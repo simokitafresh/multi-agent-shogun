@@ -12,7 +12,7 @@ teardown() {
     rm -rf "$TMP_ROOT"
 }
 
-@test "init-ledger records every scripts/*.sh file with non-destructive bash -n baseline" {
+@test "init-ledger records every scripts/*.sh file with non-destructive bash -n syntax baseline and real timing columns" {
     run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
     [ "$status" -eq 0 ]
 
@@ -21,8 +21,12 @@ teardown() {
 
     [ "$entry_count" = "$expected" ]
     grep -Fq "script_count: $expected" "$LEDGER"
-    grep -Fq 'measurement_command: "timeout 5 bash -n <script_path>"' "$LEDGER"
+    grep -Fq 'measurement_command: "timeout 5 bash -n <script_path> (syntax baseline only; not runtime speed)"' "$LEDGER"
+    grep -Fq 'real_measurement_policy: "Ninja must choose a safe runtime command per script:' "$LEDGER"
     grep -Eq 'before_ms: [0-9]+' "$LEDGER"
+    grep -Fq 'before_real_ms: ""' "$LEDGER"
+    grep -Fq 'after_real_ms: ""' "$LEDGER"
+    grep -Fq 'real_measurement_command: ""' "$LEDGER"
     grep -Fq 'global_status: running' "$LEDGER"
 }
 
@@ -63,6 +67,33 @@ teardown() {
         in_target && /commit: "abc123"/ { commit_seen = 1 }
         END { exit !(status_seen && after_seen && test_seen && commit_seen) }
     ' "$LEDGER"
+}
+
+@test "record-real writes runtime before and after with measurement command" {
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
+    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
+
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 101 72 "time bash $first --help" "bats target PASS SKIP=0" abc123 "$LEDGER"
+
+    awk -v script="$first" '
+        $0 ~ "script_path: \"" script "\"" { in_target = 1 }
+        in_target && /status: completed/ { status_seen = 1 }
+        in_target && /before_real_ms: 101/ { before_seen = 1 }
+        in_target && /after_real_ms: 72/ { after_seen = 1 }
+        in_target && /real_measurement_command: "time bash / { command_seen = 1 }
+        in_target && /test_result: "bats target PASS SKIP=0"/ { test_seen = 1 }
+        in_target && /commit: "abc123"/ { commit_seen = 1 }
+        END { exit !(status_seen && before_seen && after_seen && command_seen && test_seen && commit_seen) }
+    ' "$LEDGER"
+}
+
+@test "record-real completed rejects non-improving runtime" {
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
+    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
+
+    run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 101 101 "time bash $first --help" "bats target PASS SKIP=0" abc123 "$LEDGER"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"after_real_ms < before_real_ms"* ]]
 }
 
 @test "ninja_monitor handles speed training before legacy training auto-deploy" {

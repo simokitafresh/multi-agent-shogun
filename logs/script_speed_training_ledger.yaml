@@ -1,236 +1,324 @@
 global_status: running
-generated_at: "2026-06-06T19:57:48"
-measurement_command: "timeout 5 bash -n <script_path>"
+generated_at: "2026-06-06T21:09:32"
+measurement_command: "timeout 5 bash -n <script_path> (syntax baseline only; not runtime speed)"
+real_measurement_policy: "Ninja must choose a safe runtime command per script: time bash script.sh <args>, --help, dry-run mode, or sandboxed equivalent. Record before_real_ms/after_real_ms with the same command before and after."
 script_count: 254
 entries:
   - script_path: "scripts/ac_physical_verify.sh"
-    status: completed
-    before_ms: 9
-    after_ms: 10
-    test_result: "dry-run bash -n PASS SKIP=0"
-    commit: "dry-run-no-commit"
-    assigned_to: "hayate"
-    updated_at: "2026-06-06T19:57:53"
+    status: pending
+    before_ms: 17
+    after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
+    test_result: "baseline_bash_n_exit_0"
+    commit: ""
+    assigned_to: ""
+    updated_at: ""
   - script_path: "scripts/affected_tests.sh"
     status: pending
-    before_ms: 9
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/agent_status.sh"
     status: pending
-    before_ms: 10
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/api_usage.sh"
     status: pending
-    before_ms: 13
+    before_ms: 39
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/archive_completed.sh"
     status: pending
-    before_ms: 13
+    before_ms: 19
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/auto_deploy_next.sh"
     status: pending
-    before_ms: 8
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/auto_draft_lesson.sh"
     status: pending
-    before_ms: 8
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/auto_failure_lesson.sh"
     status: pending
-    before_ms: 9
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/backfill_knowledge_debt.sh"
     status: pending
-    before_ms: 8
+    before_ms: 22
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/backfill_lesson_target_files.sh"
     status: pending
-    before_ms: 7
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/backfill_review_gate_done.sh"
     status: pending
-    before_ms: 12
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/backfill_task_type.sh"
     status: pending
-    before_ms: 22
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/build_instructions.sh"
     status: pending
-    before_ms: 13
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/bulletin_archive.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/bulletin_close.sh"
     status: pending
-    before_ms: 10
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/bulletin_confirm.sh"
     status: pending
-    before_ms: 9
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/bulletin_write.sh"
     status: pending
-    before_ms: 10
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/capture_clipboard_image.sh"
     status: pending
-    before_ms: 8
+    before_ms: 25
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/causal_backlink_counts.sh"
     status: pending
-    before_ms: 9
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/causal_backlinks.sh"
     status: pending
-    before_ms: 12
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cdp/cdp_benchmark.sh"
     status: pending
-    before_ms: 9
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cdp/cdp_cli.sh"
     status: pending
-    before_ms: 10
+    before_ms: 25
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cdp/cdp_measure.sh"
     status: pending
-    before_ms: 10
+    before_ms: 20
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cdp_canary.sh"
     status: pending
-    before_ms: 12
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cdp_chrome_cleanup.sh"
     status: pending
-    before_ms: 8
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/check_project_codd_ready.sh"
     status: pending
-    before_ms: 13
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/checklist_progress.sh"
     status: pending
-    before_ms: 10
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/checklist_update.sh"
     status: pending
-    before_ms: 8
+    before_ms: 19
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/chronicle_metrics.sh"
     status: pending
-    before_ms: 8
+    before_ms: 25
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
@@ -239,406 +327,559 @@ entries:
     status: pending
     before_ms: 11
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cleanup_three_layer_tmp.sh"
     status: pending
-    before_ms: 8
+    before_ms: 20
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/clear_prep_check.sh"
     status: pending
-    before_ms: 11
+    before_ms: 21
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/clipboard_watcher.sh"
     status: pending
-    before_ms: 9
+    before_ms: 32
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cmd_absorb.sh"
     status: pending
-    before_ms: 11
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cmd_complete_gate.sh"
     status: pending
-    before_ms: 27
+    before_ms: 32
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cmd_delegate.sh"
     status: pending
-    before_ms: 14
+    before_ms: 21
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cmd_friction_log.sh"
     status: pending
-    before_ms: 9
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cmd_halt.sh"
     status: pending
-    before_ms: 10
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cmd_publish.sh"
     status: pending
-    before_ms: 9
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cmd_quality_log.sh"
     status: pending
-    before_ms: 9
+    before_ms: 19
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/cmd_save.sh"
     status: pending
-    before_ms: 22
+    before_ms: 31
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/context_freshness_check.sh"
     status: pending
-    before_ms: 10
+    before_ms: 9
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/conversation_retention.sh"
     status: pending
-    before_ms: 9
+    before_ms: 8
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/count_bats_skips.sh"
     status: pending
-    before_ms: 9
+    before_ms: 20
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/count_gate_metrics.sh"
     status: pending
-    before_ms: 12
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/daemon_supervisor.sh"
     status: pending
-    before_ms: 8
+    before_ms: 21
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/daemon_watchdog.sh"
     status: pending
-    before_ms: 9
+    before_ms: 13
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/dashboard_auto_section.sh"
     status: pending
-    before_ms: 10
+    before_ms: 21
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/dashboard_update.sh"
     status: pending
-    before_ms: 10
+    before_ms: 22
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/decision_write.sh"
     status: pending
-    before_ms: 10
+    before_ms: 24
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/deploy_task.sh"
     status: pending
-    before_ms: 32
+    before_ms: 47
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/deploy_training.sh"
     status: pending
-    before_ms: 9
+    before_ms: 29
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/enable_pane_trace.sh"
     status: pending
-    before_ms: 8
+    before_ms: 19
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/fullrecalculate.sh"
     status: pending
-    before_ms: 8
+    before_ms: 20
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gate_auto_respond.sh"
     status: pending
-    before_ms: 7
+    before_ms: 21
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gate_fire_log.sh"
     status: pending
-    before_ms: 13
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gate_improvement_trigger.sh"
     status: pending
-    before_ms: 10
+    before_ms: 8
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_artifact_map.sh"
     status: pending
-    before_ms: 11
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_autofix_proposal.sh"
     status: pending
-    before_ms: 11
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_cmd_state.sh"
     status: pending
-    before_ms: 8
+    before_ms: 9
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_codd_regression.sh"
     status: pending
-    before_ms: 8
+    before_ms: 32
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_codex_safe_write.sh"
     status: pending
-    before_ms: 7
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_context_freshness.sh"
     status: pending
-    before_ms: 8
+    before_ms: 9
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_cycle_health.sh"
     status: pending
-    before_ms: 8
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_dc_duplicate.sh"
     status: pending
-    before_ms: 8
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_diagnose_check.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_enforcement_audit.sh"
     status: pending
-    before_ms: 8
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_field_get.sh"
     status: pending
-    before_ms: 8
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_gunshi_cs_checklist.sh"
     status: pending
-    before_ms: 8
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_gunshi_observations.sh"
     status: pending
-    before_ms: 8
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_gunshi_report_precheck.sh"
     status: pending
-    before_ms: 9
+    before_ms: 20
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_gunshi_startup.sh"
     status: pending
-    before_ms: 9
+    before_ms: 20
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_hot_path_no_sync_io.sh"
     status: pending
-    before_ms: 8
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_karo_startup.sh"
     status: pending
-    before_ms: 11
+    before_ms: 19
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_knowledge_freshness.sh"
     status: pending
-    before_ms: 12
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_lesson_health.sh"
     status: pending
-    before_ms: 10
+    before_ms: 11
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_loop_health.sh"
     status: pending
-    before_ms: 8
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_mcp_access.sh"
     status: pending
-    before_ms: 7
+    before_ms: 13
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_memory_db_live_insert_async.sh"
     status: pending
-    before_ms: 10
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_ninja_workaround_rate.sh"
     status: pending
-    before_ms: 8
+    before_ms: 23
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
@@ -647,246 +888,339 @@ entries:
     status: pending
     before_ms: 8
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_pd_sync.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_recalculate_completeness.sh"
     status: pending
-    before_ms: 7
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_report_autofix.sh"
     status: pending
-    before_ms: 9
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_report_format.sh"
     status: pending
-    before_ms: 8
+    before_ms: 20
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_shogun_memory.sh"
     status: pending
-    before_ms: 13
+    before_ms: 21
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_shogun_startup.sh"
     status: pending
-    before_ms: 13
+    before_ms: 19
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_silent_fallback.sh"
     status: pending
-    before_ms: 7
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_skill_health.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_skill_quality.sh"
     status: pending
-    before_ms: 7
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_skill_script_refs.sh"
     status: pending
-    before_ms: 10
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_test_health.sh"
     status: pending
-    before_ms: 13
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_three_layer_health.sh"
     status: pending
-    before_ms: 9
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_vercel_phase.sh"
     status: pending
-    before_ms: 8
+    before_ms: 19
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_wa_data_quality.sh"
     status: pending
-    before_ms: 8
+    before_ms: 19
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_workaround_rate.sh"
     status: pending
-    before_ms: 9
+    before_ms: 22
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_yaml_status.sh"
     status: pending
-    before_ms: 8
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/mark_no_learning.sh"
     status: pending
-    before_ms: 8
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gist_index_update.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gist_sync.sh"
     status: pending
-    before_ms: 8
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gunshi_gate_reflux.sh"
     status: pending
-    before_ms: 12
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gunshi_gate_sync.sh"
     status: pending
-    before_ms: 9
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gunshi_log_append.sh"
     status: pending
-    before_ms: 7
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gunshi_next_action.sh"
     status: pending
-    before_ms: 7
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gunshi_review_stats.sh"
     status: pending
-    before_ms: 7
+    before_ms: 24
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/health_check.sh"
     status: pending
-    before_ms: 8
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hooks/bash_state_hook.sh"
     status: pending
-    before_ms: 7
+    before_ms: 6
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hooks/block_destructive.sh"
     status: pending
-    before_ms: 7
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hooks/git-pre-commit.sh"
     status: pending
-    before_ms: 11
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hooks/pre-bash-report-deny.sh"
     status: pending
-    before_ms: 11
+    before_ms: 6
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hooks/pre-bash-test-fullrun-guard.sh"
     status: pending
-    before_ms: 10
+    before_ms: 19
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
@@ -895,102 +1229,141 @@ entries:
     status: pending
     before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hooks/pre-mcp-lord-attribution-guard.sh"
     status: pending
-    before_ms: 7
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hooks/pre-write-report-deny.sh"
     status: pending
-    before_ms: 8
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hooks/pre_compact_save.sh"
     status: pending
-    before_ms: 7
+    before_ms: 13
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hooks/prompt_state_inject.sh"
     status: pending
-    before_ms: 10
+    before_ms: 8
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hooks/session_end_clear_check.sh"
     status: pending
-    before_ms: 8
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hooks/session_start_inject.sh"
     status: pending
-    before_ms: 7
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hooks/stop_check_inbox.sh"
     status: pending
-    before_ms: 8
+    before_ms: 7
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hooks/test_hooks.sh"
     status: pending
-    before_ms: 9
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hooks/test_result_guard.sh"
     status: pending
-    before_ms: 7
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/hybrid_search.sh"
     status: pending
-    before_ms: 8
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/inbox_archive.sh"
     status: pending
-    before_ms: 8
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/inbox_mark_read.sh"
     status: pending
-    before_ms: 7
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
@@ -999,14 +1372,20 @@ entries:
     status: pending
     before_ms: 7
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/inbox_watcher.sh"
     status: pending
-    before_ms: 10
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
@@ -1015,870 +1394,1197 @@ entries:
     status: pending
     before_ms: 10
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/insight_resolve.sh"
     status: pending
-    before_ms: 11
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/insight_write.sh"
     status: pending
-    before_ms: 7
+    before_ms: 6
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/karo_workaround_log.sh"
     status: pending
-    before_ms: 11
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/knowledge_metrics.sh"
     status: pending
-    before_ms: 8
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_auto_tag.sh"
     status: pending
-    before_ms: 7
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_check.sh"
     status: pending
-    before_ms: 9
+    before_ms: 12
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_confirm.sh"
     status: pending
-    before_ms: 6
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_delete.sh"
     status: pending
-    before_ms: 7
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_deprecate.sh"
     status: pending
-    before_ms: 7
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_deprecation_scan.sh"
     status: pending
-    before_ms: 8
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_edit.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_effectiveness.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_find_duplicates.sh"
     status: pending
-    before_ms: 12
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_harvest.sh"
     status: pending
-    before_ms: 10
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_health_report.sh"
     status: pending
-    before_ms: 8
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_impact_analysis.sh"
     status: pending
-    before_ms: 7
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_impact_rotate.sh"
     status: pending
-    before_ms: 7
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_merge.sh"
     status: pending
-    before_ms: 8
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_review.sh"
     status: pending
-    before_ms: 14
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_status_migration.sh"
     status: pending
-    before_ms: 8
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_update_score.sh"
     status: pending
-    before_ms: 8
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_write.sh"
     status: pending
-    before_ms: 8
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_write_karo.sh"
     status: pending
-    before_ms: 7
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lesson_write_shogun.sh"
     status: pending
-    before_ms: 7
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/agent_config.sh"
     status: pending
-    before_ms: 7
+    before_ms: 9
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/cli_lookup.sh"
     status: pending
-    before_ms: 8
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/ctx_utils.sh"
     status: pending
-    before_ms: 9
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/field_get.sh"
     status: pending
-    before_ms: 14
+    before_ms: 22
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/firefighting_keywords.sh"
     status: pending
-    before_ms: 8
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/gunshi_notify.sh"
     status: pending
-    before_ms: 8
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/known_ninjas.sh"
     status: pending
-    before_ms: 10
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/layout_string.sh"
     status: pending
-    before_ms: 6
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/lock_path.sh"
     status: pending
-    before_ms: 7
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/mcas_common.sh"
     status: pending
-    before_ms: 10
+    before_ms: 7
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/model_colors.sh"
     status: pending
-    before_ms: 8
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/model_detect.sh"
     status: pending
-    before_ms: 9
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/model_resolve.sh"
     status: pending
-    before_ms: 8
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/normalize_report.sh"
     status: pending
-    before_ms: 8
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/pane_format.sh"
     status: pending
-    before_ms: 9
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/pane_lookup.sh"
     status: pending
-    before_ms: 9
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/pre_bash_combined_guard.sh"
     status: pending
-    before_ms: 8
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/safe_rm.sh"
     status: pending
-    before_ms: 7
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/script_update.sh"
     status: pending
-    before_ms: 8
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/text_utils.sh"
     status: pending
-    before_ms: 8
+    before_ms: 13
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/tmux_utils.sh"
     status: pending
-    before_ms: 7
+    before_ms: 13
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/yaml_field_set.sh"
     status: pending
-    before_ms: 10
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/log_rotate.sh"
     status: pending
-    before_ms: 7
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/log_terminal_input.sh"
     status: pending
-    before_ms: 9
+    before_ms: 6
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/log_terminal_response.sh"
     status: pending
-    before_ms: 11
+    before_ms: 7
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lord_conversation_read.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/markdown_link_counts.sh"
     status: pending
-    before_ms: 7
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/mcp_sync_lesson.sh"
     status: pending
-    before_ms: 6
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/memory_candidate_resolve.sh"
     status: pending
-    before_ms: 7
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/memory_db_init.sh"
     status: pending
-    before_ms: 6
+    before_ms: 13
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/memory_db_query.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/memory_recall_control.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/model_analysis.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/model_switch_preflight.sh"
     status: pending
-    before_ms: 10
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/ninja_done.sh"
     status: pending
-    before_ms: 6
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/ninja_monitor.sh"
     status: pending
-    before_ms: 18
+    before_ms: 24
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/note_draft.sh"
     status: pending
-    before_ms: 7
+    before_ms: 23
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/ntfy.sh"
     status: pending
-    before_ms: 9
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/ntfy_batch.sh"
     status: pending
-    before_ms: 6
+    before_ms: 13
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/ntfy_batch_flush.sh"
     status: pending
-    before_ms: 7
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/ntfy_cmd.sh"
     status: pending
-    before_ms: 7
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/ntfy_inbox_archive.sh"
     status: pending
-    before_ms: 9
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/ntfy_listener.sh"
     status: pending
-    before_ms: 9
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/obsidian_promote_candidate.sh"
     status: pending
-    before_ms: 7
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/obsidian_promote_finalize.sh"
     status: pending
-    before_ms: 7
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/oneshot/add_injection_count.sh"
     status: pending
-    before_ms: 8
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/oneshot/backfill_gate_titles.sh"
     status: pending
-    before_ms: 8
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/oneshot/reset_harmful_counts.sh"
     status: pending
-    before_ms: 9
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/parity_check.sh"
     status: pending
-    before_ms: 7
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/pending_decision_write.sh"
     status: pending
-    before_ms: 8
+    before_ms: 13
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/post_recalculate_checks.sh"
     status: pending
-    before_ms: 7
+    before_ms: 13
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/process_stop.sh"
     status: pending
-    before_ms: 10
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/ralph_loop_closer.sh"
     status: pending
-    before_ms: 9
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/ralph_loop_metrics.sh"
     status: pending
-    before_ms: 8
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/record_lesson_feedback.sh"
     status: pending
-    before_ms: 7
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/report_field_set.sh"
     status: pending
-    before_ms: 10
+    before_ms: 19
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/report_merge.sh"
     status: pending
-    before_ms: 7
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/reset_layout.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/restart_all_daemons.sh"
     status: pending
-    before_ms: 7
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/restart_monitor.sh"
     status: pending
-    before_ms: 7
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/restart_ntfy_listener.sh"
     status: pending
-    before_ms: 8
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/restart_watchers.sh"
     status: pending
-    before_ms: 6
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/review_gate.sh"
     status: pending
-    before_ms: 7
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/rework_rate.sh"
     status: pending
-    before_ms: 7
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/rotate_gate_metrics.sh"
     status: pending
-    before_ms: 6
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/run_precommit_checks.sh"
     status: pending
-    before_ms: 7
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/run_tests.sh"
     status: pending
-    before_ms: 9
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/search_log_write.sh"
     status: pending
-    before_ms: 8
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/semantic_alias_quality.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/semantic_index_update.sh"
     status: pending
-    before_ms: 12
+    before_ms: 7
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/semantic_map_generate.sh"
     status: pending
-    before_ms: 9
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/semantic_quality_test.sh"
     status: pending
-    before_ms: 7
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/semantic_search.sh"
     status: pending
-    before_ms: 7
+    before_ms: 6
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/semantic_stress_test.sh"
     status: pending
-    before_ms: 9
+    before_ms: 19
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/shogun_lesson_ack.sh"
     status: pending
-    before_ms: 7
+    before_ms: 19
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/should_dream.sh"
     status: pending
-    before_ms: 7
+    before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/shout.sh"
     status: pending
-    before_ms: 8
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/shutsujin_departure.sh"
     status: pending
-    before_ms: 8
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/skill_auto_improve.sh"
     status: pending
-    before_ms: 7
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/skill_execution_log.sh"
     status: pending
-    before_ms: 8
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/skill_gate_feedback.sh"
     status: pending
-    before_ms: 10
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/skill_metrics.sh"
     status: pending
-    before_ms: 8
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/skill_recommend.sh"
     status: pending
-    before_ms: 8
+    before_ms: 7
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/skill_recommend_metrics.sh"
     status: pending
-    before_ms: 7
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
@@ -1887,22 +2593,31 @@ entries:
     status: pending
     before_ms: 8
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/switch_cli_mode.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/switch_project.sh"
     status: pending
-    before_ms: 7
+    before_ms: 19
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
@@ -1911,126 +2626,174 @@ entries:
     status: pending
     before_ms: 14
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/sync_pane_vars.sh"
     status: pending
-    before_ms: 7
+    before_ms: 12
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/task_deploy.sh"
     status: pending
-    before_ms: 10
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/task_queue_status.sh"
     status: pending
-    before_ms: 6
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/test_select.sh"
     status: pending
-    before_ms: 27
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/token_refresh.sh"
     status: pending
-    before_ms: 10
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/usage_compare.sh"
     status: pending
-    before_ms: 8
+    before_ms: 17
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/usage_monitor.sh"
     status: pending
-    before_ms: 8
+    before_ms: 7
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/usage_status.sh"
     status: pending
-    before_ms: 9
+    before_ms: 6
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/usage_statusbar_loop.sh"
     status: pending
-    before_ms: 8
+    before_ms: 21
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/workaround_pattern_check.sh"
     status: pending
-    before_ms: 9
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/workaround_pattern_resolve.sh"
     status: pending
-    before_ms: 6
+    before_ms: 21
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/yaml_auto_archive.sh"
     status: pending
-    before_ms: 6
+    before_ms: 15
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/yaml_check_codex.sh"
     status: pending
-    before_ms: 10
+    before_ms: 16
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/yaml_check_opus.sh"
     status: pending
-    before_ms: 8
+    before_ms: 18
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/yaml_log_rotate.sh"
     status: pending
-    before_ms: 8
+    before_ms: 19
     after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
     assigned_to: ""

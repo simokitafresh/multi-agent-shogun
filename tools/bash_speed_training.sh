@@ -15,6 +15,7 @@ Usage:
   bash tools/bash_speed_training.sh set-global-status <running|paused> [ledger]
   bash tools/bash_speed_training.sh mark-assigned <script_path> <ninja> [ledger]
   bash tools/bash_speed_training.sh record-after <script_path> <status> <after_ms> <test_result> <commit> [ledger]
+  bash tools/bash_speed_training.sh record-real <script_path> <status> <before_real_ms> <after_real_ms> <real_measurement_command> <test_result> <commit> [ledger]
   bash tools/bash_speed_training.sh auto-deploy <ninja> [ledger]
 EOF
 }
@@ -76,7 +77,8 @@ init_ledger_unlocked() {
     {
         printf 'global_status: running\n'
         printf 'generated_at: %s\n' "$(yaml_quote "$generated_at")"
-        printf 'measurement_command: %s\n' "$(yaml_quote 'timeout 5 bash -n <script_path>')"
+        printf 'measurement_command: %s\n' "$(yaml_quote 'timeout 5 bash -n <script_path> (syntax baseline only; not runtime speed)')"
+        printf 'real_measurement_policy: %s\n' "$(yaml_quote 'Ninja must choose a safe runtime command per script: time bash script.sh <args>, --help, dry-run mode, or sandboxed equivalent. Record before_real_ms/after_real_ms with the same command before and after.')"
         printf 'script_count: %s\n' "$count"
         printf 'entries:\n'
         while IFS= read -r abs_path; do
@@ -86,6 +88,9 @@ init_ledger_unlocked() {
             printf '    status: pending\n'
             printf '    before_ms: %s\n' "$ms"
             printf '    after_ms: ""\n'
+            printf '    before_real_ms: ""\n'
+            printf '    after_real_ms: ""\n'
+            printf '    real_measurement_command: ""\n'
             printf '    test_result: %s\n' "$(yaml_quote "baseline_bash_n_exit_${syntax_status}")"
             printf '    commit: ""\n'
             printf '    assigned_to: ""\n'
@@ -93,6 +98,32 @@ init_ledger_unlocked() {
         done < <(find "$SCRIPT_DIR/scripts" -type f -name '*.sh' | sort)
     } > "$tmp"
     mv "$tmp" "$ledger"
+}
+
+cmd_record_real() {
+    local script_path="${1:-}"
+    local status="${2:-}"
+    local before_real_ms="${3:-}"
+    local after_real_ms="${4:-}"
+    local real_measurement_command="${5:-}"
+    local test_result="${6:-}"
+    local commit="${7:-}"
+    local ledger="${8:-$LEDGER}"
+    [ -n "$script_path" ] && [ -n "$status" ] && [ -n "$before_real_ms" ] && [ -n "$after_real_ms" ] && [ -n "$real_measurement_command" ] && [ -n "$test_result" ] && [ -n "$commit" ] || { usage >&2; return 2; }
+    [[ "$before_real_ms" =~ ^[0-9]+$ ]] || { echo "before_real_ms must be numeric" >&2; return 2; }
+    [[ "$after_real_ms" =~ ^[0-9]+$ ]] || { echo "after_real_ms must be numeric" >&2; return 2; }
+    if [ "$status" = "completed" ] && [ "$after_real_ms" -ge "$before_real_ms" ]; then
+        echo "completed requires after_real_ms < before_real_ms" >&2
+        return 2
+    fi
+    [ -f "$ledger" ] || return 1
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "status" "$status"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "before_real_ms" "$before_real_ms"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "after_real_ms" "$after_real_ms"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "real_measurement_command" "$real_measurement_command"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "test_result" "$test_result"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "commit" "$commit"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "updated_at" "$(now_iso)"
 }
 
 cmd_init_ledger() {
@@ -221,17 +252,21 @@ task:
   target_path: ${script_path}
   scout_exempt: true
   status: assigned
-  purpose: "Speed-train ${script_path}: record before, improve safely, run script-specific tests, record after in ledger."
+  purpose: "Speed-train ${script_path}: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger."
   acceptance_criteria:
     - id: AC1
       checks:
-        - check: "before_ms is read from script_speed_training_ledger"
+        - check: "before_ms bash -n baseline is read from script_speed_training_ledger as syntax-only reference"
+        - check: "before_real_ms is measured with a safe runtime command chosen for this script (time bash script.sh <args>, --help, dry-run, or sandboxed equivalent)"
     - id: AC2
       checks:
+        - check: "implementation improves runtime without reducing behavior or safety"
         - check: "script-specific verification passes with SKIP=0"
     - id: AC3
       checks:
-        - check: "after_ms/test_result/commit are written back to script_speed_training_ledger"
+        - check: "after_real_ms is measured with the same command as before_real_ms"
+        - check: "after_real_ms is strictly lower than before_real_ms"
+        - check: "real_measurement_command/test_result/commit are written back to script_speed_training_ledger"
 EOF
 }
 
@@ -273,6 +308,7 @@ main() {
         set-global-status) cmd_set_global_status "$@" ;;
         mark-assigned) cmd_mark_assigned "$@" ;;
         record-after) cmd_record_after "$@" ;;
+        record-real) cmd_record_real "$@" ;;
         auto-deploy) cmd_auto_deploy "$@" ;;
         *) usage >&2; return 2 ;;
     esac
