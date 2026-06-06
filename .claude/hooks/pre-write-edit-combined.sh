@@ -207,7 +207,7 @@ if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
     fi
     # Guard 0d: inbox未読時はcmd起票BLOCK (LS048: 読まずに既読するな。起動時と同じ態度で正しく深く読め)
     _inbox_file="$SCRIPT_DIR/queue/inbox/shogun.yaml"
-    if [[ -f "$_inbox_file" ]]; then
+    if [[ "$file_path" == "$SCRIPT_DIR/queue/shogun_to_karo.yaml" && -f "$_inbox_file" ]]; then
         _unread_count=$(grep -cE '^[[:space:]]*read:[[:space:]]*false' "$_inbox_file" 2>/dev/null || echo 0)
         if [[ "$_unread_count" -gt 0 ]]; then
             emit_deny "BLOCK: inbox未読${_unread_count}件。Read toolで全文読み、作業への影響を自問し、対処してからcmd起票せよ(LS048)"
