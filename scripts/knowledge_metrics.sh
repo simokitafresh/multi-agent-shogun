@@ -684,7 +684,6 @@ dedup_rows = dedup_cmd_rows(valid_rows)
 STRUCTURAL_PATTERNS = ["missing_gate", "archive_gate", "lesson_gate", "review_gate"]
 gate_log_path = os.path.join(os.path.dirname(tsv_file), "gate_metrics.log")
 gate_rows = load_gate_rows(gate_log_path)
-dedup_gate_rows = {row["cmd_id"]: row for row in dedup_cmd_rows([r for r in gate_rows if r["gate_result"] in ("CLEAR", "BLOCK")])}
 cmd_block_reasons = defaultdict(list)
 for row in gate_rows:
     if row["gate_result"] == "BLOCK" and row["detail"]:
@@ -841,119 +840,125 @@ lesson_effectiveness_data = {
     "bottom_lessons": bottom_lessons,
 }
 
-cmd_metadata = load_cmd_metadata(base_dir)
-project_stats = defaultdict(lambda: {"total": 0, "injected": 0, "referenced": 0, "effective": 0})
-for row in quality_rows:
-    project = cmd_metadata.get(row["cmd_id"], {}).get("project", "unknown") or "unknown"
-    injected = bool(split_csv(row["injected_ids"]))
-    referenced = bool(split_csv(row["referenced_ids"]))
-    project_stats[project]["total"] += 1
-    if injected:
-        project_stats[project]["injected"] += 1
-        if referenced:
-            project_stats[project]["referenced"] += 1
-        if row["gate_result"] == "CLEAR":
-            project_stats[project]["effective"] += 1
-
-by_project = []
-for project, stats in project_stats.items():
-    by_project.append({
-        "project": project,
-        "inject_rate": percent(stats["injected"], stats["total"]),
-        "ref_rate": percent(stats["referenced"], stats["injected"]),
-        "effectiveness_rate": percent(stats["effective"], stats["injected"]),
-        "n": stats["total"],
-        "injected_n": stats["injected"],
-    })
-by_project.sort(key=lambda item: (item["project"] == "unknown", -(item["n"] or 0), item["project"]))
-
-model_stats = defaultdict(lambda: {"total": 0, "injected": 0, "referenced": 0, "effective": 0})
-for row in quality_rows:
-    gate_meta = dedup_gate_rows.get(row["cmd_id"], {})
-    models = split_csv(gate_meta.get("models_csv", "unknown")) or ["unknown"]
-    injected = bool(split_csv(row["injected_ids"]))
-    referenced = bool(split_csv(row["referenced_ids"]))
-    for model_name in models:
-        model_stats[model_name]["total"] += 1
+if by_project_output:
+    cmd_metadata = load_cmd_metadata(base_dir)
+    project_stats = defaultdict(lambda: {"total": 0, "injected": 0, "referenced": 0, "effective": 0})
+    for row in quality_rows:
+        project = cmd_metadata.get(row["cmd_id"], {}).get("project", "unknown") or "unknown"
+        injected = bool(split_csv(row["injected_ids"]))
+        referenced = bool(split_csv(row["referenced_ids"]))
+        project_stats[project]["total"] += 1
         if injected:
-            model_stats[model_name]["injected"] += 1
+            project_stats[project]["injected"] += 1
             if referenced:
-                model_stats[model_name]["referenced"] += 1
+                project_stats[project]["referenced"] += 1
             if row["gate_result"] == "CLEAR":
-                model_stats[model_name]["effective"] += 1
+                project_stats[project]["effective"] += 1
+    by_project = []
+    for project, stats in project_stats.items():
+        by_project.append({
+            "project": project,
+            "inject_rate": percent(stats["injected"], stats["total"]),
+            "ref_rate": percent(stats["referenced"], stats["injected"]),
+            "effectiveness_rate": percent(stats["effective"], stats["injected"]),
+            "n": stats["total"],
+            "injected_n": stats["injected"],
+        })
+    by_project.sort(key=lambda item: (item["project"] == "unknown", -(item["n"] or 0), item["project"]))
+else:
+    by_project = []
 
-def extract_model_family(label):
-    low = label.lower().replace("-", " ").replace("_", " ")
-    if "opus" in low and ("4.6" in low or "4 6" in low):
-        return "opus_4_6"
-    if ("gpt" in low or "codex" in low) and (
-        "5.4" in low or "5 4" in low or "5.5" in low or "5 5" in low
-    ):
-        return "gpt_5"
-    import re as _re
-    return _re.sub(r"[^a-z0-9]+", "_", low).strip("_") or "unknown"
+if by_model_output:
+    dedup_gate_rows = {row["cmd_id"]: row for row in dedup_cmd_rows([r for r in gate_rows if r["gate_result"] in ("CLEAR", "BLOCK")])}
+    model_stats = defaultdict(lambda: {"total": 0, "injected": 0, "referenced": 0, "effective": 0})
+    for row in quality_rows:
+        gate_meta = dedup_gate_rows.get(row["cmd_id"], {})
+        models = split_csv(gate_meta.get("models_csv", "unknown")) or ["unknown"]
+        injected = bool(split_csv(row["injected_ids"]))
+        referenced = bool(split_csv(row["referenced_ids"]))
+        for model_name in models:
+            model_stats[model_name]["total"] += 1
+            if injected:
+                model_stats[model_name]["injected"] += 1
+                if referenced:
+                    model_stats[model_name]["referenced"] += 1
+                if row["gate_result"] == "CLEAR":
+                    model_stats[model_name]["effective"] += 1
 
-def build_active_families_from_settings(settings_path, profiles_path):
-    families = set()
-    try:
-        settings = _yaml.safe_load(Path(settings_path).read_text(encoding="utf-8")) or {} if _yaml else {}
-        profiles_data = _yaml.safe_load(Path(profiles_path).read_text(encoding="utf-8")) or {} if _yaml else {}
-    except Exception:
+    def extract_model_family(label):
+        low = label.lower().replace("-", " ").replace("_", " ")
+        if "opus" in low and ("4.6" in low or "4 6" in low):
+            return "opus_4_6"
+        if ("gpt" in low or "codex" in low) and (
+            "5.4" in low or "5 4" in low or "5.5" in low or "5 5" in low
+        ):
+            return "gpt_5"
+        import re as _re
+        return _re.sub(r"[^a-z0-9]+", "_", low).strip("_") or "unknown"
+
+    def build_active_families_from_settings(settings_path, profiles_path):
+        families = set()
+        try:
+            settings = _yaml.safe_load(Path(settings_path).read_text(encoding="utf-8")) or {} if _yaml else {}
+            profiles_data = _yaml.safe_load(Path(profiles_path).read_text(encoding="utf-8")) or {} if _yaml else {}
+        except Exception:
+            return families
+        cli = settings.get("cli", {}) if isinstance(settings, dict) else {}
+        agents = cli.get("agents", {}) if isinstance(cli, dict) else {}
+        default_cli = str(cli.get("default", "claude") or "claude")
+        effort = str(settings.get("effort", "") or "").strip()
+        profiles = profiles_data.get("profiles", {}) if isinstance(profiles_data, dict) else {}
+        for ninja, cfg in agents.items():
+            cli_type = default_cli
+            model_label = ""
+            has_explicit_model = False
+            if isinstance(cfg, str):
+                cli_type = cfg or default_cli
+            elif isinstance(cfg, dict):
+                cli_type = str(cfg.get("type") or default_cli)
+                model_label = str(cfg.get("model_name") or "")
+                has_explicit_model = bool(model_label.strip())
+            if not model_label.strip():
+                profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
+                model_label = str(profile.get("display_name") or cli_type or "")
+            if has_explicit_model and effort and effort not in model_label.split():
+                model_label = f"{model_label} {effort}"
+            families.add(extract_model_family(model_label.strip()))
         return families
-    cli = settings.get("cli", {}) if isinstance(settings, dict) else {}
-    agents = cli.get("agents", {}) if isinstance(cli, dict) else {}
-    default_cli = str(cli.get("default", "claude") or "claude")
-    effort = str(settings.get("effort", "") or "").strip()
-    profiles = profiles_data.get("profiles", {}) if isinstance(profiles_data, dict) else {}
-    for ninja, cfg in agents.items():
-        cli_type = default_cli
-        model_label = ""
-        has_explicit_model = False
-        if isinstance(cfg, str):
-            cli_type = cfg or default_cli
-        elif isinstance(cfg, dict):
-            cli_type = str(cfg.get("type") or default_cli)
-            model_label = str(cfg.get("model_name") or "")
-            has_explicit_model = bool(model_label.strip())
-        if not model_label.strip():
-            profile = profiles.get(cli_type, {}) if isinstance(profiles, dict) else {}
-            model_label = str(profile.get("display_name") or cli_type or "")
-        if has_explicit_model and effort and effort not in model_label.split():
-            model_label = f"{model_label} {effort}"
-        families.add(extract_model_family(model_label.strip()))
-    return families
 
-settings_path = base_dir / "config" / "settings.yaml"
-profiles_path = base_dir / "config" / "cli_profiles.yaml"
-active_families = build_active_families_from_settings(settings_path, profiles_path)
+    settings_path = base_dir / "config" / "settings.yaml"
+    profiles_path = base_dir / "config" / "cli_profiles.yaml"
+    active_families = build_active_families_from_settings(settings_path, profiles_path)
 
-# Aggregate model_stats by family to avoid duplicate rows for same model
-family_agg = {}  # family -> {total, injected, referenced, effective, label, max_n}
-for model_name, stats in model_stats.items():
-    family = extract_model_family(model_name)
-    if model_name == "unknown" or family not in active_families:
-        continue
-    if family not in family_agg:
-        family_agg[family] = {"total": 0, "injected": 0, "referenced": 0, "effective": 0, "label": model_name, "max_n": 0}
-    family_agg[family]["total"] += stats["total"]
-    family_agg[family]["injected"] += stats["injected"]
-    family_agg[family]["referenced"] += stats["referenced"]
-    family_agg[family]["effective"] += stats["effective"]
-    if stats["total"] > family_agg[family]["max_n"]:
-        family_agg[family]["max_n"] = stats["total"]
-        family_agg[family]["label"] = model_name
+    # Aggregate model_stats by family to avoid duplicate rows for same model
+    family_agg = {}  # family -> {total, injected, referenced, effective, label, max_n}
+    for model_name, stats in model_stats.items():
+        family = extract_model_family(model_name)
+        if model_name == "unknown" or family not in active_families:
+            continue
+        if family not in family_agg:
+            family_agg[family] = {"total": 0, "injected": 0, "referenced": 0, "effective": 0, "label": model_name, "max_n": 0}
+        family_agg[family]["total"] += stats["total"]
+        family_agg[family]["injected"] += stats["injected"]
+        family_agg[family]["referenced"] += stats["referenced"]
+        family_agg[family]["effective"] += stats["effective"]
+        if stats["total"] > family_agg[family]["max_n"]:
+            family_agg[family]["max_n"] = stats["total"]
+            family_agg[family]["label"] = model_name
 
-by_model = []
-for family, agg in family_agg.items():
-    by_model.append({
-        "model": agg["label"],
-        "display_name": agg["label"].replace("_", " "),
-        "ref_rate": percent(agg["referenced"], agg["injected"]),
-        "effectiveness_rate": percent(agg["effective"], agg["injected"]),
-        "n": agg["total"],
-        "injected_n": agg["injected"],
-    })
-by_model.sort(key=lambda item: (item["model"] == "unknown", -(item["n"] or 0), item["display_name"].lower()))
+    by_model = []
+    for family, agg in family_agg.items():
+        by_model.append({
+            "model": agg["label"],
+            "display_name": agg["label"].replace("_", " "),
+            "ref_rate": percent(agg["referenced"], agg["injected"]),
+            "effectiveness_rate": percent(agg["effective"], agg["injected"]),
+            "n": agg["total"],
+            "injected_n": agg["injected"],
+        })
+    by_model.sort(key=lambda item: (item["model"] == "unknown", -(item["n"] or 0), item["display_name"].lower()))
+else:
+    by_model = []
 
 # === --model モード: ninja→model直接マッピングによるCLEAR率集計 ===
 ninja_model_map = load_ninja_model_map(base_dir / "config" / "settings.yaml") if model_output else {}
