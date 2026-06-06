@@ -28,7 +28,7 @@ if [ -f "$CACHE_FILE" ]; then
     cache_age=$(( $(date +%s) - $(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0) ))
     if [ "$cache_age" -lt "$CACHE_TTL_SECONDS" ]; then
         head -1 "$CACHE_FILE"
-        cached_exit=$(grep -oE 'exit_code=[0-9]+' "$CACHE_FILE" | cut -d= -f2)
+        cached_exit=$(awk -F= '/^exit_code=/{print $2; exit}' "$CACHE_FILE" 2>/dev/null)
         exit "${cached_exit:-0}"
     fi
 fi
@@ -73,13 +73,11 @@ curl_exit=0
     -w '%{http_code} %{time_total}' \
     "${API_BASE}/api/p-average" >"$curl_meta_file" 2>"$curl_err_file" || curl_exit=$?
 
-curl_meta="$(cat "$curl_meta_file" 2>/dev/null || true)"
-curl_err="$(head -1 "$curl_err_file" 2>/dev/null || true)"
-http_code="$(printf '%s\n' "$curl_meta" | awk '{print $1}')"
-elapsed="$(printf '%s\n' "$curl_meta" | awk '{print $2}')"
+IFS=' ' read -r http_code elapsed < "$curl_meta_file" || true
+IFS= read -r curl_err < "$curl_err_file" || curl_err=""
 http_code="${http_code:-000}"
 elapsed="${elapsed:-unknown}"
-api_host="$(printf '%s\n' "$API_BASE" | sed -E 's#^[a-zA-Z]+://##; s#/.*$##')"
+_api_tmp="${API_BASE#*://}"; api_host="${_api_tmp%%/*}"
 
 if [ "$curl_exit" -ne 0 ]; then
     case "$curl_exit:$http_code" in
@@ -116,32 +114,48 @@ if [ "$curl_exit" -ne 0 ]; then
     exit 1
 fi
 
-response="$(cat "$response_file")"
+calc_result="$(
+    python3 - "$response_file" <<'PY' 2>/dev/null
+import json
+import sys
+from datetime import datetime, timezone
 
-# calculated_at を抽出（トップレベルのdata.calculated_at）
-calculated_at=$(echo "$response" | python3 -c "
-import json, sys
-d = json.load(sys.stdin)
-cat = d.get('data', {}).get('calculated_at')
-print(cat if cat else 'null')
-" 2>/dev/null) || calculated_at="null"
+path = sys.argv[1]
+with open(path, encoding="utf-8") as f:
+    data = json.load(f)
+calculated_at = (data.get("data") or {}).get("calculated_at")
+if not calculated_at:
+    print("NULL\t")
+    raise SystemExit(0)
+try:
+    normalized = str(calculated_at).replace("Z", "+00:00")
+    calc_dt = datetime.fromisoformat(normalized)
+    if calc_dt.tzinfo is None:
+        calc_dt = calc_dt.replace(tzinfo=timezone.utc)
+    now_dt = datetime.now(timezone.utc)
+    days_ago = int((now_dt.timestamp() - calc_dt.timestamp()) // 86400)
+except Exception:
+    print(f"PARSE\t{calculated_at}")
+    raise SystemExit(0)
+print(f"OK\t{calculated_at}\t{days_ago}")
+PY
+)" || calc_result="NULL"
 
-if [ "$calculated_at" = "null" ] || [ -z "$calculated_at" ]; then
+IFS=$'\t' read -r calc_status calculated_at days_ago <<< "$calc_result"
+
+if [ "$calc_status" = "NULL" ] || [ -z "${calculated_at:-}" ]; then
     echo "ALERT: p̄ never calculated (calculated_at=null)"
     echo "  action: p̄バッチが未実行。DM-Signal の p̄計算エンドポイントを呼び出し calculated_at を設定せよ"
     bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄未計算(calculated_at=null)"
     exit 1
 fi
 
-# 日数計算
-calc_epoch=$(date -d "${calculated_at}" +%s 2>/dev/null) || {
+if [ "$calc_status" = "PARSE" ]; then
     echo "ALERT: p̄鮮度: calculated_at パース失敗(${calculated_at})"
     echo "  action: DM-Signal バックエンドの p̄計算ロジックを確認し、calculated_at を ISO 8601 形式(YYYY-MM-DDTHH:MM:SSZ)で出力するよう修正せよ"
     bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — 日付パース不可"
     exit 1
-}
-now_epoch=$(date +%s)
-days_ago=$(( (now_epoch - calc_epoch) / 86400 ))
+fi
 
 if [ "$days_ago" -gt 35 ]; then
     msg="ALERT: p̄ stale (${days_ago}d)"
