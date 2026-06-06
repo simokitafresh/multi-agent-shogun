@@ -1294,16 +1294,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T06:00:25"
   - script_path: "scripts/hooks/session_start_inject.sh"
-    status: assigned
+    status: completed
     before_ms: 15
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 15
+    before_real_ms: 2537
+    after_real_ms: 1960
+    real_measurement_command: "20x printf '{\"type\":\"startup\"}' | AGENT_ID=kagemaru bash scripts/hooks/session_start_inject.sh; median of 5 runs"
+    test_result: "bash_n_pass;bats_test_session_state_hooks_session_start_inject_5_pass_0_skip;json_valid;agent_context_ok;before_2537_after_1960"
+    commit: "69af2c093"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T06:04:06"
+    updated_at: "2026-06-07T06:08:00"
   - script_path: "scripts/hooks/stop_check_inbox.sh"
     status: assigned
     before_ms: 7
