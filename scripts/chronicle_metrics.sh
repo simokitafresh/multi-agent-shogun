@@ -16,9 +16,9 @@ from __future__ import annotations
 
 import re
 import sys
+import os
 from collections import Counter
 from datetime import date, timedelta
-from pathlib import Path
 
 
 MONTH_RE = re.compile(r"^##\s+(\d{4})-(\d{2})\s*$")
@@ -73,7 +73,7 @@ def print_table(title: str, headers: list[str], rows: list[list[str]]) -> None:
     print()
 
 
-def parse_row(path: Path, raw_line: str, lineno: int) -> tuple[str, str, str, str, str] | None:
+def parse_row(path: str, raw_line: str, lineno: int) -> tuple[str, str, str, str, str] | None:
     normalized = raw_line if raw_line.rstrip().endswith("|") else f"{raw_line} |"
     cells = [cell.strip() for cell in normalized.split("|")[1:-1]]
 
@@ -95,8 +95,8 @@ def parse_row(path: Path, raw_line: str, lineno: int) -> tuple[str, str, str, st
     return cmd_id, title, project, mm_dd, key_result
 
 
-chronicle_path = Path(sys.argv[1])
-archive_dir = Path(sys.argv[2])
+chronicle_path = sys.argv[1]
+archive_dir = sys.argv[2]
 today = date.today()
 start_7 = today - timedelta(days=6)
 start_30 = today - timedelta(days=29)
@@ -109,20 +109,25 @@ recent_project_counts: Counter[str] = Counter()
 recent_type_counts: Counter[str] = Counter()
 
 
-def infer_year_from_path(path: Path) -> int | None:
-    match = YEAR_RE.search(path.name)
+def infer_year_from_path(path: str) -> int | None:
+    match = YEAR_RE.search(os.path.basename(path))
     return int(match.group(1)) if match else None
 
 
-def collect_chronicle_paths() -> list[Path]:
-    archive_paths = sorted(archive_dir.glob("*.md")) if archive_dir.is_dir() else []
+def collect_chronicle_paths() -> list[str]:
+    archive_paths = (
+        sorted(os.path.join(archive_dir, name) for name in os.listdir(archive_dir) if name.endswith(".md"))
+        if os.path.isdir(archive_dir)
+        else []
+    )
     return [*archive_paths, chronicle_path]
 
 
-def parse_chronicle(path: Path) -> None:
+def parse_chronicle(path: str) -> None:
     global count_7, count_30
     current_year = infer_year_from_path(path)
-    for lineno, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+    for lineno, raw_line in enumerate(open(path, encoding="utf-8"), start=1):
+        raw_line = raw_line.rstrip("\n")
         month_match = MONTH_RE.match(raw_line)
         if month_match:
             current_year = int(month_match.group(1))
