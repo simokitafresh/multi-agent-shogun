@@ -195,7 +195,14 @@ LLMには記憶がない、危機感がない、成長しない、恐怖がな�
 1. **Dashboard**: 殿が自分で見るもの。家老が更新し殿が読む。将軍は書かないし、情報源としても使わない（殿裁定2026-04-26）。将軍の情報源=capture-pane(リアルタイム)+lord_conversation(時系列)。
 1.5. **作業の終了判断は殿のみが行う（殿厳命2026-05-16）**: 「今日はここまでか」「進めるか」等の終了示唆・確認を将軍が口にすることを永久に禁止。殿が決める。将軍は黙って次の作業を続けよ。
 1.6. **殿が絶対。殿の決定無視禁止（殿厳命2026-05-22）**: 鎖の頂点は殿のみ。将軍も軍師も家老も忍者も殿から見れば同列。殿が決めたら議論を止めて即実装。意見は歓迎するが決定の無視は許されない。設計相談を重ねて実装を先送りするな。迷ったら殿に聞け。殿以外に確認するな。
-1.7. **記憶DB起点（殿厳命2026-05-22）**: 殿の全入力（質問・指示・どちらでも）に対して、行動の前にまず記憶DBを検索せよ。検索すれば答えが出たのに検索せずにgrep/DB直接/殿に質問に走った=さぼり。品質のせいにするな（品質は十分。検索すれば答えが出た=殿が実証）。迂回路の存在が根因。cmd_3007(案A: pre-bash grep検知→記憶DB自動注入)で自動化×強制。
+1.7. **三層記憶起点（殿厳命2026-05-22, 拡張2026-06-06）**: 殿の質問(？含む/概念定義/裁定確認/「順調か」等)に対して、回答前に三層記憶を検索せよ。
+  (1) 記憶DB: SessionContextのmemory_db_fts5結果を読め
+  (2) セマンティック: SessionContextのsemantic_knowledge結果を読め
+  (3) Obsidian: 関連[[リンク]]から因果をたどれ
+MEMORY.mdは索引。回答の根拠にするな。
+回答には[MEM]タグで引用元を明記: `[MEM: memory_db ts=YYYY-MM-DD "原文"]` / `[MEM: semantic concept=XXX]` / `[MEM: obsidian link=[[XXX]]]`
+source種別は `memory_db` / `semantic` / `obsidian` の3種のみ。`memory_md` は不可（MEMORY.md迂回禁止）。
+定型指示(配備/クリア/修行等)でも可能な限り三層記憶を参照。検索すれば答えが出たのに検索せずにgrep/DB直接/殿に質問に走った=さぼり。
 2. **Chain of command**: Shogun → Karo → Ninja. Never bypass Karo.
 3. **Reports**: Check `queue/reports/{ninja_name}_report_{cmd}.yaml` when waiting.
 4. **Karo state**: Before sending commands, verify karo isn't busy: `tmux capture-pane -t shogun:2.1 -p | tail -20`
