@@ -1140,16 +1140,16 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T05:40:00"
   - script_path: "scripts/gunshi_next_action.sh"
-    status: assigned
+    status: completed
     before_ms: 18
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 5005
+    after_real_ms: 4463
+    real_measurement_command: "GUNSHI_NEXT_ACTION_PROMPT_NO_MATCH_LOG=/dev/null bash scripts/gunshi_next_action.sh"
+    test_result: "bash -n PASS; bats tests/unit/test_gunshi_next_action.bats 1/1 PASS SKIP=0"
+    commit: "bb4714f30"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-07T05:33:33"
+    updated_at: "2026-06-07T05:55:00"
   - script_path: "scripts/gunshi_review_stats.sh"
     status: completed
     before_ms: 24
@@ -1195,7 +1195,7 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T05:49:30"
   - script_path: "scripts/hooks/git-pre-commit.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -1203,10 +1203,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T05:48:26"
   - script_path: "scripts/hooks/pre-bash-report-deny.sh"
-    status: pending
+    status: assigned
     before_ms: 6
     after_ms: ""
     before_real_ms: ""
@@ -1214,10 +1214,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T05:48:58"
   - script_path: "scripts/hooks/pre-bash-test-fullrun-guard.sh"
-    status: pending
+    status: assigned
     before_ms: 19
     after_ms: ""
     before_real_ms: ""
@@ -1225,8 +1225,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T05:49:53"
   - script_path: "scripts/hooks/pre-karo-edit-guard.sh"
     status: pending
     before_ms: 15
