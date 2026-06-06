@@ -6,7 +6,8 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_lat_self="${BASH_SOURCE[0]}"; [[ "$_lat_self" != /* ]] && _lat_self="$PWD/$_lat_self"
+SCRIPT_DIR="${_lat_self%/scripts/lesson_auto_tag.sh}"
 TAG_DICT="${SCRIPT_DIR}/config/lesson_tags.yaml"
 PROJECTS_YAML="${SCRIPT_DIR}/config/projects.yaml"
 
@@ -29,6 +30,7 @@ export TAG_DICT PROJECTS_YAML SCRIPT_DIR MODE
 
 python3 -c '
 import os, sys, re, yaml, tempfile, shutil
+_CLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
 script_dir = os.environ["SCRIPT_DIR"]
 tag_dict_path = os.environ["TAG_DICT"]
@@ -37,7 +39,7 @@ mode = os.environ["MODE"]
 
 # Load tag dictionary
 with open(tag_dict_path, "r", encoding="utf-8") as f:
-    tag_config = yaml.safe_load(f)
+    tag_config = yaml.load(f, Loader=_CLoader)
 
 tag_rules = tag_config.get("tag_rules", [])
 if not tag_rules:
@@ -58,7 +60,7 @@ for rule in tag_rules:
 
 # Load projects
 with open(projects_path, "r", encoding="utf-8") as f:
-    projects_data = yaml.safe_load(f)
+    projects_data = yaml.load(f, Loader=_CLoader)
 
 projects = projects_data.get("projects", [])
 active_projects = [p for p in projects if p.get("status") == "active"]
@@ -77,7 +79,7 @@ for project in active_projects:
         continue
 
     with open(lessons_path, "r", encoding="utf-8") as f:
-        lessons_data = yaml.safe_load(f)
+        lessons_data = yaml.load(f, Loader=_CLoader)
 
     # L063: lessons.yamlはdict構造。data.get("lessons",[]) でアクセス
     lessons = lessons_data.get("lessons", [])
