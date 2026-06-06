@@ -11,7 +11,8 @@
 # ============================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+_lir_self="${BASH_SOURCE[0]}"; [[ "$_lir_self" != /* ]] && _lir_self="$PWD/$_lir_self"
+SCRIPT_DIR="${_lir_self%/scripts/lesson_impact_rotate.sh}"
 TSV_FILE="$SCRIPT_DIR/logs/lesson_impact.tsv"
 ARCHIVE_FILE="$SCRIPT_DIR/logs/archive/lesson_impact_archive.tsv"
 KEEP_LINES=2000
