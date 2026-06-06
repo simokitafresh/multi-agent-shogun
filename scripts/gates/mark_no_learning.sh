@@ -27,7 +27,6 @@ DONE_FILE="$GATES_DIR/learning_loop.done"
 
 mkdir -p "$GATES_DIR"
 
-printf -v _mark_no_learning_ts '%(%Y-%m-%dT%H:%M:%SZ)T' -1
-printf 'no_friction_no_workaround\ntimestamp: %s\n' "$_mark_no_learning_ts" > "$DONE_FILE"
+printf 'no_friction_no_workaround\ntimestamp: %(%Y-%m-%dT%H:%M:%SZ)T\n' -1 > "$DONE_FILE"
 
 echo "[mark_no_learning] Created: $DONE_FILE"
