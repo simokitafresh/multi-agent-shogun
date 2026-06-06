@@ -48,11 +48,12 @@ for _row in "${_rows[@]}"; do
     fi
 done
 # Build combined listing from unique subdirs (batch NTFS access)
-_gs_all_files=""
+declare -A _gs_files_seen
 for _sub in "${!_gs_subdirs_seen[@]}"; do
     # shellcheck disable=SC2012  # find is 196ms vs ls 7ms on WSL2/NTFS; filenames are ASCII
-    _dir_files=$(ls "$GS_BASE/$_sub/" 2>/dev/null | sed "s|^|${_sub}/|") || true
-    _gs_all_files+="$_dir_files"$'\n'
+    while IFS= read -r _file; do
+        [[ -n "$_file" ]] && _gs_files_seen["$_sub/$_file"]=1
+    done < <(ls "$GS_BASE/$_sub/" 2>/dev/null || true)
 done
 
 # Column layout: | # | 忍法 | GS | 選出 | 成果物所在 | 完了日 |
@@ -75,7 +76,7 @@ for _row in "${_rows[@]}"; do
                 gs_path="${artifact#*GS: }"
                 gs_path="${gs_path%% (*}"
                 # R1: Check pre-built in-memory listing (bash string match, no per-file NTFS stat)
-                if [[ -n "$gs_path" ]] && [[ "$_gs_all_files" != *"$gs_path"* ]]; then
+                if [[ -n "$gs_path" ]] && [[ -z "${_gs_files_seen[$gs_path]+x}" ]]; then
                     # Fallback: direct stat for paths not covered by pre-built listing
                     full_path="$GS_BASE/$gs_path"
                     if [[ ! -f "$full_path" ]]; then
