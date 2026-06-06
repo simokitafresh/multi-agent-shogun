@@ -524,29 +524,29 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T00:01:22"
   - script_path: "scripts/dashboard_auto_section.sh"
-    status: assigned
+    status: completed
     before_ms: 21
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 550
+    after_real_ms: 430
+    real_measurement_command: "bash scripts/dashboard_auto_section.sh --dry-run >/dev/null"
+    test_result: "bash -n PASS; dry-run marker verification PASS; SKIP=0"
+    commit: "e531ccc88"
     assigned_to: "saizo"
-    updated_at: "2026-06-06T23:58:01"
+    updated_at: "2026-06-07T00:02:37"
   - script_path: "scripts/dashboard_update.sh"
-    status: pending
+    status: completed
     before_ms: 22
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 1156
+    after_real_ms: 1000
+    real_measurement_command: "time bash scripts/dashboard_update.sh cmd_training_speed_count_gate_metrics_20260606235031 --dry-run"
+    test_result: "dry_run_output_verified_SKIP_0"
+    commit: "f987505270f0c6c91edebd3991fd0fc0c02291ea"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T00:08:00"
   - script_path: "scripts/decision_write.sh"
-    status: pending
+    status: assigned
     before_ms: 24
     after_ms: ""
     before_real_ms: ""
@@ -554,10 +554,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T00:03:10"
   - script_path: "scripts/deploy_task.sh"
-    status: pending
+    status: assigned
     before_ms: 47
     after_ms: ""
     before_real_ms: ""
@@ -565,10 +565,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T00:03:52"
   - script_path: "scripts/deploy_training.sh"
-    status: pending
+    status: assigned
     before_ms: 29
     after_ms: ""
     before_real_ms: ""
@@ -576,10 +576,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T00:06:30"
   - script_path: "scripts/enable_pane_trace.sh"
-    status: pending
+    status: assigned
     before_ms: 19
     after_ms: ""
     before_real_ms: ""
@@ -587,10 +587,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T00:07:09"
   - script_path: "scripts/fullrecalculate.sh"
-    status: pending
+    status: assigned
     before_ms: 20
     after_ms: ""
     before_real_ms: ""
@@ -598,8 +598,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T00:07:58"
   - script_path: "scripts/gate_auto_respond.sh"
     status: pending
     before_ms: 21
