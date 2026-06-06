@@ -788,16 +788,16 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T04:00:58"
   - script_path: "scripts/gates/gate_gunshi_startup.sh"
-    status: assigned
+    status: completed
     before_ms: 20
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 9976
+    after_real_ms: 3678
+    real_measurement_command: "time bash scripts/gates/gate_gunshi_startup.sh (cold)"
+    test_result: "bats tests/unit/test_gate_gunshi_startup_auto_idle_actions.bats: 1 passed, 0 skipped"
+    commit: "f75f657c5"
     assigned_to: "kotaro"
-    updated_at: "2026-06-07T04:01:17"
+    updated_at: "2026-06-07T04:15:00"
   - script_path: "scripts/gates/gate_hot_path_no_sync_io.sh"
     status: completed
     before_ms: 17
@@ -2800,3 +2800,10 @@ entries:
     commit: ""
     assigned_to: ""
     updated_at: ""
+status: completed
+before_real_ms: 9976
+after_real_ms: 3678
+real_measurement_command: time bash scripts/gates/gate_gunshi_startup.sh (cold)
+test_result: 'bats tests/unit/test_gate_gunshi_startup_auto_idle_actions.bats: 1 passed, 0 skipped'
+commit: f75f657c5
+updated_at: '2026-06-06T19:15:42'
