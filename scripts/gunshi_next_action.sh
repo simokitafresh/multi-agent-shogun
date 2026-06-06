@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+REPO_ROOT="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd)"
 INBOX="${GUNSHI_NEXT_ACTION_INBOX:-$REPO_ROOT/queue/inbox/gunshi.yaml}"
 WA_LOG="${GUNSHI_NEXT_ACTION_WA_LOG:-$REPO_ROOT/logs/karo_workarounds.yaml}"
 REVIEW_LOG="${GUNSHI_NEXT_ACTION_REVIEW_LOG:-$REPO_ROOT/logs/gunshi_review_log.yaml}"
@@ -58,13 +58,11 @@ fi
 latest_reports=$(find "$REPO_ROOT/queue/reports" -name '*.yaml' -mmin -60 2>/dev/null || true)
 if [[ -n "$latest_reports" ]]; then
     commit_issues=0
+    # Pre-filter: find dm-signal reports with one grep -l call instead of N×(grep|sed|tr)
+    dm_signal_reports=$(echo "$latest_reports" | tr '\n' '\0' | xargs -0 grep -l 'project: dm-signal' 2>/dev/null || true)
     while IFS= read -r rpt; do
-        rpt_project=$(grep -m1 'project:' "$rpt" 2>/dev/null | sed 's/.*project: *//' | tr -d "'" || true)
-        if [[ "$rpt_project" == "dm-signal" ]]; then
-            proj_dir="/mnt/c/Python_app/DM-signal"
-        else
-            continue
-        fi
+        [[ -z "$rpt" ]] && continue
+        proj_dir="/mnt/c/Python_app/DM-signal"
         # files_modifiedからパスを抽出
         fm_paths=$(grep -A1 'path:' "$rpt" 2>/dev/null | grep 'path:' | sed 's/.*path: *//' | tr -d "'" || true)
         if [[ -n "$fm_paths" ]]; then
@@ -81,7 +79,7 @@ if [[ -n "$latest_reports" ]]; then
                 fi
             done <<< "$fm_paths"
         fi
-    done <<< "$latest_reports"
+    done <<< "$dm_signal_reports"
     if (( commit_issues > 0 )); then
         echo "    → 計${commit_issues}ファイル未commit。レビュー時に指摘必須"
         echo ""
