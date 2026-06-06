@@ -710,4 +710,24 @@ if [ -n "$_lg033_gp_entries" ]; then
     done <<< "$_lg033_gp_entries"
 fi
 
+# --- CS-X: 三層記憶活用+[MEM]関連性検証 (Step 1.7参照) ---
+# 将軍の回答に[MEM:]タグが含まれるか、および memory_md禁止ルールを検証する
+_lord_conv_file="/mnt/c/tools/multi-agent-shogun/data/lord_conversation.jsonl"
+if [ -f "$_lord_conv_file" ]; then
+    # 最新20件の将軍応答で[MEM]タグ引用率を計測
+    _shogun_responses=$(tail -200 "$_lord_conv_file" 2>/dev/null | grep '"direction":"response"' | tail -20)
+    _response_count=$(echo "$_shogun_responses" | grep -c '"direction"' 2>/dev/null || echo 0)
+    _mem_response_count=$(echo "$_shogun_responses" | grep -c '\[MEM:' 2>/dev/null || echo 0)
+    if [ "${_response_count:-0}" -gt 3 ] && [ "${_mem_response_count:-0}" -eq 0 ]; then
+        echo "WARN(CS-X.a): 直近${_response_count}件の将軍回答に[MEM:]タグなし。三層記憶(Step 1.7)が使われていない可能性"
+        warn=1
+    fi
+    # memory_mdソース禁止チェック (MEMORY.mdは索引。回答の根拠禁止)
+    _memory_md_count=$(echo "$_shogun_responses" | grep -c '\[MEM: memory_md' 2>/dev/null || echo 0)
+    if [ "${_memory_md_count:-0}" -gt 0 ]; then
+        echo "WARN(CS-X.b): [MEM: memory_md]が${_memory_md_count}件検出。MEMORY.md参照禁止(Step 1.7: source=memory_md不可)"
+        warn=1
+    fi
+fi
+
 exit $warn

@@ -1763,6 +1763,30 @@ else
     alerts+=("三層記憶DB健全性: gate不在")
 fi
 
+# --- Gate 12.2: 三層記憶引用率([MEM]タグ計測) (cmd_3199, Step 1.7) ---
+echo "■ 三層記憶引用率([MEM]タグ)"
+_lord_conv_12_2="/mnt/c/tools/multi-agent-shogun/data/lord_conversation.jsonl"
+if [ -f "$_lord_conv_12_2" ]; then
+    _shogun_resp_12_2=$(tail -200 "$_lord_conv_12_2" 2>/dev/null | grep '"direction":"response"' | tail -20)
+    _resp_count_12_2=$(echo "$_shogun_resp_12_2" | grep -c '"direction"' 2>/dev/null || echo 0)
+    _mem_count_12_2=$(echo "$_shogun_resp_12_2" | grep -c '\[MEM:' 2>/dev/null || echo 0)
+    echo "  三層記憶引用率: ${_mem_count_12_2}/${_resp_count_12_2}件 (grep [MEM:)"
+    if [ "${_resp_count_12_2:-0}" -gt 3 ] && [ "${_mem_count_12_2:-0}" -eq 0 ]; then
+        echo "  WARN: 直近${_resp_count_12_2}件の将軍回答に[MEM:]タグなし。Step 1.7: 三層記憶起点の原則が守られていない"
+        if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+        alerts+=("三層記憶引用率0%: 殿の質問に三層記憶を使っていない")
+    fi
+    # memory_mdソース禁止チェック
+    _mem_md_count_12_2=$(echo "$_shogun_resp_12_2" | grep -c '\[MEM: memory_md' 2>/dev/null || echo 0)
+    if [ "${_mem_md_count_12_2:-0}" -gt 0 ]; then
+        echo "  WARN: [MEM: memory_md]が${_mem_md_count_12_2}件検出。MEMORY.md参照禁止(Step 1.7)"
+        if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+        alerts+=("三層記憶[MEM:memory_md]禁止違反: ${_mem_md_count_12_2}件")
+    fi
+else
+    echo "  INFO: lord_conversation.jsonl不在。引用率計測スキップ"
+fi
+
 # --- Gate 12.5: 遡及学習 — WARN/BLOCK頻度TOP 5 + 再発率/有効率 (殿裁定2026-04-21, cmd_2289拡張) ---
 # 目的: 毎セッション起動時に「何を根本修正すべきか」+「ワクチンが効いているか」を自動表示
 # 再発率=前50cmdに出現したパターンが直近50cmdにも再出現した割合(将軍定義 2026-04-26)

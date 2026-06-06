@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_3145_exact
+  _ac_task_id: cmd_3199_focused
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3145 (deployed 2026-06-03T01:17:38). Read from the beginning.
-  ac_version: 514e9687
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3199 (deployed 2026-06-06T18:07:10). Read from the beginning.
+  ac_version: 601ca2c5
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -26,53 +26,79 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3145
+  parent_cmd: cmd_3199
   project: infra
-  purpose: '殿指摘: 全体Batsの時間が長すぎる、バグに近い。軍師分析(docs/research/gunshi_idle_bats_speed_bottleneck_20260603.md)でTop20遅延テスト特定。パターン1: cmd_save Session State系3件×14-15秒=44秒(python3+cmd_save.sh全体source)。パターン2: semantic_index_update系8件×8-11秒=76秒(python3+semantic処理)。2パターン120秒=CI全体の47%'
-  status: idle
+  purpose: 将軍が三層記憶(記憶DB+Obsidian+セマンティック)を使わずMEMORY.mdで回答する根因を解消。L0-L7に三層記憶第一優先を貫通させる。軍師覚醒レビュー3往復完了の設計書v3に基づく
+  scout_exempt: true
+  status: in_progress
   stop_for: []
-  target_path: tests/unit
-  task_id: cmd_3145_exact
-  task_type: exact
+  target_path: instructions/shogun.md
+  task_id: cmd_3199_focused
+  task_type: focused
+  previous_failures:
+    attempt: 2
+    last_block_reason: 'binary_checks: AC self-verification missing (0/3 ACs). 全ACの二値チェックを記入せよ'
+    tried_approaches:
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/3 ACs). 全ACの二値チェックを記入せよ; verdict: \"\" is not valid (must be \"PASS\",…'
+    - 'binary_checks: AC self-verification missing (0/3 ACs). 全ACの二値チェックを記入せよ'
+    approach_summary: 'gunshi-fullrecalc-resilience-analysis.mdの因果リンクに逆方向リンク(←)2件を追加し、孤立知識を解消した'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/3 ACs). 全ACの二値チェックを記入せよ; verdict: \"\" is not valid (must be \"PASS\",…'
+      approach_summary: 'gunshi-fullrecalc-resilience-analysis.mdの因果リンクに逆方向リンク(←)2件を追加し、孤立知識を解消した'
+    - attempt: 2
+      block_reason: 'binary_checks: AC self-verification missing (0/3 ACs). 全ACの二値チェックを記入せよ'
+      approach_summary: 'gunshi-fullrecalc-resilience-analysis.mdの因果リンクに逆方向リンク(←)2件を追加し、孤立知識を解消した'
   related_lessons:
-  - id: 'L499'
-    summary: 'gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_'
-    detail: 'gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_'
-  - id: 'L643'
-    summary: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
-    detail: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
-  - id: 'L507'
-    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo'
-    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo'
-  - id: 'L338'
-    summary: 'health_check.shのcheck_task_stalledが同一YAMLを3回別python3プロセスで開いていた。パイプ区切りで複数値を返し、IFS'
-    detail: 'health_check.shのcheck_task_stalledが同一YAMLを3回別python3プロセスで開いていた。パイプ区切りで複数値を返し、IFS'
+  - id: 'L472'
+    summary: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含'
+    detail: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含'
   - id: 'L625'
     summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
     detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L619'
-    summary: 'draft_lessons BLOCKを調査する時はauto_draft_lesson.sh単体ではなく、cmd_complete_gate.shのBLOCK時'
-    detail: 'draft_lessons BLOCKを調査する時はauto_draft_lesson.sh単体ではなく、cmd_complete_gate.shのBLOCK時'
-  - id: 'L611'
-    summary: 'lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ'
-    detail: 'lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ'
-  - id: 'L599'
-    summary: 'lesson_done_missingはreview_gate.done→GATE自動起動の循環依存でBLOCK。root_cause=lesson登録猶予なし'
-    detail: 'lesson_done_missingはreview_gate.done→GATE自動起動の循環依存でBLOCK。root_cause=lesson登録猶予なし'
-  - id: 'L588'
-    summary: 'cmd_karo_lesson_4fieldの誤FAIL分析でwhy/what/when/howだけでは根因に到達できなかった。whereで場所(家老のkaro'
-    detail: 'cmd_karo_lesson_4fieldの誤FAIL分析でwhy/what/when/howだけでは根因に到達できなかった。whereで場所(家老のkaro'
-  - id: 'L506'
-    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML 走査では、'
-    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML 走査では、'
+  - id: 'L712'
+    summary: 'auto-commitが他忍者のstage済み変更を取り込む(cmd_3050: hayate auto-commit a3cd61e4がsaizoの変更を吸収'
+    detail: 'auto-commitが他忍者のstage済み変更を取り込む(cmd_3050: hayate auto-commit a3cd61e4がsaizoの変更を吸収'
+  - id: 'L703'
+    summary: 'auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst'
+    detail: 'auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst'
+  - id: 'L529'
+    summary: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
+    detail: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
+  - id: 'L320'
+    summary: 'test_k*-test_y*全27テストの対象スクリプト21種は全て90日以内に3-115回変更かつ全て本番フロー関与。テスト削減ROIが低い領域。テスト時間'
+    detail: 'test_k*-test_y*全27テストの対象スクリプト21種は全て90日以内に3-115回変更かつ全て本番フロー関与。テスト削減ROIが低い領域。テスト時間'
+  - id: 'L766'
+    summary: 'obsidian_promote_candidate.shがDB状態を更新しても、gate_three_layer_health.shはext4キャッシュを参照'
+    detail: 'obsidian_promote_candidate.shがDB状態を更新しても、gate_three_layer_health.shはext4キャッシュを参照'
+  - id: 'L314'
+    summary: 'cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf'
+    detail: 'cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf'
+  - id: 'L216'
+    summary: 'IF gate_metricsテストを書く THEN tmuxモックを配置してライブ環境からの干渉を防げ BECAUSE resolve_agent_model'
+    detail: 'IF gate_metricsテストを書く THEN tmuxモックを配置してライブ環境からの干渉を防げ BECAUSE resolve_agent_model'
+  - id: 'L144'
+    summary: 'IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する'
+    detail: 'IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "growth_loop — 学習ループ:  AGENTS.md 学習ループ原則 context/growth-loop.md context/infrastructure.md 知識サイクル現状 scripts/gates/gate_cycle_health.sh 三層学習ループ健全性計測 scripts/karo_workaround_log.sh WA記録(成績表フィードバック) scripts/ci_status_check.sh CI状態チェック(品質フィードバック) scripts/lesson_impact_analysis.sh 教訓効果分析(注入率/参照率/CLEAR-BLOCK A/B) scripts/ralph_loop_metrics.sh ラルフループ定量計測(5指標: パターン再発/revert/完了速度/lesson-CLEAR相関/PI違反) scripts/knowledge_metrics.sh 教訓有効性+陳腐化検出(JSON/TSV出力対応)"
+  - "local_memory_db — ローカル記憶DB:  scripts/memory_db_import.py scripts/memory_db_query.sh data/multi_agent_shogun_memory.db context/memory-db-schema.md"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  - "semantic_dictionary_design — セマンティック辞書構想:  docs/research/semantic_index_design.md context/lord-conversation-index.md scripts/semantic_map_generate.sh scripts/insight_write.sh scripts/semantic_index_update.sh"
+  - "shin_shijin_design — 四神設計:  context/dm-signal-core.md §PFレイヤー context/checklist-shin-v2-registration.md context/l3-robustness.md §WF四神"
+  recommended_skills:
+  - "report-write"
+  - "verdict-check"
+  - "pf-registration"
+  - "db-check"
   related_causal_links:
-  - "[[source範囲+fixture共有+archive高速化]]"
-  - "[[殿指摘_Bats時間バグ]]"
-  - "[[軍師Top20分析_2パターン120秒]]"
+  - "[[なぜなぜ7回_意志依存根因]]"
+  - "[[殿指摘_三層記憶不使用3回]]"
+  - "[[設計書v3_軍師3往復]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -92,40 +118,49 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L499: gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_
-      - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
-      - L507: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
-      - L338: health_check.shのcheck_task_stalledが同一YAMLを3回別python3プロセスで開いていた。パイプ区切りで複数値を返し、IFS
+      - L472: instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含
       - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L619: draft_lessons BLOCKを調査する時はauto_draft_lesson.sh単体ではなく、cmd_complete_gate.shのBLOCK時
-      - L611: lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
-      - L599: lesson_done_missingはreview_gate.done→GATE自動起動の循環依存でBLOCK。root_cause=lesson登録猶予なし
-      - L588: cmd_karo_lesson_4fieldの誤FAIL分析でwhy/what/when/howだけでは根因に到達できなかった。whereで場所(家老のkaro
-      - L506: report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML 走査では、
+      - L712: auto-commitが他忍者のstage済み変更を取り込む(cmd_3050: hayate auto-commit a3cd61e4がsaizoの変更を吸収
+      - L703: auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst
+      - L529: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を
+      - L320: test_k*-test_y*全27テストの対象スクリプト21種は全て90日以内に3-115回変更かつ全て本番フロー関与。テスト削減ROIが低い領域。テスト時間
+      - L766: obsidian_promote_candidate.shがDB状態を更新しても、gate_three_layer_health.shはext4キャッシュを参照
+      - L314: cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf
+      - L216: IF gate_metricsテストを書く THEN tmuxモックを配置してライブ環境からの干渉を防げ BECAUSE resolve_agent_model
+      - L144: IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する
     ────────────────────────────────────────
     
     
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'cmd_save Session State系テストの合計実行時間が大幅に短縮されている(before/after計測で確認)'
+    - check: 'instructions/shogun.md Step 1.7が三層記憶起点+[MEM]タグ仕様に更新されている'
   - id: 'AC2'
     checks:
-    - check: 'semantic_index_update系テストの合計実行時間が大幅に短縮されている(before/after計測で確認)'
+    - check: 'prompt_state_inject.shの質問検知時に[MEM]タグ付き回答テンプレートが表示される'
   - id: 'AC3'
     checks:
-    - check: '既存batsテストが全件PASS(機能後退なし)'
+    - check: 'gate_gunshi_cs_checklist.shにCS-X(三層記憶活用+[MEM]関連性検証)が追加されている'
+  - id: 'AC4'
+    checks:
+    - check: 'gate_shogun_startup.shに三層記憶引用率計測(grep [MEM:)が追加されている'
+  - id: 'AC5'
+    checks:
+    - check: 'batsテストPASS'
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3145.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3145.yaml
+  report_filename: tobisaru_report_cmd_3199.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3199.yaml
   bloom_level: 
-  deployed_at: "2026-06-03T01:18:15"
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 1
+    top_pattern: 'report_yaml_format(1件)'
+    breakdown: 'report_yaml_format(1件)'
+    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_fail_top3:
+    - pattern: 'lu_structure_error'
+      count: 17
+    - pattern: 'field_missing'
+      count: 4
+    gate_warning: '⚠ gate頻出FAIL: lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
+  deployed_at: "2026-06-06T18:07:38"

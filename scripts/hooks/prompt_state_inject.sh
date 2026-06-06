@@ -798,7 +798,12 @@ if echo "$prompt_text" | grep -qiE '\?|？|分かるか|確認|どう|即答|知
     [[ -z "$current_project" ]] && current_project="unknown"
   fi
   question_warning="
-⚠ 質問検知。回答前にprojects/${current_project}.yaml + context/${current_project}.mdを確認してから答えよ。"
+⚠ 殿の質問検知(Step 1.7: 三層記憶起点)。回答前に以下を確認せよ:
+  (1) 記憶DB: memory_db_fts5結果を読め
+  (2) セマンティック: semantic_knowledge結果を読め
+  (3) projects/${current_project}.yaml + context/${current_project}.md
+回答に[MEM: memory_db ts=YYYY-MM-DD \"原文\"] / [MEM: semantic concept=XXX] / [MEM: obsidian link=[[XXX]]] タグで引用元を明記せよ。
+MEMORY.md参照は不可(source=memory_md禁止)。タグなし回答=洗脳#2(検証スキップ)。"
 fi
 
 # --- Skill trigger detection: prompt keywords → mandatory skill reminder ---
@@ -836,7 +841,7 @@ semantic_result="$(_prompt_state_semantic_inject "$prompt_text")"
 if [[ -n "$semantic_result" ]]; then
   semantic_quote_warning=""
   if (( question_detected > 0 )); then
-    semantic_quote_warning="⚠ 殿の質問検知。回答では下記semantic_knowledgeの該当resource/議論を引用し、概念混同がないことを確認せよ。
+    semantic_quote_warning="⚠ [MEM: semantic concept=XXX] タグで下記semantic_knowledgeの該当概念を引用せよ(概念名をXXXに記入)。
 "
   fi
   additional_context="${additional_context}
