@@ -5,4 +5,4 @@
 #   grep -qiE "$FIREFIGHTING_PATTERN"
 
 # shellcheck disable=SC2034  # sourceされた側のスクリプトで使用
-FIREFIGHTING_PATTERN='fix|修正|修復|revert|壊れた|障害|FAIL|CI赤|復旧|hotfix|バグ|不具合|(^|[[:blank:]_]|[^[:alnum:]_])bug([^[:alnum:]_]|$)|(^|[[:blank:]_]|[^[:alnum:]_])broken([^[:alnum:]_]|$)'
+FIREFIGHTING_PATTERN='fix|修正|修復|revert|壊れた|障害|FAIL|CI赤|復旧|hotfix|バグ|不具合|(^|[^[:alnum:]])bug([^[:alnum:]]|$)|(^|[^[:alnum:]])broken([^[:alnum:]]|$)'
