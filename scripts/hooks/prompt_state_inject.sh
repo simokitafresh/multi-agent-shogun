@@ -13,6 +13,22 @@ _prompt_state_json_get() {
   local _prompt_state_value
 
   if [[ "$_prompt_state_field" == ".prompt" ]]; then
+    case "$payload" in
+      *\"prompt\"*)
+        _prompt_state_value="${payload#*\"prompt\"}"
+        _prompt_state_value="${_prompt_state_value#*:}"
+        case "$_prompt_state_value" in
+          *\"*)
+            _prompt_state_value="${_prompt_state_value#*\"}"
+            _prompt_state_value="${_prompt_state_value%%\"*}"
+            if [[ "$_prompt_state_value" != *\\* ]]; then
+              printf '%s' "$_prompt_state_value"
+              return 0
+            fi
+            ;;
+        esac
+        ;;
+    esac
     if _prompt_state_value="$(jq -r 'try (.prompt // "") catch ""' 2>/dev/null <<<"$payload")"; then
       printf '%s' "$_prompt_state_value"
       return 0
@@ -74,7 +90,7 @@ print(json.dumps({
 }
 
 # --- Read stdin JSON (type: user_prompt_submit) ---
-payload="$(cat 2>/dev/null || true)"
+payload="$(</dev/stdin)"
 if [[ -z "$payload" ]]; then
   exit 0
 fi
@@ -84,8 +100,8 @@ prompt_text="$(_prompt_state_json_get ".prompt" "")" || {
 }
 
 # --- Get agent_id from tmux ---
-agent_id="unknown"
-if command -v tmux >/dev/null 2>&1; then
+agent_id="${PROMPT_STATE_AGENT_ID:-}"
+if [[ -z "$agent_id" ]] && command -v tmux >/dev/null 2>&1; then
   if [[ -n "${TMUX_PANE:-}" ]]; then
     agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")"
   elif [[ -n "${TMUX:-}" ]]; then
@@ -95,7 +111,6 @@ fi
 if [[ -z "$agent_id" ]]; then
   agent_id="unknown"
 fi
-agent_id="${PROMPT_STATE_AGENT_ID:-$agent_id}"
 
 # --- Timestamp (ISO 8601) ---
 printf -v timestamp '%(%Y-%m-%dT%H:%M:%S%z)T' -1
@@ -841,7 +856,7 @@ semantic_result="$(_prompt_state_semantic_inject "$prompt_text")"
 if [[ -n "$semantic_result" ]]; then
   semantic_quote_warning=""
   if (( question_detected > 0 )); then
-    semantic_quote_warning="⚠ [MEM: semantic concept=XXX] タグで下記semantic_knowledgeの該当概念を引用せよ(概念名をXXXに記入)。
+    semantic_quote_warning="⚠ [MEM: semantic concept=XXX] タグで下記semantic_knowledgeの該当resource/議論を引用せよ(概念名をXXXに記入)。
 "
   fi
   additional_context="${additional_context}

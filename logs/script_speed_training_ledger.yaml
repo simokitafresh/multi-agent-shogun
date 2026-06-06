@@ -1272,16 +1272,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T05:59:04"
   - script_path: "scripts/hooks/prompt_state_inject.sh"
-    status: assigned
+    status: completed
     before_ms: 8
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
+    after_ms: 8
+    before_real_ms: 57.217
+    after_real_ms: 53.794
+    real_measurement_command: "PATH=<mock_tmux_dir>:$PATH PROMPT_STATE_AGENT_ID=hayate PROMPT_STATE_MEMORY_DB_PATH=<missing> PROMPT_STATE_LORD_RULING_CACHE_PATH=<missing> PROMPT_STATE_SEMANTIC_SEARCH_CMD=<missing> PROMPT_STATE_SKILLS_DIR=<missing> PROMPT_STATE_PROJECTS_YAML=<missing> PROMPT_STATE_LORD_CONVERSATION_FILE=<missing> python3 measure: 30x printf '{\"prompt\":\"通常入力\"}' | bash scripts/hooks/prompt_state_inject.sh; median_ms"
+    test_result: "bash_n_pass;bats_prompt_state_skill_trigger_11_pass_0_skip;bats_filter_prompt_state_inject_9_pass_0_skip;old_new_interleaved_82.493_51.201;before_57.217_after_53.794"
     commit: ""
     assigned_to: "hayate"
-    updated_at: "2026-06-07T05:59:49"
+    updated_at: "2026-06-07T08:59:00"
   - script_path: "scripts/hooks/session_end_clear_check.sh"
     status: completed
     before_ms: 18
