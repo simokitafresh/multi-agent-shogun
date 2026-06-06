@@ -1063,16 +1063,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T05:00:34"
   - script_path: "scripts/gates/gate_yaml_status.sh"
-    status: pending
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 1722
+    after_real_ms: 1261
+    real_measurement_command: "bash -c 'for i in {1..100}; do bash scripts/gates/gate_yaml_status.sh cmd_missing_for_speed --dry-run >/dev/null 2>&1 || true; done'"
+    test_result: "bash_n_pass;missing_output_unchanged;fixture_map_list_dry_run_already_ok_pass;SKIP=0"
+    commit: "8f9a22c6e"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T05:08:01"
   - script_path: "scripts/gates/mark_no_learning.sh"
     status: pending
     before_ms: 16
