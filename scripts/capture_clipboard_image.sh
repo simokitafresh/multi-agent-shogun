@@ -25,13 +25,14 @@ LATEST="${SCREENSHOT_DIR}/latest.png"
 WIN_PATH=$(wslpath -w "$FILEPATH")
 
 # PowerShellでクリップボード画像を取得・保存
-PS_RESULT=$(powershell.exe -NoProfile -Command "
-Add-Type -AssemblyName System.Drawing
+# Add-Type は null チェック後に移動: IMAGE_NULL パスでアセンブリロードを省略
+PS_RESULT=$(powershell.exe -NoProfile -NonInteractive -Command "
 \$img = Get-Clipboard -Format Image
 if (\$null -eq \$img) {
     Write-Output 'IMAGE_NULL'
     exit 2
 }
+Add-Type -AssemblyName System.Drawing
 \$img.Save('${WIN_PATH}', [System.Drawing.Imaging.ImageFormat]::Png)
 \$img.Dispose()
 Write-Output 'IMAGE_OK'
@@ -55,8 +56,8 @@ fi
 # latest.png を更新
 cp "$FILEPATH" "$LATEST"
 
-# 古いスクリーンショットを削除（72時間超）
-find "$SCREENSHOT_DIR" -type f \( -name 'shot_*.png' -o -name 'ntfy_*.png' \) -mmin +$((RETENTION_HOURS * 60)) -delete 2>/dev/null || true
+# 古いスクリーンショットを削除（72時間超）— バックグラウンド実行でクリティカルパス短縮
+find "$SCREENSHOT_DIR" -type f \( -name 'shot_*.png' -o -name 'ntfy_*.png' \) -mmin +$((RETENTION_HOURS * 60)) -delete 2>/dev/null &
 
 # 現在のペインにファイルパスを自動入力（Claude Codeが画像を認識する）
 tmux send-keys "$FILEPATH"
