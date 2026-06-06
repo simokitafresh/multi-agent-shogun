@@ -6,7 +6,9 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+[[ "$SCRIPT_PATH" != /* ]] && SCRIPT_PATH="$PWD/$SCRIPT_PATH"
+SCRIPT_DIR="${SCRIPT_PATH%/scripts/causal_backlinks.sh}"
 
 usage() {
     echo "Usage: causal_backlinks.sh [--detail] [--semantic] <ID|[[ID]]>" >&2
@@ -49,12 +51,7 @@ SEARCH_PATHS=(
     tasks
 )
 
-existing_search_paths=()
-for path in "${SEARCH_PATHS[@]}"; do
-    if [ -e "$SCRIPT_DIR/$path" ]; then
-        existing_search_paths+=("$path")
-    fi
-done
+existing_search_paths=("${SEARCH_PATHS[@]}")
 
 if [ "$DETAIL" -eq 1 ]; then
     # Show file path + origin/causal_chain context
