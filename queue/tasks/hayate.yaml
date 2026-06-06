@@ -1,13 +1,90 @@
 task:
-  parent_cmd: 
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3
+  acceptance_criteria:
+  - checks:
+    - check: before_ms bash -n baseline is read from script_speed_training_ledger as syntax-only reference
+    - check: before_real_ms is measured with a safe runtime command chosen for this script (time bash script.sh <args>, --help, dry-run, or sandboxed equivalent)
+    id: AC1
+  - checks:
+    - check: implementation improves runtime without reducing behavior or safety
+    - check: script-specific verification passes with SKIP=0
+    id: AC2
+  - checks:
+    - check: after_real_ms is measured with the same command as before_real_ms
+    - check: after_real_ms is strictly lower than before_real_ms
+    - check: real_measurement_command/test_result/commit are written back to script_speed_training_ledger
+    id: AC3
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  parent_cmd: cmd_training_speed_deploy_training_20260607000630
   project: infra
-  status: idle
-  task_id: idle
-  task_type: impl
+  purpose: 'Speed-train scripts/deploy_training.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
+  scout_exempt: true
+  status: in_progress
+  stop_for: []
+  target_path: scripts/deploy_training.sh
+  task_id: cmd_training_speed_deploy_training_20260607000630_normal
+  task_type: speed_training
+  related_lessons:
+  - id: 'L703'
+    summary: 'auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst'
+    detail: 'auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst'
+  - id: 'L598'
+    summary: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
+    detail: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
+  - id: 'L529'
+    summary: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
+    detail: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
+  - id: 'L507'
+    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo'
+    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo'
+  - id: 'L189'
+    summary: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット'
+    detail: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット'
+  - id: 'L705'
+    summary: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
+    detail: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
+  - id: 'L692'
+    summary: 'CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/'
+    detail: 'CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
+  - "skill_design_rules — Skill設計ルール:  context/skill-design-rules.md docs/research/dream-skill-design.md scripts/skill_gate_feedback.sh scripts/skill_auto_improve.sh scripts/skill_execution_log.sh context/codd.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md skills/reset-layout/SKILL.md skills/pf-registration/SKILL.md docs/research/gstack-gbrain-skillify-2026-04.md"
+  - "daemon_supervision — デーモン監視と復旧:  scripts/daemon_supervisor.sh scripts/ninja_monitor.sh scripts/inbox_watcher.sh docs/operations/daemon_runbook.md scripts/daemon_watchdog.sh デーモンcron監視+自動再起動(ninja_monitor/ntfy_listener/inbox_watcher)"
+  - "inbox_watcher_process_model — inbox_watcherプロセスモデル:  scripts/inbox_watcher.sh scripts/restart_watchers.sh"
+  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json"
+  recommended_skills:
+  - "reset-layout"
+  - "shogun-all-codex-switch"
+  - "shogun-peacetime-rollback"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/gs-speedup-knowledge.md"
+  - "context/training-cycle.md"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
   - "Level1(事後検出): 間違えた後にgateが検出"
@@ -18,51 +95,38 @@ task:
   - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
   - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  ac_version: d41d8cd9
-  _ac_task_id: 
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L703: auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst
+      - L598: ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie
+      - L529: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を
+      - L507: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
+      - L189: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット
+      - L705: 今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/
+      - L692: CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/
+    ────────────────────────────────────────
+    
+    
+  ac_version: 719e89b4
+  _ac_task_id: cmd_training_speed_deploy_training_20260607000630_normal
   _ac_worker_id: 
-  _deploy_notice: 'STALE TASK INVALID. This YAML is the latest instruction for cmd_3183 (deployed 2026-06-05T14:24:54). Read from the beginning.'
-  purpose: 将軍startup gateが8秒かかり毎セッション起動を遅延させている。セクション別プロファイルで特定したボトルネック5箇所を改善する。python3起動コスト(24回×16ms=0.4秒)ではなく、大ファイルYAML parse(review_log 297ms+cmd_design_quality 216ms)とセクション直列実行(相互依存なし区間の並列化)が真因
-  target_path: scripts/gates/gate_shogun_startup.sh
-  related_lessons:
-  - id: 'L510'
-    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-  - id: 'L509'
-    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
-    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
-  - id: 'L508'
-    summary: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-    detail: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-  - id: 'L507'
-    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-  - id: 'L506'
-    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-  - id: 'L505'
-    summary: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-    detail: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-  - id: 'L504'
-    summary: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
-    detail: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
-  - id: 'L503'
-    summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-    detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-  - id: 'L502'
-    summary: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
-    detail: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
-  - id: 'L499'
-    summary: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
-    detail: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field'
-    tried_approaches:
-    - 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field'
-    approach_summary: 'gate_shogun_startup.shをgrep/awk化+独立チェック並列化で高速化したが、最終単独計測は4.1-4.6秒中心でAC1(4秒以下)は安定未達。batsは52/52 PASS。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field'
-      approach_summary: 'gate_shogun_startup.shをgrep/awk化+独立チェック並列化で高速化したが、最終単独計測は4.1-4.6秒中心でAC1(4秒以下)は安定未達。batsは52/52 PASS。'
+  role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: hayate_report_cmd_training_speed_deploy_training_20260607000630.yaml
+  report_path: queue/reports/hayate_report_cmd_training_speed_deploy_training_20260607000630.yaml
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 1
+    top_pattern: 'deploy_error(1件)'
+    breakdown: 'deploy_error(1件)'
+    warning: '⚠ 過去1件のworkaround発生。品質に注意'
+    gate_fail_top3:
+    - pattern: 'bc_result_empty'
+      count: 20
+    - pattern: 'verdict_invalid'
+      count: 3
+    - pattern: 'lu_structure_error'
+      count: 2
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
+  deployed_at: "2026-06-07T00:07:07"
+  progress: "AC3 completed: same measurement command after_real_ms=1277 < before_real_ms=1536; record-real wrote command/test_result/commit=f926137d8 to ledger"

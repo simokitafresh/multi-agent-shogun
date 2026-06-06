@@ -309,7 +309,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
 - id: L702
   title: FoF表示UUID漏れはFEキャッシュだけでなくAPI display fallbackも検証する
   summary: Monthly TradeのFoF pending行はexpanded_tickersが空だとSignal.signalの構成PF UUIDをそのまま返していた
@@ -330,7 +330,7 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L701
@@ -352,7 +352,7 @@ lessons:
   when: 報告YAMLやレビュー結果を作成・検証する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
 - id: L700
   title: holding_signalパリティ検証ではNULL行を比較対象から除外せよ
   summary: monthly_returnsにmonthly_return_openはあるがholding_signalがNULLの初期行が存在する。pd.isnaを明示判定
@@ -368,6 +368,9 @@ lessons:
   - scripts/oneshot/cmd_2447_register_gs_shin_okugi.py
   - commit c555c91a
   when: テスト設計・実行・結果判定を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-05'
 - id: L699
   title: holding_signalパリティ検証ではNULL行を比較対象から除外する
   summary: monthly_returnsにmonthly_return_openはあるがholding_signalがNULLの初期行が存在する。holding_sign
@@ -385,7 +388,7 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-02'
+  last_referenced: '2026-06-05'
 - id: L698
   title: FoF登録ではPortfolio直下top_nを構成数に使うな — 直下top_n=1固定+pipeline_config内側のみ
   summary: 旧register_gs_shin_okugiy.py L323がchamp[top_n]をPortfolio直下top_nに代入してle=2違反を発生させた。
@@ -418,7 +421,7 @@ lessons:
   when: 報告YAMLやレビュー結果を作成・検証する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L696
@@ -438,7 +441,7 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
 - id: L695
   title: pipeline_config内側top_nとPortfolio直下top_nは別経路で分離検証必須
   summary: pipeline_config.blocks config top_n/select_nはDict[str,Any]で型制約なし(1-4全PASS)。Portf
@@ -1277,7 +1280,7 @@ lessons:
   - grid_search
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
   how: '2026-04-21'
   origin: '[[cmd_2218]]'
   source_cmd: cmd_2218
@@ -1365,7 +1368,7 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L637
@@ -1382,7 +1385,7 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L636
@@ -1446,7 +1449,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
 - id: L632
   title: snapshot比較器は保存していない字段を比較対象に含めるな
   summary: snapshot_recalc_results.py が monthly_returns.holding_signal を保存していないのに
@@ -1482,7 +1485,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-02'
+  last_referenced: '2026-06-05'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L630
@@ -1650,7 +1653,7 @@ lessons:
   - universal
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
   how: '2026-04-13'
   origin: '[[cmd_1882]]'
   source_cmd: cmd_1882
@@ -1698,7 +1701,7 @@ lessons:
   deprecated: true
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
   deprecation_reason: auto_useful_rate_zero
   how: WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ
   origin: '[[cmd_1879]]'
@@ -2255,7 +2258,7 @@ lessons:
   when: WSL2の/mnt/c上で数十万行・数百MB級のCSVや月次GS結果を生成する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
 - id: L582
   title: '[自動生成] draft教訓の査読を怠った: cmd_1795'
   summary: draft教訓1件が未査読のままGATE到達
@@ -2304,7 +2307,7 @@ lessons:
   when: champion選出に38メトリクスを追加しつつ既存6目的関数の選出速度と互換性を維持する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
 - id: L579
   title: '[自動生成] draft教訓の査読を怠った: cmd_1786'
   summary: draft教訓31件が未査読のままGATE到達
@@ -2349,7 +2352,7 @@ lessons:
   when: MVMF/SVMF/MFで月次momentum cacheをdate keyのdictにしてlookupを高速化する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-02'
+  last_referenced: '2026-06-05'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L576
@@ -2644,7 +2647,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
 - id: L556
   title: 'grid search CSVとALM L0 champion metricsの不一致: ユニバース差がパリティ破壊'
   summary: grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(17
@@ -2983,6 +2986,9 @@ lessons:
   - tasks/lessons.md
   - backend/app/jobs/recalculate_fof.py
   when: signal_cacheを使ってDB query削減やfrontend表示のholding_signal代替を実装する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-05'
 - id: L530
   title: N=20小集団ではOPTICS xi抽出が単一クラスタに退化する
   summary: OPTICS(xi=0.05)をN=20の相関距離行列に適用するとLB>=24でreachability値が同一化しdivide-by-zero警告多発。全点が
@@ -3014,7 +3020,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
 - id: L528
   title: Windows環境YAMLファイル読み書きにはencoding=utf-8が必須
   summary: r29b_is_sensitivity.pyのYAML読み込みでcp932デコードエラー発生。Windows環境ではopen()にencoding=utf-8を
@@ -3119,7 +3125,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-02'
+  last_referenced: '2026-06-05'
 - id: L521
   title: β中立指標(Sortino/Calmar)のα効率はmomentumの2倍以上だが超越条件は不十分
   summary: momentum選出はβ=1.105で構造的高βバイアス(α4.2%)。Sortino/CalmarはβΝ中立(β~1.0)でα10%/7.9%と高効率。しかし
@@ -3156,6 +3162,9 @@ lessons:
   - outputs/analysis/nested_fof/r29c_oos_transcendence_results.yaml
   - scripts/analysis/nested_fof/r29c_oos_transcendence.py
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-05'
 - id: L518
   title: Sortino選出はfull-sampleのMaxDD優位がOOSで倍増し消滅する
   summary: Sortino選出K=3はfull-sampleでMaxDD-14.2%と最浅だがOOSで-29.0%に倍増(劣化-103.9%)。同条件のmomentum(-
@@ -3259,7 +3268,7 @@ lessons:
   - reporting
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-02'
+  last_referenced: '2026-06-05'
   how: 同一lockfileを再取得する入れ子呼び出しを避け、lock保持区間を分離するかlock済みコンテキスト用の内部更新関数を使う
   origin: '[[cmd_1508]]'
   source_cmd: cmd_1508
@@ -3613,7 +3622,7 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L487
@@ -4109,6 +4118,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_monban.py
   - scripts/analysis/grid_search/run_077_nukimi.py
   when: gateやhookの検知・補正ロジックを変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-05'
 - id: L451
   title: PipelineEngine統合時のバッチパス分離戦略とbackend sys.path依存
   summary: simulate_patternのみPipelineEngine経由に切り替え、simulate_batch等のバッチパスはnumpy維持が現実的。両パスの等価
@@ -4214,6 +4226,9 @@ lessons:
   origin: '[[cmd_1194]]'
   source_cmd: cmd_1194
   when: パリティ検証の許容誤差は要件定義時に
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-05'
 - id: L445
   title: DTB3を株式用momentum関数で処理してはならない
   summary: pct_change(金利水準変化率)とcalculate_risk_free_return_vectorized(累積複利リターン)は全く異なる値。経済指標は
@@ -4501,6 +4516,9 @@ lessons:
   - outputs/analysis/cmd_1106_parity_analysis.csv
   - outputs/analysis/cmd_1106_parity_analysis.py
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-05'
 - id: L424
   title: パリティpartial/MTD仮説は1.5%。98.5%はGS月次vsP日次の構造的乖離
   summary: GS月次解像度 vs Pipeline日次解像度のシグナル判定タイミング差異が不一致の主因。RC2(FoF展開差異)56.7%+RC3(銘柄選択差異)41.8%
@@ -4716,7 +4734,7 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
 - id: L409
   title: nukimi/oikaze momentum計算は cmd_227 で既に numpy ratio 方式に移行済み
   summary: tobisaru偵察報告(cmd_1062)はoikazeのpct_changeボトルネックを分析し 「全忍法に横展開可能」と記載したが、nukimi/oika
@@ -5221,7 +5239,7 @@ lessons:
   when: 月次解像度の重複パターンをGS build_gridで除去する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-02'
+  last_referenced: '2026-06-05'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L372
@@ -5669,7 +5687,7 @@ lessons:
   when: 忍法15体をmonthly_returnsベースで横断分析する
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
 - id: L337
   title: p̄は退避シグナル(p̄≥0.3→キャッシュ)としても機能しない。Sharpe勝率0/192全敗。MaxDD改善(62%)はキャッシュ比率増の自明な帰結。cmd_1005-1009の5連敗により、p̄の月次戦術的運用は選出・退避いずれでも有効性なし
   summary: cmd_1009 12体×16mpf=192パターン検証
@@ -5923,7 +5941,7 @@ lessons:
   - testing
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
   how: '2026-03-16'
   origin: '[[cmd_976]]'
   source_cmd: cmd_976
@@ -6394,7 +6412,7 @@ lessons:
   when: 健全度・崩壊確率・検出確率などの確率値を非専門家向けUIやレポートに表示する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L286
@@ -6440,6 +6458,9 @@ lessons:
   - backend/blocks/
   - backend/jobs/
   when: gateやhookの検知・補正ロジックを変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-05'
 - id: L282
   title: 91PFの実効独立数は20-30。cross-sectional分析では独立PFサブセット選定が必須
   summary: 'pairwise相関mean 0.610/median 0.623/p90 0.814。3層依存構造: (1)同一ファミリーρ≈0.85-0.99
@@ -6451,6 +6472,9 @@ lessons:
   origin: '[[cmd_860]]'
   source_cmd: cmd_860
   when: gateやhookの検知・補正ロジックを変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-05'
 - id: L281
   title: レバレッジETF fat tails(尖度5-8)は正規性仮定の全統計手法でリスク。t分布 or ノンパラメトリック手法を優先すべき
   summary: DM-Signal active 91PFにはTQQQ/TECL/SPXL/TMF等3xレバレッジETF含む。月次リターン尖度5-8(正規=3)。正規尤度ベイズ
@@ -6546,7 +6570,7 @@ lessons:
   when: CDPでproduction viewer pagesのreload時間やready状態を計測する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
 - id: L273
   title: live API完全一致監査はcurrent partial monthを凍結or除外しないと日次更新ノイズで誤FAIL化する
   summary: cmd_856で/api/signalsは91PF全件一致だが、/api/monthly-returnsと/api/performanceは15/15PFで不一
@@ -6912,7 +6936,7 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
 - id: L243
   title: Static Export buildが cleanup 失敗でも `.next` manifest は先に生成されることがある
   summary: 今回 `npm run build` は `out/_next/static/media` の ENOTEMPTY で最終失敗したが、その前に
@@ -7054,6 +7078,9 @@ lessons:
   target_files:
   - frontend/lib/api-cache.ts
   when: frontend/UIの表示・状態管理を変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-05'
 - id: L229
   title: SWR化は invalidation 削除だけでは成立せず、cache hit を迂回する fresh fetch 経路が必要
   summary: IndexedDB 永続 cache を持つ request 層で cache hit 時 short-circuit return している場合、
@@ -7830,6 +7857,9 @@ lessons:
   origin: '[[cmd_540]]'
   source_cmd: cmd_540
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-05'
 - id: L165
   title: P_det ローリング基準は検知力天井 β·(n+K)/2 を持つ。固定基準は時間成長するが古いアンカーの代表性リスクあり
   summary: P(deterioration)でローリングlong基準（K=120）を使うと、 期待差分 E[d] = β·(n+K)/2 が時間に依存しない定数になる。
@@ -7849,6 +7879,9 @@ lessons:
   origin: '[[cmd_535]]'
   source_cmd: cmd_535
   when: 今回、_deprecated移動後の復元容易性(AC7)は差分ゼロ主張だけでは弱い時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-05'
 - id: L163
   title: ルートディスコンは『差し替え+_deprecated退避』にすると復活が1コミットで戻せる
   summary: 'IF ルートディスコンを実施する時 THEN 復活手順（最小）: 復活手順（最小）:'
@@ -8690,7 +8723,7 @@ lessons:
   - testing
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
   how: L1 FoF検証(cmd_205)はcomponent平均突合が中心
   origin: '[[cmd_218]]'
   source_cmd: cmd_218
@@ -8871,7 +8904,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-05'
 - id: L073
   title: FoFパリティ検証ではコンポーネント初期化月をスキップするな
   summary: IF FoFのEqualWeight計算はコンポーネントの初期化月(Cash)も含めて平均する時 THEN FoFのEqualWeight計算はコンポーネントの

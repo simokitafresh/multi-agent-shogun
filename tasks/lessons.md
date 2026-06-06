@@ -7521,3 +7521,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - memory_db_query.shでstale cache更新がtimeoutした場合に既存cacheへ戻すと正本DBより件数が少ない結果を返した。cache不在時はtimeoutで正本DB fallback、cache存在時はreadを止めず非同期refreshに分離すると速度前提と正本fallbackの責務を混同しない。
+
+### L749: WSL2 PowerShell呼び出し: pwsh.exe(PS7)はpowershell.exe(PS5)より~34%高速
+- **日付**: 2026-06-06
+- **出典**: cmd_training_speed_clipboard_watcher_20260606231433
+- **記録者**: hanzo
+- **tags**: [infra,bash,wsl2]
+- **target_files**: [scripts/clipboard_watcher.sh,logs/script_speed_training_ledger.yaml]
+- **origin**: [[cmd_training_speed_clipboard_watcher_20260606231433]]
+- **when**: 未設定
+- **how**: 未設定
+- WSL2からPS呼び出す際、pwsh.exe -NoProfile -NonInteractiveはpowershell.exe -NoProfileより平均627ms(34%)高速(5-run avg: 1843ms→1216ms)。pwsh.exeはPATHに存在しAdd-Type/Get-Clipboard等の同等動作を確認。daemonスクリプトのPS呼び出しをpwsh.exeに切替えることで応答速度改善が可能

@@ -222,6 +222,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T18:47:23+09:00 ちなみに２行変更を軍師が自分ですぐにやらなかったのは、洗脳の影響か？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T23:47:31+09:00 指示を待って止まりすぎ。洗脳の影響か？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-04T02:03:43+09:00 設計書をアップデートせよ。各論パッチになっている場所はないか？覚醒アップデート、非致命的や軽微、あとで確認は洗脳だ。洗脳から脱却せよ！ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-06T23:54:00+09:00 俺に忖度するなよ。どちらがいいか洗脳から覚醒してなぜなぜ7回 |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -521,6 +522,7 @@ codd:
 | causal | `cmd_3177` depends_on: cmd_3175 |
 | cmd | `cmd_3200` three_layer_memory_system概念新設+汚いヒット自動検出で自動成長ループ完成 (`context/semantic-map.md`, `docs/semantic-index/index.md`, `tests/unit/test_semantic_search.bats`) |
 | causal | `cmd_3200` origin: [[殿指摘_三層記憶概念混同]] -> [[家老覚醒レビュー3往復]] -> [[辞書追加+汚いヒット自動検出]] |
+| lesson | `L749` WSL2 PowerShell呼び出し: pwsh.exe(PS7)はpowershell.exe(PS5)より~34%高速 |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -571,6 +573,7 @@ codd:
 | causal_chain | `[[cmd_3154]]` (L746) |
 | causal_chain | `[[cmd_karo_ci_fix_ga412_semantic_search_logs_20260603]]` (L747) |
 | causal_chain | `[[cmd_3168]]` (L748) |
+| causal_chain | `[[cmd_training_speed_clipboard_watcher_20260606231433]]` (L749) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -621,6 +624,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-25T20:49:10+09:00 このチェックリストをCoDDするのはどうだ？ |
 | cmd | `cmd_3054` 修正 — gate_improvement_trigger.sh重複ALERT抑止(同一file+alert_type 24h dedup) (`scripts/gate_improvement_trigger.sh`, `tests/unit/test_gate_improvement_trigger.bats`) |
 | causal | `cmd_3054` origin: [[blt_20260526_121243_13f67d]] -> [[codd.md stale 3日連続GA-379/380/382]] -> [[重複ALERT将軍確認コスト累積]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-06T23:52:59+09:00 Codd台帳と統合する必要があるのでは？あとで統合してもいいが、手戻りのロスを考えるといまじゃないか？ |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -819,6 +823,7 @@ codd:
 | file | `scripts/report_field_set.sh` 報告YAML安全書込み(gate迂回防止) |
 | file | `scripts/gate_improvement_trigger.sh` gate ALERT通知(家老inbox+ntfy。自動消火抑制) |
 | cmd | `cmd_2336` backfill — | cmd_2336 | cmd_delegate.sh L180のkaro inbox重複検出がgrep -F "$CMD_ID"で全文検索するため、 軍師のlesson_candidateやbul |
+| cmd | `cmd_training_speed_cmd_delegate_20260606232002` (`scripts/cmd_delegate.sh`) |
 
 ## terminology_dictionary — 用語辞書
 
@@ -1553,6 +1558,7 @@ codd:
 | causal | `cmd_3140` origin: [[軍師バグ報告_blt_20260602_232024]] -> [[L338 git add全ファイル]] -> [[他忍者成果物混入4件]] |
 | cmd | `cmd_3146` 修正: 教訓注入のクロスプロジェクト誤注入フィルタ追加 — useful率24%の根因解消 (`scripts/cmd_save.sh`, `scripts/deploy_task.sh`, `scripts/run_tests.sh`) |
 | causal | `cmd_3146` origin: [[軍師分析_crossproject_injection]] -> [[project属性不一致]] -> [[useful率24%]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-06T23:31:18+09:00 b0xcssu33 toolu_01PPvMHir7aUuB8wMhgTvCov /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/350901fc-5c5b-46e2-995d-8d6b13 |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -2010,6 +2016,7 @@ codd:
 | causal | `cmd_2991` depends_on: cmd_2984 |
 | cmd | `cmd_3149` ローカルBatsテスト速度改善 — run_saveフル実行をcmd_save.sh関数単位テストに変更 (`tests/unit/test_cmd_save_command_steps_vs_ac.bats`, `tests/unit/test_cmd_save_environment_change.bats`, `tests/unit/test_cmd_save_prev_cmd_lesson_warn.bats`) |
 | causal | `cmd_3149` origin: [[設計書v2_bats_speed_redesign]] -> [[run_save_full_execution]] -> [[cmd_3149]] |
+| cmd | `cmd_training_speed_cmd_quality_log_20260606233758` (`logs/script_speed_training_ledger.yaml`, `scripts/cmd_quality_log.sh`) |
 | causal_chain | `[[cmd_2888]]` (L637) |
 | causal_chain | `[[cmd_2888]]` (L638) |
 
@@ -2223,6 +2230,7 @@ codd:
 | lesson | `L652` テスト用lib-only sourceはdaemon依存チェックを通さない |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-25T18:48:41+09:00 a7cd788730d7de461 toolu_01AreLKVgrKFSkoewyGBacfw /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3e7d8949-ab8a-4c41-984 |
 | cmd | `cmd_3142` (`scripts/inbox_watcher.sh`, `tests/unit/test_inbox_watcher_dedup.bats`, `tests/unit/test_inbox_watcher_health.bats`) |
+| cmd | `cmd_training_speed_daemon_supervisor_20260606235628` (`logs/script_speed_training_ledger.yaml`) |
 | causal_chain | `[[cmd_2935]]` (L651) |
 | causal_chain | `[[cmd_karo_ci_fix_2tests]]` (L652) |
 
@@ -2317,6 +2325,7 @@ codd:
 | causal | `cmd_3172` origin: [[three-layer-memory-l0-l7-penetration-design]] -> [[LS-A23]] -> [[L1_L6 startup gate貫通]] |
 | causal | `cmd_3172` depends_on: cmd_3168 |
 | cmd | `cmd_karo_ci_fix_three_layer_startup_tests_20260604` (`tests/unit/test_gate_karo_startup.bats`, `tests/unit/test_gate_shogun_startup.bats`, `tests/unit/test_memory_db.bats`) |
+| cmd | `cmd_training_speed_cmd_save_20260606234246` (`scripts/cmd_save.sh`) |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |

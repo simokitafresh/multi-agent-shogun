@@ -31,19 +31,22 @@ if [ -z "$PROJECT_ID" ] || [ -z "$TITLE" ] || [ -z "$DECISION" ]; then
     exit 1
 fi
 
-# Get project path from config/projects.yaml
-export PROJECT_ID SCRIPT_DIR
-PROJECT_PATH=$(python3 -c "
-import yaml, os
-script_dir = os.environ['SCRIPT_DIR']
-project_id = os.environ['PROJECT_ID']
-with open(os.path.join(script_dir, 'config', 'projects.yaml'), encoding='utf-8') as f:
-    cfg = yaml.safe_load(f)
-for p in cfg.get('projects', []):
-    if p['id'] == project_id:
-        print(p['path'])
-        break
-")
+# Get project path from config/projects.yaml using awk (no Python startup)
+PROJECT_PATH=$(awk -v pid="$PROJECT_ID" '
+  /^  - id:/ {
+    val = $0
+    sub(/^[[:space:]]*-[[:space:]]*id:[[:space:]]*["'"'"']?/, "", val)
+    sub(/["'"'"']?[[:space:]]*$/, "", val)
+    in_proj = (val == pid)
+  }
+  /^  - / && !/id:/ { in_proj = 0 }
+  in_proj && /^[[:space:]]*path:/ {
+    val = $0
+    sub(/^[[:space:]]*path:[[:space:]]*["'"'"']?/, "", val)
+    sub(/["'"'"']?[[:space:]]*$/, "", val)
+    print val; exit
+  }
+' "$SCRIPT_DIR/config/projects.yaml")
 
 if [ -z "$PROJECT_PATH" ]; then
     echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
@@ -73,50 +76,22 @@ while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 10 200 || exit 1
 
-        # Find max ID and append new entry
-        export DECISIONS_FILE TIMESTAMP CMD_ID TITLE DECISION RATIONALE ALTERNATIVES
-        python3 << 'PYEOF'
-import re, os
+        # Find max numeric ID from ### D{N}: pattern using awk
+        max_id=$(awk 'BEGIN{max=0} /^### D[0-9]+:/{n=$2; sub(/^D/,"",n); sub(/:$/,"",n); if (n+0>max) max=n+0} END{print max}' "$DECISIONS_FILE")
+        new_id=$((max_id + 1))
+        new_id_str=$(printf 'D%03d' "$new_id")
 
-decisions_file = os.environ["DECISIONS_FILE"]
-timestamp = os.environ["TIMESTAMP"]
-cmd_id = os.environ["CMD_ID"]
-title = os.environ["TITLE"]
-decision = os.environ["DECISION"]
-rationale = os.environ["RATIONALE"]
-alternatives = os.environ["ALTERNATIVES"]
+        # Build and append entry
+        {
+            printf '\n### %s: %s\n' "$new_id_str" "$TITLE"
+            printf -- '- **日付**: %s\n' "$TIMESTAMP"
+            [ -n "$CMD_ID" ] && printf -- '- **cmd**: %s\n' "$CMD_ID"
+            printf -- '- **決定**: %s\n' "$DECISION"
+            [ -n "$RATIONALE" ] && printf -- '- **根拠**: %s\n' "$RATIONALE"
+            [ -n "$ALTERNATIVES" ] && printf -- '- **却下案**: %s\n' "$ALTERNATIVES"
+        } >> "$DECISIONS_FILE"
 
-with open(decisions_file, encoding='utf-8') as f:
-    content = f.read()
-
-# Find max numeric ID from ### D{N}: pattern
-max_id = 0
-
-for m in re.finditer(r'^### D(\d+):', content, re.MULTILINE):
-    num = int(m.group(1))
-    if num > max_id:
-        max_id = num
-
-new_id = max_id + 1
-new_id_str = f'D{new_id:03d}'
-
-# Build new entry
-entry = f'\n### {new_id_str}: {title}\n'
-entry += f'- **日付**: {timestamp}\n'
-if cmd_id:
-    entry += f'- **cmd**: {cmd_id}\n'
-entry += f'- **決定**: {decision}\n'
-if rationale:
-    entry += f'- **根拠**: {rationale}\n'
-if alternatives:
-    entry += f'- **却下案**: {alternatives}\n'
-
-# Append to file
-with open(decisions_file, 'a', encoding='utf-8') as f:
-    f.write(entry)
-
-print(f'{new_id_str} added to {decisions_file}')
-PYEOF
+        printf '%s added to %s\n' "$new_id_str" "$DECISIONS_FILE"
 
     ) 200>"$LOCKFILE"; then
         exit 0
