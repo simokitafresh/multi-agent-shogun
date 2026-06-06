@@ -1503,27 +1503,27 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T07:12:50"
   - script_path: "scripts/lesson_deprecation_scan.sh"
-    status: pending
+    status: "completed"
     before_ms: 18
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: "2508"
+    after_real_ms: "598"
+    real_measurement_command: "bash scripts/lesson_deprecation_scan.sh --candidates-only (10回中央値)"
+    test_result: "bats tests/unit/test_lesson_deprecation_scan.bats 6/6 PASS SKIP=0; SCRIPT_DIR bash-string+CSafeLoader: 2508ms->598ms (-76%)"
+    commit: "55c60df31"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T07:16:51"
   - script_path: "scripts/lesson_edit.sh"
-    status: pending
+    status: completed
     before_ms: 16
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    after_ms: 7
+    before_real_ms: 13
+    after_real_ms: 7
+    real_measurement_command: "bash scripts/lesson_edit.sh (0 args, usage exit — exercises SCRIPT_DIR; 5 cold runs median)"
+    test_result: "functional verification PASS (SCRIPT_DIR match OK; LESSON_ID: L023→L23 L23→L23 L001→L1); BASH_SOURCE string ops (SCRIPT_DIR) + bash arithmetic (LESSON_ID) + PID temp (PY_EXIT_FILE): 13ms→7ms (-46%)"
+    commit: "d5c231581"
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T07:21:00"
   - script_path: "scripts/lesson_effectiveness.sh"
     status: pending
     before_ms: 16
