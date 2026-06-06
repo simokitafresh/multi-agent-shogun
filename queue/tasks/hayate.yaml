@@ -30,7 +30,7 @@ task:
   project: infra
   purpose: 将軍startup gateが8秒かかり毎セッション起動を遅延させている。セクション別プロファイルで特定したボトルネック5箇所を改善する。python3起動コスト(24回×16ms=0.4秒)ではなく、大ファイルYAML parse(review_log 297ms+cmd_design_quality 216ms)とセクション直列実行(相互依存なし区間の並列化)が真因
   scout_exempt: true
-  status: done
+  status: idle
   stop_for: []
   target_path: scripts/gates/gate_shogun_startup.sh
   task_id: cmd_3183_impl
