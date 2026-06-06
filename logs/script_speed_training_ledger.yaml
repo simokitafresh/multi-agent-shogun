@@ -1448,14 +1448,14 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T06:56:00"
   - script_path: "scripts/lesson_auto_tag.sh"
-    status: assigned
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 1105
+    after_real_ms: 252
+    real_measurement_command: bash scripts/lesson_auto_tag.sh --dry-run (10回中央値)
+    test_result: "dry-run smoke test PASS (1535 lessons, all tagged); yaml.CSafeLoader+SCRIPT_DIR bash string: 1105ms->252ms (-853ms, -77%)"
+    commit: b7dc815be
     assigned_to: "kotaro"
     updated_at: "2026-06-07T07:00:12"
   - script_path: "scripts/lesson_check.sh"
