@@ -17,7 +17,11 @@
 # ============================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+_scripts_dir="${_self%/*}"
+SCRIPT_DIR="${_scripts_dir%/*}"
+unset _self _scripts_dir
 GATE_METRICS_LOG="$SCRIPT_DIR/logs/gate_metrics.log"
 REPORTS_DIR="$SCRIPT_DIR/queue/reports"
 
