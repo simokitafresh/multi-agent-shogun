@@ -174,62 +174,61 @@ _compute_lesson_stats() {
     ' "$file"
 }
 
-check_role_lesson_origins() {
-    local label="$1"
-    local lessons_file="$2"
-
-    [ -f "$lessons_file" ] || return 0
-
-    local origin_result
-    origin_result=$(python3 - "$lessons_file" <<'PY' 2>/dev/null || true
+check_role_lesson_origins_batch() {
+    python3 - \
+        "lessons_shogun.yaml=$SCRIPT_DIR/projects/infra/lessons_shogun.yaml" \
+        "lessons_gunshi.yaml=$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml" \
+        "lessons_karo.yaml=$SCRIPT_DIR/projects/infra/lessons_karo.yaml" <<'PY'
 import re
 import sys
 import yaml
 
-path = sys.argv[1]
-with open(path, encoding="utf-8") as fh:
-    data = yaml.safe_load(fh) or {}
-lessons = data.get("lessons") or []
-missing = []
-empty = []
-no_links = []
-for item in lessons:
-    if not isinstance(item, dict):
-        continue
-    lesson_id = str(item.get("id") or "?")
-    if "origin" not in item:
-        missing.append(lesson_id)
-        continue
-    origin = item.get("origin")
-    origin_text = "" if origin is None else str(origin).strip()
-    if not origin_text:
-        empty.append(lesson_id)
-        continue
-    if not re.search(r"\[\[[^]\n]+\]\]", origin_text):
-        no_links.append(lesson_id)
+def summarize(path):
+    with open(path, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+    lessons = data.get("lessons") or []
+    missing = []
+    empty = []
+    no_links = []
+    for item in lessons:
+        if not isinstance(item, dict):
+            continue
+        lesson_id = str(item.get("id") or "?")
+        if "origin" not in item:
+            missing.append(lesson_id)
+            continue
+        origin = item.get("origin")
+        origin_text = "" if origin is None else str(origin).strip()
+        if not origin_text:
+            empty.append(lesson_id)
+            continue
+        if not re.search(r"\[\[[^]\n]+\]\]", origin_text):
+            no_links.append(lesson_id)
+    total = len([x for x in lessons if isinstance(x, dict)])
+    return total, missing, empty, no_links
 
-total = len([x for x in lessons if isinstance(x, dict)])
-bad = len(missing) + len(empty) + len(no_links)
-print(f"{total}\t{bad}\t{','.join(missing[:5])}\t{','.join(empty[:5])}\t{','.join(no_links[:5])}")
+for spec in sys.argv[1:]:
+    label, path = spec.split("=", 1)
+    try:
+        total, missing, empty, no_links = summarize(path)
+    except FileNotFoundError:
+        continue
+    except Exception:
+        print(f"WARN: {label} origin検査に失敗。YAML構文または形式を確認せよ")
+        continue
+
+    bad = len(missing) + len(empty) + len(no_links)
+    if bad:
+        print(f"WARN: {label} origin因果リンク不備 {bad}/{total}件")
+        if missing:
+            print(f"  origin欠落: {','.join(missing[:5])}")
+        if empty:
+            print(f"  origin空: {','.join(empty[:5])}")
+        if no_links:
+            print(f"  リンク0件: {','.join(no_links[:5])}")
+    else:
+        print(f"OK: {label} origin因果リンク ({total}件)")
 PY
-)
-    if [ -z "$origin_result" ]; then
-        echo "WARN: ${label} origin検査に失敗。YAML構文または形式を確認せよ"
-        return 0
-    fi
-
-    local origin_total origin_bad origin_missing origin_empty origin_no_links
-    IFS=$'\t' read -r origin_total origin_bad origin_missing origin_empty origin_no_links <<< "$origin_result"
-    origin_total=${origin_total:-0}
-    origin_bad=${origin_bad:-0}
-    if [ "$origin_bad" -gt 0 ]; then
-        echo "WARN: ${label} origin因果リンク不備 ${origin_bad}/${origin_total}件"
-        [ -n "$origin_missing" ] && echo "  origin欠落: $origin_missing"
-        [ -n "$origin_empty" ] && echo "  origin空: $origin_empty"
-        [ -n "$origin_no_links" ] && echo "  リンク0件: $origin_no_links"
-    else
-        echo "OK: ${label} origin因果リンク (${origin_total}件)"
-    fi
 }
 
 write_lesson_effect_status() {
@@ -690,9 +689,7 @@ else
 fi
 
 # ─── role別lesson origin因果リンク検出 ───
-check_role_lesson_origins "lessons_shogun.yaml" "$SCRIPT_DIR/projects/infra/lessons_shogun.yaml"
-check_role_lesson_origins "lessons_gunshi.yaml" "$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml"
-check_role_lesson_origins "lessons_karo.yaml" "$SCRIPT_DIR/projects/infra/lessons_karo.yaml"
+check_role_lesson_origins_batch
 
 # ─── check_lesson_effectiveness ───
 if [ $# -ge 1 ]; then
