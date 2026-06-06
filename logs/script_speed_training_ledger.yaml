@@ -1085,16 +1085,16 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T05:12:00"
   - script_path: "scripts/gist_index_update.sh"
-    status: pending
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 7945
+    after_real_ms: 6203
+    real_measurement_command: "GH_CMD=/tmp/saizo_fake_gh_gist_index_update bash scripts/gist_index_update.sh --dry-run >/dev/null"
+    test_result: "bash_n_pass;fake_gh_dry_run_output_diff_empty;100run_before_7945_after_6203;SKIP=0"
+    commit: "0ae3a085e"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T05:17:05"
   - script_path: "scripts/gist_sync.sh"
     status: pending
     before_ms: 15
