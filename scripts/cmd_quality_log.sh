@@ -269,7 +269,11 @@ EOF
 
 ) 200>"$LOCK_FILE"
 
-if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
+SOURCE_FILE="${LOG_FILE#$REPO_ROOT/}"
+if [[ "$SOURCE_FILE" == "$LOG_FILE" && "$LOG_FILE" = /* ]]; then
+    SOURCE_FILE="$LOG_FILE"
+fi
+if [[ -f "$MEMORY_DB_LIVE_INSERT" && ( -n "${SHOGUN_MEMORY_DB:-}" || "$SOURCE_FILE" != /tmp/* ) ]]; then
     memory_db_args=(
         cmd_quality
         --cmd-id "$CMD_ID"
@@ -284,7 +288,7 @@ if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
         --source "$SOURCE_STAGE"
         --diagnosis "$DIAGNOSIS_TEXT"
         --notes "$NOTES"
-        --source-file "${LOG_FILE#$REPO_ROOT/}"
+        --source-file "$SOURCE_FILE"
     )
     if [[ -n "${SHOGUN_MEMORY_DB:-}" ]]; then
         python3 "$MEMORY_DB_LIVE_INSERT" "${memory_db_args[@]}" >/dev/null 2>&1 || true
