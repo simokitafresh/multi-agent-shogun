@@ -964,8 +964,9 @@ EOF
 
     archive_overflow_reports_to_cap() {
         local cap=10
-        local remaining
-        remaining=$(find "$REPORTS_DIR" -maxdepth 1 -type f -name '*.yaml' | wc -l)
+        # GP-OPT2: find+wc を外側スコープの report_files/archived カウンタで代替（WSL2プロセス起動削減）
+        local remaining=$(( ${#report_files[@]} - archived ))
+        [ "$remaining" -lt 0 ] && remaining=0
         [ "$remaining" -le "$cap" ] && return 0
 
         local overflow_list="$TMP/report_overflow_candidates.tsv"
@@ -1135,11 +1136,14 @@ PY
         gawk '
             BEGINFILE {
                 fname = FILENAME; sub(/.*\//, "", fname)
-                st = ""; pc = ""
+                st = ""; pc = ""; printed = 0
             }
-            /status:/ && !/^#/ { st = $0; sub(/.*status: */, "", st); gsub(/["'"'"'\t ]/, "", st) }
-            /parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'\t ]/, "", pc) }
-            ENDFILE { print fname "|" st "|" pc }
+            # GP-OPT3: 両フィールド発見後に nextfile で残行読込をスキップ（WSL2 I/O削減）
+            # printed フラグで ENDFILE との二重出力を防止（gawk 5.x は nextfile 後も ENDFILE を実行する）
+            !st && /status:/ && !/^#/ { st = $0; sub(/.*status: */, "", st); gsub(/["'"'"'\t ]/, "", st) }
+            !pc && /parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'\t ]/, "", pc) }
+            !printed && st && pc { print fname "|" st "|" pc; printed = 1; nextfile }
+            ENDFILE { if (!printed) print fname "|" st "|" pc }
         ' "${_task_glob[@]}" 2>/dev/null > "$_task_tsv"
         while IFS='|' read -r _tf _ts _tp; do
             _task_status["$_tf"]="$_ts"
@@ -1215,13 +1219,29 @@ PY
             [ -z "$_rc_parent" ] && continue
             [ "${_gate_status[$_rc_parent]+x}" = "x" ] && continue  # 重複スキップ
             local _gc_g="$PROJECT_DIR/queue/gates/${_rc_parent}/review_gate.done"
-            _gate_status["$_rc_parent"]="$(classify_review_gate_status "$_gc_g")"
+            # GP-OPT1: $()サブシェル排除。grep終了コードで直接判定（TOCTOU対応維持）
+            # exit 0=placeholder, exit 1=readable but not placeholder→ok, exit 2+=missing/unreadable
+            # ||でset -euo pipefailのearly exit回避
+            local _opt1_rc=0
+            grep -q "source: deploy_preflight" "$_gc_g" 2>/dev/null || _opt1_rc=$?
+            case "$_opt1_rc" in
+                0) _gate_status["$_rc_parent"]="placeholder" ;;
+                1) _gate_status["$_rc_parent"]="ok" ;;
+                *) _gate_status["$_rc_parent"]="missing" ;;
+            esac
         done < "$_REPORT_CACHE"
     fi
     # CMD_ID指定時: _gate_statusに追加(REPORT_CACHEにない場合あり)
     if [ -n "$CMD_ID" ] && [ "${_gate_status[$CMD_ID]+x}" != "x" ]; then
         local _gc_g="$PROJECT_DIR/queue/gates/${CMD_ID}/review_gate.done"
-        _gate_status["$CMD_ID"]="$(classify_review_gate_status "$_gc_g")"
+        # GP-OPT1: $()サブシェル排除（CMD_IDパス）。||でset -e回避
+        local _opt1_rc=0
+        grep -q "source: deploy_preflight" "$_gc_g" 2>/dev/null || _opt1_rc=$?
+        case "$_opt1_rc" in
+            0) _gate_status["$CMD_ID"]="placeholder" ;;
+            1) _gate_status["$CMD_ID"]="ok" ;;
+            *) _gate_status["$CMD_ID"]="missing" ;;
+        esac
     fi
 
     for report_file in "${report_files[@]}"; do
@@ -1665,11 +1685,14 @@ if compgen -G "$REPORTS_DIR/*_report*.yaml" > /dev/null 2>&1 || compgen -G "$REP
     gawk '
         BEGINFILE {
             fname = FILENAME; sub(/.*\//, "", fname)
-            st = ""; pc = ""
+            st = ""; pc = ""; printed = 0
         }
-        /^status:/ { st = $0; sub(/.*status: */, "", st); gsub(/["'"'"'\t ]/, "", st) }
-        /^parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'\t ]/, "", pc) }
-        ENDFILE { print fname "|" st "|" pc }
+        # GP-OPT3: 両フィールド発見後に nextfile で残行読込をスキップ（WSL2 I/O削減）
+        # printed フラグで ENDFILE との二重出力を防止（gawk 5.x は nextfile 後も ENDFILE を実行する）
+        !st && /^status:/ { st = $0; sub(/.*status: */, "", st); gsub(/["'"'"'\t ]/, "", st) }
+        !pc && /^parent_cmd:/ { pc = $0; sub(/.*parent_cmd: */, "", pc); gsub(/["'"'"'\t ]/, "", pc) }
+        !printed && st && pc { print fname "|" st "|" pc; printed = 1; nextfile }
+        ENDFILE { if (!printed) print fname "|" st "|" pc }
     ' "${_rpt_files[@]}" 2>/dev/null > "$_REPORT_CACHE"
 fi
 
