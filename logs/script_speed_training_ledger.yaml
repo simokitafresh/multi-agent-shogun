@@ -1180,7 +1180,7 @@ entries:
     after_real_ms: 12.532
     real_measurement_command: "PATH=<mock_tmux_dir>:$PATH TMUX_PANE=%1 TMUX_LOG=<tmp>/tmux.log python3 measure: 80x printf '{\"hook_event_name\":\"PreToolUse\"}' | bash scripts/hooks/bash_state_hook.sh; median_ms"
     test_result: "bash_n_pass;bats_filter_bash_state_hook_2_pass_0_skip;empty_input_no_tmux;camelCase_PostToolUse_ok;tmux_fail_exit_0;before_13.737_after_12.532"
-    commit: ""
+    commit: "b8a95353e"
     assigned_to: "hayate"
     updated_at: "2026-06-07T06:13:00"
   - script_path: "scripts/hooks/block_destructive.sh"
