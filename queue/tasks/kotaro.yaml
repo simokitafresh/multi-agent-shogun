@@ -32,22 +32,22 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_training_speed_lesson_auto_tag_20260607070012
+  parent_cmd: cmd_training_speed_lesson_confirm_20260607070809
   project: infra
-  purpose: 'Speed-train scripts/lesson_auto_tag.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
+  purpose: 'Speed-train scripts/lesson_confirm.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
   scout_exempt: true
   status: completed
   stop_for: []
-  target_path: scripts/lesson_auto_tag.sh
-  task_id: cmd_training_speed_lesson_auto_tag_20260607070012_normal
+  target_path: scripts/lesson_confirm.sh
+  task_id: cmd_training_speed_lesson_confirm_20260607070809_normal
   task_type: speed_training
   related_lessons:
   - id: 'L454'
     summary: '**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.'
     detail: '**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.'
-  - id: 'L357'
-    summary: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
-    detail: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
+  - id: 'L398'
+    summary: 'lesson_confirm.sh(22a8c8a)で修正されたPython変数注入パターンがsync_lessons.shにも残存していた。python3 -'
+    detail: 'lesson_confirm.sh(22a8c8a)で修正されたPython変数注入パターンがsync_lessons.shにも残存していた。python3 -'
   - id: 'L630'
     summary: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
     detail: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
@@ -99,7 +99,7 @@ task:
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L454: **retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.
-      - L357: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.
+      - L398: lesson_confirm.sh(22a8c8a)で修正されたPython変数注入パターンがsync_lessons.shにも残存していた。python3 -
       - L630: bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
       - L696: startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs
@@ -112,10 +112,10 @@ task:
     
     
   ac_version: 719e89b4
-  _ac_task_id: cmd_training_speed_lesson_auto_tag_20260607070012_normal
+  _ac_task_id: cmd_training_speed_lesson_confirm_20260607070809_normal
   _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_training_speed_lesson_auto_tag_20260607070012.yaml
-  report_path: queue/reports/kotaro_report_cmd_training_speed_lesson_auto_tag_20260607070012.yaml
+  report_filename: kotaro_report_cmd_training_speed_lesson_confirm_20260607070809.yaml
+  report_path: queue/reports/kotaro_report_cmd_training_speed_lesson_confirm_20260607070809.yaml
   bloom_level: 
-  deployed_at: "2026-06-07T07:00:29"
+  deployed_at: "2026-06-07T07:08:33"
