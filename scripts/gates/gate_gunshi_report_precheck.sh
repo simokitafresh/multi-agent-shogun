@@ -294,9 +294,11 @@ if [ -n "${FILES_MODIFIED:-}" ]; then
     while IFS= read -r fpath; do
         case "$fpath" in
             *.claude/hooks/*|*scripts/hooks/*|*scripts/gates/*)
-                # git diff --statで変更規模を確認
-                added=$({ timeout 2 git -C "$REPO_ROOT" log --grep="${PARENT_CMD}" --format="" --numstat -- "$fpath" 2>/dev/null || true; } | awk '{a+=$1}END{print a+0}')
-                deleted=$({ timeout 2 git -C "$REPO_ROOT" log --grep="${PARENT_CMD}" --format="" --numstat -- "$fpath" 2>/dev/null || true; } | awk '{d+=$2}END{print d+0}')
+                # git diff --statで変更規模を確認 (1回のgit log で added+deleted を同時取得)
+                read -r added deleted < <(
+                    { timeout 2 git -C "$REPO_ROOT" log --grep="${PARENT_CMD}" --format="" --numstat -- "$fpath" 2>/dev/null || true; } | \
+                    awk '{a+=$1; d+=$2} END{print a+0, d+0}'
+                )
                 if [ "$deleted" -gt 0 ]; then
                     total_before=$((added + deleted))  # 近似: 追加+削除≈変更前行数
                     delete_ratio=$((deleted * 100 / total_before))
@@ -340,14 +342,14 @@ fi
 # ─── SG-PRE15: 並列負荷警告 (計測値汚染リスク) ───
 echo ""
 echo "■ SG-PRE15: 並列負荷警告(before/after計測値の信頼性)"
-BUSY_NINJAS=0
-for task_file in "$REPO_ROOT"/queue/tasks/{hayate,kagemaru,hanzo,saizo,kotaro,tobisaru}.yaml; do
-    [ -f "$task_file" ] || continue
-    task_status=$(grep -m1 'status:' "$task_file" 2>/dev/null | sed 's/.*status: *//' | tr -d "'\"" || true)
-    if [ "$task_status" = "in_progress" ] || [ "$task_status" = "acknowledged" ]; then
-        BUSY_NINJAS=$((BUSY_NINJAS + 1))
-    fi
-done
+BUSY_NINJAS=$(awk '
+    /^[[:space:]]*status:/ {
+        st=$2; gsub(/["'"'"']/, "", st)
+        if (st=="in_progress" || st=="acknowledged") busy++
+        nextfile
+    }
+    END{print busy+0}
+' "$REPO_ROOT"/queue/tasks/{hayate,kagemaru,hanzo,saizo,kotaro,tobisaru}.yaml 2>/dev/null || echo 0)
 if [ "$BUSY_NINJAS" -ge 3 ]; then
     echo "  ★★★ WARN: ${BUSY_NINJAS}名の忍者が稼働中。before/after計測値がWSL2 I/O負荷で汚染されている可能性。全忍者idle後の再計測を推奨"
 elif [ "$BUSY_NINJAS" -ge 1 ]; then
