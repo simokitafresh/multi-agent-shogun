@@ -5,11 +5,8 @@
 
 set -e
 
-# SCRIPT_DIR: pure bash fast path for absolute script invocation; fallback keeps
-# relative invocation behavior unchanged.
-_SELF="${BASH_SOURCE[0]}"
-SCRIPT_DIR="${_SELF%/*}/.."
-[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
+_lrv_self="${BASH_SOURCE[0]}"; [[ "$_lrv_self" != /* ]] && _lrv_self="$PWD/$_lrv_self"
+SCRIPT_DIR="${_lrv_self%/scripts/lesson_review.sh}"
 PROJECT_ID="${1:-}"
 
 if [ -z "$PROJECT_ID" ]; then
@@ -28,11 +25,13 @@ import sys
 
 import yaml
 
+_CLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 script_dir = os.environ["SCRIPT_DIR"]
 project_id = os.environ["PROJECT_ID"]
 
 with open(os.path.join(script_dir, "config/projects.yaml"), encoding="utf-8") as f:
-    cfg = yaml.safe_load(f) or {}
+    cfg = yaml.load(f, Loader=_CLoader) or {}
 
 project_path = ""
 for p in cfg.get("projects", []):
