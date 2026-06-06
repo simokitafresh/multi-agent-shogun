@@ -107,13 +107,19 @@ if [[ ! "$SOURCE_REPEAT_THRESHOLD" =~ ^[0-9]+$ ]]; then
   echo "ERROR: INSIGHT_SOURCE_REPEAT_THRESHOLD must be a non-negative integer, got: '$SOURCE_REPEAT_THRESHOLD'" >&2
   exit 1
 fi
-ts="$(date '+%Y-%m-%dT%H:%M:%S%:z')"
 
 # Skip synthetic test fixtures. They are useful in tests, but must not pollute the real queue.
 if [[ "$msg" == *"test_pattern"* || "$msg" == *"test_fix"* ]]; then
   echo "SKIP:test-fixture"
   exit 0
 fi
+
+# Generate ID and ts in a single date call (eliminates redundant second subprocess).
+# Placed after test-fixture exit to avoid date overhead on skipped calls.
+read -r _insight_uuid < /proc/sys/kernel/random/uuid
+_insight_now="$(date '+%Y%m%d-%H%M%S%3N %Y-%m-%dT%H:%M:%S%:z')"
+id="INS-${_insight_now%% *}-${_insight_uuid:0:4}"
+ts="${_insight_now#* }"
 
 status="pending"
 resolved_at=""
@@ -122,12 +128,6 @@ if [[ "$msg" == *"修正済み"* || "$msg" == *"解消"* || "$msg" == *"登録�
   resolved_at="$ts"
 fi
 
-# Generate ID: INS-YYYYMMDD-HHMMSSmmm-{4hex} (ミリ秒精度+UUID先頭4桁)
-read -r _insight_uuid < /proc/sys/kernel/random/uuid
-_insight_now="$(date '+%Y%m%d-%H%M%S%3N %Y-%m-%dT%H:%M:%S%:z')"
-id="INS-${_insight_now%% *}-${_insight_uuid:0:4}"
-ts="${_insight_now#* }"
-
 # flock for concurrent safety
 (
   flock -w 5 200 || { echo "ERROR: lock timeout"; exit 1; }
@@ -135,8 +135,9 @@ ts="${_insight_now#* }"
   # Initialize file if empty or missing
   if [ ! -f "$INSIGHTS_FILE" ] || [ ! -s "$INSIGHTS_FILE" ]; then
     printf 'insights:\n' > "$INSIGHTS_FILE"
-  elif grep -qx 'insights: \[\]' "$INSIGHTS_FILE"; then
-    printf 'insights:\n' > "$INSIGHTS_FILE"
+  else
+    IFS= read -r _iw_first <"$INSIGHTS_FILE" || true
+    [[ "$_iw_first" == 'insights: []' ]] && printf 'insights:\n' > "$INSIGHTS_FILE"
   fi
 
   # Dedup check + raw YAML append + source repeat count (single Python process).
@@ -232,7 +233,7 @@ print(source_pending_count)
 PYEOF
 ) || { echo "ERROR: insight write failed" >&2; exit 1; }
 
-  result=$(printf '%s\n' "$raw_result" | head -1)
+  result="${raw_result%%$'\n'*}"
   echo "$result"
 
   if [[ "$result" == INS-* && -f "$MEMORY_DB_LIVE_INSERT" ]]; then
@@ -261,7 +262,7 @@ PYEOF
   # do not remain buried in queue/insights.yaml. Keep this out of the write path:
   # bulletin failures must not break normal insight recording.
   if [[ "$result" == INS-* && "$SOURCE_REPEAT_THRESHOLD" -gt 0 ]]; then
-    repeat_count=$(printf '%s\n' "$raw_result" | tail -1)
+    repeat_count="${raw_result##*$'\n'}"
     if [[ "$repeat_count" -ge "$SOURCE_REPEAT_THRESHOLD" && -f "$BULLETIN_SCRIPT" ]]; then
       # デバウンス: 同一sourceのINSIGHT_REPEATを10分以内に重複投稿しない
       _repeat_debounce_file="/tmp/shogun_insight_repeat_${source_info//[^a-zA-Z0-9_]/_}.last"
