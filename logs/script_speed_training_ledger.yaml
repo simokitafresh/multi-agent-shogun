@@ -354,9 +354,9 @@ entries:
     after_real_ms: 4941
     real_measurement_command: "time bash scripts/clear_prep_check.sh"
     test_result: "PASS(syntax:OK+functional:ALERT_expected)"
-    commit: ""
+    commit: "db49fe8e7"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-06T23:26:00"
+    updated_at: "2026-06-06T23:28:00"
   - script_path: "scripts/clipboard_watcher.sh"
     status: completed
     before_ms: 32
@@ -365,7 +365,7 @@ entries:
     after_real_ms: 1216
     real_measurement_command: "direct PS call (no-image path, 5-run avg): powershell.exe -NoProfile → pwsh.exe -NoProfile -NonInteractive"
     test_result: "bash -n PASS; pwsh.exe functional PASS; daemon startup output PASS SKIP=0"
-    commit: ""
+    commit: "ad11b7dbb"
     assigned_to: "hanzo"
     updated_at: "2026-06-06T23:16:00"
   - script_path: "scripts/cmd_absorb.sh"
@@ -402,7 +402,7 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-06T23:27:11"
   - script_path: "scripts/cmd_friction_log.sh"
-    status: pending
+    status: assigned
     before_ms: 18
     after_ms: ""
     before_real_ms: ""
@@ -410,8 +410,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-06T23:30:39"
   - script_path: "scripts/cmd_halt.sh"
     status: pending
     before_ms: 18
