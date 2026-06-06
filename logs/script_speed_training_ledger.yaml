@@ -160,16 +160,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-06T22:41:56"
   - script_path: "scripts/bulletin_close.sh"
-    status: assigned
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 85
+    after_real_ms: 48
+    real_measurement_command: "BULLETIN_ROOT_OVERRIDE=<tmp> bash scripts/bulletin_close.sh bench_entry (20-run average)"
+    test_result: "bash -n scripts/bulletin_close.sh PASS; bats tests/unit/test_bulletin_board.bats 17/17 PASS SKIP=0; bats tests/unit/test_bash_speed_training.bats 8/8 PASS SKIP=0"
+    commit: "e3b46893a"
     assigned_to: "saizo"
-    updated_at: "2026-06-06T22:39:52"
+    updated_at: "2026-06-06T22:45:12"
   - script_path: "scripts/bulletin_confirm.sh"
     status: assigned
     before_ms: 17
