@@ -17,23 +17,6 @@ fi
 AGENT_ID="$1"
 ENTRY_ID="$2"
 
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
-
-ALL_AGENTS_RAW="$(get_all_agents)"
-CONFIRM_AGENTS=(shogun)
-for agent in $ALL_AGENTS_RAW; do
-    skip=false
-    for existing in "${CONFIRM_AGENTS[@]}"; do
-        if [[ "$existing" == "$agent" ]]; then
-            skip=true
-            break
-        fi
-    done
-    [[ "$skip" == false ]] && CONFIRM_AGENTS+=("$agent")
-done
-CONFIRM_AGENTS_CSV="$(IFS=,; echo "${CONFIRM_AGENTS[*]}")"
-
 if [[ ! -f "$BULLETIN_FILE" ]]; then
     echo "ERROR: bulletin file not found: $BULLETIN_FILE" >&2
     exit 1
@@ -41,18 +24,93 @@ fi
 
 {
     flock -x 200
-    python3 - "$BULLETIN_FILE" "$ENTRY_ID" "$AGENT_ID" "$CONFIRM_AGENTS_CSV" <<'PY'
+    python3 - "$BULLETIN_FILE" "$ENTRY_ID" "$AGENT_ID" "$SCRIPT_DIR/config/settings.yaml" <<'PY'
 import os
 import sys
-import yaml
 
-bulletin_file, entry_id, agent_id, agents_csv = sys.argv[1:5]
-confirm_agents = [agent for agent in agents_csv.split(",") if agent]
+bulletin_file, entry_id, agent_id, settings_file = sys.argv[1:5]
 
-with open(bulletin_file, encoding="utf-8") as fh:
-    data = yaml.safe_load(fh) or {}
+def unquote(value):
+    value = str(value).strip()
+    if len(value) >= 2 and value[0] == "'" and value[-1] == "'":
+        return value[1:-1].replace("''", "'")
+    return value
 
-entries = data.get("entries")
+def parse_scalar(value):
+    value = str(value).strip()
+    if value == "true":
+        return True
+    if value == "false":
+        return False
+    if value == "[]":
+        return []
+    return unquote(value)
+
+def parse_bulletin(path):
+    with open(path, encoding="utf-8") as fh:
+        lines = fh.read().splitlines()
+    if not lines or not lines[0].startswith("entries:"):
+        return None
+    if lines[0].strip() == "entries: []":
+        return []
+
+    entries = []
+    i = 1
+    while i < len(lines):
+        line = lines[i]
+        if not line.startswith("- id:"):
+            i += 1
+            continue
+        entry = {"id": unquote(line.split(":", 1)[1])}
+        i += 1
+        while i < len(lines) and not lines[i].startswith("- id:"):
+            line = lines[i]
+            if line == "  content: |-":
+                i += 1
+                content = []
+                while i < len(lines) and lines[i].startswith("    "):
+                    content.append(lines[i][4:])
+                    i += 1
+                entry["content"] = "\n".join(content)
+                continue
+            if line.startswith("  requires_confirmation:") or line.startswith("  confirmed_by:"):
+                key, raw = line.strip().split(":", 1)
+                raw = raw.strip()
+                if raw:
+                    entry[key] = parse_scalar(raw)
+                    i += 1
+                    continue
+                values = []
+                i += 1
+                while i < len(lines) and lines[i].startswith("    - "):
+                    values.append(unquote(lines[i][6:]))
+                    i += 1
+                entry[key] = values
+                continue
+            if line.startswith("  ") and ":" in line:
+                key, raw = line.strip().split(":", 1)
+                entry[key] = parse_scalar(raw)
+            i += 1
+        entries.append(entry)
+    return entries
+
+def default_confirm_agents():
+    agents = ["shogun", "karo"]
+    in_agents = False
+    with open(settings_file, encoding="utf-8") as fh:
+        for line in fh:
+            if line.startswith("  agents:"):
+                in_agents = True
+                continue
+            if in_agents and line and not line.startswith("    "):
+                break
+            if in_agents and line.startswith("    ") and line.strip().endswith(":"):
+                name = line.strip()[:-1]
+                if name not in agents:
+                    agents.append(name)
+    return agents
+
+entries = parse_bulletin(bulletin_file)
 if not isinstance(entries, list):
     print("ERROR: entries list missing", file=sys.stderr)
     sys.exit(1)
@@ -82,6 +140,7 @@ if isinstance(rc, list):
     else:
         status = "open"
 else:
+    confirm_agents = default_confirm_agents()
     if all(agent in confirmed for agent in confirm_agents):
         status = "closed"
     else:
