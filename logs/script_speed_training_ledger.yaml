@@ -1250,25 +1250,25 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T05:58:10"
   - script_path: "scripts/hooks/pre-write-report-deny.sh"
-    status: assigned
+    status: completed
     before_ms: 15
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 15
+    before_real_ms: 7
+    after_real_ms: 7
+    real_measurement_command: "printf '' | bash scripts/hooks/pre-write-report-deny.sh"
+    test_result: "PASS_NO_IMPROVEMENT: 既にIFS=read builtin+bash regex最適化済み。測定誤差範囲(5-9ms)で有意差なし"
+    commit: "no_change"
     assigned_to: "kotaro"
-    updated_at: "2026-06-07T05:58:34"
+    updated_at: "2026-06-07T06:03:00"
   - script_path: "scripts/hooks/pre_compact_save.sh"
-    status: assigned
+    status: completed
     before_ms: 13
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
+    before_real_ms: 50
+    after_real_ms: 20
+    real_measurement_command: "time echo '{}'|bash scripts/hooks/pre_compact_save.sh"
     test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    commit: 3db5038241dfc880b884e488b182cd09eda15e23
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T05:59:04"
   - script_path: "scripts/hooks/prompt_state_inject.sh"
@@ -1294,7 +1294,7 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T06:00:25"
   - script_path: "scripts/hooks/session_start_inject.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -1302,8 +1302,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T06:04:06"
   - script_path: "scripts/hooks/stop_check_inbox.sh"
     status: pending
     before_ms: 7
