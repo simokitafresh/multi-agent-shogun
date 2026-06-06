@@ -34,8 +34,10 @@ should_act() {
         prev_state=$(cat "$state_file" 2>/dev/null || echo "OK")
     fi
 
-    # 状態保存（常に更新）
-    echo "$current_state" > "$state_file"
+    # 状態が変わった時だけ保存する。同値上書きは遷移判定に影響せずI/Oだけ増やす。
+    if [ "$prev_state" != "$current_state" ]; then
+        echo "$current_state" > "$state_file"
+    fi
 
     # 今回の状態がトリガー対象でなければOK
     local is_trigger=false
