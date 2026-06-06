@@ -1415,14 +1415,14 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T06:45:32"
   - script_path: "scripts/insight_write.sh"
-    status: assigned
+    status: completed
     before_ms: 6
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 57
+    after_real_ms: 54
+    real_measurement_command: INSIGHTS_FILE=/tmp/test.yaml bash scripts/insight_write.sh msg medium test (20回中央値)
+    test_result: "15/15 PASS (test_insight_write.bats); redundant date+grep+printf|head/tail subprocesses removed: 57ms->54ms (-3ms, -5%)"
+    commit: 5f60667ec
     assigned_to: "kotaro"
     updated_at: "2026-06-07T06:47:34"
   - script_path: "scripts/karo_workaround_log.sh"
@@ -1437,7 +1437,7 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T06:51:43"
   - script_path: "scripts/knowledge_metrics.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -1445,8 +1445,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T06:56:00"
   - script_path: "scripts/lesson_auto_tag.sh"
     status: pending
     before_ms: 15
