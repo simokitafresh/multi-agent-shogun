@@ -6,21 +6,24 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CMD_ID="${1:-}"
 
 if [ -z "$CMD_ID" ]; then
-    echo "Usage: cmd_complete_gate.sh <cmd_id>" >&2
-    echo "受け取った引数: $*" >&2
+    printf 'Usage: cmd_complete_gate.sh <cmd_id>\n受け取った引数: %s\n' "$*" >&2
     exit 1
 fi
 
 if [[ "$CMD_ID" != cmd_* ]]; then
-    echo "ERROR: 第1引数はcmd_id（cmd_XXX形式）でなければならない。" >&2
-    echo "Usage: cmd_complete_gate.sh <cmd_id>" >&2
-    echo "受け取った引数: $*" >&2
+    printf 'ERROR: 第1引数はcmd_id（cmd_XXX形式）でなければならない。\nUsage: cmd_complete_gate.sh <cmd_id>\n受け取った引数: %s\n' "$*" >&2
     exit 1
 fi
+
+_cmd_complete_script="${BASH_SOURCE[0]}"
+[[ "$_cmd_complete_script" != /* ]] && _cmd_complete_script="$PWD/$_cmd_complete_script"
+_cmd_complete_dir="${_cmd_complete_script%/*}"
+SCRIPT_DIR="${_cmd_complete_dir%/scripts}"
+unset _cmd_complete_dir
+unset _cmd_complete_script
 
 # --force フラグ検出
 FORCE_MODE=false
@@ -35,7 +38,7 @@ done
 LOG_DIR="$SCRIPT_DIR/logs"
 GATE_METRICS_LOG="$LOG_DIR/gate_metrics.log"
 if [ "$FORCE_MODE" = false ] && [ -f "$GATE_METRICS_LOG" ]; then
-    if grep -qP "^[^\t]+\t${CMD_ID}\tCLEAR\t" "$GATE_METRICS_LOG"; then
+    if grep -Fq $'\t'"${CMD_ID}"$'\tCLEAR\t' "$GATE_METRICS_LOG"; then
         echo "[gate] ${CMD_ID}: Already CLEARED (gate_metrics.logにCLEAR記録あり。--forceで再検査可能)"
         exit 0
     fi
