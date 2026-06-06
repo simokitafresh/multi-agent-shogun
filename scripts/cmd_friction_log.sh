@@ -5,13 +5,6 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-LOG_FILE="$REPO_ROOT/logs/cmd_friction.yaml"
-LOCK_DIR="$REPO_ROOT/.locks"
-mkdir -p "$LOCK_DIR"
-LOCK_FILE="$LOCK_DIR/cmd_friction.lock"
-
 # --- Argument validation ---
 if [[ $# -ne 3 ]]; then
     echo "[cmd_friction_log] Usage: bash scripts/cmd_friction_log.sh <cmd_id> <friction_type> \"<detail>\"" >&2
@@ -28,11 +21,21 @@ if [[ -z "$CMD_ID" || -z "$FRICTION_TYPE" || -z "$DETAIL" ]]; then
 fi
 
 # --- Validate friction_type ---
-VALID_TYPES="ambiguous_scope missing_context too_many_acs unclear_dependency other"
-if ! echo "$VALID_TYPES" | grep -qw "$FRICTION_TYPE"; then
+case "$FRICTION_TYPE" in
+    ambiguous_scope|missing_context|too_many_acs|unclear_dependency|other) ;;
+    *)
+    VALID_TYPES="ambiguous_scope missing_context too_many_acs unclear_dependency other"
     echo "[cmd_friction_log] Error: Invalid friction_type '$FRICTION_TYPE'. Valid: $VALID_TYPES" >&2
     exit 1
-fi
+    ;;
+esac
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+LOG_FILE="$REPO_ROOT/logs/cmd_friction.yaml"
+LOCK_DIR="$REPO_ROOT/.locks"
+mkdir -p "$LOCK_DIR"
+LOCK_FILE="$LOCK_DIR/cmd_friction.lock"
 
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
@@ -61,12 +64,8 @@ DETAIL_ESCAPED="${DETAIL_ESCAPED//$'\r'/\\r}" # escape carriage returns
     fi
 
     # Append entry
-    cat >> "$LOG_FILE" <<EOF
-  - cmd_id: "$CMD_ID"
-    friction_type: "$FRICTION_TYPE"
-    detail: "$DETAIL_ESCAPED"
-    timestamp: "$TIMESTAMP"
-EOF
+    printf '  - cmd_id: "%s"\n    friction_type: "%s"\n    detail: "%s"\n    timestamp: "%s"\n' \
+        "$CMD_ID" "$FRICTION_TYPE" "$DETAIL_ESCAPED" "$TIMESTAMP" >> "$LOG_FILE"
 
     echo "[cmd_friction_log] Logged: $CMD_ID [$FRICTION_TYPE]"
 
