@@ -667,16 +667,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T00:24:29"
   - script_path: "scripts/gates/gate_codd_regression.sh"
-    status: assigned
+    status: completed
     before_ms: 32
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 80
+    after_real_ms: 70
+    real_measurement_command: "bash scripts/gates/gate_codd_regression.sh docs/research/codd_refactor_registry.md"
+    test_result: "bash -n PASS; bats tests/unit/test_gate_codd_regression.bats 10/10 PASS SKIP=0; output diff old/new PASS"
+    commit: "a7dd36430"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T00:23:09"
+    updated_at: "2026-06-07T00:27:36"
   - script_path: "scripts/gates/gate_codex_safe_write.sh"
     status: assigned
     before_ms: 17
