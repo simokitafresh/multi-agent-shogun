@@ -1,9 +1,11 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-06-07 auto-generated -->
+<!-- last_updated: 2026-06-07 cmd_training_speed_dashboard_update_20260607000233 -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-07T00:08:33+09:00 -->
+<!-- generated_at: 2026-06-07T00:09:29+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-07T00:09:28+09:00 | terminal | response | 未読なし。自立自走継続。idle待機。 [meta] stop_reason=tool_use
+- 2026-06-07T00:08:52+09:00 | ntfy | outbound | 【家老】cmd_training_speed_fullrecalculate_20260607000758 初回配備開始 (title=(untitled), ninja=saizo) 📋 https://gist.github.com/…
 - 2026-06-07T00:08:33+09:00 | terminal | response | APPROVE完了。自立自走継続。idle待機。 [meta] stop_reason=tool_use
 - 2026-06-07T00:07:57+09:00 | ntfy | outbound | 【家老】cmd_training_speed_enable_pane_trace_20260607000709 初回配備開始 (title=(untitled), ninja=kagemaru) 📋 https://gist.github…
 - 2026-06-07T00:07:52+09:00 | terminal | response | APPROVE完了。自立自走継続。idle待機。 [meta] stop_reason=tool_use
@@ -12,8 +14,6 @@
 - 2026-06-07T00:06:35+09:00 | terminal | response | **48本完了 (19%) | 4本作業中 | 202本pending | 88%削減。** 継続中。 [meta] stop_reason=end_turn
 - 2026-06-07T00:06:18+09:00 | ntfy | outbound | CI赤: run 27065658420 Unit Tests (bats)
 - 2026-06-07T00:05:52+09:00 | terminal | response | GATE CLEAR確認。自立自走継続。idle待機。 [meta] stop_reason=tool_use
-- 2026-06-07T00:05:51+09:00 | terminal | response | **48本完了 (19%) | 235.6秒→27.9秒 (88%削減) | 203本pending。** deploy_task.shに着手中。継続中。 [meta] stop_reason=tool_use
-- 2026-06-07T00:04:59+09:00 | terminal | response | 未読なし。自立自走継続。idle待機。 [meta] stop_reason=tool_use
 
 ## 未解決確認事項
 - GATE CLEAR確認。自立自走継続。idle待機。 [meta] stop_reason=tool_use

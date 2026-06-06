@@ -44,17 +44,9 @@ deploy_task_early_target_from_args() {
 deploy_task_early_target_known() {
     local target="$1"
     [ -n "$target" ] || return 1
-    awk -v target="$target" '
-        /^  agents:[[:space:]]*$/ { in_agents=1; next }
-        in_agents && !/^    / { in_agents=0; next }
-        in_agents && /^    [a-z][a-z_0-9]*:[[:space:]]*$/ {
-            name = $0
-            sub(/^[ \t]+/, "", name)
-            sub(/:[[:space:]]*$/, "", name)
-            if (name == target) found = 1
-        }
-        END { exit(found ? 0 : 1) }
-    ' "$SCRIPT_DIR/config/settings.yaml"
+    # cmd_training_speed: awk→grep置換でサブプロセスオーバーヘッド削減(~4ms)
+    # エージェント名行は "    name:" のみ(値なし)の形式。フィールド値行("    type: claude"等)はヒットしない
+    grep -qE "^    ${target}:[[:space:]]*$" "$SCRIPT_DIR/config/settings.yaml"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; then
