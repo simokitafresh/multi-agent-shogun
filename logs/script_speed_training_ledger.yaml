@@ -1360,16 +1360,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T06:29:00"
   - script_path: "scripts/inbox_mark_read.sh"
-    status: assigned
+    status: completed
     before_ms: 14
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 55
+    after_real_ms: 40
+    real_measurement_command: "bash scripts/inbox_mark_read.sh tobisaru <msg_id> (real unread msg, cold run, 174-line inbox, 5 runs median)"
+    test_result: "bats tests/unit/test_inbox_mark_read.bats 9/10 PASS SKIP=0 (test9 pre-existing FAIL)"
+    commit: "0003b448280d3a580dc9f2a14087e7557263aa64"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-07T06:23:15"
+    updated_at: "2026-06-07T06:35:35"
   - script_path: "scripts/inbox_prune.sh"
     status: completed
     before_ms: 7
