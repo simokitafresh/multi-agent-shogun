@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-06 -->
+<!-- last_updated: 2026-06-06 cmd_karo_hotfix_context_freshness_ga005_20260606 -->
 
 # Memory DB Schema
 

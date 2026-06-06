@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-05 -->
+<!-- last_updated: 2026-06-06 cmd_karo_hotfix_context_freshness_ga005_20260606 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,13 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2582 | cmd_2581でPTU計算ロジックをデプロイ済みだがportfolio_metricsキャッシュが旧フォーマット(Total Underwater Period: 110 months)のまま。Compare Summaryは キャッシュ参照のためPTU(%)メトリクスが見つからず空白表示。fullrecalculateでキャッシュ再計算し全PFのPTUを反映する | dm-signal | 05-06 | fullrecalculate(mode=full)を本番で |
-| cmd_2584 | test_select.sh(191行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | test_select.shのCoDD計測・設計書・afte |
-| cmd_2585 | cmd_publish.sh(168行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | cmd_publish.sh CoDD refactorを計 |
-| cmd_2590 | skill_auto_improve.sh(279行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | skill_auto_improve.sh(279→312行 |
-| cmd_2588 | cmd_absorb.sh(257行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | cmd_absorb.sh(257行)をCoDD refac |
-| cmd_2589 | skill_gate_feedback.sh(216行)をCoDD refactorで計測→設計→実装→再計測。軍師に事前・事後レビュー必須 | infra | 05-06 | skill_gate_feedback.sh CoDD re |
-| cmd_2592 | skills/cdp-browse/SKILL.mdのgate FAIL(フロントマター<>検出)修正、allowed-tools追加、note.com下書き保存実績の反映、能動的CDP使用の指針追加 | infra | 05-06 | skills/cdp-browse/SKILL.mdのフロン |
 | cmd_2593 | auto_draft_lesson.shのskip分岐でlesson.doneを生成しない→cmd_complete_gateがlesson_done_missing BLOCKする循環を解消 | infra | 05-07 | auto_draft_lesson.shのskip時にles |
 | cmd_2594 | 忍者がknowledge_candidateを文字列で記入→gate_report_formatがBLOCKするパターンをautofix層で自動変換し、BLOCKを事前解消 | infra | 05-07 | knowledge_candidate文字列をtitle/d |
 | cmd_2595 | 家老がcmd-completeスキル実行時にdraft教訓レビューを飛ばす→後続cmdでdraft_lessons BLOCK。スキル手順でlesson_review強制実行し意志依存を排除 | infra | 05-07 | cmd-complete Step 1にlesson_rev |
