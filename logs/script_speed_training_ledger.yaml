@@ -1283,16 +1283,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T05:59:49"
   - script_path: "scripts/hooks/session_end_clear_check.sh"
-    status: assigned
+    status: completed
     before_ms: 18
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 62
+    after_real_ms: 19
+    real_measurement_command: "SESSION_END_AGENT_ID=saizo bash scripts/hooks/session_end_clear_check.sh >/dev/null 2>&1"
+    test_result: "bash_n_pass;non_shogun_output_diff_empty;shogun_path_ok_with_stub_ntfy;before_62_after_19;SKIP=0"
+    commit: "04dfe9ae8"
     assigned_to: "saizo"
-    updated_at: "2026-06-07T06:00:25"
+    updated_at: "2026-06-07T08:51:50"
   - script_path: "scripts/hooks/session_start_inject.sh"
     status: completed
     before_ms: 15
