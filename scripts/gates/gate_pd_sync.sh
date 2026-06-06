@@ -34,10 +34,10 @@ if [ ! -f "$DATA_FILE" ]; then
     exit 0
 fi
 
-mkdir -p "$ALERT_DIR"
+[ -d "$ALERT_DIR" ] || mkdir -p "$ALERT_DIR"
 
 # Check context_synced for the given PD
-mapfile -t _pd_sync_lines < <(
+{ read -r RESULT_STATUS; read -r UNSYNCED_IDS_RAW; } < <(
     awk -v pd_id="$PD_ID" '
 function flush_decision() {
     if (!in_decision || current_id == "") return
@@ -84,9 +84,9 @@ END {
 ' "$DATA_FILE"
 )
 
-TIMESTAMP=$(date "+%Y-%m-%dT%H:%M:%S")
-RESULT_STATUS="${_pd_sync_lines[0]:-ERROR}"
-UNSYNCED_IDS_RAW="${_pd_sync_lines[1]:-}"
+printf -v TIMESTAMP '%(%Y-%m-%dT%H:%M:%S)T' -1
+RESULT_STATUS="${RESULT_STATUS:-ERROR}"
+UNSYNCED_IDS_RAW="${UNSYNCED_IDS_RAW:-}"
 
 if [ -n "$UNSYNCED_IDS_RAW" ]; then
     BLOCK_MSG="$TIMESTAMP  BLOCK: context未反映PDあり: $UNSYNCED_IDS_RAW"
