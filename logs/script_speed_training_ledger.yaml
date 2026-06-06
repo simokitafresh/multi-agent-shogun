@@ -248,16 +248,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-06T22:52:14"
   - script_path: "scripts/cdp/cdp_measure.sh"
-    status: assigned
+    status: completed
     before_ms: 20
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 170
+    after_real_ms: 17
+    real_measurement_command: "timeout 20 bash scripts/cdp/cdp_measure.sh (no-arg usage, 10-run average)"
+    test_result: "bash -n scripts/cdp/cdp_measure.sh PASS; tests/unit/test_cdp_measure.bats 4/4 PASS SKIP=0"
+    commit: "bee9bdaf9"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-06T22:53:51"
+    updated_at: "2026-06-06T22:57:23"
   - script_path: "scripts/cdp_canary.sh"
     status: pending
     before_ms: 17
