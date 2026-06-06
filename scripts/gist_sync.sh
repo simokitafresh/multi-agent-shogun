@@ -43,7 +43,7 @@ resolve_gist_id() {
             ' "$PROJECTS_YAML")
             if [ -n "$GIST_URL" ]; then
                 # URLから末尾のGIST_IDを抽出（32文字hex）
-                EXTRACTED_ID=$(echo "$GIST_URL" | grep -oP '[a-f0-9]{32}$')
+                EXTRACTED_ID="${GIST_URL##*/}"
                 if [ -n "$EXTRACTED_ID" ]; then
                     GIST_ID="$EXTRACTED_ID"
                 else
@@ -92,7 +92,7 @@ fi
 # ─── Gist同期コア（1回実行） ───
 # Returns: 0=sync成功, 1=sync失敗
 do_sync() {
-    resolve_gist_id
+    [ "$ONCE_MODE" != true ] && resolve_gist_id
     log "Syncing to project=${CURRENT_PJ} GIST_ID=${GIST_ID}"
 
     UPLOAD_FILE="$DASHBOARD"
@@ -107,12 +107,8 @@ do_sync() {
     # Use gh api instead of gh gist edit — edit misdetects UTF-8 with emoji as binary
     local payload_file
     payload_file=$(mktemp)
-    python3 -c "
-import json, sys
-with open(sys.argv[1]) as f:
-    content = f.read()
-json.dump({'files': {'dashboard.md': {'content': content}}}, sys.stdout)
-" "$UPLOAD_FILE" > "$payload_file" 2>/dev/null
+    jq -n --rawfile content "$UPLOAD_FILE" \
+        '{"files":{"dashboard.md":{"content":$content}}}' > "$payload_file" 2>/dev/null
     if gh api --method PATCH "gists/${GIST_ID}" --input "$payload_file" > /dev/null 2>&1; then
         log "Gist updated successfully (project=${CURRENT_PJ})"
     else
