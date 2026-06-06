@@ -223,7 +223,8 @@ check_pane_alive() {
             local last_line
             last_line=$(tmux capture-pane -t "shogun:agents.${pane_id}" -p -J 2>/dev/null | grep -v '^$' | tail -1)
 
-            if echo "$last_line" | grep -qE '[\$#>] *$'; then
+            local _shell_prompt_re='[$#>][[:space:]]*$'
+            if [[ "$last_line" =~ $_shell_prompt_re ]]; then
                 if should_alert "cli_dead_${agent}"; then
                     log "ALERT: CLI process for ${agent} appears dead (shell prompt visible)"
                     bash "${SCRIPT_DIR}/scripts/inbox_write.sh" karo \
