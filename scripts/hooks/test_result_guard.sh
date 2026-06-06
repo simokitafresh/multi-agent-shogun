@@ -5,7 +5,7 @@ set -eu
 
 # Read stdin without forking cat subprocess
 IFS='' read -r -d '' payload || true
-[[ -z "${payload//[[:space:]]/}" ]] && exit 0
+[[ -z "$payload" ]] && exit 0
 
 # Fast-path: skip if not Bash tool
 [[ "$payload" != *'"Bash"'* ]] && exit 0
