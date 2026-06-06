@@ -1129,18 +1129,18 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T05:27:27"
   - script_path: "scripts/gunshi_log_append.sh"
-    status: pending
+    status: completed
     before_ms: 16
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    after_ms: 16
+    before_real_ms: 11
+    after_real_ms: 9
+    real_measurement_command: "time printf 'entry' | bash scripts/gunshi_log_append.sh (tmpdir, draft/report path)"
+    test_result: "bash_n PASS; test_gunshi_log_append_obs.bats 6/6 PASS SKIP=0"
+    commit: "72a1a0f1f"
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T05:40:00"
   - script_path: "scripts/gunshi_next_action.sh"
-    status: pending
+    status: assigned
     before_ms: 18
     after_ms: ""
     before_real_ms: ""
@@ -1148,19 +1148,19 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T05:33:33"
   - script_path: "scripts/gunshi_review_stats.sh"
-    status: pending
+    status: completed
     before_ms: 24
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 8173
+    after_real_ms: 6273
+    real_measurement_command: "bash /tmp/saizo_gunshi_review_stats_realfixture/scripts/gunshi_review_stats.sh >/dev/null"
+    test_result: "bash_n_pass;real_fixture_output_diff_empty;real_fixture_log_diff_empty;before_8173_after_6273;SKIP=0"
+    commit: "5d8f1707e"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T05:37:42"
   - script_path: "scripts/health_check.sh"
     status: pending
     before_ms: 15
