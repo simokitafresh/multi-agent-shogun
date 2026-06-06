@@ -5,22 +5,24 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 CMD_ID="$1"
 
 # 引数チェック（cmd_IDが必須）
 if [ -z "$CMD_ID" ]; then
-    echo "Usage: bash scripts/cmd_halt.sh cmd_XXX" >&2
-    echo "ERROR: cmd_ID is required." >&2
+    printf 'Usage: bash scripts/cmd_halt.sh cmd_XXX\nERROR: cmd_ID is required.\n' >&2
     exit 1
 fi
 
 # cmd_プレフィックスチェック
 if [[ ! "$CMD_ID" =~ ^cmd_ ]]; then
-    echo "ERROR: cmd_ID must start with 'cmd_' (got: $CMD_ID)" >&2
+    printf "ERROR: cmd_ID must start with 'cmd_' (got: %s)\n" "$CMD_ID" >&2
     exit 1
 fi
+
+SCRIPT_DIR="${BASH_SOURCE[0]}"
+[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$PWD/$SCRIPT_DIR"
+SCRIPT_DIR="${SCRIPT_DIR%/*}"
+PROJECT_DIR="${SCRIPT_DIR%/scripts}"
 
 # 家老にhalt通知を送信
 bash "$PROJECT_DIR/scripts/inbox_write.sh" karo "$CMD_ID HALT" halt shogun
