@@ -70,20 +70,20 @@ fi
 # 定義キーワード: 目的関数, パラメータ, スキーマ, UUID, pipeline_config
 # 構造定義: ×[0-9], =[0-9], モード=
 DESIGN_PATTERN='[0-9]+体|[0-9]+目的|N=[0-9]|目的関数|パラメータ|スキーマ|UUID|pipeline_config|×[0-9]|=[0-9]|モード='
-if printf '%s' "$all_contents" | grep -qP "$DESIGN_PATTERN" 2>/dev/null; then
+if [[ "$all_contents" =~ $DESIGN_PATTERN ]]; then
     echo "WARN [pre-mcp-lord-attribution-guard]: 設計情報パターン検出。projects/*.yamlに書くべきか確認せよ。" \
          "（数値/定義キーワードあり: 体数/目的数/パラメータ等）MCPに設計情報を入れると将軍以外が検証不可。" >&2
 fi
 # Check2はWARNのみ。処理継続。
 
 # --- Check1: 殿帰属キーワードチェック ---
-if ! printf '%s' "$all_contents" | grep -qP "$LORD_ATTR_PATTERN" 2>/dev/null; then
+if [[ ! "$all_contents" =~ $LORD_ATTR_PATTERN ]]; then
     # 殿帰属キーワードなし → PASS
     exit 0
 fi
 
 # --- 引用パターンチェック ---
-if printf '%s' "$all_contents" | grep -qP "$CITATION_PATTERN" 2>/dev/null; then
+if [[ "$all_contents" =~ $CITATION_PATTERN ]]; then
     # 引用あり → PASS
     exit 0
 fi
