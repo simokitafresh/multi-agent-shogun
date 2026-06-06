@@ -22,7 +22,7 @@ fi
 # Extract failure info from report YAML
 export REPORT_PATH SCRIPT_DIR
 extract_result=$(python3 << 'PYEOF'
-import yaml, os, sys, json
+import yaml, os, sys, shlex
 
 report_path = os.environ["REPORT_PATH"]
 script_dir = os.environ["SCRIPT_DIR"]
@@ -31,13 +31,13 @@ with open(report_path, encoding='utf-8') as f:
     data = yaml.safe_load(f)
 
 if not data:
-    print(json.dumps({"action": "skip", "reason": "no_data"}))
+    print('action=skip\nreason=' + shlex.quote('no_data'))
     sys.exit(0)
 
 # L010: status check — use top-level status only (safe_load handles this)
 status = data.get("status", "")
 if status != "failed":
-    print(json.dumps({"action": "skip", "reason": f"status_not_failed ({status})"}))
+    print('action=skip\nreason=' + shlex.quote(f'status_not_failed ({status})'))
     sys.exit(0)
 
 task_id = data.get("task_id", "unknown")
@@ -134,7 +134,7 @@ if parent_cmd:
 
 # Fallback: no project found
 if not project:
-    print(json.dumps({"action": "skip", "reason": "no_project_found"}))
+    print('action=skip\nreason=' + shlex.quote('no_project_found'))
     sys.exit(0)
 
 # Build lesson title using failure category templates
@@ -171,18 +171,16 @@ else:
 if len(detail) < 10:
     detail = detail + f" (task_id: {task_id})"
 
-print(json.dumps({
-    "action": "register",
-    "project": project,
-    "title": title,
-    "detail": detail,
-    "source_cmd": parent_cmd,
-    "author": worker_id,
-    "task_id": task_id,
-    "gate_fail_classification": gate_fail["classification"],
-    "gate_fail_reason": gate_fail["reason"],
-    "gate_fail_line": gate_fail["line"],
-}))
+print('\n'.join([
+    'action=register',
+    'PROJECT=' + shlex.quote(project),
+    'TITLE=' + shlex.quote(title),
+    'DETAIL=' + shlex.quote(detail),
+    'SOURCE_CMD=' + shlex.quote(parent_cmd),
+    'AUTHOR=' + shlex.quote(worker_id),
+    'GATE_FAIL_CLASSIFICATION=' + shlex.quote(gate_fail['classification']),
+    'GATE_FAIL_REASON=' + shlex.quote(gate_fail['reason']),
+]))
 PYEOF
 )
 
@@ -192,27 +190,10 @@ if [ -z "$extract_result" ]; then
     exit 1
 fi
 
-# Parse all JSON fields in a single python3 call (was 6 separate invocations)
+# Evaluate shell assignments output directly by the extraction step
 action="" reason="" PROJECT="" TITLE="" DETAIL="" SOURCE_CMD="" AUTHOR=""
 GATE_FAIL_CLASSIFICATION="" GATE_FAIL_REASON=""
-eval "$(echo "$extract_result" | python3 -c "
-import json, sys, shlex
-d = json.load(sys.stdin)
-mapping = [
-    ('action', 'action', 'skip'),
-    ('reason', 'reason', ''),
-    ('project', 'PROJECT', 'unknown'),
-    ('title', 'TITLE', 'unknown'),
-    ('detail', 'DETAIL', ''),
-    ('source_cmd', 'SOURCE_CMD', 'unknown'),
-    ('author', 'AUTHOR', 'unknown'),
-    ('gate_fail_classification', 'GATE_FAIL_CLASSIFICATION', ''),
-    ('gate_fail_reason', 'GATE_FAIL_REASON', ''),
-]
-for json_key, var_name, default in mapping:
-    v = d.get(json_key, default)
-    print(f'{var_name}={shlex.quote(str(v))}')
-")"
+eval "$extract_result"
 
 # Validate that eval properly populated action (guard against JSON parse failure)
 if [ -z "$action" ]; then
