@@ -1153,9 +1153,31 @@ report_notification_completed() {
     local report_file="$2"
     local trigger="$3"
     local report_epoch
+    local report_timestamp
     local -a inbox_sources archive_sources
 
-    report_epoch=$(stat -c %Y "$report_file" 2>/dev/null || echo 0)
+    report_timestamp=$(yaml_field_get "$report_file" "timestamp" "" 2>/dev/null || true)
+    if [ -n "$report_timestamp" ]; then
+        report_epoch=$(python3 - "$report_timestamp" <<'PY' 2>/dev/null || true
+import datetime as dt
+import sys
+
+text = sys.argv[1].strip()
+try:
+    value = dt.datetime.fromisoformat(text.replace("Z", "+00:00"))
+except ValueError:
+    raise SystemExit(1)
+if value.tzinfo is None:
+    value = value.replace(tzinfo=dt.datetime.now().astimezone().tzinfo)
+print(int(value.timestamp()))
+PY
+        )
+    else
+        report_epoch=""
+    fi
+    if ! [[ "$report_epoch" =~ ^[0-9]+$ ]]; then
+        report_epoch=$(stat -c %Y "$report_file" 2>/dev/null || echo 0)
+    fi
     inbox_sources=("$SCRIPT_DIR/queue/inbox/karo.yaml")
 
     shopt -s nullglob
