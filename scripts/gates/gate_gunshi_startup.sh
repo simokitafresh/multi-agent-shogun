@@ -58,6 +58,31 @@ write_auto_idle_actions() {
     } > "$AUTO_IDLE_ACTIONS_FILE"
 }
 
+# === 並列実行最適化: 遅いサブゲートを事前にバックグラウンド起動 ===
+_TMP_D=$(mktemp -d)
+trap 'rm -rf "$_TMP_D"' EXIT
+
+_SKILL_REC_SH="$SCRIPT_DIR/scripts/skill_recommend_metrics.sh"
+_LESSON_SH="$SCRIPT_DIR/scripts/gates/gate_lesson_health.sh"
+_CS_SH="$SCRIPT_DIR/scripts/gates/gate_gunshi_cs_checklist.sh"
+_OBS_SH="$SCRIPT_DIR/scripts/gates/gate_gunshi_observations.sh"
+_THREE_SH="$SCRIPT_DIR/scripts/gates/gate_three_layer_health.sh"
+
+{ set +e; if [ -f "$_SKILL_REC_SH" ]; then bash "$_SKILL_REC_SH" 30 > "$_TMP_D/skill_rec" 2>&1; echo $? > "$_TMP_D/skill_exit"; else printf '' > "$_TMP_D/skill_rec"; echo 127 > "$_TMP_D/skill_exit"; fi; } &
+_PID_SKILL=$!
+{ set +e; LESSON_EFFECT_NTFY_ENABLED=0 bash "$_LESSON_SH" infra > "$_TMP_D/lesson" 2>&1; echo $? > "$_TMP_D/lesson_exit"; } &
+_PID_LESSON=$!
+{ set +e; if [ -f "$_CS_SH" ]; then bash "$_CS_SH" > "$_TMP_D/cs" 2>&1; echo $? > "$_TMP_D/cs_exit"; else printf '' > "$_TMP_D/cs"; echo 127 > "$_TMP_D/cs_exit"; fi; } &
+_PID_CS=$!
+{ set +e; if [ -f "$_OBS_SH" ]; then bash "$_OBS_SH" > "$_TMP_D/obs" 2>&1; echo $? > "$_TMP_D/obs_exit"; else printf '' > "$_TMP_D/obs"; echo 127 > "$_TMP_D/obs_exit"; fi; } &
+_PID_OBS=$!
+{ set +e; if [ -x "$_THREE_SH" ]; then bash "$_THREE_SH" > "$_TMP_D/three" 2>&1; echo $? > "$_TMP_D/three_exit"; else printf '  WARN: gate_three_layer_health.sh不在\n' > "$_TMP_D/three"; echo 127 > "$_TMP_D/three_exit"; fi; } &
+_PID_THREE=$!
+find "$SCRIPT_DIR/docs/research" -maxdepth 1 -name "gunshi_*" -mmin -1440 -type f > "$_TMP_D/find_designs" 2>/dev/null &
+_PID_FIND_D=$!
+find "$SCRIPT_DIR/docs/research" -maxdepth 1 -name "*.md" -mtime -7 -type f > "$_TMP_D/find_research" 2>/dev/null &
+_PID_FIND_R=$!
+
 echo "=== 軍師起動チェック $(date '+%H:%M:%S') ==="
 echo ""
 
@@ -189,12 +214,12 @@ fi
 
 # --- Check 3: レビューログ統計 ---
 echo "■ スキル推薦 precision/recall"
-skill_recommend_metrics_script="$SCRIPT_DIR/scripts/skill_recommend_metrics.sh"
-if [ -x "$skill_recommend_metrics_script" ] || [ -f "$skill_recommend_metrics_script" ]; then
-    set +e
-    _skill_rec_out="$(bash "$skill_recommend_metrics_script" 30 2>&1)"
-    _skill_rec_status=$?
-    set -e
+wait "$_PID_SKILL" 2>/dev/null || true
+_skill_rec_status=$(cat "$_TMP_D/skill_exit" 2>/dev/null || echo 1)
+if [ "$_skill_rec_status" -eq 127 ]; then
+    echo "  SKIP: skill_recommend_metrics.sh 不在"
+else
+    _skill_rec_out=$(cat "$_TMP_D/skill_rec" 2>/dev/null)
     printf '%s\n' "$_skill_rec_out" | sed 's/^/  /'
     if [ "$_skill_rec_status" -eq 2 ] && [ "$overall" != "ALERT" ]; then
         overall="WARN"
@@ -203,8 +228,6 @@ if [ -x "$skill_recommend_metrics_script" ] || [ -f "$skill_recommend_metrics_sc
         overall="ALERT"
         alerts+=("スキル推薦精度: 集計失敗")
     fi
-else
-    echo "  SKIP: skill_recommend_metrics.sh 不在"
 fi
 echo ""
 
@@ -408,7 +431,8 @@ li_file="$SCRIPT_DIR/logs/lesson_impact.tsv"
 if [ -f "$li_file" ] && [ "$(wc -l < "$li_file")" -gt 1 ]; then
     echo "■ 教訓注入参照率"
     # gate_lesson_health.shを正本にする。直近窓・active/deprecated除外・閾値を二重実装しない。
-    _lesson_gate_output=$(LESSON_EFFECT_NTFY_ENABLED=0 bash "$SCRIPT_DIR/scripts/gates/gate_lesson_health.sh" infra 2>/dev/null || true)
+    wait "$_PID_LESSON" 2>/dev/null || true
+    _lesson_gate_output=$(cat "$_TMP_D/lesson" 2>/dev/null || true)
     _lesson_metric=$(printf '%s\n' "$_lesson_gate_output" | awk '/^METRIC: lesson_effectiveness_threshold /{line=$0} END{print line}')
     if [ -n "$_lesson_metric" ]; then
         printf '%s\n' "$_lesson_metric" | awk '
@@ -591,12 +615,12 @@ fi
 
 # --- Check 7: CS観点チェックリスト(consultation/self_study品質保証) ---
 echo "■ CS観点チェックリスト"
-cs_gate="$SCRIPT_DIR/scripts/gates/gate_gunshi_cs_checklist.sh"
-if [ -f "$cs_gate" ]; then
-    set +e
-    cs_result=$(bash "$cs_gate" 2>/dev/null)
-    cs_exit=$?
-    set -e
+wait "$_PID_CS" 2>/dev/null || true
+cs_exit=$(cat "$_TMP_D/cs_exit" 2>/dev/null || echo 0)
+cs_result=$(cat "$_TMP_D/cs" 2>/dev/null)
+if [ "$cs_exit" -eq 127 ]; then
+    echo "  SKIP: gate_gunshi_cs_checklist.sh不在"
+else
     cs_summary=$(printf '%s\n' "$cs_result" | grep -m1 -E '^(WARN|ALERT):' || true)
     [ -n "$cs_summary" ] || cs_summary=$(printf '%s\n' "$cs_result" | head -1)
     echo "  $cs_summary"
@@ -607,17 +631,18 @@ if [ -f "$cs_gate" ]; then
         alerts+=("CS観点チェックリスト/冷え観点WARNあり")
         echo "  → consultation/self_study品質または冷え観点のfinding_categories反映を確認せよ"
     fi
-else
-    echo "  SKIP: gate_gunshi_cs_checklist.sh不在"
 fi
 
 # --- Check 9: observations必須チェック(draft/reportレビュー深さ保証) ---
 echo "■ observations必須チェック"
-obs_gate="$SCRIPT_DIR/scripts/gates/gate_gunshi_observations.sh"
-if [ -f "$obs_gate" ]; then
-    obs_result=$(bash "$obs_gate" 2>/dev/null) || true
-    obs_exit=$?
+wait "$_PID_OBS" 2>/dev/null || true
+_obs_exit=$(cat "$_TMP_D/obs_exit" 2>/dev/null || echo 0)
+obs_result=$(cat "$_TMP_D/obs" 2>/dev/null)
+if [ "$_obs_exit" -eq 127 ]; then
+    echo "  SKIP: gate_gunshi_observations.sh不在"
+else
     echo "  $obs_result" | head -1
+    obs_exit=0  # preserve original behavior: || true makes obs_exit always 0
     if [ "$obs_exit" -ne 0 ]; then
         if [ "$overall" != "ALERT" ]; then
             overall="WARN"
@@ -625,8 +650,6 @@ if [ -f "$obs_gate" ]; then
         alerts+=("observations欠落あり")
         echo "  → 直近draft/reportレビューにobservationsを追記せよ"
     fi
-else
-    echo "  SKIP: gate_gunshi_observations.sh不在"
 fi
 
 # --- セマンティクスインデックス鮮度 ---
@@ -751,7 +774,8 @@ fi
 
 # --- Check 9.5: 設計書セルフレビュー催促 ---
 # docs/research/gunshi_* が直近24h以内に更新されていたら、セルフレビュー3点を表示
-recent_designs=$(find "$SCRIPT_DIR/docs/research" -maxdepth 1 -name "gunshi_*" -mmin -1440 -type f 2>/dev/null | head -5)
+wait "$_PID_FIND_D" 2>/dev/null || true
+recent_designs=$(head -5 "$_TMP_D/find_designs" 2>/dev/null)
 if [ -n "$recent_designs" ]; then
     echo ""
     echo "■ 設計書セルフレビュー"
@@ -768,9 +792,9 @@ echo ""
 echo "■ 分析結果永続化チェック"
 # 直近のself_studyエントリにdocs/research/参照があるか確認
 # + 直近7日のdocs/research/更新があるか確認
-research_dir="$SCRIPT_DIR/docs/research"
-if [ -d "$research_dir" ]; then
-    recent_research=$(find "$research_dir" -maxdepth 1 -name "*.md" -mtime -7 -type f 2>/dev/null | wc -l)
+if [ -d "$SCRIPT_DIR/docs/research" ]; then
+    wait "$_PID_FIND_R" 2>/dev/null || true
+    recent_research=$(wc -l < "$_TMP_D/find_research" 2>/dev/null || echo 0)
     echo "  docs/research/ 直近7日更新: ${recent_research}件"
     if [ "$recent_research" -eq 0 ]; then
         echo "  WARN: 直近7日で分析結果の永続化なし"
@@ -830,17 +854,15 @@ echo "  ★ FAIL→PASS遷移が免疫の直接計測。累積FAILは旧報告�
 # --- Check 11.5: 三層記憶DB健全性 ---
 echo ""
 echo "■ 三層記憶DB健全性"
-three_layer_health_script="$SCRIPT_DIR/scripts/gates/gate_three_layer_health.sh"
-if [ -x "$three_layer_health_script" ]; then
-    if ! three_layer_health_output="$(bash "$three_layer_health_script" 2>&1)"; then
-        printf '%s\n' "$three_layer_health_output" | sed 's/^/  /'
-        if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
-        alerts+=("三層記憶DB健全性: WARN")
-    else
-        printf '%s\n' "$three_layer_health_output" | sed 's/^/  /'
-    fi
-else
-    echo "  WARN: gate_three_layer_health.sh不在"
+wait "$_PID_THREE" 2>/dev/null || true
+_three_exit=$(cat "$_TMP_D/three_exit" 2>/dev/null || echo 0)
+three_layer_health_output=$(cat "$_TMP_D/three" 2>/dev/null)
+printf '%s\n' "$three_layer_health_output" | sed 's/^/  /'
+if [ "$_three_exit" -ne 0 ]; then
     if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
-    alerts+=("三層記憶DB健全性: gate不在")
+    if [ "$_three_exit" -eq 127 ]; then
+        alerts+=("三層記憶DB健全性: gate不在")
+    else
+        alerts+=("三層記憶DB健全性: WARN")
+    fi
 fi
