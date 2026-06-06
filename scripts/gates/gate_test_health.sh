@@ -32,6 +32,10 @@ done
 
 alert=0
 
+# ─── 共通: ファイルリストと@test一覧を1回取得 ───
+mapfile -t _bats_files < <(find "$TESTS_DIR" -name "*.bats" | sort)
+_all_tests=$(grep -h "^@test " "${_bats_files[@]}" 2>/dev/null || true)
+
 # ─────────────────────────────────────────────
 # AC1: テスト実行時間台帳
 # ─────────────────────────────────────────────
@@ -45,7 +49,7 @@ if $MEASURE; then
   total_files=0
   measured=0
 
-  while IFS= read -r f; do
+  for f in "${_bats_files[@]}"; do
     total_files=$((total_files + 1))
     test_count=$(grep -c "^@test " "$f" 2>/dev/null || echo 0)
     start_ns=$(date +%s%N)
@@ -65,7 +69,7 @@ if $MEASURE; then
     if (( elapsed > SLOW_THRESHOLD )); then
       slow_files+=("${elapsed}s\t${test_count}tests\t${f}")
     fi
-  done < <(find "$TESTS_DIR" -name "*.bats" | sort)
+  done
 
   echo "計測完了: ${measured}/${total_files} ファイル"
   echo "台帳出力: ${LEDGER}"
@@ -108,13 +112,13 @@ echo ""
 # ─────────────────────────────────────────────
 echo "=== [AC2] 重複テスト名検出 ==="
 
-dup_names=$(grep -rh "^@test " "$TESTS_DIR"/*.bats 2>/dev/null | sort | uniq -d | sed 's/@test "//;s/" {$//' || true)
+dup_names=$(echo "$_all_tests" | sort | uniq -d | sed 's/@test "//;s/" {$//' || true)
 
 if [ -n "$dup_names" ]; then
   echo "⚠ 重複テスト名を検出:"
   while IFS= read -r name; do
     echo "  \"${name}\""
-    grep -rl "@test \"${name}\"" "$TESTS_DIR"/*.bats 2>/dev/null | sed 's/^/    → /'
+    grep -rl "@test \"${name}\"" "${_bats_files[@]}" 2>/dev/null | sed 's/^/    → /'
   done <<< "$dup_names"
   alert=1
 else
@@ -129,12 +133,13 @@ echo ""
 echo "=== [AC3] 統合候補ファイル (テスト数≤${CONSOLIDATE_THRESHOLD}件) ==="
 
 consolidate_list=()
-while IFS= read -r f; do
-  count=$(grep -c "^@test " "$f" 2>/dev/null || echo 0)
-  if (( count <= CONSOLIDATE_THRESHOLD )); then
-    consolidate_list+=("${count}\t${f}")
-  fi
-done < <(find "$TESTS_DIR" -name "*.bats" | sort)
+while IFS=$'\t' read -r count f; do
+  consolidate_list+=("${count}\t${f}")
+done < <(
+  awk -v th="$CONSOLIDATE_THRESHOLD" \
+    '/^@test /{c[FILENAME]++} END{for(f in c) if(c[f]+0<=th) printf "%s\t%s\n", c[f], f}' \
+    "${_bats_files[@]}" 2>/dev/null | sort -t$'\t' -k2
+)
 
 if (( ${#consolidate_list[@]} > 0 )); then
   echo "統合候補: ${#consolidate_list[@]}ファイル"
@@ -150,8 +155,8 @@ echo ""
 # ─────────────────────────────────────────────
 # 総合判定
 # ─────────────────────────────────────────────
-total_files=$(find "$TESTS_DIR" -name "*.bats" | wc -l)
-total_tests=$(grep -rh "^@test " "$TESTS_DIR"/*.bats 2>/dev/null | wc -l || echo 0)
+total_files=${#_bats_files[@]}
+total_tests=$(echo "$_all_tests" | wc -l || echo 0)
 echo "=== 総合サマリ ==="
 echo "テストファイル数: ${total_files}"
 echo "テスト総件数: ${total_tests}"
