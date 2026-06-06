@@ -19,7 +19,13 @@ fi
 
 # --- mtimeキャッシュ: 同一ファイルの2回目以降はほぼゼロms ---
 cache_sig=$(stat -c '%Y:%s' "$FIRE_LOG" 2>/dev/null || printf '0:0')
-cache_key=$(printf '%s:%s' "$FIRE_LOG" "$cache_sig" | cksum | awk '{print $1}')
+cache_key="${FIRE_LOG}_${cache_sig}"
+cache_key="${cache_key//[^A-Za-z0-9_.-]/_}"
+cache_tail="$cache_key"
+if [ "${#cache_tail}" -gt 100 ]; then
+    cache_tail="${cache_tail: -100}"
+fi
+cache_key="${#FIRE_LOG}_${cache_tail}"
 cache_file="/tmp/gate_fire_log_stats_${cache_key}"
 
 if [ -f "$cache_file" ]; then
@@ -29,8 +35,7 @@ fi
 
 # --- awk 1パス: fail_total + healed + /mnt/c FAILパスを同時計算 ---
 # 出力形式: 1行目="<fail_total> <healed>", 残行=FAILファイルパス
-tmp_awk=$(mktemp /tmp/gate_fire_log_awk.XXXXXX)
-awk '
+mapfile -t awk_lines < <(awk '
 /result: FAIL/ { fail_total++ }
 match($0, /file: "([^"]*)"/, f) {
     fname = f[1]
@@ -47,20 +52,19 @@ END {
     printf "%d %d\n", fail_total+0, healed+0
     for (p in live_paths) { print p }
 }
-' "$FIRE_LOG" > "$tmp_awk"
+' "$FIRE_LOG")
 
 # 1行目から fail_total, healed を取得
-read -r fail_total healed < "$tmp_awk"
+read -r fail_total healed <<< "${awk_lines[0]:-0 0}"
 fail_total="${fail_total:-0}"
 healed="${healed:-0}"
 
 # 残行: FAILファイルパス → 存在チェック
 fail_live=0
-while IFS= read -r path; do
+for path in "${awk_lines[@]:1}"; do
     [ -z "$path" ] && continue
     if [ -f "$path" ]; then (( fail_live++ )) || true; fi
-done < <(tail -n +2 "$tmp_awk")
-rm -f "$tmp_awk" 2>/dev/null || true
+done
 
 output="healed=${healed} fail_total=${fail_total} fail_live=${fail_live}"
 printf '%s\n' "$output"
