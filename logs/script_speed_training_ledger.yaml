@@ -94,16 +94,16 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-06T22:11:00"
   - script_path: "scripts/backfill_knowledge_debt.sh"
-    status: assigned
+    status: completed
     before_ms: 22
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 200
+    after_real_ms: 102
+    real_measurement_command: "timeout 20 bash scripts/backfill_knowledge_debt.sh --dry-run >/dev/null"
+    test_result: "bash -n scripts/backfill_knowledge_debt.sh && dry-run status=0 stale=0 pd=35 stderr=0 && bad-arg status=1 SKIP=0"
+    commit: "decbe54fe"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-06T22:09:01"
+    updated_at: "2026-06-06T22:14:35"
   - script_path: "scripts/backfill_lesson_target_files.sh"
     status: assigned
     before_ms: 15
