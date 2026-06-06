@@ -319,11 +319,23 @@ inbox_yaml_emit_field() {
 }
 
 inbox_build_message_block() {
-    local output="" first=1
-    local field_output=""
+    # cmd_inbox_write_speed: inbox_yaml_emit_field呼出しをインライン化(6コマンド置換→0)
+    local output="" first=1 key value prefix
     while [[ $# -ge 2 ]]; do
-        field_output="$(inbox_yaml_emit_field "$first" "$1" "$2")"
-        output+="${field_output}"$'\n'
+        key="$1"; value="$2"
+        prefix="  "
+        [[ "$first" == "1" ]] && prefix="- "
+        if [[ "$value" == "true" || "$value" == "false" ]]; then
+            output+="${prefix}${key}: ${value}"$'\n'
+        elif [[ "$value" == *$'\n'* ]]; then
+            output+="${prefix}${key}: |-"$'\n'
+            while IFS= read -r _iw_emit_line || [[ -n "$_iw_emit_line" ]]; do
+                output+="    ${_iw_emit_line}"$'\n'
+            done <<< "$value"
+        else
+            value="${value//\'/\'\'}"
+            output+="${prefix}${key}: '${value}'"$'\n'
+        fi
         first=0
         shift 2
     done
@@ -713,10 +725,8 @@ inbox_append_message_locked() {
         return 0
     fi
 
-    while IFS= read -r _iw_count_line; do
-        [[ "$_iw_count_line" == "- "* ]] && existing_count=$((existing_count + 1))
-        (( existing_count >= 50 )) && break
-    done < "$inbox_file"
+    # cmd_inbox_write_speed: bash while readループ→grep -c(C実装, WSL2高速)
+    existing_count=$(grep -c '^- ' "$inbox_file" 2>/dev/null || echo 0)
     if (( existing_count < 50 )); then
         printf '%s' "$message_block" >> "$inbox_file"
         return 0
@@ -1420,6 +1430,27 @@ fi
 attempt=0
 max_attempts=3
 
+# cmd_inbox_write_speed: メッセージブロック構築をflockサブシェル外に移動(ネストサブシェル削減)
+# MSG_ID/TIMESTAMPはflockループ前に確定済み。リトライ時も同一メッセージを再送するため安全。
+if [ -n "$ACTION" ]; then
+    _msg_block="$(inbox_build_message_block \
+        action "$ACTION" \
+        content "$CONTENT" \
+        from "$FROM" \
+        id "$MSG_ID" \
+        read "false" \
+        timestamp "$TIMESTAMP" \
+        type "$TYPE")"$'\n'
+else
+    _msg_block="$(inbox_build_message_block \
+        content "$CONTENT" \
+        from "$FROM" \
+        id "$MSG_ID" \
+        read "false" \
+        timestamp "$TIMESTAMP" \
+        type "$TYPE")"$'\n'
+fi
+
 while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 5 200 || exit 1
@@ -1429,24 +1460,6 @@ while [ $attempt -lt $max_attempts ]; do
             printf 'messages: []\n' > "$INBOX"
         fi
 
-        if [ -n "$ACTION" ]; then
-            _msg_block="$(inbox_build_message_block \
-                action "$ACTION" \
-                content "$CONTENT" \
-                from "$FROM" \
-                id "$MSG_ID" \
-                read "false" \
-                timestamp "$TIMESTAMP" \
-                type "$TYPE")"$'\n'
-        else
-            _msg_block="$(inbox_build_message_block \
-                content "$CONTENT" \
-                from "$FROM" \
-                id "$MSG_ID" \
-                read "false" \
-                timestamp "$TIMESTAMP" \
-                type "$TYPE")"$'\n'
-        fi
         inbox_append_message_locked "$INBOX" "$_msg_block" || exit 1
 
     ) 200>"$LOCKFILE"; then
