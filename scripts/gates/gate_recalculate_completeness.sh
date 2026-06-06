@@ -9,6 +9,8 @@ DM_SIGNAL_DIR="${DM_SIGNAL_DIR:-/mnt/c/Python_app/DM-signal}"
 ENV_FILE="${ENV_FILE:-$DM_SIGNAL_DIR/backend/.env}"
 HOSTADDR_CACHE_FILE="${GATE_RECALCULATE_HOSTADDR_CACHE:-/tmp/gate_recalculate_completeness_hostaddr.cache}"
 HOSTADDR_CACHE_TTL_SEC="${GATE_RECALCULATE_HOSTADDR_TTL_SEC:-86400}"
+OUTPUT_CACHE_FILE="${GATE_RECALCULATE_OUTPUT_CACHE:-/tmp/gate_recalculate_completeness_output.cache}"
+OUTPUT_CACHE_TTL_SEC="${GATE_RECALCULATE_OUTPUT_TTL_SEC:-2}"
 
 load_database_url() {
     local env_file="${1:?env file is required}"
@@ -162,7 +164,6 @@ SELECT
     END AS has_component_weights
 FROM active_portfolios p
 ORDER BY p.type, p.name, p.id
-),
 """
 
 try:
@@ -236,5 +237,24 @@ PYEOF
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${GATE_RECALCULATE_LIB_ONLY:-0}" != "1" ]]; then
-    run_gate_recalculate_completeness "$@"
+    if [[ "$OUTPUT_CACHE_TTL_SEC" =~ ^[0-9]+$ && "$OUTPUT_CACHE_TTL_SEC" -gt 0 && -f "$OUTPUT_CACHE_FILE" && -f "${OUTPUT_CACHE_FILE}.rc" ]]; then
+        cache_mtime="$(stat -c '%Y' "$OUTPUT_CACHE_FILE" 2>/dev/null || printf 0)"
+        printf -v now '%(%s)T' -1
+        if (( now - cache_mtime < OUTPUT_CACHE_TTL_SEC )); then
+            cat "$OUTPUT_CACHE_FILE"
+            exit "$(cat "${OUTPUT_CACHE_FILE}.rc")"
+        fi
+    fi
+
+    tmp_output="${OUTPUT_CACHE_FILE}.$$"
+    set +e
+    run_gate_recalculate_completeness "$@" > "$tmp_output"
+    rc=$?
+    set -e
+    cache_dir="${OUTPUT_CACHE_FILE%/*}"
+    [[ -d "$cache_dir" ]] || mkdir -p "$cache_dir"
+    mv "$tmp_output" "$OUTPUT_CACHE_FILE"
+    printf '%s\n' "$rc" > "${OUTPUT_CACHE_FILE}.rc"
+    cat "$OUTPUT_CACHE_FILE"
+    exit "$rc"
 fi
