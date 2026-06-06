@@ -11,15 +11,15 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_adn_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_adn_self" != /* ]] && _adn_self="$PWD/$_adn_self"
+SCRIPT_DIR="${_adn_self%/scripts/auto_deploy_next.sh}"
 LOG="$SCRIPT_DIR/logs/auto_deploy.log"
 TASKS_DIR="$SCRIPT_DIR/queue/tasks"
 REPORTS_DIR="$SCRIPT_DIR/queue/reports"
 
 CMD_ID="${1:-}"
 COMPLETED_SUBTASK_ID="${2:-}"
-
-mkdir -p "$SCRIPT_DIR/logs"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AUTO_DEPLOY] $1" >> "$LOG"
@@ -41,6 +41,8 @@ if [[ "$CMD_ID" != cmd_* ]]; then
     echo "ERROR: cmd_idはcmd_*形式でなければならない (received: $CMD_ID)" >&2
     exit 1
 fi
+
+mkdir -p "$SCRIPT_DIR/logs"
 
 # ═══════════════════════════════════════
 # flock: 二重配備防止
