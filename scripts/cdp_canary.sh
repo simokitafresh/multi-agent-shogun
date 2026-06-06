@@ -8,8 +8,14 @@
 # Exit code: 0=OK, 1=alert threshold reached, 2=usage/config error
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+SCRIPT_PARENT="${SCRIPT_PATH%/*}"
+[[ "$SCRIPT_PARENT" != "$SCRIPT_PATH" ]] || SCRIPT_PARENT="."
+SCRIPT_DIR="$(cd "$SCRIPT_PARENT" && pwd)"
+REPO_ROOT="${SCRIPT_DIR%/scripts}"
+if [[ "$REPO_ROOT" == "$SCRIPT_DIR" ]]; then
+    REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+fi
 BENCHMARK_SCRIPT="${CDP_BENCHMARK_SCRIPT:-${REPO_ROOT}/scripts/cdp/cdp_benchmark.sh}"
 
 DRY_RUN=false
