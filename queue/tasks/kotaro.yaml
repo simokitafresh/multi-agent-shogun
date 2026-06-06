@@ -36,7 +36,7 @@ task:
   project: infra
   purpose: 'Speed-train scripts/insight_write.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
   scout_exempt: true
-  status: acknowledged
+  status: completed
   stop_for: []
   target_path: scripts/insight_write.sh
   task_id: cmd_training_speed_insight_write_20260607064734_normal
