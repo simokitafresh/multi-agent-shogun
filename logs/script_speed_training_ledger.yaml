@@ -700,16 +700,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T00:33:47"
   - script_path: "scripts/gates/gate_cycle_health.sh"
-    status: assigned
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 62
+    after_real_ms: 41
+    real_measurement_command: "sandboxed temp root; bash <tmp>/scripts/gates/gate_cycle_health.sh (no-alert fixture, median of 7 runs)"
+    test_result: "bash -n PASS; bats tests/unit/test_gate_cycle_health.bats 12/12 PASS SKIP=0"
+    commit: "4eb53b7d8"
     assigned_to: "hayate"
-    updated_at: "2026-06-07T00:37:09"
+    updated_at: "2026-06-07T00:41:07"
   - script_path: "scripts/gates/gate_dc_duplicate.sh"
     status: pending
     before_ms: 15
