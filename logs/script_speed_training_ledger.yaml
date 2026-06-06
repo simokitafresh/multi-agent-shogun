@@ -579,16 +579,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T00:09:03"
   - script_path: "scripts/enable_pane_trace.sh"
-    status: assigned
+    status: completed
     before_ms: 19
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 40
+    after_real_ms: 20
+    real_measurement_command: "/usr/bin/time -f '%e' bash scripts/enable_pane_trace.sh \"shogun:2.4\" off"
+    test_result: "bash -n PASS; off/on/off smoke PASS; SKIP=0"
+    commit: "cacd9967b00b465ef0c40ede27450dd1efdb1739"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T00:07:09"
+    updated_at: "2026-06-07T00:10:02"
   - script_path: "scripts/fullrecalculate.sh"
     status: assigned
     before_ms: 20
