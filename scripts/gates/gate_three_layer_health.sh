@@ -8,20 +8,16 @@ warn_bytes="${SHOGUN_THREE_LAYER_CACHE_WARN_BYTES:-10737418240}"
 cleanup_script="$repo_root/scripts/cleanup_three_layer_tmp.sh"
 overall="PASS"
 
-cache_path="$(
-    python3 - "$db_path" "$repo_root" <<'PY' 2>/dev/null || true
-import sys
-
-db_path = sys.argv[1]
-repo_root = sys.argv[2]
-sys.path.insert(0, f"{repo_root}/scripts")
-import memory_db_live_insert as live_insert
-
-print(live_insert.memory_db_cache_path(db_path))
-PY
-)"
-cache_dir="${SHOGUN_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}"
-[ -n "$cache_path" ] && cache_dir="$(dirname "$cache_path")"
+# Resolve cache_path in bash (mirrors memory_db_live_insert.memory_db_cache_path()).
+# Eliminates the first Python subprocess call.
+if [ -n "${SHOGUN_MEMORY_DB_CACHE_PATH:-}" ]; then
+    cache_path="${SHOGUN_MEMORY_DB_CACHE_PATH}"
+else
+    _cache_dir="${SHOGUN_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}"
+    _repo_key="${repo_root//[^A-Za-z0-9_.-]/_}"
+    cache_path="${_cache_dir}/${_repo_key}_$(basename "$db_path")"
+fi
+cache_dir="$(dirname "$cache_path")"
 
 echo "=== three-layer memory health ==="
 echo "db_path=$db_path"
