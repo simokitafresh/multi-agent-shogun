@@ -57,37 +57,41 @@ from pathlib import Path
 mode = sys.argv[1]
 limit = int(sys.argv[2])
 
+path_pattern = re.compile(r"(?:context|docs/research)/[A-Za-z0-9._/-]+\.md|skills/[A-Za-z0-9._/-]+/SKILL\.md")
+wiki_pattern = re.compile(r"\[\[([^\]\n]+)\]\]")
+combined_pattern = r"\[\[[^]\n]+\]\]|(?:context|docs/research)/[A-Za-z0-9._/-]+\.md|skills/[A-Za-z0-9._/-]+/SKILL\.md"
 
-def rg_files(*args: str) -> list[str]:
-    try:
-        proc = subprocess.run(["rg", "--files", *args], text=True, capture_output=True, check=False)
-    except OSError:
+# Launch all subprocesses concurrently
+RG_SEARCH_ARGS = ["rg", "-n", "-o", combined_pattern]
+try:
+    p_ctx    = subprocess.Popen(["rg", "--files", "context",      "-g", "*.md"],      text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    p_docs   = subprocess.Popen(["rg", "--files", "docs/research", "-g", "*.md"],     text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    p_skills = subprocess.Popen(["rg", "--files", "skills",        "-g", "SKILL.md"], text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    p_srch_ctx   = subprocess.Popen(RG_SEARCH_ARGS + ["context"],      text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    p_srch_docs  = subprocess.Popen(RG_SEARCH_ARGS + ["docs/research"], text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    p_srch_skills= subprocess.Popen(RG_SEARCH_ARGS + ["skills"],        text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+except OSError:
+    p_ctx = p_docs = p_skills = p_srch_ctx = p_srch_docs = p_srch_skills = None
+
+def _collect(proc) -> list[str]:
+    if proc is None:
         return []
-    return [line for line in proc.stdout.splitlines() if line]
+    out, _ = proc.communicate()
+    return [l for l in out.splitlines() if l]
 
-targets = []
-targets.extend(rg_files("context", "-g", "*.md"))
-targets.extend(rg_files("docs/research", "-g", "*.md"))
-targets.extend(rg_files("skills", "-g", "SKILL.md"))
-targets = sorted(dict.fromkeys(targets))
+# Gather rg_files results
+out_ctx    = _collect(p_ctx)
+out_docs   = _collect(p_docs)
+out_skills = _collect(p_skills)
+targets = sorted(dict.fromkeys(out_ctx + out_docs + out_skills))
+
+# Gather search results (merge from 3 parallel searches)
+search_lines = _collect(p_srch_ctx) + _collect(p_srch_docs) + _collect(p_srch_skills)
 
 wiki_sources: dict[str, set[str]] = defaultdict(set)
 path_sources: dict[str, set[str]] = defaultdict(set)
-path_pattern = re.compile(r"(?:context|docs/research)/[A-Za-z0-9._/-]+\.md|skills/[A-Za-z0-9._/-]+/SKILL\.md")
-wiki_pattern = re.compile(r"\[\[([^\]\n]+)\]\]")
 
-combined_pattern = r"\[\[[^]\n]+\]\]|(?:context|docs/research)/[A-Za-z0-9._/-]+\.md|skills/[A-Za-z0-9._/-]+/SKILL\.md"
-try:
-    proc = subprocess.run(
-        ["rg", "-n", "-o", combined_pattern, "context", "docs/research", "skills"],
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-except OSError:
-    proc = subprocess.CompletedProcess([], 1, "", "")
-
-for raw in proc.stdout.splitlines():
+for raw in search_lines:
     parts = raw.split(":", 2)
     if len(parts) != 3:
         continue
