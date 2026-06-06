@@ -1118,16 +1118,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gunshi_gate_sync.sh"
-    status: pending
+    status: completed
     before_ms: 14
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 1907
+    after_real_ms: 1531
+    real_measurement_command: "bash scripts/gunshi_gate_sync.sh --dry-run >/dev/null"
+    test_result: "bash_n_pass;dry_run_output_diff_empty;before_1907_after_1531;SKIP=0"
+    commit: "d121a3ad3"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T05:27:27"
   - script_path: "scripts/gunshi_log_append.sh"
     status: pending
     before_ms: 16
