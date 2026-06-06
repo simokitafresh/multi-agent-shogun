@@ -29,6 +29,18 @@ if [[ ! -f "$BULLETIN_FILE" ]]; then
     exit 0
 fi
 
+if [[ "$MAX_KEEP" =~ ^[0-9]+$ ]]; then
+    entry_count=$(awk '
+        /^entries:/ { in_entries = 1; next }
+        in_entries && /^- id:/ { count++ }
+        END { print count + 0 }
+    ' "$BULLETIN_FILE")
+    if (( entry_count > 0 && entry_count <= MAX_KEEP )); then
+        echo "[bulletin_archive] ${entry_count} entries <= ${MAX_KEEP} max_keep. Nothing to archive."
+        exit 0
+    fi
+fi
+
 ARCHIVE_DIR="$SCRIPT_DIR/queue/archive"
 mkdir -p "$ARCHIVE_DIR"
 
