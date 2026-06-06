@@ -37,12 +37,36 @@ if [[ ! -f "$CLAUDE_MD" ]]; then
   exit 2
 fi
 
-python3 - "$CLAUDE_MD" "$ALLOWLIST_FILE" "$USER_SETTINGS" "$PROJECT_SETTINGS" "$PROJECT_LOCAL_SETTINGS" <<'PY'
+cache_file="${ENFORCEMENT_AUDIT_CACHE:-/tmp/shogun_gate_enforcement_audit_${UID:-0}.cache}"
+cache_sig=""
+for cache_path in "$CLAUDE_MD" "$ALLOWLIST_FILE" "$USER_SETTINGS" "$PROJECT_SETTINGS" "$PROJECT_LOCAL_SETTINGS"; do
+  if [[ -f "$cache_path" ]]; then
+    cache_sig+="$cache_path $(stat -c '%Y %s' "$cache_path")"$'\n'
+  else
+    cache_sig+="$cache_path MISSING"$'\n'
+  fi
+done
+cache_hash="$(printf '%s' "$cache_sig" | sha256sum | awk '{print $1}')"
+
+if [[ -f "$cache_file" ]]; then
+  cached_hash=$(sed -n '1p' "$cache_file" 2>/dev/null || true)
+  if [[ "$cached_hash" == "sig=$cache_hash" ]]; then
+    cached_exit=$(sed -n '2p' "$cache_file" 2>/dev/null || true)
+    if [[ "$cached_exit" =~ ^exit=(0|1)$ ]]; then
+      tail -n +3 "$cache_file"
+      exit "${cached_exit#exit=}"
+    fi
+  fi
+fi
+
+tmp_output="$(mktemp "${TMPDIR:-/tmp}/gate_enforcement_audit.XXXXXX")"
+tmp_cache="$(mktemp "${cache_file}.XXXXXX")"
+set +e
+python3 - "$CLAUDE_MD" "$ALLOWLIST_FILE" "$USER_SETTINGS" "$PROJECT_SETTINGS" "$PROJECT_LOCAL_SETTINGS" > "$tmp_output" <<'PY'
 from __future__ import annotations
 
 import json
 import re
-import shlex
 import sys
 from pathlib import Path
 
@@ -120,6 +144,7 @@ print(f"  (C) 手動実行が正当: {allowlist_file} に basename を追記し�
 print("")
 print("■ hooks登録コマンド候補(settings.json追記例)")
 print("# 既定例: missing script を .claude/settings.json の SessionStart hooks に追記")
+import shlex
 print(f"mkdir -p {shlex.quote(str((claude_md.parent / '.claude').as_posix()))}")
 print(f"python3 - {shlex.quote(str((claude_md.parent / '.claude/settings.json').as_posix()))} <<'PY'")
 print("import json, sys")
@@ -142,3 +167,18 @@ print("")
 print("=== 総合判定: ALERT (要対処) ===")
 sys.exit(1)
 PY
+python_status=$?
+set -e
+cat "$tmp_output"
+if [[ "$python_status" -eq 0 || "$python_status" -eq 1 ]]; then
+  {
+    printf 'sig=%s\n' "$cache_hash"
+    printf 'exit=%s\n' "$python_status"
+    cat "$tmp_output"
+  } > "$tmp_cache"
+  mv "$tmp_cache" "$cache_file"
+else
+  rm -f "$tmp_cache"
+fi
+rm -f "$tmp_output"
+exit "$python_status"
