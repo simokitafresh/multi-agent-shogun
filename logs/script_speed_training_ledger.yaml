@@ -1382,18 +1382,18 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T06:35:00"
   - script_path: "scripts/inbox_watcher.sh"
-    status: assigned
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 67
+    after_real_ms: 47
+    real_measurement_command: INBOX_WATCHER_LIB_ONLY=1 bash scripts/inbox_watcher.sh (10回中央値)
+    test_result: "17/17 PASS (test_inbox_watcher_dedup+health+karo_nudge); cd+pwd→bash文字列演算+realpath再利用: 67ms->47ms (-20ms, -30%)"
+    commit: c17fa22e2
     assigned_to: "kotaro"
     updated_at: "2026-06-07T06:34:36"
   - script_path: "scripts/inbox_write.sh"
-    status: pending
+    status: assigned
     before_ms: 10
     after_ms: ""
     before_real_ms: ""
@@ -1401,10 +1401,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T06:41:56"
   - script_path: "scripts/insight_resolve.sh"
-    status: pending
+    status: assigned
     before_ms: 14
     after_ms: ""
     before_real_ms: ""
@@ -1412,8 +1412,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T06:42:20"
   - script_path: "scripts/insight_write.sh"
     status: pending
     before_ms: 6
@@ -2800,10 +2800,3 @@ entries:
     commit: ""
     assigned_to: ""
     updated_at: ""
-status: completed
-before_real_ms: 55
-after_real_ms: 40
-commit: 0003b448280d3a580dc9f2a14087e7557263aa64
-real_measurement_command: 'bash scripts/inbox_mark_read.sh tobisaru <msg_id> (real unread msg, cold run, 174-line inbox, 5 runs median)'
-test_result: bats tests/unit/test_inbox_mark_read.bats 9/10 PASS SKIP=0 (test9 pre-existing FAIL)
-updated_at: '2026-06-07T06:37:16+09:00'
