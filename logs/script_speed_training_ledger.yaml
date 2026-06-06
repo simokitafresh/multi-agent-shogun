@@ -259,18 +259,18 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-06T22:57:23"
   - script_path: "scripts/cdp_canary.sh"
-    status: pending
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 42
+    after_real_ms: 31
+    real_measurement_command: "timeout 5 bash scripts/cdp_canary.sh --dry-run (10-run average)"
+    test_result: "bash -n scripts/cdp_canary.sh PASS; bats --filter cdp_canary tests/unit/test_infra_misc_small_consolidated.bats 2/2 PASS SKIP=0"
+    commit: "14384d2f3"
+    assigned_to: "hayate"
+    updated_at: "2026-06-06T23:00:09"
   - script_path: "scripts/cdp_chrome_cleanup.sh"
-    status: pending
+    status: assigned
     before_ms: 14
     after_ms: ""
     before_real_ms: ""
@@ -278,10 +278,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "saizo"
+    updated_at: "2026-06-06T22:58:16"
   - script_path: "scripts/check_project_codd_ready.sh"
-    status: pending
+    status: assigned
     before_ms: 14
     after_ms: ""
     before_real_ms: ""
@@ -289,8 +289,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-06T22:58:58"
   - script_path: "scripts/checklist_progress.sh"
     status: pending
     before_ms: 17
