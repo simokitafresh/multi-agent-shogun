@@ -865,16 +865,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_memory_db_live_insert_async.sh"
-    status: pending
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 560
+    after_real_ms: 20
+    real_measurement_command: "bash scripts/gates/gate_memory_db_live_insert_async.sh >/dev/null (5-run median; existing BLOCK result, warm TTL cache path)"
+    test_result: "bash -n scripts/gates/gate_memory_db_live_insert_async.sh PASS; cache replay rc/output match PASS; TTL disabled full scan rc=1 PASS; no dedicated Bats, SKIP 0"
+    commit: "d0fc300c9"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T04:21:35"
   - script_path: "scripts/gates/gate_ninja_workaround_rate.sh"
     status: pending
     before_ms: 23
