@@ -610,7 +610,8 @@ append_codd_registry_entry() {
     result=$(
         (
             flock -w 10 200 || { echo "WARN: registry lock timeout"; exit 0; }
-            python3 - "$cmd_id" "$YAML_FILE" "$registry" "${MATCHING_TASK_FILES[@]}" <<'PY'
+            local ledger_file="$SCRIPT_DIR/logs/script_speed_training_ledger.yaml"
+            python3 - "$cmd_id" "$YAML_FILE" "$registry" "$ledger_file" "${MATCHING_TASK_FILES[@]}" <<'PY'
 import os
 import re
 import sys
@@ -624,7 +625,8 @@ import yaml
 cmd_id = sys.argv[1]
 cmd_yaml = Path(sys.argv[2])
 registry = Path(sys.argv[3])
-task_paths = [Path(p) for p in sys.argv[4:]]
+ledger_path = Path(sys.argv[4])
+task_paths = [Path(p) for p in sys.argv[5:]]
 repo_root = registry.parents[2]
 
 
@@ -814,8 +816,9 @@ for task_path in task_paths:
 all_text = "\n".join(cmd_texts + report_texts)
 is_codd = bool(re.search(r"CoDD|codd_refactor|codd_refactor_registry|codd_spec", all_text, re.IGNORECASE))
 # 修行速度改善cmd (type: training) もCoDD台帳対象とする（cmd_3099教訓）
+is_training = any(str(t.get("type") or "") == "training" for _, t in task_records)
 if not is_codd:
-    is_codd = any(str(t.get("type") or "") == "training" for _, t in task_records)
+    is_codd = is_training
 if not is_codd:
     print("SKIP: not a CoDD cmd")
     raise SystemExit(0)
@@ -836,6 +839,22 @@ for spec in spec_paths:
 
 target_paths.extend(script_from_spec(spec_paths[0] if spec_paths else "", cmd_texts + report_texts))
 target_paths = uniq(target_paths)
+
+# AC1: 速度改善修行cmdではledgerからbefore_real_ms/after_real_msを優先取得（ワンソース化）
+ledger_target_script = ""
+if is_training and ledger_path.exists():
+    ledger_data = load_yaml(ledger_path)
+    for ledger_entry in ledger_data.get("entries", []):
+        entry_script = str(ledger_entry.get("script_path", ""))
+        if entry_script in target_paths:
+            lbefore = ledger_entry.get("before_real_ms")
+            lafter = ledger_entry.get("after_real_ms")
+            if lbefore not in (None, "", 0):
+                before = f"{lbefore}ms"
+            if lafter not in (None, "", 0):
+                after = f"{lafter}ms"
+            ledger_target_script = entry_script
+            break
 
 if not task_records:
     print("SKIP: no matching task YAML")
@@ -886,6 +905,36 @@ finally:
         os.unlink(tmp)
 
 print(f"OK: appended {cmd_id} target={target_paths[0]} before_after={before}->{after}")
+
+# AC2: ledgerのstatusをcompletedに更新（テキスト操作。yaml.dump不使用）
+if is_training and ledger_target_script and ledger_path.exists():
+    ledger_text = ledger_path.read_text(encoding="utf-8")
+    lines_l = ledger_text.splitlines(keepends=True)
+    result_l = []
+    in_target = False
+    status_done = False
+    target_marker = f'- script_path: "{ledger_target_script}"'
+    for line_l in lines_l:
+        stripped_l = line_l.rstrip()
+        if stripped_l.lstrip() == target_marker:
+            in_target = True
+            status_done = False
+        elif in_target and not status_done and stripped_l.lstrip().startswith("- ") and stripped_l.lstrip() != target_marker:
+            in_target = False
+        if in_target and not status_done and re.match(r"\s+status:\s+\S", stripped_l):
+            line_l = re.sub(r"(\s+status:\s+)\S+", r"\1completed", line_l)
+            status_done = True
+        result_l.append(line_l)
+    ld, ltmp = tempfile.mkstemp(dir=str(ledger_path.parent), suffix=".tmp")
+    os.close(ld)
+    try:
+        with open(ltmp, "w", encoding="utf-8") as f:
+            f.writelines(result_l)
+        os.replace(ltmp, str(ledger_path))
+    finally:
+        if os.path.exists(ltmp):
+            os.unlink(ltmp)
+    print(f"  ledger status -> completed ({ledger_target_script})")
 PY
         ) 200>"$registry_lock"
     )
