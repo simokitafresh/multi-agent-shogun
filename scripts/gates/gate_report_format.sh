@@ -18,7 +18,21 @@ fi
 # executor帰属: 報告YAMLのworker_idを読取り(CLI非依存)
 _REPORT_EXECUTOR="${AGENT_ID:-}"
 if [ -z "$_REPORT_EXECUTOR" ]; then
-    _REPORT_EXECUTOR=$(grep '^worker_id:' "$REPORT_PATH" 2>/dev/null | awk '{print $2}' | tr -d "'" || true)
+    while IFS= read -r _line; do
+        case "$_line" in
+            worker_id:*)
+                _REPORT_EXECUTOR="${_line#worker_id:}"
+                _REPORT_EXECUTOR="${_REPORT_EXECUTOR#"${_REPORT_EXECUTOR%%[![:space:]]*}"}"
+                _REPORT_EXECUTOR="${_REPORT_EXECUTOR%%#*}"
+                _REPORT_EXECUTOR="${_REPORT_EXECUTOR%"${_REPORT_EXECUTOR##*[![:space:]]}"}"
+                _REPORT_EXECUTOR="${_REPORT_EXECUTOR%\'}"
+                _REPORT_EXECUTOR="${_REPORT_EXECUTOR#\'}"
+                _REPORT_EXECUTOR="${_REPORT_EXECUTOR%\"}"
+                _REPORT_EXECUTOR="${_REPORT_EXECUTOR#\"}"
+                break
+                ;;
+        esac
+    done < "$REPORT_PATH"
 fi
 _REPORT_EXECUTOR="${_REPORT_EXECUTOR:-unknown}"
 
@@ -33,10 +47,14 @@ if [[ "$REPORT_PATH" = /* ]]; then
 else
     _CANON="$PWD/${REPORT_PATH#./}"
 fi
-{ read -r _MTIME; read -r _GATE_MTIME; } < <(stat -c '%Y' "$REPORT_PATH" "${BASH_SOURCE[0]}" 2>/dev/null || printf '\n\n')
-if [ -n "$_MTIME" ] && [ -n "$_GATE_MTIME" ] && [ -f "$PASS_CACHE" ] && grep -qF "${_CANON} ${_MTIME} ${_GATE_MTIME}" "$PASS_CACHE" 2>/dev/null; then
-    echo "PASS"
-    exit 0
+_MTIME=""
+_GATE_MTIME=""
+if [[ "${GATE_NO_LOG:-}" != "1" ]] || [ -f "$PASS_CACHE" ]; then
+    { read -r _MTIME; read -r _GATE_MTIME; } < <(stat -c '%Y' "$REPORT_PATH" "${BASH_SOURCE[0]}" 2>/dev/null || printf '\n\n')
+    if [ -n "$_MTIME" ] && [ -n "$_GATE_MTIME" ] && [ -f "$PASS_CACHE" ] && grep -qF "${_CANON} ${_MTIME} ${_GATE_MTIME}" "$PASS_CACHE" 2>/dev/null; then
+        echo "PASS"
+        exit 0
+    fi
 fi
 
 # cmd_2063: autofix + format validation を単一 python3 プロセスで実行
@@ -51,9 +69,14 @@ echo "$RESULT"
 # perf: moved into gate_report_format_combined.py (Phase 3) to eliminate 2nd python3 subprocess
 
 RESULT_IS_PASS=0
-if printf '%s\n' "$RESULT" | grep -qxE 'PASS|PASS_NO_IMPROVEMENT'; then
-    RESULT_IS_PASS=1
-fi
+while IFS= read -r _result_line; do
+    case "$_result_line" in
+        PASS|PASS_NO_IMPROVEMENT)
+            RESULT_IS_PASS=1
+            break
+            ;;
+    esac
+done <<< "$RESULT"
 
 # Test/unit fast path: callers that only need stdout + exit code can bypass cache/log/session-state work.
 if [[ "${GATE_FAST_EXIT:-0}" = "1" ]]; then
