@@ -160,11 +160,7 @@ fi
 
 has_unread=false
 unread_count=0
-while IFS= read -r _inbox_line; do
-  if [[ "$_inbox_line" =~ ^[[:space:]]*read:[[:space:]]*false[[:space:]]*$ ]]; then
-    unread_count=$((unread_count + 1))
-  fi
-done < "$inbox_file" 2>/dev/null || true
+unread_count=$(grep -c '^[[:space:]]*read:[[:space:]]*false[[:space:]]*$' "$inbox_file" 2>/dev/null) || unread_count=0
 
 if (( unread_count > 0 )); then
   has_unread=true
@@ -286,12 +282,9 @@ else
     _ninja_task="$SCRIPT_DIR/queue/tasks/${agent_id}.yaml"
     if [[ -f "$_ninja_task" ]]; then
       _ninja_task_done=false
-      while IFS= read -r _task_line; do
-        if [[ "$_task_line" =~ ^[[:space:]]*status:[[:space:]]*(done|completed)([[:space:]]|$) ]]; then
-          _ninja_task_done=true
-          break
-        fi
-      done < "$_ninja_task" 2>/dev/null || true
+      if grep -qE '^[[:space:]]*status:[[:space:]]*(done|completed)([[:space:]]|$)' "$_ninja_task" 2>/dev/null; then
+        _ninja_task_done=true
+      fi
       if [[ "$_ninja_task_done" == "true" ]]; then
         : > "$idle_flag"
         _reason="Task completed. Wait for next task assignment from karo. Do NOT start new work."
