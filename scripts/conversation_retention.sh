@@ -11,6 +11,38 @@ LOCK_PATH="${JSONL_PATH}.lock"
 mkdir -p "$(dirname "$JSONL_PATH")" "$(dirname "$INDEX_PATH")" "$ARCHIVE_DIR"
 [ -f "$JSONL_PATH" ] || : > "$JSONL_PATH"
 
+# 空ファイルならPython起動コストなしで最小インデックスを書いて終了
+if [ ! -s "$JSONL_PATH" ]; then
+  NOW=$(date '+%Y-%m-%dT%H:%M:%S%z')
+  TODAY=$(date '+%Y-%m-%d')
+  TMP_INDEX="${INDEX_PATH}.tmp"
+  cat > "$TMP_INDEX" << EOF
+# Lord Conversation Index
+<!-- last_updated: ${TODAY} auto-generated -->
+<!-- generated_by: scripts/conversation_retention.sh -->
+<!-- generated_at: ${NOW} -->
+
+## 最新やり取り（直近24h）
+- 該当なし
+
+## 未解決確認事項
+- 該当なし
+
+## 殿の直近裁定・方針（直近24h）
+- 該当なし
+
+## 参照cmd
+- 該当なし
+
+## 参照先
+- \`queue/lord_conversation.jsonl\`（一次データ）
+- \`logs/lord_conversation_archive/*.jsonl\`（24h超過・200件超過の退避先）
+EOF
+  mv "$TMP_INDEX" "$INDEX_PATH"
+  echo "[conversation_retention] total=0 kept=0 archived=0 (empty)"
+  exit 0
+fi
+
 (
   flock -w 10 200 || {
     echo "[conversation_retention] ERROR: flock timeout on $LOCK_PATH" >&2
@@ -34,6 +66,7 @@ index_path = Path(os.environ["CONV_INDEX"])
 archive_dir = Path(os.environ["CONV_ARCHIVE_DIR"])
 now_utc = datetime.now(timezone.utc)
 cutoff_utc = now_utc - timedelta(hours=WINDOW_HOURS)
+_DT_MIN = datetime.min.replace(tzinfo=timezone.utc)
 
 
 def parse_ts(ts: Any) -> datetime | None:
@@ -83,9 +116,7 @@ def display_ts(entry: dict[str, Any]) -> str:
 
 def entry_sort_key(entry: dict[str, Any]) -> datetime:
     dt = parse_ts(entry.get("ts"))
-    if dt is None:
-        return datetime.min.replace(tzinfo=timezone.utc)
-    return dt
+    return dt if dt is not None else _DT_MIN
 
 
 def is_broadcast(entry: dict[str, Any]) -> bool:
@@ -95,11 +126,13 @@ def is_broadcast(entry: dict[str, Any]) -> bool:
     return target == "" or direction in ("response", "outbound", "session_summary")
 
 
-def render_recent(entries: list[dict[str, Any]]) -> str:
-    if not entries:
+def render_recent(sorted_desc: list[dict[str, Any]]) -> str:
+    # 降順ソート済みリストを受け取り再ソート不要
+    top10 = sorted_desc[:10]
+    if not top10:
         return "- 該当なし"
     lines: list[str] = []
-    for entry in sorted(entries, key=entry_sort_key, reverse=True)[:10]:
+    for entry in top10:
         summary = clip(entry.get("summary") or entry.get("detail"), 120) or "(要約なし)"
         source = clip(entry.get("source"), 24) or "unknown"
         direction = clip(entry.get("direction"), 24) or "unknown"
@@ -107,10 +140,11 @@ def render_recent(entries: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def render_unresolved(entries: list[dict[str, Any]]) -> str:
+def render_unresolved(sorted_desc: list[dict[str, Any]]) -> str:
+    # 降順ソート済みリストを受け取り再ソート不要
     patterns = ("?", "確認", "未解決", "要確認", "TODO", "保留")
     found: list[str] = []
-    for entry in sorted(entries, key=entry_sort_key, reverse=True):
+    for entry in sorted_desc:
         if not is_broadcast(entry):
             continue
         text = f"{entry.get('summary', '')}\n{entry.get('detail', '')}"
@@ -125,10 +159,11 @@ def render_unresolved(entries: list[dict[str, Any]]) -> str:
     return "\n".join(f"- {line}" for line in found)
 
 
-def render_lord_decisions(entries: list[dict[str, Any]]) -> str:
+def render_lord_decisions(sorted_desc: list[dict[str, Any]]) -> str:
+    # 降順ソート済みリストを受け取り再ソート不要
     keywords = ("指示", "裁定", "決裁", "決定", "方針", "承認", "却下")
     lines: list[str] = []
-    for entry in sorted(entries, key=entry_sort_key, reverse=True):
+    for entry in sorted_desc:
         if entry.get("direction") != "inbound":
             continue
         if not is_broadcast(entry):
@@ -219,19 +254,22 @@ with tmp_jsonl.open("w", encoding="utf-8", errors="replace") as f:
         f.write("\n")
 os.replace(str(tmp_jsonl), str(jsonl_path))
 
+# レンダリング用: 降順ソートを一度だけ実施し全render関数で共有（3回ソートを1回に削減）
+sorted_desc = sorted(recent_entries, key=entry_sort_key, reverse=True)
+
 index_body = f"""# Lord Conversation Index
 <!-- last_updated: {now_utc.astimezone().date().isoformat()} auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
 <!-- generated_at: {now_utc.astimezone().isoformat(timespec="seconds")} -->
 
 ## 最新やり取り（直近24h）
-{render_recent(recent_entries)}
+{render_recent(sorted_desc)}
 
 ## 未解決確認事項
-{render_unresolved(recent_entries)}
+{render_unresolved(sorted_desc)}
 
 ## 殿の直近裁定・方針（直近24h）
-{render_lord_decisions(recent_entries)}
+{render_lord_decisions(sorted_desc)}
 
 ## 参照cmd
 {render_cmd_refs(recent_entries)}
