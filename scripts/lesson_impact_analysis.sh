@@ -2,7 +2,11 @@
 # semantic-links: [[学習ループ]]
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+_scripts_dir="${_self%/*}"
+SCRIPT_DIR="${_scripts_dir%/*}"
+unset _self _scripts_dir
 DATA_FILE="$SCRIPT_DIR/logs/lesson_impact.tsv"
 
 if [ "$#" -eq 0 ]; then
