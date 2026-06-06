@@ -20,14 +20,14 @@
 
 set -euo pipefail
 
-_self="${BASH_SOURCE[0]}"
-[[ "$_self" != /* ]] && _self="$PWD/$_self"
-PROJECT_DIR="${_self%/scripts/cmd_publish.sh}"
-
 if [ $# -lt 2 ]; then
     echo "Usage: bash scripts/cmd_publish.sh <cmd_id> \"<message>\"" >&2
     exit 1
 fi
+
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+PROJECT_DIR="${_self%/scripts/cmd_publish.sh}"
 
 CMD_ID="$1"
 MESSAGE="$2"
