@@ -5,13 +5,16 @@
 set -euo pipefail
 
 readonly SERVER_INFO="/tmp/cdp-server.json"
-readonly SERVER_SCRIPT="$(cd "$(dirname "$0")" && pwd)/cdp_server.py"
 readonly STARTUP_TIMEOUT=10
 readonly REQUEST_TIMEOUT=5
 
 # ── Helpers ──────────────────────────────────────────────
 
 die() { echo "ERROR: $*" >&2; exit 1; }
+
+server_script() {
+    printf '%s/cdp_server.py\n' "$(cd "$(dirname "$0")" && pwd)"
+}
 
 # Read port and token from server info file
 read_server_info() {
@@ -38,11 +41,13 @@ ensure_server() {
     fi
 
     # Server not running — start it
-    if [[ ! -f "$SERVER_SCRIPT" ]]; then
-        die "Server script not found: $SERVER_SCRIPT"
+    local server_script_path
+    server_script_path="$(server_script)"
+    if [[ ! -f "$server_script_path" ]]; then
+        die "Server script not found: $server_script_path"
     fi
 
-    python3 "$SERVER_SCRIPT" &
+    python3 "$server_script_path" &
     local pid=$!
 
     # Wait for server to become ready
