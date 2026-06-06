@@ -31,6 +31,7 @@ write_fake_curl() {
     local http_code="$2"
     local elapsed="$3"
     local body="$4"
+    local stderr="${5:-}"
     cat > "$TEST_TMPDIR/bin/fake_curl" <<EOF
 #!/usr/bin/env bash
 out_file=""
@@ -42,6 +43,9 @@ while [ "\$#" -gt 0 ]; do
 done
 if [ -n "\$out_file" ]; then
     printf '%s' '$body' > "\$out_file"
+fi
+if [ -n '$stderr' ]; then
+    printf '%s\n' '$stderr' >&2
 fi
 printf '%s %s' '$http_code' '$elapsed'
 exit $exit_code
@@ -68,6 +72,19 @@ EOF
     [ "$status" -eq 1 ]
     [[ "$output" == *"APIタイムアウト (HTTP 000, curl_exit=28, elapsed=15.001s)"* ]]
     [[ "$output" == *"cold start/timeout"* ]]
+}
+
+@test "classifies curl exit 6 as DNS/API_BASE failure with next checks" {
+    write_fake_curl 6 000 0.001 '' 'curl: (6) Could not resolve host: missing.example'
+
+    run bash "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"API_BASE DNS解決失敗 (HTTP 000, curl_exit=6, elapsed=0.001s)"* ]]
+    [[ "$output" == *"DNS/API_BASEを先に確認"* ]]
+    [[ "$output" == *"サーバ到達性・cold sleep・バッチ鮮度はAPI到達後"* ]]
+    [[ "$output" == *"getent hosts example.test"* ]]
+    [[ "$output" == *"curl_error: curl: (6) Could not resolve host: missing.example"* ]]
 }
 
 @test "fresh p-average returns OK and writes cache" {

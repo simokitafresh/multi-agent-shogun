@@ -74,13 +74,24 @@ curl_exit=0
     "${API_BASE}/api/p-average" >"$curl_meta_file" 2>"$curl_err_file" || curl_exit=$?
 
 curl_meta="$(cat "$curl_meta_file" 2>/dev/null || true)"
+curl_err="$(head -1 "$curl_err_file" 2>/dev/null || true)"
 http_code="$(printf '%s\n' "$curl_meta" | awk '{print $1}')"
 elapsed="$(printf '%s\n' "$curl_meta" | awk '{print $2}')"
 http_code="${http_code:-000}"
 elapsed="${elapsed:-unknown}"
+api_host="$(printf '%s\n' "$API_BASE" | sed -E 's#^[a-zA-Z]+://##; s#/.*$##')"
 
 if [ "$curl_exit" -ne 0 ]; then
     case "$curl_exit:$http_code" in
+        6:*)
+            echo "ALERT: p̄鮮度: API_BASE DNS解決失敗 (HTTP ${http_code}, curl_exit=${curl_exit}, elapsed=${elapsed}s)"
+            echo "  diagnosis: curl_exit=6 はホスト名を解決できない状態。DNS/API_BASEを先に確認し、サーバ到達性・cold sleep・バッチ鮮度はAPI到達後に確認せよ"
+            echo "  action: API_BASE=${API_BASE} host=${api_host}。getent hosts ${api_host} と P_AVERAGE_API_BASE/backend/.env の参照先を確認せよ"
+            if [ -n "$curl_err" ]; then
+                echo "  curl_error: ${curl_err}"
+            fi
+            bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — API_BASE DNS解決失敗 HTTP ${http_code} curl ${curl_exit}"
+            ;;
         22:401|22:403)
             echo "ALERT: p̄鮮度: API認証失敗 (HTTP ${http_code}, curl_exit=${curl_exit}, elapsed=${elapsed}s)"
             echo "  action: backend/.env の ADMIN_USER/ADMIN_PASS と Render 側の認証設定を照合せよ"
