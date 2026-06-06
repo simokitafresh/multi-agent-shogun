@@ -181,90 +181,92 @@ mkdir -p "${BULLETIN_FILE%/*}"
 
 WRITE_RESULT="$({
     flock -x 200
-    python3 - "$BULLETIN_FILE" "$ENTRY_ID" "$CONTENT" "$POSTED_BY" "$POSTED_AT" "$REQUIRES_CONFIRMATION" "$ACTION_TYPE" <<'PY'
-import os
-import sys
-import yaml
 
-bulletin_file, entry_id, content, posted_by, posted_at, requires_confirmation, action_type = sys.argv[1:8]
-
-if os.path.exists(bulletin_file):
-    with open(bulletin_file, encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
-else:
-    data = {}
-
-entries = data.get("entries")
-if not isinstance(entries, list):
-    entries = []
-
-rc_raw = str(requires_confirmation).strip()
-if rc_raw.lower() in {"1", "true", "yes", "y"}:
-    req = True
-elif rc_raw.lower() in {"0", "false", "no", "n", ""}:
-    req = False
-else:
-    agents = [a.strip() for a in rc_raw.split(",") if a.strip()]
-    req = agents if agents else False
-# GP-210: 同一content+同一posted_byの重複投稿を防止
-for existing in entries:
-    if (existing.get("content", "").strip() == content.strip()
-            and existing.get("posted_by", "") == posted_by):
-        print(f"DEDUP: 同一内容の掲示板エントリが既存 ({existing.get('id')})")
-        sys.exit(0)
-
-entries.insert(0, {
-    "id": entry_id,
-    "content": content,
-    "posted_by": posted_by,
-    "posted_at": posted_at,
-    "requires_confirmation": req,
-    "action_type": action_type,
-    "actioned_by": "",
-    "confirmed_by": [],
-    "status": "open",
-})
-
-def sq(value):
-    return str(value).replace("'", "''")
-
-tmp_file = f"{bulletin_file}.tmp"
-with open(tmp_file, "w", encoding="utf-8") as fh:
-    fh.write("entries:\n")
-    for entry in entries:
-        fh.write(f"- id: '{sq(entry.get('id', ''))}'\n")
-        fh.write("  content: |-\n")
-        text = str(entry.get("content", ""))
-        lines = text.splitlines() or [""]
-        for line in lines:
-            fh.write(f"    {line}\n")
-        fh.write(f"  posted_by: '{sq(entry.get('posted_by', ''))}'\n")
-        fh.write(f"  posted_at: '{sq(entry.get('posted_at', ''))}'\n")
-        rc = entry.get('requires_confirmation')
-        if isinstance(rc, list):
-            fh.write("  requires_confirmation:\n")
-            for agent_name in rc:
-                fh.write(f"    - '{sq(agent_name)}'\n")
-        elif rc:
-            fh.write("  requires_confirmation: true\n")
-        else:
-            fh.write("  requires_confirmation: false\n")
-        at = entry.get("action_type", "info")
-        if at not in {"info", "action_required"}:
-            at = "info"
-        fh.write(f"  action_type: '{sq(at)}'\n")
-        fh.write(f"  actioned_by: '{sq(entry.get('actioned_by', ''))}'\n")
-        confirmed = entry.get("confirmed_by") or []
-        if confirmed:
-            fh.write("  confirmed_by:\n")
-            for agent in confirmed:
-                fh.write(f"    - '{sq(agent)}'\n")
-        else:
-            fh.write("  confirmed_by: []\n")
-        fh.write(f"  status: '{sq(entry.get('status', 'open'))}'\n")
-os.replace(tmp_file, bulletin_file)
-print(entry_id)
+    # ── GP-210: Dedup check (Python3-lite: sys/os only, no yaml import) ─────────
+    if [[ -f "$BULLETIN_FILE" && -s "$BULLETIN_FILE" ]]; then
+        _bw_dedup_result="$(python3 - "$BULLETIN_FILE" "$POSTED_BY" "$CONTENT" <<'PY'
+import sys, os
+bf, poster, content_target = sys.argv[1], sys.argv[2], sys.argv[3].strip()
+if not os.path.exists(bf):
+    sys.exit(0)
+lines = open(bf, encoding='utf-8').read().splitlines()
+in_content = False
+cur_lines = []
+cur_poster = None
+cur_id = None
+def check():
+    if cur_poster == poster:
+        c = '\n'.join(cur_lines).strip()
+        if c == content_target:
+            print(f"DEDUP: 同一内容の掲示板エントリが既存 ({cur_id})")
+            sys.exit(0)
+for line in lines:
+    if line.startswith('- id:'):
+        check()
+        cur_id = line[7:-1].replace("''", "'") if line.endswith("'") else line[7:]
+        in_content = False; cur_lines = []; cur_poster = None
+    elif line == '  content: |-':
+        in_content = True
+    elif in_content and line.startswith('    '):
+        cur_lines.append(line[4:])
+    elif in_content:
+        in_content = False
+        if line.startswith("  posted_by: '"):
+            raw = line[14:]
+            cur_poster = (raw[:-1] if raw.endswith("'") else raw).replace("''", "'")
+    elif line.startswith("  posted_by: '"):
+        raw = line[14:]
+        cur_poster = (raw[:-1] if raw.endswith("'") else raw).replace("''", "'")
+check()
 PY
+)"
+        if [[ "$_bw_dedup_result" == DEDUP:* ]]; then
+            printf '%s\n' "$_bw_dedup_result"
+            exit 0
+        fi
+    fi
+
+    # ── Write new entry (bash-only, prepend — no yaml import) ───────────────────
+    _bw_sq() { printf '%s' "${1//\'/\'\'}"; }
+    _bw_stripped_content="${CONTENT%$'\n'}"
+
+    {
+        printf '%s\n' "- id: '$(_bw_sq "$ENTRY_ID")'"
+        printf "  content: |-\n"
+        while IFS= read -r _bw_line; do
+            printf "    %s\n" "$_bw_line"
+        done <<< "$_bw_stripped_content"
+        printf "  posted_by: '%s'\n" "$(_bw_sq "$POSTED_BY")"
+        printf "  posted_at: '%s'\n" "$(_bw_sq "$POSTED_AT")"
+        case "${REQUIRES_CONFIRMATION,,}" in
+            ""|0|false|no|n) printf "  requires_confirmation: false\n" ;;
+            1|true|yes|y)    printf "  requires_confirmation: true\n" ;;
+            *)
+                printf "  requires_confirmation:\n"
+                IFS=',' read -ra _bw_rc_agents <<< "$REQUIRES_CONFIRMATION"
+                for _bw_rc_a in "${_bw_rc_agents[@]}"; do
+                    _bw_rc_a="${_bw_rc_a#"${_bw_rc_a%%[![:space:]]*}"}"
+                    _bw_rc_a="${_bw_rc_a%"${_bw_rc_a##*[![:space:]]}"}"
+                    [[ -n "$_bw_rc_a" ]] && printf "    - '%s'\n" "$(_bw_sq "$_bw_rc_a")"
+                done
+                ;;
+        esac
+        printf "  action_type: '%s'\n" "$(_bw_sq "$ACTION_TYPE")"
+        printf "  actioned_by: ''\n"
+        printf "  confirmed_by: []\n"
+        printf "  status: 'open'\n"
+    } > "${BULLETIN_FILE}.new_entry"
+
+    {
+        printf "entries:\n"
+        cat "${BULLETIN_FILE}.new_entry"
+        [[ -f "$BULLETIN_FILE" ]] && tail -n +2 "$BULLETIN_FILE"
+    } > "${BULLETIN_FILE}.tmp"
+    rm -f "${BULLETIN_FILE}.new_entry"
+    mv "${BULLETIN_FILE}.tmp" "$BULLETIN_FILE"
+
+    printf '%s\n' "$ENTRY_ID"
+
 } 200>"$LOCK_FILE")"
 
 if [[ "$WRITE_RESULT" == DEDUP:* ]]; then
