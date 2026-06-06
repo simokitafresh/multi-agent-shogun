@@ -1184,16 +1184,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T05:43:11"
   - script_path: "scripts/hooks/block_destructive.sh"
-    status: assigned
+    status: completed
     before_ms: 15
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 15
+    before_real_ms: 1353
+    after_real_ms: 1102
+    real_measurement_command: "20x printf '{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"rm -rf /tmp/kagemaru_speed_probe\"}}' | bash scripts/hooks/block_destructive.sh; median of 5 runs"
+    test_result: "bash_n_pass;direct_D001_D009_representative_PASS;safe_allow_PASS;project_rm_allow_PASS;SKIP=0;before_1353_after_1102"
+    commit: "be966c9ce"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T05:43:55"
+    updated_at: "2026-06-07T05:49:30"
   - script_path: "scripts/hooks/git-pre-commit.sh"
     status: pending
     before_ms: 16
