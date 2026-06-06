@@ -152,12 +152,12 @@ get_allowed_targets() {
 
 get_layout_col1_width_pct() {
     local val
-    val=$(grep -A1 '^layout:' "$_AGENT_CONFIG_SETTINGS" | grep 'col1_width_pct:' | sed 's/.*col1_width_pct:[[:space:]]*//')
+    val=$(awk '/^layout:/{f=1;next} f && /col1_width_pct:/{sub(/.*col1_width_pct:[[:space:]]*/,""); gsub(/[[:space:]]+$/,""); print; exit}' "$_AGENT_CONFIG_SETTINGS")
     echo "${val:-38}"
 }
 
 get_layout_karo_height() {
     local val
-    val=$(grep -A2 '^layout:' "$_AGENT_CONFIG_SETTINGS" | grep 'karo_height:' | sed 's/.*karo_height:[[:space:]]*//')
+    val=$(awk '/^layout:/{f=1;next} f && /karo_height:/{sub(/.*karo_height:[[:space:]]*/,""); gsub(/[[:space:]]+$/,""); print; exit}' "$_AGENT_CONFIG_SETTINGS")
     echo "${val:-24}"
 }
