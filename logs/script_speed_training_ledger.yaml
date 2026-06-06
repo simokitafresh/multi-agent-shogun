@@ -1,31 +1,32 @@
-global_status: paused
+global_status: running
 generated_at: "2026-06-06T21:09:32"
 measurement_command: "timeout 5 bash -n <script_path> (syntax baseline only; not runtime speed)"
 real_measurement_policy: "Ninja must choose a safe runtime command per script: time bash script.sh <args>, --help, dry-run mode, or sandboxed equivalent. Record before_real_ms/after_real_ms with the same command before and after."
 script_count: 254
 entries:
   - script_path: "scripts/ac_physical_verify.sh"
-    status: pending
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 418
+    after_real_ms: 68
+    real_measurement_command: "printf '%s
+' 'AC1 scripts/ac_physical_verify.sh L20' | bash scripts/ac_physical_verify.sh - >/dev/null"
+    test_result: "bash -n scripts/ac_physical_verify.sh && bats tests/unit/test_ac_physical_verify.bats PASS 2/2 SKIP=0"
+    commit: "08cda0186"
+    assigned_to: "hayate"
+    updated_at: "2026-06-06T21:58:12"
   - script_path: "scripts/affected_tests.sh"
-    status: pending
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 21302
+    after_real_ms: 1413
+    real_measurement_command: "timeout 20 bash scripts/affected_tests.sh scripts/affected_tests.sh >/dev/null"
+    test_result: "bash -n scripts/affected_tests.sh && bats tests/unit/test_deploy_task_ac_handling.bats PASS 36/36 SKIP=0"
+    commit: "3a9e16f6a"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-06T22:04:06"
   - script_path: "scripts/agent_status.sh"
     status: completed
     before_ms: 14
@@ -38,18 +39,18 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-06T22:01:20"
   - script_path: "scripts/api_usage.sh"
-    status: pending
+    status: completed
     before_ms: 39
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    after_ms: 10
+    before_real_ms: 2545
+    after_real_ms: 645
+    real_measurement_command: "time bash scripts/api_usage.sh openai (5回平均、本番SQLite)"
+    test_result: "bats tests/unit/test_usage_status.bats PASS 5/5 SKIP=0"
+    commit: "e109faba8"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-06T22:10:00"
   - script_path: "scripts/archive_completed.sh"
-    status: pending
+    status: assigned
     before_ms: 19
     after_ms: ""
     before_real_ms: ""
@@ -57,32 +58,39 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-06T22:01:32"
   - script_path: "scripts/auto_deploy_next.sh"
-    status: pending
+    status: completed
     before_ms: 18
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 47
+    after_real_ms: 33
+    real_measurement_command: "bash scripts/auto_deploy_next.sh >/dev/null 2>&1 || true"
+    test_result: "bash -n scripts/auto_deploy_next.sh && no-arg usage status=1 && invalid-cmd status=1 PASS SKIP=0"
+    commit: "eff6826b9"
+    assigned_to: "hayate"
+    updated_at: "2026-06-06T22:07:17"
   - script_path: "scripts/auto_draft_lesson.sh"
-    status: pending
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 1720
+    after_real_ms: 1180
+    real_measurement_command: "sandboxed_not_found_skip_50x: tmp copy of scripts/auto_draft_lesson.sh with found_false report; /usr/bin/time loop 50"
+task_id: cmd_speed_tmp_task
+parent_cmd: cmd_speed_tmp
+lesson_candidate:
+  found: false
+  no_lesson_reason: speed baseline
+' > \"$tmp/report.yaml\"; /usr/bin/time -f 'REAL_SECONDS=%e' bash -c 'for i in {1..50}; do bash \"$0/scripts/auto_draft_lesson.sh\" \"$0/report.yaml\" >/dev/null; done' \"$tmp\"; rm -rf \"$tmp\""
+\" \"worker_id: saizo\" \"task_id: cmd_speed_tmp_task\" \"parent_cmd: cmd_speed_tmp\" \"lesson_candidate:\" \"  found: false\" \"  no_lesson_reason: speed baseline\" > \"$tmp/report.yaml\"; /usr/bin/time -f \"REAL_SECONDS=%e\" bash -c 'for i in {1..50}; do bash \"$0/scripts/auto_draft_lesson.sh\" \"$0/report.yaml\" >/dev/null; done' \"$tmp\"; rm -rf \"$tmp\""
+    test_result: "bash -n scripts/auto_draft_lesson.sh && shellcheck -x scripts/auto_draft_lesson.sh && bats tests/unit/test_auto_draft_lesson.bats PASS 4/4 SKIP=0"
+    commit: "554ea80bd"
+    assigned_to: "saizo"
+    updated_at: "2026-06-06T22:09:32"
   - script_path: "scripts/auto_failure_lesson.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -90,10 +98,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-06T22:06:47"
   - script_path: "scripts/backfill_knowledge_debt.sh"
-    status: pending
+    status: assigned
     before_ms: 22
     after_ms: ""
     before_real_ms: ""
@@ -101,8 +109,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-06T22:09:01"
   - script_path: "scripts/backfill_lesson_target_files.sh"
     status: pending
     before_ms: 15
