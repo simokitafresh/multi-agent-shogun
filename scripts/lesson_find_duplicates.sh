@@ -11,7 +11,8 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_lfd_self="${BASH_SOURCE[0]}"; [[ "$_lfd_self" != /* ]] && _lfd_self="$PWD/$_lfd_self"
+SCRIPT_DIR="${_lfd_self%/scripts/lesson_find_duplicates.sh}"
 
 PROJECT="${1:-}"
 
@@ -32,11 +33,13 @@ python3 - "$LESSONS_FILE" << 'PYEOF'
 import yaml, sys
 from difflib import SequenceMatcher
 
+_CLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 lessons_file = sys.argv[1]
 threshold = 0.5
 
 with open(lessons_file, encoding="utf-8") as f:
-    data = yaml.safe_load(f)
+    data = yaml.load(f, Loader=_CLoader)
 
 lessons = data.get("lessons", []) if data else []
 if not lessons:
