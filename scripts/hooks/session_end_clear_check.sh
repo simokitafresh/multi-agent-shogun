@@ -2,11 +2,6 @@
 # @source: cmd_1808 (SessionEnd clear prep check hook)
 set -eu
 
-_session_end_self="${BASH_SOURCE[0]}"
-[[ "$_session_end_self" != /* ]] && _session_end_self="$PWD/$_session_end_self"
-SCRIPT_DIR="${_session_end_self%/scripts/hooks/session_end_clear_check.sh}"
-unset _session_end_self
-
 agent_id="${SESSION_END_AGENT_ID:-}"
 if [[ -z "$agent_id" ]] && command -v tmux >/dev/null 2>&1; then
   if [[ -n "${TMUX_PANE:-}" ]]; then
@@ -23,6 +18,11 @@ fi
 if [[ "$agent_id" != "shogun" ]]; then
   exit 0
 fi
+
+_session_end_self="${BASH_SOURCE[0]}"
+[[ "$_session_end_self" != /* ]] && _session_end_self="$PWD/$_session_end_self"
+SCRIPT_DIR="${_session_end_self%/scripts/hooks/session_end_clear_check.sh}"
+unset _session_end_self
 
 lc_file="${SESSION_END_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
 prep_check="${SESSION_END_CLEAR_PREP_CMD:-$SCRIPT_DIR/scripts/clear_prep_check.sh}"
