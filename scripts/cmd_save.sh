@@ -17,6 +17,13 @@
 # ============================================================
 set -euo pipefail
 
+# --- Usage ---
+if [[ $# -lt 1 ]]; then
+    echo "Usage: bash scripts/cmd_save.sh <cmd_id>" >&2
+    echo "  cmd_id: 数字のみ（例: 1148）またはcmd_付き（例: cmd_1148）" >&2
+    exit 1
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
@@ -2420,13 +2427,6 @@ handle_cmd_save_exit() {
 }
 
 trap 'handle_cmd_save_exit' EXIT
-
-# --- Usage ---
-if [[ $# -lt 1 ]]; then
-    echo "Usage: bash scripts/cmd_save.sh <cmd_id>" >&2
-    echo "  cmd_id: 数字のみ（例: 1148）またはcmd_付き（例: cmd_1148）" >&2
-    exit 1
-fi
 
 # --- cmd_id正規化（cmd_プレフィックスを付与） ---
 RAW_ID="$1"
