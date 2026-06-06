@@ -535,7 +535,10 @@ atomic_write_text(dashboard_path, content)
 print(f'UPDATED: 要対応セクション同期完了 ({len(pending_items)}件)')
 STEP67_PY
     }
-    _step67_pd_sync || echo "WARN: Step 6.7 要対応セクション同期失敗（既存値を維持）" >&2
+    # dry-runではPD同期不要（dashboard.md変更なし）
+    if [[ "$DRY_RUN" != true ]]; then
+        _step67_pd_sync || echo "WARN: Step 6.7 要対応セクション同期失敗（既存値を維持）" >&2
+    fi
 
     # ─── Step 6.8: Postcondition — PD⇔要対応件数の整合性検証 ───
     _step68_postcondition() {
