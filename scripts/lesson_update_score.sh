@@ -5,11 +5,8 @@
 
 set -e
 
-# SCRIPT_DIR: pure bash fast path for absolute script invocation; fallback keeps
-# relative invocation behavior unchanged.
-_SELF="${BASH_SOURCE[0]}"
-SCRIPT_DIR="${_SELF%/*}/.."
-[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
+_lus_self="${BASH_SOURCE[0]}"; [[ "$_lus_self" != /* ]] && _lus_self="$PWD/$_lus_self"
+SCRIPT_DIR="${_lus_self%/scripts/lesson_update_score.sh}"
 PROJECT_ID="${1:-}"
 LESSON_ID="${2:-}"
 SCORE_TYPE="${3:-}"
