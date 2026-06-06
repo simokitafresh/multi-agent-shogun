@@ -57,25 +57,23 @@ PY
 _session_start_emit_output() {
   local _session_start_event="$1"
   local _session_start_context="$2"
-  local _session_start_json
+  local _session_start_event_json
+  local _session_start_context_json
 
-  if _session_start_json="$(jq -Rs --arg event_name "$_session_start_event" '{hookSpecificOutput:{hookEventName:$event_name,additionalContext:.}}' 2>/dev/null <<<"$_session_start_context")"; then
-    printf '%s\n' "$_session_start_json"
-    return 0
-  fi
+  _session_start_event_json="$(_session_start_json_escape "$_session_start_event")"
+  _session_start_context_json="$(_session_start_json_escape "$_session_start_context")"
+  printf '{"hookSpecificOutput":{"hookEventName":"%s","additionalContext":"%s"}}\n' \
+    "$_session_start_event_json" "$_session_start_context_json"
+}
 
-  printf '%s' "$_session_start_context" | HOOK_EVENT_NAME="$_session_start_event" python3 -c '
-import json
-import os
-import sys
-
-print(json.dumps({
-    "hookSpecificOutput": {
-        "hookEventName": os.environ["HOOK_EVENT_NAME"],
-        "additionalContext": sys.stdin.read(),
-    }
-}, ensure_ascii=False))
-'
+_session_start_json_escape() {
+  local _session_start_value="$1"
+  _session_start_value="${_session_start_value//\\/\\\\}"
+  _session_start_value="${_session_start_value//\"/\\\"}"
+  _session_start_value="${_session_start_value//$'\n'/\\n}"
+  _session_start_value="${_session_start_value//$'\r'/\\r}"
+  _session_start_value="${_session_start_value//$'\t'/\\t}"
+  printf '%s' "$_session_start_value"
 }
 
 # --- Read stdin JSON (type: startup|resume|clear|compact) ---
@@ -88,9 +86,9 @@ source_type="$(_session_start_json_get ".type" "unknown")" || {
   exit 0
 }
 
-# --- Get agent_id from tmux ---
-agent_id="unknown"
-if command -v tmux >/dev/null 2>&1; then
+# --- Get agent_id from environment or tmux ---
+agent_id="${AGENT_ID:-}"
+if [[ -z "$agent_id" ]] && command -v tmux >/dev/null 2>&1; then
   if [[ -n "${TMUX_PANE:-}" ]]; then
     agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")"
   elif [[ -n "${TMUX:-}" ]]; then
