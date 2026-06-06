@@ -33,7 +33,7 @@ if [ ! -f "$YAML_FILE" ]; then
 fi
 
 # (a) 現在のstatusを確認（awkで安全に抽出。list形式とmap key形式の両方に対応）
-current_status=$(awk -v cmd_id="${CMD_ID}" '
+current_status=$(LC_ALL=C awk -v cmd_id="${CMD_ID}" '
     # list形式: "- id: cmd_xxx"
     /- id:/ && index($0, cmd_id) > 0 { found=1; list_mode=1; next }
     found && list_mode && /- id:/ { exit }
