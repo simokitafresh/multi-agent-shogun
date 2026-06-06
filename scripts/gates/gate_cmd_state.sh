@@ -42,6 +42,12 @@ if [ ! -f "$SHOGUN_TO_KARO" ]; then
     exit 0
 fi
 
+if ! grep -q '^[[:space:]][[:space:]]*status:[[:space:]]*pending' "$SHOGUN_TO_KARO" 2>/dev/null; then
+    echo "OK: pending cmd なし"
+    echo "--- 総合判定: OK ---"
+    exit 0
+fi
+
 # Extract all cmd IDs with status=pending
 # Parse YAML: find "- id: cmd_XXX" blocks and check their status field
 mapfile -t CMD_IDS < <(
