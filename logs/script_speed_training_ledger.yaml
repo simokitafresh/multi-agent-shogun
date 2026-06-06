@@ -722,16 +722,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_diagnose_check.sh"
-    status: pending
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 110
+    after_real_ms: 70
+    real_measurement_command: "env GATE_FIRE_LOG_FILE=/tmp/gate_diagnose_speed_kagemaru/gate_fire_log.yaml GATE_SESSION_STATE_TASK_DIR=/tmp/gate_diagnose_speed_kagemaru/tasks bash scripts/gates/gate_diagnose_check.sh /tmp/gate_diagnose_speed_kagemaru/report.yaml 'binary_checks fail'"
+    test_result: "bash -n PASS; bats tests/unit/test_gate_diagnose_check.bats 9/9 PASS SKIP=0"
+    commit: "9328887eb"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T00:44:05"
   - script_path: "scripts/gates/gate_enforcement_audit.sh"
     status: pending
     before_ms: 18
