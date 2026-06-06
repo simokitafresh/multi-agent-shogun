@@ -758,6 +758,17 @@ def before_after_from_text(text):
     return before, after
 
 
+def measurement_from_report(report, keys):
+    for key in keys:
+        value = report.get(key)
+        if value is None or value == "":
+            continue
+        if key.endswith("_ms"):
+            return f"{value}ms"
+        return str(value)
+    return ""
+
+
 def script_from_spec(spec_path, fallback_texts):
     candidates = []
     for text in fallback_texts:
@@ -793,12 +804,8 @@ for task_path in task_paths:
     report_text = "\n".join(flatten_strings(report))
     report_texts.append(report_text)
     spec_paths.extend(extract_paths([report_text], r"docs/research/[A-Za-z0-9_./-]*codd[A-Za-z0-9_./-]*\.md"))
-    for key in ("before_ms", "before_median_ms", "before_time_ms", "before"):
-        if not before and report.get(key) is not None:
-            before = f"{report.get(key)}ms" if "ms" in key else str(report.get(key))
-    for key in ("after_ms", "after_median_ms", "after_time_ms", "after"):
-        if not after and report.get(key) is not None:
-            after = f"{report.get(key)}ms" if "ms" in key else str(report.get(key))
+    before = before or measurement_from_report(report, ("before_real_ms", "before_ms", "before_median_ms", "before_time_ms", "before"))
+    after = after or measurement_from_report(report, ("after_real_ms", "after_ms", "after_median_ms", "after_time_ms", "after"))
     if not before or not after:
         b, a = before_after_from_text(report_text)
         before = before or b
@@ -3127,7 +3134,7 @@ with open(impact_file, "r", newline="", encoding="utf-8") as f:
             else:
                 row["result"] = gate_result
             updated += 1
-        rows.append(row)
+        rows.append({field: row.get(field, "") for field in fieldnames})
 
 if updated == 0:
     print(f"LESSON_IMPACT: {cmd_id} no pending rows to update")
@@ -3138,7 +3145,7 @@ tmp_dir = os.path.dirname(impact_file) or "."
 try:
     tmp_fd, tmp_path = tempfile.mkstemp(dir=tmp_dir, prefix="lesson_impact.", suffix=".tmp")
     with os.fdopen(tmp_fd, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t", extrasaction="ignore")
         writer.writeheader()
         writer.writerows(rows)
     os.replace(tmp_path, impact_file)

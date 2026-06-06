@@ -605,6 +605,49 @@ EOF
     grep -q "$TEST_CMD_ID" "$TEST_PROJECT/docs/research/codd_refactor_registry.md"
 }
 
+@test "CoDD registry append prefers report real runtime fields over summary timings" {
+    mkdir -p "$TEST_PROJECT/docs/research"
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+
+    cat > "$TEST_PROJECT/docs/research/codd_refactor_registry.md" <<'EOF'
+# CoDD Refactor Registry
+
+| 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
+|------|--------|---------------------|-----------|--------------|----------------------|
+EOF
+    cat > "$YAML_FILE" <<EOF
+commands:
+  $TEST_CMD_ID:
+    title: "CoDD improvement"
+    command: "CoDDで scripts/demo_gate.sh を改善"
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  assigned_to: sasuke
+  target_path: scripts/demo_gate.sh
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+parent_cmd: $TEST_CMD_ID
+status: done
+before_real_ms: 80
+after_real_ms: 70
+result:
+  summary: "単発time表示では 0.08s -> 0.07s と見えるが、台帳用real msを正とする"
+files_modified:
+  - path: scripts/demo_gate.sh
+EOF
+
+    run append_codd_registry_entry "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: appended $TEST_CMD_ID"* ]]
+    grep -q "80ms → 70ms" "$TEST_PROJECT/docs/research/codd_refactor_registry.md"
+    ! grep -q "0.08s → 0.07s" "$TEST_PROJECT/docs/research/codd_refactor_registry.md"
+}
+
 @test "run_codd_propagate_update executes codd propagate update after gate clear" {
     local codd_log="$TEST_TMPDIR/codd_args.log"
     local stub_codd="$TEST_TMPDIR/codd"
@@ -1496,6 +1539,44 @@ EOF
 
     run grep -F $'subtask_test\tsasuke\tL100\tinjected\tUSEFUL\tyes\tinfra\treview\troutine\t5\t1' "$TEST_PROJECT/logs/lesson_impact.tsv"
     [ "$status" -eq 0 ]
+}
+
+@test "lesson_impact update ignores extra TSV fields instead of crashing" {
+    write_cmd_yaml "with_context"
+    write_context_file "2026-03-05"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_id: subtask_test
+  subtask_id: subtask_test
+  assigned_to: sasuke
+  task_type: review
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+task_id: subtask_test
+parent_cmd: $TEST_CMD_ID
+lessons_useful:
+  - id: L100
+    useful: true
+    reason: 'test'
+EOF
+
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level
+2026-03-04T00:00:00	subtask_test	sasuke	L100	injected	pending	pending	infra	review	routine	EXTRA_FIELD
+EOF
+
+    run update_lesson_impact_tsv "$TEST_CMD_ID" "CLEAR"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"LESSON_IMPACT: $TEST_CMD_ID updated rows=1"* ]]
+
+    run grep -F $'subtask_test\tsasuke\tL100\tinjected\tUSEFUL\tyes\tinfra\treview\troutine' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+    ! grep -q "EXTRA_FIELD" "$TEST_PROJECT/logs/lesson_impact.tsv"
 }
 
 @test "B層: normalize OK when report already dict format (exit 1)" {
