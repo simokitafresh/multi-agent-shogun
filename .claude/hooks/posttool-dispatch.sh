@@ -61,11 +61,8 @@ fi
 case "$payload" in
     *'"Bash"'*)
         if [ "$payload" = "${payload%inbox_mark_read.sh*}" ]; then
-            HOOK_PAYLOAD="$payload"
-            export HOOK_PAYLOAD
-            source "$ROOT/.claude/hooks/post-bash-combined.sh"
+            run_hook "$ROOT/.claude/hooks/post-bash-combined.sh" || exit "$?"
         fi
-        run_hook "$ROOT/.claude/hooks/post-bash-combined.sh" || true
         source "$ROOT/.claude/hooks/post-bulletin-notify-read-check.sh" <<< "$payload"
         ;;
     *'"Grep"'*|*'"Glob"'*)

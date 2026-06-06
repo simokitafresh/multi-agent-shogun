@@ -87,6 +87,14 @@ _run_post() {
     [[ "$output" == *"SKIP=FAIL"* ]]
 }
 
+@test "post dispatcher runs Bash combined hook once" {
+    _run_post '{"tool_name":"Bash","tool_input":{"command":"bash scripts/cmd_save.sh cmd_test"},"tool_result":{"stdout":"BLOCK: cmd_save.sh test block","stderr":"","exit_code":1}}'
+    [ "$status" -eq 0 ]
+    local count
+    count="$(printf '%s\n' "$output" | grep -c "cmd_save.sh BLOCK")"
+    [ "$count" -eq 1 ]
+}
+
 @test "post dispatcher preserves Grep completeness warning" {
     _run_post '{"tool_name":"Grep","tool_input":{"pattern":"foo"}}'
     [ "$status" -eq 0 ]
