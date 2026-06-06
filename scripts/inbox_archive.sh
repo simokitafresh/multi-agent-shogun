@@ -40,18 +40,22 @@ inbox_archive_fast_path() {
 
     # Complex YAML remains on the existing PyYAML path. The hot inbox shape is a
     # flat list of single-line scalar message fields.
-    if grep -Eq '^[[:space:]]{4,}[^[:space:]]|:[[:space:]]*[|>][+-]?[0-9]*[[:space:]]*$' "$inbox_path" 2>/dev/null; then
-        return 1
-    fi
+    # Complex YAML detection is integrated into awk (exit 2) to avoid a separate
+    # grep subprocess reading the file a second time.
 
-    local inbox_dir archive_dir read_tmp unread_tmp stats_tmp inbox_tmp archive_tmp
+    local inbox_dir archive_dir _ia_tmpdir read_tmp unread_tmp stats_tmp inbox_tmp archive_tmp
     inbox_dir="${inbox_path%/*}"
     archive_dir="${archive_path%/*}"
-    read_tmp=$(mktemp "$archive_dir/.ia_read_XXXXXX.tmp")
-    unread_tmp=$(mktemp "$inbox_dir/.ia_unread_XXXXXX.tmp")
-    stats_tmp=$(mktemp /tmp/.ia_stats_XXXXXX)
+    # One mktemp -d replaces three separate mktemp subprocesses
+    _ia_tmpdir=$(mktemp -d /tmp/.ia_XXXXXX)
+    read_tmp="$_ia_tmpdir/r"
+    unread_tmp="$_ia_tmpdir/u"
+    stats_tmp="$_ia_tmpdir/s"
 
     if ! awk -v read_out="$read_tmp" -v unread_out="$unread_tmp" -v stats_out="$stats_tmp" '
+# Detect complex YAML in a single pass — replaces grep -Eq pre-scan
+/^[[:space:]][[:space:]][[:space:]][[:space:]][^[:space:]]/ { exit 2 }
+/:[[:space:]]*[|>][+-]?[0-9]*[[:space:]]*$/ { exit 2 }
 function trim(v) {
     gsub(/^[ \t\r\n]+/, "", v)
     gsub(/[ \t\r\n]+$/, "", v)
@@ -169,26 +173,25 @@ END {
     print total_count, read_count, unread_count > stats_out
 }
 ' "$inbox_path"; then
-        rm -f "$read_tmp" "$unread_tmp" "$stats_tmp"
+        rm -rf "$_ia_tmpdir"
         return 1
     fi
 
     local total_count read_count unread_count
     read -r total_count read_count unread_count < "$stats_tmp" || {
-        rm -f "$read_tmp" "$unread_tmp" "$stats_tmp"
+        rm -rf "$_ia_tmpdir"
         return 1
     }
-    rm -f "$stats_tmp"
 
     echo "[inbox_archive] ${agent_id}: total=${total_count}, read=${read_count}, unread=${unread_count}"
 
     if [ "${total_count:-0}" -eq 0 ]; then
-        rm -f "$read_tmp" "$unread_tmp"
+        rm -rf "$_ia_tmpdir"
         echo "[inbox_archive] No messages in inbox"
         return 0
     fi
     if [ "${read_count:-0}" -eq 0 ]; then
-        rm -f "$read_tmp" "$unread_tmp"
+        rm -rf "$_ia_tmpdir"
         echo "[inbox_archive] No read messages to archive"
         return 0
     fi
@@ -218,7 +221,7 @@ END {
     fi
     mv "$inbox_tmp" "$inbox_path"
 
-    rm -f "$read_tmp" "$unread_tmp"
+    rm -rf "$_ia_tmpdir"
     echo "[inbox_archive] Archived ${read_count} messages to ${archive_path}"
     return 0
 }
