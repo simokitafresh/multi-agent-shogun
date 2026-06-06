@@ -8,7 +8,10 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+SCRIPT_DIR="${_self%/scripts/auto_draft_lesson.sh}"
+unset _self
 REPORT_PATH="${1:-}"
 
 if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
@@ -20,7 +23,9 @@ write_skip_lesson_done() {
     local reason="$1"
     local cmd_id gates_dir
 
-    cmd_id=$(awk -F: '
+    cmd_id="${_REPORT_CMD_ID:-}"
+    if [ -z "$cmd_id" ]; then
+        cmd_id=$(awk -F: '
         /^[[:space:]]*#/ { next }
         /^[^[:space:]][^:]*:/ {
             key=$1
@@ -32,7 +37,8 @@ write_skip_lesson_done() {
             if (key == "task_id" && fallback == "" && val != "") { fallback = val }
         }
         END { if (fallback != "") print fallback }
-    ' "$REPORT_PATH")
+        ' "$REPORT_PATH")
+    fi
 
     if [[ "$cmd_id" == cmd_* ]]; then
         gates_dir="$SCRIPT_DIR/queue/gates/${cmd_id}"
@@ -45,6 +51,39 @@ write_skip_lesson_done() {
     fi
 }
 
+_REPORT_CMD_ID=""
+_found_val=""
+while IFS='=' read -r key value; do
+    case "$key" in
+        cmd_id) _REPORT_CMD_ID="$value" ;;
+        found) _found_val="$value" ;;
+    esac
+done < <(awk -F: '
+    /^[[:space:]]*#/ { next }
+    /^[^[:space:]][^:]*:/ {
+        key=$1
+        val=$0
+        sub(/^[^:]+:[[:space:]]*/, "", val)
+        gsub(/["\047]/, "", val)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
+        if (key == "parent_cmd" && val != "") { cmd_id = val }
+        if (key == "task_id" && fallback == "" && val != "") { fallback = val }
+        in_lc = (key == "lesson_candidate")
+        next
+    }
+    in_lc && /^[[:space:]]+found:[[:space:]]*/ {
+        val=$0
+        sub(/^[[:space:]]+found:[[:space:]]*/, "", val)
+        gsub(/["\047[:space:]]/, "", val)
+        found=val
+    }
+    END {
+        if (cmd_id == "") cmd_id = fallback
+        print "cmd_id=" cmd_id
+        print "found=" found
+    }
+' "$REPORT_PATH")
+
 # draft_lessons起因のBLOCK循環防止
 # GATE_BLOCK_REASON=draft_lessons* が設定されている場合はdraft生成をスキップ
 if [[ "${GATE_BLOCK_REASON:-}" == draft_lessons* ]]; then
@@ -53,16 +92,7 @@ if [[ "${GATE_BLOCK_REASON:-}" == draft_lessons* ]]; then
     exit 0
 fi
 
-# Fast pre-check: lesson_candidate.found must be exactly 'true' (awk, no python3 startup)
-_found_val=$(awk '
-    /^lesson_candidate:/ { in_lc=1; next }
-    in_lc && /^[^ \t]/ { exit }
-    in_lc && /^[[:space:]]+found:[[:space:]]*/ {
-        sub(/^[[:space:]]+found:[[:space:]]*/, "")
-        gsub(/[[:space:]]/, "")
-        print; exit
-    }
-' "$REPORT_PATH")
+# Fast pre-check: lesson_candidate.found must be exactly 'true' (metadata already read above)
 if [ "$_found_val" != "true" ]; then
     write_skip_lesson_done "not_found"
     echo "[auto_draft] Skipped: not_found (${REPORT_PATH})"
