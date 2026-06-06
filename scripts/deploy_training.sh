@@ -4,7 +4,6 @@
 # Example: bash scripts/deploy_training.sh R22 hayate:tests/unit/test_foo.bats saizo:tests/unit/test_bar.bats
 
 set -euo pipefail
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 ROUND="${1:?Usage: deploy_training.sh <round> <ninja:target> ...}"
 shift
@@ -14,6 +13,7 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 STK="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 SUCCESS=0
 TOTAL=0
