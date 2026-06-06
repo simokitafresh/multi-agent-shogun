@@ -32,31 +32,16 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_training_speed_deploy_training_20260607000630
+  parent_cmd: cmd_training_speed_gate_auto_respond_20260607001437
   project: infra
-  purpose: 'Speed-train scripts/deploy_training.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
+  purpose: 'Speed-train scripts/gate_auto_respond.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
   scout_exempt: true
   status: done
   stop_for: []
-  target_path: scripts/deploy_training.sh
-  task_id: cmd_training_speed_deploy_training_20260607000630_normal
+  target_path: scripts/gate_auto_respond.sh
+  task_id: cmd_training_speed_gate_auto_respond_20260607001437_normal
   task_type: speed_training
   related_lessons:
-  - id: 'L703'
-    summary: 'auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst'
-    detail: 'auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst'
-  - id: 'L598'
-    summary: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
-    detail: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
-  - id: 'L529'
-    summary: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
-    detail: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
-  - id: 'L507'
-    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo'
-    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo'
-  - id: 'L189'
-    summary: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット'
-    detail: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット'
   - id: 'L705'
     summary: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
     detail: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
@@ -68,15 +53,10 @@ task:
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
-  - "skill_design_rules — Skill設計ルール:  context/skill-design-rules.md docs/research/dream-skill-design.md scripts/skill_gate_feedback.sh scripts/skill_auto_improve.sh scripts/skill_execution_log.sh context/codd.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md skills/reset-layout/SKILL.md skills/pf-registration/SKILL.md docs/research/gstack-gbrain-skillify-2026-04.md"
-  - "daemon_supervision — デーモン監視と復旧:  scripts/daemon_supervisor.sh scripts/ninja_monitor.sh scripts/inbox_watcher.sh docs/operations/daemon_runbook.md scripts/daemon_watchdog.sh デーモンcron監視+自動再起動(ninja_monitor/ntfy_listener/inbox_watcher)"
-  - "inbox_watcher_process_model — inbox_watcherプロセスモデル:  scripts/inbox_watcher.sh scripts/restart_watchers.sh"
-  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
   recommended_skills:
-  - "reset-layout"
-  - "shogun-all-codex-switch"
-  - "shogun-peacetime-rollback"
+  - "report-write"
+  - "verdict-check"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -97,22 +77,17 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L703: auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst
-      - L598: ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie
-      - L529: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を
-      - L507: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
-      - L189: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット
       - L705: 今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/
       - L692: CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/
     ────────────────────────────────────────
     
     
   ac_version: 719e89b4
-  _ac_task_id: cmd_training_speed_deploy_training_20260607000630_normal
+  _ac_task_id: cmd_training_speed_gate_auto_respond_20260607001437_normal
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_training_speed_deploy_training_20260607000630.yaml
-  report_path: queue/reports/hayate_report_cmd_training_speed_deploy_training_20260607000630.yaml
+  report_filename: hayate_report_cmd_training_speed_gate_auto_respond_20260607001437.yaml
+  report_path: queue/reports/hayate_report_cmd_training_speed_gate_auto_respond_20260607001437.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -128,5 +103,5 @@ task:
     - pattern: 'lu_structure_error'
       count: 2
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
-  deployed_at: "2026-06-07T00:07:07"
-  progress: "AC3 completed: same measurement command after_real_ms=1277 < before_real_ms=1536; record-real wrote command/test_result/commit=f926137d8 to ledger"
+  deployed_at: "2026-06-07T00:14:58"
+  progress: "AC3 completed: after_real_ms=5367 < before_real_ms=8204; ledger entry recorded with implementation commit=dafe3ce81 and timing commit=695678ae7"
