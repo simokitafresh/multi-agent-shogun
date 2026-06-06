@@ -1679,7 +1679,7 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T08:42:00"
   - script_path: "scripts/lib/cli_lookup.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -1687,21 +1687,21 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T08:40:13"
   - script_path: "scripts/lib/ctx_utils.sh"
-    status: pending
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 43
+    after_real_ms: 21
+    real_measurement_command: "bash -c 'source scripts/lib/ctx_utils.sh; get_ctx_pct invalid_pane_xyz 2>/dev/null'"
+    test_result: "bash -n OK; source+call PASS; 4 functional tests PASS (default/last-num/CTX-pct/context-left)"
+    commit: "9d7e0be79"
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T08:56:00"
   - script_path: "scripts/lib/field_get.sh"
-    status: pending
+    status: assigned
     before_ms: 22
     after_ms: ""
     before_real_ms: ""
@@ -1709,19 +1709,19 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T08:55:06"
   - script_path: "scripts/lib/firefighting_keywords.sh"
-    status: pending
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 26
+    after_real_ms: 24
+    real_measurement_command: "bash -c 'source scripts/lib/firefighting_keywords.sh; [[ \"$FIREFIGHTING_PATTERN\" == *hotfix* ]]' >/dev/null 2>&1"
+    test_result: "bash_n_pass;cmd_save_q5_bundle_23_pass_0_skip;sample_boundary_match_ok;before_26_after_24;SKIP=0"
+    commit: "3a6beecaa"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T08:58:27"
   - script_path: "scripts/lib/gunshi_notify.sh"
     status: pending
     before_ms: 18
