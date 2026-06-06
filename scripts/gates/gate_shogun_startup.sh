@@ -191,10 +191,23 @@ _TMP_DQ_RECENT=$(mktemp) _TMP_WA_RECENT=$(mktemp) _TMP_SKILL_EXEC_RECENT=$(mktem
 _TMP_SCRIPTS_STATUS=$(mktemp) _TMP_GUNSHI_INFO=$(mktemp) _TMP_EVO_SCAN=$(mktemp)
 _TMP_DEFERRED_HOLES=$(mktemp) _TMP_BACKLINK_ZERO=$(mktemp)
 _TMP_THREE_LAYER=$(mktemp) _TMP_THREE_LAYER_STATUS=$(mktemp)
-_TMP_SCRIPT_INDEX=$(mktemp)
-trap 'rm -f "$_TMP_CI_RED" "$_TMP_G1" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_SCRIPT_INDEX"' EXIT
-STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
-awk '
+	_TMP_SCRIPT_INDEX=$(mktemp)
+	trap 'rm -f "$_TMP_CI_RED" "$_TMP_G1" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_SCRIPT_INDEX"' EXIT
+	STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
+	"$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
+	_PID_G1=$!
+	if [ "$LIGHT_MODE" != "1" ] || [ "$LIGHT_SKIP_HEAVY" != "1" ]; then
+	    bash "$GATE_DIR/gate_loop_health.sh" > "$_TMP_G12" 2>&1 &
+	    _PID_G12=$!
+	    bash "$GATE_DIR/gate_lesson_health.sh" > "$_TMP_G13" 2>&1 &
+	    _PID_G13=$!
+	else
+	    _PID_G12=""
+	    _PID_G13=""
+	fi
+	"$GATE_DIR/gate_knowledge_freshness.sh" > "$_TMP_G25" 2>&1 &
+	_PID_G25=$!
+	awk '
 function flush_run() {
     if (current_run != "") {
         run_count++
@@ -329,20 +342,7 @@ find() {
     command find "$@"
 }
 export -f find
-"$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
-_PID_G1=$!
-if [ "$LIGHT_MODE" != "1" ] || [ "$LIGHT_SKIP_HEAVY" != "1" ]; then
-    bash "$GATE_DIR/gate_loop_health.sh" > "$_TMP_G12" 2>&1 &
-    _PID_G12=$!
-    bash "$GATE_DIR/gate_lesson_health.sh" > "$_TMP_G13" 2>&1 &
-    _PID_G13=$!
-else
-    _PID_G12=""
-    _PID_G13=""
-fi
-"$GATE_DIR/gate_knowledge_freshness.sh" > "$_TMP_G25" 2>&1 &
-_PID_G25=$!
-(cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo "?") > "$_TMP_UNPUSHED" &
+	(cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo "?") > "$_TMP_UNPUSHED" &
 _PID_UNPUSHED=$!
 (cd "$SCRIPT_DIR" && git ls-files -m -o --exclude-standard -- scripts/ 2>/dev/null | sed 's/^/ M /') > "$_TMP_SCRIPTS_STATUS" &
 _PID_SCRIPTS_STATUS=$!
@@ -1768,8 +1768,12 @@ echo "■ 三層記憶引用率([MEM]タグ)"
 _lord_conv_12_2="/mnt/c/tools/multi-agent-shogun/data/lord_conversation.jsonl"
 if [ -f "$_lord_conv_12_2" ]; then
     _shogun_resp_12_2=$(tail -200 "$_lord_conv_12_2" 2>/dev/null | grep '"direction":"response"' | tail -20)
-    _resp_count_12_2=$(echo "$_shogun_resp_12_2" | grep -c '"direction"' 2>/dev/null || echo 0)
-    _mem_count_12_2=$(echo "$_shogun_resp_12_2" | grep -c '\[MEM:' 2>/dev/null || echo 0)
+    IFS=$'\t' read -r _resp_count_12_2 _mem_count_12_2 _mem_md_count_12_2 <<< "$(printf '%s\n' "$_shogun_resp_12_2" | awk '
+        /"direction"/ { resp++ }
+        /\[MEM:/ { mem++ }
+        /\[MEM: memory_md/ { mem_md++ }
+        END { printf "%d\t%d\t%d\n", resp + 0, mem + 0, mem_md + 0 }
+    ')"
     echo "  三層記憶引用率: ${_mem_count_12_2}/${_resp_count_12_2}件 (grep [MEM:)"
     if [ "${_resp_count_12_2:-0}" -gt 3 ] && [ "${_mem_count_12_2:-0}" -eq 0 ]; then
         echo "  WARN: 直近${_resp_count_12_2}件の将軍回答に[MEM:]タグなし。Step 1.7: 三層記憶起点の原則が守られていない"
@@ -1777,7 +1781,6 @@ if [ -f "$_lord_conv_12_2" ]; then
         alerts+=("三層記憶引用率0%: 殿の質問に三層記憶を使っていない")
     fi
     # memory_mdソース禁止チェック
-    _mem_md_count_12_2=$(echo "$_shogun_resp_12_2" | grep -c '\[MEM: memory_md' 2>/dev/null || echo 0)
     if [ "${_mem_md_count_12_2:-0}" -gt 0 ]; then
         echo "  WARN: [MEM: memory_md]が${_mem_md_count_12_2}件検出。MEMORY.md参照禁止(Step 1.7)"
         if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
