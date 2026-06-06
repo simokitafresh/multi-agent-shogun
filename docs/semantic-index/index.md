@@ -519,6 +519,8 @@ codd:
 | cmd | `cmd_3177` 三層記憶#6: Obsidian正式昇格→SQLite戻り経路スクリプト (`scripts/obsidian_promote_finalize.sh`) |
 | causal | `cmd_3177` origin: [[three-layer-memory-l0-l7-penetration-design]] -> [[LS-A23]] -> [[L7 Obsidian戻り経路]] |
 | causal | `cmd_3177` depends_on: cmd_3175 |
+| cmd | `cmd_3200` three_layer_memory_system概念新設+汚いヒット自動検出で自動成長ループ完成 (`context/semantic-map.md`, `docs/semantic-index/index.md`, `tests/unit/test_semantic_search.bats`) |
+| causal | `cmd_3200` origin: [[殿指摘_三層記憶概念混同]] -> [[家老覚醒レビュー3往復]] -> [[辞書追加+汚いヒット自動検出]] |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |

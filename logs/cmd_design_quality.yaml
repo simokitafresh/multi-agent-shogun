@@ -1,63 +1,6 @@
 entries:
 - cmd_id: "cmd_3149"
   ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-03T05:27:22Z"
-  notes: "設計書数値緩和|check=check_gunshi_reference_numeric_relaxation"
-- cmd_id: "cmd_3149"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-03T05:27:23Z"
-  diagnosis: "BLOCK理由: (1)causal_verification_missing=q5に因果キーワード不足 (2)measurement_env未記入 (3)設計書数値緩和=AC3に絶対値50%がq8数値より大きいと判定 対策: (1)q5にgit blame+因果追記 (2)measurement_env追加 (3)AC3を相対表現に変更"
-  notes: "WARN累計昇格: 「設計書数値緩和|check=check_gunshi_reference_numeric_relaxation」が6回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3149"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-03T05:28:04Z"
-  notes: "設計書数値緩和|check=check_gunshi_reference_numeric_relaxation"
-- cmd_id: "cmd_3149"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-03T05:28:04Z"
-  diagnosis: "BLOCK理由: (1)因果キーワード不足=q5に追記済み (2)環境差異フィールド未記入=追加済み (3)AC絶対値がq8数値超過=相対表現に変更済み 対策: 3件全て解消"
-  notes: "WARN累計昇格: 「設計書数値緩和|check=check_gunshi_reference_numeric_relaxation」が7回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3149"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-03T05:29:48Z"
-  notes: "設計書数値緩和|check=check_gunshi_reference_numeric_relaxation"
-- cmd_id: "cmd_3149"
-  ac_count: 0
   gate_result: "BLOCK"
   karo_rework: "no"
   gunshi_verdict: "APPROVE"
@@ -2142,3 +2085,34 @@ entries:
   supplementary_cmds: 0
   source: "cmd_complete_gate"
   timestamp: "2026-06-04T03:14:55Z"
+- cmd_id: "cmd_3200"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-06T09:55:37Z"
+  notes: "vercel_phase:broken_references"
+- cmd_id: "cmd_3200"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-06T10:00:29Z"
+- cmd_id: "cmd_3200"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-06T10:06:02Z"
