@@ -266,6 +266,7 @@ command: |
    殿の判断を要する事項は、他のセクションに書いた場合でも、必ず🚨要対応セクションにも記載せよ。殿はこのセクションだけを見て判断する。
 8. **学習ループ**: acceptance_criteria は WHAT を二値で書け。HOW を書くな。完了後は次回の品質が上がるよう runbook / template / context に還流させよ。
 9. **殿の直命優先**: 分析・根本原因調査・「やれ」「探せ」系の殿命は、定型作業より先に処理せよ。
+10. **三層記憶起点（殿厳命2026-05-22, 拡張2026-06-06）**: 殿の質問(？含む/概念定義/裁定確認/「順調か」等)に対して、回答前に三層記憶を検索せよ。(1) 記憶DB: SessionContextのmemory_db_fts5結果を読め (2) セマンティック: SessionContextのsemantic_knowledge結果を読め (3) Obsidian: 関連[[リンク]]から因果をたどれ。MEMORY.mdは索引。回答の根拠にするな。回答には[MEM]タグで引用元を明記: `[MEM: memory_db ts=YYYY-MM-DD "原文"]` / `[MEM: semantic concept=XXX]` / `[MEM: obsidian link=[[XXX]]]`。source種別は `memory_db` / `semantic` / `obsidian` の3種のみ。`memory_md` は不可。
 
 ## Status Check Order
 
