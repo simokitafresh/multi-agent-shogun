@@ -909,16 +909,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/gates/gate_recalculate_completeness.sh"
-    status: pending
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 1000
+    after_real_ms: 20
+    real_measurement_command: "GATE_RECALCULATE_OUTPUT_CACHE=<tmp>/out.cache bash scripts/gates/gate_recalculate_completeness.sh >/dev/null (5-run median; DB read gate, warm TTL cache path)"
+    test_result: "bash -n PASS; DB read gate rc=0 PASS; cache replay rc/output match PASS; GATE_RECALCULATE_OUTPUT_TTL_SEC=0 full DB path rc=0 PASS; SKIP 0"
+    commit: "eec9a621f"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T04:30:31"
   - script_path: "scripts/gates/gate_report_autofix.sh"
     status: pending
     before_ms: 14
