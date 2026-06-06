@@ -1338,7 +1338,7 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T06:12:07"
   - script_path: "scripts/hybrid_search.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -1346,10 +1346,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T06:19:19"
   - script_path: "scripts/inbox_archive.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -1357,10 +1357,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T06:22:50"
   - script_path: "scripts/inbox_mark_read.sh"
-    status: pending
+    status: assigned
     before_ms: 14
     after_ms: ""
     before_real_ms: ""
@@ -1368,8 +1368,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T06:23:15"
   - script_path: "scripts/inbox_prune.sh"
     status: pending
     before_ms: 7
@@ -2801,8 +2801,8 @@ entries:
     assigned_to: ""
     updated_at: ""
 status: completed
-before_real_ms: 86
-after_real_ms: 35
-commit: 34fcd0c00
-real_measurement_command: 'printf {"stop_hook_active":false} | TMUX_AGENT_ID=hanzo bash scripts/hooks/stop_check_inbox.sh'
+before_real_ms: 89
+after_real_ms: 74
+commit: 518d7daf9
+real_measurement_command: bash scripts/hybrid_search.sh --limit 5 cmd_save
 test_result: bash -n PASS; 4-path manual test PASS; no bats file
