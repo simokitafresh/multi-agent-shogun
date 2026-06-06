@@ -14,7 +14,8 @@ case "${1:-}" in
         ;;
 esac
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_lds_self="${BASH_SOURCE[0]}"; [[ "$_lds_self" != /* ]] && _lds_self="$PWD/$_lds_self"
+SCRIPT_DIR="${_lds_self%/scripts/lesson_deprecation_scan.sh}"
 CONFIG_FILE="$SCRIPT_DIR/config/projects.yaml"
 TRACKING_TSV="$SCRIPT_DIR/logs/lesson_tracking.tsv"
 IMPACT_TSV="$SCRIPT_DIR/logs/lesson_impact.tsv"
@@ -53,6 +54,8 @@ import yaml
 import subprocess
 from pathlib import Path
 
+_CLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 SCRIPT_DIR = Path(os.environ["SCRIPT_DIR"])
 CONFIG_FILE = Path(os.environ["CONFIG_FILE"])
 TRACKING_TSV = Path(os.environ["TRACKING_TSV"])
@@ -62,7 +65,7 @@ CANDIDATES_ONLY = os.environ.get("CANDIDATES_ONLY", "0") == "1"
 
 # --- Load projects ---
 with open(CONFIG_FILE, encoding="utf-8") as f:
-    config = yaml.safe_load(f)
+    config = yaml.load(f, Loader=_CLoader)
 all_projects = config.get("projects", [])
 
 if PROJECT_FILTER == "all":
@@ -144,7 +147,7 @@ def load_cmd_metadata(root_dir):
     stk = root_dir / "queue" / "shogun_to_karo.yaml"
     if stk.is_file():
         try:
-            data = yaml.safe_load(stk.read_text(encoding="utf-8")) or {}
+            data = yaml.load(stk.read_text(encoding="utf-8"), Loader=_CLoader) or {}
         except Exception:
             data = {}
         if isinstance(data, dict):
@@ -336,7 +339,7 @@ for project in projects:
         continue
 
     with open(lessons_file, encoding="utf-8") as f:
-        data = yaml.safe_load(f)
+        data = yaml.load(f, Loader=_CLoader)
     if not isinstance(data, dict):
         continue
     lessons = data.get("lessons", [])
@@ -416,7 +419,7 @@ for project in projects:
     if not lessons_file.exists():
         continue
     with open(lessons_file, encoding="utf-8") as f:
-        data = yaml.safe_load(f)
+        data = yaml.load(f, Loader=_CLoader)
     if not isinstance(data, dict):
         continue
     lessons = data.get("lessons", [])
