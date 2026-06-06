@@ -21,24 +21,30 @@ payload="$(cat)"
 
 # --- Slow path: dangerous keyword detected ---
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+_block_destructive_self="${BASH_SOURCE[0]}"
+[[ "$_block_destructive_self" != /* ]] && _block_destructive_self="$PWD/$_block_destructive_self"
+SCRIPT_DIR="${_block_destructive_self%/scripts/hooks/block_destructive.sh}"
 PROJECT_ROOT="$SCRIPT_DIR"
+unset _block_destructive_self
 
 emit_deny() {
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
 }
 
-# Extract command with jq (only if dangerous keyword found)
-command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"
-[[ -z "$command" ]] && exit 0
-
-reason="$(
-    COMMAND="$command" PROJECT_ROOT="$PROJECT_ROOT" python3 - <<'PY'
+read -r -d '' _block_destructive_py <<'PY' || true
+import json
 import os
 import re
 import shlex
+import sys
 
-command = os.environ.get("COMMAND", "")
+try:
+    command = json.load(sys.stdin).get("tool_input", {}).get("command", "")
+except (TypeError, json.JSONDecodeError):
+    command = ""
+if not command:
+    raise SystemExit(0)
+
 project_root = os.path.realpath(os.environ.get("PROJECT_ROOT", "."))
 cwd = os.path.realpath(os.getcwd())
 
@@ -251,7 +257,8 @@ for segment in split_segments(command):
                 print("D009: chrome --headless requires --user-data-dir")
                 raise SystemExit(0)
 PY
-)"
+reason="$(PROJECT_ROOT="$PROJECT_ROOT" python3 -c "$_block_destructive_py" <<< "$payload")"
+unset _block_destructive_py
 
 if [ -n "$reason" ]; then
     emit_deny "$reason"
