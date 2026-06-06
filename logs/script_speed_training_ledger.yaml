@@ -416,13 +416,13 @@ entries:
     status: completed
     before_ms: 18
     after_ms: ""
-    before_real_ms: 31
-    after_real_ms: 18
-    real_measurement_command: "bash scripts/cmd_halt.sh (no-arg usage path, 20-run average; no inbox/ntfy side effects)"
-    test_result: "bash -n PASS; no-arg usage output unchanged; bad_id validation PASS; no dedicated cmd_halt bats found SKIP=0"
-    commit: "683650fbe"
+    before_real_ms: 17
+    after_real_ms: 15
+    real_measurement_command: "bash scripts/cmd_halt.sh (no-arg usage path, 50-run average; no inbox/ntfy side effects)"
+    test_result: "bash -n scripts/cmd_halt.sh PASS; no-arg usage output unchanged; bad_id validation PASS; sandboxed success path inbox+ntfy helper calls PASS; SKIP=0"
+    commit: "be98130357dacd5615625a560cbec6849ca0a03c"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-06T23:32:48"
+    updated_at: "2026-06-06T23:40:03"
   - script_path: "scripts/cmd_publish.sh"
     status: pending
     before_ms: 17
