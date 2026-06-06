@@ -1635,38 +1635,38 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T08:15:00"
   - script_path: "scripts/lesson_write.sh"
-    status: pending
+    status: completed
     before_ms: 18
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 111
+    after_real_ms: 81
+    real_measurement_command: "LESSON_WRITE_SCRIPT_DIR=<sandbox> bash scripts/lesson_write.sh testprj \"Test lesson title measuring write performance\" \"Detail content for lesson write performance testing measurement\" \"\" hanzo \"\" --origin \"[[cmd_test]] -> [[test]] -> [[result]]\""
+    test_result: "bats tests/unit/test_lesson_write.bats: 32/32 PASS SKIP=0"
+    commit: "84977b690"
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T08:45:00"
   - script_path: "scripts/lesson_write_karo.sh"
-    status: pending
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 156
+    after_real_ms: 100
+    real_measurement_command: "bash scripts/lesson_write_karo.sh 'test title' 'test detail' cmd_test (backup/restore method)"
+    test_result: "bash -n OK; LK013 added correctly"
+    commit: "9c296f81e"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T08:35:00"
   - script_path: "scripts/lesson_write_shogun.sh"
-    status: pending
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 16
+    after_real_ms: 6
+    real_measurement_command: "bash scripts/lesson_write_shogun.sh --supersedes 2>/dev/null"
+    test_result: "bash -n OK; --supersedes usage PASS; SCRIPT_DIR=/mnt/c/tools/multi-agent-shogun match OK"
+    commit: "4c334aad7"
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T08:33:00"
   - script_path: "scripts/lib/agent_config.sh"
     status: pending
     before_ms: 9
