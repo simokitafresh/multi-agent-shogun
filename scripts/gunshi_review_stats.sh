@@ -18,9 +18,9 @@ fi
 tmpfile=$(mktemp)
 trap 'rm -f "$tmpfile"' EXIT
 
-for f in "$ARCHIVE_DIR"/gunshi_review_log_*.yaml; do
-    [[ -f "$f" ]] && cat "$f" >> "$tmpfile"
-done
+if [[ -d "$ARCHIVE_DIR" ]]; then
+    find "$ARCHIVE_DIR" -maxdepth 1 -name 'gunshi_review_log_*.yaml' -print0 | sort -z | xargs -0 cat >> "$tmpfile"
+fi
 # Main log: exclude comment lines
 grep -v '^#' "$MAIN_LOG" | grep -v '^[[:space:]]*$' >> "$tmpfile" || true
 
