@@ -9,15 +9,16 @@ cleanup_script="$repo_root/scripts/cleanup_three_layer_tmp.sh"
 overall="PASS"
 
 # Resolve cache_path in bash (mirrors memory_db_live_insert.memory_db_cache_path()).
-# Eliminates the first Python subprocess call.
+# Eliminates the first Python subprocess call. Uses bash parameter expansion
+# (##*/ for basename, %/* for dirname) to avoid subprocess forks.
 if [ -n "${SHOGUN_MEMORY_DB_CACHE_PATH:-}" ]; then
     cache_path="${SHOGUN_MEMORY_DB_CACHE_PATH}"
+    cache_dir="${cache_path%/*}"
 else
-    _cache_dir="${SHOGUN_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}"
+    cache_dir="${SHOGUN_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}"
     _repo_key="${repo_root//[^A-Za-z0-9_.-]/_}"
-    cache_path="${_cache_dir}/${_repo_key}_$(basename "$db_path")"
+    cache_path="${cache_dir}/${_repo_key}_${db_path##*/}"
 fi
-cache_dir="$(dirname "$cache_path")"
 
 echo "=== three-layer memory health ==="
 echo "db_path=$db_path"
