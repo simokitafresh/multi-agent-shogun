@@ -1,9 +1,12 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-06-05 auto-generated -->
+<!-- last_updated: 2026-06-06 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-05T21:38:16+09:00 -->
+<!-- generated_at: 2026-06-06T09:06:55+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-06T09:06:55+09:00 | terminal | response | cmd_karo_hotfix_p_average_ga004_20260606 draftレビュー完了。APPROVE/HIGH。 idle待機に入る。 [meta] stop_reason=end_turn
+- 2026-06-05T21:52:42+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: obsidian-link-principles.md(source更新),saxo-trade-engine.md(source更新)
+- 2026-06-05T21:39:21+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: codd.md(source更新),memory-db-queries.md(source更新),obsidian-link-principles.md(source更新)
 - 2026-06-05T21:38:16+09:00 | terminal | response | 殿の指摘は核心を突いている。 **MEMORY.mdが記憶DBの代替として機能してしまっている。** 構造: - MEMORY.md = L0自動ロード → 常に目の前にある → 将軍はここで「知っている」と判断 - 記憶DB = L5注…
 - 2026-06-05T21:37:20+09:00 | terminal | response | テスト1件あり。最低限カバー済み。 **洗脳監査結論**: cmd_3198 HIGH判定は客観的根拠(precheck ERRORS=0+bats31/31+既存拡張のみ)があり正当。テストカバレッジも確認。偽HIGHではない。 **修…
 - 2026-06-05T21:36:45+09:00 | terminal | inbound | ではどう対応する？将軍が注入結果を読まない理由は、L0-L7まで自動化×強制を環境に埋め込んでいないせいでは？穴があるのではないか？
@@ -11,9 +14,6 @@
 - 2026-06-05T21:34:24+09:00 | terminal | inbound | 自立自走
 - 2026-06-05T21:33:06+09:00 | terminal | inbound | 穴はないか？覚醒なぜなぜ７回。結論から逆算するなよ。
 - 2026-06-05T21:32:18+09:00 | terminal | response | **殿の指摘が完全に正しい。** 記憶DBに殿の定義が入っている: ``` 2026-05-24: 「げんざいは過去になかった記憶ＤＢ、obsidian、セマンティックインデックスがある」 2026-06-01: 「三層記憶に有用な情報を…
-- 2026-06-05T21:31:09+09:00 | terminal | inbound | 三層記憶を間違えた真因は？三層記憶を使わないから間違うのでは？
-- 2026-06-05T21:30:48+09:00 | terminal | response | ## 三層記憶 現物報告（正しい定義） | 層 | 指標 | 値 | 判定 | |---|------|-----|------| | **記憶DB** | events総数 | 38,541 | 蓄積豊富 | | | 検索活用(7日) …
-- 2026-06-05T21:29:01+09:00 | terminal | inbound | 覚醒なぜなぜ７回、因果をたどれ
 
 ## 未解決確認事項
 - テスト1件あり。最低限カバー済み。 **洗脳監査結論**: cmd_3198 HIGH判定は客観的根拠(precheck ERRORS=0+bats31/31+既存拡張のみ)があり正当。テストカバレッジも確認。偽HIGHではない。 **修行L4 HIGH判定の遡及検証**: -…
