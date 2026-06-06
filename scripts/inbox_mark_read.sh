@@ -138,7 +138,7 @@ attempt=0
 max_attempts=3
 
 while [ $attempt -lt $max_attempts ]; do
-    CONFIRM_LIST_FILE=$(mktemp /tmp/.imr_bulletin_XXXXXX)
+    CONFIRM_LIST_FILE="/tmp/.imr_bulletin_$$"
     if (
         flock -w 5 200 || exit 1
 
@@ -154,7 +154,7 @@ while [ $attempt -lt $max_attempts ]; do
 
         # Atomic write: mktemp in same dir + mv (same as original python3 os.replace)
         _inbox_dir="${INBOX%/*}"
-        _tmp=$(mktemp "${_inbox_dir}/.imr_XXXXXX.tmp")
+        _tmp="${_inbox_dir}/.imr_$$.tmp"
 
         if grep -q "type:[[:space:]]*['\"]*bulletin_notify['\"]*[[:space:]]*$" "$INBOX" 2>/dev/null; then
             extract_bulletin_confirms "$INBOX" "$MSG_ID" > "$CONFIRM_LIST_FILE"
@@ -169,7 +169,7 @@ while [ $attempt -lt $max_attempts ]; do
                 || { rm -f "$_tmp"; exit 1; }
         else
             # Mark specific msg_id: stateful awk pass (no python3)
-            _cnt_file=$(mktemp /tmp/.imr_cnt_XXXXXX)
+            _cnt_file="/tmp/.imr_cnt_$$"
             awk -v msg_id="$MSG_ID" -v cnt_file="$_cnt_file" '
                 BEGIN { changed=0; current_id="" }
                 {
@@ -201,7 +201,7 @@ while [ $attempt -lt $max_attempts ]; do
                 }
                 END { print changed > cnt_file }
             ' "$INBOX" > "$_tmp" || { rm -f "$_tmp" "$_cnt_file"; exit 1; }
-            _changed=$(cat "$_cnt_file" 2>/dev/null || echo 0)
+            read -r _changed < "$_cnt_file" 2>/dev/null || _changed=0
             rm -f "$_cnt_file"
         fi
 
