@@ -125,6 +125,7 @@ TMP_RESULTS="$_TMP_DIR/results"
 TMP_TITLES="$_TMP_DIR/titles"
 TMP_RECENT="$_TMP_DIR/recent"
 TMP_SKILL_METRICS="$_TMP_DIR/skill_metrics"
+TMP_TITLE_NEEDS="$_TMP_DIR/title_needs"
 trap 'rm -rf "$_TMP_DIR"' EXIT
 
 NOW=$(TZ=Asia/Tokyo date '+%H:%M')
@@ -550,29 +551,36 @@ _cached_signature=""
 # L4-R?: knowledge_metrics専用キャッシュキー（lesson系ファイルmtimeベース）
 # 変更前: gate_log mtime変化(毎cycle)→毎回knowledge_metrics.sh実行(1537ms/回)
 # 変更後: lesson_tracking.tsv + projects/*/lessons.yaml mtime変化時のみ実行
+# GP-speed: 毎回find|sort|xargs statで署名生成せず、キャッシュキーへの-nt比較だけで判定する。
 # model_analysis.sh は gate_signature(毎cycle)ベースのまま維持（軽量163msのため）
 _km_lesson_cache_key="/tmp/dashboard_km_lesson_key_${_proj_hash}.txt"
-# SC2046回避: find結果をxargs経由でstatに渡す（word splitting防止）
-_km_lesson_signature=$(
-    { stat -c '%Y:%s' "$PROJECT_DIR/logs/lesson_tracking.tsv" 2>/dev/null; \
-      find "$PROJECT_DIR/projects" -maxdepth 2 -name "lessons.yaml" 2>/dev/null \
-        | sort | head -20 | xargs -r stat -c '%Y:%s' 2>/dev/null; } \
-    | tr '\n' ':' || echo "missing"
-)
-_km_lesson_cached=""
-[[ -f "$_km_lesson_cache_key" ]] && _km_lesson_cached=$(cat "$_km_lesson_cache_key" 2>/dev/null || echo "")
+_km_lesson_stale=false
+if [[ ! -s "$KM_JSON_CACHE" ]] || [[ ! -f "$_km_lesson_cache_key" ]]; then
+    _km_lesson_stale=true
+else
+    _km_lesson_sources=("$PROJECT_DIR/logs/lesson_tracking.tsv")
+    shopt -s nullglob
+    _km_lesson_sources+=("$PROJECT_DIR"/projects/*/lessons.yaml)
+    shopt -u nullglob
+    for _km_lesson_src in "${_km_lesson_sources[@]}"; do
+        if [[ -f "$_km_lesson_src" && "$_km_lesson_src" -nt "$_km_lesson_cache_key" ]]; then
+            _km_lesson_stale=true
+            break
+        fi
+    done
+fi
 
 _PID_KM=""
 _PID_MA=""
-if [[ ! -f "$KM_JSON_CACHE" ]] || [[ "$_km_lesson_signature" != "$_km_lesson_cached" ]]; then
+if [[ "$_km_lesson_stale" == true ]]; then
     bash "$SCRIPT_DIR/knowledge_metrics.sh" --json --by-project --by-model > "$KM_JSON_CACHE" 2>/dev/null &
     _PID_KM=$!
 fi
-if [[ "$_gate_signature" != "$_cached_signature" ]] || [[ ! -f "$KM_MODEL_CACHE" ]]; then
+if [[ "$_gate_signature" != "$_cached_signature" ]] || [[ ! -s "$KM_MODEL_CACHE" ]]; then
     bash "$SCRIPT_DIR/model_analysis.sh" --summary > "$KM_MODEL_CACHE" 2>/dev/null &
     _PID_MA=$!
 fi
-[[ -n "$_PID_KM" ]] && { wait "$_PID_KM" 2>/dev/null || true; echo "$_km_lesson_signature" > "$_km_lesson_cache_key"; }
+[[ -n "$_PID_KM" ]] && { wait "$_PID_KM" 2>/dev/null || true; touch "$_km_lesson_cache_key"; }
 [[ -n "$_PID_MA" ]] && { wait "$_PID_MA" 2>/dev/null || true; echo "$_gate_signature" > "$KM_CACHE_LINES"; }
 
 if [[ -n "$_PID_CTX" ]]; then
@@ -906,27 +914,30 @@ if [[ "$_HEAVY_HIT" == false ]] && [[ -n "$_heavy_key" ]]; then
     echo "$_heavy_key" > "$_heavy_key_file" 2>/dev/null || true
 fi
 
-# ─── Deduplicate TMP_TITLES: keep last occurrence per cmd_id ───
-# Write order: archive(L305) → gate_metrics(L627) → pipeline(L631)
-# Priority: gate_metrics > pipeline > archive (comment L607)
-# tac→dedup→tac ensures later (higher-priority) entries win over earlier ones
-if [[ -s "$TMP_TITLES" ]]; then
-    tac "$TMP_TITLES" | awk -F'\t' '!seen[$1]++' | tac > "${TMP_TITLES}.dedup"
-    mv "${TMP_TITLES}.dedup" "$TMP_TITLES"
-fi
-
-# GP-XXX: Load TMP_TITLES into associative array for O(1) lookups
-# Eliminates repeated grep calls in ninja loop (L662) and 戦果 section (L896)
-declare -A TITLE_MAP=()
-if [[ -s "$TMP_TITLES" ]]; then
-    while IFS=$'\t' read -r _tid _ttitle; do
-        [[ -n "$_tid" ]] && TITLE_MAP["$_tid"]="$_ttitle"
-    done < "$TMP_TITLES"
-fi
-
 # ─── Get last 5 CLEAR cmds for battle results ───
 if [[ -s "$TMP_METRICS" ]]; then
     awk -F'\t' '$3=="CLEAR"' "$TMP_METRICS" | tail -5 > "$TMP_RESULTS"
+fi
+
+# ─── Deduplicate needed titles only: keep last occurrence per cmd_id ───
+# Write order: archive → gate_metrics → pipeline. Later entries win.
+# GP-speed: dashboard only renders ninja task titles and recent results; avoid loading all archive titles.
+declare -A TITLE_MAP=()
+if [[ -s "$TMP_TITLES" ]]; then
+    for _need_cmd in "${NINJA_CMD[@]}"; do
+        [[ -n "$_need_cmd" ]] && printf '%s\n' "$_need_cmd"
+    done > "$TMP_TITLE_NEEDS"
+    if [[ -s "$TMP_RESULTS" ]]; then
+        awk -F'\t' '{print $2}' "$TMP_RESULTS" >> "$TMP_TITLE_NEEDS"
+    fi
+    awk -F'\t' '
+        NR == FNR { need[$1] = 1; next }
+        ($1 in need) { title[$1] = $2 }
+        END { for (cmd in title) print cmd "\t" title[cmd] }
+    ' "$TMP_TITLE_NEEDS" "$TMP_TITLES" > "${TMP_TITLES}.dedup"
+    while IFS=$'\t' read -r _tid _ttitle; do
+        [[ -n "$_tid" ]] && TITLE_MAP["$_tid"]="$_ttitle"
+    done < "${TMP_TITLES}.dedup"
 fi
 
 # ═══════════════════════════════════════════════════════
@@ -988,8 +999,9 @@ fi
             echo ""
             ;;
         RED:*)
-            _ci_run_id=$(echo "$_ci_status" | cut -d: -f2)
-            _ci_failed=$(echo "$_ci_status" | cut -d: -f3-)
+            _ci_payload=${_ci_status#RED:}
+            _ci_run_id=${_ci_payload%%:*}
+            _ci_failed=${_ci_payload#*:}
             echo "### CI Status"
             echo "**CI RED: run ${_ci_run_id} — ${_ci_failed}**"
             echo ""
@@ -1133,7 +1145,10 @@ fi
         while IFS= read -r _row; do
             [[ -z "$_row" ]] && continue
             IFS='|' read -ra _f <<< "$_row"; read -r _mdl <<< "${_f[1]}"
-            _mdl_key=$(echo "$_mdl" | tr '[:upper:]' '[:lower:]' | tr -s ' ')
+            _mdl_key="${_mdl,,}"
+            while [[ "$_mdl_key" == *"  "* ]]; do
+                _mdl_key="${_mdl_key//  / }"
+            done
             _mrr="${RECENT_MDL_RR[$_mdl_key]:-—}"
             _mer="${RECENT_MDL_ER[$_mdl_key]:-—}"
             _mwarn="${RECENT_MDL_WARN[$_mdl_key]:-N}"
