@@ -1,6 +1,6 @@
 # CoDD (Coherence-Driven Development) 索引
 
-<!-- last_updated: 2026-05-26 karo_staleness_verify -->
+<!-- last_updated: 2026-06-06 cmd_karo_hotfix_context_freshness_ga007_20260606 -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
 
@@ -15,7 +15,7 @@
 | 作者 | おしお殿 (`@shio_shoppaize`) / Harness as Code |
 | GitHub | `https://github.com/yohey-w/codd-dev` |
 | ローカル実体 | `/home/simokitafresh/.codd-venv/bin/codd` |
-| 版数 | ローカルCLI=`2.18.0` (`/home/simokitafresh/.codd-venv/bin/codd --version`, 2026-05-15確認)。PATH未設定の非対話shellでは`codd`不可のためフルパスかPATH exportを使う |
+| 版数 | ローカルCLI=`2.19.0` (`/home/simokitafresh/.codd-venv/bin/codd --version`, 2026-06-06確認)。PATH未設定の非対話shellでは`codd`不可のためフルパスかPATH exportを使う |
 | 位置づけ | CoDDは「要件/制約 -> 設計 -> 実装 -> テスト」をDAGとして維持し、設計書腐敗を`elicit`/`dag verify`/`fix [PHENOMENON]`/auto-repairで抑えるHarness Engineering実装 |
 
 ## §2 コマンド体系
@@ -42,6 +42,7 @@
 | v1.35.0-v2.0.0 | `elicit`, `diff`, `brownfield`, `lexicon list/install/diff`, `coverage report`, `dag verify --auto-repair`が追加され、制約側がplug-in化 | 要件本文だけでなく「制約/coverage軸」をlexiconとして正本化する |
 | v2.17.x | `fix [PHENOMENON]`で「触った後の感想」から設計書・実装・テストを一括更新する北極星に到達 | 改善要求はコード変更指示ではなく、観測した事象として渡す方がCoDDの流儀に合う |
 | v2.18.0 | ローカルCLIで`implement run --language`, `dag verify --auto-repair --apply`, `brownfield TARGET`, `lexicon list/install/diff`を確認 | bashでも実装生成を試行可能。ただし失敗時は従来どおり設計書・DAG・伝播までをCoDDに任せ、実装は手動で行う |
+| v2.19.0 | ローカルCLIで`drift`, `fixup-drift`, `propagate-from`, `qc`, `require`, `restore`, `watch`を含む現行コマンド一覧を確認 | 既存の`fix [PHENOMENON]`/`implement run --language`/`dag verify --auto-repair --apply`は継続。新系統は利用前に対象PJの`codd.yaml`とdry-runで確認する |
 
 ### bash implement試行結果 (cmd_2485 / 2026-05-02)
 
@@ -51,13 +52,14 @@
 | `codd implement --language bash` | `Error: No such option: --language` / RC=2 | v1.10.0でもbash言語指定implementは非対応 |
 | `codd implement --help` | `--path`, `--task`, `--clean`, `--ai-cmd`のみ | 実装生成はImplementation Plan前提。bashプロジェクトでは設計生成・伝播・手動実装を標準とする |
 
-### v2.18.0 ローカル実測 (cmd_2760 / 2026-05-15)
+### v2.19.0 ローカル実測 (cmd_karo_hotfix_context_freshness_ga007_20260606 / 2026-06-06)
 
 | 試行 | 結果 | 判断 |
 |------|------|------|
-| `/home/simokitafresh/.codd-venv/bin/codd --version` | `codd, version 2.18.0` | ローカル導入済み |
+| `/home/simokitafresh/.codd-venv/bin/codd --version` | `codd, version 2.19.0` | ローカル導入済み |
 | `codd` (PATH未設定shell) | `command not found` | 忍者/家老の非対話Bashではフルパスか`export PATH="/home/simokitafresh/.codd-venv/bin:$PATH"`必須 |
-| `codd implement run --help` | `--language`, `--enable-typecheck-loop`, `--chunk-size`, `--timeout-per-chunk`あり | v1.10の「bash implement非対応」は履歴扱い。v2.18では試行して、失敗時のみ手動へfallback |
+| `codd --help` | `drift`, `fixup-drift`, `propagate-from`, `qc`, `require`, `restore`, `watch`を含む | §2の中核系統は維持。新コマンドは現物helpを一次確認してから使う |
+| `codd implement run --help` | `--language`, `--enable-typecheck-loop`, `--chunk-size`, `--timeout-per-chunk`, `--use-derived-steps`あり | v1.10の「bash implement非対応」は履歴扱い。v2.19では試行して、失敗時のみ手動へfallback |
 | `codd dag verify --help` | `--auto-repair` + `--apply`あり | dry-run提案と実書込を分ける。運用YAMLには適用しない |
 | `codd fix --help` | `[PHENOMENON]` positionalあり | 自然言語の事象から設計書・実装・テストを更新する入口として使用可能 |
 

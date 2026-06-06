@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-04 cmd_3178 -->
+<!-- last_updated: 2026-06-06 cmd_karo_hotfix_context_freshness_ga007_20260606 -->
 # Obsidianリンク×セマンティクスインデックス 分離原則
 
 <!-- created: 2026-05-22 | origin: 殿×将軍×軍師 対話で確立 -->
@@ -43,6 +43,11 @@ SQLiteは記憶台帳、Obsidianは人間の認知編集層、セマンティッ
 - 想起制御: timestampが明確なら物理的忘却は原則不要。削除ではなく、アーカイブ、低優先度化、通常検索除外、Historical層移行を正式な機能として扱う。
 - timestamp: 全記憶・全リンク・全状態変更に発生/観測/記録/検証/失効/置換/退避時刻を持たせ、因果を過去未来に辿れるようにする。
 - レビュー統合: 軍師/将軍レビューにより、検索ログ収集、Obsidian↔SQLite同期、`should_not_merge_with`、events state、confidence/expires_at、contradiction_candidate、段階的な想起制御を次の実装設計課題として明記した。追加再監査により、実装前に殿の使用パターン、現実との差分、三層間同期コストを確認する。最新版の洗脳覚醒レビューにより、確認方法未定義・距離計測未記載・殿確認への他者依存・先送りを修正し、検索ログ収集は前提確認と並行着手可能とした。
+
+### 2026-06-06 鮮度確認
+
+- `docs/semantic-index/index.md`, `context/semantic-map.md`, `scripts/semantic_search.sh`には2026-06-05以降の更新があるが、内容は検索境界・修行リンク・index生成の更新であり、本ファイルの分離原則（検索入口と直接リンクの分離、自動リンク生成禁止、リンク先引用による検証）は維持。
+- `scripts/semantic_search.sh`の2026-06-05更新はsemantic/causal expansionのbounded化。リンク生成を自動化せず、検索を入口に留める本原則と整合する。
 
 ## Why（なぜこの結論か）
 

@@ -1,12 +1,13 @@
-<!-- last_updated: 2026-05-22 cmd_3005 -->
+<!-- last_updated: 2026-06-06 cmd_karo_hotfix_context_freshness_ga007_20260606 -->
 # Memory DB Query Templates
 
 DB: `data/multi_agent_shogun_memory.db`
 Runner: `bash scripts/memory_db_query.sh '<SQL>'`
 Schema reference: `context/memory-db-schema.md`
+Freshness source: `context/memory-db-schema.md` generated 2026-06-06 by cmd_karo_hotfix_context_freshness_ga005_20260606, plus `scripts/memory_db_query.sh`.
 
 All templates below are read-only `SELECT` / `WITH` queries that work with
-`scripts/memory_db_query.sh`. Output is pipe-separated, without headers.
+`scripts/memory_db_query.sh`. Output is pipe-separated, without headers. The runner uses the ext4 cache path by default for the live DB and falls back to the source DB when cache creation is disabled, unavailable, or non-default DB caching is not requested.
 
 ## 1. Recent Conversation Turns By Agent
 
@@ -87,11 +88,11 @@ ORDER BY count DESC, event_type ASC;
 Expected output example:
 
 ```text
-conversation|27449
-skill_execution|3816
-bulletin|3230
-cmd_archive|2919
-report|703
+conversation|30775
+bulletin|4175
+cmd_archive|3336
+skill_execution|108
+pending_decision|43
 ```
 
 ## 5. Concept-Linked Events
