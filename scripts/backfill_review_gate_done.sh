@@ -15,10 +15,18 @@ GATES_DIR="$PROJECT_DIR/queue/gates"
 REPORTS_DIR="$PROJECT_DIR/queue/reports"
 count=0
 
+strip_yaml_scalar() {
+    local value="$1"
+    value="${value//\"/}"
+    value="${value//\'/}"
+    value="${value//[[:space:]]/}"
+    printf '%s' "$value"
+}
+
 # Pass 1: gate dirs with archive.done or training/cycle/selfimprovement
 while IFS= read -r dir; do
     [ -f "$dir/review_gate.done" ] && continue
-    dname=$(basename "$dir")
+    dname="${dir##*/}"
     should_backfill=false
     if [ -f "$dir/archive.done" ]; then
         should_backfill=true
@@ -30,17 +38,29 @@ while IFS= read -r dir; do
         touch "$dir/review_gate.done"
         count=$((count + 1))
     fi
-done < <(find "$GATES_DIR" -maxdepth 1 -mindepth 1 -type d | sort)
+done < <(find "$GATES_DIR" -maxdepth 1 -mindepth 1 -type d)
 
 # Pass 2: completed reports whose gate dir lacks review_gate.done
 # Create gate dir + review_gate.done so archive_completed.sh can process them
 for report_file in "$REPORTS_DIR"/*.yaml; do
     [ -f "$report_file" ] || continue
-    pcmd=$(grep -m1 "^parent_cmd:" "$report_file" | sed 's/^parent_cmd: *//' | tr -d '"'"'" | tr -d ' ' || true)
+    pcmd=""
+    status=""
+    while IFS= read -r line; do
+        case "$line" in
+            parent_cmd:*)
+                pcmd="$(strip_yaml_scalar "${line#parent_cmd:}")"
+                ;;
+            status:*)
+                status="$(strip_yaml_scalar "${line#status:}")"
+                ;;
+        esac
+        [ -n "$pcmd" ] && [ -n "$status" ] && break
+    done < "$report_file"
+
     [ -z "$pcmd" ] && continue
     gate_dir="$GATES_DIR/$pcmd"
     [ -f "$gate_dir/review_gate.done" ] && continue
-    status=$(grep -m1 "^status:" "$report_file" | sed 's/^status: *//' | tr -d '"'"'" | tr -d ' ' || true)
     case "$status" in
         done|completed|complete|success|failed)
             mkdir -p "$gate_dir"
