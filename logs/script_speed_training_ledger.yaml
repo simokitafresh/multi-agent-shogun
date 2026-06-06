@@ -1371,16 +1371,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T06:23:15"
   - script_path: "scripts/inbox_prune.sh"
-    status: assigned
+    status: completed
     before_ms: 7
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 84
+    after_real_ms: 25
+    real_measurement_command: "bash scripts/inbox_prune.sh hanzo"
+    test_result: "no_specific_bats; functional_check_exit_0"
+    commit: "cfad74508"
     assigned_to: "hanzo"
-    updated_at: "2026-06-07T06:27:10"
+    updated_at: "2026-06-07T06:35:00"
   - script_path: "scripts/inbox_watcher.sh"
     status: pending
     before_ms: 17
@@ -2801,8 +2801,8 @@ entries:
     assigned_to: ""
     updated_at: ""
 status: completed
-before_real_ms: 89
-after_real_ms: 74
-commit: 518d7daf9
-real_measurement_command: bash scripts/hybrid_search.sh --limit 5 cmd_save
-test_result: bash -n PASS; 4-path manual test PASS; no bats file
+before_real_ms: 84
+after_real_ms: 25
+commit: cfad74508
+real_measurement_command: "bash scripts/inbox_prune.sh hanzo"
+test_result: "no_specific_bats; functional_check_exit_0"
