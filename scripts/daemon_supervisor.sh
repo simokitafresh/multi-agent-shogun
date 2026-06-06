@@ -19,11 +19,13 @@
 # =============================================================================
 set -uo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_DS_SELF="${BASH_SOURCE[0]}"
+[[ "$_DS_SELF" != /* ]] && _DS_SELF="$PWD/$_DS_SELF"
+SCRIPT_DIR="${_DS_SELF%/scripts/daemon_supervisor.sh}"
 LOG_FILE="${DAEMON_SUPERVISOR_LOG:-$SCRIPT_DIR/logs/daemon_supervisor.log}"
 STATE_DIR="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}"
 
-mkdir -p "$SCRIPT_DIR/logs"
+[[ "${DAEMON_SUPERVISOR_LIB_ONLY:-0}" == "1" ]] || mkdir -p "$SCRIPT_DIR/logs"
 
 ds_log() {
     printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG_FILE"
@@ -254,6 +256,30 @@ ds_supervise_inbox_watcher() {
 }
 
 ds_agent_list() {
+    local settings cache_key cache_file line
+
+    settings="$SCRIPT_DIR/config/settings.yaml"
+    cache_key="${SCRIPT_DIR//[\/: .#*?!]/_}"
+    if ((${#cache_key} > 48)); then
+        cache_key="${cache_key: -48}"
+    fi
+    cache_file="/tmp/shogun_agent_config_${cache_key}.cache"
+
+    if [[ -f "$cache_file" && "$cache_file" -nt "$settings" ]]; then
+        while IFS= read -r line; do
+            case "$line" in
+                _AGENT_CONFIG_CACHE_VERSION=*) eval "$line" ;;
+                _AGENT_CONFIG_ALL_NAMES=*) eval "$line" ;;
+            esac
+        done < "$cache_file"
+        if [[ "${_AGENT_CONFIG_CACHE_VERSION:-}" == "3" && -n "${_AGENT_CONFIG_ALL_NAMES:-}" ]]; then
+            printf '%s\n' "shogun"
+            printf '%s\n' "karo"
+            printf '%s\n' $_AGENT_CONFIG_ALL_NAMES
+            return 0
+        fi
+    fi
+
     # shellcheck source=/dev/null
     source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
     printf '%s\n' "shogun"
