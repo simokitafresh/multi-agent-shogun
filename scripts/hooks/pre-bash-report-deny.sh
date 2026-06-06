@@ -5,7 +5,7 @@
 # cmd_1294(Write/Edit DENY)の防御ギャップ補完。
 set -euo pipefail
 
-payload="$(cat)"
+IFS= read -r -d '' payload || true
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
 
 # Fast-path: skip if not Bash or no report path
@@ -13,7 +13,7 @@ payload="$(cat)"
 [[ "$payload" != *'queue/reports/'* ]] && exit 0
 
 # Extract command with single jq call
-command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"
+command="$(jq -r '.tool_input.command // empty' 2>/dev/null <<< "$payload" || true)"
 [[ -z "$command" ]] && exit 0
 
 # Allow report_field_set.sh (the approved tool for report writing)

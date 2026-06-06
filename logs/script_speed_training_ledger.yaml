@@ -1197,11 +1197,11 @@ entries:
   - script_path: "scripts/hooks/git-pre-commit.sh"
     status: assigned
     before_ms: 16
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
+    after_ms: 16
+    before_real_ms: 405
+    after_real_ms: 405
+    real_measurement_command: "time bash scripts/hooks/git-pre-commit.sh (no staged files)"
+    test_result: "bash_n PASS; no batsfile; PASS_NO_IMPROVEMENT(WSL2 git diff cost dominates)"
     commit: ""
     assigned_to: "hanzo"
     updated_at: "2026-06-07T05:48:26"
