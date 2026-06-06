@@ -1415,7 +1415,7 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T06:45:32"
   - script_path: "scripts/insight_write.sh"
-    status: pending
+    status: assigned
     before_ms: 6
     after_ms: ""
     before_real_ms: ""
@@ -1423,8 +1423,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T06:47:34"
   - script_path: "scripts/karo_workaround_log.sh"
     status: pending
     before_ms: 16
