@@ -920,16 +920,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T04:30:31"
   - script_path: "scripts/gates/gate_report_autofix.sh"
-    status: pending
+    status: completed
     before_ms: 14
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 130
+    after_real_ms: 100
+    real_measurement_command: "bash scripts/gates/gate_report_autofix.sh queue/reports/saizo_report_cmd_training_speed_gates_gate_ninja_workaround_rate_20260607041835.yaml >/dev/null"
+    test_result: "bash_n_pass;bats tests/unit/test_gate_report_autofix.bats 21/21 PASS SKIP=0;HEAD_vs_current_NO_FIX_NEEDED_diff_empty"
+    commit: "39d799c72"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T04:33:08"
   - script_path: "scripts/gates/gate_report_format.sh"
     status: pending
     before_ms: 20
