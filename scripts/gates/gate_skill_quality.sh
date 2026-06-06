@@ -187,13 +187,13 @@ maybe_cache_gate_skill_quality() {
     cache_dir="${XDG_CACHE_HOME:-/tmp}/shogun_gate_skill_quality"
     mkdir -p "$cache_dir"
 
-    cache_scope="$(printf '%s' "$SCRIPT_DIR" | md5sum | awk '{print $1}')"
-    cache_base="$cache_dir/default_v3_$cache_scope"
+    cache_scope="${SCRIPT_DIR//[\/: .#*?!]/_}"
+    cache_base="$cache_dir/default_v4_${cache_scope: -48}"
     if [ -f "$cache_base.out" ] && [ -f "$cache_base.exit" ]; then
         local now cache_mtime
         printf -v now '%(%s)T' -1
         cache_mtime="$(stat -c '%Y' "$cache_base.out" 2>/dev/null || printf 0)"
-        if [ $((now - cache_mtime)) -le 2 ]; then
+        if [ $((now - cache_mtime)) -le "${GATE_SKILL_QUALITY_CACHE_TTL_SEC:-10}" ]; then
             cat "$cache_base.out"
             return "$(cat "$cache_base.exit")"
         fi
