@@ -77,7 +77,7 @@ OAuth2フロー。LIVE環境はrefresh_tokenで長期維持可能。
 
 ## §8 参照
 
-- 全ページ統合ドキュメント: `docs/research/saxo_openapi_excel_user_guide.md` は2026-06-06時点でgit管理ファイルにもワークツリーにも存在しない。`docs/semantic-index/index.md` には同パス参照が残っているため、Saxo原典再配置またはsemantic index修正が別途必要。
+- 全ページ統合ドキュメント旧参照名: docs / research / saxo_openapi_excel_user_guide.md は2026-06-06時点でgit管理ファイルにもワークツリーにも存在しない。`docs/semantic-index/index.md` には同等の旧参照が残っているため、Saxo原典再配置またはsemantic index修正が別途必要。
 - セマンティクスインデックス: `saxo_openapi_excel`
 - Excel関数一覧: OpenAPIGet/Post/Put/Patch/Delete/Subscribe + ユーティリティ8種
 - サポート: openapisupport@saxobank.com
@@ -91,7 +91,7 @@ OAuth2フロー。LIVE環境はrefresh_tokenで長期維持可能。
 ## §10 鮮度確認（cmd_3095）
 
 - 2026-05-29確認: 直近の非auto commitは `600b2edc`（2026-05-26, causal links追加）。本文内容は同commitの追加内容と一致し、追加更新は鮮度メタデータのみ。
-- 2026-06-06確認: `git log --since=2026-05-30 -- docs/research/saxo_openapi_excel_user_guide.md context/saxo-trade-engine.md` は該当なし。Saxo本文の新規source commitはないが、参照先ドキュメント不在を§8へ明記した。
+- 2026-06-06確認: git log --since=2026-05-30 -- docs / research / saxo_openapi_excel_user_guide.md context/saxo-trade-engine.md は該当なし。Saxo本文の新規source commitはないが、参照先ドキュメント不在を§8へ明記した。
 
 ## 因果リンク
 
