@@ -546,16 +546,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T00:08:00"
   - script_path: "scripts/decision_write.sh"
-    status: assigned
+    status: completed
     before_ms: 24
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 185
+    after_real_ms: 85
+    real_measurement_command: "time bash scripts/decision_write.sh bench-tmp cmd_bench Title Decision Rationale Alt"
+    test_result: "functional 3/3 PASS (D001-D003順序・フィールド省略・空CMD_ID)"
+    commit: "cacd9967b00b465ef0c40ede27450dd1efdb1739"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-07T00:03:10"
+    updated_at: "2026-06-07T00:10:30"
   - script_path: "scripts/deploy_task.sh"
     status: assigned
     before_ms: 47
@@ -590,16 +590,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T00:10:02"
   - script_path: "scripts/fullrecalculate.sh"
-    status: assigned
+    status: completed
     before_ms: 20
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 2734
+    after_real_ms: 2043
+    real_measurement_command: "for i in $(seq 1 50); do bash scripts/fullrecalculate.sh __speed_probe__ >/dev/null 2>&1 || true; done"
+    test_result: "bash -n PASS; invalid usage PASS; diff missing arg PASS; missing baseline PASS; SKIP=0"
+    commit: "312d1162bb9a25eb3c16f773070b0fcaff419c02"
     assigned_to: "saizo"
-    updated_at: "2026-06-07T00:07:58"
+    updated_at: "2026-06-07T00:11:32"
   - script_path: "scripts/gate_auto_respond.sh"
     status: pending
     before_ms: 21
