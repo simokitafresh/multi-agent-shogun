@@ -119,8 +119,15 @@ line_refs = re.findall(r'L(\d+)', cmd_text)
 # Extract section references (§27)
 section_refs = re.findall(r'§(\d+)', cmd_text)
 
-# Extract AC blocks
-ac_blocks = re.findall(r'(AC\d+.*?)(?=AC\d+|$)', cmd_text, re.DOTALL)
+# Extract AC blocks. Match only AC labels at line starts so literal text such as
+# TRACEAC2 does not split the navigation sheet into false AC blocks.
+ac_blocks = [
+    m.group(1)
+    for m in re.finditer(
+        r'(?ms)^\s*(?:[-*]\s*)?(AC\d+\b.*?)(?=^\s*(?:[-*]\s*)?AC\d+\b|\Z)',
+        cmd_text,
+    )
+]
 
 print('=== AC Physical Verification ===')
 print()
