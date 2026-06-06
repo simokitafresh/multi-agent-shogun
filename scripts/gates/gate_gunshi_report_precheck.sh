@@ -637,7 +637,10 @@ if [ "${#_context_files[@]}" -gt 0 ] && [ -f "$REPO_ROOT/scripts/gates/gate_verc
     if bash "$REPO_ROOT/scripts/gates/gate_vercel_phase.sh" "${_context_files[@]}" 2>/dev/null; then
         echo "  PASS: context変更の参照先は全て実在"
     else
-        echo "  ★ WARN: gate_vercel_phase FAIL — context変更に参照切れあり。LGTM前に確認せよ"
+        echo "  [CRITICAL] gate_vercel_phase FAIL — context変更に参照切れあり"
+        ERRORS=$((ERRORS + 1))
+        GATE_PREDICTION="BLOCK"
+        GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }vercel_phase:broken_refs"
     fi
 else
     echo "  SKIP: context/*.md変更なし or gate_vercel_phase.sh不在"
@@ -645,22 +648,43 @@ fi
 
 # ─── SG-PRE24: instructions変更時のgenerated/貫通チェック(GP-265) ───
 echo "■ SG-PRE24: generated/貫通チェック"
-_instr_changed=false
-echo "$FILES_MODIFIED" | grep -qP 'instructions/\S+\.md' 2>/dev/null && _instr_changed=true
-if $_instr_changed; then
-    _role_name=$(echo "$FILES_MODIFIED" | grep -oP 'instructions/\K[^/.]+' 2>/dev/null | head -1)
-    if [ -n "$_role_name" ] && [ -d "$REPO_ROOT/instructions/generated" ]; then
-        _gen_hit=$(grep -rlF "$_role_name" "$REPO_ROOT/instructions/generated/" 2>/dev/null | head -1)
-        if [ -n "$_gen_hit" ]; then
-            echo "  PASS: instructions/${_role_name}.md → generated/に対応ファイルあり"
+# instructions正本からrole名を抽出し、対応するgenerated/ファイルの内容貫通を検証
+_instr_files=()
+while IFS= read -r _if; do
+    _instr_files+=("$_if")
+done < <(echo "$FILES_MODIFIED" | tr ',' '\n' | sed 's/^[[:space:]]*//' | grep -E '^instructions/(shogun|karo|gunshi|ashigaru)' || true)
+if [ "${#_instr_files[@]}" -gt 0 ] && [ -d "$REPO_ROOT/instructions/generated" ]; then
+    _pre24_pass=true
+    for _ifile in "${_instr_files[@]}"; do
+        _rname=$(echo "$_ifile" | grep -oP '(shogun|karo|gunshi|ashigaru)' | head -1)
+        [ -z "$_rname" ] && continue
+        # generated/内の対応ファイルを検索
+        _gen_files=$(find "$REPO_ROOT/instructions/generated/" -name "*${_rname}*" -type f 2>/dev/null)
+        if [ -z "$_gen_files" ]; then
+            echo "  ★ WARN: ${_ifile}変更だがgenerated/に対応ファイルなし。build_instructions.sh再実行要"
+            _pre24_pass=false
         else
-            echo "  ★ WARN: instructions/${_role_name}.md変更だがgenerated/に対応ファイルなし。build_instructions.sh再実行要"
+            # 正本のcommit hashとgenerated/のcommit hashを比較(変更が貫通しているか)
+            _src_hash=$(git log --format=%H -1 -- "$REPO_ROOT/$_ifile" 2>/dev/null || true)
+            _gen_hash=$(echo "$_gen_files" | head -1 | xargs git log --format=%H -1 -- 2>/dev/null || true)
+            if [ -n "$_src_hash" ] && [ -n "$_gen_hash" ] && [ "$_src_hash" != "$_gen_hash" ]; then
+                # 正本の方が新しい=generatedが古い
+                _src_ts=$(git log --format=%ct -1 -- "$REPO_ROOT/$_ifile" 2>/dev/null || echo 0)
+                _gen_ts=$(echo "$_gen_files" | head -1 | xargs git log --format=%ct -1 -- 2>/dev/null || echo 0)
+                if [ "$_src_ts" -gt "$_gen_ts" ]; then
+                    echo "  ★ WARN: ${_ifile}が正本で新しいがgenerated/が古い。build_instructions.sh再実行要"
+                    _pre24_pass=false
+                else
+                    echo "  PASS: ${_ifile} → generated/貫通済み(generated側が同等以降)"
+                fi
+            else
+                echo "  PASS: ${_ifile} → generated/貫通済み"
+            fi
         fi
-    else
-        echo "  SKIP: role名抽出不可 or generated/ディレクトリ不在"
-    fi
+    done
+    $_pre24_pass || { echo "  ★ generated/未貫通をWARN表示"; }
 else
-    echo "  SKIP: instructions/*.md変更なし"
+    echo "  SKIP: instructions正本変更なし or generated/不在"
 fi
 
 # ─── GATE_PREDICTION (自動計算) ───
