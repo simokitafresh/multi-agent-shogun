@@ -29,6 +29,7 @@ import subprocess
 import os
 import pickle
 import hashlib
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import yaml
@@ -285,14 +286,18 @@ def _build_scan_data():
             if needs_fallback(raw):
                 fallback_paths.add(path)
 
-    # Load fallback results once (keyed by Path for cache storage)
-    fallback_results = {}
-    for path in sorted(rows):
-        row = rows[path]
-        if not row["lesson_found"]:
-            continue
-        if path in fallback_paths or not row["lesson_title"] or not row["lesson_detail"]:
-            fallback_results[path] = load_report_fallback(path)
+    # Load fallback results in parallel (keyed by Path for cache storage)
+    fallback_load_paths = [
+        path for path in sorted(rows)
+        if rows[path]["lesson_found"]
+        and (path in fallback_paths or not rows[path]["lesson_title"] or not rows[path]["lesson_detail"])
+    ]
+    if fallback_load_paths:
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            results = list(executor.map(load_report_fallback, fallback_load_paths))
+        fallback_results = dict(zip(fallback_load_paths, results))
+    else:
+        fallback_results = {}
 
     return rows, fallback_paths, fallback_results
 
