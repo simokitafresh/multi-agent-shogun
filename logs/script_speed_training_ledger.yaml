@@ -1228,16 +1228,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T05:52:59"
   - script_path: "scripts/hooks/pre-karo-edit-guard.sh"
-    status: assigned
+    status: completed
     before_ms: 15
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 15
+    before_real_ms: 973
+    after_real_ms: 817
+    real_measurement_command: "50x printf '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"scripts/hooks/pre-karo-edit-guard.sh\"}}' | AGENT_ID=kagemaru bash scripts/hooks/pre-karo-edit-guard.sh; median of 5 runs"
+    test_result: "bash_n_pass;sandbox_block_conflict_PASS;karo_queue_whitelist_PASS;non_karo_allow_PASS;non_edit_allow_PASS;SKIP=0;before_973_after_817"
+    commit: "c2750192f"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T05:55:05"
+    updated_at: "2026-06-07T05:59:00"
   - script_path: "scripts/hooks/pre-mcp-lord-attribution-guard.sh"
     status: pending
     before_ms: 14
