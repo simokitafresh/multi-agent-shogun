@@ -5,7 +5,7 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_DIR="${LESSON_MERGE_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
 # Source lock_path helper for /tmp/-based lock files (WSL2 NTFS flock stability)
 # shellcheck source=scripts/lib/lock_path.sh
@@ -24,10 +24,10 @@ if [ -z "$PROJECT_ID" ] || [ -z "$SOURCE_ID_1" ] || [ -z "$SOURCE_ID_2" ] || [ -
     exit 1
 fi
 
-# Normalize IDs (accept L026 or L26 → L026)
+# Normalize IDs (accept L026 or L26 → L026) — pure bash, no Python subprocess
 normalize_id() {
     local raw="$1"
-    RAW_ID="$raw" python3 -c "import os; s=os.environ['RAW_ID']; n=int(s.replace('L','')); print(f'L{n:03d}')"
+    printf 'L%03d' "$((10#${raw#L}))"
 }
 SOURCE_ID_1=$(normalize_id "$SOURCE_ID_1")
 SOURCE_ID_2=$(normalize_id "$SOURCE_ID_2")
@@ -37,16 +37,30 @@ if [ "$SOURCE_ID_1" == "$SOURCE_ID_2" ]; then
     exit 1
 fi
 
+# Get a field value from config/projects.yaml for a given project id — awk, no Python subprocess
+get_project_field() {
+    local proj_id="$1" field_name="$2"
+    awk -v proj="$proj_id" -v field="$field_name" '
+        /^  - id:/ {
+            line = $0
+            sub(/^[[:space:]]*-[[:space:]]*id:[[:space:]]*/, "", line)
+            gsub(/"/, "", line); gsub(/[[:space:]]*$/, "", line)
+            cur = line
+        }
+        cur == proj {
+            pattern = "^    " field ":"
+            if ($0 ~ pattern) {
+                line = $0
+                sub(/^[[:space:]]*[^:]+:[[:space:]]*/, "", line)
+                gsub(/"/, "", line); gsub(/[[:space:]]*$/, "", line)
+                print line; exit
+            }
+        }
+    ' "$SCRIPT_DIR/config/projects.yaml"
+}
+
 # Get project path from config/projects.yaml
-PROJECT_PATH=$(SCRIPT_DIR_ENV="$SCRIPT_DIR" PROJECT_ID_ENV="$PROJECT_ID" python3 -c "
-import yaml, os
-with open(os.path.join(os.environ['SCRIPT_DIR_ENV'], 'config/projects.yaml'), encoding='utf-8') as f:
-    cfg = yaml.safe_load(f)
-for p in cfg.get('projects', []):
-    if p['id'] == os.environ['PROJECT_ID_ENV']:
-        print(p['path'])
-        break
-")
+PROJECT_PATH=$(get_project_field "$PROJECT_ID" "path")
 
 if [ -z "$PROJECT_PATH" ]; then
     echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
@@ -217,15 +231,7 @@ PYEOF
 
         # Context索引更新: 旧エントリに[統合→新ID]注釈 + 新エントリ追記
         if [ -n "$NEW_LESSON_ID" ]; then
-            CONTEXT_FILE=$(SCRIPT_DIR_ENV="$SCRIPT_DIR" PROJECT_ID_ENV="$PROJECT_ID" python3 -c "
-import yaml, os
-with open(os.path.join(os.environ['SCRIPT_DIR_ENV'], 'config/projects.yaml'), encoding='utf-8') as f:
-    cfg = yaml.safe_load(f)
-for p in cfg.get('projects', []):
-    if p['id'] == os.environ['PROJECT_ID_ENV']:
-        print(p.get('context_file', ''))
-        break
-")
+            CONTEXT_FILE=$(get_project_field "$PROJECT_ID" "context_file")
             if [ -n "$CONTEXT_FILE" ]; then
                 CONTEXT_FULL_PATH="$SCRIPT_DIR/$CONTEXT_FILE"
                 if [ -f "$CONTEXT_FULL_PATH" ]; then

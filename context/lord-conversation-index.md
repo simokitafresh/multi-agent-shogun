@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-07 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-07T07:55:46+09:00 -->
+<!-- generated_at: 2026-06-07T08:03:57+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-07T08:03:57+09:00 | terminal | response | 既読化完了。idle待機。 [meta] stop_reason=end_turn
+- 2026-06-07T08:03:46+09:00 | terminal | response | `lesson_status_migration.sh` 速度修行完了。 - **before_real_ms**: 18ms → **after_real_ms**: 12ms（33%削減） - 変更: BASH_SOURCE stri…
+- 2026-06-07T08:01:03+09:00 | terminal | response | APPROVE送信済み。idle待機。 [meta] stop_reason=end_turn
+- 2026-06-07T08:00:35+09:00 | terminal | response | APPROVE送信済み。idle待機。 [meta] stop_reason=end_turn
+- 2026-06-07T08:00:19+09:00 | ntfy | outbound | 【tobisaru】cmd_training_speed_lesson_status_migration_20260607075955 初回配備開始 (title=(untitled), ninja=tobisaru) 📋 https:/…
+- 2026-06-07T07:59:53+09:00 | ntfy | outbound | 【tobisaru】cmd_training_speed_lesson_review_20260607075936 初回配備開始 (title=(untitled), ninja=kotaro) 📋 https://gist.github…
+- 2026-06-07T07:56:26+09:00 | terminal | response | idle待機。 [meta] stop_reason=end_turn
+- 2026-06-07T07:56:24+09:00 | terminal | response | 全メッセージ既読済み。次のinbox通知を待つ。 [meta] stop_reason=end_turn
 - 2026-06-07T07:55:45+09:00 | terminal | response | 速度修行標準テンプレート（lesson_merge、hanzo向け）。 [meta] stop_reason=tool_use
 - 2026-06-07T07:55:25+09:00 | ntfy | outbound | 【tobisaru】cmd_training_speed_lesson_merge_20260607075457 初回配備開始 (title=(untitled), ninja=hanzo) 📋 https://gist.github.c…
-- 2026-06-07T07:51:21+09:00 | terminal | response | 未読0件。inbox1通知は処理済みのメッセージに対する遅延通知。idle待機。 [meta] stop_reason=end_turn
-- 2026-06-07T07:51:09+09:00 | terminal | response | 了解。idle待機。 [meta] stop_reason=end_turn
-- 2026-06-07T07:51:06+09:00 | terminal | response | gunshi補足確認（APPROVE）。タスク完了。idleで待機。 [meta] stop_reason=tool_use
-- 2026-06-07T07:50:49+09:00 | ntfy | outbound | 【tobisaru】cmd_training_speed_lesson_impact_rotate_20260607075025 初回配備開始 (title=(untitled), ninja=kotaro) 📋 https://gist…
-- 2026-06-07T07:45:07+09:00 | terminal | response | idle待機中。 [meta] stop_reason=end_turn
-- 2026-06-07T07:45:00+09:00 | terminal | response | idle待機中。 [meta] stop_reason=end_turn
-- 2026-06-07T07:44:41+09:00 | terminal | response | 既読化完了。idle待機。 [meta] stop_reason=tool_use
-- 2026-06-07T07:44:29+09:00 | terminal | response | `lesson_impact_analysis.sh` 速度修行完了。 - **before_real_ms**: 46ms → **after_real_ms**: 24ms（48%削減） - 変更: `SCRIPT_DIR="$(cd…
 
 ## 未解決確認事項
 - gunshi補足確認（APPROVE）。タスク完了。idleで待機。 [meta] stop_reason=tool_use
