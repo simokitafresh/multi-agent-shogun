@@ -1349,16 +1349,16 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T06:19:19"
   - script_path: "scripts/inbox_archive.sh"
-    status: assigned
+    status: completed
     before_ms: 15
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 15
+    before_real_ms: 97
+    after_real_ms: 74
+    real_measurement_command: "bash scripts/inbox_archive.sh <agent> (controlled test inbox: 2 read + 1 unread, 10-run median)"
+    test_result: "2/2 PASS (fast_path+multiline_fallback); grep subprocess removed+mktemp -d consolidation: 97ms->74ms (-23ms, -24%)"
+    commit: "36acec706"
     assigned_to: "kotaro"
-    updated_at: "2026-06-07T06:22:50"
+    updated_at: "2026-06-07T06:29:00"
   - script_path: "scripts/inbox_mark_read.sh"
     status: assigned
     before_ms: 14
@@ -1371,7 +1371,7 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T06:23:15"
   - script_path: "scripts/inbox_prune.sh"
-    status: pending
+    status: assigned
     before_ms: 7
     after_ms: ""
     before_real_ms: ""
@@ -1379,8 +1379,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T06:27:10"
   - script_path: "scripts/inbox_watcher.sh"
     status: pending
     before_ms: 17
