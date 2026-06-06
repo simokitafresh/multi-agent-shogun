@@ -171,16 +171,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-06T22:45:12"
   - script_path: "scripts/bulletin_confirm.sh"
-    status: assigned
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 87
+    after_real_ms: 48
+    real_measurement_command: "BULLETIN_ROOT_OVERRIDE=<tmp> bash scripts/bulletin_confirm.sh hayate entry_1"
+    test_result: "bash -n PASS; bats tests/unit/test_bulletin_board.bats PASS 17/17 SKIP=0"
+    commit: "812b3e63b55e918f6621ef739757910c7682b55d"
     assigned_to: "hayate"
-    updated_at: "2026-06-06T22:40:34"
+    updated_at: "2026-06-06T22:44:57"
   - script_path: "scripts/bulletin_write.sh"
     status: assigned
     before_ms: 17
@@ -193,7 +193,7 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-06T22:41:36"
   - script_path: "scripts/capture_clipboard_image.sh"
-    status: pending
+    status: assigned
     before_ms: 25
     after_ms: ""
     before_real_ms: ""
@@ -201,10 +201,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-06T22:42:29"
   - script_path: "scripts/causal_backlink_counts.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -212,10 +212,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-06T22:43:37"
   - script_path: "scripts/causal_backlinks.sh"
-    status: pending
+    status: assigned
     before_ms: 14
     after_ms: ""
     before_real_ms: ""
@@ -223,21 +223,21 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-06T22:47:55"
   - script_path: "scripts/cdp/cdp_benchmark.sh"
-    status: pending
+    status: completed
     before_ms: 14
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 468
+    after_real_ms: 416
+    real_measurement_command: "timeout 20 bash scripts/cdp/cdp_benchmark.sh --help"
+    test_result: "bash_n_exit_0; help_exit_0_stdout_identical_SKIP_0"
+    commit: "c0e0e771e"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-06T22:51:42"
   - script_path: "scripts/cdp/cdp_cli.sh"
-    status: pending
+    status: assigned
     before_ms: 25
     after_ms: ""
     before_real_ms: ""
@@ -245,8 +245,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "saizo"
+    updated_at: "2026-06-06T22:49:43"
   - script_path: "scripts/cdp/cdp_measure.sh"
     status: pending
     before_ms: 20
