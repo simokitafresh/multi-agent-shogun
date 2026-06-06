@@ -41,12 +41,7 @@ if [ ! -f "$PENDING_DECISIONS" ]; then
     exit 0
 fi
 
-# Fast-path: bash-only check for decision_candidate.found before spawning python3
-if ! grep -q '^decision_candidate:' "$REPORT_FILE" 2>/dev/null; then
-    echo "SKIP: decision_candidate not found"
-    exit 0
-fi
-# found: true を探す (decision_candidate ブロック内の最初の found: 行を確認)
+# Fast-path: single awk pass checks both existence and found value (replaces grep + awk)
 _found_val=$(awk '
     /^decision_candidate:/ { in_dc=1; next }
     in_dc && /^[^[:space:]]/ { exit }
@@ -54,11 +49,13 @@ _found_val=$(awk '
         match($0, /found:[[:space:]]*(true|false)/, a)
         print a[1]; exit
     }
+    END { if (!in_dc) print "no_dc" }
 ' "$REPORT_FILE")
-if [ "$_found_val" != "true" ]; then
-    echo "SKIP: decision_candidate.found is not true"
-    exit 0
-fi
+case "$_found_val" in
+    "no_dc") echo "SKIP: decision_candidate not found"; exit 0 ;;
+    "true")  ;;  # continue to python3
+    *)       echo "SKIP: decision_candidate.found is not true"; exit 0 ;;
+esac
 
 # Run python3 for YAML parsing + comparison
 REPORT_FILE_ENV="$REPORT_FILE" PD_FILE_ENV="$PENDING_DECISIONS" python3 - <<'PYEOF'

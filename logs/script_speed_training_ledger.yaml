@@ -711,16 +711,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T00:41:07"
   - script_path: "scripts/gates/gate_dc_duplicate.sh"
-    status: pending
+    status: completed
     before_ms: 15
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
+    after_ms: 33
+    before_real_ms: 44
+    after_real_ms: 33
+    real_measurement_command: "time bash scripts/gates/gate_dc_duplicate.sh <report_with_found_false> (cold SKIP path)"
+    test_result: "bats tests/unit/test_cmd_complete_gate.bats PASS 55/55 SKIP=0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T00:43:00"
   - script_path: "scripts/gates/gate_diagnose_check.sh"
     status: completed
     before_ms: 16
