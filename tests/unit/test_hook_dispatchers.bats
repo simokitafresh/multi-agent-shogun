@@ -62,6 +62,24 @@ _run_post() {
     [[ "$output" == *"report_field_set.sh"* ]]
 }
 
+@test "pre dispatcher mirrors stdout-only deny reason to stderr on exit 2" {
+    local out_file="$BATS_TEST_TMPDIR/stdout.txt"
+    local err_file="$BATS_TEST_TMPDIR/stderr.txt"
+    run env PRE_DISPATCH="$PRE_DISPATCH" OUT_FILE="$out_file" ERR_FILE="$err_file" bash -c '
+        printf "%s" "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"/tmp/queue/reports/saizo_report_cmd_1.yaml\"}}" \
+            | "$PRE_DISPATCH" >"$OUT_FILE" 2>"$ERR_FILE"
+        rc=$?
+        printf "stdout:\n"
+        cat "$OUT_FILE"
+        printf "\nstderr:\n"
+        cat "$ERR_FILE"
+        exit "$rc"
+    '
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'stdout:'*'"permissionDecision":"deny"'* ]]
+    [[ "$output" == *'stderr:'*'report_field_set.sh'* ]]
+}
+
 @test "post dispatcher preserves test omitted-case detection" {
     _run_post '{"tool_name":"Bash","tool_input":{"command":"bats tests/unit/example.bats"},"tool_result":{"stdout":"ok 1 sample # skip reason\n1 skipped","stderr":"","exit_code":0}}'
     [ "$status" -eq 0 ]
