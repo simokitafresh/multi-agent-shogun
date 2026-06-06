@@ -1327,14 +1327,14 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T06:13:00"
   - script_path: "scripts/hooks/test_result_guard.sh"
-    status: assigned
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
+    before_real_ms: 6
+    after_real_ms: 5
+    real_measurement_command: "echo '{...}'|bash scripts/hooks/test_result_guard.sh (hot path)"
     test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    commit: 4baae3dca4af381ba2048f11ba046b254e8d5869
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T06:12:07"
   - script_path: "scripts/hybrid_search.sh"
