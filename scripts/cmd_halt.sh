@@ -5,19 +5,22 @@
 
 set -e
 
-CMD_ID="$1"
-
 # 引数チェック（cmd_IDが必須）
-if [ -z "$CMD_ID" ]; then
+if [ $# -eq 0 ] || [ -z "$1" ]; then
     printf 'Usage: bash scripts/cmd_halt.sh cmd_XXX\nERROR: cmd_ID is required.\n' >&2
     exit 1
 fi
 
+CMD_ID="$1"
+
 # cmd_プレフィックスチェック
-if [[ ! "$CMD_ID" =~ ^cmd_ ]]; then
-    printf "ERROR: cmd_ID must start with 'cmd_' (got: %s)\n" "$CMD_ID" >&2
-    exit 1
-fi
+case "$CMD_ID" in
+    cmd_*) ;;
+    *)
+        printf "ERROR: cmd_ID must start with 'cmd_' (got: %s)\n" "$CMD_ID" >&2
+        exit 1
+        ;;
+esac
 
 SCRIPT_DIR="${BASH_SOURCE[0]}"
 [[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$PWD/$SCRIPT_DIR"
