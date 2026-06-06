@@ -1525,18 +1525,18 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T07:21:00"
   - script_path: "scripts/lesson_effectiveness.sh"
-    status: pending
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 8
+    after_real_ms: 5
+    real_measurement_command: "bash scripts/lesson_effectiveness.sh --help"
+    test_result: "bash -n OK; functional --help PASS; SCRIPT_DIR=/mnt/c/tools/multi-agent-shogun match OK"
+    commit: "1dceed859"
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T07:32:00"
   - script_path: "scripts/lesson_find_duplicates.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -1544,8 +1544,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T07:25:31"
   - script_path: "scripts/lesson_harvest.sh"
     status: pending
     before_ms: 17
