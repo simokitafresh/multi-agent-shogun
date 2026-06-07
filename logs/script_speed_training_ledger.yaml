@@ -1811,16 +1811,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T09:18:11"
   - script_path: "scripts/lib/normalize_report.sh"
-    status: assigned
+    status: completed
     before_ms: 16
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 15
+    before_real_ms: 110
+    after_real_ms: 15
+    real_measurement_command: "cp /tmp/test_normalize_report.yaml /tmp/test_norm_run.yaml; time bash scripts/lib/normalize_report.sh /tmp/test_norm_run.yaml"
+    test_result: "bash -n OK; test_cmd_complete_gate 55/55 + test_lesson_impact_rotate 13/13 PASS SKIP=0"
+    commit: "087783a70"
     assigned_to: "hanzo"
-    updated_at: "2026-06-07T09:17:05"
+    updated_at: "2026-06-07T09:35:00"
   - script_path: "scripts/lib/pane_format.sh"
     status: assigned
     before_ms: 14
