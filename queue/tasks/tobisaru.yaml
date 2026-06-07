@@ -51,5 +51,5 @@ task:
   - id: 'L499'
     summary: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
     detail: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
-  report_filename: tobisaru_report_cmd_training_speed_search_log_write_20260607192700_normal.yaml
-  report_path: queue/reports/tobisaru_report_cmd_training_speed_search_log_write_20260607192700_normal.yaml
+  report_filename: tobisaru_report_cmd_training_speed_skill_recommend_metrics_20260607201400_normal.yaml
+  report_path: queue/reports/tobisaru_report_cmd_training_speed_skill_recommend_metrics_20260607201400_normal.yaml
