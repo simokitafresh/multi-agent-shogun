@@ -1960,9 +1960,24 @@ _training_pipeline_has_work() {
 
 _speed_training_pipeline_has_work() {
     local helper="$SCRIPT_DIR/tools/bash_speed_training.sh"
+    local pending_or_rework assigned_count completed_count reenqueue_count
     [ -r "$helper" ] || return 1
     [ -f "$SPEED_TRAINING_LEDGER" ] || return 1
-    bash "$helper" next "$SPEED_TRAINING_LEDGER" >/dev/null 2>&1
+    pending_or_rework=$(bash "$helper" next "$SPEED_TRAINING_LEDGER" 2>/dev/null || true)
+    [ -n "$pending_or_rework" ] && return 0
+
+    assigned_count=$(bash "$helper" status-count assigned "$SPEED_TRAINING_LEDGER" 2>/dev/null || printf '0')
+    [ "${assigned_count:-0}" -gt 0 ] 2>/dev/null && return 1
+
+    completed_count=$(bash "$helper" status-count completed "$SPEED_TRAINING_LEDGER" 2>/dev/null || printf '0')
+    [ "${completed_count:-0}" -gt 0 ] 2>/dev/null || return 1
+
+    reenqueue_count=$(bash "$helper" re-enqueue "${SPEED_TRAINING_REENQUEUE_LIMIT:-20}" "$SPEED_TRAINING_LEDGER" 2>/dev/null || printf '0')
+    if [ "${reenqueue_count:-0}" -gt 0 ] 2>/dev/null; then
+        log "SPEED-TRAINING-REENQUEUE: completed_top=${reenqueue_count} limit=${SPEED_TRAINING_REENQUEUE_LIMIT:-20} max_iteration=${SPEED_TRAINING_MAX_ITERATION:-3}"
+        return 0
+    fi
+    return 1
 }
 
 _handle_speed_training_auto_deploy() {

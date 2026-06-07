@@ -173,6 +173,107 @@ EOF
     [[ "$output" == *"after_real_ms < before_real_ms"* ]]
 }
 
+@test "re-enqueue returns top completed entries to pending and carries after_real_ms into next before_real_ms" {
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
+    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 200 50 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
+    second=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$second" completed 300 100 "time bash $second --help" "PASS SKIP=0" def456 "$LEDGER"
+
+    run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" re-enqueue 1 "$LEDGER"
+    [ "$status" -eq 0 ]
+    [ "$output" = "1" ]
+
+    awk -v first="$first" -v second="$second" '
+        $0 ~ "script_path: \"" first "\"" { in_first = 1; in_second = 0; next }
+        $0 ~ "script_path: \"" second "\"" { in_second = 1; in_first = 0; next }
+        in_first && /status: completed/ { first_completed = 1 }
+        in_second && /status: pending/ { second_pending = 1 }
+        in_second && /before_real_ms: 100/ { second_before = 1 }
+        in_second && /after_real_ms: ""/ { second_after_cleared = 1 }
+        in_second && /iteration: 1/ { second_iteration = 1 }
+        END { exit !(first_completed && second_pending && second_before && second_after_cleared && second_iteration) }
+    ' "$LEDGER"
+}
+
+@test "re-enqueue stops at max iteration" {
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
+    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 200 100 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" re-enqueue 1 "$LEDGER" 1
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 100 80 "time bash $first --help" "PASS SKIP=0" def456 "$LEDGER"
+
+    run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" re-enqueue 1 "$LEDGER" 1
+    [ "$status" -eq 0 ]
+    [ "$output" = "0" ]
+
+    awk -v first="$first" '
+        $0 ~ "script_path: \"" first "\"" { in_first = 1; next }
+        in_first && /status: completed/ { completed = 1 }
+        in_first && /iteration: 1/ { iteration = 1 }
+        END { exit !(completed && iteration) }
+    ' "$LEDGER"
+}
+
+@test "re-enqueue default max iteration is 3 and excludes iteration 3 completed entries" {
+    cat > "$LEDGER" <<EOF
+global_status: running
+entries:
+  - script_path: "scripts/iteration_three.sh"
+    status: completed
+    before_real_ms: 80
+    after_real_ms: 40
+    iteration: 3
+    assigned_to: ""
+    updated_at: ""
+EOF
+
+    run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" re-enqueue 20 "$LEDGER"
+    [ "$status" -eq 0 ]
+    [ "$output" = "0" ]
+
+    awk '
+        /script_path: "scripts\/iteration_three.sh"/ { in_target = 1; next }
+        in_target && /status: completed/ { completed = 1 }
+        in_target && /iteration: 3/ { iteration = 1 }
+        END { exit !(completed && iteration) }
+    ' "$LEDGER"
+}
+
+@test "ninja_monitor re-enqueues completed speed training when no pending or assigned work remains" {
+    cat > "$LEDGER" <<EOF
+global_status: running
+entries:
+  - script_path: "scripts/sample_slow.sh"
+    status: completed
+    before_real_ms: 200
+    after_real_ms: 100
+    iteration: 0
+    assigned_to: ""
+    updated_at: ""
+EOF
+
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export SPEED_TRAINING_LEDGER="'"$LEDGER"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+log() { :; }
+if _speed_training_pipeline_has_work; then
+    printf "work"
+else
+    printf "none"
+fi
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "work" ]
+    grep -Fq 'status: pending' "$LEDGER"
+    grep -Fq 'before_real_ms: 100' "$LEDGER"
+    grep -Fq 'iteration: 1' "$LEDGER"
+}
+
 @test "ninja_monitor handles speed training before legacy training auto-deploy" {
     run bash -c '
 set -euo pipefail

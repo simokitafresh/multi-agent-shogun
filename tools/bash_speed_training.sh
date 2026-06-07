@@ -14,9 +14,11 @@ Usage:
   bash tools/bash_speed_training.sh init-ledger [ledger]
   bash tools/bash_speed_training.sh next [ledger]
   bash tools/bash_speed_training.sh set-global-status <running|paused> [ledger]
+  bash tools/bash_speed_training.sh status-count <status> [ledger]
   bash tools/bash_speed_training.sh mark-assigned <script_path> <ninja> [ledger]
   bash tools/bash_speed_training.sh record-after <script_path> <status> <after_ms> <test_result> <commit> [ledger]
   bash tools/bash_speed_training.sh record-real <script_path> <status> <before_real_ms> <after_real_ms> <real_measurement_command> <test_result> <commit> [ledger]
+  bash tools/bash_speed_training.sh re-enqueue [limit] [ledger] [max_iteration]
   bash tools/bash_speed_training.sh auto-deploy <ninja> [ledger]
 EOF
 }
@@ -91,6 +93,7 @@ init_ledger_unlocked() {
             printf '    after_ms: ""\n'
             printf '    before_real_ms: ""\n'
             printf '    after_real_ms: ""\n'
+            printf '    iteration: 0\n'
             printf '    real_measurement_command: ""\n'
             printf '    test_result: %s\n' "$(yaml_quote "baseline_bash_n_exit_${syntax_status}")"
             printf '    commit: ""\n'
@@ -146,9 +149,179 @@ cmd_next() {
         }
         /^[[:space:]]+status:[[:space:]]*(pending|no_improvement)[[:space:]]*$/ {
             print path
-            exit
+            found = 1
+            exit 0
         }
+        END { if (!found) exit 1 }
     ' "$ledger"
+}
+
+ledger_status_count() {
+    local status_name="$1"
+    local ledger="${2:-$LEDGER}"
+    [ -f "$ledger" ] || { printf '0\n'; return 0; }
+    awk -v wanted="$status_name" '
+        /^[[:space:]]+status:/ {
+            status = $0
+            sub(/^.*status:[[:space:]]*"?/, "", status)
+            sub(/"?[[:space:]]*$/, "", status)
+            if (status == wanted) count++
+        }
+        END { print count + 0 }
+    ' "$ledger"
+}
+
+re_enqueue_completed_unlocked() {
+    local ledger="$1"
+    local limit="$2"
+    local now="$3"
+    local max_iteration="$4"
+    local selected tmp
+    selected=$(mktemp "${ledger}.reenqueue.XXXXXX")
+    tmp=$(mktemp "${ledger}.XXXXXX")
+
+    awk -v max_iteration="$max_iteration" '
+        /^[[:space:]]*-[[:space:]]+script_path:/ {
+            if (path != "" && status == "completed" && after_real_ms ~ /^[0-9]+$/ && iteration < max_iteration) {
+                rows[++n] = after_real_ms "\t" path
+            }
+            path = $0
+            sub(/^.*script_path:[[:space:]]*"?/, "", path)
+            sub(/"?[[:space:]]*$/, "", path)
+            status = after_real_ms = ""
+            iteration = 0
+            next
+        }
+        /^[[:space:]]+status:/ {
+            status = $0
+            sub(/^.*status:[[:space:]]*"?/, "", status)
+            sub(/"?[[:space:]]*$/, "", status)
+            next
+        }
+        /^[[:space:]]+iteration:/ {
+            iteration = $0
+            sub(/^.*iteration:[[:space:]]*"?/, "", iteration)
+            sub(/"?[[:space:]]*$/, "", iteration)
+            if (iteration !~ /^[0-9]+$/) iteration = 0
+            next
+        }
+        /^[[:space:]]+after_real_ms:/ {
+            after_real_ms = $0
+            sub(/^.*after_real_ms:[[:space:]]*"?/, "", after_real_ms)
+            sub(/"?[[:space:]]*$/, "", after_real_ms)
+            next
+        }
+        END {
+            if (path != "" && status == "completed" && after_real_ms ~ /^[0-9]+$/ && iteration < max_iteration) {
+                rows[++n] = after_real_ms "\t" path
+            }
+            for (i = 1; i <= n; i++) print rows[i]
+        }
+    ' "$ledger" | sort -rn -k1,1 | head -n "$limit" | cut -f2- > "$selected"
+
+    awk -v selected_file="$selected" -v now="$now" '
+        BEGIN {
+            while ((getline line < selected_file) > 0) {
+                selected[line] = 1
+            }
+            close(selected_file)
+        }
+        /^[[:space:]]*-[[:space:]]+script_path:/ {
+            if (in_target) flush_block()
+            path = $0
+            sub(/^.*script_path:[[:space:]]*"?/, "", path)
+            sub(/"?[[:space:]]*$/, "", path)
+            in_target = (path in selected)
+            if (in_target) {
+                block = $0 ORS
+                status_seen = before_seen = after_seen = iteration_seen = assigned_seen = updated_seen = 0
+                after_value = ""
+                next
+            }
+            print
+            next
+        }
+        in_target {
+            line = $0
+            if ($0 ~ /^[[:space:]]+status:/) {
+                line = "    status: pending"
+                status_seen = 1
+            } else if ($0 ~ /^[[:space:]]+before_real_ms:/) {
+                line = "    before_real_ms: __BEFORE_REAL_MS__"
+                before_seen = 1
+            } else if ($0 ~ /^[[:space:]]+after_real_ms:/) {
+                after_value = $0
+                sub(/^.*after_real_ms:[[:space:]]*"?/, "", after_value)
+                sub(/"?[[:space:]]*$/, "", after_value)
+                line = "    after_real_ms: \"\""
+                after_seen = 1
+            } else if ($0 ~ /^[[:space:]]+iteration:/) {
+                iteration_value = $0
+                sub(/^.*iteration:[[:space:]]*"?/, "", iteration_value)
+                sub(/"?[[:space:]]*$/, "", iteration_value)
+                if (iteration_value !~ /^[0-9]+$/) iteration_value = 0
+                line = "    iteration: " (iteration_value + 1)
+                iteration_seen = 1
+            } else if ($0 ~ /^[[:space:]]+assigned_to:/) {
+                line = "    assigned_to: \"\""
+                assigned_seen = 1
+            } else if ($0 ~ /^[[:space:]]+updated_at:/) {
+                line = "    updated_at: \"" now "\""
+                updated_seen = 1
+            }
+            block = block line ORS
+            next
+        }
+        { print }
+        END {
+            if (in_target) flush_block()
+        }
+        function flush_block(    before_line) {
+            if (after_value == "" || after_value !~ /^[0-9]+$/) {
+                printf "%s", block
+                in_target = 0
+                return
+            }
+            if (!status_seen) block = block "    status: pending" ORS
+            before_line = "    before_real_ms: " after_value ORS
+            if (before_seen) {
+                gsub(/    before_real_ms: __BEFORE_REAL_MS__\n/, before_line, block)
+            } else {
+                block = block before_line
+            }
+            if (!after_seen) block = block "    after_real_ms: \"\"" ORS
+            if (!iteration_seen) block = block "    iteration: 1" ORS
+            if (!assigned_seen) block = block "    assigned_to: \"\"" ORS
+            if (!updated_seen) block = block "    updated_at: \"" now "\"" ORS
+            printf "%s", block
+            count++
+            in_target = 0
+        }
+    ' "$ledger" > "$tmp"
+    mv "$tmp" "$ledger"
+    local count
+    count=$(wc -l < "$selected" | tr -d ' ')
+    rm -f "$selected"
+    printf '%s\n' "$count"
+}
+
+cmd_re_enqueue() {
+    local limit="${1:-20}"
+    local ledger="${2:-$LEDGER}"
+    local max_iteration="${3:-${SPEED_TRAINING_MAX_ITERATION:-3}}"
+    [[ "$limit" =~ ^[0-9]+$ ]] || { echo "limit must be numeric" >&2; return 2; }
+    [ "$limit" -gt 0 ] 2>/dev/null || { echo "limit must be > 0" >&2; return 2; }
+    [[ "$max_iteration" =~ ^[0-9]+$ ]] || { echo "max_iteration must be numeric" >&2; return 2; }
+    [ "$max_iteration" -gt 0 ] 2>/dev/null || { echo "max_iteration must be > 0" >&2; return 2; }
+    [ -f "$ledger" ] || return 1
+    with_ledger_lock "$ledger" re_enqueue_completed_unlocked "$ledger" "$limit" "$(now_iso)" "$max_iteration"
+}
+
+cmd_status_count() {
+    local status_name="${1:-}"
+    local ledger="${2:-$LEDGER}"
+    [ -n "$status_name" ] || { usage >&2; return 2; }
+    ledger_status_count "$status_name" "$ledger"
 }
 
 active_task_targets() {
@@ -424,6 +597,8 @@ main() {
         init-ledger) cmd_init_ledger "$@" ;;
         next) cmd_next "$@" ;;
         reserve-next) cmd_reserve_next "$@" ;;
+        re-enqueue) cmd_re_enqueue "$@" ;;
+        status-count) cmd_status_count "$@" ;;
         set-global-status) cmd_set_global_status "$@" ;;
         mark-assigned) cmd_mark_assigned "$@" ;;
         record-after) cmd_record_after "$@" ;;
