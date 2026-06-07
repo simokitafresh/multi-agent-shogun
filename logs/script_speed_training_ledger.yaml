@@ -1074,16 +1074,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T05:08:01"
   - script_path: "scripts/gates/mark_no_learning.sh"
-    status: assigned
+    status: completed
     before_ms: 16
-    after_ms: ""
+    after_ms: 16
     before_real_ms: 18
-    after_real_ms: ""
+    after_real_ms: 5
     real_measurement_command: "bash scripts/gates/mark_no_learning.sh cmd_test_bench 2>/dev/null"
-    test_result: "bash_n PASS; test_mark_no_learning.bats 2/2 PASS SKIP=0 (causal_backlinks 2 FAIL pre-existing)"
-    commit: ""
+    test_result: "bash_n_pass;functional_spot_PASS;bats_filter_mark_no_learning_2_pass_0_skip;before_18_after_5.220"
+    commit: "fbe31995c"
     assigned_to: "hayate"
-    updated_at: "2026-06-07T10:49:43"
+    updated_at: "2026-06-07T10:53:14"
   - script_path: "scripts/gist_index_update.sh"
     status: completed
     before_ms: 16
