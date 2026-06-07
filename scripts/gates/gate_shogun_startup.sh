@@ -1941,6 +1941,46 @@ END {
     else
         echo "  データなし"
     fi
+    _GF_FILE_125="$SCRIPT_DIR/logs/gate_fire_log.yaml"
+    if [ -f "$_GF_FILE_125" ]; then
+        awk '
+function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^["'\''"]|["'\''"]$/, "", s); return s }
+function extract_gate(line, s) {
+    s = line
+    if (s !~ /gate:/) return ""
+    sub(/^.*gate:[[:space:]]*/, "", s)
+    sub(/,[[:space:]]*result:.*$/, "", s)
+    sub(/[[:space:]]+result:.*$/, "", s)
+    return trim(s)
+}
+/result:[[:space:]]*FAIL/ {
+    gate = extract_gate($0)
+    if (gate != "") gates[++n] = gate
+}
+END {
+    if (n == 0) {
+        print "  FAIL種類数(ユニークgate名): 直近50=0 前50=0 増減=0"
+        exit
+    }
+    recent_start = n - 49
+    if (recent_start < 1) recent_start = 1
+    prev_start = n - 99
+    prev_end = n - 50
+    if (prev_start < 1) prev_start = 1
+    for (i = recent_start; i <= n; i++) recent[gates[i]] = 1
+    if (prev_end >= prev_start) {
+        for (i = prev_start; i <= prev_end; i++) prev[gates[i]] = 1
+    }
+    for (g in recent) recent_count++
+    for (g in prev) prev_count++
+    delta = recent_count - prev_count
+    sign = (delta > 0) ? "+" : ""
+    printf "  FAIL種類数(ユニークgate名): 直近50=%d 前50=%d 増減=%s%d\n", recent_count + 0, prev_count + 0, sign, delta
+}
+' "$_GF_FILE_125" 2>/dev/null
+    else
+        echo "  FAIL種類数(ユニークgate名): gate_fire_log.yaml不在"
+    fi
 else
     echo "  cmd_design_quality.yaml不在"
 fi

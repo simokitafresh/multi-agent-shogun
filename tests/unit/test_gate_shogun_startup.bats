@@ -713,6 +713,21 @@ MOCK
     grep -q "gate_report_format の未回復FAILが45日継続(FAIL=2件)" "$TEST_TMPDIR/logs/bulletin_calls.log"
 }
 
+@test "retrospective learning shows unique FAIL gate type trend" {
+    for i in $(seq 1 50); do
+        gate="prev_gate_$(( (i - 1) % 2 ))"
+        printf -- '- ts: "2099-01-01T00:%02d:00+09:00", file: "queue/reports/p%02d.yaml", gate: "%s", result: FAIL, reasons: "fixture"\n' "$i" "$i" "$gate"
+    done > "$TEST_TMPDIR/logs/gate_fire_log.yaml"
+    for i in $(seq 1 50); do
+        gate="recent_gate_$(( (i - 1) % 3 ))"
+        printf -- '- ts: "2099-01-02T00:%02d:00+09:00", file: "queue/reports/r%02d.yaml", gate: "%s", result: FAIL, reasons: "fixture"\n' "$i" "$i" "$gate"
+    done >> "$TEST_TMPDIR/logs/gate_fire_log.yaml"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"FAIL種類数(ユニークgate名): 直近50=3 前50=2 増減=+1"* ]]
+}
+
 @test "Gate 13.8 high FP rate requests relaxation cmd bulletin with block pattern classification" {
     unset SHOGUN_STARTUP_LIGHTWEIGHT
     cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'

@@ -1958,6 +1958,85 @@ _training_pipeline_has_work() {
     grep -qE '^\s+status:\s+(pending|new|delegated)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null
 }
 
+_retrospective_recurrence_rate() {
+    local dq_file="${1:-$SCRIPT_DIR/logs/cmd_design_quality.yaml}"
+    [ -f "$dq_file" ] || { printf '0 0 0\n'; return 0; }
+    grep -E '^[[:space:]]*-[[:space:]]*cmd_id:|^[[:space:]]*(gate_result|notes|timestamp):' "$dq_file" 2>/dev/null | awk '
+function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^["'\''"]|["'\''"]$/, "", s); return s }
+function skip_pattern(p) { return p ~ /^draft_lessons/ || p ~ /^ci_failure/ || p ~ /:binary_checks_fail/ }
+function normalize_class(p, parts, cls) {
+    p = trim(p)
+    if (p == "" || skip_pattern(p)) return ""
+    split(p, parts, ":")
+    cls = trim(parts[1])
+    if (cls ~ /^(hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)$/ && length(parts) > 1) cls = trim(parts[2])
+    if (cls ~ /environment_change/ || cls ~ /WARN累計昇格/) return ""
+    return cls
+}
+function flush_entry() {
+    if (cmd_id != "" && timestamp != "") {
+        n++
+        gate[n] = gate_result
+        notes_arr[n] = notes
+    }
+    cmd_id = ""; timestamp = ""; gate_result = ""; notes = ""
+}
+/^[[:space:]]*-[[:space:]]*cmd_id:/ { flush_entry(); s=$0; sub(/.*cmd_id:[[:space:]]*/, "", s); cmd_id=trim(s); next }
+/^[[:space:]]*gate_result:/ { s=$0; sub(/^[[:space:]]*gate_result:[[:space:]]*/, "", s); gate_result=trim(s); next }
+/^[[:space:]]*notes:/ { s=$0; sub(/^[[:space:]]*notes:[[:space:]]*/, "", s); notes=trim(s); next }
+/^[[:space:]]*timestamp:/ { s=$0; sub(/^[[:space:]]*timestamp:[[:space:]]*/, "", s); timestamp=trim(s); next }
+END {
+    flush_entry()
+    recent_start = n - 49
+    if (recent_start < 1) recent_start = 1
+    prev_start = n - 99
+    prev_end = n - 50
+    if (prev_start < 1) prev_start = 1
+    for (i = recent_start; i <= n; i++) {
+        if (gate[i] != "BLOCK" && gate[i] != "WARN") continue
+        split(notes_arr[i], pats, "|")
+        for (j in pats) {
+            cls = normalize_class(pats[j])
+            if (cls != "") recent_cls[cls] = 1
+        }
+    }
+    for (i = prev_start; i <= prev_end; i++) {
+        if (gate[i] != "BLOCK" && gate[i] != "WARN") continue
+        split(notes_arr[i], pats, "|")
+        for (j in pats) {
+            cls = normalize_class(pats[j])
+            if (cls != "") prev_cls[cls] = 1
+        }
+    }
+    for (cls in prev_cls) {
+        prev_total++
+        if (cls in recent_cls) recur++
+    }
+    rate = (prev_total > 0) ? int(recur * 100 / prev_total) : 0
+    printf "%d %d %d\n", rate + 0, recur + 0, prev_total + 0
+}'
+}
+
+_pause_speed_training_if_recurrence_high() {
+    local helper="$SCRIPT_DIR/tools/bash_speed_training.sh"
+    local threshold="${SPEED_TRAINING_RECURRENCE_PAUSE_THRESHOLD:-10}"
+    local rate recur total
+    [ -r "$helper" ] || return 1
+    [ -f "$SPEED_TRAINING_LEDGER" ] || return 1
+    [[ "$threshold" =~ ^[0-9]+$ ]] || threshold=10
+    read -r rate recur total < <(_retrospective_recurrence_rate "$SCRIPT_DIR/logs/cmd_design_quality.yaml")
+    [ "${total:-0}" -gt 0 ] 2>/dev/null || return 1
+    if [ "${rate:-0}" -gt "$threshold" ] 2>/dev/null; then
+        if bash "$helper" set-global-status paused "$SPEED_TRAINING_LEDGER" >/dev/null 2>&1; then
+            log "SPEED-TRAINING-AUTO-PAUSE: recurrence_rate=${rate}% threshold=${threshold}% recurring=${recur}/${total}; global_status=paused"
+        else
+            log "SPEED-TRAINING-AUTO-PAUSE-FAIL: recurrence_rate=${rate}% threshold=${threshold}% recurring=${recur}/${total}"
+        fi
+        return 0
+    fi
+    return 1
+}
+
 _speed_training_pipeline_has_work() {
     local helper="$SCRIPT_DIR/tools/bash_speed_training.sh"
     local pending_or_rework assigned_count completed_count reenqueue_count
@@ -1991,6 +2070,10 @@ _handle_speed_training_auto_deploy() {
 
     if _training_pipeline_has_work; then
         log "SPEED-TRAINING-AUTO-SKIP: $name production pipeline has pending work"
+        return 1
+    fi
+
+    if _pause_speed_training_if_recurrence_high; then
         return 1
     fi
 

@@ -518,6 +518,52 @@ END {
         | awk -F'|' '{ print $3 " | " $1 " | " $2 " | " $4 }'
 }
 
+review_quality_scale_summary() {
+    local review_log="${1:-$SCRIPT_DIR/logs/gunshi_review_log.yaml}"
+    local limit="${2:-20}"
+    [ -f "$review_log" ] || { echo "DATA_MISSING"; return 0; }
+    [[ "$limit" =~ ^[0-9]+$ ]] || limit=20
+    awk -v limit="$limit" '
+function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^["'\''"]|["'\''"]$/, "", s); return s }
+function flush_entry() {
+    if (review_type ~ /^(draft|report)$/) {
+        n++
+        v[n] = verdict
+        txt[n] = body
+    }
+    review_type = ""; verdict = ""; body = ""
+}
+/^[[:space:]]*-[[:space:]]*cmd_id:/ { flush_entry(); body = $0; next }
+{
+    body = body "\n" $0
+}
+/^[[:space:]]*review_type:/ {
+    s=$0; sub(/^[[:space:]]*review_type:[[:space:]]*/, "", s); review_type=trim(s); next
+}
+/^[[:space:]]*verdict:/ {
+    s=$0; sub(/^[[:space:]]*verdict:[[:space:]]*/, "", s); verdict=trim(s); next
+}
+END {
+    flush_entry()
+    start = n - limit + 1
+    if (start < 1) start = 1
+    for (i = start; i <= n; i++) {
+        if (i < 1) continue
+        total++
+        ok = (v[i] ~ /^(APPROVE|LGTM|PASS|CLEAR)$/)
+        explicit_warn = (txt[i] ~ /(WARN|REQUEST_CHANGES|LGTM→BLOCK|品質崩壊|雑なレビュー)/)
+        if (!ok || explicit_warn) warn++
+    }
+    if (total == 0) {
+        print "DATA_MISSING"
+        exit
+    }
+    rate = int(warn * 100 / total)
+    printf "RATE %d %d %d\n", rate, warn, total
+}
+' "$review_log"
+}
+
 if [[ "${GATE_KARO_STARTUP_LIB_ONLY:-0}" == "1" ]]; then
     return 0 2>/dev/null || exit 0
 fi
@@ -1109,6 +1155,25 @@ if [ -f "$_gp_log" ]; then
             alerts+=("軍師GP pending: ${_gp_pending_count}件")
         fi
     fi
+fi
+
+# --- Check 3.8: レビュー品質スケール計測 ---
+echo "■ レビュー品質スケール"
+_review_quality_line="$(review_quality_scale_summary "$SCRIPT_DIR/logs/gunshi_review_log.yaml" 20 2>/dev/null || echo "DATA_MISSING")"
+if [[ "$_review_quality_line" == RATE* ]]; then
+    read -r _rq_tag _rq_rate _rq_warn _rq_total <<< "$_review_quality_line"
+    echo "  WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, 直近20レビュー)"
+    if [ "${_rq_rate:-0}" -gt 30 ] 2>/dev/null; then
+        echo "  WARN: レビュー品質WARN率が30%超"
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("レビュー品質スケール: WARN率${_rq_rate}%")
+        fi
+    else
+        echo "  OK: レビュー品質WARN率30%以下"
+    fi
+else
+    echo "  データ不足: 直近レビューなし"
 fi
 
 # --- Check 4: pending_decisions未解決件数 ---

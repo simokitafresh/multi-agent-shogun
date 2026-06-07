@@ -654,3 +654,38 @@ MOCK
     [[ "$output" == *"[[karo_startup_gate]]"* ]]
     [[ "$(cat "$TEST_TMPDIR/logs/semantic_calls.log")" == *"scripts/gates/gate_karo_startup.sh"* ]]
 }
+
+@test "review quality scale warns when recent 20 review WARN rate exceeds 30 percent" {
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
+executions:
+- ts: "2026-05-02T10:01:00+0900"
+  skill: "report-write"
+  executor: "hanzo"
+  result: "PASS"
+  stumbling_points: "none"
+EOF
+    : > "$TEST_TMPDIR/logs/gunshi_review_log.yaml"
+    for i in $(seq 1 13); do
+        cat >> "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<EOF
+- cmd_id: cmd_ok_$i
+  review_type: draft
+  verdict: APPROVE
+  findings_summary: "OK"
+EOF
+    done
+    for i in $(seq 1 7); do
+        cat >> "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<EOF
+- cmd_id: cmd_warn_$i
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  findings_summary: "WARN: fixture"
+EOF
+    done
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ レビュー品質スケール"* ]]
+    [[ "$output" == *"WARN率 35% (7/20, 直近20レビュー)"* ]]
+    [[ "$output" == *"WARN: レビュー品質WARN率が30%超"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}

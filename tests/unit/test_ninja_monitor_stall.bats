@@ -100,6 +100,56 @@ cat "$TEST_LOG"
     [[ "$output" == *"NTFY_COUNT=0"* ]]
 }
 
+@test "speed training auto-pause when retrospective recurrence rate exceeds 10 percent" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+SPEED_TRAINING_LEDGER="$TMP_ROOT/logs/script_speed_training_ledger.yaml"
+mkdir -p "$SCRIPT_DIR/logs" "$SCRIPT_DIR/tools"
+cp "$PROJECT_ROOT/tools/bash_speed_training.sh" "$SCRIPT_DIR/tools/bash_speed_training.sh"
+cat > "$SPEED_TRAINING_LEDGER" <<EOF
+global_status: running
+entries: []
+EOF
+cat > "$SCRIPT_DIR/logs/cmd_design_quality.yaml" <<EOF
+- cmd_id: cmd_prev_1
+  gate_result: WARN
+  timestamp: "2026-06-01T00:00:00"
+  notes: "alpha_issue"
+- cmd_id: cmd_prev_2
+  gate_result: WARN
+  timestamp: "2026-06-01T00:01:00"
+  notes: "beta_issue"
+EOF
+for i in $(seq 1 50); do
+    if [ "$i" -eq 50 ]; then note="alpha_issue"; else note="recent_unique_$i"; fi
+    cat >> "$SCRIPT_DIR/logs/cmd_design_quality.yaml" <<EOF
+- cmd_id: cmd_recent_$i
+  gate_result: WARN
+  timestamp: "2026-06-02T00:$i:00"
+  notes: "$note"
+EOF
+done
+
+LOG="$TMP_ROOT/monitor.log"
+log() { echo "$1" >> "$LOG"; }
+
+_pause_speed_training_if_recurrence_high
+grep -q "global_status: paused" "$SPEED_TRAINING_LEDGER"
+grep -q "SPEED-TRAINING-AUTO-PAUSE: recurrence_rate=50%" "$LOG"
+cat "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SPEED-TRAINING-AUTO-PAUSE"* ]]
+}
+
 @test "check_stall: same ninja x task re-notifies after 5-minute debounce" {
     run bash -lc '
 set -euo pipefail
