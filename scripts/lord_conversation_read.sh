@@ -43,21 +43,17 @@ if [ ! -f "$conversation_file" ]; then
   exit 1
 fi
 
-jq -Rrs --arg agent_id "$agent_id" --argjson limit "$limit" '
-  split("\n")
-  | map(
-      select(test("\\S")) as $line
-      | ($line | fromjson) as $entry
-      | if ($entry | type) != "object" then
-          error("JSONL entry is not an object")
-        else
-          select(
-            (($entry.target // "") | tostring) == ""
-            or (($entry.target // "") | tostring) == $agent_id
-            or (($entry.agent // "") | tostring) == $agent_id
-          )
-          | $line
-        end
-    )
-  | .[-$limit:][]
-' "$conversation_file"
+jq -Rr --arg agent_id "$agent_id" '
+  select(test("\\S")) as $line
+  | ($line | fromjson) as $entry
+  | if ($entry | type) != "object" then
+      error("JSONL entry is not an object")
+    else
+      select(
+        (($entry.target // "") | tostring) == ""
+        or (($entry.target // "") | tostring) == $agent_id
+        or (($entry.agent // "") | tostring) == $agent_id
+      )
+      | $line
+    end
+' "$conversation_file" | tail -n "$limit"
