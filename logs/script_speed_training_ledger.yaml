@@ -2086,16 +2086,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/ntfy_batch.sh"
-    status: pending
+    status: completed
     before_ms: 13
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 120
+    after_real_ms: 30
+    real_measurement_command: "sandbox copy: bash /tmp/.../scripts/ntfy_batch.sh <message>"
+    test_result: "bash -n scripts/ntfy_batch.sh PASS; sandbox append/empty/noarg verification PASS SKIP=0"
+    commit: "f353eade0"
     assigned_to: ""
-    updated_at: ""
+    updated_at: "2026-06-07T14:17:54"
   - script_path: "scripts/ntfy_batch_flush.sh"
     status: pending
     before_ms: 15

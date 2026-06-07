@@ -29,7 +29,10 @@
 #   - ❯ プロンプト表示（Claude Code）+ BUSYパターンなし
 #   - › プロンプト表示（Codex CLI）+ BUSYパターンなし
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# cmd_training_speed_ninja_monitor_20260607140828: サブシェル不要の純bash文字列演算でSCRIPT_DIR解決
+_NM_SELF="${BASH_SOURCE[0]}"
+[[ "$_NM_SELF" != /* ]] && _NM_SELF="$PWD/$_NM_SELF"
+SCRIPT_DIR="${_NM_SELF%/scripts/ninja_monitor.sh}"
 LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
 TRAINING_EFFECT_LOG="$SCRIPT_DIR/logs/training_effect.log"  # 修行before/after FAIL率比較ログ (cmd_2767)
 STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
