@@ -147,11 +147,22 @@ if [[ "$MODE" == "summary" ]]; then
     {
         cmd = $2
         if (tolower(cmd) ~ /^cmd_?test/) next
+        models_str = (NF >= 6 ? $6 : "unknown")
+        n_m = split(models_str, model_filter_arr, /,/)
+        has_candidate_model = 0
+        for (mi = 1; mi <= n_m; mi++) {
+            mf = model_filter_arr[mi]; gsub(/^ +| +$/, "", mf)
+            if (mf != "" && tolower(mf) != "unknown") {
+                has_candidate_model = 1
+                break
+            }
+        }
+        if (!has_candidate_model) next
         # Dedup: keep last entry per cmd_id
         cmd_ts[cmd] = $1
         cmd_result[cmd] = $3
         cmd_type[cmd] = (NF >= 5 ? $5 : "unknown")
-        cmd_models[cmd] = (NF >= 6 ? $6 : "unknown")
+        cmd_models[cmd] = models_str
         # Preserve insertion order for trend calculation
         if (!(cmd in cmd_seen)) {
             cmd_seen[cmd] = 1
