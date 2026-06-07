@@ -203,7 +203,7 @@ bash scripts/report_field_set.sh queue/reports/sasuke_report_cmd_100.yaml decisi
 - flock排他制御+atomic write（安全な並行アクセス）
 - 値の型は自動判定: true/false→bool、null/none→None、整数→int、小数→float、その他→string
 
-→ 実行スキル: [[report-write]] (`skills/report-write/SKILL.md`) — 全フィールドをreport_field_set.sh経由で記入し、Edit tool直接編集による報告YAML WA(全WA最多 24件/100件)を根絶するために設計。
+→ 実行スキル: [[report-write]] (`skills/report-write/SKILL.md`) — 全フィールドをreport_field_set.sh経由で記入し、Edit tool直接編集による報告YAML WA(全WA最多 24件/100件)を根絶するために設計。verdict導出: [[verdict-check]] (`skills/verdict-check/SKILL.md`)
 
 ## §7 報告YAMLテンプレート（完全版）
 
