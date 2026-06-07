@@ -4,7 +4,10 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# cmd_training_speed_oneshot_reset_harmful_counts_20260607143225: サブシェル不要の純bash文字列演算でSCRIPT_DIR解決
+_RHC_SELF="${BASH_SOURCE[0]}"
+[[ "$_RHC_SELF" != /* ]] && _RHC_SELF="$PWD/$_RHC_SELF"
+SCRIPT_DIR="${_RHC_SELF%/scripts/oneshot/reset_harmful_counts.sh}"
 TARGET_FILES=(
     "$SCRIPT_DIR/projects/infra/lessons.yaml"
     "$SCRIPT_DIR/projects/dm-signal/lessons.yaml"
