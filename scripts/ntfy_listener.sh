@@ -8,7 +8,10 @@
 # FR-066: ntfy認証対応 (Bearer token / Basic auth)
 # ═══════════════════════════════════════════════════════════════
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# cmd_training_speed_ntfy_listener_20260607142618: サブシェル不要の純bash文字列演算でSCRIPT_DIR解決
+_NL_SELF="${BASH_SOURCE[0]}"
+[[ "$_NL_SELF" != /* ]] && _NL_SELF="$PWD/$_NL_SELF"
+SCRIPT_DIR="${_NL_SELF%/scripts/ntfy_listener.sh}"
 NTFY_LISTENER_LIB_ONLY="${NTFY_LISTENER_LIB_ONLY:-0}"
 
 # Single-instance guard (flock) — 多重起動による二重記録を防止

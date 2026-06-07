@@ -4,7 +4,10 @@
 
 set -euo pipefail
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+script_dir="${_self%/scripts/obsidian_promote_candidate.sh}"
+unset _self
 db_path="$script_dir/data/multi_agent_shogun_memory.db"
 backup_dir=""
 limit=50
@@ -113,7 +116,6 @@ def require_columns(conn: sqlite3.Connection, table: str, columns: set[str]) -> 
 
 def main() -> int:
     repo_root = Path(sys.argv[1])
-    state_module = load_state_module(repo_root)
     db_path = Path(sys.argv[2])
     backup_dir = sys.argv[3]
     limit = parse_positive_int(sys.argv[4], "--limit")
@@ -186,6 +188,7 @@ def main() -> int:
                 )
             return 0
 
+        state_module = load_state_module(repo_root)
         backup_path = state_module.create_sqlite_backup(
             str(db_path), backup_dir or None, "obsidian_candidate"
         )
