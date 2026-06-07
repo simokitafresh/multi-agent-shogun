@@ -1,7 +1,7 @@
 # cmd_1752: ALM本番組込み impl工数見積もり
 
 **作成日**: 2026-04-06 / kotaro
-**参照設計**: `docs/research/cmd_1750_alm_design.md`
+**参照設計**: [[cmd_1750_alm_design]] (`docs/research/cmd_1750_alm_design.md`)
 **対象ファイル**: `backend/app/jobs/recalculate_fast.py` (2271行)
 
 ---
@@ -229,6 +229,7 @@ cmd_A ─── cmd_B ─── cmd_C ─── cmd_D ─── cmd_E ─── 
 
 ## 関連ファイル（参照）
 
-- 設計詳細: `docs/research/cmd_1750_alm_design.md`
+- 設計詳細: [[cmd_1750_alm_design]] (`docs/research/cmd_1750_alm_design.md`)
+- ALM研究全体: [[dm-signal-research-alm]] (`docs/research/dm-signal-research-alm.md`)
 - 対象コード: `backend/app/jobs/recalculate_fast.py` (L902-L1018, L1039-L1332, L1499-L1533, L1763前)
 - スキーマ: `backend/app/schemas/pipeline.py` (L69: PipelineConfig)
