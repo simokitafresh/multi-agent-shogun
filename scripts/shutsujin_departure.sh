@@ -69,17 +69,6 @@ fi
 
 check_codex_memory_mcp() {
     local mcp_list
-    # TTLキャッシュ: codex mcp list は~100ms。300s以内にOK確認済みなら再実行不要
-    local _mcp_cache="${STATE_DIR}/shutsujin_mcp_ok.ts"
-    if [ -f "$_mcp_cache" ]; then
-        local _ts _now
-        IFS= read -r _ts < "$_mcp_cache" 2>/dev/null || _ts=0
-        _now=$(date +%s)
-        if [ $(( _now - _ts )) -lt 300 ]; then
-            echo "[shutsujin] OK Codex MCP: memory server enabled (cached)"
-            return 0
-        fi
-    fi
 
     if ! command -v codex >/dev/null 2>&1; then
         echo "[shutsujin] WARN Codex MCP: codex command not found; memory MCP cannot be verified"
@@ -94,14 +83,15 @@ check_codex_memory_mcp() {
 
     if echo "$mcp_list" | awk 'NR > 1 && $1 == "memory" && $0 ~ /enabled/ { found=1 } END { exit(found ? 0 : 1) }'; then
         echo "[shutsujin] OK Codex MCP: memory server enabled"
-        date +%s > "$_mcp_cache" 2>/dev/null || true
     else
         echo "[shutsujin] WARN Codex MCP: memory server is not configured or not enabled"
         echo "$mcp_list" | sed 's/^/[shutsujin] WARN Codex MCP: /'
     fi
 }
 
-check_codex_memory_mcp
+# check_codex_memory_mcp はログ出力のみで後続処理に影響しないため背景化
+# wait不要: 起動完了を待たず本体処理を進める。出力は非同期でflushed
+check_codex_memory_mcp &
 
 # 互換ターゲット解決（window名優先、なければ従来index）
 resolve_window_target() {
