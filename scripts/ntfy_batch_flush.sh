@@ -1,13 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-QUEUE_FILE="$SCRIPT_DIR/queue/ntfy_batch_queue.txt"
+_SELF="${BASH_SOURCE[0]}"
+case "$_SELF" in
+    */*) _SCRIPT_DIR="${_SELF%/*}" ;;
+    *) _SCRIPT_DIR="." ;;
+esac
+SCRIPT_DIR="${_SCRIPT_DIR}/.."
+[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
+unset _SELF _SCRIPT_DIR
+
+QUEUE_DIR="$SCRIPT_DIR/queue"
+QUEUE_FILE="$QUEUE_DIR/ntfy_batch_queue.txt"
 LOCK_FILE="${QUEUE_FILE}.lock"
 NTFY_SCRIPT="$SCRIPT_DIR/scripts/ntfy.sh"
 
-mkdir -p "$(dirname "$QUEUE_FILE")"
-touch "$QUEUE_FILE"
+ensure_queue_paths() {
+    [[ -d "$QUEUE_DIR" ]] || mkdir -p "$QUEUE_DIR"
+    [[ -e "$QUEUE_FILE" ]] || : > "$QUEUE_FILE"
+}
 
 flush_queue() {
     flock -w 10 200 || { echo "[ntfy_batch_flush] ERROR: lock timeout" >&2; exit 1; }
@@ -29,6 +40,8 @@ flush_queue() {
     bash "$NTFY_SCRIPT" "$payload"
     : > "$QUEUE_FILE"
 }
+
+ensure_queue_paths
 
 (
     flush_queue
