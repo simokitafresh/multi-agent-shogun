@@ -17,65 +17,73 @@ if [ ! -f "$FILE" ]; then
     exit 1
 fi
 
-TOTAL_LINES=$(wc -l < "$FILE")
+# perf: wc subshell → awk END (same cost, cleaner)
+TOTAL_LINES=$(awk 'END{print NR}' "$FILE")
 if [ "$TOTAL_LINES" -le "$MAX_LINES" ]; then
     exit 0
 fi
 
 echo "ROTATE: $FILE — $TOTAL_LINES lines > $MAX_LINES threshold"
 
-# Auto-detect entry pattern and wrapper
-FIRST_LINE=$(head -1 "$FILE")
+# perf: head -1 subshell → bash builtin read (no fork)
+IFS= read -r FIRST_LINE < "$FILE"
 WRAPPER_LINE=0
-if echo "$FIRST_LINE" | grep -qE '^[a-z_]+:$'; then
+# perf: echo|grep -qE pipe (2 forks) → bash regex (0 forks)
+if [[ "$FIRST_LINE" =~ ^[a-z_]+:$ ]]; then
     WRAPPER_LINE=1
 fi
 
 if [ -z "$ENTRY_PATTERN" ]; then
-    # Check actual indentation of entries (line 2)
-    SECOND_LINE=$(sed -n '2p' "$FILE")
-    if echo "$SECOND_LINE" | grep -qE '^  - '; then
+    # perf: sed -n '2p' subshell → double read builtin (no fork)
+    { IFS= read -r _skip_line; IFS= read -r SECOND_LINE; } < "$FILE"
+    # perf: echo|grep -qE pipe (2 forks) → bash regex (0 forks)
+    if [[ "$SECOND_LINE" =~ ^'  - ' ]]; then
         ENTRY_PATTERN='^  - '
     else
         ENTRY_PATTERN='^- '
     fi
 fi
 
-# Collect all entry line numbers into a temp file (avoids SIGPIPE)
-ENTRY_LINES_FILE=$(mktemp)
-grep -n "$ENTRY_PATTERN" "$FILE" | cut -d: -f1 > "$ENTRY_LINES_FILE"
-ENTRY_COUNT=$(wc -l < "$ENTRY_LINES_FILE")
+# perf: mktemp subshell → fixed tmp path (no fork)
+ENTRY_LINES_FILE="/tmp/ylr_$$_entries"
+TEMP_FILE="/tmp/ylr_$$_main"
+trap 'rm -f "$ENTRY_LINES_FILE" "$TEMP_FILE"' EXIT
+
+# perf: grep -n + cut pipe (2 procs) → awk 1-pass (1 proc)
+awk -v pat="$ENTRY_PATTERN" '$0 ~ pat {print NR}' "$FILE" > "$ENTRY_LINES_FILE"
+ENTRY_COUNT=$(awk 'END{print NR}' "$ENTRY_LINES_FILE")
 
 if [ "$ENTRY_COUNT" -le 1 ]; then
     echo "WARN: only $ENTRY_COUNT entries, skipping" >&2
-    rm -f "$ENTRY_LINES_FILE"
     exit 0
 fi
 
-FIRST_ENTRY=$(head -1 "$ENTRY_LINES_FILE")
 HALF_ENTRIES=$((ENTRY_COUNT / 2))
-KEEP_START=$(sed -n "$((HALF_ENTRIES + 1))p" "$ENTRY_LINES_FILE")
-rm -f "$ENTRY_LINES_FILE"
+# perf: head -1 + sed -n "Np" (2 subshells) → awk 1-pass (1 subshell)
+read -r FIRST_ENTRY KEEP_START < <(awk -v n="$((HALF_ENTRIES + 1))" \
+    'NR==1{f=$0} NR==n{k=$0} END{print f, k}' "$ENTRY_LINES_FILE")
 
 if [ -z "$FIRST_ENTRY" ] || [ -z "$KEEP_START" ]; then
     echo "WARN: could not determine split boundary" >&2
     exit 0
 fi
 
-# Determine archive directory
-FILE_DIR=$(dirname "$FILE")
+# perf: dirname/basename subshells → bash string ops (no forks)
+FILE_DIR="${FILE%/*}"; [[ "$FILE_DIR" == "$FILE" ]] && FILE_DIR="."
+BASENAME="${FILE##*/}"; BASENAME="${BASENAME%.yaml}"
 ARCHIVE_DIR="$FILE_DIR/archive"
 mkdir -p "$ARCHIVE_DIR"
 
-BASENAME=$(basename "$FILE" .yaml)
-ARCHIVE_FILE="$ARCHIVE_DIR/${BASENAME}_$(date +%Y%m%d_%H%M).yaml"
+# perf: date subshell → printf builtin (no fork)
+printf -v _ts '%(%Y%m%d_%H%M)T' -1
+ARCHIVE_FILE="$ARCHIVE_DIR/${BASENAME}_${_ts}.yaml"
 
 # Archive older half
 sed -n "${FIRST_ENTRY},$((KEEP_START - 1))p" "$FILE" > "$ARCHIVE_FILE"
-ARCHIVED_LINES=$(wc -l < "$ARCHIVE_FILE")
+# perf: wc -l subshell → awk END
+ARCHIVED_LINES=$(awk 'END{print NR}' "$ARCHIVE_FILE")
 
 # Rebuild main file
-TEMP_FILE=$(mktemp)
 if [ "$WRAPPER_LINE" -eq 1 ]; then
     head -n "$((FIRST_ENTRY - 1))" "$FILE" > "$TEMP_FILE"
     sed -n "${KEEP_START},\$p" "$FILE" >> "$TEMP_FILE"
@@ -84,7 +92,7 @@ else
 fi
 
 cp "$TEMP_FILE" "$FILE"
-rm -f "$TEMP_FILE"
 
-NEW_LINES=$(wc -l < "$FILE")
+# perf: wc -l subshell → awk END
+NEW_LINES=$(awk 'END{print NR}' "$FILE")
 echo "ROTATE: done. ${ARCHIVED_LINES} lines → ${ARCHIVE_FILE##*/}. Main: ${TOTAL_LINES} → ${NEW_LINES} lines"
