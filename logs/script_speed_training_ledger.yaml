@@ -2317,15 +2317,15 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/restart_monitor.sh"
-    status: pending
+    status: in_progress
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
+    before_real_ms: 4083
     after_real_ms: ""
-    real_measurement_command: ""
+    real_measurement_command: "START=$(date +%s%3N) && bash scripts/restart_monitor.sh > /dev/null 2>&1; echo $(($(date +%s%3N)-START))ms"
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
+    assigned_to: "saizo"
     updated_at: ""
   - script_path: "scripts/restart_ntfy_listener.sh"
     status: pending

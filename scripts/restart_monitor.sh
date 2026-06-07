@@ -50,7 +50,7 @@ if [ -n "$OLD_PIDS" ]; then
     fi
 
     # Give the old process a moment to close fd 9 and release the singleton flock.
-    sleep 1
+    sleep 0.3
 else
     echo "[$(date)] No existing ninja_monitor process found"
 fi
@@ -61,8 +61,17 @@ nohup bash "$MONITOR_SCRIPT" >> "$LOG_FILE" 2>&1 &
 NEW_PID=$!
 echo "[$(date)] Launched with PID: $NEW_PID"
 
-# --- Step 3: 起動確認 ---
-sleep 3
+# --- Step 3: 起動確認(ポーリング: 0.2秒間隔、最大15回=3秒上限) ---
+POLL_COUNT=0
+while [ "$POLL_COUNT" -lt 15 ]; do
+    sleep 0.2
+    POLL_COUNT=$((POLL_COUNT + 1))
+    if ! kill -0 "$NEW_PID" 2>/dev/null; then
+        break
+    fi
+    # 3回(0.6秒)連続でPID確認できれば安定とみなす
+    [ "$POLL_COUNT" -ge 3 ] && break
+done
 
 if kill -0 "$NEW_PID" 2>/dev/null; then
     echo ""
