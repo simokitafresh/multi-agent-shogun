@@ -52,6 +52,17 @@ if [ ! -f "$TRACKER_FILE" ]; then
     echo "synced: []" > "$TRACKER_FILE"
 fi
 
+if awk '
+    /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+    /^[[:space:]]*entries:[[:space:]]*\[[[:space:]]*\][[:space:]]*$/ { found_empty = 1; next }
+    { other = 1 }
+    END { exit !(found_empty && !other) }
+' "$STAGING_FILE"; then
+    echo "INFO: No entries in staging file"
+    printf '%s | synced=0 skipped=0 errors=0 (empty staging)\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')" >> "$LOG_FILE"
+    exit 0
+fi
+
 # Process staging file
 export SCRIPT_DIR STAGING_FILE TRACKER_FILE LOG_FILE
 python3 << 'PYEOF'
