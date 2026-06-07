@@ -303,18 +303,165 @@ cli_model_display() {
     esac
 }
 
+# _cli_launch_read_settings <agent_name>
+# settings.yaml を1回のみ読み、type と model_name を
+# _CLI_LAUNCH_TYPE / _CLI_LAUNCH_MODEL に設定する
+# （サブシェル不使用 — cli_launch_cmd 内からの直接呼び出し専用）
+_cli_launch_read_settings() {
+    local agent="$1"
+    local settings_path="$_CLI_LOOKUP_SETTINGS"
+    local in_cli=0 in_agents=0 in_agent=0
+    local cli_default="claude"
+    local line=""
+
+    _CLI_LAUNCH_TYPE="" _CLI_LAUNCH_MODEL=""
+
+    [[ -f "$settings_path" ]] || { _CLI_LAUNCH_TYPE="$cli_default"; return 0; }
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        if [[ $in_cli -eq 0 ]]; then
+            [[ "$line" == "cli:" ]] && in_cli=1
+            continue
+        fi
+
+        if [[ $in_agents -eq 0 ]]; then
+            if [[ "$line" == "  default: "* ]]; then
+                _cli_lookup_normalize_scalar "${line#  default: }"
+                cli_default="$REPLY"
+            elif [[ "$line" == "  agents:" ]]; then
+                in_agents=1
+            elif [[ ! "$line" =~ ^[[:space:]] ]]; then
+                break
+            fi
+            continue
+        fi
+
+        if [[ $in_agent -eq 0 ]]; then
+            if [[ "$line" == "    ${agent}: "* ]]; then
+                _cli_lookup_normalize_scalar "${line#*: }"
+                _CLI_LAUNCH_TYPE="$REPLY"
+                break
+            elif [[ "$line" == "    ${agent}:" ]]; then
+                in_agent=1
+            elif [[ ! "$line" =~ ^[[:space:]] ]]; then
+                break
+            fi
+            continue
+        fi
+
+        if [[ "$line" == "      type: "* ]]; then
+            _cli_lookup_normalize_scalar "${line#*"type": }"
+            _CLI_LAUNCH_TYPE="$REPLY"
+        elif [[ "$line" == "      model_name: "* ]]; then
+            _cli_lookup_normalize_scalar "${line#*"model_name": }"
+            _CLI_LAUNCH_MODEL="$REPLY"
+        elif [[ "$line" =~ ^"    "[^[:space:]] || ! "$line" =~ ^[[:space:]] ]]; then
+            break
+        fi
+    done < "$settings_path"
+
+    case "${_CLI_LAUNCH_TYPE:-}" in
+        claude|codex|copilot|kimi) ;;
+        *) _CLI_LAUNCH_TYPE="$cli_default" ;;
+    esac
+}
+
+# _cli_launch_read_profile <cli_type>
+# cli_profiles.yaml を1回のみ読み、launch_cmd と launch_args を
+# _CLI_LAUNCH_CMD / _CLI_LAUNCH_ARGS に設定する
+# （サブシェル不使用 — cli_launch_cmd 内からの直接呼び出し専用）
+_cli_launch_read_profile() {
+    local cli_type="$1"
+    local profiles_path="$_CLI_LOOKUP_PROFILES"
+    local in_profiles=0 in_type=0 in_list=0
+    local list_key="" line="" trimmed=""
+    local items=()
+
+    _CLI_LAUNCH_CMD="" _CLI_LAUNCH_ARGS=""
+
+    [[ -f "$profiles_path" ]] || return 0
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        if [[ $in_profiles -eq 0 ]]; then
+            [[ "$line" == "profiles:" ]] && in_profiles=1
+            continue
+        fi
+
+        _cli_lookup_trim "$line"
+        trimmed="$REPLY"
+        [[ -z "$trimmed" || "$trimmed" == \#* ]] && continue
+
+        if [[ $in_type -eq 0 ]]; then
+            if [[ "$line" == "  ${cli_type}:" ]]; then
+                in_type=1
+            elif [[ ! "$line" =~ ^[[:space:]] ]]; then
+                break
+            fi
+            continue
+        fi
+
+        if [[ $in_list -eq 1 ]]; then
+            if [[ "$line" == "      - "* ]]; then
+                _cli_lookup_normalize_scalar "${line#      - }"
+                items+=("$REPLY")
+                continue
+            fi
+            local joined="" list_item=""
+            for list_item in "${items[@]}"; do
+                [[ -n "$joined" ]] && joined+="|"
+                joined+="$list_item"
+            done
+            [[ "$list_key" == "launch_cmd"  ]] && _CLI_LAUNCH_CMD="$joined"
+            [[ "$list_key" == "launch_args" ]] && _CLI_LAUNCH_ARGS="$joined"
+            items=() in_list=0
+        fi
+
+        if [[ "$line" == "    launch_cmd: "* ]]; then
+            _cli_lookup_normalize_scalar "${line#*"launch_cmd": }"
+            _CLI_LAUNCH_CMD="$REPLY"
+        elif [[ "$line" == "    launch_cmd:" ]]; then
+            list_key="launch_cmd" in_list=1 items=()
+        elif [[ "$line" == "    launch_args: "* ]]; then
+            _cli_lookup_normalize_scalar "${line#*"launch_args": }"
+            _CLI_LAUNCH_ARGS="$REPLY"
+        elif [[ "$line" == "    launch_args:" ]]; then
+            list_key="launch_args" in_list=1 items=()
+        elif [[ "$line" =~ ^"  "[^[:space:]] || ! "$line" =~ ^[[:space:]] ]]; then
+            break
+        fi
+    done < "$profiles_path"
+
+    if [[ $in_list -eq 1 && ${#items[@]} -gt 0 ]]; then
+        local joined="" list_item=""
+        for list_item in "${items[@]}"; do
+            [[ -n "$joined" ]] && joined+="|"
+            joined+="$list_item"
+        done
+        [[ "$list_key" == "launch_cmd"  ]] && _CLI_LAUNCH_CMD="$joined"
+        [[ "$list_key" == "launch_args" ]] && _CLI_LAUNCH_ARGS="$joined"
+    fi
+}
+
 # cli_launch_cmd <agent_name>
 # 起動コマンド文字列を返す
 # codex型エージェントかつmodel_nameがgpt-X.X-{effort}形式なら
 # -c model_reasoning_effort={effort} を自動追加する
+#
+# 最適化: settings.yaml/cli_profiles.yamlをそれぞれ1回のみ読む
+# （旧実装: cli_profile_get×2 + _cli_lookup_settings_get = サブシェル~9個+ファイル読込5回）
 cli_launch_cmd() {
     local agent="$1"
-    local base_cmd
-    base_cmd=$(cli_profile_get "$agent" "launch_cmd")
+
+    # settings.yaml を1回のみ読み込み type と model_name を取得
+    _cli_launch_read_settings "$agent"
+    local model_name="$_CLI_LAUNCH_MODEL"
+
+    # cli_profiles.yaml を1回のみ読み込み launch_cmd と launch_args を取得
+    _cli_launch_read_profile "$_CLI_LAUNCH_TYPE"
+    local base_cmd="$_CLI_LAUNCH_CMD"
+    local static_args="$_CLI_LAUNCH_ARGS"
 
     # model_nameからeffortを自動抽出 (gpt-X.X-{effort} パターン)
-    local model_name
-    model_name=$(_cli_lookup_settings_get "$agent" "model_name" "")
     local extra_args=""
     if [[ "$model_name" == gpt-* ]]; then
         local effort="${model_name##*-}"
@@ -326,8 +473,6 @@ cli_launch_cmd() {
     fi
 
     # cli_profiles.yaml の launch_args (静的追加引数) をマージ
-    local static_args
-    static_args=$(cli_profile_get "$agent" "launch_args")
     if [[ -n "$static_args" && "$static_args" != '""' ]]; then
         extra_args="${static_args}${extra_args:+ $extra_args}"
     fi
