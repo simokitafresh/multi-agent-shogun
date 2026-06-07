@@ -5,7 +5,14 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_SELF="${BASH_SOURCE[0]}"
+case "$_SELF" in
+    */*) _SCRIPT_DIR="${_SELF%/*}" ;;
+    *) _SCRIPT_DIR="." ;;
+esac
+SCRIPT_DIR="${_SCRIPT_DIR}/.."
+[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
+unset _SELF _SCRIPT_DIR
 INBOX="$SCRIPT_DIR/queue/ntfy_inbox.yaml"
 ARCHIVE="$SCRIPT_DIR/queue/ntfy_inbox_archive.yaml"
 LOCKFILE="${INBOX}.lock"
@@ -23,11 +30,10 @@ if [ ! -f "$PYTHON" ]; then
     PYTHON="python3"
 fi
 
-# Python スクリプトを一時ファイルに書き出し（サブシェル内でheredoc使用不可のため）
-_PY_SCRIPT=$(mktemp /tmp/ntfy_inbox_archive_XXXXXX.py)
-trap 'rm -f "$_PY_SCRIPT"' EXIT
-
-cat > "$_PY_SCRIPT" << 'PYEOF'
+# flock で排他ロック（L169教訓: atomic操作必須）
+(
+    flock -w 10 200 || { echo "[ntfy_inbox_archive] ERROR: flock timeout" >&2; exit 1; }
+    INBOX_PATH="$INBOX" ARCHIVE_PATH="$ARCHIVE" DAYS="$DAYS" "$PYTHON" - << 'PYEOF'
 import yaml, os, sys, tempfile
 from datetime import datetime, timezone, timedelta
 
@@ -92,9 +98,4 @@ except Exception:
 
 print(f'Archived {len(archive)} old ntfy messages (>{days} days)')
 PYEOF
-
-# flock で排他ロック（L169教訓: atomic操作必須）
-(
-    flock -w 10 200 || { echo "[ntfy_inbox_archive] ERROR: flock timeout" >&2; exit 1; }
-    INBOX_PATH="$INBOX" ARCHIVE_PATH="$ARCHIVE" DAYS="$DAYS" "$PYTHON" "$_PY_SCRIPT"
 ) 200>"$LOCKFILE"
