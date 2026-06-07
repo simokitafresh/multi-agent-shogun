@@ -1701,14 +1701,14 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T08:56:00"
   - script_path: "scripts/lib/field_get.sh"
-    status: assigned
+    status: completed
     before_ms: 22
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 30
+    after_real_ms: 23
+    real_measurement_command: "bash -c '. scripts/lib/field_get.sh; FIELD_GET_NO_LOG=1 field_get queue/tasks/kotaro.yaml status' (10-run median)"
+    test_result: "bash -n PASS; field_get self-test 16/16 PASS; bats tests/unit/test_field_get.bats 15/15 PASS, SKIP=0"
+    commit: "43843e7d8"
     assigned_to: "kotaro"
     updated_at: "2026-06-07T08:55:06"
   - script_path: "scripts/lib/firefighting_keywords.sh"
@@ -1723,7 +1723,7 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T08:58:27"
   - script_path: "scripts/lib/gunshi_notify.sh"
-    status: pending
+    status: assigned
     before_ms: 18
     after_ms: ""
     before_real_ms: ""
@@ -1731,8 +1731,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T09:00:48"
   - script_path: "scripts/lib/known_ninjas.sh"
     status: completed
     before_ms: 18
@@ -1741,20 +1741,20 @@ entries:
     after_real_ms: 13.079
     real_measurement_command: "python3 measure 200x: bash -c 'source scripts/lib/known_ninjas.sh; is_known_ninja hayate; is_known_ninja bad || true; known_ninjas_display >/dev/null; printf \"%s\" \"$KNOWN_NINJAS_CSV\" >/dev/null'; median_ms"
     test_result: "bash_n_pass;bats_test_karo_workaround_validation_28_pass_0_skip;bats_filter_known_ninjas_gate_meta_quality_2_pass_0_skip;CSV_DISPLAY_and_return_codes_ok;before_15.763_after_13.079"
-    commit: ""
+    commit: "daf2fc875"
     assigned_to: "hayate"
     updated_at: "2026-06-07T09:10:00"
   - script_path: "scripts/lib/layout_string.sh"
-    status: completed
+    status: assigned
     before_ms: 16
-    after_ms: 16
-    before_real_ms: 3668
-    after_real_ms: 2704
-    real_measurement_command: "mock tmux 240x60; 50x source agent_config+layout_string; generate_layout_string shogun:agents 1; median of 5 runs"
-    test_result: "bash_n_pass;mock_tmux_output_match_0c8a;python_checksum_removed;before_3668_after_2704;SKIP=0"
-    commit: "e9de94f33"
+    after_ms: ""
+    before_real_ms: ""
+    after_real_ms: ""
+    real_measurement_command: ""
+    test_result: "baseline_bash_n_exit_0"
+    commit: ""
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T09:12:00"
+    updated_at: "2026-06-07T09:02:08"
   - script_path: "scripts/lib/lock_path.sh"
     status: pending
     before_ms: 14
