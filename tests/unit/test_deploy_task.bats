@@ -342,6 +342,16 @@ EOF
     [[ "$output" == *"|task_assigned|karo" ]]
 }
 
+@test "--yaml direct deploy skips stale training parent repair before YAML overwrite" {
+    run bash -c '
+        set -euo pipefail
+        script="$1"
+        grep -Fq "if [ \"\$DIRECT_MODE\" != true ]; then" "$script"
+        grep -Fq "repair_training_parent_cmd_from_cmd_id \"\$task_yaml\" || return \$?" "$script"
+    ' _ "$PROJECT_ROOT/scripts/deploy_task.sh"
+    [ "$status" -eq 0 ]
+}
+
 @test "cmd_3091: quoted AC ids do not abort report template binary check injection under set -e" {
     use_private_scripts_fixture
 

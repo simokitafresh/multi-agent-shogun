@@ -7323,7 +7323,9 @@ deploy_task_main() {
     task_yaml="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
 
     normalize_task_yaml "$task_yaml" || true
-    repair_training_parent_cmd_from_cmd_id "$task_yaml" || return $?
+    if [ "$DIRECT_MODE" != true ]; then
+        repair_training_parent_cmd_from_cmd_id "$task_yaml" || return $?
+    fi
 
     if [ -n "$CMD_ID" ]; then
         deploy_lock_file="$(deploy_task_lock_path "$CMD_ID")"
