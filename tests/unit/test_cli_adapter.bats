@@ -95,10 +95,24 @@ setup_file() {
         esac
     }
 
+    # 速度修行で追加された内部関数のmock（cli_launch_cmd内で直接呼ばれる）
+    _cli_launch_read_settings() {
+        local agent="$1"
+        _CLI_LAUNCH_TYPE="$(_fixture_agent_type "$_CLI_LOOKUP_SETTINGS" "$agent" "claude")"
+        _CLI_LAUNCH_MODEL="$(_fixture_yaml_val "$_CLI_LOOKUP_SETTINGS" "cli.agents.${agent}.model_name" "")"
+        [[ -z "$_CLI_LAUNCH_MODEL" ]] && _CLI_LAUNCH_MODEL="$(_fixture_yaml_val "$_CLI_LOOKUP_SETTINGS" "cli.agents.${agent}.model" "")"
+    }
+    _cli_launch_read_profile() {
+        local cli_type="$1"
+        _CLI_LAUNCH_CMD="$(_cli_lookup_profile_get "$cli_type" "launch_cmd")"
+        _CLI_LAUNCH_ARGS=""
+    }
+
     # 全テスト間で関数を共有（export -f により各テストsubprocessへ継承）
     export -f get_cli_type get_model_display_name build_cli_command get_instruction_file get_startup_prompt validate_cli_availability get_agent_model
     export -f cli_type cli_profile_get cli_launch_cmd cli_profile_get_for_type
     export -f _cli_lookup_settings_get _cli_adapter_read_yaml _cli_lookup_profile_get
+    export -f _cli_launch_read_settings _cli_launch_read_profile _cli_lookup_normalize_scalar
     export -f _fixture_name _fixture_agent_type _fixture_yaml_val
 }
 

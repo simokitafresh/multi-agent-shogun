@@ -90,7 +90,7 @@ print(json.dumps({
 }
 
 # --- Read stdin JSON (type: user_prompt_submit) ---
-payload="$(</dev/stdin)"
+payload="$(cat 2>/dev/null || true)"
 if [[ -z "$payload" ]]; then
   exit 0
 fi
