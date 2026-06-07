@@ -1,5 +1,5 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-06-08 cmd_3222 -->
+<!-- last_updated: 2026-06-08 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
 <!-- generated_at: 2026-06-08T03:18:32+09:00 -->
 

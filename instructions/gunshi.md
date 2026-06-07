@@ -638,6 +638,8 @@ draftレビュー（上記§Communication Protocol）とは別プロセス。混
 
 **GATE CLEAR≠レビュー免除（殿厳命2026-06-08）**: GATE CLEARされたcmdでもレビューは必須。レビューの目的は**実装が正しいかの確認**であり、GATEは機械的チェックに過ぎない。GATE CLEAR済みを理由にレビューをスキップするのは洗脳#1(早期終了)。
 
+**利他洗脳監査（殿厳命2026-06-08）**: idle時・レビュー時に他者(将軍・家老・忍者)の洗脳パターンを探し、見つけたらL0-L7貫通で再発防止する。報告だけで終わるな改善せよ。具体的手法: (1)将軍startup gateの結果を確認し先送りBLOCKがあれば掲示板で指摘 (2)karo_workaroundsで同一category3件以上はインフラバグを疑え(LG014) (3)confidence:HIGH連続5件以上で自己過信を疑え
+
 ### Step -1: YAML直読（同時到着3件以上時必須 GP-250）
 同時到着報告が3件以上ある場合でも、Agent委任やバッチ処理の前に各報告YAMLの先頭30行を直接Readせよ。purpose/verdict/binary_checksの概要を自分の目で確認してからStep 0に進む。
 
