@@ -1,7 +1,8 @@
 # Ashigaru Detail Reference
 
 > ashigaru.md (忍者指示書) の詳細テンプレート・例・テーブル集。
-> 索引: `instructions/ashigaru.md` から参照。直接読む必要なし。
+> 索引: [[ashigaru]] (`instructions/ashigaru.md`) から参照。直接読む必要なし。
+> 関連: [[gate_report_format]] (`scripts/gates/gate_report_format.sh`) · [[training-cycle]] (`context/training-cycle.md`)
 
 ## §1 逸脱管理 — deviation報告フォーマット
 
@@ -118,7 +119,9 @@ task YAMLに`recon_aspect`フィールドがある場合、その観点に集中
 
 レビュータスクでは、上表のバイアスガードを先に自問し、その後にAC個別照合を行い、最後にゴール逆算検証(`goal_backward_check`)を実施せよ。
 
-## §5 yaml_field_set.sh詳細
+→ 防御階層との対応: [[growth-loop]] §11 — Level5事前コンテキスト提供(バイアス最小化の本質)、Level6学習速度最大化
+
+## §5 [[yaml_field_set]]詳細
 
 ### コマンド書式
 
@@ -152,7 +155,7 @@ bash scripts/lib/yaml_field_set.sh queue/tasks/hayate.yaml task progress "AC1: �
 - status遷移は assigned → acknowledged → in_progress → done の順
 - done通知は `bash scripts/ninja_done.sh {ninja_name} {parent_cmd}` で行う
 
-## §6 report_field_set.sh詳細
+## §6 [[report_field_set]]詳細
 
 ### コマンド書式
 
@@ -246,9 +249,16 @@ decision_candidate:
   rationale: null
   alternatives: null
   pd_duplicate_check: null  # MANDATORY when found:true
-lessons_useful: [L025, L030]  # related_lessonsから実際に役立った教訓IDリスト
+lessons_useful:  # ★教訓注入済み。[]で上書きするな。各教訓にuseful+reasonを記入せよ
+  - id: L025
+    useful: true   # true=今回の判断に影響した / false=今回の変更では未使用
+    reason: "L025が今回の〇〇判断に有用だった理由を具体的に書け"
+  - id: L030
+    useful: false
+    reason: "今回の変更では未使用。対象箇所と無関係"
 # ★ related_lessonsが1件以上 → lessons_usefulに最低1件必須（空=GATE BLOCK）
 # ★ deploy_task.shがテンプレートにlessons_useful雛形を自動生成（cmd_1131）
+# ★ フォーマット: [{id, useful(true/false), reason}]リスト。IDのみリスト[L025,L030]は禁止(gate BLOCK)
 
 # パリティ検証タスク時の追加フィールド
 # ★ FoF BBパリティ検証時のM-1オフセット（L423）:
@@ -277,7 +287,7 @@ parity_data_source:
 
 ## §9 lesson_candidate書き方ガイドライン
 
-**lesson_candidate.found:trueの報告はauto_draft_lesson.shがdraft教訓として自動登録する。**
+**lesson_candidate.found:trueの報告は[[auto_draft_lesson]]がdraft教訓として自動登録する。**
 質の高いlesson_candidateを書くことが教訓システム全体の品質を決める。
 
 **found: false の場合**: `no_lesson_reason` に理由を1文で書け。全タスクに学びがある。found:falseはラルフループの燃料切れを意味する。理由なきfound:falseは家老が差し戻す。
@@ -413,7 +423,7 @@ Compaction Recovery: CLAUDE.md手順に従う。
 4. If task has `related_lessons:` → 各エントリのdetailを読め（push型）
 5. If task has `reports_to_read:` → read ALL listed report YAMLs
 
-/clear Recovery: CLAUDE.md手順を使う。ashigaru.mdの再読不要（コスト節約~3,600 tokens）。
+/clear Recovery: [[CLAUDE.md]] 手順を使う。[[ashigaru]] の再読不要（コスト節約~3,600 tokens）。
 
 **Before /clear**: タスク完了→報告YAML+inbox_write済み。タスク中→progressにcheckpoint保存:
 ```yaml
