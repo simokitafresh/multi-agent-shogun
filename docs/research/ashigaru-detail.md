@@ -430,7 +430,7 @@ Compaction Recovery: CLAUDE.md手順に従う。
 4. If task has `related_lessons:` → 各エントリのdetailを読め（push型）
 5. If task has `reports_to_read:` → read ALL listed report YAMLs
 
-/clear Recovery: [[CLAUDE.md]] 手順を使う。[[ashigaru]] の再読不要（コスト節約~3,600 tokens）。
+/clear Recovery: [[CLAUDE.md]] 手順を使う。[[ashigaru]] の再読不要（コスト節約~3,600 tokens）。tmux/inbox/ntfy操作詳細 → [[infrastructure]] (`context/infrastructure.md`)
 
 **Before /clear**: タスク完了→報告YAML+inbox_write済み。タスク中→progressにcheckpoint保存:
 ```yaml
