@@ -25,7 +25,7 @@ fi
 GATES_DIR="$SCRIPT_DIR/queue/gates/${CMD_ID}"
 DONE_FILE="$GATES_DIR/learning_loop.done"
 
-mkdir -p "$GATES_DIR"
+[[ -d "$GATES_DIR" ]] || mkdir -p "$GATES_DIR"
 
 printf 'no_friction_no_workaround\ntimestamp: %(%Y-%m-%dT%H:%M:%SZ)T\n' -1 > "$DONE_FILE"
 
