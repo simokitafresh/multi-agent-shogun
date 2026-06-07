@@ -3,14 +3,19 @@
 # Source this file, then use safe_rm instead of rm for destructive operations.
 # Part of multi-agent-shogun destructive operation safety (cmd_147)
 
+# project_rootをsource時1回だけ計算 (cd+pwd+realpath per-call を排除)
+_safe_rm_self="${BASH_SOURCE[0]}"
+[[ "$_safe_rm_self" != /* ]] && _safe_rm_self="$PWD/$_safe_rm_self"
+_SAFE_RM_PROJECT_ROOT="${_safe_rm_self%/scripts/lib/safe_rm.sh}"
+unset _safe_rm_self
+
 safe_rm() {
   if [[ $# -eq 0 ]]; then
     echo "safe_rm: no arguments provided" >&2
     return 1
   fi
 
-  local project_root
-  project_root=$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)")
+  local project_root="$_SAFE_RM_PROJECT_ROOT"
 
   # Validate each path argument (skip flags like -r, -f, -rf)
   local arg

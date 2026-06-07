@@ -20,6 +20,33 @@ if [ ! -f "$REPORT_FILE" ]; then
     exit 2
 fi
 
+# 純bash高速pre-check: 全3候補フィールドがdict形式ならPython不要で即exit 1
+# WSL2でPython3起動コスト~100msを回避(フォーク+exec排除)
+_nr_fields_found=0
+_nr_needs_python=false
+_nr_in_candidate=false
+
+while IFS= read -r _nr_line; do
+    if [[ "$_nr_line" =~ ^(lesson_candidate|decision_candidate|skill_candidate): ]]; then
+        _nr_fields_found=$(( _nr_fields_found + 1 ))
+        _nr_in_candidate=true
+    elif [[ "$_nr_in_candidate" == "true" ]]; then
+        if [[ "$_nr_line" =~ ^[[:space:]]+-[[:space:]] || "$_nr_line" =~ ^-[[:space:]] ]]; then
+            # リスト形式発見 → Pythonが必要
+            _nr_needs_python=true
+            break
+        elif [[ -n "$_nr_line" && ! "$_nr_line" =~ ^[[:space:]] && ! "$_nr_line" =~ ^# ]]; then
+            # インデントなし行 = フィールド終了
+            _nr_in_candidate=false
+        fi
+    fi
+done < "$REPORT_FILE"
+
+# 3フィールド全て存在かつリスト形式なし → 修正不要
+if [[ "$_nr_needs_python" == "false" && "$_nr_fields_found" -eq 3 ]]; then
+    exit 1
+fi
+
 # Python3でYAML操作（既存コードベースと同一手法）
 python3 - "$REPORT_FILE" <<'PYEOF'
 import yaml, sys, os, tempfile
