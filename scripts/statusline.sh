@@ -1,44 +1,17 @@
 #!/usr/bin/env bash
 
 # Invalid or missing JSON must not fail the statusline.
-_statusline_payload="$(cat 2>/dev/null || true)"
-_statusline_extract_pct() {
-  local _statusline_raw="$1"
-  local _statusline_pct
+# WSL2最適化: subshell(fork)を排除。IFS= read -r -d '' でcatサブシェル不要。
+# pure bash regex で jq/python3 サブシェルも排除。
+IFS= read -r -d '' _statusline_payload 2>/dev/null || true
 
-  if _statusline_pct="$(jq -r 'try (.context_window.used_percentage // 0) catch 0' 2>/dev/null <<<"$_statusline_raw")"; then
-    printf '%s' "$_statusline_pct"
-    return 0
-  fi
-
-  STATUSLINE_PAYLOAD="$_statusline_raw" python3 - <<'PY'
-import json
-import os
-
-payload = os.environ.get("STATUSLINE_PAYLOAD", "")
-try:
-    obj = json.loads(payload)
-except Exception:
-    print("0", end="")
-    raise SystemExit(0)
-
-context_window = obj.get("context_window")
-if not isinstance(context_window, dict):
-    context_window = {}
-
-print(context_window.get("used_percentage", 0), end="")
-PY
-}
-
-pct="$(_statusline_extract_pct "$_statusline_payload" || printf '0')"
-
-if ! [[ "$pct" =~ ^-?[0-9]+([.][0-9]+)?$ ]]; then
-  pct=0
+# Pure bash regex: "used_percentage": N (floatのみ整数部を取得, 負数はclamp)
+pct=0
+if [[ "$_statusline_payload" =~ \"used_percentage\":[[:space:]]*(-?[0-9]+) ]]; then
+  pct="${BASH_REMATCH[1]}"
 fi
 
-pct="${pct%%.*}"
-
-if [ "$pct" -lt 0 ]; then
+if (( pct < 0 )); then
   pct=0
 fi
 
