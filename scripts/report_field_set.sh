@@ -15,6 +15,15 @@
 
 set -e
 
+if [ "$#" -lt 2 ]; then
+    echo "Usage: bash scripts/report_field_set.sh <report_path> <dot.notation.key> <value>" >&2
+    echo "  value が '-' ならstdinから読む。空文字列は ''(YAML空文字)として書込み。" >&2
+    echo "Examples:" >&2
+    echo "  bash scripts/report_field_set.sh queue/reports/hanzo_report_cmd_100.yaml results.AC1.status PASS" >&2
+    echo "  echo 'long text' | bash scripts/report_field_set.sh queue/reports/hanzo_report_cmd_100.yaml results.AC1.notes -" >&2
+    exit 1
+fi
+
 # SCRIPT_DIR: string ops instead of $(cd) subshells (~1.2ms savings on WSL2)
 _rfs_self="${BASH_SOURCE[0]:-$0}"
 [[ "$_rfs_self" != /* ]] && _rfs_self="$PWD/$_rfs_self"
@@ -43,14 +52,6 @@ if [ "$DOT_KEY" = "assumption_invalidation" ] && [ "${3:-}" = "found" ] && [ -n 
     VALUE="$4"
 fi
 
-if [ -z "$REPORT_PATH" ] || [ -z "$DOT_KEY" ]; then
-    echo "Usage: bash scripts/report_field_set.sh <report_path> <dot.notation.key> <value>" >&2
-    echo "  value が '-' ならstdinから読む。空文字列は ''(YAML空文字)として書込み。" >&2
-    echo "Examples:" >&2
-    echo "  bash scripts/report_field_set.sh queue/reports/hanzo_report_cmd_100.yaml results.AC1.status PASS" >&2
-    echo "  echo 'long text' | bash scripts/report_field_set.sh queue/reports/hanzo_report_cmd_100.yaml results.AC1.notes -" >&2
-    exit 1
-fi
 # Pattern1 fix: 空文字値を許可。$3未指定/空→YAML空文字列('')として書込み
 if [ -z "$VALUE" ]; then
     VALUE="''"
