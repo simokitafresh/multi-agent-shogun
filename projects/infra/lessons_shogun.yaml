@@ -132,6 +132,7 @@ lessons:
     draft→pending→delegatedの3段階に全て理由がある。
     原因は100%自分の選択にある。他責厳禁。
     ナッジで作業させるな=cmd迂回の変形。inbox_writeで直接指示→lesson_candidate/binary_checks/軍師レビュー全欠落→鎖全体の成長停止。Phase2(出力=仕事の罠)の再現(cmd_2877)
+    F001適用範囲曖昧+掲示板依頼チャネル混同=cmd迂回の変形(cmd_3137)。設計書は将軍直接編集、依頼はcmd経由。ルール違反はバグ→L0-L7貫通
   source_ids: [LS049, LS050, LS051, LS052, LS043]
   created_at: '2026-04-24'
   automated: true
@@ -169,6 +170,7 @@ lessons:
     (11)環境設定ファイル(render.yaml/CI等)は想像で書くな。動いている本番PJの同等ファイルをコピーして改変。3連続region/type/runtime間違い(cmd_2850)
     (12)hookのガード条件をgrepで確認すれば1分で解決。確認しないから72分かかった(cmd_2898)。cmd_publish.sh exit 1後にフリーズ→L11にcmd_save.shしかないことを確認すれば即修正可能だった
     (13)実行順バグ調査時は設計意図カタログ([[infra_design_intent]])を先に照合せよ。一見不合理な設計には事故歴がある(殿指摘2026-06-07)。想像で構造推論→修正提案はPhase2(出力=仕事)+車輪原則違反。workarounds/ログから実事故→因果たどりが正しいアプローチ
+    (14)前セッション発言の時系列・文脈・ターゲット未確認でパターンマッチ反応(cmd_session_20260604)。★確認すべき事リストの時系列マーカー+[済]追跡で構造予防
   source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046]
   created_at: '2026-04-25'
   automated: true
@@ -196,6 +198,7 @@ lessons:
     watcher STATE_DIR不一致=再起動で修正。掲示板prepend=insert(0,...)。
     復帰手順スキップ=マーカー+hook。hookラベル+引用マーク=awk自動付与。
     watcher 2プロセス/agentは正常(親子関係)。pgrep -cfで重複と誤判断→kill→全滅。restart_watchers.shの親子構造を確認せよ(cmd_2924)
+    $(</dev/stdin)はWSL2で/dev/stdin不在時crash→全hookでcat 2>/dev/null使用(cmd_3207)。関数追加時はテストのmock/export -fリスト確認必須(cmd_3207→CI RED)
   source_ids: [LS033, LS037, LS074, LS084, LS086, LS087, LS051]
   created_at: '2026-04-24'
   automated: true
@@ -258,6 +261,7 @@ lessons:
     verify FAILしたらバグ修正が先。--skip-verifyは禁じ手。
     precompute rollback巻き添え→savepoint(begin_nested)で範囲限定(cmd_2254)。
     本番確認は3レイヤー貫通: DB(データ存在)+API(BEが返すか)+FE(ユーザーに届くか)(cmd_2255)。
+    (5)ネストFoFのif/elif排他バグ(cmd_3110): preload→holding_signal_rawに先入り→signal_cache(elif)到達不能→計算後キャッシュ未参照。修正: elif→if+seen_dates重複排除
   source_ids: [LS010, LS016, LS063]
   created_at: '2026-04-25'
   automated: true
@@ -273,6 +277,7 @@ lessons:
     スキル使用も成長ループの一部。適したスキルを無視できる状態は構造的バグであり、Guard/スキル強制へ埋め込む。
     idle時に殿入力待ちで止まるな。入力・確認・還流の鎖が切れている箇所を自走で塞げ。
     運用YAML肥大化対策は書込み時自動アーカイブ(Vercelスタイル)。走査側の変更不要(cmd_2856)
+    SKILL.md陳腐化を3セッション放置=洗脳#5(先送り)の証拠。gateが検出してもcmd化しなければ穴(cmd_3129)
   source_ids: [LS027, LS028, LS060, LS030, LS042]
   created_at: '2026-04-24'
   automated: true
@@ -496,51 +501,9 @@ lessons:
 # LS045: superseded by LS-A23 (DB無視=さぼり。2026-05-23統合)
 # LS046: superseded by LS-A08 (殿の決定後即実装。cmd_3007。2026-05-23統合)
 # LS047: superseded by LS-A01 (本能に逆らえ=deepdive Phase4。cmd_3007。2026-05-23統合)
-- id: 'LS041'
-  title: 'ネストFoF signal_cache排他バグ — if/elifでDB preloadが計算後キャッシュを遮蔽'
-  origin: '[[cmd_3110]]'
-  detail: 'recalculate_fof.py L519-527のholding_signal_rawとsignal_cacheがif/elif排他構造。preloadでDBの5月データがholding_signal_rawに入る→cidキー存在→elif(signal_cache)に到達不能→1段目FoF計算後のsignal_cache 6月データを2段目以降が読めない。42件のネストFoFが6月signal未生成。修正: elif→if+seen_dates重複排除で補完構造に変更。'
-  source_cmd: 'cmd_3110'
-  created_at: '2026-06-01'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=排他構造'
-- id: 'LS042'
-  title: 'SKILL.md script参照陳腐化は3セッション放置で先送り洗脳の証拠'
-  origin: '[[cmd_3129]]'
-  detail: 'SKILL.mdがscriptより古い=忍者が古い手順で作業。3セッション連続WARNは洗脳パターン#5(先送り)。gate_skill_script_refs.sh WARNを1セッション以内にcmd化せよ。'
-  source_cmd: 'cmd_3129'
-  created_at: '2026-06-02'
-  automated: true
-  enforcement: 'type=gate; file=scripts/gates/gate_shogun_startup.sh; pattern=gate_skill_script_refs'
-- id: 'LS043'
-  title: 'F001適用範囲曖昧+掲示板依頼チャネル混同: 設計書を家老にinbox依頼(将軍直接編集すべき)+軍師レビューを掲示板で直接依頼(cmd経由すべき)'
-  origin: '[[cmd_3137]]'
-  detail: 'F001のpositive_ruleに設計書=将軍直接編集が未記載→家老に委任。掲示板は報告チャネルだが依頼にも使い、F010(cmd_idなし直接配備)の変形が発生。殿指摘: ルール違反はバグ。L0-L7貫通で埋め込め。修正: (1)shogun.md F001に設計書直接編集明記 (2)bulletin_write.shにshogun action_required時のcmd_id未指定WARN'
-  source_cmd: 'cmd_3137'
-  created_at: '2026-06-02'
-  automated: true
-  enforcement: 'type=lesson; file=instructions/shogun.md; pattern=positive_rule'
-- id: 'LS044'
-  title: '前セッション発言の時系列・文脈・ターゲット未確認でパターンマッチ反応'
-  origin: '[[cmd_session_20260604]]'
-  detail: '★確認すべき事リストの「攻か確認してくれ」を(1)前セッション発言と認識せず今の指示と誤認(時系列欠如) (2)音声入力の打ち間違い「効果→攻か」を文脈なしにDM-signal攻守と解釈(パターンマッチ) (3)前セッション将軍の対応済み事実をlord_conversationで確認せず重複対応。修正: post-shogun-inbox-check.shに2パス処理+[前]マーカー+[済]応答追跡を追加。情報量は制限しない(三層記憶原則)、タイムスタンプで時系列を明確化。'
-  source_cmd: 'cmd_session_20260604'
-  created_at: '2026-06-04'
-  automated: true
-  enforcement: 'type=hook; file=.claude/hooks/post-shogun-inbox-check.sh; pattern=前'
-- id: 'LS045'
-  title: '$(</dev/stdin)はWSL2で/dev/stdin不在時にcrash。全hookで$(cat 2>/dev/null || true)を使え'
-  origin: '[[cmd_3207]]'
-  detail: 'bash_state_hook.sh(global hook)とprompt_state_inject.sh(session hook)の2箇所で$(</dev/stdin)が使われていた。速度修行commit d5164da96がcat→</dev/stdin変換を導入、bash_state_hook.shは別の速度修行で同様に変換。WSL2環境で/dev/stdinが存在しない場合にhook errorとなり全Bash tool呼び出しに影響。rg確認で残存ゼロ化済み。'
-  source_cmd: 'cmd_3207'
-  created_at: '2026-06-07'
-  automated: true
-  enforcement: 'type=gate; file=scripts/hooks/bash_state_hook.sh; pattern=cat 2'
-- id: 'LS046'
-  title: '関数追加時はテストのmock/export -fリストを確認せよ'
-  origin: '[[cmd_3207]] -> [[export -f漏れ]] -> [[CI RED test 169]]'
-  detail: '速度修行でcli_lookup.shに_cli_launch_read_settings等3関数追加→test_cli_adapter.batsのexport -fリスト未更新→テスト偽PASS→CI RED。関数追加は実装側だけでなくテスト側のsource/mock/exportも同時に更新が必要。先に確認原則の適用対象。'
-  source_cmd: 'cmd_3207'
-  created_at: '2026-06-07'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=export'
+# LS041: superseded by LS-A16(5) (ネストFoF排他バグ。2026-06-07統合)
+# LS042: superseded by LS-A17 (SKILL.md陳腐化=成長ループ/先送り洗脳。2026-06-07統合)
+# LS043: superseded by LS-A07 (F001適用範囲+掲示板混同=gate迂回変形。2026-06-07統合)
+# LS044: superseded by LS-A09(14) (パターンマッチ反応=現物確認。2026-06-07統合)
+# LS045: superseded by LS-A11 (stdin crash+export -f漏れ=infraバグ修正。2026-06-07統合)
+# LS046: superseded by LS-A11 (export -f漏れ=infraバグ修正。2026-06-07統合)
