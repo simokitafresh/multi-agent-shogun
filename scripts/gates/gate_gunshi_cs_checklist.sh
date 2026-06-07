@@ -797,6 +797,18 @@ if [ -f "$_bulletin" ]; then
     fi
 fi
 
+# --- L6: 洗脳#8検出 — confidence:HIGH連続は自己過信 (殿厳命2026-06-08) ---
+# cmd_3219でHIGHだったが動作未確認だった。HIGH連続は洗脳の証拠
+_high_streak=$(tail -200 "$REVIEW_LOG" 2>/dev/null | grep 'confidence:' | awk '
+    { if ($2 == "HIGH") streak++; else streak=0 }
+    END { print streak+0 }
+')
+if [ "${_high_streak:-0}" -ge 5 ]; then
+    echo "WARN(L6-洗脳#8): confidence:HIGHが${_high_streak}件連続。自己過信の可能性"
+    echo "  → HIGHは「全前提検証+情報不足なし」の宣言。本当に全て検証したか？cmd_3219はHIGHだったが動作未確認だった"
+    warn=1
+fi
+
 # --- L6: 洗脳#2検出 — infra report reviewで実動作確認なし (殿厳命2026-06-08) ---
 # observationsに「実行」「実測」「確認」「テスト実行」がないinfra reportレビューを検出
 _infra_no_verify=$(awk '
