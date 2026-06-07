@@ -745,7 +745,15 @@ yaml_field_set() {
     fi
 
     local lock_file
-    lock_file="$(lock_path "$yaml_file")"
+    case "$yaml_file" in
+        /mnt/c/*|/mnt/d/*)
+            local sanitized="${yaml_file//[\/: .#*?!]/_}"
+            lock_file="/tmp/shogun_lock_${sanitized: -48}.lock"
+            ;;
+        *)
+            lock_file="${yaml_file}.lock"
+            ;;
+    esac
     local tmp_file
     # WSL2最適化: tmpfsにtemp作成(NTFS mktemp/mv削減)。flock内のcat>yaml_fileで書込み
     tmp_file="$(mktemp)" || {
@@ -866,7 +874,15 @@ yaml_field_set_batch() {
     if [ "$_count" -eq 0 ]; then return 0; fi
 
     local lock_file
-    lock_file="$(lock_path "$yaml_file")"
+    case "$yaml_file" in
+        /mnt/c/*|/mnt/d/*)
+            local sanitized="${yaml_file//[\/: .#*?!]/_}"
+            lock_file="/tmp/shogun_lock_${sanitized: -48}.lock"
+            ;;
+        *)
+            lock_file="${yaml_file}.lock"
+            ;;
+    esac
     local tmp_file
     tmp_file="$(mktemp "${yaml_file}.tmp.XXXXXX")" || {
         echo "FATAL: yaml_field_set_batch: failed to create temp file" >&2
