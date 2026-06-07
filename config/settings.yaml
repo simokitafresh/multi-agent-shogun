@@ -12,8 +12,8 @@ cli:
       role: shogun
       japanese_name: 将軍
     karo:
-      type: codex
-      model_name: gpt-5.5-medium
+      type: claude
+      model_name: claude-opus-4-6
       role: karo
       japanese_name: 家老
     gunshi:
@@ -22,15 +22,17 @@ cli:
       role: gunshi
       japanese_name: 軍師
     hayate:
-      type: codex
-      model_name: gpt-5.5-medium
+      type: claude
+      model_name: claude-sonnet-4-6
       role: ninja
       japanese_name: 疾風
+      model: sonnet
     kagemaru:
-      type: codex
-      model_name: gpt-5.5-low
+      type: claude
+      model_name: claude-sonnet-4-6
       role: ninja
       japanese_name: 影丸
+      model: sonnet
     hanzo:
       type: claude
       model_name: claude-sonnet-4-6

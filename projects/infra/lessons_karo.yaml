@@ -292,6 +292,8 @@ v7吸収(2026-05-19):
     - startup gate fixture上書き時はbase健全性前提も再注入せよ(cmd_karo_ci_fix_5tests_20260527: base fixtureにQ6自己検出を追加→個別テストでbulletin_board.yaml上書き→2x2自己検出が消失→OK期待テストがWARN。fixture上書き時は検証対象以外のbase pass前提も維持。v10 L4修行テンプレートAC数変更と同根: テストfixture完全性前提)
     v15吸収(2026-05-28):
     - 忍者のmetrics変更(cmd_3080 instrumented_agents filter追加)がテストfixture前提を壊す(executor未記載→3件FAIL)。家老pushで発覚→家老が即修正(ca329ab2)。v10/v14と同根: コード変更が新フィールドを追加/参照→既存テストfixture未対応。一般原則: フィルタ/必須フィールド追加時はテストfixtureの当該フィールド有無を確認。pre-push hookが構造防御済み
+    v16吸収(2026-06-07):
+    - fd200継承flockリーク: exec 200>lockfileでflock取得後nohup起動→子プロセスがfd200を継承→親終了後もflock未解放→次回実行がflock -nでAbort。修正: nohup cmd 200>&-でfd継承遮断(041eb2f23)+rm -f lockfileで新inode化(63784b7d)。tobisaru+hanzoが独立発見(restart_watchers/restart_all_daemons)。一般原則: exec N>fileでflock取得後にnohupで子プロセスを起動する場合はN>&-でfd継承を遮断せよ
   source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080, LK009b, LK013, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
