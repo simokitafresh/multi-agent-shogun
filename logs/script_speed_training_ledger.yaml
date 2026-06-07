@@ -1899,16 +1899,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T09:59:00"
   - script_path: "scripts/lib/yaml_field_set.sh"
-    status: pending
+    status: completed
     before_ms: 17
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    after_ms: 17
+    before_real_ms: 65.011
+    after_real_ms: 51.955
+    real_measurement_command: "python3 60x: temp YAML task.status update via bash scripts/lib/yaml_field_set.sh <tmp> task status done; median_ms"
+    test_result: "bash_n_pass;test_yaml_field_set_bats_25_pass;lock_path_equivalence_spot_pass;missing_file_fatal_spot_pass;before_65.011_after_51.955;SKIP=0"
+    commit: "942633ad3"
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T10:07:00"
   - script_path: "scripts/log_rotate.sh"
     status: pending
     before_ms: 15
