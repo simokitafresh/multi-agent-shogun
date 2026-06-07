@@ -6,8 +6,13 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# SCRIPT_DIR/REPO_ROOT: subprocesses廃止 (dirname/cd/pwd 3fork削減)
+if [[ "${BASH_SOURCE[0]}" == */* ]]; then
+    SCRIPT_DIR="${BASH_SOURCE[0]%/*}"
+else
+    SCRIPT_DIR="."
+fi
+REPO_ROOT="${SCRIPT_DIR}/.."
 LOG_FILE="$REPO_ROOT/logs/karo_workarounds.yaml"
 NOTIFIED_FILE="$REPO_ROOT/logs/workaround_notified.yaml"
 PATTERNS_FILE="$REPO_ROOT/logs/workaround_patterns.yaml"
@@ -64,30 +69,30 @@ fi
     ' "$LOG_FILE")
 
     detected=0
-    now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    # notified_fileをキャッシュ（grep subprocess排除）
-    _wpc_notified_cache="$(cat "$NOTIFIED_FILE" 2>/dev/null || echo "")"
+    # date -u → printf builtin でサブプロセス削減
+    TZ=UTC printf -v _wpc_now '%(%Y-%m-%dT%H:%M:%S)TZ' -1
+    now="$_wpc_now"
+    # cat → $(<file) でサブプロセス削減
+    _wpc_notified_cache=$(<"$NOTIFIED_FILE")
+    # patterns_fileキャッシュ (grep -qF サブプロセス排除用)
+    _wpc_patterns_cache=$(<"$PATTERNS_FILE")
 
     # --- record_pattern: パターンをworkaround_patterns.yamlに記録 ---
     record_pattern() {
         local _rp_pattern_id="$1"
         local _rp_category="$2"
         local _rp_count="$3"
-        # 既に記録済みならcountだけ更新
-        if grep -qF "pattern_id: \"${_rp_pattern_id}\"" "$PATTERNS_FILE" 2>/dev/null; then
+        # 既に記録済みならcountだけ更新 (grep -qF → bash substring matchでサブプロセス削減)
+        if [[ "$_wpc_patterns_cache" == *"pattern_id: \"${_rp_pattern_id}\""* ]]; then
             # count更新: sedで該当エントリのcountを書き換え
             # pattern_idの次の行にcountがある前提
             sed -i "/${_rp_pattern_id}/,/count:/{s/count: .*/count: ${_rp_count}/}" "$PATTERNS_FILE"
             return
         fi
-        # 新規記録
-        cat >> "$PATTERNS_FILE" <<YAML_EOF
-  - pattern_id: "${_rp_pattern_id}"
-    category: "${_rp_category}"
-    count: ${_rp_count}
-    first_seen: "${now}"
-    notified_at: "${now}"
-YAML_EOF
+        # 新規記録 (cat >>heredoc → printf builtin でサブプロセス削減)
+        printf '  - pattern_id: "%s"\n    category: "%s"\n    count: %s\n    first_seen: "%s"\n    notified_at: "%s"\n' \
+            "${_rp_pattern_id}" "${_rp_category}" "${_rp_count}" "${now}" "${now}" >> "$PATTERNS_FILE"
+        _wpc_patterns_cache=$(<"$PATTERNS_FILE")
     }
 
     # --- check_regression: resolved済みパターンの再発/有効性チェック ---
