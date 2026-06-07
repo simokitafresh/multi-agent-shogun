@@ -1,5 +1,7 @@
 # cmd_1752: ALM本番組込み impl工数見積もり
 
+> ⚠ **ALMディスコン済み** (殿裁定2026-05-10) — 参考記録として保存。実装不要。→ [[dm-signal-ops]] §31 ALM浄化記録 / [[dm-signal]] `forbidden_topics`
+
 **作成日**: 2026-04-06 / kotaro
 **参照設計**: [[cmd_1750_alm_design]] (`docs/research/cmd_1750_alm_design.md`)
 **対象ファイル**: `backend/app/jobs/recalculate_fast.py` (2271行)
