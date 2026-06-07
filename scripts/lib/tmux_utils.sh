@@ -1,9 +1,5 @@
 #!/bin/bash
-# tmux_utils.sh — tmux send-keys排他制御ライブラリ
-# Usage: source scripts/lib/tmux_utils.sh
-#
-# safe_send_keys: flockによる排他制御付きsend-keys
-# ninja_monitorとinbox_watcherの同時送信時に入力が結合するのを防止
+# tmux send-keys排他制御ライブラリ。
 
 # safe_send_keys — flock排他制御付きtmux send-keys
 # 引数: $1=pane_target, $2以降=send-keysの引数
@@ -22,10 +18,6 @@ safe_send_keys() {
     ) 200>"$lock"
 }
 
-# safe_send_keys_atomic — flock内で複数操作をatomic実行
-# 2段送信（コマンド + sleep + Enter）をflock内でまとめる
-# 引数: $1=pane_target, $2=コマンド文字列, $3=sleep秒数(省略時0.3)
-# 戻り値: 0=成功, 1=flock取得失敗
 safe_send_keys_atomic() {
     local pane="$1"
     local cmd="$2"
