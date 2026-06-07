@@ -1866,16 +1866,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T09:26:37"
   - script_path: "scripts/lib/script_update.sh"
-    status: pending
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: "2026-06-07T10:20:17"
+    before_real_ms: 130
+    after_real_ms: 56
+    real_measurement_command: "bash -c 'SCRIPT_PATH=scripts/lib/script_update.sh; SCRIPT_HASH=$(stat -c %Y scripts/lib/script_update.sh); STARTUP_TIME=$(date +%s); MIN_UPTIME=999999; WATCHED_DEPS=(scripts/inbox_watcher.sh scripts/ninja_monitor.sh scripts/ntfy_listener.sh); source scripts/lib/script_update.sh; DEPS_HASH=$(compute_deps_hash); check_script_update >/dev/null' (5-run median)"
+    test_result: "bash_n_pass;callers_bash_n_pass;functional_basic_pass;deps_hash_match_pass;test_ntfy_ack_bats_8_pass_0_skip;test_bash_speed_training_bats_15_pass_0_skip;tap_skip_lines_0_for_both;before_median_130ms;after_median_56ms"
+    commit: "e9a84f134"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T10:48:30"
   - script_path: "scripts/lib/text_utils.sh"
     status: "completed"
     before_ms: 13
