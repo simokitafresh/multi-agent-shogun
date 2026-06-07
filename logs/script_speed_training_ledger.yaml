@@ -1,4 +1,4 @@
-global_status: running
+global_status: paused
 generated_at: "2026-06-06T21:09:32"
 measurement_command: "timeout 5 bash -n <script_path> (syntax baseline only; not runtime speed)"
 real_measurement_policy: "Ninja must choose a safe runtime command per script: time bash script.sh <args>, --help, dry-run mode, or sandboxed equivalent. Record before_real_ms/after_real_ms with the same command before and after."
@@ -2262,16 +2262,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T15:00:00"
   - script_path: "scripts/record_lesson_feedback.sh"
-    status: assigned
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 367
+    after_real_ms: 128
+    real_measurement_command: "time bash scripts/record_lesson_feedback.sh <report_file>"
+    test_result: "3/3 PASS (SKIP=0)"
+    commit: "035c317d0"
     assigned_to: "kotaro"
-    updated_at: "2026-06-07T14:50:37"
+    updated_at: "2026-06-07T15:00:08"
   - script_path: "scripts/report_field_set.sh"
     status: completed
     before_ms: 19

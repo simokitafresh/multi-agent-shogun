@@ -36,7 +36,7 @@ task:
   project: infra
   purpose: 'Speed-train scripts/ralph_loop_metrics.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
   scout_exempt: true
-  status: assigned
+  status: done
   stop_for: []
   target_path: scripts/ralph_loop_metrics.sh
   task_id: cmd_training_speed_ralph_loop_metrics_20260607144904_normal
