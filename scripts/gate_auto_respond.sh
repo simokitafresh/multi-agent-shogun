@@ -18,6 +18,37 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GATES_DIR="$SCRIPT_DIR/gates"
 STATE_DIR="/tmp"
 
+# ── 実行結果TTLキャッシュ ──
+# OKキャッシュ(exit 0)のみ有効。ALERT/WARNは常に再実行。
+# $1: gate名, $2: gateスクリプトパス, $3: TTL秒(デフォルト300)
+# stdout: gate出力, return: gate終了コード
+_gate_cached_run() {
+    local gate_name="$1"
+    local gate_script="$2"
+    local ttl="${3:-300}"
+    local out_file="${STATE_DIR}/gar_cache_${gate_name}.out"
+    local ts_file="${STATE_DIR}/gar_cache_${gate_name}.ts"
+    local ex_file="${STATE_DIR}/gar_cache_${gate_name}.exit"
+
+    if [ -f "$ts_file" ] && [ -f "$out_file" ] && [ -f "$ex_file" ]; then
+        local prev_ts prev_ex
+        IFS= read -r prev_ts < "$ts_file" 2>/dev/null || prev_ts=0
+        IFS= read -r prev_ex < "$ex_file" 2>/dev/null || prev_ex=1
+        if [ "$prev_ex" -eq 0 ] && [ $(( $(date +%s) - prev_ts )) -lt "$ttl" ]; then
+            cat "$out_file"
+            return 0
+        fi
+    fi
+
+    local output ex=0
+    output=$(bash "$gate_script" 2>&1) || ex=$?
+    printf '%s\n' "$output" > "$out_file"
+    date +%s > "$ts_file"
+    printf '%d\n' "$ex" > "$ex_file"
+    printf '%s\n' "$output"
+    return "$ex"
+}
+
 # ── 冪等性チェック共通関数 ──
 # $1: gate名, $2: 今回の状態(OK/WARN/ALERT), $3: トリガーとなる状態群(スペース区切り)
 # 戻り値: 0=ACTIONすべき, 1=SKIP
@@ -67,7 +98,7 @@ should_act() {
 handle_lesson_health() {
     local output
     local exit_code=0
-    output=$(bash "$GATES_DIR/gate_lesson_health.sh" 2>&1) || exit_code=$?
+    output=$(_gate_cached_run "lesson_health" "$GATES_DIR/gate_lesson_health.sh" 300 2>&1) || exit_code=$?
 
     local state="OK"
     if [ "$exit_code" -eq 1 ]; then
@@ -129,7 +160,7 @@ handle_cmd_state() {
 handle_context_freshness() {
     local output
     local exit_code=0
-    output=$(bash "$GATES_DIR/gate_context_freshness.sh" 2>&1) || exit_code=$?
+    output=$(_gate_cached_run "context_freshness" "$GATES_DIR/gate_context_freshness.sh" 300 2>&1) || exit_code=$?
 
     local state="OK"
     if [ "$exit_code" -eq 1 ]; then
