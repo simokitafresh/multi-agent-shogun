@@ -2020,16 +2020,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T11:09:00"
   - script_path: "scripts/model_analysis.sh"
-    status: assigned
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 80
+    after_real_ms: 70
+    real_measurement_command: "bash scripts/model_analysis.sh --summary"
+    test_result: "bash -n PASS; summary diff PASS; json+compare smoke PASS; test_dynamic_model_routing 7/7 PASS SKIP=0; model_analysis label regression 1/1 PASS SKIP=0"
+    commit: "1cc893fd9"
     assigned_to: "hayate"
-    updated_at: "2026-06-07T14:22:52"
+    updated_at: "2026-06-07T14:27:05"
   - script_path: "scripts/model_switch_preflight.sh"
     status: completed
     before_ms: 17
@@ -2064,16 +2064,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T14:21:00"
   - script_path: "scripts/note_draft.sh"
-    status: assigned
+    status: completed
     before_ms: 23
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 5500
+    after_real_ms: 5320
+    real_measurement_command: "for i in $(seq 1 1000); do bash scripts/note_draft.sh 2>/dev/null || true; done (1000-iter loop, no-args fast exit)"
+    test_result: "bash -n scripts/note_draft.sh PASS; no-arg usage exit=1; file-not-found exit=1; SKIP=0"
+    commit: "1d2957ccc"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-07T14:19:40"
+    updated_at: "2026-06-07T14:28:00"
   - script_path: "scripts/ntfy.sh"
     status: completed
     before_ms: 18
@@ -2108,16 +2108,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T14:20:15"
   - script_path: "scripts/ntfy_cmd.sh"
-    status: assigned
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 60
+    after_real_ms: 10
+    real_measurement_command: "sandbox copy: bash /tmp/.../scripts/ntfy_cmd.sh cmd_test 'GATE CLEAR done' with stub ntfy"
+    test_result: "bash -n scripts/ntfy_cmd.sh PASS; sandbox old/new output diff PASS; sandbox runtime before median 60ms after 10ms SKIP=0"
+    commit: "f211249d3"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T14:23:07"
+    updated_at: "2026-06-07T14:25:49"
   - script_path: "scripts/ntfy_inbox_archive.sh"
     status: completed
     before_ms: 17
@@ -2130,7 +2130,7 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T14:27:14"
   - script_path: "scripts/ntfy_listener.sh"
-    status: pending
+    status: assigned
     before_ms: 17
     after_ms: ""
     before_real_ms: ""
@@ -2138,10 +2138,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T14:26:18"
   - script_path: "scripts/obsidian_promote_candidate.sh"
-    status: pending
+    status: assigned
     before_ms: 14
     after_ms: ""
     before_real_ms: ""
@@ -2149,8 +2149,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T14:27:40"
   - script_path: "scripts/obsidian_promote_finalize.sh"
     status: pending
     before_ms: 16
@@ -2800,9 +2800,3 @@ entries:
     commit: ""
     assigned_to: ""
     updated_at: ""
-before_real_ms: 5500
-after_real_ms: 5320
-real_measurement_command: '/usr/bin/time -f ''REAL=%e'' bash -c ''for i in $(seq 1 1000); do bash scripts/note_draft.sh 2>/dev/null || true; done'' (1000-iter loop, no-args fast exit)'
-test_result: bash -n scripts/note_draft.sh PASS; no-arg usage exit=1; file-not-found exit=1; SKIP=0
-commit: 1d2957ccc
-status: completed
