@@ -2904,16 +2904,16 @@ entries:
   assigned_to: ''
   updated_at: ''
 - script_path: scripts/switch_cli_mode.sh
-  status: pending
+  status: completed
   before_ms: 16
   after_ms: ''
-  before_real_ms: ''
-  after_real_ms: ''
-  real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
-  assigned_to: ''
-  updated_at: ''
+  before_real_ms: 8
+  after_real_ms: 4
+  real_measurement_command: time bash scripts/switch_cli_mode.sh --help
+  test_result: bash -n exit:0 && bash scripts/switch_cli_mode.sh --help exit:0 (help表示確認)
+  commit: c4c283ddb
+  assigned_to: hayate
+  updated_at: '2026-06-07T17:35:00'
 - script_path: scripts/switch_project.sh
   status: pending
   before_ms: 19
