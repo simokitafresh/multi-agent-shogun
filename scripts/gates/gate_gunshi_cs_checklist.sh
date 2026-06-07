@@ -699,6 +699,7 @@ _automation_no_adv=$(awk '
     /^  finding_categories:.*\[/ { fc=$0 }
     /^    - .*/ { obs=obs " " $0 }
     /^  timestamp:/ && rt ~ /draft|report/ && fc !~ /adversarial/ && id != "" {
+        if (id ~ /^cmd_training_speed_/) next  # 速度修行cmd=コード変更なし理解テスト。adversarial不要(GP-263)
         if (obs ~ /scripts\/|\.sh|gate_|hook_|monitor|deploy_task|cron|cleanup|trigger/) {
             print id
         }

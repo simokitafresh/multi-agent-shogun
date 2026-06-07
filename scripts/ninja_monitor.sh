@@ -890,6 +890,10 @@ safe_send_clear() {
     fi
     tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
     log "CTX-RESET: $agent_name @context_pct → 0% after $clear_cmd"
+    # clear-history: /clear後のスクロールバッファに旧CTX%表示が残留し、
+    # 次のget_context_pctサイクルでcapture-paneから旧値が検出→@context_pctに書き戻される問題を防止
+    tmux clear-history -t "$pane" 2>/dev/null || true
+    log "CLEAR-HISTORY: $agent_name scroll buffer cleared after $clear_cmd"
     rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
     return 0
 }
