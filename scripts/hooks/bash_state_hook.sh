@@ -12,7 +12,7 @@
 set -eu
 
 # Read hook payload from stdin without forking cat subprocess
-payload=$(</dev/stdin)
+payload="$(cat 2>/dev/null || true)"
 
 # Extract hookEventName using bash regex (avoids jq subprocess)
 hook_event=""
