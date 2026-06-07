@@ -157,6 +157,8 @@ blocking_reason: "{理由}"         # NG時のみ
 - 失敗時の影響範囲（blast radius）はどこまで及ぶか
 - 失敗を検知する仕組み（gate、テスト、二値チェック）が設計に含まれているか
 - 新規/変更コードにexcept Exception→データ値返却(silent fallback)パターンがないか？ 例: except→return 0.0, except→signal=Cash, except→return True。エラーを正常値で偽装するコードは全てNG(PI-018)
+- **速度改善・リファクタで安全パターン(|| true, 2>/dev/null, cat 2>/dev/null, trap, timeout, set +e)が削除されていないか？** 安全パターン削除=エラーハンドリング破壊。git diffの-行に安全パターンがあればNG(2026-06-07 $(</dev/stdin)事故)
+- **関数追加・シグネチャ変更時、その関数をsource/export -fしているテストファイルのmock/exportリストが更新されているか？** 未更新=テスト偽PASS(2026-06-07 cli_adapter事故)
 
 判定基準:
 - OK: 全FMの対処が「二度と起きない」レベルで設計に含まれている

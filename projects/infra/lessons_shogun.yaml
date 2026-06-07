@@ -536,3 +536,11 @@ lessons:
   created_at: '2026-06-07'
   automated: true
   enforcement: 'type=gate; file=scripts/hooks/bash_state_hook.sh; pattern=cat 2'
+- id: 'LS046'
+  title: '関数追加時はテストのmock/export -fリストを確認せよ'
+  origin: '[[cmd_3207]] -> [[export -f漏れ]] -> [[CI RED test 169]]'
+  detail: '速度修行でcli_lookup.shに_cli_launch_read_settings等3関数追加→test_cli_adapter.batsのexport -fリスト未更新→テスト偽PASS→CI RED。関数追加は実装側だけでなくテスト側のsource/mock/exportも同時に更新が必要。先に確認原則の適用対象。'
+  source_cmd: 'cmd_3207'
+  created_at: '2026-06-07'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=export'

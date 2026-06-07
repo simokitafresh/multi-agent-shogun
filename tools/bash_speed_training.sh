@@ -561,6 +561,8 @@ task:
     - id: AC2
       checks:
         - check: "implementation improves runtime without reducing behavior or safety"
+        - check: "safety patterns (|| true, 2>/dev/null, cat 2>/dev/null, trap, timeout, set +e) are NOT deleted. git diff must show zero removed safety lines"
+        - check: "if new functions are added, all test files that source/export -f the parent script have updated mock/export lists"
         - check: "script-specific verification passes with SKIP=0"
     - id: AC3
       checks:
