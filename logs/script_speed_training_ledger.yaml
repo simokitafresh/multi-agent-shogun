@@ -1,4 +1,4 @@
-global_status: paused
+global_status: running
 generated_at: "2026-06-06T21:09:32"
 measurement_command: "timeout 5 bash -n <script_path> (syntax baseline only; not runtime speed)"
 real_measurement_policy: "Ninja must choose a safe runtime command per script: time bash script.sh <args>, --help, dry-run mode, or sandboxed equivalent. Record before_real_ms/after_real_ms with the same command before and after."
@@ -1822,18 +1822,18 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T09:17:05"
   - script_path: "scripts/lib/pane_format.sh"
-    status: pending
+    status: no_improvement
     before_ms: 14
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 22
+    after_real_ms: 19
+    real_measurement_command: "bash -c 'source scripts/lib/pane_format.sh; echo \"$AGENTS_PANE_BORDER_FORMAT\" > /dev/null'"
+    test_result: "bash -n OK. No optimization possible: pure static variable assignment, no subprocess forks. Timing diff is noise."
+    commit: "no_change"
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T09:22:30"
   - script_path: "scripts/lib/pane_lookup.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -1841,10 +1841,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T09:22:15"
   - script_path: "scripts/lib/pre_bash_combined_guard.sh"
-    status: pending
+    status: assigned
     before_ms: 17
     after_ms: ""
     before_real_ms: ""
@@ -1852,8 +1852,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T09:22:58"
   - script_path: "scripts/lib/safe_rm.sh"
     status: pending
     before_ms: 16
