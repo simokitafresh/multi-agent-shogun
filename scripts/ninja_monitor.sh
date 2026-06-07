@@ -854,9 +854,8 @@ safe_send_clear() {
     local clear_cmd
     clear_cmd=$(cli_profile_get "$agent_name" "clear_cmd")
     clear_cmd=${clear_cmd:-"/clear"}
-    # LK012: /clear前にpane CWDをSHOGUN_ROOTにリセット（Codex忍者がDM-Signal側CWDで起動→task YAML未到達を防止）
-    safe_send_keys_atomic "$pane" "cd $SCRIPT_DIR" 0.3 || true
-    log "CWD-RESET: $agent_name pane CWD → $SCRIPT_DIR"
+    # LK012はrespawn-pane -kの起動コマンドでcd済み。事前cd送信はCLIにコマンド入力され
+    # CTX消費+応答速度低下を招く(殿指摘2026-06-07)。Codex/Claudeともrespawnで対応。
 
     # Codex CLI: /newはCLI内部状態がtask in progressのまま残ると拒否される。
     # ninja_monitor側のtask statusに関係なく、respawn-pane -kでプロセスごと確実にリセットする。
