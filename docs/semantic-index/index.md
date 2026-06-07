@@ -1138,6 +1138,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-27T16:17:42+09:00 b4wi2lwf2 toolu_01U2GTuRMrTZYBdbEej1KAzM /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/f8d2ff8f-f6fa-4691-b2cc-90f50b |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-30T21:37:41+09:00 bh1zzcx7e toolu_01FnmD3ifgrsS7EpfwF4BhuX /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/1f34069b-da52-44ef-b51f-6d1583 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-01T12:44:16+09:00 ALMは既に使用していない。これはバグだな |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T10:32:07+09:00 bvu25pkju toolu_01R1fN2WFqQFz6cf9CgyRM1E /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8aa671c0-250c-404e-8b5a-7431d2 |
 | causal_chain | `[[cmd_1762]]` (L566) |
 
 ## shin_shijin_design — 四神設計
