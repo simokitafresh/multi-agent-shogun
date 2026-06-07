@@ -8,7 +8,7 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SCRIPT_DIR="$(cd "${BASH_SOURCE[0]%/*}/../.." && pwd)"
 DATA_FILE="$SCRIPT_DIR/queue/pending_decisions.yaml"
 ALERT_DIR="$SCRIPT_DIR/queue/alerts"
 UNSYNC_LOG="$ALERT_DIR/pd_unsync.log"
@@ -84,11 +84,11 @@ END {
 ' "$DATA_FILE"
 )
 
-printf -v TIMESTAMP '%(%Y-%m-%dT%H:%M:%S)T' -1
 RESULT_STATUS="${RESULT_STATUS:-ERROR}"
 UNSYNCED_IDS_RAW="${UNSYNCED_IDS_RAW:-}"
 
 if [ -n "$UNSYNCED_IDS_RAW" ]; then
+    printf -v TIMESTAMP '%(%Y-%m-%dT%H:%M:%S)T' -1
     BLOCK_MSG="$TIMESTAMP  BLOCK: context未反映PDあり: $UNSYNCED_IDS_RAW"
     emit_prefixed_actionable_stderr \
         "[gate_pd_sync] $BLOCK_MSG" \
