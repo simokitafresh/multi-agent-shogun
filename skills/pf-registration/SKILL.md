@@ -167,3 +167,5 @@ FoFのholding_signal同一判定は展開後ticker×weightで行う(L703)。
 - FoF削除順序: FoF先→standard後(FK制約)
 - Portfolio直下top_nを構成数に使うな(L696)。pipeline_config内側のみ
 - DB操作は直列(並列タイムアウト実証済み)
+
+<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->

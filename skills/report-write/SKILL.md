@@ -278,3 +278,5 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 - 2026-05-02: gate=gate_report_format result=FAIL executor=unknown reason=files_modified: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; assumption_invalidation: MISSING
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_field_set.sh` の現行契約を再確認。lessons_useful空リスト、binary_checks空欄、status pending、summary空欄はgate_report_format.shでBLOCKされるため提出前に必ずgateを通す。
+
+<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->

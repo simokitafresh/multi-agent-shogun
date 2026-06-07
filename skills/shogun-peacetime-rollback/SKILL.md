@@ -75,3 +75,5 @@ Expected state:
 
 If rollback stops mid-way, rerun the same command once.
 The script is designed to be re-entrant for the same target repository.
+
+<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->

@@ -164,3 +164,5 @@ scripts/cdp/cdp_cli.sh screenshot "/tmp/dm-signal-admin.png"
 ## 因果リンク
 
 - → [[cdp-severity.md]] CDP計測・canary・ブラウザ実測の異常分類（操作失敗時の重大度判定基準）
+
+<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->

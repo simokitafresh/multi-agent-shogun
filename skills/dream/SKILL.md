@@ -2,11 +2,11 @@
 name: dream
 argument-hint: ""
 description: |
-  【将軍専用】メモリ統合・整理（5 Phase REM型）。
-  MEMORY.md + memory/*.mdの健全度スキャン、タイムスタンプ統一(ISO 8601秒精度+TZ)、
+  【将軍専用】三層記憶(記憶DB+セマンティック+Obsidian) + MEMORY.md + memory/*.mdの統合・整理（5 Phase REM型）。
+  三層記憶健全性チェック(2g)、層間整合(3d)、タイムスタンプ統一(ISO 8601秒精度+TZ)、
   矛盾解消、重複排除、陳腐化検出、免疫系提案(自動化ターゲット発見)を行う。
   Auto-dreamの4 Phaseを超える5 Phase設計: Orient/Gather/Consolidate/Prune/Immunize。
-  TRIGGER: /dream、メモリ整理、知識統合、記憶の清掃、夢
+  TRIGGER: /dream、メモリ整理、知識統合、記憶の清掃、夢、三層記憶整理
   DO NOT TRIGGER: 知識棚卸し(→shogun-teire)、教訓登録(→lesson-sort)、
   PD反映(→shogun-pd-sync)、/clear前準備(→shogun-clear-prep)、Memory MCP単発操作
 quality_metric: "当該スキル起点cmdのcmd_save.shチェック通過率（q1-q3 BLOCKなし、q4_depth WARNINGなしの割合）"
@@ -28,7 +28,7 @@ allowed-tools:
 
 # /dream — Memory Consolidation (5 Phase)
 
-メモリの統合・整理を行う。REM睡眠に倣い、知識基盤を強化する。
+**三層記憶(記憶DB+セマンティック+Obsidian) + MEMORY.md + memory/*.md** の統合・整理を行う。REM睡眠に倣い、知識基盤を強化する。
 
 Script refs verified: 2026-06-07 cmd_3206. `gate_lesson_health.sh` はrole lesson origin確認をbatch化したが、引数なし全project走査/`<project_id>`単体走査とOK/ALERT契約は維持。`gate_shogun_memory.sh` はreferenced_files取得cacheで高速化され、`insight_write.sh` は保存/resolve/source repeat通知の呼び出し契約変更なし。
 Script refs verified: 2026-06-02T20:46:12+09:00 infra-bug audit after gate_lesson_health.sh inline-field parser fix.
@@ -180,6 +180,27 @@ done
 bash scripts/insight_write.sh "DREAM-CONTEXT: orphan=${N}, stale=${M}, unreachable_dialogue=${K}" dream
 ```
 
+### 2g. 三層記憶健全性チェック（三層貫通）
+三層記憶(記憶DB+セマンティック+Obsidian)の各層が正しく接続されているか検証する。
+
+```bash
+# 第一層: 記憶DB(FTS5) — イベント数・raw_content充填率・概念紐付き率
+bash scripts/memory_db_query.sh "SELECT COUNT(*) as total, SUM(CASE WHEN raw_content!='' THEN 1 ELSE 0 END) as with_raw FROM events"
+bash scripts/memory_db_query.sh "SELECT COUNT(DISTINCT event_id) as linked FROM event_concepts"
+
+# 第二層: セマンティックインデックス — 概念数・孤立概念
+bash scripts/semantic_search.sh "--stats" 2>/dev/null || wc -l < docs/semantic-index/index.md
+
+# 第三層: Obsidian — 昇格候補・昇格済み件数
+bash scripts/memory_db_query.sh "SELECT state, COUNT(*) FROM events WHERE state IN ('obsidian_candidate','obsidian_promoted') GROUP BY state"
+```
+
+**三層貫通チェック**:
+- 記憶DBのevent_concepts件数 > 0（第一層→第二層接続）
+- セマンティック概念からcontext/*.mdへの参照が存在（第二層→知識層接続）
+- obsidian_candidate > 0 かつ promote検討済み（第三層接続）
+- 穴検出 → `DREAM-THREE-LAYER: {layer} 断絶 — {detail}` をinsightに登録
+
 ---
 
 ## Phase 3 — Consolidate (統合)
@@ -219,10 +240,13 @@ Phase 2 の発見事項をメモリに反映する。
 
 矛盾解消時: 旧エントリに `[superseded: YYYY-MM-DDTHH:MM:SS+09:00, by: 新エントリの要約, reason: 理由]` を付記。削除はしない。
 
-### 3d. 層間整合チェック
+### 3d. 層間整合チェック（三層記憶統合）
 - MEMORY.md索引 ↔ memory/*.md実体 — 孤立ポインタを検出
 - memory observations ↔ lessons.yaml — 矛盾があれば lessons を正とする（lessonsは家老がレビュー済み）
 - memory内のファイル参照 ↔ 実ファイル — ドリフトを修正
+- **記憶DB ↔ セマンティック**: event_conceptsの概念がsemantic-map.mdに存在するか。孤立概念→セマンティック索引に追加
+- **セマンティック ↔ Obsidian**: セマンティック概念のresourcesに[[リンク]]があるか。リンク切れ→修正または除去
+- **記憶DB ↔ Obsidian**: obsidian_candidateのeventがObsidian [[リンク]]で到達可能か。到達不能→promote検討
 
 ---
 
@@ -304,6 +328,11 @@ DREAM METRICS:
   context_orphans: N (他contextから参照なし) (2f)
   context_stale: M (14日以上未更新) (2f)
   dialogue_unreachable: K (contextから参照なし) (2f)
+  three_layer_db_events: N (記憶DBイベント総数) (2g)
+  three_layer_raw_content_rate: X% (raw_content充填率) (2g)
+  three_layer_concept_linked: N (概念紐付きイベント数) (2g)
+  three_layer_obsidian_candidates: N (昇格候補) (2g)
+  three_layer_断絶: N (層間接続切れ) (3d)
 ```
 
 ### 5d. 提案の永続化
@@ -347,3 +376,5 @@ Next dream eligible: [timestamp + 24h]
 - MCP Memory操作: read/open/searchは自由。add/deleteは確認済み修正のみ
 
 Script refs verified: 2026-06-03 cmd_3144. `insight_write.sh` 直近変更(4dacb9c9)は運用ファイルauto-commit(mtimeのみ変化)。スクリプト本体の動作・インターフェース変更なし。SKILL.md記載の仕様(引数/priority/source/--resolve/dedup/source repeat通知)は現行と一致。
+
+<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->

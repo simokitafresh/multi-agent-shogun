@@ -235,3 +235,5 @@ Markdown→note.com変換ルール:
 - 空行とコードフェンス行 → スキップ
 - 本文は `div.ProseMirror, div[contenteditable]` に `innerHTML` で挿入し、`input` / `change` eventを発火する
 - 下書き保存ボタン押下後、最終URLを `[note_draft] Done: ...` に出力する
+
+<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->

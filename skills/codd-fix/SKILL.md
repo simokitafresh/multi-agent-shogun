@@ -94,3 +94,5 @@ bash scripts/test_select.sh <changed-file>
 - `codd fix`の曖昧性を無視して`--on-ambiguity top1`で進めるな
 - `--no-push`なしで実行するな。忍者はpush禁止
 - 事象ではなく広すぎる実装指示を渡すな
+
+<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->

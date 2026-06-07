@@ -485,3 +485,5 @@ CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 - 構成ティッカーが本文に出ていない
 - リンクが本文に出ていない
 - 指数が週間変動になっている
+
+<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->

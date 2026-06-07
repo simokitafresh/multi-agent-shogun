@@ -499,3 +499,5 @@ for lesson in data['lessons']:
 - **Reflector** = 家老（品質を検査・査読 — lesson confirm/reject・context整合チェック）
 - **Curator** = lesson_write.sh等のスクリプト（自動整理・登録・context索引追記）
 - 監査時: 各役割が機能しているか（生成→査読→整理のサイクルが回っているか）を検査
+
+<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->

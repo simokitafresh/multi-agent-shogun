@@ -74,3 +74,5 @@ Script refs verified: 2026-05-20 cmd_2899. `reset_layout.sh` は `agent_config.s
 - shogun:agents ウィンドウが存在すること
 - ペイン数が8未満の場合は自動追加（8超過はERROR終了）
 - CLIが起動するまでが本スキルの責務
+
+<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->

@@ -88,3 +88,5 @@ If `gunshi` is missing from the verification output, treat that as an incomplete
 
 If execution stops mid-way, rerun the same command once.
 The script is idempotent for the same target repository.
+
+<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->
