@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-07 cmd_training_speed_dashboard_auto_section_20260606235801 -->
+<!-- last_updated: 2026-06-07 -->
 
 # Memory DB Schema
 
@@ -9,13 +9,13 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 52845 | event_id, concept_name, relevance_score |
-| table | event_links | 855 | source_event_id, target_concept, link_type |
-| table | event_state_transitions | 32 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
-| table | events | 40299 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
-| table | events_fts | 40299 | summary, detail |
-| table | search_logs | 1021 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
-| view | conversations | 31277 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 58003 | event_id, concept_name, relevance_score |
+| table | event_links | 998 | source_event_id, target_concept, link_type |
+| table | event_state_transitions | 46 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
+| table | events | 43724 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
+| table | events_fts | 43724 | summary, detail |
+| table | search_logs | 2623 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
+| view | conversations | 32475 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -24,6 +24,7 @@
 | index | idx_events_event_type |  |  |
 | index | idx_events_importance |  |  |
 | index | idx_events_parent_event_id |  |  |
+| index | idx_events_state |  |  |
 | index | idx_events_ts |  |  |
 | index | idx_search_logs_no_match |  |  |
 | index | idx_search_logs_query |  |  |
@@ -33,18 +34,20 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 31277 |
-| bulletin | 4255 |
-| cmd_archive | 3813 |
-| skill_execution | 506 |
-| insight | 187 |
-| inbox | 99 |
-| report | 62 |
+| conversation | 32475 |
+| bulletin | 4345 |
+| cmd_archive | 4298 |
+| skill_execution | 1392 |
+| inbox | 545 |
+| insight | 331 |
+| report | 192 |
+| cmd_quality | 43 |
 | pending_decision | 43 |
-| cmd_quality | 30 |
-| cmd_save | 16 |
-| gate | 9 |
-| lesson | 2 |
+| gate | 31 |
+| cmd_save | 23 |
+| lesson | 3 |
+| workaround | 2 |
+| infrastructure_state | 1 |
 
 ## `event_concepts`
 
