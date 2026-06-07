@@ -124,10 +124,47 @@ archive_dir  = os.environ.get('REWORK_ARCHIVE_DIR', '')
 since_str    = os.environ.get('REWORK_SINCE', '')
 output_json  = os.environ.get('REWORK_JSON', 'false').lower() == 'true'
 
+
+def load_archive_cmds_cached(archive_dir):
+    """
+    archive cmdをJSONキャッシュ経由で取得。
+    archive/cmds/*.yamlは不変(archived後は更新なし)のでファイル数をキャッシュキーに使う。
+    cold: 通常通りyaml.safe_load(初回のみ遅い)
+    warm: .rework_rate_cache.jsonをjson.loadで読む(~0.5s)
+    """
+    archive_paths = sorted(glob.glob(os.path.join(archive_dir, '*.yaml')))
+    archive_count = len(archive_paths)
+    cache_file = os.path.join(archive_dir, '.rework_rate_cache.json')
+
+    # キャッシュ試行
+    if os.path.exists(cache_file):
+        try:
+            with open(cache_file, encoding='utf-8') as f:
+                cached = json.load(f)
+            if cached.get('count') == archive_count:
+                return cached['cmds']
+        except (json.JSONDecodeError, KeyError, IOError):
+            pass
+
+    # キャッシュなし or 無効 → 全yamlロード
+    cmds = []
+    for p in archive_paths:
+        cmds.extend(load_cmds(p))
+
+    # キャッシュ保存(失敗は非致命的)
+    try:
+        with open(cache_file, 'w', encoding='utf-8') as f:
+            json.dump({'count': archive_count, 'cmds': cmds}, f,
+                      default=str, ensure_ascii=False)
+    except IOError:
+        pass
+
+    return cmds
+
+
 # 全cmd読み込み
 all_cmds = load_cmds(active_path)
-for archive_path in sorted(glob.glob(os.path.join(archive_dir, '*.yaml'))):
-    all_cmds.extend(load_cmds(archive_path))
+all_cmds.extend(load_archive_cmds_cached(archive_dir))
 
 # --since フィルタ
 if since_str:
