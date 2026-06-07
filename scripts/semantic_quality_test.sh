@@ -52,6 +52,10 @@ fi
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
 results_jsonl="$tmp_dir/results.jsonl"
+# tmpfs index cache: shared across all queries, avoids NTFS reads (~22x per call)
+_sem_idx_cache="$tmp_dir/sem_idx"
+mkdir -p "$_sem_idx_cache"
+_search_rows_tsv="$tmp_dir/search_rows.tsv"
 
 python3 - "$fixture_path" <<'PY' > "$tmp_dir/queries.tsv"
 import json
@@ -63,11 +67,13 @@ for entry in data.get("entries", []):
     print(f"{entry.get('query', '')}\t{entry.get('expected_concept') or ''}")
 PY
 
+_idx=0
 while IFS=$'\t' read -r query expected; do
     [ -n "$query" ] || continue
-    output_file="$tmp_dir/search.out"
+    output_file="$tmp_dir/search_${_idx}.out"
     status="hit"
     if SEMANTIC_DISABLE_LLM=1 SEMANTIC_DISABLE_CAUSAL=1 SEMANTIC_DISABLE_MEMORY_DB=1 \
+        SEMANTIC_DISABLE_SEARCH_LOG=1 SEMANTIC_INDEX_CACHE_DIR="$_sem_idx_cache" \
         bash "$semantic_search" "$query" >"$output_file" 2>&1; then
         status="hit"
     else
@@ -78,22 +84,32 @@ while IFS=$'\t' read -r query expected; do
             status="error"
         fi
     fi
-    python3 - "$query" "$expected" "$status" "$output_file" >> "$results_jsonl" <<'PY'
+    printf '%s\t%s\t%s\t%s\n' "$query" "$expected" "$status" "$output_file" >> "$_search_rows_tsv"
+    _idx=$((_idx + 1))
+done < "$tmp_dir/queries.tsv"
+
+# Batch result parsing: one Python call instead of N subprocesses
+python3 - "$_search_rows_tsv" > "$results_jsonl" <<'PY'
 import json
 import re
 import sys
 from pathlib import Path
 
-query, expected, status, output_path = sys.argv[1:5]
-output = Path(output_path).read_text(encoding="utf-8", errors="replace")
-match = re.search(r"(?m)^##\s+([A-Za-z0-9_-]+)\s+—", output)
-actual = match.group(1) if match else ""
-print(json.dumps(
-    {"query": query, "expected": expected, "actual": actual, "status": status},
-    ensure_ascii=False,
-))
+for line in Path(sys.argv[1]).read_text(encoding="utf-8").splitlines():
+    if not line:
+        continue
+    parts = line.split('\t', 3)
+    if len(parts) < 4:
+        continue
+    query, expected, status, output_path = parts
+    output = Path(output_path).read_text(encoding="utf-8", errors="replace")
+    match = re.search(r"(?m)^##\s+([A-Za-z0-9_-]+)\s+—", output)
+    actual = match.group(1) if match else ""
+    print(json.dumps(
+        {"query": query, "expected": expected, "actual": actual, "status": status},
+        ensure_ascii=False,
+    ))
 PY
-done < "$tmp_dir/queries.tsv"
 
 python3 - "$results_jsonl" "$min_score" <<'PY'
 import json
