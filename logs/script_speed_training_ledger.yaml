@@ -2306,16 +2306,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/restart_all_daemons.sh"
-    status: pending
+    status: done
     before_ms: 14
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
+    before_real_ms: 21711
+    after_real_ms: 4184
+    real_measurement_command: "start_ms=$(date +%s%3N) && bash scripts/restart_all_daemons.sh 2>&1; echo \"ELAPSED: $(($(date +%s%3N) - start_ms)) ms\""
+    test_result: "no_test_mapping (test_select skipped)"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T16:12"
   - script_path: "scripts/restart_monitor.sh"
     status: done
     before_ms: 15
@@ -2328,16 +2328,16 @@ entries:
     assigned_to: "saizo"
     updated_at: ""
   - script_path: "scripts/restart_ntfy_listener.sh"
-    status: pending
+    status: in_progress
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
+    before_real_ms: 9243
     after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
+    real_measurement_command: "bash /tmp/measure_restart.sh (ntfy_listener存在あり; ラッパー経由でpgrep自己マッチ回避)"
+    test_result: "no_test_mapping"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: kotaro
+    updated_at: "2026-06-07T16:10:25"
   - script_path: "scripts/restart_watchers.sh"
     status: pending
     before_ms: 17
