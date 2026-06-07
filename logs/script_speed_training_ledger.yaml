@@ -1668,16 +1668,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T08:33:00"
   - script_path: "scripts/lib/agent_config.sh"
-    status: assigned
+    status: completed
     before_ms: 9
     after_ms: ""
     before_real_ms: 25
-    after_real_ms: ""
+    after_real_ms: 20
     real_measurement_command: "bash -c 'source scripts/lib/agent_config.sh; get_ninja_names; get_layout_col1_width_pct; get_layout_karo_height'"
-    test_result: "bash -n OK; get_layout values correct (col1:36, karo_h:24)"
-    commit: ""
+    test_result: "bash -n OK; API outputs OK; tests/unit/test_bash_speed_training.bats 15/15 PASS SKIP=0; tests/unit/test_inbox_mark_read.bats 10/10 PASS SKIP=0"
+    commit: "29f52f38a"
     assigned_to: "saizo"
-    updated_at: "2026-06-07T10:57:11"
+    updated_at: "2026-06-07T13:52:07"
   - script_path: "scripts/lib/cli_lookup.sh"
     status: completed
     before_ms: 16
