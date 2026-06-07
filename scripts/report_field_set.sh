@@ -1287,6 +1287,28 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
         # safely keep template check text and replace only the result scalar.
         if [[ "$DOT_KEY" == binary_checks.AC* ]] && [[ "$DOT_KEY" != *.*.* ]] && [ -n "$STDIN_VALUE" ]; then
             _bc_result="$(_report_field_set_extract_binary_result "$STDIN_VALUE" 2>/dev/null || true)"
+            # Flow-style fallback: extract result from {check: ..., result: yes} (single-item only)
+            # Pure bash string ops to avoid subprocess overhead (grep/sed → ~10ms savings on WSL2)
+            if [ -z "$_bc_result" ]; then
+                case "$STDIN_VALUE" in
+                    *result:*result:*) ;; # Multiple result fields: multi-item, skip fast path
+                    *result:*)
+                        _rfs_after="${STDIN_VALUE#*result:}"
+                        _rfs_after="${_rfs_after# }"
+                        case "$_rfs_after" in
+                            \"*) _rfs_after="${_rfs_after#\"}" ;;
+                        esac
+                        _rfs_after="${_rfs_after#\'}"
+                        # Extract value before first delimiter (comma, brace, quote, space)
+                        _rfs_val="${_rfs_after%%[, \}\"]*}"
+                        _rfs_val="${_rfs_val%%\'*}"
+                        case "$_rfs_val" in
+                            yes) _bc_result="yes" ;;
+                            no) _bc_result="no" ;;
+                        esac
+                        ;;
+                esac
+            fi
             if [ -n "$_bc_result" ]; then
                 tmp_file="${REPORT_PATH}.tmp.$$.$attempt"
                 rm -f "$tmp_file"
@@ -1298,37 +1320,31 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
                     fi
                     echo "[report_field_set] binary_checks保護: check項目をテンプレートから維持" >&2
                     echo "[report_field_set] $DOT_KEY.result = ${_bc_result:0:80}"
-                    _report_field_set_validate_or_restore
-                    exit $?
+                    exit 0
                 fi
                 rm -f "$tmp_file"
             fi
         fi
 
         # Multi-line stdin text → Python fallback
+        # Python path validates round-trip internally (yaml.safe_load reload)
         if [ "$USE_PYTHON" -eq 1 ]; then
             _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "-" "$STDIN_VALUE"
-            rc=$?
-            [ "$rc" -eq 0 ] && _report_field_set_validate_or_restore || exit $?
-            exit "$rc"
+            exit $?
         fi
 
         # Array index key (e.g., files_modified[0]) → Python fallback
         # awk経路はリテラルキーとして扱うため配列インデックスを正しく処理できない
         if [[ "$DOT_KEY" == *'['* ]]; then
             _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "$VALUE" "$STDIN_VALUE"
-            rc=$?
-            [ "$rc" -eq 0 ] && _report_field_set_validate_or_restore || exit $?
-            exit "$rc"
+            exit $?
         fi
 
         # JSON/YAML structure value (starts with [ or {) → Python fallback (GP-038)
         # awk経路は構造体をリテラル文字列として書くためYAML破壊の原因になる
         if [[ "$VALUE" == '['* ]] || [[ "$VALUE" == '{'* ]]; then
             _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "-" "$VALUE"
-            rc=$?
-            [ "$rc" -eq 0 ] && _report_field_set_validate_or_restore || exit $?
-            exit "$rc"
+            exit $?
         fi
 
         tmp_file="${REPORT_PATH}.tmp.$$.$attempt"
@@ -1376,9 +1392,7 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
                 # Block not found → Python fallback for new structure creation
                 rm -f "$tmp_file"
                 _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "$VALUE" ""
-                rc=$?
-                [ "$rc" -eq 0 ] && _report_field_set_validate_or_restore || exit $?
-                exit "$rc"
+                exit $?
             fi
         fi
 
@@ -1428,7 +1442,13 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
         if [ "$AUTO_COMPLETE_STATUS" -eq 1 ]; then
             echo "[report_field_set] status = completed (auto after verdict)"
         fi
-        _report_field_set_validate_or_restore
+        # Awk fast path: only validate YAML when value contains backslash.
+        # awk yaml_safe escapes '"' but not '\', so values with '\' can produce
+        # invalid YAML escape sequences (e.g. \q). Values without '\' are always safe.
+        # Python fallback paths validate unconditionally (yaml.dump round-trip risk).
+        if [[ "$VALUE" == *'\\'* ]]; then
+            _report_field_set_validate_or_restore
+        fi
 
     ) 200>"$LOCKFILE" && break
 
@@ -1485,7 +1505,30 @@ fi
 # 忍者がcheck="PASS"やresult=自由記述を書いた瞬間にフィードバック。
 # gateは事後(cmd完了時)。ここは即時検出。品質の起点を早くする。
 if [[ "$DOT_KEY" == binary_checks* ]]; then
-    _bc_post=$(REPORT_PATH="$REPORT_PATH" python3 -c "
+    # Per-AC result-only writes: awk auto-verdict (avoid Python startup ~80ms)
+    # Template check values are preserved by awk fast path; result is validated (yes/no only)
+    if [[ "$DOT_KEY" == binary_checks.AC* ]] && [[ "$DOT_KEY" != *.*.* ]]; then
+        _cur_verdict=$(awk '
+BEGIN { total=0; yes_c=0; no_c=0; empty_c=0; in_bc=0; cv="" }
+/^verdict:[[:space:]]/ { v=$0; sub(/^verdict:[[:space:]]*/, "", v); gsub(/["'"'"'[:space:]]/, "", v); cv=v }
+/^binary_checks:[[:space:]]*$/ { in_bc=1; next }
+in_bc && /^[^[:space:]]/ { in_bc=0 }
+in_bc && /[[:space:]]result:[[:space:]]/ {
+    v=$0; sub(/.*result:[[:space:]]*/, "", v); gsub(/["'"'"'[:space:]]/, "", v)
+    total++
+    if (v=="" || v=="null" || v=="None") empty_c++
+    else if (v=="yes") yes_c++
+    else if (v=="no") no_c++
+}
+END {
+    if (total==0) exit
+    if ((cv=="PASS" || cv=="PASS_NO_IMPROVEMENT") && no_c>0) print "INCONSISTENT"
+    else if ((cv=="" || cv=="null" || cv=="None") && empty_c==0 && no_c==0) print "AUTO_PASS"
+    else if ((cv=="" || cv=="null" || cv=="None") && no_c>0 && empty_c==0) print "AUTO_FAIL"
+}' "$REPORT_PATH")
+    else
+        # Full binary_checks write or per-item: full Python semantic check
+        _bc_post=$(REPORT_PATH="$REPORT_PATH" python3 -c "
 import yaml, os, sys
 rp = os.environ['REPORT_PATH']
 action = ''
@@ -1530,19 +1573,20 @@ print(f'ACTION:{action}')
 for issue in issues:
     print(issue)
 " 2>/dev/null) || true
-    _cur_verdict="${_bc_post%%$'\n'*}"
-    _cur_verdict="${_cur_verdict#ACTION:}"
-    if [[ "$_bc_post" == *$'\n'* ]]; then
-        _bc_check="${_bc_post#*$'\n'}"
-    else
-        _bc_check=""
-    fi
-    if [ -n "$_bc_check" ]; then
-        echo "" >&2
-        echo "⚠ binary_checks品質問題検出 ⚠" >&2
-        echo "$_bc_check" >&2
-        echo "FIX: check=「確認した内容」 result=\"yes\" or \"no\"" >&2
-        echo "例: bash scripts/report_field_set.sh $REPORT_PATH binary_checks.AC1 '[{check: \"変数が除去されたか\", result: \"yes\"}]'" >&2
+        _cur_verdict="${_bc_post%%$'\n'*}"
+        _cur_verdict="${_cur_verdict#ACTION:}"
+        if [[ "$_bc_post" == *$'\n'* ]]; then
+            _bc_check="${_bc_post#*$'\n'}"
+        else
+            _bc_check=""
+        fi
+        if [ -n "$_bc_check" ]; then
+            echo "" >&2
+            echo "⚠ binary_checks品質問題検出 ⚠" >&2
+            echo "$_bc_check" >&2
+            echo "FIX: check=「確認した内容」 result=\"yes\" or \"no\"" >&2
+            echo "例: bash scripts/report_field_set.sh $REPORT_PATH binary_checks.AC1 '[{check: \"変数が除去されたか\", result: \"yes\"}]'" >&2
+        fi
     fi
     # ★穴B/C対策: bc書込み後にverdictを自動再導出(矛盾状態を時間軸でも作れない)
     if [[ "$_cur_verdict" == "INCONSISTENT" ]]; then
@@ -1566,36 +1610,22 @@ fi
 _MEMORY_DB_INSERT_SCRIPT="$SCRIPT_DIR/scripts/memory_db_live_insert_async.py"
 if [ -f "$_MEMORY_DB_INSERT_SCRIPT" ] && [ -f "$REPORT_PATH" ]; then
     printf -v _rfs_ts '%(%Y-%m-%dT%H:%M:%SZ)T' -1
-    _rfs_agent=""
-    _rfs_parent_cmd=""
-    _rfs_verdict=""
-    if _rfs_yaml_out="$(awk '
-        BEGIN { worker_id = ""; parent_cmd = ""; verdict = "" }
-        /^[[:space:]]*worker_id:[[:space:]]*/ && worker_id == "" {
-            worker_id = $0
-            sub(/^[[:space:]]*worker_id:[[:space:]]*/, "", worker_id)
-            gsub(/^["'\'' ]+|["'\'' ]+$/, "", worker_id)
-        }
-        /^[[:space:]]*parent_cmd:[[:space:]]*/ && parent_cmd == "" {
-            parent_cmd = $0
-            sub(/^[[:space:]]*parent_cmd:[[:space:]]*/, "", parent_cmd)
-            gsub(/^["'\'' ]+|["'\'' ]+$/, "", parent_cmd)
-        }
-        /^[[:space:]]*verdict:[[:space:]]*/ && verdict == "" {
-            verdict = $0
-            sub(/^[[:space:]]*verdict:[[:space:]]*/, "", verdict)
-            gsub(/^["'\'' ]+|["'\'' ]+$/, "", verdict)
-        }
-        END {
-            print worker_id
-            print parent_cmd
-            print verdict
-        }
-    ' "$REPORT_PATH" 2>/dev/null)"; then
-        mapfile -t _rfs_fields <<< "$_rfs_yaml_out"
-        _rfs_agent="${_rfs_fields[0]:-}"
-        _rfs_parent_cmd="${_rfs_fields[1]:-}"
-        _rfs_verdict="${_rfs_fields[2]:-}"
+    # Extract agent/parent_cmd from filename via bash string ops (avoids awk subprocess).
+    # Standard report filename: {agent}_report_{parent_cmd}.yaml
+    _rfs_basename="${REPORT_PATH##*/}"
+    if [[ "$_rfs_basename" == *"_report_"* ]]; then
+        _rfs_agent="${_rfs_basename%%_report_*}"
+        _rfs_parent_cmd_tmp="${_rfs_basename#*_report_}"
+        _rfs_parent_cmd="${_rfs_parent_cmd_tmp%.yaml}"
+    else
+        _rfs_agent=""
+        _rfs_parent_cmd=""
+    fi
+    # Verdict is known only when we just wrote it; otherwise empty (DB stores partial record).
+    if [[ "$DOT_KEY" == "verdict" ]]; then
+        _rfs_verdict="$VALUE"
+    else
+        _rfs_verdict=""
     fi
     python3 "$_MEMORY_DB_INSERT_SCRIPT" report \
         --report-path "$REPORT_PATH" \
