@@ -6,8 +6,9 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+PROJECT_DIR="${_self%/scripts/shogun_lesson_ack.sh}"
 
 QUALITY_LOG_FILE="${SHOGUN_LESSON_ACK_QUALITY_LOG_FILE:-$PROJECT_DIR/logs/cmd_design_quality.yaml}"
 SHOGUN_LESSONS_FILE="${SHOGUN_LESSON_ACK_LESSONS_FILE:-$PROJECT_DIR/projects/infra/lessons_shogun.yaml}"
@@ -160,7 +161,7 @@ mkdir -p "$(dirname "$ACK_FILE")"
         echo "OK: ack already exists for $cmd_id -> $lesson_id"
         exit 0
     fi
-    timestamp="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    TZ=UTC printf -v timestamp '%(%Y-%m-%dT%H:%M:%SZ)T' -1
     {
         printf -- '- cmd_id: "%s"\n' "$cmd_id"
         printf '  lesson_id: "%s"\n' "$lesson_id"
