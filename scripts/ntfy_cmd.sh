@@ -59,6 +59,17 @@ trim_yaml_scalar() {
   printf '%s\n' "$value"
 }
 
+trim_yaml_scalar_v() {
+  local value="$1"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  value="${value%\"}"
+  value="${value#\"}"
+  value="${value%\'}"
+  value="${value#\'}"
+  _TRIMMED_YAML_SCALAR="$value"
+}
+
 if [ -f "$YAML_FILE" ]; then
   # Method 1: commands:リスト形式（id: cmd_XXX）
   RAW=""
@@ -69,7 +80,8 @@ if [ -f "$YAML_FILE" ]; then
     trimmed="${line#"${line%%[![:space:]]*}"}"
     [[ "$trimmed" == "- "* ]] && trimmed="${trimmed#- }"
     if [[ "$trimmed" == id:* ]]; then
-      value="$(trim_yaml_scalar "${trimmed#id:}")"
+      trim_yaml_scalar_v "${trimmed#id:}"
+      value="$_TRIMMED_YAML_SCALAR"
       if [ "$value" = "$CMD_ID" ]; then
         _watch_list=1
         _watch_key=0
@@ -86,20 +98,22 @@ if [ -f "$YAML_FILE" ]; then
     if [ "$_watch_list" = "1" ]; then
       _watch_count=$((_watch_count + 1))
       if [[ "$trimmed" == purpose:* ]]; then
-        RAW="$(trim_yaml_scalar "${trimmed#purpose:}")"
+        trim_yaml_scalar_v "${trimmed#purpose:}"
+        RAW="$_TRIMMED_YAML_SCALAR"
         break
       fi
       [ "$_watch_count" -lt 5 ] || _watch_list=0
     elif [ "$_watch_key" = "1" ]; then
       _watch_count=$((_watch_count + 1))
       if [[ "$trimmed" == purpose:* ]] || [[ "$trimmed" == title:* ]]; then
-        RAW="$(trim_yaml_scalar "${trimmed#*:}")"
+        trim_yaml_scalar_v "${trimmed#*:}"
+        RAW="$_TRIMMED_YAML_SCALAR"
         break
       fi
       [ "$_watch_count" -lt 5 ] || _watch_key=0
     fi
   done < "$YAML_FILE"
-  unset _watch_list _watch_key _watch_count trimmed value
+  unset _watch_list _watch_key _watch_count trimmed value _TRIMMED_YAML_SCALAR
 
   # Method 2: キー形式フォールバック（cmd_XXX: で始まる形式）
   # (bash loop above handles both formats)
@@ -124,29 +138,58 @@ fi
 
 # 軍師verdict取得（queue/inbox + archive/inboxのgunshi→karo msg）
 GUNSHI_VERDICT=""
-for src in "$SCRIPT_DIR/queue/inbox/karo.yaml" $(find "$SCRIPT_DIR/archive/inbox" -maxdepth 1 -name 'karo_*.yaml' -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -3 | cut -d' ' -f2); do
-  [ -f "$src" ] || continue
-  RAW_VERDICT=$(grep -B5 "from: gunshi" "$src" 2>/dev/null \
-    | grep "$CMD_ID" \
-    | grep -o 'verdict[: ]*[A-Z_]*' \
-    | sed 's/verdict[: ]*//' | tail -1)
-  if [ -n "$RAW_VERDICT" ]; then
-    GUNSHI_VERDICT="$RAW_VERDICT"
-    break
+_ntfy_cmd_sources=("$SCRIPT_DIR/queue/inbox/karo.yaml")
+if [ -d "$SCRIPT_DIR/archive/inbox" ]; then
+  _ntfy_cmd_archives=("$SCRIPT_DIR"/archive/inbox/karo_*.yaml)
+  if [ -e "${_ntfy_cmd_archives[0]}" ]; then
+    for ((_i=${#_ntfy_cmd_archives[@]}-1; _i>=0 && ${#_ntfy_cmd_sources[@]}<4; _i--)); do
+      _ntfy_cmd_sources+=("${_ntfy_cmd_archives[$_i]}")
+    done
   fi
+fi
+for src in "${_ntfy_cmd_sources[@]}"; do
+  [ -f "$src" ] || continue
+  _prev1=""; _prev2=""; _prev3=""; _prev4=""; _prev5=""
+  while IFS= read -r line || [ -n "$line" ]; do
+    if [[ "$line" == *"from: gunshi"* ]]; then
+      for _candidate in "$_prev1" "$_prev2" "$_prev3" "$_prev4" "$_prev5"; do
+        if [[ "$_candidate" == *"$CMD_ID"* && "$_candidate" =~ verdict[:\ ]*([A-Z_]+) ]]; then
+          GUNSHI_VERDICT="${BASH_REMATCH[1]}"
+        fi
+      done
+      [ -n "$GUNSHI_VERDICT" ] && break
+    fi
+    _prev5="$_prev4"; _prev4="$_prev3"; _prev3="$_prev2"; _prev2="$_prev1"; _prev1="$line"
+  done < "$src"
+  [ -n "$GUNSHI_VERDICT" ] && break
 done
+unset _ntfy_cmd_sources _ntfy_cmd_archives _i _prev1 _prev2 _prev3 _prev4 _prev5 _candidate
 
 # Gist URL取得（current_projectのgist_urlをprojects.yamlから解決）
 GIST_URL=""
 PROJECTS_YAML="$SCRIPT_DIR/config/projects.yaml"
 if [ -f "$PROJECTS_YAML" ]; then
-  CURRENT_PJ=$(grep '^current_project:' "$PROJECTS_YAML" 2>/dev/null | awk '{print $2}')
-  if [ -n "$CURRENT_PJ" ]; then
-    GIST_URL=$(awk -v id="$CURRENT_PJ" '
-      /^[[:space:]]+- id:/ { found=($NF == id) }
-      found && /gist_url:/ { gsub(/.*gist_url:[[:space:]]*"?|"?[[:space:]]*$/, ""); print; exit }
-    ' "$PROJECTS_YAML" 2>/dev/null)
-  fi
+  CURRENT_PJ=""
+  _project_found=0
+  while IFS= read -r line || [ -n "$line" ]; do
+    trimmed="${line#"${line%%[![:space:]]*}"}"
+    if [[ "$trimmed" == current_project:* ]]; then
+      trim_yaml_scalar_v "${trimmed#current_project:}"
+      CURRENT_PJ="$_TRIMMED_YAML_SCALAR"
+      continue
+    fi
+    if [[ "$trimmed" == "- id:"* ]]; then
+      trim_yaml_scalar_v "${trimmed#- id:}"
+      [ "$_TRIMMED_YAML_SCALAR" = "$CURRENT_PJ" ] && _project_found=1 || _project_found=0
+      continue
+    fi
+    if [ "$_project_found" = "1" ] && [[ "$trimmed" == gist_url:* ]]; then
+      trim_yaml_scalar_v "${trimmed#gist_url:}"
+      GIST_URL="$_TRIMMED_YAML_SCALAR"
+      break
+    fi
+  done < "$PROJECTS_YAML"
+  unset CURRENT_PJ _project_found trimmed _TRIMMED_YAML_SCALAR
 fi
 
 # streak付加（MESSAGE中にGATE CLEARがある場合のみ）
