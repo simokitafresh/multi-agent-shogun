@@ -58,6 +58,7 @@ run_gate() {
     run run_gate
 
     [ "$status" -eq 0 ]
+    [[ "$output" == *"warn_bytes=5368709120"* ]]
     [[ "$output" == *"candidate候補生成件数: 0"* ]]
     [[ "$output" == *"state遷移件数(state!=raw): 1"* ]]
     [[ "$output" == *"STATUS: PASS"* ]]

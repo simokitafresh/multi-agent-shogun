@@ -108,7 +108,8 @@ BULLETIN_ARCHIVE_INTERVAL=3600  # 掲示板archive間隔（秒）— 1時間
 LAST_BULLETIN_ARCHIVE=0         # 掲示板archive最終実行時刻（epoch秒）
 MEMORY_DB_LIVE_DRAIN_INTERVAL=${MEMORY_DB_LIVE_DRAIN_INTERVAL:-60}  # live insert退避queue drain間隔（秒）
 LAST_MEMORY_DB_LIVE_DRAIN=0     # memory_db_live_insert_queue最終drain時刻（epoch秒）
-THREE_LAYER_MAINTENANCE_INTERVAL=${THREE_LAYER_MAINTENANCE_INTERVAL:-21600}  # 三層記憶tmp cleanup+dry-run候補抽出間隔（秒）— 6時間
+THREE_LAYER_MAINTENANCE_INTERVAL=${THREE_LAYER_MAINTENANCE_INTERVAL:-3600}  # 三層記憶tmp cleanup+dry-run候補抽出間隔（秒）— 1時間
+THREE_LAYER_MAINTENANCE_TMP_TTL_HOURS=${THREE_LAYER_MAINTENANCE_TMP_TTL_HOURS:-4}
 THREE_LAYER_MAINTENANCE_TIMEOUT=${THREE_LAYER_MAINTENANCE_TIMEOUT:-120}
 THREE_LAYER_MAINTENANCE_STATE_FILE="$STATE_DIR/shogun_three_layer_maintenance.last"
 THREE_LAYER_MAINTENANCE_LOG="$SCRIPT_DIR/logs/three_layer_maintenance.log"
@@ -4284,7 +4285,7 @@ check_three_layer_maintenance() {
     cleanup_script="$SCRIPT_DIR/scripts/cleanup_three_layer_tmp.sh"
     if [ -f "$cleanup_script" ]; then
         log "THREE-LAYER-MAINTENANCE: tmp cleanup start"
-        if timeout "$maintenance_timeout" bash "$cleanup_script" --apply --ttl-hours 6 >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1; then
+        if timeout "$maintenance_timeout" bash "$cleanup_script" --apply --ttl-hours "${THREE_LAYER_MAINTENANCE_TMP_TTL_HOURS:-4}" >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1; then
             log "THREE-LAYER-MAINTENANCE: tmp cleanup done"
         else
             log "THREE-LAYER-MAINTENANCE: tmp cleanup failed (non-blocking)"
@@ -5027,7 +5028,7 @@ while true; do
     # ═══ effectiveness低下教訓deprecate候補の日次抽出（cmd_2757） ═══
     check_lesson_deprecation_candidates
 
-    # ═══ 三層記憶tmp cleanup + dry-run候補抽出（日次 cmd_3175） ═══
+    # ═══ 三層記憶tmp cleanup + dry-run候補抽出（60分間隔） ═══
     check_three_layer_maintenance
 
     # ═══ scripts/主要スクリプト肥大化チェック（cmd_2759） ═══

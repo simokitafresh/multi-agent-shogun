@@ -4,7 +4,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 db_path="${SHOGUN_MEMORY_DB:-$repo_root/data/multi_agent_shogun_memory.db}"
-warn_bytes="${SHOGUN_THREE_LAYER_CACHE_WARN_BYTES:-10737418240}"
+warn_bytes="${SHOGUN_THREE_LAYER_CACHE_WARN_BYTES:-5368709120}"
 cleanup_script="$repo_root/scripts/cleanup_three_layer_tmp.sh"
 overall="PASS"
 
