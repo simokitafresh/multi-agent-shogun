@@ -1844,16 +1844,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T09:35:00"
   - script_path: "scripts/lib/pre_bash_combined_guard.sh"
-    status: assigned
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 92
+    after_real_ms: 63
+    real_measurement_command: "source scripts/lib/pre_bash_combined_guard.sh; pre_bash_combined_eval_command 'git reset --hard HEAD' \"/mnt/c/tools/multi-agent-shogun\" saizo >/dev/null"
+    test_result: "bash_n_pass;scripts/hooks/test_hooks.sh 80/80 PASS SKIP=0;before_ms_values=87,103,118,73,92;after_ms_values=77,74,59,63,60"
+    commit: "3127f0e44b46b1038ceb637f05d0625645b99cbe"
     assigned_to: "saizo"
-    updated_at: "2026-06-07T09:22:58"
+    updated_at: "2026-06-07T09:28:18"
   - script_path: "scripts/lib/safe_rm.sh"
     status: pending
     before_ms: 16
