@@ -100,6 +100,7 @@ run_semantic_quality_after_alias_change() {
     flock -w 10 200 || { echo "ERROR: lock timeout: $lock_path" >&2; exit 1; }
     changed_flag="$(
     python3 - "$source_type" "$payload_json" "$index_path" "$insight_write" <<'PY'
+import hashlib
 import json
 import math
 import os
@@ -268,7 +269,8 @@ def propagate_memory_db_concept_tags(concepts):
     # TTL cache: skip if last propagation was within 300s (avoids ~17s SQLite/NTFS per call)
     _ttl = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_TTL", "300"))
     if _ttl > 0:
-        _cache = Path(f"/tmp/shogun_tag_propagation_ttl_{memory_db_path.name}")
+        _db_key = hashlib.md5(str(memory_db_path.resolve()).encode()).hexdigest()[:8]
+        _cache = Path(f"/tmp/shogun_tag_propagation_ttl_{_db_key}")
         try:
             if _cache.exists() and (time.time() - _cache.stat().st_mtime) < _ttl:
                 return
