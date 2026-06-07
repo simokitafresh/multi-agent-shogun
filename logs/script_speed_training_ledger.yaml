@@ -1987,16 +1987,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T10:06:01"
   - script_path: "scripts/memory_db_init.sh"
-    status: assigned
+    status: completed
     before_ms: 13
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 13
+    before_real_ms: 585.849
+    after_real_ms: 571.947
+    real_measurement_command: "python3 30x: temp archive+DB; bash scripts/memory_db_init.sh --archive-dir <tmp>/archive --db <tmp>/data/memory.db --lord-ruling-cache <tmp>/data/cache.db; median_ms"
+    test_result: "bash_n_pass;help_pass;test_memory_db_bats_40_pass;before_585.849_after_571.947;SKIP=0"
+    commit: "ea2efae3a"
     assigned_to: "hayate"
-    updated_at: "2026-06-07T10:11:43"
+    updated_at: "2026-06-07T10:22:00"
   - script_path: "scripts/memory_db_query.sh"
     status: assigned
     before_ms: 16
