@@ -114,7 +114,7 @@ fi
 - メッセージは固定文字列 + `${AGENT_ID}`（tmux属性値: kagemaru等）
 - 動的コンテンツ（ユーザー入力・ファイル内容）を引数に使用していない
 - inbox_write.sh の `inbox_yaml_emit_field` がシングルクォートをエスケープしてYAML書き込み
-- → **脆弱性なし**
+- → **脆弱性なし**（[[test_stop_lint_gate]]参照）
 
 ---
 
@@ -122,7 +122,7 @@ fi
 
 ### テスト条件
 
-特殊文字を含むinboxを用いて stop_check_inbox.sh の処理パスを検証。
+特殊文字を含むinboxを用いて stop_check_inbox.sh の処理パスを検証（[[test_stop_check_inbox]]）。
 
 ```yaml
 content: "特殊文字テスト: シングルクォート' + ダブルクォート\" + バックスラッシュ\\ + $HOME変数 + `バックティック`"
@@ -166,3 +166,4 @@ content: "特殊文字テスト: シングルクォート' + ダブルクォー�
   > 同ファイルボトルネック特定: "hook 実行 | ~100-200ms | payload解析+inbox読込+python3"
 - stop-lint L3仕様: [[cmd_2065_stop_lint_l3_spec_20260418]]
 - CoDD仕様(stop-lint-gate): [[codd_spec_stop_lint_gate_20260416]]
+- cmd_1755シリーズ guard比較研究: [[cmd_1755_guard_comparison]]
