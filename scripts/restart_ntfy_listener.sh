@@ -16,7 +16,8 @@ mkdir -p "$LOG_DIR"
 echo "[$(date)] === ntfy_listener restart initiated ==="
 
 # --- Step 1: 旧プロセスの特定と停止 ---
-OLD_PIDS=$(pgrep -f "ntfy_listener.sh" 2>/dev/null || true)
+# フルパスでマッチ: restart_ntfy_listener.sh への誤マッチを防ぐ
+OLD_PIDS=$(pgrep -f "$LISTENER_SCRIPT" 2>/dev/null || true)
 
 if [ -n "$OLD_PIDS" ]; then
     echo "[$(date)] Found existing ntfy_listener process(es): $OLD_PIDS"
@@ -41,7 +42,7 @@ if [ -n "$OLD_PIDS" ]; then
     # 停止完了を待機(最大5秒)
     WAIT_COUNT=0
     while [ "$WAIT_COUNT" -lt 10 ]; do
-        REMAINING=$(pgrep -f "ntfy_listener.sh" 2>/dev/null | grep -v "^$$\$" || true)
+        REMAINING=$(pgrep -f "$LISTENER_SCRIPT" 2>/dev/null || true)
         if [ -z "$REMAINING" ]; then
             echo "[$(date)] Old process(es) terminated successfully"
             break
@@ -50,7 +51,7 @@ if [ -n "$OLD_PIDS" ]; then
         WAIT_COUNT=$((WAIT_COUNT + 1))
     done
 
-    if [ -n "$(pgrep -f "ntfy_listener.sh" 2>/dev/null | grep -v "^$$\$" || true)" ]; then
+    if [ -n "$(pgrep -f "$LISTENER_SCRIPT" 2>/dev/null || true)" ]; then
         echo "[$(date)] WARNING: Old process still running after 5s, sending SIGKILL"
         for pid in $OLD_PIDS; do
             [ "$pid" -eq "$$" ] && continue
@@ -82,17 +83,23 @@ NEW_PID=$!
 echo "[$(date)] Launched with PID: $NEW_PID"
 
 # --- Step 4: 起動確認(curlストリーム接続の存在チェック) ---
-sleep 3
-
+# ポーリング: curlが接続されたら即終了(最大3秒)
 LISTENER_ALIVE=0
-if kill -0 "$NEW_PID" 2>/dev/null; then
-    LISTENER_ALIVE=1
-fi
-
 CURL_FOUND=0
-if pgrep -f "curl.*ntfy.sh/.*/json" >/dev/null 2>&1; then
-    CURL_FOUND=1
-fi
+POLL_COUNT=0
+while [ "$POLL_COUNT" -lt 6 ]; do
+    if kill -0 "$NEW_PID" 2>/dev/null; then
+        LISTENER_ALIVE=1
+    fi
+    if pgrep -f "curl.*ntfy.sh/.*/json" >/dev/null 2>&1; then
+        CURL_FOUND=1
+    fi
+    if [ "$LISTENER_ALIVE" -eq 1 ] && [ "$CURL_FOUND" -eq 1 ]; then
+        break
+    fi
+    sleep 0.5
+    POLL_COUNT=$((POLL_COUNT + 1))
+done
 
 echo ""
 echo "=== Restart Result ==="

@@ -2328,16 +2328,16 @@ entries:
     assigned_to: "saizo"
     updated_at: ""
   - script_path: "scripts/restart_ntfy_listener.sh"
-    status: in_progress
+    status: done
     before_ms: 15
     after_ms: ""
     before_real_ms: 9243
-    after_real_ms: ""
+    after_real_ms: 614
     real_measurement_command: "bash /tmp/measure_restart.sh (ntfy_listener存在あり; ラッパー経由でpgrep自己マッチ回避)"
-    test_result: "no_test_mapping"
+    test_result: "no_test_mapping (PASS)"
     commit: ""
     assigned_to: kotaro
-    updated_at: "2026-06-07T16:10:25"
+    updated_at: "2026-06-07T16:12:46"
   - script_path: "scripts/restart_watchers.sh"
     status: pending
     before_ms: 17
