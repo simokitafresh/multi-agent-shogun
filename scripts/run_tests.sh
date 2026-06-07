@@ -22,13 +22,13 @@ bats_source_fingerprint() {
         printf '%s\n' "$BATS_SOURCE_FINGERPRINT"
         return 0
     fi
-    (
-        cd "$REPO_ROOT"
-        git ls-files scripts lib tests/helpers 2>/dev/null \
-            | grep -v '^scripts/run_tests.sh$' \
-            | sort \
-            | xargs -r sha256sum
-    ) | sha256sum | awk '{print $1}'
+    # git index object hashes: reads git's in-memory index (no NTFS file I/O).
+    # Captures committed+staged changes (~30x faster than sha256sum of 288 files).
+    # Unstaged-only changes not captured; use BATS_CACHE=0 or set
+    # BATS_SOURCE_FINGERPRINT manually when running against uncommitted edits.
+    git -C "$REPO_ROOT" ls-files --format='%(objectname)' \
+        -- scripts lib tests/helpers ':!scripts/run_tests.sh' 2>/dev/null \
+        | sha256sum | awk '{print $1}'
 }
 
 bats_cache_key() {
