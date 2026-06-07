@@ -3,6 +3,7 @@
 調査者: kotaro
 対象: backend/app/api/portfolios.py L63-152 + backend/app/schemas/models.py
 注記: 参考ファイル `docs/research/cmd_1751_admin_validation.md` は存在しなかった（L558: ファイル不在を報告して作業継続）
+関連: [[dm-signal-core]] (`context/dm-signal-core.md`) · [[dm-signal]] (`context/dm-signal.md`)
 
 ---
 
