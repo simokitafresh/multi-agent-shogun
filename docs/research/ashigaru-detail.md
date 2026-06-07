@@ -271,6 +271,9 @@ parity_data_source:
 
 **Required fields**: worker_id, task_id, parent_cmd, status, timestamp, ac_version_read, result, skill_candidate, lesson_candidate, decision_candidate, lessons_useful. `how_it_works` is additionally required for implement / impl tasks only.
 
+→ 検証: [[gate_report_format]] (`scripts/gates/gate_report_format.sh`) — 報告YAML提出前に必ず実行。家老の手動フォーマット修正作業を根絶するために設計された自動検証ゲート。
+→ verdict 自動導出は [[verdict-check]] (`skills/verdict-check/SKILL.md`) を参照（binary_checks 全 yes → PASS、1つでも no → FAIL）。手動判断の誤verdict を根絶する。
+
 ## §8 報告具体性ルール（「名前をつけろ」）
 
 **偵察報告・実装報告の両方で、抽象表現を禁止する。**
@@ -305,6 +308,7 @@ parity_data_source:
 - 悪い例: `"UUIDが違っていた"` ← 原因も対策も不明
 
 **project** — lesson_candidateにproject:フィールドを必ず含めよ。auto_draft_lesson.shが登録先を判定する。
+→ lesson_candidate テンプレート進化の実証データ（R1-R6 一発PASS率向上）は [[training-cycle]] (`context/training-cycle.md`) §5 を参照。Round 6で 0%→100% 到達までの改善パターンが「なぜこのフォーマットか」の根拠。
 
 ### Lessons Field Guidelines
 
