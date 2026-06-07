@@ -11,7 +11,10 @@
 # =============================================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# string ops instead of $(cd) subshells (~11ms savings on WSL2)
+_um_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_um_self" != /* ]] && _um_self="$PWD/$_um_self"
+SCRIPT_DIR="${_um_self%/usage_monitor.sh}"
 MCAS_COMMON_LOADED=false
 
 load_mcas_common() {
@@ -52,8 +55,8 @@ CODEX_BUDGET_7D="${CODEX_BUDGET_7D:-1600000000}"
 fetch_usage() {
     local token="$1"
     local response
-    local ua
-    ua="claude-code/$(claude --version 2>/dev/null | head -1 | sed 's/ .*//' || echo '2.0.0')"
+    # skip claude --version subprocess (~192ms on WSL2); UA version is cosmetic
+    local ua="claude-code"
     response=$(curl -s --max-time "$MCAS_API_TIMEOUT" \
         -H "Authorization: Bearer ${token}" \
         -H "anthropic-beta: oauth-2025-04-20" \
@@ -98,16 +101,16 @@ format_reset_time() {
         return
     fi
     local epoch
+    # one date subprocess for ISO→epoch; remaining uses bash printf builtins (~7 date calls saved)
     epoch=$(date -d "$iso_time" +%s 2>/dev/null) || { echo "--"; return; }
-    local today
-    today=$(date +%Y-%m-%d)
-    local reset_date
-    reset_date=$(date -d "@$epoch" +%Y-%m-%d 2>/dev/null) || { echo "--"; return; }
 
-    local hour minute ampm
-    hour=$(date -d "@$epoch" +%-I)
-    minute=$(date -d "@$epoch" +%M)
-    ampm=$(date -d "@$epoch" +%P)  # lowercase am/pm
+    local today reset_date hour minute ampm
+    printf -v today     '%(%Y-%m-%d)T' -1      # bash builtin: current date, no subprocess
+    printf -v reset_date '%(%Y-%m-%d)T' "$epoch"
+    printf -v hour      '%(%I)T' "$epoch"       # 12-hour with leading zero
+    hour="${hour#0}"                             # %-I equivalent: strip leading zero
+    printf -v minute    '%(%M)T' "$epoch"
+    printf -v ampm      '%(%P)T' "$epoch"       # lowercase am/pm
 
     local time_str
     if [[ "$minute" == "00" ]]; then
@@ -120,8 +123,10 @@ format_reset_time() {
         echo "$time_str"
     else
         local month day
-        month=$(date -d "@$epoch" +%-m)
-        day=$(date -d "@$epoch" +%-d)
+        printf -v month '%(%m)T' "$epoch"       # %-m equivalent
+        month="${month#0}"
+        printf -v day   '%(%d)T' "$epoch"       # %-d equivalent
+        day="${day#0}"
         echo "${month}/${day} ${time_str}"
     fi
 }
