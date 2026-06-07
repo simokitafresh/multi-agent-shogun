@@ -36,6 +36,8 @@ _AGENT_CONFIG_CACHE="/tmp/shogun_agent_config_${_ac_cache_key}.cache"
 _AGENT_CONFIG_RAW=""
 _AGENT_CONFIG_NINJA_NAMES=""
 _AGENT_CONFIG_ALL_NAMES=""
+_AGENT_CONFIG_LAYOUT_COL1_WIDTH_PCT=""
+_AGENT_CONFIG_LAYOUT_KARO_HEIGHT=""
 # Associative arrays for O(1) per-agent lookups (eliminates echo|awk spawns)
 declare -A _AGENT_CONFIG_ROLE_MAP=()
 declare -A _AGENT_CONFIG_JP_MAP=()
@@ -49,7 +51,7 @@ _agent_config_load() {
     if [[ -f "$_AGENT_CONFIG_CACHE" && "$_AGENT_CONFIG_CACHE" -nt "$_AGENT_CONFIG_SETTINGS" ]]; then
         # shellcheck source=/dev/null
         if source "$_AGENT_CONFIG_CACHE" 2>/dev/null \
-            && [[ "${_AGENT_CONFIG_CACHE_VERSION:-}" == "3" ]] \
+            && [[ "${_AGENT_CONFIG_CACHE_VERSION:-}" == "5" ]] \
             && [[ -n "$_AGENT_CONFIG_RAW" ]]; then
             return 0
         fi
@@ -96,23 +98,43 @@ _agent_config_load() {
 
     _AGENT_CONFIG_NINJA_NAMES="${ninjas[*]}"
     _AGENT_CONFIG_ALL_NAMES="${all_names[*]}"
+
+    local _ac_layout
+    _ac_layout=$(awk '
+        /^layout:[[:space:]]*$/ { in_layout=1; next }
+        in_layout && /^[^[:space:]]/ { in_layout=0 }
+        in_layout && /^[[:space:]]+col1_width_pct:/ {
+            v = $0; sub(/.*col1_width_pct:[[:space:]]*/, "", v); gsub(/[[:space:]\r]+$/, "", v); col1 = v
+        }
+        in_layout && /^[[:space:]]+karo_height:/ {
+            v = $0; sub(/.*karo_height:[[:space:]]*/, "", v); gsub(/[[:space:]\r]+$/, "", v); karo = v
+        }
+        END {
+            print (col1 != "" ? col1 : "38") "\t" (karo != "" ? karo : "24")
+        }
+    ' "$_AGENT_CONFIG_SETTINGS")
+    IFS=$'\t' read -r _AGENT_CONFIG_LAYOUT_COL1_WIDTH_PCT _AGENT_CONFIG_LAYOUT_KARO_HEIGHT <<< "$_ac_layout"
+
     {
-        printf '_AGENT_CONFIG_CACHE_VERSION=3\n'
+        printf '_AGENT_CONFIG_CACHE_VERSION=5\n'
         printf '_AGENT_CONFIG_RAW=%q\n' "$_AGENT_CONFIG_RAW"
         printf '_AGENT_CONFIG_NINJA_NAMES=%q\n' "$_AGENT_CONFIG_NINJA_NAMES"
         printf '_AGENT_CONFIG_ALL_NAMES=%q\n' "$_AGENT_CONFIG_ALL_NAMES"
-        printf '_AGENT_CONFIG_ROLE_MAP=('
-        local _ac_key
-        for _ac_key in "${!_AGENT_CONFIG_ROLE_MAP[@]}"; do
-            printf '[%q]=%q ' "$_ac_key" "${_AGENT_CONFIG_ROLE_MAP[$_ac_key]}"
-        done
-        printf ')\n'
-        printf '_AGENT_CONFIG_JP_MAP=('
-        for _ac_key in "${!_AGENT_CONFIG_JP_MAP[@]}"; do
-            printf '[%q]=%q ' "$_ac_key" "${_AGENT_CONFIG_JP_MAP[$_ac_key]}"
-        done
-        printf ')\n'
+        printf '_AGENT_CONFIG_LAYOUT_COL1_WIDTH_PCT=%q\n' "$_AGENT_CONFIG_LAYOUT_COL1_WIDTH_PCT"
+        printf '_AGENT_CONFIG_LAYOUT_KARO_HEIGHT=%q\n' "$_AGENT_CONFIG_LAYOUT_KARO_HEIGHT"
     } > "$_AGENT_CONFIG_CACHE" 2>/dev/null || true
+}
+
+_agent_config_build_maps() {
+    if ((${#_AGENT_CONFIG_ROLE_MAP[@]} > 0)); then
+        return 0
+    fi
+    _agent_config_load
+    while IFS=$'\t' read -r _ac_name _ac_role _ac_jp; do
+        [[ -z "$_ac_name" ]] && continue
+        _AGENT_CONFIG_ROLE_MAP["$_ac_name"]="$_ac_role"
+        _AGENT_CONFIG_JP_MAP["$_ac_name"]="${_ac_jp:-$_ac_name}"
+    done <<< "$_AGENT_CONFIG_RAW"
 }
 
 get_ninja_names() {
@@ -131,7 +153,7 @@ get_agent_role() {
         echo "karo"
         return 0
     fi
-    _agent_config_load
+    _agent_config_build_maps
     echo "${_AGENT_CONFIG_ROLE_MAP[$name]:-ninja}"
 }
 
@@ -141,7 +163,7 @@ get_japanese_name() {
         echo "家老"
         return 0
     fi
-    _agent_config_load
+    _agent_config_build_maps
     echo "${_AGENT_CONFIG_JP_MAP[$name]:-$name}"
 }
 
@@ -151,13 +173,11 @@ get_allowed_targets() {
 }
 
 get_layout_col1_width_pct() {
-    local val
-    val=$(awk '/^layout:/{f=1;next} f && /col1_width_pct:/{sub(/.*col1_width_pct:[[:space:]]*/,""); gsub(/[[:space:]]+$/,""); print; exit}' "$_AGENT_CONFIG_SETTINGS")
-    echo "${val:-38}"
+    _agent_config_load
+    echo "${_AGENT_CONFIG_LAYOUT_COL1_WIDTH_PCT:-38}"
 }
 
 get_layout_karo_height() {
-    local val
-    val=$(awk '/^layout:/{f=1;next} f && /karo_height:/{sub(/.*karo_height:[[:space:]]*/,""); gsub(/[[:space:]]+$/,""); print; exit}' "$_AGENT_CONFIG_SETTINGS")
-    echo "${val:-24}"
+    _agent_config_load
+    echo "${_AGENT_CONFIG_LAYOUT_KARO_HEIGHT:-24}"
 }

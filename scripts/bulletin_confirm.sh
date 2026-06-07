@@ -97,6 +97,8 @@ def parse_bulletin(path):
 def default_confirm_agents():
     agents = ["shogun", "karo"]
     in_agents = False
+    if not os.path.exists(settings_file):
+        return ["shogun", "karo", "gunshi", "hayate", "kagemaru", "hanzo", "saizo", "kotaro", "tobisaru"]
     with open(settings_file, encoding="utf-8") as fh:
         for line in fh:
             if line.startswith("  agents:"):
