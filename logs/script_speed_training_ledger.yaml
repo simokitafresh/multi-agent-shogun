@@ -1195,16 +1195,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T05:49:30"
   - script_path: "scripts/hooks/git-pre-commit.sh"
-    status: assigned
+    status: completed
     before_ms: 16
     after_ms: 16
-    before_real_ms: 405
-    after_real_ms: ""
-    real_measurement_command: "time bash scripts/hooks/git-pre-commit.sh (no staged files)"
-    test_result: "bash_n PASS; no batsfile; PASS_NO_IMPROVEMENT(WSL2 git diff cost dominates)"
-    commit: ""
+    before_real_ms: 650
+    after_real_ms: 590
+    real_measurement_command: "time bash scripts/hooks/git-pre-commit.sh (no staged files); median of 5 runs"
+    test_result: "bash_n_PASS;bats_test_git_pre_commit_9_pass_0_skip;before_650_after_590"
+    commit: "04a710483761799ed7c9f140615428dc2a3c88be"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T10:49:45"
+    updated_at: "2026-06-07T10:54:46"
   - script_path: "scripts/hooks/pre-bash-report-deny.sh"
     status: completed
     before_ms: 6
