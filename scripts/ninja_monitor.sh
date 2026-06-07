@@ -3623,10 +3623,18 @@ write_karo_snapshot() {
                             _ctx="${_ctx_num}%"
                         fi
                     fi
-                    # モデル短縮名を取得（@model_name未設定時はsettings.yamlのmodel_nameへフォールバック）
+                    # モデル短縮名を取得（実際のCLI起動コマンドから検出。設定値ではなく実態）
                     local _model_name="" _model_short="?"
                     if [ -n "$_pane_target" ]; then
-                        _model_name=$(tmux show-options -p -t "$_pane_target" -v @model_name 2>/dev/null || echo "")
+                        local _start_cmd
+                        _start_cmd=$(tmux display-message -t "$_pane_target" -p '#{pane_start_command}' 2>/dev/null || echo "")
+                        if [[ "$_start_cmd" == *"--model "* ]]; then
+                            _model_name=$(echo "$_start_cmd" | grep -oP '(?<=--model )\S+' || echo "")
+                        elif [[ "$_start_cmd" == *claude* ]]; then
+                            _model_name="opus"
+                        elif [[ "$_start_cmd" == *codex* ]]; then
+                            _model_name="gpt"
+                        fi
                     fi
                     if [ -z "$_model_name" ]; then
                         _model_name=$(get_model_display_name "$name" 2>/dev/null || echo "")
