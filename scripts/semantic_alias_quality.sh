@@ -54,10 +54,26 @@ import re
 import sys
 from pathlib import Path
 
+import os as _os
+
 index_path = Path(sys.argv[1])
 root = Path(sys.argv[2])
 top_n = int(sys.argv[3])
 select_file = sys.argv[4].lower() == "true"
+
+# scripts/下の存在ファイルをset化(is_file() x113 → scandir 1回)
+_scripts_dir = root / "scripts"
+_scripts_files: set = set()
+try:
+    for _e in _os.scandir(_scripts_dir):
+        if _e.is_file(follow_symlinks=False):
+            _scripts_files.add("scripts/" + _e.name)
+        elif _e.is_dir(follow_symlinks=False):
+            for _sub in _os.scandir(_e.path):
+                if _sub.is_file(follow_symlinks=False):
+                    _scripts_files.add("scripts/" + _e.name + "/" + _sub.name)
+except OSError:
+    pass
 
 text = index_path.read_text(encoding="utf-8", errors="replace")
 sections = re.split(r"(?m)^##\s+", text)[1:]
@@ -108,7 +124,7 @@ for raw in sections:
             rel = candidate.relative_to(root)
         except ValueError:
             continue
-        if rel.parts and rel.parts[0] == "scripts" and candidate.is_file():
+        if rel.parts and rel.parts[0] == "scripts" and str(rel) in _scripts_files:
             existing_scripts.append(str(rel))
 
     rows.append(
