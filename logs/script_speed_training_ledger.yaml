@@ -1822,7 +1822,7 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T09:17:05"
   - script_path: "scripts/lib/pane_format.sh"
-    status: completed
+    status: assigned
     before_ms: 14
     after_ms: 14
     before_real_ms: 24.565
@@ -1831,7 +1831,7 @@ entries:
     test_result: "bash_n_pass;reset_layout_and_shutsujin_bash_n_pass;source_placeholders_ok;before_24.565_after_16.634;SKIP=0"
     commit: "3fdb92a06"
     assigned_to: "hayate"
-    updated_at: "2026-06-07T09:31:00"
+    updated_at: "2026-06-07T09:25:35"
   - script_path: "scripts/lib/pane_lookup.sh"
     status: completed
     before_ms: 15
@@ -1855,16 +1855,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T09:28:18"
   - script_path: "scripts/lib/safe_rm.sh"
-    status: pending
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 51
+    after_real_ms: 44
+    real_measurement_command: "bash -c '. scripts/lib/safe_rm.sh; safe_rm /mnt/c/tools/multi-agent-shogun/nonexistent_xyz 2>/dev/null; true' (10-run median)"
+    test_result: "bash -n PASS; functional 3-case test PASS (in-tree/outside/no-args)"
+    commit: "087783a70"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T09:26:37"
   - script_path: "scripts/lib/script_update.sh"
     status: pending
     before_ms: 15
