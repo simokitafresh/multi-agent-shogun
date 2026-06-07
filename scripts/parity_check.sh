@@ -20,6 +20,21 @@ print_usage() {
     echo "       bash scripts/parity_check.sh --all"
 }
 
+# GP-XXX4: 早期終了ガード — Python heredoc定義(~300行)前に共通fast-pathを処理
+# PARITY_CHECK_LIB_ONLY=1時はソース経由のため$# > 0 (テストがargs付きでsource)→pass-through
+if [[ "${PARITY_CHECK_LIB_ONLY:-0}" != "1" ]]; then
+    if [[ $# -eq 0 ]]; then
+        print_usage; exit 1
+    fi
+    for arg in "$@"; do
+        case "$arg" in
+            -h|--help)
+                print_usage; exit 0
+                ;;
+        esac
+    done
+fi
+
 is_help_request() {
     local arg
     for arg in "$@"; do
@@ -48,16 +63,6 @@ load_database_url() {
         }
     ' "$env_path"
 }
-
-# GP-XXX4: 早期終了ガード — Python heredoc定義(~300行)前に共通fast-pathを処理
-# PARITY_CHECK_LIB_ONLY=1時はソース経由のため$# > 0 (テストがargs付きでsource)→pass-through
-if [[ "${PARITY_CHECK_LIB_ONLY:-0}" != "1" ]]; then
-    if [[ $# -eq 0 ]]; then
-        print_usage; exit 1
-    elif [[ "$1" == "-h" || "$1" == "--help" ]]; then
-        print_usage; exit 0
-    fi
-fi
 
 run_parity_check() {
     if [[ $# -eq 0 ]]; then
