@@ -781,6 +781,22 @@ if [ -f "$_inbox_file" ] && [ -f "$REVIEW_LOG" ]; then
     fi
 fi
 
+# --- L6: 利他洗脳監視 — 将軍action_required未対応検出 (殿厳命2026-06-08) ---
+# 掲示板のaction_required+status=openを検出し、軍師がフォローアップを促す
+_bulletin="$REPO_ROOT/queue/bulletin_board.yaml"
+if [ -f "$_bulletin" ]; then
+    _open_actions=$(awk '
+        /action_type:.*action_required/ { ar=1 }
+        ar && /status:.*open/ { count++; ar=0 }
+        END { print count+0 }
+    ' "$_bulletin" 2>/dev/null)
+    if [ "${_open_actions:-0}" -gt 3 ]; then
+        echo "WARN(L6-利他): 掲示板action_required未対応${_open_actions}件。将軍に先送り(洗脳#5)の可能性あり"
+        echo "  → 掲示板で具体的な未対応項目を確認し、対処可能なものは軍師が即実行せよ"
+        warn=1
+    fi
+fi
+
 # --- L6: 洗脳#2検出 — infra report reviewで実動作確認なし (殿厳命2026-06-08) ---
 # observationsに「実行」「実測」「確認」「テスト実行」がないinfra reportレビューを検出
 _infra_no_verify=$(awk '
