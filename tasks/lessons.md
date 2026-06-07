@@ -7575,3 +7575,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - safe_send_clearでpane_start_commandを使うとrespawn-pane -kの引数が次回tmux pane_start_commandに二重エスケープで保存され、CLI起動時にstatus 127で死亡。D0修正9e7e37625で廃止済み。enforcement: ninja_monitor.sh safe_send_clear内でpane_start_command呼出し除去(9e7e37625)
+
+### L754: bash_speed_training.sh update_entry_field_unlocked: 引用符なしscript_pathにマッチしないバグ+インデント4スペース固定バグ
+- **日付**: 2026-06-07
+- **出典**: cmd_3212
+- **記録者**: hanzo
+- **tags**: [infra,bash,yaml,git]
+- **target_files**: [tools/bash_speed_training.sh,tests/unit/test_bash_speed_training.bats,logs/script_speed_training_ledger.yaml]
+- **origin**: [[cmd_3212]]
+- **when**: 未設定
+- **how**: 未設定
+- ledgerはinit_ledger_unlocked(yaml_quote経由)では引用符付きで生成されるが、別プロセスが引用符除去したため現行ledgerは引用符なし。AWKパターンが引用符付きのみをマッチするためrecord-after/record-realが全て無効だった。修正: インデックス検索を引用符なし形式にも対応(||追加)。インデントは元行から検出して保持。git log一括取得でSIGPIPE+timeout回避。origin: [[ledger引用符除去]] -> [[AWKマッチ失敗]] -> [[record-after未実装の根本原因]]

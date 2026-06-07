@@ -1,8 +1,9 @@
 task:
-  _ac_task_id: cmd_3211_focused
+  _ac_task_id: cmd_karo_ci_fix_semantic_test125_20260607_normal
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3211 (deployed 2026-06-07T21:10:11). Read from the beginning.
-  cmd_id: cmd_training_speed_yaml_check_codex_20260607204100_normal
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3213 (deployed 2026-06-07T21:41:05). Read from the beginning.
+  ac_version: d41d8cd9
+  cmd_id: cmd_karo_ci_fix_semantic_test125_20260607
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -11,66 +12,47 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  growth_loop_defense:
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3211
+  parent_cmd: cmd_karo_ci_fix_semantic_test125_20260607
   project: infra
-  purpose: 速度修行ledger auto-deployがCTX%を確認せず連続配備→コンパクション頻発→速度低下。_handle_speed_training_auto_deployにCTX閾値チェックを追加し、CTX高忍者への配備をauto-clear完了まで保留する
-  status: idle
+  related_causal_links:
+  - '[[LS041_既存仕組みに乗せよ]]'
+  - '[[cmd_3211_閾値残存]]'
+  - '[[削除]]'
+  - '[[殿指摘_閾値不要]]'
+  semantic_concepts:
+  - 'creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh'
+  - 'growth_loop — 学習ループ:  AGENTS.md 学習ループ原則 context/growth-loop.md context/infrastructure.md 知識サイクル現状 scripts/gates/gate_cycle_health.sh 三層学習ループ健全性計測 scripts/karo_workaround_log.sh WA記録(成績表フィードバック) scripts/ci_status_check.sh CI状態チェック(品質フィードバック) scripts/lesson_impact_analysis.sh 教訓効果分析(注入率/参照率/CLEAR-BLOCK A/B) scripts/ralph_loop_metrics.sh ラルフループ定量計測(5指標: パターン再発/revert/完了速度/lesson-CLEAR相関/PI違反) scripts/knowledge_metrics.sh 教訓有効性+陳腐化検出(JSON/TSV出力対応)'
+  - 'gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比)'
+  - 'defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)'
+  - 'semantic_goodhart_overfitting — セマンティクスインデックスGoodhart過剰適合:  docs/research/gunshi_idle_goodhart_audit_20260516.md'
+  status: done
   stop_for: []
-  task_id: cmd_3211_focused
+  task_id: cmd_karo_ci_fix_semantic_test125_20260607_normal
   task_type: focused
   related_lessons:
-  - id: 'L504'
-    summary: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-53'
-    detail: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-53'
-  - id: 'L372'
-    summary: 'tmux display-messageの-pオプションは複数の#{@var}を1つのフォーマット文字列に結合できる。区切り文字(|等)で連結しIFS read'
-    detail: 'tmux display-messageの-pオプションは複数の#{@var}を1つのフォーマット文字列に結合できる。区切り文字(|等)で連結しIFS read'
-  - id: 'L105'
-    summary: 'tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.'
-    detail: 'tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.'
-  - id: 'L550'
-    summary: 'deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys'
-    detail: 'deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys'
-  - id: 'L575'
-    summary: '既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定s'
-    detail: '既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定s'
-  - id: 'L600'
-    summary: '今回のcmd_2690は『12件MISSING』とファイル名だけが渡され、個別の旧パス/期待新パスがタスクYAMLに無かった。現行indexではmissing='
-    detail: '今回のcmd_2690は『12件MISSING』とファイル名だけが渡され、個別の旧パス/期待新パスがタスクYAMLに無かった。現行indexではmissing='
-  - id: 'L445'
-    summary: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑'
-    detail: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑'
-  - id: 'L247'
-    summary: '全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す'
-    detail: '全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す'
-  - id: 'L165'
-    summary: 'IF 教訓効果率の低い教訓群を分析する時 THEN 自動退役は『低効果』だけでなく『仕組み化完了フラグ』連動で回すべき'
-    detail: 'IF 教訓効果率の低い教訓群を分析する時 THEN 自動退役は『低効果』だけでなく『仕組み化完了フラグ』連動で回すべき'
-  - id: 'L117'
-    summary: 'フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re'
-    detail: 'フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re'
+  - id: 'L492'
+    summary: 'WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。'
+    detail: 'WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
-  - "known_unknowns_principle — 無知の知:  memory/deepdive_causal_tracing_20260415.md context/growth-loop.md"
-  - "training_cycle_quality — 忍者修行サイクル品質:  context/training-cycle.md logs/gate_fire_log.yaml scripts/ninja_monitor.sh"
-  recommended_skills:
-  - "reset-layout"
-  - "shogun-all-codex-switch"
-  - "shogun-peacetime-rollback"
-  related_causal_links:
-  - "[[_handle_speed_training_auto_deploy_CTX閾値ゲート追加]]"
-  - "[[家老_軍師回答_CTX閾値なし]]"
-  - "[[殿指摘_CTX蓄積_コンパクション頻発]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -80,43 +62,13 @@ task:
   - "context/training-cycle.md"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L504: find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-53
-      - L372: tmux display-messageの-pオプションは複数の#{@var}を1つのフォーマット文字列に結合できる。区切り文字(|等)で連結しIFS read
-      - L105: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.
-      - L550: deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys
-      - L575: 既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定s
-      - L600: 今回のcmd_2690は『12件MISSING』とファイル名だけが渡され、個別の旧パス/期待新パスがタスクYAMLに無かった。現行indexではmissing=
-      - L445: yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑
-      - L247: 全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す
-      - L165: IF 教訓効果率の低い教訓群を分析する時 THEN 自動退役は『低効果』だけでなく『仕組み化完了フラグ』連動で回すべき
-      - L117: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re
+      - L492: WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。
     ────────────────────────────────────────
     
     
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'ninja_monitor.sh _handle_speed_training_auto_deploy関数内で対象忍者のCTX%を取得し、50%超の場合は自動的に遮断しログ出力して配備をスキップする(auto-clearが次サイクルでCTXリセット→その後のサイクルで配備される)'
-  - id: 'AC2'
-    checks:
-    - check: 'CTX50%超の忍者に対してauto-deployがスキップされ、ログにSPEED-TRAINING-CTX-SKIP出力を確認済み'
-  ac_version: b57aaf93
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3211.yaml
-  report_path: queue/reports/hayate_report_cmd_3211.yaml
+  report_filename: hayate_report_cmd_karo_ci_fix_semantic_test125_20260607.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_ci_fix_semantic_test125_20260607.yaml
   bloom_level: 
-  ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 1
-    top_pattern: 'deploy_error(1件)'
-    breakdown: 'deploy_error(1件)'
-    warning: '⚠ 過去1件のworkaround発生。品質に注意'
-    gate_fail_top3:
-    - pattern: 'bc_result_empty'
-      count: 121
-    - pattern: 'verdict_invalid'
-      count: 17
-    - pattern: 'field_missing'
-      count: 12
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
-  deployed_at: "2026-06-07T21:10:21"
+  deployed_at: "2026-06-07T22:12:47"
+  purpose: "CI修正: test_semantic_index_update.bats test125(memory DB tag propagation)が全テスト並列実行時のみFAIL。個別実行PASS。CI並列隔離問題。根因特定+テスト修正"

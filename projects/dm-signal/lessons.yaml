@@ -9728,6 +9728,9 @@ lessons:
   origin: '[[legacy_lesson_L009]]'
   source_cmd: legacy_lesson_L009
   when: sync-fof API を実施する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L008
   title: GS構成四神 [歴史的記述]と本番FoF構成PFの不一致（2026-02-14）
   summary: GS構成四神 [歴史的記述]と本番FoF構成PFの不一致（2026-02-14）
