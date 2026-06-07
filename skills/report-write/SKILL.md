@@ -155,6 +155,7 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-06-07: gate=gate_report_format result=FAIL executor=kotaro reason=stale_report: filename has cmd_training_speed_sync_pane_vars_20260607 but parent_cmd=cmd_training_speed_sync_pane_vars_20260607201900_normal (cmd_id mismatch)
 
 - 2026-06-07: gate=gate_report_format result=FAIL executor=kagemaru reason=lesson_candidate: found=true but no detail or summary
 - 2026-06-07: gate=gate_report_format result=FAIL executor=tobisaru reason=ac_version_read: MISSING; lesson_candidate: MISSING; stale_report: filename has cmd_training_speed_search_log_write_20260607 but parent_cmd=cmd_training_speed_search_log_write_2...

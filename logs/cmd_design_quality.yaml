@@ -1,14 +1,4 @@
 entries:
-- cmd_id: "cmd_3153"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-03T08:34:01Z"
 - cmd_id: "cmd_karo_hotfix_ralph_l742_runbook_20260603"
   ac_count: 0
   gate_result: "CLEAR"

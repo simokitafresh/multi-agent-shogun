@@ -1,10 +1,10 @@
 task:
-  cmd_id: cmd_training_speed_skill_recommend_metrics_20260607201400_normal
+  cmd_id: cmd_training_speed_test_select_20260607202300_normal
   type: training
   task_type: speed_training
   project: infra
-  purpose: "速度改善修行1回目残り — skill_recommend_metrics.sh (ledger pending)"
-  target_path: scripts/skill_recommend_metrics.sh
+  purpose: "速度改善修行1回目残り — test_select.sh (ledger pending)"
+  target_path: scripts/test_select.sh
   acceptance_criteria:
     AC1:
       description: "before計測3回+ボトルネック仮説記録"
@@ -14,7 +14,7 @@ task:
       description: "after計測3回+関連テストPASS(test_select.sh)+SKIP=0+docs/research/codd_refactor_registry.md追記"
     AC4:
       description: "aliases候補1-3個を概念名alias行で報告+insight_write.shで蓄積"
-  status: done
+  status: in_progress
   ac_priority: "AC1 > AC2 > AC3 > AC4"
   never_stop_for:
     - "テストFAIL — 修正して再実行"
@@ -51,5 +51,3 @@ task:
   - id: 'L499'
     summary: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
     detail: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
-  report_filename: tobisaru_report_cmd_training_speed_skill_recommend_metrics_20260607201400_normal.yaml
-  report_path: queue/reports/tobisaru_report_cmd_training_speed_skill_recommend_metrics_20260607201400_normal.yaml

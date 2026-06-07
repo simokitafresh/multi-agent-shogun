@@ -1,4 +1,4 @@
-global_status: active
+global_status: paused
 generated_at: '2026-06-06T21:09:32'
 measurement_command: timeout 5 bash -n <script_path> (syntax baseline only; not runtime
   speed)
