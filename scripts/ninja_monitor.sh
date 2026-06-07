@@ -885,10 +885,15 @@ safe_send_clear() {
     if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "claude" ]; then
         # pane_start_commandは二重クォート問題があるため使わない。
         # 常にcli_profiles.yamlのlaunch_cmdを使用する(hayate死亡事故2026-06-07)
-        local _launch_cmd
+        local _launch_cmd _model_name
         _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
+        # settings.yamlのmodel_nameをrespawn起動コマンドに反映(Opus/Sonnet混在対応)
+        _model_name=$(_cli_lookup_settings_get "$agent_name" "model_name" "")
+        if [ -n "$_model_name" ] && [[ "$_launch_cmd" != *"--model"* ]]; then
+            _launch_cmd="$_launch_cmd --model $_model_name"
+        fi
         if [ -n "${_launch_cmd:-}" ]; then
-            log "CLAUDE-RESPAWN: $agent_name respawn-pane (bypass permissions guaranteed), reason=$reason"
+            log "CLAUDE-RESPAWN: $agent_name respawn-pane (model=$_model_name), reason=$reason"
             tmux respawn-pane -k -t "$pane" "cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
                 log "CLAUDE-RESPAWN-FALLBACK: $agent_name respawn failed, falling back to $clear_cmd"
                 safe_send_keys_atomic "$pane" "$clear_cmd" 0.3 || true
