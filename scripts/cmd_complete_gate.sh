@@ -6165,6 +6165,62 @@ else
     echo "  SKIP (no push detected in reports)"
 fi
 
+# ─── cmd_3207: 速度修行の安全パターン削除検出 ───
+check_safety_pattern_removal() {
+    # 速度修行cmdのみ対象
+    local tt
+    tt="$(printf '%s' "${GATE_TASK_TYPE:-}" | tr '[:upper:]' '[:lower:]')"
+    case "$tt" in
+        *training*|*speed*) ;;
+        *) return 0 ;;
+    esac
+
+    echo ""
+    echo "Safety pattern removal check (speed training):"
+
+    # 報告YAMLからcommitハッシュを収集
+    local commits=()
+    local report_file
+    for report_file in "${MATCHING_REPORT_FILES[@]}"; do
+        local sha
+        sha=$(grep -oP '(?<=commit[ _])\w{7,40}' "$report_file" 2>/dev/null | head -5)
+        if [[ -n "$sha" ]]; then
+            while IFS= read -r line; do
+                [[ -n "$line" ]] && commits+=("$line")
+            done <<< "$sha"
+        fi
+    done
+
+    if [[ ${#commits[@]} -eq 0 ]]; then
+        echo "  SKIP (no commits found in reports)"
+        return 0
+    fi
+
+    # 安全パターン: 削除されたら危険な行パターン
+    local safety_patterns='(2>/dev/null|\|\| true|\|\| :|\|\| echo|set \+e|trap |timeout )'
+    local warnings=0
+    local c
+    for c in "${commits[@]}"; do
+        local deleted_safety
+        deleted_safety=$(git diff "${c}^..${c}" -- '*.sh' 2>/dev/null | grep -E '^\-' | grep -v '^\-\-\-' | grep -cE "$safety_patterns" || true)
+        if [[ "$deleted_safety" -gt 0 ]]; then
+            echo "  WARN: commit $c removed $deleted_safety safety pattern line(s)"
+            git diff "${c}^..${c}" -- '*.sh' 2>/dev/null | grep -E '^\-' | grep -v '^\-\-\-' | grep -E "$safety_patterns" | head -5 | while IFS= read -r line; do
+                echo "    $line"
+            done
+            warnings=$((warnings + 1))
+        fi
+    done
+
+    if [[ "$warnings" -gt 0 ]]; then
+        echo "  ⚠ $warnings commit(s) with safety pattern removal. Verify error handling is preserved."
+        # WARN only (not BLOCK) — 忍者に安全性確認を促す
+    else
+        echo "  OK: no safety patterns removed"
+    fi
+}
+check_safety_pattern_removal
+
 # ─── cmd_2273: 4新検証（scope drift / review staleness / partial completion / WTF） ───
 check_command_files_modified_coverage
 check_scope_drift
