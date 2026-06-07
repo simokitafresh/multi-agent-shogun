@@ -1822,16 +1822,16 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T09:17:05"
   - script_path: "scripts/lib/pane_format.sh"
-    status: completed
+    status: no_improvement
     before_ms: 14
-    after_ms: 14
-    before_real_ms: 24.565
-    after_real_ms: 16.634
-    real_measurement_command: "python3 measure 300x: bash -c 'source scripts/lib/pane_format.sh; printf \"%s\" \"$AGENTS_PANE_BORDER_FORMAT\" >/dev/null'; median_ms"
-    test_result: "bash_n_pass;reset_layout_and_shutsujin_bash_n_pass;source_placeholders_ok;before_24.565_after_16.634;SKIP=0"
-    commit: ""
-    assigned_to: "hayate"
-    updated_at: "2026-06-07T09:31:00"
+    after_ms: ""
+    before_real_ms: 22
+    after_real_ms: 19
+    real_measurement_command: "bash -c 'source scripts/lib/pane_format.sh; echo \"$AGENTS_PANE_BORDER_FORMAT\" > /dev/null'"
+    test_result: "bash -n OK. No optimization possible: pure static variable assignment, no subprocess forks. Timing diff is noise."
+    commit: "no_change"
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T09:22:30"
   - script_path: "scripts/lib/pane_lookup.sh"
     status: assigned
     before_ms: 15
