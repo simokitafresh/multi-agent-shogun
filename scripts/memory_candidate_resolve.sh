@@ -24,7 +24,9 @@ post-update state with SELECT, and notify through scripts/ntfy.sh.
 EOF
 }
 
-while [ "$#" -gt 0 ]; do
+case "${1-}" in -h|--help) usage; exit 0;; esac
+
+while (( $# )); do
     case "$1" in
         --db)
             [ "$#" -ge 2 ] || { usage; exit 2; }
