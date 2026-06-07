@@ -1250,16 +1250,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T10:43:50"
   - script_path: "scripts/hooks/pre-write-report-deny.sh"
-    status: pending
+    status: completed
     before_ms: 15
     after_ms: 15
     before_real_ms: 7
-    after_real_ms: ""
+    after_real_ms: 7
     real_measurement_command: "printf '' | bash scripts/hooks/pre-write-report-deny.sh"
     test_result: "PASS_NO_IMPROVEMENT: 既にIFS=read builtin+bash regex最適化済み。測定誤差範囲(5-9ms)で有意差なし"
-    commit: ""
-    assigned_to: ""
-    updated_at: "2026-06-07T10:49:16"
+    commit: "PASS_NO_IMPROVEMENT"
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T11:02:00"
   - script_path: "scripts/hooks/pre_compact_save.sh"
     status: completed
     before_ms: 13
