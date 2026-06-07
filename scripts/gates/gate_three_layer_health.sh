@@ -179,7 +179,8 @@ fi
 
 echo "■ cache容量チェック"
 if [ -d "$cache_dir" ]; then
-    cache_bytes="$(du -sb "$cache_dir" 2>/dev/null | awk '{print $1+0}')"
+    # WSL2ではdu -sbが過大報告する(sparse files等)。ls -lベースで実ファイルサイズ合計を取得
+    cache_bytes="$(ls -lR "$cache_dir" 2>/dev/null | awk '/^-/{sum+=$5} END{print sum+0}')"
 else
     cache_bytes=0
 fi

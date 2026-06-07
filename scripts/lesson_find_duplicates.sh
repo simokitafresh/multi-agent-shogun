@@ -30,8 +30,9 @@ if [ ! -f "$LESSONS_FILE" ]; then
 fi
 
 python3 - "$LESSONS_FILE" << 'PYEOF'
-import yaml, sys
+import yaml, sys, multiprocessing
 from difflib import SequenceMatcher
+from collections import Counter
 
 _CLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
@@ -66,26 +67,69 @@ if len(active) < 2:
     print("Not enough active lessons to compare.", file=sys.stderr)
     sys.exit(0)
 
-# Pre-compute text strings (avoid re-computation in O(n^2) inner loop)
+# Pre-compute text strings and metadata
 texts = []
 titles = []
+ids = []
 for lesson in active:
     t = (lesson.get("title") or "")
     s = (lesson.get("summary") or "")
     texts.append(str(t) + " " + str(s))
     titles.append(str(t)[:60])
+    ids.append(lesson.get("id", "?"))
 
-# Compare all pairs (quick_ratio pre-filter: O(n+m) upper bound skips expensive O(n*m) ratio)
-pairs = []
-sm = SequenceMatcher()
-for i in range(len(active)):
-    sm.set_seq1(texts[i])
-    for j in range(i + 1, len(active)):
-        sm.set_seq2(texts[j])
-        if sm.quick_ratio() >= threshold:
-            ratio = sm.ratio()
-            if ratio >= threshold:
-                pairs.append((ratio, active[i].get("id", "?"), titles[i], active[j].get("id", "?"), titles[j]))
+n = len(active)
+
+# Pre-compute character frequency Counters and lengths (avoid per-pair dict rebuild)
+counters = [Counter(t) for t in texts]
+lens = [len(t) for t in texts]
+
+# Worker function: compare a row range [i_start, i_end)
+# Uses Counter-based quick_ratio pre-filter (same formula as SM.quick_ratio)
+# then falls back to SM.ratio() only for candidates
+def _compare_rows(args):
+    i_start, i_end = args
+    sm = SequenceMatcher()
+    results = []
+    thr = threshold
+    n_local = n
+    for i in range(i_start, i_end):
+        ca, la = counters[i], lens[i]
+        sm.set_seq1(texts[i])
+        for j in range(i + 1, n_local):
+            cb, lb = counters[j], lens[j]
+            # Counter-based quick_ratio: same formula as SM, skips set_seq2 overhead
+            common = sum(min(v, cb.get(k, 0)) for k, v in ca.items())
+            if 2.0 * common / (la + lb) >= thr:
+                sm.set_seq2(texts[j])
+                ratio = sm.ratio()
+                if ratio >= thr:
+                    results.append((ratio, ids[i], titles[i], ids[j], titles[j]))
+    return results
+
+# Load-balanced distribution: each process handles equal number of pairs
+num_procs = min(multiprocessing.cpu_count(), 8)
+total_pairs = n * (n - 1) // 2
+target_per_proc = total_pairs / num_procs
+
+ranges = []
+i_start = 0
+cumulative = 0
+for p in range(num_procs - 1):
+    target = (p + 1) * target_per_proc
+    i_end = i_start
+    while i_end < n and cumulative < target:
+        cumulative += (n - 1 - i_end)
+        i_end += 1
+    ranges.append((i_start, i_end))
+    i_start = i_end
+ranges.append((i_start, n))
+
+# Parallel execution via fork (globals shared copy-on-write)
+with multiprocessing.Pool(processes=num_procs) as pool:
+    results_list = pool.map(_compare_rows, ranges)
+
+pairs = [r for sub in results_list for r in sub]
 
 if not pairs:
     print("No similar pairs found (threshold >= 0.5).", file=sys.stderr)

@@ -3,7 +3,7 @@
 # Ashigaru Configuration - YAML Front Matter
 # ============================================================
 # Structured rules. Machine-readable. Edit only when changing rules.
-# 詳細テンプレート・例 → docs/research/ashigaru-detail.md
+# 詳細テンプレート・例 → [[ashigaru-detail]] (`docs/research/ashigaru-detail.md`)
 
 role: ninja
 version: "2.3"
