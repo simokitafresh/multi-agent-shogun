@@ -1998,16 +1998,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T10:22:00"
   - script_path: "scripts/memory_db_query.sh"
-    status: assigned
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 20
+    after_real_ms: 10
+    real_measurement_command: "bash scripts/memory_db_query.sh (no-arg usage path, 15-run median approx; exits 2 before DB/cache)"
+    test_result: "bash_n_pass;bats tests/unit/test_memory_db.bats --filter memory_db_query 5/5 PASS SKIP=0;before_s=0.02,0.02,0.03,0.02,0.03,0.02,0.03,0.02,0.02,0.01,0.02,0.02,0.03,0.02,0.03;after_s=0.02,0.02,0.01,0.01,0.01,0.02,0.01,0.02,0.01,0.02,0.01,0.02,0.01,0.02,0.01"
+    commit: "90e2ee15a"
     assigned_to: "saizo"
-    updated_at: "2026-06-07T10:14:30"
+    updated_at: "2026-06-07T10:19:31"
   - script_path: "scripts/memory_recall_control.sh"
     status: pending
     before_ms: 16
