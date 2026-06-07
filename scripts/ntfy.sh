@@ -233,5 +233,3 @@ fi
   send_with_retry "$MSG"
 ) 200>"$NTFY_LOCK_FILE" &
 exit 0
-
-# _hanzo_measure_probe

@@ -87,8 +87,27 @@ if [ "${#shell_files[@]}" -gt 0 ]; then
         echo "ERROR: shellcheck not found. Install it before committing shell scripts." >&2
         exit 1
     fi
-    (
-        cd "$ROOT_DIR"
-        shellcheck -- "${shell_files[@]}"
-    )
+    if [ "${#shell_files[@]}" -eq 1 ]; then
+        # 1ファイル: 直接呼び出し（並列オーバーヘッド不要）
+        (
+            cd "$ROOT_DIR"
+            shellcheck -- "${shell_files[@]}"
+        )
+    else
+        # 複数ファイル: 並列shellcheck（N×~230ms → ~230ms wall time）
+        _sc_tmp="$(mktemp -d)"
+        _sc_fail=0
+        for _sc_f in "${shell_files[@]}"; do
+            ( cd "$ROOT_DIR" && shellcheck -- "$_sc_f" > "$_sc_tmp/${_sc_f//\//_}" 2>&1; printf '%s' $? > "$_sc_tmp/${_sc_f//\//_}.exit" ) &
+        done
+        wait
+        for _sc_f in "${shell_files[@]}"; do
+            _sc_out="$_sc_tmp/${_sc_f//\//_}"
+            [ -s "$_sc_out" ] && cat "$_sc_out"
+            _sc_exit=$(cat "$_sc_tmp/${_sc_f//\//_}.exit" 2>/dev/null || echo 0)
+            [ "$_sc_exit" != "0" ] && _sc_fail=1
+        done
+        rm -rf "$_sc_tmp"
+        if [ "$_sc_fail" -eq 1 ]; then exit 1; fi
+    fi
 fi

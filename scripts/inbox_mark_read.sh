@@ -237,5 +237,3 @@ while [ $attempt -lt $max_attempts ]; do
         fi
     fi
 done
-
-# _hanzo_measure_probe
