@@ -102,20 +102,18 @@ $3 == "CLEAR" && !seen[$2]++ {
 
 # --- (E)+(F) 統合: GATE対象cmdに絞ってarchiveを走査 ---
 # 指標3/4はGATE結果と突合するため、GATEログに存在しないarchiveは読まない。
-awk -F'|' '{ print $1 }' "$TMP/gate_outcomes.tsv" > "$TMP/gate_cmd_ids.txt"
-find "$ARCHIVE_DIR" -maxdepth 1 -name 'cmd_*.yaml' > "$TMP/archive_files.txt" 2>/dev/null || true
-awk '
-    NR == FNR { want[$1] = 1; next }
-    {
-        cmd = $0
-        sub(/.*cmd_/, "", cmd)
-        sub(/[^0-9].*/, "", cmd)
-        if (want[cmd + 0]) print $0
-    }
-' "$TMP/gate_cmd_ids.txt" "$TMP/archive_files.txt" > "$TMP/archive_scan_files.txt"
-
-echo "  archive cmdsスキャン中(GATE対象 $(wc -l < "$TMP/archive_scan_files.txt")件)..." >&2
-mapfile -t archive_scan_files < "$TMP/archive_scan_files.txt"
+# 最適化: find+awk全件フィルタ(3230→261ファイル)の代わりに
+#          gate cmd IDで直接glob(~23ファイル)してWSL2 Windows FS開銷を削減
+: > "$TMP/start_times.tsv"
+: > "$TMP/lesson_counts_raw.tsv"
+mapfile -t _gate_ids < <(awk -F'|' '$1+0>0{print $1+0}' "$TMP/gate_outcomes.tsv")
+archive_scan_files=()
+for _id in "${_gate_ids[@]}"; do
+    for _f in "$ARCHIVE_DIR"/cmd_${_id}_*.yaml; do
+        [ -f "$_f" ] && archive_scan_files+=("$_f")
+    done
+done
+echo "  archive cmdsスキャン中(GATE対象 ${#archive_scan_files[@]}件)..." >&2
 if [ "${#archive_scan_files[@]}" -gt 0 ]; then
     gawk -v tmpdir="$TMP" '
     BEGINFILE {
@@ -146,9 +144,6 @@ if [ "${#archive_scan_files[@]}" -gt 0 ]; then
         }
     }
 ' "${archive_scan_files[@]}" 2>/dev/null
-else
-    : > "$TMP/start_times.tsv"
-    : > "$TMP/lesson_counts_raw.tsv"
 fi
 echo "  cmd開始時刻: $(wc -l < "$TMP/start_times.tsv" 2>/dev/null || echo 0)件" >&2
 
