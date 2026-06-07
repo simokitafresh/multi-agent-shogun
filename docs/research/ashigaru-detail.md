@@ -71,6 +71,8 @@ task YAMLに`recon_aspect`フィールドがある場合、その観点に集中
 - **recommendation(推薦)は必須** — 両論併記は禁止。判断を述べよ、メニューを出すな。「Do X. Because Y.」形式で推薦+理由を1文で述べよ
 - **他の忍者の報告を参照するな** — 並行偵察の独立性を破壊する
 
+→ 報告YAML記入: [[report-write]] (`skills/report-write/SKILL.md`) — 全フィールドをreport_field_set.sh経由で書き込む(L8)。提出前検証: [[gate_report_format]] (`scripts/gates/gate_report_format.sh`)
+
 ## §3 偵察報告Suppressions（S1-S12）
 
 以下の発見は偵察・レビュー報告に**記載するな**。偽陽性ノイズを抑制し、家老の統合分析効率を高める。
@@ -199,6 +201,8 @@ bash scripts/report_field_set.sh queue/reports/sasuke_report_cmd_100.yaml decisi
 - 中間dictも自動作成される
 - flock排他制御+atomic write（安全な並行アクセス）
 - 値の型は自動判定: true/false→bool、null/none→None、整数→int、小数→float、その他→string
+
+→ 実行スキル: [[report-write]] (`skills/report-write/SKILL.md`) — 全フィールドをreport_field_set.sh経由で記入し、Edit tool直接編集による報告YAML WA(全WA最多 24件/100件)を根絶するために設計。
 
 ## §7 報告YAMLテンプレート（完全版）
 
@@ -431,6 +435,7 @@ Compaction Recovery: CLAUDE.md手順に従う。
 5. If task has `reports_to_read:` → read ALL listed report YAMLs
 
 /clear Recovery: [[CLAUDE.md]] 手順を使う。[[ashigaru]] の再読不要（コスト節約~3,600 tokens）。tmux/inbox/ntfy操作詳細 → [[infrastructure]] (`context/infrastructure.md`)
+→ 報告YAML作成: [[report-write]] (`skills/report-write/SKILL.md`) · verdict導出: [[verdict-check]] (`skills/verdict-check/SKILL.md`)
 
 **Before /clear**: タスク完了→報告YAML+inbox_write済み。タスク中→progressにcheckpoint保存:
 ```yaml
