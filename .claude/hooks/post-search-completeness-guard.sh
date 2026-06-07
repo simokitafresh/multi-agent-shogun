@@ -9,4 +9,4 @@
 # Only show reminder if results were found (no point warning on empty results)
 # The tool_output is passed via stdin or environment — check TOOL_OUTPUT if available
 # Simple approach: always show the reminder on search tool use
-echo "⚠ この検索結果は網羅的ではない可能性がある。別の手法でも確認したか？（Grep→Glob / Glob→Grep / lord_conversation確認）"
+echo "⚠ この検索結果は網羅的ではない可能性がある。別の手法でも確認したか？（Grep→Glob / Glob→Grep / lord_conversation確認）" >&2
