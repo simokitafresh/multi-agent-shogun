@@ -1756,7 +1756,7 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T09:12:00"
   - script_path: "scripts/lib/lock_path.sh"
-    status: pending
+    status: assigned
     before_ms: 14
     after_ms: ""
     before_real_ms: ""
@@ -1764,10 +1764,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T09:07:18"
   - script_path: "scripts/lib/mcas_common.sh"
-    status: pending
+    status: assigned
     before_ms: 7
     after_ms: ""
     before_real_ms: ""
@@ -1775,8 +1775,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T09:08:21"
   - script_path: "scripts/lib/model_colors.sh"
     status: pending
     before_ms: 15
