@@ -461,7 +461,9 @@ function unquote(s) {
 function finish() {
     r = toupper(result)
     u = tolower(used == "" ? "true" : used)
-    if (r == "FAIL" && u != "false" && skill != "") {
+    # 偽FAIL除外: result.summary空またはbc空(cmd空)のテンプレート段階FAIL
+    is_fake = (index(point, "result.summary: MISSING or empty") > 0 || index(point, "cmd=<empty>") > 0)
+    if (r == "FAIL" && u != "false" && skill != "" && !is_fake) {
         count[skill]++
         if (ts >= last[skill]) last[skill] = ts
         if (point != "") {
