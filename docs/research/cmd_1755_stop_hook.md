@@ -157,5 +157,10 @@ content: "特殊文字テスト: シングルクォート' + ダブルクォー�
 ## 参照
 
 - 大元commit: `gh api repos/yohey-w/multi-agent-shogun/commits/d108517`
-- 対応ファイル: `scripts/hooks/stop_check_inbox.sh`
-- lint gate: `.claude/hooks/stop-lint-gate.sh`
+- 対応ファイル: `scripts/hooks/stop_check_inbox.sh` → [[stop_check_inbox]]
+- lint gate: `.claude/hooks/stop-lint-gate.sh` → [[stop-lint-gate]]
+- stop_check_inboxプロファイリング研究: [[cmd_2111_stop_check_inbox_profiling]]
+  > `cmd_2111_stop_check_inbox_profiling.md` L1-2: "# test_stop_check_inbox.bats 高速化プロファイリング / cmd_2111 — tobisaru, 2026-04-19"
+  > 同ファイルボトルネック特定: "hook 実行 | ~100-200ms | payload解析+inbox読込+python3"
+- stop-lint L3仕様: [[cmd_2065_stop_lint_l3_spec_20260418]]
+- CoDD仕様(stop-lint-gate): [[codd_spec_stop_lint_gate_20260416]]
