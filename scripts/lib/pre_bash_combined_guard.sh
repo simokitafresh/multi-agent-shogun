@@ -547,10 +547,12 @@ pre_bash_combined_eval_command() {
         return 0
     fi
 
-    approval_reason="$(pre_bash_combined_destructive_approval_reason "$command" "$project_root")"
-    if [[ -n "$approval_reason" ]]; then
-        pre_bash_combined_emit_deny "$approval_reason"
-        return 1
+    if [[ "$command" == *'--force-with-lease'* ]]; then
+        approval_reason="$(pre_bash_combined_destructive_approval_reason "$command" "$project_root")"
+        if [[ -n "$approval_reason" ]]; then
+            pre_bash_combined_emit_deny "$approval_reason"
+            return 1
+        fi
     fi
 
     reason="$(pre_bash_combined_destructive_reason "$command" "$project_root")"
