@@ -1966,6 +1966,7 @@ codd:
 | url | `https://github.com/simokitafresh/kj-role-count` |
 | causal | `cmd_3074` origin: [[殿テスト_KJシリーズ]] -> [[グループ概念不在]] -> [[三層記憶穴埋め]] |
 | cmd | `cmd_3056` backfill — | cmd_3056 | Phase 4-O: 知識流入自動取込み+バックフィル | GATE CLEAR | 6新PJ概念自動生成(database/milk/auto-ops/mcas/kj-to |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T14:53:55+09:00 b0ks1rm09 toolu_018PJNp1Mao8pQKJrAL2eMgP /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8aa671c0-250c-404e-8b5a-7431d2 |
 
 ## kj_partshift — KJ Partshift Checker（シフト見える化MVP）
 
@@ -2456,6 +2457,7 @@ codd:
 | cmd | `cmd_2908` 修正: PostToolUse Guard 0のexit_code抽出バグ修正 (`.claude/hooks/post-bash-combined.sh`, `tests/unit/test_post_bash_combined.bats`) |
 | causal | `cmd_2908` origin: [[cmd_2907]] -> [[Guard_0_exit_code_bug]] -> [[shogun_block_freeze]] |
 | cmd | `cmd_2916` (`.claude/hooks/pre-write-edit-combined.sh`, `tests/unit/test_write_edit_combined_hooks.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T14:41:34+09:00 きえてないよ。● Bash(echo "hook error test: this Bash call should show no hook error") ⎿ PreToolUse:Bash hook error ⎿ hook erro |
 
 ## multi_cli_event_commonization — multi-CLI hook/event共通化
 

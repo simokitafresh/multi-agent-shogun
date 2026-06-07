@@ -661,6 +661,8 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-07'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L704
   title: セマンティック監査エージェントP0報告は全件現物検証必須
   summary: 本セッションでP0候補5件が全て偽陽性(100%)→P1-P3に降格。エージェントは行番号・文脈を誤読しやすい。LG033(既存確認必須)の監査エージェント版。
@@ -803,6 +805,8 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-07'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L695
   title: set -e下でALERT集計scriptを呼ぶ時は終了値捕捉を明示する
   summary: startup gateはset -eで動くため、Phase 3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶと
@@ -862,6 +866,8 @@ lessons:
   target_files:
   - tests/unit/test_lord_conversation.bats
   origin: '[[cmd_karo_ci_fix_lord_conv_read_v2]]'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L691
   title: CIでrepo内スクリプトをテストから呼ぶ時はgit実行権限かbash経由を確認する
   summary: WSL上ではファイルが実行可能に見えても、git indexが100644ならGitHub Actions checkout後は実行権限が無い。テストでscri
@@ -892,6 +898,8 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-07'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L689
   title: lord_conversation消費者はtargetフィルタ済みhelperを使え
   summary: lord_conversation.jsonlは全ロールの殿入力を含む。将軍/家老/軍師が直接tail/Readすると他ロール宛ての発言を自分宛てと誤認する。消
@@ -2014,6 +2022,8 @@ lessons:
   - skills/karo-direct/SKILL.md
   - skills/shogun-teire/SKILL.md
   origin: '[[cmd_2793]]'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L613
   title: 'deploy_task.sh: STKのac_assignedはinject関数で明示転記が必要'
   summary: resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from
@@ -5312,6 +5322,8 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要
   origin: '[[cmd_cycle_L4_016]]'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L341
   title: heredoc一括書込みでファイル中間状態を排除
   summary: echoを2回連結してYAMLを書くと、1行目書込み後2行目書込み前にクラッシュした場合にtimestampだけの不完全ファイルが残る。cat
@@ -5986,6 +5998,8 @@ lessons:
   - lesson_update_score.sh
   - sync_lessons.sh
   origin: '[[cmd_1280]]'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L284
   title: Vercel化後の消費者スクリプトarchive参照切替が必要
   summary: lessons.yamlが索引化されたため、deploy_task.sh/lesson_update_score.sh/lesson_deprecate.sh等
@@ -6001,6 +6015,8 @@ lessons:
   - lesson_update_score.sh
   - lesson_deprecate.sh
   origin: '[[cmd_1280]]'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L283
   title: PostToolUse hook SKIPカウントの誤検知
   summary: batsテスト名にskipが含まれるとPostToolUse hookがSKIP検出と誤判定する。hookはTAP出力の ok N (hash)
@@ -7257,6 +7273,8 @@ lessons:
   target_files:
   - scripts/ntfy_listener.sh
   origin: '[[cmd_608]]'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L174
   title: cmd_608
   summary: watchdogの活動時刻は『read成功』ではなく『意味のあるイベント処理成功』で更新すべし
@@ -7406,6 +7424,8 @@ lessons:
   when: フックスクリプトテスト時
   how: dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能
   origin: '[[testing]]'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L161
   title: 画像添付MIME整合改善の必要性
   summary: IF ntfy添付画像を保存する時 THEN attachment MIMEに合わせた拡張子付与またはPNG変換を標準化せよ

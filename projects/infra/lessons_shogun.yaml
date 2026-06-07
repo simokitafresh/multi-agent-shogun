@@ -528,3 +528,11 @@ lessons:
   created_at: '2026-06-04'
   automated: true
   enforcement: 'type=hook; file=.claude/hooks/post-shogun-inbox-check.sh; pattern=前'
+- id: 'LS045'
+  title: '$(</dev/stdin)はWSL2で/dev/stdin不在時にcrash。全hookで$(cat 2>/dev/null || true)を使え'
+  origin: '[[cmd_3207]]'
+  detail: 'bash_state_hook.sh(global hook)とprompt_state_inject.sh(session hook)の2箇所で$(</dev/stdin)が使われていた。速度修行commit d5164da96がcat→</dev/stdin変換を導入、bash_state_hook.shは別の速度修行で同様に変換。WSL2環境で/dev/stdinが存在しない場合にhook errorとなり全Bash tool呼び出しに影響。rg確認で残存ゼロ化済み。'
+  source_cmd: 'cmd_3207'
+  created_at: '2026-06-07'
+  automated: true
+  enforcement: 'type=gate; file=scripts/hooks/bash_state_hook.sh; pattern=cat 2'

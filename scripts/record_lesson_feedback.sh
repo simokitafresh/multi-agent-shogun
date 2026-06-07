@@ -20,25 +20,29 @@ if [[ ! -f "$IMPACT_TSV" ]]; then
     printf '%s\n' "$IMPACT_HEADER" > "$IMPACT_TSV"
 else
     # Backward compatibility: add trailing score/traversal_depth columns to old logs.
-    (
-        flock -w 10 200 || { echo "[feedback] WARN: flock timeout during header upgrade" >&2; exit 0; }
-        current_header="$(head -n 1 "$IMPACT_TSV" 2>/dev/null || true)"
-        if [[ "$current_header" != *$'\ttraversal_depth' ]]; then
-            tmp_file="${IMPACT_TSV}.tmp.$$"
-            if [[ "$current_header" == *$'\tscore' ]]; then
-                awk -F'\t' -v OFS='\t' -v header="$IMPACT_HEADER" '
-                    NR == 1 { print header; next }
-                    { print $0, "" }
-                ' "$IMPACT_TSV" > "$tmp_file"
-            else
-                awk -F'\t' -v OFS='\t' -v header="$IMPACT_HEADER" '
-                    NR == 1 { print header; next }
-                    { print $0, "", "" }
-                ' "$IMPACT_TSV" > "$tmp_file"
+    # Fast-path: skip flock+subshell entirely if header is already up-to-date.
+    _existing_header="$(head -n 1 "$IMPACT_TSV" 2>/dev/null || true)"
+    if [[ "$_existing_header" != *$'\ttraversal_depth' ]]; then
+        (
+            flock -w 10 200 || { echo "[feedback] WARN: flock timeout during header upgrade" >&2; exit 0; }
+            current_header="$(head -n 1 "$IMPACT_TSV" 2>/dev/null || true)"
+            if [[ "$current_header" != *$'\ttraversal_depth' ]]; then
+                tmp_file="${IMPACT_TSV}.tmp.$$"
+                if [[ "$current_header" == *$'\tscore' ]]; then
+                    awk -F'\t' -v OFS='\t' -v header="$IMPACT_HEADER" '
+                        NR == 1 { print header; next }
+                        { print $0, "" }
+                    ' "$IMPACT_TSV" > "$tmp_file"
+                else
+                    awk -F'\t' -v OFS='\t' -v header="$IMPACT_HEADER" '
+                        NR == 1 { print header; next }
+                        { print $0, "", "" }
+                    ' "$IMPACT_TSV" > "$tmp_file"
+                fi
+                mv "$tmp_file" "$IMPACT_TSV"
             fi
-            mv "$tmp_file" "$IMPACT_TSV"
-        fi
-    ) 200>"${IMPACT_TSV}.lock"
+        ) 200>"${IMPACT_TSV}.lock"
+    fi
 fi
 
 # 報告YAMLからメタデータとlessons_usefulを1回の走査で抽出する。
@@ -130,18 +134,6 @@ in_lessons=0
 current_id=""
 reported_ids=()
 
-record_feedback() {
-    local lesson_id="$1"
-    local result="$2"
-    local ref="$3"
-
-    # flockで排他書込み。feedback行は注入時scoreを持たないためscoreは空欄。
-    (
-        flock -w 10 200 || { echo "[feedback] WARN: flock timeout" >&2; exit 0; }
-        echo -e "${timestamp}\t${task_id:-${cmd_id}}\t${ninja:-unknown}\t${lesson_id}\tfeedback\t${result}\t${ref}\t${project:-unknown}\t${task_type:-impl}\tNone\t\t" >> "$IMPACT_TSV"
-    ) 200>"${IMPACT_TSV}.lock"
-}
-
 has_reported_id() {
     local lesson_id="$1"
     local existing
@@ -151,6 +143,19 @@ has_reported_id() {
         fi
     done
     return 1
+}
+
+# Collect all feedback lines in memory, then write in one flock to reduce lock overhead.
+_batch_lines=()
+
+make_feedback_line() {
+    local lesson_id="$1"
+    local result="$2"
+    local ref="$3"
+    # feedback行は注入時scoreを持たないためscoreは空欄。
+    printf '%s\t%s\t%s\t%s\tfeedback\t%s\t%s\t%s\t%s\tNone\t\t\n' \
+        "$timestamp" "${task_id:-${cmd_id}}" "${ninja:-unknown}" \
+        "$lesson_id" "$result" "$ref" "${project:-unknown}" "${task_type:-impl}"
 }
 
 for lesson_record in "${lesson_records[@]}"; do
@@ -163,7 +168,7 @@ for lesson_record in "${lesson_records[@]}"; do
             result="NOT_USEFUL"
             ref="no"
         fi
-        record_feedback "$current_id" "$result" "$ref"
+        _batch_lines+=("$(make_feedback_line "$current_id" "$result" "$ref")")
         reported_ids+=("$current_id")
         feedback_count=$((feedback_count + 1))
     fi
@@ -173,7 +178,7 @@ if [[ -n "$dedup_key" ]]; then
     while IFS= read -r injected_id; do
         [[ -n "$injected_id" ]] || continue
         if ! has_reported_id "$injected_id"; then
-            record_feedback "$injected_id" "NOT_USEFUL" "no"
+            _batch_lines+=("$(make_feedback_line "$injected_id" "NOT_USEFUL" "no")")
             auto_feedback_count=$((auto_feedback_count + 1))
         fi
     done < <(
@@ -182,6 +187,14 @@ if [[ -n "$dedup_key" ]]; then
             END { for (id in seen) print id }
         ' "$IMPACT_TSV" | sort
     )
+fi
+
+# Single flock write for all collected lines.
+if [[ ${#_batch_lines[@]} -gt 0 ]]; then
+    (
+        flock -w 10 200 || { echo "[feedback] WARN: flock timeout" >&2; exit 0; }
+        printf '%s\n' "${_batch_lines[@]}" >> "$IMPACT_TSV"
+    ) 200>"${IMPACT_TSV}.lock"
 fi
 
 if [[ $feedback_count -gt 0 ]]; then

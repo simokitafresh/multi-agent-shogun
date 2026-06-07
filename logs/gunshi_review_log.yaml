@@ -653,3 +653,284 @@
   ambiguity_points: none
   origin: "[[speed_training]] -> [[lib_script_update APPROVE]]"
   timestamp: "2026-06-07T10:45:00"
+- cmd_id: cmd_training_speed_ntfy_batch_flush_20260607141522
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/ntfy_batch_flush.sh。バッチ通知フラッシュ。副作用リスク低"
+  observations:
+    - "target_path確認: ntfy_batch_flush.sh。ntfy_batchの送信実行"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[ntfy_batch_flush APPROVE]]"
+  timestamp: "2026-06-07T14:17:00"
+- cmd_id: cmd_training_speed_model_analysis_20260607142252
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行2回目。target=scripts/model_analysis.sh。モデル分析ユーティリティ。副作用リスク低"
+  observations:
+    - "target_path確認: model_analysis.sh。2回目投入"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[model_analysis attempt2 APPROVE]]"
+  timestamp: "2026-06-07T14:24:00"
+- cmd_id: cmd_training_speed_ntfy_cmd_20260607142307
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/ntfy_cmd.sh。cmd通知ユーティリティ。副作用リスク低"
+  observations:
+    - "target_path確認: ntfy_cmd.sh。ntfy系通知"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[ntfy_cmd APPROVE]]"
+  timestamp: "2026-06-07T14:25:00"
+- cmd_id: cmd_training_speed_ntfy_inbox_archive_20260607142337
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/ntfy_inbox_archive.sh。通知+inboxアーカイブ。副作用リスク低"
+  observations:
+    - "target_path確認: ntfy_inbox_archive.sh"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[ntfy_inbox_archive APPROVE]]"
+  timestamp: "2026-06-07T14:25:00"
+- cmd_id: cmd_training_speed_ntfy_listener_20260607142618
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "速度修行。target=scripts/ntfy_listener.sh。デーモン(通知受信配信基盤)。LG016(timeout保護)関連。AC2で機能維持義務あり"
+  observations:
+    - "target_path確認: ntfy_listener.sh。デーモン。adversarial: 機能劣化→通知配信停止。AC2で保護。LG016 timeout保護維持必須"
+  causal_chain: "速度修行(正の複利)。デーモンの機能維持はAC2で担保"
+  brainwash_check: "デーモンだがAC2+テストSKIP=0で保護"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[ntfy_listener APPROVE]]"
+  timestamp: "2026-06-07T14:27:00"
+- cmd_id: cmd_training_speed_obsidian_promote_candidate_20260607142740
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/obsidian_promote_candidate.sh。三層記憶Obsidian昇格候補処理。AC2で機能維持"
+  observations:
+    - "target_path確認: obsidian_promote_candidate.sh。データ変換系。昇格ロジック維持必須"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[obsidian_promote_candidate APPROVE]]"
+  timestamp: "2026-06-07T14:29:00"
+- cmd_id: cmd_training_speed_obsidian_promote_finalize_20260607142927
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/obsidian_promote_finalize.sh。三層記憶Obsidian昇格最終化。AC2で機能維持"
+  observations:
+    - "target_path確認: obsidian_promote_finalize.sh。昇格最終処理"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[obsidian_promote_finalize APPROVE]]"
+  timestamp: "2026-06-07T14:30:00"
+- cmd_id: cmd_training_speed_oneshot_add_injection_count_20260607142953
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/oneshot_add_injection_count.sh。ワンショット注入カウント。副作用リスク低"
+  observations:
+    - "target_path確認: oneshot_add_injection_count.sh"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[oneshot_add_injection_count APPROVE]]"
+  timestamp: "2026-06-07T14:31:00"
+- cmd_id: cmd_training_speed_oneshot_backfill_gate_titles_20260607143106
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/oneshot_backfill_gate_titles.sh。gateタイトルバックフィル。副作用リスク低"
+  observations:
+    - "target_path確認: oneshot_backfill_gate_titles.sh。ワンショット処理"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[oneshot_backfill_gate_titles APPROVE]]"
+  timestamp: "2026-06-07T14:32:00"
+- cmd_id: cmd_training_speed_oneshot_reset_harmful_counts_20260607143225
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/oneshot_reset_harmful_counts.sh。有害カウントリセット。副作用リスク低"
+  observations:
+    - "target_path確認: oneshot_reset_harmful_counts.sh。ワンショット処理"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[oneshot_reset_harmful_counts APPROVE]]"
+  timestamp: "2026-06-07T14:33:00"
+- cmd_id: cmd_training_speed_parity_check_20260607143251
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "速度修行。target=scripts/parity_check.sh。パリティ検証。品質保証の根幹。AC2で機能維持義務あり"
+  observations:
+    - "target_path確認: parity_check.sh。adversarial: 検証ロジック劣化→パリティ不一致見逃し。AC2で保護"
+  causal_chain: "速度修行(正の複利)。パリティ検証の機能維持はAC2で担保"
+  brainwash_check: "品質保証根幹だがAC2+テストSKIP=0で保護"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[parity_check APPROVE]]"
+  timestamp: "2026-06-07T14:34:00"
+- cmd_id: cmd_karo_hotfix_hook_ga010_yaml_dump_pattern_20260607143500
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "6観点OK。GA-010 hook_failure調査hotfix。yaml.dump混入パターン調査+同型再発確認+防御層提案。AC3項。調査cmdで実害リスクなし"
+  observations:
+    - "target_path: scripts/oneshot/add_injection_count.sh。GA-010 hook_failure原因調査"
+    - "L548(yaml.dump禁止)関連。速度修行でyaml.dump混入の可能性"
+    - "AC1-3の順序依存正しい(原因特定→同型確認→防御提案)"
+  causal_chain: "GA-010 hook_failure→yaml.dump混入疑い→調査+同型確認→防御層提案(正の複利)"
+  brainwash_check: "調査cmdで実装変更なし。穴なし"
+  ambiguity_points: none
+  origin: "[[GA-010]] -> [[yaml.dump混入調査]] -> [[APPROVE]]"
+  timestamp: "2026-06-07T14:36:00"
+- cmd_id: cmd_training_speed_pending_decision_write_20260607143712
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/pending_decision_write.sh。PD書込み。AC2で機能維持"
+  observations:
+    - "target_path確認: pending_decision_write.sh。運用系書込み。速度改善で書込みロジック維持必須"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[pending_decision_write APPROVE]]"
+  timestamp: "2026-06-07T14:38:00"
+- cmd_id: cmd_karo_hotfix_hook_ga010_yaml_dump_pattern_20260607143500
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  finding_categories: [assumptions, premortem, north_star]
+  findings_summary: "4観点OK。GA-010はhook誤検知ではなくyaml.dump混入(コード品質問題)。GP-136が正しくBLOCK。同型再発なし。防御層Level4-6提案あり"
+  observations:
+    - "事実1: logs/hook_failures.yaml saizo GP-136エントリでadd_injection_count.sh yaml.dump確認"
+    - "事実2: staged files空+current diff(parity_check.sh)にyaml.dump混入なし"
+    - "事実3: 防御提案Level4(GP-136継続)+Level5(deploy_task yaml.dump AC自動注入)+Level6(hook_failure自動draft化)"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "saizo yaml.dump staged→GP-136正当BLOCK→同型なし確認→Level5防御提案(正の複利)"
+  brainwash_check: "調査報告で実装変更なし。lesson_candidateに具体的再利用可能知見あり"
+  ambiguity_points: none
+  origin: "[[GA-010]] -> [[hayate LGTM]] -> [[yaml.dump防御層提案]]"
+  timestamp: "2026-06-07T14:39:00"
+- cmd_id: cmd_training_speed_post_recalculate_checks_20260607143940
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/post_recalculate_checks.sh。再計算後チェック。副作用リスク低"
+  observations:
+    - "target_path確認: post_recalculate_checks.sh。検証用"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[post_recalculate_checks APPROVE]]"
+  timestamp: "2026-06-07T14:41:00"
+- cmd_id: cmd_training_speed_process_stop_20260607144043
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "速度修行。target=scripts/process_stop.sh。プロセス停止。安全系。AC2で機能維持義務あり"
+  observations:
+    - "target_path確認: process_stop.sh。adversarial: 停止ロジック劣化→プロセス残存。AC2で保護"
+  causal_chain: "速度修行(正の複利)。安全系の機能維持はAC2で担保"
+  brainwash_check: "安全系だがAC2で保護"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[process_stop APPROVE]]"
+  timestamp: "2026-06-07T14:43:00"
+- cmd_id: cmd_training_speed_ralph_loop_closer_20260607144730
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/ralph_loop_closer.sh。ラルフループ完了処理。学習ループ基盤。AC2で機能維持"
+  observations:
+    - "target_path確認: ralph_loop_closer.sh。学習ループ完了処理"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[ralph_loop_closer APPROVE]]"
+  timestamp: "2026-06-07T14:49:00"
+- cmd_id: cmd_training_speed_ralph_loop_metrics_20260607144904
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/ralph_loop_metrics.sh。ラルフループ計測。副作用リスク低"
+  observations:
+    - "target_path確認: ralph_loop_metrics.sh。計測ユーティリティ"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[ralph_loop_metrics APPROVE]]"
+  timestamp: "2026-06-07T14:51:00"
+- cmd_id: cmd_training_speed_record_lesson_feedback_20260607145037
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/record_lesson_feedback.sh。教訓フィードバック記録。副作用リスク低"
+  observations:
+    - "target_path確認: record_lesson_feedback.sh。教訓記録ユーティリティ"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[record_lesson_feedback APPROVE]]"
+  timestamp: "2026-06-07T14:52:00"
+- cmd_id: cmd_training_speed_report_field_set_20260607145159
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "速度修行。target=scripts/report_field_set.sh。報告YAMLフィールド書込み中核ライブラリ。AC2で機能維持義務あり"
+  observations:
+    - "target_path確認: report_field_set.sh。全忍者が報告作成時使用。adversarial: 書込みロジック劣化→報告YAML破損。AC2で保護"
+  causal_chain: "速度修行(正の複利)。中核ライブラリの機能維持はAC2で担保"
+  brainwash_check: "中核ライブラリだがAC2+テストSKIP=0で保護"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[report_field_set APPROVE]]"
+  timestamp: "2026-06-07T14:54:00"
+- cmd_id: cmd_training_speed_report_merge_20260607145557
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/report_merge.sh。報告マージ。副作用リスク低"
+  observations:
+    - "target_path確認: report_merge.sh"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[report_merge APPROVE]]"
+  timestamp: "2026-06-07T14:57:00"

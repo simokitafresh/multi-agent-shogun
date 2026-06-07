@@ -32,25 +32,27 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_training_speed_ntfy_listener_20260607142618
+  parent_cmd: cmd_training_speed_record_lesson_feedback_20260607145037
   project: infra
-  purpose: 'Speed-train scripts/ntfy_listener.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
+  purpose: 'Speed-train scripts/record_lesson_feedback.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
   scout_exempt: true
-  status: done
+  status: acknowledged
   stop_for: []
-  target_path: scripts/ntfy_listener.sh
-  task_id: cmd_training_speed_ntfy_listener_20260607142618_normal
+  target_path: scripts/record_lesson_feedback.sh
+  task_id: cmd_training_speed_record_lesson_feedback_20260607145037_normal
   task_type: speed_training
+  previous_failures:
+    attempt: 1
+    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
+    tried_approaches:
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
   related_lessons:
-  - id: 'L175'
-    summary: '`scripts/ntfy_listener.sh:317-319` が `read` 成功直後にLAST_STREAM_ACTIVITYを更新し、`190-1'
-    detail: '`scripts/ntfy_listener.sh:317-319` が `read` 成功直後にLAST_STREAM_ACTIVITYを更新し、`190-1'
-  - id: 'L169'
-    summary: 'scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ'
-    detail: 'scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ'
-  - id: 'L281'
-    summary: 'ntfy_listener.shにscript_update.shのsource行が追加されたがtest側のmock setup()にstub追加が漏れた。so'
-    detail: 'ntfy_listener.shにscript_update.shのsource行が追加されたがtest側のmock setup()にstub追加が漏れた。so'
+  - id: 'L611'
+    summary: 'lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ'
+    detail: 'lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ'
   - id: 'L342'
     summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
     detail: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
@@ -72,20 +74,21 @@ task:
   - id: 'L162'
     summary: 'IF フックスクリプトテスト時 THEN dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能'
     detail: 'IF フックスクリプトテスト時 THEN dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能'
+  - id: 'L705'
+    summary: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
+    detail: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
+  - id: 'L692'
+    summary: 'CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/'
+    detail: 'CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "infrastructure_ops — インフラ運用基盤:  scripts/ninja_monitor.sh scripts/inbox_watcher.sh scripts/daemon_supervisor.sh scripts/ntfy_listener.sh context/infrastructure.md scripts/dashboard_auto_section.sh ダッシュボードリアルタイムステータス自動生成 scripts/auto_deploy_next.sh サブタスク自動連続配備(auto_deployフラグ/blocked_by/忍者空き制御) scripts/reset_layout.sh agentsウィンドウペイン配置一発復元"
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
-  - "daemon_supervision — デーモン監視と復旧:  scripts/daemon_supervisor.sh scripts/ninja_monitor.sh scripts/inbox_watcher.sh docs/operations/daemon_runbook.md scripts/daemon_watchdog.sh デーモンcron監視+自動再起動(ninja_monitor/ntfy_listener/inbox_watcher)"
-  - "yaml_safe_write — YAML安全書込み:  scripts/lib/yaml_field_set.sh scripts/report_field_set.sh scripts/inbox_mark_read.sh scripts/inbox_write.sh"
-  - "shogun_android_app — 将軍Androidアプリ:  android/ android/app/build.gradle.kts android/app/src/main/java/com/shogun/android/ context/infrastructure.md §Android App"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
   recommended_skills:
-  - "reset-layout"
-  - "shogun-all-codex-switch"
-  - "shogun-peacetime-rollback"
+  - "report-write"
+  - "verdict-check"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -106,9 +109,7 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L175: `scripts/ntfy_listener.sh:317-319` が `read` 成功直後にLAST_STREAM_ACTIVITYを更新し、`190-1
-      - L169: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ
-      - L281: ntfy_listener.shにscript_update.shのsource行が追加されたがtest側のmock setup()にstub追加が漏れた。so
+      - L611: lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
       - L696: startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs
       - L602: karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te
@@ -116,14 +117,16 @@ task:
       - L690: CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr
       - L614: PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE '[a-z_]+.sh' が pre-bash-combine
       - L162: IF フックスクリプトテスト時 THEN dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能
+      - L705: 今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/
+      - L692: CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/
     ────────────────────────────────────────
     
     
   ac_version: 719e89b4
-  _ac_task_id: cmd_training_speed_ntfy_listener_20260607142618_normal
+  _ac_task_id: cmd_training_speed_record_lesson_feedback_20260607145037_normal
   _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_training_speed_ntfy_listener_20260607142618.yaml
-  report_path: queue/reports/kotaro_report_cmd_training_speed_ntfy_listener_20260607142618.yaml
+  report_filename: kotaro_report_cmd_training_speed_record_lesson_feedback_20260607145037.yaml
+  report_path: queue/reports/kotaro_report_cmd_training_speed_record_lesson_feedback_20260607145037.yaml
   bloom_level: 
-  deployed_at: "2026-06-07T14:26:49"
+  deployed_at: "2026-06-07T14:51:58"

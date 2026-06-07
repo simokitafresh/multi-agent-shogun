@@ -32,40 +32,19 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_training_speed_oneshot_backfill_gate_titles_20260607143106
+  parent_cmd: cmd_training_speed_ralph_loop_metrics_20260607144904
   project: infra
-  purpose: 'Speed-train scripts/oneshot/backfill_gate_titles.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
+  purpose: 'Speed-train scripts/ralph_loop_metrics.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
   scout_exempt: true
-  status: done
+  status: assigned
   stop_for: []
-  target_path: scripts/oneshot/backfill_gate_titles.sh
-  task_id: cmd_training_speed_oneshot_backfill_gate_titles_20260607143106_normal
+  target_path: scripts/ralph_loop_metrics.sh
+  task_id: cmd_training_speed_ralph_loop_metrics_20260607144904_normal
   task_type: speed_training
-  previous_failures:
-    attempt: 3
-    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-    approach_summary: 'scripts/note_draft.sh: readonlyを引数チェック後に移動+CODE_FENCE事前計算。1000回ループ: before=5500ms→after=5320ms(3.3%改善)'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-    - attempt: 2
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-    - attempt: 3
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-      approach_summary: 'scripts/note_draft.sh: readonlyを引数チェック後に移動+CODE_FENCE事前計算。1000回ループ: before=5500ms→after=5320ms(3.3%改善)'
   related_lessons:
-  - id: 'L488'
-    summary: 'stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow'
-    detail: 'stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow'
   - id: 'L342'
     summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
     detail: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
-  - id: 'L319'
-    summary: 'gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ'
-    detail: 'gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ'
   - id: 'L696'
     summary: 'startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs'
     detail: 'startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs'
@@ -81,12 +60,18 @@ task:
   - id: 'L614'
     summary: 'PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE ''[a-z_]+.sh'' が pre-bash-combine'
     detail: 'PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE ''[a-z_]+.sh'' が pre-bash-combine'
-  - id: 'L580'
-    summary: '新しいgate/hookを作るcmdでWARN表示だけをACにすると、検知は増えるが運用は変わらない。cmd設計段階でBLOCK/exit 1/強制/自動実行/'
-    detail: '新しいgate/hookを作るcmdでWARN表示だけをACにすると、検知は増えるが運用は変わらない。cmd設計段階でBLOCK/exit 1/強制/自動実行/'
   - id: 'L162'
     summary: 'IF フックスクリプトテスト時 THEN dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能'
     detail: 'IF フックスクリプトテスト時 THEN dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能'
+  - id: 'L705'
+    summary: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
+    detail: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
+  - id: 'L692'
+    summary: 'CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/'
+    detail: 'CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/'
+  - id: 'L175'
+    summary: '`scripts/ntfy_listener.sh:317-319` が `read` 成功直後にLAST_STREAM_ACTIVITYを更新し、`190-1'
+    detail: '`scripts/ntfy_listener.sh:317-319` が `read` 成功直後にLAST_STREAM_ACTIVITYを更新し、`190-1'
   standard_skills:
   - "report-write"
   - "verdict-check"
@@ -116,25 +101,25 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L488: stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
-      - L319: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ
       - L696: startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs
       - L602: karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te
       - L660: SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re
       - L690: CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr
       - L614: PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE '[a-z_]+.sh' が pre-bash-combine
-      - L580: 新しいgate/hookを作るcmdでWARN表示だけをACにすると、検知は増えるが運用は変わらない。cmd設計段階でBLOCK/exit 1/強制/自動実行/
       - L162: IF フックスクリプトテスト時 THEN dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能
+      - L705: 今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/
+      - L692: CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/
+      - L175: `scripts/ntfy_listener.sh:317-319` が `read` 成功直後にLAST_STREAM_ACTIVITYを更新し、`190-1
     ────────────────────────────────────────
     
     
   ac_version: 719e89b4
-  _ac_task_id: cmd_training_speed_oneshot_backfill_gate_titles_20260607143106_normal
+  _ac_task_id: cmd_training_speed_ralph_loop_metrics_20260607144904_normal
   _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_training_speed_oneshot_backfill_gate_titles_20260607143106.yaml
-  report_path: queue/reports/tobisaru_report_cmd_training_speed_oneshot_backfill_gate_titles_20260607143106.yaml
+  report_filename: tobisaru_report_cmd_training_speed_ralph_loop_metrics_20260607144904.yaml
+  report_path: queue/reports/tobisaru_report_cmd_training_speed_ralph_loop_metrics_20260607144904.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -154,4 +139,4 @@ task:
     - reason: 'lesson_candidate_fields_empty'
       count: 1
       hint: 'gate BLOCK: lesson_candidate_fields_empty'
-  deployed_at: "2026-06-07T14:31:42"
+  deployed_at: "2026-06-07T14:50:35"

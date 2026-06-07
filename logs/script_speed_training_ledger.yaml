@@ -1,4 +1,4 @@
-global_status: running
+global_status: paused
 generated_at: "2026-06-06T21:09:32"
 measurement_command: "timeout 5 bash -n <script_path> (syntax baseline only; not runtime speed)"
 real_measurement_policy: "Ninja must choose a safe runtime command per script: time bash script.sh <args>, --help, dry-run mode, or sandboxed equivalent. Record before_real_ms/after_real_ms with the same command before and after."
@@ -2218,40 +2218,40 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T14:42:32"
   - script_path: "scripts/post_recalculate_checks.sh"
-    status: assigned
+    status: completed
     before_ms: 13
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 480
+    after_real_ms: 40
+    real_measurement_command: "POST_RECALCULATE_CHECKS_LIB_ONLY=1 source scripts/post_recalculate_checks.sh; for i in $(seq 1 100); do load_database_url \"$env_file\" >/dev/null; done (git show HEAD baseline vs working version, 3-run min/median stable path)"
+    test_result: "bash_n_pass; bats tests/unit/test_infra_misc_small_consolidated.bats --filter test_post_recalculate_checks.bats => 3/3 pass SKIP=0"
+    commit: "cbe49d2342958e5d53eb03f458c40c28308ef6e6"
     assigned_to: "hayate"
-    updated_at: "2026-06-07T14:39:39"
+    updated_at: "2026-06-07T14:47:50"
   - script_path: "scripts/process_stop.sh"
-    status: assigned
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 42
+    after_real_ms: 20
+    real_measurement_command: "bash scripts/process_stop.sh (41 runs median, no-arg usage path)"
+    test_result: "bash_n_pass; behavior_checks_noargs_invalid_lowpid_PASS; SKIP=0"
+    commit: "52d95fbac"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T14:40:43"
+    updated_at: "2026-06-07T14:45:22"
   - script_path: "scripts/ralph_loop_closer.sh"
-    status: pending
+    status: completed
     before_ms: 18
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 186
+    after_real_ms: 73
+    real_measurement_command: "printf WARN+REFLUX_CHECK MISSING fixture | bash scripts/ralph_loop_closer.sh infra title detail cmd_test (31 runs median)"
+    test_result: "bash_n_pass; fixtures no_warn/no_missing/missing_yaml_parse PASS; SKIP=0"
+    commit: "4a1339d328d814d4aefcd663c435622d349c7a4e"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T14:53:07"
   - script_path: "scripts/ralph_loop_metrics.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -2259,10 +2259,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T14:49:04"
   - script_path: "scripts/record_lesson_feedback.sh"
-    status: pending
+    status: assigned
     before_ms: 17
     after_ms: ""
     before_real_ms: ""
@@ -2270,19 +2270,19 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T14:50:37"
   - script_path: "scripts/report_field_set.sh"
-    status: pending
+    status: completed
     before_ms: 19
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 9
+    after_real_ms: 8
+    real_measurement_command: "bash scripts/report_field_set.sh /tmp/nonexistent_report.yaml (61 runs median, 1-arg usage path)"
+    test_result: "bash_n_pass; tmp_write_PASS; usage_noargs_onearg_PASS; bats_report_field_set_48_PASS_SKIP0"
+    commit: "f039883dd"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T14:56:20"
   - script_path: "scripts/report_merge.sh"
     status: pending
     before_ms: 16
