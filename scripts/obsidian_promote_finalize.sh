@@ -193,7 +193,6 @@ def relative_path(path: Path, repo_root: Path) -> str:
 
 def main() -> int:
     repo_root = Path(sys.argv[1])
-    state_module = load_state_module(repo_root)
     db_path = Path(sys.argv[2])
     backup_dir = sys.argv[3]
     notes_dir = Path(sys.argv[4])
@@ -202,6 +201,13 @@ def main() -> int:
     reason = sys.argv[7].strip() or "Obsidian note draft generated and linked"
     dry_run = sys.argv[8] == "1"
     force = sys.argv[9] == "1"
+    state_module = None
+
+    def get_state_module():
+        nonlocal state_module
+        if state_module is None:
+            state_module = load_state_module(repo_root)
+        return state_module
 
     if not db_path.exists():
         print(f"obsidian_promote_finalize: database not found: {db_path}", file=sys.stderr)
@@ -238,10 +244,13 @@ def main() -> int:
             where += " AND id = ?"
             params.append(event_id)
         params.append(limit)
+        select_columns = "id, summary" if dry_run else (
+            "id, ts, event_type, agent, summary, detail, cmd_id, concepts, "
+            "source_file, importance, state, occurred_at, raw_content, updated_at"
+        )
         rows = conn.execute(
             f"""
-            SELECT id, ts, event_type, agent, summary, detail, cmd_id, concepts,
-                   source_file, importance, state, occurred_at, raw_content, updated_at
+            SELECT {select_columns}
             FROM events
             WHERE {where}
             ORDER BY COALESCE(NULLIF(updated_at, ''), ts, id), id
@@ -256,12 +265,11 @@ def main() -> int:
                 print("dry_run=true")
             else:
                 try:
-                    state_module.sync_memory_db_ext4_cache(str(db_path))
+                    get_state_module().sync_memory_db_ext4_cache(str(db_path))
                 except Exception as exc:
                     print(f"warn: cache sync failed (non-blocking): {exc}", file=sys.stderr)
             return 0
 
-        generated_at = state_module.now_timestamp()
         note_plan: list[tuple[sqlite3.Row, Path, str]] = []
         for row in rows:
             title_slug = slugify(row["summary"] or "", slugify(row["id"], "event"))
@@ -277,6 +285,8 @@ def main() -> int:
                 print(f"{row['id']}|note={rel_note_path}|summary={row['summary'] or ''}")
             return 0
 
+        state_module = get_state_module()
+        generated_at = state_module.now_timestamp()
         existing = [path for _row, path, _rel in note_plan if path.exists() and not force]
         if existing:
             for path in existing:

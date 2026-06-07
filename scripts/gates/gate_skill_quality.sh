@@ -188,7 +188,8 @@ maybe_cache_gate_skill_quality() {
     mkdir -p "$cache_dir"
 
     cache_scope="${SCRIPT_DIR//[\/: .#*?!]/_}"
-    cache_base="$cache_dir/default_v4_${cache_scope: -48}"
+    local _cs_len="${#cache_scope}"
+    cache_base="$cache_dir/default_v5_${cache_scope:$(( _cs_len > 48 ? _cs_len - 48 : 0 ))}"
     if [ -f "$cache_base.out" ] && [ -f "$cache_base.exit" ]; then
         local now cache_mtime
         printf -v now '%(%s)T' -1
