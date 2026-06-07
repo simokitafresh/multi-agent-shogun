@@ -892,11 +892,22 @@ safe_send_clear() {
     log "CTX-RESET: $agent_name @context_pct → 0% after $clear_cmd"
     if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "claude" ]; then
         # /clear resets Claude Code to accept-edits; shift+tab twice restores bypass permissions.
-        sleep 2
+        # CLAUDE.md(48KB)ロード+初期化完了を待つ: CTX>0%が表示されるまでポーリング(最大15秒)
+        local _bp_wait=0
+        while [ "$_bp_wait" -lt 15 ]; do
+            sleep 1
+            _bp_wait=$((_bp_wait + 1))
+            local _bp_ctx
+            _bp_ctx=$(tmux capture-pane -t "$pane" -p 2>/dev/null | grep -oP 'CTX:\K[0-9]+' | tail -1 || true)
+            if [ -n "$_bp_ctx" ] && [ "$_bp_ctx" -gt 0 ] 2>/dev/null; then
+                log "BYPASS-PERMISSIONS-WAIT: $agent_name CLI ready (CTX:${_bp_ctx}%) after ${_bp_wait}s"
+                break
+            fi
+        done
         safe_send_keys "$pane" S-Tab || true
-        sleep 0.1
+        sleep 0.3
         safe_send_keys "$pane" S-Tab || true
-        log "BYPASS-PERMISSIONS-TOGGLE: $agent_name sent shift+tab x2 after $clear_cmd"
+        log "BYPASS-PERMISSIONS-TOGGLE: $agent_name sent shift+tab x2 after $clear_cmd (waited ${_bp_wait}s)"
     fi
     rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
     return 0
