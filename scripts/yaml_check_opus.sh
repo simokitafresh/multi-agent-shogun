@@ -24,6 +24,14 @@ if [[ ! -f "$TARGET" ]]; then
     exit 1
 fi
 
+# ── ファイルを1回読み込み(全grep→bash正規表現マッチでsubprocess廃止) ──
+# mapfileで行配列+join文字列の両方を用意(~40-50 subprocess → 0)
+_yco_content=""
+while IFS= read -r _yco_line || [[ -n "$_yco_line" ]]; do
+    _yco_content+="${_yco_line}"$'\n'
+done < "$TARGET"
+_yco_lines_str="$_yco_content"
+
 # ── 結果カウンタ ──
 violations=0
 warnings=0
@@ -41,11 +49,11 @@ add_warning() {
 }
 
 # ── フィールド存在チェック (インデント考慮) ──
-# $1=パターン(grep正規表現), $2=フィールド名(表示用)
+# bash ERE: [[ "$_yco_content" =~ pattern ]] — subprocess不要
 check_field() {
     local pattern="$1"
     local name="$2"
-    if ! grep -qE "$pattern" "$TARGET"; then
+    if [[ ! "$_yco_content" =~ $pattern ]]; then
         add_violation "Missing required field: $name"
         return 1
     fi
@@ -53,33 +61,44 @@ check_field() {
 }
 
 # ── 配列フィールドチェック ──
-# YAML配列は "field:" の次行が "- " で始まるか、"field: []" の形式
-# $1=フィールド名(インデント付きgrep用), $2=表示名
 check_array_field() {
     local field_pattern="$1"
     local name="$2"
 
-    if ! grep -qE "$field_pattern" "$TARGET"; then
+    if [[ ! "$_yco_content" =~ $field_pattern ]]; then
         add_violation "Missing required array field: $name"
         return 1
     fi
 
-    # 値が空配列 [] か、次行に - がある場合はOK
-    local line
-    line=$(grep -E "$field_pattern" "$TARGET" | head -1)
+    # マッチした行を抽出(行ループ — bash組込み, subprocess不要)
+    local line="" line_num=0 found_num=0
+    local _ln=0
+    while IFS= read -r _l; do
+        ((_ln++)) || true
+        if [[ "$_l" =~ $field_pattern ]] && [[ "$found_num" -eq 0 ]]; then
+            line="$_l"
+            line_num="$_ln"
+            found_num=1
+        fi
+    done <<< "$_yco_content"
 
     # field: [] 形式
-    if echo "$line" | grep -qE '\[\]'; then
+    if [[ "$line" =~ \[\] ]]; then
         return 0
     fi
 
     # field: (値なし) → 次行を確認
-    if echo "$line" | grep -qE ':\s*$'; then
-        local line_num
-        line_num=$(grep -nE "$field_pattern" "$TARGET" | head -1 | cut -d: -f1)
-        local next_line
-        next_line=$(sed -n "$((line_num + 1))p" "$TARGET")
-        if echo "$next_line" | grep -qE '^\s*-\s'; then
+    if [[ "$line" =~ :[[:space:]]*$ ]]; then
+        local next_line=""
+        local _ln2=0
+        while IFS= read -r _l2; do
+            ((_ln2++)) || true
+            if [[ "$_ln2" -eq $(( line_num + 1 )) ]]; then
+                next_line="$_l2"
+                break
+            fi
+        done <<< "$_yco_content"
+        if [[ "$next_line" =~ ^[[:space:]]*-[[:space:]] ]]; then
             return 0
         fi
         add_warning "Array field '$name' has no entries and is not empty array []"
@@ -87,9 +106,7 @@ check_array_field() {
     fi
 
     # field: value (インライン値=型エラーの可能性)
-    # Note: grep -q suppresses stdout, so piping to another grep is broken (always empty).
-    # Use && with separate invocations instead.
-    if echo "$line" | grep -qE ':\s+[^\[]+' && ! echo "$line" | grep -qE ':\s*$'; then
+    if [[ "$line" =~ :[[:space:]]+[^\[] ]] && [[ ! "$line" =~ :[[:space:]]*$ ]]; then
         add_warning "Array field '$name' appears to have a scalar value instead of array"
     fi
 
@@ -101,13 +118,22 @@ check_boolean_field() {
     local field_pattern="$1"
     local name="$2"
 
-    if ! grep -qE "$field_pattern" "$TARGET"; then
+    if [[ ! "$_yco_content" =~ $field_pattern ]]; then
         add_violation "Missing required boolean field: $name"
         return 1
     fi
 
-    local value
-    value=$(grep -E "$field_pattern" "$TARGET" | head -1 | sed 's/.*:\s*//' | tr -d '[:space:]')
+    # bash変数展開でgrep+sed+trパイプを廃止
+    local value="" matched_line=""
+    while IFS= read -r _l; do
+        if [[ "$_l" =~ $field_pattern ]]; then
+            matched_line="$_l"
+            break
+        fi
+    done <<< "$_yco_content"
+    # "  found: true" → "true"
+    value="${matched_line##*: }"
+    value="${value//[[:space:]]/}"
 
     if [[ "$value" != "true" && "$value" != "false" ]]; then
         add_violation "Boolean field '$name' has non-boolean value: '$value'"
@@ -118,18 +144,14 @@ check_boolean_field() {
 
 # ── 形式判定 ──
 detect_format() {
-    # task形式: 最初のレベルに "task:" キーがある
-    if grep -qE '^task:' "$TARGET"; then
+    if [[ "$_yco_content" =~ (^|$'\n')task:[[:space:]]*($'\n'|$) ]]; then
         echo "task"
         return
     fi
-
-    # report形式: ルートレベルに "worker_id:" がある
-    if grep -qE '^worker_id:' "$TARGET"; then
+    if [[ "$_yco_content" =~ (^|$'\n')worker_id:[[:space:]] ]]; then
         echo "report"
         return
     fi
-
     echo "unknown"
 }
 
@@ -138,35 +160,37 @@ validate_task() {
     echo "Format: task"
     echo "---"
 
-    # 必須スカラーフィールド (task: 配下なのでインデント有)
-    check_field '^\s+task_id:' "task.task_id"
-    check_field '^\s+parent_cmd:' "task.parent_cmd"
-    check_field '^\s+task_type:' "task.task_type"
-    check_field '^\s+status:' "task.status"
-    check_field '^\s+command:' "task.command"
+    check_field $'(^|\n)[[:space:]]+task_id:' "task.task_id"
+    check_field $'(^|\n)[[:space:]]+parent_cmd:' "task.parent_cmd"
+    check_field $'(^|\n)[[:space:]]+task_type:' "task.task_type"
+    check_field $'(^|\n)[[:space:]]+status:' "task.status"
+    check_field $'(^|\n)[[:space:]]+command:' "task.command"
 
-    # 準必須スカラーフィールド (存在しなければwarning)
-    if ! grep -qE '^\s+project:' "$TARGET"; then
+    if [[ ! "$_yco_content" =~ (^|$'\n')[[:space:]]+project: ]]; then
         add_warning "Optional field missing: task.project"
     fi
-    if ! grep -qE '^\s+target_path:' "$TARGET"; then
+    if [[ ! "$_yco_content" =~ (^|$'\n')[[:space:]]+target_path: ]]; then
         add_warning "Optional field missing: task.target_path"
     fi
 
-    # 配列フィールド
-    check_array_field '^\s+acceptance_criteria:' "task.acceptance_criteria"
+    check_array_field $'(^|\n)[[:space:]]+acceptance_criteria:' "task.acceptance_criteria"
 
-    # 準必須配列フィールド (存在しなければwarning)
-    if ! grep -qE '^\s+related_lessons:' "$TARGET"; then
+    if [[ ! "$_yco_content" =~ (^|$'\n')[[:space:]]+related_lessons: ]]; then
         add_warning "Optional array field missing: task.related_lessons"
     fi
-    if ! grep -qE '^\s+constraints:' "$TARGET"; then
+    if [[ ! "$_yco_content" =~ (^|$'\n')[[:space:]]+constraints: ]]; then
         add_warning "Optional array field missing: task.constraints"
     fi
 
-    # task_type の値チェック
-    local task_type
-    task_type=$(grep -E '^\s+task_type:' "$TARGET" | head -1 | sed "s/.*task_type:\s*//" | tr -d '[:space:]"'"'"'')
+    # task_type値チェック(bash変数展開でgrep+sed+tr廃止)
+    local task_type="" _tl=""
+    while IFS= read -r _tl; do
+        if [[ "$_tl" =~ ^[[:space:]]+task_type: ]]; then
+            task_type="${_tl##*task_type:}"
+            task_type="${task_type//[[:space:]\"\']/}"
+            break
+        fi
+    done <<< "$_yco_content"
     if [[ -n "$task_type" ]]; then
         case "$task_type" in
             impl|implement|review|recon|test|fix|design|refactor|deploy)
@@ -177,12 +201,18 @@ validate_task() {
         esac
     fi
 
-    # status の値チェック
-    local status
-    status=$(grep -E '^\s+status:' "$TARGET" | head -1 | sed "s/.*status:\s*//" | tr -d '[:space:]"'"'"'')
+    # status値チェック
+    local status="" _sl=""
+    while IFS= read -r _sl; do
+        if [[ "$_sl" =~ ^[[:space:]]+status: ]]; then
+            status="${_sl##*status:}"
+            status="${status//[[:space:]\"\']/}"
+            break
+        fi
+    done <<< "$_yco_content"
     if [[ -n "$status" ]]; then
         case "$status" in
-            assigned|acknowledged|in_progress|done|blocked|cancelled|pending)
+            assigned|acknowledged|in_progress|done|blocked|cancelled|pending|completed)
                 ;;
             *)
                 add_warning "Unusual status value: '$status' (expected: assigned/acknowledged/in_progress/done/blocked/cancelled/pending)"
@@ -196,39 +226,35 @@ validate_report() {
     echo "Format: report"
     echo "---"
 
-    # 必須スカラーフィールド (ルートレベル)
-    check_field '^worker_id:' "worker_id"
-    check_field '^task_id:' "task_id"
-    check_field '^parent_cmd:' "parent_cmd"
-    check_field '^timestamp:' "timestamp"
-    check_field '^status:' "status"
+    check_field $'(^|\n)worker_id:' "worker_id"
+    check_field $'(^|\n)task_id:' "task_id"
+    check_field $'(^|\n)parent_cmd:' "parent_cmd"
+    check_field $'(^|\n)timestamp:' "timestamp"
+    check_field $'(^|\n)status:' "status"
 
-    # 必須オブジェクトフィールド
-    check_field '^result:' "result"
-    if grep -qE '^result:' "$TARGET"; then
-        # result.summary の存在チェック
-        if ! grep -qE '^\s+summary:' "$TARGET"; then
+    check_field $'(^|\n)result:' "result"
+    if [[ "$_yco_content" =~ (^|$'\n')result: ]]; then
+        if [[ ! "$_yco_content" =~ (^|$'\n')[[:space:]]+summary: ]]; then
             add_violation "Missing required field: result.summary"
         fi
     fi
 
-    check_field '^lesson_candidate:' "lesson_candidate"
-    if grep -qE '^lesson_candidate:' "$TARGET"; then
-        check_boolean_field '^\s+found:' "lesson_candidate.found"
+    check_field $'(^|\n)lesson_candidate:' "lesson_candidate"
+    if [[ "$_yco_content" =~ (^|$'\n')lesson_candidate: ]]; then
+        check_boolean_field $'(^|\n)[[:space:]]+found:' "lesson_candidate.found"
     fi
 
-    check_field '^skill_candidate:' "skill_candidate"
-    if grep -qE '^skill_candidate:' "$TARGET"; then
-        check_boolean_field '^\s+found:' "skill_candidate.found"
+    check_field $'(^|\n)skill_candidate:' "skill_candidate"
+    if [[ "$_yco_content" =~ (^|$'\n')skill_candidate: ]]; then
+        check_boolean_field $'(^|\n)[[:space:]]+found:' "skill_candidate.found"
     fi
 
-    check_field '^decision_candidate:' "decision_candidate"
-    if grep -qE '^decision_candidate:' "$TARGET"; then
-        check_boolean_field '^\s+found:' "decision_candidate.found"
+    check_field $'(^|\n)decision_candidate:' "decision_candidate"
+    if [[ "$_yco_content" =~ (^|$'\n')decision_candidate: ]]; then
+        check_boolean_field $'(^|\n)[[:space:]]+found:' "decision_candidate.found"
     fi
 
-    # lesson_referenced は配列(省略可能だがあるべき)
-    if ! grep -qE '^lesson_referenced:' "$TARGET"; then
+    if [[ ! "$_yco_content" =~ (^|$'\n')lesson_referenced: ]]; then
         add_warning "Optional field missing: lesson_referenced"
     fi
 }
