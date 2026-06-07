@@ -2130,29 +2130,29 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T14:27:14"
   - script_path: "scripts/ntfy_listener.sh"
-    status: assigned
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 33
+    after_real_ms: 20
+    real_measurement_command: "NTFY_LISTENER_LIB_ONLY=1 bash scripts/ntfy_listener.sh (10-run median)"
+    test_result: "bash -n OK; SCRIPT_DIR correct; tests/unit/test_ntfy_listener.bats 7/7 PASS SKIP=0; before_33ms_after_20ms; 39pct_reduction"
+    commit: "9c2280f0b"
     assigned_to: "kotaro"
-    updated_at: "2026-06-07T14:26:18"
+    updated_at: "2026-06-07T14:29:00"
   - script_path: "scripts/obsidian_promote_candidate.sh"
-    status: assigned
+    status: completed
     before_ms: 14
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 460
+    after_real_ms: 360
+    real_measurement_command: "bash scripts/obsidian_promote_candidate.sh --dry-run --limit 5 >/dev/null"
+    test_result: "bash -n scripts/obsidian_promote_candidate.sh PASS; dry-run PASS; sandbox non-dry-run backup/update PASS SKIP=0"
+    commit: "9c2280f0b"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T14:27:40"
+    updated_at: "2026-06-07T14:30:44"
   - script_path: "scripts/obsidian_promote_finalize.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -2160,10 +2160,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T14:29:27"
   - script_path: "scripts/oneshot/add_injection_count.sh"
-    status: pending
+    status: assigned
     before_ms: 14
     after_ms: ""
     before_real_ms: ""
@@ -2171,10 +2171,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T14:29:53"
   - script_path: "scripts/oneshot/backfill_gate_titles.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -2182,8 +2182,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T14:31:06"
   - script_path: "scripts/oneshot/reset_harmful_counts.sh"
     status: pending
     before_ms: 14
