@@ -14,6 +14,17 @@ if [ ! -f "$GATE_LOG" ]; then
     exit 1
 fi
 
+# Early exit: skip expensive archive scan when no 8-column rows remain
+_nf8_check=$(awk -F'\t' 'NF==8{found=1; exit} END{print found+0}' "$GATE_LOG")
+if [ "$_nf8_check" -eq 0 ]; then
+    after_nf9=$(awk -F'\t' 'NF==9{c++} END{print c+0}' "$GATE_LOG")
+    echo "OK: backfill complete"
+    echo "  updated_rows (8->9): 0"
+    echo "  remaining_nf8: 0"
+    echo "  nf9_rows: $after_nf9"
+    exit 0
+fi
+
 tmp_map=$(mktemp)
 tmp_out=$(mktemp)
 trap 'rm -f "$tmp_map" "$tmp_out"' EXIT
