@@ -2089,3 +2089,14 @@ entries:
   supplementary_cmds: 0
   source: "cmd_complete_gate"
   timestamp: "2026-06-07T01:37:24Z"
+- cmd_id: "cmd_3207"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-07T05:59:38Z"
+  notes: "command_files_modified_mismatch"
