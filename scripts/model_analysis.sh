@@ -101,13 +101,17 @@ if [[ "$MODE" == "summary" ]]; then
             esac
         fi
         _label="${_label//_/ }"
-        _low=$(echo "$_label" | tr '[:upper:]' '[:lower:]' | tr '-' ' ')
+        _low="${_label//-/ }"
+        _low="${_low,,}"
         if [[ "$_low" == *opus* ]] && [[ "$_low" == *4.6* || "$_low" == *4\ 6* ]]; then
             ACTIVE_FAM_MAP["opus_4_6"]=1
         elif [[ "$_low" == *gpt* || "$_low" == *codex* ]] && [[ "$_low" == *5.4* || "$_low" == *5\ 4* || "$_low" == *5.5* || "$_low" == *5\ 5* ]]; then
             ACTIVE_FAM_MAP["gpt_5"]=1
         else
-            _slug=$(echo "$_label" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g; s/^_\+//; s/_\+$//')
+            _slug="${_label,,}"
+            _slug="${_slug//[^a-z0-9]/_}"
+            _slug="${_slug#"${_slug%%[!_]*}"}"
+            _slug="${_slug%"${_slug##*[!_]}"}"
             ACTIVE_FAM_MAP["${_slug:-unknown}"]=1
         fi
     done < <(awk '
