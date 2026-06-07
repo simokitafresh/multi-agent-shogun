@@ -6,6 +6,8 @@ setup() {
     LEDGER="$TMP_ROOT/script_speed_training_ledger.yaml"
     export SPEED_TRAINING_LEDGER="$LEDGER"
     export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+    export SPEED_TRAINING_TASK_DIR="$TMP_ROOT/tasks"
+    mkdir -p "$SPEED_TRAINING_TASK_DIR"
 }
 
 teardown() {
@@ -51,6 +53,44 @@ teardown() {
     assigned_count=$(grep -c 'status: assigned' "$LEDGER")
     [ "$assigned_count" = "1" ]
     grep -Fq 'assigned_to: "hayate"' "$LEDGER"
+}
+
+@test "auto-deploy skips scripts already active in task yaml" {
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
+    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
+    cat > "$SPEED_TRAINING_TASK_DIR/hayate.yaml" <<EOF
+task:
+  status: in_progress
+  target_path: $first
+EOF
+
+    run env SPEED_TRAINING_DRY_RUN=1 bash "$PROJECT_ROOT/tools/bash_speed_training.sh" auto-deploy kagemaru "$LEDGER"
+    [ "$status" -eq 0 ]
+    [[ "$output" == DRY_RUN\ deploy_task* ]]
+
+    awk -v first="$first" '
+        $0 ~ "script_path: \"" first "\"" { in_first = 1; next }
+        in_first && /status:/ { first_status = $2; in_first = 0 }
+        /status: assigned/ { assigned_count++ }
+        END { exit !(first_status == "pending" && assigned_count == 1) }
+    ' "$LEDGER"
+}
+
+@test "auto-deploy reassigns no_improvement entries for rework" {
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
+    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-after "$first" no_improvement 12 "no improvement" no_change "$LEDGER"
+
+    run env SPEED_TRAINING_DRY_RUN=1 bash "$PROJECT_ROOT/tools/bash_speed_training.sh" auto-deploy hayate "$LEDGER"
+    [ "$status" -eq 0 ]
+
+    awk -v first="$first" '
+        $0 ~ "script_path: \"" first "\"" { in_first = 1; next }
+        in_first && /status: assigned/ { status_seen = 1 }
+        in_first && /assigned_to: "hayate"/ { assignee_seen = 1 }
+        in_first && /^[[:space:]]*-[[:space:]]+script_path:/ { in_first = 0 }
+        END { exit !(status_seen && assignee_seen) }
+    ' "$LEDGER"
 }
 
 @test "auto-deploy generated task preserves speed purpose and real runtime ACs" {

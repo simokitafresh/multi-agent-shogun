@@ -6,6 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LEDGER_DEFAULT="$SCRIPT_DIR/logs/script_speed_training_ledger.yaml"
 LEDGER="${SPEED_TRAINING_LEDGER:-$LEDGER_DEFAULT}"
 STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
+TASK_DIR="${SPEED_TRAINING_TASK_DIR:-$SCRIPT_DIR/queue/tasks}"
 
 usage() {
     cat <<'EOF'
@@ -143,11 +144,129 @@ cmd_next() {
             sub(/^.*script_path:[[:space:]]*"?/, "", path)
             sub(/"?[[:space:]]*$/, "", path)
         }
-        /^[[:space:]]+status:[[:space:]]*pending[[:space:]]*$/ {
+        /^[[:space:]]+status:[[:space:]]*(pending|no_improvement)[[:space:]]*$/ {
             print path
             exit
         }
     ' "$ledger"
+}
+
+active_task_targets() {
+    local task_dir="${1:-$TASK_DIR}"
+    local task_file
+    [ -d "$task_dir" ] || return 0
+    for task_file in "$task_dir"/*.yaml; do
+        [ -f "$task_file" ] || continue
+        awk '
+            /^[[:space:]]+status:/ {
+                status = $0
+                sub(/^.*status:[[:space:]]*"?/, "", status)
+                sub(/"?[[:space:]]*$/, "", status)
+            }
+            /^[[:space:]]+target_path:/ {
+                target = $0
+                sub(/^.*target_path:[[:space:]]*"?/, "", target)
+                sub(/"?[[:space:]]*$/, "", target)
+            }
+            END {
+                if (target != "" && status ~ /^(assigned|acknowledged|in_progress)$/) print target
+            }
+        ' "$task_file"
+    done
+}
+
+reserve_next_unlocked() {
+    local ledger="$1"
+    local ninja="$2"
+    local now="$3"
+    local task_dir="${4:-$TASK_DIR}"
+    local reserved_file="$5"
+    local tmp
+    tmp=$(mktemp "${ledger}.XXXXXX")
+    active_task_targets "$task_dir" | awk '
+        NF { active[$0] = 1 }
+        END {
+            for (target in active) print target
+        }
+    ' > "${tmp}.active"
+    awk -v ninja="$ninja" -v now="$now" -v active_file="${tmp}.active" -v reserved_file="$reserved_file" '
+        BEGIN {
+            while ((getline line < active_file) > 0) {
+                active[line] = 1
+            }
+            close(active_file)
+        }
+        /^[[:space:]]*-[[:space:]]+script_path:/ {
+            if (in_target && !reserved) emit_pending()
+            path = $0
+            sub(/^.*script_path:[[:space:]]*"?/, "", path)
+            sub(/"?[[:space:]]*$/, "", path)
+            in_target = (reserved == 0 && !(path in active))
+            if (in_target) {
+                block = $0 ORS
+                status_seen = assigned_seen = updated_seen = 0
+                pending_target = 0
+                next
+            }
+            print
+            next
+        }
+        in_target {
+            line = $0
+            if ($0 ~ /^[[:space:]]+status:[[:space:]]*(pending|no_improvement)[[:space:]]*$/) {
+                line = "    status: assigned"
+                pending_target = 1
+                status_seen = 1
+            } else if ($0 ~ /^[[:space:]]+status:/) {
+                status_seen = 1
+                in_target = 0
+                printf "%s", block
+                print
+                next
+            } else if ($0 ~ /^[[:space:]]+assigned_to:/) {
+                line = "    assigned_to: \"" ninja "\""
+                assigned_seen = 1
+            } else if ($0 ~ /^[[:space:]]+updated_at:/) {
+                line = "    updated_at: \"" now "\""
+                updated_seen = 1
+            }
+            block = block line ORS
+            next
+        }
+        { print }
+        END {
+            if (in_target && !reserved) emit_pending()
+        }
+        function emit_pending() {
+            if (pending_target) {
+                if (!assigned_seen) block = block "    assigned_to: \"" ninja "\"" ORS
+                if (!updated_seen) block = block "    updated_at: \"" now "\"" ORS
+                printf "%s", block
+                print path > reserved_file
+                reserved = 1
+            } else {
+                printf "%s", block
+            }
+        }
+    ' "$ledger" > "$tmp"
+    rm -f "${tmp}.active"
+    mv "$tmp" "$ledger"
+}
+
+cmd_reserve_next() {
+    local ninja="${1:-}"
+    local ledger="${2:-$LEDGER}"
+    local reserved_file
+    [ -n "$ninja" ] || { usage >&2; return 2; }
+    [ -f "$ledger" ] || return 1
+    if [ "$(ledger_global_status "$ledger")" != "running" ]; then
+        return 2
+    fi
+    mkdir -p "${SHOGUN_STATE_DIR:-/tmp}"
+    reserved_file=$(mktemp "${SHOGUN_STATE_DIR:-/tmp}/speed_training_reserved.XXXXXX")
+    with_ledger_lock "$ledger" reserve_next_unlocked "$ledger" "$ninja" "$(now_iso)" "$TASK_DIR" "$reserved_file"
+    cat "$reserved_file"
+    rm -f "$reserved_file"
 }
 
 set_global_status_unlocked() {
@@ -281,9 +400,8 @@ cmd_auto_deploy() {
         echo "paused"
         return 0
     fi
-    script_path=$(cmd_next "$ledger" || true)
+    script_path=$(cmd_reserve_next "$ninja" "$ledger" || true)
     [ -n "$script_path" ] || { echo "no_pending"; return 1; }
-    cmd_mark_assigned "$script_path" "$ninja" "$ledger"
     safe_name="${script_path#scripts/}"
     safe_name="${safe_name%.sh}"
     safe_name="${safe_name//[^A-Za-z0-9]/_}"
@@ -305,6 +423,7 @@ main() {
     case "$cmd" in
         init-ledger) cmd_init_ledger "$@" ;;
         next) cmd_next "$@" ;;
+        reserve-next) cmd_reserve_next "$@" ;;
         set-global-status) cmd_set_global_status "$@" ;;
         mark-assigned) cmd_mark_assigned "$@" ;;
         record-after) cmd_record_after "$@" ;;
