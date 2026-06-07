@@ -10,7 +10,7 @@ description: |
   DO NOT TRIGGER: レビュー判定そのもの（→手動）、gate_sync（→/gate-sync）、idle分析永続化（→/idle-persist）
 ---
 
-<!-- script_refs_checked_at: 2026-06-07T10:28:45+09:00 -->
+<!-- script_refs_checked_at: 2026-06-07T21:51:07+09:00 -->
 
 Script refs verified: 2026-06-07 cmd_3206. `inbox_write.sh` はサブシェル削減の高速化のみで、review_feedback送信の引数契約は変更なし。`bulletin_write.sh` のposted_by/content/requires_confirmation/action_type仕様と`yaml_field_set.sh`のflock+readback検証も維持。SKILL.md記載のレビュー記録・通知手順は現行と一致。
 

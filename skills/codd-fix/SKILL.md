@@ -95,4 +95,4 @@ bash scripts/test_select.sh <changed-file>
 - `--no-push`なしで実行するな。忍者はpush禁止
 - 事象ではなく広すぎる実装指示を渡すな
 
-<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-07T21:51:07+09:00 -->

@@ -377,4 +377,4 @@ Next dream eligible: [timestamp + 24h]
 
 Script refs verified: 2026-06-03 cmd_3144. `insight_write.sh` 直近変更(4dacb9c9)は運用ファイルauto-commit(mtimeのみ変化)。スクリプト本体の動作・インターフェース変更なし。SKILL.md記載の仕様(引数/priority/source/--resolve/dedup/source repeat通知)は現行と一致。
 
-<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-07T21:51:07+09:00 -->
