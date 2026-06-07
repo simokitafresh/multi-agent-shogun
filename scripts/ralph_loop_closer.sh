@@ -29,20 +29,29 @@ fi
 INPUT=$(cat)
 
 # Check for WARN line — if absent, nothing to do
-if ! echo "$INPUT" | grep -q "^WARN:"; then
+if [[ ! $INPUT =~ (^|$'\n')WARN: ]]; then
     exit 0
 fi
 
 # Parse REFLUX_CHECK line
-REFLUX_LINE=$(echo "$INPUT" | grep "^REFLUX_CHECK:" || true)
+REFLUX_LINE=""
+while IFS= read -r line; do
+    if [[ $line == REFLUX_CHECK:* ]]; then
+        REFLUX_LINE="$line"
+        break
+    fi
+done <<< "$INPUT"
 if [ -z "$REFLUX_LINE" ]; then
     exit 0
 fi
 
 # Extract statuses
-PI_STATUS=$(echo "$REFLUX_LINE" | sed -n 's/.*PI=\([A-Z]*\).*/\1/p')
-RUNBOOK_STATUS=$(echo "$REFLUX_LINE" | sed -n 's/.*RUNBOOK=\([A-Z]*\).*/\1/p')
-INSTRUCTIONS_STATUS=$(echo "$REFLUX_LINE" | sed -n 's/.*INSTRUCTIONS=\([A-Z]*\).*/\1/p')
+PI_STATUS=""
+RUNBOOK_STATUS=""
+INSTRUCTIONS_STATUS=""
+[[ $REFLUX_LINE =~ PI=([A-Z]+) ]] && PI_STATUS="${BASH_REMATCH[1]}"
+[[ $REFLUX_LINE =~ RUNBOOK=([A-Z]+) ]] && RUNBOOK_STATUS="${BASH_REMATCH[1]}"
+[[ $REFLUX_LINE =~ INSTRUCTIONS=([A-Z]+) ]] && INSTRUCTIONS_STATUS="${BASH_REMATCH[1]}"
 
 # Validate — empty status means parse failure (silent failure prevention)
 if [ -z "$PI_STATUS" ] || [ -z "$RUNBOOK_STATUS" ] || [ -z "$INSTRUCTIONS_STATUS" ]; then
@@ -53,12 +62,25 @@ if [ -z "$PI_STATUS" ] || [ -z "$RUNBOOK_STATUS" ] || [ -z "$INSTRUCTIONS_STATUS
 fi
 
 # Extract lesson ID from output (e.g., "L123 added to ...")
-LESSON_ID=$(echo "$INPUT" | grep -oP '^L\d+' | head -1 || true)
+LESSON_ID=""
+while IFS= read -r line; do
+    if [[ $line =~ ^(L[0-9]+) ]]; then
+        LESSON_ID="${BASH_REMATCH[1]}"
+        break
+    fi
+done <<< "$INPUT"
 
-# Generate valid YAML via Python (avoids block scalar indentation issues)
+# If every target is already present, no repair task is needed.
+if [ "$PI_STATUS" != "MISSING" ] && [ "$RUNBOOK_STATUS" != "MISSING" ] && [ "$INSTRUCTIONS_STATUS" != "MISSING" ]; then
+    exit 0
+fi
+
+# Generate YAML-compatible JSON without importing PyYAML on the hot path.
 export PROJECT_ID LESSON_TITLE LESSON_DETAIL SOURCE_CMD LESSON_ID PI_STATUS RUNBOOK_STATUS INSTRUCTIONS_STATUS
 python3 << 'PYEOF'
-import os, yaml, sys
+import json
+import os
+import sys
 
 project_id = os.environ["PROJECT_ID"]
 lesson_title = os.environ["LESSON_TITLE"]
@@ -148,5 +170,5 @@ task = {
     "never_stop_for": [],
 }
 
-print(yaml.dump(task, allow_unicode=True, default_flow_style=False, sort_keys=False).rstrip())
+print(json.dumps(task, ensure_ascii=False, indent=2))
 PYEOF
