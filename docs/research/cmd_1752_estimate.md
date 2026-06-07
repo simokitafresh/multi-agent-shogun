@@ -238,3 +238,5 @@ cmd_A ─── cmd_B ─── cmd_C ─── cmd_D ─── cmd_E ─── 
 - 研究索引: [[dm-signal-research]] (`context/dm-signal-research.md`) §28-§35 前処理研究・ALM設計
 - 対象コード: `backend/app/jobs/recalculate_fast.py` (L902-L1018, L1039-L1332, L1499-L1533, L1763前)
 - スキーマ: `backend/app/schemas/pipeline.py` (L69: PipelineConfig)
+- FE設計: [[dm-signal-frontend]] (`context/dm-signal-frontend.md`) — PortfolioEditor.tsx + AlmConfigSection.tsx(cmd_F対象, 19ページ/71コンポーネント構成)
+- コアコンテキスト: [[dm-signal-core]] (`context/dm-signal-core.md`) — recalculate_fast.py Phase間クリティカルデータフロー(§1.5)
