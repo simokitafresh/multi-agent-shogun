@@ -23,7 +23,16 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     esac
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self_path="${BASH_SOURCE[0]}"
+case "$_self_path" in
+    */*) _script_dir="${_self_path%/*}" ;;
+    *) _script_dir="." ;;
+esac
+SCRIPT_DIR="${_script_dir}/.."
+if [[ "$SCRIPT_DIR" != /* ]]; then
+    SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
+fi
+unset _self_path _script_dir
 DATA_FILE="$SCRIPT_DIR/queue/pending_decisions.yaml"
 LOCKFILE="${DATA_FILE}.lock"
 SUBCMD="$1"
