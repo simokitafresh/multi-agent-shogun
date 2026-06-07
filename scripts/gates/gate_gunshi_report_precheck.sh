@@ -58,6 +58,10 @@ if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE9" ]; then
     exit 0
 fi
 
+# ─── L5: GATE CLEAR≠レビュー免除リマインド (殿厳命2026-06-08) ───
+echo ""
+echo "★★★ レビューの目的は実装の正しさ確認。GATE CLEARはレビュー免除の理由にならない(洗脳#1防止) ★★★"
+
 # ─── SG-PRE1: gate_report_format.sh ───
 echo ""
 echo "■ SG-PRE1: gate_report_format.sh"
