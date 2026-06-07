@@ -28,7 +28,9 @@ fixture is regression detection only, never the improvement gate.
 EOF
 }
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+script_dir="${_self%/scripts/semantic_stress_test.sh}"
 source_mode="all"
 query_file=""
 limit=20
@@ -284,29 +286,40 @@ for line in Path(sys.argv[1]).read_text(encoding="utf-8").splitlines():
     print(f'{row["source"]}\t{row["query"]}')
 PY
 
+_nproc="${SEMANTIC_STRESS_PARALLEL:-4}"
+_job_count=0
+_idx=0
 while IFS=$'\t' read -r source_name query; do
     [ -n "$query" ] || continue
-    output_file="$tmp_dir/search.out"
-    status="hit"
-    rc=0
-    if SEMANTIC_DISABLE_LLM=1 SEMANTIC_DISABLE_CAUSAL=1 bash "$semantic_search" "$query" >"$output_file" 2>&1; then
-        status="hit"
-    else
-        rc=$?
-        if [ "$rc" -eq 1 ]; then
-            status="no_match"
+    (
+        _out_file="$tmp_dir/search_${_idx}.out"
+        _status="hit"
+        _rc=0
+        if SEMANTIC_DISABLE_LLM=1 SEMANTIC_DISABLE_CAUSAL=1 bash "$semantic_search" "$query" >"$_out_file" 2>&1; then
+            _status="hit"
         else
-            status="error"
+            _rc=$?
+            [ "$_rc" -eq 1 ] && _status="no_match" || _status="error"
         fi
+        _first_line="$(awk 'NR == 1 { print; exit }' "$_out_file")"
+        printf '%s\t%s\t%s\t%s\t%s\n' \
+            "$source_name" \
+            "${query//$'\t'/ }" \
+            "$_status" \
+            "$_rc" \
+            "${_first_line//$'\t'/ }" > "$tmp_dir/result_${_idx}.tsv"
+    ) &
+    _job_count=$((_job_count + 1))
+    _idx=$((_idx + 1))
+    if [[ "$_job_count" -ge "$_nproc" ]]; then
+        wait
+        _job_count=0
     fi
-    first_line="$(awk 'NR == 1 { print; exit }' "$output_file")"
-    printf '%s\t%s\t%s\t%s\t%s\n' \
-        "$source_name" \
-        "${query//$'\t'/ }" \
-        "$status" \
-        "$rc" \
-        "${first_line//$'\t'/ }" >> "$results_tsv"
 done < "$queries_tsv"
+wait
+for (( _i=0; _i<_idx; _i++ )); do
+    cat "$tmp_dir/result_${_i}.tsv" 2>/dev/null || true
+done > "$results_tsv"
 
 python3 - "$results_tsv" > "$results_jsonl" <<'PY'
 import json
