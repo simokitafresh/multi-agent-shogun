@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-08 cmd_3218 -->
+<!-- last_updated: 2026-06-08 cmd_3222 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -514,3 +514,5 @@
 | cmd_3216 | cmd_3215は3xレバレッジETF保有月のみに限定していた。殿指示(2026-06-07 22:55): 全デュアルモメンタム全PFを同時に分析に加えないと意味がない。四神12体+忍法20体+奥義21体の全53PFで損失月(-10%以下)を全期間特定し、前月パターンを分析する | dm-signal | 06-07 | 全54PF(L0四神12+L1忍法21+L2奥義21)の全期 |
 | cmd_3217 | cmd_3216の損失パターン(負け条件)に加え、全PFの好調月(勝ち条件)も同手法で分析。全利用可能データ(monthly_returns/holding_signal/signal_change_log/deterioration_snapshots/prices/VIX/DTB3)を投入し、勝ち条件vs負け条件を対比。殿指示: サイズ調整のための危険度判定材料を全データで構築 | dm-signal | 06-08 | 全54体(L0四神12+L1忍法21+L2奥義21)の月次リ |
 | cmd_3219 | safe_send_clear後にL891で@context_pctを0%リセットするが、CLIステータスラインに前回のCTX表示が残留し、次のget_context_pctサイクルでcapture-paneから旧値が検出→@context_pctに書き戻される。殿指摘(2026-06-08 01:45): /clear後にCTXが0%にならないのはおかしい | infra | 06-08 | safe_send_clear内の/clear後にtmux |
+| cmd_3220 | 殿指示: サイズ調整のみ、100% or 80%の二択。7戦略(VIX連動/実現ボラ/ATR/分類器/レジーム検出/カレンダー効果/連続上昇カウンター)を全78PF×全期間でバックテストし横並び比較。cmd_3218の教訓(HIGH月+3.3%で機会損失)を踏まえ控えめな20%縮小で検証 | dm-signal | 06-08 | 7戦略サイズ調整(100%/80%)バックテスト完了。全78 |
+| cmd_3221 | Gate 20がcmd_training_speed_*(修行cmd)を運用cmdと同列にFAIL判定しreport-write FAIL率12%(6/50)で3セッション連続BLOCK。修行cmdの報告は運用cmdより簡易でフィールド欠落が起きやすいが修行の性質であり運用品質の問題ではない。GP-263(adversarial免除)と同構造 | infra | 06-08 | gate_shogun_startup.sh _exclud |

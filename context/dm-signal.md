@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-08 cmd_3218 -->
-<!-- last_synced_lesson: L726 -->
+<!-- last_updated: 2026-06-08 cmd_3222 -->
+<!-- last_synced_lesson: L728 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -259,6 +259,8 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L724: deterioration_snapshotsは2026-03以降のみ — 過去損失パターン分析ではVIX+ETRリターンで代替（cmd_3215）
 - L725: 前月DTB3急騰(金利急上昇)は全レイヤー共通の大負★★★シグナル（cmd_3217）
 - L726: サイズ調整効果: HIGH月の平均+3.4%により削減コストが改善効果を上回る（cmd_3218）
+- L727: HMM月次fitは全サンプルが1状態に集中するデジェネレート問題が発生しやすい。日次fitが必須（cmd_3220）
+- L728: HMM月次fitは全サンプルが1状態に集中するデジェネレート問題が発生。日次fitで訓練→月次集約(50%ルール)でクリーンなレジーム検出（cmd_3220）
 
 ## 因果リンク
 
