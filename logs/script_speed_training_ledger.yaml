@@ -2575,14 +2575,13 @@ entries:
   status: completed
   before_ms: 19
   after_ms: ''
-  before_real_ms: 9
-  after_real_ms: 8
-  real_measurement_command: bash scripts/report_field_set.sh /tmp/nonexistent_report.yaml
-    (61 runs median, 1-arg usage path)
-  test_result: bash_n_pass; tmp_write_PASS; usage_noargs_onearg_PASS; bats_report_field_set_48_PASS_SKIP0
-  commit: f039883dd
+  before_real_ms: 290
+  after_real_ms: 122
+  real_measurement_command: "echo '- {check: test, result: yes}' | bash scripts/report_field_set.sh <tmp_report> binary_checks.AC1 - (verdict preset, no auto-verdict, 5 runs median)"
+  test_result: bats 104/104 PASS SKIP=0 (9 test files)
+  commit: 9122ccc41
   assigned_to: kagemaru
-  updated_at: '2026-06-07T14:56:20'
+  updated_at: '2026-06-07T16:53:45'
 - script_path: scripts/report_merge.sh
   status: done
   before_ms: 16
@@ -3102,10 +3101,3 @@ entries:
   commit: ''
   assigned_to: ''
   updated_at: ''
-before_real_ms: 367
-after_real_ms: 128
-real_measurement_command: time bash scripts/record_lesson_feedback.sh <report_file>
-test_result: 3/3 PASS (SKIP=0)
-status: done
-scripts/restart_watchers:
-  sh: commit
