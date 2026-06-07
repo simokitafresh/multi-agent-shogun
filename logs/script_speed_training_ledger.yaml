@@ -2317,14 +2317,14 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/restart_monitor.sh"
-    status: in_progress
+    status: done
     before_ms: 15
     after_ms: ""
     before_real_ms: 4083
-    after_real_ms: ""
+    after_real_ms: 1178
     real_measurement_command: "START=$(date +%s%3N) && bash scripts/restart_monitor.sh > /dev/null 2>&1; echo $(($(date +%s%3N)-START))ms"
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    test_result: "no_test_mapping"
+    commit: "2e808bfb7ae9f061024e9535ebd727631441652a"
     assigned_to: "saizo"
     updated_at: ""
   - script_path: "scripts/restart_ntfy_listener.sh"
