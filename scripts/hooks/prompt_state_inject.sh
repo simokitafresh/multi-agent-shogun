@@ -634,6 +634,8 @@ with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as conn:
     ).fetchall()
 
 if not rows:
+    print("lord_ruling_cache_matches: []")
+    print("★ FTS5結果0件。三層記憶に関連裁定がないのではなく検索クエリ不十分の可能性。sqlite3で別キーワード検索せよ")
     raise SystemExit(0)
 
 print("lord_ruling_cache_matches:")
