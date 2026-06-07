@@ -1943,16 +1943,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T10:00:37"
   - script_path: "scripts/lord_conversation_read.sh"
-    status: assigned
+    status: completed
     before_ms: 16
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 16
+    before_real_ms: 33.209
+    after_real_ms: 32.115
+    real_measurement_command: "python3 80x: LORD_CONVERSATION_FILE=<tmp mixed JSONL> bash scripts/lord_conversation_read.sh hayate 5 >/dev/null; median_ms"
+    test_result: "bash_n_pass;output_equivalence_spot_pass;target_agent_filter_spot_pass;non_object_error_spot_pass;before_33.209_after_32.115;SKIP=0"
+    commit: "0e766145b"
     assigned_to: "hayate"
-    updated_at: "2026-06-07T10:02:00"
+    updated_at: "2026-06-07T10:14:00"
   - script_path: "scripts/markdown_link_counts.sh"
     status: pending
     before_ms: 16
