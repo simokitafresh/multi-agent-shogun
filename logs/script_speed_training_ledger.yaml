@@ -1,4 +1,4 @@
-global_status: running
+global_status: paused
 generated_at: "2026-06-06T21:09:32"
 measurement_command: "timeout 5 bash -n <script_path> (syntax baseline only; not runtime speed)"
 real_measurement_policy: "Ninja must choose a safe runtime command per script: time bash script.sh <args>, --help, dry-run mode, or sandboxed equivalent. Record before_real_ms/after_real_ms with the same command before and after."
@@ -1305,16 +1305,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T06:08:00"
   - script_path: "scripts/hooks/stop_check_inbox.sh"
-    status: assigned
+    status: completed
     before_ms: 7
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 78
+    after_real_ms: 40
+    real_measurement_command: "printf '{\"last_assistant_message\":\"test message for timing\"}' | TMUX_AGENT_ID=kotaro bash scripts/hooks/stop_check_inbox.sh > /dev/null"
+    test_result: "bash -n scripts/hooks/stop_check_inbox.sh && bats tests/unit/test_stop_check_inbox.bats PASS 14/14 SKIP=0"
+    commit: "c877ce4b8"
     assigned_to: "kotaro"
-    updated_at: "2026-06-07T10:40:12"
+    updated_at: "2026-06-07T10:51:00"
   - script_path: "scripts/hooks/test_hooks.sh"
     status: pending
     before_ms: 17
