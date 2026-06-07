@@ -31,7 +31,8 @@ GATES_DIR_PREPARED=""
 prepare_gate_dirs() {
     local cmd_id="$1"
     if [ "$GATES_DIR_PREPARED" != "$cmd_id" ]; then
-        mkdir -p "$SCRIPT_DIR/queue/gates/${cmd_id}"
+        local _dir="$SCRIPT_DIR/queue/gates/${cmd_id}"
+        [[ -d "$_dir" ]] || mkdir -p "$_dir"
         GATES_DIR_PREPARED="$cmd_id"
     fi
 }
@@ -80,8 +81,14 @@ shopt -s nullglob
 TASK_FILES=("$TASKS_DIR"/*.yaml)
 shopt -u nullglob
 
-# awkで全タスクファイルを1パス処理: TAB区切りで file|ninja|status|task_id を出力
+# grep -F pre-filter: CMD_IDを含むファイルのみawkに渡す(WSL2 fork削減)
+FILTERED_FILES=()
 if [ "${#TASK_FILES[@]}" -gt 0 ]; then
+    readarray -t FILTERED_FILES < <(grep -F -l "$CMD_ID" "${TASK_FILES[@]}" 2>/dev/null || true)
+fi
+
+# awkで該当タスクファイルのみ処理: TAB区切りで file|ninja|status|task_id を出力
+if [ "${#FILTERED_FILES[@]}" -gt 0 ]; then
     while IFS=$'\t' read -r r_file r_ninja r_status r_task_id; do
         if [ -z "$r_status" ]; then
             echo "[WARN] Empty status in $r_file" >&2
@@ -136,7 +143,7 @@ if [ "${#TASK_FILES[@]}" -gt 0 ]; then
             print cur_file "\t" assigned_to "\t" status "\t" tid
         }
     }
-    ' "${TASK_FILES[@]}"
+    ' "${FILTERED_FILES[@]}"
     )
 fi
 
@@ -158,7 +165,7 @@ if [ "$DONE_COUNT" -eq "$TOTAL" ]; then
     write_done_flag "$CMD_ID" "READY"
     exit 0
 elif [ "$DONE_COUNT" -gt 0 ]; then
-    pending_names=$(IFS=,; echo "${PENDING_NINJAS[*]}")
+    _old_ifs="$IFS"; IFS=','; pending_names="${PENDING_NINJAS[*]}"; IFS="$_old_ifs"
     echo ""
     echo "WAITING: 偵察${DONE_COUNT}/${TOTAL}件完了。${pending_names}の報告待ち"
     exit 2
