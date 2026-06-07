@@ -20,7 +20,7 @@ task:
   parent_cmd: cmd_3211
   project: infra
   purpose: 速度修行ledger auto-deployがCTX%を確認せず連続配備→コンパクション頻発→速度低下。_handle_speed_training_auto_deployにCTX閾値チェックを追加し、CTX高忍者への配備をauto-clear完了まで保留する
-  status: done
+  status: idle
   stop_for: []
   task_id: cmd_3211_focused
   task_type: focused
