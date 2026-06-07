@@ -12,7 +12,10 @@
 # =============================================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# string ops instead of $(cd) subshells (~5ms savings on WSL2)
+_us_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_us_self" != /* ]] && _us_self="$PWD/$_us_self"
+SCRIPT_DIR="${_us_self%/usage_status.sh}"
 
 # Cache TTL
 CACHE_TTL="${MCAS_STATUS_INTERVAL:-${MCAS_POLL_INTERVAL:-300}}"
@@ -175,9 +178,34 @@ format_line() {
 }
 
 # =============================================================================
-# Check cache freshness
+# Fast path: provider-agnostic cache check — skips detect_shogun_provider (~11ms)
+# Uses $EPOCHSECONDS (bash 5.0+) to avoid date subshell (~7ms)
 # =============================================================================
-# Optional positional arg overrides auto-detection (e.g., "claude" or "codex")
+_cache_dir="${MCAS_CACHE_DIR:-/tmp}"
+_now=$EPOCHSECONDS
+_fast_candidates=()
+if [[ -n "${1:-}" ]]; then
+    case "$1" in claude|codex) _fast_candidates=("$1") ;; esac
+else
+    _fast_candidates=(claude codex)
+fi
+for _p in "${_fast_candidates[@]}"; do
+    _cf="${_cache_dir}/mcas_usage_status_cache_${_p}"
+    [[ -f "$_cf" ]] || continue
+    _mtime=$(stat -c %Y "$_cf" 2>/dev/null || echo 0)
+    _age=$(( _now - _mtime ))
+    if [[ "$_age" -ge "$CACHE_MAX_AGE" ]]; then
+        rm -f "$_cf"; continue
+    fi
+    if [[ "$_age" -lt "$CACHE_TTL" ]]; then
+        IFS= read -r _cached < "$_cf" 2>/dev/null || true
+        if cache_valid "$_cached" "$_p"; then
+            echo "$_cached"; exit 0
+        fi
+    fi
+done
+
+# Cache miss: detect provider (cold path only)
 if [[ -n "${1:-}" ]]; then
     PROVIDER="$1"
 else
@@ -187,25 +215,7 @@ case "$PROVIDER" in
     claude|codex) ;;
     *) PROVIDER="claude" ;;
 esac
-CACHE_FILE="${MCAS_CACHE_DIR:-/tmp}/mcas_usage_status_cache_${PROVIDER}"
-
-if [[ -f "$CACHE_FILE" ]]; then
-    cache_mtime=$(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo "0")
-    now=$(date +%s)
-    cache_age=$(( now - cache_mtime ))
-
-    # Force delete if older than CACHE_MAX_AGE
-    if [[ "$cache_age" -ge "$CACHE_MAX_AGE" ]]; then
-        rm -f "$CACHE_FILE"
-    elif [[ "$cache_age" -lt "$CACHE_TTL" ]]; then
-        cached=$(cat "$CACHE_FILE")
-        if cache_valid "$cached" "$PROVIDER"; then
-            echo "$cached"
-            exit 0
-        fi
-        # Corrupted cache: fall through to refetch
-    fi
-fi
+CACHE_FILE="${_cache_dir}/mcas_usage_status_cache_${PROVIDER}"
 
 # =============================================================================
 # Cache miss: fetch fresh data via --status
