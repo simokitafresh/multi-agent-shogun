@@ -12,7 +12,7 @@ if [[ ! -f "$LAST_DREAM_FILE" ]]; then
     exit 0
 fi
 
-LAST_TS=$(cat "$LAST_DREAM_FILE")
+IFS= read -r LAST_TS < "$LAST_DREAM_FILE"
 LAST_EPOCH=$(date -d "$LAST_TS" +%s 2>/dev/null || echo 0)
 NOW_EPOCH=$(date +%s)
 ELAPSED=$(( NOW_EPOCH - LAST_EPOCH ))
