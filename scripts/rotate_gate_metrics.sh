@@ -11,7 +11,9 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+SCRIPT_DIR="${_self%/scripts/rotate_gate_metrics.sh}"
 GATE_METRICS_LOG="$SCRIPT_DIR/logs/gate_metrics.log"
 ARCHIVE_DIR="$SCRIPT_DIR/logs/archive"
 
@@ -43,15 +45,20 @@ fi
 archive_lines=$((line_count - KEEP_LINES))
 
 # Archive old entries (append to today's archive file)
-archive_file="$ARCHIVE_DIR/gate_metrics_$(date +%Y%m%d).log"
+printf -v _today '%(%Y%m%d)T' -1
+archive_file="$ARCHIVE_DIR/gate_metrics_${_today}.log"
 head -n "$archive_lines" "$GATE_METRICS_LOG" >> "$archive_file"
 
 # Keep only the last KEEP_LINES
 tail -n "$KEEP_LINES" "$GATE_METRICS_LOG" > "${GATE_METRICS_LOG}.tmp"
 mv "${GATE_METRICS_LOG}.tmp" "$GATE_METRICS_LOG"
 
-# Clean up archives older than 90 days
-find "$ARCHIVE_DIR" -name "gate_metrics_*.log" -mtime +90 -delete 2>/dev/null || true
+# Clean up archives older than 90 days (once per day via /tmp cache)
+_cleanup_flag="/tmp/shogun_rotate_gate_metrics_cleanup_${_today}"
+if [[ ! -f "$_cleanup_flag" ]]; then
+    find "$ARCHIVE_DIR" -name "gate_metrics_*.log" -mtime +90 -delete 2>/dev/null || true
+    touch "$_cleanup_flag" 2>/dev/null || true
+fi
 
 # Lock is released automatically when fd 200 closes at script exit
 
