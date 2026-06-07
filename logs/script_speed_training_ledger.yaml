@@ -2119,16 +2119,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T14:23:07"
   - script_path: "scripts/ntfy_inbox_archive.sh"
-    status: pending
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 4562.931
+    after_real_ms: 3796.225
+    real_measurement_command: "sandbox: for i in {1..50}; do bash /tmp/mas_ntfy_inbox_archive_after2/scripts/ntfy_inbox_archive.sh >/dev/null; done (empty inbox)"
+    test_result: "bash -n PASS; sandbox archive functional PASS SKIP=0"
+    commit: "132648fa0"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T14:27:14"
   - script_path: "scripts/ntfy_listener.sh"
     status: pending
     before_ms: 17
