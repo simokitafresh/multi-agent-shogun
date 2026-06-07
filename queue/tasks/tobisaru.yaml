@@ -14,7 +14,7 @@ task:
       description: "after計測3回+関連テストPASS(test_select.sh)+SKIP=0+docs/research/codd_refactor_registry.md追記"
     AC4:
       description: "aliases候補1-3個を概念名alias行で報告+insight_write.shで蓄積"
-  status: idle
+  status: completed
   ac_priority: "AC1 > AC2 > AC3 > AC4"
   never_stop_for:
     - "テストFAIL — 修正して再実行"
