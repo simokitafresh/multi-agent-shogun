@@ -36,7 +36,7 @@ task:
   project: infra
   purpose: 'Speed-train scripts/lib/text_utils.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
   scout_exempt: true
-  status: in_progress
+  status: completed
   stop_for: []
   target_path: scripts/lib/text_utils.sh
   task_id: cmd_training_speed_lib_text_utils_20260607093958_normal
@@ -136,3 +136,14 @@ task:
       count: 1
       hint: 'gate BLOCK: lesson_candidate_fields_empty'
   deployed_at: "2026-06-07T09:40:51"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'text_utils.sh print_padded: echo-n|wc-c サブシェルをlocal LC_ALL=C byte-countに置換。186ms→35ms(81%削減)'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'text_utils.sh print_padded: echo-n|wc-c サブシェルをlocal LC_ALL=C byte-countに置換。186ms→35ms(81%削減)'

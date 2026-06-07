@@ -1884,9 +1884,9 @@ entries:
     after_real_ms: "35"
     real_measurement_command: "time bash {time_before,time_after}.sh: 10iter x3calls (ASCII hayate/JP 家老作業中/ASCII cmd_training_123)"
     test_result: "3/3 PASS SKIP=0 (ASCII/Japanese/mixed); before_186ms_after_35ms; 81pct_reduction"
-    commit: ""
+    commit: "968e582fd"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-07T09:50:04"
+    updated_at: "2026-06-07T09:51:36"
   - script_path: "scripts/lib/tmux_utils.sh"
     status: completed
     before_ms: 13
