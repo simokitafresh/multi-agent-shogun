@@ -57,6 +57,127 @@ SHELL_SETTING=$(grep '^shell:' config/settings.yaml 2>/dev/null | awk '{print $2
 SHELL_SETTING="${SHELL_SETTING:-bash}"
 
 # ═══════════════════════════════════════════════════════════════
+# Mega batch: 1 tmux + 1 ps + 2 awk で全ステップの入力データを一括取得
+# 従来の tmux list-panes 4回 → 1回に統合
+# build_cli_command N回の python3 subprocess → 0回に削減
+# ═══════════════════════════════════════════════════════════════
+
+# --- tmux mega batch (replaces 4 separate list-panes calls) ---
+declare -A _MB_AID _MB_DEAD _MB_PID _MB_MODEL _MB_GROUP _MB_CLI
+_MB_PANE_COUNT=0
+while IFS=$'\t' read -r _pi _aid _dead _pid _mod _grp _cli; do
+    [[ -n "$_pi" ]] || continue
+    _MB_AID["$_pi"]="$_aid"
+    _MB_DEAD["$_pi"]="$_dead"
+    _MB_PID["$_pi"]="$_pid"
+    _MB_MODEL["$_pi"]="$_mod"
+    _MB_GROUP["$_pi"]="$_grp"
+    _MB_CLI["$_pi"]="$_cli"
+    _MB_PANE_COUNT=$((_MB_PANE_COUNT+1))
+done < <(tmux list-panes -t shogun:agents \
+    -F '#{pane_index}	#{@agent_id}	#{pane_dead}	#{pane_pid}	#{@model_name}	#{@agent_group}	#{@agent_cli}')
+
+# --- ps batch (CLI process detection) ---
+declare -A _MB_CLI_RUNNING
+while read -r _ppid _comm; do
+    _ppid="${_ppid#"${_ppid%%[![:space:]]*}"}"
+    [[ -n "$_ppid" ]] && _MB_CLI_RUNNING["$_ppid"]=1
+done < <(ps -eo ppid,comm 2>/dev/null | grep -E 'claude|codex|copilot|kimi' || true)
+
+# --- settings.yaml batch: agent → type, model_name (replaces N×python3 subshells) ---
+declare -A _MB_AGENT_TYPE _MB_AGENT_MODEL_NAME
+while IFS=$'\t' read -r _ag _type _mname; do
+    [[ -n "$_ag" ]] || continue
+    case "$_type" in claude|codex|copilot|kimi) ;; *) _type="claude" ;; esac
+    _MB_AGENT_TYPE["$_ag"]="$_type"
+    _MB_AGENT_MODEL_NAME["$_ag"]="$_mname"
+done < <(awk '
+    /^cli:/ { c=1; next }
+    c && !/^[[:space:]]/ { exit }
+    c && /^  default:/ { sub(/.*: */,""); gsub(/[[:space:]]+$/,""); d=$0; next }
+    c && /^  agents:/ { a=1; next }
+    a && /^    [a-z]/ {
+        if (n!="") print n "\t" (t!="" ? t : (d!="" ? d : "claude")) "\t" mn
+        n=$0; sub(/^[[:space:]]+/,"",n)
+        if (n ~ /: /) { t=n; sub(/.*: /,"",t); gsub(/[[:space:]]+$/,"",t); sub(/:.*/,"",n) }
+        else { sub(/:.*$/,"",n); t="" }
+        mn=""
+        next
+    }
+    a && n!="" && /^      type:/ { sub(/.*: */,""); gsub(/[[:space:]]+$/,""); t=$0; next }
+    a && n!="" && /^      model_name:/ { sub(/.*: */,""); gsub(/[[:space:]]+$/,""); mn=$0; next }
+    a && /^[^[:space:]]/ { if (n!="") print n "\t" (t!="" ? t : (d!="" ? d : "claude")) "\t" mn; exit }
+    END { if (n!="" && a) print n "\t" (t!="" ? t : (d!="" ? d : "claude")) "\t" mn }
+' config/settings.yaml)
+
+# --- cli_profiles.yaml batch: type → launch_cmd, launch_args ---
+declare -A _MB_PROFILE_CMD _MB_PROFILE_ARGS
+while IFS=$'\t' read -r _ptype _pcmd _pargs; do
+    [[ -n "$_ptype" ]] || continue
+    _MB_PROFILE_CMD["$_ptype"]="$_pcmd"
+    _MB_PROFILE_ARGS["$_ptype"]="$_pargs"
+done < <(awk '
+    /^profiles:/ { p=1; next }
+    p && /^  [a-z]/ {
+        if (t!="") print t "\t" cmd "\t" args
+        t=$0; sub(/^  /,"",t); sub(/:.*$/,"",t)
+        cmd=""; args=""
+        next
+    }
+    p && /^    launch_cmd:/ { sub(/.*: */,""); gsub(/^"|"$/,""); cmd=$0; next }
+    p && /^    launch_args:/ { sub(/.*: */,""); gsub(/^"|"$/,""); args=$0; next }
+    p && /^[^[:space:]]/ { if (t!="") print t "\t" cmd "\t" args; exit }
+    END { if (t!="" && p) print t "\t" cmd "\t" args }
+' config/cli_profiles.yaml)
+
+# --- Pre-build all CLI commands (replaces per-agent build_cli_command calls) ---
+declare -A _MB_CLI_CMD
+for _ag in "${EXPECTED_AGENTS[@]}"; do
+    _type="${_MB_AGENT_TYPE[$_ag]:-claude}"
+    _base="${_MB_PROFILE_CMD[$_type]:-$HOME/bin/claude --dangerously-skip-permissions}"
+    _sargs="${_MB_PROFILE_ARGS[$_type]:-}"
+    _mname="${_MB_AGENT_MODEL_NAME[$_ag]:-}"
+
+    case "$_type" in
+        claude)
+            _model_short=""
+            case "$_mname" in
+                *[Ss]onnet*) _model_short="sonnet" ;;
+                *[Hh]aiku*)  _model_short="haiku" ;;
+            esac
+            _bin="${_base%% *}"
+            _flags="${_base#* }"
+            [[ "$_flags" == "$_base" ]] && _flags=""
+            if [[ -n "$_model_short" ]]; then
+                _MB_CLI_CMD["$_ag"]="${_bin} --model ${_model_short} --effort high ${_flags}"
+            else
+                _MB_CLI_CMD["$_ag"]="${_bin} --effort high ${_flags}"
+            fi
+            ;;
+        codex)
+            _extra=""
+            if [[ "$_mname" == gpt-* ]]; then
+                _effort="${_mname##*-}"
+                case "$_effort" in
+                    medium|low|high) _extra="-c model_reasoning_effort=${_effort}" ;;
+                esac
+            fi
+            if [[ -n "$_sargs" && "$_sargs" != '""' ]]; then
+                _extra="${_sargs}${_extra:+ $_extra}"
+            fi
+            if [[ -n "$_extra" ]]; then
+                _MB_CLI_CMD["$_ag"]="${_base} ${_extra}"
+            else
+                _MB_CLI_CMD["$_ag"]="$_base"
+            fi
+            ;;
+        *)
+            _MB_CLI_CMD["$_ag"]="$_base"
+            ;;
+    esac
+done
+
+# ═══════════════════════════════════════════════════════════════
 # ヘルパー関数
 # ═══════════════════════════════════════════════════════════════
 
@@ -144,7 +265,12 @@ PANE_BASE=$(tmux show-options -gv pane-base-index 2>/dev/null || echo 0)
 log "  pane-base-index=$PANE_BASE"
 
 # shogun:agents にNUM_AGENTSペイン存在するか確認。不足なら自動追加。
-PANE_COUNT=$(tmux list-panes -t shogun:agents -F '#{pane_index}' 2>/dev/null | wc -l)
+# Use mega batch data (tmux list-panes was already called once at startup)
+declare -A _STEP2_AID
+PANE_COUNT="$_MB_PANE_COUNT"
+for _pi in "${!_MB_AID[@]}"; do
+    _STEP2_AID["$_pi"]="${_MB_AID[$_pi]}"
+done
 if [[ "$PANE_COUNT" -gt "$NUM_AGENTS" ]]; then
     log_err "agentsウィンドウに${PANE_COUNT}ペイン（期待: ${NUM_AGENTS}）。余剰ペインの手動削除が必要"
     exit 1
@@ -198,18 +324,18 @@ log_ok "${NUM_AGENTS}ペイン確認済み（追加: ${pane_add_count}件）"
 log "Step 2: ペイン配置修正"
 
 LAST_IDX=$((NUM_AGENTS - 1))
-for i in $(seq 0 "$LAST_IDX"); do
+# _STEP2_AID: mega batch-read（Step 1前）で取得済み
+for ((i=0; i<=LAST_IDX; i++)); do
     target_pane=$((PANE_BASE + i))
     expected="${EXPECTED_AGENTS[$i]}"
-    actual=$(tmux show-options -p -t "shogun:agents.${target_pane}" -v @agent_id 2>/dev/null || echo "")
+    actual="${_STEP2_AID[$target_pane]:-}"
 
     if [[ "$actual" != "$expected" ]]; then
-        # 期待するエージェントが実際にどのペインにいるか探索
+        # 期待するエージェントが実際にどのペインにいるか探索（batch mapから参照）
         found_pane=""
-        for j in $(seq $((i + 1)) "$LAST_IDX"); do
+        for ((j=i+1; j<=LAST_IDX; j++)); do
             check_pane=$((PANE_BASE + j))
-            check_id=$(tmux show-options -p -t "shogun:agents.${check_pane}" -v @agent_id 2>/dev/null || echo "")
-            if [[ "$check_id" == "$expected" ]]; then
+            if [[ "${_STEP2_AID[$check_pane]:-}" == "$expected" ]]; then
                 found_pane=$check_pane
                 break
             fi
@@ -222,6 +348,9 @@ for i in $(seq 0 "$LAST_IDX"); do
                 tmux swap-pane -s "shogun:agents.${target_pane}" -t "shogun:agents.${found_pane}"
                 log "  swap: agents.${target_pane}(${actual}) <-> agents.${found_pane}(${expected})"
             fi
+            # batch mapをswap後の状態に同期
+            _STEP2_AID[$target_pane]="$expected"
+            _STEP2_AID[$found_pane]="$actual"
             swap_count=$((swap_count+1))
         else
             log_warn "  ${expected} がどのペインにも見つかりません（@agent_id未設定の可能性）"
@@ -235,13 +364,13 @@ log_ok "swap完了: ${swap_count}件"
 # ═══════════════════════════════════════════════════════════════
 log "Step 3: 死亡ペイン検出・復活"
 
-# 全ペインの死亡状態を一括取得 → 連想配列化（ループ内awk排除）
+# Use mega batch data (DEAD_MAP from startup mega batch)
 declare -A DEAD_MAP
-while read -r _pi _dead; do
-    [[ -n "$_pi" ]] && DEAD_MAP["$_pi"]="$_dead"
-done < <(tmux list-panes -t shogun:agents -F '#{pane_index} #{pane_dead}')
+for _pi in "${!_MB_DEAD[@]}"; do
+    DEAD_MAP["$_pi"]="${_MB_DEAD[$_pi]}"
+done
 
-for i in $(seq 0 "$LAST_IDX"); do
+for ((i=0; i<=LAST_IDX; i++)); do
     p=$((PANE_BASE + i))
     agent_id="${EXPECTED_AGENTS[$i]}"
     is_dead="${DEAD_MAP[$p]:-0}"
@@ -258,8 +387,8 @@ for i in $(seq 0 "$LAST_IDX"); do
             tmux send-keys -t "shogun:agents.${p}" "cd \"${SCRIPT_DIR}\" && export PS1='${prompt_str}' && clear" Enter
             sleep 0.5
 
-            # CLI起動（build_cli_command経由 — settings.yaml+cli_profiles.yaml準拠）
-            cli_cmd=$(build_cli_command "$agent_id")
+            # CLI起動（mega batch pre-built command — settings.yaml+cli_profiles.yaml準拠）
+            cli_cmd="${_MB_CLI_CMD[$agent_id]}"
             tmux send-keys -t "shogun:agents.${p}" "$cli_cmd" Enter
 
             log "  respawn: agents.${p} (${agent_id})"
@@ -277,13 +406,9 @@ log_ok "respawn完了: ${respawn_count}件"
 log "Step 3.5: CLI起動確認"
 
 cli_start_count=0
-# ペインPIDを連想配列化（ループ内awk排除）
-declare -A PANE_PID_MAP
-while read -r _pi _pid; do
-    [[ -n "$_pi" ]] && PANE_PID_MAP["$_pi"]="$_pid"
-done < <(tmux list-panes -t shogun:agents -F '#{pane_index} #{pane_pid}')
+# Use mega batch data (PID map + CLI running map from startup)
 
-for i in $(seq 0 "$LAST_IDX"); do
+for ((i=0; i<=LAST_IDX; i++)); do
     p=$((PANE_BASE + i))
     agent_id="${EXPECTED_AGENTS[$i]}"
 
@@ -294,15 +419,13 @@ for i in $(seq 0 "$LAST_IDX"); do
     is_dead="${DEAD_MAP[$p]:-0}"
     [[ "$is_dead" == "1" ]] && continue
 
-    # ペインのPIDを取得
-    pane_pid="${PANE_PID_MAP[$p]:-}"
+    # ペインのPIDを取得（mega batch）
+    pane_pid="${_MB_PID[$p]:-}"
     [[ -z "$pane_pid" ]] && continue
 
-    # CLI プロセスが子プロセスに存在するか確認
-    cli_process=$(pgrep -P "$pane_pid" -af 'claude|codex|copilot|kimi' 2>/dev/null || true)
-
-    if [[ -z "$cli_process" ]]; then
-        cli_cmd=$(build_cli_command "$agent_id")
+    # CLI プロセスが子プロセスに存在するか確認（mega batch mapから参照）
+    if [[ -z "${_MB_CLI_RUNNING[$pane_pid]:-}" ]]; then
+        cli_cmd="${_MB_CLI_CMD[$agent_id]}"
         if [[ "$DRY_RUN" == true ]]; then
             log_dry "  CLI起動: agents.${p} (${agent_id}) — ${cli_cmd}"
         else
@@ -329,37 +452,28 @@ log_ok "CLI起動: ${cli_start_count}件"
 # ═══════════════════════════════════════════════════════════════
 log "Step 4: 全ペイン変数の正規化"
 
-# ─── Batch-read existing pane vars (1 tmux call replaces N×4 individual calls) ───
-declare -A _PANE_AGENT_ID _PANE_MODEL _PANE_GROUP _PANE_CLI
-while IFS=$'\t' read -r _pi _aid _mod _grp _cli; do
-    [[ -n "$_pi" ]] || continue
-    _PANE_AGENT_ID[$_pi]="$_aid"
-    _PANE_MODEL[$_pi]="$_mod"
-    _PANE_GROUP[$_pi]="$_grp"
-    _PANE_CLI[$_pi]="$_cli"
-done < <(tmux list-panes -t shogun:agents \
-    -F '#{pane_index}	#{@agent_id}	#{@model_name}	#{@agent_group}	#{@agent_cli}')
+# ─── Use mega batch data (pane vars + CLI type from startup) ───
 
-for i in $(seq 0 "$LAST_IDX"); do
+for ((i=0; i<=LAST_IDX; i++)); do
     p=$((PANE_BASE + i))
     agent_id="${EXPECTED_AGENTS[$i]}"
 
-    # CLI type
-    cli_t=$(get_cli_type "$agent_id")
+    # CLI type (from mega batch — no subshell)
+    cli_t="${_MB_AGENT_TYPE[$agent_id]:-claude}"
 
     # モデル表示名 — use cached @model_name to avoid expensive detect_real_model
-    model_display="${_PANE_MODEL[$p]:-}"
+    model_display="${_MB_MODEL[$p]:-}"
     if [[ -z "$model_display" ]]; then
         model_display=$(_resolve_model_display "$agent_id" "$p")
     fi
     agent_group=$(_resolve_agent_group "$agent_id" "$cli_t" "$model_display")
 
     if [[ "$DRY_RUN" == true ]]; then
-        # 現在値と比較して差分を表示 (batch-read data, no per-pane tmux calls)
-        cur_aid="${_PANE_AGENT_ID[$p]:-}"
-        cur_model="${_PANE_MODEL[$p]:-}"
-        cur_group="${_PANE_GROUP[$p]:-}"
-        cur_cli="${_PANE_CLI[$p]:-}"
+        # 現在値と比較して差分を表示 (mega batch data, no per-pane tmux calls)
+        cur_aid="${_MB_AID[$p]:-}"
+        cur_model="${_MB_MODEL[$p]:-}"
+        cur_group="${_MB_GROUP[$p]:-}"
+        cur_cli="${_MB_CLI[$p]:-}"
 
         changes=""
         [[ "$cur_aid" != "$agent_id" ]] && changes+=" @agent_id:${cur_aid:-empty}->${agent_id}"
@@ -463,7 +577,7 @@ echo "  最終ペイン一覧:"
 echo "  ────────────────────────────────────────────────────"
 printf "  %-4s %-10s %-5s %-8s %-8s %-10s %s\n" "Pane" "AgentID" "Dead" "Group" "CLI" "Model" "BG"
 echo "  ──────────────────────────────────────────────────────────"
-# Batch-query: 1 tmux call for all pane data (was 48+ per-pane calls)
+# Summary query: 1 tmux call for current state (after any modifications above)
 _summary=$(tmux list-panes -t shogun:agents \
     -F '#{pane_index}	#{@agent_id}	#{pane_dead}	#{@agent_group}	#{@agent_cli}	#{@model_name}')
 while IFS=$'\t' read -r _p _id _dead _group _cli _model; do
