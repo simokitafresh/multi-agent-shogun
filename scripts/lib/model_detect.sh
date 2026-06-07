@@ -46,12 +46,13 @@ detect_real_model() {
                 # (1M context)等の括弧部分も許容
                 banner=$(echo "$output" | grep -E '(▐▛███▜▌|▝▜█████▛▘)[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+\.[0-9]+' | tail -1)
                 if [ -n "$banner" ]; then
-                    model=$(echo "$banner" \
-                        | sed -E 's/.*(▐▛███▜▌|▝▜█████▛▘)[[:space:]]*//' \
-                        | sed -E 's/[[:space:]]*\(.*\)//' \
-                        | sed -E 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+effort/ \1/' \
-                        | sed -E 's/[[:space:]]*·.*//' \
-                        | sed -E 's/[[:space:]]*$//')
+                    # 5 sed→1 sed: subprocess削減
+                    model=$(echo "$banner" | sed -E \
+                        -e 's/.*(▐▛███▜▌|▝▜█████▛▘)[[:space:]]*//' \
+                        -e 's/[[:space:]]*\(.*\)//' \
+                        -e 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+effort/ \1/' \
+                        -e 's/[[:space:]]*·.*//' \
+                        -e 's/[[:space:]]*$//')
                 fi
 
                 # Pattern 2: モデル名が別行（狭幅ペイン、1Mコンテキスト時）
@@ -60,11 +61,12 @@ detect_real_model() {
                     local model_line
                     model_line=$(echo "$output" | grep -E '^[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+\.[0-9]+' | tail -1)
                     if [ -n "$model_line" ]; then
-                        model=$(echo "$model_line" \
-                            | sed -E 's/^[[:space:]]*//' \
-                            | sed -E 's/[[:space:]]*\(.*$//' \
-                            | sed -E 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+effort/ \1/' \
-                            | sed -E 's/[[:space:]]*$//')
+                        # 4 sed→1 sed: subprocess削減
+                        model=$(echo "$model_line" | sed -E \
+                            -e 's/^[[:space:]]*//' \
+                            -e 's/[[:space:]]*\(.*$//' \
+                            -e 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+effort/ \1/' \
+                            -e 's/[[:space:]]*$//')
                     fi
                 fi
 
@@ -102,7 +104,10 @@ detect_real_model() {
                 if [ -n "$model_line" ]; then
                     # "model:" の後ろ、"/model" or "│" の前
                     # cmd_583: tr -s ' ' で連続空白を正規化（fast ON時に "gpt-5.5 high fast" を得る）
-                    model=$(echo "$model_line" | sed -E 's/.*model:[[:space:]]*//' | sed -E 's/[[:space:]]*(\/model|│).*//' | tr -s ' ')
+                    # 2 sed→1 sed -e: subprocess削減
+                    model=$(echo "$model_line" | sed -E \
+                        -e 's/.*model:[[:space:]]*//' \
+                        -e 's/[[:space:]]*(\/model|│).*//' | tr -s ' ')
                 fi
 
                 # バナーがスクロールアウトした場合のフォールバック:
