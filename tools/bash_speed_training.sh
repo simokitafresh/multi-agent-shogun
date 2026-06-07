@@ -34,6 +34,14 @@ yaml_quote() {
     printf '"%s"' "$value"
 }
 
+is_non_negative_number() {
+    [[ "$1" =~ ^[0-9]+([.][0-9]+)?$ ]]
+}
+
+is_strictly_lower_number() {
+    awk -v left="$1" -v right="$2" 'BEGIN { exit !(left < right) }'
+}
+
 measure_bash_n_ms() {
     local path="$1"
     local start end status
@@ -114,9 +122,9 @@ cmd_record_real() {
     local commit="${7:-}"
     local ledger="${8:-$LEDGER}"
     [ -n "$script_path" ] && [ -n "$status" ] && [ -n "$before_real_ms" ] && [ -n "$after_real_ms" ] && [ -n "$real_measurement_command" ] && [ -n "$test_result" ] && [ -n "$commit" ] || { usage >&2; return 2; }
-    [[ "$before_real_ms" =~ ^[0-9]+$ ]] || { echo "before_real_ms must be numeric" >&2; return 2; }
-    [[ "$after_real_ms" =~ ^[0-9]+$ ]] || { echo "after_real_ms must be numeric" >&2; return 2; }
-    if [ "$status" = "completed" ] && [ "$after_real_ms" -ge "$before_real_ms" ]; then
+    is_non_negative_number "$before_real_ms" || { echo "before_real_ms must be numeric" >&2; return 2; }
+    is_non_negative_number "$after_real_ms" || { echo "after_real_ms must be numeric" >&2; return 2; }
+    if [ "$status" = "completed" ] && ! is_strictly_lower_number "$after_real_ms" "$before_real_ms"; then
         echo "completed requires after_real_ms < before_real_ms" >&2
         return 2
     fi
@@ -182,7 +190,7 @@ re_enqueue_completed_unlocked() {
 
     awk -v max_iteration="$max_iteration" '
         /^[[:space:]]*-[[:space:]]+script_path:/ {
-            if (path != "" && status == "completed" && after_real_ms ~ /^[0-9]+$/ && iteration < max_iteration) {
+            if (path != "" && status == "completed" && after_real_ms ~ /^[0-9]+([.][0-9]+)?$/ && iteration < max_iteration) {
                 rows[++n] = after_real_ms "\t" path
             }
             path = $0
@@ -212,7 +220,7 @@ re_enqueue_completed_unlocked() {
             next
         }
         END {
-            if (path != "" && status == "completed" && after_real_ms ~ /^[0-9]+$/ && iteration < max_iteration) {
+            if (path != "" && status == "completed" && after_real_ms ~ /^[0-9]+([.][0-9]+)?$/ && iteration < max_iteration) {
                 rows[++n] = after_real_ms "\t" path
             }
             for (i = 1; i <= n; i++) print rows[i]
@@ -277,7 +285,7 @@ re_enqueue_completed_unlocked() {
             if (in_target) flush_block()
         }
         function flush_block(    before_line) {
-            if (after_value == "" || after_value !~ /^[0-9]+$/) {
+            if (after_value == "" || after_value !~ /^[0-9]+([.][0-9]+)?$/) {
                 printf "%s", block
                 in_target = 0
                 return
@@ -493,7 +501,7 @@ update_entry_field_unlocked() {
             next
         }
         in_target && $0 ~ "^[[:space:]]+" field ":" {
-            if (value ~ /^[0-9]+$/ && field ~ /_ms$/) print "    " field ": " value
+            if (value ~ /^[0-9]+([.][0-9]+)?$/ && field ~ /_ms$/) print "    " field ": " value
             else if (field == "status" && value ~ /^[A-Za-z0-9_.-]+$/) print "    " field ": " value
             else print "    " field ": " q(value)
             in_target = 0

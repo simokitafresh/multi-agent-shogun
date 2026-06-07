@@ -196,6 +196,24 @@ EOF
     ' "$LEDGER"
 }
 
+@test "re-enqueue preserves decimal after_real_ms values" {
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
+    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 24.565 16.634 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
+
+    run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" re-enqueue 1 "$LEDGER"
+    [ "$status" -eq 0 ]
+    [ "$output" = "1" ]
+
+    awk -v first="$first" '
+        $0 ~ "script_path: \"" first "\"" { in_first = 1; next }
+        in_first && /status: pending/ { pending = 1 }
+        in_first && /before_real_ms: 16.634/ { before_decimal = 1 }
+        in_first && /after_real_ms: ""/ { after_cleared = 1 }
+        END { exit !(pending && before_decimal && after_cleared) }
+    ' "$LEDGER"
+}
+
 @test "re-enqueue stops at max iteration" {
     bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
     first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
