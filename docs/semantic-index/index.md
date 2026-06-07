@@ -666,6 +666,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:24:36+09:00 bnlvs5405 toolu_014HaKANr9F1ue7DWBnxCpP3 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/350901fc-5c5b-46e2-995d-8d6b13 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:24:55+09:00 brml21a3b toolu_01QGxHRu2yeGqaJySRxbkAPQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/350901fc-5c5b-46e2-995d-8d6b13 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:25:14+09:00 banm8pmwr toolu_01Wm73zvc1GLqn9tb5Hi7mjt /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/350901fc-5c5b-46e2-995d-8d6b13 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:34:17+09:00 b7n845lc5 toolu_01Lz4ft6mURTuaLM84y3xSBd /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8bee8ae9-ddb7-4d4e-b5be-3e8347 |
 
 ## codd_methodology — CoDD整合性駆動開発
 
