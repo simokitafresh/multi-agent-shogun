@@ -24,12 +24,13 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-06-03T10:00:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-07T10:28:45+09:00 -->
 
 # /dream — Memory Consolidation (5 Phase)
 
 メモリの統合・整理を行う。REM睡眠に倣い、知識基盤を強化する。
 
+Script refs verified: 2026-06-07 cmd_3206. `gate_lesson_health.sh` はrole lesson origin確認をbatch化したが、引数なし全project走査/`<project_id>`単体走査とOK/ALERT契約は維持。`gate_shogun_memory.sh` はreferenced_files取得cacheで高速化され、`insight_write.sh` は保存/resolve/source repeat通知の呼び出し契約変更なし。
 Script refs verified: 2026-06-02T20:46:12+09:00 infra-bug audit after gate_lesson_health.sh inline-field parser fix.
 
 **核心原理**: メモリ整理は目的ではなく手段。真の目的は**因果推論能力の維持**と**免疫系(gate/hook)候補の発見**。タイムスタンプは「後で読めるように」ではなく「**因果推論を可能にするため**」に付与する。

@@ -9,7 +9,9 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-05T19:12:49+09:00 -->
+<!-- script_refs_checked_at: 2026-06-07T10:28:45+09:00 -->
+
+Script refs verified: 2026-06-07 cmd_3206. `cmd_complete_gate.sh` はCoDD registry ledger追記を内包するが、完了gateの呼び出し契約は `bash scripts/cmd_complete_gate.sh <cmd_id>` のまま。`test_select.sh` は高速化のみで、変更ファイル引数から影響テストを出力し、`skills/*/SKILL.md` 単独変更を既知のテスト不要対象として扱う現行仕様と一致。
 
 # codd-fix
 

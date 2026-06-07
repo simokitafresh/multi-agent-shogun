@@ -19,7 +19,9 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-06-05T19:21:10+09:00 -->
+<!-- script_refs_checked_at: 2026-06-07T10:28:45+09:00 -->
+
+Script refs verified: 2026-06-07 cmd_3206. `dashboard_update.sh` の契約は `<cmd_id> [--dry-run]` のまま。cmd_id未指定+`--dry-run` は本体スキップでexit 0、cmd_id不正はexit 1。`gate_report_format.sh` はhot path高速化のみで、binary_checks由来verdict自動導出・未記入BLOCK・PASS cacheの契約は本文記載と一致。
 
 # /dashboard-update — KARO_SECTION自動生成
 

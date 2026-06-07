@@ -19,6 +19,10 @@ allowed-tools:
   - AskUserQuestion
 ---
 
+<!-- script_refs_checked_at: 2026-06-07T10:28:45+09:00 -->
+
+Script refs verified: 2026-06-07 cmd_3206. `check_project_codd_ready.sh` は `bash scripts/check_project_codd_ready.sh <project-id>` または `--path <project-path> [project-id]` の契約を維持し、lexicon確認をproject_lexicon.yaml直接読みに高速化した。switch-projectのCoDD readiness確認手順は現行と一致。
+
 # /switch-project — プロジェクトフォーカス切替
 
 シングルフォーカスモデル。全軍が1つのPJに集中する。

@@ -24,12 +24,13 @@ allowed-tools:
   - Edit
 ---
 
-<!-- script_refs_checked_at: 2026-06-02T20:46:12+09:00 -->
+<!-- script_refs_checked_at: 2026-06-07T10:28:45+09:00 -->
 
 # /shogun-teire — 知識基盤の定期棚卸し（8観点監査）
 
 7層知識基盤を横断的に監査し、衛生状態・整合性・鮮度を検査する。殿の承認なしに変更を実行してはならない。
 
+Script refs verified: 2026-06-07 cmd_3206. `gate_lesson_health.sh` はrole lesson origin確認をbatch化、`gate_yaml_status.sh` はLC_ALL=Cでstatus scan高速化、`gate_pd_sync.sh` はawk経路高速化、`count_gate_metrics.sh` は最新cmd状態集計、`knowledge_metrics.sh` の引数体系、`lesson_deprecate.sh <project> <lesson_id> "<reason>" [cmd_id]` は維持。棚卸し手順は現行script契約と一致。
 Script refs verified: 2026-06-02T20:46:12+09:00 infra-bug audit after gate_lesson_health.sh inline-field parser fix.
 
 ---

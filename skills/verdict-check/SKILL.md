@@ -10,7 +10,7 @@ description: |
   DO NOT TRIGGER: 報告YAML全体作成（→/report-write）、commit（→/ninja-commit）
 ---
 
-<!-- script_refs_checked_at: 2026-06-02T20:31:22+09:00 -->
+<!-- script_refs_checked_at: 2026-06-07T10:28:45+09:00 -->
 
 # /verdict-check — binary_checks確認スキル
 
@@ -47,6 +47,7 @@ binary_checksの全結果を読み取り、未記入や不正値がないか確�
 ### 矛盾防止の必須手順
 - bc:no と verdict:PASS の矛盾防止: 忍者はverdictを書かない。全 `binary_checks.*[].result` を列挙し、空欄・不正値がないことだけ確認する。
 - verdict空欄防止: `binary_checks` に空欄、`FILL_THIS`、`waive`、`PASS`、`FAIL` が残っている場合はgate_report_format.shがBLOCKする。先に全resultを `yes/no` に正規化せよ。
+- Script refs verified: 2026-06-07 cmd_3206. `gate_report_format.sh` はhot path高速化後も、`binary_checks` が全てyes/noで埋まっている場合に既存verdict値をPASS/FAILへ自動導出・上書きする。未記入/FILL_THIS/不正値はBLOCK、PASS cacheと`GATE_NO_LOG`契約も維持。
 - Script refs verified: 2026-05-22 cmd_2959. `gate_report_format.sh` は `binary_checks` が全てyes/noで埋まっている場合、既存verdict値をPASS/FAILへ自動導出・上書きする。PASS cache、`GATE_FAST_EXIT`/`GATE_NO_LOG`、中間状態FAILログ抑止、task_clarity未記入WARN、skill_execution_log.sh非同期実行を持つ。`SKILL_LOG_SYNC=1` でテスト時は同期実行する。
 ### Step 1: binary_checksを全て記入済みか確認
 ```bash
