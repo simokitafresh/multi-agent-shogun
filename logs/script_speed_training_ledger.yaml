@@ -1789,7 +1789,7 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T09:11:57"
   - script_path: "scripts/lib/model_detect.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -1797,8 +1797,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T09:13:04"
   - script_path: "scripts/lib/model_resolve.sh"
     status: pending
     before_ms: 17
@@ -2801,8 +2801,8 @@ entries:
     assigned_to: ""
     updated_at: ""
 before_real_ms: 30
-after_real_ms: 23
-real_measurement_command: 'bash -c ''source scripts/lib/cli_lookup.sh; cli_launch_cmd hayate >/dev/null'''
-test_result: 'bats tests/unit/test_cli_lookup.bats: 9/9 PASS SKIP=0'
-commit: 72d1f014b
+after_real_ms: 20
+real_measurement_command: bash -c 'source scripts/lib/lock_path.sh; lock_path /mnt/c/tools/multi-agent-shogun/queue/inbox/hanzo.yaml'
+test_result: bash -n OK; test_cmd_complete_gate 55/55 + test_lesson_impact_rotate 2/2 + test_lesson_merge 10/10 PASS SKIP=0
+commit: 3c985db61
 status: completed
