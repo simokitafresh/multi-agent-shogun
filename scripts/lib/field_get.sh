@@ -55,37 +55,27 @@ field_get() {
     fi
   else
     # YAML: L070対策 — ^\s+ で任意インデント対応（2sp固定禁止）
-    # cmd_1355修正: トップレベル(^field:)を先に検索。なければインデント付きにフォールバック
+    # 単一awk pass: トップレベル・ネスト両対応 (grep+awk 2プロセス→awk 1プロセスに削減)
+    # トップレベル(indent=0)でマッチしたら即exit。ネスト時は最浅マッチを選択。
     local field_line=""
-
-    # 1. トップレベル(インデントなし)を優先検索 (grep -m1 + bash str ops, sed不使用)
-    field_line=$(grep -m1 -E "^${field}:" "$file" 2>/dev/null)
+    field_line=$(awk -v field="$field" '
+      {
+        match($0, /[^ \t]/)
+        indent = (RSTART > 0) ? RSTART - 1 : length($0)
+        if ($0 ~ "^[[:space:]]*" field ":") {
+          if (!seen || indent < min_indent) {
+            seen = 1; min_indent = indent; best = $0
+          }
+          if (indent == 0) exit
+        }
+      }
+      END { if (seen) print best }
+    ' "$file" 2>/dev/null)
     if [[ -n "$field_line" ]]; then
       result="${field_line#*:}"
       result="${result#"${result%%[![:space:]]*}"}"   # ltrim whitespace
       result="${result#\'}" ; result="${result%\'}"   # strip single quotes
       result="${result#\"}" ; result="${result%\"}"   # strip double quotes
-    fi
-
-    # 2. トップレベルになければインデント付き(最浅マッチ)にフォールバック
-    if [[ -z "$result" && -z "$field_line" ]]; then
-      field_line=$(awk -v field="$field" '
-        $0 ~ "^[[:space:]]+" field ":" {
-        match($0, /[^ \t]/)
-        indent = RSTART - 1
-        if (!seen || indent < min_indent) {
-          seen = 1
-          min_indent = indent
-          best = $0
-        }
-      } END { if (seen) print best }' "$file" 2>/dev/null)
-      if [[ -n "$field_line" ]]; then
-        # 最初のコロンでのみ分割（フィールド名にregex特殊文字があっても安全）
-        result="${field_line#*:}"
-        result="${result#"${result%%[![:space:]]*}"}"   # ltrim whitespace
-        result="${result#\'}" ; result="${result%\'}"   # strip single quotes
-        result="${result#\"}" ; result="${result%\"}"   # strip double quotes
-      fi
     fi
 
     # ブロック配列形式:
