@@ -2042,16 +2042,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/ninja_done.sh"
-    status: pending
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 1693.633
+    after_real_ms: 1421.877
+    real_measurement_command: "for i in {1..100}; do bash scripts/ninja_done.sh --help >/dev/null; done"
+    test_result: "bash -n scripts/ninja_done.sh PASS; bats tests/unit/test_ninja_done.bats PASS 5/5 SKIP=0"
+    commit: "3513b9d5e"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T14:10:38"
   - script_path: "scripts/ninja_monitor.sh"
     status: pending
     before_ms: 24
