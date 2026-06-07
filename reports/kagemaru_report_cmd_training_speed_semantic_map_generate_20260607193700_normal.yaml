@@ -3,12 +3,12 @@ task_id: cmd_training_speed_semantic_map_generate_20260607193700_normal
 parent_cmd: cmd_training_speed_semantic_map_generate_20260607193700_normal
 timestamp: '2026-06-07T19:55:38+09:00'
 status: completed
+diagnose_reason: 'YAML note:フィールドの値に「ボトルネック: git ls-files」のように「: 」が含まれており、 YAMLパーサーがmapping
+  keyとして解釈してparseエラーになった。 クォーテーションで囲むことで回避できるが、初稿で値をquoteせずに書いてしまった。 report_field_setでparent_cmdを後から追記した際もYAML整合性確認を怠った。'
 result:
-  summary: >-
-    TTL30sキャッシュ追加でgit ls-files --others(WSL2 NTFS ~3s)をスキップ。
-    cold: ~4.07s → ~2.21s (-46%) / warm: ~4.07s → ~0.47s (-88%)。
-    30/30 PASS SKIP=0 (test_semantic_index_update.bats)。
-    registry追記+aliases候補3個をinsight_write.sh経由で蓄積。
+  summary: 'TTL30sキャッシュ追加でgit ls-files --others(WSL2 NTFS ~3s)をスキップ。 cold: ~4.07s
+    → ~2.21s (-46%) / warm: ~4.07s → ~0.47s (-88%)。 30/30 PASS SKIP=0 (test_semantic_index_update.bats)。
+    registry追記+aliases候補3個をinsight_write.sh経由で蓄積。'
 binary_checks:
   AC1:
   - check: before計測3回実施(cold)
@@ -34,13 +34,13 @@ binary_checks:
     result: 'yes'
   commit:
   - check: commit
-    result: pending
+    result: 'yes'
 files_modified:
 - change: modified
   path: scripts/semantic_map_generate.sh
 - change: modified
   path: docs/research/codd_refactor_registry.md
-commit: ''
+commit: 6919c1526b5fe779f034a885701aeebca4b0fc7a
 gate_prediction:
   prediction: CLEAR
   reason: all binary_checks yes
@@ -57,10 +57,8 @@ lessons_useful:
 lesson_candidate:
   found: true
   title: 'WSL2 NTFS git ls-files --others: TTL30sキャッシュでcold-after速度2倍、warm速度8倍'
-  summary: >-
-    git ls-files --othersはWSL2 NTFSで毎回~3s。/tmpへの30s TTLキャッシュ(mtimeチェック)で
-    warm実行を0.5s未満に短縮可能。cache_file = /tmp/smg_new_files_{repo}.cacheパターンが有効。
-    cold改善(-46%)はtimeout_sec=2でのタイムアウト早期打ち切りが寄与。
+  summary: git ls-files --othersはWSL2 NTFSで毎回~3s。/tmpへの30s TTLキャッシュ(mtimeチェック)で warm実行を0.5s未満に短縮可能。cache_file
+    = /tmp/smg_new_files_{repo}.cacheパターンが有効。 cold改善(-46%)はtimeout_sec=2でのタイムアウト早期打ち切りが寄与。
   origin: '[[WSL2_NTFS_IO_serial]] -> [[git_ls_files_slow]] -> [[TTL_cache_pattern]]'
 assumption_invalidation:
   found: false
@@ -71,7 +69,7 @@ before_measurement:
   - 4070
   - 4070
   - 4070
-  note: 前セッションで計測。warm計測も~4.07s(TTLなし)。ボトルネック: git ls-files --others ~3s
+  note: '前セッションで計測。warm計測も~4.07s(TTLなし)。ボトルネック: git ls-files --others ~3s'
 after_measurement:
   cold_ms:
   - 2170
@@ -91,3 +89,17 @@ ac4_aliases:
   - 新規ファイル候補検索
   - インデックス再構築
   insight_id: INS-20260607-195534096-16b8
+ac_version_read: ea2f4e5d
+verdict: PASS
+purpose_validation:
+  cmd_purpose: scripts/semantic_map_generate.shのbefore計測3回+ボトルネック特定+直接実装(CoDD省略)+after計測3回+関連テストPASS+registry追記+aliases候補蓄積
+  fit: true
+  purpose_gap: ''
+test_results:
+  suite: tests/unit/test_semantic_index_update.bats
+  total: 30
+  passed: 30
+  skipped: 0
+  failed: 0
+task_clarity:
+  score: 90
