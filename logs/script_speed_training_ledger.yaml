@@ -1954,16 +1954,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T10:14:00"
   - script_path: "scripts/markdown_link_counts.sh"
-    status: assigned
+    status: "completed"
     before_ms: 16
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: "3200"
+    before_real_ms: "9500"
+    after_real_ms: "3200"
+    real_measurement_command: "time bash scripts/markdown_link_counts.sh --top 5 (783 tracked .md files)"
+    test_result: "1/1 PASS SKIP=0; before_9500ms_after_3200ms; 66pct_reduction"
+    commit: "01159e767"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-07T10:03:48"
+    updated_at: "2026-06-07T10:14:29"
   - script_path: "scripts/mcp_sync_lesson.sh"
     status: completed
     before_ms: 15
@@ -1987,7 +1987,7 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T10:06:01"
   - script_path: "scripts/memory_db_init.sh"
-    status: pending
+    status: assigned
     before_ms: 13
     after_ms: ""
     before_real_ms: ""
@@ -1995,10 +1995,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T10:11:43"
   - script_path: "scripts/memory_db_query.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -2006,8 +2006,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T10:14:30"
   - script_path: "scripts/memory_recall_control.sh"
     status: pending
     before_ms: 16
