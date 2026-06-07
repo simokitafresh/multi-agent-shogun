@@ -151,6 +151,23 @@ echo "  [前セッション出来事] ${_prev_session_summary}"
 echo "  ※ Q4は前セッションの出来事を手がかりに因果をたどれ。暗記したPhase例を貼るな。"
 echo ""
 
+# --- Check 1.7: 前セッション殿裁定の三層記憶確認 ---
+# 真因: /clear後に三層記憶で前セッションの因果文脈を確認しなかった(2026-06-07事故)
+# 根源: Codex rate limit→CLI切替→settings.yaml未更新→GPTに戻った因果を見逃した
+echo "■ 前セッション殿裁定（三層記憶）"
+_lord_rulings=$(sqlite3 "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" \
+  "SELECT ts || ' | ' || substr(summary, 1, 120) FROM events WHERE agent = 'lord' AND direction = 'inbound' AND ts >= datetime('now', '-6 hours') ORDER BY ts DESC LIMIT 5;" 2>/dev/null) || _lord_rulings=""
+if [ -n "$_lord_rulings" ]; then
+    echo "  直近6h殿→軍師（時系列で因果をたどれ）:"
+    echo "$_lord_rulings" | while IFS= read -r line; do
+        echo "    $line"
+    done
+else
+    echo "  (直近6hの殿→軍師対話なし)"
+fi
+echo "  ★ 二次情報(settings.yaml/snapshot)で判断停止するな。三層記憶で因果をたどれ"
+echo ""
+
 # --- Check 2: inbox未読件数 ---
 echo "■ inbox未読"
 inbox_file="$SCRIPT_DIR/queue/inbox/gunshi.yaml"
