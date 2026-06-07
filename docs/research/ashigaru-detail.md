@@ -297,7 +297,7 @@ parity_data_source:
 
 ## §9 lesson_candidate書き方ガイドライン
 
-**lesson_candidate.found:trueの報告は[[auto_draft_lesson]]がdraft教訓として自動登録する。**
+**lesson_candidate.found:trueの報告は[[auto_draft_lesson]] (`scripts/auto_draft_lesson.sh`)がdraft教訓として自動登録する。**
 質の高いlesson_candidateを書くことが教訓システム全体の品質を決める。
 
 **found: false の場合**: `no_lesson_reason` に理由を1文で書け。全タスクに学びがある。found:falseはラルフループの燃料切れを意味する。理由なきfound:falseは家老が差し戻す。
@@ -393,6 +393,8 @@ task YAMLに`ac_checkpoint:`がある場合、その指示を各AC完了後に�
 1. **次ACの前提条件確認**: 直前の変更で必要なファイル・テスト・データが揃っているか確認する
 2. **scope drift検出**: 次AC達成に不要な改善案・横道作業が混入していないか確認する。見つけた案は実装せず `lesson_candidate` または `decision_candidate` に逃がす
 3. **progress更新**: `progress:` に完了ACを具体的な文で追記する
+
+→ 更新ツール: [[yaml_field_set]] (`scripts/lib/yaml_field_set.sh`) — flock排他制御でstatus遷移・progress欄を安全に更新(L15)
 
 ## §11 Checklist運用手順
 
