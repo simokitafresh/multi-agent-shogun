@@ -5,7 +5,14 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+_SELF="${BASH_SOURCE[0]}"
+case "$_SELF" in
+    */*) _SCRIPT_DIR="${_SELF%/*}" ;;
+    *) _SCRIPT_DIR="." ;;
+esac
+SCRIPT_DIR="${_SCRIPT_DIR}/../.."
+[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
+unset _SELF _SCRIPT_DIR
 
 add_injection_count() {
     local file="$1"
@@ -73,4 +80,5 @@ PYEOF
 echo "=== injection_count追加 ==="
 add_injection_count "$SCRIPT_DIR/projects/infra/lessons.yaml"
 add_injection_count "$SCRIPT_DIR/projects/dm-signal/lessons.yaml"
+
 echo "=== 完了 ==="
