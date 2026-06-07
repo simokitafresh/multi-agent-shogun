@@ -905,9 +905,20 @@ safe_send_clear() {
             fi
         done
         safe_send_keys "$pane" S-Tab || true
-        sleep 0.3
+        sleep 1
         safe_send_keys "$pane" S-Tab || true
-        log "BYPASS-PERMISSIONS-TOGGLE: $agent_name sent shift+tab x2 after $clear_cmd (waited ${_bp_wait}s)"
+        sleep 0.5
+        # 結果確認: bypass permissionsになったかcapture-paneで検証
+        local _bp_result
+        _bp_result=$(tmux capture-pane -t "$pane" -p 2>/dev/null | grep -oiP '(bypass permissions|accept edits|plan mode)' | tail -1 || true)
+        if [[ "$_bp_result" == *"bypass"* ]]; then
+            log "BYPASS-PERMISSIONS-OK: $agent_name → bypass permissions (waited ${_bp_wait}s)"
+        else
+            log "BYPASS-PERMISSIONS-RETRY: $agent_name got '${_bp_result:-unknown}', retrying shift+tab"
+            safe_send_keys "$pane" S-Tab || true
+            sleep 0.5
+            safe_send_keys "$pane" S-Tab || true
+        fi
     fi
     rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
     return 0
