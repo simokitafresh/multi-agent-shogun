@@ -155,6 +155,10 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-06-07: gate=gate_report_format result=FAIL executor=tobisaru reason=result.summary: MISSING or empty
+
+- 2026-06-07: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks: item count 1/14 (<50% of task template); result.summary: MISSING or empty
+- 2026-06-07: gate=gate_report_format result=FAIL executor=unknown reason=worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; assumption_invalidation: MISSING
 
 - 2026-06-05: gate=gate_report_format result=FAIL executor=hanzo reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/4 ACs). 全ACの二値チェックを記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"compl...
 - 2026-06-05: gate=gate_report_format result=FAIL executor=kagemaru reason=lesson_candidate: missing \"found\" field; lesson_candidate: found=false but no no_lesson_reason; lessons_useful[0]: id=\"growth_loop_defense\" is invalid (must match L+number, ...
