@@ -74,7 +74,11 @@ read -ra AGENTS <<< "$(get_all_agents)"
 MSG="PJフォーカス切替: ${OLD_PROJECT_NAME} → ${NEW_PROJECT_NAME}。次の/clear時に新PJ知識がロードされる。"
 
 for agent in "${AGENTS[@]}"; do
-    bash "$SCRIPT_DIR/inbox_write.sh" "$agent" "$MSG" project_switch shogun &
+    if [[ "${DRY_RUN:-}" = "1" ]]; then
+        echo "[switch_project] DRY_RUN: inbox_write $agent skipped" >&2
+    else
+        bash "$SCRIPT_DIR/inbox_write.sh" "$agent" "$MSG" project_switch shogun &
+    fi
 done
 wait
 
@@ -82,7 +86,9 @@ echo "[switch_project] ${#AGENTS[@]}名に通知送信完了 (${OLD_PROJECT_NAME
 
 # --- ntfy で殿に新PJのGist URLを通知（NEW_GIST_URLは上のawk passで取得済み） ---
 
-if [[ -n "$NEW_GIST_URL" ]]; then
+if [[ "${DRY_RUN:-}" = "1" ]]; then
+    echo "[switch_project] DRY_RUN: ntfy skipped" >&2
+elif [[ -n "$NEW_GIST_URL" ]]; then
     bash "$SCRIPT_DIR/ntfy.sh" "PJ切替: ${NEW_PROJECT_NAME} ダッシュボード: ${NEW_GIST_URL}"
     echo "[switch_project] ntfy通知送信: ${NEW_PROJECT_NAME} Gist URL"
 else
