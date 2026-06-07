@@ -4,12 +4,20 @@
 
 set -euo pipefail
 
-# cmd_2063: SCRIPT_DIR をサブシェル不要な純bash文字列演算で解決 (~5ms節約)
-_SELF="${BASH_SOURCE[0]}"
-SCRIPT_DIR="${_SELF%/*}/.."
-[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
-REPORTS_DIR="$SCRIPT_DIR/queue/reports"
-ARCHIVE_REPORT_DIR="$SCRIPT_DIR/queue/archive/reports"
+SCRIPT_DIR=""
+REPORTS_DIR=""
+ARCHIVE_REPORT_DIR=""
+
+init_paths() {
+    [ -n "$SCRIPT_DIR" ] && return 0
+
+    # cmd_2063: SCRIPT_DIR をサブシェル不要な純bash文字列演算で解決 (~5ms節約)
+    local _self="${BASH_SOURCE[0]}"
+    SCRIPT_DIR="${_self%/*}/.."
+    [[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
+    REPORTS_DIR="$SCRIPT_DIR/queue/reports"
+    ARCHIVE_REPORT_DIR="$SCRIPT_DIR/queue/archive/reports"
+}
 
 usage() {
     echo "Usage: bash scripts/ninja_done.sh <ninja_name> <parent_cmd>" >&2
@@ -24,6 +32,8 @@ show_help() {
 resolve_report_file() {
     local ninja_name="$1"
     local cmd_id="$2"
+    init_paths
+
     local primary_path="$REPORTS_DIR/${ninja_name}_report_${cmd_id}.yaml"
 
     if [ -f "$primary_path" ]; then
@@ -163,6 +173,7 @@ main() {
 
     # cmd_1254: gate_report_format.sh — 家老への報告送信前にフォーマット検証
     local gate_output
+    init_paths
     gate_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || {
         echo "ERROR: gate_report_format.sh FAIL — 報告YAMLを修正して再実行せよ。" >&2
         echo "  対象: $report_file" >&2
