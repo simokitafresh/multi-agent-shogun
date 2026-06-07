@@ -150,13 +150,14 @@ for name in $(get_all_agents); do
 done
 
 echo "[3/3] 起動確認..."
-# Adaptive poll (max 1s) instead of fixed sleep 1
+# Adaptive poll (max 1s): 単一pgrep-afで全エージェント一括チェック（N並列pgrep回避）
 _lp_i=0
 _all_launched=0
 while [ "$_lp_i" -lt 10 ]; do
+    _running=$(pgrep -af "[i]nbox_watcher\.sh" 2>/dev/null || true)
     _all_launched=1
     for _la in "${LAUNCHED_AGENTS[@]}"; do
-        if ! pgrep -f "[i]nbox_watcher\.sh ${_la} " > /dev/null 2>&1; then
+        if ! printf '%s\n' "$_running" | grep -q "inbox_watcher\.sh ${_la} "; then
             _all_launched=0
             break
         fi
@@ -166,10 +167,12 @@ while [ "$_lp_i" -lt 10 ]; do
     ((_lp_i++)) || true
 done
 failed_agents=()
+# 最終確認: 単一pgrep-afでまとめて取得し、各エージェントをgrep確認
+_running=$(pgrep -af "[i]nbox_watcher\.sh" 2>/dev/null || true)
 for i in "${!LAUNCHED_AGENTS[@]}"; do
     agent="${LAUNCHED_AGENTS[$i]}"
-    # pgrep で実際の inbox_watcher.sh プロセスを確認（kill -0 はnohup bashが終了すると偽陽性になる）
-    if ! pgrep -f "[i]nbox_watcher\.sh ${agent} " > /dev/null 2>&1; then
+    # 一括取得済みリストからエージェント名で絞り込み（per-agent pgrep排除）
+    if ! printf '%s\n' "$_running" | grep -q "inbox_watcher\.sh ${agent} "; then
         failed_agents+=("${agent}")
     fi
 done
@@ -211,6 +214,8 @@ else
     echo "  OK: inotifywait ${inotify_count}/${ok}"
 fi
 
-# ペイン変数同期
-echo "[+] ペイン変数同期..."
-bash "$SCRIPT_DIR/scripts/sync_pane_vars.sh"
+# ペイン変数同期（バックグラウンド — model_detect capture-pane高コスト回避）
+echo "[+] ペイン変数同期 (バックグラウンド)..."
+nohup bash "$SCRIPT_DIR/scripts/sync_pane_vars.sh" \
+    &>> "$SCRIPT_DIR/logs/sync_pane_vars.log" 200>&- &
+disown
