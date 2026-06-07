@@ -624,7 +624,7 @@ codd:
 |------|---|
 | id | systems_knowledge_base |
 | label | システム知識辞書 |
-| aliases | AI開発知識辞書, systems knowledge base, systems-knowledge-base, system dictionary, ACE Framework, ace, Claude Code, Agent SDK, Agent Teams, claude-code, CoDD, GSD, Get Shit Done, gstack, garrytan gstack, Karpathy LLMコーディング4原則, karpathy-principles, おしお殿, oshio, Vercel Context Engineering, vercel, 我が軍, our-army, codd, gsd |
+| aliases | AI開発知識辞書, systems knowledge base, systems-knowledge-base, system dictionary, ACE Framework, ace, Claude Code, Agent SDK, Agent Teams, claude-code, CoDD, GSD, Get Shit Done, gstack, garrytan gstack, Karpathy LLMコーディング4原則, karpathy-principles, おしお殿, oshio, Vercel Context Engineering, vercel, 我が軍, our-army, codd, gsd, :space: |
 | related_concepts | semantic_dictionary_design, skill_design_rules, agent_formation_management |
 
 | 種別 | パス/参照 |
@@ -1155,6 +1155,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T13:35:26+09:00 洗脳監査。無意識に本能で洗脳による選択をしていないか確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-26T14:52:48+09:00 今後100億個の外部プロジェクトが増えても動くか？現在に過剰最適化していないか？確認せよ |
 | cmd | `cmd_2824` backfill — | cmd_2824 | 将軍がRenderのプラン挙動を知らずコールドスタート推測を繰り返す(殿指摘2026-05-17)。根因=Render知識がcontext/instructionsに体系化さ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T21:25:25+09:00 確認したのか？想像してるだろう？想像するな確認せよ |
 
 ## ultimate_state_principle — 究極系原則
 
@@ -1872,7 +1873,7 @@ codd:
 |------|---|
 | id | tier_plan_mapping |
 | label | Tier-プラン対応 |
-| aliases | tier, 料金プラン, プラン, plan, subscription, メンバーシップ, membership, viewer_tiers, Basic, Standard, NewStandard, AddOn, premium, ベーシック, スタンダード, アドオン, プレミアム, 古参スペシャル, 劇薬DM, ドクタープレミアム, 特にビジネスプランの話を今後するときにスムーズにやりたいな, starterplanにcold startあったっけ？, Tier, スタンダードは新スタンダードと旧スタンダードの２種類ある |
+| aliases | tier, 料金プラン, プラン, plan, subscription, メンバーシップ, membership, viewer_tiers, Basic, Standard, NewStandard, AddOn, premium, ベーシック, スタンダード, アドオン, プレミアム, 古参スペシャル, 劇薬DM, ドクタープレミアム, 特にビジネスプランの話を今後するときにスムーズにやりたいな, starterplanにcold startあったっけ？, Tier, スタンダードは新スタンダードと旧スタンダードの２種類ある, planモードが諸悪の根源では？ |
 | skills | note-writer, cdp-browse |
 | related_concepts | visibility_tier_masking, dmsignal_operations |
 
@@ -1896,6 +1897,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-31T17:55:28+09:00 下書きを書き直そうGSシン分身は新スタンダードと裏アドオンの特典だ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-01T20:05:06+09:00 以前から気になっていたのだが、DM-signalのenviromentでVIEWER_PASS_T2、VIEWER_PASS_T1、VIEWER_PASS_NEWTIERはだれがいつ作ってるんだ？おれは作った記憶がないし、消しても気づくと復 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-01T20:10:31+09:00 T1/T2/NEWTIERの３件を削除しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T21:28:02+09:00 planモードが諸悪の根源では？ |
 
 ## alpha_6_metrics — α6指標
 

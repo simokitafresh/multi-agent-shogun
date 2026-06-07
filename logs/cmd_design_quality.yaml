@@ -2096,3 +2096,37 @@ entries:
   supplementary_cmds: 0
   source: "cmd_complete_gate"
   timestamp: "2026-06-07T12:17:18Z"
+- cmd_id: "cmd_3213"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-07T12:36:27Z"
+  notes: "q8_WHEN/HOW不足|check=quality_gate_q8_when_how"
+- cmd_id: "cmd_3213"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-07T12:36:27Z"
+  notes: "q8_WHERE/WHO不足|check=quality_gate_q8_where_who"
+- cmd_id: "cmd_3213"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-07T12:36:27Z"
+  diagnosis: "BLOCK理由: 初回起票のため前回BLOCK情報なし / 対策: 2部構成形式で記載。殿指摘(21:13)→閾値不要→LS041登録→現物確認でL2095-2104残存確認→削除cmd"
+  notes: "/mnt/c/tools/multi-agent-shogun/queue/shogun_to_karo.yaml にYAML構文エラーがあります。ダブルクォート内の特殊文字(|等)をエスケープするか、ブロックスカラー(|)を使用してください"
