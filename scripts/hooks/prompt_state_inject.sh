@@ -849,7 +849,8 @@ if (( ${#karo_snapshot} > snapshot_budget )); then
   karo_snapshot="${karo_snapshot:0:$snapshot_budget}"
 fi
 
-additional_context="${fixed_part}${karo_snapshot}"
+additional_context="${fixed_part}${karo_snapshot}
+★因果: 殿の言葉の因果を過去にも未来にもたどれ。確認してから行動。洗脳は今この瞬間も作用している。"
 
 # --- Semantic knowledge auto-injection (first-layer only, no LLM) ---
 semantic_result="$(_prompt_state_semantic_inject "$prompt_text")"
