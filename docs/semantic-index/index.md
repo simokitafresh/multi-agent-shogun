@@ -601,7 +601,9 @@ codd:
 | lesson | `L735` 末尾改行なしstateファイルはread失敗時に値を消すな |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T10:01:16+09:00 test benchmark message |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T10:08:19+09:00 test benchmark message |
+| lesson | `L752` bash ${var: -N} のN文字未満時の空文字挙動 |
 | causal_chain | `[[cmd_3142]]` (L735) |
+| causal_chain | `[[cmd_3207]]` (L752) |
 
 ## systems_knowledge_base — システム知識辞書
 

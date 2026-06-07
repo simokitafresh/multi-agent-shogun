@@ -7554,3 +7554,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - eb08cec22でspeed_training保護にtask_type!=trainingを使用したが、normalも除外した。除外意図が明確な場合は==speed_trainingのように肯定的条件を使え
+
+### L752: bash ${var: -N} のN文字未満時の空文字挙動
+- **日付**: 2026-06-07
+- **出典**: cmd_3207
+- **記録者**: hanzo
+- **tags**: [infra,bash,cache]
+- **target_files**: [scripts/causal_backlinks.sh,tests/unit/test_gate_karo_startup.bats,scripts/gates/gate_skill_quality.sh]
+- **origin**: [[cmd_3207]]
+- **when**: 未設定
+- **how**: 未設定
+- bashの${variable: -N}はvariableがN文字未満の場合に空文字を返す(エラーなし)。cache_scopeが短いパスで全テストが同一キャッシュを共有する原因になった。cache_key生成には${var:0}を使え

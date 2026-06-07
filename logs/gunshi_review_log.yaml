@@ -934,3 +934,34 @@
   ambiguity_points: none
   origin: "[[speed_training]] -> [[report_merge APPROVE]]"
   timestamp: "2026-06-07T14:57:00"
+- cmd_id: cmd_3207
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。AC1/AC2 PASS+CI RED 3件追加修正。lesson_candidate: bash var substring空文字挙動"
+  observations:
+    - "事実1: causal_backlinks.sh 7c8b2f130が存在チェックフィルタ削除→rg exit 2→復元"
+    - "事実2: test_gate_karo_startup.bats cmd_3204追加チェックでfixture verdict欠如→APPROVE追加"
+    - "事実3: gate_skill_quality.sh cache_scope substring空文字バグ→正確なsubstring修正"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "速度修行3commit→CI RED 3件→因果特定→個別修正→CI GREEN復帰(正の複利)"
+  brainwash_check: "CI RED修正3件。各因果をgit logで確認済み。穴なし"
+  ambiguity_points: none
+  origin: "[[cmd_3207]] -> [[hanzo LGTM]] -> [[CI RED 3件修正完了]]"
+  timestamp: "2026-06-07T14:58:00"
+- cmd_id: cmd_training_speed_reset_layout_20260607145635
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/reset_layout.sh。レイアウトリセット。副作用リスク低"
+  observations:
+    - "target_path確認: reset_layout.sh"
+  causal_chain: "速度修行(正の複利)"
+  brainwash_check: "OK"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[reset_layout APPROVE]]"
+  timestamp: "2026-06-07T14:58:00"

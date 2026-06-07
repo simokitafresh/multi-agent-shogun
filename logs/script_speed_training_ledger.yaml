@@ -2251,16 +2251,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T14:53:07"
   - script_path: "scripts/ralph_loop_metrics.sh"
-    status: assigned
+    status: completed
     before_ms: 15
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 15
+    before_real_ms: 4678
+    after_real_ms: 2460
+    real_measurement_command: "bash scripts/ralph_loop_metrics.sh"
+    test_result: "bash -n: PASS; full run exit 0; output identical"
+    commit: "489733f21"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-07T14:49:04"
+    updated_at: "2026-06-07T15:00:00"
   - script_path: "scripts/record_lesson_feedback.sh"
     status: assigned
     before_ms: 17
@@ -2800,3 +2800,8 @@ entries:
     commit: ""
     assigned_to: ""
     updated_at: ""
+before_real_ms: 367
+after_real_ms: 128
+real_measurement_command: 'time bash scripts/record_lesson_feedback.sh <report_file>'
+test_result: 3/3 PASS (SKIP=0)
+status: done

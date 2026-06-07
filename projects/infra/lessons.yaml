@@ -1,8 +1,23 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-07T00:26:05'
+last_synced: '2026-06-07T14:59:11'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 746
+lesson_count: 747
 lessons:
+- id: L752
+  title: 'bash ${var: -N} のN文字未満時の空文字挙動'
+  summary: 'bashの${variable: -N}はvariableがN文字未満の場合に空文字を返す(エラーなし)。cache_scopeが短いパスで全テストが同一キャッ'
+  tags:
+  - infra
+  - bash
+  - cache
+  source_cmd: cmd_3207
+  when: 未設定
+  how: 未設定
+  target_files:
+  - scripts/causal_backlinks.sh
+  - tests/unit/test_gate_karo_startup.bats
+  - scripts/gates/gate_skill_quality.sh
+  origin: '[[cmd_3207]]'
 - id: L751
   title: inject_direct_training_templateのguard条件は除外対象task_typeを直接指定せよ
   summary: eb08cec22でspeed_training保護にtask_type!=trainingを使用したが、normalも除外した。除外意図が明確な場合は==sp
@@ -187,9 +202,6 @@ lessons:
   - queue/tasks/kagemaru.yaml
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
-  deprecated: true
-  deprecated_at: '2026-06-07T10:37:25+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
   summary: 外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split
@@ -433,6 +445,9 @@ lessons:
   - scripts/gates/gate_karo_startup.sh
   - tests/unit/test_gate_karo_startup.bats
   origin: '[[cmd_karo_ci_parallel_isolation_wa_rate]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L720
   title: 軍師3/3穴なし判定は洗脳#8 — Step3実運用シミュレーション強制
   summary: '3/3穴なし判定時にStep3(実運用シミュレーション)を省略し穴を見落とすパターン。Phase5c+Phase6で2回再現。殿介入で計5件追加穴を発見。対策:'
@@ -570,9 +585,6 @@ lessons:
   target_files:
   - scripts/hooks/prompt_state_inject.sh
   origin: '[[cmd_3050]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L710
   title: AC偽PASS検出 — HITだけでなく正しい概念へのHITかを検証せよ
   summary: spec v2 AC2で8語中4件がsemantic_dictionary_designに偽マッチ→AC2 PASS→偽マッチ50%見逃し。レビュー時は何にHI
@@ -658,11 +670,6 @@ lessons:
   - scripts/hooks/prompt_state_inject.sh
   - tests/unit/test_session_state_hooks.bats
   origin: '[[cmd_3048]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L704
   title: セマンティック監査エージェントP0報告は全件現物検証必須
   summary: 本セッションでP0候補5件が全て偽陽性(100%)→P1-P3に降格。エージェントは行番号・文脈を誤読しやすい。LG033(既存確認必須)の監査エージェント版。
@@ -802,11 +809,6 @@ lessons:
   - scripts/skill_recommend_metrics.sh
   - scripts/gates/gate_shogun_startup.sh
   origin: '[[cmd_3027]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L695
   title: set -e下でALERT集計scriptを呼ぶ時は終了値捕捉を明示する
   summary: startup gateはset -eで動くため、Phase 3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶと
@@ -866,8 +868,6 @@ lessons:
   target_files:
   - tests/unit/test_lord_conversation.bats
   origin: '[[cmd_karo_ci_fix_lord_conv_read_v2]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L691
   title: CIでrepo内スクリプトをテストから呼ぶ時はgit実行権限かbash経由を確認する
   summary: WSL上ではファイルが実行可能に見えても、git indexが100644ならGitHub Actions checkout後は実行権限が無い。テストでscri
@@ -895,11 +895,6 @@ lessons:
   target_files:
   - scripts/lord_conversation_read.sh
   origin: '[[cmd_karo_ci_fix_lord_conv_read]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L689
   title: lord_conversation消費者はtargetフィルタ済みhelperを使え
   summary: lord_conversation.jsonlは全ロールの殿入力を含む。将軍/家老/軍師が直接tail/Readすると他ロール宛ての発言を自分宛てと誤認する。消
@@ -1120,8 +1115,6 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L674
   title: bashスクリプトのself-path解決は$0ではなく${BASH_SOURCE[0]}を使え
   summary: 'gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA'
@@ -1782,8 +1775,6 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L629
   title: 偵察時はlayout.tsxのnavItemsを設計書URLスキームと最初に照合せよ
   summary: layout.tsxのnavItemsと設計書画面一覧を照合するだけでルーティング逆転を即発見。FE request bodyとBE Pydanticモデルのフ
@@ -2022,8 +2013,6 @@ lessons:
   - skills/karo-direct/SKILL.md
   - skills/shogun-teire/SKILL.md
   origin: '[[cmd_2793]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L613
   title: 'deploy_task.sh: STKのac_assignedはinject関数で明示転記が必要'
   summary: resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from
@@ -2192,8 +2181,6 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L602
   title: karo_directのtraining配備はdeploy_task.sh --directを使え。手動YAML方式はAC未注入を引き起こす
   summary: karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te
@@ -2337,8 +2324,6 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L593
   title: エラーログは最終行(実際のエラー)を必ず含めよ — 1行目Tracebackは情報ゼロ
   summary: gate_fire_logがPython Tracebackの1行目のみ記録→診断不能。修正(cc020f3e)で最終行抽出。ログ記録時はエラーの実メッセージ行
@@ -3235,6 +3220,9 @@ lessons:
   - scripts/gates/gate_skill_health.sh
   - tests/skill_routing_eval.bats
   origin: '[[cmd_2278]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L528
   title: 共有workspaceでのcommitは--onlyでpath固定する
   summary: git diff --cached --name-onlyで2ファイルだけ確認した直後、共有indexに別担当成果物が入り、通常のgit commitが4ファイ
@@ -3470,8 +3458,6 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L508
   title: 'WSL2 NTFS並列I/Oは直列より遅い: ThreadPoolExecutor(8worker)でfallback yaml.safe_load並列化→in-process
     2.2x改善も実測でregression'
@@ -3587,9 +3573,6 @@ lessons:
   target_files:
   - gate_ninja_workaround_rate.sh
   origin: '[[cmd_karo_ci_fix_568]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L498
   title: set -euo pipefailの呼び元でyaml_field_set内部の中間エラーが伝播する
   summary: 'yaml_field_set.shはmap_scalar→list→root fallbackの3段階を経るが各段階はexit 2で通知する。set
@@ -4059,8 +4042,6 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L453
   title: 復元コミットでenum値変更リスク — 削除→復元時は意味的差分確認必須
   summary: commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→prom
@@ -5260,9 +5241,6 @@ lessons:
   target_files:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
-  deprecated: true
-  deprecated_at: '2026-06-07T10:37:25+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
   summary: Python子プロセスがstderrにメッセージ、stdoutに値を出力する設計で、bash側が2>&1で混合→grepで再分離するパターンは、Python例外
@@ -5322,8 +5300,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要
   origin: '[[cmd_cycle_L4_016]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L341
   title: heredoc一括書込みでファイル中間状態を排除
   summary: echoを2回連結してYAMLを書くと、1行目書込み後2行目書込み前にクラッシュした場合にtimestampだけの不完全ファイルが残る。cat
@@ -5701,8 +5677,6 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L309
   title: '教訓注入の3構造問題: universalタグ誤分類+ファイルレベルマッチング欠如+負帰還ループ欠如'
   summary: '教訓活用率6.2%(146注入中9活用)の根因は3つ: (1)L063等がuniversalタグだが実際は極めて狭い操作範囲(Python
@@ -5916,9 +5890,6 @@ lessons:
   target_files:
   - scripts/lib/inject_task_modifiers.py
   origin: '[[cmd_1391]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L291
   title: resolve_expected_report_fileの再利用でガード追加時のレポート命名追従
   summary: resolve_expected_report_file()はreport_filename/parent_cmdからファイル名を解決する既存関数。新規ガード追
@@ -5998,8 +5969,6 @@ lessons:
   - lesson_update_score.sh
   - sync_lessons.sh
   origin: '[[cmd_1280]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L284
   title: Vercel化後の消費者スクリプトarchive参照切替が必要
   summary: lessons.yamlが索引化されたため、deploy_task.sh/lesson_update_score.sh/lesson_deprecate.sh等
@@ -6015,8 +5984,6 @@ lessons:
   - lesson_update_score.sh
   - lesson_deprecate.sh
   origin: '[[cmd_1280]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L283
   title: PostToolUse hook SKIPカウントの誤検知
   summary: batsテスト名にskipが含まれるとPostToolUse hookがSKIP検出と誤判定する。hookはTAP出力の ok N (hash)
@@ -6277,8 +6244,6 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L261
   title: 全体設定変更時のテスト整合性チェック不足
   summary: settings.yaml等の全体設定変更(全8名claude統一)がE2Eテスト2件+Unitテスト2件の陳腐化を43コミット蓄積後に発覚させた。設定変更コミ
@@ -6402,8 +6367,6 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L251
   title: no_lesson_reasonフィールド追加時は報告テンプレート+instructions+レビュー条件の3層を同時修正せよ
   summary: 教訓還流の仕組み変更は、テンプレート(deploy_task.sh)・忍者ルール(ashigaru.md)・家老レビュー条件(karo.md)の3層を同時に修正
@@ -6945,8 +6908,6 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L204
   title: STALL誤判定の実態は「idle+status未更新」が主因。pstree方式で予防的防御層追加が有効
   summary: 30日分134件のSTALL-DETECTEDログを分析した結果、ほぼ全件が「ペインが確実にidle状態なのにtask YAML statusが未更新」パターン
@@ -7273,8 +7234,6 @@ lessons:
   target_files:
   - scripts/ntfy_listener.sh
   origin: '[[cmd_608]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L174
   title: cmd_608
   summary: watchdogの活動時刻は『read成功』ではなく『意味のあるイベント処理成功』で更新すべし
@@ -7337,9 +7296,6 @@ lessons:
   - scripts/log_terminal_response.sh
   - queue/lord_conversation.yaml
   origin: '[[cmd_578]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L169
   title: YAMLへの追記をheredoc直書きすると引用符/改行で構造破壊する
   summary: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ
@@ -7354,9 +7310,6 @@ lessons:
   target_files:
   - scripts/ntfy_listener.sh
   origin: '[[cmd_578]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L168
   title: auto_draft_lesson.shのIF-THEN引数にスペース含む値を渡すと切り詰められる
   summary: IF auto_draft_lesson.shからlesson_write.shにIF/THEN/BECAUSE値を渡す時 THEN IF_THEN_FLAGS
@@ -7424,8 +7377,6 @@ lessons:
   when: フックスクリプトテスト時
   how: dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能
   origin: '[[testing]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L161
   title: 画像添付MIME整合改善の必要性
   summary: IF ntfy添付画像を保存する時 THEN attachment MIMEに合わせた拡張子付与またはPNG変換を標準化せよ
@@ -7928,9 +7879,6 @@ lessons:
   target_files:
   - scripts/lesson_effectiveness.sh
   origin: '[[cmd_466]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L115
   title: awkでYAMLのインデント階層別フィールド抽出時はインデント深さの正規表現条件を明示せよ
   summary: IF awkでYAMLのインデント階層ごとにフィールドを抽出する時 THEN インデント深さの正規表現条件を明示的に指定せよ。浅いパターンは複数階層にマッチして
@@ -7955,8 +7903,6 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L113
   title: タスク指定ファイルが.gitignore whitelist外だとcommit要件を満たせない
   summary: IF タスク指定ファイルが.gitignore whitelist外の可能性がある時 THEN 配備時に対象ファイルのgit追跡可否を事前検証せよ
@@ -8087,9 +8033,6 @@ lessons:
   - queue/gate_metrics.yamlだが実在はlogs/lesson_tracking.ts
   - queue/gate_metrics.yaml
   origin: '[[cmd_414]]'
-  deprecated: true
-  deprecated_at: '2026-06-07T10:37:25+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)
   summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV

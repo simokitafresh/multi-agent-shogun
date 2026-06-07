@@ -38,7 +38,7 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
 - id: L720
   title: FE表示名変更時は新名優先+旧名fallbackを同時実装せよ
   summary: metrics_jsonのキー名をBE側で変更した場合、FEキャッシュに旧名データが残存する期間がある。新名で取得→なければ旧名fallbackの二段構えをFE
@@ -3038,7 +3038,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-05'
+  last_referenced: '2026-06-07'
 - id: L528
   title: Windows環境YAMLファイル読み書きにはencoding=utf-8が必須
   summary: r29b_is_sensitivity.pyのYAML読み込みでcp932デコードエラー発生。Windows環境ではopen()にencoding=utf-8を
