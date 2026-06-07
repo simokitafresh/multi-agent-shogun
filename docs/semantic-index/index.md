@@ -613,6 +613,7 @@ codd:
 | lesson | `L752` bash ${var: -N} のN文字未満時の空文字挙動 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T15:00:15+09:00 bbmadv89q toolu_01U3r7Vaa5dL8UnqGarcAYce /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8aa671c0-250c-404e-8b5a-7431d2 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:13:50+09:00 b82x7o1o5 toolu_013iidjVk4MeLjR4aSoPZT1J /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b1260975-a6df-42fe-8f3b-42fb9a |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:18:36+09:00 btmr93nto toolu_01YUMAaYg2n6SqxarbDYPqxN /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8bee8ae9-ddb7-4d4e-b5be-3e8347 |
 | causal_chain | `[[cmd_3142]]` (L735) |
 | causal_chain | `[[cmd_3207]]` (L752) |
 
@@ -651,6 +652,13 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:28:49+09:00 bq1wxd5os toolu_01RqhBaQeNmC3HviWUifBbhQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4a506363-f3ac-467a-9aa8-dd3a4c |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:29:13+09:00 bmfz4taf5 toolu_01AEWFSxhrmKtu9Qn38QCctR /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4a506363-f3ac-467a-9aa8-dd3a4c |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:30:06+09:00 bd207h0z3 toolu_01FuqGysNoBq8ATHp9tJtYZv /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4a506363-f3ac-467a-9aa8-dd3a4c |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:16:30+09:00 bxws08qhv toolu_01PEWbxzhts7mha9ooPTt29S /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8bee8ae9-ddb7-4d4e-b5be-3e8347 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:16:57+09:00 bc52u51kl toolu_011EHjdLqPCK8WaGxuHzsi42 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8bee8ae9-ddb7-4d4e-b5be-3e8347 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:17:23+09:00 b24s2nkuo toolu_01BKngLzL714AKqnhAqZQfSQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8bee8ae9-ddb7-4d4e-b5be-3e8347 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:17:38+09:00 b4nlgde63 toolu_01JvtmshXQ1qKf9cAdPLf4fd /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8bee8ae9-ddb7-4d4e-b5be-3e8347 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:17:56+09:00 b5q0pllg7 toolu_01FHcWspngGKtPdWGiQvYQzg /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8bee8ae9-ddb7-4d4e-b5be-3e8347 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:18:13+09:00 by130q1ci toolu_01TFUnePBjqV4vsetEFAgUBs /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8bee8ae9-ddb7-4d4e-b5be-3e8347 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:18:59+09:00 b1nzss31k toolu_01HPgDCUF3SvaPq4zusTPSJ3 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8bee8ae9-ddb7-4d4e-b5be-3e8347 |
 
 ## codd_methodology — CoDD整合性駆動開発
 
