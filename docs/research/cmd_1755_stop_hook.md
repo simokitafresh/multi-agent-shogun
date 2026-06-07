@@ -64,40 +64,42 @@ print(json.dumps({'decision': 'block', 'reason': reason}, ensure_ascii=False))
 
 ### stop_check_inbox.sh の実装確認
 
-#### inbox要約構築部分（L73-98）
+> ⚠ **アーキテクチャ更新注記**: この文書はcmd_2111以前の2-call構造を記録。
+> [[cmd_2111_stop_check_inbox_profiling]]の高速化によりPythonサブプロセスが
+> 2回→1回に統合され、以下の「inbox要約構築」+「JSON出力」は現行L165-202の
+> 単一ブロックに集約されている。
+
+#### inbox要約構築+JSON出力部分（現行: L165-202、cmd_2111統合後）
 
 ```bash
-unread_summary="$(
-  INBOX_FILE="$inbox_file" SUMMARY_LIMIT_ENV="$SUMMARY_LIMIT" SUMMARY_SNIPPET_LEN_ENV="$SUMMARY_SNIPPET_LEN" python3 - <<'PY'
-import os
-import yaml
+INBOX_FILE="$inbox_file" SUMMARY_LIMIT_ENV="$SUMMARY_LIMIT" \
+  SUMMARY_SNIPPET_LEN_ENV="$SUMMARY_SNIPPET_LEN" UNREAD_COUNT="$unread_count" python3 - <<'PY'
+import os, json, yaml
 inbox_path = os.environ["INBOX_FILE"]          # 環境変数経由
 limit = int(os.environ["SUMMARY_LIMIT_ENV"])
 snippet_len = int(os.environ["SUMMARY_SNIPPET_LEN_ENV"])
-...
-print(" | ".join(parts))
+...（inbox解析+summary構築+json.dumps出力を1ブロックで処理）
 PY
-)"
 ```
 
 - **`<<'PY'`（シングルクォートヒアドキュメント）**: 変数展開なし
-- **環境変数経由**: ファイルパスを安全に渡す
+- **環境変数経由**: ファイルパスを安全に渡す（`INBOX_FILE` / `SUMMARY_LIMIT_ENV` 等）
+- **cmd_2111統合**: python3サブプロセス2回→1回。inbox解析とjson.dumps出力が1ブロックに集約
 - → 大元の旧パターンは**最初から採用していない**
 
-#### JSON出力部分（L105-110）
+#### 旧JSON出力部分（旧L105-110、cmd_2111以前の構造）
 
 ```bash
+# ← cmd_2111以前の旧構造（現在は上記ブロックに統合済み）
 REASON_TEXT="$reason_text" python3 - <<'PY'
-import json
-import os
+import json, os
 print(json.dumps({"decision": "block", "reason": os.environ["REASON_TEXT"]}, ensure_ascii=False))
 PY
 ```
 
-- `reason_text` → 環境変数 `REASON_TEXT` で渡す
-- Python内では `os.environ["REASON_TEXT"]` で取得
-- `json.dumps` が適切にエスケープ
-- → **安全**
+- 旧構造では `reason_text` を `REASON_TEXT` 環境変数で渡す2-call方式
+- `json.dumps` による適切なエスケープは現行コードでも維持
+- → **安全**（統合後も同様）
 
 ### stop-lint-gate.sh L102-103 の確認
 
