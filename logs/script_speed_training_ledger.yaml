@@ -3108,4 +3108,4 @@ real_measurement_command: time bash scripts/record_lesson_feedback.sh <report_fi
 test_result: 3/3 PASS (SKIP=0)
 status: done
 scripts/restart_watchers:
-  sh: before_real_ms
+  sh: assigned_to

@@ -40,9 +40,15 @@ stop_existing_watchers() {
     pkill -TERM -f "[i]notifywait.*queue/inbox" 2>/dev/null || true
     pkill -TERM -f "[t]imeout .*inotifywait.*queue/inbox" 2>/dev/null || true
     fuser -k /tmp/inbox_watcher_singleton_*.lock >/dev/null 2>&1 || true
-    sleep 1
 
+    # Adaptive poll (max 1s) instead of fixed sleep 1
+    local _sw_i=0
     remaining="$(watcher_process_count)"
+    while [ "$remaining" -gt 0 ] && [ "$_sw_i" -lt 10 ]; do
+        sleep 0.1
+        ((_sw_i++)) || true
+        remaining="$(watcher_process_count)"
+    done
     echo "  SIGTERM後残存: $remaining"
 
     if [ "$remaining" -gt 0 ]; then
@@ -51,8 +57,14 @@ stop_existing_watchers() {
         pkill -KILL -f "[i]notifywait.*queue/inbox" 2>/dev/null || true
         pkill -KILL -f "[t]imeout .*inotifywait.*queue/inbox" 2>/dev/null || true
         fuser -k /tmp/inbox_watcher_singleton_*.lock >/dev/null 2>&1 || true
-        sleep 1
+        # Adaptive poll (max 1s) for SIGKILL
+        _sw_i=0
         remaining="$(watcher_process_count)"
+        while [ "$remaining" -gt 0 ] && [ "$_sw_i" -lt 10 ]; do
+            sleep 0.1
+            ((_sw_i++)) || true
+            remaining="$(watcher_process_count)"
+        done
         echo "  SIGKILL後残存: $remaining"
     fi
 
@@ -101,7 +113,7 @@ declare -a LAUNCHED_PIDS=()
 _cli=$(tmux show-options -p -t "shogun:main" -v @agent_cli 2>/dev/null || echo "claude")
 unset ASW_DISABLE_ESCALATION
 nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" shogun "shogun:main" "$_cli" \
-    &>> "$SCRIPT_DIR/logs/inbox_watcher_shogun.log" &
+    &>> "$SCRIPT_DIR/logs/inbox_watcher_shogun.log" 200>&- &
 disown
 echo "  shogun → shogun:main ($!)"
 LAUNCHED_AGENTS+=("shogun")
@@ -111,7 +123,7 @@ LAUNCHED_PIDS+=("$!")
 _cli=$(tmux show-options -p -t "shogun:agents.1" -v @agent_cli 2>/dev/null || echo "claude")
 unset ASW_DISABLE_ESCALATION
 nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" karo "shogun:agents.1" "$_cli" \
-    &>> "$SCRIPT_DIR/logs/inbox_watcher_karo.log" &
+    &>> "$SCRIPT_DIR/logs/inbox_watcher_karo.log" 200>&- &
 disown
 echo "  karo → shogun:agents.1 ($!)"
 LAUNCHED_AGENTS+=("karo")
@@ -130,7 +142,7 @@ for name in $(get_all_agents); do
     _cli=$(tmux show-options -p -t "$pane" -v @agent_cli 2>/dev/null || echo "claude")
     unset ASW_DISABLE_ESCALATION
     nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "${name}" "$pane" "$_cli" \
-        &>> "$SCRIPT_DIR/logs/inbox_watcher_${name}.log" &
+        &>> "$SCRIPT_DIR/logs/inbox_watcher_${name}.log" 200>&- &
     disown
     echo "  ${name} → ${pane} ($!)"
     LAUNCHED_AGENTS+=("${name}")
@@ -138,7 +150,21 @@ for name in $(get_all_agents); do
 done
 
 echo "[3/3] 起動確認..."
-sleep 1
+# Adaptive poll (max 1s) instead of fixed sleep 1
+_lp_i=0
+_all_launched=0
+while [ "$_lp_i" -lt 10 ]; do
+    _all_launched=1
+    for _la in "${LAUNCHED_AGENTS[@]}"; do
+        if ! pgrep -f "[i]nbox_watcher\.sh ${_la} " > /dev/null 2>&1; then
+            _all_launched=0
+            break
+        fi
+    done
+    [ "$_all_launched" -eq 1 ] && break
+    sleep 0.1
+    ((_lp_i++)) || true
+done
 failed_agents=()
 for i in "${!LAUNCHED_AGENTS[@]}"; do
     agent="${LAUNCHED_AGENTS[$i]}"
@@ -171,8 +197,14 @@ fi
 
 # GP-226: ヘルスチェック — inotifywaitプロセスが実際に稼働しているか確認
 echo "[+] ヘルスチェック (inotifywait)..."
-sleep 2
+# Adaptive poll (max 2s) instead of fixed sleep 2
+_iw_i=0
 inotify_count=$(pgrep -fc "inotifywait.*queue/inbox" 2>/dev/null) || inotify_count=0
+while [[ "$inotify_count" -lt "$ok" ]] && [ "$_iw_i" -lt 20 ]; do
+    sleep 0.1
+    ((_iw_i++)) || true
+    inotify_count=$(pgrep -fc "inotifywait.*queue/inbox" 2>/dev/null) || inotify_count=0
+done
 if [[ "$inotify_count" -lt "$ok" ]]; then
     echo "  WARN: inotifywait ${inotify_count}/${ok} — watcher起動したがinotifywait未稼働の可能性"
 else
