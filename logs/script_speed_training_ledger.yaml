@@ -898,7 +898,7 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T04:28:40"
   - script_path: "scripts/gates/gate_pd_sync.sh"
-    status: assigned
+    status: pending
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -906,8 +906,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: "tobisaru"
-    updated_at: "2026-06-07T04:46:16"
+    assigned_to: ""
+    updated_at: "2026-06-07T10:20:17"
   - script_path: "scripts/gates/gate_recalculate_completeness.sh"
     status: completed
     before_ms: 16
@@ -1239,7 +1239,7 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T05:59:00"
   - script_path: "scripts/hooks/pre-mcp-lord-attribution-guard.sh"
-    status: assigned
+    status: pending
     before_ms: 14
     after_ms: ""
     before_real_ms: ""
@@ -1247,8 +1247,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: "hanzo"
-    updated_at: "2026-06-07T05:58:10"
+    assigned_to: ""
+    updated_at: "2026-06-07T10:20:17"
   - script_path: "scripts/hooks/pre-write-report-deny.sh"
     status: completed
     before_ms: 15
@@ -1305,7 +1305,7 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T06:08:00"
   - script_path: "scripts/hooks/stop_check_inbox.sh"
-    status: assigned
+    status: pending
     before_ms: 7
     after_ms: ""
     before_real_ms: ""
@@ -1313,8 +1313,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: "hanzo"
-    updated_at: "2026-06-07T06:08:02"
+    assigned_to: ""
+    updated_at: "2026-06-07T10:20:17"
   - script_path: "scripts/hooks/test_hooks.sh"
     status: completed
     before_ms: 17
@@ -1338,7 +1338,7 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T06:12:07"
   - script_path: "scripts/hybrid_search.sh"
-    status: assigned
+    status: pending
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -1346,8 +1346,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: "hanzo"
-    updated_at: "2026-06-07T06:19:19"
+    assigned_to: ""
+    updated_at: "2026-06-07T10:20:17"
   - script_path: "scripts/inbox_archive.sh"
     status: completed
     before_ms: 15
@@ -1866,7 +1866,7 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T09:26:37"
   - script_path: "scripts/lib/script_update.sh"
-    status: assigned
+    status: pending
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -1874,8 +1874,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: "tobisaru"
-    updated_at: "2026-06-07T09:32:59"
+    assigned_to: ""
+    updated_at: "2026-06-07T10:20:17"
   - script_path: "scripts/lib/text_utils.sh"
     status: "completed"
     before_ms: 13
@@ -1976,27 +1976,27 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T10:10:35"
   - script_path: "scripts/memory_candidate_resolve.sh"
-    status: assigned
+    status: completed
     before_ms: 16
+    after_ms: ""
+    before_real_ms: 33
+    after_real_ms: 28
+    real_measurement_command: "time bash scripts/memory_candidate_resolve.sh --help"
+    test_result: "test_bash_speed_training.bats 15/15 PASS SKIP=0"
+    commit: "36dd34cf2"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T10:17:33"
+  - script_path: "scripts/memory_db_init.sh"
+    status: pending
+    before_ms: 13
     after_ms: ""
     before_real_ms: ""
     after_real_ms: ""
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: "kotaro"
-    updated_at: "2026-06-07T10:06:01"
-  - script_path: "scripts/memory_db_init.sh"
-    status: completed
-    before_ms: 13
-    after_ms: 13
-    before_real_ms: 585.849
-    after_real_ms: 571.947
-    real_measurement_command: "python3 30x: temp archive+DB; bash scripts/memory_db_init.sh --archive-dir <tmp>/archive --db <tmp>/data/memory.db --lord-ruling-cache <tmp>/data/cache.db; median_ms"
-    test_result: "bash_n_pass;help_pass;test_memory_db_bats_40_pass;before_585.849_after_571.947;SKIP=0"
-    commit: "ea2efae3a"
-    assigned_to: "hayate"
-    updated_at: "2026-06-07T10:22:00"
+    assigned_to: ""
+    updated_at: "2026-06-07T10:20:17"
   - script_path: "scripts/memory_db_query.sh"
     status: completed
     before_ms: 16

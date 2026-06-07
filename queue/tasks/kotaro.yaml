@@ -32,19 +32,19 @@ task:
   - AC1
   - AC2
   - AC3
-  parent_cmd: cmd_training_speed_lib_field_get_20260607085506
+  parent_cmd: cmd_training_speed_memory_candidate_resolve_20260607100602
   project: infra
-  purpose: 'Speed-train scripts/lib/field_get.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
+  purpose: 'Speed-train scripts/memory_candidate_resolve.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
   scout_exempt: true
   status: done
   stop_for: []
-  target_path: scripts/lib/field_get.sh
-  task_id: cmd_training_speed_lib_field_get_20260607085506_normal
+  target_path: scripts/memory_candidate_resolve.sh
+  task_id: cmd_training_speed_memory_candidate_resolve_20260607100602_normal
   task_type: speed_training
   related_lessons:
-  - id: 'L483'
-    summary: '高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に so'
-    detail: '高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に so'
+  - id: 'L454'
+    summary: '**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.'
+    detail: '**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.'
   - id: 'L630'
     summary: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
     detail: 'bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR'
@@ -74,7 +74,10 @@ task:
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "systems_knowledge_base — システム知識辞書:  docs/research/systems-knowledge-base/index.md docs/research/systems-knowledge-base/systems/ docs/research/systems-knowledge-base/systems/gstack.md"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  recommended_skills:
+  - "report-write"
+  - "verdict-check"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -95,7 +98,7 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L483: 高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に so
+      - L454: **retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.
       - L630: bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
       - L696: startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs
@@ -108,10 +111,10 @@ task:
     
     
   ac_version: 719e89b4
-  _ac_task_id: cmd_training_speed_lib_field_get_20260607085506_normal
+  _ac_task_id: cmd_training_speed_memory_candidate_resolve_20260607100602_normal
   _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_training_speed_lib_field_get_20260607085506.yaml
-  report_path: queue/reports/kotaro_report_cmd_training_speed_lib_field_get_20260607085506.yaml
+  report_filename: kotaro_report_cmd_training_speed_memory_candidate_resolve_20260607100602.yaml
+  report_path: queue/reports/kotaro_report_cmd_training_speed_memory_candidate_resolve_20260607100602.yaml
   bloom_level: 
-  deployed_at: "2026-06-07T08:55:32"
+  deployed_at: "2026-06-07T10:07:45"
