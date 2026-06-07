@@ -4,7 +4,7 @@ task:
   task_type: training
   project: infra
   scout_exempt: true
-  status: acknowledged
+  status: done
   command: |
     速度修行: scripts/restart_ntfy_listener.sh の実行速度を改善せよ。
     AC1: before_real_msをledgerのbaseline(bash -n)ではなく実際のランタイムで計測。script_speed_training_ledger.yamlに記録
