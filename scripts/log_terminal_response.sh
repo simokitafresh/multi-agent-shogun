@@ -18,19 +18,15 @@ source "$SCRIPT_DIR/lib/lord_conversation.sh"
 export LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.jsonl"
 export LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 
-# Capture pane for fallback (fast: reads tmux buffer from memory)
-PANE_CAPTURE="$(tmux capture-pane -t "$TMUX_PANE" -p -J -S -200 2>/dev/null || true)"
-
 # Single python3 call: parse payload + decode + extract + compose DETAIL
-DETAIL="$(HOOK_PAYLOAD="$HOOK_PAYLOAD" PANE_CAPTURE="$PANE_CAPTURE" python3 - <<'PY'
+DETAIL="$(HOOK_PAYLOAD="$HOOK_PAYLOAD" python3 - <<'PY'
 import json
 import os
 import re
 import sys
-from pathlib import Path
 
 hook_payload = os.environ.get("HOOK_PAYLOAD", "")
-pane_capture = os.environ.get("PANE_CAPTURE", "")
+pane_capture = ""
 
 # --- parse_stop_payload ---
 data = {}
@@ -76,11 +72,10 @@ if isinstance(last_msg, dict):
 
 # --- extract_from_transcript ---
 if transcript_path:
-    path = Path(transcript_path)
-    if path.exists():
+    if os.path.exists(transcript_path):
         last_text = ""
         last_stop_reason = ""
-        with path.open("r", encoding="utf-8") as f:
+        with open(transcript_path, "r", encoding="utf-8") as f:
             for raw_line in f:
                 line = raw_line.strip()
                 if not line:
@@ -113,7 +108,23 @@ if transcript_path:
         if not response and last_text:
             response = last_text
 
-# --- extract_from_pane ---
+if not response:
+    tmux_pane = os.environ.get("TMUX_PANE", "")
+    if tmux_pane:
+        try:
+            import subprocess
+
+            pane_capture = subprocess.run(
+                ["tmux", "capture-pane", "-t", tmux_pane, "-p", "-J", "-S", "-200"],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=1,
+            ).stdout
+        except Exception:
+            pane_capture = ""
+
 if not response and pane_capture:
     lines = pane_capture.splitlines()
     last_prompt = -1
