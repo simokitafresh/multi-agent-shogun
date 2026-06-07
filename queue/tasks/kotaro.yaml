@@ -1,5 +1,5 @@
 task:
-  _ac_task_id: cmd_training_speed_test_select_20260607172800_normal
+  _ac_task_id: cmd_training_speed_yaml_field_set_batch_20260607174200_normal
   _ac_worker_id: null
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
   ac_priority: ''
@@ -57,29 +57,19 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_training_speed_test_select_20260607172800
+  parent_cmd: cmd_training_speed_yaml_field_set_batch_20260607174200
   project: infra
   purpose: 'L4修行: 指定ファイルの改善点3つを特定し、最高インパクト1件を実装し、[[リンク]]で知識ネットワークを育て、報告YAMLを一発PASS品質で完成させる'
   scout_exempt: true
   status: in_progress
   stop_for: []
-  target_path: docs/research/cmd_1755_guard_comparison.md
-  task_id: cmd_training_speed_test_select_20260607172800_normal
+  target_path: docs/research/ashigaru-detail.md
+  task_id: cmd_training_speed_yaml_field_set_batch_20260607174200_normal
   task_type: training
-  previous_failures:
-    attempt: 2
-    last_block_reason: 'binary_checks: item count 1/14 (<50% of task template); result.summary: MISSING or empty'
-    tried_approaches:
-    - 'binary_checks: item count 1/14 (<50% of task template); result.summary: MISSING or empty'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks: item count 1/14 (<50% of task template); result.summary: MISSING or empty'
-    - attempt: 2
-      block_reason: 'binary_checks: item count 1/14 (<50% of task template); result.summary: MISSING or empty'
   related_lessons:
-  - id: 'L436'
-    summary: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル `projec'
-    detail: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル `projec'
+  - id: 'L434'
+    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
+    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
   - id: 'L548'
     summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
     detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
@@ -89,6 +79,9 @@ task:
   - id: 'L625'
     summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
     detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L300'
+    summary: 'cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed'
+    detail: 'cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed'
   - id: 'L088'
     summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
     detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
@@ -104,9 +97,6 @@ task:
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-  - id: 'L135'
-    summary: 'IF build_instructions.sh時 THEN 副作用のないヘルプ確認を想定すると生成差分が発生する'
-    detail: 'IF build_instructions.sh時 THEN 副作用のないヘルプ確認を想定すると生成差分が発生する'
   standard_skills:
   - "report-write"
   - "verdict-check"
@@ -136,21 +126,21 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L436: archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル `projec
+      - L434: inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信
       - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
       - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
       - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L300: cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed
       - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
       - L030: config/projects.yamlのcurrent_projectは定義されているが、scripts/配下で このフィールドを読むスクリプトがゼロ。プロジ
       - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
       - L317: 直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
-      - L135: IF build_instructions.sh時 THEN 副作用のないヘルプ確認を想定すると生成差分が発生する
     ────────────────────────────────────────
     
     
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_training_speed_test_select_20260607172800.yaml
-  report_path: queue/reports/kotaro_report_cmd_training_speed_test_select_20260607172800.yaml
+  report_filename: kotaro_report_cmd_training_speed_yaml_field_set_batch_20260607174200.yaml
+  report_path: queue/reports/kotaro_report_cmd_training_speed_yaml_field_set_batch_20260607174200.yaml
   bloom_level: 
-  deployed_at: "2026-06-07T17:29:07"
+  deployed_at: "2026-06-07T17:42:54"

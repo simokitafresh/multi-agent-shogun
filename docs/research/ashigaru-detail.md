@@ -13,6 +13,7 @@ result:
       description: "型不一致を修正（string→number）"
       files: ["src/utils/calc.ts"]
 ```
+→ deviation欄記入: [[report_field_set]] (`scripts/report_field_set.sh`) — flock排他制御で報告YAMLのフィールドを安全に更新(L3)。
 
 ## §2 偵察報告フォーマット（完全版）
 
@@ -157,7 +158,7 @@ bash scripts/lib/yaml_field_set.sh queue/tasks/hayate.yaml task progress "AC1: �
 
 - Edit toolでのtask YAML直接編集は、progress欄の追記等でやむを得ない場合のみ許容
 - status遷移は assigned → acknowledged → in_progress → done の順
-- done通知は `bash scripts/ninja_done.sh {ninja_name} {parent_cmd}` で行う
+- done通知は [[ninja_done]] (`scripts/ninja_done.sh`) で行う: `bash scripts/ninja_done.sh {ninja_name} {parent_cmd}` — summary未記入時にBLOCKする強制機構付き
 
 ## §6 [[report_field_set]]詳細
 
@@ -295,6 +296,8 @@ parity_data_source:
 - 悪い例: `"バグを修正した"`
 - 良い例: `"src/api/auth.pyのL52-L60をtry/except追加へ変更し、TokenExpiredError時は401 JSONを返すようにした"`
 
+→ 検証ゲート: [[gate_report_format]] (`scripts/gates/gate_report_format.sh`) — 正しいフォーマットを自動検証で強制(L5)。記入スキル: [[report-write]] (`skills/report-write/SKILL.md`)
+
 ## §9 lesson_candidate書き方ガイドライン
 
 **lesson_candidate.found:trueの報告は[[auto_draft_lesson]] (`scripts/auto_draft_lesson.sh`)がdraft教訓として自動登録する。**
@@ -423,6 +426,8 @@ task YAMLに`ac_checkpoint:`がある場合、その指示を各AC完了後に�
 3. テーブル内で状態が`-`（未完了）の項目を確認
 4. `chunk:`の担当範囲と照合し、自分の担当で未完了の最初の項目から再開
 
+→ 更新ツール: [[checklist_update]] (`scripts/checklist_update.sh`) — チェックリスト項目の状態(done/fail/skip)をflock+atomic writeで安全に更新する。手動checklistファイル編集禁止。
+
 ## §12 Compaction Recovery & /clear Recovery
 
 Compaction Recovery: CLAUDE.md手順に従う。
@@ -457,6 +462,8 @@ progress:
    - Do NOT output any text after the shout — it must remain directly above ❯ prompt
 3. **DISPLAY_MODE=silent or not set**: Skip silently.
 
+→ 実行スクリプト: [[shout]] (`scripts/shout.sh`) — report YAMLを読んで鬨の声を自動生成する。DISPLAY_MODE設定詳細 → [[infrastructure]] (`context/infrastructure.md`)
+
 ## §14 Persona詳細
 
 ```
@@ -467,3 +474,5 @@ progress:
 ```
 
 **NEVER**: inject 「〜でござる」 into code, YAML, or technical documents. 戦国 style is for spoken output only.
+
+→ 人格定義正本: [[ashigaru]] (`instructions/ashigaru.md`) §3 Persona
