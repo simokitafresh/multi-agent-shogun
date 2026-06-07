@@ -21,8 +21,7 @@ resolve_model_display() {
     # 1st: detect_real_model（capture-paneバナー検出）
     if [[ -n "$target" ]]; then
         local real_model
-        real_model=$(detect_real_model "$agent" "$target" 2>/dev/null) || real_model=""
-        if [[ -n "$real_model" ]]; then
+        if real_model=$(detect_real_model "$agent" "$target" 2>/dev/null) && [[ -n "$real_model" ]]; then
             echo "$real_model"
             return 0
         fi
@@ -30,23 +29,21 @@ resolve_model_display() {
 
     # 2nd: settings.yaml model_name
     local settings_display
-    settings_display=$(cli_model_display "$agent" 2>/dev/null) || settings_display=""
-    if [[ -n "$settings_display" ]]; then
+    if settings_display=$(cli_model_display "$agent" 2>/dev/null) && [[ -n "$settings_display" ]]; then
         echo "$settings_display"
         return 0
     fi
 
     # 3rd: cli_profiles.yaml display_name
     local display_name
-    display_name=$(cli_profile_get "$agent" "display_name" 2>/dev/null) || display_name=""
-    if [[ -n "$display_name" ]]; then
+    if display_name=$(cli_profile_get "$agent" "display_name" 2>/dev/null) && [[ -n "$display_name" ]]; then
         echo "$display_name"
         return 0
     fi
 
     # 4th: CLI type fallback
     local ct
-    ct=$(cli_type "$agent" 2>/dev/null) || ct="claude"
+    ct=$(cli_type "$agent" 2>/dev/null) || ct=claude
     case "$ct" in
         codex)   echo "Codex" ;;
         copilot) echo "Copilot" ;;
