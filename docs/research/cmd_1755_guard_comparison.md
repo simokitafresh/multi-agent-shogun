@@ -2,17 +2,19 @@
 
 > 調査日: 2026-04-06
 > 調査元: yohey-w/multi-agent-shogun PR#113 (`scripts/hooks/guard.sh`)
-> 比較先: `.claude/hooks/pre-bash-combined.sh` (我が軍)
+> 比較先: `.claude/hooks/pre-bash-combined.sh` ([[pre-bash-combined.sh]])
+>
+> ⚠️ **鮮度警告**: 本文書は2026-04-06時点のスナップショット。現在のpre-bash-combined.shはGuard 0〜9+block_destructiveの10+guardsに拡張済み。§2の比較表は現在と乖離がある。最新状態は[[pre-bash-combined.sh]]を直接参照せよ。
 
 ## §1 概要
 
 | 項目 | 大元 (guard.sh) | 我が軍 (pre-bash-combined.sh) |
 |------|----------------|------------------------------|
-| 配置 | `scripts/hooks/guard.sh` | `.claude/hooks/pre-bash-combined.sh` |
+| 配置 | `scripts/hooks/guard.sh` | `.claude/hooks/pre-bash-combined.sh` ([[pre-bash-combined.sh]]) |
 | Hook種別 | PreToolUse (exit 0=allow, exit 2=block) | PreToolUse (JSON hookSpecificOutput, exit 0=allow, exit 1=block) |
 | 言語 | bash + grep/jq | bash + python3 (Guard 4のみ) |
-| チェック数 | 6 hooks | 6 guards |
-| テスト | `scripts/hooks/test_hooks.sh` (187行) | なし |
+| チェック数 | 6 hooks | 6 guards (調査時点)→現在10+ guards (Guard 0-9 + block_destructive) |
+| テスト | `scripts/hooks/test_hooks.sh` ([[test_hooks.sh]], 187行) | なし |
 | 出力形式 | stderr + exit 2 | JSON permissionDecision deny |
 
 ## §2 機能比較表
@@ -108,7 +110,9 @@
 - バイパス検知(has_git_subcmd)は堅牢性の観点で参考になる
 
 **取込優先度**:
-1. テストスクリプト — hook変更時の回帰テスト確保(最優先)
+1. テストスクリプト([[test_hooks.sh]]) — hook変更時の回帰テスト確保(最優先)
 2. mainブランチ保護 — 外部PJ操作時の安全策(適用範囲制御要)
 3. バイパス検知 — 現行python3パーサーとの統合検討
 4. push前lint/typecheck — DM-Signal等Node.jsPJで有用
+
+→ 最新Guard実装状態は [[pre-bash-combined.sh]] 参照。
