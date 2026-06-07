@@ -9,22 +9,22 @@
 # Caller must define WATCHED_DEPS array before calling.
 # Uses stat mtime instead of md5sum: same change-detection, ~3x faster.
 compute_deps_hash() {
-    if ! declare -p WATCHED_DEPS &>/dev/null || [ ${#WATCHED_DEPS[@]} -eq 0 ]; then
+    if [ "${WATCHED_DEPS+x}" != x ] || [ ${#WATCHED_DEPS[@]} -eq 0 ]; then
         echo ""
         return
     fi
-    stat -c '%Y' "${WATCHED_DEPS[@]}" 2>/dev/null | tr '\n' ':'
+    stat --printf='%Y:' "${WATCHED_DEPS[@]}" 2>/dev/null
 }
 
 check_script_update() {
     local current_hash restart_reason=""
-    current_hash="$(stat -c %Y "$SCRIPT_PATH" 2>/dev/null)"
+    current_hash="$(stat --printf='%Y' "$SCRIPT_PATH" 2>/dev/null)"
     if [ "$current_hash" != "$SCRIPT_HASH" ]; then
         restart_reason="script"
     fi
 
     # Check sourced dependencies
-    if [ -n "${DEPS_HASH:-}" ] && declare -p WATCHED_DEPS &>/dev/null && [ ${#WATCHED_DEPS[@]} -gt 0 ]; then
+    if [ -n "${DEPS_HASH:-}" ] && [ "${WATCHED_DEPS+x}" = x ] && [ ${#WATCHED_DEPS[@]} -gt 0 ]; then
         local current_deps_hash
         current_deps_hash="$(compute_deps_hash)"
         if [ "$current_deps_hash" != "$DEPS_HASH" ]; then
