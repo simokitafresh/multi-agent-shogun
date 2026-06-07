@@ -37,6 +37,8 @@ Phase 4 Pass1 (日次ループ L1420-L1635)
 **根本原因**: signal_cache_opt6 (L1752) は Phase 4 Pass1完了後に1回だけ構築。
 Pass2シグナルがDB UPSERTされても signal_cache_opt6 は更新されない。
 
+**設計根拠記録**: [[dm-signal-research-alm]] (L166) — 「Pass2シグナルflush後のsignal_cache_opt6陳腐化リスク。ALM PF分のcache再構築必須（cmd_1752）CRITICAL」
+
 **修正必須**: Pass2 flush完了後、ALM PF IDに対して signal_cache_opt6 を再構築する。
 
 ```python
