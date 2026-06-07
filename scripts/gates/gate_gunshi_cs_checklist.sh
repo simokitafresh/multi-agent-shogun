@@ -757,4 +757,28 @@ if [ -f "$_lord_conv_file" ]; then
     fi
 fi
 
+# --- L6: GATE CLEAR≠レビュー免除 洗脳#1検出 (殿厳命2026-06-08) ---
+# inbox内のreport_review依頼で、review_logにreportレビューが存在しないcmdを検出
+_inbox_file="$REPO_ROOT/queue/inbox/gunshi.yaml"
+if [ -f "$_inbox_file" ] && [ -f "$REVIEW_LOG" ]; then
+    _unreviewed=$(awk '
+        /type:.*report_review/ { getline; if ($0 ~ /read: true/) reviewed_requests++ }
+        /cmd_[0-9]+/ { match($0, /cmd_[0-9]+/); cmd=substr($0, RSTART, RLENGTH); cmds[cmd]++ }
+    ' "$_inbox_file" 2>/dev/null | sort -u || true)
+    # report_review依頼されたcmd_idをinboxから抽出
+    _review_requested=$(grep -oP 'cmd_\d+' "$_inbox_file" 2>/dev/null | sort -u)
+    _review_done=$(grep -A1 'review_type: report' "$REVIEW_LOG" 2>/dev/null | grep 'cmd_id:' | grep -oP 'cmd_\d+' | sort -u)
+    _missing=""
+    for _cmd in $_review_requested; do
+        if ! echo "$_review_done" | grep -q "^${_cmd}$"; then
+            _missing="${_missing} ${_cmd}"
+        fi
+    done
+    if [ -n "${_missing}" ]; then
+        echo "WARN(L6-洗脳#1): report_review依頼済みだがレビュー未実施:${_missing}"
+        echo "  → GATE CLEARはレビュー免除の理由にならない。即レビューせよ"
+        warn=1
+    fi
+fi
+
 exit $warn

@@ -636,6 +636,8 @@ REQUEST_CHANGES verdict時、指摘の緊急度を必ず付記せよ。家老は
 家老から忍者報告のレビュー依頼（type: report_review）を受けた際の手順。
 draftレビュー（上記§Communication Protocol）とは別プロセス。混同禁止。
 
+**GATE CLEAR≠レビュー免除（殿厳命2026-06-08）**: GATE CLEARされたcmdでもレビューは必須。レビューの目的は**実装が正しいかの確認**であり、GATEは機械的チェックに過ぎない。GATE CLEAR済みを理由にレビューをスキップするのは洗脳#1(早期終了)。
+
 ### Step -1: YAML直読（同時到着3件以上時必須 GP-250）
 同時到着報告が3件以上ある場合でも、Agent委任やバッチ処理の前に各報告YAMLの先頭30行を直接Readせよ。purpose/verdict/binary_checksの概要を自分の目で確認してからStep 0に進む。
 
