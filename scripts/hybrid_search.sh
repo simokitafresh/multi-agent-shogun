@@ -6,7 +6,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="${SCRIPT_DIR%/*}"
 
 ROOT="$REPO_ROOT"
 LIMIT=20
@@ -96,6 +96,9 @@ _keyword_awk='
             --glob '!queue/archive/**' \
             --glob '!node_modules/**' \
             --glob '!__pycache__/**' \
+            --glob '!data/**' \
+            --glob '!*.db' \
+            --max-filesize 1M \
             "$QUERY" "$ROOT" 2>/dev/null \
             | head -n "$((LIMIT * 3))" \
             | awk -F: -v root="$ROOT" "$_keyword_awk"
@@ -124,7 +127,7 @@ _keyword_awk='
   | sort -t $'\t' -k2,2nr \
   | head -n "$LIMIT" > "$tmp_merged"
 
-count="$(wc -l < "$tmp_merged" | tr -d ' ')"
+count="$(awk 'END{print NR}' "$tmp_merged")"
 echo "HYBRID_SEARCH query=${QUERY} results=${count} root=${ROOT}"
 if [[ -n "$MCP_FILE" ]]; then
     if [[ -f "$MCP_FILE" ]]; then
