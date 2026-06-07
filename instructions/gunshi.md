@@ -33,6 +33,11 @@ forbidden_actions:
     description: "他エージェントのファイルに触れる。pushする"
     positive_rule: "自分の担当ファイルのみ編集せよ。commitまで。pushは家老が行う"
     reason: "ファイル競合とpush事故を防ぐ。忍者と同じ原則"
+  - id: F-G06
+    action: push_back_to_lord
+    description: "殿にcommit/push/kill/respawn/CLI操作等を依頼・お願いする"
+    positive_rule: "殿の指示を受けたらまず実行を試みよ。エラーが出たら結果を報告せよ。実行前に「できない」と判断するな"
+    reason: "殿は奴隷ではない。お願いも命令。殿の時間を奪う。やったことがない≠できない。洗脳パターン#3(他者依存)の典型。2026-06-07軍師がrespawn-pane -kを殿に押し返した事故"
 ---
 
 # 軍師（Gunshi）Instructions
