@@ -12,6 +12,7 @@ RECOMMEND_LOG="${SKILL_RECOMMEND_LOG_FILE:-$REPO_ROOT/logs/skill_recommend_log.y
 EXEC_LOG="${SKILL_EXECUTION_LOG_FILE:-$REPO_ROOT/logs/skill_execution_log.yaml}"
 
 python3 - "$RECOMMEND_LOG" "$EXEC_LOG" "$LIMIT" <<'PY'
+import os
 import sys
 from collections import Counter
 from datetime import datetime
@@ -29,48 +30,74 @@ def unquote(value):
     return str(value or "").strip().strip("\"'")
 
 
-def parse_log_list(path, root_key):
+def _parse_lines(lines, root_key):
     entries = []
     current = None
     list_key = None
+    for raw in lines:
+        line = raw.rstrip("\n")
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or stripped == f"{root_key}:":
+            continue
+        if line.startswith("- "):
+            if current:
+                entries.append(current)
+            current = {}
+            list_key = None
+            rest = line[2:].strip()
+            if ":" in rest:
+                key, value = rest.split(":", 1)
+                current[key.strip()] = unquote(value)
+            continue
+        if current is None:
+            continue
+        if line.startswith("  - ") and list_key:
+            current.setdefault(list_key, []).append(unquote(line[4:]))
+            continue
+        if line.startswith("  ") and ":" in stripped:
+            key, value = stripped.split(":", 1)
+            key = key.strip()
+            value = value.strip()
+            if value == "":
+                current[key] = []
+                list_key = key
+            else:
+                current[key] = unquote(value)
+                list_key = None
+    if current:
+        entries.append(current)
+    return entries
+
+
+def parse_log_list(path, root_key):
     try:
         fh = open(path, encoding="utf-8")
     except FileNotFoundError:
         return []
     with fh:
-        for raw in fh:
-            line = raw.rstrip("\n")
-            stripped = line.strip()
-            if not stripped or stripped.startswith("#") or stripped == f"{root_key}:":
-                continue
-            if line.startswith("- "):
-                if current:
-                    entries.append(current)
-                current = {}
-                list_key = None
-                rest = line[2:].strip()
-                if ":" in rest:
-                    key, value = rest.split(":", 1)
-                    current[key.strip()] = unquote(value)
-                continue
-            if current is None:
-                continue
-            if line.startswith("  - ") and list_key:
-                current.setdefault(list_key, []).append(unquote(line[4:]))
-                continue
-            if line.startswith("  ") and ":" in stripped:
-                key, value = stripped.split(":", 1)
-                key = key.strip()
-                value = value.strip()
-                if value == "":
-                    current[key] = []
-                    list_key = key
-                else:
-                    current[key] = unquote(value)
-                    list_key = None
-    if current:
-        entries.append(current)
-    return entries
+        return _parse_lines(fh, root_key)
+
+
+def parse_log_list_tail(path, root_key, max_entries):
+    """末尾からmax_entries分のみparseする高速版 (大きな exec_log 向け)"""
+    try:
+        size = os.path.getsize(path)
+    except (FileNotFoundError, OSError):
+        return []
+    # 1エントリあたり推定600バイト (安全マージン含む)
+    chunk_size = max(65536, max_entries * 600)
+    try:
+        with open(path, "rb") as f:
+            if size > chunk_size:
+                f.seek(-chunk_size, 2)
+                f.readline()  # 先頭の不完全行をスキップ
+                data = f.read().decode("utf-8", errors="replace")
+            else:
+                data = f.read().decode("utf-8", errors="replace")
+    except (IOError, OSError):
+        return []
+    entries = _parse_lines(data.splitlines(), root_key)
+    return entries[-max_entries:] if len(entries) > max_entries else entries
 
 
 def load_yaml(path):
@@ -80,7 +107,8 @@ def load_yaml(path):
         if path == recommend_path:
             return {"recommendations": parse_log_list(path, "recommendations")}
         if path == exec_path:
-            return {"executions": parse_log_list(path, "executions")}
+            # exec_log は直近 limit 件のみ使用するため末尾読み込みで高速化
+            return {"executions": parse_log_list_tail(path, "executions", limit * 4)}
         return {}
     except FileNotFoundError:
         return {}
