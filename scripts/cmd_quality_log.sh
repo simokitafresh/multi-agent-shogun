@@ -150,6 +150,9 @@ fetch_gunshi_verdict() {
 
 # --- Auto-fetch: ninja_blockers ---
 # Count reports with parent_cmd=cmd_id and status=blocked
+# Optimization: use filename-based glob to avoid scanning all report files
+# Report naming: {ninja}_report_{cmd_id}[_{timestamp}].yaml
+# Opening all 102 files costs ~600ms on WSL2 NTFS; glob match costs ~10ms
 fetch_ninja_blockers() {
     local reports_dir="$REPO_ROOT/queue/reports"
     if [[ ! -d "$reports_dir" ]]; then
@@ -157,30 +160,18 @@ fetch_ninja_blockers() {
         return
     fi
 
-    local report_files=()
+    local count=0
     local report
-    for report in "$reports_dir"/*_report_*.yaml; do
+    for report in "$reports_dir"/*_report_${CMD_ID}.yaml \
+                  "$reports_dir"/*_report_${CMD_ID}_*.yaml; do
         [[ -f "$report" ]] || continue
-        report_files+=("$report")
+        # Secondary check: verify parent_cmd and status (handles edge-case glob overlaps)
+        if grep -qF "parent_cmd: $CMD_ID" "$report" 2>/dev/null && \
+           grep -q "^status: blocked$" "$report" 2>/dev/null; then
+            count=$((count + 1))
+        fi
     done
-    if [[ "${#report_files[@]}" -eq 0 ]]; then
-        echo 0
-        return
-    fi
-
-    awk -v cid="$CMD_ID" '
-        FNR == 1 {
-            if (NR > 1 && has_parent && has_blocked) count++
-            has_parent = 0
-            has_blocked = 0
-        }
-        $0 == "parent_cmd: " cid { has_parent = 1 }
-        $0 == "status: blocked" { has_blocked = 1 }
-        END {
-            if (NR > 0 && has_parent && has_blocked) count++
-            print count + 0
-        }
-    ' "${report_files[@]}" 2>/dev/null || echo 0
+    echo "$count"
 }
 
 # --- Auto-fetch: ac_count ---

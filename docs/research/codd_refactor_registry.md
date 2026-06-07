@@ -4,6 +4,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-06-07 | hayate | `scripts/cmd_quality_log.sh` 速度改善修行2回目 | Phase 5(before計測→ボトルネック特定→最小実装→after検証, cmd_training_speed_cmd_quality_log_20260607181500_normal) | full metadata経路中央値 `578ms → 262ms` (`-55%`) | fetch_ninja_blockers: 全102ファイルawk(`585ms`)→filename-based glob(`10ms`)。blockers検出正常(1件/0件確認済み)。9/9テストPASS、SKIP=0。report-derived: `queue/reports/hayate_report_cmd_training_speed_cmd_quality_log_20260607181500_normal.yaml` |
 | 2026-06-07 | kotaro | `scripts/dashboard_update.sh`, `scripts/gates/gate_report_format.sh` | Phase 5(auto registry via cmd_complete_gate, cmd_training_speed_dashboard_update_20260607000233) | `1156ms → 1000ms` | `cmd_training_speed_dashboard_update_20260607000233` report-derived |
 | 2026-06-07 | saizo | `scripts/dashboard_auto_section.sh`, `scripts/gates/gate_report_format.sh` | Phase 5(auto registry via cmd_complete_gate, cmd_training_speed_dashboard_auto_section_20260606235801) | `550ms → 430ms` | `cmd_training_speed_dashboard_auto_section_20260606235801` report-derived |
 | 2026-06-07 | kagemaru | `scripts/daemon_watchdog.sh`, `scripts/gates/gate_report_format.sh`, `scripts/ninja_monitor.sh` (+7) | Phase 5(auto registry via cmd_complete_gate, cmd_training_speed_daemon_watchdog_20260606235708) | `70ms → 30ms` | `cmd_training_speed_daemon_watchdog_20260606235708` report-derived |
