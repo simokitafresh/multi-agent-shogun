@@ -10,7 +10,7 @@
 #   Changing the interface breaks the entire notification pipeline.
 
 # Validate: message argument required
-if [ -z "$1" ]; then
+if [ "${1-}" = "" ]; then
     echo "Usage: ntfy.sh <message>" >&2
     exit 1
 fi
