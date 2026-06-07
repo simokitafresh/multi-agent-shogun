@@ -1,143 +1,23 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  acceptance_criteria:
-  - checks:
-    - check: before_ms bash -n baseline is read from script_speed_training_ledger as syntax-only reference
-    - check: before_real_ms is measured with a safe runtime command chosen for this script (time bash script.sh <args>, --help, dry-run, or sandboxed equivalent)
-    id: AC1
-  - checks:
-    - check: implementation improves runtime without reducing behavior or safety
-    - check: script-specific verification passes with SKIP=0
-    id: AC2
-  - checks:
-    - check: after_real_ms is measured with the same command as before_real_ms
-    - check: after_real_ms is strictly lower than before_real_ms
-    - check: real_measurement_command/test_result/commit are written back to script_speed_training_ledger
-    id: AC3
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  parent_cmd: cmd_training_speed_hooks_stop_check_inbox_20260607104013
-  project: infra
-  purpose: 'Speed-train scripts/hooks/stop_check_inbox.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
-  scout_exempt: true
-  status: in_progress
-  stop_for: []
-  target_path: scripts/hooks/stop_check_inbox.sh
-  task_id: cmd_training_speed_hooks_stop_check_inbox_20260607104013_normal
+  parent_cmd: cmd_training_speed_memory_recall_control_20260607105712
+  task_id: cmd_training_speed_memory_recall_control_20260607105712_standard
   task_type: speed_training
-  related_lessons:
-  - id: 'L488'
-    summary: 'stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow'
-    detail: 'stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow'
-  - id: 'L736'
-    summary: 'flock内でbackground起動したmemory DB insertがfd 200を継承し、親が終わった後もlockを保持して2回目のinsight_wr'
-    detail: 'flock内でbackground起動したmemory DB insertがfd 200を継承し、親が終わった後もlockを保持して2回目のinsight_wr'
-  - id: 'L342'
-    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
-    detail: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
-  - id: 'L319'
-    summary: 'gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ'
-    detail: 'gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ'
-  - id: 'L696'
-    summary: 'startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs'
-    detail: 'startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs'
-  - id: 'L602'
-    summary: 'karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te'
-    detail: 'karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te'
-  - id: 'L660'
-    summary: 'SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re'
-    detail: 'SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re'
-  - id: 'L164'
-    summary: 'IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな'
-    detail: 'IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな'
-  - id: 'L705'
-    summary: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
-    detail: '今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/'
-  - id: 'L690'
-    summary: 'CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr'
-    detail: 'CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr'
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  semantic_concepts:
-  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json"
-  - "defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)"
-  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比)"
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
-  - "skill_design_rules — Skill設計ルール:  context/skill-design-rules.md docs/research/dream-skill-design.md scripts/skill_gate_feedback.sh scripts/skill_auto_improve.sh scripts/skill_execution_log.sh context/codd.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md skills/reset-layout/SKILL.md skills/pf-registration/SKILL.md docs/research/gstack-gbrain-skillify-2026-04.md"
-  recommended_skills:
-  - "reset-layout"
-  - "shogun-all-codex-switch"
-  - "shogun-peacetime-rollback"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/gs-speedup-knowledge.md"
-  - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L488: stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow
-      - L736: flock内でbackground起動したmemory DB insertがfd 200を継承し、親が終わった後もlockを保持して2回目のinsight_wr
-      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
-      - L319: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ
-      - L696: startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs
-      - L602: karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te
-      - L660: SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re
-      - L164: IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな
-      - L705: 今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/
-      - L690: CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr
-    ────────────────────────────────────────
-    
-    
-  ac_version: 719e89b4
-  _ac_task_id: cmd_training_speed_hooks_stop_check_inbox_20260607104013_normal
-  _ac_worker_id: 
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_training_speed_hooks_stop_check_inbox_20260607104013.yaml
-  report_path: queue/reports/kotaro_report_cmd_training_speed_hooks_stop_check_inbox_20260607104013.yaml
-  bloom_level: 
-  deployed_at: "2026-06-07T10:40:58"
-
-  session_state:
-    attempt: 2
-    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    tried_approaches:
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    approach_summary: 'stop_check_inbox.sh: shogunのみjqでlast_assistant_message抽出→brainwash check。忍者/家老はpayload直接マッチ(jq不要)。before_real_ms=78ms → after_real_ms=40ms(49%削減)'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'stop_check_inbox.sh: shogunのみjqでlast_assistant_message抽出→brainwash check。忍者/家老はpayload直接マッチ(jq不要)。before_real_ms=78ms → after_real_ms=40ms(49%削減)'
-    - attempt: 2
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'stop_check_inbox.sh: shogunのみjqでlast_assistant_message抽出→brainwash check。忍者/家老はpayload直接マッチ(jq不要)。before_real_ms=78ms → after_real_ms=40ms(49%削減)'
+  project: infra
+  target_path: scripts/memory_recall_control.sh
+  scout_exempt: true
+  status: assigned
+  purpose: "Speed-train scripts/memory_recall_control.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger."
+  acceptance_criteria:
+    - id: AC1
+      checks:
+        - check: "before_ms bash -n baseline is read from script_speed_training_ledger as syntax-only reference"
+        - check: "before_real_ms is measured with a safe runtime command chosen for this script (time bash script.sh <args>, --help, dry-run, or sandboxed equivalent)"
+    - id: AC2
+      checks:
+        - check: "implementation improves runtime without reducing behavior or safety"
+        - check: "script-specific verification passes with SKIP=0"
+    - id: AC3
+      checks:
+        - check: "after_real_ms is measured with the same command as before_real_ms"
+        - check: "after_real_ms is strictly lower than before_real_ms"
+        - check: "real_measurement_command/test_result/commit are written back to script_speed_training_ledger"
