@@ -1,10 +1,10 @@
 task:
-  cmd_id: cmd_training_speed_reset_layout_20260607190300_normal
+  cmd_id: cmd_training_speed_skill_auto_improve_20260607200000_normal
   type: training
   task_type: speed_training
   project: infra
-  purpose: "速度改善修行1回目残り — reset_layout.sh (ledger pending)"
-  target_path: scripts/reset_layout.sh
+  purpose: "速度改善修行1回目残り — skill_auto_improve.sh (ledger pending)"
+  target_path: scripts/skill_auto_improve.sh
   acceptance_criteria:
     AC1:
       description: "before計測3回+ボトルネック仮説記録"
@@ -51,5 +51,5 @@ task:
   - id: 'L499'
     summary: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
     detail: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
-  parent_cmd: cmd_training_speed_reset_layout_20260607190300_normal
-  report_path: reports/hayate_report_cmd_training_speed_reset_layout_20260607190300_normal.yaml
+  report_path: reports/hayate_report_cmd_training_speed_skill_auto_improve_20260607200000_normal.yaml
+  parent_cmd: cmd_training_speed_skill_auto_improve_20260607200000_normal
