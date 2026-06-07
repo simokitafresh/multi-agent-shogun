@@ -23,8 +23,7 @@ fi
 
 rotate_log() {
     local logfile="$1"
-    local basename
-    basename="$(basename "$logfile")"
+    local basename="${logfile##*/}"
 
     # Remove oldest generation if it exists (.gz compressed)
     local oldest="${logfile}.${MAX_GENERATIONS}.gz"
@@ -67,17 +66,16 @@ rotate_log() {
 
 ROTATED=0
 
-for logfile in "$LOGS_DIR"/*.log; do
-    [[ -f "$logfile" ]] || continue
-
-    size=$(stat -c%s "$logfile" 2>/dev/null || echo 0)
+# Use find -printf to get size+path in one pass, avoiding per-file stat subprocesses
+while IFS=' ' read -r size logfile; do
     if [[ $size -gt $MAX_SIZE_BYTES ]]; then
-        size_mb=$(awk "BEGIN {printf \"%.1f\", $size / 1024 / 1024}")
-        echo "[log_rotate] ${logfile##*/}: ${size_mb}MB > 10MB threshold"
+        size_mb_int=$(( size / 1048576 ))
+        size_mb_frac=$(( (size * 10 / 1048576) % 10 ))
+        echo "[log_rotate] ${logfile##*/}: ${size_mb_int}.${size_mb_frac}MB > 10MB threshold"
         rotate_log "$logfile"
         ROTATED=$((ROTATED + 1))
     fi
-done
+done < <(find "$LOGS_DIR" -maxdepth 1 -name "*.log" -printf "%s %p\n" 2>/dev/null)
 
 if [[ $ROTATED -eq 0 ]]; then
     echo "[log_rotate] No logs exceeded 10MB threshold"
