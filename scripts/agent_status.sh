@@ -42,32 +42,20 @@ format_age() {
 printf "%-10s %-9s %-5s %-12s %s\n" "AGENT" "STATE" "CTX" "LAST_ACTIVE" "AGE"
 
 NOW=$(date +%s)
-declare -A CURRENT_PANES=()
-while read -r pane_index agent_name; do
-    [ -n "$agent_name" ] || continue
-    CURRENT_PANES[$agent_name]="shogun:agents.$pane_index"
-done < <(tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id}' 2>/dev/null || true)
+# 全ペインデータを1回のtmux呼出しで取得（N+1回→1回）
+declare -A PANE_DATA=()
+while IFS='|' read -r pane_index pane_agent pane_state pane_last pane_ctx; do
+    [ -n "$pane_agent" ] || continue
+    PANE_DATA["$pane_agent"]="${pane_state}|${pane_last}|${pane_ctx}"
+done < <(tmux list-panes -t shogun:agents -F '#{pane_index}|#{@agent_id}|#{@agent_state}|#{@last_active}|#{@context_pct}' 2>/dev/null || true)
 
 for name in "${AGENT_ORDER[@]}"; do
-    pane="${CURRENT_PANES[$name]:-}"
-    if [ -z "$pane" ]; then
-        pane=$(pane_lookup "$name")
-    fi
-
-    if [ -z "$pane" ]; then
+    if [[ -z "${PANE_DATA[$name]+_}" ]]; then
         printf "%-10s %-9s %-5s %-12s %s\n" "$name" "missing" "—" "—" "—"
         continue
     fi
 
-    # pane存在確認+tmux変数を一括読取り（4回→1回のtmux呼出し）
-    _tmux_raw=$(tmux display-message -t "$pane" -p '#{pane_id}|#{@agent_id}|#{@agent_state}|#{@last_active}|#{@context_pct}' 2>/dev/null) || _tmux_raw=""
-    if [ -z "$_tmux_raw" ]; then
-        printf "%-10s %-9s %-5s %-12s %s\n" "$name" "missing" "—" "—" "—"
-        continue
-    fi
-
-    # shellcheck disable=SC2034  # pane_id/agent_idはフォーマット分解で必要（将来の拡張用に保持）
-    IFS='|' read -r pane_id agent_id agent_state last_active context_pct <<< "$_tmux_raw"
+    IFS='|' read -r agent_state last_active context_pct <<< "${PANE_DATA[$name]}"
 
     # STATE判定
     if [ -z "$agent_state" ]; then
