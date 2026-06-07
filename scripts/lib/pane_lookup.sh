@@ -64,13 +64,13 @@ pane_lookup() {
 
     # Source 1: tmux @agent_id (実際のpane配置を直接参照 — 常に正確)
     if command -v tmux >/dev/null 2>&1; then
-        local pane_line
-        pane_line=$(tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id}' 2>/dev/null \
-            | grep " ${name}$" | head -1)
-        if [ -n "$pane_line" ]; then
-            echo "shogun:agents.${pane_line%% *}"
-            return 0
-        fi
+        local pane_index pane_agent
+        while read -r pane_index pane_agent; do
+            if [[ "$pane_agent" == "$name" ]]; then
+                echo "shogun:agents.${pane_index}"
+                return 0
+            fi
+        done < <(tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id}' 2>/dev/null)
     fi
 
     # Source 2: 静的フォールバック (tmux未起動時)
