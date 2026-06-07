@@ -12,6 +12,11 @@
 #   4. PID 1, init, systemd等のシステムプロセスは絶対拒否
 set -euo pipefail
 
+if [[ -z "${1:-}" ]]; then
+    echo "Usage: bash scripts/process_stop.sh <PID> [--force]" >&2
+    exit 1
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_FILE="$SCRIPT_DIR/../logs/process_stop.log"
 
@@ -29,15 +34,10 @@ die() {
 }
 
 # --- 引数解析 ---
-PID="${1:-}"
+PID="$1"
 FORCE=false
 if [[ "${2:-}" == "--force" ]]; then
     FORCE=true
-fi
-
-if [[ -z "$PID" ]]; then
-    echo "Usage: bash scripts/process_stop.sh <PID> [--force]" >&2
-    exit 1
 fi
 
 # --- ガード1: 数値チェック ---
