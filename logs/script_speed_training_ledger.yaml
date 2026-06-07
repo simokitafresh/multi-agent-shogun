@@ -1074,16 +1074,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T05:08:01"
   - script_path: "scripts/gates/mark_no_learning.sh"
-    status: completed
+    status: pending
     before_ms: 16
     after_ms: ""
     before_real_ms: 18
-    after_real_ms: 18
+    after_real_ms: ""
     real_measurement_command: "bash scripts/gates/mark_no_learning.sh cmd_test_bench 2>/dev/null"
     test_result: "bash_n PASS; test_mark_no_learning.bats 2/2 PASS SKIP=0 (causal_backlinks 2 FAIL pre-existing)"
-    commit: "454782549"
-    assigned_to: "hanzo"
-    updated_at: "2026-06-07T05:12:00"
+    commit: ""
+    assigned_to: ""
+    updated_at: "2026-06-07T10:49:16"
   - script_path: "scripts/gist_index_update.sh"
     status: completed
     before_ms: 16
@@ -1195,16 +1195,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T05:49:30"
   - script_path: "scripts/hooks/git-pre-commit.sh"
-    status: completed
+    status: pending
     before_ms: 16
     after_ms: 16
     before_real_ms: 405
-    after_real_ms: 405
+    after_real_ms: ""
     real_measurement_command: "time bash scripts/hooks/git-pre-commit.sh (no staged files)"
     test_result: "bash_n PASS; no batsfile; PASS_NO_IMPROVEMENT(WSL2 git diff cost dominates)"
     commit: ""
-    assigned_to: "hanzo"
-    updated_at: "2026-06-07T05:55:00"
+    assigned_to: ""
+    updated_at: "2026-06-07T10:49:16"
   - script_path: "scripts/hooks/pre-bash-report-deny.sh"
     status: completed
     before_ms: 6
@@ -1250,16 +1250,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T10:43:50"
   - script_path: "scripts/hooks/pre-write-report-deny.sh"
-    status: completed
+    status: pending
     before_ms: 15
     after_ms: 15
     before_real_ms: 7
-    after_real_ms: 7
+    after_real_ms: ""
     real_measurement_command: "printf '' | bash scripts/hooks/pre-write-report-deny.sh"
     test_result: "PASS_NO_IMPROVEMENT: 既にIFS=read builtin+bash regex最適化済み。測定誤差範囲(5-9ms)で有意差なし"
-    commit: "no_change"
-    assigned_to: "kotaro"
-    updated_at: "2026-06-07T06:03:00"
+    commit: ""
+    assigned_to: ""
+    updated_at: "2026-06-07T10:49:16"
   - script_path: "scripts/hooks/pre_compact_save.sh"
     status: completed
     before_ms: 13
@@ -1305,7 +1305,7 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T06:08:00"
   - script_path: "scripts/hooks/stop_check_inbox.sh"
-    status: pending
+    status: assigned
     before_ms: 7
     after_ms: ""
     before_real_ms: ""
@@ -1313,19 +1313,19 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: "2026-06-07T10:20:17"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T10:40:12"
   - script_path: "scripts/hooks/test_hooks.sh"
-    status: completed
+    status: pending
     before_ms: 17
     after_ms: 17
     before_real_ms: 2611
-    after_real_ms: 2611
+    after_real_ms: ""
     real_measurement_command: "bash scripts/hooks/test_hooks.sh"
     test_result: "PASS_NO_IMPROVEMENT: 80/80 PASS。主コストはpython3(Guard4)とsqlite3。test_hooks.sh自体の最適化余地なし"
-    commit: "no_change"
-    assigned_to: "kotaro"
-    updated_at: "2026-06-07T06:13:00"
+    commit: ""
+    assigned_to: ""
+    updated_at: "2026-06-07T10:49:16"
   - script_path: "scripts/hooks/test_result_guard.sh"
     status: completed
     before_ms: 16
@@ -1338,16 +1338,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T06:12:07"
   - script_path: "scripts/hybrid_search.sh"
-    status: pending
+    status: completed
     before_ms: 16
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: "2026-06-07T10:20:17"
+    after_ms: 28
+    before_real_ms: 68
+    after_real_ms: 28
+    real_measurement_command: "bash scripts/hybrid_search.sh --help (5-run median)"
+    test_result: "bash -n OK; --help OK; real-query returns results correctly; 68ms->28ms (-59%)"
+    commit: "506022d31"
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T10:40:12"
   - script_path: "scripts/inbox_archive.sh"
     status: completed
     before_ms: 15
@@ -1624,16 +1624,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T08:03:00"
   - script_path: "scripts/lesson_update_score.sh"
-    status: completed
+    status: pending
     before_ms: 16
     after_ms: ""
     before_real_ms: 267
-    after_real_ms: 322
+    after_real_ms: ""
     real_measurement_command: "bash scripts/lesson_update_score.sh infra L756 helpful (backup/restore method)"
     test_result: "bash -n OK; L756 helpful_count incremented correctly"
-    commit: "65786bd02"
-    assigned_to: "kotaro"
-    updated_at: "2026-06-07T08:15:00"
+    commit: ""
+    assigned_to: ""
+    updated_at: "2026-06-07T10:49:16"
   - script_path: "scripts/lesson_write.sh"
     status: completed
     before_ms: 18
@@ -1668,16 +1668,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T08:33:00"
   - script_path: "scripts/lib/agent_config.sh"
-    status: completed
+    status: pending
     before_ms: 9
     after_ms: ""
     before_real_ms: 25
-    after_real_ms: 28
+    after_real_ms: ""
     real_measurement_command: "bash -c 'source scripts/lib/agent_config.sh; get_ninja_names; get_layout_col1_width_pct; get_layout_karo_height'"
     test_result: "bash -n OK; get_layout values correct (col1:36, karo_h:24)"
-    commit: "976eb61aa"
-    assigned_to: "kotaro"
-    updated_at: "2026-06-07T08:42:00"
+    commit: ""
+    assigned_to: ""
+    updated_at: "2026-06-07T10:49:16"
   - script_path: "scripts/lib/cli_lookup.sh"
     status: completed
     before_ms: 16
@@ -1987,16 +1987,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T10:17:33"
   - script_path: "scripts/memory_db_init.sh"
-    status: pending
+    status: completed
     before_ms: 13
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: "2026-06-07T10:20:17"
+    before_real_ms: 525
+    after_real_ms: 219
+    real_measurement_command: "bash scripts/memory_db_init.sh --help (5回計測中央値; before=525ms after=219ms)"
+    test_result: "bash -n pass; bats tests/unit/test_memory_db.bats 40/40 PASS SKIP=0"
+    commit: "002e17646"
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T10:47:00"
   - script_path: "scripts/memory_db_query.sh"
     status: completed
     before_ms: 16
