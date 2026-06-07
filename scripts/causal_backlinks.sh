@@ -51,7 +51,10 @@ SEARCH_PATHS=(
     tasks
 )
 
-existing_search_paths=("${SEARCH_PATHS[@]}")
+existing_search_paths=()
+for _cbl_path in "${SEARCH_PATHS[@]}"; do
+    [ -e "$_cbl_path" ] && existing_search_paths+=("$_cbl_path")
+done
 
 if [ "$DETAIL" -eq 1 ]; then
     # Show file path + origin/causal_chain context

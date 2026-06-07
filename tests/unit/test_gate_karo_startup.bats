@@ -598,6 +598,7 @@ EOF
     cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'EOF'
 - cmd_id: cmd_100
   review_type: draft
+  verdict: APPROVE
   proposals:
     - id: GP-001
       description: "implemented proposal"
