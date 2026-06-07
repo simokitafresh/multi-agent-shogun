@@ -1778,16 +1778,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T09:10:51"
   - script_path: "scripts/lib/model_colors.sh"
-    status: assigned
+    status: completed
     before_ms: 15
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: "kotaro"
-    updated_at: "2026-06-07T09:11:57"
+    after_ms: 15
+    before_real_ms: 38579
+    after_real_ms: 821
+    real_measurement_command: "bash -c 'source scripts/lib/model_colors.sh; for i in {1..5000}; do resolve_bg_color hayate \"GPT-5.5 high\" >/dev/null; resolve_bg_color karo \"Opus 4.6 high\" >/dev/null; resolve_bg_color hanzo \"Sonnet 4.6 high\" >/dev/null; resolve_border_fg_color \"GPT-5.5 high\" >/dev/null; resolve_border_fg_color \"Sonnet 4.6 high\" >/dev/null; resolve_border_fg_color unknown >/dev/null; done'"
+    test_result: "bash_n_pass;bats_test_cli_lookup_model_colors_1_pass_0_skip;representative_outputs_match;before_38579_after_821;SKIP=0"
+    commit: "521d9fbd7"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T09:23:00"
   - script_path: "scripts/lib/model_detect.sh"
     status: assigned
     before_ms: 15
