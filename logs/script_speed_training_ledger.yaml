@@ -1800,16 +1800,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T09:13:04"
   - script_path: "scripts/lib/model_resolve.sh"
-    status: pending
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 45
+    after_real_ms: 31
+    real_measurement_command: "bash -c 'detect_real_model(){ return 1; }; cli_model_display(){ echo \"Codex\"; }; cli_profile_get(){ return 1; }; cli_type(){ echo codex; }; source scripts/lib/model_resolve.sh; resolve_model_display saizo' >/dev/null 2>&1"
+    test_result: "bash_n_pass;settings_fallback_codex_ok;real_model_priority_ok;profile_fallback_ok;cli_type_fallback_ok;before_45_after_31;SKIP=0"
+    commit: "a85fc7a1a"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T09:18:11"
   - script_path: "scripts/lib/normalize_report.sh"
     status: pending
     before_ms: 16
