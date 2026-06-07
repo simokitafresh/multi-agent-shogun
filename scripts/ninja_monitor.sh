@@ -879,31 +879,10 @@ safe_send_clear() {
     fi
 
     # Claude CLIもCodex CLIと同じくrespawn-pane -kで再起動する。
-    # /clear+shift+tab方式はplan modeに落ちるバグが頻発(2026-06-07殿指摘)。
-    # respawn-pane -kならlaunch_cmdに--dangerously-skip-permissionsが付くため
-    # bypass permissionsが確実に復帰する。
-    if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "claude" ]; then
-        # pane_start_commandは二重クォート問題があるため使わない。
-        # 常にcli_profiles.yamlのlaunch_cmdを使用する(hayate死亡事故2026-06-07)
-        local _launch_cmd _model_name
-        _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
-        # settings.yamlのmodel_nameをrespawn起動コマンドに反映(Opus/Sonnet混在対応)
-        _model_name=$(_cli_lookup_settings_get "$agent_name" "model_name" "")
-        if [ -n "$_model_name" ] && [[ "$_launch_cmd" != *"--model"* ]]; then
-            _launch_cmd="$_launch_cmd --model $_model_name"
-        fi
-        if [ -n "${_launch_cmd:-}" ]; then
-            log "CLAUDE-RESPAWN: $agent_name respawn-pane (model=$_model_name), reason=$reason"
-            tmux respawn-pane -k -t "$pane" "cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
-                log "CLAUDE-RESPAWN-FALLBACK: $agent_name respawn failed, falling back to $clear_cmd"
-                safe_send_keys_atomic "$pane" "$clear_cmd" 0.3 || true
-            }
-            tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
-            log "CTX-RESET: $agent_name @context_pct → 0% after CLAUDE-RESPAWN"
-            rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
-            return 0
-        fi
-    fi
+    # Claude CLI v2.1.87: /clear後もsettings.jsonのpermissions.allowが維持される。
+    # bypass permissionsは/clear後も自動復帰する（手動テスト2026-06-07 22:11確認済み）。
+    # respawn-pane -k方式はCLI再起動で数秒かかりCTX 0%表示が遅延するため/clearに戻す。
+    # shift+tabも不要。
     log "CLEAR-SEND: $agent_name confirmed idle, sending $clear_cmd, reason=$reason"
     if ! safe_send_keys_atomic "$pane" "$clear_cmd" 0.3; then
         log "CLEAR-BLOCKED: $agent_name send failed, reason=$reason"
