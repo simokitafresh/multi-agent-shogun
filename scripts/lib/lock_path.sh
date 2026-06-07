@@ -13,10 +13,14 @@ lock_path() {
     local file_path="$1"
     case "$file_path" in
         /mnt/c/*|/mnt/d/*)
-            local hash
-            hash=$(printf '%s' "$file_path" | md5sum)
-            hash="${hash%% *}"
-            printf '/tmp/shogun_lock_%s.lock' "${hash:0:16}"
+            # 純bash DJB2ハッシュ — md5sum subprocessを排除
+            # WSL2/NTFS環境でのforkコスト(~10ms)を回避
+            local hash=5381 i c
+            for (( i=0; i<${#file_path}; i++ )); do
+                printf -v c '%d' "'${file_path:$i:1}"
+                (( hash = hash * 33 + c ))
+            done
+            printf '/tmp/shogun_lock_%016x.lock' "$hash"
             ;;
         *)
             printf '%s.lock' "$file_path"
