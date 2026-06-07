@@ -1316,7 +1316,7 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T10:51:00"
   - script_path: "scripts/hooks/test_hooks.sh"
-    status: pending
+    status: assigned
     before_ms: 17
     after_ms: 17
     before_real_ms: 2611
@@ -1324,8 +1324,8 @@ entries:
     real_measurement_command: "bash scripts/hooks/test_hooks.sh"
     test_result: "PASS_NO_IMPROVEMENT: 80/80 PASS。主コストはpython3(Guard4)とsqlite3。test_hooks.sh自体の最適化余地なし"
     commit: ""
-    assigned_to: ""
-    updated_at: "2026-06-07T10:49:16"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T10:57:09"
   - script_path: "scripts/hooks/test_result_guard.sh"
     status: completed
     before_ms: 16
@@ -1624,16 +1624,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T08:03:00"
   - script_path: "scripts/lesson_update_score.sh"
-    status: pending
+    status: completed
     before_ms: 16
     after_ms: ""
     before_real_ms: 267
-    after_real_ms: ""
+    after_real_ms: 133
     real_measurement_command: "bash scripts/lesson_update_score.sh infra L756 helpful (backup/restore method)"
-    test_result: "bash -n OK; L756 helpful_count incremented correctly"
-    commit: ""
-    assigned_to: ""
-    updated_at: "2026-06-07T10:49:16"
+    test_result: "bash -n OK; sandbox inject/helpful PASS; L756 helpful_count incremented in real file"
+    commit: "75407d88a"
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T11:07:00"
   - script_path: "scripts/lesson_write.sh"
     status: completed
     before_ms: 18
@@ -1668,7 +1668,7 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T08:33:00"
   - script_path: "scripts/lib/agent_config.sh"
-    status: pending
+    status: assigned
     before_ms: 9
     after_ms: ""
     before_real_ms: 25
@@ -1676,8 +1676,8 @@ entries:
     real_measurement_command: "bash -c 'source scripts/lib/agent_config.sh; get_ninja_names; get_layout_col1_width_pct; get_layout_karo_height'"
     test_result: "bash -n OK; get_layout values correct (col1:36, karo_h:24)"
     commit: ""
-    assigned_to: ""
-    updated_at: "2026-06-07T10:49:16"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T10:57:11"
   - script_path: "scripts/lib/cli_lookup.sh"
     status: completed
     before_ms: 16
@@ -2009,16 +2009,16 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T10:19:31"
   - script_path: "scripts/memory_recall_control.sh"
-    status: pending
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 4700
+    after_real_ms: 80
+    real_measurement_command: "bash scripts/memory_recall_control.sh --dry-run --db data/multi_agent_shogun_memory.db"
+    test_result: "bats tests/unit/test_memory_db.bats PASS 40/40 SKIP=0"
+    commit: "80822d430"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T11:09:00"
   - script_path: "scripts/model_analysis.sh"
     status: pending
     before_ms: 16
