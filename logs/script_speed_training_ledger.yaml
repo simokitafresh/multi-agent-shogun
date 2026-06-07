@@ -2163,16 +2163,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T14:29:27"
   - script_path: "scripts/oneshot/add_injection_count.sh"
-    status: assigned
+    status: completed
     before_ms: 14
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 3487.783
+    after_real_ms: 3087.133
+    real_measurement_command: "sandbox: 20x bash /tmp/mas_add_injection_after_min/scripts/oneshot/add_injection_count.sh with restored lesson YAML fixtures"
+    test_result: "bash -n PASS; sandbox injection_count functional PASS SKIP=0"
+    commit: "7d08753dc"
     assigned_to: "saizo"
-    updated_at: "2026-06-07T14:29:53"
+    updated_at: "2026-06-07T14:34:45"
   - script_path: "scripts/oneshot/backfill_gate_titles.sh"
     status: assigned
     before_ms: 15
