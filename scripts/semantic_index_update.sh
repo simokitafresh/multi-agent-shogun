@@ -37,7 +37,9 @@ case "$source_type" in
         ;;
 esac
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+script_dir="${_self%/scripts/semantic_index_update.sh}"
 index_path="${SEMANTIC_INDEX_PATH:-$script_dir/docs/semantic-index/index.md}"
 map_generate="${SEMANTIC_MAP_GENERATE:-$script_dir/scripts/semantic_map_generate.sh}"
 insight_write="${SEMANTIC_INSIGHT_WRITE:-$script_dir/scripts/insight_write.sh}"
@@ -105,6 +107,7 @@ import re
 import sqlite3
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -262,6 +265,15 @@ def propagate_memory_db_concept_tags(concepts):
         return
     if not memory_db_path.is_file():
         return
+    # TTL cache: skip if last propagation was within 300s (avoids ~17s SQLite/NTFS per call)
+    _ttl = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_TTL", "300"))
+    if _ttl > 0:
+        _cache = Path(f"/tmp/shogun_tag_propagation_ttl_{memory_db_path.name}")
+        try:
+            if _cache.exists() and (time.time() - _cache.stat().st_mtime) < _ttl:
+                return
+        except OSError:
+            pass
 
     known_concepts = {str(concept["id"]) for concept in concepts if str(concept.get("id") or "").strip()}
     if not known_concepts:
@@ -424,6 +436,12 @@ def propagate_memory_db_concept_tags(concepts):
     finally:
         if conn is not None:
             conn.close()
+    # Update TTL cache after successful propagation
+    if _ttl > 0:
+        try:
+            _cache.touch()
+        except OSError:
+            pass
 
 def is_noise_only_candidate(payload_id, fields):
     signals = []
