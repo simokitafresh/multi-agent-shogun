@@ -1932,16 +1932,16 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T09:58:42"
   - script_path: "scripts/log_terminal_response.sh"
-    status: assigned
+    status: completed
     before_ms: 7
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 207.734
+    after_real_ms: 193.009
+    real_measurement_command: "sandboxed temp-root hook payload avg40: bash scripts/log_terminal_response.sh with last_assistant_message JSON"
+    test_result: "bash -n PASS; bats tests/unit/test_log_terminal.bats PASS 6 SKIP 0"
+    commit: "d608271a9"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T10:00:37"
+    updated_at: "2026-06-07T10:05:25"
   - script_path: "scripts/lord_conversation_read.sh"
     status: completed
     before_ms: 16
