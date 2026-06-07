@@ -98,3 +98,4 @@ if [[ $changed -eq 0 ]]; then
 else
     echo "  [sync] ${changed} ペイン更新完了"
 fi
+# hanzo_test
