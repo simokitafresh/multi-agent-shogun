@@ -114,4 +114,4 @@ FOOTER
     [[ "$output" == *"ERRORS=0"* ]]
 }
 
-export PROJECT_ROOT="${PROJECT_ROOT:-/mnt/c/tools/multi-agent-shogun}"
+export PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)}"
