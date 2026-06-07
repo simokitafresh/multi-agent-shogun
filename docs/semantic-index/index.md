@@ -1279,6 +1279,7 @@ codd:
 | causal | `cmd_3129` origin: [[gate_skill_script_refs]] -> [[SKILL.md陳腐化]] -> [[忍者手順乖離]] |
 | cmd | `cmd_3130` (`skills/review-bundle/SKILL.md`) |
 | cmd | `cmd_karo_training_backlinks_cdp_severity_20260603` (`context/cdp-severity.md`, `skills/cdp-browse/SKILL.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T10:26:58+09:00 b41fq8ktm toolu_017E68wa3ALPdX75ChxUzzrw /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/d5122dec-ef46-4c5f-b5e2-792e49 |
 | causal_chain | `[[cmd_2257]]` (L647) |
 | causal_chain | `[[cmd_2268]]` (L649) |
 | causal_chain | `[[cmd_2325]]` (L660) |
