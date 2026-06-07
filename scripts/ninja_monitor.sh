@@ -863,7 +863,10 @@ safe_send_clear() {
     # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
     if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "codex" ]; then
         local _launch_cmd
-        _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
+        _launch_cmd=$(tmux display-message -t "$pane" -p '#{pane_start_command}' 2>/dev/null || echo "")
+        if [ -z "$_launch_cmd" ] || [[ "$_launch_cmd" != *"codex"* ]]; then
+            _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
+        fi
         if [ -n "${_launch_cmd:-}" ]; then
             local _node_dir="${_launch_cmd%/bin/codex*}/bin"
             log "CODEX-RESPAWN: $agent_name respawn-pane (codex reset)"
@@ -3796,9 +3799,12 @@ check_ninja_cli_dead() {
             continue
         fi
 
-        # 起動コマンドを取得
+        # 起動コマンドを取得（一次情報優先: 前回起動コマンド→settings.yamlフォールバック）
         local launch_cmd
-        launch_cmd=$(build_cli_command "$name" 2>/dev/null || true)
+        launch_cmd=$(tmux display-message -t "$pane_target" -p '#{pane_start_command}' 2>/dev/null || echo "")
+        if [ -z "$launch_cmd" ] || [[ "$launch_cmd" == *"bash"* && "$launch_cmd" != *"claude"* && "$launch_cmd" != *"codex"* ]]; then
+            launch_cmd=$(build_cli_command "$name" 2>/dev/null || true)
+        fi
         if [ -z "$launch_cmd" ]; then
             log "CLI-DEAD: ${name} launch_cmd取得失敗。再起動スキップ。"
             bash "$SCRIPT_DIR/scripts/ntfy.sh" "【ALERT】${name} CLI死亡検知。launch_cmd取得失敗で自動再起動不可。手動確認が必要。" 2>/dev/null || true
