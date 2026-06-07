@@ -4807,9 +4807,6 @@ while true; do
     if [ $((cycle % REDISCOVER_EVERY)) -eq 0 ]; then
         discover_panes
 
-        # @model_name整合性チェック（cmd_155）
-        check_model_names
-
         # Inbox pruning (cmd_106) — 10分間隔で既読メッセージを自動削除
         bash "$SCRIPT_DIR/scripts/inbox_prune.sh" 2>>"$SCRIPT_DIR/logs/inbox_prune.log" || true
 
@@ -5077,6 +5074,7 @@ while true; do
 
     # ═══ STEP 1: ninja_states.yaml 自動生成 ═══
     write_state_file
+    check_model_names     # @model_name+bg_color整合性（毎サイクル。実態ベース検出→即時追随）
     write_karo_snapshot   # 家老陣形図更新（毎サイクル）
     check_karo_idle_cycle       # 家老idle自走サイクル起動チェック (cmd_1498)
     check_ntfy_listener_health  # ntfy_listenerゾンビ検知 (cmd_635)
