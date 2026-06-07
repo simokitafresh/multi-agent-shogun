@@ -861,11 +861,9 @@ safe_send_clear() {
     # ninja_monitor側のtask statusに関係なく、respawn-pane -kでプロセスごと確実にリセットする。
     # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
     if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "codex" ]; then
+        # pane_start_commandは二重クォート問題があるため使わない(hayate死亡事故2026-06-07)
         local _launch_cmd
-        _launch_cmd=$(tmux display-message -t "$pane" -p '#{pane_start_command}' 2>/dev/null || echo "")
-        if [ -z "$_launch_cmd" ] || [[ "$_launch_cmd" != *"codex"* ]]; then
-            _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
-        fi
+        _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
         if [ -n "${_launch_cmd:-}" ]; then
             local _node_dir="${_launch_cmd%/bin/codex*}/bin"
             log "CODEX-RESPAWN: $agent_name respawn-pane (codex reset)"
@@ -885,11 +883,10 @@ safe_send_clear() {
     # respawn-pane -kならlaunch_cmdに--dangerously-skip-permissionsが付くため
     # bypass permissionsが確実に復帰する。
     if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "claude" ]; then
+        # pane_start_commandは二重クォート問題があるため使わない。
+        # 常にcli_profiles.yamlのlaunch_cmdを使用する(hayate死亡事故2026-06-07)
         local _launch_cmd
-        _launch_cmd=$(tmux display-message -t "$pane" -p '#{pane_start_command}' 2>/dev/null || echo "")
-        if [ -z "$_launch_cmd" ] || [[ "$_launch_cmd" != *"claude"* ]]; then
-            _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
-        fi
+        _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
         if [ -n "${_launch_cmd:-}" ]; then
             log "CLAUDE-RESPAWN: $agent_name respawn-pane (bypass permissions guaranteed), reason=$reason"
             tmux respawn-pane -k -t "$pane" "cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
