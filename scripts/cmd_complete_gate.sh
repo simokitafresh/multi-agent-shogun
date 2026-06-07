@@ -6213,8 +6213,8 @@ check_safety_pattern_removal() {
     done
 
     if [[ "$warnings" -gt 0 ]]; then
-        echo "  ⚠ $warnings commit(s) with safety pattern removal. Verify error handling is preserved."
-        # WARN only (not BLOCK) — 忍者に安全性確認を促す
+        echo "  BLOCK: $warnings commit(s) removed safety patterns. Revert safety lines or justify removal in report."
+        ALL_CLEAR=false
     else
         echo "  OK: no safety patterns removed"
     fi
