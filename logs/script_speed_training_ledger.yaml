@@ -2152,16 +2152,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T14:30:44"
   - script_path: "scripts/obsidian_promote_finalize.sh"
-    status: assigned
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 170
+    after_real_ms: 120
+    real_measurement_command: "bash scripts/obsidian_promote_finalize.sh --dry-run --limit 1"
+    test_result: "bash -n PASS; dry-run output diff PASS; event-id dry-run PASS; missing-db error PASS; after 7-run median 120ms SKIP=0"
+    commit: "2474c5720"
     assigned_to: "hayate"
-    updated_at: "2026-06-07T14:29:27"
+    updated_at: "2026-06-07T14:32:34"
   - script_path: "scripts/oneshot/add_injection_count.sh"
     status: completed
     before_ms: 14
@@ -2174,40 +2174,40 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T14:34:45"
   - script_path: "scripts/oneshot/backfill_gate_titles.sh"
-    status: assigned
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 42430
+    after_real_ms: 55
+    real_measurement_command: "/usr/bin/time -f 'REAL_S=%e' bash scripts/oneshot/backfill_gate_titles.sh (NF8=0 no-op path)"
+    test_result: "bash -n PASS; NF8=0 early-exit output correct; SKIP=0"
+    commit: "0597d0462"
     assigned_to: "tobisaru"
-    updated_at: "2026-06-07T14:31:06"
+    updated_at: "2026-06-07T14:38:00"
   - script_path: "scripts/oneshot/reset_harmful_counts.sh"
-    status: pending
+    status: completed
     before_ms: 14
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    after_ms: 11
+    before_real_ms: 72
+    after_real_ms: 61
+    real_measurement_command: 'bash $TMP/scripts/oneshot/reset_harmful_counts.sh (sandbox: tempdir+copy, 10-run median)'
+    test_result: "bash_n_pass_動作確認OK"
+    commit: "7412596bf"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T14:36:00"
   - script_path: "scripts/parity_check.sh"
-    status: pending
+    status: completed
     before_ms: 14
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 16
+    after_real_ms: 14
+    real_measurement_command: "bash scripts/parity_check.sh dummy --help (41 runs median, sandbox-free help path)"
+    test_result: "bash_n_pass; behavior_checks_noargs_help_help_any_missing_env_PASS; SKIP=0"
+    commit: "ed1d90e8a"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T14:37:32"
   - script_path: "scripts/pending_decision_write.sh"
-    status: pending
+    status: assigned
     before_ms: 13
     after_ms: ""
     before_real_ms: ""
@@ -2215,10 +2215,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T14:37:12"
   - script_path: "scripts/post_recalculate_checks.sh"
-    status: pending
+    status: assigned
     before_ms: 13
     after_ms: ""
     before_real_ms: ""
@@ -2226,10 +2226,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T14:39:39"
   - script_path: "scripts/process_stop.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -2237,8 +2237,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T14:40:43"
   - script_path: "scripts/ralph_loop_closer.sh"
     status: pending
     before_ms: 18
