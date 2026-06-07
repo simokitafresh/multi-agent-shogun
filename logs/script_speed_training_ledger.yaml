@@ -2794,16 +2794,16 @@ entries:
   assigned_to: ''
   updated_at: ''
 - script_path: scripts/should_dream.sh
-  status: pending
+  status: completed
   before_ms: 14
   after_ms: ''
-  before_real_ms: ''
-  after_real_ms: ''
-  real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
-  assigned_to: ''
-  updated_at: ''
+  before_real_ms: 27
+  after_real_ms: 21
+  real_measurement_command: time bash scripts/should_dream.sh
+  test_result: bash -n exit:0 && bash scripts/should_dream.sh exit:0 (461h経過でReady確認)
+  commit: 2c08f1d71
+  assigned_to: hayate
+  updated_at: '2026-06-07T17:25:00'
 - script_path: scripts/shout.sh
   status: pending
   before_ms: 16
