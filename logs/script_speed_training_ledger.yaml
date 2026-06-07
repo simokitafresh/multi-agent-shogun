@@ -1316,16 +1316,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T10:51:00"
   - script_path: "scripts/hooks/test_hooks.sh"
-    status: assigned
+    status: completed
     before_ms: 17
     after_ms: 17
-    before_real_ms: 2611
-    after_real_ms: ""
-    real_measurement_command: "bash scripts/hooks/test_hooks.sh"
-    test_result: "PASS_NO_IMPROVEMENT: 80/80 PASS。主コストはpython3(Guard4)とsqlite3。test_hooks.sh自体の最適化余地なし"
-    commit: ""
+    before_real_ms: 3020
+    after_real_ms: 2070
+    real_measurement_command: "bash scripts/hooks/test_hooks.sh; median of 5 runs"
+    test_result: "bash_n_PASS;test_hooks_80_pass_0_skip;before_3020_after_2070"
+    commit: "e5d42e65665977b9cd0ab9fddc9d949065fb684c"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T10:57:09"
+    updated_at: "2026-06-07T13:51:04"
   - script_path: "scripts/hooks/test_result_guard.sh"
     status: completed
     before_ms: 16
