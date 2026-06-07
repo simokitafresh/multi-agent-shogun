@@ -1829,7 +1829,7 @@ entries:
     after_real_ms: 16.634
     real_measurement_command: "python3 measure 300x: bash -c 'source scripts/lib/pane_format.sh; printf \"%s\" \"$AGENTS_PANE_BORDER_FORMAT\" >/dev/null'; median_ms"
     test_result: "bash_n_pass;reset_layout_and_shutsujin_bash_n_pass;source_placeholders_ok;before_24.565_after_16.634;SKIP=0"
-    commit: ""
+    commit: "3fdb92a06"
     assigned_to: "hayate"
     updated_at: "2026-06-07T09:31:00"
   - script_path: "scripts/lib/pane_lookup.sh"
