@@ -9,13 +9,37 @@ _git_pre_commit_self="${BASH_SOURCE[0]:-$0}"
 REPO_ROOT="${_git_pre_commit_self%/scripts/hooks/git-pre-commit.sh}"
 unset _git_pre_commit_self
 _STDERR_FILE="/tmp/_hook_stderr_precommit_$$"
+declare -a _STAGED_FILES=()
+declare -a _ADDED_TEST_FILES=()
+_STAGED_FILES_LOADED=false
+
+load_staged_file_cache() {
+    local status path_a path_b path
+
+    [[ "$_STAGED_FILES_LOADED" == "true" ]] && return 0
+    _STAGED_FILES_LOADED=true
+
+    while IFS=$'\t' read -r status path_a path_b; do
+        [[ -n "$status" ]] || continue
+        path="${path_b:-$path_a}"
+        [[ -n "$path" ]] || continue
+        _STAGED_FILES+=("$path")
+        if [[ "$status" == A* && "$path" == tests/unit/test_*.bats ]]; then
+            _ADDED_TEST_FILES+=("$path")
+        fi
+    done < <(git diff --cached --name-status --diff-filter=ACMR 2>/dev/null)
+}
 
 list_staged_files() {
-    git diff --cached --name-only --diff-filter=ACMR 2>/dev/null
+    load_staged_file_cache
+    ((${#_STAGED_FILES[@]} == 0)) && return 0
+    printf '%s\n' "${_STAGED_FILES[@]}"
 }
 
 list_added_test_files() {
-    git diff --cached --name-only --diff-filter=A -- 'tests/unit/test_*.bats' 2>/dev/null
+    load_staged_file_cache
+    ((${#_ADDED_TEST_FILES[@]} == 0)) && return 0
+    printf '%s\n' "${_ADDED_TEST_FILES[@]}"
 }
 
 infer_test_group_prefix() {
