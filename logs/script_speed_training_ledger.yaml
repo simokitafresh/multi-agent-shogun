@@ -1679,16 +1679,16 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T08:42:00"
   - script_path: "scripts/lib/cli_lookup.sh"
-    status: assigned
+    status: completed
     before_ms: 16
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 30
+    after_real_ms: 23
+    real_measurement_command: "bash -c 'source scripts/lib/cli_lookup.sh; cli_launch_cmd hayate >/dev/null'"
+    test_result: "bats tests/unit/test_cli_lookup.bats: 9/9 PASS SKIP=0"
+    commit: "72d1f014b"
     assigned_to: "hanzo"
-    updated_at: "2026-06-07T08:40:13"
+    updated_at: "2026-06-07T09:00:45"
   - script_path: "scripts/lib/ctx_utils.sh"
     status: completed
     before_ms: 15
@@ -1800,7 +1800,7 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T09:13:04"
   - script_path: "scripts/lib/model_resolve.sh"
-    status: assigned
+    status: completed
     before_ms: 17
     after_ms: ""
     before_real_ms: 45
@@ -1809,7 +1809,7 @@ entries:
     test_result: "bash_n_pass;settings_fallback_codex_ok;real_model_priority_ok;profile_fallback_ok;cli_type_fallback_ok;before_45_after_31;SKIP=0"
     commit: "a85fc7a1a"
     assigned_to: "saizo"
-    updated_at: "2026-06-07T09:15:01"
+    updated_at: "2026-06-07T09:18:11"
   - script_path: "scripts/lib/normalize_report.sh"
     status: assigned
     before_ms: 16
