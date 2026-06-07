@@ -13,19 +13,15 @@ ENV_PATH="${ENV_PATH:-${DM_SIGNAL_PATH}/backend/.env}"
 
 load_database_url() {
     local env_path="${1:?env path is required}"
-    awk '
-        /^DATABASE_URL=/ {
-            sub(/\r$/, "", $0)
-            print substr($0, index($0, "=") + 1)
-            found = 1
-            exit
-        }
-        END {
-            if (!found) {
-                exit 1
-            }
-        }
-    ' "$env_path"
+    local line
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line%$'\r'}"
+        if [[ "$line" == DATABASE_URL=* ]]; then
+            printf '%s\n' "${line#DATABASE_URL=}"
+            return 0
+        fi
+    done < "$env_path"
+    return 1
 }
 
 resolve_database_url() {

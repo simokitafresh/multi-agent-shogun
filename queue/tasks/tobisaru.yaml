@@ -36,7 +36,7 @@ task:
   project: infra
   purpose: 'Speed-train scripts/oneshot/backfill_gate_titles.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
   scout_exempt: true
-  status: completed
+  status: done
   stop_for: []
   target_path: scripts/oneshot/backfill_gate_titles.sh
   task_id: cmd_training_speed_oneshot_backfill_gate_titles_20260607143106_normal
