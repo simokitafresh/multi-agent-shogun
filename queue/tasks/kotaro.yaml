@@ -1,10 +1,10 @@
 task:
-  cmd_id: cmd_training_speed_sync_pane_vars_20260607201900_normal
+  cmd_id: cmd_training_speed_usage_status_20260607203400_normal
   type: training
   task_type: speed_training
   project: infra
-  purpose: "速度改善修行1回目残り — sync_pane_vars.sh (ledger pending)"
-  target_path: scripts/sync_pane_vars.sh
+  purpose: "速度改善修行1回目残り — usage_status.sh (ledger pending・再デプロイ)"
+  target_path: scripts/usage_status.sh
   acceptance_criteria:
     AC1:
       description: "before計測3回+ボトルネック仮説記録"
@@ -14,7 +14,7 @@ task:
       description: "after計測3回+関連テストPASS(test_select.sh)+SKIP=0+docs/research/codd_refactor_registry.md追記"
     AC4:
       description: "aliases候補1-3個を概念名alias行で報告+insight_write.shで蓄積"
-  status: completed
+  status: idle
   ac_priority: "AC1 > AC2 > AC3 > AC4"
   never_stop_for:
     - "テストFAIL — 修正して再実行"
@@ -54,11 +54,13 @@ task:
 
   session_state:
     attempt: 1
-    last_block_reason: 'stale_report: filename has cmd_training_speed_sync_pane_vars_20260607 but parent_cmd=cmd_training_speed_sync_pane_vars_20260607201900_normal (cmd_id mismatch)'
+    last_block_reason: 'assumption_invalidation: MISSING'
     tried_approaches:
-    - 'stale_report: filename has cmd_training_speed_sync_pane_vars_20260607 but parent_cmd=cmd_training_speed_sync_pane_vars_20260607201900_normal (cmd_id mismatch)'
-    approach_summary: 'scripts/sync_pane_vars.sh 9ペイン直列→並列化。cold avg 1.102s → 0.348s (-68%, 3.17x)。test_test_select.bats 10/10 PASS SKIP=0。'
+    - 'assumption_invalidation: MISSING'
+    approach_summary: 'scripts/usage_status.sh warm path最適化。provider-agnostic fast cache check挿入でdetect_shogun_provider省略。warm avg ~20ms → ~14ms (-30%)。test_test_select.bats 10/10 PASS, test_usage_status.bats 5/5 PASS SKIP=0。'
     prior_attempts:
     - attempt: 1
-      block_reason: 'stale_report: filename has cmd_training_speed_sync_pane_vars_20260607 but parent_cmd=cmd_training_speed_sync_pane_vars_20260607201900_normal (cmd_id mismatch)'
-      approach_summary: 'scripts/sync_pane_vars.sh 9ペイン直列→並列化。cold avg 1.102s → 0.348s (-68%, 3.17x)。test_test_select.bats 10/10 PASS SKIP=0。'
+      block_reason: 'assumption_invalidation: MISSING'
+      approach_summary: 'scripts/usage_status.sh warm path最適化。provider-agnostic fast cache check挿入でdetect_shogun_provider省略。warm avg ~20ms → ~14ms (-30%)。test_test_select.bats 10/10 PASS, test_usage_status.bats 5/5 PASS SKIP=0。'
+  report_path: reports/kotaro_report_cmd_training_speed_usage_status_20260607203400_normal.yaml
+  parent_cmd: 

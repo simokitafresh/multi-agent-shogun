@@ -1070,7 +1070,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？ |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ |
 | skills | なし |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -1111,6 +1111,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T16:57:54+09:00 確認しないことを他責にするためにありもしないハルシネーションを作るのは非効率的だな |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:17:35+09:00 baf80jbpr toolu_011ZR8QPnMrnknDRSNCw3Tzo /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4a506363-f3ac-467a-9aa8-dd3a4c |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:45:37+09:00 掲示板は確認した？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:58:21+09:00 家老に確認をとれ。本当にpendingなのか、エラーによって記録がされていなかったのか２おだ |
 
 ## no_auto_extinguish — 自動消火禁止
 
