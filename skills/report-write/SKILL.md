@@ -156,6 +156,9 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 
 ## 注意ポイント
 
+- 2026-06-07: gate=gate_report_format result=FAIL executor=kagemaru reason=lesson_candidate: found=true but no detail or summary
+- 2026-06-07: gate=gate_report_format result=FAIL executor=tobisaru reason=ac_version_read: MISSING; lesson_candidate: MISSING; stale_report: filename has cmd_training_speed_search_log_write_20260607 but parent_cmd=cmd_training_speed_search_log_write_2...
+
 - 2026-06-07: gate=gate_report_format result=FAIL executor=kagemaru reason=ac_version_read: MISSING; binary_checks.commit[0].result: \"pending\" は不正。\"yes\" または \"no\" のみ; purpose_validation: MISSING; verdict: \"None\" is not valid (must be \"PASS\", \...
 - 2026-06-07: gate=gate_report_format result=FAIL executor=kagemaru reason=YAML parse error: mapping values are not allowed here
 

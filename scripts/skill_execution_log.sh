@@ -7,41 +7,44 @@
 
 set -euo pipefail
 
-REPO_ROOT="${SHOGUN_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+REPO_ROOT="${SHOGUN_REPO_ROOT:-${_self%/scripts/skill_execution_log.sh}}"
 LOG_FILE="${SKILL_EXECUTION_LOG_FILE:-$REPO_ROOT/logs/skill_execution_log.yaml}"
 
 usage() {
     echo "Usage: $0 summary | <skill> <executor> <result> <stumbling_points> [gate] [source] [skill_path] [used]" >&2
 }
 
+_yaml_val=""
 yaml_scalar() {
-    local value="${1:-}"
-    value="${value//\\/\\\\}"
-    value="${value//\"/\\\"}"
-    value="${value//$'\n'/\\n}"
-    printf '"%s"\n' "$value"
+    _yaml_val="${1:-}"
+    _yaml_val="${_yaml_val//\\/\\\\}"
+    _yaml_val="${_yaml_val//\"/\\\"}"
+    _yaml_val="${_yaml_val//$'\n'/\\n}"
 }
 
+_normalized_source=""
 normalize_skill_source() {
     local source_value="${1:-}"
     local base
 
     if [[ -z "$source_value" ]]; then
-        printf '%s' "$source_value"
+        _normalized_source=""
         return 0
     fi
 
     base="${source_value##*/}"
     if [[ "$base" =~ _report_(cmd_[A-Za-z0-9_.-]+)\.ya?ml$ ]]; then
-        printf '%s' "${BASH_REMATCH[1]}"
+        _normalized_source="${BASH_REMATCH[1]}"
         return 0
     fi
     if [[ "$source_value" =~ (^|[[:space:]/])(cmd_[A-Za-z0-9_.-]+)([[:space:]]|$) ]]; then
-        printf '%s' "${BASH_REMATCH[2]}"
+        _normalized_source="${BASH_REMATCH[2]}"
         return 0
     fi
 
-    printf '%s' "$source_value"
+    _normalized_source="$source_value"
 }
 
 skill="${1:-}"
@@ -116,32 +119,31 @@ case "$source" in
         exit 0
         ;;
 esac
-source="$(normalize_skill_source "$source")"
+normalize_skill_source "$source"
+source="$_normalized_source"
 
 mkdir -p "$(dirname "$LOG_FILE")"
 lock_file="${LOG_FILE}.lock"
-ts="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+TZ=JST-9 printf -v ts '%(%Y-%m-%dT%H:%M:%S+0900)T' -1
 
 (
     flock -w 5 200
     if [ ! -s "$LOG_FILE" ]; then
         printf 'executions:\n' > "$LOG_FILE"
     fi
-    {
-        printf -- '- ts: %s\n' "$(yaml_scalar "$ts")"
-        printf '  skill: %s\n' "$(yaml_scalar "$skill")"
-        printf '  executor: %s\n' "$(yaml_scalar "$executor")"
-        printf '  result: %s\n' "$(yaml_scalar "$result")"
-        printf '  used: %s\n' "$(yaml_scalar "$used")"
-        printf '  stumbling_points: %s\n' "$(yaml_scalar "$stumbling_points")"
-        [ -n "$gate" ] && printf '  gate: %s\n' "$(yaml_scalar "$gate")"
-        [ -n "$source" ] && printf '  source: %s\n' "$(yaml_scalar "$source")"
-        [ -n "$skill_path" ] && printf '  skill_path: %s\n' "$(yaml_scalar "$skill_path")"
-    } >> "$LOG_FILE"
-) 200>"$lock_file"
-
-python3 - "$LOG_FILE" <<'PY'
-import sys, yaml
-with open(sys.argv[1], encoding="utf-8") as fh:
-    yaml.safe_load(fh)
-PY
+    yaml_scalar "$ts";              printf -- '- ts: "%s"\n'             "$_yaml_val"
+    yaml_scalar "$skill";           printf   '  skill: "%s"\n'           "$_yaml_val"
+    yaml_scalar "$executor";        printf   '  executor: "%s"\n'        "$_yaml_val"
+    yaml_scalar "$result";          printf   '  result: "%s"\n'          "$_yaml_val"
+    yaml_scalar "$used";            printf   '  used: "%s"\n'            "$_yaml_val"
+    yaml_scalar "$stumbling_points"; printf  '  stumbling_points: "%s"\n' "$_yaml_val"
+    if [ -n "$gate" ]; then
+        yaml_scalar "$gate"; printf '  gate: "%s"\n' "$_yaml_val"
+    fi
+    if [ -n "$source" ]; then
+        yaml_scalar "$source"; printf '  source: "%s"\n' "$_yaml_val"
+    fi
+    if [ -n "$skill_path" ]; then
+        yaml_scalar "$skill_path"; printf '  skill_path: "%s"\n' "$_yaml_val"
+    fi
+) >> "$LOG_FILE" 200>"$lock_file"

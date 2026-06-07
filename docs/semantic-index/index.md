@@ -612,6 +612,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T10:08:19+09:00 test benchmark message |
 | lesson | `L752` bash ${var: -N} のN文字未満時の空文字挙動 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T15:00:15+09:00 bbmadv89q toolu_01U3r7Vaa5dL8UnqGarcAYce /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8aa671c0-250c-404e-8b5a-7431d2 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:13:50+09:00 b82x7o1o5 toolu_013iidjVk4MeLjR4aSoPZT1J /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b1260975-a6df-42fe-8f3b-42fb9a |
 | causal_chain | `[[cmd_3142]]` (L735) |
 | causal_chain | `[[cmd_3207]]` (L752) |
 

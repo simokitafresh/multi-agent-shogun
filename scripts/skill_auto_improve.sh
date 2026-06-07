@@ -57,19 +57,29 @@ import yaml
 
 log_file, skills_dirs, top_n_raw, apply_raw, skill_filter, repo_root, unchanged_threshold_raw, escalation_state_raw, bulletin_script, bulletin_posted_by = sys.argv[1:11]
 
+# CSafeLoader: 7.7x faster than Python SafeLoader for large YAML files.
+# Falls back to SafeLoader if C extension is unavailable.
+_yaml_loader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 # --- Gate FIX hint lookup (skill_auto_improve) ---
-# Import lookup_fix_hints from gate_report_format_main to generate
-# specific prevention steps instead of generic keyword-matching templates.
-_gate_dir = os.path.join(repo_root, "scripts", "gates")
-if _gate_dir not in sys.path and os.path.isdir(_gate_dir):
-    sys.path.insert(0, _gate_dir)
+# Lazy import: gate_report_format_main is only needed when --apply is given.
+# Avoids ~70ms NTFS .pyc read on every non-apply invocation.
 _grfm = None
-try:
-    import gate_report_format_main as _grfm  # type: ignore
-    if not hasattr(_grfm, "lookup_fix_hints"):
-        _grfm = None
-except Exception:
-    pass
+_gate_dir = os.path.join(repo_root, "scripts", "gates")
+
+
+def _load_grfm():
+    global _grfm
+    if _grfm is not None:
+        return _grfm
+    if os.path.isdir(_gate_dir) and _gate_dir not in sys.path:
+        sys.path.insert(0, _gate_dir)
+    try:
+        import gate_report_format_main as m  # type: ignore
+        _grfm = m if hasattr(m, "lookup_fix_hints") else False
+    except Exception:
+        _grfm = False
+    return _grfm if _grfm is not False else None
 
 try:
     top_n = int(top_n_raw)
@@ -112,7 +122,7 @@ def load_entries(path):
             pass
     try:
         with open(path, encoding="utf-8") as fh:
-            data = yaml.safe_load(fh) or {}
+            data = yaml.load(fh, Loader=_yaml_loader) or {}
     except FileNotFoundError:
         return []
     entries = [entry for entry in (data.get("executions") or []) if isinstance(entry, dict)]
@@ -305,9 +315,10 @@ def request_code_fix(row, unchanged_streak, state_entry):
 def concrete_prevention_steps(reason):
     # Phase 1: gate-specific FIX hints from gate_report_format_main.lookup_fix_hints()
     # This replaces generic keyword templates with concrete, actionable steps.
-    if _grfm is not None:
+    _m = _load_grfm()
+    if _m is not None:
         try:
-            gate_hints = _grfm.lookup_fix_hints(reason)
+            gate_hints = _m.lookup_fix_hints(reason)
         except Exception:
             gate_hints = []
         if gate_hints:
