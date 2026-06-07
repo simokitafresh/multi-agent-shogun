@@ -7565,3 +7565,13 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - bashの${variable: -N}はvariableがN文字未満の場合に空文字を返す(エラーなし)。cache_scopeが短いパスで全テストが同一キャッシュを共有する原因になった。cache_key生成には${var:0}を使え
+
+### L753: pane_start_commandは二重クォートでCLI死亡(status 127)を引き起こす。respawn-pane -kの再起動コマンドにはcli_profiles.yamlのlaunch_cmdを直接使用せよ
+- **日付**: 2026-06-07
+- **出典**: cmd_3211
+- **記録者**: karo
+- **tags**: [infra,frontend,gate,bash]
+- **origin**: [[cmd_3211]]
+- **when**: 未設定
+- **how**: 未設定
+- safe_send_clearでpane_start_commandを使うとrespawn-pane -kの引数が次回tmux pane_start_commandに二重エスケープで保存され、CLI起動時にstatus 127で死亡。D0修正9e7e37625で廃止済み。enforcement: ninja_monitor.sh safe_send_clear内でpane_start_command呼出し除去(9e7e37625)

@@ -607,6 +607,9 @@ lessons:
   - /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_2422_l2_champions_constrained.yaml
   - /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_2422_l2_champion_report.md
   when: 報告YAMLやレビュー結果を作成・検証する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L686
   title: robustness実行前にSQLite月次保存形式を確認する
   summary: L2 SQLiteはmonthlyテーブルではなくmonthly_blob/monthly_meta形式だったため、既存gs_grid_robustness.p
@@ -813,7 +816,7 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
 - id: L673
   title: cmd_2366 selector再実行時はchampion_list自動追記を制御せよ
   summary: cmd_2366_l1_champion_select.pyはデフォルトでoutputs/robustness/champion_list.yamlへappen
@@ -1012,6 +1015,9 @@ lessons:
   - /mnt/c/Python_app/DM-signal/outputs/grid_search/shin_shijin_l1/
   - 偵察・検証のみ。恒久コード変更なし。報告YAMLのみ更新。
   when: 報告YAMLやレビュー結果を作成・検証する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L661
   title: verify_gs_db.pyはNaN除外後の非NaN行数を期待値にする必要がある
   summary: GS CSVにはwarm-up期間のNaN月次リターンが含まれるが、gs_db_utils.write_monthlyはNaNをDROPして挿入する。verif
@@ -1119,6 +1125,9 @@ lessons:
   target_files:
   - workflows/perf_measure.py
   when: frontend/UIの表示・状態管理を変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L655
   title: 本番CDP計測ACは差分が本番URLに反映済みかを先に確認する
   summary: 未deployのfrontend差分を実装した状態で本番URLを計測しても旧コードの計測になり、改善効果の根拠にならない。CDP計測ACでは、計測対象URLに今
@@ -2594,6 +2603,9 @@ lessons:
   - scripts/analysis/standard_pf_preprocessing/cmd_1759_switching_stability.py
   - outputs/analysis/alm_research/cmd_1759_topn_by_family.yaml
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L561
   title: 'ALM保存バリデーション: pipeline_configがDict[str,Any]のためalm_config内容が未検証でDBに保存される'
   summary: portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype='standard'であればlookback_p
@@ -3490,7 +3502,7 @@ lessons:
   deprecated: true
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-02'
+  last_referenced: '2026-06-07'
   deprecation_reason: auto_useful_rate_zero
   how: '2026-03-27'
   origin: '[[cmd_1413]]'
@@ -6855,6 +6867,9 @@ lessons:
   origin: '[[cmd_807]]'
   source_cmd: cmd_807
   when: frontend/UIの表示・状態管理を変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L252
   title: PriceCacheパターン横展開がN+1最適化の最安全手法
   summary: PriceCacheパターン(一括ロード+O(1)参照)はmonthly_trade_calculatorでも適用可能。FoF展開共通関数をloop内で呼ぶ時は
@@ -7642,6 +7657,9 @@ lessons:
   - frontend/app/dashboard/page.tsx
   - frontend/app/summary/page.tsx
   when: ナビ順序や表示対象を複数ファイルで個別定義すると、1箇所更新時に他所が追従せず差分ドリフトが起きる時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L188
   title: window.location遷移を採用する構成ではContext単独の状態共有は永続化要件を満たさない
   summary: IF ページ間遷移がwindow.location.hrefだとSPA状態が毎回破棄されるため、永続化要件にはlocalStorageまたはURLパラメータを併
@@ -8293,6 +8311,9 @@ lessons:
   origin: '[[参照先scripts消滅(大掃除で削除済み)]]'
   source_cmd: 参照先scripts消滅(大掃除で削除済み)
   when: L025を実装・検証する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L133
   title: noteのMermaidは保守的構文に寄せると失敗率が下がる
   summary: IF flowchart や非ASCIIラベル直書きは環境によってコードブロック表示にフォールバックする場合がある時 THEN `flowchart`
@@ -8315,6 +8336,9 @@ lessons:
   origin: '[[note仕様更新作業]]'
   source_cmd: note仕様更新作業
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L130
   title: git commitはステージ全体を含む — 自分のgit rmだけでなく事前ステージ済みファイルも巻き込む。commit前にgit diff --cachedで全ステージ内容を確認すべき
   summary: git,commit,staging,verification
@@ -8780,6 +8804,9 @@ lessons:
   origin: '[[cmd_225]]'
   source_cmd: cmd_225
   when: DB・データ取得・永続化に関わる作業を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L089
   title: GS-本番パリティはデータソース一致が前提条件
   summary: IF GS内部の初期化処理ロジックが全4スクリプトで同一でも、データソース(CSV vs DB)が異なればパリティは保証されない時 THEN

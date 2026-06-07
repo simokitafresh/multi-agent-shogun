@@ -505,3 +505,5 @@
 | cmd_3206 | 速度修行でscript群が更新されたがSKILL.md内容が未追随。忍者が古い手順で作業するリスク解消。3セッション連続startup BLOCK | infra | 06-07 | 14件のSKILL.mdを参照scriptの現行動作へ追従し |
 | cmd_3211 | 速度修行ledger auto-deployがCTX%を確認せず連続配備→コンパクション頻発→速度低下。_handle_speed_training_auto_deployにCTX閾値チェックを追加し、CTX高忍者への配備をauto-clear完了まで保留する | infra | 06-07 | ninja_monitor.sh _handle_speed |
 | cmd_3210 | report_received hookがテンプレート段階(bc空)で偽発火→FAIL記録し、dashboard-updateのFAIL率が実態と乖離している。bc空FAILを偽FAIL分類して計測精度を回復する | infra | 06-07 | gate_karo_startup.shのskill_exe |
+| cmd_3213 | cmd_3211で追加したCTX50%閾値チェック(L2095-2104)を削除。殿指摘(2026-06-07 21:13): idleなら何%でも/clearする既存仕組みで十分。閾値は不要な複雑性であり洗脳#4(緩い設計)+#6(出力=仕事)の産物 | infra | 06-07 | ninja_monitor.sh _handle_speed |
+| cmd_3214 | gate_skill_script_refs.shが検出した9件のSKILL.mdが参照先scriptより古い。scriptの変更内容をSKILL.mdに反映し、startup BLOCKを解消する | infra | 06-07 | gate_skill_script_refs.sh検出の9件 |
