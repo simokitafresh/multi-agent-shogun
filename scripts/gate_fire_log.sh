@@ -45,6 +45,7 @@ match($0, /file: "([^"]*)"/, f) {
             if (fname ~ /^\/mnt\/c/) { live_paths[fname] = 1 }
         } else if (r[1] == "PASS" && fname in fails) {
             healed++
+            delete live_paths[fname]
         }
     }
 }
@@ -70,5 +71,4 @@ output="healed=${healed} fail_total=${fail_total} fail_live=${fail_live}"
 printf '%s\n' "$output"
 
 # --- キャッシュ保存 ---
-rm -f /tmp/gate_fire_log_stats_* 2>/dev/null || true
 printf '%s\n' "$output" > "$cache_file"

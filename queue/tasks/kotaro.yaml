@@ -1,146 +1,59 @@
 task:
-  _ac_task_id: cmd_training_speed_yaml_batch_2_20260607175100_normal
-  _ac_worker_id: null
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  ac_version: b9649a49
+  cmd_id: cmd_training_speed_gate_fire_log_20260607181500_normal
+  type: training
+  task_type: speed_training
+  project: infra
+  purpose: "速度改善修行2回目 — gate_fire_log.sh (月631s残存, 頻度250/月, after:2523ms)"
+  target_path: scripts/gate_fire_log.sh
   acceptance_criteria:
     AC1:
-      binary_checks:
-      - '改善点を3つ特定したか: yes/no'
-      - '各改善点に対象ファイル・根拠を添えたか: yes/no'
-      description: 指定ファイルの改善点を3つ特定し、根拠付きで報告する
+      description: "before計測: scripts/gate_fire_log.shを3回以上計測しボトルネック仮説をdocs/research/に記録"
     AC2:
-      binary_checks:
-      - '最高インパクト1件を実装したか: yes/no'
-      - '対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加したか: yes/no'
-      - '追加した[[ファイル名]]リンクのリンク先ファイルから特定行を引用して報告したか: yes/no'
-      - '関連テストまたは明示的な検証を実行したか: yes/no'
-      description: 改善点のうち最高インパクト1件を実装し、対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加し、リンク先ファイルの特定行引用と必要な検証を報告する
+      description: "CoDD設計: codd extract起点(brownfield)。timeout 1200。codd require/spec禁止。elicit+dag verify実行"
     AC3:
-      binary_checks:
-      - 'lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no'
-      - 'AC1/AC2/AC3/AC4/AC5のbinary_checksを全てyes/noで記入したか: yes/no'
-      - 'verdictがbinary_checksと矛盾していないか: yes/no'
-      description: lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる
+      description: "実装: 設計に基づき最小変更で速度改善。運用YAML非対象"
     AC4:
-      binary_checks:
-      - 'task.related_lessonsの注入教訓を1件以上参照したか: yes/no'
-      - '参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no'
-      description: 注入教訓から1件以上を作業判断に参照し、lessons_usefulに有用性と理由を記入する
+      description: "検証: after計測3回+関連テストPASS(test_select.sh使用)+SKIP=0確認。docs/research/codd_refactor_registry.md追記"
     AC5:
-      binary_checks:
-      - 'bash scripts/causal_backlink_counts.sh --zero --limit 20でincoming backlink baselineを確認したか: yes/no'
-      - 'bash scripts/markdown_link_counts.sh --top 20でbaselineを確認したか: yes/no'
-      - 'git diffで対象Markdownの孤立解消またはファイル間直接[[ファイル名]]リンク数増加を確認したか: yes/no'
-      description: 対象ファイルの現在のincoming backlink数とファイル間直接[[ファイル名]]リンク数baselineを計測し、変更後に孤立解消または直接リンク数増加を報告する
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
-  - 'Level1(事後検出): 間違えた後にgateが検出'
-  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
-  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
-  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
-  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
-  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
-  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
-  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok: []
-  parent_cmd: cmd_training_speed_yaml_batch_2_20260607175100
-  project: infra
-  purpose: 'L4修行: 指定ファイルの改善点3つを特定し、最高インパクト1件を実装し、[[リンク]]で知識ネットワークを育て、報告YAMLを一発PASS品質で完成させる'
-  scout_exempt: true
+      description: "aliases候補: スクリプト機能用途を1-3個の概念名alias行で報告。bash scripts/insight_write.sh で蓄積確認"
   status: in_progress
-  stop_for: []
-  target_path: docs/research/cmd_1755_stop_hook.md
-  task_id: cmd_training_speed_yaml_batch_2_20260607175100_normal
-  task_type: training
+  parallel_ok: [AC1, AC2, AC3, AC4, AC5]
+  ac_priority: "AC1 > AC2 > AC3 > AC4 > AC5"
+  never_stop_for:
+    - "codd extract/elicit/generateのtimeout — timeout 1200で再実行"
+    - "テストFAIL — 修正して再実行"
+  stop_for:
+    - "本番DB操作エラー"
+    - "rm -rf等の破壊的操作が必要な場合"
   related_lessons:
-  - id: 'L488'
-    summary: 'stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow'
-    detail: 'stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow'
-  - id: 'L548'
-    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-  - id: 'L633'
-    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
-    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L300'
-    summary: 'cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed'
-    detail: 'cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed'
-  - id: 'L088'
-    summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
-    detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
-  - id: 'L030'
-    summary: 'config/projects.yamlのcurrent_projectは定義されているが、scripts/配下で このフィールドを読むスクリプトがゼロ。プロジ'
-    detail: 'config/projects.yamlのcurrent_projectは定義されているが、scripts/配下で このフィールドを読むスクリプトがゼロ。プロジ'
-  - id: 'L643'
-    summary: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
-    detail: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
-  - id: 'L317'
-    summary: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
-    detail: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
-  - id: 'L278'
-    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  semantic_concepts:
-  - "training_cycle_quality — 忍者修行サイクル品質:  context/training-cycle.md logs/gate_fire_log.yaml scripts/ninja_monitor.sh"
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
-  recommended_skills:
-  - "report-write"
-  - "verdict-check"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L488: stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow
-      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
-      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L300: cmd_complete_gate.shのbinary_checks検証が(1)ネストされたdict形式(AC3:/AC4:グループ見出し)をmalformed
-      - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
-      - L030: config/projects.yamlのcurrent_projectは定義されているが、scripts/配下で このフィールドを読むスクリプトがゼロ。プロジ
-      - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
-      - L317: 直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ
-      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
-    ────────────────────────────────────────
-    
-    
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_training_speed_yaml_batch_2_20260607175100.yaml
-  report_path: queue/reports/kotaro_report_cmd_training_speed_yaml_batch_2_20260607175100.yaml
-  bloom_level: 
-  deployed_at: "2026-06-07T17:51:47"
+  - id: 'L510'
+    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
+    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
+  - id: 'L509'
+    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
+    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
+  - id: 'L508'
+    summary: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
+    detail: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
+  - id: 'L507'
+    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
+    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
+  - id: 'L506'
+    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
+    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
+  - id: 'L505'
+    summary: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
+    detail: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
+  - id: 'L504'
+    summary: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
+    detail: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
+  - id: 'L503'
+    summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+    detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+  - id: 'L502'
+    summary: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
+    detail: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
+  - id: 'L499'
+    summary: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
+    detail: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
+  progress: "AC1完了: cold計測5回(avg149ms), ボトルネック特定(fail_live stat66ms+awk46ms). docs/research/gate_fire_log_before_20260607.md作成"
