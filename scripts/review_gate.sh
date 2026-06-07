@@ -11,16 +11,14 @@ write_gate_flag() {
     local gates_dir="$SCRIPT_DIR/queue/gates"
     mkdir -p "$gates_dir"
     local flag_file="$gates_dir/${cmd_id}_${gate_name}.${result}"
-    cat > "$flag_file" <<EOF2
-timestamp: $(date +%Y-%m-%dT%H:%M:%S)
-cmd_id: $cmd_id
-gate_name: $gate_name
-result: $result
-reason: "$reason"
-EOF2
+    printf 'timestamp: %s\ncmd_id: %s\ngate_name: %s\nresult: %s\nreason: "%s"\n' \
+        "$_RG_TS" "$cmd_id" "$gate_name" "$result" "$reason" > "$flag_file"
 }
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+SCRIPT_DIR="${_self%/scripts/review_gate.sh}"
+_RG_TS="$(date +%Y-%m-%dT%H:%M:%S)"
 CMD_ID="$1"
 
 if [ -z "$CMD_ID" ]; then
@@ -139,8 +137,7 @@ if [ "$PY_RC" -eq 0 ]; then
     # cmd_108: Write .done flag for cmd_complete_gate
     local_gates_dir="$SCRIPT_DIR/queue/gates/${CMD_ID}"
     mkdir -p "$local_gates_dir"
-    echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)" > "$local_gates_dir/review_gate.done"
-    echo "result: ${PY_OUT%%:*}" >> "$local_gates_dir/review_gate.done"
+    printf 'timestamp: %s\nresult: %s\n' "$_RG_TS" "${PY_OUT%%:*}" > "$local_gates_dir/review_gate.done"
 fi
 
 exit "$PY_RC"
