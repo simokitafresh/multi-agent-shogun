@@ -1767,16 +1767,16 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T09:07:18"
   - script_path: "scripts/lib/mcas_common.sh"
-    status: assigned
+    status: completed
     before_ms: 7
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 112
+    after_real_ms: 67
+    real_measurement_command: "tmp=$(mktemp -d); printf '{\"claudeAiOauth\":{\"accessToken\":\"tok_new\"},\"accessToken\":\"tok_old\"}\\n' > \"$tmp/.credentials.json\"; bash -c 'source scripts/lib/mcas_common.sh; mcas_get_token \"$1\"' _ \"$tmp\" >/dev/null; rm -rf \"$tmp\""
+    test_result: "bash_n_pass;new_token_ok;legacy_token_ok;missing_token_error_ok;before_112_after_67;SKIP=0"
+    commit: "46f09dbe9"
     assigned_to: "saizo"
-    updated_at: "2026-06-07T09:08:21"
+    updated_at: "2026-06-07T09:10:51"
   - script_path: "scripts/lib/model_colors.sh"
     status: pending
     before_ms: 15
