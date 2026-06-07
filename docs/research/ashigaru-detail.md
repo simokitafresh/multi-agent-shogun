@@ -275,6 +275,7 @@ parity_data_source:
 
 → 検証: [[gate_report_format]] (`scripts/gates/gate_report_format.sh`) — 報告YAML提出前に必ず実行。家老の手動フォーマット修正作業を根絶するために設計された自動検証ゲート。
 → verdict 自動導出は [[verdict-check]] (`skills/verdict-check/SKILL.md`) を参照（binary_checks 全 yes → PASS、1つでも no → FAIL）。手動判断の誤verdict を根絶する。
+→ 記入スキル: [[report-write]] (`skills/report-write/SKILL.md`) — 報告YAML WA 24件/100件(全WA最多)を根絶するために設計。`report_field_set.sh` 経由での全フィールド記入を強制し、Edit tool直接編集によるテンプレート破損を防止する。
 
 ## §8 報告具体性ルール（「名前をつけろ」）
 
