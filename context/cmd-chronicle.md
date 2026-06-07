@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-07 cmd_training_speed_dashboard_auto_section_20260606235801 -->
+<!-- last_updated: 2026-06-07 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -502,3 +502,4 @@
 | cmd_3198 | 覚醒監査で検出した2件の改良を環境に埋め込む。(1)GP-262: 定型cmdでも洗脳#1(早期終了)で1観測止まり防止 (2)殿の質問時にsemantic_knowledge結果を引用強制し概念混同を防止 | infra | 06-05 | GP-262の最低2観測明示と、殿の質問時のsemantic |
 | cmd_3199 | 将軍が三層記憶(記憶DB+Obsidian+セマンティック)を使わずMEMORY.mdで回答する根因を解消。L0-L7に三層記憶第一優先を貫通させる。軍師覚醒レビュー3往復完了の設計書v3に基づく | infra | 06-06 | 三層記憶第一優先化L0-L7貫通: instructions |
 | cmd_3200 | 三層記憶検索到達保証+自動成長ループの穴を塞ぐ。軍師3往復+家老3往復レビュー合意 | infra | 06-06 | three_layer_memory_system概念をse |
+| cmd_3206 | 速度修行でscript群が更新されたがSKILL.md内容が未追随。忍者が古い手順で作業するリスク解消。3セッション連続startup BLOCK | infra | 06-07 | 14件のSKILL.mdを参照scriptの現行動作へ追従し |

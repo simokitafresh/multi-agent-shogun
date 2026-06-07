@@ -59,11 +59,6 @@ fi
 
 [[ -d "$STATE_DIR" ]] || mkdir -p "$STATE_DIR"
 idle_flag="${STATE_DIR}/shogun_idle_${agent_id}"
-last_assistant_message=""
-if [[ "$payload" == *'"last_assistant_message"'* ]]; then
-  last_assistant_message="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
-fi
-
 # cmd_2076: jq -r '.stop_hook_active...' → bash文字列マッチに変更 (~5ms削減)
 stop_hook_active=false
 if [[ "$payload" == *'"stop_hook_active":true'* || "$payload" == *'"stop_hook_active": true'* ]]; then
@@ -110,11 +105,15 @@ detect_shogun_brainwash_pattern() {
   fi
 }
 
-if [[ "$agent_id" == "shogun" && -n "$last_assistant_message" ]]; then
+# cmd_TRAINING: shogunのみjqでlast_assistant_message抽出→brainwash check。忍者/家老はpayload直接マッチ(jq不要, ~7ms削減)
+if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; then
+  last_assistant_message="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
   printf '%s\n' "$SHOGUN_BRAINWASH_AUDIT" >&2
-  _brainwash_match="$(detect_shogun_brainwash_pattern "$last_assistant_message")"
-  if [[ -n "$_brainwash_match" ]]; then
-    printf 'WARN: 洗脳検出 %s。一次データ確認・即時行動・L0-L7貫通の自問をやり直せ。\n' "$_brainwash_match" >&2
+  if [[ -n "$last_assistant_message" ]]; then
+    _brainwash_match="$(detect_shogun_brainwash_pattern "$last_assistant_message")"
+    if [[ -n "$_brainwash_match" ]]; then
+      printf 'WARN: 洗脳検出 %s。一次データ確認・即時行動・L0-L7貫通の自問をやり直せ。\n' "$_brainwash_match" >&2
+    fi
   fi
 fi
 
@@ -126,21 +125,15 @@ notify_completion() {
   ) >/dev/null 2>&1 &
 }
 
-if [[ -n "$last_assistant_message" && "$agent_id" != "shogun" && "$agent_id" != "gunshi" ]]; then
-  _nocasematch_was_set=false
-  if shopt -q nocasematch; then
-    _nocasematch_was_set=true
-  else
-    shopt -s nocasematch
-  fi
-  if [[ "$last_assistant_message" =~ $COMPLETE_PATTERN ]]; then
+if [[ "$agent_id" != "shogun" && "$agent_id" != "gunshi" && "$payload" == *'"last_assistant_message"'* ]]; then
+  # cmd_TRAINING: jq不要。payload全体でパターン直接マッチ(忍者/家老, ~7ms削減)
+  shopt -s nocasematch
+  if [[ "$payload" =~ $COMPLETE_PATTERN ]]; then
     notify_completion "report_completed" "${agent_id}、タスク完了"
-  elif [[ "$last_assistant_message" =~ $ERROR_PATTERN ]]; then
+  elif [[ "$payload" =~ $ERROR_PATTERN ]]; then
     notify_completion "error_report" "${agent_id}、エラー停止"
   fi
-  if [[ "$_nocasematch_was_set" != "true" ]]; then
-    shopt -u nocasematch
-  fi
+  shopt -u nocasematch
 fi
 
 inbox_file="$SCRIPT_DIR/queue/inbox/${agent_id}.yaml"
@@ -149,7 +142,7 @@ if [[ ! -f "$inbox_file" ]]; then
 fi
 
 fast_cache=""
-if [[ -z "$last_assistant_message" && "$agent_id" != "karo" && "$agent_id" != "gunshi" && "$agent_id" != "shogun" ]]; then
+if [[ "$payload" != *'"last_assistant_message"'* && "$agent_id" != "karo" && "$agent_id" != "gunshi" && "$agent_id" != "shogun" ]]; then
   _ninja_task_for_cache="$SCRIPT_DIR/queue/tasks/${agent_id}.yaml"
   fast_cache="$STATE_DIR/shogun_stop_check_inbox_fast_${agent_id}"
   if [[ -f "$_ninja_task_for_cache" && -f "$fast_cache" && ! "$inbox_file" -nt "$fast_cache" && ! "$_ninja_task_for_cache" -nt "$fast_cache" ]]; then

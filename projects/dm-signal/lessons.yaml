@@ -184,6 +184,9 @@ lessons:
   - tests/unit/test_cmd_save_dm_signal_bare_layer_reference.bats
   - queue/reports/hayate_report_cmd_2558.yaml
   when: 報告YAMLやレビュー結果を作成・検証する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L710
   title: L0-L4語彙は新cmdでprefix必須にすべき
   summary: DM-SignalではPF階層、SSOT階層、sync階層、visibility階層が同じL0-L4表記を共有している。次回同種cmdではpf_stage/sy
@@ -281,6 +284,9 @@ lessons:
   - backend/tests/test_monthly_trade_calculator.py
   - backend/tests/test_signals_fof_precomputed_display.py
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L704
   title: FoF Monthly Trade表示は動的展開よりSignal.momentum_dataのprecomputed weightsを優先せよ
   summary: FoF L3が正しいdisplay_ticker_weightsをSignal.momentum_dataへ保存していても、Monthly Tradeがsign
@@ -441,7 +447,7 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-05'
+  last_referenced: '2026-06-07'
 - id: L695
   title: pipeline_config内側top_nとPortfolio直下top_nは別経路で分離検証必須
   summary: pipeline_config.blocks config top_n/select_nはDict[str,Any]で型制約なし(1-4全PASS)。Portf
@@ -542,6 +548,9 @@ lessons:
   - outputs/registration/cmd_2424/pre_existing_shin_monthly.csv
   - outputs/registration/cmd_2424/post_existing_shin_monthly.csv
   when: タスク配備やデプロイ手順を変更・実行する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L689
   title: Payload再生成時は内部メタデータを保持するテストを追加せよ
   summary: API層でPayloadを再生成・フィルタする際、excludeメタデータ(skipped_portfolios等)が引き継がれずnull化する。途中の再生成・
@@ -779,6 +788,9 @@ lessons:
   - outputs/registration/cmd_2392/registered_portfolios.csv
   - outputs/registration/cmd_2392/pre_existing_shin_monthly.csv
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L674
   title: gs_grid_robustnessのL1軸検証では従属ラベル列も可変扱いにせよ
   summary: L1 SQLiteではlookback_id/base_period_months/numerator_days等の軸にlookback_label/base_
@@ -921,7 +933,7 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
 - id: L666
   title: ACはWHAT(二値判定)のみ記載。HOW(検証手法)を混入させるな
   summary: ACには達成基準(WHAT=二値で判定できる完了条件)のみ書く。HOW(具体的な検証手法・実装方法)はtask YAML分解時に家老が決める領域。軍師のcmdレ
@@ -1031,6 +1043,9 @@ lessons:
   - outputs/grid_search/20260427/L0/shin/gs_kawarimi_DM7P.db
   - scripts/analysis/cmd_2325_kawarimi_csv_to_db.py
   when: DB・データ取得・永続化に関わる作業を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L659
   title: source_type=csvのGS runnerでもDB前提をpreflightで切り分ける
   summary: run_077_oikaze.pyはsource_type=csvでもALM青龍-常勝 portfolioをDB参照し、現DBに存在せず停止した。一方pipel
@@ -1509,7 +1524,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
 - id: L629
   title: 'golden data有効性: 生成時のコード状態を確認せよ'
   summary: バグ状態で生成されたgolden dataは検証基準にならない。生成日+対応commitを記録すべき。TRFバグ下で生成→全コンポーネント選択=バグ値だった実例
@@ -1646,6 +1661,9 @@ lessons:
   - .claude/hooks/pre-bash-combined.sh
   - context/dm-signal-ops.md
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L621
   title: monthly_fast成果物探索はcache-onlyも許容せよ
   summary: cmd_1882再生成で `okugi_alm_alm/kasoku_diff` は `.cache.*.npy` のみ残り `.csv` が欠損していた。`l
@@ -1951,7 +1969,7 @@ lessons:
   - universal
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
   how: パターンID頭部のNXXXとCSVキャッシュで照合確認必須
   origin: '[[cmd_1845]]'
   source_cmd: cmd_1845
@@ -1977,7 +1995,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L601
@@ -2094,7 +2112,7 @@ lessons:
   - universal
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
   how: '修正: sorted(context.current_tickers)またはcomponents配列順に従う並び替えでパリティ確保'
   origin: '[[cmd_1835]]'
   source_cmd: cmd_1835
@@ -3292,6 +3310,9 @@ lessons:
   - backend/app/jobs/recalculate_fast.py
   - backend/app/jobs/recalculate_fof.py
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L508
   title: silent fallbackパターン禁止(PI-018)
   summary: except Exceptionでデータ値(Cash/0.0/True/1.0/SPY等)をfallback返却するコードは嘘をつく。cmd_1483で38箇所
@@ -3439,7 +3460,7 @@ lessons:
   when: cmdでデータソースが明示指定されている場合
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
 - id: L498
   title: ローリングSharpe選抜は遅行指標でWardクラスタ構造選抜に劣後する
   summary: 36ヶ月ローリングSharpe Top4選抜(R10)はCAGR67.9%でR2(Ward+BestCAGR=74.5%)を-6.5%下回った。Sharpeは過
@@ -3846,6 +3867,9 @@ lessons:
   target_files:
   - verify_gs_parity_pi009.py
   when: verify_gs_parity_pi009.pyでmonthly_return FAIL件を調査する
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L469
   title: FoF holding_signalはcomponent PF UUIDカンマ区切り。GS engineはFoF非対応
   summary: FoFのholding_signalはcomponent PFのUUIDをカンマ区切りで格納(Standard PFのticker名とは構造が異なる)。GS
@@ -4077,7 +4101,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
 - id: L453
   title: PipelineEngine統合時のバッチパス分離戦略
   summary: simulate_patternのみPipelineEngine経由に切り替え、simulate_batch等のバッチパスはNumPy維持が現実的。両パスの等価
@@ -4574,6 +4598,9 @@ lessons:
   target_files:
   - backend/app/jobs/recalculate_fof.py
   when: 共通flush関数やhelperを新規実装・exportして既存処理へ組み込む時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L420
   title: 本番リターン列のopen/close区別必須
   summary: monthly_returnsテーブルにはmonthly_return(Close)とmonthly_return_open(Open)の2列。GSはOpen-
@@ -6039,7 +6066,7 @@ lessons:
   - gate
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
   how: '2026-03-15'
   origin: '[[cmd_962]]'
   source_cmd: cmd_962
@@ -6357,6 +6384,9 @@ lessons:
   origin: '[[cmd_860]]'
   source_cmd: cmd_860
   when: frontend/UIの表示・状態管理を変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L291
   title: 91PF panel は横断本数をそのまま有効サンプル数と見なすな
   summary: DM-Signal active 91PF の monthly_return_open 共通169ヶ月で pairwise 相関は mean
@@ -6498,7 +6528,7 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
 - id: L279
   title: P(det) recent窓(n=6)のHAC SE推定は統計的に不安定。P6単独をトリガーにするな
   summary: newey_west_var_of_mean()のlag=max(1,floor(4*(n/100)^(2/9)))でn=6ではlag=1。6サンプルでの自己相
@@ -6702,7 +6732,7 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
 - id: L261
   title: キャッシュ系 precompute テーブル欠落は health endpoint で degraded に昇格させる
   summary: 事前計算テーブル欠落は性能劣化だけでなく fallback 経路の常時発火を招く。prices>0 && precompute=0 のような矛盾条件は
@@ -6821,7 +6851,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L251
@@ -7043,6 +7073,9 @@ lessons:
   origin: '[[cmd_766]]'
   source_cmd: cmd_766
   when: BE/FEで価格データを扱う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L232
   title: recalculate_fast.pyのholding_signal更新は「月変わりANDリバランス月」の2条件で制御される
   summary: holding_signalの更新タイミングはStep0（パフォーマンス計算前）で行われ、last_generated_signals（前月末の生signal）
@@ -7390,7 +7423,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
 - id: L204
   title: API永続キャッシュはUI state用localStorageと分離し、auth-scope付き IndexedDB を主格にすべき
   summary: selected PF や folder filter のような小さなUI stateは localStorage で十分だが、 multi-year
@@ -7575,7 +7608,7 @@ lessons:
   when: analytics tier集計でadminをtrack時にNULL化していたため、summary側でadmin/unauthenticatedを分離できなかった時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
 - id: L189
   title: ページ順序定義をsidebar/mobile-menu/page-navigationに重複保持すると導線不整合が発生しやすい
   summary: IF ナビ順序や表示対象を複数ファイルで個別定義すると、1箇所更新時に他所が追従せず差分ドリフトが起きる時 THEN ナビ順序や表示対象を複数ファイルで個別定義
@@ -7806,6 +7839,9 @@ lessons:
   target_files:
   - docs/future-01/001.md
   when: ドキュメント補完レビューではまずgit diffで変更スコープを固定し次に仕様書の節番号で照合すると網羅性不足と矛盾を短時間で検出できる時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L169
   title: 設計書補完はMECE表+仕様章リンクの二層化で抜け漏れを抑制できる
   summary: IF A/B/C/Dを先に固定し、各行に仕様書の章参照を付与すると、追記の網羅性確認と矛盾検出が高速化する時 THEN A/B/C/Dを先に固定し、各行に仕様書
@@ -7817,6 +7853,9 @@ lessons:
   target_files:
   - docs/future-01/001.md
   when: A/B/C/Dを先に固定し、各行に仕様書の章参照を付与すると、追記の網羅性確認と矛盾検出が高速化する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L168
   title: 未使用判定は import探索と呼び出し探索を分離すると誤検知が減る
   summary: 今回、module参照の有無（importベース）とメソッド呼び出し有無（api.<method>ベース）を分けて集計したことで、 `testAuth`
@@ -8411,6 +8450,9 @@ lessons:
   origin: '[[legacy_lesson_L116]]'
   source_cmd: legacy_lesson_L116
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L115
   title: 回帰→分類パイプラインは月次リターンSNR限界を克服しない
   summary: IF Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換時 THEN Ridge/Lasso/Elastic
@@ -8429,6 +8471,9 @@ lessons:
   origin: '[[legacy_lesson_L114]]'
   source_cmd: legacy_lesson_L114
   when: DM3などで複数の高相関モデル出力をスタッキングしてprecision改善を狙う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L113
   title: ターゲット再定義は予測タスクの性質を変えるがSNR限界は克服しない
   summary: IF C2-Bの22特徴量で予測対象を4種に変更時 THEN C2-Bの22特徴量で予測対象を4種に変更 C2-Bの22特徴量で予測対象を4種に変更。Drawd

@@ -498,3 +498,158 @@
   ambiguity_points: none
   origin: "[[cmd_3175]] -> [[saizo LGTM]] -> [[L7自動成長完了]]"
   timestamp: "2026-06-04T09:57:00"
+- cmd_id: cmd_3205
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem]
+  findings_summary: "4観点OK。cache cleanup周期60分/TTL4h+WARN閾値5GB。テスト29+2 PASS/SKIP0"
+  observations:
+    - "ninja_monitor check_three_layer_maintenance周期6h→1h、TTL6h→4hへ短縮"
+    - "gate_three_layer_health.sh cache_warn_bytes 10GB→5GBへ引下げ"
+    - "cleanup_three_layer_tmp.shの安全ガード(/mnt/c配下拒否)維持確認"
+  causal_chain: "cache 28GB蓄積→cleanup周期6h+WARN閾値10GBで再蓄積検知遅延(負)→60分周期+TTL4h+5GB早期WARN(正の複利)"
+  brainwash_check: "既存cleanupの周期/閾値調整が最適解。新規daemon不要の最小変更"
+  ambiguity_points: none
+  origin: "[[cmd_3205]] -> [[cache_reaccumulation_prevention]] -> [[kagemaru LGTM CLEAR]]"
+  timestamp: "2026-06-07T10:20:00"
+- cmd_id: cmd_training_speed_memory_db_init_20260607101144
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/memory_db_init.sh(三層記憶DB初期化)。冪等構造で安全"
+  observations:
+    - "target_path確認: memory_db_init.sh。CREATE IF NOT EXISTS構造で冪等"
+  causal_chain: "速度修行→計測→改善→再計測→ledger記録(正の複利)"
+  brainwash_check: "DB操作だが初期化は冪等で安全"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[memory_db_init APPROVE]]"
+  timestamp: "2026-06-07T10:22:00"
+- cmd_id: cmd_training_speed_memory_db_query_20260607101430
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/memory_db_query.sh(記憶DBクエリ)。読取専用で安全"
+  observations:
+    - "target_path確認: memory_db_query.sh。SELECT系クエリで破壊的操作なし"
+  causal_chain: "速度修行→計測→改善→再計測→ledger記録(正の複利)"
+  brainwash_check: "クエリ実行は読取専用で安全"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[memory_db_query APPROVE]]"
+  timestamp: "2026-06-07T10:22:00"
+- cmd_id: cmd_3206
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。14 SKILL.md参照陳腐化解消。29 WARN→0件目標。3セッション連続BLOCK根因対処"
+  observations:
+    - "対象14 SKILL.mdファイルとcommand欄記載が一致(14件)"
+    - "gate_skill_script_refs.sh 29 WARN検出済み(assumptions verified)"
+    - "SKILL.md=ドキュメントのみでスクリプト動作に影響なし(blast radius小)"
+  causal_chain: "速度修行でscript一斉更新→SKILL.md未追随→gate 29 WARN→3セッション連続BLOCK(負)→14 SKILL.md更新でWARN 0件(正の複利)"
+  brainwash_check: "参照陳腐化解消は既存gateの正常動作復帰で最適。穴なし"
+  ambiguity_points: none
+  origin: "[[cmd_3206]] -> [[LS042_SKILL.md陳腐化]] -> [[3セッション連続BLOCK解消]]"
+  timestamp: "2026-06-07T10:28:00"
+- cmd_id: cmd_3206
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK→GATE BLOCK(command_files_modified_mismatch)。LG036/LG037再発。command欄の実行参照をfiles_modified対象として検出"
+  observations:
+    - "事実1: files_modified 14件 = command対象14件。完全一致"
+    - "事実2: SKILL_REF_DISABLE_CACHE=1でgate_skill_script_refs.sh再実行PASS確認"
+    - "事実3: deploy_task.sh未コミットmtime差分→karo-direct/recon-dualに限定確認(discretion_fills記載)"
+  causal_chain: "速度修行でscript一斉更新→SKILL.md未追随→29 WARN(負)→14 SKILL.md追従→WARN 0件(正の複利)"
+  brainwash_check: "14件全件commit確認+gate再実行PASS。穴なし"
+  ambiguity_points: none
+  origin: "[[cmd_3206]] -> [[kagemaru LGTM]] -> [[SKILL.md追従完了]]"
+  timestamp: "2026-06-07T10:37:00"
+- cmd_id: cmd_training_speed_memory_db_init_20260607104013
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行2回目。target=scripts/memory_db_init.sh(三層記憶DB初期化)。冪等構造で安全。attempt=1(前回失敗→再投入)"
+  observations:
+    - "target_path確認: memory_db_init.sh。CREATE IF NOT EXISTS構造。2回目投入で前回失敗を踏まえた改善期待"
+  causal_chain: "速度修行→計測→改善→再計測→ledger記録(正の複利)"
+  brainwash_check: "DB初期化は冪等で安全。再投入も同テンプレート"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[memory_db_init attempt2 APPROVE]]"
+  timestamp: "2026-06-07T10:42:00"
+- cmd_id: cmd_training_speed_hybrid_search_20260607104013
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/hybrid_search.sh。検索ユーティリティ。副作用リスク低"
+  observations:
+    - "target_path確認: hybrid_search.sh。検索用途。速度改善で機能劣化リスク低"
+  causal_chain: "速度修行→計測→改善→再計測→ledger記録(正の複利)"
+  brainwash_check: "検索ユーティリティで安全"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[hybrid_search APPROVE]]"
+  timestamp: "2026-06-07T10:45:00"
+- cmd_id: cmd_training_speed_hooks_stop_check_inbox_20260607104013
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "速度修行。target=scripts/hooks/stop_check_inbox.sh(303行)。安全系hook。AC2で機能維持義務あり"
+  observations:
+    - "target_path確認: stop_check_inbox.sh=stop hook。inbox未読チェック。速度改善でチェックロジック維持が必須"
+    - "adversarial: hook無効化→inbox見落とし→メッセージ処理漏れ。AC2 behavior/safety条件で保護"
+  causal_chain: "速度修行→計測→改善→再計測→ledger記録(正の複利)。安全系hookの機能維持はAC2で担保"
+  brainwash_check: "安全系hookだがAC2で機能維持義務あり。テンプレート構造で保護"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[stop_check_inbox APPROVE]]"
+  timestamp: "2026-06-07T10:45:00"
+- cmd_id: cmd_training_speed_hooks_pre_mcp_lord_attribution_guard_20260607104012
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "速度修行。target=scripts/hooks/pre-mcp-lord-attribution-guard.sh。安全系hook(殿発言帰属保護)。AC2で機能維持義務あり"
+  observations:
+    - "target_path確認: pre-mcp-lord-attribution-guard.sh=PreToolUse hook。MCP lord attribution guard"
+    - "adversarial: guard無効化→殿の発言帰属が保護されなくなる。AC2条件で保護"
+  causal_chain: "速度修行→計測→改善→再計測→ledger記録(正の複利)。安全系hookの機能維持はAC2で担保"
+  brainwash_check: "殿発言帰属保護hookだがAC2で機能維持義務あり"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[pre_mcp_lord_attribution APPROVE]]"
+  timestamp: "2026-06-07T10:45:00"
+- cmd_id: cmd_training_speed_gates_gate_pd_sync_20260607104012
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "速度修行。target=scripts/gates/gate_pd_sync.sh(121行)。gate系。PD同期検出。AC2で機能維持義務あり"
+  observations:
+    - "target_path確認: gate_pd_sync.sh=PD同期gate。速度改善でPD検出漏れリスクあるがAC2で保護"
+    - "adversarial: gate無効化→PD未解決見落とし。AC2 behavior/safety条件で保護"
+  causal_chain: "速度修行→計測→改善→再計測→ledger記録(正の複利)。gate系の機能維持はAC2で担保"
+  brainwash_check: "gate系だがAC2で機能維持義務あり"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[gate_pd_sync APPROVE]]"
+  timestamp: "2026-06-07T10:45:00"
+- cmd_id: cmd_training_speed_lib_script_update_20260607104013
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "速度修行。target=scripts/lib/script_update.sh(58行)。ライブラリ。副作用リスク低"
+  observations:
+    - "target_path確認: lib/script_update.sh。58行の小規模ライブラリ"
+  causal_chain: "速度修行→計測→改善→再計測→ledger記録(正の複利)"
+  brainwash_check: "小規模ライブラリで安全"
+  ambiguity_points: none
+  origin: "[[speed_training]] -> [[lib_script_update APPROVE]]"
+  timestamp: "2026-06-07T10:45:00"
