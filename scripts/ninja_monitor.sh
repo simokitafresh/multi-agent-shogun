@@ -922,7 +922,9 @@ get_context_pct() {
     else
         ctx_num=""
     fi
-    if [ -n "$ctx_num" ] && [ "$ctx_num" -gt 0 ] 2>/dev/null; then
+    # @context_pctが明示的にセットされていれば（0%含む）その値を信頼する
+    # 0%はsafe_send_clear後のリセット値。Source 2に進むと旧CTX表示を拾ってしまう
+    if [ -n "$ctx_num" ]; then
         echo "$ctx_num"
         return 0
     fi
