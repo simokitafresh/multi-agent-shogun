@@ -47,23 +47,12 @@ python3 - "$script_dir" "$top_n" "$select_file" <<'PY'
 import re
 import subprocess
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 root = Path(sys.argv[1])
 top_n = int(sys.argv[2])
 select_file = sys.argv[3].lower() == "true"
-
-try:
-    proc = subprocess.run(
-        ["git", "-C", str(root), "ls-files", "*.md"],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    paths = [line.strip() for line in proc.stdout.splitlines() if line.strip()]
-except Exception:
-    paths = [str(p.relative_to(root)) for p in root.rglob("*.md") if ".git" not in p.parts]
 
 excluded_prefixes = (
     ".",
@@ -79,17 +68,48 @@ excluded_names = {
     "SECURITY.md",
 }
 
-rows = []
-for rel in paths:
-    if rel.startswith(excluded_prefixes) or "/." in rel or Path(rel).name in excluded_names:
-        continue
-    path = root / rel
-    if not path.is_file():
-        continue
-    text = path.read_text(encoding="utf-8", errors="replace")
-    link_count = len(re.findall(r"\[\[[^\]\n]+?\]\]", text))
-    rows.append((link_count, rel))
+def is_excluded(rel):
+    return rel.startswith(excluded_prefixes) or "/." in rel or Path(rel).name in excluded_names
 
+try:
+    ls_proc = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "*.md"],
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    paths = [line.strip() for line in ls_proc.stdout.splitlines() if line.strip()]
+except Exception:
+    paths = [str(p.relative_to(root)) for p in root.rglob("*.md") if ".git" not in p.parts]
+
+filtered = [p for p in paths if not is_excluded(p)]
+
+# Count [[links]] via git grep to avoid slow per-file reads on WSL2 /mnt/c/
+link_counts: defaultdict = defaultdict(int)
+try:
+    grep_proc = subprocess.run(
+        ["git", "-C", str(root), "grep", "--threads=4", "-Po",
+         r"\[\[[^\]\n]+?\]\]", "--", "*.md"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    for line in grep_proc.stdout.splitlines():
+        if ":" in line:
+            path = line.split(":", 1)[0]
+            if not is_excluded(path):
+                link_counts[path] += 1
+except Exception:
+    # Fallback: read files directly
+    pattern = re.compile(r"\[\[[^\]\n]+?\]\]")
+    for rel in filtered:
+        p = root / rel
+        if p.is_file():
+            text = p.read_text(encoding="utf-8", errors="replace")
+            link_counts[rel] = len(pattern.findall(text))
+
+rows = [(link_counts.get(rel, 0), rel) for rel in filtered]
 rows.sort(key=lambda item: (item[0], item[1]))
 
 if select_file:
