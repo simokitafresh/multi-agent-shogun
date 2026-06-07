@@ -6,13 +6,24 @@ if [[ -z "${1:-}" ]]; then
     exit 1
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-QUEUE_FILE="$SCRIPT_DIR/queue/ntfy_batch_queue.txt"
+_self="${BASH_SOURCE[0]}"
+[[ "$_self" != /* ]] && _self="$PWD/$_self"
+SCRIPT_DIR="${_self%/scripts/ntfy_batch.sh}"
+QUEUE_DIR="$SCRIPT_DIR/queue"
+QUEUE_FILE="$QUEUE_DIR/ntfy_batch_queue.txt"
 LOCK_FILE="${QUEUE_FILE}.lock"
 
-mkdir -p "$(dirname "$QUEUE_FILE")"
+mkdir -p "$QUEUE_DIR"
 
-MESSAGE="$(printf '%s' "$1" | tr '\r\n' '  ' | sed 's/[[:space:]]\+/ /g; s/^ //; s/ $//')"
+MESSAGE="$1"
+MESSAGE="${MESSAGE//$'\r'/ }"
+MESSAGE="${MESSAGE//$'\n'/ }"
+MESSAGE="${MESSAGE//$'\t'/ }"
+MESSAGE="${MESSAGE#"${MESSAGE%%[![:space:]]*}"}"
+MESSAGE="${MESSAGE%"${MESSAGE##*[![:space:]]}"}"
+while [[ "$MESSAGE" == *"  "* ]]; do
+    MESSAGE="${MESSAGE//  / }"
+done
 TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
 
 if [[ -z "$MESSAGE" ]]; then
