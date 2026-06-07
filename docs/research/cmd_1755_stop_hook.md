@@ -60,7 +60,7 @@ print(json.dumps({'decision': 'block', 'reason': reason}, ensure_ascii=False))
 ### 大元の修正対象ファイルに対応するファイル
 
 我が軍に `scripts/stop_hook_inbox.sh` は**存在しない**。
-対応するのは **`scripts/hooks/stop_check_inbox.sh`**（settings.json Stop hookに登録済み）。
+対応するのは **[[stop_check_inbox]] (`scripts/hooks/stop_check_inbox.sh`)** — inbox未読チェックstop防止hook(L2)。settings.json Stop hookに登録済み。
 
 ### stop_check_inbox.sh の実装確認
 
@@ -161,7 +161,7 @@ content: "特殊文字テスト: シングルクォート' + ダブルクォー�
 - 大元commit: `gh api repos/yohey-w/multi-agent-shogun/commits/d108517`
 - 対応ファイル: `scripts/hooks/stop_check_inbox.sh` → [[stop_check_inbox]]
 - lint gate: `.claude/hooks/stop-lint-gate.sh` → [[stop-lint-gate]]
-- stop_check_inboxプロファイリング研究: [[cmd_2111_stop_check_inbox_profiling]]
+- stop_check_inboxプロファイリング研究: [[cmd_2111_stop_check_inbox_profiling]] (`docs/research/cmd_2111_stop_check_inbox_profiling.md`)
   > `cmd_2111_stop_check_inbox_profiling.md` L1-2: "# test_stop_check_inbox.bats 高速化プロファイリング / cmd_2111 — tobisaru, 2026-04-19"
   > 同ファイルボトルネック特定: "hook 実行 | ~100-200ms | payload解析+inbox読込+python3"
 - stop-lint L3仕様: [[cmd_2065_stop_lint_l3_spec_20260418]]
