@@ -6,4 +6,4 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-python3 "$script_dir/scripts/memory_db_import.py" "$@"
+exec python3 "$script_dir/scripts/memory_db_import.py" "$@"
