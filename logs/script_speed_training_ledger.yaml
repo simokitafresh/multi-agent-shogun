@@ -1239,16 +1239,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T05:59:00"
   - script_path: "scripts/hooks/pre-mcp-lord-attribution-guard.sh"
-    status: pending
+    status: completed
     before_ms: 14
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: "2026-06-07T10:20:17"
+    after_ms: 14
+    before_real_ms: 4105
+    after_real_ms: 1547
+    real_measurement_command: "50x printf '{\"tool_name\":\"mcp__memory__add_observations\",\"tool_input\":{\"observations\":[{\"entityName\":\"Lord\",\"contents\":[\"通常メモ\"]}]}}' | bash scripts/hooks/pre-mcp-lord-attribution-guard.sh; median of 7 runs"
+    test_result: "bash_n_pass;spot_checks_non_target_normal_cited_warn_block_PASS;SKIP=0;before_4104.770_after_1547.238"
+    commit: "ce5a550d8"
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T10:43:50"
   - script_path: "scripts/hooks/pre-write-report-deny.sh"
     status: completed
     before_ms: 15
