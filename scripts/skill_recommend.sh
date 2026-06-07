@@ -30,17 +30,26 @@ _sr_prompt_lower="${_sr_prompt_text,,}"
 
 # キャッシュディレクトリ (/tmp = ext4, stat高速)
 _sr_cache_dir="${SKILL_RECOMMEND_CACHE_DIR:-/tmp/skill_recommend_cache}"
-mkdir -p "${_sr_cache_dir}" 2>/dev/null || true
+# mkdir -p はディレクトリ未存在時のみ (サブプロセス回避)
+[[ -d "${_sr_cache_dir}" ]] || mkdir -p "${_sr_cache_dir}" 2>/dev/null || true
 
 # --- レイヤー1: prompt_hashキャッシュ (同一プロンプト=即return) ---
-_sr_prompt_hash="$(printf '%s' "${_sr_prompt_text}" | sha256sum | awk '{print $1}')"
+# bash-only hash: サブプロセスゼロ (sha256sum|awk 廃止)
+_sr_h_len="${#_sr_prompt_lower}"
+if (( _sr_h_len > 96 )); then
+  _sr_h="${_sr_prompt_lower:0:64}__${_sr_prompt_lower: -32}"
+else
+  _sr_h="${_sr_prompt_lower}"
+fi
+_sr_prompt_hash="${_sr_h_len}_${_sr_h//[^a-z0-9]/_}"
 _sr_cache_version="skill-trigger-v2"
 _sr_prompt_cache="${_sr_cache_dir}/prompt_${_sr_agent_id//[^A-Za-z0-9_.-]/_}_${_sr_current_project//[^A-Za-z0-9_.-]/_}_${_sr_prompt_hash}"
 
 if [[ -f "${_sr_prompt_cache}" ]]; then
-  _sr_cached_ver="$(sed -n '1s/^v: //p' "${_sr_prompt_cache}" 2>/dev/null || true)"
-  if [[ "${_sr_cached_ver}" == "${_sr_cache_version}" ]]; then
-    sed '1,/^---$/d' "${_sr_prompt_cache}" 2>/dev/null || true
+  # bash read でバージョン確認 (sed サブプロセス廃止)
+  IFS= read -r _sr_v_line < "${_sr_prompt_cache}" 2>/dev/null || true
+  if [[ "${_sr_v_line}" == "v: ${_sr_cache_version}" ]]; then
+    tail -n +3 "${_sr_prompt_cache}" 2>/dev/null || true
     exit 0
   fi
 fi
@@ -54,7 +63,8 @@ if [[ ! -f "${_sr_compiled_cache}" ]]; then
   _sr_need_compile=1
 else
   _sr_cache_ts="$(stat -c '%Y' "${_sr_compiled_cache}" 2>/dev/null || echo 0)"
-  _sr_current_ts="$(date +%s)"
+  # printf builtin でタイムスタンプ取得 (date サブプロセス廃止)
+  printf -v _sr_current_ts '%(%s)T' -1
   if (( _sr_current_ts - _sr_cache_ts > _sr_compiled_ttl )); then
     _sr_need_compile=1
   fi

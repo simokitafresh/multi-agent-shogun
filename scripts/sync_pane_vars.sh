@@ -47,6 +47,7 @@ done
 unset _sp_idx _sp_agent
 
 changed=0
+_spv_tmp=""
 
 # ── sync_one_pane: 1ペインの @model_name / @agent_cli を同期 ──
 # Usage: sync_one_pane <agent_name> <tmux_target> <pane_label>
@@ -84,14 +85,30 @@ sync_one_pane() {
     fi
 }
 
-# ── 将軍ペイン（shogun:main）──
-sync_one_pane "shogun" "shogun:main" "main"
+# ── 全ペインを並列同期（各ペインは独立のため安全）──
+_spv_tmp=$(mktemp -d /tmp/spv_XXXXXX)
+_spv_pids=()
 
-# ── エージェントペイン（shogun:agents.*）──
+sync_one_pane "shogun" "shogun:main" "main" > "$_spv_tmp/0_shogun" 2>&1 &
+_spv_pids+=($!)
+
 for agent in "${!AGENT_PANES[@]}"; do
     pane="${AGENT_PANES[$agent]}"
-    sync_one_pane "$agent" "shogun:agents.${pane}" "agents.${pane}"
+    sync_one_pane "$agent" "shogun:agents.${pane}" "agents.${pane}" > "$_spv_tmp/${pane}_${agent}" 2>&1 &
+    _spv_pids+=($!)
 done
+
+wait "${_spv_pids[@]}"
+
+# 出力収集 + changed カウント（出力1行 = 変更1件）
+for _spv_f in "$_spv_tmp"/*; do
+    [[ -s "$_spv_f" ]] || continue
+    while IFS= read -r _spv_line; do
+        echo "$_spv_line"
+        ((changed++)) || true
+    done < "$_spv_f"
+done
+rm -rf "$_spv_tmp"
 
 if [[ $changed -eq 0 ]]; then
     echo "  [sync] 変更なし（全ペイン同期済み）"

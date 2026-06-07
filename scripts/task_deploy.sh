@@ -42,68 +42,53 @@ if [ "$TASK_TYPE" != "recon" ]; then
     exit 0
 fi
 
-# Scan queue/tasks/*.yaml for recon tasks matching parent_cmd
-check_output=$(python3 - "$TASKS_DIR" "$CMD_ID" <<'PYEOF'
-import yaml, sys, glob, os
+# Scan queue/tasks/*.yaml for recon tasks matching parent_cmd.
+# gawk+ENDFILE replaces python3 heredoc: eliminates ~70ms Python startup cost.
+# Each file is parsed for parent_cmd/title/assigned_to without yaml.safe_load.
+_recon_list=$(gawk -v cmd_id="$CMD_ID" '
+    FNR == 1 { pc = ""; title = ""; at = "" }
+    /parent_cmd:/ {
+        sub(/^[^:]+:[[:space:]]*/, ""); gsub(/["'\'']/, ""); pc = $0
+    }
+    /[[:space:]]title:[[:space:]]/ {
+        sub(/^[^:]+:[[:space:]]*/, ""); gsub(/["'\'']/, ""); title = $0
+    }
+    /assigned_to:/ {
+        sub(/^[^:]+:[[:space:]]*/, ""); gsub(/["'\'']/, ""); at = $0 == "" ? "unknown" : $0
+    }
+    ENDFILE {
+        if (pc == cmd_id && (title ~ /偵察/ || tolower(title) ~ /recon/)) {
+            print at "\t" FILENAME
+        }
+        pc = ""; title = ""; at = ""
+    }
+' "$TASKS_DIR"/*.yaml 2>/dev/null)
 
-tasks_dir = sys.argv[1]
-cmd_id = sys.argv[2]
-recon_tasks = []
+_recon_count=$(printf '%s\n' "$_recon_list" | grep -c .) 2>/dev/null || _recon_count=0
 
-for path in sorted(glob.glob(os.path.join(tasks_dir, "*.yaml"))):
-    try:
-        with open(path) as f:
-            data = yaml.safe_load(f)
-    except Exception:
-        continue
+if [ "$_recon_count" -lt 2 ]; then
+    printf 'ERROR: 偵察タスクは2名並行が必須(現在%d件)\n' "$_recon_count" >&2
+    if [ -n "$_recon_list" ]; then
+        printf '%s\n' "$_recon_list" | while IFS=$'\t' read -r at f; do
+            printf '  - %s → %s\n' "${f##*/}" "$at" >&2
+        done
+    fi
+    exit 1
+fi
 
-    if not data or not isinstance(data, dict):
-        continue
+# Duplicate assignee check
+_dupes=$(printf '%s\n' "$_recon_list" | awk -F'\t' '{print $1}' | sort | uniq -d)
+if [ -n "$_dupes" ]; then
+    printf 'ERROR: 並行偵察は別々の忍者に割り当てよ(重複: %s)\n' "$_dupes" >&2
+    printf '%s\n' "$_recon_list" | while IFS=$'\t' read -r at f; do
+        printf '  - %s → %s\n' "${f##*/}" "$at" >&2
+    done
+    exit 1
+fi
 
-    task = data.get("task", data)
-    if not isinstance(task, dict):
-        continue
-
-    parent = task.get("parent_cmd", "")
-    if parent != cmd_id:
-        continue
-
-    title = str(task.get("title", ""))
-    if "\u5075\u5bdf" in title or "recon" in title.lower():
-        assigned = task.get("assigned_to", "unknown")
-        task_id = task.get("task_id") or task.get("_ac_task_id") or os.path.basename(path)
-        recon_tasks.append({"id": task_id, "assigned_to": assigned, "file": os.path.basename(path)})
-
-count = len(recon_tasks)
-
-if count < 2:
-    print(f"ERROR: \u5075\u5bdf\u30bf\u30b9\u30af\u306f2\u540d\u4e26\u884c\u304c\u5fc5\u9808(\u73fe\u5728{count}\u4ef6)", file=sys.stderr)
-    if recon_tasks:
-        for t in recon_tasks:
-            print(f'  - {t["id"]} \u2192 {t["assigned_to"]} ({t["file"]})', file=sys.stderr)
-    sys.exit(1)
-
-# Check for duplicate assignees
-assignees = [t["assigned_to"] for t in recon_tasks]
-if len(set(assignees)) < len(assignees):
-    from collections import Counter
-    dupes = [a for a, c in Counter(assignees).items() if c > 1]
-    print(f'ERROR: \u4e26\u884c\u5075\u5bdf\u306f\u5225\u3005\u306e\u5fcd\u8005\u306b\u5272\u308a\u5f53\u3066\u3088(\u91cd\u8907: {", ".join(dupes)})', file=sys.stderr)
-    for t in recon_tasks:
-        print(f'  - {t["id"]} \u2192 {t["assigned_to"]} ({t["file"]})', file=sys.stderr)
-    sys.exit(1)
-
-names = ", ".join(t["assigned_to"] for t in recon_tasks)
-print(f"OK: \u5075\u5bdf{count}\u4ef6({names})")
-PYEOF
-)
+_recon_names=$(printf '%s\n' "$_recon_list" | awk -F'\t' '{print $1}' | paste -sd ', ')
+check_output="OK: 偵察${_recon_count}件(${_recon_names})"
 echo "$check_output"
 
-ok_line=$(printf '%s\n' "$check_output" | tail -n1)
-count=$(printf '%s\n' "$ok_line" | sed -n 's/^OK: 偵察\([0-9]\+\)件(.*/\1/p')
-ninjas=$(printf '%s\n' "$ok_line" | sed -n 's/^OK: 偵察[0-9]\+件(\(.*\))$/\1/p')
-[ -n "$count" ] || count=0
-[ -n "$ninjas" ] || ninjas="unknown"
-
-write_gate_flag "$CMD_ID" "task_deploy" "pass" "偵察${count}件(${ninjas})"
+write_gate_flag "$CMD_ID" "task_deploy" "pass" "偵察${_recon_count}件(${_recon_names})"
 exit 0
