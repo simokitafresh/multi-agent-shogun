@@ -684,7 +684,7 @@ if [ -n "$skill_usage_missing" ]; then
 fi
 
 # --- LG034: 低ROI/対応不要の言語検出 ---
-_lg034_hits=$(grep -n '低ROI\|対応不要\|コスト>効果で見送り\|効果が薄い\|優先度低' "$REVIEW_LOG" 2>/dev/null | grep -v '^#' | head -5)
+_lg034_hits=$(grep -n '低ROI\|対応不要\|コスト>効果で見送り\|効果が薄い\|優先度低' "$LOG_FILE" 2>/dev/null | grep -v '^#' | head -5)
 if [ -n "$_lg034_hits" ]; then
     echo "WARN(LG034): 「低ROI/対応不要」表現検出。全件対応が前提、順番を付けて全部やれ:"
     printf '%s\n' "$_lg034_hits" | head -3
@@ -715,7 +715,7 @@ if [ -n "$_automation_no_adv" ]; then
 fi
 
 # --- LG010: GP提案のdefense_level < 4 検出 ---
-_lg010_weak=$(grep -B2 'defense_level: [123]$' "$REVIEW_LOG" 2>/dev/null | grep 'id: GP-' | head -5)
+_lg010_weak=$(grep -B2 'defense_level: [123]$' "$LOG_FILE" 2>/dev/null | grep 'id: GP-' | head -5)
 if [ -n "$_lg010_weak" ]; then
     echo "WARN(LG010): defense_level<4のGP提案あり。Level4(フロー内BLOCK)以上を目指せ:"
     printf '%s\n' "$_lg010_weak" | sed 's/.*id: /  /' | head -3
@@ -724,12 +724,12 @@ fi
 
 # --- LG033: GP提案前の既存実装grep確認 ---
 # proposalsにGP-xxxがあるのに、同エントリのobservationsにgrep/git show/find等の確認証跡がないケースを検出
-_lg033_gp_entries=$(grep -n 'id: GP-' "$REVIEW_LOG" 2>/dev/null | grep -v '^#' | tail -5)
+_lg033_gp_entries=$(grep -n 'id: GP-' "$LOG_FILE" 2>/dev/null | grep -v '^#' | tail -5)
 if [ -n "$_lg033_gp_entries" ]; then
     while IFS=: read -r _line_no _rest; do
         _gp_id=$(echo "$_rest" | sed 's/.*GP-/GP-/;s/[^0-9a-zA-Z_-].*//')
         # 前後20行内にgrep/git show/findの証跡があるか
-        _evidence=$(sed -n "$((_line_no-10)),$((_line_no+10))p" "$REVIEW_LOG" 2>/dev/null | grep -ic 'grep\|git show\|find.*-name\|既存.*確認\|existing.*check' || true)
+        _evidence=$(sed -n "$((_line_no-10)),$((_line_no+10))p" "$LOG_FILE" 2>/dev/null | grep -ic 'grep\|git show\|find.*-name\|既存.*確認\|existing.*check' || true)
         if [ "${_evidence:-0}" -eq 0 ]; then
             echo "WARN(LG033): ${_gp_id}に既存実装の確認証跡なし。grep/git showで既存を確認してからGP提案せよ"
             warn=1
@@ -760,14 +760,14 @@ fi
 # --- L6: GATE CLEAR≠レビュー免除 洗脳#1検出 (殿厳命2026-06-08) ---
 # inbox内のreport_review依頼で、review_logにreportレビューが存在しないcmdを検出
 _inbox_file="$REPO_ROOT/queue/inbox/gunshi.yaml"
-if [ -f "$_inbox_file" ] && [ -f "$REVIEW_LOG" ]; then
+if [ -f "$_inbox_file" ] && [ -f "$LOG_FILE" ]; then
     _unreviewed=$(awk '
         /type:.*report_review/ { getline; if ($0 ~ /read: true/) reviewed_requests++ }
         /cmd_[0-9]+/ { match($0, /cmd_[0-9]+/); cmd=substr($0, RSTART, RLENGTH); cmds[cmd]++ }
     ' "$_inbox_file" 2>/dev/null | sort -u || true)
     # report_review依頼されたcmd_idをinboxから抽出
     _review_requested=$(grep -oP 'cmd_\d+' "$_inbox_file" 2>/dev/null | sort -u)
-    _review_done=$(grep -A1 'review_type: report' "$REVIEW_LOG" 2>/dev/null | grep 'cmd_id:' | grep -oP 'cmd_\d+' | sort -u)
+    _review_done=$(grep -A1 'review_type: report' "$LOG_FILE" 2>/dev/null | grep 'cmd_id:' | grep -oP 'cmd_\d+' | sort -u)
     _missing=""
     for _cmd in $_review_requested; do
         if ! echo "$_review_done" | grep -q "^${_cmd}$"; then
@@ -797,9 +797,23 @@ if [ -f "$_bulletin" ]; then
     fi
 fi
 
+# --- L6: brainwash_check形骸化検出 — 8パターン番号なし=形式的 (殿厳命2026-06-08) ---
+_bw_no_pattern=$(tail -200 "$LOG_FILE" 2>/dev/null | awk '
+    /brainwash_check:/ {
+        line=$0
+        if (line !~ /#[0-9]/ && line !~ /洗脳#/) no_pattern++
+        total++
+    }
+    END { if (total >= 5 && no_pattern > total*0.6) print no_pattern "/" total }
+')
+if [ -n "$_bw_no_pattern" ]; then
+    echo "WARN(L6-形骸化): brainwash_checkの${_bw_no_pattern}件で8パターン番号なし。具体的にどのパターンを検査したか明記せよ"
+    warn=1
+fi
+
 # --- L6: 洗脳#8検出 — confidence:HIGH連続は自己過信 (殿厳命2026-06-08) ---
 # cmd_3219でHIGHだったが動作未確認だった。HIGH連続は洗脳の証拠
-_high_streak=$(tail -200 "$REVIEW_LOG" 2>/dev/null | grep 'confidence:' | awk '
+_high_streak=$(tail -200 "$LOG_FILE" 2>/dev/null | grep 'confidence:' | awk '
     { if ($2 == "HIGH") streak++; else streak=0 }
     END { print streak+0 }
 ')
@@ -825,7 +839,7 @@ _infra_no_verify=$(awk '
         }
         obs=""
     }
-' "$REVIEW_LOG" 2>/dev/null | tail -5)
+' "$LOG_FILE" 2>/dev/null | tail -5)
 if [ -n "$_infra_no_verify" ]; then
     echo "WARN(L6-洗脳#2): infra/scripts reportレビューで実動作確認なし:"
     printf '%s\n' "$_infra_no_verify" | while read -r _id; do
