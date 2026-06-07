@@ -1,4 +1,4 @@
-global_status: paused
+global_status: running
 generated_at: "2026-06-06T21:09:32"
 measurement_command: "timeout 5 bash -n <script_path> (syntax baseline only; not runtime speed)"
 real_measurement_policy: "Ninja must choose a safe runtime command per script: time bash script.sh <args>, --help, dry-run mode, or sandboxed equivalent. Record before_real_ms/after_real_ms with the same command before and after."
@@ -1074,7 +1074,7 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T05:08:01"
   - script_path: "scripts/gates/mark_no_learning.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: 18
@@ -1082,8 +1082,8 @@ entries:
     real_measurement_command: "bash scripts/gates/mark_no_learning.sh cmd_test_bench 2>/dev/null"
     test_result: "bash_n PASS; test_mark_no_learning.bats 2/2 PASS SKIP=0 (causal_backlinks 2 FAIL pre-existing)"
     commit: ""
-    assigned_to: ""
-    updated_at: "2026-06-07T10:49:16"
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T10:49:43"
   - script_path: "scripts/gist_index_update.sh"
     status: completed
     before_ms: 16
@@ -1195,7 +1195,7 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T05:49:30"
   - script_path: "scripts/hooks/git-pre-commit.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: 16
     before_real_ms: 405
@@ -1203,8 +1203,8 @@ entries:
     real_measurement_command: "time bash scripts/hooks/git-pre-commit.sh (no staged files)"
     test_result: "bash_n PASS; no batsfile; PASS_NO_IMPROVEMENT(WSL2 git diff cost dominates)"
     commit: ""
-    assigned_to: ""
-    updated_at: "2026-06-07T10:49:16"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T10:49:45"
   - script_path: "scripts/hooks/pre-bash-report-deny.sh"
     status: completed
     before_ms: 6
