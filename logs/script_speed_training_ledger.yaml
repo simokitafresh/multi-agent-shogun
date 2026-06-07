@@ -2606,16 +2606,16 @@ entries:
   assigned_to: saizo
   updated_at: '2026-06-07T15:55:00'
 - script_path: scripts/reset_layout.sh
-  status: pending
+  status: completed
   before_ms: 16
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "7ff47ebca"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:51:54"
 - script_path: scripts/restart_all_daemons.sh
   status: done
   before_ms: 14
@@ -2663,60 +2663,60 @@ entries:
   assigned_to: hanzo
   updated_at: '2026-06-07'
 - script_path: scripts/review_gate.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "30027a3cb"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:52:01"
 - script_path: scripts/rework_rate.sh
-  status: pending
+  status: completed
   before_ms: 18
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "ce4ecb2d4"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:52:08"
 - script_path: scripts/rotate_gate_metrics.sh
-  status: pending
+  status: completed
   before_ms: 16
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "607d0281e"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:52:14"
 - script_path: scripts/run_precommit_checks.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "68f57021d"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:52:20"
 - script_path: scripts/run_tests.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "6bd6af909"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:52:31"
 - script_path: scripts/search_log_write.sh
   status: pending
   before_ms: 18
@@ -2729,49 +2729,49 @@ entries:
   assigned_to: ''
   updated_at: ''
 - script_path: scripts/semantic_alias_quality.sh
-  status: pending
+  status: completed
   before_ms: 16
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "082db4a0f"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:52:44"
 - script_path: scripts/semantic_index_update.sh
-  status: pending
+  status: completed
   before_ms: 7
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "dbd07c2cd"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:52:52"
 - script_path: scripts/semantic_map_generate.sh
-  status: pending
+  status: completed
   before_ms: 18
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "6919c1526"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:53:02"
 - script_path: scripts/semantic_quality_test.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "f68fbb799"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:53:10"
 - script_path: scripts/semantic_search.sh
   status: pending
   before_ms: 6
@@ -2784,27 +2784,27 @@ entries:
   assigned_to: ''
   updated_at: ''
 - script_path: scripts/semantic_stress_test.sh
-  status: pending
+  status: completed
   before_ms: 19
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "06a5e7b7f"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:53:48"
 - script_path: scripts/shogun_lesson_ack.sh
-  status: pending
+  status: completed
   before_ms: 19
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "0cd4a000e"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:54:03"
 - script_path: scripts/should_dream.sh
   status: completed
   before_ms: 14
@@ -2817,27 +2817,27 @@ entries:
   assigned_to: hayate
   updated_at: '2026-06-07T17:25:00'
 - script_path: scripts/shout.sh
-  status: pending
+  status: completed
   before_ms: 16
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "fb6ec1a4a"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:54:11"
 - script_path: scripts/shutsujin_departure.sh
-  status: pending
+  status: completed
   before_ms: 17
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "81ce251f3"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:54:12"
 - script_path: scripts/skill_auto_improve.sh
   status: pending
   before_ms: 17
@@ -2861,16 +2861,16 @@ entries:
   assigned_to: ''
   updated_at: ''
 - script_path: scripts/skill_gate_feedback.sh
-  status: pending
+  status: completed
   before_ms: 18
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "105501248"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:54:29"
 - script_path: scripts/skill_metrics.sh
   status: pending
   before_ms: 16
@@ -2883,38 +2883,38 @@ entries:
   assigned_to: ''
   updated_at: ''
 - script_path: scripts/skill_recommend.sh
-  status: pending
+  status: completed
   before_ms: 7
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "b5e0d3aaf"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:54:40"
 - script_path: scripts/skill_recommend_metrics.sh
-  status: pending
+  status: completed
   before_ms: 18
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "134b1f191"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:54:48"
 - script_path: scripts/statusline.sh
-  status: pending
+  status: completed
   before_ms: 8
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "ae8db21c0"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:54:56"
 - script_path: scripts/switch_cli_mode.sh
   status: completed
   before_ms: 16
@@ -2949,27 +2949,27 @@ entries:
   assigned_to: ''
   updated_at: ''
 - script_path: scripts/sync_pane_vars.sh
-  status: pending
+  status: completed
   before_ms: 12
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "b5e0d3aaf"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:56:07"
 - script_path: scripts/task_deploy.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "b5e0d3aaf"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:56:19"
 - script_path: scripts/task_queue_status.sh
   status: pending
   before_ms: 16
@@ -2993,38 +2993,38 @@ entries:
   assigned_to: ''
   updated_at: ''
 - script_path: scripts/token_refresh.sh
-  status: pending
+  status: completed
   before_ms: 18
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "9ed908bef"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:55:48"
 - script_path: scripts/usage_compare.sh
-  status: pending
+  status: completed
   before_ms: 17
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "b317263e9"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:55:56"
 - script_path: scripts/usage_monitor.sh
-  status: pending
+  status: completed
   before_ms: 7
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "c953d2361"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:56:03"
 - script_path: scripts/usage_status.sh
   status: pending
   before_ms: 6
@@ -3059,38 +3059,38 @@ entries:
   assigned_to: ''
   updated_at: ''
 - script_path: scripts/workaround_pattern_resolve.sh
-  status: pending
+  status: completed
   before_ms: 21
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "a27fbec1c"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:57:04"
 - script_path: scripts/yaml_auto_archive.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "3f39b2e49"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:57:10"
 - script_path: scripts/yaml_check_codex.sh
-  status: pending
+  status: completed
   before_ms: 16
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "11d95e14b"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:57:16"
 - script_path: scripts/yaml_check_opus.sh
   status: completed
   before_ms: 18
@@ -3103,16 +3103,16 @@ entries:
   assigned_to: saizo
   updated_at: '2026-06-07'
 - script_path: scripts/yaml_log_rotate.sh
-  status: pending
+  status: completed
   before_ms: 19
   after_ms: ''
   before_real_ms: ''
   after_real_ms: ''
   real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
+  test_result: "reconciled"
+  commit: "acda5c2da"
   assigned_to: ''
-  updated_at: ''
+  updated_at: "2026-06-07T21:57:22"
 status: completed
 before_real_ms: 2083
 after_real_ms: 780

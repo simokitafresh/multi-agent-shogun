@@ -20,6 +20,7 @@ Usage:
   bash tools/bash_speed_training.sh record-real <script_path> <status> <before_real_ms> <after_real_ms> <real_measurement_command> <test_result> <commit> [ledger]
   bash tools/bash_speed_training.sh re-enqueue [limit] [ledger] [max_iteration]
   bash tools/bash_speed_training.sh auto-deploy <ninja> [ledger]
+  bash tools/bash_speed_training.sh reconcile [ledger]
 EOF
 }
 
@@ -496,14 +497,17 @@ update_entry_field_unlocked() {
             return "\"" s "\""
         }
         /^[[:space:]]*-[[:space:]]+script_path:/ {
-            in_target = (index($0, "script_path: \"" script_path "\"") > 0)
+            in_target = (index($0, "script_path: \"" script_path "\"") > 0 || \
+                         index($0, "script_path: " script_path) > 0)
             print
             next
         }
         in_target && $0 ~ "^[[:space:]]+" field ":" {
-            if (value ~ /^[0-9]+([.][0-9]+)?$/ && field ~ /_ms$/) print "    " field ": " value
-            else if (field == "status" && value ~ /^[A-Za-z0-9_.-]+$/) print "    " field ": " value
-            else print "    " field ": " q(value)
+            match($0, /^[[:space:]]+/)
+            indent = substr($0, 1, RLENGTH)
+            if (value ~ /^[0-9]+([.][0-9]+)?$/ && field ~ /_ms$/) print indent field ": " value
+            else if (field == "status" && value ~ /^[A-Za-z0-9_.-]+$/) print indent field ": " value
+            else print indent field ": " q(value)
             in_target = 0
             next
         }
@@ -539,6 +543,45 @@ cmd_record_after() {
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "updated_at" "$(now_iso)"
 }
 
+cmd_reconcile() {
+    local ledger="${1:-$LEDGER}"
+    [ -f "$ledger" ] || return 1
+    local reconciled=0 skipped=0
+    # Build script->commit map in one git log call (newest-first, first match wins)
+    local commit_map
+    commit_map=$(mktemp)
+    git -C "$SCRIPT_DIR" log --oneline --name-only --grep='training(' -- 'scripts/*.sh' 2>/dev/null | awk '
+        /^[0-9a-f]{7,}[[:space:]]/ { current = $1; next }
+        /^scripts\// { if (!(seen[$0]++)) print $0, current }
+    ' > "$commit_map"
+    # Get pending entries
+    local pending_paths
+    pending_paths=$(awk '
+        /script_path:/ {
+            path = $0
+            sub(/^.*script_path:[[:space:]]*"?/, "", path)
+            sub(/"?[[:space:]]*$/, "", path)
+        }
+        /^[[:space:]]+status:[[:space:]]*pending[[:space:]]*$/ { print path }
+    ' "$ledger")
+    while IFS= read -r script_path; do
+        [ -z "$script_path" ] && continue
+        local commit
+        commit=$(awk -v p="$script_path" '$1==p{print $2; exit}' "$commit_map" || true)
+        if [ -n "$commit" ]; then
+            with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "status" "completed"
+            with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "commit" "$commit"
+            with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "test_result" "reconciled"
+            with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "updated_at" "$(now_iso)"
+            reconciled=$((reconciled + 1))
+        else
+            skipped=$((skipped + 1))
+        fi
+    done <<< "$pending_paths"
+    rm -f "$commit_map"
+    echo "reconcile: ${reconciled} completed, ${skipped} still pending (no training commit found)"
+}
+
 write_training_task() {
     local tmp_task="$1"
     local cmd_id="$2"
@@ -568,7 +611,7 @@ task:
       checks:
         - check: "after_real_ms is measured with the same command as before_real_ms"
         - check: "after_real_ms is strictly lower than before_real_ms"
-        - check: "real_measurement_command/test_result/commit are written back to script_speed_training_ledger"
+        - check: "bash tools/bash_speed_training.sh record-after ${script_path} completed <after_real_ms> \"<test_result>\" <commit> is called to write results back to script_speed_training_ledger"
 EOF
 }
 
@@ -614,6 +657,7 @@ main() {
         record-after) cmd_record_after "$@" ;;
         record-real) cmd_record_real "$@" ;;
         auto-deploy) cmd_auto_deploy "$@" ;;
+        reconcile) cmd_reconcile "$@" ;;
         *) usage >&2; return 2 ;;
     esac
 }

@@ -105,7 +105,7 @@ EOF
     grep -Fq 'purpose: "Speed-train ' "$generated_task"
     grep -Fq 'before_real_ms is measured with a safe runtime command chosen for this script' "$generated_task"
     grep -Fq 'after_real_ms is measured with the same command as before_real_ms' "$generated_task"
-    grep -Fq 'real_measurement_command/test_result/commit are written back to script_speed_training_ledger' "$generated_task"
+    grep -Fq 'bash tools/bash_speed_training.sh record-after' "$generated_task"
     ! grep -Fq 'L4修行:' "$generated_task"
 
     run env FIELD_GET_NO_LOG=1 bash -c '
@@ -126,7 +126,7 @@ EOF
     grep -Fq 'purpose: "Speed-train ' "$generated_task"
     grep -Fq 'before_real_ms is measured with a safe runtime command chosen for this script' "$generated_task"
     grep -Fq 'after_real_ms is measured with the same command as before_real_ms' "$generated_task"
-    grep -Fq 'real_measurement_command/test_result/commit are written back to script_speed_training_ledger' "$generated_task"
+    grep -Fq 'bash tools/bash_speed_training.sh record-after' "$generated_task"
     ! grep -Fq 'L4修行:' "$generated_task"
 }
 
