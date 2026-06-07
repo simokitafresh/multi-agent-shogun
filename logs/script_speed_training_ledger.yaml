@@ -2097,16 +2097,16 @@ entries:
     assigned_to: ""
     updated_at: "2026-06-07T14:17:54"
   - script_path: "scripts/ntfy_batch_flush.sh"
-    status: pending
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 4607.531
+    after_real_ms: 576.806
+    real_measurement_command: "sandbox: for i in {1..100}; do bash /tmp/mas_ntfy_batch_flush_bench_after/scripts/ntfy_batch_flush.sh; done (empty queue, stub ntfy)"
+    test_result: "bash -n PASS; sandbox empty/nonempty queue functional PASS SKIP=0"
+    commit: "c5a700c2a"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T14:20:15"
   - script_path: "scripts/ntfy_cmd.sh"
     status: pending
     before_ms: 15
