@@ -1,20 +1,7 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  acceptance_criteria:
-  - checks:
-    - check: before_ms bash -n baseline is read from script_speed_training_ledger as syntax-only reference
-    - check: before_real_ms is measured with a safe runtime command chosen for this script (time bash script.sh <args>, --help, dry-run, or sandboxed equivalent)
-    id: AC1
-  - checks:
-    - check: implementation improves runtime without reducing behavior or safety
-    - check: script-specific verification passes with SKIP=0
-    id: AC2
-  - checks:
-    - check: after_real_ms is measured with the same command as before_real_ms
-    - check: after_real_ms is strictly lower than before_real_ms
-    - check: real_measurement_command/test_result/commit are written back to script_speed_training_ledger
-    id: AC3
+  _ac_task_id: cmd_training_speed_should_dream_20260607171200_normal
+  _ac_worker_id: null
+  ac_version: d41d8cd9
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -23,79 +10,68 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  failure_reason: Codex usage limit; task requeued by karo
+  growth_loop_defense:
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  parent_cmd: cmd_training_speed_reset_layout_20260607145635
+  parallel_ok: []
+  parent_cmd: cmd_training_speed_should_dream_20260607171200
   project: infra
-  purpose: 'Speed-train scripts/reset_layout.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
+  recommended_skills:
+  - report-write
+  - verdict-check
   scout_exempt: true
-  status: failed
+  semantic_concepts:
+  - 'report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md'
+  status: done
   stop_for: []
-  target_path: scripts/reset_layout.sh
-  task_id: cmd_training_speed_reset_layout_20260607145635_normal
+  target_path: docs/research/ashigaru-detail.md
+  task_id: cmd_training_speed_should_dream_20260607171200_normal
   task_type: speed_training
   related_lessons:
-  - id: 'L711'
-    summary: 'git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje'
-    detail: 'git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje'
-  - id: 'L393'
-    summary: 'mcp_sync_lesson.shはscripts/配下にあったが.gitignoreのホワイトリストに未登録→git追跡外で安全規則違反が検出されなかった。'
-    detail: 'mcp_sync_lesson.shはscripts/配下にあったが.gitignoreのホワイトリストに未登録→git追跡外で安全規則違反が検出されなかった。'
-  - id: 'L170'
-    summary: '`scripts/log_terminal_response.sh` の `head -c 500` が多バイト文字を途中切断し、`queue/lord_con'
-    detail: '`scripts/log_terminal_response.sh` の `head -c 500` が多バイト文字を途中切断し、`queue/lord_con'
-  - id: 'L169'
-    summary: 'scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ'
-    detail: 'scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ'
+  - id: 'L434'
+    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
+    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
+  - id: 'L178'
+    summary: 'Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.'
+    detail: 'Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.'
+  - id: 'L147'
+    summary: 'IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les'
+    detail: 'IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
-  recommended_skills:
-  - "report-write"
-  - "verdict-check"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/gs-speedup-knowledge.md"
   - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L711: git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje
-      - L393: mcp_sync_lesson.shはscripts/配下にあったが.gitignoreのホワイトリストに未登録→git追跡外で安全規則違反が検出されなかった。
-      - L170: `scripts/log_terminal_response.sh` の `head -c 500` が多バイト文字を途中切断し、`queue/lord_con
-      - L169: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ
+      - L434: inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信
+      - L178: Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.
+      - L147: IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les
     ────────────────────────────────────────
     
     
-  ac_version: 719e89b4
-  _ac_task_id: cmd_training_speed_reset_layout_20260607145635_normal
-  _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_training_speed_reset_layout_20260607145635.yaml
-  report_path: queue/reports/hayate_report_cmd_training_speed_reset_layout_20260607145635.yaml
+  report_filename: hayate_report_cmd_training_speed_should_dream_20260607171200.yaml
+  report_path: queue/reports/hayate_report_cmd_training_speed_should_dream_20260607171200.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -111,5 +87,4 @@ task:
     - pattern: 'status_pending'
       count: 11
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 完了後にstatusを"completed"に更新。"pending"のまま報告禁止'
-  deployed_at: "2026-06-07T14:57:15"
-  failure_reason: Codex usage limit; task requeued by karo
+  deployed_at: "2026-06-07T17:13:50"
