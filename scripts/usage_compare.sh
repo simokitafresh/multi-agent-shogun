@@ -32,29 +32,13 @@ find_credentials_file() {
 
 extract_access_token() {
     local credentials_file="$1"
-    python3 - "$credentials_file" <<'PY'
-import json
-import sys
-
-path = sys.argv[1]
-try:
-    with open(path, "r", encoding="utf-8") as fh:
-        data = json.load(fh)
-except Exception:
-    sys.exit(1)
-
-token = None
-if isinstance(data, dict):
-    token = data.get("accessToken")
-    oauth = data.get("claudeAiOauth")
-    if not token and isinstance(oauth, dict):
-        token = oauth.get("accessToken")
-
-if not isinstance(token, str) or not token:
-    sys.exit(1)
-
-print(token)
-PY
+    # WSL2最適化: python3(~34ms)→jq(~4ms)。fork 1回分削減。
+    local token
+    token="$(jq -r '(.accessToken // .claudeAiOauth.accessToken) // empty' "$credentials_file" 2>/dev/null)"
+    if [[ -z "$token" || "$token" == "null" ]]; then
+        return 1
+    fi
+    printf '%s\n' "$token"
 }
 
 mock_usage_json() {
@@ -170,58 +154,47 @@ print_table() {
     local primary_file="$1"
     local secondary_file="$2"
 
-    python3 - "$primary_file" "$secondary_file" <<'PY'
-import json
-import sys
-
-BUCKETS = ["five_hour", "seven_day", "seven_day_sonnet"]
-LABELS = ["5h usage", "7d usage", "7d sonnet"]
-
-def load_buckets(path):
-    try:
-        with open(path, "r", encoding="utf-8") as fh:
-            data = json.load(fh)
-    except Exception:
-        return ["N/A"] * len(BUCKETS)
-    results = []
-    for bucket in BUCKETS:
-        node = data.get(bucket) if isinstance(data, dict) else None
-        value = None
-        if isinstance(node, dict):
-            value = node.get("utilization")
-        elif isinstance(node, (int, float, str)):
-            value = node
-        try:
-            value_f = float(value)
-        except (TypeError, ValueError):
-            results.append("N/A")
-            continue
-        if value_f <= 1.0:
-            value_f *= 100.0
-        results.append(f"{value_f:.1f}%")
-    return results
-
-primary = load_buckets(sys.argv[1])
-secondary = load_buckets(sys.argv[2])
-
-print("=== Claude Usage Compare ===")
-print(f"{'Bucket':<14} | {'Primary':<8} | {'Secondary':<9}")
-print("-" * 42)
-for label, p, s in zip(LABELS, primary, secondary):
-    print(f"{label:<14} | {p:>8} | {s:>9}")
-PY
+    # WSL2最適化: python3(~34ms)→jq+awk pipeline(~8ms)。
+    # jqで6値抽出(両ファイル1回)→awkでテーブル整形。
+    jq -rn \
+        --slurpfile p "$primary_file" \
+        --slurpfile s "$secondary_file" \
+        '($p[0].five_hour.utilization // "null"),
+         ($p[0].seven_day.utilization // "null"),
+         ($p[0].seven_day_sonnet.utilization // "null"),
+         ($s[0].five_hour.utilization // "null"),
+         ($s[0].seven_day.utilization // "null"),
+         ($s[0].seven_day_sonnet.utilization // "null")' 2>/dev/null \
+    | awk '
+        { vals[NR] = $0 }
+        END {
+            labels[1]="5h usage"; labels[2]="7d usage"; labels[3]="7d sonnet"
+            printf "=== Claude Usage Compare ===\n"
+            printf "%-14s | %-8s | %-9s\n", "Bucket", "Primary", "Secondary"
+            printf "------------------------------------------\n"
+            for (i=1; i<=3; i++) {
+                p=vals[i]; s=vals[i+3]
+                pfmt=(p=="null")?"N/A":sprintf("%.1f%%",(p+0<=1.0?p*100:p+0))
+                sfmt=(s=="null")?"N/A":sprintf("%.1f%%",(s+0<=1.0?s*100:s+0))
+                printf "%-14s | %8s | %9s\n", labels[i], pfmt, sfmt
+            }
+        }'
 }
 
 main() {
     require_command curl
-    require_command python3
+    require_command jq
 
-    primary_json="$(mktemp)"
-    secondary_json="$(mktemp)"
-    primary_err="$(mktemp)"
-    secondary_err="$(mktemp)"
+    # WSL2最適化: $(mktemp)×4のsubshell fork(~8ms×4=~32ms)を排除。
+    # $$+RANDOMで一意性保証。/tmpはtmpfsなので書き込み高速。
+    local _uc_base="/tmp/uc_${$}_${RANDOM}"
+    local primary_json="${_uc_base}_pj.json"
+    local secondary_json="${_uc_base}_sj.json"
+    local primary_err="${_uc_base}_pe"
+    local secondary_err="${_uc_base}_se"
 
-    trap 'rm -f "${primary_json:-}" "${secondary_json:-}" "${primary_err:-}" "${secondary_err:-}"' EXIT
+    # shellcheck disable=SC2064  # ダブルクォートで即時展開: EXIT時にlocal変数スコープが切れるため
+    trap "rm -f '${_uc_base}_pj.json' '${_uc_base}_sj.json' '${_uc_base}_pe' '${_uc_base}_se'" EXIT
 
     fetch_usage "Primary" "$PRIMARY_DIR" "$primary_json" "$primary_err" &
     local pid_primary="$!"
