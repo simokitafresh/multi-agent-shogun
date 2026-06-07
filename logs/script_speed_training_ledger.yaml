@@ -2659,7 +2659,7 @@ entries:
   after_real_ms: 780
   real_measurement_command: "sync && time bash scripts/restart_watchers.sh"
   test_result: "7/7 PASS SKIP=0 (test_inbox_watcher_health.bats)"
-  commit: TBD
+  commit: 8c69e8666
   assigned_to: hanzo
   updated_at: '2026-06-07'
 - script_path: scripts/review_gate.sh
@@ -3120,3 +3120,4 @@ real_measurement_command: sync && time bash scripts/restart_watchers.sh
 test_result: 7/7 PASS SKIP=0 (test_inbox_watcher_health.bats)
 assigned_to: hanzo
 updated_at: 2026-06-07
+commit: 8c69e8666

@@ -21,10 +21,43 @@ if [[ "${1:-}" == "--dry-run" ]]; then
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# 定数
+# 定数: lib キャッシュ source
+# 7 NTFS ファイル個別source (~167ms) → tmpfs 1ファイルsource (~9ms)
+# キャッシュは /tmp (WSL2 ext4) に保存。/tmp のみ削除で再生成。
 # ═══════════════════════════════════════════════════════════════
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+_LIB_CACHE="/tmp/shogun_reset_layout_lib.sh"
+if [[ ! -f "$_LIB_CACHE" ]]; then
+    cat "$SCRIPT_DIR/scripts/lib/agent_config.sh" \
+        "$SCRIPT_DIR/scripts/lib/cli_lookup.sh" \
+        "$SCRIPT_DIR/scripts/lib/model_colors.sh" \
+        "$SCRIPT_DIR/scripts/lib/model_detect.sh" \
+        "$SCRIPT_DIR/scripts/lib/model_resolve.sh" \
+        "$SCRIPT_DIR/scripts/lib/pane_format.sh" \
+        "$SCRIPT_DIR/scripts/lib/layout_string.sh" \
+        > "$_LIB_CACHE" 2>/dev/null \
+    || {
+        # fallback: 個別source
+        # shellcheck source=/dev/null
+        source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+        source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+        source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
+        source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
+        source "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
+        source "$SCRIPT_DIR/scripts/lib/pane_format.sh"
+        source "$SCRIPT_DIR/scripts/lib/layout_string.sh"
+        _LIB_CACHE=""
+    }
+fi
+if [[ -n "$_LIB_CACHE" ]]; then
+    # Pre-set path vars: lib files use BASH_SOURCE[0] for path resolution.
+    # When sourced from /tmp, BASH_SOURCE is wrong → pre-set overrides it.
+    _AGENT_CONFIG_SCRIPT_DIR="$SCRIPT_DIR"
+    CLI_ADAPTER_SETTINGS="$SCRIPT_DIR/config/settings.yaml"
+    CLI_LOOKUP_PROFILES="$SCRIPT_DIR/config/cli_profiles.yaml"
+    # shellcheck source=/dev/null
+    source "$_LIB_CACHE"
+fi
+
 read -ra EXPECTED_AGENTS <<< "$(get_all_agents)"
 # karo=red, gunshi=cyan, ninjas=yellow (動的生成)
 PROMPT_COLORS=()
@@ -37,20 +70,6 @@ for _ea in "${EXPECTED_AGENTS[@]}"; do
 done
 unset _ea
 NUM_AGENTS=${#EXPECTED_AGENTS[@]}
-
-# ═══════════════════════════════════════════════════════════════
-# CLI Adapter・レイアウト生成読み込み
-# ═══════════════════════════════════════════════════════════════
-source "$SCRIPT_DIR/lib/cli_adapter.sh"
-source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/scripts/lib/pane_format.sh"
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/scripts/lib/layout_string.sh"
 
 # シェル設定
 SHELL_SETTING=$(grep '^shell:' config/settings.yaml 2>/dev/null | awk '{print $2}')
@@ -261,7 +280,15 @@ for ((i=0; i<NUM_AGENTS; i++)); do RESPAWNED[i]=0; done
 # ═══════════════════════════════════════════════════════════════
 log "Step 1: 前提確認"
 
-PANE_BASE=$(tmux show-options -gv pane-base-index 2>/dev/null || echo 0)
+# Infer pane-base-index from mega batch (min pane_index) — avoids extra tmux call
+if [[ $_MB_PANE_COUNT -gt 0 ]]; then
+    PANE_BASE=9999
+    for _pi in "${!_MB_AID[@]}"; do
+        (( _pi < PANE_BASE )) && PANE_BASE=$_pi
+    done
+else
+    PANE_BASE=$(tmux show-options -gv pane-base-index 2>/dev/null || echo 1)
+fi
 log "  pane-base-index=$PANE_BASE"
 
 # shogun:agents にNUM_AGENTSペイン存在するか確認。不足なら自動追加。
