@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-07 cmd_3216 -->
-<!-- last_synced_lesson: L724 -->
+<!-- last_updated: 2026-06-08 cmd_3217 -->
+<!-- last_synced_lesson: L725 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -257,6 +257,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L722: pipeline_config同期偵察はトップレベル差分とブロック差分を別々に検証する（cmd_3079）
 - L723: context freshnessはprojects/{id}.yaml欠落時のsource repo fallbackを検証対象に含める（cmd_karo_recon_context_freshness_dm_signal_research_202606041656）
 - L724: deterioration_snapshotsは2026-03以降のみ — 過去損失パターン分析ではVIX+ETRリターンで代替（cmd_3215）
+- L725: 前月DTB3急騰(金利急上昇)は全レイヤー共通の大負★★★シグナル（cmd_3217）
 
 ## 因果リンク
 
