@@ -288,6 +288,17 @@ if lg003_hits:
         print(f'  [WARN] 「{label}」: ...{ctx}...')
     print(f'  → 現物確認証拠(grep/git show)なしに信頼するな。前提を裏取りせよ')
 
+# LG037: command欄ファイル参照の3分類リマインド
+# cmd_text = command欄の内容そのもの(command:ヘッダなし)
+cmd_file_refs = re.findall(r'(?:scripts|tools|skills)/[\w/._-]+\.(?:sh|py|md)', cmd_text)
+if cmd_file_refs:
+    unique_refs = sorted(set(cmd_file_refs))
+    print(f'\n--- LG037: command欄ファイル参照 ({len(unique_refs)}件) ---')
+    for ref in unique_refs:
+        print(f'  {ref}')
+    print(f'  → 各参照を分類せよ: 変更対象 / 既存依存(verified) / 実行のみ(変更対象外)')
+    print(f'  → 実行のみなら cmd本文に「実行のみ・変更対象外」と明記させよ(LG037)')
+
 if missing > 0:
     sys.exit(1)
 else:
