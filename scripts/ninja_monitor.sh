@@ -878,22 +878,22 @@ safe_send_clear() {
         log "CODEX-RESPAWN-SKIP: $agent_name launch_cmd empty, using $clear_cmd"
     fi
 
-    # Claude CLIもCodex CLIと同じくrespawn-pane -kで再起動する。
-    # Claude CLI v2.1.87: /clear後もsettings.jsonのpermissions.allowが維持される。
-    # bypass permissionsは/clear後も自動復帰する（手動テスト2026-06-07 22:11確認済み）。
-    # respawn-pane -k方式はCLI再起動で数秒かかりCTX 0%表示が遅延するため/clearに戻す。
-    # shift+tabも不要。
-    log "CLEAR-SEND: $agent_name confirmed idle, sending $clear_cmd, reason=$reason"
-    if ! safe_send_keys_atomic "$pane" "$clear_cmd" 0.3; then
-        log "CLEAR-BLOCKED: $agent_name send failed, reason=$reason"
-        return 1
+    # Claude CLIもrespawn-pane -kで再起動する。
+    # /clearではCLI内部のCTX%計算が前セッション値を維持しCTX 0%にならない(殿指摘2026-06-08)。
+    # respawn-pane -kならCLIプロセス再起動でCTX確実に0%。数秒の起動遅延はCTX不正表示より軽微。
+    # gunshi D0 e2b5a4010で/clearに戻したのが根因。respawn-pane復帰。
+    local _launch_cmd
+    _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
+    if [ -z "${_launch_cmd:-}" ]; then
+        _launch_cmd="/home/simokitafresh/bin/claude --effort high"
     fi
+    log "RESPAWN-PANE: $agent_name respawn-pane -k (CTX確実0%復帰), reason=$reason"
+    tmux respawn-pane -k -t "$pane" "cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
+        log "RESPAWN-FALLBACK: $agent_name respawn failed, trying /clear"
+        safe_send_keys_atomic "$pane" "$clear_cmd" 0.3 || true
+    }
     tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
-    log "CTX-RESET: $agent_name @context_pct → 0% after $clear_cmd"
-    # clear-history: /clear後のスクロールバッファに旧CTX%表示が残留し、
-    # 次のget_context_pctサイクルでcapture-paneから旧値が検出→@context_pctに書き戻される問題を防止
-    tmux clear-history -t "$pane" 2>/dev/null || true
-    log "CLEAR-HISTORY: $agent_name scroll buffer cleared after $clear_cmd"
+    log "CTX-RESET: $agent_name @context_pct → 0% after respawn-pane"
     rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
     return 0
 }
