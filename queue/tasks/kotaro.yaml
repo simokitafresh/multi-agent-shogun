@@ -14,7 +14,7 @@ task:
       description: "after計測3回+関連テストPASS(test_select.sh)+SKIP=0+docs/research/codd_refactor_registry.md追記"
     AC4:
       description: "aliases候補1-3個を概念名alias行で報告+insight_write.shで蓄積"
-  status: assigned
+  status: idle
   ac_priority: "AC1 > AC2 > AC3 > AC4"
   never_stop_for:
     - "テストFAIL — 修正して再実行"
@@ -51,3 +51,5 @@ task:
   - id: 'L499'
     summary: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
     detail: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
+  report_filename: kotaro_report_cmd_training_speed_semantic_stress_test_20260607194600_normal.yaml
+  parent_cmd: 

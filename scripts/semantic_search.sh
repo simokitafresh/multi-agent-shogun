@@ -166,6 +166,7 @@ prepare_memory_db_for_read() {
     fi
 
     if [ -s "$cache_path" ]; then
+        # shellcheck disable=SC2030,SC2031
         (
             flock -n 9 2>/dev/null || exit 0
             tmp_path="${cache_path}.tmp.$$"
@@ -193,6 +194,7 @@ prepare_memory_db_for_read() {
         return 0
     fi
 
+    # shellcheck disable=SC2031
     (
         flock 9 2>/dev/null || exit 0
         if [ ! -s "$cache_path" ] || [ "$source_path" -nt "$cache_path" ]; then
@@ -276,11 +278,12 @@ record_search_log() {
         elapsed_ms=0
     fi
 
+    # バックグラウンド化: ログ書込みはメイン出力をブロックしない（-141ms）
     bash "$script_dir/scripts/search_log_write.sh" \
         --caller semantic_search \
         --elapsed-ms "$elapsed_ms" \
         --exit-code "$rc" \
-        "$query" "$hit_count" "$no_match" >/dev/null 2>&1 || true
+        "$query" "$hit_count" "$no_match" >/dev/null 2>&1 || true &
 }
 
 emit_search_output() {
@@ -370,28 +373,37 @@ append_causal_expansion() {
 
     echo ""
     echo "causal_expansion:"
-    while IFS= read -r link_id; do
-        [ -n "$link_id" ] || continue
-        echo "- link: [[$link_id]]"
-
-        local backlink_output
-        backlink_output=$(
+    # 並列化: 全causal_backlinksをバックグラウンド起動→wait→順序通り出力（N×T→max(T)）
+    mapfile -t _cb_link_ids <<< "$links"
+    local _cb_tmpdir
+    _cb_tmpdir="$(mktemp -d)"
+    local _idx=0
+    for _cb_link_id in "${_cb_link_ids[@]}"; do
+        [ -n "$_cb_link_id" ] || { ((_idx++)) || true; continue; }
+        (
             if cd "${SEMANTIC_CAUSAL_ROOT:-$script_dir}" 2>/dev/null; then
-                timeout "$backlink_timeout" bash "$script_dir/scripts/causal_backlinks.sh" "$link_id" 2>/dev/null \
-                    | head -10 \
-                || true
+                timeout "$backlink_timeout" bash "$script_dir/scripts/causal_backlinks.sh" "$_cb_link_id" 2>/dev/null \
+                    | head -10 || true
             fi
-        )
-
-        if [ -n "$backlink_output" ]; then
+        ) > "$_cb_tmpdir/$_idx" 2>/dev/null &
+        ((_idx++)) || true
+    done
+    wait
+    _idx=0
+    for _cb_link_id in "${_cb_link_ids[@]}"; do
+        [ -n "$_cb_link_id" ] || { ((_idx++)) || true; continue; }
+        echo "- link: [[$_cb_link_id]]"
+        if [ -s "$_cb_tmpdir/$_idx" ]; then
             while IFS= read -r resource; do
                 [ -n "$resource" ] || continue
                 echo "  - resource: $resource"
-            done <<< "$backlink_output"
+            done < "$_cb_tmpdir/$_idx"
         else
             echo "  - resource: none"
         fi
-    done <<< "$links"
+        ((_idx++)) || true
+    done
+    rm -rf "$_cb_tmpdir"
 }
 
 llm_cache_key() {
