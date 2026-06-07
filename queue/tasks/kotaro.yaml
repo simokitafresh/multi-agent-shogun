@@ -63,4 +63,4 @@ task:
       block_reason: 'assumption_invalidation: MISSING'
       approach_summary: 'scripts/usage_status.sh warm path最適化。provider-agnostic fast cache check挿入でdetect_shogun_provider省略。warm avg ~20ms → ~14ms (-30%)。test_test_select.bats 10/10 PASS, test_usage_status.bats 5/5 PASS SKIP=0。'
   report_path: reports/kotaro_report_cmd_training_speed_usage_status_20260607203400_normal.yaml
-  parent_cmd: cmd_training_speed_usage_status_20260607203400_normal
+  parent_cmd: 
