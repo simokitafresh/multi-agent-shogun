@@ -1755,6 +1755,18 @@ entries:
   commit: faadfa29f
   assigned_to: kotaro
   updated_at: '2026-06-07T07:25:31'
+- script_path: scripts/lesson_find_duplicates.sh
+  status: completed
+  before_ms: ''
+  after_ms: ''
+  before_real_ms: '18995'
+  after_real_ms: '2900'
+  real_measurement_command: bash scripts/lesson_find_duplicates.sh infra (cold 3回中央値)
+  test_result: 'cold 3run avg 19.3s->2.84s (-85%, 6.8x); multiprocessing.Pool(8,
+    load-balanced)+Counter pre-filter; 出力diff zero (36ペア); 141/141 PASS, SKIP=0'
+  commit: TBD
+  assigned_to: hanzo
+  updated_at: '2026-06-07T18:49:00'
 - script_path: scripts/lesson_harvest.sh
   status: completed
   before_ms: 17
