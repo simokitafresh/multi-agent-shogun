@@ -5,7 +5,11 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# SCRIPT_DIR: string ops instead of $(cd) subshell (~5ms savings on WSL2)
+_sh_self="${BASH_SOURCE[0]}"
+[[ "$_sh_self" != /* ]] && _sh_self="$PWD/$_sh_self"
+SCRIPT_DIR="${_sh_self%/scripts/shout.sh}"
+unset _sh_self
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 
@@ -25,53 +29,67 @@ fi
 
 TASK_FILE="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
 
-# 報告ファイル解決: task YAMLの report_filename → glob最新 → レガシー固定名
-REPORT_FILE=""
+# task YAML から rf / pcmd / echo_msg を一括読込（grep|sed×9 → while read 0 subprocess）
+rf="" pcmd="" echo_msg=""
 if [[ -f "$TASK_FILE" ]]; then
-  rf=$(grep -m1 '^\s*report_filename:' "$TASK_FILE" 2>/dev/null | sed 's/^[^:]*:\s*//' | sed 's/^["'\'']\|["'\''"]$//g' || true)
-  if [[ -n "$rf" ]]; then
-    REPORT_FILE="$SCRIPT_DIR/queue/reports/${rf}"
-  fi
+  while IFS= read -r _line; do
+    case "$_line" in
+      *'report_filename:'*)
+        if [[ -z "$rf" ]]; then
+          rf="${_line#*: }"; rf="${rf#[\"\']}"; rf="${rf%[\"\']}"
+        fi ;;
+      *'parent_cmd:'*)
+        if [[ -z "$pcmd" ]]; then
+          pcmd="${_line#*: }"; pcmd="${pcmd#[\"\']}"; pcmd="${pcmd%[\"\']}"
+        fi ;;
+      *'echo_message:'*)
+        if [[ -z "$echo_msg" ]]; then
+          echo_msg="${_line#*: }"; echo_msg="${echo_msg#[\"\']}"; echo_msg="${echo_msg%[\"\']}"
+        fi ;;
+    esac
+  done < "$TASK_FILE"
 fi
-if [[ -z "$REPORT_FILE" || ! -f "$REPORT_FILE" ]] && [[ -f "$TASK_FILE" ]]; then
-  # parent_cmdからレポートファイル名を構築（stale report防止）
-  pcmd=$(grep -m1 '^\s*parent_cmd:' "$TASK_FILE" 2>/dev/null | sed 's/^[^:]*:\s*//' | sed "s/^[\"']\|[\"']$//g" || true)
-  if [[ -n "$pcmd" ]]; then
-    candidate="$SCRIPT_DIR/queue/reports/${ninja_name}_report_${pcmd}.yaml"
-    [[ -f "$candidate" ]] && REPORT_FILE="$candidate"
-  fi
+
+# 報告ファイル解決: task YAMLの report_filename → parent_cmd → glob最新 → レガシー固定名
+REPORT_FILE=""
+if [[ -n "$rf" ]]; then
+  REPORT_FILE="$SCRIPT_DIR/queue/reports/${rf}"
+fi
+if [[ -z "$REPORT_FILE" || ! -f "$REPORT_FILE" ]] && [[ -n "$pcmd" ]]; then
+  candidate="$SCRIPT_DIR/queue/reports/${ninja_name}_report_${pcmd}.yaml"
+  [[ -f "$candidate" ]] && REPORT_FILE="$candidate"
 fi
 if [[ -z "$REPORT_FILE" || ! -f "$REPORT_FILE" ]]; then
-  # glob最新: cmd番号付きレポートの最新ファイル（最終フォールバック）
-  latest=$(find "$SCRIPT_DIR/queue/reports" -maxdepth 1 -name "${ninja_name}_report_*.yaml" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2- || true)
-  if [[ -n "$latest" ]]; then
-    REPORT_FILE="$latest"
+  # bash glob + -nt 比較（find|sort|head|cut 4 subprocesses → 0）
+  _latest=""
+  for _f in "$SCRIPT_DIR/queue/reports/${ninja_name}_report_"*.yaml; do
+    [[ -f "$_f" ]] || continue
+    [[ -z "$_latest" || "$_f" -nt "$_latest" ]] && _latest="$_f"
+  done
+  if [[ -n "$_latest" ]]; then
+    REPORT_FILE="$_latest"
   else
     REPORT_FILE="$SCRIPT_DIR/queue/reports/${ninja_name}_report.yaml"
   fi
 fi
 
-# 優先1: タスクYAMLの echo_message フィールド
-if [[ -f "$TASK_FILE" ]]; then
-  echo_msg=$(grep -m1 '^\s*echo_message:' "$TASK_FILE" 2>/dev/null | sed 's/^[^:]*:\s*//' | sed 's/^["'\'']\|["'\''"]$//g' || true)
-  if [[ -n "$echo_msg" ]]; then
-    echo "$echo_msg"
-    exit 0
-  fi
+# 優先1: タスクYAMLの echo_message フィールド（既にwhile readで取得済み）
+if [[ -n "$echo_msg" ]]; then
+  echo "$echo_msg"
+  exit 0
 fi
 
-# 優先2: 報告YAMLの result.summary（yaml.safe_loadで全形式対応）
+# 優先2: 報告YAMLの result.summary（awk で python3 subprocess を排除）
 if [[ -f "$REPORT_FILE" ]]; then
-  summary=$(python3 -c "
-import yaml, sys
-try:
-    with open(sys.argv[1]) as f:
-        d = yaml.safe_load(f)
-    s = (d or {}).get('result', {}).get('summary', '') or ''
-    print(s.split('\n')[0].strip())
-except Exception:
-    pass
-" "$REPORT_FILE" 2>/dev/null || true)
+  summary=$(awk '
+    /^result:/ { in_result=1; next }
+    in_result && /^[^[:space:]]/ { in_result=0 }
+    in_result && /^[[:space:]]+summary:/ {
+      v = $0; sub(/^[[:space:]]+summary:[[:space:]]*/, "", v)
+      gsub(/^["'"'"']|["'"'"']$/, "", v)
+      print v; exit
+    }
+  ' "$REPORT_FILE" 2>/dev/null || true)
 
   if [[ -n "$summary" ]]; then
     # 40文字で切る（bash substring = マルチバイト安全）
