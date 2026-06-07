@@ -10,15 +10,20 @@
 
 set -euo pipefail
 
-ROOT_DIR="${SHOGUN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+# WSL2最適化: $(cd)/$(dirname) subshell(~8ms) → string ops。
+_yaa_self="${BASH_SOURCE[0]}"
+[[ "$_yaa_self" != /* ]] && _yaa_self="$PWD/$_yaa_self"
+ROOT_DIR="${SHOGUN_ROOT:-${_yaa_self%/scripts/yaml_auto_archive.sh}}"
+unset _yaa_self
 CONFIG_FILE="${YAML_AUTO_ARCHIVE_CONFIG:-$ROOT_DIR/config/yaml_auto_archive.tsv}"
 LOCK_FILE="/tmp/shogun_yaml_auto_archive.lock"
 
 [ -f "$CONFIG_FILE" ] || exit 0
 
-(
-    flock -w 10 200
-    python3 - "$ROOT_DIR" "$CONFIG_FILE" <<'PY'
+# WSL2最適化: flock subshell(~5-15ms) → exec fd。subshell fork排除。
+exec 200>"$LOCK_FILE"
+flock -w 10 200
+python3 - "$ROOT_DIR" "$CONFIG_FILE" <<'PY'
 from __future__ import annotations
 
 import os
@@ -111,4 +116,4 @@ for raw in config.read_text(encoding="utf-8").splitlines():
         raise SystemExit(f"invalid keep value for {rel_path}: {keep_s}")
     archive_one(resolve(rel_path), int(keep_s), top_key, entry_pattern, resolve(rel_archive))
 PY
-) 200>"$LOCK_FILE"
+exec 200>&-
