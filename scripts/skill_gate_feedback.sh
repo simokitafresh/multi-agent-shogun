@@ -243,9 +243,10 @@ def has_duplicate_caution(text, gate_name, reason_text):
 
 
 source = normalize_skill_source(source)
-# スキルがexplicit/gate-mapで特定済みの場合はログロード(~850ms)をスキップ
-_skip_log_load = bool(explicit_skill) or bool(GATE_SKILL_MAP.get(str(gate or "").strip()))
-logged_entry = None if _skip_log_load else latest_fail_entry()
+# gate-mapでスキル特定済み(explicit_skill未指定)の場合はログロード(~850ms)をスキップ
+# explicit_skillの場合はhas_duplicate_failure dedup動作を維持するため元のフローを保持
+_mapped_skill_no_explicit = (not explicit_skill) and bool(GATE_SKILL_MAP.get(str(gate or "").strip()))
+logged_entry = None if (explicit_skill or _mapped_skill_no_explicit) else latest_fail_entry()
 logged_skill = ""
 logged_skill_path = ""
 if logged_entry:
@@ -267,7 +268,7 @@ stumbling = str(logged_entry.get("stumbling_points") or "").strip() if logged_en
 if not stumbling:
     stumbling = reason or f"{gate} {result}"
 
-if not logged_entry and not _skip_log_load and result.upper() == "FAIL" and has_duplicate_failure(skill, gate, stumbling):
+if not logged_entry and not _mapped_skill_no_explicit and result.upper() == "FAIL" and has_duplicate_failure(skill, gate, stumbling):
     print(f"DUPLICATE: {skill} gate={gate}")
     raise SystemExit(0)
 
