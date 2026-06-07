@@ -16,8 +16,6 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 
 TARGET="${1:-}"
 
@@ -110,53 +108,61 @@ check_settings_schema() {
         return
     fi
 
-    # settings.yaml の全agentを検証
+    # settings.yaml の全agentを検証（単純な固定schemaのみ確認するためawkでPython起動を回避）
     local check_result
-    check_result=$(python3 - "$settings_file" "$profiles_file" 2>&1 <<'PYEOF'
-import yaml, sys
-
-settings_path, profiles_path = sys.argv[1], sys.argv[2]
-
-try:
-    with open(settings_path) as f:
-        settings = yaml.safe_load(f) or {}
-    with open(profiles_path) as f:
-        profiles_cfg = yaml.safe_load(f) or {}
-except yaml.YAMLError as e:
-    print(f'ERROR:YAMLパースエラー: {e}')
-    sys.exit(0)
-except Exception as e:
-    print(f'ERROR:ファイル読込エラー: {e}')
-    sys.exit(0)
-
-cli = settings.get('cli', {})
-agents = cli.get('agents', {}) if isinstance(cli, dict) else {}
-default_type = cli.get('default', 'claude') if isinstance(cli, dict) else 'claude'
-valid_profiles = list((profiles_cfg.get('profiles', {})).keys())
-
-errors = []
-warnings = []
-
-for name, cfg in agents.items():
-    if not isinstance(cfg, dict):
-        errors.append(f'{name}: 設定が辞書型でない')
-        continue
-
-    # type チェック（省略時はdefault使用 — 正当）
-    agent_type = cfg.get('type', default_type)
-    if agent_type not in valid_profiles:
-        errors.append(f'{name}: type "{agent_type}" は cli_profiles.yaml に未定義 (有効: {valid_profiles})')
-
-if errors:
-    for e in errors:
-        print(f'ERROR:{e}')
-if warnings:
-    for w in warnings:
-        print(f'WARN:{w}')
-if not errors and not warnings:
-    print('OK:全agent定義が正常')
-PYEOF
-)
+    check_result=$(awk '
+        FNR == 1 { file_index++ }
+        file_index == 1 {
+            if ($0 == "cli:") { in_cli=1; next }
+            if (in_cli && $0 ~ /^  default:[[:space:]]*/) {
+                default_type=$0
+                sub(/^  default:[[:space:]]*/, "", default_type)
+                gsub(/["'\''[:space:]\r]/, "", default_type)
+                next
+            }
+            if (in_cli && $0 == "  agents:") { in_agents=1; next }
+            if (in_agents && $0 ~ /^    [a-z][a-z_0-9]*:[[:space:]]*$/) {
+                name=$0
+                sub(/^[[:space:]]+/, "", name)
+                sub(/:[[:space:]]*$/, "", name)
+                agent_order[++agent_count]=name
+                agent_type[name]=""
+                next
+            }
+            if (in_agents && $0 ~ /^      type:[[:space:]]*/) {
+                v=$0
+                sub(/^      type:[[:space:]]*/, "", v)
+                gsub(/["'\''[:space:]\r]/, "", v)
+                agent_type[name]=v
+                next
+            }
+            if (in_agents && $0 ~ /^[^[:space:]]/) { in_agents=0; in_cli=0 }
+            next
+        }
+        file_index == 2 {
+            if ($0 == "profiles:") { in_profiles=1; next }
+            if (in_profiles && $0 ~ /^  [a-z][a-z_0-9]*:[[:space:]]*$/) {
+                p=$0
+                sub(/^[[:space:]]+/, "", p)
+                sub(/:[[:space:]]*$/, "", p)
+                profiles[p]=1
+            }
+        }
+        END {
+            if (default_type == "") default_type="claude"
+            profile_list=""
+            for (p in profiles) profile_list = profile_list (profile_list ? ", " : "") p
+            for (i=1; i<=agent_count; i++) {
+                name=agent_order[i]
+                t=agent_type[name] != "" ? agent_type[name] : default_type
+                if (!(t in profiles)) {
+                    print "ERROR:" name ": type \"" t "\" は cli_profiles.yaml に未定義 (有効: [" profile_list "])"
+                    errors++
+                }
+            }
+            if (!errors) print "OK:全agent定義が正常"
+        }
+    ' "$settings_file" "$profiles_file" 2>&1)
 
     while IFS= read -r line; do
         if [[ "$line" == ERROR:* ]]; then
@@ -226,13 +232,21 @@ check_cli_lookup_usage() {
     # cli_lookup.sh自身・本スクリプト・テスト・一時ファイルを除外
     local exclude_pattern='cli_lookup\.sh|model_switch_preflight\.sh|\.tmp/|tests/'
     local dependent_scripts=()
+    local inline_by_script=""
 
-    # git grepでgit index経由スキャン（WSL2 I/O 3.5x高速化）
-    while IFS= read -r git_path; do
-        [[ -z "$git_path" ]] && continue
-        dependent_scripts+=("$git_path")
-    done < <(git -C "$SCRIPT_DIR" grep -rl 'source.*cli_lookup\.sh' -- '*.sh' 2>/dev/null \
-        | grep -Ev "$exclude_pattern" || true)
+    # git grep 1回でsource検出と旧式inline関数検出を同時に行う（per-file grepを削減）
+    local grep_result
+    grep_result=$(git -C "$SCRIPT_DIR" grep -n -E 'source.*cli_lookup\.sh|is_codex[[:space:]]*\(\)' -- '*.sh' 2>/dev/null || true)
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        local git_path="${line%%:*}"
+        [[ "$git_path" =~ $exclude_pattern ]] && continue
+        if [[ "$line" == *source*cli_lookup.sh* ]]; then
+            dependent_scripts+=("$git_path")
+        elif [[ "$line" =~ is_codex[[:space:]]*\(\) ]]; then
+            inline_by_script+="${line}"$'\n'
+        fi
+    done <<< "$grep_result"
 
     if [[ ${#dependent_scripts[@]} -eq 0 ]]; then
         result_warn "cli_lookup.sh をsourceするスクリプトが見つからない"
@@ -250,11 +264,13 @@ check_cli_lookup_usage() {
         fi
 
         # 旧式のインライン関数定義が残っていないか
-        local inline_funcs
-        inline_funcs=$(grep -n 'is_codex\s*()' "$full_path" 2>/dev/null || true)
+        local inline_funcs=""
+        while IFS= read -r inline_line; do
+            [[ "$inline_line" == "$script:"* ]] && inline_funcs+="${inline_line#"$script:"}"$'\n'
+        done <<< "$inline_by_script"
         if [[ -n "$inline_funcs" ]]; then
             result_fail "${script}: インライン is_codex() 関数定義が残存"
-            echo "    $inline_funcs"
+            echo "    ${inline_funcs%$'\n'}"
             all_ok=false
         else
             result_pass "${script} — cli_lookup.sh 経由・インライン定義なし"
