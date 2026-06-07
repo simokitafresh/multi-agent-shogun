@@ -47,20 +47,16 @@ if [ -z "${payload//[[:space:]]/}" ]; then
     exit 0
 fi
 
-tool_name="$(printf '%s' "$payload" | jq -r '.tool_name // empty' 2>/dev/null || true)"
-if [[ "$tool_name" != "mcp__memory__add_observations" ]]; then
-    exit 0
-fi
-
 # --- Extract observations contents ---
-# observations は [{entityName: "...", contents: ["...", "..."]}] の配列
-observations_json="$(printf '%s' "$payload" | jq -r '.tool_input.observations // empty' 2>/dev/null || true)"
-if [ -z "$observations_json" ] || [ "$observations_json" = "null" ]; then
-    exit 0
-fi
-
-# 全observationのcontentsを結合して1テキストにする
-all_contents="$(printf '%s' "$observations_json" | jq -r '.[].contents[]?' 2>/dev/null || true)"
+# observations は [{entityName: "...", contents: ["...", "..."]}] の配列。
+# tool判定とcontents抽出を1 jqにまとめ、add_observations hot pathのforkを減らす。
+all_contents="$(printf '%s' "$payload" | jq -r '
+  if (.tool_name // "") == "mcp__memory__add_observations" then
+    (.tool_input.observations // [] | .[].contents[]?)
+  else
+    empty
+  end
+' 2>/dev/null || true)"
 if [ -z "$all_contents" ]; then
     exit 0
 fi
