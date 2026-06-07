@@ -375,7 +375,23 @@ except OSError: pass
     if [ "$_adv_target" = "automation" ]; then
         echo "  ★ target_pathが自動化系ファイル。finding_categoriesにadversarialを含めよ(§5.6)"
     else
-        echo "  PASS: 非自動化系target"
+        # フォールバック: target_path未設定時はfiles_modifiedからscripts/パスを検出(GP-263b)
+        _adv_fm=$(python3 -c "
+import yaml, sys
+try:
+    d = yaml.safe_load(open('${REPORT_PATH}'))
+    fm = d.get('files_modified', [])
+    for f in (fm or []):
+        p = str(f.get('path', '') if isinstance(f, dict) else f)
+        if any(k in p for k in ['scripts/', '.sh', 'gate_', 'hook_', 'monitor', 'cron', 'cleanup']):
+            print('automation'); break
+except: pass
+" 2>/dev/null || true)
+        if [ "$_adv_fm" = "automation" ]; then
+            echo "  ★ files_modifiedに自動化系ファイル。finding_categoriesにadversarialを含めよ(§5.6/GP-263b)"
+        else
+            echo "  PASS: 非自動化系target"
+        fi
     fi
 else
     echo "  SKIP: task YAML不在"

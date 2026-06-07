@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-08 cmd_3217 -->
-<!-- last_synced_lesson: L725 -->
+<!-- last_updated: 2026-06-08 cmd_3218 -->
+<!-- last_synced_lesson: L726 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -258,6 +258,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L723: context freshnessはprojects/{id}.yaml欠落時のsource repo fallbackを検証対象に含める（cmd_karo_recon_context_freshness_dm_signal_research_202606041656）
 - L724: deterioration_snapshotsは2026-03以降のみ — 過去損失パターン分析ではVIX+ETRリターンで代替（cmd_3215）
 - L725: 前月DTB3急騰(金利急上昇)は全レイヤー共通の大負★★★シグナル（cmd_3217）
+- L726: サイズ調整効果: HIGH月の平均+3.4%により削減コストが改善効果を上回る（cmd_3218）
 
 ## 因果リンク
 

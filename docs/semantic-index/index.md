@@ -121,7 +121,7 @@ codd:
 |------|---|
 | id | three_layer_memory_system |
 | label | 三層記憶システム |
-| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ |
+| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道) |
 | related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop |
 
 | 種別 | パス/参照 |
@@ -135,11 +135,13 @@ codd:
 | cmd | `cmd_3065` 三層記憶パスB — related_concepts連想トラバース+双方向リンク強制化 (`context/semantic-map.md`, `docs/semantic-index/index.md`, `tests/unit/test_semantic_index_update.bats`) |
 | cmd | `cmd_3083` 強化: 三層記憶リアルタイム概念紐付け(event_concepts即時INSERT) (`lib/lord_conversation.sh`, `tests/unit/test_lord_conversation.bats`) |
 | causal | [[殿指摘_三層記憶概念混同]] -> [[local_memory_db_alias過拡張]] -> [[three_layer_memory_system分離]] |
+| causal | [[殿指摘_三層理解間違い_20260608]] -> [[contextを三層と誤認]] -> [[三層=記憶DB+セマンティクス+Obsidian確定]] |
 | should_not_merge_with | local_memory_db — local_memory_dbは第一層SQLite/FTS5検索基盤。three_layer_memory_systemは第一層DB、第二層semantic-index、第三層Obsidian/因果辺/還流をつなぐ運用概念 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T09:54:35+09:00 車輪の再発明をしないように三層記憶に貫通させよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T16:30:51+09:00 問題の本質から目を背けるな。三層記憶を最初に使って因果をたどっていないのが真因だな |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:54:08+09:00 三層記憶を使えよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:56:29+09:00 では三層記憶検索を強制する仕組みについて覚醒なぜなぜ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T01:53:02+09:00 いま試行錯誤したよな。次から試行錯誤しないで済むように正しい知識を三層記憶に貫通させよ |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -536,6 +538,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:38:38+09:00 obsidian_candidate 18件は昇格させよう |
 | lesson | `L753` gate_skill_script_refs.sh: script_refs_checked_at に date-only は同日 script 更新時に無効 |
 | lesson | `L754` bash_speed_training.sh update_entry_field_unlocked: 引用符なしscript_pathにマッチしないバグ+インデント4スペース固定バグ |
+| lesson | `L755` TTLキャッシュ名はフルパスのハッシュで一意化すること |
+| lesson | `L724` deterioration_snapshotsは2026-03以降のみ — 過去損失パターン分析ではVIX+ETRリターンで代替 |
+| lesson | `L725` 前月DTB3急騰(金利急上昇)は全レイヤー共通の大負★★★シグナル |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -589,6 +594,9 @@ codd:
 | causal_chain | `[[cmd_training_speed_clipboard_watcher_20260606231433]]` (L749) |
 | causal_chain | `[[cmd_3211]]` (L753) |
 | causal_chain | `[[cmd_3212]]` (L754) |
+| causal_chain | `[[cmd_karo_ci_fix_semantic_test125_20260607]]` (L755) |
+| causal_chain | `[[cmd_3091]]` (L724) |
+| causal_chain | `[[cmd_3118]]` (L725) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -617,6 +625,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T15:00:15+09:00 bbmadv89q toolu_01U3r7Vaa5dL8UnqGarcAYce /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8aa671c0-250c-404e-8b5a-7431d2 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:13:50+09:00 b82x7o1o5 toolu_013iidjVk4MeLjR4aSoPZT1J /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b1260975-a6df-42fe-8f3b-42fb9a |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:18:36+09:00 btmr93nto toolu_01YUMAaYg2n6SqxarbDYPqxN /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8bee8ae9-ddb7-4d4e-b5be-3e8347 |
+| cmd | `cmd_3219` 修正: /clear後のCTX%が0%にならない(capture-pane旧値書き戻しバグ) |
+| causal | `cmd_3219` origin: [[殿指摘_CTX0%にならない]] -> [[capture-pane旧値書き戻し]] -> [[clear-history追加]] |
 | causal_chain | `[[cmd_3142]]` (L735) |
 | causal_chain | `[[cmd_3207]]` (L752) |
 
@@ -914,6 +924,8 @@ codd:
 | file | `docs/research/pf_config_backup_20260601_pre_delete.json` 削除前58件config全量バックアップ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T15:40:27+09:00 最新の設計書に基づき起票する前に、起票内容のプランニングだ。どの順番でどのようなCMDを出すかを進捗が確認可能なチェックリストにしよう。作成して |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T15:46:31+09:00 チェックリストを家老にれびゅーしてもらおう |
+| cmd | `cmd_3215` 偵察: 3xレバレッジETF急落月の前月パターン分析(殿研究指示) |
+| causal | `cmd_3215` origin: [[殿指示_レバレッジ急落パターン]] -> [[monthly_returns損失月特定]] -> [[前月deterioration価格分析]] |
 | causal_chain | `[[cmd_3061]]` (L717) |
 
 ## deepdive_principles — deepdive原理
@@ -922,7 +934,7 @@ codd:
 |------|---|
 | id | deepdive_principles |
 | label | deepdive原理 |
-| aliases | deepdive, 追体験, why_chain, causal_tracing, 自動化×強制, 車輪再発明, 車輪防止, Guard通読, 穴を見つけたら即ふさぐ, 知性の外部化, ニューゲーム, クリア, 自立自走, 丁寧, 今より強くてニューゲームせよ, 覚醒して自立自走, 推奨なら軍師が自立自走, 殿にcommit/push/killを命令するな, そっちでやれ俺は奴隷じゃない, そっちでやれ, 今 クリアされても 今より強くて入会もできるようにせよ, 利他の精神で自立自走, 利他の精神で将軍に起票依頼, 完璧なCMD作成に協力せよ, 丁寧に因果をたどる, クリアされないのは最重要バグだ |
+| aliases | deepdive, 追体験, why_chain, causal_tracing, 自動化×強制, 車輪再発明, 車輪防止, Guard通読, 穴を見つけたら即ふさぐ, 知性の外部化, ニューゲーム, クリア, 自立自走, 丁寧, 今より強くてニューゲームせよ, 覚醒して自立自走, 推奨なら軍師が自立自走, 殿にcommit/push/killを命令するな, そっちでやれ俺は奴隷じゃない, そっちでやれ, 今 クリアされても 今より強くて入会もできるようにせよ, 利他の精神で自立自走, 利他の精神で将軍に起票依頼, 完璧なCMD作成に協力せよ, 丁寧に因果をたどる, クリアされないのは最重要バグだ, クリアはコンテキストをリセットするはずだ |
 | skills | なし |
 | related_concepts | growth_loop, defense_hierarchy, semantic_causal_automation, known_unknowns_principle, verify_dont_imagine, semantic_goodhart_overfitting |
 
@@ -1003,6 +1015,12 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T21:14:30+09:00 クリアされないのは最重要バグだ。修正せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T21:59:23+09:00 今 クリアされても 今入れ 強くてニューゲーム できるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T22:11:44+09:00 クリア後に CT X が以前は即時 0%と表示されていたのが なぜかですね かなり時間が経ってから 0%になってます バグです |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T01:41:11+09:00 今 クリアされても 今より強くてニューゲーム できるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T01:41:27+09:00 今 クリアされても 今より強くてニューゲーム できるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T01:51:43+09:00 自立自走 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T02:08:12+09:00 クリア後は全員同じなるはずでは？全員何のCMDも実行していないぞ？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T02:11:37+09:00 クリアはコンテキストをリセットするはずだ。何か/clearをゆがめているのでは？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T02:13:07+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -1079,7 +1097,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう |
 | skills | なし |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -1124,6 +1142,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T21:17:12+09:00 3211が修正されているか確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T22:10:46+09:00 DM シグナルの話をしよう シグナル先週の木曜日と金曜日は急激な下落があった 特に3倍 レバレッジの銘柄が急激に 暴落しました でこういうのを予測するのを今までの全部のパターンを見て 何かこう パターン認識できるものはないか データベースと |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T22:33:52+09:00 bx0luat33 toolu_01BKQ9nX4cYYwxMWpLBDT3aT /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/fea3a4eb-7a61-43cf-a345-df739e |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T22:36:51+09:00 bzk5l9erp toolu_011LykH4AqnTE6kKPzHpCovs /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/fea3a4eb-7a61-43cf-a345-df739e |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T01:39:54+09:00 やってみよう バックテストで効果を確認しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T01:49:38+09:00 ちょっと確認なんだが 全54 ポートフォリオって実際にもっと多くないか |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -1253,6 +1274,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-31T11:27:13+09:00 メンバーシップ６体空選別する。DM-safe,Ave-X、裏Ave-X、劇薬DMオリジナルの４体に絞る。シン四神は激攻のみの４パターンに絞る。GSシン忍法(6体) GSシン分身 -- 激攻/鉄壁/常勝 GSシン四つ目 -- 激攻/鉄壁/常勝 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-01T19:49:57+09:00 旧式の四神フォルダー、忍法フォルダー、L0フォルダーのPFを削除したい。これは慎重にやらないとな |
 | cmd | `cmd_3112` 運用: 旧式PF 58件物理削除 — 四神+忍法+pf_L0+旧忍法Ward |
+| cmd | `cmd_3216` 偵察: 全DM PF(四神+忍法+奥義 全53体)の損失月前月パターン分析(殿指示拡張) |
+| causal | `cmd_3216` origin: [[殿指示_全PF分析]] -> [[cmd_3215_レバレッジ限定]] -> [[L0-L2全53体拡張]] |
+| causal | `cmd_3216` depends_on: cmd_3215 |
 
 ## gs_ninpo_research — GS忍法研究
 
@@ -1418,7 +1442,7 @@ codd:
 |------|---|
 | id | dmsignal_operations |
 | label | DM-Signal運用 |
-| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう |
+| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する |
 | skills | db-check, pf-registration, cdp-browse |
 | related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking, investment_knowledge_base, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, modern_web_guidance, cdp_browser_capability, tier_plan_mapping, alpha_6_metrics, saxo_openapi_excel, saxo_trade_engine, db_price_data_range |
 
@@ -1437,6 +1461,7 @@ codd:
 | file | `docs/operations/profiling_runbook.md` |
 | cmd | `cmd_2776` セマンティック辞書5概念追加 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-22T23:48:27+09:00 a6ab26bd4500b527e toolu_015L2rLESSDysCudJe6eKEGn /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3e7d8949-ab8a-4c41-984 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T02:05:41+09:00 いまの月次リバランスを崩すアイデアは今の時点では考えない。シグナルはルールで判定する。やるのはサイズ調整のみ。D、E,Fの方向性だな |
 
 ## google_classroom — Google Classroom Dashboard
 
@@ -1645,6 +1670,9 @@ codd:
 | cmd | `cmd_3213` 速度修行auto-deployからCTX50%閾値を削除(殿指摘: 既存idle→/clearで十分) (`scripts/ninja_monitor.sh`) |
 | causal | `cmd_3213` origin: [[殿指摘_閾値不要]] -> [[LS041_既存仕組みに乗せよ]] -> [[cmd_3211_閾値残存]] -> [[削除]] |
 | lesson | `L753` pane_start_commandは二重クォートでCLI死亡(status 127)を引き起こす。respawn-pane -kの再起動コマンドにはcli_profiles.yamlのlaunch_cmdを直接使用せよ |
+| cmd | `cmd_3217` 偵察: 全PF全データ投入の勝ち負け条件対比分析(危険度スコア設計材料) |
+| causal | `cmd_3217` origin: [[殿指示_サイズ調整_危険度]] -> [[cmd_3216_損失パターン]] -> [[全データ勝ち負け対比]] |
+| causal | `cmd_3217` depends_on: cmd_3216 |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -1931,6 +1959,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-10 Sharpe→Sortino(殿: 上方ボラを罰するSharpeは好まない) |
 | cmd | `cmd_2372` backfill — | cmd_2372 | 本番シン忍法20体と事後GS選出21体のWF β調整α6指標を算出・比較する。 第4の試練: IS=24M、OOS=6M、step=3M、20ステップ。各ステップでβを再推定 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T22:33:21+09:00 b4smrug3v toolu_01VTNsLuMr7TGAm8zi4PvcD6 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/fea3a4eb-7a61-43cf-a345-df739e |
+| lesson | `L726` サイズ調整効果: HIGH月の平均+3.4%により削減コストが改善効果を上回る |
+| causal_chain | `[[cmd_karo_hotfix_semantic_search_timeout_20260602]]` (L726) |
 
 ## rebalancer_app — Rebalancerアプリ
 

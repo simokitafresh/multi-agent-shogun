@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-08 -->
+<!-- last_updated: 2026-06-08 cmd_3218 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -513,3 +513,4 @@
 | cmd_3215 | 3xレバレッジETF保有中の大幅損失月を全期間で特定し、その前月のシグナル・価格・ボラティリティに共通パターンがないか調査する。殿指示(2026-06-07): 先週木金の急落のような事態を事前に予測できるサインを探す | dm-signal | 06-07 | 3xレバレッジETF保有中の月次リターン-10%以下を全期間 |
 | cmd_3216 | cmd_3215は3xレバレッジETF保有月のみに限定していた。殿指示(2026-06-07 22:55): 全デュアルモメンタム全PFを同時に分析に加えないと意味がない。四神12体+忍法20体+奥義21体の全53PFで損失月(-10%以下)を全期間特定し、前月パターンを分析する | dm-signal | 06-07 | 全54PF(L0四神12+L1忍法21+L2奥義21)の全期 |
 | cmd_3217 | cmd_3216の損失パターン(負け条件)に加え、全PFの好調月(勝ち条件)も同手法で分析。全利用可能データ(monthly_returns/holding_signal/signal_change_log/deterioration_snapshots/prices/VIX/DTB3)を投入し、勝ち条件vs負け条件を対比。殿指示: サイズ調整のための危険度判定材料を全データで構築 | dm-signal | 06-08 | 全54体(L0四神12+L1忍法21+L2奥義21)の月次リ |
+| cmd_3219 | safe_send_clear後にL891で@context_pctを0%リセットするが、CLIステータスラインに前回のCTX表示が残留し、次のget_context_pctサイクルでcapture-paneから旧値が検出→@context_pctに書き戻される。殿指摘(2026-06-08 01:45): /clear後にCTXが0%にならないのはおかしい | infra | 06-08 | safe_send_clear内の/clear後にtmux |
