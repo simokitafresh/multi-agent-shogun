@@ -1910,18 +1910,18 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T10:07:00"
   - script_path: "scripts/log_rotate.sh"
-    status: pending
+    status: "completed"
     before_ms: 15
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    after_ms: "103"
+    before_real_ms: "422"
+    after_real_ms: "103"
+    real_measurement_command: "time bash scripts/log_rotate.sh --dry-run (44 log files)"
+    test_result: "dry-run PASS; 擬似11MB file: size表示OK; before_422ms_after_103ms; 76pct_reduction"
+    commit: "0591d6d64"
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T10:02:30"
   - script_path: "scripts/log_terminal_input.sh"
-    status: pending
+    status: assigned
     before_ms: 6
     after_ms: ""
     before_real_ms: ""
@@ -1929,10 +1929,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hanzo"
+    updated_at: "2026-06-07T09:58:42"
   - script_path: "scripts/log_terminal_response.sh"
-    status: pending
+    status: assigned
     before_ms: 7
     after_ms: ""
     before_real_ms: ""
@@ -1940,10 +1940,10 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T10:00:37"
   - script_path: "scripts/lord_conversation_read.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -1951,8 +1951,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T10:02:00"
   - script_path: "scripts/markdown_link_counts.sh"
     status: pending
     before_ms: 16
