@@ -586,6 +586,7 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_ga412_semantic_search_logs_20260603]]` (L747) |
 | causal_chain | `[[cmd_3168]]` (L748) |
 | causal_chain | `[[cmd_training_speed_clipboard_watcher_20260606231433]]` (L749) |
+| causal_chain | `[[cmd_3211]]` (L753) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -917,7 +918,7 @@ codd:
 |------|---|
 | id | deepdive_principles |
 | label | deepdive原理 |
-| aliases | deepdive, 追体験, why_chain, causal_tracing, 自動化×強制, 車輪再発明, 車輪防止, Guard通読, 穴を見つけたら即ふさぐ, 知性の外部化, ニューゲーム, クリア, 自立自走, 丁寧, 今より強くてニューゲームせよ, 覚醒して自立自走, 推奨なら軍師が自立自走, 殿にcommit/push/killを命令するな, そっちでやれ俺は奴隷じゃない, そっちでやれ, 今 クリアされても 今より強くて入会もできるようにせよ, 利他の精神で自立自走, 利他の精神で将軍に起票依頼, 完璧なCMD作成に協力せよ, 丁寧に因果をたどる |
+| aliases | deepdive, 追体験, why_chain, causal_tracing, 自動化×強制, 車輪再発明, 車輪防止, Guard通読, 穴を見つけたら即ふさぐ, 知性の外部化, ニューゲーム, クリア, 自立自走, 丁寧, 今より強くてニューゲームせよ, 覚醒して自立自走, 推奨なら軍師が自立自走, 殿にcommit/push/killを命令するな, そっちでやれ俺は奴隷じゃない, そっちでやれ, 今 クリアされても 今より強くて入会もできるようにせよ, 利他の精神で自立自走, 利他の精神で将軍に起票依頼, 完璧なCMD作成に協力せよ, 丁寧に因果をたどる, クリアされないのは最重要バグだ |
 | skills | なし |
 | related_concepts | growth_loop, defense_hierarchy, semantic_causal_automation, known_unknowns_principle, verify_dont_imagine, semantic_goodhart_overfitting |
 
@@ -994,6 +995,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T18:00:43+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T18:02:08+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:45:11+09:00 今の家老のやり方だと 忍者がクリアされる前に再配備をしてしまって コンテキストを浪費してコンパクションが頻発してるように見える。これは速度低下を招くのでは？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T21:07:52+09:00 sonnetニンジャのctxがクリア後も高いままでは？バグではないか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T21:14:30+09:00 クリアされないのは最重要バグだ。修正せよ |
 
 ## growth_loop — 学習ループ
 
@@ -1070,7 +1073,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ |
 | skills | なし |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -1112,6 +1115,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:17:35+09:00 baf80jbpr toolu_011ZR8QPnMrnknDRSNCw3Tzo /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4a506363-f3ac-467a-9aa8-dd3a4c |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:45:37+09:00 掲示板は確認した？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:58:21+09:00 家老に確認をとれ。本当にpendingなのか、エラーによって記録がされていなかったのか２おだ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T21:17:12+09:00 3211が修正されているか確認せよ |
 
 ## no_auto_extinguish — 自動消火禁止
 

@@ -1,8 +1,20 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-07T14:59:11'
+last_synced: '2026-06-07T21:17:03'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 747
+lesson_count: 748
 lessons:
+- id: L753
+  title: _handle_speed_training_auto_deployのCTX閾値チェックはPANE_TARGETSとget_context_pct()の既存インフラで実装可能
+  summary: speed_training自動配備でCTX%を閾値チェックする際、新規状態管理は不要。PANE_TARGETS[$name]でpane_targetを取得しg
+  tags:
+  - infra
+  - deploy
+  source_cmd: cmd_3211
+  when: 未設定
+  how: 未設定
+  target_files:
+  - scripts/ninja_monitor.sh
+  origin: '[[cmd_3211]]'
 - id: L752
   title: 'bash ${var: -N} のN文字未満時の空文字挙動'
   summary: 'bashの${variable: -N}はvariableがN文字未満の場合に空文字を返す(エラーなし)。cache_scopeが短いパスで全テストが同一キャッ'
@@ -202,6 +214,9 @@ lessons:
   - queue/tasks/kagemaru.yaml
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
+  deprecated: true
+  deprecated_at: '2026-06-07T21:17:19+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
   summary: 外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split
@@ -445,9 +460,6 @@ lessons:
   - scripts/gates/gate_karo_startup.sh
   - tests/unit/test_gate_karo_startup.bats
   origin: '[[cmd_karo_ci_parallel_isolation_wa_rate]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L720
   title: 軍師3/3穴なし判定は洗脳#8 — Step3実運用シミュレーション強制
   summary: '3/3穴なし判定時にStep3(実運用シミュレーション)を省略し穴を見落とすパターン。Phase5c+Phase6で2回再現。殿介入で計5件追加穴を発見。対策:'
@@ -571,6 +583,9 @@ lessons:
   target_files:
   - scripts/hooks/prompt_state_inject.sh
   origin: '[[cmd_3050]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L711
   title: 共有repoの自動commitが他忍者のstage済み差分を取り込む
   summary: git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje
@@ -670,8 +685,6 @@ lessons:
   - scripts/hooks/prompt_state_inject.sh
   - tests/unit/test_session_state_hooks.bats
   origin: '[[cmd_3048]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L704
   title: セマンティック監査エージェントP0報告は全件現物検証必須
   summary: 本セッションでP0候補5件が全て偽陽性(100%)→P1-P3に降格。エージェントは行番号・文脈を誤読しやすい。LG033(既存確認必須)の監査エージェント版。
@@ -811,8 +824,6 @@ lessons:
   - scripts/skill_recommend_metrics.sh
   - scripts/gates/gate_shogun_startup.sh
   origin: '[[cmd_3027]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L695
   title: set -e下でALERT集計scriptを呼ぶ時は終了値捕捉を明示する
   summary: startup gateはset -eで動くため、Phase 3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶと
@@ -872,8 +883,6 @@ lessons:
   target_files:
   - tests/unit/test_lord_conversation.bats
   origin: '[[cmd_karo_ci_fix_lord_conv_read_v2]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L691
   title: CIでrepo内スクリプトをテストから呼ぶ時はgit実行権限かbash経由を確認する
   summary: WSL上ではファイルが実行可能に見えても、git indexが100644ならGitHub Actions checkout後は実行権限が無い。テストでscri
@@ -901,8 +910,6 @@ lessons:
   target_files:
   - scripts/lord_conversation_read.sh
   origin: '[[cmd_karo_ci_fix_lord_conv_read]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L689
   title: lord_conversation消費者はtargetフィルタ済みhelperを使え
   summary: lord_conversation.jsonlは全ロールの殿入力を含む。将軍/家老/軍師が直接tail/Readすると他ロール宛ての発言を自分宛てと誤認する。消
@@ -1120,11 +1127,6 @@ lessons:
   - scripts/ninja_done.sh
   - scripts/ninja_monitor.sh
   origin: '[[cmd_training_L7_v3_kotaro_9_20260521215949]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L674
   title: bashスクリプトのself-path解決は$0ではなく${BASH_SOURCE[0]}を使え
   summary: 'gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA'
@@ -1235,9 +1237,6 @@ lessons:
   - scripts/report_field_set.sh
   - tests/unit/test_report_field_set_validation.bats
   origin: '[[cmd_training_L7_v3_saizo_6_20260521205341]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L666
   title: idle系スクリプトのCACHE_TTLデフォルト2秒はキャッシュ効果がほぼない
   summary: gate_autofix_proposal.shのCACHE_TTLデフォルト=2秒は、idle時の頻繁呼出し(通常5-60秒間隔)に対してキャッシュが効かず毎
@@ -1344,9 +1343,6 @@ lessons:
   - skills/report-write/SKILL.md
   - skills/verdict-check/SKILL.md
   origin: '[[cmd_training_L7_v3_hanzo_5_20260521202900]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L659
   title: YAML形状互換のfixtureは出力までassertせよ
   summary: '既存fixtureはcommands: {cmd_id: ...}のmapping型を使っていたが、dashboard_update.shのtitle抽出結果を'
@@ -1782,11 +1778,6 @@ lessons:
   - scripts/gates/gate_shogun_startup.sh
   - scripts/yaml_auto_archive.sh
   origin: '[[cmd_2856]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L629
   title: 偵察時はlayout.tsxのnavItemsを設計書URLスキームと最初に照合せよ
   summary: layout.tsxのnavItemsと設計書画面一覧を照合するだけでルーティング逆転を即発見。FE request bodyとBE Pydanticモデルのフ
@@ -1861,6 +1852,9 @@ lessons:
   - scripts/inbox_write.sh
   - scripts/gates/gate_report_format.sh
   origin: '[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L624
   title: yaml_field_setのnested指定は構文破壊リスク→dot notation専用ツール要
   summary: yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用
@@ -1904,9 +1898,6 @@ lessons:
   target_files:
   - scripts/ninja_monitor.sh
   origin: '[[cmd_training_L4_auto_202605181242_tobisaru]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L621
   title: 並列修行で同一バグ独立発見→git log -5確認で重複防止
   summary: 複数忍者が同一ファイルに対する修行を並列実行すると同一バグを独立発見し重複修正する。commit前にgit log -5で他忍者の先行修正を確認せよ
@@ -2025,8 +2016,6 @@ lessons:
   - skills/karo-direct/SKILL.md
   - skills/shogun-teire/SKILL.md
   origin: '[[cmd_2793]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L613
   title: 'deploy_task.sh: STKのac_assignedはinject関数で明示転記が必要'
   summary: resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from
@@ -2192,11 +2181,6 @@ lessons:
   - skills/karo-direct/SKILL.md
   - tests/unit/test_deploy_task.bats
   origin: '[[cmd_2691]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L602
   title: karo_directのtraining配備はdeploy_task.sh --directを使え。手動YAML方式はAC未注入を引き起こす
   summary: karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te
@@ -2213,9 +2197,6 @@ lessons:
   - skills/karo-direct/SKILL.md
   - tests/unit/test_deploy_task.bats
   origin: '[[cmd_2691]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L601
   title: drift検出cmdは個別パスをtask YAMLに注入せよ
   summary: semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690
@@ -2244,6 +2225,9 @@ lessons:
   - docs/semantic-index/index.md
   - context/semantic-map.md
   origin: '[[cmd_2690]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L599
   title: gate種別ごとにmissing失敗意味を分離(待てば進む vs 止めるべき)
   summary: lesson_done_missingはreview_gate.done→GATE自動起動の循環依存でBLOCK。root_cause=lesson登録猶予なし
@@ -2337,11 +2321,6 @@ lessons:
   - queue/reports/saizo_report_cmd_karo_lk004_inbox_root_cause.yaml
   - queue/tasks/saizo.yaml
   origin: '[[cmd_karo_lk004_inbox_root_cause]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L593
   title: エラーログは最終行(実際のエラー)を必ず含めよ — 1行目Tracebackは情報ゼロ
   summary: gate_fire_logがPython Tracebackの1行目のみ記録→診断不能。修正(cc020f3e)で最終行抽出。ログ記録時はエラーの実メッセージ行
@@ -2601,6 +2580,9 @@ lessons:
   - skills/report-write/SKILL.md
   - tests/test_gate_report_format.bats
   origin: '[[cmd_2605]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L574
   title: gate起点のFAILは実行コンテキストではなく責務表で帰属させる
   summary: gate_report_formatのように複数スキルの後段で発火するgateは、直近実行スキル推定に任せるとdashboard-update等へ誤帰属する。g
@@ -2840,6 +2822,9 @@ lessons:
   target_files:
   - scripts/ninja_monitor.sh
   origin: '[[cmd_2540]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L557
   title: 永続キャッシュの無効化キーをファイル数だけにするな
   summary: archive_completed.shの/tmp永続キャッシュがreport/task/gate状態をファイル数だけで再利用し、symlink化・status
@@ -2956,6 +2941,9 @@ lessons:
   target_files:
   - deploy_task.sh
   origin: '[[cmd_karo_fix_direct_ac_loss]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L549
   title: gate/hookはflat/nested両task YAML形式をfixtureで検証
   summary: queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形
@@ -3473,11 +3461,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: L496の教訓を確認しても冷却後に再計測しなかった
   origin: '[[cmd_2089]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L508
   title: 'WSL2 NTFS並列I/Oは直列より遅い: ThreadPoolExecutor(8worker)でfallback yaml.safe_load並列化→in-process
     2.2x改善も実測でregression'
@@ -3489,6 +3472,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: Python GILも追加制約
   origin: '[[cmd_2086]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L507
   title: gate_statusキャッシュはreportファイル数が安定している場合のみ有効
   summary: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
@@ -3533,6 +3519,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 必ず5回median計測してから採用判断せよ
   origin: '[[cmd_2088]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L503
   title: 'dashboard_auto_section.sh: knowledge_metrics.sh(980ms)がgate_log更新でキャッシュミス→before/after共に高い計測値が出る'
   summary: 'CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninj'
@@ -3902,9 +3891,6 @@ lessons:
   - context_freshness_check.sh
   - gate_context_freshness.sh
   origin: '[[cmd_1889]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L469
   title: gate_report_formatにautofix pre-stepを組込みFAILサイクル防止
   summary: 忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAIL発生。gate_report_f
@@ -4059,11 +4045,6 @@ lessons:
   when: whitelist型.gitignoreではスクリプト追加時に
   how: .gitignoreに!パス エントリを追加しないとgit add/commit対象にならずCIでファイル不在扱いになる
   origin: '[[cmd_root_fixes]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L453
   title: 復元コミットでenum値変更リスク — 削除→復元時は意味的差分確認必須
   summary: commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→prom
@@ -4152,6 +4133,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-07'
   origin: '[[cmd_deploy_yaml_speedup]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L444
   title: 外部リポ参照は動的パス読込+環境依存スキップで偽陽性防止
   summary: 'gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:
@@ -4411,9 +4395,6 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: Bash sedを使えば両方回避できる
   origin: '[[cmd_1621]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L420
   title: Edit toolとClaude Codeスキルスキャンの競合によるSKILL.mdファイル破損
   summary: 'Edit toolでSKILL.mdのname:フィールドを更新しようとしたところ、2ファイルとも0バイトに破損。推定原因: Edit toolのtruncat'
@@ -4971,6 +4952,9 @@ lessons:
   target_files:
   - agent_status.sh
   origin: '[[cmd_cycle_L4_046]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L371
   title: Python内シェル変数展開は環境変数経由に統一せよ
   summary: auto_deploy_next.shの第2Pythonブロックでドル記号VAR形式のシェル変数展開を使用していた。同スクリプト内の第1ブロックはos.envi
@@ -5263,6 +5247,9 @@ lessons:
   target_files:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
+  deprecated: true
+  deprecated_at: '2026-06-07T21:17:20+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
   summary: Python子プロセスがstderrにメッセージ、stdoutに値を出力する設計で、bash側が2>&1で混合→grepで再分離するパターンは、Python例外
@@ -5322,8 +5309,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要
   origin: '[[cmd_cycle_L4_016]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L341
   title: heredoc一括書込みでファイル中間状態を排除
   summary: echoを2回連結してYAMLを書くと、1行目書込み後2行目書込み前にクラッシュした場合にtimestampだけの不完全ファイルが残る。cat
@@ -5567,6 +5552,9 @@ lessons:
   when: 報告YAMLやレビュー結果を作成・検証する時
   how: INBOX_WRITE_TEST=1設定下ではNINJA_NAMESが空→is_ninja_reporter=0→report_received処理全体がスキップされる
   origin: '[[cmd_1565]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L320
   title: infraテストは全件必要と判定（後半27テスト）
   summary: test_k*-test_y*全27テストの対象スクリプト21種は全て90日以内に3-115回変更かつ全て本番フロー関与。テスト削減ROIが低い領域。テスト時間
@@ -5698,11 +5686,6 @@ lessons:
   - deploy_task.sh
   - inject_task_modifiers.py
   origin: '[[cmd_training_structural_001]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L309
   title: '教訓注入の3構造問題: universalタグ誤分類+ファイルレベルマッチング欠如+負帰還ループ欠如'
   summary: '教訓活用率6.2%(146注入中9活用)の根因は3つ: (1)L063等がuniversalタグだが実際は極めて狭い操作範囲(Python
@@ -5995,8 +5978,6 @@ lessons:
   - lesson_update_score.sh
   - sync_lessons.sh
   origin: '[[cmd_1280]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L284
   title: Vercel化後の消費者スクリプトarchive参照切替が必要
   summary: lessons.yamlが索引化されたため、deploy_task.sh/lesson_update_score.sh/lesson_deprecate.sh等
@@ -6012,8 +5993,6 @@ lessons:
   - lesson_update_score.sh
   - lesson_deprecate.sh
   origin: '[[cmd_1280]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L283
   title: PostToolUse hook SKIPカウントの誤検知
   summary: batsテスト名にskipが含まれるとPostToolUse hookがSKIP検出と誤判定する。hookはTAP出力の ok N (hash)
@@ -6058,9 +6037,6 @@ lessons:
   target_files:
   - ninja_monitor.sh
   origin: '[[cmd_1268]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L279
   title: scope_creep_同一ファイル並列配備
   summary: '才蔵がAC1配備でAC2(小太郎担当)のコードも実装しcommit。小太郎は実装済みコードをテスト確認のみで報告。根本原因: 同一ファイル(dashboard_'
@@ -6271,11 +6247,6 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: '2026-03-20'
   origin: '[[cmd_1136実装中の半蔵がstop]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L261
   title: 全体設定変更時のテスト整合性チェック不足
   summary: settings.yaml等の全体設定変更(全8名claude統一)がE2Eテスト2件+Unitテスト2件の陳腐化を43コミット蓄積後に発覚させた。設定変更コミ
@@ -6396,11 +6367,6 @@ lessons:
   target_files:
   - ninja_monitor.sh
   origin: '[[cmd_1108]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L251
   title: no_lesson_reasonフィールド追加時は報告テンプレート+instructions+レビュー条件の3層を同時修正せよ
   summary: 教訓還流の仕組み変更は、テンプレート(deploy_task.sh)・忍者ルール(ashigaru.md)・家老レビュー条件(karo.md)の3層を同時に修正
@@ -6457,6 +6423,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-19'
   origin: '[[cmd_1104]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L246
   title: デフォルト値return時はreturn 0が正しい(set -e対策)
   summary: 関数がデフォルト値をechoしつつreturn 1する設計は、set -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn
@@ -6612,9 +6581,6 @@ lessons:
   how: AC には `git show --check <commit>` のような commit-scope 検証を使うか、事前条件として clean-tree
     を明記すべき
   origin: '[[cmd_996]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
 - id: L232
   title: 'pre-pushフックtimeout: 294テストが120秒内に完走しない'
   summary: bats tests/unit/（294件、--jobs 4）がpre-pushのtimeout 120秒を超過。テストスイート増加に伴いtimeout延長かテ
@@ -6939,11 +6905,6 @@ lessons:
   target_files:
   - ninja_monitor.sh
   origin: '[[cmd_777]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L204
   title: STALL誤判定の実態は「idle+status未更新」が主因。pstree方式で予防的防御層追加が有効
   summary: 30日分134件のSTALL-DETECTEDログを分析した結果、ほぼ全件が「ペインが確実にidle状態なのにtask YAML statusが未更新」パターン
@@ -7270,8 +7231,6 @@ lessons:
   target_files:
   - scripts/ntfy_listener.sh
   origin: '[[cmd_608]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L174
   title: cmd_608
   summary: watchdogの活動時刻は『read成功』ではなく『意味のあるイベント処理成功』で更新すべし
@@ -7387,6 +7346,9 @@ lessons:
   when: 教訓効果率の低い教訓群を分析する時
   how: 自動退役は『低効果』だけでなく『仕組み化完了フラグ』連動で回すべき
   origin: '[[cmd_567]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L164
   title: Claude Code Hooksのshスクリプトはset -euのみ使用しpipefail禁止
   summary: IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな
@@ -7415,8 +7377,6 @@ lessons:
   when: フックスクリプトテスト時
   how: dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能
   origin: '[[testing]]'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L161
   title: 画像添付MIME整合改善の必要性
   summary: IF ntfy添付画像を保存する時 THEN attachment MIMEに合わせた拡張子付与またはPNG変換を標準化せよ
@@ -7529,6 +7489,9 @@ lessons:
   when: commit関連のACを検証する時
   how: git commit --dry-runではなく実commit(失敗想定)またはhook直接実行で検証せよ
   origin: '[[cmd_537]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L149
   title: shellスクリプトでrgを使うな、grepを使え
   summary: IF shellスクリプトやgit hookでテキスト検索を行う時 THEN rgではなく標準のgrepを使え
@@ -7796,6 +7759,9 @@ lessons:
   when: 報告YAMLやレビュー結果を作成・検証する時
   how: 家老は再配備前にgit log + report存在を確認することで重複作業を防止できる
   origin: '[[cmd_494]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L126
   title: 非同期通知ラッパーをif判定に使うと成功誤判定が起きる
   summary: IF 非同期通知ラッパー(常時exit 0)の結果をif判定で使う時 THEN 同期モードまたは結果ファイル連携で結果を取得せよ
@@ -7906,6 +7872,9 @@ lessons:
   - cmd_complete_gate.sh
   - deploy_task.sh
   origin: '[[cmd_466]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L116
   title: .gitignore whitelist-basedリポジトリでは新規スクリプト作成時に必ずwhitelist追加が必要
   summary: scripts/lesson_effectiveness.shがgit addで拒否された。whitelist方式の.gitignoreでは新規ファイルは自動的
@@ -7940,11 +7909,6 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: '2026-03-01'
   origin: '[[ninja_monitor,idle_detection,safe_send_clear]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-07'
-  deprecated: true
-  deprecation_reason: auto_useful_rate_zero
 - id: L113
   title: タスク指定ファイルが.gitignore whitelist外だとcommit要件を満たせない
   summary: IF タスク指定ファイルが.gitignore whitelist外の可能性がある時 THEN 配備時に対象ファイルのgit追跡可否を事前検証せよ
@@ -8038,6 +8002,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.0が存在せずセットアップ失敗
   origin: '[[cmd_438]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L104
   title: 本家参照時のパス揺れ — tree確認後に取得を標準化
   summary: IF OSSリポジトリや外部ソースからファイルを参照する時 THEN 先にtreeを取得して実パスを確定してから取得せよ
@@ -8061,6 +8028,9 @@ lessons:
   when: skill.md(小文字)でスキル配置時
   how: DM-signal側2スキルがskill.md小文字で配置
   origin: '[[draft]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L102
   title: lesson_tracking.tsvのデータソース相違 — タスク記述はqueue/gate_metrics.yamlだが実在はlogs/lesson_tracking.tsv
   summary: タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正
@@ -8075,6 +8045,9 @@ lessons:
   - queue/gate_metrics.yamlだが実在はlogs/lesson_tracking.ts
   - queue/gate_metrics.yaml
   origin: '[[cmd_414]]'
+  deprecated: true
+  deprecated_at: '2026-06-07T21:17:20+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)
   summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV

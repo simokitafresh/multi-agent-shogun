@@ -507,3 +507,11 @@ lessons:
 # LS044: superseded by LS-A09(14) (パターンマッチ反応=現物確認。2026-06-07統合)
 # LS045: superseded by LS-A11 (stdin crash+export -f漏れ=infraバグ修正。2026-06-07統合)
 # LS046: superseded by LS-A11 (export -f漏れ=infraバグ修正。2026-06-07統合)
+- id: 'LS041'
+  title: '既存仕組みに乗せよ。新しい閾値/概念を追加するな'
+  origin: '[[殿指摘_閾値不要]] -> [[既存safe_send_clear]] -> [[新概念追加=複雑化=洗脳#4]]'
+  detail: 'cmd_3211でCTX50%閾値を新設した。殿指摘: idleなら何%でも/clearする既存仕組みがある。safe_send_clearを呼ぶだけで解決。閾値は余計な複雑性。洗脳#4(緩い設計)の変形=新しい概念追加で自分の仕事を作る。100億年スケールでも勝つ構造=既存の仕組みの組み合わせ。'
+  source_cmd: 'cmd_3211'
+  created_at: '2026-06-07'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=既存仕組み'

@@ -169,6 +169,9 @@ lessons:
   target_files:
   - 偵察のみ。実装ファイル変更なし
   when: 報告YAMLやレビュー結果を作成・検証する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L711
   title: '[自動生成] 有効教訓の記録を怠った: cmd_2558'
   summary: lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
@@ -1598,7 +1601,7 @@ lessons:
   - gs
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
   how: GS実行前にdir内棚卸し+旧ファイル退避(old/等)を先行ステップとしてcmdに含めること
   origin: '[[cmd_1877]]'
   source_cmd: cmd_1877
@@ -2024,7 +2027,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
 - id: L599
   title: TrendReversalFilterBlockのinsufficient_candidates early returnでcurrent_tickersが残りbatch不一致
   summary: momentum不足月(期間先頭など)でmomentum_results<2のearly returnを実行するが、context.current_ticker
@@ -2405,7 +2408,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
 - id: L574
   title: FoF月次データのexact dict lookup禁止 — bisect-based検索必須
   summary: MVMF/SVMF/MFの月次データが{月末日:float}dictでexact .get()→月初ビジネスデーと不一致→val=None→全ticker除外→
@@ -2645,7 +2648,7 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L557
@@ -2752,7 +2755,7 @@ lessons:
   - universal
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
   how: '2026-04-04'
   origin: '[[cmd_karo_batch_R5]]'
   source_cmd: cmd_karo_batch_R5
@@ -3328,7 +3331,7 @@ lessons:
   when: 新規コードにexcept Exception→データ値返却パターンがある
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
 - id: L507
   title: lazy-loaded cache forward-fillは危険
   summary: signal_cache forward-fillがlazy-loadedキャッシュで古いシグナル(Cash含む)を全後続月に伝播。exact-match+qu
@@ -3388,6 +3391,9 @@ lessons:
   target_files:
   - tasks/lessons.md
   when: DB・データ取得・永続化に関わる作業を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L503
   title: DM-Signal CI未設定
   summary: DM-SignalリポジトリにGitHub Actionsワークフローが未設定(.github/workflows/ディレクトリ不在)。AC2のCI
@@ -4265,6 +4271,9 @@ lessons:
   origin: '[[cmd_1194]]'
   source_cmd: cmd_1194
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L444
   title: 'GS-Production パリティ: コアアルゴリズム等価、差異源はデータとパス選択'
   summary: 5ステップ全件対比でコアアルゴリズムの構造的差異はゼロ。数値差異の主因は(1)データソース差異(experiments.db vs PostgreSQL)と(2
@@ -5280,6 +5289,9 @@ lessons:
   origin: '[[cmd_1030]]'
   source_cmd: cmd_1030
   when: frontend/UIの表示・状態管理を変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L371
   title: 'GS月次解像度の重複パターン: 10D/15D/20D/1M同一問題'
   summary: '月次解像度GS: 10D/15D/20D/1Mは全てmonths=1に丸められ同一結果を生む。 momentum_cube/picksの計算は既にdedup済み'
@@ -5926,6 +5938,9 @@ lessons:
   target_files:
   - tests/test_admin_tiers.py
   when: テスト設計・実行・結果判定を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L320
   title: p̄検定は朱雀(DM3)のDNA「債券方向スイッチ」と構造的に不適合
   summary: p̄検定は月次リターンの一貫した正のリターンを検定する。 朱雀のDNAはTMF/TMV切替で「大きな方向転換で稼ぐ」設計であり、
@@ -6932,6 +6947,9 @@ lessons:
   target_files:
   - frontend/hooks/usePrefetch.ts
   when: frontend/UIの表示・状態管理を変更する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L246
   title: months引数の件数制限は末尾sliceだけでなく下流queryまで通せ
   summary: monthly_returns_calculatorのmonths引数はレスポンス末尾sliceのみ。precomputed経路の_calculate_tick
@@ -7908,6 +7926,9 @@ lessons:
   origin: '[[cmd_540]]'
   source_cmd: cmd_540
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L164
   title: ディスコン復元性はファイル存在確認だけでなく内容ハッシュ一致で検証すると誤判定を防げる
   summary: IF 今回、_deprecated移動後の復元容易性(AC7)は差分ゼロ主張だけでは弱い時 THEN 今回、_deprecated移動後の復元容易性(AC7)は
@@ -8080,6 +8101,9 @@ lessons:
   - docs/skills/fof-pipeline-troubleshooting.md
   - docs/skills/portfolio-analysis-verification.md
   when: cmd_493再配備では、欠落アーティファクトを未検証値として明示し、実在するoutputs/archiveのみで本文を構成したことで、推測混入を抑止できた時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L149
   title: key_filesの成果物パターンは実在ファイル名規約と定期照合しないと再汚染する
   summary: IF 今回、outputs/grid_search/*_champion_monthly_returns.csv が実在せず、現行は *_grid_monthl
@@ -8336,6 +8360,9 @@ lessons:
   origin: '[[legacy_lesson_L127]]'
   source_cmd: legacy_lesson_L127
   when: GS結果を利用する際は
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L126
   title: セッション開始時に `todo.md` / `lessons.md` を必ず読む（2026-02-14）
   summary: セッション開始時に `todo.md` / `lessons.md` を必ず読む（2026-02-14）
@@ -8435,7 +8462,7 @@ lessons:
   deprecated: true
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-03'
+  last_referenced: '2026-06-07'
   deprecation_reason: auto_useful_rate_zero
   how: '2026-02-23'
   origin: '[[cmd_277]]'
@@ -8575,6 +8602,9 @@ lessons:
   origin: '[[cmd_264]]'
   source_cmd: cmd_264
   when: 同種の作業・判断・検証を行う時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L104
   title: subtask間依存でgitignoreがコミット計画をブロック
   summary: 前タスク(.gitignore追加)の成果物が後タスク(7コミット)のgit addをブロック。outputs/charts/*.pngとoutputs/gri
@@ -8602,6 +8632,9 @@ lessons:
   - deploy_task.sh
   - archive_completed.sh
   when: 報告YAMLやレビュー結果を作成・検証する時
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-07'
 - id: L102
   title: MultiViewの4視点skip_months=[0,1,2,3]はクラス変数固定でconfigで変更不可
   summary: SKIP_MONTHS_LIST=[0,1,2,3]はクラス変数として定義されており、pipeline_configのconfig辞書からは変更できない。パラメ
