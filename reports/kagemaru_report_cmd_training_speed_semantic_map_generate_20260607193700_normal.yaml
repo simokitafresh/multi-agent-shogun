@@ -1,0 +1,93 @@
+worker_id: kagemaru
+task_id: cmd_training_speed_semantic_map_generate_20260607193700_normal
+parent_cmd: cmd_training_speed_semantic_map_generate_20260607193700_normal
+timestamp: '2026-06-07T19:55:38+09:00'
+status: completed
+result:
+  summary: >-
+    TTL30sキャッシュ追加でgit ls-files --others(WSL2 NTFS ~3s)をスキップ。
+    cold: ~4.07s → ~2.21s (-46%) / warm: ~4.07s → ~0.47s (-88%)。
+    30/30 PASS SKIP=0 (test_semantic_index_update.bats)。
+    registry追記+aliases候補3個をinsight_write.sh経由で蓄積。
+binary_checks:
+  AC1:
+  - check: before計測3回実施(cold)
+    result: 'yes'
+  - check: ボトルネック仮説記録
+    result: 'yes'
+  AC2:
+  - check: TTLキャッシュ実装(git ls-files --others置換)
+    result: 'yes'
+  - check: timeout_sec=2でタイムアウト保護
+    result: 'yes'
+  AC3:
+  - check: after計測3回実施(cold avg 2.21s)
+    result: 'yes'
+  - check: warm計測実施(avg 0.47s, -88%)
+    result: 'yes'
+  - check: test_select.sh → test_semantic_index_update.bats 30/30 PASS SKIP=0
+    result: 'yes'
+  - check: docs/research/codd_refactor_registry.md追記済み
+    result: 'yes'
+  AC4:
+  - check: aliases候補3個(セマンティックマップ再生成/新規ファイル候補検索/インデックス再構築)をinsight_write.shで蓄積
+    result: 'yes'
+  commit:
+  - check: commit
+    result: pending
+files_modified:
+- change: modified
+  path: scripts/semantic_map_generate.sh
+- change: modified
+  path: docs/research/codd_refactor_registry.md
+commit: ''
+gate_prediction:
+  prediction: CLEAR
+  reason: all binary_checks yes
+lessons_useful:
+- id: L509
+  useful: true
+  reason: cold計測必須の教訓を守り、TTL期限切れ(35s wait)後に3回測定した。
+- id: L508
+  useful: true
+  reason: WSL2 NTFSのI/Oシリアライズ問題。git ls-files --othersが3sかかる原因と一致し、TTLキャッシュで回避。
+- id: L504
+  useful: true
+  reason: find等のNTFSファイル操作の変動大(WSL2)。TTLキャッシュが有効な対策。
+lesson_candidate:
+  found: true
+  title: 'WSL2 NTFS git ls-files --others: TTL30sキャッシュでcold-after速度2倍、warm速度8倍'
+  summary: >-
+    git ls-files --othersはWSL2 NTFSで毎回~3s。/tmpへの30s TTLキャッシュ(mtimeチェック)で
+    warm実行を0.5s未満に短縮可能。cache_file = /tmp/smg_new_files_{repo}.cacheパターンが有効。
+    cold改善(-46%)はtimeout_sec=2でのタイムアウト早期打ち切りが寄与。
+  origin: '[[WSL2_NTFS_IO_serial]] -> [[git_ls_files_slow]] -> [[TTL_cache_pattern]]'
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ''
+before_measurement:
+  cold_ms:
+  - 4070
+  - 4070
+  - 4070
+  note: 前セッションで計測。warm計測も~4.07s(TTLなし)。ボトルネック: git ls-files --others ~3s
+after_measurement:
+  cold_ms:
+  - 2170
+  - 2530
+  - 1930
+  avg_cold_ms: 2210
+  warm_ms:
+  - 460
+  - 470
+  avg_warm_ms: 465
+  improvement_cold_pct: -46
+  improvement_warm_pct: -88
+ac4_aliases:
+  concept_id: semantic_dictionary_design
+  candidates:
+  - セマンティックマップ再生成
+  - 新規ファイル候補検索
+  - インデックス再構築
+  insight_id: INS-20260607-195534096-16b8

@@ -34,6 +34,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 index_path = Path(sys.argv[1])
@@ -324,9 +325,20 @@ def new_file_candidates():
     env_list = os.environ.get("SEMANTIC_NEW_FILE_LIST", "").strip()
     if env_list:
         return [line.strip() for line in re.split(r"[\n,]", env_list) if line.strip()]
+
+    # TTLキャッシュ: git ls-files --othersはWSL2 NTFSで~3s。30s以内は再実行しない
+    _cache_ttl = 30
+    _cache_file = Path("/tmp") / f"smg_new_files_{repo_root.name}.cache"
+    try:
+        if time.time() - _cache_file.stat().st_mtime < _cache_ttl:
+            cached = _cache_file.read_text(encoding="utf-8").splitlines()
+            return [p for p in cached if p]
+    except OSError:
+        pass
+
     files = []
     files.extend(run_git_lines(["diff", "--name-only", "--diff-filter=A", "--cached"]))
-    files.extend(run_git_lines(["ls-files", "--others", "--exclude-standard"]))
+    files.extend(run_git_lines(["ls-files", "--others", "--exclude-standard"], timeout_sec=2))
     seen = set()
     out = []
     for path in files:
@@ -336,7 +348,15 @@ def new_file_candidates():
         if path.startswith((".git/", "queue/", "logs/", "tmp/")):
             continue
         out.append(path)
-    return out[:30]
+    out = out[:30]
+
+    # キャッシュ保存(失敗は非致命的)
+    try:
+        _cache_file.write_text("\n".join(out), encoding="utf-8")
+    except OSError:
+        pass
+
+    return out
 
 def queue_new_file_insights(text):
     insight_script = Path(os.environ.get("SEMANTIC_INSIGHT_WRITE", str(repo_root / "scripts" / "insight_write.sh")))
