@@ -61,6 +61,7 @@ fi
 # ─── L5: GATE CLEAR≠レビュー免除リマインド (殿厳命2026-06-08) ───
 echo ""
 echo "★★★ レビューの目的は実装の正しさ確認。GATE CLEARはレビュー免除の理由にならない(洗脳#1防止) ★★★"
+echo "★★★ infra/scripts変更: binary_checks=yesを鵜呑みにするな。実際に実行して動作確認せよ(洗脳#2防止) ★★★"
 
 # ─── SG-PRE1: gate_report_format.sh ───
 echo ""

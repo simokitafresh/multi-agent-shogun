@@ -781,4 +781,29 @@ if [ -f "$_inbox_file" ] && [ -f "$REVIEW_LOG" ]; then
     fi
 fi
 
+# --- L6: 洗脳#2検出 — infra report reviewで実動作確認なし (殿厳命2026-06-08) ---
+# observationsに「実行」「実測」「確認」「テスト実行」がないinfra reportレビューを検出
+_infra_no_verify=$(awk '
+    /^- cmd_id:/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); rt=""; obs="" }
+    /review_type: report/ { rt="report" }
+    /observations:/ { in_obs=1; next }
+    in_obs && /^    - / { obs=obs " " $0 }
+    in_obs && /^  [^ ]/ { in_obs=0 }
+    /timestamp:/ && rt=="report" && id != "" {
+        if (obs ~ /scripts\/|gate_|hook_|monitor|ninja_monitor/) {
+            if (obs !~ /実行|実測|実験|動作確認|テスト実行|bash.*\.sh/) {
+                print id
+            }
+        }
+        obs=""
+    }
+' "$REVIEW_LOG" 2>/dev/null | tail -5)
+if [ -n "$_infra_no_verify" ]; then
+    echo "WARN(L6-洗脳#2): infra/scripts reportレビューで実動作確認なし:"
+    printf '%s\n' "$_infra_no_verify" | while read -r _id; do
+        [ -n "$_id" ] && echo "  - $_id: binary_checks=yesを鵜呑みにするな。実行して確認せよ"
+    done
+    warn=1
+fi
+
 exit $warn
