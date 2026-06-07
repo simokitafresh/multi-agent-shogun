@@ -36,7 +36,7 @@ task:
   project: infra
   purpose: 'Speed-train scripts/reset_layout.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
   scout_exempt: true
-  status: assigned
+  status: failed
   stop_for: []
   target_path: scripts/reset_layout.sh
   task_id: cmd_training_speed_reset_layout_20260607145635_normal
@@ -112,3 +112,4 @@ task:
       count: 11
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 完了後にstatusを"completed"に更新。"pending"のまま報告禁止'
   deployed_at: "2026-06-07T14:57:15"
+  failure_reason: Codex usage limit; task requeued by karo
