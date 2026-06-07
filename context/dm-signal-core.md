@@ -313,7 +313,7 @@ PipelineContext(黒板): `current_tickers`(絞込) / `momentum_data`(各BB結果
 ## 8. APIエンドポイント概要
 
 FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success,data,error,message}`。FE `api-client.ts` は TTL付きGET (`annual-returns`/`monthly-returns`/`rolling-returns`/`monthly-trade` 等) で auth-scope込み `cacheKey` を生成し、保存済みETagを `If-None-Match` 送信、`304 Not Modified` は成功扱いで保存済みpayloadへ復元する。参照: `/mnt/c/Python_app/DM-signal/frontend/lib/api-client.ts`
-主要: `/api/signals` `/api/portfolios/get|save` `/admin/recalculate-sync` `/healthz`
+主要: `/api/signals` `/api/portfolios/get|save` `/admin/recalculate-sync` `/healthz` | Admin保存バリデーション分析: [[cmd_1753_validation_analysis]]
 詳細(全EP・レスポンス構造) → `docs/research/core-api-endpoints.md` | yaml → `projects/dm-signal.yaml` (h) api
 - L153: signals APIのpending判定はrebalance_trigger共通化しないとFoF/非月次で表示不整合が起きる（cmd_515）
 - L174: 最新+前月比較APIは『前月年月サブクエリ→同テーブル再JOIN』でN+1を回避できる（cmd_550）

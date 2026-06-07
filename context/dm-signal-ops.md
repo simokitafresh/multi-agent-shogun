@@ -139,6 +139,8 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 | P4 | **FE UI全ページ整合** | Dashboard/Compare/Signals/Detail/Admin MECE確認 | 殿指示 2026-04-11 |
 | P5 | **hide-first原則** | is_visible=false→PASS後に表示切替 | PI-023 |
 | P6 | **本番がground truth** | 不一致ならGS側の問題。本番を疑わない | 殿厳命 2026-03-22 |
+
+追体験: [[dialogue_parity_experience_20260407]] (ALMパリティ三重事故→PI-023→道具磨き→追体験の意味)
 旧アーキ資料(`cmd_286_recalculate-architecture.md`)は未復旧。再計算の一次情報は実コード(`backend/app/jobs/recalculate_fast.py`)を参照。
 - L155: monthly_trade_calculatorのpending判定はtrigger固定monthlyで全PFに同一ロジック適用していた（cmd_524）
 - L157: pending判定は『存在チェック』より先にrebalance月 gatingを入れないと非月次triggerで誤表示する（cmd_525）
@@ -517,6 +519,8 @@ import metrics_research_engine as MRE
 | SIGNAL_DEFERRED_BATCH_SIZE倍増(cmd_2260後) | constants.py 5000→10000。commit 169cd744。期待-15~20s |
 
 ## §31 ALM浄化記録 (2026-04-25)
+
+→ 工数見積もり: [[cmd_1752_estimate]] (`docs/research/cmd_1752_estimate.md`) ※ALMディスコン済み
 
 ### 発見した事実
 

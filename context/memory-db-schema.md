@@ -9,13 +9,13 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 58003 | event_id, concept_name, relevance_score |
-| table | event_links | 998 | source_event_id, target_concept, link_type |
-| table | event_state_transitions | 46 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
-| table | events | 43724 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
-| table | events_fts | 43724 | summary, detail |
-| table | search_logs | 2623 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
-| view | conversations | 32475 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 58963 | event_id, concept_name, relevance_score |
+| table | event_links | 1089 | source_event_id, target_concept, link_type |
+| table | event_state_transitions | 64 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
+| table | events | 44199 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
+| table | events_fts | 44199 | summary, detail |
+| table | search_logs | 2830 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
+| view | conversations | 32700 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -34,18 +34,18 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 32475 |
-| bulletin | 4345 |
+| conversation | 32700 |
+| bulletin | 4352 |
 | cmd_archive | 4298 |
-| skill_execution | 1392 |
-| inbox | 545 |
-| insight | 331 |
-| report | 192 |
+| skill_execution | 1557 |
+| inbox | 558 |
+| insight | 370 |
+| report | 214 |
 | cmd_quality | 43 |
 | pending_decision | 43 |
-| gate | 31 |
+| gate | 34 |
 | cmd_save | 23 |
-| lesson | 3 |
+| lesson | 5 |
 | workaround | 2 |
 | infrastructure_state | 1 |
 

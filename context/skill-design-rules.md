@@ -121,7 +121,7 @@ agent: general-purpose   # fork時のエージェント種別（Explore/Plan/gen
 
 ## §6 品質チェックリスト（新規スキル作成時）
 
-作成・更新時の実行チェックリストは `skills/skill-creator/SKILL.md` の `Quality Checklist` を使う。ここでは設計原則のみを保持し、個別作業のチェック項目は重複させない。
+作成・更新時の実行チェックリストは `skills/skill-creator/SKILL.md` の `Quality Checklist` を使う。ここでは設計原則のみを保持し、個別作業のチェック項目は重複させない。差分比較: [[cmd_1755_skill_creator]] (`docs/research/cmd_1755_skill_creator.md`)
 
 - [ ] description 1024文字以内
 - [ ] What + When + NOT When の3要素あり

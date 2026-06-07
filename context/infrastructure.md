@@ -992,6 +992,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L629: 偵察時はlayout.tsxのnavItemsを設計書URLスキームと最初に照合せよ（cmd_karo_kjrc_recon_kotaro）
 - L630: bulletin_write.shのSCRIPT_DIRはrepo root(parentディレクトリ)であり、scripts/yaml_auto_archive.shは$SCRIPT_DIR/scripts/yaml_auto_archive.shで到達する（cmd_2856）
 - L631: q11のGuard重複確認はファイル名guardではなくGuard一覧記述で判定する（cmd_2863）
+- guard.sh vs pre-bash-combined.sh機能比較: [[cmd_1755_guard_comparison]] (`docs/research/cmd_1755_guard_comparison.md`)
 - L632: TSV列追加時はテストの列参照をヘッダー名方式にせよ（cmd_karo_ci_fix_score_column）
 - L633: verdict自動導出は免除文脈(waive_reason)をgate検出へ残す（cmd_karo_ci_fix_verdict_derive）
 - L634: stats APIの集計粒度不足はFEフィルタでは補えない(kj-role-count)（cmd_karo_kj_role_filter）
