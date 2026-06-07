@@ -1822,7 +1822,7 @@ entries:
     assigned_to: "hanzo"
     updated_at: "2026-06-07T09:35:00"
   - script_path: "scripts/lib/pane_format.sh"
-    status: assigned
+    status: completed
     before_ms: 14
     after_ms: 14
     before_real_ms: 24.565
@@ -1866,7 +1866,7 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T09:26:37"
   - script_path: "scripts/lib/script_update.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -1874,19 +1874,19 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T09:32:59"
   - script_path: "scripts/lib/text_utils.sh"
-    status: pending
+    status: "completed"
     before_ms: 13
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
+    after_ms: "35"
+    before_real_ms: "186"
+    after_real_ms: "35"
+    real_measurement_command: "time bash {time_before,time_after}.sh: 10iter x3calls (ASCII hayate/JP 家老作業中/ASCII cmd_training_123)"
+    test_result: "3/3 PASS SKIP=0 (ASCII/Japanese/mixed); before_186ms_after_35ms; 81pct_reduction"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T09:50:04"
   - script_path: "scripts/lib/tmux_utils.sh"
     status: completed
     before_ms: 13
