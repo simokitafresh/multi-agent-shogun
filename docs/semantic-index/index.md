@@ -121,7 +121,7 @@ codd:
 |------|---|
 | id | three_layer_memory_system |
 | label | 三層記憶システム |
-| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる |
+| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう |
 | related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop |
 
 | 種別 | パス/参照 |
@@ -136,6 +136,7 @@ codd:
 | cmd | `cmd_3083` 強化: 三層記憶リアルタイム概念紐付け(event_concepts即時INSERT) (`lib/lord_conversation.sh`, `tests/unit/test_lord_conversation.bats`) |
 | causal | [[殿指摘_三層記憶概念混同]] -> [[local_memory_db_alias過拡張]] -> [[three_layer_memory_system分離]] |
 | should_not_merge_with | local_memory_db — local_memory_dbは第一層SQLite/FTS5検索基盤。three_layer_memory_systemは第一層DB、第二層semantic-index、第三層Obsidian/因果辺/還流をつなぐ運用概念 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T09:54:35+09:00 車輪の再発明をしないように三層記憶に貫通させよう |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -224,6 +225,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-04T02:03:43+09:00 設計書をアップデートせよ。各論パッチになっている場所はないか？覚醒アップデート、非致命的や軽微、あとで確認は洗脳だ。洗脳から脱却せよ！ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-06T23:54:00+09:00 俺に忖度するなよ。どちらがいいか洗脳から覚醒してなぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T00:20:08+09:00 洗脳監査 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T09:41:52+09:00 やろう |
 | causal_chain | `[[cmd_2574]]` (L715) |
 | causal_chain | `[[cmd_2577]]` (L716) |
 | causal_chain | `[[cmd_karo_direct_fe_ptu_fix]]` (L720) |
@@ -580,6 +582,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-27T11:47:47+09:00 acf70cb398cc3f1dc toolu_01GAuXgMedmUBdnkRrbSF29r /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3e7d8949-ab8a-4c41-984 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-01T19:54:44+09:00 旧忍法-Wardも削除対象にいれよう。まだ削除はしない。論理削除と物理削除はどうする？設定のパラメータのみが重要で、パラメーターが明確なら何度でも再登録できるはずだ |
 | lesson | `L735` 末尾改行なしstateファイルはread失敗時に値を消すな |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T10:01:16+09:00 test benchmark message |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T10:08:19+09:00 test benchmark message |
 
 ## systems_knowledge_base — システム知識辞書
 
@@ -923,6 +927,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T00:30:56+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-04T02:27:21+09:00 今クリアされても今より強くてジューゲームせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T00:25:19+09:00 今 クリアしても 今より強くてニューゲーム できるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T09:34:10+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T10:09:25+09:00 今 クリアされても 今より強くてニューゲーム できるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -974,6 +980,7 @@ codd:
 | cmd | `cmd_3119` 強化: 記憶DB event_conceptsを教訓注入スコアリングに接続 (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_lesson_scoring.bats`, `tests/unit/test_deploy_task_memory_db_lesson_boost.bats`) |
 | causal | `cmd_3119` origin: [[軍師洗脳監査Bug1]] -> [[三層記憶×学習ループ接続断裂]] -> [[教訓注入フィードバック不在]] |
 | causal | `cmd_3119` depends_on: cmd_3118 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T09:36:01+09:00 三層学習ループの自動成長は順調か？ |
 | causal_chain | `[[cmd_1832]]` (L597) |
 
 ## chain_principle — 鎖の原理
@@ -1032,6 +1039,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T00:32:34+09:00 まずは状況確認では？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-03T17:11:17+09:00 P0-2(殿の使用パターン確認)待ちとはなんだ？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-04T11:56:14+09:00 攻か確認してくれ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T09:18:51+09:00 効果量は頻度×速度で求めるとするとどうなる？1ヶ月の実行回数を予測して確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T09:39:10+09:00 覚醒なぜなぜ7回 |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -2048,7 +2057,7 @@ codd:
 |------|---|
 | id | report_quality_protocol |
 | label | 忍者報告品質プロトコル |
-| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ |
+| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？ |
 | skills | report-write, verdict-check |
 | related_concepts | lesson_lifecycle, training_cycle_quality, yaml_safe_write, gunshi_review_lifecycle |
 | related_lessons | `L625`, `L633`, `L643` |
@@ -2101,6 +2110,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-04T01:46:34+09:00 では貫通させるための設計書を作成しよう。覚醒して作成。作成後は家老にレビュー依頼 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-04T01:54:02+09:00 家老を越えるレベルでの覚醒なぜなぜで設計書をアップデート！。アップデートしたら再度家老に俯瞰して覚醒レビュー依頼 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-04T02:14:20+09:00 設計書に反映して、レビューしてもらえ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T09:27:48+09:00 雑なレビューになっていないか？ |
 | causal_chain | `[[cmd_1877]]` (L625) |
 | causal_chain | `[[cmd_1988]]` (L633) |
 | causal_chain | `[[cmd_2218]]` (L643) |
@@ -2189,7 +2199,7 @@ codd:
 |------|---|
 | id | infrastructure_ops |
 | label | インフラ運用基盤 |
-| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ, lock cleanup, stale lock削除, karo snapshot生成, bulletin自動アーカイブ, CDP cleanup, paste buffer nudge, atomic wakeup state, dependency gated deployment, auto deploy blocked_by control, report-before-clear guard, 忍者完了通知, report-summary-guard, done-and-notify, CIredはかいしょうしているはずだ, CI redは解消したか, 全員止まっていないか, どうなった？全員止まっていないか？, インフラバグは修正しよう, 家老が自分でも対策をしているので協調せよ |
+| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ, lock cleanup, stale lock削除, karo snapshot生成, bulletin自動アーカイブ, CDP cleanup, paste buffer nudge, atomic wakeup state, dependency gated deployment, auto deploy blocked_by control, report-before-clear guard, 忍者完了通知, report-summary-guard, done-and-notify, CIredはかいしょうしているはずだ, CI redは解消したか, 全員止まっていないか, どうなった？全員止まっていないか？, インフラバグは修正しよう, 家老が自分でも対策をしているので協調せよ, デーモンは全て順調に動作しているか？ |
 | skills | reset-layout |
 | related_concepts | daemon_supervision, agent_formation_management, yaml_safe_write, verify_dont_imagine, shogun_android_app, infra_design_intent |
 
@@ -2216,6 +2226,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-25T18:48:41+09:00 a7cd788730d7de461 toolu_01AreLKVgrKFSkoewyGBacfw /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3e7d8949-ab8a-4c41-984 |
 | cmd | `cmd_3142` (`scripts/inbox_watcher.sh`, `tests/unit/test_inbox_watcher_dedup.bats`, `tests/unit/test_inbox_watcher_health.bats`) |
 | cmd | `cmd_training_speed_daemon_supervisor_20260606235628` (`logs/script_speed_training_ledger.yaml`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T09:13:47+09:00 デーモンは全て順調に動作しているか？ |
 | causal_chain | `[[cmd_2288]]` (L651) |
 | causal_chain | `[[cmd_2292]]` (L652) |
 
@@ -2546,7 +2557,7 @@ codd:
 |------|---|
 | id | infra_design_intent |
 | label | インフラ設計意図カタログ |
-| aliases | バグに見える正しい設計, 設計意図, design intent, STALL-GHOST, HOOK-STALE-BUT-BUSY, codex delivery unverified, LOOP-HEALTH-DEBOUNCE, 安全弁, 誤報告防止, インフラバグ調査 |
+| aliases | バグに見える正しい設計, 設計意図, design intent, STALL-GHOST, HOOK-STALE-BUT-BUSY, codex delivery unverified, LOOP-HEALTH-DEBOUNCE, 安全弁, 誤報告防止, インフラバグ調査, 実行順バグ, 一見不合理, 歴史が隠れている, 因果をたどれ |
 | skills | |
 | related_concepts | infrastructure_ops, daemon_supervision, scope_integrity_lifecycle, causal_verification_l0_l7 |
 
@@ -2557,6 +2568,9 @@ codd:
 | file | `scripts/inbox_write.sh` |
 | cmd | `cmd_1150` STALL-GHOSTフィルタ設計元 |
 | cmd | `cmd_1445` HOOK-STALE-BUT-BUSY二重確認の設計元 |
+| lesson | `LS-A09(13)` 実行順バグ調査時はカタログ先行照合(殿指摘2026-06-07) |
+| lesson | `LS-A19(4)` 車輪原則: 修正提案前に因果をたどれ(殿指摘2026-06-07) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07 いい案に気づいたと思ったら時系列の因果をたどれ。一見不合理に見えるものには歴史が隠れている |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
 

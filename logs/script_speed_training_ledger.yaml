@@ -1954,7 +1954,7 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T10:14:00"
   - script_path: "scripts/markdown_link_counts.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -1962,21 +1962,21 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T10:03:48"
   - script_path: "scripts/mcp_sync_lesson.sh"
-    status: pending
+    status: completed
     before_ms: 15
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 150
+    after_real_ms: 40
+    real_measurement_command: "sandboxed empty staging: /usr/bin/time -f '%e' bash scripts/mcp_sync_lesson.sh <tmp>/staging.yaml (10 runs median approx)"
+    test_result: "bash_n_pass;bats tests/unit/test_gate_shogun_memory.bats 4/4 PASS SKIP=0;empty_staging_smoke PASS;before_s=0.20,0.17,0.14,0.16,0.16,0.13,0.12,0.11,0.12,0.11;after_s=0.04,0.03,0.04,0.05,0.04,0.04,0.03,0.04,0.07,0.03"
+    commit: "7ec9bf888"
+    assigned_to: "saizo"
+    updated_at: "2026-06-07T10:10:35"
   - script_path: "scripts/memory_candidate_resolve.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -1984,8 +1984,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T10:06:01"
   - script_path: "scripts/memory_db_init.sh"
     status: pending
     before_ms: 13
