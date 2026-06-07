@@ -881,45 +881,35 @@ safe_send_clear() {
         log "CODEX-RESPAWN-SKIP: $agent_name launch_cmd empty, using $clear_cmd"
     fi
 
+    # Claude CLIもCodex CLIと同じくrespawn-pane -kで再起動する。
+    # /clear+shift+tab方式はplan modeに落ちるバグが頻発(2026-06-07殿指摘)。
+    # respawn-pane -kならlaunch_cmdに--dangerously-skip-permissionsが付くため
+    # bypass permissionsが確実に復帰する。
+    if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "claude" ]; then
+        local _launch_cmd
+        _launch_cmd=$(tmux display-message -t "$pane" -p '#{pane_start_command}' 2>/dev/null || echo "")
+        if [ -z "$_launch_cmd" ] || [[ "$_launch_cmd" != *"claude"* ]]; then
+            _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
+        fi
+        if [ -n "${_launch_cmd:-}" ]; then
+            log "CLAUDE-RESPAWN: $agent_name respawn-pane (bypass permissions guaranteed), reason=$reason"
+            tmux respawn-pane -k -t "$pane" "cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
+                log "CLAUDE-RESPAWN-FALLBACK: $agent_name respawn failed, falling back to $clear_cmd"
+                safe_send_keys_atomic "$pane" "$clear_cmd" 0.3 || true
+            }
+            tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
+            log "CTX-RESET: $agent_name @context_pct → 0% after CLAUDE-RESPAWN"
+            rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
+            return 0
+        fi
+    fi
     log "CLEAR-SEND: $agent_name confirmed idle, sending $clear_cmd, reason=$reason"
     if ! safe_send_keys_atomic "$pane" "$clear_cmd" 0.3; then
         log "CLEAR-BLOCKED: $agent_name send failed, reason=$reason"
         return 1
     fi
-    # /clear後に@context_pctをリセット。旧値キャッシュが残るとget_context_pctが
-    # /clear後も高CTX値を返し、陣形図表示とauto-clear/auto-deploy判定が狂う
     tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
     log "CTX-RESET: $agent_name @context_pct → 0% after $clear_cmd"
-    if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "claude" ]; then
-        # /clear resets Claude Code to accept-edits; shift+tab twice restores bypass permissions.
-        # CLAUDE.md(48KB)ロード+初期化完了を待つ: CTX>0%が表示されるまでポーリング(最大15秒)
-        local _bp_wait=0
-        while [ "$_bp_wait" -lt 15 ]; do
-            sleep 1
-            _bp_wait=$((_bp_wait + 1))
-            local _bp_ctx
-            _bp_ctx=$(tmux capture-pane -t "$pane" -p 2>/dev/null | grep -oP 'CTX:\K[0-9]+' | tail -1 || true)
-            if [ -n "$_bp_ctx" ] && [ "$_bp_ctx" -gt 0 ] 2>/dev/null; then
-                log "BYPASS-PERMISSIONS-WAIT: $agent_name CLI ready (CTX:${_bp_ctx}%) after ${_bp_wait}s"
-                break
-            fi
-        done
-        safe_send_keys "$pane" S-Tab || true
-        sleep 1
-        safe_send_keys "$pane" S-Tab || true
-        sleep 0.5
-        # 結果確認: bypass permissionsになったかcapture-paneで検証
-        local _bp_result
-        _bp_result=$(tmux capture-pane -t "$pane" -p 2>/dev/null | grep -oiP '(bypass permissions|accept edits|plan mode)' | tail -1 || true)
-        if [[ "$_bp_result" == *"bypass"* ]]; then
-            log "BYPASS-PERMISSIONS-OK: $agent_name → bypass permissions (waited ${_bp_wait}s)"
-        else
-            log "BYPASS-PERMISSIONS-RETRY: $agent_name got '${_bp_result:-unknown}', retrying shift+tab"
-            safe_send_keys "$pane" S-Tab || true
-            sleep 0.5
-            safe_send_keys "$pane" S-Tab || true
-        fi
-    fi
     rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
     return 0
 }

@@ -23,97 +23,100 @@ LOCK_FILE="/tmp/shogun_yaml_auto_archive.lock"
 # WSL2最適化: flock subshell(~5-15ms) → exec fd。subshell fork排除。
 exec 200>"$LOCK_FILE"
 flock -w 10 200
-python3 - "$ROOT_DIR" "$CONFIG_FILE" <<'PY'
-from __future__ import annotations
 
-import os
-import re
-import sys
-from pathlib import Path
+# WSL2最適化: Python起動(~50ms) → grep+awk(~5ms)。
+# アーカイブ不要の一般ケースでPython起動を完全排除。
+# アーカイブ必要時はawk単一パスで全ブロック収集→archive追記→main上書き(atomic)。
+_archive_one() {
+    local path="$1" keep="$2" top_key="$3" entry_pattern="$4" archive_path="$5"
+    local relpath="${path#$ROOT_DIR/}"
+    local rel_archive="${archive_path#$ROOT_DIR/}"
 
-root = Path(sys.argv[1])
-config = Path(sys.argv[2])
-
-
-def resolve(path: str) -> Path:
-    p = Path(path)
-    return p if p.is_absolute() else root / p
-
-
-def parse_entries(text: str, entry_pattern: str) -> tuple[list[str], list[list[str]]]:
-    lines = text.splitlines(keepends=True)
-    entry_re = re.compile(entry_pattern)
-    header: list[str] = []
-    entries: list[list[str]] = []
-    current: list[str] | None = None
-
-    for line in lines:
-        if entry_re.match(line):
-            if current is not None:
-                entries.append(current)
-            current = [line]
-            continue
-        if current is None:
-            header.append(line)
-            continue
-        current.append(line)
-
-    if current is not None:
-        entries.append(current)
-    return header, entries
-
-
-def body_for(top_key: str, entries: list[list[str]], include_header: bool) -> str:
-    out: list[str] = []
-    if include_header and top_key != "-":
-        out.append(f"{top_key}:\n")
-    for block in entries:
-        out.extend(block)
-        if block and not block[-1].endswith("\n"):
-            out.append("\n")
-    return "".join(out)
-
-
-def archive_one(path: Path, keep: int, top_key: str, entry_pattern: str, archive_path: Path) -> None:
-    if not path.exists():
-        print(f"SKIP missing {path.relative_to(root) if path.is_relative_to(root) else path}")
+    if [[ ! -f "$path" ]]; then
+        echo "SKIP missing $relpath"
         return
+    fi
 
-    text = path.read_text(encoding="utf-8", errors="ignore")
-    _header, entries = parse_entries(text, entry_pattern)
-    total = len(entries)
-    if total <= keep:
-        print(f"OK {path.relative_to(root) if path.is_relative_to(root) else path}: entries={total} keep={keep}")
+    # grep -c: 1回のシーケンシャルスキャンでエントリ数を取得
+    local count
+    count=$(grep -cE "$entry_pattern" "$path" 2>/dev/null) || count=0
+
+    if (( count <= keep )); then
+        echo "OK $relpath: entries=$count keep=$keep"
         return
+    fi
 
-    archive_entries = entries[:-keep]
-    recent_entries = entries[-keep:]
+    # アーカイブ必要 — awk単一パス
+    local n_archive=$(( count - keep ))
+    local archive_has_content=0
+    [[ -s "$archive_path" ]] && archive_has_content=1
+    mkdir -p "$(dirname "$archive_path")"
+    local tmp_path="${path}.tmp.$$"
+    # NOTE: gawk dynamic regex(\s未サポート) → POSIX [[:space:]]に変換
+    local awk_pattern="${entry_pattern//\\s/[[:space:]]}"
 
-    archive_path.parent.mkdir(parents=True, exist_ok=True)
-    archive_exists = archive_path.exists() and archive_path.stat().st_size > 0
-    with archive_path.open("a", encoding="utf-8") as fh:
-        fh.write(body_for(top_key, archive_entries, include_header=not archive_exists))
+    awk \
+        -v keep="$keep" \
+        -v top_key="$top_key" \
+        -v pattern="$awk_pattern" \
+        -v archive_path="$archive_path" \
+        -v tmp_path="$tmp_path" \
+        -v archive_has_content="$archive_has_content" \
+    'BEGIN {
+        entry_count = 0
+        in_entry = 0
+        current_block = ""
+    }
+    $0 ~ pattern {
+        if (in_entry) {
+            entry_count++
+            entries[entry_count] = current_block
+        }
+        in_entry = 1
+        current_block = $0 "\n"
+        next
+    }
+    in_entry { current_block = current_block $0 "\n"; next }
+    END {
+        if (in_entry) {
+            entry_count++
+            entries[entry_count] = current_block
+        }
+        n_keep  = int(keep)
+        n_archive = entry_count - n_keep
 
-    tmp_path = path.with_suffix(path.suffix + f".tmp.{os.getpid()}")
-    tmp_path.write_text(body_for(top_key, recent_entries, include_header=True), encoding="utf-8")
-    os.replace(tmp_path, path)
-    print(
-        f"ARCHIVED {path.relative_to(root) if path.is_relative_to(root) else path}: "
-        f"{len(archive_entries)} archived, {len(recent_entries)} kept -> "
-        f"{archive_path.relative_to(root) if archive_path.is_relative_to(root) else archive_path}"
-    )
+        # archive追記 (新規作成時のみheader先出し)
+        if (!archive_has_content && top_key != "-") {
+            printf "%s:\n", top_key >> archive_path
+        }
+        for (i = 1; i <= n_archive; i++) {
+            printf "%s", entries[i] >> archive_path
+        }
+        close(archive_path)
 
+        # main上書き (atomic: tmp書込み→rename)
+        if (top_key != "-") {
+            printf "%s:\n", top_key > tmp_path
+        }
+        for (i = n_archive + 1; i <= entry_count; i++) {
+            printf "%s", entries[i] >> tmp_path
+        }
+        close(tmp_path)
+    }' "$path"
 
-for raw in config.read_text(encoding="utf-8").splitlines():
-    line = raw.strip()
-    if not line or line.startswith("#"):
-        continue
-    parts = raw.split("\t")
-    if len(parts) != 5:
-        raise SystemExit(f"invalid config line (expected 5 tab columns): {raw}")
-    rel_path, keep_s, top_key, entry_pattern, rel_archive = parts
-    if not keep_s.isdigit() or int(keep_s) < 1:
-        raise SystemExit(f"invalid keep value for {rel_path}: {keep_s}")
-    archive_one(resolve(rel_path), int(keep_s), top_key, entry_pattern, resolve(rel_archive))
-PY
+    mv "$tmp_path" "$path"
+    echo "ARCHIVED $relpath: $n_archive archived, $keep kept -> $rel_archive"
+}
+
+while IFS=$'\t' read -r rel_path keep_s top_key entry_pattern rel_archive; do
+    [[ -z "$rel_path" || "$rel_path" == \#* ]] && continue
+    if ! [[ "$keep_s" =~ ^[0-9]+$ ]] || (( keep_s < 1 )); then
+        echo "invalid config line (keep must be integer >= 1): $rel_path" >&2
+        exit 1
+    fi
+    [[ "$rel_path"    == /* ]] && fp="$rel_path"    || fp="$ROOT_DIR/$rel_path"
+    [[ "$rel_archive" == /* ]] && fa="$rel_archive" || fa="$ROOT_DIR/$rel_archive"
+    _archive_one "$fp" "$keep_s" "$top_key" "$entry_pattern" "$fa"
+done < "$CONFIG_FILE"
+
 exec 200>&-
