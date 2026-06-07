@@ -17,13 +17,13 @@
 #   6. 下書き保存
 set -euo pipefail
 
-readonly AUTO_OPS_DIR="/mnt/c/Python_app/auto-ops"
-readonly CDP_PORT="${CDP_PORT:-9234}"
-
 die() { echo "ERROR: $*" >&2; exit 1; }
 
 [[ $# -ge 1 ]] || die "Usage: $0 <markdown_file>"
 [[ -f "$1" ]] || die "File not found: $1"
+
+readonly AUTO_OPS_DIR="/mnt/c/Python_app/auto-ops"
+readonly CDP_PORT="${CDP_PORT:-9234}"
 
 MD_FILE="$(realpath "$1")"
 
@@ -193,6 +193,7 @@ title = ""
 fallback_title = ""
 sections = []
 text_buf = []
+CODE_FENCE = chr(96) * 3
 
 def flush_text():
     global text_buf
@@ -220,7 +221,7 @@ for line in lines:
         sections.append({"type": "bullet", "text": line[2:]})
     elif line.strip() == "":
         flush_text()
-    elif line.startswith(chr(96) * 3):
+    elif line.startswith(CODE_FENCE):
         continue
     else:
         text_buf.append(line + " ")
