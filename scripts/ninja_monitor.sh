@@ -2089,17 +2089,6 @@ _handle_speed_training_auto_deploy() {
     [ -n "$name" ] || return 1
     [ -r "$helper" ] || return 1
 
-    # CTX%閾値チェック: 50%超の忍者への配備をスキップ（コンパクション頻発防止）
-    local _ctx_target="${PANE_TARGETS[$name]:-}"
-    if [ -n "$_ctx_target" ]; then
-        local _ctx_pct
-        _ctx_pct=$(get_context_pct "$_ctx_target" "$name")
-        if [ -n "$_ctx_pct" ] && [ "$_ctx_pct" -gt 50 ] 2>/dev/null; then
-            log "SPEED-TRAINING-CTX-SKIP: $name CTX=${_ctx_pct}% exceeds 50% threshold, skipping auto-deploy"
-            return 1
-        fi
-    fi
-
     if _training_pipeline_has_work; then
         log "SPEED-TRAINING-AUTO-SKIP: $name production pipeline has pending work"
         return 1
