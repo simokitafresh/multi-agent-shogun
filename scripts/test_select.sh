@@ -40,12 +40,12 @@ declare -A SCRIPT_PATHS_BY_BASENAME
 declare -A SCRIPT_EXISTS
 
 # perf: basename subshell → bash param expansion (saves 246 subprocess forks on NTFS)
-while IFS= read -r script_path; do
-    script_base="${script_path##*/}"
-    rel_path="${script_path#"$REPO_ROOT"/}"
+# perf: find → git ls-files (git index経由でNTFS I/O回避: 117ms → 37ms)
+while IFS= read -r rel_path; do
+    script_base="${rel_path##*/}"
     SCRIPT_PATHS_BY_BASENAME["$script_base"]+="$rel_path "
     SCRIPT_EXISTS["$rel_path"]=1
-done < <(find "$REPO_ROOT/scripts" "$REPO_ROOT/lib" -name '*.sh' 2>/dev/null)
+done < <(git -C "$REPO_ROOT" ls-files -- 'scripts/' 'lib/' 2>/dev/null | grep '\.sh$')
 
 # L1: 命名規則マッチ (test_foo.bats → scripts/foo.sh)
 # perf: basename+sed subshell → bash param expansion (saves 161 subprocess forks × 2)
@@ -67,8 +67,9 @@ done
 
 # L2: テスト内のsource/bash解析 — single grep -rH pass
 # perf: replaces 161×grep + 507×(echo|sed|sed) with one process (~13s → ~0.3s)
+# perf: grep -rH → git grep (git index経由でNTFS I/O回避: 875ms → 299ms)
 while IFS= read -r line; do
-    test_file="${line%%:*}"
+    test_file="$REPO_ROOT/${line%%:*}"
     match="${line#*:}"
     script_ref="${match#* }"      # strip "source " / "bash " / ". " prefix
     script_base="${script_ref##*/}"
@@ -79,7 +80,7 @@ while IFS= read -r line; do
         [ -n "$rel_path" ] || continue
         TEST_MAP["$rel_path"]+="$test_file "
     done
-done < <(grep -rH -oE '(source|bash|\.) +[^ ]+\.sh' "$TEST_DIR"/test_*.bats 2>/dev/null)
+done < <(git -C "$REPO_ROOT" grep -H -oE '(source|bash|\.) +[^ ]+\.sh' -- 'tests/unit/test_*.bats' 2>/dev/null)
 
 # --- 影響テスト特定 ---
 declare -A AFFECTED_TESTS
