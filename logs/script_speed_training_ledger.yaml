@@ -1734,16 +1734,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/known_ninjas.sh"
-    status: pending
+    status: completed
     before_ms: 18
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
+    after_ms: 18
+    before_real_ms: 15.763
+    after_real_ms: 13.079
+    real_measurement_command: "python3 measure 200x: bash -c 'source scripts/lib/known_ninjas.sh; is_known_ninja hayate; is_known_ninja bad || true; known_ninjas_display >/dev/null; printf \"%s\" \"$KNOWN_NINJAS_CSV\" >/dev/null'; median_ms"
+    test_result: "bash_n_pass;bats_test_karo_workaround_validation_28_pass_0_skip;bats_filter_known_ninjas_gate_meta_quality_2_pass_0_skip;CSV_DISPLAY_and_return_codes_ok;before_15.763_after_13.079"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T09:10:00"
   - script_path: "scripts/lib/layout_string.sh"
     status: pending
     before_ms: 16
