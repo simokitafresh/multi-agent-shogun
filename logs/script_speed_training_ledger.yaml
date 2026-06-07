@@ -1745,16 +1745,16 @@ entries:
     assigned_to: "hayate"
     updated_at: "2026-06-07T09:10:00"
   - script_path: "scripts/lib/layout_string.sh"
-    status: assigned
+    status: completed
     before_ms: 16
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 16
+    before_real_ms: 3668
+    after_real_ms: 2704
+    real_measurement_command: "mock tmux 240x60; 50x source agent_config+layout_string; generate_layout_string shogun:agents 1; median of 5 runs"
+    test_result: "bash_n_pass;mock_tmux_output_match_0c8a;python_checksum_removed;before_3668_after_2704;SKIP=0"
+    commit: "e9de94f33"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T09:02:08"
+    updated_at: "2026-06-07T09:12:00"
   - script_path: "scripts/lib/lock_path.sh"
     status: pending
     before_ms: 14
