@@ -54,9 +54,7 @@ notify_gunshi_for_report() {
         "${ninja_name}報告完了。レビュー依頼: ${cmd_id} report=${report_base}" \
         report_review karo 2>/dev/null; then
         echo "  gunshi_notify: SENT (${ninja_name} → gunshi)"
-        echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)" > "$flag_file"
-        echo "ninja: ${ninja_name}" >> "$flag_file"
-        echo "report: ${report_base}" >> "$flag_file"
+        printf 'timestamp: %(%Y-%m-%dT%H:%M:%S)T\nninja: %s\nreport: %s\n' -1 "${ninja_name}" "${report_base}" > "$flag_file"
     else
         echo "  gunshi_notify: WARN (inbox_write failed for ${ninja_name})"
     fi
