@@ -1888,16 +1888,16 @@ entries:
     assigned_to: ""
     updated_at: ""
   - script_path: "scripts/lib/tmux_utils.sh"
-    status: pending
+    status: completed
     before_ms: 13
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    after_ms: 13
+    before_real_ms: 8.277
+    after_real_ms: 8.029
+    real_measurement_command: "python3 interleaved 120x: bash -c 'source scripts/lib/tmux_utils.sh; type safe_send_keys >/dev/null; type safe_send_keys_atomic >/dev/null'; median_ms"
+    test_result: "bash_n_pass;callers_bash_n_pass;safe_send_keys_invalid_pane_spot_ok;before_8.277_after_8.029;SKIP=0"
+    commit: "de97d77b2"
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T09:59:00"
   - script_path: "scripts/lib/yaml_field_set.sh"
     status: pending
     before_ms: 17
