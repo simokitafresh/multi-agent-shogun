@@ -1,4 +1,4 @@
-global_status: paused
+global_status: running
 generated_at: "2026-06-06T21:09:32"
 measurement_command: "timeout 5 bash -n <script_path> (syntax baseline only; not runtime speed)"
 real_measurement_policy: "Ninja must choose a safe runtime command per script: time bash script.sh <args>, --help, dry-run mode, or sandboxed equivalent. Record before_real_ms/after_real_ms with the same command before and after."
@@ -1253,13 +1253,13 @@ entries:
     status: completed
     before_ms: 15
     after_ms: 15
-    before_real_ms: 7
-    after_real_ms: 7
-    real_measurement_command: "printf '' | bash scripts/hooks/pre-write-report-deny.sh"
-    test_result: "PASS_NO_IMPROVEMENT: 既にIFS=read builtin+bash regex最適化済み。測定誤差範囲(5-9ms)で有意差なし"
-    commit: "PASS_NO_IMPROVEMENT"
+    before_real_ms: 17.519
+    after_real_ms: 11.892
+    real_measurement_command: "printf \"{}\" | bash scripts/hooks/pre-write-report-deny.sh"
+    test_result: "bash -n PASS; functional hook tests PASS SKIP=0"
+    commit: "2ab61d6e3"
     assigned_to: "hayate"
-    updated_at: "2026-06-07T11:02:00"
+    updated_at: "2026-06-07T14:20:04"
   - script_path: "scripts/hooks/pre_compact_save.sh"
     status: completed
     before_ms: 13
@@ -2020,7 +2020,7 @@ entries:
     assigned_to: "kotaro"
     updated_at: "2026-06-07T11:09:00"
   - script_path: "scripts/model_analysis.sh"
-    status: pending
+    status: assigned
     before_ms: 16
     after_ms: ""
     before_real_ms: ""
@@ -2028,19 +2028,19 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T14:22:52"
   - script_path: "scripts/model_switch_preflight.sh"
-    status: pending
+    status: completed
     before_ms: 17
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 1690
+    after_real_ms: 900
+    real_measurement_command: "bash scripts/model_switch_preflight.sh"
+    test_result: "bash -n PASS; bats tests/unit/test_cli_lookup.bats PASS SKIP=0"
+    commit: "6ddc50343"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T14:19:39"
   - script_path: "scripts/ninja_done.sh"
     status: completed
     before_ms: 17
@@ -2053,18 +2053,18 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T14:10:38"
   - script_path: "scripts/ninja_monitor.sh"
-    status: pending
+    status: completed
     before_ms: 24
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 63
+    after_real_ms: 57
+    real_measurement_command: "NINJA_MONITOR_LIB_ONLY=1 bash scripts/ninja_monitor.sh (10-run median)"
+    test_result: "bash -n OK; SCRIPT_DIR correct; tests/unit/test_ninja_monitor_*.bats 56/56 PASS SKIP=0; before_63ms_after_57ms; 10pct_reduction"
+    commit: "6ddf70e86"
+    assigned_to: "kotaro"
+    updated_at: "2026-06-07T14:21:00"
   - script_path: "scripts/note_draft.sh"
-    status: pending
+    status: assigned
     before_ms: 23
     after_ms: ""
     before_real_ms: ""
@@ -2072,19 +2072,19 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "tobisaru"
+    updated_at: "2026-06-07T14:19:40"
   - script_path: "scripts/ntfy.sh"
-    status: pending
+    status: completed
     before_ms: 18
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
-    assigned_to: ""
-    updated_at: ""
+    before_real_ms: 22.895
+    after_real_ms: 19.501
+    real_measurement_command: "bash scripts/ntfy.sh"
+    test_result: "bash -n PASS; noarg/empty usage PASS; bats test_ntfy_auth + test_cmd_1408_defensive_coding 21/21 PASS SKIP=0"
+    commit: "be85d24ef"
+    assigned_to: "hayate"
+    updated_at: "2026-06-07T14:19:39"
   - script_path: "scripts/ntfy_batch.sh"
     status: completed
     before_ms: 13
@@ -2092,10 +2092,10 @@ entries:
     before_real_ms: 120
     after_real_ms: 30
     real_measurement_command: "sandbox copy: bash /tmp/.../scripts/ntfy_batch.sh <message>"
-    test_result: "bash -n scripts/ntfy_batch.sh PASS; sandbox append/empty/noarg verification PASS SKIP=0"
+    test_result: "bash -n PASS; sandbox append/empty/noarg verification PASS SKIP=0"
     commit: "f353eade0"
-    assigned_to: ""
-    updated_at: "2026-06-07T14:17:54"
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T14:19:40"
   - script_path: "scripts/ntfy_batch_flush.sh"
     status: completed
     before_ms: 15
@@ -2108,7 +2108,7 @@ entries:
     assigned_to: "saizo"
     updated_at: "2026-06-07T14:20:15"
   - script_path: "scripts/ntfy_cmd.sh"
-    status: pending
+    status: assigned
     before_ms: 15
     after_ms: ""
     before_real_ms: ""
@@ -2116,8 +2116,8 @@ entries:
     real_measurement_command: ""
     test_result: "baseline_bash_n_exit_0"
     commit: ""
-    assigned_to: ""
-    updated_at: ""
+    assigned_to: "kagemaru"
+    updated_at: "2026-06-07T14:23:07"
   - script_path: "scripts/ntfy_inbox_archive.sh"
     status: pending
     before_ms: 17
@@ -2800,3 +2800,9 @@ entries:
     commit: ""
     assigned_to: ""
     updated_at: ""
+before_real_ms: 5500
+after_real_ms: 5320
+real_measurement_command: '/usr/bin/time -f ''REAL=%e'' bash -c ''for i in $(seq 1 1000); do bash scripts/note_draft.sh 2>/dev/null || true; done'' (1000-iter loop, no-args fast exit)'
+test_result: bash -n scripts/note_draft.sh PASS; no-arg usage exit=1; file-not-found exit=1; SKIP=0
+commit: 1d2957ccc
+status: completed
