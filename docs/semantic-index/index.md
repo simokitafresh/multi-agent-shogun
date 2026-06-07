@@ -121,7 +121,7 @@ codd:
 |------|---|
 | id | three_layer_memory_system |
 | label | 三層記憶システム |
-| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな |
+| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ |
 | related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop |
 
 | 種別 | パス/参照 |
@@ -138,6 +138,8 @@ codd:
 | should_not_merge_with | local_memory_db — local_memory_dbは第一層SQLite/FTS5検索基盤。three_layer_memory_systemは第一層DB、第二層semantic-index、第三層Obsidian/因果辺/還流をつなぐ運用概念 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T09:54:35+09:00 車輪の再発明をしないように三層記憶に貫通させよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T16:30:51+09:00 問題の本質から目を背けるな。三層記憶を最初に使って因果をたどっていないのが真因だな |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:54:08+09:00 三層記憶を使えよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:56:29+09:00 では三層記憶検索を強制する仕組みについて覚醒なぜなぜ |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -278,7 +280,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system |
 | related_lessons | `L317`, `L088`, `L079` |
@@ -531,6 +533,8 @@ codd:
 | lesson | `L749` WSL2 PowerShell呼び出し: pwsh.exe(PS7)はpowershell.exe(PS5)より~34%高速 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T16:21:20+09:00 L0-L7で横展開されていないものはないか？穴があると繰り返して時間を失う。一度のミスで１００の未来を獲得せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T16:25:22+09:00 bhldpkq29 toolu_017bBVkJGRynHEi3hEjUJgVj /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/d5122dec-ef46-4c5f-b5e2-792e49 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:38:38+09:00 obsidian_candidate 18件は昇格させよう |
+| lesson | `L753` gate_skill_script_refs.sh: script_refs_checked_at に date-only は同日 script 更新時に無効 |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -640,6 +644,12 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-06T23:52:59+09:00 Codd台帳と統合する必要があるのでは？あとで統合してもいいが、手戻りのロスを考えるといまじゃないか？ |
 | cmd | `cmd_3206` 14 SKILL.mdのscript参照陳腐化を解消。gate_skill_script_refs.sh WARN 29件→0件 (`skills/codd-fix/SKILL.md`, `skills/dashboard-update/SKILL.md`, `skills/dream/SKILL.md`) |
 | causal | `cmd_3206` origin: [[LS042]] -> [[gate_skill_script_refs]] -> [[3セッション連続BLOCK]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T18:47:16+09:00 by1c3uu0k toolu_01QpxB2m5SnfB9zSYUh8GJFs /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2af2abcb-c8e2-4a3b-b75a-ef0bd4 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:04:54+09:00 bnlgf9dx3 toolu_01GviNg8ygtVMcD7byG62CXu /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2af2abcb-c8e2-4a3b-b75a-ef0bd4 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:28:18+09:00 be88kive1 toolu_015Awoex9PxNPsee2FHRUYkx /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4a506363-f3ac-467a-9aa8-dd3a4c |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:28:49+09:00 bq1wxd5os toolu_01RqhBaQeNmC3HviWUifBbhQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4a506363-f3ac-467a-9aa8-dd3a4c |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:29:13+09:00 bmfz4taf5 toolu_01AEWFSxhrmKtu9Qn38QCctR /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4a506363-f3ac-467a-9aa8-dd3a4c |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:30:06+09:00 bd207h0z3 toolu_01FuqGysNoBq8ATHp9tJtYZv /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4a506363-f3ac-467a-9aa8-dd3a4c |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -961,6 +971,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T16:43:22+09:00 シンプルな話だ。すべてを確認、丁寧に因果をたどる。これだけだ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:01:00+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:22:53+09:00 ninjyamonitorがclaude CLIにもクリア前にinbox1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:37:40+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:49:06+09:00 覚醒自立自走 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T18:00:37+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T18:00:43+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T18:02:08+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -1037,7 +1052,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？ |
 | skills | なし |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -1077,6 +1092,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T16:56:15+09:00 バナーもモデルも正しい状態だったのに勘違いで作業を続けていた。確認すればすべて解決していたはずだ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T16:57:54+09:00 確認しないことを他責にするためにありもしないハルシネーションを作るのは非効率的だな |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:17:35+09:00 baf80jbpr toolu_011ZR8QPnMrnknDRSNCw3Tzo /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4a506363-f3ac-467a-9aa8-dd3a4c |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:45:37+09:00 掲示板は確認した？ |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -1987,6 +2003,7 @@ codd:
 | causal | `cmd_3074` origin: [[殿テスト_KJシリーズ]] -> [[グループ概念不在]] -> [[三層記憶穴埋め]] |
 | cmd | `cmd_3056` backfill — | cmd_3056 | Phase 4-O: 知識流入自動取込み+バックフィル | GATE CLEAR | 6新PJ概念自動生成(database/milk/auto-ops/mcas/kj-to |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T14:53:55+09:00 b0ks1rm09 toolu_018PJNp1Mao8pQKJrAL2eMgP /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8aa671c0-250c-404e-8b5a-7431d2 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:30:31+09:00 ba20go4hw toolu_01Fg1BzEFQybHohRNKj5AGjw /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4a506363-f3ac-467a-9aa8-dd3a4c |
 
 ## kj_partshift — KJ Partshift Checker（シフト見える化MVP）
 
@@ -2270,6 +2287,12 @@ codd:
 | cmd | `cmd_3142` (`scripts/inbox_watcher.sh`, `tests/unit/test_inbox_watcher_dedup.bats`, `tests/unit/test_inbox_watcher_health.bats`) |
 | cmd | `cmd_training_speed_daemon_supervisor_20260606235628` (`logs/script_speed_training_ledger.yaml`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T09:13:47+09:00 デーモンは全て順調に動作しているか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T18:27:34+09:00 # Elicitation Prompt L0 You are reviewing requirements and design notes to discover missing context. Use only the suppli |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T18:30:09+09:00 # Elicitation Prompt L0 You are reviewing requirements and design notes to discover missing context. Use only the suppli |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T18:32:57+09:00 # Elicitation Prompt L0 You are reviewing requirements and design notes to discover missing context. Use only the suppli |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:17:01+09:00 # Elicitation Prompt L0 You are reviewing requirements and design notes to discover missing context. Use only the suppli |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:20:52+09:00 # Elicitation Prompt L0 You are reviewing requirements and design notes to discover missing context. Use only the suppli |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:23:53+09:00 # Elicitation Prompt L0 You are reviewing requirements and design notes to discover missing context. Use only the suppli |
 | causal_chain | `[[cmd_2935]]` (L651) |
 | causal_chain | `[[cmd_karo_ci_fix_2tests]]` (L652) |
 

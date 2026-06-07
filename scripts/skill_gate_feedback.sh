@@ -195,6 +195,14 @@ def exact_skill_file(skill_name, logged_path=""):
         path = Path(os.path.expanduser(str(logged_path)))
         if path.is_file():
             return path
+    # 高速パス: 各skills_dirで直接パス構築(iter_skill_files全スキャン回避)
+    for raw_dir in skills_dirs.split(":"):
+        if not raw_dir:
+            continue
+        candidate = Path(os.path.expanduser(raw_dir)) / skill_name / "SKILL.md"
+        if candidate.is_file():
+            return candidate
+    # フォールバック: フルスキャン(シンボリックリンク等の例外ケース)
     for name, path in iter_skill_files():
         if name == skill_name:
             return path
@@ -235,7 +243,9 @@ def has_duplicate_caution(text, gate_name, reason_text):
 
 
 source = normalize_skill_source(source)
-logged_entry = None if explicit_skill else latest_fail_entry()
+# スキルがexplicit/gate-mapで特定済みの場合はログロード(~850ms)をスキップ
+_skip_log_load = bool(explicit_skill) or bool(GATE_SKILL_MAP.get(str(gate or "").strip()))
+logged_entry = None if _skip_log_load else latest_fail_entry()
 logged_skill = ""
 logged_skill_path = ""
 if logged_entry:
@@ -257,7 +267,7 @@ stumbling = str(logged_entry.get("stumbling_points") or "").strip() if logged_en
 if not stumbling:
     stumbling = reason or f"{gate} {result}"
 
-if not logged_entry and result.upper() == "FAIL" and has_duplicate_failure(skill, gate, stumbling):
+if not logged_entry and not _skip_log_load and result.upper() == "FAIL" and has_duplicate_failure(skill, gate, stumbling):
     print(f"DUPLICATE: {skill} gate={gate}")
     raise SystemExit(0)
 

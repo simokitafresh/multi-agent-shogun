@@ -155,6 +155,11 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-06-07: gate=gate_report_format result=FAIL executor=kagemaru reason=ac_version_read: MISSING; binary_checks.commit[0].result: \"pending\" は不正。\"yes\" または \"no\" のみ; purpose_validation: MISSING; verdict: \"None\" is not valid (must be \"PASS\", \...
+- 2026-06-07: gate=gate_report_format result=FAIL executor=kagemaru reason=YAML parse error: mapping values are not allowed here
+
+- 2026-06-07: gate=gate_report_format result=FAIL executor=kagemaru reason=assumption_invalidation: is str (must be dict)
 - 2026-06-07: gate=gate_report_format result=FAIL executor=tobisaru reason=result.summary: MISSING or empty
 
 - 2026-06-07: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks: item count 1/14 (<50% of task template); result.summary: MISSING or empty

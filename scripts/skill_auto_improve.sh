@@ -127,7 +127,10 @@ def load_entries(path):
 
 
 def iter_skill_files():
-    seen = set()
+    # Name-based dedup: skills with the same name in different dirs are considered
+    # duplicates (covers symlink case, e.g. ~/.codex/skills/cmd-complete -> NTFS skills/).
+    # Avoids Path.resolve() per entry (~9ms/call on NTFS), saving ~470ms cold.
+    seen_names = set()
     for raw_dir in skills_dirs.split(":"):
         if not raw_dir:
             continue
@@ -135,14 +138,12 @@ def iter_skill_files():
         if not root.is_dir():
             continue
         for child in sorted(root.iterdir(), key=lambda p: p.name):
-            skill_file = child / "SKILL.md"
-            try:
-                resolved = skill_file.resolve()
-            except OSError:
-                resolved = skill_file
-            if not skill_file.is_file() or resolved in seen:
+            if child.name in seen_names:
                 continue
-            seen.add(resolved)
+            skill_file = child / "SKILL.md"
+            if not skill_file.is_file():
+                continue
+            seen_names.add(child.name)
             yield child.name, skill_file
 
 
