@@ -16,7 +16,7 @@ emit_deny() {
 
 # Read stdin without forking cat subprocess
 IFS='' read -r -d '' payload || true
-if [ -z "${payload//[[:space:]]/}" ]; then
+if [ -z "$payload" ]; then
     exit 0
 fi
 
