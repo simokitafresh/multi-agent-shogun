@@ -21,11 +21,7 @@ mcas_get_token() {
 
     local token
     # New format first (claudeAiOauth), then legacy fallback
-    token=$(jq -r '.claudeAiOauth.accessToken // empty' "$cred_file" 2>/dev/null) || true
-
-    if [[ -z "$token" ]]; then
-        token=$(jq -r '.accessToken // empty' "$cred_file" 2>/dev/null) || true
-    fi
+    token=$(jq -r '.claudeAiOauth.accessToken // .accessToken // empty' "$cred_file" 2>/dev/null) || true
 
     if [[ -z "$token" ]]; then
         echo >&2 "[usage] accessToken not found in: ${cred_file}"
