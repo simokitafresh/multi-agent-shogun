@@ -507,3 +507,6 @@
 | cmd_3210 | report_received hookがテンプレート段階(bc空)で偽発火→FAIL記録し、dashboard-updateのFAIL率が実態と乖離している。bc空FAILを偽FAIL分類して計測精度を回復する | infra | 06-07 | gate_karo_startup.shのskill_exe |
 | cmd_3213 | cmd_3211で追加したCTX50%閾値チェック(L2095-2104)を削除。殿指摘(2026-06-07 21:13): idleなら何%でも/clearする既存仕組みで十分。閾値は不要な複雑性であり洗脳#4(緩い設計)+#6(出力=仕事)の産物 | infra | 06-07 | ninja_monitor.sh _handle_speed |
 | cmd_3214 | gate_skill_script_refs.shが検出した9件のSKILL.mdが参照先scriptより古い。scriptの変更内容をSKILL.mdに反映し、startup BLOCKを解消する | infra | 06-07 | gate_skill_script_refs.sh検出の9件 |
+| cmd_3212 | ledger pending39件中34件がcommit済みだがrecord-after未実行で偽pending。一括修復+karo_directフローにrecord-after呼出しを統合し再発防止 | infra | 06-07 | reconcile追加+update_entry_field |
+| cmd_9998 | cmd_save.sh速度計測のための新規PASSシナリオ。cmd_9999に蓄積したWARN履歴の影響を排除する | — | 06-07 | — |
+| cmd_9999 | 速度計測テスト用のダミーcmd | — | 06-07 | — |
