@@ -10,10 +10,11 @@ if [[ "${1:-}" == "--dry-run" ]]; then
     DRY_RUN=true
 fi
 
-_self="${BASH_SOURCE[0]}"
-_self_dir="${_self%/*}"
-[[ "$_self_dir" != /* ]] && _self_dir="$(cd "$_self_dir" && pwd)"
-SCRIPT_DIR="${_self_dir%/scripts}"
+# SCRIPT_DIR: string ops instead of $(cd) subshell (~5ms savings on WSL2)
+_sd_self="${BASH_SOURCE[0]}"
+[[ "$_sd_self" != /* ]] && _sd_self="$PWD/$_sd_self"
+SCRIPT_DIR="${_sd_self%/scripts/shutsujin_departure.sh}"
+unset _sd_self
 STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
 AGENTS_PANE_BORDER_FORMAT_PLACEHOLDER='<agent/model/context/inbox/task>'
 
@@ -47,8 +48,22 @@ fi
 # /switch-to-codex でsettings.yamlが変更されていても、再起動時はデフォルトOpusに戻す。
 # 殿裁定(2026-04-22): デフォルトは将軍・家老・軍師=Opus。Codex切替は手動スキル実行時のみ。
 _SETTINGS="$SCRIPT_DIR/config/settings.yaml"
+# 3x awk → 1 awk: settings.yaml を1回だけ読んで全指揮官のtypeを取得（~20ms削減）
+declare -A _COMMANDER_TYPES=()
+while IFS=$'\t' read -r _cmd _type; do
+    [[ -n "$_cmd" ]] && _COMMANDER_TYPES["$_cmd"]="$_type"
+done < <(awk '
+    /^    (shogun|karo|gunshi):/ {
+        match($0, /^    ([a-z]+):/, arr); cur = arr[1]
+    }
+    cur != "" && /^      type:/ {
+        v = $0; sub(/.*type:[[:space:]]*/, "", v); gsub(/[[:space:]\r]/, "", v)
+        printf "%s\t%s\n", cur, v; cur = ""
+    }
+    cur != "" && /^    [a-z][a-z_]*:[[:space:]]*$/ && !/^    (shogun|karo|gunshi):/ { cur = "" }
+' "$_SETTINGS" 2>/dev/null)
 for _commander in shogun karo gunshi; do
-    _current_type=$(awk "/^    ${_commander}:/{found=1} found && /type:/{print \$2; exit}" "$_SETTINGS" 2>/dev/null)
+    _current_type="${_COMMANDER_TYPES[$_commander]:-}"
     if [[ "$_current_type" == "codex" ]]; then
         if [[ "$DRY_RUN" == true ]]; then
             echo "[DRY-RUN] Reset ${_commander} type: codex → claude (default Opus)"
@@ -58,6 +73,7 @@ for _commander in shogun karo gunshi; do
         fi
     fi
 done
+unset _COMMANDER_TYPES
 
 # dry-run hot path では agent_config.sh 以外の source を遅延する
 source_optional "$SCRIPT_DIR/scripts/lib/agent_config.sh"
