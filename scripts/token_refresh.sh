@@ -48,16 +48,17 @@ if [[ "$ACCOUNT_ARG" != "primary" && "$ACCOUNT_ARG" != "secondary" && "$ACCOUNT_
 fi
 
 # ─── ログ関数 ──────────────────────────────────────────────────────────
+# printf '%(%Y-%m-%dT%H:%M:%S)T' -1: bash組込み日付フォーマット。$(date)サブプロセス不要(~10ms/call削減)
 log_info() {
-  printf '[%s] [INFO] %s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" "$*"
+  printf '[%(%Y-%m-%dT%H:%M:%S)T] [INFO] %s\n' -1 "$*"
 }
 
 log_error() {
-  printf '[%s] [ERROR] %s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" "$*" >&2
+  printf '[%(%Y-%m-%dT%H:%M:%S)T] [ERROR] %s\n' -1 "$*" >&2
 }
 
 log_warn() {
-  printf '[%s] [WARN] %s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" "$*"
+  printf '[%(%Y-%m-%dT%H:%M:%S)T] [WARN] %s\n' -1 "$*"
 }
 
 # ─── 依存チェック ──────────────────────────────────────────────────────
@@ -97,9 +98,11 @@ refresh_account() {
   fi
 
   # ─── expiresAt確認（ログ用） ──────────────────────────────────────
-  local expires_at now_ms remaining_min
+  # ${EPOCHREALTIME}: bash 5.0+組込み。$(date +%s%3N)サブプロセス不要(~10ms削減)
+  local expires_at now_ms remaining_min _er
   expires_at=$(jq -r '.claudeAiOauth.expiresAt // 0' "$credentials_file" 2>/dev/null)
-  now_ms=$(date +%s%3N)
+  _er="${EPOCHREALTIME}"
+  now_ms=$(( ${_er%.*} * 1000 + 10#${_er##*.} / 1000 ))
   if [[ "$expires_at" -gt "$now_ms" ]]; then
     remaining_min=$(( (expires_at - now_ms) / 60000 ))
     log_info "[${account_name}] Current token expires in ${remaining_min} min. Refreshing anyway."
@@ -139,8 +142,9 @@ refresh_account() {
     return 1
   }
 
-  http_code=$(printf '%s' "$raw_response" | tail -1)
-  response_body=$(printf '%s' "$raw_response" | sed '$d')
+  # bash文字列操作でtail/sed subprocessを排除(~20ms削減)
+  http_code="${raw_response##*$'\n'}"
+  response_body="${raw_response%$'\n'*}"
 
   if [[ "$http_code" != "200" ]]; then
     log_error "[${account_name}] Token refresh failed: HTTP ${http_code}"
@@ -168,10 +172,12 @@ refresh_account() {
 
   # ─── expiresAt計算（ミリ秒タイムスタンプ） ──────────────────────
   local new_expires_at_ms
+  _er="${EPOCHREALTIME}"
+  local _now_ms2=$(( ${_er%.*} * 1000 + 10#${_er##*.} / 1000 ))
   if [[ -n "$new_expires_in" && "$new_expires_in" =~ ^[0-9]+$ ]]; then
-    new_expires_at_ms=$(( $(date +%s%3N) + new_expires_in * 1000 ))
+    new_expires_at_ms=$(( _now_ms2 + new_expires_in * 1000 ))
   else
-    new_expires_at_ms=$(( $(date +%s%3N) + 3600000 ))
+    new_expires_at_ms=$(( _now_ms2 + 3600000 ))
     log_warn "[${account_name}] Could not parse expires_in. Setting expiresAt to 1 hour from now."
   fi
 
