@@ -1833,16 +1833,16 @@ entries:
     assigned_to: "tobisaru"
     updated_at: "2026-06-07T09:22:30"
   - script_path: "scripts/lib/pane_lookup.sh"
-    status: assigned
+    status: completed
     before_ms: 15
-    after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    after_ms: 15
+    before_real_ms: 7042
+    after_real_ms: 6366
+    real_measurement_command: "mock tmux list-panes; source scripts/lib/pane_lookup.sh; 200x pane_lookup hayate/kagemaru/tobisaru; median of 5 runs"
+    test_result: "bash_n_pass;mock_tmux_output_match;test_infra_misc_small_consolidated_pane_lookup_3_pass_0_skip;before_7042_after_6366;SKIP=0"
+    commit: "472e6f327"
     assigned_to: "kagemaru"
-    updated_at: "2026-06-07T09:22:15"
+    updated_at: "2026-06-07T09:35:00"
   - script_path: "scripts/lib/pre_bash_combined_guard.sh"
     status: assigned
     before_ms: 17
