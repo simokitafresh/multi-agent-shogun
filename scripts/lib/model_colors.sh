@@ -18,16 +18,14 @@ _normalize_model_name() {
 resolve_bg_color() {
   local agent_id="$1"
   local model_display="$2"
-  local normalized
-  normalized=$(_normalize_model_name "$model_display")
   case "$agent_id" in
     karo|gunshi) echo "#121214" ;;
     *)
-      case "$normalized" in
-        Opus*)   echo "#1a1e28" ;;   # 紺系
-        Sonnet*) echo "#1a2420" ;;   # 深緑系
-        Codex*)  echo "#201a1e" ;;   # 深紫系
-        Haiku*)  echo "#1e2420" ;;   # 薄緑系
+      case "$model_display" in
+        *[Cc]odex*|[Gg][Pp][Tt]-*) echo "#201a1e" ;;   # 深紫系
+        *[Oo]pus*)   echo "#1a1e28" ;;   # 紺系
+        *[Ss]onnet*) echo "#1a2420" ;;   # 深緑系
+        *[Hh]aiku*)  echo "#1e2420" ;;   # 薄緑系
         *)       echo "#1a1e28" ;;   # fallback = Opus
       esac
       ;;
@@ -36,13 +34,11 @@ resolve_bg_color() {
 
 resolve_border_fg_color() {
   local model_display="$1"
-  local normalized
-  normalized=$(_normalize_model_name "$model_display")
-  case "$normalized" in
-    Opus*)   echo "#cba6f7" ;;  # 紫
-    Sonnet*) echo "#89dceb" ;;  # 水色
-    Codex*)  echo "#a6e3a1" ;;  # 緑
-    Haiku*)  echo "#f9e2af" ;;  # 黄
+  case "$model_display" in
+    *[Cc]odex*|[Gg][Pp][Tt]-*) echo "#a6e3a1" ;;  # 緑
+    *[Oo]pus*)   echo "#cba6f7" ;;  # 紫
+    *[Ss]onnet*) echo "#89dceb" ;;  # 水色
+    *[Hh]aiku*)  echo "#f9e2af" ;;  # 黄
     *)       echo "#89b4fa" ;;  # fallback = 汎用Claude
   esac
 }
