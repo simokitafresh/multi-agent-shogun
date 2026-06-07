@@ -2207,16 +2207,16 @@ entries:
     assigned_to: "kagemaru"
     updated_at: "2026-06-07T14:37:32"
   - script_path: "scripts/pending_decision_write.sh"
-    status: assigned
+    status: completed
     before_ms: 13
     after_ms: ""
-    before_real_ms: ""
-    after_real_ms: ""
-    real_measurement_command: ""
-    test_result: "baseline_bash_n_exit_0"
-    commit: ""
+    before_real_ms: 23
+    after_real_ms: 21
+    real_measurement_command: "bash /tmp/mas_pdw_bench_1780810889_221916/scripts/pending_decision_write.sh list --status pending"
+    test_result: "bash_n_PASS; sandbox_list_recalc_create_resolve_yaml_PASS_SKIP0"
+    commit: "e8ea3193e"
     assigned_to: "saizo"
-    updated_at: "2026-06-07T14:37:12"
+    updated_at: "2026-06-07T14:42:32"
   - script_path: "scripts/post_recalculate_checks.sh"
     status: assigned
     before_ms: 13
