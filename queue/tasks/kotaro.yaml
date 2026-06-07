@@ -30,7 +30,7 @@ task:
   parent_cmd: cmd_3210
   project: infra
   purpose: report_received hookがテンプレート段階(bc空)で偽発火→FAIL記録し、dashboard-updateのFAIL率が実態と乖離している。bc空FAILを偽FAIL分類して計測精度を回復する
-  status: acknowledged
+  status: done
   stop_for: []
   task_id: cmd_3210_focused
   task_type: focused
