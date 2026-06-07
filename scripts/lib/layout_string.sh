@@ -7,6 +7,24 @@
 # ウィンドウサイズから tmux select-layout 用の文字列を動的生成する。
 # agent_config.sh が source 済みであること。
 
+_layout_string_checksum() {
+    local body="$1"
+    local csum=0 ord i ch
+    local old_lc="${LC_CTYPE:-}"
+    LC_CTYPE=C
+    for ((i = 0; i < ${#body}; i++)); do
+        ch="${body:i:1}"
+        printf -v ord '%d' "'$ch"
+        csum=$(( ((csum >> 1) + ((csum & 1) << 15) + ord) & 0xFFFF ))
+    done
+    if [[ -n "$old_lc" ]]; then
+        LC_CTYPE="$old_lc"
+    else
+        unset LC_CTYPE
+    fi
+    printf '%04x' "$csum"
+}
+
 generate_layout_string() {
     local window="${1:-shogun:agents}"
     local pb="${2:-1}"
@@ -64,14 +82,7 @@ generate_layout_string() {
 
     # tmux checksum計算
     local csum
-    csum=$(python3 -c "
-body = '${body}'
-csum = 0
-for c in body:
-    csum = (csum >> 1) + ((csum & 1) << 15)
-    csum = (csum + ord(c)) & 0xFFFF
-print(format(csum, '04x'))
-")
+    csum="$(_layout_string_checksum "$body")"
 
     echo "${csum},${body}"
 }
