@@ -4,10 +4,6 @@
 
 set -euo pipefail
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-default_db_path="$script_dir/data/multi_agent_shogun_memory.db"
-db_path="${MEMORY_DB_QUERY_DB:-$default_db_path}"
-
 usage() {
     cat <<'EOF' >&2
 Usage: memory_db_query.sh [--db PATH] [--target AGENT] --search QUERY
@@ -17,6 +13,15 @@ Runs SQL through Python sqlite3 and prints sqlite3 CLI-style list output:
 pipe-separated fields, no headers, NULL as an empty field.
 EOF
 }
+
+if [ "$#" -eq 0 ]; then
+    usage
+    exit 2
+fi
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+default_db_path="$script_dir/data/multi_agent_shogun_memory.db"
+db_path="${MEMORY_DB_QUERY_DB:-$default_db_path}"
 
 memory_db_cache_path() {
     local source_path="$1"
@@ -118,11 +123,6 @@ prepare_memory_db_for_read() {
         printf '%s\n' "$source_path"
     fi
 }
-
-if [ "$#" -eq 0 ]; then
-    usage
-    exit 2
-fi
 
 search_query=""
 target="${MEMORY_DB_QUERY_TARGET:-${AGENT_ID:-}}"
