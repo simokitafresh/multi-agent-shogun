@@ -873,6 +873,8 @@ safe_send_clear() {
             tmux respawn-pane -k -t "$pane" "export PATH=\"${_node_dir}:\$PATH\" && cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
                 log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed"
             }
+            tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
+            log "CTX-RESET: $agent_name @context_pct → 0% after CODEX-RESPAWN"
             rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
             return 0
         fi
@@ -884,6 +886,10 @@ safe_send_clear() {
         log "CLEAR-BLOCKED: $agent_name send failed, reason=$reason"
         return 1
     fi
+    # /clear後に@context_pctをリセット。旧値キャッシュが残るとget_context_pctが
+    # /clear後も高CTX値を返し、陣形図表示とauto-clear/auto-deploy判定が狂う
+    tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
+    log "CTX-RESET: $agent_name @context_pct → 0% after $clear_cmd"
     if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "claude" ]; then
         # /clear resets Claude Code to accept-edits; shift+tab twice restores bypass permissions.
         sleep 2
