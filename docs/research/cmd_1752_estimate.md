@@ -231,5 +231,6 @@ cmd_A ─── cmd_B ─── cmd_C ─── cmd_D ─── cmd_E ─── 
 
 - 設計詳細: [[cmd_1750_alm_design]] (`docs/research/cmd_1750_alm_design.md`)
 - ALM研究全体: [[dm-signal-research-alm]] (`docs/research/dm-signal-research-alm.md`)
+- 研究索引: [[dm-signal-research]] (`context/dm-signal-research.md`) §28-§35 前処理研究・ALM設計
 - 対象コード: `backend/app/jobs/recalculate_fast.py` (L902-L1018, L1039-L1332, L1499-L1533, L1763前)
 - スキーマ: `backend/app/schemas/pipeline.py` (L69: PipelineConfig)
