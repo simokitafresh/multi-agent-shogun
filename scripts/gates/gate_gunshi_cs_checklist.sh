@@ -9,6 +9,9 @@
 set -e
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+# set +e: CS gateはWARN集計。grep/awkの非0 exitでスクリプト全体が死なないよう保護
+set +e
 LOG_FILE="$REPO_ROOT/logs/gunshi_review_log.yaml"
 STDERR_LOG="$REPO_ROOT/logs/gate_gunshi_cs_checklist_stderr.log"
 
@@ -593,9 +596,9 @@ if [ -n "$convergence_once" ]; then
     done
 fi
 
-if (( all_pass > 0 )) && (( fm_pass > 0 )) && [ -z "$ambiguity_missing" ] && [ -z "$single_scenario" ] && [ -z "$adversarial_missing" ] && [ -z "$cold_category_missing" ] && [ -z "$skill_usage_missing" ] && [ -z "$hole_action_missing" ] && [ -z "$brainwash_missing" ] && [ -z "$ops_sim_missing" ]; then
-    exit 0
-fi
+# early exit削除: L6/L4/L4bのチェックも全て通過させる(2026-06-08 set +e修正時に発見)
+# 旧: all_pass+fm_pass+各変数空→exit 0でL6以降スキップ
+# 新: exit 0せずfall-throughしてL6/L4/L4bも実行
 if [ -n "$cs_missing" ]; then
     cs_count=$(csv_count "$cs_missing")
     echo "WARN: ${cs_count}件のエントリにcs_checklistなし:"
@@ -841,7 +844,7 @@ _infra_no_verify=$(awk '
         }
         obs=""
     }
-' "$LOG_FILE" 2>/dev/null | tail -5)
+' "$LOG_FILE" 2>/dev/null | tail -5 || true)
 if [ -n "$_infra_no_verify" ]; then
     echo "WARN(L6-洗脳#2): infra/scripts reportレビューで実動作確認なし:"
     printf '%s\n' "$_infra_no_verify" | while read -r _id; do
@@ -856,12 +859,29 @@ _step35_missing=$(awk '
     /review_type: report/ { rt="report" }
     /step3_5_verified:/ { has_s35=1 }
     /timestamp:/ && rt=="report" && !has_s35 && id != "" { print id }
-' "$LOG_FILE" 2>/dev/null | tail -10)
+' "$LOG_FILE" 2>/dev/null | tail -10 || true)
 if [ -n "$_step35_missing" ]; then
     _s35_count=$(echo "$_step35_missing" | wc -l)
     echo "WARN(L4-LG036): ${_s35_count}件のreportレビューにstep3_5_verified未記入:"
     printf '%s\n' "$_step35_missing" | while read -r _id; do
         [ -n "$_id" ] && echo "  - $_id: SG-PRE25結果+command×files_modified 3分類を記録せよ"
+    done
+    warn=1
+fi
+
+# --- L4b: LGTM+BLOCK予測=矛盾検出 (洗脳#4緩い設計防止 殿厳命2026-06-08) ---
+# LGTM=GATE通過保証(LG006)。BLOCKリスク予測+LGTM=矛盾。cmd_3228/3232/3233/3234で4件実証
+_lgtm_block=$(awk '
+    /^- cmd_id:/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); v=""; gr="" }
+    /verdict: LGTM/ { v="LGTM" }
+    /gate_result:.*BLOCK/ { gr="BLOCK" }
+    /timestamp:/ && v=="LGTM" && gr=="BLOCK" && id != "" { print id }
+' "$LOG_FILE" 2>/dev/null | tail -10 || true)
+if [ -n "$_lgtm_block" ]; then
+    _lb_count=$(echo "$_lgtm_block" | wc -l)
+    echo "WARN(L4b-洗脳#4): ${_lb_count}件のLGTM→BLOCK。BLOCKリスク予測時はFAILにせよ(LG006):"
+    printf '%s\n' "$_lgtm_block" | while read -r _id; do
+        [ -n "$_id" ] && echo "  - $_id: LGTM=GATE通過保証。BLOCKリスクがあればFAIL"
     done
     warn=1
 fi
