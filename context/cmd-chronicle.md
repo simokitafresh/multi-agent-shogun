@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-08 -->
+<!-- last_updated: 2026-06-08 cmd_3232 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -525,3 +525,5 @@
 | cmd_3228 | cmd_3227設計に基づきPhase1を実装。PostToolUse hookでSkill tool実行後にskill_execution_log.shを自動呼出し、全スキルの実行結果(PASS/FAIL+失敗理由)を記録する。新スキル追加時の個別接続作業がゼロになる | infra | 06-08 | PostToolUse hookにSkill tool判定分 |
 | cmd_3229 | cmd_3227設計§3穴2に基づきPhase2を実装。skill_auto_improve.shのescalation判定(unchanged_streak>=閾値)後に修行課題を自動生成し家老inboxに通知する。完全自動配備ではなく家老確認を挟む安全弁付き | infra | 06-08 | skill_auto_improve.shのescalati |
 | cmd_3230 | cmd_3227設計§3穴3に基づきPhase3を実装。修行完了時(gate_fire_log解析でPASS判定)にskill_auto_improve.shを呼出しSKILL.mdの防止ステップを自動更新。修行の成果がスキル自体に自動還流する最終ピース | infra | 06-08 | Phase3実装完了: training_completio |
+| cmd_3231 | 教訓健全度WARNが3セッション連続BLOCK。根因=研究cmdにtarget_pathなし→deploy_task.shのinject_related_lessonsがMIN_KEYWORD_SCORE閾値を下回り全量fallback注入→大半NOT_USEFUL(useful_rate=35%)。target_pathなし時のスコアリング精度を上げ、関連性の低い教訓の注入を抑止する | infra | 06-08 | deploy_task.sh inject_related_ |
+| cmd_3234 | 起動チェックがbacklinks=0の5ファイルを検出。孤立ドキュメントは因果ネットワークから切断され知識として到達不能。context/skills/docsから因果リンクを接続し知識基盤の健全性を回復する | infra | 06-08 | backlinks=0の5ファイル(ashigaru-det |
