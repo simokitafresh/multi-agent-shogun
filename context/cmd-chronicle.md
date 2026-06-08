@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-08 cmd_3232 -->
+<!-- last_updated: 2026-06-08 cmd_3239 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -527,3 +527,6 @@
 | cmd_3230 | cmd_3227設計§3穴3に基づきPhase3を実装。修行完了時(gate_fire_log解析でPASS判定)にskill_auto_improve.shを呼出しSKILL.mdの防止ステップを自動更新。修行の成果がスキル自体に自動還流する最終ピース | infra | 06-08 | Phase3実装完了: training_completio |
 | cmd_3231 | 教訓健全度WARNが3セッション連続BLOCK。根因=研究cmdにtarget_pathなし→deploy_task.shのinject_related_lessonsがMIN_KEYWORD_SCORE閾値を下回り全量fallback注入→大半NOT_USEFUL(useful_rate=35%)。target_pathなし時のスコアリング精度を上げ、関連性の低い教訓の注入を抑止する | infra | 06-08 | deploy_task.sh inject_related_ |
 | cmd_3234 | 起動チェックがbacklinks=0の5ファイルを検出。孤立ドキュメントは因果ネットワークから切断され知識として到達不能。context/skills/docsから因果リンクを接続し知識基盤の健全性を回復する | infra | 06-08 | backlinks=0の5ファイル(ashigaru-det |
+| cmd_3240 | obsidian昇格率0.07%(32/47037)。candidate12件蓄積。昇格が将軍の/dream(手動)依存=意志依存=停止。ninja_monitorの定期サイクルでcandidate蓄積を検知し自動昇格するトリガーを追加する | infra | 06-08 | ninja_monitorにcheck_obsidian_c |
+| cmd_3239 | raw_content充填率2.4%(1121/47037)。97.6%のイベントが原文未保存で要約のみ。三層記憶の全文記録原則(LS-A23)が機能していない。書込みスクリプト群(lord_conversation_write/bulletin_write/insight_write等)にraw_content保存を追加し充填率を向上させる | infra | 06-08 | lord_conversation.sh/memory_db |
+| cmd_3242 | 忍者にはninja_weak_points/gate_fail_top3/gate_blocks(L6)が自動注入されるが、将軍のcmd起票には同等の仕組みがない。本セッション10回BLOCK+5回lesson_ack=同じパターン繰返し=L6不在の証拠。cmd_save.sh実行前のpreflight表示に将軍個人のBLOCK TOP3と過去の回避策を自動表示し、忍者と同等のL6を将軍に適用する | infra | 06-08 | — |
