@@ -4205,6 +4205,7 @@ try:
     description = task.get('description', '')
     purpose = str(task.get('purpose') or '')
     target_path = str(task.get('target_path') or '')
+    has_target_path = bool(target_path.strip())
     _cf = task.get('context_files')
     context_files = ' '.join(str(f) for f in _cf if f) if isinstance(_cf, list) else str(_cf or '')
     ac_list = task.get('acceptance_criteria', [])
@@ -4221,6 +4222,12 @@ try:
     words = re.split(rf'[^a-zA-Z0-9_{_CJK}]+', task_text)
     expanded = [part for w in words for part in _boundary.split(w) if part]
     keywords = list(set(w.lower() for w in expanded if len(w) > 3 or (len(w) >= 2 and w.isupper() and w.isascii())))
+
+    # cmd_3231: target_pathなし時はキーワードスコアリング閾値を引き上げ、低関連教訓の注入を抑止
+    NO_TARGET_PATH_MIN_SCORE = int(os.environ.get('NO_TARGET_PATH_MIN_SCORE', '8'))
+    if not has_target_path:
+        MIN_KEYWORD_SCORE = max(MIN_KEYWORD_SCORE, NO_TARGET_PATH_MIN_SCORE)
+        print(f'[INJECT] no target_path: MIN_KEYWORD_SCORE raised to {MIN_KEYWORD_SCORE}', file=sys.stderr)
 
     SEMANTIC_LESSON_BOOST = int(os.environ.get('SEMANTIC_LESSON_BOOST', '20'))
 
@@ -4780,13 +4787,17 @@ try:
 
     # 忍者成長速度改善: タグマッチしたがキーワード0点の教訓をhelpful_count順でフォールバック注入
     # GP-221: target_filesなし教訓のフォールバック注入廃止。タスク無関係教訓のNOT_USEFUL量産防止
+    # cmd_3231: target_pathなし時はfallback注入も無効化（helpful_count順=関連性無視→NOT_USEFUL量産の根因）
     if not scored and task_tags and tag_candidates:
-        _relevant_fallback = [l for l in tag_candidates if l.get('tags') or l.get('target_files')]
-        _tag_fallback = [(l.get('helpful_count',0) or 0, l.get('id',''), str(l.get('summary', l.get('title','')))[:80]) for l in _relevant_fallback]
-        _tag_fallback.sort(key=lambda x: -x[0])
-        scored = [(1, lid, summ) for hc, lid, summ in _tag_fallback[:MAX_INJECT]]
-        if scored:
-            print(f'[INJECT] tag fallback: keyword score=0, using {len(scored)} tag-matched lessons by helpful_count', file=sys.stderr)
+        if not has_target_path:
+            print(f'[INJECT] no target_path: skipping tag fallback (would inject {min(len(tag_candidates), MAX_INJECT)} lessons by helpful_count)', file=sys.stderr)
+        else:
+            _relevant_fallback = [l for l in tag_candidates if l.get('tags') or l.get('target_files')]
+            _tag_fallback = [(l.get('helpful_count',0) or 0, l.get('id',''), str(l.get('summary', l.get('title','')))[:80]) for l in _relevant_fallback]
+            _tag_fallback.sort(key=lambda x: -x[0])
+            scored = [(1, lid, summ) for hc, lid, summ in _tag_fallback[:MAX_INJECT]]
+            if scored:
+                print(f'[INJECT] tag fallback: keyword score=0, using {len(scored)} tag-matched lessons by helpful_count', file=sys.stderr)
 
     # cmd_1564+karo_idle_fix: useful_rate feedback基盤
     # cmd_2700: mature feedback effectiveness_scoreが低い教訓は注入候補から除外
