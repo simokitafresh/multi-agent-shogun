@@ -1710,6 +1710,8 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L642
   title: Batsのloadでは@test定義を集約できない。統合ファイル生成か明示移植が必要
   summary: 'load helper.bashは関数共有のみ。@testブロック自体はload先から呼べない。テスト統合は明示的にコピー移植する。origin:
@@ -1795,6 +1797,8 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L637
   title: FP率計算は累計昇格BLOCKを候補に含める
   summary: cmd_design_quality.yamlでWARNが累計昇格BLOCKしている場合、CLEAR済み未修正だけをFP候補にすると今回のac_phase_mi
@@ -2303,6 +2307,8 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L604
   title: gate_report_format_main.pyをlookup APIとして活用するパターン
   summary: gate validation コードに lookup_fix_hints() を追加することで、skill_auto_improve.sh
@@ -2398,6 +2404,8 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L598
   title: gate種別ごとにmissingの失敗意味を分ける
   summary: ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie
@@ -2724,6 +2732,8 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L576
   title: lesson subdomain推定はAC例IDでspot checkせよ
   summary: サブドメイン自動付与はパスやタグだけだとGS固有教訓をinfraに誤推定し得る。cmdが例示したIDは個別にsubdomainを確認しdry-runで非対象ta
@@ -2764,6 +2774,8 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L574
   title: gate起点のFAILは実行コンテキストではなく責務表で帰属させる
   summary: gate_report_formatのように複数スキルの後段で発火するgateは、直近実行スキル推定に任せるとdashboard-update等へ誤帰属する。g
@@ -3637,6 +3649,8 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L509
   title: 'hot-cache計測は冷却後性能を過小評価する: cold計測を必ず実施せよ'
   summary: before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ
@@ -3649,6 +3663,8 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L508
   title: 'WSL2 NTFS並列I/Oは直列より遅い: ThreadPoolExecutor(8worker)でfallback yaml.safe_load並列化→in-process
     2.2x改善も実測でregression'
@@ -6043,6 +6059,8 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L298
   title: NTFY_LISTENER_LIB_ONLY=1でもtop-level初期化コードが実行される
   summary: ntfy_listener.shをNTFY_LISTENER_LIB_ONLY=1でsource時、flock guardはスキップされるがinbox初期化(e

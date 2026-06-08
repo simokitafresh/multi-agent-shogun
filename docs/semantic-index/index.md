@@ -2619,6 +2619,8 @@ codd:
 | causal | `cmd_2908` origin: [[cmd_2907]] -> [[Guard_0_exit_code_bug]] -> [[shogun_block_freeze]] |
 | cmd | `cmd_2916` (`.claude/hooks/pre-write-edit-combined.sh`, `tests/unit/test_write_edit_combined_hooks.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T14:41:34+09:00 きえてないよ。● Bash(echo "hook error test: this Bash call should show no hook error") ⎿ PreToolUse:Bash hook error ⎿ hook erro |
+| cmd | `cmd_3228` 実装: 全スキル自動成長Phase1 — PostToolUse hookで全スキル実行結果を自動記録 (`.claude/hooks/post-skill-execution.sh`, `.claude/hooks/posttool-dispatch.sh`) |
+| causal | `cmd_3228` origin: [[cmd_3227_設計完了]] -> [[Phase1_実行結果記録基盤]] -> [[PostToolUse_hook_全スキル自動記録]] |
 
 ## multi_cli_event_commonization — multi-CLI hook/event共通化
 

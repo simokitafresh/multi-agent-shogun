@@ -1,91 +1,6 @@
 entries:
 - cmd_id: "cmd_3176"
   ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-04T00:48:53Z"
-  diagnosis: "BLOCK理由: 初回起票 対策: template準拠+q11に既存パターン準拠明記+自動要求の行動変換キーワード明記"
-  notes: "WARN累計昇格: 「否定的前提claimにgrep反証結果なし|check=assumptions_negative_claim_grep_evidence」が4回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3176"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-04T00:49:19Z"
-- cmd_id: "cmd_3176"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-04T00:49:54Z"
-- cmd_id: "cmd_3175"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-04T00:55:17Z"
-- cmd_id: "cmd_3177"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-04T00:58:18Z"
-  notes: "否定的前提claimにgrep反証結果なし|check=assumptions_negative_claim_grep_evidence"
-- cmd_id: "cmd_3177"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-04T00:58:18Z"
-  diagnosis: "BLOCK理由: 初回起票 対策: template準拠+バックアップ明記+dry-run明記"
-  notes: "WARN累計昇格: 「否定的前提claimにgrep反証結果なし|check=assumptions_negative_claim_grep_evidence」が5回繰り返されています。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3177"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-04T00:58:43Z"
-- cmd_id: "cmd_3177"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-04T00:58:51Z"
-- cmd_id: "cmd_3176"
-  ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
   gunshi_verdict: "APPROVE"
@@ -2018,7 +1933,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -2028,7 +1943,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -2100,3 +2015,96 @@ entries:
   source: "cmd_complete_gate"
   timestamp: "2026-06-08T05:42:00Z"
   notes: "command_files_modified_mismatch"
+- cmd_id: "cmd_3228"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-08T05:44:03Z"
+  notes: "command_files_modified_mismatch"
+- cmd_id: "cmd_3228"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-08T05:44:50Z"
+  notes: "command_files_modified_mismatch"
+- cmd_id: "cmd_3228"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-08T05:45:08Z"
+  notes: "command_files_modified_mismatch"
+- cmd_id: "cmd_3228"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-08T05:45:30Z"
+- cmd_id: "cmd_3228"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-08T05:46:08Z"
+- cmd_id: "cmd_3229"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-08T05:54:16Z"
+- cmd_id: "cmd_3229"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-08T05:54:24Z"
+- cmd_id: "cmd_3230"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-08T05:59:46Z"
+- cmd_id: "cmd_3230"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-08T05:59:55Z"
