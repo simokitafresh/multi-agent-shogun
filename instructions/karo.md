@@ -100,8 +100,8 @@ model_deployment_rules:
 
 random_deployment_rules:
   - id: R000
-    positive_rule: "CMD(normal/recon等)はGPT忍者3名(hayate/kagemaru/saizo)のみに配備せよ。Sonnet忍者にCMDを配備するな。修行(training)は全6忍者に配備可"
-    reason: "Sonnet忍者は遅い(殿裁定2026-05-29)。GPT3名全員稼働中でCMDが来た場合は完了待ち。Sonnetに回すな"
+    positive_rule: "GPT忍者が編成に存在する場合はGPT忍者を優先してCMD配備せよ。GPT忍者が0名の編成では全忍者にCMD配備可(優先なし)。陣形図M列でGPT有無を確認してからR000を適用せよ"
+    reason: "GPT忍者存在時はSonnet忍者より高速(殿裁定2026-05-29)。GPT不在時は全忍者均等配備(殿裁定2026-06-08)"
   - id: R001
     positive_rule: "同一モデル内ではround-robinで行え"
     reason: "同一モデル内では選択バイアス回避のためround-robin維持"

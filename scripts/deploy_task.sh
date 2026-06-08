@@ -3116,6 +3116,32 @@ inject_semantic_concepts() {
     rm -f "$tmp_file"
     log "inject_semantic_concepts: $(echo "$matches" | wc -l) concepts injected"
 
+    # 推薦ログにninja_name付きで記録 (cmd_3244: precision照合キー修正)
+    if [ -n "$recommended_skills" ]; then
+        local _rec_ninja_name _rec_log _rec_ts _rec_hash
+        _rec_ninja_name=$(basename "$task_file" .yaml)
+        _rec_log="${SKILL_RECOMMEND_LOG_FILE:-$SCRIPT_DIR/logs/skill_recommend_log.yaml}"
+        _rec_ts="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+        _rec_hash="$(printf '%s' "$purpose" | sha256sum | cut -d' ' -f1)"
+        if [ -f "$_rec_log" ]; then
+            {
+                flock -w 5 9 || true
+                {
+                    printf -- '- ts: "%s"\n' "$_rec_ts"
+                    printf '  agent_id: "deploy_task"\n'
+                    printf '  ninja_name: "%s"\n' "$_rec_ninja_name"
+                    printf '  prompt_hash: "%s"\n' "$_rec_hash"
+                    printf '  recommended_skills:\n'
+                    while IFS= read -r _rec_skill; do
+                        [ -z "$_rec_skill" ] && continue
+                        printf '  - "%s"\n' "$_rec_skill"
+                    done <<< "$recommended_skills"
+                } >> "$_rec_log"
+            } 9>"${_rec_log}.lock"
+            log "inject_semantic_concepts: recorded ${_rec_ninja_name} recommendation to skill_recommend_log"
+        fi
+    fi
+
     # L7穴2: 家老が配備時に因果概念を毎回消費する(startup gateは/clear後のみで低頻度)
     echo "INFO: [SEMANTIC_CONTEXT] 配備cmd関連概念:" >&2
     printf '%s\n' "$matches" | sed 's/^/  /' >&2

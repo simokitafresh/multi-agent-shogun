@@ -140,7 +140,9 @@ raw_recommend_entries = [
 seen_recent_tuples = set()
 recommend_entries_reversed = []
 for entry in reversed(raw_recommend_entries):
-    agent_id = str(entry.get("agent_id") or "").strip() or "unknown"
+    # cmd_3244: ninja_name優先。deploy_task.sh記録分はninja_name=実行忍者で照合一致する
+    _ninja_name = str(entry.get("ninja_name") or "").strip()
+    agent_id = _ninja_name if _ninja_name else (str(entry.get("agent_id") or "").strip() or "unknown")
     prompt_hash = str(entry.get("prompt_hash") or "").strip()
     skills = entry.get("recommended_skills") or []
     if isinstance(skills, str):
@@ -189,7 +191,9 @@ seen_recommend_tuples = set()
 recommended_by_agent = []
 dropped_non_instrumented = 0
 for entry in recommend_entries:
-    agent_id = str(entry.get("agent_id") or "").strip() or "unknown"
+    # cmd_3244: ninja_name優先で照合キーを決定
+    _ninja_name = str(entry.get("ninja_name") or "").strip()
+    agent_id = _ninja_name if _ninja_name else (str(entry.get("agent_id") or "").strip() or "unknown")
     if agent_id not in instrumented_agents:
         dropped_non_instrumented += 1
         continue
