@@ -384,6 +384,13 @@ draft内の数値を再計算。分母・分子の定義、除外条件に注意
 ### Step 3.5: Command×成果物突合（report review時必須）
 報告のresult.summaryに記載されたカラム/フィールド/機能が、command欄の要求を全て満たしているか**1対1で突合**せよ。cmd_3149(固定行番号sed見落とし)、cmd_3150(elapsed_ms欠落見落とし)で2回家老BLOCKされた(2026-06-03)
 
+**SG-PRE25 INFO→verdict判定ルール（殿厳命2026-06-08洗脳監査で確立）**:
+SG-PRE25がINFO(command欄ファイルがfiles_modifiedに不在)を1件以上出した場合:
+- LG037で3分類(変更対象/実行のみ/既存依存)を実施
+- **実行のみ/既存依存であっても、gateのcommand_files_modified_mismatchチェックはLG037を区別できない→GATE BLOCKする**
+- したがって**verdict: FAIL**とし、command欄から実行のみ参照を除外してから再報告を要求せよ
+- LGTMの定義=GATE通過保証(LG006)。BLOCKリスク予測+LGTM=矛盾。cmd_3228/3232/3233/3234の4件で実証
+
 ### Step 4: Pre-mortem（事前検死せよ）
 「このcmdは失敗した」と仮定し失敗原因を3つ。各原因に検知・回復手段があるか確認。
 実例: cmd_1166でYAML修正cmdだが二系統残存→根本未対処→cmd_1167追加が必要に。消火vs品質向上の判定に有効。
