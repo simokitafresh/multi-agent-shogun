@@ -523,3 +523,4 @@
 | cmd_3226 | note.comエディタが2026-06時点で初回ロード時にスピナーで停止しProseMirror未描画。note_draft.shがno_prosemirrorで失敗する。リロード+待機ロジック追加とセレクタ更新で対応。加えてreference_cdp_note_com.mdに新エディタ構造を反映 | infra | 06-08 | note_draft.shにwait_for_prosemi |
 | cmd_3227 | 殿指摘: 各論パッチではなく全スキル・今後作るスキルにも適用される自動成長の仕組みが必要。現状の穴: (1)実行結果記録が各スキル個別実装→未接続スキルは失敗が見えない (2)失敗→修行課題生成が手動 (3)修行完了→SKILL.md更新が手動。全ステップ(実行→検知→修行→再現性確認→スキル更新)を共通基盤で自動化する設計を作成 | infra | 06-08 | 全スキル自動成長ループ共通基盤の設計を作成。現状穴3件(実行 |
 | cmd_3228 | cmd_3227設計に基づきPhase1を実装。PostToolUse hookでSkill tool実行後にskill_execution_log.shを自動呼出し、全スキルの実行結果(PASS/FAIL+失敗理由)を記録する。新スキル追加時の個別接続作業がゼロになる | infra | 06-08 | PostToolUse hookにSkill tool判定分 |
+| cmd_3229 | cmd_3227設計§3穴2に基づきPhase2を実装。skill_auto_improve.shのescalation判定(unchanged_streak>=閾値)後に修行課題を自動生成し家老inboxに通知する。完全自動配備ではなく家老確認を挟む安全弁付き | infra | 06-08 | skill_auto_improve.shのescalati |

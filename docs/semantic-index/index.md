@@ -1420,6 +1420,8 @@ codd:
 | cmd | `cmd_3130` (`skills/review-bundle/SKILL.md`) |
 | cmd | `cmd_karo_training_backlinks_cdp_severity_20260603` (`context/cdp-severity.md`, `skills/cdp-browse/SKILL.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T10:26:58+09:00 b41fq8ktm toolu_017E68wa3ALPdX75ChxUzzrw /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/d5122dec-ef46-4c5f-b5e2-792e49 |
+| cmd | `cmd_3229` 実装: 全スキル自動成長Phase2 — escalation後の修行課題自動生成+家老通知 (`scripts/skill_auto_improve.sh`, `scripts/training_task_generator.sh`) |
+| causal | `cmd_3229` origin: [[cmd_3228_Phase1完了]] -> [[Phase2_修行課題自動生成]] -> [[escalation後training_task_generator呼出]] |
 | causal_chain | `[[cmd_2929]]` (L647) |
 | causal_chain | `[[cmd_2929]]` (L649) |
 | causal_chain | `[[cmd_training_L7_v3_hanzo_5_20260521202900]]` (L660) |
@@ -2007,6 +2009,7 @@ codd:
 | cmd | `cmd_2372` backfill — | cmd_2372 | 本番シン忍法20体と事後GS選出21体のWF β調整α6指標を算出・比較する。 第4の試練: IS=24M、OOS=6M、step=3M、20ステップ。各ステップでβを再推定 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T22:33:21+09:00 b4smrug3v toolu_01VTNsLuMr7TGAm8zi4PvcD6 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/fea3a4eb-7a61-43cf-a345-df739e |
 | lesson | `L726` サイズ調整効果: HIGH月の平均+3.4%により削減コストが改善効果を上回る |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T15:09:24+09:00 バレてもいいところにリアルな数字を出す 例えば アルファ の CHR nhf マックス gmru カルマー アベレージ UWP などはすでにアプリで提供しているような 提供して見えるものに関して隠す必要はない 大事なところだけ隠して他が細か |
 | causal_chain | `[[cmd_karo_hotfix_semantic_search_timeout_20260602]]` (L726) |
 
 ## rebalancer_app — Rebalancerアプリ
