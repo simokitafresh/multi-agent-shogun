@@ -1568,3 +1568,113 @@ grep -q "^completed_at:" "$SCRIPT_DIR/queue/tasks/kagemaru.yaml"
 '
     [ "$status" -eq 0 ]
 }
+
+@test "check_obsidian_candidate_promotion: threshold超過で自動昇格、未満でskip" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+OBSIDIAN_PROMOTE_INTERVAL=60
+OBSIDIAN_PROMOTE_THRESHOLD=5
+OBSIDIAN_PROMOTE_STATE_FILE="$STATE_DIR/shogun_obsidian_promote.last"
+OBSIDIAN_PROMOTE_LOG="$TMP_ROOT/logs/obsidian_promote.log"
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/data" "$STATE_DIR"
+
+# SQLiteテストDB作成: candidate=3 (閾値5未満)
+sqlite3 "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" "
+CREATE TABLE events (id TEXT PRIMARY KEY, state TEXT);
+INSERT INTO events VALUES ('"'"'e1'"'"', '"'"'obsidian_candidate'"'"');
+INSERT INTO events VALUES ('"'"'e2'"'"', '"'"'obsidian_candidate'"'"');
+INSERT INTO events VALUES ('"'"'e3'"'"', '"'"'obsidian_candidate'"'"');
+"
+
+cat > "$SCRIPT_DIR/scripts/obsidian_promote_finalize.sh" <<'"'"'FEOF'"'"'
+#!/usr/bin/env bash
+echo "finalize_called" >> "$OBSIDIAN_PROMOTE_LOG"
+FEOF
+chmod +x "$SCRIPT_DIR/scripts/obsidian_promote_finalize.sh"
+export OBSIDIAN_PROMOTE_LOG
+
+log() { echo "$1" >> "$LOG"; }
+
+# 1回目: 閾値未満→skip
+check_obsidian_candidate_promotion
+echo "--- after first call (below threshold) ---"
+cat "$LOG"
+grep -q "OBSIDIAN-PROMOTE: candidates=3 (threshold=5), skip" "$LOG"
+[ ! -f "$OBSIDIAN_PROMOTE_LOG" ]
+
+# state_fileリセット(interval bypass)
+rm -f "$OBSIDIAN_PROMOTE_STATE_FILE"
+
+# candidate追加→閾値超過(5件)
+sqlite3 "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" "
+INSERT INTO events VALUES ('"'"'e4'"'"', '"'"'obsidian_candidate'"'"');
+INSERT INTO events VALUES ('"'"'e5'"'"', '"'"'obsidian_candidate'"'"');
+"
+
+# 2回目: 閾値超過→auto-promote
+check_obsidian_candidate_promotion
+echo "--- after second call (above threshold) ---"
+cat "$LOG"
+grep -q "OBSIDIAN-PROMOTE: candidates=5 >= threshold=5, auto-promoting" "$LOG"
+grep -q "OBSIDIAN-PROMOTE: auto-promote done" "$LOG"
+grep -q "finalize_called" "$OBSIDIAN_PROMOTE_LOG"
+'
+    [ "$status" -eq 0 ]
+}
+
+@test "check_obsidian_candidate_promotion: interval内は2回目skip" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+OBSIDIAN_PROMOTE_INTERVAL=86400
+OBSIDIAN_PROMOTE_THRESHOLD=1
+OBSIDIAN_PROMOTE_STATE_FILE="$STATE_DIR/shogun_obsidian_promote.last"
+OBSIDIAN_PROMOTE_LOG="$TMP_ROOT/logs/obsidian_promote.log"
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/data" "$STATE_DIR"
+
+sqlite3 "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" "
+CREATE TABLE events (id TEXT PRIMARY KEY, state TEXT);
+INSERT INTO events VALUES ('"'"'e1'"'"', '"'"'obsidian_candidate'"'"');
+INSERT INTO events VALUES ('"'"'e2'"'"', '"'"'obsidian_candidate'"'"');
+"
+
+cat > "$SCRIPT_DIR/scripts/obsidian_promote_finalize.sh" <<'"'"'FEOF'"'"'
+#!/usr/bin/env bash
+echo "finalize_called" >> "$OBSIDIAN_PROMOTE_LOG"
+FEOF
+chmod +x "$SCRIPT_DIR/scripts/obsidian_promote_finalize.sh"
+export OBSIDIAN_PROMOTE_LOG
+
+log() { echo "$1" >> "$LOG"; }
+
+# 1回目: 実行される
+check_obsidian_candidate_promotion
+count1=$(grep -c "finalize_called" "$OBSIDIAN_PROMOTE_LOG" 2>/dev/null || echo 0)
+[ "$count1" -eq 1 ]
+
+# 2回目: interval内→skip（finalize呼ばれない）
+check_obsidian_candidate_promotion
+count2=$(grep -c "finalize_called" "$OBSIDIAN_PROMOTE_LOG" 2>/dev/null || echo 0)
+[ "$count2" -eq 1 ]
+'
+    [ "$status" -eq 0 ]
+}

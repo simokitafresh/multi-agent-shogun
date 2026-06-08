@@ -116,6 +116,10 @@ THREE_LAYER_MAINTENANCE_TMP_TTL_HOURS=${THREE_LAYER_MAINTENANCE_TMP_TTL_HOURS:-4
 THREE_LAYER_MAINTENANCE_TIMEOUT=${THREE_LAYER_MAINTENANCE_TIMEOUT:-120}
 THREE_LAYER_MAINTENANCE_STATE_FILE="$STATE_DIR/shogun_three_layer_maintenance.last"
 THREE_LAYER_MAINTENANCE_LOG="$SCRIPT_DIR/logs/three_layer_maintenance.log"
+OBSIDIAN_PROMOTE_THRESHOLD=${OBSIDIAN_PROMOTE_THRESHOLD:-10}  # obsidian candidate自動昇格: 蓄積閾値（件数）— [[obsidian昇格率0.07%]]
+OBSIDIAN_PROMOTE_INTERVAL=${OBSIDIAN_PROMOTE_INTERVAL:-86400}  # obsidian candidate自動昇格: チェック間隔（秒）— 1日
+OBSIDIAN_PROMOTE_STATE_FILE="$STATE_DIR/shogun_obsidian_promote.last"
+OBSIDIAN_PROMOTE_LOG="$SCRIPT_DIR/logs/obsidian_promote.log"
 SKILL_AUTO_IMPROVE_INTERVAL=86400  # skill_auto_improve日次実行間隔（秒）— 1日(旧7日→短縮。BLOCKパターン蓄積→防止ステップ更新を高速化)
 SKILL_AUTO_IMPROVE_STATE_FILE="$STATE_DIR/shogun_skill_auto_improve.last"
 LESSON_DEPRECATION_INTERVAL=86400  # effectiveness低下教訓のdeprecate候補抽出間隔（秒）— 1日
@@ -4383,6 +4387,55 @@ check_three_layer_maintenance() {
     printf '%s\n' "$now" > "$THREE_LAYER_MAINTENANCE_STATE_FILE" 2>/dev/null || true
 }
 
+# ─── obsidian candidate自動昇格 (cmd_3240) ───
+# obsidian_promote_candidate.shが蓄積したcandidate件数を定期チェックし、
+# 閾値超過時にobsidian_promote_finalize.shでstate=obsidian_promotedへ自動遷移する。
+# 将軍の/dream(手動)依存を排除し、意志に依存しない自動昇格を実現する。
+check_obsidian_candidate_promotion() {
+    local now last elapsed candidate_count finalize_script db_path
+    now=$EPOCHSECONDS
+    last=0
+    if [ -f "$OBSIDIAN_PROMOTE_STATE_FILE" ]; then
+        read -r last < "$OBSIDIAN_PROMOTE_STATE_FILE" || last=0
+    fi
+    [[ "$last" =~ ^[0-9]+$ ]] || last=0
+    elapsed=$((now - last))
+    [ "$elapsed" -lt "$OBSIDIAN_PROMOTE_INTERVAL" ] && return
+
+    db_path="$SCRIPT_DIR/data/multi_agent_shogun_memory.db"
+    if [ ! -f "$db_path" ]; then
+        log "OBSIDIAN-PROMOTE: database not found, skip"
+        printf '%s\n' "$now" > "$OBSIDIAN_PROMOTE_STATE_FILE" 2>/dev/null || true
+        return
+    fi
+
+    candidate_count=$(sqlite3 "$db_path" "SELECT COUNT(*) FROM events WHERE state='obsidian_candidate';" 2>/dev/null || echo "0")
+    [[ "$candidate_count" =~ ^[0-9]+$ ]] || candidate_count=0
+
+    if [ "$candidate_count" -lt "$OBSIDIAN_PROMOTE_THRESHOLD" ]; then
+        log "OBSIDIAN-PROMOTE: candidates=$candidate_count (threshold=$OBSIDIAN_PROMOTE_THRESHOLD), skip"
+        printf '%s\n' "$now" > "$OBSIDIAN_PROMOTE_STATE_FILE" 2>/dev/null || true
+        return
+    fi
+
+    finalize_script="$SCRIPT_DIR/scripts/obsidian_promote_finalize.sh"
+    if [ ! -f "$finalize_script" ]; then
+        log "OBSIDIAN-PROMOTE: obsidian_promote_finalize.sh not found, skip"
+        printf '%s\n' "$now" > "$OBSIDIAN_PROMOTE_STATE_FILE" 2>/dev/null || true
+        return
+    fi
+
+    mkdir -p "$(dirname "$OBSIDIAN_PROMOTE_LOG")"
+    log "OBSIDIAN-PROMOTE: candidates=$candidate_count >= threshold=$OBSIDIAN_PROMOTE_THRESHOLD, auto-promoting"
+    if timeout 120 bash "$finalize_script" --force >> "$OBSIDIAN_PROMOTE_LOG" 2>&1; then
+        log "OBSIDIAN-PROMOTE: auto-promote done (candidates=$candidate_count)"
+    else
+        log "OBSIDIAN-PROMOTE: auto-promote failed (non-blocking)"
+    fi
+
+    printf '%s\n' "$now" > "$OBSIDIAN_PROMOTE_STATE_FILE" 2>/dev/null || true
+}
+
 check_script_size_thresholds() {
     local now last elapsed stats alerts alert_count bulletin_content
     now=$EPOCHSECONDS
@@ -5089,6 +5142,9 @@ while true; do
 
     # ═══ 三層記憶tmp cleanup + dry-run候補抽出（60分間隔） ═══
     check_three_layer_maintenance
+
+    # ═══ obsidian candidate自動昇格（日次 cmd_3240） ═══
+    check_obsidian_candidate_promotion
 
     # ═══ scripts/主要スクリプト肥大化チェック（cmd_2759） ═══
     check_script_size_thresholds
