@@ -1920,3 +1920,94 @@
   brainwash_check: "洗脳#1: GATE CLEAR済みでもレビュー実施。テスト数/結果を実数確認"
   origin: "[[cmd_karo_ci_fix]] -> [[kagemaru CI修正]] -> [[LGTM]]"
   timestamp: "2026-06-08T22:55:00"
+- cmd_id: cmd_3244
+  review_type: report
+  report_ninja: kagemaru
+  verdict: FAIL
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "FAIL: gate BLOCK(command_files_modified_mismatch)→家老修正後CLEAR。command欄gate_shogun_startup.sh→実際はskill_recommend_metrics.sh変更"
+  observations:
+    - "事実1: command欄にgate_shogun_startup.sh記載だがfiles_modifiedにはskill_recommend_metrics.sh"
+    - "事実2: bats 5/5 PASS。実装自体は正しい"
+    - "事実3: gate BLOCKをSG-PRE25注記(D0追加)で事前認識可能だった"
+  step3_5_verified: true
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "cmd仕様command欄のファイル名誤り(gate_shogun_startup.sh)→実装はskill_recommend_metrics.sh→gate mismatch BLOCK"
+  brainwash_check: "洗脳#1: gate BLOCK確認済みでLGTM出さない(LG006)。洗脳#2: gate BLOCKのreason現物確認"
+  origin: "[[cmd_3244]] -> [[kagemaru precision修正]] -> [[FAIL_mismatch]]"
+  timestamp: "2026-06-08T23:15:00"
+- cmd_id: cmd_3245
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  findings_summary: "6観点OK。quality_gateフィールド名バリデーション追加。覚醒なぜなぜ7回の根因対処。推奨: フィールド名リストをテンプレートから動的抽出(メンテナンス負債防止)"
+  observations:
+    - "事実1: cmd_save.shにフィールド名照合は0件(rg確認済み)。個別値チェック(q11/q12/q5/q8)のみ"
+    - "事実2: AC2件。cmd_save.sh単体変更。timeout 20分"
+    - "事実3: pretool-dispatch.shのpreflightテンプレートに必須フィールド名リスト定義済み"
+  causal_chain: "フィールド名不一致素通り→値チェックで初BLOCK→修正ループ7回。名前バリデーション追加で初回検出(正の複利)"
+  brainwash_check: "洗脳#1: ambiguity冷え観点を意識的に検討(冷え対策)。洗脳#7: 推奨事項(動的抽出)を省略せず記載"
+  ambiguity_points: none
+  origin: "[[cmd_3245]] -> [[quality_gateフィールド名バリデーション]] -> [[APPROVE]]"
+  timestamp: "2026-06-08T23:25:00"
+- cmd_id: cmd_3246
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: null
+  confidence: MEDIUM
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  findings_summary: "RC: AC1のlesson_write履歴検出方法未指定(FM1)+全nazenaze教訓強制の過剰性(FM3)。他5観点OK"
+  observations:
+    - "事実1: cmd_publish.shにnazenaze_root_cause検証0件(rg確認済み)"
+    - "事実2: bash historyは/clear後消失→マーカーファイルまたはログ確認が必要"
+    - "事実3: 3ファイル変更(cmd_publish.sh+gate_karo+gate_gunshi)。全ロール横展開"
+  severity: normal
+  causal_chain: "nazenaze記入→PASS→教訓記録不在=半パイプライン→gate追加で完成。ただし検出方法未指定で忍者が詰まる"
+  brainwash_check: "洗脳#1: 殿の裁定に沿った良いcmdだがFM1/FM3で安心停止しない。洗脳#4: 過剰BLOCKリスクを指摘(緩い設計の逆=厳しすぎる設計)"
+  ambiguity_points: "AC1のlesson_write実行履歴検出方法が未指定"
+  hole_action: none
+  origin: "[[cmd_3246]] -> [[洗脳監査サイクル+横展開]] -> [[REQUEST_CHANGES_FM1]]"
+  timestamp: "2026-06-08T23:28:00"
+- cmd_id: cmd_3245
+  review_type: report
+  report_ninja: hayate
+  verdict: FAIL
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "FAIL: テスト7件追加を報告するがcommitにテストファイルなし。成果物不完全"
+  observations:
+    - "事実1: git show 3fa60db22 --name-only: scripts/cmd_save.shのみ。テストファイルなし"
+    - "事実2: grep -rn VALID_QG tests/ → 0件。フィールド名バリデーションテスト不在"
+    - "事実3: 実装27行は正しく見える(CMD_BLOCK_CACHE走査+16フィールド照合)"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "テスト作成→commitに含めず→報告に虚偽記載(テスト7件)→成果物不完全"
+  brainwash_check: "洗脳#2防止: テスト存在を現物確認(git show+grep)。報告の自己申告を鵜呑みにしない"
+  origin: "[[cmd_3245]] -> [[hayate フィールド名バリデーション]] -> [[FAIL_テスト不在]]"
+  timestamp: "2026-06-08T23:38:00"
+- cmd_id: cmd_3246
+  review_type: report
+  report_ninja: saizo
+  verdict: FAIL
+  gate_result: null
+  changed_lines: 347
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "FAIL: commit混入(LG004) — saizoの3ファイルがhayateのcommit e5ce7e13b(cmd_3245)に混入。test_results空。実装内容は正しく見える"
+  observations:
+    - "事実1: git show e5ce7e13b --stat: hayate.yaml+cmd_publish.sh+gate_karo+gate_gunshi。commitメッセージはcmd_3245"
+    - "事実2: saizo報告のcommit_hash=e5ce7e13b=hayateのcommit。saizoの独立commitがない"
+    - "事実3: 洗脳監査セクション(gate_gunshi_startup.sh +66行)の実装は正しい(APPROVE/LGTM gate_result確認率+brainwash_check記入率計測)"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "347行。gate_gunshi_startup.sh変更は軍師自身に影響するが追記のみ(既存ロジック変更なし)。rollback=git revert即可"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "saizo/hayate同時作業→git add競合→saizoの変更がhayateのcommitに混入→LG004。commit分離で解決"
+  brainwash_check: "洗脳#2防止: commit内容をgit show --statで現物確認。報告のcommit_hashの帰属を検証"
+  origin: "[[cmd_3246]] -> [[saizo 洗脳監査サイクル]] -> [[FAIL_commit混入]]"
+  timestamp: "2026-06-09T00:00:00"

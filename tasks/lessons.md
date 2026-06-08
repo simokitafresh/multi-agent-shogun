@@ -7629,3 +7629,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - ( ... ) 200>lockfile のサブシェルブロック内ではlocal宣言が無効(bash仕様: local is function-only)。変数名にlocal修飾子なしで使用すべき。cmd_quality_log.shでchecksフィールドが空になる不具合の原因だった
+
+### L759: 軍師推奨: quality_gateフィールド名リストをテンプレートから動的抽出すべき
+- **日付**: 2026-06-08
+- **出典**: cmd_3245
+- **記録者**: hayate
+- **tags**: [infra,cmd-quality,gate,yaml]
+- **target_files**: [scripts/cmd_save.sh]
+- **origin**: [[cmd_3245]]
+- **when**: 未設定
+- **how**: 未設定
+- 現在はVALID_QG_FIELDSをハードコード。将来q13等追加時にリスト更新漏れのリスク。テンプレートYAMLから動的抽出する改良が望ましい(軍師指摘)
