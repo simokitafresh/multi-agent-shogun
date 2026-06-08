@@ -1045,6 +1045,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T09:15:20+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T09:15:26+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T13:09:44+09:00 自立自走 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T20:09:26+09:00 今 クリアしても 今より強く ニューゲーム できるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T20:10:02+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -1097,6 +1099,9 @@ codd:
 | causal | `cmd_3119` origin: [[軍師洗脳監査Bug1]] -> [[三層記憶×学習ループ接続断裂]] -> [[教訓注入フィードバック不在]] |
 | causal | `cmd_3119` depends_on: cmd_3118 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T09:36:01+09:00 三層学習ループの自動成長は順調か？ |
+| cmd | `cmd_3230` 実装: 全スキル自動成長Phase3 — 修行完了判定+SKILL.md防止ステップ自動更新 (`scripts/ninja_monitor.sh`, `scripts/training_completion_check.sh`, `tests/unit/test_training_completion_check.bats`) |
+| causal | `cmd_3230` origin: [[cmd_3229_Phase2]] -> [[Phase3_修行完了SKILL.md還流]] -> [[自動成長ループ完結]] |
+| causal | `cmd_3230` depends_on: cmd_3229 |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 
 ## chain_principle — 鎖の原理

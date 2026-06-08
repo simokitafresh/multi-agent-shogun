@@ -48,6 +48,7 @@ Script refs verified: 2026-05-22 cmd_2959. `gate_report_format.sh` は `gate_rep
 - <!-- skill-auto-improve:40a8ebc501f9 --> 自動防止: gate=dashboard_update のTop FAIL理由「dashboard_update.sh exit=1 cmd=<cmd_id> dry_run=true」(count=4, last=2026-05-02T22:12:29+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
 
 - <!-- skill-auto-improve:71d8b7030df8 --> 自動防止: gate=dashboard_update のTop FAIL理由「dashboard_update.sh exit=1 cmd=--help dry_run=false」(count=2, last=2026-06-06T18:02:10+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
+- <!-- skill-auto-improve:b6620bfa817a --> 自動防止: gate=dashboard_update のTop FAIL理由「dashboard_update.sh exit=2 cmd=<cmd_id> dry_run=false」(count=1, last=2026-06-08T02:29:18+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
 ### pre-flight: cmd_id空パラメータ検出
 
 `dashboard_update.sh` 実行前に必ず `cmd_id` を明示し、空文字・`--dry-run`単独・`cmd_`以外の値なら実行しない。cmd_id未指定のまま実行すると `dashboard_update.sh exit=1 cmd=<empty>` / `cmd=--dry-run` がskill FAILとして記録される。

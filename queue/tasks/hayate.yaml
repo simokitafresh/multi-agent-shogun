@@ -36,7 +36,7 @@ task:
   - 'PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則'
   project: infra
   purpose: cmd_3227設計§3穴3に基づきPhase3を実装。修行完了時(gate_fire_log解析でPASS判定)にskill_auto_improve.shを呼出しSKILL.mdの防止ステップを自動更新。修行の成果がスキル自体に自動還流する最終ピース
-  status: done
+  status: idle
   stop_for: []
   task_id: cmd_3230_focused
   task_type: focused
