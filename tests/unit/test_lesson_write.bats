@@ -396,3 +396,69 @@ EOF
     [ "$status" -eq 1 ]
     [[ "$output" == *"not found"* ]]
 }
+
+# ============================================================
+# 9. Subdomain tag inference from target-files
+# ============================================================
+
+@test "infer subdomain tag: scripts/gates/ → gate" {
+    run_lesson_write testproj "ゲート推定タグ教訓" "scripts/gates配下のtarget_filesからgateタグが推定される確認テスト" "cmd_810" "karo" "" --target-files "scripts/gates/gate_foo.sh"
+    [ "$status" -eq 0 ]
+
+    run grep "### L002:" "$EXT_PROJECT/tasks/lessons.md"
+    [ "$status" -eq 0 ]
+    run grep "tags" "$EXT_PROJECT/tasks/lessons.md"
+    [[ "$output" == *"gate"* ]]
+}
+
+@test "infer subdomain tag: tests/ → testing" {
+    run_lesson_write testproj "テスト推定タグ教訓" "tests配下のtarget_filesからtestingタグが推定される確認テスト" "cmd_811" "karo" "" --target-files "tests/unit/test_foo.bats"
+    [ "$status" -eq 0 ]
+
+    run grep -A8 "### L002:" "$EXT_PROJECT/tasks/lessons.md"
+    [[ "$output" == *"testing"* ]]
+}
+
+@test "infer subdomain tag: scripts/deploy_task → deploy-task" {
+    run_lesson_write testproj "配備推定タグ教訓" "deploy_task関連のtarget_filesからdeploy-taskタグが推定される確認テスト" "cmd_812" "karo" "" --target-files "scripts/deploy_task.sh"
+    [ "$status" -eq 0 ]
+
+    run grep -A8 "### L002:" "$EXT_PROJECT/tasks/lessons.md"
+    [[ "$output" == *"deploy-task"* ]]
+}
+
+@test "infer subdomain tag: skills/ → skill" {
+    run_lesson_write testproj "スキル推定タグ教訓" "skills配下のtarget_filesからskillタグが推定される確認テスト" "cmd_813" "karo" "" --target-files "skills/foo/SKILL.md"
+    [ "$status" -eq 0 ]
+
+    run grep -A8 "### L002:" "$EXT_PROJECT/tasks/lessons.md"
+    [[ "$output" == *"skill"* ]]
+}
+
+@test "subdomain tag combined with project tag" {
+    run_lesson_write testproj "複合タグ教訓" "プロジェクトタグとサブドメインタグの両方が付与される確認テスト" "cmd_814" "karo" "" --target-files "scripts/gates/gate_bar.sh"
+    [ "$status" -eq 0 ]
+
+    run grep -A8 "### L002:" "$EXT_PROJECT/tasks/lessons.md"
+    [[ "$output" == *"testproj"* ]]
+    [[ "$output" == *"gate"* ]]
+}
+
+@test "explicit --tags override subdomain inference" {
+    run_lesson_write testproj "明示タグ優先教訓" "明示タグ指定時はサブドメイン推定より優先される確認テスト" "cmd_815" "karo" "" --tags "custom-tag" --target-files "scripts/gates/gate_baz.sh"
+    [ "$status" -eq 0 ]
+
+    run grep "^\- \*\*tags\*\*:" "$EXT_PROJECT/tasks/lessons.md"
+    [[ "$output" == *"custom-tag"* ]]
+    [[ "$output" != *"gate"* ]]
+}
+
+@test "no target-files falls back to project tag only" {
+    run_lesson_write testproj "フォールバック教訓" "target_files未指定時はプロジェクトタグのみが付与される確認テスト" "cmd_816" "karo"
+    [ "$status" -eq 0 ]
+
+    run grep -A8 "### L002:" "$EXT_PROJECT/tasks/lessons.md"
+    [[ "$output" == *"[testproj]"* ]]
+    [[ "$output" != *"gate"* ]]
+    [[ "$output" != *"testing"* ]]
+}

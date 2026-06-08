@@ -177,6 +177,43 @@ for cpath in sorted(glob.glob(os.path.join(archive_dir, f'{cmd_id}_*.yaml')), re
 PY
 }
 
+infer_subdomain_tag_from_files() {
+    local files="${1:-}"
+    [ -z "$files" ] && return 0
+
+    local tag=""
+    local _isf_f
+    local _isf_oldIFS="$IFS"
+    IFS=','
+    for _isf_f in $files; do
+        IFS="$_isf_oldIFS"
+        # Trim whitespace
+        _isf_f="${_isf_f#"${_isf_f%%[![:space:]]*}"}"
+        _isf_f="${_isf_f%"${_isf_f##*[![:space:]]}"}"
+        [ -z "$_isf_f" ] && continue
+
+        case "$_isf_f" in
+            *scripts/gates/*|*/gates/gate_*) tag="gate" ;;
+            *tests/*|*test_*.bats)           tag="testing" ;;
+            *scripts/deploy_task*)           tag="deploy-task" ;;
+            *scripts/ninja_monitor*)         tag="ninja-monitor" ;;
+            *scripts/inbox*|*inbox_write*|*inbox_mark*|*inbox_watcher*|*inbox_archive*) tag="inbox" ;;
+            *scripts/lesson*|*lesson_write*|*sync_lessons*) tag="lesson" ;;
+            *scripts/cmd_save*|*cmd_design_quality*|*cmd_complete_gate*) tag="cmd-quality" ;;
+            *scripts/bulletin*)              tag="bulletin" ;;
+            *scripts/semantic*)              tag="semantic" ;;
+            *context/*)                      tag="context" ;;
+            *instructions/*)                 tag="instructions" ;;
+            *skills/*)                       tag="skill" ;;
+        esac
+
+        [ -n "$tag" ] && break
+    done
+    IFS="$_isf_oldIFS"
+
+    printf '%s\n' "$tag"
+}
+
 infer_default_project_tag() {
     local inferred_cmd=""
     local inferred_project=""
@@ -198,7 +235,24 @@ infer_default_project_tag() {
         fi
     fi
 
-    printf '%s\n' "$inferred_project"
+    # Infer subdomain tag from target files (--target-files or auto-resolved)
+    local subdomain_tag=""
+    local files_to_check="${_LW_TARGET_FILES:-${TARGET_FILES:-}}"
+    if [ -n "$files_to_check" ]; then
+        subdomain_tag="$(infer_subdomain_tag_from_files "$files_to_check")"
+    fi
+
+    # Combine: project_tag[,subdomain_tag]
+    local result="$inferred_project"
+    if [ -n "$subdomain_tag" ]; then
+        if [ -n "$result" ]; then
+            result="${result},${subdomain_tag}"
+        else
+            result="$subdomain_tag"
+        fi
+    fi
+
+    printf '%s\n' "$result"
 }
 
 warn_similar_title() {
