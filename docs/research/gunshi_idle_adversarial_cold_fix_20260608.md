@@ -68,3 +68,28 @@ adversarial 3/10(最低)
 - 対象: cmd_3221〜3225(DM-Signal V8バックテスト研究系)
 - 5件全てGATE CLEAR。深刻な見落としは検出されず
 - ただしGP-262(1シナリオ観測7件)の放置は惰性の兆候。次サイクルで対処
+
+## Session 3 追加分析 (2026-06-08T22:42)
+
+### zero_streak=6/10の遡及適用
+
+GP-263/263b修正後もzero_streak=6。cmd_3231-3235の直近6件でadversarial未使用。
+
+| cmd | changed_lines | blast_radius | adversarial要否 | 遡及結果 |
+|-----|--------------|-------------|----------------|---------|
+| cmd_3231 draft | N/A | **大**(全cmdの教訓注入精度) | **要** | USEFUL教訓スコアが閾値以上か未検証。穴あり |
+| cmd_3231 report | deploy_task.sh | 大 | 要 | 同上 |
+| cmd_3233 | SKILL.md×8 | 限定 | 不要 | 正当 |
+| cmd_3232 | semantic-index | 限定 | 不要 | 正当 |
+| cmd_3234 | context×3 | 限定 | 不要 | 正当 |
+| cmd_3235 | note下書き | 最小 | 不要 | 正当 |
+
+**発見**: cmd_3231のblast radiusは大(deploy_task.shは全忍者影響)だがadversarialを未適用。
+changed_lines < 200のためトリガーされなかったが、blast radius大で適用すべきだった。
+
+### 改善案: blast_radius自動判定
+ac_physical_verify.shまたはSG-PRE15.5にblast_radius推定を追加:
+- deploy_task.sh / inbox_write.sh / ninja_monitor.sh → blast_radius=high
+- CLAUDE.md / instructions/*.md → blast_radius=high
+- gate_*.sh / hook_*.sh → blast_radius=medium
+200行未満でもblast_radius=highならadversarial推奨を表示(Level 5)

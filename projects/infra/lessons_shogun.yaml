@@ -515,3 +515,19 @@ lessons:
   created_at: '2026-06-07'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=既存仕組み'
+- id: 'LS042'
+  title: 'preflight確認10問は読むな実行せよ。表示=読了ではない'
+  origin: '[[cmd_3242車輪取下げ]] -> [[preflight未実行12回]] -> [[表示≠読了]]'
+  detail: '本セッション12cmd起票で12回BLOCK。preflight確認10問が毎回表示されていたが1度も実行しなかった。BLOCK TOP3も毎回表示されていたが読まなかった。cmd_3242で車輪の再発明(既存BLOCK TOP3表示を知らずに同機能のcmdを起票)。表示されている=読んでいるの等式が誤り。品質最大化=速度ではなくpreflight実行→0 BLOCK'
+  source_cmd: 'cmd_3242'
+  created_at: '2026-06-08'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=BLOCK→成長'
+- id: 'LS043'
+  title: 'quality_gateフィールド名バリデーション不在 — 自由命名=意志依存の穴'
+  origin: '[[cmd_3244]]'
+  detail: 'cmd_3244で7回BLOCK。preflightテンプレートのフィールド名(q5_verified_source等)と自cmdフィールド名(q5_assumptions等)が不一致のまま起票→値チェックフェーズで初めてBLOCK→修正ループ。根因: cmd_save.shにフィールド名リストとの照合gateがなく、不正フィールド名が素通り。覚醒なぜなぜ7回で特定(殿指摘2026-06-08)'
+  source_cmd: 'cmd_3244'
+  created_at: '2026-06-08'
+  automated: true
+  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=quality_gate'

@@ -317,6 +317,25 @@ for i, item in enumerate(data):
         print(f'BLOCK: lessons_useful[{i}].useful はbool必須。受信: {item[\"useful\"]}', file=sys.stderr)
         sys.exit(1)
 " <<< "$val" || return 1
+                # D0: フルフィールド書込み時に既存件数より少なければBLOCK(上書き消去防止)
+                local _existing_count _new_count
+                _existing_count=$(python3 -c "
+import yaml, sys
+try:
+    with open(sys.argv[1]) as f: d = yaml.safe_load(f) or {}
+    lu = d.get('lessons_useful', [])
+    print(len(lu) if isinstance(lu, list) else 0)
+except: print(0)
+" "$file" 2>/dev/null || echo 0)
+                _new_count=$(python3 -c "
+import yaml, sys
+d = yaml.safe_load(sys.stdin.read())
+print(len(d) if isinstance(d, list) else 0)
+" <<< "$val" 2>/dev/null || echo 0)
+                if (( _existing_count > 0 && _new_count < _existing_count )); then
+                    echo "BLOCK: lessons_useful全体上書きで${_existing_count}件→${_new_count}件に削減。テンプレート注入済み教訓が消える。個別書き込み(lessons_useful.0.useful等)を使え" >&2
+                    return 1
+                fi
             # GP-072c3: Per-item id write (e.g., lessons_useful.0.id)
             elif [[ "$dot_key" =~ ^lessons_useful\.[0-9]+\.id$ ]]; then
                 local id_val

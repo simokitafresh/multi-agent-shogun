@@ -101,6 +101,9 @@ lessons:
   - queue/reports/hayate_report_cmd_3079.yaml
   - queue/tasks/hayate.yaml
   origin: '[[cmd_3079]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L721
   title: pytest対象ファイルがテスト関数ゼロだとACの実行確認が空振りする
   summary: test_*.pyでもmain()だけのスクリプトはpytest指定実行で収集0件になり得る。ACで対象テストの実行を要求する場合はDB不要のsmoke
@@ -234,6 +237,9 @@ lessons:
   - queue/tasks/saizo.yaml
   - queue/reports/saizo_report_cmd_2570.yaml
   origin: '[[cmd_2570]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L712
   title: '[自動生成] 有効教訓の記録を怠った: cmd_2560'
   summary: lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
@@ -435,6 +441,9 @@ lessons:
   - scripts/oneshot/cmd_2447_register_gs_shin_okugi.py
   - commit c555c91a
   origin: '[[cmd_2448]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L699
   title: holding_signalパリティ検証ではNULL行を比較対象から除外する
   summary: monthly_returnsにmonthly_return_openはあるがholding_signalがNULLの初期行が存在する。holding_sign
@@ -450,6 +459,9 @@ lessons:
   - scripts/oneshot/cmd_2447_register_gs_shin_okugi.py
   - commit c555c91a
   origin: '[[cmd_2448]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L698
   title: FoF登録ではPortfolio直下top_nを構成数に使うな — 直下top_n=1固定+pipeline_config内側のみ
   summary: 旧register_gs_shin_okugiy.py L323がchamp[top_n]をPortfolio直下top_nに代入してle=2違反を発生させた。
@@ -964,6 +976,9 @@ lessons:
   - outputs/grid_search/cmd_2360_oikaze/cmd_2360_oikaze_results_fast.db
   - outputs/grid_search/cmd_2360_oikaze/cmd_2360_oikaze_results_fast.meta.yaml
   origin: '[[cmd_2360]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L667
   title: lookback_index軸のGS robustnessでは連動メタデータ列を固定条件から外す
   summary: gs_grid_robustness.pyで--grid-axes lookback_indexのみを指定すると、lookback_label/lookback
@@ -1177,6 +1192,9 @@ lessons:
   - frontend/hooks/__tests__/usePrefetch.test.ts
   - frontend/contexts/__tests__/signals-context.test.tsx
   origin: '[[cmd_2300]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L654
   title: FE設計書の計測セクション(§2)はcmd更新時に陳腐化する。新計測結果とのdiff確認をAC化すべき
   summary: fe-speed-improvement-design.md §2はcmd_2262ベースのdashboard PF切替407ms。cmd_2291では同指標1
@@ -1510,6 +1528,9 @@ lessons:
   - logs/cmd_design_quality.yaml
   - logs/gunshi_review_log.yaml
   origin: '[[cmd_1985]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L631
   title: TRF insufficient_candidatesパスでcurrent_tickersをクリアするな
   summary: len(momentum_results)<2パスでcontext.current_tickers=set()すると単独ティッカーが通過できなくなる。dict.
@@ -1544,6 +1565,9 @@ lessons:
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.csv
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.meta.yaml
   origin: '[[cmd_1899]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L629
   title: 'golden data有効性: 生成時のコード状態を確認せよ'
   summary: バグ状態で生成されたgolden dataは検証基準にならない。生成日+対応commitを記録すべき。TRFバグ下で生成→全コンポーネント選択=バグ値だった実例
@@ -1632,6 +1656,9 @@ lessons:
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_validation.yaml
   origin: '[[cmd_1877]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L624
   title: 道具の全引数(--output-prefix等)をcmdに明記せよ — デフォルト依存はprefix不統一の原因
   summary: GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する。全引数を明示的にcmdに記載してデフォ
@@ -1771,6 +1798,9 @@ lessons:
   - outputs/analysis/alm_research/cmd_1869_2x2_factor_analysis.md
   - outputs/scripts/cmd_1869_2x2_factor_analysis.py
   origin: '[[cmd_1869]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L614
   title: 既存スクリプトの関数を再実装した（車輪再発明）
   summary: cmd_1850_cpcv_three_layer.pyのCPCVロジックを新スクリプトcmd_1865_alm_cpcv.pyに全コピーして再実装した。kar
@@ -2215,6 +2245,9 @@ lessons:
   target_files:
   - tasks/lessons.md
   origin: '[[cmd_1796]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L583
   title: WSL2 /mnt/c 巨大CSV flush は p9_client_rpc stall を起こしうる — Linux側出力か分割書込前提で設計すべし
   summary: 119,493パターンの kasoku_ratio 実行で 1795_kasoku_ratio_grid_monthly_fast.csv が約347.6MBに
@@ -2571,6 +2604,9 @@ lessons:
   - tasks/lessons.md
   - docs/research/cmd_1750_alm_design.md
   origin: '[[cmd_1750]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L557
   title: WF-OOS負の劣化率は過適合否定の十分条件ではない
   summary: OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認
@@ -2665,6 +2701,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: objective単位でlegacy fallbackに切替えることでparity 0 mismatchを達成
   origin: '[[cmd_karo_batch_R7]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L550
   title: 実データbatch parityではbenchmark共通を仮定するな
   summary: 65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとの
@@ -2689,6 +2728,9 @@ lessons:
   how: maximum_drawdown/tracking_errorなど丸め差が出るobjective単位でfallbackを用意し、raw parityとfallback後parityを両方記録する
   origin: '[[cmd_karo_batch_R7]]'
   retired: true
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L548
   title: bulk metrics RFはPFごとの月次軸で解決せよ
   summary: DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。
@@ -2698,6 +2740,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: bulk metrics用prepared frameのRFは各PFの実date軸に対して個別解決せよ
   origin: '[[cmd_karo_batch_R6]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L547
   title: パラメータ空間をサイレント縮小するな(殿厳命2026-04-04)
   summary: '計算量を理由にパラメータ空間を縮小すると殿の時間を奪う。4回連続事故: top_n=5決め打ち/lookback6個/PBO5組合せ/MaxDD1点。対処:
@@ -3438,7 +3483,7 @@ lessons:
   origin: '[[cmd_1378]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-07'
+  last_referenced: '2026-06-08'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L491
@@ -3457,7 +3502,7 @@ lessons:
   origin: '[[cmd_1377]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-07'
+  last_referenced: '2026-06-08'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L490
@@ -3487,7 +3532,7 @@ lessons:
   origin: '[[cmd_1370]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-07'
+  last_referenced: '2026-06-08'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L488
@@ -4441,6 +4486,9 @@ lessons:
   target_files:
   - backend/app/jobs/recalculate_fof.py
   origin: '[[cmd_1101]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L420
   title: 本番リターン列のopen/close区別必須
   summary: monthly_returnsテーブルにはmonthly_return(Close)とmonthly_return_open(Open)の2列。GSはOpen-
@@ -4910,6 +4958,9 @@ lessons:
   - outputs/analysis/cmd_1034_angle6_ppe_overhead.json
   - scripts/analysis/cmd_1034_angle6_ppe_overhead.py
   origin: '[[cmd_1034]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L383
   title: PPE result pickleがoverhead最大要因(50Kスケールで877ms=51%)。metrics-only returnでpickle量を削減可能
   summary: 月次リターンndarrayの全パターンserialize/deserializeが支配。worker内でmetrics計算→metricsのみreturnすれば
@@ -5458,6 +5509,9 @@ lessons:
   when: 2段重ねBTの過適合検証で近傍パラメータを変動させる
   how: Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_output)を変えるため、Stage2パラメータ変動より遥かに大きなSharpe変動を引き起こす
   origin: '[[cmd_1012]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L341
   title: 既存GSチャンピオン流用時はdeployed portfolio configを正本にする
   summary: IF 既存GSチャンピオンパラメータ固定で分析やBTを組む THEN outputs/grid_search/*.meta.yamlのglobal
@@ -6194,6 +6248,9 @@ lessons:
   when: 健全度・崩壊確率・検出確率などの確率値を非専門家向けUIやレポートに表示する時
   how: 確率値だけでなく頻度リフレーミングと百分位ランクを併記し、過信を誘発しない表現にする
   origin: '[[cmd_860]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L286
   title: ルールベース戦略のOOS検証はpipeline blockではなくGS runner上位の評価層に配置
   summary: allocation blockはholdings決定の責務に留め、predictive validationはrunner側のwalk-forward
@@ -6295,6 +6352,9 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-12'
   origin: '[[cmd_859]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L277
   title: 履歴グラフUIは時系列snapshot蓄積と取得窓の両方が揃わないと単月表示へ退化する
   summary: Deterioration Monitorのhistory UIは、batchがcurrent monthしかUPSERTしない状態ではhistory
@@ -6327,6 +6387,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: '2026-03-12'
   origin: '[[cmd_853]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L274
   title: CDP reload 計測の ready 条件は static selector 固定ではなく viewer 実DOM に合わせて見直せ
   summary: IF production viewer pages を CDP reload 計測する THEN `h1` 固定の待機条件に依存せず、認証壁・封鎖ページ・ペー
@@ -7113,6 +7176,9 @@ lessons:
   when: タスク配備やデプロイ手順を変更・実行する時
   how: cmd_668でusePrefetch.tsへyears=0を追加しても、本番PF切替9.3-9.7秒、ページ遷移9.3-9.5秒
   origin: '[[cmd_670]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L206
   title: prefetchキャッシュキー不一致はprefetch戦略の致命的バグ
   summary: 'prefetchと消費側でAPIパラメータ(years等)が一致しないとキャッシュが永久ミスする。 usePrefetch.ts: years=3,20
@@ -7318,6 +7384,9 @@ lessons:
   when: analytics tier集計でadminをtrack時にNULL化していたため、summary側でadmin/unauthenticatedを分離できなかった時
   how: analytics tier集計でadminをtrack時にNULL化していたため、summary側でadmin/unauthenticatedを分離できなかった
   origin: '[[cmd_574]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L189
   title: ページ順序定義をsidebar/mobile-menu/page-navigationに重複保持すると導線不整合が発生しやすい
   summary: IF ナビ順序や表示対象を複数ファイルで個別定義すると、1箇所更新時に他所が追従せず差分ドリフトが起きる時 THEN ナビ順序や表示対象を複数ファイルで個別定義
@@ -7823,6 +7892,9 @@ lessons:
   how: 'build_signal_cache_value()はmomentum_data.weightsが存在する全パイプラインFoFで{"holding_signal":
     str, "weights": dict}を返す'
   origin: '[[本番ログ "''dict'' object has no attribute ''strip''"]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L146
   title: 比較軸に『最新引け』を含む調査は latest_close_date を先に確定すべき
   summary: 本件は latest_close_date=2026-03-02 で 3/2引けと同値だった。先に最新日を確定しておくと、軸が実質重複かどうかを早期判定できる。
@@ -7929,6 +8001,9 @@ lessons:
   target_files:
   - timing.py
   origin: '[[cmd_475]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L136
   title: 改善候補調査前に既存最適化履歴を照合すべき
   summary: backend-deep-dive.mdで洗い出した改善候補(DBフラッシュ/FoF一括読込)は過去のOPT-A/087最適化で既に実装済みだった。改善候補の実
@@ -7981,6 +8056,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: テンプレート更新時は公式ヘルプ記事の最終更新日を確認し、断定は「公式記載」と「推論」を分けて記述する
   origin: '[[note仕様更新作業]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L130
   title: git commitはステージ全体を含む — 自分のgit rmだけでなく事前ステージ済みファイルも巻き込む。commit前にgit diff --cachedで全ステージ内容を確認すべき
   summary: git,commit,staging,verification
@@ -8107,6 +8185,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: '2026-02-23'
   origin: '[[cmd_282]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L118
   title: DTB3はeconomic_indicatorsではなくdaily_pricesテーブルにticker='DTB3'として格納。close_priceカラムに利回りデータ。economic_indicatorsテーブルは空。
   summary: IF hayate(cmd_282,subtask_282_integ)時 THEN hayate(cmd_282,subtask_282_integ)
@@ -8454,6 +8535,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: L1 FoF検証(cmd_205)はcomponent平均突合が中心
   origin: '[[cmd_218]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L087
   title: kasoku長lookback(12M/24M)でGS-本番初期化期間差異が発生する
   summary: IF 本番は504日分の日次データが揃うまでCash(≈0%リターン)時 THEN 本番は504日分の日次データが揃うまでCash(≈0%リターン)
@@ -8744,6 +8828,9 @@ lessons:
   target_files:
   - download_prod_data.py
   origin: '[[cmd_194]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L062
   title: L2モメンタム計算式(pct_change≡product(1+r)-1)は数学的に等価 — L2にバグなし
   summary: IF GS側MonthlyProductMomentumCache(product(1+r)-1)と本番側calculate_momentum_for_mont

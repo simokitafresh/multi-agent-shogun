@@ -7618,3 +7618,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - 40スキル中36スキルがskill_execution_logに未接続だった根因は各ゲート個別に記録処理を組込む設計。PostToolUse hookでSkill toolレベルでフックすれば全スキルを一括カバーでき、今後の新スキルも自動接続される
+
+### L758: cmd_quality_log.shのflock subshell内でlocal変数を使うとbash errorで値が空になる
+- **日付**: 2026-06-08
+- **出典**: cmd_3243
+- **記録者**: hayate
+- **tags**: [infra,bash]
+- **target_files**: [scripts/cmd_save.sh,scripts/cmd_quality_log.sh,tests/unit/test_cmd_save_block_time_nazenaze.bats,logs/cmd_design_quality.yaml]
+- **origin**: [[cmd_3243]]
+- **when**: 未設定
+- **how**: 未設定
+- ( ... ) 200>lockfile のサブシェルブロック内ではlocal宣言が無効(bash仕様: local is function-only)。変数名にlocal修飾子なしで使用すべき。cmd_quality_log.shでchecksフィールドが空になる不具合の原因だった

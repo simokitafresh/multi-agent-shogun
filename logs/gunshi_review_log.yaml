@@ -1777,7 +1777,7 @@
   review_type: report
   report_ninja: kagemaru
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   finding_categories: [assumptions, numbers, premortem]
   findings_summary: "4観点OK。deploy_task.sh教訓注入精度改善(NO_TARGET_PATH_MIN_SCORE=8+fallback無効化)。664→8件絞り込み。bats21件PASS。files_modified正常"
   observations:
@@ -1843,7 +1843,7 @@
 - cmd_id: cmd_3235
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   finding_categories: [assumptions, numbers, simulation, premortem, north_star]
   findings_summary: "6観点OK。note.com下書き保存: gist2本→note_draft.sh(cmd_3226修正済み)で実行。殿指示16:19完遂"
@@ -1855,3 +1855,68 @@
   ambiguity_points: none
   origin: "[[cmd_3235]] -> [[note.com下書き保存]] -> [[APPROVE]]"
   timestamp: "2026-06-08T21:25:00"
+- cmd_id: self_study_S29
+  review_type: self_study
+  verdict: null
+  finding_categories: [adversarial]
+  findings_summary: "idle自走3分析: (1)教訓有効率18.2%→infraタグ粗粒度根因 (2)推薦precision0%→ログ停止+照合不一致 (3)adversarial冷え→blast_radius自動判定不足"
+  observations:
+    - "事実1: 教訓useful率6.8%(5/73)。L489 6回NOT_USEFUL、L088 6回NOT_USEFUL"
+    - "事実2: 推薦ログ最終記録2026-05-31。prompt_state_inject.shのcache/dedup/timeout原因候補"
+    - "事実3: cmd_3231 blast_radius大だがadversarial未適用。changed_lines<200トリガー不発"
+  proposals:
+    - id: GP-265
+      description: "blast_radius自動判定をSG-PRE15.5に追加"
+      status: pending
+      defense_level: 5
+  cs_checklist:
+    CS1: lesson_impact.tsv/推薦ログ/review_log現物確認済み
+    CS2: 自システム計測データで問題検証済み
+    CS3: deploy_task.sh L3720-4230コード現物確認済み
+    CS4: 設計書3件+掲示板3件+家老報告2件で永続化
+    CS5: 推薦ログ停止真因は未特定(次サイクル)
+    CS6: タグ粗粒度→選択性低→NOT_USEFUL多発の因果連鎖追跡済み
+  causal_chain: "教訓タグ粗粒度+推薦ログ停止+adversarial冷え=自動化×強制の粒度不足"
+  brainwash_check: "洗脳#1:3分析完走。#5:ALERT全件着手。#6:設計書+掲示板+家老報告=行動"
+  origin: "[[self_study_S29]] -> [[idle自走3分析]] -> [[教訓有効率+推薦精度+adversarial冷え]]"
+  timestamp: "2026-06-08T22:45:00"
+- cmd_id: cmd_3243
+  review_type: report
+  report_ninja: hayate
+  verdict: FAIL
+  gate_result: CLEAR
+  changed_lines: 450
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "FAIL: SG-PRE25 INFO cmd_design_quality.yaml不在(command欄記載だがfiles_modified不在)。gate BLOCKリスク(mismatch)。実装は正しい(bats5+124PASS)。adversarial PASS"
+  observations:
+    - "事実1: SG-PRE25 INFO 1件: cmd_design_quality.yamlがcommand欄に記載だがfiles_modifiedに不在"
+    - "事実2: bats test_cmd_save_block_time_nazenaze.bats 5件PASS。既存124件回帰なし"
+    - "事実3: 前セッション同一パターン4件BLOCK(cmd_3228/3232/3233/3234)。LG006違反回避"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "450行。rollback=git revert即可。/tmp BLOCK_START_FILE 24hガード+rm -f on PASS。JSONキャッシュ優先"
+  step3_5_verified: true
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "command欄cmd_design_quality.yaml記載→files_modified不在→gate mismatch BLOCK予測(前セッション4件と同構造)→FAIL(LG006)"
+  brainwash_check: "洗脳#1: 実装正しいがgate BLOCKリスクを見逃さない(LG006)。洗脳#2: batsを実際に実行して5件PASS確認"
+  ambiguity_points: none
+  origin: "[[cmd_3243]] -> [[hayate BLOCK時間コスト+なぜなぜ強制]] -> [[FAIL_mismatch]]"
+  timestamp: "2026-06-08T22:52:00"
+- cmd_id: cmd_karo_ci_fix_deploy_lesson_tests_20260608
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。CI RED修正。テストfixture target_path追加。36テストPASS。GATE CLEAR済み"
+  observations:
+    - "事実1: test_deploy_task_ac_handling.bats 36テストPASS、0FAIL、0SKIP"
+    - "事実2: cmd_3231のtarget_pathなし時MIN_KEYWORD_SCORE引き上げにテスト未追従→fixture修正"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "cmd_3231ロジック変更→テストfixture未追従→CI RED→target_path追加で追従"
+  brainwash_check: "洗脳#1: GATE CLEAR済みでもレビュー実施。テスト数/結果を実数確認"
+  origin: "[[cmd_karo_ci_fix]] -> [[kagemaru CI修正]] -> [[LGTM]]"
+  timestamp: "2026-06-08T22:55:00"
