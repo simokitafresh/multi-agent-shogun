@@ -613,8 +613,15 @@ except yaml.YAMLError:
     print(raw, end='')
     sys.exit(0)
 if isinstance(data, str) and data.strip():
-    print('[autofix] files_modified string→dict変換(単一ファイル)', file=sys.stderr)
-    print(yaml.dump([{'path': data.strip(), 'change': 'modified'}], default_flow_style=False, allow_unicode=True), end='')
+    # スペース区切り複数パス検出(拡張子付き2+トークン)
+    tokens = [t for t in data.strip().split() if '.' in t or '/' in t]
+    if len(tokens) > 1:
+        print('[autofix] files_modified string→dict変換(複数ファイル スペース区切り)', file=sys.stderr)
+        items = [{'path': t.rstrip(','), 'change': 'modified'} for t in tokens]
+        print(yaml.dump(items, default_flow_style=False, allow_unicode=True), end='')
+    else:
+        print('[autofix] files_modified string→dict変換(単一ファイル)', file=sys.stderr)
+        print(yaml.dump([{'path': data.strip(), 'change': 'modified'}], default_flow_style=False, allow_unicode=True), end='')
 elif isinstance(data, list) and all(isinstance(x, str) for x in data):
     items = [{'path': x.strip(), 'change': 'modified'} for x in data if x.strip()]
     if items:
