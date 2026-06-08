@@ -273,7 +273,7 @@ YAML
     [ ! -f "$TEST_PROJECT/logs/inbox_write_calls.log" ]
 }
 
-@test "single AC task skips draft review" {
+@test "single AC task sends draft review" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
 task:
   parent_cmd: cmd_single_ac
@@ -285,8 +285,8 @@ YAML
     run_draft_review "cmd_single_ac"
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"draft_review: SKIP (ac_count<=1: 1)"* ]]
-    [ ! -f "$TEST_PROJECT/logs/inbox_write_calls.log" ]
+    [[ "$output" == *"draft_review: SENT"* ]]
+    [ -f "$TEST_PROJECT/logs/inbox_write_calls.log" ]
 }
 
 @test "SKIP_DRAFT_REVIEW=1 skips draft review" {
