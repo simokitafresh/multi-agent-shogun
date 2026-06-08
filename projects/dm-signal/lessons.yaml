@@ -653,6 +653,9 @@ lessons:
   - /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_2422_l2_champions_constrained.yaml
   - /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_2422_l2_champion_report.md
   origin: '[[cmd_2422]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L686
   title: robustness実行前にSQLite月次保存形式を確認する
   summary: L2 SQLiteはmonthlyテーブルではなくmonthly_blob/monthly_meta形式だったため、既存gs_grid_robustness.p
@@ -1085,6 +1088,9 @@ lessons:
   - outputs/grid_search/20260427/L0/shin/gs_kawarimi_DM7P.db
   - scripts/analysis/cmd_2325_kawarimi_csv_to_db.py
   origin: '[[cmd_2325]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L659
   title: source_type=csvのGS runnerでもDB前提をpreflightで切り分ける
   summary: run_077_oikaze.pyはsource_type=csvでもALM青龍-常勝 portfolioをDB参照し、現DBに存在せず停止した。一方pipel
@@ -1432,6 +1438,9 @@ lessons:
   - backend/app/jobs/recalculate_fof.py
   - scripts/oneshot/cmd_2025_register_hiougi_l3.py
   origin: '[[cmd_2025]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L635
   title: Signal DELETEを外すならFoF deferred flushもUPSERTへ切り替える
   summary: recalculate_fastのC1でglobal Signal DELETEを外した後も、recalculate_fof.py の deferred
@@ -1943,6 +1952,9 @@ lessons:
   - outputs/analysis/cmd_1845_three_layer_comparison.md
   - scripts/oneshot/cmd_1845_three_layer_metrics.py
   origin: '[[cmd_1845]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L602
   title: 'cmd_1844 oikaze MaxDD champion ID誤記: N2→N4(20体GSで subset=2の誤記)'
   summary: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661_10M_N2_R1 はokugi_shin_ninpo_20body '
@@ -2064,6 +2076,9 @@ lessons:
   - tasks/lessons.md
   - scripts/analysis/grid_search/run_077_yotsume.py
   origin: '[[cmd_1835]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L593
   title: GSパターン数のC(n,k)スケーリング — universe体数変更で組合せ爆発
   summary: 12→20体でパターン数7.9倍(C(n,2)+C(n,3)+C(n,4))。CSV 5.5倍、PrefixMomentCache 6.9倍。体数変更時はパター
@@ -3341,6 +3356,9 @@ lessons:
   - outputs/analysis/nested_fof/r8_absmom_performance.yaml
   - outputs/analysis/nested_fof/r8_absmom_returns.csv
   origin: '[[cmd_1413]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L496
   title: Stock Data API economic endpoint has 1000 record limit
   summary: Stock Data API /v1/economic/{symbol} returns max 1000 records per request.
@@ -5749,6 +5767,9 @@ lessons:
   target_files:
   - test_right_tail_metrics.py
   origin: '[[cmd_976]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L316
   title: 'WSL→Windows venv Ruff hook: repo-relative pathを使え'
   summary: WSLから.venv/Scripts/ruff.exeを呼ぶ場合、/mnt/c/... absolute pathを渡すとC:\mnt\c\...と誤解釈されE
@@ -5835,6 +5856,9 @@ lessons:
   - frontend/lib/api-cache.ts
   - frontend/lib/api-client.ts
   origin: '[[cmd_962]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L309
   title: static export(output:'export')アプリでは<Link>SPA遷移を使うな — window.location.hrefで統一せよ
   summary: Next.js 14.x App Router + output:'export'環境では、<Link>によるclient-side navigation(RS
@@ -6110,6 +6134,9 @@ lessons:
   - docs/research/knowledge-base/preprocessing/financial-data-analysis.md
   - docs/research/knowledge-base/preprocessing/fractional-differentiation.md
   origin: '[[cmd_861]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L292
   title: 統計指標UIの解釈可能性設計3原則
   summary: (1) 統計指標を非専門家に表示する場合、生数値ではなく信号機パターン(3色+灰)に正規化せよ。 DM-Signalの色丸パターン(deterioration-
@@ -6621,6 +6648,9 @@ lessons:
   target_files:
   - frontend/hooks/usePrefetch.ts
   origin: '[[cmd_783]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L246
   title: months引数の件数制限は末尾sliceだけでなく下流queryまで通せ
   summary: monthly_returns_calculatorのmonths引数はレスポンス末尾sliceのみ。precomputed経路の_calculate_tick
@@ -8096,6 +8126,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-02-23'
   origin: '[[cmd_277]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L116
   title: PF間の相関構造特徴量はエッジ崩壊予測に寄与しない
   summary: PF間のローリング相関/リード・ラグ/同時崩壊カウントを20特徴量追加しても改善なし。single_pf(0.111)≈single_pf+crossPF(0.

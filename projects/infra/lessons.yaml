@@ -1042,6 +1042,9 @@ lessons:
   target_files:
   - scripts/lord_conversation_read.sh
   origin: '[[cmd_karo_ci_fix_lord_conv_read]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L689
   title: lord_conversation消費者はtargetフィルタ済みhelperを使え
   summary: lord_conversation.jsonlは全ロールの殿入力を含む。将軍/家老/軍師が直接tail/Readすると他ロール宛ての発言を自分宛てと誤認する。消
@@ -1087,6 +1090,9 @@ lessons:
   - skills/dream/SKILL.md
   - skills/gate-sync/SKILL.md
   origin: '[[cmd_2995]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L686
   title: 修行taskのparent_cmdがnullならcmd_idをSSOTとして注入前に復元する
   summary: cmd指定なしの再配備/ナッジ経路では既存task YAMLのparent_cmd:nullがそのまま注入チェーンへ流れ、report_nullを生成する。cm
@@ -1318,6 +1324,9 @@ lessons:
   - queue/tasks/hayate.yaml
   - queue/reports/hayate_report_cmd_training_L7_v3_hayate_9_20260521214706.yaml
   origin: '[[cmd_training_L7_v3_hayate_9_20260521214706]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L670
   title: 同一ファイルへの複数yaml_field_get呼出しはawk単一パスで置換せよ
   summary: notify_idle_batchがtask_id取得に yaml_field_get×2を呼び出していた(task_id空なら_ac_task_idも呼出し)
@@ -1475,6 +1484,9 @@ lessons:
   - skills/report-write/SKILL.md
   - skills/verdict-check/SKILL.md
   origin: '[[cmd_training_L7_v3_hanzo_5_20260521202900]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L659
   title: YAML形状互換のfixtureは出力までassertせよ
   summary: '既存fixtureはcommands: {cmd_id: ...}のmapping型を使っていたが、dashboard_update.shのtitle抽出結果を'
@@ -1830,6 +1842,9 @@ lessons:
   - queue/inbox/hayate.yaml
   - queue/reports/hayate_report_cmd_2881.yaml
   origin: '[[cmd_2881]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L635
   title: DB関係不在時はUI要件を永続化キーと表示集計に分離解釈せよ(kj-role-count)
   summary: 架空の関係(staff-role_type)を作る危険を回避。records.role_type_idで永続化キーを持ち、表示時にrole_typesから名称解
@@ -2340,6 +2355,11 @@ lessons:
   - skills/karo-direct/SKILL.md
   - tests/unit/test_deploy_task.bats
   origin: '[[cmd_2691]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L602
   title: karo_directのtraining配備はdeploy_task.sh --directを使え。手動YAML方式はAC未注入を引き起こす
   summary: karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te
@@ -2384,6 +2404,11 @@ lessons:
   - docs/semantic-index/index.md
   - context/semantic-map.md
   origin: '[[cmd_2690]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L599
   title: gate種別ごとにmissing失敗意味を分離(待てば進む vs 止めるべき)
   summary: lesson_done_missingはreview_gate.done→GATE自動起動の循環依存でBLOCK。root_cause=lesson登録猶予なし
@@ -2482,6 +2507,11 @@ lessons:
   - queue/reports/saizo_report_cmd_karo_lk004_inbox_root_cause.yaml
   - queue/tasks/saizo.yaml
   origin: '[[cmd_karo_lk004_inbox_root_cause]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L593
   title: エラーログは最終行(実際のエラー)を必ず含めよ — 1行目Tracebackは情報ゼロ
   summary: gate_fire_logがPython Tracebackの1行目のみ記録→診断不能。修正(cc020f3e)で最終行抽出。ログ記録時はエラーの実メッセージ行
@@ -3131,6 +3161,11 @@ lessons:
   target_files:
   - deploy_task.sh
   origin: '[[cmd_karo_fix_direct_ac_loss]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L549
   title: gate/hookはflat/nested両task YAML形式をfixtureで検証
   summary: queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形
@@ -3676,6 +3711,11 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: Python GILも追加制約
   origin: '[[cmd_2086]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L507
   title: gate_statusキャッシュはreportファイル数が安定している場合のみ有効
   summary: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
@@ -3807,6 +3847,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: テストでexport PATH=$MOCK_BIN:$PATHを設定してもbash -lcサブシェルで無効化される
   origin: '[[cmd_karo_ci_fix_571]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L496
   title: 'gate_report_format.sh は/mnt/c実env では148ms(参照値71msの2倍超): /tmp計測は実運用を反映しない'
   summary: cmd_2038の計測は/tmpディレクトリで行われており実測71ms。しかし実運用ディレクトリ/mnt/c/tools/multi-agent-shogunで
@@ -5197,6 +5240,11 @@ lessons:
   target_files:
   - agent_status.sh
   origin: '[[cmd_cycle_L4_046]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L371
   title: Python内シェル変数展開は環境変数経由に統一せよ
   summary: auto_deploy_next.shの第2Pythonブロックでドル記号VAR形式のシェル変数展開を使用していた。同スクリプト内の第1ブロックはos.envi
@@ -5845,6 +5893,11 @@ lessons:
   target_files:
   - deploy_task.sh
   origin: '[[lessons,deploy,injection,useful-rate]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L316
   title: emit_deny後のexit 1欠落でDENYが無効化
   summary: pre-bash-report-deny.shでemit_deny(JSON出力)後にexit 1がなくexit 0に落ちていた。Claude
@@ -5930,6 +5983,11 @@ lessons:
   - deploy_task.sh
   - inject_task_modifiers.py
   origin: '[[cmd_training_structural_001]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L309
   title: '教訓注入の3構造問題: universalタグ誤分類+ファイルレベルマッチング欠如+負帰還ループ欠如'
   summary: '教訓活用率6.2%(146注入中9活用)の根因は3つ: (1)L063等がuniversalタグだが実際は極めて狭い操作範囲(Python
@@ -6136,6 +6194,11 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: cmd_1397でチェックリストStep7(再計算禁止=殿が実行)がcmdに転写されず、影丸が再計算を実行してしまった
   origin: '[[cmd_1397]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L292
   title: 新ファイル作成時.gitignore例外登録必須
   summary: ホワイトリスト方式の.gitignoreで新ファイル(scripts/lib/inject_task_modifiers.py)追加時に例外登録漏れ→CI環境に
@@ -6680,6 +6743,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-19'
   origin: '[[cmd_1104]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L246
   title: デフォルト値return時はreturn 0が正しい(set -e対策)
   summary: 関数がデフォルト値をechoしつつreturn 1する設計は、set -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn
@@ -8142,6 +8208,9 @@ lessons:
   - cmd_complete_gate.sh
   - deploy_task.sh
   origin: '[[cmd_466]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L116
   title: .gitignore whitelist-basedリポジトリでは新規スクリプト作成時に必ずwhitelist追加が必要
   summary: scripts/lesson_effectiveness.shがgit addで拒否された。whitelist方式の.gitignoreでは新規ファイルは自動的
@@ -8269,6 +8338,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.0が存在せずセットアップ失敗
   origin: '[[cmd_438]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-08'
 - id: L104
   title: 本家参照時のパス揺れ — tree確認後に取得を標準化
   summary: IF OSSリポジトリや外部ソースからファイルを参照する時 THEN 先にtreeを取得して実パスを確定してから取得せよ

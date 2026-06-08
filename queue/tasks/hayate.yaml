@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_3227_focused
+  _ac_task_id: cmd_3230_focused
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3227 (deployed 2026-06-08T13:52:42). Read from the beginning.
-  ac_version: eaf28ae3
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3230 (deployed 2026-06-08T15:07:05). Read from the beginning.
+  ac_version: 6d55e49c
   cmd_id: cmd_karo_ci_fix_bypass_permissions_20260607
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -27,7 +27,7 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3227
+  parent_cmd: cmd_3230
   production_invariants:
   - 'PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する'
   - 'PI-002: SQLite=不完全ミラー。PostgreSQLが真実'
@@ -35,50 +35,57 @@ task:
   - 'PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須'
   - 'PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則'
   project: infra
-  purpose: '殿指摘: 各論パッチではなく全スキル・今後作るスキルにも適用される自動成長の仕組みが必要。現状の穴: (1)実行結果記録が各スキル個別実装→未接続スキルは失敗が見えない (2)失敗→修行課題生成が手動 (3)修行完了→SKILL.md更新が手動。全ステップ(実行→検知→修行→再現性確認→スキル更新)を共通基盤で自動化する設計を作成'
-  status: idle
+  purpose: cmd_3227設計§3穴3に基づきPhase3を実装。修行完了時(gate_fire_log解析でPASS判定)にskill_auto_improve.shを呼出しSKILL.mdの防止ステップを自動更新。修行の成果がスキル自体に自動還流する最終ピース
+  status: done
   stop_for: []
-  task_id: cmd_3227_focused
+  task_id: cmd_3230_focused
   task_type: focused
   related_lessons:
-  - id: 'L472'
-    summary: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含'
-    detail: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含'
-  - id: 'L103'
-    summary: 'IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置'
-    detail: 'IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置'
-  - id: 'L011'
-    summary: 'core.hooksPathが.githooksに設定されている場合、.git/hooks/にフックを配置しても無視される。フック作成時はまず git conf'
-    detail: 'core.hooksPathが.githooksに設定されている場合、.git/hooks/にフックを配置しても無視される。フック作成時はまず git conf'
-  - id: 'L282'
-    summary: 'PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo'
-    detail: 'PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo'
+  - id: 'L497'
+    summary: 'bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport PATH=$MOC'
+    detail: 'bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport PATH=$MOC'
   - id: 'L122'
     summary: 'IF SKILL.md手順追加時 THEN SKILL.md原則に所要時間やEdit不要等の制約記載がある場合、新Stepが制約に抵触しないか確認'
     detail: 'IF SKILL.md手順追加時 THEN SKILL.md原則に所要時間やEdit不要等の制約記載がある場合、新Stepが制約に抵触しないか確認'
-  - id: 'L420'
-    summary: 'Edit toolでSKILL.mdのname:フィールドを更新しようとしたところ、2ファイルとも0バイトに破損。推定原因: Edit toolのtruncat'
-    detail: 'Edit toolでSKILL.mdのname:フィールドを更新しようとしたところ、2ファイルとも0バイトに破損。推定原因: Edit toolのtruncat'
-  - id: 'L273'
-    summary: 'batsテスト名にskipsを含むテスト(例:deploy_task skips ac_priority)が存在すると、PostToolUse hookがSKI'
-    detail: 'batsテスト名にskipsを含むテスト(例:deploy_task skips ac_priority)が存在すると、PostToolUse hookがSKI'
-  - id: 'L164'
-    summary: 'IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな'
-    detail: 'IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな'
+  - id: 'L690'
+    summary: 'CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr'
+    detail: 'CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr'
+  - id: 'L247'
+    summary: '全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す'
+    detail: '全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す'
+  - id: 'L117'
+    summary: 'フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re'
+    detail: 'フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re'
+  - id: 'L105'
+    summary: 'tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.'
+    detail: 'tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.'
+  - id: 'L636'
+    summary: 'cmd_complete_gateのno-task benchmark fast pathで生成された cmd_test_* がdashboard_update'
+    detail: 'cmd_complete_gateのno-task benchmark fast pathで生成された cmd_test_* がdashboard_update'
+  - id: 'L687'
+    summary: 'script内部変更がSKILL.md記述へ影響しない場合、SKILL.md mtimeだけで追従要否を判定すると偽陽性が再発する。確認済みの事実は<!-- s'
+    detail: 'script内部変更がSKILL.md記述へ影響しない場合、SKILL.md mtimeだけで追従要否を判定すると偽陽性が再発する。確認済みの事実は<!-- s'
+  - id: 'L671'
+    summary: 'gate_fire_logには同一報告YAMLの複数gate実行が残るため、gate行数をそのままFAIL率にすると修行自動配備の判断が歪む。修行品質や一発PA'
+    detail: 'gate_fire_logには同一報告YAMLの複数gate実行が残るため、gate行数をそのままFAIL率にすると修行自動配備の判断が歪む。修行品質や一発PA'
+  - id: 'L660'
+    summary: 'SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re'
+    detail: 'SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "known_unknowns_principle — 無知の知:  memory/deepdive_causal_tracing_20260415.md context/growth-loop.md"
   - "skill_design_rules — Skill設計ルール:  context/skill-design-rules.md docs/research/dream-skill-design.md scripts/skill_gate_feedback.sh scripts/skill_auto_improve.sh scripts/skill_execution_log.sh context/codd.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md skills/reset-layout/SKILL.md skills/pf-registration/SKILL.md docs/research/gstack-gbrain-skillify-2026-04.md"
+  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比)"
+  - "defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)"
   recommended_skills:
   - "skill-creator"
   - "skill-installer"
   related_causal_links:
-  - "[[ループ(実行/検知/修行/再現性確認/スキル更新)共通基盤設計]]"
-  - "[[全スキル自動成長断線]]"
-  - "[[殿指摘_各論パッチは洗脳]]"
+  - "[[Phase3_修行完了SKILL.md還流]]"
+  - "[[cmd_3229_Phase2]]"
+  - "[[自動成長ループ完結]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -98,26 +105,28 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L472: instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含
-      - L103: IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置
-      - L011: core.hooksPathが.githooksに設定されている場合、.git/hooks/にフックを配置しても無視される。フック作成時はまず git conf
-      - L282: PostToolUseは事後実行のためpermissionDecision:denyが効かない。WARNモード=PostToolUse additionalCo
+      - L497: bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport PATH=$MOC
       - L122: IF SKILL.md手順追加時 THEN SKILL.md原則に所要時間やEdit不要等の制約記載がある場合、新Stepが制約に抵触しないか確認
-      - L420: Edit toolでSKILL.mdのname:フィールドを更新しようとしたところ、2ファイルとも0バイトに破損。推定原因: Edit toolのtruncat
-      - L273: batsテスト名にskipsを含むテスト(例:deploy_task skips ac_priority)が存在すると、PostToolUse hookがSKI
-      - L164: IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな
+      - L690: CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。scr
+      - L247: 全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す
+      - L117: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re
+      - L105: tests/helpers/setup.bashでpane-base-index未固定だとユーザーtmux設定が1始まりの環境でe2e_test:agents.
+      - L636: cmd_complete_gateのno-task benchmark fast pathで生成された cmd_test_* がdashboard_update
+      - L687: script内部変更がSKILL.md記述へ影響しない場合、SKILL.md mtimeだけで追従要否を判定すると偽陽性が再発する。確認済みの事実は<!-- s
+      - L671: gate_fire_logには同一報告YAMLの複数gate実行が残るため、gate行数をそのままFAIL率にすると修行自動配備の判断が歪む。修行品質や一発PA
+      - L660: SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/re
     ────────────────────────────────────────
     
     
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: '自動成長ループ(実行/検知/修行/再現性確認/スキル更新)の現状穴が一覧化され、各穴の修正設計がdocs/researchに保存されていることをgrep確認'
+    - check: '修行cmd群のgate_fire_log解析→FP率計算→完了判定(PASS基準)のロジックが実装され、完了判定時にskill_auto_improve.shが呼出されることをgrep確認'
   - id: 'AC2'
     checks:
-    - check: '共通基盤で全スキル実行結果が自動記録される設計が具体的なコード変更箇所とともに記載されている'
+    - check: '修行完了後にSKILL.mdの防止ステップセクションが自動更新され、修行中のBLOCKパターン対応が反映されていることをgrep確認'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3227.yaml
-  report_path: queue/reports/hayate_report_cmd_3227.yaml
+  report_filename: hayate_report_cmd_3230.yaml
+  report_path: queue/reports/hayate_report_cmd_3230.yaml
   bloom_level: 
-  deployed_at: "2026-06-08T13:52:50"
+  deployed_at: "2026-06-08T15:07:16"
