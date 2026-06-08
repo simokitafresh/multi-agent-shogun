@@ -2546,7 +2546,7 @@ if [[ "${CMD_SAVE_PREV_LESSON_FAST:-0}" = "1" ]]; then
     fi
 
     if [[ "$BLOCK_COUNT" -gt 0 && ${#BLOCK_REASONS[@]} -gt 0 ]]; then
-        local _fast_checks_str
+        _fast_checks_str=""
         _fast_checks_str="$(build_unique_block_checks_str 2>/dev/null || true)"
         log_cmd_save_block "${BLOCK_REASONS[-1]}" "$_fast_checks_str"
     fi
@@ -2725,7 +2725,7 @@ QG_TEMPLATE
     # --- Field name validation: 不正フィールド名の即時検出 ---
     # 起源: cmd_3244で7回BLOCK。q5_assumptionsのような不正名が素通りし値チェックまで発見が遅延
     # 修正: quality_gate配下の全フィールド名をテンプレートの正規名リストと照合し、不一致を即BLOCK
-    VALID_QG_FIELDS="q1_firefighting q2_learning q3_next_quality q4_depth q5 q5_verified_source q6_not_hiding q7_definition_verified q8_why_what q9_firefighting_root_cause q10_knowledge_boundary q11_not_already_done q12_lord_30min_cost q_ambiguity assumptions diagnosis"
+    VALID_QG_FIELDS="q1_firefighting q2_learning q3_next_quality q4_depth q5 q5_verified_source q6_not_hiding q7_definition_verified q8_why_what q9_firefighting_root_cause q10_knowledge_boundary q11_not_already_done q12_lord_30min_cost q_ambiguity assumptions diagnosis environment_change nazenaze_root_cause"
     INVALID_QG_FIELDS=()
     for _cache_key in "${!CMD_BLOCK_CACHE[@]}"; do
         if [[ "$_cache_key" == quality_gate.* ]]; then
