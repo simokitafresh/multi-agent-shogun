@@ -71,6 +71,9 @@ case "$payload" in
     *'"Write"'*|*'"Edit"'*)
         source "$ROOT/.claude/hooks/post-write-edit-combined.sh" <<< "$payload"
         ;;
+    *'"Skill"'*)
+        HOOK_PAYLOAD="$payload" run_hook "$ROOT/.claude/hooks/post-skill-execution.sh" || true
+        ;;
     *)
         exit 0
         ;;
