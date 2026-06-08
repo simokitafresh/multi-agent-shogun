@@ -4209,6 +4209,7 @@ pattern = re.compile(
 )
 read_markers = (
     "読む", "読んで", "読み", "確認", "参照", "調査", "精査", "review", "read", "inspect", "refer",
+    "実行", "実行のみ", "変更対象外", "走らせ", "検証", "run", "execute",
 )
 write_markers = (
     "修正", "更新", "変更", "編集", "実装", "追加", "削除", "作成", "反映",
@@ -4300,7 +4301,9 @@ if target_refs:
     for ref in target_refs:
         print(ref)
 elif not target_paths:
-    for ref, _readonly_ref in refs:
+    for ref, readonly_ref in refs:
+        if readonly_ref:
+            continue
         print(ref)
 else:
     for ref, readonly_ref in refs:
@@ -4310,14 +4313,74 @@ else:
 PY
 }
 
+collect_report_verified_existing_deps() {
+    # 報告YAMLのverified_existing_dependency欄からLG037「実行のみ/既存依存」ファイルを収集
+    local task_file ninja_name report_file
+    if ! declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        return 0
+    fi
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        [ -f "$task_file" ] || continue
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name")
+        [ -f "$report_file" ] || continue
+        awk '
+            /^verified_existing_dependency:/ { in_ved=1; next }
+            in_ved && /^[^[:space:]-]/ { in_ved=0 }
+            in_ved && /^[[:space:]-]*(path|file):/ {
+                v=$0
+                sub(/.*(path|file):[[:space:]]*/, "", v)
+                gsub(/^["'"'"']+|["'"'"']+$/, "", v)
+                if (v != "") print v
+            }
+            in_ved && /^[[:space:]]*-[[:space:]]+[^{]/ {
+                v=$0
+                sub(/^[[:space:]]*-[[:space:]]*/, "", v)
+                gsub(/^["'"'"']+|["'"'"']+$/, "", v)
+                if (v != "" && v !~ /^(path|file|reason|category):/) print v
+            }
+        ' "$report_file" 2>/dev/null || true
+    done | awk 'NF && !seen[$0]++'
+}
+
 check_command_files_modified_coverage() {
     level_heading "[L3]" "Command/files_modified coverage check:"
 
-    local command_refs report_paths
+    local command_refs report_paths verified_deps
     command_refs="$(collect_cmd_command_file_refs "$CMD_ID" || true)"
     if [ -z "$command_refs" ]; then
         echo "  SKIP (command欄に拡張子付きファイル参照なし)"
         return 0
+    fi
+
+    # LG037: verified_existing_dependency (実行のみ/既存依存) を照合対象から除外
+    verified_deps="$(collect_report_verified_existing_deps || true)"
+    if [ -n "$verified_deps" ]; then
+        local filtered_refs="" ref_line dep_line dep_matched ref_base dep_base
+        while IFS= read -r ref_line; do
+            [ -z "$ref_line" ] && continue
+            dep_matched=false
+            ref_base="$(basename "$ref_line")"
+            while IFS= read -r dep_line; do
+                [ -z "$dep_line" ] && continue
+                dep_base="$(basename "$dep_line")"
+                if [ "$ref_line" = "$dep_line" ] \
+                    || [[ "$ref_line" == */"$dep_line" ]] \
+                    || [[ "$dep_line" == */"$ref_line" ]] \
+                    || [ "$ref_base" = "$dep_base" ]; then
+                    dep_matched=true
+                    break
+                fi
+            done <<< "$verified_deps"
+            if [ "$dep_matched" = false ]; then
+                filtered_refs="${filtered_refs}${ref_line}"$'\n'
+            fi
+        done <<< "$command_refs"
+        command_refs="$(printf '%s' "$filtered_refs" | sed '/^$/d')"
+        if [ -z "$command_refs" ]; then
+            echo "  OK (command欄ファイル参照は全てverified_existing_dependency — LG037)"
+            return 0
+        fi
     fi
 
     report_paths="$(collect_report_modified_files || true)"

@@ -44,6 +44,8 @@ setup_file() {
         printf '\n'
         sed -n '/^collect_cmd_command_file_refs()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^collect_report_verified_existing_deps()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^check_command_files_modified_coverage()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^cmd_requires_cdp_production_check()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -329,6 +331,40 @@ EOF
     [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
     [[ "$output" == *"ALL_CLEAR=false"* ]]
     [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
+}
+
+@test "command/files_modified coverage excludes execution-only refs (LG037 FP fix)" {
+    _write_command_coverage_fixture \
+        "SKILL.md 8件のスクリプト参照陳腐化を修正。note_draft.shを実行して確認。report_field_set.shを実行。gate_skill_script_refs.shで検証。" \
+        "  - path: skills/reset-layout/SKILL.md
+    change: modified"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+    [[ "$output" != *"missing: note_draft.sh"* ]]
+    [[ "$output" != *"missing: report_field_set.sh"* ]]
+    [[ "$output" != *"missing: gate_skill_script_refs.sh"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
+@test "command/files_modified coverage excludes verified_existing_dependency refs (LG037)" {
+    _write_command_coverage_fixture \
+        "scripts/cmd_complete_gate.sh と scripts/deploy_task.sh を修正" \
+        "  - path: scripts/cmd_complete_gate.sh
+    change: modified"
+
+    # Add verified_existing_dependency to report
+    cat >> "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
+verified_existing_dependency:
+  - path: scripts/deploy_task.sh
+    reason: "実行のみ参照"
+EOF
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"missing: scripts/deploy_task.sh"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
 }
 
 @test "preflight auto-registers found:true lesson candidate when lesson.done is missing" {

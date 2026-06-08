@@ -1,10 +1,9 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-08 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-08T21:39:24+09:00 -->
+<!-- generated_at: 2026-06-08T21:38:53+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-06-08T21:39:23+09:00 | terminal | response | cmd_3235 report_received即処理完了。hookが軍師レビュー+GATE自動実行。 進行中: cmd_3236(saizo) + cmd_3237(kagemaru)。cmd_3235はGATE処理待ち。Dispatc…
 - 2026-06-08T21:38:52+09:00 | terminal | response | 既読化完了。cmd_3235は完了済み。idle待機。 [meta] stop_reason=end_turn
 - 2026-06-08T21:38:36+09:00 | terminal | response | cmd_3235完了。 **結果サマリ**: - **AC1**: gist `398d6e454e649aab4757913f8be28633`（「続けることが最大の戦略」）→ note.com下書き保存済み（21:25） - **AC…
 - 2026-06-08T21:38:03+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-08 21:30:40|cmd_3234
@@ -14,6 +13,7 @@
 - 2026-06-08T21:35:36+09:00 | terminal | response | 既にpush済み。Dispatch-then-Stop。待機。 [meta] stop_reason=end_turn
 - 2026-06-08T21:35:01+09:00 | ntfy | outbound | 【家老】cmd_3236 初回配備開始 (title=draft review欠落根因調査: deploy_task.shの軍師配信経路の検証, ninja=saizo) draft review欠落根因調査: deploy_task.s…
 - 2026-06-08T21:31:18+09:00 | terminal | response | cmd_3234 BLOCK→CLEAR。cmd_3232はまだBLOCK状態（vercel_phase+mismatchの2重BLOCK）。idle待機に復帰。 [meta] stop_reason=tool_use
+- 2026-06-08T21:29:22+09:00 | terminal | response | 環境に埋め込み完了。次回からSG-PRE25 INFOが出たらFAILにする。LGTM→BLOCK連発の構造的弱点を修正。idle待機に復帰。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - cmd_3235完了。 **結果サマリ**: - **AC1**: gist `398d6e454e649aab4757913f8be28633`（「続けることが最大の戦略」）→ note.com下書き保存済み（21:25） - **AC2**: gist `a7f51ea4a…
