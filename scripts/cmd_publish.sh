@@ -128,6 +128,54 @@ shogun_lesson_exists_for_cmd() {
     grep -qF "$source_cmd_id" "$SHOGUN_LESSONS_FILE" 2>/dev/null
 }
 
+extract_nazenaze_from_cmd_yaml() {
+    local yaml_file="${1:-}"
+    local target_cmd="${2:-}"
+    [[ -n "$target_cmd" && -f "$yaml_file" ]] || return 0
+
+    awk -v cmd_id="$target_cmd" '
+    function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+    function unquote(s) {
+        if (length(s) >= 2) {
+            if (substr(s,1,1) == "\"" && substr(s,length(s),1) == "\"") {
+                s = substr(s, 2, length(s)-2)
+            } else if (substr(s,1,1) == "\x27" && substr(s,length(s),1) == "\x27") {
+                s = substr(s, 2, length(s)-2)
+            }
+        }
+        return s
+    }
+    function leading_spaces(line,    i,cnt,c) {
+        cnt = 0
+        for (i = 1; i <= length(line); i++) {
+            c = substr(line, i, 1)
+            if (c == " ") cnt++; else break
+        }
+        return cnt
+    }
+    BEGIN { in_cmd = 0 }
+    {
+        stripped = $0
+        sub(/^[[:space:]]*/, "", stripped)
+        if (!in_cmd && stripped == cmd_id ":") {
+            in_cmd = 1
+            cmd_indent = leading_spaces($0)
+            next
+        }
+        if (in_cmd) {
+            if (trim($0) != "" && leading_spaces($0) <= cmd_indent) exit
+            if (/nazenaze_root_cause:/) {
+                value = $0
+                sub(/.*nazenaze_root_cause:[[:space:]]*/, "", value)
+                value = trim(unquote(value))
+                if (value != "" && value != "null") print value
+                exit
+            }
+        }
+    }
+    ' "$yaml_file"
+}
+
 ensure_cmd_publish_default_fields() {
     local depends_on_value origin_value
 
@@ -323,6 +371,19 @@ if ! run_cmd_save_with_block_summary; then
     [ "$promoted_from_on_hold" = true ] && echo "KEEP: $CMD_ID status=on_hold"
     echo "BLOCK: cmd_save.sh failed for $CMD_ID. 修正してから再実行せよ。" >&2
     exit 1
+fi
+
+# --- Step 1.5: nazenaze_root_cause → lesson_write_shogun.sh 強制gate ---
+_nazenaze_yaml_value="$(extract_nazenaze_from_cmd_yaml "$SHOGUN_TO_KARO" "$CMD_ID" 2>/dev/null || true)"
+if [[ -n "${_nazenaze_yaml_value}" ]]; then
+    if ! shogun_lesson_exists_for_cmd "$CMD_ID"; then
+        echo "BLOCK: ${CMD_ID}にnazenaze_root_causeが記入済みだが、lesson_write_shogun.shによる教訓記録が未実行。" >&2
+        echo "  根因分析を言語化しただけでは半パイプライン。教訓を環境に埋め込め。" >&2
+        echo "  例: bash scripts/lesson_write_shogun.sh \"教訓タイトル\" \"詳細\" ${CMD_ID} \"enforcement記述\"" >&2
+        echo "  既知パターンなら: bash scripts/shogun_lesson_ack.sh ${CMD_ID} LS-A05" >&2
+        exit 1
+    fi
+    echo "OK: nazenaze_root_cause検出 + lesson記録確認済み(${CMD_ID})"
 fi
 
 # --- Step 2: draft → pending 昇格 ---

@@ -720,6 +720,72 @@ else
 fi
 echo ""
 
+# --- 洗脳監査(行動→結果検証の二値チェック) ---
+echo "■ 洗脳監査(行動→結果検証)"
+echo "  8パターン: (1)早期終了 (2)検証スキップ (3)他者依存 (4)緩い設計 (5)先送り (6)出力=仕事 (7)簡潔本能 (8)完了急ぎ"
+_rl_file="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
+if [ -f "$_rl_file" ]; then
+    # APPROVE verdictのgate_result確認率(行動→結果検証の計測)
+    _bw_review=$(awk '
+    BEGIN { approve_total=0; has_gr=0; no_gr=0; no_gr_cmds=""; has_bc=0; no_bc=0 }
+    /^- cmd_id:/ { flush(); in_entry=1; verdict=""; gate_result=0; bc=0; cmd_label="" }
+    in_entry && /^  cmd_id:/ { sub(/.*cmd_id: */, ""); gsub(/["'"'"']/, ""); cmd_label=$0 }
+    in_entry && /verdict: APPROVE/ { verdict="APPROVE" }
+    in_entry && /verdict: LGTM/ { verdict="LGTM" }
+    in_entry && /gate_result:/ { gate_result=1 }
+    in_entry && /brainwash_check:/ { bc=1 }
+    function flush() {
+        if (!in_entry) return
+        if (verdict == "APPROVE" || verdict == "LGTM") {
+            approve_total++
+            if (gate_result) has_gr++
+            else {
+                no_gr++
+                if (no_gr <= 5) {
+                    if (no_gr_cmds != "") no_gr_cmds = no_gr_cmds ", "
+                    no_gr_cmds = no_gr_cmds cmd_label
+                }
+            }
+        }
+        if (bc) has_bc++; else no_bc++
+        in_entry=0; verdict=""; gate_result=0; bc=0; cmd_label=""
+    }
+    END { flush(); print approve_total "|" has_gr "|" no_gr "|" no_gr_cmds "|" has_bc "|" no_bc }
+    ' "$_rl_file")
+    IFS='|' read -r _rv_total _rv_gr _rv_no_gr _rv_cmds _rv_bc _rv_no_bc <<< "$_bw_review"
+    _rv_total=${_rv_total:-0}
+    _rv_gr=${_rv_gr:-0}
+    _rv_no_gr=${_rv_no_gr:-0}
+    _rv_bc=${_rv_bc:-0}
+    _rv_no_bc=${_rv_no_bc:-0}
+    if [ "$_rv_total" -gt 0 ]; then
+        _rv_rate=$(( _rv_gr * 100 / _rv_total ))
+    else
+        _rv_rate=0
+    fi
+    echo "  APPROVE/LGTM後のgate_result確認率: ${_rv_rate}% (${_rv_gr}/${_rv_total})"
+    if [ "$_rv_no_gr" -gt 5 ]; then
+        echo "  WARN: gate_result未確認 ${_rv_no_gr}件(直近5件: ${_rv_cmds})"
+        echo "  → レビュー判定(行動)後にgate結果(結果検証)を閉じよ。/gate-syncを実行"
+        if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
+        alerts+=("洗脳監査: gate_result未確認 ${_rv_no_gr}件")
+    elif [ "$_rv_no_gr" -gt 0 ]; then
+        echo "  INFO: gate_result未確認 ${_rv_no_gr}件: ${_rv_cmds}"
+    else
+        echo "  OK: 全APPROVE/LGTMにgate_result記録済み"
+    fi
+    echo "  brainwash_check記入: ${_rv_bc}件 / 未記入: ${_rv_no_bc}件"
+    if [ "$_rv_no_bc" -gt 5 ]; then
+        echo "  WARN: brainwash_check未記入 ${_rv_no_bc}件"
+        if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
+        alerts+=("洗脳監査: brainwash_check未記入レビュー ${_rv_no_bc}件")
+    fi
+else
+    echo "  SKIP: gunshi_review_log.yaml不在"
+fi
+echo "  ★ 自問: 直近のレビュー判定で「検証スキップ」「完了急ぎ」に乗っていないか？"
+echo ""
+
 # --- 総合判定 ---
 echo ""
 echo "=== 総合判定: $overall ==="

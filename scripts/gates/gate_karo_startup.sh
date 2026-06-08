@@ -1446,6 +1446,51 @@ else
 fi
 echo ""
 
+# --- 洗脳監査(行動→結果検証の二値チェック) ---
+echo "■ 洗脳監査(行動→結果検証)"
+echo "  8パターン: (1)早期終了 (2)検証スキップ (3)他者依存 (4)緩い設計 (5)先送り (6)出力=仕事 (7)簡潔本能 (8)完了急ぎ"
+_wa_file="$SCRIPT_DIR/logs/karo_workarounds.yaml"
+if [ -f "$_wa_file" ]; then
+    # 直近20件のworkaround=trueエントリでbrainwash_check有無を計測
+    _bw_audit=$(awk '
+    BEGIN { total=0; has_bc=0; no_bc=0; no_bc_cmds="" }
+    /^- (cmd_id|cmd|timestamp):/ { flush(); in_entry=1; wa=0; bc=0; cmd_label="" }
+    in_entry && /workaround: true/ { wa=1 }
+    in_entry && /brainwash_check:/ { bc=1 }
+    in_entry && /cmd_id:/ { sub(/.*cmd_id: */, ""); gsub(/["'"'"']/, ""); cmd_label=$0 }
+    function flush() {
+        if (in_entry && wa) {
+            total++
+            if (bc) has_bc++
+            else {
+                no_bc++
+                if (no_bc_cmds != "") no_bc_cmds = no_bc_cmds ", "
+                no_bc_cmds = no_bc_cmds cmd_label
+            }
+        }
+        in_entry=0; wa=0; bc=0; cmd_label=""
+    }
+    END { flush(); print total "|" has_bc "|" no_bc "|" no_bc_cmds }
+    ' "$_wa_file")
+    IFS='|' read -r _bwa_total _bwa_has _bwa_no _bwa_cmds <<< "$_bw_audit"
+    _bwa_total=${_bwa_total:-0}
+    _bwa_has=${_bwa_has:-0}
+    _bwa_no=${_bwa_no:-0}
+    echo "  workaround=true: ${_bwa_total}件(brainwash_check有: ${_bwa_has}, 無: ${_bwa_no})"
+    if [ "$_bwa_no" -gt 0 ]; then
+        echo "  WARN: brainwash_check未記入のworkaround ${_bwa_no}件: ${_bwa_cmds}"
+        echo "  → 行動(workaround適用)の結果を検証したか？洗脳パターンに乗っていないか？"
+        if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
+        alerts+=("洗脳監査: brainwash_check未記入WA ${_bwa_no}件")
+    else
+        echo "  OK: 全workaroundにbrainwash_check記入済み"
+    fi
+else
+    echo "  SKIP: karo_workarounds.yaml不在"
+fi
+echo "  ★ 自問: 直近の配備/WA判断で「検証スキップ」「完了急ぎ」に乗っていないか？"
+echo ""
+
 # --- 総合判定 ---
 echo ""
 echo "=== 総合判定: $overall ==="

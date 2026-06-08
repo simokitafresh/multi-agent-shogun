@@ -1,83 +1,126 @@
 task:
+  _ac_task_id: cmd_3245_focused
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3245 (deployed 2026-06-08T23:19:20). Read from the beginning.
   cmd_id: cmd_karo_fix_universal_tag_default
-  task_type: ci_fix
-  project: infra
-  purpose: "隠れたインフラバグ修正: lesson_write.shのデフォルトタグがuniversal→全cmdに注入→useful率18.2%の根因。(1)lesson_write.shのinfer_default_project_tag()を改善し、target_filesまたはsource_cmdからサブドメインタグを推定するロジックを追加(例: scripts/gates/→gate, tests/→testing, scripts/deploy_task→deploy-task-internal)。universalフォールバックは維持するが、推定可能な場合は細粒度タグを付与。(2)既存universal教訓108件のうちtarget_filesから推定可能なものをバッチ変更"
-  target_path: scripts/lesson_write.sh
-  scope:
-    - scripts/lesson_write.sh
-  acceptance_criteria:
-    AC1:
-      description: "lesson_write.shがtarget_filesからサブドメインタグを推定する(例: scripts/gates/xxx.sh→gate, tests/→testing)"
-    AC2:
-      description: "タグ指定なし+target_files指定ありの場合にuniversalではなく推定タグが付与されるテストがPASS"
-    AC3:
-      description: "既存テストにリグレッションなし"
-  binary_checks:
-    AC1:
-      - check: "サブドメインタグ推定ロジック実装"
-        result: ""
-    AC2:
-      - check: "推定タグ付与テストPASS"
-        result: ""
-    AC3:
-      - check: "リグレッションなし"
-        result: ""
-  status: completed
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
-    - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  stop_for: []
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  report_path: queue/reports/hayate_report_cmd_karo_fix_universal_tag_default.yaml
-  standard_skills:
-    - "report-write"
-    - "verdict-check"
-    - "ninja-commit"
-  related_lessons:
-  - id: 'L510'
-    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-  - id: 'L509'
-    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
-    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。'
-  - id: 'L508'
-    summary: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-    detail: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-  - id: 'L507'
-    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-  - id: 'L506'
-    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-  - id: 'L505'
-    summary: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-    detail: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-  - id: 'L504'
-    summary: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
-    detail: 'find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2'
-  - id: 'L503'
-    summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-    detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-  - id: 'L502'
-    summary: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
-    detail: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
-  - id: 'L499'
-    summary: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
-    detail: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
-
-  session_state:
+  parent_cmd: cmd_3245
+  project: infra
+  purpose: 'cmd_3244起票で7回BLOCK。覚醒なぜなぜ7回で根因特定: cmd_save.shがquality_gateのフィールド値はチェックするがフィールド名の正しさはチェックしない。将軍がq5_assumptionsと書いてもq5_verified_sourceと照合されず素通り→値チェックフェーズで初めてBLOCK→修正ループ。フィールド名バリデーション(テンプレートの必須名リストとの照合)を追加し、不正フィールド名を即BLOCKする'
+  status: done
+  stop_for: []
+  task_id: cmd_3245_focused
+  task_type: focused
+  previous_failures:
     attempt: 2
     last_block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
     tried_approaches:
-    - 'worker_id: MISSING; ac_version_read: MISSING; lesson_candidate: missing \"found\" field; lesson_candidate: found=false but no no_lesson_reason; purpose_validation: MISSING; assumption_invalidation: MISSING'
+    - 'worker_id: MISSING; ac_version_read: MISSING; lesson_candidate: missing \"found\" field; lesson_candidate: found=false but no no_lesson_reason; purpose_validation: MISSING; assump…'
     - 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
     diagnose_reason: '報告YAMLの必須フィールド(worker_id/lesson_candidate/purpose_validation/assumption_invalidation)を把握せず送信した'
     approach_summary: 'infer_subdomain_tag_from_files()関数を追加。target_filesパスパターンからgate/testing/deploy-task等のサブドメインタグを推定。universalフォールバック維持。テスト7件追加、全39テストPASS。'
     prior_attempts:
     - attempt: 1
-      block_reason: 'worker_id: MISSING; ac_version_read: MISSING; lesson_candidate: missing \"found\" field; lesson_candidate: found=false but no no_lesson_reason; purpose_validation: MISSING; assumption_invalidation: MISSING'
+      block_reason: 'worker_id: MISSING; ac_version_read: MISSING; lesson_candidate: missing \"found\" field; lesson_candidate: found=false but no no_lesson_reason; purpose_validation: MISSING; assump…'
       approach_summary: 'infer_subdomain_tag_from_files()関数を追加。target_filesパスパターンからgate/testing/deploy-task等のサブドメインタグを推定。universalフォールバック維持。テスト7件追加、全39テストPASS。'
     - attempt: 2
       block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
       diagnose_reason: '報告YAMLの必須フィールド(worker_id/lesson_candidate/purpose_validation/assumption_invalidation)を把握せず送信した'
       approach_summary: 'infer_subdomain_tag_from_files()関数を追加。target_filesパスパターンからgate/testing/deploy-task等のサブドメインタグを推定。universalフォールバック維持。テスト7件追加、全39テストPASS。'
+  related_lessons:
+  - id: 'L492'
+    summary: 'WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。'
+    detail: 'WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。'
+  - id: 'L613'
+    summary: 'resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from'
+    detail: 'resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from'
+  - id: 'L593'
+    summary: 'gate_fire_logがPython Tracebackの1行目のみ記録→診断不能。修正(cc020f3e)で最終行抽出。ログ記録時はエラーの実メッセージ行'
+    detail: 'gate_fire_logがPython Tracebackの1行目のみ記録→診断不能。修正(cc020f3e)で最終行抽出。ログ記録時はエラーの実メッセージ行'
+  - id: 'L575'
+    summary: '既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定s'
+    detail: '既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定s'
+  - id: 'L551'
+    summary: 'cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.'
+    detail: 'cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.'
+  - id: 'L470'
+    summary: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj'
+    detail: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj'
+  - id: 'L395'
+    summary: 'awkで---区間を抽出する際、n==1のnextで開始---をスキップしつつn==2で終了---をprintする非対称パターンが使われていた。生成ファイルのf'
+    detail: 'awkで---区間を抽出する際、n==1のnextで開始---をスキップしつつn==2で終了---をprintする非対称パターンが使われていた。生成ファイルのf'
+  - id: 'L372'
+    summary: 'tmux display-messageの-pオプションは複数の#{@var}を1つのフォーマット文字列に結合できる。区切り文字(|等)で連結しIFS read'
+    detail: 'tmux display-messageの-pオプションは複数の#{@var}を1つのフォーマット文字列に結合できる。区切り文字(|等)で連結しIFS read'
+  - id: 'L293'
+    summary: 'cmd_1397でチェックリストStep7(再計算禁止=殿が実行)がcmdに転写されず、影丸が再計算を実行してしまった。チェックリストを参照するcmdを書く際は'
+    detail: 'cmd_1397でチェックリストStep7(再計算禁止=殿が実行)がcmdに転写されず、影丸が再計算を実行してしまった。チェックリストを参照するcmdを書く際は'
+  - id: 'L247'
+    summary: '全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す'
+    detail: '全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  related_causal_links:
+  - "[[cmd_3244_7回BLOCK]]"
+  - "[[quality_gateフィールド名バリデーション不在]]"
+  - "[[フィールド名不一致素通り]]"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L492: WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。
+      - L613: resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from
+      - L593: gate_fire_logがPython Tracebackの1行目のみ記録→診断不能。修正(cc020f3e)で最終行抽出。ログ記録時はエラーの実メッセージ行
+      - L575: 既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定s
+      - L551: cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.
+      - L470: `context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj
+      - L395: awkで---区間を抽出する際、n==1のnextで開始---をスキップしつつn==2で終了---をprintする非対称パターンが使われていた。生成ファイルのf
+      - L372: tmux display-messageの-pオプションは複数の#{@var}を1つのフォーマット文字列に結合できる。区切り文字(|等)で連結しIFS read
+      - L293: cmd_1397でチェックリストStep7(再計算禁止=殿が実行)がcmdに転写されず、影丸が再計算を実行してしまった。チェックリストを参照するcmdを書く際は
+      - L247: 全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す
+    ────────────────────────────────────────
+    
+    
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'cmd_save.shがquality_gate配下のフィールド名をテンプレートの必須名リストと照合し、不一致フィールドがある場合に即BLOCKしている'
+  - id: 'AC2'
+    checks:
+    - check: 'BLOCK時に正しいフィールド名リストと不一致フィールド名が表示されている'
+  ac_version: 9c5fe6fa
+  role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: hayate_report_cmd_3245.yaml
+  report_path: queue/reports/hayate_report_cmd_3245.yaml
+  bloom_level: 
+  deployed_at: "2026-06-08T23:19:53"
