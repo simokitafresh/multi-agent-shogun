@@ -102,6 +102,27 @@ def wait_for_recaptcha_challenge_or_login():
         time.sleep(1)
     return "unknown"
 
+def wait_for_prosemirror(max_reloads=2, wait_per_attempt=15):
+    """ProseMirrorエディタの出現を待つ。スピナーで停止している場合はPage.reloadしてリトライ。"""
+    for attempt in range(max_reloads + 1):
+        deadline = time.time() + wait_per_attempt
+        while time.time() < deadline:
+            found = runtime_eval("""(() => {
+              var el = document.querySelector('.ProseMirror.note-common-styles__textnote-body')
+                    || document.querySelector('div.ProseMirror')
+                    || document.querySelector('div[contenteditable]');
+              return el ? 'found' : null;
+            })()""")
+            if found == "found":
+                print(f"[note_draft] ProseMirror ready (attempt {attempt})")
+                return True
+            time.sleep(1)
+        if attempt < max_reloads:
+            print(f"[note_draft] ProseMirror not rendered after {wait_per_attempt}s. Reloading page (attempt {attempt + 1}/{max_reloads})...")
+            cdp_send(tab, "Page.reload", {}, port=PORT)
+            time.sleep(3)
+    return False
+
 def handle_recaptcha_if_present():
     if not maybe_click_recaptcha_checkbox():
         return
@@ -184,6 +205,11 @@ if "/login" in url:
         sys.exit(2)
 
 print(f"[note_draft] Logged in. Editor: {url}")
+
+# Step 2.5: Wait for ProseMirror editor to render (may be stuck on spinner)
+if not wait_for_prosemirror():
+    print("[note_draft] ERROR: ProseMirror editor did not render after reloads", file=sys.stderr)
+    sys.exit(3)
 
 # Step 3: Parse Markdown
 with open(MD_FILE, encoding="utf-8") as f:
@@ -271,7 +297,9 @@ body_html = "\n".join(html_parts)
 encoded_html = base64.b64encode(body_html.encode("utf-8")).decode("ascii")
 
 result = js_eval(tab, """(function(){
-  var body = document.querySelector('div.ProseMirror, div[contenteditable]');
+  var body = document.querySelector('.ProseMirror.note-common-styles__textnote-body')
+          || document.querySelector('div.ProseMirror')
+          || document.querySelector('div[contenteditable]');
   if(!body) return 'no_prosemirror';
   body.focus();
   var raw = atob('""" + encoded_html + """');

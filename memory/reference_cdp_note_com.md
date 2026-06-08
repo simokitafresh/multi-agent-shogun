@@ -56,7 +56,22 @@ When the browser shows a 4x4 image challenge:
 If the grid layout changes, recapture the screenshot and recompute coordinates
 from the visible frame. Do not reuse stale coordinates.
 
-## §5 Markdown Conversion Rules
+## §5 Editor Structure (2026-06)
+
+As of June 2026, note.com's `/notes/new` editor uses the following DOM structure:
+
+| Element | Selector | Purpose |
+|---------|----------|---------|
+| Title | `textarea` | Plain `<textarea>` for the note title |
+| Body | `.ProseMirror.note-common-styles__textnote-body` | ProseMirror contenteditable div for body text |
+| Save button | `button` containing text `下書き保存` | Saves the current draft |
+
+**Initial load spinner issue**: The editor may show a spinner on first load,
+leaving ProseMirror unrendered. `note_draft.sh` handles this by waiting for the
+ProseMirror element and reloading the page if it does not appear within 15
+seconds (up to 2 reloads).
+
+## §6 Markdown Conversion Rules
 
 - `# Title` becomes the note title textarea and is not inserted into the body.
 - `## Heading` becomes an h3-style note heading.
