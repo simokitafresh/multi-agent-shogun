@@ -6691,11 +6691,6 @@ maybe_notify_draft_review() {
         log "draft_review: WARN (ac_count invalid: ${ac_count:-empty}; sending review)"
         ac_count=2
     fi
-    if [ "$ac_count" -le 1 ]; then
-        log "draft_review: SKIP (ac_count<=1: ${ac_count})"
-        return 0
-    fi
-
     if ! mark_draft_review_once "$cmd_id" "$ninja_name" "${title:-$cmd_id}"; then
         log "draft_review: SKIP (already sent)"
         return 0
