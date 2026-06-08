@@ -732,6 +732,55 @@ else
     echo "  SKIP: instructions正本変更なし or generated/不在"
 fi
 
+# ─── SG-PRE25: command×files_modified名前照合 (LG036 Step3.5自動化) ───
+echo ""
+echo "■ SG-PRE25: command×files_modified名前照合(LG036)"
+if [ -n "${PARENT_CMD:-}" ] && [ -n "${FILES_MODIFIED:-}" ]; then
+    _cmd_spec="$REPO_ROOT/queue/shogun_to_karo.yaml"
+    if [ -f "$_cmd_spec" ]; then
+        # python: command欄からファイルパスを抽出しfiles_modifiedと照合
+        _pre25_result=$(python3 - "$_cmd_spec" "${PARENT_CMD}" "${FILES_MODIFIED}" <<'PYEOF'
+import yaml, re, sys, os
+try:
+    spec_file, cmd_id, fm_raw = sys.argv[1], sys.argv[2], sys.argv[3]
+    with open(spec_file) as f:
+        d = yaml.safe_load(f) or {}
+    cmds = d.get('commands', {})
+    spec = cmds.get(cmd_id, {})
+    cmd_text = spec.get('command', '')
+    if not cmd_text:
+        print('SKIP: command欄なし')
+        sys.exit(0)
+    cmd_files = set(os.path.basename(p) for p in re.findall(r'[a-zA-Z0-9_/.-]+\.(?:sh|py|md|yaml|json|ts|js)', cmd_text))
+    fm_bases = set(os.path.basename(p.strip()) for p in fm_raw.split('\n') if p.strip())
+    unmatched = sorted(cmd_files - fm_bases)
+    if unmatched:
+        print('INFO: ' + ' '.join(unmatched))
+    else:
+        print('PASS')
+except Exception as e:
+    print(f'SKIP: {e}')
+PYEOF
+)
+        case "$_pre25_result" in
+            PASS*)
+                echo "  PASS: command欄ファイルとfiles_modified名前照合OK"
+                ;;
+            INFO:*)
+                echo "  INFO: command欄ファイルがfiles_modifiedに不在: ${_pre25_result#INFO: }"
+                echo "  → Step3.5で変更対象/実行のみ/既存依存の3分類を確認せよ(LG036/LG037)"
+                ;;
+            *)
+                echo "  ${_pre25_result}"
+                ;;
+        esac
+    else
+        echo "  SKIP: shogun_to_karo.yaml不在"
+    fi
+else
+    echo "  SKIP: PARENT_CMD or FILES_MODIFIED empty"
+fi
+
 # ─── GATE_PREDICTION (自動計算) ───
 # PRE12b draft_lessons補正: engine.pyに未連携のためbash側で上書き
 if [ "${_draft_lessons_total:-0}" -gt 0 ]; then
