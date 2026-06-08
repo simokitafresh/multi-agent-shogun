@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-08 cmd_3239 -->
+<!-- last_updated: 2026-06-08 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -530,3 +530,4 @@
 | cmd_3240 | obsidian昇格率0.07%(32/47037)。candidate12件蓄積。昇格が将軍の/dream(手動)依存=意志依存=停止。ninja_monitorの定期サイクルでcandidate蓄積を検知し自動昇格するトリガーを追加する | infra | 06-08 | ninja_monitorにcheck_obsidian_c |
 | cmd_3239 | raw_content充填率2.4%(1121/47037)。97.6%のイベントが原文未保存で要約のみ。三層記憶の全文記録原則(LS-A23)が機能していない。書込みスクリプト群(lord_conversation_write/bulletin_write/insight_write等)にraw_content保存を追加し充填率を向上させる | infra | 06-08 | lord_conversation.sh/memory_db |
 | cmd_3242 | 忍者にはninja_weak_points/gate_fail_top3/gate_blocks(L6)が自動注入されるが、将軍のcmd起票には同等の仕組みがない。本セッション10回BLOCK+5回lesson_ack=同じパターン繰返し=L6不在の証拠。cmd_save.sh実行前のpreflight表示に将軍個人のBLOCK TOP3と過去の回避策を自動表示し、忍者と同等のL6を将軍に適用する | infra | 06-08 | — |
+| cmd_3241 | 将軍の三層記憶引用率0%。殿応答時のみ[MEM:]引用で自発的引用なし。殿指摘(2026-06-05)「使わないから間違う」が改善されていない。cmd起票時のpreflight(pre-write-edit-combined.sh)に記憶DB検索結果を自動表示し、将軍が三層記憶を参照せざるを得ない環境を作る | infra | 06-08 | pre-write-edit-combined.shのcmd |
