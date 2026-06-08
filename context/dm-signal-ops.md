@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-06-03 cmd_karo_context_freshness_ga407_20260603 -->
+<!-- last_updated: 2026-06-08 cmd_3233 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -237,6 +237,7 @@ PD-028裁定: GS制約同期は仕組み化しない。BBカタログにPydantic
 ## §14 ドキュメントインデックス
 
 **CoDD適用方針設計書**: `docs/research/codd_dmsignal_python_strategy.md` — DM-Signal Python高速化の全体方針。§0前提条件(環境/コマンド/成功条件)+§3ワークフロー(Phase 1-4)+§5本番防御層。CoDD改善cmd着手前に必読
+**Level A cProfileインベントリ**: [[cmd_1987_level_a_cprofile_inventory]] (`docs/research/cmd_1987_level_a_cprofile_inventory.md`) — 設計書§2 Level A 15本の実在確認+cProfile実測結果(10本成功/5本環境制約)
 
 docs/skills/(25件) + docs/rule/(25件)全一覧 + DB接続・パリティ検証・API使用法ルール抜粋。
 補助参照: `docs/research/cmd_485_dm-signal-environment-catalog.md`（環境/Render/API） + `docs/research/cmd_488_dm-signal-claude-config-catalog.md`（運用設定）

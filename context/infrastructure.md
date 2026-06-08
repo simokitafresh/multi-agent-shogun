@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-06 cmd_3201 -->
+<!-- last_updated: 2026-06-08 cmd_3233 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -199,9 +199,10 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 | Skill tool | Codex CLIは`/skills`コマンドでスキル一覧表示・実行可能 | Claude CodeのSkill toolと同等機能 |
 | doc読込制限 | `project_doc_max_bytes` | AGENTS.md+CLAUDE.md合計が制限超→切り捨て。128KB以上を推奨 |
 | セッションリセット | `/new`(セッション新規) | config.toml変更反映にはCLI再起動(respawn-pane)が必要。`/new`ではconfig再読込されない |
-| **Stop hook** | `{"decision":"block"}`の挙動差異 | **Claude Code**: メッセージ表示+ターン停止。**Codex**: reason文をプロンプトとして再実行=**無限ループ**。忍者done/completed時はblockせずidle flag+exit 0 |
+| **Stop hook** | `{"decision":"block"}`の挙動差異 | **Claude Code**: メッセージ表示+ターン停止。**Codex**: reason文をプロンプトとして再実行=**無限ループ**。忍者done/completed時はblockせずidle flag+exit 0。quoting脆弱性検証→ [[cmd_1755_stop_hook]] (`docs/research/cmd_1755_stop_hook.md`) |
 | **launch_cmd** | `cli_profiles.yaml` | Codexは**絶対パス必須**(`/home/.../bin/codex`)。respawn-paneは.bashrc未読込→nvm PATHなし→`codex: command not found` |
 | **respawn方式** | `ninja_monitor.sh safe_send_clear()` | Codex再起動は`tmux respawn-pane -k`方式。Ctrl-C方式はcodex=PID 1終了→pane dead→relaunch届かない |
+| **利用量モニタリング** | `usage_monitor.sh` + `usage_status.sh` | upstream ratelimit_check.sh(tmux capture方式)との比較→SQLite直接集計方式が安定。[[cmd_1756_ratelimit]] (`docs/research/cmd_1756_ratelimit.md`) |
 | **Codex idle時も respawn-pane -k 必須** | 設計意図(殿裁定2026-05-20) | `/new`はCodex CLI内部状態が「task in progress」だと拒否される。ninja_monitorがidle判定しても、CLI内部はsession activeのまま→`/new`非互換。respawn-pane -kはCLI内部状態に関係なくpaneプロセスを殺して再起動するため唯一確実なリセット手段。cmd_2904/2906で/new経路に変更→3忍者CTX滞留(51%/55%/43%)で実証。一見乱暴だが理由がある設計。198回/日ループの真因は発火条件(デバウンス/idle判定頻度)側であり、respawn手段を変えるべきではない。因果: [[cmd_2904_overfix]] -> [[codex_new_rejected]] -> [[respawn_is_correct_design]]。カタログ: `docs/research/gunshi_idle_infra_design_intent_catalog_20260520.md` |
 
 ### 直近24日間の主要裁定/実装（2026-05-01〜2026-05-24）
@@ -267,7 +268,7 @@ cmd_1173偵察で特定した高優先gate未実装項目の構造的実装。
 | タスク/報告YAML hook強制 | settings.json hook | cmd_1065/1067 | queue/tasks/*.yaml, queue/reports/*.yamlへの直接Write/Editを無条件deny。deploy_task.sh/report_field_set.sh経由のみ許可 |
 | 家老教訓自動ロード | instructions/karo.md | cmd_1111 | /clear Recovery手順にlessons_karo.yaml読込を追加。教訓参照漏れ防止 |
 | gate穴検出3問トリガー | gate_improvement_trigger.sh | cmd_1113 | GATE CLEAR時に3問で防御層の穴を自動検出。ninja_monitor定期巡回に統合(cmd_1114) |
-| hook失敗自動記録 | 報告テンプレート+ashigaru.md | cmd_1117 | hook_failures欄で失敗を構造化記録。穴検出3問と自動連鎖 |
+| hook失敗自動記録 | 報告テンプレート+ashigaru.md | cmd_1117 | hook_failures欄で失敗を構造化記録。穴検出3問と自動連鎖。詳細テンプレート→ [[ashigaru-detail]] (`docs/research/ashigaru-detail.md`) |
 | 自動トリム | archive_completed.sh | cmd_1119/1120 | cmd-chronicle.md(200行)+shogun_to_karo.yaml(50件)をarchive時に自動トリム |
 
 ### 現行メトリクス（2026-03-30時点）

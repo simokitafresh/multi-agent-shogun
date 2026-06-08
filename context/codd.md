@@ -1,6 +1,6 @@
 # CoDD (Coherence-Driven Development) 索引
 
-<!-- last_updated: 2026-06-06 cmd_karo_hotfix_context_freshness_ga007_20260606 -->
+<!-- last_updated: 2026-06-08 cmd_3233 -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
 
@@ -91,7 +91,7 @@
 
 | 層 | CoDD | 我が軍 | 有効率/GAP |
 |----|------|--------|-----------|
-| L1 事前 | codd extract設計書 | related_lessons + context_files | 有用率26%→3件絞込み実装済み(GP-199 CLEAR) |
+| L1 事前 | codd extract設計書 | related_lessons + context_files | 有用率26%→3件絞込み実装済み(GP-199 CLEAR)。アーキテクチャ概要→ [[architecture-overview]] (`docs/research/cmd_1991_codd_extract/architecture-overview.md`) |
 | L2 事後 | テストFB + DIVERGENT | gate BLOCK + FIX hints + DIVERGENT(GP-200 CLEAR) | workaround率0%(直近10件) |
 | L3 診断 | Diagnose MANDATORY + Session State | diagnose_reason必須(GP-198 CLEAR) + Session State(GP-201 CLEAR) + deepdive | 全層実装完了。初回実証済み(疾風cmd_1936) |
 
