@@ -1117,6 +1117,8 @@ def ensure_event_attribute_columns(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE events ADD COLUMN recorded_at TEXT")
     if "updated_at" not in cols:
         conn.execute("ALTER TABLE events ADD COLUMN updated_at TEXT")
+    if "raw_content" not in cols:
+        conn.execute("ALTER TABLE events ADD COLUMN raw_content TEXT")
     # バックフィル: 既存行のoccurred_at/recorded_atにtsをコピー
     conn.execute(
         "UPDATE events SET occurred_at = ts, recorded_at = ts WHERE occurred_at IS NULL AND ts <> ''"
@@ -1142,6 +1144,7 @@ def ensure_event_state_transition_log(conn: sqlite3.Connection) -> None:
 
 def event_row_with_attributes(event_row: EventRow) -> EventRow:
     ts = event_row[1]
+    detail = event_row[7] if len(event_row) > 7 else ""
     if len(event_row) == 15:
         return (
             *event_row[:14],
@@ -1152,6 +1155,7 @@ def event_row_with_attributes(event_row: EventRow) -> EventRow:
             ts,    # occurred_at
             ts,    # recorded_at
             None,  # updated_at (未設定 = NULL)
+            detail,  # raw_content
         )
     if len(event_row) == 18:
         return (
@@ -1159,8 +1163,11 @@ def event_row_with_attributes(event_row: EventRow) -> EventRow:
             ts,    # occurred_at
             ts,    # recorded_at
             None,  # updated_at (未設定 = NULL)
+            detail,  # raw_content
         )
     if len(event_row) == 21:
+        return (*event_row, detail)  # raw_content
+    if len(event_row) == 22:
         return event_row
     raise ValueError(f"Unexpected EventRow length: {len(event_row)}")
 
@@ -1375,8 +1382,8 @@ def build_db(
                 id, ts, event_type, agent, target, direction, summary, detail,
                 session_id, cmd_id, concepts, source_file, parent_event_id, importance,
                 confidence, freshness, source_type, state,
-                occurred_at, recorded_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                occurred_at, recorded_at, updated_at, raw_content
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             event_rows_for_insert,
         )

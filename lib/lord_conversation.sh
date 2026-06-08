@@ -294,12 +294,16 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
         if not {"conversations", "events", "events_fts"}.issubset(tables):
             return
         ensure_event_concepts_schema(conn)
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(events)")}
+        if "raw_content" not in cols:
+            conn.execute("ALTER TABLE events ADD COLUMN raw_content TEXT")
         cursor = conn.execute(
             """
             INSERT OR IGNORE INTO events (
                 id, ts, event_type, agent, target, direction, summary, detail,
-                session_id, cmd_id, concepts, source_file, parent_event_id, importance
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                session_id, cmd_id, concepts, source_file, parent_event_id, importance,
+                raw_content
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 event_id,
@@ -316,6 +320,7 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
                 source_file,
                 None,
                 "normal",
+                entry_detail,
             ),
         )
         if cursor.rowcount == 1:
