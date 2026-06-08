@@ -2722,6 +2722,33 @@ QG_TEMPLATE
         abort_if_block_immediate || exit 1
     fi
 
+    # --- Field name validation: 不正フィールド名の即時検出 ---
+    # 起源: cmd_3244で7回BLOCK。q5_assumptionsのような不正名が素通りし値チェックまで発見が遅延
+    # 修正: quality_gate配下の全フィールド名をテンプレートの正規名リストと照合し、不一致を即BLOCK
+    VALID_QG_FIELDS="q1_firefighting q2_learning q3_next_quality q4_depth q5 q5_verified_source q6_not_hiding q7_definition_verified q8_why_what q9_firefighting_root_cause q10_knowledge_boundary q11_not_already_done q12_lord_30min_cost q_ambiguity assumptions diagnosis"
+    INVALID_QG_FIELDS=()
+    for _cache_key in "${!CMD_BLOCK_CACHE[@]}"; do
+        if [[ "$_cache_key" == quality_gate.* ]]; then
+            _qg_subfield="${_cache_key#quality_gate.}"
+            _qg_valid=0
+            for _valid_name in $VALID_QG_FIELDS; do
+                if [[ "$_qg_subfield" == "$_valid_name" ]]; then
+                    _qg_valid=1
+                    break
+                fi
+            done
+            if [[ "$_qg_valid" -eq 0 ]]; then
+                INVALID_QG_FIELDS+=("$_qg_subfield")
+            fi
+        fi
+    done
+    if [[ ${#INVALID_QG_FIELDS[@]} -gt 0 ]]; then
+        record_block_reason "quality_gate: 不正フィールド名 ${#INVALID_QG_FIELDS[@]}件検出。正しいフィールド名に修正せよ"
+        echo "  不正フィールド名: ${INVALID_QG_FIELDS[*]}" >&2
+        echo "  正しいフィールド名: $VALID_QG_FIELDS" >&2
+        abort_if_block_immediate || exit 1
+    fi
+
     # --- Preflight: 全必須項目の存在を一括チェック（逐次BLOCK防止） ---
     # 起源: cmd_1951で7回連続BLOCK。1項目ずつexit 1するため全項目埋めるのに7往復
     # 修正: 全必須項目を一括チェックし、全ての不足を1回で表示してexit 1
