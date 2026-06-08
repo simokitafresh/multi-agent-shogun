@@ -21,6 +21,8 @@ SOURCE_STAGE="${CMD_QUALITY_SOURCE:-cmd_complete_gate}"
 DIAGNOSIS_TEXT="${CMD_QUALITY_DIAGNOSIS:-}"
 FAST_METADATA="${CMD_QUALITY_FAST_METADATA:-0}"
 PROJECT_ID="${CMD_QUALITY_PROJECT:-}"
+CHECK_NAMES="${CMD_QUALITY_CHECK_NAMES:-}"
+BLOCK_DURATION="${CMD_QUALITY_BLOCK_DURATION:-0}"
 MEMORY_DB_LIVE_INSERT="${MEMORY_DB_LIVE_INSERT:-$REPO_ROOT/scripts/memory_db_live_insert_async.py}"
 if [[ ! -f "$MEMORY_DB_LIVE_INSERT" ]]; then
     MEMORY_DB_LIVE_INSERT="$REPO_ROOT/scripts/memory_db_live_insert.py"
@@ -241,6 +243,16 @@ ${field_indent}supplementary_cmds: $SUPPLEMENTARY_CMDS
 ${field_indent}source: "$SOURCE_STAGE"
 ${field_indent}timestamp: "$TIMESTAMP"
 EOF
+
+    if [[ -n "$CHECK_NAMES" ]]; then
+        escaped_checks="${CHECK_NAMES//\\/\\\\}"
+        escaped_checks="${escaped_checks//\"/\\\"}"
+        echo "${field_indent}checks: \"$escaped_checks\"" >> "$LOG_FILE"
+    fi
+
+    if [[ "$BLOCK_DURATION" =~ ^[0-9]+$ ]] && (( BLOCK_DURATION > 0 )); then
+        echo "${field_indent}block_duration_minutes: $BLOCK_DURATION" >> "$LOG_FILE"
+    fi
 
     if [[ -n "$DIAGNOSIS_TEXT" ]]; then
         escaped_diagnosis="${DIAGNOSIS_TEXT//\\/\\\\}"

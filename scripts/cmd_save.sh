@@ -59,6 +59,7 @@ CMD_SAVE_PERSISTENT_STDERR_LOG="${CMD_SAVE_PERSISTENT_STDERR_LOG:-$PROJECT_DIR/l
 CMD_SAVE_SCAN_FILE_CACHE="/tmp/cmd_save_scan_$$.tmp"
 CMD_SAVE_SCAN_JSON_CACHE="/tmp/cmd_save_scan_$$.json"
 CMD_SAVE_ACCUMULATE_BLOCKS="${CMD_SAVE_ACCUMULATE_BLOCKS:-1}"
+BLOCK_DURATION_MINUTES=0
 BLOCK_RETRY_NUDGE="止まるな、修正して再実行せよ"
 BLOCK_RETRY_NUDGE_EMITTED=0
 BLOCK_COUNT=0
@@ -84,6 +85,23 @@ extract_cmd_diagnosis() {
         }
         in_qg && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
     '
+}
+
+extract_nazenaze_root_cause() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+    printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        /nazenaze_root_cause:/ {
+            sub(/.*nazenaze_root_cause:[[:space:]]*/, "")
+            gsub(/^["'"'"']|["'"'"']$/, "")
+            if ($0 != "" && $0 != "null") print
+            exit
+        }
+    '
+}
+
+build_unique_block_checks_str() {
+    [[ ${#BLOCK_CHECKS[@]} -gt 0 ]] || return 0
+    printf '%s\n' "${BLOCK_CHECKS[@]}" | sort -u | paste -sd'|'
 }
 
 trim_inline_yaml_scalar() {
@@ -2021,6 +2039,64 @@ print(count)
 PY
 }
 
+count_same_check_prior_blocks() {
+    local check_name="${1:-}"
+    [[ -n "$check_name" && -f "$QUALITY_LOG_FILE" ]] || {
+        echo 0
+        return 0
+    }
+    if ! grep -qF "cmd_id: \"$CMD_ID\"" "$QUALITY_LOG_FILE" 2>/dev/null; then
+        echo 0
+        return 0
+    fi
+    local scan_file
+    scan_file="$(make_quality_log_scan_file)" || {
+        echo 0
+        return 0
+    }
+    CMD_SAVE_CMD_ID="$CMD_ID" \
+    CMD_SAVE_QUALITY_LOG="$scan_file" \
+    CMD_SAVE_CHECK_NAME="$check_name" \
+    python3 - <<'PY'
+import os
+import json
+import yaml
+
+cmd_id = os.environ.get("CMD_SAVE_CMD_ID", "")
+log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
+target_check = os.environ.get("CMD_SAVE_CHECK_NAME", "").strip()
+
+if not cmd_id or not target_check or not log_path or not os.path.exists(log_path):
+    print(0)
+    raise SystemExit(0)
+
+_json_path = log_path[:-4] + ".json" if log_path.endswith(".tmp") else ""
+if _json_path and os.path.exists(_json_path):
+    with open(_json_path) as fh:
+        data = json.load(fh) or {}
+else:
+    with open(log_path, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+
+entries = (data.get("entries") or []) if isinstance(data, dict) else []
+count = 0
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    if entry.get("cmd_id") != cmd_id:
+        continue
+    if entry.get("gate_result") != "BLOCK":
+        continue
+    if entry.get("source") != "cmd_save":
+        continue
+    checks_str = str(entry.get("checks", "") or "")
+    if target_check in checks_str.split("|"):
+        count += 1
+
+print(count)
+PY
+}
+
 extract_last_block_reason() {
     python3 - "$CMD_SAVE_STDERR_LOG" <<'PY'
 import re
@@ -2046,6 +2122,7 @@ PY
 
 log_cmd_save_block() {
     local block_reason="${1:-}"
+    local check_names="${2:-}"
     [[ "${CMD_SAVE_DISABLE_QUALITY_LOG:-0}" != "1" ]] || return 0
     [[ -n "$block_reason" && -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
     if [[ "${CMD_SAVE_SYNC_QUALITY_LOG:-0}" == "1" ]]; then
@@ -2053,6 +2130,7 @@ log_cmd_save_block() {
         CMD_QUALITY_SOURCE="cmd_save" \
         CMD_QUALITY_DIAGNOSIS="$CMD_DIAGNOSIS" \
         CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
+        CMD_QUALITY_CHECK_NAMES="$check_names" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" "$block_reason" >/dev/null 2>&1
     else
@@ -2061,6 +2139,7 @@ log_cmd_save_block() {
         CMD_QUALITY_SOURCE="cmd_save" \
         CMD_QUALITY_DIAGNOSIS="$CMD_DIAGNOSIS" \
         CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
+        CMD_QUALITY_CHECK_NAMES="$check_names" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" "$block_reason" >/dev/null 2>&1 &
     fi
@@ -2101,6 +2180,7 @@ log_cmd_save_pass() {
         CMD_QUALITY_SOURCE="cmd_save" \
         CMD_QUALITY_DIAGNOSIS="" \
         CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
+        CMD_QUALITY_BLOCK_DURATION="$BLOCK_DURATION_MINUTES" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "PASS" "no" "0" >/dev/null 2>&1
     else
@@ -2109,6 +2189,7 @@ log_cmd_save_pass() {
         CMD_QUALITY_SOURCE="cmd_save" \
         CMD_QUALITY_DIAGNOSIS="" \
         CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
+        CMD_QUALITY_BLOCK_DURATION="$BLOCK_DURATION_MINUTES" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "PASS" "no" "0" >/dev/null 2>&1 &
         # perf: 非同期化 — yaml_auto_archive.sh は結果に影響しない後処理。
@@ -2416,7 +2497,9 @@ handle_cmd_save_exit() {
                 echo "  根本的に異なるアプローチを検討せよ。" >&2
             fi
 
-            log_cmd_save_block "$block_reason"
+            local _exit_checks_str
+            _exit_checks_str="$(build_unique_block_checks_str 2>/dev/null || true)"
+            log_cmd_save_block "$block_reason" "$_exit_checks_str"
         fi
     fi
 
@@ -2436,6 +2519,7 @@ else
     CMD_ID="cmd_${RAW_ID}"
 fi
 
+BLOCK_START_FILE="/tmp/cmd_save_block_start_${CMD_ID}.ts"
 WARN_COUNT=0
 CMD_BLOCK=""
 CMD_BLOCK_NC=""
@@ -2462,7 +2546,9 @@ if [[ "${CMD_SAVE_PREV_LESSON_FAST:-0}" = "1" ]]; then
     fi
 
     if [[ "$BLOCK_COUNT" -gt 0 && ${#BLOCK_REASONS[@]} -gt 0 ]]; then
-        log_cmd_save_block "${BLOCK_REASONS[-1]}"
+        local _fast_checks_str
+        _fast_checks_str="$(build_unique_block_checks_str 2>/dev/null || true)"
+        log_cmd_save_block "${BLOCK_REASONS[-1]}" "$_fast_checks_str"
     fi
     echo "保存確認NG: ${CMD_ID} (${BLOCK_COUNT}件のBLOCK, ${WARN_COUNT}件のWARN)" >&2
     emit_block_warn_trigger_summary
@@ -5586,8 +5672,45 @@ if [[ ${#WARN_REASONS[@]} -gt 0 ]]; then
     log_cmd_save_warns
 fi
 
+# --- BLOCK同一パターン3回なぜなぜ強制(cmd_3243) ---
+# 目的: 同一checkで3回BLOCKした場合、ack+修正だけでは通過不能。
+# nazenaze_root_cause記入を強制し、L4(BLOCK)→L6(学習速度最大化)を接続する。
+if [[ ${#BLOCK_CHECKS[@]} -gt 0 ]]; then
+    declare -A _NAZENAZE_CHECKED=()
+    for _nz_check in "${BLOCK_CHECKS[@]}"; do
+        [[ -v "_NAZENAZE_CHECKED[$_nz_check]" ]] && continue
+        _NAZENAZE_CHECKED["$_nz_check"]=1
+        _same_check_count=$(count_same_check_prior_blocks "$_nz_check" 2>/dev/null || echo 0)
+        [[ "$_same_check_count" =~ ^[0-9]+$ ]] || _same_check_count=0
+        if (( _same_check_count >= 2 )); then
+            _nazenaze_value="$(extract_nazenaze_root_cause)"
+            if [[ -z "$_nazenaze_value" ]]; then
+                record_block_reason "同一チェック(${_nz_check})で3回目BLOCK。diagnosis.nazenaze_root_cause にnなぜなぜ7回の根因分析を記入せよ"
+                echo "  形式: nazenaze_root_cause: \"なぜ1→なぜ2→...→根因: ...→仕組み: ...\"" >&2
+            fi
+        fi
+    done
+fi
+
 # --- 結果出力 ---
+# AC1(cmd_3243): PASS時にBLOCK→成功の所要時間を計算
+if [[ -f "$BLOCK_START_FILE" ]]; then
+    _block_start_epoch=$(cat "$BLOCK_START_FILE" 2>/dev/null || echo 0)
+    if [[ "$_block_start_epoch" =~ ^[0-9]+$ ]] && (( _block_start_epoch > 0 )); then
+        _block_end_epoch=$(date +%s)
+        _block_age=$(( _block_end_epoch - _block_start_epoch ))
+        if (( _block_age < 86400 )); then
+            BLOCK_DURATION_MINUTES=$(( (_block_end_epoch - _block_start_epoch + 30) / 60 ))
+        fi
+    fi
+fi
+
 if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
+    # PASS: clean up block start file
+    rm -f "$BLOCK_START_FILE"
+    if (( BLOCK_DURATION_MINUTES > 0 )); then
+        echo "  BLOCK→PASS所要時間: ${BLOCK_DURATION_MINUTES}分" >&2
+    fi
     echo "保存確認OK: ${CMD_ID}"
     log_cmd_save_pass
     if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
@@ -5633,6 +5756,10 @@ if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
     remind_missing_current_cmd_lesson_after_clear
 else
     if [[ "$BLOCK_COUNT" -gt 0 ]]; then
+        # AC1(cmd_3243): Record first BLOCK timestamp for duration tracking
+        if [[ ! -f "$BLOCK_START_FILE" ]]; then
+            date +%s > "$BLOCK_START_FILE"
+        fi
         echo "保存確認NG: ${CMD_ID} (${BLOCK_COUNT}件のBLOCK, ${WARN_COUNT}件のWARN)" >&2
         # 全BLOCK理由の一括サマリ(将軍フリーズ防止: 修正箇所を一目で把握)
         echo "━━━ BLOCK理由一覧 ━━━" >&2
