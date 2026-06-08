@@ -155,6 +155,9 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-06-08: gate=cmd_complete_gate result=FAIL executor=kagemaru reason=report_format:kagemaru_report_cmd_3228.yaml|command_files_modified_mismatch
+
+- 2026-06-08: gate=gate_report_format result=FAIL executor=kagemaru reason=result: not a dict
 - 2026-06-08: gate=gate_report_format result=FAIL executor=kagemaru reason=knowledge_candidate: found=true but items is empty
 
 - 2026-06-07: gate=gate_report_format result=FAIL executor=saizo reason=ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lessons_useful: MISSING; parent_cmd: MISSING (empty value); lesson_candidate: found=false but no no_le...
