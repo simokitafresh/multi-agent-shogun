@@ -479,6 +479,7 @@ declare -A REPORT_DONE_MISMATCH_NOTIFIED  # report done+status未idle通知時�
 declare -A IDLE_NOTIFY_SENT              # idle通知送信済み時刻 — key: agent_name, value: epoch秒（状態変化ベース+モード切替）
 declare -A TRAINING_IDLE_FIRST_SEEN      # 修行自動配備: idle継続開始時刻 — key: agent_name, value: epoch秒
 declare -A TRAINING_EFFECT_RECORDED     # 修行効果記録済みフラグ — key: "ninja:task_id", value: "1" (cmd_2767)
+declare -A TRAINING_COMPLETION_CHECKED  # 修行完了判定済みフラグ — key: "ninja:task_id", value: "1" (cmd_3230)
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
 declare -A _INBOX_COUNT_CACHE     # サイクル内inbox未読数キャッシュ — key: agent_name, value: count
 declare -A _INBOX_FP_CACHE        # サイクル内inbox未読fingerprintキャッシュ — key: agent_name, value: md5 hash
@@ -2407,6 +2408,52 @@ _record_training_effect() {
     TRAINING_EFFECT_RECORDED[$key]="1"
 }
 
+# ─── 修行完了判定+SKILL.md自動更新トリガー (cmd_3230: Phase3) ───
+_trigger_training_completion_check() {
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+
+    [ -f "$task_file" ] || return 0
+
+    local task_type task_id task_status
+    IFS='|' read -r task_type task_id task_status < <(awk '
+        BEGIN { tt=""; ti=""; ts="" }
+        /^[ \t]*task_type:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); tt=v }
+        /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
+        /^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
+        /^[ \t]*status:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ts=v }
+        END { print tt "|" ti "|" ts }
+    ' "$task_file")
+
+    # training taskのみ対象
+    local is_training=0
+    [[ "$task_type" = "training" ]] && is_training=1
+    [[ "$task_id" = *training* ]] && is_training=1
+    [ "$is_training" = "1" ] || return 0
+
+    # done/completed状態のみ
+    case "$task_status" in
+        done|completed) ;;
+        *) return 0 ;;
+    esac
+
+    [ -n "$task_id" ] || return 0
+
+    # 二重チェック防止
+    local key="${name}:${task_id}"
+    [ "${TRAINING_COMPLETION_CHECKED[$key]:-}" = "1" ] && return 0
+
+    local check_script="$SCRIPT_DIR/scripts/training_completion_check.sh"
+    [ -f "$check_script" ] || return 0
+
+    local result last_line
+    result=$(bash "$check_script" --cmd-id "$task_id" --repo-root "$SCRIPT_DIR" 2>&1) || true
+    last_line=$(echo "$result" | tail -1)
+    log "TRAINING-COMPLETION: $name task=$task_id $last_line"
+
+    TRAINING_COMPLETION_CHECKED[$key]="1"
+}
+
 # ─── idle→通知の処理（状態遷移+デバウンス） ───
 # 4サブ関数に分割: _handle_post_clear_pending / _handle_deploy_stall /
 #                   _handle_idle_notify / _handle_auto_clear
@@ -2421,6 +2468,7 @@ handle_confirmed_idle() {
     _clear_stall_tracking_for_completed_idle "$name"
     _handle_idle_notify "$name" "$now"
     _record_training_effect "$name"  # 修行完了時にbefore/after FAIL率を比較記録 (cmd_2767)
+    _trigger_training_completion_check "$name"  # 修行完了判定→SKILL.md自動更新 (cmd_3230: Phase3)
     if _handle_speed_training_auto_deploy "$name" "$now"; then return; fi
     if _handle_training_auto_deploy "$name" "$now"; then return; fi
     _handle_auto_clear "$name" "$now"
