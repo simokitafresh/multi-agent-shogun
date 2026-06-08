@@ -104,6 +104,34 @@ auto_q11_script_grep_results() {
     done <<< "$script_paths"
 }
 
+memory_db_fts5_top3() {
+    local cmd_text="$1"
+    local title purpose
+
+    title="$(printf '%s\n' "$cmd_text" | awk '/^[[:space:]]*title:[[:space:]]*/ { sub(/^[[:space:]]*title:[[:space:]]*/, ""); gsub(/["'"'"']/, ""); print; exit }')"
+    purpose="$(printf '%s\n' "$cmd_text" | awk '/^[[:space:]]*purpose:[[:space:]]*/ { sub(/^[[:space:]]*purpose:[[:space:]]*/, ""); gsub(/["'"'"']/, ""); print; exit }')"
+
+    [[ -n "$title" || -n "$purpose" ]] || return 0
+
+    local query="${title:+$title }${purpose:+$purpose}"
+    query="${query# }"
+    query="${query% }"
+    [[ -n "$query" ]] || return 0
+
+    local db_path="$SCRIPT_DIR/data/multi_agent_shogun_memory.db"
+    local results
+    results="$(timeout 5s python3 "$SCRIPT_DIR/scripts/hooks/memory_db_fts5_preflight.py" "$db_path" "$query" 2>/dev/null)" || return 0
+    [[ -n "$results" ]] || return 0
+
+    printf '三層記憶FTS5検索(title+purpose → 上位3件):\n'
+    printf '%s\n' "$results" | awk -F'\t' '{
+        summary = substr($6, 1, 80)
+        cmd = ($4 != "" ? $4 : "n/a")
+        ts = substr($2, 1, 10)
+        printf "  %d. [%s] %s (%s, %s)\n", NR, cmd, summary, ts, $5
+    }'
+}
+
 quality_gate_field_pair_warnings() {
     local cmd_text="$1"
     printf '%s\n' "$cmd_text" | awk '
@@ -332,6 +360,12 @@ ${_auto_q11_grep_results}"
             _checklist="${_checklist}
 
 ${_qg_pair_warnings}"
+        fi
+        _memory_db_fts5="$(memory_db_fts5_top3 "$_stk_content")"
+        if [[ -n "$_memory_db_fts5" ]]; then
+            _checklist="${_checklist}
+
+${_memory_db_fts5}"
         fi
         emit_context "$_checklist"
     fi

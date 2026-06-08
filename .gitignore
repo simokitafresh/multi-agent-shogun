@@ -154,6 +154,7 @@ queue/memory_db_live_insert_queue/
 !scripts/gates/*.py
 !scripts/hooks/
 !scripts/hooks/*.sh
+!scripts/hooks/*.py
 !scripts/oneshot/
 !scripts/oneshot/*.sh
 !scripts/oneshot/*.py
