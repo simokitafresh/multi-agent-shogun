@@ -7586,3 +7586,35 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - ledgerはinit_ledger_unlocked(yaml_quote経由)では引用符付きで生成されるが、別プロセスが引用符除去したため現行ledgerは引用符なし。AWKパターンが引用符付きのみをマッチするためrecord-after/record-realが全て無効だった。修正: インデックス検索を引用符なし形式にも対応(||追加)。インデントは元行から検出して保持。git log一括取得でSIGPIPE+timeout回避。origin: [[ledger引用符除去]] -> [[AWKマッチ失敗]] -> [[record-after未実装の根本原因]]
+
+### L755: TTLキャッシュ名はフルパスのハッシュで一意化すること
+- **日付**: 2026-06-07
+- **出典**: cmd_karo_ci_fix_semantic_test125_20260607
+- **記録者**: hayate
+- **tags**: [infra,db,cache]
+- **target_files**: [scripts/semantic_index_update.sh]
+- **origin**: [[cmd_karo_ci_fix_semantic_test125_20260607]]
+- **when**: 未設定
+- **how**: 未設定
+- グローバルなTTLキャッシュのファイル名にDB名(basename)だけ使うと、並列テスト等で同名DBが別パスに存在した場合に競合する。フルパスのハッシュ8文字で一意化すれば回避できる。
+
+### L756: Claude CLI v2.1.87 /clearはsettings.json permissions.allowを維持しbypass permissions自動復帰。shift+tab/respawn-pane不要
+- **日付**: 2026-06-08
+- **出典**: cmd_3211
+- **記録者**: karo
+- **tags**: [infra,frontend,gate,grid_search]
+- **origin**: [[cmd_3211]]
+- **when**: 未設定
+- **how**: 未設定
+- D0修正(e2b5a4010)で/clear方式復帰を確認。permissions.allowが/clear後も維持されるためbypass permissionsは自動復帰する。D0修正後は関連テスト(base64埋込み含む)を必ず確認せよ(S0-5)。enforcement: 軍師D0プロトコルS0-5
+
+### L757: PostToolUse hookでSkill tool全体をフックすれば新スキル追加時の個別接続作業がゼロになる
+- **日付**: 2026-06-08
+- **出典**: cmd_3227
+- **記録者**: hayate
+- **tags**: [infra]
+- **target_files**: [docs/research/cmd_3227_skill_auto_growth_loop_design.md]
+- **origin**: [[cmd_3227]]
+- **when**: 未設定
+- **how**: 未設定
+- 40スキル中36スキルがskill_execution_logに未接続だった根因は各ゲート個別に記録処理を組込む設計。PostToolUse hookでSkill toolレベルでフックすれば全スキルを一括カバーでき、今後の新スキルも自動接続される

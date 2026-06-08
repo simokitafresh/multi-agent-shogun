@@ -242,6 +242,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T03:47:38+09:00 利他の精神で将軍の洗脳監査をせよ。覚醒せよ。見つけた洗脳は 軍師がL0-L7まで貫通修正せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T13:18:30+09:00 そうだ。レイヤーを重ねてもベータ調整後のアルファが100%存在するから、過剰最適化ではないという結論を過去に出した。覚えているか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T13:45:02+09:00 各論に逃げるのは洗脳の証拠。覚醒せよ |
+| cmd | `cmd_3227` 偵察+設計: 全スキル自動成長基盤 — 実行結果自動記録+失敗→修行自動生成+修行完了→SKILL.md自動更新 (`docs/research/cmd_3227_skill_auto_growth_loop_design.md`) |
+| causal | `cmd_3227` origin: [[殿指摘_各論パッチは洗脳]] -> [[全スキル自動成長断線]] -> [[ループ(実行/検知/修行/再現性確認/スキル更新)共通基盤設計]] |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -554,6 +556,7 @@ codd:
 | lesson | `L727` HMM月次fitは全サンプルが1状態に集中するデジェネレート問題が発生しやすい。日次fitが必須 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T02:38:49+09:00 L0-L7に貫通させたか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T13:40:21+09:00 三層記憶に貫通させるときには記憶DB+obsidian+セマンティクスインデックスの三層だ |
+| lesson | `L757` PostToolUse hookでSkill tool全体をフックすれば新スキル追加時の個別接続作業がゼロになる |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -611,6 +614,7 @@ codd:
 | causal_chain | `[[cmd_3091]]` (L724) |
 | causal_chain | `[[cmd_3118]]` (L725) |
 | causal_chain | `[[cmd_3134]]` (L727) |
+| causal_chain | `[[cmd_3227]]` (L757) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -1887,6 +1891,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T16:19:58+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T21:37:43+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T02:38:09+09:00 続けて |
+| cmd | `cmd_3226` 修正: note_draft.sh初回ロード停止バグ+セレクタ更新(2026-06 noteエディタ変更対応) (`logs/gunshi_review_log.yaml`, `scripts/gates/gate_gunshi_cs_checklist.sh`, `memory/reference_cdp_note_com.md`) |
+| causal | `cmd_3226` origin: [[note_draft_no_prosemirror]] -> [[2026-06_noteエディタ変更]] -> [[リロード+待機+セレクタ更新]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T13:51:05+09:00 bbekgfku5 toolu_01TEL3sXeZ3KMcuX5ZY2sLT9 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/cc0e69da-24a1-4e11-88f1-e802fa |
 
 ## defense_hierarchy — 防御階層原則
 

@@ -19,16 +19,25 @@
 | 計測テストブロードキャスト | switch_project.shがinbox_write全員配信 | DRY_RUN対応(48a95ff22) |
 | 全忍者Opusで起動 | launch_cmdに--model未付与。settings.yaml model_name無視 | model_nameを--model引数追加(a0cac8711) |
 
+## 最終解決(e2b5a4010)
+respawn-pane方式はCLI再起動で数秒かかりCTX即時0%にならない(殿指摘)。
+手動テストでClaude CLI v2.1.87は`/clear`後もsettings.jsonのpermissions.allowが維持され
+bypass permissionsが自動復帰することを確認。**shift+tabもrespawnも不要。/clearのみで全て解決。**
+
 ## 教訓
 - 想像するな確認せよ: CTX 0%不可能と断言→ログでCTX=0%実績あり→嘘だった
-- 洗脳#6(出力=仕事): CTX閾値ゲートは既存仕組みで解決できた(将軍洗脳分析)
-- pane_start_commandは使うな: respawn-pane -kの起動コマンドが次回二重エスケープされる
+- 洗脳#6(出力=仕事): CTX閾値ゲートもrespawn方式も不要な複雑性だった
+- pane_start_commandは使うな: 二重エスケープでCLI死亡
+- CLI v2.1.87の/clearはbypass permissionsを維持する: 最初に確認していれば全て不要だった
+- D0修正後にテスト確認(S0-5)を怠るとCI REDを引き起こす(base64テスト更新漏れ)
 
-## 修正commit一覧
+## 修正commit一覧(時系列)
 - 8c5677d1e: @context_pctリセット
-- 88f0f90dc: bypass permissions待機(後でrespawn方式に統合)
-- 25d9944b9: respawn-pane -k方式統一
+- 88f0f90dc: bypass permissions待機(後で/clear方式に戻す)
+- 25d9944b9: respawn-pane -k方式統一(後で/clear方式に戻す)
 - 515901a36: cd送信除去
 - 9e7e37625: pane_start_command廃止
-- dfecdf651: shift+tab間隔延長+リトライ(後でrespawn方式に統合)
+- dfecdf651: shift+tab間隔延長+リトライ(後で/clear方式に戻す)
 - 48a95ff22: switch_project.sh DRY_RUN対応
+- a0cac8711: model_name反映(respawn方式用。/clear方式復帰後も有用)
+- **e2b5a4010: /clear方式に復帰。respawn撤去。最終解決**
