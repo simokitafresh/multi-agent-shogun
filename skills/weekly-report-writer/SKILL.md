@@ -462,7 +462,7 @@ CDP経由でnote.comに下書き保存する。手順は共通リファレンス
 CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 ```
 
-未ログイン時は`.env.note`の`NOTE_EMAIL`/`NOTE_PASSWORD`で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは`/tmp/note_recaptcha_challenge.png`を撮影して、ブラウザ上で解決されるまで最大120秒待機する。
+未ログイン時は`.env.note`の`NOTE_EMAIL`/`NOTE_PASSWORD`で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは`/tmp/note_recaptcha_challenge.png`を撮影して、ブラウザ上で解決されるまで最大120秒待機する。ProseMirrorエディタがスピナーで停止している場合は`Page.reload`で最大2回リトライする。実行結果は`skill_execution_log.yaml`にPASS/FAILで記録される。
 
 ## トラブル時
 
@@ -486,4 +486,4 @@ CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 - リンクが本文に出ていない
 - 指数が週間変動になっている
 
-<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-08T21:13:40+09:00 -->

@@ -181,7 +181,8 @@ Markdown→note.com変換ルール:
 - `---` → `<hr>` として本文HTMLに入れる
 - 通常テキストと `- リスト項目` → 連続分を1つの `<p>` にまとめ、行間は `<br>` でつなぐ
 - 空行とコードフェンス行 → スキップ
-- 本文は `div.ProseMirror, div[contenteditable]` に `innerHTML` で挿入し、`input` / `change` eventを発火する
-- 下書き保存ボタン押下後、最終URLを `[note_draft] Done: ...` に出力する
+- 本文は `.ProseMirror.note-common-styles__textnote-body` → `div.ProseMirror` → `div[contenteditable]` の3段fallbackでエディタを検出し、`innerHTML` で挿入して `input` / `change` eventを発火する
+- ProseMirrorエディタがスピナーで停止している場合、`Page.reload` で最大2回リトライする（`wait_for_prosemirror`）
+- 下書き保存ボタン押下後、最終URLを `[note_draft] Done: ...` に出力し、`skill_execution_log.yaml` にPASS/FAILを記録する
 
-<!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-08T21:13:40+09:00 -->
