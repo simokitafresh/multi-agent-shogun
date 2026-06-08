@@ -195,6 +195,19 @@ for changed in "${CHANGED_FILES[@]}"; do
         done
     fi
 
+    # scripts/hooks/ 変更→hookベース名でテスト検索(.claude/hooks/と同構造)
+    if [[ "$changed" == scripts/hooks/* ]]; then
+        hook_base="${changed##*/}"
+        hook_base="${hook_base%.sh}"; hook_base="${hook_base%.py}"
+        hook_base="${hook_base//-/_}"
+        for tf in "$TEST_DIR"/test_"${hook_base}"*.bats "$TEST_DIR"/test_hook_dispatchers*.bats; do
+            if [ -f "$tf" ]; then
+                AFFECTED_TESTS["$tf"]=1
+                matched=1
+            fi
+        done
+    fi
+
     # L3: scripts/gates/ 変更→直接テスト。
     # 旧実装は単一gate変更でも test_gate*.bats + test_cmd_complete_gate*.bats を
     # 全選択し、pre-pushが30秒を超えた。startup系テストは子gateをmockするため、
