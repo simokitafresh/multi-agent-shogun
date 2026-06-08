@@ -31,7 +31,8 @@ echo "[note_draft] Markdown: ${MD_FILE}"
 echo "[note_draft] CDP port: ${CDP_PORT}"
 
 # ── Step 1-6: All in one Python script ──
-python3 << PYEOF
+PY_EXIT=0
+python3 << PYEOF || PY_EXIT=$?
 import sys, os, time, json, base64, pathlib
 
 sys.path.insert(0, "${AUTO_OPS_DIR}")
@@ -329,3 +330,26 @@ time.sleep(2)
 final_url = js_eval(tab, "document.URL", port=PORT)
 print(f"[note_draft] Done: {final_url}")
 PYEOF
+
+# ── Step 7: Record to skill_execution_log ──
+SKILL_LOG="/mnt/c/tools/multi-agent-shogun/logs/skill_execution_log.yaml"
+AGENT_ID="${AGENT_ID:-$(tmux display-message -t "${TMUX_PANE}" -p '#{@agent_id}' 2>/dev/null || echo unknown)}"
+TS="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+if [[ $PY_EXIT -eq 0 ]]; then
+  RESULT="PASS"; STUMBLING=""
+else
+  RESULT="FAIL"; STUMBLING="Python script exited with code ${PY_EXIT}"
+fi
+cat >> "$SKILL_LOG" << LOGEOF
+- ts: "${TS}"
+  skill: "note-draft"
+  executor: "${AGENT_ID}"
+  result: "${RESULT}"
+  used: "true"
+  stumbling_points: "${STUMBLING}"
+  gate: "none"
+  source: "note_draft.sh"
+  skill_path: "/mnt/c/tools/multi-agent-shogun/scripts/note_draft.sh"
+LOGEOF
+echo "[note_draft] Logged to skill_execution_log: ${RESULT}"
+exit "$PY_EXIT"
