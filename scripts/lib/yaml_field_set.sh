@@ -121,7 +121,7 @@ BEGIN { replaced = 0; has_fields = 0; skip_children = 0 }
 {
     # When replacing a nested mapping header, skip its indented children
     if (skip_children) {
-        if ($0 ~ /^[[:space:]]/ && $0 !~ /^[A-Za-z0-9_.-]+:/) {
+        if (($0 ~ /^[[:space:]]/ || $0 ~ /^-[[:space:]]/) && $0 !~ /^[A-Za-z0-9_.-]+:/) {
             next
         }
         skip_children = 0
