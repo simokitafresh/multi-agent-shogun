@@ -43,7 +43,7 @@ print(conn.execute("SELECT event_type FROM events ORDER BY ts LIMIT 1").fetchone
 PY
 )
     [ "${result[0]}" = "ts,agent,direction,summary,detail,session_id" ]
-    [ "${result[1]}" = "id,ts,event_type,agent,target,direction,summary,detail,session_id,cmd_id,concepts,source_file,parent_event_id,importance,confidence,freshness,source_type,state,occurred_at,recorded_at,updated_at" ]
+    [ "${result[1]}" = "id,ts,event_type,agent,target,direction,summary,detail,session_id,cmd_id,concepts,source_file,parent_event_id,importance,confidence,freshness,source_type,state,occurred_at,recorded_at,updated_at,raw_content" ]
     [ "${result[2]}" = "view" ]
     [ "${result[3]}" = "2" ]
     [ "${result[4]}" = "2026-05-01" ]

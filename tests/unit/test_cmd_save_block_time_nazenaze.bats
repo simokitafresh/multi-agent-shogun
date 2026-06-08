@@ -29,12 +29,12 @@ setup() {
     mkdir -p "$TEST_ARCHIVE_DIR" "$TEST_Q11_RESEARCH_DIR"
     printf '%s\n' '[]' > "$TEST_INSIGHTS"
     # Clean up any stale block start file
-    rm -f "/tmp/cmd_save_block_start_cmd_btn_test.ts"
+    rm -f "$TEST_TMPDIR/cmd_save_block_start_cmd_btn_test.ts"
 }
 
 teardown() {
     rm -rf "$TEST_TMPDIR"
-    rm -f "/tmp/cmd_save_block_start_cmd_btn_test.ts"
+    rm -f "$TEST_TMPDIR/cmd_save_block_start_cmd_btn_test.ts"
 }
 
 write_cmd_yaml_block() {
@@ -116,6 +116,7 @@ run_cmd_save() {
         CMD_SAVE_BULLETIN_FILE="$TEST_BULLETIN" \
         CMD_SAVE_INSIGHTS_FILE="$TEST_INSIGHTS" \
         CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$TEST_TMPDIR/no_semantic_search.sh" \
+        CMD_SAVE_BLOCK_DIR="$TEST_TMPDIR" \
         CMD_SAVE_Q11_RESEARCH_DIR="$TEST_Q11_RESEARCH_DIR" \
         CMD_SAVE_SYNC_QUALITY_LOG=1 \
         MEMORY_DB_LIVE_INSERT="$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
@@ -132,10 +133,10 @@ run_cmd_save() {
     [ "$status" -eq 1 ]
 
     # BLOCK start timestamp file should exist
-    [ -f "/tmp/cmd_save_block_start_cmd_btn_test.ts" ]
+    [ -f "$TEST_TMPDIR/cmd_save_block_start_cmd_btn_test.ts" ]
     # Content should be epoch seconds
     local ts
-    ts=$(cat "/tmp/cmd_save_block_start_cmd_btn_test.ts")
+    ts=$(cat "$TEST_TMPDIR/cmd_save_block_start_cmd_btn_test.ts")
     [[ "$ts" =~ ^[0-9]+$ ]]
 }
 
@@ -144,12 +145,12 @@ run_cmd_save() {
     write_cmd_yaml_block ""
     run_cmd_save
     [ "$status" -eq 1 ]
-    [ -f "/tmp/cmd_save_block_start_cmd_btn_test.ts" ]
+    [ -f "$TEST_TMPDIR/cmd_save_block_start_cmd_btn_test.ts" ]
 
     # Manipulate timestamp to simulate 3 minutes ago
     local now_epoch
     now_epoch=$(date +%s)
-    echo $(( now_epoch - 180 )) > "/tmp/cmd_save_block_start_cmd_btn_test.ts"
+    echo $(( now_epoch - 180 )) > "$TEST_TMPDIR/cmd_save_block_start_cmd_btn_test.ts"
 
     # Now PASS
     write_cmd_yaml_pass
@@ -158,7 +159,7 @@ run_cmd_save() {
     [ "$status" -eq 0 ]
 
     # block start file should be cleaned up
-    [ ! -f "/tmp/cmd_save_block_start_cmd_btn_test.ts" ]
+    [ ! -f "$TEST_TMPDIR/cmd_save_block_start_cmd_btn_test.ts" ]
 
     # Quality log should have PASS entry with block_duration_minutes
     run python3 - <<'PY'
