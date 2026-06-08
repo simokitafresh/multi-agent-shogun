@@ -17,6 +17,7 @@ unchanged_threshold="${SKILL_AUTO_IMPROVE_UNCHANGED_THRESHOLD:-3}"
 escalation_state="${SKILL_AUTO_IMPROVE_STATE_JSON:-$REPO_ROOT/logs/skill_auto_improve_state.json}"
 bulletin_script="${SKILL_AUTO_IMPROVE_BULLETIN_SCRIPT:-$REPO_ROOT/scripts/bulletin_write.sh}"
 bulletin_posted_by="${SKILL_AUTO_IMPROVE_POSTED_BY:-karo}"
+training_task_generator="${SKILL_AUTO_IMPROVE_TRAINING_GENERATOR:-$REPO_ROOT/scripts/training_task_generator.sh}"
 
 usage() {
     sed -n '1,7p' "$0" >&2
@@ -41,7 +42,7 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 
-python3 - "$LOG_FILE" "$SKILLS_DIRS" "$top_n" "$apply" "$skill_filter" "$REPO_ROOT" "$unchanged_threshold" "$escalation_state" "$bulletin_script" "$bulletin_posted_by" <<'PY'
+python3 - "$LOG_FILE" "$SKILLS_DIRS" "$top_n" "$apply" "$skill_filter" "$REPO_ROOT" "$unchanged_threshold" "$escalation_state" "$bulletin_script" "$bulletin_posted_by" "$training_task_generator" <<'PY'
 import hashlib
 import json
 import os
@@ -55,7 +56,7 @@ from pathlib import Path
 
 import yaml
 
-log_file, skills_dirs, top_n_raw, apply_raw, skill_filter, repo_root, unchanged_threshold_raw, escalation_state_raw, bulletin_script, bulletin_posted_by = sys.argv[1:11]
+log_file, skills_dirs, top_n_raw, apply_raw, skill_filter, repo_root, unchanged_threshold_raw, escalation_state_raw, bulletin_script, bulletin_posted_by, training_task_generator_script = sys.argv[1:12]
 
 # CSafeLoader: 7.7x faster than Python SafeLoader for large YAML files.
 # Falls back to SafeLoader if C extension is unavailable.
@@ -309,6 +310,46 @@ def request_code_fix(row, unchanged_streak, state_entry):
         return False
     print(f"ESCALATED_CODE_FIX: {row['skill']} streak={unchanged_streak} gate={row.get('gate') or 'unknown_gate'}")
     state_entry["notified_streak"] = unchanged_streak
+    return True
+
+
+def request_training_task(row, unchanged_streak, state_entry):
+    """Generate training task when escalation is detected (SKILL.md unchanged)."""
+    if is_code_fix_cleared(state_entry):
+        print(f"TRAINING_SKIPPED_CODE_FIX_CLEARED: {row['skill']} streak={unchanged_streak}")
+        return False
+    if state_entry.get("training_notified_streak", 0) >= unchanged_streak:
+        print(f"TRAINING_SKIPPED_ALREADY_NOTIFIED: {row['skill']} streak={unchanged_streak}")
+        return False
+    if not Path(training_task_generator_script).is_file():
+        print(f"TRAINING_SKIPPED_NO_GENERATOR: {training_task_generator_script}")
+        return False
+    try:
+        proc = subprocess.run(
+            [
+                "bash", training_task_generator_script,
+                "--skill", row["skill"],
+                "--gate", row.get("gate") or "unknown_gate",
+                "--reason", shorten(row["reason"], 300),
+                "--streak", str(unchanged_streak),
+            ],
+            cwd=repo_root,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=15,
+            check=False,
+        )
+    except Exception as exc:
+        print(f"TRAINING_FAILED: {row['skill']} {exc}")
+        return False
+    if proc.returncode != 0:
+        stderr = " ".join(proc.stderr.split())
+        print(f"TRAINING_FAILED: {row['skill']} exit={proc.returncode} {shorten(stderr, 180)}")
+        return False
+    for line in proc.stdout.strip().splitlines():
+        print(line)
+    state_entry["training_notified_streak"] = unchanged_streak
     return True
 
 
@@ -591,6 +632,9 @@ for skill, rows in apply_plan.items():
         )
         if cause == "code_fix_required":
             request_code_fix(row, int(entry["unchanged_streak"]), entry)
+            # Generate training task for non-code-bug escalation (SKILL.md unchanged)
+            if "script/runtime failure" not in cause_reason:
+                request_training_task(row, int(entry["unchanged_streak"]), entry)
 
 save_escalation_state(escalation_state_path, escalation_state)
 print(f"updated_skills={updated} cleared_code_fix={cleared_code_fix} generated_at={datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}")
