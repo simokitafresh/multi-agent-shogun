@@ -910,6 +910,7 @@ task:
   description: "validate rollback database cache notification lesson injection cap"
   task_type: impl
   project: testproj
+  target_path: "scripts/deploy.sh"
   acceptance_criteria:
     - AC1
 EOF
@@ -1014,6 +1015,7 @@ task:
   assigned_to: sasuke
   task_type: impl
   project: testproj
+  target_path: "scripts/deploy.sh"
   acceptance_criteria:
     - AC1
 EOF
@@ -1383,6 +1385,7 @@ task:
   description: "trigger tag fallback without keyword overlap"
   task_type: impl
   project: testproj
+  target_path: "scripts/deploy.sh"
   acceptance_criteria:
     - AC1
 EOF
