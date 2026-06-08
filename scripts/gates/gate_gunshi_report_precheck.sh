@@ -739,15 +739,28 @@ if [ -n "${PARENT_CMD:-}" ] && [ -n "${FILES_MODIFIED:-}" ]; then
     _cmd_spec="$REPO_ROOT/queue/shogun_to_karo.yaml"
     if [ -f "$_cmd_spec" ]; then
         # python: command欄からファイルパスを抽出しfiles_modifiedと照合
-        _pre25_result=$(python3 - "$_cmd_spec" "${PARENT_CMD}" "${FILES_MODIFIED}" <<'PYEOF'
-import yaml, re, sys, os
+        _pre25_result=$(python3 - "$_cmd_spec" "${PARENT_CMD}" "${FILES_MODIFIED}" "$REPO_ROOT" <<'PYEOF'
+import yaml, re, sys, os, glob
 try:
-    spec_file, cmd_id, fm_raw = sys.argv[1], sys.argv[2], sys.argv[3]
+    spec_file, cmd_id, fm_raw, repo = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+    # shogun_to_karo.yaml (active)
+    cmd_text = ''
     with open(spec_file) as f:
         d = yaml.safe_load(f) or {}
-    cmds = d.get('commands', {})
+    cmds = d.get('commands', {}) or {}
     spec = cmds.get(cmd_id, {})
-    cmd_text = spec.get('command', '')
+    if spec:
+        cmd_text = spec.get('command', '')
+    # fallback: archive
+    if not cmd_text:
+        for p in sorted(glob.glob(os.path.join(repo, 'queue', 'archive', 'cmds', f'{cmd_id}*.yaml')), reverse=True):
+            with open(p) as f:
+                ad = yaml.safe_load(f) or {}
+            acmds = ad.get('commands', {}) or {}
+            aspec = acmds.get(cmd_id, {}) or {}
+            cmd_text = aspec.get('command', '')
+            if cmd_text:
+                break
     if not cmd_text:
         print('SKIP: command欄なし')
         sys.exit(0)
