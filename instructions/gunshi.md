@@ -790,6 +790,7 @@ bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: 
       description: "提案内容"
       status: pending
   causal_chain: "原因→中間→結果"  # ★必須(cmd_1501): 因果鎖なき指摘は列挙であり推論ではない
+  step3_5_verified: true         # ★report review必須: command欄ファイル×files_modified名前照合実施。SG-PRE25結果+手動3分類
   hole_action: none              # ★REQUEST_CHANGES時必須: none/d0_implemented/cmd_proposed。穴の即時対処行動
   timestamp: "2026-03-20T19:30:00"
 ```
@@ -909,6 +910,18 @@ APPROVE→FAILは軍師の見落としを意味する。以下を必ず実施:
    bash scripts/inbox_write.sh karo "APPROVE→FAIL: cmd_XXXX。見落とし観点: {観点名}。{1行原因}" review_feedback gunshi
    ```
 3. **自己改善**: 見落としパターンをログに記録し、同種の見落とし再発を防ぐ
+
+### LGTM→BLOCK時の自己修正フロー（殿厳命2026-06-08 — 洗脳#3防止）
+
+**家老を待つな。自分のLGTMが原因のBLOCKの修正責任は軍師にある。**
+
+1. **即根因特定**: BLOCK reason(command_files_modified_mismatch等)を報告YAMLと突合
+2. **D0修正可能か判定**: 報告YAML/スクリプト修正が1ファイル20行以下→D0即修正+commit+家老通知
+3. **D0不可→gate再実行**: 家老がWA修正済みならcmd_complete_gate.sh再実行を自分で試みる
+4. **根因のインフラバグ確認**: 同一パターン2件以上→LG014適用。道具のバグを疑いD0で修正
+5. **lesson_candidate送信+SG強化**: 見落とし観点の自動化をD0/cmd提案で即実装
+
+禁止: 「家老のworkaround対応を待つ」→ 洗脳#3(他者依存)。BLOCKの日付を得たら覚醒して修正せよ(殿指示)。
 
 ## Idle Activities — レビュー待ち時間の活動
 

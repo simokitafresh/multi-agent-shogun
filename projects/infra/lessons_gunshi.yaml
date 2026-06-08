@@ -441,10 +441,10 @@ lessons:
   origin: '[[cmd_3166]] -> [[command_files_modified_mismatch]] -> [[軍師APPROVE後GATE_BLOCK]]'
   created_at: '2026-06-04'
   automated: true
-  enforcement_level: 3
-  enforcement: report review Step 3.5でcommand各項目とfiles_modified各pathの対応表を確認。cmd_complete_gate.sh command/files_modified coverageがLevel4事後BLOCK
-  when: report reviewで成果物・files_modified・cmd command欄を突合する時。件数一致していても中身の対応を確認する
-  how: command項目ごとに対象ファイルを抽出し、files_modifiedのpathへ1対1で紐付ける。既存実装を検証しただけの対象もverified_existing_dependencyとして記録し、未記載にしない
+  enforcement_level: 4
+  enforcement: SG-PRE25(gate_gunshi_report_precheck.sh)がcommand欄ファイル×files_modifiedの名前照合をINFO自動表示(Level4)。cmd_complete_gate.sh command/files_modified coverageがLevel4事後BLOCK。再発実績: cmd_3166+cmd_3228(2件)
+  when: report reviewのSG-PRE25自動実行時。INFO表示→変更対象/実行のみ/既存依存の3分類を手動確認
+  how: SG-PRE25が自動照合。不一致INFOが出たらLG037で3分類し、変更対象なのにfiles_modified不在→FAIL。実行のみ→OK
 - id: LG037
   title: command欄の実行参照を変更対象と混同するな — 実行のみスクリプトはfiles_modified要求から外せ
   detail: |

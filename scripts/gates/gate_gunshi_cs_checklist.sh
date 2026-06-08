@@ -148,6 +148,8 @@ BEGIN {
         has_brainwash = 1
     } else if ($0 ~ /^[[:space:]]*operational_simulation:/) {
         has_ops_sim = 1
+    } else if ($0 ~ /^[[:space:]]*step3_5_verified:/) {
+        has_step35 = 1
     } else if ($0 ~ /^[[:space:]]*changed_lines:[[:space:]]*[0-9]+/) {
         line = $0
         sub(/^[[:space:]]*changed_lines:[[:space:]]*/, "", line)
@@ -844,6 +846,22 @@ if [ -n "$_infra_no_verify" ]; then
     echo "WARN(L6-洗脳#2): infra/scripts reportレビューで実動作確認なし:"
     printf '%s\n' "$_infra_no_verify" | while read -r _id; do
         [ -n "$_id" ] && echo "  - $_id: binary_checks=yesを鵜呑みにするな。実行して確認せよ"
+    done
+    warn=1
+fi
+
+# --- L4: step3_5_verified未記入検出 (LG036 洗脳#1/#2/#8防止) ---
+_step35_missing=$(awk '
+    /^- cmd_id:/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); rt=""; has_s35=0 }
+    /review_type: report/ { rt="report" }
+    /step3_5_verified:/ { has_s35=1 }
+    /timestamp:/ && rt=="report" && !has_s35 && id != "" { print id }
+' "$LOG_FILE" 2>/dev/null | tail -10)
+if [ -n "$_step35_missing" ]; then
+    _s35_count=$(echo "$_step35_missing" | wc -l)
+    echo "WARN(L4-LG036): ${_s35_count}件のreportレビューにstep3_5_verified未記入:"
+    printf '%s\n' "$_step35_missing" | while read -r _id; do
+        [ -n "$_id" ] && echo "  - $_id: SG-PRE25結果+command×files_modified 3分類を記録せよ"
     done
     warn=1
 fi
