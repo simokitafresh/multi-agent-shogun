@@ -782,6 +782,7 @@ PYEOF
             INFO:*)
                 echo "  INFO: command欄ファイルがfiles_modifiedに不在: ${_pre25_result#INFO: }"
                 echo "  → Step3.5で変更対象/実行のみ/既存依存の3分類を確認せよ(LG036/LG037)"
+                echo "  ★注: SG-PRE25はreadonly_ref未考慮。gateはcommand文脈(記録/確認)でreadonly除外するためBLOCK判定が異なる場合あり"
                 ;;
             *)
                 echo "  ${_pre25_result}"

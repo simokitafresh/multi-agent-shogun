@@ -2519,7 +2519,7 @@ else
     CMD_ID="cmd_${RAW_ID}"
 fi
 
-BLOCK_START_FILE="/tmp/cmd_save_block_start_${CMD_ID}.ts"
+BLOCK_START_FILE="${CMD_SAVE_BLOCK_DIR:-/tmp}/cmd_save_block_start_${CMD_ID}.ts"
 WARN_COUNT=0
 CMD_BLOCK=""
 CMD_BLOCK_NC=""
@@ -5685,7 +5685,7 @@ if [[ ${#BLOCK_CHECKS[@]} -gt 0 ]]; then
         if (( _same_check_count >= 2 )); then
             _nazenaze_value="$(extract_nazenaze_root_cause)"
             if [[ -z "$_nazenaze_value" ]]; then
-                record_block_reason "同一チェック(${_nz_check})で3回目BLOCK。diagnosis.nazenaze_root_cause にnなぜなぜ7回の根因分析を記入せよ"
+                record_block_reason "同一チェック(${_nz_check})で3回目BLOCK。diagnosis.nazenaze_root_cause になぜなぜ7回の根因分析を記入せよ"
                 echo "  形式: nazenaze_root_cause: \"なぜ1→なぜ2→...→根因: ...→仕組み: ...\"" >&2
             fi
         fi
