@@ -767,7 +767,7 @@ if [ -f "$_inbox_file" ] && [ -f "$LOG_FILE" ]; then
     ' "$_inbox_file" 2>/dev/null | sort -u || true)
     # report_review依頼されたcmd_idをinboxから抽出
     _review_requested=$(grep -oP 'cmd_\d+' "$_inbox_file" 2>/dev/null | sort -u)
-    _review_done=$(grep -A1 'review_type: report' "$LOG_FILE" 2>/dev/null | grep 'cmd_id:' | grep -oP 'cmd_\d+' | sort -u)
+    _review_done=$(grep -B1 'review_type: report' "$LOG_FILE" 2>/dev/null | grep 'cmd_id:' | grep -oP 'cmd_\d+' | sort -u)
     _missing=""
     for _cmd in $_review_requested; do
         if ! echo "$_review_done" | grep -q "^${_cmd}$"; then

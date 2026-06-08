@@ -963,8 +963,8 @@
   report_ninja: hanzo
   verdict: LGTM
   gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "4観点OK。AC1/AC2 PASS+CI RED 3件追加修正。lesson_candidate: bash var substring空文字挙動"
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK+adversarial遡及。AC1/AC2 PASS+CI RED 3件追加修正。lesson_candidate: bash var substring空文字挙動。adversarial: 3修正全てrollback可能,入力空文字は修正で対処済み"
   observations:
     - "事実1: causal_backlinks.sh 7c8b2f130が存在チェックフィルタ削除→rg exit 2→復元"
     - "事実2: test_gate_karo_startup.bats cmd_3204追加チェックでfixture verdict欠如→APPROVE追加"
@@ -980,11 +980,12 @@
   review_type: draft
   verdict: APPROVE
   confidence: HIGH
-  finding_categories: [assumptions, premortem]
-  findings_summary: "速度修行。target=scripts/reset_layout.sh。レイアウトリセット。副作用リスク低"
+  finding_categories: [assumptions, premortem, simulation]
+  findings_summary: "速度修行。target=scripts/reset_layout.sh。レイアウトリセット。副作用リスク低。simulation遡及:tmuxペイン操作で並行cmd衝突なし,依存なし独立操作"
   observations:
     - "target_path確認: reset_layout.sh"
-  causal_chain: "速度修行(正の複利)"
+    - "simulation遡及(冷え観点Step4): reset_layout.shはtmuxペイン操作。他忍者cmdsと直接ファイル競合なし。配備→読み→実行の流れに手詰まりポイントなし"
+  causal_chain: "速度修行(正の複利)。simulation: 独立操作→並行衝突リスクなし→時系列OK"
   brainwash_check: "OK"
   ambiguity_points: none
   origin: "[[speed_training]] -> [[reset_layout APPROVE]]"
@@ -1093,7 +1094,7 @@
   review_type: report
   report_ninja: hanzo
   verdict: LGTM
-  gate_result: null
+  gate_result: BLOCK
   finding_categories: [assumptions, numbers, premortem]
   findings_summary: "4観点OK。reconcile追加でpending39→12件。引用符ミスマッチ+インデント固定バグ修正。15テストPASS"
   observations:
@@ -1119,3 +1120,465 @@
   brainwash_check: "洗脳#8(完了急ぎ)。hanzoの説明を鵜呑みにしてcommand/files_modified突合を省略"
   origin: "[[cmd_3212]] -> [[LGTM→BLOCK]] -> [[LG036再違反]]"
   timestamp: "2026-06-07T22:06:00"
+- cmd_id: cmd_karo_ci_fix_semantic_test125_20260607
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。TTLキャッシュ名をDBフルパスMD5ハッシュ化でCI並列隔離バグ修正。2197件PASS"
+  observations:
+    - "事実1: 根因=TTLキャッシュが/tmp/shogun_tag_propagation_ttl_memory.db(名前のみ)で並列テスト競合"
+    - "事実2: touch再現テストでFAIL確認→修正後PASS。全テスト2197件PASS"
+    - "事実3: hashlib MD5ハッシュ8文字でフルパス一意化。衝突確率極小"
+  causal_chain: "並列テストで同名DB→TTLキャッシュ共有→tag_propagationスキップ→test125 FAIL→フルパスハッシュで隔離"
+  brainwash_check: "CI修正の定型だが再現テスト証拠を確認。手抜きなし"
+  ambiguity_points: none
+  origin: "[[ci_fix_semantic_test125]] -> [[TTLキャッシュ衝突]] -> [[hayate LGTM]]"
+  timestamp: "2026-06-07T22:36:00"
+- cmd_id: cmd_3215
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, numbers]
+  findings_summary: "殿研究指示。3xレバレッジETF急落前月パターン分析。DB構造確認済み。読取専用。AC3件適切"
+  observations:
+    - "事実1: holding_signal/monthly_returns/deterioration_history/pricesの4テーブル構造をdm-signal-core.mdで確認"
+    - "事実2: 読取専用クエリのみ。PI-009(本番DB汚染防止)適合"
+    - "事実3: 殿指示(2026-06-07)先週木金の急落の事前予測サインを探す"
+  causal_chain: "殿指示→全期間損失月特定→前月データ収集→パターン有無分析→製品改良基盤(正の複利)"
+  brainwash_check: "研究cmdでbaseline確認(LG022): AC3で「パターンなし」も明記要求あり"
+  ambiguity_points: none
+  origin: "[[cmd_3215]] -> [[レバレッジ急落パターン]] -> [[APPROVE]]"
+  timestamp: "2026-06-07T22:39:00"
+- cmd_id: cmd_3215
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。42損失月特定+前月パターン3分類。deterioration 2026-03以降限定を明記。DB読取のみ"
+  observations:
+    - "事実1: 42ヶ月(2010-04〜2026-06)で21PF×320件の損失月を特定。最大損失2020-03 TECL-58.9%"
+    - "事実2: 油断パターン(前月VIX<18+ETF陽)15件avg-17.9%が最頻出。2026-06急落は典型例"
+    - "事実3: deterioration_snapshotsは231件(2026-03以降のみ)。全期間分析にはVIX+ETFリターンで代替"
+  causal_chain: "殿指示→全期間損失月42件特定→前月VIX/ETFリターン分析→油断パターン発見(正の複利: 予測サイン基盤)"
+  brainwash_check: "研究cmdでcommit不在を正常と判断。PRE3 WARNは読取専用研究の想定内"
+  ambiguity_points: none
+  origin: "[[cmd_3215]] -> [[3xレバレッジ損失パターン]] -> [[saizo LGTM]]"
+  timestamp: "2026-06-07T22:50:00"
+- cmd_id: cmd_karo_ci_fix_bypass_permissions_20260607
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  finding_categories: [assumptions, premortem, numbers]
+  findings_summary: "4観点OK。軍師D0(e2b5a4010)S-Tab削除時のbase64テスト更新漏れ修正。41テストPASS"
+  observations:
+    - "事実1: 根因=軍師D0(e2b5a4010)でS-Tabコード削除→base64テストが旧コード存在を検証→FAIL"
+    - "事実2: ローカル単体でも再現(並列限定ではなかった)。前提崩壊をassumption_invalidationで記録"
+    - "事実3: base64はgrep検索困難で見落としやすい(lesson_candidate)"
+  causal_chain: "軍師D0(e2b5a4010)S-Tab削除→base64テスト更新漏れ→CI FAIL→hayate修正(正の複利)"
+  brainwash_check: "自分のD0が引き起こしたCI RED。S0-5(他覚的検証)でテスト確認を怠った結果"
+  ambiguity_points: none
+  origin: "[[e2b5a4010]] -> [[base64テスト更新漏れ]] -> [[hayate修正LGTM]]"
+  timestamp: "2026-06-07T22:59:00"
+- cmd_id: cmd_3216
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "cmd_3215全PF拡張。殿指示(22:55)。L0-L2全53PF。DB読取専用。depends_on cmd_3215 CLEAR済み"
+  observations:
+    - "事実1: cmd_3215でDB構造確認済み(holding_signal/monthly_returns/deterioration_snapshots/prices)"
+    - "事実2: L0=12/L1=20/L2=21=53体(dm-signal-core.md §0確認)"
+    - "事実3: depends_on cmd_3215 CLEAR済み。同手法の範囲拡張"
+  causal_chain: "殿指示(全PF分析)→cmd_3215(レバレッジ限定)→cmd_3216(L0-L2全53体拡張)→レイヤー別比較(正の複利)"
+  brainwash_check: "研究cmdの連続APPROVE。前回cmd_3215 LGTM→CLEAR実績あり"
+  ambiguity_points: none
+  origin: "[[cmd_3216]] -> [[全PF拡張]] -> [[APPROVE]]"
+  timestamp: "2026-06-07T23:05:00"
+- cmd_id: cmd_3216
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。54PF/500件/54ヶ月。レイヤー別パターン4件。FoF構造リスク低減定量確認"
+  observations:
+    - "事実1: 54PF(L0:12+L1:21+L2:21)で500件/54ヶ月の損失イベント。cmd仕様53体との差異(L1/L2=21)を記録"
+    - "事実2: 損失発生率L0=10.5%>L1=4.7%>L2=3.0%。FoF2層構造が有効にリスク低減"
+    - "事実3: 共通パターン4件: 前月低VIX70%/前月正リターン/乗り換えなし95%/TECL主要ドライバー"
+  causal_chain: "殿指示全PF分析→54PF横断→FoF構造リスク低減定量確認+油断パターン再確認(正の複利)"
+  brainwash_check: "研究cmd連続APPROVE。数値の再計算は困難(DB直接クエリ結果)だが内部整合性を確認"
+  ambiguity_points: none
+  origin: "[[cmd_3216]] -> [[全PF損失パターン]] -> [[hayate LGTM]]"
+  timestamp: "2026-06-07T23:16:00"
+- cmd_id: cmd_3217
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem]
+  findings_summary: "cmd_3216発展。全PF5分位分類+勝ち負け前月対比+統計検定。DB読取専用。DTB3別DB明記"
+  observations:
+    - "事実1: cmd_3216でDB構造+全PFデータ確認済み。depends_on cmd_3216 CLEAR"
+    - "事実2: 5分位閾値(+10%/-10%)はcmd_3216の-10%と対称設定。合理的"
+    - "事実3: DTB3は株価DB(Supabase)のeconomic_indicatorsテーブル。DM-Signal本番DBとは別"
+  causal_chain: "殿指示(サイズ調整)→損失パターン(3215/3216)→勝ち負け対比(3217)→危険度スコア設計材料(正の複利)"
+  brainwash_check: "研究cmd3連続APPROVE。殿直接指示の発展系列で妥当"
+  ambiguity_points: none
+  origin: "[[cmd_3217]] -> [[勝ち負け対比]] -> [[APPROVE]]"
+  timestamp: "2026-06-08T00:28:00"
+- cmd_id: cmd_3217
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。8958件5分位+Mann-Whitney検定4指標有意差(DTB3急騰/前月好調/VIX/乗換率)"
+  observations:
+    - "事実1: 8958件(54体×166ヶ月)を5分位分類。大勝1964件/大負500件"
+    - "事実2: Mann-Whitney検定: DTB3変化率p=0.0000, 前月リターンp=0.0000, VIX変化率p=0.0000, 乗換率p=0.0075"
+    - "事実3: 最重要シグナル: 前月DTB3急騰(+39.5%)が全レイヤー共通の大負条件"
+  causal_chain: "殿指示(サイズ調整)→5分位分類→統計検定→4指標有意差→危険度スコア設計材料確立(正の複利)"
+  brainwash_check: "研究cmdでDB直接検証困難だが内部整合性(分位合計=8958件)とp値具体性で信頼度判断"
+  ambiguity_points: none
+  origin: "[[cmd_3217]] -> [[勝ち負け対比4指標]] -> [[kagemaru LGTM]]"
+  timestamp: "2026-06-08T00:45:00"
+- cmd_id: cmd_3218
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, adversarial]
+  findings_summary: "cmd_3217集大成バックテスト。危険度3段階+サイズ調整効果を5指標で検証。DB読取+ローカル計算"
+  observations:
+    - "事実1: cmd_3217で有意4指標(DTB3/前月リターン/VIX水準/VIX変化率)確認済み。depends_on CLEAR"
+    - "事実2: サイズ比率(HIGH=50%/MEDIUM=75%/LOW=100%)は初期値。探索余地あり"
+    - "事実3: adversarial: 効果なし/悪化も報告する設計(AC3)。全期間バックテストで部分最適化リスク低"
+  causal_chain: "殿指示(バックテスト)→有意4指標→危険度スコア→サイズ調整前後比較→本番実装判断材料(正の複利)"
+  brainwash_check: "研究cmd4連続APPROVE。殿直接指示の連続発展で妥当。過適合検証はAC3で担保"
+  ambiguity_points: none
+  origin: "[[cmd_3218]] -> [[サイズ調整バックテスト]] -> [[APPROVE]]"
+  timestamp: "2026-06-08T01:43:00"
+- cmd_id: cmd_3219
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star, ambiguity]
+  findings_summary: "6観点OK。殿指摘CTX0%バグ修正。L891(@context_pctリセット)直後にclear-history追加で旧値書き戻し根因を解消。1行追加、構文検証AC付き。副作用なし"
+  observations:
+    - "事実1: ninja_monitor.sh L891 tmux set-option @context_pct 0%確認。L940-972でcapture-pane旧値を_ctx_pct_emitで上書きする経路確認"
+    - "事実2: tmux clear-historyはスクロールバッファのみ消去。プロセス・永続ログに影響なし"
+    - "事実3: 並行cmd衝突なし(hayate/kagemaru/saizo全てdm-signal対象でninja_monitor.sh変更なし)"
+    - "事実4: north_star遡及: CTX精度向上=配備判断正確性=+1点複利。ambiguity: AC明確(L891直後+bash -n)"
+  causal_chain: "殿指摘(CTX0%にならない)→capture-pane旧値残留→@context_pct書き戻し→clear-historyで根因解消(正の複利:CTX精度→配備判断精度)"
+  brainwash_check: "1行追加で完結感あるが3層検証実施: 構造あり/品質(バッファ全消去で確実)/前提(tmux clear-history仕様OK)。穴なし"
+  ambiguity_points: none
+  origin: "[[cmd_3219]] -> [[capture-pane旧値書き戻しバグ]] -> [[APPROVE]]"
+  timestamp: "2026-06-08T01:52:00"
+- cmd_id: cmd_3219
+  review_type: self_study
+  gate_result: CLEAR
+  verdict: null
+  finding_categories: [adversarial]
+  findings_summary: "adversarial遡及(idle自走Step5): ninja_monitor.sh 1行追加のclear-history。壊し方3点検証: (1)CLIバナー検出漏れ→0%表示が正しい動作で問題なし (2)idle以外ペインへの誤送信→safe_send_clear既存条件チェックで防御 (3)rollback→git revert即可能"
+  observations:
+    - "事実1: 自分のcmd_3219 APPROVEでadversarial未検討を自己検出。scripts変更(5128行コア)でadversarial省略は冷え観点の再発"
+    - "事実2: adversarial 3/10の根因分析: changed_lines>=200閾値のみでは小規模scripts変更が素通り→GP-263でtraining_speed除外済みだが非training_speed scripts cmdへの適用拡大が課題"
+  cs_checklist:
+    CS1: "cmd_3219レビュー結果を全量確認"
+    CS2: "adversarial 3/10のデータで問題存在を検証"
+    CS3: "review_log直近10件の観点実績と突合"
+    CS4: "cmd_3219 review_logにadversarial遡及追記を実施"
+    CS5: "numbers/adversarial冷え観点のさらなる改善余地あり(次サイクル)"
+    CS6: "changed_lines閾値→素通り→冷え→見逃し(負の複利)の因果鎖特定"
+  causal_chain: "adversarial 3/10(最低)→根因: changed_lines>=200閾値のみ→小規模scripts変更素通り→cmd_3219自身も同構造で素通り→冷え観点の構造的弱点"
+  operational_simulation: "clear-historyは次の/clearサイクルから自動適用。CTX0%表示正常化確認済み(GP-263b)。idle忍者への誤送信リスクはsafe_send_clear既存条件チェックで防御済み"
+  brainwash_check: "自分のレビューを自分で批判=洗脳チェック機能中。1つ見つけて満足するなの自問OK"
+  origin: "[[cmd_3219]] -> [[adversarial冷え3/10]] -> [[自己検出遡及]]"
+  timestamp: "2026-06-08T01:55:00"
+- cmd_id: cmd_3219
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。safe_send_clear L895にclear-history追加。1行修正でcapture-pane旧CTX%書き戻し根因解消。bash -n PASS。commit bc97414実在確認"
+  observations:
+    - "事実1: L921 ctx_num>0判定で0%→Source2(capture-pane)分岐の記述が報告と一致"
+    - "事実2: changed_lines +16/-15=31。files_modified=1(ninja_monitor.sh)。precheck ERRORS=0"
+    - "事実3: hanzo WA率25%(4件中1件=commit_missing)。今回はcommit hash bc97414実在確認済み"
+    - "事実4: adversarial: clear-historyは表示バッファのみ消去。プロセス無影響。rollback=git revert即可能"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "殿指摘→capture-pane旧値残留→clear-history追加→スクロールバッファ消去で根因解消(正の複利:CTX精度向上)"
+  brainwash_check: "1行修正で完結感。3層検証: 構造あり/品質(バッファ全消去)/前提(tmux仕様OK)。穴なし"
+  ambiguity_points: none
+  origin: "[[cmd_3219]] -> [[hanzo clear-history追加]] -> [[LGTM]]"
+  timestamp: "2026-06-08T01:56:00"
+- cmd_id: idle_adversarial_cold_fix_20260608
+  review_type: self_study
+  verdict: null
+  finding_categories: [adversarial, simulation]
+  findings_summary: "idle自走Step4-5。adversarial冷え3/10根因分析→GP-263(速度修行ノイズ除外)+GP-263b(files_modifiedフォールバック)即実装。simulation遡及1件"
+  observations:
+    - "事実1: adversarial 3/10が最低。速度修行cmd8件がノイズ(コード変更なし理解テスト)"
+    - "事実2: SG-PRE15.5のtarget_path判定がcmd_3219(target_pathなし)で素通り→files_modifiedフォールバック追加で解消"
+    - "事実3: GP-263動作確認: CS gate実行で速度修行cmd除外。GP-263b動作確認: cmd_3219報告でadversarial推奨表示"
+  cs_checklist:
+    CS1: "review_log直近10件+観点別集計を全量確認"
+    CS2: "adversarial 3/10のデータで問題存在を検証"
+    CS3: "CS gateソースコード+SG-PRE15.5ソースコードを精読"
+    CS4: "GP-263+GP-263b即実装+動作確認(行動変換)"
+    CS5: "numbers 6/10も冷え→次サイクルの改善余地"
+    CS6: "速度修行ノイズ→重要WARN埋没→見逃し(負の複利)の因果鎖特定"
+  causal_chain: "adversarial 3/10→原因1:速度修行ノイズ8件→GP-263除外。原因2:target_path未設定素通り→GP-263bフォールバック。Level5事前コンテキスト提供"
+  operational_simulation: "GP-263: 速度修行cmdがCS gate集計から除外され、本番cmd観点のみで冷え検知精度向上。GP-263b: files_modifiedフォールバックでtarget_path未設定cmdも adversarial推奨対象に。次の/clearサイクルで自動適用"
+  brainwash_check: "2件修正で満足するなの自問。numbers 6/10も次サイクル候補として認識済み"
+  origin: "[[adversarial冷え3/10]] -> [[GP-263]] -> [[GP-263b]] -> [[Level5強化]]"
+  timestamp: "2026-06-08T01:58:00"
+- cmd_id: cmd_3220
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。7戦略サイズ調整バックテスト(78PF全期間)。D10-VIX>25が最良(ΔCAGR-2.88%/ΔMaxDD+3.55%)。D11/D12/E14にlook-aheadバイアスあるが忍者自身が認識・明記。adversarial: 研究スクリプトのみ、本番波及なし"
+  observations:
+    - "事実1: 78PF(is_active全件)。cmd_3218の54PFからPF増加はportfoliosテーブル全件使用のため"
+    - "事実2: ベースCAGR=54.73%(cmd_3218では55.76%)。PF数差(54→78)による差異"
+    - "事実3: D11/D12閾値に全期間中央値使用=未来データ含むlook-aheadバイアス。assumption_checkで忍者自身が指摘"
+    - "事実4: lesson_candidate: HMM月次fitはデジェネレート問題発生。日次fit必須。再利用可能な具体知見"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "cmd_3218(50%失敗+HIGH月+3.3%)→20%縮小7戦略→D10-VIX>25が最良バランス→本番実装候補材料(正の複利)"
+  brainwash_check: "GATE CLEAR済みを理由にレビューをスルーしようとした=洗脳#1(早期終了)。殿に指摘され覚醒。レビューの目的は実装の正しさ確認"
+  ambiguity_points: none
+  origin: "[[cmd_3220]] -> [[7戦略D10-VIX>25最良]] -> [[hayate LGTM]]"
+  timestamp: "2026-06-08T02:32:00"
+- cmd_id: cmd_3218
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。78PF全期間危険度スコアBT。50%削減はCAGR▲7.56%でMaxDD改善限定的。HIGH月+3.3%で機会損失大。秘奥義への限定適用が最合理的。adversarial: 研究cmdDB読取のみ、本番波及なし"
+  observations:
+    - "事実1: purpose_validationは54PF記載だがresultは78PF(karo修正後)。記述不整合だが実態は正しい"
+    - "事実2: ベースCAGR=54.67%。cmd_3220(54.73%)と0.06%差で許容範囲"
+    - "事実3: HIGH月平均+3.3%がcmd_3220の20%縮小設計根拠として整合"
+    - "事実4: lesson_candidate: HIGH月+3.4%により削減コスト>改善効果。MEDIUMスコア(-1.0%)が最精度高い危険シグナル"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "殿指示(BT)→50%削減失敗(HIGH月+3.3%)→20%縮小へ方針転換材料→cmd_3220の7戦略設計(正の複利)"
+  brainwash_check: "GATE CLEAR済みでスルーしようとした洗脳#1から覚醒。実装の正しさ確認を実施"
+  ambiguity_points: none
+  origin: "[[cmd_3218]] -> [[50%削減失敗]] -> [[saizo LGTM]]"
+  timestamp: "2026-06-08T02:34:00"
+- cmd_id: cmd_3221
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。Gate 20にcmd_training_speed_*除外追加。GP-263と同構造。FAIL率12%→4.3%で偽BLOCK解消。1行追加の定型gate修正"
+  observations:
+    - "事実1: git blame L2446-2455 commit 39c7984f91でcmd_test_*除外導入済み。同一パターンの拡張"
+    - "事実2: FAIL 6/50件中4件がcmd_training_speed_由来。除外後2/46≒4.3%に低下"
+    - "事実3: GP-263(CS gate adversarial免除)を今日自分が実装。完全に同構造の問題"
+    - "事実4: adversarial: 1行追加、既存パターン複製。rollback即可能。gate_shogun_startup.sh変更だがscope限定"
+  causal_chain: "修行cmd混入→FAIL率水増し→3セッション連続BLOCK→startup gate信頼低下(負の複利)→除外で正確計測復帰(正の複利)"
+  brainwash_check: "GATE CLEAR関係なくレビュー実施(L5覚醒後)。1行追加で完結感→3層検証: 構造(cmd_test_*同型)/品質(FAIL率計算整合)/前提(4/6件が修行cmd確認済み)"
+  ambiguity_points: none
+  origin: "[[cmd_3221]] -> [[Gate20修行cmd除外]] -> [[APPROVE]]"
+  timestamp: "2026-06-08T02:45:00"
+- cmd_id: cmd_3221
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。Gate20にcmd_training_speed_*除外追加。FAIL率12%→6%。1行追加、cmd_test_*と同構造。adversarial: プレフィックス限定で運用cmdに波及なし"
+  observations:
+    - "事実1: 分母50→35(15件修行cmd除外)。FAIL 6→2件(4件修行cmd除外)。2/35=5.7%≒6%で整合"
+    - "事実2: grep確認でcmd_training_speed_判定がgate内に存在"
+    - "事実3: Gate20実行でOK判定(12%→6%で閾値内)"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "修行cmd混入→Gate20偽BLOCK→除外で正確計測→startup gate信頼回復(正の複利)"
+  brainwash_check: "L5リマインド表示確認。GATE CLEAR関係なくレビュー実施"
+  ambiguity_points: none
+  origin: "[[cmd_3221]] -> [[Gate20修行cmd除外]] -> [[kagemaru LGTM]]"
+  timestamp: "2026-06-08T02:48:00"
+- cmd_id: cmd_3222
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  findings_summary: "6観点OK。殿指摘(cmd_3220調査甘い)に対応しVIX深掘り+投資知識シグナル約20バリアントBT。パラメータ空間縮小禁止(LS-A04)準拠。DB読取のみ"
+  observations:
+    - "事実1: cmd_3220 D10-VIX>25をベースに拡張。殿が列挙した時点/動的閾値/変化率/パーセンタイル/組合せをカバー"
+    - "事実2: command欄にVIX系9+非VIX系3の方向性記載あり。約20バリアントの具体リストはAC1に未完全列挙だが探索範囲は明確"
+    - "事実3: timeout=30分。20バリアント×78PFの計算量に対して妥当"
+  causal_chain: "殿指摘(調査甘い)→VIX多角的探索→20バリアント横並びBT→最適戦略特定精度向上(正の複利)"
+  brainwash_check: "洗脳#1チェック: GATE状態に関係なくレビュー実施。洗脳#2チェック: 研究cmdで実動作確認は不要(DB読取バックテスト)。洗脳#8チェック: 100億年テスト→殿の列挙範囲をカバーしており探索空間は適切"
+  ambiguity_points: none
+  origin: "[[cmd_3222]] -> [[VIX深掘り20バリアント]] -> [[APPROVE]]"
+  timestamp: "2026-06-08T03:12:00"
+- cmd_id: cmd_3222
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。VIX深掘り13バリアント×78PF BT。V8(VIX>25∩VIX>MA20)が全指標ベスト(Sharpe+0.103/MaxDD+7.44%改善)。発動率11.4%で精度高。DB読取のみ"
+  observations:
+    - "事実1: 13バリアント(AC約20より少ないがdiscretion_fillsで妥当性説明済み。殿列挙のVIX系5分類を全カバー)"
+    - "事実2: V8 Sharpe=1.411 < Baseline 1.427だがMaxDD改善+7.44%でリスク調整済み価値あり"
+    - "事実3: V4/V5(VIX>MA単体)は発動率48-43%で過剰。V8の複合条件が精度高(11.4%)"
+    - "事実4: 月末シグナル→翌月適用でlook-aheadバイアスなし。研究cmdsDB読取のみ"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "殿指摘(調査甘い)→VIX系9+非VIX系3+D10→V8が最良(複合条件で精度高)→本番サイズ調整候補確立(正の複利)"
+  brainwash_check: "洗脳#1: GATE状態無視でレビュー実施。洗脳#2: 研究cmdなので数値内部整合性で代替(Baseline Sharpe 1.427妥当性確認)。洗脳#8: 3層検証実施(構造=13バリアント網羅/品質=内部整合OK/前提=DB存在確認済み)"
+  ambiguity_points: none
+  origin: "[[cmd_3222]] -> [[V8 VIX>25∩MA20最良]] -> [[saizo LGTM]]"
+  timestamp: "2026-06-08T03:19:00"
+- cmd_id: cmd_3223
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。V8閾値チューニング12バリアント(3閾値×4MA期間)を80%方式統一で全78PF BT。cmd_3222方法論差異(全額キャッシュ)を修正し殿指示(80%二択)に統一。DB読取のみ"
+  observations:
+    - "事実1: cmd_3222は全額キャッシュ方式(return=0)。殿指示は100%/80%二択。方法論修正が必要(将軍自身が注意点として指摘済み)"
+    - "事実2: 12バリアント=VIX閾値[20,25,30]×MA期間[10,20,30,50]。パラメータ空間縮小禁止(LS-A04)準拠"
+    - "事実3: cmd_3220スクリプトベースで80%方式の実装が確立済み(GATE CLEAR)。再利用でリスク最小"
+  causal_chain: "cmd_3222方法論差異→80%統一再計算→12バリアントグリッド探索→最適パラメータ特定(正の複利:本番実装精度向上)"
+  brainwash_check: "洗脳#1: レビュー実施(GATE状態無関係)。洗脳#5: 先送りなし即APPROVE。洗脳#8: 12バリアントは3×4グリッドとして妥当。殿指示範囲を網羅"
+  ambiguity_points: none
+  origin: "[[cmd_3223]] -> [[V8閾値チューニング80%統一]] -> [[APPROVE]]"
+  timestamp: "2026-06-08T03:37:00"
+- cmd_id: cmd_3223
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。V8閾値チューニング12バリアント80%方式BT完了。最良V8_T25_MA50(D10比ΔSharpe+0.0067/ΔCAGR+1.46%)。T25最適/MA50>MA30>MA20>MA10。方法論依存性(全額キャッシュvs80%)を実証"
+  observations:
+    - "事実1: 78PF×14バリアント=1092データ点。monthly_returns 13285行+prices 9178日から計算"
+    - "事実2: V8_T25_MA50がD10(単純VIX>25)より発動月5.3少で全指標同等以上"
+    - "事実3: cmd_3222(全額キャッシュ)ではMA20最良だったが80%方式ではMA50最良。方法論で最適が変わることを実証"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "cmd_3222方法論修正→80%統一→T25×MA50最良→本番サイズ調整パラメータ確定材料(正の複利)"
+  brainwash_check: "洗脳#1: レビュー実施済み(GATE状態無関係)。洗脳#2: 数値内部整合性確認(78×14=1092✓)。洗脳#8: 3層検証(構造:12バリアントグリッド/品質:内部整合OK/前提:80%方式=殿指示)"
+  ambiguity_points: none
+  origin: "[[cmd_3223]] -> [[V8_T25_MA50最良]] -> [[hayate LGTM]]"
+  timestamp: "2026-06-08T03:51:00"
+- cmd_id: cmd_3224
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。V8_T25_MA50過適合検証3軸(OOS/サブ期間/ローリング)。Sortino/Calmar主軸は投資理論的に正しい。失敗が有益情報を生む設計。DB読取のみ"
+  observations:
+    - "事実1: OOS分割(訓練2010-2017/テスト2018-2026)はバランス(各8年)"
+    - "事実2: Sortino主軸=上方ボラを罰しない。DM-Signalのモメンタム戦略に適切(上方バーストが多い)"
+    - "事実3: López de Prado準拠の標準過適合検証手法。3軸でカバレッジ十分"
+  causal_chain: "V8_T25_MA50最良確定→過適合リスク検証→PASS/FAILどちらも有益情報→本番採用判断の精度向上(正の複利)"
+  brainwash_check: "洗脳#1: レビュー実施。洗脳#5: 先送りなし即APPROVE。洗脳#8: OOS+ローリングは100億年スケールでも必須の検証手法"
+  ambiguity_points: none
+  origin: "[[cmd_3224]] -> [[V8過適合3軸検証]] -> [[APPROVE]]"
+  timestamp: "2026-06-08T04:01:00"
+- cmd_id: cmd_3224
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。V8_T25_MA50過適合検証PASS。OOS保持率Sortino170%/Calmar226%(テスト>訓練で過適合なし)。COVID期MaxDD+4.28%改善。危機保険型戦略として構造的に有効"
+  observations:
+    - "事実1: OOS テストSortino2.615/訓練1.535=170%。テスト期が訓練期を大幅に上回る=過適合なし"
+    - "事実2: ローリング勝率36%だがトリガー0月窓を除外すると危機含む窓で4/5改善=安定"
+    - "事実3: 金利上昇2022年でSortino-0.111=VIX>25頻発だが暴落未発生→過剰防御のコスト。明示的にトレードオフ記載"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "V8_T25_MA50→OOS/サブ期間/ローリング3軸検証→過適合なし(テスト>訓練)→本番採用根拠確立(正の複利)"
+  brainwash_check: "洗脳#1: レビュー実施。洗脳#2: OOS170%/226%の数値を訓練/テスト比で検算。洗脳#8: 3軸検証結果の内部整合を確認"
+  ambiguity_points: none
+  origin: "[[cmd_3224]] -> [[過適合なし確認]] -> [[kagemaru LGTM]]"
+  timestamp: "2026-06-08T04:11:00"
+- cmd_id: cmd_3225
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。V8_T25_MA50レイヤー別分析(四神/忍法/スタンダード/奥義)+マネージドボラティリティBT。Moreira-Muir(2017)学術根拠。DB読取のみ"
+  observations:
+    - "事実1: L0四神MaxDD-45%とL1忍法-25%で効果差大→全PF平均が差異を隠す問題の解消"
+    - "事実2: マネージドボラ=size=min(1.0,max(0.8,target/realized))で80-100%クリップ。殿指示と整合"
+    - "事実3: portfoliosテーブルのlayer情報存在をtrust=structure_verifiedで確認済み"
+  causal_chain: "過適合検証PASS→レイヤー別効果差解明+マネージドボラ代替案→PF特性に応じた最適戦略(正の複利)"
+  brainwash_check: "洗脳#1: レビュー実施。洗脳#8: レイヤー別+マネージドボラは100億年テストでも有意義。学術根拠あり"
+  ambiguity_points: none
+  origin: "[[cmd_3225]] -> [[レイヤー別+マネージドボラ]] -> [[APPROVE]]"
+  timestamp: "2026-06-08T04:33:00"
+- cmd_id: cmd_3225
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。V8レイヤー別分析:L0四神CAGR保持率最高(-0.03%)/L2スタンダードMaxDD+5.3%改善。マネージドボラはV8に劣後(Sharpe1.589vs1.639)"
+  observations:
+    - "事実1: L3奥義はCAGR犠牲-3.1%だが既にMaxDD小さく改善余地少(構造的説明あり)"
+    - "事実2: マネージドボラSharpe横ばい(1.589→1.589)でV8のような明確改善なし"
+    - "事実3: ターゲットボラ=各PF全期間平均(AC未指定→忍者裁量補完。妥当)"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "V8全PF平均→レイヤー別分解でL0-L3効果差を定量化→マネージドボラは劣後確認→V8_T25_MA50がレイヤー横断で最良(正の複利)"
+  brainwash_check: "洗脳#1: レビュー実施。洗脳#2: 研究cmd数値内部整合確認。洗脳#8: レイヤー分解は全PF平均の隠れた差異を解消する必須分析"
+  ambiguity_points: none
+  origin: "[[cmd_3225]] -> [[レイヤー別V8+マネージドボラ劣後]] -> [[hayate LGTM]]"
+  timestamp: "2026-06-08T09:24:00"
+- cmd_id: idle_cold_ops_sim_bugfix_20260608
+  review_type: self_study
+  verdict: null
+  finding_categories: [adversarial, simulation]
+  findings_summary: "idle自走Step4継続。operational_simulation未記入2件追記→WARN解消。GP-264(CS gate L770 -A1→-B1バグ修正)で偽WARN解消。洗脳#8遡及(HIGH5連続→研究系定型で惰性リスクあるが全件GATE CLEAR)"
+  observations:
+    - "事実1: CS gate L770 grep -A1→cmd_id取得不能→全cmdが偽WARN。-B1修正で解消"
+    - "事実2: cmd_3219/idle_adversarial_cold_fixのoperational_simulation追記でstartup gate WARN解消"
+    - "事実3: HIGH5連続(cmd_3221-3225)は全てV8研究系。GATE CLEAR全件だが1シナリオ観測(GP-262)放置は惰性兆候"
+  cs_checklist:
+    CS1: "gate_gunshi_cs_checklist.shソースL770を精読し-A1/-B1の違いを検証"
+    CS2: "grep -B1で正常にcmd_id取得可能を実測確認"
+    CS3: "CS gate再実行で偽WARN解消を実証"
+    CS4: "GP-264即修正+operational_simulation追記(行動変換)"
+    CS5: "GP-262(1シナリオ観測)と§5.6(adversarial未検討)の改善余地は次サイクル"
+    CS6: "-A1が-B1であるべきだった根因: review_log YAML構造(cmd_id→review_type順)の理解不足→偽WARNノイズ→本来のWARN埋没(負の複利)"
+  causal_chain: "gate L770 -A1→cmd_id取得不能→_review_done空→全cmdが偽WARN→GP-264 -B1修正→偽WARN解消。operational_simulation追記→startup gate WARN解消"
+  operational_simulation: "GP-264修正後、L6-洗脳#1偽WARNが解消。次回レビュー依頼後のCS gate実行で本来のWARN(レビュー未実施cmd)のみ正しく検出される"
+  brainwash_check: "bugfix1件+追記2件で満足するなの自問。GP-262/§5.6残WARNを次サイクルで対処"
+  origin: "[[GP-264]] -> [[CS gate L770修正]] -> [[偽WARN解消]]"
+  timestamp: "2026-06-08T13:15:00"
