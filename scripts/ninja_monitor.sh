@@ -881,7 +881,8 @@ safe_send_clear() {
     # Claude CLIもrespawn-pane -kで再起動する。
     # /clearではCLI内部のCTX%計算が前セッション値を維持しCTX 0%にならない(殿指摘2026-06-08)。
     # respawn-pane -kならCLIプロセス再起動でCTX確実に0%。数秒の起動遅延はCTX不正表示より軽微。
-    # gunshi D0 e2b5a4010で/clearに戻したのが根因。respawn-pane復帰。
+    # bypass permissionsはrespawn後もsettings.jsonのpermissions.allowが維持される(確認済み2026-06-07)。
+    # gunshi D0 e2b5a4010で/clearに戻したのが根因。respawn-pane復帰(e9ae6839a)。
     local _launch_cmd
     _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
     if [ -z "${_launch_cmd:-}" ]; then
