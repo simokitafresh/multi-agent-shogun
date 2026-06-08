@@ -1582,3 +1582,19 @@
   brainwash_check: "bugfix1件+追記2件で満足するなの自問。GP-262/§5.6残WARNを次サイクルで対処"
   origin: "[[GP-264]] -> [[CS gate L770修正]] -> [[偽WARN解消]]"
   timestamp: "2026-06-08T13:15:00"
+- cmd_id: cmd_3226
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。note_draft.sh初回ロード停止バグ修正(ProseMirrorリロード+待機+セレクタ更新)。CDPでDOM実測確認済み。blast radius=note下書きのみ"
+  observations:
+    - "事実1: HEAD時点でPage.reload未実装(q11正確)。disk上のL105-122はsaizo作業中変更"
+    - "事実2: AC2本、timeout20分。CDP操作+リロード待機で妥当"
+    - "事実3: adversarial: 新規記事ページなのでリロードでデータ損失なし。セレクタ誤り→エラー停止(silent fallbackなし)"
+  causal_chain: "noteエディタ変更→ProseMirror未描画→note_draft.sh失敗→リロード+待機ロジック+セレクタ更新で根因解消(正の複利:次回記事も成功)"
+  brainwash_check: "洗脳#1: 全6観点実施。洗脳#8: 覚醒3層(構造/品質/前提)PASS。note.com監視メカニズム不在だがscope外"
+  ambiguity_points: none
+  origin: "[[cmd_3226]] -> [[noteエディタ変更対応]] -> [[APPROVE]]"
+  timestamp: "2026-06-08T13:42:00"

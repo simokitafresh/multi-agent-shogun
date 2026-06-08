@@ -203,7 +203,7 @@ END {
         if (i >= start_draft && !draft_has_ambiguity[i]) {
             ambiguity_missing[++ambiguity_missing_count] = draft_id[i]
         }
-        if (i >= start_draft && draft_obs_count[i] <= 1) {
+        if (i >= start_draft && draft_obs_count[i] <= 1 && draft_id[i] !~ /^cmd_training_speed_/) {
             single_scenario[++single_scenario_count] = draft_id[i]
         }
         if (i >= start_draft && zero_ambiguity && zero_ambiguity_seen[draft_id[i]] == 0) {
