@@ -649,6 +649,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T20:18:36+09:00 btmr93nto toolu_01YUMAaYg2n6SqxarbDYPqxN /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8bee8ae9-ddb7-4d4e-b5be-3e8347 |
 | cmd | `cmd_3219` 修正: /clear後のCTX%が0%にならない(capture-pane旧値書き戻しバグ) |
 | causal | `cmd_3219` origin: [[殿指摘_CTX0%にならない]] -> [[capture-pane旧値書き戻し]] -> [[clear-history追加]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-08T21:13:05+09:00 a86570cce59838452 toolu_01AJmNE4wFinFaZcR7cVkrAD /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2bbee917-1f2e-4d49-a7b |
 | causal_chain | `[[cmd_3142]]` (L735) |
 | causal_chain | `[[cmd_3207]]` (L752) |
 
@@ -1366,7 +1367,7 @@ codd:
 |------|---|
 | id | skill_design_rules |
 | label | Skill設計ルール |
-| aliases | skill design, skill-design, スキル設計, SKILL.md, description 1024, What When NOT When, trigger設計, 誤発火防止, allowed-tools, skill creator, スキルTRIGGER, skill_gate_feedback, skill_auto_improve, スキル自動改善, skill_execution_log, スキル実行ログ, script_refs, スキルスクリプト参照, SKILL.md追従, mtime同期, skill outcome ledger, stumbling point ranking, unused skill exclusion, test source suppression, test_production_divergence, SKILL.md鮮度ゲート, スクリプト参照整合チェック, skill_script_freshness_gate, skill recommend log yamlのデダップ窓が10件と狭く |
+| aliases | skill design, skill-design, スキル設計, SKILL.md, description 1024, What When NOT When, trigger設計, 誤発火防止, allowed-tools, skill creator, スキルTRIGGER, skill_gate_feedback, skill_auto_improve, スキル自動改善, skill_execution_log, スキル実行ログ, script_refs, スキルスクリプト参照, SKILL.md追従, mtime同期, skill outcome ledger, stumbling point ranking, unused skill exclusion, test source suppression, test_production_divergence, SKILL.md鮮度ゲート, スクリプト参照整合チェック, skill_script_freshness_gate, skill recommend log yamlのデダップ窓が10件と狭く, スキルの自動成長, スキル自動成長 |
 | skills | skill-creator, skill-installer |
 | related_concepts | codd_methodology, hook_automation_framework, agent_formation_management, systems_knowledge_base, file_rename, modern_web_guidance |
 
@@ -2006,7 +2007,7 @@ codd:
 |------|---|
 | id | alpha_6_metrics |
 | label | α6指標 |
-| aliases | α6指標, alpha 6, 6指標α, alpha metrics, CAGR, NHF, MaxDD, MRU, Calmar, Avg UWP, ソルティノ, Sortino |
+| aliases | α6指標, alpha 6, 6指標α, alpha metrics, CAGR, NHF, MaxDD, MRU, Calmar, Avg UWP, ソルティノ, Sortino, 6項目でチェック, トータルリターン |
 | skills | なし |
 | related_concepts | dmsignal_operations, production_parity, db_price_data_range |
 
@@ -2436,7 +2437,7 @@ codd:
 | label | ゲート品質統合フレームワーク |
 | aliases | ゲート統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, ゲート偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, クオリティゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, ゲート偽陽性ALERTはバグだな |
 | skills | |
-| related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework, creator_brainwashing_defense, chain_principle, no_auto_extinguish, multi_cli_event_commonization |
+| related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework, creator_brainwashing_defense, chain_principle, no_auto_extinguish, multi_cli_event_commonization, command_files_modified_verification |
 | related_lessons | `L512`, `L079`, `L633` |
 
 | 種別 | パス/参照 |
@@ -2686,7 +2687,7 @@ codd:
 | id | causal_verification_l0_l7 |
 | label | 因果確認L0-L7 |
 | aliases | 因果確認, 因果を確認する, なぜ現在の実装がそうなっているか, 過去の経緯を確認, 設計意図確認, design intent check, past design intent, git log blame確認, 変更前因果確認, L0-L7因果確認, 現在の実装には過去の経緯がある, CLIが違っても通用する仕組み, multi-CLI因果確認, hookに依存しない因果確認, 共通gateで因果確認 |
-| related_concepts | growth_loop, semantic_causal_automation, infra_design_intent, multi_cli_event_commonization, local_memory_db |
+| related_concepts | growth_loop, semantic_causal_automation, infra_design_intent, multi_cli_event_commonization, local_memory_db, command_files_modified_verification |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -3042,3 +3043,5 @@ codd:
 | principle | command欄ファイル参照を3分類: 変更対象/実行のみ/既存依存。件数一致≠中身一致(LG036再発2件) |
 | principle | LGTM→BLOCK時は家老を待たず自己修正(洗脳#3防止。殿厳命2026-06-08) |
 | causal | [[LG036_cmd_3166]] -> [[cmd_3228_再発]] -> [[SG-PRE25自動化]] -> [[L0-L7貫通]] |
+| cmd | `cmd_3157` backfill — | cmd_3157 | command欄の自然言語テキストからファイル参照を過剰抽出し、偵察cmdや自然言語記述のcmdでcommand_files_modified_mismatch BLOCKが |
+
