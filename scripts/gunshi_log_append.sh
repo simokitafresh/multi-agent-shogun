@@ -55,6 +55,14 @@ if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study|consultation)
     fi
 fi
 
+# --- operational_simulation必須(self_study/consultation) --- 先送りWARN 5件遡及: L4貫通
+if [[ "$ENTRY" =~ review_type:[[:space:]]*(self_study|consultation) ]]; then
+    if [[ "$ENTRY" != *"operational_simulation:"* ]]; then
+        echo "BLOCK: operational_simulationが未記入(self_study/consultation)。実運用で何が起きるかのシミュレーション結果を記入せよ(殿指摘2026-05-27)" >&2
+        exit 2
+    fi
+fi
+
 # Append to log file (flock for safety)
 (
     flock -w 5 200 || { echo "ERROR: flock timeout" >&2; exit 1; }
