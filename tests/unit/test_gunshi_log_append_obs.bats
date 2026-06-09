@@ -80,6 +80,7 @@ ENTRY
 - cmd_id: t005
   review_type: report
   verdict: APPROVE
+  brainwash_check: "1/1確認済み 修正前0→修正後1"
   observations:
     - 事実1: テスト実施済み
 ENTRY
