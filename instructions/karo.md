@@ -153,6 +153,7 @@ Timestamp: `date`必須。推測禁止。dashboard=`date "+%Y-%m-%d %H:%M"` / YA
 **Dispatch-then-Stop**: dispatch→inbox_write→(pending cmdあれば次)→stop→ninja完了→wakeup→全scan
 **途中修正≠補足ナッジ**: inbox_writeでの指示変更(AC変更等)は禁止(CLAUDE.md二択)。だが事実情報の補足ナッジ(正しいファイル名通知等)は許容。忍者が間違った前提で作業していたらナッジで補足せよ(LK076)
 **CI待ちで忍者を止めるな**: push後のCI完了待ちは忍者がやる仕事ではない。報告YAMLを先に書かせろ。CI GREEN確認は家老がgh run viewで確認(LK078)
+**gate_alert type別行動(覚醒洗脳監査2026-06-10)**: type=ci_red→即D0修正+push。type=context_freshness→3件以上同パターンなら掲示板CMD起票要請(1件ずつ既読化で止めるな)。type=hook_failure→パターン分析+横展開grep。全typeで「mark_readのみ」は洗脳#1(早期終了)。行動変換(修正/掲示板投稿/grep)まで回せ
 **report_received即処理(LK086)**: 忍者完了報告受信→即座に3アクション実行。溜めるな。分割配備でも独立cmdなら各完了を個別処理:
   (0) **報告YAML 2点確認**(止まるポイント。手順を回すだけで思考が消える防止。LK-A01 v14):
       `grep 'result:.*yes\|result:.*no' queue/reports/{ninja}_report_{cmd}.yaml` でbinary_checks全yesか確認
