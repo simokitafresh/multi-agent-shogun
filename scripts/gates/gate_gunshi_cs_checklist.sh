@@ -816,6 +816,20 @@ if [ -n "$_bw_no_pattern" ]; then
     warn=1
 fi
 
+# --- L6: brainwash_check数値なし検出 — 記入≠検証(LG027横展開) ---
+_bw_no_number=$(tail -200 "$LOG_FILE" 2>/dev/null | awk '
+    /brainwash_check:/ {
+        line=$0
+        if (line !~ /[0-9]+/) no_num++
+        total++
+    }
+    END { if (total >= 5 && no_num > total*0.5) print no_num "/" total }
+')
+if [ -n "$_bw_no_number" ]; then
+    echo "WARN(L6-数値なし): brainwash_checkの${_bw_no_number}件で数値なし。記入率≠検出率(LG027)。修正前→後の数値差分を記載せよ"
+    warn=1
+fi
+
 # --- L6: 洗脳#8検出 — confidence:HIGH連続は自己過信 (殿厳命2026-06-08) ---
 # cmd_3219でHIGHだったが動作未確認だった。HIGH連続は洗脳の証拠
 _high_streak=$(tail -200 "$LOG_FILE" 2>/dev/null | grep 'confidence:' | awk '
