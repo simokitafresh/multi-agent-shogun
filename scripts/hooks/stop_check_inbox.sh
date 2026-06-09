@@ -323,6 +323,17 @@ else
     fi
   fi
 
+  # L4: 家老ALERT未処理検知 — startup gateが設置したpendingフラグをチェック
+  if [[ "$agent_id" == "karo" ]]; then
+    _alert_pending="$SCRIPT_DIR/queue/gates/karo_alert_pending.txt"
+    if [[ -s "$_alert_pending" ]]; then
+      _alert_content="$(head -3 "$_alert_pending" 2>/dev/null | tr '\n' '; ')"
+      _reason="startup gate ALERT未処理: ${_alert_content}ALERTはバグ。根因調査→修正→commitまで回せ。解消したら rm $_alert_pending"
+      jq -n --arg reason "$_reason" '{"decision":"block","reason":$reason}'
+      exit 0
+    fi
+  fi
+
   : > "$idle_flag"
   if [[ -n "$fast_cache" ]]; then
     : > "$fast_cache"
