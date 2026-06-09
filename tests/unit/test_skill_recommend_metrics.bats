@@ -68,6 +68,7 @@ EOF
 }
 
 @test "unobserved recommended skills remain in precision denominator" {
+  # cmd_3255: karo-direct(家老専用)とrecon-dual(家老専用)はkaro互換
   cat > "$SKILL_RECOMMEND_LOG_FILE" <<'EOF'
 recommendations:
 EOF
@@ -77,15 +78,15 @@ EOF
   agent_id: "karo"
   prompt_hash: "hash_${i}"
   recommended_skills:
-  - "report-write"
-  - "hensei"
+  - "karo-direct"
+  - "recon-dual"
 EOF
   done
   cat > "$SKILL_EXECUTION_LOG_FILE" <<'EOF'
 executions:
 - ts: "2026-05-24T18:00:00+0900"
   executor: "karo"
-  skill: "report-write"
+  skill: "karo-direct"
   used: "true"
 EOF
 
@@ -99,13 +100,14 @@ EOF
 }
 
 @test "precision matches recommendations and executions by agent_id" {
+  # cmd_3255: hayateにreport-write(忍者専用)を推薦、saizoが実行→agent不一致でFP
   cat > "$SKILL_RECOMMEND_LOG_FILE" <<'EOF'
 recommendations:
 EOF
   for i in $(seq 1 10); do
     cat >> "$SKILL_RECOMMEND_LOG_FILE" <<EOF
 - ts: "2026-05-24T15:${i}:00+09:00"
-  agent_id: "karo"
+  agent_id: "hayate"
   prompt_hash: "hash_${i}"
   recommended_skills:
   - "report-write"
@@ -114,8 +116,8 @@ EOF
   cat > "$SKILL_EXECUTION_LOG_FILE" <<'EOF'
 executions:
 - ts: "2026-05-24T17:50:00+0900"
-  executor: "karo"
-  skill: "dashboard-update"
+  executor: "hayate"
+  skill: "ninja-commit"
   used: "true"
 - ts: "2026-05-24T18:00:00+0900"
   executor: "saizo"
