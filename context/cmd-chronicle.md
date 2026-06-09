@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-09 -->
+<!-- last_updated: 2026-06-10 cmd_3263 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,33 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2636 | semantic_search.shは手動CLI検索ツール(エージェントが概念検索時に明示的に呼ぶ道具)。hooks登録は不適切。allowlistの道具カテゴリに追加し、startup gateの3セッション連続BLOCKを解消する | infra | 05-10 | config/enforcement_audit_allow |
-| cmd_2638 | gate_vercel_phase.shは壊れたcontext参照を検出するがALERT表示のみ。忍者/家老が手動で修正箇所を探す必要がある(9回BLOCK実績)。壊れ参照検出時に修正候補(存在するファイルからの類似パス提案)を自動表示し、手動探索コストを削減する | infra | 05-10 | gate_vercel_phase.shの壊れたdocs/r |
-| cmd_2637 | gate_skill_script_refs.shが16件のSKILL.mdで参照scriptがSKILL.mdより新しいと検出。大半は共通ライブラリ(yaml_field_set.sh等)の内部変更でインターフェース不変。各SKILL.mdのscript参照を確認し、内容変更が必要ならば更新、不要ならばtouchでmtimeリセット。startup gateの3セッション連続BLOCKを解消する | infra | 05-10 | gate_skill_script_refs.shの要更新ス |
-| cmd_2641 | スクリプト変更後にcodd propagate --updateが手動実行のため設計書/SKILL.mdが陳腐化する(今日のSKILL.md stale 16件の根因)。cmd_complete_gate.sh CLEAR後にcodd propagateを強制的に自動実行し、変更波及先を自動更新する | infra | 05-10 | cmd_complete_gate.shのGATE CLEA |
-| cmd_2642 | CDP(ブラウザ操作)はFE変更の本番確認に有用だが、cmd完了時の自動接続がなく意志依存。FE変更を含むcmdのGATE CLEAR後にCDP自動スクショを実行し、変更が本番に反映されたことを強制的に確認する仕組みを追加する | infra | 05-10 | cmd_complete_gate.shのCLEAR判定直前 |
-| cmd_2643 | gate_context_freshness/gate_lesson_health/gate_knowledge_freshness/gate_silent_fallback/gate_wa_data_quality/gate_p_average_freshnessの6件はALERT検出のみで修正提案がない(Level1)。各gateのALERT出力箇所に修正候補を強制的に自動提案する表示を追加しLevel5化する(gate_vercel_phaseのcmd_2638と同パターン) | infra | 05-10 | gate_knowledge_freshness/gate_ |
-| cmd_2645 | lord_conversation.jsonl(202件)に殿の裁定・方針・指摘が蓄積されているが、cmd起票時に自動検索されない(cmd_save.shに参照0箇所)。cmdのtitle/purposeから殿の関連発言を強制的に自動検索し、殿の過去裁定と矛盾するcmd起票を構造的に防止する | infra | 05-10 | cmd_save.shに殿発言検索INFOを追加し、関連ba |
-| cmd_2644 | cmd ACにchecklist参照がある場合、該当Stepの隣接Step(前後)の制約条件がタスクYAMLに強制的に自動注入されていない。cmd_1397事故(再計算禁止ステップ未転写)の再発防止。deploy_task.shでAC内のchecklist参照を検出→隣接Step制約を自動注入する | infra | 05-10 | deploy_task.sh に inject_checkl |
-| cmd_2646 | 家老がWA記録時にinsightが自動生成されるが、家老自身のstartup gateに表示されない(gate_karo_startup.shに参照0箇所)。家老が生成したinsightが家老に戻らない断絶を解消し、pending件数+直近3件を起動時に強制的に表示する | infra | 05-10 | gate_karo_startup.shにinsights未 |
-| cmd_2647 | cmd-chronicle.md(790行)に全cmd履歴が蓄積されているが、cmd起票時に類似過去cmdが自動検索されない。cmd_save.shでtitle/purposeからcmd-chronicle.mdを強制的に検索し、類似過去cmdをINFO表示する。lord_conversation検索(cmd_2645)と同パターン | infra | 05-10 | cmd_save.shのcmd-chronicle強制検索を |
-| cmd_2650 | robustness-verification-catalog.md、gs-speedup-knowledge.md、dm-signal-terminology.md、training-cycle.mdの4ファイルがdeploy_task.shから注入されていない。purpose/project/task_typeに応じて関連contextパスを強制的にタスクYAMLへ注入するinject_context_hints関数を追加し、4ファイルを一括Level5化する(軍師提案R2残4件を統合) | infra | 05-10 | deploy_task.shにinject_context_ |
-| cmd_2651 | ACに「N条件」「N項目」と書いて具体値を未列挙→忍者が独自判断で補完する問題が98回WARN。WARN時にcmd内のN条件をパースし、関連するcontext/*.md/projects/*.yamlから候補値を強制的に自動提案するLevel5化。軍師提案(blt_20260510_125831) | infra | 05-10 | cmd_save.shのAC数量指定WARNに、関連cont |
-| cmd_2649 | growth-loop.md §11(防御階層Level1-5)は忍者のBLOCK対応に有用だが、instructions/ashigaru.md参照0・deploy_task.sh注入0。忍者は成長ループの構造を知らずにgateBLOCKと格闘している。deploy_task.shでgate関連cmdの忍者タスクYAMLにgrowth-loop.md §11を強制的に自動注入する | infra | 05-10 | deploy_task.shにinject_growth_l |
-| cmd_2652 | DM-Signal本番リポジトリにGitHub Actionsがなく、3583テストファイルがpush前に自動実行されない(Level 0)。pytest自動実行のGitHub Actionsワークフローを追加し、push/PR時にテストが強制的に実行される仕組みを構築する。軍師指摘(blt_20260510_002908): 最大の穴 | dm-signal | 05-10 | GitHub Actions pytest workflow |
-| cmd_2654 | cmd_2652で追加したGitHub Actions CIの初回実行がfailure。9テストファイルがcollection errorで失敗。全9件の根因は同一: scripts/analysis/配下のresearchスクリプトが`import yaml`するがPyYAMLがCI環境にインストールされていない(backend/requirements.txtに未記載)。依存を解決しCI GREENにする | dm-signal | 05-10 | GitHub Actions pytest workflow |
-| cmd_2655 | 殿原則(2026-05-10): WHY/WHAT/WHEN/HOWが最低でもないとループが回転しない。現在のcmd_save.sh q8はWHY+WHATのみ検証。WHEN(いつ発動するか)とHOW(どう機能するか)が欠落しているcmdは設計不完全のまま通過する。q8検証にWHEN/HOWの有無チェックを追加し、殿の原則を環境に埋め込む | infra | 05-10 | cmd_save.shのq8_why_what検査にWHEN |
-| cmd_2656 | cmd_2654でPyYAML追加後もCI failureが継続。残2件のcollection error: test_pipeline_cache_optimization.py(ModuleNotFoundError: dotenv)とtest_ward_two_stage_ew_block.py(ModuleNotFoundError: sklearn)。python-dotenvとscikit-learnをCI依存に追加しGREEN化する | dm-signal | 05-10 | CI pytest依存にpython-dotenv/scik |
-| cmd_2657 | 軍師分析: 教訓when/how充足率=全PJ 0%(dm-signal 696件)。教訓にwhen(いつ適用するか)がない→忍者が適用タイミングを判断できない→教訓参照しても行動に変換されない→L6学習速度低下。useful_count上位20件からwhen/how補完を開始し、教訓の行動変換率を向上させる | infra | 05-10 | dm-signal教訓のhelpful_count上位20件 |
-| cmd_2660 | cmd_2652/2654/2656でcollection error全解消(1422 passed)したがDB依存テスト11件がfailed。根因: GitHub ActionsにPostgreSQLサービスがなくDATABASE_URL未設定。ワークフローにPostgreSQLサービスを追加しDB依存テストを実行可能にする | dm-signal | 05-10 | CI pytest workflowにPostgreSQLサ |
-| cmd_2661 | check_ac_test_scope() FP率66%(3件中2件FP)。grep -v除外パターンが不十分でスコープ済みテストAC(DB依存テスト11件/退行確認/CI固有テスト等)にもWARN発火。累計昇格で将軍cmd起票がBLOCKされる実害あり | infra | 05-10 | check_ac_test_scopeのスコープ済みテスト条 |
-| cmd_2663 | test_cmd_save系テストが個別実行ではPASSするが一括実行(bats --jobs 8)でFAILする。根因: テスト間のグローバル変数/tmpファイル共有による状態汚染。CIでも--jobs 8で実行されるためCI安定性に直結 | infra | 05-10 | cmd_save系5テストの並列実行向け状態隔離を実装 |
-| cmd_2664 | Check16(行動→即確認原則)がYAML multiline block形式のACを検出できない。L3446がdescription:行のみgrepするためAC本文の確認キーワードを見逃す。LS-A22(8)と同一構造のバグ。cmd_2392で他check関数は修正済みだがCheck16は未修正 | infra | 05-10 | Check16がacceptance_criteria配下全 |
-| cmd_2665 | lesson関連BLOCK 43回(50cmd中)。根因: deploy_task.shテンプレートのno_lesson_reasonが空文字、lessons_usefulがnull。忍者が教訓なしの場合でも手動記入が必要→漏れ→BLOCK。cmd_2472(binary_checks/assumption_invalidation prefill)と同パターンの横展開 | infra | 05-10 | 報告テンプレートのlessonデフォルトをgate互換値へ変 |
-| cmd_2666 | skills/dream/SKILL.mdとskills/shogun-teire/SKILL.mdが参照するgate_lesson_health.shより古い。startup gateで3セッション連続WARN→BLOCK昇格。参照スクリプトの変更内容をSKILL.mdに反映する | infra | 05-10 | skills/dream/SKILL.md と skills |
-| cmd_2659 | draft reviewが18件連続SKIP。根因: STALE_FIELDSがacceptance_criteriaを削除→_overwrite_ac_from_cmdがcmdソースからAC再注入を試みるがアーカイブ済みで不在→task YAMLにACなし。cmdソース不在時のfallbackを実装 | infra | 05-10 | deploy_task.shのAC overwrite失敗時fallback |
-| cmd_2662 | gate_report_format.shで直近50cmdにreport_format BLOCK 9回+binary_checks_fail 3回。既存instructions記載済みだがBLOCK継続。配置・強調・記入例の改善でLevel5化し忍者の吸収率を上げる | infra | 05-10 | 忍者instructions Level5化(report_field_set必須+bc例) |
-| cmd_2667 | auto_failure_lesson.shが--status draftで教訓を書くため、cmd_complete_gateが自cmd由来draftを検出→BLOCK→家老がconfirmed昇格→再gate→CLEARの2回gate実行が24回発生。auto_draft_lesson.shは既にconfirmedで書いておりBLOCKしない。同じ構造に統一する | infra | 05-10 | auto_failure_lesson.shをconfirm |
 | cmd_2668 | L6学習速度の自動追跡をstartup gateに組込む。FAIL→PASS遷移率+L6化率を自動算出・表示し、L6化候補を強制提案する | infra | 05-11 | gate_shogun_startup.shにL6学習速度セ |
 | cmd_2669 | LS-A14(進行中計画は即永続化)をL2→L4化。clear_prep_check.shに裁定未反映検出を追加し、未反映裁定がある状態での/clearをBLOCKする | infra | 05-11 | clear_prep_check.shに裁定反映Check1 |
 | cmd_2670 | growth-loop.md §11にL6化済み/未化の完全リストを追記し、L6化の正確な全体像を受動的知識として永続化する | infra | 05-11 | context/growth-loop.md §11にL6化 |
@@ -528,3 +501,4 @@
 | cmd_3254 | startup BLOCK 3セッション連続。useful_rate=3.4%(2/58)。直近6cmdで58件教訓注入のうちuseful2件のみ。根因特定(注入ロジック/タグ精度/フィードバック記録)+低useful教訓のwhen/how改善で有効率を回復する | infra | 06-09 | useful_rate 3.4%の根因=memory_db |
 | cmd_3255 | startup BLOCK 3セッション連続。cmd_3075(重複抑止)/3080(窓拡張)/3244(照合キー修正)で0%→7%に改善したが偽陽性93%(28/30)が残存。残存根因を特定し改善する | infra | 06-09 | skill_recommend.shにrole_marker |
 | cmd_3259 | 覚醒洗脳監査6/8 YES。根因: GATE CLEARで鎖が切れ効果を再確認しない→洗脳#6(出力=仕事)が構造化。cmd_3254 GATE CLEARでuseful_rate+1%なのに完了と報告した。GATE CLEAR受信時にcmdのpurposeから数値改善キーワードを抽出し、効果再確認リマインダーを将軍に強制注入する | infra | 06-09 | post-shogun-inbox-check.shにGAT |
+| cmd_3262 | note_draft.sh がChrome未起動時にPython exit 1でFAILカウントされる。Chrome接続確認をbash層で事前実行し、未起動時はSKIP(exit 0+理由表示)に変換してFAIL率を正常化する | infra | 06-10 | note_draft.shにbash層CDP事前チェック(S |
