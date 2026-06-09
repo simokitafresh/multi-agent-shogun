@@ -902,7 +902,7 @@ found_automation_target = False
 automation_target = ""
 
 for entry in reversed(session_entries):
-    if entry.get("direction") != "response":
+    if entry.get("direction") not in ("response", "outbound"):
         continue
     text = " ".join(
         str(entry.get(key, "") or "")
