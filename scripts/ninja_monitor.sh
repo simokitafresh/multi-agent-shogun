@@ -387,6 +387,58 @@ filter_auto_commit_paths_by_task_scope() {
     done
 }
 
+# cmd_3264: in_progress忍者のtarget_path配下ファイルをauto-commitから除外
+# target_path空の忍者はINFO表示のみで除外しない（除外対象は明示的target_pathのみ）
+filter_exclude_inprogress_ninja_paths() {
+    local clearing_agent="$1"
+    local -a excluded_paths=()
+    local -a excluded_owners=()
+    local ninja_name task_file task_status scope_text _p
+
+    for ninja_name in "${NINJA_NAMES[@]}"; do
+        [ "$ninja_name" = "$clearing_agent" ] && continue
+        task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
+        [ -f "$task_file" ] || continue
+        task_status="$(yaml_field_get "$task_file" "status" "" || true)"
+        case "$task_status" in
+            assigned|acknowledged|in_progress) ;;
+            *) continue ;;
+        esac
+        scope_text="$(auto_commit_scope_paths_for_agent "$ninja_name")"
+        if [ -z "${scope_text//[[:space:]]/}" ]; then
+            log "AUTO-COMMIT-INPROGRESS-INFO: $ninja_name is $task_status but has no target_path (not excluded)"
+            continue
+        fi
+        while IFS= read -r _p || [ -n "$_p" ]; do
+            if [ -n "$_p" ]; then
+                excluded_paths+=("$_p")
+                excluded_owners+=("$ninja_name")
+            fi
+        done <<< "$scope_text"
+    done
+
+    if [ ${#excluded_paths[@]} -eq 0 ]; then
+        cat
+        return 0
+    fi
+
+    local path i
+    while IFS= read -r path || [ -n "$path" ]; do
+        [ -n "$path" ] || continue
+        local matched=false
+        for i in "${!excluded_paths[@]}"; do
+            if [ "$path" = "${excluded_paths[$i]}" ] || [[ "$path" == "${excluded_paths[$i]}/"* ]]; then
+                log "AUTO-COMMIT-INPROGRESS-WARN: excluded $path (belongs to ${excluded_owners[$i]} scope, clearing_agent=$clearing_agent)"
+                matched=true
+                break
+            fi
+        done
+        if [ "$matched" = "false" ]; then
+            printf '%s\n' "$path"
+        fi
+    done
+}
+
 filter_regular_auto_commit_paths() {
     auto_commit_paths_from_status | grep -v -E '^context/[^/]*\.md$' || true
 }
@@ -400,8 +452,8 @@ auto_commit_before_clear() {
     local uncommitted="$2"
     local regular_paths context_paths last_file context_last_file
 
-    regular_paths="$(printf '%s\n' "$uncommitted" | filter_regular_auto_commit_paths | filter_auto_commit_paths_by_task_scope "$agent_name")"
-    context_paths="$(printf '%s\n' "$uncommitted" | filter_context_batch_commit_paths | filter_auto_commit_paths_by_task_scope "$agent_name")"
+    regular_paths="$(printf '%s\n' "$uncommitted" | filter_regular_auto_commit_paths | filter_auto_commit_paths_by_task_scope "$agent_name" | filter_exclude_inprogress_ninja_paths "$agent_name")"
+    context_paths="$(printf '%s\n' "$uncommitted" | filter_context_batch_commit_paths | filter_auto_commit_paths_by_task_scope "$agent_name" | filter_exclude_inprogress_ninja_paths "$agent_name")"
     last_file="$(auto_commit_last_file)"
     context_last_file="$(context_batch_commit_last_file)"
 
