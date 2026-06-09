@@ -5,6 +5,8 @@ setup() {
   TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/skill_recommend_metrics.XXXXXX")"
   export SKILL_RECOMMEND_LOG_FILE="$TEST_TMPDIR/skill_recommend_log.yaml"
   export SKILL_EXECUTION_LOG_FILE="$TEST_TMPDIR/skill_execution_log.yaml"
+  # Disable cutoff filter for existing tests (empty string = no cutoff)
+  export SKILL_RECOMMEND_CUTOFF=""
 }
 
 teardown() {
@@ -170,4 +172,67 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *"recall miss件数: 0"* ]]
   [[ "$output" != *"ALERT: Phase 3"* ]]
+}
+
+@test "cutoff filter excludes pre-cutoff recommendations from measurement" {
+  # cmd_3263: cutoff日より前の推薦はFP計測から除外される
+  cat > "$SKILL_RECOMMEND_LOG_FILE" <<'EOF'
+recommendations:
+- ts: "2026-06-08T23:59:59+09:00"
+  agent_id: "karo"
+  prompt_hash: "old_hash_1"
+  recommended_skills:
+  - "karo-direct"
+- ts: "2026-06-09T00:00:01+09:00"
+  agent_id: "karo"
+  prompt_hash: "new_hash_1"
+  recommended_skills:
+  - "recon-dual"
+EOF
+  cat > "$SKILL_EXECUTION_LOG_FILE" <<'EOF'
+executions:
+- ts: "2026-06-09T01:00:00+0900"
+  executor: "karo"
+  skill: "recon-dual"
+  used: "true"
+EOF
+
+  export SKILL_RECOMMEND_CUTOFF="2026-06-09T00:00:00+09:00"
+  run bash "$PROJECT_ROOT/scripts/skill_recommend_metrics.sh" 30
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"cutoff前1件除外"* ]]
+  [[ "$output" == *"precision率: 100% (1/1)"* ]]
+  [[ "$output" == *"偽陽性率: 0% (0/1)"* ]]
+}
+
+@test "cutoff filter preserves original log data" {
+  # cmd_3263 AC3: 元データが削除されていないことを確認
+  cat > "$SKILL_RECOMMEND_LOG_FILE" <<'EOF'
+recommendations:
+- ts: "2026-05-24T15:00:00+09:00"
+  agent_id: "hayate"
+  prompt_hash: "old_1"
+  recommended_skills:
+  - "report-write"
+- ts: "2026-06-10T10:00:00+09:00"
+  agent_id: "hayate"
+  prompt_hash: "new_1"
+  recommended_skills:
+  - "report-write"
+EOF
+  cat > "$SKILL_EXECUTION_LOG_FILE" <<'EOF'
+executions:
+- ts: "2026-06-10T11:00:00+0900"
+  executor: "hayate"
+  skill: "report-write"
+  used: "true"
+EOF
+
+  export SKILL_RECOMMEND_CUTOFF="2026-06-09T00:00:00+09:00"
+  run bash "$PROJECT_ROOT/scripts/skill_recommend_metrics.sh" 30
+
+  [ "$status" -eq 0 ]
+  # 元ログファイルにcutoff前のエントリが残っていることを確認
+  grep -q "2026-05-24" "$SKILL_RECOMMEND_LOG_FILE"
 }
