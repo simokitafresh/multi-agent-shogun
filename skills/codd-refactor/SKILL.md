@@ -54,7 +54,7 @@ bashスクリプトのリファクタリングを、データ駆動で設計→�
 _fail=0
 export PATH="/home/simokitafresh/.codd-venv/bin:$PATH"
 command -v codd >/dev/null 2>&1 || { echo "BLOCK: codd未インストール。export PATH=/home/simokitafresh/.codd-venv/bin:$PATH"; _fail=1; }
-codd --version | grep -qE '^codd, version 2\.18\.' || { echo "BLOCK: codd v2.18.xが必要。pip install --upgrade codd-dev"; _fail=1; }
+codd --version | grep -qE '^codd, version 2\.(18|19)\.' || { echo "BLOCK: codd v2.18.x以上が必要。pip install --upgrade codd-dev"; _fail=1; }
 command -v bats >/dev/null 2>&1 || { echo "BLOCK: bats未インストール。npm i -g bats"; _fail=1; }
 command -v parallel >/dev/null 2>&1 || { echo "BLOCK: parallel未インストール。apt install parallel"; _fail=1; }
 [ "$_fail" -eq 1 ] && return 1
@@ -138,7 +138,7 @@ done
 codd validate 2>/dev/null || true
 ```
 
-v2.18.0で`codd implement run --language`オプションをローカル確認済み。bashリファクタでも`codd implement run --language bash --enable-typecheck-loop`で実装生成を試みよ。失敗時はCoDDを設計書・依存グラフ・伝播に使い、Phase 4の実装は手動で行う。
+v2.18.0+で`codd implement run --language`オプションをローカル確認済み(v2.19.0動作確認済)。bashリファクタでも`codd implement run --language bash --enable-typecheck-loop`で実装生成を試みよ。失敗時はCoDDを設計書・依存グラフ・伝播に使い、Phase 4の実装は手動で行う。
 
 ## Phase 4: 実装（1つずつ→テスト→次）
 

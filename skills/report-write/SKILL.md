@@ -10,7 +10,7 @@ description: |
   DO NOT TRIGGER: 報告YAMLの読み取り（→Read tool直接）、verdict判定（→/verdict-check）、commit（→/ninja-commit）
 ---
 
-<!-- script_refs_checked_at: 2026-06-05T19:21:10+09:00 -->
+<!-- script_refs_checked_at: 2026-06-09T09:25:00+09:00 -->
 
 # /report-write — 報告YAML作成スキル
 
@@ -111,6 +111,11 @@ bash scripts/report_field_set.sh "$REPORT" result.summary "作業結果の1行�
 bash scripts/report_field_set.sh "$REPORT" assumption_invalidation "none"
 
 # 8. lessons_useful（注入済み教訓のうち有用だったもの）
+# ★ 全体上書きは既存件数より少ない場合BLOCKされる(06f5a0856)。
+#    テンプレート注入済み教訓が消えるため。個別書込みを推奨:
+#    bash scripts/report_field_set.sh "$REPORT" "lessons_useful.0.useful" "true"
+#    bash scripts/report_field_set.sh "$REPORT" "lessons_useful.0.feedback" "具体的に何が役立ったか"
+# 全体書込みする場合はテンプレート注入済み件数以上のリストを渡すこと。
 bash scripts/report_field_set.sh "$REPORT" "lessons_useful" "[{id: L123, useful: true, feedback: '具体的に何が役立ったか'}]"
 
 # 9. lesson_candidate（新たな発見）
@@ -297,5 +302,4 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_field_set.sh` の現行契約を再確認。lessons_useful空リスト、binary_checks空欄、status pending、summary空欄はgate_report_format.shでBLOCKされるため提出前に必ずgateを通す。
 Script refs verified: 2026-06-08 9a1c5df09. `report_field_set.sh` のfiles_modified autofixがスペース区切り複数パス（拡張子or/を含む2+トークン）を検出し個別dict変換する。files_modifiedをスペース区切り文字列で渡しても正しくlist of dict化される。推奨形式（YAML list）への影響なし。
-
-<!-- script_refs_checked_at: 2026-06-08T21:13:40+09:00 -->
+Script refs verified: 2026-06-09 06f5a0856. `report_field_set.sh` にlessons_useful全体上書きBLOCKガード追加。テンプレート注入済み件数より少ないリストで全体上書きすると拒否される。個別per-item書込み(`lessons_useful.0.useful true`等)を推奨。Step 2のコメントに制約注記済み。

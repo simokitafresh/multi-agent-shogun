@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-08T21:13:40+09:00 -->
+<!-- script_refs_checked_at: 2026-06-09T09:25:00+09:00 -->
 
 # /karo-direct — 家老自立配備スキル
 
@@ -117,3 +117,4 @@ bash scripts/deploy_task.sh --direct <ninja_name> cmd_training_L4_r<round>_<ninj
 Script refs verified: 2026-06-07 cmd_3206. `deploy_task.sh` はearly target判定・field_getログ抑制など速度修行の内部高速化が入ったが、karo_directで使う `--yaml <yaml_file> <ninja>` とtraining用 `--direct <ninja> <cmd_training_...>` の契約は変更なし。DIRECT_MODEでは既存task YAMLのtraining parent_cmd補修をスキップし、`--direct`が注入するcmd_id/parent_cmdを正本にする。`yaml_field_set.sh` のlock path高速化もI/F変更なし。SKILL.md記載の配備方式は現行と一致。
 Script refs verified: 2026-06-05 cmd_3146/cmd_3144. `deploy_task.sh` はlesson injectionで対象project外の教訓を除外し、platform project教訓のみ横断許可する(project filter)。これは注入精度の変更であり、`--yaml`/`--direct`配備手順変更なし。`deploy_task.sh` 直近変更(670918b3)は`draft_review_already_completed()`関数追加によるdraft review重複通知防止(内部追加のみ、配備手順変更なし)。SKILL.md記載の`--yaml`/`--direct`呼び出し方法は現行と一致。
 Script refs verified: 2026-06-08 ceb10419a cmd_3231. `deploy_task.sh` はtarget_pathなし時にMIN_KEYWORD_SCOREを8へ引上げ、tag fallbackを無効化(低関連教訓のNOT_USEFUL量産防止)。注入精度の変更であり、`--yaml`/`--direct`配備手順変更なし。
+Script refs verified: 2026-06-09 e72eb99d4+3de0d29cc. `deploy_task.sh` はinject_semantic_conceptsで推薦ログにninja_nameフィールドを記録(precision照合キー修正)。`yaml_field_set.sh` はskip_childrenがYAMLリスト要素(`- `始まり)を見逃すバグ修正。いずれも内部変更であり、`--yaml`/`--direct`配備手順変更なし。

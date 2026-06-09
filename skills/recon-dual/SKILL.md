@@ -9,7 +9,7 @@ description: |
 quality_metric: "当該スキルで配備した偵察2名タスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-08T21:13:40+09:00 -->
+<!-- script_refs_checked_at: 2026-06-09T09:25:00+09:00 -->
 
 Script refs verified: 2026-06-07 cmd_3206. `deploy_task.sh` の直近速度修行変更はearly target判定・ログ抑制など内部処理で、1人目の正規配備 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目の `--yaml` 配備契約は変更なし。DIRECT_MODE専用のtraining parent_cmd補修スキップはrecon-dualのscout/`--yaml`経路に影響しない。`yaml_field_set.sh` はlock path高速化のみ。SKILL.md記載の偵察2名配備手順は現行と一致。
 
@@ -58,3 +58,4 @@ bash scripts/deploy_task.sh --yaml /tmp/recon2_<ninja2>.yaml <ninja2>
 
 Script refs verified: 2026-06-05 cmd_3146/cmd_3144. `deploy_task.sh` はlesson injectionで対象project外の教訓を除外し、platform project教訓のみ横断許可する(project filter)。これは注入精度の変更であり、偵察2名配備の手順変更なし。`deploy_task.sh` 直近変更(670918b3)はdraft review重複通知防止(内部追加のみ)。`yaml_field_set.sh` 直近変更(670918b3)はsingle-quoteエスケープ修正(内部バグフィックス)。SKILL.md記載の1人目正規配備+2人目--yaml配備手順は現行と一致。
 Script refs verified: 2026-06-08 ceb10419a cmd_3231. `deploy_task.sh` はtarget_pathなし時にMIN_KEYWORD_SCOREを8へ引上げ、tag fallbackを無効化(低関連教訓のNOT_USEFUL量産防止)。注入精度の変更であり、偵察2名配備の手順変更なし。
+Script refs verified: 2026-06-09 e72eb99d4+3de0d29cc. `deploy_task.sh` はinject_semantic_conceptsで推薦ログにninja_nameフィールドを記録(precision照合キー修正)。`yaml_field_set.sh` はskip_childrenがYAMLリスト要素を見逃すバグ修正。いずれも内部変更であり、偵察2名配備の手順変更なし。
