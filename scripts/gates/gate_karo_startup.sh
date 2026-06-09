@@ -1498,4 +1498,5 @@ if [ ${#alerts[@]} -gt 0 ]; then
     for a in "${alerts[@]}"; do
         echo "  ⚠ $a"
     done
+    echo "  ★ ALERT=バグ。「確認した」で閉じるな。根因調査→修正→commitまで回せ(洗脳#6防止)"
 fi

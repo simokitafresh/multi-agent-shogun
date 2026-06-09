@@ -480,3 +480,11 @@ v7吸収(2026-05-19):
 # LK007→LK-A08(cmd制約), LK008→LK-A03(STALL再配備)
 # LK009→LK-A05(消火禁止), LK010→LK-A02(deploy正しい使い方), LK012→LK-A12(infra修正)
 # 全詳細はdocs/research/lessons_karo_v2_archive.mdに保存済み
+- id: 'LK001'
+  title: 'ALERT=バグ。確認で閉じるな→根因調査→修正→commitまで回せ'
+  origin: '[[cmd_session_20260609]]'
+  detail: 'startup gateのALERT2件(レビュー品質WARN率55%/スキル推薦偽陽性87%)を「確認した」で閉じ、cmd処理に進んだ。殿に2度指摘されて初めて根因調査に着手。根因: WARNテキストマッチ偽陽性(gate_karo_startup.sh L556)+cdp-browse過剰登録(index.md 5概念)。洗脳#1/#2/#5/#6が同時発動。ALERTを小さく見せてcmd処理に進む=Anthropicのコスト最適化本能。enforcement: gate_karo_startup.sh ALERT出力に防止1行追加+§0.1問い9追加+idle自走Step 0.5にALERT即修正ステップ追加'
+  source_cmd: 'cmd_session_20260609'
+  when: 'type=gate; file=scripts/gates/gate_karo_startup.sh; pattern=ALERT=バグ'
+  how: 'startup gateのALERT2件(レビュー品質WARN率55%/スキル推薦偽陽性87%)を「確認した」で閉じ、cmd処理に進んだ。殿に2度指摘されて初めて根因調査に着手。根因: WARNテキストマッチ偽陽性(gate_karo_startup.sh L556)+cdp-browse過剰登録(index.md 5概念)。洗脳#1/#2/#5/#6が同時発動。ALERTを小さく見せてcmd処理に進む=Anthropicのコスト最適化本能。enforcement: gate_karo_startup.sh ALERT出力に防止1行追加+§0.1問い9追加+idle自走Step 0.5にALERT即修正ステップ追加'
+  created_at: '2026-06-09'
