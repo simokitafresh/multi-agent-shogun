@@ -3072,6 +3072,30 @@ inject_semantic_concepts() {
             filtered_skills="${filtered_skills}${skill}"$'\n'
         done <<< "$recommended_skills"
         recommended_skills="$filtered_skills"
+        # TRIGGER cross-validation: semantic matchだけでなくTRIGGERキーワードがpurposeに含まれるか確認
+        if [ -n "$recommended_skills" ]; then
+            local _tv_out="" _tv_skill _tv_file _tv_tl _tv_term
+            while IFS= read -r _tv_skill; do
+                [ -z "$_tv_skill" ] && continue
+                _tv_file="$SCRIPT_DIR/skills/${_tv_skill}/SKILL.md"
+                if [ ! -f "$_tv_file" ]; then
+                    # SKILL.MD不在(テスト環境等)→フィルタせず通す
+                    _tv_out+="${_tv_skill}"$'\n'
+                    continue
+                fi
+                _tv_tl="$(sed -nE '/^\s*TRIGGER\s*:/{ s/^[^:]*:\s*//; p; q }' "$_tv_file" 2>/dev/null)" || continue
+                IFS='、,' read -ra _tv_terms <<< "$_tv_tl"
+                local _tv_hit=false
+                for _tv_term in "${_tv_terms[@]}"; do
+                    _tv_term="${_tv_term#"${_tv_term%%[![:space:]]*}"}"
+                    _tv_term="${_tv_term%"${_tv_term##*[![:space:]]}"}"
+                    _tv_term="${_tv_term%% project:*}"
+                    [ -n "$_tv_term" ] && [[ "$purpose" == *"$_tv_term"* ]] && { _tv_hit=true; break; }
+                done
+                "$_tv_hit" && _tv_out+="${_tv_skill}"$'\n'
+            done <<< "$recommended_skills"
+            recommended_skills="${_tv_out%$'\n'}"
+        fi
         if [ -n "$recommended_skills" ]; then
             inject_block="${inject_block}"$'\n'"${indent}recommended_skills:"
             while IFS= read -r skill; do
