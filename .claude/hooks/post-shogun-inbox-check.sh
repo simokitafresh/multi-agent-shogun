@@ -77,6 +77,34 @@ if [ -f "$LORD_CONV" ]; then
     }' 2>/dev/null)
 fi
 
+# ─── GATE CLEAR 効果再確認リマインダー（cmd_3259: 洗脳#6構造防止） ───
+# 未読gate_clearメッセージから数値改善目的のcmdを検出し、効果検証リマインダーを強制注入
+EFFECT_REMIND=""
+if [ "${UNREAD:-0}" -gt 0 ]; then
+    _STKY="${SHOGUN_TO_KARO_PATH:-/mnt/c/tools/multi-agent-shogun/queue/shogun_to_karo.yaml}"
+    if [ -f "$_STKY" ]; then
+        _gc_cmds=$(awk '
+            /^- /{ if(gc&&ur&&c){ if(match(c,/cmd_[0-9]+/)) print substr(c,RSTART,RLENGTH) } gc=0;ur=0;c="" }
+            /type:.*gate_clear/{ gc=1 } /read: false/{ ur=1 }
+            /content:.*GATE CLEAR/{ s=$0; sub(/.*content:[[:space:]]*\047?/,"",s); sub(/\047?[[:space:]]*$/,"",s); c=s }
+            END{ if(gc&&ur&&c){ if(match(c,/cmd_[0-9]+/)) print substr(c,RSTART,RLENGTH) } }
+        ' "$INBOX" 2>/dev/null)
+        for _gc_cmd in $_gc_cmds; do
+            _purpose=$(awk -v cmd="$_gc_cmd" '
+                /^  [a-zA-Z_].*:$/{ k=$0; gsub(/^[[:space:]]+|:[[:space:]]*$/,"",k); f=(k==cmd) }
+                f && /purpose:/{ sub(/.*purpose:[[:space:]]*"?/,""); sub(/"[[:space:]]*$/,""); print; exit }
+            ' "$_STKY" 2>/dev/null)
+            [ -z "$_purpose" ] && continue
+            _hi=$(printf '%s' "$_purpose" | grep -cE '改善|向上|削減|短縮|高速化|最適化|増加|減少|improve|optimize|reduce|increase|boost' 2>/dev/null) || _hi=0
+            _hm=$(printf '%s' "$_purpose" | grep -ciE '精度|率|rate|precision|recall|accuracy|速度|speed|件数|count|偽陽性|FP|useful|score|スコア' 2>/dev/null) || _hm=0
+            if [ "$_hi" -gt 0 ] && [ "$_hm" -gt 0 ]; then
+                _kws=$(printf '%s' "$_purpose" | grep -oE '改善|向上|削減|短縮|高速化|最適化|精度|率|useful|speed|precision|recall|accuracy|score|偽陽性' 2>/dev/null | sort -u | tr '\n' ',' | sed 's/,$//')
+                EFFECT_REMIND="${EFFECT_REMIND:+${EFFECT_REMIND}\\n}⚠効果再確認: ${_gc_cmd}は数値改善目的(${_kws:-metrics})。計測スクリプト再実行で修正前→後の差分を確認せよ。例: bash scripts/gates/gate_shogun_startup.sh"
+            fi
+        done
+    fi
+fi
+
 # 出力組立て
 MSG=""
 if [ "${RECOVERY_STALE:-}" = "1" ]; then
@@ -87,6 +115,9 @@ if [ "${UNREAD:-0}" -gt 0 ]; then
 fi
 if [ -n "$LORD_LAST" ]; then
     MSG="${MSG:+${MSG}\\n}★確認すべき事: ${LORD_LAST}"
+fi
+if [ -n "$EFFECT_REMIND" ]; then
+    MSG="${MSG:+${MSG}\\n}${EFFECT_REMIND}"
 fi
 
 [ -n "$MSG" ] && printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"%s"}}\n' "$MSG"
