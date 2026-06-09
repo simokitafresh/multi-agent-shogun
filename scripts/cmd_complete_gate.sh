@@ -3165,7 +3165,11 @@ with open(impact_file, "r", newline="", encoding="utf-8") as f:
     for row in reader:
         # Strip CR from all field values and skip empty rows
         for k in list(row.keys()):
-            row[k] = (row[k] or "").strip("\r")
+            v = row[k]
+            if isinstance(v, str):
+                row[k] = v.strip("\r")
+            elif v is None:
+                row[k] = ""
         row_cmd_id = (row.get("cmd_id") or "").strip()
         row_lesson_id = (row.get("lesson_id") or "").strip()
         # Skip empty rows (no cmd_id and no lesson_id)
