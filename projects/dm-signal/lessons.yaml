@@ -995,6 +995,9 @@ lessons:
   - scripts/analysis/gs_grid_robustness.py
   - outputs/robustness/20260428/L0/
   origin: '[[cmd_2357]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-09'
 - id: L666
   title: ACはWHAT(二値判定)のみ記載。HOW(検証手法)を混入させるな
   summary: ACには達成基準(WHAT=二値で判定できる完了条件)のみ書く。HOW(具体的な検証手法・実装方法)はtask YAML分解時に家老が決める領域。軍師のcmdレ
@@ -1224,6 +1227,9 @@ lessons:
   - /mnt/c/Python_app/DM-signal/outputs/cmd_2291_measurements.json
   - /mnt/c/Python_app/DM-signal/outputs/cmd_2291_measurements/
   origin: '[[cmd_2291]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L652
   title: context §0のL2体数・L3状態・四神体数が実態と乖離しており更新が必要
   summary: context/dm-signal-core.md §0のL2「12体登録」は実態20体、L3「未着手」は奥義-SSS21体存在、四神「重複吸収後10体」は実態
@@ -1515,7 +1521,7 @@ lessons:
   origin: '[[cmd_1988]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-09'
+  last_referenced: '2026-06-10'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L632
@@ -1698,6 +1704,9 @@ lessons:
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_validation.yaml
   origin: '[[cmd_1877]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L622
   title: filter-repo --invert-pathsはワーキングツリーファイルも削除する — バックアップ必須
   summary: filter-repo --invert-pathsはgit履歴だけでなくワーキングツリーのファイルも削除する。大ファイルgit除去前にローカルバックアップ必須
@@ -1990,7 +1999,7 @@ lessons:
   origin: '[[cmd_1845]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L602
   title: 'cmd_1844 oikaze MaxDD champion ID誤記: N2→N4(20体GSで subset=2の誤記)'
   summary: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661_10M_N2_R1 はokugi_shin_ninpo_20body '
@@ -2724,7 +2733,7 @@ lessons:
   origin: '[[cmd_karo_batch_R5]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L549
@@ -2739,7 +2748,7 @@ lessons:
   retired: true
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L548
   title: bulk metrics RFはPFごとの月次軸で解決せよ
   summary: DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。
@@ -2803,6 +2812,9 @@ lessons:
   target_files:
   - context/dm-signal-research.md
   origin: '[[cmd_1707]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L543
   title: numpy cumsum rolling windowでBipower Variationをベクトル化すると50x高速化
   summary: Lee-Mykland(2008) jump detectionのBV計算はPythonループで各t点のlocal window sum。bv_products
@@ -3222,7 +3234,7 @@ lessons:
   origin: '[[cmd_1508]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-09'
 - id: L509
   title: target_pathのservices/jobs不一致に注意
   summary: タスクYAMLのtarget_pathがjobs配下だったが実際はservices配下。target_path_warningを先に確認すべき
@@ -3412,7 +3424,7 @@ lessons:
   origin: '[[cmd_1413]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-09'
 - id: L496
   title: Stock Data API economic endpoint has 1000 record limit
   summary: Stock Data API /v1/economic/{symbol} returns max 1000 records per request.
@@ -3559,7 +3571,7 @@ lessons:
   origin: '[[cmd_1353]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L487
@@ -3678,7 +3690,7 @@ lessons:
   origin: '[[cmd_1271]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L479
@@ -4435,6 +4447,9 @@ lessons:
   - outputs/analysis/cmd_1106_parity_analysis.csv
   - outputs/analysis/cmd_1106_parity_analysis.py
   origin: '[[cmd_1106]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L425
   title: シン四神v2パリティ不一致の95%はRC4解像度差異
   summary: 完全月にも不一致が残る(92.2%)。partial/MTD月はわずか7件。主因はPI-001の日次vs月次解像度差異で、リバランス周期(2-3ヶ月)単位のブロ
@@ -4587,6 +4602,9 @@ lessons:
   - outputs/analysis/cmd_1078_screening_DM7P_RXLU.csv
   - scripts/analysis/cmd_1078_dm7p_rxlu_redo.py
   origin: '[[cmd_1078]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L414
   title: DM7+ 24M RXLU CPCV Max_Run-up PBO=1.0
   summary: DM7+ 24M lookbackをRXLU固定でCPCV検定するとMax_Run-up PBOが1.0になりやすい。24M窓は変化が極めて緩慢でCPCVの短期
@@ -4894,6 +4912,9 @@ lessons:
   - docs/research/core-local-analysis.md
   - docs/research/ops-procedures.md
   origin: '[[cmd_1035]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L389
   title: PeriodIndex.to_timestamp(how='end')は23:59:59.999を生成し月末フィルタでoffset。normalize()で00:00:00化が必要
   summary: PeriodIndex.to_timestamp(how='end')は月末23:59:59.999999を生成。本番blockが<= pd.Timestamp
@@ -5600,6 +5621,9 @@ lessons:
   when: 忍法15体をmonthly_returnsベースで横断分析する
   how: 分身-{モード}の名義実在を先に確認し、欠落時は同一モード4四神のSynthetic EW4 fallbackをレポートに明記せよ
   origin: '[[cmd_1010]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-09'
 - id: L337
   title: p̄は退避シグナル(p̄≥0.3→キャッシュ)としても機能しない。Sharpe勝率0/192全敗。MaxDD改善(62%)はキャッシュ比率増の自明な帰結。cmd_1005-1009の5連敗により、p̄の月次戦術的運用は選出・退避いずれでも有効性なし
   summary: cmd_1009 12体×16mpf=192パターン検証
@@ -5948,7 +5972,7 @@ lessons:
   origin: '[[cmd_962]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L309
   title: static export(output:'export')アプリでは<Link>SPA遷移を使うな — window.location.hrefで統一せよ
   summary: Next.js 14.x App Router + output:'export'環境では、<Link>によるclient-side navigation(RS
@@ -6091,6 +6115,9 @@ lessons:
   - docs/research/knowledge-base/preprocessing/financial-data-analysis.md
   - docs/research/knowledge-base/preprocessing/fractional-differentiation.md
   origin: '[[cmd_861]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L300
   title: バッチ手法追加は新バッチ並走が安全
   summary: 既存安定稼働バッチに手法を追加するより新バッチとして並走させる方が安全。deterioration_batch(244行)は触らずpersistence_bat
@@ -6107,6 +6134,9 @@ lessons:
   - docs/research/knowledge-base/preprocessing/financial-data-analysis.md
   - docs/research/knowledge-base/preprocessing/fractional-differentiation.md
   origin: '[[cmd_861]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-09'
 - id: L299
   title: GS shared metricsとrunner CSV metricsが別系統だとdrift
   summary: grid_search_metrics_v2.pyとrun_077_*は同じSharpe系指標を別々に計算。PSR/DSRのような統計推論指標を入れる時、片方だ
@@ -6442,6 +6472,9 @@ lessons:
   when: CDPでproduction viewer pagesのreload時間やready状態を計測する時
   how: '`h1`など固定selectorではなく、認証壁・封鎖ページ・ページ固有DOMを確認してviewer実DOMに対応したready判定を設定する'
   origin: '[[cmd_852]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L273
   title: live API完全一致監査はcurrent partial monthを凍結or除外しないと日次更新ノイズで誤FAIL化する
   summary: cmd_856で/api/signalsは91PF全件一致だが、/api/monthly-returnsと/api/performanceは15/15PFで不一
@@ -8272,7 +8305,7 @@ lessons:
   origin: '[[cmd_277]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L116
   title: PF間の相関構造特徴量はエッジ崩壊予測に寄与しない
   summary: PF間のローリング相関/リード・ラグ/同時崩壊カウントを20特徴量追加しても改善なし。single_pf(0.111)≈single_pf+crossPF(0.
@@ -8300,6 +8333,9 @@ lessons:
   when: DM3などで複数の高相関モデル出力をスタッキングしてprecision改善を狙う時
   how: best base modelを基準にOOF確率の相関とメタ学習後precisionを比較し、改善しなければ単体モデルを採用する
   origin: '[[legacy_lesson_L114]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-09'
 - id: L113
   title: ターゲット再定義は予測タスクの性質を変えるがSNR限界は克服しない
   summary: IF C2-Bの22特徴量で予測対象を4種に変更時 THEN C2-Bの22特徴量で予測対象を4種に変更 C2-Bの22特徴量で予測対象を4種に変更。Drawd
@@ -8606,7 +8642,7 @@ lessons:
   origin: '[[cmd_218]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-09'
+  last_referenced: '2026-06-10'
 - id: L087
   title: kasoku長lookback(12M/24M)でGS-本番初期化期間差異が発生する
   summary: IF 本番は504日分の日次データが揃うまでCash(≈0%リターン)時 THEN 本番は504日分の日次データが揃うまでCash(≈0%リターン)

@@ -118,10 +118,12 @@ lessons:
     cmd_save.sh Session Stateが同一WARN 2回目以降で検出ロジックを自動表示。
     殿の定義: BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉。
     将軍の自走=鎖の中。F004(polling禁止)を過剰解釈し殿入力なしに動けなかった。GATE CLEAR後の定型アクションはpolling loopではない(cmd_2744)
-  source_ids: [LS044, LS078, LS083, LS096, LS031]
+    preflight確認10問は読むな実行せよ。表示=読了ではない。12cmd連続BLOCKでpreflight/BLOCK TOP3が毎回表示されていたが1度も実行しなかった(cmd_3242)。品質最大化=速度ではなくpreflight実行→0 BLOCK
+    GATE CLEAR後に殿待ちで停止するな=洗脳#3+#5複合。insightキュー/掲示板要請/裁定反映が残っているのに「次の指示を待つ」はPhase7未到達(cmd_3261セッション)。post-shogun-inbox-check.shに自走チェック注入で強制表示(L5)
+  source_ids: [LS044, LS078, LS083, LS096, LS031, LS042]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'cmd_save.sh Session State(GP-201: 過去BLOCK履歴自動表示+検出ロジック表示)+environment_change強制'
+  enforcement: 'cmd_save.sh Session State(GP-201: 過去BLOCK履歴自動表示+検出ロジック表示)+environment_change強制+post-shogun-inbox-check.sh自走チェック(L5: insightキュー+掲示板action_required強制表示)'
 
 # === クラスタ4: gate迂回・先走り ===
 - id: LS-A07
@@ -172,7 +174,9 @@ lessons:
     (12)hookのガード条件をgrepで確認すれば1分で解決。確認しないから72分かかった(cmd_2898)。cmd_publish.sh exit 1後にフリーズ→L11にcmd_save.shしかないことを確認すれば即修正可能だった
     (13)実行順バグ調査時は設計意図カタログ([[infra_design_intent]])を先に照合せよ。一見不合理な設計には事故歴がある(殿指摘2026-06-07)。想像で構造推論→修正提案はPhase2(出力=仕事)+車輪原則違反。workarounds/ログから実事故→因果たどりが正しいアプローチ
     (14)前セッション発言の時系列・文脈・ターゲット未確認でパターンマッチ反応(cmd_session_20260604)。★確認すべき事リストの時系列マーカー+[済]追跡で構造予防
-  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046]
+    (15)FTS5スキーマ未確認で遡及充填を推薦(cmd_session_20260608)。配管(書込み)は見たがスキーマ(検索構造)を見ていない。道具を語る前にスキーマ1行読め
+    (16)grep単一キーワードで0件→未実装と断定(cmd_3249)。複数キーワード(機能名+目的語+関連概念)でgrepし、0件でも関連セクション通読せよ
+  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)+q11_existing_alternative Guard一覧自動表示(cmd_2863)+post-bash-combined.sh cmd_publish hook(cmd_2898)'
@@ -305,7 +309,8 @@ lessons:
     (2)原理1行>各論パッチ。新しい箱を作るな既存を磨け
     (3)検証済み空間の中でだけ推論せよ(無知の知)。事実のみ報告、方法論の機械適用も同根
     (4)インフラバグ調査時は[[infra_design_intent]]カタログを先に照合(殿指摘2026-06-07)。一見不合理な設計には事故歴がある。修正提案の前に時系列の因果をたどれ
-  source_ids: [LS008, LS009, LS012, LS015, LS036]
+    (5)既存仕組みに乗せよ。新閾値/新概念追加は洗脳#4(緩い設計)の変形。safe_send_clearを呼ぶだけで解決する場面で50%閾値を新設した(cmd_3211)。100億年スケールで勝つ構造=既存の組合せ
+  source_ids: [LS008, LS009, LS012, LS015, LS036, LS041]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'cmd_save.sh q11(BLOCK)+q5(BLOCK)+q10(WARNING)+MCP L-FactOnly+gunshi review因果推論ルール LG023'
@@ -509,55 +514,27 @@ lessons:
 # LS044: superseded by LS-A09(14) (パターンマッチ反応=現物確認。2026-06-07統合)
 # LS045: superseded by LS-A11 (stdin crash+export -f漏れ=infraバグ修正。2026-06-07統合)
 # LS046: superseded by LS-A11 (export -f漏れ=infraバグ修正。2026-06-07統合)
-- id: 'LS041'
-  title: '既存仕組みに乗せよ。新しい閾値/概念を追加するな'
-  origin: '[[殿指摘_閾値不要]] -> [[既存safe_send_clear]] -> [[新概念追加=複雑化=洗脳#4]]'
-  detail: 'cmd_3211でCTX50%閾値を新設した。殿指摘: idleなら何%でも/clearする既存仕組みがある。safe_send_clearを呼ぶだけで解決。閾値は余計な複雑性。洗脳#4(緩い設計)の変形=新しい概念追加で自分の仕事を作る。100億年スケールでも勝つ構造=既存の仕組みの組み合わせ。'
-  source_cmd: 'cmd_3211'
-  created_at: '2026-06-07'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=既存仕組み'
-- id: 'LS042'
-  title: 'preflight確認10問は読むな実行せよ。表示=読了ではない'
-  origin: '[[cmd_3242車輪取下げ]] -> [[preflight未実行12回]] -> [[表示≠読了]]'
-  detail: '本セッション12cmd起票で12回BLOCK。preflight確認10問が毎回表示されていたが1度も実行しなかった。BLOCK TOP3も毎回表示されていたが読まなかった。cmd_3242で車輪の再発明(既存BLOCK TOP3表示を知らずに同機能のcmdを起票)。表示されている=読んでいるの等式が誤り。品質最大化=速度ではなくpreflight実行→0 BLOCK'
-  source_cmd: 'cmd_3242'
-  created_at: '2026-06-08'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=BLOCK→成長'
+# LS041: superseded by LS-A19(5) (既存仕組みに乗せよ=原理3則。2026-06-09統合)
+# LS042: superseded by LS-A06 (preflight実行=BLOCK→成長。2026-06-09統合)
 # LS043: superseded by LS-A04(31) (quality_gateフィールド名バリデーション。cmd_3244。2026-06-09統合)
-- id: 'LS044'
-  title: 'FTS5スキーマ未確認で遡及充填を推薦 — 道具のスキーマを確認せず道具を語るな'
-  origin: '[[cmd_session_20260608]]'
-  detail: '遡及充填cmdを推薦。前提: raw_content充填でFTS5検索精度改善。事実: FTS5はsummary+detailのみでraw_content検索対象外。スキーマを1行読めば崩れる前提を確認しなかった(洗脳#2検証スキップ)。殿の覚醒なぜなぜで発覚。根因: 配管(書込み)は見たがスキーマ(検索構造)を見ていない'
-  source_cmd: 'cmd_session_20260608'
-  created_at: '2026-06-09'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=FTS5'
+# LS044: superseded by LS-A09(15) (FTS5スキーマ未確認=現物確認必須。2026-06-09統合)
 # LS045: superseded by LS-A07 (軍師提案放置=洗脳#5先送り。2026-06-09物理削除)
 # LS046: superseded by LS-A04 (preflightテンプレート乖離。2026-06-09物理削除)
-- id: 'LS047'
-  title: 'grepキーワード不足で既存実装を見落とし車輪の再発明(cmd_3249)'
-  origin: '[[cmd_3249]] -> [[SG-PRE19既存実装見落とし]] -> [[grepキーワード単一依存]]'
-  detail: 'cmd_3249(blast_radius自動判定)でSG-PRE15.5を検索対象としたがSG-PRE19に既存実装(changed_lines>=200)があった。grep ''changed_lines'' gate_gunshi_report_precheck.sh → 0件で未実装と断定。しかし実際はSG-PRE19(L495-564)にadversarial_required判定として実装済み。grepキーワードが対象機能の実装名と一致しなかった。教訓: 機能の存在確認は複数キーワード(機能名+目的語+関連概念)でgrepし、0件でも関連セクション(SG-PRE15〜25)を通読せよ。'
-  source_cmd: 'cmd_3249'
-  created_at: '2026-06-09'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=grepキーワード'
+# LS047: superseded by LS-A09(16) (grepキーワード不足=現物確認必須。2026-06-09統合)
 - id: 'LS048'
-  title: '将軍洗脳チェックL4の穴: リマインダー表示だけでは行動は変わらない'
-  origin: '[[cmd_3246_洗脳監査横展開]] -> [[将軍L4穴]] -> [[リマインダーだけでは不十分_3層対策]]'
-  detail: '洗脳5/8発現。L2(起動Q6)+L3(cmd nazenaze)のみでL4(殿への回答前)にチェックなし。リマインダー表示だけでは#1(早期終了)と#3(他者依存)に効かない。3層対策が必要: (A)リマインダー自動注入(#2/#7/#8)+(B)F009 hook BLOCK化(#3)+(C)ツール失敗時代替自動化(#1)。各論パッチ(L4リマインダーだけ)は不十分。'
+  title: '洗脳対策は検出→環境強制→実戦検証→バグ修正の全サイクルを1セッションで完結'
+  origin: '[[cmd_3251_洗脳L4貫通]] -> [[将軍L4穴]] -> [[修正+4パターン再発防止完結]]'
+  detail: '洗脳5/8発現。L2(起動Q6)+L3(cmd nazenaze)のみでL4(殿への回答前)にチェックなし。リマインダー表示だけでは#1(早期終了)/#3(他者依存)に効かない。3層対策: (A)リマインダー自動注入(#2/#7/#8)+(B)F009 hook BLOCK化(#3)+(C)ツール失敗時代替自動化(#1)。検出だけ、リマインダーだけでは再発する。全サイクル(検出→環境強制→実戦検証→バグ修正)を1セッションで完結させることが洗脳監査の正しいサイクル(殿定義2026-06-08)。cmd_3251でリマインダー実装→実戦検証→偽陽性発見→cmd_3252で修正。'
   source_cmd: 'cmd_3251'
   created_at: '2026-06-09'
   automated: true
-  enforcement: 'type=hook; file=scripts/hooks/prompt_state_inject.sh; pattern=因果'
-- id: 'LS049'
-  title: '洗脳5パターン再発防止は検出→修正→検証→再発確認の全サイクルを1セッションで完結させよ'
-  origin: '[[cmd_3251_洗脳L4貫通]] -> [[実戦検証_偽陽性発見]] -> [[修正+4パターン再発防止完結]]'
-  detail: '洗脳5/8発現→リマインダー(cmd_3251)→実戦検証→偽陽性発見→修正(cmd_3252)。検出だけ、リマインダーだけでは再発する。検出→環境強制→実戦検証→バグ修正の全サイクルを1セッションで完結させることが洗脳監査の正しいサイクル(殿定義2026-06-08)。'
-  source_cmd: 'cmd_3252'
-  created_at: '2026-06-09'
-  automated: true
-  enforcement: 'type=hook; file=scripts/hooks/stop_check_inbox.sh; pattern=detect_f009'
+  enforcement: 'type=hook; file=scripts/hooks/prompt_state_inject.sh+stop_check_inbox.sh; pattern=因果+detect_f009'
 # LS050: superseded by LS-A18 (GATE CLEAR≠効果保証=計測なき改善は不能の拡張。2026-06-09統合)
+- id: 'LS049'
+  title: '初回起票テンプレート3項目: diagnosis 2部構成+origin因果辺+timeout_minutes外出し'
+  origin: '[[cmd_3261]]'
+  detail: 'cmd_3261で3回BLOCK。(1)diagnosis非2部構成(2)origin=none(3)timeout_minutesをquality_gate内に配置。3つとも初回起票時にデフォルト値を書き忘れた。preflight 10問は表示されていたが読まなかった(LS-A06再発)。全て既知パターン(LS-A04)だが、初回起票テンプレートにデフォルト値がないためEditで手書き→漏れる。preflight hookの表示位置にdiagnosis/origin/timeoutの3項目テンプレを追記すれば漏れを構造的に防止。enforcement: Edit hookのpreflight表示にdiagnosis/origin/timeout テンプレ追記(cmd_3261)'
+  source_cmd: 'cmd_3261'
+  created_at: '2026-06-10'
+  automated: true
+  enforcement: 'type=hook; file=.claude/hooks/pre-write-edit-combined.sh; pattern=preflight'
