@@ -6291,6 +6291,80 @@ check_review_staleness
 check_partial_completion
 check_wtf_likelihood
 
+# ─── 軍師verdict事前チェック（cmd_3248: GATE判定前にWARN表示） ───
+# GATE CLEAR後の記録処理(L6585/L6888)とは別。家老がGATE判断前に軍師指摘を把握するためのWARN。
+echo ""
+level_heading "[L2]" "Gunshi verdict pre-check:"
+_GUNSHI_VERDICT_WARN=false
+_GUNSHI_VERDICT_REVIEW_LOG="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
+_GUNSHI_VERDICT_ARCHIVE_DIR="$SCRIPT_DIR/logs/archive"
+if [ -f "$_GUNSHI_VERDICT_REVIEW_LOG" ]; then
+    _gv_precheck_result=$(
+        python3 - "$CMD_ID" "$_GUNSHI_VERDICT_REVIEW_LOG" "$_GUNSHI_VERDICT_ARCHIVE_DIR" 2>/dev/null <<'END_GV_PRECHECK_PY'
+import sys, re, os, glob
+
+cmd_id = sys.argv[1]
+review_log = sys.argv[2]
+archive_dir = sys.argv[3]
+
+sources = []
+if os.path.exists(review_log):
+    sources.append(review_log)
+archives = sorted(glob.glob(os.path.join(archive_dir, "gunshi_review_log*.yaml")))
+sources.extend(archives[-2:])
+
+# cmd_idに一致する全エントリからverdict + findings_summaryを収集
+fail_verdicts = []
+for src in sources:
+    try:
+        with open(src, encoding='utf-8') as f:
+            content = f.read()
+    except Exception:
+        continue
+    for m in re.finditer(r'^- cmd_id:.*?(?=^- cmd_id:|\Z)', content, re.MULTILINE | re.DOTALL):
+        entry = m.group(0)
+        cm = re.match(r'^- cmd_id:\s*["\']?([^"\'\n]+)["\']?', entry)
+        if not cm or cm.group(1).strip() != cmd_id:
+            continue
+        # self_study/consultationは対象外
+        rt_m = re.search(r'review_type:\s*(\S+)', entry)
+        if rt_m:
+            rt = rt_m.group(1).strip('"\'')
+            if rt in ('self_study', 'consultation'):
+                continue
+        vm = re.search(r'(?<![a-z_])verdict:\s*(\S+)', entry)
+        if not vm:
+            continue
+        v = vm.group(1).strip('"\'')
+        if v in ('FAIL', 'REQUEST_CHANGES'):
+            fs_m = re.search(r'findings_summary:\s*"([^"]*)"', entry)
+            fs = fs_m.group(1) if fs_m else '(findings_summary not found)'
+            rt_label = rt if rt_m else 'unknown'
+            fail_verdicts.append((rt_label, v, fs))
+
+if fail_verdicts:
+    print("WARN")
+    for rt_label, v, fs in fail_verdicts:
+        print(f"  [{rt_label}] verdict={v}: {fs}")
+else:
+    print("OK")
+END_GV_PRECHECK_PY
+    ) || _gv_precheck_result="SKIP (python3 failed)"
+
+    if [[ "$_gv_precheck_result" == WARN* ]]; then
+        _GUNSHI_VERDICT_WARN=true
+        echo "  [WARN] 軍師がFAIL/REQUEST_CHANGESを出しています:"
+        echo "$_gv_precheck_result" | tail -n +2
+        echo "  → 家老は軍師指摘を踏まえてGATE判断してください"
+    elif [[ "$_gv_precheck_result" == OK* ]]; then
+        echo "  OK (verdict FAIL/REQUEST_CHANGES なし)"
+    else
+        echo "  ${_gv_precheck_result}"
+    fi
+else
+    echo "  SKIP (gunshi_review_log.yaml not found)"
+fi
+
 # ─── 判定結果 ───
 echo ""
 if [ "$ALL_CLEAR" = true ]; then

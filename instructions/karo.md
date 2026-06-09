@@ -300,7 +300,7 @@ chunk: "1-8"  # この忍者の担当範囲
 - **検索**: 用語が曖昧、または semantic_concepts が不足して見える場合は `bash scripts/semantic_search.sh "<query>"` で関連概念を確認してから分解せよ
 - **Why**: semantic_search の道具が存在しても、配備手順に semantic 確認がなければ忍者・軍師に使われず、L7概念が実務に浸透しない
 
-**YAML操作**: 配備は`deploy_task.sh <ninja> <cmd_id>`。**cmd_id第2引数は必須** — 省略するとACが上書きされず旧タスクを実行する(LK061: cmd_1903/1904で5回失敗)。**deploy後にtask YAMLのACを確認せよ**: `grep 'description:' queue/tasks/{ninja}.yaml | head -3` でACが新cmdの内容か検証。ログ=残像、ファイル=現在(LG007)。cmd_resolveエラー時はdeploy_task.sh --directを使え。手動配備(cat+inbox_write直接)は全ガードバイパスのため禁止。報告YAMLは`report_field_set.sh`経由。**yqは環境に存在しない**。ツール詳細→`docs/research/karo-operations-detail.md` §7
+**YAML操作**: 配備は`deploy_task.sh <ninja> <cmd_id>`。**cmd_id第2引数は必須** — 省略するとACが上書きされず旧タスクを実行する(LK061: cmd_1903/1904で5回失敗)。**deploy後にtask YAMLのACを確認せよ**: `grep 'description:' queue/tasks/{ninja}.yaml | head -3` でACが新cmdの内容か検証。ログ=残像、ファイル=現在(LG007)。cmd_resolveエラー時はdeploy_task.sh --directを使え。手動配備(cat/Write+inbox_write直接)は全ガードバイパスのため禁止。karo_directはkaro-operations.md §1の正規手順(nested YAML+cp+inbox_write+scout_exempt:true)に従え。報告YAMLは`report_field_set.sh`経由。**yqは環境に存在しない**。ツール詳細→`docs/research/karo-operations-detail.md` §7
 
 ### 停止条件二分法（task分解ルール）
 
