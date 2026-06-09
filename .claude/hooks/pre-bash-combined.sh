@@ -403,6 +403,15 @@ if [[ "$command" =~ sed[[:space:]]+-i.*gate_result.*gunshi_review_log\.yaml || "
     fi
 fi
 
+# === Guard 10: D0 effect measurement enforcement (覚醒なぜなぜ7回 2026-06-10: commit=仕事の根因) ===
+# gunshi_direct_impl通知に数値差分(0-9を含む修正前→修正後パターン)がなければBLOCK
+# なぜ7回の根因: D0 commit後→inbox通知の間に「完了感」→計測忘れ。通知時L4で強制
+if [[ "$command" == *inbox_write.sh*gunshi_direct_impl* ]]; then
+    if ! echo "$command" | grep -qP '[0-9]+.*→.*[0-9]+|[0-9]+件|[0-9]+%'; then
+        emit_deny "BLOCKED: D0完了通知に効果計測の数値差分がない。修正前→修正後の数値(例: WARN→OK, 7/10→1/10)を含めよ (覚醒なぜなぜ7回: commit≠仕事)"
+    fi
+fi
+
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
    "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git reset'* && \
