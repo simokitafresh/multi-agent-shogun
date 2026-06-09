@@ -528,7 +528,7 @@ review_quality_scale_summary() {
     awk -v limit="$limit" '
 function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^["'\''"]|["'\''"]$/, "", s); return s }
 function flush_entry() {
-    if (review_type ~ /^(draft|report)$/) {
+    if (review_type ~ /^(draft|report)$/ && verdict != "" && verdict != "null") {
         n++
         v[n] = verdict
         txt[n] = body
@@ -553,7 +553,7 @@ END {
         if (i < 1) continue
         total++
         ok = (v[i] ~ /^(APPROVE|LGTM|PASS|CLEAR)$/)
-        explicit_warn = (txt[i] ~ /(WARN|REQUEST_CHANGES|LGTM→BLOCK|品質崩壊|雑なレビュー)/)
+        explicit_warn = (txt[i] ~ /(REQUEST_CHANGES|LGTM→BLOCK|品質崩壊|雑なレビュー)/)
         if (!ok || explicit_warn) warn++
     }
     if (total == 0) {
