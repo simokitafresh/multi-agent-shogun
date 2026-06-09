@@ -12,6 +12,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 overall="OK"
 alerts=()
 STARTUP_STDERR_LOG="$SCRIPT_DIR/logs/gate_karo_startup_stderr.log"
+STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/karo_startup_alert_history.tsv"
+STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-3}"
 
 log_startup_stderr_file() {
     local label="$1"
@@ -1497,6 +1499,61 @@ fi
 echo "  ★ 自問: 直近の配備/WA判断で「検証スキップ」「完了急ぎ」に乗っていないか？"
 echo ""
 
+# --- ストリーク検出: 3セッション連続WARN/ALERT→BLOCK昇格 (L7横展開: gate_shogun_startup.sh準拠) ---
+if [ "${#alerts[@]}" -gt 0 ]; then
+    mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
+    _streak_result=$(python3 - "$STARTUP_ALERT_HISTORY" "${STARTUP_WARN_STREAK_THRESHOLD}" "${alerts[@]}" <<'PY' 2>/dev/null || true
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    threshold = int(sys.argv[2])
+except ValueError:
+    threshold = 3
+current = [a.strip() for a in sys.argv[3:] if a.strip()]
+if not current or threshold <= 1:
+    sys.exit(0)
+
+runs = []
+if path.exists():
+    current_run = None
+    current_keys = set()
+    for raw in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        parts = raw.split("\t", 1)
+        if len(parts) != 2:
+            continue
+        run_id, key = parts
+        if current_run is None:
+            current_run = run_id
+        if run_id != current_run:
+            runs.append(current_keys)
+            current_run = run_id
+            current_keys = set()
+        if key != "__OK__":
+            current_keys.add(key)
+    if current_run is not None:
+        runs.append(current_keys)
+
+previous = runs[-(threshold - 1):]
+for key in current:
+    if len(previous) == threshold - 1 and all(key in run for run in previous):
+        print(key)
+PY
+)
+    if [ -n "$_streak_result" ]; then
+        echo "■ startup WARN/ALERT連続出現"
+        while IFS= read -r _streak_key; do
+            [ -n "$_streak_key" ] || continue
+            echo "  BLOCK: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続"
+            echo "  先送り判断検出: ${STARTUP_WARN_STREAK_THRESHOLD}セッション連続で未解消。低優先/後で扱いにした穴の証拠として今ふさげ。"
+            alerts+=("startup連続出現BLOCK: ${_streak_key}")
+            alerts+=("先送り判断: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続")
+        done <<< "$_streak_result"
+        overall="BLOCK"
+    fi
+fi
+
 # --- 総合判定 ---
 echo ""
 echo "=== 総合判定: $overall ==="
@@ -1509,4 +1566,32 @@ if [ ${#alerts[@]} -gt 0 ]; then
     _alert_flag="$SCRIPT_DIR/queue/gates/karo_alert_pending.txt"
     printf '%s\n' "${alerts[@]}" > "$_alert_flag"
     echo "  [L4] ALERT pendingフラグ設置: $_alert_flag (stop hookがBLOCK)"
+fi
+
+# --- Alert history記録 (gate_shogun_startup.sh準拠) ---
+mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
+_startup_run_id="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+if [ ${#alerts[@]} -gt 0 ]; then
+    for a in "${alerts[@]}"; do
+        printf '%s\t%s\n' "$_startup_run_id" "$a" >> "$STARTUP_ALERT_HISTORY"
+    done
+else
+    printf '%s\t__OK__\n' "$_startup_run_id" >> "$STARTUP_ALERT_HISTORY"
+fi
+
+# --- L1先送り自動エスカレーション: 先送り判断3セッション連続→将軍にinbox送信 ---
+if [ ${#alerts[@]} -gt 0 ]; then
+    _deferred_alerts=""
+    for a in "${alerts[@]}"; do
+        case "$a" in
+            先送り判断:*)
+                _deferred_alerts="${_deferred_alerts:+${_deferred_alerts}; }${a}"
+                ;;
+        esac
+    done
+    if [ -n "$_deferred_alerts" ]; then
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun \
+            "家老startup先送りBLOCK自動エスカレーション: ${_deferred_alerts}。家老が対処できないため将軍cmd起票を検討せよ" \
+            escalation karo 2>/dev/null || true
+    fi
 fi
