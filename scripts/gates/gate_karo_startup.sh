@@ -517,8 +517,8 @@ in_entry && /^  stumbling_points:/ {
 END {
     if (in_entry) finish()
     for (s in count) {
-        # 最新結果がPASSなら過去FAILは解消済み→除外
-        if (latest_result[s] == "PASS") continue
+        # 最新結果がPASS/SKIPなら過去FAILは解消済み→除外
+        if (latest_result[s] == "PASS" || latest_result[s] == "SKIP") continue
         printf "%d|%s|%s|%s\n", count[s], last[s], s, top_point[s]
     }
 }
