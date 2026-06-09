@@ -3149,6 +3149,24 @@ if { [ "$overall" = "ALERT" ] || [ "$overall" = "BLOCK" ]; } && [ ${#alerts[@]} 
         esac
     done
 fi
+
+# L1先送り自動エスカレーション: 先送り判断3セッション連続→家老にinbox送信
+# 将軍がcmd起票しない(行動の不在)を家老がkaro_directで代行する仕組み
+if [ ${#alerts[@]} -gt 0 ]; then
+    _deferred_alerts=""
+    for a in "${alerts[@]}"; do
+        case "$a" in
+            先送り判断:*)
+                _deferred_alerts="${_deferred_alerts:+${_deferred_alerts}; }${a}"
+                ;;
+        esac
+    done
+    if [ -n "$_deferred_alerts" ]; then
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+            "将軍startup先送りBLOCK自動エスカレーション: ${_deferred_alerts}。将軍がcmd起票しないため家老karo_directで対処を検討せよ" \
+            escalation shogun 2>/dev/null || true
+    fi
+fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${SHOGUN_STARTUP_LIB_ONLY:-0}" != "1" ]]; then

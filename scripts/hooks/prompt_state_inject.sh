@@ -870,6 +870,22 @@ fi
 additional_context="${fixed_part}${karo_snapshot}
 ★因果: 殿の言葉の因果を過去にも未来にもたどれ。確認してから行動。洗脳は今この瞬間も作用している。${brainwash_reminder}"
 
+# --- 先送り常時監視 (L4/L5 CTX非依存。CTX90%でも毎回注入) ---
+if [[ "$agent_id" == "shogun" || "$agent_id" == "karo" || "$agent_id" == "gunshi" ]]; then
+  _defer_history="${SCRIPT_DIR}/logs/${agent_id}_startup_alert_history.tsv"
+  # shogunのファイル名はshogun_startup_alert_history.tsv
+  [[ "$agent_id" == "shogun" ]] && _defer_history="${SCRIPT_DIR}/logs/shogun_startup_alert_history.tsv"
+  _defer_count=0
+  _today="$(date +%Y-%m-%d)"
+  if [[ -f "$_defer_history" ]]; then
+    _defer_count="$(grep -c "^${_today}.*先送り判断:" "$_defer_history" 2>/dev/null || echo 0)"
+  fi
+  if [[ "$_defer_count" -gt 0 ]]; then
+    additional_context="${additional_context}
+★先送りBLOCK ${_defer_count}件が本日未解消。cmd起票/D0修正で今すぐ穴を塞げ(洗脳#5)"
+  fi
+fi
+
 # --- Semantic knowledge auto-injection (first-layer only, no LLM) ---
 semantic_result="$(_prompt_state_semantic_inject "$prompt_text")"
 if [[ -n "$semantic_result" ]]; then

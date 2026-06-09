@@ -162,6 +162,18 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
   fi
 fi
 
+# L7横展開: 家老・軍師にもbrainwash 8パターン検出を適用(利他の精神)
+# 将軍のdetect_shogun_brainwash_patternを共有。F009は将軍専用のため除外
+if [[ ("$agent_id" == "karo" || "$agent_id" == "gunshi") && "$payload" == *'"last_assistant_message"'* ]]; then
+  _lam="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
+  if [[ -n "$_lam" ]]; then
+    _bw="$(detect_shogun_brainwash_pattern "$_lam")"
+    if [[ -n "$_bw" ]]; then
+      printf 'WARN: 洗脳検出 %s。一次データ確認・即時行動・L0-L7貫通の自問をやり直せ。\n' "$_bw" >&2
+    fi
+  fi
+fi
+
 notify_completion() {
   local msg_type="$1"
   local message="$2"
