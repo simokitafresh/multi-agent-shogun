@@ -442,7 +442,7 @@ lessons:
   created_at: '2026-06-04'
   automated: true
   enforcement_level: 4
-  enforcement: SG-PRE25(gate_gunshi_report_precheck.sh)がcommand欄ファイル×files_modifiedの名前照合をINFO自動表示(Level4)。cmd_complete_gate.sh command/files_modified coverageがLevel4事後BLOCK。再発実績: cmd_3166+cmd_3228(2件)
+  enforcement: 'SG-PRE25(gate_gunshi_report_precheck.sh)がcommand欄ファイル×files_modifiedの名前照合をINFO自動表示(Level4)。cmd_complete_gate.sh command/files_modified coverageがLevel4事後BLOCK。再発実績: cmd_3166+cmd_3228(2件)'
   when: report reviewのSG-PRE25自動実行時。INFO表示→変更対象/実行のみ/既存依存の3分類を手動確認
   how: SG-PRE25が自動照合。不一致INFOが出たらLG037で3分類し、変更対象なのにfiles_modified不在→FAIL。実行のみ→OK
 - id: LG037
