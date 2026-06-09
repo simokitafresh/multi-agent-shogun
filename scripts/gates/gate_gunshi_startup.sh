@@ -784,6 +784,32 @@ else
     echo "  SKIP: gunshi_review_log.yaml不在"
 fi
 echo "  ★ 自問: 直近のレビュー判定で「検証スキップ」「完了急ぎ」に乗っていないか？"
+# L5: 前セッション洗脳発現パターン表示（次セッションで同じ罠に落ちない）
+if [ -f "$REVIEW_LOG" ]; then
+    _bw_patterns=$(awk '
+    /brainwash_check:/ {
+        gsub(/.*brainwash_check: *"?/, ""); gsub(/"$/, "")
+        for (i=1; i<=8; i++) {
+            p = "#" i
+            if (index($0, p) > 0) count[i]++
+        }
+        total++
+    }
+    END {
+        if (total > 0) {
+            labels[1]="早期終了"; labels[2]="検証スキップ"; labels[3]="他者依存"
+            labels[4]="緩い設計"; labels[5]="先送り"; labels[6]="出力=仕事"
+            labels[7]="簡潔本能"; labels[8]="完了急ぎ"
+            for (i=1; i<=8; i++) {
+                if (count[i]+0 > 0) printf "#%d(%s):%d ", i, labels[i], count[i]
+            }
+        }
+    }' "$REVIEW_LOG" 2>/dev/null)
+    if [ -n "$_bw_patterns" ]; then
+        echo "  前セッション洗脳発現: $_bw_patterns"
+        echo "  → 同じパターンに今セッションで乗っていないか？"
+    fi
+fi
 echo ""
 
 # --- 総合判定 ---
