@@ -3950,11 +3950,24 @@ def _deprecate_lessons_in_file(yaml_path, lesson_ids):
         pending_insert = False
 
     id_re = re.compile(r'^(\s*)-\s+id:\s*[\'"]?([^\'"#\s]+)')
+    # cmd_3254: flow-style YAML対応 — `- {id: L723, ...}` パターン
+    flow_id_re = re.compile(r'^(\s*)-\s+\{.*?id:\s*[\'"]?([^\'"#\s,}]+)')
     item_re = re.compile(r'^(\s*)-\s+')
     deprecated_re = re.compile(r'^\s+deprecated:\s*true\s*(?:#.*)?$', re.IGNORECASE)
     status_deprecated_re = re.compile(r'^\s+status:\s*[\'"]?deprecated[\'"]?\s*(?:#.*)?$', re.IGNORECASE)
 
     for line in lines:
+        # cmd_3254: flow-style行を先にチェック（一行完結のため即時処理）
+        flow_m = flow_id_re.match(line)
+        if flow_m:
+            fid = flow_m.group(2).strip()
+            if fid in target_ids and 'deprecated: true' not in line and 'deprecated:true' not in line:
+                # flow-style: 閉じ`}`の直前に`, deprecated: true`を挿入
+                line = re.sub(r'\}(\s*)$', r', deprecated: true, deprecation_reason: auto_useful_rate_zero}\1', line)
+                changed += 1
+            out.append(line)
+            continue
+
         item_m = item_re.match(line)
         if item_m and current_id is not None and len(item_m.group(1)) <= current_indent:
             flush_pending()
@@ -4788,14 +4801,19 @@ try:
         title_text = l_title.lower()
         other_text = f'{l_summary} {l_content} {l_source}'.lower()
 
-        score = 0
+        keyword_score = 0
         for kw in keywords:
             # cmd_2270: 頻度重み付きスコアリング (engram-style: presence→frequency count)
             # タイトル内出現回数×3 + その他テキスト内出現回数×1
-            score += title_text.count(kw) * 3 + other_text.count(kw) * 1
+            keyword_score += title_text.count(kw) * 3 + other_text.count(kw) * 1
 
+        score = keyword_score
+
+        # cmd_3254: boostはkeyword_score>0の教訓にのみ適用
+        # 根因: keyword_score=0でもboost(20)+project(2)=22でMIN_KEYWORD_SCOREを突破し
+        # 全NOT_USEFUL教訓の28%(16/58)を占めていた(useful_rate 3.4%の主因)
         semantic_boost = lesson_boosts.get(lid, 0)
-        if semantic_boost:
+        if semantic_boost and keyword_score > 0:
             score += semantic_boost
 
         cross_project_score = lesson.get('_cross_project_score', 0) or 0
