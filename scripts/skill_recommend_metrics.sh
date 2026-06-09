@@ -11,19 +11,62 @@ LIMIT="${1:-30}"
 RECOMMEND_LOG="${SKILL_RECOMMEND_LOG_FILE:-$REPO_ROOT/logs/skill_recommend_log.yaml}"
 EXEC_LOG="${SKILL_EXECUTION_LOG_FILE:-$REPO_ROOT/logs/skill_execution_log.yaml}"
 
-python3 - "$RECOMMEND_LOG" "$EXEC_LOG" "$LIMIT" <<'PY'
+python3 - "$RECOMMEND_LOG" "$EXEC_LOG" "$LIMIT" "$REPO_ROOT" <<'PY'
 import os
+import re
 import sys
 from collections import Counter
 from datetime import datetime
 
-recommend_path, exec_path, raw_limit = sys.argv[1:4]
+recommend_path, exec_path, raw_limit, repo_root = sys.argv[1:5]
 try:
     limit = int(raw_limit)
 except ValueError:
     limit = 30
 if limit <= 0:
     limit = 30
+skills_dir = os.path.join(repo_root, "skills")
+
+
+def _role_marker_cache():
+    """Build skill_name -> role_marker mapping from SKILL.md files."""
+    cache = {}
+    try:
+        entries = os.scandir(skills_dir)
+    except OSError:
+        return cache
+    for entry in entries:
+        if not entry.is_dir():
+            continue
+        skill_file = os.path.join(entry.path, "SKILL.md")
+        try:
+            with open(skill_file, encoding="utf-8") as fh:
+                head = fh.read(2000)
+        except OSError:
+            continue
+        m = re.search(r"【([^】]+)専用】", head)
+        if m:
+            cache[entry.name] = m.group(1)
+    return cache
+
+
+_role_markers = _role_marker_cache()
+
+
+def skill_allowed_for_agent(skill_name, agent_id):
+    """Check if a skill's role_marker is compatible with the agent."""
+    marker = _role_markers.get(skill_name, "")
+    if not marker:
+        return True
+    if "将軍" in marker and agent_id == "shogun":
+        return True
+    if "家老" in marker and agent_id == "karo":
+        return True
+    if "軍師" in marker and agent_id == "gunshi":
+        return True
+    if "忍者" in marker and agent_id not in ("shogun", "karo", "gunshi"):
+        return True
+    return False
 
 
 def unquote(value):
@@ -190,6 +233,7 @@ else:
 seen_recommend_tuples = set()
 recommended_by_agent = []
 dropped_non_instrumented = 0
+dropped_role_mismatch = 0
 for entry in recommend_entries:
     # cmd_3244: ninja_name優先で照合キーを決定
     _ninja_name = str(entry.get("ninja_name") or "").strip()
@@ -204,6 +248,14 @@ for entry in recommend_entries:
     for skill in skills:
         skill_name = str(skill or "").strip()
         if not skill_name:
+            continue
+        # cmd_3255: 存在しないスキルを除外
+        if not os.path.isfile(os.path.join(skills_dir, skill_name, "SKILL.md")):
+            dropped_role_mismatch += 1
+            continue
+        # cmd_3255: role_marker互換性チェック (ロール不一致推薦を除外)
+        if not skill_allowed_for_agent(skill_name, agent_id):
+            dropped_role_mismatch += 1
             continue
         recommend_tuple = (agent_id, prompt_hash, skill_name)
         if recommend_tuple in seen_recommend_tuples:
@@ -260,6 +312,8 @@ else:
     print("偽陽性率: 0% (0/0; 比較対象推薦ログなし)")
 if dropped_non_instrumented:
     print(f"比較対象外: 実行ログ未観測agentの推薦{dropped_non_instrumented}件を除外")
+if dropped_role_mismatch:
+    print(f"ロール不一致除外: {dropped_role_mismatch}件 (skill_recommend.shのrole_markerフィルタ修正済み)")
 if recommended_total >= min_data:
     print(f"recall miss件数: {recall_miss_count}")
 else:

@@ -1500,7 +1500,7 @@ if [ ${#alerts[@]} -gt 0 ]; then
     done
     echo "  ★ ALERT=バグ。「確認した」で閉じるな。根因調査→修正→commitまで回せ(洗脳#6防止)"
     # L4: ALERTペンディングフラグ設置 — stop hookが検知しBLOCK
-    local _alert_flag="$SCRIPT_DIR/queue/gates/karo_alert_pending.txt"
+    _alert_flag="$SCRIPT_DIR/queue/gates/karo_alert_pending.txt"
     printf '%s\n' "${alerts[@]}" > "$_alert_flag"
     echo "  [L4] ALERT pendingフラグ設置: $_alert_flag (stop hookがBLOCK)"
 fi

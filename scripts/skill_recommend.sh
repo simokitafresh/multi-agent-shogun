@@ -157,6 +157,9 @@ def split_project_constraint(trigger):
 def trigger_terms(trigger):
     terms = [trigger]
     for token in re.findall(r"[A-Za-z0-9][A-Za-z0-9_-]{1,}", trigger):
+        # cmd_3255: 4文字未満の短トークンを除外 (DB/FE/PF/CDP等がほぼ全プロンプトにマッチ)
+        if len(token) < 4:
+            continue
         if token.isupper() or trigger.startswith("/"):
             terms.append(token)
     return terms
@@ -228,9 +231,16 @@ _sr_result="$(
     tproj    = $5
     disp     = $6
 
-    # note: role_marker check is intentionally absent here, matching the original
-    # detect_skill_triggers() Python inline script behavior (no role filtering).
-    # Role filtering only applies in semantic_skill_recommendations() via filter_skills_for_agent().
+    # role_marker filter (cmd_3255: precision改善)
+    # 複合ロール対応: 「将軍・家老」→shogun OR karo許可
+    if (role != "") {
+      role_ok = 0
+      if (index(role, "将軍") > 0 && agent == "shogun") role_ok = 1
+      if (index(role, "家老") > 0 && agent == "karo") role_ok = 1
+      if (index(role, "軍師") > 0 && agent == "gunshi") role_ok = 1
+      if (index(role, "忍者") > 0 && agent != "shogun" && agent != "karo" && agent != "gunshi") role_ok = 1
+      if (!role_ok) next
+    }
 
     # allowed_projects check (frontmatter)
     if (allowed != "") {
