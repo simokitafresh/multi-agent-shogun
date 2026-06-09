@@ -108,8 +108,21 @@ detect_shogun_brainwash_pattern() {
 # cmd_3251 AC2: F009 殿への操作依頼パターン検出
 # 洗脳#3(他者依存)の具体的防御。殿にCLI操作・手動作業を依頼するパターンをBLOCK
 # 偽陽性防止: パターンは殿/lordコンテキストに限定(軍師指摘反映)
+# cmd_3252 AC1: 過去形引用パターン除外（偽陽性防止）
 detect_f009_lord_delegation() {
   local message="$1"
+  # 過去形引用チェック: 「殿にpushしてもらった」「殿が実行してくれた」等は
+  # 報告・引用であり依頼ではない。過去形のみで依頼表現がなければスキップ
+  local has_past=0 has_request=0
+  if [[ "$message" =~ (してもらった|してくれた|してくださった|していただいた|しました|された結果|した経緯|した際) ]]; then
+    has_past=1
+  fi
+  if [[ "$message" =~ (ください|いただきたい|頂きたい|してほしい|お願いします|していただけ) ]]; then
+    has_request=1
+  fi
+  if [[ $has_past -eq 1 && $has_request -eq 0 ]]; then
+    return 1
+  fi
   # 殿に操作を依頼するパターン(殿/lordコンテキスト必須)
   if [[ "$message" =~ 殿.*(手動で|実行して|操作して|貼り付けて|入力して|コピーして|commit.*して|push.*して|kill.*して|respawn.*して) ]]; then
     return 0

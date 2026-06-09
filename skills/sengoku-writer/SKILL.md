@@ -39,6 +39,16 @@ allowed-tools:
 
 テーマが曖昧なら殿に確認する。具体的な出来事やエピソードがあるか聞く。
 
+### Step 1.5: 最新話数確認（必須・省略厳禁）
+
+記事ディレクトリを `ls` で確認し、実在する最新話数を把握する。**SKILL.md内の既刊一覧は陳腐化している可能性がある。lsの結果を信頼せよ。**
+
+```bash
+ls -1 /mnt/c/Python_app/DM-signal/marketing-director/content/articles/shogun/sengoku-*.md 2>/dev/null | sort
+```
+
+出力から最新の話数を確認し、次の話数を決定する。ls結果と既刊一覧に差異があればls結果を優先する。
+
 ### Step 2: 素材収集
 
 テーマに関連する素材を自動収集する:

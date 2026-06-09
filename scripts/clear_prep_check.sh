@@ -871,6 +871,48 @@ if [ -f "$CHRONICLE" ] && [ -n "$session_start_date" ]; then
   fi
 fi
 
+# (e) cmd_3252 AC4: セッション中の知見反映状況チェック
+# 洗脳#7(簡潔本能)+#8(完了急ぎ)防御: 活動量に対して知識キャプチャが不足していないか
+if [ "${session_completed_cmds:-0}" -gt 0 ]; then
+  # セッション中に更新されたcontext/*.mdの件数
+  context_updates=0
+  if [ -d "$ROOT_DIR/context" ] && [ -n "$session_start_date" ]; then
+    session_epoch=$(date -d "${session_start_date}T00:00:00" '+%s' 2>/dev/null || echo 0)
+    while IFS= read -r -d '' cfile; do
+      cfile_mtime=$(stat -c '%Y' "$cfile" 2>/dev/null || echo 0)
+      if [ "$cfile_mtime" -ge "$session_epoch" ]; then
+        context_updates=$((context_updates + 1))
+      fi
+    done < <(find "$ROOT_DIR/context" -maxdepth 1 -name "*.md" -print0 2>/dev/null)
+  fi
+
+  # 報告YAMLからlesson_candidate件数を集計
+  lesson_candidates=0
+  if [ -d "$ROOT_DIR/queue/reports" ]; then
+    lesson_candidates=$(grep -rl 'lesson_candidate' "$ROOT_DIR/queue/reports/" 2>/dev/null | while IFS= read -r rfile; do
+      rfile_mtime=$(stat -c '%Y' "$rfile" 2>/dev/null || echo 0)
+      if [ "${rfile_mtime:-0}" -ge "${session_epoch:-0}" ]; then
+        grep -c 'lesson_candidate' "$rfile" 2>/dev/null || echo 0
+      fi
+    done | awk '{s+=$1}END{print s+0}')
+  fi
+
+  embed_details+=("(e)知見反映: context更新=${context_updates}件, lesson_candidate=${lesson_candidates}件(${session_start_date}以降)")
+
+  # cmd完了あり + lesson登録0 + context更新0 → 知見が全く反映されていない
+  if [ "${lesson_count_session:-0}" -eq 0 ] && [ "${context_updates:-0}" -eq 0 ]; then
+    embed_details+=("(e)ALERT: cmd完了${session_completed_cmds}件だがlesson+context更新0件。セッション知見が反映されていない可能性(洗脳#7/#8)")
+    embed_issues=$((embed_issues + 1))
+  fi
+
+  # lesson_candidateが報告にあるのにlesson登録が少ない
+  if [ "${lesson_candidates:-0}" -gt 0 ] && [ "${lesson_count_session:-0}" -eq 0 ]; then
+    embed_details+=("(e)WARN: 報告にlesson_candidate${lesson_candidates}件あるがlesson登録0件。lesson_write未実行?")
+  fi
+else
+  embed_details+=("(e)知見反映: SKIP(cmd完了なし)")
+fi
+
 echo "[8.知識埋込み] lesson:${lesson_count_session}件(${session_start_date}以降)"
 echo "  セッション中cmd完了: ${session_completed_cmds}件"
 for d in "${embed_details[@]}"; do

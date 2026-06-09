@@ -181,12 +181,36 @@ def login_if_needed():
         raise RuntimeError("Login did not complete. Check credentials or reCAPTCHA state.")
     print(f"[note_draft] Login successful: {final_url}")
 
+# cmd_3252 AC2: PowerShell失敗時のcmd.exeフォールバック
+def fallback_chrome_launch(port):
+    """launch_browser(PowerShell)失敗時にcmd.exe経由でChrome起動を試行"""
+    import subprocess
+    print("[note_draft] WARN: launch_browser failed. Trying cmd.exe fallback...")
+    try:
+        subprocess.Popen(
+            ["cmd.exe", "/c", "start", "", "chrome.exe",
+             f"--remote-debugging-port={port}",
+             "--no-first-run", "--no-default-browser-check",
+             f"--user-data-dir=C:\\tmp\\note-cdp-profile-{port}"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+    except Exception as e:
+        print(f"[note_draft] cmd.exe fallback launch error: {e}", file=sys.stderr)
+        return False
+    for attempt in range(6):
+        time.sleep(2)
+        if _is_cdp_alive(port):
+            print(f"[note_draft] cmd.exe fallback succeeded (attempt {attempt})")
+            return True
+    return False
+
 # Step 1: Ensure Chrome is running
 if not _is_cdp_alive(PORT):
     print(f"[note_draft] Launching Chrome on port {PORT}...")
     if not launch_browser(port=PORT):
-        print("ERROR: Chrome launch failed", file=sys.stderr)
-        sys.exit(1)
+        if not fallback_chrome_launch(PORT):
+            print("ERROR: Chrome launch failed. PowerShell and cmd.exe fallbacks both failed.", file=sys.stderr)
+            sys.exit(1)
     time.sleep(3)
 print(f"[note_draft] Chrome alive on port {PORT}")
 

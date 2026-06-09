@@ -1,7 +1,17 @@
-# 家老(karo)教訓 — パターン集約版 (v3)
-# v1: 92件/506行(2026-03-19〜04-24) → v2: 35件/575行(2026-04-24〜06-09) → v3: 22件/本ファイル
+# 家老(karo)教訓 v2 全文アーカイブ
+
+- 統合前件数: 35件 (LK-A01〜LK-A22 + LK001〜LK013)
+- 統合前行数: 575行
+- アーカイブ日: 2026-06-09
+- v3統合cmd: cmd_3253
+- v1アーカイブ: docs/research/lessons_karo_v1_archive.md
+
+---
+
+# 家老(karo)教訓 — パターン集約版 (v2)
+# 統合前: 92件/506行(2026-03-19〜04-24, v1)
+# 統合後: 22件/本ファイル
 # v1全文アーカイブ: docs/research/lessons_karo_v1_archive.md
-# v2全文アーカイブ: docs/research/lessons_karo_v2_archive.md
 #
 # 読み方:
 #   - 各エントリは再利用可能なパターン(個別事故記録ではない)
@@ -57,11 +67,7 @@ lessons:
     - deploy_task.sh resolve_cmdでpurpose内シングルクォートがyaml_field_set_batchの検証を崩す→--directモードで回避(cmd_3116/cmd_3125で2回発生)。将軍cmdのpurposeに'が含まれる場合はdeploy_task.sh --directを使え
     v16吸収(2026-06-09):
     - GATE実行前に軍師review結果(verdict)を確認せよ(cmd_3245/3246: 軍師FAILがある状態でGATE CLEARを通した=完了急ぎ洗脳#8)。軍師がFAILを指摘している場合、根因1行+対策1行を記録してからGATE処理。GATE前確認ポイント: grep verdict logs/gunshi_review_log.yaml | tail -5
-    v3統合吸収(2026-06-09, cmd_3253):
-    - cmd前提否定時は停止→現物確認→将軍shelve報告→偵察cmd要請の4段階(LK004: cmd_2794で軍師REQUEST_CHANGES→家老が現物確認→前提否定確定→影丸停止→将軍shelve。忍者に続行させるな)
-    - CoDD修行AC設計前にCLI --helpで構文現物確認必須(LK006: codd extract/elicit/generate構文を未確認でAC設計→4忍者全FAIL。§0.1問い2にCLIツール構文確認を含む)
-    - D0レビューでテスト前提更新を確認せよ(LK013: 軍師D0でMIN_SAMPLES 3→1変更→テスト前提古い→CI RED。D0変更がデフォルト値・閾値追加→既存テスト前提古くなっていないか)
-  source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015, LK004i, LK006i, LK013i]
+  source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'karo-operations.md §0.1判断4問チェック+ninja_monitor idle通知にpane最終3行自動添付+deepdive Phase1-2+cmd_2784 pre-bash lord_conversation承認確認Guard'
@@ -81,9 +87,7 @@ lessons:
     v3吸収(2026-05-10):
     - YAMLパースエラーでlessons_useful未注入(LK005b: commandフィールドの特殊文字がパーサー崩壊。BLOCKにしfallback注入)
     - AC抽出失敗時は手動ナッジで補足(LK008b: AC_VERIFY SKIP検出→grep description task YAML→空なら即ナッジ)
-    v3統合吸収(2026-06-09, cmd_3253):
-    - deploy_task.sh exit 1でもnudge送信済みの場合あり(LK010: deploy出力に'codex nudge retry'/'delivery verified'があれば手動nudge不要。殿に指摘されるまで毎回重複送信)
-  source_ids: [LK002, LK008, LK011, LK021, LK023, LK028, LK029, LK045, LK053, LK060, LK061, LK063, LK092, LK005b, LK008b, LK010i]
+  source_ids: [LK002, LK008, LK011, LK021, LK023, LK028, LK029, LK045, LK053, LK060, LK061, LK063, LK092, LK005b, LK008b]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'deploy_task.sh STALE_FIELDS全フィールドクリア+重複ガード(GP-042)+Codex config.toml instruction設定'
@@ -109,9 +113,7 @@ lessons:
     - auto-clear後のtask status残留パターン: commit+報告YAML存在だがtask status=in_progress(ninja_monitorがcommit後・inbox_write前にauto-clear発動)。STALL通知が来てもpane全体にcommit hash確認+報告YAML存在→作業完了と判断。task statusを手動doneにしGATE処理を進める(cmd_2931で実証)
     v4吸収(2026-05-21):
     - 1回のpane captureでSTALL即断してtask YAMLクリア+再配備するな。15-20秒後に再captureで確認。agent_state busy判定バグ(3beefbd0)でthinking中がidle表示される場合があった。殿に「動いてるぞ」と指摘されて発覚。deepdive Phase 2「pane末尾だけ見てrespawnした」の再現
-    v3統合吸収(2026-06-09, cmd_3253):
-    - STALL≠配備不完全。CTX:0%+空プロンプト=STALLと即断するな(LK008: deploy_task.shのdeployment complete+re-nudge sentが出ていなければ配備不完全。STALLではなく配備をやり直せ。2026-05-17にGPT4名連続STALL誤判断→Sonnet誤切替事故)
-  source_ids: [LK019, LK032, LK013, LK008i]
+  source_ids: [LK019, LK032, LK013]
   superseded_ids: [LK013]
   created_at: '2026-04-24'
   automated: true
@@ -131,11 +133,7 @@ lessons:
     (5)pane直接観察→gate_fire_logでは見えない摩擦の発見
     v3吸収(2026-05-10):
     - karo_direct修行cmdはGATE処理対象外(LK007b: stop hook誤検知→task YAML idle化で解消。GP候補)
-    v3統合吸収(2026-06-09, cmd_3253):
-    - CoDD修行ACは各コマンド個別明記5ACで配備せよ(LK002: 3ACでは省略余地あり。5AC=extract/elicit/generate/validate/measure各1AC。★codd specは存在しない→正しくはcodd extract。★--wave 1 --force必須。★timeout 1200)
-    - CoDD修行ACにtimeout 1200(20分)必須(LK003: AI呼び出し含み2分超。Codex CLIデフォルト120sでは未完了のまま次に進む)
-    - 速度最適化修行ACにtest_select関連テストPASS確認を必須化せよ(LK011: 飛猿のcontext_freshness_check.sh速度最適化がテスト9件FAIL→CI RED。before/after計測だけでなくテストPASS確認)
-  source_ids: [LK014, LK015, LK016, LK026, LK027, LK033, LK034, LK007b, LK002i, LK003i, LK011i]
+  source_ids: [LK014, LK015, LK016, LK026, LK027, LK033, LK034, LK007b]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'context/training-cycle.md+deploy_task.sh テンプレート自動生成+gate_fire_log計測'
@@ -153,9 +151,7 @@ lessons:
     教訓L2/L3不在: 記録だけでは行動は変わらない。automated/enforcementフィールド必須。
     v4吸収(2026-05-11):
     - 偵察前に家老がなぜなぜ7回で仮説を立て、偵察結果で更新せよ(LK013: 仮説なしの偵察は焦点が散る)
-    v3統合吸収(2026-06-09, cmd_3253):
-    - 間違いに気づいたら元まで巻き戻せ。対処を重ねるな(LK009: 2026-05-17 deploy不完全→STALL誤判断→Sonnet切替→さらに3名配備。正解=起点まで巻き戻し。殿厳命: 時系列で因果を追い起点を特定)
-  source_ids: [LK064, LK013, LK009i]
+  source_ids: [LK064, LK013]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'gate_report_format.sh+gate_karo_startup.sh+karo_workaround_log.sh ALERT→PD自動起票(LK049)'
@@ -212,9 +208,7 @@ lessons:
     並列配備禁止→独自解釈で緩和→OOM事故。制約に疑問→将軍に確認。
     途中修正の二択(別CMD or 神速停止)は指示変更を禁止。補足ナッジ(ファクト提供)は許容。
     spec_mismatch防止はengineering_preferencesが最小コスト。
-    v3統合吸収(2026-06-09, cmd_3253):
-    - 修行配備は殿指示時のみ(LK007: idle忍者への修行配備=家老の自立自走に含めない。トークン消費=殿のリアルマネー。家老には予算権限がない。殿厳命2026-05-17)
-  source_ids: [LK024, LK048, LK076, LK007i]
+  source_ids: [LK024, LK048, LK076]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'CLAUDE.md途中修正二択+projects/{id}.yaml engineering_preferences自動注入'
@@ -312,10 +306,7 @@ v7吸収(2026-05-19):
     - 忍者のmetrics変更(cmd_3080 instrumented_agents filter追加)がテストfixture前提を壊す(executor未記載→3件FAIL)。家老pushで発覚→家老が即修正(ca329ab2)。v10/v14と同根: コード変更が新フィールドを追加/参照→既存テストfixture未対応。一般原則: フィルタ/必須フィールド追加時はテストfixtureの当該フィールド有無を確認。pre-push hookが構造防御済み
     v16吸収(2026-06-07):
     - fd200継承flockリーク: exec 200>lockfileでflock取得後nohup起動→子プロセスがfd200を継承→親終了後もflock未解放→次回実行がflock -nでAbort。修正: nohup cmd 200>&-でfd継承遮断(041eb2f23)+rm -f lockfileで新inode化(63784b7d)。tobisaru+hanzoが独立発見(restart_watchers/restart_all_daemons)。一般原則: exec N>fileでflock取得後にnohupで子プロセスを起動する場合はN>&-でfd継承を遮断せよ
-    v3統合吸収(2026-06-09, cmd_3253):
-    - CI表示乖離: ci_status_check.shがlatest runのみ見てin_progress→UNKNOWN→check failed表示(LK001: 修正=latest completed runとlatest runを分離しin_progress→PENDING表示。cmd_2792偵察で根因特定)
-    - consolidated testのrun_embedded_testは一時ファイルをtests/unit/配下に生成せよ(LK012: CI --jobs 8並列で/tmp配下だとBATSのPROJECT_ROOT解決が壊れる。cf7adb49で6ファイル修正済み)
-  source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080, LK009b, LK013, LK014, LK015, LK001i, LK012i]
+  source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080, LK009b, LK013, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'ninja_monitor.sh各修正+inbox_watcher.sh各修正+cmd_complete_gate.sh lifecycle自動化'
@@ -342,9 +333,7 @@ v7吸収(2026-05-19):
     v5吸収(2026-05-24):
     - karo_direct CI修正cmdでcmd_complete_gate.shを実行するとmissing_gate:report_merge BLOCK。karo_directはreport_mergeを通過しない構造。対処: task YAMLをidle化してstop hook再発防止。根本対処はcmd_complete_gate.shにkaro_directスキップ条件追加(cmd起票候補)
     - 軍師D0(brainwash_check全level拡張 c8f6062a)のCI RED副作用: consolidated testのfixture旧形式残存(cdf6747cで修正)。新フィールド必須化時はfixture影響を確認せよ(LK005 v2/LG026と同根)
-    v3統合吸収(2026-06-09, cmd_3253):
-    - gate修正cmdはtest_select波及先テストを配備前に確認せよ(LK005: cmd_2798でgate修正→test_selectに間接依存マッピングなし→CI RED。cmd_2802で修正済み。v2: consolidated test wrapper更新漏れ cmd_3029。grep {対象名} tests/で事前確認)
-  source_ids: [LK002, LK003, LK004, LK008, LK011, LK013, LK039, LK053, LK074, LK077, LK082, LK083, LK084, LK087, LK090, LK001b, LK011b, LK012b, LK007, LK009, LK010, LK005i]
+  source_ids: [LK002, LK003, LK004, LK008, LK011, LK013, LK039, LK053, LK074, LK077, LK082, LK083, LK084, LK087, LK090, LK001b, LK011b, LK012b, LK007, LK009, LK010]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'deploy_task.sh各修正+gate各修正+hook各修正(個別commit参照)'
@@ -474,9 +463,123 @@ v7吸収(2026-05-19):
 # LK013→LK-A04(karo_direct修行AC手動設定)
 # 全詳細はdocs/research/lessons_karo_v1_archive.mdに保存済み
   origin: "[[LK054]] -> [[depends_on鵜呑み]] -> [[不要直列配備]]"
-# v3統合(2026-06-09, cmd_3253): LK001-LK013の13件を既存A系列パターンに吸収完了
-# LK001→LK-A12(CI表示乖離), LK002/LK003/LK011→LK-A04(修行サイクル設計)
-# LK004/LK006/LK013→LK-A01(確認系原則), LK005→LK-A13(gate/hook修正)
-# LK007→LK-A08(cmd制約), LK008→LK-A03(STALL再配備)
-# LK009→LK-A05(消火禁止), LK010→LK-A02(deploy正しい使い方), LK012→LK-A12(infra修正)
-# 全詳細はdocs/research/lessons_karo_v2_archive.mdに保存済み
+- id: 'LK001'
+  title: 'CI表示乖離: in_progress runをcheck failedと表示するな'
+  detail: 'ci_status_check.shがlatest runのみ見てin_progress→UNKNOWN変換→dashboard_auto_section.shがUNKNOWN→check failed表示。修正: latest completed runとlatest runを分離し、in_progress→PENDING表示に変更。cmd_2792偵察で根因特定。enforcement: cmd_2792偵察報告で修正方針2案提示済み'
+  source_cmd: 'cmd_2792'
+  when: '同種の状況が再発した時'
+  how: 'ci_status_check.shがlatest runのみ見てin_progress→UNKNOWN変換→dashboard_auto_section.shがUNKNOWN→check failed表示。修正: latest completed runとlatest runを分離し、in_progress→PENDING表示に変更。cmd_2792偵察で根因特定。enforcement: cmd_2792偵察報告で修正方針2案提示済み'
+  created_at: '2026-05-15'
+  origin: "[[cmd_2792]]"
+- id: 'LK002'
+  title: 'CoDD修行ACは各コマンド個別明記(5AC)で配備せよ'
+  detail: |
+    3AC(spec+elicit/validate+measure)では忍者がCoDDステップを省略する余地がある。
+    5AC(extract/elicit/generate/validate/measure各1AC)で個別強制。
+    ★codd specコマンドは存在しない。正しくはcodd extract(既存コードから事実抽出)またはcodd require(要件推定)。
+    ★codd generate --wave 1 --force必須。wave未指定だと0 generated/skippedで成果物なし。
+    ★timeout 1200(20分)で実行。600秒でも足りない場合がある(殿指摘)。
+    配備時の初回ナッジでも全5ステップ+正確なコマンド名+timeout+--wave 1 --forceを明示。
+    殿指摘: 最初から強くナッジすべき+完了待ちは手戻りの原因。
+  source_cmd: 'cmd_training_codd'
+  when: 'karo-operations.md §修行配備テンプレート'
+  how: '3AC(spec+elicit/validate+measure)では忍者がCoDDステップを省略する余地がある。5AC(spec/elicit/generate/validate/measure各1AC)で個別強制。さらに配備時の初回ナッジでも全5ステップ実行を明示。殿指摘: 最初から強くナッジすべき+完了待ちは手戻りの原因。'
+  created_at: '2026-05-16'
+  origin: "[[cmd_training_codd]]"
+- id: 'LK003'
+  title: 'CoDD修行ACにtimeout 600必須 — AI呼び出しがデフォルト2分でタイムアウトする'
+  detail: |
+    codd generate/extract/elicitはAI(claude --print)呼び出しを含み2分超かかる。
+    Codex CLIのデフォルトbash timeout(120s)では未完了のまま次に進み、成果物にgenerateの痕跡が残らない。
+    全CoDD修行ACにtimeout 1200(20分)+run_in_background:trueを明記。殿指摘: 600秒でも足りなければ1200秒まで伸ばせ。
+  source_cmd: 'cmd_training_codd'
+  when: 'task YAML AC記載+補足ナッジ'
+  how: 'codd generate/extract/elicitはAI(claude --print)呼び出しを含み2分超かかる。Codex CLIのデフォルトbash timeout(120s)では未完了のまま次に進み、成果物にgenerateの痕跡が残らない。全CoDD修行ACにtimeout 600(10分)+run_in_background:trueを明記。殿指摘: 何回やっても未完になっている。'
+  created_at: '2026-05-16'
+  origin: "[[cmd_training_codd]]"
+- id: 'LK004'
+  title: 'cmd前提否定時は停止→現物確認→将軍shelve報告→偵察cmd要請の4段階'
+  detail: 'cmd_2794で軍師REQUEST_CHANGES→家老が現物確認(deploy_task.sh L3713-3726にfallback内除外実装済み)→前提否定確定→影丸停止指示→将軍にshelve+偵察cmd要請。忍者に作業続行させると前提誤りのまま成果物が生まれる。enforcement: §0.1問い2(現物確認)が前提否定の入口。停止→確認→報告→偵察の4段階を手順化'
+  source_cmd: 'cmd_2794'
+  when: '同種の状況が再発した時'
+  how: 'cmd_2794で軍師REQUEST_CHANGES→家老が現物確認(deploy_task.sh L3713-3726にfallback内除外実装済み)→前提否定確定→影丸停止指示→将軍にshelve+偵察cmd要請。忍者に作業続行させると前提誤りのまま成果物が生まれる。enforcement: §0.1問い2(現物確認)が前提否定の入口。停止→確認→報告→偵察の4段階を手順化'
+  created_at: '2026-05-16'
+  origin: "[[cmd_2794]]"
+- id: 'LK005'
+  title: 'gate修正cmdはtest_select波及先テストを配備前に確認せよ'
+  detail: |
+    cmd_2798でgate_context_freshness.sh修正→pre-pushはtest_context_freshness_check.batsのみ実行→test_cmd_complete_gate.batsのテスト28が漏れ→CI RED。根因=test_selectにgate→消費先テスト間接依存がなかった(cmd_2802で修正)。家老はgate修正cmd配備前に「このgateを呼ぶ上位テストは何か」を確認せよ。enforcement: cmd_2802でtest_selectにgate間接依存マッピング追加済み(環境側防御)。家老側=§0.1問い2適用(配備前にgrep -r gate名 tests/で消費先テスト確認)
+    v2吸収(2026-05-24):
+    - consolidated test wrapper更新漏れ: cmd_3029でFP判定変更→才蔵がnew test作成(2/2 PASS)→test_gate_small_consolidated.batsの旧wrapperが旧期待値のまま→CI RED。grep {対象名} tests/でconsolidated wrapperの存在を事前確認し、ACまたは補足ナッジに含めよ
+  source_cmd: 'cmd_2798'
+  when: '同種の状況が再発した時'
+  how: 'cmd_2798でgate_context_freshness.sh修正→pre-pushはtest_context_freshness_check.batsのみ実行→test_cmd_complete_gate.batsのテスト28が漏れ→CI RED。根因=test_selectにgate→消費先テスト間接依存がなかった(cmd_2802で修正)。家老はgate修正cmd配備前に「このgateを呼ぶ上位テストは何か」を確認せよ。enforcement: cmd_2802でtest_selectにgate間接依存マッピング追加済み(環境側防御)。家老側=§0.1問い2適用(配備前にgrep -r gate名 tests/で消費先テスト確認)'
+  created_at: '2026-05-16'
+  origin: "[[cmd_2798]]"
+- id: 'LK006'
+  title: 'CoDD修行AC設計前にCLI --helpで構文現物確認必須'
+  detail: 'codd extract/elicit/generate等のサブコマンド構文をCLI --helpで確認せずにACを設計→4忍者全FAIL。coddはファイル引数ではなく--path/サブコマンド形式。§0.1問い2(現物確認)の適用範囲にCLIツール構文確認を含める。'
+  source_cmd: 'cmd_training_codd_202605161230'
+  when: '§0.1問い2にCLIツール構文確認を追加'
+  how: 'codd extract/elicit/generate等のサブコマンド構文をCLI --helpで確認せずにACを設計→4忍者全FAIL。coddはファイル引数ではなく--path/サブコマンド形式。§0.1問い2(現物確認)の適用範囲にCLIツール構文確認を含める。'
+  created_at: '2026-05-16'
+  origin: "[[cmd_training_codd_202605161230]]"
+- id: 'LK007'
+  title: '修行配備は殿指示時のみ — コスト責任者は殿'
+  detail: 'idle忍者への修行配備は家老の自立自走に含めない。金と権限がないロールがリアルマネーを使うのは越権行為(殿厳命2026-05-17)。トークン消費=殿のリアルマネー。家老には予算権限がない。自立自走=コストの掛からない分析・思考・改善提案(workaround分析/教訓監査/PD対応等)。修行配備は殿の明示的指示がある時のみ実施。'
+  source_cmd: 'cmd_karo_self_driving'
+  when: '同種の状況が再発した時'
+  how: 'idle忍者への修行配備は家老の自立自走に含めない。トークン/コンテキストのコスト責任者は殿。家老が勝手にリソースを消費する権限はない。自立自走=コストの掛からない分析・思考・改善提案。修行配備は殿の明示的指示がある時のみ実施。'
+  created_at: '2026-05-17'
+  origin: "[[cmd_karo_self_driving]]"
+- id: 'LK008'
+  title: 'STALL≠配備不完全 — nudge到達を確認してからSTALL判断せよ'
+  origin: '[[cmd_karo_stall_vs_deploy]]'
+  detail: 'CTX:0%+空プロンプト=STALLと即断するな。deploy_task.shのdeployment complete+re-nudge sentが出ていなければ配備不完全(nudge未到達)。STALLではなく配備をやり直せ。2026-05-17にGPT忍者4名連続STALL誤判断→Sonnet誤切替→全巻き戻しの事故。§0.1問い2(現物確認)の適用範囲にdeploy_task.logのnudge送信確認を含める。'
+  source_cmd: 'cmd_karo_stall_vs_deploy'
+  when: 'enforcement: post-bash-combined.sh deploy完了検証guard(Level4)+LK-A02 v7(deployment complete確認必須)'
+  how: 'CTX:0%+空プロンプト=STALLと即断するな。deploy_task.shのdeployment complete+re-nudge sentが出ていなければ配備不完全(nudge未到達)。STALLではなく配備をやり直せ。2026-05-17にGPT忍者4名連続STALL誤判断→Sonnet誤切替→全巻き戻しの事故。§0.1問い2(現物確認)の適用範囲にdeploy_task.logのnudge送信確認を含める。'
+  created_at: '2026-05-18'
+- id: 'LK009'
+  title: '間違いに気づいたら元まで巻き戻せ — 対処を重ねるな'
+  origin: '[[cmd_karo_rollback]]'
+  detail: '間違いの連鎖に気づいたら、対処(さらに切替/修正)を重ねるのではなく因果の起点まで巻き戻せ。2026-05-17: deploy不完全→STALL誤判断→Sonnet切替→さらに3名配備。正解=Sonnet配備取消→元のCodex忍者に正しく再配備。常に時系列での因果を意識し、間違いの起点を特定して巻き戻す(殿厳命)。'
+  source_cmd: 'cmd_karo_rollback'
+  when: 'enforcement: §0.1問い0(10回繰り返したら)で連鎖対処の負の複利を検出'
+  how: '間違いの連鎖に気づいたら、対処(さらに切替/修正)を重ねるのではなく因果の起点まで巻き戻せ。2026-05-17: deploy不完全→STALL誤判断→Sonnet切替→さらに3名配備。正解=Sonnet配備取消→元のCodex忍者に正しく再配備。常に時系列での因果を意識し、間違いの起点を特定して巻き戻す(殿厳命)。'
+  created_at: '2026-05-18'
+# v8統合(2026-05-20): LK010→LK-A13(sed修正済み/enforcement記載済み), LK011→LK-A02(GPT報告未作成=commit確認で代替),
+# LK012→LK-A09(karo_direct手動review=既記載), LK013→LK-A03(STALL再配備3点確認)。4件吸収削除
+- id: 'LK010'
+  title: 'deploy_task.sh exit 1でもnudge送信済みの場合あり — deploy出力のnudge痕跡を確認してから手動nudge判断'
+  origin: '[[cmd_2881]]'
+  detail: 'deploy_task.shがinject_causal_linksエラーでexit 1でも、inbox_write(nudge)は成功済みの場合がある。deploy出力に''codex nudge retry''/''delivery verified''があれば手動nudge不要。殿に指摘されるまで毎回重複送信していた。enforcement: LK-A02にnudge痕跡確認手順を追加'
+  source_cmd: 'cmd_2881'
+  when: '同種の状況が再発した時'
+  how: 'deploy_task.shがinject_causal_linksエラーでexit 1でも、inbox_write(nudge)は成功済みの場合がある。deploy出力に''codex nudge retry''/''delivery verified''があれば手動nudge不要。殿に指摘されるまで毎回重複送信していた。enforcement: LK-A02にnudge痕跡確認手順を追加'
+  created_at: '2026-05-20'
+- id: 'LK011'
+  title: '速度最適化修行ACにtest_select関連テストPASS確認を必須化せよ'
+  origin: '[[cmd_training_speed_tobisaru_3]]'
+  detail: '飛猿のcontext_freshness_check.sh速度最適化(649c6a44)がテスト9件FAILを引き起こしCI RED。修行ACにbefore/after計測だけでなくtest_select関連テストPASS確認を含めるべき。enforcement: training-cycle.md §28のACテンプレートにテストPASS確認を追加要'
+  source_cmd: 'cmd_training_speed_tobisaru_3'
+  when: '同種の状況が再発した時'
+  how: '飛猿のcontext_freshness_check.sh速度最適化(649c6a44)がテスト9件FAILを引き起こしCI RED。修行ACにbefore/after計測だけでなくtest_select関連テストPASS確認を含めるべき。enforcement: training-cycle.md §28のACテンプレートにテストPASS確認を追加要'
+  created_at: '2026-05-20'
+- id: 'LK012'
+  title: 'consolidated testのrun_embedded_testは一時ファイルをtests/unit/配下に生成せよ(CI並列対応)'
+  origin: '[[cmd_2894]]'
+  detail: 'CI --jobs 8並列でrun_embedded_testの一時ファイルが/tmp配下だとBATSのPROJECT_ROOT解決が壊れる。tests/unit/配下にBATS_TEST_NUMBER付きユニーク名で生成。cf7adb49で6ファイル修正済み。enforcement: cf7adb49'
+  source_cmd: 'cmd_2894'
+  when: '同種の状況が再発した時'
+  how: 'CI --jobs 8並列でrun_embedded_testの一時ファイルが/tmp配下だとBATSのPROJECT_ROOT解決が壊れる。tests/unit/配下にBATS_TEST_NUMBER付きユニーク名で生成。cf7adb49で6ファイル修正済み。enforcement: cf7adb49'
+  created_at: '2026-05-20'
+# LK013→LK-A12 v8吸収(2026-05-21): dashboard 0バイト競合
+- id: 'LK013'
+  title: 'D0レビューでテスト前提更新を確認せよ'
+  origin: '[[cmd_karo_d0_test_review]]'
+  detail: '軍師D0でMIN_SAMPLES 3→1変更+デバウンス追加。軍師は18テスト全PASSと報告。しかしテストはMIN_SAMPLES=3前提で書かれており、pre-push hookでFAIL 2件検出→CI RED。D0変更がデフォルト値・閾値・新ロジック追加の場合、既存テストの前提が古くなっていないか確認必須。§0.1問い2(現物確認)の適用範囲にD0テスト前提確認を追加。enforcement: LK-A01適用拡張(D0レビュー時にgit diff --stat対象ファイルの関連テストをgrep確認)'
+  source_cmd: 'cmd_karo_d0_test_review'
+  when: '同種の状況が再発した時'
+  how: '軍師D0でMIN_SAMPLES 3→1変更+デバウンス追加。軍師は18テスト全PASSと報告。しかしテストはMIN_SAMPLES=3前提で書かれており、pre-push hookでFAIL 2件検出→CI RED。D0変更がデフォルト値・閾値・新ロジック追加の場合、既存テストの前提が古くなっていないか確認必須。§0.1問い2(現物確認)の適用範囲にD0テスト前提確認を追加。enforcement: LK-A01適用拡張(D0レビュー時にgit diff --stat対象ファイルの関連テストをgrep確認)'
+  created_at: '2026-05-21'
