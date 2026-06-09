@@ -29,7 +29,7 @@ CHECK_SCRIPT="${CONTEXT_FRESHNESS_CHECK_SCRIPT:-$ROOT_DIR/scripts/context_freshn
 NTFY_SCRIPT="${CONTEXT_FRESHNESS_NTFY_SCRIPT:-$ROOT_DIR/scripts/ntfy.sh}"
 TODAY_OVERRIDE="${CONTEXT_FRESHNESS_TODAY:-}"
 CACHE_TTL="${CONTEXT_FRESHNESS_GATE_CACHE_TTL:-10}"
-ALERT_DEBOUNCE_SECONDS="${CONTEXT_FRESHNESS_ALERT_DEBOUNCE_SECONDS:-3600}"
+ALERT_DEBOUNCE_SECONDS="${CONTEXT_FRESHNESS_ALERT_DEBOUNCE_SECONDS:-86400}"
 ALERT_STATE_DIR="${CONTEXT_FRESHNESS_ALERT_STATE_DIR:-/tmp/gate_context_freshness_alerts}"
 GIT_TIMEOUT="${CONTEXT_FRESHNESS_GATE_GIT_TIMEOUT:-1}"
 
@@ -283,10 +283,9 @@ for rel_path in "${target_rel_paths[@]}"; do
         ALERT_LIST+=("${basename_file}(source更新)")
     elif [[ "$days_ago" -gt 14 ]]; then
         emit_actionable \
-            "ALERT: ${basename_file} (${days_ago}日前更新)" \
-            "${basename_file} の内容を確認し、最新情報へ更新せよ。"
-        HAS_ALERT=1
-        ALERT_LIST+=("${basename_file}(${days_ago}日)")
+            "WARN: ${basename_file} (${days_ago}日前更新、ソース変更なし)" \
+            "${basename_file} の鮮度を確認し、必要なら更新せよ。"
+        HAS_WARN=1
     elif [[ "$days_ago" -gt 7 ]]; then
         emit_actionable \
             "WARN: ${basename_file} (${days_ago}日前更新)" \

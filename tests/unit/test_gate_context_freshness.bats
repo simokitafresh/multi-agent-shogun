@@ -43,7 +43,7 @@ run_gate() {
     run bash "$PROJECT_ROOT/scripts/gates/gate_context_freshness.sh"
 }
 
-@test "ALERT output includes update command templates for stale top 3" {
+@test "stale files without source commits produce WARN not ALERT" {
     cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
 #!/usr/bin/env bash
 cat <<'OUT'
@@ -61,20 +61,44 @@ SH
 
     run_gate
 
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"WARN: oldest.md (40日前更新、ソース変更なし)"* ]]
+    [[ "$output" == *"WARN: second.md (30日前更新、ソース変更なし)"* ]]
+    [[ "$output" == *"--- 総合判定: WARN ---"* ]]
+    [[ "$output" != *"--- 更新cmdテンプレート TOP3 ---"* ]]
+}
+
+@test "ALERT output includes update command templates when source commits exist" {
+    cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
+#!/usr/bin/env bash
+cat <<'OUT'
+ALERT: context/oldest.md source commits 3件 since last_updated=2026-04-01。更新要否を確認せよ
+ALERT: context/second.md source commits 2件 since last_updated=2026-04-11。更新要否を確認せよ
+ALERT: context/third.md source commits 1件 since last_updated=2026-04-21。更新要否を確認せよ
+WARN: context/fourth.md last_updated 18日前。更新要否を確認せよ
+OUT
+SH
+    chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
+    write_context_file context/oldest.md 2026-04-01
+    write_context_file context/second.md 2026-04-11
+    write_context_file context/third.md 2026-04-21
+    write_context_file context/fourth.md 2026-04-23
+
+    run_gate
+
     [ "$status" -eq 1 ]
     [[ "$output" == *"--- 更新cmdテンプレート TOP3 ---"* ]]
     [[ "$output" == *"cmd_ctx_oldest_20260511"* ]]
     [[ "$output" == *"cmd_ctx_second_20260511"* ]]
     [[ "$output" == *"cmd_ctx_third_20260511"* ]]
     [[ "$output" != *"cmd_ctx_fourth_20260511"* ]]
-    [[ "$output" == *"AC3: bash scripts/gates/gate_context_freshness.sh 実行時に context/oldest.md がALERT対象から外れる"* ]]
 }
 
-@test "first ALERT sends ntfy and logs sent to stderr" {
+@test "first ALERT with source commits sends ntfy and logs sent to stderr" {
     cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
 #!/usr/bin/env bash
 cat <<'OUT'
-WARN: context/stale.md last_updated 30日前。更新要否を確認せよ
+ALERT: context/stale.md source commits 2件 since last_updated=2026-04-11。更新要否を確認せよ
 OUT
 SH
     chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
@@ -83,16 +107,16 @@ SH
     run_gate
 
     [ "$status" -eq 1 ]
-    [[ "$output" == *"[gate_context_freshness] ntfy sent: stale.md(30日)"* ]]
+    [[ "$output" == *"[gate_context_freshness] ntfy sent: stale.md(source更新)"* ]]
     [ "$(wc -l < "$TEST_TMPDIR/ntfy_calls.log")" -eq 1 ]
-    [[ "$(cat "$TEST_TMPDIR/ntfy_calls.log")" == *"【将軍】context鮮度ALERT: stale.md(30日)"* ]]
+    [[ "$(cat "$TEST_TMPDIR/ntfy_calls.log")" == *"【将軍】context鮮度ALERT: stale.md(source更新)"* ]]
 }
 
-@test "same ALERT within 60 minutes skips ntfy and logs skip to stderr" {
+@test "same ALERT within debounce window skips ntfy" {
     cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
 #!/usr/bin/env bash
 cat <<'OUT'
-WARN: context/stale.md last_updated 30日前。更新要否を確認せよ
+ALERT: context/stale.md source commits 2件 since last_updated=2026-04-11。更新要否を確認せよ
 OUT
 SH
     chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
@@ -104,7 +128,7 @@ SH
     CONTEXT_FRESHNESS_ALERT_NOW=1770000300 run_gate
 
     [ "$status" -eq 1 ]
-    [[ "$output" == *"[gate_context_freshness] ntfy skip: same ALERT sent 300s ago (<3600s): stale.md(30日)"* ]]
+    [[ "$output" == *"[gate_context_freshness] ntfy skip: same ALERT sent 300s ago (<86400s): stale.md(source更新)"* ]]
     [ "$(wc -l < "$TEST_TMPDIR/ntfy_calls.log")" -eq 1 ]
 }
 
