@@ -1,6 +1,7 @@
 ---
 name: gs-bench-gate
 description: |
+  【忍者専用】将軍・家老・軍師は使用禁止。忍者以外が呼んだ場合は即座に中断せよ。
   GS共通コード変更時のパフォーマンス回帰検出ゲート。
   Phase before(ベースライン計測)とPhase after(変更後計測+比較+判定)の2段階。
   REGRESSIONならrevert→家老報告→作業停止。

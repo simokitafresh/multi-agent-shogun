@@ -2,6 +2,7 @@
 name: monthly-report-writer
 argument-hint: "[month:YYYY-MM]"
 description: |
+  【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。
   DM-Signal Monthly Report を月初に発行する skill。
   DM-Signal API から signals / monthly-returns(5年) / deterioration を取得し、
   xAI Grok x_search で先月の月間ニュースを補完して、

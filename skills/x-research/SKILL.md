@@ -2,6 +2,7 @@
 name: x-research
 quality_metric: "将軍系: X調査cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
 description: |
+  【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。
   xAI Grok APIのx_search機能でXリアルタイム検索し、トレンドクラスター・代表ポスト・
   一次情報URLを含むContext Pack Markdownを生成。将軍がトピック調査時に使用。
   TRIGGER: /x-research、X検索、Xリサーチ、トピック調査、トレンド調査
