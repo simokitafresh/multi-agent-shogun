@@ -454,10 +454,14 @@ else:
 print()
 
 print('=== Loop Status ===')
-if fail_count > 0 and autofix_count == 0:
+if fail_count > 0:
     if sc_total > 0 and sc_pct >= 80:
         print(f'  OK: 免疫系正常（自己修正率{sc_pct}%）')
         sys.exit(0)
+    recent_total = len(recent_entries)
+    if recent_total >= 10 and recent_fail_count > recent_total * 0.3:
+        print('  WARNING: FAIL率30%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須')
+        sys.exit(1)
     elif format_fail_recent > 0:
         print(f'  WARNING: フォーマット系FAIL {format_fail_recent}件が未auto-fix。新フォーマットパターンの成熟提案を確認せよ')
         sys.exit(1)
@@ -467,9 +471,6 @@ if fail_count > 0 and autofix_count == 0:
     else:
         print('  OK: 直近のFAILパターンなし')
         sys.exit(0)
-elif recent_fail_count > recent_pass_count * 0.3:
-    print('  WARNING: FAIL率30%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須')
-    sys.exit(1)
 else:
     print('  OK: 第三層は健全')
     sys.exit(0)

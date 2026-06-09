@@ -80,6 +80,51 @@ EOF
     [[ "$output" == *"現時点で成熟提案なし"* ]]
 }
 
+@test "gate_loop_health autofix蓄積があっても自己修正率判定が実行される" {
+    {
+        # 10 self-corrected files (FAIL→PASS)
+        for i in $(seq 1 10); do
+            printf -- '- ts: "2026-04-19T13:%02d:00" file: "queue/reports/sc_%02d.yaml" result: FAIL reasons: "quality_check" fixes: ""\n' "$i" "$i"
+            printf -- '- ts: "2026-04-19T13:%02d:30" file: "queue/reports/sc_%02d.yaml" result: PASS reasons: "" fixes: ""\n' "$i" "$i"
+        done
+        # 2 uncorrected files
+        for i in $(seq 11 12); do
+            printf -- '- ts: "2026-04-19T13:%02d:00" file: "queue/reports/uc_%02d.yaml" result: FAIL reasons: "quality_check" fixes: ""\n' "$i" "$i"
+        done
+        # 5 AUTO-FIXED entries (autofix蓄積)
+        for i in $(seq 1 5); do
+            printf -- '- ts: "2026-04-19T14:%02d:00" file: "queue/reports/af_%02d.yaml" result: AUTO-FIXED reasons: "" fixes: "fixed"\n' "$i" "$i"
+        done
+    } > "$TEST_TMPDIR/logs/gate_fire_log.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Self-correction: 10/12 (83%)"* ]]
+    [[ "$output" == *"OK: 免疫系正常"* ]]
+}
+
+@test "gate_loop_health FAIL率はFAIL/TOTALで計算されFAIL/PASSではない" {
+    {
+        # 5 FAIL + 3 AUTO-FIXED + 12 PASS = 20 entries (all in recent window)
+        # FAIL/PASS = 5/12 = 41.7% > 30% (old buggy code would warn)
+        # FAIL/TOTAL = 5/20 = 25% <= 30% (new code does NOT warn)
+        for i in $(seq 1 5); do
+            printf -- '- ts: "2026-04-19T14:%02d:00" file: "queue/reports/fail_%02d.yaml" result: FAIL reasons: "quality_issue" fixes: ""\n' "$i" "$i"
+        done
+        for i in $(seq 1 3); do
+            printf -- '- ts: "2026-04-19T14:%02d:00" file: "queue/reports/auto_%02d.yaml" result: AUTO-FIXED reasons: "" fixes: "fixed"\n' $((i+5)) "$i"
+        done
+        for i in $(seq 1 12); do
+            printf -- '- ts: "2026-04-19T14:%02d:00" file: "queue/reports/pass_%02d.yaml" result: PASS reasons: "" fixes: ""\n' $((i+8)) "$i"
+        done
+    } > "$TEST_TMPDIR/logs/gate_fire_log.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARNING: FAIL率30%超"* ]]
+    [[ "$output" == *"INFO: 品質系FAIL"* ]]
+}
+
 @test "gate_loop_health fail rate warning threshold is above 30 percent" {
     {
         for i in $(seq 1 5); do
