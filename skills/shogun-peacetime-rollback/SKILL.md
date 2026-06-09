@@ -3,6 +3,7 @@ name: shogun-peacetime-rollback
 argument-hint: ""
 quality_metric: "将軍系: peacetime rollback cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
 description: |
+  【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。
   What: Restore multi-agent-shogun from emergency Codex-only mode back to peacetime CLI allocation with scripts/switch_cli_mode.sh and deterministic settings rollback.
   TRIGGER: /shogun-peacetime-rollback、平時編成へ戻す、Codex-only解除、Claude復旧後ロールバック
   DO NOT TRIGGER: 全員Codex切替（→/shogun-all-codex-switch）、単体ペイン修復

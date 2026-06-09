@@ -3,6 +3,7 @@ name: shogun-all-codex-switch
 argument-hint: ""
 quality_metric: "将軍系: all-codex切替cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
 description: |
+  【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。
   What: Switch multi-agent-shogun to Codex-only operation via scripts/switch_cli_mode.sh, normalize cli.default=codex, and restart inbox watchers.
   TRIGGER: /shogun-all-codex-switch、全員Codex切替、Codex-only編成、緊急Codex編成
   DO NOT TRIGGER: 単体CLI切替、peacetime rollback（→/shogun-peacetime-rollback）
