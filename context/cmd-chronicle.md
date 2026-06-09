@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-09 cmd_3256 -->
+<!-- last_updated: 2026-06-09 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -527,3 +527,4 @@
 | cmd_3252 | セッション中に洗脳5/8発現。#3はcmd_3251で環境強制済み。残り4パターン+F009偽陽性の5件を完結させる: (A)F009偽陽性=過去形引用除外 (B)#1早期終了=note_draft.sh WebSocketフォールバック (C)#2検証スキップ=sengoku-writerにls自動確認ステップ強制 (D)#7簡潔本能+#8完了急ぎ=clear_prep_check.shにセッション知見全件反映チェック追加 | infra | 06-09 | 洗脳4パターン+F009偽陽性の5件修正完了。AC1:F00 |
 | cmd_3254 | startup BLOCK 3セッション連続。useful_rate=3.4%(2/58)。直近6cmdで58件教訓注入のうちuseful2件のみ。根因特定(注入ロジック/タグ精度/フィードバック記録)+低useful教訓のwhen/how改善で有効率を回復する | infra | 06-09 | useful_rate 3.4%の根因=memory_db |
 | cmd_3255 | startup BLOCK 3セッション連続。cmd_3075(重複抑止)/3080(窓拡張)/3244(照合キー修正)で0%→7%に改善したが偽陽性93%(28/30)が残存。残存根因を特定し改善する | infra | 06-09 | skill_recommend.shにrole_marker |
+| cmd_3259 | 覚醒洗脳監査6/8 YES。根因: GATE CLEARで鎖が切れ効果を再確認しない→洗脳#6(出力=仕事)が構造化。cmd_3254 GATE CLEARでuseful_rate+1%なのに完了と報告した。GATE CLEAR受信時にcmdのpurposeから数値改善キーワードを抽出し、効果再確認リマインダーを将軍に強制注入する | infra | 06-09 | post-shogun-inbox-check.shにGAT |
