@@ -21,7 +21,7 @@ allowed-tools:
 
 <!-- script_refs_checked_at: 2026-06-07T10:28:45+09:00 -->
 
-Script refs verified: 2026-06-07 cmd_3206. `dashboard_update.sh` の契約は `<cmd_id> [--dry-run]` のまま。cmd_id未指定+`--dry-run` は本体スキップでexit 0、cmd_id不正はexit 1。`gate_report_format.sh` はhot path高速化のみで、binary_checks由来verdict自動導出・未記入BLOCK・PASS cacheの契約は本文記載と一致。
+Script refs verified: 2026-06-10. `dashboard_update.sh` の契約は `<cmd_id> [--dry-run]` のまま。cmd_id未指定+`--dry-run` は本体スキップでexit 0、cmd_id不正はexit 1。`gate_report_format.sh` はhot path高速化に加え、cmd_3264でauto-commit contamination check(bc:commit=yes時にtarget_path配下の未commit変更・auto-commit巻込みをWARN検出)を追加。binary_checks由来verdict自動導出・未記入BLOCK・PASS cacheの契約は本文記載と一致。
 
 # /dashboard-update — KARO_SECTION自動生成
 
@@ -180,4 +180,4 @@ bash scripts/ntfy.sh "📊 Dashboard: {直近cmd結果} | idle:{N}名 | pipeline
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `gate_report_format.sh` の現行契約を再確認。dashboard更新前の報告YAML検証は、binary_checks由来verdict自動導出・lessons_useful空リストBLOCK・中間FAILログ抑止を含む現在のgate出力を正本にする。
 
-<!-- script_refs_checked_at: 2026-06-07T21:51:07+09:00 -->
+<!-- script_refs_checked_at: 2026-06-10T08:40:00+09:00 -->

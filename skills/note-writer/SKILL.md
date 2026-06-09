@@ -173,7 +173,7 @@ CDP経由でnote.comに下書き保存する。実行は共通ヘルパー `scri
 CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 ```
 
-内部では `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは `/tmp/note_recaptcha_challenge.png` を撮影して、ブラウザ上で解決されるまで最大120秒待機する。
+内部では `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。bash層でChrome CDP事前チェック(Step 0)を行い、CDP_PORTに応答がなければSKIP(exit 0)で抜ける(FAIL率汚染防止)。Chrome起動時は `launch_browser`(PowerShell)を試行し、失敗時は `cmd.exe` フォールバックで隔離プロファイル付きChrome起動を試みる。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは `/tmp/note_recaptcha_challenge.png` を撮影して、ブラウザ上で解決されるまで最大120秒待機する。
 
 Markdown→note.com変換ルール:
 - `# タイトル` → titleのtextareaに設定（本文に含めない）。`#` が無い場合は最初の `##` をfallback titleに使う
@@ -185,4 +185,4 @@ Markdown→note.com変換ルール:
 - ProseMirrorエディタがスピナーで停止している場合、`Page.reload` で最大2回リトライする（`wait_for_prosemirror`）
 - 下書き保存ボタン押下後、最終URLを `[note_draft] Done: ...` に出力し、`skill_execution_log.yaml` にPASS/FAILを記録する
 
-<!-- script_refs_checked_at: 2026-06-08T21:13:40+09:00 -->
+<!-- script_refs_checked_at: 2026-06-10T08:40:00+09:00 -->

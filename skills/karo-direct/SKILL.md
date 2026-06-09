@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-09T09:25:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-10T08:40:00+09:00 -->
 
 # /karo-direct — 家老自立配備スキル
 
@@ -118,3 +118,4 @@ Script refs verified: 2026-06-07 cmd_3206. `deploy_task.sh` はearly target判�
 Script refs verified: 2026-06-05 cmd_3146/cmd_3144. `deploy_task.sh` はlesson injectionで対象project外の教訓を除外し、platform project教訓のみ横断許可する(project filter)。これは注入精度の変更であり、`--yaml`/`--direct`配備手順変更なし。`deploy_task.sh` 直近変更(670918b3)は`draft_review_already_completed()`関数追加によるdraft review重複通知防止(内部追加のみ、配備手順変更なし)。SKILL.md記載の`--yaml`/`--direct`呼び出し方法は現行と一致。
 Script refs verified: 2026-06-08 ceb10419a cmd_3231. `deploy_task.sh` はtarget_pathなし時にMIN_KEYWORD_SCOREを8へ引上げ、tag fallbackを無効化(低関連教訓のNOT_USEFUL量産防止)。注入精度の変更であり、`--yaml`/`--direct`配備手順変更なし。
 Script refs verified: 2026-06-09 e72eb99d4+3de0d29cc. `deploy_task.sh` はinject_semantic_conceptsで推薦ログにninja_nameフィールドを記録(precision照合キー修正)。`yaml_field_set.sh` はskip_childrenがYAMLリスト要素(`- `始まり)を見逃すバグ修正。いずれも内部変更であり、`--yaml`/`--direct`配備手順変更なし。
+Script refs verified: 2026-06-10. `deploy_task.sh` は(1)TRIGGER cross-validation追加: inject_semantic_conceptsのスキル推薦で、semantic matchだけでなくSKILL.mdのTRIGGERキーワードがpurposeに含まれるかを確認し偽陽性を除去。(2)boost適用にkeyword_score>0必須化(cmd_3254): keyword_score=0でもboost+project点で閾値突破していたNOT_USEFUL教訓の注入を防止。(3)flow-style YAML deprecation対応: `- {id: L723, ...}` パターンのdeprecated:true挿入。(4)lesson_impact.tsv空行混入防御: ensure_impact_headerのCR汚染対策+_is_empty_row空行フィルタ+DictWriter lineterminator="\n"明示。いずれも内部変更であり、`--yaml`/`--direct`配備手順変更なし。
