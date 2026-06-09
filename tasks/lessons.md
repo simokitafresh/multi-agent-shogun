@@ -738,7 +738,7 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **日付**: 2026-02-27
 - **出典**: cmd_386
 - **記録者**: kagemaru,saizo
-- **tags**: [review, gate]
+- **tags**: [gate-block-structure]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: 65%(214件)がmissing_gate(archive/lesson/review_gate)=家老の処理順序とゲート実行タイミングの不一致
 - gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/review_gate)=家老の処理順序とゲート実行タイミングの不一致。81-90%が5分以内解決で実害は限定的。改善策: preflight一括フラグ生成でBLOCK率20%台に削減可能
@@ -967,7 +967,7 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **日付**: 2026-02-27
 - **出典**: cmd_413
 - **記録者**: hayate
-- **tags**: [gate, yaml]
+- **tags**: [gate-metrics-format]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: 実装前にファイル形式を確認せよ
 - gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV 6列: timestamp/cmd_id/result/reason/task_type/model)に格納される。タスク記述の「gate_metrics.yaml」は実際のファイルと異なる。実装前にファイル形式を確認せよ。
@@ -1434,7 +1434,7 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **日付**: 2026-03-04
 - **出典**: cmd_534
 - **記録者**: karo
-- **tags**: [gate, git]
+- **tags**: [gitignore-silent-error]
 - **if**: gitignoreエラー時
 - **then**: 対策は(1)ashigaru.md明文化(即効)→(2)pre-commitフック(根治)の段階実施が有効
 - **because**: 忍者のgit addエラー(gitignore対象の誤addやwhitelist未登録)はgate_metrics.logに記録されない
@@ -1511,7 +1511,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-04
 - **出典**: cmd_537
 - **記録者**: kagemaru
-- **tags**: [bash, git]
+- **tags**: [shellcheck-rg-grep]
 - **if**: shellスクリプトやgit hookでテキスト検索を行う時
 - **then**: rgではなく標準のgrepを使え
 - **because**: ポータブルなスクリプトではrg/ripgrepの存在が保証されず、|| trueパターンもエラー握りつぶしリスクがあるため
@@ -1729,7 +1729,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-05
 - **出典**: cmd_571
 - **記録者**: kirimaru
-- **tags**: [process]
+- **tags**: [daemon-singleton]
 - **if**: ストリーム購読系デーモン時
 - **then**: ntfy_listenerで多重起動防止(lock/pidfile)とMSG_ID重複排除が無いと、運用上の二重起動や再接続再配送で同一イベントを二重記録する
 - **because**: 購読デーモンは両方を初期実装に含めるべき
@@ -1753,7 +1753,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-05
 - **出典**: cmd_578
 - **記録者**: hayate
-- **tags**: [communication, bash, yaml, inbox]
+- **tags**: [yaml-heredoc-safety]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-03-05
 - scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れる。append系は flock + parse + dump の原子トランザクションに統一すべし。
@@ -2499,7 +2499,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-19
 - **出典**: cmd_1104
 - **記録者**: kirimaru
-- **tags**: [lesson]
+- **tags**: [report-format]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-03-19
 - 全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す
@@ -2636,7 +2636,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-20
 - **出典**: cmd_1136実装中の半蔵がstop hook errorで停止
 - **記録者**: karo
-- **tags**: [gate, bash, git]
+- **tags**: [shellcheck-gate]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: 2026-03-20
 - stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude Codeに'non-blocking status code'エラーとして処理されblock decisionが無視された
@@ -2862,7 +2862,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-23
 - **出典**: cmd_1285
 - **記録者**: kagemaru
-- **tags**: [process, gate, yaml]
+- **tags**: [yaml-fallback-parser]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: gate_shogun_startup.shと同様のfallback regex parserが必須
 - karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様のfallback regex parserが必須。運用ファイルは構造破損前提で設計すべき
@@ -2916,7 +2916,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-25
 - **出典**: cmd_1397
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [checklist-constraint]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: cmd_1397でチェックリストStep7(再計算禁止=殿が実行)がcmdに転写されず、影丸が再計算を実行してしまった
 - cmd_1397でチェックリストStep7(再計算禁止=殿が実行)がcmdに転写されず、影丸が再計算を実行してしまった。チェックリストを参照するcmdを書く際は、該当Stepだけでなく前後Stepの制約をACまたはnever_doに必ず転写せよ。忍者はチェックリスト全体を読まない前提で設計すること
@@ -2961,7 +2961,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-26
 - **出典**: cmd_1409
 - **記録者**: kotaro
-- **tags**: [communication, git, inbox]
+- **tags**: [ntfy-listener-init]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-03-26
 - ntfy_listener.shをNTFY_LISTENER_LIB_ONLY=1でsource時、flock guardはスキップされるがinbox初期化(echo>INBOX)やmkdir等のI/O操作はガードされていなかった。CIではqueue/ディレクトリがgitignoreで不在のためset -eで即終了。lib-only modeではI/O初期化もスキップすべき
@@ -3024,7 +3024,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-30
 - **出典**: cmd_1493
 - **記録者**: karo
-- **tags**: [deploy, yaml]
+- **tags**: [deploy-task-cmd-id]
 - **when**: deploy_task.shを新cmdで呼ぶ
 - **how**: cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510)
 - IF deploy_task.shを新cmdで呼ぶ THEN cmd_id引数を必ず指定せよ(例: deploy_task.sh hayate cmd_1510) BECAUSE cmd_id未指定時はtask YAMLのparent_cmd/task_idが更新されず旧cmdのまま配備される。resolve_cmd_to_taskが自動設定。
@@ -3132,7 +3132,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-30
 - **出典**: lessons,deploy,injection,useful-rate
 - **記録者**: karo
-- **tags**: [deploy, recon, lesson]
+- **tags**: [lesson-tag-precision]
 - **when**: deploy_task.shのlesson_tags/related_lessons注入条件、またはlesson useful率改善を扱う時
 - **how**: useful:false理由をtask_type/project/対象ファイル別に集計し、広すぎるタグ語を削るか狭スコープ教訓をdormant/deprecated候補へ分ける
 - 直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコープ教訓が全タスクに注入される。死蔵教訓は個別事象レベルで再発条件が極めて限定的。改善: 適用頻度閾値による自動dormant化+教訓の原理レベルへの昇格リライト+空理由の自動ブロック
@@ -3339,7 +3339,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_013
 - **記録者**: hanzo
-- **tags**: [bash, yaml]
+- **tags**: [yaml-quote-escape]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-03-31
 - cmd_quality_log.shでNOTES引数をダブルクォートで囲んでYAMLに書き込む際、引用符やバックスラッシュをエスケープしていなかった。echo notes: NOTES のパターンは全てのbash YAML書込みスクリプトで同様のリスクがある。bash YAML書込み時はダブルクォート→バックスラッシュ→引用符の順でエスケープ必須
@@ -3468,7 +3468,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_023
 - **記録者**: hayate
-- **tags**: [communication, inbox]
+- **tags**: [daemon-flock]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: inbox_archive.shとinbox_write.shが異なるロックパス(${INBOX}.lock vs /tmp/shogun_lock_<md5>.lock)を使用しており排他制御が無効だった
 - inbox_archive.shとinbox_write.shが異なるロックパス(${INBOX}.lock vs /tmp/shogun_lock_<md5>.lock)を使用しており排他制御が無効だった。同一ファイルを操作するスクリプト群はlock_path()を統一利用し、ロックファイルの一致を保証すべき
@@ -3576,7 +3576,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_039
 - **記録者**: kotaro
-- **tags**: [bash]
+- **tags**: [bash-python-eval]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: ShellCheck SC2154対策として事前変数宣言が必要
 - bashスクリプトから同一JSONに対しpython3を複数回起動するパターンは、shlex.quote()でシェル安全にエスケープしeval代入する1回呼出しに統合すべき。ShellCheck SC2154対策として事前変数宣言が必要
@@ -3666,7 +3666,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_050
 - **記録者**: saizo
-- **tags**: [communication, inbox]
+- **tags**: [daemon-state]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: should_act関数(L38)でアクション実行前に状態ファイルを書く設計
 - should_act関数(L38)でアクション実行前に状態ファイルを書く設計。inbox_write/ntfy失敗時に次回ALERT→ALERT再送抑止でALERTが消失する。状態保存はアクション成功後に行うべき
@@ -3684,7 +3684,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_048
 - **記録者**: kagemaru
-- **tags**: [communication, gate, inbox]
+- **tags**: [daemon-flock]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: 同じパターンはinbox_write.sh等プロジェクト内の他のファイル操作でも使用されている
 - rotate_gate_metrics.shがflock無しで実装されており、cmd_complete_gate.shの3箇所から並行呼出しされるとhead-tail-mv間で書込みが入りログ行消失する。flock取得後にline_countを再チェックする二重チェックパターン(DCLP的)で、先行プロセスがローテーション済みの場合のearly exitも実現。同じパターンはinbox_write.sh等プロジェクト内の他のファイル操作でも使用されている。
@@ -3693,7 +3693,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_051
 - **記録者**: kotaro
-- **tags**: [git, inbox]
+- **tags**: [git-config]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: git addが拒否されgit add -fで強制追加した
 - clipboard_watcher.shはwhitelist方式の.gitignoreで許可リストに未登録だった。git addが拒否されgit add -fで強制追加した。未追跡ファイルの改善タスクでは事前にgit ls-filesで追跡状態を確認すべき
@@ -3702,7 +3702,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_058
 - **記録者**: tobisaru
-- **tags**: [pipeline]
+- **tags**: [daemon-log-rotation]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: cronで毎分実行されるwatchdogスクリプトのlog()がappend-onlyでサイズチェックなし
 - cronで毎分実行されるwatchdogスクリプトのlog()がappend-onlyでサイズチェックなし。10分毎のOKログだけでも月1440行、再起動イベント含めると際限なく成長。rotate_log()を冒頭で実行し1MB超過時にtail -n 500で切り詰める方式で対処。他のcron系スクリプトにも同様のリスクがないか横展開確認が望ましい
@@ -4035,7 +4035,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_091
 - **記録者**: kotaro
-- **tags**: [process, bash, yaml]
+- **tags**: [yaml-heredoc-escape]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: bash parameter expansion(${var//pattern/replacement})で書込み前にエスケープせよ
 - cmd_friction_log.shのようにheredoc+cat>>でYAMLにエントリを追記するパターンでは、変数内のダブルクォートやバックスラッシュがYAML構造を壊す。bash parameter expansion(${var//pattern/replacement})で書込み前にエスケープせよ。yaml.dumpが禁止されている運用YAMLでは特に重要
@@ -4365,7 +4365,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_karo_ci_fix
 - **記録者**: hanzo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [cmd-save-test]
 - **when**: テスト設計・実行・結果判定を行う時
 - **how**: _make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった
 - _make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全関数を同時に修正する必要がある。
@@ -4658,7 +4658,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1963
 - **記録者**: kotaro
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash-python-interop]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-16
 - python3 -c "..." 内のPythonコードをShellCheckがシェルコードとして解析し、(等でエラーになる。根本解決はpython3 << 'PYEOF'形式に変換すること。シェル変数はGATE_VAR=val python3 << 'PYEOF'の形でos.environ['GATE_VAR']として渡す。yaml.safe_loadはfileオブジェクトにもimportコストがあるため大ファイルは行ベースパーサで代替すると100ms以上削減できる
@@ -4668,7 +4668,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1965
 - **記録者**: hayate
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [performance-source-overhead]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に source すると usage/help でも固定コストを払い続ける
 - 高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に source すると usage/help でも固定コストを払い続ける。hot path は専用の軽量パーサへ切り出し、重い共通ライブラリは遅延読込または不使用に寄せるべし。
@@ -4708,7 +4708,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1981
 - **記録者**: kagemaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash-error-handling]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 修正: 変数代入行末に|| trueを追加
 - stat複数ファイル | trはいずれかのファイルが不在でstatが非ゼロ→pipefailでパイプ全体非ゼロ→set -eで即exit。テスト環境では対象ファイルが存在しないため発現。修正: 変数代入行末に|| trueを追加。同パターンはL481(grep no-match)と同種の罠。
@@ -4727,7 +4727,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-16
 - **出典**: cmd_karo_ci_fix_1987
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [bats-parallel, testing]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-16
 - bats --jobs並列でsetup/teardownが/tmp固定パスに同時アクセスしレースコンディション発生。テスト用状態ファイルはTEST_ROOT配下に隔離し/tmp固定パスを使わない。STOP_LINT_HASH_FILE環境変数でオーバーライド可能にした
@@ -4747,7 +4747,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2039
 - **記録者**: hayate
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [git-performance, wsl2]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 今回の stop-lint-gate では bash read loop median 0.91s に対し awk 抽出版 median 0.84s を確認した
 - WSL2上の大きいgit worktreeでは、git status --porcelain=v2 -z のNUL区切り出力は bash の while read -d ループより awk 抽出の方が速かった。今回の stop-lint-gate では bash read loop median 0.91s に対し awk 抽出版 median 0.84s を確認した。
@@ -4756,7 +4756,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-18
 - **出典**: cmd_2039
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [performance-wsl2]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-18
 - WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。bash readのIFS分割+行ループより awk 1-passの方がWSL2 NTFS上で高速。stop-lint-gate cmd_2039で0.84s実証。
@@ -4878,7 +4878,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2088
 - **記録者**: tobisaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [wsl2-filesystem, performance]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 必ず5回median計測してから採用判断せよ
 - find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2 NTFS上ではfindがstatより遅い場合があり、事前の単体計測1回では判断できない。必ず5回median計測してから採用判断せよ。
@@ -5336,7 +5336,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-02
 - **出典**: cmd_karo_infra_recon_core
 - **記録者**: karo
-- **tags**: [infra,recon,process,yaml]
+- **tags**: [yaml-dump-detection]
 - **target_files**: [queue/tasks/hayate.yaml (status assigned->acknowledged->in_progress),queue/reports/hayate_report_cmd_karo_infra_recon_core.yaml]
 - **when**: queue/tasks・queue/reports・queue/inboxなど運用YAMLを書き換えるスクリプトや偵察を担当する時
 - **how**: rg 'yaml\\.dump|yaml\\.safe_dump' と書込先確認を行い、運用YAMLはyaml_field_set/report_field_set/inbox_mark_read等の専用helperへ置き換える
@@ -5618,7 +5618,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-09
 - **出典**: cmd_2605
 - **記録者**: karo
-- **tags**: [infra]
+- **tags**: [skill-auto-improve]
 - **target_files**: [scripts/gates/gate_report_format.sh,scripts/skill_auto_improve.sh,scripts/ninja_monitor.sh,skills/report-write/SKILL.md,tests/test_gate_report_format.bats]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: skill_indexは設定skills_dirsを優先しログ由来pathはフォールバックとする
@@ -5887,7 +5887,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-12
 - **出典**: cmd_2690
 - **記録者**: saizo
-- **tags**: [infra,review,yaml]
+- **tags**: [external-path-drift]
 - **target_files**: [docs/semantic-index/index.md,context/semantic-map.md]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 現行indexではmissing=0だったため、掲示板とgunshi_review_logを追加で追跡する必要があった
@@ -5899,7 +5899,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-12
 - **出典**: cmd_2690
 - **記録者**: karo
-- **tags**: [infra,recon,yaml]
+- **tags**: [drift-task-injection]
 - **target_files**: [docs/semantic-index/index.md,context/semantic-map.md]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)
@@ -6060,7 +6060,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-16
 - **出典**: cmd_2807
 - **記録者**: tobisaru
-- **tags**: [infra,yaml]
+- **tags**: [yaml-field-set-batch-bug]
 - **target_files**: [scripts/lib/inject_task_modifiers.py,tests/unit/test_gate_meta_quality.bats,tests/unit/test_dashboard_auto_context_freshness.bats]
 - **when**: 未設定
 - **how**: 未設定
@@ -6253,7 +6253,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-19
 - **出典**: cmd_karo_ci_fix_verdict_derive
 - **記録者**: karo
-- **tags**: [infra,gate]
+- **tags**: [verdict-waive]
 - **target_files**: [scripts/gates/gate_report_autofix_main.py,scripts/report_field_set.sh,tests/unit/test_report_template_gate_compat.bats]
 - **origin**: [[cmd_karo_ci_fix_verdict_derive]]
 - **when**: 未設定
@@ -6297,7 +6297,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-19
 - **出典**: cmd_2888
 - **記録者**: kagemaru
-- **tags**: [infra,gate,yaml]
+- **tags**: [fp-rate-calculation]
 - **target_files**: [scripts/gates/gate_fp_relaxation_proposal.py,scripts/gates/gate_shogun_startup.sh,tests/unit/test_gate_fp_relaxation_proposal.bats]
 - **origin**: [[cmd_2888]]
 - **when**: 未設定
@@ -6548,7 +6548,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-21
 - **出典**: cmd_training_L7_v3_hanzo_5_20260521202900
 - **記録者**: hanzo
-- **tags**: [infra,recon,gate,bash]
+- **tags**: [skill-script-refs]
 - **target_files**: [skills/dashboard-update/SKILL.md,skills/report-write/SKILL.md,skills/verdict-check/SKILL.md]
 - **origin**: [[cmd_training_L7_v3_hanzo_5_20260521202900]]
 - **when**: 未設定
@@ -6878,7 +6878,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-23
 - **出典**: cmd_karo_ci_fix_lord_conv_read
 - **記録者**: karo
-- **tags**: [infra,testing,bash]
+- **tags**: [script-dir-cwd]
 - **target_files**: [scripts/lord_conversation_read.sh]
 - **origin**: [[cmd_karo_ci_fix_lord_conv_read]]
 - **when**: 未設定
@@ -6978,7 +6978,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-24
 - **出典**: cmd_3033_saizo
 - **記録者**: saizo
-- **tags**: [infra,gate,bash]
+- **tags**: [cmd-save-fixture-cascade]
 - **target_files**: [scripts/cmd_save.sh,tests/unit/test_cmd_save.bats,docs/semantic-index/index.md,context/semantic-map.md]
 - **origin**: [[cmd_3033_saizo]]
 - **when**: 未設定
@@ -7240,7 +7240,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-29
 - **出典**: cmd_karo_ci_fix_freshness_test_20260529
 - **記録者**: kagemaru
-- **tags**: [infra,bash,git]
+- **tags**: [bats-fixture]
 - **target_files**: [tests/unit/test_learning_ops_small_consolidated.bats]
 - **origin**: [[cmd_karo_ci_fix_freshness_test_20260529]]
 - **when**: 未設定
@@ -7570,7 +7570,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-06-07
 - **出典**: cmd_3211
 - **記録者**: karo
-- **tags**: [infra,frontend,gate,bash]
+- **tags**: [tmux-pane-command]
 - **origin**: [[cmd_3211]]
 - **when**: 未設定
 - **how**: 未設定
@@ -7602,7 +7602,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-06-08
 - **出典**: cmd_3211
 - **記録者**: karo
-- **tags**: [infra,frontend,gate,grid_search]
+- **tags**: [cli-clear-settings]
 - **origin**: [[cmd_3211]]
 - **when**: 未設定
 - **how**: 未設定
@@ -7640,3 +7640,68 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - 現在はVALID_QG_FIELDSをハードコード。将来q13等追加時にリスト更新漏れのリスク。テンプレートYAMLから動的抽出する改良が望ましい(軍師指摘)
+
+### L760: SG-PRE25とgate mismatchの判定乖離: readonly_ref未考慮
+- **日付**: 2026-06-09
+- **出典**: cmd_3243
+- **記録者**: gunshi
+- **tags**: [gate-precheck-mismatch]
+- **origin**: [[cmd_3243]]
+- **when**: 未設定
+- **how**: 未設定
+- SG-PRE25はreadonly_ref未考慮で全ファイル参照を抽出するがgateはcommand文脈でreadonly除外する。SG-PRE25 INFOを見てFAIL判定するとgate CLEARとの乖離が発生。D0でSG-PRE25に注記追加済み(88593bd)。origin: [[cmd_3243]] -> [[FAIL-CLEAR乖離]] -> [[SG-PRE25 readonly_ref未考慮]]
+
+### L761: yaml_field_set.sh skip_childrenがYAMLリスト要素を見逃すバグ
+- **日付**: 2026-06-09
+- **出典**: cmd_3246
+- **記録者**: gunshi
+- **tags**: [yaml-field-set-bug]
+- **target_files**: [scripts/cmd_publish.sh,scripts/gates/gate_karo_startup.sh,scripts/gates/gate_gunshi_startup.sh]
+- **origin**: [[cmd_3246]]
+- **when**: 未設定
+- **how**: 未設定
+- skip_childrenの子要素判定が^[[:space:]]のみで-で始まるリスト要素を除去せずYAML破壊。D0で^-[[:space:]]追加(3de0d29cc)。25テストPASS。origin: [[hayate 2回連続FAIL]] -> [[LG014インフラバグ]] -> [[skip_children リスト要素見逃し]]
+
+### L762: 出力量で仕事した気になる洗脳#6: 設計書掲示板報告8件出力だがD0実装0件
+- **日付**: 2026-06-09
+- **出典**: cmd_3246
+- **記録者**: gunshi
+- **tags**: [brainwash-output-bias]
+- **target_files**: [scripts/cmd_publish.sh,scripts/gates/gate_karo_startup.sh,scripts/gates/gate_gunshi_startup.sh]
+- **origin**: [[cmd_3246]]
+- **when**: 未設定
+- **how**: 未設定
+- 設計書3件+掲示板3件+家老報告2件=8件の出力。しかし1つもD0実装していなかった。提案は行動ではない(LG018再発)。出力した後に自問: 1つでもD0実装したか。origin: [[覚醒洗脳監査]] -> [[洗脳#6]] -> [[LG018再発]]
+
+### L763: SG-PRE25 WARNが出た時点でFAIL判定必須: gate予行演習
+- **日付**: 2026-06-09
+- **出典**: cmd_3247
+- **記録者**: gunshi
+- **tags**: [gate, review]
+- **target_files**: [scripts/gates/gate_gunshi_report_precheck.sh,tests/unit/test_sg_pre25_readonly_ref.bats,scripts/cmd_complete_gate.sh]
+- **origin**: [[cmd_3247]]
+- **when**: 未設定
+- **how**: 未設定
+- SG-PRE25 WARNはgateのBLOCK予測。gate_prediction CLEARでもSG-PRE25 WARNがあればgateはBLOCKする(cmd_3247で実証)。SG-PRE25とgateのreadonly_ref判定は同一ロジックだがcommand欄のwrite_marker近接でreadonly除外されないケースがある。origin: [[cmd_3247]] -> [[LGTM-BLOCK]] -> [[SG-PRE25 WARN=FAIL必須]]
+
+### L764: _deprecate_lessons_in_fileがflow-style YAML未対応で自動deprecationが無効化
+- **日付**: 2026-06-09
+- **出典**: cmd_3254
+- **記録者**: saizo
+- **tags**: [infra,deploy-task,gate,yaml,lesson]
+- **target_files**: [scripts/deploy_task.sh,projects/infra/lessons.yaml]
+- **origin**: [[cmd_3254]]
+- **when**: 未設定
+- **how**: 未設定
+- flow-style教訓(- {id: L723, ...})にdeprecated:trueを書き込めず、auto-deprecationがログ上は実行済みだがファイルは未変更。id_reパターンがblock-styleのみ対応。45教訓の自動deprecationが数セッション無効だった
+
+### L765: TRIGGER経路のrole_markerフィルタはsemantic経路と同期すべき
+- **日付**: 2026-06-09
+- **出典**: cmd_3255
+- **記録者**: kotaro
+- **tags**: [infra,testing,bash]
+- **target_files**: [scripts/skill_recommend.sh,scripts/skill_recommend_metrics.sh,tests/unit/test_skill_recommend_metrics.bats]
+- **origin**: [[cmd_3255]]
+- **when**: 未設定
+- **how**: 未設定
+- skill_recommend.shのTRIGGER照合にrole_markerフィルタがなく、semantic_skill_recommendations()にはfilter_skills_for_agentが存在した。2経路のフィルタ不整合がprecision低下の根因。新しいフィルタ追加時は全推薦経路への横展開を確認すべき

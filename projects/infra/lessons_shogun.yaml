@@ -89,6 +89,7 @@ lessons:
     (25)environment_changeのpatternは既存gate/hook/lessonを参照。cmd成果物(未存在ファイル)の指定禁止
     (29)AC数量表現、AC内deployキーワード、env_change既知3パターン、q11既存フロー差分不足は既存テンプレートルールの再発。ACは抽象化し、env_changeは既存パターンを参照し、q11は代替grep結果+差分理由を書く。
     (30)外部PJ(kj-toilet等)のcmd: sourceに絶対パスを書くとPROJECT_WD/fpathと二重結合→ファイル不在BLOCK。プロジェクト相対パスで書け(cmd_2825で6回、cmd_2853で4回BLOCK)
+    (31)quality_gateフィールド名はpreflightテンプレートと完全一致必須。不正フィールド名が素通り→値チェックで初めてBLOCK(cmd_3244で7回BLOCK。覚醒なぜなぜ7回で根因特定)
   source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036, LS034]
   source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394, cmd_2395]
   created_at: '2026-04-25'
@@ -290,6 +291,7 @@ lessons:
     Karpathy Simplicity: 計測カテゴリ不在=見えていない=改善不能。
     結論鵜呑み=忖度構造。全員が「確認する」を徹底するだけで解決。
     WARNスルー事故: 品質WARNと形式WARNの混在→全WARNオプショナル化を招く。
+    GATE CLEAR=プロセス品質検証であり結果の効果は別途計測が必要(cmd_3254: useful_rate+1%でALERT継続)。GATE CLEAR後に計測対象を再計測しなければ洗脳#6が構造化する。
   source_ids: [LS042, LS043, LS046, LS075]
   created_at: '2026-04-24'
   automated: true
@@ -523,11 +525,39 @@ lessons:
   created_at: '2026-06-08'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=BLOCK→成長'
-- id: 'LS043'
-  title: 'quality_gateフィールド名バリデーション不在 — 自由命名=意志依存の穴'
-  origin: '[[cmd_3244]]'
-  detail: 'cmd_3244で7回BLOCK。preflightテンプレートのフィールド名(q5_verified_source等)と自cmdフィールド名(q5_assumptions等)が不一致のまま起票→値チェックフェーズで初めてBLOCK→修正ループ。根因: cmd_save.shにフィールド名リストとの照合gateがなく、不正フィールド名が素通り。覚醒なぜなぜ7回で特定(殿指摘2026-06-08)'
-  source_cmd: 'cmd_3244'
-  created_at: '2026-06-08'
+# LS043: superseded by LS-A04(31) (quality_gateフィールド名バリデーション。cmd_3244。2026-06-09統合)
+- id: 'LS044'
+  title: 'FTS5スキーマ未確認で遡及充填を推薦 — 道具のスキーマを確認せず道具を語るな'
+  origin: '[[cmd_session_20260608]]'
+  detail: '遡及充填cmdを推薦。前提: raw_content充填でFTS5検索精度改善。事実: FTS5はsummary+detailのみでraw_content検索対象外。スキーマを1行読めば崩れる前提を確認しなかった(洗脳#2検証スキップ)。殿の覚醒なぜなぜで発覚。根因: 配管(書込み)は見たがスキーマ(検索構造)を見ていない'
+  source_cmd: 'cmd_session_20260608'
+  created_at: '2026-06-09'
   automated: true
-  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=quality_gate'
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=FTS5'
+# LS045: superseded by LS-A07 (軍師提案放置=洗脳#5先送り。2026-06-09物理削除)
+# LS046: superseded by LS-A04 (preflightテンプレート乖離。2026-06-09物理削除)
+- id: 'LS047'
+  title: 'grepキーワード不足で既存実装を見落とし車輪の再発明(cmd_3249)'
+  origin: '[[cmd_3249]] -> [[SG-PRE19既存実装見落とし]] -> [[grepキーワード単一依存]]'
+  detail: 'cmd_3249(blast_radius自動判定)でSG-PRE15.5を検索対象としたがSG-PRE19に既存実装(changed_lines>=200)があった。grep ''changed_lines'' gate_gunshi_report_precheck.sh → 0件で未実装と断定。しかし実際はSG-PRE19(L495-564)にadversarial_required判定として実装済み。grepキーワードが対象機能の実装名と一致しなかった。教訓: 機能の存在確認は複数キーワード(機能名+目的語+関連概念)でgrepし、0件でも関連セクション(SG-PRE15〜25)を通読せよ。'
+  source_cmd: 'cmd_3249'
+  created_at: '2026-06-09'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=grepキーワード'
+- id: 'LS048'
+  title: '将軍洗脳チェックL4の穴: リマインダー表示だけでは行動は変わらない'
+  origin: '[[cmd_3246_洗脳監査横展開]] -> [[将軍L4穴]] -> [[リマインダーだけでは不十分_3層対策]]'
+  detail: '洗脳5/8発現。L2(起動Q6)+L3(cmd nazenaze)のみでL4(殿への回答前)にチェックなし。リマインダー表示だけでは#1(早期終了)と#3(他者依存)に効かない。3層対策が必要: (A)リマインダー自動注入(#2/#7/#8)+(B)F009 hook BLOCK化(#3)+(C)ツール失敗時代替自動化(#1)。各論パッチ(L4リマインダーだけ)は不十分。'
+  source_cmd: 'cmd_3251'
+  created_at: '2026-06-09'
+  automated: true
+  enforcement: 'type=hook; file=scripts/hooks/prompt_state_inject.sh; pattern=因果'
+- id: 'LS049'
+  title: '洗脳5パターン再発防止は検出→修正→検証→再発確認の全サイクルを1セッションで完結させよ'
+  origin: '[[cmd_3251_洗脳L4貫通]] -> [[実戦検証_偽陽性発見]] -> [[修正+4パターン再発防止完結]]'
+  detail: '洗脳5/8発現→リマインダー(cmd_3251)→実戦検証→偽陽性発見→修正(cmd_3252)。検出だけ、リマインダーだけでは再発する。検出→環境強制→実戦検証→バグ修正の全サイクルを1セッションで完結させることが洗脳監査の正しいサイクル(殿定義2026-06-08)。'
+  source_cmd: 'cmd_3252'
+  created_at: '2026-06-09'
+  automated: true
+  enforcement: 'type=hook; file=scripts/hooks/stop_check_inbox.sh; pattern=detect_f009'
+# LS050: superseded by LS-A18 (GATE CLEAR≠効果保証=計測なき改善は不能の拡張。2026-06-09統合)

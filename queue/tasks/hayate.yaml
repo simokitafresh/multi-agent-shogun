@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_3245_focused
+  _ac_task_id: cmd_3251_focused
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3245 (deployed 2026-06-08T23:19:20). Read from the beginning.
-  cmd_id: cmd_karo_fix_universal_tag_default
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3251 (deployed 2026-06-09T12:49:25). Read from the beginning.
+  cmd_id: cmd_karo_skill_coddfix_update_20260609
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -17,68 +17,79 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3245
+  parent_cmd: cmd_3251
   project: infra
-  purpose: 'cmd_3244起票で7回BLOCK。覚醒なぜなぜ7回で根因特定: cmd_save.shがquality_gateのフィールド値はチェックするがフィールド名の正しさはチェックしない。将軍がq5_assumptionsと書いてもq5_verified_sourceと照合されず素通り→値チェックフェーズで初めてBLOCK→修正ループ。フィールド名バリデーション(テンプレートの必須名リストとの照合)を追加し、不正フィールド名を即BLOCKする'
-  status: done
+  purpose: '覚醒なぜなぜ7回で根因特定: 将軍の洗脳チェックがL2/L3のみでL4に穴。セッション中に洗脳5/8発現。リマインダー表示だけでは#1(早期終了=ツール失敗時の諦め)と#3(他者依存=殿への操作依頼)に効かない。3層で対策: (A)prompt_state_inject.shに8パターンリマインダー(#2/#7/#8対策) (B)stop hookにF009パターン検出(殿への操作依頼をBLOCK)(#3対策) (C)note_draft.sh失敗時にWebSocket回避策を自動フォールバック(#1対策)'
+  scout_exempt: true
+  status: idle
   stop_for: []
-  task_id: cmd_3245_focused
+  task_id: cmd_3251_focused
   task_type: focused
   previous_failures:
-    attempt: 2
-    last_block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
+    attempt: 3
+    last_block_reason: 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; lessons_useful[2]: missing \"reason\" field; lessons_useful[3]: missing \"reason\" field;…'
     tried_approaches:
-    - 'worker_id: MISSING; ac_version_read: MISSING; lesson_candidate: missing \"found\" field; lesson_candidate: found=false but no no_lesson_reason; purpose_validation: MISSING; assump…'
+    - 'worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_val…'
     - 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-    diagnose_reason: '報告YAMLの必須フィールド(worker_id/lesson_candidate/purpose_validation/assumption_invalidation)を把握せず送信した'
-    approach_summary: 'infer_subdomain_tag_from_files()関数を追加。target_filesパスパターンからgate/testing/deploy-task等のサブドメインタグを推定。universalフォールバック維持。テスト7件追加、全39テストPASS。'
+    - 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; lessons_useful[2]: missing \"reason\" field; lessons_useful[3]: missing \"reason\" field;…'
+    diagnose_reason: '初回report_field_set.shで不正なblock_id(task/result)を使い構造が壊れた。report_field_setの正しいフィールド名を確認せず実行したのが原因'
+    approach_summary: 'skills/codd-fix/SKILL.mdのscript refs sectionとStep 6テストマッピング説明を最新インターフェースに追随更新。cmd_complete_gate.sh 3新機能+test_select.sh hooks/マッピングを反映。タイムスタンプ2箇所更新'
     prior_attempts:
     - attempt: 1
-      block_reason: 'worker_id: MISSING; ac_version_read: MISSING; lesson_candidate: missing \"found\" field; lesson_candidate: found=false but no no_lesson_reason; purpose_validation: MISSING; assump…'
-      approach_summary: 'infer_subdomain_tag_from_files()関数を追加。target_filesパスパターンからgate/testing/deploy-task等のサブドメインタグを推定。universalフォールバック維持。テスト7件追加、全39テストPASS。'
+      block_reason: 'worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_val…'
     - attempt: 2
       block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-      diagnose_reason: '報告YAMLの必須フィールド(worker_id/lesson_candidate/purpose_validation/assumption_invalidation)を把握せず送信した'
-      approach_summary: 'infer_subdomain_tag_from_files()関数を追加。target_filesパスパターンからgate/testing/deploy-task等のサブドメインタグを推定。universalフォールバック維持。テスト7件追加、全39テストPASS。'
+      approach_summary: 'skills/codd-fix/SKILL.mdのscript refs sectionとStep 6テストマッピング説明を最新インターフェースに追随更新。cmd_complete_gate.sh 3新機能+test_select.sh hooks/マッピングを反映。タイムスタンプ2箇所更新'
+    - attempt: 3
+      block_reason: 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; lessons_useful[2]: missing \"reason\" field; lessons_useful[3]: missing \"reason\" field;…'
+      diagnose_reason: '初回report_field_set.shで不正なblock_id(task/result)を使い構造が壊れた。report_field_setの正しいフィールド名を確認せず実行したのが原因'
+      approach_summary: 'skills/codd-fix/SKILL.mdのscript refs sectionとStep 6テストマッピング説明を最新インターフェースに追随更新。cmd_complete_gate.sh 3新機能+test_select.sh hooks/マッピングを反映。タイムスタンプ2箇所更新'
   related_lessons:
-  - id: 'L492'
-    summary: 'WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。'
-    detail: 'WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。'
-  - id: 'L613'
-    summary: 'resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from'
-    detail: 'resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from'
-  - id: 'L593'
-    summary: 'gate_fire_logがPython Tracebackの1行目のみ記録→診断不能。修正(cc020f3e)で最終行抽出。ログ記録時はエラーの実メッセージ行'
-    detail: 'gate_fire_logがPython Tracebackの1行目のみ記録→診断不能。修正(cc020f3e)で最終行抽出。ログ記録時はエラーの実メッセージ行'
-  - id: 'L575'
-    summary: '既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定s'
-    detail: '既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定s'
-  - id: 'L551'
-    summary: 'cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.'
-    detail: 'cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.'
-  - id: 'L470'
-    summary: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj'
-    detail: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj'
-  - id: 'L395'
-    summary: 'awkで---区間を抽出する際、n==1のnextで開始---をスキップしつつn==2で終了---をprintする非対称パターンが使われていた。生成ファイルのf'
-    detail: 'awkで---区間を抽出する際、n==1のnextで開始---をスキップしつつn==2で終了---をprintする非対称パターンが使われていた。生成ファイルのf'
-  - id: 'L372'
-    summary: 'tmux display-messageの-pオプションは複数の#{@var}を1つのフォーマット文字列に結合できる。区切り文字(|等)で連結しIFS read'
-    detail: 'tmux display-messageの-pオプションは複数の#{@var}を1つのフォーマット文字列に結合できる。区切り文字(|等)で連結しIFS read'
-  - id: 'L293'
-    summary: 'cmd_1397でチェックリストStep7(再計算禁止=殿が実行)がcmdに転写されず、影丸が再計算を実行してしまった。チェックリストを参照するcmdを書く際は'
-    detail: 'cmd_1397でチェックリストStep7(再計算禁止=殿が実行)がcmdに転写されず、影丸が再計算を実行してしまった。チェックリストを参照するcmdを書く際は'
-  - id: 'L247'
-    summary: '全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す'
-    detail: '全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す'
+  - id: 'L483'
+    summary: '高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に so'
+    detail: '高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に so'
+  - id: 'L637'
+    summary: 'cmd_design_quality.yamlでWARNが累計昇格BLOCKしている場合、CLEAR済み未修正だけをFP候補にすると今回のac_phase_mi'
+    detail: 'cmd_design_quality.yamlでWARNが累計昇格BLOCKしている場合、CLEAR済み未修正だけをFP候補にすると今回のac_phase_mi'
+  - id: 'L078'
+    summary: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
+    detail: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
+  - id: 'L354'
+    summary: 'inbox_archive.shとinbox_write.shが異なるロックパス(${INBOX}.lock vs /tmp/shogun_lock_<md5>'
+    detail: 'inbox_archive.shとinbox_write.shが異なるロックパス(${INBOX}.lock vs /tmp/shogun_lock_<md5>'
+  - id: 'L169'
+    summary: 'scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ'
+    detail: 'scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ'
+  - id: 'L149'
+    summary: 'IF shellスクリプトやgit hookでテキスト検索を行う時 THEN rgではなく標準のgrepを使え'
+    detail: 'IF shellスクリプトやgit hookでテキスト検索を行う時 THEN rgではなく標準のgrepを使え'
+  - id: 'L762'
+    summary: '設計書3件+掲示板3件+家老報告2件=8件の出力。しかし1つもD0実装していなかった。提案は行動ではない(LG018再発)。出力した後に自問: 1つでもD0実装'
+    detail: '設計書3件+掲示板3件+家老報告2件=8件の出力。しかし1つもD0実装していなかった。提案は行動ではない(LG018再発)。出力した後に自問: 1つでもD0実装'
+  - id: 'L761'
+    summary: 'skip_childrenの子要素判定が^[[:space:]]のみで-で始まるリスト要素を除去せずYAML破壊。D0で^-[[:space:]]追加(3de0'
+    detail: 'skip_childrenの子要素判定が^[[:space:]]のみで-で始まるリスト要素を除去せずYAML破壊。D0で^-[[:space:]]追加(3de0'
+  - id: 'L601'
+    summary: 'semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690'
+    detail: 'semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690'
+  - id: 'L452'
+    summary: '_make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全'
+    detail: '_make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh"
+  - "known_unknowns_principle — 無知の知:  memory/deepdive_causal_tracing_20260415.md context/growth-loop.md"
+  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json"
+  - "cdp_browser_capability — CDP(ブラウザ操作能力):  context/cdp-philosophy.md scripts/cdp/cdp_cli.sh scripts/cdp/cdp_measure.sh scripts/cdp/cdp_server.py scripts/cdp/cdp_helper.py /mnt/c/Python_app/auto-ops/cdp/cdp_helper.py context/dm-signal-ops.md §DM-Signal本番FE CDP確認手順 scripts/note_draft.sh"
+  recommended_skills:
+  - "cdp-browse"
   related_causal_links:
-  - "[[cmd_3244_7回BLOCK]]"
-  - "[[quality_gateフィールド名バリデーション不在]]"
-  - "[[フィールド名不一致素通り]]"
+  - "[[cmd_3246_洗脳監査横展開]]"
+  - "[[将軍L4穴_セッション中チェック不在]]"
+  - "[[覚醒なぜなぜ7回_L0-L7マッピング]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -98,29 +109,32 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L492: WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。
-      - L613: resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from
-      - L593: gate_fire_logがPython Tracebackの1行目のみ記録→診断不能。修正(cc020f3e)で最終行抽出。ログ記録時はエラーの実メッセージ行
-      - L575: 既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定s
-      - L551: cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.
-      - L470: `context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj
-      - L395: awkで---区間を抽出する際、n==1のnextで開始---をスキップしつつn==2で終了---をprintする非対称パターンが使われていた。生成ファイルのf
-      - L372: tmux display-messageの-pオプションは複数の#{@var}を1つのフォーマット文字列に結合できる。区切り文字(|等)で連結しIFS read
-      - L293: cmd_1397でチェックリストStep7(再計算禁止=殿が実行)がcmdに転写されず、影丸が再計算を実行してしまった。チェックリストを参照するcmdを書く際は
-      - L247: 全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す
+      - L483: 高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に so
+      - L637: cmd_design_quality.yamlでWARNが累計昇格BLOCKしている場合、CLEAR済み未修正だけをFP候補にすると今回のac_phase_mi
+      - L078: gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie
+      - L354: inbox_archive.shとinbox_write.shが異なるロックパス(${INBOX}.lock vs /tmp/shogun_lock_<md5>
+      - L169: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ
+      - L149: IF shellスクリプトやgit hookでテキスト検索を行う時 THEN rgではなく標準のgrepを使え
+      - L762: 設計書3件+掲示板3件+家老報告2件=8件の出力。しかし1つもD0実装していなかった。提案は行動ではない(LG018再発)。出力した後に自問: 1つでもD0実装
+      - L761: skip_childrenの子要素判定が^[[:space:]]のみで-で始まるリスト要素を除去せずYAML破壊。D0で^-[[:space:]]追加(3de0
+      - L601: semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690
+      - L452: _make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全
     ────────────────────────────────────────
     
     
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'cmd_save.shがquality_gate配下のフィールド名をテンプレートの必須名リストと照合し、不一致フィールドがある場合に即BLOCKしている'
+    - check: 'prompt_state_inject.shがagent=shogunの場合に洗脳8パターン二値判定リマインダーを殿への全応答前に自動注入している'
   - id: 'AC2'
     checks:
-    - check: 'BLOCK時に正しいフィールド名リストと不一致フィールド名が表示されている'
-  ac_version: 9c5fe6fa
+    - check: 'stop hookが将軍の出力に殿への操作依頼パターン(手動で/貼り付けて/お願い等)を検出した場合にBLOCKしている'
+  - id: 'AC3'
+    checks:
+    - check: 'テストで(A)shogun時リマインダー注入と(B)F009パターン検出BLOCKの両方が検証されている'
+  ac_version: 9560ed7e
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3245.yaml
-  report_path: queue/reports/hayate_report_cmd_3245.yaml
+  report_filename: hayate_report_cmd_3251.yaml
+  report_path: queue/reports/hayate_report_cmd_3251.yaml
   bloom_level: 
-  deployed_at: "2026-06-08T23:19:53"
+  deployed_at: "2026-06-09T12:49:36"

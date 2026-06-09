@@ -9,9 +9,9 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-07T10:28:45+09:00 -->
+<!-- script_refs_checked_at: 2026-06-09T11:10:00+09:00 -->
 
-Script refs verified: 2026-06-07 cmd_3206. `cmd_complete_gate.sh` はCoDD registry ledger追記を内包するが、完了gateの呼び出し契約は `bash scripts/cmd_complete_gate.sh <cmd_id>` のまま。`test_select.sh` は高速化のみで、変更ファイル引数から影響テストを出力し、`skills/*/SKILL.md` 単独変更を既知のテスト不要対象として扱う現行仕様と一致。
+Script refs verified: 2026-06-09. `cmd_complete_gate.sh` 呼び出し契約は `bash scripts/cmd_complete_gate.sh <cmd_id>` のまま。新機能: (1)command/files_modified coverageが報告YAMLの`verified_existing_dependency`欄を参照し実行のみ/既存依存ファイルを照合対象から除外(LG037), (2)`check_safety_pattern_removal`で速度修行cmdのcommitから安全パターン削除をBLOCK検出, (3)軍師verdict事前チェック(GATE判定前にreview_logのFAIL/WARNをWARN表示)。`test_select.sh` は`find`→`git ls-files`/`git grep`に高速化済み。新マッピング: `scripts/hooks/*`変更→hookベース名でテスト検索(`test_{hook_base}*.bats`+`test_hook_dispatchers*.bats`)。
 
 # codd-fix
 
@@ -76,9 +76,9 @@ git diff --stat
 bash scripts/test_select.sh <changed-file>
 ```
 
-共通基盤やCI gateを触った場合は関連batsを実行する。`scripts/gates/*`を変更した場合、`scripts/test_select.sh`は当該gateの直接テストを選択し、`scripts/cmd_complete_gate.sh`がそのgateを参照している場合のみ`tests/unit/test_cmd_complete_gate*.bats`も選択する。`gate_report_format.sh`・`gate_report_autofix.sh`・`gate_dc_duplicate.sh`・`gate_diagnose_check.sh`変更時は`test_gate_small_consolidated.bats`も選択する。`context/*.md`を変更した場合、`scripts/test_select.sh`は`test_context_freshness_check.bats`・`test_gate_context_freshness.bats`・`test_gate_vercel_phase.bats`を選択する（cmd_2843）。`docs/rule/*.md`を変更した場合、`scripts/test_select.sh`は`test_semantic_index_update.bats`・`test_context_freshness_check.bats`を選択する。`instructions/gunshi.md`を変更した場合、`scripts/test_select.sh`は`test_cli_adapter.bats`・`test_gate_gunshi_cs_checklist.bats`・`test_gunshi_next_action.bats`・`test_semantic_index_update.bats`を選択する。`skills/*/SKILL.md`単独変更は既知のテスト不要対象としてWARNなしでスキップする。`report_field_set.sh`変更はdeploy_task+gate_report_format系テストを選択する。`memory_db_import.py`・`memory_db_query.sh`・`semantic_search.sh`変更はmemory_db/semantic関連テストを選択する（cmd_3026確認: cmd_38aaf66f）。SKIPはFAILとして扱う。
+共通基盤やCI gateを触った場合は関連batsを実行する。`scripts/gates/*`を変更した場合、`scripts/test_select.sh`は当該gateの直接テストを選択し、`scripts/cmd_complete_gate.sh`がそのgateを参照している場合のみ`tests/unit/test_cmd_complete_gate*.bats`も選択する。`gate_report_format.sh`・`gate_report_autofix.sh`・`gate_dc_duplicate.sh`・`gate_diagnose_check.sh`変更時は`test_gate_small_consolidated.bats`も選択する。`context/*.md`を変更した場合、`scripts/test_select.sh`は`test_context_freshness_check.bats`・`test_gate_context_freshness.bats`・`test_gate_vercel_phase.bats`を選択する（cmd_2843）。`docs/rule/*.md`を変更した場合、`scripts/test_select.sh`は`test_semantic_index_update.bats`・`test_context_freshness_check.bats`を選択する。`instructions/gunshi.md`を変更した場合、`scripts/test_select.sh`は`test_cli_adapter.bats`・`test_gate_gunshi_cs_checklist.bats`・`test_gunshi_next_action.bats`・`test_semantic_index_update.bats`を選択する。`skills/*/SKILL.md`単独変更は既知のテスト不要対象としてWARNなしでスキップする。`report_field_set.sh`変更はdeploy_task+gate_report_format系テストを選択する。`memory_db_import.py`・`memory_db_query.sh`・`semantic_search.sh`変更はmemory_db/semantic関連テストを選択する（cmd_3026確認: cmd_38aaf66f）。`scripts/hooks/*`変更はhookベース名(`-`→`_`変換)で`test_{hook_base}*.bats`+`test_hook_dispatchers*.bats`を選択する。SKIPはFAILとして扱う。
 
-`scripts/cmd_complete_gate.sh`変更時は、cmd source YAML欠落をdraft lesson check / recon knowledge persistence checkでSKIP扱いにする最新挙動を前提にする。command/files_modified coverageは、偵察等の`files_modified`が「偵察のみ」「コード変更なし」「none」「N/A」などのno-code-change sentinelだけの場合のみSKIPし、通常ファイルパスのtypoはBLOCK継続する。
+`scripts/cmd_complete_gate.sh`変更時は、cmd source YAML欠落をdraft lesson check / recon knowledge persistence checkでSKIP扱いにする最新挙動を前提にする。command/files_modified coverageは、偵察等の`files_modified`が「偵察のみ」「コード変更なし」「none」「N/A」などのno-code-change sentinelだけの場合のみSKIPし、通常ファイルパスのtypoはBLOCK継続する。報告YAMLに`verified_existing_dependency`欄がある場合、該当ファイルはcoverage照合から除外される(LG037)。速度修行cmdでは`check_safety_pattern_removal`が安全パターン(`2>/dev/null`/`|| true`/`trap`等)の削除をBLOCK検出する。GATE判定前に軍師verdict事前チェックが`gunshi_review_log.yaml`のFAIL/WARNをWARN表示する。
 
 ## 報告
 
@@ -95,4 +95,4 @@ bash scripts/test_select.sh <changed-file>
 - `--no-push`なしで実行するな。忍者はpush禁止
 - 事象ではなく広すぎる実装指示を渡すな
 
-<!-- script_refs_checked_at: 2026-06-07T21:51:07+09:00 -->
+<!-- script_refs_checked_at: 2026-06-09T11:10:00+09:00 -->

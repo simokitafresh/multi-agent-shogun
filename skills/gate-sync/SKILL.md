@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキル同期後の軍師review精度（logs/gunshi_review_log.yamlでgate_prediction==gate_resultとなった割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-07T10:28:45+09:00 -->
+<!-- script_refs_checked_at: 2026-06-09T09:20:00+09:00 -->
 
 # /gate-sync — gate結果同期スキル
 
@@ -67,5 +67,5 @@ BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "gate予測精度�
 - Script refs verified: 2026-05-22 cmd_2959. `yaml_field_set.sh` はflock、root fallback、map/list block対応、複数行・inline scalar継続の安全置換、post-write readback検証を行う。review_log更新はこのhelper以外で行わない。
 - Script refs verified: 2026-05-22 cmd_2959. `yaml_field_set.sh` WSL2最適化済み(lock_path純bash化、Windows path用/tmp lock、検証込み)。
 
+Script refs verified: 2026-06-09 cmd_karo_skill_update_batch1. `yaml_field_set.sh` 直近変更(3de0d29c)は_yaml_field_set_apply_rootのskip_children条件修正(YAMLリスト要素`- id:`等の子要素認識漏れ修正)。内部バグフィックスのみ、インターフェース変更なし。本スキルはroot操作を使わないため直接影響なし。flock+readback検証の契約は維持。
 Script refs verified: 2026-06-07 cmd_3206. `yaml_field_set.sh` はlock path純bash化で高速化されたが、flock+root fallback+readback検証の契約は維持。`bulletin_write.sh` の明示posted_by形式と通知先CSV仕様も変更なし。SKILL.md記載のreview_log更新と掲示板通知手順は現行と一致。
-Script refs verified: 2026-06-03 cmd_3144. `bulletin_write.sh` 直近変更(c356e7ae)はMEMORY_DB_LIVE_INSERT_SYNC環境変数によるDB insert同期/非同期切替(内部実装のみ、インターフェース変更なし)。`yaml_field_set.sh` 直近変更(670918b3)はsingle-quoteエスケープ修正(内部バグフィックス、インターフェース変更なし)。SKILL.md記載の呼び出し方法は現行と一致。

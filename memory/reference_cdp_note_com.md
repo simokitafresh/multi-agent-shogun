@@ -74,8 +74,49 @@ seconds (up to 2 reloads).
 ## §6 Markdown Conversion Rules
 
 - `# Title` becomes the note title textarea and is not inserted into the body.
-- `## Heading` becomes an h3-style note heading.
-- `---` becomes a horizontal rule.
-- Consecutive plain text lines are joined into one paragraph.
-- Bullet lines are inserted as separate paragraphs.
+- `## Heading` / `### Heading` becomes `<h3>` (note heading).
+- `---` becomes `<hr>` (horizontal rule).
+- `**text**` becomes `<strong>text</strong>` (太字。noteが保持する).
+- Consecutive plain text lines are joined into one `<p>` with `<br>` for line breaks.
+- Bullet lines (`- text`) are joined into paragraphs.
+
+## §7 ProseMirror Supported Tags (2026-06-09 実証)
+
+CDP経由のinnerHTML挿入後にProseMirrorが保持するタグと除去するタグ:
+
+Preserved:
+- `<strong>` — 太字として表示・保持
+- `<a href="...">` — リンク。target="_blank"が自動付与される
+- `<h3>` — 見出し
+- `<hr>` — 区切り線
+- `<p>` — 段落
+
+Stripped (テキストのみ残る):
+- `<em>` — イタリック非対応。テキストは残るがイタリック装飾は消える
+- `<code>` — インラインコード非対応。テキストは残るがコード装飾は消える
+- `<b>` — 未検証。`<strong>`を使え
+
+注意: note_draft.shは現在`**`→`<strong>`変換が未実装(2026-06-09時点)。
+HTML生成時にre.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)で変換が必要。
+
+## §8 PowerShell引数長制限の回避 (2026-06-09 実証)
+
+note_draft.shはcdp_helper.pyのjs_eval→_cdp_send_sequence→ps_run経由でJavaScript
+をPowerShellコマンドラインに渡す。記事が長い(base64エンコード後~26KB超)とPowerShellの
+引数長制限(約32KB)に当たり`Invalid argument`で失敗する。
+
+回避策: Python websocketライブラリでCDP WebSocketに直接接続し、Runtime.evaluateを送信。
+PowerShellを経由しないためコマンドライン長の制約を受けない。
+
+```python
+import websocket, json
+ws = websocket.create_connection(tab["webSocketDebuggerUrl"], timeout=30)
+ws.send(json.dumps({"id": 1, "method": "Runtime.evaluate",
+    "params": {"expression": js_code, "returnByValue": True}}))
+result = json.loads(ws.recv())
+ws.close()
+```
+
+恒久修正: note_draft.sh(またはcdp_helper.py)にWebSocket直接送信パスを追加し、
+大きいペイロード時に自動でPowerShellをバイパスする。
 

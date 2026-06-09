@@ -1867,7 +1867,7 @@
   proposals:
     - id: GP-265
       description: "blast_radius自動判定をSG-PRE15.5に追加"
-      status: pending
+      status: implemented
       defense_level: 5
   cs_checklist:
     CS1: lesson_impact.tsv/推薦ログ/review_log現物確認済み
@@ -1941,7 +1941,7 @@
 - cmd_id: cmd_3245
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   findings_summary: "6観点OK。quality_gateフィールド名バリデーション追加。覚醒なぜなぜ7回の根因対処。推奨: フィールド名リストをテンプレートから動的抽出(メンテナンス負債防止)"
@@ -1957,7 +1957,7 @@
 - cmd_id: cmd_3246
   review_type: draft
   verdict: REQUEST_CHANGES
-  gate_result: null
+  gate_result: CLEAR
   confidence: MEDIUM
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   findings_summary: "RC: AC1のlesson_write履歴検出方法未指定(FM1)+全nazenaze教訓強制の過剰性(FM3)。他5観点OK"
@@ -1976,7 +1976,7 @@
   review_type: report
   report_ninja: hayate
   verdict: FAIL
-  gate_result: null
+  gate_result: CLEAR
   finding_categories: [assumptions, numbers, premortem]
   findings_summary: "FAIL: テスト7件追加を報告するがcommitにテストファイルなし。成果物不完全"
   observations:
@@ -1993,7 +1993,7 @@
   review_type: report
   report_ninja: saizo
   verdict: FAIL
-  gate_result: null
+  gate_result: CLEAR
   changed_lines: 347
   finding_categories: [assumptions, numbers, premortem, adversarial]
   findings_summary: "FAIL: commit混入(LG004) — saizoの3ファイルがhayateのcommit e5ce7e13b(cmd_3245)に混入。test_results空。実装内容は正しく見える"
@@ -2011,3 +2011,350 @@
   brainwash_check: "洗脳#2防止: commit内容をgit show --statで現物確認。報告のcommit_hashの帰属を検証"
   origin: "[[cmd_3246]] -> [[saizo 洗脳監査サイクル]] -> [[FAIL_commit混入]]"
   timestamp: "2026-06-09T00:00:00"
+- cmd_id: consultation_brainwash_audit_raw_content
+  review_type: consultation
+  verdict: null
+  finding_categories: [assumptions, north_star]
+  findings_summary: "将軍の遡及充填cmd推薦を洗脳監査。raw_contentはFTS5対象外(events_ftsはsummary+detailのみ)。充填してもFTS5精度は改善しない。将軍の洗脳: #2(FTS5スキーマ未確認)+#6(無効な行動)+#1(充填率低い→充填すべきの短絡)"
+  observations:
+    - "事実1: events_fts USING fts5(summary, detail)。raw_contentはFTS5対象外"
+    - "事実2: raw_content充填率2.5%(1179/47114)。設計意図=Obsidian昇格時の原文保存"
+    - "事実3: detail→raw_contentコピーは情報増分ゼロ。FTS5検索精度に寄与しない"
+  cs_checklist:
+    CS1: "events_ftsスキーマ現物確認(.schema events_fts)"
+    CS2: "自システムDB(充填率/FTS5構成)で前提検証"
+    CS3: "raw_content設計意図をmemory_db_live_insert.py L564で確認"
+    CS4: "掲示板に検証結果+洗脳パターン3件を回答(行動変換)"
+    CS5: "raw_contentをFTS5に追加すべきか→追加不要(重複データ)の結論"
+    CS6: "充填率低い→充填すべきの因果を検証: 設計上不要だから低い(#1短絡の否定)"
+  causal_chain: "将軍がraw_content充填率2.5%を見て低い→充填cmd推薦。しかしFTS5=summary+detailでraw_content対象外→充填してもFTS5精度不変→推薦の前提が崩壊(洗脳#2)"
+  brainwash_check: "忖度チェック: 将軍の推薦を否定する回答。殿指示に従い忖度なしで事実を提示"
+  origin: "[[将軍raw_content充填推薦]] -> [[FTS5スキーマ未確認]] -> [[洗脳#2検証スキップ]]"
+  timestamp: "2026-06-09T03:52:00"
+- cmd_id: cmd_3247
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。SG-PRE25 readonly_ref除外+INFO→WARN昇格。軍師D0注記の本格実装。WARN率35%なぜなぜ根因対処"
+  observations:
+    - "事実1: SG-PRE25にreadonly_ref除外ロジック0行(L785注記のみ)。D0 commit 88593bdで注記追加済み"
+    - "事実2: cmd_complete_gate.sh L4204-4312にPythonでreadonly_ref判定実装済み。SG-PRE25と非同期が乖離根因"
+    - "事実3: 家老WARN率35%(7/20)全件がcommand_files_modified_mismatch由来(掲示板blt_20260609_103848)"
+  causal_chain: "SG-PRE25 readonly_ref未考慮→軍師LGTM→gate readonly除外後BLOCK→判定乖離(WARN率35%)。除外ロジック同期で構造的解消(正の複利)"
+  brainwash_check: "洗脳#1: 自分の発見のcmd化だが6観点を省略しない。洗脳#4: cmd_complete_gate.shと完全同一ロジック推奨(独自実装=新乖離)"
+  ambiguity_points: none
+  origin: "[[cmd_3247]] -> [[SG-PRE25 readonly_ref除外]] -> [[APPROVE]]"
+  timestamp: "2026-06-09T10:56:00"
+- cmd_id: cmd_3248
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "RC: assumptions.claimが事実誤認(gunshi_review_log参照9件存在)。既存はGATE CLEAR後処理。GATE前WARN機能は確かに不在。claim訂正で解消"
+  observations:
+    - "事実1: grep -c gunshi_review_log cmd_complete_gate.sh = 9件。L1340/L6588/L6603/L6685/L6892"
+    - "事実2: L6585=GATE CLEAR後のgunshi_verdict自動更新。L6888=GATE CLEAR後のverdict自動記録。共にGATE判定前のWARNではない"
+    - "事実3: GATE判定段階(check_xxx関数群)でgunshi_review_log verdictを参照する機能は確かに0件"
+  severity: normal
+  causal_chain: "将軍がrg -nF → 0件と報告→実際は9件(既存はGATE後処理)→claim訂正で忍者の混乱を防止"
+  brainwash_check: "洗脳#2防止: grep -cで現物確認し前提崩壊を検出。将軍の自己申告を鵜呑みにしない"
+  ambiguity_points: "assumptions.claimの0件が事実と不一致"
+  hole_action: none
+  origin: "[[cmd_3248]] -> [[軍師verdict FAIL時WARN]] -> [[REQUEST_CHANGES_claim訂正]]"
+  timestamp: "2026-06-09T11:03:00"
+- cmd_id: cmd_3247
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "LGTM→BLOCK→家老修正→CLEAR(LG006違反)。SG-PRE25 WARNを見ていたのにLGTM出した"
+  observations:
+    - "事実1: bats test_sg_pre25_readonly_ref.bats 9/9 PASS(実動作確認済み)"
+    - "事実2: cmd_complete_gate.sh L4204-4312と同一ロジックをSG-PRE25に実装(軍師推奨通り)"
+    - "事実3: SG-PRE25 WARNはcmd_complete_gate.sh参照先+write_marker近接の誤判定"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "SG-PRE25 readonly_ref未考慮→gate判定乖離(WARN率35%)→同一ロジック実装→乖離解消(正の複利)"
+  brainwash_check: "洗脳#2: bats 9件を実際に実行して確認。忍者報告の自己申告を鵜呑みにしない"
+  origin: "[[cmd_3247]] -> [[tobisaru SG-PRE25 readonly_ref]] -> [[LGTM]]"
+  timestamp: "2026-06-09T11:08:00"
+- cmd_id: cmd_3249
+  review_type: draft
+  verdict: REJECT
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions]
+  findings_summary: "REJECT: 既存SG-PRE19(L495-564)にchanged_lines>=200 adversarial判定が実装済み。車輪の再発明。将軍の前提(changed_lines参照0件)が事実誤り"
+  observations:
+    - "事実1: grep -n changed_lines gate_gunshi_report_precheck.sh → L564にadversarial_review必須(changed_lines>=200)"
+    - "事実2: GP-265(blast_radiusスクリプト追加)はD0 commit 639e797feで実装済み(SG-PRE18拡張)"
+  causal_chain: "将軍がrg -nF → 0件と報告→実際はSG-PRE19 L564に実装済み→車輪の再発明→REJECT"
+  brainwash_check: "洗脳#2防止: grep現物確認で既存実装を検出。将軍の前提を鵜呑みにしない"
+  origin: "[[cmd_3249]] -> [[SG-PRE19既存実装]] -> [[REJECT_車輪]]"
+  timestamp: "2026-06-09T11:12:00"
+- cmd_id: cmd_3248
+  review_type: report
+  report_ninja: kagemaru
+  verdict: FAIL
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "FAIL: SG-PRE25 WARN(gunshi_review_log.yaml不在)。cmd_3247と同構造のgate BLOCKリスク。実装正しい(12テストPASS)"
+  observations:
+    - "事実1: SG-PRE25 WARN: gunshi_review_log.yaml readonly_ref除外後も不在(取得がread_marker外)"
+    - "事実2: bats 12/12 PASS。非ブロッキングWARN設計(ALL_CLEAR影響なし)"
+    - "事実3: cmd_3247でLGTM→BLOCK経験済み。同構造のWARNはFAIL必須(教訓適用)"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "command欄のgunshi_review_log.yaml言及で取得がread_marker外→write_ref判定→gate BLOCK予測→FAIL(LG006+cmd_3247教訓)"
+  brainwash_check: "洗脳#4防止: cmd_3247のLGTM→BLOCK教訓を即適用。SG-PRE25 WARN=FAIL例外なし"
+  origin: "[[cmd_3248]] -> [[SG-PRE25 WARN]] -> [[FAIL_gate_BLOCK予測]]"
+  timestamp: "2026-06-09T11:15:00"
+- cmd_id: cmd_3250
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。gate_loop_health.sh L457 autofix迂回+L470 FAIL/PASS比計算の2件バグ修正。前提現物確認済み"
+  observations:
+    - "事実1: L457 autofix_count==0がAUTO-FIXED=7で永続False→自己修正率判定迂回"
+    - "事実2: L470 FAIL/PASS比(33.3%)とFAIL/TOTAL比(25%)の乖離を現物確認"
+    - "事実3: FAIL/TOTAL計算でゼロ除算リスクなし(条件False時else→OK)"
+  causal_chain: "autofix蓄積→L457迂回→L470 FAIL/PASS比過大→偽WARNING→startup BLOCK連鎖(3session)。2件修正で根因解消(正の複利)"
+  brainwash_check: "洗脳#2防止: L457/L470を現物確認(sed -n 450,475p)"
+  ambiguity_points: none
+  origin: "[[cmd_3250]] -> [[gate_loop_health FAIL率バグ]] -> [[APPROVE]]"
+  timestamp: "2026-06-09T11:36:00"
+- cmd_id: cmd_3250
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。gate_loop_health.sh autofix迂回削除+FAIL/TOTAL計算修正。bats 6/6 PASS"
+  observations:
+    - "事実1: bats test_gate_loop_health.bats 6/6 PASS。テスト4(autofix蓄積)テスト5(FAIL/TOTAL)が新規"
+    - "事実2: SG-PRE25 PASS(readonly_ref除外済み)。gate_prediction CLEAR"
+    - "事実3: L457 autofix_count==0削除+L470 recent_pass→recent_total修正の2行変更"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "autofix蓄積→L457迂回→L470 FAIL/PASS過大→偽WARNING→startup BLOCK。2行修正で3session連続BLOCK解消(正の複利)"
+  brainwash_check: "洗脳#2: bats 6件実行して確認。洗脳#1: SG-PRE25 PASSなのでLGTM判定は妥当"
+  origin: "[[cmd_3250]] -> [[kotaro FAIL率バグ修正]] -> [[LGTM]]"
+  timestamp: "2026-06-09T11:45:00"
+- cmd_id: cmd_3251
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: MEDIUM
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "RC: AC2 F009パターン偽陽性リスク。手動で/お願い等が殿以外文脈でも発火。WARNに変更またはコンテキスト限定を推奨"
+  observations:
+    - "事実1: prompt_state_inject.sh L855に因果リマインダー1行のみ。洗脳8パターンなし"
+    - "事実2: F009パターン(手動で/お願い)は多義的。忍者への指示でも発火する"
+    - "事実3: stop hookのBLOCKは作業中断コスト大。WARNなら情報提供で中断なし"
+  severity: normal
+  causal_chain: "F009パターンが殿限定でない→忍者/家老への指示でも発火→将軍作業中断→偽陽性コスト>洗脳防止効果"
+  brainwash_check: "洗脳#4防止: BLOCK設計が厳しすぎる→偽陽性で将軍作業中断は負の複利"
+  ambiguity_points: "F009パターンの対象が殿限定か全出力かが未定義"
+  hole_action: none
+  origin: "[[cmd_3251]] -> [[洗脳チェックL4貫通]] -> [[REQUEST_CHANGES_F009偽陽性]]"
+  timestamp: "2026-06-09T12:51:00"
+- cmd_id: cmd_3251
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  changed_lines: 240
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。RC指摘(F009偽陽性)反映済み(殿/lordコンテキスト限定)。bats 18/18 PASS"
+  observations:
+    - "事実1: RC指摘反映: F009パターンに殿/lordコンテキスト必須条件追加(偽陽性低減)"
+    - "事実2: bats test_stop_check_inbox.bats 18/18 PASS。T-SCI-014にbrainwash audit確認"
+    - "事実3: SG-PRE25 PASS(readonly_ref除外済み)。gate_prediction CLEAR"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "240行。rollback=git revert即可。shogun条件で他ロール無影響。F009殿コンテキスト限定で偽陽性低減"
+  lesson_quality: OK
+  escalation_needed: false
+  causal_chain: "L4穴(セッション中洗脳チェック不在)→リマインダー注入+F009 BLOCK→L0-L7貫通(正の複利)"
+  brainwash_check: "洗脳#2: bats 18件実行確認。洗脳#4: RC指摘反映(殿限定)で偽陽性防止"
+  origin: "[[cmd_3251]] -> [[hayate 洗脳チェックL4貫通]] -> [[LGTM]]"
+  timestamp: "2026-06-09T13:00:00"
+- cmd_id: cmd_3252
+  review_type: draft
+  verdict: APPROVE
+  gate_result: N/A
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。洗脳5パターン再発防止完結。F009偽陽性修正+note_draft回避+sengoku ls強制+clear_prep知見チェック"
+  observations:
+    - "事実1: F009に過去形除外0件、note_draft.shにwebsocket 0件を現物確認"
+    - "事実2: 4ファイル独立修正(AC1-4)。全て実戦検証済みバグ対応"
+    - "事実3: 過去形除外は妥当(殿にお願いした=除外、殿にお願いします=BLOCK)"
+  causal_chain: "cmd_3251実戦検証→偽陽性+note_draft未修正発見→4件修正で洗脳5パターン再発防止完結(正の複利)"
+  brainwash_check: "洗脳#1: 4AC全て確認し省略なし。洗脳#5: 後回しにせず即APPROVE"
+  ambiguity_points: none
+  origin: "[[cmd_3252]] -> [[洗脳5パターン再発防止完結]] -> [[APPROVE]]"
+  timestamp: "2026-06-09T13:10:00"
+- cmd_id: cmd_3253
+  review_type: draft
+  verdict: APPROVE
+  gate_result: N/A
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  findings_summary: "6観点OK。家老教訓v3統合: 35件→22件以下圧縮。上限BLOCK解消。全前提一次情報検証済み"
+  observations:
+    - "事実1: grep -c '^- id:' lessons_karo.yaml → 35件。lesson_write_karo.sh L81に上限35件BLOCK確認"
+    - "事実2: A系列22件+LK独立13件=35件。LK001-013は個別事象教訓でA系列に吸収可能"
+    - "事実3: テスト(test_gate_lesson_health.bats)のLK001-003はfixtureで独立。本番ID削除影響なし"
+    - "事実4: v2アーカイブ(docs/research/lessons_karo_v2_archive.md 585行)が既に存在"
+  causal_chain: "教訓35件上限到達→lesson_write_karo.sh BLOCK→新規教訓登録不可→家老学習サイクル停止→v3統合で22件以下に圧縮→登録再開(正の複利)"
+  brainwash_check: "洗脳#1(早期終了): テスト前提・v2アーカイブ・上限BLOCKの実在を全て現物確認。洗脳#8(完了急ぎ): ambiguity冷え観点を意識的に検討し吸収先判断基準を評価"
+  ambiguity_points: none
+  origin: "[[cmd_3253]] -> [[家老教訓上限到達]] -> [[v3統合APPROVE]]"
+  timestamp: "2026-06-09T13:20:00"
+- cmd_id: idle_skill_precision_20260609
+  review_type: self_study
+  findings_summary: "スキル推薦偽陽性削減: SKILL.md 3件に役割制限追記(D0 commit 8f42e7f85)。教訓有効率改善: ワースト8教訓タグ変更を家老に依頼"
+  observations:
+    - "事実1: precision 10%(3/30)。偽陽性根因=SKILL.mdに役割制限なし3スキル(shogun-all-codex-switch/peacetime-rollback/reset-layout)"
+    - "事実2: 教訓有効率3.3%(2/61)。NOT_USEFULワースト8教訓のタグが汎用的すぎ(universal/lesson/process等)"
+    - "事実3: L489は前セッションでbats-parallelにタグ変更済み"
+  cs_checklist:
+    CS1: "OK: skill_recommend_log全67件+偽陽性パターン全件確認"
+    CS2: "OK: grepでフィルタ動作を実証(echo→grep 1 match)"
+    CS3: "OK: deploy_task.sh L3069の現物コードを読んでgrepパターン確認"
+    CS4: "OK: D0実装+commit+家老通知(スキル精度)。教訓タグ変更依頼送信(有効率)"
+    CS5: "PENDING: 次回推薦計測で効果検証要"
+    CS6: "タグ粗粒度→キーワード広マッチ→無関係注入→NOT_USEFUL→有効率3.3%。タグ細粒度化が根因対処(正の複利)"
+  finding_categories: [assumptions, numbers, premortem, north_star]
+  causal_chain: "SKILL.md役割制限なし→deploy_task.shフィルタすり抜け→忍者偽陽性推薦。教訓タグ汎用→全cmdにマッチ→NOT_USEFUL蓄積→有効率3.3%"
+  brainwash_check: "洗脳#5(先送り): D0即実装で解消。#6(出力=仕事): 家老依頼だけでなく自力D0も実行"
+  origin: "[[idle_20260609]] -> [[スキル推薦精度+教訓有効率]] -> [[D0実装+家老依頼]]"
+  timestamp: "2026-06-09T13:30:00"
+- cmd_id: cmd_3252
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。洗脳5パターン再発防止(F009偽陽性+note_draft+sengoku ls+clear_prep)。GATE CLEAR確認済み"
+  observations:
+    - "事実1: precheck全PASS。WA率0%(10件中0件)"
+    - "事実2: files_modified 4件全てにcmd_3252 commit確認(PRE3 PASS)"
+    - "事実3: lessons_useful 10件中1件USEFUL(L551)。有効率10%"
+  causal_chain: "cmd_3251実戦検証→偽陽性+未修正4件発見→kagemaru4AC実装→GATE CLEAR(正の複利)"
+  brainwash_check: "洗脳#1: GATE CLEAR済みだがレビュー省略せず4観点全実施。洗脳#2: precheck結果を現物確認"
+  step3_5_verified: true
+  origin: "[[cmd_3252]] -> [[洗脳5パターン再発防止]] -> [[LGTM+GATE CLEAR]]"
+  timestamp: "2026-06-09T13:35:00"
+- cmd_id: cmd_3253
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。家老教訓v3統合35→22件。AC1-3現物確認済み。★commit混入: commit_hash=14aa13952のmsg=cmd_3252。cmd_3253固有commitなし→GATE BLOCKリスク→家老に対処依頼"
+  observations:
+    - "事実1: grep -c '^- id:' lessons_karo.yaml → 22件(AC1達成)"
+    - "事実2: YAML parse成功(AC3達成)。v2アーカイブ585行存在(AC2達成)"
+    - "事実3: commit 14aa13952のstat=6ファイル。cmd_3252(4)+cmd_3253(2)が混在。cmd_3253固有commitなし"
+    - "事実4: LK→A系列マッピング: LK001→A12, LK002/003/011→A04, LK004/006/013→A01, LK005→A13, LK007→A08, LK008→A03, LK009→A05, LK010→A02, LK012→A12"
+  causal_chain: "教訓35件上限→v3統合→22件達成→但しcommit混入(2cmd合体)→GATE BLOCK予測→家老commit追加で解消可能"
+  brainwash_check: "洗脳#1: AC達成だけで止めずcommit hash検証。洗脳#2: git show --statで混入を現物確認"
+  step3_5_verified: true
+  origin: "[[cmd_3253]] -> [[v3統合完了+commit混入]] -> [[LGTM+GATE BLOCKリスク]]"
+  timestamp: "2026-06-09T13:35:00"
+- cmd_id: cmd_3254
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: N/A
+  confidence: HIGH
+  finding_categories: [assumptions, simulation]
+  findings_summary: "REQUEST_CHANGES(normal): 軍師D0修正(34教訓タグ+TRIGGER cross-validation)の事実をcmd constraintに追記し忍者の重複調査を防止"
+  observations:
+    - "事実1: 軍師D0で34種類NOT_USEFUL教訓のタグ細粒度化済み(commit 24a3dd22c)"
+    - "事実2: deploy_task.sh TRIGGER cross-validation追加済み(commit a9dc1b7c8)"
+    - "事実3: cmd_3254 AC1の根因「タグ精度」は既に対処済み。when/how品質は未対処で有効"
+  causal_chain: "D0修正→タグ精度改善済み→忍者がAC1で同一根因に到達→重複作業→cmd constraintに既修正事実を追記し重複防止(正の複利)"
+  brainwash_check: "洗脳#2(検証スキップ): 自分のD0修正との重複を現物確認してからverdict判定"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[cmd_3254]] -> [[D0修正と重複]] -> [[REQUEST_CHANGES(constraint追記)]]"
+  timestamp: "2026-06-09T13:42:00"
+- cmd_id: cmd_3255
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: N/A
+  confidence: HIGH
+  finding_categories: [assumptions, simulation]
+  findings_summary: "REQUEST_CHANGES(normal): 軍師D0修正3件(SKILL.md 9件+TRIGGER cross-validation+34教訓タグ)をcmd constraintに追記。忍者はD0効果測定+残存偽陽性のaliases調整に集中すべき"
+  observations:
+    - "事実1: SKILL.md役割制限9件(commit 8f42e7f85+cb138f7e9)でdeploy_task.sh+prompt_state_inject.shフィルタ対応済み"
+    - "事実2: deploy_task.sh TRIGGER cross-validation(commit a9dc1b7c8)でcdp-browse等の無関係推薦を構造排除"
+    - "事実3: cmd_3255 AC1根因の大部分は対処済み。残存=aliases精度+過去推薦ログの計測残存"
+  causal_chain: "D0修正3件→偽陽性根因大部分対処→忍者が重複調査→cmd constraintに既修正事実追記で重複防止→忍者は効果測定+残存改善に集中(正の複利)"
+  brainwash_check: "洗脳#2: D0修正commitを現物確認(git log)してからverdict判定。洗脳#1: cmd_3254と同構造の重複を見落とさず検出"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[cmd_3255]] -> [[D0修正3件と重複]] -> [[REQUEST_CHANGES(constraint追記)]]"
+  timestamp: "2026-06-09T13:45:00"
+- cmd_id: cmd_3254
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。useful_rate 3.4%→50.0%(gate_lesson_health.sh実行で数値確認)。根因=memory_db boost bypass(keyword_score=0)を修正。45教訓deprecate+flow-style YAML対応"
+  observations:
+    - "事実1: deploy_task.sh L4816にboost条件keyword_score>0確認(grep現物)"
+    - "事実2: gate_lesson_health.sh実行結果: useful_rate=50.0%(2/4) status=OK"
+    - "事実3: 軍師D0タグ変更(34件)+saizo boostロジック修正=補完関係。重複なし"
+    - "事実4: lesson_candidate: flow-style YAML deprecation不能バグ。register_recommended=true"
+  causal_chain: "memory_db boost(+20pt)がkeyword_score=0教訓に無条件加算→score=22で閾値8突破→39件NOT_USEFUL注入→useful_rate 3.4%。keyword_score>0条件追加で根因解消(50.0%)"
+  brainwash_check: "洗脳#2防止: useful_rate=50.0%をgate_lesson_health.sh実行で数値確認(3.4%→50.0%)。洗脳#6防止: deploy_task.sh L4816でboost条件を現物grep確認"
+  step3_5_verified: true
+  origin: "[[cmd_3254]] -> [[memory_db_boost_bypass修正]] -> [[useful_rate 3.4%→50.0%]]"
+  timestamp: "2026-06-09T13:58:00"
+- cmd_id: cmd_3255
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。precision 13%→33%実動作確認(skill_recommend_metrics.sh再実行)。role_markerフィルタ+4文字未満トークン除外。テスト5件PASS"
+  observations:
+    - "事実1: skill_recommend_metrics.sh再実行でprecision=33%(6/18)確認。報告値と一致"
+    - "事実2: AWK role_marker判定に複合ロール対応(将軍・家老)実装確認(git diff)"
+    - "事実3: 本体変更はauto-commit 6c6810eadに巻込み。cmd_3255専用commit=3fe385a84はテストのみ"
+    - "事実4: recommended_skills skill-installerは用途不一致(AWKフィルタ変更にインストーラー不要)で例外扱い"
+  causal_chain: "TRIGGER経路role_marker未判定→全agent全スキル推薦→偽陽性87%。role_marker AWK判定追加+短トークン除外→precision 33%(2.5x改善)。残存67%は別根因(aliases/trigger精度)"
+  brainwash_check: "洗脳#2防止: skill_recommend_metrics.sh実行で33%を数値確認(binary_checks鵜呑みにせず)。洗脳#8防止: 残存67%偽陽性を明示(33%で完了にしない)"
+  step3_5_verified: true
+  origin: "[[cmd_3255]] -> [[role_markerフィルタ+短トークン除外]] -> [[precision 13%→33%]]"
+  timestamp: "2026-06-09T14:10:00"
+- cmd_id: idle_skill_precision_cycle2_20260609
+  review_type: self_study
+  verdict: null
+  findings_summary: "cmd_3255後精度分析。precision 39%全体/75%フィルタ後。残存FP=古い推薦ログ残像(8件)+未実行正当推薦(2件)+TRIGGER不一致(1件)。自然解消見込み"
+  observations:
+    - "事実1: フィルタ後推薦4件中3件HIT(75%)。role_markerフィルタが偽陽性の主根因だった"
+    - "事実2: 推薦ログ16件窓のうち14件がフィルタ前(5/26-27)。新推薦で入替わり待ち"
+    - "事実3: skill-installer→kotaroが唯一のフィルタ後偽陽性。TRIGGER条件精査候補"
+  cs_checklist:
+    CS1: "推薦ログ16件+実行ログ30件を全量確認"
+    CS2: "自システム(precision計測)のデータで検証"
+    CS3: "skill_recommend.sh AWK変更のgit diffを現物確認"
+    CS4: "設計書docs/research/に永続化+掲示板投稿"
+    CS5: "フィルタ後precision 75%の持続性は未検証(次サイクル)"
+    CS6: "TRIGGER経路role_marker欠落→全agent推薦→precision低下の因果鎖を追跡"
+  causal_chain: "cmd_3255(role_marker+短トークン除外)→8件FP除外→precision 0%→39%。フィルタ後推薦75%がベースライン。残存=古いログ残像で自然解消"
+  brainwash_check: "洗脳#5防止: 経過観察=先送りではない。計測データ(75%フィルタ後)で改善を確認済み。aliases補完案は不要と判定(根因がrole_markerだった)"
+  origin: "[[cmd_3255]] -> [[precision 39%/75%]] -> [[古い推薦ログ残像が主因]]"
+  timestamp: "2026-06-09T14:11:00"
