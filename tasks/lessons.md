@@ -833,7 +833,7 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **日付**: 2026-02-27
 - **出典**: cmd_397
 - **記録者**: karo
-- **tags**: [deploy, yaml, lesson]
+- **tags**: [deploy-task-internal]
 - **when**: タスク配備やデプロイ手順を変更・実行する時
 - **how**: 推定タグ数上限(max 3)の導入が必要
 - lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)。推定タグ数上限(max 3)の導入が必要
@@ -4727,7 +4727,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-16
 - **出典**: cmd_karo_ci_fix_1987
 - **記録者**: karo
-- **tags**: [bats-parallel, testing]
+- **tags**: [bats-parallel]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-16
 - bats --jobs並列でsetup/teardownが/tmp固定パスに同時アクセスしレースコンディション発生。テスト用状態ファイルはTEST_ROOT配下に隔離し/tmp固定パスを使わない。STOP_LINT_HASH_FILE環境変数でオーバーライド可能にした
@@ -4747,7 +4747,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2039
 - **記録者**: hayate
 - **status**: confirmed
-- **tags**: [git-performance, wsl2]
+- **tags**: [git-status-perf]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 今回の stop-lint-gate では bash read loop median 0.91s に対し awk 抽出版 median 0.84s を確認した
 - WSL2上の大きいgit worktreeでは、git status --porcelain=v2 -z のNUL区切り出力は bash の while read -d ループより awk 抽出の方が速かった。今回の stop-lint-gate では bash read loop median 0.91s に対し awk 抽出版 median 0.84s を確認した。
@@ -4878,7 +4878,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2088
 - **記録者**: tobisaru
 - **status**: confirmed
-- **tags**: [wsl2-filesystem, performance]
+- **tags**: [wsl2-find-perf]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 必ず5回median計測してから採用判断せよ
 - find -mmin -1440は単体計測63msだったが繰り返し計測で106-330ms(最大1942ms)の大変動。stat 100files(220-530ms変動)と比較してfindの方が遅かった。WSL2 NTFS上ではfindがstatより遅い場合があり、事前の単体計測1回では判断できない。必ず5回median計測してから採用判断せよ。
@@ -4928,7 +4928,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2089
 - **記録者**: kotaro
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [performance-measurement]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: L496の教訓を確認しても冷却後に再計測しなかった
 - before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプト初回実行)で行え。
@@ -5336,7 +5336,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-02
 - **出典**: cmd_karo_infra_recon_core
 - **記録者**: karo
-- **tags**: [yaml-dump-detection]
+- **tags**: [recon-yaml-dump]
 - **target_files**: [queue/tasks/hayate.yaml (status assigned->acknowledged->in_progress),queue/reports/hayate_report_cmd_karo_infra_recon_core.yaml]
 - **when**: queue/tasks・queue/reports・queue/inboxなど運用YAMLを書き換えるスクリプトや偵察を担当する時
 - **how**: rg 'yaml\\.dump|yaml\\.safe_dump' と書込先確認を行い、運用YAMLはyaml_field_set/report_field_set/inbox_mark_read等の専用helperへ置き換える
@@ -6253,7 +6253,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-19
 - **出典**: cmd_karo_ci_fix_verdict_derive
 - **記録者**: karo
-- **tags**: [verdict-waive]
+- **tags**: [gate-verdict-waive]
 - **target_files**: [scripts/gates/gate_report_autofix_main.py,scripts/report_field_set.sh,tests/unit/test_report_template_gate_compat.bats]
 - **origin**: [[cmd_karo_ci_fix_verdict_derive]]
 - **when**: 未設定
@@ -6636,7 +6636,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-21
 - **出典**: cmd_training_L7_v3_hanzo_6_20260521205341
 - **記録者**: hanzo
-- **tags**: [infra,bash]
+- **tags**: [insight-write-internal]
 - **target_files**: [scripts/insight_write.sh]
 - **origin**: [[cmd_training_L7_v3_hanzo_6_20260521205341]]
 - **when**: 未設定
@@ -6878,7 +6878,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-23
 - **出典**: cmd_karo_ci_fix_lord_conv_read
 - **記録者**: karo
-- **tags**: [script-dir-cwd]
+- **tags**: [ci-path-resolution]
 - **target_files**: [scripts/lord_conversation_read.sh]
 - **origin**: [[cmd_karo_ci_fix_lord_conv_read]]
 - **when**: 未設定
@@ -7705,3 +7705,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - skill_recommend.shのTRIGGER照合にrole_markerフィルタがなく、semantic_skill_recommendations()にはfilter_skills_for_agentが存在した。2経路のフィルタ不整合がprecision低下の根因。新しいフィルタ追加時は全推薦経路への横展開を確認すべき
+
+### L766: TSV書き戻し時にnewline='' + CR汚染が空行増殖の根因
+- **日付**: 2026-06-10
+- **出典**: cmd_3261
+- **記録者**: hanzo
+- **tags**: [infra,deploy-task]
+- **target_files**: [logs/lesson_impact.tsv,scripts/deploy_task.sh,scripts/cmd_complete_gate.sh]
+- **origin**: [[cmd_3261]]
+- **when**: 未設定
+- **how**: 未設定
+- csv.reader(newline='')がCR付きフィールドを読み、ヘッダ比較が毎回不一致→全行upgradeパス発動→空行をパディング。防御: (1)ヘッダ比較前にCR strip (2)空行スキップ (3)lineterminator明示

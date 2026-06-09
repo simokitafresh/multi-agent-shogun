@@ -149,11 +149,11 @@ lessons:
     殿が話していないことを記録するな(知識記録での先走り)。
     殿の指示は文字通り全て従う。省略・効率化・まとめ処理は指示違反。
     (4)殿の決定後は議論停止→即実装。設計相談で先送りするな。殿以外に確認するな(cmd_3007)
+    (5)黙って先送り=行動の不在。テキストに先送りキーワードが出ないため従来のL4では検出不能。startup_alert_historyの先送り判断件数をstop hookで検出しWARN注入(cmd_3261セッション)
   source_ids: [LS053, LS054, LS055, LS046]
   created_at: '2026-04-24'
-  automated: false
-  enforcement_level: 2
-  enforcement: 'deepdive Phase 2(出力=仕事の罠)との紐付け。追体験で自問(意志依存。gate/hookなし)'
+  automated: true
+  enforcement: 'stop_check_inbox.sh L4先送り防止(startup_alert_history先送り判断件数→WARN注入)+post-shogun-inbox-check.sh自走チェック(L5: GATE CLEAR後insight/action_required強制表示)'
 
 # === クラスタ5: 想像するな確認せよ ===
 - id: LS-A09

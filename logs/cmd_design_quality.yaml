@@ -606,3 +606,14 @@ entries:
   source: "cmd_complete_gate"
   timestamp: "2026-06-09T23:07:58Z"
   notes: "command_files_modified_mismatch"
+- cmd_id: "cmd_3265"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-09T23:08:26Z"
+  notes: "command_files_modified_mismatch"

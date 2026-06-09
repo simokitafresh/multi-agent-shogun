@@ -65,6 +65,70 @@ RESULT=$(python3 "$_GATE_DIR/gate_report_format_combined.py" "$REPORT_PATH" 2>&1
 
 echo "$RESULT"
 
+# --- cmd_3264: auto-commit contamination check (AC2/AC3) ---
+# bc:commit=yes時にtarget_path配下の未commit変更・auto-commit巻込みを検出
+if [[ "$REPORT_PATH" != /tmp/* ]] && [[ "$REPORT_PATH" != *"/tmp/"* ]]; then
+    _CC_WORKER="$_REPORT_EXECUTOR"
+    _CC_TASK_FILE="$REPO_ROOT/queue/tasks/${_CC_WORKER}.yaml"
+    if [ -f "$_CC_TASK_FILE" ]; then
+        _CC_CHECK=$(python3 -c "
+import yaml, sys
+try:
+    rdata = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+    bc = rdata.get('binary_checks') or {}
+    commit = bc.get('commit') or []
+    if not (isinstance(commit, list) and commit):
+        sys.exit(0)
+    if str(commit[0].get('result', '') or '').strip() != 'yes':
+        sys.exit(0)
+    tdata = yaml.safe_load(open(sys.argv[2], encoding='utf-8')) or {}
+    task = tdata.get('task') or tdata
+    tp = task.get('target_path') or ''
+    paths = []
+    if isinstance(tp, list):
+        for p in tp:
+            s = str(p).strip().lstrip('- ')
+            if s and s not in ('', 'none', 'null', 'FILL_THIS'):
+                paths.append(s)
+    elif tp:
+        s = str(tp).strip()
+        if s and s not in ('none', 'null', 'FILL_THIS'):
+            paths.append(s)
+    for p in paths:
+        print(p)
+except Exception:
+    pass
+" "$REPORT_PATH" "$_CC_TASK_FILE" 2>/dev/null || true)
+        if [ -n "${_CC_CHECK//[[:space:]]/}" ]; then
+            # AC2: git status check for uncommitted target_path changes
+            _CC_UNCOMMITTED=$(cd "$REPO_ROOT" && git status --porcelain -- $_CC_CHECK 2>/dev/null || true)
+            if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
+                echo ""
+                echo "★ WARN(cmd_3264-AC2): ${_CC_WORKER} target_path配下に未commit変更あり:"
+                while IFS= read -r _ccl; do [ -n "$_ccl" ] && echo "  $_ccl"; done <<< "$_CC_UNCOMMITTED"
+            fi
+            # AC3: auto-commit contamination detection
+            _CC_AUTO_FILES=$(cd "$REPO_ROOT" && git log --grep="auto-commit" -10 --format="" --name-only 2>/dev/null | sort -u || true)
+            if [ -n "$_CC_AUTO_FILES" ]; then
+                _CC_HITS=""
+                while IFS= read -r _tp; do
+                    [ -n "$_tp" ] || continue
+                    _CC_M=$(printf '%s\n' "$_CC_AUTO_FILES" | grep -E "^${_tp}(/|$)" || true)
+                    [ -n "$_CC_M" ] && _CC_HITS="${_CC_HITS}${_CC_M}"$'\n'
+                done <<< "$_CC_CHECK"
+                _CC_HITS="${_CC_HITS%$'\n'}"
+                if [ -n "${_CC_HITS//[[:space:]]/}" ]; then
+                    echo ""
+                    echo "★ WARN(cmd_3264-AC3): ${_CC_WORKER} target_path配下ファイルがauto-commitに巻き込まれた可能性:"
+                    printf '%s\n' "$_CC_HITS" | sort -u | while IFS= read -r _ccl; do
+                        [ -n "$_ccl" ] && echo "  $_ccl"
+                    done
+                fi
+            fi
+        fi
+    fi
+fi
+
 # cmd_2130: task_clarity_score WARN (non-blocking)
 # perf: moved into gate_report_format_combined.py (Phase 3) to eliminate 2nd python3 subprocess
 

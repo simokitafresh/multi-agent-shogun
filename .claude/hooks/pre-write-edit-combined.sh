@@ -326,13 +326,19 @@ quality_gate template (cmd_save.sh必須フィールド):
   q11_not_already_done: \"\"
   q_ambiguity: \"\"
   timeout_minutes: \"\"  # 計測/研究/見積/探索cmdの場合は想定実行時間上限(分)を記入
+  diagnosis: \"BLOCK理由: ... 対策: ...\"  # 初回起票でも2部構成必須(LS049)
 
 environment_change template (cmd_save.sh構造化形式):
   environment_change: \"type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な既存文字列\"
   注意:
   - 1行テキスト形式必須。block scalar(|)や複数行にしない
   - patternは実装済みの既存文字列のみ。予定・説明文・未実装文字列を書かない
-  - patternにバックスラッシュ・パイプ禁止。grep検証で誤解釈される文字を避ける"
+  - patternにバックスラッシュ・パイプ禁止。grep検証で誤解釈される文字を避ける
+
+cmd-level required fields (quality_gate外。cmd直下に配置):
+  timeout_minutes: 30  # quality_gate内ではなくcmd直下(LS049)
+  depends_on: none  # or cmd_XXXX
+  origin: \"[[発端]] -> [[原因]] -> [[結果]]\"  # none禁止。最低1つの[[リンク]]必須(LS049)"
         if [[ -n "$_dynamic_checks" ]]; then
             _checklist="${_checklist}
 

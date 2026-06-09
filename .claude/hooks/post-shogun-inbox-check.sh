@@ -105,6 +105,25 @@ if [ "${UNREAD:-0}" -gt 0 ]; then
     fi
 fi
 
+# ─── GATE CLEAR後 自走チェック（L5: CLEAR→殿待ち停止防止） ───
+# insightキュー件数+掲示板action_required件数を強制表示し、自走を促す
+SELF_DRIVE=""
+if [ -n "$EFFECT_REMIND" ]; then
+    _insight_count=0
+    _blt_action_count=0
+    _insight_file="${SCRIPT_DIR}/queue/insights.yaml"
+    _blt_file="${SCRIPT_DIR}/queue/bulletin_board.yaml"
+    if [ -f "$_insight_file" ]; then
+        _insight_count=$(grep -c "status: pending" "$_insight_file" 2>/dev/null || echo 0)
+    fi
+    if [ -f "$_blt_file" ]; then
+        _blt_action_count=$(awk '/action_type:.*action_required/{ar=1} ar && /actioned_by:.*'\'''\''/{c++; ar=0} END{print c+0}' "$_blt_file" 2>/dev/null || echo 0)
+    fi
+    if [ "$_insight_count" -gt 0 ] || [ "$_blt_action_count" -gt 0 ]; then
+        SELF_DRIVE="★自走チェック: CLEAR後に殿待ちで止まるな(LS-A06/LS049)。insightキュー=${_insight_count}件 掲示板action_required=${_blt_action_count}件"
+    fi
+fi
+
 # 出力組立て
 MSG=""
 if [ "${RECOVERY_STALE:-}" = "1" ]; then
@@ -118,6 +137,9 @@ if [ -n "$LORD_LAST" ]; then
 fi
 if [ -n "$EFFECT_REMIND" ]; then
     MSG="${MSG:+${MSG}\\n}${EFFECT_REMIND}"
+fi
+if [ -n "$SELF_DRIVE" ]; then
+    MSG="${MSG:+${MSG}\\n}${SELF_DRIVE}"
 fi
 
 [ -n "$MSG" ] && printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"%s"}}\n' "$MSG"

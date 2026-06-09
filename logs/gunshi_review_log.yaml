@@ -1301,7 +1301,7 @@
 - cmd_id: cmd_3265
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: BLOCK
   confidence: HIGH
   finding_categories: [assumptions, numbers, simulation, premortem, north_star]
   findings_summary: "context_freshness偽陽性抑止。6観点OK。ソース変更確認インフラ(source_commit_count_since L439-471)が既存。AC3 debounce 86400は忍者実装済み(9332fabe3)。FM2(WARN降格で真陳腐化見逃し)は設計上許容(WARN表示維持)"

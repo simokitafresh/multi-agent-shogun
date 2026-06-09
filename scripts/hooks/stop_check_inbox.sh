@@ -145,6 +145,15 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
     if [[ -n "$_brainwash_match" ]]; then
       printf 'WARN: 洗脳検出 %s。一次データ確認・即時行動・L0-L7貫通の自問をやり直せ。\n' "$_brainwash_match" >&2
     fi
+    # L4先送り防止: startup BLOCK未対処で殿に応答→WARN注入
+    _startup_history="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
+    if [[ -f "$_startup_history" ]]; then
+      _today="$(date +%Y-%m-%d)"
+      _block_count="$(grep -c "^${_today}.*先送り判断:" "$_startup_history" 2>/dev/null || echo 0)"
+      if [[ "$_block_count" -gt 0 ]]; then
+        printf 'WARN: startup先送りBLOCK %s件が本日未解消。cmd起票またはD0修正で穴を塞げ(洗脳#5)。\n' "$_block_count" >&2
+      fi
+    fi
     # cmd_3251 AC2: F009 殿への操作依頼パターン → BLOCK
     if detect_f009_lord_delegation "$last_assistant_message"; then
       printf '{"decision":"block","reason":"BLOCK F009: 殿への操作依頼を検出。殿にcommit/push/kill/respawn/CLI操作を依頼するな。自分で実行せよ(CLAUDE.md: 殿への操作押し返し禁止)。"}\n'

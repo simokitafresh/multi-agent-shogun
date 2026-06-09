@@ -1149,3 +1149,158 @@ echo "PASS: in_progress respawns"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS: in_progress respawns"* ]]
 }
+
+# --- cmd_3264: auto-commit in_progress ninja exclusion tests ---
+
+@test "auto_commit: excludes in_progress ninja target_path files from other ninja clear" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT/repo"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/scripts/gates" "$SCRIPT_DIR/queue/tasks" "$STATE_DIR"
+cd "$SCRIPT_DIR"
+git init -q
+git config user.email test@example.com
+git config user.name test
+printf "base\n" > scripts/a.sh
+printf "base\n" > scripts/gates/check.sh
+git add scripts/a.sh scripts/gates/check.sh
+git commit -qm initial
+
+# hanzo is in_progress with target_path=scripts/gates/
+cat > "$SCRIPT_DIR/queue/tasks/hanzo.yaml" <<INNEREOF
+task:
+  status: in_progress
+  target_path: scripts/gates
+INNEREOF
+
+# saizo is doing /clear (no task scope)
+NINJA_NAMES=(hanzo saizo)
+printf "change\n" >> scripts/a.sh
+printf "change\n" >> scripts/gates/check.sh
+NINJA_MONITOR_NOW=10000
+export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
+_uncommitted=$(git status --porcelain -uno -- scripts/)
+auto_commit_before_clear saizo "$_uncommitted"
+
+committed_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
+worktree_files=$(git diff --name-only | sort | tr "\n" " ")
+echo "committed=$committed_files"
+echo "worktree=$worktree_files"
+test "$committed_files" = "scripts/a.sh "
+test "$worktree_files" = "scripts/gates/check.sh "
+grep -q "AUTO-COMMIT-INPROGRESS-WARN:.*hanzo" "$LOG"
+echo "PASS"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" == *"committed=scripts/a.sh"* ]]
+}
+
+@test "auto_commit: in_progress ninja without target_path is not excluded (INFO only)" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT/repo"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/queue/tasks" "$STATE_DIR"
+cd "$SCRIPT_DIR"
+git init -q
+git config user.email test@example.com
+git config user.name test
+printf "base\n" > scripts/a.sh
+git add scripts/a.sh
+git commit -qm initial
+
+# kotaro is in_progress but has NO target_path
+cat > "$SCRIPT_DIR/queue/tasks/kotaro.yaml" <<INNEREOF
+task:
+  status: in_progress
+INNEREOF
+
+NINJA_NAMES=(kotaro saizo)
+printf "change\n" >> scripts/a.sh
+NINJA_MONITOR_NOW=10000
+export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
+_uncommitted=$(git status --porcelain -uno -- scripts/)
+auto_commit_before_clear saizo "$_uncommitted"
+
+committed_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
+echo "committed=$committed_files"
+test "$committed_files" = "scripts/a.sh "
+grep -q "AUTO-COMMIT-INPROGRESS-INFO:.*kotaro.*no target_path" "$LOG"
+# Should NOT have WARN (file was committed, not excluded)
+if grep -q "AUTO-COMMIT-INPROGRESS-WARN:" "$LOG"; then
+    echo "FAIL: unexpected WARN for target_path-less ninja"
+    exit 1
+fi
+echo "PASS"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+}
+
+@test "auto_commit: clearing agent own files are not excluded by inprogress filter" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT/repo"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/scripts/gates" "$SCRIPT_DIR/queue/tasks" "$STATE_DIR"
+cd "$SCRIPT_DIR"
+git init -q
+git config user.email test@example.com
+git config user.name test
+printf "base\n" > scripts/gates/check.sh
+git add scripts/gates/check.sh
+git commit -qm initial
+
+# hayate is in_progress AND is the clearing agent
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<INNEREOF
+task:
+  status: in_progress
+  target_path: scripts/gates
+INNEREOF
+
+NINJA_NAMES=(hayate saizo)
+printf "change\n" >> scripts/gates/check.sh
+NINJA_MONITOR_NOW=10000
+export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
+_uncommitted=$(git status --porcelain -uno -- scripts/)
+auto_commit_before_clear hayate "$_uncommitted"
+
+committed_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
+echo "committed=$committed_files"
+test "$committed_files" = "scripts/gates/check.sh "
+# Own files should NOT be excluded
+if grep -q "AUTO-COMMIT-INPROGRESS-WARN:" "$LOG"; then
+    echo "FAIL: own files should not be excluded"
+    exit 1
+fi
+echo "PASS"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+}
