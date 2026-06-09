@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-09 cmd_3245 -->
+<!-- last_updated: 2026-06-09 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,20 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2604 | スキル自動成長ループの段階3(自動改善)・段階4(品質向上)が未実装。根本原因はskill_execution_logの帰属精度。dashboard-updateがgate_report_formatのFAILを被っている(8/11件)。報告YAML品質はreport-writeスキルの責任であり、dashboard-updateの責任ではない。帰属がずれている限り、stumbling_points→SKILL.md反映は誤った対象に注意ポイントを追加し続ける | infra | 05-09 | gate_report_format FAILのskill帰 |
-| cmd_2605 | スキル成長ループの段階3-4を完結させる。現状PASS記録がgate_report_format.sh経由のスキル(report-write等)で欠落しており成長が計測不能。PASS記録を統一し、注意ポイントを適用し、定期自走化で永続的にループを回す | infra | 05-09 | gate_report_format PASSをreport |
-| cmd_2607 | 将軍のcmd起票BLOCK率が56%で振動し改善しない。根因: 検知(cmd_save.sh BLOCK)は機能しているが防止(事前に正しく書ける仕組み)がない。さらにPASS記録がなく成長の証拠が計測できない。スキル成長ループ(cmd_2605)で修正した構造と全く同じ穴が将軍自身のcmd起票にもある | infra | 05-09 | cmd_save.shのPASS記録と、起票前hookの直近 |
-| cmd_2608 | 将軍BLOCKの65%がWARN累計昇格BLOCK。FPが蓄積→閾値超過→正しいcmdもBLOCKされる。FP率最高の2チェック(q11_existing_alternative_verification 50%, command_steps_over_ac 45%)のロジック改善でWARN蓄積を削減し実効BLOCK率を下げる | infra | 05-09 | cmd_save.shのq11 command抽出終端を安定 |
-| cmd_2609 | セマンティクスインデックスの新概念候補53件がinsightに滞留し追加率5.7%(3/53)。根因: 検知精度が低くタイムスタンプ・cmd番号・lesson番号がノイズとして候補に入る。さらにaliases拡張は自動化可能だが手動依頼のまま。cmd_save.sh FP率問題(cmd_2608)と同構造: 検知が粗い→ノイズ蓄積→信号が埋もれる→仕組みが死ぬ | infra | 05-09 | semantic_index_update.shにノイズ候補 |
-| cmd_2610 | 家老のworkaround記録112件中environment_change付き0件(変換率0%)。karo_workaround_log.sh L196でWARN止まりのためBLOCKしない=家老は無視する=同じworkaroundが繰り返される。将軍のcmd_save.shではenvironment_change未記入→BLOCKで強制しており変換率100%。同じ仕組みが家老側に未適用。deepdive Phase 4(WARNでは行動は変わらない→BLOCK=自動化×強制) | infra | 05-09 | karo_workaround_log.sh --wa の |
-| cmd_2611 | 教訓478件が索引セクションに滞留(core:62,ops:82,research:4,infra:330)。根因: lesson_write.shが全教訓を索引セクションに投入するバッチ設計。cmd_2606で追加したsubdomainタグ(fe/be/gs/infra)を活用し、教訓追加時に適切な§に自動ルーティングするストリーム設計に変更する。加えてlesson-sort SKILL.mdの§番号テーブルを現在のセクション構造に更新 | infra | 05-09 | lesson_write.shにresolve_lesson |
-| cmd_2612 | 本セッションで6領域に同一構造の穴(WARN止まり=行動変換なし)を発見・修正した。根因: 新しいgate/hookを作るcmdに対して「WARN止まりにしていないか」「行動変換(BLOCK/自動実行)まで設計したか」を検知する仕組みがない。個別の穴を塞いでも、同じ設計ミスで新しい穴が量産される。穴を作らない仕組み=メタ穴防止gate | infra | 05-09 | cmd_save.shにgate/hook追加cmdの行動変 |
-| cmd_2613 | auto_draft_lesson.shがlesson_write.shを呼ぶ際、CMD_IDを空文字で渡しlesson.doneが生成されない問題と、--status draftで登録し同一gate実行内でdraft_lessons BLOCKが発火する構造的バグを修正。直近50cmdで3パターン計72回のBLOCK(draft_lessons:27, missing_gate:lesson:23, lesson_done_missing:22)の根因 | infra | 05-09 | auto_draft_lesson.shをconfirmed |
-| cmd_2614 | deploy_task.sh L295のSTALE_FIELDSにscout_exemptが含まれ、家老が事前設定したscout_exemptが配備時にクリアされる(5回連続workaround LK011)。resolve_cmd L504-505がSTKから再設定する機能は既存だが、STKにscout_exemptがないcmdでは復元されない。STALE_FIELDSからscout_exemptを除外し、resolve_cmdのSTK読取に一本化する | infra | 05-09 | cmd_2614: STALE_FIELDSからscout_ |
-| cmd_2615 | 軍師startup gateが冷え観点(ambiguity 10件連続0等)を検出し表示するが、レビュー時の使用を強制しない(意志依存)。gate_gunshi_cs_checklist.shに冷え観点チェックを追加し、startup gateが検出した冷え候補がfinding_categoriesに含まれなければWARNする。cmd_2612(メタ穴防止gate)と同構造の穴を塞ぐ | infra | 05-09 | 軍師CS checklist gateに冷え観点findin |
-| cmd_2616 | cmd_save.sh L1679-1682でgate/hook追加cmdのq11にgrep結果がない場合WARNするが、将軍が毎回消火(q11追記→PASS)してリセットし26回同じWARNを繰り返す。WARN→直接BLOCKに昇格して即停止させる | infra | 05-09 | cmd_save.shのq11既存代替確認なし分岐をWARN |
-| cmd_2618 | lessons_gunshi.yaml 15件+lessons_shogun.yaml 3件=合計18件のautomated:false教訓を洗い出し、各教訓に最適なenforcement方式(gate/hook/テンプレート/入口生成)を設計する。軍師指摘(blt_232728): Level4(止める):Level5(生成)=28:3。入口生成を増やす計画を立てる | infra | 05-09 | automated:false 18件を全件確認。Level |
-| cmd_2619 | check_research_tool_explicit(Check 18)が62回WARN。偵察や本番検証cmdでcommandにoutputs/grid_searchデータ参照を含む場合も発火する偽陽性と、ACに書くべきスクリプトパスを将軍が手動で探す必要がある入口不在が根因。偽陽性除外+ACパス候補の自動提案(Level5化)で62回WARNを構造的に削減する | infra | 05-09 | Check 18のoutputs/grid_search偵察 |
 | cmd_2636 | semantic_search.shは手動CLI検索ツール(エージェントが概念検索時に明示的に呼ぶ道具)。hooks登録は不適切。allowlistの道具カテゴリに追加し、startup gateの3セッション連続BLOCKを解消する | infra | 05-10 | config/enforcement_audit_allow |
 | cmd_2638 | gate_vercel_phase.shは壊れたcontext参照を検出するがALERT表示のみ。忍者/家老が手動で修正箇所を探す必要がある(9回BLOCK実績)。壊れ参照検出時に修正候補(存在するファイルからの類似パス提案)を自動表示し、手動探索コストを削減する | infra | 05-10 | gate_vercel_phase.shの壊れたdocs/r |
 | cmd_2637 | gate_skill_script_refs.shが16件のSKILL.mdで参照scriptがSKILL.mdより新しいと検出。大半は共通ライブラリ(yaml_field_set.sh等)の内部変更でインターフェース不変。各SKILL.mdのscript参照を確認し、内容変更が必要ならば更新、不要ならばtouchでmtimeリセット。startup gateの3セッション連続BLOCKを解消する | infra | 05-10 | gate_skill_script_refs.shの要更新ス |
@@ -532,3 +518,9 @@
 | cmd_3242 | 忍者にはninja_weak_points/gate_fail_top3/gate_blocks(L6)が自動注入されるが、将軍のcmd起票には同等の仕組みがない。本セッション10回BLOCK+5回lesson_ack=同じパターン繰返し=L6不在の証拠。cmd_save.sh実行前のpreflight表示に将軍個人のBLOCK TOP3と過去の回避策を自動表示し、忍者と同等のL6を将軍に適用する | infra | 06-08 | — |
 | cmd_3241 | 将軍の三層記憶引用率0%。殿応答時のみ[MEM:]引用で自発的引用なし。殿指摘(2026-06-05)「使わないから間違う」が改善されていない。cmd起票時のpreflight(pre-write-edit-combined.sh)に記憶DB検索結果を自動表示し、将軍が三層記憶を参照せざるを得ない環境を作る | infra | 06-08 | pre-write-edit-combined.shのcmd |
 | cmd_3244 | startup gate「スキル推薦精度」が3セッション連続BLOCK。precision 0%(0/18)、偽陽性100%。軍師分析で根因3つ特定(設計書: docs/research/gunshi_idle_skill_precision_20260608.md)。根因1(推薦ログ停止)と根因3(役割フィルタ)は家老D0で対処。本cmdは根因2(推薦agent≠実行agent照合不一致)を修正する。推薦ログにninja_nameフィールドを追加し、precision計測の照合キーを推薦agent→割当ninjaに変更する | infra | 06-08 | deploy_task.shのinject_semantic |
+| cmd_3245 | cmd_3244起票で7回BLOCK。覚醒なぜなぜ7回で根因特定: cmd_save.shがquality_gateのフィールド値はチェックするがフィールド名の正しさはチェックしない。将軍がq5_assumptionsと書いてもq5_verified_sourceと照合されず素通り→値チェックフェーズで初めてBLOCK→修正ループ。フィールド名バリデーション(テンプレートの必須名リストとの照合)を追加し、不正フィールド名を即BLOCKする | infra | 06-09 | cmd_save.sh Check3にquality_gat |
+| cmd_3246 | cmd_3244起票で7回BLOCK→覚醒なぜなぜで根因言語化→しかし教訓記録+環境cmd起票は殿の介入で初めて実行(殿依存=洗脳#3)。根因: cmd_publish.sh PASS後にnazenaze_root_causeがあっても教訓記録+環境変更cmdの起票を強制するgateがない(半パイプライン)。加えて殿裁定(2026-06-08): 洗脳監査の正しいサイクル(行動→行動結果検証)は家老/軍師にも横展開が必須 | infra | 06-09 | cmd_publish.shにnazenaze_root_c |
+| cmd_3247 | 覚醒洗脳監査→家老なぜなぜで根因特定: 軍師レビューWARN率35%(7/20)の全件がcommand_files_modified_mismatch由来。SG-PRE25がreadonly_ref未考慮のINFOを出す→軍師がLGTM→gateはreadonly_ref除外後にBLOCK→判定乖離。SG-PRE25にreadonly_ref除外ロジックを追加し、除外後の真のmismatchをWARNに昇格させることでgate判定と同期する | infra | 06-09 | SG-PRE25にcmd_complete_gate.shと |
+| cmd_3249 | 軍師idle自走分析(GP-265)で検出: cmd_3231でblast_radius大(changed_lines>200)だがadversarial未適用。根因: SG-PRE15.5のadversarialリマインドがcmd種別(自動化系)のみで判定しchanged_linesを参照しない。changed_lines閾値(200行)超過時にadversarial必須を自動トリガーし、大規模変更の見落としを防止する | infra | 06-09 | — |
+| cmd_3250 | 三層ループFAIL率30%超WARNINGが3セッション連続startup BLOCK。家老偵察(才蔵)で根因2件特定: (1)L457のautofix_count==0条件がAUTO-FIXED=7件蓄積で永続False→自己修正率判定を迂回→粗いFAIL率判定に到達 (2)L470のFAIL率がFAIL/PASS(33.3%)で計算されFAIL/TOTAL(25%)ではない。2件のバグを修正しFAIL率判定を正確化する | infra | 06-09 | gate_loop_health.shの2件バグ修正: (1 |
+| cmd_3251 | 覚醒なぜなぜ7回で根因特定: 将軍の洗脳チェックがL2/L3のみでL4に穴。セッション中に洗脳5/8発現。リマインダー表示だけでは#1(早期終了=ツール失敗時の諦め)と#3(他者依存=殿への操作依頼)に効かない。3層で対策: (A)prompt_state_inject.shに8パターンリマインダー(#2/#7/#8対策) (B)stop hookにF009パターン検出(殿への操作依頼をBLOCK)(#3対策) (C)note_draft.sh失敗時にWebSocket回避策を自動フォールバック(#1対策) | infra | 06-09 | 洗脳チェック3層対策: (A)prompt_state_in |
