@@ -3163,7 +3163,14 @@ with open(impact_file, "r", newline="", encoding="utf-8") as f:
         raise SystemExit(0)
 
     for row in reader:
+        # Strip CR from all field values and skip empty rows
+        for k in list(row.keys()):
+            row[k] = (row[k] or "").strip("\r")
         row_cmd_id = (row.get("cmd_id") or "").strip()
+        row_lesson_id = (row.get("lesson_id") or "").strip()
+        # Skip empty rows (no cmd_id and no lesson_id)
+        if not row_cmd_id and not row_lesson_id:
+            continue
         matched = row_cmd_id in tracked_row_ids
         if not matched:
             for tid in tracked_row_ids:
@@ -3194,7 +3201,7 @@ tmp_dir = os.path.dirname(impact_file) or "."
 try:
     tmp_fd, tmp_path = tempfile.mkstemp(dir=tmp_dir, prefix="lesson_impact.", suffix=".tmp")
     with os.fdopen(tmp_fd, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t", extrasaction="ignore")
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t", extrasaction="ignore", lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     os.replace(tmp_path, impact_file)

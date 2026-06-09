@@ -3809,6 +3809,10 @@ IMPACT_COLUMNS = [
     'traversal_depth',
 ]
 
+def _is_empty_row(row):
+    """Return True if all fields in *row* are blank (or only whitespace/CR)."""
+    return all(not cell.strip().strip('\r') for cell in row)
+
 def ensure_impact_header(impact_path):
     """Upgrade existing lesson_impact.tsv headers without losing old rows."""
     if not os.path.exists(impact_path) or os.path.getsize(impact_path) == 0:
@@ -3820,7 +3824,8 @@ def ensure_impact_header(impact_path):
         rows = list(csv.reader(f, delimiter='\t'))
     if not rows:
         return
-    header = rows[0]
+    # Strip CR from header fields for reliable comparison
+    header = [c.strip().strip('\r') for c in rows[0]]
     if header == IMPACT_COLUMNS:
         return
 
@@ -3831,7 +3836,10 @@ def ensure_impact_header(impact_path):
 
     upgraded_rows = [new_header]
     for row in rows[1:]:
-        upgraded = list(row)
+        # Skip empty rows (all fields blank)
+        if _is_empty_row(row):
+            continue
+        upgraded = [cell.strip('\r') for cell in row]
         while len(upgraded) < len(new_header):
             upgraded.append('')
         upgraded_rows.append(upgraded)
