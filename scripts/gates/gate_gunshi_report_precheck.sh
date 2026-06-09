@@ -477,7 +477,7 @@ INFRA_FILES=""
 if [ -n "${FILES_MODIFIED:-}" ]; then
     while IFS= read -r fpath; do
         case "$fpath" in
-            *scripts/hooks/*|*scripts/gates/*|*CLAUDE.md|*instructions/*|*.claude/settings*|*config/settings.yaml)
+            *scripts/hooks/*|*scripts/gates/*|*CLAUDE.md|*instructions/*|*.claude/settings*|*config/settings.yaml|*scripts/deploy_task.sh|*scripts/ninja_monitor.sh|*scripts/inbox_write.sh|*scripts/cmd_save.sh|*scripts/cmd_publish.sh|*scripts/cmd_complete_gate.sh|*scripts/report_field_set.sh|*scripts/cmd_quality_log.sh)
                 INFRA_FILES="${INFRA_FILES:+$INFRA_FILES, }$fpath"
                 INFRA_DETECTED=1
                 ;;
@@ -733,12 +733,13 @@ else
 fi
 
 # ─── SG-PRE25: command×files_modified名前照合 (LG036 Step3.5自動化) ───
+# readonly_ref除外ロジック: cmd_complete_gate.sh L4204-4312と同一判定
 echo ""
 echo "■ SG-PRE25: command×files_modified名前照合(LG036)"
 if [ -n "${PARENT_CMD:-}" ] && [ -n "${FILES_MODIFIED:-}" ]; then
     _cmd_spec="$REPO_ROOT/queue/shogun_to_karo.yaml"
     if [ -f "$_cmd_spec" ]; then
-        # python: command欄からファイルパスを抽出しfiles_modifiedと照合
+        # python: command欄からファイルパスを抽出し、readonly_ref除外後にfiles_modifiedと照合
         _pre25_result=$(python3 - "$_cmd_spec" "${PARENT_CMD}" "${FILES_MODIFIED}" "$REPO_ROOT" <<'PYEOF'
 import yaml, re, sys, os, glob
 try:
@@ -764,30 +765,105 @@ try:
     if not cmd_text:
         print('SKIP: command欄なし')
         sys.exit(0)
-    cmd_files = set(os.path.basename(p) for p in re.findall(r'[a-zA-Z0-9_/.-]+\.(?:sh|py|md|yaml|json|ts|js)', cmd_text))
+
+    # ── readonly_ref判定 (cmd_complete_gate.sh L4204-4312と同一ロジック) ──
+    pattern = re.compile(
+        r"(?<![A-Za-z0-9_./-])"
+        r"((?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+"
+        r"\.(?:sh|py|md|yaml|yml|json|toml|js|ts|tsx|jsx|css|html|sql|csv))"
+        r"(?![A-Za-z0-9_.-])"
+    )
+    read_markers = (
+        "読む", "読んで", "読み", "確認", "参照", "調査", "精査", "review", "read", "inspect", "refer",
+        "実行", "実行のみ", "変更対象外", "走らせ", "検証", "run", "execute",
+    )
+    write_markers = (
+        "修正", "更新", "変更", "編集", "実装", "追加", "削除", "作成", "反映",
+        "modify", "update", "edit", "add", "remove", "delete", "create", "write", "implement",
+    )
+
+    def marker_pos(text, markers):
+        positions = [text.find(marker) for marker in markers if text.find(marker) >= 0]
+        return min(positions) if positions else -1
+
+    matches = list(pattern.finditer(cmd_text))
+    seen = set()
+    write_refs = []
+    readonly_refs = []
+    for idx, match in enumerate(matches):
+        ref = match.group(1).strip().strip("`'\".,:;()[]{}")
+        if not ref or ref in seen:
+            continue
+        seen.add(ref)
+        sentence_end_candidates = [
+            pos for pos in (
+                cmd_text.find("\n", match.end()),
+                cmd_text.find("。", match.end()),
+                cmd_text.find("；", match.end()),
+                cmd_text.find(";", match.end()),
+            )
+            if pos >= 0
+        ]
+        sentence_end = min(sentence_end_candidates) if sentence_end_candidates else len(cmd_text)
+        next_file_start = matches[idx + 1].start() if idx + 1 < len(matches) else sentence_end
+        local = cmd_text[match.end():next_file_start]
+        sentence_tail = cmd_text[match.end():sentence_end]
+        read_pos = marker_pos(local, read_markers)
+        if read_pos < 0:
+            read_pos = marker_pos(sentence_tail, read_markers)
+        write_pos = marker_pos(sentence_tail, write_markers)
+        next_ref_before_write = idx + 1 < len(matches) and matches[idx + 1].start() < sentence_end and (
+            write_pos < 0 or matches[idx + 1].start() - match.end() < write_pos
+        )
+        is_readonly = read_pos >= 0 and (write_pos < 0 or read_pos < write_pos) and (
+            write_pos < 0 or next_ref_before_write
+        )
+        base = os.path.basename(ref)
+        if is_readonly:
+            readonly_refs.append(base)
+        else:
+            write_refs.append(base)
+
     fm_bases = set(os.path.basename(p.strip()) for p in fm_raw.split('\n') if p.strip())
-    unmatched = sorted(cmd_files - fm_bases)
+    unmatched = sorted(set(write_refs) - fm_bases)
+
+    lines = []
+    if readonly_refs:
+        lines.append('READONLY_EXCLUDED: ' + ' '.join(sorted(set(readonly_refs))))
     if unmatched:
-        print('INFO: ' + ' '.join(unmatched))
+        lines.append('WARN: ' + ' '.join(unmatched))
     else:
-        print('PASS')
+        lines.append('PASS')
+    print('\n'.join(lines))
 except Exception as e:
     print(f'SKIP: {e}')
 PYEOF
 )
-        case "$_pre25_result" in
-            PASS*)
-                echo "  PASS: command欄ファイルとfiles_modified名前照合OK"
-                ;;
-            INFO:*)
-                echo "  INFO: command欄ファイルがfiles_modifiedに不在: ${_pre25_result#INFO: }"
-                echo "  → Step3.5で変更対象/実行のみ/既存依存の3分類を確認せよ(LG036/LG037)"
-                echo "  ★注: SG-PRE25はreadonly_ref未考慮。gateはcommand文脈(記録/確認)でreadonly除外するためBLOCK判定が異なる場合あり"
-                ;;
-            *)
-                echo "  ${_pre25_result}"
-                ;;
-        esac
+        # 複数行出力対応: READONLY_EXCLUDED行とWARN/PASS行を分離処理
+        _has_warn=0
+        _has_readonly=0
+        while IFS= read -r _line; do
+            case "$_line" in
+                PASS*)
+                    echo "  PASS: command欄ファイルとfiles_modified名前照合OK(readonly_ref除外済み)"
+                    ;;
+                WARN:*)
+                    echo "  ★★★ WARN: command欄ファイルがfiles_modifiedに不在(readonly_ref除外後): ${_line#WARN: }"
+                    echo "  → Step3.5で変更対象/実行のみ/既存依存の3分類を確認せよ(LG036/LG037)"
+                    _has_warn=1
+                    ;;
+                READONLY_EXCLUDED:*)
+                    echo "  INFO: readonly_ref除外済み: ${_line#READONLY_EXCLUDED: }"
+                    _has_readonly=1
+                    ;;
+                SKIP*)
+                    echo "  ${_line}"
+                    ;;
+                *)
+                    echo "  ${_line}"
+                    ;;
+            esac
+        done <<< "$_pre25_result"
     else
         echo "  SKIP: shogun_to_karo.yaml不在"
     fi
