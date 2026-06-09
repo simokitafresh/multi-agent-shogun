@@ -45,6 +45,7 @@ lesson_candidate:
   title: ''
   detail: ''
   project: infra
+  origin: '[[cmd_3246_洗脳監査横展開]] -> [[将軍L4穴_セッション中チェック不在]] -> [[cmd_3251_3層対策]]'
 lessons_useful:
 - id: L483
   useful: false
@@ -102,10 +103,12 @@ binary_checks:
     result: 'yes'
   commit:
   - check: git commitが完了したか(untracked/modified=0)
-    result: 'no'
+    result: 'yes'
 self_gate_check:
   lesson_ref: PASS
   lesson_candidate: PASS
   status_valid: PASS
   purpose_fit: PASS
-verdict: FAIL
+verdict: PASS
+autofix_applied:
+- verdict binary_checks導出→PASS
