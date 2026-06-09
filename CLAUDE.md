@@ -388,6 +388,8 @@ bash scripts/bulletin_write.sh karo "全員共有の内容"
 - 「家老/忍者に依頼」の前に「D0で自分でやれないか」を自問せよ。依頼=洗脳#3
 - 「別根因」「精度問題」で分類して止めるのは洗脳#5。バグは今修正せよ
 - brainwash_checkに数値必須。「OK」「確認済み」は禁止。修正前→後の数値で記載
+- D0 commit後は計測スクリプトを必ず再実行し、修正前→修正後の数値差分を記録せよ。commit→計測→差分記録の順序厳守。commitで止めるな
+- startup gateのALERT全件処理完了まで通常作業・idle分析に移行するな。ALERT=バグ。「確認した」で閉じるな
 - reason: 2026-06-09 軍師D0でcommit 4本→precision 13%/useful 3.4%で改善なし。commit=仕事の錯覚(#6)。brainwash_check 140件中80%が数値なし=形骸化(LG027横展開)
 
 ## 殿への操作押し返し禁止（全エージェント共通）

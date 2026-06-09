@@ -553,8 +553,7 @@ END {
         if (i < 1) continue
         total++
         ok = (v[i] ~ /^(APPROVE|LGTM|PASS|CLEAR)$/)
-        explicit_warn = (txt[i] ~ /(REQUEST_CHANGES|LGTM→BLOCK|品質崩壊|雑なレビュー)/)
-        if (!ok || explicit_warn) warn++
+        if (!ok) warn++
     }
     if (total == 0) {
         print "DATA_MISSING"

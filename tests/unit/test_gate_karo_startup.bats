@@ -15,6 +15,7 @@ setup() {
              "$TEST_TMPDIR/scripts/lib" \
              "$TEST_TMPDIR/queue/inbox" \
              "$TEST_TMPDIR/queue/tasks" \
+             "$TEST_TMPDIR/queue/gates" \
              "$TEST_TMPDIR/memory" \
              "$TEST_TMPDIR/logs" \
              "$TEST_TMPDIR/data" \
