@@ -857,15 +857,17 @@ for key in current:
 PY
 )
     if [ -n "$_streak_result" ]; then
-        echo "■ startup WARN/ALERT連続出現"
+        echo "■ ★★★ CRITICAL: startup WARN/ALERT連続出現 ★★★"
         while IFS= read -r _streak_key; do
             [ -n "$_streak_key" ] || continue
-            echo "  BLOCK: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続"
+            echo "  ★★★ CRITICAL: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続"
             echo "  先送り判断検出: ${STARTUP_WARN_STREAK_THRESHOLD}セッション連続で未解消。低優先/後で扱いにした穴の証拠として今ふさげ。"
-            alerts+=("startup連続出現BLOCK: ${_streak_key}")
-            alerts+=("先送り判断: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続")
+            alerts+=("先送りCRITICAL: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続")
         done <<< "$_streak_result"
-        overall="BLOCK"
+        # 軍師BLOCKはレビュー全停止を招くため、BLOCK昇格せず起動は許可する
+        # 代わりにntfyで殿に通知し、CRITICAL表示で注意喚起
+        if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="ALERT"; fi
+        bash "$SCRIPT_DIR/scripts/ntfy.sh" "【軍師CRITICAL】先送り${STARTUP_WARN_STREAK_THRESHOLD}セッション連続検出。起動は許可するが即対処必須" 2>/dev/null || true
     fi
 fi
 
@@ -1044,19 +1046,19 @@ else
     printf '%s\t__OK__\n' "$_startup_run_id" >> "$STARTUP_ALERT_HISTORY"
 fi
 
-# --- L1先送り自動エスカレーション: 先送り判断3セッション連続→家老にinbox送信 ---
+# --- L1先送り自動エスカレーション: 先送りCRITICAL検出→家老にinbox送信 ---
 if [ ${#alerts[@]} -gt 0 ]; then
     _deferred_alerts=""
     for a in "${alerts[@]}"; do
         case "$a" in
-            先送り判断:*)
+            先送りCRITICAL:*)
                 _deferred_alerts="${_deferred_alerts:+${_deferred_alerts}; }${a}"
                 ;;
         esac
     done
     if [ -n "$_deferred_alerts" ]; then
         bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
-            "軍師startup先送りBLOCK自動エスカレーション: ${_deferred_alerts}。軍師が対処できないため家老karo_directで対処を検討せよ" \
+            "軍師startup先送りCRITICAL自動エスカレーション: ${_deferred_alerts}。軍師が対処できないため家老karo_directで対処を検討せよ" \
             escalation gunshi 2>/dev/null || true
     fi
 fi
