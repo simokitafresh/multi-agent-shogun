@@ -463,6 +463,11 @@ function finish() {
     u = tolower(used == "" ? "true" : used)
     # 偽FAIL除外: result.summary空またはbc空(cmd空)のテンプレート段階FAIL
     is_fake = (index(point, "result.summary: MISSING or empty") > 0 || index(point, "cmd=<empty>") > 0)
+    if (skill != "" && u != "false" && !is_fake) {
+        # 最新結果を追跡(時系列順: 後のエントリが上書き)
+        latest_result[skill] = r
+        latest_ts[skill] = ts
+    }
     if (r == "FAIL" && u != "false" && skill != "" && !is_fake) {
         count[skill]++
         if (ts >= last[skill]) last[skill] = ts
@@ -512,6 +517,8 @@ in_entry && /^  stumbling_points:/ {
 END {
     if (in_entry) finish()
     for (s in count) {
+        # 最新結果がPASSなら過去FAILは解消済み→除外
+        if (latest_result[s] == "PASS") continue
         printf "%d|%s|%s|%s\n", count[s], last[s], s, top_point[s]
     }
 }
