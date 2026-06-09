@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_3255_focused
+  _ac_task_id: cmd_3263_focused
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3255 (deployed 2026-06-09T13:42:31). Read from the beginning.
-  ac_version: 3c738576
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3263 (deployed 2026-06-10T01:43:22). Read from the beginning.
+  ac_version: 7d010443
   cmd_id: cmd_training_speed_usage_status_20260607203400_normal
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -27,29 +27,27 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3255
+  parent_cmd: cmd_3263
   project: infra
-  purpose: startup BLOCK 3セッション連続。cmd_3075(重複抑止)/3080(窓拡張)/3244(照合キー修正)で0%→7%に改善したが偽陽性93%(28/30)が残存。残存根因を特定し改善する
+  purpose: skill_recommend_metrics.shが全期間の推薦ログを計測対象にしており、role_markerフィルタ未実装時代の古い推薦(FP)が窓内に残存してFP率67%。計測窓をcmd_3255実装日(2026-06-09)以降に限定し、フィルタ実装後の推薦のみで精度を計測する
   status: idle
   stop_for: []
-  task_id: cmd_3255_focused
+  task_id: cmd_3263_focused
   task_type: focused
   related_lessons:
-  - id: 'L509'
-    summary: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ'
-    detail: 'before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ'
+  - id: 'L488'
+    summary: 'stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow'
+    detail: 'stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "skill_design_rules — Skill設計ルール:  context/skill-design-rules.md docs/research/dream-skill-design.md scripts/skill_gate_feedback.sh scripts/skill_auto_improve.sh scripts/skill_execution_log.sh context/codd.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md skills/reset-layout/SKILL.md skills/pf-registration/SKILL.md docs/research/gstack-gbrain-skillify-2026-04.md"
-  recommended_skills:
-  - "skill-installer"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
   related_causal_links:
-  - "[[growth_loop]]"
-  - "[[skill_recommend]]"
-  - "[[スキル推薦精度3セッション連続BLOCK]]"
+  - "[[measurement_window_contamination]]"
+  - "[[skill_auto_growth]]"
+  - "[[skill_recommend_precision]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -69,22 +67,16 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L509: before計測で94ms(hot)を得たが実際はcold 541ms。L496の教訓を確認しても冷却後に再計測しなかった。CoDD計測は必ずcold(スクリプ
+      - L488: stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow
     ────────────────────────────────────────
     
     
   acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'precision 7%の残存根因が特定されている(推薦条件/aliases/source正規化のどれか)'
-  - id: 'AC2'
-    checks:
-    - check: '根因に基づく改善が実装されている'
-  - id: 'AC3'
-    checks:
-    - check: 'skill_recommend_metrics.sh再実行でprecision改善が確認されている'
+  - description: 'skill_recommend_metrics.shが2026-06-09より前の推薦ログを計測から除外すること'
+  - description: 'フィルタ後のprecision/FP率がstartup gateで表示されること'
+  - description: '推薦ログの元データは削除されず保持されていること'
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_3255.yaml
-  report_path: queue/reports/kotaro_report_cmd_3255.yaml
+  report_filename: kotaro_report_cmd_3263.yaml
+  report_path: queue/reports/kotaro_report_cmd_3263.yaml
   bloom_level: 
-  deployed_at: "2026-06-09T13:42:40"
+  deployed_at: "2026-06-10T01:43:39"

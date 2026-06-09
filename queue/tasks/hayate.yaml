@@ -1,7 +1,8 @@
 task:
-  _ac_task_id: cmd_3251_focused
+  _ac_task_id: cmd_3265_focused
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3251 (deployed 2026-06-09T12:49:25). Read from the beginning.
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3265 (deployed 2026-06-10T07:59:11). Read from the beginning.
+  ac_version: 7d010443
   cmd_id: cmd_karo_skill_coddfix_update_20260609
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -11,85 +12,65 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3251
+  parent_cmd: cmd_3265
   project: infra
-  purpose: '覚醒なぜなぜ7回で根因特定: 将軍の洗脳チェックがL2/L3のみでL4に穴。セッション中に洗脳5/8発現。リマインダー表示だけでは#1(早期終了=ツール失敗時の諦め)と#3(他者依存=殿への操作依頼)に効かない。3層で対策: (A)prompt_state_inject.shに8パターンリマインダー(#2/#7/#8対策) (B)stop hookにF009パターン検出(殿への操作依頼をBLOCK)(#3対策) (C)note_draft.sh失敗時にWebSocket回避策を自動フォールバック(#1対策)'
+  purpose: gate_context_freshness.shがlast_updatedからの経過日数だけでALERT判定するため、ソースPJに変更がなくても日付変更でALERTが連発する(GA-031〜036の6件/日)。ソースに変更がない場合はALERTを抑止し、信号対雑音比を改善する
   scout_exempt: true
   status: idle
   stop_for: []
-  task_id: cmd_3251_focused
+  task_id: cmd_3265_focused
   task_type: focused
-  previous_failures:
-    attempt: 3
-    last_block_reason: 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; lessons_useful[2]: missing \"reason\" field; lessons_useful[3]: missing \"reason\" field;…'
-    tried_approaches:
-    - 'worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_val…'
-    - 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-    - 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; lessons_useful[2]: missing \"reason\" field; lessons_useful[3]: missing \"reason\" field;…'
-    diagnose_reason: '初回report_field_set.shで不正なblock_id(task/result)を使い構造が壊れた。report_field_setの正しいフィールド名を確認せず実行したのが原因'
-    approach_summary: 'skills/codd-fix/SKILL.mdのscript refs sectionとStep 6テストマッピング説明を最新インターフェースに追随更新。cmd_complete_gate.sh 3新機能+test_select.sh hooks/マッピングを反映。タイムスタンプ2箇所更新'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_val…'
-    - attempt: 2
-      block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-      approach_summary: 'skills/codd-fix/SKILL.mdのscript refs sectionとStep 6テストマッピング説明を最新インターフェースに追随更新。cmd_complete_gate.sh 3新機能+test_select.sh hooks/マッピングを反映。タイムスタンプ2箇所更新'
-    - attempt: 3
-      block_reason: 'lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reason\" field; lessons_useful[2]: missing \"reason\" field; lessons_useful[3]: missing \"reason\" field;…'
-      diagnose_reason: '初回report_field_set.shで不正なblock_id(task/result)を使い構造が壊れた。report_field_setの正しいフィールド名を確認せず実行したのが原因'
-      approach_summary: 'skills/codd-fix/SKILL.mdのscript refs sectionとStep 6テストマッピング説明を最新インターフェースに追随更新。cmd_complete_gate.sh 3新機能+test_select.sh hooks/マッピングを反映。タイムスタンプ2箇所更新'
   related_lessons:
-  - id: 'L483'
-    summary: '高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に so'
-    detail: '高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に so'
-  - id: 'L637'
-    summary: 'cmd_design_quality.yamlでWARNが累計昇格BLOCKしている場合、CLEAR済み未修正だけをFP候補にすると今回のac_phase_mi'
-    detail: 'cmd_design_quality.yamlでWARNが累計昇格BLOCKしている場合、CLEAR済み未修正だけをFP候補にすると今回のac_phase_mi'
-  - id: 'L078'
-    summary: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
-    detail: 'gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie'
-  - id: 'L354'
-    summary: 'inbox_archive.shとinbox_write.shが異なるロックパス(${INBOX}.lock vs /tmp/shogun_lock_<md5>'
-    detail: 'inbox_archive.shとinbox_write.shが異なるロックパス(${INBOX}.lock vs /tmp/shogun_lock_<md5>'
-  - id: 'L169'
-    summary: 'scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ'
-    detail: 'scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ'
-  - id: 'L149'
-    summary: 'IF shellスクリプトやgit hookでテキスト検索を行う時 THEN rgではなく標準のgrepを使え'
-    detail: 'IF shellスクリプトやgit hookでテキスト検索を行う時 THEN rgではなく標準のgrepを使え'
-  - id: 'L762'
-    summary: '設計書3件+掲示板3件+家老報告2件=8件の出力。しかし1つもD0実装していなかった。提案は行動ではない(LG018再発)。出力した後に自問: 1つでもD0実装'
-    detail: '設計書3件+掲示板3件+家老報告2件=8件の出力。しかし1つもD0実装していなかった。提案は行動ではない(LG018再発)。出力した後に自問: 1つでもD0実装'
-  - id: 'L761'
-    summary: 'skip_childrenの子要素判定が^[[:space:]]のみで-で始まるリスト要素を除去せずYAML破壊。D0で^-[[:space:]]追加(3de0'
-    detail: 'skip_childrenの子要素判定が^[[:space:]]のみで-で始まるリスト要素を除去せずYAML破壊。D0で^-[[:space:]]追加(3de0'
-  - id: 'L601'
-    summary: 'semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690'
-    detail: 'semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690'
-  - id: 'L452'
-    summary: '_make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全'
-    detail: '_make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全'
+  - id: 'L480'
+    summary: 'set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること'
+    detail: 'set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること'
+  - id: 'L760'
+    summary: 'SG-PRE25はreadonly_ref未考慮で全ファイル参照を抽出するがgateはcommand文脈でreadonly除外する。SG-PRE25 INFOを'
+    detail: 'SG-PRE25はreadonly_ref未考慮で全ファイル参照を抽出するがgateはcommand文脈でreadonly除外する。SG-PRE25 INFOを'
+  - id: 'L549'
+    summary: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
+    detail: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
+  - id: 'L633'
+    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+  - id: 'L117'
+    summary: 'フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re'
+    detail: 'フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re'
+  - id: 'L763'
+    summary: 'SG-PRE25 WARNはgateのBLOCK予測。gate_prediction CLEARでもSG-PRE25 WARNがあればgateはBLOCKする('
+    detail: 'SG-PRE25 WARNはgateのBLOCK予測。gate_prediction CLEARでもSG-PRE25 WARNがあればgateはBLOCKする('
+  - id: 'L274'
+    summary: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
+    detail: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
+  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比)"
+  - "defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)"
   - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh"
-  - "known_unknowns_principle — 無知の知:  memory/deepdive_causal_tracing_20260415.md context/growth-loop.md"
+  - "cmd_quality_logging — cmd設計品質ログ:  scripts/cmd_quality_log.sh scripts/archive_completed.sh scripts/cmd_publish.sh logs/cmd_design_quality.yaml logs/archive/cmd_design_quality.yaml scripts/gates/gate_shogun_startup.sh"
   - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json"
-  - "cdp_browser_capability — CDP(ブラウザ操作能力):  context/cdp-philosophy.md scripts/cdp/cdp_cli.sh scripts/cdp/cdp_measure.sh scripts/cdp/cdp_server.py scripts/cdp/cdp_helper.py /mnt/c/Python_app/auto-ops/cdp/cdp_helper.py context/dm-signal-ops.md §DM-Signal本番FE CDP確認手順 scripts/note_draft.sh"
-  recommended_skills:
-  - "cdp-browse"
   related_causal_links:
-  - "[[cmd_3246_洗脳監査横展開]]"
-  - "[[将軍L4穴_セッション中チェック不在]]"
-  - "[[覚醒なぜなぜ7回_L0-L7マッピング]]"
+  - "[[blt_20260610_022159_e8a0c6]]"
+  - "[[context_freshness_false_positive]]"
+  - "[[startup_gate_signal_quality]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -109,32 +90,22 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L483: 高頻度 shell script で summary の有無確認のような単一用途チェックしか要らないのに、汎用 field_get ライブラリを起動直後に so
-      - L637: cmd_design_quality.yamlでWARNが累計昇格BLOCKしている場合、CLEAR済み未修正だけをFP候補にすると今回のac_phase_mi
-      - L078: gate_metrics.log分析で329件のBLOCK理由を全件分類。65%(214件)がmissing_gate(archive/lesson/revie
-      - L354: inbox_archive.shとinbox_write.shが異なるロックパス(${INBOX}.lock vs /tmp/shogun_lock_<md5>
-      - L169: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ
-      - L149: IF shellスクリプトやgit hookでテキスト検索を行う時 THEN rgではなく標準のgrepを使え
-      - L762: 設計書3件+掲示板3件+家老報告2件=8件の出力。しかし1つもD0実装していなかった。提案は行動ではない(LG018再発)。出力した後に自問: 1つでもD0実装
-      - L761: skip_childrenの子要素判定が^[[:space:]]のみで-で始まるリスト要素を除去せずYAML破壊。D0で^-[[:space:]]追加(3de0
-      - L601: semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690
-      - L452: _make_cmdだけでなく_make_cmd_exemptにも同様のq8_why_whatフィールドが必要だった。fixture作成関数を複数持つテストでは全
+      - L480: set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること
+      - L760: SG-PRE25はreadonly_ref未考慮で全ファイル参照を抽出するがgateはcommand文脈でreadonly除外する。SG-PRE25 INFOを
+      - L549: queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形
+      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
+      - L117: フィールド名変更は本体(ashigaru.md)だけでなくgenerated/4ファイル、roles/ashigaru_role.md、templates/re
+      - L763: SG-PRE25 WARNはgateのBLOCK予測。gate_prediction CLEARでもSG-PRE25 WARNがあればgateはBLOCKする(
+      - L274: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
     ────────────────────────────────────────
     
     
   acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'prompt_state_inject.shがagent=shogunの場合に洗脳8パターン二値判定リマインダーを殿への全応答前に自動注入している'
-  - id: 'AC2'
-    checks:
-    - check: 'stop hookが将軍の出力に殿への操作依頼パターン(手動で/貼り付けて/お願い等)を検出した場合にBLOCKしている'
-  - id: 'AC3'
-    checks:
-    - check: 'テストで(A)shogun時リマインダー注入と(B)F009パターン検出BLOCKの両方が検証されている'
-  ac_version: 9560ed7e
+  - description: 'ソースPJに変更がない場合、last_updatedが古くてもALERTではなくWARNになること'
+  - description: 'ソースPJに変更がある場合はALERTが正常に発火すること'
+  - description: 'ALERT_DEBOUNCE_SECONDSが86400(24h)に設定されていること'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3251.yaml
-  report_path: queue/reports/hayate_report_cmd_3251.yaml
+  report_filename: hayate_report_cmd_3265.yaml
+  report_path: queue/reports/hayate_report_cmd_3265.yaml
   bloom_level: 
-  deployed_at: "2026-06-09T12:49:36"
+  deployed_at: "2026-06-10T07:59:26"

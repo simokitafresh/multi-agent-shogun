@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_3256_focused
+  _ac_task_id: cmd_3264_focused
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3256 (deployed 2026-06-09T14:03:51). Read from the beginning.
-  ac_version: 2eaf8271
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3264 (deployed 2026-06-10T07:55:45). Read from the beginning.
+  ac_version: 7d010443
   cmd_id: cmd_training_speed_yaml_log_rotate_20260607204300_normal
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -27,33 +27,65 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3256
+  parent_cmd: cmd_3264
   project: infra
-  purpose: pre-write-edit-combined.sh L322-327のpreflightテンプレートに不正フィールド名4件(q6_related_lessons/q7_definition_check/q9_deployment_risk/q10_pi_check)が表示される。VALID_QG_FIELDS(cmd_save.sh L2728)に含まれないためcmd起票時にBLOCKが発火する。cmd_3254で2回BLOCK実証。テンプレート側を修正する
+  purpose: '忍者の本体変更がauto-commit(chore: auto-commit before /clear)に巻き込まれ、cmd固有commitにはテストのみ含まれる。SG-PRE3のcommit検証をすり抜ける。3件連続発生(cmd_3255/3261/3263)。忍者commit完了後のgit status確認を強制し、auto-commit先取りを検出する'
   status: idle
   stop_for: []
-  task_id: cmd_3256_focused
+  task_id: cmd_3264_focused
   task_type: focused
+  previous_failures:
+    attempt: 1
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'pre-write-edit-combined.sh L322-327のpreflightテンプレートから不正フィールド名4件(q6_related_lessons/q7_definition_check/q9_deployment_risk/q10_pi_check)を削除/置換し、VALID_QG_FIELDSと完全一致を確認'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'pre-write-edit-combined.sh L322-327のpreflightテンプレートから不正フィールド名4件(q6_related_lessons/q7_definition_check/q9_deployment_risk/q10_pi_check)を削除/置換し、VALID_QG_FIELDSと完全一致を確認'
   related_lessons:
-  - id: 'L508'
-    summary: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-    detail: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-  - id: 'L594'
-    summary: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
-    detail: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
+  - id: 'L480'
+    summary: 'set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること'
+    detail: 'set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること'
+  - id: 'L088'
+    summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
+    detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
+  - id: 'L760'
+    summary: 'SG-PRE25はreadonly_ref未考慮で全ファイル参照を抽出するがgateはcommand文脈でreadonly除外する。SG-PRE25 INFOを'
+    detail: 'SG-PRE25はreadonly_ref未考慮で全ファイル参照を抽出するがgateはcommand文脈でreadonly除外する。SG-PRE25 INFOを'
+  - id: 'L377'
+    summary: 'lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam'
+    detail: 'lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam'
+  - id: 'L492'
+    summary: 'WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。'
+    detail: 'WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。'
+  - id: 'L284'
+    summary: 'lessons.yamlが索引化されたため、deploy_task.sh/lesson_update_score.sh/lesson_deprecate.sh等'
+    detail: 'lessons.yamlが索引化されたため、deploy_task.sh/lesson_update_score.sh/lesson_deprecate.sh等'
+  - id: 'L633'
+    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+  - id: 'L327'
+    summary: 'dashboard_auto_section.shで忍者総数が8にハードコードされていたが、ALL_NINJASはL77でget_ninja_namesにより動'
+    detail: 'dashboard_auto_section.shで忍者総数が8にハードコードされていたが、ALL_NINJASはL77でget_ninja_namesにより動'
+  - id: 'L167'
+    summary: 'IF ストリーム購読系デーモン時 THEN ntfy_listenerで多重起動防止(lock/pidfile)とMSG_ID重複排除が無いと、運用上の二重起動'
+    detail: 'IF ストリーム購読系デーモン時 THEN ntfy_listenerで多重起動防止(lock/pidfile)とMSG_ID重複排除が無いと、運用上の二重起動'
+  - id: 'L278'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
+  - "known_unknowns_principle — 無知の知:  memory/deepdive_causal_tracing_20260415.md context/growth-loop.md"
   - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
-  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比)"
-  - "lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/auto_draft_lesson.sh scripts/sync_lessons.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml"
-  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json"
   related_causal_links:
-  - "[[LS-A04(31)]]"
-  - "[[cmd_3254_BLOCK]]"
-  - "[[preflightテンプレート不整合]]"
+  - "[[auto_commit_race_condition]]"
+  - "[[blt_20260610_022143_94d7b0]]"
+  - "[[cmd_commit_integrity]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -73,31 +105,25 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L508: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL
-      - L594: deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1
+      - L480: set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること
+      - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
+      - L760: SG-PRE25はreadonly_ref未考慮で全ファイル参照を抽出するがgateはcommand文脈でreadonly除外する。SG-PRE25 INFOを
+      - L377: lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam
+      - L492: WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk を使うこと。
+      - L284: lessons.yamlが索引化されたため、deploy_task.sh/lesson_update_score.sh/lesson_deprecate.sh等
+      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
+      - L327: dashboard_auto_section.shで忍者総数が8にハードコードされていたが、ALL_NINJASはL77でget_ninja_namesにより動
+      - L167: IF ストリーム購読系デーモン時 THEN ntfy_listenerで多重起動防止(lock/pidfile)とMSG_ID重複排除が無いと、運用上の二重起動
+      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
     ────────────────────────────────────────
     
     
   acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'pre-write-edit-combined.sh L322-327のフィールド名がVALID_QG_FIELDSの正規名と一致している'
-  - id: 'AC2'
-    checks:
-    - check: '変更前後のフィールド名差分が因果チェーンと整合している'
+  - description: 'auto-commit実行時にin_progress忍者のtarget_path配下ファイルが除外されること'
+  - description: 'bc:commit=yes時にgit statusで対象ファイルの未commit変更が0であることが確認されること'
+  - description: 'auto-commitに巻き込まれた本体変更がある場合にWARN表示されること'
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3256.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3256.yaml
+  report_filename: tobisaru_report_cmd_3264.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3264.yaml
   bloom_level: 
-  deployed_at: "2026-06-09T14:04:02"
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    tried_approaches:
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    approach_summary: 'pre-write-edit-combined.sh L322-327のpreflightテンプレートから不正フィールド名4件(q6_related_lessons/q7_definition_check/q9_deployment_risk/q10_pi_check)を削除/置換し、VALID_QG_FIELDSと完全一致を確認'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'pre-write-edit-combined.sh L322-327のpreflightテンプレートから不正フィールド名4件(q6_related_lessons/q7_definition_check/q9_deployment_risk/q10_pi_check)を削除/置換し、VALID_QG_FIELDSと完全一致を確認'
+  deployed_at: "2026-06-10T07:56:01"

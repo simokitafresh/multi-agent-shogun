@@ -537,7 +537,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "REQUEST_CHANGES"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -547,7 +547,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "REQUEST_CHANGES"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -557,7 +557,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -567,7 +567,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -617,3 +617,89 @@ entries:
   source: "cmd_complete_gate"
   timestamp: "2026-06-09T23:08:26Z"
   notes: "command_files_modified_mismatch"
+- cmd_id: "cmd_3265"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-09T23:09:36Z"
+  notes: "command_files_modified_mismatch"
+- cmd_id: "cmd_3265"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-09T23:13:19Z"
+- cmd_id: "cmd_3266"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "REQUEST_CHANGES"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-09T23:14:46Z"
+  notes: "否定的前提claimにgrep反証結果なし|check=assumptions_negative_claim_grep_evidence"
+- cmd_id: "cmd_3266"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "REQUEST_CHANGES"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-09T23:14:46Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: 初回起票 対策: 将軍実装の3箇所(TSV記録/streak検出/エスカレーション)を現物確認し横展開対象を特定済み"
+  notes: "q11に既存代替の現物確認なし"
+- cmd_id: "cmd_3264"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "REQUEST_CHANGES"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-09T23:15:35Z"
+- cmd_id: "cmd_3264"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "REQUEST_CHANGES"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-09T23:15:45Z"
+- cmd_id: "cmd_3266"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "REQUEST_CHANGES"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-09T23:17:39Z"
+  block_duration_minutes: 3
+- cmd_id: "cmd_3266"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "REQUEST_CHANGES"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-09T23:17:54Z"

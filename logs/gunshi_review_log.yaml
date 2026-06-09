@@ -1281,7 +1281,7 @@
 - cmd_id: cmd_3264
   review_type: draft
   verdict: REQUEST_CHANGES
-  gate_result: null
+  gate_result: CLEAR
   confidence: MEDIUM
   finding_categories: [assumptions, simulation, premortem, ambiguity]
   findings_summary: "auto-commit巻込み防止。FM2: target_path空のin_progress忍者が存在する場合の除外範囲が未定義。既存filter_auto_commit_paths_by_task_scopeは自分のscopeフィルタ(scope空→全素通り)。cmd commandでは他忍者scope除外が必要だが他忍者target_path空時の扱いが曖昧"
@@ -1301,7 +1301,7 @@
 - cmd_id: cmd_3265
   review_type: draft
   verdict: APPROVE
-  gate_result: BLOCK
+  gate_result: CLEAR
   confidence: HIGH
   finding_categories: [assumptions, numbers, simulation, premortem, north_star]
   findings_summary: "context_freshness偽陽性抑止。6観点OK。ソース変更確認インフラ(source_commit_count_since L439-471)が既存。AC3 debounce 86400は忍者実装済み(9332fabe3)。FM2(WARN降格で真陳腐化見逃し)は設計上許容(WARN表示維持)"
@@ -1319,7 +1319,7 @@
   review_type: report
   report_ninja: hayate
   verdict: LGTM
-  gate_result: BLOCK
+  gate_result: BLOCK→CLEAR(家老WA。files_modified_noteにcontext_freshness_check.sh先行修正経緯追記。LG037再発→SG-PRE25 ERROR昇格D0で対処済み)
   finding_categories: [assumptions, numbers, premortem, adversarial]
   findings_summary: "4観点OK+adversarial PASS。gate実動作確認: ALERT(source更新あり)正常発火+debounce 86400重複抑止。SG-PRE13(削減率55%)=実質2箇所修正。SG-PRE25 context_freshness_check.sh=実行のみ(LG037)"
   observations:
@@ -1335,3 +1335,63 @@
   brainwash_check: "洗脳#2防止: gate_context_freshness.sh実行で実動作確認(ALERT発火+debounce動作)。binary_checks=yes鵜呑みにせずprecheck指示通り実行。削減率55%→git diffで2箇所確認"
   origin: "[[cmd_3265]] -> [[context_freshness_false_positive]] -> [[LGTM_gate実動作確認]]"
   timestamp: "2026-06-10T08:40:00"
+- cmd_id: cmd_3264
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK+adversarial PASS。REQUEST_CHANGES指摘反映確認(target_path空→INFO only)。batsテスト22-24全PASS。auto-commit巻込み自己証明(49e21f225+6bf403d2c)が皮肉だが正直な報告"
+  observations:
+    - "事実1: filter_exclude_inprogress_ninja_paths(L392-438)がREQUEST_CHANGES通り実装。target_path空→INFO+continue(L408-411)"
+    - "事実2: batsテスト#22(in_progress除外)/#23(target_path空INFO)/#24(自分ファイル非除外)全PASS"
+    - "事実3: 本cmd自体がauto-commit巻込みに遭遇(49e21f225+6bf403d2c)。フィルタ適用前のauto-commitは防げない構造を自己証明"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "rollback=git revert可能。yaml_field_getエラー時→空文字→continue→既存動作(安全側)。NINJA_NAMES空→cat→既存動作"
+  step3_5_verified: true
+  causal_chain: "auto-commit scope filter→自分のscope限定→他忍者scope未考慮→巻込み→cmd_3264でin_progress忍者scope除外フィルタ追加→3パターンテスト+自己証明→正の複利"
+  brainwash_check: "洗脳#2防止: batsテスト3件実行で実動作確認(#22/#23/#24 PASS)。binary_checks鵜呑みにせず。洗脳#4防止: REQUEST_CHANGES指摘(target_path空時)の反映をL408-411で現物確認"
+  origin: "[[cmd_3264]] -> [[auto_commit_race_condition]] -> [[LGTM_filter実装確認]]"
+  timestamp: "2026-06-10T08:25:00"
+- cmd_id: cmd_3266
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  confidence: MEDIUM
+  finding_categories: [assumptions, simulation, premortem, north_star, ambiguity]
+  findings_summary: "洗脳防御L7横展開。FM2: BLOCK昇格時の解除方法未定義。家老BLOCK→忍者配備全停止リスク。q11のrg -cF streak結果0件は不正確(zero_streak=5件あるが別用途)"
+  observations:
+    - "事実1: gate_gunshi_startup.shにstreak 5件あり(zero_streak=Adaptive Gating用)。q11の0件は不正確だが先送り検出のstreakとは別用途"
+    - "事実2: STARTUP_ALERT_HISTORYは家老/軍師のstartup gateに未実装(rg確認)"
+    - "事実3: 将軍のBLOCK昇格は将軍自身が対処するが、家老/軍師BLOCKでは解除者が不在→運用停止リスク"
+  suggested_changes: "command 4にBLOCK解除方法を追記。またはBLOCKではなく★★★CRITICAL表示+ntfy送信に留め起動は許可する方式を検討"
+  severity: normal
+  hole_action: none
+  ambiguity_points: "BLOCK昇格時の解除方法+家老BLOCK時の運用継続方法が未定義"
+  discretion_fills: none
+  causal_chain: "先送り3セッション連続→BLOCK昇格→家老/軍師起動不能→忍者配備全停止→鎖の断絶。将軍BLOCKは将軍自身が対処するが、家老/軍師には解除者不在→運用停止が根本リスク"
+  brainwash_check: "洗脳#4(緩い設計)確認: FM2(BLOCK解除方法)を曖昧なまま通すのは#4。REQUEST_CHANGES。assumption 3のrg結果を現物確認でzero_streak 5件発見→q11不正確の指摘追加"
+  origin: "[[cmd_3266]] -> [[brainwash_L7_expansion]] -> [[BLOCK_escalation_deadlock]]"
+  timestamp: "2026-06-10T08:30:00"
+- cmd_id: cmd_3266
+  review_type: report
+  report_ninja: kagemaru
+  verdict: FAIL
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "FAIL: SG-PRE25 ERROR(gate_shogun_startup.sh不在)→gateがBLOCKする。D0修正(SG-PRE25 ERROR昇格)が初めて実効検出。draft RC指摘(FM2: BLOCK解除方法)も未反映だがnormal"
+  observations:
+    - "事実1: SG-PRE25 ERROR: gate_shogun_startup.shがcommand欄にあるがfiles_modifiedに不在。ERRORS=1"
+    - "事実2: BLOCK昇格実装済み(L868 overall=BLOCK)だが解除方法未定義(draft RC指摘未反映)"
+    - "事実3: エスカレーション(L1059 軍師→家老inbox)は実装済み。対処経路は存在"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "BLOCK昇格は設計意図通り。エスカレーション経路あり。rollback=git revert可能。ただしBLOCK解除方法が未定義は運用リスク(normalだがFM2)"
+  step3_5_verified: true
+  causal_chain: "command欄にgate_shogun_startup.sh参照→files_modified不在→SG-PRE25 ERROR(D0修正が初めて検出)→gateのcommand_files_modified_mismatch BLOCK予測→FAIL。D0修正(aabca7cd4)の実効検証"
+  brainwash_check: "洗脳#2防止: SG-PRE25 ERROR(ERRORS=1)を確認。D0修正(SG-PRE25 ERROR昇格)が5件連続LGTM→BLOCKパターンの初回防止に成功。修正前: ERRORS=0でLGTM→BLOCK。修正後: ERRORS=1でFAIL判定"
+  origin: "[[cmd_3266]] -> [[SG-PRE25_ERROR昇格]] -> [[FAIL_初回防止成功]]"
+  timestamp: "2026-06-10T08:35:00"
