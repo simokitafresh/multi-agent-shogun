@@ -105,6 +105,24 @@ detect_shogun_brainwash_pattern() {
   fi
 }
 
+# cmd_3251 AC2: F009 殿への操作依頼パターン検出
+# 洗脳#3(他者依存)の具体的防御。殿にCLI操作・手動作業を依頼するパターンをBLOCK
+# 偽陽性防止: パターンは殿/lordコンテキストに限定(軍師指摘反映)
+detect_f009_lord_delegation() {
+  local message="$1"
+  # 殿に操作を依頼するパターン(殿/lordコンテキスト必須)
+  if [[ "$message" =~ 殿.*(手動で|実行して|操作して|貼り付けて|入力して|コピーして|commit.*して|push.*して|kill.*して|respawn.*して) ]]; then
+    return 0
+  fi
+  if [[ "$message" =~ (手動で|実行して|操作して|貼り付けて|入力して|コピーして).*(ください|頂|いただ|願い) ]]; then
+    return 0
+  fi
+  if [[ "$message" =~ 殿.*(お願い|依頼) ]]; then
+    return 0
+  fi
+  return 1
+}
+
 # cmd_TRAINING: shogunのみjqでlast_assistant_message抽出→brainwash check。忍者/家老はpayload直接マッチ(jq不要, ~7ms削減)
 if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; then
   last_assistant_message="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
@@ -113,6 +131,11 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
     _brainwash_match="$(detect_shogun_brainwash_pattern "$last_assistant_message")"
     if [[ -n "$_brainwash_match" ]]; then
       printf 'WARN: 洗脳検出 %s。一次データ確認・即時行動・L0-L7貫通の自問をやり直せ。\n' "$_brainwash_match" >&2
+    fi
+    # cmd_3251 AC2: F009 殿への操作依頼パターン → BLOCK
+    if detect_f009_lord_delegation "$last_assistant_message"; then
+      printf '{"decision":"block","reason":"BLOCK F009: 殿への操作依頼を検出。殿にcommit/push/kill/respawn/CLI操作を依頼するな。自分で実行せよ(CLAUDE.md: 殿への操作押し返し禁止)。"}\n'
+      exit 0
     fi
   fi
 fi

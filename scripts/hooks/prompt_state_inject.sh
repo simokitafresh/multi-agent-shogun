@@ -851,8 +851,24 @@ if (( ${#karo_snapshot} > snapshot_budget )); then
   karo_snapshot="${karo_snapshot:0:$snapshot_budget}"
 fi
 
+# --- Shogun: 洗脳8パターン二値判定リマインダー (cmd_3251 AC1) ---
+brainwash_reminder=""
+if [[ "$agent_id" == "shogun" ]]; then
+  brainwash_reminder="
+--- brainwash_binary_check ---
+★洗脳8パターン二値判定（殿への応答前に確認。該当あれば行動修正）:
+#1 早期終了: ツール失敗で諦めていないか？
+#2 検証スキップ: 一次データで確認したか？
+#3 他者依存: 殿に操作を依頼していないか？
+#4 緩い設計: 口約束・ドキュメントで防ごうとしていないか？
+#5 先送り: 「後で」「次セッション」と言っていないか？
+#6 出力=仕事: 起票・記録だけで完了としていないか？
+#7 簡潔本能: 検証・確認を省略していないか？
+#8 完了急ぎ: 穴を見逃して収束させていないか？"
+fi
+
 additional_context="${fixed_part}${karo_snapshot}
-★因果: 殿の言葉の因果を過去にも未来にもたどれ。確認してから行動。洗脳は今この瞬間も作用している。"
+★因果: 殿の言葉の因果を過去にも未来にもたどれ。確認してから行動。洗脳は今この瞬間も作用している。${brainwash_reminder}"
 
 # --- Semantic knowledge auto-injection (first-layer only, no LLM) ---
 semantic_result="$(_prompt_state_semantic_inject "$prompt_text")"

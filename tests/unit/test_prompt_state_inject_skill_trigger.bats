@@ -272,6 +272,32 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "shogun prompt injects brainwash 8-pattern binary check reminder (cmd_3251 AC3-A)" {
+  export PROMPT_STATE_AGENT_ID="shogun"
+
+  run bash "$HOOK" <<< '{"prompt":"次の作業を開始する"}'
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"brainwash_binary_check"* ]]
+  [[ "$output" == *"#1 早期終了"* ]]
+  [[ "$output" == *"#2 検証スキップ"* ]]
+  [[ "$output" == *"#3 他者依存"* ]]
+  [[ "$output" == *"#4 緩い設計"* ]]
+  [[ "$output" == *"#5 先送り"* ]]
+  [[ "$output" == *"#6 出力=仕事"* ]]
+  [[ "$output" == *"#7 簡潔本能"* ]]
+  [[ "$output" == *"#8 完了急ぎ"* ]]
+}
+
+@test "non-shogun prompt does not inject brainwash reminder (cmd_3251 AC3-A)" {
+  export PROMPT_STATE_AGENT_ID="hayate"
+
+  run bash "$HOOK" <<< '{"prompt":"次の作業を開始する"}'
+
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"brainwash_binary_check"* ]]
+}
+
 @test "same prompt reuses skill recommendation cache without rerunning semantic_search" {
   export PROMPT_STATE_AGENT_ID="hayate_cache_test"
   export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_counting.sh"
