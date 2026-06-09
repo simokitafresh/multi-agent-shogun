@@ -11,14 +11,16 @@ LIMIT="${1:-30}"
 RECOMMEND_LOG="${SKILL_RECOMMEND_LOG_FILE:-$REPO_ROOT/logs/skill_recommend_log.yaml}"
 EXEC_LOG="${SKILL_EXECUTION_LOG_FILE:-$REPO_ROOT/logs/skill_execution_log.yaml}"
 
-python3 - "$RECOMMEND_LOG" "$EXEC_LOG" "$LIMIT" "$REPO_ROOT" <<'PY'
+CUTOFF="${SKILL_RECOMMEND_CUTOFF-2026-06-09T00:00:00+09:00}"
+
+python3 - "$RECOMMEND_LOG" "$EXEC_LOG" "$LIMIT" "$REPO_ROOT" "$CUTOFF" <<'PY'
 import os
 import re
 import sys
 from collections import Counter
 from datetime import datetime
 
-recommend_path, exec_path, raw_limit, repo_root = sys.argv[1:5]
+recommend_path, exec_path, raw_limit, repo_root, cutoff_raw = sys.argv[1:6]
 try:
     limit = int(raw_limit)
 except ValueError:
@@ -173,12 +175,26 @@ def normalize_ts(value):
         return text
 
 
+cutoff_ts = normalize_ts(cutoff_raw) if cutoff_raw else ""
+
 recommend_data = load_yaml(recommend_path)
 exec_data = load_yaml(exec_path)
-raw_recommend_entries = [
+all_recommend_entries = [
     item for item in (recommend_data.get("recommendations") or [])
     if isinstance(item, dict)
 ]
+# cmd_3263: role_markerフィルタ実装前の推薦ログを計測から除外(元データは保持)
+pre_cutoff_count = 0
+if cutoff_ts:
+    raw_recommend_entries = []
+    for item in all_recommend_entries:
+        entry_ts = normalize_ts(item.get("ts"))
+        if entry_ts and entry_ts < cutoff_ts:
+            pre_cutoff_count += 1
+        else:
+            raw_recommend_entries.append(item)
+else:
+    raw_recommend_entries = all_recommend_entries
 
 seen_recent_tuples = set()
 recommend_entries_reversed = []
@@ -303,6 +319,8 @@ if recommended_total >= min_data:
             recall_misses.append((f"{executor}/{skill}", miss_count))
 recall_miss_count = sum(count for _, count in recall_misses)
 
+if cutoff_ts and pre_cutoff_count:
+    print(f"計測窓: {cutoff_raw} 以降 (cutoff前{pre_cutoff_count}件除外)")
 print(f"推薦ログ: 直近{len(recommend_entries)}件 / 実行ログ: 直近{len(exec_entries)}件")
 if recommended_total:
     print(f"precision率: {precision}% ({hit_total}/{recommended_total})")
