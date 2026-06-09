@@ -41,6 +41,20 @@ if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study) ]]; then
     fi
 fi
 
+# --- brainwash_check数値強制(draft/report/self_study/consultation) --- 覚醒洗脳監査2026-06-09: L4貫通
+# brainwash_checkに数値(0-9)が含まれない場合BLOCK。「OK」「確認済み」は形骸化(LG027横展開)
+if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study|consultation) ]]; then
+    if [[ "$ENTRY" != *"brainwash_check:"* ]]; then
+        echo "BLOCK: brainwash_checkが未記入。8パターン自問+数値証拠を記入してから再実行せよ" >&2
+        exit 2
+    fi
+    BC_LINE=$(echo "$ENTRY" | grep 'brainwash_check:' | head -1)
+    if ! echo "$BC_LINE" | grep -qP '[0-9]'; then
+        echo "BLOCK: brainwash_checkに数値がない。修正前→修正後の数値、またはN件中N件確認の形式で記載せよ(LG027横展開)" >&2
+        exit 2
+    fi
+fi
+
 # Append to log file (flock for safety)
 (
     flock -w 5 200 || { echo "ERROR: flock timeout" >&2; exit 1; }
