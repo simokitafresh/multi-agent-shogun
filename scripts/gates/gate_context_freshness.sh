@@ -202,13 +202,14 @@ warnings_output() {
         fi
     fi
 
+    local _min_sc="${CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS:-3}"
     if [[ -n "$cache_file" ]]; then
         local tmp_cache="${cache_file}.$$"
-        CFC_GIT_TIMEOUT="$GIT_TIMEOUT" bash "$CHECK_SCRIPT" --dashboard-warnings > "$tmp_cache" 2>/dev/null
+        CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS="$_min_sc" bash "$CHECK_SCRIPT" --dashboard-warnings > "$tmp_cache" 2>/dev/null
         mv "$tmp_cache" "$cache_file"
         cat "$cache_file"
     else
-        CFC_GIT_TIMEOUT="$GIT_TIMEOUT" bash "$CHECK_SCRIPT" --dashboard-warnings 2>/dev/null
+        CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS="$_min_sc" bash "$CHECK_SCRIPT" --dashboard-warnings 2>/dev/null
     fi
 }
 

@@ -816,9 +816,11 @@ if mode == "--dashboard-warnings":
             continue
         files_for_git.append((project_id, rel_path, abs_path, updated_at))
     commit_counts = batch_source_commit_counts(files_for_git)
+    min_source_commits = int(os.environ.get("CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS", "1"))
     for project_id, rel_path, abs_path, updated_at in files_for_git:
-        if commit_counts.get((project_id, rel_path), 0) > 0:
-            warnings.append(build_source_warning(rel_path, commit_counts[(project_id, rel_path)], updated_at))
+        cc = commit_counts.get((project_id, rel_path), 0)
+        if cc >= min_source_commits:
+            warnings.append(build_source_warning(rel_path, cc, updated_at))
 elif mode == "--cmd-warnings":
     project_id = find_cmd_project(cmd_id)
     if project_id:
