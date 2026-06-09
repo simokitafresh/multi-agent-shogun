@@ -10,7 +10,7 @@ description: |
   DO NOT TRIGGER: 報告YAML全体作成（→/report-write）、commit（→/ninja-commit）
 ---
 
-<!-- script_refs_checked_at: 2026-06-07T10:28:45+09:00 -->
+<!-- script_refs_checked_at: 2026-06-10T08:35:40+09:00 -->
 
 # /verdict-check — binary_checks確認スキル
 
@@ -133,3 +133,4 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 - 2026-05-02: gate=cmd_complete_gate result=FAIL executor=unknown reason=kagemaru:binary_checks_fail
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `gate_report_format.sh` の現行契約を再確認。binary_checks未記入または欠落時はverdict自動導出できずBLOCKするため、verdict編集ではなくbinary_checksを修正する。
+Script refs verified: 2026-06-10 6bf403d2c. `gate_report_format.sh` はauto-commit contamination check(cmd_3264)を追加。bc:commit=yes時にtarget_path配下の未commit変更・auto-commit巻込みをWARN検出する。verdict自動導出(binary_checks→PASS/FAIL上書き)の契約は変更なし。verdict-checkの手順変更は不要。

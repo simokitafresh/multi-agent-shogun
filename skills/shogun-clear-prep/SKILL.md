@@ -13,7 +13,7 @@ allowed-tools:
   - Bash
 ---
 
-<!-- script_refs_checked_at: 2026-06-07T10:28:45+09:00 -->
+<!-- script_refs_checked_at: 2026-06-10T08:35:40+09:00 -->
 
 Script refs verified: 2026-06-07 cmd_3206. `clear_prep_check.sh` の契約は引数なし実行で7項目チェックを出力する形式のまま。直近の記憶整理/会話アーカイブ系変更はチェック内容の拡張であり、/shogun-clear-prepの実行手順変更は不要。
 
@@ -101,3 +101,4 @@ bash scripts/ntfy.sh "【将軍】/clear準備完了。PD:{件数} cmd:{件数} 
 - **所要時間: 30秒以内** — スクリプト実行+出力確認+ntfyだけ。ファイル読みやEdit不要
 
 Script refs verified: 2026-06-04 cmd_karo_hotfix_shogun_clear_prep_skill_sync_20260604. `clear_prep_check.sh` 現行のG0/会話退避/記憶整理/session_summary/掲示板未対応チェックまで反映済み。
+Script refs verified: 2026-06-10 14aa13952. `clear_prep_check.sh` は[8.知識埋込み]に(e)知見反映状況チェックを追加(cmd_3252)。セッション中のcontext更新件数とlesson_candidate件数を集計し、cmd完了ありで知識反映0件ならALERT(洗脳#7/#8防御)。チェック項目の拡張であり、/shogun-clear-prepの実行手順(Step 1-3)は変更なし。
