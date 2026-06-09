@@ -395,11 +395,49 @@ except: pass
         if [ "$_adv_fm" = "automation" ]; then
             echo "  ★ files_modifiedに自動化系ファイル。finding_categoriesにadversarialを含めよ(§5.6/GP-263b)"
         else
-            echo "  PASS: 非自動化系target"
+            # blast_radius=high判定: 全cmd影響ファイルはchanged_lines < 200でもadversarial推奨(GP-265)
+            _adv_blast=$(python3 -c "
+import yaml, sys
+try:
+    d = yaml.safe_load(open('${REPORT_PATH}'))
+    fm = d.get('files_modified', [])
+    HIGH_BLAST = ['deploy_task.sh', 'CLAUDE.md', 'ninja_monitor.sh', 'inbox_write.sh', 'cmd_complete_gate.sh']
+    for f in (fm or []):
+        p = str(f.get('path', '') if isinstance(f, dict) else f)
+        if any(h in p for h in HIGH_BLAST) or p.startswith('instructions/'):
+            print('high'); break
+except: pass
+" 2>/dev/null || true)
+            if [ "$_adv_blast" = "high" ]; then
+                echo "  ★ blast_radius=highファイル検出。changed_lines<200でもadversarial推奨(GP-265)"
+            else
+                echo "  PASS: 非自動化系target"
+            fi
         fi
     fi
 else
-    echo "  SKIP: task YAML不在"
+    # TASK_FILE不在でもfiles_modified+blast_radiusで判定(GP-265拡張)
+    _adv_fm_notp=$(python3 -c "
+import yaml, sys
+try:
+    d = yaml.safe_load(open('${REPORT_PATH}'))
+    fm = d.get('files_modified', [])
+    HIGH_BLAST = ['deploy_task.sh', 'CLAUDE.md', 'ninja_monitor.sh', 'inbox_write.sh', 'cmd_complete_gate.sh']
+    for f in (fm or []):
+        p = str(f.get('path', '') if isinstance(f, dict) else f)
+        if any(k in p for k in ['scripts/', '.sh', 'gate_', 'hook_', 'monitor', 'cron', 'cleanup']):
+            print('automation'); break
+        if any(h in p for h in HIGH_BLAST) or p.startswith('instructions/'):
+            print('high'); break
+except: pass
+" 2>/dev/null || true)
+    if [ "$_adv_fm_notp" = "automation" ]; then
+        echo "  ★ files_modifiedに自動化系ファイル。finding_categoriesにadversarialを含めよ(§5.6/GP-263b)"
+    elif [ "$_adv_fm_notp" = "high" ]; then
+        echo "  ★ blast_radius=highファイル検出。changed_lines<200でもadversarial推奨(GP-265)"
+    else
+        echo "  SKIP: task YAML不在+非自動化系files_modified"
+    fi
 fi
 
 # ─── SG-PRE16: BE impl ゴールデンデータ突合チェック (L-GoldenDataFirst) ───
