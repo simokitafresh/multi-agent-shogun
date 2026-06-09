@@ -55,6 +55,8 @@ lessons:
     v15吸収(2026-06-02):
     - 分析結果を「穴」と即断するな。軍師協議で(A)設計トレードオフ(B)消費者不在が真の問題と判明(三層記憶穴分析)。SQLクエリで0%を確認しても、import.pyのコードを読まずに「構造穴」と結論=検証スキップ(洗脳#2)。分析時もimport.pyのコード現物を読んでからconcepts_for_text()の有無を確認せよ
     - deploy_task.sh resolve_cmdでpurpose内シングルクォートがyaml_field_set_batchの検証を崩す→--directモードで回避(cmd_3116/cmd_3125で2回発生)。将軍cmdのpurposeに'が含まれる場合はdeploy_task.sh --directを使え
+    v16吸収(2026-06-09):
+    - GATE実行前に軍師review結果(verdict)を確認せよ(cmd_3245/3246: 軍師FAILがある状態でGATE CLEARを通した=完了急ぎ洗脳#8)。軍師がFAILを指摘している場合、根因1行+対策1行を記録してからGATE処理。GATE前確認ポイント: grep verdict logs/gunshi_review_log.yaml | tail -5
   source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015]
   created_at: '2026-04-24'
   automated: true
