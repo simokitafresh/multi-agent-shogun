@@ -886,9 +886,10 @@ PYEOF
                     echo "  PASS: command欄ファイルとfiles_modified名前照合OK(readonly_ref除外済み)"
                     ;;
                 WARN:*)
-                    echo "  ★★★ WARN: command欄ファイルがfiles_modifiedに不在(readonly_ref除外後): ${_line#WARN: }"
-                    echo "  → Step3.5で変更対象/実行のみ/既存依存の3分類を確認せよ(LG036/LG037)"
+                    echo "  ★★★ ERROR: command欄ファイルがfiles_modifiedに不在(readonly_ref除外後): ${_line#WARN: }"
+                    echo "  → verdict: FAILにせよ。gateのcommand_files_modified_mismatchはLG037の3分類を区別できない(殿厳命Step3.5。5件連続LGTM→BLOCK)"
                     _has_warn=1
+                    ERRORS=$((ERRORS + 1))
                     ;;
                 READONLY_EXCLUDED:*)
                     echo "  INFO: readonly_ref除外済み: ${_line#READONLY_EXCLUDED: }"
