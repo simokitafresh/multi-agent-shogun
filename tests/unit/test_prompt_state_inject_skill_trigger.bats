@@ -63,7 +63,7 @@ teardown() {
 @test "shogun prompt matching skill trigger injects mandatory skill reminder" {
   export PROMPT_STATE_AGENT_ID="shogun"
 
-  run bash "$HOOK" <<< '{"prompt":"CDP未使用のまま進めていないか確認して"}'
+  run bash "$HOOK" <<< '{"prompt":"CDPで確認して本番画面を見よう"}'
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"SKILL TRIGGER HIT"* ]]
@@ -74,7 +74,7 @@ teardown() {
 @test "non-shogun prompt matching skill trigger injects skill reminder" {
   export PROMPT_STATE_AGENT_ID="hayate"
 
-  run bash "$HOOK" <<< '{"prompt":"CDP未使用のまま進めていないか確認して"}'
+  run bash "$HOOK" <<< '{"prompt":"CDPで確認して本番画面を見よう"}'
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"SKILL TRIGGER HIT"* ]]

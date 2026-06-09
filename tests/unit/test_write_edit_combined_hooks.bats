@@ -106,9 +106,9 @@ _run_post() {
     [[ "$output" == *'quality_gate template (cmd_save.sh必須フィールド)'* ]]
     for field in \
         q1_firefighting q2_learning q3_next_quality q4_depth \
-        q5_verified_source q6_not_hiding q6_related_lessons \
-        q7_definition_check q7_definition_verified q8_why_what \
-        q9_deployment_risk q10_pi_check q10_knowledge_boundary \
+        q5_verified_source q6_not_hiding \
+        q7_definition_verified q8_why_what \
+        q9_firefighting_root_cause q10_knowledge_boundary \
         q11_not_already_done q_ambiguity timeout_minutes
     do
         [[ "$output" == *"$field"* ]]
