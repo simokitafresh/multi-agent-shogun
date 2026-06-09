@@ -30,6 +30,29 @@ MD_FILE="$(realpath "$1")"
 echo "[note_draft] Markdown: ${MD_FILE}"
 echo "[note_draft] CDP port: ${CDP_PORT}"
 
+# ── Step 0: Chrome CDP pre-check (bash layer) ──
+# Chrome未起動時はSKIP(exit 0)で抜ける。FAIL率汚染防止。
+if ! curl -s --max-time 3 "http://localhost:${CDP_PORT}/json/version" >/dev/null 2>&1; then
+  echo "[note_draft] SKIP: Chrome CDP not reachable on port ${CDP_PORT}. Chrome is not running."
+  # skill_execution_logにSKIP記録
+  SKILL_LOG="/mnt/c/tools/multi-agent-shogun/logs/skill_execution_log.yaml"
+  AGENT_ID="${AGENT_ID:-$(tmux display-message -t "${TMUX_PANE}" -p '#{@agent_id}' 2>/dev/null || echo unknown)}"
+  TS="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+  cat >> "$SKILL_LOG" << LOGEOF
+- ts: "${TS}"
+  skill: "note-draft"
+  executor: "${AGENT_ID}"
+  result: "SKIP"
+  used: "true"
+  stumbling_points: "Chrome CDP not reachable on port ${CDP_PORT}"
+  gate: "none"
+  source: "note_draft.sh"
+  skill_path: "/mnt/c/tools/multi-agent-shogun/scripts/note_draft.sh"
+LOGEOF
+  echo "[note_draft] Logged to skill_execution_log: SKIP"
+  exit 0
+fi
+
 # ── Step 1-6: All in one Python script ──
 PY_EXIT=0
 python3 << PYEOF || PY_EXIT=$?
@@ -377,3 +400,5 @@ cat >> "$SKILL_LOG" << LOGEOF
 LOGEOF
 echo "[note_draft] Logged to skill_execution_log: ${RESULT}"
 exit "$PY_EXIT"
+### 自動防止ステップ
+- <!-- skill-auto-improve:f39a5e08cea6 --> 自動防止: gate=none のTop FAIL理由「Python script exited with code 1」(count=3, last=2026-06-09T12:18:28+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
