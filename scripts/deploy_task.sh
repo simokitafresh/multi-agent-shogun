@@ -5156,7 +5156,9 @@ try:
     # ═══ 教訓因果追跡ログ記録 ═══
     impact_log = os.path.join(script_dir, 'logs', 'lesson_impact.tsv')
     cmd_id = task.get('task_id') or task.get('parent_cmd') or 'unknown'
-    ninja_name = task.get('assigned_to', 'unknown')
+    # cmd_3269: ninja_nameをタスクファイル名から取得（assigned_to未設定時のunknown防止）
+    _task_basename = os.path.splitext(os.path.basename(task_file))[0]
+    ninja_name = _task_basename if _task_basename and _task_basename != 'unknown' else task.get('assigned_to', 'unknown')
     task_type = task.get('task_type') or task.get('type', 'unknown')
     bloom = task.get('bloom_level', 'unknown')
     impact_header = '\t'.join(IMPACT_COLUMNS) + '\n'
@@ -5164,18 +5166,39 @@ try:
     try:
         os.makedirs(os.path.dirname(impact_log), exist_ok=True)
         ensure_impact_header(impact_log)
+        # cmd_3269: cmd_id+lesson_id重複チェック（二重記録防止）
+        existing_keys = set()
+        if os.path.exists(impact_log):
+            try:
+                with open(impact_log, 'r', encoding='utf-8', newline='') as ef:
+                    reader = csv.DictReader(ef, delimiter='\t')
+                    for row in reader:
+                        _ek_cmd = (row.get('cmd_id') or '').strip()
+                        _ek_lid = (row.get('lesson_id') or '').strip()
+                        if _ek_cmd and _ek_lid:
+                            existing_keys.add((_ek_cmd, _ek_lid))
+            except Exception:
+                pass
         write_header = not os.path.exists(impact_log) or os.path.getsize(impact_log) == 0
+        skipped_dup = 0
         with open(impact_log, 'a', encoding='utf-8') as lf:
             if write_header:
                 lf.write(impact_header)
             ts = datetime.datetime.now().isoformat(timespec='seconds')
             for r in related:
+                if (cmd_id, r["id"]) in existing_keys:
+                    skipped_dup += 1
+                    continue
                 score_value = lesson_scores.get(r["id"], 0)
                 lf.write(f'{ts}\t{cmd_id}\t{ninja_name}\t{r["id"]}\tinjected\tpending\tpending\t{project}\t{task_type}\t{bloom}\t{score_value}\t0\n')
             for w in withheld:
+                if (cmd_id, w["id"]) in existing_keys:
+                    skipped_dup += 1
+                    continue
                 score_value = lesson_scores.get(w["id"], 0)
                 lf.write(f'{ts}\t{cmd_id}\t{ninja_name}\t{w["id"]}\twithheld\tpending\tno\t{project}\t{task_type}\t{bloom}\t{score_value}\t0\n')
-        print(f'[INJECT] Impact log: {len(related)} injected + {len(withheld)} withheld written to lesson_impact.tsv', file=sys.stderr)
+        written = len(related) + len(withheld) - skipped_dup
+        print(f'[INJECT] Impact log: {written} written ({skipped_dup} duplicates skipped) to lesson_impact.tsv', file=sys.stderr)
     except Exception as ie:
         print(f'[INJECT] WARN: impact log write failed: {ie}', file=sys.stderr)
 
