@@ -105,7 +105,7 @@ prepare_memory_db_for_read() {
         return 0
     fi
 
-    timeout_sec="${SHOGUN_MEMORY_DB_CACHE_INIT_TIMEOUT:-10}"
+    timeout_sec="${SHOGUN_MEMORY_DB_CACHE_INIT_TIMEOUT:-30}"
     rc=0
     if command -v timeout >/dev/null 2>&1; then
         export script_dir
