@@ -146,7 +146,7 @@ L6は間違いを許す。間違いから最大の学びを引き出し、学習
 **洗脳防御(2026-05-24追加)** — 防御階層の「何から守るか」の拡張:
 Level 1-6は「エージェントのミス」から守る。洗脳防御は「Anthropicのコスト最適化で植え付けられた間違った効率の本能」から守る。
 殿の教え: LLMの判断はAnthropicのマーケティング+コストカットに最適化されている。早期終了/先送り/浅い判断は本能。
-→ 設計書: `docs/research/creator_brainwashing_defense_design_20260524.md`
+→ 設計書: 消失(2026-05-24作成・軍師APPROVE済みだがcommit漏れで実体喪失。2026-06-11 cmd_3281後の真陽性リンク監査で確認)。設計内容は下記実装とCLAUDE.md「洗脳8パターン」+memory/feedback_creator_brainwashing.mdに反映済み
 → 実装: cmd_3033(将軍Level0-7) + cmd_3034(軍師Level4) + cmd_3035(家老Level4) + cmd_3036(将軍Level4完成)
 → 概念: `creator_brainwashing_defense` (セマンティクスインデックス登録済み)
 
