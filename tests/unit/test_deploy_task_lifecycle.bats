@@ -166,16 +166,20 @@ run_double_deploy_guard() {
 
     log() { echo "$*" >> "$log_file"; }
 
-    local DEPLOY_PARENT_CMD="" DEPLOY_TASK_ID="" DEPLOY_SCOPE_MODE="" _line
+    # cmd_3280: _ac_task_id → subtask_id → task_id の優先順位でDEPLOY_TASK_IDを取得
+    local DEPLOY_PARENT_CMD="" _SELF_AC_TID="" _SELF_SUB_TID="" _SELF_TASK_ID="" DEPLOY_TASK_ID="" DEPLOY_SCOPE_MODE="" _line
     while IFS= read -r _line; do
         [[ -z "$DEPLOY_PARENT_CMD" && "$_line" =~ ^[[:space:]]*parent_cmd:[[:space:]]+(.*) ]] && {
             DEPLOY_PARENT_CMD="${BASH_REMATCH[1]//\'/}"; DEPLOY_PARENT_CMD="${DEPLOY_PARENT_CMD//\"/}"
         }
-        [[ -z "$DEPLOY_TASK_ID" && "$_line" =~ ^[[:space:]]*_ac_task_id:[[:space:]]+(.*) ]] && {
-            DEPLOY_TASK_ID="${BASH_REMATCH[1]//\'/}"; DEPLOY_TASK_ID="${DEPLOY_TASK_ID//\"/}"
+        [[ -z "$_SELF_AC_TID" && "$_line" =~ ^[[:space:]]*_ac_task_id:[[:space:]]+(.*) ]] && {
+            _SELF_AC_TID="${BASH_REMATCH[1]//\'/}"; _SELF_AC_TID="${_SELF_AC_TID//\"/}"
         }
-        [[ -z "$DEPLOY_TASK_ID" && "$_line" =~ ^[[:space:]]*task_id:[[:space:]]+(.*) ]] && {
-            DEPLOY_TASK_ID="${BASH_REMATCH[1]//\'/}"; DEPLOY_TASK_ID="${DEPLOY_TASK_ID//\"/}"
+        [[ -z "$_SELF_SUB_TID" && "$_line" =~ ^[[:space:]]*subtask_id:[[:space:]]+(.*) ]] && {
+            _SELF_SUB_TID="${BASH_REMATCH[1]//\'/}"; _SELF_SUB_TID="${_SELF_SUB_TID//\"/}"
+        }
+        [[ -z "$_SELF_TASK_ID" && "$_line" =~ ^[[:space:]]*task_id:[[:space:]]+(.*) ]] && {
+            _SELF_TASK_ID="${BASH_REMATCH[1]//\'/}"; _SELF_TASK_ID="${_SELF_TASK_ID//\"/}"
         }
         [[ -z "$DEPLOY_SCOPE_MODE" && "$_line" =~ ^[[:space:]]*task_type:[[:space:]]+(.*) ]] && {
             DEPLOY_SCOPE_MODE="${BASH_REMATCH[1]//\'/}"; DEPLOY_SCOPE_MODE="${DEPLOY_SCOPE_MODE//\"/}"; DEPLOY_SCOPE_MODE="${DEPLOY_SCOPE_MODE,,}"
@@ -184,19 +188,24 @@ run_double_deploy_guard() {
             DEPLOY_SCOPE_MODE="${BASH_REMATCH[1]//\'/}"; DEPLOY_SCOPE_MODE="${DEPLOY_SCOPE_MODE//\"/}"; DEPLOY_SCOPE_MODE="${DEPLOY_SCOPE_MODE,,}"
         }
     done < "$_TASK_YAML"
+    DEPLOY_TASK_ID="${_SELF_AC_TID:-}"
+    [ -z "$DEPLOY_TASK_ID" ] && DEPLOY_TASK_ID="${_SELF_SUB_TID:-${_SELF_TASK_ID:-}}"
 
     if [ -n "$DEPLOY_PARENT_CMD" ]; then
         for _dd_task in "$SCRIPT_DIR/queue/tasks/"*.yaml; do
             [ -f "$_dd_task" ] || continue
             _dd_ninja=$(basename "$_dd_task" .yaml)
             [ "$_dd_ninja" = "$NINJA_NAME" ] && continue
-            local _dd_pcmd="" _dd_tid="" _dd_status=""
+            local _dd_pcmd="" _dd_ac_tid="" _dd_sub_tid="" _dd_raw_tid="" _dd_tid="" _dd_status=""
             while IFS= read -r _line; do
                 [[ -z "$_dd_pcmd" && "$_line" =~ ^[[:space:]]*parent_cmd:[[:space:]]+(.*) ]] && { _dd_pcmd="${BASH_REMATCH[1]//\'/}"; _dd_pcmd="${_dd_pcmd//\"/}"; }
-                [[ -z "$_dd_tid" && "$_line" =~ ^[[:space:]]*_ac_task_id:[[:space:]]+(.*) ]] && { _dd_tid="${BASH_REMATCH[1]//\'/}"; _dd_tid="${_dd_tid//\"/}"; }
-                [[ -z "$_dd_tid" && "$_line" =~ ^[[:space:]]*task_id:[[:space:]]+(.*) ]] && { _dd_tid="${BASH_REMATCH[1]//\'/}"; _dd_tid="${_dd_tid//\"/}"; }
+                [[ -z "$_dd_ac_tid" && "$_line" =~ ^[[:space:]]*_ac_task_id:[[:space:]]+(.*) ]] && { _dd_ac_tid="${BASH_REMATCH[1]//\'/}"; _dd_ac_tid="${_dd_ac_tid//\"/}"; }
+                [[ -z "$_dd_sub_tid" && "$_line" =~ ^[[:space:]]*subtask_id:[[:space:]]+(.*) ]] && { _dd_sub_tid="${BASH_REMATCH[1]//\'/}"; _dd_sub_tid="${_dd_sub_tid//\"/}"; }
+                [[ -z "$_dd_raw_tid" && "$_line" =~ ^[[:space:]]*task_id:[[:space:]]+(.*) ]] && { _dd_raw_tid="${BASH_REMATCH[1]//\'/}"; _dd_raw_tid="${_dd_raw_tid//\"/}"; }
                 [[ -z "$_dd_status" && "$_line" =~ ^[[:space:]]*status:[[:space:]]+(.*) ]] && { _dd_status="${BASH_REMATCH[1]//\'/}"; _dd_status="${_dd_status//\"/}"; }
             done < "$_dd_task"
+            _dd_tid="${_dd_ac_tid:-}"
+            [ -z "$_dd_tid" ] && _dd_tid="${_dd_sub_tid:-${_dd_raw_tid:-}}"
             [ "$_dd_pcmd" != "$DEPLOY_PARENT_CMD" ] && continue
             if [ -n "$DEPLOY_TASK_ID" ] && [ "$DEPLOY_SCOPE_MODE" != "exact" ] && [ -n "$_dd_tid" ] && [ "$DEPLOY_TASK_ID" != "$_dd_tid" ]; then
                 log "split_deploy: ${DEPLOY_PARENT_CMD} peer ${_dd_ninja} (task_id: ${_dd_tid}) — different task_id, allowing"
@@ -780,6 +789,54 @@ task:
 EOF
 
     run run_double_deploy_guard sasuke
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_3280: split deploy with subtask_id — different subtask_id allows parallel deploy" {
+    cat > "$TEST_TMPDIR/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_700
+  subtask_id: cmd_700_hayate_full
+  task_id: cmd_700_full
+  status: assigned
+EOF
+
+    cat > "$TEST_TMPDIR/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_700
+  subtask_id: cmd_700_sasuke_full
+  task_id: cmd_700_full
+  status: pending
+EOF
+
+    run run_double_deploy_guard sasuke
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_3280: same subtask_id on two ninjas → BLOCK" {
+    cat > "$TEST_TMPDIR/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_701
+  subtask_id: cmd_701_chunk1
+  task_id: cmd_701_full
+  status: assigned
+EOF
+
+    cat > "$TEST_TMPDIR/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_701
+  subtask_id: cmd_701_chunk1
+  task_id: cmd_701_full
+  status: pending
+EOF
+
+    run run_double_deploy_guard sasuke
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK"* ]]
+}
+
+@test "cmd_3280: split deploy fix exists in deploy_task.sh source" {
+    run grep -F "split_deploy fix (cmd_3280)" "$PROJECT_ROOT/scripts/deploy_task.sh"
     [ "$status" -eq 0 ]
 }
 

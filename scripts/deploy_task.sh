@@ -7647,10 +7647,16 @@ except Exception:
         return 1
     fi
 
-    local task_type="" scope_mode="" type=""
-    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_yaml" parent_cmd _ac_task_id task_type scope_mode type 2>/dev/null)" || true
+    local task_type="" scope_mode="" type="" task_id="" subtask_id=""
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_yaml" parent_cmd _ac_task_id task_id subtask_id task_type scope_mode type 2>/dev/null)" || true
     deploy_parent_cmd="${parent_cmd:-}"
     deploy_task_id="${_ac_task_id:-}"
+    # split_deploy fix (cmd_3280): resolve_cmd_to_taskが_ac_task_idを常に空リセットするため
+    # 分割配備許可パス(L7713)に到達不能だった。_ac_task_idが空(inject_ac_version実行前)の場合は
+    # subtask_id(karo_direct分割配備の固有ID)またはtask_id(resolve直後の値)をfallbackとして使う。
+    if [ -z "$deploy_task_id" ]; then
+        deploy_task_id="${subtask_id:-${task_id:-}}"
+    fi
     deploy_scope_mode="${task_type:-}"
     [ -z "$deploy_scope_mode" ] && deploy_scope_mode="${scope_mode:-}"
     [ -z "$deploy_scope_mode" ] && deploy_scope_mode="${type:-}"
@@ -7707,6 +7713,13 @@ except Exception:
             dd_pcmd=$(FIELD_GET_NO_LOG=1 field_get "$dd_task" "parent_cmd" "")
             [ "$dd_pcmd" != "$deploy_parent_cmd" ] && continue
             dd_tid=$(FIELD_GET_NO_LOG=1 field_get "$dd_task" "_ac_task_id" "")
+            # split_deploy fix (cmd_3280): peer側も_ac_task_idが空の場合はsubtask_id/task_idをfallback
+            if [ -z "$dd_tid" ]; then
+                local _dd_subtask_id _dd_task_id
+                _dd_subtask_id="$(FIELD_GET_NO_LOG=1 field_get "$dd_task" "subtask_id" "" 2>/dev/null || true)"
+                _dd_task_id="$(FIELD_GET_NO_LOG=1 field_get "$dd_task" "task_id" "" 2>/dev/null || true)"
+                dd_tid="${_dd_subtask_id:-${_dd_task_id:-}}"
+            fi
             # 二重配備判定: deploy_task_idが空(reset_stale_fields後)の場合は
             # parent_cmd一致+相手がactive=二重配備とみなす。
             # deploy_task_idが存在する場合は task_id同一チェックで分割配備を許可。
