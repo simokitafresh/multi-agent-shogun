@@ -7784,3 +7784,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - cmd_3278でhayateとkotaroが独立に発見した同根の盲点2件: (1)kotaro実証: rg --debugでwhitelist型gitignoreによりskills/がcounts.shのrg検索スコープから除外されている(リンクを書いてもバックリンクとして数えられない) (2)hayate実証: docs/semantic-index/index.mdはバックリンク検索スコープ外(context/docs/research/skills/のみ対象)。影響: 孤立判定(--zero)が実際よりリンク切れを過大計上または接続実績を過小計上する。次回バックリンク系cmdの起票/レビュー時はcounts.shの検索スコープ(rg対象+gitignore作用)を現物確認してからACを設計せよ
+
+### L773: autofixのsilent変換は'内容不変'条件を必ず検証せよ: 文字列内の構造マーカー数でERROR昇格
+- **日付**: 2026-06-11
+- **出典**: cmd_3282
+- **記録者**: kagemaru
+- **tags**: [infra,gate,testing]
+- **target_files**: [scripts/gates/gate_report_autofix_main.py,tests/unit/test_gate_report_autofix.bats]
+- **origin**: [[cmd_3282]]
+- **when**: 未設定
+- **how**: 未設定
+- files_modified string→dict変換はpath件数確認なしで機械変換すると複数ファイル押込み破損を隠蔽する。GP-107 Q1(内容不変か)の検証を変換前に強制することで根源的に防止できる。検出条件: '- path:'または'change:'が2回以上出現 → FM_FORMAT_INVALID ERROR昇格

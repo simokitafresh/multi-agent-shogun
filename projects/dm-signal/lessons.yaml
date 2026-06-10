@@ -1962,7 +1962,7 @@ lessons:
   origin: '[[cmd_1856]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-11'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L605
@@ -2190,6 +2190,9 @@ lessons:
   target_files:
   - outputs/scripts/l1_alm_wf_engine.py
   origin: '[[cmd_1828]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L589
   title: SHM結果回収で rows_fast 線形探索を重ねると large-grid で二乗時間化する
   summary: shared_memory で chunk 計算自体は完了していても、pid ごとに any(r["pattern_id"] == pid for
@@ -2572,6 +2575,9 @@ lessons:
   - scripts/analysis/standard_pf_preprocessing/cmd_1759_switching_stability.py
   - outputs/analysis/alm_research/cmd_1759_topn_by_family.yaml
   origin: '[[cmd_1759]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L562
   title: ALM L0 4体でWard FoFを組む場合K=5は構造的不可(体数<クラスタ数)
   summary: ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage
@@ -3893,6 +3899,9 @@ lessons:
   when: パリティ検証ツールを新規作成する
   how: 既存ツール(15+)とのtolerance差異を確認せよ
   origin: '[[cmd_1235]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L466
   title: FoF component_portfoliosはUUID格納。旧四神=fof型、シン四神=standard型の構造差
   summary: component_portfoliosはportfolios.idのUUIDリストで格納。名前解決にはportfoliosテーブルとのJOINが必須。また、旧
@@ -4212,7 +4221,7 @@ lessons:
   origin: '[[cmd_1196]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-10'
+  last_referenced: '2026-06-11'
 - id: L446
   title: パリティ検証の許容誤差は要件定義時に明示せよ
   summary: cmd_1115は1e-4許容で100%一致と報告。cmd_1194は許容0で完全一致を要求。同じ一致でも基準が異なる。偵察・検証cmdでは許容誤差を明示的にA
@@ -4332,6 +4341,9 @@ lessons:
   when: 報告YAML消失時は
   how: hayateとkagemaruが同一cmdを並列実行し、両者のinbox完了報告が一致
   origin: '[[cmd_1189]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L436
   title: REFLUX WARN教訓は索引1-2行で十分に還流可能
   summary: L285/L286/L433の還流は各1行の索引追記のみで完結。REFLUX WARNのランブック対応は新規ランブック作成ではなく既存contextの該当セクシ
@@ -7776,6 +7788,9 @@ lessons:
   target_files:
   - backend/app/services/deterioration.py
   origin: '[[cmd_550]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L172
   title: 新規テーブル導入時はインデックス作成をif/else外に置くと自己修復性が上がる
   summary: IF migrationで「新規作成分岐」と「既存追設分岐」を分ける場合、時 THEN migrationで「新規作成分岐」と「既存追設分岐」を分ける場合、
@@ -8515,6 +8530,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: '2026-02-23'
   origin: '[[cmd_273]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L107
   title: 生成物調査ではDATA_CATALOG掲載有無とmeta.output.file実在の二軸照合が有効
   summary: meta.yamlの価値判断はDATA_CATALOG掲載+output.file実在+命名(backup/pre/old)の三点セットで分類すると誤判定が減る
@@ -8596,6 +8614,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: パラメータ化するにはコード変更が必要
   origin: '[[kotaro]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L101
   title: MultiViewのPhase3 momentum_cache事前計算はFoF専用のためskipされる
   summary: recalculate_fast.py Phase3(OPT-A)ではMultiView/SingleView/TrendReversalはFoF専用としてmo

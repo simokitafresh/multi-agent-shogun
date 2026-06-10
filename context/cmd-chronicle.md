@@ -58,16 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2668 | L6学習速度の自動追跡をstartup gateに組込む。FAIL→PASS遷移率+L6化率を自動算出・表示し、L6化候補を強制提案する | infra | 05-11 | gate_shogun_startup.shにL6学習速度セ |
-| cmd_2669 | LS-A14(進行中計画は即永続化)をL2→L4化。clear_prep_check.shに裁定未反映検出を追加し、未反映裁定がある状態での/clearをBLOCKする | infra | 05-11 | clear_prep_check.shに裁定反映Check1 |
-| cmd_2670 | growth-loop.md §11にL6化済み/未化の完全リストを追記し、L6化の正確な全体像を受動的知識として永続化する | infra | 05-11 | context/growth-loop.md §11にL6化 |
-| cmd_2671 | startup gateのL6化率算出ロジックを修正。母数をGP提案(56件)→防御仕組み(16件)に変更し、L6済み仕組みをgrowth-loop.md §11から読み取る | infra | 05-11 | Gate 21のL6化率をgrowth-loop.md §1 |
-| cmd_2672 | 将軍教訓32件→22件に統合。LS023-LS032の10件を既存クラスタ(LS-A04/A09/A02/A22/A17)に吸収し、上限31件超過を解消する | infra | 05-11 | projects/infra/lessons_shogun. |
-| cmd_2674 | gate_enforcement_audit.shをL1→L5化。意志依存スクリプト検出時にhooks登録コマンドを自動提案し、修正アクションを即実行可能にする | infra | 05-11 | gate_enforcement_auditのALERT時に |
-| cmd_2676 | gate_wa_data_quality.shをL1→L5化。False WAパターンTOP3を家老に自動通知し、WA計測精度の改善アクションを即座に提示する | infra | 05-11 | gate_wa_data_quality.shにFalse |
-| cmd_2678 | cmd_save.sh is_gate_or_hook_addition_cmd L161の偽陽性修正。gate_fire_log等のファイル名内gateをgate/hook追加と誤判定するバグを修正する | infra | 05-11 | cmd_save.shのgate/hook追加判定をASCI |
-| cmd_2679 | セマンティクスインデックスにL6化セッションの成果を反映。defense_hierarchyとgrowth_loopにaliases+cmd参照を追加し、semantic_map_generate.shで伝搬する | infra | 05-11 | セマンティクスインデックスのdefense_hierarch |
-| cmd_2680 | daemon_watchdog.shのcrontab登録を旧flock形式から新形式に更新し、1時間毎のntfy WARN通知を停止する | infra | 05-11 | crontabのdaemon_watchdog.sh登録から |
 | cmd_2681 | 同一cmdに2名配備される二重配備パターン(cmd_2678-2680で3連続発生)を構造的に防止する | infra | 05-12 | cmd_2681: deploy_task.shの同一cmd |
 | cmd_2682 | 同一cmdで先行忍者が完了済みの場合、後発忍者を自動的にvoid(task reset+/clear)して空報告を防止する | infra | 05-12 | ninja_monitorに同一parent_cmd完了済み |
 | cmd_2683 | 起動手順スキップ(家老がinstructions/karo.md未読で即応答した事故)を構造的に防止する。全ロールのstartup gateをSessionStart hookで自動実行し意志依存をゼロにする | infra | 05-12 | SessionStart hookをsettings.jso |
@@ -517,3 +507,5 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
+| cmd_3282 | 軍師実証(blt_20260611_014139): cmd_3278 hayate報告でfiles_modifiedに7ファイル分のリストが1つのpath文字列として押込まれた形式破損を、autofixが単一ファイル向けのstring→dict変換で機械変換しERROR化を回避→破損したまま下流(レビュー/gate)へ素通りした。LG038(silent SKIP=情報の墓場)のautofix版であり、『直せない破損』を『直したことにする』のは検査不能の隠蔽。変換可否を判別しERRORへ昇格させる | infra | 06-11 | FM_FORMAT_INVALID検出追加: files_m |
+| cmd_3279 | 殿指示(2026-06-11 01:19)「続きはシンプルだ。renderにデプロイするウェブアプリ。画面はシンプルで、縦軸はカテゴリごとに項目一覧、横軸は年月」に基づき、monthly_status 294セルをブラウザで見えるマトリクス画面として実装する。Sheets併存。スタッフ(第三者)にも現況が見える作業化の土台 | clinic-expense-tracker | 06-11 | 【軍師RC対応済み】FastAPI+Jinja2でmonth |

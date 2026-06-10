@@ -2035,7 +2035,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "REQUEST_CHANGES"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -2045,7 +2045,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "REQUEST_CHANGES"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -2055,9 +2055,94 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "REQUEST_CHANGES"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
   source: "cmd_save"
   timestamp: "2026-06-10T16:46:06Z"
+- cmd_id: "cmd_3279"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "REQUEST_CHANGES"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-10T17:10:18Z"
+- cmd_id: "cmd_3282"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "REQUEST_CHANGES"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-10T17:12:44Z"
+- cmd_id: "cmd_3277"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "yes"
+  gunshi_verdict: "REQUEST_CHANGES"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-10T17:15:28Z"
+- cmd_id: "cmd_3283"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "clinic-expense-tracker"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-10T17:18:41Z"
+  notes: "ac_phase_mixing|check=check_ac_phase_mixing"
+- cmd_id: "cmd_3283"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "clinic-expense-tracker"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-10T17:18:42Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点で形式準拠。アップロード受け口の追加はDB搬送に必要な意図的追加(既存アプリは読み取り専用画面のみで搬送経路が存在しないため)"
+  notes: "WARN累計昇格: 「ac_phase_mixing|check=check_ac_phase_mixing」が2回繰り返されています(cmd_ids=cmd_3274,cmd_3274)。WARNを解消してからcmd_save.shを実行せよ"
+- cmd_id: "cmd_3283"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "clinic-expense-tracker"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-10T17:19:21Z"
+  block_duration_minutes: 1
+- cmd_id: "cmd_3283"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "clinic-expense-tracker"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-10T17:19:34Z"
+- cmd_id: "cmd_3283"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "clinic-expense-tracker"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-10T17:19:40Z"
