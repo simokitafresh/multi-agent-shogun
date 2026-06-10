@@ -2050,6 +2050,23 @@
   brainwash_check: "洗脳#4防止: LGTMで流してBLOCKリスク(LG006)。skill_auto_improve_state.jsonのcommand欄不在を見逃さない。洗脳#2: 実装=正しい、GATE予測=BLOCK"
   origin: "[[cmd_3270]] -> [[hayate FAIL率38%修正]] -> [[FAIL_mismatch_risk]]"
   timestamp: "2026-06-10T12:30:00"
+- cmd_id: cmd_3271
+  review_type: draft
+  verdict: APPROVE
+  gate_result: N/A
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "7観点OK。教訓健全度useful_rate改善。inject_related_lessons L3772 fallback全量注入抑制。AC2件で適切粒度。premortem: 教訓注入減→必要教訓欠落リスクあるがbefore/after比較(AC2)で検出可能"
+  observations:
+    - "事実1: ac_physical_verify PASS。deploy_task.sh L3772にinject_related_lessons()存在確認"
+    - "事実2: useful_rate=46.2%(12/26件)。startup gate出力で確認"
+    - "事実3: cmd_3231で根因分析済み(target_path未設定→MIN_KEYWORD_SCORE閾値下回り→fallback全量注入)"
+    - "事実4: adversarial — 閾値厳格化→有効教訓も注入されないfalse negativeリスク。AC2のbefore/after比較で検出可能"
+  causal_chain: "useful_rate 46.2%→target_path未設定時fallback全量注入→閾値改善→不要教訓注入減→CTX効率向上(正の複利)"
+  brainwash_check: "洗脳#2防止: deploy_task.sh L3772現物確認(ac_physical_verify)。洗脳#8防止: ambiguity(閾値裁量)を検討し記録"
+  ambiguity_points: "閾値調整幅は忍者裁量(q10記載)。AC2 before/after比較で効果計測される"
+  origin: "[[cmd_3271]] -> [[教訓健全度useful_rate改善]] -> [[APPROVE]]"
+  timestamp: "2026-06-10T12:38:00"
 # === L6-洗脳#2解消: 実動作確認5件 ===
 - cmd_id: cmd_3143
   review_type: self_study
