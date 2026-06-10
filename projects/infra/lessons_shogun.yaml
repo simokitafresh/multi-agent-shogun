@@ -546,3 +546,12 @@ lessons:
   created_at: '2026-06-10'
   automated: true
   enforcement: 'cmd_save.sh check_gunshi_reference_numeric_relaxation WARN時にq8とACの数値表記整合を点検'
+  superseded_by: 'LS051 (Check17の日付リテラルFPをcmd_save.shコード修正で根治したため、LS050のq8整合ワークアラウンドは不要(2026-06-10))'
+- id: 'LS051'
+  title: 'cmd起票は雛形起点(cmd_skeleton.sh)が正。事後規律型は劣化LLMほどBLOCK往復する'
+  origin: '[[殿指示2026-06-10起票分析]] -> [[事後規律型の摩擦]] -> [[cmd_skeleton.sh+gate修正5点]]'
+  detail: '根因: 必須フィールド・形式規約がEdit後のhook/cmd_save BLOCKでしか到達しない事後規律型のため、記憶からの作文に頼るLLMほど摩擦が増える。対処5点(2026-06-10): (1)cmd_skeleton.shで形式を環境保証(FILL_THISに規約埋込) (2)cmd_save.sh Check1.05でFILL_THIS残存BLOCK (3)PASS出力にcmd_delegate.sh次ステップ提示 (4)cmd_delegate.sh数字のみID正規化 (5)Check17の日付リテラル除外。Check17日付FPはコード修正済みのためLS050のq8整合ワークアラウンドは不要'
+  source_cmd: 'cmd_3273'
+  created_at: '2026-06-10'
+  automated: true
+  enforcement: 'cmd_save.sh Check1.05 FILL_THIS BLOCK + pre-write-edit hook雛形導線 + AS-FP-005/006回帰テスト + test_cmd_delegate正規化テスト'
