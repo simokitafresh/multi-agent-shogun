@@ -8,7 +8,7 @@ description: |
   マルチエージェント開発の裏話、技術的発見、設計思想を
   将軍が殿に報告する書簡形式で執筆する。
   TRIGGER: /sengoku-writer、開発裏話、戦国AI列伝、将軍の書簡、技術エッセイ
-  DO NOT TRIGGER: ユーザー向け機能紹介記事（→note-article）、
+  DO NOT TRIGGER: ユーザー向け機能紹介記事（→[[note-writer]]）、
   週報生成（→weekly-report）、X検索調査（→x-research）
 allowed-tools:
   - Read

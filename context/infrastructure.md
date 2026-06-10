@@ -1338,3 +1338,12 @@ done | sort -u
 - [[gunshi_idle_codex_respawn_loop_20260516]] — 軍師idle: Codex respawnループ分析(2026-05-16)
 - [[gunshi_idle_codex_respawn_loop_nazenaze_20260520]] — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)
 - [[gunshi_codex_clear_judgment_20260422]] — 軍師分析: Codex clear判断基準(2026-04-22)
+- → [[cdp-browse]] CDPブラウザ自動化スキル（persistent daemon + AXTree操作）
+- → [[reset-layout]] tmuxペイン配置復元スキル（agentsウィンドウ一発復元）
+- → [[shogun-all-codex-switch]] 全忍者Codex一括切替スキル（Claude→Codex全員切替）
+- → [[shogun-peacetime-rollback]] Codex→Claude平時ロールバックスキル
+- → [[switch-to-codex]] 個別エージェントCodex切替スキル
+- → [[switch-to-opus]] 個別エージェントOpus CLI切替スキル
+- → [[switch-project]] プロジェクト切替スキル（current_project変更）
+- → [[hensei-mixed]] 混成編成切替スキル（GPT+Sonnet+Opus混成）
+- → [[hensei-opus]] Opus統一編成スキル（決戦モード全忍者Opus化）

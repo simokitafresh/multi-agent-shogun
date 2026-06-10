@@ -442,3 +442,11 @@ retry_policy: |
 - [[gunshi_idle_bulletin_nazenaze_7_20260515]] — 軍師idle: 掲示板なぜなぜ#7分析(2026-05-15)
 - [[gunshi_idle_lgtm_block_pattern_20260414]] — 軍師idle: LGTM BLOCKパターン分析(2026-04-14)
 - [[gunshi_idle_cmd_quality_block_analysis_20260425]] — 軍師idle: cmd品質BLOCK分析(2026-04-25)
+- → [[cmd-complete]] cmd完了処理（GATE CLEAR後の全ステップ自動化）
+- → [[dashboard-update]] dashboard更新スキル（cmd完了後の一括更新）
+- → [[lesson-sort]] 教訓振り分けスキル（draft教訓→正式登録）
+- → [[repo-clean]] リポジトリ清掃スキル（孤立ファイル・古いブランチ整理）
+- → [[shogun-pd-sync]] 未決裁定→context反映スキル（PD解決後の知識還流）
+- → [[shogun-clear-prep]] /clear前準備スキル（状態確認+殿報告自動化）
+- → [[shogun-teire]] 知識棚卸しスキル（8観点監査）
+- → [[recon-dual]] 偵察2名並列配備スキル（recon2タスクタイプの標準配備）

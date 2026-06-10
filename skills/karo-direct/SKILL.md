@@ -125,3 +125,10 @@ Script refs verified: 2026-06-05 cmd_3146/cmd_3144. `deploy_task.sh` はlesson i
 Script refs verified: 2026-06-08 ceb10419a cmd_3231. `deploy_task.sh` はtarget_pathなし時にMIN_KEYWORD_SCOREを8へ引上げ、tag fallbackを無効化(低関連教訓のNOT_USEFUL量産防止)。注入精度の変更であり、`--yaml`/`--direct`配備手順変更なし。
 Script refs verified: 2026-06-09 e72eb99d4+3de0d29cc. `deploy_task.sh` はinject_semantic_conceptsで推薦ログにninja_nameフィールドを記録(precision照合キー修正)。`yaml_field_set.sh` はskip_childrenがYAMLリスト要素(`- `始まり)を見逃すバグ修正。いずれも内部変更であり、`--yaml`/`--direct`配備手順変更なし。
 Script refs verified: 2026-06-10. `deploy_task.sh` は(1)TRIGGER cross-validation追加: inject_semantic_conceptsのスキル推薦で、semantic matchだけでなくSKILL.mdのTRIGGERキーワードがpurposeに含まれるかを確認し偽陽性を除去。(2)boost適用にkeyword_score>0必須化(cmd_3254): keyword_score=0でもboost+project点で閾値突破していたNOT_USEFUL教訓の注入を防止。(3)flow-style YAML deprecation対応: `- {id: L723, ...}` パターンのdeprecated:true挿入。(4)lesson_impact.tsv空行混入防御: ensure_impact_headerのCR汚染対策+_is_empty_row空行フィルタ+DictWriter lineterminator="\n"明示。いずれも内部変更であり、`--yaml`/`--direct`配備手順変更なし。
+
+## 関連スキル
+
+- [[recon-dual]] — 偵察2名並列配備（recon2タスクタイプで使用）
+- [[cmd-complete]] — cmd完了処理（GATE CLEAR後の全ステップ自動化）
+- [[reset-layout]] — エージェントウィンドウのレイアウト復元（ペイン消失時）
+- [[cdp-browse]] — ブラウザ自動化スキル（hotfix作業でウェブ確認が必要な場合）

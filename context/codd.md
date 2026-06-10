@@ -137,6 +137,10 @@
   - dm-signal: `/mnt/c/Python_app/DM-signal/docs/research/codd_refactor_registry.md`
   - **対象スクリプトが属するリポの台帳に追記せよ。別リポの台帳に書くな**
 - **根源ルール: CoDDで改善したものは必ず台帳に載せる。** 対象がスクリプト/テスト/ドキュメントに関わらず例外なし(殿厳命2026-04-19, LS047)
+- gate改善設計(shogun startup): [[codd_gate_shogun_startup_reimprove_20260419]]
+- CoDD生成成果物(semantic_search cmd_2586): [[codd_generated_semantic_search_acceptance_cmd_2586_20260506]] / [[codd_generated_semantic_search_adr_cmd_2586_20260506]] / [[codd_generated_semantic_search_mode_dispatch_cmd_2586_20260506]] / [[codd_generated_semantic_search_system_design_cmd_2586_20260506]]
+- CoDD spec: [[codd_spec_gate_workaround_rate_after_20260418]] (gate WA率改善spec) / [[codd_spec_recalculate_fast]] (fullrecalculate高速化spec)
+- CoDD refactor記録(before): [[codd_refactor_cmd_quality_log_before_20260607]] (cmd_quality_log改善前の状態記録)
 
 ## 因果リンク
 

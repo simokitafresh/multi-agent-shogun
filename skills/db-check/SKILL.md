@@ -312,3 +312,7 @@ curl -s -u "$ADMIN_USER:$ADMIN_PASS" "$BASE/api/admin/signals/$PF_ID?months=12"
 - NULL行はパリティ比較から除外（L699）
 - FoFのholding_signal同一判定は展開後ticker×weightで行う（L703）
 - fullrecalculate完了はrecalculation_status DB行で二重確認（L690）
+
+## 関連スキル
+
+- [[pf-registration]] — DB確認・パリティ検証完了後の本番PF登録（パリティ確認→登録の流れで使用）

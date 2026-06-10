@@ -262,3 +262,52 @@ kasoku ratio/diff は独立実行可能 → 最大分割粒度: method(2) × sub
 3. 成功も失敗も記録する。失敗は特に重要
 4. 各忍者の知見は次の忍者のタスクYAMLに全注入する
 5. 1回目の知見→2回目に注入→2回目の知見も追記→3回目に注入→…知識が厚くなる
+
+---
+
+## §8 CoDD extract bunshin 設計書群（cmd_1991）
+
+CoDD `extract` コマンドで bunshin GS システムから逆生成した設計書・モジュール仕様群。
+GS実行エンジン・パリティ検証・ベンチマーク・診断の4軸で分類する。
+[[gs-bench-gate]] — GS高速化の品質ゲート（パリティ確認・ベンチマーク実行を自動化）
+
+### GS実行エンジン（忍法別）
+[[run-077-bunshin]] / [[run-077-kasoku-diff]] / [[run-077-kasoku-ratio]] / [[run-077-kawarimi]] / [[run-077-nukimi]] / [[run-077-oikaze]] / [[run-077-yotsume]]
+
+各忍法の `run_077_*.py` の設計書。分身(均等配分)・加速(ratio/diff)・変わり身・抜き身・追い風・四つ目の7忍法仕様。
+
+### GS サブシステム
+[[gs-runner]] — GSパターン実行エンジン本体
+[[gs-csv-loader]] / [[gs-data-loader]] — CSV・DBからのデータ読込
+[[gs-parity-check]] / [[parity-numpy-fast]] — パリティ検証（逐次版↔高速版完全一致確認）
+[[gs-vectorized-subset]] / [[gs-numba-kernels]] — vectorized実行・Numbaカーネル設計
+
+### GS ベンチマーク・計測
+[[gs-benchmark]] — GS高速化ベンチマーク設計
+[[benchmark-cmd-1035]] / [[benchmark-cmd-1035-yotsume-bunshin]] — cmd_1035系ベンチマーク実測結果
+[[gs-profiler-cmd1062]] — cmd_1062 profiler計測結果（momentum_cube 82.8x高速化）
+[[test-gs-benchmark-compare]] / [[test-numba-parity]] — ベンチマーク比較・Numbaパリティテスト
+[[grid-search-metrics-v2]] — GS指標定義v2
+
+### PPE 実験・診断
+[[cmd-1037-ppe-overhead-experiment]] — PPEオーバーヘッド実験（cmd_1037）
+[[cmd-1038-shm-parity-test]] — 共有メモリ(SHM)パリティ検証（cmd_1038）
+[[diag-yotsume-picks-detail]] / [[diag-yotsume-serial-vs-batch]] / [[diag-dtb3-parity]] — 四つ目診断・dtb3パリティ診断
+
+### パリティ検証
+[[verify-ac1-parity]] / [[verify-fof-parity]] / [[verify-fof-parity-batch]] / [[verify-fof-parity-cmd1251]] / [[verify-gs-parity-pi009]] / [[verify-all-portfolios]]
+
+パリティ検証ドキュメント群。PI-009（GS=本番同一エンジン必須）準拠確認に使用。
+
+[[cmd-1050-parity-test]] / [[cmd-1052-parity-test]] — cmd_1050/1052のパリティ検証実測
+
+### チャンピオン選択・OOS検証
+[[cmd-1125-v2-champion-select]] — v2チャンピオン選択ロジック
+[[cmd-1711-ninpo-landscape-summary]] — 忍法ランドスケープサマリ
+[[cmd-1717-oos-validation]] — OOS(Out-of-Sample)検証
+[[shin-shijin-l1-gs]] — シン四神L1 GS設計
+
+### ゴールデン出力・その他
+[[dump-all-pf-golden]] / [[dump-all-pf-holding-signals-golden]] / [[dump-standard-pf-golden]] — 本番PFゴールデン出力（パリティ基準値）
+[[sync-experiments-prices]] — 実験価格データ同期
+[[system-context]] — CoDD extract の system-context（bunshinシステム全体俯瞰）

@@ -494,3 +494,8 @@ CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 <!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->
 
 Script refs verified: 2026-06-10 e81c63081+ba757a1f7+14aa13952. `note_draft.sh` はChrome CDP未起動時にexit 0(SKIP)で抜ける事前チェック追加(FAIL率汚染防止)、PowerShell失敗時のcmd.exeフォールバック追加、shellcheckエラー除去。Chrome未起動時はStep 8がSKIPされ`skill_execution_log`にSKIP記録される。Markdown生成(Step 1-7)への影響なし。SKILL.md記載の`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`呼び出し契約は変更なし。
+
+## 関連スキル
+
+- [[monthly-report-writer]] — 月次レポート（週報の月間版。より詳細な長期パフォーマンス分析含む）
+- [[x-research]] — X/Twitter検索調査のみ実行する場合（週報生成を伴わない単体調査）

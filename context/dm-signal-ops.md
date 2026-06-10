@@ -785,3 +785,10 @@ import metrics_research_engine as MRE
 - → [[ops-db-rules]] DB運用ルール詳細(接続/バックアップ/パリティ確認手順)
 - → [[ops-procedures]] 運用手順詳細(デプロイ/ロールバック/障害対応)
 - → [[parity-verification-details]] パリティ検証詳細(本番/GS同一エンジン確認手順)
+- → [[pf-registration]] 本番PF登録スキル（パリティ即確認+登録の流れ）
+- → [[weekly-report-writer]] 週報生成スキル（API+Grok x_search使用）
+- → [[monthly-report-writer]] 月報生成スキル（5年月次リターン+月間ニュース）
+- → [[note-writer]] note.com記事生成スキル（バムスタイル機能紹介記事）
+- → [[sengoku-writer]] 戦国将軍書簡スキル（マルチエージェント開発裏話）
+- → [[x-research]] X/Twitter検索調査スキル（xAI Grok x_search）
+- → [[shogun-param-neighbor-check]] パラメータ近傍チェックスキル（GS最適値の堅牢性確認）
