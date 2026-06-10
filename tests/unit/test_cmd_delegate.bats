@@ -434,6 +434,15 @@ YAML
     [[ "$output" != *"already listed in dashboard.md"* ]]
 }
 
+@test "cmd_delegate: 数字のみcmd_idはcmd_付きに正規化される(cmd_save.shと同一規約 2026-06-10)" {
+    create_shogun_yaml_with_pending
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" 100 "cmd_100を書いた。配備せよ。"
+    echo "output: $output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DELEGATED: cmd_100 at"* ]]
+}
+
 @test "cmd_delegate: inbox_write失敗時エラー" {
     create_shogun_yaml_with_pending
 

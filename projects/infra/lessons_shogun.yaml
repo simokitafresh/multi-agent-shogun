@@ -538,3 +538,11 @@ lessons:
   created_at: '2026-06-10'
   automated: true
   enforcement: 'type=hook; file=.claude/hooks/pre-write-edit-combined.sh; pattern=preflight'
+- id: 'LS050'
+  title: 'AC内の日付リテラルは数値緩和チェックに誤検知される'
+  origin: '[[cmd_3273起票BLOCK]] -> [[日付リテラル2026がAC最大数値と判定]] -> [[q8とAC数値表記の整合ルール]]'
+  detail: 'Gmailクエリ等の日付(before:2026/7/1)をACに書くと、check_gunshi_reference_numeric_relaxationがq8最大数値(201)との比較で『緩和』と誤判定する。対処: q8のWHATにACと同一のクエリ日付を明記して最大数値を整合させる。設計書数値はq8とACの両方に同一表記で書け'
+  source_cmd: 'cmd_3273'
+  created_at: '2026-06-10'
+  automated: true
+  enforcement: 'cmd_save.sh check_gunshi_reference_numeric_relaxation WARN時にq8とACの数値表記整合を点検'

@@ -83,3 +83,35 @@ setup() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"数値緩和を検出"* ]]
 }
+
+@test "AS-FP-005: AC内の日付リテラルは設計数値として比較しない(LS050 cmd_3273偽陽性回帰)" {
+    CMD_BLOCK_NC='    scope_mode: FULL
+    quality_gate:
+      q5_verified_source: "設計書docs/03 §6の現物確認"
+      q8_why_what: "WHY: 投入 / WHAT: Gmail検索の全ヒット201件を投入する"
+    acceptance_criteria:
+      AC1:
+        description: "クエリ after:2025/1/1 before:2026/7/1 のヒット数と投入201件の一致を2026-06-10T18:00:00時点で確認する"
+        binary_check: "201件一致か"'
+    export CMD_BLOCK_NC
+
+    run check_gunshi_design_num_relax
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "AS-FP-006: 日付リテラル混在でも真の数値緩和はWARNINGする" {
+    CMD_BLOCK_NC='    scope_mode: FULL
+    quality_gate:
+      q5_verified_source: "設計書docs/03 §6の現物確認"
+      q8_why_what: "WHY: 投入 / WHAT: 201件を投入する"
+    acceptance_criteria:
+      AC1:
+        description: "2026/7/1までの300件を確認する"
+        binary_check: "300件か"'
+    export CMD_BLOCK_NC
+
+    run check_gunshi_design_num_relax
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"数値緩和を検出"* ]]
+}
