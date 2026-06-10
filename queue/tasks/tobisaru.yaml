@@ -38,7 +38,7 @@ task:
   project: infra
   purpose: '軍師実証(blt_20260611_013831): cmd_3278_saizo報告precheckでCRITICAL発火したが根因はsaizo無関係の偽陽性2種。(1)ref抽出regexの文字クラスに非ASCIIがなく日本語ファイル名(cmd_3218_サイズ調整バックテスト.md)が途中切断され存在しないパスを生成 (2)外部repo(DM-signal)に実在する参照がNOT FOUND判定。将軍がgate_vercel_phase.sh L211の文字クラス現物で切断メカニズムを確認済み。残4チャンク報告+今後の全context変更cmdで再発するため根治する'
   scout_exempt: true
-  status: in_progress
+  status: idle
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_vercel_phase.sh
   task_id: cmd_3281_full
