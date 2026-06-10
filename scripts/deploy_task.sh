@@ -4769,13 +4769,18 @@ try:
             overlap = set(task_tags) & set(l_tags)
             if overlap:
                 tag_candidates.append(lesson)
-        # task_tagsが空（推定もできなかった）→全教訓注入（安全側フォールバック）
-        else:
+        # cmd_3271: target_pathなし+tag推定失敗 → タグ付き教訓は除外（NOT_USEFUL量産防止）
+        # target_pathあり時は安全側フォールバック維持（既存動作）
+        elif has_target_path:
             tag_candidates.append(lesson)
+        # else: target_pathもtask_tagsもなし → この教訓をskip
 
-    # (5) タスクにtagsがなくキーワード推定もできない → 全教訓注入（現行動作=安全側フォールバック）
-    if not task_tags:
+    # (5) タスクにtagsがなくキーワード推定もできない → 全教訓fallback
+    # cmd_3271: target_pathなし時は全量fallback禁止（has_target_pathがある場合のみ実行）
+    if not task_tags and has_target_path:
         tag_candidates = [l for l in confirmed_lessons if l not in universal_lessons]
+    elif not task_tags:
+        print(f'[INJECT] no target_path + no task_tags: skipping full-lesson fallback ({len(confirmed_lessons)} lessons withheld)', file=sys.stderr)
 
     # target_filesフィルタ適用: タグマッチしなかった教訓のみ除外(タグ優先原則)
     if _tf_excluded_ids and task_tags:

@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-10 cmd_karo_insight_cleanup_20260610083506 -->
+<!-- last_updated: 2026-06-10 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -505,3 +505,7 @@
 | cmd_3265 | gate_context_freshness.shがlast_updatedからの経過日数だけでALERT判定するため、ソースPJに変更がなくても日付変更でALERTが連発する(GA-031〜036の6件/日)。ソースに変更がない場合はALERTを抑止し、信号対雑音比を改善する | infra | 06-10 | gate_context_freshness.shの日数のみ |
 | cmd_3264 | 忍者の本体変更がauto-commit(chore: auto-commit before /clear)に巻き込まれ、cmd固有commitにはテストのみ含まれる。SG-PRE3のcommit検証をすり抜ける。3件連続発生(cmd_3255/3261/3263)。忍者commit完了後のgit status確認を強制し、auto-commit先取りを検出する | infra | 06-10 | auto-commit巻込み防止: ninja_monito |
 | cmd_3266 | 将軍のstartup gateにある先送り3セッション連続検出+自動エスカレーション(L1)が家老・軍師に未実装。洗脳#5(先送り)は全ロールに作用するため、gate_karo_startup.sh/gate_gunshi_startup.shに同等機能を横展開する | infra | 06-10 | gate_karo/gunshi_startup.shに先送 |
+| cmd_3267 | gate_shogun_startup.shの殿生発言Q生成がtask-notificationをinboundとして取得し殿の発言でないテキストを追体験Qに含めている。フィルタ追加で追体験Qの精度を改善する | infra | 06-10 | gate_shogun_startup.shの2箇所のinb |
+| cmd_3268 | docs/research/cmd_1991_codd_extract/modules/配下5ファイルがbacklinks=0で因果ネットワークから孤立。20セッション先送り。context/dm-signal-research.mdから因果リンクを接続し知識到達性を回復する | infra | 06-10 | cmd_1991 CoDD extract modules/ |
+| cmd_3269 | deploy_task.sh inject_related_lessonsがassigned_to未設定時にninja_name=unknownで記録し、同一教訓が忍者名+unknownで二重登録される。172 NOT_USEFUL中81件がunknownで水増し。二重記録を防止しuseful_rate計測を正常化する | infra | 06-10 | deploy_task.sh inject_related_ |
+| cmd_3270 | note-draft スキルの直近50件FAIL率が38%(3/8)で3セッション連続startup BLOCK。家老escalation(blt_20260610_115209)でCMD起票要請あり。skill_auto_improve_stateでcode_fix_requiredエスカレーション済み。根因を特定し修正する | infra | 06-10 | note-draft FAIL率38%の根本原因(CDPなし |

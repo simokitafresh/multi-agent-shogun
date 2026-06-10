@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-10 -->
+<!-- last_updated: 2026-06-10 cmd_3270 -->
 
 # Memory DB Schema
 
@@ -9,13 +9,13 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 67153 | event_id, concept_name, relevance_score |
-| table | event_links | 1396 | source_event_id, target_concept, link_type |
-| table | event_state_transitions | 120 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
-| table | events | 49338 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
-| table | events_fts | 49338 | summary, detail |
-| table | search_logs | 4252 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
-| view | conversations | 34700 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 67789 | event_id, concept_name, relevance_score |
+| table | event_links | 1413 | source_event_id, target_concept, link_type |
+| table | event_state_transitions | 124 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
+| table | events | 49763 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
+| table | events_fts | 49763 | summary, detail |
+| table | search_logs | 4289 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
+| view | conversations | 34791 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -34,16 +34,16 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 34700 |
-| cmd_archive | 5292 |
-| bulletin | 4578 |
-| skill_execution | 2826 |
-| inbox | 701 |
-| insight | 694 |
-| report | 309 |
-| cmd_quality | 77 |
-| gate | 55 |
-| cmd_save | 48 |
+| conversation | 34791 |
+| cmd_archive | 5528 |
+| bulletin | 4585 |
+| skill_execution | 2869 |
+| insight | 719 |
+| inbox | 712 |
+| report | 315 |
+| cmd_quality | 79 |
+| gate | 57 |
+| cmd_save | 50 |
 | pending_decision | 44 |
 | lesson | 9 |
 | workaround | 4 |

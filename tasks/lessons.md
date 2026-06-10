@@ -7716,3 +7716,25 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - csv.reader(newline='')がCR付きフィールドを読み、ヘッダ比較が毎回不一致→全行upgradeパス発動→空行をパディング。防御: (1)ヘッダ比較前にCR strip (2)空行スキップ (3)lineterminator明示
+
+### L767: auto-commit巻込みは実装中にも発生する(自己証明)
+- **日付**: 2026-06-10
+- **出典**: cmd_3264
+- **記録者**: tobisaru
+- **tags**: [infra,ninja-monitor,git]
+- **target_files**: [scripts/ninja_monitor.sh,scripts/gates/gate_report_format.sh,tests/unit/test_ninja_monitor_clear_guard.bats,tests/test_gate_report_format.bats]
+- **origin**: [[cmd_3264]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3264の修正中に、修正対象のauto-commit自体が飛猿の変更を巻込んだ(49e21f225+6bf403d2c)。フィルタ追加後も、フィルタ適用前のauto-commitは防げない。忍者は/ninja-commitで早めにcommitすべき。origin: [[auto_commit_race_condition]] -> [[tobisaru_own_changes_absorbed]] -> [[cmd_specific_commit_impossible]]
+
+### L768: Python heredoc内のget_tab() Noneチェック漏れは uncaught exception → exit 1 FAIL
+- **日付**: 2026-06-10
+- **出典**: cmd_3270
+- **記録者**: hayate
+- **tags**: [infra,bash,cdp]
+- **target_files**: [scripts/note_draft.sh,logs/skill_auto_improve_state.json]
+- **origin**: [[cmd_3270]]
+- **when**: 未設定
+- **how**: 未設定
+- bash層でCDP疎通確認してもPython側get_tab()はNoneを返しうる(タブ不在時)。Noneチェックなしにnavigate(None,...)を呼ぶとRuntimeError→uncaught→exit 1。bash層チェック≠Python層チェック。CDP操作ではget_tab()の戻り値を必ず確認し、Noneの場合はcreate_tab()でフォールバックせよ。origin: [[2026-06-09 FAIL]] -> [[get_tab None→navigate uncaught]] -> [[Python exit 1 FAIL]]

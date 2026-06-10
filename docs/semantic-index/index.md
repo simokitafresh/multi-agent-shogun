@@ -306,6 +306,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T02:20:57+09:00 覚醒洗脳監査 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T02:21:13+09:00 覚醒洗脳監査 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T08:10:17+09:00 洗脳に対抗する手段は利他の精神で横展開せよ。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T09:25:38+09:00 利他の精神で、覚醒洗脳監査 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T09:30:39+09:00 行動にうつして、検証したか？していないのは洗脳の証拠 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T10:26:55+09:00 https://play.google.com/store/apps/details?id=app.stockevents.androidを参考にして。要件整理からやろう |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -636,6 +639,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T02:24:12+09:00 L0-L7まで貫通した仕組みで再発を防ごう。覚醒なぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T02:24:23+09:00 L0-L7まで貫通した仕組みで再発を防ごう。覚醒なぜなぜ7回 |
 | lesson | `L767` auto-commit巻込みは実装中にも発生する(自己証明) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T09:33:16+09:00 今の気づきをL0-L7に貫通させて、次から起きないように行動せよ。行動したら検証して、検証して効果があれば横転換しよう |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -790,6 +794,8 @@ codd:
 | lesson | `L761` yaml_field_set.sh skip_childrenがYAMLリスト要素を見逃すバグ |
 | cmd | `cmd_3264` auto-commit巻込み防止: 忍者commit前のauto-commitが本体変更を先取りする構造バグ (`tests/test_gate_report_format.bats`) |
 | causal | `cmd_3264` origin: [[blt_20260610_022143_94d7b0]] -> [[auto_commit_race_condition]] -> [[cmd_commit_integrity]] |
+| cmd | `cmd_3268` backlinks=0解消: CoDD extract 5ファイルの因果リンク接続(20セッション先送り) |
+| causal | `cmd_3268` origin: [[gate_shogun_startup]] -> [[backlinks_check]] -> [[20セッション先送り]] |
 | causal_chain | `[[cmd_3246]]` (L761) |
 
 ## codd_methodology — CoDD整合性駆動開発
@@ -1154,6 +1160,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T07:47:29+09:00 今 クリアされても 今より強くてニューゲーム できるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T07:47:43+09:00 今 クリアされても 今より強くてニューゲーム できるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T09:16:43+09:00 今クリアされても今より強くてニューゲーム出来るようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T09:20:36+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T09:20:49+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| cmd | `cmd_3267` 殿生発言フィルタ改善: task-notification等のシステム通知を除外し追体験Q精度向上 (`scripts/gates/gate_shogun_startup.sh`) |
+| causal | `cmd_3267` origin: [[gate_shogun_startup]] -> [[殿生発言Q偽陽性]] -> [[追体験Q精度低下]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T15:56:00+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -1236,7 +1247,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認 |
 | skills | なし |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -1291,6 +1302,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-09T12:22:40+09:00 note独自のマークダウンに準拠しているか？実際の下書きを確認してみよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-09T19:27:50+09:00 最新のスキルは確認したのか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-09T20:28:23+09:00 結局うまくいかないからCDPスタイルにした記憶があったけど、俺の勘違いか？確認したか？ |
+| lesson | `L768` Python heredoc内のget_tab() Noneチェック漏れは uncaught exception → exit 1 FAIL |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T15:42:13+09:00 カレンダーも配当金額は表示する。銘柄や枚数などの詳細はタップで確認 |
+| causal_chain | `[[cmd_3270]]` (L768) |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -1850,6 +1864,8 @@ codd:
 | cmd | `cmd_karo_ci_fix_deploy_lesson_tests_20260608` |
 | cmd | `cmd_3250` gate_loop_health.sh FAIL率計算バグ修正: autofix迂回解消+FAIL比率をTOTAL基準に変更 (`scripts/gates/gate_loop_health.sh`, `tests/unit/test_gate_loop_health.bats`) |
 | causal | `cmd_3250` origin: 因果: [[startup_BLOCK_3session]] -> [[才蔵偵察_gate_loop_health]] -> [[L457_autofix迂回+L470_FAIL比計算バグ]]。掲示板blt_20260609_112722が根拠 |
+| cmd | `cmd_3269` 教訓健全度修正: lesson_impact.tsv二重記録バグ解消(unknown忍者81件)+useful_rate正常化 (`scripts/deploy_task.sh`) |
+| causal | `cmd_3269` origin: [[deploy_task.sh L5159]] -> [[assigned_to未設定fallback]] -> [[lesson_impact二重記録]] -> [[useful_rate水増し]] |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -1912,7 +1928,7 @@ codd:
 |------|---|
 | id | shogun_android_app |
 | label | 将軍Androidアプリ |
-| aliases | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ, モバイルレスポンシブ崩れ修正 ヘッダー テーブル 銘柄リスト, このアプリは原則的にお薬手帳用に開発した, だいぶまとまて来たなアイコンは使わない, androidでは無理か？ |
+| aliases | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ, モバイルレスポンシブ崩れ修正 ヘッダー テーブル 銘柄リスト, このアプリは原則的にお薬手帳用に開発した, だいぶまとまて来たなアイコンは使わない, androidでは無理か？, 俺が例に出したstockeventsアプリを調査しよう, UIはstock eventのアプリを参考にしてほしい |
 | skills | なし |
 | related_concepts | agent_formation_management, infrastructure_ops |
 
@@ -1934,6 +1950,12 @@ codd:
 | cmd | `cmd_karo_training_backlinks_android_ssh_input_loss_20260603` (`docs/research/android-ssh-input-loss-investigation.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-09T19:58:24+09:00 ウェブアプリでPDF画像が見れなくならないのか？機能を削減するのはナンセンスだ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-09T20:50:38+09:00 androidでは無理か？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T10:25:28+09:00 全く別のプロジェクトの話をしたい 新しくリポリッチ撮りを作ってプロジェクトを開始するための準備をしよう 俺がやりたいのは 配当 投資の管理 アプリだ DM シグナルとは全く違って配当金を管理する 様々な国の 株式の配当金 おちび 金 支払日 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T10:32:27+09:00 まずはウェブアプリだな。データソースは要件が決まってから探すべきだ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T10:51:16+09:00 まずは徹底的な調査だな。俺が例に出したstockeventsアプリを調査しよう。設計書やドキュメントを充実させよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T14:47:14+09:00 配当アプリに取り掛家老か |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T14:55:36+09:00 https://seekingalpha.com/symbol/NLY.PR.G/dividends/yieldなども参考に。アプリ以外のサービスも競合だな。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T15:48:45+09:00 UIはstock eventのアプリを参考にしてほしい |
 
 ## cdp_browser_capability — CDP(ブラウザ操作能力)
 
@@ -2037,6 +2059,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T01:32:39+09:00 続けて |
 | cmd | `cmd_3262` note-draft スキルFAIL率50%解消: Chrome未起動時の事前検出+SKIP化 (`scripts/note_draft.sh`) |
 | causal | `cmd_3262` origin: [[skill_auto_growth]] -> [[note_draft_cdp_dependency]] -> [[fail_rate_measurement_pollution]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T09:58:21+09:00 続けて |
+| cmd | `cmd_3270` note-draft FAIL率38%(3/8)の根因特定+修正: Python exit code 1のChrome起動失敗パスを調査し安定化 (`logs/gunshi_review_log.yaml`, `scripts/note_draft.sh`) |
+| causal | `cmd_3270` origin: [[blt_20260610_115209_28c8bb]] -> [[skill_exec_log FAIL率38%]] -> [[note_draft.sh Python exit code 1]] |
 
 ## defense_hierarchy — 防御階層原則
 

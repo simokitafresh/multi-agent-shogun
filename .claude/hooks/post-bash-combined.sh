@@ -188,16 +188,19 @@ def parse_skip_count(text: str) -> int:
 
 
 def parse_fail_count(text: str) -> int:
+    # cmd_3271: parse_skip_countと同様にTAP行(ok/not ok)を除外してからregex検索。
+    # 除外しないと「ok 265 failed AC count command...」等のテスト名が誤マッチする。
+    non_tap_text = _filter_tap_lines(text)
     matches = []
     for pat in (r"(\d+)\s+(?:tests?\s+)?failed\b", r"(\d+)\s+(?:test suites?\s+)?failed\b",
                 r"(\d+)\s+failures?\b", r"failed:\s*(\d+)\b", r"failures?:\s*(\d+)\b"):
-        for m in re.finditer(pat, text, flags=re.IGNORECASE | re.MULTILINE):
+        for m in re.finditer(pat, non_tap_text, flags=re.IGNORECASE | re.MULTILINE):
             try: matches.append(int(m.group(1)))
             except Exception: pass
     bats_fails = len(re.findall(r"(?im)^\s*not ok\b(?!.*#\s*skip\b)", text))
     if bats_fails: matches.append(bats_fails)
     if matches: return max(matches)
-    if re.search(r"(?im)^\s*FAIL(?:ED)?\b", text) or re.search(r"\bFAILED\b", text): return 1
+    if re.search(r"(?im)^\s*FAIL(?:ED)?\b", non_tap_text) or re.search(r"\bFAILED\b", non_tap_text): return 1
     return 0
 
 

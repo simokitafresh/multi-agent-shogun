@@ -1470,7 +1470,7 @@ lessons:
   origin: '[[cmd_2025]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L635
   title: Signal DELETEを外すならFoF deferred flushもUPSERTへ切り替える
   summary: recalculate_fastのC1でglobal Signal DELETEを外した後も、recalculate_fof.py の deferred
@@ -1579,7 +1579,7 @@ lessons:
   origin: '[[cmd_1899]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L629
   title: 'golden data有効性: 生成時のコード状態を確認せよ'
   summary: バグ状態で生成されたgolden dataは検証基準にならない。生成日+対応commitを記録すべき。TRFバグ下で生成→全コンポーネント選択=バグ値だった実例
@@ -1754,6 +1754,9 @@ lessons:
   - outputs/analysis/alm_research/cmd_1878_l2_okugi_comparison.csv
   - scripts/oneshot/cmd_1878_l2_okugi_comparison.py
   origin: '[[cmd_1878]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L618
   title: 長時間計算はBash tool直接実行。Agent toolバックグラウンド+sleepポーリング禁止
   summary: WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent
@@ -1770,6 +1773,9 @@ lessons:
   - outputs/analysis/alm_research/okugi_alm_alm/cmd_1877_bunshin_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/okugi_alm_alm/cmd_1877_bunshin_l1_wf_validation.yaml
   origin: '[[cmd_1879]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L617
   title: gate_artifact_map.shで進行表の成果物所在チェック — 完了ブロック空欄→WARN
   summary: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ
@@ -1843,7 +1849,7 @@ lessons:
   origin: '[[cmd_1866]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L612
@@ -2322,6 +2328,9 @@ lessons:
   when: champion選出に38メトリクスを追加しつつ既存6目的関数の選出速度と互換性を維持する時
   how: select_champions_multi_isの目的関数は増やさず、選出後champion行へ_compute_metric_values_for_pattern()で後計算添付する
   origin: '[[cmd_1791]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L579
   title: '[自動生成] draft教訓の査読を怠った: cmd_1786'
   summary: draft教訓31件が未査読のままGATE到達
@@ -2640,6 +2649,9 @@ lessons:
   - scripts/analysis/standard_pf_preprocessing/cmd_1748_partial_nhf.py
   - outputs/analysis/alm_research/cmd_1748_partial_tail_contribution.yaml
   origin: '[[cmd_1748]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L556
   title: 'grid search CSVとALM L0 champion metricsの不一致: ユニバース差がパリティ破壊'
   summary: grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(17
@@ -2792,6 +2804,9 @@ lessons:
   - outputs/analysis/alm_research/cmd_1737_stage1_heatmap.csv
   - outputs/analysis/alm_research/cmd_1737_stage2_pbo.csv
   origin: '[[cmd_1737]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L545
   title: 逐次PF計測では先頭PFのウォームアップ外れ値を切り分けよ
   summary: 本番DBを逐次読む性能計測では、入力順先頭PFだけが接続確立や初回クエリ準備のウォームアップで突出して遅く見える。遅いPF上位をそのまま原因視せず、同一セッショ
@@ -2801,6 +2816,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 遅いPF上位をそのまま原因視せず、同一セッションで短いwarm checkを追加して「固有に遅いPF」と「初回外れ値」を分離してから結論を書くべき
   origin: '[[cmd_metrics_R1]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L544
   title: EW terminal≠selection_block=0。59FoF中42体にmomentum selection blockが存在
   summary: cmd_1700の全59FoFがEW blocks=[]は不正確。terminal EW=58/59だがselection_block=0は17/59のみ。42
@@ -2961,6 +2979,9 @@ lessons:
   - outputs/analysis/standard_pf_preprocessing/gerber_threshold_study_results.yaml
   - scripts/analysis/standard_pf_preprocessing/gerber_threshold_study.py
   origin: '[[cmd_1628]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L531
   title: build_signal_cache_valueのholding_signal or signalフォールバック注意
   summary: signal_cacheの値はbuild_signal_cache_valueで変換済み(holding_signal or signal)。DB
@@ -3988,6 +4009,9 @@ lessons:
   - scripts/analysis/grid_search/cmd_1200_kasoku_diff_runner.py
   - scripts/analysis/grid_search/run_077_kasoku.py
   origin: '[[cmd_1200]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L457
   title: oikaze serial/batch md5不一致(PE移行時fill_value差異)
   summary: simulate_patternのみPE化後simulate_batchとのfill_value=0.0差異でmd5不一致→CSV中止。全7本PE移行完了後にs
@@ -4050,6 +4074,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_monban.py
   - scripts/analysis/grid_search/run_077_nukimi.py
   origin: '[[cmd_1199]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L453
   title: PipelineEngine統合時のバッチパス分離戦略
   summary: simulate_patternのみPipelineEngine経由に切り替え、simulate_batch等のバッチパスはNumPy維持が現実的。両パスの等価
@@ -5571,7 +5598,7 @@ lessons:
   origin: '[[cmd_1012]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L341
   title: 既存GSチャンピオン流用時はdeployed portfolio configを正本にする
   summary: IF 既存GSチャンピオンパラメータ固定で分析やBTを組む THEN outputs/grid_search/*.meta.yamlのglobal
@@ -5892,7 +5919,7 @@ lessons:
   origin: '[[cmd_976]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-09'
+  last_referenced: '2026-06-10'
 - id: L316
   title: 'WSL→Windows venv Ruff hook: repo-relative pathを使え'
   summary: WSLから.venv/Scripts/ruff.exeを呼ぶ場合、/mnt/c/... absolute pathを渡すとC:\mnt\c\...と誤解釈されE
@@ -5903,6 +5930,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-16'
   origin: '[[cmd_969佐助発見]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L315
   title: Payload cacheとvalidator cache分離構成ではinvalidatorが両層同時破棄必須
   summary: response payload(IDB)とETag validator(IDB/Map)を別管理している構成で片方だけclearすると、If-None-Mat
@@ -5949,6 +5979,9 @@ lessons:
   when: タスク配備やデプロイ手順を変更・実行する時
   how: '2026-03-15'
   origin: '[[cmd_962]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L311
   title: 'api-client.tsのisRetryableError()はネットワークエラーのみリトライ対象(failed to fetch/network/aborted/timeout)。HTTP
     5xx(サーバー一時障害)はリトライされない。Render cold start時の502/503で即エラーUI表示になる。5xxを1回リトライする改善候補。対象:
@@ -6672,6 +6705,9 @@ lessons:
   - backend/app/services/rebalance.py
   - backend/app/utils/business_day_utils.py
   origin: '[[cmd_820]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L258
   title: try/exceptフォールバックでbulk preload+mock DB両立。bulk_loaded flagで本番=最適化パス、テストmock=per-iterationフォールバック。テスト変更ゼロ。ただしtry/exceptは本番エラー隠蔽リスクあり、ログ監視と組合せるべき
   summary: cmd_820 kagemaru発見
@@ -6693,6 +6729,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-12'
   origin: '[[cmd_819]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L255
   title: ticker precompute欠落時のfallbackはmonths windowをPrice queryへ必ず伝播させる
   summary: monthly-returns APIはticker_monthly_returnsが空になるとfallbackに落ちるが、fallbackがPrice全履歴を
@@ -7072,6 +7111,9 @@ lessons:
   when: summarize_runs()のfloat出力をshell整数比較に渡す時は
   how: statistics.median/meanはfloatを返すため、JSON経由でshellに渡す際にint()変換が必要
   origin: '[[cmd_737]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L221
   title: CDP計測の `spa` は実ナビゲーション実装と一致させ、hard reload と別ラベルで報告せよ
   summary: frontend の遷移導線が `window.location.href` ベースのままなら、見かけ上のページ切替でも reload 副作用が混ざる。
@@ -7801,7 +7843,7 @@ lessons:
   origin: '[[cmd_535]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L163
   title: ルートディスコンは『差し替え+_deprecated退避』にすると復活が1コミットで戻せる
   summary: 'IF ルートディスコンを実施する時 THEN 復活手順（最小）: 復活手順（最小）:'
@@ -8301,7 +8343,7 @@ lessons:
   origin: '[[cmd_282]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L118
   title: DTB3はeconomic_indicatorsではなくdaily_pricesテーブルにticker='DTB3'として格納。close_priceカラムに利回りデータ。economic_indicatorsテーブルは空。
   summary: IF hayate(cmd_282,subtask_282_integ)時 THEN hayate(cmd_282,subtask_282_integ)
@@ -8363,6 +8405,9 @@ lessons:
   when: C2-Bの22特徴量で予測対象を4種に変更時
   how: C2-Bの22特徴量で予測対象を4種に変更
   origin: '[[subtask_274_c3e]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L112
   title: monthly_returns.signalがJSON辞書形式のときはキー抽出しないと日次分布分析が全欠損になる
   summary: cmd274_c3_generalization.py で parse_signal_tickers() を追加し、'{"TECL":1.0}'
@@ -8490,7 +8535,7 @@ lessons:
   origin: '[[cmd_253]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L102
   title: MultiViewの4視点skip_months=[0,1,2,3]はクラス変数固定でconfigで変更不可
   summary: SKIP_MONTHS_LIST=[0,1,2,3]はクラス変数として定義されており、pipeline_configのconfig辞書からは変更できない。パラメ
@@ -8684,6 +8729,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: oikaze/nukimi/kasokuで修正・検証済み(全0bp完全一致)
   origin: '[[cmd_217]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L085
   title: テストPF削除のFK依存は16テーブル
   summary: signals/monthly_returns/rolling_returns_chart/trade_performanceの4つだけでは不足。drawdow
@@ -8807,6 +8855,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: confirmed
   origin: '[[cmd_212]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L075
   title: 新規PFのrecalculateにはrecalculate-syncが必要
   summary: IF sync-standardは既存PFの差分更新のみ時 THEN sync-standardは既存PFの差分更新のみ sync-standardは既存PFの
@@ -8868,6 +8919,9 @@ lessons:
   when: PipelineEngineのMomentumFilterBlockはティッカー単位でNaNスキップ(部分的成功)時
   how: PipelineEngineのMomentumFilterBlockはティッカー単位でNaNスキップ(部分的成功)
   origin: '[[cmd_197]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L069
   title: GS candidateからpipeline_config構築はregister_shijin_portfolios.pyのbuild_pipeline_configと同一構造を使え
   summary: 3ブロック構造(MomentumFilter/AbsoluteMomentumFilter/SafeHavenSwitch+EqualWeight)はDM全ファ
@@ -9209,6 +9263,9 @@ lessons:
   target_files:
   - sync_lessons.sh
   origin: '[[cmd_137]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L037
   title: standard PFでpipeline_config未設定だとrecalculate_fastがCashフォールバック
   summary: IF Portfolio(type=standard)はschema上pipeline_config optionalのため、登録スクリプトで未付与でも保存され
@@ -9238,6 +9295,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: UPDATE方式(既存PFにpipeline_config付与+/api/portfolios/saveで一括保存)でUUID維持しつつ設定変更が安全かつ確実
   origin: '[[cmd_128]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L034
   title: Claude CodeはRead未実施のファイルへのWrite/Editを拒否する
   summary: タスクYAML(queue/tasks/)・inbox(queue/inbox/)・報告YAML(queue/reports/)等を書く前に必ず対象ファイルをR

@@ -412,6 +412,12 @@ if [[ "$command" == *inbox_write.sh*gunshi_direct_impl* ]]; then
     fi
 fi
 
+# === Guard 11: bulletin_write action conversion reminder (殿指摘2026-06-10: 出力≠行動) ===
+# 掲示板投稿は「出力」であり「行動」ではない。投稿後にコード変更/教訓追記/gate修正まで回せ
+if [[ "$command" == *bulletin_write.sh* ]]; then
+    echo "[Guard11] INFO(§0.1問い10): 掲示板投稿=出力。行動(コード変更/教訓追記/gate修正)→検証(grep/計測)まで回したか？出力で止まるな" >&2
+fi
+
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
    "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git reset'* && \

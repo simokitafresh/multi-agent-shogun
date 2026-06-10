@@ -57,6 +57,8 @@ lessons:
     - deploy_task.sh resolve_cmdでpurpose内シングルクォートがyaml_field_set_batchの検証を崩す→--directモードで回避(cmd_3116/cmd_3125で2回発生)。将軍cmdのpurposeに'が含まれる場合はdeploy_task.sh --directを使え
     v16吸収(2026-06-09):
     - GATE実行前に軍師review結果(verdict)を確認せよ(cmd_3245/3246: 軍師FAILがある状態でGATE CLEARを通した=完了急ぎ洗脳#8)。軍師がFAILを指摘している場合、根因1行+対策1行を記録してからGATE処理。GATE前確認ポイント: grep verdict logs/gunshi_review_log.yaml | tail -5
+    v17吸収(2026-06-10):
+    - karo_direct配備時は/karo-directスキル使用必須。手動配備(Write+inbox_write直接)はdeploy_task.sh未経由→report_template未生成→忍者報告フィールド8件欠落→gate FAIL(cmd_karo_insight_cleanup実証)。karo.md L304にもスキル経由明記済み。LG035(スキル不使用=バグ)再現。洗脳#8(完了急ぎ)でスキル手順省略→負の複利
     v3統合吸収(2026-06-09, cmd_3253):
     - cmd前提否定時は停止→現物確認→将軍shelve報告→偵察cmd要請の4段階(LK004: cmd_2794で軍師REQUEST_CHANGES→家老が現物確認→前提否定確定→影丸停止→将軍shelve。忍者に続行させるな)
     - CoDD修行AC設計前にCLI --helpで構文現物確認必須(LK006: codd extract/elicit/generate構文を未確認でAC設計→4忍者全FAIL。§0.1問い2にCLIツール構文確認を含む)
