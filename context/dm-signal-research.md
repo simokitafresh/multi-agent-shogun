@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-05-29 cmd_3091 -->
+<!-- last_updated: 2026-06-10 cmd_3276 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -429,6 +429,55 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 | terminology | DM-Signal terminology / disambiguationを拡張。UWP/PTU/MaxDD UWPなど衝突しやすい語はcanonical定義を確認する | commits a39d6d19, ff142314, 40a22dc6; `/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md` |
 | knowledge links | method全件へ関連投資知識リンクを接続済み。研究時は単独methodだけでなくリンク先methodも候補に含める | cmd_3015; `/mnt/c/Python_app/DM-signal/docs/research/knowledge-base/methods/` |
 | marketing research outputs | note記事/weekly reportsはDM-Signal知識の公開向け再構成。研究正本ではないが説明・商品設計の文脈確認に使える | commit 1a5f5149; `marketing-director/content/` |
+
+---
+
+## §38. サイズ調整研究 (cmd_3218/3220/3224, 2026-06-08)
+
+→ 詳細資料: `docs/research/cmd_3218_サイズ調整バックテスト.md` / `docs/research/cmd_3220_7戦略バックテスト.md` / `docs/research/cmd_3224_V8過適合検証.md`
+
+### cmd_3218: 危険度スコアによるサイズ調整バックテスト (78体)
+
+**結論: 全体サイズ調整は非推奨。HIGH月平均+3.3%のため削減コスト>改善効果。** → L726
+
+| 指標 | ベースライン | 調整後 | 差分 |
+|------|------------|--------|------|
+| CAGR | 54.67% | 47.11% | ▲7.56% |
+| MaxDD | -26.82% | -26.82% | 変化なし |
+| HIGH月平均リターン | — | +3.3% | 機会損失大 |
+
+- 秘奥義のみCalmar改善(5.742→6.460)、MaxDD改善(-2.85%)
+- MEDIUMスコア月(-1.0%)が最も危険。HIGH(+3.3%)より精度高い可能性
+- スクリプト: `scripts/cmd_3218_size_adjustment_backtest.py`
+
+### cmd_3220: 7戦略サイズ調整(100%/80%)バックテスト
+
+**結論: 全7戦略でΔCAGR < 0。CAGRコストがMaxDD改善を上回り採用不適。** 最良はD10-VIX>25。
+
+| 戦略 | ΔCAGR | ΔMaxDD | ΔSharpe | 評価 |
+|------|-------|--------|---------|------|
+| D10-VIX>25 | -2.88% | +3.55% | +0.053 | 最良(ΔSharpe正) |
+| D11-実現ボラ | -8.18% | +4.28% | +0.028 | CAGRコスト大 |
+| E14-HMM | -4.33% | 0% | +0.026 | MaxDD改善なし |
+| F15-弱月暦 | -1.78% | +0.83% | +0.006 | 最小コスト |
+
+- スクリプト: `scripts/cmd_3220_7strategy_backtest.py`
+- 結果JSON: `docs/research/cmd_3220_7戦略バックテスト.json`
+
+### cmd_3224: V8_T25_MA50 過適合検証(OOS+サブ期間+ローリング3年窓)
+
+**結論: 過適合リスクあり。ローリングSortino勝率5/14(36%)で安定性不足。採用要慎重。**
+
+| 検証 | 結果 | 判定 |
+|------|------|------|
+| OOS Sortino保持率 | 170.4%(テスト/訓練) | ✓ 過適合でない |
+| OOS Calmar保持率 | 226.1% | ✓ 過適合でない |
+| ローリング3年 Sortino勝率 | 5/14(36%) | ✗ 安定性不足 |
+| サブ期間(COVID) | ΔSortino+0.517 | ✓ 効果あり |
+| サブ期間(金利上昇2022) | ΔSortino-0.111 | ✗ 逆効果 |
+
+- 判定基準: OOS保持率≥70% → PASS, ローリング勝率≥50% → 安定 (今回: OOS PASS/ローリングFAIL)
+- スクリプト: `scripts/cmd_3224_v8_overfitting_check.py`
 
 ---
 
