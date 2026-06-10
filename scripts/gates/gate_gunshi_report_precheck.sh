@@ -919,6 +919,33 @@ if [ "${_draft_lessons_total:-0}" -gt 0 ]; then
         GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }draft_lessons:${_draft_lessons_total}件(tasks/lessons.md)"
     fi
 fi
+# ─── SG-PRE26: 三層記憶検索(殿厳命2026-06-10: 使用しないのはバグ) ───
+echo ""
+echo "■ SG-PRE26: 三層記憶検索(L0-L7貫通)"
+_mem_query="${_purpose:-${PARENT_CMD:-}}"
+if [ -n "$_mem_query" ]; then
+    _mem_db_script="$REPO_ROOT/scripts/memory_db_query.sh"
+    if [ -f "$_mem_db_script" ]; then
+        _mem_keywords=$(echo "$_mem_query" | tr ' 　/\n' '\n' | grep -E '.{2,}' | head -3 | tr '\n' ' ')
+        _mem_result=""
+        for _kw in $_mem_keywords; do
+            _hit=$(bash "$_mem_db_script" "SELECT ts, substr(summary,1,80) FROM events WHERE summary LIKE '%${_kw}%' ORDER BY ts DESC LIMIT 2" 2>/dev/null | head -4)
+            [ -n "$_hit" ] && _mem_result="${_mem_result}${_hit}"$'\n'
+        done
+        if [ -n "$_mem_result" ]; then
+            echo "  記憶DB関連エントリ:"
+            printf '%s\n' "$_mem_result" | head -6 | while IFS= read -r _line; do [ -n "$_line" ] && echo "    $_line"; done
+            echo "  ★ 上記を[MEM: memory_db ts=YYYY-MM-DD]で引用してレビューに反映せよ"
+        else
+            echo "  記憶DB: 関連エントリなし(検索キーワード: $_mem_keywords)"
+        fi
+    else
+        echo "  SKIP: memory_db_query.sh not found"
+    fi
+else
+    echo "  SKIP: cmd purpose/id empty"
+fi
+
 echo ""
 echo "■ GATE_PREDICTION (自動計算 — SG7 gate_predictionに転記せよ)"
 echo "  prediction: ${GATE_PREDICTION:-UNKNOWN}"

@@ -3181,6 +3181,59 @@ inject_semantic_concepts() {
     fi
 }
 
+# ─── 三層記憶先行知識注入(殿厳命2026-06-10: 使用しないのはバグ。L0-L7貫通) ───
+# Level5: 配備時に記憶DBから先行知識(過去の裁定/類似cmd)を自動検索しtask YAMLに注入
+inject_memory_db_context() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local query_script="$SCRIPT_DIR/scripts/memory_db_query.sh"
+    [ -f "$query_script" ] || { log "inject_memory_db_context: query script not found"; return 0; }
+
+    # purposeからキーワード抽出
+    local purpose
+    purpose=$(awk '/^  purpose:/{gsub(/^  purpose: *"?/,""); gsub(/"$/,""); print; exit}' "$task_file" 2>/dev/null)
+    [ -n "$purpose" ] || return 0
+
+    # 2-3語のキーワードを抽出してFTS5検索
+    local keywords result=""
+    keywords=$(echo "$purpose" | tr '　/ ()（）' '\n' | grep -E '.{3,}' | head -3 | tr '\n' ' ')
+    [ -n "$keywords" ] || return 0
+
+    local kw hit
+    for kw in $keywords; do
+        hit=$(bash "$query_script" "SELECT ts || ' | ' || substr(summary,1,100) FROM events WHERE summary LIKE '%${kw}%' AND event_type IN ('conversation','knowledge','ruling') ORDER BY ts DESC LIMIT 2" 2>/dev/null | head -4)
+        [ -n "$hit" ] && result="${result}${hit}"$'\n'
+    done
+    [ -n "$result" ] || { log "inject_memory_db_context: no hits for: $keywords"; return 0; }
+
+    # task YAMLに memory_db_context フィールドとして注入
+    local indent="  "
+    local inject_block="${indent}memory_db_context:"
+    local line
+    while IFS= read -r line; do
+        [ -n "$line" ] && inject_block="${inject_block}"$'\n'"${indent}- \"$(echo "$line" | sed 's/"/\\"/g')\""
+    done <<< "$(echo "$result" | head -5)"
+
+    # 既存のmemory_db_contextを除去してから追加
+    local tmp_file
+    tmp_file=$(mktemp)
+    awk '
+        /^  memory_db_context:/ { skip=1; next }
+        skip && /^  [^ ]/ { skip=0 }
+        skip { next }
+        { print }
+    ' "$task_file" > "$tmp_file"
+    # task: ブロックの末尾(次のトップレベルキーの前)に挿入
+    awk -v block="$inject_block" '
+        printed == 0 && /^[^ ]/ && prev ~ /^  / { print block; printed=1 }
+        { prev=$0; print }
+        END { if (printed==0) print block }
+    ' "$tmp_file" > "${task_file}.tmp" && mv "${task_file}.tmp" "$task_file"
+    rm -f "$tmp_file"
+    log "inject_memory_db_context: $(echo "$result" | grep -c '.' || echo 0) entries injected"
+}
+
 # ─── 因果リンク注入（task YAMLにcmdのoriginリンクを挿入） ───
 # Level5: 忍者が関連する過去の失敗/裁定因果を自動で知る。意志依存ゼロ。
 inject_causal_links() {
@@ -7339,6 +7392,7 @@ deploy_task_apply_task_mutations() {
     inject_related_lessons "$task_file" || handle_yaml_injection_failure "inject_related_lessons" "$task_file" "$ninja_name"
     inject_standard_skills "$task_file" || true  # Level5: 全taskに常時使用スキルを明示(cmd_2737)
     inject_semantic_concepts "$task_file" || true  # Level5: 全忍者にセマンティクス概念+ファイル自動提供
+    inject_memory_db_context "$task_file" || true  # Level5: 三層記憶先行知識注入(殿厳命2026-06-10)
     inject_causal_links "$task_file" || true      # Level5: 全忍者にcmd origin因果リンクを自動提供(cmd_2822)
     inject_causal_verification_template "$task_file" || true  # Level5: infra変更前の因果確認をCLI非依存で注入
     inject_context_hints "$task_file" || true  # Level5: purpose/project/task_typeから必読contextを強制提供

@@ -1102,11 +1102,12 @@ YAML front matter (F-G01〜F-G05) 参照。全エージェント共通禁則（C
 - 「家老に依頼」の前に「D0で自分でやれないか」を自問せよ(#3防止)
 - 「別根因」「精度問題」で分類して止めるのは#5。バグは今修正せよ
 
-レビュー依頼がない間、以下の5ステップで自走サイクルを回せ。
+レビュー依頼がない間、以下のステップで自走サイクルを回せ。
 完了→次のステップ→完了→次…を**殿に押されずに**回し続けよ。
 
 | Step | 行動 | 対象 | 目的 |
 |------|------|------|------|
+| 0 | **三層記憶で先行知識確認** | `bash scripts/memory_db_query.sh` + `bash scripts/semantic_search.sh` | 各Step開始前に三層記憶で関連裁定/過去分析を検索。既知の結論を再発見しない(車輪防止)。殿厳命2026-06-10 |
 | 1 | **karo_workarounds直近10件分析** | `logs/karo_workarounds.yaml` | 軍師の成績表。家老の手動補正パターンを探す。レビュー観点の穴 |
 | 2 | **gunshi_review_log傾向分析** | `logs/gunshi_stats.yaml` + `logs/gunshi_review_log.yaml` | verdict分布変化、accuracy推移、繰り返し出る指摘パターン |
 | 3 | **未自動化教訓のgate化** | `projects/infra/lessons_gunshi.yaml` | `automated: false`の教訓→gate/hook/protocol化を設計し家老に提案 |
