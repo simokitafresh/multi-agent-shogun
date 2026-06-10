@@ -3117,6 +3117,15 @@ else
     fi
 fi
 
+# --- 三層記憶使用義務リマインダー(殿厳命2026-06-10: 使用しないのはバグ) ---
+echo ""
+echo "■ 三層記憶使用義務(L0-L7貫通)"
+echo "  ★ 全行動で三層記憶を検索してから行動せよ。使用しないのはバグ"
+echo "  (1) bash scripts/memory_db_query.sh \"SELECT ts,substr(summary,1,80) FROM events WHERE summary LIKE '%キーワード%' ORDER BY ts DESC LIMIT 3\""
+echo "  (2) bash scripts/semantic_search.sh \"キーワード\""
+echo "  (3) 回答に[MEM: memory_db ts=YYYY-MM-DD]タグで引用"
+echo "  理解を出力するな。使え。contextファイル更新だけでは三層貫通ではない"
+
 echo ""
 echo "=== 総合判定: $overall ==="
 if [ ${#alerts[@]} -gt 0 ]; then
