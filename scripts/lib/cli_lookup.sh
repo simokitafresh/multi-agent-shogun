@@ -254,6 +254,7 @@ cli_type() {
 
 # cli_profile_get <agent_name> <key>
 # settings.yaml → type特定 → cli_profiles.yaml から任意のキーを取得
+# settings.yaml にエージェント個別の <key> があればそちらを優先（pane単位オーバーライド）
 cli_profile_get() {
     local agent="$1"
     local key="$2"
@@ -262,6 +263,15 @@ cli_profile_get() {
     local cache_key="${agent}:${key}"
     if [[ -n "${_CLI_LOOKUP_PROFILE_CACHE[$cache_key]+x}" ]]; then
         echo "${_CLI_LOOKUP_PROFILE_CACHE[$cache_key]}"
+        return 0
+    fi
+
+    # settings.yaml の個別オーバーライドを先に確認（pane単位切替）
+    local override
+    override=$(_cli_lookup_settings_get "$agent" "$key" "")
+    if [[ -n "$override" ]]; then
+        _CLI_LOOKUP_PROFILE_CACHE[$cache_key]="$override"
+        echo "$override"
         return 0
     fi
 
