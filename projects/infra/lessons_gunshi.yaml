@@ -459,3 +459,44 @@ lessons:
   enforcement: draft review時にcommand欄のファイル参照を変更対象/既存依存/実行のみへ分類し、実行のみは変更対象外と明記させる
   when: draft reviewでcmd command欄にスクリプトパスが出ている時
   how: 各参照ファイルを分類する。変更対象はfiles_modifiedへ、既存依存はverified_existing_dependencyへ、実行のみはcmd本文に「実行のみ・変更対象外」と明記させる
+- id: LG038
+  title: silent SKIP=情報の墓場。precheckのSKIPは検査不能であり問題なしではない
+  detail: |
+    cmd_3274でhayateのfiles_modifiedがcheck/result散文形式→SG-PRE25がpath抽出不能で黙ってSKIP→軍師に信号なし→LGTM→cmd_complete_gateでBLOCK。
+    precheckが「検査できない」と「問題ない」を区別せずSKIPすると、形式不備が下流まで素通りしてgate BLOCKで初めて顕在化する。
+    検査不能はERRORとして可視化せよ。SKIPを返すのは「対象外であることが確認できた」場合のみに限定する。
+  source_cmd: cmd_3274
+  origin: '[[cmd_3274]] -> [[SG-PRE25 silent SKIP]] -> [[LGTM後GATE_BLOCK]]'
+  created_at: '2026-06-10'
+  automated: true
+  enforcement_level: 4
+  enforcement: 'engineにFM_FORMAT_INVALID判定追加+precheckでERROR化(commit 0a03b1e66、フィクスチャ両面検証済み)'
+  when: precheck/gate設計時、またはSKIP出力を見た時
+  how: SKIPの理由を確認する。「検査不能」由来ならERRORへ昇格させる。「対象外確認済み」のみSKIP許可
+- id: LG039
+  title: 無制限マッチの貪欲FP族 — 検知regexのギャップは有界化し、証跡regexの誤マッチは検査を誤抑制する
+  detail: |
+    同日4実例(2026-06-10): (1)F009の無制限.*が文境界を越え遠距離マッチ→将軍報告を2回誤BLOCK (2)利他WARNのawk境界未リセット→7件偽陽性 (3)洗脳#1のinbox無差別grep→draft/掲示板言及を誤検知 (4)git commit短縮フラグ検知の全文regex→メッセージ内の構文チェックフラグ文字列を誤BLOCK。
+    共通根因=パターンの及ぶ範囲を制限していない。検知regexはギャップを.{0,N}で有界化、トークン単位の検査が可能ならshlex等でトークン化して実引数のみ検査せよ。
+  source_cmd: cmd_3274
+  origin: '[[blt_20260610_184817]] -> [[貪欲FP族]] -> [[有界ギャップ標準]]'
+  created_at: '2026-06-10'
+  automated: true
+  enforcement_level: 4
+  enforcement: '軍師gate2本有界化(875f059d9)+hook shlexトークン化(4698be8f1)'
+  when: 新しい検知パターン(regex/grep/awk)の起票・レビュー時
+  how: ギャップは有界(.{0,N})で書く。コマンド検査はトークン化して実引数のみ対象にする。境界変数は反復前に必ずリセット
+- id: LG040
+  title: 検証関数は単体実行で検証せよ — evidenceの「一致確認」主張は検証コードが動くことの証明にならない
+  detail: |
+    cmd_3275でverify_sheets()を軍師が単体実行→False(batchGetへのranges配列渡しバグ)。報告のevidence「gws readback: 294一致」はこの関数経由では物理的に不可能な記載だった。
+    binary_checks全yes+もっともらしいevidenceが揃っていても、検証関数自体が壊れていれば「一致確認」は手動確認か未確認の転記である。
+    恒久部品の検証関数は、レビュー時に必ず単体実行して戻り値を確認せよ。
+  source_cmd: cmd_3275
+  origin: '[[cmd_3275]] -> [[verify_sheets ranges配列バグ]] -> [[FAIL_evidence矛盾]]'
+  created_at: '2026-06-10'
+  automated: true
+  enforcement_level: 3
+  enforcement: '報告レビュー時にverify系関数を単体実行する行動原則(レビュー実動作確認の一部)。実績: cmd_3275でFAIL→修正→False→True実証'
+  when: report reviewで報告にverify/check系関数のevidenceがある時
+  how: 当該関数を単体実行して戻り値を確認する。evidenceの主張と実行結果が矛盾したらFAIL
