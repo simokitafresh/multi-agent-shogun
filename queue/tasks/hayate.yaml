@@ -35,7 +35,7 @@ task:
   purpose: startup gateのbacklinks=0 WARNが20回繰り返し表示。表示はlimit 5だが実態はcausal_backlink_counts.sh --zeroで孤立400件(2026-06-11実測)。5件ずつの消化では80セッションかかる。全量400件を対象にリンク元(context/skills/docs索引)から[[リンク]]を接続し、孤立を根こそぎ解消する
   semantic_concepts:
   - 'agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-claude-version-switch/SKILL.md skills/shogun-claude-version-switch/scripts/claude_version_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)'
-  status: in_progress
+  status: done
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/docs/research/
   task_id: cmd_3278_full
