@@ -1302,6 +1302,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T16:04:41+09:00 同じやり方が使えると思う。マネーフォワードで事業系の項目を確認する、主流は２つ銀行引き落としと、クレジットカード、それに現金。銀行引き落としはメールで領収書などが来ることが多い。クレジットカードはinbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:05:25+09:00 通帳スキャン(みずほ)のPDFも中身を確認しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T01:43:46+09:00 blbtnrina toolu_01MGeou95hEMbjcg2adAnNMT /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4afb0c55-495e-49fd-97d6-58e6c9 |
+| lesson | `L772` causal_backlink_counts.shの検索スコープ盲点 — whitelist型gitignoreでskills/除外+semantic-index対象外 |
 
 ## no_auto_extinguish — 自動消火禁止
 

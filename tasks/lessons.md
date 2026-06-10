@@ -7773,3 +7773,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 研究系cmd完了処理時/context_freshness ALERT発火時
 - **how**: 1.research系cmd完了時にcontext索引への反映要否を確認 2.gate_context_freshness.shで乖離検出
 - skills/cmd-complete/SKILL.md Step1-8にcontext/*.md更新ステップが構造的に欠落(hanzo現物実証: lesson/WA/gate/品質/status/dashboard/ntfy/archiveのみ)。gate_context_freshness.shはALERT発火できるが完了処理と連携せず後追い検出のみ。GA-038=dm-signal研究cmd3件(3218/3220/3224)が完了したのにdm-signal-research.mdが12日停滞。防御層提案: A=cmd-complete Step3後にgate_context_freshness.sh実行しresearch系cmdでWARN表示 B=cmd_complete_gate.shにresearch系context鮮度観点追加
+
+### L772: causal_backlink_counts.shの検索スコープ盲点 — whitelist型gitignoreでskills/除外+semantic-index対象外
+- **日付**: 2026-06-11
+- **出典**: cmd_3278
+- **記録者**: karo
+- **tags**: [infra,context,review,bash]
+- **target_files**: [/mnt/c/tools/multi-agent-shogun/docs/research/,context/gunshi-nazenaze-synthesis.md,context/karo-operations.md,context/cdp-philosophy.md,context/memory-db-schema.md]
+- **origin**: [[cmd_3278]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3278でhayateとkotaroが独立に発見した同根の盲点2件: (1)kotaro実証: rg --debugでwhitelist型gitignoreによりskills/がcounts.shのrg検索スコープから除外されている(リンクを書いてもバックリンクとして数えられない) (2)hayate実証: docs/semantic-index/index.mdはバックリンク検索スコープ外(context/docs/research/skills/のみ対象)。影響: 孤立判定(--zero)が実際よりリンク切れを過大計上または接続実績を過小計上する。次回バックリンク系cmdの起票/レビュー時はcounts.shの検索スコープ(rg対象+gitignore作用)を現物確認してからACを設計せよ

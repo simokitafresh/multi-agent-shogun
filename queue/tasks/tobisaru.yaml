@@ -34,7 +34,7 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3281
+  parent_cmd: 
   project: infra
   purpose: '軍師実証(blt_20260611_013831): cmd_3278_saizo報告precheckでCRITICAL発火したが根因はsaizo無関係の偽陽性2種。(1)ref抽出regexの文字クラスに非ASCIIがなく日本語ファイル名(cmd_3218_サイズ調整バックテスト.md)が途中切断され存在しないパスを生成 (2)外部repo(DM-signal)に実在する参照がNOT FOUND判定。将軍がgate_vercel_phase.sh L211の文字クラス現物で切断メカニズムを確認済み。残4チャンク報告+今後の全context変更cmdで再発するため根治する'
   scout_exempt: true
