@@ -224,11 +224,12 @@ EOF
     [ ! -f "$TEST_TMPDIR/ntfy.log" ]
 }
 
+# cmd_3265仕様: 日数のみはWARN降格。ALERT+ntfyはsource commits検知時のみ
 @test "gate_context_freshness: ALERTではntfyし exit 1" {
     mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/context"
     cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'EOF'
 #!/usr/bin/env bash
-echo "WARN: context/foo.md last_updated stale"
+echo "ALERT: context/foo.md (source commits since last_updated=2026-04-01)"
 EOF
     chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
     cat > "$TEST_TMPDIR/scripts/ntfy.sh" <<'EOF'
@@ -249,8 +250,8 @@ EOF
         bash "$PROJECT_ROOT/scripts/gates/gate_context_freshness.sh"
 
     [ "$status" -eq 1 ]
-    [[ "$output" == *"ALERT: foo.md (17日前更新)"* ]]
+    [[ "$output" == *"ALERT: foo.md (source commits since last_updated=2026-04-01)"* ]]
     run cat "$TEST_TMPDIR/ntfy.log"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"【将軍】context鮮度ALERT: foo.md(17日)"* ]]
+    [[ "$output" == *"【将軍】context鮮度ALERT: foo.md(source更新)"* ]]
 }
