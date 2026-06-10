@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-10 cmd_3263 -->
+<!-- last_updated: 2026-06-10 cmd_karo_insight_cleanup_20260610083506 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -502,3 +502,6 @@
 | cmd_3255 | startup BLOCK 3セッション連続。cmd_3075(重複抑止)/3080(窓拡張)/3244(照合キー修正)で0%→7%に改善したが偽陽性93%(28/30)が残存。残存根因を特定し改善する | infra | 06-09 | skill_recommend.shにrole_marker |
 | cmd_3259 | 覚醒洗脳監査6/8 YES。根因: GATE CLEARで鎖が切れ効果を再確認しない→洗脳#6(出力=仕事)が構造化。cmd_3254 GATE CLEARでuseful_rate+1%なのに完了と報告した。GATE CLEAR受信時にcmdのpurposeから数値改善キーワードを抽出し、効果再確認リマインダーを将軍に強制注入する | infra | 06-09 | post-shogun-inbox-check.shにGAT |
 | cmd_3262 | note_draft.sh がChrome未起動時にPython exit 1でFAILカウントされる。Chrome接続確認をbash層で事前実行し、未起動時はSKIP(exit 0+理由表示)に変換してFAIL率を正常化する | infra | 06-10 | note_draft.shにbash層CDP事前チェック(S |
+| cmd_3265 | gate_context_freshness.shがlast_updatedからの経過日数だけでALERT判定するため、ソースPJに変更がなくても日付変更でALERTが連発する(GA-031〜036の6件/日)。ソースに変更がない場合はALERTを抑止し、信号対雑音比を改善する | infra | 06-10 | gate_context_freshness.shの日数のみ |
+| cmd_3264 | 忍者の本体変更がauto-commit(chore: auto-commit before /clear)に巻き込まれ、cmd固有commitにはテストのみ含まれる。SG-PRE3のcommit検証をすり抜ける。3件連続発生(cmd_3255/3261/3263)。忍者commit完了後のgit status確認を強制し、auto-commit先取りを検出する | infra | 06-10 | auto-commit巻込み防止: ninja_monito |
+| cmd_3266 | 将軍のstartup gateにある先送り3セッション連続検出+自動エスカレーション(L1)が家老・軍師に未実装。洗脳#5(先送り)は全ロールに作用するため、gate_karo_startup.sh/gate_gunshi_startup.shに同等機能を横展開する | infra | 06-10 | gate_karo/gunshi_startup.shに先送 |

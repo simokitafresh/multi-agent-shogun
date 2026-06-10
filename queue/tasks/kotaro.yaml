@@ -12,7 +12,7 @@ task:
       description: "INS-20260609-141126872を処理(semantic_map新規ファイル候補→index.md追加またはreject)"
     AC3:
       description: "INS-20260610-075058561を処理(clear_prep NO_MATCH aliases→semantic index追加またはreject)"
-  status: in_progress
+  status: idle
   assigned_to: kotaro
   parent_cmd: cmd_karo_insight_cleanup_20260610083506
   related_lessons:
@@ -46,3 +46,14 @@ task:
   - id: 'L497'
     summary: 'bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport'
     detail: 'bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport'
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; binary_checks.ac1_done: is str (must be list of check items); binary_checks.ac2_done: is bool (must be list of check items); binary_checks.ac3_done: is bool (must be list of check items); purpose_validation: MISSING; assumption_invalidation: MISSING'
+    tried_approaches:
+    - 'files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; binary_checks.ac1_done: is str (must be list of check items); binary_checks.ac2_done: is bool (must be list of check items); binary_checks.ac3_done: is bool (must be list of check items); purpose_validation: MISSING; assumption_invalidation: MISSING'
+    approach_summary: 'insightキュー3件処理完了: AC1=GP-107判定(auto-fix化は消火→BLOCK維持), AC2=skill_design_rules概念にfile追加, AC3=reject(汎用質問文)'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; binary_checks.ac1_done: is str (must be list of check items); binary_checks.ac2_done: is bool (must be list of check items); binary_checks.ac3_done: is bool (must be list of check items); purpose_validation: MISSING; assumption_invalidation: MISSING'
+      approach_summary: 'insightキュー3件処理完了: AC1=GP-107判定(auto-fix化は消火→BLOCK維持), AC2=skill_design_rules概念にfile追加, AC3=reject(汎用質問文)'

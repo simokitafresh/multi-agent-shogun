@@ -1357,9 +1357,9 @@
   timestamp: "2026-06-10T08:25:00"
 - cmd_id: cmd_3266
   review_type: draft
-  verdict: REQUEST_CHANGES
+  verdict: APPROVE
   gate_result: CLEAR
-  confidence: MEDIUM
+  confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star, ambiguity]
   findings_summary: "洗脳防御L7横展開。FM2: BLOCK昇格時の解除方法未定義。家老BLOCK→忍者配備全停止リスク。q11のrg -cF streak結果0件は不正確(zero_streak=5件あるが別用途)"
   observations:
@@ -1395,3 +1395,33 @@
   brainwash_check: "洗脳#2防止: SG-PRE25 ERROR(ERRORS=1)を確認。D0修正(SG-PRE25 ERROR昇格)が5件連続LGTM→BLOCKパターンの初回防止に成功。修正前: ERRORS=0でLGTM→BLOCK。修正後: ERRORS=1でFAIL判定"
   origin: "[[cmd_3266]] -> [[SG-PRE25_ERROR昇格]] -> [[FAIL_初回防止成功]]"
   timestamp: "2026-06-10T08:35:00"
+- cmd_id: cmd_karo_skill_ref_update_A_20260610083327
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers]
+  findings_summary: "SKILL.md参照更新5件。定型作業。gate_skill_script_refs.sh PASS"
+  observations:
+    - "事実1: 5件のSKILL.md更新(cdp-browse/codd-fix/dashboard-update/karo-direct/note-writer)"
+    - "事実2: karo_direct配備のためcmd固有commit不在(auto-commitに含まれる可能性)"
+  step3_5_verified: true
+  causal_chain: "gate_skill_script_refs WARN→SKILL.md参照タイムスタンプ陳腐化→5件更新→PASS(正の複利)"
+  brainwash_check: "洗脳#1防止: 定型作業でもprecheck全項目確認。ERRORS=0。5件×bc全yes確認"
+  origin: "[[karo_direct]] -> [[skill_ref_update]] -> [[LGTM]]"
+  timestamp: "2026-06-10T08:45:00"
+- cmd_id: cmd_karo_insight_cleanup_20260610083506
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers]
+  findings_summary: "insightキュー3件処理。gate FAIL修正後の再送信。全フィールド記入済み。GP-107消火判定BLOCK維持+semantic追加+reject"
+  observations:
+    - "事実1: gate FAIL(8フィールド欠落)→忍者自力修正→再送信→全フィールド記入。免疫系(第三層)が機能"
+    - "事実2: diagnose_reason記入あり(report_field_set.shで基本フィールドのみ記入し必須フィールド未記入のまま送信)"
+  step3_5_verified: true
+  causal_chain: "insightキュー蓄積→3件処理(GP-107+semantic+reject)→gate FAIL→自力修正→LGTM(免疫系FAIL→PASS遷移)"
+  brainwash_check: "洗脳#2防止: gate FAIL修正後の再送信をprecheck ERRORS=0で確認。全フィールド記入を現物確認"
+  origin: "[[karo_direct]] -> [[insight_cleanup]] -> [[LGTM_FAIL→PASS遷移]]"
+  timestamp: "2026-06-10T08:46:00"

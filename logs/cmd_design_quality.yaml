@@ -703,3 +703,33 @@ entries:
   supplementary_cmds: 0
   source: "cmd_save"
   timestamp: "2026-06-09T23:17:54Z"
+- cmd_id: "cmd_3266"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "REQUEST_CHANGES"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-09T23:30:41Z"
+- cmd_id: "cmd_karo_skill_ref_update_A_20260610083327"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-09T23:41:59Z"
+- cmd_id: "cmd_karo_insight_cleanup_20260610083506"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-09T23:42:25Z"
