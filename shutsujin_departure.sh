@@ -14,6 +14,13 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# 対話端末から起動された場合、stdin を /dev/null に切り離す。
+# スクリプト内の一部 python3 呼び出しが端末 stdin を継承すると Python 対話モード
+# （プロンプト >>>）に落ちて入力待ちでハングする事象への恒久対策。非対話実行
+# （CI・パイプ・< /dev/null）では即EOFで無害だが、対話端末では固まるため明示的に切る。
+# 本スクリプトは端末からの対話入力(read)を行わない（read は全て <<< ヒアストリング）ので安全。
+[ -t 0 ] && exec </dev/null
+
 # エージェント構成の一元管理ライブラリ読み込み
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 
