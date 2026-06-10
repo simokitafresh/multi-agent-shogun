@@ -747,9 +747,10 @@ for line in dashboard_text.split('\n'):
 VALIDATE_MODEL_PYEOF
 
     # (d) 日付チェック
+    # Template v3.0では1行目はテンプレートコメント。実ヘッダは「# 🏯 Dashboard」行
     local today
     today=$(date +%Y-%m-%d)
-    if ! head -1 "$dashboard" | grep -qF "$today"; then
+    if ! grep -m1 '^# 🏯 Dashboard' "$dashboard" | grep -qF "$today"; then
         echo "[WARN] Dashboard header date does not match today ($today)" >&2
     fi
 }
