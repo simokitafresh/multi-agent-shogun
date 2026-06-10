@@ -24,12 +24,13 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-06-07T10:28:45+09:00 -->
+<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->
 
 # /dream — Memory Consolidation (5 Phase)
 
 **三層記憶(記憶DB+セマンティック+Obsidian) + MEMORY.md + memory/*.md** の統合・整理を行う。REM睡眠に倣い、知識基盤を強化する。
 
+Script refs verified: 2026-06-10. `memory_db_query.sh` の契約は変更なし。449dd3029でext4キャッシュ初期化タイムアウトを10s→30s(DB 198MB成長対応)に変更したが、クエリ引数・SQL実行・出力形式の契約は維持。
 Script refs verified: 2026-06-07 cmd_3206. `gate_lesson_health.sh` はrole lesson origin確認をbatch化したが、引数なし全project走査/`<project_id>`単体走査とOK/ALERT契約は維持。`gate_shogun_memory.sh` はreferenced_files取得cacheで高速化され、`insight_write.sh` は保存/resolve/source repeat通知の呼び出し契約変更なし。
 Script refs verified: 2026-06-02T20:46:12+09:00 infra-bug audit after gate_lesson_health.sh inline-field parser fix.
 
@@ -377,4 +378,4 @@ Next dream eligible: [timestamp + 24h]
 
 Script refs verified: 2026-06-03 cmd_3144. `insight_write.sh` 直近変更(4dacb9c9)は運用ファイルauto-commit(mtimeのみ変化)。スクリプト本体の動作・インターフェース変更なし。SKILL.md記載の仕様(引数/priority/source/--resolve/dedup/source repeat通知)は現行と一致。
 
-<!-- script_refs_checked_at: 2026-06-07T21:51:07+09:00 -->
+<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->

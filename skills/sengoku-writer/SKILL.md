@@ -20,6 +20,10 @@ allowed-tools:
   - AskUserQuestion
 ---
 
+<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->
+
+Script refs verified: 2026-06-10. `note_draft.sh` の契約は変更なし。cmd_3270でget_tab() Noneフォールバック(タブ不在時create_tab()で自動回復)とPython stderrキャプチャを追加したが、引数・呼び出し方・成功/失敗の戻り値契約は変更なし。
+
 # 戦国ライター — 将軍の書簡スキル
 
 ## 使い方
@@ -247,6 +251,6 @@ Markdown→note.com変換ルール:
 - ProseMirrorエディタがスピナーで停止している場合、`Page.reload` で最大2回リトライする（`wait_for_prosemirror`）
 - 下書き保存ボタン押下後、最終URLを `[note_draft] Done: ...` に出力し、`skill_execution_log.yaml` にPASS/FAILを記録する
 
-<!-- script_refs_checked_at: 2026-06-10T08:35:40+09:00 -->
+<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->
 
 Script refs verified: 2026-06-10 e81c63081+ba757a1f7+14aa13952. `note_draft.sh` はChrome CDP未起動時にexit 0(SKIP)で抜ける事前チェック追加(FAIL率汚染防止)、PowerShell失敗時のcmd.exeフォールバック追加、skill-auto-improveコメントのshellcheckエラー除去。Chrome未起動時はStep 6がSKIPされ`skill_execution_log`にSKIP記録される。Markdown生成・保存(Step 1-5)への影響なし。SKILL.md記載の`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`呼び出し契約は変更なし。

@@ -8,6 +8,10 @@ description: |
   DO NOT TRIGGER: Codex編成切替、モデル配備方針変更、通常の /model 操作、Codex-only 切替
 ---
 
+<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->
+
+Script refs verified: 2026-06-10. `claude_version_switch.sh` の契約は `status/pin-2.1.87/latest/--agent` のまま。666173827(respawn_single_agentのwindow探索修正)・f93c4fded(set_launch_cmd yaml.safe_dump除去)はいずれも内部実装変更で、呼び出し引数・動作・出力の契約は変更なし。
+
 # Shogun Claude Version Switch
 
 ## Overview

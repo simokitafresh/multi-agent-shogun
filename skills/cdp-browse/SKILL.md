@@ -14,6 +14,10 @@ allowed-tools:
   - Grep
 ---
 
+<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->
+
+Script refs verified: 2026-06-10. `note_draft.sh` の契約は変更なし。cmd_3270でget_tab() Noneフォールバック(タブ不在時create_tab()で自動回復)とPython stderrキャプチャを追加したが、引数・呼び出し方・成功/失敗の戻り値契約は変更なし。
+
 # /cdp-browse
 
 CDPの本質は、LLMが人間と同じようにWebブラウザを使えること。推測で答えず、ブラウザ起動、ログイン、遷移、スクリーンショット、画面確認までを同じ順序で実行する。
@@ -165,4 +169,4 @@ scripts/cdp/cdp_cli.sh screenshot "/tmp/dm-signal-admin.png"
 
 - → [[cdp-severity.md]] CDP計測・canary・ブラウザ実測の異常分類（操作失敗時の重大度判定基準）
 
-<!-- script_refs_checked_at: 2026-06-10T08:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->

@@ -15,6 +15,10 @@ allowed-tools:
   - Write
 ---
 
+<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->
+
+Script refs verified: 2026-06-10. `note_draft.sh` の契約は変更なし。cmd_3270でget_tab() Noneフォールバック(タブ不在時create_tab()で自動回復)とPython stderrキャプチャを追加したが、引数・呼び出し方・成功/失敗の戻り値契約は変更なし。
+
 # /weekly-report
 
 ## 使い方
@@ -487,6 +491,6 @@ CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 - リンクが本文に出ていない
 - 指数が週間変動になっている
 
-<!-- script_refs_checked_at: 2026-06-10T08:35:40+09:00 -->
+<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->
 
 Script refs verified: 2026-06-10 e81c63081+ba757a1f7+14aa13952. `note_draft.sh` はChrome CDP未起動時にexit 0(SKIP)で抜ける事前チェック追加(FAIL率汚染防止)、PowerShell失敗時のcmd.exeフォールバック追加、shellcheckエラー除去。Chrome未起動時はStep 8がSKIPされ`skill_execution_log`にSKIP記録される。Markdown生成(Step 1-7)への影響なし。SKILL.md記載の`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`呼び出し契約は変更なし。
