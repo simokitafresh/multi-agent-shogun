@@ -31,6 +31,11 @@ fi
 CMD_ID="$1"
 MESSAGE="$2"
 
+# 数字のみ指定をcmd_付きに正規化(cmd_save.shと同一規約。引数規約不一致FP修正 2026-06-10)
+if [[ "$CMD_ID" =~ ^[0-9]+$ ]]; then
+    CMD_ID="cmd_${CMD_ID}"
+fi
+
 if [[ "$MESSAGE" != *[![:space:]]* ]]; then
     echo "ERROR: message must contain non-whitespace content" >&2
     exit 1

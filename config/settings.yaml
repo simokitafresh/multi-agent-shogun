@@ -11,6 +11,7 @@ cli:
       model_name: claude-opus-4-6
       role: shogun
       japanese_name: 将軍
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions
     karo:
       type: claude
       model_name: claude-opus-4-6

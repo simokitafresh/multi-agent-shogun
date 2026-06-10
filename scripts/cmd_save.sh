@@ -2538,6 +2538,7 @@ if [[ "${CMD_SAVE_PREV_LESSON_FAST:-0}" = "1" ]]; then
 
     if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
         echo "保存確認OK: ${CMD_ID}"
+        echo "  次: bash scripts/cmd_delegate.sh ${CMD_ID} \"<家老への配備メッセージ>\" で委任せよ（inbox_write直接のcmd_new送信はcmd_new_gateがBLOCKする）"
         echo "$CMD_ID" > "$CMD_SAVE_LAST_CMD_FILE"
         remind_missing_current_cmd_lesson_after_clear
         rm -f "$CMD_SAVE_STDERR_LOG"
@@ -2570,6 +2571,14 @@ if [[ ! -f "$QUEUE_FILE" ]]; then
 elif ! load_cmd_block; then
     echo "WARN: ${CMD_ID} のブロックが $QUEUE_FILE に見つかりません" >&2
     record_warn_reason "cmd_block_missing" "check=session_state_cmd_block_presence"
+fi
+
+# --- Check 1.05: 雛形FILL_THIS残存BLOCK ---
+# 起源: cmd_skeleton.sh導入(2026-06-10殿指示「劣化LLMでもスムーズ起票」)。
+# 雛形の穴埋め漏れを構造的に防ぐ。FILL_THIS残存=未記入フィールド。
+if load_cmd_block && printf '%s\n' "$CMD_BLOCK_NC" | grep -q 'FILL_THIS'; then
+    record_block_reason "雛形のFILL_THISが残存。全プレースホルダを実内容で埋めよ"
+    printf '%s\n' "$CMD_BLOCK_NC" | grep -n 'FILL_THIS' | head -5 >&2
 fi
 
 # --- Check 1.1: 定型フィールド自動補完 ---
@@ -4662,7 +4671,7 @@ check_param_space_shrink() {
 
 check_param_space_shrink
 
-# --- Check 17: 軍師設計書参照cmdの数値緩和検出（WARN — WARN_COUNTに加算しない） ---
+# --- Check 17: 軍師設計書参照cmdの数値緩和検出（WARN — record_warn_reason経由でWARN_COUNTに加算） ---
 # 起源: cmd_1781事故 — 軍師設計書の数値→cmdで緩和して起票(cmd_1783教訓)
 # 目的: gunshi設計書参照cmdでq8_why_what数値とAC数値を突合し、緩和をWARN
 check_gunshi_design_num_relax() {
@@ -4699,6 +4708,8 @@ check_gunshi_design_num_relax() {
     WHAT_PART="${Q8_LINE#*WHAT:}"
     # FP修正(2026-04-27): 複利の問い「10回繰り返したら」の10は設計パラメータではない
     WHAT_PART="${WHAT_PART%%複利:*}"
+    # FP修正(2026-06-10 LS050): 日付リテラル(2026/7/1, 2026-06-10, ISO時刻)は設計数値ではない
+    WHAT_PART="$(echo "$WHAT_PART" | sed -E 's#(19|20)[0-9]{2}[-/][0-9]{1,2}([-/][0-9]{1,2})?(T[0-9:]+)?##g')"
     Q8_NUMS=$(echo "$WHAT_PART" | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
     [[ -z "$Q8_NUMS" ]] && return 0
     Q8_MAX=$(echo "$Q8_NUMS" | tail -1)
@@ -4712,7 +4723,7 @@ check_gunshi_design_num_relax() {
         found { exit }
     ')
     [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
-    AC_NUMS=$(echo "$AC_SECTION" | sed 's|AC[0-9]\{1,\}||g; s|[A-Za-z_]*_[0-9]\{1,\}[A-Za-z0-9_.-]*||g; s|[A-Za-z_/]\{1,\}/[^ ]*||g; s|[αβγδ][0-9]\{1,\}||g; s|§[0-9.]\{1,\}||g' | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
+    AC_NUMS=$(echo "$AC_SECTION" | sed -E 's#(19|20)[0-9]{2}[-/][0-9]{1,2}([-/][0-9]{1,2})?(T[0-9:]+)?##g' | sed 's|AC[0-9]\{1,\}||g; s|[A-Za-z_]*_[0-9]\{1,\}[A-Za-z0-9_.-]*||g; s|[A-Za-z_/]\{1,\}/[^ ]*||g; s|[αβγδ][0-9]\{1,\}||g; s|§[0-9.]\{1,\}||g' | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
 
     if [[ -z "$AC_NUMS" ]]; then
         echo "WARN: 軍師設計書参照cmdでAC数値不一致を検出（cmd_1783教訓）" >&2
@@ -5739,6 +5750,7 @@ if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
         echo "  BLOCK→PASS所要時間: ${BLOCK_DURATION_MINUTES}分" >&2
     fi
     echo "保存確認OK: ${CMD_ID}"
+    echo "  次: bash scripts/cmd_delegate.sh ${CMD_ID} \"<家老への配備メッセージ>\" で委任せよ（inbox_write直接のcmd_new送信はcmd_new_gateがBLOCKする）"
     log_cmd_save_pass
     if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
         printf -v _CMD_SAVE_MEMORY_TS '%(%Y-%m-%dT%H:%M:%S)T' -1
