@@ -224,8 +224,10 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 | **v2.1.87固定** | `/home/simokitafresh/bin/claude --dangerously-skip-permissions` | 現在の状態 |
 | **auto-update復帰** | `/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions` | updater管理symlink |
 
-切替手順: launch_cmd変更 → `bash scripts/switch_cli_mode.sh claude --scope shogun,karo,gunshi,kagemaru,hanzo,kotaro,tobisaru` でrespawn。backup3本(`~/bin/claude`, `claude.pinned`, `claude-2.1.87-stable`)で復元可能。
+切替手順(全体): launch_cmd変更 → `bash scripts/switch_cli_mode.sh claude --scope shogun,karo,gunshi,kagemaru,hanzo,kotaro,tobisaru` でrespawn。backup3本(`~/bin/claude`, `claude.pinned`, `claude-2.1.87-stable`)で復元可能。
+切替手順(pane単位): `bash skills/shogun-claude-version-switch/scripts/claude_version_switch.sh unpin-latest --agent hayate` で特定paneだけ最新版。`pin-2.1.87 --agent hayate` でピン止めに戻す。settings.yamlの個別launch_cmdをcli_lookup.shがオーバーライド。
 → `docs/research/claude-code-version-runbook.md`（全手順+緊急ロールバック+復元方法）
+→ `skills/shogun-claude-version-switch/SKILL.md`（スキル詳細）
 
 ## 忍者個別弱点自動注入（cmd_1307）
 
