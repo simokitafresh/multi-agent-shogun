@@ -313,3 +313,7 @@ cmd: cmd_2199-2205(GS 7忍法), cmd_2207(champion統合)
 | cmd_1948 | `outputs/analysis/alm_research/cmd_1948_l3_*.csv`, `cmd_1948_nbody_comparison_1x1_summary.md` |
 | cmd_1949 | `outputs/analysis/alm_research/cmd_1949_l3_*.csv`, `cmd_1949_nbody_cross_1maj_summary.md` |
 | cmd_1950 | `outputs/analysis/alm_research/cmd_1950_l3_*.csv`, `cmd_1950_nbody_cross_5maj_summary.md` |
+
+## 因果リンク
+
+- → [[gunshi_okugi_8pattern_design_20260412]] 奥義8パターン設計: ALM奥義の設計書

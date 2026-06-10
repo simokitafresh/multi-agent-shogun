@@ -34,3 +34,10 @@
 ## 手法テンプレート
 
 inbox_mark_read.sh: yaml.safe_load除去+1パス統合で28%高速化(57ms→41ms)。全P1/P2対策の基本パターン。
+
+## 因果リンク
+
+- → [[gunshi_idle_script_performance_20260407]] スクリプトパフォーマンス初期分析: ボトルネック特定の起点
+- → [[gunshi_idle_script_speed_benchmark_20260529]] スクリプト速度ベンチマーク: 改善効果の定量評価
+- → [[gunshi_script_audit_20260413]] スクリプト監査: 全スクリプトの最適化対象リストアップ
+- → [[gunshi_perf_price_cache_fix_20260425]] price cache修正: パフォーマンス改善実例
