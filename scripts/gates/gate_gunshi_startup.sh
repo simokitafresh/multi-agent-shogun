@@ -728,7 +728,14 @@ echo "  8パターン: (1)早期終了 (2)検証スキップ (3)他者依存 (4)
 _rl_file="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
 if [ -f "$_rl_file" ]; then
     # APPROVE verdictのgate_result確認率(行動→結果検証の計測)
-    _bw_review=$(awk '
+    # 計測窓=直近30エントリ。全期間累積は過去エントリ(導入前)の未記入が
+    # 永久WARN化し形骸化する(2026-06-10実測: self_study旧エントリ32件が
+    # 解消不能CRITICALとして3セッション連続escalation。cmd_2732と同根)。
+    # brainwash_checkはverdict付き(APPROVE/LGTM)レビュー限定。
+    # self_studyはcs_checklist+causal_chain(gate_gunshi_cs_checklist.sh)が担当。
+    _rl_window_start=$(grep -n "^- cmd_id:" "$_rl_file" | tail -30 | head -1 | cut -d: -f1)
+    _rl_window_start=${_rl_window_start:-1}
+    _bw_review=$(tail -n +"$_rl_window_start" "$_rl_file" | awk '
     BEGIN { approve_total=0; has_gr=0; no_gr=0; no_gr_cmds=""; has_bc=0; no_bc=0 }
     /^- cmd_id:/ { flush(); in_entry=1; verdict=""; gate_result=0; bc=0; cmd_label="" }
     in_entry && /^  cmd_id:/ { sub(/.*cmd_id: */, ""); gsub(/["'"'"']/, ""); cmd_label=$0 }
@@ -748,12 +755,12 @@ if [ -f "$_rl_file" ]; then
                     no_gr_cmds = no_gr_cmds cmd_label
                 }
             }
+            if (bc) has_bc++; else no_bc++
         }
-        if (bc) has_bc++; else no_bc++
         in_entry=0; verdict=""; gate_result=0; bc=0; cmd_label=""
     }
     END { flush(); print approve_total "|" has_gr "|" no_gr "|" no_gr_cmds "|" has_bc "|" no_bc }
-    ' "$_rl_file")
+    ')
     IFS='|' read -r _rv_total _rv_gr _rv_no_gr _rv_cmds _rv_bc _rv_no_bc <<< "$_bw_review"
     _rv_total=${_rv_total:-0}
     _rv_gr=${_rv_gr:-0}
