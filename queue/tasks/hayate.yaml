@@ -1,76 +1,73 @@
 task:
-  _ac_task_id: cmd_3270_full
+  _ac_task_id: cmd_3274_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3270 (deployed 2026-06-10T12:12:46). Read from the beginning.
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3274 (deployed 2026-06-10T21:18:38). Read from the beginning.
+  ac_version: 87422ec0
+  engineering_preferences: []
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3270
-  project: infra
-  purpose: note-draft スキルの直近50件FAIL率が38%(3/8)で3セッション連続startup BLOCK。家老escalation(blt_20260610_115209)でCMD起票要請あり。skill_auto_improve_stateでcode_fix_requiredエスカレーション済み。根因を特定し修正する
+  parent_cmd: cmd_3274
+  project: clinic-expense-tracker
+  purpose: '殿指示(2026-06-10 21:04「遅すぎる。やり方が間違っている。Gmailは今後も増える。サンクコストに囚われず今やるべき」+21:18「速度を合格点にするのではなく、より早くを目的にして修行すべき」)。遅さの真因=1通ごとにgws CLI(Node.js)をcold startする直列ループ(実測145分/1,577通=5.5秒/通)。投入自体は21:06に完了済み(1,577件・将軍と家老が独立検証済み)のため、本cmdはデータ再投入ではなく取込エンジンの恒久部品化: プロセス起動O(1)化+増分同期+FTS5日本語トークナイザ欠陥修正'
   status: idle
   stop_for: []
-  target_path: scripts/note_draft.sh
-  task_id: cmd_3270_full
+  target_path: /mnt/c/Python_app/clinic-expense-tracker
+  task_id: cmd_3274_full
   task_type: full
   related_lessons:
-  - id: 'L636'
-    summary: 'cmd_complete_gateのno-task benchmark fast pathで生成された cmd_test_* がdashboard_update'
-    detail: 'cmd_complete_gateのno-task benchmark fast pathで生成された cmd_test_* がdashboard_update'
-  - id: 'L619'
-    summary: 'draft_lessons BLOCKを調査する時はauto_draft_lesson.sh単体ではなく、cmd_complete_gate.shのBLOCK時'
-    detail: 'draft_lessons BLOCKを調査する時はauto_draft_lesson.sh単体ではなく、cmd_complete_gate.shのBLOCK時'
-  - id: 'L164'
-    summary: 'IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな'
-    detail: 'IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな'
-  - id: 'L086'
-    summary: 'auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは'
-    detail: 'auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは'
-  - id: 'L038'
-    summary: 'L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必'
-    detail: 'L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必'
-  - id: 'L580'
-    summary: '新しいgate/hookを作るcmdでWARN表示だけをACにすると、検知は増えるが運用は変わらない。cmd設計段階でBLOCK/exit 1/強制/自動実行/'
-    detail: '新しいgate/hookを作るcmdでWARN表示だけをACにすると、検知は増えるが運用は変わらない。cmd設計段階でBLOCK/exit 1/強制/自動実行/'
-  - id: 'L532'
-    summary: '現在のwarn_missing_prev_cmd_lesson()は次のcmd_save保存時(L1070)に発火する。前cmdCLEAR直後にはリマインドしな'
-    detail: '現在のwarn_missing_prev_cmd_lesson()は次のcmd_save保存時(L1070)に発火する。前cmdCLEAR直後にはリマインドしな'
-  - id: 'L316'
-    summary: 'pre-bash-report-deny.shでemit_deny(JSON出力)後にexit 1がなくexit 0に落ちていた。Claude Code hoo'
-    detail: 'pre-bash-report-deny.shでemit_deny(JSON出力)後にexit 1がなくexit 0に落ちていた。Claude Code hoo'
-  - id: 'L103'
-    summary: 'IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置'
-    detail: 'IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置'
-  - id: 'L035'
-    summary: 'cmd_complete_gate.shはテスト用cmdでもinbox_archiveチェックを走らせる。検証時は運用データに副作用を与え得るため、隔離データま'
-    detail: 'cmd_complete_gate.shはテスト用cmdでもinbox_archiveチェックを走らせる。検証時は運用データに副作用を与え得るため、隔離データま'
+  - id: 'L447'
+    summary: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
+    detail: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
+  - id: 'L634'
+    summary: 'role_type_idでDB集計時点で絞る必要がある。FEのみのフィルタはAPI応答が全ロール合算のため機能しない。BE側にrole_type_idパラメータ'
+    detail: 'role_type_idでDB集計時点で絞る必要がある。FEのみのフィルタはAPI応答が全ロール合算のため機能しない。BE側にrole_type_idパラメータ'
+  - id: 'L040'
+    summary: 'IF WSL2環境でUsage APIを呼び出す監視スクリプトを実装する時 THEN timeout設定を10秒以上に設定せよ'
+    detail: 'IF WSL2環境でUsage APIを呼び出す監視スクリプトを実装する時 THEN timeout設定を10秒以上に設定せよ'
+  - id: 'L726'
+    summary: 'memory DB FTS自体をtimeoutで囲っても、失敗時に通常LLM fallbackへ落ちると外側処理はboundedではなくなる。検索/復旧系fal'
+    detail: 'memory DB FTS自体をtimeoutで囲っても、失敗時に通常LLM fallbackへ落ちると外側処理はboundedではなくなる。検索/復旧系fal'
+  - id: 'L294'
+    summary: 'cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想'
+    detail: 'cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想'
+  - id: 'L203'
+    summary: 'xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール'
+    detail: 'xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール'
+  - id: 'L066'
+    summary: 'integration,yaml-key-mismatch,dry-run-limitation'
+    detail: 'integration,yaml-key-mismatch,dry-run-limitation'
+  - id: 'L635'
+    summary: '架空の関係(staff-role_type)を作る危険を回避。records.role_type_idで永続化キーを持ち、表示時にrole_typesから名称解'
+    detail: '架空の関係(staff-role_type)を作る危険を回避。records.role_type_idで永続化キーを持ち、表示時にrole_typesから名称解'
+  - id: 'L604'
+    summary: 'gate validation コードに lookup_fix_hints() を追加することで、skill_auto_improve.sh がゲートの知識を自'
+    detail: 'gate validation コードに lookup_fix_hints() を追加することで、skill_auto_improve.sh がゲートの知識を自'
+  - id: 'L523'
+    summary: '偵察cmdでcron/fullrecalculate/Render API POSTなどの実行禁止事項がある場合、inbox_writeで伝えるだけでは意志依存'
+    detail: '偵察cmdでcron/fullrecalculate/Render API POSTなどの実行禁止事項がある場合、inbox_writeで伝えるだけでは意志依存'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "skill_design_rules — Skill設計ルール:  context/skill-design-rules.md docs/research/dream-skill-design.md scripts/skill_gate_feedback.sh scripts/skill_auto_improve.sh scripts/skill_execution_log.sh context/codd.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md skills/reset-layout/SKILL.md skills/pf-registration/SKILL.md docs/research/gstack-gbrain-skillify-2026-04.md docs/research/gunshi_idle_skill_precision_cycle2_20260609.md"
-  - "codd_methodology — CoDD整合性駆動開発:  context/codd.md memory/reference_codd_oshio_articles.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md"
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
-  - "systems_knowledge_base — システム知識辞書:  docs/research/systems-knowledge-base/index.md docs/research/systems-knowledge-base/systems/ docs/research/systems-knowledge-base/systems/gstack.md"
-  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json"
-  recommended_skills:
-  - "skill-installer"
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-claude-version-switch/SKILL.md skills/shogun-claude-version-switch/scripts/claude_version_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
   related_causal_links:
-  - "[[blt_20260610_115209_28c8bb]]"
-  - "[[note_draft.sh Python exit code 1]]"
-  - "[[skill_exec_log FAIL率38%]]"
+  - "[[cmd_3274プロセスO1化+増分同期]]"
+  - "[[gws CLI cold start直列]]"
+  - "[[殿指示2026-06-10遅すぎる]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -90,32 +87,45 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L636: cmd_complete_gateのno-task benchmark fast pathで生成された cmd_test_* がdashboard_update
-      - L619: draft_lessons BLOCKを調査する時はauto_draft_lesson.sh単体ではなく、cmd_complete_gate.shのBLOCK時
-      - L164: IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな
-      - L086: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは
-      - L038: L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必
-      - L580: 新しいgate/hookを作るcmdでWARN表示だけをACにすると、検知は増えるが運用は変わらない。cmd設計段階でBLOCK/exit 1/強制/自動実行/
-      - L532: 現在のwarn_missing_prev_cmd_lesson()は次のcmd_save保存時(L1070)に発火する。前cmdCLEAR直後にはリマインドしな
-      - L316: pre-bash-report-deny.shでemit_deny(JSON出力)後にexit 1がなくexit 0に落ちていた。Claude Code hoo
-      - L103: IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置
-      - L035: cmd_complete_gate.shはテスト用cmdでもinbox_archiveチェックを走らせる。検証時は運用データに副作用を与え得るため、隔離データま
+      - L447: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe
+      - L634: role_type_idでDB集計時点で絞る必要がある。FEのみのフィルタはAPI応答が全ロール合算のため機能しない。BE側にrole_type_idパラメータ
+      - L040: IF WSL2環境でUsage APIを呼び出す監視スクリプトを実装する時 THEN timeout設定を10秒以上に設定せよ
+      - L726: memory DB FTS自体をtimeoutで囲っても、失敗時に通常LLM fallbackへ落ちると外側処理はboundedではなくなる。検索/復旧系fal
+      - L294: cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想
+      - L203: xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール
+      - L066: integration,yaml-key-mismatch,dry-run-limitation
+      - L635: 架空の関係(staff-role_type)を作る危険を回避。records.role_type_idで永続化キーを持ち、表示時にrole_typesから名称解
+      - L604: gate validation コードに lookup_fix_hints() を追加することで、skill_auto_improve.sh がゲートの知識を自
+      - L523: 偵察cmdでcron/fullrecalculate/Render API POSTなどの実行禁止事項がある場合、inbox_writeで伝えるだけでは意志依存
     ────────────────────────────────────────
     
     
+  memory_db_context:
+  - "2026-06-10T17:54:09+09:00 | [MEM: memory_db ts=2026-06-10T09:33] 殿「今の気づきをL0-L7に貫通させて、次から起きないように行動せよ」 **L0-L7 = 防御階層(7層貫通設計)** | "
+  - "2026-06-10T17:35:30+09:00 | 【INFOバッチ】 2026-06-10 17:34:19|cmd_3272"
+  - "2026-05-09T21:05:32+09:00 | 【INFOバッチ】 2026-05-09 20:52:05|cmd_2607 2026-05-09 21:04:20|cmd_2608"
+  - "2026-05-02T21:12:49+09:00 | 【INFOバッチ】 2026-05-02 21:04:01|cmd_2479"
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: '直近のnote-draft FAIL 3件のexit codeとエラーメッセージが特定されている'
+    - check: 'メール1通あたりのCLIプロセス起動を排除し、単一プロセスからGmail APIを直接呼ぶ構造(gws認証トークン再利用を最優先調査、不可ならgoogle-api-python-client。バッチ取得・format=metadata活用検討)に改修する。fetch実行中のps計測でプロセス生成がメール数Nに比例しないことを確認する'
   - id: 'AC2'
     checks:
-    - check: 'FAIL原因が修正され、bash scripts/note_draft.sh実行でexit 0が返る'
+    - check: 'ベンチ(after:2026/5/1の実窓再fetch)で1通あたり実測msを計測し、直列実績5,500ms/通との比+理論限界(Gmail APIクォータ250units/秒・messages.get=5units→50通/秒、HTTP RTT)との差分分析を報告に記載する。合格閾値は設けない(LS053・殿裁定21:18)。実測値が修行の計測値であり、より早くが目的'
   - id: 'AC3'
     checks:
-    - check: 'skill_exec_logの当該スキルFAIL率の修正前後数値が報告に記載されている'
-  ac_version: b528942a
+    - check: '増分モード(gmail_receiptsのMAX(date)をwatermarkにafter:自動付与、--fullで全期間)+1通ごとdata/gmail_raw/{gmail_id}.json保存によるresume+429/5xx指数バックオフを実装し、増分実行の実測timeを報告する'
+  - id: 'AC4'
+    checks:
+    - check: 'gmail_fts(FTS5)の日本語トークナイザ欠陥を修正する。現状unicode61で日本語分かち書き不能=1,577行同期済みなのにMATCH''請求''=0件・LIKE''%請求%''=330件(将軍+家老実測 2026-06-10 21:15)→tokenize=''trigram''等で再作成し、日本語MATCHをPython sqlite3照会で実証する'
+  - id: 'AC5'
+    checks:
+    - check: '冪等性(INSERT OR IGNORE維持)をベンチ再fetch後のCOUNT(*)照会で確認する(既存1,577件から減少せず、増加は新着分のみ)'
+  - id: 'AC6'
+    checks:
+    - check: '未commitの現行gmail_to_sqlite.py(kagemaru作・halt時commit禁止中)をベースとしてcommitした上で改修をcommitし、docs/03 §6の『201件』を実測1,577件に訂正(出典resultSizeEstimate=Gmail API推定値と実取得の乖離を注記)する。git logで確認する'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3270.yaml
-  report_path: queue/reports/hayate_report_cmd_3270.yaml
+  report_filename: hayate_report_cmd_3274.yaml
+  report_path: queue/reports/hayate_report_cmd_3274.yaml
   bloom_level: 
-  deployed_at: "2026-06-10T12:13:04"
+  deployed_at: "2026-06-10T21:18:46"

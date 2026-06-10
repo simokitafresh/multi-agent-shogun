@@ -160,6 +160,8 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-06-10: gate=gate_report_format result=FAIL executor=saizo reason=lessons_useful: MISSING; lesson_candidate: found=true but no title
 - 2026-06-10: gate=gate_report_format result=FAIL executor=saizo reason=lessons_useful: MISSING; binary_checks.AC1: is dict (must be list of check items); binary_checks.AC2: is dict (must be list of check items); assumption_invalidation: MISSING
 
 - 2026-06-10: gate=gate_report_format result=FAIL executor=hanzo reason=lesson_candidate: found=false but no no_lesson_reason; lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな); binary_checks: AC self-verification missing (0/5 ACs). 全ACの二値チェッ...

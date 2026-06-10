@@ -7749,3 +7749,27 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - parse_skip_countはnon_tap_text(_filter_tap_lines)を使うがparse_fail_countは生textに適用。テスト名に「failed」含む行が誤マッチ→265件FAILEDと誤報告。修正: non_tap_textを使いFAILED/FAIL判定もTAP除外後に行う
+
+### L770: SKILL.md複数checked_atタグ時はmatches[-1]が基準
+- **日付**: 2026-06-10
+- **出典**: cmd_karo_hotfix_skill_ref_sync_20260610181800
+- **記録者**: saizo
+- **tags**: [gate, skill]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_skill_script_refs.sh]
+- **origin**: [[gate_skill_script_refs.sh_WARN]] -> [[checked_at_re_matches_last]] -> [[先頭タグ追加だけでは不十分]]
+- **when**: SKILL.mdのscript_refs検証注記を更新する時
+- **how**: 1.grep -n script_refs_checked_at <SKILL.md>で全タグ位置確認 2.最後のタグを更新 3.SKILL_REF_DISABLE_CACHE=1でgate再実行確認
+- gate_skill_script_refs.shはscript_refs_checked_atタグをmatches[-1](最後のタグ)で評価する。SKILL.md先頭に新タグを追加しても本文末尾に古いタグが残っていれば古い方が有効になり、gate WARNが解消しない。検証注記更新時は本文末尾の既存タグも同時更新せよ
+
+### L771: cmd-complete完了処理にcontext鮮度更新ステップが欠落(研究系cmdで顕在化)
+- **日付**: 2026-06-10
+- **出典**: cmd_karo_hotfix_ga038
+- **記録者**: hanzo
+- **tags**: [gate, context, process]
+- **subdomain**: infra
+- **target_files**: [skills/cmd-complete/SKILL.md,scripts/gates/gate_context_freshness.sh]
+- **origin**: [[GA-038_alert]] -> [[cmd_complete_skill_no_context_step]] -> [[research_context_12days_stale]]
+- **when**: 研究系cmd完了処理時/context_freshness ALERT発火時
+- **how**: 1.research系cmd完了時にcontext索引への反映要否を確認 2.gate_context_freshness.shで乖離検出
+- skills/cmd-complete/SKILL.md Step1-8にcontext/*.md更新ステップが構造的に欠落(hanzo現物実証: lesson/WA/gate/品質/status/dashboard/ntfy/archiveのみ)。gate_context_freshness.shはALERT発火できるが完了処理と連携せず後追い検出のみ。GA-038=dm-signal研究cmd3件(3218/3220/3224)が完了したのにdm-signal-research.mdが12日停滞。防御層提案: A=cmd-complete Step3後にgate_context_freshness.sh実行しresearch系cmdでWARN表示 B=cmd_complete_gate.shにresearch系context鮮度観点追加
