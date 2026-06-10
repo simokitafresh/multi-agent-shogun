@@ -269,3 +269,5 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - → [[dm-signal-ops]] 運用詳細
 - → [[dm-signal-research]] 研究詳細
 - → [[dm-signal-frontend]] フロントエンド詳細
+- → [[cmd_absorb_refactor_after_20260506]] 吸収ルールリファクタリング後の実装(cmd_1080: シン忍法v2完成後)
+- → [[cmd_absorb_refactor_spec_20260506]] 吸収ルールリファクタリング仕様書(シン忍法v2 absorption設計)

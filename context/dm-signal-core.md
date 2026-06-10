@@ -551,4 +551,7 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 
 - ← [[dm-signal]] メインPJの核心層
 - → [[dm-signal-ops]] コア→運用への接続
+- → [[dm_signal_db_schema]] DM-Signal DBスキーマ全文(テーブル構造・カラム定義)
+- → [[dm_signal_pi_full]] DM-Signal 本番不変量(PI)全文(全PI一覧・適用ルール)
+- → [[dm_signal_trade_rules_full]] DM-Signalトレードルール全文(エントリー/エグジット条件)
 - → [[dialogue_preprocessing_research_20260331]] 前処理研究日誌=コア改善の知的基盤

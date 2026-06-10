@@ -441,3 +441,4 @@ retry_policy: |
 - [[gunshi_idle_lesson_useful_rate_20260608]] — 軍師idle: 教訓有用率計測v3(2026-06-08)
 - [[gunshi_idle_bulletin_nazenaze_7_20260515]] — 軍師idle: 掲示板なぜなぜ#7分析(2026-05-15)
 - [[gunshi_idle_lgtm_block_pattern_20260414]] — 軍師idle: LGTM BLOCKパターン分析(2026-04-14)
+- [[gunshi_idle_cmd_quality_block_analysis_20260425]] — 軍師idle: cmd品質BLOCK分析(2026-04-25)

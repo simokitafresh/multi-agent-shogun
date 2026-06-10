@@ -776,4 +776,12 @@ import metrics_research_engine as MRE
 
 - ← [[dm-signal]] 運用層
 - ← [[dm-signal-core]] コアの運用面
+- → [[gunshi_idle_teppeki_parity_analysis_20260427]] 鉄壁パリティ分析: 本番PFの整合性確認
+- → [[gunshi_kawarimi_monthly_speed_design_20260413]] 変換月次速度設計: kawarimi高速化の設計
+- → [[gunshi_nukimi_wf_oom_analysis_20260410]] nukimi WF OOM分析: ワークフローのメモリ問題根因
+- → [[gunshi_trf_date_mismatch_fix_20260414]] TRF日付不一致修正: 再計算パイプラインのバグ対処
+- → [[gunshi_wf_profile_baseline_20260410]] WFプロファイルベースライン: 速度計測の起点
 - → [[database]] DB運用との接続
+- → [[ops-db-rules]] DB運用ルール詳細(接続/バックアップ/パリティ確認手順)
+- → [[ops-procedures]] 運用手順詳細(デプロイ/ロールバック/障害対応)
+- → [[parity-verification-details]] パリティ検証詳細(本番/GS同一エンジン確認手順)
