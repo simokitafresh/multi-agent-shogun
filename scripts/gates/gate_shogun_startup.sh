@@ -876,6 +876,10 @@ for entry in session_entries:
         continue
     if entry.get("target") not in ("shogun", "lord", None, ""):
         continue
+    # Skip system notifications (task-notification etc.) — cmd_3267
+    _summary = str(entry.get("summary") or "")
+    if _summary.lstrip().startswith("<task-notification>"):
+        continue
     text = str(entry.get("detail") or entry.get("summary") or "").strip()
     text = re.sub(r"\s+", " ", text)
     if not text:
@@ -1191,6 +1195,10 @@ for entry in session_entries:
     if entry.get("agent") not in ("lord", None, ""):
         continue
     if entry.get("target") not in ("shogun", "lord", None, ""):
+        continue
+    # Skip system notifications (task-notification etc.) — cmd_3267
+    _summary = str(entry.get("summary") or "")
+    if _summary.lstrip().startswith("<task-notification>"):
         continue
     text = " ".join(str(entry.get(k) or "") for k in ("summary", "detail", "content", "message"))
     lord_inbound.append(text)
