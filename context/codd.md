@@ -137,4 +137,12 @@
   - dm-signal: `/mnt/c/Python_app/DM-signal/docs/research/codd_refactor_registry.md`
   - **対象スクリプトが属するリポの台帳に追記せよ。別リポの台帳に書くな**
 - **根源ルール: CoDDで改善したものは必ず台帳に載せる。** 対象がスクリプト/テスト/ドキュメントに関わらず例外なし(殿厳命2026-04-19, LS047)
+
+## 因果リンク
+
+- → [[system-context]] CoDD extractのsystem-context（cmd_1991 extract）
+- → [[oshio]] おしお殿のCoDD設計思想(systems-knowledge-base)
 - 既存設計書群: `docs/test/*.md` `docs/governance/*.md` `docs/design/*.md` `docs/detailed_design/*.md` `docs/plan/*.md` `docs/operations/*.md`
+
+<!-- 軍師idle分析リンク(cmd_3278自動追記) -->
+- [[gunshi_idle_codd_ac3_ambiguity_20260424]] — 軍師idle: CoDD AC3曖昧性分析(2026-04-24)

@@ -1031,4 +1031,82 @@ WHY=台帳鮮度回復+aliases品質向上、WHAT=対象スクリプトのCoDD�
 - ← [[growth-loop]] 成長ループの忍者向け実装
 - ← [[infrastructure]] インフラ(gate/hook)が修行を駆動
 - ← [[deepdive_why_chain_20260321]] Phase 8利他=忍者を助ける仕組み
+- → [[cmd_317v2_task1_A]] タスク1-A修行実績(cmd_317v2)
+- → [[cmd_317v2_task1_B]] タスク1-B修行実績(cmd_317v2)
+- → [[cmd_317v2_task1_C]] タスク1-C修行実績(cmd_317v2)
+- → [[cmd_323_r2t1_A]] Round2 Task1-A修行(cmd_323)
+- → [[cmd_323_r2t1_B]] Round2 Task1-B修行(cmd_323)
+- → [[cmd_323_r2t2_review]] Round2 Task2レビュー(cmd_323)
+- → [[cmd_323_r2t3_review]] Round2 Task3レビュー(cmd_323)
+- → [[cmd_323_r3t1_A]] Round3 Task1-A修行(cmd_323)
+- → [[cmd_323_r3t1_C]] Round3 Task1-C修行(cmd_323)
+- → [[cmd_323_r3t1_review]] Round3 Task1レビュー(cmd_323)
+- → [[cmd_323_r3t3_review]] Round3 Task3レビュー(cmd_323)
+- → [[cmd_323_r4t1_A]] Round4 Task1-A修行(cmd_323)
+- → [[cmd_323_r4t1_B]] Round4 Task1-B修行(cmd_323)
+- → [[cmd_323_r4t1_C]] Round4 Task1-C修行(cmd_323)
+- → [[cmd_323_r4t3_A]] Round4 Task3-A修行(cmd_323)
+- → [[cmd_323_r4t3_B]] Round4 Task3-B修行(cmd_323)
+- → [[cmd_323_r4t3_C]] Round4 Task3-C修行(cmd_323)
+- → [[cmd_324_positive_prompting_A]] ポジティブプロンプティング修行-A(cmd_324)
+- → [[cmd_324_positive_prompting_B]] ポジティブプロンプティング修行-B(cmd_324)
+
+### CoDD修行サイクル実績(2026-05-16 L4ラウンド)
+
+- → [[cmd_training_L4_codd_c1_bulletin_write_20260516]] L4修行cmd設計: bulletin_write CoDD設計書
+- → [[cmd_training_L4_codd_c2_inbox_write_20260516]] L4修行cmd設計: inbox_write CoDD設計書
+- → [[cmd_training_L4_codd_c3_cmd_delegate_20260516]] L4修行cmd設計: cmd_delegate CoDD設計書
+- → [[cmd_training_L4_codd_c4_chronicle_metrics_20260516]] L4修行cmd設計: chronicle_metrics CoDD設計書
+- → [[cmd_training_L4_codd_c5_checklist_progress_20260516]] L4修行cmd設計: checklist_progress CoDD設計書
+- → [[cmd_training_codd_202605161230_hayate_inbox_write_20260516]] hayate inbox_write修行(CoDD L4)実施記録
+- → [[cmd_training_codd_r1_saizo_lesson_write_20260516]] saizo R1修行: lesson_write CoDD設計書
+- → [[cmd_training_codd_r2_saizo_karo_workaround_log_20260516]] saizo R2修行: karo_workaround_log CoDD設計書
+- → [[cmd_training_codd_r3_saizo_semantic_index_update_20260516]] saizo R3修行: semantic_index_update CoDD設計書
+- → [[cmd_training_codd_s3_saizo_daemon_watchdog_20260516]] saizo S3修行: daemon_watchdog CoDD設計書
+- → [[hayate_codd_L4_ac_physical_verify_20260516]] hayate L4修行: AC物理検証スクリプト
+- → [[hayate_codd_L4_archive_completed_20260516]] hayate L4修行: archive_completed実装
+- → [[hayate_codd_L4_archive_completed_coverage_20260516]] hayate L4修行: archive_completed カバレッジ検証
+- → [[hayate_codd_L4_auto_deploy_next_20260516]] hayate L4修行: auto_deploy_next実装
+- → [[hayate_codd_L4_auto_deploy_next_coverage_20260516]] hayate L4修行: auto_deploy_next カバレッジ検証
+- → [[hayate_codd_L4_ci_status_check_20260516]] hayate L4修行: CI状態確認スクリプト
+- → [[hayate_codd_L4_ci_status_check_coverage_20260516]] hayate L4修行: CI状態確認カバレッジ
+- → [[hayate_codd_L4_clear_prep_check_20260516]] hayate L4修行: clear_prep_check実装
+- → [[hayate_codd_L4_reset_layout_20260516]] hayate L4修行: reset_layout実装
+- → [[hayate_codd_R1_cmd_complete_gate_20260516]] hayate R1修行: cmd_complete_gate CoDD設計書
+- → [[hayate_codd_R2_inbox_watcher_20260516]] hayate R2修行: inbox_watcher CoDD設計書
+- → [[hayate_codd_R3_lesson_impact_analysis_20260516]] hayate R3修行: 教訓インパクト分析
+- → [[hayate_codd_R4_skill_gate_feedback_20260516]] hayate R4修行: スキルゲートフィードバック設計
+- → [[hayate_codd_S1_model_analysis_20260516]] hayate S1修行: モデル分析
+- → [[hayate_codd_S2_sync_lessons_20260516]] hayate S2修行: 教訓同期スクリプト
+- → [[hayate_codd_S3_lesson_deprecation_scan_20260516]] hayate S3修行: 教訓廃止スキャン
+- → [[hayate_codd_S4_lesson_harvest_20260516]] hayate S4修行: 教訓収穫スクリプト
+- → [[kagemaru_codd_L4_model_switch_preflight_20260516]] kagemaru L4修行: モデル切替preflight CoDD設計書
+- → [[kagemaru_codd_R1_report_field_set_20260516]] kagemaru R1修行: report_field_set CoDD設計書
+- → [[kagemaru_codd_R2_pending_decision_write_20260516]] kagemaru R2修行: pending_decision_write CoDD設計書
+- → [[kagemaru_codd_R3_parity_check_20260516]] kagemaru R3修行: パリティチェック CoDD設計書
+- → [[kagemaru_codd_s1_knowledge_metrics_20260516]] kagemaru S1修行: 知識メトリクス CoDD設計書
+- → [[kagemaru_codd_s2_context_freshness_check_20260516]] kagemaru S2修行: コンテキスト鮮度確認CoDD設計書
+- → [[kagemaru_codd_s3_skill_auto_improve_20260516]] kagemaru S3修行: スキル自動改善 CoDD設計書
+- → [[system-context]] hayate/saizo CoDD L4修行 extract系 system-context(ac_physical_verify/archive_completed/auto_deploy_next/ci_status_check/clear_prep_check/karo_workaround_log/lesson_write/semantic_index_update 各ステップのCoDD抽出設計書)
 - → [[lessons_shogun]] 修行結果→教訓蓄積
+
+<!-- 軍師idle分析リンク(cmd_3278自動追記) -->
+- [[gunshi-idle-S8-workaround-analysis]] — 軍師idle: 修行S8ワークアラウンド分析
+- [[gunshi_idle_adversarial_cold_analysis_20260426]] — 軍師idle: adversarial cold視点分析(2026-04-26)
+- [[gunshi_idle_adversarial_cold_fix_20260430]] — 軍師idle: adversarial cold修正(2026-04-30)
+- [[gunshi_idle_adversarial_cold_fix_20260608]] — 軍師idle: adversarial cold修正v2(2026-06-08)
+- [[gunshi_idle_ambiguity_cold_analysis_20260426]] — 軍師idle: 曖昧cold視点分析(2026-04-26)
+- [[gunshi_idle_cold_perspective_audit_20260515]] — 軍師idle: cold視点監査(2026-05-15)
+- [[gunshi_idle_cold_perspective_ambiguity_20260603]] — 軍師idle: cold視点曖昧性分析(2026-06-03)
+- [[gunshi_idle_cold_perspective_retroactive_20260605]] — 軍師idle: cold視点遡及分析(2026-06-05)
+- [[gunshi_idle_cold_perspective_retroactive_20260606]] — 軍師idle: cold視点遡及分析v2(2026-06-06)
+- [[gunshi_idle_cold_streak_analysis_20260428]] — 軍師idle: cold連続パターン分析(2026-04-28)
+- [[gunshi_idle_cold_streak_structural_20260429]] — 軍師idle: cold連続構造的原因(2026-04-29)
+- [[gunshi_idle_block_pattern_analysis_20260512]] — 軍師idle: BLOCKパターン分析(2026-05-12)
+- [[gunshi_idle_block_quality_audit_20260514]] — 軍師idle: BLOCK品質監査(2026-05-14)
+- [[gunshi_idle_l2_completion_check_20260413]] — 軍師idle: L2完了チェック(2026-04-13)
+- [[gunshi_idle_l7_autopromote_nazenaze_20260521]] — 軍師idle: L7自動昇格なぜなぜ(2026-05-21)
+- [[gunshi_idle_l7_causal_network_learning_20260520]] — 軍師idle: L7因果ネットワーク学習設計(2026-05-20)
+- [[gunshi_idle_bats_speed_bottleneck_20260603]] — 軍師idle: bats速度ボトルネック分析(2026-06-03)
+- [[gunshi_idle_bats_speed_redesign_20260603]] — 軍師idle: bats速度再設計(2026-06-03)
+- → [[gunshi_idle_training_rethink_nazenaze_20260516]] 修行再考のなぜなぜ: 修行設計の構造的問題

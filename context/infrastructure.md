@@ -1242,4 +1242,99 @@ done | sort -u
 - → [[growth-loop]] 成長ループ=インフラの設計原理
 - → [[training-cycle]] 修行サイクル=インフラで駆動する忍者成長
 - → [[karo-operations]] 家老運用=インフラを操作する手順
+- → [[gunshi_idle_ntfy_rate_limit_global_20260516]] ntfyグローバルレート制限の分析
+- → [[gunshi_idle_numbers_cold_bugfix_20260426]] numbersのコールドバグ修正: インフラバグ実例
+- → [[gunshi_idle_observations_gap_analysis_20260519]] MCP observations gapの分析: 三層記憶インフラの穴
+- → [[gunshi_idle_precision_fix_inbox_nudge_20260527]] inbox nudge精度修正: watcher誤検知根因
+- → [[gunshi_idle_project_dir_false_rc_20260430]] project_dir false RC: gate判定バグの根因
+- → [[gunshi_idle_recording_error_analysis_20260409]] recording error分析: lord_conversation記録失敗の根因
+- → [[gunshi_idle_session_efficiency_20260503]] セッション効率分析: CTX消費ボトルネックの特定
+- → [[gunshi_idle_session_nazenaze_20260519]] セッションのなぜなぜ: clear後の復旧速度問題
+- → [[gunshi_idle_speed_bottleneck_nazenaze_20260602]] 速度ボトルネックのなぜなぜ: インフラ全体の遅延根因
+- → [[gunshi_idle_stall_ghost_nazenaze_20260521]] STALL-GHOSTのなぜなぜ: ninja_monitor誤検知根因
+- → [[gunshi_idle_state_divergence_20260603]] 状態乖離分析: karo_snapshot不整合の根因
+- → [[gunshi_idle_wsl2_symlink_limitation_20260427]] WSL2シンボリックリンク制限の分析
+- → [[gunshi_idle_yaml_field_set_newline_20260502]] yaml_field_set改行バグ: YAML安全書込みの問題
+- → [[gunshi_idle_yaml_parse_vulnerability_20260505]] YAML parseの脆弱性分析: 運用YAML破損リスク
+- → [[gunshi_idle_inbox_watcher_fp_repeat_20260602]] inbox watcher偽陽性繰り返しの根因分析
+- → [[gunshi_watcher_silent_cycle_rootcause_20260425]] watcher silent cycleの根因: watcher設計の構造的問題
+- → [[gunshi_startup_gate_auto_exec_bug_20260412]] startup gate自動実行バグ: gate設計の問題
+- → [[gunshi_idle_semantic_audit_20260505]] セマンティック監査2026-05-05: インデックス品質評価
+- → [[gunshi_idle_semantic_audit_20260509]] セマンティック監査2026-05-09: aliases品質評価
+- → [[gunshi_idle_semantic_audit_20260517]] セマンティック監査2026-05-17: aliases漏れの検出
+- → [[gunshi_idle_semantic_audit_20260519b]] セマンティック監査2026-05-19b: 品質精度の再測定
+- → [[gunshi_idle_semantic_audit_20260521]] セマンティック監査2026-05-21: 改善効果の検証
+- → [[gunshi_idle_semantic_audit_causal_nw_20260518]] セマンティック監査+因果NW統合: 三層記憶の接続品質
+- → [[gunshi_idle_semantic_audit_cmd2681_2684_20260512]] cmd2681/2684のセマンティック監査: aliases注入効果
+- → [[gunshi_idle_semantic_audit_daemon_watcher_20260530]] daemon_watcherのセマンティック監査
+- → [[gunshi_idle_semantic_audit_infra_bugs_20260525]] インフラバグのセマンティック監査: 概念接続の穴
+- → [[gunshi_idle_semantic_audit_post_backup_first_20260519]] backup_first後のセマンティック監査
+- → [[gunshi_idle_semantic_audit_scripts_20260529]] スクリプトのセマンティック監査: 索引品質向上
+- → [[gunshi_idle_semantic_audit_skill_scripts_20260506]] スキルスクリプトのセマンティック監査
+- → [[gunshi_idle_semantic_index_gap_20260515]] セマンティックインデックスgap分析: 未カバー概念の特定
+- → [[gunshi_semantic_audit_catalog_design_20260503]] セマンティック監査カタログ設計: 監査の標準化
+- → [[gunshi_semantic_audit_cmd2621_20260510]] cmd2621のセマンティック監査結果
+- → [[gunshi_semantic_audit_cmd2635_20260510]] cmd2635のセマンティック監査結果
+- → [[gunshi_staleness_audit_20260510]] 陳腐化監査: コンテキストファイルの鮮度評価
+- → [[cmd_karo_reprofile_bench_20260426]] 家老CTXプロファイリングベンチマーク(2026-04-26: bottleneck特定)
+- → [[cmd_karo_reprofile_freq_20260426]] 家老CTXプロファイリング頻度分析(2026-04-26: 頻度別コスト)
+- → [[multinode_portable_environment_20260609]] マルチノードポータブル環境設計(2026-06-09: 可搬性向上)
+- → [[rollback_english_design_20260422]] ロールバック英語版設計(2026-04-22: 英語対応設計書)
+- → [[language_policy_design_20260421]] 言語ポリシー設計(2026-04-21: 日英混在ルール策定)
+- → [[statistical-wheels-for-quality]] 品質のための統計的車輪原則(車輪の再発明禁止+既存計測活用)
+- → [[three_layer_memory_first_priority_design_20260606]] 三層記憶ファーストプライオリティ設計(2026-06-06: 検索順序強制)
+- → [[cmd_316_rate_limit_analysis]] APIレート制限分析(cmd_316)
+- → [[cmd_316_rate_limit_consumption]] APIレート制限消費分析(cmd_316)
+- → [[cmd_317_config_dir_codex]] Codex設定ディレクトリ調査(cmd_317)
+- → [[cmd_317_config_dir_opus]] Opus設定ディレクトリ調査(cmd_317)
+- → [[cmd_317_config_dir_sonnet]] Sonnet設定ディレクトリ調査(cmd_317)
+- → [[cmd_317v2_model_comparison]] モデル比較実験(cmd_317v2)
+- → [[cmd_319_oss_preparation]] OSS公開準備(cmd_319)
+- → [[cmd_344_knowledge_metrics_design]] 知識メトリクス設計(cmd_344)
+- → [[cmd_504_qiita-idea-council]] Qiita記事アイデア会議(cmd_504)
+- → [[cmd_506_hermit-technical-recon]] 仙人技術偵察(cmd_506)
+- → [[cmd_508_screenshot-paste-recon]] スクリーンショット貼付偵察(cmd_508)
+- → [[cmd_798_ndlocr-lite]] NDLOCR-Lite調査(cmd_798)
+- → [[cmd_888_self-healing-patterns]] 自己修復パターン分析(cmd_888)
+- → [[cmd_2087_codd_spec_ntfy_20260418]] ntfy CoDD仕様書(cmd_2087)
+- → [[cmd_2108_deploy_task_template_generation_profile]] テンプレート生成プロファイル(cmd_2108)
+- → [[cmd_2109_gate_shogun_startup_test_profiling]] startup gateテストプロファイル(cmd_2109)
+- → [[cmd_2110_report-template-gate-compat-setup-profile]] レポートテンプレートgateプロファイル(cmd_2110a)
+- → [[cmd_2110_test_report_template_gate_profiling]] レポートテンプレートgateプロファイル(cmd_2110b)
+- → [[cmd_2112_test_deploy_task_lifecycle_profiling]] deploy_taskライフサイクルプロファイル(cmd_2112)
+- → [[cmd_2113_cli_adapter_setup_profile]] CLIアダプタセットアッププロファイル(cmd_2113)
+- → [[cmd_2115_test_cmd_save_profile]] cmd_saveテストプロファイル(cmd_2115)
+- → [[cmd_2116_test_build_system_profiling]] ビルドシステムプロファイル(cmd_2116)
+- → [[cmd_2126_mizchi_red_flags_skip_reasons_20260419]] mizchi red flags調査(cmd_2126)
+- → [[cmd_3005_document_inventory_kagemaru]] ドキュメントインベントリ(cmd_3005)
+- → [[adoption-log]] 知識採用ログ(systems-knowledge-base/our-army)
+- → [[claude-code]] Claude Code知識ベース(systems-knowledge-base)
+- → [[our-army]] 我ら軍の知識ベース(systems-knowledge-base)
+- → [[vercel]] Vercel設計原則(systems-knowledge-base)
+- → [[mizchi]] mizchi記事知識ベース(systems-knowledge-base)
+- → [[gyakusegawa]] 逆瀬川記事知識ベース(systems-knowledge-base)
 - → [[dm-signal]] DM-Signal=インフラが支えるPJ
+
+<!-- 軍師idle分析リンク(cmd_3278自動追記) -->
+- [[gunshi_idle_infra_bug_audit_20260409]] — 軍師idle: インフラバグ監査(2026-04-09)
+- [[gunshi_idle_infra_bugs_full_audit_20260424]] — 軍師idle: インフラバグ全量監査(2026-04-24)
+- [[gunshi_idle_infra_health_20260425]] — 軍師idle: インフラ健全性レポート(2026-04-25)
+- [[gunshi_idle_infra_bug_universal_commit_20260430]] — 軍師idle: インフラバグ汎用コミット対策(2026-04-30)
+- [[gunshi_idle_infra_bug_trio_20260502]] — 軍師idle: インフラバグトリオ分析(2026-05-02)
+- [[gunshi_idle_infra_bug_trio_fix_20260503]] — 軍師idle: インフラバグトリオ修正(2026-05-03)
+- [[gunshi_idle_infra_speed_hidden_bugs_20260605]] — 軍師idle: インフラ速度の隠れバグ(2026-06-05)
+- [[gunshi_idle_clear_durability_nazenaze_20260515]] — 軍師idle: /clear耐久性なぜなぜ分析(2026-05-15)
+- [[gunshi_idle_clear_durability_flag_gap_20260515]] — 軍師idle: /clear耐久性フラグギャップ(2026-05-15)
+- [[gunshi_idle_clear_durability_nazenaze_20260515d]] — 軍師idle: /clear耐久性なぜなぜ分析(続)(2026-05-15)
+- [[gunshi_idle_clear_durability_fix_20260516]] — 軍師idle: /clear耐久性修正(2026-05-16)
+- [[gunshi_idle_clear_respawn_bug_20260607]] — 軍師idle: /clear respawnバグ分析(2026-06-07)
+- [[gunshi_idle_deploy_yaml_parse_error_20260516]] — 軍師idle: 配備YAMLパースエラー(2026-05-16)
+- [[gunshi_idle_deploy_structural_bugs_20260517]] — 軍師idle: 配備構造バグ分析(2026-05-17)
+- [[gunshi_idle_direct_mode_stale_ac_20260502]] — 軍師idle: ダイレクトモード古いAC問題(2026-05-02)
+- [[gunshi_idle_gitignore_wa_20260409]] — 軍師idle: .gitignore WAパターン(2026-04-09)
+- [[gunshi_idle_autocommit_scope_leak_20260602]] — 軍師idle: 自動コミットスコープ漏洩(2026-06-02)
+- [[gunshi_idle_dashboard_corruption_20260603]] — 軍師idle: ダッシュボード破損分析(2026-06-03)
+- [[gunshi_idle_codex_commit_missing_20260413]] — 軍師idle: Codexコミット欠落分析(2026-04-13)
+- [[gunshi_idle_codex_respawn_loop_20260516]] — 軍師idle: Codex respawnループ分析(2026-05-16)
+- [[gunshi_idle_codex_respawn_loop_nazenaze_20260520]] — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)
+- [[gunshi_codex_clear_judgment_20260422]] — 軍師分析: Codex clear判断基準(2026-04-22)

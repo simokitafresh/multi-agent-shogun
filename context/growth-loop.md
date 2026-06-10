@@ -195,4 +195,53 @@ cmd_2673-2676で4件全てL5化完了(2026-05-11):
 - ← [[deepdive_causal_tracing_20260415]] 因果をたどる=成長ループのSystem 2側
 - → [[training-cycle]] 修行サイクル=成長ループの忍者向け実装
 - → [[infrastructure]] gate/hook/lessons=成長ループの環境埋込み先
+- → [[gunshi_idle_nazenaze7_bottleneck_20260413]] なぜなぜ7回転がボトルネックになる構造分析
+- → [[gunshi_idle_nazenaze_ci_red_lesson_gap_20260605]] CI red→lesson gap: なぜなぜが成長ループに接続されていない根因
+- → [[gunshi_idle_recommended_skills_role_filter_20260602]] 推奨スキルのロールフィルタ設計: 不要通知削減の実践
+- → [[gunshi_idle_s05_test_premise_check_20260521]] テスト前提チェックのなぜなぜ: S05実行可能前提の確認
+- → [[gunshi_idle_self_gate_check_str_bug_20260516]] self_gate_checkの文字列バグ: gate品質の問題
+- → [[gunshi_idle_silent_failure_audit_20260605]] サイレント失敗監査: 成長ループの穴の可視化
+- → [[gunshi_idle_skill_enforcement_5layer_20260515]] スキル強制5層設計: Level5到達の実装実例
+- → [[gunshi_idle_skill_growth_audit_20260506]] スキル成長監査: 成長ループのスキル次元の計測
+- → [[gunshi_idle_skill_growth_loop_nazenaze_20260502]] スキル成長ループのなぜなぜ: idle→skill精度の連鎖
+- → [[gunshi_idle_skill_growth_nazenaze_20260512]] スキル成長のなぜなぜ継続分析
+- → [[gunshi_idle_skill_precision_cycle2_20260609]] スキル精度サイクル2: 成長ループの計測と改善
+- → [[gunshi_idle_structural_analysis_20260510]] 構造的問題分析: なぜBLOCKが繰り返されるかの根因
+- → [[gunshi_idle_test_contamination_20260413]] テスト汚染: 成長ループのフィードバック精度低下の根因
+- → [[gunshi_idle_useful_rate_alert_nazenaze_20260519]] useful_rate ALERT後のなぜなぜ7回転
+- → [[gunshi_idle_useful_rate_baseline_20260512]] useful_rate基準値設定と成長ループ計測設計
+- → [[gunshi_idle_useful_rate_drop_20260425]] useful_rate低下の原因分析
+- → [[gunshi_idle_useful_rate_gp218_20260422]] GP218: useful_rate向上提案
+- → [[gunshi_idle_useful_rate_gp219_20260422]] GP219: useful_rate向上提案
+- → [[gunshi_idle_verdict_override_analysis_20260411]] verdict override問題の分析: 手動判断依存の根因
+- → [[gunshi_idle_verdict_override_elimination_20260414]] verdict override廃止設計: gate自動化への移行
+- → [[gunshi_idle_verdict_override_root_cause_20260412]] verdict override根因: 判断の外部化なしに品質は安定しない
+- → [[gunshi_idle_warn_legacy_count_20260514]] WARN数計測によるレガシー問題の可視化
+- → [[gunshi_l6_bottleneck_analysis_20260510]] L6化のボトルネック分析: BLOCK→自力修正遷移率の改善
+- → [[gunshi_nazenaze_universal_claim_20260413]] 普遍的主張の危険性: なぜなぜを特定事例に限定すべき理由
+- → [[gunshi_sg_s0_self_code_change_20260412]] SG S0自己コード変更: gate自己改善の盲点分析
+- → [[cmd_497_cmd-splitting-policy]] cmdスプリットポリシー(cmd_497)
+- → [[cmd_2589_codd_adr]] CoDD ADR設計書(cmd_2589)
+- → [[cmd_2589_skill_gate_feedback_refactor_spec]] スキルgate feedback refactor仕様(cmd_2589)
+- → [[cmd_2590_skill_auto_improve_after_20260506]] スキル自動改善after状態(cmd_2590)
+- → [[cmd_2590_skill_auto_improve_refactor_spec]] スキル自動改善refactor仕様(cmd_2590)
+- → [[cmd_3227_skill_auto_growth_loop_design]] スキル自動成長ループ設計(cmd_3227)
+- → [[karpathy-principles]] Karpathy原則知識ベース(systems-knowledge-base)
 - → [[lessons_shogun]] 将軍教訓=成長ループの第一層(個)の蓄積先
+
+<!-- 軍師idle分析リンク(cmd_3278自動追記) -->
+- [[gunshi_idle_growth_loop_nazenaze_20260515]] — 軍師idle: 成長ループなぜなぜ分析(2026-05-15)
+- [[gunshi_idle_immune_system_evidence_20260426]] — 軍師idle: 免疫システム証拠収集(2026-04-26)
+- [[gunshi_idle_immunity_measurement_20260510]] — 軍師idle: 免疫計測フレームワーク(2026-05-10)
+- [[gunshi_idle_immune_effectiveness_20260512]] — 軍師idle: 免疫システム有効性測定(2026-05-12)
+- [[gunshi_idle_gate_fail_trend_20260430]] — 軍師idle: ゲート失敗トレンド分析(2026-04-30)
+- [[gunshi_idle_gate_fail_rate_anatomy_20260502]] — 軍師idle: ゲート失敗率解剖(2026-05-02)
+- [[gunshi_idle_gate_fire_traceback_20260510]] — 軍師idle: ゲート発火トレースバック(2026-05-10)
+- [[gunshi_idle_gate_fp_analysis_20260527]] — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27)
+- [[gunshi_idle_lg003_gate_wa_analysis_20260519]] — 軍師idle: LG003ゲートWA分析(2026-05-19)
+- [[gunshi_idle_lu_dict_pattern_20260415]] — 軍師idle: LU辞書パターン分析(2026-04-15)
+- [[gunshi_idle_commit_check_wa_pattern_20260410]] — 軍師idle: コミットチェックWAパターン(2026-04-10)
+- [[gunshi_idle_cross_contamination_20260503]] — 軍師idle: クロスプロジェクト汚染分析(2026-05-03)
+- [[gunshi_idle_cross_project_fp_20260426]] — 軍師idle: クロスプロジェクトFP分析(2026-04-26)
+- [[gunshi_idle_deepdive_design_impl_phantom_20260516]] — 軍師idle: deepdive設計実装ファントム問題(2026-05-16)
+- [[gunshi_idle_brainwash_audit_memory_loop_20260602]] — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)

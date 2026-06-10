@@ -400,4 +400,44 @@ retry_policy: |
 
 - ← [[infrastructure]] インフラを操作する手順
 - ← [[deepdive_karo_verification_20260405]] 家老専用deepdive=運用品質の根拠
+- → [[gunshi_idle_nazenaze_lgtm_block_20260516]] LGTM即BLOCKパターンのなぜなぜ分析
+- → [[gunshi_idle_precheck_bottleneck_20260503]] precheckボトルネック: レビュー前確認の遅延原因
+- → [[gunshi_idle_report_yaml_bottleneck_20260429]] 報告YAML処理のボトルネック分析
+- → [[gunshi_idle_report_yaml_infra_bugs_20260424]] 報告YAMLインフラバグの分析
+- → [[gunshi_idle_rfs_fill_bypass_20260429]] report_field_set.sh bypassパターンの検出
+- → [[gunshi_idle_sg7_blind_spot_analysis_20260502]] SG7の盲点分析: 見えていないBLOCKパターン
+- → [[gunshi_idle_side_effect_scan_20260504]] 副作用スキャン: 変更の波及リスク分析
+- → [[gunshi_idle_side_effect_scan_cmd2593_2595_20260507]] cmd2593/2595の副作用スキャン
+- → [[gunshi_idle_stale_ac_analysis_20260426]] 陳腐化AC: 配備済みcmdのAC不整合分析
+- → [[gunshi_idle_stale_report_bugs_20260503]] 陳腐化報告バグ: 古いreportへの対処
+- → [[gunshi_idle_target_path_nazenaze_20260520]] target_path省略によるスコープ逸脱のなぜなぜ
+- → [[gunshi_idle_wa_arg_swap_20260428]] WA: 引数スワップパターンの根因分析
+- → [[gunshi_idle_wa_data_quality_20260425]] WA: データ品質問題のワークアラウンドパターン
+- → [[gunshi_idle_wa_immunity_20260415]] WA免疫: ワークアラウンドを防ぐgate設計
+- → [[gunshi_idle_wa_lesson_candidate_20260415]] WAから教訓候補への変換プロセス
+- → [[gunshi_idle_wa_pattern_deep_20260425]] WAパターン深堀り: 構造的原因の抽出
+- → [[gunshi_idle_wa_qm_pattern_20260413]] WA品質管理パターン
+- → [[gunshi_idle_wa_timeseries_20260411]] WA時系列分析: 発生頻度の推移
+- → [[gunshi_idle_wa_trend_20260408]] WAトレンド: 初期の傾向分析
+- → [[cmd_498_karo-independent-assessment]] 家老独立評価(cmd_498)
+- → [[gunshi_nazenaze_waive_ac_blind_spot_20260416]] AC棄却の盲点: なぜ確認をスキップするか
+- → [[lessons_karo_v2_archive]] 家老教訓v2アーカイブ(旧バージョン教訓の履歴保管)
 - → [[growth-loop]] 家老の第二層学習ループ(対)の実践
+
+<!-- 軍師idle分析リンク(cmd_3278自動追記) -->
+- [[gunshi_idle_lesson_impact_20260412]] — 軍師idle: 教訓インパクト分析(2026-04-12)
+- [[gunshi_idle_lesson_dedup_20260413]] — 軍師idle: 教訓重複排除分析(2026-04-13)
+- [[gunshi_idle_lesson_effectiveness_20260413]] — 軍師idle: 教訓有効性測定(2026-04-13)
+- [[gunshi_idle_lesson_injection_dual_track_20260428]] — 軍師idle: 教訓注入デュアルトラック設計(2026-04-28)
+- [[gunshi_idle_lesson_ref_rate_analysis_20260430]] — 軍師idle: 教訓参照率分析(2026-04-30)
+- [[gunshi_idle_lesson_useful_rate_20260422]] — 軍師idle: 教訓有用率計測(2026-04-22)
+- [[gunshi_idle_lesson_useful_rate_20260503]] — 軍師idle: 教訓有用率計測v2(2026-05-03)
+- [[gunshi_idle_lesson_tag_mismatch_20260507]] — 軍師idle: 教訓タグ不一致分析(2026-05-07)
+- [[gunshi_idle_insights_consumption_bottleneck_20260515]] — 軍師idle: インサイト消費ボトルネック分析(2026-05-15)
+- [[gunshi_idle_lesson_waste_analysis_20260516]] — 軍師idle: 教訓無駄分析(2026-05-16)
+- [[gunshi_idle_knowledge_burial_audit_20260505]] — 軍師idle: 知識埋没監査(2026-05-05)
+- [[gunshi_idle_lesson_injection_universal_bypass_20260602]] — 軍師idle: 教訓注入汎用バイパス問題(2026-06-02)
+- [[gunshi_idle_lesson_injection_quality_20260605]] — 軍師idle: 教訓注入品質監査(2026-06-05)
+- [[gunshi_idle_lesson_useful_rate_20260608]] — 軍師idle: 教訓有用率計測v3(2026-06-08)
+- [[gunshi_idle_bulletin_nazenaze_7_20260515]] — 軍師idle: 掲示板なぜなぜ#7分析(2026-05-15)
+- [[gunshi_idle_lgtm_block_pattern_20260414]] — 軍師idle: LGTM BLOCKパターン分析(2026-04-14)
