@@ -72,7 +72,14 @@ log_war() {
 EXPECTED_WATCHER_COUNT="${EXPECTED_WATCHER_COUNT:-9}"
 
 inbox_watcher_process_count() {
-    pgrep -fc "[i]nbox_watcher\.sh" 2>/dev/null || true
+    # inbox_watcher.sh は while ループ内で `( ... ) &` のバックグラウンドサブシェルを
+    # forkするため、1エージェントが親+子で最大2プロセスに見え、子はループ周期で
+    # 生成・消滅する。pgrep -fc では総数が 9〜18 で変動し、固定値(EXPECTED=9)との
+    # 厳密一致チェックが正常起動でもランダムに失敗していた（cmd_2967 リグレッション）。
+    # 親子何プロセスになっても安定するよう、ユニークなエージェント名で数える。
+    ps ax -o args= 2>/dev/null \
+        | grep -oE '/inbox_watcher\.sh [a-z]+' \
+        | awk '{print $2}' | sort -u | wc -l | tr -d ' '
 }
 
 stop_existing_inbox_watchers() {
