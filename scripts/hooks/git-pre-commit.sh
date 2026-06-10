@@ -118,6 +118,7 @@ is_yaml_dump_scan_target() {
     [[ "$file" == *yaml-dump-guard* ]] && return 1
     [[ "$file" == *pre_bash_combined_guard* ]] && return 1
     [[ "$file" == scripts/hooks/* ]] && return 1
+    [[ "$file" == skills/* ]] && return 1  # skills/のスクリプトはcli_profiles.yaml操作用。運用YAML非対象
     [[ "$file" == *.sh || "$file" == *.py ]]
 }
 
