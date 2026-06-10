@@ -2016,6 +2016,23 @@
   causal_chain: "target_re太字対応→regex拡大→偽positiveリスク→値検証維持+52テストで防御"
   origin: "[[cmd_3143]] -> [[adversarial遡及]]"
   timestamp: "2026-06-10T13:00:00"
+- cmd_id: cmd_3270
+  review_type: draft
+  verdict: APPROVE
+  gate_result: N/A
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。note-draft FAIL率38%(3/8)根因修正。exit code 1=Chrome起動失敗(L237)+タブなし(L249)の2パス。FAIL率数値verified。timeout_minutes:30で実行時間制限。blast_radius=note_draft.sh 1ファイル"
+  observations:
+    - "事実1: exit codeパス4箇所確認 — L237(exit1 Chrome起動失敗)/L249(exit1 タブなし)/L261(exit2 ログイン失敗)/L268(exit3 ProseMirror未レンダリング)"
+    - "事実2: assumptions claim『L236(exit 1)』は実際L237。1行ズレ軽微。exit 1が2パスある事実はAC1で特定対象"
+    - "事実3: ac_physical_verify PASS。scripts/note_draft.sh 417行存在。関連テスト=test_cmd_complete_gate.bats"
+    - "事実4: adversarial — fallback追加でタイムアウト増加リスクあるがtimeout_minutes:30で制限"
+  causal_chain: "note-draft FAIL率38%→3セッション連続startup BLOCK→根因(Python exit code 1)特定+修正→スキル信頼性向上(正の複利)"
+  brainwash_check: "洗脳#5防止: L6-洗脳#1(cmd_3270レビュー未実施)WARNを即対応。洗脳#2防止: exit codeパスをRead toolで現物確認(L237/L249/L261/L268)"
+  ambiguity_points: none
+  origin: "[[cmd_3270]] -> [[note-draft FAIL率38%根因修正]] -> [[APPROVE]]"
+  timestamp: "2026-06-10T12:25:00"
 # === L6-洗脳#2解消: 実動作確認5件 ===
 - cmd_id: cmd_3143
   review_type: self_study
