@@ -102,7 +102,19 @@ def main() -> int:
 
     fm = data.get("files_modified")
     if isinstance(fm, str) and fm.strip():
-        data["files_modified"] = [{"path": fm.strip(), "change": "modified"}]
+        fm_str = fm.strip()
+        # 破損検出: 「- path:」または「change:」が2回以上出現する場合は
+        # 複数ファイルが1つのstringとして押込まれた形式破損 → FM_FORMAT_INVALIDへ昇格
+        if fm_str.count("- path:") >= 2 or fm_str.count("change:") >= 2:
+            print(
+                f"UNFIXABLE: FM_FORMAT_INVALID: files_modified contains multi-file YAML list "
+                f"encoded as a single string "
+                f"({fm_str.count('- path:')} '- path:' markers, "
+                f"{fm_str.count('change:')} 'change:' markers). "
+                "Cannot auto-fix: manual correction required."
+            )
+            return 1
+        data["files_modified"] = [{"path": fm_str, "change": "modified"}]
         fixes.append("files_modified string→dict変換(単一ファイル)")
     elif isinstance(fm, list):
         needs_fix = False
