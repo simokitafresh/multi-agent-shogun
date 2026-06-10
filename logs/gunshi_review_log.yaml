@@ -2084,6 +2084,22 @@
   brainwash_check: "洗脳#4防止: useful_rate改善の成果に惑わされずmismatchリスクを検出。洗脳#2: useful_rate 70.6%をgate_lesson_health.sh実行で現物確認(数値: 12/17)"
   origin: "[[cmd_3271]] -> [[kagemaru useful_rate改善]] -> [[FAIL_mismatch_risk]]"
   timestamp: "2026-06-10T16:08:00"
+- cmd_id: cmd_3272
+  review_type: draft
+  verdict: APPROVE
+  gate_result: N/A
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。yaml.safe_dump→yaml_field_set.sh 1箇所置換。GP-136正当BLOCK対応。shallow修正(L198のみ)。家老横展開確認済み"
+  observations:
+    - "事実1: claude_version_switch.sh L198にyaml.safe_dump存在(cmd assumptions verified)"
+    - "事実2: yaml_field_set.shはflock付きatomic write。settings.yaml構造破壊リスクなし"
+    - "事実3: 横展開=1箇所のみ(家老blt_20260610_172123で確認済み)"
+  causal_chain: "GP-136正当BLOCK→yaml.safe_dump→yaml_field_set.sh置換→settings.yaml丸ごと上書きリスク排除(正の複利)"
+  brainwash_check: "洗脳#8防止: shallow修正で完了急ぎの誘惑あるが6観点全て検討。洗脳#2: L198のyaml.safe_dump存在をcmd assumptions verifiedで確認"
+  ambiguity_points: none
+  origin: "[[cmd_3272]] -> [[GP-136 yaml.safe_dump置換]] -> [[APPROVE]]"
+  timestamp: "2026-06-10T17:28:00"
 # === L6-洗脳#2解消: 実動作確認5件 ===
 - cmd_id: cmd_3143
   review_type: self_study
