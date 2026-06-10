@@ -55,11 +55,12 @@ fi
 
 # ── Step 1-6: All in one Python script ──
 PY_EXIT=0
-python3 << PYEOF || PY_EXIT=$?
+_PY_STDERR_FILE="/tmp/note_draft_stderr_$$.txt"
+python3 << PYEOF 2>"$_PY_STDERR_FILE" || PY_EXIT=$?
 import sys, os, time, json, base64, pathlib
 
 sys.path.insert(0, "${AUTO_OPS_DIR}")
-from cdp.cdp_helper import launch_browser, get_tab, js_eval, navigate, cdp_send, screenshot, _is_cdp_alive
+from cdp.cdp_helper import launch_browser, get_tab, create_tab, js_eval, navigate, cdp_send, screenshot, _is_cdp_alive
 from dotenv import load_dotenv
 
 PORT = ${CDP_PORT}
@@ -239,6 +240,13 @@ print(f"[note_draft] Chrome alive on port {PORT}")
 
 # Step 2: Check login state
 tab = get_tab(port=PORT)
+if not tab:
+    print("[note_draft] No page tab found. Creating new tab...")
+    tab = create_tab(url="about:blank", port=PORT)
+    time.sleep(1)
+if not tab:
+    print("[note_draft] ERROR: No page tab available on CDP port", file=sys.stderr)
+    sys.exit(1)
 navigate(tab, "https://note.com/notes/new", port=PORT)
 time.sleep(4)
 url = js_eval(tab, "document.URL", port=PORT)
@@ -385,8 +393,15 @@ TS="$(date '+%Y-%m-%dT%H:%M:%S%z')"
 if [[ $PY_EXIT -eq 0 ]]; then
   RESULT="PASS"; STUMBLING=""
 else
-  RESULT="FAIL"; STUMBLING="Python script exited with code ${PY_EXIT}"
+  RESULT="FAIL"
+  if [[ -s "$_PY_STDERR_FILE" ]]; then
+    PY_ERR_DETAIL="$(tail -3 "$_PY_STDERR_FILE" | tr '\n' ' ' | cut -c1-150)"
+    STUMBLING="Python exit ${PY_EXIT}: ${PY_ERR_DETAIL}"
+  else
+    STUMBLING="Python script exited with code ${PY_EXIT}"
+  fi
 fi
+rm -f "$_PY_STDERR_FILE"
 cat >> "$SKILL_LOG" << LOGEOF
 - ts: "${TS}"
   skill: "note-draft"
