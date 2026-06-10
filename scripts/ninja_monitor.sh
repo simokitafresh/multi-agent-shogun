@@ -3947,7 +3947,12 @@ check_ninja_cli_dead() {
         # 起動コマンドを取得（一次情報優先: 前回起動コマンド→settings.yamlフォールバック）
         local launch_cmd
         launch_cmd=$(tmux display-message -t "$pane_target" -p '#{pane_start_command}' 2>/dev/null || echo "")
-        if [ -z "$launch_cmd" ] || [[ "$launch_cmd" == *"bash"* && "$launch_cmd" != *"claude"* && "$launch_cmd" != *"codex"* ]]; then
+        # respawn-pane経由のpane_start_commandは"cd DIR && CLI"等の複合形式。これを再ラップすると
+        # cd前置が雪だるま式にネストし引用が崩壊してstatus 126で死ぬ(kagemaru事故 2026-06-10 21:16-22:
+        # 1回目respawn後start_command="cd...&&claude"→2回目で export...&& cd...&& "cd...&&claude" に成長)。
+        # 複合形式(&&や引用符を含む)は信頼せず、設定から純粋なCLIコマンドを再構築する。
+        if [ -z "$launch_cmd" ] || [[ "$launch_cmd" == *'&&'* ]] || [[ "$launch_cmd" == *'"'* ]] \
+           || [[ "$launch_cmd" == *"bash"* && "$launch_cmd" != *"claude"* && "$launch_cmd" != *"codex"* ]]; then
             launch_cmd=$(build_cli_command "$name" 2>/dev/null || true)
         fi
         if [ -z "$launch_cmd" ]; then
