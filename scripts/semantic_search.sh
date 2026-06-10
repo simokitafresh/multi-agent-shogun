@@ -140,6 +140,26 @@ memory_db_cache_path_for() {
     printf '%s/%s_%s\n' "$cache_dir" "$cache_key" "$(basename "$source_path")"
 }
 
+# SQLite Backup APIで一貫スナップショットを作成する。
+# cp生コピーは書込み中(WAL checkpoint/drain等)のDBで非一貫コピーとなり
+# 「database disk image is malformed」を引き起こす(2026-06-10 22:27実測:
+# 19k backlog drain中のrefreshで破損cacheが生成され読み手がクラッシュ)。
+# Backup APIはWAL内容も統合するためwal/shmの個別コピーは不要。
+_consistent_db_snapshot() {
+    python3 - "$1" "$2" 2>/dev/null <<'PY'
+import sqlite3
+import sys
+
+src = sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True)
+dst = sqlite3.connect(sys.argv[2])
+try:
+    src.backup(dst)
+finally:
+    dst.close()
+    src.close()
+PY
+}
+
 prepare_memory_db_for_read() {
     local source_path="${SEMANTIC_MEMORY_DB_PATH:-$default_memory_db_path}"
     [ "${SEMANTIC_DISABLE_MEMORY_DB_CACHE:-0}" != "1" ] || {
@@ -171,24 +191,10 @@ prepare_memory_db_for_read() {
             flock -n 9 2>/dev/null || exit 0
             tmp_path="${cache_path}.tmp.$$"
             rm -f "$tmp_path" 2>/dev/null || true
-            cp "$source_path" "$tmp_path" 2>/dev/null || exit 0
-            if [ -f "${source_path}-wal" ]; then
-                cp "${source_path}-wal" "${tmp_path}-wal" 2>/dev/null || true
-            else
-                rm -f "${cache_path}-wal" 2>/dev/null || true
-            fi
-            if [ -f "${source_path}-shm" ]; then
-                cp "${source_path}-shm" "${tmp_path}-shm" 2>/dev/null || true
-            else
-                rm -f "${cache_path}-shm" 2>/dev/null || true
-            fi
+            _consistent_db_snapshot "$source_path" "$tmp_path" || { rm -f "$tmp_path"; exit 0; }
             mv "$tmp_path" "$cache_path" 2>/dev/null || rm -f "$tmp_path"
-            if [ -f "${tmp_path}-wal" ]; then
-                mv "${tmp_path}-wal" "${cache_path}-wal" 2>/dev/null || rm -f "${tmp_path}-wal"
-            fi
-            if [ -f "${tmp_path}-shm" ]; then
-                mv "${tmp_path}-shm" "${cache_path}-shm" 2>/dev/null || rm -f "${tmp_path}-shm"
-            fi
+            # Backup APIはWALを本体に統合済み。古いサイドカーが残ると不整合になるため削除
+            rm -f "${cache_path}-wal" "${cache_path}-shm" 2>/dev/null || true
         ) 9>"$lock_path" &
         printf '%s\n' "$cache_path"
         return 0
@@ -199,24 +205,10 @@ prepare_memory_db_for_read() {
         flock 9 2>/dev/null || exit 0
         if [ ! -s "$cache_path" ] || [ "$source_path" -nt "$cache_path" ]; then
             rm -f "$tmp_path" 2>/dev/null || true
-            cp "$source_path" "$tmp_path" 2>/dev/null || exit 0
-            if [ -f "${source_path}-wal" ]; then
-                cp "${source_path}-wal" "${tmp_path}-wal" 2>/dev/null || true
-            else
-                rm -f "${cache_path}-wal" 2>/dev/null || true
-            fi
-            if [ -f "${source_path}-shm" ]; then
-                cp "${source_path}-shm" "${tmp_path}-shm" 2>/dev/null || true
-            else
-                rm -f "${cache_path}-shm" 2>/dev/null || true
-            fi
+            _consistent_db_snapshot "$source_path" "$tmp_path" || { rm -f "$tmp_path"; exit 0; }
             mv "$tmp_path" "$cache_path" 2>/dev/null || rm -f "$tmp_path"
-            if [ -f "${tmp_path}-wal" ]; then
-                mv "${tmp_path}-wal" "${cache_path}-wal" 2>/dev/null || rm -f "${tmp_path}-wal"
-            fi
-            if [ -f "${tmp_path}-shm" ]; then
-                mv "${tmp_path}-shm" "${cache_path}-shm" 2>/dev/null || rm -f "${tmp_path}-shm"
-            fi
+            # Backup APIはWALを本体に統合済み。古いサイドカーが残ると不整合になるため削除
+            rm -f "${cache_path}-wal" "${cache_path}-shm" 2>/dev/null || true
         fi
     ) 9>"$lock_path"
 
