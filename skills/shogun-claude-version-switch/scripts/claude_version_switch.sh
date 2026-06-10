@@ -180,22 +180,52 @@ set_launch_cmd() {
   log "Backup created: $backup_path"
 
   CLI_PROFILES="$CLI_PROFILES" NEW_CMD="$new_cmd" python3 - <<'PY'
-import os, yaml
+import os, re
 path = os.environ["CLI_PROFILES"]
 new_cmd = os.environ["NEW_CMD"]
+
 with open(path, "r", encoding="utf-8") as f:
-    cfg = yaml.safe_load(f) or {}
-profiles = cfg.setdefault("profiles", {})
-if not isinstance(profiles, dict):
-    profiles = {}
-    cfg["profiles"] = profiles
-claude = profiles.setdefault("claude", {})
-if not isinstance(claude, dict):
-    claude = {}
-    profiles["claude"] = claude
-claude["launch_cmd"] = new_cmd
+    lines = f.readlines()
+
+out = []
+in_profiles = False
+in_claude = False
+replaced = False
+
+for line in lines:
+    stripped = line.rstrip()
+    indent = len(line) - len(line.lstrip())
+    if not in_profiles:
+        if re.match(r'^profiles\s*:', stripped):
+            in_profiles = True
+        out.append(line)
+        continue
+    if not in_claude:
+        if re.match(r'^  claude\s*:', stripped):
+            in_claude = True
+        out.append(line)
+        continue
+    # inside claude block
+    if indent >= 4 or line.strip() == "" or line.strip().startswith("#"):
+        if line.strip().startswith("launch_cmd:"):
+            out.append(f"    launch_cmd: {new_cmd}\n")
+            replaced = True
+            continue
+        out.append(line)
+        continue
+    else:
+        if not replaced:
+            out.append(f"    launch_cmd: {new_cmd}\n")
+            replaced = True
+        in_claude = False
+        out.append(line)
+        continue
+
+if in_claude and not replaced:
+    out.append(f"    launch_cmd: {new_cmd}\n")
+
 with open(path, "w", encoding="utf-8") as f:
-    yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False)
+    f.writelines(out)
 PY
 }
 
