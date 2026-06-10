@@ -602,6 +602,12 @@ for item in summary.get("candidate_aliases", []):
 PY
     while IFS=$'\t' read -r alias source_name original_query; do
         [ -n "$alias" ] || continue
+        # 重複発行ガード: 同一aliasのinsightが既に存在(pending/resolved問わず)するならスキップ。
+        # resolved済みクエリの再発行が再蓄積の根因(2026-06-10実証: 18:13 resolve→21:06同一クエリ
+        # 再発行→pending 51→0→28再蓄積。生成器が回る限り無限再生成される構造)
+        if [ -f "$insights_path" ] && grep -qF "[[$alias]]" "$insights_path"; then
+            continue
+        fi
         if [ -x "$insight_write" ] || [ -f "$insight_write" ]; then
             INSIGHTS_FILE="$insights_path" bash "$insight_write" \
                 "[[$alias]] semantic_stress_test candidate_aliases: NO_MATCH source=$source_name query=$original_query" \
@@ -621,6 +627,10 @@ PY
 if [ "$write_insights" = true ] && [ -s "$tmp_dir/high_frequency_no_match_terms.tsv" ]; then
     while IFS=$'\t' read -r alias source_name original_query frequency_count; do
         [ -n "$alias" ] || continue
+        # 重複発行ガード(candidate_aliasesと同様): test_set_candidate表記を含む既存があればスキップ
+        if [ -f "$insights_path" ] && grep -F "[[$alias]]" "$insights_path" | grep -q "test_set_candidate"; then
+            continue
+        fi
         if [ -x "$insight_write" ] || [ -f "$insight_write" ]; then
             INSIGHTS_FILE="$insights_path" bash "$insight_write" \
                 "[[$alias]] semantic_stress_test test_set_candidate: high_frequency_NO_MATCH count=$frequency_count source=$source_name query=$original_query quality_gate=blind_hit_rate_non_regression fixed_50_role=regression_detection_only" \
