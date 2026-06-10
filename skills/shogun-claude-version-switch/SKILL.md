@@ -1,6 +1,6 @@
 ---
 name: shogun-claude-version-switch
-argument-hint: "[pinned|latest|status]"
+argument-hint: "[pinned|latest|status] [--agent <name>]"
 quality_metric: "将軍系: Claude version切替cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
 description: |
   【将軍専用】multi-agent-shogun の Claude Code version 運用を切り替える。
@@ -21,11 +21,17 @@ Claude Code の version 運用だけを切り替えるスキルである。
 # 現状確認
 ~/.codex/skills/shogun-claude-version-switch/scripts/claude_version_switch.sh status
 
-# 2.1.87 へ固定（config変更 + Claude pane respawn）
+# 全Claude paneを 2.1.87 へ固定
 ~/.codex/skills/shogun-claude-version-switch/scripts/claude_version_switch.sh pin-2.1.87
 
-# updater管理版へ戻す（config変更 + Claude pane respawn）
+# 全Claude paneを最新版へ
 ~/.codex/skills/shogun-claude-version-switch/scripts/claude_version_switch.sh unpin-latest
+
+# 特定paneだけ最新版に（他は変更なし）
+~/.codex/skills/shogun-claude-version-switch/scripts/claude_version_switch.sh unpin-latest --agent hayate
+
+# 特定paneをピン止めに戻す（個別オーバーライド削除）
+~/.codex/skills/shogun-claude-version-switch/scripts/claude_version_switch.sh pin-2.1.87 --agent hayate
 ```
 
 ## Safety
@@ -38,7 +44,7 @@ Claude Code の version 運用だけを切り替えるスキルである。
 ## Options
 
 ```bash
-~/.codex/skills/shogun-claude-version-switch/scripts/claude_version_switch.sh <status|pin-2.1.87|unpin-latest> [--repo <path>] [--dry-run] [--settings-only]
+~/.codex/skills/shogun-claude-version-switch/scripts/claude_version_switch.sh <status|pin-2.1.87|unpin-latest> [--agent <name>] [--repo <path>] [--dry-run] [--settings-only]
 ```
 
 ## Notes
@@ -46,3 +52,5 @@ Claude Code の version 運用だけを切り替えるスキルである。
 - 対象は **Claude 系 pane のみ**
 - Codex 配備や mixed 編成そのものは変えない
 - 2.1.87 固定資産が欠けている場合は停止して報告する
+- `--agent` 指定時: settings.yaml の個別 `launch_cmd` を操作（cli_lookup.sh のオーバーライド機構を利用）
+- `--agent` + `pin-2.1.87`: 個別オーバーライドを削除しプロファイルデフォルト(ピン止め)に戻す
