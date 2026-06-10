@@ -1172,6 +1172,7 @@ codd:
 | cmd | `cmd_3267` 殿生発言フィルタ改善: task-notification等のシステム通知を除外し追体験Q精度向上 (`scripts/gates/gate_shogun_startup.sh`) |
 | causal | `cmd_3267` origin: [[gate_shogun_startup]] -> [[殿生発言Q偽陽性]] -> [[追体験Q精度低下]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T15:56:00+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:30:32+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 
 ## growth_loop — 学習ループ
 

@@ -105,4 +105,18 @@ projects:
     status: planned
     note: "診療介助ロール担当回数記録・可視化。Next.js+FastAPI+SQLite+Render Disk。共有スマホ氏名入力+二重承認(日+週)+棒グラフ"
 
+  - id: clinic-expense-tracker
+    name: "Clinic Expense Tracker"
+    path: "/mnt/c/Python_app/clinic-expense-tracker"
+    priority: medium
+    status: active
+    note: "診療所経費管理トラッカー。Next.jsアプリ"
+
+  - id: dividend-tracker
+    name: "Dividend Tracker"
+    path: "/mnt/c/Python_app/dividend-tracker"
+    priority: medium
+    status: active
+    note: "配当収入追跡アプリ。Next.jsアプリ"
+
 current_project: dm-signal
