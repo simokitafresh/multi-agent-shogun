@@ -102,4 +102,6 @@ cat >&2 <<'GUIDE'
 4. 保存: bash scripts/cmd_save.sh <id>
 5. BLOCK/WARNが出たら: 根本原因をdiagnosisに書き、environment_change: "type=gate|lesson|hook; file=...; pattern=既存文字列" を追記(patternはrg -nFで存在確認)
 6. PASS後: bash scripts/cmd_delegate.sh cmd_<id> "<家老への配備メッセージ>" (inbox_write直接のcmd_newはgateがBLOCK)
+7. 新規ファイル/ディレクトリを伴うcmdは意図的新設である理由をdiagnosisに書け(new_file WARN対策。無自覚な新設=車輪の再発明検査)
+8. 性能ACに合格点(閾値)を書くな(LS053)。構造的二値(プロセス起動O(1)等)+実測値報告+理論限界比で書け。閾値はデータ量変化で無意味化し、到達で最適化が止まる
 GUIDE
