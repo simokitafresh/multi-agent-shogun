@@ -801,7 +801,9 @@ fi
 INSIGHTS_FILE="$ROOT_DIR/queue/insights.yaml"
 pending_insights=0
 if [ -f "$INSIGHTS_FILE" ]; then
-  pending_insights=$(grep -c 'status: pending' "$INSIGHTS_FILE" 2>/dev/null || echo 0)
+  # grep -cはマッチ0件でも"0"を出力してexit 1するため、|| echo 0併用だと
+  # "0\n0"の2行になり整数比較が壊れる(実機: "[: 0\n0: integer expression expected")
+  pending_insights=$(grep -c 'status: pending' "$INSIGHTS_FILE" 2>/dev/null) || pending_insights=0
 fi
 embed_details+=("(c)insights未処理: ${pending_insights}件")
 if [ "${pending_insights:-0}" -ge 5 ] && [ "${session_completed_cmds:-0}" -gt 0 ]; then
