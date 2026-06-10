@@ -2067,6 +2067,23 @@
   ambiguity_points: "閾値調整幅は忍者裁量(q10記載)。AC2 before/after比較で効果計測される"
   origin: "[[cmd_3271]] -> [[教訓健全度useful_rate改善]] -> [[APPROVE]]"
   timestamp: "2026-06-10T12:38:00"
+- cmd_id: cmd_3271
+  review_type: report
+  report_ninja: kagemaru
+  verdict: FAIL
+  gate_result: pending
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "FAIL(LG006): files_modified=deploy_task.sh+post-bash-combined.sh。post-bash-combined.shがcommand欄に未記載→mismatch BLOCKリスク。実装は正しい(useful_rate 46.2%→70.6%確認, 276bats全PASS)。副産物修正(parse_fail_countバグ)は有益だがscope明示が必要"
+  observations:
+    - "事実1: files_modified 2件。command欄にdeploy_task.sh L3772のみ。post-bash-combined.shは未記載"
+    - "事実2: useful_rate before 46.2% → after 70.6%。gate_lesson_health.sh実行で現物確認"
+    - "事実3: cmd固有commitなし。auto-commit(b032849f9)に巻込み。scope外ファイル多数含む"
+    - "事実4: lesson_candidate有り(parse_fail_countのTAP行フィルタ未適用)。副産物として有益"
+  step3_5_verified: true
+  causal_chain: "useful_rate 46.2%→fallback全量注入抑制→70.6%改善。副産物parse_fail_countバグ修正は有益だがcommand欄不在→mismatch BLOCK"
+  brainwash_check: "洗脳#4防止: useful_rate改善の成果に惑わされずmismatchリスクを検出。洗脳#2: useful_rate 70.6%をgate_lesson_health.sh実行で現物確認(数値: 12/17)"
+  origin: "[[cmd_3271]] -> [[kagemaru useful_rate改善]] -> [[FAIL_mismatch_risk]]"
+  timestamp: "2026-06-10T16:08:00"
 # === L6-洗脳#2解消: 実動作確認5件 ===
 - cmd_id: cmd_3143
   review_type: self_study
