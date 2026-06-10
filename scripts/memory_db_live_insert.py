@@ -210,6 +210,16 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
     tmp_path = ""
     with open(lock_path, "w", encoding="utf-8") as lock_handle:
         fcntl.flock(lock_handle, fcntl.LOCK_EX)
+        # Orphan sweep: the exclusive flock guarantees no other backup is live,
+        # so any pre-existing tmp for this cache is a dead leftover (e.g. the
+        # writing process was SIGKILLed before its finally block could run).
+        for stale in glob.glob(
+            os.path.join(cache_dir, f".{os.path.basename(cache_path)}.*.tmp*")
+        ):
+            try:
+                os.unlink(stale)
+            except OSError:
+                pass
         fd, tmp_path = tempfile.mkstemp(
             prefix=f".{os.path.basename(cache_path)}.",
             suffix=".tmp",
@@ -1364,10 +1374,11 @@ def main() -> int:
         append_contradiction_candidate(args)
     elif args.event_type == "duplicate_candidate":
         append_duplicate_candidate(args)
-    try:
-        sync_memory_db_ext4_cache(args.db_path)
-    except Exception as exc:
-        print(f"WARN: memory DB ext4 cache sync failed: {exc}", file=sys.stderr)
+    if os.environ.get("SHOGUN_MEMORY_DB_SKIP_CACHE_SYNC", "0") != "1":
+        try:
+            sync_memory_db_ext4_cache(args.db_path)
+        except Exception as exc:
+            print(f"WARN: memory DB ext4 cache sync failed: {exc}", file=sys.stderr)
     return 0
 
 

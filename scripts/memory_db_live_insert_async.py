@@ -37,6 +37,12 @@ def enqueue(args: list[str]) -> None:
 
 
 def run_insert(args: list[str]) -> bool:
+    # Skip the full-DB ext4 cache backup inside the timed child. The backup of
+    # a 100MB+ DB regularly exceeds TIMEOUT_SECONDS, so the child got SIGKILLed
+    # mid-backup: orphan tmp files piled up in the cache dir and the (already
+    # committed) insert was re-enqueued forever. Cache freshness is owned by
+    # the readers (memory_db_query.sh / semantic_search.sh refresh on -nt).
+    env = dict(os.environ, SHOGUN_MEMORY_DB_SKIP_CACHE_SYNC="1")
     try:
         completed = subprocess.run(
             [sys.executable, str(LIVE_INSERT), *args],
@@ -45,6 +51,7 @@ def run_insert(args: list[str]) -> bool:
             check=False,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            env=env,
         )
         return completed.returncode == 0
     except subprocess.TimeoutExpired:
@@ -112,7 +119,9 @@ def drain_queue() -> None:
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
             args = payload.get("args")
-            if not isinstance(args, list) or not all(isinstance(item, str) for item in args):
+            # Empty args is a poison item: the child exits 2 on argparse,
+            # never gets unlinked, and head-of-line blocks the whole queue.
+            if not isinstance(args, list) or not args or not all(isinstance(item, str) for item in args):
                 path.unlink(missing_ok=True)
                 continue
             if source_file_is_ephemeral(args):
@@ -139,7 +148,8 @@ def main(argv: list[str]) -> int:
         try:
             fcntl.flock(lock_handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
-            enqueue(argv)
+            if argv:
+                enqueue(argv)
             return 0
 
         drain_queue()
