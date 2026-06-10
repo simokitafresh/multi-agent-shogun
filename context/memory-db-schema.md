@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-10 cmd_3271 -->
+<!-- last_updated: 2026-06-10 -->
 
 # Memory DB Schema
 
@@ -9,13 +9,13 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 68585 | event_id, concept_name, relevance_score |
-| table | event_links | 1475 | source_event_id, target_concept, link_type |
-| table | event_state_transitions | 132 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
-| table | events | 50390 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
-| table | events_fts | 50390 | summary, detail |
-| table | search_logs | 4370 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
-| view | conversations | 35038 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 69205 | event_id, concept_name, relevance_score |
+| table | event_links | 1533 | source_event_id, target_concept, link_type |
+| table | event_state_transitions | 136 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
+| table | events | 50840 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
+| table | events_fts | 50840 | summary, detail |
+| table | search_logs | 4452 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
+| view | conversations | 35155 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -34,19 +34,20 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 35038 |
-| cmd_archive | 5766 |
-| bulletin | 4605 |
-| skill_execution | 2902 |
-| insight | 774 |
-| inbox | 723 |
-| report | 328 |
+| conversation | 35155 |
+| cmd_archive | 5996 |
+| bulletin | 4614 |
+| skill_execution | 2908 |
+| insight | 851 |
+| inbox | 728 |
+| report | 330 |
 | cmd_quality | 84 |
 | gate | 57 |
-| cmd_save | 54 |
+| cmd_save | 56 |
 | pending_decision | 44 |
 | lesson | 10 |
 | workaround | 4 |
+| project | 2 |
 | infrastructure_state | 1 |
 
 ## `event_concepts`
