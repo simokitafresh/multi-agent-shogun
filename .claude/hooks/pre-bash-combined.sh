@@ -282,8 +282,37 @@ if [[ "$payload" == *'--no-verify'* || "$payload" == *'HUSKY=0'* ]] || \
             emit_deny "BLOCKED: --no-verify is forbidden on git commands. Fix hooks, do not bypass them."
         fi
         # git commit -n (short alias for --no-verify, commit only — -n means different things for other subcommands)
+        # 貪欲FP族対策(2026-06-10): 全文regexはメッセージ内の「bash -n」等を誤検知(同日実測1件)。
+        # shlexトークン化でcommitトークン以降・コマンド区切り前の実引数トークンのみ検査
+        # (引用句内文字列は1トークンに畳まれ除外される)。解析失敗時はBLOCK=fail-closed。FN追加ゼロ。
         if [[ "$command" =~ git[[:space:]]+commit[[:space:]] && "$command" =~ [[:space:]]-n([[:space:]]|$) ]]; then
-            emit_deny "BLOCKED: git commit -n (--no-verify) is forbidden. Fix hooks, do not bypass them."
+            _commit_n_verdict=$(COMMIT_N_CMD="$command" python3 - <<'PYGUARD' 2>/dev/null || echo BLOCK
+import os, shlex, json
+cmd = os.environ.get("COMMIT_N_CMD", "")
+# awk抽出はJSONエスケープ(\" \n等)を温存する仕様(cmd_2075)。shlex前にデコードする。
+try:
+    cmd = json.loads('"' + cmd + '"')
+except Exception:
+    pass  # 非エスケープ形はそのまま
+try:
+    toks = shlex.split(cmd)
+except ValueError:
+    print("BLOCK"); raise SystemExit
+SEP = {"&&", "||", ";", "|"}
+block = False
+for i, t in enumerate(toks):
+    if t == "commit":
+        for k in range(i + 1, len(toks)):
+            if toks[k] in SEP:
+                break
+            if toks[k] == "-n":
+                block = True
+print("BLOCK" if block else "OK")
+PYGUARD
+)
+            if [[ "$_commit_n_verdict" != "OK" ]]; then
+                emit_deny "BLOCKED: git commit -n (--no-verify) is forbidden. Fix hooks, do not bypass them."
+            fi
         fi
         # Hook bypass via environment variables
         if [[ "$command" == *'HUSKY=0'* ]]; then
