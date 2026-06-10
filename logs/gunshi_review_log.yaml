@@ -2071,9 +2071,9 @@
   review_type: report
   report_ninja: kagemaru
   verdict: FAIL
-  gate_result: pending
+  gate_result: CLEAR
   finding_categories: [assumptions, numbers, premortem, adversarial]
-  findings_summary: "FAIL(LG006): files_modified=deploy_task.sh+post-bash-combined.sh。post-bash-combined.shがcommand欄に未記載→mismatch BLOCKリスク。実装は正しい(useful_rate 46.2%→70.6%確認, 276bats全PASS)。副産物修正(parse_fail_countバグ)は有益だがscope明示が必要"
+  findings_summary: "FAIL(LG006)→GATE CLEAR。post-bash-combined.sh command欄不在→mismatch予測→家老が解消しCLEAR。useful_rate 46.2%→70.6%改善確認"
   observations:
     - "事実1: files_modified 2件。command欄にdeploy_task.sh L3772のみ。post-bash-combined.shは未記載"
     - "事実2: useful_rate before 46.2% → after 70.6%。gate_lesson_health.sh実行で現物確認"
