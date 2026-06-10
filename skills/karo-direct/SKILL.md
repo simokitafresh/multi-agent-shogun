@@ -54,6 +54,10 @@ task:
 YAML
 ```
 
+**★projectは作業実体で選べ（current_projectに流すな）**: CI修正・gate/hook/context索引・スクリプト修正等のインフラ系作業は、対象ファイルがPJ名を含んでも `project: infra` を指定する。
+判定基準=「変更/調査するのは何のコードか」（例: context/dm-signal-research.mdの鮮度回復=contextインフラ作業→infra）。
+理由: project指定が教訓注入のスコープになる。GA-038でproject: dm-signal指定→dm-signal教訓10件が10/10無駄打ちし、lesson useful率を9.4%まで汚染した(2026-06-11軍師計測)。
+
 ### Step 3: タスク配備
 ```bash
 # /tmp から deploy_task.sh --yaml 経由で配備する。
