@@ -364,6 +364,26 @@ auto_commit_path_in_scope() {
     return 1
 }
 
+# target_pathなし忍者のauto-commitは運用ファイルのみ許可（default-closed）。
+# scripts/config等のコード・設定は他エージェント作業中差分の巻き込みリスクがある
+# ため明示commitに限定する（2026-06-10 saizo auto-commitが将軍編集中の
+# scripts/cmd_save.sh等を巻き込んだ事故の再発防止）。
+filter_operational_paths_only() {
+    local agent_name="$1"
+    local path
+    while IFS= read -r path || [ -n "$path" ]; do
+        [ -n "$path" ] || continue
+        case "$path" in
+            queue/*|logs/*|context/*|docs/*|projects/*|tasks/*|dashboard.md)
+                printf '%s\n' "$path"
+                ;;
+            *)
+                log "AUTO-COMMIT-OPERATIONAL-SKIP: $agent_name excluded $path (non-operational, no target_path)"
+                ;;
+        esac
+    done
+}
+
 filter_auto_commit_paths_by_task_scope() {
     local agent_name="$1"
     local scope_text path
@@ -371,7 +391,7 @@ filter_auto_commit_paths_by_task_scope() {
 
     scope_text="$(auto_commit_scope_paths_for_agent "$agent_name")"
     if [ -z "${scope_text//[[:space:]]/}" ]; then
-        cat
+        filter_operational_paths_only "$agent_name"
         return 0
     fi
     while IFS= read -r path || [ -n "$path" ]; do

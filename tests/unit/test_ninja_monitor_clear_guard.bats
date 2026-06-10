@@ -19,33 +19,80 @@ trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
-mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/context" "$STATE_DIR"
+mkdir -p "$SCRIPT_DIR/queue" "$SCRIPT_DIR/context" "$STATE_DIR"
 cd "$SCRIPT_DIR"
 git init -q
 git config user.email test@example.com
 git config user.name test
-printf "base\n" > scripts/a.sh
+printf "base\n" > queue/a.yaml
 printf "base\n" > context/foo.md
-git add scripts/a.sh context/foo.md
+git add queue/a.yaml context/foo.md
 git commit -qm initial
 
-printf "change\n" >> scripts/a.sh
+printf "change\n" >> queue/a.yaml
 printf "change\n" >> context/foo.md
 NINJA_MONITOR_NOW=10000
 export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
-_uncommitted=$(git status --porcelain -uno -- scripts/ context/)
+_uncommitted=$(git status --porcelain -uno -- queue/ context/)
 auto_commit_before_clear hayate "$_uncommitted"
 
 regular_files=$(git show --name-only --format= HEAD~1 | sed "/^$/d" | sort | tr "\n" " ")
 context_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
 echo "regular=$regular_files"
 echo "context=$context_files"
-test "$regular_files" = "scripts/a.sh "
+test "$regular_files" = "queue/a.yaml "
 test "$context_files" = "context/foo.md "
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"regular=scripts/a.sh"* ]]
+    [[ "$output" == *"regular=queue/a.yaml"* ]]
     [[ "$output" == *"context=context/foo.md"* ]]
+}
+
+@test "auto_commit: no target_path restricts regular commit to operational paths" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT/repo"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/queue" "$SCRIPT_DIR/config" "$STATE_DIR"
+cd "$SCRIPT_DIR"
+git init -q
+git config user.email test@example.com
+git config user.name test
+printf "base\n" > scripts/edited_by_shogun.sh
+printf "base\n" > config/settings.yaml
+printf "base\n" > queue/state.yaml
+git add scripts/edited_by_shogun.sh config/settings.yaml queue/state.yaml
+git commit -qm initial
+
+printf "change\n" >> scripts/edited_by_shogun.sh
+printf "change\n" >> config/settings.yaml
+printf "change\n" >> queue/state.yaml
+NINJA_MONITOR_NOW=10000
+export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
+_uncommitted=$(git status --porcelain -uno -- scripts/ config/ queue/)
+auto_commit_before_clear saizo "$_uncommitted"
+
+committed_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
+worktree_files=$(git diff --name-only | sort | tr "\n" " ")
+echo "committed=$committed_files"
+echo "worktree=$worktree_files"
+cat "$LOG"
+test "$committed_files" = "queue/state.yaml "
+test "$worktree_files" = "config/settings.yaml scripts/edited_by_shogun.sh "
+grep -q "AUTO-COMMIT-OPERATIONAL-SKIP: saizo excluded scripts/edited_by_shogun.sh" "$LOG"
+grep -q "AUTO-COMMIT-OPERATIONAL-SKIP: saizo excluded config/settings.yaml" "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"committed=queue/state.yaml"* ]]
+    [[ "$output" == *"AUTO-COMMIT-OPERATIONAL-SKIP"* ]]
 }
 
 @test "auto_commit: task target_path limits regular git add scope" {
@@ -112,20 +159,20 @@ trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
-mkdir -p "$SCRIPT_DIR/scripts" "$STATE_DIR"
+mkdir -p "$SCRIPT_DIR/queue" "$STATE_DIR"
 cd "$SCRIPT_DIR"
 git init -q
 git config user.email test@example.com
 git config user.name test
-printf "base\n" > scripts/a.sh
-git add scripts/a.sh
+printf "base\n" > queue/a.yaml
+git add queue/a.yaml
 git commit -qm initial
 
 printf "9900\n" > "$STATE_DIR/.last_auto_commit"
-printf "change\n" >> scripts/a.sh
+printf "change\n" >> queue/a.yaml
 NINJA_MONITOR_NOW=10000
 export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
-_uncommitted=$(git status --porcelain -uno -- scripts/)
+_uncommitted=$(git status --porcelain -uno -- queue/)
 auto_commit_before_clear hayate "$_uncommitted"
 
 count=$(git rev-list --count HEAD)
@@ -1182,7 +1229,13 @@ task:
   target_path: scripts/gates
 INNEREOF
 
-# saizo is doing /clear (no task scope)
+# saizo is doing /clear with target_path=scripts (covers hanzo scope too;
+# operational-only filter applies only when clearing agent has no target_path)
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<INNEREOF
+task:
+  status: done
+  target_path: scripts
+INNEREOF
 NINJA_NAMES=(hanzo saizo)
 printf "change\n" >> scripts/a.sh
 printf "change\n" >> scripts/gates/check.sh
