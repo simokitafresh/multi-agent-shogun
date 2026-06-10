@@ -176,6 +176,30 @@ run_gate() {
     [[ "$output" == *"NOT FOUND"* ]]
 }
 
+@test "過剰マッチ回帰: パス直後に全角括弧・日本語文 → 抽出されない（AC3回帰）" {
+    # doc-style-guide.md L48パターン: （docs/research/に詳細移動）→ のような記述
+    # 拡張子アンカーなし → .md等がなければrefとして抽出しない
+    make_projects_yaml ""
+    make_context_file "test.md" "リンク先作成（docs/research/に詳細移動）→ リンク先存在確認"
+
+    run_gate "$TEST_TMPDIR/context/test.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[OK]"* ]]
+    [[ "$output" == *"0 refs checked"* ]]
+}
+
+@test "過剰マッチ回帰: 日本語説明文が全角句点で区切られる表行 → 途中パスで止まらない（AC3回帰）" {
+    # cmd-chronicle.md L499パターン: 説明文にdocs/research/パスが含まれ全角句点が続く場合
+    # 全角。で文字クラスを打ち切り + 拡張子アンカーにより過剰マッチしない
+    make_projects_yaml ""
+    make_context_file "test.md" "| cmd | docs/research/some_dir/配下ファイルが孤立。先送り。context/other.md参照 | infra |"
+
+    run_gate "$TEST_TMPDIR/context/test.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[OK]"* ]]
+    [[ "$output" == *"0 refs checked"* ]]
+}
+
 @test "DM-signal偽陽性パターン: 外部リポなし環境でdm-signal参照をスキップ" {
     # 外部リポ(DM-signal等)が全て存在しない環境をシミュレート
     make_projects_yaml "  - id: dm-signal

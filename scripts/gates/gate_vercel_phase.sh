@@ -208,7 +208,7 @@ main() {
         [ -n "$context_file" ] || continue
         check_ref_record "$context_file" "$line_no" "$raw_ref"
     done < <(
-        rg -n -o --with-filename --no-heading 'docs/research/[^\s\x60\[\]()\x27"<>,;{}|]+' "${context_files[@]}" 2>/dev/null \
+        rg -n -o --with-filename --no-heading 'docs/research/[^\s\x60\[\]()\x27"<>,;{}|。、）（」「]+?\.(md|json|yaml|py|sh|txt)' "${context_files[@]}" 2>/dev/null \
             | grep -v 'XXX\|YYY\|ZZZ\|{.*}' \
             | awk -F: '{
                 file = $1

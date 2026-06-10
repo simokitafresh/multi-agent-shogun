@@ -38,7 +38,7 @@ task:
   project: infra
   purpose: '軍師実証(blt_20260611_013831): cmd_3278_saizo報告precheckでCRITICAL発火したが根因はsaizo無関係の偽陽性2種。(1)ref抽出regexの文字クラスに非ASCIIがなく日本語ファイル名(cmd_3218_サイズ調整バックテスト.md)が途中切断され存在しないパスを生成 (2)外部repo(DM-signal)に実在する参照がNOT FOUND判定。将軍がgate_vercel_phase.sh L211の文字クラス現物で切断メカニズムを確認済み。残4チャンク報告+今後の全context変更cmdで再発するため根治する'
   scout_exempt: true
-  status: done
+  status: in_progress
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_vercel_phase.sh
   task_id: cmd_3281_full
@@ -103,21 +103,7 @@ task:
   - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
   - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L485: gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因: W
-      - L771: skills/cmd-complete/SKILL.md Step1-8にcontext/*.md更新ステップが構造的に欠落(hanzo現物実証: lesson
-      - L173: instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github
-      - L102: タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正
-      - L437: gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_l
-      - L770: gate_skill_script_refs.shはscript_refs_checked_atタグをmatches[-1](最後のタグ)で評価する。SKILL
-      - L304: gate_cycle_health.shのgrep -c pattern || echo 0は、0マッチ時にgrep -cが0を出力しつつexit 1→echo
-      - L108: IF compact_stateにタスク状態を記録する時 THEN 長さ制限(例: 500文字)の追加を検討せよ
-      - L590: 指定2ファイル修正だけではCI全量で別cmd_save fixtureが同じq8 5W1H WARNを出した。gate条件追加時のfixture修正はrgで同一
-      - L654: task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母
-    ────────────────────────────────────────
-    
-    
+  description: "【軍師FAIL是正(cmd_3281差し戻し)】L211否定文字クラス修正が過剰マッチ偽陽性を導入(軍師実証: パス直後の日本語文が文末までマッチ。doc-style-guide.md L48全角括弧+chronicle L509で実証。切断3件解消と引換えに過剰2件導入=クラス置換であり根治未達)。是正せよ: (1)regexを拡張子アンカー方式に変更: 既知拡張子(md/json/yaml/py/sh/txt)のリテラルピリオド+拡張子でパターンを終端させ、非貪欲マッチにする(日本語パス対応と過剰マッチ防止を両立)。代替案=全角句読点・全角括弧(。、）（」)を否定クラスへ追加 (2)batsに過剰マッチ回帰ケース(パス直後に日本語文・全角括弧)を追加 (3)全context走査でga038由来3件解消+過剰マッチ0件+真陽性2件(cmd_3222_VIX/growth-loop L149)維持をbefore/afterで記録 (4)真陽性2件は本cmdスコープ外(別途リンク修正対象)と報告に明記"
   acceptance_criteria:
   - id: 'AC1'
     checks:
