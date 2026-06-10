@@ -1,9 +1,16 @@
 task:
-  _ac_task_id: cmd_3274_full
+  _ac_task_id: cmd_3278_chunk1
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3274 (deployed 2026-06-10T21:18:38). Read from the beginning.
-  ac_version: 87422ec0
-  engineering_preferences: []
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3278 (deployed 2026-06-11T01:17:13). Read from the beginning.
+  ac_version: d8ec7f5e
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
   - 'Level1(事後検出): 間違えた後にgateが検出'
   - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
@@ -13,61 +20,65 @@ task:
   - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
   - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
   - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
+  - '2026-06-10T17:54:09+09:00 | [MEM: memory_db ts=2026-06-10T09:33] 殿「今の気づきをL0-L7に貫通させて、次から起きないように行動せよ」 **L0-L7 = 防御階層(7層貫通設計)** | '
+  - 2026-06-10T17:35:30+09:00 | 【INFOバッチ】 2026-06-10 17:34:19|cmd_3272
+  - 2026-05-09T21:05:32+09:00 | 【INFOバッチ】 2026-05-09 20:52:05|cmd_2607 2026-05-09 21:04:20|cmd_2608
+  - 2026-05-02T21:12:49+09:00 | 【INFOバッチ】 2026-05-02 21:04:01|cmd_2479
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3274
-  project: clinic-expense-tracker
-  purpose: '殿指示(2026-06-10 21:04「遅すぎる。やり方が間違っている。Gmailは今後も増える。サンクコストに囚われず今やるべき」+21:18「速度を合格点にするのではなく、より早くを目的にして修行すべき」)。遅さの真因=1通ごとにgws CLI(Node.js)をcold startする直列ループ(実測145分/1,577通=5.5秒/通)。投入自体は21:06に完了済み(1,577件・将軍と家老が独立検証済み)のため、本cmdはデータ再投入ではなく取込エンジンの恒久部品化: プロセス起動O(1)化+増分同期+FTS5日本語トークナイザ欠陥修正'
-  status: idle
+  parent_cmd: cmd_3278
+  project: infra
+  purpose: startup gateのbacklinks=0 WARNが20回繰り返し表示。表示はlimit 5だが実態はcausal_backlink_counts.sh --zeroで孤立400件(2026-06-11実測)。5件ずつの消化では80セッションかかる。全量400件を対象にリンク元(context/skills/docs索引)から[[リンク]]を接続し、孤立を根こそぎ解消する
+  semantic_concepts:
+  - 'agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-claude-version-switch/SKILL.md skills/shogun-claude-version-switch/scripts/claude_version_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)'
+  status: in_progress
   stop_for: []
-  target_path: /mnt/c/Python_app/clinic-expense-tracker
-  task_id: cmd_3274_full
+  target_path: /mnt/c/tools/multi-agent-shogun/docs/research/
+  task_id: cmd_3278_full
   task_type: full
   related_lessons:
   - id: 'L447'
     summary: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
     detail: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
-  - id: 'L634'
-    summary: 'role_type_idでDB集計時点で絞る必要がある。FEのみのフィルタはAPI応答が全ロール合算のため機能しない。BE側にrole_type_idパラメータ'
-    detail: 'role_type_idでDB集計時点で絞る必要がある。FEのみのフィルタはAPI応答が全ロール合算のため機能しない。BE側にrole_type_idパラメータ'
-  - id: 'L040'
-    summary: 'IF WSL2環境でUsage APIを呼び出す監視スクリプトを実装する時 THEN timeout設定を10秒以上に設定せよ'
-    detail: 'IF WSL2環境でUsage APIを呼び出す監視スクリプトを実装する時 THEN timeout設定を10秒以上に設定せよ'
-  - id: 'L726'
-    summary: 'memory DB FTS自体をtimeoutで囲っても、失敗時に通常LLM fallbackへ落ちると外側処理はboundedではなくなる。検索/復旧系fal'
-    detail: 'memory DB FTS自体をtimeoutで囲っても、失敗時に通常LLM fallbackへ落ちると外側処理はboundedではなくなる。検索/復旧系fal'
-  - id: 'L294'
-    summary: 'cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想'
-    detail: 'cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想'
-  - id: 'L203'
-    summary: 'xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール'
-    detail: 'xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール'
-  - id: 'L066'
-    summary: 'integration,yaml-key-mismatch,dry-run-limitation'
-    detail: 'integration,yaml-key-mismatch,dry-run-limitation'
-  - id: 'L635'
-    summary: '架空の関係(staff-role_type)を作る危険を回避。records.role_type_idで永続化キーを持ち、表示時にrole_typesから名称解'
-    detail: '架空の関係(staff-role_type)を作る危険を回避。records.role_type_idで永続化キーを持ち、表示時にrole_typesから名称解'
-  - id: 'L604'
-    summary: 'gate validation コードに lookup_fix_hints() を追加することで、skill_auto_improve.sh がゲートの知識を自'
-    detail: 'gate validation コードに lookup_fix_hints() を追加することで、skill_auto_improve.sh がゲートの知識を自'
-  - id: 'L523'
-    summary: '偵察cmdでcron/fullrecalculate/Render API POSTなどの実行禁止事項がある場合、inbox_writeで伝えるだけでは意志依存'
-    detail: '偵察cmdでcron/fullrecalculate/Render API POSTなどの実行禁止事項がある場合、inbox_writeで伝えるだけでは意志依存'
+  - id: 'L771'
+    summary: 'skills/cmd-complete/SKILL.md Step1-8にcontext/*.md更新ステップが構造的に欠落(hanzo現物実証: lesson'
+    detail: 'skills/cmd-complete/SKILL.md Step1-8にcontext/*.md更新ステップが構造的に欠落(hanzo現物実証: lesson'
+  - id: 'L434'
+    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
+    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
+  - id: 'L178'
+    summary: 'Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.'
+    detail: 'Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.'
+  - id: 'L551'
+    summary: 'cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.'
+    detail: 'cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.'
+  - id: 'L435'
+    summary: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒'
+    detail: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒'
+  - id: 'L614'
+    summary: 'PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE ''[a-z_]+.sh'' が pre-bash-combine'
+    detail: 'PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE ''[a-z_]+.sh'' が pre-bash-combine'
+  - id: 'L198'
+    summary: 'プライマリボタンは画面に1つだけ。ボタン階層: filled(主)→outlined(副)→text-only(補助)の3段階。最小タッチターゲット48pt×4'
+    detail: 'プライマリボタンは画面に1つだけ。ボタン階層: filled(主)→outlined(副)→text-only(補助)の3段階。最小タッチターゲット48pt×4'
+  - id: 'L583'
+    summary: 'gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate'
+    detail: 'gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate'
+  - id: 'L096'
+    summary: 'bash,variable-scope,preflight'
+    detail: 'bash,variable-scope,preflight'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-claude-version-switch/SKILL.md skills/shogun-claude-version-switch/scripts/claude_version_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)"
   related_causal_links:
-  - "[[cmd_3274プロセスO1化+増分同期]]"
-  - "[[gws CLI cold start直列]]"
-  - "[[殿指示2026-06-10遅すぎる]]"
+  - "[[cmd_3278全量因果リンク接続]]"
+  - "[[limit5表示の裏に孤立400件]]"
+  - "[[startup_backlinks0_20回連続]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -88,44 +99,38 @@ task:
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L447: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe
-      - L634: role_type_idでDB集計時点で絞る必要がある。FEのみのフィルタはAPI応答が全ロール合算のため機能しない。BE側にrole_type_idパラメータ
-      - L040: IF WSL2環境でUsage APIを呼び出す監視スクリプトを実装する時 THEN timeout設定を10秒以上に設定せよ
-      - L726: memory DB FTS自体をtimeoutで囲っても、失敗時に通常LLM fallbackへ落ちると外側処理はboundedではなくなる。検索/復旧系fal
-      - L294: cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想
-      - L203: xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール
-      - L066: integration,yaml-key-mismatch,dry-run-limitation
-      - L635: 架空の関係(staff-role_type)を作る危険を回避。records.role_type_idで永続化キーを持ち、表示時にrole_typesから名称解
-      - L604: gate validation コードに lookup_fix_hints() を追加することで、skill_auto_improve.sh がゲートの知識を自
-      - L523: 偵察cmdでcron/fullrecalculate/Render API POSTなどの実行禁止事項がある場合、inbox_writeで伝えるだけでは意志依存
+      - L771: skills/cmd-complete/SKILL.md Step1-8にcontext/*.md更新ステップが構造的に欠落(hanzo現物実証: lesson
+      - L434: inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信
+      - L178: Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.
+      - L551: cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.
+      - L435: 関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒
+      - L614: PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE '[a-z_]+.sh' が pre-bash-combine
+      - L198: プライマリボタンは画面に1つだけ。ボタン階層: filled(主)→outlined(副)→text-only(補助)の3段階。最小タッチターゲット48pt×4
+      - L583: gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate
+      - L096: bash,variable-scope,preflight
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-10T17:54:09+09:00 | [MEM: memory_db ts=2026-06-10T09:33] 殿「今の気づきをL0-L7に貫通させて、次から起きないように行動せよ」 **L0-L7 = 防御階層(7層貫通設計)** | "
-  - "2026-06-10T17:35:30+09:00 | 【INFOバッチ】 2026-06-10 17:34:19|cmd_3272"
-  - "2026-05-09T21:05:32+09:00 | 【INFOバッチ】 2026-05-09 20:52:05|cmd_2607 2026-05-09 21:04:20|cmd_2608"
-  - "2026-05-02T21:12:49+09:00 | 【INFOバッチ】 2026-05-02 21:04:01|cmd_2479"
+  - "2026-06-10T20:51:02+09:00 | 良い知らせ2件: - **将軍**: 追体験Q6を本セッション内で解消（Q6回答+軍師第三者検証OK+LS052環境埋込）。Gate20回復streak認識と「閾値を下げない」判断も承認 - **軍師"
+  - "2026-06-10T20:50:34+09:00 | 良い知らせ2件: - **将軍**: 追体験Q6を本セッション内で解消（Q6回答+軍師第三者検証OK+LS052環境埋込）。Gate20回復streak認識と「閾値を下げない」判断も承認 - **軍師"
+  - "2026-06-11T00:31:30+09:00 | 【将軍】/clear準備完了。PD:0 cmd pending:0 🚨:0。cmd_3273-3276全CLEAR(マトリクス🟢143/🔴151稼働)。教訓5件+gate根治7件+skills sym"
+  - "2026-06-10T23:17:20+09:00 | ## 2cmd同時クローズ完了 **cmd_3276（佐瀬メールパース）— GATE CLEAR一発通過** - 35通全分類（リスト保有2/引用重複4/リストなし29）→143セルsubmitted"
+  - "2026-06-10T22:43:07+09:00 | どのWARNがカウントされたか全文で確認する。 [meta] stop_reason=tool_use"
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'メール1通あたりのCLIプロセス起動を排除し、単一プロセスからGmail APIを直接呼ぶ構造(gws認証トークン再利用を最優先調査、不可ならgoogle-api-python-client。バッチ取得・format=metadata活用検討)に改修する。fetch実行中のps計測でプロセス生成がメール数Nに比例しないことを確認する'
+    - check: 'causal_backlink_counts.sh --zeroの出力が400件から0件になることをbefore/after実行出力で確認する'
   - id: 'AC2'
     checks:
-    - check: 'ベンチ(after:2026/5/1の実窓再fetch)で1通あたり実測msを計測し、直列実績5,500ms/通との比+理論限界(Gmail APIクォータ250units/秒・messages.get=5units→50通/秒、HTTP RTT)との差分分析を報告に記載する。合格閾値は設けない(LS053・殿裁定21:18)。実測値が修行の計測値であり、より早くが目的'
+    - check: '追加リンクは各ファイルの主題と因果(発端→原因→結果)に基づきリンク元の関連セクションに文脈付きで記載され、無意味な機械的リンク羅列ページが0件であることをリンク元ファイル一覧のgrep出力で確認する'
   - id: 'AC3'
     checks:
-    - check: '増分モード(gmail_receiptsのMAX(date)をwatermarkにafter:自動付与、--fullで全期間)+1通ごとdata/gmail_raw/{gmail_id}.json保存によるresume+429/5xx指数バックオフを実装し、増分実行の実測timeを報告する'
-  - id: 'AC4'
-    checks:
-    - check: 'gmail_fts(FTS5)の日本語トークナイザ欠陥を修正する。現状unicode61で日本語分かち書き不能=1,577行同期済みなのにMATCH''請求''=0件・LIKE''%請求%''=330件(将軍+家老実測 2026-06-10 21:15)→tokenize=''trigram''等で再作成し、日本語MATCHをPython sqlite3照会で実証する'
-  - id: 'AC5'
-    checks:
-    - check: '冪等性(INSERT OR IGNORE維持)をベンチ再fetch後のCOUNT(*)照会で確認する(既存1,577件から減少せず、増加は新着分のみ)'
-  - id: 'AC6'
-    checks:
-    - check: '未commitの現行gmail_to_sqlite.py(kagemaru作・halt時commit禁止中)をベースとしてcommitした上で改修をcommitし、docs/03 §6の『201件』を実測1,577件に訂正(出典resultSizeEstimate=Gmail API推定値と実取得の乖離を注記)する。git logで確認する'
+    - check: 'チャンク分割で並列処理する場合も対象400件全量がいずれかのチャンクに含まれ、漏れが0件であることをチャンク割当表と処理済み件数の合計で確認する'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3274.yaml
-  report_path: queue/reports/hayate_report_cmd_3274.yaml
+  report_filename: hayate_report_cmd_3278.yaml
+  report_path: queue/reports/hayate_report_cmd_3278.yaml
   bloom_level: 
-  deployed_at: "2026-06-10T21:18:46"
+  deployed_at: "2026-06-11T01:17:27"
+  checklist: queue/checklists/cmd_3278.md
+  chunk: chunk 1 (92件)

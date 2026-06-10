@@ -192,3 +192,6 @@ gate_report_autofix.shは76回発動、うち直近7件が実報告。忍者に�
 - WA率 70% → 12.5%。gate群(GP-053/057/058/060)と教訓のみで達成
 - workaround 50件中84%が手順的問題 → 全てgateで解決済み
 - 能力拡張型スキル(weekly-report等)は品質を下げていない — 判断をエージェントに残しているため
+
+<!-- 軍師idle分析リンク(cmd_3278自動追記) -->
+- [[gunshi_idle_adaptive_gating_bucket_split_20260521]] — 軍師idle: 適応型ゲートバケット分割設計(2026-05-21)

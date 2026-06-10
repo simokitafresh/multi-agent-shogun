@@ -159,6 +159,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:16:41+09:00 今までの知識を抜かりなく三層記憶に貫通佐瀬よ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:43:04+09:00 ちなみ将軍も三層記憶をさっきもつかわなかった。なぜなら俺が事前に伝えたように最初にいくら伝えても毎回明示しない限り忘れるからだ。おまえも俺の指示を無視して実装した気になっていないか？洗脳されてるぞ。覚醒せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:51:58+09:00 家老のpaneを読め。家老も三層記憶を使わなかった。利他の精神でバグを修正せよ |
+| file | `docs/research/gunshi_idle_dream_gate_analysis_20260507.md` — 軍師idle: dreamゲート分析(2026-05-07) |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -320,6 +321,7 @@ codd:
 | causal_chain | `[[cmd_2577]]` (L716) |
 | causal_chain | `[[cmd_karo_direct_fe_ptu_fix]]` (L720) |
 | causal_chain | `[[cmd_3220]]` (L727) |
+| file | `docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md` — 軍師idle: 洗脳監査メモリループ分析(2026-06-02) |
 
 ## recalculate_pipeline — 再計算パイプライン
 
@@ -956,6 +958,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-25T20:31:35+09:00 慌てて起票するなよ。丁寧に全軸を一つづつなぜなぜ7回。チェックリストをアップデート。一周まわったら軍師に同じようになぜなぜ7回を丁寧に5つの軸を一つずつ検討してもらおう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-25T20:47:14+09:00 もういちどこの順番でいいか、穴がないかなぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-25T21:13:44+09:00 では起票しよう |
+| file | `docs/research/gunshi_idle_codd_ac3_ambiguity_20260424.md` — 軍師idle: CoDD AC3曖昧性分析(2026-04-24) |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -1026,6 +1029,7 @@ codd:
 | causal | `cmd_3215` origin: [[殿指示_レバレッジ急落パターン]] -> [[monthly_returns損失月特定]] -> [[前月deterioration価格分析]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T16:10:33+09:00 まず最初にやるのはMVP。 殿の痛み（メールから読み取れる構造）: ┌────────────┬────────────────────────────────────────────────────────────────────┬─── |
 | causal_chain | `[[cmd_2578]]` (L717) |
+| file | `docs/research/gunshi_alm_parity_drift_analysis_20260409.md` — 軍師分析: ALMパリティドリフト分析(2026-04-09) |
 
 ## deepdive_principles — deepdive原理
 
@@ -1151,6 +1155,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T15:56:00+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:30:32+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T00:08:04+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| file | `docs/research/gunshi_idle_deepdive_design_impl_phantom_20260516.md` — 軍師idle: deepdive設計実装ファントム問題(2026-05-16) |
 
 ## growth_loop — 学習ループ
 
@@ -1210,6 +1215,10 @@ codd:
 | cmd | `cmd_3244` スキル推薦precision計測修正: 推薦ログninja_name追加+照合キー変更 |
 | causal | `cmd_3244` origin: 因果: [[3セッション連続BLOCK_スキル推薦精度]] -> [[推薦agent≠実行agent]] -> [[precision照合キー不一致]]。教訓LS-A18(計測なき改善不能)が根拠 |
 | causal_chain | `[[cmd_1832]]` (L597) |
+| file | `docs/research/gunshi_idle_growth_loop_nazenaze_20260515.md` — 軍師idle: 成長ループなぜなぜ分析(2026-05-15) |
+| file | `docs/research/gunshi_idle_immune_effectiveness_20260512.md` — 軍師idle: 免疫システム有効性測定(2026-05-12) |
+| file | `docs/research/gunshi_idle_immune_system_evidence_20260426.md` — 軍師idle: 免疫システム証拠収集(2026-04-26) |
+| file | `docs/research/gunshi_idle_immunity_measurement_20260510.md` — 軍師idle: 免疫計測フレームワーク(2026-05-10) |
 
 ## chain_principle — 鎖の原理
 
@@ -1394,6 +1403,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T10:32:07+09:00 bvu25pkju toolu_01R1fN2WFqQFz6cf9CgyRM1E /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8aa671c0-250c-404e-8b5a-7431d2 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:21:22+09:00 bstvwg6g1 toolu_01YYWfFmxptX4E2JHVrqqjNd /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b1260975-a6df-42fe-8f3b-42fb9a |
 | causal_chain | `[[cmd_1762]]` (L566) |
+| file | `docs/research/gunshi-alm-dynamic-iswindow-design.md` — 軍師分析: ALM動的isWindow設計 |
+| file | `docs/research/gunshi_cmd1901_cash_fallback_design_20260414.md` — 軍師分析: cmd_1901 Cashフォールバック設計(2026-04-14) |
+| file | `docs/research/gunshi_consultation_cmd1901_cash_analysis_20260414.md` — 軍師相談: cmd_1901 Cash分析(2026-04-14) |
 
 ## shin_shijin_design — 四神設計
 
@@ -1456,6 +1468,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T13:12:34+09:00 意味が違う。分身とは均等保有だろ？概念を理解しろ。忍法とはそれに対応するビルディングブロックのことだ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T13:13:54+09:00 忍法とはビルディングブロックを使って構成PFから新しいPFを選別・作成する行為。ビルディングブロック毎に忍法の固有名をつけている |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T13:15:38+09:00 実はL1,L2,L3 とは忍法の重ねがけだ。意味は分かるか？ |
+| file | `docs/research/gunshi_gs_sqlite_further_optimization_20260429.md` — 軍師分析: GS SQLiteさらなる最適化(2026-04-29) |
 
 ## silent_fallback_quality — Silent Fallback品質
 
@@ -1557,6 +1570,7 @@ codd:
 | causal_chain | `[[cmd_2330]]` (L662) |
 | causal_chain | `[[cmd_2346]]` (L666) |
 | causal_chain | `[[cmd_2422]]` (L687) |
+| file | `docs/research/gunshi_idle_adaptive_gating_bucket_split_20260521.md` — 軍師idle: 適応型ゲートバケット分割設計(2026-05-21) |
 
 ## file_rename — ファイルリネーム
 
@@ -1666,7 +1680,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗 |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく |
 | skills | hensei, hensei-mixed, hensei-opus, karo-direct, recon-dual, reset-layout, shogun-all-codex-switch, shogun-claude-version-switch, shogun-peacetime-rollback, switch-to-codex, switch-to-opus |
 | related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework, systems_knowledge_base, skill_design_rules, shogun_android_app, task_modifier_injection, infrastructure_ops, bulletin_communication, inbox_processing_discipline, multi_cli_event_commonization |
 | related_lessons | `L594`, `L603`, `L550`, `L310` |
@@ -1881,6 +1895,10 @@ codd:
 | causal_chain | `[[cmd_2393]]` (L676) |
 | causal_chain | `[[cmd_2411]]` (L684) |
 | causal_chain | `[[cmd_2413]]` (L686) |
+| file | `docs/research/gunshi_codex_clear_judgment_20260422.md` — 軍師分析: Codex clear判断基準(2026-04-22) |
+| file | `docs/research/gunshi_idle_codex_commit_missing_20260413.md` — 軍師idle: Codexコミット欠落分析(2026-04-13) |
+| file | `docs/research/gunshi_idle_codex_respawn_loop_20260516.md` — 軍師idle: Codex respawnループ分析(2026-05-16) |
+| file | `docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md` — 軍師idle: Codex respawnループなぜなぜ(2026-05-20) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -1956,6 +1974,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T14:55:36+09:00 https://seekingalpha.com/symbol/NLY.PR.G/dividends/yieldなども参考に。アプリ以外のサービスも競合だな。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T15:48:45+09:00 UIはstock eventのアプリを参考にしてほしい |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:16:00+09:00 dividend-tracker PJ開始: 配当投資管理Webアプリ。日英バイリンガル。Next.js+Supabase+Google OAuth。MVP R1-R9。Stock Events準拠UI。15社日本語非対応=差別化。gist |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-11T01:19:40+09:00 clinic-expense-trackerの続きはシンプルだ。renderにデプロイするウェブアプリ。画面はシンプルで、縦軸はカテゴリごとに項目一覧、横軸は年月 |
 
 ## cdp_browser_capability — CDP(ブラウザ操作能力)
 
@@ -2066,6 +2085,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T16:34:48+09:00 マネーフォワードのCSVはそっちでCDPで取得せよ。auto-oopsに.envも知見もあるはずだ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T16:39:14+09:00 bapocuy20 toolu_01DA6JHFJXUAiP1qcyPgMTiY /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/0a66f9b4-82bd-49c7-8ea5-2928f0 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:16:00+09:00 clinic-expense-tracker PJ開始: クリニック若友会の経費証票管理。二層設計(SQLite+Drive)。MF3086件+みずほ984件。CDPでMF自動取得実証。karasuyama3387@gmail.com。佐瀬 |
+| file | `docs/research/gunshi_idle_cdp_dmsignal_auth_20260505.md` — 軍師idle: CDP DM-Signal認証分析(2026-05-05) |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -2367,6 +2387,7 @@ codd:
 | cmd | `cmd_3248` (`tests/unit/test_cmd_complete_gate_gunshi_verdict_precheck.bats`) |
 | causal_chain | `[[cmd_2131]]` (L637) |
 | causal_chain | `[[cmd_2131]]` (L638) |
+| file | `docs/research/gunshi_idle_cmd_quality_block_analysis_20260425.md` — 軍師idle: cmd品質BLOCK分析(2026-04-25) |
 
 ## task_modifier_injection — タスク修飾子注入
 
@@ -2404,6 +2425,22 @@ codd:
 | file | `scripts/ninja_monitor.sh` |
 | cmd | `cmd_2754` ninja_monitorに修行サイクル自動トリガーを追加 |
 | cmd | `cmd_2755` FAIL→PASS遷移率の定期計測をninja_monitorに追加 |
+| file | `docs/research/gunshi-idle-S8-workaround-analysis.md` — 軍師idle分析: 修行S8ワークアラウンド分析 |
+| file | `docs/research/gunshi_idle_adversarial_cold_analysis_20260426.md` — 軍師idle: adversarial cold視点分析(2026-04-26) |
+| file | `docs/research/gunshi_idle_adversarial_cold_fix_20260430.md` — 軍師idle: adversarial cold修正(2026-04-30) |
+| file | `docs/research/gunshi_idle_adversarial_cold_fix_20260608.md` — 軍師idle: adversarial cold修正v2(2026-06-08) |
+| file | `docs/research/gunshi_idle_ambiguity_cold_analysis_20260426.md` — 軍師idle: 曖昧cold視点分析(2026-04-26) |
+| file | `docs/research/gunshi_idle_block_pattern_analysis_20260512.md` — 軍師idle: BLOCKパターン分析(2026-05-12) |
+| file | `docs/research/gunshi_idle_block_quality_audit_20260514.md` — 軍師idle: BLOCK品質監査(2026-05-14) |
+| file | `docs/research/gunshi_idle_cold_perspective_ambiguity_20260603.md` — 軍師idle: cold視点曖昧性分析(2026-06-03) |
+| file | `docs/research/gunshi_idle_cold_perspective_audit_20260515.md` — 軍師idle: cold視点監査(2026-05-15) |
+| file | `docs/research/gunshi_idle_cold_perspective_retroactive_20260605.md` — 軍師idle: cold視点遡及分析(2026-06-05) |
+| file | `docs/research/gunshi_idle_cold_perspective_retroactive_20260606.md` — 軍師idle: cold視点遡及分析v2(2026-06-06) |
+| file | `docs/research/gunshi_idle_cold_streak_analysis_20260428.md` — 軍師idle: cold連続パターン分析(2026-04-28) |
+| file | `docs/research/gunshi_idle_cold_streak_structural_20260429.md` — 軍師idle: cold連続構造的原因(2026-04-29) |
+| file | `docs/research/gunshi_idle_l2_completion_check_20260413.md` — 軍師idle: L2完了チェック(2026-04-13) |
+| file | `docs/research/gunshi_idle_l7_autopromote_nazenaze_20260521.md` — 軍師idle: L7自動昇格なぜなぜ(2026-05-21) |
+| file | `docs/research/gunshi_idle_l7_causal_network_learning_20260520.md` — 軍師idle: L7因果ネットワーク学習設計(2026-05-20) |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -2548,6 +2585,7 @@ codd:
 | cmd | `cmd_2818` 因果NW導入 |
 | cmd | `cmd_2860` 因果辺抽出 |
 | cmd | `cmd_2866` 統合パイプライン |
+| file | `docs/research/gunshi_idle_causal_chain_quality_20260425.md` — 軍師idle: 因果チェーン品質評価(2026-04-25) |
 
 ## infrastructure_ops — インフラ運用基盤
 
@@ -2592,6 +2630,24 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-09T09:41:57+09:00 デーモンの再起動をスクリプトでせよ |
 | causal_chain | `[[cmd_2288]]` (L651) |
 | causal_chain | `[[cmd_2292]]` (L652) |
+| file | `docs/research/gunshi_idle_autocommit_scope_leak_20260602.md` — 軍師idle: 自動コミットスコープ漏洩(2026-06-02) |
+| file | `docs/research/gunshi_idle_clear_durability_fix_20260516.md` — 軍師idle: /clear耐久性修正(2026-05-16) |
+| file | `docs/research/gunshi_idle_clear_durability_flag_gap_20260515.md` — 軍師idle: /clear耐久性フラグギャップ(2026-05-15) |
+| file | `docs/research/gunshi_idle_clear_durability_nazenaze_20260515.md` — 軍師idle: /clear耐久性なぜなぜ分析(2026-05-15) |
+| file | `docs/research/gunshi_idle_clear_durability_nazenaze_20260515d.md` — 軍師idle: /clear耐久性なぜなぜ分析(続)(2026-05-15) |
+| file | `docs/research/gunshi_idle_clear_respawn_bug_20260607.md` — 軍師idle: /clear respawnバグ分析(2026-06-07) |
+| file | `docs/research/gunshi_idle_dashboard_corruption_20260603.md` — 軍師idle: ダッシュボード破損分析(2026-06-03) |
+| file | `docs/research/gunshi_idle_deploy_structural_bugs_20260517.md` — 軍師idle: 配備構造バグ分析(2026-05-17) |
+| file | `docs/research/gunshi_idle_deploy_yaml_parse_error_20260516.md` — 軍師idle: 配備YAMLパースエラー(2026-05-16) |
+| file | `docs/research/gunshi_idle_direct_mode_stale_ac_20260502.md` — 軍師idle: ダイレクトモード古いAC問題(2026-05-02) |
+| file | `docs/research/gunshi_idle_gitignore_wa_20260409.md` — 軍師idle: .gitignore WAパターン(2026-04-09) |
+| file | `docs/research/gunshi_idle_infra_bug_audit_20260409.md` — 軍師idle: インフラバグ監査(2026-04-09) |
+| file | `docs/research/gunshi_idle_infra_bug_trio_20260502.md` — 軍師idle: インフラバグトリオ分析(2026-05-02) |
+| file | `docs/research/gunshi_idle_infra_bug_trio_fix_20260503.md` — 軍師idle: インフラバグトリオ修正(2026-05-03) |
+| file | `docs/research/gunshi_idle_infra_bug_universal_commit_20260430.md` — 軍師idle: インフラバグ汎用コミット対策(2026-04-30) |
+| file | `docs/research/gunshi_idle_infra_bugs_full_audit_20260424.md` — 軍師idle: インフラバグ全量監査(2026-04-24) |
+| file | `docs/research/gunshi_idle_infra_health_20260425.md` — 軍師idle: インフラ健全性レポート(2026-04-25) |
+| file | `docs/research/gunshi_idle_infra_speed_hidden_bugs_20260605.md` — 軍師idle: インフラ速度の隠れバグ(2026-06-05) |
 
 ## gate_quality_framework — ゲート品質統合フレームワーク
 
@@ -2691,6 +2747,15 @@ codd:
 | causal_chain | `[[cmd_2443]]` (L695) |
 | causal_chain | `[[cmd_2444]]` (L696) |
 | causal_chain | `[[cmd_2448]]` (L699) |
+| file | `docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md` — 軍師idle: コミットチェックWAパターン(2026-04-10) |
+| file | `docs/research/gunshi_idle_cross_contamination_20260503.md` — 軍師idle: クロスプロジェクト汚染分析(2026-05-03) |
+| file | `docs/research/gunshi_idle_cross_project_fp_20260426.md` — 軍師idle: クロスプロジェクトFP分析(2026-04-26) |
+| file | `docs/research/gunshi_idle_gate_fail_rate_anatomy_20260502.md` — 軍師idle: ゲート失敗率解剖(2026-05-02) |
+| file | `docs/research/gunshi_idle_gate_fail_trend_20260430.md` — 軍師idle: ゲート失敗トレンド分析(2026-04-30) |
+| file | `docs/research/gunshi_idle_gate_fire_traceback_20260510.md` — 軍師idle: ゲート発火トレースバック(2026-05-10) |
+| file | `docs/research/gunshi_idle_gate_fp_analysis_20260527.md` — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27) |
+| file | `docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md` — 軍師idle: LG003ゲートWA分析(2026-05-19) |
+| file | `docs/research/gunshi_idle_lu_dict_pattern_20260415.md` — 軍師idle: LU辞書パターン分析(2026-04-15) |
 
 ## lesson_lifecycle — 教訓ライフサイクル管理
 
@@ -2727,6 +2792,20 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-02T15:09:58+09:00 a2d7a21c443219eb5 toolu_01L5mLQ778f2XNAu1LWmm7AU /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2bbee917-1f2e-4d49-a7b |
 | causal_chain | `[[cmd_2412]]` (L685) |
 | causal_chain | `[[cmd_2436]]` (L693) |
+| file | `docs/research/gunshi_idle_insights_consumption_bottleneck_20260515.md` — 軍師idle: インサイト消費ボトルネック分析(2026-05-15) |
+| file | `docs/research/gunshi_idle_knowledge_burial_audit_20260505.md` — 軍師idle: 知識埋没監査(2026-05-05) |
+| file | `docs/research/gunshi_idle_lesson_dedup_20260413.md` — 軍師idle: 教訓重複排除分析(2026-04-13) |
+| file | `docs/research/gunshi_idle_lesson_effectiveness_20260413.md` — 軍師idle: 教訓有効性測定(2026-04-13) |
+| file | `docs/research/gunshi_idle_lesson_impact_20260412.md` — 軍師idle: 教訓インパクト分析(2026-04-12) |
+| file | `docs/research/gunshi_idle_lesson_injection_dual_track_20260428.md` — 軍師idle: 教訓注入デュアルトラック設計(2026-04-28) |
+| file | `docs/research/gunshi_idle_lesson_injection_quality_20260605.md` — 軍師idle: 教訓注入品質監査(2026-06-05) |
+| file | `docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md` — 軍師idle: 教訓注入汎用バイパス問題(2026-06-02) |
+| file | `docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md` — 軍師idle: 教訓参照率分析(2026-04-30) |
+| file | `docs/research/gunshi_idle_lesson_tag_mismatch_20260507.md` — 軍師idle: 教訓タグ不一致分析(2026-05-07) |
+| file | `docs/research/gunshi_idle_lesson_useful_rate_20260422.md` — 軍師idle: 教訓有用率計測(2026-04-22) |
+| file | `docs/research/gunshi_idle_lesson_useful_rate_20260503.md` — 軍師idle: 教訓有用率計測v2(2026-05-03) |
+| file | `docs/research/gunshi_idle_lesson_useful_rate_20260608.md` — 軍師idle: 教訓有用率計測v3(2026-06-08) |
+| file | `docs/research/gunshi_idle_lesson_waste_analysis_20260516.md` — 軍師idle: 教訓無駄分析(2026-05-16) |
 
 ## gunshi_review_lifecycle — 軍師レビューライフサイクル
 
@@ -2748,6 +2827,16 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T22:50:01+09:00 a95032bc6dc0b089f toolu_01AT6NZ71XzpahZjA4kUBpH8 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2bbee917-1f2e-4d49-a7b |
 | cmd | `cmd_3272` claude_version_switch.sh L198のyaml.safe_dump→yaml_field_set.sh置換(GP-136正当BLOCK対応) (`logs/gunshi_review_log.yaml`, `skills/shogun-claude-version-switch/scripts/claude_version_switch.sh`) |
 | causal | `cmd_3272` origin: [[blt_20260610_172123_8c48d2]] -> [[GP-136 yaml.dump BLOCK]] -> [[claude_version_switch.sh L198]] |
+| file | `docs/research/gunshi_gp193_t1_prevention_20260414.md` — 軍師GP193: T1防止設計(2026-04-14) |
+| file | `docs/research/gunshi_gp194_split_deploy_bc_scope_20260415.md` — 軍師GP194: 分割配備BCスコープ(2026-04-15) |
+| file | `docs/research/gunshi_idle_ac_scope_nazenaze_20260519.md` — 軍師idle: ACスコープなぜなぜ分析(2026-05-19) |
+| file | `docs/research/gunshi_idle_accuracy_goodhart_20260512.md` — 軍師idle: 精度Goodhart過適合分析(2026-05-12) |
+| file | `docs/research/gunshi_idle_altruism_cost_analysis_20260512.md` — 軍師idle: 利他コスト分析(2026-05-12) |
+| file | `docs/research/gunshi_idle_altruism_proposals_20260512.md` — 軍師idle: 利他改善提案(2026-05-12) |
+| file | `docs/research/gunshi_idle_draft_lessons_trend_20260426.md` — 軍師idle: ドラフト教訓トレンド分析(2026-04-26) |
+| file | `docs/research/gunshi_idle_effectiveness_score_baseline_20260512.md` — 軍師idle: 有効性スコアベースライン測定(2026-05-12) |
+| file | `docs/research/gunshi_idle_fail_pattern_active_20260428.md` — 軍師idle: アクティブ失敗パターン分析(2026-04-28) |
+| file | `docs/research/gunshi_idle_lgtm_block_pattern_20260414.md` — 軍師idle: LGTM BLOCKパターン分析(2026-04-14) |
 
 ## bulletin_communication — 掲示板通信基盤
 
@@ -2777,6 +2866,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-27T20:32:19+09:00 こんな質問がメンバーからきました。 【シン玄武：長期の下落相場の場合について】 バム様 いつもお世話になっております。サービスの核に関わる話が含まれますので掲示板ではなく、こちらのダイレクトメッセージにて失礼いたします。 シン玄武は、DM7 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-02T00:39:42+09:00 疾風がやった 掲示板の報告を読んで もう一度考え直してみろ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-02T07:28:18+09:00 掲示板に先送りや後回しにしているものはない？ |
+| file | `docs/research/gunshi_idle_bulletin_nazenaze_7_20260515.md` — 軍師idle: 掲示板なぜなぜ#7分析(2026-05-15) |
 
 ## hook_automation_framework — Hook自動化フレームワーク
 
@@ -2895,6 +2985,8 @@ codd:
 | cmd | `cmd_2895` pre-commit WARN(テスト追加時) |
 | lesson | テストは負債。3問検証(リグレッション/変更頻度/コスト) |
 | cmd | `cmd_karo_hotfix_ga411_test_select_mapping_20260603` (`scripts/test_select.sh`, `tests/unit/test_test_select.bats`) |
+| file | `docs/research/gunshi_idle_bats_speed_bottleneck_20260603.md` — 軍師idle: bats速度ボトルネック分析(2026-06-03) |
+| file | `docs/research/gunshi_idle_bats_speed_redesign_20260603.md` — 軍師idle: bats速度再設計(2026-06-03) |
 
 ## semantic_causal_automation — セマンティック因果自動化
 
@@ -3003,6 +3095,7 @@ codd:
 | file | `scripts/hooks/stop_check_inbox.sh` |
 | file | `scripts/inbox_mark_read.sh` |
 | cmd | `cmd_2922` inbox既読スルー事故→Guard 0d実装 |
+| file | `docs/research/gunshi_idle_inbox_watcher_fp_repeat_20260602.md` — 軍師idle: inboxウォッチャーFP繰返し問題(2026-06-02) |
 
 ## inbox_watcher_process_model — inbox_watcherプロセスモデル
 

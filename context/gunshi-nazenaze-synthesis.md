@@ -121,3 +121,14 @@ ALM研究の前提条件(道具)が整えば、**CAGR目的関数のDMA/DMS検�
 ```
 
 **全体の到達点**: 信号改善は天井(サイクル2)。confidence軸は幻(サイクル4)。momentum事実測定が依然最強。突破口は**目的関数の変更**(Binary→CAGR)と**特徴量の拡張**(6→42メトリクス)。そのための道具(メトリクスエンジン)を先に作る。
+
+<!-- 軍師idle分析リンク(cmd_3278自動追記) -->
+- [[gunshi_idle_ac_scope_nazenaze_20260519]] — 軍師idle: ACスコープなぜなぜ分析(2026-05-19)
+- [[gunshi_idle_accuracy_goodhart_20260512]] — 軍師idle: 精度Goodhart過適合分析(2026-05-12)
+- [[gunshi_idle_altruism_cost_analysis_20260512]] — 軍師idle: 利他コスト分析(2026-05-12)
+- [[gunshi_idle_altruism_proposals_20260512]] — 軍師idle: 利他改善提案(2026-05-12)
+- [[gunshi_idle_draft_lessons_trend_20260426]] — 軍師idle: ドラフト教訓トレンド分析(2026-04-26)
+- [[gunshi_idle_effectiveness_score_baseline_20260512]] — 軍師idle: 有効性スコアベースライン測定(2026-05-12)
+- [[gunshi_idle_fail_pattern_active_20260428]] — 軍師idle: アクティブ失敗パターン分析(2026-04-28)
+- [[gunshi_gp193_t1_prevention_20260414]] — 軍師GP193: T1防止設計(2026-04-14)
+- [[gunshi_gp194_split_deploy_bc_scope_20260415]] — 軍師GP194: 分割配備BCスコープ(2026-04-15)

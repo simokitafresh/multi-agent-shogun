@@ -90,3 +90,7 @@ CDPプロトコルはChromium共通。Chrome/Edge区別不要。
 ## 因果リンク
 
 - → [[cdp-severity.md]] CDP計測・canary・ブラウザ実測の異常分類
+- → [[gunshi_nazenaze_cdp_measurement_20260426]] CDPによる計測のなぜなぜ: 計測根拠の深掘り
+
+<!-- 軍師idle分析リンク(cmd_3278自動追記) -->
+- [[gunshi_idle_cdp_dmsignal_auth_20260505]] — 軍師idle: CDP DM-Signal認証分析(2026-05-05)

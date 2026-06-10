@@ -123,4 +123,9 @@ SQLiteは記憶台帳、Obsidianは人間の認知編集層、セマンティッ
 - → [[context/README.md]] contextディレクトリの目的・テンプレート・読込順序
 - → [[training-cycle]] 修行AC設計にリンク記録を反映
 - → [[semantic_index_design]] セマンティクスインデックスとの分離を明記
+- → [[gunshi_idle_obsidian_link_quality_principle_20260522]] Obsidianリンク品質原則の詳細分析
+- → [[gunshi_idle_obsidian_semantic_growth_20260520]] Obsidian+セマンティック統合成長の設計
 - → [[three-layer-memory-operating-principles_20260603]] 長期外部記憶の状態管理・想起制御・昇格原則
+
+<!-- 軍師idle分析リンク(cmd_3278自動追記) -->
+- [[gunshi_idle_causal_chain_quality_20260425]] — 軍師idle: 因果チェーン品質評価(2026-04-25)

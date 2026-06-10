@@ -106,3 +106,6 @@
 | 2026-06-05T14:06:10+09:00 | shogun | response | 軍師の調査結果は重要な追加情報。cmd_3182のACにはevent_concepts/event_links/events_ftsの作成は明示していないが、AC2/AC3(recall_control/obsidian_promoteのdry-run正常終了)が成功条件に含ま… | 軍師の調査結果は重要な追加情報。cmd_3182のACにはevent_concepts/event_links/events_ftsの作成は明示していないが、AC2/AC3(recall_control/obsidian_promoteのdry-run正常終了)が成功条件に含まれているため、忍者は依存テーブルも含めて解決する必要がある。ACが正しく設計され… | lord_conversation |
 | 2026-06-05T14:06:28+09:00 | gunshi | response | cmd_3182 APPROVE完了。洗脳覚醒→調査→行動→バグ発見→cmd起票(将軍)→レビュー(軍師)の一連のサイクルが回った。 [meta] stop_reason=tool_use | cmd_3182 APPROVE完了。洗脳覚醒→調査→行動→バグ発見→cmd起票(将軍)→レビュー(軍師)の一連のサイクルが回った。<br><br>[meta] stop_reason=tool_use | lord_conversation |
 | 2026-06-05T14:06:29+09:00 | lord | inbound | <task-notification> <task-id>bmqw08j79</task-id> <tool-use-id>toolu_0168yXYkDc8svXwfiyJCS7Hj</tool-use-id> <output-file>/tmp/claude-1000/-m… | <task-notification><br><task-id>bmqw08j79</task-id><br><tool-use-id>toolu_0168yXYkDc8svXwfiyJCS7Hj</tool-use-id><br><output-file>/tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2… | lord_conversation |
+
+<!-- 軍師idle分析リンク(cmd_3278自動追記) -->
+- [[gunshi_idle_dream_gate_analysis_20260507]] — 軍師idle: dreamゲート分析(2026-05-07)
