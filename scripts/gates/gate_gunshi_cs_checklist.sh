@@ -778,12 +778,16 @@ fi
 # inbox内のreport_review依頼で、review_logにreportレビューが存在しないcmdを検出
 _inbox_file="$REPO_ROOT/queue/inbox/gunshi.yaml"
 if [ -f "$_inbox_file" ] && [ -f "$LOG_FILE" ]; then
-    _unreviewed=$(awk '
-        /type:.*report_review/ { getline; if ($0 ~ /read: true/) reviewed_requests++ }
-        /cmd_[0-9]+/ { match($0, /cmd_[0-9]+/); cmd=substr($0, RSTART, RLENGTH); cmds[cmd]++ }
-    ' "$_inbox_file" 2>/dev/null | sort -u || true)
     # report_review依頼されたcmd_idをinboxから抽出
-    _review_requested=$(grep -oP 'cmd_\d+' "$_inbox_file" 2>/dev/null | sort -u)
+    # (type: report_reviewメッセージのcontentのみ対象。全文grepはdraft依頼/掲示板通知の
+    #  cmd言及を誤検知する: 2026-06-10 cmd_3273 draft/cmd_3274掲示板言及の偽陽性で実証)
+    _review_requested=$(awk '
+        function flush() { if (mtype ~ /report_review/) print buf }
+        /^- / { flush(); buf=""; mtype="" }
+        { buf = buf "\n" $0 }
+        /^  type:/ { mtype=$0 }
+        END { flush() }
+    ' "$_inbox_file" 2>/dev/null | grep -oP 'cmd_\d+' | sort -u || true)
     _review_done=$(grep -B1 'review_type: report' "$LOG_FILE" 2>/dev/null | grep 'cmd_id:' | grep -oP 'cmd_\d+' | sort -u)
     _missing=""
     for _cmd in $_review_requested; do
@@ -803,6 +807,7 @@ fi
 _bulletin="$REPO_ROOT/queue/bulletin_board.yaml"
 if [ -f "$_bulletin" ]; then
     _open_actions=$(awk '
+        /^- id:/ { ar=0 }
         /action_type:.*action_required/ { ar=1 }
         ar && /status:.*open/ { count++; ar=0 }
         END { print count+0 }
@@ -911,12 +916,26 @@ fi
 
 # --- L4b: LGTM+BLOCK予測=矛盾検出 (洗脳#4緩い設計防止 殿厳命2026-06-08) ---
 # LGTM=GATE通過保証(LG006)。BLOCKリスク予測+LGTM=矛盾。cmd_3228/3232/3233/3234で4件実証
+# self_studyで遡及検証済み(根因対処+environment fix確認)のcmdは解消扱い(洗脳#2と同型 2026-06-10)
+_lgtm_resolved_by_ss=$(awk '
+    /^- cmd_id:/ { rt=""; obs="" }
+    /review_type: self_study/ { rt="self_study" }
+    /observations:/ { in_obs=1; next }
+    in_obs && /^    - / { obs=obs " " $0 }
+    in_obs && /^  [^ ]/ { in_obs=0 }
+    /timestamp:/ && rt=="self_study" {
+        if (obs ~ /LGTM→BLOCK遡及/) { s=obs; while (match(s, /cmd_[0-9]+/)) { print substr(s,RSTART,RLENGTH); s=substr(s,RSTART+RLENGTH) } }
+        obs=""; rt=""
+    }
+' "$LOG_FILE" 2>/dev/null | sort -u)
 _lgtm_block=$(awk '
     /^- cmd_id:/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); v=""; gr="" }
     /verdict: LGTM/ { v="LGTM" }
     /gate_result:.*BLOCK/ { gr="BLOCK" }
     /timestamp:/ && v=="LGTM" && gr=="BLOCK" && id != "" { print id }
-' "$LOG_FILE" 2>/dev/null | tail -10 || true)
+' "$LOG_FILE" 2>/dev/null | while read -r _cid; do
+    echo "$_lgtm_resolved_by_ss" | grep -qxF "$_cid" || echo "$_cid"
+done | tail -10 || true)
 if [ -n "$_lgtm_block" ]; then
     _lb_count=$(echo "$_lgtm_block" | wc -l)
     echo "WARN(L4b-洗脳#4): ${_lb_count}件のLGTM→BLOCK。BLOCKリスク予測時はFAILにせよ(LG006):"

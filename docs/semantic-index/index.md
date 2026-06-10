@@ -2604,6 +2604,7 @@ codd:
 | file | `scripts/context_freshness_check.sh` |
 | file | `scripts/gates/gate_ninja_workaround_rate.sh` |
 | file | `scripts/cmd_save.sh` |
+| file | `scripts/cmd_skeleton.sh` |
 | file | `context/growth-loop.md` |
 | cmd | `cmd_2897` ac_phase_mixing commit FP除外 |
 | cmd | `cmd_2898` cmd_save BLOCK時トリガーマップ一括表示 |
