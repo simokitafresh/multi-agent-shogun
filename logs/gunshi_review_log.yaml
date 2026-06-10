@@ -2037,9 +2037,9 @@
   review_type: report
   report_ninja: hayate
   verdict: FAIL
-  gate_result: pending
+  gate_result: CLEAR
   finding_categories: [assumptions, numbers, premortem, adversarial]
-  findings_summary: "FAIL(LG006): files_modified=note_draft.sh+skill_auto_improve_state.json。skill_auto_improve_state.jsonがcommand欄に未記載→cmd_complete_gate command_files_modified_mismatch BLOCKリスク。実装自体は正しい(exit code修正+Noneフォールバック+stderrキャプチャ)"
+  findings_summary: "FAIL(LG006)→GATE CLEAR。files_modified mismatch(skill_auto_improve_state.json command欄不在)を家老が解消しCLEAR。FAIL判定はBLOCKリスク予測として妥当(LG006遵守)"
   observations:
     - "事実1: files_modified 2件(note_draft.sh, skill_auto_improve_state.json)。command欄にskill_auto_improve_stateの操作記述なし"
     - "事実2: AC1=yes(FAIL3件のexit code 1特定), AC2=yes(exit 0確認), AC3=yes(FAIL率記載)"
