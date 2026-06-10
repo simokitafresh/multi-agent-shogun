@@ -709,3 +709,61 @@ print('OK')
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
+
+# === Test 22: files_modified 破損押込みパターン → FM_FORMAT_INVALID ERROR (AC1/AC4) ===
+# cmd_3278 hayate報告と同形式: 7ファイルが1つのliteral blockとして押込まれた形式破損
+@test "files_modified multi-file literal block is rejected as FM_FORMAT_INVALID (破損押込み)" {
+    local rpath="$TEST_TMPDIR/queue/reports/hayate_report_cmd_3278.yaml"
+    cat > "$rpath" <<'EOF'
+worker_id: hayate
+parent_cmd: cmd_3278
+verdict: PASS
+files_modified: |-
+  - path: context/gunshi-nazenaze-synthesis.md
+    change: modified
+  - path: context/karo-operations.md
+    change: modified
+  - path: context/cdp-philosophy.md
+    change: modified
+binary_checks:
+  AC1:
+    - check: test
+      result: yes
+EOF
+    run bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"UNFIXABLE"* ]]
+    [[ "$output" == *"FM_FORMAT_INVALID"* ]]
+    run python3 -c "
+import yaml
+with open('$rpath') as f:
+    d = yaml.safe_load(f)
+assert isinstance(d['files_modified'], str), 'Expected str'
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+# === Test 23: files_modified 2ファイル境界値 → change:が2回出現で破損検出 ===
+@test "files_modified two-file literal block is rejected as FM_FORMAT_INVALID (境界値2ファイル)" {
+    local rpath="$TEST_TMPDIR/queue/reports/saizo_report_cmd_999.yaml"
+    cat > "$rpath" <<'EOF'
+worker_id: saizo
+parent_cmd: cmd_999
+verdict: PASS
+files_modified: |-
+  - path: scripts/a.sh
+    change: modified
+  - path: scripts/b.sh
+    change: modified
+binary_checks:
+  AC1:
+    - check: test
+      result: yes
+EOF
+    run bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"UNFIXABLE"* ]]
+    [[ "$output" == *"FM_FORMAT_INVALID"* ]]
+}

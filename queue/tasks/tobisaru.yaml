@@ -1,39 +1,138 @@
-# tobisaru専用タスクファイル
 task:
-  task_id: null
-  parent_cmd: 
-  description: null
-  target_path: null
-  status: idle
-  timestamp: ""
+  _ac_task_id: cmd_3281_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3281 (deployed 2026-06-11T01:45:53). Read from the beginning.
+  ac_version: daecd4ff
+  checklist: queue/checklists/cmd_3278.md
+  chunk: chunk 5 (66件)
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
+  memory_db_context:
+  - '2026-06-10T20:51:02+09:00 | 良い知らせ2件: - **将軍**: 追体験Q6を本セッション内で解消（Q6回答+軍師第三者検証OK+LS052環境埋込）。Gate20回復streak認識と「閾値を下げない」判断も承認 - **軍師'
+  - '2026-06-10T20:50:34+09:00 | 良い知らせ2件: - **将軍**: 追体験Q6を本セッション内で解消（Q6回答+軍師第三者検証OK+LS052環境埋込）。Gate20回復streak認識と「閾値を下げない」判断も承認 - **軍師'
+  - 2026-06-11T00:31:30+09:00 | 【将軍】/clear準備完了。PD:0 cmd pending:0 🚨:0。cmd_3273-3276全CLEAR(マトリクス🟢143/🔴151稼働)。教訓5件+gate根治7件+skills sym
+  - '2026-06-10T23:17:20+09:00 | ## 2cmd同時クローズ完了 **cmd_3276（佐瀬メールパース）— GATE CLEAR一発通過** - 35通全分類（リスト保有2/引用重複4/リストなし29）→143セルsubmitted'
+  - 2026-06-10T22:43:07+09:00 | どのWARNがカウントされたか全文で確認する。 [meta] stop_reason=tool_use
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok: []
+  parent_cmd: cmd_3281
+  project: infra
+  purpose: '軍師実証(blt_20260611_013831): cmd_3278_saizo報告precheckでCRITICAL発火したが根因はsaizo無関係の偽陽性2種。(1)ref抽出regexの文字クラスに非ASCIIがなく日本語ファイル名(cmd_3218_サイズ調整バックテスト.md)が途中切断され存在しないパスを生成 (2)外部repo(DM-signal)に実在する参照がNOT FOUND判定。将軍がgate_vercel_phase.sh L211の文字クラス現物で切断メカニズムを確認済み。残4チャンク報告+今後の全context変更cmdで再発するため根治する'
+  scout_exempt: true
+  status: done
+  stop_for: []
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_vercel_phase.sh
+  task_id: cmd_3281_full
+  task_type: full
   related_lessons:
-  - id: 'L510'
-    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-  - id: 'L508'
-    summary: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-    detail: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-  - id: 'L507'
-    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-  - id: 'L506'
-    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-  - id: 'L505'
-    summary: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-    detail: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-  - id: 'L503'
-    summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-    detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-  - id: 'L502'
-    summary: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
-    detail: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
-  - id: 'L499'
-    summary: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
-    detail: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
-  - id: 'L498'
-    summary: 'yaml_field_set.shはmap_scalar→list→root fallbackの3段階を経るが各段階はexit 2で通知する。set'
-    detail: 'yaml_field_set.shはmap_scalar→list→root fallbackの3段階を経るが各段階はexit 2で通知する。set'
-  - id: 'L497'
-    summary: 'bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport'
-    detail: 'bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport'
+  - id: 'L485'
+    summary: 'gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因: W'
+    detail: 'gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因: W'
+  - id: 'L771'
+    summary: 'skills/cmd-complete/SKILL.md Step1-8にcontext/*.md更新ステップが構造的に欠落(hanzo現物実証: lesson'
+    detail: 'skills/cmd-complete/SKILL.md Step1-8にcontext/*.md更新ステップが構造的に欠落(hanzo現物実証: lesson'
+  - id: 'L173'
+    summary: 'instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github'
+    detail: 'instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github'
+  - id: 'L102'
+    summary: 'タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正'
+    detail: 'タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正'
+  - id: 'L437'
+    summary: 'gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_l'
+    detail: 'gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_l'
+  - id: 'L770'
+    summary: 'gate_skill_script_refs.shはscript_refs_checked_atタグをmatches[-1](最後のタグ)で評価する。SKILL'
+    detail: 'gate_skill_script_refs.shはscript_refs_checked_atタグをmatches[-1](最後のタグ)で評価する。SKILL'
+  - id: 'L304'
+    summary: 'gate_cycle_health.shのgrep -c pattern || echo 0は、0マッチ時にgrep -cが0を出力しつつexit 1→echo'
+    detail: 'gate_cycle_health.shのgrep -c pattern || echo 0は、0マッチ時にgrep -cが0を出力しつつexit 1→echo'
+  - id: 'L108'
+    summary: 'IF compact_stateにタスク状態を記録する時 THEN 長さ制限(例: 500文字)の追加を検討せよ'
+    detail: 'IF compact_stateにタスク状態を記録する時 THEN 長さ制限(例: 500文字)の追加を検討せよ'
+  - id: 'L590'
+    summary: '指定2ファイル修正だけではCI全量で別cmd_save fixtureが同じq8 5W1H WARNを出した。gate条件追加時のfixture修正はrgで同一'
+    detail: '指定2ファイル修正だけではCI全量で別cmd_save fixtureが同じq8 5W1H WARNを出した。gate条件追加時のfixture修正はrgで同一'
+  - id: 'L654'
+    summary: 'task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母'
+    detail: 'task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  semantic_concepts:
+  - "known_unknowns_principle — 無知の知:  memory/deepdive_causal_tracing_20260415.md context/growth-loop.md"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  - "systems_knowledge_base — システム知識辞書:  docs/research/systems-knowledge-base/index.md docs/research/systems-knowledge-base/systems/ docs/research/systems-knowledge-base/systems/gstack.md"
+  related_causal_links:
+  - "[[cmd_3281 vercel_phase偽陽性根治]]"
+  - "[[ref抽出regex非ASCII未対応+外部repo解決不全]]"
+  - "[[軍師実証blt_20260611_013831]]"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L485: gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因: W
+      - L771: skills/cmd-complete/SKILL.md Step1-8にcontext/*.md更新ステップが構造的に欠落(hanzo現物実証: lesson
+      - L173: instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github
+      - L102: タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正
+      - L437: gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_l
+      - L770: gate_skill_script_refs.shはscript_refs_checked_atタグをmatches[-1](最後のタグ)で評価する。SKILL
+      - L304: gate_cycle_health.shのgrep -c pattern || echo 0は、0マッチ時にgrep -cが0を出力しつつexit 1→echo
+      - L108: IF compact_stateにタスク状態を記録する時 THEN 長さ制限(例: 500文字)の追加を検討せよ
+      - L590: 指定2ファイル修正だけではCI全量で別cmd_save fixtureが同じq8 5W1H WARNを出した。gate条件追加時のfixture修正はrgで同一
+      - L654: task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母
+    ────────────────────────────────────────
+    
+    
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: '日本語等の非ASCII文字を含むdocs/research参照パスが切断されずに抽出・解決されることを、実例(cmd_3218_サイズ調整バックテスト.md)を含むfixtureのgate実行出力で確認する'
+  - id: 'AC2'
+    checks:
+    - check: '外部repo(config/projects.yaml登録PJ)に実在する参照がPASSし、どのrepoにも実在しない参照はFAIL維持となることを両面fixtureのgate実行出力で確認する'
+  - id: 'AC3'
+    checks:
+    - check: '既存の壊れリンク検出(真陽性)が全て維持されることを既存bats(tests/unit/test_gate_vercel_phase.bats)と追加回帰テストの実行出力で確認する'
+  - id: 'AC4'
+    checks:
+    - check: 'cmd_3278_saizo報告のprecheck相当のgate再実行で、CRITICAL発火が解消されることをbefore/after出力で確認する'
+  role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: tobisaru_report_cmd_3281.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3281.yaml
+  bloom_level: 
+  deployed_at: "2026-06-11T01:46:20"

@@ -96,21 +96,7 @@ task:
   - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
   - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L447: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe
-      - L771: skills/cmd-complete/SKILL.md Step1-8にcontext/*.md更新ステップが構造的に欠落(hanzo現物実証: lesson
-      - L434: inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信
-      - L178: Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.
-      - L551: cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.
-      - L435: 関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒
-      - L614: PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE '[a-z_]+.sh' が pre-bash-combine
-      - L198: プライマリボタンは画面に1つだけ。ボタン階層: filled(主)→outlined(副)→text-only(補助)の3段階。最小タッチターゲット48pt×4
-      - L583: gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate
-      - L096: bash,variable-scope,preflight
-    ────────────────────────────────────────
-    
-    
+  description: "【軍師FAIL是正(cmd_3278 chunk1報告YAML修正のみ・実作業92/92は検証済みで再作業不要)】queue/reports/hayate_report_cmd_3278.yamlを以下3点修正せよ。report_field_set.sh経由必須(Edit直接禁止): (1)files_modifiedのpath 1要素に7ファイル分が文字列で押込まれている(L31-36)→各ファイルを個別エントリに分解 (2)AC1のresult: yes→noに修正し残存理由を記載(実態after=75件、他chunk進行中のため全体0件は未達。自chunk 92/92解消は達成と明記) (3)files_modified関連にcommit 2件参照を明記: e7bd62bb4(saizo先行commitに自分の78件が混入)+824dff3ce(残量commit)。修正後にgate_report_format.shで事前検証し、家老へreport_received送信。"
   memory_db_context:
   - "2026-06-10T20:51:02+09:00 | 良い知らせ2件: - **将軍**: 追体験Q6を本セッション内で解消（Q6回答+軍師第三者検証OK+LS052環境埋込）。Gate20回復streak認識と「閾値を下げない」判断も承認 - **軍師"
   - "2026-06-10T20:50:34+09:00 | 良い知らせ2件: - **将軍**: 追体験Q6を本セッション内で解消（Q6回答+軍師第三者検証OK+LS052環境埋込）。Gate20回復streak認識と「閾値を下げない」判断も承認 - **軍師"

@@ -1424,3 +1424,67 @@
   hole_action: none
   origin: "[[cmd_3278_kagemaru報告]] -> [[親AC1未調整の3者目]] -> [[FAIL_一括クローズ提案]]"
   timestamp: "2026-06-11T01:58:00"
+- cmd_id: cmd_3281
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  severity: normal
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, simulation]
+  findings_summary: "vercel_phase偽陽性根治(私の提案blt_013831のcmd化)。L211+L37-43現物再確認一致。RC: AC4順序依存 — before=FAIL記録が修正前に必要だがcommand順序1(修正)→3(記録)で手戻り発生。command 0として事前before記録の1行追加。参考: 偽陽性(2)は(1)切断の二次効果の可能性を忍者へ伝達推奨"
+  observations:
+    - "事実1: L211現物: rg 'docs/research/[A-Za-z0-9_./*-]+'=非ASCII不在(assumptions一致)。L37-43: EXTERNAL_REPO_PATHSがconfig/projects.yamlから動的読込=AC2前提実在"
+    - "事実2: AC4 binary_check『before=FAIL/after=PASS』×command順序(修正→再実行)の矛盾。beforeは修正前のみ自然に取得可能"
+    - "事実3: 因果気づき: 切断で『cmd_3218_』不完全prefixが抽出→外部repoにも不在→偽陽性(2)が(1)の二次効果である可能性。AC2 fixtureで切り分け開示が正確"
+  ambiguity_points: none
+  discretion_fills: none
+  hole_action: none
+  finding_confidence_1_10: 9
+  fix_first: AUTO-FIX
+  second_opinion: NOT_NEEDED
+  causal_chain: "command順序の暗黙依存→忍者が手順通り進むとbefore未取得→修正後にstash手戻りor AC4記載不能→1行の事前記録で構造的防止。軍師提案→将軍cmd化→軍師レビューの還流ループが1セッション内で完結=正の複利"
+  brainwash_check: "検証3点中3点現物確認(L211 sed/L37-43 sed/AC4×command突合)。draft転記ゼロ"
+  origin: "[[blt_20260611_013831]] -> [[cmd_3281化]] -> [[RC_AC4順序依存1行]]"
+  timestamp: "2026-06-11T02:05:00"
+- cmd_id: cmd_3278_tobisaru
+  review_type: report
+  report_ninja: tobisaru
+  verdict: FAIL
+  gate_result: null
+  gate_prediction: BLOCK
+  confidence: HIGH
+  finding_categories: [numbers, assumptions]
+  findings_summary: "chunk5 66/66機械検証+commit 6a5338284実在+dict形式正常+衝突帰属を誠実記録。FAIL: AC1=yes同型4者目のみ→一括クローズ提案に合流。precheck偽陽性2件特定: ac_version不一致(タスクがcmd_3281へ上書き済み)+vercel_phase(既知ga038由来)"
+  observations:
+    - "事実1: chunk5全量機械検証: checklist 66 link_id×--zero(0件)の積集合=0件"
+    - "事実2: chronicle書込み実質1件(expense-receipt-audit)のみ=予測したsaizo×tobisaru chronicle衝突は両者の主題分散判断で自然回避"
+    - "事実3: ac_version不一致ERROR(task=daecd4ff/report=d8ec7f5e)は偽陽性: queue/tasks/tobisaru.yamlは既にcmd_3281に上書き済み。d8ec7f5eは4忍者全報告で共通=正規cmd_3278版"
+    - "事実4: precheckのac_version照合はreport review時にtask fileが次タスクへ上書き済みだと構造的に偽ERRORを出す(時限爆弾族の新変種、判定には影響せず)"
+  step3_5_verified: true
+  causal_chain: "親AC1未調整→4者全員同型yes矛盾=設計起因の確定(忍者個人の問題ではない)→一括時点注記WAが正。ac_version偽ERRORはタスク上書きタイミング起因→report review時はreport側ac_versionと配備時記録の照合が正しい設計(改善候補)"
+  brainwash_check: "検証4点中4点独立実測(66積集合0/commit show/tobisaru.yaml現在値grep/4報告のac_version共通性)。GATE結果未知。報告転記ゼロ"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[cmd_3278_tobisaru報告]] -> [[親AC1未調整4者目+ac_version偽ERROR]] -> [[FAIL_一括クローズ合流]]"
+  timestamp: "2026-06-11T02:12:00"
+- cmd_id: cmd_3278_kotaro
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: null
+  gate_prediction: WARN
+  confidence: HIGH
+  finding_categories: [numbers, assumptions]
+  findings_summary: "chunk4 76/76機械検証+commit 2本実在+dict形式正常。★AC1=yesは5忍者中唯一正当(最終完了者、evidence『--zero→0件』を報告時点実測)。発見: whitelist型gitignoreでskills/がcounts.sh検索スコープ外をrg --debugで実証。WARN=lesson_candidate家老処理+ac_version偽陽性(次タスク上書き、tobisaru同型)"
+  observations:
+    - "事実1: chunk4全量機械検証: checklist 76 link_id×--zero(0件)の積集合=0件"
+    - "事実2: AC1=yes正当性: kotaroは最終完了者でevidenceに『--zero→0件出力確認』=他4名(報告時点残存あり)と異なり文字通り真。同じyesでも時点で正否が分かれる実例"
+    - "事実3: commit ccc5727a6+6cfda60e1実在。SG-PRE27=OK(verify関数evidenceなし=対象外確認済み表示が機能)"
+    - "事実4: lesson_candidate良質: rg --debugでIgnore(Gitignore)実証=counts.shがskills/を見ていない盲点データ(register_recommended: true)"
+  step3_5_verified: true
+  causal_chain: "同一AC文面でも報告時点の実測値で正否が分かれる(4 FAIL+1 LGTM)→AC1矛盾は忍者の問題でなく親AC未調整+完了順序の構造→一括クローズ提案の妥当性を補強"
+  brainwash_check: "検証4点中4点独立実測(76積集合0/commit×2 git log/precheck再実行/evidence照合)。GATE結果未知。報告転記ゼロ"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[cmd_3278_kotaro報告]] -> [[最終完了者0件実測]] -> [[LGTM_AC1正当]]"
+  timestamp: "2026-06-11T02:00:00"
