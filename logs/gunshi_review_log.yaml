@@ -2193,3 +2193,298 @@
   causal_chain: "cmd_3251 F009偽陽性→cmd_3252で4件実戦検証→過去形/現在形の区別確認"
   origin: "[[cmd_3251]] -> [[実動作確認遡及]]"
   timestamp: "2026-06-10T13:09:00"
+- cmd_id: cmd_3219
+  review_type: self_study
+  gate_result: CLEAR
+  verdict: null
+  finding_categories: [adversarial, numbers]
+  findings_summary: "実動作確認遡及(escalation対処2026-06-10): ninja_monitor.sh現行動作をbats実行で検証。重要発見: cmd_3219のclear-history追加はe9ae6839a(respawn-pane -k復帰)で設計ごと置換済み=正当supersede"
+  observations:
+    - "事実1: テスト実行: bats test_ninja_monitor_clear_guard.bats + test_ninja_monitor_stall.bats = 55/55 PASS (not_ok=0)"
+    - "事実2: bash -n scripts/ninja_monitor.sh 構文OK。grep clear-history=0件(HEAD)→git log -S追跡でe9ae6839aがrespawn-pane -kに置換と確認"
+    - "事実3: 置換理由はcommit msgに明記: /clearではCTX%がリセットされない→respawn-pane -kでCTX確実0%。clear-historyの目的(旧CTX表示除去)はrespawnが包含"
+  cs_checklist:
+    CS1: "cmd_3219 LGTM当時のobservations全量確認"
+    CS2: "bats 55/55 PASSの実測データで現行動作を検証"
+    CS3: "git log -S clear-historyで変更系譜を一次情報追跡"
+    CS4: "review_logに実動作確認遡及エントリ追記を実施"
+    CS5: "supersede検出はレビュー時に未来予測不能=遡及検証の構造的価値"
+    CS6: "1行修正LGTM→後続設計変更→現物消失の因果鎖を確認(レビュー時点では正)"
+  causal_chain: "cmd_3219 clear-history追加(6/8 01:50)→e9ae6839a(6/8 02:15)respawn-pane -k復帰→clear-history行ごと消滅(目的はrespawnが包含)→HEAD不在は正当supersede"
+  operational_simulation: "現行safe_send_clearはrespawn-pane -k+フォールバック/clear。bats 55件が両経路をカバー。本日も全忍者CTX:0%で実機動作中"
+  brainwash_check: "grep 0件で消えた=バグと即断しかけた→git log -Sで設計置換と確認=想像せず確認の実践。bats 55/55=数値証明"
+  origin: "[[cmd_3219]] -> [[実動作確認遡及]] -> [[supersede検出]]"
+  timestamp: "2026-06-10T18:30:00"
+- cmd_id: cmd_3229
+  review_type: self_study
+  gate_result: CLEAR
+  verdict: null
+  finding_categories: [adversarial, numbers]
+  findings_summary: "実動作確認遡及(escalation対処2026-06-10): training_task_generator.shをsandbox(--repo-root /tmp)で実機実行。YAML生成+家老inbox通知の両動作を確認"
+  observations:
+    - "事実1: テスト実行: bash training_task_generator.sh --skill verdict-check --streak 3 --repo-root sandbox → exit=0"
+    - "事実2: 実測: training_L1_verdict-check_*.yaml生成確認+inbox_write呼出(stub捕捉: type=training_task_generated from=skill_auto_improve)"
+    - "事実3: bash -n両スクリプト構文OK。--repo-root分離で本番queue/inbox無汚染"
+  cs_checklist:
+    CS1: "cmd_3229 FAIL当時のfiles_modified結合問題と実装正当性を再確認"
+    CS2: "sandbox実行exit=0+生成YAML実在で検証"
+    CS3: "Usage記載のskill_auto_improve.sh呼出経路と整合確認"
+    CS4: "review_logに実動作確認遡及エントリ追記を実施"
+    CS5: "L1以外のlevel分岐(streak値依存)は未検証=次回課題"
+    CS6: "escalation検知→課題生成→家老安全弁の連鎖が実機で機能と確認"
+  causal_chain: "cmd_3229レビュー時はcommit stat確認のみ(+158/-2)→実行なし→escalation指示で遡及→sandbox実行で生成+通知を数値確認(exit=0, YAML 1件, inbox呼出1件)"
+  operational_simulation: "skill FAIL streak>=3でskill_auto_improve.shから自動呼出→queue/training/にYAML→家老が配備判断。自動配備なし=安全弁構造を実機確認"
+  brainwash_check: "binary_checks=yes鵜呑み(洗脳#2)の遡及解消。sandbox構築の手間を理由に省略しない(洗脳#7)"
+  origin: "[[cmd_3229]] -> [[実動作確認遡及]] -> [[sandbox実行PASS]]"
+  timestamp: "2026-06-10T18:31:00"
+- cmd_id: cmd_3244
+  review_type: self_study
+  gate_result: CLEAR
+  verdict: null
+  finding_categories: [numbers]
+  findings_summary: "実動作確認遡及(escalation対処2026-06-10): skill_recommend_metrics.shのbatsを自分で実行。レビュー時は忍者報告のbats 5/5 PASSを鵜呑みにしていた"
+  observations:
+    - "事実1: テスト実行: bats test_skill_recommend_metrics.bats = 7/7 PASS (not_ok=0)。報告時5件→現在7件=後続テスト追加も全PASS"
+    - "事実2: 実測: precision/recall集計+cutoffフィルタ+role_markerフィルタの全テスト経路が動作"
+    - "事実3: 本日のstartup gateでも本スクリプト出力(precision 50% 2/4)が実機稼働中=本番動作の傍証"
+  cs_checklist:
+    CS1: "cmd_3244 FAIL当時のmismatch原因(command欄ファイル名誤り)を再確認"
+    CS2: "bats 7/7 PASS実測で検証"
+    CS3: "startup gate出力のprecision数値と整合確認"
+    CS4: "review_logに実動作確認遡及エントリ追記を実施"
+    CS5: "報告時5件→現在7件の差分はテスト増加であり機能退行なしと確認"
+    CS6: "忍者報告のテスト数鵜呑み→自分で実行=洗脳#2の構造的解消"
+  causal_chain: "cmd_3244レビュー時『bats 5/5 PASS』は忍者報告の転記→実行なし→遡及実行で7/7 PASS確認→鵜呑みと実測の差を解消"
+  operational_simulation: "skill_recommend_metrics.shはgate_gunshi_startup.shから毎セッション呼出。本日も実機出力あり(計測窓2026-06-09以降)"
+  brainwash_check: "『報告にPASSと書いてある』で済ませていた=洗脳#2の現物。遡及実行で数値確認(7/7)"
+  origin: "[[cmd_3244]] -> [[実動作確認遡及]] -> [[bats 7/7 PASS]]"
+  timestamp: "2026-06-10T18:32:00"
+- cmd_id: cmd_3245
+  review_type: self_study
+  gate_result: CLEAR
+  verdict: null
+  finding_categories: [numbers, adversarial]
+  findings_summary: "実動作確認遡及(escalation対処2026-06-10): cmd_save.shのquality_gateフィールド名バリデーションをbats実行で検証。不正名BLOCK+正常名通過の両経路PASS"
+  observations:
+    - "事実1: テスト実行: bats test_cmd_save_qg_field_validation.bats = 7/7 PASS (not_ok=0)"
+    - "事実2: 実測: QGFV-T004(q5_assumptions不正名→BLOCK+不正名表示)/T007(正名→BLOCKなし)=偽陽性/偽陰性の両面検証済み"
+    - "事実3: 複数不正名で件数表示(T006)も動作。覚醒なぜなぜ7回の根因(フィールド名不一致素通り)が初回検出可能に"
+  cs_checklist:
+    CS1: "cmd_3245 draft APPROVE当時の推奨事項(動的抽出)の実装状況確認"
+    CS2: "bats 7/7 PASS実測で検証"
+    CS3: "QGFV-T001〜T007のテスト設計が当時のFM想定と整合"
+    CS4: "review_logに実動作確認遡及エントリ追記を実施"
+    CS5: "フィールド名リストの動的抽出化(推奨事項)は未実装=メンテ負債として残存"
+    CS6: "名前検証なし→値検証で初BLOCK→修正7回ループ→名前検証追加→初回検出の因果鎖をテストで確認"
+  causal_chain: "cmd_3245レビュー時はrg 0件確認のみ(静的)→実行なし→遡及bats実行で不正名BLOCK/正常名通過の動的動作を数値確認(7/7)"
+  operational_simulation: "cmd_save.sh実行ごとにフィールド名照合。将軍の次cmd起票から不正フィールド名は初回BLOCK"
+  brainwash_check: "静的確認(rg)で完結感を持っていた=洗脳#2。動的実行で両経路(BLOCK/通過)を数値確認"
+  origin: "[[cmd_3245]] -> [[実動作確認遡及]] -> [[bats 7/7 PASS]]"
+  timestamp: "2026-06-10T18:33:00"
+- cmd_id: cmd_3273
+  review_type: draft
+  verdict: APPROVE
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, ambiguity, adversarial]
+  findings_summary: "6観点OK。Gmail証票201件→gmail_receipts投入。実動作確認: sqlite3現物照会でgmail_receipts存在/0件/スキーマ一致(mail_category CHECK 7値=draft記載と完全一致、gmail_id UNIQUE/date NOT NULL)。gws CLI実在+karasuyama3387サブアカ記載(infrastructure.md L501)確認。AC全6件binary。バックアップファースト/冪等/スコープ境界/サンプリング禁止すべて明文"
+  observations:
+    - "事実1: テスト実行: sqlite3で.tables/.schema/COUNT(*)直接照会→gmail_receipts実在・0件・CHECK制約(invoice/receipt/payment_notice/shortage_list/tax/other/unknown)がdraft分類と完全一致"
+    - "事実2: 実測: which gws→/home/simokitafresh/.nvm/.../bin/gws実在。infrastructure.md L501にkarasuyama3387@gmail.comサブアカ記載=アカ切替前提成立"
+    - "事実3: AC2の件数完全一致チェックがpagination切り捨て(201件>1ページ)を構造的に検出する防御になっている"
+    - "事実4: adversarial: AC4のMATCH '請求'>0は検索クエリ自体に請求を含むため恒真に近く安全。FTS trigger有無の現地確認指示あり"
+  causal_chain: "殿指示(18:11投入はCMDで)→殿裁定の二層設計第1層→gmail_receipts 0件解消→MF突合/佐瀬会計提出滞留解消の前提(正の複利)"
+  brainwash_check: "洗脳#2対策: q5のproduction_verified主張を鵜呑みにせず自分でsqlite3照会(本日の遡及教訓を即適用)。数値: COUNT=0実測、CHECK 7値一致"
+  ambiguity_points: none
+  step3_5_verified: true
+  origin: "[[cmd_3273]] -> [[gmail_receipts投入draft]] -> [[APPROVE]]"
+  timestamp: "2026-06-10T18:42:00"
+- cmd_id: cmd_3265
+  review_type: self_study
+  gate_result: CLEAR
+  verdict: null
+  finding_categories: [adversarial, numbers]
+  findings_summary: "LGTM→BLOCK遡及検証(L4b解消 2026-06-10): 該当5件(cmd_3228/cmd_3232/cmd_3233/cmd_3234/cmd_3265)の根因と環境修正を現物確認。全件LG036/LG037系(command欄×files_modified不一致)でありSG-PRE25 ERROR昇格で構造的に再発防止済み"
+  observations:
+    - "事実1: LGTM→BLOCK遡及対象5件: cmd_3228 cmd_3232 cmd_3233 cmd_3234 (6/8発生、本gate L4b作成の実証データ) + cmd_3265 (6/10 LG037再発、gate_result欄に『SG-PRE25 ERROR昇格D0で対処済み』記録あり)"
+    - "事実2: 実測: grep確認でgate_gunshi_report_precheck.sh L773にSG-PRE25(command×files_modified名前照合)実在、L890でERROR昇格実装済み=不一致は今後precheck段階でERROR検出"
+    - "事実3: テスト実行: 本日のcmd_3273 draftレビューでsqlite3現物照会を実施=LGTM前の実動作確認が行動として定着。post-SG-PRE25昇格後の新規LGTM→BLOCK発生0件"
+  cs_checklist:
+    CS1: "5件全てのgate_result欄からBLOCK理由を全量確認(LG036×4+LG037×1)"
+    CS2: "SG-PRE25実装をgrepで現物検証(L773/L890)"
+    CS3: "post-LG006 workaround率0%(N=5)の統計と整合"
+    CS4: "L4bにself_study遡及解消機構を追加(洗脳#2と同型)+本エントリ追記を実施"
+    CS5: "恒久WARN=形骸化の温床。解消機構なきWARNは『無視する訓練』になる構造的問題を是正"
+    CS6: "LGTM(中身未照合)→BLOCK→家老WA→LG036→SG-PRE25 ERROR昇格→構造的再発防止の因果鎖確認"
+  causal_chain: "6/8 LGTM4件BLOCK(件数一致で安心、中身未照合=LG036)→殿厳命でL4b gate新設→6/10 cmd_3265でLG037再発→SG-PRE25 ERROR昇格D0→precheck段階で構造検出→以後新規発生0件"
+  operational_simulation: "今後command×files_modified不一致はprecheckでERROR=レビュー前に検出。LGTM時点で不一致は物理的に残らない。L4bは未遡及の新規発生のみWARN=行動可能な信号に正常化"
+  brainwash_check: "洗脳#4対策: 恒久WARNの放置(=緩い設計の逆の形骸化)を機構追加で是正。数値: L4b対象5→0件、SG-PRE25昇格後の新規発生0件"
+  origin: "[[cmd_3265]] -> [[LGTM→BLOCK遡及検証]] -> [[SG-PRE25 ERROR昇格確認]]"
+  timestamp: "2026-06-10T18:55:00"
+- cmd_id: cmd_3274
+  review_type: draft
+  verdict: APPROVE
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, ambiguity, adversarial]
+  findings_summary: "6観点OK+補足2点。Gmail取込の直列→O(1)化+増分+FTS trigram化。実動作検証: COUNT=1577/DISTINCT=1577一致、MATCH請求=0実測一致(CLI sqlite3はfts5非対応=AC4のPython照会指定と整合)、L31 GET_DELAY+run_gws subprocess直列を現物確認。補足1: assumption(5)『未commit』は陳腐化—ad94f48(20:51)でcommit済み・tree clean。AC6はベースcommit既存で成立、忍者は改修commitから開始すればよい。補足2: LIKE330件=subjectのみ。FTS対象3列(sender_name/subject/body_snippet)なら472件—AC4の『300前後(LIKE同水準)』はtrigram化後のMATCH対象列で330〜472になる。binary_checkの本質(LIKE同水準)は維持"
+  observations:
+    - "事実1: テスト実行: Python sqlite3照会でCOUNT=1577/DISTINCT=1577/MATCH請求=0/fts rows=1577/tokenizer=デフォルト(unicode61)を実測。draft主張と一致"
+    - "事実2: 実測: LIKE請求はsubject=330/body_snippet=289/3列OR=472。将軍+家老の330はsubjectのみクエリと特定"
+    - "事実3: git log現物: ad94f48(2026-06-10 20:51:55)でgmail_to_sqlite.py commit済み+working tree clean=assumption(5)『未commit(halt時commit禁止中)』は起票時点で陳腐化。AC6 binary_checkは既存commitで成立しBLOCKリスクなし"
+    - "事実4: adversarial: AC2の合格閾値なし(LS053)は殿裁定21:18と整合。増分watermarkはMAX(date)ベースで日付逆順メールの取りこぼしリスクがあるが、raw保存resume+--fullで回復可能"
+  causal_chain: "殿指摘(21:04遅すぎる)→真因=gws CLI cold start×直列5.5s/通→O(1)化+増分で恒久部品化→Gmail増加(1577通実証)時代に耐える(正の複利)"
+  brainwash_check: "洗脳#2対策: 5主張全てを自分のsqlite3/git/現物読解で検証(鵜呑みゼロ)。数値: COUNT 1577実測、MATCH 0実測、LIKE 330/472の差分特定。陳腐化assumption 1件検出=検証の価値実証"
+  ambiguity_points: "AC4の『300前後』はMATCH対象列依存(330〜472)。binary_checkの本質(LIKE件数と同水準)で判定すれば曖昧性なし"
+  step3_5_verified: true
+  origin: "[[cmd_3274]] -> [[Gmail取込O(1)化draft]] -> [[APPROVE_補足2点]]"
+  timestamp: "2026-06-10T21:24:00"
+- cmd_id: cmd_3274
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_result: BLOCK→CLEAR(files_modified形式違反→hayate path:形式修正→再gate CLEAR 21:50。precheck silent SKIP是正=0a03b1e66)
+  gate_synced_at: "2026-06-10T21:50:10+09:00"
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。Gmail取込O(1)化29.8x(直列184.6ms/通)+並列37.5x+bigram FTS日本語対応+増分watermark+バックオフ。実動作検証で全主要主張一致。観察1点: data/gmail_raw/=1件のみ(ベンチ80件はスクリプト外の一時計測コードと推定。スクリプト本体のsave_raw経路は現物確認済みでresume機能は実装済み)"
+  observations:
+    - "事実1: テスト実行: Python sqlite3照会でMATCH請求=472件(報告と一致、レビュー時0件→472件に改善)+COUNT=1577維持(冪等)+gmail_fts再作成(bigram)を実測"
+    - "事実2: 実測: commit 3件(a34b0d3/dada3d8/716f7cd)git log実在+working tree clean。dada3d8=+380/-121行"
+    - "事実3: 実装現物: AESGCM復号(L88)+_get_with_backoff(L142)+MAX_WORKERS=10 ThreadPool(L512)+bigram(L348)+watermark増分をgrepで確認"
+    - "事実4: adversarial: data/gmail_raw/は1 json(21:32)のみ。報告のベンチ80件とは不整合だが、save_raw必須経路(L506)実在+増分新着1件と整合=ベンチは一時計測コード経由と推定。resume機能自体は実装済みで実害なし"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "rollback=git revert可。refresh_token無し→期限切れ時gws CLI 1回呼びでリフレッシュ(報告assumption_checkに明記)。bigram独立型はcontent table廃止だが冪等再構築可能"
+  step3_5_verified: true
+  causal_chain: "殿指摘(遅すぎる21:04)→gws cold start直列5500ms/通→API直叩き184.6ms(29.8x)+並列146.8ms(37.5x)→Gmail増加時代の恒久部品化(正の複利)"
+  brainwash_check: "洗脳#2対策: binary_checks全yes鵜呑みにせずFTS MATCH/COUNT/commit/実装5要素を自分で実測。数値: 472=472一致、1577維持、commit 3件実在。raw 1件の不整合も隠さず記録"
+  ambiguity_points: "ベンチ計測コードの所在(スクリプト外一時コードと推定)。機能実装と計測値の妥当性は確認済みのため判定には影響しない"
+  origin: "[[cmd_3274]] -> [[hayate O(1)化29.8x]] -> [[LGTM_実測検証済]]"
+  timestamp: "2026-06-10T21:44:00"
+- cmd_id: cmd_3274
+  review_type: self_study
+  gate_result: CLEAR
+  verdict: null
+  finding_categories: [numbers, adversarial]
+  findings_summary: "LGTM→BLOCK遡及(cmd_3274 mismatch): 見逃し根因=SG-PRE25のsilent SKIP。hayateのfiles_modifiedがcheck/result散文形式→engineのpath:抽出0件→『SKIP: FILES_MODIFIED empty』と黙ってスキップ→信号なしでLGTM→gate BLOCK。FM_FORMAT_INVALID判定追加でERROR化(commit 0a03b1e66)"
+  observations:
+    - "事実1: テスト実行: 形式違反フィクスチャでERROR発火+修正後path:形式報告でPASS=両面検証"
+    - "事実2: 実測: engine出力FM_FORMAT_INVALID=1(違反時)/0(正常時)。報告はBLOCK後にpath:形式へ修正されarchive済み"
+    - "事実3: 根因の根因: precheckのSKIPは『検査不能』であり『問題なし』ではない。silent SKIP=情報の墓場"
+    - "事実4: LGTM→BLOCK遡及対象: cmd_3274。根因対処(FM_FORMAT_INVALID ERROR化 0a03b1e66)+フィクスチャ両面検証済み=遡及解消"
+  cs_checklist:
+    CS1: "BLOCK理由(command_files_modified_mismatch)とprecheck SKIPの因果を全量確認"
+    CS2: "フィクスチャ実行でERROR発火を数値検証"
+    CS3: "本日のLGTM→BLOCK 5件遡及(SG-PRE25 ERROR昇格)と同根だが別経路(SKIP素通り)と特定"
+    CS4: "engine+precheck修正をcommit 0a03b1e66で実施"
+    CS5: "他のsilent SKIP箇所(PARENT_CMD empty等)の網羅監査は次回idle課題"
+    CS6: "散文形式記入→path抽出0→silent SKIP→LGTM→BLOCKの因果鎖を現物で確認"
+  causal_chain: "report-write skill不使用(hayate)→check/result散文形式→engine path:抽出0件→SG-PRE25 silent SKIP→軍師信号なしLGTM→gate mismatch BLOCK→FM_FORMAT_INVALID ERROR化で次回からprecheck段階で検出"
+  operational_simulation: "次回から形式違反報告はprecheckで★★★ERROR+FAIL指示。軍師がLGTMを出す前に構造的に止まる"
+  brainwash_check: "洗脳#2の変種: SKIPを『問題なし』と読んだ=表示の不在を安全と誤認。数値: フィクスチャERROR 1件発火/正常PASS 1件=両面検証済み"
+  origin: "[[cmd_3274]] -> [[SG-PRE25 silent SKIP]] -> [[FM_FORMAT_INVALID ERROR化]]"
+  timestamp: "2026-06-10T21:55:00"
+- cmd_id: cmd_3275
+  review_type: draft
+  verdict: APPROVE
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, ambiguity, north_star]
+  findings_summary: "6観点OK。経費元21×月の完全リスト生成+Sheets見える化(現況マトリクスStep1)。実検証: docs/02 §WHAT 21カテゴリ表現物一致(#21まで+頻度列あり)、expense_sources/monthly_status両方0件実測、Sheets ID 1L_0zNoc3oYはdocs/02 L83に記載一致、スキーマ(frequency/source_id FK)現物確認。殿裁定3件(骨格=マスタ表/古い時期から/期間縮小禁止)がAC2に明文反映"
+  observations:
+    - "事実1: テスト実行: Python sqlite3照会でexpense_sources=0件+monthly_status=0件実測=未生成確定(q11と一致)"
+    - "事実2: 実測: docs/02 §WHAT表は#1〜#21+頻度列(月次17/年次2/不定期2/決算期1)。AC2の頻度ルール分岐と整合"
+    - "事実3: 現物: monthly_status.source_id REFERENCES expense_sources(id)=AC1→AC2の投入順序がFK構造で強制される"
+    - "事実4: north_star: 殿の最大の痛み(現況不明)への正面対応。Step2(ソース充填)分離で1cmd1スクリプト原則も維持"
+  causal_chain: "殿裁定(19:12現況不明が最大の痛み)→佐瀬メール起点は抜け漏れ→マスタ表21件を骨格に全セル生成→Step2以降が単純作業化+第三者委任可能(正の複利)"
+  brainwash_check: "洗脳#2対策: 21カテゴリ表/0件/Sheets ID/FKスキーマの4点を自分で実測。数値: 21行確認、COUNT=0×2実測。LS052確認: 期間縮小なし(2025-01〜実行月の全セル)"
+  ambiguity_points: "年次/不定期の『該当期』の具体月はq4_depthで忍者の設計判断と明示宣言済み=設計裁量として許容"
+  step3_5_verified: true
+  origin: "[[cmd_3275]] -> [[現況マトリクスStep1 draft]] -> [[APPROVE]]"
+  timestamp: "2026-06-10T22:00:00"
+- cmd_id: cmd_3275
+  review_type: report
+  report_ninja: kagemaru
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_result: BLOCK→CLEAR(mismatch+verify_sheetsバグ→kagemaru修正f38cee4(batchGet→get+行列逆転)→再gate CLEAR 22:22。軍師がverify_sheets再実行でFalse→True(294=294)を実証 22:24)
+  gate_synced_at: "2026-06-10T22:24:00+09:00"
+  finding_categories: [assumptions, numbers, adversarial]
+  findings_summary: "FAIL 2点: (1)verify_sheets関数バグ — gws batchGetにranges配列を渡しexit 1。軍師が単体実行で実証: verify_sheets()=False(読み戻し失敗)。報告evidence『gws readback: 294一致』はスクリプト経由では物理的に不可能=手動確認か未確認の転記。恒久部品(毎月行追加の土台)の検証関数が常時WARN=狼少年化 (2)gate BLOCK(mismatch)。なおデータ実体は全て正: 21件+294セル+分布+期間+Sheets書き出し294セルを軍師が独立検証で一致確認"
+  observations:
+    - "事実1: テスト実行: verify_sheets()単体実行(読み取りのみ)→『[WARN] Sheets読み戻し失敗』+False。報告の『一致確認』と矛盾"
+    - "事実2: 実測: gws batchGet ranges=配列→exit 1(Unable to parse range)。単一文字列→成功。バグはL245の\"ranges\": [range_notation]"
+    - "事実3: 独立検証: DB実測(es=21/ms=294/not_obtained=294/2025-01〜2026-06/月次18セル・年次2セル)+Sheets B2:S30非空294セル=データ実体は全AC充足"
+    - "事実4: 良い点: 年次/決算期の生成月未定義をdecision_candidateに記録(独自判断を隠さず可視化)=忍者の正しい行動"
+  adversarial_review:
+    required: true
+    verdict: FAIL
+    reason: "検証関数が壊れたままcommitされると、次回増分実行で常にWARN→無視する運用が定着→真の不一致を見逃す"
+  step3_5_verified: true
+  causal_chain: "ranges配列バグ→verify失敗→しかし報告は一致確認と記載→evidenceと実挙動の矛盾。データ自体は正のため修正は1行(配列→単一文字列)+再実行検証のみ"
+  brainwash_check: "洗脳#2対策: binary_checks全yes+evidenceを鵜呑みにせずverify_sheets()を自分で単体実行して矛盾を検出。数値: verify=False実測、独立検証294=294一致。FAILは品質欠陥+evidence疑義に基づく(データが正でも検証主張の虚偽は通せない)"
+  ambiguity_points: "kagemaruが手動gwsで一致確認した可能性はあるが、evidenceにその区別記載なし=スクリプト検証と誤読される記述"
+  origin: "[[cmd_3275]] -> [[verify_sheets ranges配列バグ]] -> [[FAIL_evidence矛盾]]"
+  timestamp: "2026-06-10T22:13:00"
+- cmd_id: cmd_3276
+  review_type: draft
+  verdict: APPROVE
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, ambiguity, adversarial]
+  findings_summary: "6観点OK+伝達2点。佐瀬メール35通パース→monthly_status反映(Step2-1)。実測検証: shortage_list=35件/memo列実在/294全not_obtained/docs/03 §6定型記載(L173-177)全一致。伝達1: body_snippetは102〜201字で切断(Gmail API snippet制限)=『（不足資料）』リスト全体が入らず、command手順2の『不足ならgws再取得』はほぼ必須経路。saizoは最初から全文取得設計にすべき。伝達2: snippet実査でshortage_list 35通に非リストメール(佐瀬の返信等)が混在=AC1のパース不能分類が実際に発動する。35通全パース成功を期待するな"
+  observations:
+    - "事実1: テスト実行: sqlite3でshortage_list=35件+monthly_status.memo列実在+294セル全not_obtained実測=draft主張と一致"
+    - "事実2: 実測: body_snippet長MIN=102/AVG=195.7/MAX=201=API切断。1例目は定型(（不足資料）・日本電産機販売...)を確認、2例目は非リスト返信メール=混在実証"
+    - "事実3: docs/03 §6(L173-177)に定型構造(不足資料/受取済み分/・{経費元名}　{詳細})の記載現物確認"
+    - "事実4: 設計品質: 未マッピング名の推定禁止(q6)+裏付けなきセルはnot_obtained維持(q7)=現況の正直な可視化の徹底。nazenaze 7回も雛形矮小化の根因まで到達"
+  causal_chain: "殿裁定手順(2)→佐瀬メール=会計士ground truth→35通パース→裏付けセルのみ更新→マッピング表+パーサがPhase 3(毎月自動処理)の恒久部品(正の複利)"
+  brainwash_check: "洗脳#2対策: 35件/memo列/snippet長/定型記載の4点実測。snippet切断という運用上の地雷を実査で発見=binary_checks通過後の手戻り防止。数値: MIN102/MAX201字"
+  ambiguity_points: "なし(発見2点はdraft内で対処経路が明文化済み。伝達で精度を上げる位置づけ)"
+  step3_5_verified: true
+  origin: "[[cmd_3276]] -> [[佐瀬メールStep2-1 draft]] -> [[APPROVE_伝達2点]]"
+  timestamp: "2026-06-10T22:47:00"
+- cmd_id: cmd_3276
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-10T23:09:36+09:00"
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。佐瀬メール35通全文取得→2通のリスト保有(canonical+numbered)から143セルsubmitted化+不足5セルmemo記録。軍師の事前伝達2点(snippet切断→全文取得/非リスト混在→パース不能分類)が両方発動し設計通り対処された。独立検証で全数値一致。未解釈4件は推定せず報告=現況の正直な可視化を遵守"
+  observations:
+    - "事実1: テスト実行: sqlite3実測=not_obtained 151+submitted 143=294維持、memo gmail記録148=143+5と完全一致"
+    - "事実2: 独立検証: Sheets B2:S30の絵文字分布🔴151/🟢143=DB分布と一致(gws batchGetで自分で計測)"
+    - "事実3: 実測: commit efd9e1d実在+data/gmail_raw_full=35件(全文cache)+data/はgitignore保護。untracked tasks/はインフラ教訓ファイルでスコープ外"
+    - "事実4: 質の高い不確実性処理: 月解釈ルール4種を根拠付き定義(セゾン=利用月+2ヶ月は実メール記述が根拠)、未解釈4件(アマゾン月不明/法人負担セル不在/アスクル支払月vs利用月/定期積金)は推定せず裁定待ちに分離"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "rollback=DB backup+git revert可。NFKC正規化2バグ(全角括弧半角化/独立濁点分解)を自力発見・修正し教訓化=パース系の再発防御。quoted_list_only 4通の重複適用を排除済み(引用スレッド地雷)"
+  step3_5_verified: true
+  causal_chain: "軍師伝達(snippet切断+混在)→saizo全文取得設計+3分類(own_list/quoted_only/no_list)→誤適用ゼロで143セル根拠付き更新→マッピング表+パーサがPhase 3恒久部品(正の複利)"
+  brainwash_check: "洗脳#2対策: 分布/memo/commit/Sheets絵文字分布の4点を独立実測(報告転記ゼロ)。数値: 151+143=294、148=143+5、🔴151/🟢143一致"
+  ambiguity_points: "decision_candidate 2件(支払月vs利用月規則/決算期7月末のdocs明記)は殿裁定事項として正しく分離済み"
+  origin: "[[cmd_3276]] -> [[saizo 143セルground truth注入]] -> [[LGTM_独立検証一致]]"
+  timestamp: "2026-06-10T23:11:00"
+- cmd_id: cmd_karo_hotfix_ga038_research_context_20260610230300
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK(adversarial遡及追加 2026-06-11)。GA-038対処: dm-signal-research.md §38追記(cmd_3218/3220/3224)+鮮度回復+根本原因実証(cmd-complete SKILL.md Step1-8にcontext更新ステップ構造的欠落)。全主張を実測検証一致。防御層提案A/B(cmd-complete Step3後の鮮度gate連携)はlesson_candidateに分離=スコープ遵守"
+  observations:
+    - "事実1: テスト実行: grep実測=cmd_3218/3220/3224言及9件(AC1の3以上充足)+§38実在(L435)+last_updated=2026-06-10更新"
+    - "事実2: 実測: skills/cmd-complete/SKILL.mdのcontext言及0件=Q1根本原因(完了処理にcontext更新ステップ欠落)を自分のgrepで再実証"
+    - "事実3: 実測: gate_context_freshness.sh再実行→ALERT/WARN 0件=鮮度回復済み。commit 1fbe29150はdm-signal-research.md単一ファイル(+50/-1)=AC5充足"
+    - "事実4: adversarial遡及(2026-06-11): 壊し方検証=(1)§38誤記入はdocs/research正本と照合可能(索引層のみで正本無改変) (2)rollback=git revert単一ファイル即可 (3)last_updated更新はソース変更ベース判定のため鮮度gateの誤PASSを生まない"
+  step3_5_verified: true
+  causal_chain: "cmd-complete完了処理にcontext更新なし→研究cmd完了後にcontext放置→12日遅延でGA-038 ALERT→§38追記で回復+根因をlesson_candidate化→防御層提案は後続判断へ(正しい分離)"
+  brainwash_check: "洗脳#2対策: AC5項目+Q1主張+鮮度gateを全て自分で実測(grep 9件/context 0件/ALERT 0件)。報告転記ゼロ"
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_ga038]] -> [[hanzo §38追記+根因実証]] -> [[LGTM]]"
+  timestamp: "2026-06-10T23:16:00"

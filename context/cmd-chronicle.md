@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-10 cmd_3275 -->
+<!-- last_updated: 2026-06-10 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -512,3 +512,5 @@
 | cmd_3271 | 教訓健全度WARN(useful_rate=46.2%)が3セッション連続startup BLOCK。根因=target_path未設定cmdでMIN_KEYWORD_SCORE閾値を下回り全量fallback注入(cmd_3231分析済み)。絞り込み精度を改善しuseful_rateを向上させる | infra | 06-10 | inject_related_lessonsのtarget_ |
 | cmd_3272 | 家老escalation(blt_20260610_172123): pre-commit yaml.dump BLOCKの根因修正。skills/shogun-claude-version-switch/scripts/claude_version_switch.sh L198がyaml.safe_dumpでsettings.yamlを丸ごと上書き→GP-136正当BLOCK。yaml_field_set.shで該当フィールドのみ更新に変更 | infra | 06-10 | set_launch_cmd()のL182-198 yaml |
 | cmd_3274 | 殿指示(2026-06-10 21:04「遅すぎる。やり方が間違っている。Gmailは今後も増える。サンクコストに囚われず今やるべき」+21:18「速度を合格点にするのではなく、より早くを目的にして修行すべき」)。遅さの真因=1通ごとにgws CLI(Node.js)をcold startする直列ループ(実測145分/1,577通=5.5秒/通)。投入自体は21:06に完了済み(1,577件・将軍と家老が独立検証済み)のため、本cmdはデータ再投入ではなく取込エンジンの恒久部品化: プロセス起動O(1)化+増分同期+FTS5日本語トークナイザ欠陥修正 | clinic-expense-tracker | 06-10 | gws CLI cold start O(N)→O(1)化( |
+| cmd_3275 | 殿裁定(2026-06-10 19:12「最大の痛みは現況がはっきりしないこと」+19:15「まずはリスト。次にリストを佐瀬メールなどで埋める。見える化で第三者にも頼める作業になる」+19:17「今後も使う仕組みだから古い時期から」)。docs/02 §WHATの21カテゴリ表を骨格に完全リストを生成する。佐瀬メール起点は抜け漏れ→手戻りのため骨格はマスタ表(殿裁定)。ソースで埋める作業はStep 2(後続cmd) | clinic-expense-tracker | 06-10 | expense_sources 21件+monthly_st |
+| cmd_3276 | 殿裁定(2026-06-10 19:15「次にリストを佐瀬メールなどで埋める」)の手順(2)第1ソース。佐瀬会計メール=会計士が何を受け取り何が不足と言っているかの一次記録(ground truth)。gmail_receiptsのshortage_list 35通(検証済み)をパースし、cmd_3275で生成した294セル(全not_obtained)のうち会計士記録が裏付けるセルを更新する。1ソースずつ埋める(殿裁定: 全部一気にやらない) | clinic-expense-tracker | 06-10 | 佐瀬メールshortage_list 35通を全文取得しパー |

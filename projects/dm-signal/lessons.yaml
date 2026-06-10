@@ -1691,7 +1691,7 @@ lessons:
   origin: '[[cmd_1877]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L623
   title: 既存GS CSVの有効性はmeta.yaml universe_idで判定せよ — 行数判定は誤り
   summary: '既存ファイルの再実行要否を行数(例: bunshin 7526行)で判定すると、universe変更後も旧ファイルを有効と誤判定する。meta.yamlのuni'
@@ -2206,6 +2206,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_kasoku_ratio.py
   - scripts/analysis/grid_search/run_077_kawarimi.py
   origin: '[[cmd_1829]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L588
   title: l1_alm_wf_engine.pyは直列化でもOOM不可避：468MB CSV→anon-rss=13GB(28倍膨張)
   summary: 小太郎がoikaze(468MB)を単独実行してanon-rss=13GBでOOM Kill死亡。メモリ膨張率は約28倍(pandas内部展開+演算バッファ)。
@@ -2429,6 +2432,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-07'
   origin: '[[cmd_1787]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L572
   title: GS runnerの正規パスはbackend/app/jobsではなくscripts/analysis/grid_search
   summary: task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/ana
@@ -3090,6 +3096,9 @@ lessons:
   - outputs/analysis/nested_fof/r28_k_beta_decomposition.yaml
   - scripts/analysis/nested_fof/r28_k_beta_decomposition.py
   origin: '[[cmd_1597]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L523
   title: overlapping-window mechanical correlation trap
   summary: トレーリングLBヶ月momentum同士の残留確率テストは、LB>1でoverlapping windowにより機械的相関が発生しt統計量が桁違いに膨れる(LB
@@ -3550,7 +3559,7 @@ lessons:
   origin: '[[cmd_1377]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-09'
+  last_referenced: '2026-06-10'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L490
@@ -3823,7 +3832,7 @@ lessons:
   origin: '[[cmd_1240]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L471
   title: 白虎DM6のIEEE754差異は全パリティフェーズで再現する既知問題
   summary: 白虎(DM6/^VIX)のmonthly_return_open IEEE754差異はPhase1(cmd_1233)とPhase4(cmd_1239)で同一パ
@@ -4201,6 +4210,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_kawarimi_mp_exp.py
   - scripts/analysis/grid_search/run_077_monban.py
   origin: '[[cmd_1196]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L446
   title: パリティ検証の許容誤差は要件定義時に明示せよ
   summary: cmd_1115は1e-4許容で100%一致と報告。cmd_1194は許容0で完全一致を要求。同じ一致でも基準が異なる。偵察・検証cmdでは許容誤差を明示的にA
@@ -4374,6 +4386,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_kasoku_ratio.py
   - scripts/analysis/grid_search/run_077_kawarimi.py
   origin: '[[cmd_1186]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L432
   title: run_077 GS scriptのOUT_DIR/OUTPUT_PREFIXハードコード問題
   summary: run_077_*.pyのOUT_DIRとOUTPUT_PREFIXがcmd番号固定でハードコードされており、異なるユニバースでGS再実行時に既存CSV衝突+出
@@ -4551,7 +4566,7 @@ lessons:
   origin: '[[cmd_1101]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L420
   title: 本番リターン列のopen/close区別必須
   summary: monthly_returnsテーブルにはmonthly_return(Close)とmonthly_return_open(Open)の2列。GSはOpen-
@@ -5412,6 +5427,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: 本番DB確認はPostgreSQL必須
   origin: '[[cmd_1025]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L356
   title: 32体ユニバースのパターン爆発はsize4が86.8%支配。加速が全体の66.1%
   summary: C(32,4)=35,960がC(32,2)+C(32,3)=5,456の6.6倍。サイズ上限k=3で全忍法一律86.8%削減。加速のC(18,2)×2=306
@@ -6274,6 +6292,9 @@ lessons:
   - docs/research/knowledge-base/preprocessing/financial-data-analysis.md
   - docs/research/knowledge-base/preprocessing/fractional-differentiation.md
   origin: '[[cmd_861]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L294
   title: PSRとベイズ持続確率は部分冗長。手法統合では冗長ペアを事前特定し吸収せよ
   summary: PSRとベイズは同じ問い(パフォーマンスは有意/持続的か)に答える。独立導入は情報二重カウント+UI判断麻痺。冗長性マトリクスを先に作成し吸収可能なものを特定し
@@ -6924,6 +6945,9 @@ lessons:
   target_files:
   - docs/rule/trade-rule.md
   origin: '[[cmd_768]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L240
   title: '誤解14 IF-THEN: Open/Closeデフォルト判断はOpen-to-Open'
   summary: Open/Closeのデフォルトを判断する時は、このシステムのデフォルトがOpen-to-OpenでありClose-to-Closeではないことを前提にする。D
@@ -7009,6 +7033,9 @@ lessons:
   when: BE/FEで価格データを扱う時
   how: Open/Closeは独立計算系列として扱い、同一計算パス内でOpen価格とClose価格を混在させるな
   origin: '[[cmd_766]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L232
   title: recalculate_fast.pyのholding_signal更新は「月変わりANDリバランス月」の2条件で制御される
   summary: holding_signalの更新タイミングはStep0（パフォーマンス計算前）で行われ、last_generated_signals（前月末の生signal）
@@ -7155,6 +7182,9 @@ lessons:
   - frontend/app/layout.tsx
   - frontend/contexts/signals-context.tsx
   origin: '[[cmd_725]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L219
   title: 静的ホスト切替だけでは本番UXの主因は消えず、heavy APIが残る限り backend 待ちが支配する
   summary: Render Static -> Vercel/Cloudflare/Netlify への frontend-only 移行は、deploy体験・preview
@@ -7403,6 +7433,9 @@ lessons:
   - frontend/components/ui/dropdown-menu.tsx
   - docs/future-01/005.md
   origin: '[[cmd_642]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L200
   title: Portal内のnext/linkはクリック中に自己アンマウントさせるとSPA遷移がキャンセルされる
   summary: createPortal配下のメニュー項目をnext/link化する際、onClickでsetIsOpen(false)を即実行するとLink要素がDOMから消
@@ -7558,6 +7591,9 @@ lessons:
   - frontend/app/dashboard/page.tsx
   - frontend/app/summary/page.tsx
   origin: '[[cmd_564]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L188
   title: window.location遷移を採用する構成ではContext単独の状態共有は永続化要件を満たさない
   summary: IF ページ間遷移がwindow.location.hrefだとSPA状態が毎回破棄されるため、永続化要件にはlocalStorageまたはURLパラメータを併
