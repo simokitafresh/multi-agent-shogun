@@ -490,6 +490,29 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
+@test "skill fail rate marks recovered skill after 5 consecutive successes" {
+    {
+        echo "executions:"
+        echo '- ts: "2099-01-01T00:00:00+0900"'
+        echo '  skill: "report-bundle"'
+        echo '  executor: "saizo"'
+        echo '  result: "FAIL"'
+        echo '  stumbling_points: "binary_checks empty"'
+        for i in 1 2 3 4 5; do
+            echo "- ts: \"2099-01-01T00:0${i}:00+0900\""
+            echo '  skill: "report-bundle"'
+            echo '  executor: "saizo"'
+            echo '  result: "PASS"'
+            echo '  stumbling_points: "fixed"'
+        done
+    } > "$TEST_TMPDIR/logs/skill_execution_log.yaml"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"report-bundle: 直近50件FAIL率=17% (1/6) — 回復済み(最終FAIL後5連続成功)"* ]]
+    [[ "$output" != *"スキル別FAIL率: 直近50件FAIL率10%超の改善対象あり"* ]]
+}
+
 @test "skill fail rate excludes cmd_test and invalid dashboard-update invocations" {
     cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
 executions:
