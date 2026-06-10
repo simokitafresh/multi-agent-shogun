@@ -58,3 +58,10 @@ Claude Code の version 運用だけを切り替えるスキルである。
 - 2.1.87 固定資産が欠けている場合は停止して報告する
 - `--agent` 指定時: settings.yaml の個別 `launch_cmd` を操作（cli_lookup.sh のオーバーライド機構を利用）
 - `--agent` + `pin-2.1.87`: 個別オーバーライドを削除しプロファイルデフォルト(ピン止め)に戻す
+
+## 関連スキル
+
+- [[shogun-all-codex-switch]] — 全忍者をCodex CLIに一括切替（モデル系ではなくCLI種別の切替）
+- [[shogun-peacetime-rollback]] — CodexからClaude（平時編成）への一括ロールバック
+- [[switch-to-codex]] — 指定エージェントをCodex CLIに個別切替
+- [[switch-to-opus]] — 指定エージェントをOpus CLI（Claude Code）に個別切替

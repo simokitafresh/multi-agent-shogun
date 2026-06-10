@@ -7,7 +7,7 @@ description: |
   矛盾解消、重複排除、陳腐化検出、免疫系提案(自動化ターゲット発見)を行う。
   Auto-dreamの4 Phaseを超える5 Phase設計: Orient/Gather/Consolidate/Prune/Immunize。
   TRIGGER: /dream、メモリ整理、知識統合、記憶の清掃、夢、三層記憶整理
-  DO NOT TRIGGER: 知識棚卸し(→shogun-teire)、教訓登録(→lesson-sort)、
+  DO NOT TRIGGER: 知識棚卸し(→[[shogun-teire]])、教訓登録(→lesson-sort)、
   PD反映(→shogun-pd-sync)、/clear前準備(→shogun-clear-prep)、Memory MCP単発操作
 quality_metric: "当該スキル起点cmdのcmd_save.shチェック通過率（q1-q3 BLOCKなし、q4_depth WARNINGなしの割合）"
 allowed-tools:

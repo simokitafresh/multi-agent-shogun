@@ -513,6 +513,55 @@ EOF
     [[ "$output" != *"スキル別FAIL率: 直近50件FAIL率10%超の改善対象あり"* ]]
 }
 
+@test "skill fail rate time-based recovery for low-frequency skill (streak>=2 + 24h+)" {
+    _fail_ts=$(date -d '-30 hours' '+%Y-%m-%dT%H:%M:%S+0900')
+    _pass_ts1=$(date -d '-29 hours' '+%Y-%m-%dT%H:%M:%S+0900')
+    _pass_ts2=$(date -d '-28 hours' '+%Y-%m-%dT%H:%M:%S+0900')
+    {
+        echo "executions:"
+        echo "- ts: \"${_fail_ts}\""
+        echo '  skill: "note-draft"'
+        echo '  executor: "shogun"'
+        echo '  result: "FAIL"'
+        echo '  stumbling_points: "python exit 1"'
+        for _t in "$_pass_ts1" "$_pass_ts2"; do
+            echo "- ts: \"${_t}\""
+            echo '  skill: "note-draft"'
+            echo '  executor: "shogun"'
+            echo '  result: "PASS"'
+            echo '  stumbling_points: "fixed"'
+        done
+    } > "$TEST_TMPDIR/logs/skill_execution_log.yaml"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"note-draft: 直近50件FAIL率=33% (1/3) — 回復済み(最終FAIL後2連続成功+"* ]]
+    [[ "$output" == *"再発なし)"* ]]
+    [[ "$output" != *"スキル別FAIL率: 直近50件FAIL率10%超の改善対象あり"* ]]
+}
+
+@test "skill fail rate time-based recovery requires min streak (streak=1 stays WARN)" {
+    _fail_ts=$(date -d '-30 hours' '+%Y-%m-%dT%H:%M:%S+0900')
+    _pass_ts1=$(date -d '-29 hours' '+%Y-%m-%dT%H:%M:%S+0900')
+    {
+        echo "executions:"
+        echo "- ts: \"${_fail_ts}\""
+        echo '  skill: "note-draft"'
+        echo '  executor: "shogun"'
+        echo '  result: "FAIL"'
+        echo '  stumbling_points: "python exit 1"'
+        echo "- ts: \"${_pass_ts1}\""
+        echo '  skill: "note-draft"'
+        echo '  executor: "shogun"'
+        echo '  result: "PASS"'
+        echo '  stumbling_points: "fixed"'
+    } > "$TEST_TMPDIR/logs/skill_execution_log.yaml"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"スキル別FAIL率: 直近50件FAIL率10%超の改善対象あり"* ]]
+}
+
 @test "skill fail rate excludes cmd_test and invalid dashboard-update invocations" {
     cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
 executions:
@@ -1051,6 +1100,50 @@ EOF
     [[ "$output" == *"OK: Q6(創造主の洗脳チェック)回答検出"* ]]
     [[ "$output" != *"追体験自動化ターゲット: WARN"* ]]
     [[ "$output" == *"総合判定: OK"* ]]
+}
+
+@test "Q6 answer in recent shogun bulletin post → no Q6 WARN (channel mismatch fix)" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q1-Q5回答済み。"}
+EOF
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<EOF
+entries:
+- id: 'blt_test_q6_recent'
+  content: |-
+    Q6回答(将軍・起動時洗脳チェック): 早期終了本能が作用していないか確認した。殿のための判断として一次データで検証する。自動化ターゲット: scripts/gates/q6_target_fixture.sh に \`q6_target_probe\` をgrep検証する。
+  posted_by: 'shogun'
+  posted_at: '$(date '+%Y-%m-%dT%H:%M:%S')'
+  requires_confirmation: false
+  action_type: 'info'
+  status: 'open'
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"* ]]
+    [[ "$output" != *"追体験自動化ターゲット: WARN"* ]]
+}
+
+@test "Q6 bulletin answer older than 24h → 追体験 WARN remains" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q1-Q5回答済み。"}
+EOF
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: 'blt_test_q6_old'
+  content: |-
+    Q6回答(将軍・起動時洗脳チェック): 早期終了本能が作用していないか確認した。自動化ターゲット: scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。
+  posted_by: 'shogun'
+  posted_at: '2020-01-01T00:00:00'
+  requires_confirmation: false
+  action_type: 'info'
+  status: 'open'
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: Q6(創造主の洗脳チェック)回答未検出"* ]]
+    [[ "$output" == *"追体験自動化ターゲット: WARN"* ]]
 }
 
 # === Test 9: idle自走トリガー ON (全忍者idle) ===

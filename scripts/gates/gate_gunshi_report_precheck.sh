@@ -91,13 +91,14 @@ if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
         # PRE3/PRE14: report記載hashがあれば広域git logを避ける(WSL2 NTFS対策)
         while IFS= read -r _hash; do
             [ -z "$_hash" ] && continue
+            # 注: hashが別repo(clinic等)のものだとgit fatal(128)→代入の終了コード=128→set -e全死亡するため || true 必須(2026-06-11 cmd_3277で発火した既存バグ)
             _PRE_CMD_FILES+="$(
                 cd "${PROJECT_DIR:-$REPO_ROOT}" \
-                    && timeout 2 git diff-tree --no-commit-id --name-only -r "$_hash" 2>/dev/null
+                    && timeout 2 git diff-tree --no-commit-id --name-only -r "$_hash" 2>/dev/null || true
             )"$'\n'
             _PRE_RECENT_DATA+="$(
                 cd "$REPO_ROOT" \
-                    && git show --oneline --name-only "$_hash" 2>/dev/null
+                    && git show --oneline --name-only "$_hash" 2>/dev/null || true
             )"$'\n'
         done <<< "$_REPORT_HASHES"
         _PRE_CMD_FILES=$(printf '%s\n' "$_PRE_CMD_FILES" | sed '/^$/d' | sort -u)
@@ -941,7 +942,8 @@ if [ -n "$_mem_query" ]; then
         done
         if [ -n "$_mem_result" ]; then
             echo "  記憶DB関連エントリ:"
-            printf '%s\n' "$_mem_result" | head -6 | while IFS= read -r _line; do [ -n "$_line" ] && echo "    $_line"; done
+            # 注: ループ本体最後の[ -n ]がfalseだとset -e+pipefailで全体死亡するためelse分岐必須(2026-06-11発見の既存バグ)
+            printf '%s\n' "$_mem_result" | head -6 | while IFS= read -r _line; do if [ -n "$_line" ]; then echo "    $_line"; fi; done
             echo "  ★ 上記を[MEM: memory_db ts=YYYY-MM-DD]で引用してレビューに反映せよ"
         else
             echo "  記憶DB: 関連エントリなし(検索キーワード: $_mem_keywords)"
@@ -951,6 +953,20 @@ if [ -n "$_mem_query" ]; then
     fi
 else
     echo "  SKIP: cmd purpose/id empty"
+fi
+
+# ─── SG-PRE27: verify系関数evidence検出(LG040: 検証関数は単体実行で検証せよ) ───
+# cmd_3275: verify_sheets()がranges配列バグで常時Falseなのにevidence「一致確認」記載。
+# 関数呼出形に限定した有界パターン(LG039: 無制限マッチの貪欲FP防止)
+echo ""
+echo "■ SG-PRE27: verify系関数evidence検出(LG040)"
+_verify_fns=$(grep -oE '\b(verify|validate|readback|parity)_[a-z_]{1,40}\(' "$REPORT_PATH" 2>/dev/null | sort -u | head -5 || true)
+if [ -n "$_verify_fns" ]; then
+    echo "  INFO: 報告に検証関数の呼出evidenceあり:"
+    printf '%s\n' "$_verify_fns" | while IFS= read -r _fn; do if [ -n "$_fn" ]; then echo "    - ${_fn})"; fi; done
+    echo "  ★ LG040: 当該関数を自分で単体実行し戻り値を確認せよ。evidenceの「一致確認」は関数が動く証明ではない(cmd_3275実証)"
+else
+    echo "  OK: verify系関数evidenceなし(対象外確認済み)"
 fi
 
 echo ""

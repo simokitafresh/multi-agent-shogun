@@ -32,11 +32,11 @@ allowed-tools:
 
 ## プリセット定義
 
-### opus-all（決戦モード）
+### opus-all（決戦モード）— [[hensei-opus]]
 
 全忍者: type=claude, model_name=claude-opus-4-6
 
-### mixed（混成編成）
+### mixed（混成編成）— [[hensei-mixed]]
 
 | 忍者 | type | model_name | 区分 |
 |------|------|-----------|------|

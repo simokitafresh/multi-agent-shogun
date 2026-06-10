@@ -9,8 +9,9 @@ description: |
   衛生状態・整合性・鮮度を検査する。
   TRIGGER: /shogun-teire、棚卸し、知識の状態は、7層監査、大型cmd完了後の知識チェック
   DO NOT TRIGGER: MEMORY.md+MCPだけの棚卸し（→/dream）、
-  教訓の振り分け（→lesson-sort）、PD→context反映確認（→shogun-pd-sync）、
-  /clear前準備（→shogun-clear-prep）、パラメータ過適合判定（→shogun-param-neighbor-check）
+  教訓の振り分け（→[[lesson-sort]]）、PD→context反映確認（→[[shogun-pd-sync]]）、
+  /clear前準備（→[[shogun-clear-prep]]）、パラメータ過適合判定（→[[shogun-param-neighbor-check]]）、
+  プロジェクト切替（→[[switch-project]]）、リポジトリ清掃（→[[repo-clean]]）
 allowed-tools:
   - Read
   - Grep

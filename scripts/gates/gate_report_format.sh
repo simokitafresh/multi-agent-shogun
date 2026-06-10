@@ -105,7 +105,8 @@ except Exception:
             if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
                 echo ""
                 echo "★ WARN(cmd_3264-AC2): ${_CC_WORKER} target_path配下に未commit変更あり:"
-                while IFS= read -r _ccl; do [ -n "$_ccl" ] && echo "  $_ccl"; done <<< "$_CC_UNCOMMITTED"
+                # 注: [ -n ]&&形式はループ末尾空行でset -e死亡する同型バグ族(2026-06-11 precheck 2件と同根)。防御的if/fi化
+                while IFS= read -r _ccl; do if [ -n "$_ccl" ]; then echo "  $_ccl"; fi; done <<< "$_CC_UNCOMMITTED"
             fi
             # AC3: auto-commit contamination detection
             _CC_AUTO_FILES=$(cd "$REPO_ROOT" && git log --grep="auto-commit" -10 --format="" --name-only 2>/dev/null | sort -u || true)

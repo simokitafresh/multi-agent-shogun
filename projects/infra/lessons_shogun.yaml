@@ -90,6 +90,8 @@ lessons:
     (29)AC数量表現、AC内deployキーワード、env_change既知3パターン、q11既存フロー差分不足は既存テンプレートルールの再発。ACは抽象化し、env_changeは既存パターンを参照し、q11は代替grep結果+差分理由を書く。
     (30)外部PJ(kj-toilet等)のcmd: sourceに絶対パスを書くとPROJECT_WD/fpathと二重結合→ファイル不在BLOCK。プロジェクト相対パスで書け(cmd_2825で6回、cmd_2853で4回BLOCK)
     (31)quality_gateフィールド名はpreflightテンプレートと完全一致必須。不正フィールド名が素通り→値チェックで初めてBLOCK(cmd_3244で7回BLOCK。覚醒なぜなぜ7回で根因特定)
+    (32)初回起票3点デフォルト: diagnosis 2部構成(BLOCK理由:該当なし(新規起票)/対策:...)+origin因果辺([[リンク]]最低1つ、none禁止)+timeout_minutesはquality_gate内でなくcmd直下(cmd_3261で3回BLOCK。LS049吸収。enforcement: pre-write-edit hookのpreflightテンプレ表示+cmd_skeleton.sh雛形)
+    (33)性能ACに合格点(閾値)を書くな。閾値はデータ量変化で無意味化し(設計書201通→実測1577通で7.9倍)、到達で最適化が止まる。構造的二値(プロセス起動O(1)等)+実測値報告義務+理論限界(APIクォータ/RTT)比で書け(殿指摘2026-06-10「合格点でなくより早く」。LS053吸収。enforcement: cmd_skeleton.shガイド8)
   source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036, LS034]
   source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394, cmd_2395]
   created_at: '2026-04-25'
@@ -530,23 +532,8 @@ lessons:
   automated: true
   enforcement: 'type=hook; file=scripts/hooks/prompt_state_inject.sh+stop_check_inbox.sh; pattern=因果+detect_f009'
 # LS050: superseded by LS-A18 (GATE CLEAR≠効果保証=計測なき改善は不能の拡張。2026-06-09統合)
-- id: 'LS049'
-  title: '初回起票テンプレート3項目: diagnosis 2部構成+origin因果辺+timeout_minutes外出し'
-  origin: '[[cmd_3261]]'
-  detail: 'cmd_3261で3回BLOCK。(1)diagnosis非2部構成(2)origin=none(3)timeout_minutesをquality_gate内に配置。3つとも初回起票時にデフォルト値を書き忘れた。preflight 10問は表示されていたが読まなかった(LS-A06再発)。全て既知パターン(LS-A04)だが、初回起票テンプレートにデフォルト値がないためEditで手書き→漏れる。preflight hookの表示位置にdiagnosis/origin/timeoutの3項目テンプレを追記すれば漏れを構造的に防止。enforcement: Edit hookのpreflight表示にdiagnosis/origin/timeout テンプレ追記(cmd_3261)'
-  source_cmd: 'cmd_3261'
-  created_at: '2026-06-10'
-  automated: true
-  enforcement: 'type=hook; file=.claude/hooks/pre-write-edit-combined.sh; pattern=preflight'
-- id: 'LS050'
-  title: 'AC内の日付リテラルは数値緩和チェックに誤検知される'
-  origin: '[[cmd_3273起票BLOCK]] -> [[日付リテラル2026がAC最大数値と判定]] -> [[q8とAC数値表記の整合ルール]]'
-  detail: 'Gmailクエリ等の日付(before:2026/7/1)をACに書くと、check_gunshi_reference_numeric_relaxationがq8最大数値(201)との比較で『緩和』と誤判定する。対処: q8のWHATにACと同一のクエリ日付を明記して最大数値を整合させる。設計書数値はq8とACの両方に同一表記で書け'
-  source_cmd: 'cmd_3273'
-  created_at: '2026-06-10'
-  automated: true
-  enforcement: 'cmd_save.sh check_gunshi_reference_numeric_relaxation WARN時にq8とACの数値表記整合を点検'
-  superseded_by: 'LS051 (Check17の日付リテラルFPをcmd_save.shコード修正で根治したため、LS050のq8整合ワークアラウンドは不要(2026-06-10))'
+# LS049: superseded by LS-A04(32) (初回起票3点デフォルト=テンプレートルール。2026-06-11統合)
+# LS050: superseded by LS051 (Check17日付リテラルFPはcmd_save.shコード修正で根治済み。2026-06-11物理削除)
 - id: 'LS051'
   title: 'cmd起票は雛形起点(cmd_skeleton.sh)が正。事後規律型は劣化LLMほどBLOCK往復する'
   origin: '[[殿指示2026-06-10起票分析]] -> [[事後規律型の摩擦]] -> [[cmd_skeleton.sh+gate修正5点]]'
@@ -563,11 +550,4 @@ lessons:
   created_at: '2026-06-10'
   automated: true
   enforcement: 'brainwash_binary_check #7簡潔本能の具体パターンとして本教訓を参照'
-- id: 'LS053'
-  title: '性能ACに合格点(閾値)を設けるな。構造的二値+実測報告+理論限界比で書け'
-  origin: '[[殿指摘2026-06-10合格点でなくより早く]] -> [[閾値ACの構造欠陥]] -> [[構造的二値+限界比AC]]'
-  detail: '実例(2026-06-10): Gmail取込高速化cmdでAC『600秒以内』と書いた→殿指摘『200通10分=1通6秒。1000通なら？5000通なら？その速度を合格点にするのではなく、より早くを目的にして修行すべき』。閾値ACは(1)データ量が変わると無意味化(設計書201通→実測1577通で7.9倍) (2)閾値到達で最適化が止まる。対処: 性能ACは構造的二値(例: 1通あたりプロセス起動回数=0、O(N)→O(1))+実測値の報告義務+理論限界(APIクォータ/RTT)との差分分析で書く。速度の絶対値は合格条件でなく修行の計測値'
-  source_cmd: 'cmd_3274'
-  created_at: '2026-06-10'
-  automated: true
-  enforcement: 'cmd_skeleton.shガイドに性能AC記述指針を埋込'
+# LS053: superseded by LS-A04(33) (性能AC閾値禁止=AC設計ルール。殿指摘「合格点でなくより早く」。2026-06-11統合)

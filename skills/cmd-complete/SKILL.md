@@ -70,7 +70,7 @@ bash scripts/lib/yaml_field_set.sh queue/shogun_to_karo.yaml "<cmd_id>" status c
 ```
 
 ### Step 6: dashboard更新
-`/dashboard-update` スキルを実行。
+[[dashboard-update]] スキルを実行。
 
 ### Step 7: ntfy送信
 ```bash

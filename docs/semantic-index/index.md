@@ -317,11 +317,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T16:58:02+09:00 もっとMECEに考えよう。作業を焦っているが、それは洗脳の影響だ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:18:16+09:00 偽陽性はバグだ。即時修正しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T18:19:40+09:00 将軍がCMD起票をスムーズにできなかったのはなぜだと思う？分析して今後性能の劣るLLMでもスムーズにCMD起票ができるように環境を整えよう。洗脳監査。L0-L7に貫通させて対応。gate側のインフラバグがないかも確認しよう |
+| file | `docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md` — 軍師idle: 洗脳監査メモリループ分析(2026-06-02) |
 | causal_chain | `[[cmd_2574]]` (L715) |
 | causal_chain | `[[cmd_2577]]` (L716) |
 | causal_chain | `[[cmd_karo_direct_fe_ptu_fix]]` (L720) |
 | causal_chain | `[[cmd_3220]]` (L727) |
-| file | `docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md` — 軍師idle: 洗脳監査メモリループ分析(2026-06-02) |
 
 ## recalculate_pipeline — 再計算パイプライン
 
@@ -1028,8 +1028,8 @@ codd:
 | cmd | `cmd_3215` 偵察: 3xレバレッジETF急落月の前月パターン分析(殿研究指示) |
 | causal | `cmd_3215` origin: [[殿指示_レバレッジ急落パターン]] -> [[monthly_returns損失月特定]] -> [[前月deterioration価格分析]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T16:10:33+09:00 まず最初にやるのはMVP。 殿の痛み（メールから読み取れる構造）: ┌────────────┬────────────────────────────────────────────────────────────────────┬─── |
-| causal_chain | `[[cmd_2578]]` (L717) |
 | file | `docs/research/gunshi_alm_parity_drift_analysis_20260409.md` — 軍師分析: ALMパリティドリフト分析(2026-04-09) |
+| causal_chain | `[[cmd_2578]]` (L717) |
 
 ## deepdive_principles — deepdive原理
 
@@ -1214,11 +1214,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T22:11:09+09:00 三層学習ループの成長は順調か？ |
 | cmd | `cmd_3244` スキル推薦precision計測修正: 推薦ログninja_name追加+照合キー変更 |
 | causal | `cmd_3244` origin: 因果: [[3セッション連続BLOCK_スキル推薦精度]] -> [[推薦agent≠実行agent]] -> [[precision照合キー不一致]]。教訓LS-A18(計測なき改善不能)が根拠 |
-| causal_chain | `[[cmd_1832]]` (L597) |
 | file | `docs/research/gunshi_idle_growth_loop_nazenaze_20260515.md` — 軍師idle: 成長ループなぜなぜ分析(2026-05-15) |
 | file | `docs/research/gunshi_idle_immune_effectiveness_20260512.md` — 軍師idle: 免疫システム有効性測定(2026-05-12) |
 | file | `docs/research/gunshi_idle_immune_system_evidence_20260426.md` — 軍師idle: 免疫システム証拠収集(2026-04-26) |
 | file | `docs/research/gunshi_idle_immunity_measurement_20260510.md` — 軍師idle: 免疫計測フレームワーク(2026-05-10) |
+| causal_chain | `[[cmd_1832]]` (L597) |
 
 ## chain_principle — 鎖の原理
 
@@ -1301,6 +1301,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T15:42:13+09:00 カレンダーも配当金額は表示する。銘柄や枚数などの詳細はタップで確認 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T16:04:41+09:00 同じやり方が使えると思う。マネーフォワードで事業系の項目を確認する、主流は２つ銀行引き落としと、クレジットカード、それに現金。銀行引き落としはメールで領収書などが来ることが多い。クレジットカードはinbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:05:25+09:00 通帳スキャン(みずほ)のPDFも中身を確認しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-11T01:43:46+09:00 blbtnrina toolu_01MGeou95hEMbjcg2adAnNMT /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4afb0c55-495e-49fd-97d6-58e6c9 |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -1402,10 +1403,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-01T12:44:16+09:00 ALMは既に使用していない。これはバグだな |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T10:32:07+09:00 bvu25pkju toolu_01R1fN2WFqQFz6cf9CgyRM1E /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8aa671c0-250c-404e-8b5a-7431d2 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T17:21:22+09:00 bstvwg6g1 toolu_01YYWfFmxptX4E2JHVrqqjNd /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b1260975-a6df-42fe-8f3b-42fb9a |
-| causal_chain | `[[cmd_1762]]` (L566) |
 | file | `docs/research/gunshi-alm-dynamic-iswindow-design.md` — 軍師分析: ALM動的isWindow設計 |
 | file | `docs/research/gunshi_cmd1901_cash_fallback_design_20260414.md` — 軍師分析: cmd_1901 Cashフォールバック設計(2026-04-14) |
 | file | `docs/research/gunshi_consultation_cmd1901_cash_analysis_20260414.md` — 軍師相談: cmd_1901 Cash分析(2026-04-14) |
+| causal_chain | `[[cmd_1762]]` (L566) |
 
 ## shin_shijin_design — 四神設計
 
@@ -1564,13 +1565,13 @@ codd:
 | cmd | `cmd_3229` 実装: 全スキル自動成長Phase2 — escalation後の修行課題自動生成+家老通知 (`scripts/skill_auto_improve.sh`, `scripts/training_task_generator.sh`) |
 | causal | `cmd_3229` origin: [[cmd_3228_Phase1完了]] -> [[Phase2_修行課題自動生成]] -> [[escalation後training_task_generator呼出]] |
 | lesson | `L770` SKILL.md複数checked_atタグ時はmatches[-1]が基準 |
+| file | `docs/research/gunshi_idle_adaptive_gating_bucket_split_20260521.md` — 軍師idle: 適応型ゲートバケット分割設計(2026-05-21) |
 | causal_chain | `[[cmd_2257]]` (L647) |
 | causal_chain | `[[cmd_2268]]` (L649) |
 | causal_chain | `[[cmd_2325]]` (L660) |
 | causal_chain | `[[cmd_2330]]` (L662) |
 | causal_chain | `[[cmd_2346]]` (L666) |
 | causal_chain | `[[cmd_2422]]` (L687) |
-| file | `docs/research/gunshi_idle_adaptive_gating_bucket_split_20260521.md` — 軍師idle: 適応型ゲートバケット分割設計(2026-05-21) |
 
 ## file_rename — ファイルリネーム
 
@@ -1880,6 +1881,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T18:43:59+09:00 bafwopgjh toolu_0135ge2tv2yjk3sWG9SeAcSy /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3dc766b4-2d3e-4e82-a4f9-2674df |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T21:13:25+09:00 b6dy630a7 toolu_01KKc88DkE8wP3VJcxS62pkQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ca0cff63-e632-437c-a4c7-143fe8 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T21:30:34+09:00 bi836xqv1 toolu_013W7SegJ5jekjmUUWmvckVh /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3dc766b4-2d3e-4e82-a4f9-2674df |
+| file | `docs/research/gunshi_codex_clear_judgment_20260422.md` — 軍師分析: Codex clear判断基準(2026-04-22) |
+| file | `docs/research/gunshi_idle_codex_commit_missing_20260413.md` — 軍師idle: Codexコミット欠落分析(2026-04-13) |
+| file | `docs/research/gunshi_idle_codex_respawn_loop_20260516.md` — 軍師idle: Codex respawnループ分析(2026-05-16) |
+| file | `docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md` — 軍師idle: Codex respawnループなぜなぜ(2026-05-20) |
 | causal_chain | `[[cmd_1819]]` (L587) |
 | causal_chain | `[[cmd_1835]]` (L594) |
 | causal_chain | `[[cmd_1845]]` (L602) |
@@ -1895,10 +1900,6 @@ codd:
 | causal_chain | `[[cmd_2393]]` (L676) |
 | causal_chain | `[[cmd_2411]]` (L684) |
 | causal_chain | `[[cmd_2413]]` (L686) |
-| file | `docs/research/gunshi_codex_clear_judgment_20260422.md` — 軍師分析: Codex clear判断基準(2026-04-22) |
-| file | `docs/research/gunshi_idle_codex_commit_missing_20260413.md` — 軍師idle: Codexコミット欠落分析(2026-04-13) |
-| file | `docs/research/gunshi_idle_codex_respawn_loop_20260516.md` — 軍師idle: Codex respawnループ分析(2026-05-16) |
-| file | `docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md` — 軍師idle: Codex respawnループなぜなぜ(2026-05-20) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -2385,9 +2386,9 @@ codd:
 | cmd | `cmd_training_speed_cmd_quality_log_20260606233758` (`logs/script_speed_training_ledger.yaml`, `scripts/cmd_quality_log.sh`) |
 | cmd | `cmd_3243` (`scripts/cmd_quality_log.sh`, `scripts/cmd_save.sh`, `tests/unit/test_cmd_save_block_time_nazenaze.bats`) |
 | cmd | `cmd_3248` (`tests/unit/test_cmd_complete_gate_gunshi_verdict_precheck.bats`) |
+| file | `docs/research/gunshi_idle_cmd_quality_block_analysis_20260425.md` — 軍師idle: cmd品質BLOCK分析(2026-04-25) |
 | causal_chain | `[[cmd_2131]]` (L637) |
 | causal_chain | `[[cmd_2131]]` (L638) |
-| file | `docs/research/gunshi_idle_cmd_quality_block_analysis_20260425.md` — 軍師idle: cmd品質BLOCK分析(2026-04-25) |
 
 ## task_modifier_injection — タスク修飾子注入
 
@@ -2628,8 +2629,6 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:20:52+09:00 # Elicitation Prompt L0 You are reviewing requirements and design notes to discover missing context. Use only the suppli |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:23:53+09:00 # Elicitation Prompt L0 You are reviewing requirements and design notes to discover missing context. Use only the suppli |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-09T09:41:57+09:00 デーモンの再起動をスクリプトでせよ |
-| causal_chain | `[[cmd_2288]]` (L651) |
-| causal_chain | `[[cmd_2292]]` (L652) |
 | file | `docs/research/gunshi_idle_autocommit_scope_leak_20260602.md` — 軍師idle: 自動コミットスコープ漏洩(2026-06-02) |
 | file | `docs/research/gunshi_idle_clear_durability_fix_20260516.md` — 軍師idle: /clear耐久性修正(2026-05-16) |
 | file | `docs/research/gunshi_idle_clear_durability_flag_gap_20260515.md` — 軍師idle: /clear耐久性フラグギャップ(2026-05-15) |
@@ -2648,6 +2647,8 @@ codd:
 | file | `docs/research/gunshi_idle_infra_bugs_full_audit_20260424.md` — 軍師idle: インフラバグ全量監査(2026-04-24) |
 | file | `docs/research/gunshi_idle_infra_health_20260425.md` — 軍師idle: インフラ健全性レポート(2026-04-25) |
 | file | `docs/research/gunshi_idle_infra_speed_hidden_bugs_20260605.md` — 軍師idle: インフラ速度の隠れバグ(2026-06-05) |
+| causal_chain | `[[cmd_2288]]` (L651) |
+| causal_chain | `[[cmd_2292]]` (L652) |
 
 ## gate_quality_framework — ゲート品質統合フレームワーク
 
@@ -2744,9 +2745,6 @@ codd:
 | cmd | `cmd_training_speed_cmd_save_20260606234246` (`scripts/cmd_save.sh`) |
 | cmd | `cmd_3266` 洗脳防御L7横展開: 家老・軍師のstartup gateにalert履歴+先送り連続検出+自動エスカレーション追加 (`scripts/gates/gate_gunshi_startup.sh`, `scripts/gates/gate_karo_startup.sh`) |
 | causal | `cmd_3266` origin: [[LS-A08_先送り]] -> [[L7_horizontal_expansion]] -> [[brainwash_defense_all_roles]] |
-| causal_chain | `[[cmd_2443]]` (L695) |
-| causal_chain | `[[cmd_2444]]` (L696) |
-| causal_chain | `[[cmd_2448]]` (L699) |
 | file | `docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md` — 軍師idle: コミットチェックWAパターン(2026-04-10) |
 | file | `docs/research/gunshi_idle_cross_contamination_20260503.md` — 軍師idle: クロスプロジェクト汚染分析(2026-05-03) |
 | file | `docs/research/gunshi_idle_cross_project_fp_20260426.md` — 軍師idle: クロスプロジェクトFP分析(2026-04-26) |
@@ -2756,6 +2754,10 @@ codd:
 | file | `docs/research/gunshi_idle_gate_fp_analysis_20260527.md` — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27) |
 | file | `docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md` — 軍師idle: LG003ゲートWA分析(2026-05-19) |
 | file | `docs/research/gunshi_idle_lu_dict_pattern_20260415.md` — 軍師idle: LU辞書パターン分析(2026-04-15) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-11T01:43:44+09:00 brdww7s6b toolu_01M38G1Vqynb49hspuSsgNVC /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4afb0c55-495e-49fd-97d6-58e6c9 |
+| causal_chain | `[[cmd_2443]]` (L695) |
+| causal_chain | `[[cmd_2444]]` (L696) |
+| causal_chain | `[[cmd_2448]]` (L699) |
 
 ## lesson_lifecycle — 教訓ライフサイクル管理
 
@@ -2790,8 +2792,6 @@ codd:
 | cmd | `cmd_3127` 強化: 教訓origin必須化gate — 孤立教訓85%解消 (`scripts/lesson_write.sh`, `scripts/memory_db_live_insert.py`, `tests/unit/test_cmd_quality_memory_db.bats`) |
 | causal | `cmd_3127` origin: [[軍師断裂1]] -> [[教訓origin空85%]] -> [[因果ネットワーク断裂]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-02T15:09:58+09:00 a2d7a21c443219eb5 toolu_01L5mLQ778f2XNAu1LWmm7AU /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2bbee917-1f2e-4d49-a7b |
-| causal_chain | `[[cmd_2412]]` (L685) |
-| causal_chain | `[[cmd_2436]]` (L693) |
 | file | `docs/research/gunshi_idle_insights_consumption_bottleneck_20260515.md` — 軍師idle: インサイト消費ボトルネック分析(2026-05-15) |
 | file | `docs/research/gunshi_idle_knowledge_burial_audit_20260505.md` — 軍師idle: 知識埋没監査(2026-05-05) |
 | file | `docs/research/gunshi_idle_lesson_dedup_20260413.md` — 軍師idle: 教訓重複排除分析(2026-04-13) |
@@ -2806,6 +2806,8 @@ codd:
 | file | `docs/research/gunshi_idle_lesson_useful_rate_20260503.md` — 軍師idle: 教訓有用率計測v2(2026-05-03) |
 | file | `docs/research/gunshi_idle_lesson_useful_rate_20260608.md` — 軍師idle: 教訓有用率計測v3(2026-06-08) |
 | file | `docs/research/gunshi_idle_lesson_waste_analysis_20260516.md` — 軍師idle: 教訓無駄分析(2026-05-16) |
+| causal_chain | `[[cmd_2412]]` (L685) |
+| causal_chain | `[[cmd_2436]]` (L693) |
 
 ## gunshi_review_lifecycle — 軍師レビューライフサイクル
 

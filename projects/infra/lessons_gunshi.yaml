@@ -500,3 +500,20 @@ lessons:
   enforcement: '報告レビュー時にverify系関数を単体実行する行動原則(レビュー実動作確認の一部)。実績: cmd_3275でFAIL→修正→False→True実証'
   when: report reviewで報告にverify/check系関数のevidenceがある時
   how: 当該関数を単体実行して戻り値を確認する。evidenceの主張と実行結果が矛盾したらFAIL
+- id: LG041
+  title: set -e下のwhile readループ末尾の[ -n ]&&短絡は死亡バグ族 — boolean短絡はif/fi化、コマンド置換内のgit等は|| true
+  detail: |
+    同日3件実証(2026-06-11): (1)SG-PRE26記憶DB表示while末尾[ -n ]&&→空行でexit 1全死亡(cmd_3276で106行切断)
+    (2)precheck別repo hash git diff-tree→fatal 128→代入の終了コードがset -eに伝播し全死亡(cmd_3277で発火)
+    (3)gate_report_format.sh L108同型(家老grepで発見、発火前に防御的修正)。
+    共通根因=ループ本体/コマンド置換の最終コマンドの非ゼロ終了がset -e(+pipefail)に伝播する。
+    防御標準: ループ内boolean短絡は if/then/fi 化。コマンド置換内のgit等外部コマンドは || true。
+    検索パターン: grep -rn 'do \[ -n .*\] && ' scripts/gates/ scripts/hooks/ .claude/hooks/
+  source_cmd: cmd_3277
+  origin: '[[cmd_3277 precheck死亡]] -> [[短絡＋set -e族]] -> [[3件同根修正]]'
+  created_at: '2026-06-11'
+  automated: true
+  enforcement_level: 3
+  enforcement: '3箇所if/fi化+|| true修正済み(working tree、殿裁可待ち)。族残存0件grep確認済み(軍師広域走査+家老独立走査の二重確認)'
+  when: set -e付きスクリプトでwhile readループや$()コマンド置換を書く/レビューする時
+  how: ループ末尾のboolean短絡をif/fi化する。$()内の失敗しうる外部コマンドに|| trueを付ける。族検索パターンで残存0件を確認する

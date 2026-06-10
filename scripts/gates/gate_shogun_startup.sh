@@ -800,7 +800,7 @@ if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
     echo "  ■ Phase逐次読込ガイド: SKIP(lightweight)"
 else
 echo "  ■ Phase逐次読込ガイド（全文一括Read禁止。1 Phaseずつ読み、自問してから次へ）"
-_deepdive_combined=$(python3 - "$REQUIRED_READ" "$REQUIRED_READ2" "$_q6_lord_log" <<'PY'
+_deepdive_combined=$(python3 - "$REQUIRED_READ" "$REQUIRED_READ2" "$_q6_lord_log" "${SHOGUN_STARTUP_BULLETIN_BOARD:-$SCRIPT_DIR/queue/bulletin_board.yaml}" <<'PY'
 import json
 import re
 import sys
@@ -808,6 +808,7 @@ from pathlib import Path
 
 required_paths = sys.argv[1:3]
 lord_log = Path(sys.argv[3])
+bulletin_path = Path(sys.argv[4]) if len(sys.argv) > 4 else None
 
 print("##PHASE_GUIDES##")
 for path in required_paths:
@@ -925,6 +926,71 @@ for entry in reversed(session_entries):
             continue
         found_answer = True
         break
+
+# Q6回答の正規チャネルは掲示板(CLAUDE.md Step 8: bulletin_write.sh shogun "Q6回答: ...")。
+# lord_conversationのみの検知ではチャネル不一致で常時WARNになる形骸化を実測
+# (2026-06-11: 将軍がQ6回答+軍師検証OK済みでも3セッション連続escalation)。
+# 掲示板のposted_by=shogun直近24h投稿もOR条件で検索する。
+if not (found_answer and found_automation_target) and bulletin_path and bulletin_path.is_file():
+    import datetime
+    import os
+    try:
+        _hours = int(os.environ.get("SHOGUN_STARTUP_Q6_BULLETIN_HOURS", "24"))
+    except ValueError:
+        _hours = 24
+    now = datetime.datetime.now()
+    bulletin_entries = []
+    current = None
+    in_content = False
+    for raw in bulletin_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        if raw.startswith("- id:"):
+            if current:
+                bulletin_entries.append(current)
+            current = {"content": [], "posted_by": "", "posted_at": ""}
+            in_content = False
+            continue
+        if current is None:
+            continue
+        meta = re.match(r"^  ([a-z_]+):\s*(.*)$", raw)
+        if meta and not raw.startswith("    "):
+            key, value = meta.group(1), meta.group(2).strip().strip("'\"")
+            if key == "content":
+                in_content = True
+            else:
+                in_content = False
+                if key in ("posted_by", "posted_at"):
+                    current[key] = value
+            continue
+        if in_content:
+            current["content"].append(raw.strip())
+    if current:
+        bulletin_entries.append(current)
+    for entry in bulletin_entries:
+        if entry.get("posted_by") != "shogun":
+            continue
+        try:
+            posted = datetime.datetime.fromisoformat(str(entry.get("posted_at", ""))[:19])
+        except ValueError:
+            continue
+        # 直近=過去方向のみ。未来timestampはデータ異常であり「直近の回答」ではない
+        _age_sec = (now - posted).total_seconds()
+        if _age_sec < 0 or _age_sec > _hours * 3600:
+            continue
+        text = " ".join(entry["content"])
+        if not text:
+            continue
+        match = target_re.search(text)
+        if match:
+            value = match.group(1).strip()
+            if value and not value.startswith("<") and not empty_target_re.search(match.group(0)):
+                found_automation_target = True
+                automation_target = value
+        if any(term in text for term in answer_terms):
+            if "Q6" in text and all(term in text for term in prompt_only_terms):
+                continue
+            found_answer = True
+        if found_answer and found_automation_target:
+            break
 
 if found_answer and found_automation_target:
     print("FOUND_WITH_AUTOMATION")
@@ -2498,25 +2564,53 @@ def _trailing_success_streak(skill_entries):
         streak += 1
     return streak
 
+# 低頻度スキルはstreakが伸びず回復認識まで数週間WARNが残存する
+# (2026-06-11 note-draft実測: 根因修正commit済み+4連続成功でもstreak<5でescalation継続)。
+# 時間軸でも回復を認識するため最終FAILからの経過時間を併記する。
+import datetime
+def _hours_since_last_fail(skill_entries):
+    last_fail_ts = ""
+    for entry in skill_entries:
+        if str(entry.get("result") or "").upper() == "FAIL":
+            last_fail_ts = str(entry.get("ts") or "")
+    if not last_fail_ts:
+        return 999999
+    try:
+        parsed = datetime.datetime.fromisoformat(
+            re.sub(r"([+-]\d{2})(\d{2})$", r"\1:\2", last_fail_ts.strip())
+        )
+    except ValueError:
+        return 0
+    now = datetime.datetime.now(parsed.tzinfo) if parsed.tzinfo else datetime.datetime.now()
+    return max(0, int((now - parsed).total_seconds() // 3600))
+
 rows = []
 for skill, item in stats.items():
     total = item["total"]
     fail = item["fail"]
     pct = int(round((fail / total) * 100)) if total else 0
     streak = _trailing_success_streak(by_skill[skill][-50:])
-    rows.append((pct, fail, total, skill, item["last"], streak))
+    hours = _hours_since_last_fail(by_skill[skill][-50:])
+    rows.append((pct, fail, total, skill, item["last"], streak, hours))
 rows.sort(key=lambda row: (row[0], row[1], row[3]), reverse=True)
-for pct, fail, total, skill, last, streak in rows[:5]:
-    print(f"{skill}\t{pct}\t{fail}\t{total}\t{last}\t{streak}")
+for pct, fail, total, skill, last, streak, hours in rows[:5]:
+    print(f"{skill}\t{pct}\t{fail}\t{total}\t{last}\t{streak}\t{hours}")
 PY
 )
     if [ -n "$_skill_stats" ]; then
         _skill_warn=0
         _skill_recovery_streak="${SKILL_FAIL_RECOVERY_STREAK:-5}"
-        while IFS=$'\t' read -r _sk _pct _fail _total _last _streak; do
+        _skill_recovery_min_streak="${SKILL_FAIL_RECOVERY_MIN_STREAK:-2}"
+        _skill_recovery_hours="${SKILL_FAIL_RECOVERY_HOURS:-24}"
+        while IFS=$'\t' read -r _sk _pct _fail _total _last _streak _hours; do
             [ -n "$_sk" ] || continue
             if [ "${_pct:-0}" -gt 10 ] && [ "${_streak:-0}" -ge "$_skill_recovery_streak" ]; then
                 echo "  ${_sk}: 直近50件FAIL率=${_pct}% (${_fail}/${_total}) — 回復済み(最終FAIL後${_streak}連続成功)"
+                continue
+            fi
+            # 低頻度スキルの時間軸回復: 最終FAIL後に成功実行あり+一定時間再発なし
+            if [ "${_pct:-0}" -gt 10 ] && [ "${_streak:-0}" -ge "$_skill_recovery_min_streak" ] && [ "${_hours:-0}" -ge "$_skill_recovery_hours" ]; then
+                echo "  ${_sk}: 直近50件FAIL率=${_pct}% (${_fail}/${_total}) — 回復済み(最終FAIL後${_streak}連続成功+${_hours}h再発なし)"
                 continue
             fi
             echo "  ${_sk}: 直近50件FAIL率=${_pct}% (${_fail}/${_total}) last=${_last}"
