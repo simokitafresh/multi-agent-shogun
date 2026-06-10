@@ -104,6 +104,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 既存忍法比較: 四つ目は性能レンジ内(激攻CAGR 62.41%は変わり身62.25%同水準)。突出優位なし。
 - L413: DM7+ XLU1銘柄ではtop_n軸が冗長(top_n=1とtop_n=2が完全同一リターン)。48→24体に圧縮可能（cmd_1078）
 - L493: 四つ目(MultiView)忍法のnumpy再実装で4窓union+タイミングオフセットに不一致リスク（cmd_1410）
+- CoDD設計書: [[cmd-284]](四つ目GSスクリプト), [[champion-selector]](GS champion選出ロジック) → `docs/research/cmd_1991_codd_extract/modules/`
 
 ---
 
@@ -360,6 +361,7 @@ v2全面再設計: DNA事前制約+データ駆動lookback→12体。R28 Ward Cl
 §29: 金融ML知識辞書61エントリ拡充 + FDA Smoothing研究(§29)。§30: EMA/L1 OOS検証(過適合判定、PBO>0.5)。
 §31: ALMファミリー別研究。§32: ALM L0×忍法7種比較。§33: 6目的関数横比較。§34: 41/42 ROBUST。
 §35: ALM本番組込み設計(殿裁定2026-04-06)→L0パリティ確定→L2 2×2因子分析→L3 2体EW(α>L2)→CoDD高速化(5本完了)。
+- CoDD設計書: [[l1-alm-wf-engine]](ALM L1 WFエンジン), [[wf-runner]](WFランナー), [[cmd-1826-memory-analysis]](メモリ分析), [[cmd-1847-neighbor-analysis]](近傍パラメータ分析), [[cmd-1869-2x2-factor-analysis]](2×2因子分析), [[cmd-1870-beta-adjusted-2x2]](β調整2×2分析) → `docs/research/cmd_1991_codd_extract/modules/`
 Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 
 ## §36. 金融ML知識辞書 2026-04-30 追加9件（cmd_2426〜cmd_2434）
@@ -437,3 +439,7 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 - ← [[dialogue_alm_finite_time_20260404]] ALM有限時間4指標
 - ← [[dialogue_miniaturization_why_20260407]] 矮小化→WHY/WHAT因果→時間は人殺し→本番バグ発見
 - → [[gunshi-fof-deterioration-analysis.md]] EMA前処理のFoF悪化メカニズム分析
+- → [[cmd-284]] [[champion-selector]] 四つ目GS+champion選出(CoDD extract: cmd_1991)
+- → [[l1-alm-wf-engine]] [[wf-runner]] ALM WFエンジン+ランナー(CoDD extract: cmd_1991)
+- → [[cmd-1826-memory-analysis]] [[cmd-1847-neighbor-analysis]] メモリ+近傍分析(CoDD extract: cmd_1991)
+- → [[cmd-1869-2x2-factor-analysis]] [[cmd-1870-beta-adjusted-2x2]] 2×2因子+β調整(CoDD extract: cmd_1991)
