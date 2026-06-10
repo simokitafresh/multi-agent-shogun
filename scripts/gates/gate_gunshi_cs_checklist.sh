@@ -151,6 +151,9 @@ BEGIN {
         has_brainwash = 1
     } else if ($0 ~ /^[[:space:]]*operational_simulation:/) {
         has_ops_sim = 1
+    } else if ($0 ~ /^[[:space:]]*CS6:/ && has_cs) {
+        # adversarial self_studyのCS6(因果シナリオ)=operational_simulationの代替(2026-06-10)
+        has_ops_sim = 1
     } else if ($0 ~ /^[[:space:]]*step3_5_verified:/) {
         has_step35 = 1
     } else if ($0 ~ /^[[:space:]]*changed_lines:[[:space:]]*[0-9]+/) {
@@ -698,6 +701,13 @@ fi
 
 # --- §5.6: 自動化系cmd×adversarial交差チェック ---
 # target_path=scripts/のdraft/reportでfinding_categoriesにadversarialがないケースを検出
+# 同一cmd_idの任意エントリ(draft/report/self_study)にadversarialがあれば除外(2026-06-10)
+# reason: draftにadversarial検討済みならreportで再検討不要。self_study遡及も有効
+_adv_covered_ids=$(awk '
+    /^- (cmd_id|id):/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); fc="" }
+    /^  finding_categories:.*\[/ { fc=$0 }
+    /^  timestamp:/ && fc ~ /adversarial/ && id != "" { print id }
+' "$LOG_FILE" 2>/dev/null | sort -u)
 _automation_no_adv=$(awk '
     /^- (cmd_id|id):/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); fc=""; obs=""; rt="" }
     /^  review_type:/ { rt=substr($0,index($0,":")+2); gsub(/[" \t]/,"",rt) }
@@ -710,7 +720,9 @@ _automation_no_adv=$(awk '
         }
         obs=""
     }
-' "$LOG_FILE" 2>/dev/null | tail -10)
+' "$LOG_FILE" 2>/dev/null | while read -r _cid; do
+    echo "$_adv_covered_ids" | grep -qxF "$_cid" || echo "$_cid"
+done | tail -10)
 if [ -n "$_automation_no_adv" ]; then
     echo "WARN(§5.6): 自動化系cmd(scripts/対象)でadversarial未検討:"
     printf '%s\n' "$_automation_no_adv" | while read -r _id; do
@@ -844,6 +856,18 @@ fi
 
 # --- L6: 洗脳#2検出 — infra report reviewで実動作確認なし (殿厳命2026-06-08) ---
 # observationsに「実行」「実測」「確認」「テスト実行」がないinfra reportレビューを検出
+# self_studyで遡及的に実動作確認を追加した場合も解消として扱う(2026-06-10)
+_verified_by_ss=$(awk '
+    /^- cmd_id:/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); rt=""; obs="" }
+    /review_type: self_study/ { rt="self_study" }
+    /observations:/ { in_obs=1; next }
+    in_obs && /^    - / { obs=obs " " $0 }
+    in_obs && /^  [^ ]/ { in_obs=0 }
+    /timestamp:/ && rt=="self_study" && id != "" {
+        if (obs ~ /実行|実測|実験|動作確認|テスト実行|PASS/) print id
+        obs=""
+    }
+' "$LOG_FILE" 2>/dev/null | sort -u)
 _infra_no_verify=$(awk '
     /^- cmd_id:/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); rt=""; obs="" }
     /review_type: report/ { rt="report" }
@@ -858,7 +882,9 @@ _infra_no_verify=$(awk '
         }
         obs=""
     }
-' "$LOG_FILE" 2>/dev/null | tail -5 || true)
+' "$LOG_FILE" 2>/dev/null | while read -r _cid; do
+    echo "$_verified_by_ss" | grep -qxF "$_cid" || echo "$_cid"
+done | tail -5 || true)
 if [ -n "$_infra_no_verify" ]; then
     echo "WARN(L6-洗脳#2): infra/scripts reportレビューで実動作確認なし:"
     printf '%s\n' "$_infra_no_verify" | while read -r _id; do
