@@ -378,4 +378,6 @@ Next dream eligible: [timestamp + 24h]
 
 Script refs verified: 2026-06-03 cmd_3144. `insight_write.sh` 直近変更(4dacb9c9)は運用ファイルauto-commit(mtimeのみ変化)。スクリプト本体の動作・インターフェース変更なし。SKILL.md記載の仕様(引数/priority/source/--resolve/dedup/source repeat通知)は現行と一致。
 
-<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->
+Script refs verified: 2026-06-10 karo. `semantic_search.sh` 直近変更(ffd1305de)はcache refresh内部実装のみ(cp生コピー→SQLite Backup API置換、malformed根治)。呼び出し契約(引数/`--stats`/出力形式)は変更なし。SKILL.md記載の使用方法は現行と一致。
+
+<!-- script_refs_checked_at: 2026-06-10T23:18:00+09:00 -->
