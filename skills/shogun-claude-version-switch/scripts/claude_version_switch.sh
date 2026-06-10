@@ -348,7 +348,7 @@ respawn_single_agent() {
     return 0
   fi
   local pane
-  pane=$(tmux list-panes -t shogun:2 -F '#{pane_index} #{@agent_id}' | awk -v a="$agent" '$2==a {print "shogun:2."$1}')
+  pane=$(tmux list-panes -s -t shogun -F '#{window_index}.#{pane_index} #{@agent_id}' | awk -v a="$agent" '$2==a {print "shogun:"$1}')
   if [[ -z "$pane" ]]; then
     log "Pane for $agent not found; skip respawn"
     return 0
