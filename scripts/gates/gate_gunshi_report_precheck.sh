@@ -466,7 +466,8 @@ import yaml, re, sys
 try:
     d = yaml.safe_load(open('${REPORT_PATH}'))
     texts = str(d.get('result', {}).get('summary', '')) + str(d.get('result', {}).get('details', ''))
-    pat = re.compile(r'golden|snapshot.*比較|ゴールデン|golden\.json|パリティ.*diff.*0|parity.*diff.*0', re.I)
+    # 有界ギャップ(.{0,N}): 無制限.*は遠距離の無関係語を結合しWARNを誤抑制する(貪欲FP族 2026-06-10)
+    pat = re.compile(r'golden|snapshot.{0,20}比較|ゴールデン|golden\.json|パリティ.{0,30}diff.{0,10}0|parity.{0,30}diff.{0,10}0', re.I)
     print('yes' if pat.search(texts) else 'no')
 except: print('no')
 " 2>/dev/null || echo "no")

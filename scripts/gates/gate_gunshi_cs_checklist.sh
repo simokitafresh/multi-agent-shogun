@@ -746,7 +746,8 @@ if [ -n "$_lg033_gp_entries" ]; then
     while IFS=: read -r _line_no _rest; do
         _gp_id=$(echo "$_rest" | sed 's/.*GP-/GP-/;s/[^0-9a-zA-Z_-].*//')
         # 前後20行内にgrep/git show/findの証跡があるか
-        _evidence=$(sed -n "$((_line_no-10)),$((_line_no+10))p" "$LOG_FILE" 2>/dev/null | grep -ic 'grep\|git show\|find.*-name\|既存.*確認\|existing.*check' || true)
+        # 有界ギャップ(.{0,N}): 無制限.*は「既存のテストは未確認」等を証跡と誤認しWARNを誤抑制する(貪欲FP族 2026-06-10)
+        _evidence=$(sed -n "$((_line_no-10)),$((_line_no+10))p" "$LOG_FILE" 2>/dev/null | grep -icE 'grep|git show|find.{0,20}-name|既存.{0,12}確認|existing.{0,12}check' || true)
         if [ "${_evidence:-0}" -eq 0 ]; then
             echo "WARN(LG033): ${_gp_id}に既存実装の確認証跡なし。grep/git showで既存を確認してからGP提案せよ"
             warn=1
