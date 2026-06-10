@@ -1338,10 +1338,30 @@ PY
     fi
 
     log "REPORT-NOTIFY-MISSING-BLOCK: $name report exists and verdict is valid but karo report_received notification is missing (${trigger}, report=$(basename "$report_file"))"
-    if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}の報告YAMLは存在するが家老へのreport_received通知が未確認。/clear保留中。対象: $(basename "$report_file")" report_notification_missing ninja_monitor >> "$LOG" 2>&1; then
-        log "WARN: inbox_write report_notification_missing failed for $name"
-    fi
+    notify_karo_throttled report_notification_missing "$name" "【自動検知】${name}の報告YAMLは存在するが家老へのreport_received通知が未確認。/clear保留中。対象: $(basename "$report_file")"
     return 1
+}
+
+# 同一(type,ninja)の自動検知通知をクールダウン付きで送る。
+# verdict未記入等は解消まで毎pollで再検知されるため、抑制なしでは
+# 家老inboxに毎分同一通知が積まれる(2026-06-10 kagemaru長時間処理中に実測)。
+# /clear保留(return 1)は維持し、通知だけを間引く。
+notify_karo_throttled() {
+    local notify_type="$1"
+    local name="$2"
+    local message="$3"
+    local stamp_file="${STATE_DIR:-/tmp}/.notify_${notify_type}_${name}"
+    local cooldown="${NINJA_MONITOR_NOTIFY_COOLDOWN:-1800}"
+
+    if auto_commit_timestamp_recent "$stamp_file" "$cooldown"; then
+        log "NOTIFY-THROTTLED: $notify_type for $name suppressed (within ${cooldown}s)"
+        return 0
+    fi
+    if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" "$notify_type" ninja_monitor >> "$LOG" 2>&1; then
+        log "WARN: inbox_write $notify_type failed for $name"
+        return 0
+    fi
+    write_auto_commit_timestamp "$stamp_file"
 }
 
 report_file_has_verdict() {
@@ -1357,16 +1377,12 @@ report_file_has_verdict() {
             ;;
         "")
             log "VERDICT-EMPTY-BLOCK: $name report exists but verdict empty (${trigger}, report=$(basename "$report_file"))"
-            if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}の報告にverdictが未記入。/clear保留中。対象: $(basename "$report_file")" verdict_empty ninja_monitor >> "$LOG" 2>&1; then
-                log "WARN: inbox_write verdict_empty failed for $name"
-            fi
+            notify_karo_throttled verdict_empty "$name" "【自動検知】${name}の報告にverdictが未記入。/clear保留中。対象: $(basename "$report_file")"
             return 1
             ;;
         *)
             log "VERDICT-INVALID-BLOCK: $name report verdict invalid (${trigger}, verdict=${verdict}, report=$(basename "$report_file"))"
-            if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "【自動検知】${name}の報告verdictが不正値(${verdict})。/clear保留中。対象: $(basename "$report_file")" verdict_invalid ninja_monitor >> "$LOG" 2>&1; then
-                log "WARN: inbox_write verdict_invalid failed for $name"
-            fi
+            notify_karo_throttled verdict_invalid "$name" "【自動検知】${name}の報告verdictが不正値(${verdict})。/clear保留中。対象: $(basename "$report_file")"
             return 1
             ;;
     esac
