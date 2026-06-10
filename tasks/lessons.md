@@ -7738,3 +7738,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - bash層でCDP疎通確認してもPython側get_tab()はNoneを返しうる(タブ不在時)。Noneチェックなしにnavigate(None,...)を呼ぶとRuntimeError→uncaught→exit 1。bash層チェック≠Python層チェック。CDP操作ではget_tab()の戻り値を必ず確認し、Noneの場合はcreate_tab()でフォールバックせよ。origin: [[2026-06-09 FAIL]] -> [[get_tab None→navigate uncaught]] -> [[Python exit 1 FAIL]]
+
+### L769: post-bash-combined.shのparse_fail_countはTAP行フィルタなしでテスト名を誤検出する
+- **日付**: 2026-06-10
+- **出典**: cmd_3271
+- **記録者**: kagemaru
+- **tags**: [infra,deploy-task,bash,reporting]
+- **target_files**: [scripts/deploy_task.sh,.claude/hooks/post-bash-combined.sh]
+- **origin**: [[cmd_3271]]
+- **when**: 未設定
+- **how**: 未設定
+- parse_skip_countはnon_tap_text(_filter_tap_lines)を使うがparse_fail_countは生textに適用。テスト名に「failed」含む行が誤マッチ→265件FAILEDと誤報告。修正: non_tap_textを使いFAILED/FAIL判定もTAP除外後に行う

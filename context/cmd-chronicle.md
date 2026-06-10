@@ -509,3 +509,4 @@
 | cmd_3268 | docs/research/cmd_1991_codd_extract/modules/配下5ファイルがbacklinks=0で因果ネットワークから孤立。20セッション先送り。context/dm-signal-research.mdから因果リンクを接続し知識到達性を回復する | infra | 06-10 | cmd_1991 CoDD extract modules/ |
 | cmd_3269 | deploy_task.sh inject_related_lessonsがassigned_to未設定時にninja_name=unknownで記録し、同一教訓が忍者名+unknownで二重登録される。172 NOT_USEFUL中81件がunknownで水増し。二重記録を防止しuseful_rate計測を正常化する | infra | 06-10 | deploy_task.sh inject_related_ |
 | cmd_3270 | note-draft スキルの直近50件FAIL率が38%(3/8)で3セッション連続startup BLOCK。家老escalation(blt_20260610_115209)でCMD起票要請あり。skill_auto_improve_stateでcode_fix_requiredエスカレーション済み。根因を特定し修正する | infra | 06-10 | note-draft FAIL率38%の根本原因(CDPなし |
+| cmd_3271 | 教訓健全度WARN(useful_rate=46.2%)が3セッション連続startup BLOCK。根因=target_path未設定cmdでMIN_KEYWORD_SCORE閾値を下回り全量fallback注入(cmd_3231分析済み)。絞り込み精度を改善しuseful_rateを向上させる | infra | 06-10 | inject_related_lessonsのtarget_ |

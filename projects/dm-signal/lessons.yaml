@@ -18,6 +18,9 @@ lessons:
   - /mnt/c/Python_app/DM-signal/docs/research/cmd_3220_7戦略バックテスト.md
   - /mnt/c/Python_app/DM-signal/docs/research/cmd_3220_7戦略バックテスト.json
   origin: '[[cmd_3220]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L727
   title: HMM月次fitは全サンプルが1状態に集中するデジェネレート問題が発生しやすい。日次fitが必須
   summary: 月次SPYリターンで2状態HMMをfitすると全サンプルが1状態に割り当てられ(100%トリガー)機能しない。SPY日次リターンで訓練→月次集約(50%ルール)
@@ -1295,7 +1298,7 @@ lessons:
   origin: '[[cmd_2261]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
   deprecated: true
   deprecation_reason: auto_useful_rate_zero
 - id: L647
@@ -2271,7 +2274,7 @@ lessons:
   origin: '[[cmd_1796]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L583
   title: WSL2 /mnt/c 巨大CSV flush は p9_client_rpc stall を起こしうる — Linux側出力か分割書込前提で設計すべし
   summary: 119,493パターンの kasoku_ratio 実行で 1795_kasoku_ratio_grid_monthly_fast.csv が約347.6MBに
@@ -4131,6 +4134,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_monban.py
   - scripts/analysis/grid_search/run_077_nukimi.py
   origin: '[[cmd_1199]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L450
   title: PipelineEngine GS統合時の速度tradeoff — 77倍低下
   summary: 'PipelineEngine経由のsimulate_patternはNumPy直接計算比で約77倍遅い(bunshin: 9.7s vs 0.126s)。PI-'
@@ -6754,6 +6760,9 @@ lessons:
   when: FoF展開共通関数を API/サービスの loop 内で呼ぶ時は
   how: '2026-03-11'
   origin: '[[cmd_806]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L253
   title: Next.js大バージョンアップ偵察では依存パッケージのpeer dep対応が最大リスク変数
   summary: フレームワーク自体の変更量は管理可能でも、サードパーティ(react-katex等)のReact新版対応不明が最大リスクになる。大バージョンアップ偵察では本体の
@@ -6786,6 +6795,9 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: へ更新しておくと、レビュー・実装のテスト実行で再度詰まらない
   origin: '[[cmd_792]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L250
   title: API フィールド除去テスト修正時は xfail/保留系テストと docstring まで grep し旧仕様残存を潰す
   summary: cmd_791 再レビューで、修正対象2本は更新されていた一方 backend/tests/test_monthly_returns_056_fields.py
@@ -7032,6 +7044,9 @@ lessons:
   target_files:
   - frontend/lib/api-cache.ts
   origin: '[[cmd_758]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-10'
 - id: L229
   title: SWR化は invalidation 削除だけでは成立せず、cache hit を迂回する fresh fetch 経路が必要
   summary: IndexedDB 永続 cache を持つ request 層で cache hit 時 short-circuit return している場合、
@@ -8159,7 +8174,7 @@ lessons:
   origin: '[[cmd_475]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-10'
 - id: L136
   title: 改善候補調査前に既存最適化履歴を照合すべき
   summary: backend-deep-dive.mdで洗い出した改善候補(DBフラッシュ/FoF一括読込)は過去のOPT-A/087最適化で既に実装済みだった。改善候補の実
