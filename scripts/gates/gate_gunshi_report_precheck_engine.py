@@ -66,6 +66,10 @@ def main():
 
     result['IS_DM_SIGNAL'] = '1' if is_dm_signal else '0'
     result['FILES_MODIFIED'] = '\n'.join(fm_paths)
+    # files_modifiedが存在するのにpath抽出0件=形式違反(check/result散文形式等)。
+    # silent SKIPはSG-PRE25素通り→gate command_files_modified_mismatch BLOCKに直結
+    # (cmd_3274実証 2026-06-10: hayateがcheck形式で記入→precheck SKIP→軍師LGTM→BLOCK)
+    result['FM_FORMAT_INVALID'] = '1' if (files_modified and not fm_paths) else '0'
 
     # ── 2. TASK_FILE を1回読込 → binary_checks 整合性確認 ────────────────
     task_file = ''

@@ -908,6 +908,12 @@ PYEOF
     else
         echo "  SKIP: shogun_to_karo.yaml不在"
     fi
+elif [ "${FM_FORMAT_INVALID:-0}" = "1" ]; then
+    # files_modifiedはあるがpath:キーが1件も抽出できない=形式違反(check/result散文等)。
+    # 黙ってSKIPするとSG-PRE25素通り→gate mismatch BLOCK(cmd_3274実証 2026-06-10)
+    echo "  ★★★ ERROR: files_modifiedにpath:キーが1件もない(形式違反)。gateのcommand_files_modified_mismatchでBLOCKされる"
+    echo "  → verdict: FAILにせよ。忍者に path: 形式での再記入を求めよ(report_field_set.sh経由)"
+    ERRORS=$((ERRORS + 1))
 else
     echo "  SKIP: PARENT_CMD or FILES_MODIFIED empty"
 fi
