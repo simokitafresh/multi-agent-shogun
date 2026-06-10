@@ -139,6 +139,43 @@ run_gate() {
     [[ "$output" == *"[OK]"* ]]
 }
 
+@test "日本語ファイル名を含む参照（当リポ）: 切断されずに解決される（AC1）" {
+    # cmd_3218_サイズ調整バックテスト.md のような日本語ファイル名が切断されないことを確認
+    local JAPANESE_FILE="cmd_3218_サイズ調整バックテスト.md"
+    make_projects_yaml ""
+    echo "content" > "$TEST_TMPDIR/docs/research/$JAPANESE_FILE"
+    make_context_file "test.md" "→ \`docs/research/$JAPANESE_FILE\`"
+
+    run_gate "$TEST_TMPDIR/context/test.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[OK]"* ]]
+    [[ "$output" == *"1 refs checked"* ]]
+}
+
+@test "日本語ファイル名を含む参照（外部リポ）: PASS/FAIL両面確認（AC2）" {
+    FAKE_EXT="$TEST_TMPDIR/fake_external"
+    mkdir -p "$FAKE_EXT/docs/research"
+    echo "data" > "$FAKE_EXT/docs/research/cmd_3220_7戦略バックテスト.md"
+    # cmd_3224_V8過適合検証.md は作成しない
+
+    make_projects_yaml "  - id: external-pj
+    path: \"$FAKE_EXT\""
+
+    # PASS: 外部リポに実在する日本語パスはOK
+    make_context_file "pass.md" "ref: \`docs/research/cmd_3220_7戦略バックテスト.md\`"
+    run_gate "$TEST_TMPDIR/context/pass.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[OK]"* ]]
+    [[ "$output" == *"1 refs checked"* ]]
+
+    # FAIL: どのリポにも存在しない参照はFAIL維持
+    make_context_file "fail.md" "ref: \`docs/research/cmd_3224_V8過適合検証.md\`"
+    run_gate "$TEST_TMPDIR/context/fail.md"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"[ALERT]"* ]]
+    [[ "$output" == *"NOT FOUND"* ]]
+}
+
 @test "DM-signal偽陽性パターン: 外部リポなし環境でdm-signal参照をスキップ" {
     # 外部リポ(DM-signal等)が全て存在しない環境をシミュレート
     make_projects_yaml "  - id: dm-signal
