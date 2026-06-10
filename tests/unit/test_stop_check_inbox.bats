@@ -197,6 +197,33 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh" 
     [[ "$output" == *"F009"* ]]
 }
 
+@test "T-SCI-F009-005: commitハッシュ言及+遠距離して の報告文はFP扱いしない (2026-06-10実測FP回帰)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"殿、報告する。軍師がgate自体のバグ3件をD0修正済み(commit 0d7f29701)。利他WARNのawk境界未リセットなどの偽陽性を排除。将軍が本日修正した形骸化問題と同根のものを軍師も独立に是正しており、三者の掃除が噛み合った。"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh" 2>/dev/null
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"F009"* ]]
+}
+
+@test "T-SCI-F009-006: 近接した操作依頼は引き続きblockする (有界化後の真陽性維持)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"殿、お手数だがgit pushを実行してくれ"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh" 2>/dev/null
+'
+    [ "$status" -eq 0 ]
+    echo "$output" | jq -e '.decision == "block"' >/dev/null
+    [[ "$output" == *"F009"* ]]
+}
+
 @test "T-SCI-004: unread summary is embedded in block reason" {
     cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'EOF'
 messages:
