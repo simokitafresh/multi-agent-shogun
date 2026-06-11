@@ -631,12 +631,13 @@ for entry in entries:
     text = str(entry.get("content", "")).splitlines()
     head = text[0] if text else ""
     if status != "closed":
-        if (
+        is_unactioned_required = (
             str(entry.get("action_type", "info")).strip() == "action_required"
             and not str(entry.get("actioned_by", "")).strip()
-        ):
+        )
+        if is_unactioned_required:
             bulletin_action_pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
-        if entry.get("posted_by") != agent:
+        if not is_unactioned_required and entry.get("posted_by") != agent:
             confirmed = entry.get("confirmed_by") or []
             if agent not in confirmed:
                 rc = entry.get("requires_confirmation", False)
@@ -902,6 +903,7 @@ answer_terms = (
 prompt_only_terms = ("Q6:", "洗脳8パターン", "1つ具体例で答えよ")
 empty_target_re = re.compile(r"\*{0,2}自動化ターゲット\*{0,2}\s*[:：]\s*(なし|無し|特になし|未記入|N/?A|none|null)?\s*$", re.I)
 target_re = re.compile(r"\*{0,2}自動化ターゲット\*{0,2}\s*[:：]\s*(.+)", re.I)
+weak_target_re = re.compile(r"(案を検討|検討する|検討中|予定|つもり|後で|あとで)")
 found_answer = False
 found_automation_target = False
 automation_target = ""
@@ -918,7 +920,7 @@ for entry in reversed(session_entries):
     match = target_re.search(text)
     if match:
         value = match.group(1).strip()
-        if value and not value.startswith("<") and not empty_target_re.search(match.group(0)):
+        if value and not value.startswith("<") and not empty_target_re.search(match.group(0)) and not weak_target_re.search(value):
             found_automation_target = True
             automation_target = value
     if any(term in text for term in answer_terms):
@@ -982,7 +984,7 @@ if not (found_answer and found_automation_target) and bulletin_path and bulletin
         match = target_re.search(text)
         if match:
             value = match.group(1).strip()
-            if value and not value.startswith("<") and not empty_target_re.search(match.group(0)):
+            if value and not value.startswith("<") and not empty_target_re.search(match.group(0)) and not weak_target_re.search(value):
                 found_automation_target = True
                 automation_target = value
         if any(term in text for term in answer_terms):

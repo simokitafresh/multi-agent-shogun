@@ -375,6 +375,18 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
+@test "Q6 weak automation target proposal is missing target, not proof skip" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 洗脳#5の先送りを確認した。殿のための判断として行動まで進める。自動化ターゲット: 教訓上限ALERTにlesson統合の具体手順をgate出力へ埋め込む案を検討する"}
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: Q6回答は検出したが自動化ターゲット未記入"* ]]
+    [[ "$output" != *"WARN: 自動化ターゲット実装証拠 grep検証スキップ"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
 @test "lessons_shogun origin missing or linkless → 総合判定: WARN" {
     cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
 lessons:
@@ -1001,6 +1013,30 @@ EOF
     [[ "$output" == *"掲示板action_required未対応"* ]]
     [[ "$output" == *"ALERT: 未対応action_required掲示板 1件"* ]]
     [[ "$output" == *"blt_action_required by karo"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
+}
+
+@test "bulletin unactioned action_required is not double-counted as unread bulletin" {
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: 'blt_action_required_unconfirmed'
+  content: |-
+    CMD起票要請: 未対応かつ未確認の昇格通知
+  posted_by: 'karo'
+  posted_at: '2026-05-15T11:00:00'
+  requires_confirmation: true
+  action_type: 'action_required'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"掲示板未確認"* ]]
+    [[ "$output" == *"未確認: 0件"* ]]
+    [[ "$output" == *"掲示板action_required未対応"* ]]
+    [[ "$output" == *"ALERT: 未対応action_required掲示板 1件"* ]]
     [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
