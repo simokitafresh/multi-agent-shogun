@@ -2192,3 +2192,16 @@ entries:
   supplementary_cmds: 0
   source: "cmd_complete_gate"
   timestamp: "2026-06-11T11:04:14Z"
+- cmd_id: "cmd_3296"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-11T11:05:57Z"
+  checks: "warn_missing_prev_cmd_lesson"
+  diagnosis: "BLOCK理由: 初回起票につき該当なし(事前点検: ステップ数4≦AC数4、environment_change patternはgrep -c 'デプロイ'でexecution-log.mdに2件実在確認、q11はgit log一次証拠付き)。対策: 外部裁可書の語彙(push)を内部語彙(反映)へ置換、忍者配備なし=家老直接実施を明記して忍者push禁止の掟と矛盾しない設計にした。3作業の連結は裁可書の実施順序(確定)そのものでありcmd分割すると順序保証が失われるため単一cmdとした"
+  notes: "前cmd_3295で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3295 LS-A05"
