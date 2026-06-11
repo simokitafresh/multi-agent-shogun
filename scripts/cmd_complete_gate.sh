@@ -4486,8 +4486,10 @@ run_cdp_production_check() {
         return 1
     fi
 
+    local cdp_timeout="${CDP_MEASURE_TIMEOUT:-1800}"
     echo "  REQUIRED: dm-signal frontend change detected"
-    if timeout 900 bash "$cdp_script" "$CMD_ID"; then
+    echo "  timeout: ${cdp_timeout}s"
+    if timeout "$cdp_timeout" bash "$cdp_script" "$CMD_ID"; then
         echo "  CDP production check: OK"
         return 0
     fi
