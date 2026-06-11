@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-06-10 cmd_3276 -->
+<!-- last_updated: 2026-06-11 cmd_karo_hotfix_ga047_context_freshness_202606112306 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -478,6 +478,22 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 
 - 判定基準: OOS保持率≥70% → PASS, ローリング勝率≥50% → 安定 (今回: OOS PASS/ローリングFAIL)
 - スクリプト: `scripts/cmd_3224_v8_overfitting_check.py`
+
+---
+
+## §39. レイヤー別V8 + マネージドボラ研究 (cmd_3225, 2026-06-11)
+
+→ source commit: `096dd038` (DM-Signal) / 公開向け再構成: `marketing-director/content/articles/note-layered-alpha-not-overfitting.md`
+
+**結論: V8の効果は一枚岩ではない。レイヤー別選出とマネージドボラは「過適合ではなく市場状態依存のα」として説明可能だが、研究正本はmarketing記事ではなく分析commit/実装出力を参照すること。**
+
+| 対象 | 研究上の扱い | 反映理由 |
+|------|--------------|----------|
+| レイヤー別V8分析 | 既存§38のVIX/サイズ調整研究の後続 | `096dd038` がcmd_3225実装を含む |
+| managed volatility | V8閾値単体ではなくリスク制御との組合せ候補 | note記事は説明資料、判断時は実装/出力を一次確認 |
+| marketing weekly/note | 研究正本ではない | コンテキスト説明の補助に限定 |
+| `docs/research/core-api-endpoints.md` | API索引 | research層よりcore/frontend/ops側で参照 |
+| `tasks/lessons.md` | 教訓正本 | research結論ではなくlesson系に還流 |
 
 ---
 
