@@ -2908,6 +2908,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-03'
   origin: '[[cmd_training_L4_R38_kagemaru]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L539
   title: FoF悪化の主因は尖り削減ではなくネスト深度増幅 — r=-0.199で仮説棄却
   summary: 65PFのEMA前後シグナル相関行列+尖り削減量とFoF Δcagr相関分析。r=-0.199(弱い負の相関)。尖り削減量はFoF悪化の主因ではない。cmd_1
@@ -3258,6 +3261,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: '2026-03-30'
   origin: '[[cmd_1568]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L512
   title: experiments.db進行中月データは日次更新本番と構造的に乖離する
   summary: experiments.dbのmonthly_returnsは本番APIからのスナップショットDLであるため、進行中月(current month)の値はDL時
@@ -4398,6 +4404,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_kasoku_ratio.py
   - scripts/analysis/grid_search/run_077_kawarimi.py
   origin: '[[cmd_1186]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L434
   title: GS結果commitにgit add -f必要
   summary: outputs/grid_search/がDM-signal .gitignoreで除外されている。GS結果commitにはgit add -fが必要。ACに注
@@ -5913,6 +5922,9 @@ lessons:
   - backend/tests/test_p_bar_selection_block.py
   - scripts/analysis/p_bar_window_backtest.py
   origin: '[[cmd_1002]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L323
   title: rolling p̄ BTでは no-selection warm-up を別指標で明示せよ
   summary: n_splits=5 の rolling p̄ 選出は月次returnsを5分割し各chunk最低12期間を要するため、live selection開始前に長い
@@ -6584,7 +6596,7 @@ lessons:
   origin: '[[cmd_853]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-11'
 - id: L274
   title: CDP reload 計測の ready 条件は static selector 固定ではなく viewer 実DOM に合わせて見直せ
   summary: IF production viewer pages を CDP reload 計測する THEN `h1` 固定の待機条件に依存せず、認証壁・封鎖ページ・ペー
@@ -8604,6 +8616,9 @@ lessons:
   target_files:
   - deploy_task.sh
   origin: '[[cmd_263]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L105
   title: BB config未拘束がGS無効パターン量産の根因
   summary: Pydantic制約がPortfolio層(top_n le=2等)に偏在し、BB config(Dict[str,Any])が型検証なし。GSで制約外パラメー
@@ -9810,6 +9825,9 @@ lessons:
   how: ドキュメントでブロックを参照する際は、pipeline_config JSON で使用する **BlockType enum 値**（`MomentumFilter`,
     `AbsoluteMomentumFilter` 等）に統一する
   origin: '[[legacy_lesson_L002]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L001
   title: pipeline_config テンプレートのパラメータ名はコードと1:1一致必須（2026-02-14）
   summary: pipeline_config テンプレートのパラメータ名はコードと1:1一致必須（2026-02-14）

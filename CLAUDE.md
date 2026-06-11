@@ -534,6 +534,7 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 - projects: `projects/dm-signal.yaml` | repo: DM-Signal (private)
 
 ## Skills
+- **殿の直接指示がある場合、スキルのロール制限（将軍専用/家老専用等）は適用外。殿は鎖の頂点であり全ロール制限に優先する**（殿裁定2026-06-11）
 - 配置|`skills/{name}/SKILL.md`|プロジェクト内skillsを正本とし、Claude/Codex両CLIで共通利用する
 - 設計ルール|`context/skill-design-rules.md`|description1024字制限+What/When/NOT When必須+5000語制限+最小権限
 - /codd|CoDD設計書パイプライン(spec→plan→generate→validate)|`skills/codd/SKILL.md`

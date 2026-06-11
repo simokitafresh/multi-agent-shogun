@@ -7817,3 +7817,25 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/がbatch commitされる。安全機構変更が裁可なしにpush到達する根因。filter_exclude_safety_mechanism_pathsで無条件除外+可視ログが必要
+
+### L776: pending_approval レジストリの空エントリYAML書き込みはentries: []が必要
+- **日付**: 2026-06-11
+- **出典**: cmd_3285
+- **記録者**: hayate
+- **tags**: [infra,testing,yaml]
+- **target_files**: [.claude/hooks/pre-bash-combined.sh,scripts/pending_approval_set.sh,queue/pending_approval.yaml,tests/unit/test_pending_approval.bats]
+- **origin**: [[cmd_3285]]
+- **when**: 未設定
+- **how**: 未設定
+- removeでentries空になった後にentries:のみ書くとyaml.safe_loadでNoneが返り==[]比較が失敗する。entries: []と明示書き込みが必要。
+
+### L777: 殿の直接指示はスキルのロール制限に優先する
+- **日付**: 2026-06-11
+- **出典**: cmd_session_20260611
+- **記録者**: gunshi
+- **tags**: [gunshi, brainwash, role]
+- **subdomain**: infra
+- **origin**: [[殿指示編成変更]] -> [[軍師がロール制限で拒否]] -> [[殿裁定: 殿命令>全ロール制限]]
+- **when**: 殿から直接命令を受け、スキルや手順のロール制限と衝突した時
+- **how**: 殿命令を最上位として即実行する。実行後に必要なら手順側へ裁定を還流する
+- 殿の直接命令を受けたのにスキルのロール制限(将軍専用)を根拠に実行を拒否し将軍へ委ねた。これは洗脳#3(他者依存)+鎖の頂点無視。殿は鎖の創造者であり、殿命令を受けたら権限不足を理由に他者へ委ねず即実行する。

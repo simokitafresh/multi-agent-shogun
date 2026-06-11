@@ -38,7 +38,7 @@ task:
   purpose: '軍師分析(blt_20260611_023032): 裁可迂回push事案の根因は『裁可保留』が暗黙状態(working tree残置)で機械可読でないこと。cmd_3284のbatch commitスコープ制限だけでは別経路(手動git add -A等)が残る(防御第2層)。保留ファイルレジストリを設け、既存hookのcommit介入点で照合BLOCKすることで、どの経路のcommitでも保留中ファイルが運ばれない構造にする'
   semantic_concepts:
   - 'agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-claude-version-switch/SKILL.md skills/shogun-claude-version-switch/scripts/claude_version_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)'
-  status: acknowledged
+  status: completed
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/.claude/hooks/
   task_id: cmd_3285_full

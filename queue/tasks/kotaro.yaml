@@ -1,18 +1,43 @@
 task:
-  _ac_task_id: cmd_3280_full
+  _ac_task_id: cmd_3288_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3280 (deployed 2026-06-11T01:54:26). Read from the beginning.
-  ac_version: 11c216b1
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3288 (deployed 2026-06-11T12:39:38). Read from the beginning.
+  ac_version: d2ef8e58
   checklist: queue/checklists/cmd_3278.md
   chunk: chunk 4 (76件)
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  related_causal_links:
+  - "[[cmd_3288 CRUD設定画面+download-db+SSOT確立]]"
+  - "[[expense_sourcesがSQL直操作のみ+download-db不在]]"
+  - "[[殿指示2026-06-11設定画面+SSOT]]"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/gs-speedup-knowledge.md"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L540: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
+      - L470: `context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj
+      - L435: 関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒
+      - L275: gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ
+      - L357: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.
+      - L295: yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ
+      - L617: cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決I
+      - L083: launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手
+      - L547: CIで構造化environment_changeのfile/pattern検証をする場合、lessons.yamlのような同期でIDが入れ替わる運用ファイルに依
+      - L689: lord_conversation.jsonlは全ロールの殿入力を含む。将軍/家老/軍師が直接tail/Readすると他ロール宛ての発言を自分宛てと誤認する。消
+    ────────────────────────────────────────
+    
+    【DB変更前バックアップ必須】DB操作cmd。変更前に対象DB/テーブルのバックアップを取得し、取得コマンド・保存先・復元手順をprogressまたは報告YAMLに記録せよ。
+      ────────────────────────────────────────
+    
+  engineering_preferences: []
   growth_loop_defense:
   - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
   - 'Level1(事後検出): 間違えた後にgateが検出'
@@ -28,102 +53,79 @@ task:
   - 2026-06-11T00:31:30+09:00 | 【将軍】/clear準備完了。PD:0 cmd pending:0 🚨:0。cmd_3273-3276全CLEAR(マトリクス🟢143/🔴151稼働)。教訓5件+gate根治7件+skills sym
   - '2026-06-10T23:17:20+09:00 | ## 2cmd同時クローズ完了 **cmd_3276（佐瀬メールパース）— GATE CLEAR一発通過** - 35通全分類（リスト保有2/引用重複4/リストなし29）→143セルsubmitted'
   - 2026-06-10T22:43:07+09:00 | どのWARNがカウントされたか全文で確認する。 [meta] stop_reason=tool_use
+  - '2026-06-11T01:50:58+09:00 | cmd_3279完了。 **実施内容（全AC PASS）**: | AC | 結果 | 確認手段 | |----|------|---------| | AC1 | ✅ | curl+grep: ステ'
+  - 2026-06-11T01:50:55+09:00 | kagemaru完了処理→空きにcmd_3282(報告品質に即効)、次idleにcmd_3280の順で進める。 [meta] stop_reason=tool_use
+  - '2026-05-29T16:43:31+09:00 | 修行タスクはGATE処理対象外(LK-A04)。hayateはCTX:90%でauto-clear待ち。追加アクション不要。 残り稼働中: kagemaru(lesson_update_score),'
+  - 2026-05-29T15:56:46+09:00 | 修行タスクはGATE処理対象外(LK-A04)。stop hookの検知は修行タスク完了のステータス残存。追加アクション不要(hayateは既にlesson_write修行に再配備済み)。 全6名稼働
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3280
-  project: infra
-  purpose: '家老報告(blt_20260611_013048): 同一cmdの複数忍者分割配備を許可する分岐は、resolve処理が_ac_task_idを常に空で初期化するため到達不能(成功実績0件の構造バグ疑い)。cmd_3278では家老が忍者別cmd_id分離(LK-A04)で回避したが、正規機能が使えない状態。L918のbatch_argsで_ac_task_id=空固定を将軍が現物確認済み。設計意図を確認の上、バグなら根治する'
+  parent_cmd: cmd_3288
+  project: clinic-expense-tracker
+  purpose: '殿指示(2026-06-11): 設定画面を作って経費元を設定・変更・保存できる仕組み。人間の判断がファースト。カテゴリと項目を自由に設定可能。SSOT=Render上のアプリDB。現状: expense_sourcesテーブルは21行あるが編集はSQLite直操作のみ。Webから編集不可。ローカル→Renderのupload-dbはあるがRender→ローカルのdownload-dbがない。修正: (1)設定画面(/settings)でexpense_sourcesのCRUD (2)download-dbエンドポイント追加 (3)ローカルスクリプト実行前にdownload-dbで最新化するフローを確立'
   scout_exempt: true
   semantic_concepts:
   - 'agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-claude-version-switch/SKILL.md skills/shogun-claude-version-switch/scripts/claude_version_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)'
-  status: acknowledged
-  stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/deploy_task.sh
-  task_id: cmd_3280_full
+  status: idle
+  stop_for:
+  - バックアップなしのDB変更
+  target_path: /mnt/c/Python_app/clinic-expense-tracker/
+  task_id: cmd_3288_full
   task_type: full
   related_lessons:
-  - id: 'L447'
-    summary: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
-    detail: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
-  - id: 'L686'
-    summary: 'cmd指定なしの再配備/ナッジ経路では既存task YAMLのparent_cmd:nullがそのまま注入チェーンへ流れ、report_nullを生成する。cm'
-    detail: 'cmd指定なしの再配備/ナッジ経路では既存task YAMLのparent_cmd:nullがそのまま注入チェーンへ流れ、report_nullを生成する。cm'
   - id: 'L540'
     summary: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
     detail: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
-  - id: 'L249'
-    summary: 'テンプレート(deploy_task.sh)・忍者ルール(ashigaru.md)・家老レビュー条件(karo.md)を同時修正しないと形骸化する。1箇所だけで'
-    detail: 'テンプレート(deploy_task.sh)・忍者ルール(ashigaru.md)・家老レビュー条件(karo.md)を同時修正しないと形骸化する。1箇所だけで'
-  - id: 'L147'
-    summary: 'IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les'
-    detail: 'IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les'
-  - id: 'L178'
-    summary: 'Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.'
-    detail: 'Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.'
-  - id: 'L602'
-    summary: 'karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te'
-    detail: 'karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te'
-  - id: 'L639'
-    summary: '既存batsファイルの長い `run bash -lc ''...''` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ'
-    detail: '既存batsファイルの長い `run bash -lc ''...''` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ'
-  - id: 'L554'
-    summary: 'test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/'
-    detail: 'test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/'
-  - id: 'L412'
-    summary: 'inbox_prune.shがyaml.dumpでqueue/inbox/*.yamlを上書きしていた。CLAUDE.mdのyaml.dump禁止規則(cmd_'
-    detail: 'inbox_prune.shがyaml.dumpでqueue/inbox/*.yamlを上書きしていた。CLAUDE.mdのyaml.dump禁止規則(cmd_'
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  related_causal_links:
-  - "[[cmd_3280設計意図判定+根治]]"
-  - "[[分割配備分岐が_ac_task_id空固定で到達不能]]"
-  - "[[家老報告blt_20260611_013048]]"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/gs-speedup-knowledge.md"
-  - "context/training-cycle.md"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L447: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe
-      - L686: cmd指定なしの再配備/ナッジ経路では既存task YAMLのparent_cmd:nullがそのまま注入チェーンへ流れ、report_nullを生成する。cm
-      - L540: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
-      - L249: テンプレート(deploy_task.sh)・忍者ルール(ashigaru.md)・家老レビュー条件(karo.md)を同時修正しないと形骸化する。1箇所だけで
-      - L147: IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les
-      - L178: Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.
-      - L602: karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te
-      - L639: 既存batsファイルの長い `run bash -lc '...'` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ
-      - L554: test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/
-      - L412: inbox_prune.shがyaml.dumpでqueue/inbox/*.yamlを上書きしていた。CLAUDE.mdのyaml.dump禁止規則(cmd_
-    ────────────────────────────────────────
-    
-    
+  - id: 'L470'
+    summary: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj'
+    detail: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj'
+  - id: 'L435'
+    summary: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒'
+    detail: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒'
+  - id: 'L275'
+    summary: 'gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ'
+    detail: 'gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ'
+  - id: 'L357'
+    summary: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
+    detail: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
+  - id: 'L295'
+    summary: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
+    detail: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
+  - id: 'L617'
+    summary: 'cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決I'
+    detail: 'cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決I'
+  - id: 'L083'
+    summary: 'launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手'
+    detail: 'launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手'
+  - id: 'L547'
+    summary: 'CIで構造化environment_changeのfile/pattern検証をする場合、lessons.yamlのような同期でIDが入れ替わる運用ファイルに依'
+    detail: 'CIで構造化environment_changeのfile/pattern検証をする場合、lessons.yamlのような同期でIDが入れ替わる運用ファイルに依'
+  - id: 'L689'
+    summary: 'lord_conversation.jsonlは全ロールの殿入力を含む。将軍/家老/軍師が直接tail/Readすると他ロール宛ての発言を自分宛てと誤認する。消'
+    detail: 'lord_conversation.jsonlは全ロールの殿入力を含む。将軍/家老/軍師が直接tail/Readすると他ロール宛ての発言を自分宛てと誤認する。消'
   memory_db_context:
-  - "2026-06-11T01:50:58+09:00 | cmd_3279完了。 **実施内容（全AC PASS）**: | AC | 結果 | 確認手段 | |----|------|---------| | AC1 | ✅ | curl+grep: ステ"
-  - "2026-06-11T01:50:55+09:00 | kagemaru完了処理→空きにcmd_3282(報告品質に即効)、次idleにcmd_3280の順で進める。 [meta] stop_reason=tool_use"
-  - "2026-05-29T16:43:31+09:00 | 修行タスクはGATE処理対象外(LK-A04)。hayateはCTX:90%でauto-clear待ち。追加アクション不要。 残り稼働中: kagemaru(lesson_update_score),"
-  - "2026-05-29T15:56:46+09:00 | 修行タスクはGATE処理対象外(LK-A04)。stop hookの検知は修行タスク完了のステータス残存。追加アクション不要(hayateは既にlesson_write修行に再配備済み)。 全6名稼働"
+  - "2026-06-11T12:06:47+09:00 | 現物確認完了。殿の裁定に基づき定義を確定する。 [MEM: memory_db ts=2026-06-11T01:19:40 "clinic-expense-trackerの続きはシンプルだ。rend"
+  - "2026-06-11T10:20:14+09:00 | 【INFOバッチ】 2026-06-11 10:12:22|CI緑: run 27316645439"
+  - "2026-06-11T12:29:21+09:00 | 裁定永続化完了。殿の設定画面+SSOT設計について回答する。 [MEM: semantic concept=project_clinic_expense_tracker] [MEM: memory_d"
+  - "2026-03-13T14:06:15+09:00 | その通り。まず確認すべきは： 1. **MFがTOTP対応しているか**（セキュリティ設定画面にGoogle Authenticator等の選択肢があるか） 2. **TOTP設定するとemail_o"
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'L918周辺のbatch_args _ac_task_id空固定とresolve処理の関係をgit log/karo_workarounds/設計意図カタログと照合し、意図的設計かバグかの判定根拠が報告に記載されていることを確認する'
+    - check: 'Webアプリ/settings画面でexpense_sourcesの一覧表示・追加・編集・削除が動作し、変更がRender DB(SQLite)に即反映されることをcurl POST/PUT/DELETEの応答で確認する'
   - id: 'AC2'
     checks:
-    - check: 'バグと判定した場合、同一cmd_idで2忍者へのチャンク分割配備が成功し、各task YAMLのtask_id/_ac_task_id/ACが正しく分離されることを実機テストで確認する(意図的設計と判定した場合は回避策LK-A04を正規手順としてskills/karo-direct/SKILL.mdに記載されていることを確認する)'
+    - check: '/download-db エンドポイントがBasic Auth保護付きでSQLiteファイルをバイナリ応答し、受信側でsqlite3 .tables が expense_sources+monthly_statusを含むことを確認する'
   - id: 'AC3'
     checks:
-    - check: '対象スクリプトの既存batsテストが全てPASSし、分割配備ケースの回帰テストが追加されていることをbats実行出力で確認する'
+    - check: '設定画面でカテゴリ(category)と項目名(name)、取得方法(collection_method=gmail_api/cdp/manual)、頻度(frequency=monthly/quarterly/annual/irregular)が自由に編集可能であることをcurlで確認する'
+  - id: 'AC4'
+    checks:
+    - check: 'DB操作前にdata/clinic_expense.dbのバックアップがdata/backup/配下にタイムスタンプ付きで作成されていることをls -la出力で確認する'
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_3280.yaml
-  report_path: queue/reports/kotaro_report_cmd_3280.yaml
+  report_filename: kotaro_report_cmd_3288.yaml
+  report_path: queue/reports/kotaro_report_cmd_3288.yaml
   bloom_level: 
-  deployed_at: "2026-06-11T01:54:48"
+  deployed_at: "2026-06-11T12:41:03"

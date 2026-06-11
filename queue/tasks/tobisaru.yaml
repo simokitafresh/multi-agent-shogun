@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_3281_full
+  _ac_task_id: cmd_3284_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3281 (deployed 2026-06-11T01:45:53). Read from the beginning.
-  ac_version: daecd4ff
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3284 (deployed 2026-06-11T09:06:01). Read from the beginning.
+  ac_version: 8b28ffc4
   checklist: queue/checklists/cmd_3278.md
   chunk: chunk 5 (66件)
   engineering_preferences:
@@ -34,58 +34,58 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: 
+  parent_cmd: cmd_3284
   project: infra
-  purpose: '軍師実証(blt_20260611_013831): cmd_3278_saizo報告precheckでCRITICAL発火したが根因はsaizo無関係の偽陽性2種。(1)ref抽出regexの文字クラスに非ASCIIがなく日本語ファイル名(cmd_3218_サイズ調整バックテスト.md)が途中切断され存在しないパスを生成 (2)外部repo(DM-signal)に実在する参照がNOT FOUND判定。将軍がgate_vercel_phase.sh L211の文字クラス現物で切断メカニズムを確認済み。残4チャンク報告+今後の全context変更cmdで再発するため根治する'
+  purpose: '家老正直報告(blt_20260611_022919)+軍師第三者検証(blt_20260611_023032): 殿が裁可保留していた変更3群が、kotaroのcmd_3278完了時batch commit(6cfda60e1)に巻き込まれpush到達=裁可保留の機構的迂回。将軍がgit show --statでscripts/gates/3本の巻き込みとorigin/main到達を一次確認済み。防御2層のうち第1層=batch commitが安全機構変更(scripts/gates/+.claude/hooks/)を無差別に巻き込むスコープ無制限を塞ぐ'
   scout_exempt: true
-  status: done
+  semantic_concepts:
+  - 'known_unknowns_principle — 無知の知:  memory/deepdive_causal_tracing_20260415.md context/growth-loop.md'
+  - 'report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md'
+  - 'systems_knowledge_base — システム知識辞書:  docs/research/systems-knowledge-base/index.md docs/research/systems-knowledge-base/systems/ docs/research/systems-knowledge-base/systems/gstack.md'
+  status: idle
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_vercel_phase.sh
-  task_id: cmd_3281_full
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/
+  task_id: cmd_3284_full
   task_type: full
   related_lessons:
-  - id: 'L485'
-    summary: 'gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因: W'
-    detail: 'gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因: W'
-  - id: 'L771'
-    summary: 'skills/cmd-complete/SKILL.md Step1-8にcontext/*.md更新ステップが構造的に欠落(hanzo現物実証: lesson'
-    detail: 'skills/cmd-complete/SKILL.md Step1-8にcontext/*.md更新ステップが構造的に欠落(hanzo現物実証: lesson'
-  - id: 'L173'
-    summary: 'instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github'
-    detail: 'instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github'
-  - id: 'L102'
-    summary: 'タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正'
-    detail: 'タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正'
-  - id: 'L437'
-    summary: 'gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_l'
-    detail: 'gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_l'
-  - id: 'L770'
-    summary: 'gate_skill_script_refs.shはscript_refs_checked_atタグをmatches[-1](最後のタグ)で評価する。SKILL'
-    detail: 'gate_skill_script_refs.shはscript_refs_checked_atタグをmatches[-1](最後のタグ)で評価する。SKILL'
-  - id: 'L304'
-    summary: 'gate_cycle_health.shのgrep -c pattern || echo 0は、0マッチ時にgrep -cが0を出力しつつexit 1→echo'
-    detail: 'gate_cycle_health.shのgrep -c pattern || echo 0は、0マッチ時にgrep -cが0を出力しつつexit 1→echo'
-  - id: 'L108'
-    summary: 'IF compact_stateにタスク状態を記録する時 THEN 長さ制限(例: 500文字)の追加を検討せよ'
-    detail: 'IF compact_stateにタスク状態を記録する時 THEN 長さ制限(例: 500文字)の追加を検討せよ'
-  - id: 'L590'
-    summary: '指定2ファイル修正だけではCI全量で別cmd_save fixtureが同じq8 5W1H WARNを出した。gate条件追加時のfixture修正はrgで同一'
-    detail: '指定2ファイル修正だけではCI全量で別cmd_save fixtureが同じq8 5W1H WARNを出した。gate条件追加時のfixture修正はrgで同一'
-  - id: 'L654'
-    summary: 'task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母'
-    detail: 'task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母'
+  - id: 'L447'
+    summary: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
+    detail: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
+  - id: 'L642'
+    summary: 'load helper.bashは関数共有のみ。@testブロック自体はload先から呼べない。テスト統合は明示的にコピー移植する。origin: [[cmd_'
+    detail: 'load helper.bashは関数共有のみ。@testブロック自体はload先から呼べない。テスト統合は明示的にコピー移植する。origin: [[cmd_'
+  - id: 'L299'
+    summary: 'inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行'
+    detail: 'inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行'
+  - id: 'L186'
+    summary: 'IF review taskで `git push origin main` を行う時 THEN `git ls-remote origin refs/head'
+    detail: 'IF review taskで `git push origin main` を行う時 THEN `git ls-remote origin refs/head'
+  - id: 'L639'
+    summary: '既存batsファイルの長い `run bash -lc ''...''` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ'
+    detail: '既存batsファイルの長い `run bash -lc ''...''` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ'
+  - id: 'L555'
+    summary: 'git add <file>は同一ファイル内の既存/並行hunkもstageする。commit直後にgit show HEADを確認したため混入に気づき、ame'
+    detail: 'git add <file>は同一ファイル内の既存/並行hunkもstageする。commit直後にgit show HEADを確認したため混入に気づき、ame'
+  - id: 'L191'
+    summary: 'IF E2E test が `cp "$PROJECT_ROOT/tests/e2e/fixtures/..."` のように fixture ファイルを前提にす'
+    detail: 'IF E2E test が `cp "$PROJECT_ROOT/tests/e2e/fixtures/..."` のように fixture ファイルを前提にす'
+  - id: 'L009'
+    summary: 'IF whitelist方式.gitignoreのリポジトリでcommitする時 THEN git statusで全対象ファイルの認識状態を確認し、whitel'
+    detail: 'IF whitelist方式.gitignoreのリポジトリでcommitする時 THEN git statusで全対象ファイルの認識状態を確認し、whitel'
+  - id: 'L591'
+    summary: 'cmd_2657/2658でq8にWHEN/HOW/WHERE/WHO検証を追加したがtest_cmd_save系fixtureのq8_why_whatにこれら'
+    detail: 'cmd_2657/2658でq8にWHEN/HOW/WHERE/WHO検証を追加したがtest_cmd_save系fixtureのq8_why_whatにこれら'
+  - id: 'L530'
+    summary: 'multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on'
+    detail: 'multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "known_unknowns_principle — 無知の知:  memory/deepdive_causal_tracing_20260415.md context/growth-loop.md"
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
-  - "systems_knowledge_base — システム知識辞書:  docs/research/systems-knowledge-base/index.md docs/research/systems-knowledge-base/systems/ docs/research/systems-knowledge-base/systems/gstack.md"
   related_causal_links:
-  - "[[cmd_3281 vercel_phase偽陽性根治]]"
-  - "[[ref抽出regex非ASCII未対応+外部repo解決不全]]"
-  - "[[軍師実証blt_20260611_013831]]"
+  - "[[batch commitスコープ無制限で裁可迂回push]]"
+  - "[[cmd_3284 gate/hook除外+可視化]]"
+  - "[[殿commit拒否]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -103,22 +103,36 @@ task:
   - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
   - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: "【軍師FAIL是正(cmd_3281差し戻し)】L211否定文字クラス修正が過剰マッチ偽陽性を導入(軍師実証: パス直後の日本語文が文末までマッチ。doc-style-guide.md L48全角括弧+chronicle L509で実証。切断3件解消と引換えに過剰2件導入=クラス置換であり根治未達)。是正せよ: (1)regexを拡張子アンカー方式に変更: 既知拡張子(md/json/yaml/py/sh/txt)のリテラルピリオド+拡張子でパターンを終端させ、非貪欲マッチにする(日本語パス対応と過剰マッチ防止を両立)。代替案=全角句読点・全角括弧(。、）（」)を否定クラスへ追加 (2)batsに過剰マッチ回帰ケース(パス直後に日本語文・全角括弧)を追加 (3)全context走査でga038由来3件解消+過剰マッチ0件+真陽性2件(cmd_3222_VIX/growth-loop L149)維持をbefore/afterで記録 (4)真陽性2件は本cmdスコープ外(別途リンク修正対象)と報告に明記"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L447: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe
+      - L642: load helper.bashは関数共有のみ。@testブロック自体はload先から呼べない。テスト統合は明示的にコピー移植する。origin: [[cmd_
+      - L299: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行
+      - L186: IF review taskで `git push origin main` を行う時 THEN `git ls-remote origin refs/head
+      - L639: 既存batsファイルの長い `run bash -lc '...'` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ
+      - L555: git add <file>は同一ファイル内の既存/並行hunkもstageする。commit直後にgit show HEADを確認したため混入に気づき、ame
+      - L191: IF E2E test が `cp "$PROJECT_ROOT/tests/e2e/fixtures/..."` のように fixture ファイルを前提にす
+      - L009: IF whitelist方式.gitignoreのリポジトリでcommitする時 THEN git statusで全対象ファイルの認識状態を確認し、whitel
+      - L591: cmd_2657/2658でq8にWHEN/HOW/WHERE/WHO検証を追加したがtest_cmd_save系fixtureのq8_why_whatにこれら
+      - L530: multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on
+    ────────────────────────────────────────
+    
+    
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: '日本語等の非ASCII文字を含むdocs/research参照パスが切断されずに抽出・解決されることを、実例(cmd_3218_サイズ調整バックテスト.md)を含むfixtureのgate実行出力で確認する'
+    - check: '巻き込みが発生した正確な経路(ninja_monitor auto-commit/ninja-commitスキル/cmd完了フローのいずれか)がcommit 6cfda60e1の生成過程との照合で特定され、報告に経路スクリプト名と該当行番号が記載されていることを確認する'
   - id: 'AC2'
     checks:
-    - check: '外部repo(config/projects.yaml登録PJ)に実在する参照がPASSし、どのrepoにも実在しない参照はFAIL維持となることを両面fixtureのgate実行出力で確認する'
+    - check: 'batch commit機構がscripts/gates/と.claude/hooks/配下の変更を対象から除外し、除外発生時はスキップ理由を実行ログへ可視化することをfixtureテストで確認する(silent skip禁止)'
   - id: 'AC3'
     checks:
-    - check: '既存の壊れリンク検出(真陽性)が全て維持されることを既存bats(tests/unit/test_gate_vercel_phase.bats)と追加回帰テストの実行出力で確認する'
+    - check: '通常の運用ファイル(logs/queue/context等)のbatch commitは従来通り成功することをfixtureテストで確認する'
   - id: 'AC4'
     checks:
-    - check: 'cmd_3278_saizo報告のprecheck相当のgate再実行で、CRITICAL発火が解消されることをbefore/after出力で確認する'
+    - check: '既存batsが全てPASSし、巻き込み除外の回帰テストが追加されていることをbats実行出力で確認する'
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3281.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3281.yaml
+  report_filename: tobisaru_report_cmd_3284.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3284.yaml
   bloom_level: 
-  deployed_at: "2026-06-11T01:46:20"
+  deployed_at: "2026-06-11T09:06:52"
