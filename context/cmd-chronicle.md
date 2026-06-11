@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-11 cmd_karo_hotfix_ctx_dm_signal_ops_202606111626 -->
+<!-- last_updated: 2026-06-11 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -518,3 +518,4 @@
 | cmd_3289 | 殿指示(2026-06-11 14:04): DM-Signalリファクタリング実行任務。調査・計画・物理検証は完了済み(.agent/task-force/refactor-workorder-20260611.md=唯一の権威文書)。その任務2=ベースライン記録。backend pytestとfrontend test/build/lintを実行し、作業前の既存失敗を.agent/task-force/execution-log.mdに記録する。これがWP-0/WP-1F/WP-1Bの全検証ゲートの基準線になる。既存失敗をリファクタ起因と誤認しない/させないための必須先行作業 | dm-signal | 06-11 | cmd_3289 baseline recorded: ba |
 | cmd_3291 | 殿指示(2026-06-11 14:04)リファクタ実行任務のWP-0(最優先・WP-1B/WP-2の前提)。FE消費エンドポイント群のレスポンス形状(ステータスコード/envelope構造/主要フィールド名と型/未認証4xx)を固定する契約テストをbackend/tests/test_contract_<domain>.pyとして整備する。値の正しさではなく形状の固定が目的。模範テンプレート=backend/tests/test_api_response.py(in-memory SQLite+dependency_overrides+TestClient+envelopeアサート)に完全準拠 | dm-signal | 06-11 | WP-0契約テストとしてFE消費EP群21 path/met |
 | cmd_3292 | 殿指示(2026-06-11 14:04)リファクタ実行任務のWP-1B(WP-0完了が前提)。物理検証済み(manifest-backend.md)のBE削除9項目を実行: (1)symbol_masking.py+随伴テスト (2)monthly_product_momentum.py (3)utils/price_utils.py (4)utils/api_estimation.py+随伴テスト (5)jobs/delete_legacy_portfolios_cmd_3112.py (6)ETL残骸3点セット(orchestrator.py+calculator.py+__init__.py L2/L4のre-export行のみ+随伴test_etl_integration.py)を1コミット (7)monthly_common.py+随伴テスト2ファイル(test_monthly_common.py+test_055_pending_entry.py) (8)price_ratio_calculator.py L1875-1884のexpand_fof_to_tickers wrapper (9)検証二重資産=consistency_checks.py+随伴test_consistency_checks.py+scripts/verify_truth.py+scripts/_INDEX.md該当行(質問状2 Q7回答で除外解除済み2026-06-11。docs書換はWP-4) | dm-signal | 06-11 | WP-1B backend dead-code削除9項目を実 |
+| cmd_3293 | 殿指示(2026-06-11 14:04+14:18)リファクタ実行任務のWP-2(質問状2全7問回答受領でゲート解除済み2026-06-11)。(1)使用ゼロ確認済みEP11件の即時ハード削除(410監視期間なし=Q6将軍合意): kalman/weights・portfolios/save-legacy・run-kalman-wf・validate-prices・validate-and-recalculate・cancel-recalculate・run-maintenance・price-tickers・run-password-rotation・cleanup-prices・cleanup-fof-signals (2)本番使用0件実測済みブロック3種(PBarSelection・MonthlyReturnMomentumFilter・RelativeMomentumFilter)をregistry+schema+FE型定義から除去 (3)Kalman一式(KalmanMetaブロック+kalman_wf.py+kalman API)削除 (4)Kalman削除後の全FoF数値一致検証(cmd_1443 AC3前例準拠・workorder WP-2節4に手順確定済み) | dm-signal | 06-11 | WP-2のEP11件・選択ブロック4種・Kalman一式を削 |
