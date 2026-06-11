@@ -369,7 +369,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応 |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要 |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system |
 | related_lessons | `L317`, `L088`, `L079` |
@@ -655,6 +655,7 @@ codd:
 | lesson | `L773` autofixのsilent変換は'内容不変'条件を必ず検証せよ: 文字列内の構造マーカー数でERROR昇格 |
 | lesson | `L774` レビュー品質メトリクスはcmd_id単位最終verdict集計が正しい。全type対応必須 |
 | lesson | `L775` auto_commit_before_clearはscripts/gates/と.claude/hooks/を無条件除外しなければならない |
+| lesson | `L776` pending_approval レジストリの空エントリYAML書き込みはentries: []が必要 |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -725,6 +726,7 @@ codd:
 | causal_chain | `[[cmd_3282]]` (L773) |
 | causal_chain | `[[cmd_3286]]` (L774) |
 | causal_chain | `[[cmd_3284]]` (L775) |
+| causal_chain | `[[cmd_3285]]` (L776) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -1193,6 +1195,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:30:32+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T00:08:04+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | file | `docs/research/gunshi_idle_deepdive_design_impl_phantom_20260516.md` — 軍師idle: deepdive設計実装ファントム問題(2026-05-16) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-11T13:16:16+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -1727,7 +1730,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある |
 | skills | hensei, hensei-mixed, hensei-opus, karo-direct, recon-dual, reset-layout, shogun-all-codex-switch, shogun-claude-version-switch, shogun-peacetime-rollback, switch-to-codex, switch-to-opus |
 | related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework, systems_knowledge_base, skill_design_rules, shogun_android_app, task_modifier_injection, infrastructure_ops, bulletin_communication, inbox_processing_discipline, multi_cli_event_commonization |
 | related_lessons | `L594`, `L603`, `L550`, `L310` |
@@ -1933,6 +1936,7 @@ codd:
 | file | `docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md` — 軍師idle: Codex respawnループなぜなぜ(2026-05-20) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T12:29:52+09:00 bnme2cf6g toolu_011nxVuDdLVSLW4ug8adpD3G /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/5d38d17a-6e89-47ff-a156-1c4896 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T12:41:08+09:00 bnaov9som toolu_01QcVfhrbcvMRG2rbTwXQ1MN /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/5d38d17a-6e89-47ff-a156-1c4896 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-11T13:02:24+09:00 軍師に編成変更の権利がないという設定が間違っている。軍師は俺の指示のもとに編成を変更する権利がある。元のルールはどこにあるんだ？なにを参考にした？ |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -3369,7 +3373,7 @@ codd:
 |------|---|
 | id | project_clinic_expense_tracker |
 | label | Clinic Expense Tracker |
-| aliases | clinic-expense-tracker, Clinic Expense Tracker, clinic-expense-tracker project, Clinic Expense Tracker PJ, cliniq-expander, クリニック経費, 経費証票管理, 若友会経費, 佐瀬会計提出, マネーフォワード, MoneyForward, みずほ明細, 証憑, 証票, Gmail証票, 領収書, 領収書整理, 確定申告, 経費SQLite, 経費データ投入, クリニック経営, clinic expens, clinic expense, 経費元マスタ, monthly_status, 現況マトリクス, 経費・領収書ステータス管理 |
+| aliases | clinic-expense-tracker, Clinic Expense Tracker, clinic-expense-tracker project, Clinic Expense Tracker PJ, cliniq-expander, クリニック経費, 経費証票管理, 若友会経費, 佐瀬会計提出, マネーフォワード, MoneyForward, みずほ明細, 証憑, 証票, Gmail証票, 領収書, 領収書整理, 確定申告, 経費SQLite, 経費データ投入, クリニック経営, clinic expens, clinic expense, 経費元マスタ, monthly_status, 現況マトリクス, 経費・領収書ステータス管理, SSOT, Render DB, 設定画面, settings画面, expense_sources CRUD, download-db, upload-db, 取得済み, 未取得, 自動取得, 手動取得, collection_method, 4色分類, 取得ルート |
 | related_concepts | external_project_registry |
 
 | 種別 | パス/参照 |
@@ -3382,8 +3386,16 @@ codd:
 | causal | `cmd_3275` origin: [[殿裁定2026-06-10現況可視化]] -> [[完全リストが骨格]] -> [[cmd_3275 monthly_status生成+Sheets見える化]] |
 | cmd | `cmd_3276` clinic-expense-tracker: 佐瀬会計メール35通をパースしmonthly_statusへ反映(現況マトリクスStep 2-1) |
 | causal | `cmd_3276` origin: [[殿裁定2026-06-10手順2リストを埋める]] -> [[佐瀬メール=会計士ground truth]] -> [[cmd_3276 shortage_listパース反映]] |
-| cmd | `cmd_3287` 証票ステータス3分類化+取得ルート明示 — 判断基準をDrive PDF有無に統一し未取得を自動/手動に分離 |
+| cmd | `cmd_3277` clinic-expense-tracker: gmail_receipts×経費元突合。61件not_obtained→obtained昇格 |
+| causal | `cmd_3277` origin: [[殿指示2026-06-10データ突合]] -> [[経費元×Gmailメタデータ未接続]] -> [[cmd_3277突合スクリプト+61件昇格]] |
+| cmd | `cmd_3279` clinic-expense-tracker: monthly_statusマトリクスWebアプリ実装(FastAPI+Jinja2) |
+| causal | `cmd_3279` origin: [[殿指示2026-06-11Webアプリ化]] -> [[Sheets依存=スマホ操作困難]] -> [[cmd_3279 FastAPI+Jinja2マトリクス画面]] |
+| cmd | `cmd_3283` clinic-expense-tracker: Renderデプロイ+Basic Auth付きupload-db搬送 |
+| causal | `cmd_3283` origin: [[殿指示2026-06-11Webアプリ化]] -> [[DB機密でrepo同梱不可]] -> [[cmd_3283認証付き搬送+本番デプロイ]] |
+| cmd | `cmd_3287` 証票ステータス4色分類+取得ルート明示 — 判断基準をDrive PDF有無に統一し未取得を自動/手動に分離 |
 | causal | `cmd_3287` origin: [[殿裁定2026-06-11取得判断基準明確化]] -> [[not_obtainedが自動/手動未分離]] -> [[cmd_3287 collection_method参照で4色分類+ルート表示]] |
+| cmd | `cmd_3288` 経費元設定画面(/settings CRUD)+download-db。SSOT=Render DB確立 |
+| causal | `cmd_3288` origin: [[殿指示2026-06-11設定画面+SSOT]] -> [[expense_sourcesがSQL直操作のみ]] -> [[cmd_3288 CRUD設定画面+download-db+SSOT確立]] |
 
 ## project_dividend_tracker — Dividend Tracker
 
