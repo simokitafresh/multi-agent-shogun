@@ -958,10 +958,15 @@ safe_send_clear() {
     # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
     if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "codex" ]; then
         # pane_start_commandは二重クォート問題があるため使わない(hayate死亡事故2026-06-07)
-        local _launch_cmd
+        local _launch_cmd _launch_args
         _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
+        _launch_args=$(cli_profile_get "$agent_name" "launch_args" 2>/dev/null || echo "")
         if [ -n "${_launch_cmd:-}" ]; then
             local _node_dir="${_launch_cmd%/bin/codex*}/bin"
+            # launch_argsがあればlaunch_cmdに結合(忍者=low+非fast等のper-role設定)
+            if [ -n "${_launch_args:-}" ]; then
+                _launch_cmd="${_launch_cmd} ${_launch_args}"
+            fi
             log "CODEX-RESPAWN: $agent_name respawn-pane (codex reset)"
             tmux respawn-pane -k -t "$pane" "export PATH=\"${_node_dir}:\$PATH\" && cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
                 log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed"
