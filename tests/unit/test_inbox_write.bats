@@ -679,6 +679,33 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "report_received: files_modified dict list from report_field_set is checked without target_path fallback" {
+    setup_git_test_env
+
+    cat > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+verdict: PASS
+files_modified:
+- change: modified
+  path: src/test_file.sh
+binary_checks:
+  AC1:
+    - check: test check
+      result: PASS
+lesson_candidate:
+  found: false
+  no_lesson_reason: no lesson
+result:
+  summary: implementation complete
+YAML
+
+    echo 'echo modified' >> "$TEST_TMPDIR/src/another_file.sh"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"git_uncommitted_gate"* ]]
+    [[ "$output" != *"BLOCKED"* ]]
+}
+
 @test "report_received: auto-sends report_review to gunshi" {
     setup_git_test_env
     mkdir -p "$TEST_TMPDIR/scripts"

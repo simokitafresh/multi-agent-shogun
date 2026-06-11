@@ -763,21 +763,28 @@ inbox_extract_report_paths() {
         BEGIN { in_files = 0 }
         /^files_modified:[[:space:]]*$/ { in_files = 1; next }
         in_files {
-            if ($0 ~ /^  - path:[[:space:]]*/) {
+            if ($0 ~ /^[[:space:]]*- path:[[:space:]]*/) {
                 line = $0
-                sub(/^  - path:[[:space:]]*/, "", line)
+                sub(/^[[:space:]]*- path:[[:space:]]*/, "", line)
                 gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
                 print line
                 next
             }
-            if ($0 ~ /^  - [^[:space:]][^:]*$/) {
+            if ($0 ~ /^[[:space:]]*path:[[:space:]]*/) {
                 line = $0
-                sub(/^  - /, "", line)
+                sub(/^[[:space:]]*path:[[:space:]]*/, "", line)
                 gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
                 print line
                 next
             }
-            if ($0 ~ /^  [^[:space:]-][^:]*:/ || $0 !~ /^  /) {
+            if ($0 ~ /^[[:space:]]*- [^[:space:]][^:]*$/) {
+                line = $0
+                sub(/^[[:space:]]*- /, "", line)
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+                print line
+                next
+            }
+            if ($0 ~ /^[^[:space:]-][^:]*:/) {
                 exit
             }
         }
