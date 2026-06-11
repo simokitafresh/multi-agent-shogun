@@ -745,6 +745,7 @@ if [ -f "$bulletin_file" ]; then
         printf '%s\n' "$bulletin_action_result" | tail -n +2 | sed 's/^/    /'
         overall="BLOCK"
         blocks+=("掲示板action_required未対応: ${bulletin_action_count}件")
+        alerts+=("掲示板action_required未対応: ${bulletin_action_count}件")
     else
         echo "  未対応: 0件"
     fi
