@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-11 cmd_3299 -->
+<!-- last_updated: 2026-06-11 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -523,3 +523,5 @@
 | cmd_3297 | 首領裁可2(2026-06-11、approval-20260611-wp1f-wp4-tz.md): WP-4(docs整備)の待機解除・着手可。スコープはworkorder WP-4のとおり(verify_truth参照7ファイル書換/削除済みEP11件のdocs記載除去/timing-history現役・維持明記/未使用テーブル3種DROP禁止明記+RecalculationTimingとの混同注意/scripts依存マップdocs化)。TZ混在修正は含めない(裁可3で独立修正=cmd_3298。WP-4はdocsのみを維持しコード変更を混在させない)。Q4-3合意の整形ルールを実行側標準手順docsへ反映してよい | dm-signal | 06-11 | WP-4 docs整備を完了し、verify_truth残参 |
 | cmd_3298 | 首領裁可3(2026-06-11、approval-20260611-wp1f-wp4-tz.md): 質問状3 Q5で証拠整合を確認済みのrecalculation_status TZ混在を独立修正として起票承認。書込みコードをUTC系へ統一し、過去行は書き換えない(本番DB不可侵)。cutover日時をdocsに明記。単独コミット・単独検証。実施順序は裁可書確定順序の5番目=cmd_3296とcmd_3297の完了が前提条件。新運用どおり実装完了報告とゲート結果の提出後、mainマージは個別裁可を得てから行う(本cmdではマージしない) | dm-signal | 06-11 | recalculation_status end_time書 |
 | cmd_3296 | 首領裁定(2026-06-11、approval-20260611-wp1f-wp4-tz.md): 質問状3回答が検証・受領され、wp-1fマージ条件付き承認+実施順序が確定した。最優先=cmd_3294成果(マスク時FoF表示復元、commit 99d8c546、verdict PASS・268テストgreen)のmain着地とデプロイ確認(2026-06-11 19:54将軍git fetchでorigin/main未着地を一次確認)。続いて今夜の日次cron L0-L3完走確認、その後wp-1f(FE削除5commits)のmainマージ+tasks/todo.mdのWP-1F/WP-1B行チェック補完を同一コミットで実施(cron窓00:50–02:10 UTC回避)。マージ・リモート反映・デプロイ確認は家老が直接実施する(忍者には配備しない) | dm-signal | 06-11 | — |
+| cmd_3303 | 殿指示2026-06-11(directive-20260611-monthly-product-removal.md)に基づき、コード変更前のPhase 0本番DB実測ゲートを実行し execution-log に一次情報を固定する。実行順プラン(execution-order-plan-20260611.md) Step 0の第二弾 | dm-signal | 06-11 | WP-MP Phase 0本番DB実測ゲートを実行し、mom |
+| cmd_3302 | 殿指示2026-06-11(directive-20260611-is-active-removal.md)に基づき、コード変更前の前提ゲートP0-1/P0-2/P0-3を実測し execution-log に一次情報を固定する。実行順プラン(execution-order-plan-20260611.md) Step 0の第一弾 | dm-signal | 06-11 | cmd_3302 Phase 0前提ゲートを実測。P0-1は |

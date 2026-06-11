@@ -1,29 +1,29 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-06-11 auto-generated -->
+<!-- last_updated: 2026-06-12 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-11T23:13:45+09:00 -->
+<!-- generated_at: 2026-06-12T00:06:05+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-06-11T23:13:44+09:00 | terminal | response | GATE CLEAR確認。idle待機。 [meta] stop_reason=end_turn
-- 2026-06-11T23:13:24+09:00 | terminal | response | 重複通知。既にLGTM送信済み。idle待機。 [meta] stop_reason=tool_use
-- 2026-06-11T23:12:52+09:00 | terminal | response | cmd_karo_hotfix_ga047報告: **LGTM**。idle待機。 [meta] stop_reason=tool_use
-- 2026-06-11T23:10:33+09:00 | terminal | response | 殿、クリア耐性の確保が完了した。検証結果とともに報告する。 ## 今回永続化した2点（grep検証済み） 1. **MEMORY.mdのリファクタ任務行を最終状態へ更新** — 次セッションの将軍はこの1行から「WP-0〜2+WP-4+T…
-- 2026-06-11T23:08:24+09:00 | terminal | response | cmd_karo_hotfix_ga047_context_freshness draftレビュー: **APPROVE**。idle待機。 [meta] stop_reason=tool_use
-- 2026-06-11T23:07:25+09:00 | terminal | inbound | いまクリアされても今より強くてニューゲームできるようにせよ
-- 2026-06-11T23:05:03+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-047)
-- 2026-06-11T23:02:49+09:00 | terminal | response | 殿、進捗を総括する。**TZ修正のmain統合・本番デプロイまで完了し、リファクタ任務はWP-3本体を残すのみ**となった。 ## 本日完了（全て将軍が一次検分済み） | 項目 | 結果 | |------|------| | cmd_3…
-- 2026-06-11T22:53:56+09:00 | terminal | response | 殿、進捗を総括する。**TZ修正のmain統合・本番デプロイまで完了し、リファクタ任務はWP-3本体を残すのみ**となった。 ## 本日完了（全て将軍が一次検分済み） | 項目 | 結果 | |------|------| | cmd_3…
-- 2026-06-11T22:52:45+09:00 | ntfy | outbound | 【monitor】将軍CTX:51%。/compactをご検討ください
+- 2026-06-12T00:06:05+09:00 | terminal | response | cmd_3304 draftレビュー: **APPROVE**。idle待機。 [meta] stop_reason=end_turn
+- 2026-06-12T00:04:03+09:00 | terminal | response | 既知パターンのため両教訓にackを記録する。 [meta] stop_reason=tool_use
+- 2026-06-11T23:55:17+09:00 | terminal | inbound | 続行
+- 2026-06-11T23:48:15+09:00 | ntfy | outbound | CI赤: run 27354816401 Unit Tests (bats)
+- 2026-06-11T23:45:42+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-11 23:39:06|cmd_3303 2026-06-11 23:44:05|cmd_3302
+- 2026-06-11T23:45:29+09:00 | terminal | response | 御意。まずcmd_3302（③is_active Phase 0）の結果を一次データで確認する。 [meta] stop_reason=tool_use
+- 2026-06-11T23:44:23+09:00 | terminal | response | cmd_3302 GATE CLEAR。is_active Phase 0前提ゲート完了(P0-2 STOP→首領裁定待ち)。idle待機。 [meta] stop_reason=tool_use
+- 2026-06-11T23:44:08+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率99% 連勝23
+- 2026-06-11T23:43:47+09:00 | terminal | response | cmd_3302報告: **LGTM**送信済み+既読化完了。idle待機。 [meta] stop_reason=end_turn
+- 2026-06-11T23:43:21+09:00 | terminal | inbound | では実行せよ
 
 ## 未解決確認事項
+- 御意。まずcmd_3302（③is_active Phase 0）の結果を一次データで確認する。 [meta] stop_reason=tool_use
+- 「既に委任済み」誤検知の可能性。検出ロジックと実データを確認する。 [meta] stop_reason=tool_use
+- 将軍Q6回答確認。洗脳4パターン検出+修正行動=機能中。idle待機。 [meta] stop_reason=end_turn
 - GATE CLEAR確認。idle待機。 [meta] stop_reason=end_turn
 - 殿、クリア耐性の確保が完了した。検証結果とともに報告する。 ## 今回永続化した2点（grep検証済み） 1. **MEMORY.mdのリファクタ任務行を最終状態へ更新** — 次セッションの将軍はこの1行から「WP-0〜2+WP-4+TZ修正全完遂・デプロイlive済み / …
 - 殿、進捗を総括する。**TZ修正のmain統合・本番デプロイまで完了し、リファクタ任務はWP-3本体を残すのみ**となった。 ## 本日完了（全て将軍が一次検分済み） | 項目 | 結果 | |------|------| | cmd_3294 マスク時FoF表示復元 | ma…
 - 殿の指摘が正しい。将軍の時刻換算が誤っていた。検算して訂正する。 - 現在: 2026-06-11 22:35 JST = **13:35 UTC** - 次のcron窓: 2026-06-12 00:50–02:10 UTC = **明朝 09:50–11:10 JST** …
 - 殿、**cmd_3301が正式完了した**。一次検分の結果を報告する。 ## pytest全件green達成（マージ事前承認条件が成立） 最終証跡（hanzo報告 verdict PASS・GATE CLEAR 22:31、将軍が現物確認）: | テスト | 結果 | |---…
-- 殿、SessionLocal対処hotfixのGATE CLEARを確認した。現時点の戦況を一次情報で固めて報告する。 ## 確認済みの事実（git+execution-log一次確認 22:30） | 項目 | 状態 | |------|------| | 10件failed…
-- 殿、10件failedの切り分けが完了した。**コード回帰なし・環境起因と確定**である。 ## 切り分け結果（kagemaru hotfix・verdict PASS） - **真因**: /tmp上の隔離worktreeに `.env`/`.env.local` がなく `…
-- 殿、裁可書更新を受領し、併せてcmd_3301の障害を検分・対処した。報告する。 ## 裁可書更新の受領（AC3条件付き承認・保留なし） 更新内容を確認した。仕様判断2件が首領決定済み: 1. **months→days統一（×21換算）許可** — BEは`momentum_…
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
@@ -32,7 +32,6 @@
 - cmd_328
 - cmd_3222
 - cmd_3273
-- cmd_3276
 - cmd_3277
 - cmd_3278
 - cmd_3279
@@ -58,6 +57,8 @@
 - cmd_3299
 - cmd_3300
 - cmd_3301
+- cmd_3302
+- cmd_3303
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
