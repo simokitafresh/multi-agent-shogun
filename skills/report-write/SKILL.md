@@ -160,6 +160,7 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-06-11: gate=gate_report_format result=FAIL executor=kagemaru reason=YAML parse error: while scanning a simple key
 
 - 2026-06-10: gate=gate_report_format result=FAIL executor=saizo reason=lessons_useful: MISSING; lesson_candidate: found=true but no title
 - 2026-06-10: gate=gate_report_format result=FAIL executor=saizo reason=lessons_useful: MISSING; binary_checks.AC1: is dict (must be list of check items); binary_checks.AC2: is dict (must be list of check items); assumption_invalidation: MISSING

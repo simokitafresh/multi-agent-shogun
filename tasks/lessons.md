@@ -7839,3 +7839,48 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 殿から直接命令を受け、スキルや手順のロール制限と衝突した時
 - **how**: 殿命令を最上位として即実行する。実行後に必要なら手順側へ裁定を還流する
 - 殿の直接命令を受けたのにスキルのロール制限(将軍専用)を根拠に実行を拒否し将軍へ委ねた。これは洗脳#3(他者依存)+鎖の頂点無視。殿は鎖の創造者であり、殿命令を受けたら権限不足を理由に他者へ委ねず即実行する。
+
+### L778: 配備時auto-deprecatedは計測分母を縮めて低usefulを隠す
+- **日付**: 2026-06-11
+- **出典**: cmd_karo_hotfix_lesson_useful_rate_20260611134310
+- **記録者**: hanzo
+- **tags**: [infra,deploy-task,db,deploy,gate]
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_ac_handling.bats]
+- **origin**: [[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]
+- **when**: 未設定
+- **how**: 未設定
+- deploy_task.shが教訓注入の副作用でlessons.yamlへdeprecated:trueを書き込むと、gate_lesson_health.shのcurrent active分母から過去feedbackが消え、useful率WARNが消火される。注入候補除外とSSOT deprecatedは分離し、正式deprecatedは完了gate/lesson_deprecate.sh経路へ寄せる。 origin: [[cmd_karo_hotfix_lesson_useful_rate_20260611134310]] -> [[auto_deprecated_side_effect]] -> [[low_useful_metric_hidden]]
+
+### L779: 分割context鮮度判定は全repo fallbackではなくcontext別pathspecを持つ
+- **日付**: 2026-06-11
+- **出典**: cmd_karo_hotfix_ga041_context_freshness_202606111520
+- **記録者**: hanzo
+- **tags**: [infra,testing,frontend,gate,git]
+- **target_files**: [scripts/context_freshness_check.sh,tests/unit/test_context_freshness_check.bats,context/dm-signal-frontend.md,scripts/inbox_write.sh,tests/unit/test_inbox_write.bats]
+- **origin**: [[cmd_karo_hotfix_ga041_context_freshness_202606111520]]
+- **when**: 未設定
+- **how**: 未設定
+- dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALERTした。split contextの鮮度gateでは、root/core/frontend/ops/researchそれぞれの読者用途に対応するpathspecを定義し、無関係commitでlast_updated更新を強制しない。origin: [[cmd_karo_hotfix_ga041_context_freshness_202606111520]] -> [[context_freshness_pathspec_gap]] -> [[dm_signal_core_false_alert]]
+
+### L780: CDP preflightの実portと要求portがズレる時はcleanup権限を絞る
+- **日付**: 2026-06-11
+- **出典**: cmd_karo_hotfix_cdp_gate_stability_202606111540
+- **記録者**: hayate
+- **tags**: [infra,cmd-quality,cdp]
+- **target_files**: [scripts/cdp/cdp_measure.sh,scripts/cmd_complete_gate.sh,tests/unit/test_cdp_measure.bats,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_cdp_gate_stability_202606111540]]
+- **when**: 未設定
+- **how**: 未設定
+- CDP_PORT=9333で最小再現してもpreflightが既存9222を検出して実portを9222へ寄せた。要求portのlockだけを持つプロセスが実portをcleanupすると他計測を落とし得るため、要求portと実portが違う場合はcleanupをskipするチェックを入れるべき。origin: [[CDP_PORT override]] -> [[既存CDP port再利用]] -> [[shared cleanup risk]]
+
+### L781: readonly_ref判定はSG-PRE25とcmd_complete_gateで同じ入力規約に揃えよ
+- **日付**: 2026-06-11
+- **出典**: cmd_3293
+- **記録者**: gunshi
+- **tags**: [gate, review, readonly_ref]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,scripts/gates/gate_gunshi_report_precheck.sh]
+- **origin**: [[cmd_3289-3293 5連続BLOCK]] -> [[readonly_ref判定乖離]] -> [[改善提案]]
+- **when**: SG-PRE25とcmd_complete_gateのcommand/files_modified判定が食い違う時
+- **how**: command欄の既存依存参照は明示タグ化するか、report.verified_existing_dependencyを完了gate照合へ接続し、軍師precheckと完了gateの除外規約を一致させる
+- cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『必読: パス』をreadonly_refとして判定できず5連続BLOCKし、家老waiveが発生した。command欄の参照は[readonly]パス等の明示タグへ寄せるか、cmd_complete_gate側でreport.verified_existing_dependencyをcommand照合に使う。レビュー側と完了gate側でreadonly_ref規約を二重化しない。

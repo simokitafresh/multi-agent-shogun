@@ -1,10 +1,16 @@
 task:
-  _ac_task_id: cmd_3285_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3285 (deployed 2026-06-11T09:50:07). Read from the beginning.
-  ac_version: f43cb45a
-  checklist: queue/checklists/cmd_3278.md
-  chunk: chunk 1 (92件)
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      description: scripts/ninja_monitor.sh の respawn-pane 呼び出し2箇所(L962/L988相当)が cli_profile_get launch_cmd/launch_args 直連結ではなく cli_launch_cmd "$agent_name" の結果を使う
+    AC2:
+      description: bash -n scripts/ninja_monitor.sh と関連unitテストまたはgrep検証で、respawn-pane経路がcli_launch_cmdを参照することを確認する
+    AC3:
+      description: 稼働中 ninja_monitor デーモン(PID 7624または現行PID)を安全に再起動し、新プロセスが起動していることを確認する。kill/pkillは禁止。既存restart scriptがあれば使う
+    AC4:
+      description: 影丸またはidle忍者のrespawn dry/実測で low fast 起動になることを一次情報(pane capture/model表示または起動コマンドログ)で確認する
+  command: 根因はninja_monitor.sh L962/L988がcli_profile_get launch_cmd+launch_argsを直接連結しており、cli_lookup.shのcli_launch_cmdによるmodel_name接尾辞(gpt-5.4-low)→effort自動生成を迂回すること。13:52のlaunch_args空化(commit 60806d863)後、デーモンrespawn経路だけmedium fast化した。L962/L988をcli_launch_cmd $agent_name 呼出しに置換し、ninja_monitorを安全に再起動してlow fast復帰を確認せよ。kill/pkillは禁止。
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -13,125 +19,94 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
-  - 'Level1(事後検出): 間違えた後にgateが検出'
-  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
-  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
-  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
-  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
-  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
-  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
-  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
-  - '2026-06-10T21:11:08+09:00 | ## cmd_3273神速停止 — 執行完了+前提変化報告 **執行**: task=halted、kagemaruへ全作業停止+commit禁止指示済み。 **前提変化（即報告済み）**: 殿指示の'
-  - 2026-06-10T17:48:42+09:00 | 将軍v2.1.170更新完了。三層記憶を検索せずに実行した件は洗脳#2。今後の殿指示でも三層記憶検索を先行させる。 [meta] stop_reason=end_turn
-  - '2026-06-11T00:49:28+09:00 | 【INFOバッチ】 2026-06-11 00:43:18|CI緑: run 27287439123'
-  - '2026-04-29T08:04:27+09:00 | 【INFOバッチ】 2026-04-29 07:52:04|cmd_2392 2026-04-29 08:01:19|CI緑: run 25081815258'
-  - 2026-04-18T01:22:45+09:00 | 【INFOバッチ】 2026-04-18 01:18:27|cmd_2029 2026-04-18 01:19:47|cmd_2030
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  not_in_scope: Claude/Codex編成変更、model_name設定変更、WP-3/WP-4配備、DM-Signal実装変更
   parallel_ok: []
-  parent_cmd: cmd_3285
+  parent_cmd: cmd_karo_hotfix_ninja_monitor_low_effort_respawn_202606111855
   project: infra
-  purpose: '軍師分析(blt_20260611_023032): 裁可迂回push事案の根因は『裁可保留』が暗黙状態(working tree残置)で機械可読でないこと。cmd_3284のbatch commitスコープ制限だけでは別経路(手動git add -A等)が残る(防御第2層)。保留ファイルレジストリを設け、既存hookのcommit介入点で照合BLOCKすることで、どの経路のcommitでも保留中ファイルが運ばれない構造にする'
-  semantic_concepts:
-  - 'agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-claude-version-switch/SKILL.md skills/shogun-claude-version-switch/scripts/claude_version_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)'
-  status: completed
+  purpose: ninja_monitor respawn経路がcli_launch_cmdを通らずmedium fastで起動する不整合を修正し、settings.yaml model_name接尾辞由来のlow effort起動を復元する
+  status: idle
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/.claude/hooks/
-  task_id: cmd_3285_full
-  task_type: full
+  target_path: scripts/ninja_monitor.sh
+  task_id: cmd_karo_hotfix_ninja_monitor_low_effort_respawn_202606111855_normal
+  task_type: hotfix
+  unresolved_decisions: none
   related_lessons:
-  - id: 'L772'
-    summary: 'cmd_3278でhayateとkotaroが独立に発見した同根の盲点2件: (1)kotaro実証: rg --debugでwhitelist型gitigno'
-    detail: 'cmd_3278でhayateとkotaroが独立に発見した同根の盲点2件: (1)kotaro実証: rg --debugでwhitelist型gitigno'
-  - id: 'L324'
-    summary: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
-    detail: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
-  - id: 'L447'
-    summary: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
-    detail: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
-  - id: 'L435'
-    summary: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒'
-    detail: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒'
-  - id: 'L002'
-    summary: 'inbox_watcher.shは60秒リトライ内蔵だが、家老がforeground bashコマンドでブロック中はnudgeを受信できない。Bash tool'
-    detail: 'inbox_watcher.shは60秒リトライ内蔵だが、家老がforeground bashコマンドでブロック中はnudgeを受信できない。Bash tool'
-  - id: 'L540'
-    summary: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
-    detail: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
-  - id: 'L513'
-    summary: 'check_ac_must_should_mix等の関数をeval+export -fで抽出するとき、その関数が内部で呼ぶrecord_block_reason'
-    detail: 'check_ac_must_should_mix等の関数をeval+export -fで抽出するとき、その関数が内部で呼ぶrecord_block_reason'
-  - id: 'L275'
-    summary: 'gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ'
-    detail: 'gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ'
-  - id: 'L106'
-    summary: 'L303: load_lesson_summaries(os.path.dirname(data_file))は data_file=SCRIPT_DIR/lo'
-    detail: 'L303: load_lesson_summaries(os.path.dirname(data_file))は data_file=SCRIPT_DIR/lo'
-  - id: 'L775'
-    summary: 'target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/'
-    detail: 'target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/'
+  - id: 'L252'
+    summary: 'ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両'
+    detail: 'ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両'
+  - id: 'L280'
+    summary: 'ninja_monitor.shはset -uを使わないがテストはset -euoで実行される。新しい連想配列変数を追加する際、関連テストのdeclare -A'
+    detail: 'ninja_monitor.shはset -uを使わないがテストはset -euoで実行される。新しい連想配列変数を追加する際、関連テストのdeclare -A'
+  - id: 'L675'
+    summary: 'ninja_done.sh L37でdate +%s(subprocess)が使われていたが、L39が既にprintf-v ''%(%Y%m%d)T''(built'
+    detail: 'ninja_done.sh L37でdate +%s(subprocess)が使われていたが、L39が既にprintf-v ''%(%Y%m%d)T''(built'
+  - id: 'L622'
+    summary: '_cleanup_stale_keysはメモリリーク防止の専用関数だが、REPORT_DONE_MISMATCH_NOTIFIED(ninja:cmd_id)と'
+    detail: '_cleanup_stale_keysはメモリリーク防止の専用関数だが、REPORT_DONE_MISMATCH_NOTIFIED(ninja:cmd_id)と'
+  - id: 'L530'
+    summary: 'multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on'
+    detail: 'multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on'
+  - id: 'L432'
+    summary: 'Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff'
+    detail: 'Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff'
+  - id: 'L134'
+    summary: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
+    detail: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
+  - id: 'L673'
+    summary: 'grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc'
+    detail: 'grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc'
+  - id: 'L353'
+    summary: 'bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で'
+    detail: 'bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で'
+  - id: 'L269'
+    summary: 'while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。'
+    detail: 'while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  related_causal_links:
-  - "[[cmd_3285レジストリ+全経路照合BLOCK]]"
-  - "[[保留が暗黙状態で機械不可読]]"
-  - "[[軍師分析blt_20260611_023032]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
+  - "context/gs-speedup-knowledge.md"
   - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L772: cmd_3278でhayateとkotaroが独立に発見した同根の盲点2件: (1)kotaro実証: rg --debugでwhitelist型gitigno
-      - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ
-      - L447: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe
-      - L435: 関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒
-      - L002: inbox_watcher.shは60秒リトライ内蔵だが、家老がforeground bashコマンドでブロック中はnudgeを受信できない。Bash tool
-      - L540: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
-      - L513: check_ac_must_should_mix等の関数をeval+export -fで抽出するとき、その関数が内部で呼ぶrecord_block_reason
-      - L275: gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ
-      - L106: L303: load_lesson_summaries(os.path.dirname(data_file))は data_file=SCRIPT_DIR/lo
-      - L775: target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/
+      - L252: ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両
+      - L280: ninja_monitor.shはset -uを使わないがテストはset -euoで実行される。新しい連想配列変数を追加する際、関連テストのdeclare -A
+      - L675: ninja_done.sh L37でdate +%s(subprocess)が使われていたが、L39が既にprintf-v '%(%Y%m%d)T'(built
+      - L622: _cleanup_stale_keysはメモリリーク防止の専用関数だが、REPORT_DONE_MISMATCH_NOTIFIED(ninja:cmd_id)と
+      - L530: multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on
+      - L432: Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff
+      - L134: IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ
+      - L673: grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc
+      - L353: bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で
+      - L269: while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-11T02:01:27+09:00 | working tree clean。 **cmd_3282 完了サマリ:** | 項目 | 内容 | |------|------| | 実装 | `gate_report_autofix_main"
-  - "2026-06-11T01:05:57+09:00 | commitが拒否された。変更はworking treeに残し、家老にD0報告してレビュー判断を委ねる。 [meta] stop_reason=tool_use"
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: '保留レジストリ(queue/pending_approval.yaml)への登録・解除がflock安全なスクリプト操作で行え、登録項目(ファイルパス+理由+登録者+日時)が機械可読であることを実行出力で確認する'
-  - id: 'AC2'
-    checks:
-    - check: '保留中ファイルを含むgit commitが既存hookのcommit介入点(pre-bash-combined.sh Guard群)の照合でBLOCKされ、保留外ファイルのcommitは通ることを両面fixtureで確認する'
-  - id: 'AC3'
-    checks:
-    - check: '解除操作後は同一ファイルのcommitが通ること(登録→BLOCK→解除→通過のライフサイクル)をfixtureで確認する'
-  - id: 'AC4'
-    checks:
-    - check: '既存hookのbatsが全てPASSし、保留照合の回帰テストが追加されていることをbats実行出力で確認する'
+  - "2026-06-11T13:11:50+09:00 | 設定変更完了。忍者6人: fastモードoff、推論low。デーモン(ninja_monitor)のpost_clear_cmdも無効化済み。次のtask配備時から新設定で動く。 [meta] sto"
+  - "2026-06-11T09:47:27+09:00 | これらのファイルは私のスコープ外（他エージェントの残存変更）。L530に従い他担当ファイルの混入commit禁止。私のスコープ（scripts/ninja_monitor.sh、tests/unit/"
+  - "2026-06-11T13:52:13+09:00 | gpt忍者６名を推論lowのままでfastモードonで運用したい"
+  - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_hotfix_ninja_monitor_low_effort_respawn_202606111855_normal
+  _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3285.yaml
-  report_path: queue/reports/hayate_report_cmd_3285.yaml
+  report_filename: hayate_report_cmd_karo_hotfix_ninja_monitor_low_effort_respawn_202606111855.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_hotfix_ninja_monitor_low_effort_respawn_202606111855.yaml
   bloom_level: 
-  deployed_at: "2026-06-11T09:50:51"
+  deployed_at: "2026-06-11T18:57:24"
+  progress.AC1: "checkpoint: 前提=対象2箇所確認済み / scope drift=なし / result=cli_launch_cmd参照へ置換完了"
+  progress.AC2: "checkpoint: 前提=bats利用可 / scope drift=なし / result=bash -n PASS, grep cli_launch_cmd=2件, 旧直参照=0件, bats 9+28 PASS"
+  progress.AC3: "checkpoint: 前提=kill/pkill不使用 / scope drift=なし / result=touch→script_update自己再起動 AUTO-RESTART log line 4018, singleton PID 7624稼働確認"
+  progress.AC4: "checkpoint: 前提=影丸idle / scope drift=なし / result=respawn実測 pane_start_commandに-c model_reasoning_effort=low、画面表示gpt-5.5 low fast確認"

@@ -780,6 +780,14 @@ import metrics_research_engine as MRE
 | 6e86b501 API contract tests追加 | 本文更新不要 | 追加は`backend/tests/test_contract_*.py` 3件とtask-force記録。運用手順・本番API仕様の変更なし |
 | 096dd038 weekly reports + cmd_3225 one-shot | 本文更新不要 | 追加はmarketing記事、weekly report、`scripts/oneshot/cmd_3225_layer_managed_vol.py`、バックアップJSON再追加。既存§40のバックアップJSON参照と矛盾なし |
 
+## §42 main反映・デプロイ裁可ルール (2026-06-11)
+
+- 殿経緯整理後の運用変更: **DM-Signalのmainマージ・本番デプロイは個別に殿裁可を得てから実施する**。従前の「GATE CLEAR後に家老が自動main反映」は廃止。
+- 例外: `cmd_3294` のマスク時FoF表示復元だけは、directiveで本番裁定復旧が明示済みのため既裁可。GATE CLEAR後、家老がmain反映・Renderデプロイ完了確認・`.agent/task-force/execution-log.md`へのデプロイ記録追記を実施する。
+- `cmd_3294` 忍者スコープ: commitまで。push、Renderデプロイ確認、デプロイ記録追記は家老担当。task/reportのAC4は「単独commit + `tasks/lessons.md`教訓 + `execution-log.md`追記」までに修正済み(ac_version=`8158fcea`)。
+- WP-1Fマージは殿裁可待ち。裁可後に `todo.md` のWP-1F/WP-1B行 `[x]` 化と同一commitで実施する。
+- WP-2 post-deploy監視(2026-06-11 19:40 JST): production API `/admin/timing-history` 最新portfolio run `20260611_164902` は `L3_fof status=completed`、Render logs `2026-06-11T07:46-08:11Z` は404全体0件・削除済みEP11件path 0件。詳細は `/mnt/c/Python_app/DM-signal/.agent/task-force/execution-log.md` §WP-2 post-deploy monitoring。
+
 ## 因果リンク
 
 - ← [[dm-signal]] 運用層

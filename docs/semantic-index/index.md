@@ -369,7 +369,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要 |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system |
 | related_lessons | `L317`, `L088`, `L079` |
@@ -656,6 +656,10 @@ codd:
 | lesson | `L774` レビュー品質メトリクスはcmd_id単位最終verdict集計が正しい。全type対応必須 |
 | lesson | `L775` auto_commit_before_clearはscripts/gates/と.claude/hooks/を無条件除外しなければならない |
 | lesson | `L776` pending_approval レジストリの空エントリYAML書き込みはentries: []が必要 |
+| lesson | `L729` baseline同等ACとall-tests-pass hookの衝突時はscope外修正前に停止する |
+| lesson | `L779` 分割context鮮度判定は全repo fallbackではなくcontext別pathspecを持つ |
+| lesson | `L780` CDP preflightの実portと要求portがズレる時はcleanup権限を絞る |
+| lesson | `L729` 削除cmdのtodo更新先は実在パスを配備時に検証する |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -727,6 +731,10 @@ codd:
 | causal_chain | `[[cmd_3286]]` (L774) |
 | causal_chain | `[[cmd_3284]]` (L775) |
 | causal_chain | `[[cmd_3285]]` (L776) |
+| causal_chain | `[[cmd_training_backlinks_kagemaru_20260602]]` (L729) |
+| causal_chain | `[[cmd_karo_hotfix_ga041_context_freshness_202606111520]]` (L779) |
+| causal_chain | `[[cmd_karo_hotfix_cdp_gate_stability_202606111540]]` (L780) |
+| causal_chain | `[[cmd_training_backlinks_kagemaru_20260602]]` (L729) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -1196,6 +1204,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T00:08:04+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | file | `docs/research/gunshi_idle_deepdive_design_impl_phantom_20260516.md` — 軍師idle: deepdive設計実装ファントム問題(2026-05-16) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T13:16:16+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-11T19:43:09+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -1614,6 +1623,7 @@ codd:
 | causal | `cmd_3229` origin: [[cmd_3228_Phase1完了]] -> [[Phase2_修行課題自動生成]] -> [[escalation後training_task_generator呼出]] |
 | lesson | `L770` SKILL.md複数checked_atタグ時はmatches[-1]が基準 |
 | file | `docs/research/gunshi_idle_adaptive_gating_bucket_split_20260521.md` — 軍師idle: 適応型ゲートバケット分割設計(2026-05-21) |
+| cmd | `cmd_karo_hotfix_skill_ref_sync_20260611132342` (`skills/cdp-browse/SKILL.md`, `skills/dashboard-update/SKILL.md`, `skills/karo-direct/SKILL.md`) |
 | causal_chain | `[[cmd_2929]]` (L647) |
 | causal_chain | `[[cmd_2929]]` (L649) |
 | causal_chain | `[[cmd_training_L7_v3_hanzo_5_20260521202900]]` (L660) |
@@ -1643,6 +1653,7 @@ codd:
 | cmd | `cmd_3044` 強化 — file-renameスキルにロールバック手順追加(リネーム前バックアップ+一括復元) (`skills/file-rename/SKILL.md`) |
 | causal | `cmd_3044` origin: [[盲点2_ロールバック不在]] -> [[殿指示_リスクは先にふさげ]] -> [[バックアップ+ロールバック手順追加]] |
 | causal | `cmd_3044` depends_on: cmd_3042 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-11T14:04:17+09:00 # DM-Signal リファクタリング実行任務 あなたは DM-signal リポジトリ（c:\Python_app\DM-signal、本番運用中）のリファクタリング実行担当である。 調査・計画・物理検証は完了済み。あなたの任務は計画の |
 
 ## modern_web_guidance — Modern Web Guidance
 
@@ -2036,7 +2047,7 @@ codd:
 |------|---|
 | id | cdp_browser_capability |
 | label | CDP(ブラウザ操作能力) |
-| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, note_draft, no_prosemirror, noteエディタ変更, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう, CDPで確認して, 効果が出ているか確認しよう, これ毎回俺がやるのはおかしいな, 起票する前に確認しよう, 陳腐化しているものがないか確認しよう, CDPがあるだろ？少なくとも記事は全部取得できるよな, ちなみに話をすり替えてるぞ, どこかに甘さや洗脳が残っていないか厳しく確認しよう, respwanしないで大丈夫なのか？確認しよう, Phase 4以降の計画を確認しよう, CDPでお前が試してくれ, いつものCDPで何をどうやってきた？, 修正 CDP SKIP環境変数対応 WSL2ハング防止, ログイン自動化, 二度とログインする必要, ログイン不要, CLIなのにブラウザーをきどうする, ブラウザ起動CLI, auto_login CDP, ログインしたら二度とログインする必要がなくなる, 今回ログインしたら二度とログインする必要がなくなるのか？, CLIなのにブラウザーをきどうする？, 隠れたインフラバグや, 止まらず続けて, Phase 1から実装しよう, Phase 3も実装しよう, Phase 2も実装しよう, macでもCDPは使えるのか？, マネーフォワードのCSVはそっちでCDPで取得せよ, CDPでMF自動取得実証 |
+| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, note_draft, no_prosemirror, noteエディタ変更, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう, CDPで確認して, 効果が出ているか確認しよう, これ毎回俺がやるのはおかしいな, 起票する前に確認しよう, 陳腐化しているものがないか確認しよう, CDPがあるだろ？少なくとも記事は全部取得できるよな, ちなみに話をすり替えてるぞ, どこかに甘さや洗脳が残っていないか厳しく確認しよう, respwanしないで大丈夫なのか？確認しよう, Phase 4以降の計画を確認しよう, CDPでお前が試してくれ, いつものCDPで何をどうやってきた？, 修正 CDP SKIP環境変数対応 WSL2ハング防止, ログイン自動化, 二度とログインする必要, ログイン不要, CLIなのにブラウザーをきどうする, ブラウザ起動CLI, auto_login CDP, ログインしたら二度とログインする必要がなくなる, 今回ログインしたら二度とログインする必要がなくなるのか？, CLIなのにブラウザーをきどうする？, 隠れたインフラバグや, 止まらず続けて, Phase 1から実装しよう, Phase 3も実装しよう, Phase 2も実装しよう, macでもCDPは使えるのか？, マネーフォワードのCSVはそっちでCDPで取得せよ, CDPでMF自動取得実証, CDP production gateの長時間化・WebSocket接続失敗を再現最小化し |
 | skills | cdp-browse |
 | related_concepts | dmsignal_operations, google_classroom, external_project_registry, rebalancer_app, simple_ocr, openpbx_reference |
 
@@ -2810,6 +2821,7 @@ codd:
 | file | `docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md` — 軍師idle: LG003ゲートWA分析(2026-05-19) |
 | file | `docs/research/gunshi_idle_lu_dict_pattern_20260415.md` — 軍師idle: LU辞書パターン分析(2026-04-15) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T01:43:44+09:00 brdww7s6b toolu_01M38G1Vqynb49hspuSsgNVC /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4afb0c55-495e-49fd-97d6-58e6c9 |
+| cmd | `cmd_karo_hotfix_shogun_startup_escalation_20260611133210` (`scripts/gates/gate_shogun_startup.sh`, `tests/unit/test_gate_shogun_startup.bats`) |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
@@ -2861,8 +2873,10 @@ codd:
 | file | `docs/research/gunshi_idle_lesson_useful_rate_20260503.md` — 軍師idle: 教訓有用率計測v2(2026-05-03) |
 | file | `docs/research/gunshi_idle_lesson_useful_rate_20260608.md` — 軍師idle: 教訓有用率計測v3(2026-06-08) |
 | file | `docs/research/gunshi_idle_lesson_waste_analysis_20260516.md` — 軍師idle: 教訓無駄分析(2026-05-16) |
+| lesson | `L778` 配備時auto-deprecatedは計測分母を縮めて低usefulを隠す |
 | causal_chain | `[[cmd_2955]]` (L685) |
 | causal_chain | `[[cmd_3012]]` (L693) |
+| causal_chain | `[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]` (L778) |
 
 ## gunshi_review_lifecycle — 軍師レビューライフサイクル
 
@@ -3373,7 +3387,7 @@ codd:
 |------|---|
 | id | project_clinic_expense_tracker |
 | label | Clinic Expense Tracker |
-| aliases | clinic-expense-tracker, Clinic Expense Tracker, clinic-expense-tracker project, Clinic Expense Tracker PJ, cliniq-expander, クリニック経費, 経費証票管理, 若友会経費, 佐瀬会計提出, マネーフォワード, MoneyForward, みずほ明細, 証憑, 証票, Gmail証票, 領収書, 領収書整理, 確定申告, 経費SQLite, 経費データ投入, クリニック経営, clinic expens, clinic expense, 経費元マスタ, monthly_status, 現況マトリクス, 経費・領収書ステータス管理, SSOT, Render DB, 設定画面, settings画面, expense_sources CRUD, download-db, upload-db, 取得済み, 未取得, 自動取得, 手動取得, collection_method, 4色分類, 取得ルート |
+| aliases | clinic-expense-tracker, Clinic Expense Tracker, clinic-expense-tracker project, Clinic Expense Tracker PJ, cliniq-expander, クリニック経費, 経費証票管理, 若友会経費, 佐瀬会計提出, マネーフォワード, MoneyForward, みずほ明細, 証憑, 証票, Gmail証票, 領収書, 領収書整理, 確定申告, 経費SQLite, 経費データ投入, クリニック経営, clinic expens, clinic expense, 経費元マスタ, monthly_status, 現況マトリクス, 経費・領収書ステータス管理, SSOT, Render DB, 設定画面, settings画面, expense_sources CRUD, download-db, upload-db, 取得済み, 未取得, 自動取得, 手動取得, collection_method, 4色分類, 取得ルート, 殿裁定 取得済み 該当証票PDFがDriveに保存されていること |
 | related_concepts | external_project_registry |
 
 | 種別 | パス/参照 |

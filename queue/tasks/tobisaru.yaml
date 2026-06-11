@@ -1,10 +1,14 @@
 task:
-  _ac_task_id: cmd_3284_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3284 (deployed 2026-06-11T09:06:01). Read from the beginning.
-  ac_version: 8b28ffc4
-  checklist: queue/checklists/cmd_3278.md
-  chunk: chunk 5 (66件)
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      description: context/dm-signal-ops.md をDM-Signal最新main commit群と照合し、古い記述を更新または根拠付きで維持判断する
+    AC2:
+      description: context/dm-signal-ops.md 先頭の last_updated を 2026-06-11 cmd_karo_hotfix_ctx_dm_signal_ops_202606111626 形式へ更新する
+    AC3:
+      description: bash scripts/gates/gate_context_freshness.sh 実行時に context/dm-signal-ops.md がALERT対象から外れることを確認する
+  command: GA context freshness hotfix。cmd_3292完了時に gate_context_freshness.sh が context/dm-signal-ops.md last_updated=2026-06-08 / source commits 3件をALERT。一次データ=DM-Signal origin/mainの関連commitと現行context本文を照合し、必要最小限の索引更新でALERTを解消せよ。
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -13,79 +17,57 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
-  - 'Level1(事後検出): 間違えた後にgateが検出'
-  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
-  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
-  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
-  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
-  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
-  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
-  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
-  memory_db_context:
-  - '2026-06-10T20:51:02+09:00 | 良い知らせ2件: - **将軍**: 追体験Q6を本セッション内で解消（Q6回答+軍師第三者検証OK+LS052環境埋込）。Gate20回復streak認識と「閾値を下げない」判断も承認 - **軍師'
-  - '2026-06-10T20:50:34+09:00 | 良い知らせ2件: - **将軍**: 追体験Q6を本セッション内で解消（Q6回答+軍師第三者検証OK+LS052環境埋込）。Gate20回復streak認識と「閾値を下げない」判断も承認 - **軍師'
-  - 2026-06-11T00:31:30+09:00 | 【将軍】/clear準備完了。PD:0 cmd pending:0 🚨:0。cmd_3273-3276全CLEAR(マトリクス🟢143/🔴151稼働)。教訓5件+gate根治7件+skills sym
-  - '2026-06-10T23:17:20+09:00 | ## 2cmd同時クローズ完了 **cmd_3276（佐瀬メールパース）— GATE CLEAR一発通過** - 35通全分類（リスト保有2/引用重複4/リストなし29）→143セルsubmitted'
-  - 2026-06-10T22:43:07+09:00 | どのWARNがカウントされたか全文で確認する。 [meta] stop_reason=tool_use
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  not_in_scope: context/dm-signal-ops.md以外の知識整理・DM-Signal実装変更・WP-2作業
   parallel_ok: []
-  parent_cmd: cmd_3284
+  parent_cmd: cmd_karo_hotfix_ctx_dm_signal_ops_202606111626
   project: infra
-  purpose: '家老正直報告(blt_20260611_022919)+軍師第三者検証(blt_20260611_023032): 殿が裁可保留していた変更3群が、kotaroのcmd_3278完了時batch commit(6cfda60e1)に巻き込まれpush到達=裁可保留の機構的迂回。将軍がgit show --statでscripts/gates/3本の巻き込みとorigin/main到達を一次確認済み。防御2層のうち第1層=batch commitが安全機構変更(scripts/gates/+.claude/hooks/)を無差別に巻き込むスコープ無制限を塞ぐ'
-  scout_exempt: true
-  semantic_concepts:
-  - 'known_unknowns_principle — 無知の知:  memory/deepdive_causal_tracing_20260415.md context/growth-loop.md'
-  - 'report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md'
-  - 'systems_knowledge_base — システム知識辞書:  docs/research/systems-knowledge-base/index.md docs/research/systems-knowledge-base/systems/ docs/research/systems-knowledge-base/systems/gstack.md'
+  purpose: context/dm-signal-ops.md の鮮度ALERTを一次データ照合で解消し、last_updatedを2026-06-11へ更新する
   status: idle
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/
-  task_id: cmd_3284_full
-  task_type: full
+  target_path: context/dm-signal-ops.md
+  task_id: cmd_karo_hotfix_ctx_dm_signal_ops_202606111626_normal
+  task_type: hotfix
+  unresolved_decisions: none
   related_lessons:
-  - id: 'L447'
-    summary: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
-    detail: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
-  - id: 'L642'
-    summary: 'load helper.bashは関数共有のみ。@testブロック自体はload先から呼べない。テスト統合は明示的にコピー移植する。origin: [[cmd_'
-    detail: 'load helper.bashは関数共有のみ。@testブロック自体はload先から呼べない。テスト統合は明示的にコピー移植する。origin: [[cmd_'
-  - id: 'L299'
-    summary: 'inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行'
-    detail: 'inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行'
-  - id: 'L186'
-    summary: 'IF review taskで `git push origin main` を行う時 THEN `git ls-remote origin refs/head'
-    detail: 'IF review taskで `git push origin main` を行う時 THEN `git ls-remote origin refs/head'
-  - id: 'L639'
-    summary: '既存batsファイルの長い `run bash -lc ''...''` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ'
-    detail: '既存batsファイルの長い `run bash -lc ''...''` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ'
-  - id: 'L555'
-    summary: 'git add <file>は同一ファイル内の既存/並行hunkもstageする。commit直後にgit show HEADを確認したため混入に気づき、ame'
-    detail: 'git add <file>は同一ファイル内の既存/並行hunkもstageする。commit直後にgit show HEADを確認したため混入に気づき、ame'
-  - id: 'L191'
-    summary: 'IF E2E test が `cp "$PROJECT_ROOT/tests/e2e/fixtures/..."` のように fixture ファイルを前提にす'
-    detail: 'IF E2E test が `cp "$PROJECT_ROOT/tests/e2e/fixtures/..."` のように fixture ファイルを前提にす'
-  - id: 'L009'
-    summary: 'IF whitelist方式.gitignoreのリポジトリでcommitする時 THEN git statusで全対象ファイルの認識状態を確認し、whitel'
-    detail: 'IF whitelist方式.gitignoreのリポジトリでcommitする時 THEN git statusで全対象ファイルの認識状態を確認し、whitel'
-  - id: 'L591'
-    summary: 'cmd_2657/2658でq8にWHEN/HOW/WHERE/WHO検証を追加したがtest_cmd_save系fixtureのq8_why_whatにこれら'
-    detail: 'cmd_2657/2658でq8にWHEN/HOW/WHERE/WHO検証を追加したがtest_cmd_save系fixtureのq8_why_whatにこれら'
-  - id: 'L530'
-    summary: 'multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on'
-    detail: 'multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on'
+  - id: 'L225'
+    summary: 'dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ'
+    detail: 'dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ'
+  - id: 'L274'
+    summary: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
+    detail: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
+  - id: 'L211'
+    summary: 'A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可'
+    detail: 'A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可'
+  - id: 'L674'
+    summary: 'gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA'
+    detail: 'gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA'
+  - id: 'L324'
+    summary: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
+    detail: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
+  - id: 'L096'
+    summary: 'bash,variable-scope,preflight'
+    detail: 'bash,variable-scope,preflight'
+  - id: 'L729'
+    summary: 'markdown_link_counts.shはREADME.mdを除外するため、README系ファイルを対象にしたリンク修行ではランキング出力だけでは変更効果'
+    detail: 'markdown_link_counts.shはREADME.mdを除外するため、README系ファイルを対象にしたリンク修行ではランキング出力だけでは変更効果'
+  - id: 'L711'
+    summary: 'git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje'
+    detail: 'git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje'
+  - id: 'L654'
+    summary: 'task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母'
+    detail: 'task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母'
+  - id: 'L605'
+    summary: 'gate_report_format_main.pyのFIXヒント45パターンをskill_auto_improve.shのconcrete_preventio'
+    detail: 'gate_report_format_main.pyのFIXヒント45パターンをskill_auto_improve.shのconcrete_preventio'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  related_causal_links:
-  - "[[batch commitスコープ無制限で裁可迂回push]]"
-  - "[[cmd_3284 gate/hook除外+可視化]]"
-  - "[[殿commit拒否]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -105,34 +87,29 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L447: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe
-      - L642: load helper.bashは関数共有のみ。@testブロック自体はload先から呼べない。テスト統合は明示的にコピー移植する。origin: [[cmd_
-      - L299: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行
-      - L186: IF review taskで `git push origin main` を行う時 THEN `git ls-remote origin refs/head
-      - L639: 既存batsファイルの長い `run bash -lc '...'` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ
-      - L555: git add <file>は同一ファイル内の既存/並行hunkもstageする。commit直後にgit show HEADを確認したため混入に気づき、ame
-      - L191: IF E2E test が `cp "$PROJECT_ROOT/tests/e2e/fixtures/..."` のように fixture ファイルを前提にす
-      - L009: IF whitelist方式.gitignoreのリポジトリでcommitする時 THEN git statusで全対象ファイルの認識状態を確認し、whitel
-      - L591: cmd_2657/2658でq8にWHEN/HOW/WHERE/WHO検証を追加したがtest_cmd_save系fixtureのq8_why_whatにこれら
-      - L530: multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on
+      - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ
+      - L274: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
+      - L211: A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可
+      - L674: gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA
+      - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ
+      - L096: bash,variable-scope,preflight
+      - L729: markdown_link_counts.shはREADME.mdを除外するため、README系ファイルを対象にしたリンク修行ではランキング出力だけでは変更効果
+      - L711: git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje
+      - L654: task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母
+      - L605: gate_report_format_main.pyのFIXヒント45パターンをskill_auto_improve.shのconcrete_preventio
     ────────────────────────────────────────
     
     
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: '巻き込みが発生した正確な経路(ninja_monitor auto-commit/ninja-commitスキル/cmd完了フローのいずれか)がcommit 6cfda60e1の生成過程との照合で特定され、報告に経路スクリプト名と該当行番号が記載されていることを確認する'
-  - id: 'AC2'
-    checks:
-    - check: 'batch commit機構がscripts/gates/と.claude/hooks/配下の変更を対象から除外し、除外発生時はスキップ理由を実行ログへ可視化することをfixtureテストで確認する(silent skip禁止)'
-  - id: 'AC3'
-    checks:
-    - check: '通常の運用ファイル(logs/queue/context等)のbatch commitは従来通り成功することをfixtureテストで確認する'
-  - id: 'AC4'
-    checks:
-    - check: '既存batsが全てPASSし、巻き込み除外の回帰テストが追加されていることをbats実行出力で確認する'
+  memory_db_context:
+  - "2026-06-11T15:45:10+09:00 | 【将軍】context鮮度ALERT: dm-signal-ops.md(source更新)"
+  - "2026-06-11T15:41:04+09:00 | 【INFOバッチ】 2026-06-11 15:29:51|cmd_karo_hotfix_ga041_context_freshness_202606111520"
+  - "2026-06-11T15:45:10+09:00 | 【将軍】context鮮度ALERT: dm-signal-ops.md(source更新)"
+  - "2026-06-08T21:19:40+09:00 | 【将軍】context鮮度ALERT: dm-signal-ops.md(source更新),dm-signal-research.md(source更新)"
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_hotfix_ctx_dm_signal_ops_202606111626_normal
+  _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3284.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3284.yaml
+  report_filename: tobisaru_report_cmd_karo_hotfix_ctx_dm_signal_ops_202606111626.yaml
+  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_ctx_dm_signal_ops_202606111626.yaml
   bloom_level: 
-  deployed_at: "2026-06-11T09:06:52"
+  deployed_at: "2026-06-11T16:27:16"

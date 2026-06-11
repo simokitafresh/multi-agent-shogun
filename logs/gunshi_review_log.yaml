@@ -2009,3 +2009,547 @@
   ambiguity_points: none
   origin: "[[session_20260611]] -> [[冷え観点対策+殿裁定埋込]] -> [[強くてニューゲーム]]"
   timestamp: "2026-06-11T13:18:00"
+- cmd_id: idle_adversarial_cold_spot_20260611
+  review_type: idle_analysis
+  verdict: null
+  confidence: null
+  finding_categories: [adversarial, assumptions]
+  findings_summary: "adversarial冷え分析。直近10件1/10。主因=閾値合理的不発火+セキュリティ確認の記録ギャップ。cmd_3288でSQLi確認but adversarial未記録。改善=セキュリティ関連時は明記"
+  observations:
+    - "事実1: adversarial直近10件1/10(10%)、全期間56/106(52.8%)"
+    - "事実2: 直近10件はclinic-expense-tracker小規模cmd。changed_lines<200でトリガー不発火"
+    - "事実3: cmd_3288でSQLi確認(execute()パラメータ化10件)したがfinding_categoriesにadversarial未記録"
+    - "事実4: 200行閾値だけでなくセキュリティ関連コード変更もadversarialトリガーにすべき"
+  causal_chain: "小規模cmd連続→200行閾値不達→adversarial不発火(合理的)+セキュリティ確認時の記録漏れ(記録ギャップ)→冷え数値悪化→改善=セキュリティ時adversarial明記"
+  brainwash_check: "106件中56件=52.8%実績(数値確認)。直近10件1件=閾値合理的。cmd_3288記録漏れ1件=改善余地"
+  cs_checklist: [causal_chain, brainwash_check]
+  ambiguity_points: none
+  output: "docs/research/gunshi_idle_adversarial_cold_spot_analysis_20260611.md"
+  origin: "[[adversarial冷え]] -> [[cmd_3288記録ギャップ]] -> [[改善提案]]"
+  timestamp: "2026-06-11T13:27:00"
+- cmd_id: cmd_karo_hotfix_shogun_startup_escalation_20260611133210
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "karo_direct hotfix。gate_shogun_startup.sh Q6 proof WARN(3セッション連続BLOCK)+掲示板二重計上修正。作業方針に制約方向明示(証拠なしOK禁止/info未確認消す禁止)。L274注意喚起済み"
+  observations:
+    - "事実1: Q6 proof=path_reでファイルパス抽出→pathsなし→SKIP→WARN。自然文自動化ターゲットで不発火"
+    - "事実2: Gate4.5(未確認)+Gate4.6(action_required)の二重計上。action_requiredがinfoにも含まれ増幅"
+    - "事実3: AC5件(実質4件。AC5=SKILL.md不変のscope制約)。1ファイル+テスト"
+    - "事実4: 教訓L274(alerts配列漏れ)L473(変数未定義)L696(set -e+exit 2)が注入済み"
+  causal_chain: "Q6 proofのpath_re限定→自然文自動化ターゲットSKIP→3セッション連続→BLOCK昇格+掲示板二重計上→WARN増幅→自動エスカレーション(正の複利: 偽陽性除去で正確なWARN/BLOCKへ)"
+  brainwash_check: "gate_shogun_startup.sh現物実行でWARN/BLOCK確認。grep -nで対象コード行番号特定。FM4件全mitigated。100億年: startup gate正確性は全セッションに複利"
+  ambiguity_points: none
+  origin: "[[shogun_startup_escalation]] -> [[Q6 proof偽陽性+掲示板二重計上]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T13:35:00"
+- cmd_id: cmd_karo_hotfix_skill_ref_sync_20260611132342
+  review_type: draft
+  verdict: APPROVE
+  confidence: MEDIUM
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "karo_direct hotfix。gate_skill_script_refs.sh WARN 10件解消。前回saizo(2026-06-10)で9件修正CLEAR済み。gate既にPASS。再確認hotfixとしてAPPROVE"
+  observations:
+    - "事実1: gate_skill_script_refs.sh現在PASS(走査43 SKILL.md/参照49件/全実在+鮮度OK)"
+    - "事実2: memory_db確認=前回saizo cmd_karo_hotfix_skill_ref_sync 2026-06-10 CLEAR(9件更新)"
+    - "事実3: AC4件=確認+報告+gate PASS+scope check。AC3は配備前からPASS"
+    - "事実4: 忍者による契約確認作業自体は+1複利(将来の契約変更見落とし防止)"
+  causal_chain: "3セッション連続WARN→家老自動エスカレーション→前回saizo CLEAR→gate PASS維持→今回は再確認hotfix(正の複利: 定期契約確認習慣化)"
+  brainwash_check: "gate_skill_script_refs.sh実行でPASS現物確認。memory_db検索で前回CLEAR ts=2026-06-10確認。「gate PASSだからREJECT」は#1。確認作業の+1複利を評価"
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_skill_ref_sync]] -> [[gate既PASS+前回CLEAR]] -> [[APPROVE再確認hotfix]]"
+  timestamp: "2026-06-11T13:32:00"
+- cmd_id: cmd_karo_hotfix_skill_ref_sync_20260611132342
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "tobisaru cmd_karo_hotfix_skill_ref_sync報告。SKILL.md 10件script参照鮮度更新。契約変更なし。gate PASS実測。50行scope内"
+  observations:
+    - "事実1: files_modified 10件=AC要件10件。SG-PRE3全commit PASS。changed_lines 50行"
+    - "事実2: 各script(note_draft.sh/gate_report_format.sh/deploy_task.sh/clear_prep_check.sh/param_neighbor_check.py)契約変更なし"
+    - "事実3: SKILL_REF_DISABLE_CACHE=1 gate PASS実測。末尾日時更新問題も対処(discretion_fills記載)"
+    - "事実4: WA率0%(5件中0件)。lesson_candidate=false(既存手順実行のみ。妥当)"
+  step3_5_verified: true
+  causal_chain: "gate WARN 10件(script更新>SKILL.md)→SKILL.md鮮度記録更新→gate PASS復旧(正の複利: 鮮度管理の定期実施)"
+  brainwash_check: "SG-PRE全PASS。10件=10件数値一致。gate PASS実測(test_results記載)。100億年: script契約確認は永続的に有効"
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_skill_ref_sync報告]] -> [[SKILL.md 10件鮮度更新]] -> [[LGTM]]"
+  timestamp: "2026-06-11T13:38:00"
+- cmd_id: cmd_karo_hotfix_shogun_startup_escalation_20260611133210
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "kagemaru cmd_karo_hotfix_shogun_startup_escalation報告。Q6 proof分類修正(skip→未記入WARN)+Gate4.5/4.6責務分離。bats 60/60。実動作確認済み"
+  observations:
+    - "事実1: Q6修正後=「自動化ターゲット未記入」WARN。proof skip→既存FOUND_MISSING_AUTOMATION分岐踏襲"
+    - "事実2: Gate4.5修正後=action_required二重計上解消。新規掲示板1件のみWARN"
+    - "事実3: Gate4.6=action_required未対応BLOCK維持(弱体化なし)"
+    - "事実4: bats 60/60(既存+新7件)。commit bc9aae588実在。changed_lines 48行"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "rollback可能(1commit)。Q6分岐=既存パターン踏襲。Gate4.5集計=二重計上除外のみ。bats60+新7件で回帰検知"
+  step3_5_verified: true
+  causal_chain: "Q6 proof pathなし→SKIPからWARN→3セッション連続BLOCK昇格(偽陽性)+Gate4.5 action_required二重計上→WARN過剰増幅→修正で分類正確化+責務分離(正の複利: startup gate信頼性向上)"
+  brainwash_check: "実動作確認: gate_shogun_startup.sh実行でQ6/Gate4.5/4.6出力を現物検証(洗脳#2防止)。bats 60/60数値確認。100億年: startup gate正確性は全セッションに複利"
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_shogun_startup_escalation報告]] -> [[Q6分類修正+掲示板責務分離]] -> [[LGTM]]"
+  timestamp: "2026-06-11T13:42:00"
+- cmd_id: cmd_karo_hotfix_lesson_useful_rate_20260611134310
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "karo_direct hotfix。useful_rate 37.0%<50% WARN根因特定+修正。L317(全量fallback注入)が直接関連。cmd_3271改善実績あり。閾値下げ/行削除禁止制約明示"
+  observations:
+    - "事実1: useful_rate=37.0%(17/46)。WARN閾値50%。ALERT閾値30%"
+    - "事実2: L317=useful:false 81.7%が該当場面なし=deploy_task.shのfallback全量注入が根因"
+    - "事実3: cmd_3271で46.2%→70.6%改善実績あり(target_path未設定時fallback抑制)"
+    - "事実4: AC4件。deploy_task.sh D0修正時はhigh-risk(全cmd配備影響)"
+  causal_chain: "lesson_tagsマッチ広すぎ→全量fallback注入→無関係教訓の大量注入→忍者がuseful:false→useful率低下→WARN(正の複利: 注入精度向上=全cmdに効く)"
+  brainwash_check: "gate_lesson_health.sh METRIC出力で37.0%現物確認。L317注入済み(direct関連)。memory_dbでcmd_3271実績確認。100億年: 教訓注入精度は全cmdに複利"
+  ambiguity_points: none
+  origin: "[[lesson_useful_rate WARN]] -> [[L317 fallback全量注入]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T13:47:00"
+- cmd_id: cmd_karo_hotfix_lesson_useful_rate_20260611134310
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: WARN
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "hanzo cmd_karo_hotfix_lesson_useful_rate報告。useful_rate 37.0%→60.7%(OK)。D0修正=ENABLE_ZERO_USEFUL_AUTO_DEPRECATEガード。auto-deprecated計測分母縮小の新知見。lesson_candidate有"
+  observations:
+    - "事実1: gate実動作: useful_rate=60.7%(17/28) status=OK。修正前37.0%(17/46)"
+    - "事実2: D0修正: ENABLE_ZERO_USEFUL_AUTO_DEPRECATE=デフォルトoff。明示1時のみauto-deprecate実行"
+    - "事実3: +46/-0追加のみ。既存コードパス無変更。bats追加済み"
+    - "事実4: assumption_invalidation: cmd_3254/cmd_3271のauto-deprecation前提再評価要"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "+46/-0追加のみ。ENABLE guardデフォルトoff=既存パス無影響。rollback 1commit。bats回帰テスト追加"
+  step3_5_verified: true
+  causal_chain: "auto-deprecated→lessons.yaml deprecated:true書込み→gate active分母縮小→low useful隠蔽→WARN消火構造→ENABLEガードで副作用停止(正の複利: 計測精度向上)"
+  brainwash_check: "gate_lesson_health.sh実行で60.7% OK現物確認。grep ENABLE_ZERO_USEFUL_AUTO_DEPRECATEでガード実装確認。100億年: 計測精度は全教訓管理に複利"
+  ambiguity_points: none
+  origin: "[[lesson_useful_rate報告]] -> [[auto-deprecated副作用停止]] -> [[LGTM]]"
+  timestamp: "2026-06-11T13:52:00"
+- cmd_id: cmd_3289
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "DM-Signalリファクタ(1/4)テストベースライン記録。コード変更なし。pytest+npm test/build/lint実行→execution-log.md記録。後続WP全ゲートの基準線"
+  observations:
+    - "事実1: assumptions.trust=verified。workorder全文Read+execution-log.md未作成確認済み"
+    - "事実2: AC3件。timeout40分。shallow。コード変更禁止明示"
+    - "事実3: depends_on:none。後続cmd_3290がdepends_on:cmd_3289"
+    - "事実4: SKIP=FAILルール不適用(既存状態の忠実な記録が目的)→妥当"
+  causal_chain: "リファクタ実行→既存失敗とリファクタ起因の区別必要→ベースライン記録→全後続WPの検証ゲート基準線(正の複利: 誤認防止の構造的基盤)"
+  brainwash_check: "AC3件+コード変更なし+timeout40分=scope適正。q11でexecution-log.md未作成を現物確認(No such file)。100億年: ベースライン記録は全リファクタの検証精度に複利"
+  ambiguity_points: none
+  origin: "[[殿指示リファクタ実行]] -> [[cmd_3289ベースライン記録]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T14:18:00"
+- cmd_id: cmd_3289
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_first_result: BLOCK
+  gate_prediction: CLEAR
+  gate_block_reason: command_files_modified_mismatch(家老waive後CLEAR)
+  gate_mismatch_analysis: "command欄のrefactor-workorder-20260611.mdが必読(参照のみ)だがcmd_complete_gateが変更対象と判定。SG-PRE25はreadonly_ref除外でPASSしたがcmd_complete_gateの判定ロジックが別。LG036/LG037再発。軍師prediction CLEAR→実際BLOCK"
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "kagemaru cmd_3289報告。DM-Signalベースライン記録。BE 1436pass/0fail。FE 266pass/1既存fail。lint=ESLint未設定exit1。コード変更なし。decision_candidate(lint非対話化)妥当"
+  observations:
+    - "事実1: BE pytest 1447collected/1436passed/0failed/0skipped/5xfailed/6xpassed。数値整合(1447=1436+5+6)"
+    - "事実2: FE test 43suites(42pass/1fail)/267tests(266pass/1fail)。fail=monthly_trade_table_fof_uuid(既存)"
+    - "事実3: build PASS(23 static pages)。lint=next lint ESLint設定プロンプトでexit 1(非対話不能)"
+    - "事実4: files_modified=execution-log.md 1件。コード変更なし。commit 37426be1実在"
+  step3_5_verified: true
+  causal_chain: "殿指示リファクタ→既存失敗とリファクタ起因の区別必要→ベースライン記録→後続WP全ゲートの基準線確立(正の複利)"
+  brainwash_check: "数値整合検算: 1447=1436+5+6。267=266+1。コード変更0件=git diff確認。100億年: ベースラインは全後続判定の基盤"
+  ambiguity_points: none
+  origin: "[[cmd_3289報告]] -> [[ベースライン記録完了]] -> [[LGTM]]"
+  timestamp: "2026-06-11T14:30:00"
+- cmd_id: cmd_3290
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "DM-Signalリファクタ(2/4) WP-1F FE確証済み削除5項目。取り違え危険リストAC1。物理検証済み削除。push禁止。cmd_3289 BLOCK教訓をcommand欄readonly_ref注意として伝達"
+  observations:
+    - "事実1: 削除5項目: _deprecated/+lookbackFormatter+useAppVisibility+transition-overlay+react-katex"
+    - "事実2: AC1=取り違え検証(trades/page.tsx+katex本体→削除禁止。含まれていたら即FAIL)"
+    - "事実3: AC4件。timeout60分。depends_on:cmd_3289(CLEAR済み)"
+    - "事実4: cmd_3289でcommand欄参照→gate BLOCK実績。cmd_3290にもreadonly_refあり→注意喚起済み"
+  causal_chain: "調査チームが参照ゼロ物理検証→manifest行番号付き→忍者は指示通り削除のみ→ついでに禁止→scope制御(正の複利: デッドコード除去で認知負荷低減)"
+  brainwash_check: "AC4件+物理検証済み削除=scope適正。取り違え防止がAC1に構造化。cmd_3289 BLOCK教訓をreadonly_ref注意として反映。100億年: デッドコード除去は恒久的認知負荷低減"
+  ambiguity_points: none
+  origin: "[[殿指示リファクタ実行]] -> [[cmd_3290 WP-1F FE削除]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T14:35:00"
+- cmd_id: cmd_3290
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: FAIL
+  gate_result: CLEAR
+  gate_prediction: WARN
+  changed_lines: 1012
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "kagemaru cmd_3290 WP-1F FE削除報告。実装内容は4観点+adversarial OK。FAIL理由=SG-PRE25 ERROR(command欄refactor-workorder-20260611.mdがfiles_modified不在)。cmd_3289と同パターン(LG036/LG037)。家老waiveで対処可能"
+  observations:
+    - "事実1: 削除5項目完了(6ファイル削除+pkg-lock再生成)。trades/katex残存確認"
+    - "事実2: scope外修正0adde79f→家老scope_stop→revert 8d28f75e→decision_candidateに分離"
+    - "事実3: npm test baseline同等(42suites/1known fail/0new)。build 23/23 PASS"
+    - "事実4: SG-PRE25 ERROR=readonly参照refactor-workorder-20260611.mdがfiles_modified不在"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "-961行削除のみ。rollback可能(ブランチ上、main未マージ)。trades/katex残存確認。npm test/build baseline同等"
+  step3_5_verified: true
+  fail_reasons:
+    - "SG-PRE25 ERROR: command欄refactor-workorder-20260611.mdがfiles_modifiedに不在(LG036/LG037 readonly参照パターン)"
+  causal_chain: "cmd command欄にreadonly必読文書→SG-PRE25がERROR→gate BLOCKリスク→FAIL判定(LG037: gateは3分類を区別できない)→家老waiveで対処"
+  brainwash_check: "SG-PRE25 ERROR=FAIL判定(殿厳命Step3.5)。cmd_3289同パターンBLOCK実績あり。実装自体はOKだがgate通過保証のためFAIL。100億年: 計測の正確性は妥協しない"
+  ambiguity_points: none
+  origin: "[[cmd_3290報告]] -> [[SG-PRE25 readonly参照ERROR]] -> [[FAIL(家老waive可)]]"
+  timestamp: "2026-06-11T14:55:00"
+- cmd_id: cmd_karo_hotfix_ga041_context_freshness_202606111520
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "karo_direct hotfix。GA-041 context freshness ALERT修正。dm-signal-core/frontend/本体の鮮度回復+横展開+再発防御"
+  observations:
+    - "事実1: GA-038/039/041連続ALERT(memory_db 3件確認)"
+    - "事実2: AC4件。context層ドキュメント更新が主。low-risk"
+    - "事実3: AC2横展開3件以上の数値要件明確"
+    - "事実4: gate before/afterで検証可能(AC4)"
+  causal_chain: "DM-Signalリファクタ進行→ソースコード変更→context索引が追従せず→鮮度ALERT連続→context更新+再発防御(正の複利: 起動時情報精度)"
+  brainwash_check: "memory_dbで3回連続ALERT確認(数値)。AC4件=scope適正。100億年: context鮮度は全セッションの判断品質に複利"
+  ambiguity_points: none
+  origin: "[[GA-041 context freshness]] -> [[dm-signal context鮮度低下]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T15:20:00"
+- cmd_id: cmd_karo_hotfix_ga041_context_freshness_202606111520
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: WARN
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "hanzo GA-041 context鮮度ALERT修正。root/core pathspec追加+frontend索引更新+inbox files_modified抽出修正。before 2 ALERT→after OK。bats 30/30+8/8"
+  observations:
+    - "事実1: 根因=DM_SIGNAL_CONTEXT_PATHS未定義→全repo commit誤検知。pathspec追加で修正"
+    - "事実2: before 2 ALERT→after OK(MIN_SOURCE_COMMITS=3)。bats 30/30+8/8全PASS"
+    - "事実3: 横展開4件(root pathspec/ops-research潜在/timeout/inbox通知gate穴)"
+    - "事実4: 2 commitに分かれた(3728aa1fd+66d2e768f)。SG-PRE3 WARN 3件だが両方cmd_karo_hotfix_ga041メッセージ含む"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "pathspec追加+抽出修正のみ。既存ロジック無変更。2commit復旧可能。bats 30/30+8/8"
+  step3_5_verified: true
+  causal_chain: "DM_SIGNAL_CONTEXT_PATHS未定義→全repo commit誤検知→鮮度ALERT偽陽性→pathspec追加+索引更新→鮮度OK回復(正の複利: 全セッション判断品質)"
+  brainwash_check: "gate実行でbefore 2 ALERT→after OK現物確認。bats 38件全PASS(数値)。SG-PRE3 WARN=2commit分割を現物git log確認。100億年: context鮮度正確性は全セッションに複利"
+  ambiguity_points: none
+  origin: "[[GA-041報告]] -> [[pathspec+索引+inbox修正]] -> [[LGTM]]"
+  timestamp: "2026-06-11T15:28:00"
+- cmd_id: cmd_3291
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "DM-Signalリファクタ(3/4) WP-0契約テスト整備。約15EP×4アサート。in-memory SQLiteのみ。模範テンプレート準拠。恒久安全網"
+  observations:
+    - "事実1: assumptions.trust=verified。workorder+test_api_response.py実在確認済み"
+    - "事実2: AC4件。timeout120分deep。実DB禁止。形状固定(値の正しさは対象外)"
+    - "事実3: depends_on:cmd_3289(CLEAR済み)。ブランチrefactor/wp-0(wp-1fと独立)"
+    - "事実4: command欄readonly参照(workorder+manifest)→cmd_3289/3290同様gate BLOCKリスク注意喚起済み"
+  causal_chain: "安全網が先・削除は後の原則→契約テスト整備→全BE変更の回帰検知(正の複利: 恒久的安全網)"
+  brainwash_check: "AC4件+in-memory SQLite限定+形状固定のみ=scope適正。100億年: 契約テストは全BE変更の恒久安全網"
+  ambiguity_points: none
+  origin: "[[殿指示リファクタ実行]] -> [[cmd_3291 WP-0契約テスト]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T15:36:00"
+- cmd_id: cmd_karo_hotfix_cdp_gate_stability_202606111540
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "karo_direct hotfix。CDP production gate安定化。失敗分類+最小再現+D0修正+運用手順。AC4件"
+  observations:
+    - "事実1: CDP失敗はcmd_3290で実在(memory_db確認)"
+    - "事実2: AC4件。最小再現1-3ページ。全16ページ再実行不要"
+    - "事実3: target=scripts/cdp/。preflight_cdp_flowが自動起動(never_stop_for)"
+    - "事実4: AC4で運用手順(最大待ち時間/切り分け/再check条件)を記録"
+  causal_chain: "CDP WebSocket接続失敗/遅延→cmd_complete_gate長時間化→安定化修正+運用手順(正の複利: gate信頼性)"
+  brainwash_check: "AC4件=scope適正。100億年: CDP gate安定性は全cmd完了処理の基盤"
+  ambiguity_points: none
+  origin: "[[CDP gate不安定]] -> [[cmd_karo_hotfix_cdp_gate_stability]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T15:40:00"
+- cmd_id: cmd_3291
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: FAIL
+  gate_result: CLEAR
+  gate_first_result: BLOCK
+  gate_prediction: CLEAR
+  gate_block_reason: command_files_modified_mismatch(readonly参照3件。家老waive後CLEAR)
+  changed_lines: 607
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "kagemaru cmd_3291 WP-0契約テスト報告。21EP/3ファイル/18テスト全green。1465=baseline+18。FAIL理由=SG-PRE25 ERROR(readonly参照3件)。cmd_3289/3290同パターン"
+  observations:
+    - "事実1: 新規18テスト全green+backend全体1465collected/1454passed/0failed"
+    - "事実2: 1465-1447(baseline)=18件追加。数値整合"
+    - "事実3: backend/app変更なし(SG-PRE4 PASS)。in-memory SQLiteのみ"
+    - "事実4: SG-PRE25 ERROR=readonly3件(manifest-backend/workorder/test_api_response)"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "+606テスト追加のみ。backend/app無変更。in-memory SQLite限定。rollback可能(ブランチ上)"
+  step3_5_verified: true
+  fail_reasons:
+    - "SG-PRE25 ERROR: command欄readonly参照3件がfiles_modified不在(cmd_3289/3290同パターン)"
+  causal_chain: "command欄にreadonly必読文書→SG-PRE25 ERROR→gate BLOCKリスク→FAIL(実装自体はOK)→家老waive対処"
+  brainwash_check: "1465-1447=18数値整合。backend/app変更なし確認。in-memory SQLite限定。100億年: 契約テストは恒久安全網"
+  ambiguity_points: none
+  origin: "[[cmd_3291報告]] -> [[SG-PRE25 readonly参照ERROR]] -> [[FAIL(家老waive可)]]"
+  timestamp: "2026-06-11T15:45:00"
+- cmd_id: cmd_3292
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "DM-Signalリファクタ(4/4) WP-1B BE確証済み削除9項目。取り違え危険5対象AC1即FAIL。ETL3点1commit。カバレッジ担保3ファイル。readonly参照gate BLOCKリスク注意喚起"
+  observations:
+    - "事実1: 削除9項目=manifest物理検証済み(行番号付き)"
+    - "事実2: AC1=取り違え検証(masking_service/fetcher/loader/password_rotation/expand_portfolio_to_tickers削除禁止)"
+    - "事実3: AC3=pytest+カバレッジ担保3ファイル(test_138/test_monthly_trade/test_monthly_returns_056)green明示"
+    - "事実4: cmd_3289-3291同様command欄readonly参照→gate BLOCKリスク"
+  causal_chain: "調査チーム物理検証→manifest行番号付き→9項目限定削除→カバレッジ担保(正の複利: BEデッドコード除去)"
+  brainwash_check: "AC4件+削除9項目=scope適正。取り違え防止+カバレッジ担保が構造化。100億年: デッドコード除去は恒久的認知負荷低減"
+  ambiguity_points: none
+  origin: "[[殿指示リファクタ実行]] -> [[cmd_3292 WP-1B BE削除]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T15:58:00"
+- cmd_id: cmd_karo_hotfix_cdp_gate_stability_202606111540
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: WARN
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "hayate CDP gate安定化報告。既定3ページ/900秒化+port flock+cleanup条件。bats 124件PASS。全量復帰スイッチ維持"
+  observations:
+    - "事実1: cmd_complete_gate.sh L4489-4490: CDP_MEASURE_TIMEOUT=900/CDP_MEASURE_PAGES=home dashboard summary確認"
+    - "事実2: gate_metricsで3回BLOCK(15:10/15:25/15:43)。最小再現=420秒timeout(PowerShell WebSocket)"
+    - "事実3: files_modified 4件(cdp_measure+cmd_complete_gate+test 2件)。+56/-5=61行"
+    - "事実4: CDP_MEASURE_PAGES=allで全量復帰可能(安全方向の変更)"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "安全方向変更(全量→3ページ既定)。全量復帰スイッチ維持。port flock追加。bats 124件PASS"
+  step3_5_verified: true
+  causal_chain: "CDP全量gate→PowerShell WebSocket待ち420秒→3回BLOCK→既定3ページ+900秒+port flock(正の複利: gate信頼性)"
+  brainwash_check: "cmd_complete_gate.sh現物でCDP既定値確認(洗脳#2防止)。bats 124件数値。100億年: CDP gate安定性は全cmd完了処理の基盤"
+  ambiguity_points: none
+  origin: "[[CDP gate不安定報告]] -> [[3ページ既定+port flock]] -> [[LGTM]]"
+  timestamp: "2026-06-11T16:02:00"
+- cmd_id: cmd_3292
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: FAIL
+  gate_result: CLEAR
+  gate_prediction: WARN
+  changed_lines: 4306
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "kagemaru cmd_3292 WP-1B BE削除9項目(16ファイル)。先行レビュー4重点全確認済み。1465→1386/0fail。FAIL=SG-PRE25 readonly参照。SG-PRE3=別repo構造問題"
+  observations:
+    - "事実1: 削除20ファイル全workorder範囲内(先行レビューgit diff --stat確認)"
+    - "事実2: 現役5対象全保持(ls-tree確認: masking_service/fetcher/loader/password_rotation/expand_portfolio_to_tickers)"
+    - "事実3: price_ratio_calculator=ruff整形+expand_fof_to_tickers alias9行削除のみ(先行レビュー現物確認)"
+    - "事実4: 1465→1386 collected(79テスト削除=随伴分)。0 failed。カバレッジ担保テスト未明示(AC3要件)"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "+240/-4066大半がデッドコード削除。現役5対象ls-tree保持確認。rollback可能(ブランチ上)。pytest 0 failed"
+  step3_5_verified: true
+  fail_reasons:
+    - "SG-PRE25 ERROR: readonly参照(workorder/manifest)がfiles_modified不在。cmd_3289-3291同パターン"
+  causal_chain: "manifest物理検証済み→9項目削除→pytest 0 fail→SG-PRE25 readonly参照→FAIL(実装OK)→家老waive対処"
+  brainwash_check: "先行レビューでcommit c47742d1現物確認。1465-1386=79テスト削除(随伴分)数値確認。ls-tree5対象保持確認。100億年: BEデッドコード除去は恒久的認知負荷低減"
+  ambiguity_points: none
+  origin: "[[cmd_3292報告]] -> [[SG-PRE25 readonly参照]] -> [[FAIL(家老waive可)]]"
+  timestamp: "2026-06-11T16:20:00"
+- cmd_id: cmd_3293
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "DM-Signalリファクタ(5) WP-2 EP11件+ブロック3種+Kalman一式削除+全FoF数値一致検証。本番DB実測使用0件。cmd_1443前例。L500/L513/L690等7教訓注入"
+  observations:
+    - "事実1: assumptions=本番DB直接クエリ78PF+858行使用0件。cmd_1443前例(58FoF×9509行一致)"
+    - "事実2: AC4件。timeout240分deep。削除3カテゴリ+本番DB検証+契約テスト"
+    - "事実3: AC3=最高リスク(本番DB recalculate-sync)。事前スナップショット+全FoF両列差異0件+IEEE754 1e-12のみ"
+    - "事実4: 削除禁止4対象(password_rotation本体/p_bar_backtest/p_average/timing-history)+L500/L513注入"
+  causal_chain: "本番DB使用0件実測→EP/ブロック/Kalman削除→数値一致検証(許容誤差ゼロ)→検証手順テンプレート化(正の複利: WP-3以降の安全網)"
+  brainwash_check: "AC4件+timeout240分=scope適正(前例cmd_1443で80分)。L500/L513/L690等7教訓注入で最高リスク区間をカバー。100億年: 数値不変証明は恒久的信頼基盤"
+  ambiguity_points: none
+  origin: "[[殿指示リファクタ+WP-2ゲート解除]] -> [[cmd_3293 EP/ブロック/Kalman削除+数値一致検証]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T16:27:00"
+- cmd_id: cmd_karo_hotfix_ctx_dm_signal_ops_202606111626
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, north_star]
+  findings_summary: "karo_direct hotfix。context/dm-signal-ops.md鮮度ALERT解消。AC3件。1ファイル更新+gate確認。low-risk"
+  observations:
+    - "事実1: GA context freshness ALERTが実在(ops.md last_updated=2026-06-08)"
+    - "事実2: AC3件。最小scope。not_in_scope明示"
+  causal_chain: "DM-Signal main commit→ops.md未追従→鮮度ALERT→索引更新(正の複利: 起動時情報精度)"
+  brainwash_check: "AC3件=最小scope。100億年: context鮮度は判断品質の基盤"
+  ambiguity_points: none
+  origin: "[[GA context freshness ops.md]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T16:29:00"
+- cmd_id: cmd_karo_hotfix_ctx_dm_signal_ops_202606111626
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions]
+  findings_summary: "tobisaru ops.md鮮度更新。3 commit照合+delete_legacy参照更新。gate ALERT→OK"
+  observations:
+    - "事実1: files_modified 1件(context/dm-signal-ops.md)。gate修正前ALERT→修正後OK"
+    - "事実2: 3 commit照合(c47742d1/6e86b501/096dd038)。delete_legacy参照のみ更新"
+  causal_chain: "source commit更新→ops.md未追従→ALERT→照合+更新→OK(正の複利: 起動時情報精度)"
+  brainwash_check: "gate実行でALERT→OK確認。1ファイル変更=最小scope。100億年: context鮮度は判断品質の基盤"
+  ambiguity_points: none
+  origin: "[[ops.md鮮度ALERT報告]] -> [[3commit照合+更新]] -> [[LGTM]]"
+  timestamp: "2026-06-11T16:32:00"
+- cmd_id: cmd_3293
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: FAIL
+  gate_result: CLEAR
+  gate_prediction: WARN
+  changed_lines: 6201
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "kagemaru cmd_3293 WP-2 EP11+ブロック4+Kalman削除+本番FoFパリティ0。53FoF/8259行/171667行差分0。初回残参照検出→修正→id=150完了。FAIL=SG-PRE25 readonly参照"
+  observations:
+    - "事実1: 本番FoFパリティ: 53/53 FoF、monthly_returns 8259/8259、signals 171667/171667、差分0"
+    - "事実2: 初回再計算id=149でBlockType残参照→修正→id=150 completed(L500/L513)"
+    - "事実3: 保護対象4件(password_rotation/p_bar_backtest/p_average/timing-history)未変更"
+    - "事実4: pytest 1351/0fail。Jest 43suites/267pass。build PASS"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "+1960/-4241大半がKalman削除。本番DB差分0証明。初回失敗→修正→完了=実地検証。rollback可能(ブランチ上)"
+  step3_5_verified: true
+  fail_reasons:
+    - "SG-PRE25 ERROR: readonly参照(workorder/manifest/inquiry)がfiles_modified不在"
+  causal_chain: "EP/ブロック/Kalman使用0件→削除→初回残参照検出→修正→本番差分0証明→SG-PRE25 readonly→FAIL"
+  brainwash_check: "本番数値: 53FoF/8259行/171667行差分0(数値確認)。pytest1351/0fail。初回失敗→修正=正しい対処。100億年: 数値不変証明は恒久的信頼基盤"
+  ambiguity_points: none
+  origin: "[[cmd_3293報告]] -> [[WP-2削除+本番パリティ0]] -> [[FAIL(SG-PRE25 readonly)]]"
+  timestamp: "2026-06-11T18:42:00"
+- cmd_id: cmd_karo_hotfix_ninja_monitor_low_effort_respawn_202606111855
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "karo_direct hotfix。ninja_monitor respawn L962/L988がcli_launch_cmd迂回→medium fast化。修正2箇所+検証+安全再起動+一次確認"
+  observations:
+    - "事実1: 根因=L962/L988がcli_profile_get直結でcli_launch_cmd(model_name接尾辞→effort)を迂回"
+    - "事実2: AC4件。kill/pkill禁止。修正2箇所"
+    - "事実3: 殿裁定(忍者low非fast 2026-06-11 13:09)の実現"
+  causal_chain: "commit 60806d863でlaunch_args空化→デーモンrespawn経路のみmedium fast→cli_launch_cmd呼出しに置換→low fast復帰(正の複利: 殿裁定の環境埋込み)"
+  brainwash_check: "AC4件=最小scope。殿裁定実現。100億年: 設定→実態の一致は全セッションの基盤"
+  ambiguity_points: none
+  origin: "[[ninja_monitor respawn迂回]] -> [[cli_launch_cmd置換]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T18:58:00"
+- cmd_id: cmd_karo_hotfix_ninja_monitor_low_effort_respawn_202606111855
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, adversarial]
+  findings_summary: "hayate ninja_monitor respawn修正。L962/L983 cli_launch_cmd化。1ファイル27行。bash -n+Bats37+実測。low fast復元"
+  observations:
+    - "事実1: L962/L983でcli_launch_cmd呼出し確認(grep現物)"
+    - "事実2: files_modified 1件。+12/-15=27行。Bats 37件PASS"
+    - "事実3: kill/pkill不使用。script_update自己再起動で反映"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "cli_launch_cmd集約のみ。既存防御(respawn-pane -k/pane_start_command不使用)維持。1commit復旧可能"
+  step3_5_verified: true
+  causal_chain: "launch_args空化→respawnがmedium fast→cli_launch_cmd置換→low fast復元(殿裁定実現)"
+  brainwash_check: "grep -n cli_launch_cmdで2箇所確認(洗脳#2防止)。Bats 37数値。100億年: 設定→実態の一致は基盤"
+  ambiguity_points: none
+  origin: "[[ninja_monitor respawn報告]] -> [[cli_launch_cmd置換]] -> [[LGTM]]"
+  timestamp: "2026-06-11T19:05:00"
+- cmd_id: cmd_3294
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "首領裁定対応。マスク時FoF表示を'-'へ復元。directive6手順完全準拠。push可(本番復旧)。PI-021/PI-026準拠"
+  observations:
+    - "事実1: 首領裁定=WP-2のresolveDisplayText変更棄却。マスク時は'-'が正"
+    - "事実2: AC5件。git checkout復元+テスト修正+ゲート+push+教訓"
+    - "事実3: push可=本番表示裁定復旧の緊急性。cron窓回避明示"
+  causal_chain: "WP-2でFoF表示変更→首領裁定で棄却→本番仕様復元+テスト期待値修正→PI-021/PI-026準拠(正の複利: 裁定の環境埋込み)"
+  brainwash_check: "directive6手順完全準拠。AC5件=scope適正。100億年: 本番表示の正当性は恒久的"
+  ambiguity_points: none
+  origin: "[[首領裁定2026-06-11]] -> [[cmd_3294 FoF表示復元]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T19:28:00"
+- cmd_id: session_20260611_strong_new_game
+  review_type: self_study
+  verdict: null
+  confidence: null
+  finding_categories: [assumptions, adversarial, premortem, north_star, simulation, numbers]
+  findings_summary: "セッション振返り(強くてニューゲーム)。20件超レビュー(draft10+report10)。DM-Signalリファクタ5cmd全CLEAR。readonly_ref判定乖離5連続BLOCK→lesson_candidate+cmd起票提案。adversarial冷え分析永続化"
+  observations:
+    - "事実1: 本セッションレビュー: draft約10件APPROVE+report約10件(LGTM7+FAIL3→全家老waive→CLEAR)"
+    - "事実2: FAIL3件全てSG-PRE25 readonly参照パターン(cmd_3290/3291/3292/3293)。根因=cmd_complete_gateのreadonly_ref判定乖離"
+    - "事実3: adversarial冷え分析→docs/research永続化+掲示板。セキュリティ関連時adversarial明記ルール確認"
+    - "事実4: DM-Signalリファクタ5cmd(3289-3293)全CLEAR。本番FoFパリティ53/53差分0"
+    - "事実5: infra hotfix 5件(skill_ref/startup_escalation/lesson_useful/ga041/cdp_gate/ninja_monitor)全CLEAR"
+  operational_simulation: "次セッション: (1)readonly_ref修正cmdがCLEAR→5連続BLOCKパターン消失 (2)adversarial冷え=セキュリティ時明記で集計改善 (3)cmd_3294報告がレビュー待ちで到着する可能性"
+  causal_chain: "殿指示(強くてニューゲーム)→環境未埋込みの学び特定→(1)readonly_ref判定乖離=lesson_candidate+cmd起票提案で環境永続化 (2)adversarial冷え=docs/research永続化済み (3)self_study記録で次セッション自動ロード"
+  brainwash_check: "洗脳#6(出力=仕事)チェック: 掲示板投稿+lesson_candidate送信=出力。根本対処cmdが実装されて初めて行動完了。cmd起票提案は将軍への委任(家老経由不可=cmd起案権は将軍)で正当"
+  cs_checklist: [causal_chain, operational_simulation, brainwash_check]
+  ambiguity_points: none
+  origin: "[[殿指示_強くてニューゲーム]] -> [[readonly_ref乖離+adversarial冷え]] -> [[環境埋込み行動]]"
+  timestamp: "2026-06-11T19:45:00"
