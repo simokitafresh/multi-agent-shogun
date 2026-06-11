@@ -2554,3 +2554,50 @@
   ambiguity_points: none
   origin: "[[殿指示_強くてニューゲーム]] -> [[readonly_ref乖離+adversarial冷え]] -> [[環境埋込み行動]]"
   timestamp: "2026-06-11T19:45:00"
+- cmd_id: cmd_3294
+  review_type: report
+  gate_result: BLOCK
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: BLOCK
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。首領裁定FoF表示復元。git checkout復元diff 0行。テスト268件全PASS。GATE BLOCK=readonly_ref偽陽性(cmd_3295で根治)"
+  observations:
+    - "事実1: SG-PRE25 PASS(readonly_ref除外済み=directive)。commit hash 99d8c546/9c8555f3実在確認"
+    - "事実2: GATE BLOCK reason=command_files_modified_mismatch。missing=[]。directive必読参照を変更対象と誤判定→cmd_complete_gate readonly_ref判定乖離(cmd_3295で根治)"
+    - "事実3: changed_lines=374(≥200)→adversarial実施。git checkout復元(既知本番コード)+テスト期待値変更。rollback不能性なし"
+    - "事実4: files_modified 5件全てcommand指示と1対1対応。AC1-4全yes"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "changed_lines=374。復元=既知本番コード。競合なし(WP-2変更棄却済み)。rollback容易(git管理)"
+  causal_chain: "首領裁定→WP-2変更棄却→git checkout復元+テスト固定→PI-021/PI-026準拠(正の複利)。GATE BLOCK=readonly_ref偽陽性→cmd_3295で根治(LG014: 道具のバグ)"
+  brainwash_check: "洗脳#2防止: commit hash実在確認PRE3b PASS。changed_lines=374 adversarial実施。洗脳#1防止: GATE BLOCK既知だがレビュー省略せず4観点実施"
+  step3_5_verified: true
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_3294]] -> [[首領裁定FoF復元]] -> [[LGTM+GATE_FP_readonly_ref]]"
+  timestamp: "2026-06-11T19:55:00"
+- cmd_id: cmd_3295
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。readonly_ref判定乖離根治。verified_existing_dependencyを抽出段階に渡し偽陽性5連続解消。真陽性保全テストPASS。bats 13件実動作確認"
+  observations:
+    - "事実1: bats --filter 'command/files_modified coverage' 13/13 PASS(実動作確認)。真陽性fixture(portfolios.py)もBLOCK維持"
+    - "事実2: cmd_3289-3293アーカイブ現物回帰テスト(test 13)PASS。5連続偽陽性の根治確認"
+    - "事実3: 変更+132/-4行。フィルタ追加(除外側)のみ、既存機能削除なし。rollback容易"
+    - "事実4: 報告YAML内『存在せず/不存在』パス抽出でcmd_3292 todo.md対応も含む(discretion_fill妥当)"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "infra対象(cmd_complete_gate.sh)。フィルタ追加のみで既存機能削除なし。真陽性保全テストPASS。rollback容易。監視穴なし"
+  causal_chain: "cmd_3289-3293で5連続偽陽性→SG-PRE25とgate判定乖離→抽出段階にverified_deps渡し統一→偽陽性根治+真陽性保全(正の複利: 全future cmdのBLOCK偽陽性排除)"
+  brainwash_check: "洗脳#2防止: bats 13件を実行し実動作確認。binary_checks鵜呑みにせず。洗脳#1防止: infra対象のためadversarial実施。100億年: 検知チャネル統一=恒久的FP排除"
+  step3_5_verified: true
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_3289-3293偽陽性]] -> [[cmd_3295判定基準統一]] -> [[LGTM_readonly_ref根治]]"
+  timestamp: "2026-06-11T20:00:00"
