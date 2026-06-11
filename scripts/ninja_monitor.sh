@@ -958,15 +958,10 @@ safe_send_clear() {
     # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
     if [ "$(cli_type "$agent_name" 2>/dev/null || echo "claude")" = "codex" ]; then
         # pane_start_commandは二重クォート問題があるため使わない(hayate死亡事故2026-06-07)
-        local _launch_cmd _launch_args
-        _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
-        _launch_args=$(cli_profile_get "$agent_name" "launch_args" 2>/dev/null || echo "")
+        local _launch_cmd
+        _launch_cmd=$(cli_launch_cmd "$agent_name" 2>/dev/null || echo "")
         if [ -n "${_launch_cmd:-}" ]; then
             local _node_dir="${_launch_cmd%/bin/codex*}/bin"
-            # launch_argsがあればlaunch_cmdに結合(忍者=low+非fast等のper-role設定)
-            if [ -n "${_launch_args:-}" ]; then
-                _launch_cmd="${_launch_cmd} ${_launch_args}"
-            fi
             log "CODEX-RESPAWN: $agent_name respawn-pane (codex reset)"
             tmux respawn-pane -k -t "$pane" "export PATH=\"${_node_dir}:\$PATH\" && cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
                 log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed"
@@ -985,7 +980,7 @@ safe_send_clear() {
     # bypass permissionsはrespawn後もsettings.jsonのpermissions.allowが維持される(確認済み2026-06-07)。
     # gunshi D0 e2b5a4010で/clearに戻したのが根因。respawn-pane復帰(e9ae6839a)。
     local _launch_cmd
-    _launch_cmd=$(cli_profile_get "$agent_name" "launch_cmd")
+    _launch_cmd=$(cli_launch_cmd "$agent_name" 2>/dev/null || echo "")
     if [ -z "${_launch_cmd:-}" ]; then
         _launch_cmd="/home/simokitafresh/bin/claude --effort high"
     fi
