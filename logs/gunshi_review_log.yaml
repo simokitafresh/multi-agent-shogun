@@ -2797,3 +2797,75 @@
   hole_action: none
   origin: "[[cmd_3299 AC3 tobisaru]] -> [[SG-PRE25 readonly_ref FP]] -> [[FAIL]]"
   timestamp: "2026-06-11T20:50:00"
+- cmd_id: cmd_3300
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "readonly_ref偽陽性根治。deploy_task.sh自動注入(L5)+gate同一ソース照合の二層修正。FP4連続の根因対処。真陽性保全(AC3)"
+  observations:
+    - "事実1: 軍師掲示板blt_20260611_204742が起点。根因=忍者手動記録依存→記録漏れ→FP"
+    - "事実2: AC1源流注入(deploy_task.sh)でLevel5化。記録漏れの余地を構造排除"
+    - "事実3: AC2アーカイブ現物再判定(cmd_3297/3298/3299)で偽陽性0件証明"
+    - "事実4: grep readonly_ref=7箇所、必読パース=0件(q11実測)。修正対象が明確"
+  causal_chain: "cmd_3295修正不完全→忍者記録漏れでFP4連続→waive常態化→源流注入+同一ソース照合→FP構造根治(正の複利: 全cmdのwaive工数削減)"
+  brainwash_check: "洗脳#3防止: 家老waive依存を構造排除。100億年: 源流注入は忍者記録漏れという人的依存を永続的に排除"
+  ambiguity_points: none
+  origin: "[[軍師blt_20260611_204742]] -> [[cmd_3300 readonly_ref根治]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T21:07:00"
+- cmd_id: cmd_karo_hotfix_ga044_hook_failure_202606112110
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "GA-044 pre-push hook失敗調査hotfix。AC4件(調査→判定→防御→教訓)。target=batsテスト。修正不要なら理由報告で完結(AC3)。軽量scope"
+  observations:
+    - "事実1: AC設計=調査→二値判定→波及確認→防御層→教訓。自然な流れ"
+    - "事実2: AC3が実装/不要の二択を許容。過剰修正を防ぐ設計"
+  causal_chain: "GA-044 pre-push失敗→根因判定→防御層反映 or 不要判定→教訓記録(正の複利: hook品質向上)"
+  brainwash_check: "洗脳#4(緩い設計)チェック: AC4件は必要十分。調査hotfixに過剰ACなし"
+  ambiguity_points: none
+  origin: "[[GA-044 hook失敗]] -> [[cmd_karo_hotfix調査]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T21:09:00"
+- cmd_id: cmd_karo_hotfix_ga044_hook_failure_202606112110
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。二値判定=コード品質no/hook証跡yes。artifact保存実装(.git/hooks/pre-push)。git管理外のみ→commitなし正当。hook_failures 247件分析"
+  observations:
+    - "事実1: 二値判定=コード品質問題no。test_ninja_monitor_stall.bats 32/32 PASS→コード起因ではない"
+    - "事実2: hook証跡問題yes。stderr先頭200字のみで失敗テスト名確定不能→artifact保存で根治"
+    - "事実3: files_modified=.git/hooks/pre-push(git管理外)。tracked実装との乖離をknowledge_candidate記録"
+    - "事実4: 波及247件中pre-push 170件。2026-06-01以降8件。影響agentはkaro39件が最多"
+  causal_chain: "GA-044 pre-push exit 1→full artifact不在で根因不明→artifact保存実装→次回hook失敗時に根因特定可能(正の複利)"
+  brainwash_check: "洗脳#2防止: git管理外変更のcommitなし判定を報告内容と突合。tracked .githooksとの乖離も把握"
+  step3_5_verified: true
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[GA-044]] -> [[hook artifact保存]] -> [[LGTM]]"
+  timestamp: "2026-06-11T21:16:00"
+- cmd_id: cmd_3300
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。readonly_ref偽陽性根治。deploy_task.sh源流注入+gate同一ソース照合。bats 16/16実動作確認。真陽性保全+アーカイブ回帰PASS"
+  observations:
+    - "事実1: bats command/files_modified coverage 16/16 PASS(実動作確認)。新規test 12/14/16含む"
+    - "事実2: test 12=task readonly_ref除外。test 14=真陽性保全。test 16=cmd_3297-3299アーカイブ現物回帰"
+    - "事実3: commit d808770fc。files_modified 4件(deploy_task.sh/cmd_complete_gate.sh/bats×2)"
+    - "事実4: 検知本体は変更せず除外ソースを追加。設計意図維持"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "infra対象(cmd_complete_gate.sh+deploy_task.sh)。除外ソース追加のみ。真陽性保全テストPASS。rollback容易"
+  causal_chain: "cmd_3295修正不完全→忍者記録漏れでFP4連続→源流注入(L5)で記録漏れ排除+同一ソース照合→FP構造根治(正の複利)"
+  brainwash_check: "洗脳#2防止: bats 16件を実行し実動作確認。洗脳#1防止: infra対象のためadversarial実施"
+  step3_5_verified: true
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_3295修正不完全]] -> [[cmd_3300源流注入根治]] -> [[LGTM]]"
+  timestamp: "2026-06-11T21:19:00"

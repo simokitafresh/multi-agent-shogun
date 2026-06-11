@@ -4260,6 +4260,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: REFLUX WARNのランブック対応は新規ランブック作成ではなく既存contextの該当セクションへの索引行追加が適切
   origin: '[[cmd_1188]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L435
   title: run_077_*.pyのOUT_DIRはuniverse非連動でハードコード
   summary: run_077_nukimi.pyのOUT_DIRはoutputs/grid_search/にハードコード。--universe指定でもサブディレクトリ分離され
@@ -4390,6 +4393,9 @@ lessons:
   - outputs/analysis/cmd_1115_parity_result.csv
   - scripts/analysis/grid_search/grid_search_metrics_v2.py
   origin: '[[cmd_1115]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L427
   title: resample(ME).last()はカレンダー月末を返す。実取引日との差異がシグナル帰属ズレを引き起こす
   summary: pandas resample(ME).last()のインデックスはカレンダー月末。実最終取引日と乖離する月でシグナルが前月に誤帰属する。Phase1完了後にカ
@@ -4869,6 +4875,9 @@ lessons:
   - docs/research/core-local-analysis.md
   - docs/research/ops-procedures.md
   origin: '[[cmd_1035]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L390
   title: yotsume batch sim(3D mask)はregression。4視点union+forward-fill構造にはboolean mask不適合
   summary: yotsumeは4視点和集合+forward-fill構造。boolean mask化の恩恵を受けない。元々0.31ms/pat(PPE6)で十分高速(248K
@@ -6291,6 +6300,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: レジーム検出追加時は(1)break検出と(2)break後の悪化方向判定を分離
   origin: '[[cmd_860]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L284
   title: 統計指標UIは信号機パターン(3色+灰)+Progressive Disclosure 3層。7±2超えは判断麻痺
   summary: 全手法を緑(健全)/黄(注意)/赤(要対応)+灰(データ不足)の4状態に正規化。既存deterioration-colors.tsパターンと互換。Layer1=
@@ -6749,6 +6761,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: prefetch最適化は『PF数』だけでなく『現在routeに必要か』まで条件化すべき
   origin: '[[cmd_783]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L247
   title: 全PFプリフェッチは 1 PF あたり約10 APIを自動発火し request storm 化する
   summary: '`frontend/hooks/usePrefetch.ts` は選択PFで11本、他PFで10本のAPIを自動発火する。PF数20/50/100で概算203/'
@@ -7255,6 +7270,9 @@ lessons:
   when: タスク配備やデプロイ手順を変更・実行する時
   how: cmd_668でusePrefetch.tsへyears=0を追加しても、本番PF切替9.3-9.7秒、ページ遷移9.3-9.5秒
   origin: '[[cmd_670]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L206
   title: prefetchキャッシュキー不一致はprefetch戦略の致命的バグ
   summary: 'prefetchと消費側でAPIパラメータ(years等)が一致しないとキャッシュが永久ミスする。 usePrefetch.ts: years=3,20

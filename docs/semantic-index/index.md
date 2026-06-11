@@ -664,6 +664,7 @@ codd:
 | lesson | `L780` CDP preflightの実portと要求portがズレる時はcleanup権限を絞る |
 | lesson | `L729` 削除cmdのtodo更新先は実在パスを配備時に検証する |
 | lesson | `L784` 行動→結果検証の未同期は探索ソース不足と実データ未到着を二値分解せよ |
+| lesson | `L785` active git hookはtracked templateと別物なら実hook証跡を直接確認する |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -740,6 +741,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_cdp_gate_stability_202606111540]]` (L780) |
 | causal_chain | `[[cmd_training_backlinks_kagemaru_20260602]]` (L729) |
 | causal_chain | `[[cmd_karo_hotfix_gunshi_gate_sync_202606111958]]` (L784) |
+| causal_chain | `[[cmd_karo_hotfix_ga044_hook_failure_202606112110]]` (L785) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -1364,8 +1366,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T20:27:10+09:00 明朝のcron確認を待つのは先過ぎるな。 |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
-| causal_chain | `[[006.md検証]]` (L004) |
-| causal_chain | `[[006.md検証]]` (L005) |
+| causal_chain | `[[cmd_092]]` (L004) |
+| causal_chain | `[[cmd_134]]` (L005) |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -1505,9 +1507,9 @@ codd:
 | lesson | `L001` gws CLI token_cacheをAES-256-GCM復号でPython直接API化できる |
 | lesson | `L002` 年次/決算期経費の生成月は設計書に明記せよ |
 | lesson | `L003` NFKC正規化は全角括弧を半角化し独立濁点を空白+結合文字に分解する |
-| causal_chain | `[[cmd_1055]]` (L001) |
-| causal_chain | `[[cmd_1055]]` (L002) |
-| causal_chain | `[[006.md検証]]` (L003) |
+| causal_chain | `[[cmd_125]]` (L001) |
+| causal_chain | `[[cmd_125]]` (L002) |
+| causal_chain | `[[cmd_125]]` (L003) |
 
 ## gs_ninpo_research — GS忍法研究
 
@@ -1955,6 +1957,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T12:29:52+09:00 bnme2cf6g toolu_011nxVuDdLVSLW4ug8adpD3G /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/5d38d17a-6e89-47ff-a156-1c4896 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T12:41:08+09:00 bnaov9som toolu_01QcVfhrbcvMRG2rbTwXQ1MN /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/5d38d17a-6e89-47ff-a156-1c4896 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T13:02:24+09:00 軍師に編成変更の権利がないという設定が間違っている。軍師は俺の指示のもとに編成を変更する権利がある。元のルールはどこにあるんだ？なにを参考にした？ |
+| cmd | `cmd_3300` (`scripts/cmd_complete_gate.sh`, `scripts/deploy_task.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -2158,6 +2161,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T16:39:14+09:00 bapocuy20 toolu_01DA6JHFJXUAiP1qcyPgMTiY /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/0a66f9b4-82bd-49c7-8ea5-2928f0 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:16:00+09:00 clinic-expense-tracker PJ開始: クリニック若友会の経費証票管理。二層設計(SQLite+Drive)。MF3086件+みずほ984件。CDPでMF自動取得実証。karasuyama3387@gmail.com。佐瀬 |
 | file | `docs/research/gunshi_idle_cdp_dmsignal_auth_20260505.md` — 軍師idle: CDP DM-Signal認証分析(2026-05-05) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-11T20:56:09+09:00 続けて |
 
 ## defense_hierarchy — 防御階層原則
 

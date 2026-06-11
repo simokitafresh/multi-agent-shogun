@@ -1,8 +1,40 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-11T20:04:05'
+last_synced: '2026-06-11T21:17:53'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 779
+lesson_count: 781
 lessons:
+- id: L786
+  title: 検知チャネル間の除外基準はtask YAMLなど同一ソースへ源流注入する
+  summary: cmd_complete_gateとSG-PRE25のように同じ事象を判定する複数チャネルで、片側だけが報告YAMLの任意記録に依存すると記録漏れで偽陽性が再発
+  tags:
+  - infra
+  - deploy-task
+  - deploy
+  - gate
+  - bash
+  source_cmd: cmd_3300
+  when: 未設定
+  how: 未設定
+  target_files:
+  - scripts/deploy_task.sh
+  - scripts/cmd_complete_gate.sh
+  - tests/unit/test_cmd_complete_gate.bats
+  - tests/unit/test_deploy_task_yaml_injection.bats
+  origin: '[[cmd_3300]]'
+- id: L785
+  title: active git hookはtracked templateと別物なら実hook証跡を直接確認する
+  summary: GA-044では.githooks/pre-pushは300秒full suiteだが、実際のcore.hooksPathは.git/hooksで60秒test
+  tags:
+  - infra
+  - frontend
+  - testing
+  - recon
+  source_cmd: cmd_karo_hotfix_ga044_hook_failure_202606112110
+  when: 未設定
+  how: 未設定
+  target_files:
+  - .git/hooks/pre-push
+  origin: '[[cmd_karo_hotfix_ga044_hook_failure_202606112110]]'
 - id: L784
   title: 行動→結果検証の未同期は探索ソース不足と実データ未到着を二値分解せよ
   summary: startup gateの未確認件数は、同期スクリプトが探せないのか、そもそもgate_result実データが存在しないのかを分けて計測する。今回、cmd_32
@@ -713,7 +745,7 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-11'
   deprecated: true
-  deprecated_at: '2026-06-11T20:04:15+09:00'
+  deprecated_at: '2026-06-11T21:20:04+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -4944,6 +4976,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-02'
   origin: '[[cmd_training_L4_R22_test_hayate]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L435
   title: bash のコマンド置換は末尾改行を落とすため YAML レコード連結で明示改行が必要
   summary: 関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox
@@ -5052,6 +5087,9 @@ lessons:
   target_files:
   - scripts/lib/yaml_safe_write.py
   origin: '[[cmd_training_L4_R7]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L427
   title: 既存の状態マッピングを活用せよ(N+1クエリ排除)
   summary: discover_panes()がPANE_TARGETS連想配列を構築済みなのにwrite_karo_snapshot()がループ内でtmux
@@ -5486,6 +5524,9 @@ lessons:
   target_files:
   - review_gate.sh
   origin: '[[cmd_cycle_L4_064]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L390
   title: embedded PythonのベアexceptはKeyboardInterrupt/SystemExitを隠す
   summary: bash埋込みPythonのtmpファイルcleanupでexcept:を使うとKeyboardInterrupt時にも不要なunlink処理が走る。excep
@@ -6006,7 +6047,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-11T20:04:15+09:00'
+  deprecated_at: '2026-06-11T21:20:04+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -6767,6 +6808,9 @@ lessons:
   - lesson_update_score.sh
   - sync_lessons.sh
   origin: '[[cmd_1280]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L284
   title: Vercel化後の消費者スクリプトarchive参照切替が必要
   summary: lessons.yamlが索引化されたため、deploy_task.sh/lesson_update_score.sh/lesson_deprecate.sh等
@@ -7252,6 +7296,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: '2026-03-19'
   origin: '[[cmd_1105]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L247
   title: found:falseは教訓を探さなかった証拠
   summary: 全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す
@@ -7764,6 +7811,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: 空判定にはこのリテラル値のcase文マッチが必要
   origin: '[[cmd_795]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L206
   title: CC BY 4.0はOSS利用で最も柔軟なライセンスの一つ
   summary: NDL OCR-LiteのCC BY 4.0は帰属表示のみで商用利用・改変・再配布すべて可能。ShareAlike制約なし。依存ライブラリも全て商用利用可(MI
@@ -9002,7 +9052,7 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-11'
   deprecated: true
-  deprecated_at: '2026-06-11T20:04:15+09:00'
+  deprecated_at: '2026-06-11T21:20:04+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)

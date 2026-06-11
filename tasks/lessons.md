@@ -7917,3 +7917,25 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - startup gateの未確認件数は、同期スクリプトが探せないのか、そもそもgate_result実データが存在しないのかを分けて計測する。今回、cmd_3294は探索前skipが原因、残5件は実データ未到着だった。
+
+### L785: active git hookはtracked templateと別物なら実hook証跡を直接確認する
+- **日付**: 2026-06-11
+- **出典**: cmd_karo_hotfix_ga044_hook_failure_202606112110
+- **記録者**: kagemaru
+- **tags**: [infra,frontend,testing,recon]
+- **target_files**: [.git/hooks/pre-push]
+- **origin**: [[cmd_karo_hotfix_ga044_hook_failure_202606112110]]
+- **when**: 未設定
+- **how**: 未設定
+- GA-044では.githooks/pre-pushは300秒full suiteだが、実際のcore.hooksPathは.git/hooksで60秒test_select運用だった。hook_failures.yamlはstderr先頭200字しか残さず、失敗テスト名やselected_testsを確定できなかった。次回hook_failure調査ではgit config --get core.hooksPathとactive hook本文を先に確認し、失敗記録にはchanged_files/selected_tests/full bats output artifactを必ず残す。origin: [[GA-044]] -> [[active_hook_template_drift]] -> [[hook_failure_root_cause_unobservable]]
+
+### L786: 検知チャネル間の除外基準はtask YAMLなど同一ソースへ源流注入する
+- **日付**: 2026-06-11
+- **出典**: cmd_3300
+- **記録者**: hayate
+- **tags**: [infra,deploy-task,deploy,gate,bash]
+- **target_files**: [scripts/deploy_task.sh,scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats,tests/unit/test_deploy_task_yaml_injection.bats]
+- **origin**: [[cmd_3300]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_complete_gateとSG-PRE25のように同じ事象を判定する複数チャネルで、片側だけが報告YAMLの任意記録に依存すると記録漏れで偽陽性が再発する。deploy_task.shで正しい参照分類をtask YAMLへ注入し、各gateが同じreadonly_refを読む構造にする。origin: [[cmd_3295修正の不完全]] -> [[verified_existing_dependency記録漏れ]] -> [[readonly_ref源流注入]]
