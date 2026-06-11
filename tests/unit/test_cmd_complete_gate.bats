@@ -367,6 +367,96 @@ EOF
     [[ "$output" == *"ALL_CLEAR=true"* ]]
 }
 
+@test "command/files_modified coverage excludes verified_existing_dependency before target_path selection" {
+    _write_command_coverage_fixture \
+        "refactor-workorder-20260611.md を必読参照し、backend/app/api/main.py を修正" \
+        "  - path: backend/app/api/main.py
+    change: modified" \
+        "refactor-workorder-20260611.md"
+
+    cat >> "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
+verified_existing_dependency:
+  - path: /mnt/c/Python_app/DM-signal/.agent/task-force/refactor-workorder-20260611.md
+    reason: "必読の権威文書。参照のみで変更対象ではない"
+EOF
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (command欄ファイル参照 全1件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" != *"missing: refactor-workorder-20260611.md"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
+@test "command/files_modified coverage preserves true positive after verified_existing_dependency filtering" {
+    _write_command_coverage_fixture \
+        "refactor-workorder-20260611.md を必読参照し、backend/app/api/main.py と backend/app/api/portfolios.py を修正" \
+        "  - path: backend/app/api/main.py
+    change: modified" \
+        "refactor-workorder-20260611.md"
+
+    cat >> "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
+verified_existing_dependency:
+  - path: /mnt/c/Python_app/DM-signal/.agent/task-force/refactor-workorder-20260611.md
+    reason: "必読の権威文書。参照のみで変更対象ではない"
+EOF
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"missing: backend/app/api/portfolios.py"* ]]
+    [[ "$output" != *"missing: refactor-workorder-20260611.md"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+    [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
+}
+
+@test "command/files_modified coverage accepts archived cmd_3289 through cmd_3293 readonly refs" {
+    local cmd archive_cmd report_src report_name
+    for cmd in cmd_3289 cmd_3290 cmd_3291 cmd_3292 cmd_3293; do
+        case "$cmd" in
+            cmd_3289)
+                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3289_completed_20260611.yaml"
+                report_src="$PROJECT_ROOT/queue/archive/reports/kagemaru_report_cmd_3289_20260611.yaml"
+                ;;
+            cmd_3290)
+                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3290_done_20260611.yaml"
+                report_src="$PROJECT_ROOT/queue/archive/reports/kagemaru_report_cmd_3290.yaml.bak"
+                ;;
+            cmd_3291)
+                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3291_completed_20260611.yaml"
+                report_src="$PROJECT_ROOT/queue/archive/reports/kagemaru_report_cmd_3291_20260611.yaml"
+                ;;
+            cmd_3292)
+                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3292_completed_20260611.yaml"
+                report_src="$PROJECT_ROOT/queue/archive/reports/kagemaru_report_cmd_3292_20260611.yaml"
+                ;;
+            cmd_3293)
+                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3293_completed_20260611.yaml"
+                report_src="$PROJECT_ROOT/queue/archive/reports/kagemaru_report_cmd_3293_20260611.yaml"
+                ;;
+        esac
+
+        report_name="kagemaru_report_${cmd}.yaml"
+        cp "$archive_cmd" "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+        cp "$report_src" "$TEST_PROJECT/queue/reports/$report_name"
+        cat > "$TEST_PROJECT/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  parent_cmd: $cmd
+  report_filename: $report_name
+EOF
+
+        export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+        export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/kagemaru.yaml")
+        export CMD_ID="$cmd"
+        export ALL_CLEAR=true
+        BLOCK_REASONS=()
+
+        run _run_command_files_modified_coverage_with_state
+        [ "$status" -eq 0 ]
+        [[ "$output" != *"COMMAND_SCOPE_MISSING"* ]]
+        [[ "$output" != *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
+    done
+}
+
 @test "preflight auto-registers found:true lesson candidate when lesson.done is missing" {
     rm -f "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/lesson.done"
     export ALL_GATES=()

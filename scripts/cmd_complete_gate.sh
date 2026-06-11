@@ -4167,8 +4167,9 @@ collect_report_modified_files() {
 
 collect_cmd_command_file_refs() {
     local cmd_id="$1"
+    local verified_deps="${2:-}"
 
-    CMD_ID_ENV="$cmd_id" YAML_FILE_ENV="$YAML_FILE" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY' 2>/dev/null || true
+    CMD_ID_ENV="$cmd_id" YAML_FILE_ENV="$YAML_FILE" SCRIPT_DIR_ENV="$SCRIPT_DIR" VERIFIED_EXISTING_DEPS_ENV="$verified_deps" python3 - <<'PY' 2>/dev/null || true
 import glob
 import os
 import re
@@ -4177,6 +4178,12 @@ import yaml
 cmd_id = os.environ.get("CMD_ID_ENV", "")
 yaml_file = os.environ.get("YAML_FILE_ENV", "")
 script_dir = os.environ.get("SCRIPT_DIR_ENV", "")
+verified_deps_raw = os.environ.get("VERIFIED_EXISTING_DEPS_ENV", "")
+verified_deps = [
+    line.strip().strip("`'\"")
+    for line in verified_deps_raw.splitlines()
+    if line.strip()
+]
 
 try:
     with open(yaml_file, encoding="utf-8") as f:
@@ -4242,6 +4249,25 @@ def ref_matches_target(ref, target):
         return True
     return os.path.basename(ref) == os.path.basename(target)
 
+def ref_matches_verified_dependency(ref):
+    ref = ref.strip().strip("./")
+    if not ref:
+        return False
+    ref_base = os.path.basename(ref)
+    for dep in verified_deps:
+        dep = dep.strip().strip("./")
+        if not dep:
+            continue
+        dep_base = os.path.basename(dep)
+        if (
+            ref == dep
+            or ref.endswith("/" + dep)
+            or dep.endswith("/" + ref)
+            or ref_base == dep_base
+        ):
+            return True
+    return False
+
 def token_has_target_file(token):
     if not script_dir or not target_paths:
         return False
@@ -4267,6 +4293,8 @@ for idx, match in enumerate(matches):
     if not ref or ref in seen:
         continue
     seen.add(ref)
+    if ref_matches_verified_dependency(ref):
+        continue
     sentence_end_candidates = [
         pos for pos in (
             command.find("\n", match.end()),
@@ -4297,6 +4325,8 @@ for match in token_pattern.finditer(command):
     ref = match.group(1).strip()
     if not ref or ref in seen:
         continue
+    if ref_matches_verified_dependency(ref):
+        continue
     if not token_has_target_file(ref):
         continue
     seen.add(ref)
@@ -4325,7 +4355,8 @@ PY
 }
 
 collect_report_verified_existing_deps() {
-    # 報告YAMLのverified_existing_dependency欄からLG037「実行のみ/既存依存」ファイルを収集
+    # 報告YAMLのverified_existing_dependency欄からLG037「実行のみ/既存依存」ファイルを収集。
+    # 加えて、指示ファイルが実在しないため代替記録した旨が報告されているパスは変更漏れ扱いしない。
     local task_file ninja_name report_file
     if ! declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
         return 0
@@ -4350,6 +4381,13 @@ collect_report_verified_existing_deps() {
                 gsub(/^["'"'"']+|["'"'"']+$/, "", v)
                 if (v != "" && v !~ /^(path|file|reason|category):/) print v
             }
+            /(存在せず|不存在|実在せず|直接更新不可)/ {
+                line=$0
+                while (match(line, /([A-Za-z0-9_.-]+\/)*[A-Za-z0-9_.-]+\.(md|yaml|yml|json|toml|sh|py|js|ts|tsx|jsx|css|html|sql|csv)/)) {
+                    print substr(line, RSTART, RLENGTH)
+                    line=substr(line, RSTART + RLENGTH)
+                }
+            }
         ' "$report_file" 2>/dev/null || true
     done | awk 'NF && !seen[$0]++'
 }
@@ -4358,14 +4396,14 @@ check_command_files_modified_coverage() {
     level_heading "[L3]" "Command/files_modified coverage check:"
 
     local command_refs report_paths verified_deps
-    command_refs="$(collect_cmd_command_file_refs "$CMD_ID" || true)"
+    verified_deps="$(collect_report_verified_existing_deps || true)"
+    command_refs="$(collect_cmd_command_file_refs "$CMD_ID" "$verified_deps" || true)"
     if [ -z "$command_refs" ]; then
         echo "  SKIP (command欄に拡張子付きファイル参照なし)"
         return 0
     fi
 
     # LG037: verified_existing_dependency (実行のみ/既存依存) を照合対象から除外
-    verified_deps="$(collect_report_verified_existing_deps || true)"
     if [ -n "$verified_deps" ]; then
         local filtered_refs="" ref_line dep_line dep_matched ref_base dep_base
         while IFS= read -r ref_line; do
