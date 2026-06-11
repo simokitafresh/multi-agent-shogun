@@ -4486,10 +4486,20 @@ run_cdp_production_check() {
         return 1
     fi
 
-    local cdp_timeout="${CDP_MEASURE_TIMEOUT:-1800}"
+    local cdp_timeout="${CDP_MEASURE_TIMEOUT:-900}"
+    local cdp_pages_raw="${CDP_MEASURE_PAGES:-home dashboard summary}"
+    local cdp_cmd=(bash "$cdp_script" "$CMD_ID")
+    if [ "$cdp_pages_raw" != "all" ]; then
+        local cdp_pages=()
+        read -r -a cdp_pages <<< "$cdp_pages_raw"
+        if [ "${#cdp_pages[@]}" -gt 0 ]; then
+            cdp_cmd+=(--pages "${cdp_pages[@]}")
+        fi
+    fi
     echo "  REQUIRED: dm-signal frontend change detected"
     echo "  timeout: ${cdp_timeout}s"
-    if timeout "$cdp_timeout" bash "$cdp_script" "$CMD_ID"; then
+    echo "  pages: ${cdp_pages_raw}"
+    if timeout "$cdp_timeout" "${cdp_cmd[@]}"; then
         echo "  CDP production check: OK"
         return 0
     fi

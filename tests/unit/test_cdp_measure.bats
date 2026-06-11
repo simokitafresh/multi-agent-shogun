@@ -28,3 +28,17 @@ setup() {
     grep -q 'trap _cdp_cleanup EXIT' "$SCRIPT"
     grep -q 'cleanup_chrome' "$SCRIPT"
 }
+
+@test "cdp_measure: serializes CDP runs by port and avoids cleanup without lock" {
+    grep -q 'CDP_LOCK_ACQUIRED=0' "$SCRIPT"
+    grep -q 'cdp_measure_port_${CDP_PORT}.lock' "$SCRIPT"
+    grep -q 'flock -n 9' "$SCRIPT"
+    grep -q 'CDP_LOCK_ACQUIRED=1' "$SCRIPT"
+    grep -q 'CDP_LOCK_ACQUIRED:-0' "$SCRIPT"
+}
+
+@test "cdp_measure: passes actual CDP port to perf_measure temp config" {
+    grep -q 'CDP_REQUESTED_PORT="$CDP_PORT"' "$SCRIPT"
+    grep -q 'requested port ${CDP_REQUESTED_PORT} differs from actual port ${CDP_PORT}' "$SCRIPT"
+    grep -q 'port: ${CDP_PORT}' "$SCRIPT"
+}

@@ -26,9 +26,21 @@ shift
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 AUTO_OPS_ROOT="/mnt/c/Python_app/auto-ops"
+TEMP_CONFIG=""
+CDP_LOCK_ACQUIRED=0
 
 # 終了時にCDPブラウザをcleanup（成功/失敗/中断どれでも）
 _cdp_cleanup() {
+    if [[ -n "${TEMP_CONFIG:-}" && -f "$TEMP_CONFIG" ]]; then
+        rm -f "$TEMP_CONFIG"
+    fi
+    if [[ "${CDP_LOCK_ACQUIRED:-0}" != "1" ]]; then
+        return 0
+    fi
+    if [[ -n "${CDP_REQUESTED_PORT:-}" && "${CDP_PORT:-}" != "$CDP_REQUESTED_PORT" ]]; then
+        echo "  SKIP: cleanup skipped because requested port ${CDP_REQUESTED_PORT} differs from actual port ${CDP_PORT}"
+        return 0
+    fi
     PYTHONPATH="${AUTO_OPS_ROOT}:${PYTHONPATH:-}" python3 -c "
 from cdp import cdp_helper
 cdp_helper.cleanup_chrome(${CDP_PORT:-9222})
@@ -81,6 +93,17 @@ echo "OK (HTTP 200)"
 # 1c. CDP認証 — cdp_helper.ui_login（CDP哲学の共通基盤）
 #     人間と同じ: ブラウザ起動→ページ開く→フォーム入力→ボタン押す
 CDP_PORT="${CDP_PORT:-9222}"
+CDP_REQUESTED_PORT="$CDP_PORT"
+LOCK_DIR="${SCRIPT_DIR}/queue/locks"
+mkdir -p "$LOCK_DIR"
+LOCK_FILE="${LOCK_DIR}/cdp_measure_port_${CDP_PORT}.lock"
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+    echo "FAIL: CDP measurement already running for cmd=${CMD_ID} port=${CDP_PORT}" >&2
+    echo "  → 既存計測の完了を待つか、別cmd_idで最小再現を実行せよ" >&2
+    exit 75
+fi
+CDP_LOCK_ACQUIRED=1
 ENV_FILE="/mnt/c/Python_app/DM-signal/backend/.env"
 ADMIN_URL="${FRONTEND_URL}/admin"
 echo -n "  CDP Admin Login (UI): "
@@ -159,6 +182,8 @@ TEMP_CONFIG=$(mktemp "/tmp/perf_config_${CMD_ID}_XXXXXX.yaml")
 sed "s|output_dir:.*|output_dir: ${OUTPUT_DIR}|" "$PERF_CONFIG" > "$TEMP_CONFIG"
 # screenshot_dirも分離
 sed -i "s|screenshot_dir:.*|screenshot_dir: ${OUTPUT_DIR}/screenshots|" "$TEMP_CONFIG"
+# preflightで実際に採用したCDPポートを計測本体にも渡す
+sed -i "s|^[[:space:]]*port:.*|  port: ${CDP_PORT}|" "$TEMP_CONFIG"
 
 MEASURE_CMD=(
     python3 "$PERF_MEASURE"
@@ -177,11 +202,11 @@ PYTHONPATH="${AUTO_OPS_ROOT}:${PYTHONPATH:-}" "${MEASURE_CMD[@]}" || measure_rc=
 echo "  ─────────────────────────────────────────"
 if [[ "$measure_rc" -ne 0 ]]; then
     echo "  FAIL: 計測失敗 (exit ${measure_rc})" >&2
-    rm -f "$TEMP_CONFIG"
     exit 1
 fi
 echo "  OK: 計測完了"
 rm -f "$TEMP_CONFIG"
+TEMP_CONFIG=""
 
 # 最新の結果JSONを特定
 LATEST_JSON=$(find "${OUTPUT_DIR}" -maxdepth 1 -name 'perf_*.json' -printf '%T@\t%p\n' 2>/dev/null | sort -rn | head -1 | cut -f2-)

@@ -1000,7 +1000,7 @@ EOF
     mkdir -p "$TEST_PROJECT/scripts/cdp"
     cat > "$TEST_PROJECT/scripts/cdp/cdp_measure.sh" <<'EOF'
 #!/usr/bin/env bash
-echo "CDP_MEASURE:$1"
+echo "CDP_MEASURE:$*"
 exit 0
 EOF
     chmod +x "$TEST_PROJECT/scripts/cdp/cdp_measure.sh"
@@ -1008,7 +1008,9 @@ EOF
     run run_cdp_production_check
     [ "$status" -eq 0 ]
     [[ "$output" == *"REQUIRED: dm-signal frontend change detected"* ]]
-    [[ "$output" == *"CDP_MEASURE:$TEST_CMD_ID"* ]]
+    [[ "$output" == *"timeout: 900s"* ]]
+    [[ "$output" == *"pages: home dashboard summary"* ]]
+    [[ "$output" == *"CDP_MEASURE:$TEST_CMD_ID --pages home dashboard summary"* ]]
     [[ "$output" == *"CDP production check: OK"* ]]
 }
 
