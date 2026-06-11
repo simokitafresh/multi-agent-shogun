@@ -551,8 +551,8 @@ function flush_entry() {
 /^[[:space:]]*review_type:/ {
     s=$0; sub(/^[[:space:]]*review_type:[[:space:]]*/, "", s); review_type=trim(s); next
 }
-/^[[:space:]]*verdict:/ {
-    s=$0; sub(/^[[:space:]]*verdict:[[:space:]]*/, "", s); verdict=trim(s); next
+/^  verdict:/ {
+    s=$0; sub(/^  verdict:[[:space:]]*/, "", s); verdict=trim(s); next
 }
 END {
     flush_entry()
@@ -561,7 +561,7 @@ END {
     for (i = start; i <= n; i++) {
         if (i < 1) continue
         total++
-        ok = (v[i] ~ /^(APPROVE|LGTM|PASS|CLEAR)$/)
+        ok = (v[i] ~ /^(APPROVE|LGTM|PASS|CLEAR|VERIFIED|VERIFIED_FACTS|CONDITIONAL_PASS)$/)
         if (!ok) warn++
     }
     if (total == 0) {
