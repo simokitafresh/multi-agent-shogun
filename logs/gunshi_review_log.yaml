@@ -2521,6 +2521,7 @@
   timestamp: "2026-06-11T19:05:00"
 - cmd_id: cmd_3294
   review_type: draft
+  gate_result: BLOCK
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]

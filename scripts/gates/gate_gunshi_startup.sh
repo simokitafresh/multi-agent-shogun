@@ -559,42 +559,10 @@ if [ -f "$REVIEW_LOG" ]; then
     }
     ' "$REVIEW_LOG" 2>/dev/null || echo "0")
     if [ "$ungated" -gt 0 ]; then
-        # 自動sync実行（gate_result: nullをinbox/archiveから自動更新）
+        # 自動sync実行（gate_result: null/不在をinbox/archiveから自動更新）
         GATE_SYNC="$SCRIPT_DIR/scripts/gunshi_gate_sync.sh"
         if [ -f "$GATE_SYNC" ]; then
-            sync_needed=$(python3 - "$REVIEW_LOG" "$SCRIPT_DIR/queue/inbox/gunshi.yaml" <<'PY' 2>/dev/null || echo yes
-import re
-import sys
-
-review_path, inbox_path = sys.argv[1:3]
-pending = []
-current = None
-with open(review_path, encoding="utf-8") as fh:
-    for raw in fh:
-        line = raw.rstrip("\n")
-        if re.match(r"^- (cmd_id|id):", line):
-            current = re.sub(r"^- (cmd_id|id):\s*", "", line).strip().strip("\"'")
-        elif current and re.match(r"^\s{2}gate_result:\s*(null|pending|)$", line):
-            pending.append(current)
-            current = None
-
-if not pending:
-    print("no")
-    raise SystemExit
-
-try:
-    inbox_text = open(inbox_path, encoding="utf-8").read()
-except FileNotFoundError:
-    inbox_text = ""
-for cmd_id in pending:
-    if re.search(rf"\b{re.escape(cmd_id)}\s+gate_result:\s+(CLEAR|BLOCK)", inbox_text):
-        print("yes")
-        break
-else:
-    print("no")
-PY
-)
-            if [ "$sync_needed" = "yes" ]; then
+            if [ "$ungated" -gt 0 ]; then
             sync_out=$(bash "$GATE_SYNC" 2>&1) || true
             echo "  自動sync実行: $sync_out"
             else
@@ -739,7 +707,7 @@ if [ -f "$_rl_file" ]; then
     _rl_window_start=${_rl_window_start:-1}
     _bw_review=$(tail -n +"$_rl_window_start" "$_rl_file" | awk '
     BEGIN { approve_total=0; has_gr=0; no_gr=0; no_gr_cmds=""; has_bc=0; no_bc=0 }
-    /^- cmd_id:/ { flush(); in_entry=1; verdict=""; gate_result=0; bc=0; cmd_label="" }
+    /^- cmd_id:/ { flush(); in_entry=1; verdict=""; gate_result=0; bc=0; cmd_label=$3; gsub(/["'"'"']/, "", cmd_label) }
     in_entry && /^  cmd_id:/ { sub(/.*cmd_id: */, ""); gsub(/["'"'"']/, ""); cmd_label=$0 }
     in_entry && /verdict: APPROVE/ { verdict="APPROVE" }
     in_entry && /verdict: LGTM/ { verdict="LGTM" }
