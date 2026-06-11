@@ -1298,6 +1298,49 @@ print(','.join(ids))
     [ "$status" -eq 0 ]
 }
 
+@test "deploy_task does not auto-deprecate zero-useful lessons by default" {
+    mkdir -p "$TEST_PROJECT/projects/infra"
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L_ZERO
+    title: deploy guard zero useful
+    summary: deploy guard zero useful
+    status: confirmed
+    tags: [deploy]
+    helpful_count: 100
+EOF
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level
+2026-06-11T00:00:00	cmd_a	sasuke	L_ZERO	feedback	NOT_USEFUL	no	infra	impl	None
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "deploy guard"
+  command: "deploy guard zero useful"
+  task_id: cmd_no_auto_deprecate
+  assigned_to: sasuke
+  task_type: impl
+  project: infra
+  target_path: scripts/deploy_task.sh
+  acceptance_criteria:
+    - AC1
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/projects/infra/lessons.yaml', encoding='utf-8') as f:
+    lessons = (yaml.safe_load(f) or {}).get('lessons') or []
+item = next(x for x in lessons if x.get('id') == 'L_ZERO')
+assert item.get('deprecated') is not True, item
+print('not_deprecated')
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "not_deprecated" ]
+}
+
 @test "deploy_task injects platform project lessons into non-platform tasks" {
     mkdir -p "$TEST_PROJECT/projects/infra" "$TEST_PROJECT/projects/dm-signal"
     if [ -L "$TEST_PROJECT/config" ]; then
