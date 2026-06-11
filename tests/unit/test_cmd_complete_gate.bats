@@ -46,6 +46,8 @@ setup_file() {
         printf '\n'
         sed -n '/^collect_report_verified_existing_deps()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^collect_task_readonly_refs()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^check_command_files_modified_coverage()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^cmd_requires_cdp_production_check()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -387,6 +389,26 @@ EOF
     [[ "$output" == *"ALL_CLEAR=true"* ]]
 }
 
+@test "command/files_modified coverage excludes task readonly_ref before target_path selection" {
+    _write_command_coverage_fixture \
+        "refactor-workorder-20260611.md を必読参照し、backend/app/api/main.py を修正" \
+        "  - path: backend/app/api/main.py
+    change: modified" \
+        "refactor-workorder-20260611.md"
+
+    cat >> "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+  readonly_ref:
+  - path: /mnt/c/Python_app/DM-signal/.agent/task-force/refactor-workorder-20260611.md
+    reason: command欄の必読/参照専用ファイル
+EOF
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (command欄ファイル参照 全1件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" != *"missing: refactor-workorder-20260611.md"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
 @test "command/files_modified coverage preserves true positive after verified_existing_dependency filtering" {
     _write_command_coverage_fixture \
         "refactor-workorder-20260611.md を必読参照し、backend/app/api/main.py と backend/app/api/portfolios.py を修正" \
@@ -398,6 +420,28 @@ EOF
 verified_existing_dependency:
   - path: /mnt/c/Python_app/DM-signal/.agent/task-force/refactor-workorder-20260611.md
     reason: "必読の権威文書。参照のみで変更対象ではない"
+EOF
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"missing: backend/app/api/portfolios.py"* ]]
+    [[ "$output" != *"missing: refactor-workorder-20260611.md"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+    [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
+}
+
+@test "command/files_modified coverage preserves true positive after task readonly_ref filtering" {
+    _write_command_coverage_fixture \
+        "refactor-workorder-20260611.md を必読参照し、backend/app/api/main.py と backend/app/api/portfolios.py を修正" \
+        "  - path: backend/app/api/main.py
+    change: modified" \
+        "refactor-workorder-20260611.md"
+
+    cat >> "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+  readonly_ref:
+  - path: /mnt/c/Python_app/DM-signal/.agent/task-force/refactor-workorder-20260611.md
+    reason: command欄の必読/参照専用ファイル
 EOF
 
     run _run_command_files_modified_coverage_with_state
@@ -454,6 +498,81 @@ EOF
         [ "$status" -eq 0 ]
         [[ "$output" != *"COMMAND_SCOPE_MISSING"* ]]
         [[ "$output" != *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
+    done
+}
+
+@test "command/files_modified coverage accepts archived cmd_3297 through cmd_3299 with task readonly_ref" {
+    local cmd archive_cmd
+    for cmd in cmd_3297 cmd_3298 cmd_3299; do
+        case "$cmd" in
+            cmd_3297)
+                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3297_completed_20260611.yaml"
+                cp "$archive_cmd" "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+                cp "$PROJECT_ROOT/queue/archive/reports/hayate_report_cmd_3297.yaml.bak" "$TEST_PROJECT/queue/reports/hayate_report_${cmd}.yaml"
+                cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<EOF
+task:
+  parent_cmd: $cmd
+  report_filename: hayate_report_${cmd}.yaml
+  readonly_ref:
+  - path: .agent/task-force/refactor-workorder-20260611.md
+    reason: command欄の必読/参照専用ファイル
+  - path: .agent/task-force/approval-20260611-wp1f-wp4-tz.md
+    reason: command欄の必読/参照専用ファイル
+EOF
+                export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/hayate.yaml")
+                ;;
+            cmd_3298)
+                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3298_completed_20260611.yaml"
+                cp "$archive_cmd" "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+                cp "$PROJECT_ROOT/queue/archive/reports/kagemaru_report_cmd_3298.yaml.bak" "$TEST_PROJECT/queue/reports/kagemaru_report_${cmd}.yaml"
+                cat > "$TEST_PROJECT/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  parent_cmd: $cmd
+  report_filename: kagemaru_report_${cmd}.yaml
+  readonly_ref:
+  - path: .agent/task-force/approval-20260611-wp1f-wp4-tz.md
+    reason: command欄の必読/参照専用ファイル
+EOF
+                export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/kagemaru.yaml")
+                ;;
+            cmd_3299)
+                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3299_done_20260611.yaml"
+                cp "$archive_cmd" "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+                for ninja in hanzo hayate tobisaru; do
+                    cp "$PROJECT_ROOT/queue/archive/reports/${ninja}_report_cmd_3299.yaml.bak" "$TEST_PROJECT/queue/reports/${ninja}_report_${cmd}.yaml"
+                    cat > "$TEST_PROJECT/queue/tasks/${ninja}.yaml" <<EOF
+task:
+  parent_cmd: $cmd
+  report_filename: ${ninja}_report_${cmd}.yaml
+  readonly_ref:
+  - path: refactor-workorder-20260611.md
+    reason: command欄の必読/参照専用ファイル
+  - path: summary.md
+    reason: command欄の必読/参照専用ファイル
+  - path: manifest-frontend.md
+    reason: command欄の必読/参照専用ファイル
+  - path: manifest-backend.md
+    reason: command欄の必読/参照専用ファイル
+EOF
+                done
+                export MATCHING_TASK_FILES=(
+                    "$TEST_PROJECT/queue/tasks/hanzo.yaml"
+                    "$TEST_PROJECT/queue/tasks/hayate.yaml"
+                    "$TEST_PROJECT/queue/tasks/tobisaru.yaml"
+                )
+                ;;
+        esac
+
+        export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+        export CMD_ID="$cmd"
+        export ALL_CLEAR=true
+        BLOCK_REASONS=()
+
+        run _run_command_files_modified_coverage_with_state
+        [ "$status" -eq 0 ]
+        [[ "$output" != *"COMMAND_SCOPE_MISSING"* ]]
+        [[ "$output" != *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
+        [[ "$output" == *"ALL_CLEAR=true"* ]]
     done
 }
 

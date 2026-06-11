@@ -726,6 +726,8 @@ STALE_FIELDS = [
     'scope', 'context_hints', 'context',
     # 第12層: 因果確認L0-L7テンプレート。scopeごとに再判定して注入する
     'causal_verification',
+    # 第13層: command欄の必読/参照専用ファイル。cmdごとに再抽出する
+    'readonly_ref',
 ]
 # parent_cmdが変わる場合だけacceptance_criteriaをクリアする。
 # 同一cmd再配備では、cmdソース不在時にテンプレートACをfallbackとして保持する。
@@ -3827,6 +3829,172 @@ INJECT_GLD_PY
         log "inject_growth_loop_defense: python error (non-fatal)"
     fi
     rm -f "$py_output"
+}
+
+inject_readonly_refs() {
+    local task_file="$1"
+    local parent_cmd command_text readonly_yaml
+
+    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    [ -n "$parent_cmd" ] || return 0
+
+    command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "" 2>/dev/null || true)
+    if [ -z "$command_text" ] && [ -f "$SCRIPT_DIR/queue/shogun_to_karo.yaml" ]; then
+        command_text=$(
+            PARENT_CMD_ENV="$parent_cmd" STK_ENV="$SCRIPT_DIR/queue/shogun_to_karo.yaml" python3 - <<'PY' 2>/dev/null || true
+import os
+import yaml
+
+parent_cmd = os.environ.get("PARENT_CMD_ENV", "")
+stk = os.environ.get("STK_ENV", "")
+try:
+    with open(stk, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    data = {}
+commands = data.get("commands", data.get("cmds", data))
+entry = None
+if isinstance(commands, dict):
+    entry = commands.get(parent_cmd)
+elif isinstance(commands, list):
+    entry = next((row for row in commands if isinstance(row, dict) and str(row.get("id", "")) == parent_cmd), None)
+if isinstance(entry, dict):
+    value = entry.get("command", "")
+    if isinstance(value, (list, tuple)):
+        value = "\n".join(str(v) for v in value)
+    print(str(value or ""))
+PY
+        )
+    fi
+    [ -n "$command_text" ] || return 0
+
+    readonly_yaml=$(
+        COMMAND_TEXT_ENV="$command_text" python3 - <<'PY'
+import os
+import re
+
+command = os.environ.get("COMMAND_TEXT_ENV", "")
+pattern = re.compile(
+    r"(?<![A-Za-z0-9_./-])"
+    r"((?:/mnt/[A-Za-z0-9_.-]+/|(?:[A-Za-z0-9_.-]+/)*)[A-Za-z0-9_.-]+"
+    r"\.(?:sh|py|md|yaml|yml|json|toml|js|ts|tsx|jsx|css|html|sql|csv))"
+    r"(?![A-Za-z0-9_.-])"
+)
+read_markers = (
+    "必読", "読む", "読んで", "読み", "確認", "参照", "調査", "精査", "review", "read", "inspect", "refer",
+    "実行", "実行のみ", "変更対象外", "走らせ", "検証", "run", "execute",
+)
+write_markers = (
+    "修正", "更新", "変更", "編集", "実装", "追加", "削除", "作成", "反映",
+    "modify", "update", "edit", "add", "remove", "delete", "create", "write", "implement",
+)
+
+def marker_pos(text, markers):
+    positions = [text.find(marker) for marker in markers if text.find(marker) >= 0]
+    return min(positions) if positions else -1
+
+matches = list(pattern.finditer(command))
+seen = set()
+readonly = []
+for idx, match in enumerate(matches):
+    ref = match.group(1).strip().strip("`'\".,:;()[]{}")
+    if not ref or ref in seen:
+        continue
+    sentence_end_candidates = [
+        pos for pos in (
+            command.find("\n", match.end()),
+            command.find("。", match.end()),
+            command.find("；", match.end()),
+            command.find(";", match.end()),
+        )
+        if pos >= 0
+    ]
+    sentence_start_candidates = [
+        pos for pos in (
+            command.rfind("\n", 0, match.start()),
+            command.rfind("。", 0, match.start()),
+            command.rfind("；", 0, match.start()),
+            command.rfind(";", 0, match.start()),
+        )
+        if pos >= 0
+    ]
+    sentence_start = max(sentence_start_candidates) + 1 if sentence_start_candidates else 0
+    sentence_end = min(sentence_end_candidates) if sentence_end_candidates else len(command)
+    next_file_start = matches[idx + 1].start() if idx + 1 < len(matches) else sentence_end
+    local = command[match.end():next_file_start]
+    sentence = command[sentence_start:sentence_end]
+    sentence_tail = command[match.end():sentence_end]
+    read_pos = marker_pos(local, read_markers)
+    if read_pos < 0:
+        read_pos = marker_pos(sentence, read_markers)
+    write_pos = marker_pos(sentence_tail, write_markers)
+    next_ref_before_write = idx + 1 < len(matches) and matches[idx + 1].start() < sentence_end and (
+        write_pos < 0 or matches[idx + 1].start() - match.end() < write_pos
+    )
+    is_readonly = read_pos >= 0 and (write_pos < 0 or next_ref_before_write or read_pos < write_pos)
+    if is_readonly:
+        seen.add(ref)
+        readonly.append(ref)
+
+for ref in readonly:
+    escaped = ref.replace("'", "''")
+    print(f"  - path: '{escaped}'")
+    print("    reason: command欄の必読/参照専用ファイル")
+PY
+    )
+
+    [ -n "$readonly_yaml" ] || return 0
+
+    TASK_FILE_ENV="$task_file" READONLY_YAML_ENV="$readonly_yaml" python3 - <<'PY'
+import os
+import tempfile
+import yaml
+
+task_file = os.environ["TASK_FILE_ENV"]
+fragment = os.environ["READONLY_YAML_ENV"].rstrip("\n")
+
+with open(task_file, encoding="utf-8") as f:
+    raw = f.read()
+
+yaml.safe_load("readonly_ref:\n" + fragment + "\n")
+
+lines = raw.splitlines()
+out = []
+skip = False
+for line in lines:
+    stripped = line.lstrip(" ")
+    indent = len(line) - len(stripped)
+    if skip:
+        if stripped == "" or indent > 2:
+            continue
+        skip = False
+    if indent == 2 and stripped.startswith("readonly_ref:"):
+        skip = True
+        continue
+    out.append(line)
+
+insert_at = len(out)
+for idx in range(len(out) - 1, -1, -1):
+    if out[idx].startswith("task:"):
+        insert_at = idx + 1
+        break
+    if out[idx].startswith("  ") and not out[idx].startswith("    "):
+        insert_at = idx + 1
+
+out[insert_at:insert_at] = ["  readonly_ref:"] + fragment.splitlines()
+result = "\n".join(out).rstrip("\n") + "\n"
+
+fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix=".tmp")
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(result)
+    yaml.safe_load(result)
+    os.replace(tmp_path, task_file)
+finally:
+    if os.path.exists(tmp_path):
+        os.unlink(tmp_path)
+PY
+    log "[INJECT_READONLY_REF] injected command readonly refs"
 }
 
 # ─── 教訓自動注入（task YAMLにrelated_lessonsを挿入） ───
@@ -7411,6 +7579,7 @@ deploy_task_apply_task_mutations() {
     inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供
     inject_checklist_constraints "$task_file" || true  # Level5: checklist隣接Step制約強制注入(cmd_2644)
     inject_growth_loop_defense "$task_file" || true    # Level5: gate/hook関連cmdに防御階層§11を強制注入(cmd_2649)
+    inject_readonly_refs "$task_file" || true           # Level5: command必読/参照専用ファイルをreadonly_refへ源流注入
     inject_ac_version "$task_file" || true
     verify_ac_consistency "$task_file" || true
 

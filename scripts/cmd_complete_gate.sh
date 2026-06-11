@@ -4392,11 +4392,44 @@ collect_report_verified_existing_deps() {
     done | awk 'NF && !seen[$0]++'
 }
 
+collect_task_readonly_refs() {
+    # deploy_task.shがtask YAMLへ源流注入したreadonly_refを収集する。
+    # SG-PRE25/完了gateの除外ソースを同一化し、報告YAMLへの記録忘れでFP化しないようにする。
+    local task_file
+    if ! declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        return 0
+    fi
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        [ -f "$task_file" ] || continue
+        awk '
+            /^  readonly_ref:/ { in_rr=1; next }
+            in_rr && /^  [A-Za-z0-9_.-]+:/ { in_rr=0 }
+            in_rr && /^[[:space:]]*-[[:space:]]*(path|file):/ {
+                v=$0
+                sub(/.*(path|file):[[:space:]]*/, "", v)
+                gsub(/^["'"'"']+|["'"'"']+$/, "", v)
+                if (v != "") print v
+            }
+            in_rr && /^[[:space:]]*-[[:space:]]+[^{]/ {
+                v=$0
+                sub(/^[[:space:]]*-[[:space:]]*/, "", v)
+                gsub(/^["'"'"']+|["'"'"']+$/, "", v)
+                if (v != "" && v !~ /^(path|file|reason|category):/) print v
+            }
+        ' "$task_file" 2>/dev/null || true
+    done | awk 'NF && !seen[$0]++'
+}
+
 check_command_files_modified_coverage() {
     level_heading "[L3]" "Command/files_modified coverage check:"
 
     local command_refs report_paths verified_deps
-    verified_deps="$(collect_report_verified_existing_deps || true)"
+    verified_deps="$(
+        {
+            collect_report_verified_existing_deps || true
+            collect_task_readonly_refs || true
+        } | awk 'NF && !seen[$0]++'
+    )"
     command_refs="$(collect_cmd_command_file_refs "$CMD_ID" "$verified_deps" || true)"
     if [ -z "$command_refs" ]; then
         echo "  SKIP (command欄に拡張子付きファイル参照なし)"

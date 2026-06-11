@@ -57,6 +57,51 @@ PY
     grep -q 'inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points"' "$PROJECT_ROOT/scripts/deploy_task.sh"
 }
 
+@test "cmd_3300: deploy_task injects command readonly refs into task YAML" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue" "$tmpdir/scripts/lib"
+    cp "$PROJECT_ROOT/scripts/lib/field_get.sh" "$tmpdir/scripts/lib/field_get.sh"
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_readonly
+  task_id: cmd_readonly_full
+  status: assigned
+YAML
+    cat > "$tmpdir/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_readonly:
+    command: |
+      refactor-workorder-20260611.md を必読参照し、backend/app/api/main.py を修正する。
+YAML
+
+    cat > "$tmpdir/run_inject.sh" <<EOF
+#!/usr/bin/env bash
+set -e
+SCRIPT_DIR="$tmpdir"
+source "$tmpdir/scripts/lib/field_get.sh"
+log() { :; }
+$(sed -n '/^inject_readonly_refs()/,/^}/p' "$PROJECT_ROOT/scripts/deploy_task.sh")
+inject_readonly_refs "$tmpdir/queue/tasks/sasuke.yaml"
+EOF
+    chmod +x "$tmpdir/run_inject.sh"
+
+    run bash "$tmpdir/run_inject.sh"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+refs = task.get('readonly_ref') or []
+assert refs, task
+assert refs[0]['path'] == 'refactor-workorder-20260611.md', refs
+assert '必読' in refs[0]['reason'], refs
+PY
+}
+
 @test "db backup controls: DB cmd injects stop_for and backup instructions" {
     tmpdir="$(mktemp -d)"
     mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"
