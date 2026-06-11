@@ -447,6 +447,43 @@ if [[ "$command" == *bulletin_write.sh* ]]; then
     echo "[Guard11] INFO(§0.1問い10): 掲示板投稿=出力。行動(コード変更/教訓追記/gate修正)→検証(grep/計測)まで回したか？出力で止まるな" >&2
 fi
 
+# === Guard 12: pending_approval commit BLOCK (cmd_3285) ===
+# 裁可保留ファイルを含むgit commitをBLOCKする。どの経路のcommitでも保留中ファイルが運ばれない構造
+# PENDING_APPROVAL_FILE: テスト時にoverride可能
+if [[ -n "${command:-}" && "$command" =~ (^|[[:space:]\;]|&&|\|\|)git[[:space:]]+commit([[:space:]]|$) ]]; then
+    _pa_file="${PENDING_APPROVAL_FILE:-$SCRIPT_DIR/queue/pending_approval.yaml}"
+    if [[ -f "$_pa_file" ]]; then
+        # GUARD12_STAGED_FILES_OVERRIDE: テスト時にgit実行をmockする
+        if [[ -n "${GUARD12_STAGED_FILES_OVERRIDE:-}" ]]; then
+            _staged_files="$GUARD12_STAGED_FILES_OVERRIDE"
+        else
+            _staged_files="$(git -C "$SCRIPT_DIR" diff --cached --name-only 2>/dev/null || true)"
+        fi
+        if [[ -n "$_staged_files" ]]; then
+            _pa_block="$(STAGED="$_staged_files" PA_FILE="$_pa_file" python3 - <<'PY'
+import os, yaml, sys
+staged = set(os.environ.get("STAGED", "").splitlines())
+pa_file = os.environ.get("PA_FILE", "")
+try:
+    with open(pa_file, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    sys.exit(0)
+entries = data.get("entries") or []
+for e in entries:
+    p = (e.get("path") or "").lstrip("/")
+    if p in staged:
+        print(p)
+        sys.exit(0)
+PY
+)"
+            if [[ -n "$_pa_block" ]]; then
+                emit_deny "BLOCK(G12): '$_pa_block' is pending approval. Remove from registry first: bash scripts/pending_approval_set.sh remove '$_pa_block'"
+            fi
+        fi
+    fi
+fi
+
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
    "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git reset'* && \

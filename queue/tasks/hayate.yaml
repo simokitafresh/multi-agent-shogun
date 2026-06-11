@@ -1,8 +1,10 @@
 task:
-  _ac_task_id: cmd_3278_chunk1
+  _ac_task_id: cmd_3285_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3278 (deployed 2026-06-11T01:17:13). Read from the beginning.
-  ac_version: d8ec7f5e
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3285 (deployed 2026-06-11T09:50:07). Read from the beginning.
+  ac_version: f43cb45a
+  checklist: queue/checklists/cmd_3278.md
+  chunk: chunk 1 (92件)
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -20,65 +22,66 @@ task:
   - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
   - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
   - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
-  - '2026-06-10T17:54:09+09:00 | [MEM: memory_db ts=2026-06-10T09:33] 殿「今の気づきをL0-L7に貫通させて、次から起きないように行動せよ」 **L0-L7 = 防御階層(7層貫通設計)** | '
-  - 2026-06-10T17:35:30+09:00 | 【INFOバッチ】 2026-06-10 17:34:19|cmd_3272
-  - 2026-05-09T21:05:32+09:00 | 【INFOバッチ】 2026-05-09 20:52:05|cmd_2607 2026-05-09 21:04:20|cmd_2608
-  - 2026-05-02T21:12:49+09:00 | 【INFOバッチ】 2026-05-02 21:04:01|cmd_2479
+  - '2026-06-10T21:11:08+09:00 | ## cmd_3273神速停止 — 執行完了+前提変化報告 **執行**: task=halted、kagemaruへ全作業停止+commit禁止指示済み。 **前提変化（即報告済み）**: 殿指示の'
+  - 2026-06-10T17:48:42+09:00 | 将軍v2.1.170更新完了。三層記憶を検索せずに実行した件は洗脳#2。今後の殿指示でも三層記憶検索を先行させる。 [meta] stop_reason=end_turn
+  - '2026-06-11T00:49:28+09:00 | 【INFOバッチ】 2026-06-11 00:43:18|CI緑: run 27287439123'
+  - '2026-04-29T08:04:27+09:00 | 【INFOバッチ】 2026-04-29 07:52:04|cmd_2392 2026-04-29 08:01:19|CI緑: run 25081815258'
+  - 2026-04-18T01:22:45+09:00 | 【INFOバッチ】 2026-04-18 01:18:27|cmd_2029 2026-04-18 01:19:47|cmd_2030
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3278
+  parent_cmd: cmd_3285
   project: infra
-  purpose: startup gateのbacklinks=0 WARNが20回繰り返し表示。表示はlimit 5だが実態はcausal_backlink_counts.sh --zeroで孤立400件(2026-06-11実測)。5件ずつの消化では80セッションかかる。全量400件を対象にリンク元(context/skills/docs索引)から[[リンク]]を接続し、孤立を根こそぎ解消する
+  purpose: '軍師分析(blt_20260611_023032): 裁可迂回push事案の根因は『裁可保留』が暗黙状態(working tree残置)で機械可読でないこと。cmd_3284のbatch commitスコープ制限だけでは別経路(手動git add -A等)が残る(防御第2層)。保留ファイルレジストリを設け、既存hookのcommit介入点で照合BLOCKすることで、どの経路のcommitでも保留中ファイルが運ばれない構造にする'
   semantic_concepts:
   - 'agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-claude-version-switch/SKILL.md skills/shogun-claude-version-switch/scripts/claude_version_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)'
-  status: done
+  status: acknowledged
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/docs/research/
-  task_id: cmd_3278_full
+  target_path: /mnt/c/tools/multi-agent-shogun/.claude/hooks/
+  task_id: cmd_3285_full
   task_type: full
   related_lessons:
+  - id: 'L772'
+    summary: 'cmd_3278でhayateとkotaroが独立に発見した同根の盲点2件: (1)kotaro実証: rg --debugでwhitelist型gitigno'
+    detail: 'cmd_3278でhayateとkotaroが独立に発見した同根の盲点2件: (1)kotaro実証: rg --debugでwhitelist型gitigno'
+  - id: 'L324'
+    summary: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
+    detail: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
   - id: 'L447'
     summary: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
     detail: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
-  - id: 'L771'
-    summary: 'skills/cmd-complete/SKILL.md Step1-8にcontext/*.md更新ステップが構造的に欠落(hanzo現物実証: lesson'
-    detail: 'skills/cmd-complete/SKILL.md Step1-8にcontext/*.md更新ステップが構造的に欠落(hanzo現物実証: lesson'
-  - id: 'L434'
-    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
-    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
-  - id: 'L178'
-    summary: 'Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.'
-    detail: 'Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.'
-  - id: 'L551'
-    summary: 'cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.'
-    detail: 'cmd_2465のAC3は『我らの33スキル』と記載していたが、find skills -mindepth 2 -maxdepth 2 -name SKILL.'
   - id: 'L435'
     summary: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒'
     detail: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒'
-  - id: 'L614'
-    summary: 'PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE ''[a-z_]+.sh'' が pre-bash-combine'
-    detail: 'PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE ''[a-z_]+.sh'' が pre-bash-combine'
-  - id: 'L198'
-    summary: 'プライマリボタンは画面に1つだけ。ボタン階層: filled(主)→outlined(副)→text-only(補助)の3段階。最小タッチターゲット48pt×4'
-    detail: 'プライマリボタンは画面に1つだけ。ボタン階層: filled(主)→outlined(副)→text-only(補助)の3段階。最小タッチターゲット48pt×4'
-  - id: 'L583'
-    summary: 'gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate'
-    detail: 'gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate'
-  - id: 'L096'
-    summary: 'bash,variable-scope,preflight'
-    detail: 'bash,variable-scope,preflight'
+  - id: 'L002'
+    summary: 'inbox_watcher.shは60秒リトライ内蔵だが、家老がforeground bashコマンドでブロック中はnudgeを受信できない。Bash tool'
+    detail: 'inbox_watcher.shは60秒リトライ内蔵だが、家老がforeground bashコマンドでブロック中はnudgeを受信できない。Bash tool'
+  - id: 'L540'
+    summary: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
+    detail: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
+  - id: 'L513'
+    summary: 'check_ac_must_should_mix等の関数をeval+export -fで抽出するとき、その関数が内部で呼ぶrecord_block_reason'
+    detail: 'check_ac_must_should_mix等の関数をeval+export -fで抽出するとき、その関数が内部で呼ぶrecord_block_reason'
+  - id: 'L275'
+    summary: 'gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ'
+    detail: 'gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ'
+  - id: 'L106'
+    summary: 'L303: load_lesson_summaries(os.path.dirname(data_file))は data_file=SCRIPT_DIR/lo'
+    detail: 'L303: load_lesson_summaries(os.path.dirname(data_file))は data_file=SCRIPT_DIR/lo'
+  - id: 'L775'
+    summary: 'target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/'
+    detail: 'target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   related_causal_links:
-  - "[[cmd_3278全量因果リンク接続]]"
-  - "[[limit5表示の裏に孤立400件]]"
-  - "[[startup_backlinks0_20回連続]]"
+  - "[[cmd_3285レジストリ+全経路照合BLOCK]]"
+  - "[[保留が暗黙状態で機械不可読]]"
+  - "[[軍師分析blt_20260611_023032]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -96,27 +99,39 @@ task:
   - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
   - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: "【軍師FAIL是正(cmd_3278 chunk1報告YAML修正のみ・実作業92/92は検証済みで再作業不要)】queue/reports/hayate_report_cmd_3278.yamlを以下3点修正せよ。report_field_set.sh経由必須(Edit直接禁止): (1)files_modifiedのpath 1要素に7ファイル分が文字列で押込まれている(L31-36)→各ファイルを個別エントリに分解 (2)AC1のresult: yes→noに修正し残存理由を記載(実態after=75件、他chunk進行中のため全体0件は未達。自chunk 92/92解消は達成と明記) (3)files_modified関連にcommit 2件参照を明記: e7bd62bb4(saizo先行commitに自分の78件が混入)+824dff3ce(残量commit)。修正後にgate_report_format.shで事前検証し、家老へreport_received送信。"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L772: cmd_3278でhayateとkotaroが独立に発見した同根の盲点2件: (1)kotaro実証: rg --debugでwhitelist型gitigno
+      - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ
+      - L447: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe
+      - L435: 関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒
+      - L002: inbox_watcher.shは60秒リトライ内蔵だが、家老がforeground bashコマンドでブロック中はnudgeを受信できない。Bash tool
+      - L540: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
+      - L513: check_ac_must_should_mix等の関数をeval+export -fで抽出するとき、その関数が内部で呼ぶrecord_block_reason
+      - L275: gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ
+      - L106: L303: load_lesson_summaries(os.path.dirname(data_file))は data_file=SCRIPT_DIR/lo
+      - L775: target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/
+    ────────────────────────────────────────
+    
+    
   memory_db_context:
-  - "2026-06-10T20:51:02+09:00 | 良い知らせ2件: - **将軍**: 追体験Q6を本セッション内で解消（Q6回答+軍師第三者検証OK+LS052環境埋込）。Gate20回復streak認識と「閾値を下げない」判断も承認 - **軍師"
-  - "2026-06-10T20:50:34+09:00 | 良い知らせ2件: - **将軍**: 追体験Q6を本セッション内で解消（Q6回答+軍師第三者検証OK+LS052環境埋込）。Gate20回復streak認識と「閾値を下げない」判断も承認 - **軍師"
-  - "2026-06-11T00:31:30+09:00 | 【将軍】/clear準備完了。PD:0 cmd pending:0 🚨:0。cmd_3273-3276全CLEAR(マトリクス🟢143/🔴151稼働)。教訓5件+gate根治7件+skills sym"
-  - "2026-06-10T23:17:20+09:00 | ## 2cmd同時クローズ完了 **cmd_3276（佐瀬メールパース）— GATE CLEAR一発通過** - 35通全分類（リスト保有2/引用重複4/リストなし29）→143セルsubmitted"
-  - "2026-06-10T22:43:07+09:00 | どのWARNがカウントされたか全文で確認する。 [meta] stop_reason=tool_use"
+  - "2026-06-11T02:01:27+09:00 | working tree clean。 **cmd_3282 完了サマリ:** | 項目 | 内容 | |------|------| | 実装 | `gate_report_autofix_main"
+  - "2026-06-11T01:05:57+09:00 | commitが拒否された。変更はworking treeに残し、家老にD0報告してレビュー判断を委ねる。 [meta] stop_reason=tool_use"
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'causal_backlink_counts.sh --zeroの出力が400件から0件になることをbefore/after実行出力で確認する'
+    - check: '保留レジストリ(queue/pending_approval.yaml)への登録・解除がflock安全なスクリプト操作で行え、登録項目(ファイルパス+理由+登録者+日時)が機械可読であることを実行出力で確認する'
   - id: 'AC2'
     checks:
-    - check: '追加リンクは各ファイルの主題と因果(発端→原因→結果)に基づきリンク元の関連セクションに文脈付きで記載され、無意味な機械的リンク羅列ページが0件であることをリンク元ファイル一覧のgrep出力で確認する'
+    - check: '保留中ファイルを含むgit commitが既存hookのcommit介入点(pre-bash-combined.sh Guard群)の照合でBLOCKされ、保留外ファイルのcommitは通ることを両面fixtureで確認する'
   - id: 'AC3'
     checks:
-    - check: 'チャンク分割で並列処理する場合も対象400件全量がいずれかのチャンクに含まれ、漏れが0件であることをチャンク割当表と処理済み件数の合計で確認する'
+    - check: '解除操作後は同一ファイルのcommitが通ること(登録→BLOCK→解除→通過のライフサイクル)をfixtureで確認する'
+  - id: 'AC4'
+    checks:
+    - check: '既存hookのbatsが全てPASSし、保留照合の回帰テストが追加されていることをbats実行出力で確認する'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3278.yaml
-  report_path: queue/reports/hayate_report_cmd_3278.yaml
+  report_filename: hayate_report_cmd_3285.yaml
+  report_path: queue/reports/hayate_report_cmd_3285.yaml
   bloom_level: 
-  deployed_at: "2026-06-11T01:17:27"
-  checklist: queue/checklists/cmd_3278.md
-  chunk: chunk 1 (92件)
+  deployed_at: "2026-06-11T09:50:51"
