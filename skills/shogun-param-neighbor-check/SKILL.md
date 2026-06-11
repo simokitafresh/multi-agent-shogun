@@ -17,6 +17,10 @@ allowed-tools:
   - Bash
 ---
 
+<!-- script_refs_checked_at: 2026-06-11T13:26:58+09:00 -->
+
+Script refs verified: 2026-06-11. `param_neighbor_check.py` の契約は `--pattern` 必須、`--csv` / `--metrics` 任意のCLI形式のまま。直近で対象scriptの引数仕様変更はなく、SKILL.md記載の実行例と出力目的は現行実装と一致。
+
 # param-neighbor-check
 
 > **【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。**

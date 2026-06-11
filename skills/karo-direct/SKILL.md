@@ -10,9 +10,9 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-11T13:26:58+09:00 -->
 
-Script refs verified: 2026-06-10. `deploy_task.sh` の契約は `--yaml <file> <ninja>` / `--direct <ninja> <cmd_id>` のまま。1a7da0c49(三層記憶注入関数追加)・3ceedd92f(ninja_name取得修正+impact_log重複チェック)はいずれも内部処理変更で、配備コマンド引数・動作・完了通知の契約は変更なし。
+Script refs verified: 2026-06-11. `deploy_task.sh` の契約は `--yaml <file> <ninja>` / `--direct <ninja> <cmd_id>` のまま。25d0b1e22は分割配備判定の内部修正で、karo_directのci_fix/recon2/hotfix用YAML配備とtraining用direct配備の引数・通知契約変更なし。
 
 # /karo-direct — 家老自立配備スキル
 

@@ -13,9 +13,9 @@ allowed-tools:
   - Bash
 ---
 
-<!-- script_refs_checked_at: 2026-06-10T08:35:40+09:00 -->
+<!-- script_refs_checked_at: 2026-06-11T13:26:58+09:00 -->
 
-Script refs verified: 2026-06-07 cmd_3206. `clear_prep_check.sh` の契約は引数なし実行で7項目チェックを出力する形式のまま。直近の記憶整理/会話アーカイブ系変更はチェック内容の拡張であり、/shogun-clear-prepの実行手順変更は不要。
+Script refs verified: 2026-06-11. `clear_prep_check.sh` の契約は引数なし実行で/clear前チェックを出力する形式のまま。a7ba82b4aは知識埋込みチェック内の整数比較修正で、/shogun-clear-prepの実行手順・入力・完了報告契約変更なし。
 
 # /shogun-clear-prep — 将軍の/clear前準備
 

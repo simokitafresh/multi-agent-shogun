@@ -18,9 +18,9 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-11T13:26:58+09:00 -->
 
-Script refs verified: 2026-06-10. `note_draft.sh` の契約は変更なし。cmd_3270でget_tab() Noneフォールバック(タブ不在時create_tab()で自動回復)とPython stderrキャプチャを追加したが、引数・呼び出し方・成功/失敗の戻り値契約は変更なし。
+Script refs verified: 2026-06-11. `note_draft.sh` の契約は `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"` のまま。be261fa35はshellcheck対処のみで、Markdown生成後に1ファイルを渡す手順・title/body抽出・skill_execution_log記録の契約変更なし。
 
 # /note-article — ユーザー向けnote記事スキル
 
@@ -189,4 +189,4 @@ Markdown→note.com変換ルール:
 - ProseMirrorエディタがスピナーで停止している場合、`Page.reload` で最大2回リトライする（`wait_for_prosemirror`）
 - 下書き保存ボタン押下後、最終URLを `[note_draft] Done: ...` に出力し、`skill_execution_log.yaml` にPASS/FAILを記録する
 
-<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-11T13:26:58+09:00 -->

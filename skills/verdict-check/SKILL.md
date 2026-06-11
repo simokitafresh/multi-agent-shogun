@@ -10,7 +10,9 @@ description: |
   DO NOT TRIGGER: 報告YAML全体作成（→/report-write）、commit（→/ninja-commit）
 ---
 
-<!-- script_refs_checked_at: 2026-06-10T08:35:40+09:00 -->
+<!-- script_refs_checked_at: 2026-06-11T13:26:58+09:00 -->
+
+Script refs verified: 2026-06-11. `gate_report_format.sh` の契約は `bash scripts/gates/gate_report_format.sh <report_yaml_path>` のまま。binary_checksが全てyes/noならverdictをPASS/FAILへ自動導出し、空/FILL_THIS/不正値はBLOCKする仕様に変更なし。
 
 # /verdict-check — binary_checks確認スキル
 

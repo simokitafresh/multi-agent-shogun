@@ -14,9 +14,9 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-11T13:26:58+09:00 -->
 
-Script refs verified: 2026-06-10. `note_draft.sh` の契約は変更なし。cmd_3270でget_tab() Noneフォールバック(タブ不在時create_tab()で自動回復)とPython stderrキャプチャを追加したが、引数・呼び出し方・成功/失敗の戻り値契約は変更なし。
+Script refs verified: 2026-06-11. `note_draft.sh` の契約は `<markdown_file>` 1件を受け取りCDP経由でnote下書きを作る形式のまま。be261fa35はskill-auto-improveコメント由来のshellcheck対処で、引数・CDP_PORT・成功/失敗/SKIPログの契約変更なし。
 
 # /cdp-browse
 
@@ -169,4 +169,4 @@ scripts/cdp/cdp_cli.sh screenshot "/tmp/dm-signal-admin.png"
 
 - → [[cdp-severity.md]] CDP計測・canary・ブラウザ実測の異常分類（操作失敗時の重大度判定基準）
 
-<!-- script_refs_checked_at: 2026-06-10T18:30:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-11T13:26:58+09:00 -->
