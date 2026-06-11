@@ -904,9 +904,14 @@ prompt_only_terms = ("Q6:", "洗脳8パターン", "1つ具体例で答えよ")
 empty_target_re = re.compile(r"\*{0,2}自動化ターゲット\*{0,2}\s*[:：]\s*(なし|無し|特になし|未記入|N/?A|none|null)?\s*$", re.I)
 target_re = re.compile(r"\*{0,2}自動化ターゲット\*{0,2}\s*[:：]\s*(.+)", re.I)
 weak_target_re = re.compile(r"(案を検討|検討する|検討中|予定|つもり|後で|あとで)")
+weak_target_negation_re = re.compile(r"(検討[・/、, ]*予定ではなく|検討ではなく|予定ではなく|つもりではなく|後でではなく|あとでではなく|登録完了済み|D0修正済み)")
 found_answer = False
 found_automation_target = False
 automation_target = ""
+
+def has_weak_target(value: str) -> bool:
+    check = weak_target_negation_re.sub("", value)
+    return bool(weak_target_re.search(check))
 
 for entry in reversed(session_entries):
     if entry.get("direction") not in ("response", "outbound"):
@@ -920,7 +925,7 @@ for entry in reversed(session_entries):
     match = target_re.search(text)
     if match:
         value = match.group(1).strip()
-        if value and not value.startswith("<") and not empty_target_re.search(match.group(0)) and not weak_target_re.search(value):
+        if value and not value.startswith("<") and not empty_target_re.search(match.group(0)) and not has_weak_target(value):
             found_automation_target = True
             automation_target = value
     if any(term in text for term in answer_terms):
@@ -984,7 +989,7 @@ if not (found_answer and found_automation_target) and bulletin_path and bulletin
         match = target_re.search(text)
         if match:
             value = match.group(1).strip()
-            if value and not value.startswith("<") and not empty_target_re.search(match.group(0)) and not weak_target_re.search(value):
+            if value and not value.startswith("<") and not empty_target_re.search(match.group(0)) and not has_weak_target(value):
                 found_automation_target = True
                 automation_target = value
         if any(term in text for term in answer_terms):

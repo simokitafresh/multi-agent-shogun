@@ -387,6 +387,18 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
+@test "Q6 automation target negated weak words are accepted" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 洗脳#6を検出し、殿のためにD0修正済み。自動化ターゲット: LS053として登録済み。検討・予定ではなく登録完了済み。scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。"}
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"* ]]
+    [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
+
 @test "lessons_shogun origin missing or linkless → 総合判定: WARN" {
     cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
 lessons:
