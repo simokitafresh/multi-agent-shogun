@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-11 cmd_3293 -->
-<!-- last_synced_lesson: L730 -->
+<!-- last_updated: 2026-06-11 cmd_karo_hotfix_cmd3301_pytest_failures -->
+<!-- last_synced_lesson: L733 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -263,6 +263,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L728: HMM月次fitは全サンプルが1状態に集中するデジェネレート問題が発生。日次fitで訓練→月次集約(50%ルール)でクリーンなレジーム検出（cmd_3220）
 - L729: baseline同等ACとall-tests-pass hookの衝突時はscope外修正前に停止する（cmd_3290）
 - L730: 削除済みBlockTypeはruntime全経路で残参照検査する（cmd_3293）
+- L733: worktree pytest比較ではenv有無を先に二値確認する（cmd_karo_hotfix_cmd3301_pytest_failures_202606112157）
 
 ## 因果リンク
 
