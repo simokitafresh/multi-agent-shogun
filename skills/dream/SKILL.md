@@ -24,14 +24,14 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-06-11T13:59:32+09:00 -->
+<!-- script_refs_checked_at: 2026-06-11T14:01:43+09:00 -->
 
 # /dream — Memory Consolidation (5 Phase)
 
 **三層記憶(記憶DB+セマンティック+Obsidian) + MEMORY.md + memory/*.md** の統合・整理を行う。REM睡眠に倣い、知識基盤を強化する。
 
 Script refs verified: 2026-06-10. `memory_db_query.sh` の契約は変更なし。449dd3029でext4キャッシュ初期化タイムアウトを10s→30s(DB 198MB成長対応)に変更したが、クエリ引数・SQL実行・出力形式の契約は維持。
-Script refs verified: 2026-06-11. `gate_lesson_health.sh` はlesson useful率集計の最小サンプルを3件へ戻し、単発feedbackノイズで退役候補0件のALERT/BLOCKを作らないようにした。引数なし全project走査/`<project_id>`単体走査、METRIC行、WARN/ALERT出力契約は維持。
+Script refs verified: 2026-06-11. `gate_lesson_health.sh` はlesson useful率集計の最小サンプルを5件へ戻し、退役スキャン確定閾値と揃えて少数feedbackノイズで退役候補0件のALERT/BLOCKを作らないようにした。引数なし全project走査/`<project_id>`単体走査、METRIC行、WARN/ALERT出力契約は維持。
 Script refs verified: 2026-06-07 cmd_3206. `gate_lesson_health.sh` はrole lesson origin確認をbatch化したが、引数なし全project走査/`<project_id>`単体走査とOK/ALERT契約は維持。`gate_shogun_memory.sh` はreferenced_files取得cacheで高速化され、`insight_write.sh` は保存/resolve/source repeat通知の呼び出し契約変更なし。
 Script refs verified: 2026-06-02T20:46:12+09:00 infra-bug audit after gate_lesson_health.sh inline-field parser fix.
 
@@ -86,7 +86,7 @@ grep "result: FAIL" logs/gate_fire_log.yaml | tail -50
 # lesson effectiveness
 bash scripts/gates/gate_lesson_health.sh
 ```
-Script refs verified: 2026-05-29 cmd_3087 (lesson effectivenessは低サンプルも可視化対象だが、2026-06-11以降のWARN/ALERT判定母数は3 feedback以上。単発feedbackはMETRICのtotal_feedbackから除外される). 2026-05-22 cmd_2959 (cmd_2816: is_set_value関数の修正により`未設定`文字列を持つwhen/howフィールドは欠落扱いされなくなった。空文字のみが欠落/未設定扱い。PHANTOM extraction checks only top-level `automated: true` + `enforcement:` entries in infra lessons, and verifies referenced scripts under `scripts/` and `.claude/hooks/`; lesson effectiveness scan remains pipefail-safe and excludes `cmd_training*` from the production effectiveness window. 2026-05-21: INSIGHT_REPEAT通知に10分デバウンス追加、massbatch時の掲示板洪水を防止。2026-05-22: insight_writeはdedup+append+source repeat countを単一Python passで処理).
+Script refs verified: 2026-05-29 cmd_3087 (lesson effectivenessは低サンプルも可視化対象だが、2026-06-11以降のWARN/ALERT判定母数は5 feedback以上。単発feedbackはMETRICのtotal_feedbackから除外される). 2026-05-22 cmd_2959 (cmd_2816: is_set_value関数の修正により`未設定`文字列を持つwhen/howフィールドは欠落扱いされなくなった。空文字のみが欠落/未設定扱い。PHANTOM extraction checks only top-level `automated: true` + `enforcement:` entries in infra lessons, and verifies referenced scripts under `scripts/` and `.claude/hooks/`; lesson effectiveness scan remains pipefail-safe and excludes `cmd_training*` from the production effectiveness window. 2026-05-21: INSIGHT_REPEAT通知に10分デバウンス追加、massbatch時の掲示板洪水を防止。2026-05-22: insight_writeはdedup+append+source repeat countを単一Python passで処理).
 - workaround のカテゴリ別頻度変化を検出
 - gate FAIL の新パターンを検出
 - lesson health の4系統を検出:
@@ -381,4 +381,4 @@ Script refs verified: 2026-06-03 cmd_3144. `insight_write.sh` 直近変更(4dacb
 
 Script refs verified: 2026-06-10 karo. `semantic_search.sh` 直近変更(ffd1305de)はcache refresh内部実装のみ(cp生コピー→SQLite Backup API置換、malformed根治)。呼び出し契約(引数/`--stats`/出力形式)は変更なし。SKILL.md記載の使用方法は現行と一致。
 
-<!-- script_refs_checked_at: 2026-06-11T13:59:32+09:00 -->
+<!-- script_refs_checked_at: 2026-06-11T14:01:43+09:00 -->

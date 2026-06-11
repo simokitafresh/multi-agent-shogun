@@ -193,7 +193,7 @@ EOF
     [[ "$output" == *"METRIC: lesson_effectiveness_threshold status=OK rate=100.0% useful_rate=0.0% window_cmds=2 referenced=2 injected=2 useful=0 total_feedback=0 scope=infra"* ]]
 }
 
-@test "gate_lesson_health includes feedback samples once min sample threshold is met" {
+@test "gate_lesson_health includes feedback samples once deprecation-review threshold is met" {
     cat > "$TEST_TMPDIR/projects/infra/lessons.yaml" <<EOF
 ssot_path: $TEST_TMPDIR/tasks/lessons.md
 last_synced: '2026-04-24T00:00:00'
@@ -213,12 +213,16 @@ timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloo
 2026-05-28T00:03:00	cmd_901	saizo	L001	feedback	NOT_USEFUL	no	infra	single_script	routine	5	0
 2026-05-28T00:04:00	cmd_902	saizo	L001	injected		yes	infra	single_script	routine	5	0
 2026-05-28T00:05:00	cmd_902	saizo	L001	feedback	USEFUL	yes	infra	single_script	routine	5	0
+2026-05-28T00:06:00	cmd_903	saizo	L001	injected		yes	infra	single_script	routine	5	0
+2026-05-28T00:07:00	cmd_903	saizo	L001	feedback	NOT_USEFUL	no	infra	single_script	routine	5	0
+2026-05-28T00:08:00	cmd_904	saizo	L001	injected		yes	infra	single_script	routine	5	0
+2026-05-28T00:09:00	cmd_904	saizo	L001	feedback	USEFUL	yes	infra	single_script	routine	5	0
 EOF
 
     run bash "$TEST_GATE" infra
     [ "$status" -eq 0 ]
-    [[ "$output" == *"INFO: useful率(直近3cmd): 2/3 = 66.7%"* ]]
-    [[ "$output" == *"METRIC: lesson_effectiveness_threshold status=OK rate=100.0% useful_rate=66.7% window_cmds=3 referenced=3 injected=3 useful=2 total_feedback=3 scope=infra"* ]]
+    [[ "$output" == *"INFO: useful率(直近5cmd): 3/5 = 60.0%"* ]]
+    [[ "$output" == *"METRIC: lesson_effectiveness_threshold status=OK rate=100.0% useful_rate=60.0% window_cmds=5 referenced=5 injected=5 useful=3 total_feedback=5 scope=infra"* ]]
 }
 
 @test "gate_lesson_health excludes pending injection rows from lesson effectiveness window" {
