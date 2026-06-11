@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-11 -->
+<!-- last_updated: 2026-06-12 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,22 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2681 | 同一cmdに2名配備される二重配備パターン(cmd_2678-2680で3連続発生)を構造的に防止する | infra | 05-12 | cmd_2681: deploy_task.shの同一cmd |
-| cmd_2682 | 同一cmdで先行忍者が完了済みの場合、後発忍者を自動的にvoid(task reset+/clear)して空報告を防止する | infra | 05-12 | ninja_monitorに同一parent_cmd完了済み |
-| cmd_2683 | 起動手順スキップ(家老がinstructions/karo.md未読で即応答した事故)を構造的に防止する。全ロールのstartup gateをSessionStart hookで自動実行し意志依存をゼロにする | infra | 05-12 | SessionStart hookをsettings.jso |
-| cmd_2684 | deploy_task.sh経由でもkaro_direct経由でも最終的にinbox_write.sh type=task_assignedを通るため、ここで同一parent_cmdの他忍者配備を検査しBLOCKすることで全配備経路の二重配備を防止する | infra | 05-12 | inbox_write.shにtask_assigned全経 |
-| cmd_2685 | 教訓注入useful率29.3%(ALERT)。NOT_USEFUL 106件の根因=既存target_filesフィルタは存在するが教訓側メタデータ未設定で素通り。入口精度改善+退場加速の2軸 | infra | 05-12 | 教訓注入の入口精度改善としてtarget_files付与経路 |
-| cmd_2687 | 掲示板確認が意志依存。inbox bulletin_notifyを読んでも confirmed_byに記録されず次回起動時に未確認WARNが再発。inbox_mark_read.shにbulletin_confirm連動を追加し意志依存ゼロにする | infra | 05-12 | inbox_mark_read.shでbulletin_no |
-| cmd_2688 | 教訓注入useful率改善の補完。noise4件(L175/L170/L097/L136 参照率0%)とharm4件(L333/L326/L297/L263 BLOCK率100%)がfeedback不足でcmd_2685のdecay対象外。手動でdeprecate/tag限定し注入プールから排除 | infra | 05-12 | projects/infra/lessons.yaml のn |
-| cmd_2689 | gate_skill_quality FAIL(3/38)。shogun-all-codex-switch/shogun-peacetime-rollback/weekly-report-writerのdescription不備(What/When/NOT When欠落)。startup WARN連続の一因 | infra | 05-12 | gate_skill_qualityのFAIL対象3スキルの |
-| cmd_2690 | 軍師検出: semantic-index file参照12件がMISSING(DM-Signal外部リポジトリのパス移動/削除が未反映)。インデックス正確性を回復する | infra | 05-12 | semantic-indexのDM-Signal外部file |
-| cmd_2691 | karo_direct方式の修行配備でdeploy_task.shの修行テンプレ注入をバイパスし、AC/descriptionが空のまま配備。deploy_error 5件蓄積の根因。karo_directでも修行テンプレ注入を実行する | infra | 05-12 | karo_directスキルのtrainingセクションをd |
-| cmd_2692 | karo_workarounds.yaml 88件のresolved_by_cmdが空(解決率16.2%偽陽性)。根因=記入が意志依存。cmd_complete_gate CLEAR時にWAカテゴリを検索しresolved_by_cmdを自動backfillする | infra | 05-12 | cmd_complete_gate GATE CLEAR時に |
-| cmd_2693 | karo_direct配備(ci_fix/recon2/hotfix)で旧task YAMLのフィールドがリセットされずstale_report 5件蓄積。根因=deploy_task.shのreset_stale_fieldsに相当する処理がkaro_directのcp前にない。cp前にstatusリセットを追加する | infra | 05-12 | karo-directのci_fix/recon2/hotf |
-| cmd_2694 | restart_watchers.sh/ninja_monitor.shのwatcher起動が親プロセスからASW_DISABLE_ESCALATION=1を継承し将軍nudge無効化が再発(cmd_2403修正後も再発)。起動直前にunsetで継承を構造的に遮断する | infra | 05-12 | watcher起動直前にASW_DISABLE_ESCALA |
-| cmd_2696 | 修行cmdの教訓参照率0%(89件feedback中useful=0)。根因=修行ACに教訓活用ステップがなくgate精読+報告作成で完結。テンプレートにAC(注入教訓から1件以上referenceせよ)を追加し教訓参照を構造的に強制 | infra | 05-12 | 修行cmd L4テンプレートに、注入教訓を1件以上参照してl |
-| cmd_2698 | skill_auto_improve.shがgate FIXヒント75件を読まずBLOCK理由文字列のパターンマッチで防止ステップを生成→汎用テンプレート3件が具体性不足→一発CLEAR率71.6%止まり。FIXヒントDBを自動参照し具体的な防止ステップを生成する | infra | 05-12 | gate_report_format_main.pyにloo |
-| cmd_2699 | karo_direct配備(cmd_2695-2698の4件連続)でac_count=0→draft_review SKIPが発生し、軍師レビューの成長ループ第二層が断絶している。全配備パスでac_countが正しく返るよう修正する | infra | 05-12 | karo_direct由来でtask側ACが空でも、壊れたa |
 | cmd_2701 | rebalancerを将軍システムの管理対象に登録する。config/projects.yaml+projects/rebalancer.yaml+context/rebalancer.mdを作成し、偵察・cmd配備・教訓蓄積の基盤を整える | infra | 05-14 | rebalancerを管理対象として登録し、config索引 |
 | cmd_2703 | cmd_save.shの3ゲート(q11_existing_alternative FP率52%、command_steps_over_ac FP率50%、ac_param_sufficiency FP率40%)が偽陽性を量産し、将軍のcmd起票に負の複利を生んでいる。検出精度を改善する | infra | 05-14 | cmd_save.shの3ゲートFP削減を実装。既存gate |
 | cmd_2704 | 偵察タスク(scout_exempt:true)はコード変更を伴わないため未commitファイルが存在しない前提だが、git_uncommitted_gateはscout_exemptを考慮せずBLOCKする。偵察タスクではgit_uncommitted_gateをスキップする | infra | 05-14 | scout_exempt:trueタスクではreport_r |
@@ -525,3 +509,5 @@
 | cmd_3296 | 首領裁定(2026-06-11、approval-20260611-wp1f-wp4-tz.md): 質問状3回答が検証・受領され、wp-1fマージ条件付き承認+実施順序が確定した。最優先=cmd_3294成果(マスク時FoF表示復元、commit 99d8c546、verdict PASS・268テストgreen)のmain着地とデプロイ確認(2026-06-11 19:54将軍git fetchでorigin/main未着地を一次確認)。続いて今夜の日次cron L0-L3完走確認、その後wp-1f(FE削除5commits)のmainマージ+tasks/todo.mdのWP-1F/WP-1B行チェック補完を同一コミットで実施(cron窓00:50–02:10 UTC回避)。マージ・リモート反映・デプロイ確認は家老が直接実施する(忍者には配備しない) | dm-signal | 06-11 | — |
 | cmd_3303 | 殿指示2026-06-11(directive-20260611-monthly-product-removal.md)に基づき、コード変更前のPhase 0本番DB実測ゲートを実行し execution-log に一次情報を固定する。実行順プラン(execution-order-plan-20260611.md) Step 0の第二弾 | dm-signal | 06-11 | WP-MP Phase 0本番DB実測ゲートを実行し、mom |
 | cmd_3302 | 殿指示2026-06-11(directive-20260611-is-active-removal.md)に基づき、コード変更前の前提ゲートP0-1/P0-2/P0-3を実測し execution-log に一次情報を固定する。実行順プラン(execution-order-plan-20260611.md) Step 0の第一弾 | dm-signal | 06-11 | cmd_3302 Phase 0前提ゲートを実測。P0-1は |
+| cmd_3304 | 殿指示2026-06-11(directive-20260611-is-active-removal.md)の作業内容を実装する。Phase 0はP0-1 PASS(inactive=0件)、P0-2は首領裁定(続行・2026-06-11 23:55)で通過済み。実行順プラン Step 1。本cmdの範囲はブランチ上の実装と検証まで(リモート反映は別途裁可制) | dm-signal | 06-12 | cmd_3304_full: is_active/inclu |
+| cmd_3305 | cmd_3304成果物の将軍検分で指示書逸脱3点(基点がorigin/main最新でない・BE/FE/docsの3コミット指定が1コミットに束ねられた・Biome整形修正の機能コミット混入)を発見した。directive-20260611-is-active-removal.mdとQ4合意(整形別コミット)に準拠する形へブランチを再構成する | dm-signal | 06-12 | refactor/is-active-removalを最新o |
