@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-06-08 cmd_3232 -->
+<!-- last_updated: 2026-06-11 cmd_karo_hotfix_ctx_dm_signal_ops_202606111626 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -770,7 +770,15 @@ import metrics_research_engine as MRE
 |------|------|------|
 | FoF signal cache | FoF構成PFがDB preloaded cacheと当回生成signal_cacheの両方に存在する場合、DB行を保持し欠損日だけ当回生成cacheで補完する。`elif cid in signal_cache`から独立`if`へ変更し、FoF-of-FoFの同日/欠損混在を吸収 | commit 89761e7d / `backend/app/jobs/recalculate_fof.py` |
 | PF config snapshot | `save_portfolios`と`recalculate_history_fast`のPhase 0 cleanup前に`portfolio_config_snapshots`を作成。既存configの削除・上書き前バックアップをDBへ残す | commit 77372987 / `backend/app/services/verification_service.py` |
-| legacy PF削除 | 58件削除は`delete_legacy_portfolios_cmd_3112.py`で実施。バックアップJSON検証、保護名重複拒否、NO ACTION 9テーブル先行DELETE、逆依存順削除、残存行検証を含む | commit f84b7ad8 / `backend/app/jobs/delete_legacy_portfolios_cmd_3112.py` |
+| legacy PF削除 | 58件削除はcmd_3112で実施済み。`delete_legacy_portfolios_cmd_3112.py`は2026-06-11 WP-1Bで検証済みdead codeとして削除されたため、再実行手順ではなく履歴証跡として扱う。バックアップJSONは`docs/research/pf_config_backup_20260601_pre_delete.json`を参照 | 実行: commit f84b7ad8 / 削除: commit c47742d1 |
+
+## §41 2026-06-11 source freshness照合
+
+| commit | ops更新判断 | 根拠 |
+|------|------|------|
+| c47742d1 WP-1B dead code削除 | §40 legacy PF削除の参照を更新。§37 ETL本文は維持 | `backend/app/jobs/etl/calculator.py`/`orchestrator.py`は削除、現役`fetcher.py`/`loader.py`は維持。`backend/app/jobs/delete_legacy_portfolios_cmd_3112.py`は履歴用one-shotとして削除済み |
+| 6e86b501 API contract tests追加 | 本文更新不要 | 追加は`backend/tests/test_contract_*.py` 3件とtask-force記録。運用手順・本番API仕様の変更なし |
+| 096dd038 weekly reports + cmd_3225 one-shot | 本文更新不要 | 追加はmarketing記事、weekly report、`scripts/oneshot/cmd_3225_layer_managed_vol.py`、バックアップJSON再追加。既存§40のバックアップJSON参照と矛盾なし |
 
 ## 因果リンク
 
