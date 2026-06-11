@@ -130,5 +130,6 @@ ALM研究の前提条件(道具)が整えば、**CAGR目的関数のDMA/DMS検�
 - [[gunshi_idle_draft_lessons_trend_20260426]] — 軍師idle: ドラフト教訓トレンド分析(2026-04-26)
 - [[gunshi_idle_effectiveness_score_baseline_20260512]] — 軍師idle: 有効性スコアベースライン測定(2026-05-12)
 - [[gunshi_idle_fail_pattern_active_20260428]] — 軍師idle: アクティブ失敗パターン分析(2026-04-28)
+- [[gunshi_idle_adversarial_cold_spot_analysis_20260611]] — 軍師idle: adversarial観点冷え分析(2026-06-11)
 - [[gunshi_gp193_t1_prevention_20260414]] — 軍師GP193: T1防止設計(2026-04-14)
 - [[gunshi_gp194_split_deploy_bc_scope_20260415]] — 軍師GP194: 分割配備BCスコープ(2026-04-15)
