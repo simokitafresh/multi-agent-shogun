@@ -687,7 +687,69 @@ EOF
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
     [[ "$output" == *"■ レビュー品質スケール"* ]]
-    [[ "$output" == *"WARN率 35% (7/20, 直近20レビュー)"* ]]
+    [[ "$output" == *"WARN率 35% (7/20, cmd_id単位最終verdict集計)"* ]]
     [[ "$output" == *"WARN: レビュー品質WARN率が30%超"* ]]
     [[ "$output" == *"総合判定: WARN"* ]]
+}
+
+# === AC2: cmd_id dedup - 同一cmd_idの最終verdictのみカウント + FAIL→VERIFIEDクロスtype ===
+@test "review quality dedup: same cmd_id RC→LGTM counts as LGTM; FAIL(report)→VERIFIED(verify) cross-type also dedups (WARN率 0%)" {
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
+executions:
+- ts: "2026-05-02T10:01:00+0900"
+  skill: "report-write"
+  executor: "hanzo"
+  result: "PASS"
+  stumbling_points: "none"
+EOF
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'EOF'
+- cmd_id: cmd_dup_1
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  findings_summary: "RC first iteration"
+- cmd_id: cmd_dup_1
+  review_type: report
+  verdict: LGTM
+  findings_summary: "Final LGTM"
+- cmd_id: cmd_cross_1
+  review_type: report
+  verdict: FAIL
+  findings_summary: "fail before verify"
+- cmd_id: cmd_cross_1
+  review_type: verify
+  verdict: VERIFIED
+  findings_summary: "cross-type verified"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ レビュー品質スケール"* ]]
+    [[ "$output" == *"WARN率 0% (0/2, cmd_id単位最終verdict集計"* ]]
+    [[ "$output" == *"OK: レビュー品質WARN率30%以下"* ]]
+}
+
+# === AC3: 異なるcmd_idのFAIL/LGTMでWARN率50% ===
+@test "review quality dedup: 2 different cmd_ids FAIL and LGTM gives 50% WARN rate" {
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
+executions:
+- ts: "2026-05-02T10:01:00+0900"
+  skill: "report-write"
+  executor: "hanzo"
+  result: "PASS"
+  stumbling_points: "none"
+EOF
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'EOF'
+- cmd_id: cmd_fail_1
+  review_type: draft
+  verdict: FAIL
+  findings_summary: "fail fixture"
+- cmd_id: cmd_ok_1
+  review_type: draft
+  verdict: LGTM
+  findings_summary: "lgtm fixture"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ レビュー品質スケール"* ]]
+    [[ "$output" == *"WARN率 50% (1/2, cmd_id単位最終verdict集計)"* ]]
+    [[ "$output" == *"WARN: レビュー品質WARN率が30%超"* ]]
 }

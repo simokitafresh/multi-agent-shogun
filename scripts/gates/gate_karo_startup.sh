@@ -537,16 +537,21 @@ review_quality_scale_summary() {
     awk -v limit="$limit" '
 function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^["'\''"]|["'\''"]$/, "", s); return s }
 function flush_entry() {
-    if (review_type ~ /^(draft|report)$/ && verdict != "" && verdict != "null") {
+    if (verdict != "" && verdict != "null") {
         n++
         v[n] = verdict
-        txt[n] = body
+        cid[n] = current_cmd_id
+        if (review_type ~ /^(draft|report)$/) {
+            old_n++
+            old_v[old_n] = verdict
+        }
     }
-    review_type = ""; verdict = ""; body = ""
+    review_type = ""; verdict = ""; current_cmd_id = ""
 }
-/^[[:space:]]*-[[:space:]]*cmd_id:/ { flush_entry(); body = $0; next }
-{
-    body = body "\n" $0
+/^[[:space:]]*-[[:space:]]*cmd_id:/ {
+    flush_entry()
+    s = $0; sub(/^[[:space:]]*-[[:space:]]*cmd_id:[[:space:]]*/, "", s); current_cmd_id = trim(s)
+    next
 }
 /^[[:space:]]*review_type:/ {
     s=$0; sub(/^[[:space:]]*review_type:[[:space:]]*/, "", s); review_type=trim(s); next
@@ -556,20 +561,36 @@ function flush_entry() {
 }
 END {
     flush_entry()
-    start = n - limit + 1
-    if (start < 1) start = 1
-    for (i = start; i <= n; i++) {
-        if (i < 1) continue
-        total++
-        ok = (v[i] ~ /^(APPROVE|LGTM|PASS|CLEAR|VERIFIED|VERIFIED_FACTS|CONDITIONAL_PASS)$/)
-        if (!ok) warn++
+    # 旧方式: draft|reportのみ・重複あり
+    old_start = old_n - limit + 1
+    if (old_start < 1) old_start = 1
+    old_total = 0; old_warn = 0
+    for (i = old_start; i <= old_n; i++) {
+        old_total++
+        ok = (old_v[i] ~ /^(APPROVE|LGTM|PASS|CLEAR|VERIFIED|VERIFIED_FACTS|CONDITIONAL_PASS)$/)
+        if (!ok) old_warn++
     }
-    if (total == 0) {
+    # 新方式: 全review_type・cmd_id単位最終verdict
+    new_start = n - limit + 1
+    if (new_start < 1) new_start = 1
+    for (i = new_start; i <= n; i++) {
+        key = (cid[i] != "") ? cid[i] : ("__anon__" i)
+        last_idx[key] = i
+    }
+    new_total = 0; new_warn = 0
+    for (key in last_idx) {
+        i = last_idx[key]
+        new_total++
+        ok = (v[i] ~ /^(APPROVE|LGTM|PASS|CLEAR|VERIFIED|VERIFIED_FACTS|CONDITIONAL_PASS)$/)
+        if (!ok) new_warn++
+    }
+    if (new_total == 0) {
         print "DATA_MISSING"
         exit
     }
-    rate = int(warn * 100 / total)
-    printf "RATE %d %d %d\n", rate, warn, total
+    new_rate = int(new_warn * 100 / new_total)
+    old_rate = (old_total > 0) ? int(old_warn * 100 / old_total) : 0
+    printf "RATE %d %d %d %d\n", new_rate, new_warn, new_total, old_rate
 }
 ' "$review_log"
 }
@@ -1171,8 +1192,12 @@ fi
 echo "■ レビュー品質スケール"
 _review_quality_line="$(review_quality_scale_summary "$SCRIPT_DIR/logs/gunshi_review_log.yaml" 20 2>/dev/null || echo "DATA_MISSING")"
 if [[ "$_review_quality_line" == RATE* ]]; then
-    read -r _rq_tag _rq_rate _rq_warn _rq_total <<< "$_review_quality_line"
-    echo "  WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, 直近20レビュー)"
+    read -r _rq_tag _rq_rate _rq_warn _rq_total _rq_old_rate <<< "$_review_quality_line"
+    if [ -n "${_rq_old_rate:-}" ] && [ "${_rq_old_rate}" != "${_rq_rate}" ] 2>/dev/null; then
+        echo "  WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, cmd_id単位最終verdict集計, 旧方式=${_rq_old_rate}%)"
+    else
+        echo "  WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, cmd_id単位最終verdict集計)"
+    fi
     if [ "${_rq_rate:-0}" -gt 30 ] 2>/dev/null; then
         echo "  WARN: レビュー品質WARN率が30%超"
         if [ "$overall" != "ALERT" ]; then
