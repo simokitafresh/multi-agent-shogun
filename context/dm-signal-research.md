@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-06-11 cmd_karo_hotfix_ga047_context_freshness_202606112306 -->
+<!-- last_updated: 2026-06-11 cmd_karo_hotfix_ga047_context_freshness -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 

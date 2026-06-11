@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-11 cmd_karo_hotfix_cmd3301_pytest_failures -->
-<!-- last_synced_lesson: L733 -->
+<!-- last_updated: 2026-06-11 cmd_karo_hotfix_ga047_context_freshness -->
+<!-- last_synced_lesson: L735 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -264,6 +264,8 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L729: baseline同等ACとall-tests-pass hookの衝突時はscope外修正前に停止する（cmd_3290）
 - L730: 削除済みBlockTypeはruntime全経路で残参照検査する（cmd_3293）
 - L733: worktree pytest比較ではenv有無を先に二値確認する（cmd_karo_hotfix_cmd3301_pytest_failures_202606112157）
+- L734: FastAPI get_db overrideだけではauth/get_db_session経路は隔離されない（cmd_karo_hotfix_cmd3301_test_sessionlocal_202606112230）
+- L735: 履歴分割任務はdirty本線で直接rewriteせず隔離worktree成果branchを明示する（cmd_3301）
 
 ## 因果リンク
 
