@@ -7795,3 +7795,25 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - files_modified string→dict変換はpath件数確認なしで機械変換すると複数ファイル押込み破損を隠蔽する。GP-107 Q1(内容不変か)の検証を変換前に強制することで根源的に防止できる。検出条件: '- path:'または'change:'が2回以上出現 → FM_FORMAT_INVALID ERROR昇格
+
+### L774: レビュー品質メトリクスはcmd_id単位最終verdict集計が正しい。全type対応必須
+- **日付**: 2026-06-11
+- **出典**: cmd_3286
+- **記録者**: kagemaru
+- **tags**: [infra,gate,review]
+- **target_files**: [scripts/gates/gate_karo_startup.sh,tests/unit/test_gate_karo_startup.bats]
+- **origin**: [[cmd_3286]]
+- **when**: 未設定
+- **how**: 未設定
+- review_quality_scale_summary()は当初draft|reportのみ・全イテレーションカウントで正常な反復レビュー(RC→LGTM)がWARN扱いになり偽WARN率55%を生成。修正: (1)全review_type対応(FAIL→VERIFIEDクロスtype遷移を正しく最終OK扱い) (2)cmd_id単位dedup(最終verdictのみカウント)。旧方式比較値を出力してbefore/afterを可視化
+
+### L775: auto_commit_before_clearはscripts/gates/と.claude/hooks/を無条件除外しなければならない
+- **日付**: 2026-06-11
+- **出典**: cmd_3284
+- **記録者**: tobisaru
+- **tags**: [infra,ninja-monitor,gate,git]
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_clear_guard.bats]
+- **origin**: [[cmd_3284]]
+- **when**: 未設定
+- **how**: 未設定
+- target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/がbatch commitされる。安全機構変更が裁可なしにpush到達する根因。filter_exclude_safety_mechanism_pathsで無条件除外+可視ログが必要

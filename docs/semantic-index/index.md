@@ -653,6 +653,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:53:47+09:00 L0-L7ni |
 | lesson | `L771` cmd-complete完了処理にcontext鮮度更新ステップが欠落(研究系cmdで顕在化) |
 | lesson | `L773` autofixのsilent変換は'内容不変'条件を必ず検証せよ: 文字列内の構造マーカー数でERROR昇格 |
+| lesson | `L774` レビュー品質メトリクスはcmd_id単位最終verdict集計が正しい。全type対応必須 |
+| lesson | `L775` auto_commit_before_clearはscripts/gates/と.claude/hooks/を無条件除外しなければならない |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -721,6 +723,8 @@ codd:
 | causal_chain | `[[cmd_3271]]` (L769) |
 | causal_chain | `[[GA-038_alert]] -> [[cmd_complete_skill_no_context_step]] -> [[research_context_12days_stale]]` (L771) |
 | causal_chain | `[[cmd_3282]]` (L773) |
+| causal_chain | `[[cmd_3286]]` (L774) |
+| causal_chain | `[[cmd_3284]]` (L775) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -752,6 +756,8 @@ codd:
 | cmd | `cmd_3219` 修正: /clear後のCTX%が0%にならない(capture-pane旧値書き戻しバグ) |
 | causal | `cmd_3219` origin: [[殿指摘_CTX0%にならない]] -> [[capture-pane旧値書き戻し]] -> [[clear-history追加]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T21:13:05+09:00 a86570cce59838452 toolu_01AJmNE4wFinFaZcR7cVkrAD /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2bbee917-1f2e-4d49-a7b |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-11T09:47:33+09:00 btf7s0ik7 toolu_01GTMVUU5nFSWxxzWhfpuhax /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/20f7d228-acec-4e6d-91dc-9ae140 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-11T09:47:35+09:00 bqd6lkcmy toolu_01MRxMTL6b293ZZMaj2uBWQZ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/20f7d228-acec-4e6d-91dc-9ae140 |
 | causal_chain | `[[cmd_3142]]` (L735) |
 | causal_chain | `[[cmd_3207]]` (L752) |
 
@@ -1273,7 +1279,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した |
 | skills | なし |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -1336,6 +1342,7 @@ codd:
 | lesson | `L772` causal_backlink_counts.shの検索スコープ盲点 — whitelist型gitignoreでskills/除外+semantic-index対象外 |
 | lesson | `L004` Jinja2のsum(attribute=)は__len__等のdunder属性に使えない — Python側でカウントして渡せ |
 | lesson | `L005` 時刻系カラムの意味定義を突合前に確認せよ — 受信月≠経費帰属月。month_interp 3方式で対応表に明文化 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-11T12:03:24+09:00 確認した。取得済みなどの判断基準を明確にしよう。取得済み＝該当する証票のPDFがgoogle driveに保存されていること。未取得は二つに分けよう。未取得（自動取得可能）、未取得（手動）。データ取得ルートも明確にしよう。 |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -1924,6 +1931,8 @@ codd:
 | file | `docs/research/gunshi_idle_codex_commit_missing_20260413.md` — 軍師idle: Codexコミット欠落分析(2026-04-13) |
 | file | `docs/research/gunshi_idle_codex_respawn_loop_20260516.md` — 軍師idle: Codex respawnループ分析(2026-05-16) |
 | file | `docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md` — 軍師idle: Codex respawnループなぜなぜ(2026-05-20) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-11T12:29:52+09:00 bnme2cf6g toolu_011nxVuDdLVSLW4ug8adpD3G /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/5d38d17a-6e89-47ff-a156-1c4896 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-11T12:41:08+09:00 bnaov9som toolu_01QcVfhrbcvMRG2rbTwXQ1MN /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/5d38d17a-6e89-47ff-a156-1c4896 |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -3373,6 +3382,8 @@ codd:
 | causal | `cmd_3275` origin: [[殿裁定2026-06-10現況可視化]] -> [[完全リストが骨格]] -> [[cmd_3275 monthly_status生成+Sheets見える化]] |
 | cmd | `cmd_3276` clinic-expense-tracker: 佐瀬会計メール35通をパースしmonthly_statusへ反映(現況マトリクスStep 2-1) |
 | causal | `cmd_3276` origin: [[殿裁定2026-06-10手順2リストを埋める]] -> [[佐瀬メール=会計士ground truth]] -> [[cmd_3276 shortage_listパース反映]] |
+| cmd | `cmd_3287` 証票ステータス3分類化+取得ルート明示 — 判断基準をDrive PDF有無に統一し未取得を自動/手動に分離 |
+| causal | `cmd_3287` origin: [[殿裁定2026-06-11取得判断基準明確化]] -> [[not_obtainedが自動/手動未分離]] -> [[cmd_3287 collection_method参照で4色分類+ルート表示]] |
 
 ## project_dividend_tracker — Dividend Tracker
 

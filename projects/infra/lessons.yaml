@@ -1,8 +1,37 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-11T02:12:25'
+last_synced: '2026-06-11T09:48:44'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 768
+lesson_count: 770
 lessons:
+- id: L775
+  title: auto_commit_before_clearはscripts/gates/と.claude/hooks/を無条件除外しなければならない
+  summary: target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/
+  tags:
+  - infra
+  - ninja-monitor
+  - gate
+  - git
+  source_cmd: cmd_3284
+  when: 未設定
+  how: 未設定
+  target_files:
+  - scripts/ninja_monitor.sh
+  - tests/unit/test_ninja_monitor_clear_guard.bats
+  origin: '[[cmd_3284]]'
+- id: L774
+  title: レビュー品質メトリクスはcmd_id単位最終verdict集計が正しい。全type対応必須
+  summary: review_quality_scale_summary()は当初draft|reportのみ・全イテレーションカウントで正常な反復レビュー(RC→LGTM)が
+  tags:
+  - infra
+  - gate
+  - review
+  source_cmd: cmd_3286
+  when: 未設定
+  how: 未設定
+  target_files:
+  - scripts/gates/gate_karo_startup.sh
+  - tests/unit/test_gate_karo_startup.bats
+  origin: '[[cmd_3286]]'
 - id: L773
   title: 'autofixのsilent変換は''内容不変''条件を必ず検証せよ: 文字列内の構造マーカー数でERROR昇格'
   summary: files_modified string→dict変換はpath件数確認なしで機械変換すると複数ファイル押込み破損を隠蔽する。GP-107
@@ -521,7 +550,7 @@ lessons:
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
   deprecated: true
-  deprecated_at: '2026-06-11T02:12:45+09:00'
+  deprecated_at: '2026-06-11T09:50:11+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -778,6 +807,11 @@ lessons:
   - scripts/gates/gate_karo_startup.sh
   - tests/unit/test_gate_karo_startup.bats
   origin: '[[cmd_karo_ci_parallel_isolation_wa_rate]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L720
   title: 軍師3/3穴なし判定は洗脳#8 — Step3実運用シミュレーション強制
   summary: '3/3穴なし判定時にStep3(実運用シミュレーション)を省略し穴を見落とすパターン。Phase5c+Phase6で2回再現。殿介入で計5件追加穴を発見。対策:'
@@ -1054,6 +1088,11 @@ lessons:
   - scripts/gates/gate_karo_startup.sh
   - tests/unit/test_cmd_complete_gate.bats
   origin: '[[cmd_3047]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L701
   title: if条件失敗後のrc取得はelse内で行う
   summary: bashで `if parsed=$(cmd); then ... fi; rc=$?` と書くと、elseなしif文全体の終了ステータスが0になり、cmd失敗
@@ -1133,6 +1172,11 @@ lessons:
   - scripts/gates/gate_shogun_startup.sh
   - scripts/gates/gate_karo_startup.sh
   origin: '[[cmd_3027]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L696
   title: set-e下でALERT集計script呼出し時は終了値捕捉を明示する
   summary: startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs
@@ -1683,6 +1727,11 @@ lessons:
   - scripts/dashboard_update.sh
   - tests/unit/test_skill_feedback_loop.bats
   origin: '[[cmd_training_L7_v3_kagemaru_5_20260521202900]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L658
   title: 一時YAML作成失敗時は配備処理を即停止する
   summary: mktempやテンポラリYAML書込に失敗したままdeploy_taskへ進むと、空/不完全な入力で修行配備が失敗し原因が後段ログに隠れる。tmp_task作成
@@ -1927,6 +1976,11 @@ lessons:
   - tests/unit/test_deploy_task_small_consolidated.bats
   - tests/unit/test_gate_small_consolidated.bats
   origin: '[[cmd_2894]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L641
   title: Batsのloadでは@test定義を集約できない
   summary: 'Batsのloadで@testを含む断片を読ませると@test: command not foundで失敗する。小規模Bats統合で元ファイルごとのsetup/'
@@ -1977,6 +2031,11 @@ lessons:
   - tests/unit/test_agent_state.bats
   - tests/unit/test_usage_status.bats
   origin: '[[cmd_2893]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L638
   title: FP率計算は累計昇格BLOCKもFP候補に含める
   summary: ac_phase_mixingのような頻発BLOCKは累計昇格で閾値が下がった結果でもあり、FP率計算時にはcmd_design_quality全記録を対象にす
@@ -2745,6 +2804,11 @@ lessons:
   - tests/unit/test_cmd_save_diagnosis_quality.bats
   - tests/unit/test_cmd_save_environment_change.bats
   origin: '[[cmd_karo_ci_red_q8_fixture]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L590
   title: CI RED fixture修正は同一gate条件の全fixtureを横断確認する
   summary: 指定2ファイル修正だけではCI全量で別cmd_save fixtureが同じq8 5W1H WARNを出した。gate条件追加時のfixture修正はrgで同一
@@ -2947,6 +3011,8 @@ lessons:
   - scripts/cmd_save.sh
   - .claude/hooks/pre-write-edit-combined.sh
   origin: '[[cmd_2607]]'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L576
   title: lesson subdomain推定はAC例IDでspot checkせよ
   summary: サブドメイン自動付与はパスやタグだけだとGS固有教訓をinfraに誤推定し得る。cmdが例示したIDは個別にsubdomainを確認しdry-runで非対象ta
@@ -3281,6 +3347,9 @@ lessons:
   - scripts/cmd_save.sh
   - docs/research/codd_refactor_registry.md
   origin: '[[cmd_2482]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L554
   title: 重複Batsは片側を高速化するより専用ファイルへcoverageを集約する
   summary: test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/
@@ -3638,6 +3707,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する
   origin: '[[cmd_2278]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L529
   title: 共有workspaceで並列忍者がcommitする際はgit commit --onlyで担当pathのみcommit treeに固定せよ
   summary: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を
@@ -4179,6 +4251,11 @@ lessons:
   target_files:
   - gate_karo_startup.sh
   origin: '[[cmd_1984]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L485
   title: 'WSL2 /mnt/c でsingle awk一括化は逆効果: Windows Defender一括スキャンが支配'
   summary: 'gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因:
@@ -5767,7 +5844,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-11T02:12:45+09:00'
+  deprecated_at: '2026-06-11T09:50:11+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -6358,6 +6435,11 @@ lessons:
   target_files:
   - inbox_write.sh
   origin: '[[cmd_1412]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L298
   title: NTFY_LISTENER_LIB_ONLY=1でもtop-level初期化コードが実行される
   summary: ntfy_listener.shをNTFY_LISTENER_LIB_ONLY=1でsource時、flock guardはスキップされるがinbox初期化(e
@@ -6580,6 +6662,11 @@ lessons:
   - ntfy_listener.sh
   - script_update.sh
   origin: '[[cmd_1268]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L280
   title: ninja_monitor.sh新変数追加時は関連テストのdeclare-A+キー初期化も同時更新必須
   summary: ninja_monitor.shはset -uを使わないがテストはset -euoで実行される。新しい連想配列変数を追加する際、関連テストのdeclare
@@ -6670,6 +6757,9 @@ lessons:
   - scripts/gates/gate_karo_startup.sh
   - scripts/gates/gate_gunshi_startup.sh
   origin: '[[cmd_1261]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L273
   title: PostToolUse hookがテスト名中のskipに誤検知
   summary: batsテスト名にskipsを含むテスト(例:deploy_task skips ac_priority)が存在すると、PostToolUse
@@ -7507,6 +7597,11 @@ lessons:
   target_files:
   - ninja_monitor.sh
   origin: '[[cmd_777]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L204
   title: STALL誤判定の実態は「idle+status未更新」が主因。pstree方式で予防的防御層追加が有効
   summary: 30日分134件のSTALL-DETECTEDログを分析した結果、ほぼ全件が「ペインが確実にidle状態なのにtask YAML statusが未更新」パターン
@@ -7520,6 +7615,8 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 当初想定されたBash長時間実行中の誤判定はログ上では確認できなかった
   origin: '[[cmd_777]]'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L203
   title: xAI x_searchはResponses API+grok-4ファミリー限定
   summary: xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール
@@ -7661,6 +7758,11 @@ lessons:
   target_files:
   - task_sasuke_basic.yaml
   origin: '[[cmd_714]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L190
   title: 並列impl配備時は全忍者のcommit完了を確認してからreview配備せよ。cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit
     statusで未コミット差分を確認すべき
@@ -7724,6 +7826,11 @@ lessons:
   how: '`git ls-remote origin refs/heads/main` だけでなく push直前に `git rev-parse HEAD`
     / `git log -1 --oneline` で local HEAD も再確認せよ'
   origin: '[[cmd_675]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L185
   title: report_path 注入だけで報告テンプレート未生成→忍者が手動補完
   summary: '`cmd_675` 配備後の `queue/tasks/hayate.yaml` には `report_path: queue/reports/hayate_r'
@@ -8233,6 +8340,11 @@ lessons:
   when: レビューFAILで再提出を指示する時
   how: revert対象を明示し、scope内差分を保持した最小修正で再提出させよ
   origin: '[[cmd_528]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L139
   title: scope外変更のrevert確認では、正味diff(HEAD~N..HEAD)と個別commit diffの両方を突合すべき
   summary: IF scope外変更のrevert確認時 THEN 本件ではkirimaru impl(85c8a96)とsaizo revert(f4b264c)の正味di
@@ -8692,7 +8804,7 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-11'
   deprecated: true
-  deprecated_at: '2026-06-11T02:12:45+09:00'
+  deprecated_at: '2026-06-11T09:50:12+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)
@@ -9216,6 +9328,8 @@ lessons:
   - usage_status.sh
   - usage_statusbar_loop.sh
   origin: '[[usage_statusbar_loop.sh重複表示バグの修正体験]]'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L058
   title: WSL2の/mnt/c上でClaude CodeのWrite toolを使うと.shファイルにCRLF改行が混入する。bash -nで構文エラーになるため、新規.shファイル作成後は必ず
     sed -i 's/\r$//' で修正すること。
@@ -9737,6 +9851,11 @@ lessons:
   when: whitelist方式.gitignoreのリポジトリでcommitする時
   how: git statusで全対象ファイルの認識状態を確認し、whitelist追加漏れがないか検証せよ
   origin: '[[cmd_143]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
+  deprecated: true
+  deprecation_reason: auto_useful_rate_zero
 - id: L008
   title: WSL2新規shファイルはCRLF改行混入リスクあり
   summary: WSL2環境(/mnt/c/)でClaude CodeのWriteツールで新規.shファイルを作成するとCRLF改行になる場合がある。新規.sh作成後はfile

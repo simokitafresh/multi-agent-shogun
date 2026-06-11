@@ -125,6 +125,9 @@ lessons:
   - .github/workflows/pytest.yml
   - backend/tests/test_pipeline_cache_optimization.py
   origin: '[[cmd_2656]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L720
   title: FE表示名変更時は新名優先+旧名fallbackを同時実装せよ
   summary: metrics_jsonのキー名をBE側で変更した場合、FEキャッシュに旧名データが残存する期間がある。新名で取得→なければ旧名fallbackの二段構えをFE
@@ -415,6 +418,9 @@ lessons:
   - frontend/components/monthly-trade-table.tsx
   - frontend/lib/monthly-trade-display.ts
   origin: '[[cmd_2451]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L701
   title: fullrecalculate後は非対象PFのmonthly_returns件数diffを必ず復元判断まで行う
   summary: cmd_2450で秘奥義4体登録後にfullrecalculateを実行したところ、対象外20体のmonthly_returnsが0行から3741行生成され、A
@@ -498,6 +504,9 @@ lessons:
   - backend/app/
   - queue/reports/hayate_report_cmd_2444.yaml
   origin: '[[cmd_2444]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L696
   title: FoF登録ではPortfolio直下top_nを構成数に使うな
   summary: Portfolio直下top_nはPydanticで1..2制約があるUI/標準PF由来フィールド。FoF構成数やGS subset_sizeを入れるとtop_
@@ -1132,6 +1141,9 @@ lessons:
   - outputs/grid_search/20260427/L0/shin/gs_oikaze_DM7P.db
   - outputs/grid_search/20260427/L0/shin/source_csv/cmd_2323_oikaze_DM2_results_fast.csv
   origin: '[[cmd_2323]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L658
   title: GS正規化前にsource CSV期間とproduction最新月を照合する
   summary: cmd_2322でrun_077_bunshin.pyを再実行してもuniverseがsource_type=csvのためtarget_dateは2026-01
@@ -1384,6 +1396,9 @@ lessons:
   - .gitignore
   - outputs/scripts/champion_selector.py
   origin: '[[cmd_2177]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L641
   title: csv source universe使用時のkawarimi AC1 batch vs sequential MD5不一致
   summary: 'wf_alm_12.yaml(source_type: csv)で run_077_kawarimi.py を実行すると AC1検証(batch
@@ -1427,6 +1442,9 @@ lessons:
   - scripts/analysis/cmd_2142_bunshin_profile_harness.py
   - scripts/analysis/grid_search/run_077_bunshin.py
   origin: '[[cmd_2142]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L638
   title: upfront cleanup後の長時間再計算はworker restartで本番データを空にしうる
   summary: MonthlyReturnをPhase 0で先消しすると、FoF再生成前にRender workerが再起動した場合monthly_returns
@@ -2179,6 +2197,9 @@ lessons:
   target_files:
   - outputs/scripts/l1_alm_wf_engine.py
   origin: '[[cmd_1827]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L590
   title: tracemalloc≠RSS — メモリ目標はRSS(/usr/bin/time -v)で設定せよ
   summary: tracemallocはPythonヒープのみ。RSS差=850MB(Pythonランタイム+.so+GC)。cmd_1828でAC3 FAIL(1.394GB
@@ -2691,6 +2712,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-05'
   origin: '[[cmd_1743]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L554
   title: family ALM研究はmetricsと相関をベクトル化しないと時間で破綻する
   summary: cmd_1741ではPhase1のcompute_metrics_from_returns個別呼出とPhase2の候補×PF個別rolling
@@ -3025,6 +3049,9 @@ lessons:
   - scripts/analysis/nested_fof/building_block.py
   - scripts/analysis/nested_fof/r30_denoised_optics_vs_ward.py
   origin: '[[cmd_1623]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L529
   title: NewHigh/UWP選出指標はLB短区間で差別化力が弱い
   summary: NewHigh/UWP選出はLB短(1-4ヶ月)では同一体を選出し差別化不可。LBが短いとcumulativeの新高値/underwaterが1-2回しか発生せ
@@ -3644,6 +3671,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: selection block種類が変わってもverify_fof_parity_batch.pyの検証フローは安定動作
   origin: '[[cmd_1345]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L485
   title: FoF初月hs_cross不一致は全FoF共通パターン
   summary: verify_fof_parity_batch.pyのhs_cross_checkで全FoFの最初月がFAILする。monthly_returns.holdin
@@ -6236,7 +6266,7 @@ lessons:
   origin: '[[cmd_861]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-08'
+  last_referenced: '2026-06-11'
 - id: L298
   title: FracDiffのd最適化を全期間一括で行うな
   summary: ADF+binary searchでdを選ぶ場合、全期間で一度だけd決定するとtest foldの定常性情報をtrainingに逆流させる。d選定は各train
@@ -6481,6 +6511,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-12'
   origin: '[[cmd_860]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L280
   title: 入替推奨UIは候補(candidate)語彙+連続月数条件+Progressive Disclosureで設計せよ
   summary: 投資UIの語彙は行動に直結。recommend→candidateの語彙選択がwhipsaw抑制の生命線。遅行指標ベースのアクション提案は単月閾値ではなく連続月
@@ -6564,7 +6597,7 @@ lessons:
   origin: '[[cmd_852]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-10'
+  last_referenced: '2026-06-11'
 - id: L273
   title: live API完全一致監査はcurrent partial monthを凍結or除外しないと日次更新ノイズで誤FAIL化する
   summary: cmd_856で/api/signalsは91PF全件一致だが、/api/monthly-returnsと/api/performanceは15/15PFで不一
@@ -7394,6 +7427,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 個別に実装すると2回のSW更新(CACHE_NAME 2回インクリメント)が必要で非効率
   origin: '[[cmd_646]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L204
   title: API永続キャッシュはUI state用localStorageと分離し、auth-scope付き IndexedDB を主格にすべき
   summary: selected PF や folder filter のような小さなUI stateは localStorage で十分だが、 multi-year
@@ -7576,6 +7612,9 @@ lessons:
   - frontend/components/__tests__/compare-summary-table.test.tsx
   - frontend/components/compare-summary-table.tsx
   origin: '[[cmd_613]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L190
   title: 集計要件でrole分離が必要ならイベント記録時点で識別子を保存しないと後段SQLでは復元不能
   summary: IF analytics tier集計でadminをtrack時にNULL化していたため、summary側でadmin/unauthenticatedを分離でき
@@ -7634,6 +7673,9 @@ lessons:
   when: 本件は3/5を比較軸にしたがMAX(date)が3/4だったため変動有無とデータ未投入を分離できた時
   how: 本件は3/5を比較軸にしたがMAX(date)が3/4だったため変動有無とデータ未投入を分離できた
   origin: '[[recon]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L185
   title: テーブル列定義をSSOT(COLUMNS)で管理しておくと要件変更4点の同時反映が安全になる
   summary: IF 今回のUI改修では列の追加・削除・mobile可視制御・sort定義をCOLUMNS/ColumnKey/getSortValueで一貫管理したことで、差
@@ -8186,6 +8228,9 @@ lessons:
   when: block_registryのshared.py一元化(2026-01-05)後、troubleshooting.mdの時
   how: block_registryのshared.py一元化(2026-01-05)後、troubleshooting.mdの
   origin: '[[cmd_492]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L139
   title: 依存マップ作成時はgrepのみでなくAST循環解析を先に走らせると、遅延importを含む実サイクルを短時間で特定できる。
   summary: recon,dependency,python,static-analysis
@@ -9688,6 +9733,9 @@ lessons:
   when: sync-fof API を実施する時
   how: '`etl_trigger.py` L867 の sync-fof エンドポイントは `Query()` パラメータを使用'
   origin: '[[legacy_lesson_L009]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L008
   title: GS構成四神 [歴史的記述]と本番FoF構成PFの不一致（2026-02-14）
   summary: GS構成四神 [歴史的記述]と本番FoF構成PFの不一致（2026-02-14）
