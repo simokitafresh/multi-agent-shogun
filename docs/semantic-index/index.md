@@ -318,6 +318,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:18:16+09:00 偽陽性はバグだ。即時修正しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T18:19:40+09:00 将軍がCMD起票をスムーズにできなかったのはなぜだと思う？分析して今後性能の劣るLLMでもスムーズにCMD起票ができるように環境を整えよう。洗脳監査。L0-L7に貫通させて対応。gate側のインフラバグがないかも確認しよう |
 | file | `docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md` — 軍師idle: 洗脳監査メモリループ分析(2026-06-02) |
+| cmd | `cmd_3298` recalculation_status TZ混在バグ独立修正: 書込みdatetime.utcnow()/now()のUTC統一(mainマージは個別裁可) |
+| causal | `cmd_3298` origin: [[質問状3Q5 TZ混在証拠]] -> [[首領裁可3独立修正承認]] -> [[cmd_3298 UTC統一]] |
+| causal | `cmd_3298` depends_on: cmd_3296,cmd_3297 |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -1361,8 +1364,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T20:27:10+09:00 明朝のcron確認を待つのは先過ぎるな。 |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
-| causal_chain | `[[cmd_092]]` (L004) |
-| causal_chain | `[[cmd_134]]` (L005) |
+| causal_chain | `[[006.md検証]]` (L004) |
+| causal_chain | `[[006.md検証]]` (L005) |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -1502,9 +1505,9 @@ codd:
 | lesson | `L001` gws CLI token_cacheをAES-256-GCM復号でPython直接API化できる |
 | lesson | `L002` 年次/決算期経費の生成月は設計書に明記せよ |
 | lesson | `L003` NFKC正規化は全角括弧を半角化し独立濁点を空白+結合文字に分解する |
-| causal_chain | `[[cmd_125]]` (L001) |
-| causal_chain | `[[cmd_125]]` (L002) |
-| causal_chain | `[[cmd_125]]` (L003) |
+| causal_chain | `[[cmd_1055]]` (L001) |
+| causal_chain | `[[cmd_1055]]` (L002) |
+| causal_chain | `[[006.md検証]]` (L003) |
 
 ## gs_ninpo_research — GS忍法研究
 

@@ -150,6 +150,9 @@ lessons:
   - queue/pending_approval.yaml
   - tests/unit/test_pending_approval.bats
   origin: '[[cmd_3285]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L775
   title: auto_commit_before_clearはscripts/gates/と.claude/hooks/を無条件除外しなければならない
   summary: target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/
@@ -3822,6 +3825,9 @@ lessons:
   target_files:
   - tests/unit/test_cmd_save_prev_cmd_lesson_warn.bats
   origin: '[[cmd_karo_ci_fix_375]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L534
   title: 軍師動的指摘がcmd_save出力を汚染しテスト誤検知
   summary: '動的コンテンツ(軍師指摘)に否定アサーション対象文字列が混入可能。修正: 動的コンテンツ依存の否定アサーションは具体的エラーメッセージパターンに絞れ。'
@@ -6722,6 +6728,9 @@ lessons:
   when: 報告YAMLやレビュー結果を作成・検証する時
   how: '2026-03-23'
   origin: '[[cmd_1286]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L287
   title: 運用YAMLファイルはYAML構造破損を前提にfallback parser設計必須
   summary: karo_workarounds.yamlのYAML構造が壊れていた(line 135付近に不正インデント)。gate_shogun_startup.shと同様
@@ -7100,6 +7109,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-20'
   origin: '[[cmd_1129]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L257
   title: lesson_impact.tsvのtask_type列にimplとimplementが混在し参照追跡が分断
   summary: deploy_task.shがtask_typeをそのままimpact_logに書き込むが、impl/implement/fix/enhance等で揺れている。
@@ -7666,6 +7678,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: '2026-03-13'
   origin: '[[cmd_873]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L212
   title: '一次データ不可侵原則: 外部知識(論文/API仕様/書籍等)は原典のまま保存し、自軍の解釈・適用は別セクション/別ファイルに分離する。改変は捏造。全PJ共通適用'
   summary: 'IF: 外部知識を記録・引用する時 THEN: 一次データ層と解釈・適用層を分離せよ BECAUSE: 一次データの改変は捏造であり、知識の信頼性が失われる'
@@ -7724,6 +7739,9 @@ lessons:
   - inbox_write.sh
   - ninja_done.sh
   origin: '[[cmd_812]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L208
   title: テスト#158ライブtmux環境依存FAILの修正要
   summary: test_gate_metrics_model_labels.batsのテスト#158がライブtmuxセッションの@model_nameを取得し、テストフィクス
@@ -8299,6 +8317,9 @@ lessons:
   when: 5軸以上の独立した偵察を実施する時
   how: '並列Agent(例: 4並列)で各軸を分担して同時実行せよ'
   origin: '[[cmd_548]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L158
   title: ローテーション機能レビューでは境界値テストに加えて過剰初期データの実地検証が有効
   summary: IF ローテーション機能をレビューする時 THEN 境界値テストに加え、200超の初期データ(例:250件)を用いた追記検証を実施せよ
@@ -8532,6 +8553,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: taskが特定セクション改修を要求している場合、commit diffに無関係なgate条件変更が混在した時点でFAILとし、目的適合性違反として差し戻す運用が必要
   origin: '[[cmd_528]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L137
   title: lesson_done先行生成とpreflight upgradeの設計的不整合
   summary: deploy_task.shがlesson.doneをlesson_checkで先行生成する設計は、cmd_complete_gate.shのpreflight
@@ -8612,6 +8636,9 @@ lessons:
   target_files:
   - dashboard_update.sh
   origin: '[[cmd_511]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L131
   title: archive_completed.sh sweep modeはparent_cmd完了チェック必須
   summary: sweep mode（引数なし）はstatus判定のみだと進行中cmdの報告を早期退避し得る。原則はcmd_id指定呼び出しとし、sweepにはparent_c
@@ -8670,6 +8697,9 @@ lessons:
   when: 報告YAMLやレビュー結果を作成・検証する時
   how: 家老は再配備前にgit log + report存在を確認することで重複作業を防止できる
   origin: '[[cmd_494]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L126
   title: 非同期通知ラッパーをif判定に使うと成功誤判定が起きる
   summary: IF 非同期通知ラッパー(常時exit 0)の結果をif判定で使う時 THEN 同期モードまたは結果ファイル連携で結果を取得せよ
@@ -8849,6 +8879,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: task_id||subtask_idフォールバック実装が必要
   origin: '[[cmd_462]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L111
   title: ACにテストファイル実行が含まれる場合は実行前にファイル実在を確認せよ
   summary: IF ACにテストファイル実行が含まれる時 THEN 実行前にファイルの実在を確認し、不在なら停止して報告せよ
@@ -9326,6 +9359,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: cmd_371 C1のタスク指示は'lib/配下→..でリポルート'だったが、実際はscripts/lib/配下のため../..が必要
   origin: '[[path-resolution,task-instruction-verification,security-boundary]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L072
   title: git-ignoredスクリプトがwhitelist漏れで現役使用されるリスク — clone後に動作不全
   summary: shout.sh(ninja FINAL step必須)とgate_mcp_access.sh(セキュリティhook)がwhitelist未登録。スクリプト作成

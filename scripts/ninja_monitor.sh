@@ -1410,7 +1410,9 @@ report_file_has_verdict() {
 find_completed_parent_cmd_report_for_other_ninja() {
     local name="$1"
     local parent_cmd="$2"
+    local task_id="${3:-}"
     local dir report_file report_parent_cmd report_status report_worker base
+    local report_task_id
 
     [ -n "$parent_cmd" ] || return 1
 
@@ -1425,6 +1427,11 @@ find_completed_parent_cmd_report_for_other_ninja() {
 
             report_parent_cmd=$(yaml_field_get "$report_file" "parent_cmd")
             [ "$report_parent_cmd" = "$parent_cmd" ] || continue
+
+            report_task_id=$(yaml_field_get "$report_file" "task_id")
+            if [ -n "$task_id" ] && [ -n "$report_task_id" ] && [ "$task_id" != "$report_task_id" ]; then
+                continue
+            fi
 
             report_status=$(yaml_field_get "$report_file" "status")
             case "$report_status" in
@@ -1466,7 +1473,7 @@ auto_void_if_parent_cmd_completed() {
     esac
     [ -n "$parent_cmd" ] || return 1
 
-    completed_report=$(find_completed_parent_cmd_report_for_other_ninja "$name" "$parent_cmd") || return 1
+    completed_report=$(find_completed_parent_cmd_report_for_other_ninja "$name" "$parent_cmd" "$task_id") || return 1
     completed_base=$(basename "$completed_report")
 
     local lock_file="${STATE_DIR:-/tmp}/task_${name}.lock"
@@ -1483,7 +1490,7 @@ auto_void_if_parent_cmd_completed() {
         esac
         current_parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
         [ "$current_parent_cmd" = "$parent_cmd" ] || { log "AUTO-VOID-SKIP: $name parent_cmd changed to ${current_parent_cmd:-empty}"; exit 1; }
-        still_completed_report=$(find_completed_parent_cmd_report_for_other_ninja "$name" "$parent_cmd") || { log "AUTO-VOID-SKIP: completed report disappeared for $name parent_cmd=$parent_cmd"; exit 1; }
+        still_completed_report=$(find_completed_parent_cmd_report_for_other_ninja "$name" "$parent_cmd" "$task_id") || { log "AUTO-VOID-SKIP: completed report disappeared for $name parent_cmd=$parent_cmd task_id=$task_id"; exit 1; }
 
         if ! yaml_field_set "$task_file" "task" "status" "idle"; then
             log "ERROR: yaml_field_set failed for ${name} auto-void status update"

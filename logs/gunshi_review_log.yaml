@@ -2703,3 +2703,97 @@
   brainwash_check: "洗脳#8(完了急ぎ)チェック: cmd_3297 CLEARで次に進みたい衝動があるがcmd_3296前提を確認。100億年: 裁可書順序遵守は恒久的信頼の基盤"
   origin: "[[裁可書実施順序]] -> [[cmd_3296 AC2差し戻し]] -> [[RC_前提未成立]]"
   timestamp: "2026-06-11T20:28:00"
+- cmd_id: cmd_3299
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "WP-3実施計画偵察。読取専用(AC4ソース変更ゼロ証明)。3領域並列(FE10型/BE4モジュール/deprecated2フィールド)。現物突合義務化。制約明記(ファサード維持/削除禁止等)"
+  observations:
+    - "事実1: depends_on=none。読取専用でcmd_3296/3298と無干渉。殿指示(20:31)で並列化"
+    - "事実2: AC4 git statusソース変更ゼロ証明。コード変更混入を構造的に検知"
+    - "事実3: 偵察5要件(変更対象・波及先・テスト・エッジケース・依存)が全ACに義務化"
+    - "事実4: manifest列挙値→現物突合がAC1-3の必須条件。workorder制約も各ACに明記"
+  causal_chain: "WP-3裁可制→計画先行が必要→idle忍者5名活用→読取専用偵察で並列化→計画品質×手戻り削減(正の複利)"
+  brainwash_check: "洗脳#5(先送り)チェック: 裁可待ちの間も計画策定を並列で進める=先送りの対極。100億年: 計画品質が全WP-3実装の前提"
+  ambiguity_points: none
+  origin: "[[殿指示並列化]] -> [[cmd_3299 WP-3偵察]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T20:42:00"
+- cmd_id: cmd_3298
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。end_time 2箇所UTC化(_utc_now)。pytest 18 PASS。過去行不可侵。mainマージ非実施。changed_lines=231(ruff整形含む)"
+  observations:
+    - "事実1: git diff確認。end_time書込み2箇所datetime.now()→_utc_now()(=datetime.now(UTC))。実質変更は最小"
+    - "事実2: timing-historyデータソース=recalculation_timings(別テーブル)→表示影響なし確認済み"
+    - "事実3: commit fa87fa2b。3ファイル(recalc_status.py/test/execution-log)。ruff整形含み+151/-80"
+    - "事実4: post_deploy_evidence required=false。本番cutoverは個別裁可後deploy時に追記"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "changed_lines=231だがruff整形が大部分。実質コード変更=end_time 2箇所+_utc_now追加のみ。rollback容易。本番DB不可侵"
+  causal_chain: "TZ混在(start=UTC/end=JST)→end_time書込みをUTC化→start/end同一TZ保証→完走確認の誤読消滅(正の複利)"
+  brainwash_check: "洗脳#2防止: git diff現物確認で2箇所のみ実質変更を確認。洗脳#1防止: changed_lines≥200のためadversarial実施"
+  step3_5_verified: true
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[質問状3Q5 TZ混在]] -> [[cmd_3298 UTC統一]] -> [[LGTM]]"
+  timestamp: "2026-06-11T20:45:00"
+- cmd_id: cmd_3299
+  review_type: report
+  report_ninja: hanzo
+  verdict: FAIL
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem]
+  findings_summary: "SG-PRE25 ERROR 5ファイル(readonly_ref FP)。AC2分担=BE分割計画。files_modified=report YAMLのみ"
+  observations:
+    - "事実1: SG-PRE25 ERROR: execution-log.md/manifest-frontend.md/refactor-workorder-20260611.md/summary.md/wp3-implementation-plan-draft.md不在"
+    - "事実2: 全て必読参照(readonly_ref)だがverified_existing_dependency未記録→GATE BLOCK確実"
+  fail_reasons:
+    - "SG-PRE25 ERROR: command欄必読参照5ファイルがfiles_modifiedに不在→GATE BLOCK。verified_existing_dependency追記 or 家老waiveが必要"
+  causal_chain: "readonly_ref未記録→GATE BLOCK→LG006(LGTM=GATE通過保証)準拠でFAIL"
+  brainwash_check: "洗脳#1防止: cmd_3297/3298と同パターンのSG-PRE25 ERRORを見逃さずFAIL"
+  step3_5_verified: true
+  hole_action: none
+  origin: "[[cmd_3299 AC2 hanzo]] -> [[SG-PRE25 readonly_ref FP]] -> [[FAIL]]"
+  timestamp: "2026-06-11T20:47:00"
+- cmd_id: cmd_3299
+  review_type: report
+  report_ninja: hayate
+  verdict: FAIL
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem]
+  findings_summary: "SG-PRE25 ERROR 4ファイル(readonly_ref FP)。AC1+AC4分担=FE分割計画+統合ドラフト。files_modified=wp3-implementation-plan-draft.md"
+  observations:
+    - "事実1: SG-PRE25 ERROR: execution-log.md/manifest-frontend.md/refactor-workorder-20260611.md/summary.md不在"
+    - "事実2: commit 26bc34ec実在。wp3-implementation-plan-draft.md作成。実装自体は問題なし"
+  fail_reasons:
+    - "SG-PRE25 ERROR: command欄必読参照4ファイルがfiles_modifiedに不在→GATE BLOCK。verified_existing_dependency追記 or 家老waiveが必要"
+  causal_chain: "readonly_ref未記録→GATE BLOCK→LG006準拠でFAIL"
+  brainwash_check: "洗脳#1防止: 同パターンSG-PRE25 ERROR連続。readonly_ref偽陽性はインフラバグ(LG014)だがレビュー判定はFAIL維持"
+  step3_5_verified: true
+  hole_action: cmd_proposed
+  ambiguity_points: none
+  origin: "[[cmd_3299 AC1+4 hayate]] -> [[SG-PRE25 readonly_ref FP]] -> [[FAIL]]"
+  timestamp: "2026-06-11T20:47:00"
+- cmd_id: cmd_3299
+  review_type: report
+  report_ninja: tobisaru
+  verdict: FAIL
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem]
+  findings_summary: "SG-PRE25 ERROR 4ファイル(readonly_ref FP)。AC3分担=deprecated移行計画。同パターン5件目"
+  observations:
+    - "事実1: SG-PRE25 ERROR: execution-log.md/manifest-frontend.md/refactor-workorder-20260611.md/summary.md不在"
+    - "事実2: 同パターン5連続(cmd_3297/3298/3299x3)。インフラバグ(掲示板blt_20260611_204742報告済み)"
+  fail_reasons:
+    - "SG-PRE25 ERROR: 必読参照4ファイル不在→GATE BLOCK。家老waive or インフラ修正が必要"
+  causal_chain: "readonly_ref未記録→GATE BLOCK→LG006準拠FAIL。5連続=インフラバグ(LG014)"
+  brainwash_check: "洗脳#8防止: 同パターン連続で形骸化せずFAIL維持。根治はインフラ側"
+  step3_5_verified: true
+  hole_action: none
+  origin: "[[cmd_3299 AC3 tobisaru]] -> [[SG-PRE25 readonly_ref FP]] -> [[FAIL]]"
+  timestamp: "2026-06-11T20:50:00"

@@ -53072,3 +53072,75 @@ entries:
   source: "cmd_save_warn"
   timestamp: "2026-06-10T16:41:26Z"
   notes: "ac_param_sufficiency|check=check_ac_param_sufficiency"
+- cmd_id: "cmd_3281"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-10T16:41:26Z"
+  notes: "causal_verification_missing|check=check_causal_verification_requirement"
+- cmd_id: "cmd_3281"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-10T16:41:26Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点で形式準拠。既存gateスクリプトの修正とテスト追加でありファイル構成の変更なし"
+  notes: "WARN累計昇格: 「causal_verification_missing|check=check_causal_verification_requirement」が4回繰り返されています(cmd_ids=cmd_3257,cmd_3267,cmd_3267,cmd_3267)。WARNを解消してからcmd_save.shを実行せよ"
+- cmd_id: "cmd_3281"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-10T16:42:32Z"
+  notes: "ac_param_sufficiency|check=check_ac_param_sufficiency"
+- cmd_id: "cmd_3281"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-10T16:42:32Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点で形式準拠。既存gateスクリプトの修正とテスト追加でありファイル構成の変更なし"
+  notes: "WARN累計昇格: 「ac_param_sufficiency|check=check_ac_param_sufficiency」が1回繰り返されています(cmd_ids=cmd_3281)。WARNを解消してからcmd_save.shを実行せよ"
+- cmd_id: "cmd_3281"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-10T16:42:52Z"
+  notes: "ac_param_sufficiency|check=check_ac_param_sufficiency"
+- cmd_id: "cmd_3281"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-10T16:42:53Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点で形式準拠。既存gateスクリプトの修正とテスト追加でありファイル構成の変更なし"
+  notes: "同一チェック(cmd_save_main)で3回目BLOCK。diagnosis.nazenaze_root_cause になぜなぜ7回の根因分析を記入せよ"

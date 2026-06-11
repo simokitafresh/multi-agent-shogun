@@ -244,6 +244,12 @@ except Exception:
 parent_cmd = str(target_task.get("parent_cmd") or "").strip()
 if not parent_cmd:
     raise SystemExit(0)
+target_task_id = str(
+    target_task.get("_ac_task_id")
+    or target_task.get("subtask_id")
+    or target_task.get("task_id")
+    or ""
+).strip()
 
 for path in sorted(glob.glob(os.path.join(tasks_dir, "*.yaml"))):
     ninja = os.path.splitext(os.path.basename(path))[0]
@@ -256,6 +262,14 @@ for path in sorted(glob.glob(os.path.join(tasks_dir, "*.yaml"))):
     if str(task.get("parent_cmd") or "").strip() != parent_cmd:
         continue
     status = str(task.get("status") or "").strip()
+    peer_task_id = str(
+        task.get("_ac_task_id")
+        or task.get("subtask_id")
+        or task.get("task_id")
+        or ""
+    ).strip()
+    if target_task_id and peer_task_id and target_task_id != peer_task_id:
+        continue
     if status in active_statuses:
         print(f"{ninja}\t{status}")
 PY

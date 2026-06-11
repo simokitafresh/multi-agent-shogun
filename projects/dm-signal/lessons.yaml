@@ -2913,6 +2913,9 @@ lessons:
   - outputs/analysis/standard_pf_preprocessing/dm6_5_extended_results.yaml
   - scripts/analysis/standard_pf_preprocessing/dm6_5_extended_study.py
   origin: '[[cmd_1684]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L534
   title: 'L1 cvxpy最適化: ticker×lambdaキャッシュで重複計算を解消すると実行時間が4時間→1時間に短縮'
   summary: L1 Trend Filterのcvxpy計算は同じticker×lambdaで同一結果を返す。65PF×5λ×2stage=650回の計算のうち実際に必要なの
@@ -6255,6 +6258,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: 169M共通パネルの84M train + 85M rolling OOSなら検証可能圏
   origin: '[[cmd_860]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L287
   title: 確率値の単独表示は過信誘発。頻度リフレーミングを添えよ
   summary: 'P(det)=72%を見ると非専門家は「ほぼ確実」と過信。対策: 頻度リフレーミング「過去10ヶ月中3ヶ月は下落」を並記。百分位ランク(「上位30%の健全度」)'
@@ -6613,6 +6619,9 @@ lessons:
   when: タスク配備やデプロイ手順を変更・実行する時
   how: '2026-03-12'
   origin: '[[cmd_820]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L257
   title: 'Monthly Trade raw payload: Pydantic未宣言fieldもAPI contract'
   summary: monthly_trade APIはresponse_model未指定でraw payload返却。price_movement/calculated_retu
@@ -7158,6 +7167,9 @@ lessons:
   - frontend/lib/__tests__/api-client-auth.test.ts
   - frontend/lib/api-client.ts
   origin: '[[cmd_686]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L212
   title: CDP性能計測ではtiming計測前に正常画面かを先に検査すべき。障害画面(城の修繕中等)が表示されていればtimingは無意味
   summary: 'IF: CDP性能計測を実施する時 THEN: wall-clock計測前にbody text/ready state/auth modalの3点を確認し、正常'
@@ -7218,6 +7230,9 @@ lessons:
   when: 報告YAMLやレビュー結果を作成・検証する時
   how: '2026-03-09'
   origin: '[[cmd_681]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L208
   title: Tier分離は設計書だけでは維持されず、prefetch即時対象の逆流で初動性能が崩れる
   summary: '`docs/future-01/004` §11.1 では Tier1即時=Dashboard必須5API、Tier1 Extra=他ページ用4API
@@ -7823,6 +7838,9 @@ lessons:
   when: layout最上位でProviderが全ページをラップしている構造では、ページ個別実装よりProviderでの条件分岐が最小差分で安全時
   how: layout最上位でProviderが全ページをラップしている構造では、ページ個別実装よりProviderでの条件分岐が最小差分で安全
   origin: '[[cmd_526]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L158
   title: WSL上のWindows venvでは .venv/Scripts/python.exe 経由でpytestを実行できる
   summary: python3環境にpytestが無くても、Windows形式venvがある場合は .venv/Scripts/python.exe -m pytest
@@ -8074,6 +8092,9 @@ lessons:
   - trade_performance.py
   - return_calculator.py
   origin: '[[cmd_475]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L137
   title: FoF計測はLayerTimer.substepではなくL3 metadata.profilingを確認する
   summary: IF timing.pyのsubstep実装だけ見ると誤認しやすい時 THEN timing.pyのsubstep実装だけ見ると誤認しやすい
@@ -8144,6 +8165,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: テンプレート更新時は公式ヘルプ記事の最終更新日を確認し、断定は「公式記載」と「推論」を分けて記述する
   origin: '[[note仕様更新作業]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L130
   title: git commitはステージ全体を含む — 自分のgit rmだけでなく事前ステージ済みファイルも巻き込む。commit前にgit diff --cachedで全ステージ内容を確認すべき
   summary: git,commit,staging,verification
@@ -8192,6 +8216,9 @@ lessons:
   when: GS結果を利用する際は
   how: 抜き身FoF作成時、GS champion のパラメータだけを見て `CANDIDATE_SET` の中身を確認せずに本番FoFを登録した
   origin: '[[legacy_lesson_L127]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L126
   title: セッション開始時に `todo.md` / `lessons.md` を必ず読む（2026-02-14）
   summary: セッション開始時に `todo.md` / `lessons.md` を必ず読む（2026-02-14）
@@ -8348,6 +8375,9 @@ lessons:
   how: cmd274_c3_generalization.py で parse_signal_tickers() を追加し、'{"TECL":1.0}' 形式を
     json.loads で解析してティッカーキーを抽出
   origin: '[[subtask_274_c3a]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L111
   title: Cycle1統合:月次リターン粒度でのエッジ崩壊precision80%は構造的に困難
   summary: IF 7アプローチ(AND/MAJORITY/CUSUM/Sharpe/VolWeighted/Idiosyncratic/LogisticCV)全て80%未達
@@ -8813,6 +8843,9 @@ lessons:
   when: FoFのEqualWeight計算はコンポーネントの初期化月(Cash)も含めて平均する時
   how: FoFのEqualWeight計算はコンポーネントの初期化月(Cash)も含めて平均する
   origin: '[[cmd_205]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L072
   title: GS計算開始日フィルタの設計原則 — Phase 1後にsignal_historyを一括フィルタ
   summary: simulate_strategy_vectorizedの3パス(PipelineEngine/matrix/dict)はそれぞれ異なるNaN処理ロジックを持つ
