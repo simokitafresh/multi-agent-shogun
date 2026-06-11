@@ -241,6 +241,7 @@ second_opinion: REQUIRED / OPTIONAL / NOT_NEEDED
 - 直近10件で連続0件の観点は**抑制候補**として扱い、その観点を使った「問題なし」宣言は `confidence: LOW` に落として再点検せよ
 - LOW化の目的は「その観点を外す」ことではない。惰性でOKを出さず、意識して再活性化することにある
 - review log には `finding_categories:` を追記し、実際に使った観点を列挙せよ。未記録の観点は集計されない
+- **セキュリティ関連コード変更(認証/DB操作/ファイル操作/SQLi確認等)を実施した場合、changed_lines < 200でもfinding_categoriesにadversarialを明記せよ。** セキュリティ確認の実施=adversarial観点の実質的発火。記録しなければ冷え集計に反映されない(2026-06-11 cmd_3288でSQLi確認but adversarial未記録→冷え数値悪化の実例)
 
 例:
 ```yaml
