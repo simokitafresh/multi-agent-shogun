@@ -640,10 +640,12 @@ cs_result=$(cat "$_TMP_D/cs" 2>/dev/null)
 if [ "$cs_exit" -eq 127 ]; then
     echo "  SKIP: gate_gunshi_cs_checklist.sh不在"
 else
-    cs_summary=$(printf '%s\n' "$cs_result" | grep -m1 -E '^(WARN|ALERT):' || true)
+    cs_relevant_warn=$(printf '%s\n' "$cs_result" | grep -m1 -E '^(WARN|ALERT).*([cC][sS]_checklist|causal_chain|operational_simulation|冷え観点|finding_categories)' || true)
+    cs_summary="$cs_relevant_warn"
+    [ -n "$cs_summary" ] || cs_summary=$(printf '%s\n' "$cs_result" | grep -m1 '^PASS:' || true)
     [ -n "$cs_summary" ] || cs_summary=$(printf '%s\n' "$cs_result" | head -1)
     echo "  $cs_summary"
-    if [ "$cs_exit" -ne 0 ]; then
+    if [ "$cs_exit" -ne 0 ] && [ -n "$cs_relevant_warn" ]; then
         if [ "$overall" != "ALERT" ]; then
             overall="WARN"
         fi
