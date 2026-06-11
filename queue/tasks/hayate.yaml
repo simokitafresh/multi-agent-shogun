@@ -1,16 +1,8 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  acceptance_criteria:
-    AC1:
-      description: scripts/ninja_monitor.sh の respawn-pane 呼び出し2箇所(L962/L988相当)が cli_profile_get launch_cmd/launch_args 直連結ではなく cli_launch_cmd "$agent_name" の結果を使う
-    AC2:
-      description: bash -n scripts/ninja_monitor.sh と関連unitテストまたはgrep検証で、respawn-pane経路がcli_launch_cmdを参照することを確認する
-    AC3:
-      description: 稼働中 ninja_monitor デーモン(PID 7624または現行PID)を安全に再起動し、新プロセスが起動していることを確認する。kill/pkillは禁止。既存restart scriptがあれば使う
-    AC4:
-      description: 影丸またはidle忍者のrespawn dry/実測で low fast 起動になることを一次情報(pane capture/model表示または起動コマンドログ)で確認する
-  command: 根因はninja_monitor.sh L962/L988がcli_profile_get launch_cmd+launch_argsを直接連結しており、cli_lookup.shのcli_launch_cmdによるmodel_name接尾辞(gpt-5.4-low)→effort自動生成を迂回すること。13:52のlaunch_args空化(commit 60806d863)後、デーモンrespawn経路だけmedium fast化した。L962/L988をcli_launch_cmd $agent_name 呼出しに置換し、ninja_monitorを安全に再起動してlow fast復帰を確認せよ。kill/pkillは禁止。
+  _ac_task_id: cmd_3295_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3295 (deployed 2026-06-11T19:51:09). Read from the beginning.
+  ac_version: b8bd4133
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -19,6 +11,10 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - '2026-06-11T13:11:50+09:00 | 設定変更完了。忍者6人: fastモードoff、推論low。デーモン(ninja_monitor)のpost_clear_cmdも無効化済み。次のtask配備時から新設定で動く。 [meta] sto'
+  - 2026-06-11T09:47:27+09:00 | これらのファイルは私のスコープ外（他エージェントの残存変更）。L530に従い他担当ファイルの混入commit禁止。私のスコープ（scripts/ninja_monitor.sh、tests/unit/
+  - 2026-06-11T13:52:13+09:00 | gpt忍者６名を推論lowのままでfastモードonで運用したい
+  - 2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -26,87 +22,105 @@ task:
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   not_in_scope: Claude/Codex編成変更、model_name設定変更、WP-3/WP-4配備、DM-Signal実装変更
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_ninja_monitor_low_effort_respawn_202606111855
+  parent_cmd: cmd_3295
+  progress.AC1: "checkpoint: 前提=cmd_3289-3293 archive cmd/report現物確認済み / scope drift=なし / result=verified_existing_dependencyを抽出段階へ接続し5件BLOCKなしをbatsで証明"
+  progress.AC2: "checkpoint: 前提=真陽性fixture追加 / scope drift=なし / result=未記載portfolios.pyはCOMMAND_SCOPE_MISSINGでBLOCK、関連bats 13+85 PASS"
+  progress.AC3: "checkpoint: 前提=commit+report helper使用 / scope drift=なし / result=commit 67a0a1174、報告YAML PASS、lesson_candidate記入済み"
+  progress.AC4: 'checkpoint: 前提=影丸idle / scope drift=なし / result=respawn実測 pane_start_commandに-c model_reasoning_effort=low、画面表示gpt-5.5 low fast確認'
   project: infra
-  purpose: ninja_monitor respawn経路がcli_launch_cmdを通らずmedium fastで起動する不整合を修正し、settings.yaml model_name接尾辞由来のlow effort起動を復元する
+  purpose: '軍師提案(blt_20260611_194535): 本セッションのcmd_3289〜cmd_3293で5連続、cmd_complete_gateがcommand欄の必読参照(workorder等のRead対象パス)を変更対象ファイルと誤判定しBLOCK→毎回家老waiveが発生した。SG-PRE25とcmd_complete_gateのreadonly_ref判定が乖離していることが根因。verified_existing_dependency突合(cmd_complete_gate.sh内に4箇所実在)をcommand照合パスに組み込み、必読参照と変更対象を区別する'
   status: idle
   stop_for: []
-  target_path: scripts/ninja_monitor.sh
-  task_id: cmd_karo_hotfix_ninja_monitor_low_effort_respawn_202606111855_normal
-  task_type: hotfix
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/cmd_complete_gate.sh
+  task_id: cmd_3295_full
+  task_type: full
   unresolved_decisions: none
   related_lessons:
-  - id: 'L252'
-    summary: 'ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両'
-    detail: 'ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両'
-  - id: 'L280'
-    summary: 'ninja_monitor.shはset -uを使わないがテストはset -euoで実行される。新しい連想配列変数を追加する際、関連テストのdeclare -A'
-    detail: 'ninja_monitor.shはset -uを使わないがテストはset -euoで実行される。新しい連想配列変数を追加する際、関連テストのdeclare -A'
-  - id: 'L675'
-    summary: 'ninja_done.sh L37でdate +%s(subprocess)が使われていたが、L39が既にprintf-v ''%(%Y%m%d)T''(built'
-    detail: 'ninja_done.sh L37でdate +%s(subprocess)が使われていたが、L39が既にprintf-v ''%(%Y%m%d)T''(built'
-  - id: 'L622'
-    summary: '_cleanup_stale_keysはメモリリーク防止の専用関数だが、REPORT_DONE_MISMATCH_NOTIFIED(ninja:cmd_id)と'
-    detail: '_cleanup_stale_keysはメモリリーク防止の専用関数だが、REPORT_DONE_MISMATCH_NOTIFIED(ninja:cmd_id)と'
-  - id: 'L530'
-    summary: 'multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on'
-    detail: 'multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on'
-  - id: 'L432'
-    summary: 'Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff'
-    detail: 'Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff'
-  - id: 'L134'
-    summary: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
-    detail: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
-  - id: 'L673'
-    summary: 'grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc'
-    detail: 'grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc'
-  - id: 'L353'
-    summary: 'bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で'
-    detail: 'bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で'
-  - id: 'L269'
-    summary: 'while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。'
-    detail: 'while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。'
+  - id: 'L449'
+    summary: 'cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresu'
+    detail: 'cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresu'
+  - id: 'L781'
+    summary: 'cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『'
+    detail: 'cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『'
+  - id: 'L607'
+    summary: 'cmd_complete_gate CLEAR時にregister_recommended:trueを検知→lesson_write.sh自動実行。教訓登録の手'
+    detail: 'cmd_complete_gate CLEAR時にregister_recommended:trueを検知→lesson_write.sh自動実行。教訓登録の手'
+  - id: 'L598'
+    summary: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
+    detail: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
+  - id: 'L244'
+    summary: 'cmd_complete_gate.shのPython埋込でsys.exit(0)がbare except:に捕捉されていた。except Exception:'
+    detail: 'cmd_complete_gate.shのPython埋込でsys.exit(0)がbare except:に捕捉されていた。except Exception:'
+  - id: 'L704'
+    summary: '本セッションでP0候補5件が全て偽陽性(100%)→P1-P3に降格。エージェントは行番号・文脈を誤読しやすい。LG033(既存確認必須)の監査エージェント版。'
+    detail: '本セッションでP0候補5件が全て偽陽性(100%)→P1-P3に降格。エージェントは行番号・文脈を誤読しやすい。LG033(既存確認必須)の監査エージェント版。'
+  - id: 'L085'
+    summary: 'cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction'
+    detail: 'cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction'
+  - id: 'L274'
+    summary: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
+    detail: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
+  - id: 'L739'
+    summary: 'hook_failure GA-408は、cmd_3150実装commitにqueue/tasks/hayate.yamlが混入しpre-push/test_s'
+    detail: 'hook_failure GA-408は、cmd_3150実装commitにqueue/tasks/hayate.yamlが混入しpre-push/test_s'
+  - id: 'L329'
+    summary: 'パイプ区切り文字列からフィールド抽出する場合、echo|awk -F| パイプはfork+execを伴う。IFS=| read -ra _f <<<で配列分割し'
+    detail: 'パイプ区切り文字列からフィールド抽出する場合、echo|awk -F| パイプはfork+execを伴う。IFS=| read -ra _f <<<で配列分割し'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  related_causal_links:
+  - "[[SG-PRE25とgateのreadonly_ref判定乖離]]"
+  - "[[cmd_3289-3293の5連続偽陽性BLOCK]]"
+  - "[[cmd_3295判定基準統一]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/gs-speedup-knowledge.md"
   - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L252: ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両
-      - L280: ninja_monitor.shはset -uを使わないがテストはset -euoで実行される。新しい連想配列変数を追加する際、関連テストのdeclare -A
-      - L675: ninja_done.sh L37でdate +%s(subprocess)が使われていたが、L39が既にprintf-v '%(%Y%m%d)T'(built
-      - L622: _cleanup_stale_keysはメモリリーク防止の専用関数だが、REPORT_DONE_MISMATCH_NOTIFIED(ninja:cmd_id)と
-      - L530: multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on
-      - L432: Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff
-      - L134: IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ
-      - L673: grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc
-      - L353: bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で
-      - L269: while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。
+      - L449: cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresu
+      - L781: cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『
+      - L607: cmd_complete_gate CLEAR時にregister_recommended:trueを検知→lesson_write.sh自動実行。教訓登録の手
+      - L598: ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie
+      - L244: cmd_complete_gate.shのPython埋込でsys.exit(0)がbare except:に捕捉されていた。except Exception:
+      - L704: 本セッションでP0候補5件が全て偽陽性(100%)→P1-P3に降格。エージェントは行番号・文脈を誤読しやすい。LG033(既存確認必須)の監査エージェント版。
+      - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction
+      - L274: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
+      - L739: hook_failure GA-408は、cmd_3150実装commitにqueue/tasks/hayate.yamlが混入しpre-push/test_s
+      - L329: パイプ区切り文字列からフィールド抽出する場合、echo|awk -F| パイプはfork+execを伴う。IFS=| read -ra _f <<<で配列分割し
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-11T13:11:50+09:00 | 設定変更完了。忍者6人: fastモードoff、推論low。デーモン(ninja_monitor)のpost_clear_cmdも無効化済み。次のtask配備時から新設定で動く。 [meta] sto"
-  - "2026-06-11T09:47:27+09:00 | これらのファイルは私のスコープ外（他エージェントの残存変更）。L530に従い他担当ファイルの混入commit禁止。私のスコープ（scripts/ninja_monitor.sh、tests/unit/"
-  - "2026-06-11T13:52:13+09:00 | gpt忍者６名を推論lowのままでfastモードonで運用したい"
-  - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_ninja_monitor_low_effort_respawn_202606111855_normal
-  _ac_worker_id: 
+  - "2026-06-08T21:36:36+09:00 | 【家老】cmd_3237 初回配備開始 (title=command_files_modified_mismatch FP修正: command欄の実行参照を変更対象と誤判定する問題の解消, ninj"
+  - "2026-04-28T02:46:03+09:00 | 【家老】cmd_2342 初回配備開始 (title=強化 — cmd_save.sh テストACスコープ検証(全テストPASS要求をWARN→変更対象限定を促す), ninja=kagemaru) "
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'cmd_complete_gate.shのcommand欄照合パスにverified_existing_dependency(readonly_ref)突合を組み込み、必読参照パスが変更対象として誤判定されないことを、cmd_3289〜cmd_3293のアーカイブ済みcmd現物を入力とした再判定で5件全てBLOCKなしになることで証明する'
+  - id: 'AC2'
+    checks:
+    - check: '真陽性の保全: 実際にスコープ外ファイルを変更したケースを模したfixtureで従来通りBLOCKされることをbatsテストで確認し、既存のcmd_complete_gate関連batsが全件PASSする'
+  - id: 'AC3'
+    checks:
+    - check: '修正をcommitし、lesson_candidateに偽陽性根治の教訓(検知チャネルの判定基準はSG-PREとgateで同一ソースを参照する)を記入して報告YAMLを提出する'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_hotfix_ninja_monitor_low_effort_respawn_202606111855.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_hotfix_ninja_monitor_low_effort_respawn_202606111855.yaml
+  report_filename: hayate_report_cmd_3295.yaml
+  report_path: queue/reports/hayate_report_cmd_3295.yaml
   bloom_level: 
-  deployed_at: "2026-06-11T18:57:24"
-  progress.AC1: "checkpoint: 前提=対象2箇所確認済み / scope drift=なし / result=cli_launch_cmd参照へ置換完了"
-  progress.AC2: "checkpoint: 前提=bats利用可 / scope drift=なし / result=bash -n PASS, grep cli_launch_cmd=2件, 旧直参照=0件, bats 9+28 PASS"
-  progress.AC3: "checkpoint: 前提=kill/pkill不使用 / scope drift=なし / result=touch→script_update自己再起動 AUTO-RESTART log line 4018, singleton PID 7624稼働確認"
-  progress.AC4: "checkpoint: 前提=影丸idle / scope drift=なし / result=respawn実測 pane_start_commandに-c model_reasoning_effort=low、画面表示gpt-5.5 low fast確認"
+  deployed_at: "2026-06-11T19:51:29"

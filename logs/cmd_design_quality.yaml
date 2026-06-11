@@ -1,90 +1,6 @@
 entries:
 - cmd_id: "cmd_3276"
   ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "clinic-expense-tracker"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-10T13:39:07Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 前提(cmd_3275完了+記憶DB復旧確認+入力35通実測)が固まってからの一発起票(LS051準拠)"
-  notes: "WARNが1件検出。environment_changeを記載せよ。次のcmdで同じWARNが出ないように環境に何を埋め込むか書け"
-- cmd_id: "cmd_3276"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "clinic-expense-tracker"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-10T13:39:41Z"
-  notes: "assumptions claimに日付なし|check=assumptions_claim_date"
-- cmd_id: "cmd_3276"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "clinic-expense-tracker"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-10T13:39:41Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 前提(cmd_3275完了+記憶DB復旧確認+入力35通実測)が固まってからの一発起票(LS051準拠)"
-  notes: "WARN累計昇格: 「assumptions claimに日付なし|check=assumptions_claim_date」が1回繰り返されています(cmd_ids=cmd_3276)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3276"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "clinic-expense-tracker"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-10T13:40:18Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 前提(cmd_3275完了+記憶DB復旧確認+入力35通実測)が固まってからの一発起票(LS051準拠)"
-  notes: "同一チェック(cmd_save_main)で3回目BLOCK。diagnosis.nazenaze_root_cause になぜなぜ7回の根因分析を記入せよ"
-- cmd_id: "cmd_3276"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "clinic-expense-tracker"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-10T13:41:27Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: assumptions claimの確認時刻に日付がなくWARN→environment_change未記載でBLOCK / 対策: claim全件に2026-06-10付き日時を補記+雛形本文からの起票徹底をenvironment_changeに記載"
-  notes: "雛形のFILL_THISが残存。全プレースホルダを実内容で埋めよ"
-- cmd_id: "cmd_3276"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "clinic-expense-tracker"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-10T13:42:20Z"
-  block_duration_minutes: 3
-- cmd_id: "cmd_3276"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "clinic-expense-tracker"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-10T13:42:44Z"
-- cmd_id: "cmd_3276"
-  ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
   gunshi_verdict: "APPROVE"
@@ -2023,7 +1939,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2034,7 +1950,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2045,7 +1961,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2056,7 +1972,7 @@ entries:
   ac_count: 0
   gate_result: "BLOCK"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2069,7 +1985,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2080,7 +1996,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2091,7 +2007,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2102,7 +2018,7 @@ entries:
   ac_count: 0
   gate_result: "BLOCK"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2115,7 +2031,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2126,7 +2042,7 @@ entries:
   ac_count: 0
   gate_result: "BLOCK"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2139,7 +2055,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2150,7 +2066,7 @@ entries:
   ac_count: 0
   gate_result: "BLOCK"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2163,7 +2079,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2174,7 +2090,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2214,3 +2130,65 @@ entries:
   supplementary_cmds: 0
   source: "cmd_save"
   timestamp: "2026-06-11T10:48:55Z"
+- cmd_id: "cmd_3294"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-11T10:50:59Z"
+  notes: "command_files_modified_mismatch"
+- cmd_id: "cmd_3295"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-11T10:57:35Z"
+- cmd_id: "cmd_3294"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-11T10:57:41Z"
+  notes: "command_files_modified_mismatch"
+- cmd_id: "cmd_3294"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-11T10:58:25Z"
+- cmd_id: "cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-11T11:03:57Z"
+- cmd_id: "cmd_karo_hotfix_gunshi_gate_sync_202606111958"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-11T11:04:14Z"

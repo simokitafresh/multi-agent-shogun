@@ -3,12 +3,13 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: context/dm-signal-ops.md をDM-Signal最新main commit群と照合し、古い記述を更新または根拠付きで維持判断する
+      description: scripts/gates/gate_gunshi_cs_checklist.sh と scripts/gates/gate_gunshi_startup.sh の現行出力・exit codeを実測し、PASS表示なのにalertsへCS観点チェックリスト/冷え観点WARNあり が入る原因を3行以上で報告する
     AC2:
-      description: context/dm-signal-ops.md 先頭の last_updated を 2026-06-11 cmd_karo_hotfix_ctx_dm_signal_ops_202606111626 形式へ更新する
+      description: PASS表示時はCS/冷えalertへ入れず、WARN/ALERT表示時だけalertへ入れるように最小修正する。必要ならgate_gunshi_cs_checklist.sh側のexit code/出力規約も同時に揃える
     AC3:
-      description: bash scripts/gates/gate_context_freshness.sh 実行時に context/dm-signal-ops.md がALERT対象から外れることを確認する
-  command: GA context freshness hotfix。cmd_3292完了時に gate_context_freshness.sh が context/dm-signal-ops.md last_updated=2026-06-08 / source commits 3件をALERT。一次データ=DM-Signal origin/mainの関連commitと現行context本文を照合し、必要最小限の索引更新でALERTを解消せよ。
+      description: bash -n scripts/gates/gate_gunshi_startup.sh と該当チェック単体、gate_gunshi_startup.sh再実行でCS/冷えalertが消えることを確認する。ただし洗脳監査gate_result未確認 alertは別件として残ってよい
+    AC4:
+      description: commitし、lesson_candidateに『PASS文言とexit codeを分離したgateはstartup側で文言/exit規約を二重確認する』趣旨の教訓を記入して報告YAMLを提出する
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -22,52 +23,54 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope: context/dm-signal-ops.md以外の知識整理・DM-Signal実装変更・WP-2作業
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_ctx_dm_signal_ops_202606111626
+  parent_cmd: cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956
   project: infra
-  purpose: context/dm-signal-ops.md の鮮度ALERTを一次データ照合で解消し、last_updatedを2026-06-11へ更新する
+  purpose: 軍師startup CRITICALのうち、CS観点チェックリストがPASS表示なのにgate_gunshi_startup.shがCS/冷えWARN alertへ入れる矛盾を根治する
   status: idle
   stop_for: []
-  target_path: context/dm-signal-ops.md
-  task_id: cmd_karo_hotfix_ctx_dm_signal_ops_202606111626_normal
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_gunshi_startup.sh
+  task_id: cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956_normal
   task_type: hotfix
-  unresolved_decisions: none
   related_lessons:
-  - id: 'L225'
-    summary: 'dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ'
-    detail: 'dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ'
   - id: 'L274'
     summary: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
     detail: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
-  - id: 'L211'
-    summary: 'A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可'
-    detail: 'A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可'
-  - id: 'L674'
-    summary: 'gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA'
-    detail: 'gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA'
-  - id: 'L324'
-    summary: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
-    detail: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
-  - id: 'L096'
-    summary: 'bash,variable-scope,preflight'
-    detail: 'bash,variable-scope,preflight'
-  - id: 'L729'
-    summary: 'markdown_link_counts.shはREADME.mdを除外するため、README系ファイルを対象にしたリンク修行ではランキング出力だけでは変更効果'
-    detail: 'markdown_link_counts.shはREADME.mdを除外するため、README系ファイルを対象にしたリンク修行ではランキング出力だけでは変更効果'
-  - id: 'L711'
-    summary: 'git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje'
-    detail: 'git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje'
+  - id: 'L074'
+    summary: '((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。'
+    detail: '((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。'
+  - id: 'L216'
+    summary: 'IF gate_metricsテストを書く THEN tmuxモックを配置してライブ環境からの干渉を防げ BECAUSE resolve_agent_model'
+    detail: 'IF gate_metricsテストを書く THEN tmuxモックを配置してライブ環境からの干渉を防げ BECAUSE resolve_agent_model'
+  - id: 'L739'
+    summary: 'hook_failure GA-408は、cmd_3150実装commitにqueue/tasks/hayate.yamlが混入しpre-push/test_s'
+    detail: 'hook_failure GA-408は、cmd_3150実装commitにqueue/tasks/hayate.yamlが混入しpre-push/test_s'
+  - id: 'L276'
+    summary: 'gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行'
+    detail: 'gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行'
+  - id: 'L144'
+    summary: 'IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する'
+    detail: 'IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する'
   - id: 'L654'
     summary: 'task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母'
     detail: 'task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母'
-  - id: 'L605'
-    summary: 'gate_report_format_main.pyのFIXヒント45パターンをskill_auto_improve.shのconcrete_preventio'
-    detail: 'gate_report_format_main.pyのFIXヒント45パターンをskill_auto_improve.shのconcrete_preventio'
+  - id: 'L412'
+    summary: 'inbox_prune.shがyaml.dumpでqueue/inbox/*.yamlを上書きしていた。CLAUDE.mdのyaml.dump禁止規則(cmd_'
+    detail: 'inbox_prune.shがyaml.dumpでqueue/inbox/*.yamlを上書きしていた。CLAUDE.mdのyaml.dump禁止規則(cmd_'
+  - id: 'L343'
+    summary: 'lesson_effectiveness.shのparse_lesson_listが全71報告でuseful_count=0を返していた。原因は正規表現^[[:'
+    detail: 'lesson_effectiveness.shのparse_lesson_listが全71報告でuseful_count=0を返していた。原因は正規表現^[[:'
+  - id: 'L781'
+    summary: 'cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『'
+    detail: 'cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  - "production_parity — 本番パリティ:  context/dm-signal-core.md §19.3 context/checklist-shin-v2-registration.md docs/research/dmsignal_parity_verification_audit.md docs/research/pf_config_backup_20260601_pre_delete.json 削除前58件config全量バックアップ docs/research/gunshi_alm_parity_drift_analysis_20260409.md — 軍師分析: ALMパリティドリフト分析(2026-04-09)"
+  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh scripts/cmd_skeleton.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比) docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md — 軍師idle: コミットチェックWAパターン(2026-04-10) docs/research/gunshi_idle_cross_contamination_20260503.md — 軍師idle: クロスプロジェクト汚染分析(2026-05-03) docs/research/gunshi_idle_cross_project_fp_20260426.md — 軍師idle: クロスプロジェクトFP分析(2026-04-26) docs/research/gunshi_idle_gate_fail_rate_anatomy_20260502.md — 軍師idle: ゲート失敗率解剖(2026-05-02) docs/research/gunshi_idle_gate_fail_trend_20260430.md — 軍師idle: ゲート失敗トレンド分析(2026-04-30) docs/research/gunshi_idle_gate_fire_traceback_20260510.md — 軍師idle: ゲート発火トレースバック(2026-05-10) docs/research/gunshi_idle_gate_fp_analysis_20260527.md — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27) docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md — 軍師idle: LG003ゲートWA分析(2026-05-19) docs/research/gunshi_idle_lu_dict_pattern_20260415.md — 軍師idle: LU辞書パターン分析(2026-04-15)"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -87,29 +90,29 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L225: dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『こ
       - L274: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
-      - L211: A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可
-      - L674: gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA
-      - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ
-      - L096: bash,variable-scope,preflight
-      - L729: markdown_link_counts.shはREADME.mdを除外するため、README系ファイルを対象にしたリンク修行ではランキング出力だけでは変更効果
-      - L711: git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje
+      - L074: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+      - L216: IF gate_metricsテストを書く THEN tmuxモックを配置してライブ環境からの干渉を防げ BECAUSE resolve_agent_model
+      - L739: hook_failure GA-408は、cmd_3150実装commitにqueue/tasks/hayate.yamlが混入しpre-push/test_s
+      - L276: gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行
+      - L144: IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する
       - L654: task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母
-      - L605: gate_report_format_main.pyのFIXヒント45パターンをskill_auto_improve.shのconcrete_preventio
+      - L412: inbox_prune.shがyaml.dumpでqueue/inbox/*.yamlを上書きしていた。CLAUDE.mdのyaml.dump禁止規則(cmd_
+      - L343: lesson_effectiveness.shのparse_lesson_listが全71報告でuseful_count=0を返していた。原因は正規表現^[[:
+      - L781: cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-11T15:45:10+09:00 | 【将軍】context鮮度ALERT: dm-signal-ops.md(source更新)"
-  - "2026-06-11T15:41:04+09:00 | 【INFOバッチ】 2026-06-11 15:29:51|cmd_karo_hotfix_ga041_context_freshness_202606111520"
-  - "2026-06-11T15:45:10+09:00 | 【将軍】context鮮度ALERT: dm-signal-ops.md(source更新)"
-  - "2026-06-08T21:19:40+09:00 | 【将軍】context鮮度ALERT: dm-signal-ops.md(source更新),dm-signal-research.md(source更新)"
+  - "2026-06-11T19:49:06+09:00 | 【軍師CRITICAL】先送り3セッション連続検出。起動は許可するが即対処必須"
+  - "2026-06-11T09:10:35+09:00 | 【家老CRITICAL】先送り3セッション連続検出。起動は許可するが即対処必須"
+  - "2026-06-11T19:53:24+09:00 | 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=56件 clear_p"
+  - "2026-06-11T19:50:55+09:00 | 教訓効果率WARN: 99.5%"
   ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_ctx_dm_signal_ops_202606111626_normal
+  _ac_task_id: cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956_normal
   _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_karo_hotfix_ctx_dm_signal_ops_202606111626.yaml
-  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_ctx_dm_signal_ops_202606111626.yaml
+  report_filename: tobisaru_report_cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956.yaml
+  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956.yaml
   bloom_level: 
-  deployed_at: "2026-06-11T16:27:16"
+  deployed_at: "2026-06-11T19:54:56"

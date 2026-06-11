@@ -2559,9 +2559,9 @@
   gate_result: BLOCK
   report_ninja: kagemaru
   verdict: LGTM
-  gate_result: BLOCK
+  gate_result: CLEAR
   finding_categories: [assumptions, numbers, premortem, adversarial]
-  findings_summary: "4観点+adversarial OK。首領裁定FoF表示復元。git checkout復元diff 0行。テスト268件全PASS。GATE BLOCK=readonly_ref偽陽性(cmd_3295で根治)"
+  findings_summary: "4観点+adversarial OK。首領裁定FoF表示復元。git checkout復元diff 0行。テスト268件全PASS。初回BLOCK=readonly_ref偽陽性→cmd_3295根治後re-trigger→CLEAR"
   observations:
     - "事実1: SG-PRE25 PASS(readonly_ref除外済み=directive)。commit hash 99d8c546/9c8555f3実在確認"
     - "事実2: GATE BLOCK reason=command_files_modified_mismatch。missing=[]。directive必読参照を変更対象と誤判定→cmd_complete_gate readonly_ref判定乖離(cmd_3295で根治)"
@@ -2582,7 +2582,7 @@
   review_type: report
   report_ninja: hayate
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   finding_categories: [assumptions, numbers, premortem, adversarial]
   findings_summary: "4観点+adversarial OK。readonly_ref判定乖離根治。verified_existing_dependencyを抽出段階に渡し偽陽性5連続解消。真陽性保全テストPASS。bats 13件実動作確認"
   observations:
@@ -2601,3 +2601,48 @@
   ambiguity_points: none
   origin: "[[cmd_3289-3293偽陽性]] -> [[cmd_3295判定基準統一]] -> [[LGTM_readonly_ref根治]]"
   timestamp: "2026-06-11T20:00:00"
+- cmd_id: cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "3観点+adversarial OK。CS/冷えalert分類をexit codeからWARN行存在判定に変更。+4/-2行。startup再実行でCS冷えWARN消失→OK確認"
+  observations:
+    - "事実1: startup gate再実行で総合判定ALERT→OK。CS観点WARN消失を実動作確認"
+    - "事実2: diff +4/-2行。cs_relevant_warnでCS/冷え関連WARNのみalert追加。PASS時は追加しない"
+    - "事実3: commit 188ccd3be。scope=gate_gunshi_startup.sh 1ファイルのみ"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "infra対象(gate_gunshi_startup.sh)。WARN行判定フィルタ追加で既存機能削除なし。実動作確認済み"
+  causal_chain: "CS subgate=exit 1(複数WARN混在)→startup=exit codeのみでalert分類→PASS表示なのにCS冷えalert→WARN行存在判定に変更→3セッション連続CRITICAL解消(正の複利)"
+  brainwash_check: "洗脳#2防止: startup gate再実行で実動作確認(ALERT→OK)。洗脳#1防止: infra対象のためadversarial実施"
+  step3_5_verified: true
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[CS冷え3セッション連続CRITICAL]] -> [[exit_code分類バグ]] -> [[LGTM_WARN行判定]]"
+  timestamp: "2026-06-11T20:05:00"
+- cmd_id: cmd_karo_hotfix_gunshi_gate_sync_202606111958
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。pre-syncフィルタ削除(inbox限定→無条件sync)。gate_result未確認6→5件。startup再実行で確認"
+  observations:
+    - "事実1: startup gate再実行でgate_result未確認6→5件(INFO降格)、総合判定OK確認"
+    - "事実2: diff +4/-35行。Python pre-syncフィルタ削除(inbox検索のみでarchive未検索=見逃し根因)→ungated>0で無条件sync"
+    - "事実3: cmd_3294 gate_result同期済み(review_log +1行)。残5件は実データ未到着"
+    - "事実4: cmd_label取得修正(awk)。92%削減だがPythonフィルタ=機能阻害要因の除去"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "infra対象(gate_gunshi_startup.sh)。不要フィルタの削除で既存防御を強化。実動作確認済み。rollback容易"
+  causal_chain: "pre-syncフィルタ=inbox検索のみ→archive/gateディレクトリ未検索→同期可能cmdを見逃し→6件残存3セッション→フィルタ削除→無条件sync→未確認件数減(正の複利)"
+  brainwash_check: "洗脳#2防止: startup gate再実行で6→5件+OK判定を実動作確認。洗脳#1防止: 92%削減(PRE13 WARN)だがPythonフィルタ=不要コードの正当な除去"
+  step3_5_verified: true
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[gate_result未確認3セッション連続]] -> [[pre-sync inbox限定バグ]] -> [[LGTM_フィルタ削除+無条件sync]]"
+  timestamp: "2026-06-11T20:05:00"

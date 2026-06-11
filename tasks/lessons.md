@@ -7884,3 +7884,36 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: SG-PRE25とcmd_complete_gateのcommand/files_modified判定が食い違う時
 - **how**: command欄の既存依存参照は明示タグ化するか、report.verified_existing_dependencyを完了gate照合へ接続し、軍師precheckと完了gateの除外規約を一致させる
 - cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『必読: パス』をreadonly_refとして判定できず5連続BLOCKし、家老waiveが発生した。command欄の参照は[readonly]パス等の明示タグへ寄せるか、cmd_complete_gate側でreport.verified_existing_dependencyをcommand照合に使う。レビュー側と完了gate側でreadonly_ref規約を二重化しない。
+
+### L782: 検知チャネルの判定基準は同一ソースで共有する
+- **日付**: 2026-06-11
+- **出典**: cmd_3295
+- **記録者**: hayate
+- **tags**: [infra,cmd-quality,gate]
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_3295]]
+- **when**: 未設定
+- **how**: 未設定
+- SG-PRE25相当ではreadonly/既存依存として扱える参照でも、cmd_complete_gate側が別経路でcommand欄を再抽出すると5連続で偽陽性BLOCKになった。検知チャネルを複数持つ場合、readonly_ref/verified_existing_dependencyなどの除外基準は後段フィルタだけでなく抽出段階にも同じ入力として渡し、真陽性fixtureで保全を確認する。 origin: [[cmd_3289-3293]] -> [[判定基準乖離]] -> [[偽陽性BLOCK]]
+
+### L783: PASS文言とexit codeを分離したgateはstartup側で文言/exit規約を二重確認する
+- **日付**: 2026-06-11
+- **出典**: cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956
+- **記録者**: tobisaru
+- **tags**: [infra,gate,gate]
+- **target_files**: [scripts/gates/gate_gunshi_startup.sh]
+- **origin**: [[cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956]]
+- **when**: 未設定
+- **how**: 未設定
+- サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カテゴリalertへ分類すると、PASS表示なのにカテゴリalertが残る。startup統合時は表示行とexit規約を二重確認し、カテゴリ別alertは該当WARN行の有無で判定する。 origin: [[cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956]] -> [[exit_code_only_alert_classification]] -> [[PASS表示なのにCS冷えalert]]
+
+### L784: 行動→結果検証の未同期は探索ソース不足と実データ未到着を二値分解せよ
+- **日付**: 2026-06-11
+- **出典**: cmd_karo_hotfix_gunshi_gate_sync_202606111958
+- **記録者**: hanzo
+- **tags**: [infra,gate,testing,gate]
+- **target_files**: [scripts/gates/gate_gunshi_startup.sh,logs/gunshi_review_log.yaml]
+- **origin**: [[cmd_karo_hotfix_gunshi_gate_sync_202606111958]]
+- **when**: 未設定
+- **how**: 未設定
+- startup gateの未確認件数は、同期スクリプトが探せないのか、そもそもgate_result実データが存在しないのかを分けて計測する。今回、cmd_3294は探索前skipが原因、残5件は実データ未到着だった。

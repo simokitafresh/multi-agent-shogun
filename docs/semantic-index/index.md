@@ -369,7 +369,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因 |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system |
 | related_lessons | `L317`, `L088`, `L079` |
@@ -660,6 +660,7 @@ codd:
 | lesson | `L779` 分割context鮮度判定は全repo fallbackではなくcontext別pathspecを持つ |
 | lesson | `L780` CDP preflightの実portと要求portがズレる時はcleanup権限を絞る |
 | lesson | `L729` 削除cmdのtodo更新先は実在パスを配備時に検証する |
+| lesson | `L784` 行動→結果検証の未同期は探索ソース不足と実データ未到着を二値分解せよ |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -735,6 +736,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_ga041_context_freshness_202606111520]]` (L779) |
 | causal_chain | `[[cmd_karo_hotfix_cdp_gate_stability_202606111540]]` (L780) |
 | causal_chain | `[[cmd_training_backlinks_kagemaru_20260602]]` (L729) |
+| causal_chain | `[[cmd_karo_hotfix_gunshi_gate_sync_202606111958]]` (L784) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -1355,6 +1357,7 @@ codd:
 | lesson | `L004` Jinja2のsum(attribute=)は__len__等のdunder属性に使えない — Python側でカウントして渡せ |
 | lesson | `L005` 時刻系カラムの意味定義を突合前に確認せよ — 受信月≠経費帰属月。month_interp 3方式で対応表に明文化 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T12:03:24+09:00 確認した。取得済みなどの判断基準を明確にしよう。取得済み＝該当する証票のPDFがgoogle driveに保存されていること。未取得は二つに分けよう。未取得（自動取得可能）、未取得（手動）。データ取得ルートも明確にしよう。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-11T19:53:40+09:00 質問状3への回答を検証・受領した。裁定は .agent/task-force/approval-20260611-wp1f-wp4-tz.md のとおり。 wp-1fマージ承認（条件付き）・WP-4待機解除・TZ混在は独立修正として起票承認 |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -3380,6 +3383,8 @@ codd:
 | principle | LGTM→BLOCK時は家老を待たず自己修正(洗脳#3防止。殿厳命2026-06-08) |
 | causal | [[LG036_cmd_3166]] -> [[cmd_3228_再発]] -> [[SG-PRE25自動化]] -> [[L0-L7貫通]] |
 | cmd | `cmd_3157` backfill — | cmd_3157 | command欄の自然言語テキストからファイル参照を過剰抽出し、偵察cmdや自然言語記述のcmdでcommand_files_modified_mismatch BLOCKが |
+| lesson | `L782` 検知チャネルの判定基準は同一ソースで共有する |
+| causal_chain | `[[cmd_3295]]` (L782) |
 
 ## project_clinic_expense_tracker — Clinic Expense Tracker
 

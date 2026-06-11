@@ -407,6 +407,9 @@ lessons:
   - backend/app/jobs/
   - queue/tasks/kagemaru.yaml (status更新と、読み直し時に判明したdescription YAML構文破損の修復のみ)
   origin: '[[cmd_2452]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L703
   title: FoF holding_signal同一判定は展開後ticker×weightで行う
   summary: FoF monthly_returns/signals.holding_signal は選択された構成PF ID列であり、下層standardのholding_
@@ -667,6 +670,9 @@ lessons:
   - backend/app/schemas/models.py
   - backend/tests/test_portfolio_repository_skip_invalid.py
   origin: '[[cmd_2423]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L687
   title: '[自動生成] 有効教訓の記録を怠った: cmd_2422'
   summary: lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
@@ -1676,7 +1682,7 @@ lessons:
   origin: '[[cmd_1877]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-10'
+  last_referenced: '2026-06-11'
 - id: L623
   title: 既存GS CSVの有効性はmeta.yaml universe_idで判定せよ — 行数判定は誤り
   summary: '既存ファイルの再実行要否を行数(例: bunshin 7526行)で判定すると、universe変更後も旧ファイルを有効と誤判定する。meta.yamlのuni'
@@ -1729,6 +1735,9 @@ lessons:
   - outputs/analysis/alm_research/cmd_1878_l2_okugi_comparison.csv
   - scripts/oneshot/cmd_1878_l2_okugi_comparison.py
   origin: '[[cmd_1878]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L619
   title: 'L2奥義2×2因子分析: L1傾向継続だが縮小する理由'
   summary: L1(シン忍法GS固定ベース)ではBB+15pp/動的-27〜-41ppが観測。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定はproduc
@@ -1918,6 +1927,9 @@ lessons:
   target_files:
   - scripts/oneshot/cmd_1855_register_bunshin_gekko.py
   origin: '[[cmd_1855]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L606
   title: WF回帰テストは同一CSV2回実行での決定論確認(異なるCSV世代間比較は別用途)
   summary: l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行しnp.allclose=Trueで決定論を検証するもの。エンジン改良やCSV再生成で異
@@ -2041,6 +2053,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_kawarimi.py
   - scripts/analysis/grid_search/run_077_nukimi.py
   origin: '[[cmd_1836]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L597
   title: module-level pipeline importのRSS削減量は--helpでなくworker fork RSSで計測せよ
   summary: lazy import前後の--help比較は43.4MBだがCoW効果を見落とした過小評価。forked workerは親プロセスpipelineを継承しCo
@@ -2556,6 +2571,9 @@ lessons:
   - docs/research/cmd_1753_fe_save_analysis.md
   - docs/research/cmd_1753_mtd_analysis.md
   origin: '[[cmd_1753]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L560
   title: 'ALM実装時: pipeline_config.alm_configのcandidate_lookbacksをbuffer計算に含める必要がある'
   summary: recalculate_fast.py L708-715のbuffer計算はportfolio.lookback_periodsのみ参照。ALM
@@ -4065,6 +4083,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_monban.py
   - scripts/analysis/grid_search/run_077_nukimi.py
   origin: '[[cmd_1199]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L448
   title: run_077各本が独自simulate_patternを使いPI-009チェックを迂回
   summary: run_077各本は独自simulate_patternを持ちgrid_search_metrics_v2のsimulate_strategy_vectoriz
@@ -4569,6 +4590,9 @@ lessons:
   target_files:
   - frontend/lib/constants.ts
   origin: '[[cmd_1079]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L411
   title: GS並列実行時のメモリ競合によるBus error
   summary: '初回DM2実行時にBus error(core dump)。原因: 他GSプロセス(kasoku_diff等)並走でfree memory
@@ -4792,6 +4816,9 @@ lessons:
   - docs/research/core-local-analysis.md
   - docs/research/ops-procedures.md
   origin: '[[cmd_1035]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L392
   title: yotsume 4視点union batch simでIEEE 754 FPノイズ(5.55e-17)発生。パリティ検証閾値は1e-12を採用
   summary: 4視点union mask+numpy broadcastingの演算順序が逐次版と異なりFP丸め誤差が最大5.55e-17発生。ロジック差異ではない。stri
@@ -5460,6 +5487,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: ただしDM2+とDM7+はXLU+TQQQを共通に持つため、XLUの出現頻度30%閾値で区別する必要がある
   origin: '[[cmd_1014]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L342
   title: 2段重ねBTのStage1変更はnominal_output変動を伴い大幅Sharpe変動の主因
   summary: IF 2段重ねBTの過適合検証で近傍パラメータを変動させる THEN Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_
@@ -5631,6 +5661,9 @@ lessons:
   - scripts/analysis/p_bar_window_backtest.py
   - backend/app/api/p_average.py
   origin: '[[cmd_1005]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L328
   title: MIN_PERIOD_LENGTH=1だけでは短窓p̄検定が退化しうる
   summary: IF n_splits=5でmpf=1にすると各foldが1サンプルとなりttest_1sampの統計量がNaN→_calc_chunk_p_value()で1
@@ -6004,6 +6037,9 @@ lessons:
   - docs/research/knowledge-base/pitfalls/ml-fund-failure-patterns.md
   - docs/research/knowledge-base/portfolio/ml-asset-allocation.md
   origin: '[[cmd_862]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L301
   title: PSR/DSRは時系列順序を無視する弱点あり。p平均法で補完必須
   summary: 'LC-D1: PSR/DSRは時系列順序を無視する根本的弱点がある。p平均法(期間分割t検定のp値平均)で補完必須。 LC-D2: 154,350パターンGSに'
@@ -6192,6 +6228,9 @@ lessons:
   when: panel化時に
   how: '2026-03-12'
   origin: '[[cmd_860]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L288
   title: n=84でのOOS R²は検出力不足。予測力なし≠予測力がない(データ不足の可能性)
   summary: IS 46M + OOS 32MでR²_OOS=0.02-0.05の改善は有意にならない可能性が高い。Clark-West検定でも最低水準。169M共通パネルの
@@ -6334,6 +6373,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: CDP preflightはprocess検知後も/json/versionを確認し、port deadならuser-data-dir分離で自動起動を再試行する方が計測安定性が高い
   origin: '[[cmd_857]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L275
   title: CDP本番計測は共有ブラウザプロファイルを避けisolated portで実行せよ
   summary: 共有CDPプロファイルではservice worker/route状態に引きずられ、/compare-summaryへのnavigateが別ページ着地へ化けた。
@@ -6580,6 +6622,9 @@ lessons:
   how: monthly-returns APIはticker_monthly_returnsが空になるとfallbackに落ちるが、fallbackがPrice全履歴を読む実装だとquick
     path(months=12)が即座に無効化される
   origin: '[[cmd_805]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L254
   title: FoF展開共通関数を API/サービスの loop 内で呼ぶ時は signal_cache/portfolio_cache 未注入だと query
     storm 化する
@@ -6724,6 +6769,9 @@ lessons:
   target_files:
   - frontend/hooks/usePrefetch.ts
   origin: '[[cmd_783]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L243
   title: Static Export buildが cleanup 失敗でも `.next` manifest は先に生成されることがある
   summary: 今回 `npm run build` は `out/_next/static/media` の ENOTEMPTY で最終失敗したが、その前に
@@ -7041,6 +7089,9 @@ lessons:
   target_files:
   - app/DM-signal/frontend/next.config.js
   origin: '[[cmd_719]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L215
   title: 本番viewer認証の自動化ではrepo内.envよりRender live envを優先せよ
   summary: DM-signalのviewer passwordはRender側で月次更新され、repo内backend/.envはstaleになり得る。CDP自動認証でlo
@@ -7413,6 +7464,9 @@ lessons:
   when: ページ間遷移がwindow.location.hrefだとSPA状態が毎回破棄されるため、永続化要件にはlocalStorageまたはURLパラメータを併用する設計が必要時
   how: ページ間遷移がwindow.location.hrefだとSPA状態が毎回破棄されるため、永続化要件にはlocalStorageまたはURLパラメータを併用する設計が必要
   origin: '[[cmd_570]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L187
   title: ジェネリックソートフックのnull処理は方向別(multiplier)との合成結果まで検証する
   summary: IF compare関数単体でnull末尾でも、desc時の符号反転で順序が逆転し得る時 THEN compare関数単体でnull末尾でも、desc時の符号反
@@ -7468,6 +7522,9 @@ lessons:
   - frontend/app/compare-summary/page.tsx
   - frontend/app/deterioration/page.tsx
   origin: '[[cmd_556]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L182
   title: FolderFilterChipがcompare-summaryとdeteriorationで完全重複しており共通コンポーネント抽出候補
   summary: FolderFilterChipコンポーネントがcompare-summary/page.tsxとdeterioration/page.tsxで完全重複(同一コ
@@ -7931,6 +7988,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: CLAUDE.md禁則(リンク先なき圧縮=禁止)の実効性が不足
   origin: '[[cmd_492]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L143
   title: docs/research/消失ファイルはDM-signalリポジトリ側git操作に起因する可能性
   summary: IF docs/research/配下ファイル16件の消失は、DM-signalリポジトリ側のgit操作時 THEN docs/research/配下ファイル1
@@ -8533,6 +8593,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: confirmed
   origin: '[[cmd_225]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L089
   title: GS-本番パリティはデータソース一致が前提条件
   summary: IF GS内部の初期化処理ロジックが全4スクリプトで同一でも、データソース(CSV vs DB)が異なればパリティは保証されない時 THEN
@@ -8545,6 +8608,9 @@ lessons:
   when: GS内部の初期化処理ロジックが全4スクリプトで同一でも、データソース(CSV vs DB)が異なればパリティは保証されない時
   how: GS内部の初期化処理ロジックが全4スクリプトで同一でも、データソース(CSV vs DB)が異なればパリティは保証されない
   origin: '[[cmd_222]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L088
   title: L1パリティPASSはtie処理網羅の証明にはならない
   summary: L1 FoF検証(cmd_205)はcomponent平均突合が中心。tie境界ケースを明示的に切り出していない。L1構造的にtie問題は不発(10/12
@@ -8591,6 +8657,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: drawdown_periods/portfolio_metrics等16テーブル全てをFK依存順に削除する必要がある
   origin: '[[cmd_215]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L084
   title: recalculate-statusのis_running=Noneは完了ではない
   summary: IF is_running=Noneは状態不明であり完了(False)と誤判定してはならない時 THEN is_running=Noneは状態不明であり完了(F
@@ -8717,6 +8786,9 @@ lessons:
   target_files:
   - verify_all_portfolios.py
   origin: '[[cmd_205]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L073
   title: FoFパリティ検証ではコンポーネント初期化月をスキップするな
   summary: IF FoFのEqualWeight計算はコンポーネントの初期化月(Cash)も含めて平均する時 THEN FoFのEqualWeight計算はコンポーネントの
@@ -9112,6 +9184,9 @@ lessons:
   when: POST /admin/recalculate-syncにstart_dateを指定しても実際はstart_date=2000-01-01で全期間実行される時
   how: POST /admin/recalculate-syncにstart_dateを指定しても実際はstart_date=2000-01-01で全期間実行される
   origin: '[[cmd_128]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L035
   title: FoF参照L0 PFはDELETE不可→UPDATE方式が安全
   summary: L0 PFがFoFコンポーネントとして参照されている場合、DELETE APIは400を返す。UPDATE方式(既存PFにpipeline_config付与+/
@@ -9217,6 +9292,9 @@ lessons:
   when: C抜き身のCANDIDATE_SET不一致 — CS4 [歴史的記述](4体)→C11_CCNh(11体)を実装・検証する時
   how: C抜き身のCANDIDATE_SET不一致 — CS4 [歴史的記述](4体)→C11_CCNh(11体)を実装・検証する時
   origin: '[[legacy_lesson_L027]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L026
   title: 本番FoFコンポーネント取得は `/api/portfolios/get` のみ（2026-02-15）
   summary: FoFのcomponent_portfoliosを取得するため `/api/admin/fof-portfolios` を呼んだら `404
