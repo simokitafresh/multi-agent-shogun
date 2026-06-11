@@ -1357,3 +1357,158 @@ echo "PASS"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
 }
+
+# --- cmd_3284: safety mechanism exclusion tests ---
+
+@test "auto_commit: safety filter excludes scripts/gates/ with visible log even when in target_path scope" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT/repo"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/scripts/gates" "$SCRIPT_DIR/queue/tasks" "$STATE_DIR"
+cd "$SCRIPT_DIR"
+git init -q
+git config user.email test@example.com
+git config user.name test
+printf "base\n" > scripts/a.sh
+printf "base\n" > scripts/gates/gate_check.sh
+git add scripts/a.sh scripts/gates/gate_check.sh
+git commit -qm initial
+
+cat > "$SCRIPT_DIR/queue/tasks/kotaro.yaml" <<INNEREOF
+task:
+  status: done
+  target_path: scripts
+INNEREOF
+
+NINJA_NAMES=(kotaro)
+printf "change\n" >> scripts/a.sh
+printf "change\n" >> scripts/gates/gate_check.sh
+NINJA_MONITOR_NOW=10000
+export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
+_uncommitted=$(git status --porcelain -uno -- scripts/)
+auto_commit_before_clear kotaro "$_uncommitted"
+
+committed_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
+worktree_files=$(git diff --name-only | sort | tr "\n" " ")
+echo "committed=$committed_files"
+echo "worktree=$worktree_files"
+cat "$LOG"
+test "$committed_files" = "scripts/a.sh "
+test "$worktree_files" = "scripts/gates/gate_check.sh "
+grep -q "AUTO-COMMIT-SAFETY-EXCLUDE: kotaro excluded scripts/gates/gate_check.sh" "$LOG"
+echo "PASS"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" == *"committed=scripts/a.sh"* ]]
+    [[ "$output" == *"AUTO-COMMIT-SAFETY-EXCLUDE"* ]]
+}
+
+@test "auto_commit: safety filter excludes .claude/hooks/ with visible log" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT/repo"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/.claude/hooks" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/queue/tasks" "$STATE_DIR"
+cd "$SCRIPT_DIR"
+git init -q
+git config user.email test@example.com
+git config user.name test
+printf "base\n" > scripts/a.sh
+printf "base\n" > .claude/hooks/pre-commit.sh
+git add scripts/a.sh .claude/hooks/pre-commit.sh
+git commit -qm initial
+
+# target_path=.claude で .claude/ スコープ内として安全フィルタが適用される
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<INNEREOF
+task:
+  status: done
+  target_path: .claude
+INNEREOF
+
+NINJA_NAMES=(saizo)
+printf "change\n" >> .claude/hooks/pre-commit.sh
+NINJA_MONITOR_NOW=10000
+export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
+touch "$LOG"
+_uncommitted=$(git status --porcelain -uno -- .claude/)
+auto_commit_before_clear saizo "$_uncommitted"
+
+cat "$LOG"
+# .claude/hooks/pre-commit.sh は安全フィルタで除外されnew commitなし
+# HEAD = initial commit (scripts/a.sh + .claude/hooks/pre-commit.sh)
+if git log --oneline | grep -q "auto-commit"; then
+    echo "FAIL: auto-commit created when safety file should be excluded"
+    exit 1
+fi
+grep -q "AUTO-COMMIT-SAFETY-EXCLUDE:.*\.claude/hooks/pre-commit\.sh" "$LOG"
+echo "PASS"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" == *"AUTO-COMMIT-SAFETY-EXCLUDE"* ]]
+}
+
+@test "auto_commit: safety filter does not block normal operational files (queue/ logs/)" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT/repo"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue" "$SCRIPT_DIR/logs" "$STATE_DIR"
+cd "$SCRIPT_DIR"
+git init -q
+git config user.email test@example.com
+git config user.name test
+printf "base\n" > queue/state.yaml
+printf "base\n" > logs/ops.yaml
+git add queue/state.yaml logs/ops.yaml
+git commit -qm initial
+
+NINJA_NAMES=(hayate)
+printf "change\n" >> queue/state.yaml
+printf "change\n" >> logs/ops.yaml
+NINJA_MONITOR_NOW=10000
+export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
+touch "$LOG"
+_uncommitted=$(git status --porcelain -uno -- queue/ logs/)
+auto_commit_before_clear hayate "$_uncommitted"
+
+committed_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
+echo "committed=$committed_files"
+cat "$LOG"
+test "$committed_files" = "logs/ops.yaml queue/state.yaml "
+if grep -q "AUTO-COMMIT-SAFETY-EXCLUDE:" "$LOG"; then
+    echo "FAIL: safety filter incorrectly excluded operational files"
+    exit 1
+fi
+echo "PASS"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" == *"committed=logs/ops.yaml queue/state.yaml"* ]]
+}

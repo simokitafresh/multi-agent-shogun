@@ -467,13 +467,32 @@ filter_context_batch_commit_paths() {
     auto_commit_paths_from_status | grep -E '^context/[^/]*\.md$' || true
 }
 
+# cmd_3284: scripts/gates/と.claude/hooks/を無条件除外（安全機構のbatch commit巻き込み防止）
+# 裁可保留変更がbatch commitに混入し殿のGo-ahead前にpush到達する事故の再発防止。
+# silent skip禁止: 除外発生時は必ずログへ可視化する。
+filter_exclude_safety_mechanism_paths() {
+    local agent_name="$1"
+    local path
+    while IFS= read -r path || [ -n "$path" ]; do
+        [ -n "$path" ] || continue
+        case "$path" in
+            scripts/gates/*|.claude/hooks/*)
+                log "AUTO-COMMIT-SAFETY-EXCLUDE: $agent_name excluded $path (safety mechanism file, unconditional)"
+                ;;
+            *)
+                printf '%s\n' "$path"
+                ;;
+        esac
+    done
+}
+
 auto_commit_before_clear() {
     local agent_name="$1"
     local uncommitted="$2"
     local regular_paths context_paths last_file context_last_file
 
-    regular_paths="$(printf '%s\n' "$uncommitted" | filter_regular_auto_commit_paths | filter_auto_commit_paths_by_task_scope "$agent_name" | filter_exclude_inprogress_ninja_paths "$agent_name")"
-    context_paths="$(printf '%s\n' "$uncommitted" | filter_context_batch_commit_paths | filter_auto_commit_paths_by_task_scope "$agent_name" | filter_exclude_inprogress_ninja_paths "$agent_name")"
+    regular_paths="$(printf '%s\n' "$uncommitted" | filter_regular_auto_commit_paths | filter_auto_commit_paths_by_task_scope "$agent_name" | filter_exclude_inprogress_ninja_paths "$agent_name" | filter_exclude_safety_mechanism_paths "$agent_name")"
+    context_paths="$(printf '%s\n' "$uncommitted" | filter_context_batch_commit_paths | filter_auto_commit_paths_by_task_scope "$agent_name" | filter_exclude_inprogress_ninja_paths "$agent_name" | filter_exclude_safety_mechanism_paths "$agent_name")"
     last_file="$(auto_commit_last_file)"
     context_last_file="$(context_batch_commit_last_file)"
 
