@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-11 cmd_karo_hotfix_shogun_startup_escalation_20260611133210 -->
+<!-- last_updated: 2026-06-11 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -515,3 +515,4 @@
 | cmd_3287 | 殿裁定(2026-06-11): 取得済み=該当証票PDFがDriveに保存されていること。未取得を自動取得可能/手動の2種に分ける。データ取得ルートも明確にする。現状: monthly_status.statusは3値(not_obtained/obtained/submitted)で未取得の自動/手動区別なし。expense_sources.collection_methodにgmail_api/cdp/manualが設定済みだがWebアプリ表示に反映されていない。修正: not_obtainedをcollection_method参照で自動/手動に色分け表示+取得ルート列追加 | clinic-expense-tracker | 06-11 | app.py fetch_matrix()にcollecti |
 | cmd_3288 | 殿指示(2026-06-11): 設定画面を作って経費元を設定・変更・保存できる仕組み。人間の判断がファースト。カテゴリと項目を自由に設定可能。SSOT=Render上のアプリDB。現状: expense_sourcesテーブルは21行あるが編集はSQLite直操作のみ。Webから編集不可。ローカル→Renderのupload-dbはあるがRender→ローカルのdownload-dbがない。修正: (1)設定画面(/settings)でexpense_sourcesのCRUD (2)download-dbエンドポイント追加 (3)ローカルスクリプト実行前にdownload-dbで最新化するフローを確立 | clinic-expense-tracker | 06-11 | AC1-AC4全PASS: /settings CRUD画面 |
 | cmd_3285 | 軍師分析(blt_20260611_023032): 裁可迂回push事案の根因は『裁可保留』が暗黙状態(working tree残置)で機械可読でないこと。cmd_3284のbatch commitスコープ制限だけでは別経路(手動git add -A等)が残る(防御第2層)。保留ファイルレジストリを設け、既存hookのcommit介入点で照合BLOCKすることで、どの経路のcommitでも保留中ファイルが運ばれない構造にする | infra | 06-11 | 保留ファイルレジストリ(queue/pending_appr |
+| cmd_3289 | 殿指示(2026-06-11 14:04): DM-Signalリファクタリング実行任務。調査・計画・物理検証は完了済み(.agent/task-force/refactor-workorder-20260611.md=唯一の権威文書)。その任務2=ベースライン記録。backend pytestとfrontend test/build/lintを実行し、作業前の既存失敗を.agent/task-force/execution-log.mdに記録する。これがWP-0/WP-1F/WP-1Bの全検証ゲートの基準線になる。既存失敗をリファクタ起因と誤認しない/させないための必須先行作業 | dm-signal | 06-11 | cmd_3289 baseline recorded: ba |
