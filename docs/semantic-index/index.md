@@ -1360,8 +1360,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T19:53:40+09:00 質問状3への回答を検証・受領した。裁定は .agent/task-force/approval-20260611-wp1f-wp4-tz.md のとおり。 wp-1fマージ承認（条件付き）・WP-4待機解除・TZ混在は独立修正として起票承認 |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
-| causal_chain | `[[cmd_092]]` (L004) |
-| causal_chain | `[[cmd_134]]` (L005) |
+| causal_chain | `[[006.md検証]]` (L004) |
+| causal_chain | `[[006.md検証]]` (L005) |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -1501,9 +1501,9 @@ codd:
 | lesson | `L001` gws CLI token_cacheをAES-256-GCM復号でPython直接API化できる |
 | lesson | `L002` 年次/決算期経費の生成月は設計書に明記せよ |
 | lesson | `L003` NFKC正規化は全角括弧を半角化し独立濁点を空白+結合文字に分解する |
-| causal_chain | `[[cmd_125]]` (L001) |
-| causal_chain | `[[cmd_125]]` (L002) |
-| causal_chain | `[[cmd_125]]` (L003) |
+| causal_chain | `[[cmd_1055]]` (L001) |
+| causal_chain | `[[cmd_1055]]` (L002) |
+| causal_chain | `[[006.md検証]]` (L003) |
 
 ## gs_ninpo_research — GS忍法研究
 

@@ -807,6 +807,9 @@ lessons:
   - scripts/analysis/grid_search/gs_sqlite_output.py
   - scripts/analysis/grid_search/cmd_2397_sqlite_write_benchmark.py
   origin: '[[cmd_2397]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L678
   title: 既コミット変更のベンチマーク測定は合成データで実施せよ
   summary: run_077_kasoku_diff.pyはDB接続+全計算時間が混在するため書込み性能単体の計測に不向き。合成データ+直接関数呼出しで計測するとWRITE時
@@ -1332,6 +1335,9 @@ lessons:
   - backend/app/jobs/generators/trade_performance.py
   - backend/app/services/return_calculator.py
   origin: '[[cmd_2253]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L645
   title: sync-status解除だけでL3完走と見なしてはならない
   summary: Layer 3 manual syncでは sync-status が unlocked に戻っても current run の Layer
@@ -2812,6 +2818,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-03'
   origin: '[[cmd_training_L4_R39_hanzo]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L542
   title: cmd用語の定義は高コスト分析前にテストへ固定せよ
   summary: High/Lowのような研究用語をcmdや将軍メモで定義していても、実装とテストに同じ意味を固定しないと、もっともらしいYAMLが大量に出ても結論がずれる。高コ
@@ -3035,6 +3044,9 @@ lessons:
   - outputs/analysis/nested_fof/r28_lb2m_comparison.yaml
   - scripts/analysis/nested_fof/r28_lb2m_cluster_selection.py
   origin: '[[cmd_1599]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L525
   title: R28 ClSel K値増加でα効率単調減少
   summary: K=2:6.5%→K=3:4.2%→K=4:1.3%→K=5:1.0%。分散(K体保有)はβ低下だがα希釈も。ClSel momentum方式でK大はα寄与ゼロ
@@ -4957,6 +4969,9 @@ lessons:
   - outputs/analysis/cmd_1034_angle6_ppe_overhead.json
   - scripts/analysis/cmd_1034_angle6_ppe_overhead.py
   origin: '[[cmd_1034]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L383
   title: PPE result pickleがoverhead最大要因(50Kスケールで877ms=51%)。metrics-only returnでpickle量を削減可能
   summary: 月次リターンndarrayの全パターンserialize/deserializeが支配。worker内でmetrics計算→metricsのみreturnすれば
@@ -5305,7 +5320,7 @@ lessons:
   origin: '[[cmd_1025]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-10'
+  last_referenced: '2026-06-11'
 - id: L356
   title: 32体ユニバースのパターン爆発はsize4が86.8%支配。加速が全体の66.1%
   summary: C(32,4)=35,960がC(32,2)+C(32,3)=5,456の6.6倍。サイズ上限k=3で全忍法一律86.8%削減。加速のC(18,2)×2=306

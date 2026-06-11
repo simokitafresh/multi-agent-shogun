@@ -5431,6 +5431,127 @@ if [ "$BC_CHECKED" = false ]; then
     echo "  (no reports found for this cmd)"
 fi
 
+# ─── post_deploy_evidence検証（deploy後cron/外部job証跡の旧run流用防止） ───
+level_heading "[L2]" "Post-deploy evidence timestamp check:"
+PDE_CHECKED=false
+for task_file in "${MATCHING_TASK_FILES[@]}"; do
+    if [ ! -f "$task_file" ]; then
+        echo "  [WARN] matching task file disappeared, skipping: $task_file"
+        MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+        continue
+    fi
+    MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
+
+    ninja_name=$(basename "$task_file" .yaml)
+    report_file=$(resolve_report_file "$ninja_name")
+
+    if [ ! -f "$report_file" ]; then
+        echo "  ${ninja_name}: SKIP (report not found)"
+        continue
+    fi
+
+    if ! pde_status=$(REPORT_FILE="$report_file" python3 - 2>/dev/null <<'PY'
+import os
+from datetime import datetime, timezone
+
+import yaml
+
+report_file = os.environ["REPORT_FILE"]
+with open(report_file, encoding="utf-8") as f:
+    data = yaml.safe_load(f) or {}
+
+pde = data.get("post_deploy_evidence")
+if not isinstance(pde, dict):
+    print("skip")
+    raise SystemExit(0)
+
+def as_bool(v):
+    if isinstance(v, bool):
+        return v
+    return str(v).strip().lower() in {"1", "true", "yes", "y"}
+
+if not as_bool(pde.get("required")):
+    print("skip")
+    raise SystemExit(0)
+
+missing = []
+for key in ("deploy_live_at", "evidence_run_start_at", "evidence_run_completed_at", "source"):
+    if not str(pde.get(key) or "").strip():
+        missing.append(key)
+if "run_completed" not in pde or not as_bool(pde.get("run_completed")):
+    missing.append("run_completed")
+if missing:
+    print("missing:" + ",".join(missing))
+    raise SystemExit(0)
+
+def parse_ts(raw):
+    s = str(raw).strip()
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    dt = datetime.fromisoformat(s)
+    if dt.tzinfo is None:
+        # naive timestamp is ambiguous; treat as invalid so UTC evidence is required.
+        raise ValueError("timezone_missing")
+    return dt.astimezone(timezone.utc)
+
+try:
+    deploy_live_at = parse_ts(pde["deploy_live_at"])
+    run_start_at = parse_ts(pde["evidence_run_start_at"])
+    run_completed_at = parse_ts(pde["evidence_run_completed_at"])
+except Exception:
+    print("invalid_timestamp")
+    raise SystemExit(0)
+
+if run_completed_at < run_start_at:
+    print("order_fail:completed_before_start")
+elif run_start_at <= deploy_live_at:
+    print("order_fail:run_start_not_after_deploy")
+else:
+    print("ok")
+PY
+    ); then
+        pde_status="parse_error"
+    fi
+
+    case "$pde_status" in
+        skip)
+            ;;
+        ok)
+            PDE_CHECKED=true
+            echo "  ${ninja_name}: OK (post_deploy_evidence run_start > deploy_live_at)"
+            ;;
+        missing:*)
+            PDE_CHECKED=true
+            missing_fields="${pde_status#missing:}"
+            echo "  [CRITICAL] ${ninja_name}: NG ← post_deploy_evidence required but missing/false: ${missing_fields}"
+            record_block_reason "${ninja_name}:post_deploy_evidence_missing:${missing_fields}"
+            ALL_CLEAR=false
+            ;;
+        invalid_timestamp)
+            PDE_CHECKED=true
+            echo "  [CRITICAL] ${ninja_name}: NG ← post_deploy_evidence timestamp invalid or timezone missing"
+            record_block_reason "${ninja_name}:post_deploy_evidence_invalid_timestamp"
+            ALL_CLEAR=false
+            ;;
+        order_fail:*)
+            PDE_CHECKED=true
+            pde_reason="${pde_status#order_fail:}"
+            echo "  [CRITICAL] ${ninja_name}: NG ← post_deploy_evidence order check failed: ${pde_reason}"
+            record_block_reason "${ninja_name}:post_deploy_evidence_${pde_reason}"
+            ALL_CLEAR=false
+            ;;
+        *)
+            PDE_CHECKED=true
+            echo "  [CRITICAL] ${ninja_name}: NG ← post_deploy_evidence parse error"
+            record_block_reason "${ninja_name}:post_deploy_evidence_parse_error"
+            ALL_CLEAR=false
+            ;;
+    esac
+done
+if [ "$PDE_CHECKED" = false ]; then
+    echo "  (no post_deploy_evidence.required=true reports)"
+fi
+
 # ─── purpose_validation検証（fit:falseでBLOCK、fit空欄はWARN） ───
 level_heading "[L2]" "Purpose validation check:"
 PV_CHECKED=false

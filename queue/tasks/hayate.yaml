@@ -1,86 +1,32 @@
 task:
-  _ac_task_id: cmd_3295_full
+  _ac_task_id: cmd_3297_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3295 (deployed 2026-06-11T19:51:09). Read from the beginning.
-  ac_version: b8bd4133
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  - '2026-06-11T13:11:50+09:00 | 設定変更完了。忍者6人: fastモードoff、推論low。デーモン(ninja_monitor)のpost_clear_cmdも無効化済み。次のtask配備時から新設定で動く。 [meta] sto'
-  - 2026-06-11T09:47:27+09:00 | これらのファイルは私のスコープ外（他エージェントの残存変更）。L530に従い他担当ファイルの混入commit禁止。私のスコープ（scripts/ninja_monitor.sh、tests/unit/
-  - 2026-06-11T13:52:13+09:00 | gpt忍者６名を推論lowのままでfastモードonで運用したい
-  - 2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope: Claude/Codex編成変更、model_name設定変更、WP-3/WP-4配備、DM-Signal実装変更
-  parallel_ok: []
-  parent_cmd: cmd_3295
-  progress.AC1: "checkpoint: 前提=cmd_3289-3293 archive cmd/report現物確認済み / scope drift=なし / result=verified_existing_dependencyを抽出段階へ接続し5件BLOCKなしをbatsで証明"
-  progress.AC2: "checkpoint: 前提=真陽性fixture追加 / scope drift=なし / result=未記載portfolios.pyはCOMMAND_SCOPE_MISSINGでBLOCK、関連bats 13+85 PASS"
-  progress.AC3: "checkpoint: 前提=commit+report helper使用 / scope drift=なし / result=commit 67a0a1174、報告YAML PASS、lesson_candidate記入済み"
-  progress.AC4: 'checkpoint: 前提=影丸idle / scope drift=なし / result=respawn実測 pane_start_commandに-c model_reasoning_effort=low、画面表示gpt-5.5 low fast確認'
-  project: infra
-  purpose: '軍師提案(blt_20260611_194535): 本セッションのcmd_3289〜cmd_3293で5連続、cmd_complete_gateがcommand欄の必読参照(workorder等のRead対象パス)を変更対象ファイルと誤判定しBLOCK→毎回家老waiveが発生した。SG-PRE25とcmd_complete_gateのreadonly_ref判定が乖離していることが根因。verified_existing_dependency突合(cmd_complete_gate.sh内に4箇所実在)をcommand照合パスに組み込み、必読参照と変更対象を区別する'
-  status: idle
-  stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/cmd_complete_gate.sh
-  task_id: cmd_3295_full
-  task_type: full
-  unresolved_decisions: none
-  related_lessons:
-  - id: 'L449'
-    summary: 'cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresu'
-    detail: 'cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresu'
-  - id: 'L781'
-    summary: 'cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『'
-    detail: 'cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『'
-  - id: 'L607'
-    summary: 'cmd_complete_gate CLEAR時にregister_recommended:trueを検知→lesson_write.sh自動実行。教訓登録の手'
-    detail: 'cmd_complete_gate CLEAR時にregister_recommended:trueを検知→lesson_write.sh自動実行。教訓登録の手'
-  - id: 'L598'
-    summary: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
-    detail: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
-  - id: 'L244'
-    summary: 'cmd_complete_gate.shのPython埋込でsys.exit(0)がbare except:に捕捉されていた。except Exception:'
-    detail: 'cmd_complete_gate.shのPython埋込でsys.exit(0)がbare except:に捕捉されていた。except Exception:'
-  - id: 'L704'
-    summary: '本セッションでP0候補5件が全て偽陽性(100%)→P1-P3に降格。エージェントは行番号・文脈を誤読しやすい。LG033(既存確認必須)の監査エージェント版。'
-    detail: '本セッションでP0候補5件が全て偽陽性(100%)→P1-P3に降格。エージェントは行番号・文脈を誤読しやすい。LG033(既存確認必須)の監査エージェント版。'
-  - id: 'L085'
-    summary: 'cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction'
-    detail: 'cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction'
-  - id: 'L274'
-    summary: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
-    detail: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
-  - id: 'L739'
-    summary: 'hook_failure GA-408は、cmd_3150実装commitにqueue/tasks/hayate.yamlが混入しpre-push/test_s'
-    detail: 'hook_failure GA-408は、cmd_3150実装commitにqueue/tasks/hayate.yamlが混入しpre-push/test_s'
-  - id: 'L329'
-    summary: 'パイプ区切り文字列からフィールド抽出する場合、echo|awk -F| パイプはfork+execを伴う。IFS=| read -ra _f <<<で配列分割し'
-    detail: 'パイプ区切り文字列からフィールド抽出する場合、echo|awk -F| パイプはfork+execを伴う。IFS=| read -ra _f <<<で配列分割し'
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3297 (deployed 2026-06-11T20:17:55). Read from the beginning.
+  ac_version: b9189a9c
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   related_causal_links:
-  - "[[SG-PRE25とgateのreadonly_ref判定乖離]]"
-  - "[[cmd_3289-3293の5連続偽陽性BLOCK]]"
-  - "[[cmd_3295判定基準統一]]"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  - "[[Q7将軍条件 存在しないスクリプト文書禁止]]"
+  - "[[cmd_3297 docs整備]]"
+  - "[[首領裁可2 WP-4待機解除]]"
   context_hints:
-  - "context/training-cycle.md"
+  - "context/robustness-verification-catalog.md"
+  - "context/gs-speedup-knowledge.md"
+  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
+  production_invariants:
+  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
+  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
+  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
+  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
+  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
   - "Level1(事後検出): 間違えた後にgateが検出"
@@ -93,34 +39,122 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L449: cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresu
-      - L781: cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『
-      - L607: cmd_complete_gate CLEAR時にregister_recommended:trueを検知→lesson_write.sh自動実行。教訓登録の手
-      - L598: ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie
-      - L244: cmd_complete_gate.shのPython埋込でsys.exit(0)がbare except:に捕捉されていた。except Exception:
-      - L704: 本セッションでP0候補5件が全て偽陽性(100%)→P1-P3に降格。エージェントは行番号・文脈を誤読しやすい。LG033(既存確認必須)の監査エージェント版。
-      - L085: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction
-      - L274: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
-      - L739: hook_failure GA-408は、cmd_3150実装commitにqueue/tasks/hayate.yamlが混入しpre-push/test_s
-      - L329: パイプ区切り文字列からフィールド抽出する場合、echo|awk -F| パイプはfork+execを伴う。IFS=| read -ra _f <<<で配列分割し
+      - L295: yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ
+      - L357: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.
+      - L179: 疾風がstatus: doneの報告YAMLを提出したが、git commitが未実施だった。レビュー担当がcommit+pushを代行した。impl忍者がco
+      - L732: android-ssh-input-loss-investigation.mdはincoming backlinks=0で完全孤立していた。改善手順: (1)s
+      - L654: task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母
+      - L679: cmd_delegate.shのcmd_idはASCII前提の識別子であり、dashboardなど二次証跡のgrep -w照合をlocale任せにすると境界判定
+      - L646: 推薦/監査系スクリプトで共有運用ファイルを読むgrep pipelineは、0件が正常な状態なら末尾に|| trueを置き空値として継続させる。Batsはenv
+      - L543: CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlの
+      - L526: validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配
+      - L384: result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_
     ────────────────────────────────────────
     
+    【DB変更前バックアップ必須】DB操作cmd。変更前に対象DB/テーブルのバックアップを取得し、取得コマンド・保存先・復元手順をprogressまたは報告YAMLに記録せよ。
+      ────────────────────────────────────────
     
+  engineering_preferences:
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
+  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
+  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
+  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
+  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
+  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
+  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
+  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
+  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
+  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
+  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
+  - '2026-06-08T21:36:36+09:00 | 【家老】cmd_3237 初回配備開始 (title=command_files_modified_mismatch FP修正: command欄の実行参照を変更対象と誤判定する問題の解消, ninj'
+  - '2026-04-28T02:46:03+09:00 | 【家老】cmd_2342 初回配備開始 (title=強化 — cmd_save.sh テストACスコープ検証(全テストPASS要求をWARN→変更対象限定を促す), ninja=kagemaru) '
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  not_in_scope: Claude/Codex編成変更、model_name設定変更、WP-3/WP-4配備、DM-Signal実装変更
+  parallel_ok: []
+  parent_cmd: cmd_3297
+  progress.AC1: 'checkpoint: 前提=cmd_3289-3293 archive cmd/report現物確認済み / scope drift=なし / result=verified_existing_dependencyを抽出段階へ接続し5件BLOCKなしをbatsで証明'
+  progress.AC2: 'checkpoint: 前提=真陽性fixture追加 / scope drift=なし / result=未記載portfolios.pyはCOMMAND_SCOPE_MISSINGでBLOCK、関連bats 13+85 PASS'
+  progress.AC3: 'checkpoint: 前提=commit+report helper使用 / scope drift=なし / result=commit 67a0a1174、報告YAML PASS、lesson_candidate記入済み'
+  progress.AC4: 'checkpoint: 前提=影丸idle / scope drift=なし / result=respawn実測 pane_start_commandに-c model_reasoning_effort=low、画面表示gpt-5.5 low fast確認'
+  project: dm-signal
+  purpose: '首領裁可2(2026-06-11、approval-20260611-wp1f-wp4-tz.md): WP-4(docs整備)の待機解除・着手可。スコープはworkorder WP-4のとおり(verify_truth参照7ファイル書換/削除済みEP11件のdocs記載除去/timing-history現役・維持明記/未使用テーブル3種DROP禁止明記+RecalculationTimingとの混同注意/scripts依存マップdocs化)。TZ混在修正は含めない(裁可3で独立修正=cmd_3298。WP-4はdocsのみを維持しコード変更を混在させない)。Q4-3合意の整形ルールを実行側標準手順docsへ反映してよい'
+  status: idle
+  stop_for:
+  - バックアップなしのDB変更
+  target_path: /mnt/c/Python_app/DM-signal/.agent/task-force/refactor-workorder-20260611.md
+  task_id: cmd_3297_full
+  task_type: full
+  unresolved_decisions: none
+  skill_hint: /db-check
+  related_lessons:
+  - id: 'L295'
+    summary: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
+    detail: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
+  - id: 'L357'
+    summary: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
+    detail: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
+  - id: 'L179'
+    summary: '疾風がstatus: doneの報告YAMLを提出したが、git commitが未実施だった。レビュー担当がcommit+pushを代行した。impl忍者がco'
+    detail: '疾風がstatus: doneの報告YAMLを提出したが、git commitが未実施だった。レビュー担当がcommit+pushを代行した。impl忍者がco'
+  - id: 'L732'
+    summary: 'android-ssh-input-loss-investigation.mdはincoming backlinks=0で完全孤立していた。改善手順: (1)s'
+    detail: 'android-ssh-input-loss-investigation.mdはincoming backlinks=0で完全孤立していた。改善手順: (1)s'
+  - id: 'L654'
+    summary: 'task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母'
+    detail: 'task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母'
+  - id: 'L679'
+    summary: 'cmd_delegate.shのcmd_idはASCII前提の識別子であり、dashboardなど二次証跡のgrep -w照合をlocale任せにすると境界判定'
+    detail: 'cmd_delegate.shのcmd_idはASCII前提の識別子であり、dashboardなど二次証跡のgrep -w照合をlocale任せにすると境界判定'
+  - id: 'L646'
+    summary: '推薦/監査系スクリプトで共有運用ファイルを読むgrep pipelineは、0件が正常な状態なら末尾に|| trueを置き空値として継続させる。Batsはenv'
+    detail: '推薦/監査系スクリプトで共有運用ファイルを読むgrep pipelineは、0件が正常な状態なら末尾に|| trueを置き空値として継続させる。Batsはenv'
+  - id: 'L543'
+    summary: 'CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlの'
+    detail: 'CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlの'
+  - id: 'L526'
+    summary: 'validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配'
+    detail: 'validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配'
+  - id: 'L384'
+    summary: 'result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_'
+    detail: 'result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_'
   memory_db_context:
-  - "2026-06-08T21:36:36+09:00 | 【家老】cmd_3237 初回配備開始 (title=command_files_modified_mismatch FP修正: command欄の実行参照を変更対象と誤判定する問題の解消, ninj"
-  - "2026-04-28T02:46:03+09:00 | 【家老】cmd_2342 初回配備開始 (title=強化 — cmd_save.sh テストACスコープ検証(全テストPASS要求をWARN→変更対象限定を促す), ninja=kagemaru) "
+  - "2026-06-11T20:06:39+09:00 | 【INFOバッチ】 2026-06-11 19:57:34|cmd_3295 2026-06-11 19:58:24|cmd_3294 2026-06-11 20:02:21|CI緑: run 273"
+  - "2026-06-11T19:33:24+09:00 | 【INFOバッチ】 2026-06-11 19:21:47|CI緑: run 27339385330"
+  - "2026-06-11T19:53:40+09:00 | 質問状3への回答を検証・受領した。裁定は .agent/task-force/approval-20260611-wp1f-wp4-tz.md のとおり。 wp-1fマージ承認（条件付き）・WP-4待"
+  - "2026-06-11T17:50:03+09:00 | 承知した、殿。手配済みである。 - **家老への指示は永続化済み**: 「cmd_3293（WP-2）完了後はWP-3/WP-4とも配備せず待機。GATE CLEAR後に将軍が殿へ状況報告し裁可を仰ぐ"
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'cmd_complete_gate.shのcommand欄照合パスにverified_existing_dependency(readonly_ref)突合を組み込み、必読参照パスが変更対象として誤判定されないことを、cmd_3289〜cmd_3293のアーカイブ済みcmd現物を入力とした再判定で5件全てBLOCKなしになることで証明する'
+    - check: 'verify_truth.pyを参照する現役docs7ファイル(docs/rule/check-rule.md 8箇所/docs/rule/return-consistency-verification.md 5/docs/rule/local-verification-guide.md 1/docs/skills/environment-switching.md 11/docs/skills/api-reference.md 2/docs/architecture/backend-deep-dive.md 2/backend/scripts/_INDEX.md 2=WP-1B対応済みなら確認のみ)の記載を現行の検証手段(DB直接クエリ)に置換し、残参照grepが0件(歴史文書docs/archives/**・docs/research/codd_extract_**・marketing-director/logs/**を除く)であることを証明する(質問状3是正策=残参照grep必須化)'
   - id: 'AC2'
     checks:
-    - check: '真陽性の保全: 実際にスコープ外ファイルを変更したケースを模したfixtureで従来通りBLOCKされることをbatsテストで確認し、既存のcmd_complete_gate関連batsが全件PASSする'
+    - check: '削除済みEP11件のdocs記載を除去し、残参照grep 0件を証明する'
   - id: 'AC3'
     checks:
-    - check: '修正をcommitし、lesson_candidateに偽陽性根治の教訓(検知チャネルの判定基準はSG-PREとgateで同一ソースを参照する)を記入して報告YAMLを提出する'
+    - check: 'timing-history「現役・維持」明記+未使用テーブル3種(CalculationPerformanceLog/ReturnSegment/CalculationMetadata)を「未使用・DROP禁止・外部読取なし」と明記(CalculationPerformanceLogと現役RecalculationTimingの混同注意を併記。本cmdはDB操作なし=文書明記であり変更前バックアップ対象なし)+scripts依存マップのdocs化を、docs/rule/と_INDEX.md規約に従って実施する'
+  - id: 'AC4'
+    checks:
+    - check: 'コード変更を混在させない: git diffで変更が文書のみ(docs/・tasks/・.agent/等)であることを証明する。TZ修正は含めない。Q4-3合意の整形ルール(整形は別コミット・リネーム事前宣言・execution-log整形有無欄)を実行側標準手順docsへ反映する'
+  - id: 'AC5'
+    checks:
+    - check: 'backend/.env.exampleのverify_truth用変数(PRODUCTION_API_URL等)はdiagnose_rebalance.py等の他スクリプト利用を確認してから削除可否を判断し、判断根拠をexecution-log.mdに記録する。commitし(mainマージ・デプロイは個別裁可制。wp-1fと同日まとめてのデプロイ可=回数圧縮は家老判断)、execution-log.mdへ記録する'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3295.yaml
-  report_path: queue/reports/hayate_report_cmd_3295.yaml
+  report_filename: hayate_report_cmd_3297.yaml
+  report_path: queue/reports/hayate_report_cmd_3297.yaml
   bloom_level: 
-  deployed_at: "2026-06-11T19:51:29"
+  deployed_at: "2026-06-11T20:18:18"
+  progress.AC5: "checkpoint: 前提=WP-4 docsのみ / scope drift=なし / result=verify_truth残参照0件・削除済みEP11件残参照0件・PRODUCTION_API_URL使用元3本確認・commit 7dc518ca・report PASS"

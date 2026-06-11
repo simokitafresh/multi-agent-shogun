@@ -2332,6 +2332,15 @@ assumption_invalidation:
 hook_failures:
   count: 0
   details: ""
+post_deploy_evidence:
+  # deploy後のcron/外部job完走確認がACに含まれる場合だけ required: true にして記入せよ。
+  # cmd_complete_gate が evidence_run_start_at > deploy_live_at と run_completed=true を検証する。
+  required: false
+  deploy_live_at: ""  # UTC推奨。例: 2026-06-11T11:10:00Z
+  evidence_run_start_at: ""  # UTC推奨。例: 2026-06-12T01:00:00Z
+  evidence_run_completed_at: ""  # UTC推奨。例: 2026-06-12T02:10:00Z
+  run_completed: false
+  source: ""  # timing-history id / Render log timestamp / DB queryなど一次証跡
 binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入
 # ⚠ result値は "yes" or "no" のみ。true/false/PASS/FAIL/OK等はBLOCKされる
 # 例: echo '[{check: "コメント追加済みか", result: "yes"}]' | \$RFS binary_checks.AC1 -

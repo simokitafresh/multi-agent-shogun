@@ -816,6 +816,9 @@ lessons:
   target_files:
   - docs/research/android-ssh-input-loss-investigation.md
   origin: '[[cmd_training_backlinks_tobisaru_20260602]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L731
   title: 孤立Markdown修行ではincoming backlinkとoutgoing wiki linkを分けて報告する
   summary: causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数
@@ -1600,6 +1603,9 @@ lessons:
   target_files:
   - scripts/cmd_delegate.sh
   origin: '[[cmd_training_L7_v3_saizo_12_20260521225416]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L678
   title: 委任メッセージは非空白文字を必須にする
   summary: 引数が存在しても空白だけのmessageを許すと、cmd_saveやinbox_writeなど副作用のある処理へ無意味な委任通知が流れる。通知・委任系CLIでは
@@ -2085,6 +2091,9 @@ lessons:
   - scripts/gunshi_next_action.sh
   - tests/unit/test_gunshi_next_action.bats
   origin: '[[cmd_karo_ci_fix_gunshi_next_action]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L645
   title: cmd_saveトリガー表示は行本文を出さず最小メタ情報に限定する
   summary: BLOCK/WARNトリガーマップに該当行本文まで出すと、既存テストが禁止したい文字列(WARN累計昇格など)をサマリ経由で拾い、偽の再発に見える。将軍の修正行
@@ -3697,6 +3706,9 @@ lessons:
   target_files:
   - tests/unit/test_cmd_save_environment_change.bats
   origin: '[[cmd_karo_ci_fix_env_change]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L542
   title: CI用fixtureはSSOT可変IDに依存させるな
   summary: environment_change=lesson登録のテストは、本番lessons.yamlの特定ID存在に依存するとSSOT更新でCI RED化する。TES
@@ -3935,6 +3947,9 @@ lessons:
   target_files:
   - scripts/dashboard_update.sh
   origin: '[[cmd_training_L4_R3_kotaro]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L525
   title: 新gate追加時は既存テストフィクスチャのassumptionsにも日付を追加せよ
   summary: cmd_save.shに『assumptions claimに日付なし』チェックを追加した際、既存6テストファイルのフィクスチャが未対応でCI
@@ -5551,6 +5566,9 @@ lessons:
   target_files:
   - report_field_set.sh
   origin: '[[cmd_cycle_L4_057]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L383
   title: Python埋込コードのシェル変数展開はコードインジェクション源
   summary: lesson_delete.shでSCRIPT_DIR/PROJECT_IDをPythonヒアドク内にシェル展開で直接埋込していた。シングルクォート含む入力で任
@@ -5861,7 +5879,7 @@ lessons:
   origin: '[[cmd_cycle_L4_029]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-10'
+  last_referenced: '2026-06-11'
 - id: L356
   title: YAML文字列化dictのパースにast.literal_evalは使えない(不完全文字列で失敗)
   summary: lesson_candidateのtitle/detailに格納されたPython dict repr文字列は閉じ括弧が欠損している場合がある。ast.lite

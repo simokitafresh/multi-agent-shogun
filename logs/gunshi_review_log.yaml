@@ -2646,3 +2646,60 @@
   ambiguity_points: none
   origin: "[[gate_result未確認3セッション連続]] -> [[pre-sync inbox限定バグ]] -> [[LGTM_フィルタ削除+無条件sync]]"
   timestamp: "2026-06-11T20:05:00"
+- cmd_id: cmd_3297
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "WP-4 docs整備。docsのみスコープ(AC4 diff証明)。7ファイル29箇所+EP11件+明記3点。grep 0件証明付き。FM3対処(.env.example利用確認義務)。depends_on=none、cmd_3298がdepends_on cmd_3297"
+  observations:
+    - "事実1: q11 grep -rl verify_truth=7ファイル=workorder記載値一致。未修正を一次確認(2026-06-11 20:01)"
+    - "事実2: AC4 git diff文書のみ証明でコード変更混入を構造的に検知。TZ修正はcmd_3298に分離"
+    - "事実3: AC5 .env.example判断根拠記録を義務化(diagnose_rebalance.py等の利用確認前に削除しない)"
+    - "事実4: 歴史文書除外パターン3種をAC1に明記。grepで除外漏れリスクを構造的に排除"
+  causal_chain: "WP-1F/1B/2でコード削除→docs参照が残り乖離→WP-4でdocs整備+grep 0件証明→docs=現物一致が全future作業の前提品質向上(正の複利)"
+  brainwash_check: "AC5件はdocs作業の自然な分割。100億年: docs=現物一致は恒久的資産。歴史文書除外は合理的(書換不要の保存)"
+  ambiguity_points: none
+  origin: "[[首領裁可2 WP-4待機解除]] -> [[cmd_3297 docs整備]] -> [[APPROVE]]"
+  timestamp: "2026-06-11T20:20:00"
+- cmd_id: cmd_3297
+  review_type: report
+  report_ninja: hayate
+  verdict: FAIL
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "SG-PRE25 ERROR: command欄のrefactor-workorder-20260611.md(必読参照)がfiles_modifiedに不在→GATE BLOCK確定。FAIL判定が正確にBLOCK原因を予測"
+  observations:
+    - "事実1: SG-PRE25 ERROR。refactor-workorder-20260611.mdがcommand Step1「必読」に出現するがfiles_modified17件に不在"
+    - "事実2: approval-20260611-wp1f-wp4-tz.mdはreadonly_ref除外済みだが、workorderは除外されていない"
+    - "事実3: cmd_3295で修正したreadonly_ref判定はverified_existing_dependencyベース。報告YAMLに記録がなければ除外されない"
+    - "事実4: commit 7dc518ca実在。17ファイル全commit確認済み。実装自体は問題なし"
+  fail_reasons:
+    - "refactor-workorder-20260611.mdがfiles_modifiedに不在。報告YAMLにverified_existing_dependency(読取専用・変更対象外)として記録するか、causal_verification等に必読参照として明記してGATE BLOCKを回避せよ"
+  causal_chain: "command欄に必読参照→files_modifiedに不在→cmd_complete_gateがBLOCK→LG006(LGTM=GATE通過保証)"
+  brainwash_check: "洗脳#1防止: SG-PRE25 ERRORを無視せずFAIL判定。5連続LGTM→BLOCK(cmd_3289-3293)の教訓適用"
+  step3_5_verified: true
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_3297報告]] -> [[SG-PRE25 workorder不在]] -> [[FAIL_GATE_BLOCK回避]]"
+  timestamp: "2026-06-11T20:25:00"
+- cmd_id: cmd_3298
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  confidence: MEDIUM
+  finding_categories: [assumptions, simulation, premortem, north_star, ambiguity]
+  findings_summary: "TZ混在修正。裁可書「cmd_3296+cmd_3297完了が前提」だがcmd_3296 AC2差し戻し中(status=delegated)。忍者着手可否の曖昧さ→depends_onにcmd_3296追加 or 着手条件をcommandに明記すべき"
+  observations:
+    - "事実1: cmd_3298 depends_on=cmd_3297(CLEAR済み)。しかし裁可書+q8=cmd_3296+cmd_3297両方完了が前提"
+    - "事実2: cmd_3296 status=delegated(AC2差し戻し中。AC2=日次cron完走確認、2026-06-12 02:30 UTC目処)"
+    - "事実3: AC4件の設計自体は適切。UTC統一+過去行不可侵+cutover明記+マージ非実施"
+    - "事実4: 忍者着手時にcmd_3296完了を確認する仕組みがない→裁可書順序違反リスク"
+  suggested_changes: "depends_on: cmd_3297 → depends_on: [cmd_3296, cmd_3297] に変更。または command Step 1に「cmd_3296 CLEAR確認後に着手」を明記(忍者が判断に迷わない構造化)"
+  severity: normal
+  hole_action: none
+  ambiguity_points: "cmd_3296未完了(AC2差し戻し中)の状態でcmd_3298を着手してよいか不明。裁可書は両方完了を前提と明記"
+  discretion_fills: none
+  causal_chain: "裁可書実施順序(5番目=cmd_3296+cmd_3297完了後)→cmd_3296 AC2差し戻し→前提未成立→忍者着手可否が曖昧→depends_on補強で構造化"
+  brainwash_check: "洗脳#8(完了急ぎ)チェック: cmd_3297 CLEARで次に進みたい衝動があるがcmd_3296前提を確認。100億年: 裁可書順序遵守は恒久的信頼の基盤"
+  origin: "[[裁可書実施順序]] -> [[cmd_3296 AC2差し戻し]] -> [[RC_前提未成立]]"
+  timestamp: "2026-06-11T20:28:00"
