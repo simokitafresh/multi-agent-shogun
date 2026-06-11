@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-05-29 cmd_3091 -->
+<!-- last_updated: 2026-06-11 cmd_karo_hotfix_ga041_context_freshness_202606111520 -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -87,6 +87,12 @@ Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式
 | Auth token cleanup | count-based eviction削除により、viewer/admin tokenは期限切れのみcleanup。FE側でtoken数上限前提の挙動を置かない | cmd_2599; `backend/app/auth.py` |
 | Home holiday awareness | 封鎖中Homeにも市場休日認識を追加。`date-fns`依存追加済み | cmd_2880; `frontend/app/page.tsx`, `frontend/package.json` |
 | Admin backfill year | AdvancedOperationsのfull backfill開始年は`FULL_BACKFILL_START_YEAR=2000`に統一 | cmd_3077; `frontend/app/admin/components/AdvancedOperations.tsx` |
+
+## 2.7 直近FE変更索引（2026-06-11）
+
+| 対象 | 結論 | 参照 |
+|------|------|------|
+| 未使用FE成果物削除 | `_deprecated/signal`, `_deprecated/trades`, `transition-overlay`, `useAppVisibility`, `lookbackFormatter`と関連testを削除。`frontend/package.json`/lockも整理済み。Monthly Trade FoF表示維持コミットは同日revert済みで、現行表示仕様は§2.6のprecomputed weights/月初Signal優先を正とする | e0b59782, 0adde79f→8d28f75e; `frontend/_INDEX.md`, `frontend/package.json`, `frontend/lib/monthly-trade-display.ts` |
 
 ## 3. 状態管理
 

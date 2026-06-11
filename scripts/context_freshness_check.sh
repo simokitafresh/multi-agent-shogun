@@ -335,6 +335,18 @@ def load_project_paths() -> dict[str, str]:
 PROJECT_PATHS = load_project_paths()
 AUTO_COMMIT_SUBJECT_RE = re.compile(r"^chore: (auto-commit|batch context)\b")
 DM_SIGNAL_CONTEXT_PATHS: dict[str, list[str]] = {
+    "context/dm-signal.md": [
+        "context/dm-signal-terminology.md",
+        "docs/knowledge-base/terminology/disambiguation.md",
+        "docs/rule/db-operations-runbook.md",
+    ],
+    "context/dm-signal-core.md": [
+        "backend/app",
+        "backend/tests",
+        "docs/rule",
+        "context/dm-signal-terminology.md",
+        "docs/knowledge-base/terminology/disambiguation.md",
+    ],
     "context/dm-signal-frontend.md": [
         "frontend",
         "docs/research/frontend-components.md",

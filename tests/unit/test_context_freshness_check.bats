@@ -434,13 +434,13 @@ EOF
 
 @test "dm-signal context uses external project git log" {
     local source_repo="$TEST_TMPDIR/source/dm-signal"
-    mkdir -p "$source_repo" "$TEST_TMPDIR/projects"
+    mkdir -p "$source_repo/docs/rule" "$TEST_TMPDIR/projects"
     git -C "$source_repo" init -q
     git -C "$source_repo" config user.email "test@example.invalid"
     git -C "$source_repo" config user.name "Test User"
     printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
-    printf 'source\n' > "$source_repo/source.txt"
-    git -C "$source_repo" add source.txt
+    printf 'runbook\n' > "$source_repo/docs/rule/db-operations-runbook.md"
+    git -C "$source_repo" add docs/rule/db-operations-runbook.md
     git -C "$source_repo" commit -q -m "feature: source project changed"
 
     _create_context "context/dm-signal.md" "$STALE_DATE"
@@ -451,6 +451,27 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT: context/dm-signal.md source commits"* ]]
     [[ "$output" != *"infrastructure.md"* ]]
+}
+
+@test "dm-signal root and core contexts ignore unrelated external commits" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$source_repo/marketing-director/content" "$TEST_TMPDIR/projects"
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
+    printf 'article\n' > "$source_repo/marketing-director/content/article.md"
+    git -C "$source_repo" add marketing-director/content/article.md
+    git -C "$source_repo" commit -q -m "docs: unrelated marketing update"
+
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_context "context/dm-signal-core.md" "$STALE_DATE"
+    _create_shogun_to_karo "cmd_932" "dm-signal"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_932
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"context/dm-signal.md"* ]]
+    [[ "$output" != *"context/dm-signal-core.md"* ]]
 }
 
 @test "infra context uses same-repo path git log" {
