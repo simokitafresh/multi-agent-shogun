@@ -415,5 +415,3 @@ cat >> "$SKILL_LOG" << LOGEOF
 LOGEOF
 echo "[note_draft] Logged to skill_execution_log: ${RESULT}"
 exit "$PY_EXIT"
-### 自動防止ステップ
-- <!-- skill-auto-improve:f39a5e08cea6 --> 自動防止: gate=none のTop FAIL理由「Python script exited with code 1」(count=3, last=2026-06-09T12:18:28+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
