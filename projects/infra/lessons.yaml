@@ -1,8 +1,22 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-11T21:17:53'
+last_synced: '2026-06-11T23:12:52'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 781
+lesson_count: 782
 lessons:
+- id: L787
+  title: context_freshnessはsource commitを分類してから索引更新する
+  summary: source pathsが広いcontextでは、ALERT件数=全て同じcontextへ追記すべき情報ではない。commitを研究正本/補助資料/core寄り
+  tags:
+  - infra
+  - context
+  - git
+  - lesson
+  source_cmd: cmd_karo_hotfix_ga047_context_freshness_202606112306
+  when: 未設定
+  how: 未設定
+  target_files:
+  - context/dm-signal-research.md
+  origin: '[[cmd_karo_hotfix_ga047_context_freshness_202606112306]]'
 - id: L786
   title: 検知チャネル間の除外基準はtask YAMLなど同一ソースへ源流注入する
   summary: cmd_complete_gateとSG-PRE25のように同じ事象を判定する複数チャネルで、片側だけが報告YAMLの任意記録に依存すると記録漏れで偽陽性が再発
@@ -745,7 +759,7 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-11'
   deprecated: true
-  deprecated_at: '2026-06-11T21:20:04+09:00'
+  deprecated_at: '2026-06-11T23:13:15+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -2391,9 +2405,6 @@ lessons:
   - scripts/gates/gate_shogun_startup.sh
   - scripts/yaml_auto_archive.sh
   origin: '[[cmd_2856]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-10'
 - id: L629
   title: 偵察時はlayout.tsxのnavItemsを設計書URLスキームと最初に照合せよ
   summary: layout.tsxのnavItemsと設計書画面一覧を照合するだけでルーティング逆転を即発見。FE request bodyとBE Pydanticモデルのフ
@@ -2583,9 +2594,6 @@ lessons:
   - scripts/causal_backlinks.sh
   - tests/unit/test_lesson_write_shogun.bats
   origin: '[[cmd_2818]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-10'
 - id: L617
   title: AC内の存在しない運用YAML IDは開始時grepで検出し報告する
   summary: cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決I
@@ -2668,9 +2676,6 @@ lessons:
   - tests/helpers/deploy_task_scaffold.bash
   - tests/unit/test_deploy_task_ac_handling.bats
   origin: '[[cmd_2790]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-10'
 - id: L612
   title: 進行中CIをcheck failedと表示するな
   summary: CI表示の偵察ではlatest runとlatest completed runを分けて確認せよ。latest runがin_progressでconclusi
@@ -3528,9 +3533,6 @@ lessons:
   - queue/reports/
   - queue/reports/saizo_report_cmd_2529.yaml
   origin: '[[cmd_2529]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-10'
 - id: L556
   title: '[自動生成] 有効教訓の記録を怠った: cmd_2483'
   summary: lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
@@ -3708,9 +3710,6 @@ lessons:
   target_files:
   - 偵察のみ（コード変更なし）
   origin: '[[cmd_karo_infra_recon_gates]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-10'
 - id: L544
   title: 運用YAML writerのyaml.dump残存を偵察ゲートで検出せよ
   summary: queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では
@@ -4785,9 +4784,6 @@ lessons:
   when: whitelist型.gitignoreではスクリプト追加時に
   how: .gitignoreに!パス エントリを追加しないとgit add/commit対象にならずCIでファイル不在扱いになる
   origin: '[[cmd_root_fixes]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-10'
 - id: L453
   title: 復元コミットでenum値変更リスク — 削除→復元時は意味的差分確認必須
   summary: commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→prom
@@ -5317,6 +5313,9 @@ lessons:
   target_files:
   - run_precommit_checks.sh
   origin: '[[cmd_cycle_L4_084]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-11'
 - id: L408
   title: 'switch_project.shのL074パターン: ((sent++))がset -e環境で初回即死'
   summary: switch_project.shのLine 62にL074と同一パターン存在。sent=0→((sent++))→式値0→exit 1→set
@@ -6047,7 +6046,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-11T21:20:04+09:00'
+  deprecated_at: '2026-06-11T23:13:15+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -6111,9 +6110,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要
   origin: '[[cmd_cycle_L4_016]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-10'
 - id: L341
   title: heredoc一括書込みでファイル中間状態を排除
   summary: echoを2回連結してYAMLを書くと、1行目書込み後2行目書込み前にクラッシュした場合にtimestampだけの不完全ファイルが残る。cat
@@ -7140,9 +7136,6 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: '2026-03-20'
   origin: '[[cmd_1129]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-10'
 - id: L258
   title: ログローテーション世代数不足+task_idログ欠損
   summary: ログローテ1MBでは約1日分しか保持できず30日分析不可。STALL-DETECTEDの38%でcmd情報欠損(task_id空)。task_idフォールバック
@@ -9052,7 +9045,7 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-11'
   deprecated: true
-  deprecated_at: '2026-06-11T21:20:04+09:00'
+  deprecated_at: '2026-06-11T23:13:16+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)

@@ -7939,3 +7939,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - cmd_complete_gateとSG-PRE25のように同じ事象を判定する複数チャネルで、片側だけが報告YAMLの任意記録に依存すると記録漏れで偽陽性が再発する。deploy_task.shで正しい参照分類をtask YAMLへ注入し、各gateが同じreadonly_refを読む構造にする。origin: [[cmd_3295修正の不完全]] -> [[verified_existing_dependency記録漏れ]] -> [[readonly_ref源流注入]]
+
+### L787: context_freshnessはsource commitを分類してから索引更新する
+- **日付**: 2026-06-11
+- **出典**: cmd_karo_hotfix_ga047_context_freshness_202606112306
+- **記録者**: hayate
+- **tags**: [infra,context,git,lesson]
+- **target_files**: [context/dm-signal-research.md]
+- **origin**: [[cmd_karo_hotfix_ga047_context_freshness_202606112306]]
+- **when**: 未設定
+- **how**: 未設定
+- source pathsが広いcontextでは、ALERT件数=全て同じcontextへ追記すべき情報ではない。commitを研究正本/補助資料/core寄り/lesson正本に分類し、対象contextへ入れるものだけ索引化するチェックを次回追加する。 origin: [[GA-047]] -> [[source path broadness]] -> [[context update target classification]]
