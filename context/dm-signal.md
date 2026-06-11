@@ -251,21 +251,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L667-L676は振り分け済 → research§GS結果(L667:robustness連動メタ列/L674:L1従属ラベル列), core§19.2(L669:monthly_returnセマンティクス[open-to-open]/L670:Oikaze first_signal EW/L671:Yotsume close cumulative+bootstrap), ops索引(L668:ALM DB preflight/L672:champion_list追記制御/L676:SQLite quick_check), ops§6-7(L675:recalculate-sync待機)。L673はL672重複→削除）
 - （L677-L708は振り分け済 → ops索引(L677:SQLite検証/L678:合成ベンチ/L680:CLI引数照合/L684:output-dir alias/L688:Payload meta/L692:SSOT照合/L708:valid_start_date), ops§6-7(L690:sync完了判定/L701:fullrecalc復元), research§GS結果(L685:selector流用/L686:SQLite月次), research§パリティ(L699:NULL除外), research索引(L693:時間解像度), core§19.2(L694:top_n分離/L696:FoF top_n/L703:ticker×weight判定), frontend§12(L702:UUID漏れ/L704:precomputed weights/L705:月初Signal)。重複削除: L679≡L678, L681-L683≡L680, L689≡L688, L691≡L690, L695≡L694, L698≡L696, L700≡L699, L706≡L705。L687/L697/L707自動生成→削除）
 - （L709-L720は振り分け済 → core§19.4(L709[PI]), ops§6-7(L714+L715統合), ops索引(L710/L713/L716/L717), frontend§12(L719+L720統合)。L711/L712/L718はAUTO-DEPRECATE→スキップ）
-- L721: pytest対象ファイルがテスト関数ゼロだとACの実行確認が空振りする（cmd_2656）
-
----
-- L722: pipeline_config同期偵察はトップレベル差分とブロック差分を別々に検証する（cmd_3079）
-- L723: context freshnessはprojects/{id}.yaml欠落時のsource repo fallbackを検証対象に含める（cmd_karo_recon_context_freshness_dm_signal_research_202606041656）
-- L724: deterioration_snapshotsは2026-03以降のみ — 過去損失パターン分析ではVIX+ETRリターンで代替（cmd_3215）
-- L725: 前月DTB3急騰(金利急上昇)は全レイヤー共通の大負★★★シグナル（cmd_3217）
-- L726: サイズ調整効果: HIGH月の平均+3.4%により削減コストが改善効果を上回る（cmd_3218）
-- L727: HMM月次fitは全サンプルが1状態に集中するデジェネレート問題が発生しやすい。日次fitが必須（cmd_3220）
-- L728: HMM月次fitは全サンプルが1状態に集中するデジェネレート問題が発生。日次fitで訓練→月次集約(50%ルール)でクリーンなレジーム検出（cmd_3220）
-- L729: baseline同等ACとall-tests-pass hookの衝突時はscope外修正前に停止する（cmd_3290）
-- L730: 削除済みBlockTypeはruntime全経路で残参照検査する（cmd_3293）
-- L733: worktree pytest比較ではenv有無を先に二値確認する（cmd_karo_hotfix_cmd3301_pytest_failures_202606112157）
-- L734: FastAPI get_db overrideだけではauth/get_db_session経路は隔離されない（cmd_karo_hotfix_cmd3301_test_sessionlocal_202606112230）
-- L735: 履歴分割任務はdirty本線で直接rewriteせず隔離worktree成果branchを明示する（cmd_3301）
+- （L721-L735は振り分け済 → ops教訓索引(L721/L723/L729/L730/L733/L735), core§19.2(L722/L734), research§38(L724/L725/L726/L728)。L727はL728重複→統合）
 
 ## 因果リンク
 

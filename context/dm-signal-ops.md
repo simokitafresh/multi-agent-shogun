@@ -287,6 +287,12 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
   §32: L628,L629,L632
   削除: L579,L582,L584,L256(自動生成具体性なし),L571(deprecated)
 -->
+| L735 | 履歴分割任務はdirty本線で直接rewriteせず隔離worktree成果branchを明示する | git運用 | cmd_3301 |
+| L733 | worktree pytest比較ではenv(.env/.env.local)有無を先に二値確認する | テスト運用 | cmd_3301系hotfix |
+| L730 | 削除済みBlockTypeはruntime全経路(recalculate_fast含む)で残参照検査する | 再計算 | cmd_3293 |
+| L729 | baseline同等ACとall-tests-pass hookの衝突時はscope外修正前に停止する | 運用手順 | cmd_3290 |
+| L723 | 鮮度gateはAPI失敗とデータ未実行を同一ALERTに畳まずfallback経路も検証対象に含める | gate設計 | recon_202606 |
+| L721 | test_*.pyでもテスト関数ゼロはpytest収集0件で空振り。AC実行確認はsmoke test要件を明示 | テスト運用 | cmd_2656 |
 | L135 | 参照先scripts消滅時は教訓参照をdeprecatedとして明示する（旧L010） | 知識基盤 | cleanup |
 | L134 | 参照先scripts消滅時は教訓参照をdeprecatedとして明示する（旧L025） | 知識基盤 | cleanup |
 | L133 | セッション開始時にtodo.md/lessons.md必読 | 運用手順 | — |

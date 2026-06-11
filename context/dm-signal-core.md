@@ -403,6 +403,8 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 
 | ID | 結論(1行) | 出典 |
 |---|---|---|
+| L722 | pipeline_config同期はトップレベル差分とブロック差分を別々に検証(FEはトップレベルのみ更新・BE saveはmodel_dump丸ごと保存) | cmd_3079 |
+| L734 | FastAPIテストのget_db overrideだけではauth/get_db_session経路は隔離されない | cmd_3301系hotfix |
 | L093 | SVMF月次/日次判定バグ: `is_monthly_data()`未使用で行数ベース判定が月次データを日次と誤判定 | cmd_227 |
 | L096 | skip処理のデータ頻度判定は`is_monthly_data()`を使え(行数ヒューリスティック禁止) | cmd_234 |
 | L097 | SVMF/MVMFのskip計算に`is_monthly_data()`使え。同一ファイル内に既存実装あり | cmd_233 |
