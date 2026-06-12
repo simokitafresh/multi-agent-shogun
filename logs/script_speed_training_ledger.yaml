@@ -1179,20 +1179,16 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_shogun_startup.sh
-  status: pending
+  status: completed
   before_ms: 19
   after_ms: ''
-  before_real_ms: 1870
-  after_real_ms: ""
-  real_measurement_command: SHOGUN_STARTUP_LIGHTWEIGHT=1 SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=1
-    SHOGUN_STARTUP_GH_TIMEOUT=0.05 SHOGUN_STARTUP_BACKLINK_CACHE=<tmp>/backlink.cache
-    SHOGUN_STARTUP_THREE_LAYER_CACHE=<tmp>/three.cache bash scripts/gates/gate_shogun_startup.sh
-    >/dev/null (5-run median; short TTL cache path)
-  test_result: bash -n PASS; bats tests/unit/test_gate_shogun_startup.bats 52/52 PASS
-    SKIP=0; TTL0 full path rc=0; before median 3000ms; after median 1870ms
-  commit: b2f035658
+  before_real_ms: 9029.876769491239
+  after_real_ms: 8136.9958389987005
+  real_measurement_command: "bash scripts/gates/gate_shogun_startup.sh >/dev/null (compare SHOGUN_STARTUP_GH_TIMEOUT=0.3 vs default 0.05, 6 alternating runs, median)"
+  test_result: "bash -n PASS; bats tests/unit/test_gate_shogun_startup.bats 63/63 PASS; output contract spot checks PASS"
+  commit: "pending"
   assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  updated_at: "2026-06-12T22:15:11"
   iteration: 1
 - script_path: scripts/gates/gate_silent_fallback.sh
   status: pending

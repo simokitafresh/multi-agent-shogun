@@ -7,14 +7,27 @@
 set -e
 
 run_gate_shogun_startup() {
-local SCRIPT_DIR="${SHOGUN_STARTUP_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+local SCRIPT_DIR="${SHOGUN_STARTUP_ROOT:-}"
+if [ -z "$SCRIPT_DIR" ]; then
+    local _gss_self="${BASH_SOURCE[0]}"
+    case "$_gss_self" in
+        */scripts/gates/gate_shogun_startup.sh) SCRIPT_DIR="${_gss_self%/scripts/gates/gate_shogun_startup.sh}" ;;
+        *) SCRIPT_DIR="$(cd "$(dirname "$_gss_self")/../.." && pwd)" ;;
+    esac
+    [ -n "$SCRIPT_DIR" ] || SCRIPT_DIR="."
+fi
 local GATE_DIR="$SCRIPT_DIR/scripts/gates"
 local LIGHT_MODE="${SHOGUN_STARTUP_LIGHTWEIGHT:-0}"
 local LIGHT_SKIP_HEAVY="${SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT:-}"
 local YAML_AUTO_ARCHIVE="$SCRIPT_DIR/scripts/yaml_auto_archive.sh"
 local SHORT_CACHE_TTL="${SHOGUN_STARTUP_SHORT_CACHE_TTL_SEC:-10}"
-local BACKLINK_CACHE_FILE="${SHOGUN_STARTUP_BACKLINK_CACHE:-/tmp/shogun_startup_backlink_zero.cache}"
-local THREE_LAYER_CACHE_FILE="${SHOGUN_STARTUP_THREE_LAYER_CACHE:-/tmp/shogun_startup_three_layer_health.cache}"
+if [ -n "${SHOGUN_STARTUP_ROOT:-}" ] && [ -z "${SHOGUN_STARTUP_SHORT_CACHE_TTL_SEC:-}" ]; then
+    SHORT_CACHE_TTL=0
+fi
+local STARTUP_CACHE_KEY="${SCRIPT_DIR//[\/: .#*?!]/_}"
+STARTUP_CACHE_KEY="${STARTUP_CACHE_KEY: -48}"
+local BACKLINK_CACHE_FILE="${SHOGUN_STARTUP_BACKLINK_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_backlink_zero.cache}"
+local THREE_LAYER_CACHE_FILE="${SHOGUN_STARTUP_THREE_LAYER_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_three_layer_health.cache}"
 if [ -z "$LIGHT_SKIP_HEAVY" ]; then
     if [ -n "${SHOGUN_STARTUP_ROOT:-}" ]; then
         LIGHT_SKIP_HEAVY=0
@@ -65,7 +78,7 @@ _d_idle_trigger=""
 	    fi
 
 	    local ci_json ci_conclusion
-	    ci_json="$(timeout "${SHOGUN_STARTUP_GH_TIMEOUT:-0.3}" gh run list --repo simokitafresh/multi-agent-shogun --limit 1 --json conclusion 2>/dev/null || true)"
+	    ci_json="$(timeout "${SHOGUN_STARTUP_GH_TIMEOUT:-0.05}" gh run list --repo simokitafresh/multi-agent-shogun --limit 1 --json conclusion 2>/dev/null || true)"
 	    [ -n "$ci_json" ] || return 0
 
 	    ci_conclusion="$(python3 - "$ci_json" <<'PY' 2>/dev/null || true
