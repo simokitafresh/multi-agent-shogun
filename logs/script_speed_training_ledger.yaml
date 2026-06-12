@@ -1611,7 +1611,7 @@ entries:
   before_real_ms: 451.917
   after_real_ms: 369.167
   real_measurement_command: "env PROMPT_STATE_AGENT_ID=saizo PROMPT_STATE_SKILLS_DIR=/tmp/psi_equiv.zPNVDI/skills PROMPT_STATE_SEMANTIC_SEARCH_CMD=/tmp/psi_equiv.zPNVDI/semantic.sh bash scripts/hooks/prompt_state_inject.sh <<< '{\"prompt\":\"報告YAML作成はどう確認する？\"}'"
-  test_result: "normal/question equivalence yes; bats tests/unit/test_prompt_state_inject_skill_trigger.bats PASS SKIP=0"
+  test_result: "normal equivalence yes 596.000->375.000ms; question equivalence yes 451.917->369.167ms; bats tests/unit/test_prompt_state_inject_skill_trigger.bats PASS SKIP=0"
   commit: "pending"
   assigned_to: ""
   updated_at: "2026-06-13T00:04:41"

@@ -35,58 +35,35 @@ _prompt_state_json_get() {
     fi
   fi
 
-  JSON_PAYLOAD="$payload" JSON_FIELD="$_prompt_state_field" JSON_DEFAULT="$_prompt_state_default" python3 - <<'PY'
-import json
-import os
-import sys
-
-payload = os.environ.get("JSON_PAYLOAD", "")
-field = os.environ.get("JSON_FIELD", "")
-default = os.environ.get("JSON_DEFAULT", "")
-
-try:
-    obj = json.loads(payload)
-except Exception:
-    raise SystemExit(1)
-
-field_map = {
-    ".prompt": "prompt",
+  return 1
 }
-key = field_map.get(field)
-if key is None:
-    raise SystemExit(1)
 
-value = obj.get(key, default)
-if value is None:
-    value = default
-if not isinstance(value, str):
-    value = str(value)
-sys.stdout.write(value)
-PY
+_prompt_state_json_escape() {
+  local _prompt_state_value="${1:-}"
+  _prompt_state_value="${_prompt_state_value//\\/\\\\}"
+  _prompt_state_value="${_prompt_state_value//\"/\\\"}"
+  _prompt_state_value="${_prompt_state_value//$'\n'/\\n}"
+  _prompt_state_value="${_prompt_state_value//$'\r'/\\r}"
+  _prompt_state_value="${_prompt_state_value//$'\t'/\\t}"
+  printf '%s' "$_prompt_state_value"
 }
 
 _prompt_state_emit_output() {
   local _prompt_state_event="$1"
   local _prompt_state_context="$2"
   local _prompt_state_json
+  local _prompt_state_escaped_event
+  local _prompt_state_escaped_context
 
   if _prompt_state_json="$(jq -Rs --arg event_name "$_prompt_state_event" '{hookSpecificOutput:{hookEventName:$event_name,additionalContext:.}}' 2>/dev/null <<<"$_prompt_state_context")"; then
     printf '%s\n' "$_prompt_state_json"
     return 0
   fi
 
-  printf '%s' "$_prompt_state_context" | HOOK_EVENT_NAME="$_prompt_state_event" python3 -c '
-import json
-import os
-import sys
-
-print(json.dumps({
-    "hookSpecificOutput": {
-        "hookEventName": os.environ["HOOK_EVENT_NAME"],
-        "additionalContext": sys.stdin.read(),
-    }
-}, ensure_ascii=False))
-'
+  _prompt_state_escaped_event="$(_prompt_state_json_escape "$_prompt_state_event")"
+  _prompt_state_escaped_context="$(_prompt_state_json_escape "$_prompt_state_context")"
+  printf '{"hookSpecificOutput":{"hookEventName":"%s","additionalContext":"%s"}}\n' \
+    "$_prompt_state_escaped_event" "$_prompt_state_escaped_context"
 }
 
 # --- Read stdin JSON (type: user_prompt_submit) ---
@@ -129,24 +106,10 @@ count_lord_responses() {
     return 0
   }
 
-  python3 - "$lord_conversation_file" <<'PY'
-import json
-import sys
-
-count = 0
-with open(sys.argv[1], encoding="utf-8") as fh:
-    for line in fh:
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            entry = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if entry.get("type") == "inbound" and entry.get("source") == "lord":
-            count += 1
-print(count)
-PY
+  awk '
+    /"type"[[:space:]]*:[[:space:]]*"inbound"/ && /"source"[[:space:]]*:[[:space:]]*"lord"/ { c++ }
+    END { print c + 0 }
+  ' "$lord_conversation_file"
 }
 
 record_shogun_growth_metrics() {
@@ -176,32 +139,24 @@ record_semantic_no_match_metric() {
 }
 
 dedup_semantic_discussions() {
-  python3 -c '
-import re
-import sys
-
-seen = set()
-for raw in sys.stdin:
-    line = raw.rstrip("\n")
-    if re.match(r"^\|\s*discussion\s*\|", line):
-        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-        ref = cells[1] if len(cells) > 1 else line
-        timestamp_match = re.search(
-            r"\b(\d{4}-\d{2}-\d{2}T[0-9:]+(?:[+-]\d{2}:?\d{2}|Z)?|\d{4}-\d{2}-\d{2}[T ][0-9:]+)\b",
-            ref,
-        )
-        if timestamp_match:
-            summary = ref[timestamp_match.end():].strip()
-            summary = re.sub(r"^\[[^\]]+\]\s*", "", summary)
-            summary = re.sub(r"\s+", " ", summary)
-            key = (timestamp_match.group(1), summary)
-        else:
-            key = ("", re.sub(r"\s+", " ", ref))
-        if key in seen:
-            continue
-        seen.add(key)
-    print(line)
-'
+  awk '
+    function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
+    function squeeze(s) { gsub(/[[:space:]]+/, " ", s); return s }
+    /^\|[[:space:]]*discussion[[:space:]]*\|/ {
+      ref = $0
+      n = split($0, cells, "|")
+      if (n >= 3) ref = trim(cells[3])
+      key = squeeze(ref)
+      if (match(ref, /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9][T ][0-9:]+([+-][0-9][0-9]:?[0-9][0-9]|Z)?/)) {
+        ts = substr(ref, RSTART, RLENGTH)
+        summary = trim(substr(ref, RSTART + RLENGTH))
+        sub(/^\[[^]]+\][[:space:]]*/, "", summary)
+        key = ts "|" squeeze(summary)
+      }
+      if (seen[key]++) next
+    }
+    { print }
+  '
 }
 
 prompt_state_yaml_scalar() {
@@ -385,28 +340,29 @@ semantic_skill_recommendations() {
   [[ "$semantic_rc" -eq 0 ]] || return 0
 
   skills="$(
-    SEMANTIC_RESULT="$semantic_result" python3 - <<'PY'
-import os
-import re
-
-raw = os.environ.get("SEMANTIC_RESULT", "")
-seen = set()
-names = []
-for line in raw.splitlines():
-    match = re.match(r"^\s*-\s*skills\s*:\s*(.+?)\s*$", line)
-    if not match:
-        continue
-    for item in re.split(r"[,、]", match.group(1)):
-        name = item.strip().strip("`\"'")
-        if not name or name.lower() in {"none", "no", "n/a", "null"} or name in {"なし", "無し"}:
-            continue
-        if not re.match(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$", name):
-            continue
-        if name not in seen:
-            seen.add(name)
-            names.append(name)
-print("\n".join(names[:5]))
-PY
+    printf '%s\n' "$semantic_result" | awk '
+      function trim(s) {
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+        gsub(/^[`"'\''"]+|[`"'\''"]+$/, "", s)
+        return s
+      }
+      /^[[:space:]]*-[[:space:]]*skills[[:space:]]*:/ {
+        sub(/^[[:space:]]*-[[:space:]]*skills[[:space:]]*:[[:space:]]*/, "")
+        gsub(/、/, ",")
+        n = split($0, items, ",")
+        for (i = 1; i <= n; i++) {
+          name = trim(items[i])
+          low = tolower(name)
+          if (name == "" || low == "none" || low == "no" || low == "n/a" || low == "null" || name == "なし" || name == "無し") continue
+          if (name !~ /^[A-Za-z0-9][A-Za-z0-9_.-]*$/) continue
+          if (!seen[name]++) {
+            print name
+            count++
+            if (count >= 5) exit
+          }
+        }
+      }
+    '
   )"
   skills="$(printf '%s\n' "$skills" | filter_skills_for_agent)"
   # D0: Cross-validate semantic skills against TRIGGER keywords (precision fix).
@@ -857,7 +813,7 @@ if [[ "$agent_id" == "shogun" || "$agent_id" == "karo" || "$agent_id" == "gunshi
   _defer_count=0
   _today="$(date +%Y-%m-%d)"
   if [[ -f "$_defer_history" ]]; then
-    _defer_count="$(grep -c "^${_today}.*先送り判断:" "$_defer_history" 2>/dev/null || echo 0)"
+    _defer_count="$(awk -v today="$_today" 'index($0, today) == 1 && /先送り判断:/ { c++ } END { print c + 0 }' "$_defer_history" 2>/dev/null || printf '0\n')"
   fi
   if [[ "$_defer_count" -gt 0 ]]; then
     additional_context="${additional_context}
