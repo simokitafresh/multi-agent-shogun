@@ -24,8 +24,18 @@ emit_context_raw() {
     printf '%s' "$1" | jq -Rs '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":.}}' 2>/dev/null || true
 }
 
-# Extract file_path with jq (single call for all guards)
-file_path="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .file_path // .filePath // .path // empty' 2>/dev/null)" || exit 0
+# Extract fields with one jq startup for all guards.
+IFS=$'\t' read -r file_path _replace_all _old_string < <(
+    printf '%s' "$payload" | jq -r '
+        (.tool_input // .toolInput // {}) as $input
+        | [
+            ($input.file_path // $input.filePath // $input.path // ""),
+            ($input.replace_all // false | tostring),
+            ($input.old_string // "")
+          ]
+        | @tsv
+    ' 2>/dev/null
+) || exit 0
 [[ -z "$file_path" ]] && exit 0
 
 # PROJECT_ROOT via string ops (no subshell)
@@ -41,9 +51,7 @@ case "$file_path" in
 esac
 
 # === Guard 0: replace_all confirmation (LS069 — 2026-04-21殿裁定) ===
-_replace_all="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .replace_all // false' 2>/dev/null)" || true
 if [[ "$_replace_all" == "true" ]]; then
-    _old_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .old_string // empty' 2>/dev/null)" || true
     if [[ -n "$_old_string" ]]; then
         _short="${_old_string:0:50}"
         emit_context "★ replace_all=true 使用。適用件数を確認せよ: grep -c '${_short//\"/\\\"}' ${file_path}"
