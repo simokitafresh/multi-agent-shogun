@@ -1,114 +1,82 @@
 task:
-  _ac_task_id: cmd_3299_AC3
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3299 (deployed 2026-06-11T20:43:03). Read from the beginning.
-  ac_version: 1d894d73
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      binary_check: 13件/32件の根拠となる一次ファイルと該当IDまたは算出条件が報告YAMLに記録されたか？
+      description: bash scripts/gates/gate_shogun_startup.sh の掲示板action_required未対応13件と将軍教訓32件(上限31)の発火ロジックを特定し、入力ファイル・該当ID・現状値を列挙する
+    AC2:
+      binary_check: action_required13件が resolved_by_karo / needs_shogun_decision / needs_gunshi_review / invalid_stale のいずれかに分類され、可能なものは処理済みか？
+      description: 掲示板action_requiredについて、家老が安全に処理できる既処理/重複/古い通知は正規スクリプトで状態更新する。判断が必要なものは放置せず、宛先・必要判断・次アクションを表にする
+    AC3:
+      binary_check: 将軍教訓の統合候補と禁止した操作(lesson-sort等)が明記され、家老/忍者が越権編集していないか？
+      description: 将軍教訓32件超過は将軍専用領域のため、lesson-sort等の将軍専用スキルは実行しない。重複/統合候補を一次情報で抽出し、将軍が1操作で統合判断できる候補表を作る
+    AC4:
+      binary_check: 掲示板action_requiredと将軍教訓超過のそれぞれに、修正前後または未解消理由の二値結果があるか？
+      description: 変更を入れた場合は対象gateを再実行し、修正前→修正後の数値差分を記録する。変更なしの場合も再現コマンドと未解消理由を二値で記録する
+    AC5:
+      binary_check: commit hashまたはコード変更なしのgit status確認が報告YAMLに記録されているか？
+      description: コード/YAML変更がある場合はcommitする。変更なしの場合は files_modified=none とgit status確認を報告する
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
-  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
-  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
-  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
-  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
-  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
-  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
-  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
-  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
-  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
-  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
-  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
-  - 'Level1(事後検出): 間違えた後にgateが検出'
-  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
-  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
-  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
-  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
-  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
-  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
-  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
-  - 2026-06-11T19:49:06+09:00 | 【軍師CRITICAL】先送り3セッション連続検出。起動は許可するが即対処必須
-  - 2026-06-11T09:10:35+09:00 | 【家老CRITICAL】先送り3セッション連続検出。起動は許可するが即対処必須
-  - 2026-06-11T19:53:24+09:00 | 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=56件 clear_p
-  - '2026-06-11T19:50:55+09:00 | 教訓効果率WARN: 99.5%'
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  not_in_scope: 追体験自動化ターゲット・洗脳連鎖2x2・スキル別FAIL率(hanzo担当)、SKILL.md script参照(hayate担当)、将軍専用lesson-sort実行、将軍教訓ファイルの越権編集
   parallel_ok: []
-  parent_cmd: cmd_3299
-  project: dm-signal
-  purpose: 首領裁可書(2026-06-11、approval-20260611-wp1f-wp4-tz.md)はWP-3着手前に実施計画の提出+個別裁可を要求している。計画策定は読取専用偵察+文書作成でありデプロイ・マージ・本番と完全無干渉のため、cmd_3296 AC2前倒し検証およびcmd_3298と並列で今すぐ進められる(殿指示2026-06-11 20:31「並列で進められる内容はないか」)。workorder WP-3の制約(ファサード維持/ペア移設/LookbackPeriodスキーマ削除禁止/モメンタム集約は範囲外)に完全準拠した実施計画書ドラフトを作成し、首領裁可の材料とする。3領域を別忍者に並列配備可(読取専用のため競合なし)
-  status: idle
+  parent_cmd: cmd_karo_hotfix_bulletin_lessons_202606121138
+  project: infra
+  purpose: 将軍startupで3セッション連続BLOCKしている掲示板action_required未対応13件と将軍教訓32件超過を一次情報で再現し、家老が実行可能な解消または将軍専用手順へ分解する
+  status: done
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/.agent/task-force/refactor-workorder-20260611.md
-  task_id: cmd_3299_AC3
-  task_type: full
+  target_path: /mnt/c/tools/multi-agent-shogun
+  task_id: cmd_karo_hotfix_bulletin_lessons_202606121138_normal
+  task_type: hotfix
   related_lessons:
-  - id: 'L530'
-    summary: 'multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on'
-    detail: 'multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on'
-  - id: 'L112'
-    summary: 'check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT'
-    detail: 'check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT'
-  - id: 'L213'
-    summary: 'cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit'
-    detail: 'cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit'
-  - id: 'L258'
-    summary: 'ログローテ1MBでは約1日分しか保持できず30日分析不可。STALL-DETECTEDの38%でcmd情報欠損(task_id空)。task_idフォールバック'
-    detail: 'ログローテ1MBでは約1日分しか保持できず30日分析不可。STALL-DETECTEDの38%でcmd情報欠損(task_id空)。task_idフォールバック'
-  - id: 'L113'
-    summary: 'IF タスク指定ファイルが.gitignore whitelist外の可能性がある時 THEN 配備時に対象ファイルのgit追跡可否を事前検証せよ'
-    detail: 'IF タスク指定ファイルが.gitignore whitelist外の可能性がある時 THEN 配備時に対象ファイルのgit追跡可否を事前検証せよ'
-  - id: 'L159'
-    summary: 'IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore'
-    detail: 'IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore'
-  - id: 'L073'
-    summary: 'cmd_371 C1のタスク指示は''lib/配下→..でリポルート''だったが、実際はscripts/lib/配下のため../..が必要。指示コードをそのまま使う'
-    detail: 'cmd_371 C1のタスク指示は''lib/配下→..でリポルート''だったが、実際はscripts/lib/配下のため../..が必要。指示コードをそのまま使う'
-  - id: 'L776'
-    summary: 'removeでentries空になった後にentries:のみ書くとyaml.safe_loadでNoneが返り==[]比較が失敗する。entries: []と'
-    detail: 'removeでentries空になった後にentries:のみ書くとyaml.safe_loadでNoneが返り==[]比較が失敗する。entries: []と'
-  - id: 'L535'
-    summary: 'bats --jobs Nで並列実行時、cmd_save.shが/tmp/shogun_to_karo.lockを取り合いWARNが偽発火する。修正: LOCK'
-    detail: 'bats --jobs Nで並列実行時、cmd_save.shが/tmp/shogun_to_karo.lockを取り合いWARNが偽発火する。修正: LOCK'
-  - id: 'L209'
-    summary: '運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report file 未作成でも '
-    detail: '運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report file 未作成でも '
+  - id: 'L472'
+    summary: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含'
+    detail: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含'
+  - id: 'L585'
+    summary: 'sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの'
+    detail: 'sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの'
+  - id: 'L086'
+    summary: 'auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは'
+    detail: 'auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは'
+  - id: 'L147'
+    summary: 'IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les'
+    detail: 'IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les'
+  - id: 'L114'
+    summary: 'cmd_464_hotfix'
+    detail: 'cmd_464_hotfix'
+  - id: 'L583'
+    summary: 'gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate'
+    detail: 'gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate'
+  - id: 'L529'
+    summary: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
+    detail: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
+  - id: 'L314'
+    summary: 'cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf'
+    detail: 'cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf'
+  - id: 'L190'
+    summary: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき'
+    detail: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき'
+  - id: 'L377'
+    summary: 'lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam'
+    detail: 'lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-claude-version-switch/SKILL.md skills/shogun-claude-version-switch/scripts/claude_version_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
-  - "skill_design_rules — Skill設計ルール:  context/skill-design-rules.md docs/research/dream-skill-design.md scripts/skill_gate_feedback.sh scripts/skill_auto_improve.sh scripts/skill_execution_log.sh context/codd.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md skills/reset-layout/SKILL.md skills/pf-registration/SKILL.md docs/research/gstack-gbrain-skillify-2026-04.md docs/research/gunshi_idle_skill_precision_cycle2_20260609.md docs/research/gunshi_idle_adaptive_gating_bucket_split_20260521.md — 軍師idle: 適応型ゲートバケット分割設計(2026-05-21)"
-  - "systems_knowledge_base — システム知識辞書:  docs/research/systems-knowledge-base/index.md docs/research/systems-knowledge-base/systems/ docs/research/systems-knowledge-base/systems/gstack.md"
-  - "training_cycle_quality — 忍者修行サイクル品質:  context/training-cycle.md logs/gate_fire_log.yaml scripts/ninja_monitor.sh docs/research/gunshi-idle-S8-workaround-analysis.md — 軍師idle分析: 修行S8ワークアラウンド分析 docs/research/gunshi_idle_adversarial_cold_analysis_20260426.md — 軍師idle: adversarial cold視点分析(2026-04-26) docs/research/gunshi_idle_adversarial_cold_fix_20260430.md — 軍師idle: adversarial cold修正(2026-04-30) docs/research/gunshi_idle_adversarial_cold_fix_20260608.md — 軍師idle: adversarial cold修正v2(2026-06-08) docs/research/gunshi_idle_ambiguity_cold_analysis_20260426.md — 軍師idle: 曖昧cold視点分析(2026-04-26) docs/research/gunshi_idle_block_pattern_analysis_20260512.md — 軍師idle: BLOCKパターン分析(2026-05-12) docs/research/gunshi_idle_block_quality_audit_20260514.md — 軍師idle: BLOCK品質監査(2026-05-14) docs/research/gunshi_idle_cold_perspective_ambiguity_20260603.md — 軍師idle: cold視点曖昧性分析(2026-06-03) docs/research/gunshi_idle_cold_perspective_audit_20260515.md — 軍師idle: cold視点監査(2026-05-15) docs/research/gunshi_idle_cold_perspective_retroactive_20260605.md — 軍師idle: cold視点遡及分析(2026-06-05) docs/research/gunshi_idle_cold_perspective_retroactive_20260606.md — 軍師idle: cold視点遡及分析v2(2026-06-06) docs/research/gunshi_idle_cold_streak_analysis_20260428.md — 軍師idle: cold連続パターン分析(2026-04-28) docs/research/gunshi_idle_cold_streak_structural_20260429.md — 軍師idle: cold連続構造的原因(2026-04-29) docs/research/gunshi_idle_l2_completion_check_20260413.md — 軍師idle: L2完了チェック(2026-04-13) docs/research/gunshi_idle_l7_autopromote_nazenaze_20260521.md — 軍師idle: L7自動昇格なぜなぜ(2026-05-21) docs/research/gunshi_idle_l7_causal_network_learning_20260520.md — 軍師idle: L7因果ネットワーク学習設計(2026-05-20)"
-  - "infrastructure_ops — インフラ運用基盤:  scripts/ninja_monitor.sh scripts/inbox_watcher.sh scripts/daemon_supervisor.sh scripts/ntfy_listener.sh context/infrastructure.md scripts/dashboard_auto_section.sh ダッシュボードリアルタイムステータス自動生成 scripts/auto_deploy_next.sh サブタスク自動連続配備(auto_deployフラグ/blocked_by/忍者空き制御) scripts/reset_layout.sh agentsウィンドウペイン配置一発復元 docs/research/gunshi_idle_autocommit_scope_leak_20260602.md — 軍師idle: 自動コミットスコープ漏洩(2026-06-02) docs/research/gunshi_idle_clear_durability_fix_20260516.md — 軍師idle: /clear耐久性修正(2026-05-16) docs/research/gunshi_idle_clear_durability_flag_gap_20260515.md — 軍師idle: /clear耐久性フラグギャップ(2026-05-15) docs/research/gunshi_idle_clear_durability_nazenaze_20260515.md — 軍師idle: /clear耐久性なぜなぜ分析(2026-05-15) docs/research/gunshi_idle_clear_durability_nazenaze_20260515d.md — 軍師idle: /clear耐久性なぜなぜ分析(続)(2026-05-15) docs/research/gunshi_idle_clear_respawn_bug_20260607.md — 軍師idle: /clear respawnバグ分析(2026-06-07) docs/research/gunshi_idle_dashboard_corruption_20260603.md — 軍師idle: ダッシュボード破損分析(2026-06-03) docs/research/gunshi_idle_deploy_structural_bugs_20260517.md — 軍師idle: 配備構造バグ分析(2026-05-17) docs/research/gunshi_idle_deploy_yaml_parse_error_20260516.md — 軍師idle: 配備YAMLパースエラー(2026-05-16) docs/research/gunshi_idle_direct_mode_stale_ac_20260502.md — 軍師idle: ダイレクトモード古いAC問題(2026-05-02) docs/research/gunshi_idle_gitignore_wa_20260409.md — 軍師idle: .gitignore WAパターン(2026-04-09) docs/research/gunshi_idle_infra_bug_audit_20260409.md — 軍師idle: インフラバグ監査(2026-04-09) docs/research/gunshi_idle_infra_bug_trio_20260502.md — 軍師idle: インフラバグトリオ分析(2026-05-02) docs/research/gunshi_idle_infra_bug_trio_fix_20260503.md — 軍師idle: インフラバグトリオ修正(2026-05-03) docs/research/gunshi_idle_infra_bug_universal_commit_20260430.md — 軍師idle: インフラバグ汎用コミット対策(2026-04-30) docs/research/gunshi_idle_infra_bugs_full_audit_20260424.md — 軍師idle: インフラバグ全量監査(2026-04-24) docs/research/gunshi_idle_infra_health_20260425.md — 軍師idle: インフラ健全性レポート(2026-04-25) docs/research/gunshi_idle_infra_speed_hidden_bugs_20260605.md — 軍師idle: インフラ速度の隠れバグ(2026-06-05)"
-  related_causal_links:
-  - "[[WP-3個別裁可制の計画先行]]"
-  - "[[cmd_3299実施計画偵察]]"
-  - "[[殿指示2026-06-11並列化]]"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/robustness-verification-catalog.md"
-  - "context/gs-speedup-knowledge.md"
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
-  production_invariants:
-  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
-  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
-  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
-  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
-  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
+  - "context/training-cycle.md"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
   - "Level1(事後検出): 間違えた後にgateが検出"
@@ -121,42 +89,29 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L530: multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit --on
-      - L112: check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT
-      - L213: cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit
-      - L258: ログローテ1MBでは約1日分しか保持できず30日分析不可。STALL-DETECTEDの38%でcmd情報欠損(task_id空)。task_idフォールバック
-      - L113: IF タスク指定ファイルが.gitignore whitelist外の可能性がある時 THEN 配備時に対象ファイルのgit追跡可否を事前検証せよ
-      - L159: IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore
-      - L073: cmd_371 C1のタスク指示は'lib/配下→..でリポルート'だったが、実際はscripts/lib/配下のため../..が必要。指示コードをそのまま使う
-      - L776: removeでentries空になった後にentries:のみ書くとyaml.safe_loadでNoneが返り==[]比較が失敗する。entries: []と
-      - L535: bats --jobs Nで並列実行時、cmd_save.shが/tmp/shogun_to_karo.lockを取り合いWARNが偽発火する。修正: LOCK
-      - L209: 運用ドキュメントに旧 `inbox_write.sh ... report_received` 手順が残っていると、忍者は report file 未作成でも 
+      - L472: instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含
+      - L585: sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの
+      - L086: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは
+      - L147: IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les
+      - L114: cmd_464_hotfix
+      - L583: gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate
+      - L529: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を
+      - L314: cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf
+      - L190: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき
+      - L377: lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-11T20:39:21+09:00 | 【INFOバッチ】 2026-06-11 20:24:59|cmd_3297"
-  - "2026-06-11T20:21:51+09:00 | cmd_3296 AC2差し戻しの経緯を把握。家老が旧コードrun(2026-06-11 01:01-01:40 UTC)を新コードcron完走と誤認→将軍が一次検証で否定→AC2差し戻し。次回cro"
-  - "2026-03-18T20:37:06+09:00 | 【家老】/clear前状態保存完了。cmd_1055 GATE CLEAR(連勝16)。cmd_1057(シン忍法GS Phase5)受領済み・配備計画策定済み・YAML未作成で中断。/clear後に"
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'FE分割計画: frontend/lib/api-client.tsの直書き10型についてmanifest-frontend.md §8の列挙(型名/行番号/消費側12ファイル)を現物コードと突合し、移設先ファイル構成・ペア移設(FoFWeightsResponse+FoFWeightComponent、SyncStatusResponse+LayerProgress)・内部インフラ型(RequestPriority等)の移設対象外を含む分割設計を、偵察5要件(変更対象ファイル・行番号/波及先/テスト有無・修正要否/エッジケース・副作用/依存・順序制約)で文書化する'
-  - id: 'AC2'
-    checks:
-    - check: 'BE分割計画: price_ratio_calculator/metrics_calculator/trades_calculator/monthly_trade_calculatorの現行構造(行数/関数構成/相互依存)を現物確認し、既存モジュールパスのファサード維持設計(scripts/がapp.services.metrics_calculator等を直接importする箇所の全列挙)+分割前と分割後のAPI応答完全一致を検証する方法(対象EP/比較手順)を偵察5要件で文書化する'
-  - id: 'AC3'
-    checks:
-    - check: 'deprecatedフィールド移行計画: @deprecatedフィールドmonths/use_calendarのFE参照6ファイルを現物確認し、FE参照除去手順を文書化する。BE側LookbackPeriodスキーマのフィールド定義は削除禁止(本番configに保存済み=workorder Q4)・BEレスポンス返却停止はFE移行完了後に首領判断で別途、の2制約を計画書に明記する'
-  - id: 'AC4'
-    checks:
-    - check: 'AC1-AC3を統合した実施計画書ドラフトを.agent/task-force/wp3-implementation-plan-draft.mdに作成する(実施順序・検証ゲート・コミット粒度・リスクを含む)。本cmdはコード変更ゼロ=git statusでソース変更なし(新規計画書ファイルのみ)を証明し、execution-log.mdへ記録する'
+  - "2026-05-21T00:56:18+09:00 | insightに記録した。将軍startup gateでNO_MATCH件数を毎回見るので、20件蓄積時に気づく。意志依存ではなく計測データが自然にトリガーする。 殿の指示を待つ。 [meta] st"
+  - "2026-05-21T00:29:57+09:00 | 穴をなぜなぜ7回で深掘りし、行動に変換する。 **穴1: 将軍startup gateにNO_MATCH率がない** → なぜ: ACに「startup gate」と書いただけで「誰の」を指定しなかっ"
+  - "2026-06-11T22:31:19+09:00 | 殿、SessionLocal対処hotfixのGATE CLEARを確認した。現時点の戦況を一次情報で固めて報告する。 ## 確認済みの事実（git+execution-log一次確認 22:30） "
+  - "2026-06-11T20:39:47+09:00 | 並列化の余地を一次情報で確認する。まずworkorderのWP-3スコープと現在の忍者稼働状況を見る。 [meta] stop_reason=tool_use"
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_hotfix_bulletin_lessons_202606121138_normal
+  _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3299.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3299.yaml
+  report_filename: tobisaru_report_cmd_karo_hotfix_bulletin_lessons_202606121138.yaml
+  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_bulletin_lessons_202606121138.yaml
   bloom_level: 
-  deployed_at: "2026-06-11T20:43:33"
-  assigned_acs: AC3
-  scope_note: "AC3のみ担当: deprecatedフィールド移行計画。@deprecated fields months/use_calendar のFE参照6ファイルを現物確認し、FE参照除去手順とBE側LookbackPeriodスキーマ削除禁止/BEレスポンス返却停止は別判断の2制約を文書化。AC1/AC2/AC4は担当外。コード変更禁止。"
-  voided_at: 
-  void_reason: 
+  deployed_at: "2026-06-12T11:35:55"
