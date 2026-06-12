@@ -11,10 +11,10 @@ esac
 
 _self="${BASH_SOURCE[0]:-$0}"
 case "$_self" in
-    /*) ;;
-    *) _self="$PWD/$_self" ;;
+    /*/.claude/hooks/pretool-dispatch.sh) ROOT="${_self%/.claude/hooks/pretool-dispatch.sh}" ;;
+    .claude/hooks/pretool-dispatch.sh) ROOT="$PWD" ;;
+    *) ROOT="${PWD}/${_self%/.claude/hooks/pretool-dispatch.sh}" ;;
 esac
-ROOT="${_self%/.claude/hooks/pretool-dispatch.sh}"
 unset _self
 
 _mirror_block_reason_if_needed() {
@@ -61,7 +61,7 @@ case "$payload" in
     *'"Bash"'*)
         HOOK_PAYLOAD="$payload"
         export HOOK_PAYLOAD
-        _run_pretool_child bash "$ROOT/.claude/hooks/pre-bash-combined.sh" || exit "$?"
+        bash "$ROOT/.claude/hooks/pre-bash-combined.sh" || exit "$?"
         ;;
     *'"Read"'*)
         source "$ROOT/.claude/hooks/pre-write-read-tracker.sh" <<< "$payload"
