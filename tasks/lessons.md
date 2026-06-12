@@ -7972,3 +7972,36 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - NO_MATCH候補は生成時点の失敗であり、後続のmemory DB fallbackや索引更新でHIT可能になる。pending消化時はalias類似昇格だけでなく元queryをsemantic_searchで再検証し、HITした候補は誤alias追加なしでdone化する。origin: [[cmd_3316]] -> [[semantic_stress_pending再検証欠落]] -> [[INSIGHT_REPEAT蓄積]]
+
+### L790: context_freshness調査はgate timeout差分も記録する
+- **日付**: 2026-06-12
+- **出典**: cmd_karo_hotfix_ga051_context_freshness_202606121555
+- **記録者**: hanzo
+- **tags**: [infra,context,recon,gate,git]
+- **target_files**: [context/dm-signal-ops.md]
+- **origin**: [[cmd_karo_hotfix_ga051_context_freshness_202606121555]]
+- **when**: 未設定
+- **how**: 未設定
+- context_freshness gateは高速化のため短いgit timeoutを持つ。外部repoのgit logがtimeoutするとsource commit countが0扱いになり、通常実行とtimeout延長実行で判定が変わる。ALERT調査ではcache無効化に加えてCFC_GIT_TIMEOUTまたはCONTEXT_FRESHNESS_GATE_GIT_TIMEOUTを明示し、通常実行との差分を報告する。origin: [[GA-051]] -> [[git_log_timeout]] -> [[freshness_primary_check_timeout]]
+
+### L791: context_freshness gateはgit timeout時に0件OKへ倒さずtimeoutをWARN/ALERT化する
+- **日付**: 2026-06-12
+- **出典**: cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622
+- **記録者**: hayate
+- **tags**: [infra,context,frontend,gate,git]
+- **target_files**: [context/dm-signal-frontend.md,queue/reports/hayate_report_cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622.yaml,queue/tasks/hayate.yaml]
+- **origin**: [[cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622]]
+- **when**: 未設定
+- **how**: 未設定
+- 通常gateはCONTEXT_FRESHNESS_GATE_GIT_TIMEOUT=1でOKだったが、CFC_GIT_TIMEOUT=10の直接checkではdm-signal-frontend.mdが12件ALERTだった。timeoutを0件扱いにすると鮮度ALERTが消えるため、gate側はtimeout発生件数を二値チェックし、source count未知としてWARN以上にするべき。origin: [[cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622]] -> [[L790]] -> [[context_freshness_timeout_false_ok]]
+
+### L792: context_freshness解消報告は対象contextと残存別contextを分離する
+- **日付**: 2026-06-12
+- **出典**: cmd_karo_hotfix_ga053_core_context_freshness_202606121637
+- **記録者**: kagemaru
+- **tags**: [infra,context,gate,reporting]
+- **target_files**: [context/dm-signal-core.md]
+- **origin**: [[cmd_karo_hotfix_ga053_core_context_freshness_202606121637]]
+- **when**: 未設定
+- **how**: 未設定
+- 対象contextのALERTが解消してもdashboard-warnings全体には別contextのALERTが残り得る。報告では対象contextのbefore/after件数と全体残存件数を分けて書かないと、CLEAR対象を誤読する。今回coreは12件→0件、全体残存はdm-signal.md 1件 + dm-signal-research.md 2件。

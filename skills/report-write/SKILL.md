@@ -160,6 +160,8 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-06-12: gate=gate_report_format result=FAIL executor=unknown reason=worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; lesson_candidate: MISSING; lessons_useful[0]: missing \"id\" field (must have lesson ID like L074); lessons_us...
 - 2026-06-11: gate=gate_report_format result=FAIL executor=kagemaru reason=YAML parse error: while scanning a simple key
 
 - 2026-06-10: gate=gate_report_format result=FAIL executor=saizo reason=lessons_useful: MISSING; lesson_candidate: found=true but no title

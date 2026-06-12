@@ -1007,7 +1007,7 @@ lessons:
   origin: '[[cmd_2391]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L673
   title: cmd_2366 selector再実行時はchampion_list自動追記を制御せよ
   summary: cmd_2366_l1_champion_select.pyはデフォルトでoutputs/robustness/champion_list.yamlへappen
@@ -1348,7 +1348,7 @@ lessons:
   origin: '[[cmd_2297]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L653
   title: cdp_measure baseline比較は生成JSONへの統合確認を必須にする
   summary: cdp_measure.sh Phase4はcdp_benchmark.pyを--baseline/current比較器として呼ぶが、実際のcdp_benchm
@@ -2113,7 +2113,7 @@ lessons:
   origin: '[[cmd_1847]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L604
   title: IS前半チャンピオンは全期間チャンピオンと完全に異なる(0/21一致)
   summary: 7忍法×3目的=21体全て、IS前半(75M)最適パターンは全期間最適パターンと異なった。前半過適合の典型パターン。OOS検証の必要性を定量的に裏付ける結果。
@@ -2127,6 +2127,9 @@ lessons:
   - outputs/analysis/cmd_1848_is_oos_champion_analysis.md
   - scripts/oneshot/cmd_1848_is_oos_champion_analysis.py
   origin: '[[cmd_1848]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L603
   title: 'cmd_1844 oikaze MaxDD champion ID誤記: N2→N4'
   summary: cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661はN2ではなくN4。パターンID頭部のNXXXとCSVキャッシュで照合確
@@ -2192,6 +2195,9 @@ lessons:
   - tasks/lessons.md
   - outputs/analysis/cmd_1035_parity_verification.json
   origin: '[[cmd_1837]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L598
   title: 'numpy savetxt(float32)のyear_month混在CSVへの適用: BytesIO中継+行単位プレフィックス追記パターン'
   summary: monthly_fast.csvは年月文字列+float列の混在フォーマット。np.savetxtは純数値のみ対応するため、float32行列をBytesIOに
@@ -2209,7 +2215,7 @@ lessons:
   origin: '[[cmd_1836]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L597
   title: module-level pipeline importのRSS削減量は--helpでなくworker fork RSSで計測せよ
   summary: lazy import前後の--help比較は43.4MBだがCoW効果を見落とした過小評価。forked workerは親プロセスpipelineを継承しCo
@@ -2325,7 +2331,7 @@ lessons:
   origin: '[[cmd_1828]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L589
   title: SHM結果回収で rows_fast 線形探索を重ねると large-grid で二乗時間化する
   summary: shared_memory で chunk 計算自体は完了していても、pid ごとに any(r["pattern_id"] == pid for
@@ -2474,7 +2480,7 @@ lessons:
   origin: '[[cmd_1791]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-10'
+  last_referenced: '2026-06-12'
 - id: L579
   title: '[自動生成] draft教訓の査読を怠った: cmd_1786'
   summary: draft教訓31件が未査読のままGATE到達
@@ -2509,6 +2515,9 @@ lessons:
   target_files:
   - queue/tasks/kotaro.yaml
   origin: '[[cmd_1786]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L576
   title: FoFのMVMF/SVMF/MomentumFilterで月次データlookupにexact-matchを使用するとCash全損になる
   summary: FoFパイプラインのMVMF/SVMF/MomentumFilterは月次データのmomentumキャッシュをdict{月末日:float}で保存し、conte
@@ -2547,7 +2556,7 @@ lessons:
   origin: '[[cmd_1786]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L573
   title: FoF月次キャッシュをdictに変えるときも lookup は exact get でなく bisect helper に統一せよ
   summary: 2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache
@@ -2560,7 +2569,7 @@ lessons:
   origin: '[[cmd_1787]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-10'
+  last_referenced: '2026-06-12'
 - id: L572
   title: GS runnerの正規パスはbackend/app/jobsではなくscripts/analysis/grid_search
   summary: task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/ana
@@ -2706,7 +2715,7 @@ lessons:
   origin: '[[cmd_1759]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L562
   title: ALM L0 4体でWard FoFを組む場合K=5は構造的不可(体数<クラスタ数)
   summary: ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage
@@ -3461,6 +3470,9 @@ lessons:
   target_files:
   - tasks/lessons.md
   origin: '[[cmd_1483]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L507
   title: lazy-loaded cache forward-fillは危険
   summary: signal_cache forward-fillがlazy-loadedキャッシュで古いシグナル(Cash含む)を全後続月に伝播。exact-match+qu
@@ -4764,6 +4776,9 @@ lessons:
   - outputs/analysis/cmd_1078_screening_DM7P_RXLU.csv
   - scripts/analysis/cmd_1078_dm7p_rxlu_redo.py
   origin: '[[cmd_1078]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L414
   title: DM7+ 24M RXLU CPCV Max_Run-up PBO=1.0
   summary: DM7+ 24M lookbackをRXLU固定でCPCV検定するとMax_Run-up PBOが1.0になりやすい。24M窓は変化が極めて緩慢でCPCVの短期
@@ -5718,7 +5733,7 @@ lessons:
   origin: '[[cmd_1014]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L342
   title: 2段重ねBTのStage1変更はnominal_output変動を伴い大幅Sharpe変動の主因
   summary: IF 2段重ねBTの過適合検証で近傍パラメータを変動させる THEN Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_
@@ -6299,6 +6314,9 @@ lessons:
   - docs/research/knowledge-base/preprocessing/financial-data-analysis.md
   - docs/research/knowledge-base/preprocessing/fractional-differentiation.md
   origin: '[[cmd_861]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L300
   title: バッチ手法追加は新バッチ並走が安全
   summary: 既存安定稼働バッチに手法を追加するより新バッチとして並走させる方が安全。deterioration_batch(244行)は触らずpersistence_bat
@@ -6531,7 +6549,7 @@ lessons:
   origin: '[[cmd_860]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L284
   title: 統計指標UIは信号機パターン(3色+灰)+Progressive Disclosure 3層。7±2超えは判断麻痺
   summary: 全手法を緑(健全)/黄(注意)/赤(要対応)+灰(データ不足)の4状態に正規化。既存deterioration-colors.tsパターンと互換。Layer1=
@@ -6672,7 +6690,7 @@ lessons:
   origin: '[[cmd_852]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L273
   title: live API完全一致監査はcurrent partial monthを凍結or除外しないと日次更新ノイズで誤FAIL化する
   summary: cmd_856で/api/signalsは91PF全件一致だが、/api/monthly-returnsと/api/performanceは15/15PFで不一
@@ -7377,7 +7395,7 @@ lessons:
   origin: '[[cmd_719]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L215
   title: 本番viewer認証の自動化ではrepo内.envよりRender live envを優先せよ
   summary: DM-signalのviewer passwordはRender側で月次更新され、repo内backend/.envはstaleになり得る。CDP自動認証でlo
@@ -7522,7 +7540,7 @@ lessons:
   origin: '[[cmd_670]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L206
   title: prefetchキャッシュキー不一致はprefetch戦略の致命的バグ
   summary: 'prefetchと消費側でAPIパラメータ(years等)が一致しないとキャッシュが永久ミスする。 usePrefetch.ts: years=3,20
@@ -8315,7 +8333,7 @@ lessons:
   origin: '[[cmd_492]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L143
   title: docs/research/消失ファイルはDM-signalリポジトリ側git操作に起因する可能性
   summary: IF docs/research/配下ファイル16件の消失は、DM-signalリポジトリ側のgit操作時 THEN docs/research/配下ファイル1
@@ -9535,7 +9553,7 @@ lessons:
   origin: '[[cmd_137]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-10'
+  last_referenced: '2026-06-12'
 - id: L037
   title: standard PFでpipeline_config未設定だとrecalculate_fastがCashフォールバック
   summary: IF Portfolio(type=standard)はschema上pipeline_config optionalのため、登録スクリプトで未付与でも保存され

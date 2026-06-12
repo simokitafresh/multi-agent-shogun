@@ -27,7 +27,7 @@ task:
   parent_cmd: cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622
   project: infra
   purpose: GA-052 dm-signal-frontend.md context_freshness ALERTの原因特定・横展開・防御層反映
-  status: done
+  status: idle
   stop_for: []
   task_id: cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622_normal
   task_type: hotfix

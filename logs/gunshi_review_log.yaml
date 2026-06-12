@@ -2480,3 +2480,120 @@
   altruism_check: not_needed
   origin: "[[adversarial冷え3セッション]] -> [[根因=docs偏重]] -> [[入力耐性拡張]]"
   timestamp: "2026-06-12T15:50:00"
+- cmd_id: cmd_karo_hotfix_ga051_context_freshness_202606121555
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "6観点OK。GA-051 context_freshness ALERT調査+横展開+防御層。AC3件=原因特定→範囲確認→対処。dm-signal-ops.md last_updated 2026-06-11。hotfixスコープ適切"
+  observations:
+    - "事実1: dm-signal-ops.md last_updated=2026-06-11(cmd_karo_hotfix_ctx)。GA-051はこのファイルがソースcommitに対して古い状態を検知"
+    - "事実2: L738(外部repo全体commit→context全体ALERT)がrelated_lessonsに注入済み。横展開の視点が教訓で担保"
+    - "事実3: AC3は防御層実装or理由付き提案の二択。消火ではなく構造的対処を要求する設計"
+  causal_chain: "source commit進行→dm-signal-ops.md未更新→context_freshness ALERT→根因調査+横展開+防御層(正の複利:context鮮度維持)"
+  brainwash_check: "洗脳#1防止: hotfixだから軽いとは限らない。AC1原因特定が先行する設計を確認"
+  ambiguity_points: none
+  origin: "[[GA-051]] -> [[context_freshness_ALERT]] -> [[APPROVE]]"
+  timestamp: "2026-06-12T15:55:00"
+- cmd_id: cmd_karo_hotfix_skill_fail_rate_escalation_202606121528
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。lenient reader=YAMLError時fallback+正常CSafeLoader維持。bats 24/24 PASS。skill_auto_improve --top 10 exit=0。commit a7258b1a。書込+読込の二重防御"
+  observations:
+    - "事実1: causal_verification: git blame確認済み、yaml_scalar=2026-06-07 a960c0f290導入。L15075は導入前の未エスケープ引用符"
+    - "事実2: fallbackは行単位リーダー。正常YAML→CSafeLoader高速経路維持。YAMLError時のみfallback発動"
+    - "事実3: bats 24/24 PASS + 実ログ(17308行)でParserErrorなしexit=0。入力堅牢化=adversarial観点適用"
+  causal_chain: "L15075未エスケープ引用符→ParserError→Gate20 BLOCK 3セッション→lenient reader実装→exit=0(負の複利→正の複利)"
+  brainwash_check: "洗脳#2防止: precheck全PASS+commit a7258b1a実在確認+bats 24/24数値。GATE CLEAR既知の確証バイアス意識"
+  step3_5_verified: true
+  hole_action: none
+  origin: "[[skill_execution_log L15075]] -> [[lenient_reader]] -> [[LGTM]]"
+  timestamp: "2026-06-12T16:00:00"
+- cmd_id: cmd_karo_hotfix_ga051_context_freshness_202606121555
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: WARN
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。GA-051 ops source commits 8件特定+context更新+gate再検証でALERT解消。横展開core15件/frontend12件残存。gate timeout差分記録の有用lesson_candidate。gate_prediction: WARN(lesson_candidate有)"
+  observations:
+    - "事実1: commit 9139b77e2実在確認。context/dm-signal-ops.md last_updated=2026-06-12に更新済み"
+    - "事実2: CFC_GIT_TIMEOUT=10で8件検出。通常timeout=1ではgit logがtimeoutしOK返す可能性→ALERT再発の隠れた原因"
+    - "事実3: 横展開core 15件/frontend 12件はscope外(ops hotfix)。別cmdで対処が必要"
+  causal_chain: "source commit 8件追随漏れ→ops ALERT→context更新+gate再検証→ALERT解消。gate timeout=隠れた偽陰性源(lesson_candidate)"
+  brainwash_check: "洗脳#1防止: gate timeout問題は報告に含まれておりlesson_candidate有。横展開残存も記録。スコープ内完了で止めず残務を可視化"
+  step3_5_verified: true
+  hole_action: none
+  origin: "[[GA-051]] -> [[ops_source_commits_8件]] -> [[LGTM+WARN]]"
+  timestamp: "2026-06-12T16:05:00"
+- cmd_id: cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "6観点OK。GA-052 frontend context_freshness ALERT。GA-051(ops)の姉妹cmd。AC4件=原因特定+横展開+gate再検証+lesson_candidate。GA-051横展開でfrontend 12件残存が報告済み→その対処"
+  observations:
+    - "事実1: GA-051 hanzo報告でfrontend 12件残存を明示。本cmdはその直接対処"
+    - "事実2: GA-051で発見されたgate timeout問題(CFC_GIT_TIMEOUT)のlesson_candidateが既に提出済み"
+    - "事実3: AC4でlesson_candidate提案を分離→防御層設計が明示的"
+  causal_chain: "GA-051横展開frontend12件残存→GA-052 frontend hotfix→context鮮度回復(正の複利)"
+  brainwash_check: "洗脳#8防止: GA-051と同型だから簡単と思わず各ACを確認。AC4件は妥当"
+  ambiguity_points: none
+  origin: "[[GA-052]] -> [[frontend_context_freshness]] -> [[APPROVE]]"
+  timestamp: "2026-06-12T16:15:00"
+- cmd_id: cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: WARN
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。frontend source commits 12件特定+context更新+gate再検証でALERT解消。横展開core12件/research2件残存。timeout false OK防止のlesson_candidate有用"
+  observations:
+    - "事実1: commit 3009d88a0実在。dm-signal-frontend.md更新済み"
+    - "事実2: CFC_GIT_TIMEOUT=10で12件検出、通常timeout=1ではOK→GA-051と同型のfalse OK問題"
+    - "事実3: lesson_candidate: timeout時0件OKをWARN化提案→gate改善の正の複利"
+  causal_chain: "FE 12件未反映→frontend ALERT→context更新→ALERT解消+timeout false OK防止提案(正の複利)"
+  brainwash_check: "洗脳#2防止: commit 3009d88a0実在+precheck全PASS。GA-051同型だが数値を個別確認"
+  step3_5_verified: true
+  hole_action: none
+  origin: "[[GA-052]] -> [[frontend_12件未反映]] -> [[LGTM+WARN]]"
+  timestamp: "2026-06-12T16:20:00"
+- cmd_id: cmd_karo_hotfix_ga053_core_context_freshness_202606121637
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "6観点OK。GA-053 core context_freshness ALERT。GA-051/052の姉妹cmd。AC4件同型。GA-052横展開のcore12件残存への対処"
+  observations:
+    - "事実1: GA-052 hayate報告でcore 12件残存を明示。本cmdは直接対処"
+    - "事実2: previous_failures 3回だが前2回は別cmd(skill_fail_rate)の残骸混入。3回目はフォーマット不備"
+    - "事実3: GA-051/052で確立したcontext_freshness hotfixパターンの3件目。同型構造"
+  causal_chain: "GA-052横展開core12件残存→GA-053 core hotfix→全context鮮度回復完了見込み(正の複利)"
+  brainwash_check: "洗脳#8防止: 3件目同型でも各ACを確認。previous_failures残骸を確認"
+  ambiguity_points: none
+  origin: "[[GA-053]] -> [[core_context_freshness]] -> [[APPROVE]]"
+  timestamp: "2026-06-12T16:35:00"
+- cmd_id: cmd_karo_hotfix_ga053_core_context_freshness_202606121637
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: WARN
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。core 12件特定(is_active/momentum/Kalman削除等)+context更新+gate再検証でcore ALERT解消。全体残存dm-signal.md 1件+research 2件(scope外)"
+  observations:
+    - "事実1: commit 378ae263c実在。dm-signal-core.md last_updated=2026-06-12更新済み"
+    - "事実2: 横展開ops/frontendは既吸収(GA-051/052)。semantic-mapのis_activeはalias維持=妥当"
+    - "事実3: lesson_candidate: 対象context件数と残存別context件数を分離する→報告品質向上の知見"
+  causal_chain: "core 12件未反映→core ALERT→context更新→ALERT解消。GA-051/052/053でcontext鮮度三部作完了"
+  brainwash_check: "洗脳#8防止: 3件目同型でも commit実在+数値確認。12→0件を検証"
+  step3_5_verified: true
+  hole_action: none
+  origin: "[[GA-053]] -> [[core_12件未反映]] -> [[LGTM+WARN]]"
+  timestamp: "2026-06-12T16:40:00"
