@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-13 cmd_3342 -->
+<!-- last_updated: 2026-06-13 cmd_karo_hotfix_ga060_cmd_complete_readonly_ref_20260613 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -540,3 +540,5 @@
 | cmd_3338 | 軍師idle分析でhookコスト効果量4位(セッション約20回発火×約0.765秒)と特定されたlog_terminal_responseの実行時間を、機能等価を保ったまま短縮する。python3のpayload parse(現物2箇所)とlord_conversation追記のflock排他が主要コスト源候補。短縮は殿との全対話往復のレイテンシに恒久的に効く | infra | 06-12 | log_terminal_response.shのStop |
 | cmd_3340 | 殿裁可(2026-06-12 22:55「許可する」)と調査チーム第7報レビュー通過(2026-06-12 22:49受領: AST等価+patch経路独自照合+独立全テスト再実行1366 passed・0 failed。第3コミットは検証済み無害でマージ含有承認)に基づき、refactor/cmd-3334-trades-facadeの3コミット(5de6f945・60740f85・59148dea)をmainへ統合し、検収と本番反映の確認まで閉じる。59148dea=cmd_3335の整形混在検査ツーリング(純追加315行)を独立項目として扱う(調査チーム条件は明記済み: execution-log独立項目+裁可申請明記とも実施済み)。検収はper-module方式(本番API大規模deep-diffは全モジュール完了後の最終ゲートに1回)。実施は家老が直接行う(忍者に配備しない・cmd_3333裁定踏襲) | dm-signal | 06-13 | — |
 | cmd_3341 | 軍師の第2波ゼロベース再計測(第1波適用後81秒→30.4秒を実証)で効果量1位と特定された、pretool-dispatchのtmux set-option 2回(毎Bash呼出で約25ms)を条件付き化して短縮する。@agent_stateと@last_activeは監視系の消費データであるため、間引きが監視判定を壊さないことを検収に含める | infra | 06-13 | pretool-dispatchのtmux state更新を |
+| cmd_3348 | 将軍調査(2026-06-13 01:30台)で特定したインフラバグの修正。prompt_state_inject.shの先送り監視(L808-822)はstartup_alert_history.tsvの本日分『先送り判断:』行を累積カウントしており、同一項目がgate/hook実行のたびに再追記されるため、実際の未解消項目が約4件でも117件と表示され続けた(本日実測: 解消作業後も104→117へ増加)。stop_check_inbox.sh L157も同方式。偽の大量警報が全エージェントの毎ターンに注入され判断を焦らせる構造を、現在未解消の項目数(項目キーでの重複排除+解消判定)に正規化して実態と一致させる | infra | 06-13 | prompt_state_inject.sh と stop_ |
+| cmd_3349 | 将軍調査(2026-06-13 01:30台)で特定した設計ネックの修正。pre-write-edit-combined.shのGuard 0d(L242-250)は未読メッセージのtypeを問わず件数のみで起票を拒否するため、家老hotfixの完了通知(type=gate_clear・情報のみ)が1分間隔で届く時間帯に将軍の起票が分断され続ける。本日実測: 殿裁可済みcmd_3345の起票中に4回拒否+7往復の確認処理が割り込み、裁可(01:09)から委任(01:22)まで13分を要した。未読の全件が情報通知のみの場合は起票を許可し、指示系typeを含む場合は従来通り拒否するtype判定に改める。ターン終了時の未読全件確認(stop_check_inbox.sh)は変更せず、読まずに放置できない構造(LS048の趣旨)を維持する | infra | 06-13 | Guard 0d(L242-250)をtype判定に改修完了 |
