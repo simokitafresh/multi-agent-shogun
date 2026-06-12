@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-06-12 cmd_karo_hotfix_skill_fail_rate_escalation_202606121528 -->
+<!-- last_updated: 2026-06-12 cmd_karo_hotfix_ga051_context_freshness_202606121555 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
