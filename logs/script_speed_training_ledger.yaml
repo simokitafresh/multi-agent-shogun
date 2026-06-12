@@ -20,53 +20,53 @@ entries:
   updated_at: "2026-06-13T00:39:54"
   iteration: 1
 - script_path: ".claude/hooks/pretool-dispatch.sh"
-    status: pending
+  status: pending
   before_ms: ''
   after_ms: ''
-    before_real_ms: 78.678
-    after_real_ms: ""
+  before_real_ms: 78.678
+  after_real_ms: ""
   real_measurement_command: "100x Read payload through pretool-dispatch; PRETOOL_STATE_REFRESH_INTERVAL=0 forced update vs PRETOOL_STATE_REFRESH_INTERVAL=10 throttled update; TMPDIR isolated via mktemp -d"
   test_result: "bash -n .claude/hooks/pretool-dispatch.sh PASS; bats tests/unit/test_hook_dispatchers.bats tests/unit/test_read_tracker_hook.bats tests/unit/test_write_edit_combined_hooks.bats PASS 35/35 SKIP=0; bats tests/unit/test_agent_state.bats PASS 14/14 SKIP=0; bats tests/unit/test_bash_speed_training.bats PASS 15/15 SKIP=0"
   commit: "fe85a4843"
-    assigned_to: ""
-    updated_at: "2026-06-13T00:19:57"
-    iteration: 1
+  assigned_to: ""
+  updated_at: "2026-06-13T00:19:57"
+  iteration: 1
 - script_path: scripts/gates/gate_loop_health.sh
-    status: pending
+  status: pending
   before_ms: ''
   after_ms: ''
-    before_real_ms: 600
-    after_real_ms: ""
+  before_real_ms: 600
+  after_real_ms: ""
   real_measurement_command: "/usr/bin/time -f 'real_ms=%e' bash scripts/gates/gate_loop_health.sh >/tmp/saizo_gate_loop_{before,after}.out"
   test_result: "bats tests/unit/test_gate_loop_health.bats PASS 6/6 SKIP=0; output_diff_empty"
   commit: "dc65afd2fb9558f85dde30ca85089085ead88ff5"
-    assigned_to: ""
-    updated_at: "2026-06-13T00:19:57"
-    iteration: 1
+  assigned_to: ""
+  updated_at: "2026-06-13T00:19:57"
+  iteration: 1
 - script_path: .claude/hooks/post-shogun-inbox-check.sh
-    status: pending
+  status: pending
   before_ms: 0
   after_ms: ''
-    before_real_ms: 86.718
-    after_real_ms: ""
+  before_real_ms: 86.718
+  after_real_ms: ""
   real_measurement_command: "50x isolated shogun fixture with unread gate_clear inbox; avg_ms from date +%s%N loop"
   test_result: "dash_n_pass; posttool_dispatch_bash_n_pass; test_hook_dispatchers_and_bash_speed_training_bats all_23_pass skip_count_0; isolated_output_contract_pass"
   commit: "5fc3705046cbc28db6131b96446f3c6062ac08ea"
-    assigned_to: ""
-    updated_at: "2026-06-13T00:19:57"
-    iteration: 1
+  assigned_to: ""
+  updated_at: "2026-06-13T00:19:57"
+  iteration: 1
 - script_path: .claude/hooks/post-write-edit-combined.sh
-    status: pending
+  status: pending
   before_ms: 0
   after_ms: ''
-    before_real_ms: 840
-    after_real_ms: ""
+  before_real_ms: 840
+  after_real_ms: ""
   real_measurement_command: "printf payload | bash .claude/hooks/post-write-edit-combined.sh >/dev/null"
   test_result: "bash -n .claude/hooks/post-write-edit-combined.sh && bats tests/unit/test_write_edit_combined_hooks.bats PASS 20/20 SKIP=0"
   commit: "1bacc0d013a75ffa05ce6113eccd003ae591552d"
-    assigned_to: ""
-    updated_at: "2026-06-13T00:19:57"
-    iteration: 1
+  assigned_to: ""
+  updated_at: "2026-06-13T00:19:57"
+  iteration: 1
 - script_path: .claude/hooks/pre-write-edit-combined.sh
   status: completed
   before_ms: ''
@@ -328,17 +328,17 @@ entries:
   updated_at: "2026-06-08T03:50:29"
   iteration: 1
 - script_path: scripts/causal_backlinks.sh
-    status: pending
+  status: pending
   before_ms: 14
   after_ms: ''
-    before_real_ms: 343
-    after_real_ms: ""
+  before_real_ms: 343
+  after_real_ms: ""
   real_measurement_command: "date +%s%3N around: bash scripts/causal_backlinks.sh セマンティック因果自動化 >/tmp/hanzo_cbl_{before,after}.out (5 runs; before min from 727/..., after min 343)"
   test_result: "bash -n scripts/causal_backlinks.sh PASS; bats tests/unit/test_semantic_search.bats PASS 28/28 SKIP=0; test_select warns no direct mapping"
   commit: "3591b3090"
-    assigned_to: ""
-    updated_at: "2026-06-13T00:19:57"
-    iteration: 2
+  assigned_to: ""
+  updated_at: "2026-06-13T00:19:57"
+  iteration: 2
 - script_path: scripts/cdp/cdp_benchmark.sh
   status: pending
   before_ms: 14
@@ -1029,17 +1029,17 @@ entries:
   updated_at: "2026-06-08T03:50:28"
   iteration: 1
 - script_path: scripts/gates/gate_gunshi_startup.sh
-    status: pending
+  status: pending
   before_ms: 20
   after_ms: ''
-    before_real_ms: 3494
-    after_real_ms: ""
+  before_real_ms: 3494
+  after_real_ms: ""
   real_measurement_command: "python3: forced-sync median 6478.1ms vs guarded median 3493.6ms, 3 runs each"
   test_result: "bash -n scripts/gates/gate_gunshi_startup.sh; bats tests/unit/test_gate_gunshi_startup_auto_idle_actions.bats; bats tests/unit/test_gate_small_consolidated.bats --filter gate_gunshi_startup|missed_sg PASS"
   commit: "6564e4739"
-    assigned_to: ""
-    updated_at: "2026-06-13T00:19:57"
-    iteration: 2
+  assigned_to: ""
+  updated_at: "2026-06-13T00:19:57"
+  iteration: 2
 - script_path: scripts/gates/gate_hot_path_no_sync_io.sh
   status: pending
   before_ms: 17
@@ -1087,30 +1087,30 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_lesson_health.sh
-    status: pending
+  status: pending
   before_ms: 11
   after_ms: ''
-    before_real_ms: 2260
-    after_real_ms: ""
+  before_real_ms: 2260
+  after_real_ms: ""
   real_measurement_command: "time_gate_lesson_health_full_all_projects_after2"
   test_result: "bats tests/unit/test_gate_lesson_health.bats: 12/12 PASS; output_diff_empty"
   commit: "90c32efdd"
-    assigned_to: ""
-    updated_at: "2026-06-13T00:19:57"
-    iteration: 2
+  assigned_to: ""
+  updated_at: "2026-06-13T00:19:57"
+  iteration: 2
 - script_path: scripts/gates/gate_loop_health.sh
-    status: pending
+  status: pending
   before_ms: 16
   after_ms: ''
-    before_real_ms: __BEFORE_REAL_MS__
-    after_real_ms: ""
+  before_real_ms: __BEFORE_REAL_MS__
+  after_real_ms: ""
   real_measurement_command: 'sandbox copy with real logs/reports symlink and stub
     insight_write: bash <tmp>/scripts/gates/gate_loop_health.sh'
   test_result: bash_n_pass;bats_test_gate_loop_health_4_4_pass_skip0;output_diff_empty
   commit: bf55601e4
-    assigned_to: ""
-    updated_at: "2026-06-13T00:19:57"
-    iteration: 2
+  assigned_to: ""
+  updated_at: "2026-06-13T00:19:57"
+  iteration: 2
 - script_path: scripts/gates/gate_mcp_access.sh
   status: pending
   before_ms: 13
@@ -1238,17 +1238,17 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_shogun_startup.sh
-    status: completed
+  status: completed
   before_ms: 19
   after_ms: ''
-    before_real_ms: 5.18
-    after_real_ms: 4.80
-  real_measurement_command: "env SHOGUN_STARTUP_LIGHTWEIGHT=1 SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=1 SHOGUN_STARTUP_GH_TIMEOUT=0.01 bash scripts/gates/gate_shogun_startup.sh"
-  test_result: "bash -n PASS; bats tests/unit/test_gate_shogun_startup.bats pending"
-  commit: "pending"
-    assigned_to: ""
-    updated_at: "2026-06-13T00:39:57"
-    iteration: 2
+  before_real_ms: 7119
+  after_real_ms: 5888
+  real_measurement_command: "3-run average with SHOGUN_STARTUP_ROOT=/mnt/c/tools/multi-agent-shogun SHOGUN_STARTUP_LIGHTWEIGHT=1 timeout 60 bash gate_shogun_startup; HEAD vs worktree"
+  test_result: "bash -n scripts/gates/gate_shogun_startup.sh PASS; bats tests/unit/test_gate_shogun_startup.bats PASS 63/63 SKIP=0"
+  commit: "b52424f7b"
+  assigned_to: ""
+  updated_at: "2026-06-13T00:46:24"
+  iteration: 2
 - script_path: scripts/gates/gate_silent_fallback.sh
   status: pending
   before_ms: 15
@@ -1617,17 +1617,17 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/hooks/prompt_state_inject.sh
-    status: pending
+  status: pending
   before_ms: 8
   after_ms: 8
-    before_real_ms: 369.167
-    after_real_ms: ""
+  before_real_ms: 369.167
+  after_real_ms: ""
   real_measurement_command: "env PROMPT_STATE_AGENT_ID=saizo PROMPT_STATE_SKILLS_DIR=/tmp/psi_equiv.zPNVDI/skills PROMPT_STATE_SEMANTIC_SEARCH_CMD=/tmp/psi_equiv.zPNVDI/semantic.sh bash scripts/hooks/prompt_state_inject.sh <<< '{\"prompt\":\"報告YAML作成はどう確認する？\"}'"
   test_result: "normal equivalence yes 596.000->375.000ms; question equivalence yes 451.917->369.167ms; bats tests/unit/test_prompt_state_inject_skill_trigger.bats PASS SKIP=0"
   commit: "pending"
-    assigned_to: ""
-    updated_at: "2026-06-13T00:19:57"
-    iteration: 2
+  assigned_to: ""
+  updated_at: "2026-06-13T00:19:57"
+  iteration: 2
 - script_path: scripts/hooks/session_end_clear_check.sh
   status: pending
   before_ms: 18
@@ -1642,18 +1642,18 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/hooks/session_start_inject.sh
-    status: pending
+  status: pending
   before_ms: 15
   after_ms: 15
-    before_real_ms: __BEFORE_REAL_MS__
-    after_real_ms: ""
+  before_real_ms: __BEFORE_REAL_MS__
+  after_real_ms: ""
   real_measurement_command: 20x printf '{"type":"startup"}' | AGENT_ID=kagemaru bash
     scripts/hooks/session_start_inject.sh; median of 5 runs
   test_result: bash_n_pass;bats_test_session_state_hooks_session_start_inject_5_pass_0_skip;json_valid;agent_context_ok;before_2537_after_1960
   commit: 69af2c093
-    assigned_to: ""
-    updated_at: "2026-06-13T00:19:57"
-    iteration: 2
+  assigned_to: ""
+  updated_at: "2026-06-13T00:19:57"
+  iteration: 2
 - script_path: scripts/hooks/stop_check_inbox.sh
   status: completed
   before_ms: 7
@@ -2432,17 +2432,17 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/log_terminal_response.sh
-    status: pending
+  status: pending
   before_ms: 7
   after_ms: ''
-    before_real_ms: 374.5
-    after_real_ms: ""
+  before_real_ms: 374.5
+  after_real_ms: ""
   real_measurement_command: "sandboxed temp-root transcript_path payload avg20: printf payload | bash scripts/log_terminal_response.sh; before=11.09s/20 after=7.49s/20"
   test_result: "bash -n scripts/log_terminal_response.sh PASS; bats tests/unit/test_log_terminal.bats PASS 6/6 SKIP=0; response JSONL+memory DB direct check PASS"
   commit: "b224c274d"
-    assigned_to: ""
-    updated_at: "2026-06-13T00:19:57"
-    iteration: 2
+  assigned_to: ""
+  updated_at: "2026-06-13T00:19:57"
+  iteration: 2
 - script_path: scripts/lord_conversation_read.sh
   status: pending
   before_ms: 16
@@ -3374,22 +3374,37 @@ entries:
   assigned_to: ''
   updated_at: "2026-06-07T21:57:22"
 - script_path: scripts/hooks/session_start_inject.sh
-    status: pending
+  status: pending
   before_ms: ''
   after_ms: ''
-    before_real_ms: 60
-    after_real_ms: ""
+  before_real_ms: 60
+  after_real_ms: ""
   real_measurement_command: "before: HEAD copy under .tmp_ssi_before_cmp2 with queue symlink; after: working tree; both 9 runs of AGENT_ID=saizo SessionStart startup payload via /usr/bin/time"
   test_result: "bash -n PASS; JSON parse PASS; bats tests/unit/test_session_state_hooks.bats 20/20 PASS SKIP=0"
-    assigned_to: ""
-    updated_at: "2026-06-13T00:19:57"
+  assigned_to: ""
+  updated_at: "2026-06-13T00:19:57"
   commit: "96f5940f2"
-status: completed
-before_real_ms: 2083
-after_real_ms: 780
-real_measurement_command: DRY_RUN=1 bash scripts/switch_project.sh dm-signal
-test_result: 7/7 PASS SKIP=0 (test_inbox_watcher_health.bats)
-assigned_to: hanzo
-updated_at: 2026-06-07
-commit: 8c69e8666
-    iteration: 1
+- script_path: scripts/switch_project.sh
+  status: completed
+  before_ms: ''
+  after_ms: ''
+  before_real_ms: 2083
+  after_real_ms: 780
+  real_measurement_command: DRY_RUN=1 bash scripts/switch_project.sh dm-signal
+  test_result: 7/7 PASS SKIP=0 (test_inbox_watcher_health.bats)
+  assigned_to: hanzo
+  updated_at: 2026-06-07
+  commit: 8c69e8666
+  iteration: 1
+- script_path: .claude/hooks/posttool-dispatch.sh
+  status: completed
+  before_ms: ''
+  after_ms: ''
+  before_real_ms: 26.122
+  after_real_ms: 23.357
+  real_measurement_command: "300x Grep payload through posttool-dispatch with TMUX_PANE non-shogun cache pre-created; avg_ms from date +%s%N loop"
+  test_result: "bash -n .claude/hooks/posttool-dispatch.sh PASS; bats tests/unit/test_hook_dispatchers.bats 8/8 PASS SKIP=0"
+  commit: "pending_commit"
+  assigned_to: hayate
+  updated_at: "2026-06-13T00:45:25"
+  iteration: 1

@@ -29,8 +29,7 @@ run_hook() {
 
 is_shogun_agent() {
     [ -n "${TMUX_PANE:-}" ] || return 1
-    local non_cache="/tmp/shogun_not_shogun_${TMUX_PANE}"
-    [ -e "$non_cache" ] && return 1
+    [ -e "/tmp/shogun_not_shogun_${TMUX_PANE}" ] && return 1
     local cache="/tmp/shogun_aid_${TMUX_PANE}" agent=""
     if [ -r "$cache" ]; then
         IFS= read -r agent < "$cache" || true
@@ -38,7 +37,7 @@ is_shogun_agent() {
     if [ "$agent" = "shogun" ]; then
         return 0
     elif [ -n "$agent" ]; then
-        : > "$non_cache" 2>/dev/null || true
+        : > "/tmp/shogun_not_shogun_${TMUX_PANE}" 2>/dev/null || true
         return 1
     fi
     agent="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
@@ -49,7 +48,7 @@ is_shogun_agent() {
     if [ -n "$agent" ]; then
         printf '%s\n' "$agent" > "$cache" 2>/dev/null || true
     fi
-    : > "$non_cache" 2>/dev/null || true
+    : > "/tmp/shogun_not_shogun_${TMUX_PANE}" 2>/dev/null || true
     return 1
 }
 

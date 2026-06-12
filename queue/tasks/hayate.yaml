@@ -3,13 +3,11 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: scripts/gates/gate_lesson_health.shの遅い処理を一次情報で計測し、不要な外部プロセス/重複読込/全走査を削減する
+      description: tools/bash_speed_training.sh record-realでbefore_real_ms/after_real_msを記録し、after < beforeを満たす
     AC2:
-      description: record-real等でbefore/afterをlogs/script_speed_training_ledger.yamlへ記録し、after_real_ms < before_real_msを満たす
+      description: posttool-dispatchのルーティング機能等価を単体テストまたは再生payloadで検証し、SKIP=0を報告する
     AC3:
-      description: tests/unit/test_gate_lesson_health.batsまたは同等の既存契約確認がPASSし、出力契約を壊していない
-  command: scripts/gates/gate_lesson_health.shの速度改善。kagemaru計測で約2375msのstartupサブゲート。まずbash time/既存ledgerでbeforeを測り、実測ボトルネックを特定してから最小修正。after_real_ms < before_real_msをledgerへ記録。関連テストPASS。報告YAMLにbefore/after/test/commitを記載。
-  credential_warning: ⚠ 認証が必要なタスクだが/mnt/c/tools/multi-agent-shogunに.envファイルが見つからない。認証情報の準備が必要。家老に即報告せよ。
+      description: logs/script_speed_training_ledger.yamlへ対象script_path/status/before_real_ms/after_real_ms/test_result/commitを更新する
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -23,56 +21,60 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  not_in_scope: posttool-dispatch以外のhook再設計、機能削除、未計測の高速化主張
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_speed_gate_lesson_health_20260612
+  parent_cmd: cmd_karo_hotfix_speed_posttool_dispatch_20260613
   project: infra
-  purpose: gate_lesson_health.shの実測ボトルネックを削り、startupサブゲートの実行時間を短縮する
+  purpose: '速度改善第2波3位: posttool-dispatch fast pathを実測で高速化し、機能等価を保持する'
   status: done
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun
-  task_id: cmd_karo_hotfix_speed_gate_lesson_health_20260612_normal
+  target_path: .claude/hooks/posttool-dispatch.sh
+  task_id: cmd_karo_hotfix_speed_posttool_dispatch_20260613_normal
   task_type: hotfix
   related_lessons:
-  - id: 'L529'
-    summary: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
-    detail: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
-  - id: 'L783'
-    summary: 'サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ'
-    detail: 'サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ'
-  - id: 'L712'
-    summary: 'auto-commitが他忍者のstage済み変更を取り込む(cmd_3050: hayate auto-commit a3cd61e4がsaizoの変更を吸収'
-    detail: 'auto-commitが他忍者のstage済み変更を取り込む(cmd_3050: hayate auto-commit a3cd61e4がsaizoの変更を吸収'
-  - id: 'L703'
-    summary: 'auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst'
-    detail: 'auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst'
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L560'
-    summary: 'grep等の判定コマンドをif条件に置き、thenに入らなかった後でcase "$?"を読むと、構文や後続処理で期待した終了コードを失うことがある。失敗側の終了'
-    detail: 'grep等の判定コマンドをif条件に置き、thenに入らなかった後でcase "$?"を読むと、構文や後続処理で期待した終了コードを失うことがある。失敗側の終了'
-  - id: 'L562'
-    summary: 'CLI説明だけではsource→designに見えるが、実装にはMD→MD経路もあり、逆にYAML frontmatterは入口対象外だった。辞書や設定ファイル'
-    detail: 'CLI説明だけではsource→designに見えるが、実装にはMD→MD経路もあり、逆にYAML frontmatterは入口対象外だった。辞書や設定ファイル'
-  - id: 'L319'
-    summary: 'gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ'
-    detail: 'gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ'
-  - id: 'L639'
-    summary: '既存batsファイルの長い `run bash -lc ''...''` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ'
-    detail: '既存batsファイルの長い `run bash -lc ''...''` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ'
-  - id: 'L278'
-    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+  - id: 'L164'
+    summary: 'IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな'
+    detail: 'IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな'
+  - id: 'L653'
+    summary: 'skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数'
+    detail: 'skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数'
+  - id: 'L737'
+    summary: 'cmd_save.shに教育的メタデータ表示(show_lord_conversation_matches&, Q11 research dir scan等)を'
+    detail: 'cmd_save.shに教育的メタデータ表示(show_lord_conversation_matches&, Q11 research dir scan等)を'
+  - id: 'L711'
+    summary: 'git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje'
+    detail: 'git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje'
+  - id: 'L389'
+    summary: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
+    detail: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
+  - id: 'L377'
+    summary: 'lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam'
+    detail: 'lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam'
+  - id: 'L295'
+    summary: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
+    detail: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
+  - id: 'L779'
+    summary: 'dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER'
+    detail: 'dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER'
+  - id: 'L624'
+    summary: 'yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用'
+    detail: 'yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用'
+  - id: 'L543'
+    summary: 'CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlの'
+    detail: 'CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlの'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
+  - "context/gs-speedup-knowledge.md"
   - "context/training-cycle.md"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
@@ -86,28 +88,31 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L529: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を
-      - L783: サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ
-      - L712: auto-commitが他忍者のstage済み変更を取り込む(cmd_3050: hayate auto-commit a3cd61e4がsaizoの変更を吸収
-      - L703: auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L560: grep等の判定コマンドをif条件に置き、thenに入らなかった後でcase "$?"を読むと、構文や後続処理で期待した終了コードを失うことがある。失敗側の終了
-      - L562: CLI説明だけではsource→designに見えるが、実装にはMD→MD経路もあり、逆にYAML frontmatterは入口対象外だった。辞書や設定ファイル
-      - L319: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ
-      - L639: 既存batsファイルの長い `run bash -lc '...'` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ
-      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
+      - L164: IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな
+      - L653: skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数
+      - L737: cmd_save.shに教育的メタデータ表示(show_lord_conversation_matches&, Q11 research dir scan等)を
+      - L711: git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje
+      - L389: 検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数
+      - L377: lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam
+      - L295: yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ
+      - L779: dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER
+      - L624: yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用
+      - L543: CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlの
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-04-16T15:45:06+09:00 | 【家老】cmd_1964 初回配備開始 (title=CoDD改善#12 — gate_lesson_health.sh高速化(228ms→目標50ms), ninja=tobisaru) CoDD改"
-  - "2026-04-16T03:10:52+09:00 | 【家老】cmd_1940 初回配備開始 (title=強化 — gate_lesson_health.sh閾値をuseful率に変更+低効果教訓自動除外, ninja=kagemaru) 強化 📋 h"
+  - "2026-06-08T14:43:04+09:00 | 家老にwaive指示送信完了。GATE再実行で cmd_3228がCLEARされる見込み。 殿、状況報告: - cmd_3228(Phase1 全スキル実行結果自動記録): 忍者が正しくposttoo"
+  - "2026-06-07T13:25:34+09:00 | push完了。殿、報告: **hook error修正完了** (`4246a6b9e`): - 原因: `post-search-completeness-guard.sh`のecho出力がstdo"
+  - "2026-06-11T13:52:13+09:00 | gpt忍者６名を推論lowのままでfastモードonで運用したい"
+  - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
+  - "2026-06-11T12:55:30+09:00 | 以上。cmd_3285完了報告サマリ： **実装内容（全AC PASS）:** - **AC1**: `scripts/pending_approval_set.sh` — flock安全なadd/r"
   ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_speed_gate_lesson_health_20260612_normal
+  _ac_task_id: cmd_karo_hotfix_speed_posttool_dispatch_20260613_normal
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_hotfix_speed_gate_lesson_health_20260612.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_hotfix_speed_gate_lesson_health_20260612.yaml
+  report_filename: hayate_report_cmd_karo_hotfix_speed_posttool_dispatch_20260613.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_hotfix_speed_posttool_dispatch_20260613.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -123,5 +128,5 @@ task:
     - pattern: 'field_missing'
       count: 17
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
-  deployed_at: "2026-06-12T22:28:47"
-  progress: "completed: gate_lesson_health.sh 3410ms->2260ms, bats 12/12 PASS, commits 90c32efdd edde75a55, report gate PASS"
+  deployed_at: "2026-06-13T00:36:50"
+  progress: "AC1 PASS: record-real before_real_ms=26.122 after_real_ms=23.357 (after<before). AC2 PASS: bash -n PASS; bats tests/unit/test_hook_dispatchers.bats 8/8 PASS SKIP=0. AC3 PASS: ledger entry updated with status/before_real_ms/after_real_ms/test_result/commit=pending_commit; final commit hash will be amended after commit."
