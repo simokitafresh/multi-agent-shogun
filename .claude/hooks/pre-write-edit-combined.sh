@@ -240,12 +240,23 @@ if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
         exit 2
     fi
     # Guard 0d: inbox未読時はcmd起票BLOCK (LS048: 読まずに既読するな。起動時と同じ態度で正しく深く読め)
-    _inbox_file="$SCRIPT_DIR/queue/inbox/shogun.yaml"
-    if [[ "$file_path" == "$SCRIPT_DIR/queue/shogun_to_karo.yaml" && -f "$_inbox_file" ]]; then
+    # gate_clearのみ(情報通知)なら起票許可。指示系typeが1件でもあればBLOCK (cmd_3349)
+    _inbox_file="${GUARD_0D_INBOX_OVERRIDE:-$SCRIPT_DIR/queue/inbox/shogun.yaml}"
+    if [[ -f "$_inbox_file" ]]; then
         _unread_count=$(grep -cE '^[[:space:]]*read:[[:space:]]*false' "$_inbox_file" 2>/dev/null || echo 0)
         if [[ "$_unread_count" -gt 0 ]]; then
-            emit_deny "BLOCK: inbox未読${_unread_count}件。Read toolで全文読み、作業への影響を自問し、対処してからcmd起票せよ(LS048)"
-            exit 2
+            _non_gate_clear=$(INBOX_FILE="$_inbox_file" python3 -c '
+import yaml, os
+with open(os.environ["INBOX_FILE"], encoding="utf-8") as f:
+    data = yaml.safe_load(f) or {}
+non_gc = [msg for msg in data.get("messages", [])
+          if msg.get("read") is False and msg.get("type") != "gate_clear"]
+print(len(non_gc))
+' 2>/dev/null || echo 99)
+            if [[ "$_non_gate_clear" -gt 0 ]]; then
+                emit_deny "BLOCK: inbox未読${_unread_count}件(うち指示系${_non_gate_clear}件)。Read toolで全文読み、作業への影響を自問し、対処してからcmd起票せよ(LS048)"
+                exit 2
+            fi
         fi
     fi
     # Guard 0b: on_hold禁止。cmdは直列でdraft→publishせよ。配備順序は家老が判断する(殿裁定2026-05-03)

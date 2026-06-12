@@ -221,3 +221,25 @@ _run_post() {
     [[ "$output" == *'"hookEventName":"PostToolUse"'* ]]
     [[ "$output" == *'報告YAMLへの直接Edit/Write検出'* ]]
 }
+
+@test "Guard 0d: 全件gate_clearのみなら起票を許可する" {
+    local fake_inbox="$TMP_DIR/fake_inbox_gc_only.yaml"
+    printf 'messages:\n- content: "cmd_3345 GATE CLEAR"\n  from: karo\n  id: msg_gc1\n  read: false\n  timestamp: "2026-06-13T00:00:00"\n  type: gate_clear\n- content: "cmd_3346 GATE CLEAR"\n  from: karo\n  id: msg_gc2\n  read: false\n  timestamp: "2026-06-13T00:00:01"\n  type: gate_clear\n' > "$fake_inbox"
+    run bash -c 'printf "%s" "$1" | PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" GUARD_0D_INBOX_OVERRIDE="$5" bash "$2"' _ \
+        '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'"}}' \
+        "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY" "$fake_inbox"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'"permissionDecision":"deny"'* ]]
+}
+
+@test "Guard 0d: 指示系type混在なら起票をBLOCKする" {
+    local fake_inbox="$TMP_DIR/fake_inbox_mixed.yaml"
+    printf 'messages:\n- content: "cmd_3345 GATE CLEAR"\n  from: karo\n  id: msg_gc1\n  read: false\n  timestamp: "2026-06-13T00:00:00"\n  type: gate_clear\n- content: "新タスク配備"\n  from: karo\n  id: msg_ta1\n  read: false\n  timestamp: "2026-06-13T00:00:01"\n  type: task_assigned\n' > "$fake_inbox"
+    run bash -c 'printf "%s" "$1" | PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" GUARD_0D_INBOX_OVERRIDE="$5" bash "$2"' _ \
+        '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'"}}' \
+        "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY" "$fake_inbox"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'"permissionDecision":"deny"'* ]]
+    [[ "$output" == *'LS048'* ]]
+    [[ "$output" == *'指示系'* ]]
+}
