@@ -67,6 +67,18 @@ entries:
     assigned_to: ""
     updated_at: "2026-06-13T00:19:57"
     iteration: 1
+- script_path: .claude/hooks/pre-write-edit-combined.sh
+  status: completed
+  before_ms: ''
+  after_ms: ''
+  before_real_ms: 74
+  after_real_ms: 66
+  real_measurement_command: "8-run p50 isolated Edit payload for queue/shogun_to_karo checklist path; temp files for autolearn/cmd_design_quality; stdout discarded"
+  test_result: "bash -n .claude/hooks/pre-write-edit-combined.sh PASS; bats tests/unit/test_write_edit_combined_hooks.bats PASS 20/20 SKIP=0; jq JSON parse PASS"
+  commit: "pending"
+  assigned_to: ""
+  updated_at: "2026-06-13T00:41:41"
+  iteration: 1
 - script_path: scripts/ac_physical_verify.sh
   status: pending
   before_ms: 17
@@ -1226,16 +1238,16 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_shogun_startup.sh
-    status: pending
+    status: completed
   before_ms: 19
   after_ms: ''
-    before_real_ms: 8136.9958389987005
-    after_real_ms: ""
-  real_measurement_command: "bash scripts/gates/gate_shogun_startup.sh >/dev/null (compare SHOGUN_STARTUP_GH_TIMEOUT=0.3 vs default 0.05, 6 alternating runs, median)"
-  test_result: "bash -n PASS; bats tests/unit/test_gate_shogun_startup.bats 63/63 PASS; output contract spot checks PASS"
+    before_real_ms: 5.18
+    after_real_ms: 4.80
+  real_measurement_command: "env SHOGUN_STARTUP_LIGHTWEIGHT=1 SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=1 SHOGUN_STARTUP_GH_TIMEOUT=0.01 bash scripts/gates/gate_shogun_startup.sh"
+  test_result: "bash -n PASS; bats tests/unit/test_gate_shogun_startup.bats pending"
   commit: "pending"
     assigned_to: ""
-    updated_at: "2026-06-13T00:19:57"
+    updated_at: "2026-06-13T00:39:57"
     iteration: 2
 - script_path: scripts/gates/gate_silent_fallback.sh
   status: pending
@@ -1643,18 +1655,16 @@ entries:
     updated_at: "2026-06-13T00:19:57"
     iteration: 2
 - script_path: scripts/hooks/stop_check_inbox.sh
-  status: pending
+  status: completed
   before_ms: 7
   after_ms: ''
-  before_real_ms: 40
-  after_real_ms: ""
-  real_measurement_command: printf '{"last_assistant_message":"test message for timing"}'
-    | TMUX_AGENT_ID=kotaro bash scripts/hooks/stop_check_inbox.sh > /dev/null
-  test_result: bash -n scripts/hooks/stop_check_inbox.sh && bats tests/unit/test_stop_check_inbox.bats
-    PASS 14/14 SKIP=0
-  commit: c877ce4b8
+  before_real_ms: 30.860
+  after_real_ms: 23.320
+  real_measurement_command: "50x repeated unread inbox Stop hook JSON payload; same inbox/state so summary cache measures repeated-stop hot path"
+  test_result: "bash -n scripts/hooks/stop_check_inbox.sh PASS; bats tests/unit/test_stop_check_inbox.bats PASS 21/21 SKIP=0"
+  commit: "1c2958029648ed8f5ce46c5aed1d2f2f577bec84"
   assigned_to: ""
-  updated_at: "2026-06-08T15:24:49"
+  updated_at: "2026-06-13T00:41:56"
   iteration: 1
 - script_path: scripts/hooks/test_hooks.sh
   status: pending
