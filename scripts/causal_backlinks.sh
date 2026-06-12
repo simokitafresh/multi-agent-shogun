@@ -63,28 +63,12 @@ RG_COMMON_ARGS=(
     --glob '!node_modules/**'
     --glob '!__pycache__/**'
     --glob '!docs/obsidian-promoted/**'
-    --glob '*.md'
-    --glob '*.yaml'
-    --glob '*.yml'
-    --glob '*.sh'
-    --glob '*.py'
-    --glob '*.json'
     --glob '!*.cache.json'
-    --glob '*.txt'
-    --glob '*.bats'
-    --glob '*.toml'
+    --glob '!*.pyc'
+    --glob '!*.lock'
 )
 
 run_backlink_search() {
-    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-        if [ "$DETAIL" -eq 1 ]; then
-            git grep --untracked -n -F "$needle" -- "${existing_search_paths[@]}" 2>/dev/null || true
-        else
-            git grep --untracked -l -F "$needle" -- "${existing_search_paths[@]}" 2>/dev/null || true
-        fi
-        return 0
-    fi
-
     if [ "$DETAIL" -eq 1 ]; then
         rg -n "${RG_COMMON_ARGS[@]}" "$needle" "${existing_search_paths[@]}" 2>/dev/null || true
     else
