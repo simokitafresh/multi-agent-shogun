@@ -1122,8 +1122,16 @@ for match in path_re.finditer(target):
     if value not in paths:
         paths.append(value)
 
+if not paths:
+    for name in re.findall(r"(?<![A-Za-z0-9_])([A-Za-z][A-Za-z0-9_]{5,})(?![A-Za-z0-9_])", target):
+        candidates = list(root.glob(f"scripts/**/{name}.sh"))
+        if len(candidates) == 1:
+            rel = str(candidates[0].relative_to(root))
+            if rel not in paths:
+                paths.append(rel)
+
 backtick_tokens = [m.group(1).strip() for m in re.finditer(r"`([^`]+)`", target)]
-identifier_tokens = re.findall(r"\b[A-Za-z][A-Za-z0-9_]{5,}\b", target)
+identifier_tokens = re.findall(r"(?<![A-Za-z0-9_])([A-Za-z][A-Za-z0-9_]{5,})(?![A-Za-z0-9_])", target)
 path_parts = set()
 for path in paths:
     for part in re.split(r"[/._-]+", path):
