@@ -33,7 +33,7 @@ task:
   parent_cmd: cmd_3347
   project: infra
   purpose: '殿指摘(2026-06-13 00:21「いま動作中なのにidle判定でrespawnしたぞ。インフラバグか？」)と将軍調査(2026-06-13 01:30台)に基づく。実ログ証拠: 00:13:59-00:14:10にkagemaru/saizo/kotaroが連続CODEX-RESPAWN(cmd_3341-3343 in_progress時間帯と重なる)、01:25に統合作業中のhayateへSTALL-WATCH発火(check_idleが作業中をidleと判定)。軍師も独立に同結論(blt_20260613_014607)。cmd_3336の修正は家老startup gateのCTXパースのみでリセット判定経路は未修正。check_idleからCODEX-RESPAWN/auto-clearに至る誤判定の因果連鎖を特定し、リセット直前のダブルチェックを実装して稼働中忍者の作業破壊を構造的に防ぐ'
-  status: in_progress
+  status: idle
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/scripts
   task_id: cmd_3347_full
@@ -135,3 +135,4 @@ task:
   report_path: queue/reports/kotaro_report_cmd_3347.yaml
   bloom_level: 
   deployed_at: "2026-06-13T01:53:35"
+status: completed
