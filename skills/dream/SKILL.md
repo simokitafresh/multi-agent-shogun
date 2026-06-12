@@ -24,13 +24,14 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-06-11T14:01:43+09:00 -->
+<!-- script_refs_checked_at: 2026-06-12T20:37:38+09:00 -->
 
 # /dream — Memory Consolidation (5 Phase)
 
 **三層記憶(記憶DB+セマンティック+Obsidian) + MEMORY.md + memory/*.md** の統合・整理を行う。REM睡眠に倣い、知識基盤を強化する。
 
 Script refs verified: 2026-06-10. `memory_db_query.sh` の契約は変更なし。449dd3029でext4キャッシュ初期化タイムアウトを10s→30s(DB 198MB成長対応)に変更したが、クエリ引数・SQL実行・出力形式の契約は維持。
+Script refs verified: 2026-06-12 cmd_karo_hotfix_skill_script_refs_20260612. `insight_write.sh` は保存I/F `bash scripts/insight_write.sh "message" [priority] [source]` と resolve I/F `--resolve <id>` を維持。直近変更(e59594dc8)は破損tail隔離、raw YAML appendのatomic replace、DB live insert非同期化、source repeat集計の単一pass化で、/dream側の呼び出し手順変更は不要。
 Script refs verified: 2026-06-11. `gate_lesson_health.sh` はlesson useful率集計の最小サンプルを5件へ戻し、退役スキャン確定閾値と揃えて少数feedbackノイズで退役候補0件のALERT/BLOCKを作らないようにした。引数なし全project走査/`<project_id>`単体走査、METRIC行、WARN/ALERT出力契約は維持。
 Script refs verified: 2026-06-07 cmd_3206. `gate_lesson_health.sh` はrole lesson origin確認をbatch化したが、引数なし全project走査/`<project_id>`単体走査とOK/ALERT契約は維持。`gate_shogun_memory.sh` はreferenced_files取得cacheで高速化され、`insight_write.sh` は保存/resolve/source repeat通知の呼び出し契約変更なし。
 Script refs verified: 2026-06-02T20:46:12+09:00 infra-bug audit after gate_lesson_health.sh inline-field parser fix.
@@ -348,8 +349,10 @@ bash scripts/insight_write.sh "DREAM-LESSON: {suggestion}" dream
 - 引数は `message [priority] [source]`。`priority` は `high|medium|low` のみ、既定は `medium`。`source` 既定は `manual`。
 - `--resolve <id>` で既存insightを `status: done` にし、`resolved_at` を追記する。
 - queue/insights.yaml は全体YAML再書込みではなく、flock下で制御済み形状を行単位編集/追記する。`yaml.dump` は使わない。
+- 通常追記はraw YAMLを保持したatomic replaceで行い、kill等で生じた不完全tail entryは隔離してから追記する。
 - pending中の同一insight、または先頭50文字一致のinsightは重複登録せず `SKIP:<id>` を返す。
 - `修正済み` / `解消` / `登録済み` / `対処済み` を含むmessageは登録時点で `done` 扱いにする。
+- 新規INSは`memory_db_live_insert_async.py`優先で記憶DBへ非同期INSERTする。同期実行が必要な検証では`SHOGUN_MEMORY_DB`を設定する。
 - 同一 `source` のpending insightが `INSIGHT_SOURCE_REPEAT_THRESHOLD`（既定3）以上になると、`bulletin_write.sh` 経由で将軍へ `action_required` 掲示板通知する。掲示板失敗はinsight保存自体を失敗させない。
 - INSIGHT_REPEAT通知は同一sourceに10分デバウンスを適用（massbatch時の掲示板洪水防止。2026-05-21 fix追加）。
 - 2026-05-21 cmd_training_L7_v3_hanzo_6: dedup確認、pending source件数計算、YAML追記を単一Pythonプロセスへ統合し、保存経路は同じflock付き追記のまま高速化。
@@ -381,4 +384,4 @@ Script refs verified: 2026-06-03 cmd_3144. `insight_write.sh` 直近変更(4dacb
 
 Script refs verified: 2026-06-10 karo. `semantic_search.sh` 直近変更(ffd1305de)はcache refresh内部実装のみ(cp生コピー→SQLite Backup API置換、malformed根治)。呼び出し契約(引数/`--stats`/出力形式)は変更なし。SKILL.md記載の使用方法は現行と一致。
 
-<!-- script_refs_checked_at: 2026-06-11T14:01:43+09:00 -->
+<!-- script_refs_checked_at: 2026-06-12T20:37:38+09:00 -->
