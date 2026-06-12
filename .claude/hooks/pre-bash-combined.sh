@@ -505,6 +505,27 @@ PY
     fi
 fi
 
+# === Guard 13: respawn-pane task status safety (2026-06-13 軍師判断ミス: task in_progress中にrespawn→タスク消失) ===
+if [[ -n "${command:-}" && "$command" == *"respawn-pane"* ]]; then
+    # respawn対象ペインからagent_idを抽出し、task statusがidle以外ならBLOCK
+    _rp_pane=""
+    if [[ "$command" =~ -t[[:space:]]+([^[:space:]]+) ]]; then
+        _rp_pane="${BASH_REMATCH[1]}"
+    elif [[ "$command" =~ -t([^[:space:]]+) ]]; then
+        _rp_pane="${BASH_REMATCH[1]}"
+    fi
+    if [[ -n "$_rp_pane" ]]; then
+        _rp_agent=$(tmux display-message -t "$_rp_pane" -p '#{@agent_id}' 2>/dev/null || true)
+        if [[ -n "$_rp_agent" ]]; then
+            _rp_task_status=$(grep '^  status:' "$SCRIPT_DIR/queue/tasks/${_rp_agent}.yaml" 2>/dev/null | head -1 | awk '{print $2}')
+            if [[ -n "$_rp_task_status" && "$_rp_task_status" != "idle" && "$_rp_task_status" != "done" && "$_rp_task_status" != "failed" ]]; then
+                echo "BLOCK: respawn-pane対象${_rp_agent}のtask status=${_rp_task_status}(idle/done/failed以外)。タスク保持中のrespawnはタスク消失を招く(2026-06-13事故)。task完了を待つかtask statusをidle化してから実行せよ" >&2
+                exit 2
+            fi
+        fi
+    fi
+fi
+
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
    "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git reset'* && \
