@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-11 cmd_karo_hotfix_ga047_context_freshness -->
+<!-- last_updated: 2026-06-12 cmd_karo_hotfix_ga050_context_freshness -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -73,14 +73,19 @@ gstack Tier1-2取込(875/876): 忍者プロンプト強化+家老Two-pass Review
 | 1113 | **gate穴検出3問トリガー** | GATE CLEAR時にgate_improvement_trigger.sh自動発火。3問で防御層の穴を検出 |
 | 1117 | **hook失敗自動記録+穴検出3問** | 報告テンプレートにhook_failures欄追加。hook失敗→穴検出3問を自動連鎖 |
 | 1118 | ラルフループ効果検証 | 学習ループ(clear→知識基盤残存→穴検出→防御層強化)の定量検証スクリプト |
+| 1119/1120 | **自動トリム機構** | cmd-chronicle.md(200行)+shogun_to_karo.yaml(50件)をarchive_completed.shで自動トリム |
+
+→ 完了履歴: `context/cmd-chronicle.md` 03-18〜03-20
 
 > **思考の起源（経験的知識。圧縮禁止。過程が本体）**:
 > - 免疫系/ラルフループ/自動化×強制の到達過程 → `memory/deepdive_why_chain_20260321.md`
 > - System 1(gate自動)/System 2(なぜなぜ検証)の二重ループ → `memory/dialogue_heuristics_system2_20260401.md`
 > - 第二層学習ループ（軍師↔家老還流） → `memory/dialogue_second_layer_20260321.md`
-| 1119/1120 | **自動トリム機構** | cmd-chronicle.md(200行)+shogun_to_karo.yaml(50件)をarchive_completed.shで自動トリム |
 
-→ 完了履歴: `context/cmd-chronicle.md` 03-18〜03-20
+## 直近改善（cmd_3300〜GA-050）
+
+CDP production checkはdeploy証跡が必要な場合だけ実行する。readonly ref回帰テストはself-contained化済み。context鮮度gateは10秒cacheを持つため、調査時は `CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1` で一次判定を取る。
+→ `scripts/cmd_complete_gate.sh` / `scripts/gates/gate_gunshi_report_precheck.sh` / `tests/unit/test_cmd_complete_gate.bats` / `tests/unit/test_sg_pre25_readonly_ref.bats`
 
 ## 軍師品質管理ユニット（cmd_1144〜cmd_1181）
 
