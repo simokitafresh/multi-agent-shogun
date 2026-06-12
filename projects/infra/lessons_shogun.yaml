@@ -37,7 +37,8 @@ lessons:
     (4)同じ指摘2回=上位構造を抽出し教訓化
     (5)殿の問いには症状でなく構造を見よ
     (6)掲示板未確認などの運用事故も、殿が何を失ったか(報告の鎖/時間/確認機会)を先に理解してから設計せよ
-  source_ids: [LS021, LS022, LS030]
+    (7)裁可申請も推薦先行(LS063吸収2026-06-12)。『裁可、申されよ』と受動的に伺うのは型違反(殿指摘2026-06-12 18:31)。個別裁可制との両立形=『将軍の判断: Xを直ちに実行する。理由: Y。裁可の一言で即実行する』と推奨判断を命令形で先に宣言し、殿の判断コストをYES/NOまで下げる。出典はgstack §2.3(I'm paying for your judgment, not a menu)
+  source_ids: [LS021, LS022, LS030, LS063]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'deepdive追体験Q5(殿が前提を崩した場面特定)+cmd_save.sh q5/q8で想像/各論を部分対処'
@@ -97,7 +98,8 @@ lessons:
     (36)数量語(N項目/N種/N条件等)はbinary_check欄でも括弧列挙必須。check_ac_param_sufficiencyはAC配下全行をgrepするためdescriptionに列挙済みでもbinary_checkの裸数量語でWARN(cmd_3302で特定。15回累計の根因)
     (37)削除系/ブランチ作業cmdのACにコミット構成(基点ブランチの一致確認・分割単位・メッセージ形式・整形の別コミット分離)を明示せよ。実施項目の列挙だけでは忍者が古い基点に1コミットで束ね整形も混入する(cmd_3304で3逸脱実証: 基点5コミット遅れ・3コミット指定の1本化・Biome修正混入)
     (38)起票は雛形起点(cmd_skeleton.sh)が正(LS051吸収2026-06-12)。必須フィールド・形式規約が事後BLOCKでしか到達しない事後規律型は記憶からの作文に頼るほどBLOCK往復する。対処5点実装済み(2026-06-10): 雛形の形式環境保証+FILL_THIS残存BLOCK(Check1.05)+PASS出力に次ステップ提示+cmd_delegate数字ID正規化+Check17日付リテラル除外。grep検証は最終版テキストに対して実行せよ(編集→検証の順序逆転がcmd_3316で再BLOCKを生んだ)
-  source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036, LS034]
+    (39)ブランチ作業cmdは基点ブランチ確認をbinary_checkに入れよ(LS062吸収2026-06-12)。cmd_3331でhayateが『mainからブランチを切り』のcommandステップを飛ばしローカルmainへ直接2コミット((37)の再発形=command欄の指示では忍者の逸脱を検出できない)。binary_checkに『作業ブランチ名がmain以外であることを確認したか』を入れて報告ゲートで二値検証させよ。将軍のGATE CLEAR検分(git branch --contains)が最後の防衛線。push前検出→refactor/wp3-ac2-m2退避+git branch -f非破壊復元で実害なし
+  source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036, LS034, LS062]
   source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394, cmd_2395]
   created_at: '2026-04-25'
   automated: true
@@ -588,8 +590,10 @@ lessons:
 - id: 'LS061'
   title: '忍者作業中の共有作業ツリーでブランチを切り替えるな'
   origin: '[[cmd_3328]]'
-  detail: 'cmd_3328でhayateがrefactor/wp3-ac1上で実装中に、将軍が第4報docsコミットのためgit checkout mainを実行しブランチを切り替えた。hayateがコミットしていればmainに直接乗る事故だった(2分後に検知し復旧、実害なし)。第3報時も同checkoutがabortしており2回目の兆候。根因: docsコミットの慣例(main着地)を、共有作業ツリーで忍者が作業中という状態確認なしに実行した。対処: 共有リポジトリでのブランチ切替え前にkaro_snapshotとcapture-paneで当該PJ作業中の忍者の有無を確認し、作業中なら忍者の現在ブランチ上にdocsコミットを積むか完了を待つ'
+  detail: 'cmd_3328でhayateがrefactor/wp3-ac1上で実装中に、将軍が第4報docsコミットのためgit checkout mainを実行しブランチを切り替えた。hayateがコミットしていればmainに直接乗る事故だった(2分後に検知し復旧、実害なし)。第3報時も同checkoutがabortしており2回目の兆候。根因: docsコミットの慣例(main着地)を、共有作業ツリーで忍者が作業中という状態確認なしに実行した。対処: 共有リポジトリでのブランチ切替え前にkaro_snapshotとcapture-paneで当該PJ作業中の忍者の有無を確認し、作業中なら忍者の現在ブランチ上にdocsコミットを積むか完了を待つ。(2)2026-06-12再発変形(cmd_3332): hayateのブランチ作成直後に将軍が第6報docsコミットを実行し、index.lock競合1回の後、コミットが忍者の作業ブランチ(cmd_3332_mtd_preliminary_row)に乗った(b6754233)。「忍者はまだテンプレ読込中でgit操作前」をcapture-pane表示から想像して判断した。対処拡張: 忍者がdm-signalタスクをacknowledged〜completedの間、将軍は当該リポジトリでブランチ切替えに加えcommit/add等のindex書込み操作も一切行わない。docsコミットは忍者の完了後。read-only(log/diff/status/fetch)とリモートrefのみのブランチpushは許可'
   source_cmd: 'cmd_3328'
   created_at: '2026-06-12'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=忍者作業中の共有作業ツリー'
+# LS062: superseded by LS-A04(39) (ブランチ基点のbinary_check必須化=テンプレートルール(37)の拡張形。2026-06-12統合)
+# LS063: superseded by LS-A02(7) (裁可申請も推薦先行=殿との対話原則。gstack §2.3出典。2026-06-12統合)

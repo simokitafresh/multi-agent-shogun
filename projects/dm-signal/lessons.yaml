@@ -967,6 +967,9 @@ lessons:
   - scripts/oneshot/cmd_2381_kawarimi_open_parity.py
   - scripts/oneshot/cmd_2382_yotsume_parity_verify.py
   origin: '[[cmd_2393]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L675
   title: recalculate-sync後のstatus待機は初回idleを完了扱いにする
   summary: cmd_2392でrecalculate-sync POST後、/admin/recalculate-status がすでに running=false
@@ -1315,6 +1318,9 @@ lessons:
   target_files:
   - workflows/perf_measure.py
   origin: '[[cmd_2310]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L655
   title: 本番CDP計測ACは差分が本番URLに反映済みかを先に確認する
   summary: 未deployのfrontend差分を実装した状態で本番URLを計測しても旧コードの計測になり、改善効果の根拠にならない。CDP計測ACでは、計測対象URLに今
@@ -1994,7 +2000,7 @@ lessons:
   origin: '[[cmd_1866]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L612
   title: 超越条件C UWP<5M閾値は132M OOSに非現実+SPA全42非有意
   summary: cmd_1866 ALM忍法全方位検証でV3超越条件のUWP<5M閾値が132ヶ月OOS期間に対して非現実的に厳しい。全42セルFAIL。V7
@@ -2145,7 +2151,7 @@ lessons:
   origin: '[[cmd_1845]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L602
   title: 'cmd_1844 oikaze MaxDD champion ID誤記: N2→N4(20体GSで subset=2の誤記)'
   summary: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661_10M_N2_R1 はokugi_shin_ninpo_20body '
@@ -2748,7 +2754,7 @@ lessons:
   origin: '[[cmd_1753]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L560
   title: 'ALM実装時: pipeline_config.alm_configのcandidate_lookbacksをbuffer計算に含める必要がある'
   summary: recalculate_fast.py L708-715のbuffer計算はportfolio.lookback_periodsのみ参照。ALM
@@ -7025,7 +7031,7 @@ lessons:
   origin: '[[cmd_783]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L247
   title: 全PFプリフェッチは 1 PF あたり約10 APIを自動発火し request storm 化する
   summary: '`frontend/hooks/usePrefetch.ts` は選択PFで11本、他PFで10本のAPIを自動発火する。PF数20/50/100で概算203/'
@@ -8553,7 +8559,7 @@ lessons:
   origin: '[[cmd_297]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L124
   title: DB JSONカラムのstr型防御パターン
   summary: IF SQLAlchemy JSON型カラムのDB値が文字列として格納される場合がある（マイグレーション不整合等）時 THEN SQLAlchemy
@@ -8699,7 +8705,7 @@ lessons:
   origin: '[[subtask_274_c3a]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L111
   title: Cycle1統合:月次リターン粒度でのエッジ崩壊precision80%は構造的に困難
   summary: IF 7アプローチ(AND/MAJORITY/CUSUM/Sharpe/VolWeighted/Idiosyncratic/LogisticCV)全て80%未達
@@ -9574,7 +9580,7 @@ lessons:
   origin: '[[cmd_128]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L035
   title: FoF参照L0 PFはDELETE不可→UPDATE方式が安全
   summary: L0 PFがFoFコンポーネントとして参照されている場合、DELETE APIは400を返す。UPDATE方式(既存PFにpipeline_config付与+/
@@ -9682,7 +9688,7 @@ lessons:
   origin: '[[legacy_lesson_L027]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L026
   title: 本番FoFコンポーネント取得は `/api/portfolios/get` のみ（2026-02-15）
   summary: FoFのcomponent_portfoliosを取得するため `/api/admin/fof-portfolios` を呼んだら `404

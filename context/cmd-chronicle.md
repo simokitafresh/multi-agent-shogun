@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-12 cmd_3332 -->
+<!-- last_updated: 2026-06-12 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -535,3 +535,5 @@
 | cmd_3329 | 殿裁可(2026-06-12 15:53「FE系5コミットをmainへ先行マージ+本番反映しよう」)に基づき、refactor/wp3-ac1上のFE系5コミット(a12994c7・588d10ad・b881993b・79373f98・3ff64282)をmainへ先行統合して本番反映の確認まで閉じる。AC2 BE分割の4コミットは調査チームのレビュー通過連絡待ちのため含めない(返信書の1モジュール1サイクル条件遵守)。実施は家老が直接行う(忍者に配備しない・cmd_3296裁定踏襲) | dm-signal | 06-12 | — |
 | cmd_3331 | 調査チーム承認(2026-06-12 16:19受領: 第二モジュール凍結解除+順序monthly_trade→trades→metrics)に基づき、AC2第二サイクルとしてmonthly_trade_calculator(994行)を第一サイクルと同型の手法(旧path維持ファサード+モジュール属性の遅延参照)で実体モジュールへ分割する。あわせて調査チーム条件(3)のdocstring遅延束縛契約1段落をprice_ratio_calculatorファサードへ同梱追記する。本cmdの範囲はブランチ上の実装と検証まで(リモート反映は別途裁可制) | dm-signal | 06-12 | monthly_trade_calculatorを旧path |
 | cmd_3330 | 殿裁可(2026-06-12 16:47「よい」)と調査チームレビュー通過(2026-06-12 16:19受領、AST等価+互換テスト+独立再実行1354 passed)に基づき、refactor/wp3-ac1のAC2コア5コミット(7c9c86f9・801cf2ed・03aec06d・efdd75c4・4e6b3bb4)を4e6b3bb4時点でmainへ統合し、検収と本番反映の確認まで閉じる。調査チーム条件(1)FE系drop・(2)cutover docs早期着地に対応する。実施は家老が直接行う(忍者に配備しない・cmd_3296裁定踏襲) | dm-signal | 06-12 | — |
+| cmd_3332 | 殿指示(2026-06-12 17:26「directive-20260612-mtd-preliminary-row.mdをよみ実行せよ」)。mtd-ux設計書のFeature C=速報行をBE+FEで実装し、PR2検証時指摘のBenchmark Dailyギャップも修正する。SSOT=docs/spec/mtd-daily-returns-ux.md(矛盾時は設計書優先)。確定値計算ロジック不変が絶対条件(price_ratio_calculatorは1文字も変更禁止・既存mtd_dataエントリは追加のみ)。指示書がpush可と明記しており本cmdはリモート反映+本番確認まで閉じる | dm-signal | 06-12 | MTD Daily Returns PR3 Feature |
+| cmd_3333 | 殿裁可(2026-06-12 18:35「よい」)と調査チーム第6報レビュー通過(2026-06-12 18:17受領: AST等価でロジック変更ゼロ+patch経路温存+独立再実行1356 passed・0 failed+m2はクリーンな2コミット構成でそのままマージ対象でよい)に基づき、refactor/wp3-ac2-m2の2コミット(56cd9bbd・d9e2c023)をmainへ統合し、検収と本番反映の確認まで閉じる。検収は調査チーム裁定のper-module方式(本番API大規模deep-diffはAC2全モジュール完了後の最終ゲートに1回)。実施は家老が直接行う(忍者に配備しない・cmd_3296裁定踏襲) | dm-signal | 06-12 | — |

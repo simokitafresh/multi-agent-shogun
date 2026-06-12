@@ -1,64 +1,108 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  acceptance_criteria:
-    AC1:
-      description: context_freshness ALERTが鳴った直接原因と根本原因を、source commits since last_updatedの数値付きで報告する
-    AC2:
-      description: 同カテゴリの横展開候補を洗い出し、今回更新すべきcontextがあれば更新する
-    AC3:
-      description: gate再実行でdm-signal-frontend.mdのALERT解消または残存理由を数値付きで示す
-    AC4:
-      description: 次回防御層としてlesson_candidateにorigin付きで追加チェックを提案する
+  readonly_ref:
+  - path: 'agent/task-force/directive-20260612-mtd-preliminary-row.md'
+    reason: command欄の必読/参照専用ファイル
+  - path: 'docs/spec/mtd-daily-returns-ux.md'
+    reason: command欄の必読/参照専用ファイル
+  - path: 'tasks/todo.md'
+    reason: command欄の必読/参照専用ファイル
+  _ac_task_id: cmd_3332_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3332 (deployed 2026-06-12T17:36:06). Read from the beginning.
+  ac_version: 13dd13ea
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
+  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
+  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
+  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
+  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
+  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
+  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
+  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
+  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
+  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
+  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
+  - 2026-06-12T16:47:09+09:00 | 【INFOバッチ】 2026-06-12 16:40:59|cmd_karo_hotfix_ga053_core_context_freshness_202606121637
+  - 2026-06-12T16:31:54+09:00 | 【INFOバッチ】 2026-06-12 16:18:17|cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622 2026-06-
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622
-  project: infra
-  purpose: GA-052 dm-signal-frontend.md context_freshness ALERTの原因特定・横展開・防御層反映
+  parent_cmd: cmd_3332
+  project: dm-signal
+  purpose: 殿指示(2026-06-12 17:26「directive-20260612-mtd-preliminary-row.mdをよみ実行せよ」)。mtd-ux設計書のFeature C=速報行をBE+FEで実装し、PR2検証時指摘のBenchmark Dailyギャップも修正する。SSOT=docs/spec/mtd-daily-returns-ux.md(矛盾時は設計書優先)。確定値計算ロジック不変が絶対条件(price_ratio_calculatorは1文字も変更禁止・既存mtd_dataエントリは追加のみ)。指示書がpush可と明記しており本cmdはリモート反映+本番確認まで閉じる
   status: idle
   stop_for: []
-  task_id: cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622_normal
-  task_type: hotfix
+  target_path: /mnt/c/Python_app/DM-signal
+  task_id: cmd_3332_full
+  task_type: full
   related_lessons:
-  - id: 'L508'
-    summary: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-    detail: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-  - id: 'L549'
-    summary: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
-    detail: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
-  - id: 'L738'
-    summary: '外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split'
-    detail: '外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split'
-  - id: 'L790'
-    summary: 'context_freshness gateは高速化のため短いgit timeoutを持つ。外部repoのgit logがtimeoutするとsource co'
-    detail: 'context_freshness gateは高速化のため短いgit timeoutを持つ。外部repoのgit logがtimeoutするとsource co'
-  - id: 'L742'
-    summary: 'hookやgateはシステムルールであり、殿の直接指示ではない。hookに従ったことを『殿の指示に従った』と表現すると、殿の直接指示が相対化される。報告では『h'
-    detail: 'hookやgateはシステムルールであり、殿の直接指示ではない。hookに従ったことを『殿の指示に従った』と表現すると、殿の直接指示が相対化される。報告では『h'
-  - id: 'L598'
-    summary: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
-    detail: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
-  - id: 'L144'
-    summary: 'IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する'
-    detail: 'IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する'
+  - id: 'L447'
+    summary: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
+    detail: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
+  - id: 'L125'
+    summary: 'IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)'
+    detail: 'IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)'
+  - id: 'L036'
+    summary: 'IF テストデータrevertでgit checkout -- SSOT時 THEN 対策: SSOTのrevertはgit管理外ファイルのみか、当該テストエン'
+    detail: 'IF テストデータrevertでgit checkout -- SSOT時 THEN 対策: SSOTのrevertはgit管理外ファイルのみか、当該テストエン'
+  - id: 'L545'
+    summary: 'queue/tasksはflat形式とnested task形式が混在している。awk ''^  status:'' や data.get(''task'', {}) '
+    detail: 'queue/tasksはflat形式とnested task形式が混在している。awk ''^  status:'' や data.get(''task'', {}) '
+  - id: 'L256'
+    summary: 'dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil'
+    detail: 'dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil'
+  - id: 'L603'
+    summary: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
+    detail: 'karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ'
+  - id: 'L103'
+    summary: 'IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置'
+    detail: 'IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置'
+  - id: 'L027'
+    summary: 'IF C抜き身のCANDIDATE_SET不一致 — CS4 [歴史的記述](4体)→C11_CCNh(11体)を実装・検証する時 THEN **修正内容**:'
+    detail: 'IF C抜き身のCANDIDATE_SET不一致 — CS4 [歴史的記述](4体)→C11_CCNh(11体)を実装・検証する時 THEN **修正内容**:'
+  - id: 'L656'
+    summary: 'reportのファイル名はtask_id由来になる場合があり、parent_cmdと一致しない。cmd_id filename filterでmissした場合は'
+    detail: 'reportのファイル名はtask_id由来になる場合があり、parent_cmdと一致しない。cmd_id filename filterでmissした場合は'
+  - id: 'L613'
+    summary: 'resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from'
+    detail: 'resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  related_causal_links:
+  - "[[cmd_3332]]"
+  - "[[directive-20260612-mtd-preliminary-row]]"
+  - "[[mtd-ux設計書Feature C]]"
   context_hints:
-  - "context/training-cycle.md"
+  - "context/robustness-verification-catalog.md"
+  - "context/gs-speedup-knowledge.md"
+  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
+  production_invariants:
+  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
+  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
+  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
+  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
+  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
   - "Level1(事後検出): 間違えた後にgateが検出"
@@ -71,27 +115,55 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L508: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL
-      - L549: queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形
-      - L738: 外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split
-      - L790: context_freshness gateは高速化のため短いgit timeoutを持つ。外部repoのgit logがtimeoutするとsource co
-      - L742: hookやgateはシステムルールであり、殿の直接指示ではない。hookに従ったことを『殿の指示に従った』と表現すると、殿の直接指示が相対化される。報告では『h
-      - L598: ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie
-      - L144: IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する
+      - L447: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe
+      - L125: IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)
+      - L036: IF テストデータrevertでgit checkout -- SSOT時 THEN 対策: SSOTのrevertはgit管理外ファイルのみか、当該テストエン
+      - L545: queue/tasksはflat形式とnested task形式が混在している。awk '^  status:' や data.get('task', {}) 
+      - L256: dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil
+      - L603: karo_directスキルで手動task YAML作成→配備するとAC/purpose未注入でFAIL。deploy_task.sh --directが修行テ
+      - L103: IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置
+      - L027: IF C抜き身のCANDIDATE_SET不一致 — CS4 [歴史的記述](4体)→C11_CCNh(11体)を実装・検証する時 THEN **修正内容**:
+      - L656: reportのファイル名はtask_id由来になる場合があり、parent_cmdと一致しない。cmd_id filename filterでmissした場合は
+      - L613: resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-04-15T16:53:57+09:00 | 【改善トリガー】ci_red ALERT (GA-052)"
-  - "2026-06-12T10:50:15+09:00 | 【将軍】context鮮度ALERT: dm-signal-core.md(source更新),dm-signal-frontend.md(source更新),dm-signal-ops.md(sou"
-  - "2026-06-12T10:45:01+09:00 | 【将軍】context鮮度ALERT: dm-signal-frontend.md(source更新),dm-signal-ops.md(source更新),infrastructure.md(sou"
-  - "2026-06-12T15:59:53+09:00 | **cmd_karo_hotfix_ga051_context_freshness report review完了**: verdict **LGTM** (gate_prediction: WARN"
-  - "2026-06-12T15:54:18+09:00 | **draft review完了**: cmd_karo_hotfix_ga051_context_freshness — verdict: **APPROVE** 本セッション実績: 1. **cm"
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622_normal
-  _ac_worker_id: 
+  - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
+  - "2026-06-10T21:11:08+09:00 | ## cmd_3273神速停止 — 執行完了+前提変化報告 **執行**: task=halted、kagemaruへ全作業停止+commit禁止指示済み。 **前提変化（即報告済み）**: 殿指示の"
+  - "2026-06-12T17:34:00+09:00 | 【INFOバッチ】 2026-06-12 17:27:44|cmd_3331"
+  - "2026-06-12T17:02:55+09:00 | 【INFOバッチ】 2026-06-12 16:54:15|CI緑: run 27402081743"
+  - "2026-04-20T17:35:07+09:00 | 【INFOバッチ】 2026-04-20 17:26:30|cmd_2160 2026-04-20 17:34:38|cmd_2129"
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: '指示書コミット1のとおりbusiness_day_utilsへのnext_weekday追加とperformance.pyへの速報エントリ構築ヘルパー追加と呼出挿入を実装し、指示書1-4の表のテスト6本を含むbackendテストが基準線(pre-existing failureなし)に対し退行なく成功し、price_ratio_calculatorが無変更かつ既存mtd_dataエントリが追加のみであることをgit diffで確認する'
+  - id: 'AC2'
+    checks:
+    - check: '指示書コミット2のとおり速報行のFE表示(Dateセル⚡サフィックス・値セルのitalicミュート統一・行のbg-muted強調・脚注2行目の条件付き表示・チャート末尾の破線分割+白抜き点)を実装し、CLOSEモードで速報行と破線と脚注が一切出ないことをテストで確認し、tscとjestとbuildの成功を実行結果で確認する'
+  - id: 'AC3'
+    checks:
+    - check: '指示書コミット3のとおりBenchmark Dailyのギャップ処理(欠損日の翌日は直近のbenchmark存在行との比)へ修正し、テスト期待値(06/03行のBM Dailyが1.03/1.01の比)の更新と既存portfolioDaily期待値の不変をテスト結果で確認する'
+  - id: 'AC4'
+    checks:
+    - check: '3コミット(BE・FE・fix)の分割構成と整形混入なしをコミット一覧で記録し、リモート反映(禁止窓00:50-02:10 UTC回避)後に本番ダッシュボードのOPENモードで速報行(翌営業日付+⚡+グレーイタリック)とチャート破線の表示、CLOSEモードで非表示を確認し、tasks/todo.mdのPR3行更新とexecution-logへの記録を完了する'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622.yaml
+  report_filename: hayate_report_cmd_3332.yaml
+  report_path: queue/reports/hayate_report_cmd_3332.yaml
   bloom_level: 
-  deployed_at: "2026-06-12T16:12:20"
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 1
+    top_pattern: 'commit_missing(1件)'
+    breakdown: 'commit_missing(1件)'
+    warning: '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁'
+    gate_fail_top3:
+    - pattern: 'bc_result_empty'
+      count: 122
+    - pattern: 'verdict_invalid'
+      count: 18
+    - pattern: 'field_missing'
+      count: 17
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
+  deployed_at: "2026-06-12T17:36:28"
+  completed_at: "2026-06-12T18:05:57+09:00"

@@ -2383,6 +2383,7 @@
   timestamp: "2026-06-12T14:40:00"
 - cmd_id: cmd_3328
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]
@@ -2433,6 +2434,7 @@
   timestamp: "2026-06-12T15:14:00"
 - cmd_id: cmd_3328
   review_type: report
+  gate_result: CLEAR
   report_ninja: hayate
   verdict: LGTM
   gate_result: CLEAR
@@ -2597,3 +2599,102 @@
   hole_action: none
   origin: "[[GA-053]] -> [[core_12件未反映]] -> [[LGTM+WARN]]"
   timestamp: "2026-06-12T16:40:00"
+- cmd_id: cmd_3331
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "6観点OK。AC2第二サイクル monthly_trade_calculator(994行)ファサード化。第一サイクル同型手法。AC4件=scaffolding→移設→docstring→検収。assumptions 2件一次確認済み(994行/実体未存在)"
+  observations:
+    - "事実1: wc -l monthly_trade_calculator.py=994行。実体モジュール(monthly_trade/)未存在=未分割確認"
+    - "事実2: 第一サイクル(price_ratio_calculator)の手法が調査チームAST等価性検証通過済み。同型適用"
+    - "事実3: AC4にコミット構成記録(整形分離)を明示。第一サイクルの整形同居教訓(LS-A09(17))反映"
+  causal_chain: "巨大モジュール構造→ファサード化第二サイクル→変更コスト構造的低減(正の複利)+残り2モジュール手順安定"
+  brainwash_check: "洗脳#8防止: 994行を一次確認。第一サイクル同型でも前提を個別検証"
+  ambiguity_points: none
+  origin: "[[調査チーム承認]] -> [[cmd_3331_第二サイクル]] -> [[APPROVE]]"
+  timestamp: "2026-06-12T17:15:00"
+- cmd_id: cmd_3331
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。monthly_trade_calculatorファサード化完了。ファサード23行+実体1008行。1356 passed/0 failed(+2=compat test)。WP-0 18件PASS。deep-diff diff_count=0。scaffolding 56cd9bbd + split d9e2c023"
+  observations:
+    - "事実1: git log確認 scaffolding=56cd9bbd split=d9e2c023。報告のed820e82はamend前hash(hook_failuresでImportError自己修正)"
+    - "事実2: 1356 passed(基準線1354+2=compat test追加)。WP-0契約18件PASS。deep-diff 0不一致"
+    - "事実3: SG-PRE25 execution-log.md=参照専用(LG037)。files_modified不要。GATE_PREDICTION=CLEAR"
+  causal_chain: "994行巨大モジュール→23行ファサード+1008行実体→変更コスト低減。第二サイクル完走で残り2モジュール手順確定(正の複利)"
+  brainwash_check: "洗脳#2防止: commit d9e2c023/56cd9bbd実在確認+テスト1356数値+deep-diff 0確認"
+  step3_5_verified: true
+  hole_action: none
+  origin: "[[cmd_3331]] -> [[monthly_trade_facade]] -> [[LGTM]]"
+  timestamp: "2026-06-12T17:28:00"
+- cmd_id: idle_gate_prediction_accuracy_20260612
+  review_type: self_study
+  verdict: null
+  finding_categories: [numbers, assumptions]
+  findings_summary: "gate_prediction accuracy 44%(25件中11件)。不一致14件=全WARN→CLEAR(保守的偽陽性)。偽陰性0件。safety-adjusted accuracy=100%。SG-PRE12維持+計測二分化提案"
+  observations:
+    - "事実1: 25件中14件がWARN→CLEAR。根因=SG-PRE12 lesson_candidate有→WARN必須。家老先行処理で全件CLEAR"
+    - "事実2: CLEAR→BLOCK(偽陰性)は0件。保守的WARNは安全側の判定として正しく機能"
+    - "事実3: 直近10件accuracy 50%。本セッションのGA三部作(3件WARN→CLEAR)が直接影響"
+  cs_checklist: [CS1, CS2, CS4, CS6]
+  causal_chain: "SG-PRE12 lesson_candidate有→WARN→家老先行CLEAR→accuracy 44%。保守的偽陽性であり偽陰性0件→安全側維持が正しい"
+  brainwash_check: "洗脳#5防止: accuracy低下を放置せず計測。保守的WARN維持は安全だが計測指標の分離が必要"
+  altruism_check: not_needed
+  origin: "[[gate_prediction_accuracy]] -> [[WARN→CLEAR偽陽性14件]] -> [[計測二分化提案]]"
+  timestamp: "2026-06-12T17:37:00"
+- cmd_id: cmd_3332
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "6観点OK。MTD速報行Feature C。BE+FE+fix 3コミット+本番反映。AC4件。price_ratio_calculator変更禁止をAC1 binary_checkで強制。本番OPEN/CLOSE両モード確認をAC4で要求。殿指示直接実行"
+  observations:
+    - "事実1: assumptions 2件grep確認済み。next_weekday未実装+performance.py限定(services 4モジュール非重複)"
+    - "事実2: 本番push含む。禁止窓00:50-02:10 UTC回避明記。AC4で本番両モード確認"
+    - "事実3: Benchmark Dailyギャップ修正(AC3)でportfolioDaily不変をテストで担保。cmd_3328レビューで手計算済みのロジックへの影響を構造的に検証"
+  causal_chain: "MTD UX設計書PR3→速報行BE+FE→本番反映→設計書全PR完結(正の複利:設計書駆動前例確立)"
+  brainwash_check: "洗脳#1防止: 本番push含むcmdでHIGH判定。AC4に本番両モード確認要求あり。price_ratio_calculator変更禁止がAC1で構造的強制"
+  ambiguity_points: none
+  origin: "[[殿指示_directive]] -> [[cmd_3332_Feature_C]] -> [[APPROVE]]"
+  timestamp: "2026-06-12T17:40:00"
+- cmd_id: cmd_3332
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。Feature C速報行BE+FE本番反映完了。price_ratio_calculator diff 0行。1360 passed/0 failed(+6新テスト)。FE 265 passed(+3)。本番CDP確認OPEN=⚡行+破線/CLOSE=非表示。push UTC 08:52禁止窓外"
+  observations:
+    - "事実1: 3コミット+証跡=4 commit。90331d88(BE)+009b8ed6(FE)+c08b09fa(fix)+a907c26a(証跡)。整形混入なし"
+    - "事実2: 本番deploy live FE 08:54:01/BE 08:54:59。CDP確認: OPEN prelimRows=1 dashed43=2、CLOSE hasFlash=false prelimRows=0"
+    - "事実3: price_ratio_calculator.py+return_calculator.py diff 0行=確定値計算不変。BM Dailyギャップ修正でportfolioDaily不変はテストで担保"
+  causal_chain: "Feature C実装→3コミット分割→本番push+CDP確認→mtd-ux設計書PR1-3全完結(正の複利)"
+  brainwash_check: "洗脳#2防止: 本番push済みcmd。commit 4本実在+テスト1360/265数値+CDP証跡+price_ratio diff 0行を個別確認"
+  step3_5_verified: true
+  hole_action: none
+  origin: "[[cmd_3332]] -> [[Feature_C_速報行]] -> [[LGTM_本番live]]"
+  timestamp: "2026-06-12T18:08:00"
+- cmd_id: session_20260612_gunshi_strong_new_game
+  review_type: self_study
+  verdict: null
+  finding_categories: [assumptions, numbers, premortem, north_star, adversarial]
+  findings_summary: "強くてニューゲーム完了。draft6+report7+idle2=15件全CLEAR/WA=0。環境埋込み: review_log 16件+docs/research 3件+senkyoku-log+掲示板3件"
+  observations:
+    - "事実1: 本セッション全レビュー=LGTM/APPROVE→全GATE CLEAR。偽陰性0件"
+    - "事実2: idle分析2件永続化(adversarial冷え+gate_prediction accuracy)。行動に変換済み(adversarial追記+計測二分化提案)"
+    - "事実3: mtd-ux PR1-3全完結(cmd_3325/3328/3332)。AC2第二サイクル(cmd_3331)CLEAR。context鮮度三部作(GA-051/052/053)全CLEAR"
+  cs_checklist: [CS1, CS4, CS6]
+  causal_chain: "15件レビュー全CLEAR→WA=0→家老負担ゼロ→review_log+研究3件+senkyoku-log=環境に埋め込み→/clear後も残る(ラルフループ)"
+  brainwash_check: "洗脳#6防止: 出力(レビュー)だけでなく行動(adversarial追記+計測分析永続化)も実施。senkyoku-log追記=次の軍師への引継ぎ完了"
+  origin: "[[殿指示_強くてニューゲーム]] -> [[15件全CLEAR+idle2件永続化]] -> [[環境埋込み完了]]"
+  timestamp: "2026-06-12T18:50:00"

@@ -1084,7 +1084,7 @@ codd:
 |------|---|
 | id | production_parity |
 | label | 本番パリティ |
-| aliases | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data, 月次リターン, MTD, 月次部分月, MTD判定, Month-to-Date, 部分月, partial_month, monthly_common, チェックリスト, monthly trade画面には現時点で全PFの６月の保有ポジションがpendingに表示される必要がある, signal_pending, pending 3条件, monthly_trade.py, signals.py pending, is_pending, is_mtd, build_pending_map, 3レイヤー貫通確認, DB→API→FE, PF物理削除, PF論理削除, is_active, portfolio_config_snapshots, FK制約, CASCADE, NO ACTION, 逆依存順削除, PF設定バックアップ, PF削除手順, 旧式PF削除, チェックリストを家老にれびゅーしてもらおう, is active削除WP Phase 前提ゲート実測, is active機能のFE BE docs削除実装, is active削除ブランチの指示書準拠再構成, monthly productのBEスキーマ削除実装, MTDテーブルDaily列の実装 設計書PR2 |
+| aliases | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data, 月次リターン, MTD, 月次部分月, MTD判定, Month-to-Date, 部分月, partial_month, monthly_common, チェックリスト, monthly trade画面には現時点で全PFの６月の保有ポジションがpendingに表示される必要がある, signal_pending, pending 3条件, monthly_trade.py, signals.py pending, is_pending, is_mtd, build_pending_map, 3レイヤー貫通確認, DB→API→FE, PF物理削除, PF論理削除, is_active, portfolio_config_snapshots, FK制約, CASCADE, NO ACTION, 逆依存順削除, PF設定バックアップ, PF削除手順, 旧式PF削除, チェックリストを家老にれびゅーしてもらおう, is active削除WP Phase 前提ゲート実測, is active機能のFE BE docs削除実装, is active削除ブランチの指示書準拠再構成, monthly productのBEスキーマ削除実装, MTDテーブルDaily列の実装 設計書PR2, MTD速報行の実装 設計書PR3 Feature C |
 | skills | db-check, pf-registration |
 | related_concepts | recalculate_pipeline, dmsignal_operations, silent_fallback_quality, terminology_dictionary, shin_shijin_design, alpha_6_metrics, db_price_data_range, dm_signal_refactor_mission |
 
@@ -1117,6 +1117,9 @@ codd:
 | cmd | `cmd_3328` MTDテーブルDaily列の実装(設計書PR2) |
 | causal | `cmd_3328` origin: [[殿指示2026-06-12_mtd-daily-returns-ux実装]] -> [[PR1完了による設計書順序の第二弾]] -> [[cmd_3328]] |
 | causal | `cmd_3328` depends_on: cmd_3325 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-12T17:26:23+09:00 C:\Python_app\DM-signal\.agent\task-force\directive-20260612-mtd-preliminary-row.mdをよみ実行せよ |
+| cmd | `cmd_3332` MTD速報行の実装(設計書PR3 Feature C) |
+| causal | `cmd_3332` origin: [[directive-20260612-mtd-preliminary-row]] -> [[mtd-ux設計書Feature C]] -> [[cmd_3332]] |
 | causal_chain | `[[cmd_3061]]` (L717) |
 
 ## deepdive_principles — deepdive原理
@@ -1252,6 +1255,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T11:24:15+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T15:12:38+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T15:44:35+09:00 自立自走 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-12T17:34:53+09:00 自立自走 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-12T18:47:57+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -1712,6 +1717,9 @@ codd:
 | lesson | `LS-A09(17)` 整形混入検分はgit show -w+実差分照合が最低線 |
 | cmd | `cmd_3289`-`cmd_3328` リファクタ実行任務cmd群(WP-0〜WP-3 AC2第一サイクル+mtd-ux PR1/PR2) |
 | causal | `cmd_3324` origin: [[approval-20260612-third-report-ac2]] -> [[AC2第一サイクル]] -> [[price_ratio_calculatorファサード化]] |
+| cmd | `cmd_3331` AC2第二サイクル monthly_trade_calculatorのファサード化 |
+| causal | `cmd_3331` origin: [[調査チームレビュー通過20260612]] -> [[第二モジュール凍結解除]] -> [[cmd_3331]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-12T18:17:31+09:00 第6報レビュー結果: 通過。 検収根拠: AST等価検証（実差分=_facade追加+5メソッドの全変更がファサード経由化のみ、ロジック変更ゼロ）/ test_138_pending系の既存patch経路の温存を確認 / 条件(3)docs |
 
 ## file_rename — ファイルリネーム
 
@@ -2811,7 +2819,7 @@ codd:
 |------|---|
 | id | gate_quality_framework |
 | label | ゲート品質統合フレームワーク |
-| aliases | ゲート統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, ゲート偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, クオリティゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, ゲート偽陽性ALERTはバグだな, startup BLOCK 3セッション連続, cmd_skeleton, cmd起票雛形, 起票雛形ジェネレータ, FILL_THIS残存BLOCK, cmd起票フロー3ステップ, skeleton→save→delegate, cmd_delegate数字ID正規化, Check17日付リテラル除外, 性能の劣るLLMでもスムーズにCMD起票, GA context freshness ALERTを一次情報で調査し |
+| aliases | ゲート統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, ゲート偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, クオリティゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, ゲート偽陽性ALERTはバグだな, startup BLOCK 3セッション連続, cmd_skeleton, cmd起票雛形, 起票雛形ジェネレータ, FILL_THIS残存BLOCK, cmd起票フロー3ステップ, skeleton→save→delegate, cmd_delegate数字ID正規化, Check17日付リテラル除外, 性能の劣るLLMでもスムーズにCMD起票, GA context freshness ALERTを一次情報で調査し, GA context freshness ALERTの根因を調査し, GA dm signal frontend md context freshness ALERTの原因特定・横展開・防御, GA dm signal core md context freshness ALERTの原因特定・横展開・防御層反映 |
 | skills | |
 | related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework, creator_brainwashing_defense, chain_principle, no_auto_extinguish, multi_cli_event_commonization, command_files_modified_verification |
 | related_lessons | `L512`, `L079`, `L633` |

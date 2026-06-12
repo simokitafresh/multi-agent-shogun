@@ -1769,6 +1769,9 @@ lessons:
   - tests/helpers/deploy_task_scaffold.bash
   - tests/unit/test_deploy_task.bats
   origin: '[[cmd_2950]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L675
   title: 同関数内でprintfビルトインを部分使用しているならdate/外部コマンドも同パターンで統一せよ
   summary: ninja_done.sh L37でdate +%s(subprocess)が使われていたが、L39が既にprintf-v '%(%Y%m%d)T'(built
@@ -2075,6 +2078,9 @@ lessons:
   - scripts/dashboard_update.sh
   - tests/unit/test_skill_feedback_loop.bats
   origin: '[[cmd_2943]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L655
   title: report_field_setの歴史的誤形は互換shimで吸収する
   summary: skill-auto-improveが誤った呼び出し例を生成していた場合、ドキュメント修正だけでは既存手順の再発を止めにくい。report_field_set.
@@ -2752,6 +2758,9 @@ lessons:
   - tests/helpers/deploy_task_scaffold.bash
   - tests/unit/test_deploy_task_ac_handling.bats
   origin: '[[cmd_2790]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L612
   title: 進行中CIをcheck failedと表示するな
   summary: CI表示の偵察ではlatest runとlatest completed runを分けて確認せよ。latest runがin_progressでconclusi
@@ -2913,6 +2922,9 @@ lessons:
   - skills/karo-direct/SKILL.md
   - tests/unit/test_deploy_task.bats
   origin: '[[cmd_2691]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L602
   title: karo_directのtraining配備はdeploy_task.sh --directを使え。手動YAML方式はAC未注入を引き起こす
   summary: karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te
@@ -3557,6 +3569,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: '2026-05-04'
   origin: '[[cmd_2554]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L560
   title: bashのif条件失敗後は終了コードを即時保存する
   summary: grep等の判定コマンドをif条件に置き、thenに入らなかった後でcase "$?"を読むと、構文や後続処理で期待した終了コードを失うことがある。失敗側の終了
@@ -7335,6 +7350,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: '2026-03-19'
   origin: '[[cmd_1105]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L247
   title: found:falseは教訓を探さなかった証拠
   summary: 全タスクに学びがある。found:falseの場合はno_lesson_reasonに理由必須。理由なきfound:falseは家老が差し戻す
@@ -8772,6 +8790,9 @@ lessons:
   when: paste-bufferで特定ペインにデータを注入する時
   how: 注入先の@agent_idを検証してから実行せよ(defense-in-depth)
   origin: '[[cmd_494]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L124
   title: paste-bufferの-dフラグはタイムアウト時に発動しない — 明示的delete-buffer必須
   summary: IF paste-bufferの-dフラグはタイムアウト時 THEN timeout N tmux paste-buffer -b name
@@ -8932,6 +8953,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: task_id||subtask_idフォールバック実装が必要
   origin: '[[cmd_462]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L111
   title: ACにテストファイル実行が含まれる場合は実行前にファイル実在を確認せよ
   summary: IF ACにテストファイル実行が含まれる時 THEN 実行前にファイルの実在を確認し、不在なら停止して報告せよ
@@ -9811,6 +9835,9 @@ lessons:
   when: テストデータrevertでgit checkout -- SSOT時
   how: '対策: SSOTのrevertはgit管理外ファイルのみか、当該テストエントリのみ手動削除で対処すべき'
   origin: '[[cmd_310]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L035
   title: cmd_complete_gate.shの検証で副作用が発火する可能性
   summary: cmd_complete_gate.shはテスト用cmdでもinbox_archiveチェックを走らせる。検証時は運用データに副作用を与え得るため、隔離データま

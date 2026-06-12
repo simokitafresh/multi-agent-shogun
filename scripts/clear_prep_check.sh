@@ -1106,4 +1106,8 @@ else
 fi
 echo "========================"
 
+# /clear前に復帰完了マーカーを削除。次セッションが復帰手順(startup gate)を踏むまで
+# post-shogun-inbox-check.shのRECOVERY INCOMPLETE警告が正しく発火する(残骸の主検知。TTLは安全網)
+rm -f "${SHOGUN_RECOVERY_MARKER:-/tmp/shogun_recovery_complete}"
+
 exit "$( [ "$issues" -gt 0 ] && echo 1 || echo 0 )"
