@@ -360,6 +360,79 @@ YAML
     [[ "$output" != *"idle時自走プロトコルを実行せよ"* ]]
 }
 
+@test "active Codex Context used display is parsed and does not raise STALL" {
+    cat > "$TEST_TMPDIR/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  status: in_progress
+YAML
+    cat > "$TEST_TMPDIR/bin/tmux" <<'MOCK'
+#!/usr/bin/env bash
+case "$1" in
+  list-panes)
+    printf '3 hayate\n'
+    ;;
+  capture-pane)
+    printf 'working\nContext 42%% used\n›\n'
+    ;;
+esac
+MOCK
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"hayate: CTX=42% status=in_progress"* ]]
+    [[ "$output" != *"STALL疑い"* ]]
+}
+
+@test "active Claude CTX display is still parsed and does not raise STALL" {
+    cat > "$TEST_TMPDIR/queue/tasks/kagemaru.yaml" <<'YAML'
+task:
+  status: assigned
+YAML
+    cat > "$TEST_TMPDIR/bin/tmux" <<'MOCK'
+#!/usr/bin/env bash
+case "$1" in
+  list-panes)
+    printf '4 kagemaru\n'
+    ;;
+  capture-pane)
+    printf 'thinking\nCTX:37%%\n❯\n'
+    ;;
+esac
+MOCK
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"kagemaru: CTX=37% status=assigned"* ]]
+    [[ "$output" != *"STALL疑い"* ]]
+}
+
+@test "active pane with unparseable CTX still raises STALL suspicion" {
+    cat > "$TEST_TMPDIR/queue/tasks/hanzo.yaml" <<'YAML'
+task:
+  status: in_progress
+YAML
+    cat > "$TEST_TMPDIR/bin/tmux" <<'MOCK'
+#!/usr/bin/env bash
+case "$1" in
+  list-panes)
+    printf '5 hanzo\n'
+    ;;
+  capture-pane)
+    printf 'working without context meter\n'
+    ;;
+esac
+MOCK
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"hanzo: CTX=EMPTY status=in_progress → STALL疑い"* ]]
+    [[ "$output" == *"ALERT: 1名STALL疑い"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
 # === Test 10: workarounds傾向表示(workaroundあり) ===
 @test "workarounds present → shows category and count" {
     cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'

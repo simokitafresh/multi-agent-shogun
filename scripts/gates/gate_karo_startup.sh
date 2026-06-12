@@ -27,6 +27,31 @@ log_startup_stderr_file() {
     done < "$stderr_file"
 }
 
+karo_startup_extract_ctx_pct() {
+    local output="$1"
+    local ctx_num remaining
+
+    ctx_num=$(printf '%s\n' "$output" | grep -oE 'CTX:[0-9]+%' | tail -1 | grep -oE '[0-9]+' || true)
+    if [ -n "$ctx_num" ]; then
+        printf '%s%%\n' "$ctx_num"
+        return 0
+    fi
+
+    ctx_num=$(printf '%s\n' "$output" | grep -oE 'Context [0-9]+%' | tail -1 | grep -oE '[0-9]+' || true)
+    if [ -n "$ctx_num" ]; then
+        printf '%s%%\n' "$ctx_num"
+        return 0
+    fi
+
+    remaining=$(printf '%s\n' "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+' || true)
+    if [ -n "$remaining" ]; then
+        printf '%s%%\n' "$((100 - remaining))"
+        return 0
+    fi
+
+    return 1
+}
+
 phase_guide_cached() {
     local source_file="${1:?source file required}"
     local cache_name="${2:?cache name required}"
@@ -1104,16 +1129,8 @@ for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
         _tmpf=$(mktemp)
         _CTX_TMPF[$ninja]=$_tmpf
         (
-            tmux capture-pane -t "shogun:2.$pane_idx" -p 2>/dev/null \
-                | awk '
-                    {
-                        while (match($0, /CTX:[0-9]+%/)) {
-                            ctx = substr($0, RSTART + 4, RLENGTH - 4)
-                            $0 = substr($0, RSTART + RLENGTH)
-                        }
-                    }
-                    END { if (ctx != "") print ctx }
-                ' > "$_tmpf"
+            _pane_output=$(tmux capture-pane -t "shogun:2.$pane_idx" -p -J -S -30 2>/dev/null || true)
+            karo_startup_extract_ctx_pct "$_pane_output" > "$_tmpf" || true
         ) &
         _CTX_PIDS+=($!)
     fi
