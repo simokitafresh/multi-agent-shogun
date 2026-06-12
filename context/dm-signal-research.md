@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-06-11 cmd_karo_hotfix_ga047_context_freshness -->
+<!-- last_updated: 2026-06-13 cmd_karo_hotfix_context_freshness_alerts_20260613 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -504,6 +504,21 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 
 ---
 
+## §40. MTD Daily Returns UX / 速報行 (cmd_3332, 2026-06-12)
+
+→ 正本: `/mnt/c/Python_app/DM-signal/docs/spec/mtd-daily-returns-ux.md` / 実装commit: `90331d88` / 本番検証: `a907c26a`
+
+**結論: OPENモードは翌営業日付の速報行を持つ。確定月次研究やCLOSEモード比較では `is_preliminary=true` を除外し、OPENモードのUX/当月確認だけで暫定値として扱う。**
+
+| 項目 | 研究上の扱い | 根拠 |
+|------|--------------|------|
+| `is_preliminary=true` | 確定系列ではない | close→翌open代理値で翌営業日付の速報行を生成 |
+| CLOSEモード | 速報行なし | `/api/mtd` 実装でOPEN用途の暫定表示として扱う |
+| 本番検証 | OPEN/CLOSEスクショ+summary JSONで確認済み | `outputs/prod_checks/cmd_3332/` |
+| 月次/GS/パリティ分析 | 除外または別系列明示 | 確定monthly returnと混ぜるとpartial/MTD差分を誤診する |
+
+---
+
 ## 因果リンク
 
 - ← [[dm-signal]] 研究層
@@ -529,6 +544,7 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 - → [[cmd_3222_VIX深掘りバックテスト]] VIX深掘りバックテスト(cmd_3222)
 - → [[cmd_3223_V8閾値チューニング]] V8閾値チューニング(cmd_3223)
 - → [[cmd_3225_レイヤー別+マネージドボラ]] レイヤー別+マネージドボラ分析(cmd_3225)
+- → [[cmd_3332_MTD速報行]] MTD Daily Returns UX速報行(cmd_3332)
 - → [[cmd-1869-2x2-factor-analysis]] [[cmd-1870-beta-adjusted-2x2]] 2×2因子+β調整(CoDD extract: cmd_1991)
 
 <!-- 軍師idle分析リンク(cmd_3278自動追記) -->
