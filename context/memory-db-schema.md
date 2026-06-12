@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-11 -->
+<!-- last_updated: 2026-06-12 cmd_karo_hotfix_ga050_context_freshness; schema unchanged after 2026-06-12 infra commits -->
 
 # Memory DB Schema
 
