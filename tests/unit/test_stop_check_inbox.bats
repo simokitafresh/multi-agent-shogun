@@ -246,6 +246,36 @@ EOF
     [[ "$output" == *"[shogun/cmd_new] 追加の指示を確認せよ"* ]]
 }
 
+@test "T-SCI-016: unread summary cache invalidates when inbox changes" {
+    cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'EOF'
+messages:
+  - id: msg1
+    from: karo
+    type: task_assigned
+    content: 初回タスクを確認せよ
+    read: false
+EOF
+
+    run_hook '{"stop_hook_active":false}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"初回タスクを確認せよ"* ]]
+
+    sleep 1
+    cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'EOF'
+messages:
+  - id: msg2
+    from: karo
+    type: task_assigned
+    content: 更新後タスクを確認せよ
+    read: false
+EOF
+
+    run_hook '{"stop_hook_active":false}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"更新後タスクを確認せよ"* ]]
+    [[ "$output" != *"初回タスクを確認せよ"* ]]
+}
+
 @test "T-SCI-006: no unread exits cleanly" {
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
 

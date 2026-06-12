@@ -221,8 +221,16 @@ fi
 
 if [[ "$has_unread" == "true" ]]; then
   : > "$idle_flag"
-  # cmd_2111: python3 2回→1回に統合(サブプロセス削減)
-  INBOX_FILE="$inbox_file" SUMMARY_LIMIT_ENV="$SUMMARY_LIMIT" SUMMARY_SNIPPET_LEN_ENV="$SUMMARY_SNIPPET_LEN" UNREAD_COUNT="$unread_count" python3 - <<'PY'
+  _summary_cache="$STATE_DIR/shogun_stop_check_inbox_summary_${agent_id}"
+  if [[ -s "$_summary_cache" && ! "$inbox_file" -nt "$_summary_cache" ]]; then
+    IFS= read -r _cached_summary < "$_summary_cache" || _cached_summary=""
+    if [[ -n "$_cached_summary" ]]; then
+      printf '%s\n' "$_cached_summary"
+    fi
+  else
+    # cmd_2111: python3 2回→1回に統合(サブプロセス削減)
+    # cmd_karo_hotfix_speed_stop_check_inbox_20260613: 同一未読inboxの再Stopでは生成済みJSONを再利用する。
+    INBOX_FILE="$inbox_file" SUMMARY_LIMIT_ENV="$SUMMARY_LIMIT" SUMMARY_SNIPPET_LEN_ENV="$SUMMARY_SNIPPET_LEN" UNREAD_COUNT="$unread_count" python3 - <<'PY' | tee "$_summary_cache"
 import os, json, yaml
 
 inbox_path = os.environ["INBOX_FILE"]
@@ -261,6 +269,7 @@ else:
 
 print(json.dumps({"decision": "block", "reason": reason_text}, ensure_ascii=False))
 PY
+  fi
 else
   # 全ロール共通: inbox未読0でも掲示板action_required未対処/insights pendingがあれば表示
   _bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
