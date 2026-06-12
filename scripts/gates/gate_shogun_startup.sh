@@ -213,6 +213,99 @@ PY
     echo ""
 }
 
+	collect_gate4_yaml_batch() {
+	    local karo_inbox_file="$1"
+	    local inbox_file="$2"
+	    local bulletin_file="$3"
+	    python3 - "$karo_inbox_file" "$inbox_file" "$bulletin_file" shogun <<'PY'
+import re
+import sys
+import yaml
+from pathlib import Path
+
+karo_inbox, shogun_inbox, bulletin_path, agent = sys.argv[1:5]
+
+def load_yaml(path):
+    p = Path(path)
+    if not p.is_file():
+        return {}
+    with p.open(encoding="utf-8") as fh:
+        return yaml.safe_load(fh) or {}
+
+karo_messages = load_yaml(karo_inbox).get("messages") or []
+cmd_new_violations = []
+for msg in karo_messages:
+    if not isinstance(msg, dict):
+        continue
+    if str(msg.get("from", "")).strip() != "shogun":
+        continue
+    if str(msg.get("type", "")).strip() != "cmd_new":
+        continue
+    content = str(msg.get("content", ""))
+    if re.search(r"cmd_\d+", content):
+        continue
+    cmd_new_violations.append((str(msg.get("id", "?")), str(msg.get("timestamp", "?")), content.splitlines()[0][:100]))
+
+shogun_messages = load_yaml(shogun_inbox).get("messages") or []
+gate_clear_pending = []
+for msg in shogun_messages:
+    if not isinstance(msg, dict):
+        continue
+    if msg.get("read") is not False:
+        continue
+    if str(msg.get("type", "")).strip() != "gate_clear":
+        continue
+    content = str(msg.get("content", ""))
+    cmd_match = re.search(r"\bcmd_[A-Za-z0-9_-]+\b", content)
+    cmd_id = cmd_match.group(0) if cmd_match else "cmd不明"
+    gate_clear_pending.append((cmd_id, str(msg.get("id", "?")), str(msg.get("timestamp", "?")), content.splitlines()[0][:80]))
+
+entries = load_yaml(bulletin_path).get("entries") or []
+bulletin_pending = []
+bulletin_action_pending = []
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    status = str(entry.get("status", "")).lower()
+    text = str(entry.get("content", "")).splitlines()
+    head = text[0] if text else ""
+    if status != "closed":
+        is_unactioned_required = (
+            str(entry.get("action_type", "info")).strip() == "action_required"
+            and not str(entry.get("actioned_by", "")).strip()
+        )
+        if is_unactioned_required:
+            bulletin_action_pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
+        if not is_unactioned_required and entry.get("posted_by") != agent:
+            confirmed = entry.get("confirmed_by") or []
+            if agent not in confirmed:
+                rc = entry.get("requires_confirmation", False)
+                if rc:
+                    is_for_agent = agent in rc if isinstance(rc, list) else True
+                else:
+                    is_for_agent = True
+                if is_for_agent:
+                    bulletin_pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
+
+print("##CMD_NEW##")
+print(len(cmd_new_violations))
+for msg_id, ts, head in cmd_new_violations[:10]:
+    print(f"{msg_id}\t{ts}\t{head}")
+print("##GATE_CLEAR##")
+print(len(gate_clear_pending))
+for cmd_id, msg_id, ts, head in gate_clear_pending[:10]:
+    print(f"{cmd_id}\t{msg_id}\t{ts}\t{head}")
+print("##BULLETIN##")
+print(len(bulletin_pending))
+for item in bulletin_pending[:5]:
+    print(item)
+print("##BULLETIN_ACTION##")
+print(len(bulletin_action_pending))
+for item in bulletin_action_pending[:5]:
+    print(item)
+PY
+	}
+
 echo "=== 将軍起動チェック $(date '+%H:%M:%S') ==="
 echo ""
 
@@ -235,8 +328,9 @@ _TMP_DQ_RECENT=$(mktemp) _TMP_WA_RECENT=$(mktemp) _TMP_SKILL_EXEC_RECENT=$(mktem
 _TMP_SCRIPTS_STATUS=$(mktemp) _TMP_GUNSHI_INFO=$(mktemp) _TMP_EVO_SCAN=$(mktemp)
 _TMP_DEFERRED_HOLES=$(mktemp) _TMP_BACKLINK_ZERO=$(mktemp)
 _TMP_THREE_LAYER=$(mktemp) _TMP_THREE_LAYER_STATUS=$(mktemp)
+_TMP_GATE4_YAML=$(mktemp) _TMP_SEMANTIC_NO_MATCH=$(mktemp)
 	_TMP_SCRIPT_INDEX=$(mktemp)
-	trap 'rm -f "$_TMP_CI_RED" "$_TMP_G1" "$_TMP_G2" "$_TMP_G3" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_SCRIPT_INDEX"' EXIT
+	trap 'rm -f "$_TMP_CI_RED" "$_TMP_G1" "$_TMP_G2" "$_TMP_G3" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_GATE4_YAML" "$_TMP_SEMANTIC_NO_MATCH" "$_TMP_SCRIPT_INDEX"' EXIT
 	STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
 	"$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
 	_PID_G1=$!
@@ -255,6 +349,24 @@ _TMP_THREE_LAYER=$(mktemp) _TMP_THREE_LAYER_STATUS=$(mktemp)
 	fi
 	"$GATE_DIR/gate_knowledge_freshness.sh" > "$_TMP_G25" 2>&1 &
 	_PID_G25=$!
+	karo_inbox_file="$SCRIPT_DIR/queue/inbox/karo.yaml"
+	bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
+	inbox_file="$SCRIPT_DIR/queue/inbox/shogun.yaml"
+	(
+	    collect_gate4_yaml_batch "$karo_inbox_file" "$inbox_file" "$bulletin_file" 2>/dev/null || cat <<'EOF'
+##CMD_NEW##
+0
+##GATE_CLEAR##
+0
+##BULLETIN##
+0
+##BULLETIN_ACTION##
+0
+EOF
+	) > "$_TMP_GATE4_YAML" &
+	_PID_GATE4_YAML=$!
+	show_semantic_no_match_metrics > "$_TMP_SEMANTIC_NO_MATCH" 2>&1 &
+	_PID_SEMANTIC_NO_MATCH=$!
 	awk '
 function flush_run() {
     if (current_run != "") {
@@ -562,7 +674,8 @@ else
     fi
     alerts+=("セマンティクスインデックス鮮度: index不在")
 fi
-show_semantic_no_match_metrics
+wait "$_PID_SEMANTIC_NO_MATCH" || true
+cat "$_TMP_SEMANTIC_NO_MATCH"
 
 # --- Gate 3: cmd委任状態 (Step 2.6) ---
 echo "■ cmd委任状態"
@@ -589,96 +702,10 @@ else
     echo "  未読: 0件"
 fi
 
-karo_inbox_file="$SCRIPT_DIR/queue/inbox/karo.yaml"
-bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
-_gate4_yaml_batch=$(python3 - "$karo_inbox_file" "$inbox_file" "$bulletin_file" shogun <<'PY'
-import re
-import sys
-import yaml
-from pathlib import Path
-
-karo_inbox, shogun_inbox, bulletin_path, agent = sys.argv[1:5]
-
-def load_yaml(path):
-    p = Path(path)
-    if not p.is_file():
-        return {}
-    with p.open(encoding="utf-8") as fh:
-        return yaml.safe_load(fh) or {}
-
-karo_messages = load_yaml(karo_inbox).get("messages") or []
-cmd_new_violations = []
-for msg in karo_messages:
-    if not isinstance(msg, dict):
-        continue
-    if str(msg.get("from", "")).strip() != "shogun":
-        continue
-    if str(msg.get("type", "")).strip() != "cmd_new":
-        continue
-    content = str(msg.get("content", ""))
-    if re.search(r"cmd_\d+", content):
-        continue
-    cmd_new_violations.append((str(msg.get("id", "?")), str(msg.get("timestamp", "?")), content.splitlines()[0][:100]))
-
-shogun_messages = load_yaml(shogun_inbox).get("messages") or []
-gate_clear_pending = []
-for msg in shogun_messages:
-    if not isinstance(msg, dict):
-        continue
-    if msg.get("read") is not False:
-        continue
-    if str(msg.get("type", "")).strip() != "gate_clear":
-        continue
-    content = str(msg.get("content", ""))
-    cmd_match = re.search(r"\bcmd_[A-Za-z0-9_-]+\b", content)
-    cmd_id = cmd_match.group(0) if cmd_match else "cmd不明"
-    gate_clear_pending.append((cmd_id, str(msg.get("id", "?")), str(msg.get("timestamp", "?")), content.splitlines()[0][:80]))
-
-entries = load_yaml(bulletin_path).get("entries") or []
-bulletin_pending = []
-bulletin_action_pending = []
-for entry in entries:
-    if not isinstance(entry, dict):
-        continue
-    status = str(entry.get("status", "")).lower()
-    text = str(entry.get("content", "")).splitlines()
-    head = text[0] if text else ""
-    if status != "closed":
-        is_unactioned_required = (
-            str(entry.get("action_type", "info")).strip() == "action_required"
-            and not str(entry.get("actioned_by", "")).strip()
-        )
-        if is_unactioned_required:
-            bulletin_action_pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
-        if not is_unactioned_required and entry.get("posted_by") != agent:
-            confirmed = entry.get("confirmed_by") or []
-            if agent not in confirmed:
-                rc = entry.get("requires_confirmation", False)
-                if rc:
-                    is_for_agent = agent in rc if isinstance(rc, list) else True
-                else:
-                    is_for_agent = True
-                if is_for_agent:
-                    bulletin_pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
-
-print("##CMD_NEW##")
-print(len(cmd_new_violations))
-for msg_id, ts, head in cmd_new_violations[:10]:
-    print(f"{msg_id}\t{ts}\t{head}")
-print("##GATE_CLEAR##")
-print(len(gate_clear_pending))
-for cmd_id, msg_id, ts, head in gate_clear_pending[:10]:
-    print(f"{cmd_id}\t{msg_id}\t{ts}\t{head}")
-print("##BULLETIN##")
-print(len(bulletin_pending))
-for item in bulletin_pending[:5]:
-    print(item)
-print("##BULLETIN_ACTION##")
-print(len(bulletin_action_pending))
-for item in bulletin_action_pending[:5]:
-    print(item)
-PY
-) || _gate4_yaml_batch="##CMD_NEW##
+wait "$_PID_GATE4_YAML" || true
+_gate4_yaml_batch=$(cat "$_TMP_GATE4_YAML" 2>/dev/null)
+if [ -z "$_gate4_yaml_batch" ]; then
+    _gate4_yaml_batch="##CMD_NEW##
 0
 ##GATE_CLEAR##
 0
@@ -686,6 +713,7 @@ PY
 0
 ##BULLETIN_ACTION##
 0"
+fi
 
 # --- Gate 4.05: shogun cmd_new gate bypass history ---
 echo "■ shogun cmd_new gate迂回履歴"
