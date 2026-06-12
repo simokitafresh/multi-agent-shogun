@@ -335,6 +335,39 @@ EOF
     [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
 }
 
+@test "command/files_modified coverage ignores product names that look like file paths" {
+    _write_command_coverage_fixture \
+        "Next.js標準のESLint設定ファイルを追加しnpm run lintの非対話実行を確認" \
+        "  - path: frontend/.eslintrc.json
+    change: added
+  - path: frontend/package.json
+    change: modified" \
+        "frontend"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP (command欄に拡張子付きファイル参照なし)"* ]]
+    [[ "$output" != *"missing: Next.js"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+    [[ "$output" == *"BLOCK_REASONS="* ]]
+}
+
+@test "command/files_modified coverage still checks real uppercase files" {
+    touch "$TEST_PROJECT/README.md"
+
+    _write_command_coverage_fixture \
+        "README.mdを更新" \
+        "  - path: docs/other.md
+    change: modified"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"missing: README.md"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+    [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
+}
+
 @test "command/files_modified coverage excludes execution-only refs (LG037 FP fix)" {
     _write_command_coverage_fixture \
         "SKILL.md 8件のスクリプト参照陳腐化を修正。note_draft.shを実行して確認。report_field_set.shを実行。gate_skill_script_refs.shで検証。" \
@@ -1203,9 +1236,31 @@ EOF
     [ "${BLOCK_REASONS[0]}" = "sasuke:empty_lessons_useful:related=[L001,L002]" ]
 }
 
-@test "CDP production check is required for dm-signal frontend changed files" {
+@test "CDP production check skips branch-only dm-signal frontend changes without deploy evidence" {
     export CMD_PROJECT="dm-signal"
     export CMD_CHANGED_FILES=$'backend/app.py\nfrontend/app/dashboard/page.tsx'
+
+    run run_cdp_production_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP (frontend change detected, but no production deploy/live evidence required)"* ]]
+    [[ "$output" != *"CDP_MEASURE"* ]]
+}
+
+@test "CDP production check is required for dm-signal frontend deploy evidence" {
+    export CMD_PROJECT="dm-signal"
+    export CMD_CHANGED_FILES=$'backend/app.py\nfrontend/app/dashboard/page.tsx'
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_999
+post_deploy_evidence:
+  required: true
+EOF
     mkdir -p "$TEST_PROJECT/scripts/cdp"
     cat > "$TEST_PROJECT/scripts/cdp/cdp_measure.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -1216,7 +1271,7 @@ EOF
 
     run run_cdp_production_check
     [ "$status" -eq 0 ]
-    [[ "$output" == *"REQUIRED: dm-signal frontend change detected"* ]]
+    [[ "$output" == *"REQUIRED: dm-signal frontend change with production deploy/live evidence"* ]]
     [[ "$output" == *"timeout: 900s"* ]]
     [[ "$output" == *"pages: home dashboard summary"* ]]
     [[ "$output" == *"CDP_MEASURE:$TEST_CMD_ID --pages home dashboard summary"* ]]
@@ -1246,6 +1301,8 @@ worker_id: sasuke
 parent_cmd: cmd_999
 files_modified:
   - path: frontend/components/Widget.tsx
+post_deploy_evidence:
+  required: true
 EOF
     mkdir -p "$TEST_PROJECT/scripts/cdp"
     cat > "$TEST_PROJECT/scripts/cdp/cdp_measure.sh" <<'EOF'
@@ -1257,7 +1314,7 @@ EOF
 
     run run_cdp_production_check
     [ "$status" -eq 0 ]
-    [[ "$output" == *"REQUIRED: dm-signal frontend change detected"* ]]
+    [[ "$output" == *"REQUIRED: dm-signal frontend change with production deploy/live evidence"* ]]
     [[ "$output" == *"REPORT_CDP:$TEST_CMD_ID"* ]]
 }
 

@@ -4285,12 +4285,37 @@ def token_has_target_file(token):
                 return True
     return any(os.path.isfile(path) for path in candidates)
 
+def is_probable_product_token(ref):
+    # "Next.js" のようなフレームワーク名をファイル参照として誤検出しない。
+    # スラッシュなし・大文字始まりでも、対象dir/リポジトリ直下に実在するならファイルとして扱う。
+    clean_ref = ref.strip().strip("`'\".,:;()[]{}")
+    if "/" in clean_ref or "\\" in clean_ref:
+        return False
+    stem = os.path.basename(clean_ref).split(".", 1)[0]
+    if not stem[:1].isupper():
+        return False
+    if stem.upper() == stem:
+        return False
+    candidates = []
+    if script_dir:
+        candidates.append(os.path.join(script_dir, clean_ref))
+    for target in target_paths:
+        clean_target = target.strip().strip("./")
+        if not clean_target or not script_dir:
+            continue
+        target_abs = clean_target if os.path.isabs(clean_target) else os.path.join(script_dir, clean_target)
+        if os.path.isdir(target_abs):
+            candidates.extend(glob.glob(os.path.join(target_abs, "**", clean_ref), recursive=True))
+    return not any(os.path.isfile(path) for path in candidates)
+
 matches = list(pattern.finditer(command))
 seen = set()
 refs = []
 for idx, match in enumerate(matches):
     ref = match.group(1).strip().strip("`'\".,:;()[]{}")
     if not ref or ref in seen:
+        continue
+    if is_probable_product_token(ref):
         continue
     seen.add(ref)
     if ref_matches_verified_dependency(ref):
@@ -4528,13 +4553,46 @@ check_command_files_modified_coverage() {
 cmd_requires_cdp_production_check() {
     [ "${CMD_PROJECT:-}" = "dm-signal" ] || return 1
 
+    CDP_SKIP_REASON="project=${CMD_PROJECT:-unknown}, frontend changes not detected"
     {
         printf '%s\n' "${CMD_CHANGED_FILES:-}"
         collect_report_modified_files
     } | awk '
         /^frontend\// || /\/frontend\// { found=1 }
         END { exit found ? 0 : 1 }
-    '
+    ' || return 1
+
+    CDP_SKIP_REASON="frontend change detected, but no production deploy/live evidence required"
+    local task_file ninja_name report_file
+    if declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        for task_file in "${MATCHING_TASK_FILES[@]}"; do
+            [ -f "$task_file" ] || continue
+            ninja_name=$(basename "$task_file" .yaml)
+            report_file=$(resolve_report_file "$ninja_name")
+            [ -f "$report_file" ] || continue
+            if REPORT_FILE="$report_file" python3 - <<'PY' 2>/dev/null
+import os
+import yaml
+
+with open(os.environ["REPORT_FILE"], encoding="utf-8") as f:
+    data = yaml.safe_load(f) or {}
+
+pde = data.get("post_deploy_evidence")
+if not isinstance(pde, dict):
+    raise SystemExit(1)
+
+raw = pde.get("required")
+required = raw if isinstance(raw, bool) else str(raw).strip().lower() in {"1", "true", "yes", "y"}
+raise SystemExit(0 if required else 1)
+PY
+            then
+                CDP_SKIP_REASON=""
+                return 0
+            fi
+        done
+    fi
+
+    return 1
 }
 
 run_cdp_production_check() {
@@ -4547,7 +4605,7 @@ run_cdp_production_check() {
     fi
 
     if ! cmd_requires_cdp_production_check; then
-        echo "  SKIP (project=${CMD_PROJECT:-unknown}, frontend changes not detected)"
+        echo "  SKIP (${CDP_SKIP_REASON:-conditions not met})"
         return 0
     fi
 
@@ -4567,7 +4625,7 @@ run_cdp_production_check() {
             cdp_cmd+=(--pages "${cdp_pages[@]}")
         fi
     fi
-    echo "  REQUIRED: dm-signal frontend change detected"
+    echo "  REQUIRED: dm-signal frontend change with production deploy/live evidence"
     echo "  timeout: ${cdp_timeout}s"
     echo "  pages: ${cdp_pages_raw}"
     if timeout "$cdp_timeout" "${cdp_cmd[@]}"; then

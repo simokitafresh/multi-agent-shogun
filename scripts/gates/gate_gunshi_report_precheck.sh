@@ -827,6 +827,19 @@ try:
         positions = [text.find(marker) for marker in markers if text.find(marker) >= 0]
         return min(positions) if positions else -1
 
+    def is_probable_product_token(ref):
+        clean_ref = ref.strip().strip("`'\".,:;()[]{}")
+        if '/' in clean_ref or '\\' in clean_ref:
+            return False
+        stem = os.path.basename(clean_ref).split('.', 1)[0]
+        if not stem[:1].isupper():
+            return False
+        if stem.upper() == stem:
+            return False
+        # Product/framework names like Next.js should not be treated as file paths.
+        # Keep real files such as README.md by checking repository existence.
+        return not os.path.isfile(os.path.join(repo, clean_ref))
+
     matches = list(pattern.finditer(cmd_text))
     seen = set()
     write_refs = []
@@ -834,6 +847,8 @@ try:
     for idx, match in enumerate(matches):
         ref = match.group(1).strip().strip("`'\".,:;()[]{}")
         if not ref or ref in seen:
+            continue
+        if is_probable_product_token(ref):
             continue
         seen.add(ref)
         sentence_end_candidates = [

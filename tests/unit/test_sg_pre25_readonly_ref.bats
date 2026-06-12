@@ -71,6 +71,15 @@ try:
         positions = [text.find(marker) for marker in markers if text.find(marker) >= 0]
         return min(positions) if positions else -1
 
+    def is_probable_product_token(ref):
+        clean_ref = ref.strip().strip("`'\".,:;()[]{}")
+        if '/' in clean_ref or '\\' in clean_ref:
+            return False
+        stem = os.path.basename(clean_ref).split('.', 1)[0]
+        if not stem[:1].isupper():
+            return False
+        return not os.path.isfile(os.path.join(repo, clean_ref))
+
     matches = list(pattern.finditer(cmd_text))
     seen = set()
     write_refs = []
@@ -78,6 +87,8 @@ try:
     for idx, match in enumerate(matches):
         ref = match.group(1).strip().strip("`'\".,:;()[]{}")
         if not ref or ref in seen:
+            continue
+        if is_probable_product_token(ref):
             continue
         seen.add(ref)
         sentence_end_candidates = [
@@ -230,4 +241,23 @@ PYEOF
     run run_pre25_python "" "a.sh" "nonexistent_cmd"
     echo "output: $output"
     [[ "$output" == *"SKIP"* ]]
+}
+
+@test "AC4: framework names such as Next.js are not treated as file paths" {
+    run run_pre25_python \
+        "Next.js標準のESLint設定ファイルを追加しnpm run lintの非対話実行を確認" \
+        $'frontend/.eslintrc.json\nfrontend/package.json'
+    echo "output: $output"
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" != *"WARN"* ]]
+    [[ "$output" != *"Next.js"* ]]
+}
+
+@test "AC4: real uppercase file names are still checked" {
+    touch "$TEST_TMP/README.md"
+    run run_pre25_python \
+        "README.mdを更新" \
+        "docs/other.md"
+    echo "output: $output"
+    [[ "$output" == *"WARN: README.md"* ]]
 }
