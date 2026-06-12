@@ -56,19 +56,50 @@ for _cbl_path in "${SEARCH_PATHS[@]}"; do
     [ -e "$_cbl_path" ] && existing_search_paths+=("$_cbl_path")
 done
 
+RG_COMMON_ARGS=(
+    --fixed-strings
+    --hidden
+    --glob '!.git/**'
+    --glob '!node_modules/**'
+    --glob '!__pycache__/**'
+    --glob '!docs/obsidian-promoted/**'
+    --glob '*.md'
+    --glob '*.yaml'
+    --glob '*.yml'
+    --glob '*.sh'
+    --glob '*.py'
+    --glob '*.json'
+    --glob '!*.cache.json'
+    --glob '*.txt'
+    --glob '*.bats'
+    --glob '*.toml'
+)
+
+run_backlink_search() {
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        if [ "$DETAIL" -eq 1 ]; then
+            git grep --untracked -n -F "$needle" -- "${existing_search_paths[@]}" 2>/dev/null || true
+        else
+            git grep --untracked -l -F "$needle" -- "${existing_search_paths[@]}" 2>/dev/null || true
+        fi
+        return 0
+    fi
+
+    if [ "$DETAIL" -eq 1 ]; then
+        rg -n "${RG_COMMON_ARGS[@]}" "$needle" "${existing_search_paths[@]}" 2>/dev/null || true
+    else
+        rg -l "${RG_COMMON_ARGS[@]}" "$needle" "${existing_search_paths[@]}" 2>/dev/null || true
+    fi
+}
+
 if [ "$DETAIL" -eq 1 ]; then
     # Show file path + origin/causal_chain context
-    rg --fixed-strings --hidden -n \
-        --glob '!.git/**' \
-        --glob '!node_modules/**' \
-        --glob '!__pycache__/**' \
-        "$needle" "${existing_search_paths[@]}" 2>/dev/null | grep -E 'origin:|causal_chain:|→ \[\[' | head -20
+    run_backlink_search \
+        | grep -E 'origin:|causal_chain:|→ \[\[' \
+        | head -20 \
+        || true
 else
-    rg -l --fixed-strings --hidden \
-        --glob '!.git/**' \
-        --glob '!node_modules/**' \
-        --glob '!__pycache__/**' \
-        "$needle" "${existing_search_paths[@]}" 2>/dev/null
+    run_backlink_search
 fi
 
 # Semantic concept reverse lookup
