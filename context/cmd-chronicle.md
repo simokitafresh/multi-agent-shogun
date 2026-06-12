@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-12 -->
+<!-- last_updated: 2026-06-12 cmd_karo_hotfix_bulletin_lessons_202606121138 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -519,3 +519,4 @@
 | cmd_3311 | 殿指示2026-06-11(directive-20260611-monthly-product-removal.md)のPhase 3を実装する。本体のFE+BE削除は本番反映済み(origin/main=c9ef84d7, momentum_method_keys=0実測済み)。本cmdの範囲はブランチ上の実装と検証まで(リモート反映は別途裁可制)。tmp診断スクリプト削除は指示書§0裁定③で承認済み | dm-signal | 06-12 | wp-mp Phase 3として現役docsのM-/mont |
 | cmd_3312 | 殿裁可(2026-06-12 08:55「実行せよ」)に基づき、検分済みのrefactor/wp-mp(docs 2コミット: aaa6cd25とcmd_3310検証記録345b82ab)をmainへ統合してorigin/mainへ着地させる。docsのみの変更のため不要な本番再起動を避ける統合とする。これでmonthly_product削除WPの全工程が完結する | dm-signal | 06-12 | cmd_3312 docs統合は家老実施済みのorigin/ |
 | cmd_3313 | 調査チーム裁可書(approval-20260611-3-second-report.md §5)の推奨に基づき、全WPを通して対話プロンプトで無効だったnpm run lintを実効化する独立小整備を実装する。WP-3 AC1着手前の前提タスク。本cmdの範囲はブランチ上の実装と検証まで(リモート反映は別途裁可制) | dm-signal | 06-12 | WP-3前提としてNext標準ESLint設定を追加し、np |
+| cmd_3314 | 殿裁可(2026-06-12 10:56「1.2ともにやろう」の1)に基づき、検分済みのrefactor/wp3-lint(設定コミット3fb84577)をmainへ統合してorigin/mainへ着地させる。設定ファイルの変更のため不要な本番再起動を避ける統合とする。注意: 現在禁止窓(00:50-02:10 UTC)内のため、統合実行は窓明け以降に行う | dm-signal | 06-12 | refactor/wp3-lintをmainへfast-fo |
