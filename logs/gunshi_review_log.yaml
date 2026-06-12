@@ -2478,6 +2478,7 @@
     - "事実3: cmd_karo_hotfix(入力堅牢化)にadversarial追記=正当。虚偽遡及0件"
   cs_checklist: [CS1, CS2, CS4, CS6]
   causal_chain: "docs/分析/FE偏重cmd→adversarial該当cmd不足→冷え観点WARN連続→入力耐性=adversarialの意識拡張で解消(正の複利)"
+  operational_simulation: "実運用では直近cmdがdocs/分析/表示中心に偏るとadversarial該当性が薄くWARNが継続する。虚偽遡及ではなく、入力堅牢化hotfixでadversarialを1件記録し、以後scripts変更時は入力耐性もadversarialとして確認する運用で冷えを解消する"
   brainwash_check: "洗脳#5防止: 遡及追記で数値改善する誘惑を拒否。虚偽記載0件=正直な計測"
   altruism_check: not_needed
   origin: "[[adversarial冷え3セッション]] -> [[根因=docs偏重]] -> [[入力耐性拡張]]"
@@ -2645,6 +2646,7 @@
     - "事実3: 直近10件accuracy 50%。本セッションのGA三部作(3件WARN→CLEAR)が直接影響"
   cs_checklist: [CS1, CS2, CS4, CS6]
   causal_chain: "SG-PRE12 lesson_candidate有→WARN→家老先行CLEAR→accuracy 44%。保守的偽陽性であり偽陰性0件→安全側維持が正しい"
+  operational_simulation: "実運用ではlesson_candidate有の報告はSG-PRE12でWARN予測になるが、家老がcmd_complete_gate前に教訓処理すると実結果はCLEARになる。偽陰性0件を維持するためWARN判定は緩和せず、strict accuracy 44%とsafety-adjusted accuracy 100%を分けて扱う"
   brainwash_check: "洗脳#5防止: accuracy低下を放置せず計測。保守的WARN維持は安全だが計測指標の分離が必要"
   altruism_check: not_needed
   origin: "[[gate_prediction_accuracy]] -> [[WARN→CLEAR偽陽性14件]] -> [[計測二分化提案]]"
@@ -2695,6 +2697,7 @@
     - "事実3: mtd-ux PR1-3全完結(cmd_3325/3328/3332)。AC2第二サイクル(cmd_3331)CLEAR。context鮮度三部作(GA-051/052/053)全CLEAR"
   cs_checklist: [CS1, CS4, CS6]
   causal_chain: "15件レビュー全CLEAR→WA=0→家老負担ゼロ→review_log+研究3件+senkyoku-log=環境に埋め込み→/clear後も残る(ラルフループ)"
+  operational_simulation: "次セッションの軍師はreview_log 16件、docs/research 3件、senkyoku-log、掲示板から本セッションの判断根拠を復元できる。adversarial冷えは入力耐性として記録し、gate_predictionはWARN→CLEARを保守的偽陽性として扱うため、/clear後も同じ15件全CLEAR/WA=0の学びを再利用できる"
   brainwash_check: "洗脳#6防止: 出力(レビュー)だけでなく行動(adversarial追記+計測分析永続化)も実施。senkyoku-log追記=次の軍師への引継ぎ完了"
   origin: "[[殿指示_強くてニューゲーム]] -> [[15件全CLEAR+idle2件永続化]] -> [[環境埋込み完了]]"
   timestamp: "2026-06-12T18:50:00"
