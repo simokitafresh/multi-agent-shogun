@@ -5073,7 +5073,7 @@ lessons:
   origin: '[[cmd_1035]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L390
   title: yotsume batch sim(3D mask)はregression。4視点union+forward-fill構造にはboolean mask不適合
   summary: yotsumeは4視点和集合+forward-fill構造。boolean mask化の恩恵を受けない。元々0.31ms/pat(PPE6)で十分高速(248K
@@ -8575,6 +8575,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: タスク設計時のAPI仕様記載は参考情報扱いとし、忍者はbackend/*.pyの実コードを必ず確認すること
   origin: '[[cmd_283]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L120
   title: 外部データ(DTB3)追加はBayes上界を悪化させる(-5.2pp)。情報なき次元追加は次元の呪いで逆効果。MI=0.058bitsの低情報量データは特徴量に加えるべきでない。
   summary: IF saizo(cmd_282,subtask_282_recon_b)時 THEN saizo(cmd_282,subtask_282_recon_b)

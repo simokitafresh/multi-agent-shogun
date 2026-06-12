@@ -1425,6 +1425,13 @@ if [ -f "$INSIGHTS_FILE" ]; then
     if [ "$archivable_count" -ge 5 ]; then
         # 閾値到達時のみテキストベースでアーカイブ実行（yaml.dump禁止準拠 cmd_training_L4_R7）
         # gawkでinsightsブロックをstatus別に分離→テキスト追記/書戻し
+        # flock排他+mktemp一意tmp: SessionStart/UserPromptSubmitの並行起動で固定tmp名のmvが
+        # cannot statで失敗し更新消失するレースの防止(2026-06-12将軍D0。insight_write.shと同一lock)
+        exec 207>>"${INSIGHTS_FILE}.lock"
+        if ! flock -w 5 207; then
+            archive_result="SKIP(insights lock timeout — 並行プロセスがアーカイブ中)"
+            exec 207>&-
+        else
         _ins_tmp_archive=$(mktemp)
         _ins_tmp_remain=$(mktemp)
         _ins_counts=$(gawk -v arc_file="$_ins_tmp_archive" -v rem_file="$_ins_tmp_remain" '
@@ -1463,15 +1470,19 @@ if [ -f "$INSIGHTS_FILE" ]; then
             fi
             cat "$_ins_tmp_archive" >> "$INSIGHTS_ARCHIVE"
         fi
-        # メインファイル書戻し（残留分のみ）
+        # メインファイル書戻し（残留分のみ。tmpはmktempで一意化し並行mv衝突を排除）
+        _ins_rewrite_tmp=$(mktemp "${INSIGHTS_FILE}.rewrite.XXXXXX")
         {
             echo "insights:"
             if [ -s "$_ins_tmp_remain" ]; then
                 cat "$_ins_tmp_remain"
             fi
-        } > "${INSIGHTS_FILE}.tmp" && mv "${INSIGHTS_FILE}.tmp" "$INSIGHTS_FILE"
-        rm -f "$_ins_tmp_archive" "$_ins_tmp_remain"
+        } > "$_ins_rewrite_tmp" && mv "$_ins_rewrite_tmp" "$INSIGHTS_FILE"
+        rm -f "$_ins_tmp_archive" "$_ins_tmp_remain" "$_ins_rewrite_tmp"
         archive_result="ARCHIVED ${_ins_archived}件→insights_archive.yaml, 残${_ins_remaining}件"
+        flock -u 207
+        exec 207>&-
+        fi
     else
         archive_result="アーカイブ対象${archivable_count}件(閾値5未満), pending${remaining_count}件"
     fi

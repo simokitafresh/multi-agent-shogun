@@ -1724,6 +1724,7 @@
   timestamp: "2026-06-12T09:25:00"
 - cmd_id: cmd_3313
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star, ambiguity]
@@ -1739,6 +1740,7 @@
   timestamp: "2026-06-12T09:28:00"
 - cmd_id: cmd_3313
   review_type: report
+  gate_result: CLEAR
   report_ninja: kagemaru
   verdict: LGTM
   gate_result: CLEAR
@@ -1794,6 +1796,8 @@
   timestamp: "2026-06-12T11:00:00"
 - cmd_id: cmd_3314
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]
@@ -1808,6 +1812,8 @@
   timestamp: "2026-06-12T11:06:00"
 - cmd_id: cmd_3314
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   report_ninja: kagemaru
   verdict: LGTM
   gate_result: CLEAR
@@ -1826,6 +1832,8 @@
   timestamp: "2026-06-12T11:18:00"
 - cmd_id: cmd_3315
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star, ambiguity]
@@ -1936,6 +1944,8 @@
   timestamp: "2026-06-12T11:44:00"
 - cmd_id: cmd_3316
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]
@@ -1950,6 +1960,8 @@
   timestamp: "2026-06-12T11:51:00"
 - cmd_id: cmd_3317
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]
@@ -1964,6 +1976,8 @@
   timestamp: "2026-06-12T11:55:00"
 - cmd_id: cmd_3315
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   report_ninja: kagemaru
   verdict: LGTM
   gate_result: CLEAR
@@ -1982,6 +1996,8 @@
   timestamp: "2026-06-12T11:58:00"
 - cmd_id: cmd_3317
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   report_ninja: hanzo
   verdict: LGTM
   gate_result: CLEAR
@@ -2000,6 +2016,8 @@
   timestamp: "2026-06-12T12:02:00"
 - cmd_id: cmd_3316
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   report_ninja: tobisaru
   verdict: LGTM
   gate_result: CLEAR
@@ -2018,6 +2036,8 @@
   timestamp: "2026-06-12T12:05:00"
 - cmd_id: cmd_3318
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]
@@ -2032,6 +2052,8 @@
   timestamp: "2026-06-12T12:10:00"
 - cmd_id: cmd_3319
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]
@@ -2046,6 +2068,8 @@
   timestamp: "2026-06-12T12:26:00"
 - cmd_id: cmd_3318
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   report_ninja: kagemaru
   verdict: LGTM
   gate_result: CLEAR
@@ -2064,6 +2088,8 @@
   timestamp: "2026-06-12T12:29:00"
 - cmd_id: cmd_3319
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   report_ninja: hanzo
   verdict: LGTM
   gate_result: CLEAR
@@ -2082,6 +2108,8 @@
   timestamp: "2026-06-12T12:31:00"
 - cmd_id: cmd_3320
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]
@@ -2096,6 +2124,8 @@
   timestamp: "2026-06-12T12:37:00"
 - cmd_id: cmd_3320
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   report_ninja: tobisaru
   verdict: LGTM
   gate_result: CLEAR
@@ -2114,6 +2144,8 @@
   timestamp: "2026-06-12T12:40:00"
 - cmd_id: cmd_3321
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, premortem, north_star]
@@ -2128,6 +2160,8 @@
   timestamp: "2026-06-12T13:31:00"
 - cmd_id: cmd_3321
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   report_ninja: hayate
   verdict: LGTM
   gate_result: CLEAR
@@ -2145,6 +2179,8 @@
   timestamp: "2026-06-12T13:34:00"
 - cmd_id: cmd_3322
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]
@@ -2159,6 +2195,8 @@
   timestamp: "2026-06-12T13:42:00"
 - cmd_id: cmd_3323
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]
@@ -2173,6 +2211,8 @@
   timestamp: "2026-06-12T13:46:00"
 - cmd_id: cmd_3323
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   report_ninja: hanzo
   verdict: LGTM
   gate_result: CLEAR
@@ -2191,6 +2231,8 @@
   timestamp: "2026-06-12T13:50:00"
 - cmd_id: cmd_3322
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   report_ninja: kagemaru
   verdict: LGTM
   gate_result: CLEAR
@@ -2209,6 +2251,8 @@
   timestamp: "2026-06-12T13:52:00"
 - cmd_id: cmd_3324
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star, ambiguity]
@@ -2223,6 +2267,8 @@
   timestamp: "2026-06-12T14:00:00"
 - cmd_id: cmd_3325
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]
@@ -2237,6 +2283,8 @@
   timestamp: "2026-06-12T14:11:00"
 - cmd_id: cmd_3324
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   report_ninja: kagemaru
   verdict: LGTM
   gate_result: CLEAR
@@ -2259,6 +2307,8 @@
   timestamp: "2026-06-12T14:14:00"
 - cmd_id: cmd_3326
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]
@@ -2273,6 +2323,8 @@
   timestamp: "2026-06-12T14:21:00"
 - cmd_id: cmd_3325
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   report_ninja: hayate
   verdict: FAIL
   gate_result: CLEAR
@@ -2291,6 +2343,8 @@
   timestamp: "2026-06-12T14:34:00"
 - cmd_id: cmd_3326
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   report_ninja: hanzo
   verdict: LGTM
   gate_result: CLEAR
@@ -2313,6 +2367,8 @@
   timestamp: "2026-06-12T14:36:00"
 - cmd_id: cmd_3327
   review_type: draft
+  gate_result: CLEAR
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]
@@ -2341,6 +2397,8 @@
   timestamp: "2026-06-12T14:50:00"
 - cmd_id: cmd_3327
   review_type: report
+  gate_result: CLEAR
+  gate_result: CLEAR
   report_ninja: hanzo
   verdict: LGTM
   gate_result: CLEAR
@@ -2357,3 +2415,68 @@
   ambiguity_points: none
   origin: "[[事後規律LS051]] -> [[--preflight追加cmd_3327]] -> [[LGTM]]"
   timestamp: "2026-06-12T14:51:00"
+- cmd_id: session_20260612_strong_new_game_final
+  review_type: self_study
+  verdict: null
+  finding_categories: [assumptions, adversarial, premortem, north_star, simulation, numbers]
+  findings_summary: "強くてニューゲーム最終。draft15/report14/self_study1/idle1=31件。全CLEAR。SG-PRE25 FAIL強制学習(cmd_3313→3325)。adversarial冷え解消。WA分析永続化"
+  observations:
+    - "事実1: cmd_3313 LGTM→BLOCK(SG-PRE25偽陽性判断誤り)→cmd_3325で正しくFAIL適用=学習完了"
+    - "事実2: WP-3進捗=AC1完了(型分割+style分離)+AC2第一サイクル(ファサード化deep-diff全EP一致)+before基準線採取"
+    - "事実3: インフラ改善=起票検査FP率66.7%→文脈化修理+--preflightモード+cycle health計測修理+PI原理率0→50%"
+    - "事実4: MTD UX=PR1(As-of表示)+PR2(Daily列)着手。設計書駆動直列実装の型確立"
+  cs_checklist: [causal_chain, operational_simulation, brainwash_check]
+  causal_chain: "SG-PRE25偽陽性判断→LGTM→BLOCK→FAIL強制学習→cmd_3325で正しくFAIL→環境埋込み(lesson_candidate送信)"
+  operational_simulation: "次セッション: startup gate OK見込み。SG-PRE25 ERROR→FAIL強制はlesson_candidate経由で教訓化待ち。adversarial冷え=記録徹底で改善中"
+  brainwash_check: "洗脳#1防止: cmd_3313でLGTM→BLOCKを経験し同パターンcmd_3325でFAILを出せた。数値: 31件中BLOCK 1件→家老WA→CLEAR"
+  origin: "[[殿指示_強くてニューゲーム]] -> [[SG-PRE25学習+31件レビュー]] -> [[環境埋込み完了]]"
+  timestamp: "2026-06-12T15:14:00"
+- cmd_id: cmd_3328
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。Feature B Daily列実装。daily計算=ascending sort+portfolio(i)/portfolio(i-1)=設計書一致。bench undefined時リセット=仕様内。レスポンシブhidden md:table-cell=モバイル3列維持。commit 021cab92。テスト3件+全テスト262件PASS"
+  observations:
+    - "事実1: daily計算ロジック=ascending sort後portfolio(i)/portfolio(i-1)。月初行=portfolio(0)。手計算で+2.00%/+2.94%/+2.86%を検証=テスト期待値と一致"
+    - "事実2: benchmark undefined(06/02)→次行benchmarkDaily=row.benchmark(1.03)リセット=+3.00%。previous?.benchmarkがundefinedのため。テスト期待値と一致"
+    - "事実3: hidden md:table-cell付与でモバイル非表示。2段ヘッダー(Portfolio/Benchmark group+Daily/MTD列)。設計書ワイヤーフレームと一致"
+  causal_chain: "MTDテーブル月初来累積のみ→日次変化読めない→Daily列追加(フロントのみ)→表示改善(正の複利:ユーザー暗算不要)"
+  brainwash_check: "洗脳#2防止: git show 021cab92で全203行読了+手計算3点検証。GATE CLEAR既知だが確証バイアスではなくコード実物確認に基づくLGTM"
+  step3_5_verified: true
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_3328]] -> [[Feature_B_Daily列]] -> [[LGTM]]"
+  timestamp: "2026-06-12T15:40:00"
+- cmd_id: cmd_karo_hotfix_skill_fail_rate_escalation_202606121528
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。skill_execution_log L15075の未エスケープ二重引用符(Python traceback含む)がParserError根因。yaml_scalar()にエスケープ実装済みだが既存破損エントリが残存。AC3件=テスト先行+書込/読込両堅牢化+統合テスト。hotfixスコープ適切"
+  observations:
+    - "事実1: yaml_scalar() L22-24はバックスラッシュ/二重引用符/改行をエスケープ済み。L15075は修正前コードで生成された既存破損エントリ"
+    - "事実2: skill_auto_improve.sh L126でyaml.load(CSafeLoader)使用。破損エントリでParserError発生→全ログ読込失敗→startup gate BLOCK"
+    - "事実3: AC2は書込側+読込側の両方を対象(今後入ってもYAML破損しない)。既存破損の修復ではなく防御的読込が主眼"
+  causal_chain: "未エスケープstumbling_points→YAML破損→skill_auto_improve.sh ParserError→startup gate BLOCK 3セッション連続(負の複利)→堅牢化(正の複利)"
+  brainwash_check: "洗脳#2防止: L15075実測+yaml_scalar()現物確認。3セッション連続BLOCK=放置の負の複利を計測済み"
+  ambiguity_points: none
+  origin: "[[skill_execution_log L15075]] -> [[ParserError]] -> [[startup_gate_BLOCK]]"
+  timestamp: "2026-06-12T15:45:00"
+- cmd_id: idle_adversarial_cold_category_20260612
+  review_type: self_study
+  verdict: null
+  finding_categories: [adversarial, assumptions]
+  findings_summary: "adversarial冷え観点WARN分析。11件中10件セキュリティ関連なし→遡及追記不実施。hotfix1件にadversarial追記。入力耐性検証=adversarialの自問追加"
+  observations:
+    - "事実1: 直近10件adversarial使用率20%(2/10)。冷えWARN3セッション連続"
+    - "事実2: 対象11件のうちセキュリティ関連コード変更は1/7cmd(cmd_3324)のみ。cmd_3324 reportは既にadversarial含む"
+    - "事実3: cmd_karo_hotfix(入力堅牢化)にadversarial追記=正当。虚偽遡及0件"
+  cs_checklist: [CS1, CS2, CS4, CS6]
+  causal_chain: "docs/分析/FE偏重cmd→adversarial該当cmd不足→冷え観点WARN連続→入力耐性=adversarialの意識拡張で解消(正の複利)"
+  brainwash_check: "洗脳#5防止: 遡及追記で数値改善する誘惑を拒否。虚偽記載0件=正直な計測"
+  altruism_check: not_needed
+  origin: "[[adversarial冷え3セッション]] -> [[根因=docs偏重]] -> [[入力耐性拡張]]"
+  timestamp: "2026-06-12T15:50:00"

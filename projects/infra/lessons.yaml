@@ -5521,7 +5521,7 @@ lessons:
   origin: '[[cmd_cycle_L4_064]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-11'
+  last_referenced: '2026-06-12'
 - id: L390
   title: embedded PythonのベアexceptはKeyboardInterrupt/SystemExitを隠す
   summary: bash埋込みPythonのtmpファイルcleanupでexcept:を使うとKeyboardInterrupt時にも不要なunlink処理が走る。excep
@@ -8808,6 +8808,9 @@ lessons:
   when: YAML回転処理(古いエントリの刈り込み)を実装する時
   how: echo headerで先にヘッダを書き出してからsed出力を>>追記せよ
   origin: '[[cmd_490]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-12'
 - id: L120
   title: report gateの存在判定はprefix検索+archive探索が必要
   summary: IF report gateで報告ファイルの存在判定を行う時 THEN prefix検索+archive探索を併用せよ
