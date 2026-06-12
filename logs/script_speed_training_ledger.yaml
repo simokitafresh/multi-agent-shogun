@@ -295,13 +295,13 @@ entries:
   status: completed
   before_ms: 14
   after_ms: ''
-  before_real_ms: 2233
-  after_real_ms: 2217
-  real_measurement_command: "3-run avg: /usr/bin/time -f 'real=%e rc=%x' bash scripts/causal_backlinks.sh growth_loop >/tmp/kagemaru_causal_{before,after}.out"
-  test_result: "bash -n scripts/causal_backlinks.sh; bats tests/unit/test_learning_ops_small_consolidated.bats --filter test_causal_backlinks PASS 2/2 SKIP=0; cmd_2818 contract rc=0 lines=1; zero-match rc=0 lines=0"
-  commit: "66f1b0dd0"
+  before_real_ms: 727
+  after_real_ms: 343
+  real_measurement_command: "date +%s%3N around: bash scripts/causal_backlinks.sh セマンティック因果自動化 >/tmp/hanzo_cbl_{before,after}.out (5 runs; before min from 727/..., after min 343)"
+  test_result: "bash -n scripts/causal_backlinks.sh PASS; bats tests/unit/test_semantic_search.bats PASS 28/28 SKIP=0; test_select warns no direct mapping"
+  commit: "3591b3090"
   assigned_to: ""
-  updated_at: "2026-06-12T22:54:19"
+  updated_at: "2026-06-12T23:55:31"
   iteration: 1
 - script_path: scripts/cdp/cdp_benchmark.sh
   status: pending
