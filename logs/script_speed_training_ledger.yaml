@@ -292,16 +292,16 @@ entries:
   updated_at: "2026-06-08T03:50:29"
   iteration: 1
 - script_path: scripts/causal_backlinks.sh
-  status: pending
+  status: completed
   before_ms: 14
   after_ms: ''
-  before_real_ms: 265
-  after_real_ms: ""
-  real_measurement_command: bash scripts/causal_backlinks.sh growth-loop
-  test_result: bash -n PASS; normal/detail/semantic smoke PASS SKIP=0
-  commit: 7c8b2f130368c9a25420f82562c70b40f813f063
+  before_real_ms: 2233
+  after_real_ms: 2217
+  real_measurement_command: "3-run avg: /usr/bin/time -f 'real=%e rc=%x' bash scripts/causal_backlinks.sh growth_loop >/tmp/kagemaru_causal_{before,after}.out"
+  test_result: "bash -n scripts/causal_backlinks.sh; bats tests/unit/test_learning_ops_small_consolidated.bats --filter test_causal_backlinks PASS 2/2 SKIP=0; cmd_2818 contract rc=0 lines=1; zero-match rc=0 lines=0"
+  commit: "66f1b0dd0"
   assigned_to: ""
-  updated_at: "2026-06-08T03:50:31"
+  updated_at: "2026-06-12T22:54:19"
   iteration: 1
 - script_path: scripts/cdp/cdp_benchmark.sh
   status: pending
