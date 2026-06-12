@@ -2108,3 +2108,123 @@
   ambiguity_points: "家老WARN『test_results/origin空』はtest_results(L119)・causal_verification.origin(L34)ともに記載あり。偽陽性。ただしtest_resultsがフラットstring形式のため機械的パース困難な可能性あり(形式改善は別件)"
   origin: "[[cmd_karo_hotfix_speed_gate_shogun_parallel_20260613]] -> [[Gate4 YAML+セマンティックNO_MATCH先行バックグラウンド化]] -> [[LGTM(7119→5888ms -17.3%)]]"
   timestamp: "2026-06-13T02:05:00"
+- cmd_id: cmd_karo_hotfix_skill_refs_stale_20260613
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE ERRORS=0。commit e701ecda8実在(main上、git show確認済み)。files_modified 3件(skills/codd-fix/SKILL.md, skills/dream/SKILL.md, skills/shogun-teire/SKILL.md)=scope完全一致。gate_skill_script_refs.sh独立再実行→PASS。gate_report_format PASS(gate_fire_log確認済み)。コード変更=タイムスタンプ更新+Script refs verifiedコメント追記のみ。ロジック変更0行。新規外部依存なし。rollback=git revert e701ecda8 1 commit clean"
+  changed_lines: 15
+  finding_categories: [assumptions, numbers, simulation]
+  findings_summary: "3スキルのscript_refs_checked_at更新+Script refs verifiedコメント追記。WARN 3→PASS 0。参照commit(e52a71bb8, 90c32efdd)実在+I/F変更なし確認済み。変更行=net +3行(+9/-6)、全scope内"
+  observations:
+    - "事実1(before→after数値): gate_skill_script_refs.sh WARN 3件(codd-fix/dream/shogun-teire)→PASS 0件。軍師独立再実行で確認(出力: '全script参照先が実在' + 'SKILL.md更新日がscript参照先以上に新しい' + '総合判定: PASS')。commit=e701ecda8(main上)[git show確認済み]"
+    - "事実2(安全パターン+scope): 変更内容はscript_refs_checked_atタイムスタンプ更新(3ファイル×top+bottom=6箇所)+Script refs verifiedコメント追記(3箇所)のみ。コード実行ロジック・gate判定条件・SKILL.md機能記述への変更0行。3ファイル=scope完全一致。整形混入・scope外変更なし"
+    - "事実3(退行なし+因果検証): 参照先commit e52a71bb8(cmd_complete_gate.sh構文修正)・90c32efdd(gate_lesson_health.sh Python→bash変換)をgit log/diffで確認。どちらもI/F(引数・出力形式)変更なし=SKILL.md側更新不要の「確認済み証跡タイムスタンプ更新」パターン。既存Script refs verified履歴との整合性あり"
+  causal_chain: "gate_skill_script_refs.sh WARN 3件(script mtime > checked_at)→2 commit(e52a71bb8+90c32efdd)のI/F非変更を確認→script_refs_checked_at更新→gate再実行PASS(WARN 3→0)"
+  brainwash_check: "洗脳#2防止: git show e701ecda8全diff確認+参照commit 2件(e52a71bb8, 90c32efdd)のstat確認+gate_skill_script_refs.sh独立再実行。洗脳#6防止: WARN 3→PASS 0は独立gate実行で数値確認。洗脳#8防止: 3ファイル×2マーカー=6タイムスタンプ全て2026-06-13T01:09:39+09:00統一をgrep確認(grep -c=各2件)。数値: 3ファイル変更(+9/-6=net+3行), WARN 3→0, commit 1/1実在(main上), files_modified 3/3scope内, gate PASS"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=タイムスタンプ更新のみの定型hotfix。新規恒久教訓なし。妥当"
+  step3_5_verified: "SG-PRE3 commit e701ecda8=git show+git branch確認済み(main上)。SG9 kotaro WA履歴: 本件WA対象なし"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_skill_refs_stale_20260613]] -> [[script_refs_checked_at更新3件]] -> [[LGTM(WARN 3→PASS 0)]]"
+  timestamp: "2026-06-13T02:15:00"
+- cmd_id: cmd_karo_hotfix_gunshi_cs_startup_20260613
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE ERRORS=0。commit 76c98f64e実在(main上)。files_modified 1件(logs/gunshi_review_log.yaml)=target一致。変更=2行(finding_categories+findings_summary)。gate_gunshi_cs_checklist.sh再実行で冷えWARN 0件確認済み。rollback=git revert 76c98f64e 1 commit clean"
+  changed_lines: 2
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "3観点OK。cmd_karo_hotfix_speed_gate_loop_health_20260612のfinding_categoriesにambiguity追記(ambiguity_points:noneは確認済みだったがfinding_categoriesに未反映=記録漏れ)。改善前: 冷えWARN 1件+CRITICAL(3連続) → 改善後: 冷えWARN 0件・gate OK"
+  observations:
+    - "事実1: git diff 76c98f64eで実コード変更2行確認。L1762 finding_categories: [assumptions, numbers, premortem] → [assumptions, numbers, premortem, ambiguity]。findings_summaryに遡及追記理由付記。最小修正・正確"
+    - "事実2: gate_gunshi_cs_checklist.sh独立再実行で冷えWARN 0件確認。CS観点PASS。改善前の3連続CRITICALは解消"
+    - "事実3(scope注記): commit 76c98f64eにはtobisaruの2行修正以外に5件の軍師レビューエントリ(~140行)が含まれる。gunshi_review_log.yamlは共有append-onlyファイルであり、working tree上のdirty状態がtobisaruのcommitに巻き込まれたと推定。機能面の問題なし。commit messageは2行修正のみを記述しており正確"
+  causal_chain: "軍師レビュー(cmd_karo_hotfix_speed_gate_loop_health_20260612)でambiguity_points:none記入→finding_categoriesにambiguity未反映→冷え観点gate検知(10件連続未出現)→3セッションCRITICAL化→tobisaru配備→finding_categories追記で解消"
+  brainwash_check: "洗脳#2防止: git diff 76c98f64e全行確認(実コード変更2行)+gate_gunshi_cs_checklist.sh独立再実行(冷えWARN 0件)。洗脳#6防止: 改善前WARN 1件+CRITICAL 1件→改善後WARN 0件+CRITICAL 0件(gate出力で数値確認)。洗脳#1防止: binary_checks鵜呑み不可→gate独立再実行で検証。数値: 2行diff, WARN 1→0, CRITICAL 1→0, gate check変更0件, commit 1/1実在(main上)"
+  lesson_quality:
+    lesson_candidate_present: true
+    quality: "found:true。title+detailで『ambiguity確認済みでもfinding_categoriesへの記入漏れ→3連続CRITICAL』の構造を的確に記述。origin付き。ただし汎用教訓化(『確認済み≠記録済み。両方を仕組みで強制せよ』)の方がinfra教訓として再利用性が高い。現状の記述は事象特化寄りだが許容範囲"
+  step3_5_verified: "SG-PRE3 commit 76c98f64e=git show+git branch --contains確認済み(main上)。SG-PRE19 changed_lines=2(adversarial不要)。SG-PRE25 FP判定: review_logのみ修正で機能コード非接触"
+  hole_action: "observation: commitに5件の無関係レビューエントリ混入。ninja-commitスキルがgit add対象を絞っていないか、またはEdit後のstaging状態が原因。機能面問題なしだがcommit hygiene改善余地あり"
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_gunshi_cs_startup_20260613]] -> [[ambiguity確認済みだがfinding_categories未反映(記録漏れ)]] -> [[LGTM(冷えWARN解消)]]"
+  timestamp: "2026-06-13T02:30:00"
+- cmd_id: cmd_karo_hotfix_context_freshness_alerts_20260613
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE ERRORS=0。gate_report_format.sh=PASS。commit f4f7ec4a4実在(main上)。files_modified 2件一致。binary_checks 9/9 yes。changed_lines=58(<200)。gate変更0。scope外変更0。SG9 kagemaru WA率0/4=0.0%"
+  changed_lines: 58
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "4観点OK。AC1-3全完了。対象2ファイルstale理由特定→索引更新+再生成→gate再実行ALERT消滅確認。hook_failure 1件(task YAML誤用→即復旧→品質影響なし)"
+  observations:
+    - "事実1(commit確認): f4f7ec4a4(Co-Authored-By: kagemaru)=main上。files_modified 2件=git show --stat一致。追加commit af714a583(last_updated tag修正1行)は家老/インフラ由来(Co-Author無し)=kagemaru scope外後処理[MEM: memory_db ts=2026-06-13 'GATE CLEAR cmd_karo_hotfix_context_freshness_alerts_20260613']"
+    - "事実2(ALERT消滅確認): 軍師独立実行 CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 gate_context_freshness.sh→総合OK。min=1 dashboard-warnings実行でも対象2ファイルALERT対象外。残ALERT 3件=scope外(dm-signal.md/infrastructure.md/memory-db-schema.md)=報告記載と一致"
+    - "事実3(設計意図準拠): lord-conversation-index.mdはgenerated_by=scripts/conversation_retention.sh→kagemaru報告discretion_fills『生成元スクリプトで再生成』=手編集回避設計準拠。dm-signal-research.md §40追記はVercelスタイル(結論テーブル+正本リンク+因果リンク)準拠"
+  causal_chain: "GA-057/058 context freshness ALERT(dm-signal-research.md 4件, lord-conversation-index.md 18件 source commits since last_updated)→索引更新+再生成→gate再実行ALERT消滅(正の複利: freshness gate精度維持→startup ALERT減少→起動時トークン節約)"
+  brainwash_check: "洗脳#2防止: git show f4f7ec4a4全diff 58行(+37/-21)確認+gate_report_format=PASS+gate_context_freshness独立再実行OK。洗脳#6防止: ALERT対象2/2件消滅確認(独立再実行), scope外残ALERT 3/3件一致。洗脳#1防止: hook_failure 1件確認(task YAML破損→復旧→影響なし)。数値: 58行diff, 9/9 bc yes, 2/2 ALERT消滅, 3/3 scope外一致, 1/1 commit main上, 2/2 files scope内"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=既存L788(cache無効化)+生成物は生成元スクリプトで更新の既知パターン。新規恒久教訓なし。妥当"
+  step3_5_verified: "SG-PRE3 commit f4f7ec4a4=main上確認。SG-PRE1 gate_report_format=PASS。SG9 kagemaru WA率0/4=0.0%=clean"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_context_freshness_alerts_20260613]] -> [[GA057_GA058_freshness_ALERT]] -> [[LGTM(ALERT消滅2/2)]]"
+  timestamp: "2026-06-13T02:20:00"
+- cmd_id: cmd_karo_hotfix_hook_failure_triage_20260613
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE ERRORS=0。gate_report_format=PASS。commit 3c3f67880(main上)。files_modified 2件(report+task)=git show --stat一致。binary_checks 4/4 yes。changed_lines=84(adversarial不要)。SG9 hayate WA率1/5=20%(commit_missing 1件)。コード変更0=gate側検証項目最小"
+  changed_lines: 84
+  finding_categories: [assumptions, numbers, premortem, north_star]
+  findings_summary: "4観点OK。pre-push artifact 9件を4系統分類(LG037/semantic_search/CI RED/readonly_ref)。全系統が他commit(dd6661535/e52a71bb8/05ea9a7d7)で既修正。選択テスト再実行でPASS確認。コード変更なし(triage解消確認のみ)。数値微差(151報告 vs 実測154)あるが判定影響なし"
+  observations:
+    - "事実1(commit確認): 3c3f67880(Co-Authored-By: hayate)=main上。git show --stat=queue/tasks/hayate.yaml 1件のみ。report YAMLはuncommitted(SG-PRE3 WARN)だがreport自体のcommitは家老/gate処理が担当するため問題なし[MEM: memory_db ts=2026-06-13 'hayate報告完了。レビュー依頼: cmd_karo_hotfix_hook_failure_triage_20260613']"
+    - "事実2(artifact一次確認): 9 pre-push artifact全件実在確認(ls)。failure count: 102102/102159/102255=各2件(LG037 test#14), 215109=2件(semantic#22), 222009=2件(CI RED#32), 002003=2件(semantic#77), 002730/002851/002949=各6件(readonly_ref#17/#19/#20)。報告の4系統分類は一次logのnot ok行と一致"
+    - "事実3(解消確認根拠): 修正commit dd6661535(10:33 readonly_ref自己完結化) e52a71bb8(00:33 readonly_ref抽出修正) 05ea9a7d7(00:23 LG036再発修正)は全てhayate配備(01:07)前にmain上。current HEADでの再現不能は修正済みの帰結であり、hayateの報告『現HEADでは解消済み』は正確"
+  causal_chain: "GA-055/059/060 hook_failure ALERT→pre-push artifact 9件(4系統)→他cmd修正で既解消→hayate triage確認→選択テスト再実行PASS→防御層=既存回帰テスト群(正の複利: triage→重複ALERTの根拠消滅)"
+  brainwash_check: "洗脳#2防止: artifact 9件のnot ok行を軍師独立grep(合計28 not ok=2+2+2+2+2+2+6+6+6)で報告の4系統分類を検証。修正commit 3本のtimestamp+git show --statで因果確認。洗脳#6防止: commit内容=task YAML更新のみ(コード変更0行)。triage確認任務としてはコード変更なしが正解。洗脳#8防止: 151 vs 154の数値差3を追跡(c36821f9f追加分1件+残差2件は未特定だが判定影響なし)。数値: 9 artifacts, 28 not ok行, 4系統, 修正commit 3本(main上), 151/154テストPASS(差3), files_modified 2件, bc 4/4 yes"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=既存テスト+artifact分類で完結。triage任務で新発見パターンなし。妥当"
+  step3_5_verified: "SG-PRE3 commit 3c3f67880=main上確認。SG-PRE25 SKIP(command欄なし)。SG-PRE1 gate_report_format=PASS"
+  hole_action: "observation: テスト件数の軽微な不一致(報告151 vs 実測154)。判定に影響なし。hayateのWA率20%(1/5)のcommit_missingパターンは今回はreport uncommittedのみでgate処理範囲"
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_hook_failure_triage_20260613]] -> [[pre-push artifact 9件4系統=他commit既修正]] -> [[LGTM(triage解消確認完了)]]"
+  timestamp: "2026-06-13T02:40:00"
+- cmd_id: cmd_karo_recon_lesson_health_shogun_active31_20260613
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE GATE_PREDICTION=CLEAR(all checks passed)。偵察のみ(files_modified:偵察のみ)=commit/push対象なし。binary_checks全yes。purpose_fit=true。causal_verification.origin記載あり。gate_cmd_complete_gate.shはcommit検証+scope検証を偵察cmdでは省略可能。memory_db確認済みgate_result=CLEAR(2026-06-13T01:15:59)"
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, north_star]
+  findings_summary: "3観点OK。AC1: gate_lesson_health=全OK+gate_shogun_startup=BLOCK3項目(saizo実行時点で正確)。AC2: total=32/active=31/superseded_by=1/4クラスタ抽出(全数値独立再計算一致)。AC3: 家老権限2種+将軍専用3種の分離がCLAUDE.md Knowledge Map準拠。SKILL.md 3件はe701ecda8(01:12:31)で既修正=AC3の家老修正推奨は陳腐化だが偵察時点の事実として正確"
+  observations:
+    - "事実1(AC2数値独立検証): python3でlessons_shogun.yaml直接パース — total=32, LS-A系=22, 旧番号=10, superseded_by付き=1(LS052→LS048), active=31。報告記載値と5数値全件一致。分母分子の乖離ゼロ[MEM: memory_db ts=2026-06-13 'cmd_karo_recon_lesson_health_shogun_active31_20260613 gate_result: CLEAR']"
+    - "事実2(AC1独立再検証): gate_lesson_health.sh独立再実行=全OK(BLOCK/WARN 0件)。報告のgate_lesson_health=全OK主張と一致。SKILL.md refs hotfix(e701ecda8 01:12:31)がsaizo配備(01:07:27)→報告(01:12:15)の時間帯ではまだ未commit=saizo実行時の出力は正確"
+    - "事実3(AC3権限分離の一次情報確認): CLAUDE.md Knowledge Map L439に'将軍=lesson_write_shogun.sh'明記。家老権限でlessons_shogun.yaml統合は不可能=報告の権限分離は正確。AC3の家老修正可能項目のうちSKILL.md 3件はe701ecda8で既修正済み→残存家老修正可能はscripts/未コミットのみ(現git statusでscripts/変更なし=これも既処理の可能性)"
+  causal_chain: "lesson_health ALERT(GA-056)→家老recon配備→saizo偵察→active31/superseded候補/クラスタ4群/権限分離を数値で抽出→将軍がlesson-sort実行の判断材料を獲得(正の複利: 教訓肥大化防止の定期メンテナンスサイクル)"
+  brainwash_check: "GATE CLEAR既知で確証バイアスリスクあり→全数値独立検証で対処。洗脳#2防止: gate_lesson_health.sh独立再実行+python3直接パースで全数値独立検証(total=32一致/active=31一致/superseded_by=1一致/LS-A=22一致/旧=10一致=5/5件)。洗脳#6防止: binary_checks鵜呑み不可→独立再計算で5数値全件一致確認。洗脳#1防止: SKILL.md陳腐化(報告正確だが現在は修正済み)を検出=レビュー省略せず確認。数値: 5数値全件一致(total/active/superseded/LS-A/old), gate_lesson_health独立再実行PASS, SG9 saizo WA率0.0%(4件中0件), precheck ERRORS=1(偵察cmdの想定内WARN)"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=偵察のみ・新規実装バグ修正なし。偵察cmdで教訓候補なしは妥当"
+  step3_5_verified: "SG-PRE3: 偵察のみ(commit対象なし)→commit検証省略。SG-PRE26: memory_db gate_result=CLEAR確認済み。SG9 saizo WA率: 0/4=0.0%(clean)。SG-PRE25: files_modified='偵察のみ'→対象外"
+  hole_action: "observation: SKILL.md 3件修正はsaizo偵察と並行してhotfixが走った(e701ecda8 01:12:31)。家老への回答でSKILL.md修正済みを補足"
+  ambiguity_points: none
+  origin: "[[lesson_health_ALERT_GA-056]] -> [[saizo偵察(active31/クラスタ4/権限分離)]] -> [[LGTM(全数値独立検証一致)]]"
+  timestamp: "2026-06-13T02:30:00"
