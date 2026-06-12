@@ -21,20 +21,18 @@ IDLE_COUNT=0
 IDLE_NAMES=""
 PI_RATIO="?"
 
-# --- 1. 未消化insights aging check (resolved除外) ---
+# --- 1. 未消化insights aging check (pendingのみ)
 if [ -f queue/insights.yaml ]; then
-    read -r TOTAL_INSIGHTS RESOLVED < <(
+    read -r INSIGHT_COUNT < <(
         awk '
-            /^- / { total++ }
-            /status: resolved/ { resolved++ }
-            END { print total + 0, resolved + 0 }
+            /status: pending/ { pending++ }
+            END { print pending + 0 }
         ' queue/insights.yaml
     )
-    INSIGHT_COUNT=$((TOTAL_INSIGHTS - RESOLVED))
     if [ "$INSIGHT_COUNT" -gt 15 ]; then
-        ALERTS+=("insights: ${INSIGHT_COUNT}件未消化(閾値15, resolved除外)。気づきが行動に変わっていない")
+        ALERTS+=("insights: ${INSIGHT_COUNT}件未消化(閾値15, pendingのみ)。気づきが行動に変わっていない")
     elif [ "$INSIGHT_COUNT" -gt 5 ]; then
-        INFOS+=("insights: ${INSIGHT_COUNT}件(正常範囲, resolved除外)")
+        INFOS+=("insights: ${INSIGHT_COUNT}件(正常範囲, pendingのみ)")
     fi
 fi
 
@@ -135,10 +133,16 @@ fi
 if [ -f projects/dm-signal.yaml ]; then
     # Optimized: python3(80ms) → awk(6ms) cmd_1955
     PI_RATIO=$(awk '
-    /^  entries:/{in_pi=1; next}
-    in_pi && /^    - /{found++}
-    in_pi && /implication:/ && /全て|原理|適用される|信頼境界|任意の/{principle++}
-    /^[^ ]/{if(in_pi) in_pi=0}
+    /^production_invariants:/ { in_section=1; next }
+    in_section && /^  entries:/ { in_pi=1; next }
+    in_section && /^[^ ]/ { in_section=0; in_pi=0 }
+    in_pi && /^  [a-zA-Z_]+:/ && $1 != "entries:" { in_pi=0 }
+    in_pi && /^    - / {
+        found++
+        if ($0 ~ /(implication|fact):/ && $0 ~ /全て|原理|適用される|信頼境界|任意の/) principle++
+        next
+    }
+    in_pi && /(implication|fact):/ && /全て|原理|適用される|信頼境界|任意の/ { principle++ }
     END{
         if(found>0) printf "%d\n", 100*principle/found
         else print "0"

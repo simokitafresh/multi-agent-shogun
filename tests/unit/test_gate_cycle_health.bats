@@ -140,6 +140,19 @@ EOF
     [[ "$output" == *"PI原理率: 100%"* ]]
 }
 
+@test "PI ratio supports inline fact entries" {
+    cat > "$TEST_TMPDIR/projects/dm-signal.yaml" <<'EOF'
+production_invariants:
+  detail: "inline fact structure"
+  entries:
+    - {id: PI-001, fact: "全てのPFで適用される原理"}
+    - {id: PI-002, fact: "特定PFだけの個別防御"}
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PI原理率: 50%"* ]]
+}
+
 # === Test 5: 複合ALERT (idle + GATE未処理同時) ===
 @test "compound ALERT: idle + pending reports" {
     # idle ninjas
@@ -209,21 +222,28 @@ EOF
 
 # === Test 8: insights > 15 → ALERT ===
 @test "insights > 15 → ALERT" {
-    # Create insights.yaml with 18 entries (16 unresolved + 2 resolved)
+    # Create insights.yaml with 20 entries (16 pending + 2 resolved + 2 done)
     {
+        echo "insights:"
         for i in $(seq 1 16); do
             echo "- id: insight_$i"
             echo "  content: test insight $i"
+            echo "  status: pending"
         done
         echo "- id: insight_17"
         echo "  status: resolved"
         echo "- id: insight_18"
         echo "  status: resolved"
+        echo "- id: insight_19"
+        echo "  status: done"
+        echo "- id: insight_20"
+        echo "  status: done"
     } > "$TEST_TMPDIR/queue/insights.yaml"
 
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
     [[ "$output" == *"insights: 16件未消化"* ]]
+    [[ "$output" == *"pendingのみ"* ]]
     [[ "$output" == *"気づきが行動に変わっていない"* ]]
 }
 
