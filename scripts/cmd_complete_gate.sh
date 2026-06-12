@@ -4442,8 +4442,12 @@ collect_task_readonly_refs() {
                 if (v != "" && v !~ /^(path|file|reason|category):/) print v
             }
         ' "$task_file" 2>/dev/null || true
-    done | awk 'NF && !seen[$0]++'
-}
+    done
+    # Global readonly refs: speed training infrastructure (measurement tools, not modification targets)
+    # LG036 recurrence x4: bash_speed_training.sh誤含→BLOCK。計測ツールは常にreadonly
+    echo "tools/bash_speed_training.sh"
+    echo "logs/script_speed_training_ledger.yaml"
+} | awk 'NF && !seen[$0]++'
 
 check_command_files_modified_coverage() {
     level_heading "[L3]" "Command/files_modified coverage check:"
