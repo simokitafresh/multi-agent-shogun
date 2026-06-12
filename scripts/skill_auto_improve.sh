@@ -107,6 +107,46 @@ def _cache_path(log_path):
     return Path(tempfile.gettempdir()) / f"skill_auto_improve_cache_{digest}.json"
 
 
+def _parse_log_scalar(raw):
+    value = str(raw or "").strip()
+    if not value:
+        return ""
+    if value.startswith('"'):
+        body = value[1:]
+        if body.endswith('"'):
+            body = body[:-1]
+        return body.replace("\\n", "\n").replace('\\"', '"').replace("\\\\", "\\")
+    if value.startswith("'") and value.endswith("'"):
+        return value[1:-1].replace("''", "'")
+    return value
+
+
+def _load_entries_lenient(path):
+    entries = []
+    current = None
+    try:
+        lines = Path(path).read_text(encoding="utf-8").splitlines()
+    except FileNotFoundError:
+        return entries
+    for line in lines:
+        if line.startswith("- "):
+            if isinstance(current, dict):
+                entries.append(current)
+            current = {}
+            rest = line[2:]
+            if ":" in rest:
+                key, value = rest.split(":", 1)
+                current[key.strip()] = _parse_log_scalar(value)
+            continue
+        if current is None or not line.startswith("  ") or ":" not in line:
+            continue
+        key, value = line.strip().split(":", 1)
+        current[key.strip()] = _parse_log_scalar(value)
+    if isinstance(current, dict):
+        entries.append(current)
+    return entries
+
+
 def load_entries(path):
     try:
         stat = Path(path).stat()
@@ -124,9 +164,11 @@ def load_entries(path):
     try:
         with open(path, encoding="utf-8") as fh:
             data = yaml.load(fh, Loader=_yaml_loader) or {}
+        entries = [entry for entry in (data.get("executions") or []) if isinstance(entry, dict)]
+    except yaml.YAMLError:
+        entries = _load_entries_lenient(path)
     except FileNotFoundError:
         return []
-    entries = [entry for entry in (data.get("executions") or []) if isinstance(entry, dict)]
     try:
         cache_file.write_text(
             json.dumps({"key": list(cache_key), "entries": entries}, ensure_ascii=False),

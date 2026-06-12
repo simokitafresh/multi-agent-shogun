@@ -143,6 +143,43 @@ EOF
     [[ "${lines[2]}" == "report-write | 1 | 2026-05-02T10:01:00+0900 | field empty" ]]
 }
 
+@test "skill log readers tolerate legacy unescaped traceback quotes" {
+    cat > "$TEST_SKILL_LOG" <<'EOF'
+executions:
+- ts: "2026-06-11T21:47:20+0900"
+  skill: "note-draft"
+  executor: "shogun"
+  result: "FAIL"
+  used: "true"
+  stumbling_points: "Python exit 1:   File "<stdin>", line 143, in login_if_needed
+RuntimeError: reCAPTCHA challenge"
+  gate: "none"
+  source: "note_draft.sh"
+  skill_path: "/tmp/skills/note-draft/SKILL.md"
+- ts: "2026-06-11T21:50:13+0900"
+  skill: "report-write"
+  executor: "kagemaru"
+  result: "FAIL"
+  used: "true"
+  stumbling_points: "Traceback (most recent call last):\n  File \"<stdin>\", line 1, in <module>\nValueError: \"quoted\""
+  gate: "gate_report_format"
+  source: "queue/reports/kagemaru_report_cmd_1.yaml"
+  skill_path: "$TEST_TMPDIR/skills/report-write/SKILL.md"
+EOF
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$SKILL_LOG_SCRIPT" summary
+    [ "$status" -eq 0 ]
+    [[ "${lines[0]}" == "skill | fail_count | last_fail | top_stumbling_point" ]]
+    [[ "$output" == *"note-draft | 1 | 2026-06-11T21:47:20+0900 | Python exit 1:   File \"<stdin>\", line 143, in login_if_needed"* ]]
+    [[ "$output" == *"report-write | 1 | 2026-06-11T21:50:13+0900 | Traceback (most recent call last):"* ]]
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 10
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"report-write | 1 | 1 | 2026-06-11T21:50:13+0900 | gate_report_format | Traceback (most recent call last):"* ]]
+}
+
 @test "skill aggregation excludes used false FAIL entries" {
     mkdir -p "$TEST_TMPDIR/skills/report-write" "$TEST_TMPDIR/skills/dashboard-update"
     cat > "$TEST_TMPDIR/skills/report-write/SKILL.md" <<'EOF'

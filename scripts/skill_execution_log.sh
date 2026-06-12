@@ -61,13 +61,55 @@ import yaml
 
 path = sys.argv[1]
 print("skill | fail_count | last_fail | top_stumbling_point")
+
+def parse_log_scalar(raw):
+    value = str(raw or "").strip()
+    if not value:
+        return ""
+    if value.startswith('"'):
+        body = value[1:]
+        if body.endswith('"'):
+            body = body[:-1]
+        return body.replace("\\n", "\n").replace('\\"', '"').replace("\\\\", "\\")
+    if value.startswith("'") and value.endswith("'"):
+        return value[1:-1].replace("''", "'")
+    return value
+
+def load_entries_lenient(log_path):
+    entries = []
+    current = None
+    try:
+        with open(log_path, encoding="utf-8") as fh:
+            lines = fh.read().splitlines()
+    except FileNotFoundError:
+        return entries
+    for line in lines:
+        if line.startswith("- "):
+            if isinstance(current, dict):
+                entries.append(current)
+            current = {}
+            rest = line[2:]
+            if ":" in rest:
+                key, value = rest.split(":", 1)
+                current[key.strip()] = parse_log_scalar(value)
+            continue
+        if current is None or not line.startswith("  ") or ":" not in line:
+            continue
+        key, value = line.strip().split(":", 1)
+        current[key.strip()] = parse_log_scalar(value)
+    if isinstance(current, dict):
+        entries.append(current)
+    return entries
+
 try:
     with open(path, encoding="utf-8") as fh:
         data = yaml.safe_load(fh) or {}
+    entries = data.get("executions") or []
+except yaml.YAMLError:
+    entries = load_entries_lenient(path)
 except FileNotFoundError:
     sys.exit(0)
 
-entries = data.get("executions") or []
 stats = defaultdict(lambda: {"fail_count": 0, "last_fail": "", "points": Counter()})
 for entry in entries:
     if not isinstance(entry, dict):
