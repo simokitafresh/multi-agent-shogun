@@ -436,6 +436,101 @@ YAML
     [[ "$output" != *"q8_WHY引用"* ]]
 }
 
+@test "cmd_save --preflight matches save pass without quality log history or YAML writes" {
+    local pf_tmpdir save_tmpdir
+    pf_tmpdir="$(mktemp -d "$BATS_TMPDIR/cmd_save_preflight.XXXXXX")"
+    save_tmpdir="$(mktemp -d "$BATS_TMPDIR/cmd_save_save.XXXXXX")"
+
+    for d in "$pf_tmpdir" "$save_tmpdir"; do
+        mkdir -p "$d/archive" "$d/docs/research"
+        printf 'entries:\n' > "$d/cmd_design_quality.yaml"
+        printf 'lessons:\n' > "$d/lessons_shogun.yaml"
+        cat > "$d/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_preflight:
+    id: cmd_preflight
+    title: "infra 起票前検証モード"
+    purpose: "cmd_save.shの同一検査を保存前に実行できることを確認する"
+    project: infra
+    task_type: impl
+    target_path: scripts/cmd_save.sh
+    command: "cmd_save.shに事前検証モードを追加し、保存時と同じ判定を確認する"
+    acceptance_criteria:
+      - "AC1: cmd_save.sh --preflight と cmd_save.sh の判定が一致することをテストで確認する"
+    status: pending
+    origin: "[[cmd_3327]] -> [[事後規律構造LS051と同根]] -> [[保存前検証]]"
+    quality_gate:
+      q1_firefighting: "no — 保存前検証導線の追加"
+      q2_learning: "奪わない — 保存前に自己修正できる"
+      q3_next_quality: "上がる — 失敗前に同一検査を実行できる"
+      q4_depth: "shallow"
+      q5_verified_source: "structure_verified — git log確認: scripts/cmd_save.sh直近履歴確認; git blame確認: cmd_save副作用関数を確認; semantic/causal確認: [[cmd_3327]]; 関連教訓: L549"
+      q6_not_hiding: "no — 記録抑止はpreflight限定で保存時判定は維持"
+      q7_definition_verified: "yes — preflightは書込みなしの同一検査"
+      q8_why_what: "WHY: 事後規律を保存前検証へ移す。git log/blameとsemantic/causal [[cmd_3327]] で設計意図を確認 / WHAT: cmd_save.sh --preflight と cmd_save.sh の判定一致 / WHEN: 今セッション / WHERE: scripts/cmd_save.sh / WHO: 将軍 / HOW: 同一cmdブロックを2モードで実行する。複利: 正の複利"
+      q9_firefighting_root_cause: "no — 根本対応は保存前入口の追加"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲"
+      q11_not_already_done: "未達成。rg -n -- '--preflight' scripts/cmd_save.sh → 実装前0件。既存道具なし"
+      q_ambiguity: "none"
+      q12_lord_30min_cost: "no — 保存前に自己修正できる"
+    assumptions:
+      - claim: "2026-06-12時点でcmd_save.shの副作用はログ/last_cmd/YAML補完に現れる"
+        source: "tests/unit/test_cmd_save.bats"
+        trust: "verified"
+YAML
+    done
+
+    run env \
+        CMD_SAVE_QUEUE_FILE="$pf_tmpdir/shogun_to_karo.yaml" \
+        CMD_SAVE_ARCHIVE_CMD_DIR="$pf_tmpdir/archive" \
+        CMD_QUALITY_LOG_FILE="$pf_tmpdir/cmd_design_quality.yaml" \
+        CMD_SAVE_LOCK_FILE="$pf_tmpdir/shogun_to_karo.lock" \
+        CMD_SAVE_LAST_CMD_FILE="$pf_tmpdir/cmd_save_last_cmd.txt" \
+        CMD_SAVE_SHOGUN_LESSONS_FILE="$pf_tmpdir/lessons_shogun.yaml" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$pf_tmpdir/preflight_autolearn.txt" \
+        CMD_SAVE_LORD_CONVERSATION_FILE="$pf_tmpdir/lord_conversation.jsonl" \
+        CMD_SAVE_CMD_CHRONICLE_FILE="$pf_tmpdir/cmd-chronicle.md" \
+        CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$pf_tmpdir/no_semantic_search.sh" \
+        CMD_SAVE_Q11_RESEARCH_DIR="$pf_tmpdir/docs/research" \
+        CMD_QUALITY_FAST_METADATA=1 \
+        bash "$SRC_SAVE_SCRIPT" --preflight cmd_preflight
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"事前検証OK: cmd_preflight"* ]]
+    [[ "$output" == *"書込みなし"* ]]
+    ! grep -q 'cmd_id: "cmd_preflight"' "$pf_tmpdir/cmd_design_quality.yaml"
+    [ ! -f "$pf_tmpdir/cmd_save_last_cmd.txt" ]
+    ! grep -q 'depends_on:' "$pf_tmpdir/shogun_to_karo.yaml"
+
+    run env \
+        CMD_SAVE_QUEUE_FILE="$save_tmpdir/shogun_to_karo.yaml" \
+        CMD_SAVE_ARCHIVE_CMD_DIR="$save_tmpdir/archive" \
+        CMD_QUALITY_LOG_FILE="$save_tmpdir/cmd_design_quality.yaml" \
+        CMD_SAVE_LOCK_FILE="$save_tmpdir/shogun_to_karo.lock" \
+        CMD_SAVE_LAST_CMD_FILE="$save_tmpdir/cmd_save_last_cmd.txt" \
+        CMD_SAVE_SHOGUN_LESSONS_FILE="$save_tmpdir/lessons_shogun.yaml" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$save_tmpdir/preflight_autolearn.txt" \
+        CMD_SAVE_LORD_CONVERSATION_FILE="$save_tmpdir/lord_conversation.jsonl" \
+        CMD_SAVE_CMD_CHRONICLE_FILE="$save_tmpdir/cmd-chronicle.md" \
+        CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$save_tmpdir/no_semantic_search.sh" \
+        CMD_SAVE_Q11_RESEARCH_DIR="$save_tmpdir/docs/research" \
+        CMD_QUALITY_FAST_METADATA=1 \
+        bash "$SRC_SAVE_SCRIPT" cmd_preflight
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK: cmd_preflight"* ]]
+    grep -q 'cmd_id: "cmd_preflight"' "$save_tmpdir/cmd_design_quality.yaml"
+    grep -q '^cmd_preflight$' "$save_tmpdir/cmd_save_last_cmd.txt"
+    grep -q 'depends_on:' "$save_tmpdir/shogun_to_karo.yaml"
+
+    rm -rf "$pf_tmpdir" "$save_tmpdir"
+}
+
+@test "cmd_skeleton and write hook guide mention cmd_save preflight" {
+    grep -q 'cmd_save.sh --preflight <id>' "$PROJECT_ROOT/scripts/cmd_skeleton.sh"
+    grep -q 'cmd_save.sh --preflight <id>' "$PROJECT_ROOT/.claude/hooks/pre-write-edit-combined.sh"
+}
+
 @test "Check21.2: 非DB cmdならバックアップAC WARNなし" {
     create_queue_file << 'YAML'
 commands:

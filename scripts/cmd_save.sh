@@ -4,8 +4,9 @@
 # cmd_save.sh
 # 将軍がEdit toolでshogun_to_karo.yamlに書いたcmdブロックの保存前安全チェック
 #
-# Usage: bash scripts/cmd_save.sh <cmd_id>
+# Usage: bash scripts/cmd_save.sh [--preflight] <cmd_id>
 #   cmd_id: 数字のみ（例: 1148）またはcmd_付き（例: cmd_1148）
+#   --preflight: 同一検査を実行するが、ログ/履歴/通知/YAML補完を書き込まない
 #
 # チェック内容:
 #   1. cmdブロックがshogun_to_karo.yamlに存在するか
@@ -19,7 +20,36 @@ set -euo pipefail
 
 # --- Usage ---
 if [[ $# -lt 1 ]]; then
-    echo "Usage: bash scripts/cmd_save.sh <cmd_id>" >&2
+    echo "Usage: bash scripts/cmd_save.sh [--preflight] <cmd_id>" >&2
+    echo "  cmd_id: 数字のみ（例: 1148）またはcmd_付き（例: cmd_1148）" >&2
+    echo "  --preflight: 保存前の事前検証。判定は保存時と同一、累計記録/履歴/通知/自動補完の書込みなし" >&2
+    exit 1
+fi
+
+CMD_SAVE_PREFLIGHT_ONLY=0
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --preflight|--check-only)
+            CMD_SAVE_PREFLIGHT_ONLY=1
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            echo "Unknown option: $1" >&2
+            echo "Usage: bash scripts/cmd_save.sh [--preflight] <cmd_id>" >&2
+            exit 1
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: bash scripts/cmd_save.sh [--preflight] <cmd_id>" >&2
     echo "  cmd_id: 数字のみ（例: 1148）またはcmd_付き（例: cmd_1148）" >&2
     exit 1
 fi
@@ -1129,15 +1159,25 @@ auto_insert_cmd_default_fields() {
 
     local inserted=0
     if ! cmd_block_has_field "depends_on" || [[ -z "$(cmd_block_get_field "depends_on")" ]]; then
+        if [[ "$CMD_SAVE_PREFLIGHT_ONLY" == "1" ]]; then
+            CMD_BLOCK_CACHE["depends_on"]="none"
+            echo "INFO: depends_on未記入 → preflightでは depends_on: none として検査継続(書込みなし)" >&2
+        else
         bash "$SCRIPT_DIR/lib/yaml_field_set.sh" "$QUEUE_FILE" "$CMD_ID" "depends_on" "none" >/dev/null || return 1
         echo "INFO: depends_on未記入 → depends_on: none を自動挿入" >&2
         inserted=1
+        fi
     fi
 
     if ! cmd_block_has_field "origin" || [[ -z "$(cmd_block_get_field "origin")" ]]; then
+        if [[ "$CMD_SAVE_PREFLIGHT_ONLY" == "1" ]]; then
+            CMD_BLOCK_CACHE["origin"]="none"
+            echo "INFO: origin未記入 → preflightでは origin: none として検査継続(書込みなし)" >&2
+        else
         bash "$SCRIPT_DIR/lib/yaml_field_set.sh" "$QUEUE_FILE" "$CMD_ID" "origin" "none" >/dev/null || return 1
         echo "INFO: origin未記入 → origin: none を自動挿入" >&2
         inserted=1
+        fi
     fi
 
     if [[ "$inserted" -eq 1 ]]; then
@@ -2128,6 +2168,7 @@ PY
 log_cmd_save_block() {
     local block_reason="${1:-}"
     local check_names="${2:-}"
+    [[ "${CMD_SAVE_PREFLIGHT_ONLY:-0}" != "1" ]] || return 0
     [[ "${CMD_SAVE_DISABLE_QUALITY_LOG:-0}" != "1" ]] || return 0
     [[ -n "$block_reason" && -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
     if [[ "${CMD_SAVE_SYNC_QUALITY_LOG:-0}" == "1" ]]; then
@@ -2151,6 +2192,7 @@ log_cmd_save_block() {
 }
 
 log_cmd_save_warns() {
+    [[ "${CMD_SAVE_PREFLIGHT_ONLY:-0}" != "1" ]] || return 0
     [[ "${CMD_SAVE_DISABLE_QUALITY_LOG:-0}" != "1" ]] || return 0
     [[ ${#WARN_REASONS[@]} -gt 0 && -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
     local warn_note
@@ -2177,6 +2219,7 @@ log_cmd_save_warns() {
 }
 
 log_cmd_save_pass() {
+    [[ "${CMD_SAVE_PREFLIGHT_ONLY:-0}" != "1" ]] || return 0
     [[ "${CMD_SAVE_DISABLE_QUALITY_LOG:-0}" != "1" ]] || return 0
     [[ -n "$CMD_ID" ]] || return 0
     [[ -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
@@ -2542,10 +2585,16 @@ if [[ "${CMD_SAVE_PREV_LESSON_FAST:-0}" = "1" ]]; then
     fi
 
     if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
-        echo "保存確認OK: ${CMD_ID}"
-        echo "  次: bash scripts/cmd_delegate.sh ${CMD_ID} \"<家老への配備メッセージ>\" で委任せよ（inbox_write直接のcmd_new送信はcmd_new_gateがBLOCKする）"
-        echo "$CMD_ID" > "$CMD_SAVE_LAST_CMD_FILE"
-        remind_missing_current_cmd_lesson_after_clear
+        if [[ "$CMD_SAVE_PREFLIGHT_ONLY" == "1" ]]; then
+            echo "事前検証OK: ${CMD_ID}"
+            echo "  書込みなし: 累計記録/履歴/通知/自動補完は更新していません"
+            echo "  保存時は: bash scripts/cmd_save.sh ${CMD_ID}"
+        else
+            echo "保存確認OK: ${CMD_ID}"
+            echo "  次: bash scripts/cmd_delegate.sh ${CMD_ID} \"<家老への配備メッセージ>\" で委任せよ（inbox_write直接のcmd_new送信はcmd_new_gateがBLOCKする）"
+            echo "$CMD_ID" > "$CMD_SAVE_LAST_CMD_FILE"
+            remind_missing_current_cmd_lesson_after_clear
+        fi
         rm -f "$CMD_SAVE_STDERR_LOG"
         trap - EXIT
         exit 0
@@ -5762,14 +5811,20 @@ fi
 
 if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
     # PASS: clean up block start file
-    rm -f "$BLOCK_START_FILE"
+    [[ "$CMD_SAVE_PREFLIGHT_ONLY" == "1" ]] || rm -f "$BLOCK_START_FILE"
     if (( BLOCK_DURATION_MINUTES > 0 )); then
         echo "  BLOCK→PASS所要時間: ${BLOCK_DURATION_MINUTES}分" >&2
     fi
-    echo "保存確認OK: ${CMD_ID}"
-    echo "  次: bash scripts/cmd_delegate.sh ${CMD_ID} \"<家老への配備メッセージ>\" で委任せよ（inbox_write直接のcmd_new送信はcmd_new_gateがBLOCKする）"
+    if [[ "$CMD_SAVE_PREFLIGHT_ONLY" == "1" ]]; then
+        echo "事前検証OK: ${CMD_ID}"
+        echo "  書込みなし: 累計記録/履歴/通知/自動補完は更新していません"
+        echo "  保存時は: bash scripts/cmd_save.sh ${CMD_ID}"
+    else
+        echo "保存確認OK: ${CMD_ID}"
+        echo "  次: bash scripts/cmd_delegate.sh ${CMD_ID} \"<家老への配備メッセージ>\" で委任せよ（inbox_write直接のcmd_new送信はcmd_new_gateがBLOCKする）"
+    fi
     log_cmd_save_pass
-    if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
+    if [[ "$CMD_SAVE_PREFLIGHT_ONLY" != "1" && -f "$MEMORY_DB_LIVE_INSERT" ]]; then
         printf -v _CMD_SAVE_MEMORY_TS '%(%Y-%m-%dT%H:%M:%S)T' -1
         _CMD_SAVE_MEMORY_SUMMARY="$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
             /^[[:space:]]*title:[[:space:]]*/ {
@@ -5796,24 +5851,29 @@ if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
             >/dev/null 2>&1 &
         disown 2>/dev/null || true
     fi
-    _BULLETIN_ACTIONED_UPDATED="$(update_bulletin_actioned_by_for_cmd 2>/dev/null || true)"
+    _BULLETIN_ACTIONED_UPDATED=""
+    if [[ "$CMD_SAVE_PREFLIGHT_ONLY" != "1" ]]; then
+        _BULLETIN_ACTIONED_UPDATED="$(update_bulletin_actioned_by_for_cmd 2>/dev/null || true)"
+    fi
     if [[ -n "$_BULLETIN_ACTIONED_UPDATED" ]]; then
         echo "  bulletin actioned_by更新: ${_BULLETIN_ACTIONED_UPDATED} → ${CMD_ID}"
     fi
     # status: pending 自動注入（未設定時のみ。cmdライフサイクル追跡の起点）
     _EXISTING_STATUS=$(echo "$CMD_BLOCK" | awk '/status:/{gsub(/.*status: */, ""); gsub(/"/, ""); print; exit}')
-    if [[ -z "$_EXISTING_STATUS" ]]; then
+    if [[ "$CMD_SAVE_PREFLIGHT_ONLY" != "1" && -z "$_EXISTING_STATUS" ]]; then
         if bash "$SCRIPT_DIR/lib/yaml_field_set.sh" "$QUEUE_FILE" "$CMD_ID" status pending 2>/dev/null; then
             echo "  status: pending — 自動設定"
         fi
     fi
     # 前回cmd_id記録（次回呼出し時のpending昇格チェック用 — Check 1.6）
-    echo "$CMD_ID" > "$CMD_SAVE_LAST_CMD_FILE"
-    remind_missing_current_cmd_lesson_after_clear
+    if [[ "$CMD_SAVE_PREFLIGHT_ONLY" != "1" ]]; then
+        echo "$CMD_ID" > "$CMD_SAVE_LAST_CMD_FILE"
+        remind_missing_current_cmd_lesson_after_clear
+    fi
 else
     if [[ "$BLOCK_COUNT" -gt 0 ]]; then
         # AC1(cmd_3243): Record first BLOCK timestamp for duration tracking
-        if [[ ! -f "$BLOCK_START_FILE" ]]; then
+        if [[ "$CMD_SAVE_PREFLIGHT_ONLY" != "1" && ! -f "$BLOCK_START_FILE" ]]; then
             date +%s > "$BLOCK_START_FILE"
         fi
         echo "保存確認NG: ${CMD_ID} (${BLOCK_COUNT}件のBLOCK, ${WARN_COUNT}件のWARN)" >&2
