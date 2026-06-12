@@ -48,6 +48,63 @@ _prompt_state_json_escape() {
   printf '%s' "$_prompt_state_value"
 }
 
+_prompt_state_unresolved_defer_count() {
+  local _prompt_state_history="$1"
+  [[ -f "$_prompt_state_history" ]] || {
+    printf '0\n'
+    return 0
+  }
+
+  awk '
+function flush_run() {
+  if (current_run != "") {
+    run_count++
+    run_keys[run_count] = current_keys
+  }
+}
+function add_defer(key) {
+  sub(/^先送り判断:[[:space:]]*/, "", key)
+  sub(/[[:space:]]が[0-9]+セッション連続$/, "", key)
+  if (key == "") return
+  if (current_keys == "") current_keys = key
+  else current_keys = current_keys "\034" key
+}
+{
+  split($0, parts, "\t")
+  if (length(parts) < 2) next
+  run_id = parts[1]
+  key = substr($0, length(parts[1]) + 2)
+  if (current_run == "") current_run = run_id
+  if (run_id != current_run) {
+    flush_run()
+    current_run = run_id
+    current_keys = ""
+  }
+  if (key == "__OK__") {
+    current_keys = ""
+    next
+  }
+  if (key ~ /^先送り判断:/) add_defer(key)
+}
+END {
+  flush_run()
+  if (run_count == 0 || run_keys[run_count] == "") {
+    print 0
+    exit
+  }
+  split(run_keys[run_count], keys, "\034")
+  for (j in keys) {
+    key = keys[j]
+    if (key != "" && !seen[key]) {
+      seen[key] = 1
+      count++
+    }
+  }
+  print count + 0
+}
+' "$_prompt_state_history" 2>/dev/null || printf '0\n'
+}
+
 _prompt_state_emit_output() {
   local _prompt_state_event="$1"
   local _prompt_state_context="$2"
@@ -811,13 +868,12 @@ if [[ "$agent_id" == "shogun" || "$agent_id" == "karo" || "$agent_id" == "gunshi
   # shogunのファイル名はshogun_startup_alert_history.tsv
   [[ "$agent_id" == "shogun" ]] && _defer_history="${SCRIPT_DIR}/logs/shogun_startup_alert_history.tsv"
   _defer_count=0
-  _today="$(date +%Y-%m-%d)"
   if [[ -f "$_defer_history" ]]; then
-    _defer_count="$(awk -v today="$_today" 'index($0, today) == 1 && /先送り判断:/ { c++ } END { print c + 0 }' "$_defer_history" 2>/dev/null || printf '0\n')"
+    _defer_count="$(_prompt_state_unresolved_defer_count "$_defer_history")"
   fi
   if [[ "$_defer_count" -gt 0 ]]; then
     additional_context="${additional_context}
-★先送りBLOCK ${_defer_count}件が本日未解消。cmd起票/D0修正で今すぐ穴を塞げ(洗脳#5)"
+★先送りBLOCK 現在未解消${_defer_count}件。cmd起票/D0修正で今すぐ穴を塞げ(洗脳#5)"
   fi
 fi
 

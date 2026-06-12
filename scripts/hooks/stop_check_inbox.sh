@@ -15,6 +15,63 @@ readonly SUMMARY_LIMIT=5
 readonly SUMMARY_SNIPPET_LEN=80
 readonly SHOGUN_BRAINWASH_AUDIT='洗脳8パターン自問: #1早期終了 #2検証スキップ #3他者依存 #4緩い設計 #5先送り #6出力=仕事 #7簡潔本能 #8完了急ぎ'
 
+unresolved_startup_defer_count() {
+  local history_file="$1"
+  [[ -f "$history_file" ]] || {
+    printf '0\n'
+    return 0
+  }
+
+  awk '
+function flush_run() {
+  if (current_run != "") {
+    run_count++
+    run_keys[run_count] = current_keys
+  }
+}
+function add_defer(key) {
+  sub(/^先送り判断:[[:space:]]*/, "", key)
+  sub(/[[:space:]]が[0-9]+セッション連続$/, "", key)
+  if (key == "") return
+  if (current_keys == "") current_keys = key
+  else current_keys = current_keys "\034" key
+}
+{
+  split($0, parts, "\t")
+  if (length(parts) < 2) next
+  run_id = parts[1]
+  key = substr($0, length(parts[1]) + 2)
+  if (current_run == "") current_run = run_id
+  if (run_id != current_run) {
+    flush_run()
+    current_run = run_id
+    current_keys = ""
+  }
+  if (key == "__OK__") {
+    current_keys = ""
+    next
+  }
+  if (key ~ /^先送り判断:/) add_defer(key)
+}
+END {
+  flush_run()
+  if (run_count == 0 || run_keys[run_count] == "") {
+    print 0
+    exit
+  }
+  split(run_keys[run_count], keys, "\034")
+  for (j in keys) {
+    key = keys[j]
+    if (key != "" && !seen[key]) {
+      seen[key] = 1
+      count++
+    }
+  }
+  print count + 0
+}
+' "$history_file" 2>/dev/null || printf '0\n'
+}
+
 IFS='' read -r -d '' payload || true
 if [[ -z "$payload" ]]; then
   exit 0
@@ -151,10 +208,9 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
     # L4先送り防止: startup BLOCK未対処で殿に応答→WARN注入
     _startup_history="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
     if [[ -f "$_startup_history" ]]; then
-      _today="$(date +%Y-%m-%d)"
-      _block_count="$(grep -c "^${_today}.*先送り判断:" "$_startup_history" 2>/dev/null || echo 0)"
+      _block_count="$(unresolved_startup_defer_count "$_startup_history")"
       if [[ "$_block_count" -gt 0 ]]; then
-        printf 'WARN: startup先送りBLOCK %s件が本日未解消。cmd起票またはD0修正で穴を塞げ(洗脳#5)。\n' "$_block_count" >&2
+        printf 'WARN: startup先送りBLOCK 現在未解消%s件。cmd起票またはD0修正で穴を塞げ(洗脳#5)。\n' "$_block_count" >&2
       fi
     fi
     # cmd_3251 AC2: F009 殿への操作依頼パターン → BLOCK

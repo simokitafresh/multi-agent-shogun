@@ -298,6 +298,38 @@ PY
   [[ "$output" != *"brainwash_binary_check"* ]]
 }
 
+@test "startup defer injection counts current unresolved unique keys" {
+  export PROMPT_STATE_AGENT_ID="shogun"
+  local hook_root="$BATS_TEST_TMPDIR/prompt_state_defer_root"
+  mkdir -p "$hook_root/scripts/hooks" "$hook_root/logs"
+  cp "$HOOK" "$hook_root/scripts/hooks/prompt_state_inject.sh"
+  cat > "$hook_root/logs/shogun_startup_alert_history.tsv" <<'EOF'
+2026-06-13T01:00:00+09:00	先送り判断: 穴A が3セッション連続
+2026-06-13T01:00:00+09:00	先送り判断: 穴A が3セッション連続
+2026-06-13T01:00:00+09:00	先送り判断: 穴B が3セッション連続
+EOF
+
+  run bash "$hook_root/scripts/hooks/prompt_state_inject.sh" <<< '{"prompt":"次の作業を開始する"}'
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"現在未解消2件"* ]]
+  [[ "$output" != *"現在未解消3件"* ]]
+}
+
+@test "startup defer injection treats OK as resolved" {
+  export PROMPT_STATE_AGENT_ID="shogun"
+  local hook_root="$BATS_TEST_TMPDIR/prompt_state_defer_ok_root"
+  mkdir -p "$hook_root/scripts/hooks" "$hook_root/logs"
+  cp "$HOOK" "$hook_root/scripts/hooks/prompt_state_inject.sh"
+  cat > "$hook_root/logs/shogun_startup_alert_history.tsv" <<'EOF'
+2026-06-13T01:00:00+09:00	先送り判断: 穴A が3セッション連続
+2026-06-13T01:05:00+09:00	__OK__
+EOF
+
+  run bash "$hook_root/scripts/hooks/prompt_state_inject.sh" <<< '{"prompt":"次の作業を開始する"}'
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"先送りBLOCK"* ]]
+}
+
 @test "same prompt reuses skill recommendation cache without rerunning semantic_search" {
   export PROMPT_STATE_AGENT_ID="hayate_cache_test"
   export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_counting.sh"

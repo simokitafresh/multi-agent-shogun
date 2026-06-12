@@ -142,6 +142,44 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
     [[ "$output" == *"WARN: 洗脳検出 #5 先送り"* ]]
 }
 
+@test "T-SCI-017: shogun startup defer warning counts unresolved unique keys" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    mkdir -p "$TEST_PROJECT/logs"
+    cat > "$TEST_PROJECT/logs/shogun_startup_alert_history.tsv" <<'EOF'
+2026-06-13T01:00:00+09:00	先送り判断: 穴A が3セッション連続
+2026-06-13T01:00:00+09:00	先送り判断: 穴A が3セッション連続
+2026-06-13T01:00:00+09:00	先送り判断: 穴B が3セッション連続
+EOF
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"一次データを確認して進む"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"現在未解消2件"* ]]
+    [[ "$output" != *"現在未解消3件"* ]]
+}
+
+@test "T-SCI-018: shogun startup defer warning clears after OK" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    mkdir -p "$TEST_PROJECT/logs"
+    cat > "$TEST_PROJECT/logs/shogun_startup_alert_history.tsv" <<'EOF'
+2026-06-13T01:00:00+09:00	先送り判断: 穴A が3セッション連続
+2026-06-13T01:05:00+09:00	__OK__
+EOF
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"一次データを確認して進む"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"startup先送りBLOCK"* ]]
+}
+
 @test "T-SCI-F009-001: shogun lord delegation pattern blocks with F009 (cmd_3251 AC3-B)" {
     export TMUX_AGENT_ID="shogun"
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
