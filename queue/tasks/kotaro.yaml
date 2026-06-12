@@ -1,20 +1,8 @@
 task:
-  readonly_ref:
-  - path: 'claude/hooks/post-write-edit-combined.sh'
-    reason: command欄の必読/参照専用ファイル
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  acceptance_criteria:
-    AC1:
-      binary_check: 主要コスト源の計測値と対応する実装変更を報告に記録したか？
-      description: .claude/hooks/post-write-edit-combined.sh の実行時間内訳を計測し、主要コスト源を数値で特定して短縮を実装する
-    AC2:
-      binary_check: record-real の after 実測値が before より小さいか？
-      description: tools/bash_speed_training.sh record-real で before/after 実測を記録し、after が before より小さいことを確認する
-    AC3:
-      binary_check: 既存テスト全件成功かつ主要ガード出力契約維持を確認したか？
-      description: 機能等価確認として対象hookの既存自動テストを全件実行し、主要ガード出力契約が維持されていることを確認する
-  command: '.claude/hooks/post-write-edit-combined.sh の実行時間内訳を計測し、主要コスト源を数値で特定して短縮を実装する。tools/bash_speed_training.sh record-real でbefore/afterを記録し、対象hookの既存自動テストと主要ガード出力契約維持を確認する。'
+  _ac_task_id: cmd_3347_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3347 (deployed 2026-06-13T01:52:45). Read from the beginning.
+  ac_version: 4bb2f70b
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -23,65 +11,78 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
+  - 'Level1(事後検出): 間違えた後にgateが検出'
+  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
+  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
+  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
+  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
+  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
+  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
+  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
+  - '2026-06-10T18:32:07+09:00 | ## saizo報告処理完了 **cmd_karo_hotfix_skill_ref_sync — CLEAR** | 検証項目 | 結果 | |---------|------| | gate_sk'
+  - 2026-06-10T18:31:32+09:00 | 報告完了（BLOCKなし）。 **作業完了サマリ:** | AC | 内容 | 結果 | |----|------|------| | AC1 | 7件の判定根拠を報告YAMLに記載 | ✓ PASS
+  - 2026-06-13T00:42:37+09:00 | 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=97件 clear_p
+  - '2026-06-12T22:18:01+09:00 | 【三層ループALERT】WARNING: CTX%異常値 cmd_karo_hotfix_speed_post_write_edit_combined_20260612 (ctx_pct=91%, m'
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_speed_post_write_edit_combined_20260612
+  parent_cmd: cmd_3347
   project: infra
-  purpose: '軍師速度改善提案Top10残件6位: post-write-edit-combined hook の実行時間を機能等価のまま短縮する'
-  status: done
+  purpose: '殿指摘(2026-06-13 00:21「いま動作中なのにidle判定でrespawnしたぞ。インフラバグか？」)と将軍調査(2026-06-13 01:30台)に基づく。実ログ証拠: 00:13:59-00:14:10にkagemaru/saizo/kotaroが連続CODEX-RESPAWN(cmd_3341-3343 in_progress時間帯と重なる)、01:25に統合作業中のhayateへSTALL-WATCH発火(check_idleが作業中をidleと判定)。軍師も独立に同結論(blt_20260613_014607)。cmd_3336の修正は家老startup gateのCTXパースのみでリセット判定経路は未修正。check_idleからCODEX-RESPAWN/auto-clearに至る誤判定の因果連鎖を特定し、リセット直前のダブルチェックを実装して稼働中忍者の作業破壊を構造的に防ぐ'
+  status: in_progress
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun
-  task_id: cmd_karo_hotfix_speed_post_write_edit_combined_20260612_normal
-  task_type: hotfix
-  previous_failures:
-    attempt: 1
-    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/4 ACs). 全ACの二値チェックを記入せよ; verdict: \"\" is not valid (must be \"PASS\",…'
-    tried_approaches:
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/4 ACs). 全ACの二値チェックを記入せよ; verdict: \"\" is not valid (must be \"PASS\",…'
-    approach_summary: 'gate_shogun_startup.shのQ6自動化ターゲット証拠判定に本文ヒント補完を追加し、パス未指定のcommit前ターゲットがgrep検証スキップで止まらないよう修正。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/4 ACs). 全ACの二値チェックを記入せよ; verdict: \"\" is not valid (must be \"PASS\",…'
-      approach_summary: 'gate_shogun_startup.shのQ6自動化ターゲット証拠判定に本文ヒント補完を追加し、パス未指定のcommit前ターゲットがgrep検証スキップで止まらないよう修正。'
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts
+  task_id: cmd_3347_full
+  task_type: full
   related_lessons:
-  - id: 'L472'
-    summary: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含'
-    detail: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含'
+  - id: 'L454'
+    summary: '**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.'
+    detail: '**retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.'
+  - id: 'L773'
+    summary: 'files_modified string→dict変換はpath件数確認なしで機械変換すると複数ファイル押込み破損を隠蔽する。GP-107 Q1(内容不変か)'
+    detail: 'files_modified string→dict変換はpath件数確認なしで機械変換すると複数ファイル押込み破損を隠蔽する。GP-107 Q1(内容不変か)'
+  - id: 'L788'
+    summary: 'gate_context_freshness.shは短TTL cacheを持つため、通常実行だけでは直前のOKを返すことがある。ALERT調査ではCONTEXT'
+    detail: 'gate_context_freshness.shは短TTL cacheを持つため、通常実行だけでは直前のOKを返すことがある。ALERT調査ではCONTEXT'
   - id: 'L625'
     summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
     detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L614'
-    summary: 'PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE ''[a-z_]+.sh'' が pre-bash-combine'
-    detail: 'PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE ''[a-z_]+.sh'' が pre-bash-combine'
-  - id: 'L150'
-    summary: 'IF commit関連のACを検証する時 THEN git commit --dry-runではなく実commit(失敗想定)またはhook直接実行で検証せよ'
-    detail: 'IF commit関連のACを検証する時 THEN git commit --dry-runではなく実commit(失敗想定)またはhook直接実行で検証せよ'
-  - id: 'L015'
-    summary: 'IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O'
-    detail: 'IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O'
-  - id: 'L421'
-    summary: 'Edit toolで~/.claude/skills/のSKILL.mdを編集すると(1)settings権限ダイアログでBLOCK(2)スキルスキャンとの競合'
-    detail: 'Edit toolで~/.claude/skills/のSKILL.mdを編集すると(1)settings権限ダイアログでBLOCK(2)スキルスキャンとの競合'
-  - id: 'L769'
-    summary: 'parse_skip_countはnon_tap_text(_filter_tap_lines)を使うがparse_fail_countは生textに適用。テス'
-    detail: 'parse_skip_countはnon_tap_text(_filter_tap_lines)を使うがparse_fail_countは生textに適用。テス'
-  - id: 'L597'
-    summary: 'lesson_write.shのREFLUX_CHECK穴検出はawk正規表現[a-z_][a-z_0-9]{2,}でASCII文字のみ抽出。日本語主体の教訓で'
-    detail: 'lesson_write.shのREFLUX_CHECK穴検出はawk正規表現[a-z_][a-z_0-9]{2,}でASCII文字のみ抽出。日本語主体の教訓で'
-  - id: 'L173'
-    summary: 'instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github'
-    detail: 'instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github'
-  - id: 'L333'
-    summary: 'grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド'
-    detail: 'grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド'
+  - id: 'L252'
+    summary: 'ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両'
+    detail: 'ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両'
+  - id: 'L204'
+    summary: '30日分134件のSTALL-DETECTEDログを分析した結果、ほぼ全件が「ペインが確実にidle状態なのにtask YAML statusが未更新」パターン'
+    detail: '30日分134件のSTALL-DETECTEDログを分析した結果、ほぼ全件が「ペインが確実にidle状態なのにtask YAML statusが未更新」パターン'
+  - id: 'L112'
+    summary: 'check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT'
+    detail: 'check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT'
+  - id: 'L783'
+    summary: 'サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ'
+    detail: 'サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ'
+  - id: 'L215'
+    summary: 'gate_metricsテストがtmux環境依存'
+    detail: 'gate_metricsテストがtmux環境依存'
+  - id: 'L666'
+    summary: 'gate_autofix_proposal.shのCACHE_TTLデフォルト=2秒は、idle時の頻繁呼出し(通常5-60秒間隔)に対してキャッシュが効かず毎'
+    detail: 'gate_autofix_proposal.shのCACHE_TTLデフォルト=2秒は、idle時の頻繁呼出し(通常5-60秒間隔)に対してキャッシュが効かず毎'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "chain_principle — 鎖の原理:  AGENTS.md 学習ループ原則 context/growth-loop.md"
+  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-claude-version-switch/SKILL.md skills/shogun-claude-version-switch/scripts/claude_version_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
+  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh scripts/cmd_skeleton.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比) docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md — 軍師idle: コミットチェックWAパターン(2026-04-10) docs/research/gunshi_idle_cross_contamination_20260503.md — 軍師idle: クロスプロジェクト汚染分析(2026-05-03) docs/research/gunshi_idle_cross_project_fp_20260426.md — 軍師idle: クロスプロジェクトFP分析(2026-04-26) docs/research/gunshi_idle_gate_fail_rate_anatomy_20260502.md — 軍師idle: ゲート失敗率解剖(2026-05-02) docs/research/gunshi_idle_gate_fail_trend_20260430.md — 軍師idle: ゲート失敗トレンド分析(2026-04-30) docs/research/gunshi_idle_gate_fire_traceback_20260510.md — 軍師idle: ゲート発火トレースバック(2026-05-10) docs/research/gunshi_idle_gate_fp_analysis_20260527.md — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27) docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md — 軍師idle: LG003ゲートWA分析(2026-05-19) docs/research/gunshi_idle_lu_dict_pattern_20260415.md — 軍師idle: LU辞書パターン分析(2026-04-15)"
+  related_causal_links:
+  - "[[check_idle誤判定]]"
+  - "[[cmd_3347]]"
+  - "[[殿指摘20260613_0021動作中respawn]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -101,28 +102,36 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L472: instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含
+      - L454: **retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み whitelist型.
+      - L773: files_modified string→dict変換はpath件数確認なしで機械変換すると複数ファイル押込み破損を隠蔽する。GP-107 Q1(内容不変か)
+      - L788: gate_context_freshness.shは短TTL cacheを持つため、通常実行だけでは直前のOKを返すことがある。ALERT調査ではCONTEXT
       - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L614: PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE '[a-z_]+.sh' が pre-bash-combine
-      - L150: IF commit関連のACを検証する時 THEN git commit --dry-runではなく実commit(失敗想定)またはhook直接実行で検証せよ
-      - L015: IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O
-      - L421: Edit toolで~/.claude/skills/のSKILL.mdを編集すると(1)settings権限ダイアログでBLOCK(2)スキルスキャンとの競合
-      - L769: parse_skip_countはnon_tap_text(_filter_tap_lines)を使うがparse_fail_countは生textに適用。テス
-      - L597: lesson_write.shのREFLUX_CHECK穴検出はawk正規表現[a-z_][a-z_0-9]{2,}でASCII文字のみ抽出。日本語主体の教訓で
-      - L173: instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github
-      - L333: grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド
+      - L252: ninja_monitor.shのStage 1直後(maybe_idle追加前)にガードを入れることで下流のauto_clearとdeploy_stallの両
+      - L204: 30日分134件のSTALL-DETECTEDログを分析した結果、ほぼ全件が「ペインが確実にidle状態なのにtask YAML statusが未更新」パターン
+      - L112: check_stall()はtask_id(L835)を読むが、タスクYAMLにはsubtask_idしか存在しない。結果、2/26以降STALL-DETECT
+      - L783: サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ
+      - L215: gate_metricsテストがtmux環境依存
+      - L666: gate_autofix_proposal.shのCACHE_TTLデフォルト=2秒は、idle時の頻繁呼出し(通常5-60秒間隔)に対してキャッシュが効かず毎
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-04-18T14:10:03+09:00 | 【家老】cmd_2062 初回配備開始 (title=CoDD正規改善(忍者hook B) — pre-write-edit-combined.sh + post-write-edit-combine"
-  - "2026-06-12T21:39:07+09:00 | **軍師の掲示板、確認して行動まで完了した。内容は「スクリプト速度改善提案Top10」— 全10件を取りこぼしなく処理した。** ## 軍師の投稿（blt_20260612_205402） hookコ"
-  - "2026-06-12T21:22:21+09:00 | lefthook管理。lefthook.ymlで検査が接続されているか確認する。 [meta] stop_reason=tool_use"
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_speed_post_write_edit_combined_20260612_normal
-  _ac_worker_id: 
+  - "2026-06-13T01:52:18+09:00 | 【INFOバッチ】 2026-06-13 01:39:16|cmd_karo_hotfix_insight_handoff_20260613 2026-06-13 01:41:03|cmd_3345 "
+  - "2026-06-13T01:36:59+09:00 | 【INFOバッチ】 2026-06-13 01:25:07|CI緑: run 27428130675"
+  - "2026-06-13T00:29:38+09:00 | 【INFOバッチ】 2026-06-13 00:19:51|cmd_3341 2026-06-13 00:21:39|cmd_3342 2026-06-13 00:22:39|cmd_3343 202"
+  - "2026-05-06T00:26:12+09:00 | 【INFOバッチ】 2026-05-06 00:21:55|CI緑: run 25384607955 2026-05-06 00:24:41|cmd_2582"
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: '00:06-00:14の連続CODEX-RESPAWN(4忍者)と01:25のSTALL-WATCH発火(作業中hayate)それぞれについて、当時のログとコード行を突合した誤判定の因果連鎖(状態変数→判定分岐→リセット実行)が文書で記録され、根因の分岐箇所が行番号で特定されている'
+  - id: 'AC2'
+    checks:
+    - check: 'リセット系操作(respawn-pane/auto-clear)の実行直前に稼働中状態の再確認(直近活動時刻の再取得と猶予判定を含む)を行う防御が実装され、稼働中状態を模したケースでリセットが抑止されることをbatsテストの結果で確認する'
+  - id: 'AC3'
+    checks:
+    - check: '修正後にninja_monitorを再起動し、全忍者の監視が正常継続していることと稼働中忍者への誤リセットが発生していないことをログの数値(リセット件数と対象状態)で確認する'
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_karo_hotfix_speed_post_write_edit_combined_20260612.yaml
-  report_path: queue/reports/kotaro_report_cmd_karo_hotfix_speed_post_write_edit_combined_20260612.yaml
+  report_filename: kotaro_report_cmd_3347.yaml
+  report_path: queue/reports/kotaro_report_cmd_3347.yaml
   bloom_level: 
-  deployed_at: "2026-06-12T22:01:08"
+  deployed_at: "2026-06-13T01:53:35"

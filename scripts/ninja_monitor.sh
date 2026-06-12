@@ -2070,6 +2070,20 @@ _handle_auto_clear() {
             log "AUTO-CLEAR-BLOCKED: $name done but report missing, keep context"
             return
         fi
+        # ─── RESPAWN直前最終確認（cmd_3347 AC2: background AUTO_DEPLOY race condition防止） ───
+        # 理由: _handle_auto_clearの初回status読取り後にバックグラウンドAUTO_DEPLOYサブシェルが
+        # status="assigned"を書き込んだ場合、ここでキャッチしなければ稼働開始済みの忍者を破壊する。
+        # 根拠ログ: 00:13:57 [AUTO_DEPLOY] OK → 00:13:59 CODEX-RESPAWN (2秒の競合窓)
+        # GP-233パターン: grep直接 (yaml_field_get回避、WSL2 NTFS遅延対策)
+        if [ -f "$_ac_task_file" ]; then
+            local _pre_status
+            _pre_status=$(grep -m1 -E '^\s*status:\s*' "$_ac_task_file" 2>/dev/null \
+                | sed 's/.*status:[[:space:]]*//' | tr -d "\"'[:space:]" || true)
+            if [[ "$_pre_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
+                log "AUTO-CLEAR-PREFLIGHT-BLOCK: $name task_status=$_pre_status at respawn time (background deploy完了), deferring to DEPLOY-STALL"
+                return
+            fi
+        fi
         if safe_send_clear "$target" "$name" "AUTO-CLEAR"; then
             LAST_CLEARED[$name]=$now
             # AC4: @current_taskをクリア（次ポーリングでis_task_deployed()がfalseを返すように）

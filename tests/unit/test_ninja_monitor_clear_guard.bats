@@ -1512,3 +1512,132 @@ echo "PASS"
     [[ "$output" == *"PASS"* ]]
     [[ "$output" == *"committed=logs/ops.yaml queue/state.yaml"* ]]
 }
+
+# --- cmd_3347 AC2: AUTO-CLEAR-PREFLIGHT-BLOCK ---
+
+@test "auto_clear preflight: blocks respawn when background AUTO_DEPLOY changes status to assigned" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks"
+touch "$LOG"
+
+declare -A LAST_CLEARED PANE_TARGETS CLEAR_SKIP_COUNT POST_CLEAR_PENDING
+
+LAST_CLEARED[kagemaru]=9000
+PANE_TARGETS[kagemaru]="shogun:2.5"
+
+# タスクYAML: 最初はdone、しかしsafe_send_clear呼び出し前にassignedに変わる
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<YAML
+task:
+  status: done
+YAML
+
+log() { echo "$@" >> "$LOG"; }
+get_context_pct() { echo "80"; }
+cli_profile_get() {
+    case "$2" in
+        clear_debounce) echo "600" ;;
+        *) echo "" ;;
+    esac
+}
+# safe_send_clear呼び出し前にstatusをassignedに書き換え（background AUTO_DEPLOY完了をシミュレート）
+can_send_clear_with_report_gate() {
+    sed -i "s/status: done/status: assigned/" "$SCRIPT_DIR/queue/tasks/kagemaru.yaml"
+    return 0
+}
+CLEAR_CALLED=0
+safe_send_clear() { CLEAR_CALLED=1; return 0; }
+tmux() { echo ""; }
+export -f tmux
+
+_handle_auto_clear "kagemaru" 10000
+
+if [ "$CLEAR_CALLED" -eq 0 ]; then
+    echo "PASS: respawn blocked by preflight check"
+else
+    echo "FAIL: respawn executed despite active task"
+    exit 1
+fi
+
+if grep -q "AUTO-CLEAR-PREFLIGHT-BLOCK: kagemaru task_status=assigned" "$LOG"; then
+    echo "PASS: PREFLIGHT-BLOCK logged correctly"
+else
+    echo "FAIL: PREFLIGHT-BLOCK not in log"
+    cat "$LOG"
+    exit 1
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: respawn blocked by preflight check"* ]]
+    [[ "$output" == *"PASS: PREFLIGHT-BLOCK logged correctly"* ]]
+}
+
+@test "auto_clear preflight: allows respawn when task remains done (no race)" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks"
+touch "$LOG"
+
+declare -A LAST_CLEARED PANE_TARGETS CLEAR_SKIP_COUNT POST_CLEAR_PENDING
+
+LAST_CLEARED[saizo]=9000
+PANE_TARGETS[saizo]="shogun:2.6"
+
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<YAML
+task:
+  status: done
+YAML
+
+log() { echo "$@" >> "$LOG"; }
+get_context_pct() { echo "80"; }
+cli_profile_get() {
+    case "$2" in
+        clear_debounce) echo "600" ;;
+        *) echo "" ;;
+    esac
+}
+can_send_clear_with_report_gate() { return 0; }
+CLEAR_CALLED=0
+safe_send_clear() { CLEAR_CALLED=1; return 0; }
+tmux() { echo ""; }
+export -f tmux
+
+_handle_auto_clear "saizo" 10000
+
+if [ "$CLEAR_CALLED" -eq 1 ]; then
+    echo "PASS: respawn allowed when task stays done"
+else
+    echo "FAIL: respawn was unexpectedly blocked"
+    cat "$LOG"
+    exit 1
+fi
+
+if grep -q "AUTO-CLEAR-PREFLIGHT-BLOCK" "$LOG"; then
+    echo "FAIL: PREFLIGHT-BLOCK should not fire for done status"
+    cat "$LOG"
+    exit 1
+fi
+echo "PASS: no false-positive preflight block"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: respawn allowed when task stays done"* ]]
+    [[ "$output" == *"PASS: no false-positive preflight block"* ]]
+}
