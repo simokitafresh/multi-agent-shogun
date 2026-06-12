@@ -8,17 +8,17 @@ real_measurement_policy: 'Ninja must choose a safe runtime command per script: t
 script_count: 254
 entries:
 - script_path: ".claude/hooks/pre-bash-combined.sh"
-    status: pending
+  status: completed
   before_ms: ''
   after_ms: ''
-    before_real_ms: 29
-    after_real_ms: ""
-  real_measurement_command: "35-run median HOOK_PAYLOAD curl -s https://example.com/api via HEAD temp vs worktree"
-  test_result: "bash -n PASS; scripts/hooks/test_hooks.sh 90/90 PASS; bats tests/unit/test_hook_dispatchers.bats 8/8 PASS; parity D001-D009/G2/D010 representative same"
-  commit: "a4bc44d5f"
-    assigned_to: ""
-    updated_at: "2026-06-13T00:19:57"
-    iteration: 1
+  before_real_ms: 323
+  after_real_ms: 238
+  real_measurement_command: "source scripts/lib/pre_bash_combined_guard.sh; pre_bash_combined_eval_command 'rg -n speed context/infrastructure.md' (20-run avg, warm TTL cache, PRE_BASH_MEMORY_INJECT_DEBOUNCE_SEC=0)"
+  test_result: "bash -n hooks/libs PASS; bash scripts/hooks/test_hooks.sh 90/90 PASS SKIP=0"
+  commit: "pending_commit"
+  assigned_to: ""
+  updated_at: "2026-06-13T00:39:54"
+  iteration: 1
 - script_path: ".claude/hooks/pretool-dispatch.sh"
     status: pending
   before_ms: ''

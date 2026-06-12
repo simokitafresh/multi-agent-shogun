@@ -349,8 +349,22 @@ PY
 
 pre_bash_combined_knowledge_grep_query() {
     local command="$1"
+    local cache_dir cache_key cache_file now last ttl query
 
-    COMMAND="$command" python3 - <<'PY'
+    ttl="${PRE_BASH_KNOWLEDGE_QUERY_CACHE_SEC:-300}"
+    if [[ "$ttl" =~ ^[0-9]+$ && "$ttl" -gt 0 ]]; then
+        cache_dir="${PRE_BASH_KNOWLEDGE_QUERY_CACHE_DIR:-/tmp/pre_bash_knowledge_query_cache}"
+        cache_key="$(printf '%s' "$command" | cksum | awk '{print $1}')"
+        cache_file="$cache_dir/${cache_key}.query"
+        now="$(date +%s)"
+        last="$(stat -c %Y "$cache_file" 2>/dev/null || echo 0)"
+        if [ $((now - last)) -lt "$ttl" ]; then
+            cat "$cache_file" 2>/dev/null || true
+            return 0
+        fi
+    fi
+
+    query="$(COMMAND="$command" python3 - <<'PY'
 import os
 import re
 import shlex
@@ -425,6 +439,12 @@ for segment in split_segments(command):
             raise SystemExit(0)
 raise SystemExit(0)
 PY
+)"
+    if [[ -n "${query:-}" && "$ttl" =~ ^[0-9]+$ && "$ttl" -gt 0 ]]; then
+        mkdir -p "$cache_dir" 2>/dev/null || true
+        printf '%s\n' "$query" > "$cache_file" 2>/dev/null || true
+    fi
+    printf '%s\n' "$query"
 }
 
 pre_bash_combined_memory_injection_context() {
