@@ -350,6 +350,67 @@ assert rows["INS-SEMANTIC"]["status"] == "done"
 PY
 }
 
+@test "pending semantic insights: semantic stress NO_MATCH is resolved when query now hits" {
+    export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
+    export SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/scripts/semantic_search.sh"
+    cat > "$SEMANTIC_SEARCH_CMD" <<'EOF'
+#!/usr/bin/env bash
+if [ "$*" = "週報はnoteに下書きまで頼む" ]; then
+    echo "MEMORY_DB_MATCH: $*"
+    exit 0
+fi
+exit 1
+EOF
+    chmod +x "$SEMANTIC_SEARCH_CMD"
+    cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'
+insights:
+- id: INS-RECHECK-HIT
+  ts: "2026-06-12T00:00:00+09:00"
+  insight: "[[週報はnoteに下書きまで頼む]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=週報はnoteに下書きまで頼む"
+  priority: "low"
+  source: "semantic_stress_test"
+  status: pending
+- id: INS-RECHECK-MISS
+  ts: "2026-06-12T00:00:01+09:00"
+  insight: "[[未知の別物]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=未知の別物"
+  priority: "low"
+  source: "semantic_stress_test"
+  status: pending
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_3316","title":"セマンティクスインデックス","purpose":"pending recheck","files":["scripts/semantic_index_update.sh"]}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PENDING_ALIAS_RECHECK: hit now INS-RECHECK-HIT"* ]]
+    [[ "$output" != *"週報はnoteに下書きまで頼む |"* ]]
+
+    ! grep -q '週報はnoteに下書きまで頼む' "$SEMANTIC_INDEX_PATH"
+    python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
+rows = {e["id"]: e for e in data["insights"]}
+assert rows["INS-RECHECK-HIT"]["status"] == "done"
+assert rows["INS-RECHECK-MISS"]["status"] == "pending"
+PY
+}
+
+@test "absorb_pending mode does not queue a new concept candidate" {
+    export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
+    cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'
+insights:
+- id: INS-KNOWN
+  ts: "2026-06-12T00:00:00+09:00"
+  insight: "[[意味検索]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=意味検索"
+  priority: "low"
+  source: "semantic_stress_test"
+  status: pending
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" absorb_pending '{}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PENDING_ALIAS: already known 意味検索"* ]]
+    [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
+}
+
 @test "pending semantic insights: concept-named AC5 alias lines auto-promote without similarity score" {
     export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
     cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'

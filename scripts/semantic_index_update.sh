@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # semantic-links: [[セマンティック辞書構想]]
 # semantic_index_update.sh — Update semantic-index resources from known events.
-# Usage: bash scripts/semantic_index_update.sh <cmd_complete|lesson|discussion> '<json-payload>'
+# Usage: bash scripts/semantic_index_update.sh <cmd_complete|lesson|discussion|absorb_pending> '<json-payload>'
 
 set -euo pipefail
 
@@ -13,6 +13,7 @@ source_type:
   cmd_complete  payload: {"id":"cmd_123","title":"...","purpose":"...","files":["..."]}
   lesson        payload: {"id":"L123","title":"...","enforcement":"..."}
   discussion    payload: {"timestamp":"...","summary":"..."}
+  absorb_pending payload: {}  resolve pending semantic insights without queuing a new candidate
 EOF
 }
 
@@ -30,7 +31,7 @@ source_type="$1"
 payload_json="$2"
 
 case "$source_type" in
-    cmd_complete|lesson|discussion) ;;
+    cmd_complete|lesson|discussion|absorb_pending) ;;
     *)
         echo "ERROR: unknown source_type: $source_type" >&2
         exit 2
@@ -118,6 +119,7 @@ insight_write = Path(insight_arg)
 semantic_root = index_path.parent.parent.parent
 insights_path = Path(os.environ.get("SEMANTIC_INSIGHTS_PATH", str(semantic_root / "queue" / "insights.yaml")))
 deploy_log_path = Path(os.environ.get("SEMANTIC_DEPLOY_LOG", str(semantic_root / "logs" / "deploy_task.log")))
+semantic_search_path = Path(os.environ.get("SEMANTIC_SEARCH_CMD", str(semantic_root / "scripts" / "semantic_search.sh")))
 pending_alias_threshold = float(os.environ.get("SEMANTIC_PENDING_ALIAS_THRESHOLD", "16.0"))
 no_match_scan_lines = int(os.environ.get("SEMANTIC_NO_MATCH_SCAN_LINES", "500"))
 no_match_alias_limit = int(os.environ.get("SEMANTIC_NO_MATCH_ALIAS_LIMIT", "5"))
@@ -1036,6 +1038,11 @@ def parse_pending_semantic_insights(path):
         if not source_allowed:
             continue
 
+        original_query = ""
+        m_query = re.search(r"\bquery=(.*?)(?:\s+quality_gate=|\s+fixed_50_role=|$)", insight)
+        if m_query:
+            original_query = m_query.group(1).strip()
+
         candidates = []
         for raw in re.findall(r"\[\[([^\]]+)\]\]", insight):
             target = raw.split("|", 1)[0].split("#", 1)[0].strip()
@@ -1056,7 +1063,14 @@ def parse_pending_semantic_insights(path):
             seen.add(candidate_n)
             if is_semantic_wiki_target(candidate):
                 semantic_count += 1
-                pending.append({"id": insight_id, "alias": candidate, "insight": insight})
+                pending.append(
+                    {
+                        "id": insight_id,
+                        "alias": candidate,
+                        "insight": insight,
+                        "query": original_query,
+                    }
+                )
         if candidates and semantic_count == 0:
             pending.append({"id": insight_id, "alias": "", "insight": insight, "noise": True})
     return pending
@@ -1080,6 +1094,27 @@ def resolve_semantic_insight(insight_id):
         return False
     return True
 
+def pending_query_now_hits(query):
+    if not query or not semantic_search_path.exists():
+        return False
+    env = os.environ.copy()
+    env.setdefault("SEMANTIC_DISABLE_LLM", "1")
+    env.setdefault("SEMANTIC_ENABLE_LLM_FALLBACK", "0")
+    env.setdefault("SEMANTIC_DISABLE_SEARCH_LOG", "1")
+    try:
+        result = subprocess.run(
+            ["bash", str(semantic_search_path), query],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+            timeout=float(os.environ.get("SEMANTIC_PENDING_RECHECK_TIMEOUT", "8")),
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        print(f"WARN: pending semantic recheck failed: {query[:80]}: {exc}", file=sys.stderr)
+        return False
+    return result.returncode == 0
+
 def absorb_pending_semantic_insights(text, concepts):
     additions = {}
     resolved_ids = set()
@@ -1092,6 +1127,11 @@ def absorb_pending_semantic_insights(text, concepts):
         if item.get("noise"):
             resolved_ids.add(item["id"])
             messages.append(f"PENDING_ALIAS: resolved noise {item['id']}")
+            continue
+        recheck_query = item.get("query") or ""
+        if recheck_query and pending_query_now_hits(recheck_query):
+            resolved_ids.add(item["id"])
+            messages.append(f"PENDING_ALIAS_RECHECK: hit now {item['id']}")
             continue
         if item.get("direct_concept"):
             target = item["direct_concept"]
@@ -1186,6 +1226,12 @@ if pending_changed:
     index_path.write_text(text, encoding="utf-8")
     print("__SEMANTIC_INDEX_CHANGED__")
     print("__SEMANTIC_ALIASES_CHANGED__")
+if source_type == "absorb_pending":
+    if pending_messages:
+        print("ABSORB_PENDING: complete")
+    else:
+        print("ABSORB_PENDING: no semantic insight changes")
+    sys.exit(0)
 
 fields = flatten_text(payload)
 known_terms = concept_terms(concepts)

@@ -122,6 +122,7 @@ fi
 semantic_search="${SEMANTIC_SEARCH_CMD:-$script_dir/scripts/semantic_search.sh}"
 insight_write="${SEMANTIC_INSIGHT_WRITE:-$script_dir/scripts/insight_write.sh}"
 quality_test="${SEMANTIC_QUALITY_TEST_CMD:-$script_dir/scripts/semantic_quality_test.sh}"
+semantic_index_update="${SEMANTIC_INDEX_UPDATE_CMD:-$script_dir/scripts/semantic_index_update.sh}"
 if [ ! -f "$semantic_search" ]; then
     echo "ERROR: semantic_search not found: $semantic_search" >&2
     exit 1
@@ -637,6 +638,16 @@ if [ "$write_insights" = true ] && [ -s "$tmp_dir/high_frequency_no_match_terms.
                 medium semantic_stress_test >/dev/null
         fi
     done < "$tmp_dir/high_frequency_no_match_terms.tsv"
+fi
+
+if [ "$write_insights" = true ] && [ "${SEMANTIC_STRESS_ABSORB_PENDING:-1}" != "0" ] && [ -f "$semantic_index_update" ]; then
+    if SEMANTIC_STRESS_AFTER_ALIAS_CHANGE=0 SEMANTIC_QUALITY_AFTER_ALIAS_CHANGE=0 \
+        SEMANTIC_INSIGHTS_PATH="$insights_path" \
+        bash "$semantic_index_update" absorb_pending '{}' >/dev/null 2>&1; then
+        :
+    else
+        echo "WARN: semantic stress pending absorb failed" >&2
+    fi
 fi
 
 if [ "$auto_test_set_add" = true ] && [ -s "$tmp_dir/high_frequency_no_match_terms.tsv" ]; then
