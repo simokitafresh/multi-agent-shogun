@@ -22,7 +22,6 @@ GATE_REPO_ROOT="$REPO_ROOT" \
 python3 << 'PYEOF'
 import sys, re, os, json, glob, statistics
 from collections import Counter, defaultdict
-import yaml
 
 # Pre-compile patterns (minor speedup)
 RE_TS = re.compile(r'ts:\s*"([^"]*)"')
@@ -32,6 +31,7 @@ RE_REASONS = re.compile(r'reasons:\s*"(.*)"$')
 RE_FIXES = re.compile(r'fixes:\s*"(.*)"$')
 RE_LU = re.compile(r'lessons_useful\[\d+\]')
 RE_BC = re.compile(r'binary_checks\.\w+')
+RE_TASK_CLARITY_SCORE = re.compile(r'^  score:\s*(.*?)\s*(?:#.*)?$')
 
 log_path = os.environ['GATE_LOG_FILE']
 wa_path = os.environ['GATE_WA_FILE']
@@ -435,14 +435,27 @@ print()
 # === task_clarity_score 平均 (cmd_2130) ===
 _tc_scores = []
 for _rdir in [os.path.join(repo_root, 'queue', 'reports'), os.path.join(repo_root, 'archive', 'reports')]:
+    if not os.path.isdir(_rdir):
+        continue
     for _rp in glob.glob(os.path.join(_rdir, '*_report_*.yaml')):
         try:
-            with open(_rp, encoding='utf-8') as _rf:
-                _rd = yaml.safe_load(_rf) or {}
-            _tc = _rd.get('task_clarity') or {}
-            _score = _tc.get('score', '')
-            if _score is not None and str(_score).strip() not in ('', 'null'):
-                _tc_scores.append(float(str(_score).strip()))
+            in_task_clarity = False
+            with open(_rp, encoding='utf-8', errors='replace') as _rf:
+                for _line in _rf:
+                    if _line.startswith('task_clarity:'):
+                        in_task_clarity = True
+                        continue
+                    if not in_task_clarity:
+                        continue
+                    if _line and not _line.startswith(' '):
+                        break
+                    _m = RE_TASK_CLARITY_SCORE.match(_line)
+                    if not _m:
+                        continue
+                    _score = _m.group(1).strip().strip('"\'')
+                    if _score and _score != 'null':
+                        _tc_scores.append(float(_score))
+                    break
         except Exception:
             pass
 print('=== task_clarity_score 平均 ===')
