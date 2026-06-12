@@ -789,7 +789,22 @@ if [ -f "$_inbox_file" ] && [ -f "$LOG_FILE" ]; then
         /^  type:/ { mtype=$0 }
         END { flush() }
     ' "$_inbox_file" 2>/dev/null | grep -oP 'cmd_\d+' | sort -u || true)
-    _review_done=$(grep -B1 'review_type: \(report\|self_study\)' "$LOG_FILE" 2>/dev/null | grep 'cmd_id:' | grep -oP 'cmd_\d+' | sort -u)
+    # report + self_study(報告YAML不在の家老直接実施cmd代替)をreview_done扱い
+    # ただしself_studyは対応報告YAMLが不在の場合のみ(家老RC 2026-06-12: 通常report_review隠蔽防止)
+    _review_done_report=$(grep -B1 'review_type: report' "$LOG_FILE" 2>/dev/null | grep 'cmd_id:' | grep -oP 'cmd_\d+' | sort -u)
+    _review_done_self=$(grep -B1 'review_type: self_study' "$LOG_FILE" 2>/dev/null | grep 'cmd_id:' | grep -oP 'cmd_\d+' | sort -u)
+    _review_done="$_review_done_report"
+    for _ss_cmd in $_review_done_self; do
+        # self_studyのcmd_idに対応するreport_review完了(review_type: report)がなく、
+        # かつ報告YAMLが不在の場合のみreview_done扱い
+        if ! echo "$_review_done_report" | grep -q "^${_ss_cmd}$"; then
+            _has_report=$(find "$REPO_ROOT/queue/reports" "$REPO_ROOT/queue/archive/reports" -name "*report*${_ss_cmd}*" 2>/dev/null | head -1)
+            if [ -z "$_has_report" ]; then
+                _review_done=$(printf '%s\n%s' "$_review_done" "$_ss_cmd")
+            fi
+        fi
+    done
+    _review_done=$(echo "$_review_done" | sort -u)
     _missing=""
     for _cmd in $_review_requested; do
         if ! echo "$_review_done" | grep -q "^${_cmd}$"; then
