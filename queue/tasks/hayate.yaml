@@ -27,7 +27,7 @@ task:
   parent_cmd: cmd_karo_hotfix_speed_gate_lesson_health_20260612
   project: infra
   purpose: gate_lesson_health.shの実測ボトルネックを削り、startupサブゲートの実行時間を短縮する
-  status: done
+  status: idle
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun
   task_id: cmd_karo_hotfix_speed_gate_lesson_health_20260612_normal
