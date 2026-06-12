@@ -497,6 +497,37 @@ fi
 # Dangerous keyword detected — extract command and run python3 checker
 [[ -z "${command:-}" ]] && exit 0
 
+needs_destructive_python() {
+    local cmd="$1"
+
+    case "$cmd" in
+        *"rm "*|*"sudo"*|*"su "*|*"kill"*|*"git push"*|*"git reset"*|*"git checkout"*|*"git restore"*|*"git clean"*|*"tmux kill"*) return 0 ;;
+        *"mkfs"*|*"fdisk"*|*"mount"*|*"umount"*) return 0 ;;
+    esac
+    if [[ "$cmd" == *'curl'* || "$cmd" == *'wget'* ]]; then
+        [[ "$cmd" =~ \|[[:space:]]*(bash|sh)([[:space:]]|$) ]] && return 0
+        return 1
+    fi
+    if [[ "$cmd" == *'chmod'* || "$cmd" == *'chown'* ]]; then
+        [[ "$cmd" =~ (^|[[:space:]])--recursive([[:space:]]|$) || "$cmd" =~ (^|[[:space:]])-[^[:space:]]*R[^[:space:]]*([[:space:]]|$) ]] && return 0
+        return 1
+    fi
+    if [[ "$cmd" == *'dd '* ]]; then
+        [[ "$cmd" =~ (^|[[:space:]])if= ]] && return 0
+        return 1
+    fi
+    if [[ "$cmd" == *'chrome'* || "$cmd" == *'chromium'* ]]; then
+        [[ "$cmd" == *'--headless'* ]] && return 0
+        return 1
+    fi
+    return 1
+}
+
+if ! needs_destructive_python "$command"; then
+    emit_memory_db_for_knowledge_grep
+    exit 0
+fi
+
 approval_reason="$(destructive_approval_reason)"
 if [[ -n "$approval_reason" ]]; then
     emit_deny "$approval_reason"

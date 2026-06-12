@@ -223,6 +223,32 @@ for segment in split_segments(command):
 PY
 }
 
+pre_bash_combined_command_needs_destructive_python() {
+    local cmd="$1"
+
+    case "$cmd" in
+        *"rm "*|*"sudo"*|*"su "*|*"kill"*|*"git push"*|*"git reset"*|*"git checkout"*|*"git restore"*|*"git clean"*|*"tmux kill"*) return 0 ;;
+        *"mkfs"*|*"fdisk"*|*"mount"*|*"umount"*) return 0 ;;
+    esac
+    if [[ "$cmd" == *'curl'* || "$cmd" == *'wget'* ]]; then
+        [[ "$cmd" =~ \|[[:space:]]*(bash|sh)([[:space:]]|$) ]] && return 0
+        return 1
+    fi
+    if [[ "$cmd" == *'chmod'* || "$cmd" == *'chown'* ]]; then
+        [[ "$cmd" =~ (^|[[:space:]])--recursive([[:space:]]|$) || "$cmd" =~ (^|[[:space:]])-[^[:space:]]*R[^[:space:]]*([[:space:]]|$) ]] && return 0
+        return 1
+    fi
+    if [[ "$cmd" == *'dd '* ]]; then
+        [[ "$cmd" =~ (^|[[:space:]])if= ]] && return 0
+        return 1
+    fi
+    if [[ "$cmd" == *'chrome'* || "$cmd" == *'chromium'* ]]; then
+        [[ "$cmd" == *'--headless'* ]] && return 0
+        return 1
+    fi
+    return 1
+}
+
 pre_bash_combined_destructive_approval_reason() {
     local command="$1"
     local project_root="$2"
@@ -542,6 +568,12 @@ pre_bash_combined_eval_command() {
           "$command" != *'curl'* && "$command" != *'wget'* && \
           "$command" != *'chmod'* && "$command" != *'chown'* && \
           "$command" != *'tmux kill'* ]]; then
+        memory_context="$(pre_bash_combined_memory_injection_context "$command" "$project_root" "$agent_id" || true)"
+        [[ -n "$memory_context" ]] && printf '%s\n' "$memory_context"
+        return 0
+    fi
+
+    if ! pre_bash_combined_command_needs_destructive_python "$command"; then
         memory_context="$(pre_bash_combined_memory_injection_context "$command" "$project_root" "$agent_id" || true)"
         [[ -n "$memory_context" ]] && printf '%s\n' "$memory_context"
         return 0
