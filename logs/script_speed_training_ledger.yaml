@@ -15,9 +15,9 @@ entries:
   after_real_ms: 29
   real_measurement_command: "35-run median HOOK_PAYLOAD curl -s https://example.com/api via HEAD temp vs worktree"
   test_result: "bash -n PASS; scripts/hooks/test_hooks.sh 90/90 PASS; bats tests/unit/test_hook_dispatchers.bats 8/8 PASS; parity D001-D009/G2/D010 representative same"
-  commit: "WORKTREE"
+  commit: "a4bc44d5f"
   assigned_to: "kotaro"
-  updated_at: "2026-06-13T00:05:44"
+  updated_at: "2026-06-13T00:06:25"
   iteration: 0
 - script_path: ".claude/hooks/pretool-dispatch.sh"
   status: completed
