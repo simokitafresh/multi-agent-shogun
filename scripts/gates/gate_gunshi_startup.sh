@@ -559,35 +559,79 @@ if [ -f "$REVIEW_LOG" ]; then
     }
     ' "$REVIEW_LOG" 2>/dev/null || echo "0")
     if [ "$ungated" -gt 0 ]; then
-        # 自動sync実行（gate_result: null/不在をinbox/archiveから自動更新）
+        ungated_ids=$(awk '
+        function flush() {
+            if (n > 0 && !has_gate && (rt == "draft" || rt == "report") && id != "") print id
+            has_gate=0; rt=""; id=""
+        }
+        /^- (cmd_id|id):/ {
+            flush(); n++
+            id=$0; sub(/^- (cmd_id|id): */, "", id); gsub(/["'"'"' ]/, "", id)
+        }
+        /^  gate_result:/ {
+            v=$0; sub(/^  gate_result: */, "", v); gsub(/["'"'"' ]/, "", v)
+            if (v != "" && v != "null" && v != "pending") has_gate=1
+        }
+        /^  (review_type|type):/ {
+            v=$0; sub(/^  (review_type|type): */, "", v); gsub(/["'"'"']/, "", v)
+            if (v == "draft" || v == "report") rt=v
+        }
+        END { flush() }
+        ' "$REVIEW_LOG" 2>/dev/null)
+        # 自動sync実行（gate_result: null/不在をinboxから検知した時だけarchive全走査）
         GATE_SYNC="$SCRIPT_DIR/scripts/gunshi_gate_sync.sh"
         if [ -f "$GATE_SYNC" ]; then
-            if [ "$ungated" -gt 0 ]; then
-            sync_out=$(bash "$GATE_SYNC" 2>&1) || true
-            echo "  自動sync実行: $sync_out"
+            inbox_file="$SCRIPT_DIR/queue/inbox/gunshi.yaml"
+            has_new_gate_result=0
+            if [ -f "$inbox_file" ]; then
+                has_new_gate_result=$(UNGATED_IDS="$ungated_ids" awk '
+                BEGIN {
+                    n=split(ENVIRON["UNGATED_IDS"], ids, "\n")
+                    for (i=1; i<=n; i++) if (ids[i] != "") target[ids[i]]=1
+                }
+                function flush() {
+                    if (read_false && has_gate && content != "") {
+                        for (id in target) {
+                            if (index(content, id) > 0) found=1
+                        }
+                    }
+                    read_false=0; has_gate=0; content=""
+                }
+                /^[[:space:]]*-/ { flush() }
+                /read:[[:space:]]*false/ { read_false=1 }
+                /(content|body):/ { content=$0 }
+                /gate_result:[[:space:]]*["'\'' ]*(CLEAR|BLOCK)/ { has_gate=1 }
+                /type:[[:space:]]*["'\'' ]*(gate_result|gate_clear|review_feedback)/ { has_gate=1 }
+                END { flush(); print found ? 1 : 0 }
+                ' "$inbox_file" 2>/dev/null || echo 0)
+            fi
+            if [ "${GUNSHI_STARTUP_FORCE_GATE_SYNC:-0}" = "1" ] || [ "$has_new_gate_result" -eq 1 ]; then
+                sync_out=$(bash "$GATE_SYNC" 2>&1) || true
+                echo "  自動sync実行: $sync_out"
+                # sync後に再計測
+                ungated_after=$(awk '
+                /^- (cmd_id|id):/ {
+                    if (n > 0 && !has_gate && (rt == "draft" || rt == "report")) count++
+                    n++; has_gate=0; rt=""
+                }
+                /^  gate_result:/ {
+                    v=$0; sub(/^  gate_result: */, "", v); gsub(/["'"'"' ]/, "", v)
+                    if (v != "" && v != "null" && v != "pending") has_gate=1
+                }
+                /^  (review_type|type):/ {
+                    v=$0; sub(/^  (review_type|type): */, "", v); gsub(/["'"'"']/, "", v)
+                    if (v == "draft" || v == "report") rt=v
+                }
+                END {
+                    if (n > 0 && !has_gate && (rt == "draft" || rt == "report")) count++
+                    print count+0
+                }
+                ' "$REVIEW_LOG" 2>/dev/null || echo "0")
             else
                 sync_out="SKIP: inbox内に未反映cmdのgate_resultなし（archive全走査省略）"
                 echo "  自動sync実行: $sync_out"
+                ungated_after="$ungated"
             fi
-            # sync後に再計測
-            ungated_after=$(awk '
-            /^- (cmd_id|id):/ {
-                if (n > 0 && !has_gate && (rt == "draft" || rt == "report")) count++
-                n++; has_gate=0; rt=""
-            }
-            /^  gate_result:/ {
-                v=$0; sub(/^  gate_result: */, "", v); gsub(/["'"'"' ]/, "", v)
-                if (v != "" && v != "null" && v != "pending") has_gate=1
-            }
-            /^  (review_type|type):/ {
-                v=$0; sub(/^  (review_type|type): */, "", v); gsub(/["'"'"']/, "", v)
-                if (v == "draft" || v == "report") rt=v
-            }
-            END {
-                if (n > 0 && !has_gate && (rt == "draft" || rt == "report")) count++
-                print count+0
-            }
-            ' "$REVIEW_LOG" 2>/dev/null || echo "0")
             echo "  GATE結果未反映: ${ungated}→${ungated_after}件 (sync後)"
         else
             echo "  GATE結果未反映: ${ungated}件"

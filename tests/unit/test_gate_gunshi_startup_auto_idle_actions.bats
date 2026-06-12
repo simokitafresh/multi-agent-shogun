@@ -57,3 +57,49 @@ teardown() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"idle Step 3: 未自動化教訓のgate化を実施"* ]]
 }
+
+@test "gate_gunshi_startup skips expensive gate sync when inbox has no new gate_result" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'EOF'
+- cmd_id: cmd_100
+  review_type: report
+  verdict: APPROVE
+EOF
+    cat > "$TEST_TMPDIR/scripts/gunshi_gate_sync.sh" <<'EOF'
+#!/usr/bin/env bash
+touch "$PWD/sync_called"
+echo "SYNC_CALLED"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/gunshi_gate_sync.sh"
+
+    run bash -c "cd '$TEST_TMPDIR' && scripts/gates/gate_gunshi_startup.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"自動sync実行: SKIP: inbox内に未反映cmdのgate_resultなし（archive全走査省略）"* ]]
+    [[ "$output" == *"GATE結果未反映: 1→1件 (sync後)"* ]]
+    [ ! -e "$TEST_TMPDIR/sync_called" ]
+}
+
+@test "gate_gunshi_startup runs gate sync when inbox has new gate_result" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'EOF'
+- cmd_id: cmd_100
+  review_type: report
+  verdict: APPROVE
+EOF
+    cat > "$TEST_TMPDIR/queue/inbox/gunshi.yaml" <<'EOF'
+messages:
+  - id: msg_1
+    type: gate_result
+    read: false
+    body: "cmd_100 gate_result: CLEAR"
+EOF
+    cat > "$TEST_TMPDIR/scripts/gunshi_gate_sync.sh" <<'EOF'
+#!/usr/bin/env bash
+touch "$PWD/sync_called"
+echo "SYNC_CALLED"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/gunshi_gate_sync.sh"
+
+    run bash -c "cd '$TEST_TMPDIR' && scripts/gates/gate_gunshi_startup.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"自動sync実行: SYNC_CALLED"* ]]
+    [ -e "$TEST_TMPDIR/sync_called" ]
+}
