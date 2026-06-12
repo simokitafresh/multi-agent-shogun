@@ -362,7 +362,7 @@ filter_skills_for_agent() {
 
 semantic_skill_recommendations() {
   local cache_file
-  local cache_version="role-filter-v1"
+  local cache_version="role-filter-v2"
   local prompt_hash
   local cached_hash
   local cached_version
@@ -376,7 +376,13 @@ semantic_skill_recommendations() {
   (( prompt_is_inbox_nudge == 0 )) || return 0
 
   cache_file="/tmp/skill_recommend_cache_${agent_id//[^A-Za-z0-9_.-]/_}"
-  prompt_hash="$(printf '%s' "$prompt_text" | sha256sum | awk '{print $1}')"
+  prompt_hash="$(
+    {
+      printf 'prompt=%s\n' "$prompt_text"
+      printf 'skills_dir=%s\n' "${PROMPT_STATE_SKILLS_DIR:-$SCRIPT_DIR/skills}"
+      printf 'semantic_cmd=%s\n' "${PROMPT_STATE_SEMANTIC_SEARCH_CMD:-$SCRIPT_DIR/scripts/semantic_search.sh}"
+    } | sha256sum | awk '{print $1}'
+  )"
   if [[ -f "$cache_file" ]]; then
     cached_hash="$(sed -n '1s/^prompt_sha256: //p' "$cache_file" 2>/dev/null || true)"
     cached_version="$(sed -n '2s/^filter_version: //p' "$cache_file" 2>/dev/null || true)"
