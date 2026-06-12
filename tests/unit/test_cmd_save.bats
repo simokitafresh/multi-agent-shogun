@@ -290,6 +290,17 @@ _setup_cmd_block() {
     [[ "$output" == *"非致命的なので後で対応する"* ]]
 }
 
+@test "cmd_3326: deferral language does not warn for before-after wording" {
+    CMD_BLOCK_NC='    title: "比較cmd"
+    command: "修正前後で検出結果を比較する"'
+    export CMD_BLOCK_NC
+
+    run bash -c 'check_deferral_language_warn "$CMD_BLOCK_NC" 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"先送り表現を検出"* ]]
+}
+
 # --- Check 6: GP重複検出 ---
 
 @test "Check6: GP番号一致でWARN出力" {
@@ -1010,7 +1021,7 @@ YAML
     [[ "$output" != *"q8_縮小表現"* ]]
 }
 
-@test "cmd_3025: scope_mode未設定ならq8のだけ表現は縮小表現WARNINGを維持する" {
+@test "cmd_3025: scope_mode未設定ならq8の探索対象だけ表現は縮小表現WARNINGを維持する" {
     create_queue_file << 'YAML'
 commands:
   cmd_3025_q8_unset:
@@ -1028,7 +1039,7 @@ commands:
       q3_next_quality: "上がる"
       q4_depth: "shallow — q8 focused除外のTP回帰確認"
       q5_verified_source: "tests/unit/test_cmd_save.bats isolated_test"
-      q8_why_what: "WHY: 不明な限定は範囲縮小として検出する → WHAT: q8縮小表現判定だけを検証する → WHEN: cmd保存時 → WHERE: scripts/cmd_save.sh → WHO: 将軍 → HOW: scope_mode未設定では既存WARNを維持する。複利: 正の複利"
+      q8_why_what: "WHY: 不明な限定は範囲縮小として検出する → WHAT: 探索対象だけを検証する → WHEN: cmd保存時 → WHERE: scripts/cmd_save.sh → WHO: 将軍 → HOW: scope_mode未設定では既存WARNを維持する。複利: 正の複利"
       q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
       q11_not_already_done: "未達成。rg q8_縮小表現 scripts/cmd_save.sh で既存チェック確認済み"
     assumptions:
@@ -1042,6 +1053,40 @@ YAML
     echo "$output" >&2
     [ "$status" -eq 0 ]
     [[ "$output" == *"q8_why_whatのWHATに縮小表現を検出"* ]]
+}
+
+@test "cmd_3326: q8 ordinary exact check wording does not trigger shrinkage warning" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_3326_q8_fp:
+    id: cmd_3326_q8_fp
+    title: "検証 — q8通常文言"
+    purpose: "q8の通常説明に含まれる限定語が誤反応しないことを確認する"
+    command: |
+      scripts/cmd_save.shのq8縮小表現判定だけを修正する
+    acceptance_criteria:
+      - "AC1: 通常文言ではq8縮小表現WARNが出ない"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "shallow — q8 FP局所回帰確認"
+      q5_verified_source: "tests/unit/test_cmd_save.bats isolated_test"
+      q8_why_what: "WHY: exactな対象文は縮小ではない → WHAT: q8縮小表現判定だけを修正する → WHEN: cmd保存時 → WHERE: scripts/cmd_save.sh → WHO: 将軍 → HOW: 縮小対象語との近接時だけWARNにする。複利: 正の複利"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats のfixture範囲のみ使用"
+      q11_not_already_done: "未達成。rg q8_縮小表現 scripts/cmd_save.sh で既存チェック確認済み"
+    assumptions:
+      - claim: "cmd_3323で通常説明のだけ表現はFPと分類済み"
+        source: "docs/research/cmd_3323_cmd_design_quality_fp_classification_20260612.md"
+        trust: "verified"
+YAML
+
+    CMD_ID="cmd_3326_q8_fp"; export CMD_ID
+    run check_quality_gate
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"q8_why_whatのWHATに縮小表現を検出"* ]]
 }
 
 @test "cmd_2837: q8の代表/一部は正当WARNINGを維持する" {

@@ -89,6 +89,28 @@ teardown() {
     [[ "$output" != *"WARNING: 因果確認不足"* ]]
 }
 
+@test "cmd_3326: causal scope accepts structured evidence without magic words" {
+    local CMD_BLOCK='    project: infra
+    title: "改善 — cmd_save structured evidence"
+    purpose: "cmd_save.shの検査誤反応を分類結果に沿って修理する"
+    target_path: scripts/cmd_save.sh
+    command: |
+      scripts/cmd_save.sh を修正する
+    acceptance_criteria:
+      - id: AC1
+        description: "scripts/cmd_save.sh と docs/research/cmd_3323_cmd_design_quality_fp_classification_20260612.md と a990a5c39 の整合を確認する"
+    quality_gate:
+      q5_verified_source: "structure_verified — scripts/cmd_save.sh; docs/research/cmd_3323_cmd_design_quality_fp_classification_20260612.md; commit a990a5c39"
+      q8_why_what: "WHY: magic word依存だと証跡済みcmdもWARNになる → WHAT: 構造化証跡を確認する"'
+
+    run bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: [CAUSAL_VERIFICATION]"* ]]
+    [[ "$output" != *"WARNING: 因果確認不足"* ]]
+}
+
 @test "non causal scope does not emit q5 template" {
     local CMD_BLOCK='    project: infra
     title: "文言整理"

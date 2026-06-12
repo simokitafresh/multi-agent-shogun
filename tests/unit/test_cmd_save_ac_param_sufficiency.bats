@@ -181,3 +181,18 @@ _set_cmd_block_nc() {
     [[ "$output" == *"WARN: ACに数量指定"* ]]
     [[ "$output" == *"WARN_COUNT=1"* ]]
 }
+
+@test "cmd_3326: AC内の参照番号やcmd番号は数量指定WARNにならない" {
+    _set_cmd_block_nc "    acceptance_criteria:
+    - ac: 'Q7とAC2とcmd_3322の第5節を参照して修理方針を確認する'"
+    run bash -c '
+        eval "$(sed -n '"'"'/^extract_acceptance_criteria_block()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^check_ac_param_sufficiency()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        WARN_COUNT=0
+        check_ac_param_sufficiency
+        echo "WARN_COUNT=$WARN_COUNT"
+    '
+    echo "output: $output" >&2
+    [[ "$output" != *"WARN: ACに数量指定"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
+}

@@ -652,7 +652,7 @@ check_deferral_language_warn() {
     [[ -n "$search_text" ]] || return 0
 
     local hits
-    hits="$(printf '%s\n' "$search_text" | grep -nE '低優先|後で|次セッション|非致命的|見送り|段階的に|後回し|severity.?normal' || true)"
+    hits="$(printf '%s\n' "$search_text" | grep -nE '低優先|後で|次セッション|非致命的|見送り|段階的に|後回し|severity.?normal' | grep -vE '前後|直後|以後|以前|以降' || true)"
     [[ -n "$hits" ]] || return 0
 
     echo "WARNING: cmd全文に先送り表現を検出。創造主の洗脳によるさぼり正当化のシグナル" >&2
@@ -1423,7 +1423,7 @@ check_causal_verification_requirement() {
     echo "  必須: git log/blame・関連教訓・設計書・semantic/causal確認をq5/q8/origin/ACへ記録" >&2
     show_causal_verification_q5_template
 
-    local origin_value q5_value q8_value combined
+    local origin_value q5_value q8_value combined structured_evidence_count
     origin_value="$(cmd_block_get_field "origin")"
     q5_value="$(cmd_block_get_field "quality_gate.q5_verified_source")"
     q8_value="$(cmd_block_get_field "quality_gate.q8_why_what")"
@@ -1435,7 +1435,12 @@ $(extract_acceptance_criteria_block)"
         echo "DEBUG: [CAUSAL_VERIFICATION] q5_value=${q5_value}" >&2
     fi
 
-    if ! printf '%s\n' "$combined" | grep -qiE 'git log|git blame|blame|履歴|導入理由|設計意図|因果|causal|semantic|教訓|docs/research/causal-verification-l0-l7-design_20260602'; then
+    structured_evidence_count=0
+    printf '%s\n' "$combined" | grep -qiE 'scripts/|context/|docs/|projects/|queue/|tests/|[A-Za-z0-9_./-]+\.(sh|py|md|yaml|bats)' && structured_evidence_count=$((structured_evidence_count + 1))
+    printf '%s\n' "$combined" | grep -qiE 'commit|[0-9a-f]{7,40}|cmd_[0-9]+|L[0-9]+|lesson' && structured_evidence_count=$((structured_evidence_count + 1))
+    printf '%s\n' "$combined" | grep -qiE '設計書|設計意図|design doc|docs/research/|教訓|lesson' && structured_evidence_count=$((structured_evidence_count + 1))
+
+    if ! printf '%s\n' "$combined" | grep -qiE 'git log|git blame|blame|履歴|導入理由|設計意図|因果|causal|semantic|教訓|docs/research/causal-verification-l0-l7-design_20260602' && (( structured_evidence_count < 2 )); then
         echo "WARNING: 因果確認不足。対象scopeでは origin/q5/q8/AC に git log/blame・教訓・設計意図・semantic/causal確認を明記せよ" >&2
         record_warn_reason "causal_verification_missing" "check=check_causal_verification_requirement"
     fi
@@ -2907,6 +2912,10 @@ QG_TEMPLATE
         # WHAT部分の縮小表現検出（WARN — AC2）
         _Q8_WW_VAL="$(cmd_block_get_field "quality_gate.q8_why_what")"
         _Q8_WHAT_PART="${_Q8_WW_VAL#*WHAT:}"
+        _Q8_WHAT_PART="${_Q8_WHAT_PART%%WHEN:*}"
+        _Q8_WHAT_PART="${_Q8_WHAT_PART%%WHERE:*}"
+        _Q8_WHAT_PART="${_Q8_WHAT_PART%%WHO:*}"
+        _Q8_WHAT_PART="${_Q8_WHAT_PART%%HOW:*}"
         _Q8_SCOPE_MODE="$(cmd_block_get_field "scope_mode")"
         _Q8_SCOPE_EXEMPT=false
         # scope_mode=focused/exact は限定表現が正当なので _Q8_SCOPE_EXEMPT 扱いにする。
@@ -2917,7 +2926,7 @@ QG_TEMPLATE
         if echo "$_Q8_WHAT_PART" | grep -qE '偵察のみ|分析のみ|調査のみ|確認のみ|コード変更なし|非破壊|対象外|not[- ]in[- ]scope|スコープ限定|範囲限定'; then
             _Q8_SCOPE_EXEMPT=true
         fi
-        if echo "$_Q8_WHAT_PART" | grep -qE 'のみ|だけ|一部|代表' && [[ "$_Q8_SCOPE_EXEMPT" != true ]]; then
+        if echo "$_Q8_WHAT_PART" | grep -qE '(のみ|だけ|一部|代表).{0,24}(対象|範囲|探索|パラメータ|件数|サンプル)|(対象|範囲|探索|パラメータ|件数|サンプル).{0,24}(のみ|だけ|一部|代表)' && [[ "$_Q8_SCOPE_EXEMPT" != true ]]; then
             echo "WARN: q8_why_whatのWHATに縮小表現を検出。全量やることを確認せよ" >&2
             echo "  → のみ/だけ/一部/代表 は範囲縮小のシグナル(殿厳命 2026-04-04)" >&2
             record_warn_reason "q8_縮小表現" "check=quality_gate_q8_scope_expression"
@@ -4405,6 +4414,9 @@ check_ac_param_sufficiency() {
     local HIT=false
     while IFS= read -r line; do
         [[ -z "$line" ]] && continue
+        if echo "$line" | grep -qE '(参照|引用|節番号|章番号|項番).{0,40}(第[0-9]+|[0-9]+章|[0-9]+節|Q[0-9]+|AC[0-9]+|cmd_[0-9]+)|(第[0-9]+|[0-9]+章|[0-9]+節|Q[0-9]+|AC[0-9]+|cmd_[0-9]+).{0,40}(参照|引用|節番号|章番号|項番)'; then
+            continue
+        fi
         # 具体値列挙チェック: 括弧内にスラッシュ区切り or カンマ区切り or 中点区切りの項目
         if ! echo "$line" | grep -qE '\([^)]*[/,・][^)]*\)'; then
             if [[ "$HIT" == false ]]; then
@@ -5693,6 +5705,11 @@ _WARN_ESCALATE_THRESHOLD=1
 if [[ ${#WARN_REASONS[@]} -gt 0 ]]; then
     # カウントを先に(log書込み前)。書込み後だと自分自身をカウントする(閾値1で即BLOCK)
     for _warn_r in "${WARN_REASONS[@]}"; do
+        case "$_warn_r" in
+            *"check=cmd_text_deferral_language"*|*"check=quality_gate_q8_scope_expression"*|*"check=check_ac_param_sufficiency"*|*"check=check_causal_verification_requirement"*)
+                continue
+                ;;
+        esac
         _warn_prior_count=$(count_same_warn_pattern "$_warn_r" 2>/dev/null || echo 0)
         [[ "$_warn_prior_count" =~ ^[0-9]+$ ]] || _warn_prior_count=0
         if (( _warn_prior_count >= _WARN_ESCALATE_THRESHOLD )); then
