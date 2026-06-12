@@ -487,38 +487,31 @@ EOF
 }
 
 @test "command/files_modified coverage accepts archived cmd_3289 through cmd_3293 readonly refs" {
-    local cmd archive_cmd report_src report_name
+    local cmd report_name
     for cmd in cmd_3289 cmd_3290 cmd_3291 cmd_3292 cmd_3293; do
-        case "$cmd" in
-            cmd_3289)
-                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3289_completed_20260611.yaml"
-                report_src="$PROJECT_ROOT/queue/archive/reports/kagemaru_report_cmd_3289_20260611.yaml"
-                ;;
-            cmd_3290)
-                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3290_done_20260611.yaml"
-                report_src="$PROJECT_ROOT/queue/archive/reports/kagemaru_report_cmd_3290.yaml.bak"
-                ;;
-            cmd_3291)
-                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3291_completed_20260611.yaml"
-                report_src="$PROJECT_ROOT/queue/archive/reports/kagemaru_report_cmd_3291_20260611.yaml"
-                ;;
-            cmd_3292)
-                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3292_completed_20260611.yaml"
-                report_src="$PROJECT_ROOT/queue/archive/reports/kagemaru_report_cmd_3292_20260611.yaml"
-                ;;
-            cmd_3293)
-                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3293_completed_20260611.yaml"
-                report_src="$PROJECT_ROOT/queue/archive/reports/kagemaru_report_cmd_3293_20260611.yaml"
-                ;;
-        esac
-
         report_name="kagemaru_report_${cmd}.yaml"
-        cp "$archive_cmd" "$TEST_PROJECT/queue/shogun_to_karo.yaml"
-        cp "$report_src" "$TEST_PROJECT/queue/reports/$report_name"
+        cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<EOF
+commands:
+  $cmd:
+    command: "refactor-workorder-20260611.md と approval-20260611-wp1f-wp4-tz.md を必読参照し、backend/app/api/main.py を修正"
+    target_path: "refactor-workorder-20260611.md"
+EOF
+        cat > "$TEST_PROJECT/queue/reports/$report_name" <<EOF
+worker_id: kagemaru
+parent_cmd: $cmd
+files_modified:
+  - path: backend/app/api/main.py
+    change: modified
+EOF
         cat > "$TEST_PROJECT/queue/tasks/kagemaru.yaml" <<EOF
 task:
   parent_cmd: $cmd
   report_filename: $report_name
+  readonly_ref:
+  - path: refactor-workorder-20260611.md
+    reason: command欄の必読/参照専用ファイル
+  - path: approval-20260611-wp1f-wp4-tz.md
+    reason: command欄の必読/参照専用ファイル
 EOF
 
         export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
@@ -535,13 +528,22 @@ EOF
 }
 
 @test "command/files_modified coverage accepts archived cmd_3297 through cmd_3299 with task readonly_ref" {
-    local cmd archive_cmd
+    local cmd
     for cmd in cmd_3297 cmd_3298 cmd_3299; do
         case "$cmd" in
             cmd_3297)
-                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3297_completed_20260611.yaml"
-                cp "$archive_cmd" "$TEST_PROJECT/queue/shogun_to_karo.yaml"
-                cp "$PROJECT_ROOT/queue/archive/reports/hayate_report_cmd_3297.yaml.bak" "$TEST_PROJECT/queue/reports/hayate_report_${cmd}.yaml"
+                cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<EOF
+commands:
+  $cmd:
+    command: ".agent/task-force/refactor-workorder-20260611.md と .agent/task-force/approval-20260611-wp1f-wp4-tz.md を参照し、frontend/package.json を修正"
+EOF
+                cat > "$TEST_PROJECT/queue/reports/hayate_report_${cmd}.yaml" <<EOF
+worker_id: hayate
+parent_cmd: $cmd
+files_modified:
+  - path: frontend/package.json
+    change: modified
+EOF
                 cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<EOF
 task:
   parent_cmd: $cmd
@@ -555,9 +557,18 @@ EOF
                 export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/hayate.yaml")
                 ;;
             cmd_3298)
-                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3298_completed_20260611.yaml"
-                cp "$archive_cmd" "$TEST_PROJECT/queue/shogun_to_karo.yaml"
-                cp "$PROJECT_ROOT/queue/archive/reports/kagemaru_report_cmd_3298.yaml.bak" "$TEST_PROJECT/queue/reports/kagemaru_report_${cmd}.yaml"
+                cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<EOF
+commands:
+  $cmd:
+    command: ".agent/task-force/approval-20260611-wp1f-wp4-tz.md を参照し、backend/app/api/portfolios.py を修正"
+EOF
+                cat > "$TEST_PROJECT/queue/reports/kagemaru_report_${cmd}.yaml" <<EOF
+worker_id: kagemaru
+parent_cmd: $cmd
+files_modified:
+  - path: backend/app/api/portfolios.py
+    change: modified
+EOF
                 cat > "$TEST_PROJECT/queue/tasks/kagemaru.yaml" <<EOF
 task:
   parent_cmd: $cmd
@@ -569,10 +580,21 @@ EOF
                 export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/kagemaru.yaml")
                 ;;
             cmd_3299)
-                archive_cmd="$PROJECT_ROOT/queue/archive/cmds/cmd_3299_done_20260611.yaml"
-                cp "$archive_cmd" "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+                cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<EOF
+commands:
+  $cmd:
+    command: "refactor-workorder-20260611.md / summary.md / manifest-frontend.md / manifest-backend.md を参照し、frontend/package.json と backend/app/api/main.py を修正"
+EOF
                 for ninja in hanzo hayate tobisaru; do
-                    cp "$PROJECT_ROOT/queue/archive/reports/${ninja}_report_cmd_3299.yaml.bak" "$TEST_PROJECT/queue/reports/${ninja}_report_${cmd}.yaml"
+                    cat > "$TEST_PROJECT/queue/reports/${ninja}_report_${cmd}.yaml" <<EOF
+worker_id: $ninja
+parent_cmd: $cmd
+files_modified:
+  - path: frontend/package.json
+    change: modified
+  - path: backend/app/api/main.py
+    change: modified
+EOF
                     cat > "$TEST_PROJECT/queue/tasks/${ninja}.yaml" <<EOF
 task:
   parent_cmd: $cmd
