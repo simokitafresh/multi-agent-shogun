@@ -1701,7 +1701,7 @@ codd:
 |------|---|
 | id | dm_signal_refactor_mission |
 | label | DM-Signalリファクタ任務 |
-| aliases | DM-Signalリファクタリング, リファクタリング実行任務, リファクタ実行任務, 調査チーム, リファクタリング調査チーム, 質問状, 裁可書, 返信書, 状況報告書, 第3報, 第4報, execution-status-report, execution-log, workorder, task-force, WP-0, WP-1F, WP-1B, WP-2, WP-3, WP-4, WP-3 AC1, WP-3 AC2, AC2 BE分割, BE4モジュール分割, マージ裁可, mainマージを裁可, マージを裁可する, 本番反映せよ, 個別裁可制, マージ デプロイ個別裁可, ファサード化, price_ratio_calculator分割, price_ratio分割, scaffolding, patch互換, beforeスナップショット, API deep-diff, deep-diff検収, 契約テスト, WP-0契約テスト, 整形先行コミット, style先行コミット, 整形分離, 整形混入, push禁止窓, cron禁止窓, cronはUTC, cron窓00:50-02:10 UTC, レビュー通過まで着手禁止, 1モジュール1サイクル, dead-code削除, FE削除, BE削除, api-client型移設 |
+| aliases | DM-Signalリファクタリング, リファクタリング実行任務, リファクタ実行任務, 調査チーム, リファクタリング調査チーム, 質問状, 裁可書, 返信書, 状況報告書, 第3報, 第4報, execution-status-report, execution-log, workorder, task-force, WP-0, WP-1F, WP-1B, WP-2, WP-3, WP-4, WP-3 AC1, WP-3 AC2, AC2 BE分割, BE4モジュール分割, マージ裁可, mainマージを裁可, マージを裁可する, 本番反映せよ, 個別裁可制, マージ デプロイ個別裁可, ファサード化, price_ratio_calculator分割, price_ratio分割, scaffolding, patch互換, beforeスナップショット, API deep-diff, deep-diff検収, 契約テスト, WP-0契約テスト, 整形先行コミット, style先行コミット, 整形分離, 整形混入, push禁止窓, cron禁止窓, cronはUTC, cron窓00:50-02:10 UTC, レビュー通過まで着手禁止, 1モジュール1サイクル, dead-code削除, FE削除, BE削除, api-client型移設, リファクタリングをするとどのようなメリットがあり, 現状に比較してどうなるんだ, FE系5コミットをmainへ先行マージ, FE系5コミットをmainへ先行マージ 本番反映しよう |
 | skills | なし |
 | related_concepts | production_parity, creator_brainwashing_defense, gate_bypass_prevention, dm_signal_ops |
 
@@ -3522,4 +3522,3 @@ codd:
 | 種別 | パス/参照 |
 |------|----------|
 | cmd | `cmd_3056` auto project registry intake |
-
