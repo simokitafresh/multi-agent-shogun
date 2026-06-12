@@ -3,20 +3,11 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      binary_check: 13件/32件の根拠となる一次ファイルと該当IDまたは算出条件が報告YAMLに記録されたか？
-      description: bash scripts/gates/gate_shogun_startup.sh の掲示板action_required未対応13件と将軍教訓32件(上限31)の発火ロジックを特定し、入力ファイル・該当ID・現状値を列挙する
+      description: bash scripts/gates/gate_gunshi_startup.sh の一次出力でCS/冷えWARNの直接原因を特定する
     AC2:
-      binary_check: action_required13件が resolved_by_karo / needs_shogun_decision / needs_gunshi_review / invalid_stale のいずれかに分類され、可能なものは処理済みか？
-      description: 掲示板action_requiredについて、家老が安全に処理できる既処理/重複/古い通知は正規スクリプトで状態更新する。判断が必要なものは放置せず、宛先・必要判断・次アクションを表にする
+      description: 未解消なら最小修正またはチェックリスト更新を行い、同WARNが3連続CRITICAL化しない状態にする
     AC3:
-      binary_check: 将軍教訓の統合候補と禁止した操作(lesson-sort等)が明記され、家老/忍者が越権編集していないか？
-      description: 将軍教訓32件超過は将軍専用領域のため、lesson-sort等の将軍専用スキルは実行しない。重複/統合候補を一次情報で抽出し、将軍が1操作で統合判断できる候補表を作る
-    AC4:
-      binary_check: 掲示板action_requiredと将軍教訓超過のそれぞれに、修正前後または未解消理由の二値結果があるか？
-      description: 変更を入れた場合は対象gateを再実行し、修正前→修正後の数値差分を記録する。変更なしの場合も再現コマンドと未解消理由を二値で記録する
-    AC5:
-      binary_check: commit hashまたはコード変更なしのgit status確認が報告YAMLに記録されているか？
-      description: コード/YAML変更がある場合はcommitする。変更なしの場合は files_modified=none とgit status確認を報告する
+      description: 対象gate/関連テストを再実行し、改善前後のWARN/CRITICAL件数を数値で報告する
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -30,51 +21,55 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope: 追体験自動化ターゲット・洗脳連鎖2x2・スキル別FAIL率(hanzo担当)、SKILL.md script参照(hayate担当)、将軍専用lesson-sort実行、将軍教訓ファイルの越権編集
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_bulletin_lessons_202606121138
+  parent_cmd: cmd_karo_hotfix_gunshi_cs_startup_20260613
   project: infra
-  purpose: 将軍startupで3セッション連続BLOCKしている掲示板action_required未対応13件と将軍教訓32件超過を一次情報で再現し、家老が実行可能な解消または将軍専用手順へ分解する
-  status: done
+  purpose: 軍師startup CS観点チェックリスト/冷え観点WARNの3セッション連続CRITICALを一次確認し、解消または防御層を実装する
+  status: acknowledged
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun
-  task_id: cmd_karo_hotfix_bulletin_lessons_202606121138_normal
+  task_id: cmd_karo_hotfix_gunshi_cs_startup_20260613_normal
   task_type: hotfix
   related_lessons:
-  - id: 'L472'
-    summary: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含'
-    detail: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含'
-  - id: 'L585'
-    summary: 'sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの'
-    detail: 'sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの'
-  - id: 'L086'
-    summary: 'auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは'
-    detail: 'auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは'
-  - id: 'L147'
-    summary: 'IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les'
-    detail: 'IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les'
-  - id: 'L114'
-    summary: 'cmd_464_hotfix'
-    detail: 'cmd_464_hotfix'
-  - id: 'L583'
-    summary: 'gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate'
-    detail: 'gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate'
-  - id: 'L529'
-    summary: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
-    detail: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
-  - id: 'L314'
-    summary: 'cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf'
-    detail: 'cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf'
-  - id: 'L190'
-    summary: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき'
-    detail: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき'
-  - id: 'L377'
-    summary: 'lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam'
-    detail: 'lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam'
+  - id: 'L508'
+    summary: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
+    detail: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
+  - id: 'L783'
+    summary: 'サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ'
+    detail: 'サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ'
+  - id: 'L324'
+    summary: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
+    detail: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
+  - id: 'L119'
+    summary: 'inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat'
+    detail: 'inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat'
+  - id: 'L673'
+    summary: 'grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc'
+    detail: 'grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc'
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L674'
+    summary: 'gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA'
+    detail: 'gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA'
+  - id: 'L216'
+    summary: 'IF gate_metricsテストを書く THEN tmuxモックを配置してライブ環境からの干渉を防げ BECAUSE resolve_agent_model'
+    detail: 'IF gate_metricsテストを書く THEN tmuxモックを配置してライブ環境からの干渉を防げ BECAUSE resolve_agent_model'
+  - id: 'L144'
+    summary: 'IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する'
+    detail: 'IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "known_unknowns_principle — 無知の知:  memory/deepdive_causal_tracing_20260415.md context/growth-loop.md"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  - "production_parity — 本番パリティ:  context/dm-signal-core.md §19.3 context/checklist-shin-v2-registration.md docs/research/dmsignal_parity_verification_audit.md docs/research/pf_config_backup_20260601_pre_delete.json 削除前58件config全量バックアップ docs/research/gunshi_alm_parity_drift_analysis_20260409.md — 軍師分析: ALMパリティドリフト分析(2026-04-09)"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
   growth_loop_defense:
@@ -89,29 +84,40 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L472: instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含
-      - L585: sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの
-      - L086: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは
-      - L147: IF related_lessons.detail注入はlessons.yamlスキーマ依存 — 現行スキーマ時 THEN AC6を成立させるには(1) les
-      - L114: cmd_464_hotfix
-      - L583: gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate
-      - L529: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を
-      - L314: cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf
-      - L190: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき
-      - L377: lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam
+      - L508: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL
+      - L783: サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ
+      - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ
+      - L119: inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat
+      - L673: grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L674: gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA
+      - L216: IF gate_metricsテストを書く THEN tmuxモックを配置してライブ環境からの干渉を防げ BECAUSE resolve_agent_model
+      - L144: IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-05-21T00:56:18+09:00 | insightに記録した。将軍startup gateでNO_MATCH件数を毎回見るので、20件蓄積時に気づく。意志依存ではなく計測データが自然にトリガーする。 殿の指示を待つ。 [meta] st"
-  - "2026-05-21T00:29:57+09:00 | 穴をなぜなぜ7回で深掘りし、行動に変換する。 **穴1: 将軍startup gateにNO_MATCH率がない** → なぜ: ACに「startup gate」と書いただけで「誰の」を指定しなかっ"
-  - "2026-06-11T22:31:19+09:00 | 殿、SessionLocal対処hotfixのGATE CLEARを確認した。現時点の戦況を一次情報で固めて報告する。 ## 確認済みの事実（git+execution-log一次確認 22:30） "
-  - "2026-06-11T20:39:47+09:00 | 並列化の余地を一次情報で確認する。まずworkorderのWP-3スコープと現在の忍者稼働状況を見る。 [meta] stop_reason=tool_use"
+  - "2026-06-12T19:00:40+09:00 | **殿、inboxは家老の自走hotfix完了報告だった。処理済み、将軍の対応事項なし。** 先刻配備された軍師startup CRITICAL対処が完了した: 影丸がgunshi_review_lo"
+  - "2026-06-12T19:16:21+09:00 | 家老RC対応完了。修正報告送信済み。 **セッション状態サマリ**: - inbox: 全既読 - レビュー: cmd_karo_hotfix_gunshi_cs_operational_sim LG"
+  - "2026-06-12T19:03:00+09:00 | **殿、inboxは先刻完了報告済みのhotfix(軍師CS観点補完)のGATE CLEAR通知だった。既読化済み、将軍の対応事項なし。** この件は掲示板報告(影丸・commit 1b0f4b698"
+  - "2026-06-12T19:16:21+09:00 | 家老RC対応完了。修正報告送信済み。 **セッション状態サマリ**: - inbox: 全既読 - レビュー: cmd_karo_hotfix_gunshi_cs_operational_sim LG"
+  - "2026-06-12T15:49:21+09:00 | **Step 5**: 利他還流判断 「この知見を忍者/家老が知っていれば将来のWA/BLOCK/再cmdを防げるか？」→ **NO**。冷え観点WARNは軍師固有のレビュー記録の問題であり、忍者/家"
   ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_bulletin_lessons_202606121138_normal
+  _ac_task_id: cmd_karo_hotfix_gunshi_cs_startup_20260613_normal
   _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_karo_hotfix_bulletin_lessons_202606121138.yaml
-  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_bulletin_lessons_202606121138.yaml
+  report_filename: tobisaru_report_cmd_karo_hotfix_gunshi_cs_startup_20260613.yaml
+  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_gunshi_cs_startup_20260613.yaml
   bloom_level: 
-  deployed_at: "2026-06-12T11:35:55"
+  deployed_at: "2026-06-13T01:07:33"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'CS観点チェックリスト/冷えWARN直接原因: cmd_karo_hotfix_speed_gate_loop_health_20260612のfinding_categoriesにambiguity未記入(ambiguity_points:noneで確認済みだが記録漏れ)。finding_categories追記で解消。改善前: 冷えWARN 1件+CRITICAL(3連続)→改善後: 冷えWARN 0件・総合判定OK'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'CS観点チェックリスト/冷えWARN直接原因: cmd_karo_hotfix_speed_gate_loop_health_20260612のfinding_categoriesにambiguity未記入(ambiguity_points:noneで確認済みだが記録漏れ)。finding_categories追記で解消。改善前: 冷えWARN 1件+CRITICAL(3連続)→改善後: 冷えWARN 0件・総合判定OK'

@@ -1759,8 +1759,8 @@
   gate_prediction: CLEAR
   gate_prediction_reason: "SG-PRE全項目PASS。changed_lines=39(+32/-7)。files_modified=2(gate_loop_health.sh+ledger)。commit dc65afd2実在確認。bash -n PASS。bats 6/6 PASS SKIP=0。adversarial不要(39行変更, blast_radius=1スクリプト内部最適化)"
   changed_lines: 39
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "4観点OK。gate_loop_health.shのtask_clarity_score平均計算をyaml.safe_load(58ファイル全体parse)から限定行スキャン(regex)へ置換。1550→500ms(-67.7%)。bats 6/6。出力契約不変(diff空)。import yaml削除=PyYAML依存除去"
+  finding_categories: [assumptions, numbers, premortem, ambiguity]
+  findings_summary: "4観点OK(ambiguity含む遡及追記: ambiguity_points:noneで確認済みだったが記録漏れ)。gate_loop_health.shのtask_clarity_score平均計算をyaml.safe_load(58ファイル全体parse)から限定行スキャン(regex)へ置換。1550→500ms(-67.7%)。bats 6/6。出力契約不変(diff空)。import yaml削除=PyYAML依存除去"
   observations:
     - "事実1: before_real_ms=1550 → after_real_ms=600 → post-commit=500ms → 軍師独立再実行=490ms。削減-1050ms(-67.7%)。ボトルネック=58件のreport YAMLをyaml.safe_loadで全体parse(約637ms)。限定行スキャンで`task_clarity:`ブロック内`score:`のみ抽出に置換"
     - "事実2: 安全パターン削除なし。regex RE_TASK_CLARITY_SCORE=`^  score:\\s*(.*?)\\s*(?:#.*)?$`は2-space indent+score行のみマッチ。in_task_clarity状態機械でtask_clarity:ブロック外のscore行を拾わない。`errors='replace'`追加+`isdir()`ガード追加=堅牢性向上。gate check/ALERT/WARN条件変更0件"
@@ -1968,3 +1968,143 @@
   ambiguity_points: none
   origin: "[[cmd_3344]] -> [[metrics_calculator facade分割(AC2第四サイクル)]] -> [[LGTM(AC2 BE4分割完結)]]"
   timestamp: "2026-06-13T01:15:00"
+- cmd_id: cmd_karo_hotfix_speed_pre_write_edit_20260613
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE ERRORS想定0。commit b495e2d02+5d3a43ecb実在(main上)。files_modified 2件=pre-write-edit-combined.sh+script_speed_training_ledger.yaml全てcmd仕様scope内。テスト3種全PASS(bash -n/bats 20/20 SKIP=0/jq JSON parse)。guard変更0件。新規外部依存なし。rollback=git revert b495e2d02 1 commit clean"
+  changed_lines: 8
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "emit_context関数のjq -Rs→bash内JSONエスケープ置換。変更1関数8行のみ。guard 0-12の判定ロジック変更ゼロ。8-run p50: 74ms→66ms(-10.8%)。bats 20/20 SKIP=0。jq JSON parse PASS。bash -n PASS"
+  observations:
+    - "事実1: before=74ms, after=66ms(8-run p50計測, -10.8%改善)。emit_contextはshogun_to_karo.yaml Edit時のadditionalContext出力で発火。jq -Rs(外部プロセス起動)→bash parameter expansion(プロセス内)への置換でプロセス起動コスト1回分削減"
+    - "事実2: git show b495e2d02でdiff確認。変更範囲=emit_context関数のみ(行23-30)。Guard 0-12(deny判定/BLOCK判定)のロジック変更ゼロ。emit_deny関数(行18-21)変更なし。set -eu維持。新規外部依存なし"
+    - "事実3: JSONエスケープ5文字種(backslash/double-quote/tab/CR/LF)はemit_context入力($_checklist=awk/printf/grep生成テキスト)で出現しうる全特殊文字をカバー。backspace/formfeed等の制御文字はshell生成テキストに出現しない(jq primary path成功時は不到達)"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "changed_lines=8。guard判定ロジック変更0。認証/DB操作/ファイル操作変更0。blast radius=emit_context JSON出力形式のみ"
+  causal_chain: "第2波速度改善7位(pre-write-edit-combined emit_context)→jq -Rs外部プロセス起動→bash内JSONエスケープへ置換→p50 74→66ms(-10.8%)→PreToolUse hot path高速化(正の複利: 全Write/Edit操作で恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git show b495e2d02全8行diff確認+bash -n独立実行+bats 20/20独立確認+jq JSON parse独立確認。洗脳#6防止: 74→66ms(-10.8%)はledger record-real計測値(8-run p50)。数値: 8行diff全確認, 20/20 bats(0 skip), 74→66ms(-10.8%), guard変更0件, commit 2/2実在(main上), files_modified 2/2scope内"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=jq→bash内エスケープの既知速度改善パターン再適用。新規恒久教訓なし。妥当"
+  step3_5_verified: "SG-PRE3 commit b495e2d02+5d3a43ecb=git show+git branch --contains確認済み(main上)。SG-PRE25 FP判定: script_speed_training_ledger.yamlはreadonly_ref"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_speed_pre_write_edit_20260613]] -> [[emit_context jq→bash JSONエスケープ]] -> [[LGTM(p50 74→66ms -10.8%)]]"
+  timestamp: "2026-06-13T01:30:00"
+- cmd_id: cmd_karo_hotfix_speed_stop_check_inbox_20260613
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE ERRORS想定0。commit 1c2958029実在(main上)。files_modified 2件=stop_check_inbox.sh+test_stop_check_inbox.bats全てcmd仕様scope内。bash -n PASS。bats 21/21 PASS SKIP=0。既存テスト行削除0。gate check変更0件。新規外部依存なし。mtime-based invalidationは同一ファイル内line 277の_warning_cacheと同一パターン。rollback=git revert 1c2958029 1 commit clean"
+  changed_lines: 43
+  finding_categories: [numbers, assumptions, premortem]
+  findings_summary: "4観点OK。stop_check_inbox.shのPython unread summary生成結果をSTATE_DIRにキャッシュし、同一inbox(mtime変化なし)時は再生成をスキップ。before=30.860ms→after=23.320ms(-24.4%、50回平均)。テスト21/21 PASS SKIP=0。既存テスト行削除ゼロ(純追加)。新テストT-SCI-016がcache invalidation検証済み。gate/ALERT/BLOCK条件変更ゼロ"
+  observations:
+    - "事実1: before_real_ms=30.860→after_real_ms=23.320(-7.54ms,-24.4%)。計測=50回平均、同一未読inboxでStop hook繰返し走行のhot path。ledger record-realで正規フロー記録済み"
+    - "事実2: 安全パターン確認。mtime-based invalidation(`! inbox_file -nt _summary_cache`)は同一ファイルline 277の`_warning_cache`と完全同型。per-agent cache key(`${agent_id}`suffix)でクロスエージェント汚染なし。`tee`で書込み・`IFS= read -r`で読込み。inbox変更時は必ず再生成(T-SCI-016テストで検証済み)"
+    - "事実3: 退行なし。既存テスト行削除ゼロ(git diff -でマイナス行=0、移動コメント2行のみ)。21/21 PASS SKIP=0。LS048防御(block on unread)維持。gate/ALERT/BLOCK判定ロジック変更ゼロ。変更はhas_unread=trueブロック内のみで、else側(掲示板/insights処理)は非接触"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "changed_lines=43。gate/BLOCK判定ロジック変更0。認証/DB操作/ファイル操作変更0。blast radius=unread summary出力経路のみ(cache hit or cache miss→tee)"
+  causal_chain: "第2波速度改善6位(stop_check_inbox Python summary再生成)→同一inboxの再StopでPython3サブプロセス起動→STATE_DIRキャッシュでスキップ→30.860→23.320ms(-24.4%)(正の複利: 全エージェントのStop hook発火ごとに恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git show 1c2958029全43行diff確認+bash -n独立実行+bats 21/21独立確認+既存テスト行削除0件grep確認+line 277同型パターン目視確認。洗脳#6防止: 30.860→23.320ms(-24.4%)はledger record-real計測値(50回平均)。数値: 43行diff全確認, 21/21 bats(0 skip), 30.860→23.320ms(-24.4%), gate変更0件, 既存テスト削除行0, commit 1/1実在(main上), files_modified 2/2scope内"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=STATE_DIRキャッシュ+mtime invalidationは既存パターン(line 277 _warning_cache)の再適用。新規恒久教訓なし。妥当"
+  step3_5_verified: "SG-PRE3 commit 1c2958029=git show+git branch --contains確認済み(main上)。SG-PRE15.5→adversarial不要判定(changed_lines<200、gate判定変更0)。SG9 saizo WA履歴: clean(workaround 0件)"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_speed_stop_check_inbox_20260613]] -> [[Python summary再生成hot path]] -> [[LGTM(30.860→23.320ms -24.4%)]]"
+  timestamp: "2026-06-13T01:40:00"
+- cmd_id: cmd_karo_hotfix_speed_knowledge_grep_cache_20260613
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE ERRORS=0。commit ab3612c78実在(main上)。files_modified 3件=pre-bash-combined.sh+pre_bash_combined_guard.sh+script_speed_training_ledger.yaml全てcmd仕様scope内。テスト3種全PASS(bash -n 2ファイル/test_hooks.sh 90/90 SKIP=0)。guard判定ロジック変更ゼロ。query抽出キャッシュのみ追加でDB検索は毎回実行維持。rollback=git revert ab3612c78 1 commit clean"
+  changed_lines: 52
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "knowledge_grep_query関数のPython shlex解析結果をcksum単位300秒TTLキャッシュ化。dual実装(hook+testable lib)同一変更。before=323ms, after=238ms(-26.3%, 20-run平均)。DB検索・注入条件・infra除外条件は不変。cache missはPython fallbackで安全。empty query時のcache書込みガードあり"
+  observations:
+    - "事実1: before_real_ms=323, after_real_ms=238(20-run平均, -26.3%改善, 85ms短縮)。計測コマンド=source pre_bash_combined_guard.sh pre_bash_combined_eval_command。ledger記録と報告値一致 [MEM: memory_db ts=2026-06-13]"
+    - "事実2: git show ab3612c78でdiff確認。pre-bash-combined.sh(+22/-1)とpre_bash_combined_guard.sh(+22/-1)が完全同一構造のTTLキャッシュ追加。cache key=command全文cksum(L755準拠)。TTL=300秒(env var override可能)。cat/stat/mkdir全てエラー安全"
+    - "事実3: 出力等価性確認。cache hit/miss/empty全パスでPython直接実行と同一出力。記憶DB注入の鮮度前提不変(query抽出のみキャッシュ、DB検索は毎回実行)"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "changed_lines=52だがdual実装で実質26行x2。guard判定ロジック変更0。blast radius=knowledge_grep_query関数のPython起動頻度のみ"
+  causal_chain: "第2波速度改善8位(knowledge grep/rg検知)→Python shlex解析毎回起動がhot path→cksum単位TTLキャッシュ追加→20-run平均323→238ms(-26.3%)→PreBash hot path高速化(正の複利)"
+  brainwash_check: "洗脳#2防止: git show ab3612c78全52行diff確認+bash -n 2ファイル+test_hooks.sh 90/90+dual実装一致目視照合。洗脳#6防止: 323→238ms(-26.3%)はledger 20-run平均。洗脳#8防止: empty query/cache miss/TTL expiry各パスの出力等価性を個別検証。数値: 52行diff, 90/90 tests(0 skip), 323→238ms(-26.3%), guard変更0件, commit 1/1(main上), files_modified 3/3scope内"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。L755+L324/L673の既知パターン再適用。新規恒久教訓なし。妥当"
+  step3_5_verified: "SG-PRE3 commit ab3612c78=git show+git branch --contains確認済み(main上)。SG-PRE15.5 adversarial: target_path=自動化系だが変更はquery抽出キャッシュのみ。guard判定変更0件"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_speed_knowledge_grep_cache_20260613]] -> [[Python shlex解析TTLキャッシュ化]] -> [[LGTM(323→238ms -26.3%)]]"
+  timestamp: "2026-06-13T01:40:00"
+- cmd_id: cmd_karo_hotfix_speed_posttool_dispatch_20260613
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE ERRORS=0。commit 570bde0e1+253054ed2実在(main上)。files_modified 4件中target 1件(.claude/hooks/posttool-dispatch.sh)+ledger+task/report全てcmd scope内。bash -n PASS。bats 8/8 PASS SKIP=0。既存テスト行削除0。gate/BLOCK条件変更0。新規外部依存なし。inline literal化はlocal変数代入の純削除で機能等価。rollback=git revert 570bde0e1 1 commit clean"
+  changed_lines: 7
+  finding_categories: [numbers, assumptions, premortem, adversarial]
+  findings_summary: "4観点OK。is_shogun_agent内non-shogun cache pathでlocal変数代入を除去し直接文字列展開に置換。before=26.122ms→after=23.357ms(-10.6%,300回平均)。テスト8/8 PASS SKIP=0(独立再実行確認済)。既存テスト行削除ゼロ(純差分-1行)。gate/ALERT/BLOCK条件変更ゼロ"
+  observations:
+    - "事実1: before_real_ms=26.122→after_real_ms=23.357(-2.765ms,-10.6%)。計測=300回平均,non-shogunキャッシュ済みTMUX_PANE+Grep payloadのhot path。ledger record-realで正規フロー記録済み。commit=570bde0e1(main上)[MEM: memory_db ts=2026-06-13]"
+    - "事実2: 安全パターン確認。変更は`local non_cache`変数代入1行削除+参照3箇所を直接リテラル`/tmp/shogun_not_shogun_${TMUX_PANE}`に置換。機能等価(bashシェル展開結果同一)。is_shogun_agent関数の分岐ロジック(return 0/1)・cache作成・tmux display-message呼出し全て非接触。SG-PRE13 WARN(削減率57%)は+3/-4=net-1行の変数除去であり機能削減ではない"
+    - "事実3: 退行なし。既存テスト行削除ゼロ(diff net-1行は純変数代入削除)。bats 8/8 PASS SKIP=0(test_hook_dispatchers.bats軍師独立再実行で確認)。gate/ALERT/BLOCK判定ロジック変更ゼロ。case分岐・run_hook・post-shogun-inbox-check呼出し全て非接触"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "SG-PRE19=317行だが実コード変更は7行(残り310行=ledger YAML再整形+task YAML更新)。gate/BLOCK判定ロジック変更0。認証/DB/ファイル操作変更0。blast radius=is_shogun_agent内変数代入1箇所のみ"
+  causal_chain: "第2波速度改善3位(posttool-dispatch non-shogun fast path)→local変数代入+参照のオーバーヘッド→直接リテラル化で代入コスト除去→26.122→23.357ms(-10.6%)(正の複利: 全エージェント全PostToolUse発火ごとに恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git show 570bde0e1全7行diff確認+bash -n独立実行+bats 8/8独立再実行+非接触箇所(case分岐/run_hook)目視確認。洗脳#6防止: 26.122→23.357ms(-10.6%)はledger record-real計測値(300回平均)。数値: 7行diff全確認, 8/8 bats(0 skip), 26.122→23.357ms(-10.6%), gate変更0件, 既存テスト削除行0, commit 2/2実在(main上), files_modified 4/4scope内"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=local変数→直接リテラル化は既知の微細最適化パターン。新規恒久教訓なし。妥当"
+  step3_5_verified: "SG-PRE3 commit 570bde0e1+253054ed2=git show+git branch --contains確認済み(main上)。SG-PRE13 WARN=net-1行変数除去で機能削減なし。SG-PRE19 317行中実コード変更7行。SG9 hayate WA履歴: commit_missing(1件)→本件commit確認済み"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_speed_posttool_dispatch_20260613]] -> [[non_shogun_cache local変数代入除去]] -> [[LGTM(26.122→23.357ms -10.6%)]]"
+  timestamp: "2026-06-13T01:50:00"
+- cmd_id: cmd_karo_hotfix_speed_gate_shogun_parallel_20260613
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE ERRORS=0。commit b52424f7b実在(main上、git show確認済み)。files_modified 1件(scripts/gates/gate_shogun_startup.sh)=target_path一致。bash -n PASS。bats 63/63 PASS SKIP=0(軍師独立再実行で確認)。gate/BLOCK条件変更0。安全パターン(wait || true, 2>/dev/null, trap, fallback EOF)全維持。collect_gate4_yaml_batch関数抽出=Python本体変更0行。新規外部依存なし。rollback=git revert b52424f7b 1 commit clean"
+  changed_lines: 251
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。Gate4 YAML集計(python3)とshow_semantic_no_match_metrics(awk/tail)を既存一時ファイル+PID待機パターンで先行バックグラウンド化。before_real_ms=7119→after_real_ms=5888(-17.3%,3-run平均)。出力は全てmktemp→ファイル経由で消費、stdout混在なし。bats 63/63 PASS SKIP=0。家老WARN(test_results/origin空)はtest_results=L119に記載あり・causal_verification.origin=L34に記載あり。空ではなくフォーマット観点の偽陽性"
+  observations:
+    - "事実1(before→after数値): speed_ledger記録確認。before_real_ms=7119→after_real_ms=5888(-1231ms,-17.3%)。計測=3-run平均、HEAD版を/tmp展開+SHOGUN_STARTUP_ROOT同条件。SG-PRE15 全忍者idle=計測値信頼可能。commit=b52424f7b(main上)[MEM: memory_db ts=2026-06-13 '影丸cmd完了報告']"
+    - "事実2(安全パターン維持+RC不在): git diff -行に安全パターン削除なし。旧trap→新trap(+_TMP_GATE4_YAML,+_TMP_SEMANTIC_NO_MATCH追加のみ)。wait || true 2箇所新設(L677,L705)。subshell内fallback(|| cat <<'EOF')維持。collect_gate4_yaml_batch内2>/dev/nullで異常抑制。Python本体コード変更0行(関数抽出のみ)。inbox_file変数はfork前(L354)に代入済みで子プロセスにcopy-on-write伝播。L692の再代入は同値(既存コード残存)=レースなし"
+    - "事実3(退行なし): bats 63/63 PASS SKIP=0(軍師独立再実行で確認)。gate_shogun_startup.sh 3386行→3414行(+28行net)。WARN/BLOCK/ALERT判定ロジック変更0行。overall/alerts更新を伴う直列判定はscope外(not_in_scope準拠)。bash -n構文チェックPASS"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "SG-PRE18 infra対象+SG-PRE19 changed_lines=251>=200で必須。Red-Team確認: (1)RC=stdout全てファイルリダイレクト+wait後にcat消費、混在経路なし (2)rollback=git revert b52424f7b 1 commit、clean revert可能 (3)Python子プロセスクラッシュ→fallback EOF出力でゼロカウント(安全停止) (4)mktemp一時ファイル=プロセス固有、並列衝突なし(L488準拠) (5)show_semantic_no_match_metricsの2>&1でstderr→ファイル、端末汚染なし"
+  causal_chain: "第2波速度改善4位(gate_shogun_startup)→Gate4 YAML集計(python3起動)+セマンティックNO_MATCH(awk/tail)が直列ブロック→既存パターンで先行バックグラウンド化→wait+ファイル消費で出力順維持→7119→5888ms(-17.3%)(正の複利: 将軍全/clear復帰ごとに恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git show b52424f7b全212行diff確認+bash -n独立実行+bats 63/63独立再実行+安全パターン全件grep確認(wait||true 2/2, 2>/dev/null 1/1, trap 1/1, fallback 1/1)。洗脳#6防止: 7119→5888ms(-17.3%)はledger record-real計測値(3-run平均)。洗脳#8防止: test_results/origin空WARNを検証→L119+L34に記載あり偽陽性判定。数値: 212行diff(+120/-92), 63/63 bats(0 skip), 7119→5888ms(-17.3%), gate/BLOCK変更0件, 安全パターン削除0件, Python本体変更0行, commit 1/1実在(main上), files_modified 1/1scope内"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=既存並列化パターン(一時ファイル+PID待機)の横展開。新規恒久教訓なし。妥当"
+  step3_5_verified: "SG-PRE3 commit b52424f7b=git show+git branch --contains確認済み(main上)。SG-PRE15.5 adversarial: target_path=自動化系→adversarial_review実施(changed_lines=251)。SG-PRE18 infra対象WARN処理済み。SG-PRE19 changed_lines=251>=200処理済み。SG9 kagemaru WA率: 0/4=0.0%"
+  hole_action: none
+  ambiguity_points: "家老WARN『test_results/origin空』はtest_results(L119)・causal_verification.origin(L34)ともに記載あり。偽陽性。ただしtest_resultsがフラットstring形式のため機械的パース困難な可能性あり(形式改善は別件)"
+  origin: "[[cmd_karo_hotfix_speed_gate_shogun_parallel_20260613]] -> [[Gate4 YAML+セマンティックNO_MATCH先行バックグラウンド化]] -> [[LGTM(7119→5888ms -17.3%)]]"
+  timestamp: "2026-06-13T02:05:00"
