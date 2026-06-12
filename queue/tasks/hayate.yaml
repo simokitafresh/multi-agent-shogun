@@ -1,8 +1,17 @@
 task:
-  _ac_task_id: cmd_3300_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3300 (deployed 2026-06-11T21:05:24). Read from the beginning.
-  ac_version: 93d57b31
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      description: gate_context_freshness.shのALERT根因を一次情報(git log・context_freshness_check.sh判定・対象context現物)で説明し、コード品質問題かgate設定問題かを二値判定する
+    AC2:
+      description: infrastructure.md / memory-db-schema.md / dm-signal-frontend.md / dm-signal-ops.md の横展開状況を確認し、今回の修正対象と別cmd対象を切り分ける
+    AC3:
+      description: 必要なら対象contextの内容またはlast_updatedを更新し、更新不要ならその根拠を報告する。単なる日付更新だけで閉じる場合はsource commitが内容差分不要であることを示す
+    AC4:
+      description: bash scripts/gates/gate_context_freshness.sh を再実行し、GA-050対象(infrastructure.md / memory-db-schema.md)がALERTから外れる、または外れない場合は残理由を明記する
+    AC5:
+      description: 次回同種alertを減らす防御層(自動last_updated更新、pathspec分類、除外/別cmd化など)をlesson_candidateにorigin付きで記録する
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -11,84 +20,55 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
-  - 'Level1(事後検出): 間違えた後にgateが検出'
-  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
-  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
-  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
-  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
-  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
-  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
-  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
-  - 2026-06-11T20:21:51+09:00 | cmd_3296 AC2差し戻しの経緯を把握。家老が旧コードrun(2026-06-11 01:01-01:40 UTC)を新コードcron完走と誤認→将軍が一次検証で否定→AC2差し戻し。次回cro
-  - '2026-06-11T20:06:39+09:00 | 【INFOバッチ】 2026-06-11 19:57:34|cmd_3295 2026-06-11 19:58:24|cmd_3294 2026-06-11 20:02:21|CI緑: run 273'
-  - 2026-03-18T20:37:06+09:00 | 【家老】/clear前状態保存完了。cmd_1055 GATE CLEAR(連勝16)。cmd_1057(シン忍法GS Phase5)受領済み・配備計画策定済み・YAML未作成で中断。/clear後に
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope: Claude/Codex編成変更、model_name設定変更、WP-3/WP-4配備、DM-Signal実装変更
   parallel_ok: []
-  parent_cmd: cmd_3300
-  production_invariants:
-  - 'PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する'
-  - 'PI-002: SQLite=不完全ミラー。PostgreSQLが真実'
-  - 'PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック'
-  - 'PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須'
-  - 'PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則'
-  progress.AC1: "completed: deploy_task.sh inject_readonly_refs追加、command必読参照をtask.readonly_refへ源流注入、bats 6/6 PASS"
-  progress.AC2: "completed: cmd_complete_gate.sh collect_task_readonly_refs追加、cmd_3297-3299 archive現物fixtureでCOMMAND_SCOPE_MISSING 0件"
-  progress.AC3: "completed: 真陽性fixtureでbackend/app/api/portfolios.py missing BLOCK維持、cmd_complete_gate関連bats 144/144 PASS"
-  progress.AC4: "completed: commit d808770fc、報告YAML PASS、lesson_candidate記入済み"
-  progress.AC5: 'checkpoint: 前提=WP-4 docsのみ / scope drift=なし / result=verify_truth残参照0件・削除済みEP11件残参照0件・PRODUCTION_API_URL使用元3本確認・commit 7dc518ca・report PASS'
+  parent_cmd: cmd_karo_hotfix_ga050_context_freshness_202606121052
   project: infra
-  purpose: '軍師報告(blt_20260611_204742)+家老所見(blt_20260611_205111): cmd_3295のverified_existing_dependency突合修正後もreadonly_ref偽陽性BLOCKが連続発火(cmd_3297/cmd_3298/cmd_3299で計4回)し毎回家老waiveが発生。根因は、忍者が報告YAMLにverified_existing_dependencyを記録しない場合、command欄の必読参照が変更対象照合から除外されないこと。源流注入(deploy_task.shがcommand欄の必読参照をtask YAMLへreadonly_ref一覧として自動注入=Level 5)と、cmd_complete_gateが同一覧をSG-PRE25と同一ソースとして参照する二層で構造的に根治する'
-  status: idle
+  purpose: GA-050 context_freshness ALERTを一次情報で調査し、infrastructure.md / memory-db-schema.mdがなぜ2026-06-11のままsource commitに追随していないか、同カテゴリ横展開、再発防御層を特定して必要な最小修正を行う
+  status: done
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/cmd_complete_gate.sh
-  task_id: cmd_3300_full
-  task_type: full
-  unresolved_decisions: none
+  target_path: context/infrastructure.md
+  task_id: cmd_karo_hotfix_ga050_context_freshness_202606121052_normal
+  task_type: hotfix
   related_lessons:
-  - id: 'L436'
-    summary: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル `projec'
-    detail: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル `projec'
-  - id: 'L781'
-    summary: 'cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『'
-    detail: 'cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『'
-  - id: 'L704'
-    summary: '本セッションでP0候補5件が全て偽陽性(100%)→P1-P3に降格。エージェントは行番号・文脈を誤読しやすい。LG033(既存確認必須)の監査エージェント版。'
-    detail: '本セッションでP0候補5件が全て偽陽性(100%)→P1-P3に降格。エージェントは行番号・文脈を誤読しやすい。LG033(既存確認必須)の監査エージェント版。'
-  - id: 'L428'
-    summary: '_sv/_yaml_lines/_list_item/_safe_section_replaceが3箇所にコピペ。yaml.dump禁止の代替として各Pytho'
-    detail: '_sv/_yaml_lines/_list_item/_safe_section_replaceが3箇所にコピペ。yaml.dump禁止の代替として各Pytho'
-  - id: 'L207'
-    summary: 'summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML par'
-    detail: 'summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML par'
-  - id: 'L391'
-    summary: 'review_gate.shがtask.get(''type'')でフィールド参照していたが実際のYAMLキーはtask_type。結果、task_typeによるレ'
-    detail: 'review_gate.shがtask.get(''type'')でフィールド参照していたが実際のYAMLキーはtask_type。結果、task_typeによるレ'
-  - id: 'L295'
-    summary: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
-    detail: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
-  - id: 'L285'
-    summary: 'sync_lessons.shがflow-style索引を出力後、lesson_update_score.shがyaml.dump(default_flow_s'
-    detail: 'sync_lessons.shがflow-style索引を出力後、lesson_update_score.shがyaml.dump(default_flow_s'
-  - id: 'L248'
-    summary: 'STALL検知(assigned 10分超)で自動捕捉し家老に再配備を促す。ループ入口のスタック防止'
-    detail: 'STALL検知(assigned 10分超)で自動捕捉し家老に再配備を促す。ループ入口のスタック防止'
-  - id: 'L179'
-    summary: '疾風がstatus: doneの報告YAMLを提出したが、git commitが未実施だった。レビュー担当がcommit+pushを代行した。impl忍者がco'
-    detail: '疾風がstatus: doneの報告YAMLを提出したが、git commitが未実施だった。レビュー担当がcommit+pushを代行した。impl忍者がco'
+  - id: 'L643'
+    summary: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
+    detail: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
+  - id: 'L633'
+    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+  - id: 'L775'
+    summary: 'target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/'
+    detail: 'target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/'
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L299'
+    summary: 'inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行'
+    detail: 'inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行'
+  - id: 'L529'
+    summary: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
+    detail: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
+  - id: 'L738'
+    summary: '外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split'
+    detail: '外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split'
+  - id: 'L667'
+    summary: 'self_gate_check.lessonrefのようなtypoはdict構造としては書けるが、gate_report_formatが求めるlesson_re'
+    detail: 'self_gate_check.lessonrefのようなtypoはdict構造としては書けるが、gate_report_formatが求めるlesson_re'
+  - id: 'L606'
+    summary: 'if _lc_raw=$(REPORT_PATH="$f" python3 - 2>/dev/null <<PYEOF...PYEOF); then eval '
+    detail: 'if _lc_raw=$(REPORT_PATH="$f" python3 - 2>/dev/null <<PYEOF...PYEOF); then eval '
+  - id: 'L589'
+    summary: 'build_instructions.sh再生成後にgit addした際、既存stageのscripts/gates/gate_report_format.sh'
+    detail: 'build_instructions.sh再生成後にgit addした際、既存stageのscripts/gates/gate_report_format.sh'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  related_causal_links:
-  - "[[cmd_3295修正の不完全]]"
-  - "[[cmd_3300同一ソース照合根治]]"
-  - "[[必読参照FP4連続+家老waive常態化]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -108,36 +88,30 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L436: archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル `projec
-      - L781: cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『
-      - L704: 本セッションでP0候補5件が全て偽陽性(100%)→P1-P3に降格。エージェントは行番号・文脈を誤読しやすい。LG033(既存確認必須)の監査エージェント版。
-      - L428: _sv/_yaml_lines/_list_item/_safe_section_replaceが3箇所にコピペ。yaml.dump禁止の代替として各Pytho
-      - L207: summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML par
-      - L391: review_gate.shがtask.get('type')でフィールド参照していたが実際のYAMLキーはtask_type。結果、task_typeによるレ
-      - L295: yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ
-      - L285: sync_lessons.shがflow-style索引を出力後、lesson_update_score.shがyaml.dump(default_flow_s
-      - L248: STALL検知(assigned 10分超)で自動捕捉し家老に再配備を促す。ループ入口のスタック防止
-      - L179: 疾風がstatus: doneの報告YAMLを提出したが、git commitが未実施だった。レビュー担当がcommit+pushを代行した。impl忍者がco
+      - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
+      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
+      - L775: target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L299: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行
+      - L529: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を
+      - L738: 外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split
+      - L667: self_gate_check.lessonrefのようなtypoはdict構造としては書けるが、gate_report_formatが求めるlesson_re
+      - L606: if _lc_raw=$(REPORT_PATH="$f" python3 - 2>/dev/null <<PYEOF...PYEOF); then eval 
+      - L589: build_instructions.sh再生成後にgit addした際、既存stageのscripts/gates/gate_report_format.sh
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-11T20:51:48+09:00 | inbox処理完了。未読なし。 家老もreadonly_ref FPインフラ修正の必要性を認識(掲示板所見)。軍師の掲示板報告(blt_20260611_204742)と家老の所見が一致。次のインフラ"
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'deploy_task.shがcommand欄の「必読:」記載の参照パスを抽出しtask YAMLへreadonly_ref一覧として自動注入する(源流注入=忍者の記録忘れが構造的に発生しない)。注入結果をbatsテストで検証する'
-  - id: 'AC2'
-    checks:
-    - check: 'cmd_complete_gate.shの変更対象照合がtask YAMLのreadonly_ref一覧を除外ソースとして参照する(SG-PRE25と判定基準を同一ソース化)。アーカイブ現物(cmd_3297/cmd_3298/cmd_3299)を入力とした再判定で必読参照由来のBLOCKが0件であることを証明する'
-  - id: 'AC3'
-    checks:
-    - check: '真陽性の保全: 実際にスコープ外ファイルを変更したケースを模したfixtureで従来どおりBLOCKされることをbatsで確認し、既存のcmd_complete_gate関連batsが全件PASSする'
-  - id: 'AC4'
-    checks:
-    - check: '修正をcommitし、lesson_candidateに教訓(検知チャネル間の判定基準は同一ソースを参照させる。別実装の突合は片側の記録漏れで破綻する)を記入して報告YAMLを提出する'
+  - "2026-04-15T13:56:32+09:00 | 【改善トリガー】ci_red ALERT (GA-050)"
+  - "2026-06-11T23:14:52+09:00 | 【INFOバッチ】 2026-06-11 23:13:12|cmd_karo_hotfix_ga047_context_freshness"
+  - "2026-06-11T23:08:24+09:00 | cmd_karo_hotfix_ga047_context_freshness draftレビュー: **APPROVE**。idle待機。 [meta] stop_reason=tool_use"
+  - "2026-06-12T10:28:17+09:00 | 【改善トリガー】hook_failure ALERT (GA-049)"
+  - "2026-06-12T10:06:20+09:00 | 【改善トリガー】ci_red ALERT (GA-048)"
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_hotfix_ga050_context_freshness_202606121052_normal
+  _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3300.yaml
-  report_path: queue/reports/hayate_report_cmd_3300.yaml
+  report_filename: hayate_report_cmd_karo_hotfix_ga050_context_freshness_202606121052.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_hotfix_ga050_context_freshness_202606121052.yaml
   bloom_level: 
-  deployed_at: "2026-06-11T21:06:34"
+  deployed_at: "2026-06-12T10:52:19"
