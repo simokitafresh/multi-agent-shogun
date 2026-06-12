@@ -24,7 +24,7 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-06-12T21:36:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-13T01:09:39+09:00 -->
 
 # /dream — Memory Consolidation (5 Phase)
 
@@ -32,6 +32,7 @@ allowed-tools:
 
 Script refs verified: 2026-06-10. `memory_db_query.sh` の契約は変更なし。449dd3029でext4キャッシュ初期化タイムアウトを10s→30s(DB 198MB成長対応)に変更したが、クエリ引数・SQL実行・出力形式の契約は維持。
 Script refs verified: 2026-06-12 cmd_karo_hotfix_skill_script_refs_20260612. `insight_write.sh` は保存I/F `bash scripts/insight_write.sh "message" [priority] [source]` と resolve I/F `--resolve <id>` を維持。直近変更(e59594dc8)は破損tail隔離、raw YAML appendのatomic replace、DB live insert非同期化、source repeat集計の単一pass化で、/dream側の呼び出し手順変更は不要。
+Script refs verified: 2026-06-13 cmd_karo_hotfix_skill_refs_stale_20260613. `gate_lesson_health.sh` 直近変更(90c32efdd)は`check_role_lesson_origins_batch()`をPython3 heredocからbash for loopに変換（高速化）。引数なし全project走査/`<project_id>`単体走査、METRIC行、WARN/ALERT出力契約は維持。
 Script refs verified: 2026-06-12. `gate_lesson_health.sh` はhotfix feedbackを長期useful率健康指標から除外する。自己修復hotfixの短期バーストで通常/full作業向けの教訓有用性をWARN化しないため。引数なし全project走査/`<project_id>`単体走査、METRIC行、WARN/ALERT出力契約は維持。
 Script refs verified: 2026-06-11. `gate_lesson_health.sh` はlesson useful率集計の最小サンプルを5件へ戻し、退役スキャン確定閾値と揃えて少数feedbackノイズで退役候補0件のALERT/BLOCKを作らないようにした。引数なし全project走査/`<project_id>`単体走査、METRIC行、WARN/ALERT出力契約は維持。
 Script refs verified: 2026-06-07 cmd_3206. `gate_lesson_health.sh` はrole lesson origin確認をbatch化したが、引数なし全project走査/`<project_id>`単体走査とOK/ALERT契約は維持。`gate_shogun_memory.sh` はreferenced_files取得cacheで高速化され、`insight_write.sh` は保存/resolve/source repeat通知の呼び出し契約変更なし。
@@ -385,4 +386,4 @@ Script refs verified: 2026-06-03 cmd_3144. `insight_write.sh` 直近変更(4dacb
 
 Script refs verified: 2026-06-10 karo. `semantic_search.sh` 直近変更(ffd1305de)はcache refresh内部実装のみ(cp生コピー→SQLite Backup API置換、malformed根治)。呼び出し契約(引数/`--stats`/出力形式)は変更なし。SKILL.md記載の使用方法は現行と一致。
 
-<!-- script_refs_checked_at: 2026-06-12T21:36:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-13T01:09:39+09:00 -->

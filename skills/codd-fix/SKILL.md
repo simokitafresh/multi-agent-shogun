@@ -9,8 +9,9 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-12T11:33:20+09:00 -->
+<!-- script_refs_checked_at: 2026-06-13T01:09:39+09:00 -->
 
+Script refs verified: 2026-06-13 cmd_karo_hotfix_skill_refs_stale_20260613. `cmd_complete_gate.sh` 直近変更(e52a71bb8)は`collect_task_readonly_refs()`のサブシェル構文修正（bashパーサー誤検知バグ修正）。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
 Script refs verified: 2026-06-12 cmd_karo_hotfix_skill_refs_202606121132. `cmd_complete_gate.sh` 直近変更(5e37f302a)はCDP production checkをpost_deploy_evidence必須時だけ実行する条件追加。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約と、codd-fixの共通基盤/CI gate変更時に関連batsを実行する手順は変更なし。
 Script refs verified: 2026-06-10. `cmd_complete_gate.sh` 呼び出し契約は `bash scripts/cmd_complete_gate.sh <cmd_id>` のまま。新機能: (1)command/files_modified coverageが報告YAMLの`verified_existing_dependency`欄を参照し実行のみ/既存依存ファイルを照合対象から除外(LG037), (2)`check_safety_pattern_removal`で速度修行cmdのcommitから安全パターン削除をBLOCK検出, (3)軍師verdict事前チェック(GATE判定前にreview_logのFAIL/WARNをWARN表示)。`test_select.sh` は`find`→`git ls-files`/`git grep`に高速化済み。新マッピング: `scripts/hooks/*`変更→hookベース名でテスト検索(`test_{hook_base}*.bats`+`test_hook_dispatchers*.bats`)。(4)lesson_impact.tsv空行混入防御: ensure_impact_headerのCR汚染対策+update_lesson_impact_tsvの空行フィルタ追加+DictWriter lineterminator="\n"明示。(5)CR strip でDictReader restkey(list型)クラッシュ修正(isinstance(v,str)判定追加)。
 
@@ -96,4 +97,4 @@ bash scripts/test_select.sh <changed-file>
 - `--no-push`なしで実行するな。忍者はpush禁止
 - 事象ではなく広すぎる実装指示を渡すな
 
-<!-- script_refs_checked_at: 2026-06-12T11:33:20+09:00 -->
+<!-- script_refs_checked_at: 2026-06-13T01:09:39+09:00 -->
