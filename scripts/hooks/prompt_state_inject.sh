@@ -98,6 +98,10 @@ fi
 prompt_text="$(_prompt_state_json_get ".prompt" "")" || {
   exit 0
 }
+prompt_is_inbox_nudge=0
+if [[ "$prompt_text" =~ ^inbox[0-9]+$ ]]; then
+  prompt_is_inbox_nudge=1
+fi
 
 # --- Get agent_id from tmux ---
 agent_id="${PROMPT_STATE_AGENT_ID:-}"
@@ -284,27 +288,17 @@ record_skill_recommendation_log() {
     if [[ ! -s "$recommend_log" ]]; then
       printf 'recommendations:\n' > "$recommend_log"
     fi
-    if python3 - "$recommend_log" "$agent_id" "$prompt_hash" >/dev/null 2>&1 <<'PY'
-import sys
-import yaml
-
-path, agent_id, prompt_hash = sys.argv[1:4]
-try:
-    with open(path, encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
-except (FileNotFoundError, yaml.YAMLError):
-    raise SystemExit(1)
-
-recommendations = [
-    item for item in data.get("recommendations", [])
-    if isinstance(item, dict) and "agent_id" in item and "prompt_hash" in item
-]
-for entry in recommendations[-200:]:
-    if str(entry.get("agent_id") or "") == agent_id and str(entry.get("prompt_hash") or "") == prompt_hash:
-        raise SystemExit(0)
-raise SystemExit(1)
-PY
-    then
+    if awk -v agent="  agent_id: $(prompt_state_yaml_scalar "$agent_id")" \
+           -v hash="  prompt_hash: $(prompt_state_yaml_scalar "$prompt_hash")" '
+      $0 == "- ts:" || $0 ~ /^- ts: / {
+        if (entry_agent && entry_hash) found = 1
+        entry_agent = 0
+        entry_hash = 0
+      }
+      $0 == agent { entry_agent = 1 }
+      $0 == hash { entry_hash = 1 }
+      END { exit !(found || (entry_agent && entry_hash)) }
+    ' "$recommend_log" 2>/dev/null; then
       return 0
     fi
     {
@@ -318,14 +312,6 @@ PY
       done <<< "$skills"
     } >> "$recommend_log"
   } 9>"${recommend_log}.lock"
-
-  python3 - "$recommend_log" <<'PY' >/dev/null 2>&1 || true
-import sys
-import yaml
-
-with open(sys.argv[1], encoding="utf-8") as fh:
-    yaml.safe_load(fh)
-PY
 }
 
 skill_names_from_recommendation_text() {
@@ -375,7 +361,7 @@ semantic_skill_recommendations() {
 
   [[ -n "${prompt_text//[[:space:]]/}" ]] || return 0
   # Skip inbox nudge prompts (precision fix: inbox1 hash=86/111 FP)
-  [[ ! "$prompt_text" =~ ^inbox[0-9]+$ ]] || return 0
+  (( prompt_is_inbox_nudge == 0 )) || return 0
 
   cache_file="/tmp/skill_recommend_cache_${agent_id//[^A-Za-z0-9_.-]/_}"
   prompt_hash="$(printf '%s' "$prompt_text" | sha256sum | awk '{print $1}')"
@@ -467,6 +453,7 @@ detect_skill_triggers() {
   local current_project="${PROMPT_STATE_CURRENT_PROJECT:-}"
   local trigger_output
   local semantic_output
+  [[ ! "$prompt_text" =~ ^inbox[0-9]+$ ]] || return 0
   [[ -d "$skills_dir" ]] || {
     semantic_skill_recommendations
     return 0
@@ -660,21 +647,13 @@ PY
 	  local _psi_cache_path _psi_db_path _psi_result _psi_rc
 	  [[ -f "$_psi_source_db" ]] || return 0
 
-	  _psi_cache_path="$(
-	    PROMPT_STATE_MEMORY_DB_SOURCE="$_psi_source_db" PROMPT_STATE_SCRIPT_DIR="$SCRIPT_DIR" python3 - <<'PY' 2>/dev/null || true
-import os
-import sys
-
-script_dir = os.environ.get("PROMPT_STATE_SCRIPT_DIR", "")
-source_db = os.environ.get("PROMPT_STATE_MEMORY_DB_SOURCE", "")
-if not script_dir or not source_db:
-    raise SystemExit(1)
-sys.path.insert(0, f"{script_dir}/scripts")
-import memory_db_live_insert as live_insert
-
-print(live_insert.memory_db_cache_path(source_db))
-PY
-	  )"
+	  if [[ -n "${SHOGUN_MEMORY_DB_CACHE_PATH:-}" ]]; then
+	    _psi_cache_path="$SHOGUN_MEMORY_DB_CACHE_PATH"
+	  else
+	    _psi_cache_dir="${SHOGUN_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}"
+	    _psi_repo_key="${SCRIPT_DIR//[^A-Za-z0-9_.-]/_}"
+	    _psi_cache_path="${_psi_cache_dir}/${_psi_repo_key}_${_psi_source_db##*/}"
+	  fi
 	  _psi_db_path="$_psi_source_db"
 	  if [[ -n "$_psi_cache_path" && -s "$_psi_cache_path" ]]; then
 	    _psi_db_path="$_psi_cache_path"
@@ -731,8 +710,8 @@ PY
 
 # --- Growth metrics: automatic lord response count recording ---
 lord_conversation_file="${PROMPT_STATE_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
-lord_response_count="$(count_lord_responses "$lord_conversation_file" 2>/dev/null || printf '0\n')"
 if [[ "$agent_id" == "shogun" ]]; then
+  lord_response_count="$(count_lord_responses "$lord_conversation_file" 2>/dev/null || printf '0\n')"
   record_shogun_growth_metrics "$lord_response_count" 2>/dev/null || true
 fi
 
@@ -887,7 +866,10 @@ if [[ "$agent_id" == "shogun" || "$agent_id" == "karo" || "$agent_id" == "gunshi
 fi
 
 # --- Semantic knowledge auto-injection (first-layer only, no LLM) ---
-semantic_result="$(_prompt_state_semantic_inject "$prompt_text")"
+semantic_result=""
+if (( prompt_is_inbox_nudge == 0 )); then
+  semantic_result="$(_prompt_state_semantic_inject "$prompt_text")"
+fi
 if [[ -n "$semantic_result" ]]; then
   semantic_quote_warning=""
   if (( question_detected > 0 )); then
@@ -899,7 +881,10 @@ if [[ -n "$semantic_result" ]]; then
 ${semantic_quote_warning}${semantic_result}"
 fi
 
-memory_db_result="$(memory_db_fts5_inject "$prompt_text")"
+memory_db_result=""
+if (( prompt_is_inbox_nudge == 0 )); then
+  memory_db_result="$(memory_db_fts5_inject "$prompt_text")"
+fi
 if [[ -n "$memory_db_result" ]]; then
   additional_context="${additional_context}
 --- memory_db_fts5 ---
