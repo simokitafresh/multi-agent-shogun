@@ -14,9 +14,9 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-06-11T13:26:58+09:00 -->
+<!-- script_refs_checked_at: 2026-06-12T20:46:45+09:00 -->
 
-Script refs verified: 2026-06-11. `note_draft.sh` の契約は `<markdown_file>` 1件を受け取りCDP経由でnote下書きを作る形式のまま。be261fa35はskill-auto-improveコメント由来のshellcheck対処で、引数・CDP_PORT・成功/失敗/SKIPログの契約変更なし。
+Script refs verified: 2026-06-12. `note_draft.sh` の契約は `<markdown_file>` 1件を受け取りCDP経由でnote下書きを作る形式のまま。932936059は外部reCAPTCHA画像チャレンジ未解決を運用FAILではなくSKIPとして`skill_execution_log.yaml`へ記録し、exit 0で返す変更。Gate20も同じ外部reCAPTCHAチャレンジ由来の`note-draft`結果をFAIL率分母から除外する。引数・CDP_PORT・通常PASS/FAILログの契約変更なし。
 
 # /cdp-browse
 
@@ -106,7 +106,7 @@ note.com下書き保存では、共通ヘルパー `scripts/note_draft.sh` を�
 CDP_PORT=9234 bash scripts/note_draft.sh "<記事.md>"
 ```
 
-`note_draft.sh` は `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。bash層でChrome CDP事前チェック(Step 0)を行い、CDP_PORTに応答がなければSKIP(exit 0)で抜ける(FAIL率汚染防止)。Chrome起動時は `launch_browser`(PowerShell)を試行し、失敗時は `cmd.exe` フォールバックで隔離プロファイル付きChrome起動を試みる。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` でログインし、reCAPTCHA画像チャレンジが出た場合は `/tmp/note_recaptcha_challenge.png` を出力して最大120秒待つ。ProseMirrorエディタがスピナーで停止している場合は `Page.reload` で最大2回リトライする。本文挿入は `.ProseMirror.note-common-styles__textnote-body` → `div.ProseMirror` → `div[contenteditable]` の3段fallbackでエディタを検出する。下書き保存の成果はnote.comエディタ上のドラフトで、スクリプトは最終URLを `[note_draft] Done: ...` に出し、`skill_execution_log.yaml` にPASS/FAIL/SKIPを記録する。
+`note_draft.sh` は `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。bash層でChrome CDP事前チェック(Step 0)を行い、CDP_PORTに応答がなければSKIP(exit 0)で抜ける(FAIL率汚染防止)。Chrome起動時は `launch_browser`(PowerShell)を試行し、失敗時は `cmd.exe` フォールバックで隔離プロファイル付きChrome起動を試みる。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` でログインし、reCAPTCHA画像チャレンジが出た場合は `/tmp/note_recaptcha_challenge.png` を出力して最大120秒待つ。外部reCAPTCHAチャレンジが解決されずログイン完了できない場合はSKIPとして記録し、exit 0で終了する。これは人間/外部サービス待ちであり、Gate20のスキルFAIL率からも除外される。ProseMirrorエディタがスピナーで停止している場合は `Page.reload` で最大2回リトライする。本文挿入は `.ProseMirror.note-common-styles__textnote-body` → `div.ProseMirror` → `div[contenteditable]` の3段fallbackでエディタを検出する。下書き保存の成果はnote.comエディタ上のドラフトで、スクリプトは最終URLを `[note_draft] Done: ...` に出し、`skill_execution_log.yaml` にPASS/FAIL/SKIPを記録する。
 
 ## cdp_cli.sh不可時の直接WS操作
 
@@ -169,4 +169,4 @@ scripts/cdp/cdp_cli.sh screenshot "/tmp/dm-signal-admin.png"
 
 - → [[cdp-severity.md]] CDP計測・canary・ブラウザ実測の異常分類（操作失敗時の重大度判定基準）
 
-<!-- script_refs_checked_at: 2026-06-11T13:26:58+09:00 -->
+<!-- script_refs_checked_at: 2026-06-12T20:46:45+09:00 -->

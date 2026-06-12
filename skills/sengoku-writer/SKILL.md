@@ -20,9 +20,9 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-<!-- script_refs_checked_at: 2026-06-11T13:26:58+09:00 -->
+<!-- script_refs_checked_at: 2026-06-12T20:46:45+09:00 -->
 
-Script refs verified: 2026-06-11. `note_draft.sh` の契約は `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"` のまま。be261fa35はshellcheck対処のみで、戦国記事Markdown生成後のnote下書き保存呼び出し・成功/失敗/SKIPの戻り値契約変更なし。
+Script refs verified: 2026-06-12. `note_draft.sh` の契約は `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"` のまま。932936059は外部reCAPTCHA画像チャレンジ未解決を運用FAILではなくSKIPとして`skill_execution_log.yaml`へ記録し、exit 0で返す変更。Gate20も同じ外部reCAPTCHAチャレンジ由来の`note-draft`結果をFAIL率分母から除外する。戦国記事Markdown生成後のnote下書き保存呼び出し・通常PASS/FAILログの契約変更なし。
 
 # 戦国ライター — 将軍の書簡スキル
 
@@ -239,7 +239,7 @@ CDP経由でnote.comに下書き保存する。実行は共通ヘルパー `scri
 CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 ```
 
-内部では `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは `/tmp/note_recaptcha_challenge.png` を撮影して、ブラウザ上で解決されるまで最大120秒待機する。
+内部では `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは `/tmp/note_recaptcha_challenge.png` を撮影して、ブラウザ上で解決されるまで最大120秒待機する。外部reCAPTCHAチャレンジが解決されずログイン完了できない場合はSKIPとして記録し、exit 0で終了する。これは人間/外部サービス待ちであり、Gate20のスキルFAIL率からも除外される。
 
 Markdown→note.com変換ルール:
 - `# タイトル` → titleのtextareaに設定（本文に含めない）。`#` が無い場合は最初の `##` をfallback titleに使う
@@ -251,6 +251,6 @@ Markdown→note.com変換ルール:
 - ProseMirrorエディタがスピナーで停止している場合、`Page.reload` で最大2回リトライする（`wait_for_prosemirror`）
 - 下書き保存ボタン押下後、最終URLを `[note_draft] Done: ...` に出力し、`skill_execution_log.yaml` にPASS/FAILを記録する
 
-<!-- script_refs_checked_at: 2026-06-11T13:26:58+09:00 -->
+<!-- script_refs_checked_at: 2026-06-12T20:46:45+09:00 -->
 
 Script refs verified: 2026-06-10 e81c63081+ba757a1f7+14aa13952. `note_draft.sh` はChrome CDP未起動時にexit 0(SKIP)で抜ける事前チェック追加(FAIL率汚染防止)、PowerShell失敗時のcmd.exeフォールバック追加、skill-auto-improveコメントのshellcheckエラー除去。Chrome未起動時はStep 6がSKIPされ`skill_execution_log`にSKIP記録される。Markdown生成・保存(Step 1-5)への影響なし。SKILL.md記載の`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`呼び出し契約は変更なし。
