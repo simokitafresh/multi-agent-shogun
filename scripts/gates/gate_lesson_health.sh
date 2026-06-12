@@ -175,60 +175,62 @@ _compute_lesson_stats() {
 }
 
 check_role_lesson_origins_batch() {
-    python3 - \
+    local _role_spec _label _path
+    for _role_spec in \
         "lessons_shogun.yaml=$SCRIPT_DIR/projects/infra/lessons_shogun.yaml" \
         "lessons_gunshi.yaml=$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml" \
-        "lessons_karo.yaml=$SCRIPT_DIR/projects/infra/lessons_karo.yaml" <<'PY'
-import re
-import sys
-import yaml
-
-def summarize(path):
-    with open(path, encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
-    lessons = data.get("lessons") or []
-    missing = []
-    empty = []
-    no_links = []
-    for item in lessons:
-        if not isinstance(item, dict):
-            continue
-        lesson_id = str(item.get("id") or "?")
-        if "origin" not in item:
-            missing.append(lesson_id)
-            continue
-        origin = item.get("origin")
-        origin_text = "" if origin is None else str(origin).strip()
-        if not origin_text:
-            empty.append(lesson_id)
-            continue
-        if not re.search(r"\[\[[^]\n]+\]\]", origin_text):
-            no_links.append(lesson_id)
-    total = len([x for x in lessons if isinstance(x, dict)])
-    return total, missing, empty, no_links
-
-for spec in sys.argv[1:]:
-    label, path = spec.split("=", 1)
-    try:
-        total, missing, empty, no_links = summarize(path)
-    except FileNotFoundError:
-        continue
-    except Exception:
-        print(f"WARN: {label} origin検査に失敗。YAML構文または形式を確認せよ")
-        continue
-
-    bad = len(missing) + len(empty) + len(no_links)
-    if bad:
-        print(f"WARN: {label} origin因果リンク不備 {bad}/{total}件")
-        if missing:
-            print(f"  origin欠落: {','.join(missing[:5])}")
-        if empty:
-            print(f"  origin空: {','.join(empty[:5])}")
-        if no_links:
-            print(f"  リンク0件: {','.join(no_links[:5])}")
-    else:
-        print(f"OK: {label} origin因果リンク ({total}件)")
-PY
+        "lessons_karo.yaml=$SCRIPT_DIR/projects/infra/lessons_karo.yaml"; do
+        _label="${_role_spec%%=*}"
+        _path="${_role_spec#*=}"
+        [ -f "$_path" ] || continue
+        awk -v label="$_label" '
+            function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+            function first5(list,    i,out) {
+                out = ""
+                for (i = 1; i <= list[0] && i <= 5; i++) out = out (out ? "," : "") list[i]
+                return out
+            }
+            function flush_current(    origin_text) {
+                if (id == "") return
+                total++
+                if (!origin_seen) {
+                    missing[++missing[0]] = id
+                } else {
+                    origin_text = trim(origin_value)
+                    gsub(/^["'\''"]|["'\''"]$/, "", origin_text)
+                    if (origin_text == "") empty[++empty[0]] = id
+                    else if (origin_text !~ /\[\[[^]\n]+\]\]/) no_links[++no_links[0]] = id
+                }
+            }
+            /^- id:[[:space:]]*/ {
+                flush_current()
+                id = $0
+                sub(/^- id:[[:space:]]*["'\''"]?/, "", id)
+                sub(/["'\''"]?[[:space:]]*$/, "", id)
+                origin_seen = 0
+                origin_value = ""
+                next
+            }
+            /^[[:space:]]+origin:[[:space:]]*/ {
+                origin_seen = 1
+                origin_value = $0
+                sub(/^[[:space:]]+origin:[[:space:]]*/, "", origin_value)
+                next
+            }
+            END {
+                flush_current()
+                bad = missing[0] + empty[0] + no_links[0]
+                if (bad) {
+                    printf "WARN: %s origin因果リンク不備 %d/%d件\n", label, bad, total
+                    if (missing[0]) printf "  origin欠落: %s\n", first5(missing)
+                    if (empty[0]) printf "  origin空: %s\n", first5(empty)
+                    if (no_links[0]) printf "  リンク0件: %s\n", first5(no_links)
+                } else {
+                    printf "OK: %s origin因果リンク (%d件)\n", label, total
+                }
+            }
+        ' "$_path" || echo "WARN: ${_label} origin検査に失敗。YAML構文または形式を確認せよ"
+    done
 }
 
 write_lesson_effect_status() {
@@ -646,8 +648,8 @@ _phantom_tmp="/tmp/_glh_phantom_$$"
 # 高速化: scripts/.claude/hooks の .sh ファイル一覧を事前に1回収集 (find N回→1回)
 declare -A _script_exists
 while IFS= read -r _s; do
-    _script_exists["$(basename "$_s")"]="1"
-done < <(find "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/.claude/hooks" -name "*.sh" 2>/dev/null)
+    _script_exists["$_s"]="1"
+done < <(find "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/.claude/hooks" -name "*.sh" -printf '%f\n' 2>/dev/null)
 
 for _lf in "$SCRIPT_DIR"/projects/infra/lessons_gunshi.yaml "$SCRIPT_DIR"/projects/infra/lessons_karo.yaml; do
     [ -f "$_lf" ] || continue
