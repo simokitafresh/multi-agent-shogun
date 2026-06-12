@@ -84,6 +84,46 @@ PY
     [ "${result[3]}" = "True" ]
 }
 
+@test "SSH-001a: session_start_inject preserves compact_state 24h stale contract without date command" {
+    export MOCK_AGENT_ID="saizo"
+    cat > "$TEST_TMPDIR/queue/compact_state/saizo.yaml" <<'YAML'
+timestamp: '2000-01-01T00:00:00Z'
+summary: old compact
+YAML
+
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"type\":\"startup\"}' | scripts/hooks/session_start_inject.sh"
+    [ "$status" -eq 0 ]
+    readarray -t stale_result < <(OUTPUT_JSON="$output" python3 - <<'PY'
+import json
+import os
+ctx = json.loads(os.environ["OUTPUT_JSON"])["hookSpecificOutput"]["additionalContext"]
+print("stale:" in ctx)
+print("old compact" in ctx)
+PY
+)
+    [ "${stale_result[0]}" = "True" ]
+    [ "${stale_result[1]}" = "True" ]
+
+    printf -v now_compact_ts '%(%Y-%m-%dT%H:%M:%S%z)T' -1
+    cat > "$TEST_TMPDIR/queue/compact_state/saizo.yaml" <<YAML
+timestamp: '$now_compact_ts'
+summary: fresh compact
+YAML
+
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"type\":\"startup\"}' | scripts/hooks/session_start_inject.sh"
+    [ "$status" -eq 0 ]
+    readarray -t fresh_result < <(OUTPUT_JSON="$output" python3 - <<'PY'
+import json
+import os
+ctx = json.loads(os.environ["OUTPUT_JSON"])["hookSpecificOutput"]["additionalContext"]
+print("stale:" in ctx)
+print("fresh compact" in ctx)
+PY
+)
+    [ "${fresh_result[0]}" = "False" ]
+    [ "${fresh_result[1]}" = "True" ]
+}
+
 @test "SSH-001b: session_start_inject runs karo startup gate and injects output" {
     export MOCK_AGENT_ID="karo"
     cat > "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh" <<'EOF'

@@ -3339,6 +3339,17 @@ entries:
   commit: "acda5c2da"
   assigned_to: ''
   updated_at: "2026-06-07T21:57:22"
+- script_path: scripts/hooks/session_start_inject.sh
+  status: completed
+  before_ms: ''
+  after_ms: ''
+  before_real_ms: 90
+  after_real_ms: 60
+  real_measurement_command: "before: HEAD copy under .tmp_ssi_before_cmp2 with queue symlink; after: working tree; both 9 runs of AGENT_ID=saizo SessionStart startup payload via /usr/bin/time"
+  test_result: "bash -n PASS; JSON parse PASS; bats tests/unit/test_session_state_hooks.bats 20/20 PASS SKIP=0"
+  assigned_to: saizo
+  updated_at: "2026-06-12T22:58:00+09:00"
+  commit: "5b04f77f3"
 status: completed
 before_real_ms: 2083
 after_real_ms: 780

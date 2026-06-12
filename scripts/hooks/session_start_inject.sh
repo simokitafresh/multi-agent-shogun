@@ -76,6 +76,65 @@ _session_start_json_escape() {
   printf '%s' "$_session_start_value"
 }
 
+_session_start_epoch_result=0
+_session_start_iso_epoch() {
+  local _session_start_ts="$1"
+  local _session_start_y
+  local _session_start_m
+  local _session_start_d
+  local _session_start_h
+  local _session_start_min
+  local _session_start_s
+  local _session_start_tz
+  local _session_start_days_y
+  local _session_start_days_m
+  local _session_start_era
+  local _session_start_yoe
+  local _session_start_doy
+  local _session_start_doe
+  local _session_start_offset
+
+  if [[ ! "$_session_start_ts" =~ ^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})(Z|[+-][0-9]{2}:?[0-9]{2})$ ]]; then
+    return 1
+  fi
+
+  _session_start_y=$((10#${BASH_REMATCH[1]}))
+  _session_start_m=$((10#${BASH_REMATCH[2]}))
+  _session_start_d=$((10#${BASH_REMATCH[3]}))
+  _session_start_h=$((10#${BASH_REMATCH[4]}))
+  _session_start_min=$((10#${BASH_REMATCH[5]}))
+  _session_start_s=$((10#${BASH_REMATCH[6]}))
+  _session_start_tz="${BASH_REMATCH[7]}"
+
+  _session_start_days_y=$_session_start_y
+  if (( _session_start_m <= 2 )); then
+    ((_session_start_days_y--))
+  fi
+  if (( _session_start_days_y >= 0 )); then
+    _session_start_era=$((_session_start_days_y / 400))
+  else
+    _session_start_era=$(((_session_start_days_y - 399) / 400))
+  fi
+  _session_start_yoe=$((_session_start_days_y - _session_start_era * 400))
+  if (( _session_start_m > 2 )); then
+    _session_start_days_m=$((_session_start_m - 3))
+  else
+    _session_start_days_m=$((_session_start_m + 9))
+  fi
+  _session_start_doy=$(((153 * _session_start_days_m + 2) / 5 + _session_start_d - 1))
+  _session_start_doe=$((_session_start_yoe * 365 + _session_start_yoe / 4 - _session_start_yoe / 100 + _session_start_doy))
+  _session_start_epoch_result=$(((_session_start_era * 146097 + _session_start_doe - 719468) * 86400 + _session_start_h * 3600 + _session_start_min * 60 + _session_start_s))
+
+  if [[ "$_session_start_tz" != "Z" ]]; then
+    _session_start_offset=$((10#${_session_start_tz:1:2} * 3600 + 10#${_session_start_tz: -2} * 60))
+    if [[ "${_session_start_tz:0:1}" == "+" ]]; then
+      _session_start_epoch_result=$((_session_start_epoch_result - _session_start_offset))
+    else
+      _session_start_epoch_result=$((_session_start_epoch_result + _session_start_offset))
+    fi
+  fi
+}
+
 # --- Read stdin JSON (type: startup|resume|clear|compact) ---
 payload="$(cat 2>/dev/null || true)"
 if [[ -z "$payload" ]]; then
@@ -105,6 +164,11 @@ if [[ "$timestamp" =~ ^(.+)([+-][0-9]{2})([0-9]{2})$ ]]; then
   timestamp="${BASH_REMATCH[1]}${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
 fi
 
+snapshot_budget=500
+compact_budget=1000
+auto_idle_budget=3000
+startup_gate_budget=20000
+
 # --- Inbox unread count ---
 inbox_file="$SCRIPT_DIR/queue/inbox/${agent_id}.yaml"
 unread_count=0
@@ -118,7 +182,7 @@ fi
 snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
 karo_snapshot="unavailable"
 if [[ -f "$snapshot_file" ]]; then
-  karo_snapshot="$(< "$snapshot_file")"
+  IFS= read -r -N $((snapshot_budget + 1)) karo_snapshot < "$snapshot_file" || true
   if [[ -z "$karo_snapshot" ]]; then
     karo_snapshot="unavailable"
   fi
@@ -137,11 +201,11 @@ compact_stale_threshold=86400  # 24h in seconds
 if [[ "$source_type" == "clear" ]]; then
   compact_state="(skipped: /clear type does not update compact_state; last value may be stale)"
 elif [[ -f "$compact_file" ]]; then
-  raw_state="$(< "$compact_file")"
+  IFS= read -r -N $((compact_budget + 1)) raw_state < "$compact_file" || true
   if [[ -z "$raw_state" ]]; then
     compact_state="none"
   else
-    # timestamp行を抽出してepoch比較。短命hookなのでawk起動は避ける。
+    # timestamp行を抽出してepoch比較。短命hookなのでawk/date起動は避ける。
     ts_line=""
     while IFS= read -r _session_start_line; do
       case "$_session_start_line" in
@@ -156,7 +220,11 @@ elif [[ -f "$compact_file" ]]; then
       esac
     done < "$compact_file"
     if [[ -n "$ts_line" ]]; then
-      ts_epoch="$(date -d "$ts_line" +%s 2>/dev/null || echo 0)"
+      if _session_start_iso_epoch "$ts_line"; then
+        ts_epoch="$_session_start_epoch_result"
+      else
+        ts_epoch=0
+      fi
       printf -v now_epoch '%(%s)T' -1
       age_sec=$((now_epoch - ts_epoch))
       if (( ts_epoch > 0 && age_sec > compact_stale_threshold )); then
@@ -234,11 +302,6 @@ ${startup_gate_output}"
 
 # 大きいセクションは役割ごとに上限を設ける。startup gateは手順強制の正本なので
 # snapshot/compactより優先して広めに残す。
-snapshot_budget=500
-compact_budget=1000
-auto_idle_budget=3000
-startup_gate_budget=20000
-
 if (( ${#karo_snapshot} > snapshot_budget )); then
   karo_snapshot="${karo_snapshot:0:$snapshot_budget}
 (truncated)"
