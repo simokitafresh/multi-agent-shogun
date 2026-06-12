@@ -10,8 +10,9 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-11T13:59:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-12T11:33:20+09:00 -->
 
+Script refs verified: 2026-06-12 cmd_karo_hotfix_skill_refs_202606121132. `deploy_task.sh` 直近変更(d808770fc)はreadonly refsをtaskへ自動注入する内部コンテキスト提供追加。`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_training_...>` の引数・通知契約、report template生成、safe_inbox_write経路は変更なし。
 Script refs verified: 2026-06-11. `deploy_task.sh` の契約は `--yaml <file> <ninja>` / `--direct <ninja> <cmd_id>` のまま。25d0b1e22は分割配備判定の内部修正で、karo_directのci_fix/recon2/hotfix用YAML配備とtraining用direct配備の引数・通知契約変更なし。
 Script refs verified: 2026-06-11 ab0d45dad. `deploy_task.sh` はzero-useful lesson自動deprecatedを `ENABLE_ZERO_USEFUL_AUTO_DEPRECATE=1` 指定時の明示機能に変更した。lesson注入後の評価分母保護の内部挙動であり、karo_directの `--yaml <yaml_file> <ninja_name>` / training用 `--direct <ninja_name> <cmd_training_...>` の配備手順・通知契約変更なし。
 

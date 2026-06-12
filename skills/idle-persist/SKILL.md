@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキル利用後の軍師review精度（logs/gunshi_review_log.yamlで当該分析由来レビューのgate_prediction==gate_resultとなった割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-09T09:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-12T11:33:20+09:00 -->
 
 # /idle-persist — idle分析永続化スキル
 
@@ -76,4 +76,5 @@ bash scripts/lib/yaml_field_set.sh logs/gunshi_review_log.yaml "idle_<topic>_<da
 - Script refs verified: 2026-05-22 cmd_2959. `yaml_field_set.sh` はflock、root fallback、map/list block対応、複数行・inline scalar継続の安全置換、post-write readback検証を行う。idle分析のreview_log記録はhelper経由で完了させる。
 
 Script refs verified: 2026-06-09 cmd_karo_skill_update_batch1. `yaml_field_set.sh` 直近変更(3de0d29c)は_yaml_field_set_apply_rootのskip_children条件修正(内部バグフィックス、I/F変更なし)。本スキルはroot操作を使わないため直接影響なし。flock+readback検証の契約は維持。
+Script refs verified: 2026-06-12 cmd_karo_hotfix_skill_refs_202606121132. `inbox_write.sh` 直近変更(e2df9b4d2)は分割cmd完了時のtask completion判定許可を追加した内部hook対象制御。`bash scripts/inbox_write.sh karo "{知見1行要約}" gunshi_lesson_candidate gunshi` の契約とidle分析保存→掲示板→review_log→家老通知手順は変更なし。
 Script refs verified: 2026-06-07 cmd_3206. `inbox_write.sh` はサブシェル削減で高速化されたが、`bash scripts/inbox_write.sh <target> "<message>" <type> <from>` の契約とhook対象type制御は維持。`bulletin_write.sh`/`yaml_field_set.sh` もI/F変更なし。SKILL.md記載のidle分析保存→掲示板→review_log→家老通知手順は現行と一致。
