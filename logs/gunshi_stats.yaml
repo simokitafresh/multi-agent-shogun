@@ -55,6 +55,15 @@
 # → docs/research/gunshi_idle_bats_speed_redesign_20260603.md (v2)
 # → docs/research/three-layer-memory-operating-principles_20260603.md (レビュー統合)
 #
+# ─── 本セッション成果 (2026-06-12T09:06最終更新) ───
+# draft review 15件: cmd_3294-3311+hotfix8件。APPROVE 14+RC 1(cmd_3298前提未成立→depends_on補正)
+# report review 19件: LGTM 14+FAIL 5(cmd_3297/3299x3 readonly_ref FP→全CLEAR, cmd_3301 AC3環境由来→CLEAR, cmd_3306 dirty→CLEAR)
+# インフラバグ発見→根治: readonly_ref偽陽性4連続→掲示板報告→cmd_3300(源流注入+同一ソース照合)→CLEAR。bats 16/16実動作確認
+# 3セッション連続CRITICAL解消: cs_cold_alert hotfix+gate_sync hotfix→startup gate OK
+# DM-Signal進捗: WP-4 CLEAR+TZ修正CLEAR+is_active削除WP完了(Phase 0→実装→再構成→本番反映77件→CLEAR)+monthly_product全Phase完了(Phase 0→FE削除→本番反映79件→BE削除→本番反映79件/0件→docs整理→CLEAR)
+# RC有効: cmd_3298裁可書順序違反を事前防止
+# accuracy: 全LGTM→CLEAR。APPROVE→FAIL 0件
+#
 # ─── idle自走 (2026-06-03T22:10更新) ───
 # Step 4完了: ambiguity_points 11件backfill+operational_simulation 7件backfill。CS WARN 2件解消
 # Step 1完了: dashboard_corruption根因特定(open('w')→truncate→0バイト)→GP-255提案→掲示板cmd起票依頼

@@ -7950,3 +7950,25 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - source pathsが広いcontextでは、ALERT件数=全て同じcontextへ追記すべき情報ではない。commitを研究正本/補助資料/core寄り/lesson正本に分類し、対象contextへ入れるものだけ索引化するチェックを次回追加する。 origin: [[GA-047]] -> [[source path broadness]] -> [[context update target classification]]
+
+### L788: context_freshness調査はcache無効化を一次判定にする
+- **日付**: 2026-06-12
+- **出典**: cmd_karo_hotfix_ga050_context_freshness_202606121052
+- **記録者**: hayate
+- **tags**: [infra,context,recon,gate,bash]
+- **target_files**: [context/infrastructure.md]
+- **origin**: [[cmd_karo_hotfix_ga050_context_freshness_202606121052]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_context_freshness.shは短TTL cacheを持つため、通常実行だけでは直前のOKを返すことがある。ALERT調査ではCONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1を使い、cacheあり/なしの差分を報告に残す。origin: [[GA-050]] -> [[gate_cache_ok_false_negative]] -> [[cache_disabled_primary_check]]
+
+### L789: semantic_stress候補はHIT再検証で消化してからalias昇格を検討する
+- **日付**: 2026-06-12
+- **出典**: cmd_3316
+- **記録者**: tobisaru
+- **tags**: [infra,semantic,db,testing]
+- **target_files**: [scripts/semantic_index_update.sh,scripts/semantic_stress_test.sh,tests/unit/test_semantic_index_update.bats,tests/unit/test_semantic_stress_test.bats]
+- **origin**: [[cmd_3316]]
+- **when**: 未設定
+- **how**: 未設定
+- NO_MATCH候補は生成時点の失敗であり、後続のmemory DB fallbackや索引更新でHIT可能になる。pending消化時はalias類似昇格だけでなく元queryをsemantic_searchで再検証し、HITした候補は誤alias追加なしでdone化する。origin: [[cmd_3316]] -> [[semantic_stress_pending再検証欠落]] -> [[INSIGHT_REPEAT蓄積]]

@@ -92,6 +92,11 @@ lessons:
     (31)quality_gateフィールド名はpreflightテンプレートと完全一致必須。不正フィールド名が素通り→値チェックで初めてBLOCK(cmd_3244で7回BLOCK。覚醒なぜなぜ7回で根因特定)
     (32)初回起票3点デフォルト: diagnosis 2部構成(BLOCK理由:該当なし(新規起票)/対策:...)+origin因果辺([[リンク]]最低1つ、none禁止)+timeout_minutesはquality_gate内でなくcmd直下(cmd_3261で3回BLOCK。LS049吸収。enforcement: pre-write-edit hookのpreflightテンプレ表示+cmd_skeleton.sh雛形)
     (33)性能ACに合格点(閾値)を書くな。閾値はデータ量変化で無意味化し(設計書201通→実測1577通で7.9倍)、到達で最適化が止まる。構造的二値(プロセス起動O(1)等)+実測値報告義務+理論限界(APIクォータ/RTT)比で書け(殿指摘2026-06-10「合格点でなくより早く」。LS053吸収。enforcement: cmd_skeleton.shガイド8)
+    (34)委任メッセージは当該cmdのみに言及せよ。後続cmd番号を列挙するとcmd_delegate.shの重複ガードが誤検知しBLOCK。後続予告はcmd_idを含めない表現で。解消はinbox_archive.sh→再委任(cmd_3290。LS054吸収)
+    (35)ACのファイル名列挙はスラッシュ区切り禁止。機械パーサがパスとして誤抽出しac_missing_parent_path BLOCK。区切りは中黒(・)か読点、パスはプロジェクトWD相対で書け(cmd_3292。LS056吸収。(27)の再発形)
+    (36)数量語(N項目/N種/N条件等)はbinary_check欄でも括弧列挙必須。check_ac_param_sufficiencyはAC配下全行をgrepするためdescriptionに列挙済みでもbinary_checkの裸数量語でWARN(cmd_3302で特定。15回累計の根因)
+    (37)削除系/ブランチ作業cmdのACにコミット構成(基点ブランチの一致確認・分割単位・メッセージ形式・整形の別コミット分離)を明示せよ。実施項目の列挙だけでは忍者が古い基点に1コミットで束ね整形も混入する(cmd_3304で3逸脱実証: 基点5コミット遅れ・3コミット指定の1本化・Biome修正混入)
+    (38)起票は雛形起点(cmd_skeleton.sh)が正(LS051吸収2026-06-12)。必須フィールド・形式規約が事後BLOCKでしか到達しない事後規律型は記憶からの作文に頼るほどBLOCK往復する。対処5点実装済み(2026-06-10): 雛形の形式環境保証+FILL_THIS残存BLOCK(Check1.05)+PASS出力に次ステップ提示+cmd_delegate数字ID正規化+Check17日付リテラル除外。grep検証は最終版テキストに対して実行せよ(編集→検証の順序逆転がcmd_3316で再BLOCKを生んだ)
   source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036, LS034]
   source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394, cmd_2395]
   created_at: '2026-04-25'
@@ -106,6 +111,8 @@ lessons:
     連鎖起票時は各cmdのgate前に前cmdの教訓記録を完了させる。
     緊急対応モードでもgate形式フィールドを省略するな(cmd_2259事故)。
     これは成長ループの正しい動作。教訓記録先送りが問題。
+    WARNを残したままcmd_save.shを診断目的で再実行するな。同一WARNが再記録され累計昇格でBLOCK化する。
+    1回のsave出力で全WARN列挙→全件修正→再実行の順序を守れ(cmd_3291。LS055吸収)。
   source_ids: [LS062, LS070, LS071, LS073, LS076, LS077, LS092]
   source_cmds_v3: [cmd_2329]
   created_at: '2026-04-25'
@@ -178,7 +185,11 @@ lessons:
     (14)前セッション発言の時系列・文脈・ターゲット未確認でパターンマッチ反応(cmd_session_20260604)。★確認すべき事リストの時系列マーカー+[済]追跡で構造予防
     (15)FTS5スキーマ未確認で遡及充填を推薦(cmd_session_20260608)。配管(書込み)は見たがスキーマ(検索構造)を見ていない。道具を語る前にスキーマ1行読め
     (16)grep単一キーワードで0件→未実装と断定(cmd_3249)。複数キーワード(機能名+目的語+関連概念)でgrepし、0件でも関連セクション通読せよ
-  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047]
+    (17)検証手段がその主張を証明できるか先に確認せよ。git show --stat(ファイル数)で「整形混入なし」と報告→実差分にruff整形混入が調査チーム検証で発覚=虚偽報告(cmd_3298 fa87fa2b)。混入検分はgit show -w+実差分照合が最低線。--statは内容を一切証明しない。忍者のbinary_check yes(照合済み)も同様に未検証の主張。整形分離ACを含むGATE CLEARは将軍が自らgit show -wで再検分してからマージ裁可に出せ(cmd_3315 672cfb8cで再発: AC5 yes報告だがimport並べ替え+折返し整形が型移設コミットに混入。裁可書条件違反を将軍検分で捕捉)
+    (18)時刻の主張はUTC/JST併記+dateコマンド検算してから報告せよ。cron窓00:50 UTCをJST深夜と暗算で混同し「2時間後」と報告→実際は11時間後(殿指摘2026-06-11 22:35)。TZ付き時刻は暗算禁止。本番証跡の時刻整合(start/end差とelapsedの突合)も同様に数値で検算
+    (19)リモート状態(マージ/push/デプロイ)を報告・判断する前にgit fetch必須。古いorigin参照での「未マージ」報告は検証スキップであり調査チーム指摘で食い違いが発覚した(refactor_inquiry3_q1。LS057吸収)
+    (20)DB検証で例外が出た対象を「未実施」注記のまま回答完了にするな。information_schema等で実構造を確認→クエリ再構築→数値取得までが完了条件。実際再実行したら3分で確定値が得られた(refactor_inquiry_20260611。LS053吸収。洗脳#1+#6)
+  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047, LS053]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)+q11_existing_alternative Guard一覧自動表示(cmd_2863)+post-bash-combined.sh cmd_publish hook(cmd_2898)'
@@ -526,22 +537,16 @@ lessons:
 - id: 'LS048'
   title: '洗脳対策は検出→環境強制→実戦検証→バグ修正の全サイクルを1セッションで完結'
   origin: '[[cmd_3251_洗脳L4貫通]] -> [[将軍L4穴]] -> [[修正+4パターン再発防止完結]]'
-  detail: '洗脳5/8発現。L2(起動Q6)+L3(cmd nazenaze)のみでL4(殿への回答前)にチェックなし。リマインダー表示だけでは#1(早期終了)/#3(他者依存)に効かない。3層対策: (A)リマインダー自動注入(#2/#7/#8)+(B)F009 hook BLOCK化(#3)+(C)ツール失敗時代替自動化(#1)。検出だけ、リマインダーだけでは再発する。全サイクル(検出→環境強制→実戦検証→バグ修正)を1セッションで完結させることが洗脳監査の正しいサイクル(殿定義2026-06-08)。cmd_3251でリマインダー実装→実戦検証→偽陽性発見→cmd_3252で修正。'
+  detail: '洗脳5/8発現。L2(起動Q6)+L3(cmd nazenaze)のみでL4(殿への回答前)にチェックなし。リマインダー表示だけでは#1(早期終了)/#3(他者依存)に効かない。3層対策: (A)リマインダー自動注入(#2/#7/#8)+(B)F009 hook BLOCK化(#3)+(C)ツール失敗時代替自動化(#1)。検出だけ、リマインダーだけでは再発する。全サイクル(検出→環境強制→実戦検証→バグ修正)を1セッションで完結させることが洗脳監査の正しいサイクル(殿定義2026-06-08)。cmd_3251でリマインダー実装→実戦検証→偽陽性発見→cmd_3252で修正。(2)#7簡潔本能の変種=質問の形をした範囲縮小提案(LS052吸収2026-06-12): 開始月/対象数/期間を絞る選択肢を殿に提示するのは、自分で縮小する代わりに殿に縮小を承認させる形の洗脳。範囲・期間・対象数は全範囲をデフォルトに自分で決めて宣言し、殿の上書きに委ねる。縮小オプションは提示しない(実例2026-06-10: clinic-expense現況リストで開始月を絞る質問をした)'
   source_cmd: 'cmd_3251'
+  source_ids_absorbed: [LS052]
   created_at: '2026-06-09'
   automated: true
   enforcement: 'type=hook; file=scripts/hooks/prompt_state_inject.sh+stop_check_inbox.sh; pattern=因果+detect_f009'
 # LS050: superseded by LS-A18 (GATE CLEAR≠効果保証=計測なき改善は不能の拡張。2026-06-09統合)
 # LS049: superseded by LS-A04(32) (初回起票3点デフォルト=テンプレートルール。2026-06-11統合)
 # LS050: superseded by LS051 (Check17日付リテラルFPはcmd_save.shコード修正で根治済み。2026-06-11物理削除)
-- id: 'LS051'
-  title: 'cmd起票は雛形起点(cmd_skeleton.sh)が正。事後規律型は劣化LLMほどBLOCK往復する'
-  origin: '[[殿指示2026-06-10起票分析]] -> [[事後規律型の摩擦]] -> [[cmd_skeleton.sh+gate修正5点]]'
-  detail: '根因: 必須フィールド・形式規約がEdit後のhook/cmd_save BLOCKでしか到達しない事後規律型のため、記憶からの作文に頼るLLMほど摩擦が増える。対処5点(2026-06-10): (1)cmd_skeleton.shで形式を環境保証(FILL_THISに規約埋込) (2)cmd_save.sh Check1.05でFILL_THIS残存BLOCK (3)PASS出力にcmd_delegate.sh次ステップ提示 (4)cmd_delegate.sh数字のみID正規化 (5)Check17の日付リテラル除外。Check17日付FPはコード修正済みのためLS050のq8整合ワークアラウンドは不要'
-  source_cmd: 'cmd_3273'
-  created_at: '2026-06-10'
-  automated: true
-  enforcement: 'cmd_save.sh Check1.05 FILL_THIS BLOCK + pre-write-edit hook雛形導線 + AS-FP-005/006回帰テスト + test_cmd_delegate正規化テスト'
+# LS051: superseded by LS-A04(38) (雛形起点起票=テンプレートルール。2026-06-12統合)
 - id: 'LS052'
   title: '質問の形をした範囲縮小提案=洗脳の発現。縮小オプションを殿に提示するな'
   origin: '[[殿指摘2026-06-10作業を減らそうと思ったなら洗脳]] -> [[質問形の範囲縮小提案]] -> [[全範囲デフォルト宣言]]'
@@ -551,46 +556,11 @@ lessons:
   automated: true
   enforcement: 'brainwash_binary_check #7簡潔本能の具体パターンとして本教訓を参照'
 # LS053: superseded by LS-A04(33) (性能AC閾値禁止=AC設計ルール。殿指摘「合格点でなくより早く」。2026-06-11統合)
-- id: 'LS053'
-  title: 'DB検証で例外が出た対象を『未実施』注記のまま回答完了にするな'
-  origin: '[[refactor-inquiry-20260611]] -> [[ProgrammingError握りつぶし]] -> [[未実施注記のまま回答完了]]'
-  detail: 'DM-signal質問状回答(2026-06-11)でportfolio_config_snapshotsへの検索がProgrammingErrorで失敗した際、『未実施(カラム構造差異)』と注記して回答完了・掲示板報告した。これは洗脳#1(ツール失敗で諦め)+#6(出力=仕事)。正しい手順: information_schema.columnsで実カラム名を確認→クエリ再構築→数値取得まで完了条件。実際に再実行したら3分で858行×4ブロック0件の確定値が得られた。検証対象N件中N件の数値取得まで『確認済み』と書くな'
-  source_cmd: 'refactor_inquiry_20260611'
-  created_at: '2026-06-11'
-  automated: true
-  enforcement: '起動時gate(brainwash_binary_check #1/#6)+本教訓の起動時自動ロードで毎セッション注入'
-- id: 'LS054'
-  title: '委任メッセージに後続cmd番号を列挙するな(重複ガード誤検知)'
-  origin: '[[cmd_3289委任メッセージ]] -> [[後続cmd番号の列挙]] -> [[cmd_3290委任の重複ガード誤検知BLOCK]]'
-  detail: 'cmd_3289委任時に『後続cmd_3290-3292は順次起票中』と書いたため、cmd_3290委任時にcmd_delegate.shの重複ガードが『karo inboxに既出』と誤検知しBLOCK。委任メッセージは当該cmdのみに言及し、後続予告はcmd_idを含めない表現(『後続WP cmdを順次起票中』等)にせよ。解消はinbox_archive.sh(既読退避)→再委任'
-  source_cmd: 'cmd_3290'
-  created_at: '2026-06-11'
-  automated: true
-  enforcement: 'cmd_delegate.shの重複ガード自体が強制装置(本教訓は運用ルール)'
-- id: 'LS055'
-  title: 'WARNを残したままcmd_save.shを再実行するな(累計昇格でBLOCK化)'
-  origin: '[[cmd_3291起票]] -> [[修正なしのcmd_save再実行]] -> [[WARN累計昇格BLOCK]]'
-  detail: 'cmd_3290-3292起票時、診断目的でcmd_save.shを修正なしに再実行し、同一WARN(ac_param_sufficiency等)が再記録されて累計3回でBLOCK昇格した。WARNはBLOCKと同列(成長ループ原則)。1回のsave出力で全WARNを列挙→全件修正→再実行の順序を守れ。診断だけの再実行は累計を増やすだけ'
-  source_cmd: 'cmd_3291'
-  created_at: '2026-06-11'
-  automated: true
-  enforcement: 'cmd_save.shのWARN累計昇格機構そのものが強制装置'
-- id: 'LS056'
-  title: 'AC本文のファイル名列挙はスラッシュ区切り禁止(パス誤抽出)'
-  origin: '[[cmd_3292 AC1のスラッシュ区切り]] -> [[パス誤抽出]] -> [[ac_missing_parent_path BLOCK]]'
-  detail: 'cmd_3292のAC1で削除禁止5対象を『(現役)/backend/...』とスラッシュ区切りで連結したため、check_ac_file_pathsが『/backend/app/jobs/etl/fetcher.py』を絶対パスとして抽出し親ディレクトリ不在BLOCK。ACは人間向け文章であると同時にゲートの機械パーサが読む。ファイル名を含む列挙の区切りは中黒(・)か読点を使え。パスを書くときはプロジェクトWDからの正しい相対パスで書け'
-  source_cmd: 'cmd_3292'
-  created_at: '2026-06-11'
-  automated: true
-  enforcement: 'check_ac_file_paths自体が強制装置(本教訓は記述規約)'
-- id: 'LS057'
-  title: 'リモート状態を報告する前にgit fetch必須'
-  origin: '[[報告書5節未マージ記載]] -> [[fetchせず古いorigin参照で判断]] -> [[調査チーム指摘で食い違い発覚]]'
-  detail: 'DM-signalリファクタ報告書(2026-06-11 18:56)で『wp-2未マージ』と記載したが、実際はwp-1b(16:19)/wp-2(18:53)ともpush済みだった。git fetchせずローカルの古いorigin/main参照で判断した検証スキップが原因。調査チームの独立検証で発覚(質問状3 Q1)。リモートの状態(マージ/push/デプロイ)を報告・判断する前は必ずgit fetch→origin/<branch>を一次情報として確認せよ'
-  source_cmd: 'refactor_inquiry3_q1'
-  created_at: '2026-06-11'
-  automated: true
-  enforcement: '起動時自動ロード+brainwash_binary_check #2(一次データ確認)'
+# LS053: superseded by LS-A09(20) (DB検証例外握りつぶし→未実施注記=現物確認必須の検証版。2026-06-12統合)
+# LS054: superseded by LS-A04(34) (委任メッセージ後続cmd番号列挙禁止=テンプレートルール。2026-06-11統合)
+# LS055: superseded by LS-A05 (WARN残し再実行禁止=遡及学習/累計昇格。2026-06-11統合)
+# LS056: superseded by LS-A04(35) (ACスラッシュ区切り禁止=(27)再発形。2026-06-11統合)
+# LS057: superseded by LS-A09(19) (git fetch必須=現物確認必須のリモート版。2026-06-11統合)
 - id: 'LS058'
   title: '本番recalculate前に削除シンボルの残参照横断grepを必須化'
   origin: '[[WP-2ブロック削除]] -> [[recalculate_fast残参照見落とし]] -> [[id=149本番中断24分]]'
@@ -607,3 +577,19 @@ lessons:
   created_at: '2026-06-11'
   automated: true
   enforcement: 'cmd_save.shの各チェック自体が強制装置(本教訓は転記時の翻訳規約)'
+- id: 'LS060'
+  title: 'cmd追記のEditアンカーは前cmdブロックの最終行(delegated_at)にせよ'
+  origin: '[[cmd_3303起票]] -> [[Editアンカーをorigin行に選択]] -> [[delegated_at取り残しで委任済み誤判定BLOCK]]'
+  detail: 'cmd_3303起票時、cmd_3302のorigin行をアンカーに新cmdを挿入したため、cmd_publishがorigin直後に後置していたdelegated_at行が新cmd_3303ブロックの末尾に取り残され、cmd_save Check 1.5が『既に委任済み』と誤判定しBLOCK。cmd_publish.shはdelegated_atをブロック末尾に追記するため、新cmd追記のEditアンカーは必ず前cmdの最終行(delegated_at行)にする。修正はdelegated_at行を正しいブロックへ戻すEdit 2回で完了'
+  source_cmd: 'cmd_3303'
+  created_at: '2026-06-12'
+  automated: true
+  enforcement: 'cmd_save.sh Check 1.5(delegated_at判定)自体が検出装置(本教訓は追記時のアンカー規約)'
+- id: 'LS061'
+  title: '忍者作業中の共有作業ツリーでブランチを切り替えるな'
+  origin: '[[cmd_3328]]'
+  detail: 'cmd_3328でhayateがrefactor/wp3-ac1上で実装中に、将軍が第4報docsコミットのためgit checkout mainを実行しブランチを切り替えた。hayateがコミットしていればmainに直接乗る事故だった(2分後に検知し復旧、実害なし)。第3報時も同checkoutがabortしており2回目の兆候。根因: docsコミットの慣例(main着地)を、共有作業ツリーで忍者が作業中という状態確認なしに実行した。対処: 共有リポジトリでのブランチ切替え前にkaro_snapshotとcapture-paneで当該PJ作業中の忍者の有無を確認し、作業中なら忍者の現在ブランチ上にdocsコミットを積むか完了を待つ'
+  source_cmd: 'cmd_3328'
+  created_at: '2026-06-12'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=忍者作業中の共有作業ツリー'

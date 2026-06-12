@@ -103,6 +103,7 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 - **verdict を Edit toolで直接書くな** — 独立フィールドとして扱うほど矛盾の温床になる
 
 ## 注意ポイント
+- 2026-06-11: gate=cmd_complete_gate result=FAIL executor=hanzo reason=hanzo:binary_checks_fail|hanzo:purpose_validation_fit_false
 
 - 2026-06-11: gate=gate_report_format result=FAIL executor=saizo reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or...
 - 2026-06-10: gate=gate_report_format result=FAIL executor=saizo reason=binary_checks.AC1: is dict (must be list of check items); binary_checks.AC2: is dict (must be list of check items)
