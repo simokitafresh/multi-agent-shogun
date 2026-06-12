@@ -160,6 +160,68 @@ print('APPEND OK')
     [[ "$output" == *"APPEND OK"* ]]
 }
 
+@test "中断耐性: 未完了の末尾エントリを退避してparse可能なまま追記する" {
+    cat > "${TEST_TMP}/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-20260612-000000000-good
+  ts: "2026-06-12T00:00:00+09:00"
+  insight: "既存"
+  priority: "medium"
+  source: "unit"
+  status: pending
+- id: INS-20260612-000000001-part
+  ts: "2026-06-12T00:00:01+09:00"
+  insight: "書込み途中"
+EOF
+
+    run bash "${TEST_TMP}/scripts/insight_write.sh" "中断後の追記" "high" "unit_test"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ ^INS- ]]
+
+    run python3 -c "
+import glob
+import yaml
+with open('${TEST_TMP}/queue/insights.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+entries = data['insights']
+assert [e['insight'] for e in entries] == ['既存', '中断後の追記']
+assert glob.glob('${TEST_TMP}/queue/insights.yaml.corrupt.*'), 'corrupt quarantine missing'
+print('PARTIAL RECOVERED')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PARTIAL RECOVERED"* ]]
+}
+
+@test "破損退避: 末尾の構文破損行を退避しparseを継続する" {
+    cat > "${TEST_TMP}/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-20260612-000000000-good
+  ts: "2026-06-12T00:00:00+09:00"
+  insight: "既存"
+  priority: "medium"
+  source: "unit"
+  status: pending
+  broken: [unterminated
+EOF
+
+    run bash "${TEST_TMP}/scripts/insight_write.sh" "破損後の追記" "low" "unit_test"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ ^INS- ]]
+
+    run python3 -c "
+import glob
+import yaml
+with open('${TEST_TMP}/queue/insights.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+entries = data['insights']
+assert [e['insight'] for e in entries] == ['既存', '破損後の追記']
+assert glob.glob('${TEST_TMP}/queue/insights.yaml.corrupt.*'), 'corrupt quarantine missing'
+print('CORRUPT RECOVERED')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CORRUPT RECOVERED"* ]]
+}
+
 # --- 3. ID自動生成の形式確認 ---
 
 @test "ID形式: INS-YYYYMMDD-HHMMSSmmm-{4hex}に一致する" {

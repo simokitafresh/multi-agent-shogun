@@ -10,6 +10,7 @@ setup() {
     export SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/scripts/semantic_search.sh"
     export SEMANTIC_INSIGHT_WRITE="$TEST_TMPDIR/scripts/insight_write.sh"
     export SEMANTIC_QUALITY_TEST_CMD="$TEST_TMPDIR/scripts/semantic_quality_test.sh"
+    export SEMANTIC_STRESS_ABSORB_PENDING=0
 
     cat > "$SEMANTIC_STRESS_LORD_LOG" <<'EOF'
 {"content":"lord hit concept","direction":"inbound"}

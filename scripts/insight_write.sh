@@ -150,6 +150,8 @@ fi
 import json
 import os
 import sys
+import tempfile
+import time
 
 insights_file = os.environ['INSIGHTS_FILE_ENV']
 msg = os.environ['MSG_ENV']
@@ -159,6 +161,66 @@ entry_id = os.environ['ID_ENV']
 ts = os.environ['TS_ENV']
 status = os.environ['STATUS_ENV']
 resolved_at = os.environ['RESOLVED_AT_ENV']
+
+def repair_trailing_partial_entry(path):
+    """Quarantine an incomplete tail entry before scanning/appending."""
+    with open(path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    if not lines:
+        return
+
+    truncate_at = None
+    current_start = None
+    current_has_status = False
+    known_fields = ('  ts:', '  insight:', '  priority:', '  source:', '  status:', '  resolved_at:')
+
+    for idx, line in enumerate(lines):
+        stripped = line.strip()
+        if idx == 0 and stripped == 'insights:':
+            continue
+        if not stripped:
+            continue
+        if line.startswith('- id: '):
+            if current_start is not None and not current_has_status:
+                truncate_at = current_start
+                break
+            current_start = idx
+            current_has_status = False
+            continue
+        if current_start is None:
+            truncate_at = idx
+            break
+        if line.startswith('  status:'):
+            current_has_status = True
+            continue
+        if line.startswith(known_fields):
+            continue
+        truncate_at = idx
+        break
+
+    if truncate_at is None and current_start is not None and not current_has_status:
+        truncate_at = current_start
+
+    if truncate_at is None:
+        return
+
+    keep = lines[:truncate_at]
+    corrupt = lines[truncate_at:]
+    if not keep:
+        keep = ['insights:\n']
+    elif keep[-1] and not keep[-1].endswith('\n'):
+        keep[-1] += '\n'
+
+    corrupt_path = f"{path}.corrupt.{int(time.time() * 1000)}"
+    with open(corrupt_path, 'w', encoding='utf-8') as f:
+        f.writelines(corrupt)
+    with open(path, 'w', encoding='utf-8') as f:
+        f.writelines(keep)
+        f.flush()
+        os.fsync(f.fileno())
+
+repair_trailing_partial_entry(insights_file)
 
 def parse_scalar(raw):
     value = raw.strip()
@@ -212,20 +274,37 @@ if current_status == 'pending':
 if status == 'pending':
     source_pending_count += 1
 
-# Append raw YAML entry (no full-file rewrite — preserves existing multiline strings)
+# Append raw YAML entry via atomic replace. This keeps raw YAML bytes intact while
+# preventing a killed writer from leaving a half-written entry in the live file.
 def yaml_escape(s):
     """JSON double-quoted strings are valid YAML double-quoted scalars."""
     return json.dumps(s, ensure_ascii=False)
 
-with open(insights_file, 'a', encoding='utf-8') as f:
-    f.write(f'- id: {entry_id}\n')
-    f.write(f'  ts: {yaml_escape(ts)}\n')
-    f.write(f'  insight: {yaml_escape(msg)}\n')
-    f.write(f'  priority: {yaml_escape(priority)}\n')
-    f.write(f'  source: {yaml_escape(source_info)}\n')
-    f.write(f'  status: {status}\n')
-    if resolved_at:
-        f.write(f'  resolved_at: {yaml_escape(resolved_at)}\n')
+entry_lines = [
+    f'- id: {entry_id}\n',
+    f'  ts: {yaml_escape(ts)}\n',
+    f'  insight: {yaml_escape(msg)}\n',
+    f'  priority: {yaml_escape(priority)}\n',
+    f'  source: {yaml_escape(source_info)}\n',
+    f'  status: {status}\n',
+]
+if resolved_at:
+    entry_lines.append(f'  resolved_at: {yaml_escape(resolved_at)}\n')
+
+directory = os.path.dirname(os.path.abspath(insights_file)) or '.'
+fd, tmp_path = tempfile.mkstemp(prefix='.insights.', suffix='.tmp', dir=directory)
+try:
+    with os.fdopen(fd, 'w', encoding='utf-8') as out:
+        with open(insights_file, 'r', encoding='utf-8') as src:
+            for line in src:
+                out.write(line)
+        out.writelines(entry_lines)
+        out.flush()
+        os.fsync(out.fileno())
+    os.replace(tmp_path, insights_file)
+finally:
+    if os.path.exists(tmp_path):
+        os.unlink(tmp_path)
 
 # Line 1: entry_id; Line 2: source_pending_count (for bulletin threshold check)
 print(entry_id)
