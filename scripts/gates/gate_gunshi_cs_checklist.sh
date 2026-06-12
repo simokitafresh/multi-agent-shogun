@@ -789,7 +789,7 @@ if [ -f "$_inbox_file" ] && [ -f "$LOG_FILE" ]; then
         /^  type:/ { mtype=$0 }
         END { flush() }
     ' "$_inbox_file" 2>/dev/null | grep -oP 'cmd_\d+' | sort -u || true)
-    _review_done=$(grep -B1 'review_type: report' "$LOG_FILE" 2>/dev/null | grep 'cmd_id:' | grep -oP 'cmd_\d+' | sort -u)
+    _review_done=$(grep -B1 'review_type: \(report\|self_study\)' "$LOG_FILE" 2>/dev/null | grep 'cmd_id:' | grep -oP 'cmd_\d+' | sort -u)
     _missing=""
     for _cmd in $_review_requested; do
         if ! echo "$_review_done" | grep -q "^${_cmd}$"; then

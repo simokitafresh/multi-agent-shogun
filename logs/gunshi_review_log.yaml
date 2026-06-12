@@ -724,6 +724,7 @@
   causal_chain: "source commit更新→ops.md未追従→ALERT→照合+更新→OK(正の複利: 起動時情報精度)"
   brainwash_check: "gate実行でALERT→OK確認。1ファイル変更=最小scope。100億年: context鮮度は判断品質の基盤"
   ambiguity_points: none
+  step3_5_verified: "N/A (karo_hotfix配備。SG-PRE25 SKIP: command欄なし。files_modified=[context/dm-signal-ops.md]はcommitと一致)"
   origin: "[[ops.md鮮度ALERT報告]] -> [[3commit照合+更新]] -> [[LGTM]]"
   timestamp: "2026-06-11T16:32:00"
 - cmd_id: cmd_3293
@@ -2701,3 +2702,37 @@
   brainwash_check: "洗脳#6防止: 出力(レビュー)だけでなく行動(adversarial追記+計測分析永続化)も実施。senkyoku-log追記=次の軍師への引継ぎ完了"
   origin: "[[殿指示_強くてニューゲーム]] -> [[15件全CLEAR+idle2件永続化]] -> [[環境埋込み完了]]"
   timestamp: "2026-06-12T18:50:00"
+- cmd_id: cmd_karo_hotfix_gunshi_cs_operational_sim_20260612
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_hotfix_gunshi_cs_operational_sim_20260612_normal
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: "WARN (lesson_candidate有→draft_lessons BLOCKリスク)"
+  finding_categories: [assumptions, numbers]
+  findings_summary: "4観点OK。operational_simulation未記入3件補完→gate PASS→CRITICAL解消。commit +3行のみ。precheck ERRORS=0"
+  observations:
+    - "事実1: commit 1b0f4b698で3件のoperational_simulation追記(+3行のみ)。git diff確認済み、内容は一次情報(docs/research,review_log既存,senkyoku-log)に基づく妥当な記述"
+    - "事実2: gate_gunshi_cs_checklist.sh再実行でPASS(WARN 0件)。gate_gunshi_startup.sh再実行でCS観点PASS、CRITICAL表示なし"
+    - "事実3: 本レビュー中に自身がLG001同構造の誤判断(現ファイル読み→既に記入済みと誤認→git diffで影丸commit後状態と判明)を自己検出"
+  causal_chain: "startup gate stale結果→CS観点WARN 3セッション連続CRITICAL→家老karo_direct配備→影丸3件補完→gate PASS(正の複利:operational_simulation必須L4が機能し検出→修正サイクル完結)"
+  brainwash_check: "洗脳#2防止: git show確認せず現ファイルで既実装判定→LG001同構造を自己検出。数値: 修正前3件WARN→修正後0件WARN(git diff +3行で確認)"
+  step3_5_verified: "N/A (karo_direct配備、command欄なし。files_modified=[logs/gunshi_review_log.yaml]はcommit 1b0f4b698と一致)"
+  hole_action: none
+  origin: "[[cmd_karo_hotfix_gunshi_cs_operational_sim_20260612]] -> [[operational_simulation未記入3件]] -> [[LGTM+CRITICAL解消]]"
+  timestamp: "2026-06-12T19:05:00"
+- cmd_id: cmd_3329
+  review_type: self_study
+  verdict: null
+  finding_categories: [assumptions]
+  findings_summary: "GATE CLEAR済み家老直接実施cmd。報告YAML不在(忍者配備なし)。後追いレビュー不可→archive cmdから内容確認。FE系5コミットのmain先行統合+本番反映。BE未混入をAC1で検証済み"
+  observations:
+    - "事実1: cmd_3329は家老直接実施(忍者配備なし)。報告YAMLが存在せずreport review形式のレビュー不可"
+    - "事実2: GATE CLEAR+archive完了済み(cmd_3329_completed_20260612.yaml)。AC1-3のbinary_check設計は妥当(BE未混入確認+テスト+本番確認)"
+    - "事実3: gate_gunshi_cs_checklist.shがreport_review依頼済みWARNを検出。家老直接実施cmdの軍師レビュー経路が未整備(構造的ギャップ)"
+  cs_checklist: [CS1, CS4, CS6]
+  causal_chain: "家老直接実施cmd→報告YAML不在→軍師レビュー経路なし→WARN蓄積。家老直接実施cmdのレビュー方式を整備すれば解消(正の複利)"
+  operational_simulation: "家老直接実施cmdが増えると軍師レビューWARNが蓄積する。cmd archive+gate結果で最低限の品質保証はあるが、軍師の6/4観点レビューがスキップされる"
+  brainwash_check: "洗脳#1防止: GATE CLEARを理由にレビュースキップしない。報告不在の構造的問題を記録。数値: archive cmd確認1件/報告YAML 0件"
+  origin: "[[cmd_3329]] -> [[家老直接実施報告不在]] -> [[軍師レビュー経路ギャップ]]"
+  timestamp: "2026-06-12T19:10:00"
