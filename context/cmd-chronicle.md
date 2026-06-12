@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-12 -->
+<!-- last_updated: 2026-06-12 cmd_karo_hotfix_speed_gate_gunshi_startup_20260612 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -537,3 +537,4 @@
 | cmd_3330 | 殿裁可(2026-06-12 16:47「よい」)と調査チームレビュー通過(2026-06-12 16:19受領、AST等価+互換テスト+独立再実行1354 passed)に基づき、refactor/wp3-ac1のAC2コア5コミット(7c9c86f9・801cf2ed・03aec06d・efdd75c4・4e6b3bb4)を4e6b3bb4時点でmainへ統合し、検収と本番反映の確認まで閉じる。調査チーム条件(1)FE系drop・(2)cutover docs早期着地に対応する。実施は家老が直接行う(忍者に配備しない・cmd_3296裁定踏襲) | dm-signal | 06-12 | — |
 | cmd_3332 | 殿指示(2026-06-12 17:26「directive-20260612-mtd-preliminary-row.mdをよみ実行せよ」)。mtd-ux設計書のFeature C=速報行をBE+FEで実装し、PR2検証時指摘のBenchmark Dailyギャップも修正する。SSOT=docs/spec/mtd-daily-returns-ux.md(矛盾時は設計書優先)。確定値計算ロジック不変が絶対条件(price_ratio_calculatorは1文字も変更禁止・既存mtd_dataエントリは追加のみ)。指示書がpush可と明記しており本cmdはリモート反映+本番確認まで閉じる | dm-signal | 06-12 | MTD Daily Returns PR3 Feature |
 | cmd_3333 | 殿裁可(2026-06-12 18:35「よい」)と調査チーム第6報レビュー通過(2026-06-12 18:17受領: AST等価でロジック変更ゼロ+patch経路温存+独立再実行1356 passed・0 failed+m2はクリーンな2コミット構成でそのままマージ対象でよい)に基づき、refactor/wp3-ac2-m2の2コミット(56cd9bbd・d9e2c023)をmainへ統合し、検収と本番反映の確認まで閉じる。検収は調査チーム裁定のper-module方式(本番API大規模deep-diffはAC2全モジュール完了後の最終ゲートに1回)。実施は家老が直接行う(忍者に配備しない・cmd_3296裁定踏襲) | dm-signal | 06-12 | — |
+| cmd_3338 | 軍師idle分析でhookコスト効果量4位(セッション約20回発火×約0.765秒)と特定されたlog_terminal_responseの実行時間を、機能等価を保ったまま短縮する。python3のpayload parse(現物2箇所)とlord_conversation追記のflock排他が主要コスト源候補。短縮は殿との全対話往復のレイテンシに恒久的に効く | infra | 06-12 | log_terminal_response.shのStop |
