@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-06-11 cmd_karo_hotfix_ctx_dm_signal_ops_202606111626 -->
+<!-- last_updated: 2026-06-12 cmd_karo_hotfix_skill_fail_rate_escalation_202606121528 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -793,6 +793,18 @@ import metrics_research_engine as MRE
 - `cmd_3294` 忍者スコープ: commitまで。push、Renderデプロイ確認、デプロイ記録追記は家老担当。task/reportのAC4は「単独commit + `tasks/lessons.md`教訓 + `execution-log.md`追記」までに修正済み(ac_version=`8158fcea`)。
 - WP-1Fマージは殿裁可待ち。裁可後に `todo.md` のWP-1F/WP-1B行 `[x]` 化と同一commitで実施する。
 - WP-2 post-deploy監視(2026-06-11 19:40 JST): production API `/admin/timing-history` 最新portfolio run `20260611_164902` は `L3_fof status=completed`、Render logs `2026-06-11T07:46-08:11Z` は404全体0件・削除済みEP11件path 0件。詳細は `/mnt/c/Python_app/DM-signal/.agent/task-force/execution-log.md` §WP-2 post-deploy monitoring。
+
+## §43 2026-06-12 source freshness照合
+
+| commit | ops更新判断 | 根拠 |
+|------|------|------|
+| 3b69c172 is_active機能削除 | §42の裁可・削除系運用ルールで吸収済み。本文追加不要 | 対象は`backend/app/api/*`、`backend/app/jobs/*`、関連backend tests。運用上はWP系削除作業の一部で、個別手順は外部repo task-force記録が正本 |
+| 40a1d740 is_active docs整理 | 本文追加不要 | `docs/rule/api-usage-guide.md`/`db-operations-runbook.md`/`shin-shijin-registration-runbook.md`更新。既存DB操作ランブック参照は維持 |
+| 79d8eaee task-force記録復旧 | 本文追加不要 | `.agent/task-force/*`と`tasks/lessons.md`の証跡復旧。運用手順の新規差分なし |
+| fadf1a94 monthly product cleanup | 本文追加不要 | `docs/rule/gs-parity-verification-guide.md`/`portfolio-naming-convention.md`更新。登録・命名の正本は外部repo docs/rule側 |
+| 7c9c86f9 recalculation status timezone | §42に接続済み | `docs/rule/db-operations-runbook.md`へUTC/JST cutover証跡を追加。§42のpost-deploy監視記録と同系統 |
+| 03aec06d price ratio facade test | 本文追加不要 | `backend/tests/test_price_ratio_facade_compat.py`追加のみ。運用手順・API仕様変更なし |
+| efdd75c4 price ratio facade split | 本文追加不要 | `backend/app/services/price_ratio_calculator.py`から実装分離。facade維持の内部refactorで運用手順差分なし |
 
 ## 因果リンク
 
