@@ -49,12 +49,29 @@ _run_pretool_child() {
     return "$rc"
 }
 
-# Preserve the former always-on PreToolUse state update without a separate hook entry.
+# Preserve the former PreToolUse state update, but do not pay two tmux
+# set-option calls on every tool. Consumers treat active hooks as fresh for
+# 15s+ and stale only after 30-60s, so a 10s refresh interval stays inside
+# every monitor grace window.
 if [ -n "${TMUX_PANE:-}" ]; then
     printf -v now '%(%s)T' -1 2>/dev/null || now="$(date +%s)"
-    tmux set-option -p -t "$TMUX_PANE" @agent_state active 2>/dev/null || true
-    tmux set-option -p -t "$TMUX_PANE" @last_active "$now" 2>/dev/null || true
-    unset now
+    _pane_cache_key="${TMUX_PANE//[^A-Za-z0-9_.-]/_}"
+    _state_cache_dir="${TMPDIR:-/tmp}/shogun-pretool-state"
+    _state_cache_file="${_state_cache_dir}/${_pane_cache_key}.last"
+    _last_state_update=0
+    if [ -r "$_state_cache_file" ]; then
+        IFS= read -r _last_state_update < "$_state_cache_file" || _last_state_update=0
+    fi
+    case "$_last_state_update" in
+        ''|*[!0-9]*) _last_state_update=0 ;;
+    esac
+    if [ $((now - _last_state_update)) -ge "${PRETOOL_STATE_REFRESH_INTERVAL:-10}" ]; then
+        mkdir -p "$_state_cache_dir" 2>/dev/null || true
+        tmux set-option -p -t "$TMUX_PANE" @agent_state active 2>/dev/null || true
+        tmux set-option -p -t "$TMUX_PANE" @last_active "$now" 2>/dev/null || true
+        printf '%s\n' "$now" > "$_state_cache_file" 2>/dev/null || true
+    fi
+    unset now _pane_cache_key _state_cache_dir _state_cache_file _last_state_update
 fi
 
 case "$payload" in

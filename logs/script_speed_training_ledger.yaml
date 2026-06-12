@@ -7,6 +7,30 @@ real_measurement_policy: 'Ninja must choose a safe runtime command per script: t
   with the same command before and after.'
 script_count: 254
 entries:
+- script_path: ".claude/hooks/pre-bash-combined.sh"
+  status: completed
+  before_ms: ''
+  after_ms: ''
+  before_real_ms: 193
+  after_real_ms: 29
+  real_measurement_command: "35-run median HOOK_PAYLOAD curl -s https://example.com/api via HEAD temp vs worktree"
+  test_result: "bash -n PASS; scripts/hooks/test_hooks.sh 90/90 PASS; bats tests/unit/test_hook_dispatchers.bats 8/8 PASS; parity D001-D009/G2/D010 representative same"
+  commit: "WORKTREE"
+  assigned_to: "kotaro"
+  updated_at: "2026-06-13T00:05:44"
+  iteration: 0
+- script_path: ".claude/hooks/pretool-dispatch.sh"
+  status: completed
+  before_ms: ''
+  after_ms: ''
+  before_real_ms: 122.861
+  after_real_ms: 78.678
+  real_measurement_command: "100x Read payload through pretool-dispatch; PRETOOL_STATE_REFRESH_INTERVAL=0 forced update vs PRETOOL_STATE_REFRESH_INTERVAL=10 throttled update; TMPDIR isolated via mktemp -d"
+  test_result: "bash -n .claude/hooks/pretool-dispatch.sh PASS; bats tests/unit/test_hook_dispatchers.bats tests/unit/test_read_tracker_hook.bats tests/unit/test_write_edit_combined_hooks.bats PASS 35/35 SKIP=0; bats tests/unit/test_agent_state.bats PASS 14/14 SKIP=0; bats tests/unit/test_bash_speed_training.bats PASS 15/15 SKIP=0"
+  commit: "e16bf1973"
+  assigned_to: "kagemaru"
+  updated_at: "2026-06-13T00:05:35"
+  iteration: 0
 - script_path: scripts/gates/gate_loop_health.sh
   status: completed
   before_ms: ''
@@ -1584,13 +1608,13 @@ entries:
   status: completed
   before_ms: 8
   after_ms: 8
-  before_real_ms: 128
-  after_real_ms: 120
-  real_measurement_command: "old/new 20-run median: normal 64->58ms + question 64->62ms; inbox median 77->73ms"
-  test_result: "bash -n PASS; bats prompt_state/session_state 32 PASS SKIP=0; output equivalence PASS for inbox1/normal"
-  commit: "f8a65b605"
+  before_real_ms: 451.917
+  after_real_ms: 369.167
+  real_measurement_command: "env PROMPT_STATE_AGENT_ID=saizo PROMPT_STATE_SKILLS_DIR=/tmp/psi_equiv.zPNVDI/skills PROMPT_STATE_SEMANTIC_SEARCH_CMD=/tmp/psi_equiv.zPNVDI/semantic.sh bash scripts/hooks/prompt_state_inject.sh <<< '{\"prompt\":\"報告YAML作成はどう確認する？\"}'"
+  test_result: "normal/question equivalence yes; bats tests/unit/test_prompt_state_inject_skill_trigger.bats PASS SKIP=0"
+  commit: "pending"
   assigned_to: ""
-  updated_at: "2026-06-12T21:52:53"
+  updated_at: "2026-06-13T00:04:41"
   iteration: 1
 - script_path: scripts/hooks/session_end_clear_check.sh
   status: pending
