@@ -7,6 +7,18 @@ real_measurement_policy: 'Ninja must choose a safe runtime command per script: t
   with the same command before and after.'
 script_count: 254
 entries:
+- script_path: .claude/hooks/post-shogun-inbox-check.sh
+  status: completed
+  before_ms: 0
+  after_ms: ''
+  before_real_ms: 144.220
+  after_real_ms: 86.718
+  real_measurement_command: "50x isolated shogun fixture with unread gate_clear inbox; avg_ms from date +%s%N loop"
+  test_result: "dash_n_pass; posttool_dispatch_bash_n_pass; test_hook_dispatchers_and_bash_speed_training_bats all_23_pass skip_count_0; isolated_output_contract_pass"
+  commit: "5fc3705046cbc28db6131b96446f3c6062ac08ea"
+  assigned_to: hanzo
+  updated_at: "2026-06-12T22:19:25"
+  iteration: 0
 - script_path: .claude/hooks/post-write-edit-combined.sh
   status: completed
   before_ms: 0
