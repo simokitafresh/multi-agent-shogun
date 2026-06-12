@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-06-08 cmd_3218 -->
+<!-- last_updated: 2026-06-12 cmd_karo_hotfix_ga053_core_context_freshness_202606121637 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -45,7 +45,7 @@
 | 2 | 01:10 | sync-standard | 個別DM戦略シグナル計算 |
 | 3 | 01:40 | sync-fof | FoFシグナル計算 |
 
-再計算排他制御: `recalc_status.py`の`threading.Lock`。同時実行不可。409=正常排他(FAILではない)。30秒待って再実行。→ `projects/dm-signal.yaml` (c) recalculate_concurrency
+再計算排他制御: `recalc_status.py`の`threading.Lock`。同時実行不可。409=正常排他(FAILではない)。30秒待って再実行。status timestampはUTC/JST cutoverを明示して書き込む（commit 546565d6）。→ `projects/dm-signal.yaml` (c) recalculate_concurrency
 p̄バッチ: `p_average_results`テーブルに事前計算結果を格納。バッチ未実行 or cold sleepで空(L319)。p̄ゲート: `gate_p_average_freshness.sh`で鮮度監視。
 - L232: recalculate_fast.pyのholding_signal更新は「月変わりANDリバランス月」の2条件で制御される（cmd_764）
 
@@ -212,7 +212,7 @@ UUID・銘柄構成・リバランス設定 → `projects/dm-signal.yaml` (e) sh
 
 ## 4. ビルディングブロック
 
-パス: `backend/app/services/pipeline/blocks/` | BlockType enum: `schemas/pipeline.py:18-37` | 登録: `shared.py:225-270`
+パス: `backend/app/services/pipeline/blocks/` | BlockType enum: `schemas/pipeline.py` | 登録: `shared.py`
 標準パターン → `projects/dm-signal.yaml` (d) pipeline
 全14種BBパラメータ詳細・選出方式 → `docs/research/core-param-catalog.md`
 
@@ -222,12 +222,11 @@ UUID・銘柄構成・リバランス設定 → `projects/dm-signal.yaml` (e) sh
 |------|----------------|---------|
 | 採用 | MomentumFilter / SingleViewMomentumFilter / TrendReversalFilter / MomentumAccelerationFilter | 追い風 / 抜き身 / 変わり身 / 加速 |
 | 採用 | AbsoluteMomentumFilter / EqualWeight | 門番 / 分身(全忍法terminal) |
-| 補助 | SafeHavenSwitch / MonthlyReturnMomentumFilter | 門番補助 / 追い風GS方式 |
+| 補助 | SafeHavenSwitch | 門番補助 |
 | 採用 | ReversalFilter → **逆風**(cmd_249採用決定) / MultiViewMomentumFilter → **四つ目**(cmd_284フルGS完了) | シン忍法v2で7忍法体制確定 |
-| 採用 | PBarSelectionBlock → **p̄選別**(cmd_977-987) | p̄ベースFoF材料選別。月次戦術運用は無効(cmd_1009) |
-| 偵察中 | RelativeMomentumFilter(cmd_250) | 新忍法候補 |
 | 採用 | WardTwoStageEW → **Ward二段EW**(cmd_1437/1443/1444) | ネステッドFoF terminal。Ward階層クラスタリング+二段均等加重。本番稼働中(旧忍法-Ward) |
-| 未採用 | ComponentPrice / CashTerminal / KalmanMeta | インフラ/スケルトン |
+| 未採用/削除済 | MonthlyReturnMomentumFilter / PBarSelectionBlock / RelativeMomentumFilter / KalmanMeta | WP-2でdead endpoints・未使用BBとして削除済み(commit d1bc8b22)。古い調査結果を実装前提にしない |
+| 未採用 | ComponentPrice / CashTerminal | インフラ/スケルトン |
 
 - L151: OPEN/CLOSE切替導入時はbenchmark側の*_open適用も同時チェック必須（cmd_507）
 - L154: OPEN/CLOSE切替修正ではbenchmark側の*_open参照を全ビューで同時点検する（cmd_522）
@@ -521,6 +520,15 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - `outputs/analysis/cmd_2422_l2_champions_constrained.yaml` = 制約付きL2 champion 21体SSOT
 - cmd_2424でGSシン奥義21体本番hide登録完了。完了判定はAPI status + DB `recalculation_status`二重確認(L690/L691)
 - knowledge-base methods SSOT: `/mnt/c/Python_app/DM-signal/docs/research/knowledge-base/index.md`。M79-M84にDeepUnifiedMom/VAA-BAA/Hierarchical Momentum/Factor Momentum/ADTS-CADTS/WASAを追加済み
+
+## §20.5 WP削除後のbackend正本 (2026-06-12)
+
+| 領域 | 現状 | 根拠 |
+|------|------|------|
+| is_active | backend API/jobs/schema/repositoryのis_active前提は削除済み。PF有効/無効を新規実装前提にしない | commit 3b69c172 |
+| momentum method | backend schemaのmomentum method selectorは削除済み。FE側削除は`context/dm-signal-frontend.md` §10に記録 | commit 36e6137a |
+| dead endpoints/BB | `api/kalman.py`, `kalman_wf.py`, `services/kalman/*`, KalmanMeta/MonthlyReturnMomentum/PBar/RelativeMomentum blocksは削除済み。`backend/app/main.py`にもKalman routerなし | commit d1bc8b22 |
+| verified dead code | legacy削除one-shot、旧ETL calculator/orchestrator、monthly_common、monthly_product_momentum、consistency_checks等は削除済み。履歴はops §40-43とtask-force記録を参照 | commit c47742d1 |
 
 ---
 
