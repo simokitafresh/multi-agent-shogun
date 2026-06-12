@@ -351,6 +351,26 @@ EOF
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
+@test "Q6 automation target without explicit path resolves commit hook proof → no grep skip" {
+    mkdir -p "$TEST_TMPDIR/scripts/hooks"
+    cat > "$TEST_TMPDIR/scripts/hooks/git-pre-commit.sh" <<'EOF'
+#!/usr/bin/env bash
+# pre-commit hook fixture
+EOF
+
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 洗脳#2検証スキップを避けるため、殿のために一次データで確認する。自動化ターゲット: 整形混入L0防止(指示書外の整形差分をcommit前に検出する仕組み)のcmd起票=3連続見逃しの環境埋込み。軍師の第三者検証を請う"}
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"* ]]
+    [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
+    [[ "$output" == *"scripts/hooks/git-pre-commit.sh: pre-commit"* ]]
+    [[ "$output" != *"WARN: 自動化ターゲット実装証拠 grep検証スキップ"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
+
 @test "Q6 automation target accepts markdown bold label → 総合判定: OK" {
     cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
 {"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。**自動化ターゲット**: scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。"}

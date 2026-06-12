@@ -1,131 +1,134 @@
 task:
-  _ac_task_id: cmd_3288_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3288 (deployed 2026-06-11T12:39:38). Read from the beginning.
-  ac_version: d2ef8e58
-  checklist: queue/checklists/cmd_3278.md
-  chunk: chunk 4 (76件)
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  related_causal_links:
-  - "[[cmd_3288 CRUD設定画面+download-db+SSOT確立]]"
-  - "[[expense_sourcesがSQL直操作のみ+download-db不在]]"
-  - "[[殿指示2026-06-11設定画面+SSOT]]"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/gs-speedup-knowledge.md"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L540: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
-      - L470: `context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj
-      - L435: 関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒
-      - L275: gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ
-      - L357: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.
-      - L295: yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ
-      - L617: cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決I
-      - L083: launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手
-      - L547: CIで構造化environment_changeのfile/pattern検証をする場合、lessons.yamlのような同期でIDが入れ替わる運用ファイルに依
-      - L689: lord_conversation.jsonlは全ロールの殿入力を含む。将軍/家老/軍師が直接tail/Readすると他ロール宛ての発言を自分宛てと誤認する。消
-    ────────────────────────────────────────
-    
-    【DB変更前バックアップ必須】DB操作cmd。変更前に対象DB/テーブルのバックアップを取得し、取得コマンド・保存先・復元手順をprogressまたは報告YAMLに記録せよ。
-      ────────────────────────────────────────
-    
-  engineering_preferences: []
-  growth_loop_defense:
-  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
-  - 'Level1(事後検出): 間違えた後にgateが検出'
-  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
-  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
-  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
-  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
-  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
-  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
-  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
-  - '2026-06-10T20:51:02+09:00 | 良い知らせ2件: - **将軍**: 追体験Q6を本セッション内で解消（Q6回答+軍師第三者検証OK+LS052環境埋込）。Gate20回復streak認識と「閾値を下げない」判断も承認 - **軍師'
-  - '2026-06-10T20:50:34+09:00 | 良い知らせ2件: - **将軍**: 追体験Q6を本セッション内で解消（Q6回答+軍師第三者検証OK+LS052環境埋込）。Gate20回復streak認識と「閾値を下げない」判断も承認 - **軍師'
-  - 2026-06-11T00:31:30+09:00 | 【将軍】/clear準備完了。PD:0 cmd pending:0 🚨:0。cmd_3273-3276全CLEAR(マトリクス🟢143/🔴151稼働)。教訓5件+gate根治7件+skills sym
-  - '2026-06-10T23:17:20+09:00 | ## 2cmd同時クローズ完了 **cmd_3276（佐瀬メールパース）— GATE CLEAR一発通過** - 35通全分類（リスト保有2/引用重複4/リストなし29）→143セルsubmitted'
-  - 2026-06-10T22:43:07+09:00 | どのWARNがカウントされたか全文で確認する。 [meta] stop_reason=tool_use
-  - '2026-06-11T01:50:58+09:00 | cmd_3279完了。 **実施内容（全AC PASS）**: | AC | 結果 | 確認手段 | |----|------|---------| | AC1 | ✅ | curl+grep: ステ'
-  - 2026-06-11T01:50:55+09:00 | kagemaru完了処理→空きにcmd_3282(報告品質に即効)、次idleにcmd_3280の順で進める。 [meta] stop_reason=tool_use
-  - '2026-05-29T16:43:31+09:00 | 修行タスクはGATE処理対象外(LK-A04)。hayateはCTX:90%でauto-clear待ち。追加アクション不要。 残り稼働中: kagemaru(lesson_update_score),'
-  - 2026-05-29T15:56:46+09:00 | 修行タスクはGATE処理対象外(LK-A04)。stop hookの検知は修行タスク完了のステータス残存。追加アクション不要(hayateは既にlesson_write修行に再配備済み)。 全6名稼働
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      binary_check: 根因経路の行番号と再現結果が報告に記録されているか？
+      description: gate_shogun_startup.shで自動化ターゲット実装証拠WARNが出る根因経路を行番号・再現結果つきで特定する
+    AC2:
+      binary_check: grep検証スキップが同条件で再発しない修正になっているか？
+      description: 自動化ターゲット本文から検証対象ファイルを取れない場合でも、実装証拠の判定が意志依存のskipで止まらない構造に修正する
+    AC3:
+      binary_check: gate_shogun_startup.sh再実行で対象WARNが0件になったか？
+      description: bash scripts/gates/gate_shogun_startup.shを実行し、『追体験自動化ターゲット実装証拠 grep検証スキップ』WARNが出ないことを確認する
+    AC4:
+      binary_check: 対象ケースのテストが全件PASSしたか？
+      description: 関連する自動テストまたは最小再現テストを追加/更新し、対象ケースがPASSすることを数値で確認する
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3288
-  project: clinic-expense-tracker
-  purpose: '殿指示(2026-06-11): 設定画面を作って経費元を設定・変更・保存できる仕組み。人間の判断がファースト。カテゴリと項目を自由に設定可能。SSOT=Render上のアプリDB。現状: expense_sourcesテーブルは21行あるが編集はSQLite直操作のみ。Webから編集不可。ローカル→Renderのupload-dbはあるがRender→ローカルのdownload-dbがない。修正: (1)設定画面(/settings)でexpense_sourcesのCRUD (2)download-dbエンドポイント追加 (3)ローカルスクリプト実行前にdownload-dbで最新化するフローを確立'
-  scout_exempt: true
-  semantic_concepts:
-  - 'agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-claude-version-switch/SKILL.md skills/shogun-claude-version-switch/scripts/claude_version_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ)'
-  status: idle
-  stop_for:
-  - バックアップなしのDB変更
-  target_path: /mnt/c/Python_app/clinic-expense-tracker/
-  task_id: cmd_3288_full
-  task_type: full
+  parent_cmd: cmd_karo_hotfix_shogun_q6_target_proof_20260612
+  project: infra
+  purpose: 将軍startup gateの『追体験自動化ターゲット実装証拠 grep検証スキップ』WARNを一次情報で根治し、3セッション連続BLOCKを解消する
+  status: done
+  stop_for: []
+  target_path: /mnt/c/tools/multi-agent-shogun
+  task_id: cmd_karo_hotfix_shogun_q6_target_proof_20260612_normal
+  task_type: hotfix
   related_lessons:
-  - id: 'L540'
-    summary: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
-    detail: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
-  - id: 'L470'
-    summary: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj'
-    detail: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj'
-  - id: 'L435'
-    summary: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒'
-    detail: '関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒'
-  - id: 'L275'
-    summary: 'gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ'
-    detail: 'gunshi_review_log.yamlは600行で10000token超。Read時にlimit指定必須。全量読みを前提とした作業設計は避けよ'
-  - id: 'L357'
-    summary: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
-    detail: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
-  - id: 'L295'
-    summary: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
-    detail: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
-  - id: 'L617'
-    summary: 'cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決I'
-    detail: 'cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決I'
-  - id: 'L083'
-    summary: 'launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手'
-    detail: 'launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手'
-  - id: 'L547'
-    summary: 'CIで構造化environment_changeのfile/pattern検証をする場合、lessons.yamlのような同期でIDが入れ替わる運用ファイルに依'
-    detail: 'CIで構造化environment_changeのfile/pattern検証をする場合、lessons.yamlのような同期でIDが入れ替わる運用ファイルに依'
-  - id: 'L689'
-    summary: 'lord_conversation.jsonlは全ロールの殿入力を含む。将軍/家老/軍師が直接tail/Readすると他ロール宛ての発言を自分宛てと誤認する。消'
-    detail: 'lord_conversation.jsonlは全ロールの殿入力を含む。将軍/家老/軍師が直接tail/Readすると他ロール宛ての発言を自分宛てと誤認する。消'
+  - id: 'L794'
+    summary: '全ログではnote-draft 4/13=31%だったが、Gate20が読むtail 5000行では1/3=33%だった。FAIL率修正では対象gateの入力窓'
+    detail: '全ログではnote-draft 4/13=31%だったが、Gate20が読むtail 5000行では1/3=33%だった。FAIL率修正では対象gateの入力窓'
+  - id: 'L633'
+    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+  - id: 'L775'
+    summary: 'target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/'
+    detail: 'target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/'
+  - id: 'L783'
+    summary: 'サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ'
+    detail: 'サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ'
+  - id: 'L389'
+    summary: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
+    detail: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
+  - id: 'L791'
+    summary: '通常gateはCONTEXT_FRESHNESS_GATE_GIT_TIMEOUT=1でOKだったが、CFC_GIT_TIMEOUT=10の直接checkではd'
+    detail: '通常gateはCONTEXT_FRESHNESS_GATE_GIT_TIMEOUT=1でOKだったが、CFC_GIT_TIMEOUT=10の直接checkではd'
+  - id: 'L667'
+    summary: 'self_gate_check.lessonrefのようなtypoはdict構造としては書けるが、gate_report_formatが求めるlesson_re'
+    detail: 'self_gate_check.lessonrefのようなtypoはdict構造としては書けるが、gate_report_formatが求めるlesson_re'
+  - id: 'L643'
+    summary: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
+    detail: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
+  - id: 'L299'
+    summary: 'inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行'
+    detail: 'inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行'
+  - id: 'L096'
+    summary: 'bash,variable-scope,preflight'
+    detail: 'bash,variable-scope,preflight'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  semantic_concepts:
+  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)"
+  - "deepdive_principles — deepdive原理:  context/training-cycle.md docs/research/gunshi_idle_deepdive_design_impl_phantom_20260516.md — 軍師idle: deepdive設計実装ファントム問題(2026-05-16)"
+  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh scripts/cmd_skeleton.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比) docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md — 軍師idle: コミットチェックWAパターン(2026-04-10) docs/research/gunshi_idle_cross_contamination_20260503.md — 軍師idle: クロスプロジェクト汚染分析(2026-05-03) docs/research/gunshi_idle_cross_project_fp_20260426.md — 軍師idle: クロスプロジェクトFP分析(2026-04-26) docs/research/gunshi_idle_gate_fail_rate_anatomy_20260502.md — 軍師idle: ゲート失敗率解剖(2026-05-02) docs/research/gunshi_idle_gate_fail_trend_20260430.md — 軍師idle: ゲート失敗トレンド分析(2026-04-30) docs/research/gunshi_idle_gate_fire_traceback_20260510.md — 軍師idle: ゲート発火トレースバック(2026-05-10) docs/research/gunshi_idle_gate_fp_analysis_20260527.md — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27) docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md — 軍師idle: LG003ゲートWA分析(2026-05-19) docs/research/gunshi_idle_lu_dict_pattern_20260415.md — 軍師idle: LU辞書パターン分析(2026-04-15)"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L794: 全ログではnote-draft 4/13=31%だったが、Gate20が読むtail 5000行では1/3=33%だった。FAIL率修正では対象gateの入力窓
+      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
+      - L775: target_path=scripts/の忍者がauto_commit_before_clearを経由するとscripts/gates/を含む全scripts/
+      - L783: サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ
+      - L389: 検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数
+      - L791: 通常gateはCONTEXT_FRESHNESS_GATE_GIT_TIMEOUT=1でOKだったが、CFC_GIT_TIMEOUT=10の直接checkではd
+      - L667: self_gate_check.lessonrefのようなtypoはdict構造としては書けるが、gate_report_formatが求めるlesson_re
+      - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
+      - L299: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行
+      - L096: bash,variable-scope,preflight
+    ────────────────────────────────────────
+    
+    
   memory_db_context:
-  - "2026-06-11T12:06:47+09:00 | 現物確認完了。殿の裁定に基づき定義を確定する。 [MEM: memory_db ts=2026-06-11T01:19:40 "clinic-expense-trackerの続きはシンプルだ。rend"
-  - "2026-06-11T10:20:14+09:00 | 【INFOバッチ】 2026-06-11 10:12:22|CI緑: run 27316645439"
-  - "2026-06-11T12:29:21+09:00 | 裁定永続化完了。殿の設定画面+SSOT設計について回答する。 [MEM: semantic concept=project_clinic_expense_tracker] [MEM: memory_d"
-  - "2026-03-13T14:06:15+09:00 | その通り。まず確認すべきは： 1. **MFがTOTP対応しているか**（セキュリティ設定画面にGoogle Authenticator等の選択肢があるか） 2. **TOTP設定するとemail_o"
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'Webアプリ/settings画面でexpense_sourcesの一覧表示・追加・編集・削除が動作し、変更がRender DB(SQLite)に即反映されることをcurl POST/PUT/DELETEの応答で確認する'
-  - id: 'AC2'
-    checks:
-    - check: '/download-db エンドポイントがBasic Auth保護付きでSQLiteファイルをバイナリ応答し、受信側でsqlite3 .tables が expense_sources+monthly_statusを含むことを確認する'
-  - id: 'AC3'
-    checks:
-    - check: '設定画面でカテゴリ(category)と項目名(name)、取得方法(collection_method=gmail_api/cdp/manual)、頻度(frequency=monthly/quarterly/annual/irregular)が自由に編集可能であることをcurlで確認する'
-  - id: 'AC4'
-    checks:
-    - check: 'DB操作前にdata/clinic_expense.dbのバックアップがdata/backup/配下にタイムスタンプ付きで作成されていることをls -la出力で確認する'
+  - "2026-05-21T00:56:18+09:00 | insightに記録した。将軍startup gateでNO_MATCH件数を毎回見るので、20件蓄積時に気づく。意志依存ではなく計測データが自然にトリガーする。 殿の指示を待つ。 [meta] st"
+  - "2026-05-21T00:29:57+09:00 | 穴をなぜなぜ7回で深掘りし、行動に変換する。 **穴1: 将軍startup gateにNO_MATCH率がない** → なぜ: ACに「startup gate」と書いただけで「誰の」を指定しなかっ"
+  - "2026-06-12T21:12:13+09:00 | cmd_3334は早くもsaizoが完遂しarchive済み。報告YAMLとGATE状況を検分する（将軍検分義務: git branch --contains + show -w）。 [meta] s"
+  - "2026-06-12T21:12:08+09:00 | draft reviewは忍者の作業完了後にreport reviewでまとめて処理可能。hayate(startup_deferred)とsaizo(cmd_3334 GATE)の結果を待つ。idl"
+  - "2026-06-12T19:00:40+09:00 | **殿、inboxは家老の自走hotfix完了報告だった。処理済み、将軍の対応事項なし。** 先刻配備された軍師startup CRITICAL対処が完了した: 影丸がgunshi_review_lo"
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_hotfix_shogun_q6_target_proof_20260612_normal
+  _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_3288.yaml
-  report_path: queue/reports/kotaro_report_cmd_3288.yaml
+  report_filename: kotaro_report_cmd_karo_hotfix_shogun_q6_target_proof_20260612.yaml
+  report_path: queue/reports/kotaro_report_cmd_karo_hotfix_shogun_q6_target_proof_20260612.yaml
   bloom_level: 
-  deployed_at: "2026-06-11T12:41:03"
+  deployed_at: "2026-06-12T21:15:26"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/4 ACs). 全ACの二値チェックを記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/4 ACs). 全ACの二値チェックを記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'gate_shogun_startup.shのQ6自動化ターゲット証拠判定に本文ヒント補完を追加し、パス未指定のcommit前ターゲットがgrep検証スキップで止まらないよう修正。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/4 ACs). 全ACの二値チェックを記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'gate_shogun_startup.shのQ6自動化ターゲット証拠判定に本文ヒント補完を追加し、パス未指定のcommit前ターゲットがgrep検証スキップで止まらないよう修正。'

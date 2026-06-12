@@ -1122,6 +1122,26 @@ for match in path_re.finditer(target):
     if value not in paths:
         paths.append(value)
 
+hint_paths = {
+    "commit前": ["scripts/hooks/git-pre-commit.sh"],
+    "pre-commit": ["scripts/hooks/git-pre-commit.sh"],
+    "コミット前": ["scripts/hooks/git-pre-commit.sh"],
+    "掲示板": ["scripts/gates/gate_shogun_startup.sh", "scripts/bulletin_write.sh"],
+    "action_required": ["scripts/gates/gate_shogun_startup.sh", "scripts/bulletin_write.sh"],
+}
+hint_tokens = {
+    "commit前": ["pre-commit"],
+    "pre-commit": ["pre-commit"],
+    "コミット前": ["pre-commit"],
+    "掲示板": ["action_required"],
+    "action_required": ["action_required"],
+}
+for hint, rels in hint_paths.items():
+    if hint in target:
+        for rel in rels:
+            if rel not in paths:
+                paths.append(rel)
+
 if not paths:
     for name in re.findall(r"(?<![A-Za-z0-9_])([A-Za-z][A-Za-z0-9_]{5,})(?![A-Za-z0-9_])", target):
         candidates = list(root.glob(f"scripts/**/{name}.sh"))
@@ -1153,6 +1173,11 @@ for raw in backtick_tokens + identifier_tokens:
         continue
     if token not in tokens:
         tokens.append(token)
+for hint, values in hint_tokens.items():
+    if hint in target:
+        for token in values:
+            if token not in tokens:
+                tokens.append(token)
 
 if not paths:
     print("SKIP\t検証対象ファイル未指定")
