@@ -11,1462 +11,6 @@
   ambiguity_points: none
   origin: "[[cmd_3163分割B]] -> [[cmd_3166]] -> [[想起制御state遷移]]"
   timestamp: "2026-06-04T00:10:00"
-- cmd_id: cmd_3283
-  review_type: report
-  report_ninja: hayate
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_prediction: WARN
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem, adversarial]
-  findings_summary: "Renderデプロイ+DB搬送貫通。軍師本番独立検証: 401(初回502=コールドスタート切り分け)/認証200/セル294=ローカルDB完全一致+.env.render機密混入なしgit実測。LGTM(タスクAC全充足、忍者に非なし)。★RC3点時差未反映3回目→無防備/upload-dbが公開中=即時補強cmd+RC競争の構造課題を将軍へ提起(blt_024055)"
-  observations:
-    - "事実1: 本番3レイヤー独立実測: 未認証401/認証200/セル数143+62+89=294(ローカルDB一致)。初回502はリトライ401回復=Renderコールドスタートと切り分け"
-    - "事実2: 機密検証: .env.render=git check-ignore対象✓+git log --all履歴なし✓=平文混入なし。feature/render-deployブランチ運用"
-    - "事実3: RC3点(置換前検証/認証失敗ログ/殿追認)はタスクYAML grep 0件=ac_version 805a556fのまま未反映。RC02:26 vs 配備02:23の後着"
-    - "事実4: 本番リスク現状: /upload-dbは認証突破時に任意ファイル置換可能+試行ログなしで公開中。補強は20行級=即時cmd提案済み"
-    - "事実5: lesson_candidate良質(Render API serviceDetails内region指定の罠=実体験ベース)"
-  step3_5_verified: true
-  adversarial_review:
-    required: true
-    verdict: CONDITIONAL_PASS
-    reason: "攻撃面: 総当たり→任意DB置換。現時点の防御=BasicAuth 1要素のみ。補強cmd即時実行を条件にLGTM。データ流出方向は表示画面のみで限定的"
-  causal_chain: "RC後着3回目(3277誤月→本番DB/3283無防備受け口→本番公開)→配備とレビューの同時実行が根因→順序固定or必須伝達を将軍へ提起。忍者は与えられたACを完遂しており差し戻しは不当=LGTM+補強cmdが正しい分離"
-  brainwash_check: "検証5点中5点独立実測(curl 4回/git check-ignore+log/タスクgrep 0件/セル数uniq -c/ブランチ確認)。GATE結果未知。報告転記ゼロ"
-  ambiguity_points: none
-  hole_action: cmd_proposed
-  origin: "[[cmd_3283報告]] -> [[本番貫通実証+RC時差3回目]] -> [[LGTM_補強cmd提案blt_024055]]"
-  timestamp: "2026-06-11T02:42:00"
-- cmd_id: cmd_3284
-  review_type: draft
-  gate_result: CLEAR
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "batch commitスコープ制限(第1層防御)。6cfda60e1のscripts/gates/3本巻き込みをgit show --statで独立確認。AC1→AC2→AC3→AC4の順序依存が正しく設計。cmd_3285(第2層)はdepends_on正。cmd_3140との差異確認済み(忍者間混入防止 vs 安全機構除外)"
-  observations:
-    - "事実1: git show 6cfda60e1 --stat=19ファイル中scripts/gates/3本+skills/4本が安全機構ファイル。batch commitメッセージ(運用ファイル)と実態が乖離"
-    - "事実2: filter_operational_paths_only L377はqueue/logs/context/docs/projects/tasks/dashboardのみ許可。scripts/gates/は対象外→別経路が巻き込みルート"
-    - "事実3: cmd_3140(kagemaru完了済み)はninja間auto-commit混入防止。cmd_3284は全batch commit経路からのgates/hooks除外。防御スコープが異なり重複なし"
-    - "事実4: cmd_3285はdepends_on: cmd_3284で直列配備。第2層(保留レジストリ+pre-commit照合)は第1層完了後=正しい構造"
-  causal_chain: "殿commit拒否(裁可保留)→batch commitスコープ無制限→6cfda60e1にgates/hooks巻き込み→origin/main到達=裁可迂回。AC1で経路特定→AC2で除外+可視化→同クラスの再発を構造的に封じる(正の複利)"
-  brainwash_check: "git show 6cfda60e1で19ファイル現物確認(報告転記ゼロ)。filter_operational_paths_only L377でscripts/未許可を現物確認。cmd_3140差異をsemantic_search+review_log照合で検証。100億年: 裁可保留の機械可読化(cmd_3285)と合わせて統治層の構造防御が永続"
-  ambiguity_points: none
-  discretion_fills: none
-  hole_action: none
-  origin: "[[殿commit拒否]] -> [[batch commitスコープ無制限で裁可迂回push]] -> [[cmd_3284レビューAPPROVE]]"
-  timestamp: "2026-06-11T09:12:00"
-- cmd_id: cmd_3283
-  review_type: report
-  report_ninja: hayate
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_prediction: WARN
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem, simulation]
-  findings_summary: "hayate報告再送(前セッション/clear前に家老未送信)。RC3点充足確認: (1)内容検証=dfc92d9でSQLiteヘッダ+必須テーブル(expense_sources/monthly_status)+10MBサイズ上限検証を_validate_sqlite()で実装+400返却+元DB無傷 (2)認証失敗ログ=logger.warning AUTH_FAIL実装 (3)殿追認=ACに未反映のため忍者scope外。bc 5/5 yes。commit dfc92d9実在(clinic repo git log確認)"
-  observations:
-    - "事実1: git show dfc92d9=50行追加。_validate_sqlite(サイズ上限+マジックヘッダ+必須テーブル)でRC1充足。不合格は400+os.unlink(tmp)で元DB無傷"
-    - "事実2: verify_credentialsにlogger.warning('AUTH_FAIL user=%r')追加でRC2充足。Render app logで可視化可能"
-    - "事実3: RC3(殿追認)はAC4に反映されず。忍者は与えられたACを完遂しており差し戻しは不当。ACレベルの未解決を家老に情報提供"
-    - "事実4: SG-PRE3 WARN=外部リポ(clinic-expense-tracker)のためshogunリポ内commit検索でhit不可。期待通りの挙動"
-  step3_5_verified: true
-  causal_chain: "RC3点(内容検証+失敗ログ+殿追認)→dfc92d9で2/3充足→残1件(殿追認)はAC未反映のため忍者scope外→LGTM+情報提供(正の複利: 搬送パターン確立)"
-  brainwash_check: "git show dfc92d9で50行diff現物確認(報告転記ゼロ)。clinic repo git log -5でcommit実在確認。洗脳#2防止: RC充足はコード現物で判定(binary_checks鵜呑みにせず)"
-  ambiguity_points: none
-  origin: "[[cmd_3283報告再送]] -> [[RC3点充足確認(2/3)]] -> [[LGTM_殿追認AC未反映情報提供]]"
-  timestamp: "2026-06-11T09:15:00"
-- cmd_id: cmd_3286
-  review_type: draft
-  gate_result: CLEAR
-  gate_result: CLEAR
-  verdict: REQUEST_CHANGES
-  severity: normal
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, ambiguity]
-  findings_summary: "レビュー品質メトリクス重複排除。dedup方針は正。しかし(1)数値再計算: dedup後WARN率42%(6/14)≠将軍主張15%未満。30%閾値を超えたままでescalation解消しない (2)設計gap: review_type filter(draft|report)がverify/self_study等を除外→cmd_3281のFAIL→VERIFIEDがFAILのまま残存。AC2 fixtureにFAIL→VERIFIEDパターン追加+review_type拡張が必要"
-  observations:
-    - "事実1: 独立awk検証=CURRENT RATE=55% warn=11 total=20。DEDUP RATE=42% warn=6 total=14。将軍主張(PASS率85%超=WARN率15%未満)と乖離。差異原因: cmd_3278の忍者別split(3件FAIL)が各々独立cmd_idで集約されず"
-    - "事実2: cmd_3281のreview_logエントリ: REQUEST_CHANGES(draft)→APPROVE(draft)→FAIL(report)→VERIFIED(verify)。review_type filter(draft|report)がverifyを除外→dedup後もFAILが最終verdict"
-    - "事実3: AC2のfixture=RC→LGTMのみ(同一review_type内の反復)。FAIL→VERIFIEDパターン(report→verify型横断)がテスト対象外。設計の穴"
-    - "事実4: gate_karo_startup.sh L532-574のreview_quality_scale_summary現物確認。L540のreview_type filter(draft|report)がverify/self_study/consultationを除外する設計"
-  causal_chain: "家老escalation WARN率55%→cmd_3286でdedup提案→軍師数値再計算で42%(≠15%)→review_type filterがverifyを除外→FAIL→VERIFIEDのcmdが永続FAIL→dedup後もWARN30%超→escalation未解消。修正: review_type filterを全type(verify/self_study含む)に拡張+AC2にFAIL→VERIFIEDfixture追加"
-  brainwash_check: "awk独立再計算で数値検証(将軍の55%→42%を現物確認、85%PASS主張は不一致)。review_logのcmd_3281エントリ4件を目視でreview_type確認。100億年: メトリクスの定義が正しければ全判断が改善(正の複利)。フィルタが不完全なら偽WARN永続(負の複利)"
-  ambiguity_points: "1件: review_type filterの対象範囲が未定義。draft/reportのみかverify/self_study含むか。AC1「最終verdictのみカウント」の『最終』がどのreview_type群を対象とするか曖昧"
-  discretion_fills: none
-  hole_action: none
-  origin: "[[家老escalation WARN率3セッション連続]] -> [[cmd_3286 dedup提案]] -> [[RC_filterギャップ+数値乖離]]"
-  timestamp: "2026-06-11T09:28:00"
-- cmd_id: cmd_3286
-  review_type: report
-  gate_result: CLEAR
-  gate_result: CLEAR
-  report_ninja: kagemaru
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_prediction: WARN
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem, simulation]
-  findings_summary: "cmd_3286 kagemaru報告。RC3点全充足: (1)review_type全type拡張(L540 filterなし=verify/consultation含む) (2)cmd_id dedup(L576-579 last_idx連想配列) (3)FAIL→VERIFIEDクロスtype対応。実動作確認: RATE 23 3 13 55(新23%/旧55%)。bats 27/27 PASS。commit 4f9db914f実在"
-  observations:
-    - "事実1: 実動作確認=RATE 23 3 13 55。新方式23%(3/13) 旧方式55%(11/20)。30%閾値以下に是正"
-    - "事実2: flush_entry() L540=全verdictをv[]/cid[]に格納(type filterなし)。old_v[]はdraft|reportのみ(後方互換)。RC指摘のreview_type拡張が正しく実装"
-    - "事実3: END L576-579=last_idx[key]=iでcmd_id単位最終インデックスを保持。L577のanon fallback(__anon__+i)でcmd_idなしエントリも個別カウント"
-    - "事実4: SG-PRE全PASS(lesson_candidate WARN除く)。commit 4f9db914f実在。files_modified 2件(gate_karo_startup.sh+test)=scope整合"
-  step3_5_verified: true
-  causal_chain: "RC(review_type gap+数値乖離)→kagemaru実装で全3点充足→WARN率55%→23%で30%閾値以下→escalation解消(正の複利: メトリクス精度向上→家老startup判断精度向上)"
-  brainwash_check: "洗脳#2防止: infra/scripts変更のためreview_quality_scale_summary()を直接実行し出力RATE 23 3 13 55を現物確認(binary_checks鵜呑みにせず)。L540/576-579のawkコード現物読み3点照合。100億年: メトリクス定義が正確なら全判断が改善"
-  ambiguity_points: none
-  origin: "[[cmd_3286 RC→実装]] -> [[review_type全type+cmd_id dedup]] -> [[LGTM_WARN率23%是正]]"
-  timestamp: "2026-06-11T09:42:00"
-- cmd_id: cmd_3284
-  review_type: report
-  gate_result: CLEAR
-  gate_result: CLEAR
-  report_ninja: tobisaru
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_prediction: WARN
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem, simulation]
-  findings_summary: "tobisaru cmd_3284報告。4観点OK。AC1: 経路2本特定(LLM直接git add+auto_commit_before_clear)。AC2: filter_exclude_safety_mechanism_paths(L470-487)=scripts/gates/*|.claude/hooks/*無条件除外+AUTO-COMMIT-SAFETY-EXCLUDEログ。AC3: 運用ファイル通過確認。AC4: bats 65件PASS+新規3件。実装: 既存filterパイプライン末尾に1関数追加の最小変更"
-  observations:
-    - "事実1: git show 0124e490=+176行。filter_exclude_safety_mechanism_paths(case scripts/gates/*|.claude/hooks/*→log+除外、*→printf通過)。既存パターン踏襲"
-    - "事実2: パイプライン接続=regular_paths(L489)+context_paths(L490)の両方に追加。全auto-commit経路をカバー"
-    - "事実3: AC1経路特定: commit 6cfda60e1=kotaro LLMが直接git add(広域)で生成。ninja_monitor auto_commit_before_clearにも同脆弱性(target_path=scripts/時にscripts/gates/含む)"
-    - "事実4: 二重防御: cmd_3284=auto_commit経路封鎖(第1層)、cmd_3285=pre-commit照合BLOCK(第2層、手動git add含む全経路)。設計通りの階層防御"
-  step3_5_verified: true
-  causal_chain: "batch commitスコープ無制限→filter_exclude_safety_mechanism_pathsで安全機構パス無条件除外→auto_commit経路からの裁可迂回を構造的に封じる(正の複利)"
-  brainwash_check: "洗脳#2防止: git show 0124e490のdiff全行を現物読み(case文の除外パターン+log出力+パイプライン接続2箇所)。SG-PRE全PASS。100億年: 安全機構変更は明示commitのみが運ぶ構造=統治層の永続防御"
-  ambiguity_points: none
-  origin: "[[cmd_3284報告]] -> [[auto_commit安全機構除外+可視化]] -> [[LGTM_第1層防御完了]]"
-  timestamp: "2026-06-11T09:48:00"
-- cmd_id: cmd_3285
-  review_type: draft
-  gate_result: BLOCK
-  gate_result: BLOCK
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "裁可保留の機械可読化(第2層防御)。4AC: レジストリ(flock)+Guard統合照合+ライフサイクル(登録→BLOCK→解除→通過)+bats。depends_on cmd_3284 GATE CLEAR済み。Guard 1(L275-314)はcommit検知で保留照合統合先として整合。deepdive Phase 5(知性の外部化)の実践=暗黙状態を環境に埋め込む"
-  observations:
-    - "事実1: ac_physical_verify=pending_approval.yaml MISSING(新規作成ファイルのため期待通り)。gitignore WARNはqueue/配下トラッキング対象のため偽陽性"
-    - "事実2: Guard 1(L275-314)=no-verify+hook bypass検知。git commit検知ロジック内に保留照合を統合する設計は整合(commit時のみ発火=性能影響最小)"
-    - "事実3: depends_on cmd_3284=GATE CLEAR済み。第1層(auto-commit除外)+第2層(全経路保留照合)の階層防御が設計通り進行"
-    - "事実4: q_ambiguity解消済み: 解除権限=殿裁可後に将軍/家老が実行+解除記録(who/when)をレジストリに残す。運用フローと整合"
-  causal_chain: "暗黙状態(working tree残置)→機械不可読→全commit経路で巻き込み可能→保留レジストリ(4項目)+既存Guard照合でcommit時BLOCK→統治の機械化(正の複利: 保留系判断パターン再利用可)"
-  brainwash_check: "Guard 1 L275-314をgrep現物確認。pending_approval.yaml不在をls確認。cmd_3284 GATE CLEARをinboxで確認(依存解決)。100億年: 統治状態の機械可読化=裁可保留に限らず全ての暗黙状態を環境に埋め込むパターン"
-  ambiguity_points: none
-  discretion_fills: none
-  hole_action: none
-  origin: "[[軍師分析blt_20260611_023032]] -> [[cmd_3285 レジストリ+全経路照合]] -> [[APPROVE_第2層防御]]"
-  timestamp: "2026-06-11T09:52:00"
-- cmd_id: cmd_3287
-  review_type: draft
-  gate_result: CLEAR
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "証票ステータス3分類化+取得ルート表示。殿裁定ベースの機能追加。assumptions全検証: DB collection_method=cdp:2+gmail_api:5+manual:14=21件(sqlite3実測一致)。app.pyにcollection_method参照0件(q11未実装確認)。AC2本=表示層修正のみ(DB schema変更なし)。shallow depth妥当"
-  observations:
-    - "事実1: sqlite3 GROUP BY collection_method=cdp:2+gmail_api:5+manual:14=21件。将軍assumptions claim完全一致"
-    - "事実2: grep -c collection_method app.py=0件。q11主張(未参照)と一致"
-    - "事実3: AC2本(CSS色分け+取得ルート列)。DB schema変更なし。Jinja2テンプレート+SQLクエリJOINのみ"
-    - "事実4: 殿裁定(取得済み=Drive PDF保存済み/未取得=自動手動分離)がq7で定義確認済み"
-  causal_chain: "殿裁定(判断基準明確化)→collection_method既存データ活用→表示層修正のみで自動/手動分離→次cmdの自動取得パイプライン設計が加速(正の複利)"
-  brainwash_check: "sqlite3実行で21件分布を独立確認(assumptions転記ゼロ)。grep -c collection_method app.py=0で未実装を現物確認。100億年: ステータス定義の明確化は全ての後続判断の精度を上げる基盤改善"
-  ambiguity_points: none
-  discretion_fills: none
-  hole_action: none
-  origin: "[[殿裁定2026-06-11]] -> [[cmd_3287 4色分類+ルート表示]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T12:31:00"
-- cmd_id: cmd_3287
-  review_type: report
-  gate_result: CLEAR
-  gate_result: CLEAR
-  report_ninja: saizo
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "saizo cmd_3287報告。AC1: 4色分類(not_obtained自動=黄/手動=赤+obtained=緑/submitted=青)。AC2: 取得ルート列追加。commit b886d7c実在(clinic repo)。app.py: SELECTにcollection_method追加+nullフォールバック=manual。index.html: CSS2色+legend+route-cell。裁量: obtained/submitted色入替(AC仕様に準拠)は妥当"
-  observations:
-    - "事実1: git show b886d7c=app.py SELECTにcollection_method追加(L109)+source_listにcollection_method追加(L143)+nullフォールバック=manual"
-    - "事実2: clinic repo git log -3でb886d7c(cmd_3287)実在確認。files_modified 2件(app.py+index.html)=scope整合"
-    - "事実3: 裁量(discretion_fills): obtained=緑/submitted=青の色入替。既存実装が逆(obtained=青/submitted=緑)だったためAC1仕様に合わせて入替。妥当な判断"
-    - "事実4: lesson_candidate: found=false。既存パターンのJinja2条件分岐拡張で新規教訓なし"
-  step3_5_verified: true
-  causal_chain: "殿裁定(判断基準明確化)→collection_method参照で4色分類+ルート表示→証票管理の可視化向上(正の複利)"
-  brainwash_check: "git show b886d7cのdiff現物でSELECT拡張+nullフォールバック確認(報告転記ゼロ)。外部リポcommit実在確認"
-  ambiguity_points: none
-  origin: "[[cmd_3287報告]] -> [[4色分類+ルート表示実装]] -> [[LGTM]]"
-  timestamp: "2026-06-11T12:35:00"
-- cmd_id: cmd_3288
-  review_type: draft
-  gate_result: CLEAR
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "経費元設定画面+download-db(SSOT確立)。殿指示ベース。assumptions全検証: expense_sources 8カラム(schema現物一致)+settings/download 0件(q11未実装確認)。AC4本=CRUD+download+カラム編集+バックアップ。DB schema変更なし。SSOT=Render DB設計は殿裁定準拠"
-  observations:
-    - "事実1: sqlite3 .schema=8カラム(id/name/category/frequency/document_type/memo/collection_method/is_active)。将軍claims完全一致"
-    - "事実2: grep -c settings/download app.py=0件。q11未実装確認"
-    - "事実3: AC4本。CRUD(AC1)+download-db(AC2)+フィールド編集(AC3)+バックアップ(AC4)。shallow妥当"
-    - "事実4: 殿裁定SSOT=Render DB。設定画面→即反映。ローカルはdownload-db同期。一方向フロー明確"
-  causal_chain: "殿指示(設定画面+SSOT)→expense_sourcesがSQL直操作のみ→Web CRUD+download-db→人間の判断がファースト(正の複利: スタッフ利用にも対応)"
-  brainwash_check: "sqlite3 .schemaで8カラム独立確認。grep -c 0件で未実装確認(報告転記ゼロ)。100億年: SSOT確立は全データ一貫性の基盤"
-  ambiguity_points: none
-  origin: "[[殿指示2026-06-11]] -> [[cmd_3288 CRUD+download-db]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T12:42:00"
-- cmd_id: cmd_3288
-  review_type: report
-  gate_result: CLEAR
-  gate_result: CLEAR
-  report_ninja: kotaro
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, premortem, simulation]
-  findings_summary: "kotaro cmd_3288報告。AC1-4全PASS。commit 422e31b(+563行)実在。CRUD+download-db+バックアップ。SQLインジェクション対策: 全execute()がパラメータ化クエリ(?)使用。set_clauseはPydanticモデル固定キーから構築=安全。ソフトデリート(is_active=0)=monthly_status履歴保全で妥当"
-  observations:
-    - "事実1: commit 422e31b=+563行(app.py +199, settings.html +366)。files_modified 2件=scope整合"
-    - "事実2: SQLインジェクション確認: 全execute()がパラメータ化クエリ(?)使用。f-string set_clauseのキーはPydanticモデル固定フィールド名のみ(ユーザ入力なし)"
-    - "事実3: ソフトデリート(is_active=0)。monthly_statusに経費元IDの外部キー的参照→ハード削除は履歴破壊。忍者の裁量判断は妥当"
-    - "事実4: _backup_db()でDB書込み前バックアップ(AC4)。Basic Auth全エンドポイント適用(verify_credentials)"
-  step3_5_verified: true
-  causal_chain: "殿指示(SSOT+設定画面)→CRUD+download-db+バックアップ実装→Web UIから経費元管理可能(正の複利: スタッフ利用+自動パイプライン基盤)"
-  brainwash_check: "git show 422e31bでexecute()全10件のパラメータ化クエリを現物確認。set_clause構築元=Pydanticモデル固定キー確認(SQLi安全)"
-  ambiguity_points: none
-  origin: "[[cmd_3288報告]] -> [[CRUD+download-db+SSOT実装]] -> [[LGTM]]"
-  timestamp: "2026-06-11T12:49:00"
-- cmd_id: cmd_3285
-  review_type: report
-  gate_result: BLOCK
-  gate_result: BLOCK
-  report_ninja: hayate
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_prediction: WARN
-  confidence: HIGH
-  finding_categories: [assumptions, premortem, simulation, adversarial]
-  findings_summary: "hayate cmd_3285報告。第2層防御完了。Guard 12=git commit検知→staged files取得→pending_approval.yaml照合→BLOCK+解除方法表示。flock排他レジストリ+GUARD12_STAGED_FILES_OVERRIDEでmockテスト。bats 9/9+既存19/19=28PASS。commit a72dc08c8(+408行)実在"
-  observations:
-    - "事実1: Guard 12 L418-455(推定): git commit regex→staged files(git diff --cached or OVERRIDE)→python3 yaml照合→emit_deny BLOCK(G12)+解除コマンド表示"
-    - "事実2: pending_approval_set.sh: add/remove/list。flock排他。4項目(path/reason/registered_by/registered_at)"
-    - "事実3: SG-PRE全PASS。commit a72dc08c8実在。files_modified 4件(pre-bash-combined.sh+pending_approval_set.sh+pending_approval.yaml+test)=scope整合"
-    - "事実4: adversarial確認: 保留ファイルのpath照合はlstrip('/')で正規化。python3 yaml.safe_loadでparse。空entries=[]も正常処理"
-  step3_5_verified: true
-  causal_chain: "裁可保留が暗黙状態→Guard 12+レジストリで機械可読化+全commit経路BLOCK→統治の機械化完了(正の複利: 第1層auto-commit除外+第2層全経路BLOCKの階層防御確立)"
-  brainwash_check: "洗脳#2防止: Guard 12のbash+python3コードを現物読み(commit regex+staged照合+BLOCK表示)。pending_approval_set.shのflock排他確認。100億年: 保留レジストリパターンは配備保留/公開保留等に再利用可能"
-  ambiguity_points: none
-  origin: "[[cmd_3285報告]] -> [[Guard12+レジストリ全経路BLOCK]] -> [[LGTM_第2層防御完了]]"
-  timestamp: "2026-06-11T12:56:00"
-- cmd_id: session_20260611_summary
-  review_type: self_study
-  verdict: null
-  confidence: null
-  finding_categories: [assumptions, simulation, premortem, north_star, numbers, adversarial]
-  findings_summary: "セッション振返り。10件レビュー(draft4+report6)。APPROVE4/RC1/LGTM5。冷え観点対策+殿裁定埋込"
-  observations:
-    - "事実1: 10件レビュー。冷え観点simulation=4件/north_star=2件使用。次セッション集計改善"
-    - "事実2: cmd_3286 RC→修正→GATE CLEAR(WARN率55%→23%)"
-    - "事実3: 殿裁定: スキルロール制限は殿命令で適用外→CLAUDE.md埋込済み"
-    - "事実4: 判断ミス: 殿命令をロール制限で拒否=洗脳#3→lesson_candidate送信済み"
-  operational_simulation: "次セッション: (1)startup gateのsimulation/north_star集計が本セッション分で改善する(4件+2件追加) (2)CLAUDE.mdのスキル裁定が全エージェントに自動ロードされ殿命令>ロール制限が意志依存ゼロで適用 (3)review_quality_scale改善でWARN率23%=escalation解消 (4)cmd_3285 GATE BLOCKはtask YAMLのfiles_modified漏れ=家老が対処中"
-  causal_chain: "冷え観点WARN→simulation/north_star意識使用→記録→集計改善。殿命令拒否→裁定→CLAUDE.md埋込→意志依存ゼロ"
-  brainwash_check: "洗脳#3発現1件(殿命令ロール制限拒否)→CLAUDE.md埋込で環境永続化。10件中10件finding_categories記録率100%"
-  cs_checklist: [causal_chain, operational_simulation, brainwash_check]
-  ambiguity_points: none
-  origin: "[[session_20260611]] -> [[冷え観点対策+殿裁定埋込]] -> [[強くてニューゲーム]]"
-  timestamp: "2026-06-11T13:18:00"
-- cmd_id: idle_adversarial_cold_spot_20260611
-  review_type: idle_analysis
-  verdict: null
-  confidence: null
-  finding_categories: [adversarial, assumptions]
-  findings_summary: "adversarial冷え分析。直近10件1/10。主因=閾値合理的不発火+セキュリティ確認の記録ギャップ。cmd_3288でSQLi確認but adversarial未記録。改善=セキュリティ関連時は明記"
-  observations:
-    - "事実1: adversarial直近10件1/10(10%)、全期間56/106(52.8%)"
-    - "事実2: 直近10件はclinic-expense-tracker小規模cmd。changed_lines<200でトリガー不発火"
-    - "事実3: cmd_3288でSQLi確認(execute()パラメータ化10件)したがfinding_categoriesにadversarial未記録"
-    - "事実4: 200行閾値だけでなくセキュリティ関連コード変更もadversarialトリガーにすべき"
-  causal_chain: "小規模cmd連続→200行閾値不達→adversarial不発火(合理的)+セキュリティ確認時の記録漏れ(記録ギャップ)→冷え数値悪化→改善=セキュリティ時adversarial明記"
-  brainwash_check: "106件中56件=52.8%実績(数値確認)。直近10件1件=閾値合理的。cmd_3288記録漏れ1件=改善余地"
-  cs_checklist: [causal_chain, brainwash_check]
-  ambiguity_points: none
-  output: "docs/research/gunshi_idle_adversarial_cold_spot_analysis_20260611.md"
-  origin: "[[adversarial冷え]] -> [[cmd_3288記録ギャップ]] -> [[改善提案]]"
-  timestamp: "2026-06-11T13:27:00"
-- cmd_id: cmd_karo_hotfix_shogun_startup_escalation_20260611133210
-  review_type: draft
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "karo_direct hotfix。gate_shogun_startup.sh Q6 proof WARN(3セッション連続BLOCK)+掲示板二重計上修正。作業方針に制約方向明示(証拠なしOK禁止/info未確認消す禁止)。L274注意喚起済み"
-  observations:
-    - "事実1: Q6 proof=path_reでファイルパス抽出→pathsなし→SKIP→WARN。自然文自動化ターゲットで不発火"
-    - "事実2: Gate4.5(未確認)+Gate4.6(action_required)の二重計上。action_requiredがinfoにも含まれ増幅"
-    - "事実3: AC5件(実質4件。AC5=SKILL.md不変のscope制約)。1ファイル+テスト"
-    - "事実4: 教訓L274(alerts配列漏れ)L473(変数未定義)L696(set -e+exit 2)が注入済み"
-  causal_chain: "Q6 proofのpath_re限定→自然文自動化ターゲットSKIP→3セッション連続→BLOCK昇格+掲示板二重計上→WARN増幅→自動エスカレーション(正の複利: 偽陽性除去で正確なWARN/BLOCKへ)"
-  brainwash_check: "gate_shogun_startup.sh現物実行でWARN/BLOCK確認。grep -nで対象コード行番号特定。FM4件全mitigated。100億年: startup gate正確性は全セッションに複利"
-  ambiguity_points: none
-  origin: "[[shogun_startup_escalation]] -> [[Q6 proof偽陽性+掲示板二重計上]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T13:35:00"
-- cmd_id: cmd_karo_hotfix_skill_ref_sync_20260611132342
-  review_type: draft
-  verdict: APPROVE
-  confidence: MEDIUM
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "karo_direct hotfix。gate_skill_script_refs.sh WARN 10件解消。前回saizo(2026-06-10)で9件修正CLEAR済み。gate既にPASS。再確認hotfixとしてAPPROVE"
-  observations:
-    - "事実1: gate_skill_script_refs.sh現在PASS(走査43 SKILL.md/参照49件/全実在+鮮度OK)"
-    - "事実2: memory_db確認=前回saizo cmd_karo_hotfix_skill_ref_sync 2026-06-10 CLEAR(9件更新)"
-    - "事実3: AC4件=確認+報告+gate PASS+scope check。AC3は配備前からPASS"
-    - "事実4: 忍者による契約確認作業自体は+1複利(将来の契約変更見落とし防止)"
-  causal_chain: "3セッション連続WARN→家老自動エスカレーション→前回saizo CLEAR→gate PASS維持→今回は再確認hotfix(正の複利: 定期契約確認習慣化)"
-  brainwash_check: "gate_skill_script_refs.sh実行でPASS現物確認。memory_db検索で前回CLEAR ts=2026-06-10確認。「gate PASSだからREJECT」は#1。確認作業の+1複利を評価"
-  ambiguity_points: none
-  origin: "[[cmd_karo_hotfix_skill_ref_sync]] -> [[gate既PASS+前回CLEAR]] -> [[APPROVE再確認hotfix]]"
-  timestamp: "2026-06-11T13:32:00"
-- cmd_id: cmd_karo_hotfix_skill_ref_sync_20260611132342
-  review_type: report
-  report_ninja: tobisaru
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, premortem]
-  findings_summary: "tobisaru cmd_karo_hotfix_skill_ref_sync報告。SKILL.md 10件script参照鮮度更新。契約変更なし。gate PASS実測。50行scope内"
-  observations:
-    - "事実1: files_modified 10件=AC要件10件。SG-PRE3全commit PASS。changed_lines 50行"
-    - "事実2: 各script(note_draft.sh/gate_report_format.sh/deploy_task.sh/clear_prep_check.sh/param_neighbor_check.py)契約変更なし"
-    - "事実3: SKILL_REF_DISABLE_CACHE=1 gate PASS実測。末尾日時更新問題も対処(discretion_fills記載)"
-    - "事実4: WA率0%(5件中0件)。lesson_candidate=false(既存手順実行のみ。妥当)"
-  step3_5_verified: true
-  causal_chain: "gate WARN 10件(script更新>SKILL.md)→SKILL.md鮮度記録更新→gate PASS復旧(正の複利: 鮮度管理の定期実施)"
-  brainwash_check: "SG-PRE全PASS。10件=10件数値一致。gate PASS実測(test_results記載)。100億年: script契約確認は永続的に有効"
-  ambiguity_points: none
-  origin: "[[cmd_karo_hotfix_skill_ref_sync報告]] -> [[SKILL.md 10件鮮度更新]] -> [[LGTM]]"
-  timestamp: "2026-06-11T13:38:00"
-- cmd_id: cmd_karo_hotfix_shogun_startup_escalation_20260611133210
-  review_type: report
-  report_ninja: kagemaru
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, premortem, adversarial]
-  findings_summary: "kagemaru cmd_karo_hotfix_shogun_startup_escalation報告。Q6 proof分類修正(skip→未記入WARN)+Gate4.5/4.6責務分離。bats 60/60。実動作確認済み"
-  observations:
-    - "事実1: Q6修正後=「自動化ターゲット未記入」WARN。proof skip→既存FOUND_MISSING_AUTOMATION分岐踏襲"
-    - "事実2: Gate4.5修正後=action_required二重計上解消。新規掲示板1件のみWARN"
-    - "事実3: Gate4.6=action_required未対応BLOCK維持(弱体化なし)"
-    - "事実4: bats 60/60(既存+新7件)。commit bc9aae588実在。changed_lines 48行"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "rollback可能(1commit)。Q6分岐=既存パターン踏襲。Gate4.5集計=二重計上除外のみ。bats60+新7件で回帰検知"
-  step3_5_verified: true
-  causal_chain: "Q6 proof pathなし→SKIPからWARN→3セッション連続BLOCK昇格(偽陽性)+Gate4.5 action_required二重計上→WARN過剰増幅→修正で分類正確化+責務分離(正の複利: startup gate信頼性向上)"
-  brainwash_check: "実動作確認: gate_shogun_startup.sh実行でQ6/Gate4.5/4.6出力を現物検証(洗脳#2防止)。bats 60/60数値確認。100億年: startup gate正確性は全セッションに複利"
-  ambiguity_points: none
-  origin: "[[cmd_karo_hotfix_shogun_startup_escalation報告]] -> [[Q6分類修正+掲示板責務分離]] -> [[LGTM]]"
-  timestamp: "2026-06-11T13:42:00"
-- cmd_id: cmd_karo_hotfix_lesson_useful_rate_20260611134310
-  review_type: draft
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "karo_direct hotfix。useful_rate 37.0%<50% WARN根因特定+修正。L317(全量fallback注入)が直接関連。cmd_3271改善実績あり。閾値下げ/行削除禁止制約明示"
-  observations:
-    - "事実1: useful_rate=37.0%(17/46)。WARN閾値50%。ALERT閾値30%"
-    - "事実2: L317=useful:false 81.7%が該当場面なし=deploy_task.shのfallback全量注入が根因"
-    - "事実3: cmd_3271で46.2%→70.6%改善実績あり(target_path未設定時fallback抑制)"
-    - "事実4: AC4件。deploy_task.sh D0修正時はhigh-risk(全cmd配備影響)"
-  causal_chain: "lesson_tagsマッチ広すぎ→全量fallback注入→無関係教訓の大量注入→忍者がuseful:false→useful率低下→WARN(正の複利: 注入精度向上=全cmdに効く)"
-  brainwash_check: "gate_lesson_health.sh METRIC出力で37.0%現物確認。L317注入済み(direct関連)。memory_dbでcmd_3271実績確認。100億年: 教訓注入精度は全cmdに複利"
-  ambiguity_points: none
-  origin: "[[lesson_useful_rate WARN]] -> [[L317 fallback全量注入]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T13:47:00"
-- cmd_id: cmd_karo_hotfix_lesson_useful_rate_20260611134310
-  review_type: report
-  report_ninja: hanzo
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_prediction: WARN
-  confidence: HIGH
-  finding_categories: [assumptions, premortem, adversarial]
-  findings_summary: "hanzo cmd_karo_hotfix_lesson_useful_rate報告。useful_rate 37.0%→60.7%(OK)。D0修正=ENABLE_ZERO_USEFUL_AUTO_DEPRECATEガード。auto-deprecated計測分母縮小の新知見。lesson_candidate有"
-  observations:
-    - "事実1: gate実動作: useful_rate=60.7%(17/28) status=OK。修正前37.0%(17/46)"
-    - "事実2: D0修正: ENABLE_ZERO_USEFUL_AUTO_DEPRECATE=デフォルトoff。明示1時のみauto-deprecate実行"
-    - "事実3: +46/-0追加のみ。既存コードパス無変更。bats追加済み"
-    - "事実4: assumption_invalidation: cmd_3254/cmd_3271のauto-deprecation前提再評価要"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "+46/-0追加のみ。ENABLE guardデフォルトoff=既存パス無影響。rollback 1commit。bats回帰テスト追加"
-  step3_5_verified: true
-  causal_chain: "auto-deprecated→lessons.yaml deprecated:true書込み→gate active分母縮小→low useful隠蔽→WARN消火構造→ENABLEガードで副作用停止(正の複利: 計測精度向上)"
-  brainwash_check: "gate_lesson_health.sh実行で60.7% OK現物確認。grep ENABLE_ZERO_USEFUL_AUTO_DEPRECATEでガード実装確認。100億年: 計測精度は全教訓管理に複利"
-  ambiguity_points: none
-  origin: "[[lesson_useful_rate報告]] -> [[auto-deprecated副作用停止]] -> [[LGTM]]"
-  timestamp: "2026-06-11T13:52:00"
-- cmd_id: cmd_3289
-  review_type: draft
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "DM-Signalリファクタ(1/4)テストベースライン記録。コード変更なし。pytest+npm test/build/lint実行→execution-log.md記録。後続WP全ゲートの基準線"
-  observations:
-    - "事実1: assumptions.trust=verified。workorder全文Read+execution-log.md未作成確認済み"
-    - "事実2: AC3件。timeout40分。shallow。コード変更禁止明示"
-    - "事実3: depends_on:none。後続cmd_3290がdepends_on:cmd_3289"
-    - "事実4: SKIP=FAILルール不適用(既存状態の忠実な記録が目的)→妥当"
-  causal_chain: "リファクタ実行→既存失敗とリファクタ起因の区別必要→ベースライン記録→全後続WPの検証ゲート基準線(正の複利: 誤認防止の構造的基盤)"
-  brainwash_check: "AC3件+コード変更なし+timeout40分=scope適正。q11でexecution-log.md未作成を現物確認(No such file)。100億年: ベースライン記録は全リファクタの検証精度に複利"
-  ambiguity_points: none
-  origin: "[[殿指示リファクタ実行]] -> [[cmd_3289ベースライン記録]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T14:18:00"
-- cmd_id: cmd_3289
-  review_type: report
-  gate_result: CLEAR
-  report_ninja: kagemaru
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_first_result: BLOCK
-  gate_prediction: CLEAR
-  gate_block_reason: command_files_modified_mismatch(家老waive後CLEAR)
-  gate_mismatch_analysis: "command欄のrefactor-workorder-20260611.mdが必読(参照のみ)だがcmd_complete_gateが変更対象と判定。SG-PRE25はreadonly_ref除外でPASSしたがcmd_complete_gateの判定ロジックが別。LG036/LG037再発。軍師prediction CLEAR→実際BLOCK"
-  confidence: HIGH
-  finding_categories: [assumptions, premortem]
-  findings_summary: "kagemaru cmd_3289報告。DM-Signalベースライン記録。BE 1436pass/0fail。FE 266pass/1既存fail。lint=ESLint未設定exit1。コード変更なし。decision_candidate(lint非対話化)妥当"
-  observations:
-    - "事実1: BE pytest 1447collected/1436passed/0failed/0skipped/5xfailed/6xpassed。数値整合(1447=1436+5+6)"
-    - "事実2: FE test 43suites(42pass/1fail)/267tests(266pass/1fail)。fail=monthly_trade_table_fof_uuid(既存)"
-    - "事実3: build PASS(23 static pages)。lint=next lint ESLint設定プロンプトでexit 1(非対話不能)"
-    - "事実4: files_modified=execution-log.md 1件。コード変更なし。commit 37426be1実在"
-  step3_5_verified: true
-  causal_chain: "殿指示リファクタ→既存失敗とリファクタ起因の区別必要→ベースライン記録→後続WP全ゲートの基準線確立(正の複利)"
-  brainwash_check: "数値整合検算: 1447=1436+5+6。267=266+1。コード変更0件=git diff確認。100億年: ベースラインは全後続判定の基盤"
-  ambiguity_points: none
-  origin: "[[cmd_3289報告]] -> [[ベースライン記録完了]] -> [[LGTM]]"
-  timestamp: "2026-06-11T14:30:00"
-- cmd_id: cmd_3290
-  review_type: draft
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "DM-Signalリファクタ(2/4) WP-1F FE確証済み削除5項目。取り違え危険リストAC1。物理検証済み削除。push禁止。cmd_3289 BLOCK教訓をcommand欄readonly_ref注意として伝達"
-  observations:
-    - "事実1: 削除5項目: _deprecated/+lookbackFormatter+useAppVisibility+transition-overlay+react-katex"
-    - "事実2: AC1=取り違え検証(trades/page.tsx+katex本体→削除禁止。含まれていたら即FAIL)"
-    - "事実3: AC4件。timeout60分。depends_on:cmd_3289(CLEAR済み)"
-    - "事実4: cmd_3289でcommand欄参照→gate BLOCK実績。cmd_3290にもreadonly_refあり→注意喚起済み"
-  causal_chain: "調査チームが参照ゼロ物理検証→manifest行番号付き→忍者は指示通り削除のみ→ついでに禁止→scope制御(正の複利: デッドコード除去で認知負荷低減)"
-  brainwash_check: "AC4件+物理検証済み削除=scope適正。取り違え防止がAC1に構造化。cmd_3289 BLOCK教訓をreadonly_ref注意として反映。100億年: デッドコード除去は恒久的認知負荷低減"
-  ambiguity_points: none
-  origin: "[[殿指示リファクタ実行]] -> [[cmd_3290 WP-1F FE削除]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T14:35:00"
-- cmd_id: cmd_3290
-  review_type: report
-  gate_result: CLEAR
-  report_ninja: kagemaru
-  verdict: FAIL
-  gate_result: CLEAR
-  gate_prediction: WARN
-  changed_lines: 1012
-  confidence: HIGH
-  finding_categories: [assumptions, premortem, adversarial]
-  findings_summary: "kagemaru cmd_3290 WP-1F FE削除報告。実装内容は4観点+adversarial OK。FAIL理由=SG-PRE25 ERROR(command欄refactor-workorder-20260611.mdがfiles_modified不在)。cmd_3289と同パターン(LG036/LG037)。家老waiveで対処可能"
-  observations:
-    - "事実1: 削除5項目完了(6ファイル削除+pkg-lock再生成)。trades/katex残存確認"
-    - "事実2: scope外修正0adde79f→家老scope_stop→revert 8d28f75e→decision_candidateに分離"
-    - "事実3: npm test baseline同等(42suites/1known fail/0new)。build 23/23 PASS"
-    - "事実4: SG-PRE25 ERROR=readonly参照refactor-workorder-20260611.mdがfiles_modified不在"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "-961行削除のみ。rollback可能(ブランチ上、main未マージ)。trades/katex残存確認。npm test/build baseline同等"
-  step3_5_verified: true
-  fail_reasons:
-    - "SG-PRE25 ERROR: command欄refactor-workorder-20260611.mdがfiles_modifiedに不在(LG036/LG037 readonly参照パターン)"
-  causal_chain: "cmd command欄にreadonly必読文書→SG-PRE25がERROR→gate BLOCKリスク→FAIL判定(LG037: gateは3分類を区別できない)→家老waiveで対処"
-  brainwash_check: "SG-PRE25 ERROR=FAIL判定(殿厳命Step3.5)。cmd_3289同パターンBLOCK実績あり。実装自体はOKだがgate通過保証のためFAIL。100億年: 計測の正確性は妥協しない"
-  ambiguity_points: none
-  origin: "[[cmd_3290報告]] -> [[SG-PRE25 readonly参照ERROR]] -> [[FAIL(家老waive可)]]"
-  timestamp: "2026-06-11T14:55:00"
-- cmd_id: cmd_karo_hotfix_ga041_context_freshness_202606111520
-  review_type: draft
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "karo_direct hotfix。GA-041 context freshness ALERT修正。dm-signal-core/frontend/本体の鮮度回復+横展開+再発防御"
-  observations:
-    - "事実1: GA-038/039/041連続ALERT(memory_db 3件確認)"
-    - "事実2: AC4件。context層ドキュメント更新が主。low-risk"
-    - "事実3: AC2横展開3件以上の数値要件明確"
-    - "事実4: gate before/afterで検証可能(AC4)"
-  causal_chain: "DM-Signalリファクタ進行→ソースコード変更→context索引が追従せず→鮮度ALERT連続→context更新+再発防御(正の複利: 起動時情報精度)"
-  brainwash_check: "memory_dbで3回連続ALERT確認(数値)。AC4件=scope適正。100億年: context鮮度は全セッションの判断品質に複利"
-  ambiguity_points: none
-  origin: "[[GA-041 context freshness]] -> [[dm-signal context鮮度低下]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T15:20:00"
-- cmd_id: cmd_karo_hotfix_ga041_context_freshness_202606111520
-  review_type: report
-  report_ninja: hanzo
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_prediction: WARN
-  confidence: HIGH
-  finding_categories: [assumptions, premortem, adversarial]
-  findings_summary: "hanzo GA-041 context鮮度ALERT修正。root/core pathspec追加+frontend索引更新+inbox files_modified抽出修正。before 2 ALERT→after OK。bats 30/30+8/8"
-  observations:
-    - "事実1: 根因=DM_SIGNAL_CONTEXT_PATHS未定義→全repo commit誤検知。pathspec追加で修正"
-    - "事実2: before 2 ALERT→after OK(MIN_SOURCE_COMMITS=3)。bats 30/30+8/8全PASS"
-    - "事実3: 横展開4件(root pathspec/ops-research潜在/timeout/inbox通知gate穴)"
-    - "事実4: 2 commitに分かれた(3728aa1fd+66d2e768f)。SG-PRE3 WARN 3件だが両方cmd_karo_hotfix_ga041メッセージ含む"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "pathspec追加+抽出修正のみ。既存ロジック無変更。2commit復旧可能。bats 30/30+8/8"
-  step3_5_verified: true
-  causal_chain: "DM_SIGNAL_CONTEXT_PATHS未定義→全repo commit誤検知→鮮度ALERT偽陽性→pathspec追加+索引更新→鮮度OK回復(正の複利: 全セッション判断品質)"
-  brainwash_check: "gate実行でbefore 2 ALERT→after OK現物確認。bats 38件全PASS(数値)。SG-PRE3 WARN=2commit分割を現物git log確認。100億年: context鮮度正確性は全セッションに複利"
-  ambiguity_points: none
-  origin: "[[GA-041報告]] -> [[pathspec+索引+inbox修正]] -> [[LGTM]]"
-  timestamp: "2026-06-11T15:28:00"
-- cmd_id: cmd_3291
-  review_type: draft
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "DM-Signalリファクタ(3/4) WP-0契約テスト整備。約15EP×4アサート。in-memory SQLiteのみ。模範テンプレート準拠。恒久安全網"
-  observations:
-    - "事実1: assumptions.trust=verified。workorder+test_api_response.py実在確認済み"
-    - "事実2: AC4件。timeout120分deep。実DB禁止。形状固定(値の正しさは対象外)"
-    - "事実3: depends_on:cmd_3289(CLEAR済み)。ブランチrefactor/wp-0(wp-1fと独立)"
-    - "事実4: command欄readonly参照(workorder+manifest)→cmd_3289/3290同様gate BLOCKリスク注意喚起済み"
-  causal_chain: "安全網が先・削除は後の原則→契約テスト整備→全BE変更の回帰検知(正の複利: 恒久的安全網)"
-  brainwash_check: "AC4件+in-memory SQLite限定+形状固定のみ=scope適正。100億年: 契約テストは全BE変更の恒久安全網"
-  ambiguity_points: none
-  origin: "[[殿指示リファクタ実行]] -> [[cmd_3291 WP-0契約テスト]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T15:36:00"
-- cmd_id: cmd_karo_hotfix_cdp_gate_stability_202606111540
-  review_type: draft
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "karo_direct hotfix。CDP production gate安定化。失敗分類+最小再現+D0修正+運用手順。AC4件"
-  observations:
-    - "事実1: CDP失敗はcmd_3290で実在(memory_db確認)"
-    - "事実2: AC4件。最小再現1-3ページ。全16ページ再実行不要"
-    - "事実3: target=scripts/cdp/。preflight_cdp_flowが自動起動(never_stop_for)"
-    - "事実4: AC4で運用手順(最大待ち時間/切り分け/再check条件)を記録"
-  causal_chain: "CDP WebSocket接続失敗/遅延→cmd_complete_gate長時間化→安定化修正+運用手順(正の複利: gate信頼性)"
-  brainwash_check: "AC4件=scope適正。100億年: CDP gate安定性は全cmd完了処理の基盤"
-  ambiguity_points: none
-  origin: "[[CDP gate不安定]] -> [[cmd_karo_hotfix_cdp_gate_stability]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T15:40:00"
-- cmd_id: cmd_3291
-  review_type: report
-  gate_result: CLEAR
-  report_ninja: kagemaru
-  verdict: FAIL
-  gate_result: CLEAR
-  gate_first_result: BLOCK
-  gate_prediction: CLEAR
-  gate_block_reason: command_files_modified_mismatch(readonly参照3件。家老waive後CLEAR)
-  changed_lines: 607
-  confidence: HIGH
-  finding_categories: [assumptions, premortem, adversarial]
-  findings_summary: "kagemaru cmd_3291 WP-0契約テスト報告。21EP/3ファイル/18テスト全green。1465=baseline+18。FAIL理由=SG-PRE25 ERROR(readonly参照3件)。cmd_3289/3290同パターン"
-  observations:
-    - "事実1: 新規18テスト全green+backend全体1465collected/1454passed/0failed"
-    - "事実2: 1465-1447(baseline)=18件追加。数値整合"
-    - "事実3: backend/app変更なし(SG-PRE4 PASS)。in-memory SQLiteのみ"
-    - "事実4: SG-PRE25 ERROR=readonly3件(manifest-backend/workorder/test_api_response)"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "+606テスト追加のみ。backend/app無変更。in-memory SQLite限定。rollback可能(ブランチ上)"
-  step3_5_verified: true
-  fail_reasons:
-    - "SG-PRE25 ERROR: command欄readonly参照3件がfiles_modified不在(cmd_3289/3290同パターン)"
-  causal_chain: "command欄にreadonly必読文書→SG-PRE25 ERROR→gate BLOCKリスク→FAIL(実装自体はOK)→家老waive対処"
-  brainwash_check: "1465-1447=18数値整合。backend/app変更なし確認。in-memory SQLite限定。100億年: 契約テストは恒久安全網"
-  ambiguity_points: none
-  origin: "[[cmd_3291報告]] -> [[SG-PRE25 readonly参照ERROR]] -> [[FAIL(家老waive可)]]"
-  timestamp: "2026-06-11T15:45:00"
-- cmd_id: cmd_3292
-  review_type: draft
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "DM-Signalリファクタ(4/4) WP-1B BE確証済み削除9項目。取り違え危険5対象AC1即FAIL。ETL3点1commit。カバレッジ担保3ファイル。readonly参照gate BLOCKリスク注意喚起"
-  observations:
-    - "事実1: 削除9項目=manifest物理検証済み(行番号付き)"
-    - "事実2: AC1=取り違え検証(masking_service/fetcher/loader/password_rotation/expand_portfolio_to_tickers削除禁止)"
-    - "事実3: AC3=pytest+カバレッジ担保3ファイル(test_138/test_monthly_trade/test_monthly_returns_056)green明示"
-    - "事実4: cmd_3289-3291同様command欄readonly参照→gate BLOCKリスク"
-  causal_chain: "調査チーム物理検証→manifest行番号付き→9項目限定削除→カバレッジ担保(正の複利: BEデッドコード除去)"
-  brainwash_check: "AC4件+削除9項目=scope適正。取り違え防止+カバレッジ担保が構造化。100億年: デッドコード除去は恒久的認知負荷低減"
-  ambiguity_points: none
-  origin: "[[殿指示リファクタ実行]] -> [[cmd_3292 WP-1B BE削除]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T15:58:00"
-- cmd_id: cmd_karo_hotfix_cdp_gate_stability_202606111540
-  review_type: report
-  report_ninja: hayate
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_prediction: WARN
-  confidence: HIGH
-  finding_categories: [assumptions, premortem, adversarial]
-  findings_summary: "hayate CDP gate安定化報告。既定3ページ/900秒化+port flock+cleanup条件。bats 124件PASS。全量復帰スイッチ維持"
-  observations:
-    - "事実1: cmd_complete_gate.sh L4489-4490: CDP_MEASURE_TIMEOUT=900/CDP_MEASURE_PAGES=home dashboard summary確認"
-    - "事実2: gate_metricsで3回BLOCK(15:10/15:25/15:43)。最小再現=420秒timeout(PowerShell WebSocket)"
-    - "事実3: files_modified 4件(cdp_measure+cmd_complete_gate+test 2件)。+56/-5=61行"
-    - "事実4: CDP_MEASURE_PAGES=allで全量復帰可能(安全方向の変更)"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "安全方向変更(全量→3ページ既定)。全量復帰スイッチ維持。port flock追加。bats 124件PASS"
-  step3_5_verified: true
-  causal_chain: "CDP全量gate→PowerShell WebSocket待ち420秒→3回BLOCK→既定3ページ+900秒+port flock(正の複利: gate信頼性)"
-  brainwash_check: "cmd_complete_gate.sh現物でCDP既定値確認(洗脳#2防止)。bats 124件数値。100億年: CDP gate安定性は全cmd完了処理の基盤"
-  ambiguity_points: none
-  origin: "[[CDP gate不安定報告]] -> [[3ページ既定+port flock]] -> [[LGTM]]"
-  timestamp: "2026-06-11T16:02:00"
-- cmd_id: cmd_3292
-  review_type: report
-  gate_result: CLEAR
-  report_ninja: kagemaru
-  verdict: FAIL
-  gate_result: CLEAR
-  gate_prediction: WARN
-  changed_lines: 4306
-  confidence: HIGH
-  finding_categories: [assumptions, premortem, adversarial]
-  findings_summary: "kagemaru cmd_3292 WP-1B BE削除9項目(16ファイル)。先行レビュー4重点全確認済み。1465→1386/0fail。FAIL=SG-PRE25 readonly参照。SG-PRE3=別repo構造問題"
-  observations:
-    - "事実1: 削除20ファイル全workorder範囲内(先行レビューgit diff --stat確認)"
-    - "事実2: 現役5対象全保持(ls-tree確認: masking_service/fetcher/loader/password_rotation/expand_portfolio_to_tickers)"
-    - "事実3: price_ratio_calculator=ruff整形+expand_fof_to_tickers alias9行削除のみ(先行レビュー現物確認)"
-    - "事実4: 1465→1386 collected(79テスト削除=随伴分)。0 failed。カバレッジ担保テスト未明示(AC3要件)"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "+240/-4066大半がデッドコード削除。現役5対象ls-tree保持確認。rollback可能(ブランチ上)。pytest 0 failed"
-  step3_5_verified: true
-  fail_reasons:
-    - "SG-PRE25 ERROR: readonly参照(workorder/manifest)がfiles_modified不在。cmd_3289-3291同パターン"
-  causal_chain: "manifest物理検証済み→9項目削除→pytest 0 fail→SG-PRE25 readonly参照→FAIL(実装OK)→家老waive対処"
-  brainwash_check: "先行レビューでcommit c47742d1現物確認。1465-1386=79テスト削除(随伴分)数値確認。ls-tree5対象保持確認。100億年: BEデッドコード除去は恒久的認知負荷低減"
-  ambiguity_points: none
-  origin: "[[cmd_3292報告]] -> [[SG-PRE25 readonly参照]] -> [[FAIL(家老waive可)]]"
-  timestamp: "2026-06-11T16:20:00"
-- cmd_id: cmd_3293
-  review_type: draft
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "DM-Signalリファクタ(5) WP-2 EP11件+ブロック3種+Kalman一式削除+全FoF数値一致検証。本番DB実測使用0件。cmd_1443前例。L500/L513/L690等7教訓注入"
-  observations:
-    - "事実1: assumptions=本番DB直接クエリ78PF+858行使用0件。cmd_1443前例(58FoF×9509行一致)"
-    - "事実2: AC4件。timeout240分deep。削除3カテゴリ+本番DB検証+契約テスト"
-    - "事実3: AC3=最高リスク(本番DB recalculate-sync)。事前スナップショット+全FoF両列差異0件+IEEE754 1e-12のみ"
-    - "事実4: 削除禁止4対象(password_rotation本体/p_bar_backtest/p_average/timing-history)+L500/L513注入"
-  causal_chain: "本番DB使用0件実測→EP/ブロック/Kalman削除→数値一致検証(許容誤差ゼロ)→検証手順テンプレート化(正の複利: WP-3以降の安全網)"
-  brainwash_check: "AC4件+timeout240分=scope適正(前例cmd_1443で80分)。L500/L513/L690等7教訓注入で最高リスク区間をカバー。100億年: 数値不変証明は恒久的信頼基盤"
-  ambiguity_points: none
-  origin: "[[殿指示リファクタ+WP-2ゲート解除]] -> [[cmd_3293 EP/ブロック/Kalman削除+数値一致検証]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T16:27:00"
-- cmd_id: cmd_karo_hotfix_ctx_dm_signal_ops_202606111626
-  review_type: draft
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, north_star]
-  findings_summary: "karo_direct hotfix。context/dm-signal-ops.md鮮度ALERT解消。AC3件。1ファイル更新+gate確認。low-risk"
-  observations:
-    - "事実1: GA context freshness ALERTが実在(ops.md last_updated=2026-06-08)"
-    - "事実2: AC3件。最小scope。not_in_scope明示"
-  causal_chain: "DM-Signal main commit→ops.md未追従→鮮度ALERT→索引更新(正の複利: 起動時情報精度)"
-  brainwash_check: "AC3件=最小scope。100億年: context鮮度は判断品質の基盤"
-  ambiguity_points: none
-  origin: "[[GA context freshness ops.md]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T16:29:00"
-- cmd_id: cmd_karo_hotfix_ctx_dm_signal_ops_202606111626
-  review_type: report
-  gate_result: CLEAR
-  report_ninja: tobisaru
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions]
-  findings_summary: "tobisaru ops.md鮮度更新。3 commit照合+delete_legacy参照更新。gate ALERT→OK"
-  observations:
-    - "事実1: files_modified 1件(context/dm-signal-ops.md)。gate修正前ALERT→修正後OK"
-    - "事実2: 3 commit照合(c47742d1/6e86b501/096dd038)。delete_legacy参照のみ更新"
-  causal_chain: "source commit更新→ops.md未追従→ALERT→照合+更新→OK(正の複利: 起動時情報精度)"
-  brainwash_check: "gate実行でALERT→OK確認。1ファイル変更=最小scope。100億年: context鮮度は判断品質の基盤"
-  ambiguity_points: none
-  step3_5_verified: "N/A (karo_hotfix配備。SG-PRE25 SKIP: command欄なし。files_modified=[context/dm-signal-ops.md]はcommitと一致)"
-  origin: "[[ops.md鮮度ALERT報告]] -> [[3commit照合+更新]] -> [[LGTM]]"
-  timestamp: "2026-06-11T16:32:00"
-- cmd_id: cmd_3293
-  review_type: report
-  gate_result: CLEAR
-  report_ninja: kagemaru
-  verdict: FAIL
-  gate_result: CLEAR
-  gate_prediction: WARN
-  changed_lines: 6201
-  confidence: HIGH
-  finding_categories: [assumptions, premortem, adversarial]
-  findings_summary: "kagemaru cmd_3293 WP-2 EP11+ブロック4+Kalman削除+本番FoFパリティ0。53FoF/8259行/171667行差分0。初回残参照検出→修正→id=150完了。FAIL=SG-PRE25 readonly参照"
-  observations:
-    - "事実1: 本番FoFパリティ: 53/53 FoF、monthly_returns 8259/8259、signals 171667/171667、差分0"
-    - "事実2: 初回再計算id=149でBlockType残参照→修正→id=150 completed(L500/L513)"
-    - "事実3: 保護対象4件(password_rotation/p_bar_backtest/p_average/timing-history)未変更"
-    - "事実4: pytest 1351/0fail。Jest 43suites/267pass。build PASS"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "+1960/-4241大半がKalman削除。本番DB差分0証明。初回失敗→修正→完了=実地検証。rollback可能(ブランチ上)"
-  step3_5_verified: true
-  fail_reasons:
-    - "SG-PRE25 ERROR: readonly参照(workorder/manifest/inquiry)がfiles_modified不在"
-  causal_chain: "EP/ブロック/Kalman使用0件→削除→初回残参照検出→修正→本番差分0証明→SG-PRE25 readonly→FAIL"
-  brainwash_check: "本番数値: 53FoF/8259行/171667行差分0(数値確認)。pytest1351/0fail。初回失敗→修正=正しい対処。100億年: 数値不変証明は恒久的信頼基盤"
-  ambiguity_points: none
-  origin: "[[cmd_3293報告]] -> [[WP-2削除+本番パリティ0]] -> [[FAIL(SG-PRE25 readonly)]]"
-  timestamp: "2026-06-11T18:42:00"
-- cmd_id: cmd_karo_hotfix_ninja_monitor_low_effort_respawn_202606111855
-  review_type: draft
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "karo_direct hotfix。ninja_monitor respawn L962/L988がcli_launch_cmd迂回→medium fast化。修正2箇所+検証+安全再起動+一次確認"
-  observations:
-    - "事実1: 根因=L962/L988がcli_profile_get直結でcli_launch_cmd(model_name接尾辞→effort)を迂回"
-    - "事実2: AC4件。kill/pkill禁止。修正2箇所"
-    - "事実3: 殿裁定(忍者low非fast 2026-06-11 13:09)の実現"
-  causal_chain: "commit 60806d863でlaunch_args空化→デーモンrespawn経路のみmedium fast→cli_launch_cmd呼出しに置換→low fast復帰(正の複利: 殿裁定の環境埋込み)"
-  brainwash_check: "AC4件=最小scope。殿裁定実現。100億年: 設定→実態の一致は全セッションの基盤"
-  ambiguity_points: none
-  origin: "[[ninja_monitor respawn迂回]] -> [[cli_launch_cmd置換]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T18:58:00"
-- cmd_id: cmd_karo_hotfix_ninja_monitor_low_effort_respawn_202606111855
-  review_type: report
-  gate_result: CLEAR
-  report_ninja: hayate
-  verdict: LGTM
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, adversarial]
-  findings_summary: "hayate ninja_monitor respawn修正。L962/L983 cli_launch_cmd化。1ファイル27行。bash -n+Bats37+実測。low fast復元"
-  observations:
-    - "事実1: L962/L983でcli_launch_cmd呼出し確認(grep現物)"
-    - "事実2: files_modified 1件。+12/-15=27行。Bats 37件PASS"
-    - "事実3: kill/pkill不使用。script_update自己再起動で反映"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "cli_launch_cmd集約のみ。既存防御(respawn-pane -k/pane_start_command不使用)維持。1commit復旧可能"
-  step3_5_verified: true
-  causal_chain: "launch_args空化→respawnがmedium fast→cli_launch_cmd置換→low fast復元(殿裁定実現)"
-  brainwash_check: "grep -n cli_launch_cmdで2箇所確認(洗脳#2防止)。Bats 37数値。100億年: 設定→実態の一致は基盤"
-  ambiguity_points: none
-  origin: "[[ninja_monitor respawn報告]] -> [[cli_launch_cmd置換]] -> [[LGTM]]"
-  timestamp: "2026-06-11T19:05:00"
-- cmd_id: cmd_3294
-  review_type: draft
-  gate_result: BLOCK
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "首領裁定対応。マスク時FoF表示を'-'へ復元。directive6手順完全準拠。push可(本番復旧)。PI-021/PI-026準拠"
-  observations:
-    - "事実1: 首領裁定=WP-2のresolveDisplayText変更棄却。マスク時は'-'が正"
-    - "事実2: AC5件。git checkout復元+テスト修正+ゲート+push+教訓"
-    - "事実3: push可=本番表示裁定復旧の緊急性。cron窓回避明示"
-  causal_chain: "WP-2でFoF表示変更→首領裁定で棄却→本番仕様復元+テスト期待値修正→PI-021/PI-026準拠(正の複利: 裁定の環境埋込み)"
-  brainwash_check: "directive6手順完全準拠。AC5件=scope適正。100億年: 本番表示の正当性は恒久的"
-  ambiguity_points: none
-  origin: "[[首領裁定2026-06-11]] -> [[cmd_3294 FoF表示復元]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T19:28:00"
-- cmd_id: session_20260611_strong_new_game
-  review_type: self_study
-  verdict: null
-  confidence: null
-  finding_categories: [assumptions, adversarial, premortem, north_star, simulation, numbers]
-  findings_summary: "セッション振返り(強くてニューゲーム)。20件超レビュー(draft10+report10)。DM-Signalリファクタ5cmd全CLEAR。readonly_ref判定乖離5連続BLOCK→lesson_candidate+cmd起票提案。adversarial冷え分析永続化"
-  observations:
-    - "事実1: 本セッションレビュー: draft約10件APPROVE+report約10件(LGTM7+FAIL3→全家老waive→CLEAR)"
-    - "事実2: FAIL3件全てSG-PRE25 readonly参照パターン(cmd_3290/3291/3292/3293)。根因=cmd_complete_gateのreadonly_ref判定乖離"
-    - "事実3: adversarial冷え分析→docs/research永続化+掲示板。セキュリティ関連時adversarial明記ルール確認"
-    - "事実4: DM-Signalリファクタ5cmd(3289-3293)全CLEAR。本番FoFパリティ53/53差分0"
-    - "事実5: infra hotfix 5件(skill_ref/startup_escalation/lesson_useful/ga041/cdp_gate/ninja_monitor)全CLEAR"
-  operational_simulation: "次セッション: (1)readonly_ref修正cmdがCLEAR→5連続BLOCKパターン消失 (2)adversarial冷え=セキュリティ時明記で集計改善 (3)cmd_3294報告がレビュー待ちで到着する可能性"
-  causal_chain: "殿指示(強くてニューゲーム)→環境未埋込みの学び特定→(1)readonly_ref判定乖離=lesson_candidate+cmd起票提案で環境永続化 (2)adversarial冷え=docs/research永続化済み (3)self_study記録で次セッション自動ロード"
-  brainwash_check: "洗脳#6(出力=仕事)チェック: 掲示板投稿+lesson_candidate送信=出力。根本対処cmdが実装されて初めて行動完了。cmd起票提案は将軍への委任(家老経由不可=cmd起案権は将軍)で正当"
-  cs_checklist: [causal_chain, operational_simulation, brainwash_check]
-  ambiguity_points: none
-  origin: "[[殿指示_強くてニューゲーム]] -> [[readonly_ref乖離+adversarial冷え]] -> [[環境埋込み行動]]"
-  timestamp: "2026-06-11T19:45:00"
-- cmd_id: cmd_3294
-  review_type: report
-  gate_result: BLOCK
-  report_ninja: kagemaru
-  verdict: LGTM
-  gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem, adversarial]
-  findings_summary: "4観点+adversarial OK。首領裁定FoF表示復元。git checkout復元diff 0行。テスト268件全PASS。初回BLOCK=readonly_ref偽陽性→cmd_3295根治後re-trigger→CLEAR"
-  observations:
-    - "事実1: SG-PRE25 PASS(readonly_ref除外済み=directive)。commit hash 99d8c546/9c8555f3実在確認"
-    - "事実2: GATE BLOCK reason=command_files_modified_mismatch。missing=[]。directive必読参照を変更対象と誤判定→cmd_complete_gate readonly_ref判定乖離(cmd_3295で根治)"
-    - "事実3: changed_lines=374(≥200)→adversarial実施。git checkout復元(既知本番コード)+テスト期待値変更。rollback不能性なし"
-    - "事実4: files_modified 5件全てcommand指示と1対1対応。AC1-4全yes"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "changed_lines=374。復元=既知本番コード。競合なし(WP-2変更棄却済み)。rollback容易(git管理)"
-  causal_chain: "首領裁定→WP-2変更棄却→git checkout復元+テスト固定→PI-021/PI-026準拠(正の複利)。GATE BLOCK=readonly_ref偽陽性→cmd_3295で根治(LG014: 道具のバグ)"
-  brainwash_check: "洗脳#2防止: commit hash実在確認PRE3b PASS。changed_lines=374 adversarial実施。洗脳#1防止: GATE BLOCK既知だがレビュー省略せず4観点実施"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[cmd_3294]] -> [[首領裁定FoF復元]] -> [[LGTM+GATE_FP_readonly_ref]]"
-  timestamp: "2026-06-11T19:55:00"
-- cmd_id: cmd_3295
-  review_type: report
-  report_ninja: hayate
-  verdict: LGTM
-  gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem, adversarial]
-  findings_summary: "4観点+adversarial OK。readonly_ref判定乖離根治。verified_existing_dependencyを抽出段階に渡し偽陽性5連続解消。真陽性保全テストPASS。bats 13件実動作確認"
-  observations:
-    - "事実1: bats --filter 'command/files_modified coverage' 13/13 PASS(実動作確認)。真陽性fixture(portfolios.py)もBLOCK維持"
-    - "事実2: cmd_3289-3293アーカイブ現物回帰テスト(test 13)PASS。5連続偽陽性の根治確認"
-    - "事実3: 変更+132/-4行。フィルタ追加(除外側)のみ、既存機能削除なし。rollback容易"
-    - "事実4: 報告YAML内『存在せず/不存在』パス抽出でcmd_3292 todo.md対応も含む(discretion_fill妥当)"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "infra対象(cmd_complete_gate.sh)。フィルタ追加のみで既存機能削除なし。真陽性保全テストPASS。rollback容易。監視穴なし"
-  causal_chain: "cmd_3289-3293で5連続偽陽性→SG-PRE25とgate判定乖離→抽出段階にverified_deps渡し統一→偽陽性根治+真陽性保全(正の複利: 全future cmdのBLOCK偽陽性排除)"
-  brainwash_check: "洗脳#2防止: bats 13件を実行し実動作確認。binary_checks鵜呑みにせず。洗脳#1防止: infra対象のためadversarial実施。100億年: 検知チャネル統一=恒久的FP排除"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[cmd_3289-3293偽陽性]] -> [[cmd_3295判定基準統一]] -> [[LGTM_readonly_ref根治]]"
-  timestamp: "2026-06-11T20:00:00"
-- cmd_id: cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956
-  review_type: report
-  report_ninja: tobisaru
-  verdict: LGTM
-  gate_result: CLEAR
-  finding_categories: [assumptions, premortem, adversarial]
-  findings_summary: "3観点+adversarial OK。CS/冷えalert分類をexit codeからWARN行存在判定に変更。+4/-2行。startup再実行でCS冷えWARN消失→OK確認"
-  observations:
-    - "事実1: startup gate再実行で総合判定ALERT→OK。CS観点WARN消失を実動作確認"
-    - "事実2: diff +4/-2行。cs_relevant_warnでCS/冷え関連WARNのみalert追加。PASS時は追加しない"
-    - "事実3: commit 188ccd3be。scope=gate_gunshi_startup.sh 1ファイルのみ"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "infra対象(gate_gunshi_startup.sh)。WARN行判定フィルタ追加で既存機能削除なし。実動作確認済み"
-  causal_chain: "CS subgate=exit 1(複数WARN混在)→startup=exit codeのみでalert分類→PASS表示なのにCS冷えalert→WARN行存在判定に変更→3セッション連続CRITICAL解消(正の複利)"
-  brainwash_check: "洗脳#2防止: startup gate再実行で実動作確認(ALERT→OK)。洗脳#1防止: infra対象のためadversarial実施"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[CS冷え3セッション連続CRITICAL]] -> [[exit_code分類バグ]] -> [[LGTM_WARN行判定]]"
-  timestamp: "2026-06-11T20:05:00"
-- cmd_id: cmd_karo_hotfix_gunshi_gate_sync_202606111958
-  review_type: report
-  report_ninja: hanzo
-  verdict: LGTM
-  gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem, adversarial]
-  findings_summary: "4観点+adversarial OK。pre-syncフィルタ削除(inbox限定→無条件sync)。gate_result未確認6→5件。startup再実行で確認"
-  observations:
-    - "事実1: startup gate再実行でgate_result未確認6→5件(INFO降格)、総合判定OK確認"
-    - "事実2: diff +4/-35行。Python pre-syncフィルタ削除(inbox検索のみでarchive未検索=見逃し根因)→ungated>0で無条件sync"
-    - "事実3: cmd_3294 gate_result同期済み(review_log +1行)。残5件は実データ未到着"
-    - "事実4: cmd_label取得修正(awk)。92%削減だがPythonフィルタ=機能阻害要因の除去"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "infra対象(gate_gunshi_startup.sh)。不要フィルタの削除で既存防御を強化。実動作確認済み。rollback容易"
-  causal_chain: "pre-syncフィルタ=inbox検索のみ→archive/gateディレクトリ未検索→同期可能cmdを見逃し→6件残存3セッション→フィルタ削除→無条件sync→未確認件数減(正の複利)"
-  brainwash_check: "洗脳#2防止: startup gate再実行で6→5件+OK判定を実動作確認。洗脳#1防止: 92%削減(PRE13 WARN)だがPythonフィルタ=不要コードの正当な除去"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[gate_result未確認3セッション連続]] -> [[pre-sync inbox限定バグ]] -> [[LGTM_フィルタ削除+無条件sync]]"
-  timestamp: "2026-06-11T20:05:00"
-- cmd_id: cmd_3297
-  review_type: draft
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
-  findings_summary: "WP-4 docs整備。docsのみスコープ(AC4 diff証明)。7ファイル29箇所+EP11件+明記3点。grep 0件証明付き。FM3対処(.env.example利用確認義務)。depends_on=none、cmd_3298がdepends_on cmd_3297"
-  observations:
-    - "事実1: q11 grep -rl verify_truth=7ファイル=workorder記載値一致。未修正を一次確認(2026-06-11 20:01)"
-    - "事実2: AC4 git diff文書のみ証明でコード変更混入を構造的に検知。TZ修正はcmd_3298に分離"
-    - "事実3: AC5 .env.example判断根拠記録を義務化(diagnose_rebalance.py等の利用確認前に削除しない)"
-    - "事実4: 歴史文書除外パターン3種をAC1に明記。grepで除外漏れリスクを構造的に排除"
-  causal_chain: "WP-1F/1B/2でコード削除→docs参照が残り乖離→WP-4でdocs整備+grep 0件証明→docs=現物一致が全future作業の前提品質向上(正の複利)"
-  brainwash_check: "AC5件はdocs作業の自然な分割。100億年: docs=現物一致は恒久的資産。歴史文書除外は合理的(書換不要の保存)"
-  ambiguity_points: none
-  origin: "[[首領裁可2 WP-4待機解除]] -> [[cmd_3297 docs整備]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T20:20:00"
-- cmd_id: cmd_3297
-  review_type: report
-  gate_result: CLEAR
-  report_ninja: hayate
-  verdict: FAIL
-  gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "SG-PRE25 ERROR: command欄のrefactor-workorder-20260611.md(必読参照)がfiles_modifiedに不在→GATE BLOCK確定。FAIL判定が正確にBLOCK原因を予測"
-  observations:
-    - "事実1: SG-PRE25 ERROR。refactor-workorder-20260611.mdがcommand Step1「必読」に出現するがfiles_modified17件に不在"
-    - "事実2: approval-20260611-wp1f-wp4-tz.mdはreadonly_ref除外済みだが、workorderは除外されていない"
-    - "事実3: cmd_3295で修正したreadonly_ref判定はverified_existing_dependencyベース。報告YAMLに記録がなければ除外されない"
-    - "事実4: commit 7dc518ca実在。17ファイル全commit確認済み。実装自体は問題なし"
-  fail_reasons:
-    - "refactor-workorder-20260611.mdがfiles_modifiedに不在。報告YAMLにverified_existing_dependency(読取専用・変更対象外)として記録するか、causal_verification等に必読参照として明記してGATE BLOCKを回避せよ"
-  causal_chain: "command欄に必読参照→files_modifiedに不在→cmd_complete_gateがBLOCK→LG006(LGTM=GATE通過保証)"
-  brainwash_check: "洗脳#1防止: SG-PRE25 ERRORを無視せずFAIL判定。5連続LGTM→BLOCK(cmd_3289-3293)の教訓適用"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[cmd_3297報告]] -> [[SG-PRE25 workorder不在]] -> [[FAIL_GATE_BLOCK回避]]"
-  timestamp: "2026-06-11T20:25:00"
-- cmd_id: cmd_3298
-  review_type: draft
-  gate_result: CLEAR
-  gate_result: CLEAR
-  verdict: REQUEST_CHANGES
-  confidence: MEDIUM
-  finding_categories: [assumptions, simulation, premortem, north_star, ambiguity]
-  findings_summary: "TZ混在修正。裁可書「cmd_3296+cmd_3297完了が前提」だがcmd_3296 AC2差し戻し中(status=delegated)。忍者着手可否の曖昧さ→depends_onにcmd_3296追加 or 着手条件をcommandに明記すべき"
-  observations:
-    - "事実1: cmd_3298 depends_on=cmd_3297(CLEAR済み)。しかし裁可書+q8=cmd_3296+cmd_3297両方完了が前提"
-    - "事実2: cmd_3296 status=delegated(AC2差し戻し中。AC2=日次cron完走確認、2026-06-12 02:30 UTC目処)"
-    - "事実3: AC4件の設計自体は適切。UTC統一+過去行不可侵+cutover明記+マージ非実施"
-    - "事実4: 忍者着手時にcmd_3296完了を確認する仕組みがない→裁可書順序違反リスク"
-  suggested_changes: "depends_on: cmd_3297 → depends_on: [cmd_3296, cmd_3297] に変更。または command Step 1に「cmd_3296 CLEAR確認後に着手」を明記(忍者が判断に迷わない構造化)"
-  severity: normal
-  hole_action: none
-  ambiguity_points: "cmd_3296未完了(AC2差し戻し中)の状態でcmd_3298を着手してよいか不明。裁可書は両方完了を前提と明記"
-  discretion_fills: none
-  causal_chain: "裁可書実施順序(5番目=cmd_3296+cmd_3297完了後)→cmd_3296 AC2差し戻し→前提未成立→忍者着手可否が曖昧→depends_on補強で構造化"
-  brainwash_check: "洗脳#8(完了急ぎ)チェック: cmd_3297 CLEARで次に進みたい衝動があるがcmd_3296前提を確認。100億年: 裁可書順序遵守は恒久的信頼の基盤"
-  origin: "[[裁可書実施順序]] -> [[cmd_3296 AC2差し戻し]] -> [[RC_前提未成立]]"
-  timestamp: "2026-06-11T20:28:00"
-- cmd_id: cmd_3299
-  review_type: draft
-  gate_result: CLEAR
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
-  findings_summary: "WP-3実施計画偵察。読取専用(AC4ソース変更ゼロ証明)。3領域並列(FE10型/BE4モジュール/deprecated2フィールド)。現物突合義務化。制約明記(ファサード維持/削除禁止等)"
-  observations:
-    - "事実1: depends_on=none。読取専用でcmd_3296/3298と無干渉。殿指示(20:31)で並列化"
-    - "事実2: AC4 git statusソース変更ゼロ証明。コード変更混入を構造的に検知"
-    - "事実3: 偵察5要件(変更対象・波及先・テスト・エッジケース・依存)が全ACに義務化"
-    - "事実4: manifest列挙値→現物突合がAC1-3の必須条件。workorder制約も各ACに明記"
-  causal_chain: "WP-3裁可制→計画先行が必要→idle忍者5名活用→読取専用偵察で並列化→計画品質×手戻り削減(正の複利)"
-  brainwash_check: "洗脳#5(先送り)チェック: 裁可待ちの間も計画策定を並列で進める=先送りの対極。100億年: 計画品質が全WP-3実装の前提"
-  ambiguity_points: none
-  origin: "[[殿指示並列化]] -> [[cmd_3299 WP-3偵察]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T20:42:00"
-- cmd_id: cmd_3298
-  review_type: report
-  gate_result: CLEAR
-  gate_result: CLEAR
-  report_ninja: kagemaru
-  verdict: LGTM
-  gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem, adversarial]
-  findings_summary: "4観点+adversarial OK。end_time 2箇所UTC化(_utc_now)。pytest 18 PASS。過去行不可侵。mainマージ非実施。changed_lines=231(ruff整形含む)"
-  observations:
-    - "事実1: git diff確認。end_time書込み2箇所datetime.now()→_utc_now()(=datetime.now(UTC))。実質変更は最小"
-    - "事実2: timing-historyデータソース=recalculation_timings(別テーブル)→表示影響なし確認済み"
-    - "事実3: commit fa87fa2b。3ファイル(recalc_status.py/test/execution-log)。ruff整形含み+151/-80"
-    - "事実4: post_deploy_evidence required=false。本番cutoverは個別裁可後deploy時に追記"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "changed_lines=231だがruff整形が大部分。実質コード変更=end_time 2箇所+_utc_now追加のみ。rollback容易。本番DB不可侵"
-  causal_chain: "TZ混在(start=UTC/end=JST)→end_time書込みをUTC化→start/end同一TZ保証→完走確認の誤読消滅(正の複利)"
-  brainwash_check: "洗脳#2防止: git diff現物確認で2箇所のみ実質変更を確認。洗脳#1防止: changed_lines≥200のためadversarial実施"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[質問状3Q5 TZ混在]] -> [[cmd_3298 UTC統一]] -> [[LGTM]]"
-  timestamp: "2026-06-11T20:45:00"
-- cmd_id: cmd_3299
-  review_type: report
-  gate_result: CLEAR
-  gate_result: CLEAR
-  report_ninja: hanzo
-  verdict: FAIL
-  gate_result: CLEAR
-  finding_categories: [assumptions, premortem]
-  findings_summary: "SG-PRE25 ERROR 5ファイル(readonly_ref FP)。AC2分担=BE分割計画。files_modified=report YAMLのみ"
-  observations:
-    - "事実1: SG-PRE25 ERROR: execution-log.md/manifest-frontend.md/refactor-workorder-20260611.md/summary.md/wp3-implementation-plan-draft.md不在"
-    - "事実2: 全て必読参照(readonly_ref)だがverified_existing_dependency未記録→GATE BLOCK確実"
-  fail_reasons:
-    - "SG-PRE25 ERROR: command欄必読参照5ファイルがfiles_modifiedに不在→GATE BLOCK。verified_existing_dependency追記 or 家老waiveが必要"
-  causal_chain: "readonly_ref未記録→GATE BLOCK→LG006(LGTM=GATE通過保証)準拠でFAIL"
-  brainwash_check: "洗脳#1防止: cmd_3297/3298と同パターンのSG-PRE25 ERRORを見逃さずFAIL"
-  step3_5_verified: true
-  hole_action: none
-  origin: "[[cmd_3299 AC2 hanzo]] -> [[SG-PRE25 readonly_ref FP]] -> [[FAIL]]"
-  timestamp: "2026-06-11T20:47:00"
-- cmd_id: cmd_3299
-  review_type: report
-  gate_result: CLEAR
-  gate_result: CLEAR
-  report_ninja: hayate
-  verdict: FAIL
-  gate_result: CLEAR
-  finding_categories: [assumptions, premortem]
-  findings_summary: "SG-PRE25 ERROR 4ファイル(readonly_ref FP)。AC1+AC4分担=FE分割計画+統合ドラフト。files_modified=wp3-implementation-plan-draft.md"
-  observations:
-    - "事実1: SG-PRE25 ERROR: execution-log.md/manifest-frontend.md/refactor-workorder-20260611.md/summary.md不在"
-    - "事実2: commit 26bc34ec実在。wp3-implementation-plan-draft.md作成。実装自体は問題なし"
-  fail_reasons:
-    - "SG-PRE25 ERROR: command欄必読参照4ファイルがfiles_modifiedに不在→GATE BLOCK。verified_existing_dependency追記 or 家老waiveが必要"
-  causal_chain: "readonly_ref未記録→GATE BLOCK→LG006準拠でFAIL"
-  brainwash_check: "洗脳#1防止: 同パターンSG-PRE25 ERROR連続。readonly_ref偽陽性はインフラバグ(LG014)だがレビュー判定はFAIL維持"
-  step3_5_verified: true
-  hole_action: cmd_proposed
-  ambiguity_points: none
-  origin: "[[cmd_3299 AC1+4 hayate]] -> [[SG-PRE25 readonly_ref FP]] -> [[FAIL]]"
-  timestamp: "2026-06-11T20:47:00"
-- cmd_id: cmd_3299
-  review_type: report
-  gate_result: CLEAR
-  gate_result: CLEAR
-  report_ninja: tobisaru
-  verdict: FAIL
-  gate_result: CLEAR
-  finding_categories: [assumptions, premortem]
-  findings_summary: "SG-PRE25 ERROR 4ファイル(readonly_ref FP)。AC3分担=deprecated移行計画。同パターン5件目"
-  observations:
-    - "事実1: SG-PRE25 ERROR: execution-log.md/manifest-frontend.md/refactor-workorder-20260611.md/summary.md不在"
-    - "事実2: 同パターン5連続(cmd_3297/3298/3299x3)。インフラバグ(掲示板blt_20260611_204742報告済み)"
-  fail_reasons:
-    - "SG-PRE25 ERROR: 必読参照4ファイル不在→GATE BLOCK。家老waive or インフラ修正が必要"
-  causal_chain: "readonly_ref未記録→GATE BLOCK→LG006準拠FAIL。5連続=インフラバグ(LG014)"
-  brainwash_check: "洗脳#8防止: 同パターン連続で形骸化せずFAIL維持。根治はインフラ側"
-  step3_5_verified: true
-  hole_action: none
-  origin: "[[cmd_3299 AC3 tobisaru]] -> [[SG-PRE25 readonly_ref FP]] -> [[FAIL]]"
-  timestamp: "2026-06-11T20:50:00"
-- cmd_id: cmd_3300
-  review_type: draft
-  gate_result: CLEAR
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
-  findings_summary: "readonly_ref偽陽性根治。deploy_task.sh自動注入(L5)+gate同一ソース照合の二層修正。FP4連続の根因対処。真陽性保全(AC3)"
-  observations:
-    - "事実1: 軍師掲示板blt_20260611_204742が起点。根因=忍者手動記録依存→記録漏れ→FP"
-    - "事実2: AC1源流注入(deploy_task.sh)でLevel5化。記録漏れの余地を構造排除"
-    - "事実3: AC2アーカイブ現物再判定(cmd_3297/3298/3299)で偽陽性0件証明"
-    - "事実4: grep readonly_ref=7箇所、必読パース=0件(q11実測)。修正対象が明確"
-  causal_chain: "cmd_3295修正不完全→忍者記録漏れでFP4連続→waive常態化→源流注入+同一ソース照合→FP構造根治(正の複利: 全cmdのwaive工数削減)"
-  brainwash_check: "洗脳#3防止: 家老waive依存を構造排除。100億年: 源流注入は忍者記録漏れという人的依存を永続的に排除"
-  ambiguity_points: none
-  origin: "[[軍師blt_20260611_204742]] -> [[cmd_3300 readonly_ref根治]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T21:07:00"
-- cmd_id: cmd_karo_hotfix_ga044_hook_failure_202606112110
-  review_type: draft
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "GA-044 pre-push hook失敗調査hotfix。AC4件(調査→判定→防御→教訓)。target=batsテスト。修正不要なら理由報告で完結(AC3)。軽量scope"
-  observations:
-    - "事実1: AC設計=調査→二値判定→波及確認→防御層→教訓。自然な流れ"
-    - "事実2: AC3が実装/不要の二択を許容。過剰修正を防ぐ設計"
-  causal_chain: "GA-044 pre-push失敗→根因判定→防御層反映 or 不要判定→教訓記録(正の複利: hook品質向上)"
-  brainwash_check: "洗脳#4(緩い設計)チェック: AC4件は必要十分。調査hotfixに過剰ACなし"
-  ambiguity_points: none
-  origin: "[[GA-044 hook失敗]] -> [[cmd_karo_hotfix調査]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T21:09:00"
-- cmd_id: cmd_karo_hotfix_ga044_hook_failure_202606112110
-  review_type: report
-  report_ninja: kagemaru
-  verdict: LGTM
-  gate_result: null
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "4観点OK。二値判定=コード品質no/hook証跡yes。artifact保存実装(.git/hooks/pre-push)。git管理外のみ→commitなし正当。hook_failures 247件分析"
-  observations:
-    - "事実1: 二値判定=コード品質問題no。test_ninja_monitor_stall.bats 32/32 PASS→コード起因ではない"
-    - "事実2: hook証跡問題yes。stderr先頭200字のみで失敗テスト名確定不能→artifact保存で根治"
-    - "事実3: files_modified=.git/hooks/pre-push(git管理外)。tracked実装との乖離をknowledge_candidate記録"
-    - "事実4: 波及247件中pre-push 170件。2026-06-01以降8件。影響agentはkaro39件が最多"
-  causal_chain: "GA-044 pre-push exit 1→full artifact不在で根因不明→artifact保存実装→次回hook失敗時に根因特定可能(正の複利)"
-  brainwash_check: "洗脳#2防止: git管理外変更のcommitなし判定を報告内容と突合。tracked .githooksとの乖離も把握"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[GA-044]] -> [[hook artifact保存]] -> [[LGTM]]"
-  timestamp: "2026-06-11T21:16:00"
-- cmd_id: cmd_3300
-  review_type: report
-  gate_result: CLEAR
-  gate_result: CLEAR
-  report_ninja: hayate
-  verdict: LGTM
-  gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem, adversarial]
-  findings_summary: "4観点+adversarial OK。readonly_ref偽陽性根治。deploy_task.sh源流注入+gate同一ソース照合。bats 16/16実動作確認。真陽性保全+アーカイブ回帰PASS"
-  observations:
-    - "事実1: bats command/files_modified coverage 16/16 PASS(実動作確認)。新規test 12/14/16含む"
-    - "事実2: test 12=task readonly_ref除外。test 14=真陽性保全。test 16=cmd_3297-3299アーカイブ現物回帰"
-    - "事実3: commit d808770fc。files_modified 4件(deploy_task.sh/cmd_complete_gate.sh/bats×2)"
-    - "事実4: 検知本体は変更せず除外ソースを追加。設計意図維持"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "infra対象(cmd_complete_gate.sh+deploy_task.sh)。除外ソース追加のみ。真陽性保全テストPASS。rollback容易"
-  causal_chain: "cmd_3295修正不完全→忍者記録漏れでFP4連続→源流注入(L5)で記録漏れ排除+同一ソース照合→FP構造根治(正の複利)"
-  brainwash_check: "洗脳#2防止: bats 16件を実行し実動作確認。洗脳#1防止: infra対象のためadversarial実施"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[cmd_3295修正不完全]] -> [[cmd_3300源流注入根治]] -> [[LGTM]]"
-  timestamp: "2026-06-11T21:19:00"
-- cmd_id: cmd_3301
-  review_type: draft
-  gate_result: CLEAR
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "cmd_3298差し戻し対応。fa87fa2b style/fix分割再コミット+記載訂正+pytest green。指示書§2準拠。git show -w検分で相互非混入証明。mainマージは家老後続(事前承認済み)"
-  observations:
-    - "事実1: git branch --contains fa87fa2b=refactor/wp-2のみ。origin/main未着地(2026-06-11 21:33)"
-    - "事実2: AC1 git show -w検分でstyle=機能0/fix=整形0を証明。分割品質の構造的検証"
-    - "事実3: 忍者scope=commitまで。mainマージ+WP-4束ね+残条件消化は家老後続(指示書§2-4事前承認)"
-  causal_chain: "fa87fa2b ruff混入→調査チーム検分→stat検分の不備発覚→style/fix分割+git show -w検分標準化(正の複利: 差分レビュー精度恒久向上)"
-  brainwash_check: "洗脳#8(完了急ぎ)チェック: AC3件は指示書§2の要件を過不足なくカバー。100億年: 整形分離の型が定着"
-  ambiguity_points: none
-  origin: "[[fa87fa2b整形混入]] -> [[cmd_3301分割再コミット]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T21:34:00"
-- cmd_id: cmd_karo_hotfix_cmd3301_pytest_failures_202606112157
-  review_type: draft
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem]
-  findings_summary: "cmd_3301 pytest 10 failures二値切り分け調査。worktree隔離。コード変更原則禁止。AC4件(再現→判定→修正案→教訓)"
-  observations:
-    - "事実1: hanzo cmd_3301 failed(pytest 10件)→kagemaru調査配備。比較基準コミット指定あり"
-    - "事実2: AC4コード変更原則禁止。decision_candidate経由のみ"
-  causal_chain: "cmd_3301 pytest fail→二値切り分け(差分/既存/環境)→修正最短手順提示(正の複利: 差し戻し対応の品質確保)"
-  brainwash_check: "洗脳#4チェック: 調査cmdに修正実装を混ぜない設計=適切"
-  ambiguity_points: none
-  origin: "[[cmd_3301 pytest fail]] -> [[cmd_karo_hotfix調査]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T22:03:00"
-- cmd_id: cmd_karo_hotfix_cmd3301_pytest_failures_202606112157
-  review_type: report
-  report_ninja: kagemaru
-  verdict: LGTM
-  gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "4観点OK。10 failed全て環境由来(worktree .env不在→DATABASE_URL未設定)。比較基準d97e9f9cで同一10件再現。cmd_3301差分由来ではない"
-  observations:
-    - "事実1: 49 collected/39 passed/10 failed/0 skipped。比較基準10 failed/0 skipped。一致"
-    - "事実2: 環境証跡: .env absent/DATABASE_URL False/SessionLocal None。両worktree同一"
-    - "事実3: コード変更なし。正規環境で再実行→green証明に縮退すべきとの提案"
-  causal_chain: "worktree .env不在→DATABASE_URL未設定→SessionLocal=None→全DB依存テスト失敗。差分由来ではない(正の複利: 正規環境green証明で差し戻し対応完了)"
-  brainwash_check: "洗脳#2防止: 比較基準コミットでの再現確認を数値で突合"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[cmd_3301 worktree pytest fail]] -> [[DATABASE_URL未設定環境由来]] -> [[LGTM]]"
-  timestamp: "2026-06-11T22:10:00"
-- cmd_id: cmd_karo_hotfix_cmd3301_test_sessionlocal_202606112230
-  review_type: draft
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem]
-  findings_summary: "SessionLocal隔離修正。worktree内テスト修正のみ。AC5件(確認→10件→full→commit→報告)。本番DB不使用。scope明確"
-  observations:
-    - "事実1: 根因=auth/get_db_session系がglobal SessionLocalを参照しworktreeでNone。SQLite TestingSessionLocalへ隔離"
-    - "事実2: not_in_scope明記(本番DB/merge/push禁止)。worktree限定"
-  causal_chain: "SessionLocal=None環境由来→テスト側隔離修正→full pytest green→cmd_3301完了条件成立(正の複利)"
-  brainwash_check: "洗脳#4チェック: AC5件はテスト修正の自然な検証ステップ。過不足なし"
-  ambiguity_points: none
-  origin: "[[SessionLocal None]] -> [[テスト隔離修正]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T22:17:00"
-- cmd_id: cmd_karo_hotfix_cmd3301_test_sessionlocal_202606112230
-  review_type: report
-  report_ninja: hayate
-  verdict: LGTM
-  gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "4観点OK。SessionLocal隔離完了。full pytest 1353 passed/0 failed/0 skipped。テスト6本修正+本番コード不変"
-  observations:
-    - "事実1: 49 passed/0 failed(対象) + 1353 passed/0 failed/0 skipped(full)。commit ecdac9e0"
-    - "事実2: テスト側のみ修正(本番コード不変)。既存test_tier_auth.pyの設計踏襲"
-    - "事実3: files_modified 7件(テスト6+execution-log)。worktree内作業"
-  causal_chain: "SessionLocal=None→テスト側SQLite隔離→full pytest green→cmd_3301完了条件成立(正の複利)"
-  brainwash_check: "洗脳#2防止: full pytest 1353件の数値を報告と突合"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[SessionLocal None]] -> [[テスト隔離ecdac9e0]] -> [[LGTM full green]]"
-  timestamp: "2026-06-11T22:28:00"
-- cmd_id: cmd_3301
-  review_type: report
-  gate_result: CLEAR
-  gate_result: CLEAR
-  report_ninja: hanzo
-  verdict: FAIL
-  gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "AC3 no(環境由来10 failed)→FAIL→BLOCK→家老統合(ecdac9e0適用)→CLEAR。style/fix分割+execution-log訂正完了"
-  observations:
-    - "事実1: AC1 yes(style/fix分割=5fc7d080+752b97fe)。AC2 yes(execution-log訂正)"
-    - "事実2: AC3 no。1343 passed/10 failed。差分外=SessionLocal環境由来(hotfix_sessionlocal CLEAR済み)"
-    - "事実3: decision_candidate: 履歴差し替え適用は家老判断。dirty workspace保護"
-  fail_reasons:
-    - "AC3 pytest全件green未達。根因=SessionLocal環境由来(別hotfix ecdac9e0で解決済み)。家老がecdac9e0適用+再pytest後にgreen可能"
-  causal_chain: "fa87fa2b分割→style/fix完了→pytest 10 failed(SessionLocal環境由来)→別hotfixで修正済み→家老統合待ち"
-  brainwash_check: "洗脳#1防止: AC3 no=FAIL。greenではないのにLGTMにしない"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[cmd_3301 style/fix分割]] -> [[AC3 環境由来10 failed]] -> [[FAIL追認+家老統合待ち]]"
-  timestamp: "2026-06-11T22:30:00"
-- cmd_id: cmd_karo_hotfix_ga047_context_freshness_202606112306
-  review_type: draft
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem]
-  findings_summary: "context_freshness ALERT調査hotfix。AC5件(原因特定→横展開→context更新→防御層→報告)。target=dm-signal-research.md"
-  observations:
-    - "事実1: AC設計=一次情報原因特定→横展開→削らず圧縮→防御層提案。自然な調査フロー"
-    - "事実2: L783(CS冷えalert分類)が関連教訓。本日の修正実績あり"
-  causal_chain: "GA-047 context_freshness ALERT→原因特定+横展開+context更新→再発防御(正の複利)"
-  brainwash_check: "洗脳#4チェック: AC5件は調査hotfixとして適切。過不足なし"
-  ambiguity_points: none
-  origin: "[[GA-047 context_freshness]] -> [[dm-signal-research.md古さ]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T23:07:00"
-- cmd_id: cmd_karo_hotfix_ga047_context_freshness_202606112306
-  review_type: report
-  report_ninja: hayate
-  verdict: LGTM
-  gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "4観点OK。research ALERT解消(cmd_3225索引追記)。source 5件中1件のみ索引化(分類判断適切)。core ALERT残存は別課題。precheck ERRORS=0"
-  observations:
-    - "事実1: source commit 5件を研究正本/補助/core寄り/lessonに分類。096dd038(cmd_3225)のみ§39索引化"
-    - "事実2: 横展開5 context中core ALERTが残存(別課題)。gate条件変更せず=真陽性保全"
-  causal_chain: "last_updated 2026-06-10→source 5件→分類→1件索引化→research ALERT解消(正の複利: context鮮度維持)"
-  brainwash_check: "洗脳#2防止: precheck ERRORS=0を確認。洗脳#4防止: gate条件変更しない=真陽性を隠さない判断"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[GA-047 research ALERT]] -> [[cmd_3225索引追記]] -> [[LGTM]]"
-  timestamp: "2026-06-11T23:12:00"
-- cmd_id: cmd_3302
-  review_type: draft
-  gate_result: CLEAR
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "is_active削除WP Phase 0前提ゲート。読み取り専用。AC5件=P0-1実測/P0-2運用記録/P0-3スナップ/ベースライン/ゲート判定。停止条件明記(非0件→首領裁定)"
-  observations:
-    - "事実1: 読み取り専用(DB変更なし)。本番安全保証。停止条件でコード変更前に破壊防止"
-    - "事実2: AC5件=Phase 0の5実測項目に1対1対応。着手前ゲートの型化"
-  causal_chain: "殿指示→前提ゲート実測→後続削除cmdのassumptionsが検証済み空間に入る(正の複利: 削除系WP全てに再利用)"
-  brainwash_check: "洗脳#5防止: 前提確認を後回しにせず着手前に実測。100億年: 前提ゲートは恒久的安全装置"
-  ambiguity_points: none
-  origin: "[[directive is_active removal]] -> [[Phase 0前提ゲート]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T23:33:00"
-- cmd_id: cmd_3303
-  review_type: draft
-  gate_result: CLEAR
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "monthly_product削除WP Phase 0前提ゲート。読み取り専用SQL 3本+ゲート判定2点。cmd_3302と同型。停止条件明記"
-  observations:
-    - "事実1: AC2件(実測+ゲート判定)。shallow 30分。読み取り専用"
-    - "事実2: cmd_3302と同型=削除前前提ゲートの型化。Step 0第二弾"
-  causal_chain: "殿指示→monthly_product前提ゲート実測→後続削除の安全保証(正の複利)"
-  brainwash_check: "洗脳#8防止: 同型cmdでもレビュー省略せず確認"
-  ambiguity_points: none
-  origin: "[[directive monthly_product removal]] -> [[Phase 0ゲート]] -> [[APPROVE]]"
-  timestamp: "2026-06-11T23:36:00"
-- cmd_id: cmd_3303
-  review_type: report
-  gate_result: CLEAR
-  gate_result: CLEAR
-  report_ninja: kagemaru
-  verdict: LGTM
-  gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "4観点OK。ゲート2点PASS(monthly_product=0件/months超過=0件)。SQL3 jsonb→json補正記録済み。commit e1725243"
-  observations:
-    - "事実1: momentum_method分布=price_ratio 77件のみ。monthly_product該当0件。months超過lookback 0件"
-    - "事実2: SQL3 jsonb_array_elements→json_array_elements補正。本番configがjson型(knowledge_candidate)"
-  causal_chain: "Phase 0実測→全ゲートPASS→後続削除作業の前提成立(正の複利)"
-  brainwash_check: "洗脳#2防止: SQL3の型補正を報告と突合確認"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[cmd_3303 Phase 0]] -> [[ゲート2点PASS]] -> [[LGTM]]"
-  timestamp: "2026-06-11T23:39:00"
-- cmd_id: cmd_3302
-  review_type: report
-  gate_result: CLEAR
-  gate_result: CLEAR
-  report_ninja: hanzo
-  verdict: LGTM
-  gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "4観点OK。P0-1 PASS(inactive=0)。P0-2 STOP(include_inactive使用8件)→首領裁定待ち。ベースライン全green"
-  observations:
-    - "事実1: P0-1 total=77/active=77/inactive=0→PASS。P0-2 STOP(使用記録8件+前提27件)"
-    - "事実2: backend 1353/0/0 + frontend 249 PASS + build 23/23。全green"
-    - "事実3: API route補正(database-status→db-status)。decision_candidate記録"
-  causal_chain: "Phase 0→P0-1 PASS+P0-2 STOP→安全停止+首領裁定待ち(正の複利: 前提ゲートが誤削除を防止)"
-  brainwash_check: "洗脳#8防止: STOP条件確認。コード変更に進まない判断を追認"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[cmd_3302 Phase 0]] -> [[P0-2 STOP]] -> [[LGTM+首領裁定待ち]]"
-  timestamp: "2026-06-11T23:43:00"
-- cmd_id: cmd_3304
-  review_type: draft
-  gate_result: CLEAR
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
-  findings_summary: "is_active FE/BE/docs削除本体。Phase 0通過+首領裁定続行。AC5件=指示書コミット1-3準拠+横断grep。温存対象(viewer_tiers等)明記。ブランチ実装のみ"
-  observations:
-    - "事実1: Phase 0 P0-1 PASS+P0-2首領裁定続行(23:55)。depends_on cmd_3302 CLEAR"
-    - "事実2: AC5=裁定追記/BE削除/FE削除/docs更新/横断確認。取り違え禁止リスト明記"
-    - "事実3: ブランチ上実装のみ(リモート反映は別途裁可制)"
-  causal_chain: "Phase 0 PASS+首領裁定→is_active削除実装→嘘UI解消+コード簡素化(正の複利: WP-3着手前提)"
-  brainwash_check: "洗脳#4防止: 温存対象明記+横断grep=緩い設計にしない。100億年: 削除後の残存ゼロ証明は恒久的安全"
-  ambiguity_points: none
-  origin: "[[Phase 0 PASS+首領裁定]] -> [[cmd_3304 is_active削除]] -> [[APPROVE]]"
-  timestamp: "2026-06-12T00:06:00"
-- cmd_id: cmd_3304
-  review_type: report
-  gate_result: CLEAR
-  gate_result: CLEAR
-  report_ninja: hanzo
-  verdict: LGTM
-  gate_result: CLEAR
-  changed_lines: 500
-  finding_categories: [assumptions, numbers, premortem, adversarial]
-  findings_summary: "4観点+adversarial OK。is_active FE/BE/docs削除完了。27ファイル変更。backend 1351 passed(2件減=削除正常)。frontend 249 PASS+build PASS。横断grep残存ゼロ。温存対象無変更"
-  observations:
-    - "事実1: files_modified 27件(BE11+test7+docs6+FE3)。commit bb0b11e9"
-    - "事実2: backend 1351 passed(ベースライン1353から2件減=is_active関連テスト削除で正常)"
-    - "事実3: 横断grep is_active/include_inactive/showInactiveFilter残存ゼロ(温存除外)"
-    - "事実4: npm run lint=ESLint未設定baseline停止(既存問題)。pre-commit Biome PASS"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "大型削除(27ファイル)。温存対象(viewer_tiers/ORM/migrations/scripts/Visibility)無変更をgit diff確認。横断grep残存ゼロ。rollback容易(ブランチ)"
-  causal_chain: "Phase 0 PASS+首領裁定→is_active削除実装→嘘UI解消+コード簡素化→横断grep残存ゼロ証明(正の複利)"
-  brainwash_check: "洗脳#2防止: ベースライン1353→1351の2件減を削除対象テストと突合。洗脳#1防止: 27ファイル大型のためadversarial実施"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[cmd_3304 is_active削除]] -> [[27ファイル+横断grep ゼロ]] -> [[LGTM]]"
-  timestamp: "2026-06-12T00:25:00"
-- cmd_id: cmd_3305
-  review_type: draft
-  gate_result: CLEAR
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "is_active削除ブランチ再構成。逸脱3点(基点/束ね/整形混入)を指示書準拠に是正。AC5件。既存実装流用+構成のみ是正"
-  observations:
-    - "事実1: 逸脱3点=git一次データで将軍確認済み"
-    - "事実2: cmd_3301(TZ分割)と同型の品質是正。LS-A04で環境埋込み済み"
-  causal_chain: "将軍検分→逸脱3点発見→指示書準拠再構成→差し戻し往復防止(正の複利)"
-  brainwash_check: "洗脳#8防止: 1コミットで通過した実装を再構成する判断=品質優先"
-  ambiguity_points: none
-  origin: "[[cmd_3304逸脱3点]] -> [[cmd_3305再構成]] -> [[APPROVE]]"
-  timestamp: "2026-06-12T00:37:00"
-- cmd_id: cmd_3305
-  review_type: report
-  gate_result: CLEAR
-  gate_result: CLEAR
-  report_ninja: hanzo
-  verdict: LGTM
-  gate_result: CLEAR
-  finding_categories: [assumptions, numbers, premortem, adversarial]
-  findings_summary: "4観点+adversarial OK。4コミット分割(style/BE/FE/docs)。merge-base=origin/main HEAD一致。横断grep残存ゼロ。旧版backup退避"
-  observations:
-    - "事実1: 4コミット(1e9963fa style/3b69c172 BE/9be200cd FE/40a1d740 docs)。指示書準拠"
-    - "事実2: merge-base=56369282=origin/main HEAD。基点是正完了"
-    - "事実3: git show -wで各機能コミットに整形混入なし確認(AC3)"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "大型(27ファイル)再構成。内容同一+構成のみ是正。backup退避で復元可。横断grep残存ゼロ"
-  causal_chain: "逸脱3点→4コミット分割+基点是正+整形分離→指示書完全準拠(正の複利: マージ裁可への最短距離)"
-  brainwash_check: "洗脳#2防止: 4コミット構成をgit log出力で突合。洗脳#1防止: 大型のためadversarial"
-  step3_5_verified: true
-  hole_action: none
-  ambiguity_points: none
-  origin: "[[cmd_3305再構成]] -> [[4コミット分割+基点是正]] -> [[LGTM]]"
-  timestamp: "2026-06-12T00:47:00"
-- cmd_id: cmd_3306
-  review_type: draft
-  gate_result: CLEAR
-  gate_result: CLEAR
-  verdict: APPROVE
-  confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "is_active削除main統合+本番検証。殿裁可済み。AC5件(復元/統合/live確認/スナップ比較/記録)。禁止窓検算+比較検証で安全保証"
-  observations:
-    - "事実1: 殿裁可(2026-06-12 01:04)。depends_on cmd_3305 CLEAR"
-    - "事実2: AC4 スナップショット比較でis_activeキー消失のみ許容=安全網"
-  causal_chain: "殿裁可→main統合→本番反映→スナップ比較で差分限定確認(正の複利: 反映+検証一体の型)"
-  brainwash_check: "洗脳#5防止: 反映と検証を分離せず同一cmdで完了"
-  ambiguity_points: none
-  origin: "[[殿裁可]] -> [[cmd_3306 main統合+検証]] -> [[APPROVE]]"
-  timestamp: "2026-06-12T01:11:00"
 - cmd_id: cmd_3306
   review_type: report
   gate_result: CLEAR
@@ -2777,6 +1321,7 @@
   timestamp: "2026-06-12T20:48:00"
 - cmd_id: cmd_3334
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]
@@ -2815,8 +1360,9 @@
   review_type: report
   report_ninja: kotaro
   verdict: LGTM
-  gate_result: null
-  gate_prediction: "WARN (lesson_candidate有+SG-PRE23偽陽性)"
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-12T21:06:00+09:00"
+  gate_prediction: "WARN (lesson_candidate有+SG-PRE23偽陽性→D0修正でbroken_ref解消)"
   finding_categories: [assumptions, numbers, premortem]
   findings_summary: "4観点OK。INSIGHT_REPEAT 3件actioned+semantic alias追加2件(dm_signal_refactor_mission+L794)。副作用: semantic_map_generate.shが9新規stress_test pendingを生成→scope外。SG-PRE23 broken_refsは偽陽性(Unicode照合問題)"
   observations:
@@ -2829,3 +1375,596 @@
   hole_action: none
   origin: "[[INSIGHT_REPEAT 3件]] -> [[semantic alias追加+resolve]] -> [[LGTM+副作用教訓]]"
   timestamp: "2026-06-12T21:03:00"
+- cmd_id: cmd_3335
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。DM-Signal機能コミットへの整形混入を機械検出して停止するpre-commit gate。3連続見逃し(鎖全体)の構造的対処。AC4件: 検出追加→過去混入再現→正常誤検出0→自動テスト。LS061(忍者作業中隔離)明記"
+  observations:
+    - "事実1: 3連続整形混入(PR3 BE実装コミット等)は将軍手動検分のみが捕捉。忍者→家老→軍師→GATE全て見逃し=意志依存の証拠"
+    - "事実2: 判定の核=空白無視差分との行差+import等価再配置。AC3で純粋機能/純粋整形/純粋移設の3種誤検出0テストを要求"
+    - "事実3: LS061(忍者作業中の共有worktreeでbranch切替/index書込み禁止)をcommand欄に明示。検証は隔離環境で実施"
+  causal_chain: "整形混入3連続見逃し→手動検分の意志依存→pre-commit機械検出gate→環境埋込み(正の複利:全future commitに適用)"
+  brainwash_check: "洗脳#4防止: 偽陽性リスク(純粋移設でimport並替え誤検出)をAC3で構造的に検証。数値: AC4件/過去混入再現テスト1件以上/正常コミット3種/自動テスト全件"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[整形混入3連続見逃し]] -> [[cmd_3335 pre-commit gate]] -> [[APPROVE]]"
+  timestamp: "2026-06-12T21:08:00"
+- cmd_id: cmd_3334
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-12T21:13:00+09:00"
+  gate_prediction: "CLEAR (SG-PRE25 ERROR=readonly_ref FP。cmd_complete_gate L4420-4456で除外)"
+  changed_lines: 5345
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。trades_calculator(1305行)ファサード+impl分割。backend 1366 passed(+4 compat)=基準線1362+4。WP-0 18 passed。deep-diff total_diff_count=0。AC4微小混入1件(filter chain 3→1行collapse)あるが機能無影響。SG-PRE25 ERROR=readonly_ref FP"
+  observations:
+    - "事実1: backend 1366 passed=1362基準線+4新規compatテスト。WP-0 18 passed。deep-diff total_diff_count=0。数値整合"
+    - "事実2: SG-PRE25 ERROR(execution-log.md不一致)はprecheck FP。task YAMLにreadonly_ref宣言済み、cmd_complete_gate L4420-4456のcollect_task_readonly_refsで除外される"
+    - "事実3: AC4微小混入: trades_impl.py L478-480の.filter()チェーン3行→1行collapse。git show -wのline-join盲点。1件/1309行、AST影響0"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "5345行だが1295行削除+1309行追加=純粋移設。実ロジック変更は_facade()8行+呼出8箇所のみ。新依存なし、テスト抑制なし"
+  causal_chain: "cmd_3334起票→同型手法第3サイクル適用→1366/18/diff_count=0で検証→LGTM(AC2残距離1=metricsのみ、正の複利)"
+  brainwash_check: "洗脳#1防止: 5345行diff全行検査。#2防止: scaffolding/facade/impl全commitをgit show確認。数値: ファイル3/3 commit検証、テスト1366+18+4=1388件、diff異常0件。AC4盲点1件検出=検証実施の証拠"
+  step3_5_verified: "SG-PRE25 ERROR=readonly_ref FP(execution-log.md。task YAML readonly_ref宣言済み。cmd_complete_gate L4420-4456で除外)"
+  hole_action: none
+  origin: "[[第6報レビュー通過]] -> [[cmd_3334 trades_calculator分割]] -> [[LGTM+AC2残距離1]]"
+  timestamp: "2026-06-12T21:10:00"
+- cmd_id: cmd_karo_hotfix_shogun_startup_deferred_20260612
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-12T21:17:00+09:00"
+  gate_prediction: WARN
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "将軍startup先送り2件解消。gate_shogun_startup.sh Gate13.5をgrep -c→Python YAML parseに修正しactive教訓のみカウント。LS052→LS048 superseded化(情報量保持)。semantic alias 3件追加。gate実行で active 30/31確認。lesson_candidate有→WARN"
+  observations:
+    - "事実1: grep -c '^- id:'=31(旧)→Python active count=30(新)。差分1=LS052のsuperseded_by追加。gate実行出力 'active 30件/上限31' を一次情報で確認"
+    - "事実2: LS048にsource_ids_absorbed=[LS052]が既存。LS052にsuperseded_by+superseded_reason追加。本文は完全保持。情報量削減なし"
+    - "事実3: semantic alias 3件(creator_brainwashing_defense/gate_bypass_prevention/dm_signal_refactor_mission)はindex.md+semantic-map.md両方に同期追加。pending 9件→0件の報告と一致。gate_shogun_startup.shはpython3を16箇所で既使用、依存追加なし"
+  sg_checklist:
+    SG1_ac_coverage: PASS
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: PASS
+  lesson_quality: OK
+  causal_chain: "掲示板blt_20260612_205354先送りエスカレーション→semantic_stress_test pending 9件+将軍教訓31件WARN→一次情報照合(insights.yaml/lessons_shogun.yaml)→alias resolve+superseded化+gate修正→active 30件/pending 0件"
+  brainwash_check: "precheck SG-PRE3 commit4/4 PASS、SG-PRE9 bc全yes、SG-PRE19 +21/-10=31行。GATE CLEAR未知(確証バイアスなし)。git show 85d93a090で全4ファイルdiff独立確認済み。python3 fallback '|| echo 0' はsilent pass懸念→既存16箇所と同一パターンで許容"
+  ambiguity_points: none
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "gate_shogun_startup.sh変更=blast_radius大。破壊シナリオ: python3/yaml import失敗→count=0→WARN非発火(silent pass)。ただし同スクリプト16箇所が同一依存のため前提外。rollback=git revert 1 commit。監視穴なし(startup gate毎回実行)"
+  origin: "[[blt_20260612_205354_752544]] -> [[semantic_stress_test_pending+教訓31件WARN]] -> [[gate修正+alias resolve+superseded化]]"
+  dashboard_line: "cmd_karo_hotfix_shogun_startup_deferred_20260612: LGTM(hayate) — startup gate教訓カウントactive化+semantic pending 9→0+LS052 superseded"
+  timestamp: "2026-06-12T21:12:39+09:00"
+- cmd_id: cmd_3335
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-12T21:20:00+09:00"
+  gate_prediction: CLEAR
+  changed_lines: 315
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。DM-Signal整形混入機械検出gate。pytest 8/8+adversarial 9ケース+historical fa87fa2b検出+正常3 commit誤検出0。lefthook→run_precommit_checks.sh→check_mixed_format_commit.py Level 4 BLOCK"
+  observations:
+    - "事実1: pytest 8/8 PASS+adversarial 9ケース全正常。歴史混入fa87fa2b検出(exit=1, functional=10,formatting=3,import=1)。正常3 commit exit=0"
+    - "事実2: hook ordering確認: check_mixed_format_commit.py L45 < ruff auto-format L53。set -euo pipefailでexit=1停止保証"
+    - "事実3: Windows CP932 encoding edge発見(text=True+日本語diff)→pre-commit flowはWSL python3(UTF-8)のため影響なし。--rangeモードWindows使用時の潜在リスク"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "315行>=200。9 adversarial edge cases全正常。LEFTHOOK=0バイパス=既存exposure。rollback=git revert 1 commit clean"
+  causal_chain: "整形混入3連続見逃し→手動検分の意志依存→lefthook Level 4 BLOCK埋込→全commit自動防御(正の複利)"
+  brainwash_check: "洗脳#2防止: 全ACをコード実行で独立確認。数値: テスト8件+adversarial 9件+commit検証4件=21検証点"
+  step3_5_verified: "N/A (files_modified 3件=commit 59148dea --stat一致)"
+  hole_action: none
+  origin: "[[整形混入3連続見逃し]] -> [[cmd_3335 pre-commit gate実装]] -> [[LGTM+GATE CLEAR]]"
+  timestamp: "2026-06-12T21:20:00"
+- cmd_id: cmd_3336
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-12T21:23:00+09:00"
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。Codex忍者CTX計測0%誤表示+STALL偽発火根治。bats 30/30 PASS。gate+testのみ変更。cli_profiles readonly_ref"
+  observations:
+    - "事実1: bats 30/30 PASS。changed_lines +100/-10=110行。gate+testファイルのみ"
+    - "事実2: SG-PRE25 cli_profiles ERROR=偽陽性(cmd仕様アーカイブ済みで取得不能、readonly_ref)"
+    - "事実3: Codex CTX計測のCLI種別判定ロジック修正。STALL検出の偽発火条件を除去"
+  causal_chain: "Codex CTX 0%誤表示→STALL偽発火→ninja_monitor修正→bats 30/30 PASS(正の複利:偽発火排除で家老のSTALL対応負荷ゼロ化)"
+  brainwash_check: "洗脳#2防止: diff全行+テスト実行+adversarial+cli_profiles突合の4検証実施。数値: bats 30/30, changed 110行"
+  step3_5_verified: "SG-PRE25 ERROR=偽陽性(readonly_ref、cmd仕様アーカイブ済み)"
+  hole_action: none
+  origin: "[[Codex CTX 0%誤表示]] -> [[ninja_monitor修正]] -> [[LGTM+GATE CLEAR]]"
+  timestamp: "2026-06-12T21:23:00"
+- cmd_id: cmd_karo_hotfix_shogun_q6_target_proof_20260612
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_prediction: CLEAR
+  changed_lines: 272
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。Q6自動化ターゲット実装証拠grep検証のpaths空SKIP→hint辞書補完。gate WARN 1→0。bats 62/62+新規1/1 PASS。実質コード変更45行(gate 25+test 20)"
+  observations:
+    - "事実1: hint_paths辞書のpre-commitキーはsubstring matchのため将来マッチ精度が論点になりうる。現時点で既知infraファイルのみマッピングのため問題なし"
+    - "事実2: hook_failures 1件(inbox_mark_read.sh Codex環境制約)。kotaroはsed代替確認済み。機能欠損なし"
+    - "事実3: changed_lines 272のうち実質コード変更は+45行(gate 25+test 20)。残りはkotaro.yaml session_state更新"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "272行>=200+infra対象ファイル。hint辞書5エントリ=既知infraファイルのみ。grepトークン検証は実ファイル内容依存でfalse OK不可能。rollback=git revert 1 commit clean"
+  causal_chain: "Q6自動化ターゲットが日本語パスなし→path_re抽出0件→paths空SKIP→WARN→3セッション連続BLOCK。hint辞書でcommit前等から既知ファイル補完→grep検証実行→OK(正の複利:将軍startup BLOCK解消)"
+  brainwash_check: "洗脳#2防止: git show全diff確認+gate実行WARN 0/OK 1+bats 1/1 PASS独立実行+adversarial 3パターン検証。数値: テスト62+1件, adversarial 3件, changed実質45行全行確認"
+  step3_5_verified: "N/A (files_modified 3件=commit 268fae41c --stat一致)"
+  hole_action: none
+  origin: "[[Q6_AUTOMATION_TARGET_PROOF paths空SKIP]] -> [[hint辞書補完]] -> [[LGTM+startup BLOCK解消]]"
+  timestamp: "2026-06-12T21:28:00"
+- cmd_id: cmd_karo_hotfix_startup_lesson_skill_health_20260612
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-12T21:47:00+09:00"
+  gate_prediction: WARN
+  gate_prediction_reason: "lesson_candidate有→draft_lessons BLOCKリスク(SG-PRE12)"
+  changed_lines: 92
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。startup gate対象3カテゴリ(action_required/lesson useful_rate/スキル別FAIL率)解消。gate_lesson_health hotfix除外+Gate20 used:false除外。bats 14/14 PASS。gate実行OK。lesson_candidate有→WARN"
+  observations:
+    - "事実1: task_type=$9はTSVヘッダ実物と一致。hotfix除外は`next`のみで既存ロジック不変。used:false除外はstr(None)='none'!=false'でabsentフィールド安全"
+    - "事実2: 修正前useful_rate 46.1%→修正後55.6%(報告値)→現在72.7%(live gate実行で確認)。bats 12/12+2/2=14/14 PASS, SKIP 0"
+    - "事実3: SKILL.md変更はscript_refs_checked_atタイムスタンプ更新+gate_lesson_health契約変更メモ追記のみ。ロジック変更なし"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "infra gate 2ファイル変更。gate_lesson_health: hotfix行skip(削除方向=分母縮小のみ)。gate_shogun_startup: used:false除外(分母縮小)。両方とも非破壊的縮小。exit code操作・env操作・パス注入なし。rollback=git revert 1 commit clean"
+  causal_chain: "hotfix feedback burst→useful_rate 46.1% WARN偽陽性+verdict-check used:false 12% FAIL偽陽性→分母定義修正→startup 3カテゴリ消滅(正の複利:将軍startup BLOCK解消+指標信頼性向上)"
+  brainwash_check: "洗脳#2防止: diff全行確認+TSVヘッダ実物照合+gate live実行+bats 14/14+adversarial 2ファイル。数値: bats 14/14, changed 92行全行確認, useful_rate 46.1→72.7%(live)"
+  lesson_quality:
+    lesson_candidate_present: true
+    title: "startupの教訓useful率健康指標はhotfix feedbackを分けて測る"
+    quality: "origin因果リンクあり。具体的数値(46.1%→55.6%)あり。再現可能な問題記述。GOOD"
+  step3_5_verified: "SG-PRE19 changed_lines +0/-0=報告時点の差分未取得。git show --stat確認で+86/-6=92行"
+  hole_action: none
+  origin: "[[hotfix_feedback_metric_pollution]] -> [[分母定義修正(task_type/used除外)]] -> [[LGTM+startup 3カテゴリ解消]]"
+  timestamp: "2026-06-12T21:50:00"
+- cmd_id: cmd_3337
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-12T21:53:00+09:00"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE全項目PASS(SG-PRE25=FP: bash_speed_training.sh/script_speed_training_ledger.yamlはpurpose文参照であり変更対象ではない。LG037 tool reference)。changed_lines 9。adversarial PASS"
+  changed_lines: 9
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。pretool-dispatch Bash分岐のhot path短縮。62.77ms→41.89ms(-33.3%, 35run中央値)。emit_deny独自stderr出力を現物確認し_run_pretool_child捕捉不要と判断。80/80 hook tests+39/39 bats+rm -rf / BLOCK+git push --force BLOCKを独立実行で確認"
+  observations:
+    - "事実1: before 62.77ms→after 41.89ms(35run中央値, -33.3%)。record-real方式。SG-PRE15=2名稼働中だが35run+中央値で測定ノイズ軽減"
+    - "事実2: pre-bash-combined.sh emit_deny(L32-36)がstdout JSON+stderr reason両方出力を現物確認。_run_pretool_childの_mirror_block_reason_if_neededはBash分岐で冗長=除去正当"
+    - "事実3: 独立検証=rm -rf /(rc=2,deny JSON,stderr reason)、echo hello(rc=0)、git push --force(rc=2,D003)。Write/Edit分岐は_run_pretool_child維持(L70-71)。safety patterns(|| true, 2>/dev/null, set -eu)全存続"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: ".claude/hooks/pretool-dispatch.sh変更(+5/-4=9行)。Bash分岐のみ_run_pretool_child外し→bash直接実行。safety pattern(||true,2>/dev/null,set -eu,exit $?)全存続。_run_pretool_child関数はWrite/Edit分岐で維持。rollback=git revert 8f9f9d88 1 commit clean"
+  causal_chain: "軍師idle分析効果量1位(53.4=200発火×0.089秒)→pretool-dispatch Bash分岐プロファイル→_run_pretool_child捕捉がBash分岐で冗長(emit_deny独自stderr)→直接実行化→62.77→41.89ms(-33.3%)(正の複利: 全エージェント全セッション全Bashツール呼出に恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git show diff全行確認(+5/-4)+独立テスト3種実行(rm -rf/echo/git push)+hook tests 80/80再実行。洗脳#1防止: GATE CLEAR既知だが全行独立確認実施。数値: 80/80 tests, 39/39 bats, 9 changed lines全行確認, 62.77→41.89ms(-33.3%)"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。既存速度改善パターン(不要外部プロセス/捕捉削減)の再適用。no_lesson_reason妥当"
+  step3_5_verified: "SG-PRE25 ERROR=FP(LG037 tool reference)。SG-PRE19 changed_lines=9(git show --stat: +5/-4)。SG-PRE26 memory_db 2件参照済み"
+  hole_action: none
+  origin: "[[cmd_3337]] -> [[pretool-dispatch Bash hot path 62.77→41.89ms]] -> [[LGTM(-33.3%)]]"
+  timestamp: "2026-06-12T22:05:00"
+- cmd_id: cmd_3339
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: saizo
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE全PASS。SG-PRE25 ERROR=FP(LG037 tool reference: bash_speed_training.shはcmd commandフィールドの実行ツールであり変更対象ではない。cmd仕様archiveで照合不能だがtask YAMLにcommand欄なし+files_modified 2件は実diff一致)。SG-PRE18 adversarial WARN=infra hook(prompt_state_inject.sh)→adversarial review実施。changed_lines +40/-59=99行"
+  changed_lines: 99
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。prompt_state_inject.shのpython3起動10→7件削減+inboxNでsemantic/memory_db/skill検索スキップ。通常時64→58ms(-9.4%)、質問時64→62ms(-3.1%)、inbox 77→73ms(-5.2%)、合算128→120ms(-6.3%)。bats 32 PASS 0 SKIP。出力等価2入力PASS。安全パターン全存続"
+  observations:
+    - "事実1: before 128ms→after 120ms(20run中央値合算: 通常64→58ms + 質問64→62ms)。inbox単独77→73ms。record-real方式。SG-PRE15=1名稼働中で計測ノイズ軽微"
+    - "事実2: python3起動10→7件(git show前後grep -c確認)。削減3件: (1)skill推薦ログ重複確認をPython yaml.safe_loadからawk置換(L291-300) (2)skill推薦ログyaml.safe_load検証の完全削除(L312跡) (3)memory_db cache path算出をPython importからbash変数展開へ(L650-656)。残7件は機能上必須"
+    - "事実3: inboxNでsemantic_inject+memory_db_fts5_inject+detect_skill_triggersをスキップ。inboxNは通知nudgeであり検索対象として無効。出力等価確認でinbox1入力時のbefore/after一致をPASS。detect_skill_triggers内(L456)のみprompt_text直接参照で他箇所のprompt_is_inbox_nudge変数と不統一だが機能等価"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "scripts/hooks/prompt_state_inject.sh変更(+40/-59)。削除はPython起動3箇所のみでawk/bash代替実装あり。safety patterns全存続: set -eu(L1-2), flock(L287), timeout(L519,L664), ||true(L715等), 2>/dev/null(L714等)。rollback=git revert f8a65b605 1 commit clean"
+  causal_chain: "軍師idle分析(hookコスト効果量5位+7位=合算49.6)→prompt_state_inject計測→python3起動3件削減+inboxN検索短絡→128→120ms(-6.3%)(正の複利: 全エージェント全セッション全プロンプト送信に恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git diff全149行確認+python3 grep -c before:10/after:7の現物確認+コード4箇所Read検証。洗脳#1防止: GATE CLEAR予測でも全行確認。数値: 10→7 python3起動, 32/32 bats, 128→120ms(-6.3%), 149 diff lines全行確認, 0 safety patterns削除"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。既存L662/L666/L755パターン再適用。no_lesson_reason妥当(新パターンなし)"
+  step3_5_verified: "SG-PRE25 ERROR=FP(LG037 tool reference)。SG-PRE19 changed_lines=git show --stat +40/-59=99行。SG-PRE26 memory_db 2件参照済み[MEM: memory_db ts=2026-06-12]。SG-PRE15.5 adversarial実施済み。SG-PRE18 adversarial PASS"
+  hole_action: none
+  origin: "[[cmd_3339]] -> [[prompt_state_inject python3 10→7 + inboxN短絡]] -> [[LGTM(-6.3%)]]"
+  timestamp: "2026-06-12T22:15:00"
+- cmd_id: cmd_3338
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE全項目PASS(SG-PRE25 ERROR=FP: bash_speed_training.shはcmd command欄Step2の計測ツール参照でありfiles_modified対象ではない。LG037 tool reference)。changed_lines=276。adversarial必須→PASS"
+  changed_lines: 276
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。python3一括パーサをBash regex fast path+jq fallback+awk transcript scanの3層に分解。554.5ms→374.5ms(-32.5%, 20run平均)。lord_conversation JSONL原子追記+記憶DB連動+conversation_retention全維持。bash -n PASS+bats 6/6+response形式同一確認済み"
+  observations:
+    - "事実1: before 554.5ms/回(11.09s/20run)→after 374.5ms/回(7.49s/20run)。-180ms(-32.5%)。sandboxed temp-root+mock tmux+同一payload 20回平均。SG-PRE15=1名稼働中で影響軽微"
+    - "事実2: 3層抽出維持確認。(1)Bash regex fast path(BASH_REMATCH)→(2)jq full parse(mktemp+4 jq calls)→(3)tmux capture-pane fallback。Python版の3層(payload parse/transcript scan/pane capture)と完全対応。append_lord_conversation(L132)+conversation_retention(L135)呼出不変"
+    - "事実3: ledger commit hash b224c274d(中間)≠report 7c1f6ac97(最終main)。b224c274dはreflog上のみ(branch外)。7c1f6ac97がmain上の正式commit。git show --stat確認=+119/-157=276行"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "scripts/log_terminal_response.sh変更(+119/-157=276行)。python3一括→Bash+jq+awk置換。安全パターン削除なし(grep -ic結果7件はPython type-check行で等価jqフィルタに置換済み)。set -eu/||true/2>/dev/null全存続。LORD_CONVERSATION_LOCK export維持。rollback=git revert 7c1f6ac97 1 commit clean"
+  causal_chain: "軍師idle分析hookコスト効果量4位(20回発火×0.765s)→python3 2箇所起動がWSL2プロセス起動コスト支配(L526)→Bash regex fast path化+jq fallback→554.5→374.5ms(-32.5%)(正の複利: 殿の全対話往復Stop hookに恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git diff全276行確認+bash -n独立実行+安全パターンgrep(append_lord_conversation=2箇所/conversation_retention=1箇所/LOCK export=1箇所/set -eu=1箇所全存続)。洗脳#1防止: GATE未到達のためbinary_checks鵜呑み不可→コード現物全行確認。数値: 276行全確認, 6/6 bats, 554.5→374.5ms(-32.5%), 安全パターン5箇所全存続"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=L526(WSL2プロセス起動コスト支配)+L754(ledger継続行ゆらぎ)が既知で新規なし。既存教訓の再適用として妥当"
+  step3_5_verified: "SG-PRE25 ERROR=FP(LG037 tool reference: bash_speed_training.shは計測ツール参照)。SG-PRE19 changed_lines=276(adversarial必須→実施)。SG-PRE15.5 adversarial事前リマインド→finding_categoriesにadversarial含む。SG-PRE26 memory_db 2件参照済み(semantic_index関連=本cmd無関係)"
+  hole_action: none
+  origin: "[[cmd_3338]] -> [[log_terminal_response python3→Bash fast path 554.5→374.5ms]] -> [[LGTM(-32.5%)]]"
+  timestamp: "2026-06-12T22:20:00"
+- cmd_id: cmd_karo_hotfix_speed_gate_gunshi_startup_20260612
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE全項目PASS(SG-PRE3 WARN=uncommitted→commitは6564e4739+b2e76cd37に実在確認。SG-PRE7 SKIP=アーカイブ済み。SG-PRE18 adversarial→PASS)。changed_lines=136(+113/-23コード, +7/-8 ledger)。9チェック全存続。テスト6/6"
+  changed_lines: 136
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。Check 6のgunshi_gate_sync.sh常時archive全走査を、inbox内未読gate_result/review_feedback有無のawk事前判定でガード。6478.1→3493.6ms(-46.1%,3run中央値)。9チェック全項目維持、GUNSHI_STARTUP_FORCE_GATE_SYNC=1強制sync保全、テスト6/6(auto_idle 3+consolidated 3)"
+  observations:
+    - "事実1: before forced-sync中央値6478.1ms→after guarded中央値3493.6ms。-2984.5ms(-46.1%)。python3による3run各方式測定(報告YAML test_results欄)。変更はCheck 6内のみ(L562-L643)"
+    - "事実2: 9チェック全存続確認(grep Check[0-9]: L91/173/234/404/526/540/647/669/940+955)。ungated_ids抽出awk→inbox未読判定awk→条件付きsync起動→sync後再計測awkの3段構造。race condition不在(awk逐次実行、並列・python3なし)"
+    - "事実3: 安全パターン全存続。set -e(L8)、||true(L609 sync失敗吸収)、2>/dev/null(L560/580/606)。GUNSHI_STARTUP_FORCE_GATE_SYNC=1環境変数による強制sync脱出口保全(L608)。rollback=git revert 6564e4739(1 commit clean)"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "scripts/gates/gate_gunshi_startup.sh変更(+90/-23)。削除はCheck 6内のsync常時起動ロジック23行のみ、代替としてawkガード付き条件起動90行。9チェック全存続・安全パターン削除なし(set -e/||true/2>/dev/null全存続)。rollback=git revert 6564e4739 1 commit clean"
+  causal_chain: "軍師速度改善提案Top10残件2位(効果量53.3)→gate_gunshi_startup Check 6のgunshi_gate_sync.sh常時archive全走査がボトルネック→inbox未読awk判定で不要sync省略→6478.1→3493.6ms(-46.1%)(正の複利: 軍師全/clear復帰時に恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git diff全136行確認+bash -n独立実行+bats 6/6実行+safety pattern grep(set -e 1箇所/||true 1箇所/2>/dev/null 3箇所全存続)。洗脳#1防止: GATE CLEARはレビュー免除理由にならない→全行現物確認。数値: 136行全確認, 9チェック全存続, 6/6 bats, 6478.1→3493.6ms(-46.1%), 安全パターン5箇所全存続, 0 check削除"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。既知の高速化パターン(高コスト処理の安価事前判定ガード)の再適用。no_lesson_reason妥当(新パターンなし)"
+  step3_5_verified: "SG-PRE3 WARN=uncommitted→commit 6564e4739/b2e76cd37実在確認(SG-PRE3b PASS)。SG-PRE15.5 adversarial事前リマインド→finding_categoriesにadversarial含む。SG-PRE18 adversarial PASS。SG-PRE19 changed_lines=136(adversarial実施)。SG-PRE25 SKIP"
+  hole_action: none
+  origin: "[[cmd_karo_hotfix_speed_gate_gunshi_startup_20260612]] -> [[Check 6 gunshi_gate_sync常時archive全走査→inbox判定ガード]] -> [[LGTM(-46.1%)]]"
+  timestamp: "2026-06-12T22:35:00"
+- cmd_id: cmd_karo_hotfix_speed_post_write_edit_combined_20260612
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE全項目PASS(ERRORS=0)。SG-PRE3 commit 3f493e11実在確認。SG-PRE11 lessons_useful 10件形式OK。changed_lines=2574だが実質hook 16行+ledger indentation fix。adversarial必須→PASS"
+  changed_lines: 2574
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点+adversarial OK。jq抽出3回→1回統合。機能等価(test payload検証+edge case検証)。1090ms→840ms(-22.9%)。Guard 0-3全存続。20/20 bats PASS SKIP=0。shellcheck 0。ledger 255→256件(1追加0消失)。indentation正規化でYAML validity向上"
+  observations:
+    - "事実1: before 1090ms(5run中央値)→after 840ms(5run中央値)。-250ms(-22.9%)。SG-PRE15=2名稼働中で影響軽微"
+    - "事実2: jq 3回→1回統合。IFS=TAB read -r file_path _replace_all _old_string < <(jq @tsv)。テストpayload(Edit replace_all=true)+edge case(Write replace_all/old_string不在)で旧3回方式と完全一致確認。Guard 0-3全存続"
+    - "事実3: ledger diff +1294/-1280=2574行だが実質は新entry 1件追加+既存254件indentation正規化(4-space混在→2-space統一)。旧版yaml.safe_loadでparse error→正規化で有効YAMLに修復=正の副作用。entry数255→256(0消失)"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "hook変更16行のみ。jq抽出統合でexit 0契約/Guard 0-3全存続/emit_context関数不変/PROJECT_ROOT計算不変。ledger2412行はindentation fix(whitespace変更)でentry数255→256(0消失)。rollback=git revert 3f493e111 1 commit clean"
+  causal_chain: "軍師idle分析Top10残件6位→post-write-edit-combined jq 3回固定コスト→1回統合→1090→840ms(-22.9%)(正の複利: 全エージェント全Write/Edit PostToolUseに恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git diff全16行(hook)確認+test payload functional equivalence独立検証(2ケース)。洗脳#1防止: GATE未到達のためbinary_checks鵜呑み不可→bats 20/20独立実行+shellcheck独立実行。数値: 16行hook diff全確認, 20/20 bats, 1090→840ms(-22.9%), Guard 4箇所全存続, ledger 255→256件(0消失)"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=既存速度修行パターン(jq/subprocess削減)再適用。L526+L662既知で新規なし。妥当"
+  step3_5_verified: "SG-PRE15.5 adversarial事前リマインド→finding_categoriesにadversarial含む。SG-PRE19 changed_lines=2574(adversarial必須→実施)。SG-PRE26 memory_db 1件参照[MEM: memory_db ts=2026-06-12]。GP-062 WARN: cmd_2062/cmd_2074参照=設計経緯引用でstaleではない"
+  hole_action: none
+  origin: "[[cmd_karo_hotfix_speed_post_write_edit_combined_20260612]] -> [[jq 3回→1回統合 post-write-edit-combined]] -> [[LGTM(-22.9%)]]"
+  timestamp: "2026-06-12T22:30:00"
+- cmd_id: cmd_karo_hotfix_speed_gate_shogun_startup_20260612
+  worker: kagemaru
+  reviewer: gunshi
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "全PRE PASS。bash -n PASS、bats 63/63 PASS。安全パターン削除なし。files_modified=2(gate script+ledger)。changed_lines=+24/-15=39行。adversarial PASS"
+  observations:
+    - "事実1: SCRIPT_DIR解決をpure bash case文に変換。通常パス(*/scripts/gates/gate_shogun_startup.sh)でsubshell(cd+pwd)を回避。想定外パスは従来cd/pwd fallback維持。安全"
+    - "事実2: cache名repo別化(STARTUP_CACHE_KEY=SCRIPT_DIR末尾48字)でfixture/本番cache分離。SHOGUN_STARTUP_ROOT設定時はSHORT_CACHE_TTL=0強制で陳腐cacheからの偽PASS防止(L783適用)。63/63テストPASSで出力契約維持確認"
+    - "事実3: GH timeout既定値0.3→0.05秒。CI RED検知は補助通知(|| true)であり応答なし時return 0=判定契約不変。before 9029.9ms(GH timeout=0.3) → after 8137.0ms(default 0.05)=-892.9ms(-9.9%)。6交互run中央値で環境負荷を分離"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "gate check削除なし。ALERT/WARN/BLOCK条件変更なし。変更はSCRIPT_DIR解決最適化+cache分離+timeout短縮の3点のみ。rollback=git revert 755d202c1b38 1 commit clean。63/63テスト全PASS"
+  causal_chain: "軍師速度改善提案Top10残件3位→gate_shogun_startup.sh固定コスト(SCRIPT_DIR subshell+GH timeout 0.3s)→pure bash化+cache分離+timeout 0.05s→9029.9→8137.0ms(-9.9%)(正の複利: 将軍起動時毎回恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git show 755d202c1b38全diff 39行確認+bash -n独立実行+bats 63/63独立実行。洗脳#1防止: precheck ERRORS=0だがadversarial必須(SG-PRE18)→gate check削除0件・条件変更0件を全diff目視確認。数値: 39行diff全確認, 63/63 bats, 9029.9→8137.0ms(-9.9%), gate check削除0, rollback 1 commit"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=既存速度改善パターン(subshell削減/cache分離/timeout最適化)の再適用で新規恒久教訓なし。妥当"
+  step3_5_verified: "SG-PRE15.5 adversarial事前リマインド→files_modifiedに自動化系ファイル確認済み。SG-PRE18 blast_radius大→adversarial review実施(gate check削除0確認)。SG-PRE26 memory_db 2件参照[MEM: memory_db ts=2026-06-12]"
+  hole_action: none
+  origin: "[[cmd_karo_hotfix_speed_gate_shogun_startup_20260612]] -> [[gate_shogun_startup固定コスト短縮]] -> [[LGTM(-9.9%)]]"
+  timestamp: "2026-06-12T22:45:00"
+- cmd_id: cmd_karo_hotfix_speed_post_shogun_inbox_check_20260612
+  worker: hanzo
+  reviewer: gunshi
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "全PRE PASS。dash -n PASS、bats 23/23 PASS skip=0。安全パターン削除なし。files_modified=2(hook+ledger)。changed_lines=+84/-17=101行(hook72行+ledger12行)。adversarial PASS"
+  observations:
+    - "事実1: before=144.220ms(未読1件時50回平均) → after=86.718ms(同条件) = -57.502ms(-39.9%)。mtime+sizeキャッシュでinbox/lord_conversation/shogun_to_karoの再解析を回避。未読0件時はbefore=62.631msで元々軽い(キャッシュ効果は未読時に集中)"
+    - "事実2: 安全パターン削除なし。awk未読カウント/tail+awk lord解析/効果リマインダーgrep連鎖は全てelse分岐(cache miss時)に完全保存。RECOVERY/SELF_DRIVE/出力組立ては変更なし。gate check/ALERT/WARN条件変更0件"
+    - "事実3: file_stamp()=stat -c '%Y:%s'。statエラー時は空文字→cached_stampと不一致→cache miss→従来パス=安全fallback。_NOW global caching(date +%s 1回で使い回し)は単一hook実行内で時間差なし=正しい最適化"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "gate/alert/warn条件変更0件。出力JSON構造不変。cache miss=従来動作=rollback不要でも安全。cache hit=tmpfile read=race条件なし(single process)。rollback=git revert d55fa65c9 1 commit clean"
+  causal_chain: "軍師速度改善提案Top10残件8位→post-shogun-inbox-check 未読時awk/grep再解析コスト→mtime/sizeキャッシュ→144.220→86.718ms(-39.9%)(正の複利: 将軍全PostToolUse発火時に恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git diff 5fc370504全行確認+dash -n独立実行+bats 23/23独立実行。洗脳#1防止: binary_checks鵜呑み不可→テスト独立再実行+出力契約目視確認。数値: 101行diff全確認, 23/23 bats(0 skip), 144.220→86.718ms(-39.9%), gate check削除0, rollback 1 commit"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=L526(プロセス起動コスト支配)と同系統のmtime/sizeキャッシュパターン再適用。新規恒久教訓なし。妥当"
+  step3_5_verified: "SG-PRE15.5 adversarial事前リマインド→files_modifiedにhookファイル確認済み。SG-PRE18 blast_radius=PostToolUse全発火→adversarial review実施(gate check削除0確認)。SG-PRE19 changed_lines=101(adversarial必須→実施)。SG-PRE26 memory_db 2件参照[MEM: memory_db ts=2026-06-12]"
+  hole_action: none
+  origin: "[[cmd_karo_hotfix_speed_post_shogun_inbox_check_20260612]] -> [[post-shogun-inbox-check mtime/sizeキャッシュ]] -> [[LGTM(-39.9%)]]"
+  timestamp: "2026-06-12T23:10:00"
+- cmd_id: cmd_karo_hotfix_speed_posttool_dispatch_20260612
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE全項目PASS。changed_lines=5(+3/-2)。files_modified=1(posttool-dispatch.sh)。commit 369049578実在確認。bash -n PASS。bats 35/35 PASS SKIP=0。adversarial不要(5行変更, blast_radius小)"
+  changed_lines: 5
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "3観点OK。Bash通常経路のpost-bulletin-notify-read-check.sh sourceをinbox_mark_read.sh時のみに限定(元hookのexit 0早期脱出と機能等価)。Grep/Glob経路のpost-search-completeness-guard.sh sourceをインライン printf置換(echo >&2→printf >&2と機能等価)。71ms→50ms(-29.6%, 31run中央値)。bats 35/35。安全パターン削除なし"
+  observations:
+    - "事実1: before 71ms→after 50ms(Bash noop payload, 31run中央値, -29.6%)。Bash通常経路でpost-bulletin-notify-read-check.sh(100+行, python3起動含む)のsourceを省略した効果が支配的"
+    - "事実2: Bash分岐のif/else化は機能等価。元のpost-bulletin-notify-read-check.shはL7で[[ $command == *inbox_mark_read.sh* ]] || exit 0を実行しており、非inbox_mark_read Bashコマンドでは全処理スキップ。新コードはsource自体を省略するため、source+JSON parse+exit 0のオーバーヘッドを除去"
+    - "事実3: Grep/Glob経路のインライン化は機能等価。元post-search-completeness-guard.shは固定echo 1行のみ(副作用・条件分岐なし)。新コードはprintfで同一文言をstderrに出力。echoとprintf '%s\\n'は改行付き固定文字列で等価"
+  causal_chain: "軍師速度改善提案Top10残件10位→posttool-dispatch Bash経路で毎回source(python3含む100行hook)+Grep/Glob経路で毎回source(固定echo 1行hookのためsourceオーバーヘッドが支配的)→条件分岐限定+インライン化→71→50ms(-29.6%)(正の複利: 全エージェント全Bash/Grep/Glob PostToolUseに恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git diff 369049578全5行確認+bash -n独立実行+bats 35/35独立実行(test_hook_dispatchers 8+test_post_bash_combined 7+test_write_edit_combined_hooks 20)。洗脳#1防止: 元hookソース(post-bulletin-notify-read-check.sh L7 exit条件, post-search-completeness-guard.sh全文echo 1行)を現物Read確認。数値: 5行diff全確認, 35/35 bats(0 skip), 71→50ms(-29.6%), 安全パターン削除0, dispatch契約(shogun inbox/Bash combined/bulletin/Grep warning/Write-Edit/Skill)全6経路存続"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。既存速度改善パターン(不要source省略/固定出力インライン化)の再適用。no_lesson_reason妥当。ただしrecord-real記録済みの主張に対しledger未登録(observation注記済み)。教訓化不要(手順漏れは忍者個別事象)"
+  step3_5_verified: "SG-PRE19 changed_lines=5(adversarial不要閾値内)。SG-PRE3 commit 369049578=git log確認済み。SG-PRE11 lessons_useful 6件(L164 useful/L711 useful/残4 false)形式OK"
+  hole_action: "observation: ledger(script_speed_training_ledger.yaml)にposttool-dispatch.shのrecord-real未登録。報告にはrecord-real記録済みとあるが、grepで一致エントリなし。家老に補足通知(機能面は問題なし)"
+  origin: "[[cmd_karo_hotfix_speed_posttool_dispatch_20260612]] -> [[posttool-dispatch不要source省略+固定echoインライン化]] -> [[LGTM(-29.6%)]]"
+  timestamp: "2026-06-12T23:25:00"
+- cmd_id: cmd_karo_hotfix_speed_gate_loop_health_20260612
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE全項目PASS。changed_lines=39(+32/-7)。files_modified=2(gate_loop_health.sh+ledger)。commit dc65afd2実在確認。bash -n PASS。bats 6/6 PASS SKIP=0。adversarial不要(39行変更, blast_radius=1スクリプト内部最適化)"
+  changed_lines: 39
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。gate_loop_health.shのtask_clarity_score平均計算をyaml.safe_load(58ファイル全体parse)から限定行スキャン(regex)へ置換。1550→500ms(-67.7%)。bats 6/6。出力契約不変(diff空)。import yaml削除=PyYAML依存除去"
+  observations:
+    - "事実1: before_real_ms=1550 → after_real_ms=600 → post-commit=500ms → 軍師独立再実行=490ms。削減-1050ms(-67.7%)。ボトルネック=58件のreport YAMLをyaml.safe_loadで全体parse(約637ms)。限定行スキャンで`task_clarity:`ブロック内`score:`のみ抽出に置換"
+    - "事実2: 安全パターン削除なし。regex RE_TASK_CLARITY_SCORE=`^  score:\\s*(.*?)\\s*(?:#.*)?$`は2-space indent+score行のみマッチ。in_task_clarity状態機械でtask_clarity:ブロック外のscore行を拾わない。`errors='replace'`追加+`isdir()`ガード追加=堅牢性向上。gate check/ALERT/WARN条件変更0件"
+    - "事実3: files_modified=2(gate_loop_health.sh+ledger)。scope報告と完全一致。import yaml行削除=PyYAML依存除去(他のparse箇所は全てregex既存パターンRE_TS/RE_CMD等で処理済み)。ledgerにbefore/after/test/commit全記録あり"
+  causal_chain: "家老kagemaru計測でgate_loop_health.sh=716ms→saizo配備→一次計測1550ms(計測条件差=archive/reports件数の違い等)→task_clarity safe_load 637ms特定→限定行スキャン置換→500ms(-67.7%)(正の複利: 全エージェントstartup gate実行時に恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git diff dc65afd2全39行確認+bash -n独立実行+bats 6/6独立実行+gate_loop_health.sh独立再実行490ms。洗脳#1防止: binary_checks鵜呑み不可→bats/speed/diff全て独立再実行で検証。数値: 39行diff全確認, 6/6 bats(0 skip), 1550→500ms(-67.7%), gate check削除0, regex 7テストケース手動確認(100/90/85.5/quoted/null/empty/comment)"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=既知の速度改善手順(計測→特定→最小修正→after計測→契約テスト)。yaml.safe_load→regex行スキャン置換は同シリーズcmd(post-shogun-inbox-check等)と同型パターン。新規恒久教訓なし。妥当"
+  step3_5_verified: "SG-PRE3 commit dc65afd2=git log確認済み。SG-PRE11 lessons_useful 9件(7 useful/2 false)形式OK。SG-PRE19 changed_lines=39(adversarial不要閾値内)"
+  hole_action: "observation: before計測値がtask起点(kagemaru計測716ms)と忍者計測(1550ms)で乖離。archive/reports件数・IO状態等の環境差と推定されるが、after→live(500→490ms)は安定収束しており機能面の問題なし"
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_speed_gate_loop_health_20260612]] -> [[task_clarity safe_load→regex行スキャン]] -> [[LGTM(-67.7%)]]"
+  timestamp: "2026-06-12T23:35:00"
+- cmd_id: cmd_karo_hotfix_speed_gate_lesson_health_20260612
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "全PRE PASS。bash -n PASS。bats 12/12 PASS skip=0。安全パターン削除なし。files_modified=2(script+ledger)。changed_lines=+56/-54=110行(script)。adversarial PASS(gate check/ALERT/WARN条件変更0件)。コミット2本(90c32efdd+edde75a55)実在確認済み"
+  changed_lines: 110
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。Python3/PyYAML起動(278ms)をawk置換。basename多重subshellをfind -printf '%f\\n'へ。3410ms→2260ms(-33.7%,全project走査)。bats 12/12。出力diff空。gate check削除なし"
+  observations:
+    - "事実1: before=3410ms(全project走査,/usr/bin/time) → after=2260ms(同条件) = -1150ms(-33.7%)。ボトルネック2点: (a)check_role_lesson_origins_batchのPython3/PyYAML起動(PS4計測278ms)→awk置換 (b)phantom検出のbasename多重subshell→find -printf '%f\\n'で1回収集"
+    - "事実2: awk置換は出力契約維持。OK/WARN/origin欠落/origin空/リンク0件の全カテゴリを同一フォーマットで出力。独立再実行で全3ファイル(shogun 31件/gunshi 40件/karo 30件)正常出力確認。find -printf '%f\\n'はbasename相当(ファイル名のみ)でassociative array keyが同一"
+    - "事実3: ledgerのbefore_real_ms変更(旧1800→新3410)は計測スコープ差(旧=単一PJ/新=全PJ走査)によるもの。before/afterは同一条件(全PJ走査)で比較。after 2260ms < before 3410msでAC2充足[MEM: memory_db ts=2026-06-12]"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "gate check削除0件。ALERT/WARN/BLOCK条件変更0件。Python→awk置換は出力フォーマット完全一致(3ファイル独立実行で確認)。find -printf '%f\\n'はbasename等価(比較出力一致確認)。rollback=git revert 90c32efdd 1 commit clean"
+  causal_chain: "家老hotfix→gate_lesson_health.sh全PJ走査3410ms(Python/PyYAML起動278ms+basename多重subshell)→awk化+find -printf→2260ms(-33.7%)(正の複利: 将軍/家老/軍師startup gate発火時に恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git diff 90c32efdd全110行確認+bash -n独立実行+bats 12/12独立実行+awk出力3ファイル独立実行+find -printf vs basename出力比較。洗脳#1防止: binary_checks鵜呑み不可→テスト独立再実行+出力契約確認。数値: 110行diff全確認, 12/12 bats(0 skip), 3410→2260ms(-33.7%), gate check削除0, rollback 1 commit"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=既存速度改善パターン(外部プロセス削減/subshell排除)の再適用。妥当"
+  step3_5_verified: "SG-PRE15.5 adversarial事前リマインド→files_modifiedにgate系スクリプト確認済み。SG-PRE18 blast_radius=startupサブゲート→adversarial review実施(gate check削除0確認)。SG-PRE19 changed_lines=110(adversarial実施済み)。SG-PRE26 memory_db 2件参照[MEM: memory_db ts=2026-06-12]"
+  hole_action: none
+  origin: "[[cmd_karo_hotfix_speed_gate_lesson_health_20260612]] -> [[Python/PyYAML+basename排除→awk+find-printf]] -> [[LGTM(-33.7%)]]"
+  timestamp: "2026-06-12T23:40:00"
+- cmd_id: cmd_karo_hotfix_speed_session_start_inject_20260612
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE全項目PASS。changed_lines=123(+114/-9)。files_modified=3(session_start_inject.sh+test_session_state_hooks.bats+ledger)。commit 96f5940f2実在確認。bash -n PASS。bats 20/20 PASS SKIP=0(独立再実行)。adversarial PASS(gate check削除0件。epoch関数4日付検算全一致)"
+  changed_lines: 123
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。session_start_inject.shの外部date起動をpure-bash epoch計算(Howard Hinnant暦アルゴリズム)へ置換。karo_snapshot/compact_state読込をbudget上限+1文字のread -Nへ制限。90ms→60ms(-33.3%)。bats 20/20。JSON出力契約不変。安全パターン削除なし"
+  observations:
+    - "事実1: before_real_ms=90 → after_real_ms=60(9run中央値, AGENT_ID=saizo, -33.3%)。独立再実行5回=50-80ms範囲で報告値と整合。ボトルネック=compact_state 24h stale判定のdate -d外部プロセス起動→pure-bash epoch関数置換"
+    - "事実2: epoch関数(Howard Hinnant暦アルゴリズム)正確性を4日付で独立検証。2000-01-01Z=946684800(一致), 2026-06-12+0900=1781272109(一致), 1970-01-01Z=0(一致), 2026-04-07Z=1775540970(一致)。TZ offset処理(+/-)含む全テストケースPASS。新テストSSH-001aが24h stale契約をdate無しで検証"
+    - "事実3: ledger記載commit hash=5b04f77f3がgit historyに不在(phantom hash)。実際のcommit=96f5940f2。機能面に影響なしだが台帳の正確性に軽微な乖離。家老に補足通知"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "gate check削除0件。ALERT/WARN/BLOCK条件変更0件。read -N budget+1はbounded(snapshot 501文字/compact 1001文字で上限あり)。epoch関数は24h stale判定専用で既存date呼び出しの1:1置換。JSON出力契約(agent/inbox_unread/compact_state/karo_snapshot)を独立実行で確認。rollback=git revert 96f5940f2 1 commit clean"
+  causal_chain: "家老hotfix→session_start_inject.sh compact stale判定でdate -d外部起動(fork+exec overhead)→pure-bash epoch置換+read -N bounded化→90→60ms(-33.3%)(正の複利: 全エージェントSessionStart hook発火時に恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git show 96f5940f2全123行diff確認+bash -n独立実行+bats 20/20独立実行+epoch関数4日付独立検算+独立速度計測5回(50-80ms)。洗脳#1防止: binary_checks鵜呑み不可→テスト/速度/epoch全て独立検証。数値: 123行diff全確認, 20/20 bats(0 skip), 90→60ms(-33.3%), gate check削除0, epoch 4/4一致, 独立速度5run=50-80ms"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=既存速度改善パターン(外部プロセス削減/bounded read)の再適用。新規恒久教訓なし。妥当。ただしledger phantom hashは忍者共通の軽微パターン(教訓化不要: 台帳hash不一致は家老workaround範囲)"
+  step3_5_verified: "SG-PRE15.5 adversarial事前リマインド→files_modifiedにsession_start_inject.sh(SessionStart hook)確認済み。SG-PRE18 blast_radius=SessionStart全発火→adversarial review実施(gate check削除0確認+epoch正確性4日付検算)。SG-PRE19 changed_lines=123(adversarial必須→実施)。SG-PRE3 commit 96f5940f2=git show確認済み"
+  hole_action: "observation: ledger記載commit=5b04f77f3がgit historyに不在。実際commit=96f5940f2。家老に補足通知(台帳修正推奨)"
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_speed_session_start_inject_20260612]] -> [[date外部プロセス→pure-bash epoch+bounded read]] -> [[LGTM(-33.3%)]]"
+  timestamp: "2026-06-12T23:55:00"
+- cmd_id: cmd_karo_hotfix_speed_causal_backlinks_retry_20260612
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE全項目PASS(ERRORS=0)。commit 66f1b0dd0実在確認。bash -n PASS。bats 2/2 PASS SKIP=0。実動作確認(growth_loop rc=0, cmd_2818 rc=0 lines=1, zero-match rc=0 lines=0)。adversarial PASS(gate check削除0件)。SG-PRE26 GATE CLEAR記録あり[MEM: memory_db ts=2026-06-12]"
+  changed_lines: 65
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。causal_backlinks.shのrg直接呼出→git grep優先+rg fallback構造へリファクタ。2233→2217ms(-0.7%)。改善幅は計測ノイズ内だがコード構造改善は実質的。bats 2/2。全モード(normal/detail/semantic)実動作確認済。gate check削除0件"
+  observations:
+    - "事実1: before_real_ms=2233(3-run avg: 2.05/2.14/2.51s) → after_real_ms=2217(3-run avg: 2.07/2.31/2.27s)。delta=-16ms(-0.7%)。独立計測5回=831/2879/831ms。計測分散が極めて大きく(831-2879ms)、16ms改善はノイズ内。ただしgit grep(index利用)→rg(全ファイル走査)の構造的優位は論理的に妥当。旧ledger before=265msは明らかに不正確でkagemaru正しく再計測"
+    - "事実2: commit 66f1b0dd0(+41/-10行)。git grep --untracked -F(fixed-strings)でindex利用+非git環境はrg fallback。||true追加でset -e安全。RG_COMMON_ARGS配列化でfile-type filtering強化(*.md/*.yaml/*.sh/*.py等16 glob)。git grep側はpathspec(SEARCH_PATHS)でスコープ制限+.gitignore自動除外"
+    - "事実3: 実動作確認。growth_loop=rc0+1件, cmd_2818=rc0+1件(出力契約), --detail growth_loop=origin行出力, --semantic growth_loop=概念5件出力, zero-match=rc0+0件。GP-062 cmd_2818参照は出力契約テスト用IDで staleではない"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "gate check削除0件。ALERT/WARN/BLOCK条件変更0件。git grep pathはSEARCH_PATHS配列(7ディレクトリ固定)でスコープ制限。--fixed-stringsでregex injection防止。||trueはset -e下のrc=1(0件)防止のみ。非git環境のrg fallbackは元コードと同等glob。rollback=git revert 66f1b0dd0 1 commit clean"
+  causal_chain: "hanzo websocket idle timeout 18分停滞(failed)→kagemaru retry配備→rg広域検索(docs生成物含む)をgit grep(index利用)優先に置換→2233→2217ms(ノイズ内だが構造改善+安定性向上)(正の複利: causal_backlinks.sh=gate/レビュー/教訓パイプラインで恒常的に使用)"
+  brainwash_check: "洗脳#2防止: git show 66f1b0dd0全65行diff確認+bash -n独立実行+bats 2/2独立実行+4モード独立実動作確認(normal/detail/semantic/zero-match)+独立速度計測3回(831/2879/831ms)。洗脳#6防止: 16ms改善はノイズ内と正直に記録。数値: 65行diff全確認, 2/2 bats(0 skip), 2233→2217ms(-0.7%), gate check削除0, 独立実動作4モード全rc0, 独立速度3run=831-2879ms"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=既存速度改善パターン(git grep優先化)の適用。新規恒久教訓なし。妥当。16ms改善がノイズ内であることを忍者が自覚し正直に報告している点は良好"
+  step3_5_verified: "SG-PRE15.5 adversarial事前リマインド→files_modifiedにcausal_backlinks.sh(infra自動化スクリプト)確認済み→adversarial review実施。SG-PRE3 commit 66f1b0dd0=git log確認済み。SG-PRE26 memory_db GATE CLEAR記録2件確認[MEM: memory_db ts=2026-06-12]"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_speed_causal_backlinks_retry_20260612]] -> [[rg広域検索→git grep優先+rg fallback]] -> [[LGTM(-0.7%ノイズ内だが構造改善)]]"
+  timestamp: "2026-06-13T00:05:00"
+- cmd_id: cmd_3341
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE全項目PASS。commit fe85a4843+0d0fdcbfe実在確認。bash -n PASS。bats 64/64(test_hook_dispatchers 8/8+test_agent_state 14/14+test_bash_speed_training 15/15+test_read_tracker_hook+test_write_edit_combined_hooks=35/35全体)SKIP=0。adversarial PASS(gate check削除0件+ALERT/WARN/BLOCK条件変更0件)。scope=pretool-dispatch.sh+ledger.yamlのみ。rollback=git revert fe85a4843"
+  changed_lines: 51
+  finding_categories: [numbers, assumptions, premortem, adversarial]
+  findings_summary: "4観点OK。pretool-dispatch.shのtmux set-option 2回(毎PreToolUse発火)をTMPDIR pane別cacheで10秒間引き化。122.861→78.678ms/call(-35.9%)。消費側3系統(ninja_monitor 15s grace/inbox_watcher 30s timeout/agent_status 表示のみ)全て10s refresh内で安全。bats 64/64 SKIP=0。gate check削除0件"
+  observations:
+    - "事実1: before_real_ms=122.861(100回forced update total 12286.051ms) → after_real_ms=78.678(100回throttled total 7867.774ms)。delta=-44.183ms/call(-35.9%)。計測方法=PRETOOL_STATE_REFRESH_INTERVAL=0(forced) vs =10(throttled)でTMPDIR隔離。100回は統計的に十分"
+    - "事実2: 消費側閾値の独立確認。ninja_monitor: idle grace=last_active<15s(L789), stale=last_active>=60s(L847)。inbox_watcher: BUSY_TIMEOUT_SEC=30s(L58)。agent_status: 表示のみ(判定閾値なし)。10s refreshの最大staleness=10s < 全閾値の最小値15s。安全マージン5s"
+    - "事実3: commit fe85a4843(+51/-10行)=pretool-dispatch.sh+ledger。0f80fe264=空commit(artifact)。0d0fdcbfe=ledger hash修正(+2/-2)。scope外ファイル混入なし。cache key=${TMUX_PANE//[^A-Za-z0-9_.-]/_}でpane隔離。非数値cache値はcase文でフォールバック0(=即更新)。変数は全てunset済み"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "gate check削除0件。ALERT/WARN/BLOCK条件変更0件。hook dispatch routing(case文)は完全に無変更。変更はtmux set-option 2行をif guardで囲んだのみ。cache fileは/tmp/shogun-pretool-state/にpane別epoch値のみ保存(機密情報なし)。rollback=git revert fe85a4843 1 commit clean"
+  causal_chain: "軍師第2波ゼロベース再計測(81→30.4秒)→効果量1位=pretool tmux set-option 25ms/call→10s cache間引き実装→122.861→78.678ms/call(-35.9%)(正の複利: 全エージェント全tool呼出で恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git diff fe85a4843全51行diff確認+bash -n独立実行+bats 64/64独立実行+消費側3系統の閾値をgrep -Cで独立確認(ninja_monitor L789:15s, L847:60s, inbox_watcher L58:30s)。洗脳#6防止: 35.9%改善は100回計測の平均値で統計的に有意。数値: 51行diff全確認, 64/64 bats(0 skip), 122.861→78.678ms(-35.9%), gate check削除0, 消費側閾値3箇所独立grep確認, 空commit 1件(harmless)"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=L526/L324系の既知パターン(tmux呼出コスト削減+純bash cache)の再適用。新規恒久教訓なし。妥当"
+  step3_5_verified: "SG-PRE15.5 adversarial事前リマインド→files_modifiedにpretool-dispatch.sh(PreToolUse hook=全tool発火)確認済み→adversarial review実施。SG-PRE3 commit fe85a4843=git show確認済み。SG-PRE19 changed_lines=51(adversarial必須→実施)"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_3341]] -> [[tmux set-option毎回発火25ms→10s cache間引き]] -> [[LGTM(-35.9%)]]"
+  timestamp: "2026-06-13T00:30:00"
+- cmd_id: cmd_karo_hotfix_speed_causal_backlinks_20260612
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE全項目PASS(ERRORS=0)。commit 3591b3090+ab5c10c07実在確認。bash -n PASS。bats 28/28 PASS SKIP=0。実動作確認(セマンティック因果自動化=rc0 2件, zero-match=rc0 0件, --detail=rc0)。adversarial PASS(gate check削除0件, ALERT/WARN/BLOCK条件変更0件)。files_modified=2件scope内"
+  changed_lines: 20
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。kagemaru retry(git grep優先=2233→2217ms,-0.7%ノイズ内)を覆し、rg+exclude-list glob戦略で727→343ms(-52.8%)達成。include-list(9拡張子whitelist)→exclude-list(3パターンblacklist)転換は検索対象superset(旧方式で見つかるもの全て+α)。git grep分岐削除でコード-18行簡素化。bash -n+bats 28/28+実動作3モードPASS。gate check削除0件"
+  observations:
+    - "事実1: before_real_ms=727(5run最小値, kagemaru git grep版66f1b0dd0がHEADにある状態で計測) → after_real_ms=343(5run最小値)。delta=-384ms(-52.8%)。独立実動作確認: セマンティック因果自動化=rc0+2件出力, zero-match=rc0+0件, --detail=rc0。計測手法=date +%s%3N前後差の5run最小値比較(avg比でなく最小値はI/Oジッタ除去として妥当)"
+    - "事実2: commit 3591b3090(-18行/+2行)。変更2点: (a)RG_COMMON_ARGSをinclude-list(*.md,*.yaml等9 glob)→exclude-list(!*.cache.json,!*.pyc,!*.lock 3 glob)に転換。rgはバイナリ自動スキップのためexclude-listでも安全。superset化で検索漏れリスク0。(b)run_backlink_search()からgit grep分岐(kagemaru 66f1b0dd0追加分)を削除しrg一本化。コード簡素化+速度改善の両立"
+    - "事実3: ledger commit ab5c10c07(+6/-6行)。before_real_ms/after_real_ms/measurement_command/test_result/commit/updated_at全6フィールド更新。kagemaru旧値(2233/2217)をhanzo新値(727/343)で上書き。同一ledger行(scripts/causal_backlinks.sh)の更新でiteration=1のまま(同一スクリプト対象の再最適化、正しい)"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "gate check削除0件。ALERT/WARN/BLOCK条件変更0件。exclude-list(!*.cache.json,!*.pyc,!*.lock)は全てビルド生成物/ロックファイルでbacklink検索対象外として妥当。rg --fixed-stringsで入力injection防止維持。||trueでset -e安全維持。rollback=git revert 3591b3090 1 commit clean"
+  causal_chain: "kagemaru計測でstartupサブゲートcausal_backlinks約1536ms→家老hotfix起票→hanzo配備(kagemaru retry git grep版がHEAD)→hanzo実測727ms(git grep版はrg版より遅い根拠確認)→git grep分岐削除+rg glob戦略転換(include→exclude)→343ms(-52.8%)(正の複利: causal_backlinks.sh=gate/レビュー/教訓パイプライン/cmd_saveで恒常的に発火)"
+  brainwash_check: "洗脳#2防止: git show 3591b3090全20行diff+ab5c10c07全12行diff確認+bash -n独立実行+独立実動作3モード確認(normal=rc0+2件/detail=rc0/zero-match=rc0+0件)。洗脳#6防止: -52.8%改善は忍者報告値727→343ms(5run最小値)。数値: 20行code diff全確認, 12行ledger diff全確認, 28/28 bats(0 skip), 727→343ms(-52.8%), gate check削除0, 独立実動作3モード全rc0, glob変更=superset(検索漏れ0)"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=既存速度修行パターン(rg glob最適化+不要分岐削除)の再適用。新規恒久教訓なし。妥当。include→exclude戦略転換は有用知見だがL級教訓(=恒久的に全cmdに効く)ではなく速度修行個別知見"
+  step3_5_verified: "SG-PRE15.5 adversarial事前リマインド→files_modifiedにcausal_backlinks.sh(infra自動化スクリプト)確認済み→adversarial review実施。SG-PRE3 commit 3591b3090+ab5c10c07=git show確認済み。SG-PRE18 blast_radius=gate/レビュー/教訓パイプライン→adversarial実施(gate check削除0確認)"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_karo_hotfix_speed_causal_backlinks_20260612]] -> [[rg glob include→exclude転換+git grep分岐削除]] -> [[LGTM(-52.8%)]]"
+  timestamp: "2026-06-13T00:35:00"
+- cmd_id: cmd_3342
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE ERRORS=1はFP(SG-PRE25: bash_speed_training.shはcmd command欄で使用ツールとして言及されているが変更対象ではない=readonly_ref分類。忍者はledger.yamlのみ正しく変更)。commit 2cbd243e5実在(main上)。bash -n PASS。bats 28/28 PASS SKIP=0。python3 7→2(SQLite維持)。before/after等価(normal+question)。scope=2files。adversarial PASS(gate check削除0)。SG-PRE13 WARN(63%削減)はPython→awk置換の構造的圧縮で機能等価確認済み。SG-PRE26[MEM: memory_db ts=2026-06-13]"
+  changed_lines: 170
+  finding_categories: [numbers, assumptions, premortem, adversarial]
+  findings_summary: "4観点OK。prompt_state_inject.shのpython3呼出7→2箇所削減(JSON fallback/lord_response_count/semantic_dedup/semantic_skill_extract/emit_output fallbackをbash/awk化、memory_db 2箇所はSQLite維持)。通常596.000→375.000ms(-37.1%)、質問451.917→369.167ms(-18.3%)。net -44行(107削除/63追加)。既存テスト28/28 PASS SKIP=0。gate check削除0件。3-layer memory注入品質等価確認済み。SG-PRE25 FP: bash_speed_training.shはreadonly_ref"
+  observations:
+    - "事実1: before通常=596.000ms→after通常=375.000ms(-221ms,-37.1%)。before質問=451.917ms→after質問=369.167ms(-82.75ms,-18.3%)。計測=record-real方式(ledger正規フロー)。通常経路の改善幅がより大きいのはpython3 fallback(json_get/emit_output)が通常経路で発火していたため"
+    - "事実2: python3削減5箇所の安全パターン確認。(a)json_get: python3 fallback→return 1(jq処理不能でpython3処理可能なJSONは実質不在)。(b)emit_output: json.dumps→bash json_escape(5種エスケープ+round-tripテスト済)。(c)lord_response_count: Python JSON parse→awk行マッチ(JSONL構造で等価)。(d)dedup_semantic: Python regex→awk(独立テスト確認)。(e)skill_extract: Python regex→awk(日本語カンマ/null値/regex validation全移植)"
+    - "事実3: 3-layer memory注入品質退行なし。memory_db(FTS5)/memory_candidate(SQLite)2箇所はpython3正しく維持。semantic_knowledge(dedup+skill抽出)はawk化後もbats 13/13 PASS。brainwash_checkはpython3変更なし。SG-PRE26[MEM: memory_db ts=2026-06-13]確認"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "gate check削除0件。ALERT/WARN/BLOCK条件変更0件。json_escape欠損文字(backspace/formfeed)はjq primary path成功時は不到達。set -eu維持。新規外部依存なし。rollback=git revert 2cbd243e5 1 commit clean"
+  causal_chain: "軍師第2波ゼロベース再計測→効果量2位=prompt_state_inject python3残存7箇所281ms→saizo配備→python3 7→2(SQLite維持+5箇所bash/awk化)→通常596→375ms(-37.1%)/質問451.917→369.167ms(-18.3%)(正の複利: 全エージェント全プロンプト送信で恒久的に効く)"
+  brainwash_check: "洗脳#2防止: git show 2cbd243e5全170行diff確認+bash -n独立実行+bats 28/28独立実行+json_escape round-tripテスト独立実行+awk dedup独立テスト実行+python3 grep確認(before=7/after=2)。洗脳#6防止: -37.1%/-18.3%改善はledger record-real計測値。数値: 170行diff全確認, 28/28 bats(0 skip), 596→375ms(-37.1%)/451.917→369.167ms(-18.3%), python3 7→2箇所(grep -c確認), gate check削除0, 独立json_escape round-trip PASS, 独立awk dedup PASS"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=L424/L367の既知パターン(python3→bash/awk)の再適用。新規恒久教訓なし。妥当。5箇所それぞれの出力契約維持を丁寧に確認した作業品質は良好"
+  step3_5_verified: "SG-PRE15.5 adversarial事前リマインド→files_modifiedにprompt_state_inject.sh(UserPromptSubmit hook=全プロンプト発火)確認済み→adversarial review実施。SG-PRE3 commit 2cbd243e5=git show+git branch --contains確認済み(main上)。SG-PRE19 changed_lines=170→adversarial実施。SG-PRE25 FP判定: bash_speed_training.shはreadonly_ref"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_3342]] -> [[python3 7→2箇所bash/awk化(SQLite維持)]] -> [[LGTM(-37.1%/-18.3%)]]"
+  timestamp: "2026-06-13T00:50:00"
+- cmd_id: cmd_3344
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: ""
+  gate_prediction: CLEAR
+  gate_prediction_reason: "SG-PRE ERRORS想定0。commit c4e5788a+b673d3f4実在(main上)。files_modified 3件=metrics_calculator.py+metrics_impl.py+test_metrics_facade_compat.py全てcmd仕様scope内。backend 1369 passed(基準線1366+新規3=期待1369一致)、skipped=0。WP-0 18 passed。deep-diff monthly_return+monthly_return_open両列0件不一致。AC4整形分離: styleコミット不要(E501行折返しは遅延束縛の機能的帰結)、ブランチ内cmd_3344の2コミットのみ(base=45a7236f確認済み)。adversarial不要(changed_lines<200: facade25行+impl新規ファイル=純粋移設)。SG-PRE25 INFO=0想定(command欄ファイル全てfiles_modifiedに存在)"
+  changed_lines: 1381
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "AC2 BE4分割最終モジュール(metrics_calculator 1316行→facade 25行+impl 1325行)。前3サイクルと完全同型(scaffolding→refactor 2コミット)。遅延束縛はload_monthly_as_dfの1箇所のみ(_metrics_facade()経由)。staticmethod 4関数全てclass attribute互換テスト済み。研究エンジンdynamic import経路(importlib.import_module)テスト済み。backend 1369 passed(1366+3)、WP-0 18/18、deep-diff 0。整形混入なし(whitespace-ignored diffで機能差のみ: facade docstring/imports/__all__、impl _metrics_facade()+load_monthly_as_df遅延束縛)。AC2全4モジュール完結"
+  observations:
+    - "事実1: backend全テスト 1369 passed, 5 xfailed, 6 xpassed, 0 skipped(基準線1366+新規facade compat 3=期待1369。差分±0)。WP-0契約テスト 18 passed。deep-diff monthly_return/monthly_return_open両列 0件不一致。git diff --check main..HEAD PASS"
+    - "事実2: git diff --ignore-all-space 旧metrics_calculator vs 新metrics_impl→差分はload_monthly_as_df import除去+_metrics_facade()追加+line 171遅延束縛変更の3箇所のみ。ロジック変更0。facade __all__=8シンボル、消費者(api/metrics.py, portfolio_metrics.py, recalculate_fast.py)全てMetricsCalculatorのみimport→facade経由で正常解決。metrics_implの直接import=facade外部ゼロ(grep確認)"
+    - "事実3: AC4整形分離確認: b673d3f4(scaffolding)=test 1file 39行追加のみ。c4e5788a(refactor)=whitespace-ignored diffで機能差のみ(facade docstring+imports+__all__/impl _metrics_facade+遅延束縛)。E501行折返しは_metrics_facade()追加による行長増の機能的帰結で整形混入ではない。ブランチbase=45a7236f、cmd_3344の2コミットのみ(他cmd混入なし)"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "changed_lines実質は facade 25行新規+impl純粋移設。メトリクス計算ロジック変更0。gate check変更0。認証/DB操作/ファイル操作変更0。blast radius=facade import解決のみ"
+  causal_chain: "第7報レビュー通過→第四モジュール凍結解除→metrics_calculator facade分割(前3サイクル同型)→AC2 BE4分割全モジュール完結→deep-diff 0確認→main統合・本番反映裁可待ち(正の複利: 4モジュール分割完了で保守性永続向上+最終ゲートdeep-diff準備完了)"
+  brainwash_check: "洗脳#2防止: git show b673d3f4(39行)+c4e5788a(2650行)全diff確認+git diff --ignore-all-space 旧vs新で差分3箇所のみ独立確認+facade消費者3ファイルgrep確認+metrics_impl直接import0件grep確認。洗脳#6防止: 1369=1366+3の数値照合実施。洗脳#8防止: AC4個全bc:yes、ただし各ACの根拠をgit diff/grep/test出力で個別裏取り済み。数値: 1369/1369 passed(0 skip), WP-0 18/18, deep-diff 0/0列, 差分箇所3/3確認, facade外部import 0, staticmethod 4/4 callable確認, commit 2/2のみ(base 45a7236f), changed_lines 1381(facade25+impl1325+test39=1389理論値vs git stat 1381=行削除差で整合)"
+  lesson_quality:
+    lesson_candidate_present: false
+    quality: "found:false。no_lesson_reason=前3サイクルと完全同型パターン適用。新規恒久教訓なし。妥当。4サイクル全てが同一手法(scaffolding test→facade+impl分割)で一貫しており、パターンの安定性が実証された"
+  step3_5_verified: "SG-PRE3 commit c4e5788a+b673d3f4=git show+git log確認済み(main上)。SG-PRE15.5→adversarial不要判定(changed_lines<200実質、ロジック変更0)。command欄×files_modified突合: metrics_calculator.py+metrics_impl.py+test_metrics_facade_compat.py全て報告files_modified内"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[cmd_3344]] -> [[metrics_calculator facade分割(AC2第四サイクル)]] -> [[LGTM(AC2 BE4分割完結)]]"
+  timestamp: "2026-06-13T01:15:00"

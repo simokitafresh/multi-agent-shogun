@@ -599,3 +599,11 @@ lessons:
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=忍者作業中の共有作業ツリー'
 # LS062: superseded by LS-A04(39) (ブランチ基点のbinary_check必須化=テンプレートルール(37)の拡張形。2026-06-12統合)
 # LS063: superseded by LS-A02(7) (裁可申請も推薦先行=殿との対話原則。gstack §2.3出典。2026-06-12統合)
+- id: 'LS062'
+  title: 'レビュー依頼ブランチはpush前に全コミット列を報告書と照合せよ'
+  origin: '[[cmd_3334]]'
+  detail: 'cmd_3334第7報で『2コミット構成』と報告したが、実際のレビューブランチは3コミット(59148dea=cmd_3335が混在)だった。原因2層: (1)実装忍者が共有作業ツリーのチェックアウト中ブランチ(レビュー対象)へ別cmdの成果をcommitした=LS061の変形(branch切替え禁止は守られたが、チェックアウト中ブランチへの別任務commitが新パターン) (2)将軍がgit push前にgit log origin/main..branchで全コミット列を検分せず、show -w単体検分のみで2コミットと思い込んだ。調査チーム検証で無害(純追加315行)と確認されマージ承認されたが、報告書と現物の乖離を将軍が作った。対処: (a)レビュー依頼済みブランチへの追加コミット禁止。必要時は報告書改訂+再依頼(調査チーム裁定2026-06-12) (b)将軍はブランチpush前と報告書記載前にgit log origin/main..branchの全コミット列を照合する (c)別cmdの忍者を共有ツリーで作業させる場合、家老はチェックアウト中ブランチを配備時に確認する'
+  source_cmd: 'cmd_3334'
+  created_at: '2026-06-12'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=全コミット列'

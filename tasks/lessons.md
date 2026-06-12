@@ -8005,3 +8005,80 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - 対象contextのALERTが解消してもdashboard-warnings全体には別contextのALERTが残り得る。報告では対象contextのbefore/after件数と全体残存件数を分けて書かないと、CLEAR対象を誤読する。今回coreは12件→0件、全体残存はdm-signal.md 1件 + dm-signal-research.md 2件。
+
+### L793: 運用ログ全体parse不能時は対象ブロック単体parseと正規ゲートで変更影響を検証する
+- **日付**: 2026-06-12
+- **出典**: cmd_karo_hotfix_gunshi_cs_operational_sim_20260612
+- **記録者**: kagemaru
+- **tags**: [infra,testing,review,process]
+- **target_files**: [logs/gunshi_review_log.yaml]
+- **origin**: [[cmd_karo_hotfix_gunshi_cs_operational_sim_20260612]]
+- **when**: 未設定
+- **how**: 未設定
+- logs/gunshi_review_log.yamlは既存先頭構造によりyaml.safe_load全体parseが失敗したが、変更3ブロックは単体safe_load成功し、gate_gunshi_cs_checklist/startupも正常にPASSした。長大運用ログ補完では全体parseの既存制約と変更箇所の構文影響を分けて検証する
+
+### L794: 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する
+- **日付**: 2026-06-12
+- **出典**: cmd_karo_hotfix_note_draft_fail_rate_20260612
+- **記録者**: hayate
+- **tags**: [infra,gate,gate]
+- **target_files**: [scripts/note_draft.sh,scripts/gates/gate_shogun_startup.sh]
+- **origin**: [[cmd_karo_hotfix_note_draft_fail_rate_20260612]]
+- **when**: 未設定
+- **how**: 未設定
+- 全ログではnote-draft 4/13=31%だったが、Gate20が読むtail 5000行では1/3=33%だった。FAIL率修正では対象gateの入力窓を再現しないと母数がずれ、改善証跡もずれる。次回はgate内のtail/window条件を先に抽出して同条件でbefore/afterを出す。
+
+### L795: script_refs_checked_atは複数ある場合最後の値が採用される
+- **日付**: 2026-06-12
+- **出典**: cmd_karo_hotfix_skill_script_refs_20260612
+- **記録者**: hanzo
+- **tags**: [infra,skill,gate,bash]
+- **target_files**: [skills/dream/SKILL.md,skills/shogun-clear-prep/SKILL.md]
+- **origin**: [[cmd_karo_hotfix_skill_script_refs_20260612]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し、最後の値をfreshness時刻として使う。本文先頭の時刻だけ更新しても末尾に古い時刻が残るとWARNが継続するため、同一SKILL.md内の全script_refs_checked_atをrgで確認する。
+
+### L796: script_refs_checked_atはファイル内最後の値を更新する
+- **日付**: 2026-06-12
+- **出典**: cmd_karo_hotfix_note_draft_skill_refs_20260612
+- **記録者**: kagemaru
+- **tags**: [infra,skill,gate,bash]
+- **target_files**: [skills/cdp-browse/SKILL.md,skills/note-writer/SKILL.md,skills/sengoku-writer/SKILL.md,skills/weekly-report-writer/SKILL.md]
+- **origin**: [[cmd_karo_hotfix_note_draft_skill_refs_20260612]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し最後の値をfreshness基準にする。本文先頭のメタデータだけ更新しても末尾の古いメタデータが残るとWARNが継続するため、同一SKILL.md内の全script_refs_checked_atを揃えてからgateを再実行する。 origin: [[cmd_karo_hotfix_note_draft_skill_refs_20260612]] -> [[最後のscript_refs_checked_at採用]] -> [[WARN継続防止]]
+
+### L797: semantic_map_generateの副作用差分はcommit前にscope検査する
+- **日付**: 2026-06-12
+- **出典**: cmd_karo_hotfix_insight_repeat_backlog_20260612
+- **記録者**: kotaro
+- **tags**: [infra,context,api,testing,bash]
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_karo_hotfix_insight_repeat_backlog_20260612]]
+- **when**: 未設定
+- **how**: 未設定
+- semantic_map_generate.sh実行後、docs/semantic-index/index.mdとcontext/semantic-map.mdに対象alias以外の大きな差分が発生した。commit前のgit diff --statで検出し、正本/生成物をrestoreしてalias最小差分へ戻した。次回は生成後にdiff --statとdiff -U0でscope外差分を必ず除外する。origin: [[semantic_stress_test_NO_MATCH]] -> [[semantic_map_generate副作用差分]] -> [[scope外commit防止]]
+
+### L798: superseded_by運用の件数gateはactive件数で測る
+- **日付**: 2026-06-12
+- **出典**: cmd_karo_hotfix_shogun_startup_deferred_20260612
+- **記録者**: hayate
+- **tags**: [infra,context,process,gate,bash]
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md,projects/infra/lessons_shogun.yaml,scripts/gates/gate_shogun_startup.sh]
+- **origin**: [[cmd_karo_hotfix_shogun_startup_deferred_20260612]]
+- **when**: 未設定
+- **how**: 未設定
+- projects/infra/lessons_shogun.yamlでLS052をLS048へsuperseded化してactive件数は31→30になったが、gate_shogun_startup.shはgrep -c '^- id:' の総件数を見ていたためWARNが残った。superseded_by付きは参考扱いという起動表示と一致させ、gateはYAML parseでactiveのみを数える必要がある。
+
+### L799: startupの教訓useful率健康指標はhotfix feedbackを分けて測る
+- **日付**: 2026-06-12
+- **出典**: cmd_karo_hotfix_startup_lesson_skill_health_20260612
+- **記録者**: hayate
+- **tags**: [infra,gate,db,lesson]
+- **target_files**: [scripts/gates/gate_lesson_health.sh,scripts/gates/gate_shogun_startup.sh,tests/unit/test_gate_lesson_health.bats,tests/unit/test_gate_shogun_startup.bats,skills/dream/SKILL.md]
+- **origin**: [[cmd_karo_hotfix_startup_lesson_skill_health_20260612]]
+- **when**: 未設定
+- **how**: 未設定
+- 自己修復hotfixは短時間に大量の教訓feedbackを返すため、通常/full作業向けの長期useful率を46.1% WARNへ押し下げた。健康指標ではtask_type=hotfixを除外し、hotfix側の改善は別指標で見るべき。origin: [[cmd_karo_hotfix_startup_lesson_skill_health_20260612]] -> [[hotfix_feedback_metric_pollution]] -> [[lesson_health_WARN_false_pressure]]
