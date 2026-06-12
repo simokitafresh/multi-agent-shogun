@@ -1087,8 +1087,43 @@ if [ ${#alerts[@]} -gt 0 ]; then
         esac
     done
     if [ -n "$_deferred_alerts" ]; then
-        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
-            "軍師startup先送りCRITICAL自動エスカレーション: ${_deferred_alerts}。軍師が対処できないため家老karo_directで対処を検討せよ" \
-            escalation gunshi 2>/dev/null || true
+        _deferred_message="軍師startup先送りCRITICAL自動エスカレーション: ${_deferred_alerts}。軍師が対処できないため家老karo_directで対処を検討せよ"
+        _deferred_dup_status=$(python3 - "$SCRIPT_DIR/queue/inbox/karo.yaml" "$_deferred_message" <<'PY' 2>/dev/null || true
+import sys
+from pathlib import Path
+
+try:
+    import yaml
+except Exception:
+    raise SystemExit(0)
+
+path = Path(sys.argv[1])
+target = sys.argv[2]
+if not path.exists():
+    raise SystemExit(0)
+
+try:
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+except Exception:
+    raise SystemExit(0)
+
+for msg in data.get("messages") or []:
+    if not isinstance(msg, dict):
+        continue
+    if msg.get("read"):
+        continue
+    if msg.get("from") == "gunshi" and msg.get("type") == "escalation" and msg.get("content") == target:
+        print("duplicate_unread")
+        break
+PY
+)
+        if [ "$_deferred_dup_status" = "duplicate_unread" ]; then
+            echo "  SKIP: 同一未読escalationが家老inboxに存在 — 重複送信を抑制"
+        else
+            bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+                "$_deferred_message" \
+                escalation gunshi 2>/dev/null || true
+        fi
+        unset _deferred_message _deferred_dup_status
     fi
 fi
