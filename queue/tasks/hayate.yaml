@@ -129,4 +129,4 @@ task:
       count: 17
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
   deployed_at: "2026-06-13T00:36:50"
-  progress: "AC1 PASS: record-real before_real_ms=26.122 after_real_ms=23.357 (after<before). AC2 PASS: bash -n PASS; bats tests/unit/test_hook_dispatchers.bats 8/8 PASS SKIP=0. AC3 PASS: ledger entry updated with status/before_real_ms/after_real_ms/test_result/commit=pending_commit; final commit hash will be amended after commit."
+  progress: "AC1 PASS: record-real before_real_ms=26.122 after_real_ms=23.357 (after<before). AC2 PASS: bash -n PASS; bats tests/unit/test_hook_dispatchers.bats 8/8 PASS SKIP=0. AC3 PASS: ledger entry updated with status/before_real_ms/after_real_ms/test_result/commit=570bde0e1."

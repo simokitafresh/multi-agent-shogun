@@ -3404,7 +3404,7 @@ entries:
   after_real_ms: 23.357
   real_measurement_command: "300x Grep payload through posttool-dispatch with TMUX_PANE non-shogun cache pre-created; avg_ms from date +%s%N loop"
   test_result: "bash -n .claude/hooks/posttool-dispatch.sh PASS; bats tests/unit/test_hook_dispatchers.bats 8/8 PASS SKIP=0"
-  commit: "pending_commit"
+  commit: "570bde0e1"
   assigned_to: hayate
-  updated_at: "2026-06-13T00:45:25"
+  updated_at: "2026-06-13T00:48:17"
   iteration: 1
