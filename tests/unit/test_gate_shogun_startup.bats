@@ -1192,6 +1192,31 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
+@test "startup deferral escalation is not resent while identical unread message exists" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データで検証する。"}
+EOF
+    cat > "$TEST_TMPDIR/logs/shogun_startup_alert_history.tsv" <<'EOF'
+run1	追体験自動化ターゲット: WARN
+run2	追体験自動化ターゲット: WARN
+EOF
+    cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'EOF'
+messages:
+- content: '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: 追体験自動化ターゲット: WARN が3セッション連続。将軍がcmd起票しないため家老karo_directで対処を検討せよ'
+  from: 'shogun'
+  id: 'msg_existing'
+  read: false
+  timestamp: '2099-01-01T00:00:00'
+  type: 'escalation'
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK: 追体験自動化ターゲット: WARN が3セッション連続"* ]]
+    [[ "$output" == *"SKIP: 同一未読escalationが家老inboxに存在"* ]]
+    [ ! -f "$TEST_TMPDIR/logs/inbox_write_calls.log" ]
+}
+
 @test "Q6 brainwashing answer present → no Q6 WARN" {
     SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
