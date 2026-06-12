@@ -471,14 +471,22 @@ cli_launch_cmd() {
     local base_cmd="$_CLI_LAUNCH_CMD"
     local static_args="$_CLI_LAUNCH_ARGS"
 
-    # model_nameからeffortを自動抽出 (gpt-X.X-{effort} パターン)
+    # model_nameからCLI引数を自動生成
     local extra_args=""
     if [[ "$model_name" == gpt-* ]]; then
+        # Codex: gpt-X.X-{effort} → -c model_reasoning_effort={effort}
         local effort="${model_name##*-}"
         case "$effort" in
             medium|low|high)
                 extra_args="-c model_reasoning_effort=${effort}"
                 ;;
+        esac
+    elif [[ "$model_name" == claude-* && "$_CLI_LAUNCH_TYPE" == "claude" ]]; then
+        # Claude Code: claude-sonnet-4-6 → --model sonnet, claude-haiku-4-5 → --model haiku
+        # claude-opus-4-6はデフォルトのため指定不要(指定しても害はないが冗長)
+        case "$model_name" in
+            claude-sonnet-*)  extra_args="--model sonnet" ;;
+            claude-haiku-*)   extra_args="--model haiku" ;;
         esac
     fi
 
