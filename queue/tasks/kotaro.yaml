@@ -32,7 +32,7 @@ task:
   parent_cmd: cmd_karo_hotfix_speed_post_write_edit_combined_20260612
   project: infra
   purpose: '軍師速度改善提案Top10残件6位: post-write-edit-combined hook の実行時間を機能等価のまま短縮する'
-  status: done
+  status: idle
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun
   task_id: cmd_karo_hotfix_speed_post_write_edit_combined_20260612_normal
