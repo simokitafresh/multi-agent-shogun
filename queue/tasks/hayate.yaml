@@ -3,11 +3,11 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: tools/bash_speed_training.sh record-realでbefore_real_ms/after_real_msを記録し、after < beforeを満たす
+      description: logs/hook_artifactsの該当pre-push失敗を読み、失敗テスト名・直接原因・現時点で解消済みかを数値で報告する
     AC2:
-      description: posttool-dispatchのルーティング機能等価を単体テストまたは再生payloadで検証し、SKIP=0を報告する
+      description: 未解消なら最小修正を実装し、該当Batsまたはpre-push相当の選択テストをPASSさせる
     AC3:
-      description: logs/script_speed_training_ledger.yamlへ対象script_path/status/before_real_ms/after_real_ms/test_result/commitを更新する
+      description: 同種hook_failureが次回重複alert化しない防御層を1つ以上コード/テスト/運用ログへ反映する
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -21,60 +21,33 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope: posttool-dispatch以外のhook再設計、機能削除、未計測の高速化主張
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_speed_posttool_dispatch_20260613
+  parent_cmd: cmd_karo_hotfix_hook_failure_triage_20260613
   project: infra
-  purpose: '速度改善第2波3位: posttool-dispatch fast pathを実測で高速化し、機能等価を保持する'
+  purpose: GA-055/059/060 hook_failureの重複再発を一次ログで分類し、再発防御または解消確認まで完了する
   status: done
   stop_for: []
-  target_path: .claude/hooks/posttool-dispatch.sh
-  task_id: cmd_karo_hotfix_speed_posttool_dispatch_20260613_normal
+  task_id: cmd_karo_hotfix_hook_failure_triage_20260613_normal
   task_type: hotfix
   related_lessons:
-  - id: 'L164'
-    summary: 'IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな'
-    detail: 'IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな'
-  - id: 'L653'
-    summary: 'skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数'
-    detail: 'skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数'
-  - id: 'L737'
-    summary: 'cmd_save.shに教育的メタデータ表示(show_lord_conversation_matches&, Q11 research dir scan等)を'
-    detail: 'cmd_save.shに教育的メタデータ表示(show_lord_conversation_matches&, Q11 research dir scan等)を'
-  - id: 'L711'
-    summary: 'git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje'
-    detail: 'git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje'
-  - id: 'L389'
-    summary: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
-    detail: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
-  - id: 'L377'
-    summary: 'lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam'
-    detail: 'lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam'
-  - id: 'L295'
-    summary: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
-    detail: 'yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ'
-  - id: 'L779'
-    summary: 'dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER'
-    detail: 'dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER'
-  - id: 'L624'
-    summary: 'yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用'
-    detail: 'yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用'
-  - id: 'L543'
-    summary: 'CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlの'
-    detail: 'CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlの'
+  - id: 'L508'
+    summary: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
+    detail: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json"
+  - "known_unknowns_principle — 無知の知:  memory/deepdive_causal_tracing_20260415.md context/growth-loop.md"
+  - "deepdive_principles — deepdive原理:  context/training-cycle.md docs/research/gunshi_idle_deepdive_design_impl_phantom_20260516.md — 軍師idle: deepdive設計実装ファントム問題(2026-05-16)"
+  - "growth_loop — 学習ループ:  AGENTS.md 学習ループ原則 context/growth-loop.md context/infrastructure.md 知識サイクル現状 scripts/gates/gate_cycle_health.sh 三層学習ループ健全性計測 scripts/karo_workaround_log.sh WA記録(成績表フィードバック) scripts/ci_status_check.sh CI状態チェック(品質フィードバック) scripts/lesson_impact_analysis.sh 教訓効果分析(注入率/参照率/CLEAR-BLOCK A/B) scripts/ralph_loop_metrics.sh ラルフループ定量計測(5指標: パターン再発/revert/完了速度/lesson-CLEAR相関/PI違反) scripts/knowledge_metrics.sh 教訓有効性+陳腐化検出(JSON/TSV出力対応) docs/research/gunshi_idle_growth_loop_nazenaze_20260515.md — 軍師idle: 成長ループなぜなぜ分析(2026-05-15) docs/research/gunshi_idle_immune_effectiveness_20260512.md — 軍師idle: 免疫システム有効性測定(2026-05-12) docs/research/gunshi_idle_immune_system_evidence_20260426.md — 軍師idle: 免疫システム証拠収集(2026-04-26) docs/research/gunshi_idle_immunity_measurement_20260510.md — 軍師idle: 免疫計測フレームワーク(2026-05-10)"
+  - "semantic_causal_automation — セマンティック因果自動化:  scripts/semantic_map_generate.sh scripts/causal_backlinks.sh docs/semantic-index/index.md"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/gs-speedup-knowledge.md"
   - "context/training-cycle.md"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
@@ -88,31 +61,22 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L164: IF Claude Code Hooksのshスクリプトを作成する時 THEN set -euのみ使用しpipefailは使うな
-      - L653: skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数
-      - L737: cmd_save.shに教育的メタデータ表示(show_lord_conversation_matches&, Q11 research dir scan等)を
-      - L711: git add後、別忍者のauto-commit before /clearが同一repoで走り、scripts/hooks/prompt_state_inje
-      - L389: 検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数
-      - L377: lesson_deprecate.shはPython埋込みでyaml.dumpを使用してlessons.yaml全体を書き換える。CLAUDE.md禁止のyam
-      - L295: yaml.dump/yaml.safe_dumpで運用YAML(queue/tasks/inbox/reports)を上書きするとデータ消失する。複雑なマルチラ
-      - L779: dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER
-      - L624: yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用
-      - L543: CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlの
+      - L508: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-08T14:43:04+09:00 | 家老にwaive指示送信完了。GATE再実行で cmd_3228がCLEARされる見込み。 殿、状況報告: - cmd_3228(Phase1 全スキル実行結果自動記録): 忍者が正しくposttoo"
-  - "2026-06-07T13:25:34+09:00 | push完了。殿、報告: **hook error修正完了** (`4246a6b9e`): - 原因: `post-search-completeness-guard.sh`のecho出力がstdo"
-  - "2026-06-11T13:52:13+09:00 | gpt忍者６名を推論lowのままでfastモードonで運用したい"
-  - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
-  - "2026-06-11T12:55:30+09:00 | 以上。cmd_3285完了報告サマリ： **実装内容（全AC PASS）:** - **AC1**: `scripts/pending_approval_set.sh` — flock安全なadd/r"
+  - "2026-06-12T22:25:18+09:00 | 【改善トリガー】hook_failure ALERT (GA-055)"
+  - "2026-04-15T19:47:07+09:00 | 【改善トリガー】hook_failure ALERT (GA-055)"
+  - "2026-06-13T00:25:33+09:00 | 【改善トリガー】hook_failure ALERT (GA-059)"
+  - "2026-06-06T19:26:20+09:00 | CI赤: run 27059549915 Unit Tests (bats)"
+  - "2026-06-09T21:03:44+09:00 | 作成完了。`docs/research/multinode_portable_environment_20260609.md` 殿の構想をPhase 0-4の段階的アプローチで整理した。Classro"
   ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_speed_posttool_dispatch_20260613_normal
+  _ac_task_id: cmd_karo_hotfix_hook_failure_triage_20260613_normal
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_hotfix_speed_posttool_dispatch_20260613.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_hotfix_speed_posttool_dispatch_20260613.yaml
+  report_filename: hayate_report_cmd_karo_hotfix_hook_failure_triage_20260613.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_hotfix_hook_failure_triage_20260613.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -128,5 +92,5 @@ task:
     - pattern: 'field_missing'
       count: 17
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
-  deployed_at: "2026-06-13T00:36:50"
-  progress: "AC1 PASS: record-real before_real_ms=26.122 after_real_ms=23.357 (after<before). AC2 PASS: bash -n PASS; bats tests/unit/test_hook_dispatchers.bats 8/8 PASS SKIP=0. AC3 PASS: ledger entry updated with status/before_real_ms/after_real_ms/test_result/commit=570bde0e1."
+  deployed_at: "2026-06-13T01:07:26"
+  progress: AC1=PASS artifact 9件分類; AC2=PASS 選択テスト151/151; AC3=PASS report hook_failures証跡+既存回帰テスト確認
