@@ -2543,9 +2543,9 @@ def _entry_cmd_id(entry):
         return match.group(1)
     return ""
 
-# Benchmark cmd_test_* runs, training cmd_training_speed_* runs, and malformed
-# dashboard-update invocations are not operational skill failures, so Gate20
-# excludes them before calculating rates.
+# Benchmark cmd_test_* runs, training cmd_training_speed_* runs, malformed
+# dashboard-update invocations, and external note.com reCAPTCHA challenges are
+# not operational skill failures, so Gate20 excludes them before calculating rates.
 def _exclude_from_fail_denominator(entry):
     cmd_id = _entry_cmd_id(entry)
     if cmd_id.startswith("cmd_test_"):
@@ -2556,6 +2556,9 @@ def _exclude_from_fail_denominator(entry):
     if skill == "dashboard-update" and cmd_id in ("", "<empty>"):
         return True
     if skill == "dashboard-update" and cmd_id.startswith("-"):
+        return True
+    stumbling = str(entry.get("stumbling_points") or "")
+    if skill == "note-draft" and re.search(r"reCAPTCHA challenge was not so|reCAPTCHA challenge was not solved|External reCAPTCHA challenge", stumbling, re.IGNORECASE):
         return True
     return False
 

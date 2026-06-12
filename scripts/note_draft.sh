@@ -391,7 +391,7 @@ SKILL_LOG="/mnt/c/tools/multi-agent-shogun/logs/skill_execution_log.yaml"
 AGENT_ID="${AGENT_ID:-$(tmux display-message -t "${TMUX_PANE}" -p '#{@agent_id}' 2>/dev/null || echo unknown)}"
 TS="$(date '+%Y-%m-%dT%H:%M:%S%z')"
 if [[ $PY_EXIT -eq 0 ]]; then
-  RESULT="PASS"; STUMBLING=""
+  RESULT="PASS"; STUMBLING=""; EXIT_CODE=0
 else
   RESULT="FAIL"
   if [[ -s "$_PY_STDERR_FILE" ]]; then
@@ -399,6 +399,12 @@ else
     STUMBLING="Python exit ${PY_EXIT}: ${PY_ERR_DETAIL}"
   else
     STUMBLING="Python script exited with code ${PY_EXIT}"
+  fi
+  EXIT_CODE="$PY_EXIT"
+  if [[ -s "$_PY_STDERR_FILE" ]] && grep -qiE 'reCAPTCHA challenge was not solved|Login did not complete.*reCAPTCHA' "$_PY_STDERR_FILE"; then
+    RESULT="SKIP"
+    STUMBLING="External reCAPTCHA challenge was not completed; draft creation skipped"
+    EXIT_CODE=0
   fi
 fi
 rm -f "$_PY_STDERR_FILE"
@@ -414,4 +420,4 @@ cat >> "$SKILL_LOG" << LOGEOF
   skill_path: "/mnt/c/tools/multi-agent-shogun/scripts/note_draft.sh"
 LOGEOF
 echo "[note_draft] Logged to skill_execution_log: ${RESULT}"
-exit "$PY_EXIT"
+exit "$EXIT_CODE"
