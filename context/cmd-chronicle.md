@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-12 cmd_karo_hotfix_bulletin_lessons_202606121138 -->
+<!-- last_updated: 2026-06-12 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -520,3 +520,9 @@
 | cmd_3312 | 殿裁可(2026-06-12 08:55「実行せよ」)に基づき、検分済みのrefactor/wp-mp(docs 2コミット: aaa6cd25とcmd_3310検証記録345b82ab)をmainへ統合してorigin/mainへ着地させる。docsのみの変更のため不要な本番再起動を避ける統合とする。これでmonthly_product削除WPの全工程が完結する | dm-signal | 06-12 | cmd_3312 docs統合は家老実施済みのorigin/ |
 | cmd_3313 | 調査チーム裁可書(approval-20260611-3-second-report.md §5)の推奨に基づき、全WPを通して対話プロンプトで無効だったnpm run lintを実効化する独立小整備を実装する。WP-3 AC1着手前の前提タスク。本cmdの範囲はブランチ上の実装と検証まで(リモート反映は別途裁可制) | dm-signal | 06-12 | WP-3前提としてNext標準ESLint設定を追加し、np |
 | cmd_3314 | 殿裁可(2026-06-12 10:56「1.2ともにやろう」の1)に基づき、検分済みのrefactor/wp3-lint(設定コミット3fb84577)をmainへ統合してorigin/mainへ着地させる。設定ファイルの変更のため不要な本番再起動を避ける統合とする。注意: 現在禁止窓(00:50-02:10 UTC)内のため、統合実行は窓明け以降に行う | dm-signal | 06-12 | refactor/wp3-lintをmainへfast-fo |
+| cmd_3315 | 調査チーム裁可書(approval-20260611-3-second-report.md §4 AC1承認)に基づき、WP-3 AC1(api-client.ts直書きAPI応答型の移設)を実装する。前提のlint実効化は本線着地済み(138fe43d)。本cmdの範囲はブランチ上の実装と検証まで(リモート反映は別途裁可制) | dm-signal | 06-12 | WP-3 AC1のapi-client直書きAPI応答型10 |
+| cmd_3317 | scripts/insight_write.shはflock内でappend直書きのため、書込み途中でプロセスが落ちると部分行が残りqueue/insights.yaml全体がparse不能になる(2026-06-12に実例発生、将軍がD0修復)。append方式の設計意図(multiline文字列保護)は維持したまま、部分行が残らない書込みと混入時の検出退避を加える | infra | 06-12 | insight_write.shの末尾破損退避と原子的追記を |
+| cmd_3316 | 殿クエリのセマンティック検索が外れ続け(起動チェック2026-06-12でヒット率0%)、queue/insights.yamlにpendingが蓄積し、saizoのINSIGHT_REPEAT掲示板投稿が連発している。既存のaliases自動成長の流れ(cmd_2920の自動昇格+cmd_2922の計測)がpendingを消化していない根因を特定し修理する | infra | 06-12 | semantic_stress由来pending insig |
+| cmd_3318 | cmd_3315の成果commit 672cfb8cに、裁可書(approval-20260611-3-second-report.md L41)の明示条件『整形はスタイル先行コミットを適用』に反するimport並べ替え・行折返し整形が型移設と同居していることを将軍がgit show -wの実差分で確認した(2026-06-12)。マージ裁可に出す前提条件として、整形を先行の独立styleコミットに分離した構成へ再構成する | dm-signal | 06-12 | cmd_3315の単一commit 672cfb8cを、st |
+| cmd_3320 | cmd_3319の計器修理でPI原理率の真値が0%(found=5 principle=0)と判明した(2026-06-12)。既存PIは個別事実として正しいが、複数PIを包含する上位原理が未抽出のため1対N防御になっていない。個別PIは具体性が価値なので残したまま、上位原理の層を抽出して追記する | dm-signal | 06-12 | projects/dm-signal.yamlに上位原理PI |
+| cmd_3321 | 調査チーム返信書(approval-20260612-third-report-ac2.md 残務1件、2026-06-12受領)の指示。cmd_3298裁可条件(b)のcutover日時明記がexecution-log止まりで、docs/配下にcutover記載が0件(将軍grep実測2026-06-12)。recalculation_statusの時刻解釈に関わる運用注意のため文書のみの変更で明記する | dm-signal | 06-12 | docs/rule/db-operations-runboo |
