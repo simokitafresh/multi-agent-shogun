@@ -1,5 +1,5 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-06-13 auto-generated -->
+<!-- last_updated: 2026-06-13 cmd_karo_hotfix_context_freshness_alerts_20260613 -->
 <!-- generated_by: scripts/conversation_retention.sh -->
 <!-- generated_at: 2026-06-13T01:09:45+09:00 -->
 
