@@ -1558,9 +1558,9 @@ entries:
     after_real_ms: 120
   real_measurement_command: "old/new 20-run median: normal 64->58ms + question 64->62ms; inbox median 77->73ms"
   test_result: "bash -n PASS; bats prompt_state/session_state 32 PASS SKIP=0; output equivalence PASS for inbox1/normal"
-  commit: "pending"
+  commit: "f8a65b605"
     assigned_to: ""
-    updated_at: "2026-06-12T21:45:25"
+    updated_at: "2026-06-12T21:52:53"
     iteration: 1
 - script_path: scripts/hooks/session_end_clear_check.sh
     status: pending
@@ -2368,18 +2368,17 @@ entries:
     updated_at: "2026-06-08T15:24:48"
     iteration: 1
 - script_path: scripts/log_terminal_response.sh
-    status: pending
+  status: completed
   before_ms: 7
   after_ms: ''
-    before_real_ms: 193.009
-    after_real_ms: ""
-  real_measurement_command: 'sandboxed temp-root hook payload avg40: bash scripts/log_terminal_response.sh
-    with last_assistant_message JSON'
-  test_result: bash -n PASS; bats tests/unit/test_log_terminal.bats PASS 6 SKIP 0
-  commit: d608271a9
-    assigned_to: ""
-    updated_at: "2026-06-08T15:24:48"
-    iteration: 1
+  before_real_ms: 554.5
+  after_real_ms: 374.5
+  real_measurement_command: "sandboxed temp-root transcript_path payload avg20: printf payload | bash scripts/log_terminal_response.sh; before=11.09s/20 after=7.49s/20"
+  test_result: "bash -n scripts/log_terminal_response.sh PASS; bats tests/unit/test_log_terminal.bats PASS 6/6 SKIP=0; response JSONL+memory DB direct check PASS"
+  commit: "b224c274d"
+  assigned_to: ""
+  updated_at: "2026-06-12T21:49:43"
+  iteration: 1
 - script_path: scripts/lord_conversation_read.sh
     status: pending
   before_ms: 16

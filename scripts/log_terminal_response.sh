@@ -18,151 +18,114 @@ source "$SCRIPT_DIR/lib/lord_conversation.sh"
 export LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.jsonl"
 export LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 
-# Single python3 call: parse payload + decode + extract + compose DETAIL
-DETAIL="$(HOOK_PAYLOAD="$HOOK_PAYLOAD" python3 - <<'PY'
-import json
-import os
-import re
-import sys
+extract_detail_with_jq() {
+  local transcript_path stop_reason response line
 
-hook_payload = os.environ.get("HOOK_PAYLOAD", "")
-pane_capture = ""
+  # Fast path for the common Stop payload shape: transcript_path + transcript JSONL.
+  # Avoids a parser process before append_lord_conversation's required DB/JSONL writer.
+  if [[ "$HOOK_PAYLOAD" =~ \"transcript_path\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
+    transcript_path="${BASH_REMATCH[1]}"
+  elif [[ "$HOOK_PAYLOAD" =~ \"transcriptPath\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
+    transcript_path="${BASH_REMATCH[1]}"
+  fi
+  if [[ "$HOOK_PAYLOAD" =~ \"stop_reason\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
+    stop_reason="${BASH_REMATCH[1]}"
+  elif [[ "$HOOK_PAYLOAD" =~ \"stopReason\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
+    stop_reason="${BASH_REMATCH[1]}"
+  fi
+  if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
+    line="$(awk '
+      /"type"[[:space:]]*:[[:space:]]*"assistant"/ && /"role"[[:space:]]*:[[:space:]]*"assistant"/ { last = $0 }
+      END { print last }
+    ' "$transcript_path" 2>/dev/null || true)"
+    if [ -n "$line" ]; then
+      if [ -z "$stop_reason" ] && [[ "$line" =~ \"stop_reason\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
+        stop_reason="${BASH_REMATCH[1]}"
+      fi
+      if [[ "$line" =~ \"text\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
+        response="${BASH_REMATCH[1]}"
+        response="${response//\\n/$'\n'}"
+        response="${response//\\\"/\"}"
+        response="${response//\\\\/\\}"
+        printf '%s' "$response"
+        [ -z "$stop_reason" ] || printf '\n\n[meta] stop_reason=%s' "$stop_reason"
+        return 0
+      fi
+    fi
+  fi
 
-# --- parse_stop_payload ---
-data = {}
-if hook_payload:
-    try:
-        parsed = json.loads(hook_payload)
-        if isinstance(parsed, dict):
-            data = parsed
-    except Exception:
-        pass
+  command -v jq >/dev/null 2>&1 || return 1
 
-transcript_path = data.get("transcript_path") or data.get("transcriptPath") or ""
-if not isinstance(transcript_path, str):
-    transcript_path = ""
+  local payload_file tool_result transcript_extract pane_capture
+  payload_file="$(mktemp)"
+  printf '%s' "$HOOK_PAYLOAD" > "$payload_file"
 
-stop_reason = data.get("stop_reason") or data.get("stopReason") or ""
-if not isinstance(stop_reason, str):
-    stop_reason = ""
+  transcript_path="$(jq -r '(.transcript_path // .transcriptPath // "") | strings' "$payload_file" 2>/dev/null || true)"
+  stop_reason="$(jq -r '(.last_assistant_message.stop_reason // .stop_reason // .stopReason // "") | strings' "$payload_file" 2>/dev/null || true)"
+  tool_result="$(jq -cr '(.tool_result // .toolUseResult // empty)' "$payload_file" 2>/dev/null || true)"
+  response="$(jq -r '
+    (.last_assistant_message.content // [])
+    | map(select(.type == "text") | .text // "" | strings | gsub("^\\s+|\\s+$"; ""))
+    | map(select(length > 0))
+    | join("\n")
+  ' "$payload_file" 2>/dev/null || true)"
+  rm -f "$payload_file"
 
-tool_result = data.get("tool_result")
-if tool_result is None:
-    tool_result = data.get("toolUseResult")
-if isinstance(tool_result, (dict, list)):
-    tool_result = json.dumps(tool_result, ensure_ascii=False, separators=(",", ":"))
-elif not isinstance(tool_result, str):
-    tool_result = ""
+  if [ -z "$response" ] && [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
+    transcript_extract="$(jq -r -s '
+      map(select(.type == "assistant" and .message.role == "assistant"))
+      | last // {}
+      | [
+          ((.message.stop_reason // "") | strings),
+          ((.message.content // [])
+            | map(select(.type == "text") | .text // "" | strings | gsub("^\\s+|\\s+$"; ""))
+            | map(select(length > 0))
+            | join("\n"))
+        ]
+      | @tsv
+    ' "$transcript_path" 2>/dev/null || true)"
+    if [ -n "$transcript_extract" ]; then
+      local transcript_stop transcript_response
+      IFS=$'\t' read -r transcript_stop transcript_response <<EOF
+$transcript_extract
+EOF
+      [ -n "$stop_reason" ] || stop_reason="$transcript_stop"
+      [ -n "$response" ] || response="$transcript_response"
+    fi
+  fi
 
-response = ""
-last_msg = data.get("last_assistant_message")
-if isinstance(last_msg, dict):
-    sr = last_msg.get("stop_reason")
-    if isinstance(sr, str) and sr:
-        stop_reason = sr
-    content = last_msg.get("content")
-    if isinstance(content, list):
-        texts = []
-        for block in content:
-            if isinstance(block, dict) and block.get("type") == "text":
-                text = block.get("text")
-                if isinstance(text, str) and text.strip():
-                    texts.append(text.strip())
-        response = "\n".join(texts).strip()
+  if [ -z "$response" ] && [ -n "${TMUX_PANE:-}" ]; then
+    pane_capture="$(tmux capture-pane -t "$TMUX_PANE" -p -J -S -200 2>/dev/null || true)"
+    if [ -n "$pane_capture" ]; then
+      response="$(printf '%s\n' "$pane_capture" | awk '
+        /^[[:space:]]*[›❯]/ { last_prompt = NR; next }
+        { lines[NR] = $0 }
+        END {
+          for (i = last_prompt + 1; i <= NR; i++) {
+            line = lines[i]
+            if (line ~ /^[[:space:]]*$/) continue
+            if (line ~ /^[[:space:]]*[›❯]/) continue
+            sub(/[[:space:]]+$/, "", line)
+            out = out (out ? "\n" : "") line
+          }
+          if (length(out) > 2500) out = substr(out, 1, 2499) "…"
+          print out
+        }
+      ')"
+    fi
+  fi
 
-# --- extract_from_transcript ---
-if transcript_path:
-    if os.path.exists(transcript_path):
-        last_text = ""
-        last_stop_reason = ""
-        with open(transcript_path, "r", encoding="utf-8") as f:
-            for raw_line in f:
-                line = raw_line.strip()
-                if not line:
-                    continue
-                try:
-                    record = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                if not isinstance(record, dict) or record.get("type") != "assistant":
-                    continue
-                message = record.get("message")
-                if not isinstance(message, dict) or message.get("role") != "assistant":
-                    continue
-                sr = message.get("stop_reason")
-                if isinstance(sr, str) and sr:
-                    last_stop_reason = sr
-                content = message.get("content")
-                if not isinstance(content, list):
-                    continue
-                texts = []
-                for block in content:
-                    if isinstance(block, dict) and block.get("type") == "text":
-                        text = block.get("text")
-                        if isinstance(text, str) and text.strip():
-                            texts.append(text.strip())
-                if texts:
-                    last_text = "\n".join(texts).strip()
-        if not stop_reason and last_stop_reason:
-            stop_reason = last_stop_reason
-        if not response and last_text:
-            response = last_text
+  [ -n "$response" ] || return 1
+  printf '%s' "$response"
+  [ -z "$stop_reason" ] || printf '\n\n[meta] stop_reason=%s' "$stop_reason"
+  if [ -n "$tool_result" ]; then
+    local snippet
+    snippet="$(printf '%s' "$tool_result" | tr '\n' ' ' | awk '{gsub(/[[:space:]]+/, " "); sub(/^ /, ""); sub(/ $/, ""); if (length($0) > 300) print substr($0, 1, 299) "…"; else print}')"
+    [ -z "$snippet" ] || printf '\n[meta] tool_result=%s' "$snippet"
+  fi
+}
 
-if not response:
-    tmux_pane = os.environ.get("TMUX_PANE", "")
-    if tmux_pane:
-        try:
-            import subprocess
-
-            pane_capture = subprocess.run(
-                ["tmux", "capture-pane", "-t", tmux_pane, "-p", "-J", "-S", "-200"],
-                check=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                text=True,
-                timeout=1,
-            ).stdout
-        except Exception:
-            pane_capture = ""
-
-if not response and pane_capture:
-    lines = pane_capture.splitlines()
-    last_prompt = -1
-    prompt_pattern = re.compile(r"^\s*[›❯]")
-    for idx, line in enumerate(lines):
-        if prompt_pattern.match(line):
-            last_prompt = idx
-    candidate = lines[last_prompt + 1:] if last_prompt >= 0 else lines
-    filtered = []
-    for line in candidate:
-        stripped = line.strip()
-        if not stripped:
-            continue
-        if prompt_pattern.match(stripped):
-            continue
-        filtered.append(line.rstrip())
-    text = "\n".join(filtered).strip()
-    if len(text) > 2500:
-        text = text[:2499] + "\u2026"
-    response = text
-
-if not response:
-    sys.exit(1)
-
-# --- compose DETAIL ---
-detail = response
-if stop_reason:
-    detail += "\n\n[meta] stop_reason=" + stop_reason
-if tool_result:
-    snippet = " ".join(tool_result.split())
-    if len(snippet) > 300:
-        snippet = snippet[:299] + "\u2026"
-    if snippet:
-        detail += "\n[meta] tool_result=" + snippet
-
-print(detail, end="")
-PY
-)" || exit 0
+DETAIL="$(extract_detail_with_jq)" || exit 0
 
 [ -n "$DETAIL" ] || exit 0
 
