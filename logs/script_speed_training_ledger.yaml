@@ -1039,17 +1039,16 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_lesson_health.sh
-  status: pending
+  status: completed
   before_ms: 11
   after_ms: ''
-  before_real_ms: 1800
-  after_real_ms: ""
-  real_measurement_command: LESSON_EFFECT_NTFY_ENABLED=0 bash scripts/gates/gate_lesson_health.sh
-    infra
-  test_result: bash_n_pass;bats_test_gate_lesson_health_10_10_pass_skip0;output_diff_empty
-  commit: ca97c6efe
+  before_real_ms: 3410
+  after_real_ms: 2260
+  real_measurement_command: "time_gate_lesson_health_full_all_projects_after2"
+  test_result: "bats tests/unit/test_gate_lesson_health.bats: 12/12 PASS; output_diff_empty"
+  commit: "90c32efdd"
   assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  updated_at: "2026-06-12T22:31:26"
   iteration: 1
 - script_path: scripts/gates/gate_loop_health.sh
   status: pending
