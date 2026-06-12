@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-06-11 cmd_karo_hotfix_ga041_context_freshness_202606111520 -->
+<!-- last_updated: 2026-06-12 cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622 -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -93,6 +93,15 @@ Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式
 | 対象 | 結論 | 参照 |
 |------|------|------|
 | 未使用FE成果物削除 | `_deprecated/signal`, `_deprecated/trades`, `transition-overlay`, `useAppVisibility`, `lookbackFormatter`と関連testを削除。`frontend/package.json`/lockも整理済み。Monthly Trade FoF表示維持コミットは同日revert済みで、現行表示仕様は§2.6のprecomputed weights/月初Signal優先を正とする | e0b59782, 0adde79f→8d28f75e; `frontend/_INDEX.md`, `frontend/package.json`, `frontend/lib/monthly-trade-display.ts` |
+
+## 2.8 直近FE変更索引（2026-06-12）
+
+| 対象 | 結論 | 参照 |
+|------|------|------|
+| Admin PF編集整理 | Active Status UIとmomentum method selectorを削除。Portfolio型/API差分処理も対応済みで、FE側にActive Status/momentum method入力前提を置かない | 9be200cd, 3d4255bf, 36e6137a; `frontend/app/admin/page.tsx`, `frontend/app/admin/components/PortfolioEditor.tsx`, `frontend/app/admin/components/LookbackEditor.tsx`, `frontend/lib/types/portfolio.ts`, `frontend/lib/portfolio-diff.ts` |
+| Frontend lint/type整理 | Next/Biome lint baselineを有効化し、api-client response型を`frontend/lib/types/api.ts`へ抽出。admin/fof周辺はformat正規化済み | 138fe43d, 663b3354, b293806f; `frontend/.eslintrc.json`, `frontend/next.config.mjs`, `frontend/lib/api-client.ts`, `frontend/lib/types/api.ts`, `frontend/hooks/useAdminPage.ts`, `frontend/app/admin/fof/components/WeightBreakdown.tsx` |
+| Dashboard MTD表示 | MTDチャートにas-of labelを追加し、MTD Daily Tableへdesktop-only daily columnsを追加。確定値計算ではなく表示層の精度・明示性改善 | 0ed68575, c530b4b3; `frontend/app/dashboard/page.tsx`, `frontend/components/mtd-chart.tsx`, `frontend/components/mtd-daily-table.tsx`, `frontend/lib/mtd-as-of-label.ts`, `frontend/lib/types/market.ts` |
+| Metrics/Compare Summary表示 | MetricsのUp/Down Market chartはmobile横スクロールからviewport内に収まるbin統合へ変更。Compare SummaryのAvg UWPは小数第1位表示 | 46c50462, 509ed49b, 36e39ae3; `frontend/components/up-down-market-chart.tsx`, `frontend/components/compare-summary-table.tsx`, `frontend/lib/types/compare-summary.ts` |
 
 ## 3. 状態管理
 
