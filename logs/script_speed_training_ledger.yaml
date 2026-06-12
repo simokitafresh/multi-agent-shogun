@@ -969,17 +969,16 @@ entries:
   updated_at: "2026-06-08T03:50:28"
   iteration: 1
 - script_path: scripts/gates/gate_gunshi_startup.sh
-  status: pending
+  status: completed
   before_ms: 20
   after_ms: ''
-  before_real_ms: 3678
-  after_real_ms: ""
-  real_measurement_command: time bash scripts/gates/gate_gunshi_startup.sh (cold)
-  test_result: 'bats tests/unit/test_gate_gunshi_startup_auto_idle_actions.bats: 1
-    passed, 0 skipped'
-  commit: f75f657c5
+  before_real_ms: 6478
+  after_real_ms: 3494
+  real_measurement_command: "python3: forced-sync median 6478.1ms vs guarded median 3493.6ms, 3 runs each"
+  test_result: "bash -n scripts/gates/gate_gunshi_startup.sh; bats tests/unit/test_gate_gunshi_startup_auto_idle_actions.bats; bats tests/unit/test_gate_small_consolidated.bats --filter gate_gunshi_startup|missed_sg PASS"
+  commit: "6564e4739"
   assigned_to: ""
-  updated_at: "2026-06-08T03:50:28"
+  updated_at: "2026-06-12T22:09:47"
   iteration: 1
 - script_path: scripts/gates/gate_hot_path_no_sync_io.sh
   status: pending
