@@ -2581,6 +2581,9 @@ def _entry_cmd_id(entry):
 # dashboard-update invocations, and external note.com reCAPTCHA challenges are
 # not operational skill failures, so Gate20 excludes them before calculating rates.
 def _exclude_from_fail_denominator(entry):
+    used = str(entry.get("used") or "").strip().lower()
+    if used == "false":
+        return True
     cmd_id = _entry_cmd_id(entry)
     if cmd_id.startswith("cmd_test_"):
         return True

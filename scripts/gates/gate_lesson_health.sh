@@ -375,14 +375,17 @@ check_lesson_effectiveness() {
         }
         $1 == "timestamp" { next }
         {
-            cmd=$2; action=$5; result=$6; ref=tolower($7); proj=$8; lid=$4
+            cmd=$2; action=$5; result=$6; ref=tolower($7); proj=$8; task_type=$9; lid=$4
             gsub(/\r$/, "", cmd); gsub(/\r$/, "", action)
-            gsub(/\r$/, "", result); gsub(/\r$/, "", ref); gsub(/\r$/, "", proj); gsub(/\r$/, "", lid)
+            gsub(/\r$/, "", result); gsub(/\r$/, "", ref); gsub(/\r$/, "", proj); gsub(/\r$/, "", task_type); gsub(/\r$/, "", lid)
             if (cmd !~ /^cmd_/) next
             if (!(cmd in selected)) next
             if (project != "" && proj != project) next
             if (!((proj SUBSEP lid) in active)) next
             if (result == "pending" || ref == "pending") next
+            # hotfix feedback is dominated by self-healing tasks and is too bursty
+            # for the long-window lesson usefulness health signal.
+            if (task_type == "hotfix") next
             if (action == "injected") {
                 injected++
                 if (ref == "yes" || ref == "true" || ref == "1") referenced++

@@ -225,6 +225,48 @@ EOF
     [[ "$output" == *"METRIC: lesson_effectiveness_threshold status=OK rate=100.0% useful_rate=60.0% window_cmds=5 referenced=5 injected=5 useful=3 total_feedback=5 scope=infra"* ]]
 }
 
+@test "gate_lesson_health excludes hotfix feedback from useful_rate health signal" {
+    cat > "$TEST_TMPDIR/projects/infra/lessons.yaml" <<EOF
+ssot_path: $TEST_TMPDIR/tasks/lessons.md
+last_synced: '2026-04-24T00:00:00'
+archive_path: $TEST_TMPDIR/projects/infra/lessons_archive.yaml
+lesson_count: 1
+lessons:
+- id: L001
+  title: sample one
+  summary: sample one
+EOF
+
+    cat > "$TEST_TMPDIR/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
+2026-05-28T00:00:00	cmd_900	saizo	L001	injected		yes	infra	hotfix	routine	5	0
+2026-05-28T00:01:00	cmd_900	saizo	L001	feedback	NOT_USEFUL	no	infra	hotfix	routine	5	0
+2026-05-28T00:02:00	cmd_901	saizo	L001	injected		yes	infra	hotfix	routine	5	0
+2026-05-28T00:03:00	cmd_901	saizo	L001	feedback	NOT_USEFUL	no	infra	hotfix	routine	5	0
+2026-05-28T00:04:00	cmd_902	saizo	L001	injected		yes	infra	hotfix	routine	5	0
+2026-05-28T00:05:00	cmd_902	saizo	L001	feedback	NOT_USEFUL	no	infra	hotfix	routine	5	0
+2026-05-28T00:06:00	cmd_903	saizo	L001	injected		yes	infra	hotfix	routine	5	0
+2026-05-28T00:07:00	cmd_903	saizo	L001	feedback	NOT_USEFUL	no	infra	hotfix	routine	5	0
+2026-05-28T00:08:00	cmd_904	saizo	L001	injected		yes	infra	hotfix	routine	5	0
+2026-05-28T00:09:00	cmd_904	saizo	L001	feedback	NOT_USEFUL	no	infra	hotfix	routine	5	0
+2026-05-28T00:10:00	cmd_905	saizo	L001	injected		yes	infra	full	routine	5	0
+2026-05-28T00:11:00	cmd_905	saizo	L001	feedback	USEFUL	yes	infra	full	routine	5	0
+2026-05-28T00:12:00	cmd_906	saizo	L001	injected		yes	infra	full	routine	5	0
+2026-05-28T00:13:00	cmd_906	saizo	L001	feedback	USEFUL	yes	infra	full	routine	5	0
+2026-05-28T00:14:00	cmd_907	saizo	L001	injected		yes	infra	full	routine	5	0
+2026-05-28T00:15:00	cmd_907	saizo	L001	feedback	USEFUL	yes	infra	full	routine	5	0
+2026-05-28T00:16:00	cmd_908	saizo	L001	injected		yes	infra	full	routine	5	0
+2026-05-28T00:17:00	cmd_908	saizo	L001	feedback	USEFUL	yes	infra	full	routine	5	0
+2026-05-28T00:18:00	cmd_909	saizo	L001	injected		yes	infra	full	routine	5	0
+2026-05-28T00:19:00	cmd_909	saizo	L001	feedback	USEFUL	yes	infra	full	routine	5	0
+EOF
+
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: useful率(直近10cmd): 5/5 = 100.0%"* ]]
+    [[ "$output" == *"METRIC: lesson_effectiveness_threshold status=OK rate=100.0% useful_rate=100.0% window_cmds=10 referenced=5 injected=5 useful=5 total_feedback=5 scope=infra"* ]]
+}
+
 @test "gate_lesson_health excludes pending injection rows from lesson effectiveness window" {
     cat > "$TEST_TMPDIR/logs/lesson_impact.tsv" <<'EOF'
 timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth

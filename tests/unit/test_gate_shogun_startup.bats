@@ -659,6 +659,36 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
+@test "skill fail rate excludes unused inferred failures" {
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
+executions:
+- ts: "2099-01-01T00:00:00+0900"
+  skill: "verdict-check"
+  executor: "saizo"
+  result: "FAIL"
+  used: "false"
+  stumbling_points: "gate_report_format before report was filled"
+  gate: "gate_report_format"
+  source: "cmd_9000"
+  skill_path: "/mnt/c/tools/multi-agent-shogun/skills/verdict-check/SKILL.md"
+- ts: "2099-01-01T00:01:00+0900"
+  skill: "verdict-check"
+  executor: "saizo"
+  result: "PASS"
+  used: "true"
+  stumbling_points: "gate_report_format PASS"
+  gate: "gate_report_format"
+  source: "cmd_9000"
+  skill_path: "/mnt/c/tools/multi-agent-shogun/skills/verdict-check/SKILL.md"
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ スキル別FAIL率"* ]]
+    [[ "$output" == *"verdict-check: 直近50件FAIL率=0% (0/1) last=2099-01-01T00:01:00+0900"* ]]
+    [[ "$output" != *"スキル別FAIL率: 直近50件FAIL率10%超の改善対象あり"* ]]
+}
+
 @test "code_fix_required alert clears when recent 50 skill executions have zero FAIL" {
     cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
 executions:
