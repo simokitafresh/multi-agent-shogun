@@ -1,107 +1,64 @@
 task:
-  readonly_ref:
-  - path: 'docs/spec/mtd-daily-returns-ux.md'
-    reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3328_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3328 (deployed 2026-06-12T14:47:10). Read from the beginning.
-  ac_version: 3d92d4d8
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      description: context_freshness ALERTが鳴った直接原因と根本原因を、source commits since last_updatedの数値付きで報告する
+    AC2:
+      description: 同カテゴリの横展開候補を洗い出し、今回更新すべきcontextがあれば更新する
+    AC3:
+      description: gate再実行でdm-signal-frontend.mdのALERT解消または残存理由を数値付きで示す
+    AC4:
+      description: 次回防御層としてlesson_candidateにorigin付きで追加チェックを提案する
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
-  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
-  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
-  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
-  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
-  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
-  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
-  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
-  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
-  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
-  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
-  - ゲートの成功=未熟さの証拠。発火しないシステムが完成系。
-  - 'Level1(事後検出): 間違えた後にgateが検出'
-  - 'Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載'
-  - 'Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制'
-  - 'Level4(フロー内BLOCK): 間違ったら即停止。先に進めない'
-  - 'Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない'
-  - 'Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる'
-  - '新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな'
-  - 'BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め'
-  - 2026-06-12T13:48:14+09:00 | 【INFOバッチ】 2026-06-12 13:33:43|cmd_3321
-  - 2026-06-12T12:45:36+09:00 | 【INFOバッチ】 2026-06-12 12:39:30|cmd_3320
-  - 2026-04-10T14:00:36+09:00 | 【INFOバッチ】 2026-04-10 13:55:03|cmd_1829
-  - '2026-04-03T04:24:10+09:00 | 【INFOバッチ】 2026-04-03 04:13:55|cmd_1702 2026-04-03 04:14:00|[archive] INFO: completed存在するがアーカイブ0件 (ex'
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope: SKILL.md参照WARN以外のstartup BLOCK解消、機能改修、将軍cmd起票
   parallel_ok: []
-  parent_cmd: cmd_3328
-  project: dm-signal
-  purpose: '殿指示(2026-06-12 13:55 mtd-daily-returns-ux実装)の第二弾。設計書PR2(Feature B: Daily列=フロント変更)を実装する。PR1(cmd_3325)は完了検収済みで設計書指定の順序どおり。テーブルが月初来累積だけで日次変化が読めない課題への対処。確定値の計算ロジックには触れない設計書最重要原則を遵守する'
-  status: idle
+  parent_cmd: cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622
+  project: infra
+  purpose: GA-052 dm-signal-frontend.md context_freshness ALERTの原因特定・横展開・防御層反映
+  status: done
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/frontend
-  task_id: cmd_3328_full
-  task_type: full
+  task_id: cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622_normal
+  task_type: hotfix
   related_lessons:
-  - id: 'L447'
-    summary: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
-    detail: 'pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe'
-  - id: 'L286'
-    summary: 'context/dm-signal-core.mdがprojects/dm-signal.yaml内の詳細セクション(common_misconceptions'
-    detail: 'context/dm-signal-core.mdがprojects/dm-signal.yaml内の詳細セクション(common_misconceptions'
-  - id: 'L544'
-    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
-    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
+  - id: 'L508'
+    summary: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
+    detail: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
+  - id: 'L549'
+    summary: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
+    detail: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
   - id: 'L738'
     summary: '外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split'
     detail: '外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split'
-  - id: 'L351'
-    summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
-    detail: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
-  - id: 'L290'
-    summary: 'karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo'
-    detail: 'karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo'
-  - id: 'L121'
-    summary: 'IF YAML回転処理(古いエントリの刈り込み)を実装する時 THEN echo headerで先にヘッダを書き出してからsed出力を>>追記せよ'
-    detail: 'IF YAML回転処理(古いエントリの刈り込み)を実装する時 THEN echo headerで先にヘッダを書き出してからsed出力を>>追記せよ'
-  - id: 'L391'
-    summary: 'review_gate.shがtask.get(''type'')でフィールド参照していたが実際のYAMLキーはtask_type。結果、task_typeによるレ'
-    detail: 'review_gate.shがtask.get(''type'')でフィールド参照していたが実際のYAMLキーはtask_type。結果、task_typeによるレ'
-  - id: 'L384'
-    summary: 'result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_'
-    detail: 'result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_'
-  - id: 'L278'
-    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+  - id: 'L790'
+    summary: 'context_freshness gateは高速化のため短いgit timeoutを持つ。外部repoのgit logがtimeoutするとsource co'
+    detail: 'context_freshness gateは高速化のため短いgit timeoutを持つ。外部repoのgit logがtimeoutするとsource co'
+  - id: 'L742'
+    summary: 'hookやgateはシステムルールであり、殿の直接指示ではない。hookに従ったことを『殿の指示に従った』と表現すると、殿の直接指示が相対化される。報告では『h'
+    detail: 'hookやgateはシステムルールであり、殿の直接指示ではない。hookに従ったことを『殿の指示に従った』と表現すると、殿の直接指示が相対化される。報告では『h'
+  - id: 'L598'
+    summary: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
+    detail: 'ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie'
+  - id: 'L144'
+    summary: 'IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する'
+    detail: 'IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  related_causal_links:
-  - "[[PR1完了による設計書順序の第二弾]]"
-  - "[[cmd_3328]]"
-  - "[[殿指示2026-06-12_mtd-daily-returns-ux実装]]"
   context_hints:
-  - "context/robustness-verification-catalog.md"
-  - "context/gs-speedup-knowledge.md"
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
-  production_invariants:
-  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
-  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
-  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
-  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
-  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
+  - "context/training-cycle.md"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
   - "Level1(事後検出): 間違えた後にgateが検出"
@@ -114,36 +71,27 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L447: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。fe
-      - L286: context/dm-signal-core.mdがprojects/dm-signal.yaml内の詳細セクション(common_misconceptions
-      - L544: queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg 'yaml.
+      - L508: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL
+      - L549: queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形
       - L738: 外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split
-      - L351: insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL
-      - L290: karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo
-      - L121: IF YAML回転処理(古いエントリの刈り込み)を実装する時 THEN echo headerで先にヘッダを書き出してからsed出力を>>追記せよ
-      - L391: review_gate.shがtask.get('type')でフィールド参照していたが実際のYAMLキーはtask_type。結果、task_typeによるレ
-      - L384: result.detailsにバックスラッシュn含む長文を1コマンドで渡したところ、sedが改行を展開し重複行が挿入されYAML破損。report_field_
-      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
+      - L790: context_freshness gateは高速化のため短いgit timeoutを持つ。外部repoのgit logがtimeoutするとsource co
+      - L742: hookやgateはシステムルールであり、殿の直接指示ではない。hookに従ったことを『殿の指示に従った』と表現すると、殿の直接指示が相対化される。報告では『h
+      - L598: ALL_GATESのmissingは一律BLOCKに見えても、lessonはlesson_write登録待ちの非同期完了にできる一方、archive/revie
+      - L144: IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-12T14:23:00+09:00 | 【INFOバッチ】 2026-06-12 14:14:01|cmd_3324"
-  - "2026-06-12T14:05:07+09:00 | 【INFOバッチ】 2026-06-12 13:49:37|cmd_3322 2026-06-12 13:50:08|cmd_3323"
-  - "2026-04-10T14:00:36+09:00 | 【INFOバッチ】 2026-04-10 13:55:03|cmd_1829"
-  - "2026-04-03T04:24:10+09:00 | 【INFOバッチ】 2026-04-03 04:13:55|cmd_1702 2026-04-03 04:14:00|[archive] INFO: completed存在するがアーカイブ0件 (ex"
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: '設計書のFeature B節の仕様どおり、frontend/components/ 配下のmtd-daily-tableコンポーネントにDaily列(計算式は昇順でportfolio(i)/portfolio(i-1)、月初行はportfolio(0))とヘッダー多段構成とsticky整理と脚注差し替えを実装し、計算値が設計書の式と一致することをテストで確認する'
-  - id: 'AC2'
-    checks:
-    - check: 'デスクトップ表示で設計書指定の全列とグループヘッダーが出ること、モバイル相当幅では従来の列構成のままとなり設計書指定のレスポンシブクラスが付与されていることをテストで確認する'
-  - id: 'AC3'
-    checks:
-    - check: 'npx tsc --noEmitとnpm testとnpm run buildの全通過(lintはbaseline外の新規違反ゼロ)を確認し、結果数値とコミット構成(整形差分が出る場合は先行の独立styleコミットへ分離)を報告YAMLに記録する'
+  - "2026-04-15T16:53:57+09:00 | 【改善トリガー】ci_red ALERT (GA-052)"
+  - "2026-06-12T10:50:15+09:00 | 【将軍】context鮮度ALERT: dm-signal-core.md(source更新),dm-signal-frontend.md(source更新),dm-signal-ops.md(sou"
+  - "2026-06-12T10:45:01+09:00 | 【将軍】context鮮度ALERT: dm-signal-frontend.md(source更新),dm-signal-ops.md(source更新),infrastructure.md(sou"
+  - "2026-06-12T15:59:53+09:00 | **cmd_karo_hotfix_ga051_context_freshness report review完了**: verdict **LGTM** (gate_prediction: WARN"
+  - "2026-06-12T15:54:18+09:00 | **draft review完了**: cmd_karo_hotfix_ga051_context_freshness — verdict: **APPROVE** 本セッション実績: 1. **cm"
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622_normal
+  _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3328.yaml
-  report_path: queue/reports/hayate_report_cmd_3328.yaml
+  report_filename: hayate_report_cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622.yaml
   bloom_level: 
-  deployed_at: "2026-06-12T14:47:59"
+  deployed_at: "2026-06-12T16:12:20"
