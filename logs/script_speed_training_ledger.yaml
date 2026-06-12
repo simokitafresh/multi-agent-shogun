@@ -15,7 +15,7 @@ entries:
   after_real_ms: 600
   real_measurement_command: "/usr/bin/time -f 'real_ms=%e' bash scripts/gates/gate_loop_health.sh >/tmp/saizo_gate_loop_{before,after}.out"
   test_result: "bats tests/unit/test_gate_loop_health.bats PASS 6/6 SKIP=0; output_diff_empty"
-  commit: "e7e572d878f94801dad2450efa07f93226b57418"
+  commit: "dc65afd2fb9558f85dde30ca85089085ead88ff5"
   assigned_to: saizo
   updated_at: "2026-06-12T22:32:18+0900"
   iteration: 0
