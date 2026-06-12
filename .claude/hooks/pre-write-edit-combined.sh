@@ -21,7 +21,13 @@ emit_deny() {
 }
 
 emit_context() {
-    printf '%s' "$1" | jq -Rs '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":.}}'
+    local text="$1"
+    text="${text//\\/\\\\}"
+    text="${text//\"/\\\"}"
+    text="${text//$'\t'/\\t}"
+    text="${text//$'\r'/\\r}"
+    text="${text//$'\n'/\\n}"
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"%s"}}\n' "$text"
 }
 
 _pre_write_self="${BASH_SOURCE[0]:-$0}"
