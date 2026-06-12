@@ -1722,6 +1722,7 @@ codd:
 | cmd | `cmd_3331` AC2第二サイクル monthly_trade_calculatorのファサード化 |
 | causal | `cmd_3331` origin: [[調査チームレビュー通過20260612]] -> [[第二モジュール凍結解除]] -> [[cmd_3331]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T18:17:31+09:00 第6報レビュー結果: 通過。 検収根拠: AST等価検証（実差分=_facade追加+5メソッドの全変更がファサード経由化のみ、ロジック変更ゼロ）/ test_138_pending系の既存patch経路の温存を確認 / 条件(3)docs |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-12T21:10:19+09:00 a0f93dd1838d4fd93 toolu_012vGdaiMaoKhjijwZvDiu6G /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 
 ## file_rename — ファイルリネーム
 
@@ -1789,7 +1790,7 @@ codd:
 | cmd | `cmd_2776` セマンティック辞書5概念追加 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-22T23:48:27+09:00 a6ab26bd4500b527e toolu_015L2rLESSDysCudJe6eKEGn /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3e7d8949-ab8a-4c41-984 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T02:05:41+09:00 いまの月次リバランスを崩すアイデアは今の時点では考えない。シグナルはルールで判定する。やるのはサイズ調整のみ。D、E,Fの方向性だな |
-| cmd | `cmd_3222` 偵察: VIX深掘り+投資知識シグナル20バリアント バックテスト(100%/80%二択、全78PF全期間) (`"docs/research/cmd_3222_VIX\346\267\261\346\216\230\343\202\212\343\203\220\343\203\203\343\202\257\343\203\206\343\202\271\343\203\210.md"`) |
+| cmd | `cmd_3222` 偵察: VIX深掘り+投資知識シグナル20バリアント バックテスト(100%/80%二択、全78PF全期間) (`docs/research/cmd_3222_VIX深掘りバックテスト.md`) |
 | causal | `cmd_3222` origin: [[cmd_3220_7戦略BT]] -> [[殿指摘_調査甘い]] -> [[VIX深掘り+投資知識シグナル拡張]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T08:05:38+09:00 FoF複製2件はおれの操作だ。 |
 
