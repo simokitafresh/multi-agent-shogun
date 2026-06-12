@@ -73,11 +73,11 @@ entries:
   after_ms: ''
   before_real_ms: 74
   after_real_ms: 66
-  real_measurement_command: "8-run p50 isolated Edit payload for queue/shogun_to_karo checklist path; temp files for autolearn/cmd_design_quality; stdout discarded"
+  real_measurement_command: "8-run p50 isolated Edit payload for queue cmd checklist path; temp files for autolearn/cmd_design_quality; stdout discarded"
   test_result: "bash -n .claude/hooks/pre-write-edit-combined.sh PASS; bats tests/unit/test_write_edit_combined_hooks.bats PASS 20/20 SKIP=0; jq JSON parse PASS"
-  commit: "pending"
+  commit: "b495e2d02"
   assigned_to: ""
-  updated_at: "2026-06-13T00:41:41"
+  updated_at: "2026-06-13T00:43:11"
   iteration: 1
 - script_path: scripts/ac_physical_verify.sh
   status: pending
