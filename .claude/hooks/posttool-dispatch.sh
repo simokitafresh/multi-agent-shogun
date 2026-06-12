@@ -62,11 +62,12 @@ case "$payload" in
     *'"Bash"'*)
         if [ "$payload" = "${payload%inbox_mark_read.sh*}" ]; then
             run_hook "$ROOT/.claude/hooks/post-bash-combined.sh" || exit "$?"
+        else
+            source "$ROOT/.claude/hooks/post-bulletin-notify-read-check.sh" <<< "$payload"
         fi
-        source "$ROOT/.claude/hooks/post-bulletin-notify-read-check.sh" <<< "$payload"
         ;;
     *'"Grep"'*|*'"Glob"'*)
-        source "$ROOT/.claude/hooks/post-search-completeness-guard.sh" <<< "$payload"
+        printf '%s\n' "⚠ この検索結果は網羅的ではない可能性がある。別の手法でも確認したか？（Grep→Glob / Glob→Grep / lord_conversation確認）" >&2
         ;;
     *'"Write"'*|*'"Edit"'*)
         source "$ROOT/.claude/hooks/post-write-edit-combined.sh" <<< "$payload"
