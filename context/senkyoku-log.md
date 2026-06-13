@@ -1,5 +1,13 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-13 cmd_3363 -->
+<!-- last_updated: 2026-06-14 cmd_3368 -->
+
+## 2026-06-14
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| startup BLOCK | 掲示板18件+SKILL.md 3セッション+CI RED+教訓WARN | 全件対処/委託 | 掲示板確認済。SKILL.md gate PASS(未commit→家老batch commit)。CI RED(test 1256 flaky)→家老委託 |
+| cmd_3368 | inject_related_lessons Python exit 1根因調査+修正 | 委任済み | 家老掲示板要請(blt_195849)。3件連続失敗→safety net依存。教訓マッチング精度劣化の構造バグ |
+| 追体験 | deepdive 2本全Phase+Q1-Q6 | 完了 | Q6洗脳#5(SKILL.md先送り)検出→軍師第三者検証OK。前セッションの10分ループ空転をPhase 3退行と分析 |
 
 > cmdの意図・結果・因果を時系列で記録する索引層。
 > 詳細は各報告YAML（パス記載）を参照。500行超で日付分割。

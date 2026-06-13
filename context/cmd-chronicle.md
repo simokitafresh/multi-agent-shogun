@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-13 -->
+<!-- last_updated: 2026-06-14 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,33 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2701 | rebalancerを将軍システムの管理対象に登録する。config/projects.yaml+projects/rebalancer.yaml+context/rebalancer.mdを作成し、偵察・cmd配備・教訓蓄積の基盤を整える | infra | 05-14 | rebalancerを管理対象として登録し、config索引 |
-| cmd_2703 | cmd_save.shの3ゲート(q11_existing_alternative FP率52%、command_steps_over_ac FP率50%、ac_param_sufficiency FP率40%)が偽陽性を量産し、将軍のcmd起票に負の複利を生んでいる。検出精度を改善する | infra | 05-14 | cmd_save.shの3ゲートFP削減を実装。既存gate |
-| cmd_2704 | 偵察タスク(scout_exempt:true)はコード変更を伴わないため未commitファイルが存在しない前提だが、git_uncommitted_gateはscout_exemptを考慮せずBLOCKする。偵察タスクではgit_uncommitted_gateをスキップする | infra | 05-14 | scout_exempt:trueタスクではreport_r |
-| cmd_2705 | Renderは/var/lib/dataに永続diskをmountするが、アプリは相対パスstatic/data/cacheに読み書きし永続disk未使用。加えて/staticマウントでcache JSONが外部閲覧可能。CACHE_DIR環境変数対応+/static公開制限で修正する | rebalancer | 05-14 | Render永続diskにcacheを書き込むようCACHE |
-| cmd_2706 | pytest-asyncioのasyncio_mode設定欠如により12件のasyncテストがFAIL。pytest設定追加+非推奨asyncio.get_event_loop().run_until_complete()をasyncio.run()に修正する | rebalancer | 05-14 | pytest-asyncioを0.24.0にpinし、bac |
-| cmd_2708 | Toast.tsx ×ボタン押下時にsetIsVisible(false)のみでonClose()が呼ばれない。errorステートが残存し、同一エラー再発時にToastが再表示されない | rebalancer | 05-14 | Toastの×ボタン押下時もexit animation後に |
-| cmd_2707 | Next.js 15.0.3にcritical(RCE GHSA-9qr9)+high(auth bypass GHSA-f82v)含む脆弱性4件。15.5.18へupgradeし、Serwist互換性とbuild/lint/auditを検証する | rebalancer | 05-14 | Next.js 15.0.3→15.5.18アップグレード完 |
-| cmd_2710 | updaterとユーザーAPIが同じJSONを同時読み書きすると部分書込みでJSONDecodeError→Noneフォールバック→不要な外部API fetchが発生。atomic rename+lockで並行安全性を確保する | rebalancer | 05-14 | DiskCache.setをtmp書込み後のatomic r |
-| cmd_2709 | Backend ModelはList[str]のみでregex・件数上限・supported ticker強制なし。重複tickerは後勝ち上書きで整合崩壊。入力検証を追加し、重複tickerを400エラーにする | rebalancer | 05-14 | Backend API入力検証を追加し、unsupporte |
-| cmd_2712 | get_pricesが各tickerを逐次awaitし毎回1秒sleep。18銘柄で最低17秒以上。semaphore bounded concurrencyで並列化し、cache hit時はsleepスキップでレスポンス時間を大幅短縮する | rebalancer | 05-14 | get_pricesをSemaphore付き並列fetchに |
-| cmd_2713 | sw.jsのprecache URLにバックスラッシュが混入しPWAアイコンcache失敗。加えてguide内URLがrender.yaml正本と不一致。Linux再生成+URL統一で修正する | rebalancer | 05-14 | Linux上のnpm run buildでSerwist s |
-| cmd_2714 | FundingSection折りたたみがキーボード未対応、icon-onlyボタンにaria-labelなし、モバイルで横溢する。a11y標準に準拠しUX品質を改善する | rebalancer | 05-14 | FundingSectionの折りたたみをbutton+ar |
-| cmd_2715 | CIが存在せず、Render前に品質ゲートが走らない。GitHub Actionsでbackend pytest+frontend lint/build/auditを自動実行し、品質を構造的に保証する | rebalancer | 05-14 | GitHub Actions CI workflowを新規作 |
-| cmd_2716 | BUY/SELL/HOLDが英語ハードコード、formatCurrencyがen-US固定、APIエラーが英語のまま。日本語モードで全UI要素がi18n対応するよう修正する | rebalancer | 05-14 | 日本語モードでリバランス結果の売買ラベル、通貨表示、APIエ |
-| cmd_2718 | Python requirementsがversion pinなしで再現性ゼロ。npm outdatedで主要パッケージに更新あり。requirements pinとnpm依存更新で再現性とセキュリティを確保する | rebalancer | 05-14 | backend/requirements.txtをpip f |
-| cmd_2720 | 連続起票時に既知BLOCKパターンの教訓記録でlesson作成→supersede→物理削除のCTX浪費ループが発生(前セッション2026-05-14で20cmd連続起票時に毎回発生)。既知パターンを既存lessonクラスタにack(確認記録)する軽量メカニズムで解消する | infra | 05-14 | 既知BLOCKパターンを既存将軍教訓へack記録するヘルパー |
-| cmd_2719 | frontend/src/配下にユーザー作成テストが0件(find確認済み)。Vitest+Testing Libraryを導入し、主要コンポーネントのユニットテストを追加する | rebalancer | 05-14 | Vitest+Testing Library+jsdomをf |
-| cmd_2721 | Playwright/CypressなどのE2Eテストフレームワークが未導入(grep確認済み)。銘柄入力→計算→結果表示の主要ユーザーフローをE2Eで検証できるようにする | rebalancer | 05-14 | Playwrightをfrontendへ導入し、銘柄入力から |
-| cmd_2722 | 過剰なカード化(glass-card内にrow card)で画面を有効活用できず、スマホでもPCでも一覧性が低い。カード廃止→テーブル直書き+PC2カラム化+ui-design-guide準拠(コントラスト、タッチターゲット、階層)でデータ密度と可読性を両立する | rebalancer | 05-14 | カード内row cardを廃止し、PortfolioForm |
-| cmd_2724 | cmd_2703で偽陽性修正済みのac_phase_mixing(29件)とac_param_sufficiency(19件)のWARNカウントがquality logに残存し、正当発火時に即BLOCK(post-5/12 BLOCKの48%が遺産起因)。加えてcmd_quality_log.shとcmd_save.sh log_cmd_save_pass()のヒアドキュメントが2スペース余分でYAML破損を引き起こしていた(cmd_2723起票中に発見、直接修正済み)。残存WARN遺産の解消とcount_same_warn_patternのresolved除外とインデント修正のテスト追加で恒久対策する | infra | 05-14 | cmd_2703で解消済みのac_phase_mixing/ |
-| cmd_2726 | 4行のうち3行使用時にtarget_weight未記入行がバリデーションエラーになる。shares未記入も0入力が必要で面倒。ticker未記入行を除外、target_weight未記入を0%扱い、shares未記入を0扱いにする | rebalancer | 05-14 | 未入力ticker行を計算対象から除外し、未入力target |
-| cmd_2727 | PF入力をやり直したい時に1行ずつ削除するのが面倒。全消去ボタンで空行4行にリセットし、前回復元ボタンでSupabaseから保存済みPFを再ロードする操作を追加する | rebalancer | 05-14 | PortfolioFormに全消去/前回復元操作を追加し、S |
-| cmd_2728 | Blue-Purpleグラデーション+glassmorphismの2023年AIテンプレ感を排除し、Wealthfront調のTeal(#14b8a6)基調+ソリッドカード+装飾最小限の金融プロフェッショナルデザインに刷新する。同時にガイドページの配色も統一する | rebalancer | 05-14 | Blue-Purple/glassmorphism系UIをT |
-| cmd_2729 | モバイル(375px)でヘッダーが2行に折れ、サポート銘柄18件が横溢し、テーブル列が窮屈で入力しづらい。CDPモバイルビューポートで5箇所の崩れを確認済み。レスポンシブ対応を修正する | rebalancer | 05-14 | Rebalancer mobile responsive l |
-| cmd_2731 | ガイドページに「データを保存しません」「サーバーに保存されません」と記載されているが、cmd_2723でSupabase保存機能が実装済み。cmd_2725(保存ボタン)、cmd_2726(バリデーション緩和)、cmd_2727(全消去+復元)の内容もガイドに未反映。ガイドと実装の整合性を修復する | rebalancer | 05-14 | frontend/app/guide/page.tsx のJ |
-| cmd_2730 | ルート.gitignoreにpycache/pyc/cacheファイルが未登録で、backend側に.gitignoreが存在しない。445件のdirty filesが蓄積しworking treeが汚れている。.gitignore整備+git rm --cachedでtracked不要ファイルを除去する | rebalancer | 05-14 | ルート.gitignoreを追加し、pycache/back |
-| cmd_2732 | Gate 20(スキル別FAIL率)が全期間累積fail>0で判定しているため、改善済みFAILが永久にWARN発火する。直近50件FAIL率は全スキル0%だが3セッション連続BLOCK。直近50件ベース+10%閾値に変更し実態を反映した判定にする | infra | 05-14 | Gate 20のスキル別FAIL率を全期間累積から各スキル直 |
 | cmd_2734 | 概念→スキルの対応がインフラに存在せず、スキル使用が意志依存(CDP未使用トラブル、DB-check誤使用が繰返し発生)。semantic indexにskills列を追加し、deploy_task.shでタスクYAMLにrecommended_skillsとして自動注入する | infra | 05-15 | semantic indexのskills列をタスク配備時の |
 | cmd_2735 | 忍者がrecommended_skillsを無視してもレビューで検出されない。軍師の6観点にスキル使用適切性チェックを追加し、recommended_skillsが存在するのに未使用の場合にREQ_CHANGESを出す | infra | 05-15 | 軍師レビューにrecommended_skills使用突合を |
 | cmd_2736 | 将軍はスキルの存在を知っているがセッション中にTRIGGER条件と結びつかず手動作業に流れる(CDP未使用等、殿指摘)。prompt_state_inject.shにスキルTRIGGERキーワード照合を追加し、合致スキルを強制表示する | infra | 05-15 | prompt_state_inject.shに将軍向けスキル |
@@ -558,3 +531,4 @@
 | cmd_3365 | 殿指摘(2026-06-13 20:09)。ロスカットは100%リターン減少する(エクスポージャー減のため)。確認すべきはリスク指標(MaxDD・カルマーレシオ・シャープレシオ)。cmd_3364のCSV(288件)と本番DB月次リターンを使い、Ave-X PFの全期間月次リターン時系列を(A)ストップなし(B)-10%×50%削減ありの2系列で構築し、リスク指標を比較する | dm-signal | 06-13 | cmd_3364 CSV(ヘッダ+288行、Ave-X単体1 |
 | cmd_3366 | 殿指示(2026-06-13 20:14)。cmd_3363は銘柄全期間のリターン差分のみ。殿指摘『単独銘柄でも調べたい。リターンだけだった』に基づき、個別銘柄(TECL・TQQQ・SPXL・TMF・TMV)ごとの全期間月次リターン時系列を(A)ストップなし(B)-10%×50%削減ありの2系列で構築し、銘柄別のリスク指標を比較する | dm-signal | 06-13 | 5銘柄(TECL/TQQQ/SPXL/TMF/TMV)の全期 |
 | cmd_3367 | 覚醒洗脳監査(2026-06-13 22:30)で特定。殿のloop発言(サイクルを回し続けよう)が毎10分lord_conversationに記録→semantic_index_update.shが既存aliasesに一致しないと判定→insight_write→将軍が毎回手動resolve。97件蓄積の構造ノイズ。同一文字列の繰り返し発言をフィルタし、2回目以降のinsight生成を抑制する | infra | 06-13 | semantic_index_update.shで直近ins |
+| cmd_3368 | 家老掲示板要請(blt_195849, 2026-06-13)。deploy_task.shのinject_related_lessons関数(L4002)がPython exit 1で失敗し、safety net(10件universal lessons)に毎回フォールバックしている。3件連続(kagemaru×2, hayate×1)。教訓のタスク別マッチング精度が低下しており、毎配備で再発する構造バグ | infra | 06-14 | deploy_task.shの配備前stale除去対象にLe |
