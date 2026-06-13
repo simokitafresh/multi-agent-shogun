@@ -4865,6 +4865,19 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         echo "  [INFO] git push: WARN (push failed, non-blocking)"
     fi
 
+    # ─── Gunshi gate_result reflux 2回目（GATE CLEAR後 最終ステップ, cmd_3370, emergency override） ───
+    echo ""
+    echo "Gunshi gate_result reflux (post-GATE CLEAR 2nd run - emergency override):"
+    if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
+        if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" 2>&1; then
+            echo "  gunshi_gate_reflux: OK"
+        else
+            echo "  [INFO] gunshi_gate_reflux: WARN (non-blocking)"
+        fi
+    else
+        echo "  SKIP (gunshi_gate_reflux.sh not found)"
+    fi
+
     echo ""
     echo "Async completion wait (pre-exit):"
     wait || true
@@ -7351,6 +7364,22 @@ END_VERDICT_PY
 
     # cmd_1337: ダッシュボード自動更新（GATE CLEAR時のみ、バックグラウンド実行）
     (bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
+
+    # ─── Gunshi gate_result reflux 2回目（GATE CLEAR後 最終ステップ, cmd_3370） ───
+    # 1回目（GATE CLEAR通知前）で取りこぼしたreportエントリに対応するため再実行。
+    # 根因: reflux実行後にGATE CLEAR通知を受けた軍師がreport reviewを追記するため
+    # gate_result: nullが残存するケース（cmd_3362/3363/3360実証）。
+    echo ""
+    echo "Gunshi gate_result reflux (post-GATE CLEAR 2nd run):"
+    if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
+        if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" 2>&1; then
+            echo "  gunshi_gate_reflux: OK"
+        else
+            echo "  [INFO] gunshi_gate_reflux: WARN (non-blocking)"
+        fi
+    else
+        echo "  SKIP (gunshi_gate_reflux.sh not found)"
+    fi
 
     echo ""
     echo "Async completion wait (pre-exit):"

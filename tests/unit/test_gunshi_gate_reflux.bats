@@ -83,3 +83,27 @@ YAML
     grep -A3 'cmd_400' "$REVIEW_LOG" | grep -q 'gate_result: CLEAR'
     grep -A3 'cmd_401' "$REVIEW_LOG" | grep -q 'gate_result: null'
 }
+
+@test "2nd run updates report entry added after 1st run (post-GATE CLEAR scenario)" {
+    # GATE CLEAR前: draftエントリのみ存在
+    cat > "$REVIEW_LOG" <<'YAML'
+- cmd_id: cmd_500
+  review_type: draft
+  gate_result: null
+  verdict: APPROVE
+YAML
+
+    # 1回目のreflux（GATE CLEAR通知前に実行）
+    run env GUNSHI_REVIEW_LOG="$REVIEW_LOG" bash "$REFLUX_SCRIPT" cmd_500 CLEAR
+    [ "$status" -eq 0 ]
+    [ "$(grep -c 'gate_result: CLEAR' "$REVIEW_LOG")" -eq 1 ]
+
+    # GATE CLEAR後に軍師がreport reviewを追記（gate_result: null）
+    printf -- '- cmd_id: cmd_500\n  review_type: report\n  gate_result: null\n  verdict: LGTM\n' >> "$REVIEW_LOG"
+
+    # 2回目のreflux（GATE CLEAR後の最終ステップ）でreportエントリも更新される
+    run env GUNSHI_REVIEW_LOG="$REVIEW_LOG" bash "$REFLUX_SCRIPT" cmd_500 CLEAR
+    [ "$status" -eq 0 ]
+    [ "$(grep -c 'gate_result: CLEAR' "$REVIEW_LOG")" -eq 2 ]
+    ! grep -q 'gate_result: null' "$REVIEW_LOG"
+}
