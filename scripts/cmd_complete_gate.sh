@@ -4810,6 +4810,16 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     else
         echo "  [INFO] ${LAST_GATE_NOTIFY_ROUTE:-notification}: WARN (INFO notification failed, non-blocking)" >&2
     fi
+    echo "Gunshi gate_result reflux (GATE CLEAR - emergency override):"
+    if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
+        if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" 2>&1; then
+            echo "  gunshi_gate_reflux: OK"
+        else
+            echo "  [INFO] gunshi_gate_reflux: WARN (non-blocking)"
+        fi
+    else
+        echo "  SKIP (gunshi_gate_reflux.sh not found)"
+    fi
     notify_shogun_gate_clear "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了"
     notify_karo_cmd_complete_skill_hint "$CMD_ID"
 
@@ -6867,6 +6877,19 @@ PY
     notify_shogun_gate_clear "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了"
     notify_karo_cmd_complete_skill_hint "$CMD_ID"
 
+    # GATE結果通知を出す前にreview_logへ同期し、/gate-sync手動依存を残さない。
+    echo ""
+    echo "Gunshi gate_result reflux (GATE CLEAR):"
+    if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
+        if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" 2>&1; then
+            echo "  gunshi_gate_reflux: OK"
+        else
+            echo "  [INFO] gunshi_gate_reflux: WARN (non-blocking)"
+        fi
+    else
+        echo "  SKIP (gunshi_gate_reflux.sh not found)"
+    fi
+
     # ─── 掲示板自動投稿（GATE CLEAR時、将軍が/clear後に即把握できるよう） ───
     echo ""
     echo "Bulletin board (GATE CLEAR):"
@@ -7036,16 +7059,6 @@ END_GV_PY
         echo "  ${_gv_result}"
     else
         echo "  SKIP (cmd_design_quality.yaml or gunshi_review_log.yaml not found)"
-    fi
-
-    # ─── 軍師gate_result自動還流（GATE CLEAR時、ベストエフォート） ───
-    echo ""
-    echo "Gunshi gate_result reflux (GATE CLEAR):"
-    if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
-        (bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
-        echo "  queued (async)"
-    else
-        echo "  SKIP (gunshi_gate_reflux.sh not found)"
     fi
 
     # ─── GATE CLEAR時 insight候補通知（cmd_1217: lesson_candidate/decision_candidate found:true検出） ───
