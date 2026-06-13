@@ -1,5 +1,5 @@
 # 成長ループ設計 — 全ロール共通
-<!-- last_updated: 2026-06-02 cmd_karo_hotfix_semantic_search_timeout_20260602 -->
+<!-- last_updated: 2026-06-13 cmd_3363 -->
 <!-- origin: 殿指摘2026-04-20「BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉」 -->
 
 ## §1 核心原則
@@ -199,6 +199,7 @@ cmd_2673-2676で4件全てL5化完了(2026-05-11):
 - → [[gunshi_idle_nazenaze_ci_red_lesson_gap_20260605]] CI red→lesson gap: なぜなぜが成長ループに接続されていない根因
 - → [[gunshi_idle_recommended_skills_role_filter_20260602]] 推奨スキルのロールフィルタ設計: 不要通知削減の実践
 - → [[gunshi_idle_s05_test_premise_check_20260521]] テスト前提チェックのなぜなぜ: S05実行可能前提の確認
+- → [[gunshi_idle_gate_prediction_accuracy_20260612]] gate予測精度分析: APPROVE→CLEAR/FAIL予測の精度計測
 - → [[gunshi_idle_self_gate_check_str_bug_20260516]] self_gate_checkの文字列バグ: gate品質の問題
 - → [[gunshi_idle_silent_failure_audit_20260605]] サイレント失敗監査: 成長ループの穴の可視化
 - → [[gunshi_idle_skill_enforcement_5layer_20260515]] スキル強制5層設計: Level5到達の実装実例

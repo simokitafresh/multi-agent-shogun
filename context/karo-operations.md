@@ -1,5 +1,5 @@
 # 家老運用索引
-<!-- last_updated: 2026-06-10 cmd_3270 -->
+<!-- last_updated: 2026-06-13 cmd_3363 -->
 
 > 索引層。詳細手順・テンプレート・判断材料は `docs/research/karo-operations-detail.md` を参照。
 > 原則: 普段は本ファイルの結論だけで判断し、深掘りが必要な時だけ詳細へ進め。
@@ -415,6 +415,7 @@ retry_policy: |
 - → [[gunshi_idle_wa_data_quality_20260425]] WA: データ品質問題のワークアラウンドパターン
 - → [[gunshi_idle_wa_immunity_20260415]] WA免疫: ワークアラウンドを防ぐgate設計
 - → [[gunshi_idle_wa_lesson_candidate_20260415]] WAから教訓候補への変換プロセス
+- → [[gunshi_idle_wa_pattern_20260612]] WAパターン分析(2026-06-12): 直近WAの根因分類と構造対策
 - → [[gunshi_idle_wa_pattern_deep_20260425]] WAパターン深堀り: 構造的原因の抽出
 - → [[gunshi_idle_wa_qm_pattern_20260413]] WA品質管理パターン
 - → [[gunshi_idle_wa_timeseries_20260411]] WA時系列分析: 発生頻度の推移
