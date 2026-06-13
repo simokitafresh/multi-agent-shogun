@@ -728,6 +728,10 @@ STALE_FIELDS = [
     'causal_verification',
     # 第13層: command欄の必読/参照専用ファイル。cmdごとに再抽出する
     'readonly_ref',
+    # 第14層: Level5自動注入/診断メタ。スカラー親だけ上書きされると旧リスト子が残りYAMLを壊す
+    'growth_loop_defense', 'semantic_concepts', 'standard_skills',
+    'memory_db_context', 'related_causal_links', 'production_invariants',
+    'hypothesis_count', 'three_strike_rule',
 ]
 # parent_cmdが変わる場合だけacceptance_criteriaをクリアする。
 # 同一cmd再配備では、cmdソース不在時にテンプレートACをfallbackとして保持する。

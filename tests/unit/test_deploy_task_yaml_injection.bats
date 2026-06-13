@@ -57,6 +57,36 @@ PY
     grep -q 'inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points"' "$PROJECT_ROOT/scripts/deploy_task.sh"
 }
 
+@test "cmd_3368: reset_stale_fields clears auto-injected scalar/list metadata before YAML injection" {
+    python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import ast
+import re
+import sys
+
+script = open(sys.argv[1], encoding="utf-8").read()
+match = re.search(r"STALE_FIELDS = \[(.*?)\n\]", script, re.S)
+assert match, "STALE_FIELDS block not found"
+fields = {
+    node.value
+    for node in ast.walk(ast.parse("FIELDS = [" + match.group(1) + "\n]"))
+    if isinstance(node, ast.Constant) and isinstance(node.value, str)
+}
+
+required = {
+    "hypothesis_count",
+    "three_strike_rule",
+    "growth_loop_defense",
+    "semantic_concepts",
+    "standard_skills",
+    "memory_db_context",
+    "related_causal_links",
+    "production_invariants",
+}
+missing = required - fields
+assert not missing, f"missing stale reset fields: {sorted(missing)}"
+PY
+}
+
 @test "cmd_3300: deploy_task injects command readonly refs into task YAML" {
     tmpdir="$(mktemp -d)"
     mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue" "$tmpdir/scripts/lib"
