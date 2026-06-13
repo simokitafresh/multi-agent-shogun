@@ -88,7 +88,7 @@ _run_post() {
     [ "$status" -eq 0 ]
     [[ "$output" == *'"hookEventName"'* ]]
     [[ "$output" == *'"PreToolUse"'* ]]
-    [[ "$output" == *'起票前確認10問'* ]]
+    [[ "$output" == *'起票前確認11問'* ]]
     [[ "$output" == *'対象現物を確認したか'* ]]
     [[ "$output" == *'既存代替で足りないことを確認したか'* ]]
     [[ "$output" == *'cmd_save.sh関連チェック名を確認したか'* ]]
