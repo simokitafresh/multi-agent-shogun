@@ -26,17 +26,22 @@ setup_file() {
     eval "$(sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^is_gate_or_hook_addition_cmd()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^q11_has_existing_alternative_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^is_gate_or_script_modification_cmd()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^q5_has_execution_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_gate_script_execution_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_assumption_source_files()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^extract_guard_list_from_files()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^q11_has_guard_duplicate_check()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_q11_guard_list()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_gate_hook_action_conversion()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field \
         is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification \
+        is_gate_or_script_modification_cmd q5_has_execution_evidence check_gate_script_execution_evidence \
         collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check \
-        collect_q11_guard_list check_gate_hook_action_conversion record_block_reason abort_if_block_immediate
+        collect_q11_guard_list check_gate_hook_action_conversion record_block_reason record_warn_reason abort_if_block_immediate
 
     eval "check_quality_gate() {
 local WARN_COUNT=0
@@ -171,6 +176,76 @@ YAML
     echo "$output" >&2
     [ "$status" -eq 0 ]
     [[ "$output" != *"BLOCK: q5=code_readingのみ"* ]]
+}
+
+@test "Q5-T009: gate/script修正cmdでq5に実行結果なし → WARN" {
+    cat > "$QUEUE_FILE" <<'YAML'
+commands:
+  cmd_q5test:
+    id: cmd_q5test
+    title: "gate修正 q5実行証拠テスト"
+    purpose: "cmd_save.shのgate判定を修正する"
+    target_path: scripts/cmd_save.sh
+    command: "scripts/cmd_save.shのgateを修正する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "medium"
+      q5_verified_source: "structure_verified — scripts/cmd_save.shをgrep確認"
+      q8_why_what: "WHY: gate修正の実行証拠不足 → WHAT: WARNを出す"
+      q11_not_already_done: "未達成。既存gate確認済み"
+    assumptions:
+      - claim: "cmd_save.sh現物確認"
+        source: "scripts/cmd_save.sh"
+        trust: "verified"
+YAML
+    CMD_BLOCK=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
+    CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_CACHE_LOADED=0
+    export CMD_BLOCK CMD_BLOCK_NC CMD_BLOCK_FOUND CMD_BLOCK_CACHE_LOADED
+
+    run check_gate_script_execution_evidence "$CMD_BLOCK_NC"
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARNING: gate/script修正cmdのq5に実行結果がありません"* ]]
+}
+
+@test "Q5-T010: gate/script修正cmdでq5に実行結果あり → WARNなし" {
+    cat > "$QUEUE_FILE" <<'YAML'
+commands:
+  cmd_q5test:
+    id: cmd_q5test
+    title: "gate修正 q5実行証拠テスト"
+    purpose: "cmd_save.shのgate判定を修正する"
+    target_path: scripts/cmd_save.sh
+    command: "scripts/cmd_save.shのgateを修正する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "medium"
+      q5_verified_source: "structure_verified — bash scripts/cmd_save.sh --preflight cmd_test 実行結果 exit code 0 / WARNなし"
+      q8_why_what: "WHY: gate修正の実行証拠不足 → WHAT: WARNを出さない"
+      q11_not_already_done: "未達成。既存gate確認済み"
+    assumptions:
+      - claim: "cmd_save.sh現物確認"
+        source: "scripts/cmd_save.sh"
+        trust: "verified"
+YAML
+    CMD_BLOCK=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
+    CMD_BLOCK_NC=$(echo "$CMD_BLOCK" | grep -v '^\s*#' || true)
+    CMD_BLOCK_FOUND=1
+    CMD_BLOCK_CACHE_LOADED=0
+    export CMD_BLOCK CMD_BLOCK_NC CMD_BLOCK_FOUND CMD_BLOCK_CACHE_LOADED
+
+    run check_gate_script_execution_evidence "$CMD_BLOCK_NC"
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARNING: gate/script修正cmdのq5に実行結果がありません"* ]]
 }
 
 # ---- 除外条件: scope_mode=SCOUT OR scout_exempt=true ----

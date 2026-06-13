@@ -62,6 +62,17 @@ _run_post() {
     [[ "$output" == *"report_field_set.sh"* ]]
 }
 
+@test "pre dispatcher shogun_to_karo checklist includes gate/script execution evidence item" {
+    local queue_file="$BATS_TEST_TMPDIR/queue/shogun_to_karo.yaml"
+    mkdir -p "$(dirname "$queue_file")"
+    printf 'commands:\n' > "$queue_file"
+    _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$queue_file"'","old_string":"commands:\n","new_string":"commands:\n  cmd_test:\n    id: cmd_test\n"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"起票前確認11問"* ]]
+    [[ "$output" == *"gate/script修正cmd"* ]]
+    [[ "$output" == *"q5_verified_sourceへ実行コマンド・exit code・出力要点"* ]]
+}
+
 @test "pre dispatcher mirrors stdout-only deny reason to stderr on exit 2" {
     local out_file="$BATS_TEST_TMPDIR/stdout.txt"
     local err_file="$BATS_TEST_TMPDIR/stderr.txt"

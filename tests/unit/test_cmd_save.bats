@@ -464,7 +464,7 @@ commands:
       q2_learning: "奪わない — 保存前に自己修正できる"
       q3_next_quality: "上がる — 失敗前に同一検査を実行できる"
       q4_depth: "shallow"
-      q5_verified_source: "structure_verified — git log確認: scripts/cmd_save.sh直近履歴確認; git blame確認: cmd_save副作用関数を確認; semantic/causal確認: [[cmd_3327]]; 関連教訓: L549"
+      q5_verified_source: "structure_verified — git log確認: scripts/cmd_save.sh直近履歴確認; git blame確認: cmd_save副作用関数を確認; semantic/causal確認: [[cmd_3327]]; 関連教訓: L549; 実行結果: bash scripts/cmd_save.sh --preflight cmd_preflight exit code 0"
       q6_not_hiding: "no — 記録抑止はpreflight限定で保存時判定は維持"
       q7_definition_verified: "yes — preflightは書込みなしの同一検査"
       q8_why_what: "WHY: 事後規律を保存前検証へ移す。git log/blameとsemantic/causal [[cmd_3327]] で設計意図を確認 / WHAT: cmd_save.sh --preflight と cmd_save.sh の判定一致 / WHEN: 今セッション / WHERE: scripts/cmd_save.sh / WHO: 将軍 / HOW: 同一cmdブロックを2モードで実行する。複利: 正の複利"

@@ -410,6 +410,44 @@ q11_has_existing_alternative_verification() {
     return 0
 }
 
+is_gate_or_script_modification_cmd() {
+    local block_text="${1:-${CMD_BLOCK_NC:-}}"
+    local search_text
+
+    [[ -n "$block_text" ]] || return 1
+    search_text="$(printf '%s\n' "$block_text" | awk '
+        /^[[:space:]]*(title|purpose|target_path):/ { print; next }
+        /^[[:space:]]*command:[[:space:]]*\|/ { in_command=1; next }
+        /^[[:space:]]*command:[[:space:]]*[^|]/ { print; next }
+        in_command && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_command=0; next }
+        in_command && /^[[:space:]]{4,}/ { print; next }
+    ')"
+
+    printf '%s\n' "$search_text" | grep -qiE 'gate|hook|script|\.sh|ゲート|フック|スクリプト' || return 1
+    printf '%s\n' "$search_text" | grep -qiE '修正|改善|追加|変更|更新|精度|誤判定|偽陽性|fix|modify|update|improve|add' || return 1
+    return 0
+}
+
+q5_has_execution_evidence() {
+    local q5_value="${1:-}"
+
+    [[ -n "$q5_value" ]] || return 1
+    printf '%s\n' "$q5_value" | grep -qiE '実行結果|実行確認|実行済|コマンド実行|hook出力|gate出力|出力|stdout|stderr|exit[ _-]?code|exit[ =:]?[0-9]|PASS|FAIL|WARN|CLEAR|BLOCK|bats|テスト実行|\.sh[[:space:]]|bash[[:space:]]|sh[[:space:]]' || return 1
+    return 0
+}
+
+check_gate_script_execution_evidence() {
+    local block_text="${1:-${CMD_BLOCK_NC:-}}"
+    local q5_value
+
+    is_gate_or_script_modification_cmd "$block_text" || return 0
+    q5_value="$(cmd_block_get_field "quality_gate.q5_verified_source")"
+    if ! q5_has_execution_evidence "$q5_value"; then
+        echo "WARNING: gate/script修正cmdのq5に実行結果がありません。grep/コード断片だけで未実装判断せず、対象gate/scriptを実行し、コマンド・exit code・出力要点をq5_verified_sourceへ記録せよ(LS063)" >&2
+        record_warn_reason "gate/script修正cmd q5実行証拠なし" "check=gate_script_q5_execution_evidence"
+    fi
+}
+
 extract_q11_semantic_query() {
     local block_text="${1:-}"
     [[ -n "${block_text//[[:space:]]/}" ]] || return 1
@@ -2931,6 +2969,7 @@ QG_TEMPLATE
     elif [[ -n "$q5_val" ]] && ! echo "$q5_val" | grep -qiE "実行|execute|pipeline|本番|production|API応答|DB確認|テスト実行|structure_verified|isolated_test|production_verified|pipeline_test"; then
         echo "WARNING: q5に検証方法が不明確。レベル明記推奨: code_reading(コード読み) / isolated_test(単体実行) / pipeline_test(結合実行) / production_verified(本番確認)" >&2
     fi
+    check_gate_script_execution_evidence "$CMD_BLOCK_NC"
 
     # q6_not_hiding: SG8自動消火チェック（WARN_COUNTに加算 2026-04-21殿裁定）
     # 目的: 表面的対処で根源的問題を隠し改革動機を殺すcmdを防止

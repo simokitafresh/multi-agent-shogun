@@ -319,7 +319,7 @@ print(len(non_gc))
         fi
         _checklist="★起票は雛形から始めよ: bash scripts/cmd_skeleton.sh \"タイトル\" project で全必須フィールド入り雛形を生成→FILL_THISを埋めて貼れ(記憶からの作文はBLOCK往復の元)。保存前検証: cmd_save.sh --preflight <id> (書込みなし)。保存後フロー: cmd_save.sh <id> → cmd_delegate.sh cmd_<id> \"<msg>\"
 
-起票前確認10問:
+起票前確認11問:
 1. 対象現物を確認したか？
 2. 既存代替で足りないことを確認したか？
 3. cmd_save.sh関連チェック名を確認したか？
@@ -330,6 +330,7 @@ print(len(non_gc))
 8. q11にgrep/rg結果(コマンド+件数)を含めたか？特にスクリプト変更cmdはgate/hook追加と判定される(q11_existing_alternative_verification 17回累計BLOCK)
 9. environment_changeのpatternを対象fileでgrep確認したか？例: rg -nF \"pattern文字列\" \"対象ファイル\" → 1件以上(environment_change未実装pattern累計BLOCK)
 10. semantic_search.shで関連概念を検索したか？未実行ならここで止まり bash scripts/semantic_search.sh \"cmd主題または対象概念\" を実行し、既知キーワードgrepだけでは見落とす関連概念を確認せよ([[grep依存=既知限定]] -> [[将軍semantic_search未使用]] -> [[殿指摘2026-05-22]])
+11. gate/script修正cmdは、起票前に対象gate/scriptを実行し、q5_verified_sourceへ実行コマンド・exit code・出力要点を記録したか？(LS063: grep断片だけで未実装判断する車輪を防ぐ)
 
 quality_gate template (cmd_save.sh必須フィールド):
   q1_firefighting: \"\"
