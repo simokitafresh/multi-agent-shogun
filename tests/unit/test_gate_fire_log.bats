@@ -6,12 +6,11 @@ setup() {
     SCRIPT="$REPO_ROOT/scripts/gate_fire_log.sh"
     TMP_DIR="$(mktemp -d)"
     TMP_LOG="$TMP_DIR/gate_fire_log.yaml"
-    rm -f /tmp/gate_fire_log_stats_* 2>/dev/null || true
+    export GATE_FIRE_LOG_CACHE_DIR="$TMP_DIR"
 }
 
 teardown() {
     rm -rf "$TMP_DIR" 2>/dev/null || true
-    rm -f /tmp/gate_fire_log_stats_* 2>/dev/null || true
 }
 
 # ファイル不在 → healed=0 fail_total=0 fail_live=0

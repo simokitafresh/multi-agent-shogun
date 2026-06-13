@@ -26,7 +26,7 @@ if [ "${#cache_tail}" -gt 100 ]; then
     cache_tail="${cache_tail: -100}"
 fi
 cache_key="${#FIRE_LOG}_${cache_tail}"
-cache_file="/tmp/gate_fire_log_stats_${cache_key}"
+cache_file="${GATE_FIRE_LOG_CACHE_DIR:-/tmp}/gate_fire_log_stats_${cache_key}"
 
 if [ -f "$cache_file" ]; then
     cat "$cache_file"
