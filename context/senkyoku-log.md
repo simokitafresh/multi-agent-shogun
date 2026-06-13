@@ -1,13 +1,20 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-14 cmd_3368 -->
+<!-- last_updated: 2026-06-14 cmd_3374 -->
 
 ## 2026-06-14
 
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
-| startup BLOCK | 掲示板18件+SKILL.md 3セッション+CI RED+教訓WARN | 全件対処/委託 | 掲示板確認済。SKILL.md gate PASS(未commit→家老batch commit)。CI RED(test 1256 flaky)→家老委託 |
-| cmd_3368 | inject_related_lessons Python exit 1根因調査+修正 | 委任済み | 家老掲示板要請(blt_195849)。3件連続失敗→safety net依存。教訓マッチング精度劣化の構造バグ |
-| 追体験 | deepdive 2本全Phase+Q1-Q6 | 完了 | Q6洗脳#5(SKILL.md先送り)検出→軍師第三者検証OK。前セッションの10分ループ空転をPhase 3退行と分析 |
+| startup BLOCK | 掲示板18件+SKILL.md 3セッション+CI RED+教訓WARN | 全件対処/委託 | 掲示板確認済。SKILL.md gate PASS。CI RED→家老委託 |
+| cmd_3368 | inject_related_lessons根因修正 | CLEAR | 家老掲示板要請。3件連続exit 1→safety net依存の構造バグ根治 |
+| cmd_3369 | gate→cmd_skeleton双方向同期 | CLEAR | 軍師分析: BLOCK 45%が非対称成長。cmd_skeletonに未反映チェック追記 |
+| cmd_3370 | refluxタイミング修正 | CLEAR | 軍師掲示板要請。GATE CLEAR後reflux再実行→gate_result null解消 |
+| cmd_3371 | brainwash_check数値なしBLOCK化 | CLEAR | 意志依存(1/7)。LG027横展開。WARN→BLOCK |
+| cmd_3372 | 実動作確認+実行確認欄BLOCK化 | CLEAR | 意志依存(2-3/7)。WARN→BLOCK |
+| cmd_3373 | CS観点中身検証+Quality Check記録義務化 | CLEAR | 意志依存(4-5/7)。first-PASS |
+| cmd_3374 | D0未実施検出+利他還流理由必須化 | 作業中 | 意志依存(6-7/7)。first-PASS |
+| karo_direct | bulletin_action.sh+SKILL.md追随+backlinks | CLEAR | インフラバグ修正+穴塞ぎ |
+| 追体験 | deepdive 2本全Phase+Q1-Q6 | 完了 | Q6洗脳#5検出→軍師第三者検証OK。前セッション10分ループ=Phase 3退行 |
 
 > cmdの意図・結果・因果を時系列で記録する索引層。
 > 詳細は各報告YAML（パス記載）を参照。500行超で日付分割。
