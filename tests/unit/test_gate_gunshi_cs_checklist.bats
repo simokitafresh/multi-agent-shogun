@@ -924,3 +924,80 @@ YAML
     run bash "$TEST_GATE"
     [[ "$output" != *"BLOCK(AC2-品質三問)"* ]]
 }
+
+@test "draft with minor fix pattern but no d0_applied warns (AC1 cmd_3374)" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_8001
+  review_type: draft
+  verdict: APPROVE
+  confidence: MEDIUM
+  ambiguity_points: none
+  brainwash_check: "#1防止: MEDIUM。数値: AC 2件"
+  findings_summary: "6観点OK。typo修正1件。実装は正しい"
+  observations:
+    - "事実1: typoを発見した"
+    - "事実2: 実装は正しい"
+  timestamp: "2026-06-14T03:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"WARN(AC1-D0未実施)"* ]]
+    [[ "$output" == *"cmd_8001"* ]]
+}
+
+@test "draft with minor fix pattern and d0_applied set does not warn (AC1 cmd_3374)" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_8002
+  review_type: draft
+  verdict: APPROVE
+  confidence: MEDIUM
+  ambiguity_points: none
+  brainwash_check: "#1防止: MEDIUM。数値: AC 2件"
+  findings_summary: "6観点OK。フォーマット不備を修正した"
+  d0_applied: yes
+  observations:
+    - "事実1: フォーマット修正済み"
+    - "事実2: 実装は正しい"
+  timestamp: "2026-06-14T03:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [[ "$output" != *"WARN(AC1-D0未実施)"* ]]
+}
+
+@test "altruism_check not_needed without reason blocks with exit 2 (AC2 cmd_3374)" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: idle_study_X001
+  review_type: self_study
+  verdict: N/A
+  causal_chain: "因果"
+  cs_checklist:
+    CS1: "PASS"
+  operational_simulation: "シミュレーション完了"
+  altruism_check: not_needed
+  timestamp: "2026-06-14T03:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(AC2-利他理由なし)"* ]]
+    [[ "$output" == *"idle_study_X001"* ]]
+}
+
+@test "altruism_check not_needed with reason does not block (AC2 cmd_3374)" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: idle_study_X002
+  review_type: self_study
+  verdict: N/A
+  causal_chain: "因果"
+  cs_checklist:
+    CS1: "PASS"
+  operational_simulation: "シミュレーション完了"
+  altruism_check: "not_needed — 既存lessonsに記載済みのため還流不要"
+  timestamp: "2026-06-14T03:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [[ "$output" != *"BLOCK(AC2-利他理由なし)"* ]]
+}

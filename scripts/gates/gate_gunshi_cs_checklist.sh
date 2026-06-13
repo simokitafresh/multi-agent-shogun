@@ -1057,7 +1057,77 @@ if [ -n "$_lgtm_block" ]; then
     warn=1
 fi
 
-if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ] || [ -n "$infra_no_verify_block" ] || [ -n "$step35_block" ] || [ -n "$cs_empty_block" ] || [ -n "$bw_quality_block" ]; then
+# --- AC1 cmd_3374: D0未実施検出 — 軽微修正パターンありd0_applied未設定はWARN ---
+_d0_missing=$(awk '
+    function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+    function check_flush() {
+        if (!current_id) return
+        if (rt !~ /draft|report/) return
+        if (!has_minor) return
+        if (has_d0) return
+        print current_id
+    }
+    /^- (cmd_id|id):/ {
+        check_flush()
+        line = $0; sub(/^- (cmd_id|id):[[:space:]]*/, "", line); gsub(/"/, "", line)
+        current_id = trim(line); rt = ""; has_minor = 0; has_d0 = 0; in_obs = 0
+        next
+    }
+    /^[[:space:]]*review_type:/ {
+        v = $0; sub(/^[[:space:]]*review_type:[[:space:]]*/, "", v); gsub(/"/, "", v); rt = trim(v)
+    }
+    /^[[:space:]]*findings_summary:/ {
+        if ($0 ~ /typo|フォーマット|format|missing.field|フィールド不備|記入漏れ|欠落|誤字|脱字|field.*missing|フィールド.*不備/) has_minor = 1
+    }
+    /^[[:space:]]*d0_applied:/ { has_d0 = 1 }
+    /^[[:space:]]*observations:[[:space:]]*$/ { in_obs = 1; next }
+    in_obs && /^[[:space:]]{4,}-/ {
+        if ($0 ~ /typo|フォーマット|format|missing.field|フィールド不備|記入漏れ|欠落|誤字|脱字|field.*missing|フィールド.*不備/) has_minor = 1
+        next
+    }
+    in_obs && !/^[[:space:]]{4,}/ { in_obs = 0 }
+    END { check_flush() }
+' "$LOG_FILE" 2>/dev/null | tail -5 || true)
+
+# --- AC2 cmd_3374: 利他還流not_needed理由なし検出 → BLOCK ---
+_altruism_no_reason=$(awk '
+    function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+    function flush() {
+        if (current_id && altruism_no_reason) print current_id
+    }
+    /^- (cmd_id|id):/ {
+        flush()
+        line = $0; sub(/^- (cmd_id|id):[[:space:]]*/, "", line); gsub(/"/, "", line)
+        current_id = trim(line); altruism_no_reason = 0
+        next
+    }
+    /^[[:space:]]*altruism_check:[[:space:]]*/ {
+        v = $0; sub(/^[[:space:]]*altruism_check:[[:space:]]*/, "", v); gsub(/"/, "", v)
+        v = trim(v)
+        altruism_no_reason = (v ~ /^not_needed$/) ? 1 : 0
+    }
+    END { flush() }
+' "$LOG_FILE" 2>/dev/null | tail -5 || true)
+
+if [ -n "$_d0_missing" ]; then
+    _d0_count=$(printf '%s\n' "$_d0_missing" | awk 'NF{c++} END{print c+0}')
+    echo "WARN(AC1-D0未実施): ${_d0_count}件のdraft/reportで軽微修正パターン検出だがd0_applied未設定:"
+    printf '%s\n' "$_d0_missing" | while IFS= read -r _id; do
+        [ -n "$_id" ] && echo "  - $_id: 軽微修正(typo/format/フィールド不備等)はD0で即修正しd0_applied: yesを記録せよ"
+    done
+    warn=1
+fi
+if [ -n "$_altruism_no_reason" ]; then
+    _alt_count=$(printf '%s\n' "$_altruism_no_reason" | awk 'NF{c++} END{print c+0}')
+    echo "BLOCK(AC2-利他理由なし): ${_alt_count}件のエントリでaltruism_check=not_neededだが理由なし:"
+    printf '%s\n' "$_altruism_no_reason" | while IFS= read -r _id; do
+        [ -n "$_id" ] && echo "  - $_id: altruism_check: \"not_needed — <理由>\" の形式で理由を記載せよ"
+    done
+    altruism_no_reason_block=1
+    warn=1
+fi
+
+if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ] || [ -n "$infra_no_verify_block" ] || [ -n "$step35_block" ] || [ -n "$cs_empty_block" ] || [ -n "$bw_quality_block" ] || [ -n "$altruism_no_reason_block" ]; then
     exit 2
 fi
 
