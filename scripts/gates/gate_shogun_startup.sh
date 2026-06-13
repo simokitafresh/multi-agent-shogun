@@ -947,6 +947,16 @@ empty_target_re = re.compile(r"\*{0,2}自動化ターゲット\*{0,2}\s*[:：]\s
 target_re = re.compile(r"\*{0,2}自動化ターゲット\*{0,2}\s*[:：]\s*(.+)", re.I)
 weak_target_re = re.compile(r"(案を検討|検討する|検討中|予定|つもり|後で|あとで)")
 weak_target_negation_re = re.compile(r"(検討[・/、, ]*予定ではなく|検討ではなく|予定ではなく|つもりではなく|後でではなく|あとでではなく|登録完了済み|D0修正済み)")
+automation_action_re = re.compile(
+    r"(cmd起票|cmd発行|cmd化|gate修正|gate追加|hook追加|hook修正|script変更|script修正|"
+    r"スクリプト変更|教訓追記|教訓登録|lesson追記|D0修正|実装修正|テスト追加|検知追加|"
+    r"ブロック追加|BLOCK追加)"
+)
+automation_action_negation_re = re.compile(
+    r"(cmd起票|cmd発行|cmd化|gate修正|gate追加|hook追加|hook修正|script変更|script修正|"
+    r"スクリプト変更|教訓追記|教訓登録|lesson追記|D0修正|実装修正|テスト追加|検知追加|"
+    r"ブロック追加|BLOCK追加)\s*(なし|無し|不要|しない|せず|未実施|未対応)"
+)
 found_answer = False
 found_automation_target = False
 automation_target = ""
@@ -954,6 +964,22 @@ automation_target = ""
 def has_weak_target(value: str) -> bool:
     check = weak_target_negation_re.sub("", value)
     return bool(weak_target_re.search(check))
+
+def extract_automation_target(text: str) -> str:
+    match = target_re.search(text)
+    if match:
+        value = match.group(1).strip()
+        if value and not value.startswith("<") and not empty_target_re.search(match.group(0)) and not has_weak_target(value):
+            return value
+        return ""
+    if (
+        "Q6" in text
+        and automation_action_re.search(text)
+        and not automation_action_negation_re.search(text)
+        and not has_weak_target(text)
+    ):
+        return text.strip()
+    return ""
 
 for entry in reversed(session_entries):
     if entry.get("direction") not in ("response", "outbound"):
@@ -964,12 +990,10 @@ for entry in reversed(session_entries):
     )
     if not text:
         continue
-    match = target_re.search(text)
-    if match:
-        value = match.group(1).strip()
-        if value and not value.startswith("<") and not empty_target_re.search(match.group(0)) and not has_weak_target(value):
-            found_automation_target = True
-            automation_target = value
+    value = extract_automation_target(text)
+    if value:
+        found_automation_target = True
+        automation_target = value
     if any(term in text for term in answer_terms):
         if "Q6" in text and all(term in text for term in prompt_only_terms):
             continue
@@ -1028,12 +1052,10 @@ if not (found_answer and found_automation_target) and bulletin_path and bulletin
         text = " ".join(entry["content"])
         if not text:
             continue
-        match = target_re.search(text)
-        if match:
-            value = match.group(1).strip()
-            if value and not value.startswith("<") and not empty_target_re.search(match.group(0)) and not has_weak_target(value):
-                found_automation_target = True
-                automation_target = value
+        value = extract_automation_target(text)
+        if value:
+            found_automation_target = True
+            automation_target = value
         if any(term in text for term in answer_terms):
             if "Q6" in text and all(term in text for term in prompt_only_terms):
                 continue

@@ -419,6 +419,42 @@ EOF
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
+@test "Q6 action words without automation target label are accepted as fallback" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 洗脳#6出力=仕事で止まらないよう、cmd起票して scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。殿のために行動まで進める。"}
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"* ]]
+    [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
+
+@test "Q6 without label or action words keeps missing automation warning" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 洗脳#6出力=仕事を確認した。殿のために一次情報を見る。結論だけでは終わらない。"}
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: Q6回答は検出したが自動化ターゲット未記入"* ]]
+    [[ "$output" != *"OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
+@test "Q6 explicit no action word keeps missing automation warning" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 洗脳#5先送りを確認した。cmd起票なし。特になし。"}
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: Q6回答は検出したが自動化ターゲット未記入"* ]]
+    [[ "$output" != *"OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
 @test "lessons_shogun origin missing or linkless → 総合判定: WARN" {
     cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
 lessons:
