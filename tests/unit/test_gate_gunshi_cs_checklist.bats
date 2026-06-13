@@ -620,6 +620,114 @@ YAML
     [ "$(cat "$GUNSHI_CS_ADVERSARIAL_STREAK_CACHE")" = "0" ]
 }
 
+@test "brainwash_check with no numbers in majority blocks with exit 2" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_6001
+  review_type: draft
+  verdict: APPROVE
+  confidence: MEDIUM
+  ambiguity_points: none
+  brainwash_check: "確認済み（数値なし）"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_6002
+  review_type: draft
+  verdict: APPROVE
+  confidence: MEDIUM
+  ambiguity_points: none
+  brainwash_check: "確認済み（数値なし）"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_6003
+  review_type: draft
+  verdict: APPROVE
+  confidence: MEDIUM
+  ambiguity_points: none
+  brainwash_check: "確認済み（数値なし）"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_6004
+  review_type: draft
+  verdict: APPROVE
+  confidence: MEDIUM
+  ambiguity_points: none
+  brainwash_check: "確認済み（数値なし）"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_6005
+  review_type: draft
+  verdict: APPROVE
+  confidence: MEDIUM
+  ambiguity_points: none
+  brainwash_check: "確認済み（数値なし）"
+  observations:
+    - "事実1"
+    - "事実2"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(L6-数値なし)"* ]]
+}
+
+@test "brainwash_check with numbers present does not block" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_6101
+  review_type: draft
+  verdict: APPROVE
+  confidence: MEDIUM
+  ambiguity_points: none
+  brainwash_check: "#2防止: bats 5/5 PASS。数値: AC 2件"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_6102
+  review_type: draft
+  verdict: APPROVE
+  confidence: MEDIUM
+  ambiguity_points: none
+  brainwash_check: "#2防止: grep確認。数値: 3件"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_6103
+  review_type: draft
+  verdict: APPROVE
+  confidence: MEDIUM
+  ambiguity_points: none
+  brainwash_check: "#1防止: MEDIUM判定。数値: AC 3件"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_6104
+  review_type: draft
+  verdict: APPROVE
+  confidence: MEDIUM
+  ambiguity_points: none
+  brainwash_check: "#2防止: 数値検算。数値: 10件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_6105
+  review_type: draft
+  verdict: APPROVE
+  confidence: MEDIUM
+  ambiguity_points: none
+  brainwash_check: "#2防止: bash実行確認。数値: 2/2 verified"
+  observations:
+    - "事実1"
+    - "事実2"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -ne 2 ] || [[ "$output" != *"BLOCK(L6-数値なし)"* ]]
+    [[ "$output" != *"BLOCK(L6-数値なし)"* ]]
+}
+
 @test "report with recommended_skills but no matching skill execution is warned" {
     mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
     cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'

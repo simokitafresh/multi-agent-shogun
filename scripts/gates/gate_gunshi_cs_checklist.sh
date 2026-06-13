@@ -271,6 +271,7 @@ hole_action_missing=""
 brainwash_missing=""
 cold_category_missing=""
 adversarial_streak_error=""
+bw_no_number_block=""
 skill_usage_missing=""
 ops_sim_missing=""
 all_pass=0
@@ -889,7 +890,8 @@ _bw_no_number=$(tail -200 "$LOG_FILE" 2>/dev/null | awk '
     END { if (total >= 5 && no_num > total*0.5) print no_num "/" total }
 ')
 if [ -n "$_bw_no_number" ]; then
-    echo "WARN(L6-数値なし): brainwash_checkの${_bw_no_number}件で数値なし。記入率≠検出率(LG027)。修正前→後の数値差分を記載せよ"
+    echo "BLOCK(L6-数値なし): brainwash_checkの${_bw_no_number}件で数値なし。記入率≠検出率(LG027)。修正前→後の数値差分を記載せよ"
+    bw_no_number_block=1
     warn=1
 fi
 
@@ -991,7 +993,7 @@ if [ -n "$_lgtm_block" ]; then
     warn=1
 fi
 
-if [ -n "$adversarial_streak_error" ]; then
+if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ]; then
     exit 2
 fi
 
