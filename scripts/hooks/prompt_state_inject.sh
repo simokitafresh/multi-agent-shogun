@@ -150,6 +150,16 @@ if [[ -z "$agent_id" ]]; then
   agent_id="unknown"
 fi
 
+refresh_shogun_recovery_marker() {
+  local marker="${PROMPT_STATE_RECOVERY_MARKER:-/tmp/shogun_recovery_complete}"
+
+  [[ "$agent_id" == "shogun" ]] || return 0
+  [[ -f "$marker" ]] || return 0
+  touch "$marker" 2>/dev/null || true
+}
+
+refresh_shogun_recovery_marker
+
 # --- Timestamp (ISO 8601) ---
 printf -v timestamp '%(%Y-%m-%dT%H:%M:%S%z)T' -1
 if [[ "$timestamp" =~ ^(.+)([+-][0-9]{2})([0-9]{2})$ ]]; then
