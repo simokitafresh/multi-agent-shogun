@@ -262,3 +262,4 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - → [[dm-signal-frontend]] フロントエンド詳細
 - → [[cmd_absorb_refactor_after_20260506]] 吸収ルールリファクタリング後の実装(cmd_1080: シン忍法v2完成後)
 - → [[cmd_absorb_refactor_spec_20260506]] 吸収ルールリファクタリング仕様書(シン忍法v2 absorption設計)
+- → [[dm_signal_refactor_mission]] BE4分割リファクタ全工程完了(2026-06-13)。WP-0(契約18)+WP-1(FE/BE削除)+WP-2(EP11+ブロック4種+Kalman)+WP-3(AC1 price_ratio+AC2 4モジュール分割+AC3縮小版FE参照除去)。本番数値不変証明済み。→ `/mnt/c/Python_app/DM-signal/.agent/task-force/execution-log.md`
