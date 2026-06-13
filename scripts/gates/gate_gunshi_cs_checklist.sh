@@ -939,10 +939,11 @@ _infra_no_verify=$(awk '
     echo "$_verified_by_ss" | grep -qxF "$_cid" || echo "$_cid"
 done | tail -5 || true)
 if [ -n "$_infra_no_verify" ]; then
-    echo "WARN(L6-洗脳#2): infra/scripts reportレビューで実動作確認なし:"
+    echo "BLOCK(L6-洗脳#2): infra/scripts reportレビューで実動作確認なし:"
     printf '%s\n' "$_infra_no_verify" | while read -r _id; do
         [ -n "$_id" ] && echo "  - $_id: binary_checks=yesを鵜呑みにするな。実行して確認せよ"
     done
+    infra_no_verify_block=1
     warn=1
 fi
 
@@ -955,10 +956,11 @@ _step35_missing=$(awk '
 ' "$LOG_FILE" 2>/dev/null | tail -10 || true)
 if [ -n "$_step35_missing" ]; then
     _s35_count=$(echo "$_step35_missing" | wc -l)
-    echo "WARN(L4-LG036): ${_s35_count}件のreportレビューにstep3_5_verified未記入:"
+    echo "BLOCK(L4-LG036): ${_s35_count}件のreportレビューにstep3_5_verified未記入:"
     printf '%s\n' "$_step35_missing" | while read -r _id; do
         [ -n "$_id" ] && echo "  - $_id: SG-PRE25結果+command×files_modified 3分類を記録せよ"
     done
+    step35_block=1
     warn=1
 fi
 
@@ -993,7 +995,7 @@ if [ -n "$_lgtm_block" ]; then
     warn=1
 fi
 
-if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ]; then
+if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ] || [ -n "$infra_no_verify_block" ] || [ -n "$step35_block" ]; then
     exit 2
 fi
 

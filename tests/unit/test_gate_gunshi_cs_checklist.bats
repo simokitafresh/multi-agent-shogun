@@ -802,3 +802,68 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" != *"recommended_skills未使用"* ]]
 }
+
+@test "infra report without 実行 confirmation blocks with exit 2 (AC1 cmd_3372)" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_7001
+  review_type: report
+  verdict: LGTM
+  step3_5_verified: "PASS"
+  finding_categories: [adversarial]
+  observations:
+    - "gate_gunshi_cs_checklist.sh のレビュー完了"
+  timestamp: "2026-06-14T00:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(L6-洗脳#2)"* ]]
+}
+
+@test "infra report with 実行 confirmation does not block (AC1 cmd_3372)" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_7002
+  review_type: report
+  verdict: LGTM
+  step3_5_verified: "PASS"
+  finding_categories: [adversarial]
+  observations:
+    - "gate_gunshi_cs_checklist.sh を実行して確認した"
+  timestamp: "2026-06-14T00:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -ne 2 ]
+    [[ "$output" != *"BLOCK(L6-洗脳#2)"* ]]
+}
+
+@test "report review without step3_5_verified blocks with exit 2 (AC2 cmd_3372)" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_7003
+  review_type: report
+  verdict: LGTM
+  observations:
+    - "通常のレビュー完了"
+  timestamp: "2026-06-14T00:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(L4-LG036)"* ]]
+}
+
+@test "report review with step3_5_verified does not block for step35 (AC2 cmd_3372)" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_7004
+  review_type: report
+  verdict: LGTM
+  step3_5_verified: "PASS"
+  observations:
+    - "通常のレビュー完了"
+  timestamp: "2026-06-14T00:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -ne 2 ]
+    [[ "$output" != *"BLOCK(L4-LG036)"* ]]
+}
