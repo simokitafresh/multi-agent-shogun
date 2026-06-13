@@ -80,7 +80,7 @@ cat <<SKELETON
       q2_learning: "FILL_THIS: 忍者の学習機会を奪わない理由"
       q3_next_quality: "FILL_THIS: 次のcmd品質が上がる理由"
       q4_depth: "FILL_THIS: shallow|medium|deep — 理由(deep/mediumは時間コスト概算WARNが出る)"
-      q5_verified_source: "FILL_THIS: code_reading|isolated_test|pipeline_test|production_verified — 何をどう一次確認したか+確認日時"
+      q5_verified_source: "FILL_THIS: code_reading|isolated_test|pipeline_test|production_verified — 何をどう一次確認したか+確認日時(gate/hook/script修正cmdは実行証拠必須: コマンド+exit code+出力要点 LS063)"
       q6_not_hiding: "FILL_THIS: 何も隠していない理由"
       q7_definition_verified: "FILL_THIS: 用語定義の確認内容(確認日: ${TODAY})"
       q8_why_what: "WHY: FILL_THIS / WHAT: FILL_THIS(ACと同じ数値・日付を同一表記で) / WHEN: 今セッション / WHERE: FILL_THIS / WHO: 忍者N名 / HOW: FILL_THIS / 複利: FILL_THIS"
@@ -105,4 +105,7 @@ cat >&2 <<'GUIDE'
 7. PASS後: bash scripts/cmd_delegate.sh cmd_<id> "<家老への配備メッセージ>" (inbox_write直接のcmd_newはgateがBLOCK)
 8. 新規ファイル/ディレクトリを伴うcmdは意図的新設である理由をdiagnosisに書け(new_file WARN対策。無自覚な新設=車輪の再発明検査)
 9. 性能ACに合格点(閾値)を書くな(LS053)。構造的二値(プロセス起動O(1)等)+実測値報告+理論限界比で書け。閾値はデータ量変化で無意味化し、到達で最適化が止まる
+10. gate/hook/script修正cmd: q5に実行証拠(コマンド・exit code・出力要点)を必ず記載せよ。grep/コード断片だけは不可(LS063: check_gate_script_execution_evidence)
+11. インフラ(gate/hook/daemon/記憶DB/semantic)cmd: q5/q8/originにgit log・教訓・設計意図を明記せよ(check_causal_verification_requirement)
+12. 同一BLOCKが3回以上続いたら: quality_gate.nazenaze_root_cause になぜなぜ7回分析を記載せよ(VALID_QG_FIELDSに登録済み)
 GUIDE

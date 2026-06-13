@@ -531,6 +531,19 @@ YAML
     grep -q 'cmd_save.sh --preflight <id>' "$PROJECT_ROOT/.claude/hooks/pre-write-edit-combined.sh"
 }
 
+@test "cmd_skeleton q5 hint mentions gate/script execution evidence requirement (LS063)" {
+    grep -q 'gate/hook/script修正cmd' "$PROJECT_ROOT/scripts/cmd_skeleton.sh"
+    grep -q 'LS063' "$PROJECT_ROOT/scripts/cmd_skeleton.sh"
+}
+
+@test "cmd_skeleton guide mentions causal_verification for infra cmds" {
+    grep -q 'check_causal_verification_requirement' "$PROJECT_ROOT/scripts/cmd_skeleton.sh"
+}
+
+@test "cmd_skeleton guide mentions nazenaze_root_cause for repeated BLOCKs" {
+    grep -q 'nazenaze_root_cause' "$PROJECT_ROOT/scripts/cmd_skeleton.sh"
+}
+
 @test "Check21.2: 非DB cmdならバックアップAC WARNなし" {
     create_queue_file << 'YAML'
 commands:
