@@ -230,9 +230,9 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 | **auto-update復帰** | `/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions` | updater管理symlink |
 
 切替手順(全体): launch_cmd変更 → `bash scripts/switch_cli_mode.sh claude --scope shogun,karo,gunshi,kagemaru,hanzo,kotaro,tobisaru` でrespawn。backup3本(`~/bin/claude`, `claude.pinned`, `claude-2.1.87-stable`)で復元可能。
-切替手順(pane単位): `bash skills/shogun-claude-version-switch/scripts/claude_version_switch.sh unpin-latest --agent hayate` で特定paneだけ最新版。`pin-2.1.87 --agent hayate` でピン止めに戻す。settings.yamlの個別launch_cmdをcli_lookup.shがオーバーライド。
+切替手順(pane単位): `bash skills/shogun-cli-switch/scripts/shogun_cli_switch.sh unpin-latest --agent hayate` で特定paneだけ最新版。`pin-2.1.87 --agent hayate` でピン止めに戻す。settings.yamlの個別launch_cmdをcli_lookup.shがオーバーライド。
 → `docs/research/claude-code-version-runbook.md`（全手順+緊急ロールバック+復元方法）
-→ `skills/shogun-claude-version-switch/SKILL.md`（スキル詳細）
+→ `skills/shogun-cli-switch/SKILL.md`（スキル詳細）
 
 ## 忍者個別弱点自動注入（cmd_1307）
 
@@ -1378,8 +1378,8 @@ done | sort -u
 - → [[reset-layout]] tmuxペイン配置復元スキル（agentsウィンドウ一発復元）
 - → [[shogun-all-codex-switch]] 全忍者Codex一括切替スキル（Claude→Codex全員切替）
 - → [[shogun-peacetime-rollback]] Codex→Claude平時ロールバックスキル
-- → [[switch-to-codex]] 個別エージェントCodex切替スキル
-- → [[switch-to-opus]] 個別エージェントOpus CLI切替スキル
+- → [[shogun-cli-switch]] 個別エージェントCodex切替スキル
+- → [[shogun-cli-switch]] 個別エージェントOpus CLI切替スキル
 - → [[switch-project]] プロジェクト切替スキル（current_project変更）
 - → [[hensei-mixed]] 混成編成切替スキル（GPT+Sonnet+Opus混成）
 - → [[hensei-opus]] Opus統一編成スキル（決戦モード全忍者Opus化）

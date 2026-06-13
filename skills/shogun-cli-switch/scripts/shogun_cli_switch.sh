@@ -6,6 +6,7 @@ ACTION="${1:-}"
 DRY_RUN=false
 SETTINGS_ONLY=false
 TARGET_AGENT=""
+SCOPE="core"
 
 PINNED_CMD="/home/simokitafresh/bin/claude --dangerously-skip-permissions"
 LATEST_CMD="/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions"
@@ -16,22 +17,32 @@ LATEST_BIN="/home/simokitafresh/.local/bin/claude"
 
 usage() {
   cat <<'USAGE'
-Usage: claude_version_switch.sh <status|pin-2.1.87|unpin-latest> [--agent <name>] [--repo <path>] [--dry-run] [--settings-only]
+Usage: shogun_cli_switch.sh <status|pin-2.1.87|unpin-latest|to-claude|to-codex> [--agent <name>] [--scope <core|all|csv>] [--repo <path>] [--dry-run] [--settings-only]
 
 Actions:
   status         Show current launch_cmd, available binaries, and active Claude scope
   pin-2.1.87     Point launch_cmd at /home/simokitafresh/bin/claude and respawn Claude panes
   unpin-latest   Point launch_cmd at /home/simokitafresh/.local/bin/claude and respawn Claude panes
+  to-claude      Switch target agents to Claude CLI
+  to-codex       Switch target agents to Codex CLI
 
 Options:
   --agent <name>     Target a single agent (pane-level switch via settings.yaml override)
+  --scope <scope>    Target multiple agents for CLI switch: core, all, or comma-separated list
   --repo <path>      Target multi-agent-shogun repository (default: current dir)
   --dry-run          Print actions only
   --settings-only    Update config only; do not respawn panes
 USAGE
 }
 
-[[ -n "$ACTION" ]] || { usage >&2; exit 1; }
+if [[ -z "$ACTION" ]]; then
+  usage >&2
+  exit 1
+fi
+if [[ "$ACTION" == "-h" || "$ACTION" == "--help" ]]; then
+  usage
+  exit 0
+fi
 shift || true
 
 while [[ $# -gt 0 ]]; do
@@ -54,6 +65,11 @@ while [[ $# -gt 0 ]]; do
       TARGET_AGENT="$2"
       shift 2
       ;;
+    --scope)
+      [[ $# -lt 2 ]] && { echo "[ERROR] --scope requires a value" >&2; exit 1; }
+      SCOPE="$2"
+      shift 2
+      ;;
     -h|--help)
       usage
       exit 0
@@ -74,7 +90,7 @@ RESTART_WATCHERS="$REPO_ROOT/scripts/restart_watchers.sh"
 [[ -f "$CLI_PROFILES" ]] || { echo "[ERROR] cli_profiles not found: $CLI_PROFILES" >&2; exit 1; }
 [[ -x "$SWITCH_SCRIPT" ]] || { echo "[ERROR] switch script not executable: $SWITCH_SCRIPT" >&2; exit 1; }
 
-log() { echo "[claude-version] $*"; }
+log() { echo "[shogun-cli-switch] $*"; }
 
 get_current_launch_cmd() {
   python3 - "$CLI_PROFILES" <<'PY'
@@ -229,8 +245,108 @@ with open(path, "w", encoding="utf-8") as f:
 PY
 }
 
-# --- per-agent override (settings.yaml) ---
+# --- runtime / per-agent helpers ---
 SETTINGS_YAML="$REPO_ROOT/config/settings.yaml"
+
+source "$REPO_ROOT/lib/agent_state.sh"
+
+resolve_window_target() {
+  local named_target="$1"
+  local indexed_target="$2"
+  if tmux list-panes -t "$named_target" >/dev/null 2>&1; then
+    echo "$named_target"
+  else
+    echo "$indexed_target"
+  fi
+}
+
+find_agent_pane() {
+  local agent="$1"
+  local agents_window
+  agents_window=$(resolve_window_target "shogun:agents" "shogun:2")
+
+  local pane_idx
+  pane_idx=$(tmux list-panes -t "$agents_window" -F '#{pane_index} #{@agent_id}' 2>/dev/null \
+    | awk -v a="$agent" '$2==a {print $1; exit}')
+  if [[ -n "$pane_idx" ]]; then
+    echo "${agents_window}.${pane_idx}"
+    return 0
+  fi
+
+  return 1
+}
+
+agent_pane_target() {
+  local agent="$1"
+  if [[ "$agent" == "shogun" ]]; then
+    resolve_window_target "shogun:main" "shogun:1"
+    return 0
+  fi
+  find_agent_pane "$agent"
+}
+
+agent_runtime_state() {
+  local agent="$1"
+  local pane="$2"
+  local tmux_state task_status
+
+  tmux_state=$(tmux display-message -t "$pane" -p '#{@agent_state}' 2>/dev/null || true)
+  task_status=$(python3 - "$REPO_ROOT" "$agent" <<'PY'
+import os, sys, yaml
+repo, agent = sys.argv[1], sys.argv[2]
+path = os.path.join(repo, "queue", "tasks", f"{agent}.yaml")
+try:
+    with open(path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    task = data.get("task", data) if isinstance(data, dict) else {}
+    print(task.get("status", ""))
+except Exception:
+    print("")
+PY
+)
+
+  case "$tmux_state" in
+    active|bash_running) echo "busy:${tmux_state}:${task_status}"; return 0 ;;
+  esac
+  case "$task_status" in
+    assigned|acknowledged|in_progress|pending) echo "busy:${tmux_state:-unknown}:${task_status}"; return 0 ;;
+  esac
+  if check_agent_busy "$pane" "$agent"; then
+    echo "idle:${tmux_state:-unknown}:${task_status:-none}"
+  else
+    echo "busy:${tmux_state:-unknown}:${task_status:-unknown}"
+  fi
+}
+
+safe_respawn_agent() {
+  local agent="$1" launch_cmd="$2"
+  if ! tmux has-session -t shogun 2>/dev/null; then
+    log "No tmux session; config update only"
+    return 0
+  fi
+  local pane
+  pane=$(agent_pane_target "$agent" 2>/dev/null || true)
+  if [[ -z "$pane" ]]; then
+    log "Pane for $agent not found; skip respawn"
+    return 0
+  fi
+  local state
+  state=$(agent_runtime_state "$agent" "$pane")
+  if [[ "$state" != idle:* ]]; then
+    log "SKIP respawn $agent ($pane): not idle ($state)"
+    return 0
+  fi
+  if [[ "$DRY_RUN" == true ]]; then
+    log "[dry-run] respawn $pane with: $launch_cmd"
+    return 0
+  fi
+  log "Respawning idle $agent ($pane) with: $launch_cmd"
+  tmux set-option -p -t "$pane" @agent_state active 2>/dev/null || true
+  tmux respawn-pane -k -t "$pane" "cd $REPO_ROOT && $launch_cmd" 2>/dev/null || {
+    log "Respawn failed for $agent"
+    return 1
+  }
+}
 
 set_agent_launch_cmd() {
   local agent="$1" new_cmd="$2"
@@ -343,25 +459,7 @@ PY
 
 respawn_single_agent() {
   local agent="$1" launch_cmd="$2"
-  if ! tmux has-session -t shogun 2>/dev/null; then
-    log "No tmux session; config update only"
-    return 0
-  fi
-  local pane
-  pane=$(tmux list-panes -s -t shogun -F '#{window_index}.#{pane_index} #{@agent_id}' | awk -v a="$agent" '$2==a {print "shogun:"$1}')
-  if [[ -z "$pane" ]]; then
-    log "Pane for $agent not found; skip respawn"
-    return 0
-  fi
-  if [[ "$DRY_RUN" == true ]]; then
-    log "[dry-run] respawn $pane with: $launch_cmd"
-    return 0
-  fi
-  log "Respawning $agent ($pane) with: $launch_cmd"
-  tmux respawn-pane -k -t "$pane" "cd $REPO_ROOT && $launch_cmd" 2>/dev/null || {
-    log "Respawn failed for $agent"
-    return 1
-  }
+  safe_respawn_agent "$agent" "$launch_cmd"
 }
 
 apply_runtime() {
@@ -390,6 +488,23 @@ apply_runtime() {
   fi
 }
 
+apply_cli_switch() {
+  local target_cli="$1"
+  local switch_scope
+  if [[ -n "$TARGET_AGENT" ]]; then
+    switch_scope="$TARGET_AGENT"
+  else
+    switch_scope="$SCOPE"
+  fi
+
+  local args=()
+  [[ "$DRY_RUN" == true ]] && args+=(--dry-run)
+  [[ "$SETTINGS_ONLY" == true ]] && args+=(--no-relaunch)
+
+  log "Switching CLI: target=${target_cli} scope=${switch_scope}"
+  bash "$SWITCH_SCRIPT" "$target_cli" --scope "$switch_scope" "${args[@]}"
+}
+
 case "$ACTION" in
   status)
     print_status
@@ -399,6 +514,12 @@ case "$ACTION" in
       echo "  $TARGET_AGENT override: ${_override:-<none (using profile default)>}"
     fi
     exit 0
+    ;;
+  to-claude)
+    apply_cli_switch claude
+    ;;
+  to-codex)
+    apply_cli_switch codex
     ;;
   pin-2.1.87)
     ensure_pinned_assets

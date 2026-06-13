@@ -182,6 +182,22 @@ wait_for_codex_boot_mock saizo shogun:agents.7
     [[ "$output" == *"timeout"* ]]
 }
 
+@test "switch_cli_mode: dry-run supports single-agent Codex switch" {
+    run bash "${PROJECT_ROOT}/scripts/switch_cli_mode.sh" codex --scope karo --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"target_cli=codex"* ]]
+    [[ "$output" == *"scope=karo"* ]]
+    [[ "$output" == *"dry-run complete"* ]]
+}
+
+@test "shogun_cli_switch: dry-run routes to Codex switch" {
+    run bash "${PROJECT_ROOT}/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh" to-codex --agent karo --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Switching CLI: target=codex scope=karo"* ]]
+    [[ "$output" == *"dry-run complete"* ]]
+}
+
+
 # =============================================================================
 # settings.yaml 更新テスト（Python部分）
 # =============================================================================

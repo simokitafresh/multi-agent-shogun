@@ -271,6 +271,35 @@ restart_agent_cli() {
     display_name=$(cli_profile_get "$agent" "display_name")
     display_name="${display_name:-$TARGET_CLI}"
 
+    local tmux_state task_status pane_state
+    tmux_state=$(tmux display-message -t "$target" -p '#{@agent_state}' 2>/dev/null || true)
+    task_status=$(python3 - "$SCRIPT_DIR" "$agent" <<'PY'
+import os, sys, yaml
+repo, agent = sys.argv[1], sys.argv[2]
+path = os.path.join(repo, "queue", "tasks", f"{agent}.yaml")
+try:
+    with open(path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    task = data.get("task", data) if isinstance(data, dict) else {}
+    print(task.get("status", ""))
+except Exception:
+    print("")
+PY
+)
+    if [[ "$tmux_state" =~ ^(active|bash_running)$ ]] || [[ "$task_status" =~ ^(assigned|acknowledged|in_progress|pending)$ ]]; then
+        tmux set-option -p -t "$target" @agent_cli "$TARGET_CLI" >/dev/null 2>&1 || true
+        tmux set-option -p -t "$target" @model_name "$display_name" >/dev/null 2>&1 || true
+        echo "  [runtime] ${agent}@${target}: busy (${tmux_state:-unknown}/${task_status:-none}), relaunch skipped"
+        return 0
+    fi
+    if ! check_agent_busy "$target" "$agent"; then
+        pane_state=$(get_agent_state_label "$target" "$agent" 2>/dev/null || echo "unknown")
+        tmux set-option -p -t "$target" @agent_cli "$TARGET_CLI" >/dev/null 2>&1 || true
+        tmux set-option -p -t "$target" @model_name "$display_name" >/dev/null 2>&1 || true
+        echo "  [runtime] ${agent}@${target}: not idle (${pane_state}), relaunch skipped"
+        return 0
+    fi
+
     if [[ "$DRY_RUN" == true ]]; then
         echo "  [runtime] ${agent}@${target}: relaunch -> ${launch}"
         return 0

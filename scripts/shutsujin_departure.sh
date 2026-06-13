@@ -45,7 +45,7 @@ else
 fi
 
 # ─── 指揮官デフォルトCLI復元（Opus保証） ───
-# /switch-to-codex でsettings.yamlが変更されていても、再起動時はデフォルトOpusに戻す。
+# /shogun-cli-switch でsettings.yamlが変更されていても、再起動時はデフォルトOpusに戻す。
 # 殿裁定(2026-04-22): デフォルトは将軍・家老・軍師=Opus。Codex切替は手動スキル実行時のみ。
 _SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 # 3x awk → 1 awk: settings.yaml を1回だけ読んで全指揮官のtypeを取得（~20ms削減）
