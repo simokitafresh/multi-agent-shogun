@@ -111,7 +111,9 @@ if [[ ! -f "$SETTINGS_FILE" ]]; then
     exit 1
 fi
 
-validate_cli_availability "$TARGET_CLI" >/dev/null
+if [[ "$DRY_RUN" != true ]]; then
+    validate_cli_availability "$TARGET_CLI" >/dev/null
+fi
 
 # shellcheck source=/dev/null
 source "${SCRIPT_DIR}/scripts/lib/agent_config.sh"
