@@ -131,6 +131,7 @@ tag_max_concepts = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_MAX_CONCEPTS", "
 tag_bh_q = float(os.environ.get("SEMANTIC_TAG_PROPAGATION_BH_Q", "0.75"))
 tag_source_per_concept = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_SOURCE_PER_CONCEPT", "1"))
 tag_source_limit = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_SOURCE_LIMIT", "5"))
+insight_recent_dedup_limit = int(os.environ.get("SEMANTIC_INSIGHT_RECENT_DEDUP_LIMIT", "50"))
 
 try:
     payload = json.loads(payload_raw)
@@ -713,6 +714,47 @@ def extract_cmd_origin_targets(payload):
     fields = raw if isinstance(raw, list) else [raw]
     return extract_wiki_targets(fields)
 
+def discussion_candidate_label(payload, fallback):
+    if source_type != "discussion":
+        return fallback
+    for key in ("summary", "detail"):
+        value = payload.get(key)
+        if not isinstance(value, str):
+            continue
+        cleaned = strip_noise(value)
+        cleaned = re.sub(r"\s+", " ", cleaned).strip(" ・、。:：-")
+        if cleaned:
+            return cleaned[:80]
+    return fallback
+
+def parse_recent_insight_messages(path, limit):
+    if limit <= 0 or not path.exists() or not path.stat().st_size:
+        return []
+    messages = []
+    current = {}
+    try:
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            if line.startswith("- id: "):
+                if current.get("insight"):
+                    messages.append(current["insight"])
+                current = {}
+                continue
+            if line.startswith("  insight:"):
+                raw = line.split(":", 1)[1].strip()
+                try:
+                    current["insight"] = json.loads(raw)
+                except json.JSONDecodeError:
+                    current["insight"] = raw.strip("'\"")
+        if current.get("insight"):
+            messages.append(current["insight"])
+    except OSError as exc:
+        print(f"WARN: failed to read recent insights for dedup: {exc}", file=sys.stderr)
+        return []
+    return messages[-limit:]
+
+def recent_insight_exists(message):
+    return message in parse_recent_insight_messages(insights_path, insight_recent_dedup_limit)
+
 def is_semantic_wiki_target(target):
     target_n = norm(target)
     if re.fullmatch(r"cmd_[a-z0-9_]+", target_n):
@@ -726,6 +768,9 @@ def is_semantic_wiki_target(target):
     return bool(strip_noise(target))
 
 def queue_insight(message, priority="low"):
+    if recent_insight_exists(message):
+        print(f"SKIP: recent duplicate semantic insight: {message[:120]}")
+        return False
     if insight_write.exists():
         result = subprocess.run(
             ["bash", str(insight_write), message, priority, "semantic_index_update"],
@@ -742,6 +787,7 @@ def queue_insight(message, priority="low"):
     else:
         print(f"WARN: insight_write not found: {insight_write}", file=sys.stderr)
         print(message)
+    return True
 
 def queue_unregistered_target(target, concepts, message_prefix):
     if not is_semantic_wiki_target(target):
@@ -749,11 +795,12 @@ def queue_unregistered_target(target, concepts, message_prefix):
     if norm(target) in known_terms:
         return False
     similar = format_similar_concepts(target, concepts)
-    queue_insight(
+    if queue_insight(
         f"{message_prefix}: [[{target}]] は既存aliasesに一致なし。{similar}。概念定義とaliases追加を検討せよ",
         "low",
-    )
-    return True
+    ):
+        return True
+    return False
 
 def purpose_alias_candidate(raw):
     cleaned = strip_noise(raw)
@@ -802,11 +849,11 @@ def queue_no_match_purpose_aliases(concepts):
         if norm(alias) in known:
             continue
         similar = format_similar_concepts(alias, concepts)
-        queue_insight(
+        if queue_insight(
             f"[[{alias}]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。{similar}。既存概念aliasesへの自動昇格候補",
             "low",
-        )
-        queued += 1
+        ):
+            queued += 1
     if queued:
         print(f"NO_MATCH_PURPOSE_ALIAS: queued {queued} pending alias candidate(s)")
 
@@ -1255,7 +1302,7 @@ scored.sort(key=lambda item: (item[0], item[1], item[2]), reverse=True)
 _, _, _, best, confidence, exact, partial = scored[0]
 
 payload_id = str(payload.get("id") or payload.get("cmd_id") or payload.get("lesson_id") or payload.get("timestamp") or "").strip()
-payload_label = payload_id or "payload"
+payload_label = discussion_candidate_label(payload, payload_id or "payload")
 matched = ", ".join(exact + sorted(set(partial))) or "none"
 
 if confidence == "HIGH":
@@ -1325,9 +1372,10 @@ else:
     )
     priority = "low"
 
-queue_insight(message, priority)
-
-print(f"{confidence}: insight queued for {source_type}:{payload_label}")
+    if queue_insight(message, priority):
+        print(f"{confidence}: insight queued for {source_type}:{payload_label}")
+    else:
+        print(f"{confidence}: insight skipped for {source_type}:{payload_label}")
 PY
     )"
     index_changed=false

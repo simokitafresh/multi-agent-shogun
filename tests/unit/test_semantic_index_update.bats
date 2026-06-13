@@ -260,10 +260,49 @@ EOF
     grep -q 'semantic_index_update新概念候補' "$TEST_TMPDIR/queue/insights.log"
 }
 
+@test "NONE: duplicate discussion content skips insight_write when recent insight exists" {
+    export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
+    cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'
+insights:
+- id: INS-RECENT-DUP
+  ts: "2026-06-13T22:00:00+09:00"
+  insight: "semantic_index_update新概念候補: discussion:サイクルを回し続けよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  status: done
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" discussion '{"timestamp":"2026-06-13T22:10:00+09:00","summary":"サイクルを回し続けよう"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP: recent duplicate semantic insight"* ]]
+    [[ "$output" == *"NONE: insight skipped for discussion:サイクルを回し続けよう"* ]]
+
+    [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
+}
+
+@test "NONE: first-seen discussion content still calls insight_write" {
+    export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
+    cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'
+insights:
+- id: INS-OTHER
+  ts: "2026-06-13T22:00:00+09:00"
+  insight: "semantic_index_update新概念候補: discussion:別の発言 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  status: pending
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" discussion '{"timestamp":"2026-06-13T22:10:00+09:00","summary":"サイクルを回し続けよう"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NONE: insight queued for discussion:サイクルを回し続けよう"* ]]
+
+    grep -q 'semantic_index_update新概念候補: discussion:サイクルを回し続けよう' "$TEST_TMPDIR/queue/insights.log"
+}
+
 @test "NONE: discussion timestamp with transport-only text is skipped as noise" {
     run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" discussion '{"timestamp":"2026-05-20T23:00:11+09:00","summary":"task notification task id tool use id inbox1"}'
     [ "$status" -eq 0 ]
-    [[ "$output" == *"NONE: skipped noise-only candidate for discussion:2026-05-20T23:00:11+09:00"* ]]
+    [[ "$output" == *"NONE: skipped noise-only candidate for discussion:task notification task id tool use id inbox1"* ]]
 
     [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
 }
