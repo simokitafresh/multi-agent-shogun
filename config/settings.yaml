@@ -13,8 +13,8 @@ cli:
       japanese_name: 将軍
       launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions
     karo:
-      type: codex
-      model_name: gpt-5.4
+      type: claude
+      model_name: claude-opus-4-6
       role: karo
       japanese_name: 家老
     gunshi:
@@ -24,32 +24,32 @@ cli:
       japanese_name: 軍師
     hayate:
       type: codex
-      model_name: gpt-5.4-low
+      model_name: gpt-5.5-low
       role: ninja
       japanese_name: 疾風
     kagemaru:
       type: codex
-      model_name: gpt-5.4-low
+      model_name: gpt-5.5-low
       role: ninja
       japanese_name: 影丸
     hanzo:
       type: codex
-      model_name: gpt-5.4-low
+      model_name: gpt-5.5-low
       role: ninja
       japanese_name: 半蔵
     saizo:
-      type: codex
-      model_name: gpt-5.4-low
+      type: claude
+      model_name: claude-sonnet-4-6
       role: ninja
       japanese_name: 才蔵
     kotaro:
-      type: codex
-      model_name: gpt-5.4-low
+      type: claude
+      model_name: claude-sonnet-4-6
       role: ninja
       japanese_name: 小太郎
     tobisaru:
-      type: codex
-      model_name: gpt-5.4-low
+      type: claude
+      model_name: claude-sonnet-4-6
       role: ninja
       japanese_name: 飛猿
 idle_cycle: off

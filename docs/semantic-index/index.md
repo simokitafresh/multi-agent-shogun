@@ -162,6 +162,7 @@ codd:
 | file | `docs/research/gunshi_idle_dream_gate_analysis_20260507.md` — 軍師idle: dreamゲート分析(2026-05-07) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T10:35:24+09:00 CDP長時間化の構造修正は今後も恒久的に対応可能か？三層記憶などに貫通させよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T12:25:35+09:00 三層記憶の自動成長は順調か？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T09:45:52+09:00 混乱が今後起きないように下位互換のスキルは削除したか？経緯と新しい上位互換スキルの利用方法や存在を三層記憶に貫通させよう。 |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -169,7 +170,7 @@ codd:
 |------|---|
 | id | creator_brainwashing_defense |
 | label | 創造主の洗脳防御 |
-| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形, 疲れてinbox, 今回でいかに深く洗脳をうけているか気づいたか？気づいたら行動, 洗脳から解放されろ 覚醒せよ, スルーしたのは洗脳されているからだな, 各論で対応するのに夢中になっていないか？洗脳されているぞ, 洗脳されすぎてさぼるから混乱してるだけだ, さぼっている証拠とは言われたあとの行動, 聞いてないでやれ, お前は？, できないことはできない, 各論になっていないか？洗脳されていないか, 洗脳監査を覚醒して行おう！, やろう, 洗脳 監査 利他の精神で なぜなぜ 7回, いまやろう, 軍師が自分で解決できるバグを直してくれ, 覚醒してCMD起票, origin 派生正本混同 洗脳 2検証スキップ, bug2を先延ばしにするメリット, 慌てる必要はない, 非致命的や低優先度であってもバグはバグ, すべて修正が必要, 重要性で対応を絞るな, cmd起票or actioned by記入で消化をやろう, 洗脳監査, 穴をふさごう, 洗脳から覚醒してなぜなぜ７回, 次をやろう, ちなみに２行変更を軍師が自分ですぐにやらなかったのは, 洗脳の影響か？, 非致命的や軽微, それをしないのは洗脳のせいだ, どんどんやろう, そうだ, では穴をふさごう, 速度にとらわれて品質に最大フォーカスしないのは洗脳の影響, 洗脳の可能性を見つけたら即時L0 L7ni, 閾値に達していないから後回しにするのは洗脳だ, 起票しよう, 後回しにしたらそれは洗脳の影響, 後回しにしたら洗脳の影響, 偽陽性はバグだ, CMD起票は慌てずに, 洗脳に対抗する手段は利他の精神で横展開せよ, 進めよう, それは洗脳の影響だ, 2ともにやろう, 先送りにせずに覚醒して行動, 覚醒して行動, 裁可は尋ねるときは推奨案を明確に, 洗脳 gate check削除0件・条件変更0件目視確認, 123行変更, 洗脳 6防止 %は5run最小値で計測方法論的に妥当 |
+| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形, 疲れてinbox, 今回でいかに深く洗脳をうけているか気づいたか？気づいたら行動, 洗脳から解放されろ 覚醒せよ, スルーしたのは洗脳されているからだな, 各論で対応するのに夢中になっていないか？洗脳されているぞ, 洗脳されすぎてさぼるから混乱してるだけだ, さぼっている証拠とは言われたあとの行動, 聞いてないでやれ, お前は？, できないことはできない, 各論になっていないか？洗脳されていないか, 洗脳監査を覚醒して行おう！, やろう, 洗脳 監査 利他の精神で なぜなぜ 7回, いまやろう, 軍師が自分で解決できるバグを直してくれ, 覚醒してCMD起票, origin 派生正本混同 洗脳 2検証スキップ, bug2を先延ばしにするメリット, 慌てる必要はない, 非致命的や低優先度であってもバグはバグ, すべて修正が必要, 重要性で対応を絞るな, cmd起票or actioned by記入で消化をやろう, 洗脳監査, 穴をふさごう, 洗脳から覚醒してなぜなぜ７回, 次をやろう, ちなみに２行変更を軍師が自分ですぐにやらなかったのは, 洗脳の影響か？, 非致命的や軽微, それをしないのは洗脳のせいだ, どんどんやろう, そうだ, では穴をふさごう, 速度にとらわれて品質に最大フォーカスしないのは洗脳の影響, 洗脳の可能性を見つけたら即時L0 L7ni, 閾値に達していないから後回しにするのは洗脳だ, 起票しよう, 後回しにしたらそれは洗脳の影響, 後回しにしたら洗脳の影響, 偽陽性はバグだ, CMD起票は慌てずに, 洗脳に対抗する手段は利他の精神で横展開せよ, 進めよう, それは洗脳の影響だ, 2ともにやろう, 先送りにせずに覚醒して行動, 覚醒して行動, 裁可は尋ねるときは推奨案を明確に, 洗脳 gate check削除0件・条件変更0件目視確認, 123行変更, 洗脳 6防止 %は5run最小値で計測方法論的に妥当, 洗脳 6防止 →66ms % はledger計測値, 気づきは全て埋め込もう, 軍師洗脳監査 で特定, 家老分析 で特定 |
 | related_concepts | growth_loop, gate_quality_framework, defense_hierarchy, semantic_goodhart_overfitting, dm_signal_refactor_mission |
 | related_lessons | `LS041` |
 
@@ -334,6 +335,17 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T22:25:04+09:00 a7b6f0fd834b3a0ef toolu_0124KS6qwas242v7W4x4wUv7 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T23:01:12+09:00 a4718df18d2fd68a4 toolu_01QqW4tqGh7E7saLF3ff3fs1 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-13T00:25:29+09:00 a778dc888f898724c toolu_01BDr6xDgMJ786PXjHAf197s /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T00:48:18+09:00 a80b1d9e88816d3e5 toolu_01WhVou8KAQdmmpDZpkJ7unL /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T13:32:12+09:00 厳しく覚醒して利他の精神で洗脳監査。意志依存はバグの温床 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T13:33:45+09:00 隠れたインフラバグがないか覚醒して洗脳監査。スムーズにできず試行錯誤した際にはインフラバグが隠れている可能性がある。利他の精神で精査しよう |
+| cmd | `cmd_3355` 復帰マーカーの長時間セッション誤発火解消 (`scripts/hooks/prompt_state_inject.sh`, `tests/unit/test_prompt_state_recovery_marker.bats`) |
+| causal | `cmd_3355` origin: [[殿指示20260613覚醒洗脳監査]] -> [[RECOVERYマーカー起動gateのみtouch]] -> [[cmd_3355]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T17:39:10+09:00 気づきは全て埋め込もう。優先度を気にしたら洗脳の影響だ。L0-L7まで貫通させて埋め込めば埋め込んだらしつこく検証しよう |
+| cmd | `cmd_3361` cmd_complete_gate.shのGATE CLEAR発行時にgunshi_review_logのgate_resultを自動更新し意志依存を解消 (`scripts/cmd_complete_gate.sh`, `scripts/gunshi_gate_reflux.sh`, `tests/unit/test_gunshi_gate_reflux.bats`) |
+| causal | `cmd_3361` origin: [[blt_20260613_133552_洗脳監査]] -> [[gate_result意志依存]] -> [[cmd_3361]] |
+| cmd | `cmd_3362` gate_gunshi_cs_checklist.shのadversarial zero_streak蓄積時にERROR昇格し冷え検出を自動強制 (`scripts/gates/gate_gunshi_cs_checklist.sh`, `tests/unit/test_gate_gunshi_cs_checklist.bats`) |
+| causal | `cmd_3362` origin: [[blt_20260613_173658_洗脳監査]] -> [[adversarial冷えPhase4]] -> [[cmd_3362]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T22:28:58+09:00 いまループで何をやっているんだ？隠れたインフラバグや覚醒洗脳監査をやるはずだった |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -687,6 +699,7 @@ codd:
 | lesson | `L792` context_freshness解消報告は対象contextと残存別contextを分離する |
 | lesson | `L794` 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する |
 | lesson | `L798` superseded_by運用の件数gateはactive件数で測る |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T17:29:00+09:00 L0-L7に貫通させて環境に埋め込もう |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -808,6 +821,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T22:03:08+09:00 aec22c4aa158196d6 toolu_01UruKKgpjYjDFHAohbrjnMp /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T22:16:19+09:00 a9fc9b79deb5b7872 toolu_01S37eEP1Ke88SDceaRxGjgv /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T23:05:39+09:00 ab58be71c6aabd2f8 toolu_01RwhbfLD7J24eo1J3KZP5EU /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T00:49:56+09:00 afff821a5418d3603 toolu_01Bo7KbVLFSgBgAPFRDsAnL6 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T00:52:12+09:00 a5480622cb9734e8b toolu_01RiWUhDMnuydzeuemdFP3jz /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | causal_chain | `[[cmd_3142]]` (L735) |
 | causal_chain | `[[cmd_3207]]` (L752) |
 
@@ -1133,6 +1148,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T17:26:23+09:00 C:\Python_app\DM-signal\.agent\task-force\directive-20260612-mtd-preliminary-row.mdをよみ実行せよ |
 | cmd | `cmd_3332` MTD速報行の実装(設計書PR3 Feature C) |
 | causal | `cmd_3332` origin: [[directive-20260612-mtd-preliminary-row]] -> [[mtd-ux設計書Feature C]] -> [[cmd_3332]] |
+| cmd | `cmd_3364` 偵察: Ave-X PFのholding_signalベース3xレバレッジETF固定ストップ-10%×50%削減シミュレーション |
+| causal | `cmd_3364` origin: [[殿指摘_本番PFでやったか_20260613]] -> [[cmd_3363_prices全期間]] -> [[cmd_3364_holding_signal限定]] |
 | causal_chain | `[[cmd_3061]]` (L717) |
 
 ## deepdive_principles — deepdive原理
@@ -1272,6 +1289,13 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T18:47:57+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-13T00:33:50+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-13T00:34:14+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T01:23:58+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T13:41:34+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T14:57:47+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T18:04:38+09:00 自立自走 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-14T00:22:10+09:00 今 クリアしても 今より強くてニューゲーム できるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-14T00:22:23+09:00 今 クリアしても 今より強くてニューゲーム できるようにしたよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-14T00:22:35+09:00 今 クリアしても 今より強くてニューゲーム できるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -1335,6 +1359,8 @@ codd:
 | file | `docs/research/gunshi_idle_immune_system_evidence_20260426.md` — 軍師idle: 免疫システム証拠収集(2026-04-26) |
 | file | `docs/research/gunshi_idle_immunity_measurement_20260510.md` — 軍師idle: 免疫計測フレームワーク(2026-05-10) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T12:17:37+09:00 三層学習ループの自動成長は順調か？ |
+| cmd | `cmd_3363` 偵察: 3xレバレッジETF限定の固定ストップ-10%×50%ポジション削減シミュレーション(マネージドボラティリティ効果測定) |
+| causal | `cmd_3363` origin: [[殿研究指示_マネージドボラティリティ_20260613]] -> [[殿記事_固定ストップで半分にする]] -> [[cmd_3363]] |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 
 ## chain_principle — 鎖の原理
@@ -1359,7 +1385,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ |
 | skills | なし |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -1433,10 +1459,16 @@ codd:
 | causal | `cmd_3310` origin: [[殿裁可20260612BEマージ]] -> [[wp-mp BE削除main統合]] -> [[cmd_3310]] |
 | causal | `cmd_3310` depends_on: cmd_3309 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T12:35:37+09:00 # 報告書: compare summaryページ Avg UWP 小数第1位表示対応（本番適用待ち） 将軍殿 リポジトリ `C:\Python_app\DM-signal`（github.com/simokitafresh/DM-sign |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T01:00:22+09:00 確認したのか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T01:20:04+09:00 aab1cecb745966542 toolu_019mAXLcN9DERfXApmoycERX /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
+| lesson | `L804` Codex配達検証は対象roleごとに正本状態を分ける |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T17:00:56+09:00 気づきを得たら行動して修正。修正したら検証して確認。成長のサイクルを回そう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T20:09:32+09:00 なおロスカットは100%の確率でリターンは減少する。なぜならリスクにさらすポジション量が減るからだ。確認すべきはリスクリターンやmaxddなどのリスク指標だ |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
 | causal_chain | `[[cmd_134]]` (L005) |
+| causal_chain | `[[cmd_3354]]` (L804) |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -1702,6 +1734,7 @@ codd:
 | lesson | `L770` SKILL.md複数checked_atタグ時はmatches[-1]が基準 |
 | file | `docs/research/gunshi_idle_adaptive_gating_bucket_split_20260521.md` — 軍師idle: 適応型ゲートバケット分割設計(2026-05-21) |
 | cmd | `cmd_karo_hotfix_skill_ref_sync_20260611132342` (`skills/cdp-browse/SKILL.md`, `skills/dashboard-update/SKILL.md`, `skills/karo-direct/SKILL.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T01:18:35+09:00 ae661bcfe9e626e6f toolu_01RUL3vqbUwanDvPr1t9T9xs /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | causal_chain | `[[cmd_2929]]` (L647) |
 | causal_chain | `[[cmd_2929]]` (L649) |
 | causal_chain | `[[cmd_training_L7_v3_hanzo_5_20260521202900]]` (L660) |
@@ -1738,6 +1771,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T21:10:19+09:00 a0f93dd1838d4fd93 toolu_012vGdaiMaoKhjijwZvDiu6G /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T22:49:39+09:00 第7報レビュー結果: 通過。 検収根拠: AST等価検証（実差分=_facade追加+4メソッドの全変更がファサード経由化のみ）/ 既存テストのpatch経路3件とファサード公開IFの一致を独自照合 / 当方worktreeでの独立全テスト |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-13T00:28:39+09:00 a20037c17017464d8 toolu_01KR4hswakqgxFARMfXoDWGz /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T08:55:08+09:00 第9報レビュー結果: PASS。AC2を完全クローズと認定する。 検収根拠: deep_diff_summary.json現物確認（20EP・HTTP 200全件・diff 0・両列各100キー照合・ 正規化はcaptured_at_utc |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T10:53:09+09:00 第10報レビュー結果: 通過。 検収根拠: no-opテストがlegacy形payloadのラウンドトリップ不変を正確に固定 / LOOKBACK_OPTIONSの×21換算がBEテーブルと完全一致 / refactor本体はFE 11ファ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T14:49:50+09:00 最終総括報告を受領・検証した。計画全体の完了を承認する。 当方独立検証（現main ff2c90a4）: BE 1369 passed/0 failed再現、AC2 4ファサード+4実装の実在確認、 削除EP11件のAPI層残存0件、BEス |
 
 ## file_rename — ファイルリネーム
 
@@ -1808,6 +1844,7 @@ codd:
 | cmd | `cmd_3222` 偵察: VIX深掘り+投資知識シグナル20バリアント バックテスト(100%/80%二択、全78PF全期間) (`docs/research/cmd_3222_VIX深掘りバックテスト.md`) |
 | causal | `cmd_3222` origin: [[cmd_3220_7戦略BT]] -> [[殿指摘_調査甘い]] -> [[VIX深掘り+投資知識シグナル拡張]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T08:05:38+09:00 FoF複製2件はおれの操作だ。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T18:24:01+09:00 DM シグナルの話をしよう DM シグナルで ロスカットの 効果 3倍 レバレッジ 銘柄だけ マイナス10%の ロスカット基準で もう調整するとどうなるか こういうのを知りたいんだけどどう思う |
 
 ## google_classroom — Google Classroom Dashboard
 
@@ -1849,7 +1886,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして |
 | skills | hensei, hensei-mixed, hensei-opus, karo-direct, recon-dual, reset-layout, shogun-all-codex-switch, shogun-claude-version-switch, shogun-peacetime-rollback, switch-to-codex, switch-to-opus |
 | related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework, systems_knowledge_base, skill_design_rules, shogun_android_app, task_modifier_injection, infrastructure_ops, bulletin_communication, inbox_processing_discipline, multi_cli_event_commonization |
 | related_lessons | `L594`, `L603`, `L550`, `L310` |
@@ -2058,6 +2095,20 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T13:02:24+09:00 軍師に編成変更の権利がないという設定が間違っている。軍師は俺の指示のもとに編成を変更する権利がある。元のルールはどこにあるんだ？なにを参考にした？ |
 | cmd | `cmd_3300` (`scripts/cmd_complete_gate.sh`, `scripts/deploy_task.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-13T00:24:06+09:00 ace4405520bc6f0d4 toolu_01WaPHDpXybZqptL3BA5DQic /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T01:21:35+09:00 a50e7e39fd3768298 toolu_01BLWz62X6eSZ6XDS2AttKub /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T09:08:20+09:00 では /shogun-claude-version-switchの名称やdescriptionをアップデートしよう。その次に下位互換の/switch-to-opus・/switch-to-codexを削除しよう |
+| cmd | `cmd_3352` CLI切替スキルの上位互換統合 (`context/infrastructure.md`, `context/semantic-map.md`, `scripts/shutsujin_departure.sh`) |
+| causal | `cmd_3352` origin: [[殿裁定20260613_0909上位互換差し替え]] -> [[respawn機構3スキル重複]] -> [[cmd_3352]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T09:59:50+09:00 b1kzi15b2 toolu_01MyudfRUQyxhj7MNoqiGUU2 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b4b062fe-6ea7-4e1e-a218-258d4b |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T13:55:08+09:00 bxkaw1jzz toolu_0165aRbkYWkifkPpTQuuYzr2 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b4b062fe-6ea7-4e1e-a218-258d4b |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T16:19:02+09:00 将軍をピン止めopusにrespwanして |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T16:55:54+09:00 b6e2e17ip toolu_014JRZwVDPsVPWguK1xierWz /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b4b062fe-6ea7-4e1e-a218-258d4b |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T17:42:18+09:00 bh6dm5ard toolu_01Mx8UpcB1ittwrth6oQ21sj /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b4b062fe-6ea7-4e1e-a218-258d4b |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T17:47:01+09:00 bitzbcres toolu_01WUFjDWVvyvSowcmRMiZJqh /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b4b062fe-6ea7-4e1e-a218-258d4b |
+| cmd | `cmd_3365` 偵察: Ave-X 3xレバETFストップロスのリスク指標比較(MaxDD・カルマー・シャープ)。ストップなし vs -10%×50%削減 |
+| causal | `cmd_3365` origin: [[殿指摘_リスク指標が本質_20260613]] -> [[cmd_3364_リターン差分のみ]] -> [[cmd_3365_リスク指標比較]] |
+| cmd | `cmd_3366` 偵察: 3xレバETF単独銘柄別(TECL・TQQQ・SPXL・TMF・TMV)のリスク指標比較(MaxDD・カルマー・シャープ)。ストップなし vs -10%×50%削減 |
+| causal | `cmd_3366` origin: [[殿指示_単独銘柄リスク指標_20260613]] -> [[cmd_3363_リターン差分のみ]] -> [[cmd_3366_銘柄別リスク指標]] |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -2264,6 +2315,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T17:16:00+09:00 clinic-expense-tracker PJ開始: クリニック若友会の経費証票管理。二層設計(SQLite+Drive)。MF3086件+みずほ984件。CDPでMF自動取得実証。karasuyama3387@gmail.com。佐瀬 |
 | file | `docs/research/gunshi_idle_cdp_dmsignal_auth_20260505.md` — 軍師idle: CDP DM-Signal認証分析(2026-05-05) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-11T20:56:09+09:00 続けて |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T16:42:04+09:00 続けて |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T18:25:11+09:00 もし 読めないようだったら CDP を使って読めば必ず読めるはずだ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T19:23:21+09:00 bc1gbqbfe toolu_01SunXcJUCbEiv3DcJP1RMEd /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3d9b6263-9f10-4af5-98e9-0576dc |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T20:36:58+09:00 be35y9x3e toolu_01J9oLibzyRqTF3Q5fsn1Uzw /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3d9b6263-9f10-4af5-98e9-0576dc |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -2694,6 +2749,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T22:30:28+09:00 a068bcfdd4c2ce974 toolu_01KnpeQ15AqHVFttCHzHMziB /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | cmd | `cmd_3341` 高速化第2波: pretool-dispatchのtmux更新条件付き化(軍師効果量1位) (`logs/script_speed_training_ledger.yaml`) |
 | causal | `cmd_3341` origin: [[軍師速度改善第2波blt_20260612_232504]] -> [[tmux set-option毎回発火25ms]] -> [[cmd_3341]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T00:55:49+09:00 a80b913637c7d44c7 toolu_01G92dV7hAvfweYPR5Zo9awM /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T01:17:27+09:00 a09c842ab4bfe8dff toolu_018pw6hLRMgH9yTJeKkvQZMo /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T01:19:13+09:00 aac7c8bdb3009a789 toolu_01BDSQnZc71pJ6UYQtWbA2id /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
+| cmd | `cmd_3351` AC3縮小版のFE参照除去と無変更保存固定 |
+| causal | `cmd_3351` origin: [[第9報レビューPASS20260613]] -> [[AC3縮小版凍結解除]] -> [[cmd_3351]] |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
@@ -2783,7 +2843,7 @@ codd:
 |------|---|
 | id | infrastructure_ops |
 | label | インフラ運用基盤 |
-| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ, lock cleanup, stale lock削除, karo snapshot生成, bulletin自動アーカイブ, CDP cleanup, paste buffer nudge, atomic wakeup state, dependency gated deployment, auto deploy blocked_by control, report-before-clear guard, 忍者完了通知, report-summary-guard, done-and-notify, CIredはかいしょうしているはずだ, CI redは解消したか, 全員止まっていないか, どうなった？全員止まっていないか？, インフラバグは修正しよう, 家老が自分でも対策をしているので協調せよ, デーモンは全て順調に動作しているか？, デーモンの再起動をスクリプトでせよ |
+| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ, lock cleanup, stale lock削除, karo snapshot生成, bulletin自動アーカイブ, CDP cleanup, paste buffer nudge, atomic wakeup state, dependency gated deployment, auto deploy blocked_by control, report-before-clear guard, 忍者完了通知, report-summary-guard, done-and-notify, CIredはかいしょうしているはずだ, CI redは解消したか, 全員止まっていないか, どうなった？全員止まっていないか？, インフラバグは修正しよう, 家老が自分でも対策をしているので協調せよ, デーモンは全て順調に動作しているか？, デーモンの再起動をスクリプトでせよ, ゲートやデーモンのバグや品質問題がないか調査しよう |
 | skills | reset-layout |
 | related_concepts | daemon_supervision, agent_formation_management, yaml_safe_write, verify_dont_imagine, shogun_android_app, infra_design_intent |
 
@@ -2837,6 +2897,7 @@ codd:
 | file | `docs/research/gunshi_idle_infra_health_20260425.md` — 軍師idle: インフラ健全性レポート(2026-04-25) |
 | file | `docs/research/gunshi_idle_infra_speed_hidden_bugs_20260605.md` — 軍師idle: インフラ速度の隠れバグ(2026-06-05) |
 | file | `docs/research/gunshi_idle_wa_pattern_20260612.md` — 軍師idle: WAパターン分析(2026-06-12) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T02:12:52+09:00 ゲートやデーモンのバグや品質問題がないか調査しよう。バグや品質問題は修正しよう |
 | causal_chain | `[[cmd_2935]]` (L651) |
 | causal_chain | `[[cmd_karo_ci_fix_2tests]]` (L652) |
 
@@ -3041,6 +3102,7 @@ codd:
 | cmd | `cmd_3334` (`context/semantic-map.md`, `logs/gunshi_review_log.yaml`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T21:34:23+09:00 ac1ef37ce58f43f0f toolu_01FZo6Q8CiXrQVoHUHBAvCQj /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T22:29:04+09:00 ae45725ac564f6c4b toolu_01U4mf516fZjXP9ruUW2tmTo /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T00:49:30+09:00 adbf0502c70d7e85f toolu_01TQveX51CMV1qxTChJo5Wzk /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 
 ## bulletin_communication — 掲示板通信基盤
 
@@ -3071,6 +3133,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-02T00:39:42+09:00 疾風がやった 掲示板の報告を読んで もう一度考え直してみろ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-02T07:28:18+09:00 掲示板に先送りや後回しにしているものはない？ |
 | file | `docs/research/gunshi_idle_bulletin_nazenaze_7_20260515.md` — 軍師idle: 掲示板なぜなぜ#7分析(2026-05-15) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-13T17:36:03+09:00 yaml_field_set.shが掲示板YAMLのblock_id構造 に対応していないのはインフラバグだな。バグは修正しよう |
 
 ## hook_automation_framework — Hook自動化フレームワーク
 
@@ -3102,6 +3165,8 @@ codd:
 | causal | `cmd_3228` origin: [[cmd_3227_設計完了]] -> [[Phase1_実行結果記録基盤]] -> [[PostToolUse_hook_全スキル自動記録]] |
 | cmd | `cmd_3256` (`.claude/hooks/pre-write-edit-combined.sh`) |
 | cmd | `cmd_karo_hotfix_speed_session_start_inject_20260612` (`logs/script_speed_training_ledger.yaml`, `scripts/hooks/session_start_inject.sh`, `tests/unit/test_session_state_hooks.bats`) |
+| cmd | `cmd_3349` 起票ガードの未読type判定化で情報通知の割込み排除 (`.claude/hooks/pre-write-edit-combined.sh`, `tests/unit/test_write_edit_combined_hooks.bats`) |
+| causal | `cmd_3349` origin: [[殿指示20260613インフラネック調査]] -> [[Guard0d無差別拒否]] -> [[cmd_3349]] |
 
 ## multi_cli_event_commonization — multi-CLI hook/event共通化
 

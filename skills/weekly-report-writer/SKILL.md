@@ -15,7 +15,7 @@ allowed-tools:
   - Write
 ---
 
-<!-- script_refs_checked_at: 2026-06-12T20:46:45+09:00 -->
+<!-- script_refs_checked_at: 2026-06-13T15:21:03+0900 -->
 
 Script refs verified: 2026-06-12. `note_draft.sh` の契約は `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"` のまま。932936059は外部reCAPTCHA画像チャレンジ未解決を運用FAILではなくSKIPとして`skill_execution_log.yaml`へ記録し、exit 0で返す変更。Gate20も同じ外部reCAPTCHAチャレンジ由来の`note-draft`結果をFAIL率分母から除外する。週報Markdown生成後のnote下書き保存呼び出し・Chrome未起動時SKIP・通常PASS/FAILログの契約変更なし。
 
@@ -491,7 +491,7 @@ CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 - リンクが本文に出ていない
 - 指数が週間変動になっている
 
-<!-- script_refs_checked_at: 2026-06-12T20:46:45+09:00 -->
+<!-- script_refs_checked_at: 2026-06-13T15:21:03+0900 -->
 
 Script refs verified: 2026-06-10 e81c63081+ba757a1f7+14aa13952. `note_draft.sh` はChrome CDP未起動時にexit 0(SKIP)で抜ける事前チェック追加(FAIL率汚染防止)、PowerShell失敗時のcmd.exeフォールバック追加、shellcheckエラー除去。Chrome未起動時はStep 8がSKIPされ`skill_execution_log`にSKIP記録される。Markdown生成(Step 1-7)への影響なし。SKILL.md記載の`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`呼び出し契約は変更なし。
 

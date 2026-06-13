@@ -8,17 +8,17 @@ real_measurement_policy: 'Ninja must choose a safe runtime command per script: t
 script_count: 254
 entries:
 - script_path: ".claude/hooks/pre-bash-combined.sh"
-  status: completed
+    status: pending
   before_ms: ''
   after_ms: ''
-  before_real_ms: 323
-  after_real_ms: 238
+    before_real_ms: 238
+    after_real_ms: ""
   real_measurement_command: "source scripts/lib/pre_bash_combined_guard.sh; pre_bash_combined_eval_command 'rg -n speed context/infrastructure.md' (20-run avg, warm TTL cache, PRE_BASH_MEMORY_INJECT_DEBOUNCE_SEC=0)"
   test_result: "bash -n hooks/libs PASS; bash scripts/hooks/test_hooks.sh 90/90 PASS SKIP=0"
   commit: "pending_commit"
-  assigned_to: ""
-  updated_at: "2026-06-13T00:39:54"
-  iteration: 1
+    assigned_to: ""
+    updated_at: "2026-06-13T00:53:00"
+    iteration: 2
 - script_path: ".claude/hooks/pretool-dispatch.sh"
   status: pending
   before_ms: ''
@@ -68,17 +68,17 @@ entries:
   updated_at: "2026-06-13T00:19:57"
   iteration: 1
 - script_path: .claude/hooks/pre-write-edit-combined.sh
-  status: completed
+    status: pending
   before_ms: ''
   after_ms: ''
-  before_real_ms: 74
-  after_real_ms: 66
+    before_real_ms: 66
+    after_real_ms: ""
   real_measurement_command: "8-run p50 isolated Edit payload for queue cmd checklist path; temp files for autolearn/cmd_design_quality; stdout discarded"
   test_result: "bash -n .claude/hooks/pre-write-edit-combined.sh PASS; bats tests/unit/test_write_edit_combined_hooks.bats PASS 20/20 SKIP=0; jq JSON parse PASS"
   commit: "b495e2d02"
-  assigned_to: ""
-  updated_at: "2026-06-13T00:43:11"
-  iteration: 1
+    assigned_to: ""
+    updated_at: "2026-06-13T00:53:00"
+    iteration: 2
 - script_path: scripts/ac_physical_verify.sh
   status: pending
   before_ms: 17
@@ -1238,17 +1238,17 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_shogun_startup.sh
-  status: completed
+    status: pending
   before_ms: 19
   after_ms: ''
-  before_real_ms: 7119
-  after_real_ms: 5888
+    before_real_ms: 5888
+    after_real_ms: ""
   real_measurement_command: "3-run average with SHOGUN_STARTUP_ROOT=/mnt/c/tools/multi-agent-shogun SHOGUN_STARTUP_LIGHTWEIGHT=1 timeout 60 bash gate_shogun_startup; HEAD vs worktree"
   test_result: "bash -n scripts/gates/gate_shogun_startup.sh PASS; bats tests/unit/test_gate_shogun_startup.bats PASS 63/63 SKIP=0"
   commit: "b52424f7b"
-  assigned_to: ""
-  updated_at: "2026-06-13T00:46:24"
-  iteration: 2
+    assigned_to: ""
+    updated_at: "2026-06-13T00:53:00"
+    iteration: 3
 - script_path: scripts/gates/gate_silent_fallback.sh
   status: pending
   before_ms: 15
@@ -1655,17 +1655,17 @@ entries:
   updated_at: "2026-06-13T00:19:57"
   iteration: 2
 - script_path: scripts/hooks/stop_check_inbox.sh
-  status: completed
+    status: pending
   before_ms: 7
   after_ms: ''
-  before_real_ms: 30.860
-  after_real_ms: 23.320
+    before_real_ms: 23.320
+    after_real_ms: ""
   real_measurement_command: "50x repeated unread inbox Stop hook JSON payload; same inbox/state so summary cache measures repeated-stop hot path"
   test_result: "bash -n scripts/hooks/stop_check_inbox.sh PASS; bats tests/unit/test_stop_check_inbox.bats PASS 21/21 SKIP=0"
   commit: "1c2958029648ed8f5ce46c5aed1d2f2f577bec84"
-  assigned_to: ""
-  updated_at: "2026-06-13T00:41:56"
-  iteration: 1
+    assigned_to: ""
+    updated_at: "2026-06-13T00:53:00"
+    iteration: 2
 - script_path: scripts/hooks/test_hooks.sh
   status: pending
   before_ms: 17
@@ -3186,16 +3186,16 @@ entries:
   updated_at: "2026-06-08T15:25:24"
   iteration: 1
 - script_path: scripts/switch_project.sh
-  status: pending
+    status: pending
   before_ms: 19
   after_ms: ''
-  before_real_ms: ''
-  after_real_ms: ''
+    before_real_ms: __BEFORE_REAL_MS__
+    after_real_ms: ""
   real_measurement_command: ''
   test_result: baseline_bash_n_exit_0
   commit: ''
-  assigned_to: ''
-  updated_at: ''
+    assigned_to: ""
+    updated_at: "2026-06-13T00:53:00"
 - script_path: scripts/sync_lessons.sh
   status: pending
   before_ms: 14
@@ -3385,26 +3385,26 @@ entries:
   updated_at: "2026-06-13T00:19:57"
   commit: "96f5940f2"
 - script_path: scripts/switch_project.sh
-  status: completed
+    status: pending
   before_ms: ''
   after_ms: ''
-  before_real_ms: 2083
-  after_real_ms: 780
+    before_real_ms: 780
+    after_real_ms: ""
   real_measurement_command: DRY_RUN=1 bash scripts/switch_project.sh dm-signal
   test_result: 7/7 PASS SKIP=0 (test_inbox_watcher_health.bats)
-  assigned_to: hanzo
-  updated_at: 2026-06-07
+    assigned_to: ""
+    updated_at: "2026-06-13T00:53:00"
   commit: 8c69e8666
-  iteration: 1
+    iteration: 2
 - script_path: .claude/hooks/posttool-dispatch.sh
-  status: completed
+    status: pending
   before_ms: ''
   after_ms: ''
-  before_real_ms: 26.122
-  after_real_ms: 23.357
+    before_real_ms: 23.357
+    after_real_ms: ""
   real_measurement_command: "300x Grep payload through posttool-dispatch with TMUX_PANE non-shogun cache pre-created; avg_ms from date +%s%N loop"
   test_result: "bash -n .claude/hooks/posttool-dispatch.sh PASS; bats tests/unit/test_hook_dispatchers.bats 8/8 PASS SKIP=0"
   commit: "570bde0e1"
-  assigned_to: hayate
-  updated_at: "2026-06-13T00:48:17"
-  iteration: 1
+    assigned_to: ""
+    updated_at: "2026-06-13T00:53:00"
+    iteration: 2

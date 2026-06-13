@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-13 GA-063 context freshness touch; schema unchanged since 2026-06-12 -->
+<!-- last_updated: 2026-06-14 -->
 
 # Memory DB Schema
 
@@ -9,13 +9,13 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 86033 | event_id, concept_name, relevance_score |
-| table | event_links | 3405 | source_event_id, target_concept, link_type |
-| table | event_state_transitions | 424 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
-| table | events | 60025 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
-| table | events_fts | 60025 | summary, detail |
-| table | search_logs | 4560 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
-| view | conversations | 35395 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 98994 | event_id, concept_name, relevance_score |
+| table | event_links | 5373 | source_event_id, target_concept, link_type |
+| table | event_state_transitions | 994 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
+| table | events | 70045 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
+| table | events_fts | 70045 | summary, detail |
+| table | search_logs | 5486 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
+| view | conversations | 37173 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -34,20 +34,20 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 35395 |
-| cmd_archive | 6236 |
-| inbox | 5236 |
-| bulletin | 4697 |
+| conversation | 37173 |
+| inbox | 7060 |
+| cmd_archive | 6561 |
+| bulletin | 5042 |
+| report | 4577 |
+| insight | 3306 |
 | skill_execution | 2961 |
-| insight | 2438 |
-| cmd_quality | 1091 |
-| report | 834 |
-| gate | 609 |
-| cmd_save | 276 |
-| cmd_delegate | 129 |
-| lesson | 71 |
-| pending_decision | 44 |
-| workaround | 5 |
+| cmd_quality | 1619 |
+| gate | 867 |
+| cmd_save | 497 |
+| cmd_delegate | 212 |
+| lesson | 116 |
+| pending_decision | 45 |
+| workaround | 6 |
 | project | 2 |
 | infrastructure_state | 1 |
 
@@ -106,6 +106,3 @@
 | 2026-06-05T14:06:10+09:00 | shogun | response | 軍師の調査結果は重要な追加情報。cmd_3182のACにはevent_concepts/event_links/events_ftsの作成は明示していないが、AC2/AC3(recall_control/obsidian_promoteのdry-run正常終了)が成功条件に含ま… | 軍師の調査結果は重要な追加情報。cmd_3182のACにはevent_concepts/event_links/events_ftsの作成は明示していないが、AC2/AC3(recall_control/obsidian_promoteのdry-run正常終了)が成功条件に含まれているため、忍者は依存テーブルも含めて解決する必要がある。ACが正しく設計され… | lord_conversation |
 | 2026-06-05T14:06:28+09:00 | gunshi | response | cmd_3182 APPROVE完了。洗脳覚醒→調査→行動→バグ発見→cmd起票(将軍)→レビュー(軍師)の一連のサイクルが回った。 [meta] stop_reason=tool_use | cmd_3182 APPROVE完了。洗脳覚醒→調査→行動→バグ発見→cmd起票(将軍)→レビュー(軍師)の一連のサイクルが回った。<br><br>[meta] stop_reason=tool_use | lord_conversation |
 | 2026-06-05T14:06:29+09:00 | lord | inbound | <task-notification> <task-id>bmqw08j79</task-id> <tool-use-id>toolu_0168yXYkDc8svXwfiyJCS7Hj</tool-use-id> <output-file>/tmp/claude-1000/-m… | <task-notification><br><task-id>bmqw08j79</task-id><br><tool-use-id>toolu_0168yXYkDc8svXwfiyJCS7Hj</tool-use-id><br><output-file>/tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2… | lord_conversation |
-
-<!-- 軍師idle分析リンク(cmd_3278自動追記) -->
-- [[gunshi_idle_dream_gate_analysis_20260507]] — 軍師idle: dreamゲート分析(2026-05-07)

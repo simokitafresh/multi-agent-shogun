@@ -8082,3 +8082,61 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - 自己修復hotfixは短時間に大量の教訓feedbackを返すため、通常/full作業向けの長期useful率を46.1% WARNへ押し下げた。健康指標ではtask_type=hotfixを除外し、hotfix側の改善は別指標で見るべき。origin: [[cmd_karo_hotfix_startup_lesson_skill_health_20260612]] -> [[hotfix_feedback_metric_pollution]] -> [[lesson_health_WARN_false_pressure]]
+
+### L800: 冷えWARNの根因: ambiguity確認済みでもfinding_categoriesへの記入を忘れると3連続CRITICALになる
+- **日付**: 2026-06-13
+- **出典**: cmd_karo_hotfix_gunshi_cs_startup_20260613
+- **記録者**: tobisaru
+- **tags**: [infra,review,gate,bash]
+- **target_files**: [logs/gunshi_review_log.yaml]
+- **origin**: [[cmd_karo_hotfix_gunshi_cs_startup_20260613]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_gunshi_cs_checklist.shの冷え観点チェックはfinding_categoriesの有無のみ検査する。ambiguity_points:noneで確認済みでもfinding_categoriesに含めない場合はWARNが発火し続ける。レビュー時は冷えカテゴリを必ずfinding_categoriesにも記入すること
+
+### L801: ninja_monitor AUTO_DEPLOY競合: respawn直前にstatus再読取りが必須
+- **日付**: 2026-06-13
+- **出典**: cmd_3347
+- **記録者**: kotaro
+- **tags**: [monitor, gate, race]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_clear_guard.bats]
+- **origin**: [[cmd_3347]] -> [[AUTO_DEPLOY_race_condition]] -> [[CODEX-RESPAWN_active_ninja]]
+- **when**: ninja_monitorでrespawn/auto-clear直前に非同期状態遷移がありうる時
+- **how**: リセット直前にtask YAML statusを一次情報として再読取りし稼働状態ならreturnする
+- バックグラウンドAUTO_DEPLOYサブシェルはmonitorの非同期配備設計で不可避。_handle_auto_clearがstatus=done確認後にsafe_send_clearを呼ぶまでの窓でstatus=assignedに変わりうる。防御としてsafe_send_clear呼出し直前にstatusを再読取りし、assigned/acknowledged/in_progressならrespawnを止める。
+
+### L802: semantic recommendation cacheはprompt以外の実行コンテキストもキーに含める
+- **日付**: 2026-06-13
+- **出典**: cmd_karo_hotfix_ga061_pre_push_skill_marker_20260613
+- **記録者**: hayate
+- **tags**: [hook, cache, test]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/prompt_state_inject.sh,tests/unit/test_prompt_state_inject_skill_trigger.bats]
+- **origin**: [[GA-061 pre-push]] -> [[semantic recommendation cache contamination]] -> [[role marker test /report-write missing]]
+- **when**: prompt injection/semantic recommendationのテストでfixtureや検索コマンドを差し替える時
+- **how**: cache keyに推薦結果を変える入力を含め、prompt単体キーを避ける
+- semantic_searchやskills_dirを差し替えるhook/testでは、promptのみをcache keyにすると別fixture/別検索コマンドの結果を再利用してrole marker判定が崩れる。cache keyにはpromptに加え、skills_dirとsemantic_search command等の推薦結果を変える入力を含める。
+
+### L803: pre-push artifact hotfixはartifact時点と現行HEADの再現性を分けて判定する
+- **日付**: 2026-06-13
+- **出典**: cmd_karo_hotfix_ga060_cmd_complete_readonly_ref_20260613
+- **記録者**: hayate
+- **tags**: [hook, pre-push, artifact]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats,logs/hook_artifacts]
+- **origin**: [[GA-060 pre-push]] -> [[stale failure artifact]] -> [[no-code hotfix evidence]]
+- **when**: hook failure artifactの調査で現行HEADが既に進んでいる時
+- **how**: artifact時点の失敗内容と現行HEADでの対象テスト再実行結果を別々に記録し、no-code判定の根拠を残す
+- 同じhook artifactが連続で残っていても、後続commitで既に修正済みなら現行HEADでは再現しない。hook/共有状態問題と断定する前に、artifact時点の失敗件数と現行HEADの対象テスト再実行を分けて記録する。
+
+### L804: Codex配達検証は対象roleごとに正本状態を分ける
+- **日付**: 2026-06-13
+- **出典**: cmd_3354
+- **記録者**: hayate
+- **tags**: [infra,inbox,testing,yaml,inbox]
+- **target_files**: [scripts/inbox_write.sh,tests/unit/test_inbox_write.bats]
+- **origin**: [[cmd_3354]]
+- **when**: 未設定
+- **how**: 未設定
+- task_assignedの配達確認を一律task YAML statusへ寄せると、task YAMLで動かない家老/軍師を構造的にunverified扱いする。配達検証では対象roleの正本状態を先に判定し、非忍者はinbox既読、忍者はtask YAML statusまたはpane workingを使う。origin: [[cmd_3354]] -> [[codex配達検証task_YAML依存]] -> [[unverified偽WARN]]

@@ -9,7 +9,7 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-13T01:09:39+09:00 -->
+<!-- script_refs_checked_at: 2026-06-14T00:48:07+0900 -->
 
 Script refs verified: 2026-06-13 cmd_karo_hotfix_skill_refs_stale_20260613. `cmd_complete_gate.sh` 直近変更(e52a71bb8)は`collect_task_readonly_refs()`のサブシェル構文修正（bashパーサー誤検知バグ修正）。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
 Script refs verified: 2026-06-12 cmd_karo_hotfix_skill_refs_202606121132. `cmd_complete_gate.sh` 直近変更(5e37f302a)はCDP production checkをpost_deploy_evidence必須時だけ実行する条件追加。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約と、codd-fixの共通基盤/CI gate変更時に関連batsを実行する手順は変更なし。
@@ -97,4 +97,4 @@ bash scripts/test_select.sh <changed-file>
 - `--no-push`なしで実行するな。忍者はpush禁止
 - 事象ではなく広すぎる実装指示を渡すな
 
-<!-- script_refs_checked_at: 2026-06-13T01:09:39+09:00 -->
+<!-- script_refs_checked_at: 2026-06-14T00:48:07+0900 -->

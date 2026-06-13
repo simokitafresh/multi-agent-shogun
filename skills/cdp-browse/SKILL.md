@@ -14,7 +14,7 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-06-12T20:46:45+09:00 -->
+<!-- script_refs_checked_at: 2026-06-14T00:48:07+0900 -->
 
 Script refs verified: 2026-06-12. `note_draft.sh` の契約は `<markdown_file>` 1件を受け取りCDP経由でnote下書きを作る形式のまま。932936059は外部reCAPTCHA画像チャレンジ未解決を運用FAILではなくSKIPとして`skill_execution_log.yaml`へ記録し、exit 0で返す変更。Gate20も同じ外部reCAPTCHAチャレンジ由来の`note-draft`結果をFAIL率分母から除外する。引数・CDP_PORT・通常PASS/FAILログの契約変更なし。
 
@@ -169,4 +169,4 @@ scripts/cdp/cdp_cli.sh screenshot "/tmp/dm-signal-admin.png"
 
 - → [[cdp-severity.md]] CDP計測・canary・ブラウザ実測の異常分類（操作失敗時の重大度判定基準）
 
-<!-- script_refs_checked_at: 2026-06-12T20:46:45+09:00 -->
+<!-- script_refs_checked_at: 2026-06-14T00:48:07+0900 -->

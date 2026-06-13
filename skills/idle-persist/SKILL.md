@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキル利用後の軍師review精度（logs/gunshi_review_log.yamlで当該分析由来レビューのgate_prediction==gate_resultとなった割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-12T11:33:20+09:00 -->
+<!-- script_refs_checked_at: 2026-06-13T15:21:03+0900 -->
 
 # /idle-persist — idle分析永続化スキル
 

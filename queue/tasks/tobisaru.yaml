@@ -1,123 +1,20 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
+  parent_cmd: 
+  task_type: hotfix
+  project: infra
+  purpose: "GA-061 pre-push hook failureを根因特定し、semantic_search skill role markerテストを再びPASSさせる"
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/hooks/prompt_state_inject.sh
+  status: idle
   acceptance_criteria:
     AC1:
-      description: bash scripts/gates/gate_gunshi_startup.sh の一次出力でCS/冷えWARNの直接原因を特定する
+      description: "logs/hook_artifacts/20260613T020542_pre-push_623111.log と tests/unit/test_prompt_state_inject_skill_trigger.bats L209 周辺を突合し、Q1: hook設定問題かコード品質問題かを根拠付きで報告する"
     AC2:
-      description: 未解消なら最小修正またはチェックリスト更新を行い、同WARNが3連続CRITICAL化しない状態にする
+      description: "同種失敗が他artifact/他忍者にあるかを logs/hook_artifacts と関連テスト履歴から検索し、Q2: パターン有無を件数付きで報告する"
     AC3:
-      description: 対象gate/関連テストを再実行し、改善前後のWARN/CRITICAL件数を数値で報告する
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_gunshi_cs_startup_20260613
-  project: infra
-  purpose: 軍師startup CS観点チェックリスト/冷え観点WARNの3セッション連続CRITICALを一次確認し、解消または防御層を実装する
-  status: acknowledged
-  stop_for: []
-  task_id: cmd_karo_hotfix_gunshi_cs_startup_20260613_normal
-  task_type: hotfix
-  related_lessons:
-  - id: 'L508'
-    summary: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-    detail: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-  - id: 'L783'
-    summary: 'サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ'
-    detail: 'サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ'
-  - id: 'L324'
-    summary: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
-    detail: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
-  - id: 'L119'
-    summary: 'inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat'
-    detail: 'inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat'
-  - id: 'L673'
-    summary: 'grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc'
-    detail: 'grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc'
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L674'
-    summary: 'gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA'
-    detail: 'gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA'
-  - id: 'L216'
-    summary: 'IF gate_metricsテストを書く THEN tmuxモックを配置してライブ環境からの干渉を防げ BECAUSE resolve_agent_model'
-    detail: 'IF gate_metricsテストを書く THEN tmuxモックを配置してライブ環境からの干渉を防げ BECAUSE resolve_agent_model'
-  - id: 'L144'
-    summary: 'IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する'
-    detail: 'IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する'
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  semantic_concepts:
-  - "known_unknowns_principle — 無知の知:  memory/deepdive_causal_tracing_20260415.md context/growth-loop.md"
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
-  - "production_parity — 本番パリティ:  context/dm-signal-core.md §19.3 context/checklist-shin-v2-registration.md docs/research/dmsignal_parity_verification_audit.md docs/research/pf_config_backup_20260601_pre_delete.json 削除前58件config全量バックアップ docs/research/gunshi_alm_parity_drift_analysis_20260409.md — 軍師分析: ALMパリティドリフト分析(2026-04-09)"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L508: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL
-      - L783: サブゲートが複数カテゴリのWARNを同時に扱う場合、先頭表示がPASSでも後続WARNによりexit 1になる。startup側がexit codeだけで特定カ
-      - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ
-      - L119: inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat
-      - L673: grep -qで存在確認→awkで値取得という2段階は、awk単独でsection検索+値取得を1passで完了できる。WSL2/NTFS環境ではsubproc
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L674: gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA
-      - L216: IF gate_metricsテストを書く THEN tmuxモックを配置してライブ環境からの干渉を防げ BECAUSE resolve_agent_model
-      - L144: IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する
-    ────────────────────────────────────────
-    
-    
-  memory_db_context:
-  - "2026-06-12T19:00:40+09:00 | **殿、inboxは家老の自走hotfix完了報告だった。処理済み、将軍の対応事項なし。** 先刻配備された軍師startup CRITICAL対処が完了した: 影丸がgunshi_review_lo"
-  - "2026-06-12T19:16:21+09:00 | 家老RC対応完了。修正報告送信済み。 **セッション状態サマリ**: - inbox: 全既読 - レビュー: cmd_karo_hotfix_gunshi_cs_operational_sim LG"
-  - "2026-06-12T19:03:00+09:00 | **殿、inboxは先刻完了報告済みのhotfix(軍師CS観点補完)のGATE CLEAR通知だった。既読化済み、将軍の対応事項なし。** この件は掲示板報告(影丸・commit 1b0f4b698"
-  - "2026-06-12T19:16:21+09:00 | 家老RC対応完了。修正報告送信済み。 **セッション状態サマリ**: - inbox: 全既読 - レビュー: cmd_karo_hotfix_gunshi_cs_operational_sim LG"
-  - "2026-06-12T15:49:21+09:00 | **Step 5**: 利他還流判断 「この知見を忍者/家老が知っていれば将来のWA/BLOCK/再cmdを防げるか？」→ **NO**。冷え観点WARNは軍師固有のレビュー記録の問題であり、忍者/家"
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_gunshi_cs_startup_20260613_normal
-  _ac_worker_id: 
-  role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_karo_hotfix_gunshi_cs_startup_20260613.yaml
-  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_gunshi_cs_startup_20260613.yaml
-  bloom_level: 
-  deployed_at: "2026-06-13T01:07:33"
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    tried_approaches:
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    approach_summary: 'CS観点チェックリスト/冷えWARN直接原因: cmd_karo_hotfix_speed_gate_loop_health_20260612のfinding_categoriesにambiguity未記入(ambiguity_points:noneで確認済みだが記録漏れ)。finding_categories追記で解消。改善前: 冷えWARN 1件+CRITICAL(3連続)→改善後: 冷えWARN 0件・総合判定OK'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'CS観点チェックリスト/冷えWARN直接原因: cmd_karo_hotfix_speed_gate_loop_health_20260612のfinding_categoriesにambiguity未記入(ambiguity_points:noneで確認済みだが記録漏れ)。finding_categories追記で解消。改善前: 冷えWARN 1件+CRITICAL(3連続)→改善後: 冷えWARN 0件・総合判定OK'
+      description: "根因に応じて prompt_state_inject.sh またはテスト/fixtureを最小修正し、Q3: 次回防御層をlesson_candidateまたは実装内容として記録する"
+    AC4:
+      description: "bats tests/unit/test_prompt_state_inject_skill_trigger.bats と pre-push選択3ファイル相当のテストを実行し、全件PASSを数値で報告する"
+  task_id: cmd_karo_hotfix_ga061_pre_push_skill_marker_20260613_normal
+  _ac_task_id: 
+  report_path: 
+  report_filename: 

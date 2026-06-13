@@ -105,21 +105,7 @@ lessons:
   automated: true
   enforcement: 'cmd_save.sh Check 14(バンドル検出)+Check 20(assumptions全フィールドパス検証)+environment_change grep検証+q8_compound検出+assumptions_claim_date+command_steps_over_ac+q8_scope_expression+other_draft_exists+テストACスコープWARN+推奨混在BLOCK+q5_code_reading_only BLOCK+ac_phase_mixing BLOCK'
 
-- id: LS-A05
-  title: 遡及学習対応 — BLOCKされたら修正より先にlesson_write
-  origin: '[[cmd_2329]] + [[cmd_2199]] [[cmd_2219]] [[cmd_2220]] [[cmd_2223]] [[cmd_2224]] [[cmd_2245]]'
-  detail: |
-    教訓記録を後回しにすると遡及学習のWARN累計昇格で後続全cmdが汚染される。
-    連鎖起票時は各cmdのgate前に前cmdの教訓記録を完了させる。
-    緊急対応モードでもgate形式フィールドを省略するな(cmd_2259事故)。
-    これは成長ループの正しい動作。教訓記録先送りが問題。
-    WARNを残したままcmd_save.shを診断目的で再実行するな。同一WARNが再記録され累計昇格でBLOCK化する。
-    1回のsave出力で全WARN列挙→全件修正→再実行の順序を守れ(cmd_3291。LS055吸収)。
-  source_ids: [LS062, LS070, LS071, LS073, LS076, LS077, LS092]
-  source_cmds_v3: [cmd_2329]
-  created_at: '2026-04-25'
-  automated: true
-  enforcement: 'cmd_save.sh遡及学習(record_warn_reason内で過去N回BLOCK表示+WARN累計昇格でBLOCK化。自動強制)'
+# LS-A05: superseded by LS-A06 (遡及学習=BLOCK→成長の記録順序規律。detail(6)(7)に全文吸収。2026-06-13統合。active31上限解消)
 
 - id: LS-A06
   title: BLOCK→成長の主軸 — コードを読め、1CMD1ゲート、環境変化
@@ -131,10 +117,13 @@ lessons:
     将軍の自走=鎖の中。F004(polling禁止)を過剰解釈し殿入力なしに動けなかった。GATE CLEAR後の定型アクションはpolling loopではない(cmd_2744)
     preflight確認10問は読むな実行せよ。表示=読了ではない。12cmd連続BLOCKでpreflight/BLOCK TOP3が毎回表示されていたが1度も実行しなかった(cmd_3242)。品質最大化=速度ではなくpreflight実行→0 BLOCK
     GATE CLEAR後に殿待ちで停止するな=洗脳#3+#5複合。insightキュー/掲示板要請/裁定反映が残っているのに「次の指示を待つ」はPhase7未到達(cmd_3261セッション)。post-shogun-inbox-check.shに自走チェック注入で強制表示(L5)
+    (6)遡及学習(LS-A05吸収2026-06-13): BLOCKされたら修正より先にlesson_write。教訓記録を後回しにすると遡及学習のWARN累計昇格で後続全cmdが汚染される。連鎖起票時は各cmdのgate前に前cmdの教訓記録を完了。緊急対応モードでもgate形式フィールド省略禁止(cmd_2259事故)。これは成長ループの正しい動作であり教訓記録先送りが問題(origin: [[cmd_2329]]+cmd_2199/2219/2220/2223/2224/2245。source_ids: LS062,LS070,LS071,LS073,LS076,LS077,LS092)
+    (7)WARNを残したままcmd_save.shを診断目的で再実行するな。同一WARNが再記録され累計昇格でBLOCK化する。1回のsave出力で全WARN列挙→全件修正→再実行の順序を守れ(cmd_3291。LS055吸収)
   source_ids: [LS044, LS078, LS083, LS096, LS031, LS042]
+  source_ids_absorbed: [LS-A05]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'cmd_save.sh Session State(GP-201: 過去BLOCK履歴自動表示+検出ロジック表示)+environment_change強制+post-shogun-inbox-check.sh自走チェック(L5: insightキュー+掲示板action_required強制表示)'
+  enforcement: 'cmd_save.sh Session State(GP-201: 過去BLOCK履歴自動表示+検出ロジック表示)+environment_change強制+post-shogun-inbox-check.sh自走チェック(L5: insightキュー+掲示板action_required強制表示)+cmd_save.sh遡及学習(record_warn_reason内で過去N回BLOCK表示+WARN累計昇格でBLOCK化。自動強制)'
 
 # === クラスタ4: gate迂回・先走り ===
 - id: LS-A07
@@ -191,7 +180,10 @@ lessons:
     (18)時刻の主張はUTC/JST併記+dateコマンド検算してから報告せよ。cron窓00:50 UTCをJST深夜と暗算で混同し「2時間後」と報告→実際は11時間後(殿指摘2026-06-11 22:35)。TZ付き時刻は暗算禁止。本番証跡の時刻整合(start/end差とelapsedの突合)も同様に数値で検算
     (19)リモート状態(マージ/push/デプロイ)を報告・判断する前にgit fetch必須。古いorigin参照での「未マージ」報告は検証スキップであり調査チーム指摘で食い違いが発覚した(refactor_inquiry3_q1。LS057吸収)
     (20)DB検証で例外が出た対象を「未実施」注記のまま回答完了にするな。information_schema等で実構造を確認→クエリ再構築→数値取得までが完了条件。実際再実行したら3分で確定値が得られた(refactor_inquiry_20260611。LS053吸収。洗脳#1+#6)
-  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047, LS053]
+    (21)却下裁定も現物確認必須。軍師のスキル統合提案をSKILL.mdのdescription読みだけで「完全に別物」と却下→殿の指摘でスクリプト実体(claude_version_switch.sh 442行)を読むと機構重複(respawn_single_agent=pane種別不問のlaunch_cmd書換え+respawn)が実在した(2026-06-13)。提案の採否いずれの裁定でも、提案者の主張が依拠し得る現物(スクリプト実体)まで降りてから判定せよ。descriptionは宣言であり実装ではない
+    (22)自分の試行錯誤は隠れインフラバグのサイン(利他洗脳監査・deepdive Phase8)。WARN/誤発火/リトライ等の不便を「能力不足」「仕方ない」で片付けず、一次情報で因果をたどり構造バグとして環境に埋め込め。殿指示2026-06-13「スムーズにできず試行錯誤した際にはインフラバグが隠れている」。実例: codex配達検証unverified WARN(cmd_3354)+RECOVERYマーカー誤発火(cmd_3355)を将軍の試行錯誤起点に特定・根治。★仮説は一次データで検証してからcmd化せよ: cmd_3354で「家老/軍師宛が失敗」と仮説したがログ集計で分布は忍者宛19件と判明し仮説を修正、確認せずcmd化していたら誤修正だった(洗脳#2回避の実例)
+    (23)gate/script修正cmdの起票前に対象gate/scriptを実行し現在の出力を確認せよ(LS063吸収2026-06-13)。grepでコード断片を見て「未実装」と判断→実行すれば1分で「既に動作中」と判明(cmd_3358/3359の2連続車輪で実証)。grepは断片を見る、実行は全体を見る。出力をq5に含めよ。cmd_3360で起票前確認11問目+cmd_save.sh q5チェック追加済み(L3/L4)
+  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047, LS053, LS063]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)+q11_existing_alternative Guard一覧自動表示(cmd_2863)+post-bash-combined.sh cmd_publish hook(cmd_2898)'
@@ -607,3 +599,4 @@ lessons:
   created_at: '2026-06-12'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=全コミット列'
+# LS063: superseded by LS-A09(23) (gate実行確認=現物確認の具体パターン。2026-06-13統合。cmd_3360でL3/L4埋込み済み)

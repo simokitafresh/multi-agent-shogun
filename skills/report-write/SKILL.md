@@ -161,6 +161,9 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 
 ## 注意ポイント
 
+- 2026-06-13: gate=gate_report_format result=FAIL executor=unknown reason=worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; lessons_useful[0]: missing \"id\" field (must have lesson ID like L074); lessons_useful[0]: missing \"useful\"...
+- 2026-06-13: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: item count 1/5 (<50% of task template); status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; res...
+
 - 2026-06-12: gate=gate_report_format result=FAIL executor=unknown reason=worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; lesson_candidate: MISSING; lessons_useful[0]: missing \"id\" field (must have lesson ID like L074); lessons_us...
 - 2026-06-11: gate=gate_report_format result=FAIL executor=kagemaru reason=YAML parse error: while scanning a simple key
 
