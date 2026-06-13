@@ -1,20 +1,134 @@
 task:
-  parent_cmd: 
-  task_type: hotfix
+  readonly_ref:
+  - path: 'gate_gunshi_cs_checklist.sh'
+    reason: command欄の必読/参照専用ファイル
+  _ac_task_id: cmd_3372_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3372 (deployed 2026-06-14T01:48:55). Read from the beginning.
+  ac_version: c4d1013a
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok: []
+  parent_cmd: cmd_3372
   project: infra
-  purpose: "GA-061 pre-push hook failureを根因特定し、semantic_search skill role markerテストを再びPASSさせる"
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/hooks/prompt_state_inject.sh
-  status: idle
+  purpose: 軍師意志依存調査(blt_011952)の項目(2)(3)。実動作確認なし(L910付近)と実行確認欄(step three five verified)未記入(L949付近)が共にWARNのみで通過可能。infra変更レビューで実行証拠なしLGTMが出せる穴を塞ぐ
+  recommended_skills:
+  - shogun-claude-version-switch
+  - switch-to-codex
+  scout_exempt: true
+  status: done
+  stop_for: []
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_gunshi_cs_checklist.sh
+  target_path_warning: '⚠ target_pathが存在しない: /mnt/c/tools/multi-agent-shogun/scripts/bulletin_action.sh'
+  task_id: cmd_3372_full
+  task_type: full
+  related_lessons:
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L333'
+    summary: 'grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド'
+    detail: 'grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド'
+  - id: 'L276'
+    summary: 'gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行'
+    detail: 'gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行'
+  - id: 'L639'
+    summary: '既存batsファイルの長い `run bash -lc ''...''` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ'
+    detail: '既存batsファイルの長い `run bash -lc ''...''` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ'
+  - id: 'L207'
+    summary: 'summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML par'
+    detail: 'summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML par'
+  - id: 'L800'
+    summary: 'gate_gunshi_cs_checklist.shの冷え観点チェックはfinding_categoriesの有無のみ検査する。ambiguity_point'
+    detail: 'gate_gunshi_cs_checklist.shの冷え観点チェックはfinding_categoriesの有無のみ検査する。ambiguity_point'
+  - id: 'L679'
+    summary: 'cmd_delegate.shのcmd_idはASCII前提の識別子であり、dashboardなど二次証跡のgrep -w照合をlocale任せにすると境界判定'
+    detail: 'cmd_delegate.shのcmd_idはASCII前提の識別子であり、dashboardなど二次証跡のgrep -w照合をlocale任せにすると境界判定'
+  - id: 'L677'
+    summary: '[[cmd_delegate.sh]]のdashboard既存掲載チェックはWARN onlyでも、cmd_100がcmd_1000に部分一致すると不要な警告が'
+    detail: '[[cmd_delegate.sh]]のdashboard既存掲載チェックはWARN onlyでも、cmd_100がcmd_1000に部分一致すると不要な警告が'
+  - id: 'L324'
+    summary: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
+    detail: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
+  - id: 'L205'
+    summary: '2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.'
+    detail: '2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  related_causal_links:
+  - "[[blt_20260614_011952_eeb07a]]"
+  - "[[infraレビュー形骸化]]"
+  - "[[実動作確認意志依存]]"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L333: grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド
+      - L276: gate検証でパス解決失敗時にWARNING出力のみで続行すると、gateが発火せずすり抜ける。失敗時は即BLOCK(exit 1)が鉄則。WARNING+続行
+      - L639: 既存batsファイルの長い `run bash -lc '...'` ブロック途中に新しい @test を挿入すると、bats-gather-testsや既存テ
+      - L207: summary: | のようなblock scalar指示子は、field_get(grep+sed方式)では | がリテラル文字列として返る。YAML par
+      - L800: gate_gunshi_cs_checklist.shの冷え観点チェックはfinding_categoriesの有無のみ検査する。ambiguity_point
+      - L679: cmd_delegate.shのcmd_idはASCII前提の識別子であり、dashboardなど二次証跡のgrep -w照合をlocale任せにすると境界判定
+      - L677: [[cmd_delegate.sh]]のdashboard既存掲載チェックはWARN onlyでも、cmd_100がcmd_1000に部分一致すると不要な警告が
+      - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ
+      - L205: 2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.
+    ────────────────────────────────────────
+    
+    
+  memory_db_context:
+  - "2026-06-14T01:37:28+09:00 | 【家老】cmd_3371 初回配備開始 (title=brainwash_check数値なしをWARN→BLOCK昇格。意志依存の自動化×強制(軍師分析blt_011952), ninja=kotar"
   acceptance_criteria:
-    AC1:
-      description: "logs/hook_artifacts/20260613T020542_pre-push_623111.log と tests/unit/test_prompt_state_inject_skill_trigger.bats L209 周辺を突合し、Q1: hook設定問題かコード品質問題かを根拠付きで報告する"
-    AC2:
-      description: "同種失敗が他artifact/他忍者にあるかを logs/hook_artifacts と関連テスト履歴から検索し、Q2: パターン有無を件数付きで報告する"
-    AC3:
-      description: "根因に応じて prompt_state_inject.sh またはテスト/fixtureを最小修正し、Q3: 次回防御層をlesson_candidateまたは実装内容として記録する"
-    AC4:
-      description: "bats tests/unit/test_prompt_state_inject_skill_trigger.bats と pre-push選択3ファイル相当のテストを実行し、全件PASSを数値で報告する"
-  task_id: cmd_karo_hotfix_ga061_pre_push_skill_marker_20260613_normal
-  _ac_task_id: 
-  report_path: 
-  report_filename: 
+  - id: 'AC1'
+    checks:
+    - check: 'gate_gunshi_cs_checklist.shの実動作確認なしWARNをinfra変更レビュー限定でBLOCKに昇格する'
+  - id: 'AC2'
+    checks:
+    - check: '実行確認欄(step three five verified)未記入WARNをBLOCKに昇格する'
+  - id: 'AC3'
+    checks:
+    - check: '関連batsテストがPASSすることを確認する'
+  role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: tobisaru_report_cmd_3372.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3372.yaml
+  bloom_level: 
+  deployed_at: "2026-06-14T01:49:09"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'AC1: gate_gunshi_cs_checklist.sh infra reportレビューで実動作確認なしWARNをBLOCKに昇格。AC2: step3_5_verified未記入WARNをBLOCKに昇格。bats 20/20 PASS。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'AC1: gate_gunshi_cs_checklist.sh infra reportレビューで実動作確認なしWARNをBLOCKに昇格。AC2: step3_5_verified未記入WARNをBLOCKに昇格。bats 20/20 PASS。'
