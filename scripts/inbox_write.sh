@@ -74,6 +74,20 @@ sender_is_ninja_from_fs() {
     [ -f "$SCRIPT_DIR/queue/tasks/${agent}.yaml" ]
 }
 
+target_is_ninja() {
+    local agent="$1"
+    local ninja=""
+
+    is_core_agent "$agent" && return 1
+    ensure_agent_config_loaded
+    for ninja in $NINJA_NAMES; do
+        if [ "$ninja" = "$agent" ]; then
+            return 0
+        fi
+    done
+    [ -f "$SCRIPT_DIR/queue/tasks/${agent}.yaml" ]
+}
+
 ensure_agent_config_loaded() {
     if [ "${AGENT_CONFIG_LOADED:-0}" = "1" ]; then
         return 0
@@ -555,6 +569,8 @@ verify_codex_task_delivery() {
         return 0
     fi
 
+    target_is_ninja "$target" || return 1
+
     if [ -f "$task_file" ]; then
         local task_status
         task_status=$(inbox_yaml_field_get "$task_file" "status" "")
@@ -590,16 +606,17 @@ maybe_verify_codex_delivery() {
     pane_target=$(resolve_agent_pane_target "$target" || true)
 
     while [ "$attempt" -le "$retries" ]; do
-        if [ "$attempt" -gt 0 ]; then
-            # Working状態の忍者にはretry不要（既に処理中）
-            if [ -n "$pane_target" ]; then
-                local pane_snapshot
-                pane_snapshot=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
-                if echo "$pane_snapshot" | grep -qE '• (Working|Ran |Waiting)'; then
-                    echo "[inbox_write] codex delivery verified (ninja working) for ${target}" >&2
-                    return 0
-                fi
+        # Working状態のCodex paneは、task YAML更新前でも配達済みとして扱う。
+        if [ -n "$pane_target" ]; then
+            local pane_snapshot
+            pane_snapshot=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
+            if echo "$pane_snapshot" | grep -qE '• (Working|Ran |Waiting)'; then
+                echo "[inbox_write] codex delivery verified (pane working) for ${target}" >&2
+                return 0
             fi
+        fi
+
+        if [ "$attempt" -gt 0 ]; then
             local unread_count
             unread_count=$(inbox_unread_count "$inbox_file")
             if [ -n "$pane_target" ] && [ "$unread_count" -gt 0 ] 2>/dev/null; then
