@@ -504,6 +504,9 @@ lessons:
   - backend/app/jobs/
   - queue/tasks/kagemaru.yaml (status更新と、読み直し時に判明したdescription YAML構文破損の修復のみ)
   origin: '[[cmd_2452]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L703
   title: FoF holding_signal同一判定は展開後ticker×weightで行う
   summary: FoF monthly_returns/signals.holding_signal は選択された構成PF ID列であり、下層standardのholding_
@@ -536,6 +539,9 @@ lessons:
   - frontend/components/monthly-trade-table.tsx
   - frontend/lib/monthly-trade-display.ts
   origin: '[[cmd_2451]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L701
   title: fullrecalculate後は非対象PFのmonthly_returns件数diffを必ず復元判断まで行う
   summary: cmd_2450で秘奥義4体登録後にfullrecalculateを実行したところ、対象外20体のmonthly_returnsが0行から3741行生成され、A
@@ -553,6 +559,9 @@ lessons:
   - outputs/registration/cmd_2450/registered_portfolios.csv
   - outputs/registration/cmd_2450/monthly_counts.csv
   origin: '[[cmd_2450]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L700
   title: holding_signalパリティ検証ではNULL行を比較対象から除外せよ
   summary: monthly_returnsにmonthly_return_openはあるがholding_signalがNULLの初期行が存在する。pd.isnaを明示判定
@@ -568,6 +577,9 @@ lessons:
   - scripts/oneshot/cmd_2447_register_gs_shin_okugi.py
   - commit c555c91a
   origin: '[[cmd_2448]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L699
   title: holding_signalパリティ検証ではNULL行を比較対象から除外する
   summary: monthly_returnsにmonthly_return_openはあるがholding_signalがNULLの初期行が存在する。holding_sign
@@ -732,6 +744,9 @@ lessons:
   - outputs/registration/cmd_2424/pre_existing_shin_monthly.csv
   - outputs/registration/cmd_2424/post_existing_shin_monthly.csv
   origin: '[[cmd_2424]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L689
   title: Payload再生成時は内部メタデータを保持するテストを追加せよ
   summary: API層でPayloadを再生成・フィルタする際、excludeメタデータ(skipped_portfolios等)が引き継がれずnull化する。途中の再生成・
@@ -900,7 +915,7 @@ lessons:
   origin: '[[cmd_2397]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L678
   title: 既コミット変更のベンチマーク測定は合成データで実施せよ
   summary: run_077_kasoku_diff.pyはDB接続+全計算時間が混在するため書込み性能単体の計測に不向き。合成データ+直接関数呼出しで計測するとWRITE時
@@ -934,6 +949,9 @@ lessons:
   - scripts/oneshot/cmd_2381_kawarimi_open_parity.py
   - scripts/oneshot/cmd_2382_yotsume_parity_verify.py
   origin: '[[cmd_2393]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L676
   title: 大容量SQLite移動後検証はintegrity_check前にquick_checkを使う
   summary: cmd_2393で7本SQLiteの移動後にPRAGMA integrity_checkを全量実行したところ、WSL2/NTFS上の8GB級DB走査で約10分か
@@ -1104,6 +1122,9 @@ lessons:
   - outputs/grid_search/cmd_2360_oikaze/cmd_2360_oikaze_results_fast.db
   - outputs/grid_search/cmd_2360_oikaze/cmd_2360_oikaze_results_fast.meta.yaml
   origin: '[[cmd_2360]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L667
   title: lookback_index軸のGS robustnessでは連動メタデータ列を固定条件から外す
   summary: gs_grid_robustness.pyで--grid-axes lookback_indexのみを指定すると、lookback_label/lookback
@@ -1119,7 +1140,7 @@ lessons:
   origin: '[[cmd_2357]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-14'
 - id: L666
   title: ACはWHAT(二値判定)のみ記載。HOW(検証手法)を混入させるな
   summary: ACには達成基準(WHAT=二値で判定できる完了条件)のみ書く。HOW(具体的な検証手法・実装方法)はtask YAML分解時に家老が決める領域。軍師のcmdレ
@@ -1500,6 +1521,9 @@ lessons:
   - .gitignore
   - outputs/scripts/champion_selector.py
   origin: '[[cmd_2177]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L641
   title: csv source universe使用時のkawarimi AC1 batch vs sequential MD5不一致
   summary: 'wf_alm_12.yaml(source_type: csv)で run_077_kawarimi.py を実行すると AC1検証(batch
@@ -1551,7 +1575,7 @@ lessons:
   origin: '[[cmd_2142]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L638
   title: upfront cleanup後の長時間再計算はworker restartで本番データを空にしうる
   summary: MonthlyReturnをPhase 0で先消しすると、FoF再生成前にRender workerが再起動した場合monthly_returns
@@ -1692,7 +1716,7 @@ lessons:
   origin: '[[cmd_1899]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L629
   title: 'golden data有効性: 生成時のコード状態を確認せよ'
   summary: バグ状態で生成されたgolden dataは検証基準にならない。生成日+対応commitを記録すべき。TRFバグ下で生成→全コンポーネント選択=バグ値だった実例
@@ -1779,7 +1803,7 @@ lessons:
   origin: '[[cmd_1877]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-14'
 - id: L624
   title: 道具の全引数(--output-prefix等)をcmdに明記せよ — デフォルト依存はprefix不統一の原因
   summary: GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する。全引数を明示的にcmdに記載してデフォ
@@ -2371,7 +2395,7 @@ lessons:
   origin: '[[cmd_1796]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L582
   title: '[自動生成] draft教訓の査読を怠った: cmd_1795'
   summary: draft教訓1件が未査読のままGATE到達
@@ -2495,6 +2519,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-07'
   origin: '[[cmd_1787]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L572
   title: GS runnerの正規パスはbackend/app/jobsではなくscripts/analysis/grid_search
   summary: task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/ana
@@ -2656,7 +2683,7 @@ lessons:
   origin: '[[cmd_1759]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L561
   title: 'ALM保存バリデーション: pipeline_configがDict[str,Any]のためalm_config内容が未検証でDBに保存される'
   summary: portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype='standard'であればlookback_p
@@ -2817,7 +2844,7 @@ lessons:
   origin: '[[cmd_karo_batch_R5]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L549
   title: ALM batch 統合では objective 単位 fallback で parity を守る
   summary: cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdow
@@ -2885,7 +2912,7 @@ lessons:
   origin: '[[cmd_metrics_R1]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-14'
 - id: L544
   title: EW terminal≠selection_block=0。59FoF中42体にmomentum selection blockが存在
   summary: cmd_1700の全59FoFがEW blocks=[]は不正確。terminal EW=58/59だがselection_block=0は17/59のみ。42
@@ -2899,7 +2926,7 @@ lessons:
   origin: '[[cmd_1707]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L543
   title: numpy cumsum rolling windowでBipower Variationをベクトル化すると50x高速化
   summary: Lee-Mykland(2008) jump detectionのBV計算はPythonループで各t点のlocal window sum。bv_products
@@ -3594,6 +3621,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_kawarimi.py
   - scripts/analysis/grid_search/run_077_oikaze.py
   origin: '[[cmd_1377]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L490
   title: GS precomputed_picksのtolerance過剰がserial/batch不一致を引き起こす
   summary: batch pathのprecomputed_picksでtolerance=1e-12を使用すると、モメンタム値が2ULP差のコンポーネントでserial(e
@@ -3619,6 +3649,9 @@ lessons:
   target_files:
   - run_077_kasoku_diff.py
   origin: '[[cmd_1370]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L488
   title: 非市場ティッカーの全パス統一除外
   summary: PI-010対応でPipelineEngine pathは^VIX/DTB3をcacheから除外していたが、_build_cache_fastの通常ループでは^
@@ -3634,7 +3667,7 @@ lessons:
   origin: '[[cmd_1353]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-14'
 - id: L487
   title: PI強制化波及先未更新チェック必須
   summary: grid_search_metrics_v2.pyにPI-009(pipeline_config必須)を追加した際にsimulate_strategy_vect
@@ -3831,7 +3864,7 @@ lessons:
   origin: '[[cmd_1240]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L471
   title: 白虎DM6のIEEE754差異は全パリティフェーズで再現する既知問題
   summary: 白虎(DM6/^VIX)のmonthly_return_open IEEE754差異はPhase1(cmd_1233)とPhase4(cmd_1239)で同一パ
@@ -4687,6 +4720,9 @@ lessons:
   target_files:
   - scripts/analysis/grid_search/run_077_kasoku_ratio.py
   origin: '[[cmd_1075]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L410
   title: gs_benchmark.pyアダプタはrun_077_*.pyのAPI変更に追従が必要
   summary: run_077_*.pyのデータローダAPIがload_monthly_returns_dual_from_db→ load_monthly_returns_d
@@ -5121,6 +5157,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_kawarimi.py
   - scripts/analysis/grid_search/run_077_oikaze.py
   origin: '[[cmd_1032]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L377
   title: 短命タスクのcommit指示前にHEADを再確認せよ
   summary: 並行作業下ではtask YAMLに未commitと書かれていても別経路でcommit済みの場合がある。AC実行前にgit status+git
@@ -5477,6 +5516,9 @@ lessons:
   - outputs/analysis/shin_shijin_cpcv_DM7P.md
   - scripts/analysis/shin_shijin_cpcv_engine.py
   origin: '[[cmd_1020]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L350
   title: サブディレクトリCSVはgitignoreの*.csvでは除外されない
   summary: outputs/grid_search/*.csvは直下のみマッチし、shin_shijin_l1/等のサブディレクトリCSVには効かない。サブディレクトリ含む
@@ -5701,7 +5743,7 @@ lessons:
   origin: '[[sasuke]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L332
   title: FoF of FoF の partial recalculate-sync は live data を欠損させうる
   summary: FoF of FoF 15体に対して `/admin/recalculate-sync?portfolio_id=...` を partial
@@ -5832,7 +5874,7 @@ lessons:
   origin: '[[cmd_1002]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-14'
 - id: L323
   title: rolling p̄ BTでは no-selection warm-up を別指標で明示せよ
   summary: n_splits=5 の rolling p̄ 選出は月次returnsを5分割し各chunk最低12期間を要するため、live selection開始前に長い
@@ -5942,7 +5984,7 @@ lessons:
   origin: '[[cmd_964]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L313
   title: apiCache.clear()はETag IDBを削除しない→304エラーの可能性
   summary: DM-signal FEのキャッシュは5層構成(memory Map→IDB apiCache→IDB ETag→localStorage manifest→S
@@ -6158,7 +6200,7 @@ lessons:
   origin: '[[cmd_861]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L299
   title: GS shared metricsとrunner CSV metricsが別系統だとdrift
   summary: grid_search_metrics_v2.pyとrun_077_*は同じSharpe系指標を別々に計算。PSR/DSRのような統計推論指標を入れる時、片方だ
@@ -6210,6 +6252,9 @@ lessons:
   - docs/research/knowledge-base/preprocessing/financial-data-analysis.md
   - docs/research/knowledge-base/preprocessing/fractional-differentiation.md
   origin: '[[cmd_861]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L296
   title: 履歴特徴量系の新手法を入れる前にsnapshot SSOTを埋めよ
   summary: portfolio_config_snapshots=0/signal_detail_history=0の状態ではleakage-free履歴特徴量再現ができな
@@ -6396,7 +6441,7 @@ lessons:
   origin: '[[cmd_860]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L281
   title: レバレッジETF fat tails(尖度5-8)は正規性仮定の全統計手法でリスク。t分布 or ノンパラメトリック手法を優先すべき
   summary: DM-Signal active 91PFにはTQQQ/TECL/SPXL/TMF等3xレバレッジETF含む。月次リターン尖度5-8(正規=3)。正規尤度ベイズ
@@ -6461,6 +6506,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: CDP preflightはprocess検知後も/json/versionを確認し、port deadならuser-data-dir分離で自動起動を再試行する方が計測安定性が高い
   origin: '[[cmd_857]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L275
   title: CDP本番計測は共有ブラウザプロファイルを避けisolated portで実行せよ
   summary: 共有CDPプロファイルではservice worker/route状態に引きずられ、/compare-summaryへのnavigateが別ページ着地へ化けた。
@@ -7286,6 +7334,9 @@ lessons:
   when: タスク配備やデプロイ手順を変更・実行する時
   how: cmd_668でusePrefetch.tsへyears=0を追加しても、本番PF切替9.3-9.7秒、ページ遷移9.3-9.5秒
   origin: '[[cmd_670]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L206
   title: prefetchキャッシュキー不一致はprefetch戦略の致命的バグ
   summary: 'prefetchと消費側でAPIパラメータ(years等)が一致しないとキャッシュが永久ミスする。 usePrefetch.ts: years=3,20
@@ -7308,7 +7359,7 @@ lessons:
   origin: '[[cmd_646]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L204
   title: API永続キャッシュはUI state用localStorageと分離し、auth-scope付き IndexedDB を主格にすべき
   summary: selected PF や folder filter のような小さなUI stateは localStorage で十分だが、 multi-year
@@ -9252,7 +9303,7 @@ lessons:
   origin: '[[cmd_128]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-14'
 - id: L034
   title: Claude CodeはRead未実施のファイルへのWrite/Editを拒否する
   summary: タスクYAML(queue/tasks/)・inbox(queue/inbox/)・報告YAML(queue/reports/)等を書く前に必ず対象ファイルをR

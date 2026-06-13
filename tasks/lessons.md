@@ -8140,3 +8140,25 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - task_assignedの配達確認を一律task YAML statusへ寄せると、task YAMLで動かない家老/軍師を構造的にunverified扱いする。配達検証では対象roleの正本状態を先に判定し、非忍者はinbox既読、忍者はtask YAML statusまたはpane workingを使う。origin: [[cmd_3354]] -> [[codex配達検証task_YAML依存]] -> [[unverified偽WARN]]
+
+### L805: task YAML使い回しで自動注入メタを追加したらreset_stale_fieldsにも同時登録する
+- **日付**: 2026-06-14
+- **出典**: cmd_3368
+- **記録者**: hayate
+- **tags**: [infra,deploy-task,yaml]
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_yaml_injection.bats]
+- **origin**: [[cmd_3368]]
+- **when**: 未設定
+- **how**: 未設定
+- 今回のParserErrorはinject_related_lessons本体ではなく、hypothesis_count/three_strike_ruleがスカラーに上書きされた後に旧リスト子行が残った不正YAMLが原因。新しい自動注入/診断メタをtask YAMLに追加する時は、cmd間で残る可能性があるキーをreset_stale_fieldsへ同時登録し、stale子行の構文破壊を防ぐ。 origin: [[cmd_3368]] -> [[stale_task_yaml_list_children]] -> [[inject_related_lessons_exit1]]
+
+### L806: cmd_save.sh/cmd_skeleton.sh非対称成長の根因: 追加チェックの反映に強制機構が存在しない
+- **日付**: 2026-06-14
+- **出典**: cmd_3369
+- **記録者**: saizo
+- **tags**: [infra,testing,testing,bash]
+- **target_files**: [scripts/cmd_skeleton.sh,tests/unit/test_cmd_save.bats]
+- **origin**: [[cmd_3369]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_save.shにチェックを追加しても、cmd_skeleton.shへの反映を強制する仕組みがなかった。batsテスト追加(LS_NEW: check_name→skeleton存在確認)が最小コストの強制機構。次回cmd_save.shにcheckを追加したら対応するbatsテストも同時追加する規約が必要
