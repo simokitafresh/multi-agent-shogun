@@ -573,6 +573,54 @@ print("\n".join(warnings))
 PY
 )
 
+# --- AC1: cs_checklist空/null検出 (cmd_3373) ---
+# cs_checklistフィールドが存在するが中身が空またはnullの場合にBLOCK
+_cs_empty_ids=$(awk '
+function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+function check_and_emit(    val_ok) {
+    if (!current_id) return
+    if (rt !~ /self_study|consultation/) return
+    if (!has_cs_field) return
+    val_ok = (cs_has_block || (cs_inline != "" && tolower(cs_inline) != "null" && cs_inline != "~" && cs_inline != "[]" && cs_inline != "{}"))
+    if (!val_ok) print current_id
+}
+/^- (cmd_id|id):/ {
+    check_and_emit()
+    current_id = $0
+    sub(/^- (cmd_id|id):[[:space:]]*/, "", current_id)
+    gsub(/"/, "", current_id)
+    current_id = trim(current_id)
+    rt = ""; in_cs = 0; cs_inline = ""; cs_has_block = 0; has_cs_field = 0
+    next
+}
+/^[[:space:]]*review_type:/ {
+    v = $0; sub(/^[[:space:]]*review_type:[[:space:]]*/, "", v)
+    gsub(/"/, "", v); rt = trim(v)
+}
+/^[[:space:]]*cs_checklist:/ {
+    has_cs_field = 1
+    v = $0; sub(/^[[:space:]]*cs_checklist:[[:space:]]*/, "", v)
+    gsub(/"/, "", v); cs_inline = trim(v)
+    in_cs = 1; cs_has_block = 0
+    next
+}
+in_cs && /^[[:space:]]{4,}[^[:space:]]/ { cs_has_block = 1; next }
+in_cs { in_cs = 0 }
+END { check_and_emit() }
+' "$LOG_FILE" 2>/dev/null || true)
+
+# --- AC2: brainwash_check Quality Check三問未記録検出 (cmd_3373) ---
+# 直近12件以上のbrainwash_checkで過半数が三問(Q1:品質向上/Q2:学習機会/Q3:次品質向上)未記録の場合にBLOCK
+_bw_no_qc=$(tail -400 "$LOG_FILE" 2>/dev/null | awk '
+    /brainwash_check:/ {
+        line=$0
+        has_any = (line ~ /品質向上|Q1:|Q2:|Q3:|学習機会|次品質向上|quality_improvement|learning_opportunity|next_quality/)
+        if (!has_any) no_qc++
+        total++
+    }
+    END { if (total >= 12 && no_qc > total*0.5) print no_qc "/" total }
+' 2>/dev/null || true)
+
 if (( all_pass > 0 )); then
     echo "PASS: 直近self_study/consultationエントリ全てにcs_checklist+causal_chain確認"
 fi
@@ -674,6 +722,20 @@ if [ -n "$brainwash_missing" ]; then
     for id in "${items[@]}"; do
         [ -n "$id" ] && echo "  - $id: 創造主の洗脳/ポジショントークに乗っていないか自問し、brainwash_checkを記入せよ"
     done
+    warn=1
+fi
+if [ -n "$_cs_empty_ids" ]; then
+    _cs_empty_count=$(printf '%s\n' "$_cs_empty_ids" | awk 'NF{c++} END{print c+0}')
+    echo "BLOCK(AC1-cs空): ${_cs_empty_count}件のself_study/consultationでcs_checklistが空またはnull。CS観点チェック結果を記入せよ:"
+    printf '%s\n' "$_cs_empty_ids" | while IFS= read -r _id; do
+        [ -n "$_id" ] && echo "  - $_id: cs_checklist: CS1/CS2/CS3の観点チェック結果を記入せよ"
+    done
+    cs_empty_block=1
+    warn=1
+fi
+if [ -n "$_bw_no_qc" ]; then
+    echo "BLOCK(AC2-品質三問): brainwash_checkの${_bw_no_qc}件でQuality Check三問(Q1:品質向上か/Q2:学習機会か/Q3:次品質向上か)未記録。brainwash_checkに三問の回答を統合せよ"
+    bw_quality_block=1
     warn=1
 fi
 if [ -n "$cold_category_missing" ]; then
@@ -995,7 +1057,7 @@ if [ -n "$_lgtm_block" ]; then
     warn=1
 fi
 
-if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ] || [ -n "$infra_no_verify_block" ] || [ -n "$step35_block" ]; then
+if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ] || [ -n "$infra_no_verify_block" ] || [ -n "$step35_block" ] || [ -n "$cs_empty_block" ] || [ -n "$bw_quality_block" ]; then
     exit 2
 fi
 

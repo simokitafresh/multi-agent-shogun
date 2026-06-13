@@ -867,3 +867,60 @@ YAML
     [ "$status" -ne 2 ]
     [[ "$output" != *"BLOCK(L4-LG036)"* ]]
 }
+
+@test "cs_checklist present but empty blocks with exit 2 (AC1 cmd_3373)" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: self_study_A001
+  review_type: self_study
+  verdict: N/A
+  causal_chain: "因果"
+  cs_checklist:
+  operational_simulation: "シミュレーション完了"
+  timestamp: "2026-06-14T00:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(AC1-cs空)"* ]]
+    [[ "$output" == *"self_study_A001"* ]]
+}
+
+@test "cs_checklist with block content does not trigger AC1 block (AC1 cmd_3373)" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: self_study_A002
+  review_type: self_study
+  verdict: N/A
+  causal_chain: "因果"
+  cs_checklist:
+    CS1: "PASS - 品質向上あり"
+    CS2: "PASS - 実運用確認済み"
+  operational_simulation: "シミュレーション完了"
+  timestamp: "2026-06-14T00:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [[ "$output" != *"BLOCK(AC1-cs空)"* ]]
+}
+
+@test "brainwash_check without Quality Check 3 questions blocks when majority missing (AC2 cmd_3373)" {
+    {
+        for i in $(seq -w 01 12); do
+            printf -- '- cmd_id: cmd_qc_%s\n  review_type: draft\n  verdict: APPROVE\n  confidence: MEDIUM\n  ambiguity_points: none\n  brainwash_check: "確認済み（三問なし）"\n  observations:\n    - "事実1"\n    - "事実2"\n' "$i"
+        done
+    } > "$TEST_TMPDIR/logs/gunshi_review_log.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(AC2-品質三問)"* ]]
+}
+
+@test "brainwash_check with Quality Check 3 questions does not block (AC2 cmd_3373)" {
+    {
+        for i in $(seq -w 01 12); do
+            printf -- '- cmd_id: cmd_qc_%s\n  review_type: draft\n  verdict: APPROVE\n  confidence: MEDIUM\n  ambiguity_points: none\n  brainwash_check: "Q1:品質向上yes Q2:学習機会yes Q3:次品質向上yes #2防止確認"\n  observations:\n    - "事実1"\n    - "事実2"\n' "$i"
+        done
+    } > "$TEST_TMPDIR/logs/gunshi_review_log.yaml"
+
+    run bash "$TEST_GATE"
+    [[ "$output" != *"BLOCK(AC2-品質三問)"* ]]
+}
