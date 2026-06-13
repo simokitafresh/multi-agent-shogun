@@ -270,6 +270,7 @@ adversarial_missing=""
 hole_action_missing=""
 brainwash_missing=""
 cold_category_missing=""
+adversarial_streak_error=""
 skill_usage_missing=""
 ops_sim_missing=""
 all_pass=0
@@ -682,6 +683,35 @@ if [ -n "$cold_category_missing" ]; then
     done
     warn=1
 fi
+
+# --- L4: adversarial冷え連続未適用のERROR昇格 ---
+# 冷え観点WARNだけでは「意識して書く」運用に戻るため、adversarial未反映の連続回数を/tmpに保持する。
+adversarial_streak_threshold="${GUNSHI_CS_ADVERSARIAL_STREAK_THRESHOLD:-5}"
+adversarial_streak_cache="${GUNSHI_CS_ADVERSARIAL_STREAK_CACHE:-/tmp/shogun_gunshi_cs_adversarial_zero_streak.cache}"
+adversarial_current_missing=0
+if printf '%s\n' "$cold_category_missing" | awk -F: 'NF >= 2 && $2 ~ /(^|,)adversarial(,|$)/ { found=1 } END { exit found ? 0 : 1 }'; then
+    adversarial_current_missing=1
+fi
+if [ "$adversarial_current_missing" -eq 1 ]; then
+    previous_streak=0
+    if [ -f "$adversarial_streak_cache" ]; then
+        previous_streak=$(awk 'NR==1 && $1 ~ /^[0-9]+$/ { print $1; found=1 } END { if (!found) print 0 }' "$adversarial_streak_cache" 2>/dev/null)
+    fi
+    adversarial_zero_streak=$((previous_streak + 1))
+    mkdir -p "$(dirname "$adversarial_streak_cache")" 2>/dev/null || true
+    printf '%s\n' "$adversarial_zero_streak" > "$adversarial_streak_cache" 2>/dev/null || true
+    if [ "$adversarial_zero_streak" -ge "$adversarial_streak_threshold" ]; then
+        echo "ERROR(L4-adversarial): adversarial冷え観点が${adversarial_zero_streak}回連続未適用。finding_categoriesにadversarialを含めるまで拒否"
+        adversarial_streak_error=1
+        warn=1
+    else
+        echo "WARN(L4-adversarial): adversarial冷え観点未適用 streak=${adversarial_zero_streak}/${adversarial_streak_threshold}"
+    fi
+else
+    mkdir -p "$(dirname "$adversarial_streak_cache")" 2>/dev/null || true
+    printf '0\n' > "$adversarial_streak_cache" 2>/dev/null || true
+fi
+
 if [ -n "$skill_usage_missing" ]; then
     skill_usage_count=$(printf '%s\n' "$skill_usage_missing" | awk 'NF{c++} END{print c+0}')
     echo "WARN: ${skill_usage_count}件のreportでrecommended_skills未使用:"
@@ -959,6 +989,10 @@ if [ -n "$_lgtm_block" ]; then
         [ -n "$_id" ] && echo "  - $_id: LGTM=GATE通過保証。BLOCKリスクがあればFAIL"
     done
     warn=1
+fi
+
+if [ -n "$adversarial_streak_error" ]; then
+    exit 2
 fi
 
 exit $warn

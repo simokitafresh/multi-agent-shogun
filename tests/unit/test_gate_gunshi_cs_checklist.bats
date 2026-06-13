@@ -396,6 +396,230 @@ YAML
     [[ "$output" != *"冷え観点がfinding_categoriesに未反映"* ]]
 }
 
+@test "adversarial cold category reaches threshold and exits ERROR" {
+    export GUNSHI_CS_ADVERSARIAL_STREAK_CACHE="$TEST_TMPDIR/adversarial_streak.cache"
+    export GUNSHI_CS_ADVERSARIAL_STREAK_THRESHOLD=5
+    printf '4\n' > "$GUNSHI_CS_ADVERSARIAL_STREAK_CACHE"
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_4201
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4202
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4203
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4204
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4205
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4206
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4207
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4208
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4209
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4210
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4211
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"ERROR(L4-adversarial): adversarial冷え観点が5回連続未適用"* ]]
+    [ "$(cat "$GUNSHI_CS_ADVERSARIAL_STREAK_CACHE")" = "5" ]
+}
+
+@test "adversarial finding category resets cold streak cache" {
+    export GUNSHI_CS_ADVERSARIAL_STREAK_CACHE="$TEST_TMPDIR/adversarial_streak.cache"
+    export GUNSHI_CS_ADVERSARIAL_STREAK_THRESHOLD=5
+    printf '4\n' > "$GUNSHI_CS_ADVERSARIAL_STREAK_CACHE"
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_4301
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4302
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4303
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4304
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4305
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4306
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4307
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4308
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4309
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4310
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_4311
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  ambiguity_points: none
+  brainwash_check: "PASS 洗脳#1-8確認"
+  observations:
+    - "事実1"
+    - "事実2"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"ERROR(L4-adversarial)"* ]]
+    [ "$(cat "$GUNSHI_CS_ADVERSARIAL_STREAK_CACHE")" = "0" ]
+}
+
 @test "report with recommended_skills but no matching skill execution is warned" {
     mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
     cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
