@@ -307,6 +307,8 @@ exit 1
 MOCK
     chmod +x "$TEST_TMPDIR/bin/gh"
 
+    export SHOGUN_STARTUP_GH_TIMEOUT=5
+    export SHOGUN_STARTUP_INBOX_TIMEOUT=5
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"■ CI RED自動修正配備"* ]]
