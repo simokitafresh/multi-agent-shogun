@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-13 cmd_karo_hotfix_ga060_cmd_complete_readonly_ref_20260613 -->
+<!-- last_updated: 2026-06-13 cmd_3352 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
