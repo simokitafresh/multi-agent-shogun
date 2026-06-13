@@ -88,7 +88,7 @@ SWITCH_SCRIPT="$REPO_ROOT/scripts/switch_cli_mode.sh"
 RESTART_WATCHERS="$REPO_ROOT/scripts/restart_watchers.sh"
 
 [[ -f "$CLI_PROFILES" ]] || { echo "[ERROR] cli_profiles not found: $CLI_PROFILES" >&2; exit 1; }
-[[ -x "$SWITCH_SCRIPT" ]] || { echo "[ERROR] switch script not executable: $SWITCH_SCRIPT" >&2; exit 1; }
+[[ -f "$SWITCH_SCRIPT" ]] || { echo "[ERROR] switch script not found: $SWITCH_SCRIPT" >&2; exit 1; }
 
 log() { echo "[shogun-cli-switch] $*"; }
 
