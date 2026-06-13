@@ -396,7 +396,13 @@ else
 
   # 軍師向け: inbox未読0 → idle自走リマインド(意志依存排除)
   if [[ "$agent_id" == "gunshi" ]]; then
-    echo "★ inbox未読0。idle自走プロトコル実行せよ(Step 0→8)。止まるな。" >&2
+    _idle_last=""
+    [[ -f /tmp/gunshi_idle_last_step ]] && _idle_last=$(< /tmp/gunshi_idle_last_step)
+    if [[ -n "$_idle_last" ]]; then
+      echo "★ inbox未読0。idle自走Step ${_idle_last}で中断。再開せよ(→Step 8)。止まるな。" >&2
+    else
+      echo "★ inbox未読0。idle自走プロトコル実行せよ(Step 0→8)。止まるな。" >&2
+    fi
   fi
 
   # 忍者向け: task完了後に勝手な作業を始めるのを防止
