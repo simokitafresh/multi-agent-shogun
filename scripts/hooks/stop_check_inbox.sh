@@ -394,6 +394,11 @@ else
     fi
   fi
 
+  # 軍師向け: inbox未読0 → idle自走リマインド(意志依存排除)
+  if [[ "$agent_id" == "gunshi" ]]; then
+    echo "★ inbox未読0。idle自走プロトコル実行せよ(Step 0→8)。止まるな。" >&2
+  fi
+
   # 忍者向け: task完了後に勝手な作業を始めるのを防止
   # status=done/completed + inbox未読0 → 待機指示
   if [[ "$agent_id" != "karo" && "$agent_id" != "gunshi" && "$agent_id" != "shogun" ]]; then
