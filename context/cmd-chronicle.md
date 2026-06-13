@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-13 -->
+<!-- last_updated: 2026-06-13 cmd_karo_ci_fix_switch_cli_test_20260613 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -543,3 +543,4 @@
 | cmd_3348 | 将軍調査(2026-06-13 01:30台)で特定したインフラバグの修正。prompt_state_inject.shの先送り監視(L808-822)はstartup_alert_history.tsvの本日分『先送り判断:』行を累積カウントしており、同一項目がgate/hook実行のたびに再追記されるため、実際の未解消項目が約4件でも117件と表示され続けた(本日実測: 解消作業後も104→117へ増加)。stop_check_inbox.sh L157も同方式。偽の大量警報が全エージェントの毎ターンに注入され判断を焦らせる構造を、現在未解消の項目数(項目キーでの重複排除+解消判定)に正規化して実態と一致させる | infra | 06-13 | prompt_state_inject.sh と stop_ |
 | cmd_3349 | 将軍調査(2026-06-13 01:30台)で特定した設計ネックの修正。pre-write-edit-combined.shのGuard 0d(L242-250)は未読メッセージのtypeを問わず件数のみで起票を拒否するため、家老hotfixの完了通知(type=gate_clear・情報のみ)が1分間隔で届く時間帯に将軍の起票が分断され続ける。本日実測: 殿裁可済みcmd_3345の起票中に4回拒否+7往復の確認処理が割り込み、裁可(01:09)から委任(01:22)まで13分を要した。未読の全件が情報通知のみの場合は起票を許可し、指示系typeを含む場合は従来通り拒否するtype判定に改める。ターン終了時の未読全件確認(stop_check_inbox.sh)は変更せず、読まずに放置できない構造(LS048の趣旨)を維持する | infra | 06-13 | Guard 0d(L242-250)をtype判定に改修完了 |
 | cmd_3352 | 殿裁定(2026-06-13 09:08-09:09「より洗練された上位互換に他を差し替える」)に基づく。shogun-claude-version-switchを、CLI種別切替(Claude⇔Codex両方向)+Claudeバージョン切替(pinned/latest)+idle安全機構(in_progress時スキップ)を全て備えた上位互換スキルへアップデートし(名称はshogun-cli-switchへ変更)、機能パリティ確認後にswitch-to-opus/switch-to-codexの2スキルを差し替え(撤去)する。背景: 現状はrespawn機構が3スキルに重複し、version-switchはCodex方向切替を持たず(codex言及0件を将軍確認済み)、respawnにidle安全機構がなく稼働中エージェントを即killし得る穴がある。旧名参照の実体4ファイル(semantic-map・infrastructure.md・shutsujin_departure.sh・自SKILL.md)の差し替えも含む | infra | 06-13 | shogun-cli-switchへ統合し、Claude⇔C |
+| cmd_3351 | 調査チーム第9報レビュー回答(2026-06-13 08:55受領: PASS・AC2完全クローズ認定・AC3縮小版凍結解除)に基づき、price_ratio系months/use_calendarのFE参照を除去する。調査チーム条件3点を厳守: (1)既存PF(months保有の現存分)を編集画面で開いて無変更保存した場合の保存payloadが変更前後で同一であることをテストで固定 (2)受信境界のlegacy読込互換は維持しBEスキーマのフィールド定義は削除禁止(本番configに保存済みのため) (3)これまでと同型のサイクル(scaffolding→実装→報告→調査チームレビュー→個別マージ裁可)。FE参照の実体は6ファイル(型定義2・コンポーネント2・テスト2、coverage成果物除く)を将軍がrgで確認済み。AC3完了をもってWP-3全体=2026-06-11策定リファクタリング計画の全工程完了となる | dm-signal | 06-13 | cmd_3351 WP-3 AC3縮小版として、price_ |
