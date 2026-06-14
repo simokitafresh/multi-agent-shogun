@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-14 cmd_3377 -->
-<!-- last_synced_lesson: L738 -->
+<!-- last_updated: 2026-06-14 cmd_3378 -->
+<!-- last_synced_lesson: L741 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -254,6 +254,9 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L721-L735は振り分け済 → ops教訓索引(L721/L723/L729/L730/L733/L735), core§19.2(L722/L734), research§38(L724/L725/L726/L728)。L727はL728重複→統合）
 - L737: 奥義PFの命名BBはL1コンポーネントBBと対応していない（cmd_3377）
 - L738: 奥義命名BBとL1コンポーネントBB非対応は正常挙動（cmd_3377）
+- L739: portfolio.config.pipeline_configのselection_pipelineはblocks配列を持つdict形式（cmd_3378）
+- L740: PF構成確認はcheck_pf_config.pyで全層一括確認（cmd_3378）
+- L741: BB↔忍法完全対応表（cmd_3377）
 
 ## 因果リンク
 
