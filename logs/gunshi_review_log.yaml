@@ -2505,3 +2505,125 @@
   ambiguity_points: none
   origin: "[[殿指摘_PF構成確認不能]] -> [[ファイル名不一致]] -> [[FAIL]]"
   timestamp: "2026-06-14T14:35:00"
+- cmd_id: cmd_3379
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "shallow。SKILL.md更新のみ"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, north_star]
+  findings_summary: "6観点OK。SKILL.md 5件追随更新。3セッション連続startup BLOCK解消。shallow"
+  observations:
+    - "事実1: gate_skill_script_refs.sh WARN 5件(note_draft.sh 4件+cmd_complete_gate.sh 1件)"
+    - "事実2: 変更はSKILL.md記述の照合更新のみ。スクリプト機能変更なし"
+  causal_chain: "script変更→SKILL.md未追随→gate WARN→3セッション連続BLOCK→追随更新で解消"
+  brainwash_check: "#5防止: 3セッション先送りを今解消。数値: WARN 5→0(目標)"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[startup_BLOCK_3session]] -> [[SKILL.md追随]] -> [[APPROVE]]"
+  timestamp: "2026-06-14T16:37:00"
+- cmd_id: cmd_3380
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  gate_prediction: CLEAR
+  gate_prediction_reason: "軍師D0(666634297)適用済み上のテスト追加。medium"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, north_star]
+  findings_summary: "6観点OK。SG-PRE25偽陽性修正。軍師D0(read_markers 11語)上にFPテスト5件+真陽性テスト追加。殿指示直接対応"
+  observations:
+    - "事実1: 軍師D0 commit 666634297で既にread_markers 11語追加済み。忍者はこの上にテスト追加"
+    - "事実2: AC2のFPテスト5件で実効性担保。AC3で真陽性維持"
+    - "事実3: startup gate BLOCK TOP1(41件/50件)=command_files_modified_mismatch"
+  causal_chain: "SG-PRE25偽陽性→家老waive 5回/セッション→D0修正+テスト追加→偽陽性根絶"
+  brainwash_check: "#5防止: 放置せず即対応。数値: FP 5件/session→0(目標), BLOCK TOP1=41/50"
+  ambiguity_points: "動詞リスト網羅性にやや曖昧さ→AC2 FP5件テストで実効担保"
+  hole_action: none
+  origin: "[[blt_20260614_162444_6e9ca5]] -> [[SG-PRE25偽陽性]] -> [[APPROVE(D0上位互換)]]"
+  timestamp: "2026-06-14T16:41:00"
+- cmd_id: cmd_3379
+  review_type: report
+  report_ninja: saizo
+  verdict: FAIL
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T16:46:00"
+  gate_note: "FAIL予測通りBLOCK(command_files_modified_mismatch)。家老waive待ち"
+  gate_prediction: WARN
+  gate_prediction_reason: "SG-PRE25 ERROR(note_draft.sh/cmd_complete_gate.sh読取参照不在)"
+  changed_lines: 0
+  finding_categories: [assumptions, numbers]
+  findings_summary: "SG-PRE25 ERROR: command欄読取参照2件不在→GATE BLOCK予測。報告品質4観点OK(WARN5→0+gate PASS)"
+  observations:
+    - "事実1: SKILL.md 4件=タイムスタンプ更新のみ(note_draft.sh変更はコメント形式のみ)"
+    - "事実2: codd-fix SKILL.md=reflux 2回実行を正確に記述追加"
+    - "事実3: gate_skill_script_refs.sh WARN 5→0件PASS"
+  causal_chain: "command欄読取参照→files_modified不在→SG-PRE25 ERROR→FAIL"
+  brainwash_check: "#1防止: ERRORS=1からFAIL。数値: WARN5→0, ERRORS=1"
+  step3_5_verified: "SG-PRE25 ERROR: note_draft.sh/cmd_complete_gate.sh(読取参照)"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[startup_BLOCK_3session]] -> [[SG-PRE25読取参照]] -> [[FAIL]]"
+  timestamp: "2026-06-14T16:44:00"
+- cmd_id: cmd_3381
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "shallow。grep除外1行追加"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, premortem, north_star]
+  findings_summary: "6観点OK。先送り検出FP修正(品質向上文脈除外)。grep -vE拡張。AC3件/20min"
+  observations:
+    - "事実1: L723 grep -vEに品質向上文脈(向上/改善/解消)なし→FP"
+    - "事実2: cmd_3380(precheck.sh)と別ファイル(cmd_save.sh)→並行安全"
+  causal_chain: "品質向上記述→先送り語部分一致→偽陽性WARN→grep除外追加→FP排除"
+  brainwash_check: "#5防止: 偽陽性=バグ即修正。数値: AC 3件"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[殿指示_偽陽性はバグ]] -> [[L723_grep除外不足]] -> [[APPROVE]]"
+  timestamp: "2026-06-14T16:49:00"
+- cmd_id: cmd_3382
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  gate_prediction: CLEAR
+  gate_prediction_reason: "教訓yaml修正のみ。コード変更なし"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, north_star]
+  findings_summary: "6観点OK。教訓useful率改善(10%ALERT)。noise候補deprecated化+when限定。AC3件/30min"
+  observations:
+    - "事実1: useful_rate=10%(1/10)で3回連続ALERT"
+    - "事実2: 家老分析でnoise候補10件(参照率0%)特定済み"
+  causal_chain: "noise教訓注入→useful率10%→ALERT→deprecated化+when限定→精度向上"
+  brainwash_check: "#5防止: ALERT即対応。数値: useful_rate 10%, noise 10件"
+  ambiguity_points: "noise候補IDは忍者が注入ログから特定"
+  hole_action: none
+  origin: "[[startup_lesson_health_ALERT]] -> [[noise教訓]] -> [[APPROVE]]"
+  timestamp: "2026-06-14T16:51:00"
+- cmd_id: cmd_3381
+  review_type: report
+  report_ninja: tobisaru
+  verdict: FAIL
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T16:58:00"
+  gate_note: "FAIL(files_modifiedコメント混入)→家老waive→CLEAR"
+  gate_prediction: WARN
+  gate_prediction_reason: "files_modifiedコメント混入→SG-PRE3 commit検索不能"
+  changed_lines: 0
+  finding_categories: [assumptions, premortem]
+  findings_summary: "files_modifiedにコメント混入(括弧注記)→commit検索不能→BLOCK予測。品質4観点OK(grep -vE追加+115/115)"
+  observations:
+    - "事実1: files_modified path=scripts/cmd_save.sh (L723: ...)→括弧注記がパスに混入"
+    - "事実2: grep -vE 3段目パイプ追加。向上/改善/強化+セッション/起動の組合せ除外"
+  causal_chain: "files_modifiedコメント混入→SG-PRE3 commit不検出→ERRORS=2→FAIL"
+  brainwash_check: "#1防止: ERRORS=2からFAIL。数値: bats 115/115, ERRORS=2"
+  step3_5_verified: "SG-PRE3 WARN: コメント混入でcommit検索不能"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[殿指示_偽陽性はバグ]] -> [[files_modifiedコメント混入]] -> [[FAIL]]"
+  timestamp: "2026-06-14T16:57:00"

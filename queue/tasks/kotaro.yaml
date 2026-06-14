@@ -1,130 +1,147 @@
 task:
-  _ac_task_id: cmd_3377_full
+  readonly_ref:
+  - path: 'gate_gunshi_report_precheck.sh'
+    reason: command欄の必読/参照専用ファイル
+  _ac_task_id: cmd_3380_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3377 (deployed 2026-06-14T12:38:29). Read from the beginning.
-  ac_version: 7ddab8b3
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3380 (deployed 2026-06-14T16:37:38). Read from the beginning.
+  ac_version: 89b62639
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
-  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
-  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
-  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
-  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
-  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
-  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
-  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
-  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
-  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
-  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3377
-  project: dm-signal
-  purpose: 殿指示(2026-06-14)。cmd_3375はシャープで算出+pf_L0ベースラインなし。α6指標(CAGR・NHF・MaxDD・MRU・Calmar・Avg UWP)でpf_L0(四神)→pf_L1(シン忍法)→pf_L2(奥義)の各段差分を算出し、BB単体効果+BB組合せ行列を定量化する
-  status: idle
+  parent_cmd: cmd_3380
+  project: infra
+  purpose: 殿指示(2026-06-14)『偽陽性はバグだ。バグは修正しよう』。SG-PRE25がcommand欄の実行参照(bash scripts/X.sh等)を変更対象ファイルと誤判定し、毎セッション5件の家老waive作業が発生(10分/セッション負の複利)。軍師提案(blt_20260614_162444)に基づきcommand欄のファイル参照を自動分類するヒューリスティックを追加する
+  status: done
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal
-  task_id: cmd_3377_full
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_gunshi_report_precheck.sh
+  task_id: cmd_3380_full
   task_type: full
   previous_failures:
-    attempt: 1
-    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    tried_approaches:
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    approach_summary: 'AC1: cs_checklistが空/nullのself_study/consultationエントリをBLOCK検出するawkを追加。AC2: brainwash_checkにQuality Check三問(Q1:品質向上/Q2:学習機会/Q3:次品質向上)キーワードが直近12件以上で過半数未記録の場合にBLOCK。batsテスト4件追加(test 2…'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'AC1: cs_checklistが空/nullのself_study/consultationエントリをBLOCK検出するawkを追加。AC2: brainwash_checkにQuality Check三問(Q1:品質向上/Q2:学習機会/Q3:次品質向上)キーワードが直近12件以上で過半数未記録の場合にBLOCK。batsテスト4件追加(test 2…'
-  skill_hint: /db-check
-  memory_db_context:
-  - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
-  - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
-  - "2026-06-14T12:29:25+09:00 | 【INFOバッチ】 2026-06-14 12:24:42|cmd_3375"
-  - "2026-06-14T02:45:07+09:00 | 【INFOバッチ】 2026-06-14 02:37:43|CI緑: run 27473782628"
-  - "2026-06-14T12:20:16+09:00 | 【家老】cmd_3375 初回配備開始 (title=偵察: シン忍法(pf_L1)・奥義(pf_L2)の忍法BB別特性分析。CAGR・カルマー・MaxDD・Avg UWP・シャープを忍法ごとに比較,"
-  related_causal_links:
-  - "[[BB単体効果不明]]"
-  - "[[pf_L0ベースライン不在]]"
-  - "[[殿指示_BB重ねがけ分析_20260614]]"
-  context_hints:
-  - "context/robustness-verification-catalog.md"
-  - "context/gs-speedup-knowledge.md"
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
-  - "context/training-cycle.md"
-  production_invariants:
-  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
-  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
-  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
-  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
-  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: '本番DBからpf_L0(四神)全体のmonthly_returnsを取得し、α6指標(CAGR・NHF・MaxDD・MRU・Calmar・Avg UWP)を算出する'
-  - id: 'AC2'
-    checks:
-    - check: 'pf_L0→pf_L1の差分をBB別に算出し、BB単体の効果(分身・追い風・抜き身・変わり身・加速D・加速R・四つ目)をテーブル化する'
-  - id: 'AC3'
-    checks:
-    - check: 'pf_L1→pf_L2の差分をBB別に算出し、重ねがけ効果をテーブル化する'
-  - id: 'AC4'
-    checks:
-    - check: 'BB(pf_L1)×BB(pf_L2)の組合せ行列で、pf_L0→pf_L2の累積効果をα6指標差分で定量化する'
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_3377.yaml
-  report_path: queue/reports/kotaro_report_cmd_3377.yaml
-  bloom_level: 
-  related_lessons:
-  - id: 'L634'
-    summary: 'add_cascade_delete.pyに存在しない''performance''テーブルが含まれていたため、スクリプトが実行されると即エラーでロールバックする構造になっていた。結果として8テーブルのCASCDE未適用が長期間放置された。マイグレーション作成時は必ず本番テーブル名と突合すること'
-    detail: 'add_cascade_delete.pyに存在しない''performance''テーブルが含まれていたため、スクリプトが実行されると即エラーでロールバックする構造になっていた。結果として8テーブルのCASCDE未適用が長期間放置された。マイグレーション作成時は必ず本番テーブル名と突合すること'
-  - id: 'L633'
-    summary: '四つ目(yotsume)のように monthly-only かつ precomputed union mask が既にあるGSでは、serial'
-    detail: '四つ目(yotsume)のように monthly-only かつ precomputed union mask が既にあるGSでは、serial'
-  - id: 'L621'
-    summary: 'cmd_1882再生成で `okugi_alm_alm/kasoku_diff` は `.cache.*.npy` のみ残り `.csv` が欠損していた。`load_cached_series()`'
-    detail: 'cmd_1882再生成で `okugi_alm_alm/kasoku_diff` は `.cache.*.npy` のみ残り `.csv` が欠損していた。`load_cached_series()`'
-  - id: 'L620'
-    summary: 'L1ではBB+15pp/動的-27〜-41pp。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定にはproduction_db①とgs_static_champion③⑤⑦の2種が混在し後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。共通OOS期間での比較純化も検討すべき。'
-    detail: 'L1ではBB+15pp/動的-27〜-41pp。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定にはproduction_db①とgs_static_champion③⑤⑦の2種が混在し後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。共通OOS期間での比較純化も検討すべき。'
-  - id: 'L619'
-    summary: '''L1(シン忍法GS固定ベース)ではBB+15pp/動的-27〜-41ppが観測。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定はproduction_db(①)とgs_static_champion(③⑤⑦)の2種混在で、後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。次回:'
-    detail: '''L1(シン忍法GS固定ベース)ではBB+15pp/動的-27〜-41ppが観測。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定はproduction_db(①)とgs_static_champion(③⑤⑦)の2種混在で、後者はALM探索空間の影響が入り純粋なシンGS固定と異なる。この非対称性がL1との差異の一因。次回:'
-  - id: 'L618'
-    summary: 'WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent'
-    detail: 'WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent'
-  - id: 'L617'
-    summary: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
-    detail: 'gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。ファイルパスの実在も検証。なぜなぜ7回(2026-04-12殿指摘)の対策として将軍が実装。clear_prep_check.shのCheck7に連携済み'
-  - id: 'L616'
-    summary: '多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つけられない。L2奥義①の本番DB奥義21体を進行表から辿れなかった事故(2026-04-12)。gate_artifact_map.shで完了ブロックの所在空欄をWARN検知'
-    detail: '多段パイプライン(GS→選出→DB登録)では最終成果物の物理的所在(パス/DB名/UUID)を進行表に必須記録せよ。済フラグだけでは/clear後に成果物を見つけられない。L2奥義①の本番DB奥義21体を進行表から辿れなかった事故(2026-04-12)。gate_artifact_map.shで完了ブロックの所在空欄をWARN検知'
-  - id: 'L615'
-    summary: '''cmd_1867の1186 GSにおいてkasoku_diff/kawarimi/yotsume等はexpected_patterns=1のためALMウォークフォワードが実質的に静的選出と同じ結果になる。2×2因子分析でこの縮退ケースを識別・注記する必要がある。次回:'
-    detail: '''cmd_1867の1186 GSにおいてkasoku_diff/kawarimi/yotsume等はexpected_patterns=1のためALMウォークフォワードが実質的に静的選出と同じ結果になる。2×2因子分析でこの縮退ケースを識別・注記する必要がある。次回:'
-  - id: 'L614'
-    summary: 'cmd_1850_cpcv_three_layer.pyのCPCVロジックを新スクリプトcmd_1865_alm_cpcv.pyに全コピーして再実装した。karoから指摘を受け削除・修正。正解は既存スクリプトへの最小差分追加（--alm-dmフラグ追加）だった。新スクリプト作成前に既存コードの再利用可能性を確認すること。'
-    detail: 'cmd_1850_cpcv_three_layer.pyのCPCVロジックを新スクリプトcmd_1865_alm_cpcv.pyに全コピーして再実装した。karoから指摘を受け削除・修正。正解は既存スクリプトへの最小差分追加（--alm-dmフラグ追加）だった。新スクリプト作成前に既存コードの再利用可能性を確認すること。'
-  deployed_at: "2026-06-14T12:38:49"
-
-  session_state:
     attempt: 1
     last_block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
     tried_approaches:
     - 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-    approach_summary: 'pf_L0(四神12体均等)→pf_L1(シン忍法BB別3目的均等)→pf_L2(奥義BB別3目的均等)のα6指標差分を定量化。L1最強BB: 加速D(CAGR+31.30pp)/抜き身(MaxDD-28.49pp/Calmar+2.904)。L2最強BB: 追い風(CAGR+34.49pp)/四つ目(MaxDD-20.11pp)/加速R(Calmar+3.799)。L0→L2累積最高: 抜き身CAGR=96.95%(+53.92pp),Calmar=5.852(+4.915)。発見: 奥義命名BBとL1コンポーネントBBが非対応→decision_candidate記録。'
+    approach_summary: 'pf_L0(四神12体均等)→pf_L1(シン忍法BB別3目的均等)→pf_L2(奥義BB別3目的均等)のα6指標差分を定量化。L1最強BB: 加速D(CAGR+31.30pp)/抜き身(MaxDD-28.49pp/Calmar+2.904)。L2最強BB: 追い風(CAGR+34.49pp)/四つ目(MaxDD-20.11pp)/加速R(Calmar+3…'
     prior_attempts:
     - attempt: 1
       block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-      approach_summary: 'pf_L0(四神12体均等)→pf_L1(シン忍法BB別3目的均等)→pf_L2(奥義BB別3目的均等)のα6指標差分を定量化。L1最強BB: 加速D(CAGR+31.30pp)/抜き身(MaxDD-28.49pp/Calmar+2.904)。L2最強BB: 追い風(CAGR+34.49pp)/四つ目(MaxDD-20.11pp)/加速R(Calmar+3.799)。L0→L2累積最高: 抜き身CAGR=96.95%(+53.92pp),Calmar=5.852(+4.915)。発見: 奥義命名BBとL1コンポーネントBBが非対応→decision_candidate記録。'
+      approach_summary: 'pf_L0(四神12体均等)→pf_L1(シン忍法BB別3目的均等)→pf_L2(奥義BB別3目的均等)のα6指標差分を定量化。L1最強BB: 加速D(CAGR+31.30pp)/抜き身(MaxDD-28.49pp/Calmar+2.904)。L2最強BB: 追い風(CAGR+34.49pp)/四つ目(MaxDD-20.11pp)/加速R(Calmar+3…'
+  related_lessons:
+  - id: 'L467'
+    summary: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ'
+    detail: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ'
+  - id: 'L769'
+    summary: 'parse_skip_countはnon_tap_text(_filter_tap_lines)を使うがparse_fail_countは生textに適用。テス'
+    detail: 'parse_skip_countはnon_tap_text(_filter_tap_lines)を使うがparse_fail_countは生textに適用。テス'
+  - id: 'L324'
+    summary: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
+    detail: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
+  - id: 'L074'
+    summary: '((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。'
+    detail: '((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。'
+  - id: 'L564'
+    summary: 'WSL2 NTFSでは100644ファイルでも実行可能に見える場合があり、ローカルPASSがCIの-x判定FAILを隠す。bash "$script" で起動す'
+    detail: 'WSL2 NTFSでは100644ファイルでも実行可能に見える場合があり、ローカルPASSがCIの-x判定FAILを隠す。bash "$script" で起動す'
+  - id: 'L183'
+    summary: 'Ubuntu既定の `~/.bashrc` は先頭で `case $-` により非対話シェルを即 return する。環境変数追加レビューで `bash -lc'
+    detail: 'Ubuntu既定の `~/.bashrc` は先頭で `case $-` により非対話シェルを即 return する。環境変数追加レビューで `bash -lc'
+  - id: 'L768'
+    summary: 'bash層でCDP疎通確認してもPython側get_tab()はNoneを返しうる(タブ不在時)。Noneチェックなしにnavigate(None,...)を'
+    detail: 'bash層でCDP疎通確認してもPython側get_tab()はNoneを返しうる(タブ不在時)。Noneチェックなしにnavigate(None,...)を'
+  - id: 'L758'
+    summary: '( ... ) 200>lockfile のサブシェルブロック内ではlocal宣言が無効(bash仕様: local is function-only)。変数名'
+    detail: '( ... ) 200>lockfile のサブシェルブロック内ではlocal宣言が無効(bash仕様: local is function-only)。変数名'
+  - id: 'L692'
+    summary: 'CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/'
+    detail: 'CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/'
+  - id: 'L671'
+    summary: 'gate_fire_logには同一報告YAMLの複数gate実行が残るため、gate行数をそのままFAIL率にすると修行自動配備の判断が歪む。修行品質や一発PA'
+    detail: 'gate_fire_logには同一報告YAMLの複数gate実行が残るため、gate行数をそのままFAIL率にすると修行自動配備の判断が歪む。修行品質や一発PA'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  semantic_concepts:
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  - "command_files_modified_verification — Command×Files Modified照合:  scripts/gates/gate_gunshi_report_precheck.sh (SG-PRE25) scripts/gates/gate_gunshi_cs_checklist.sh (L4 step3_5_verified検出) instructions/gunshi.md (Step 3.5定義+review_logテンプレート) projects/infra/lessons_gunshi.yaml (LG036/LG037)"
+  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)"
+  related_causal_links:
+  - "[[SG-PRE25_FP_41件]]"
+  - "[[動詞ヒューリスティック追加]]"
+  - "[[殿指示_偽陽性はバグ_20260614]]"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L467: 新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ
+      - L769: parse_skip_countはnon_tap_text(_filter_tap_lines)を使うがparse_fail_countは生textに適用。テス
+      - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ
+      - L074: ((PASS++))はPASS=0の時に((0))を評価→exit code 1→set -eでスクリプト即終了。PASS=$((PASS+1))に変換必須。
+      - L564: WSL2 NTFSでは100644ファイルでも実行可能に見える場合があり、ローカルPASSがCIの-x判定FAILを隠す。bash "$script" で起動す
+      - L183: Ubuntu既定の `~/.bashrc` は先頭で `case $-` により非対話シェルを即 return する。環境変数追加レビューで `bash -lc
+      - L768: bash層でCDP疎通確認してもPython側get_tab()はNoneを返しうる(タブ不在時)。Noneチェックなしにnavigate(None,...)を
+      - L758: ( ... ) 200>lockfile のサブシェルブロック内ではlocal宣言が無効(bash仕様: local is function-only)。変数名
+      - L692: CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/
+      - L671: gate_fire_logには同一報告YAMLの複数gate実行が残るため、gate行数をそのままFAIL率にすると修行自動配備の判断が歪む。修行品質や一発PA
+    ────────────────────────────────────────
+    
+    
+  memory_db_context:
+  - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
+  - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
+  - "2026-06-14T16:20:45+09:00 | 【INFOバッチ】 2026-06-14 16:16:03|CI緑: run 27491494373"
+  - "2026-06-14T15:03:33+09:00 | 【INFOバッチ】 2026-06-14 14:54:21|CI緑: run 27489644660"
+  - "2026-06-10T18:59:21+09:00 | commitが殿の許可で拒否されました。hook(安全機構)への変更のため、commit前に確認します。 **現在の状態:** - `.claude/hooks/pre-bash-combined.s"
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'gate_gunshi_report_precheck.shのSG-PRE25にcommand欄ファイル参照の自動分類ロジック(実行動詞+パス→除外、変更動詞+パス→照合対象)が実装されており、既存テストがPASSすることを確認する'
+  - id: 'AC2'
+    checks:
+    - check: '過去5件のFALSE POSITIVE(command欄の実行参照による誤判定)をテストケースとして追加し、全てPASSすることを確認する'
+  - id: 'AC3'
+    checks:
+    - check: '真のcommand_files_modified_mismatch(変更動詞+パスだがfiles_modifiedに未記載)は引き続きFAIL判定されることを確認する'
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_3380.yaml
+  report_path: queue/reports/kotaro_report_cmd_3380.yaml
+  bloom_level: 
+  deployed_at: "2026-06-14T16:37:55"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'SG-PRE25のcommand欄偽陽性修正完了。exec_prefix(bash/python3等の直前実行動詞)とhas_clause_boundary(読点「、」で区切られた別節判定)の2ヒューリスティックを追加。既存11テスト+新規FP5件+真陽性2件=全18テストPASS。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'SG-PRE25のcommand欄偽陽性修正完了。exec_prefix(bash/python3等の直前実行動詞)とhas_clause_boundary(読点「、」で区切られた別節判定)の2ヒューリスティックを追加。既存11テスト+新規FP5件+真陽性2件=全18テストPASS。'

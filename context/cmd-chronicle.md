@@ -542,3 +542,5 @@
 | cmd_3376 | 殿指摘(2026-06-14)。教訓を記録しても使わないのは仕組みがないから。各論パッチ(α6指標だけ検出等)ではなく、全cmd起票前に三層記憶を自動検索し、cmd内容に関連する殿裁定・定義をcmd_save.shの出力に表示する汎用仕組みを構築する | infra | 06-14 | Check 11.12(show_three_layer_m |
 | cmd_3377 | 殿指示(2026-06-14)。cmd_3375はシャープで算出+pf_L0ベースラインなし。α6指標(CAGR・NHF・MaxDD・MRU・Calmar・Avg UWP)でpf_L0(四神)→pf_L1(シン忍法)→pf_L2(奥義)の各段差分を算出し、BB単体効果+BB組合せ行列を定量化する | dm-signal | 06-14 | pf_L0(四神12体均等)→pf_L1(シン忍法BB別3目 |
 | cmd_3378 | 殿指示(2026-06-14)。PFの構成を確認する際に将軍がportfoliosテーブルだけ見てtier_visibility_settingsやpipeline_configを確認しなかった。誰でもいつでもPF名を指定するだけで全構成を一発確認できるスクリプトを作る | dm-signal | 06-14 | scripts/check_pf_config.py作成: |
+| cmd_3379 | startup gateのSKILL.md script参照WARNが3セッション連続BLOCK(2026-06-14)。note_draft.sh(shellcheck SC1036修正 82fda53)とcmd_complete_gate.sh(reflux競合修正 23edb56)がSKILL.mdより新しい。5件のSKILL.mdを現行スクリプト動作と照合し追随更新する | infra | 06-14 | SKILL.md 5件を現行スクリプト動作と照合し追随更新。 |
+| cmd_3381 | 殿指示(2026-06-14)『偽陽性はバグだ』。cmd_save.sh L723 check_deferral_language_warnが品質向上文脈の語(N回連続startup BLOCK解消で起動品質向上)を先送りと誤判定。grepパターンに文脈除外を追加する | infra | 06-14 | cmd_save.sh L723 check_deferra |

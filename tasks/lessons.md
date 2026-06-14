@@ -1669,7 +1669,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-05
 - **出典**: testing
 - **記録者**: cmd_558
-- **tags**: [bash, yaml]
+- **tags**: [bash, testing]
 - **if**: フックスクリプトテスト時
 - **then**: dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能
 - **because**: symlink構造でSCRIPT_DIRをテスト用ディレクトリに向ける
@@ -4316,7 +4316,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_step2c_push
 - **記録者**: kotaro
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [infra, git, pre-push]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止
 - pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止。feature branchをpushしてPRを作成する必要がある。次回タスクにgit push origin mainが含まれる場合はfeature branch+PR作成手順を踏め
@@ -5141,7 +5141,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **tags**: [infra,git]
 - **target_files**: [scripts/cdp_canary.sh,scripts/hybrid_search.sh,scripts/gates/gate_skill_health.sh,tests/skill_routing_eval.bats]
 - **when**: 共有workspaceで並列忍者がcommitする際は
-- **how**: 2026-04-25
+- **how**: git commit --only <担当ファイル>でcommit対象pathを固定し、共有indexに他忍者の変更が混入しないようにする
 - 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を限定することで意図しないファイル混入を防ぐ。cmd_2278でhayateがkagemaruのAC2/AC3成果物を巻き込んだ事例
 
 ### L530: 共有workspaceでのgit commitは--onlyオプションでpath固定する
@@ -6881,8 +6881,8 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **tags**: [ci-path-resolution]
 - **target_files**: [scripts/lord_conversation_read.sh]
 - **origin**: [[cmd_karo_ci_fix_lord_conv_read]]
-- **when**: 未設定
-- **how**: 未設定
+- **when**: CIのbatsテストでcwd非依存なスクリプトを実装・修正する時
+- **how**: デフォルトパスを相対パス(queue/xxx)ではなくscript_dir基準の絶対パスで設定する
 - CI --jobs 8並列ではbatsがテスト単位でCWDを変更しうる。スクリプトのデフォルトパスが相対パス(queue/xxx)だとファイル不在エラー。script_dir=$(cd $(dirname $0)/.. && pwd)でプロジェクトルートを導出し絶対パスで参照する。lord_conversation_read.shで実証(T-LC-015/016 CI FAIL→修正後PASS)。
 
 ### L691: CIでrepo内スクリプトをテストから呼ぶ時はgit実行権限かbash経由を確認する
@@ -6903,8 +6903,8 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **tags**: [infra,bash,git]
 - **target_files**: [tests/unit/test_lord_conversation.bats]
 - **origin**: [[cmd_karo_ci_fix_lord_conv_read_v2]]
-- **when**: 未設定
-- **how**: 未設定
+- **when**: CIのbatsテストからrepo内スクリプトを直接実行する時
+- **how**: 直接実行の代わりにbash スクリプト名の形式で呼び出すか、CI設定でgit chmod +xを付与する
 - CI checkout(git mode 100644)ではスクリプトに実行権限がない場合がある。テストで直接実行($PROJECT_ROOT/scripts/xxx.sh)するとpermission denied。bash $PROJECT_ROOT/scripts/xxx.sh またはrun bash xxx.shで呼び出せばCIでも安全。lord_conversation_read.sh T-LC-015/016で3連続CI REDの根因。
 
 ### L693: doc-dirs投入は品質対象拡張子を事前照合せよ
@@ -7024,8 +7024,8 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **記録者**: karo
 - **tags**: [infra,process,git,cache]
 - **origin**: [[cmd_3045]]
-- **when**: 未設定
-- **how**: 未設定
+- **when**: D0 commitを実行する前、またはgit addで変更をstageした後にcommitする前
+- **how**: git diff --cachedでstaging確認し、auto-commitが先行していないかを確認してからD0 commitを実行する
 - auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでstaging内容を確認せよ。LG024(軍師直接修正権限)のS0手順に追加。
 
 ### L704: セマンティック監査エージェントP0報告は全件現物検証必須
@@ -7043,11 +7043,11 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-25
 - **出典**: cmd_3048
 - **記録者**: hayate
-- **tags**: [infra,bash,git]
+- **tags**: [infra, bash, git]
 - **target_files**: [scripts/hooks/prompt_state_inject.sh,tests/unit/test_session_state_hooks.bats]
 - **origin**: [[cmd_3048]]
-- **when**: 未設定
-- **how**: 未設定
+- **when**: git showやgit commitでファイル実装の有無を確認する時
+- **how**: git show HEAD:<ファイルパス>でファイルの存在・内容を直接確認し、commit stat枚数だけで判断しない
 - 今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/prompt_state_inject.shで確認するとhook実装は既にHEADに存在した。commit statだけでは先行実装済みファイルを見落とすため、AC対象はHEAD上のファイル内容を直接rgで確認する必要がある。origin: [[cmd_3048]] -> [[commit_stat_only_misread]] -> [[AC実装確認]]
 
 ### L706: 動的データ件数をACに固定値で書くと実装時点でズレる
