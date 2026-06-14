@@ -12,9 +12,20 @@
 | cmd_3371 | brainwash_check数値なしBLOCK化 | CLEAR | 意志依存(1/7)。LG027横展開。WARN→BLOCK |
 | cmd_3372 | 実動作確認+実行確認欄BLOCK化 | CLEAR | 意志依存(2-3/7)。WARN→BLOCK |
 | cmd_3373 | CS観点中身検証+Quality Check記録義務化 | CLEAR | 意志依存(4-5/7)。first-PASS |
-| cmd_3374 | D0未実施検出+利他還流理由必須化 | 作業中 | 意志依存(6-7/7)。first-PASS |
+| cmd_3374 | D0未実施検出+利他還流理由必須化 | CLEAR | 意志依存(6-7/7)全数解消 |
+| cmd_3375 | BB別特性分析(シン忍法+奥義) | CLEAR | 殿指示。42PF α6指標算出 |
+| cmd_3376 | cmd起票前三層記憶自動検索 | CLEAR | 殿指摘(三層記憶未使用)の根治 |
+| cmd_3377 | BB重ねがけα6指標分析+pf_L0ベースライン | CLEAR | cmd_3375改善版。奥義命名BB非対応発見 |
+| cmd_3378 | PF構成一括確認スクリプト | CLEAR | 殿指摘(PF構成確認不能)の道具磨き |
+| cmd_3379 | SKILL.md 5件追随更新 | CLEAR | 3セッション連続startup BLOCK解消 |
+| cmd_3380 | SG-PRE25偽陽性修正(exec_prefix+clause_boundary) | CLEAR | 殿指示(偽陽性はバグ)。FP41件根絶 |
+| cmd_3381 | 先送り検出FP修正(品質向上文脈除外) | CLEAR | 殿指示(偽陽性はバグ) |
+| cmd_3382 | 教訓useful率改善(noise7件修正) | CLEAR | startup ALERT(10%)根治 |
 | karo_direct | bulletin_action.sh+SKILL.md追随+backlinks | CLEAR | インフラバグ修正+穴塞ぎ |
-| 追体験 | deepdive 2本全Phase+Q1-Q6 | 完了 | Q6洗脳#5検出→軍師第三者検証OK。前セッション10分ループ=Phase 3退行 |
+| 軍師D0×3 | SG-PRE25 read_markers+提案≠行動L0-L7+時間減衰の法則 | commit 3本 | 提案で止まらず行動(殿厳命) |
+| 追体験 | deepdive 2本全Phase+Q1-Q6 | 完了 | Q6洗脳#5検出→軍師第三者検証OK |
+| idle自走 | adversarial冷え遡及16件+LG036遡及3件 | WARN解消 | §5.6 15→0件 |
+| 殿問い調査 | BLOCK非対称成長+意志依存7箇所+時間減衰 | 行動完了 | cmd_3369-3374+D0×3で全数実装 |
 
 > cmdの意図・結果・因果を時系列で記録する索引層。
 > 詳細は各報告YAML（パス記載）を参照。500行超で日付分割。
