@@ -539,3 +539,5 @@
 | cmd_3373 | 軍師意志依存調査(blt_011952)の項目(4)(5)。cs_checklistはフィールド存在のみ検知で中身は意志依存。Quality Check三問は記録義務がなく自問の証拠がない。cs_checklist中身が空文字やnullでBLOCK+Quality Checkをbrainwash_check欄に統合し記録を強制する | infra | 06-14 | AC1: cs_checklistが空/nullのself_ |
 | cmd_3374 | 軍師意志依存調査(blt_011952)の項目(6)(7)。D0すべき場面(軽微修正)でD0しなくても何も起きない。利他還流でnot_neededと書けば通過する。D0未実施検出をWARN追加+not_neededに理由必須を追加する | infra | 06-14 | AC1: draft/reportでtypo/format等 |
 | cmd_3375 | 殿指示(2026-06-14)。忍法=ビルディングブロック(BB)ごとの特性を定量的に把握したい。各BBがリターン・リスクリターン・Avg UWPにどう貢献するかを分析する。シン忍法(pf_L1)と奥義(pf_L2)を対象に、全忍法PFのメトリクスをBB別に集計・比較する | dm-signal | 06-14 | 本番DB monthly_returns からpf_L1忍法 |
+| cmd_3376 | 殿指摘(2026-06-14)。教訓を記録しても使わないのは仕組みがないから。各論パッチ(α6指標だけ検出等)ではなく、全cmd起票前に三層記憶を自動検索し、cmd内容に関連する殿裁定・定義をcmd_save.shの出力に表示する汎用仕組みを構築する | infra | 06-14 | Check 11.12(show_three_layer_m |
+| cmd_3377 | 殿指示(2026-06-14)。cmd_3375はシャープで算出+pf_L0ベースラインなし。α6指標(CAGR・NHF・MaxDD・MRU・Calmar・Avg UWP)でpf_L0(四神)→pf_L1(シン忍法)→pf_L2(奥義)の各段差分を算出し、BB単体効果+BB組合せ行列を定量化する | dm-signal | 06-14 | pf_L0(四神12体均等)→pf_L1(シン忍法BB別3目 |

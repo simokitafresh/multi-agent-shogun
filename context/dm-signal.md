@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-11 cmd_karo_hotfix_ga047_context_freshness -->
-<!-- last_synced_lesson: L735 -->
+<!-- last_updated: 2026-06-14 cmd_3377 -->
+<!-- last_synced_lesson: L738 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -252,6 +252,8 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L677-L708は振り分け済 → ops索引(L677:SQLite検証/L678:合成ベンチ/L680:CLI引数照合/L684:output-dir alias/L688:Payload meta/L692:SSOT照合/L708:valid_start_date), ops§6-7(L690:sync完了判定/L701:fullrecalc復元), research§GS結果(L685:selector流用/L686:SQLite月次), research§パリティ(L699:NULL除外), research索引(L693:時間解像度), core§19.2(L694:top_n分離/L696:FoF top_n/L703:ticker×weight判定), frontend§12(L702:UUID漏れ/L704:precomputed weights/L705:月初Signal)。重複削除: L679≡L678, L681-L683≡L680, L689≡L688, L691≡L690, L695≡L694, L698≡L696, L700≡L699, L706≡L705。L687/L697/L707自動生成→削除）
 - （L709-L720は振り分け済 → core§19.4(L709[PI]), ops§6-7(L714+L715統合), ops索引(L710/L713/L716/L717), frontend§12(L719+L720統合)。L711/L712/L718はAUTO-DEPRECATE→スキップ）
 - （L721-L735は振り分け済 → ops教訓索引(L721/L723/L729/L730/L733/L735), core§19.2(L722/L734), research§38(L724/L725/L726/L728)。L727はL728重複→統合）
+- L737: 奥義PFの命名BBはL1コンポーネントBBと対応していない（cmd_3377）
+- L738: 奥義命名BBとL1コンポーネントBB非対応は正常挙動（cmd_3377）
 
 ## 因果リンク
 
