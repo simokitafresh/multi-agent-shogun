@@ -5065,10 +5065,12 @@ check_research_tool_explicit() {
     FULL_CMD=$(echo "$CMD_BLOCK_NC" | awk '
         /^\s*command:\s*\|/ { found=1; next }
         /^\s*command:\s*[^|]/ { found=1; sub(/^\s*command:\s*/, ""); print; next }
+        found && /^    [a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
         found && /^\s{4,}/ { print; next }
-        found && /^\s*[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
+        found { exit }
     ')
     TITLE_LINE=$(echo "$CMD_BLOCK_NC" | grep '^\s*title:' | head -1)
+    # FP防止(cmd_3384): quality_gate配下のテキストを除外しtitle+command欄のみ対象
     SEARCH_TEXT="${TITLE_LINE}
 ${FULL_CMD}"
 
