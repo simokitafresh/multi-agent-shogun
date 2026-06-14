@@ -44,6 +44,11 @@ PYTHONIOENCODING=utf-8 /mnt/c/Python_app/DM-signal/.venv/Scripts/python.exe your
 - cwdは`/mnt/c/Python_app/DM-signal/backend`にする。`.env`相対読込の失敗を避ける。
 - WSL側`python3`に依存しない。`sqlalchemy`等が無い場合はプロジェクトの`.venv/Scripts/python.exe`を使う。
 - 日本語PF名を出す確認では`PYTHONIOENCODING=utf-8`を付ける。
+- **UTF-8出力強制（必須）**: `PYTHONIOENCODING=utf-8`だけでは日本語PF名が文字化けする場合がある(2026-06-14実証)。Pythonスクリプトのimport直後に以下を追加:
+  ```python
+  import io, sys
+  sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+  ```
 
 ---
 
