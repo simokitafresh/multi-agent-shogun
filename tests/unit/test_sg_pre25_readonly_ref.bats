@@ -61,6 +61,8 @@ try:
     read_markers = (
         "読む", "読んで", "読み", "確認", "参照", "調査", "精査", "review", "read", "inspect", "refer",
         "実行", "実行のみ", "変更対象外", "走らせ", "検証", "run", "execute",
+        "同構造", "と同一", "と同じ", "同等", "踏襲", "に基づ", "を参考",
+        "突合", "比較", "一覧", "解析", "分析", "取得", "検索", "出力", "表示", "呼び出", "呼出",
     )
     write_markers = (
         "修正", "更新", "変更", "編集", "実装", "追加", "削除", "作成", "反映",
@@ -111,8 +113,21 @@ try:
         next_ref_before_write = idx + 1 < len(matches) and matches[idx + 1].start() < sentence_end and (
             write_pos < 0 or matches[idx + 1].start() - match.end() < write_pos
         )
-        is_readonly = read_pos >= 0 and (write_pos < 0 or read_pos < write_pos) and (
-            write_pos < 0 or next_ref_before_write
+        exec_verbs = {"bash", "python3", "python", "sh", "bats", "node"}
+        prefix_text = cmd_text[max(0, match.start() - 60):match.start()]
+        prefix_tokens = prefix_text.split()
+        is_exec_prefix = bool(prefix_tokens) and prefix_tokens[-1].lower() in exec_verbs
+        has_clause_boundary = False
+        if read_pos >= 0 and write_pos >= 0 and read_pos < write_pos:
+            jp_comma = sentence_tail.find("、", read_pos)
+            ascii_comma = sentence_tail.find(",", read_pos)
+            clause_positions = [p for p in [jp_comma, ascii_comma] if p >= 0]
+            if clause_positions:
+                has_clause_boundary = min(clause_positions) < write_pos
+        is_readonly = is_exec_prefix or has_clause_boundary or (
+            read_pos >= 0 and (write_pos < 0 or read_pos < write_pos) and (
+                write_pos < 0 or next_ref_before_write
+            )
         )
         base = os.path.basename(ref)
         if is_readonly:
@@ -260,4 +275,96 @@ PYEOF
         "docs/other.md"
     echo "output: $output"
     [[ "$output" == *"WARN: README.md"* ]]
+}
+
+# ── AC5: 過去5件のFALSE POSITIVE(command欄の実行参照による誤判定) ──
+# FP根因: read_marker後に読点「、」で区切られた別節にwrite_markerが来る場合
+# → has_clause_boundary=True で実行参照として除外するべき
+
+@test "FP1: 呼び出し+読点+追加パターンはreadonly_refとして除外される(cmd_3376型)" {
+    # command: semantic_search.shを呼び出し、チェックを追加
+    # 「、」がread_marker(呼び出し)とwrite_marker(追加)の間にある → 別節 → 除外
+    # files_modified: target.py のみ
+    run run_pre25_python \
+        "semantic_search.shを呼び出し、チェックを追加" \
+        "target.py"
+    echo "output: $output"
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" == *"READONLY_EXCLUDED: semantic_search.sh"* ]]
+    [[ "$output" != *"WARN"* ]]
+}
+
+@test "FP2: 実行+読点+追加パターンはreadonly_refとして除外される" {
+    # command: gate_report_format.shを実行し、処理を追加
+    # 「、」区切り → has_clause_boundary=True → 除外
+    run run_pre25_python \
+        "gate_report_format.shを実行し、処理を追加" \
+        "target.py"
+    echo "output: $output"
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" == *"READONLY_EXCLUDED: gate_report_format.sh"* ]]
+    [[ "$output" != *"WARN"* ]]
+}
+
+@test "FP3: 解析+読点+複数句+追加パターンはreadonly_refとして除外される" {
+    # command: semantic_search.shを解析し、関連知識を抽出して新チェックを追加
+    # 「、」が先頭近くにありhas_clause_boundary=True
+    run run_pre25_python \
+        "semantic_search.shを解析し、関連知識を抽出して新チェックを追加" \
+        "target.py"
+    echo "output: $output"
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" == *"READONLY_EXCLUDED: semantic_search.sh"* ]]
+    [[ "$output" != *"WARN"* ]]
+}
+
+@test "FP4: bashパスパターン+別ファイル修正でスクリプトはreadonly_refになる" {
+    # command: target.pyを修正後にbash scripts/test_runner.shを実行して確認
+    # bash がtest_runner.shの直前トークン → is_exec_prefix=True → 除外
+    run run_pre25_python \
+        "target.pyを修正後にbash scripts/test_runner.shを実行して確認" \
+        "target.py"
+    echo "output: $output"
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" == *"READONLY_EXCLUDED: test_runner.sh"* ]]
+    [[ "$output" != *"WARN: test_runner.sh"* ]]
+}
+
+@test "FP5: 呼び出し+読点+通知追加パターンはreadonly_refとして除外される" {
+    # command: scripts/inbox_write.shを呼び出し、通知を追加
+    # 「、」区切り → has_clause_boundary=True → 除外
+    run run_pre25_python \
+        "scripts/inbox_write.shを呼び出し、通知を追加" \
+        "target.yaml"
+    echo "output: $output"
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" == *"READONLY_EXCLUDED: inbox_write.sh"* ]]
+    [[ "$output" != *"WARN"* ]]
+}
+
+# ── AC6: 真のcommand_files_modified_mismatch(変更動詞+パスだがfiles_modifiedに未記載)はFAIL ──
+
+@test "AC6: 変更動詞+パスはfiles_modified不在でWARN(真のmismatch)" {
+    # command: target.shを修正してリリース
+    # 「修正」はwrite_marker、read_markerなし → is_readonly=False
+    # files_modified: other.py のみ → WARN
+    run run_pre25_python \
+        "target.shを修正してリリース" \
+        "other.py"
+    echo "output: $output"
+    [[ "$output" == *"WARN: target.sh"* ]]
+    [[ "$output" != *"READONLY_EXCLUDED: target.sh"* ]]
+}
+
+@test "AC6: 読点なしの実行+更新パターンはwrite_refとしてWARN(真のmismatch)" {
+    # command: target.shを確認し更新 (読点なし→別節判定なし)
+    # 「確認」(read_marker)+「更新」(write_marker)、読点なし
+    # write_pos < read_pos? → 「確認」が先、「更新」が後 → read_pos < write_pos
+    # has_clause_boundary: 「、」なし → False
+    # is_readonly: has_clause_boundary=False、next_ref_before_write=False → False → write_ref
+    run run_pre25_python \
+        "target.shを確認し更新" \
+        "other.py"
+    echo "output: $output"
+    [[ "$output" == *"WARN: target.sh"* ]]
 }

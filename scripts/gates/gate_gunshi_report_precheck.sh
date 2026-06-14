@@ -872,8 +872,24 @@ try:
         next_ref_before_write = idx + 1 < len(matches) and matches[idx + 1].start() < sentence_end and (
             write_pos < 0 or matches[idx + 1].start() - match.end() < write_pos
         )
-        is_readonly = read_pos >= 0 and (write_pos < 0 or read_pos < write_pos) and (
-            write_pos < 0 or next_ref_before_write
+        # 実行前置き動詞検出: bash/python3等がパス直前 → 実行のみ参照として除外
+        exec_verbs = {"bash", "python3", "python", "sh", "bats", "node"}
+        prefix_text = cmd_text[max(0, match.start() - 60):match.start()]
+        prefix_tokens = prefix_text.split()
+        is_exec_prefix = bool(prefix_tokens) and prefix_tokens[-1].lower() in exec_verbs
+        # 読点「、」区切り検出: read_markerとwrite_markerの間に「、」→ 別節のwrite_marker → 除外
+        # 例: "semantic_search.shを呼び出し、チェックを追加" → 「、」で区切られた別節の追加(SG-PRE25_FP_41件)
+        has_clause_boundary = False
+        if read_pos >= 0 and write_pos >= 0 and read_pos < write_pos:
+            jp_comma = sentence_tail.find("、", read_pos)
+            ascii_comma = sentence_tail.find(",", read_pos)
+            clause_positions = [p for p in [jp_comma, ascii_comma] if p >= 0]
+            if clause_positions:
+                has_clause_boundary = min(clause_positions) < write_pos
+        is_readonly = is_exec_prefix or has_clause_boundary or (
+            read_pos >= 0 and (write_pos < 0 or read_pos < write_pos) and (
+                write_pos < 0 or next_ref_before_write
+            )
         )
         base = os.path.basename(ref)
         if is_readonly:
