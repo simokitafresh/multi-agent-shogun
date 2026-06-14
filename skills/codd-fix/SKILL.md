@@ -9,10 +9,9 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-14T00:48:07+0900 -->
+<!-- script_refs_checked_at: 2026-06-14T16:37:23+0900 -->
 
-Script refs verified: 2026-06-13 cmd_karo_hotfix_skill_refs_stale_20260613. `cmd_complete_gate.sh` 直近変更(e52a71bb8)は`collect_task_readonly_refs()`のサブシェル構文修正（bashパーサー誤検知バグ修正）。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
-Script refs verified: 2026-06-12 cmd_karo_hotfix_skill_refs_202606121132. `cmd_complete_gate.sh` 直近変更(5e37f302a)はCDP production checkをpost_deploy_evidence必須時だけ実行する条件追加。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約と、codd-fixの共通基盤/CI gate変更時に関連batsを実行する手順は変更なし。
+Script refs verified: 2026-06-14 cmd_3379. `cmd_complete_gate.sh` 直近変更(23edb564f)はGATE CLEAR後にgunshi_gate_reflux.shを2回実行する修正（通常パス+emergency overrideパス両方）。1回目はGATE CLEAR通知前、2回目はGATE CLEAR通知後の軍師report追記分のgate_result null残存を防止（cmd_3370）。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
 Script refs verified: 2026-06-10. `cmd_complete_gate.sh` 呼び出し契約は `bash scripts/cmd_complete_gate.sh <cmd_id>` のまま。新機能: (1)command/files_modified coverageが報告YAMLの`verified_existing_dependency`欄を参照し実行のみ/既存依存ファイルを照合対象から除外(LG037), (2)`check_safety_pattern_removal`で速度修行cmdのcommitから安全パターン削除をBLOCK検出, (3)軍師verdict事前チェック(GATE判定前にreview_logのFAIL/WARNをWARN表示)。`test_select.sh` は`find`→`git ls-files`/`git grep`に高速化済み。新マッピング: `scripts/hooks/*`変更→hookベース名でテスト検索(`test_{hook_base}*.bats`+`test_hook_dispatchers*.bats`)。(4)lesson_impact.tsv空行混入防御: ensure_impact_headerのCR汚染対策+update_lesson_impact_tsvの空行フィルタ追加+DictWriter lineterminator="\n"明示。(5)CR strip でDictReader restkey(list型)クラッシュ修正(isinstance(v,str)判定追加)。
 
 # codd-fix
@@ -80,7 +79,7 @@ bash scripts/test_select.sh <changed-file>
 
 共通基盤やCI gateを触った場合は関連batsを実行する。`scripts/gates/*`を変更した場合、`scripts/test_select.sh`は当該gateの直接テストを選択し、`scripts/cmd_complete_gate.sh`がそのgateを参照している場合のみ`tests/unit/test_cmd_complete_gate*.bats`も選択する。`gate_report_format.sh`・`gate_report_autofix.sh`・`gate_dc_duplicate.sh`・`gate_diagnose_check.sh`変更時は`test_gate_small_consolidated.bats`も選択する。`context/*.md`を変更した場合、`scripts/test_select.sh`は`test_context_freshness_check.bats`・`test_gate_context_freshness.bats`・`test_gate_vercel_phase.bats`を選択する（cmd_2843）。`docs/rule/*.md`を変更した場合、`scripts/test_select.sh`は`test_semantic_index_update.bats`・`test_context_freshness_check.bats`を選択する。`instructions/gunshi.md`を変更した場合、`scripts/test_select.sh`は`test_cli_adapter.bats`・`test_gate_gunshi_cs_checklist.bats`・`test_gunshi_next_action.bats`・`test_semantic_index_update.bats`を選択する。`skills/*/SKILL.md`単独変更は既知のテスト不要対象としてWARNなしでスキップする。`report_field_set.sh`変更はdeploy_task+gate_report_format系テストを選択する。`memory_db_import.py`・`memory_db_query.sh`・`semantic_search.sh`変更はmemory_db/semantic関連テストを選択する（cmd_3026確認: cmd_38aaf66f）。`scripts/hooks/*`変更はhookベース名(`-`→`_`変換)で`test_{hook_base}*.bats`+`test_hook_dispatchers*.bats`を選択する。SKIPはFAILとして扱う。
 
-`scripts/cmd_complete_gate.sh`変更時は、cmd source YAML欠落をdraft lesson check / recon knowledge persistence checkでSKIP扱いにする最新挙動を前提にする。command/files_modified coverageは、偵察等の`files_modified`が「偵察のみ」「コード変更なし」「none」「N/A」などのno-code-change sentinelだけの場合のみSKIPし、通常ファイルパスのtypoはBLOCK継続する。報告YAMLに`verified_existing_dependency`欄がある場合、該当ファイルはcoverage照合から除外される(LG037)。速度修行cmdでは`check_safety_pattern_removal`が安全パターン(`2>/dev/null`/`|| true`/`trap`等)の削除をBLOCK検出する。GATE判定前に軍師verdict事前チェックが`gunshi_review_log.yaml`のFAIL/WARNをWARN表示する。
+`scripts/cmd_complete_gate.sh`変更時は、cmd source YAML欠落をdraft lesson check / recon knowledge persistence checkでSKIP扱いにする最新挙動を前提にする。command/files_modified coverageは、偵察等の`files_modified`が「偵察のみ」「コード変更なし」「none」「N/A」などのno-code-change sentinelだけの場合のみSKIPし、通常ファイルパスのtypoはBLOCK継続する。報告YAMLに`verified_existing_dependency`欄がある場合、該当ファイルはcoverage照合から除外される(LG037)。速度修行cmdでは`check_safety_pattern_removal`が安全パターン(`2>/dev/null`/`|| true`/`trap`等)の削除をBLOCK検出する。GATE判定前に軍師verdict事前チェックが`gunshi_review_log.yaml`のFAIL/WARNをWARN表示する。GATE CLEAR後は通常パス・emergency overrideパス両方で`gunshi_gate_reflux.sh`を2回実行する（1回目はGATE CLEAR通知前、2回目はGATE CLEAR通知後のreport追記分のgate_result null残存を防止、cmd_3370）。
 
 ## 報告
 
@@ -97,4 +96,4 @@ bash scripts/test_select.sh <changed-file>
 - `--no-push`なしで実行するな。忍者はpush禁止
 - 事象ではなく広すぎる実装指示を渡すな
 
-<!-- script_refs_checked_at: 2026-06-14T00:48:07+0900 -->
+<!-- script_refs_checked_at: 2026-06-14T16:37:23+0900 -->
