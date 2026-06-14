@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-06-14 cmd_3378 -->
-<!-- last_synced_lesson: L741 -->
+<!-- last_synced_lesson: L743 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -257,6 +257,8 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L739: portfolio.config.pipeline_configのselection_pipelineはblocks配列を持つdict形式（cmd_3378）
 - L740: PF構成確認はcheck_pf_config.pyで全層一括確認（cmd_3378）
 - L741: BB↔忍法完全対応表（cmd_3377）
+- L742: BB↔忍法対応+パラメータ範囲の確認方法（cmd_3377）
+- L743: PF構成確認手順(確認方法付き)（cmd_3378）
 
 ## 因果リンク
 

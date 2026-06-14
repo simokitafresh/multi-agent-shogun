@@ -600,3 +600,11 @@ lessons:
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=全コミット列'
 # LS063: superseded by LS-A09(23) (gate実行確認=現物確認の具体パターン。2026-06-13統合。cmd_3360でL3/L4埋込み済み)
+- id: 'LS063'
+  title: 'dm-signal指標はα6指標(CAGR・NHF・MaxDD・MRU・Calmar・Avg UWP)。シャープレシオ使用禁止(殿裁定2026-05-10: 上方ボラを罰するため)'
+  origin: '[[cmd_3375]]'
+  detail: 'cmd_3375起票時にシャープレシオをACに含めた。三層記憶にα6指標の定義と殿裁定(Sharpe→Sortino変更)が記録済みだったが確認せずにシャープを書いた=洗脳#2(検証スキップ)。cmd起票前にdm-signalの指標体系を三層記憶で確認すべきだった'
+  source_cmd: 'cmd_3375'
+  created_at: '2026-06-14'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=alpha'

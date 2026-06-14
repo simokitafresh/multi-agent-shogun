@@ -19,6 +19,9 @@ lessons:
   - scripts/cmd_skeleton.sh
   - tests/unit/test_cmd_save.bats
   origin: '[[cmd_3369]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L805
   title: task YAML使い回しで自動注入メタを追加したらreset_stale_fieldsにも同時登録する
   summary: 今回のParserErrorはinject_related_lessons本体ではなく、hypothesis_count/three_strike_ruleがス
@@ -191,6 +194,9 @@ lessons:
   - skills/sengoku-writer/SKILL.md
   - skills/weekly-report-writer/SKILL.md
   origin: '[[cmd_karo_hotfix_note_draft_skill_refs_20260612]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L795
   title: script_refs_checked_atは複数ある場合最後の値が採用される
   summary: gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し、最後の値をfreshness時
@@ -790,6 +796,9 @@ lessons:
   target_files:
   - scripts/cmd_save.sh
   origin: '[[cmd_3245]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L758
   title: cmd_quality_log.shのflock subshell内でlocal変数を使うとbash errorで値が空になる
   summary: '( ... ) 200>lockfile のサブシェルブロック内ではlocal宣言が無効(bash仕様: local is function-only)。変数名'
@@ -948,7 +957,7 @@ lessons:
   origin: '[[cmd_3168]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-14'
 - id: L747
   title: bashで呼ぶhelperを-xで存在判定するな
   summary: search_log_write.shはgit index上100644だったがsemantic_search.shはbashで呼ぶ前に-xを要求していたため、
@@ -1885,6 +1894,9 @@ lessons:
   - tests/helpers/deploy_task_scaffold.bash
   - tests/unit/test_deploy_task_ac_version.bats
   origin: '[[cmd_2956]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L685
   title: 自動生成resourcesは最終dry-runで再検出せよ
   summary: context/lord-conversation-index.md等は並行自動生成でsemantic-linksが一度落ちた。生成対象を編集するタスクでは適用
@@ -2458,6 +2470,9 @@ lessons:
   - tests/unit/test_deploy_task_template_generation.bats
   - tests/unit/test_report_field_set_validation.bats
   origin: '[[cmd_2930]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L647
   title: dry-run health checkは対象未指定でもFAIL学習ログにしない
   summary: dashboard_update.sh --dry-run のようなヘルスチェック系実行でcmd_idが省略される可能性がある。通常実行ではcmd_id必須を維
@@ -2488,7 +2503,7 @@ lessons:
   origin: '[[cmd_karo_ci_fix_gunshi_next_action]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-14'
 - id: L645
   title: cmd_saveトリガー表示は行本文を出さず最小メタ情報に限定する
   summary: BLOCK/WARNトリガーマップに該当行本文まで出すと、既存テストが禁止したい文字列(WARN累計昇格など)をサマリ経由で拾い、偽の再発に見える。将軍の修正行
@@ -2502,6 +2517,9 @@ lessons:
   - scripts/cmd_save.sh
   - tests/unit/test_cmd_save_diagnosis_quality.bats
   origin: '[[cmd_2898]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L644
   title: 非同期&テストはポーリング同期後に検証せよ
   summary: gate_report_format.shのskill_execution_log非同期化でテストが即時読込→不在FAILになった。非同期処理のテストはポーリン
@@ -2675,6 +2693,9 @@ lessons:
   - frontend/lib/types.ts
   - frontend/tsconfig.tsbuildinfo
   origin: '[[cmd_karo_kj_role_switch]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L634
   title: stats APIの集計粒度不足はFEフィルタでは補えない(kj-role-count)
   summary: role_type_idでDB集計時点で絞る必要がある。FEのみのフィルタはAPI応答が全ロール合算のため機能しない。BE側にrole_type_idパラメータ
@@ -2737,6 +2758,9 @@ lessons:
   - tests/unit/test_cmd_save_q11_fp_reduction.bats
   - tests/unit/test_cmd_save_q5.bats
   origin: '[[cmd_2863]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L630
   title: bulletin_write.shのSCRIPT_DIRはrepo root(parentディレクトリ)であり、scripts/yaml_auto_archive.shは$SCRIPT_DIR/scripts/yaml_auto_archive.shで到達する
   summary: bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR
@@ -2857,7 +2881,7 @@ lessons:
   origin: '[[cmd_karo_kjrc_A_db_models]] -> [[yaml_field_set_nested]] -> [[構文破壊]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-14'
 - id: L623
   title: task YAML nested binary_checksへのyaml_field_set.sh直指定は構文破壊リスクがある
   summary: queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar
@@ -2924,6 +2948,9 @@ lessons:
   target_files:
   - cmd_2848_scout_no_file_scout_only
   origin: '[[cmd_2848]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L618
   title: 逆引きCLIはrg -l単発にする(ファイル単位rg多重化は20s超)
   summary: causal_backlinks.sh初版はrg --files後に各ファイルへrgを実行し20s超。rg -l --fixed-strings単発に修正。次回
@@ -3274,6 +3301,9 @@ lessons:
   target_files:
   - lesson_write.sh
   origin: '[[cmd_training_L4_r14_hanzo]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L596
   title: inbox_write呼出しの後続処理保護は永続化成否で分岐せよ
   summary: set -e下で通知スクリプトを呼ぶ場合、終了コードだけをWARN化すると永続化失敗まで隠す。呼出し前後の永続化状態を確認し、追記済みならpost-write配
@@ -3404,6 +3434,9 @@ lessons:
   - instructions/generated/ashigaru.md
   - instructions/generated/codex-ashigaru.md
   origin: '[[cmd_2662]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L588
   title: 因果分析は5W1H(WHY/WHAT/WHEN/WHERE/WHO/HOW)で漏れなく — WHOで送信者特定
   summary: cmd_karo_lesson_4fieldの誤FAIL分析でwhy/what/when/howだけでは根因に到達できなかった。whereで場所(家老のkaro
@@ -3564,6 +3597,9 @@ lessons:
   - scripts/cmd_save.sh
   - .claude/hooks/pre-write-edit-combined.sh
   origin: '[[cmd_2607]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L576
   title: lesson subdomain推定はAC例IDでspot checkせよ
   summary: サブドメイン自動付与はパスやタグだけだとGS固有教訓をinfraに誤推定し得る。cmdが例示したIDは個別にsubdomainを確認しdry-runで非対象ta
@@ -5191,6 +5227,9 @@ lessons:
   target_files:
   - cmd_save.sh
   origin: '[[cmd_1783]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L445
   title: yaml.safe_load→yaml.load(SafeLoader)で機能等価かつgrep検知を回避できる
   summary: yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑
@@ -5557,6 +5596,9 @@ lessons:
   - inbox_prune.sh
   - yaml_field_set.sh
   origin: '[[cmd_1616]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L413
   title: extract_fieldのpipefail即終了パターン
   summary: set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep
@@ -6037,6 +6079,9 @@ lessons:
   target_files:
   - cmd_save.sh
   origin: '[[cmd_cycle_L4_043]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L372
   title: tmux display-messageはフォーマット文字列で複数変数を一括取得可能
   summary: tmux display-messageの-pオプションは複数の#{@var}を1つのフォーマット文字列に結合できる。区切り文字(|等)で連結しIFS
@@ -6229,7 +6274,7 @@ lessons:
   origin: '[[cmd_cycle_L4_029]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-14'
 - id: L356
   title: YAML文字列化dictのパースにast.literal_evalは使えない(不完全文字列で失敗)
   summary: lesson_candidateのtitle/detailに格納されたPython dict repr文字列は閉じ括弧が欠損している場合がある。ast.lite
@@ -6279,7 +6324,7 @@ lessons:
   origin: '[[cmd_cycle_L4_026]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L352
   title: ntfy.shのsend_with_retryは失敗時にstderrへ何も出さず呼び出し元が原因不明
   summary: send_with_retryの非200/非000パス(L95-98)とリトライ後失敗パス(L108)はログファイルにのみ記録しstderrに出力しない。syn
@@ -6874,7 +6919,7 @@ lessons:
   origin: '[[cmd_1502]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-14'
 - id: L303
   title: RUNBOOK還流漏れ検出
   summary: lesson_write.shのREFLUX_CHECKでRUNBOOK=MISSINGが検出された。silent fallbackパターンのランブック反映が未
@@ -7010,6 +7055,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: DB操作cmdでは(1)データファイル間の参照関係(2)API必須フィールド(3)認証方式(4)必要なエンドポイントの存在を現物確認してからACを書け
   origin: '[[cmd_1397]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L293
   title: チェックリスト参照cmdでは隣接Step制約をACに転写必須
   summary: cmd_1397でチェックリストStep7(再計算禁止=殿が実行)がcmdに転写されず、影丸が再計算を実行してしまった。チェックリストを参照するcmdを書く際は
@@ -7114,6 +7162,9 @@ lessons:
   - lesson_update_score.sh
   - sync_lessons.sh
   origin: '[[cmd_1280]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L284
   title: Vercel化後の消費者スクリプトarchive参照切替が必要
   summary: lessons.yamlが索引化されたため、deploy_task.sh/lesson_update_score.sh/lesson_deprecate.sh等
@@ -7164,6 +7215,9 @@ lessons:
   - ntfy_listener.sh
   - script_update.sh
   origin: '[[cmd_1268]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L280
   title: ninja_monitor.sh新変数追加時は関連テストのdeclare-A+キー初期化も同時更新必須
   summary: ninja_monitor.shはset -uを使わないがテストはset -euoで実行される。新しい連想配列変数を追加する際、関連テストのdeclare
@@ -7661,7 +7715,7 @@ lessons:
   origin: '[[cmd_1041]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-12'
+  last_referenced: '2026-06-14'
 - id: L240
   title: test_result_guard.sh正規表現がbats TAP出力のテスト番号+テスト名を誤マッチ
   summary: parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力
@@ -7885,6 +7939,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: tr -d '\r'でCR除去してからパースする必要がある
   origin: '[[cmd_911]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L220
   title: bulk commit AC4 は queue/禁止hook と live-generated tracked files を考慮して定義せよ
   summary: .githooks/pre-commit が queue/ stage を全面禁止する一方、context/lord-conversation-index.md
@@ -8840,6 +8897,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: taskが特定セクション改修を要求している場合、commit diffに無関係なgate条件変更が混在した時点でFAILとし、目的適合性違反として差し戻す運用が必要
   origin: '[[cmd_528]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L137
   title: lesson_done先行生成とpreflight upgradeの設計的不整合
   summary: deploy_task.shがlesson.doneをlesson_checkで先行生成する設計は、cmd_complete_gate.shのpreflight
@@ -9517,6 +9577,9 @@ lessons:
   target_files:
   - cli_profiles.yaml
   origin: '[[cmd_390]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L082
   title: Codexは~/.codex/を全エージェント共有。分離機構なし
   summary: CLAUDE_CONFIG_DIRのような分離機構がCodexにはない。history.jsonl・state_5.sqlite・sessions/が全Code

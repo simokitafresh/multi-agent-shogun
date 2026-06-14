@@ -1996,3 +1996,512 @@
     CS6: "根因=意志依存→cmd_3362 ERROR昇格(自動化済み)。16件遡及は過去の空白埋め"
   origin: "[[cmd_3362 adversarial冷えERROR昇格]] -> [[§5.6 WARN 15件]] -> [[遡及適用16件→0件]]"
   timestamp: "2026-06-14T00:59:00"
+- cmd_id: cmd_3368
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "medium修正。deploy_task.sh Python exit 1根因修正。batsテスト既存あり"
+  confidence: MEDIUM
+  changed_lines: 0
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。inject_related_lessons exit 1根因修正。3件連続失敗(cmd_3354/3363/3364)のlog確認q5 verified。AC4件/30min/1ファイル。FM3件(複数exit条件/weak_points波及/テストカバレッジ)全対処。blast radius=全配備だが修正方向は安全(exit 1→正常終了)。adversarial: deploy_task.shはPython実行含むがrun_python_logged経由のstderr隔離で安全"
+  observations:
+    - "事実1: assumptions trust:verified。q5にdeploy_task.log 3件ERROR日時(14:09/19:57/20:18)+コード精読範囲(L4002-4050, L7572, L411)記載"
+    - "事実2: AC4件+timeout30min。LG021基準(AC≤4)満たす。cmd分割不要"
+    - "事実3: diagnosis欄にBLOCK理由3件+対策記載。q5累計昇格→証拠追記で解消。ac_param_sufficiency FP→日本語表現統一"
+  causal_chain: "inject_related_lessons Python exit 1→safety net(汎用10件)フォールバック→タスク別教訓マッチング精度劣化→修正で根治→正の複利(全配備の教訓注入品質回復)"
+  brainwash_check: "#1防止: MEDIUM判定(deploy_task.sh 5931行のblast radius考慮)。#2防止: q5 verified確認+AC物理検証PASS。数値: AC 4件, FM 3件, timeout 30min, verified 1/1"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[blt_20260613_195849_2685b0]] -> [[inject_related_lessons_exit1_3連続]] -> [[APPROVE(根治方向)]]"
+  timestamp: "2026-06-14T01:12:00"
+- cmd_id: cmd_3368
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T01:16:00"
+  gate_prediction: WARN
+  gate_prediction_reason: "lesson_candidate有→draft_lessons BLOCKリスク"
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。ParserError根因=stale task YAML子行(hypothesis_count/three_strike_rule)。reset_stale_fieldsに8キー追加で入口防御。bats 13/13。最小再現で正常終了確認。adversarial: キー削除のみで安全方向"
+  observations:
+    - "事実1: deploy_task.log ParserError line 17/34。hayate.yaml現物でhypothesis_count/three_strike_rule直下に旧リスト子行残存を確認"
+    - "事実2: bats 7/7(yaml_injection)+6/6(safe_section_replace)=13/13 PASS。最小再現でreset→inject正常終了"
+    - "事実3: reset_stale_fieldsに8キー追加。注入関数側の例外追加ではなく入口防御の既存設計を保持(design_intent_checked)"
+  causal_chain: "自動注入メタ(growth_loop_defense等)スカラー上書き→旧リスト子行残存→ParserError→inject exit 1→safety netフォールバック→reset_stale_fields拡張で根治"
+  brainwash_check: "#2防止: SG-PRE3 commit検証PASS+bats 13/13。#1防止: GATE CLEAR未知(確証バイアスなし)。数値: 13/13 PASS, commit c48abedd3, files_modified 2件, WA率11.1%"
+  step3_5_verified: "SG-PRE25 PASS。command欄deploy_task.sh=変更対象、deploy_task.log=実行のみ参照(readonly_ref除外済み)"
+  lesson_quality: OK
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[blt_20260613_195849_2685b0]] -> [[stale_task_yaml_list_children]] -> [[LGTM(reset_stale_fields拡張+13/13)]]"
+  timestamp: "2026-06-14T01:15:00"
+- cmd_id: cmd_3369
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "shallow。cmd_skeleton.shガイド行追記のみ。ロジック変更なし"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "6観点OK。gate→cmd_skeleton非対称成長の根治(殿問いblt_010852直接回答)。AC3件/30min/shallow。cmd_3368とファイル非重複(並行安全)。FM3件(網羅性/テンプレート破壊/Level2限界)全対処"
+  observations:
+    - "事実1: assumptions verified。軍師分析blt_010852が一次情報(6月BLOCK 22件中10件=gate新ルール由来)"
+    - "事実2: AC1→AC2→AC3の順序依存は自然。cmd_3368(deploy_task.sh)とファイル非重複"
+    - "事実3: ガイド行追記=Level 2(doc)。将来Level 4/5化が必要だが今回は+1点の複利として妥当"
+  causal_chain: "gate新ルール追加→cmd_skeleton未更新→将軍BLOCK不減(非対称成長)→cmd_skeletonにガイド行追記→正の複利(全将軍セッションの起票BLOCK率低下)"
+  brainwash_check: "#1防止: shallow全実施。#2防止: q5/q11確認。数値: AC 3件, FM 3件, timeout 30min, verified 1/1"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[blt_20260614_010852_d5ec81]] -> [[gate_cmd_skeleton非対称成長]] -> [[APPROVE(根治方向)]]"
+  timestamp: "2026-06-14T01:19:00"
+- cmd_id: cmd_3370
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "shallow。cmd_complete_gate.sh reflux再実行追加のみ。既存ロジック削除なし"
+  confidence: MEDIUM
+  changed_lines: 0
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。refluxタイミング修正でgate_result null残存の根治。blast radius大(全cmdのGATE処理)だが追加のみで安全方向。AC3件/30min。cmd_3369(saizo)とファイル非重複。adversarial: reflux二重実行のパフォーマンス影響微小(1cmd1回追加)"
+  observations:
+    - "事実1: q5にgrep -n reflux結果(L4813-4821/L6882-6885)記載。reflux呼出がGATE CLEAR同一ブロック内=reportエントリ未追記時点で実行される構造を確認"
+    - "事実2: cmd_3362/3363/3360で軍師がgate_result null残存を検出(一次情報)。手動更新で対処中"
+    - "事実3: cmd_3369(cmd_skeleton.sh, saizo)と並行だがファイル非重複。cross-cmd安全"
+  causal_chain: "reflux実行→reportエントリ未追記→gate_result null→手動修正→GATE CLEAR後reflux再実行で根治→正の複利(全cmdのgate_result精度保証)"
+  brainwash_check: "#1防止: MEDIUM判定(blast radius=全cmdのGATE処理)。#2防止: q5実行証拠確認。数値: AC 3件, FM 3件, timeout 30min, verified 1/1, 影響cmd 3件(3362/3363/3360)"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[blt_20260613_194349_f56173]] -> [[reflux実行順序競合]] -> [[APPROVE(タイミング修正で根治)]]"
+  timestamp: "2026-06-14T01:22:00"
+- cmd_id: cmd_3369
+  review_type: report
+  report_ninja: saizo
+  verdict: FAIL
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T01:31:00"
+  gate_note: "FAIL判定(SG-PRE25 cmd_save.sh読取参照不在)→家老waive→GATE CLEAR。保守的偽陽性"
+  gate_prediction: WARN
+  gate_prediction_reason: "lesson_candidate有+SG-PRE25 ERROR(cmd_save.sh不在)"
+  changed_lines: 18
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "SG-PRE25 ERROR: command欄cmd_save.shがfiles_modifiedに不在→GATE BLOCK予測(LG037 3分類区別不可)。報告品質自体は4観点OK(3チェック特定+ガイド追記+bats 113/113)。cmd_save.shは突合用読み取り参照だが殿厳命Step 3.5適用でFAIL"
+  observations:
+    - "事実1: SG-PRE25 ERROR — command欄にcmd_save.shが参照されるがfiles_modifiedに不在。LG036/LG037適用"
+    - "事実2: 報告品質は良好。3件未反映チェック(gate_script_q5/causal_verification/nazenaze_root_cause)特定。bats 113/113 PASS"
+    - "事実3: lesson_candidate有(非対称成長の根因+batsテストによる強制機構)。register_recommended: true"
+  causal_chain: "command欄cmd_save.sh参照→files_modified不在→SG-PRE25 ERROR→gate BLOCK予測→FAIL(殿厳命Step 3.5 5件連続実績)"
+  brainwash_check: "#1防止: SG-PRE25 ERRORを見て安心停止しなかった。#2防止: 報告品質を個別確認した上でGATE BLOCKリスクからFAIL判定。数値: bats 113/113, 未反映3件, SG-PRE25 ERROR 1件"
+  step3_5_verified: "SG-PRE25 ERROR: cmd_save.sh(command欄)がfiles_modified不在。LG037分類: 読み取り専用参照(突合用)。しかしgateは区別不可→BLOCK"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[blt_20260614_010852_d5ec81]] -> [[SG-PRE25_cmd_save.sh読取参照]] -> [[FAIL(GATE BLOCK予測)]]"
+  timestamp: "2026-06-14T01:28:00"
+- cmd_id: cmd_karo_hotfix_bulletin_action_20260614
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "shallow hotfix。新規スクリプト作成+既存ベース"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, premortem, north_star]
+  findings_summary: "6観点OK。bulletin_action.sh新規作成(bulletin_confirm.shベース)。actioned_byフィールド書込みでaction_required掲示板対処を記録可能に。AC3件。掲示板L6-利他WARN対処基盤"
+  observations:
+    - "事実1: bulletin_confirm.shが既存ベース。flock排他+Python3でYAML安全書込み"
+    - "事実2: AC3件(作成/動作確認/テスト回帰)。shallow hotfix"
+    - "事実3: CS観点WARN(掲示板action_required未対応11件)の対処基盤。+1複利"
+  causal_chain: "action_required掲示板11件未対応→actioned_by記録手段なし→bulletin_action.sh作成→対処記録可能→WARN解消"
+  brainwash_check: "#1防止: shallow全実施。数値: AC 3件, 掲示板未対応11件"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[L6-利他WARN_action_required_11件]] -> [[bulletin_action.sh新規]] -> [[APPROVE]]"
+  timestamp: "2026-06-14T01:30:00"
+- cmd_id: cmd_3370
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T01:34:00"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。reflux競合修正。通常+emergencyパス末尾にreflux 2回目追加。冪等で安全。bats 5/5"
+  observations:
+    - "事実1: reflux呼出L6882(通常)+L4813(emergency)。GATE CLEAR前のみ→report review追記前"
+    - "事実2: bats 5/5 PASS(新規test_5: 2回目で追記エントリ更新確認)"
+    - "事実3: gunshi_gate_reflux.sh冪等(null→CLEARのみ更新)。2回実行安全"
+  causal_chain: "reflux GATE CLEAR前のみ→null残存→2回目追加で根治→全cmdのgate_result精度"
+  brainwash_check: "#2防止: precheck ERRORS=0+bats 5/5。数値: AC 3件, bats 5/5"
+  step3_5_verified: "SG-PRE25 PASS"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[blt_20260613_194349_f56173]] -> [[reflux競合]] -> [[LGTM(2回目追加)]]"
+  timestamp: "2026-06-14T01:33:00"
+- cmd_id: cmd_karo_hotfix_bulletin_action_20260614
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T01:36:00"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  changed_lines: 0
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "4観点OK。bulletin_action.sh新規作成。flock+atomic+L630。bats 17/17"
+  observations:
+    - "事実1: bulletin_confirm.shパターン踏襲。flock排他+atomic置換"
+    - "事実2: bats 17/17 PASS。手動検証でactioned_by書込み確認"
+    - "事実3: yaml.safe_dump禁止準拠。自前パーサ使用"
+  causal_chain: "actioned_by記録手段なし→bulletin_action.sh作成→L6-利他WARN解消基盤"
+  brainwash_check: "#2防止: precheck ERRORS=0+bats 17/17。数値: AC 3件, 17/17"
+  step3_5_verified: "SG-PRE25 PASS"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[L6-利他WARN]] -> [[bulletin_action.sh]] -> [[LGTM]]"
+  timestamp: "2026-06-14T01:35:00"
+- cmd_id: cmd_3371
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "shallow。WARN→BLOCK変更のみ。ロジック変更なし"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。brainwash_check数値なしWARN→BLOCK昇格。Phase 4(自動化×強制)直接実装。意志依存7箇所のうち最優先(1)を解消。BLOCK化後は軍師自身の行動を環境で強制"
+  observations:
+    - "事実1: LG027(brainwash_check 80%数値なし)は軍師自身の分析。一次情報"
+    - "事実2: BLOCK化後、軍師の次回レビューで数値なし→自分がBLOCK=正しい方向"
+    - "事実3: AC2で偽陽性確認を要求。既存の数値あり記載を誤BLOCKしない設計"
+  causal_chain: "brainwash_check数値なし通過→形骸化→洗脳素通り→WARN→BLOCK昇格→数値必須強制→形骸化構造的防止"
+  brainwash_check: "#1防止: HIGH判定はshallow変更+FM3件全対処で妥当。数値: AC 3件, FM 3件, timeout 30min"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[blt_20260614_011952_eeb07a]] -> [[brainwash_check意志依存]] -> [[APPROVE(BLOCK昇格)]]"
+  timestamp: "2026-06-14T01:38:00"
+- cmd_id: cmd_3371
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T01:46:00"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK+実動作確認。brainwash_check数値なしWARN→BLOCK(exit 2)。bats 16/16(既存14+新規2)。偽陽性0件(本番ログtail-200)。adversarial: exit 2=既存パターン踏襲"
+  observations:
+    - "事実1: BLOCK条件=total>=5 and no_num>50%。WARN時と同一閾値"
+    - "事実2: bats 16/16。既存#1-8は数値含むため影響なし。新規2件(数値なしBLOCK/数値ありPASS)"
+    - "事実3: 実動作確認 gate_gunshi_cs_checklist.sh実行→brainwash数値なしBLOCK未発火=現行ログ正常"
+  causal_chain: "brainwash_check数値なしWARN通過→形骸化→BLOCK昇格→数値必須強制→意志依存1/7解消"
+  brainwash_check: "#2防止: 実動作確認実施+bats 16/16。数値: 16/16, 偽陽性0/200行, exit 2"
+  step3_5_verified: "SG-PRE25 PASS"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[blt_20260614_011952_eeb07a]] -> [[brainwash_check BLOCK昇格]] -> [[LGTM(16/16+偽陽性0)]]"
+  timestamp: "2026-06-14T01:45:00"
+- cmd_id: cmd_3372
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "shallow。WARN→BLOCK変更のみ"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。意志依存(2/7)(3/7)同時解消。実動作確認infra限定BLOCK+step3_5_verified未記入BLOCK。AC3件/30min"
+  observations:
+    - "事実1: 現在WARNのみ(gate実行確認済み)。BLOCK昇格で意志依存→自動強制"
+    - "事実2: infra限定=dm-signalレビューには影響なし。scope適切"
+    - "事実3: 偵察cmdはstep3_5_verified=対象外と明記で対応可能"
+  causal_chain: "実動作確認なし+step3_5未記入がWARN通過→形骸化→BLOCK昇格→意志依存2件解消"
+  brainwash_check: "#1防止: HIGH(shallow変更)。数値: AC 3件, FM 3件, 意志依存7→5"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[blt_20260614_011952_eeb07a]] -> [[実動作確認+step3_5意志依存]] -> [[APPROVE]]"
+  timestamp: "2026-06-14T01:50:00"
+- cmd_id: cmd_3372
+  review_type: report
+  report_ninja: tobisaru
+  verdict: FAIL
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T01:59:00"
+  gate_note: "FAIL判定(files_modifiedカンマ区切り)→家老waive→GATE CLEAR。保守的偽陽性"
+  gate_prediction: WARN
+  gate_prediction_reason: "SG-PRE25 ERROR(files_modifiedカンマ区切り)→GATE BLOCKリスク"
+  changed_lines: 0
+  finding_categories: [assumptions, premortem]
+  findings_summary: "SG-PRE25 ERROR: files_modifiedにカンマ区切り2ファイル(gate_gunshi_cs_checklist.sh,test_...)→パース不能→GATE BLOCKリスク。報告品質は4観点OK(bats 20/20)。フォーマット修正で通る"
+  observations:
+    - "事実1: files_modified path欄にカンマ区切り2ファイル記載。SG-PRE25がパース不能でERROR"
+    - "事実2: 実装内容は正しい(bats 20/20、BLOCK昇格2箇所)"
+    - "事実3: files_modifiedを2エントリに分離すればGATE通過見込み"
+  causal_chain: "files_modifiedカンマ区切り→SG-PRE25パース不能→GATE command_files_modified_mismatch予測→FAIL"
+  brainwash_check: "#1防止: SG-PRE25 ERRORを安心停止せずFAIL判定。数値: ERRORS=2, bats 20/20"
+  step3_5_verified: "SG-PRE25 ERROR: files_modifiedフォーマット不備(カンマ区切り)"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[blt_20260614_011952_eeb07a]] -> [[files_modifiedカンマ区切り]] -> [[FAIL]]"
+  timestamp: "2026-06-14T01:58:00"
+- cmd_id: cmd_3373
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "shallow。cs_checklist空BLOCK+QC記録義務化"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, premortem, north_star]
+  findings_summary: "6観点OK。意志依存(4/7)(5/7)同時解消。cs_checklist中身空BLOCK+Quality Check記録義務化。AC3件/30min"
+  observations:
+    - "事実1: cs_checklistは存在チェックのみ(WARN)。中身空でも通過=意志依存"
+    - "事実2: Quality Check三問は記録義務なし。自問の証拠がない"
+    - "事実3: brainwash_checkにQCキーワード(品質・学習・向上)検証追加で記録を強制"
+  causal_chain: "cs_checklist中身未検証+QC記録義務なし→形骸化→BLOCK化で意志依存2件解消→意志依存7→3"
+  brainwash_check: "#1防止: HIGH(shallow)。数値: AC 3件, FM 2件, 意志依存7→3"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[blt_20260614_011952_eeb07a]] -> [[CS+QC意志依存]] -> [[APPROVE]]"
+  timestamp: "2026-06-14T02:02:00"
+- cmd_id: cmd_3373
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T02:16:00"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。cs_checklist空BLOCK+QC三問義務化。bats 24/24。threshold=12件/50%"
+  observations:
+    - "事実1: cs_checklist空/null検出→BLOCK。ブロック形式は有効扱い"
+    - "事実2: QC三問キーワード12件以上50%超未記録→BLOCK"
+    - "事実3: bats 24/24(既存20+新規4)"
+  causal_chain: "cs_checklist存在のみ+QC記録なし→形骸化→BLOCK化→意志依存7→3"
+  brainwash_check: "#2防止: ERRORS=0+bats 24/24。数値: 24/24, 意志依存7→3"
+  step3_5_verified: "SG-PRE25 PASS"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[blt_20260614_011952_eeb07a]] -> [[CS+QC]] -> [[LGTM(24/24)]]"
+  timestamp: "2026-06-14T02:14:00"
+- cmd_id: cmd_3374
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "shallow。D0 WARN+not_needed理由BLOCK追加"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, premortem, north_star]
+  findings_summary: "6観点OK。意志依存(6/7)(7/7)最後の2件。D0=WARN(偽陽性安全)。not_needed=理由存在BLOCK。全7件完結"
+  observations:
+    - "事実1: D0判定gate未実装(grep 0件)。WARN新設で検出開始"
+    - "事実2: 利他還流not_neededは理由なしで通過可能だった→理由存在BLOCK化"
+    - "事実3: 全7件意志依存解消で殿問い(blt_011952)完全対処"
+  causal_chain: "D0未検出+利他バイパス→形骸化→WARN+BLOCK追加→意志依存7→0(全数解消)"
+  brainwash_check: "#1防止: HIGH(shallow)。数値: AC 3件, 意志依存7→0"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[blt_20260614_011952_eeb07a]] -> [[D0+利他意志依存]] -> [[APPROVE(全数解消)]]"
+  timestamp: "2026-06-14T02:16:00"
+- cmd_id: cmd_3374
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T02:26:00"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。D0 WARN(本番5件発火)+altruism理由BLOCK。bats 28/28。意志依存7→0全数解消"
+  observations:
+    - "事実1: D0軽微パターン検出=findings_summary+observationsスキャン。本番5件発火で偽陰性なし"
+    - "事実2: altruism_check=not_needed理由なし→BLOCK。altruism_no_reason_block変数追加"
+    - "事実3: bats 28/28(既存24+新規4)。既存gateパターン踏襲(awk+変数+exit条件)"
+  causal_chain: "D0未検出+利他バイパス→WARN+BLOCK追加→意志依存7→0→殿問い(blt_011952)完全解消"
+  brainwash_check: "#2防止: ERRORS=0+bats 28/28+本番5件発火確認。数値: 28/28, D0発火5件, 意志依存0"
+  step3_5_verified: "SG-PRE25 PASS"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[blt_20260614_011952_eeb07a]] -> [[D0+利他gate追加]] -> [[LGTM(28/28+全数解消)]]"
+  timestamp: "2026-06-14T02:26:00"
+- cmd_id: cmd_3375
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "偵察。DB読取のみ。コード変更なし"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, north_star]
+  findings_summary: "6観点OK。殿直接指示。BB別特性分析(シン忍法pf_L1+奥義pf_L2)。AC3件/30min。DB排他安全。q7にBB全定義記載"
+  observations:
+    - "事実1: BB定義=殿定義(2026-06-08)。分身/追い風/抜き身/変わり身/加速D/加速R/四つ目の7種"
+    - "事実2: measurement_env=本番DB直読(backend/.env DATABASE_URL)。環境差異なし"
+    - "事実3: q11確認: rg BB特性/忍法特性分析 senkyoku-log → 0件。既存cmdなし"
+  causal_chain: "殿指示→BB特性未定量→偵察で全忍法PF指標算出→PF設計判断根拠蓄積"
+  brainwash_check: "#1防止: 偵察全実施。数値: AC 3件, BB 7種, 指標5種(CAGR/カルマー/MaxDD/AvgUWP/シャープ)"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[殿指示_BB特性分析_20260614]] -> [[忍法BB特性未定量]] -> [[APPROVE(偵察)]]"
+  timestamp: "2026-06-14T12:21:00"
+- cmd_id: cmd_3375
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T12:26:00"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "偵察。コード変更なし"
+  changed_lines: 0
+  finding_categories: [assumptions, numbers]
+  findings_summary: "4観点OK。42PF(7BB×3モード×2層)全指標算出。BB別テーブル+L2-L1共通月差分。偵察のみ"
+  observations:
+    - "事実1: L1最高CAGR=加速D 71.9%。最高Calmar=抜き身 2.62"
+    - "事実2: L2全BBでCAGR/Calmar/Sharpe改善+AvgUWP短縮。最強=加速R(Calmar4.93)"
+    - "事実3: L2-L1差分は共通月で再計算(期間差バイアス除去)。全BBでΔCAGR+12.7〜+27.5pp"
+  causal_chain: "殿指示→42PF指標算出→BB別特性定量化→PF設計判断根拠蓄積"
+  brainwash_check: "#2防止: 数値豊富(42PF×5指標=210数値)。数値: 42PF, 7BB, 5指標"
+  step3_5_verified: "偵察cmd。files_modified=偵察のみ。SG-PRE25対象外"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[殿指示_BB特性分析_20260614]] -> [[42PF算出]] -> [[LGTM(BB特性定量化完了)]]"
+  timestamp: "2026-06-14T12:25:00"
+- cmd_id: cmd_3376
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "既存パターン拡張。INFO/WARN(BLOCKなし)"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "6観点OK。全cmd起票前にsemantic_search→殿裁定INFO+矛盾WARN。既存q11パターン拡張。AC1=INFO/AC2=WARN(安全方向)"
+  observations:
+    - "事実1: semantic_search.sh既存(q11で呼出済み)。timeout 5sで保護可能"
+    - "事実2: AC1=INFO表示、AC2=WARN(BLOCKではない)→偽陽性リスク低"
+    - "事実3: 殿直接指摘「教訓を記録しても使わない」の根治。三層記憶→cmd起票の断絶接続"
+  causal_chain: "三層記憶に殿裁定あるが起票時未参照→仕組みなし→semantic_search自動検索で強制表示→断絶解消"
+  brainwash_check: "#1防止: HIGH(既存パターン拡張+INFO/WARN)。数値: AC 3件, timeout 5s"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[殿指摘_三層記憶未使用]] -> [[起票前検索強制]] -> [[APPROVE]]"
+  timestamp: "2026-06-14T12:30:00"
+- cmd_id: cmd_3377
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "偵察。DB読取のみ"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, north_star]
+  findings_summary: "6観点OK。cmd_3375改善版。α6指標(シャープ→NHF/MRU/Calmar)+pf_L0ベースライン+BB組合せ行列。AC4件/30min"
+  observations:
+    - "事実1: α6指標=CAGR/NHF/MaxDD/MRU/Calmar/AvgUWP(殿裁定)。シャープ使用禁止"
+    - "事実2: pf_L0(四神12体)→pf_L1(21体)→pf_L2(21体)の3層差分分析"
+    - "事実3: BB組合せ行列7×7=49セル。計算量小"
+  causal_chain: "cmd_3375シャープ使用→殿指摘→α6指標+pf_L0ベースライン+組合せ行列で再分析"
+  brainwash_check: "#1防止: HIGH(偵察)。数値: AC 4件, pf_L0 12体, α6 6指標, BB 7種"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[殿指示_BB重ねがけ_20260614]] -> [[α6+pf_L0+組合せ行列]] -> [[APPROVE]]"
+  timestamp: "2026-06-14T12:40:00"
+- cmd_id: cmd_3376
+  review_type: report
+  report_ninja: saizo
+  verdict: FAIL
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T12:44:00"
+  gate_note: "FAIL(SG-PRE25 semantic_search.sh実行参照)→家老waive→CLEAR"
+  gate_prediction: WARN
+  gate_prediction_reason: "SG-PRE25 ERROR(semantic_search.sh実行参照不在)"
+  changed_lines: 0
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "SG-PRE25 ERROR: semantic_search.sh(実行のみ参照)がfiles_modified不在→GATE BLOCK予測。報告品質は4観点OK(Check 11.12/11.13追加+bats 8/8)"
+  observations:
+    - "事実1: SG-PRE25 ERROR — semantic_search.shは実行のみ参照だがgateは区別不可"
+    - "事実2: bats 8/8 PASS。pre-existing failure(test5)はgit stash確認済み"
+    - "事実3: pipe+heredoc stdin競合をCMD_SAVE_CMD_TEXT env変数で回避=妥当な設計判断"
+  causal_chain: "command欄semantic_search.sh参照→files_modified不在→SG-PRE25 ERROR→FAIL"
+  brainwash_check: "#1防止: SG-PRE25 ERRORからFAIL。数値: bats 8/8, ERRORS=1"
+  step3_5_verified: "SG-PRE25 ERROR: semantic_search.sh(実行のみ)不在"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[殿指摘_三層記憶未使用]] -> [[SG-PRE25_semantic_search.sh]] -> [[FAIL]]"
+  timestamp: "2026-06-14T12:43:00"
+- cmd_id: cmd_3377
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T12:52:00"
+  gate_prediction: WARN
+  gate_prediction_reason: "lesson_candidate有"
+  changed_lines: 0
+  finding_categories: [assumptions, numbers]
+  findings_summary: "4観点OK。α6指標でL0→L1→L2差分定量化。重要発見: 奥義命名BBとL1コンポーネントBB非対応(decision_candidate)。L0→L2最高=抜き身CAGR97%"
+  observations:
+    - "事実1: L0 CAGR=43.03%。L1最強=加速D+31pp。L2最強=追い風+34pp。累積最高=抜き身97%"
+    - "事実2: 奥義命名BBとL1コンポーネントBBが非対応。例: 奥義-追い風のコンポーネントに追い風BBなし"
+    - "事実3: 共通期間172ヶ月(2012-03~2026-06)。pf_L0=12体、L1=21体、L2=21体"
+  causal_chain: "L0ベースライン+α6指標で再分析→BB効果定量化+奥義命名非対応発見→PF設計根拠蓄積"
+  brainwash_check: "#2防止: 数値豊富(54PF×6指標=324数値)。数値: AC 4件, 172ヶ月, 54PF"
+  step3_5_verified: "偵察cmd。SG-PRE25対象外"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[殿指示_BB重ねがけ]] -> [[α6+L0ベースライン]] -> [[LGTM(奥義命名非対応発見)]]"
+  timestamp: "2026-06-14T12:51:00"
+- cmd_id: cmd_3378
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "新規スクリプト+SKILL.md追記。shallow"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, premortem, north_star]
+  findings_summary: "6観点OK。PF構成一括確認スクリプト(pf_config_check.py)新規+db-check SKILL.mdテンプレート追記。殿直接指摘の道具磨き"
+  observations:
+    - "事実1: PF構成=4層(portfolios/tier_visibility/pipeline_config/components)。殿定義"
+    - "事実2: create_db_engine接続+UTF-8(io.TextIOWrapper)。db-checkスキル準拠"
+    - "事実3: 殿直接指摘=将軍がportfoliosのみ見てtier/pipeline未確認で誤報告した"
+  causal_chain: "PF部分確認→誤報告→一括確認スクリプト→全エージェントPF構成即確認→誤報告防止"
+  brainwash_check: "#1防止: HIGH(shallow新規)。数値: AC 3件, 4層確認"
+  ambiguity_points: none
+  hole_action: none
+  origin: "[[殿指摘_PF構成確認不能]] -> [[pf_config_check.py]] -> [[APPROVE]]"
+  timestamp: "2026-06-14T14:30:00"
+- cmd_id: cmd_3378
+  review_type: report
+  report_ninja: tobisaru
+  verdict: FAIL
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T14:38:00"
+  gate_note: "初回BLOCK(command_files_modified_mismatch)→家老waive→再GATE CLEAR"
+  gate_prediction: WARN
+  gate_prediction_reason: "lesson_candidate有+SG-PRE25 ERROR(ファイル名不一致)"
+  changed_lines: 0
+  finding_categories: [assumptions, premortem]
+  findings_summary: "SG-PRE25 ERROR: command欄pf_config_check.py vs 実装check_pf_config.py(ファイル名不一致)。報告品質は4観点OK"
+  observations:
+    - "事実1: command欄=pf_config_check.py、files_modified=check_pf_config.py。名前が逆"
+    - "事実2: AC1-3全完了。全5Tier hide+TRF+4コンポーネント正常表示"
+    - "事実3: lesson_candidate有(selection_pipeline dict形式)。register_recommended: true"
+  causal_chain: "command欄ファイル名→実装ファイル名不一致→SG-PRE25 ERROR→FAIL"
+  brainwash_check: "#1防止: ERRORS=3からFAIL。数値: ERRORS=3"
+  step3_5_verified: "SG-PRE25 ERROR: pf_config_check.py(command) vs check_pf_config.py(実装)"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[殿指摘_PF構成確認不能]] -> [[ファイル名不一致]] -> [[FAIL]]"
+  timestamp: "2026-06-14T14:35:00"

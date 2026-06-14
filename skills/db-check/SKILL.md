@@ -318,6 +318,53 @@ curl -s -u "$ADMIN_USER:$ADMIN_PASS" "$BASE/api/admin/signals/$PF_ID?months=12"
 - FoFのholding_signal同一判定は展開後ticker×weightで行う（L703）
 - fullrecalculate完了はrecalculation_status DB行で二重確認（L690）
 
+### 12. PF構成一括確認（名前で全情報を一発取得）
+```bash
+# スクリプトで実行（推奨）
+cd /mnt/c/Python_app/DM-signal/backend
+PYTHONIOENCODING=utf-8 /mnt/c/Python_app/DM-signal/.venv/Scripts/python.exe \
+    ../scripts/check_pf_config.py "<PF名の一部>"
+# 出力: 基本情報 + 全Tier visibility + pipeline_config + コンポーネントPF一覧
+```
+
+```python
+# SQLクエリ版（単一PF調査時）
+# 基本情報 + pipeline_config
+row = conn.execute(text("""
+    SELECT id, name, type, config, hide_portfolio, hide_signal, folder_id
+    FROM portfolios WHERE name ILIKE :pat
+"""), {'pat': '%<PF名>%'}).mappings().fetchone()
+import json
+config = row['config'] if isinstance(row['config'], dict) else json.loads(row['config'])
+pc = config.get('pipeline_config', {})
+sel = pc.get('selection_pipeline', {}).get('blocks', [])
+term = pc.get('terminal_block', {})
+
+# 全Tier別visibility設定
+rows = conn.execute(text("""
+    SELECT vt.name AS tier_name,
+           (tvs.portfolio_settings -> :pid ->> 'hide_portfolio')::boolean AS hide_portfolio,
+           (tvs.portfolio_settings -> :pid ->> 'hide_signal')::boolean AS hide_signal,
+           (tvs.portfolio_settings -> :pid ->> 'hide_components')::boolean AS hide_components
+    FROM tier_visibility_settings tvs
+    JOIN viewer_tiers vt ON vt.id = tvs.tier_id
+    ORDER BY vt.display_order
+"""), {'pid': row['id']}).mappings().all()
+
+# コンポーネントPF一覧（FoF type の場合）
+components = conn.execute(text("""
+    SELECT fcw.component_id, p.name, fcw.component_type, fcw.target_weight, fcw.nested_depth
+    FROM fof_component_weights fcw
+    LEFT JOIN portfolios p ON p.id = fcw.component_id
+    WHERE fcw.portfolio_id = :pid
+      AND fcw.date = (SELECT MAX(date) FROM fof_component_weights WHERE portfolio_id = :pid)
+    ORDER BY fcw.nested_depth, fcw.component_id
+"""), {'pid': row['id']}).mappings().all()
+```
+**注意**: `selection_pipeline` は `{"blocks": [...]}` の形式。`terminal_block.config` が空でも `EqualWeight` は正常。全Tier未設定PFはデフォルト非表示(hide_portfolio=True)。
+
+---
+
 ## 関連スキル
 
 - [[pf-registration]] — DB確認・パリティ検証完了後の本番PF登録（パリティ確認→登録の流れで使用）
