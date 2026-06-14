@@ -48,6 +48,7 @@ EOF
 
     run bash -lc '
         export DEPLOY_TASK_LIB_ONLY=1
+        export DEPLOY_TASK_GPT_PRIORITY=1
         export CLI_LOOKUP_SETTINGS="'"$TEST_TMPDIR/settings_gpt_priority.yaml"'"
         source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
         log() { :; }
@@ -67,6 +68,7 @@ EOF
 
     run bash -lc '
         export DEPLOY_TASK_LIB_ONLY=1
+        export DEPLOY_TASK_GPT_PRIORITY=1
         export CLI_LOOKUP_SETTINGS="'"$TEST_TMPDIR/settings_gpt_priority.yaml"'"
         source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
         log() { :; }
@@ -85,6 +87,7 @@ EOF
 
     run bash -lc '
         export DEPLOY_TASK_LIB_ONLY=1
+        export DEPLOY_TASK_GPT_PRIORITY=1
         export CLI_LOOKUP_SETTINGS="'"$TEST_TMPDIR/settings_gpt_priority.yaml"'"
         export DEPLOY_TASK_ALLOW_NON_GPT=1
         export DEPLOY_TASK_GPT_PRIORITY_REASON="Sonnet観点の比較レビュー"
