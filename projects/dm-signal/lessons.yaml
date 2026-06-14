@@ -742,6 +742,9 @@ lessons:
   - backend/app/
   - queue/reports/hayate_report_cmd_2444.yaml
   origin: '[[cmd_2444]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L695
   title: pipeline_config内側top_nとPortfolio直下top_nは別経路で分離検証必須
   summary: pipeline_config.blocks config top_n/select_nはDict[str,Any]で型制約なし(1-4全PASS)。Portf
@@ -2328,6 +2331,9 @@ lessons:
   - tasks/lessons.md
   - scripts/analysis/grid_search/run_077_yotsume.py
   origin: '[[cmd_1835]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L593
   title: GSパターン数のC(n,k)スケーリング — universe体数変更で組合せ爆発
   summary: 12→20体でパターン数7.9倍(C(n,2)+C(n,3)+C(n,4))。CSV 5.5倍、PrefixMomentCache 6.9倍。体数変更時はパター
@@ -3541,6 +3547,9 @@ lessons:
   - tasks/lessons.md
   - backend/app/jobs/recalculate_fof.py
   origin: '[[cmd_1445]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L500
   title: ガード条件除去時の暗黙的副作用チェック必須
   summary: IF ガード条件(is_kalman_meta等)を除去または変更する THEN そのガードが保護していた全変数のスコープと副作用を確認せよ
@@ -5668,6 +5677,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: ただしDM2+とDM7+はXLU+TQQQを共通に持つため、XLUの出現頻度30%閾値で区別する必要がある
   origin: '[[cmd_1014]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L342
   title: 2段重ねBTのStage1変更はnominal_output変動を伴い大幅Sharpe変動の主因
   summary: IF 2段重ねBTの過適合検証で近傍パラメータを変動させる THEN Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_
@@ -5996,6 +6008,9 @@ lessons:
   target_files:
   - test_right_tail_metrics.py
   origin: '[[cmd_976]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L316
   title: 'WSL→Windows venv Ruff hook: repo-relative pathを使え'
   summary: WSLから.venv/Scripts/ruff.exeを呼ぶ場合、/mnt/c/... absolute pathを渡すとC:\mnt\c\...と誤解釈されE
@@ -7079,6 +7094,9 @@ lessons:
   target_files:
   - frontend/lib/api-cache.ts
   origin: '[[cmd_758]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L229
   title: SWR化は invalidation 削除だけでは成立せず、cache hit を迂回する fresh fetch 経路が必要
   summary: IndexedDB 永続 cache を持つ request 層で cache hit 時 short-circuit return している場合、
@@ -8632,6 +8650,9 @@ lessons:
   target_files:
   - base.py
   origin: '[[cmd_234]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L095
   title: kasoku main()がcumulative_returnsを未ロード — 転換コード死蔵
   summary: IF cmd_222でget_kasoku_contextにcumulative_return計算パスを追加したが、main()でload_cumulative

@@ -100,8 +100,8 @@ model_deployment_rules:
 
 random_deployment_rules:
   - id: R000
-    positive_rule: "GPT忍者が編成に存在する場合はGPT忍者を優先してCMD配備せよ。GPT忍者が0名の編成では全忍者にCMD配備可(優先なし)。陣形図M列でGPT有無を確認してからR000を適用せよ"
-    reason: "GPT忍者存在時はSonnet忍者より高速(殿裁定2026-05-29)。GPT不在時は全忍者均等配備(殿裁定2026-06-08)"
+    positive_rule: "Sonnet忍者を優先してCMD配備せよ。Sonnet忍者が0名の編成では全忍者にCMD配備可(優先なし)。陣形図M列でSo有無を確認してからR000を適用せよ"
+    reason: "殿裁定2026-06-14: ソネット優先。旧GPT優先(2026-05-29)を上書き"
   - id: R001
     positive_rule: "同一モデル内ではround-robinで行え"
     reason: "同一モデル内では選択バイアス回避のためround-robin維持"

@@ -355,6 +355,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-13T22:28:58+09:00 いまループで何をやっているんだ？隠れたインフラバグや覚醒洗脳監査をやるはずだった |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-14T01:11:13+09:00 洗脳の影響で、全部やらずに優先度をつけていないか？効果があるものは全てやろう。覚醒せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-14T16:22:54+09:00 改善余地を放置するのは洗脳の影響。覚醒せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-14T17:21:23+09:00 では DM シグナルの話に戻ろう 今まで使っていないビルディングブロックがあったが L 1 l 2 L 3 どこに 最初に適用してみると面白そうだ？ |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -1323,6 +1324,7 @@ codd:
 | cmd | `cmd_3374` D0未実施検出WARN+利他還流not_needed理由必須化。意志依存の自動化×強制(4/7) (`scripts/gates/gate_gunshi_cs_checklist.sh`, `tests/unit/test_gate_gunshi_cs_checklist.bats`) |
 | causal | `cmd_3374` origin: [[blt_20260614_011952_eeb07a]] -> [[D0_利他意志依存]] -> [[軍師自走形骸化]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-14T16:04:12+09:00 今クリアされても今より強くてニューゲーム出来るようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-14T17:20:33+09:00 今クリアされても 今より強くてニューゲームができるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -2676,6 +2678,7 @@ codd:
 | cmd | `cmd_3243` (`scripts/cmd_quality_log.sh`, `scripts/cmd_save.sh`, `tests/unit/test_cmd_save_block_time_nazenaze.bats`) |
 | cmd | `cmd_3248` (`tests/unit/test_cmd_complete_gate_gunshi_verdict_precheck.bats`) |
 | file | `docs/research/gunshi_idle_cmd_quality_block_analysis_20260425.md` — 軍師idle: cmd品質BLOCK分析(2026-04-25) |
+| cmd | `cmd_3382` (`context/cmd-chronicle.md`, `context/infrastructure.md`, `docs/semantic-index/index.md`) |
 | causal_chain | `[[cmd_2888]]` (L637) |
 | causal_chain | `[[cmd_2888]]` (L638) |
 
@@ -3127,11 +3130,13 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T21:43:42+09:00 a18c9d747af7dd4a4 toolu_01Sw94Vh1kARwTNGqbPZzdxG /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | lesson | `L805` task YAML使い回しで自動注入メタを追加したらreset_stale_fieldsにも同時登録する |
 | lesson | `L807` SG-PRE25 FP根因: 読点「、」区切りのwrite_markerが同文内別節に存在する場合の誤判定 |
+| lesson | `L808` yaml_field_set.shの変更はlesson_write.sh --retagで上書きされる。SSoT(lessons.md)先行修正が必須 |
 | causal_chain | `[[cmd_2955]]` (L685) |
 | causal_chain | `[[cmd_3012]]` (L693) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]` (L778) |
 | causal_chain | `[[cmd_3368]]` (L805) |
 | causal_chain | `[[cmd_3380]]` (L807) |
+| causal_chain | `[[cmd_3382]]` (L808) |
 
 ## gunshi_review_lifecycle — 軍師レビューライフサイクル
 

@@ -2589,7 +2589,7 @@
 - cmd_id: cmd_3382
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   gate_prediction: CLEAR
   gate_prediction_reason: "教訓yaml修正のみ。コード変更なし"
   confidence: HIGH
@@ -2631,7 +2631,8 @@
   review_type: report
   report_ninja: kotaro
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T17:07:00"
   gate_prediction: WARN
   gate_prediction_reason: "lesson_candidate有"
   changed_lines: 0
@@ -2648,3 +2649,25 @@
   ambiguity_points: none
   origin: "[[殿指示_偽陽性はバグ]] -> [[SG-PRE25修正]] -> [[LGTM]]"
   timestamp: "2026-06-14T17:06:00"
+- cmd_id: cmd_3382
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-14T17:09:00"
+  gate_prediction: WARN
+  gate_prediction_reason: "lesson_candidate有"
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, north_star]
+  findings_summary: "4観点OK。noise10件中7件修正(when4+tags2+how1)。dm-signal誤修正revert。injected 190→189"
+  observations:
+    - "事実1: 10件中L625=deprecated済み、L548/L589/L529=有効で除外。修正対象7件"
+    - "事実2: whenフィールドはdeploy_task.shフィルタ外。tagsが主要フィルタ"
+    - "事実3: SSoT=lessons.md先行修正→lesson_write.sh --retag同期が正しい順序"
+  causal_chain: "noise教訓10件→7件修正→tags精度向上→useful率改善→startup ALERT解消"
+  brainwash_check: "#2防止: ERRORS=0+injected数値確認。数値: 190→189, 修正7/10"
+  step3_5_verified: "SG-PRE25 PASS"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[startup_lesson_health_ALERT]] -> [[noise7件修正]] -> [[LGTM]]"
+  timestamp: "2026-06-14T17:08:00"

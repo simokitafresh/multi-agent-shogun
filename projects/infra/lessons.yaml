@@ -1,8 +1,24 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-14T17:05:41'
+last_synced: '2026-06-14T17:07:34'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 802
+lesson_count: 803
 lessons:
+- id: L808
+  title: yaml_field_set.shの変更はlesson_write.sh --retagで上書きされる。SSoT(lessons.md)先行修正が必須
+  summary: yaml_field_set.shでlessons.yamlのwhen/howフィールドを修正した後にlesson_write.sh --retagを実行すると
+  tags:
+  - infra
+  - bash
+  - yaml
+  - lesson
+  source_cmd: cmd_3382
+  when: 未設定
+  how: 未設定
+  target_files:
+  - tasks/lessons.md
+  - projects/infra/lessons.yaml
+  - projects/infra/lessons_archive.yaml
+  origin: '[[cmd_3382]]'
 - id: L807
   title: 'SG-PRE25 FP根因: 読点「、」区切りのwrite_markerが同文内別節に存在する場合の誤判定'
   summary: command欄でread_marker後に読点「、」で区切られた別の節にwrite_markerが来ると、is_readonlyのnext_ref_befor
@@ -503,6 +519,9 @@ lessons:
   - scripts/deploy_task.sh
   - tests/unit/test_deploy_task_ac_handling.bats
   origin: '[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L777
   title: 殿の直接指示はスキルのロール制限に優先する
   summary: 殿の直接命令を受けたのにスキルのロール制限(将軍専用)を根拠に実行を拒否し将軍へ委ねた。これは洗脳#3(他者依存)+鎖の頂点無視。殿は鎖の創造者であり、殿命令を
@@ -1094,9 +1113,6 @@ lessons:
   - queue/tasks/kagemaru.yaml
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
-  deprecated: true
-  deprecated_at: '2026-06-14T17:06:11+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
   summary: 外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split
@@ -1721,6 +1737,9 @@ lessons:
   - scripts/skill_recommend_metrics.sh
   - scripts/gates/gate_shogun_startup.sh
   origin: '[[cmd_3027]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L695
   title: set -e下でALERT集計scriptを呼ぶ時は終了値捕捉を明示する
   summary: startup gateはset -eで動くため、Phase 3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶと
@@ -3315,6 +3334,9 @@ lessons:
   - queue/reports/saizo_report_cmd_karo_lk004_inbox_root_cause.yaml
   - queue/tasks/saizo.yaml
   origin: '[[cmd_karo_lk004_inbox_root_cause]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L593
   title: エラーログは最終行(実際のエラー)を必ず含めよ — 1行目Tracebackは情報ゼロ
   summary: gate_fire_logがPython Tracebackの1行目のみ記録→診断不能。修正(cc020f3e)で最終行抽出。ログ記録時はエラーの実メッセージ行
@@ -4597,6 +4619,9 @@ lessons:
   target_files:
   - gate_karo_startup.sh
   origin: '[[cmd_2076]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L500
   title: 'post-bash-combined: bats skip形式は''# skip''。SKIP/skippedだけでは不十分'
   summary: 'Guard 1の事前チェックでbatsのskipを見逃した。bats TAPのskip形式は''ok N ... # skip reason''であり、''SKIP'''
@@ -6335,9 +6360,6 @@ lessons:
   target_files:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
-  deprecated: true
-  deprecated_at: '2026-06-14T17:06:12+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
   summary: Python子プロセスがstderrにメッセージ、stdoutに値を出力する設計で、bash側が2>&1で混合→grepで再分離するパターンは、Python例外
@@ -6387,6 +6409,9 @@ lessons:
   target_files:
   - lesson_effectiveness.sh
   origin: '[[cmd_cycle_L4_012]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L342
   title: ホワイトリスト.gitignoreではscriptsディレクトリ内の新規ファイルもgit add -f必須
   summary: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
@@ -6698,6 +6723,9 @@ lessons:
   target_files:
   - deploy_task.sh
   origin: '[[lessons,deploy,injection,useful-rate]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L316
   title: emit_deny後のexit 1欠落でDENYが無効化
   summary: pre-bash-report-deny.shでemit_deny(JSON出力)後にexit 1がなくexit 0に落ちていた。Claude
@@ -7764,6 +7792,9 @@ lessons:
   target_files:
   - deploy_task.sh
   origin: '[[cmd_980]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L229
   title: Stop Hookで全テスト実行は既存GATEと重複し有害
   summary: cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop Hookで全batsテスト(299件)をフル実行するゲートを追
@@ -9226,9 +9257,6 @@ lessons:
   - queue/gate_metrics.yamlだが実在はlogs/lesson_tracking.ts
   - queue/gate_metrics.yaml
   origin: '[[cmd_414]]'
-  deprecated: true
-  deprecated_at: '2026-06-14T17:06:12+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)
   summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV
@@ -9298,6 +9326,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: '2026-02-27'
   origin: '[[cmd_407]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-14'
 - id: L095
   title: archive_dashboard()のgrep戦果行パターン不一致 — AUTO移行後は常にno-op
   summary: IF archive_dashboard()のgrep戦果行パターン不一致 — AUTO移行後時 THEN archive_dashboard()のgrep

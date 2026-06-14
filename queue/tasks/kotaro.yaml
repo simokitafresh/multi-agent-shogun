@@ -23,7 +23,7 @@ task:
   parent_cmd: cmd_3380
   project: infra
   purpose: 殿指示(2026-06-14)『偽陽性はバグだ。バグは修正しよう』。SG-PRE25がcommand欄の実行参照(bash scripts/X.sh等)を変更対象ファイルと誤判定し、毎セッション5件の家老waive作業が発生(10分/セッション負の複利)。軍師提案(blt_20260614_162444)に基づきcommand欄のファイル参照を自動分類するヒューリスティックを追加する
-  status: done
+  status: idle
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_gunshi_report_precheck.sh
   task_id: cmd_3380_full

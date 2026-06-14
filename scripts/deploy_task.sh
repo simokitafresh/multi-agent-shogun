@@ -181,7 +181,7 @@ deploy_task_enforce_gpt_priority() {
     local deploy_scope_mode="$2"
     local target_cli idle_codex_ninjas override_reason
 
-    [ "${DEPLOY_TASK_GPT_PRIORITY:-1}" != "0" ] || return 0
+    [ "${DEPLOY_TASK_GPT_PRIORITY:-0}" != "0" ] || return 0
     [ "${TYPE:-task_assigned}" = "task_assigned" ] || return 0
 
     target_cli=$(cli_type "$target_ninja")

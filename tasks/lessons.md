@@ -8173,3 +8173,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - command欄でread_marker後に読点「、」で区切られた別の節にwrite_markerが来ると、is_readonlyのnext_ref_before_write条件が誤判定してFPが発生。対策: has_clause_boundary(読点位置がwrite_pos前)とis_exec_prefix(bash等実行動詞が直前)の2ヒューリスティックをis_readonlyの先行条件に追加。origin: [[SG-PRE25_FP_41件]] -> [[読点区切り別節誤判定]] -> [[毎セッション5件FP×家老waive10分]]
+
+### L808: yaml_field_set.shの変更はlesson_write.sh --retagで上書きされる。SSoT(lessons.md)先行修正が必須
+- **日付**: 2026-06-14
+- **出典**: cmd_3382
+- **記録者**: saizo
+- **tags**: [infra,bash,yaml,lesson]
+- **target_files**: [tasks/lessons.md,projects/infra/lessons.yaml,projects/infra/lessons_archive.yaml]
+- **origin**: [[cmd_3382]]
+- **when**: 未設定
+- **how**: 未設定
+- yaml_field_set.shでlessons.yamlのwhen/howフィールドを修正した後にlesson_write.sh --retagを実行するとlessons.md→lessons.yaml再同期が走り変更が消える。whenフィールドはlessons.md(SSOT)を直接修正してから同期するのが正しい順序
