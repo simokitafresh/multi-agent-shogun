@@ -210,6 +210,15 @@ def main() -> int:
     elif isinstance(fm, list) and len(fm) == 0 and data.get("status") == "completed":
         hints.append('GP-127 WARN: files_modified: [] (空リスト) — 変更ファイルを記入せよ。偵察のみの場合は文字列で "偵察のみ" と記入')
 
+    # GP-285: files_modified entries with parentheses/comments (cmd_3381 incident)
+    if isinstance(fm, list):
+        _paren_re = re.compile(r'\(.*\)')
+        for item in fm:
+            _p = str(item.get("path", "") if isinstance(item, dict) else item)
+            if _paren_re.search(_p):
+                hints.append(f'GP-285 WARN: files_modified entry contains parentheses: "{_p}" — パスのみ記入せよ(コメント・注記混入禁止)')
+                break
+
     parent_cmd_value = str(data.get("parent_cmd") or "")
     if parent_cmd_value and isinstance(fm, list) and len(fm) > 0:
         fm_paths = []
