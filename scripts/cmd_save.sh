@@ -4120,6 +4120,136 @@ if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
 fi
 check_causal_verification_requirement
 
+# --- Check 11.12: 三層記憶・殿裁定自動INFO表示（informational — WARN_COUNTに加算しない） ---
+# 目的: cmdのtitle+purposeで三層記憶(semantic_search.sh)を自動検索し、関連する殿裁定・概念定義をINFO表示する。
+# 起源: 殿指摘(2026-06-14) — 教訓を記録しても使わないのは仕組みがないから。全cmd起票前に三層記憶を自動検索せよ。
+# 設計: BLOCKなし。INFOのみ。LLMフォールバックは使わない(SEMANTIC_DISABLE_LLM=1)。
+show_three_layer_memory_ruling_info() {
+    local block_text="${1:-${CMD_BLOCK_NC:-}}"
+    [[ -z "$block_text" ]] && return 0
+
+    local semantic_script="${CMD_SAVE_SEMANTIC_SEARCH_SCRIPT:-$PROJECT_DIR/scripts/semantic_search.sh}"
+    [[ -f "$semantic_script" ]] || return 0
+
+    # title+purposeのみ抽出してクエリを組み立てる
+    local query
+    query="$(printf '%s\n' "$block_text" | awk '
+        /^[[:space:]]*(title|purpose):[[:space:]]*/ {
+            sub(/^[[:space:]]*(title|purpose):[[:space:]]*/, "")
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+            if (NF > 0) print
+        }
+    ' | head -10 | tr '\n' ' ' | sed -E 's/^[[:space:]]+|[[:space:]]+$//g' || true)"
+    [[ -n "${query//[[:space:]]/}" ]] || return 0
+
+    local output rc
+    if command -v timeout >/dev/null 2>&1; then
+        if output="$(
+            SEMANTIC_DISABLE_LLM=1 \
+            SEMANTIC_DISABLE_CAUSAL=1 \
+            SEMANTIC_CAUSAL_ROOT="${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
+                timeout 8 bash "$semantic_script" "$query" 2>/dev/null
+        )"; then
+            rc=0
+        else
+            rc=$?
+        fi
+    else
+        if output="$(
+            SEMANTIC_DISABLE_LLM=1 \
+            SEMANTIC_DISABLE_CAUSAL=1 \
+            SEMANTIC_CAUSAL_ROOT="${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
+                bash "$semantic_script" "$query" 2>/dev/null
+        )"; then
+            rc=0
+        else
+            rc=$?
+        fi
+    fi
+
+    [[ "$rc" -eq 0 && -n "${output//[[:space:]]/}" ]] || return 0
+
+    echo "INFO: [MEMORY_RULING] 三層記憶検索(title+purpose基準):" >&2
+    printf '%s\n' "$output" | sed 's/^/  /' >&2
+}
+
+# WSL2最適化: 非同期化（全出力>&2、判定に影響しない）
+if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
+    show_three_layer_memory_ruling_info &
+fi
+
+# --- Check 11.13: projects yaml forbidden_topics矛盾検出（WARNING — WARN_COUNTに加算しない） ---
+# 目的: projects/{project}.yaml + infra.yaml の forbidden_topics を自動参照し、
+#       cmd内容(title+purpose+command)に矛盾する記述があればWARNINGを表示する。
+# 設計: BLOCKなし。WARNINGのみ。record_warn_reasonは使わない(gate判定に影響させない)。
+check_projects_yaml_forbidden_topics() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+
+    local project_id
+    project_id="$(cmd_block_get_field "project" "")"
+
+    # cmd テキスト: title + purpose + command の先頭50行
+    local cmd_text
+    cmd_text="$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*(title|purpose):[[:space:]]*/ { print; next }
+        /^[[:space:]]*command:[[:space:]]/ { found=1; print; next }
+        found && /^[[:space:]]{4,}/ { print; next }
+        found && /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:[[:space:]]/ { found=0 }
+    ' | head -50 || true)"
+    [[ -n "${cmd_text//[[:space:]]/}" ]] || return 0
+
+    # 検索対象yaml: infra.yaml + project固有yaml
+    local yaml_files=()
+    local _pdir="$PROJECT_DIR/projects"
+    [[ -f "$_pdir/infra.yaml" ]] && yaml_files+=("$_pdir/infra.yaml")
+    if [[ -n "$project_id" && "$project_id" != "infra" && -f "$_pdir/${project_id}.yaml" ]]; then
+        yaml_files+=("$_pdir/${project_id}.yaml")
+    fi
+    [[ ${#yaml_files[@]} -eq 0 ]] && return 0
+
+    CMD_SAVE_PROJECT_YAMLS="$(printf '%s\n' "${yaml_files[@]}")" \
+    CMD_SAVE_CMD_TEXT="$cmd_text" \
+    python3 - >&2 <<'PY'
+import os
+import re
+
+yaml_paths_raw = os.environ.get("CMD_SAVE_PROJECT_YAMLS", "")
+yaml_paths = [p.strip() for p in yaml_paths_raw.splitlines() if p.strip()]
+cmd_text = os.environ.get("CMD_SAVE_CMD_TEXT", "")
+
+def keyword_match(text, keyword):
+    if not text or not keyword:
+        return False
+    kw = re.escape(keyword.strip())
+    return bool(re.search(kw, text, re.IGNORECASE))
+
+for yaml_path in yaml_paths:
+    if not os.path.isfile(yaml_path):
+        continue
+    try:
+        content = open(yaml_path, encoding="utf-8", errors="replace").read()
+    except OSError:
+        continue
+    # forbidden_topics セクションのtopic+rule ペアを抽出
+    topic_matches = re.findall(
+        r'- topic:\s*["\']?([^"\'\n#]+?)["\']?\s*\n\s*rule:\s*["\']?([^"\'\n#]+?)["\']?\s*$',
+        content, re.MULTILINE
+    )
+    for topic, rule in topic_matches:
+        topic = topic.strip()
+        rule = rule.strip()
+        if not topic:
+            continue
+        if keyword_match(cmd_text, topic):
+            print(f"WARNING: [MEMORY_RULING] forbidden_topic検出: '{topic}' がcmd内に含まれています")
+            print(f"  殿裁定: {rule}")
+            print(f"  source: {yaml_path}")
+            print("  → このcmdはforbidden topicに言及しています。再確認してください（BLOCKなし）")
+PY
+}
+
+check_projects_yaml_forbidden_topics
+
 # --- Check 12: 内容重複チェック（informational — WARN_COUNTに加算しない） ---
 # 起源: 重複cmd起票の構造的防止
 # 目的: 新cmdのtitle+purposeと直近20件(キュー+archive)の類似度を比較しWARN（50%以上）
