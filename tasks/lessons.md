@@ -8162,3 +8162,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - cmd_save.shにチェックを追加しても、cmd_skeleton.shへの反映を強制する仕組みがなかった。batsテスト追加(LS_NEW: check_name→skeleton存在確認)が最小コストの強制機構。次回cmd_save.shにcheckを追加したら対応するbatsテストも同時追加する規約が必要
+
+### L807: SG-PRE25 FP根因: 読点「、」区切りのwrite_markerが同文内別節に存在する場合の誤判定
+- **日付**: 2026-06-14
+- **出典**: cmd_3380
+- **記録者**: kotaro
+- **tags**: [infra,gate,bash]
+- **target_files**: [scripts/gates/gate_gunshi_report_precheck.sh,tests/unit/test_sg_pre25_readonly_ref.bats]
+- **origin**: [[cmd_3380]]
+- **when**: 未設定
+- **how**: 未設定
+- command欄でread_marker後に読点「、」で区切られた別の節にwrite_markerが来ると、is_readonlyのnext_ref_before_write条件が誤判定してFPが発生。対策: has_clause_boundary(読点位置がwrite_pos前)とis_exec_prefix(bash等実行動詞が直前)の2ヒューリスティックをis_readonlyの先行条件に追加。origin: [[SG-PRE25_FP_41件]] -> [[読点区切り別節誤判定]] -> [[毎セッション5件FP×家老waive10分]]
