@@ -3126,10 +3126,12 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T21:15:38+09:00 adbbab2b4815727cb toolu_016cqX9TFUMStL2HNByaDCaa /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T21:43:42+09:00 a18c9d747af7dd4a4 toolu_01Sw94Vh1kARwTNGqbPZzdxG /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | lesson | `L805` task YAML使い回しで自動注入メタを追加したらreset_stale_fieldsにも同時登録する |
+| lesson | `L807` SG-PRE25 FP根因: 読点「、」区切りのwrite_markerが同文内別節に存在する場合の誤判定 |
 | causal_chain | `[[cmd_2955]]` (L685) |
 | causal_chain | `[[cmd_3012]]` (L693) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]` (L778) |
 | causal_chain | `[[cmd_3368]]` (L805) |
+| causal_chain | `[[cmd_3380]]` (L807) |
 
 ## gunshi_review_lifecycle — 軍師レビューライフサイクル
 

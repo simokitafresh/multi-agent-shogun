@@ -2527,7 +2527,7 @@
 - cmd_id: cmd_3380
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   gate_prediction: CLEAR
   gate_prediction_reason: "軍師D0(666634297)適用済み上のテスト追加。medium"
   confidence: HIGH
@@ -2627,3 +2627,24 @@
   ambiguity_points: none
   origin: "[[殿指示_偽陽性はバグ]] -> [[files_modifiedコメント混入]] -> [[FAIL]]"
   timestamp: "2026-06-14T16:57:00"
+- cmd_id: cmd_3380
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: null
+  gate_prediction: WARN
+  gate_prediction_reason: "lesson_candidate有"
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。SG-PRE25偽陽性修正。exec_prefix+clause_boundary。bats 18/18"
+  observations:
+    - "事実1: exec_prefix(bash等直前)→readonly除外"
+    - "事実2: clause_boundary(読点区切り別節)→除外"
+    - "事実3: bats 18/18(既存11+FP5+真陽性2)"
+  causal_chain: "FP41件→2ヒューリスティック追加→偽陽性根絶"
+  brainwash_check: "#2防止: bats 18/18。数値: 18/18, FP5→0"
+  step3_5_verified: "SG-PRE25 PASS"
+  hole_action: none
+  ambiguity_points: none
+  origin: "[[殿指示_偽陽性はバグ]] -> [[SG-PRE25修正]] -> [[LGTM]]"
+  timestamp: "2026-06-14T17:06:00"

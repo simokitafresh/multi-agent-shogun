@@ -544,3 +544,4 @@
 | cmd_3378 | 殿指示(2026-06-14)。PFの構成を確認する際に将軍がportfoliosテーブルだけ見てtier_visibility_settingsやpipeline_configを確認しなかった。誰でもいつでもPF名を指定するだけで全構成を一発確認できるスクリプトを作る | dm-signal | 06-14 | scripts/check_pf_config.py作成: |
 | cmd_3379 | startup gateのSKILL.md script参照WARNが3セッション連続BLOCK(2026-06-14)。note_draft.sh(shellcheck SC1036修正 82fda53)とcmd_complete_gate.sh(reflux競合修正 23edb56)がSKILL.mdより新しい。5件のSKILL.mdを現行スクリプト動作と照合し追随更新する | infra | 06-14 | SKILL.md 5件を現行スクリプト動作と照合し追随更新。 |
 | cmd_3381 | 殿指示(2026-06-14)『偽陽性はバグだ』。cmd_save.sh L723 check_deferral_language_warnが品質向上文脈の語(N回連続startup BLOCK解消で起動品質向上)を先送りと誤判定。grepパターンに文脈除外を追加する | infra | 06-14 | cmd_save.sh L723 check_deferra |
+| cmd_3380 | 殿指示(2026-06-14)『偽陽性はバグだ。バグは修正しよう』。SG-PRE25がcommand欄の実行参照(bash scripts/X.sh等)を変更対象ファイルと誤判定し、毎セッション5件の家老waive作業が発生(10分/セッション負の複利)。軍師提案(blt_20260614_162444)に基づきcommand欄のファイル参照を自動分類するヒューリスティックを追加する | infra | 06-14 | SG-PRE25のcommand欄偽陽性修正完了。exec_ |
