@@ -538,3 +538,4 @@
 | cmd_3372 | 軍師意志依存調査(blt_011952)の項目(2)(3)。実動作確認なし(L910付近)と実行確認欄(step three five verified)未記入(L949付近)が共にWARNのみで通過可能。infra変更レビューで実行証拠なしLGTMが出せる穴を塞ぐ | infra | 06-14 | AC1: gate_gunshi_cs_checklist. |
 | cmd_3373 | 軍師意志依存調査(blt_011952)の項目(4)(5)。cs_checklistはフィールド存在のみ検知で中身は意志依存。Quality Check三問は記録義務がなく自問の証拠がない。cs_checklist中身が空文字やnullでBLOCK+Quality Checkをbrainwash_check欄に統合し記録を強制する | infra | 06-14 | AC1: cs_checklistが空/nullのself_ |
 | cmd_3374 | 軍師意志依存調査(blt_011952)の項目(6)(7)。D0すべき場面(軽微修正)でD0しなくても何も起きない。利他還流でnot_neededと書けば通過する。D0未実施検出をWARN追加+not_neededに理由必須を追加する | infra | 06-14 | AC1: draft/reportでtypo/format等 |
+| cmd_3375 | 殿指示(2026-06-14)。忍法=ビルディングブロック(BB)ごとの特性を定量的に把握したい。各BBがリターン・リスクリターン・Avg UWPにどう貢献するかを分析する。シン忍法(pf_L1)と奥義(pf_L2)を対象に、全忍法PFのメトリクスをBB別に集計・比較する | dm-signal | 06-14 | 本番DB monthly_returns からpf_L1忍法 |
