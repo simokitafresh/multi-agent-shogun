@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-14 cmd_3382 -->
+<!-- last_updated: 2026-06-15 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,45 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2734 | 概念→スキルの対応がインフラに存在せず、スキル使用が意志依存(CDP未使用トラブル、DB-check誤使用が繰返し発生)。semantic indexにskills列を追加し、deploy_task.shでタスクYAMLにrecommended_skillsとして自動注入する | infra | 05-15 | semantic indexのskills列をタスク配備時の |
-| cmd_2735 | 忍者がrecommended_skillsを無視してもレビューで検出されない。軍師の6観点にスキル使用適切性チェックを追加し、recommended_skillsが存在するのに未使用の場合にREQ_CHANGESを出す | infra | 05-15 | 軍師レビューにrecommended_skills使用突合を |
-| cmd_2736 | 将軍はスキルの存在を知っているがセッション中にTRIGGER条件と結びつかず手動作業に流れる(CDP未使用等、殿指摘)。prompt_state_inject.shにスキルTRIGGERキーワード照合を追加し、合致スキルを強制表示する | infra | 05-15 | prompt_state_inject.shに将軍向けスキル |
-| cmd_2738 | DB-checkをrebalancerで呼ぶ等のスキル誤使用が繰返し発生(殿指摘)。SKILL.mdのDO NOT TRIGGER条件とcurrent_projectを照合し、制約違反時にexit 2でBLOCKするPreToolUse hookを追加する | infra | 05-15 | PreToolUse Skill guard hookを実装 |
-| cmd_2742 | 現在ダークモード固定でライトモードがない(殿指摘)。Tailwind darkMode class方式で切替トグルを追加し、ユーザーがダーク/ライトを選択可能にする | rebalancer | 05-15 | Tailwind class dark方式のテーマ切替を追加 |
-| cmd_2743 | cmd_complete_gate.sh L222がshogun_state!=idleでinbox_writeをスキップし、将軍がactive時(殿と対話中)にGATE CLEAR通知が届かない。殿がntfyで先に知り将軍に聞くが将軍が知らない事態が発生(殿指摘)。stateチェックを撤去し常時通知にする | infra | 05-15 | cmd_complete_gate.shの将軍GATE CL |
-| cmd_2744 | 将軍がGATE CLEARを受けても殿の入力を待って動かない。F004(polling禁止)を過剰解釈し自走を抑制していた(殿指摘:自分で出したcmdの結果確認は鎖の中)。GATE CLEAR後の定型アクション(push判断/次cmd確認/殿への報告)を将軍の正当な自走としてshogun.mdに明文化する | infra | 05-15 | GATE CLEAR受信後の将軍自走フローをshogun.m |
-| cmd_2746 | cmd_2662-2666で5回頻発したdeploy_task.sh配備後のinbox未配信事象の根因を特定し、再発防止策を提案する | infra | 05-15 | cmd_2662-2666のinbox未配信は、2026-0 |
-| cmd_2747 | karo_workarounds.yamlの歴史的データ汚染(detail空・category不正)82件を正しいcategory/detailに修復し、WA分析の精度を回復する | infra | 05-15 | karo_workarounds.yamlのWAデータ品質汚 |
-| cmd_2748 | dm-signal教訓698件+infra教訓583件の旧形式教訓にwhen/howフィールドを段階的に補完するスクリプトを作成し、教訓注入の精度を向上させる | infra | 05-15 | 旧形式教訓のwhen/how補完スクリプトを追加し、dm-s |
-| cmd_2749 | skill_auto_improveがSKILL.md改善で閉じないFAIL(スクリプトバグ起因)を検出し、コード修正cmdの起票を将軍に掲示板経由で要請する仕組みを追加する | infra | 05-15 | skill_auto_improveにFAIL分類、UNCH |
-| cmd_2750 | auto_failure_lesson.shがgate_fire_logのFAIL原因を参照し、スクリプトバグ起因のFAILを検出した場合にbulletin_write.shで将軍にコード修正cmd起票を要請する | infra | 05-15 | auto_failure_lesson.shにgate_fi |
-| cmd_2751 | insight_write.shに同一パターン繰返し検出と優先度判定を追加し、高優先度insightが蓄積のまま埋もれる問題を解消する | infra | 05-15 | insight_write.shにsource一致のpend |
-| cmd_2752 | gate_fire_logのFAIL→PASS遷移分析で未回復期間が閾値(設定可能)を超えたFAILを検出し、bulletin_write.shで将軍にコード修正cmd起票を要請する | infra | 05-15 | gate_shogun_startup.shのL6学習速度に |
-| cmd_2753 | auto_failure_lesson.shがどこからも呼ばれていない断裂を修正し、gate FAILした忍者タスクから自動的に教訓が生成されるパイプラインを接続する | infra | 05-15 | cmd_complete_gate.shのGATE BLOC |
-| cmd_2754 | ninja_monitorにidle忍者への修行自動配備トリガーを追加し、修行サイクルが家老の手動判断に依存する断裂を解消する | infra | 05-15 | ninja_monitor.shにidle継続+直近gate |
-| cmd_2756 | bulletin_write.shにaction_typeフィールドを追加し、昇格通知が対応されたか追跡可能にする。startup gateで未対応ALERTを表示し、cmd_save.shでactioned_by自動更新する | infra | 05-15 | bulletin action_type/actioned_ |
-| cmd_2755 | gate_fire_logのFAIL→PASS遷移率計測を将軍の/clear間隔依存から解放し、ninja_monitorで定期的に計測・記録する | infra | 05-15 | ninja_monitor.shにgate_fire_log |
-| cmd_2758 | Gate 13.8のFP率閾値超過時にbulletin_write.shで将軍にgate条件緩和cmdの起票を要請し、FP増大による速度低下を防止する | infra | 05-15 | Gate 13.8の高FP率時bulletin緩和要請実装を |
-| cmd_2757 | effectiveness低い教訓の定期棄却をninja_monitorで自動実行し、教訓注入ノイズの単調増加を防止する | infra | 05-15 | ninja_monitorに教訓deprecate候補の日次 |
-| cmd_2760 | CoDD v1.10.0時点の知識体系をv2.18.0に更新する。context/codd.md+セマンティックインデックス+スキルSKILL.md+reference_codd_oshio_articles.mdを最新の記事・GitHub情報で刷新する | infra | 05-15 | CoDD知識体系をv2.18.0へ更新し、context/s |
-| cmd_2761 | 全8PJでcodd init --suggest-lexicons --llm-enhancedを実行しlexiconを設定。codd.yamlをv2.x形式に刷新。新PJ作成時にcodd initが自動実行される仕組みを追加する | infra | 05-15 | 全8PJへCoDD v2系設定とshogun_core le |
-| cmd_2766 | CLEAR済みcmd関連insightとsemantic_index_update由来insightを自動done化し、191件pending永久蓄積を解消する | infra | 05-15 | cmd_complete_gate CLEAR後にcmd関連 |
-| cmd_2768 | harmful閾値に加えuseful率(helpful/参照回数)が低い教訓も自動deprecateし、効果の薄い教訓が永続する穴を解消する | infra | 05-15 | — |
-| cmd_2769 | deploy_task.sh配備後にinbox未配信が5回頻発した根因を特定し、再発防止策を設計する | infra | 05-15 | cmd_2662-2666の未配信疑いは、5件ともinbox |
-| cmd_2762 | 設計書ゼロの主要スクリプト4本(deploy_task.sh/cmd_save.sh/ninja_monitor.sh/inbox_write.sh)にcodd brownfieldを実行し、DAG構築+設計書逆生成でリファクタとcodd fix/verifyの土台を作る | infra | 05-15 | 主要4スクリプトのCoDD brownfield成果物(re |
-| cmd_2776 | セマンティック辞書に未マッピングの5概念カテゴリを追加し30ファイルの辞書到達性を確保。前提崩壊の構造的防止 | infra | 05-15 | セマンティック辞書SSOTに5概念を追加し、semantic |
-| cmd_2777 | cmd_2775偵察で特定した高優先度60関数をcontext/infrastructure.mdにカテゴリ別で追記し、全エージェントが起動時に自動ロードできる受動的知識に昇格させる | infra | 05-15 | context/infrastructure.mdにcmd_ |
-| cmd_2779 | cmd_save.sh BLOCK後のREMINDに教訓記録だけでなく環境埋込み判定を強制追加し、BLOCKのたびにインフラ改善cmdの要否を自動判定させる | infra | 05-15 | cmd_save.shのCLEAR時REMINDに環境埋込み |
-| cmd_2780 | Simple-OCRリポジトリ全体にcodd extract --ai を実行し、6層MECE設計書を逆生成する。OCRエンジン切替実装の土台とする | infra | 05-15 | Simple-OCRでCoDD brownfield ext |
-| cmd_2781 | 設計書(docs/ocr-engine-switching-design.md)のPhase 1-3を実装。OCREngine抽象クラス+Google/Claude/GPTの3エンジンを切替可能にする | infra | 05-15 | OCRエンジン抽象化を追加し、Google/Claude/G |
-| cmd_2782 | Google Vision DOCUMENT_TEXT_DETECTIONのブロック座標情報をClaude Haikuに渡し、お薬手帳の列構造を正確に復元する二段構えパイプラインをSimple-OCRに組み込む | infra | 05-15 | Google DOCUMENT_TEXT_DETECTION |
-| cmd_2784 | force-with-lease/reset/clean等の破壊的コマンド実行前に、lord_conversation.jsonlのinboundに殿の承認発言があるか自動検証するhookを追加し、ハルシネーションに基づく破壊的操作を構造的に防止する | infra | 05-15 | pre-bash-combinedにD010 Guardを追 |
-| cmd_2785 | skills/dream・gate-sync・idle-persistのSKILL.mdが参照scriptより古く、startup gateが3セッション連続WARNしている。scriptの変更内容をSKILL.mdに反映し、gate_skill_script_refs.shのWARNを解消する | infra | 05-15 | skills/dream・gate-sync・idle-pe |
-| cmd_2786 | cmd_save.sh L254のadditionキーワード判定が過去形・受身形(追加された/追加済み等)にもマッチし、gate参照cmdをgate追加cmdと誤判定する。15回累計でBLOCK昇格している偽陽性を修正する | infra | 05-15 | — |
-| cmd_2787 | _build_two_stage_promptがお薬手帳の処方行解釈をハードコードしており、情報の追加(処方日補完)や構造強制(1行まとめ)が発生する。プロンプトを座標ベースのレイアウト忠実復元に限定し、情報量を不変にする | simple-ocr | 05-15 | _build_two_stage_promptを座標ベースの |
-| cmd_2788 | record_lesson_feedback.sh L91の${task_type:-impl}がexact/recon/trainingを全てimplにフォールバックし、deploy_task.shのeffectiveness_score計算でexactタスクの有効率が歪む(有効率30%)。task YAMLからtask_type取得のフォールバックを追加する | infra | 05-15 | record_lesson_feedback.shにtask |
-| cmd_2791 | auto-ops/gc/db等の教訓にwhen/howフィールドが欠落している69件を補完する。when/howがないと教訓注入時のタスク特性マッチングが効かず、注入精度が低下する | infra | 05-15 | — |
-| cmd_2792 | dashboard_auto_section.shのCI取得ロジックがcheck failedと表示するが、gh run list直近5件は全てsuccess。表示と実態の乖離原因を特定する | infra | 05-15 | dashboardのCI check failed表示は、l |
 | cmd_2790 | deploy_task.shが全ACにbinary_checksスタブを注入するため、担当外ACにもbc:noが入りverdictがFAILになる(WA 10回)。task YAMLにac_assigned追加→担当ACのみスタブ生成に限定する | infra | 05-16 | inject_ac_assigned_from_stk()を |
 | cmd_2793 | gate_lesson_health.shのawkがdetailフィールド内のenforcement:テキストを誤抽出しPHANTOM偽陽性4件を生んでいる。修正後、同スクリプトを参照するSKILL.md 3件を最新動作に追従更新し、3セッション連続BLOCK(gate_skill_script_refs.sh)を解消する | infra | 05-16 | gate_lesson_health.shのPHANTOM抽 |
 | cmd_2794 | deploy_task.sh L3705のtag fallbackパスがeffectiveness除外(L3740)より前に実行されるため、useful率0%の教訓10件が除外されずに注入され続けている。fallbackパスにもeffectiveness除外を適用し、忍者CTX約295tok/タスク削減する | infra | 05-16 | 停止指示によりFAIL報告。cmd前提のfallback e |
@@ -545,3 +506,5 @@
 | cmd_3379 | startup gateのSKILL.md script参照WARNが3セッション連続BLOCK(2026-06-14)。note_draft.sh(shellcheck SC1036修正 82fda53)とcmd_complete_gate.sh(reflux競合修正 23edb56)がSKILL.mdより新しい。5件のSKILL.mdを現行スクリプト動作と照合し追随更新する | infra | 06-14 | SKILL.md 5件を現行スクリプト動作と照合し追随更新。 |
 | cmd_3381 | 殿指示(2026-06-14)『偽陽性はバグだ』。cmd_save.sh L723 check_deferral_language_warnが品質向上文脈の語(N回連続startup BLOCK解消で起動品質向上)を先送りと誤判定。grepパターンに文脈除外を追加する | infra | 06-14 | cmd_save.sh L723 check_deferra |
 | cmd_3380 | 殿指示(2026-06-14)『偽陽性はバグだ。バグは修正しよう』。SG-PRE25がcommand欄の実行参照(bash scripts/X.sh等)を変更対象ファイルと誤判定し、毎セッション5件の家老waive作業が発生(10分/セッション負の複利)。軍師提案(blt_20260614_162444)に基づきcommand欄のファイル参照を自動分類するヒューリスティックを追加する | infra | 06-14 | SG-PRE25のcommand欄偽陽性修正完了。exec_ |
+| cmd_3383 | 殿指示(2026-06-15)。変わり身BBの名前TrendReversalFilterは本質(トレンドフォロー+ミーンリバージョンのペア戦略)と不一致。FE+BE両方でBB名を本質と一致させるために、影響範囲と依存関係を徹底調査する偵察cmd | dm-signal | 06-15 | TrendReversalFilterの全参照箇所を調査完了 |
+| cmd_3384 | 殿裁定(2026-06-15)。既存四つ目(MultiViewMomentumFilter)はunion(set)で4視点の投票数情報が消失する設計バグ。新BBを実装し、4視点の投票数に比例したウェイトをcontext.final_weightsに書込むことでengine既存伝搬経路(L179)を活用する | dm-signal | 06-15 | WeightedMultiViewMomentumFilte |
