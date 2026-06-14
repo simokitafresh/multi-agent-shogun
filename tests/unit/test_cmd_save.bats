@@ -301,6 +301,28 @@ _setup_cmd_block() {
     [[ "$output" != *"先送り表現を検出"* ]]
 }
 
+@test "cmd_3381 AC3: deferral language does not warn for quality improvement startup context" {
+    CMD_BLOCK_NC='    title: "起動品質向上cmd"
+    purpose: "N回連続startup BLOCKの解消で次セッションの起動品質が向上する"'
+    export CMD_BLOCK_NC
+
+    run bash -c 'check_deferral_language_warn "$CMD_BLOCK_NC" 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"先送り表現を検出"* ]]
+}
+
+@test "cmd_3381 AC2: genuine deferral without quality improvement words still warns" {
+    CMD_BLOCK_NC='    title: "先送りcmd"
+    command: "次セッションで後回しにする"'
+    export CMD_BLOCK_NC
+
+    run bash -c 'check_deferral_language_warn "$CMD_BLOCK_NC" 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"先送り表現を検出"* ]]
+}
+
 # --- Check 6: GP重複検出 ---
 
 @test "Check6: GP番号一致でWARN出力" {
