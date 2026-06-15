@@ -8184,3 +8184,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - yaml_field_set.shでlessons.yamlのwhen/howフィールドを修正した後にlesson_write.sh --retagを実行するとlessons.md→lessons.yaml再同期が走り変更が消える。whenフィールドはlessons.md(SSOT)を直接修正してから同期するのが正しい順序
+
+### L809: review_quality集計はgate_result=CLEARでのverdict上書きが必要
+- **日付**: 2026-06-15
+- **出典**: cmd_karo_hotfix_review_quality_warn_gate_result_20260615
+- **記録者**: kotaro
+- **tags**: [infra,gate,review,gate]
+- **target_files**: [scripts/gates/gate_karo_startup.sh]
+- **origin**: [[cmd_karo_hotfix_review_quality_warn_gate_result_20260615]]
+- **when**: 未設定
+- **how**: 未設定
+- gunshi FAIL + 家老waive → GATE CLEARのパターン(cmd_3376等)でverdictがFAILのまま残るため、gate_result=CLEAR/PASSのエントリはWARN対象から除外する必要がある。flush_entry()でgr[]に保存し、END blockで上書きする3点セット実装

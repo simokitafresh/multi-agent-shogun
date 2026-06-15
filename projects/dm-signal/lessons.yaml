@@ -361,6 +361,9 @@ lessons:
   target_files:
   - 偵察のみ（コード変更なし。運用YAML task/reportのみ更新）
   origin: '[[cmd_karo_recon_p_average_freshness_api_failure_202606041948]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L722
   title: pipeline_config同期偵察はトップレベル差分とブロック差分を別々に検証する
   summary: PortfolioEditorはトップレベルPortfolioフィールドだけを更新し、BE saveはmodel_dumpをそのままconfig保存する。pip
@@ -766,6 +769,9 @@ lessons:
   - backend/app/
   - queue/reports/hayate_report_cmd_2444.yaml
   origin: '[[cmd_2444]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L696
   title: FoF登録ではPortfolio直下top_nを構成数に使うな
   summary: Portfolio直下top_nはPydanticで1..2制約があるUI/標準PF由来フィールド。FoF構成数やGS subset_sizeを入れるとtop_
@@ -1149,6 +1155,9 @@ lessons:
   - scripts/oneshot/cmd_2391_l1_robustness_run.py
   - outputs/robustness/20260429/L1/
   origin: '[[cmd_2391]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L673
   title: cmd_2366 selector再実行時はchampion_list自動追記を制御せよ
   summary: cmd_2366_l1_champion_select.pyはデフォルトでoutputs/robustness/champion_list.yamlへappen
@@ -2638,6 +2647,9 @@ lessons:
   target_files:
   - queue/tasks/kotaro.yaml
   origin: '[[cmd_1786]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L573
   title: FoF月次キャッシュをdictに変えるときも lookup は exact get でなく bisect helper に統一せよ
   summary: 2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache
@@ -2984,6 +2996,9 @@ lessons:
   how: maximum_drawdown/tracking_errorなど丸め差が出るobjective単位でfallbackを用意し、raw parityとfallback後parityを両方記録する
   origin: '[[cmd_karo_batch_R7]]'
   retired: true
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L548
   title: bulk metrics RFはPFごとの月次軸で解決せよ
   summary: DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。
@@ -3195,6 +3210,9 @@ lessons:
   - outputs/analysis/standard_pf_preprocessing/gerber_threshold_study_results.yaml
   - scripts/analysis/standard_pf_preprocessing/gerber_threshold_study.py
   origin: '[[cmd_1628]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L531
   title: build_signal_cache_valueのholding_signal or signalフォールバック注意
   summary: signal_cacheの値はbuild_signal_cache_valueで変換済み(holding_signal or signal)。DB
@@ -3817,6 +3835,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: selection block種類が変わってもverify_fof_parity_batch.pyの検証フローは安定動作
   origin: '[[cmd_1345]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L485
   title: FoF初月hs_cross不一致は全FoF共通パターン
   summary: verify_fof_parity_batch.pyのhs_cross_checkで全FoFの最初月がFAILする。monthly_returns.holdin
@@ -6643,6 +6664,9 @@ lessons:
   when: CDPでproduction viewer pagesのreload時間やready状態を計測する時
   how: '`h1`など固定selectorではなく、認証壁・封鎖ページ・ページ固有DOMを確認してviewer実DOMに対応したready判定を設定する'
   origin: '[[cmd_852]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L273
   title: live API完全一致監査はcurrent partial monthを凍結or除外しないと日次更新ノイズで誤FAIL化する
   summary: cmd_856で/api/signalsは91PF全件一致だが、/api/monthly-returnsと/api/performanceは15/15PFで不一
