@@ -423,7 +423,7 @@ echo "[note_draft] Logged to skill_execution_log: ${RESULT}"
 exit "$EXIT_CODE"
 # --- 自動防止ステップ (shellcheck対策: bashコメント化) ---
 ### 自動防止ステップ
-- <!-- skill-auto-improve:f39a5e08cea6 --> 自動防止: gate=none のTop FAIL理由「Python script exited with code 1」(count=3, last=2026-06-09T12:18:28+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
-- <!-- skill-auto-improve:5fbd3c084bc2 --> 自動防止: gate=none のTop FAIL理由「Python exit 1: File "<stdin>", line 143, in login_if_needed File "<stdin>", line 105, in handle_recaptcha_if_present RuntimeError: reCAPTCHA challenge was not so」(count=1, last=2026-06-11T21:47:20+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
+# <!-- skill-auto-improve:f39a5e08cea6 --> 自動防止: gate=none のTop FAIL理由「Python script exited with code 1」(count=3, last=2026-06-09T12:18:28+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
+# <!-- skill-auto-improve:5fbd3c084bc2 --> 自動防止: gate=none のTop FAIL理由「Python exit 1: File "<stdin>", line 143, in login_if_needed File "<stdin>", line 105, in handle_recaptcha_if_present RuntimeError: reCAPTCHA challenge was not so」(count=1, last=2026-06-11T21:47:20+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
 # skill-auto-improve:f39a5e08cea6 自動防止: gate=none Top FAIL「Python script exited with code 1」count=3 last=2026-06-09. gate_report_format.sh事前実行+FIXヒント修正
 # skill-auto-improve:5fbd3c084bc2 自動防止: gate=none Top FAIL「Python exit 1 login_if_needed handle_recaptcha_if_present RuntimeError」count=1 last=2026-06-11. gate_report_format.sh事前実行+FIXヒント修正

@@ -241,7 +241,7 @@ lessons:
   origin: '[[cmd_karo_hotfix_skill_script_refs_20260612]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-14'
+  last_referenced: '2026-06-15'
 - id: L794
   title: 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する
   summary: 全ログではnote-draft 4/13=31%だったが、Gate20が読むtail 5000行では1/3=33%だった。FAIL率修正では対象gateの入力窓
@@ -3232,6 +3232,9 @@ lessons:
   - skills/karo-direct/SKILL.md
   - tests/unit/test_deploy_task.bats
   origin: '[[cmd_2691]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L601
   title: drift検出cmdは個別パスをtask YAMLに注入せよ
   summary: semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690
@@ -4689,6 +4692,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: テストでexport PATH=$MOCK_BIN:$PATHを設定してもbash -lcサブシェルで無効化される
   origin: '[[cmd_karo_ci_fix_571]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L496
   title: 'gate_report_format.sh は/mnt/c実env では148ms(参照値71msの2倍超): /tmp計測は実運用を反映しない'
   summary: cmd_2038の計測は/tmpディレクトリで行われており実測71ms。しかし実運用ディレクトリ/mnt/c/tools/multi-agent-shogunで
@@ -6665,7 +6671,7 @@ lessons:
   origin: '[[cmd_training_comprehensive_002]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-14'
+  last_referenced: '2026-06-15'
 - id: L323
   title: プロセス数検証は実際の起動数を追跡せよ。外部計算の期待値はスキップ条件を反映しない
   summary: restart_watchers.shでexpected=1+全エージェント数としていたが、ループ内でpane未解決エージェントをスキップするため、期待値と実際
@@ -7457,6 +7463,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-20'
   origin: '[[cmd_1127]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L259
   title: STALL偽陽性の38%はStale YAML Ghost(task_id空)が原因
   summary: AUTO-CLEARはtmux変数のみリセットしYAMLファイルをクリーンアップしない。check_stall()がstatus残留を拾い偽陽性を発火。task
@@ -8359,6 +8368,9 @@ lessons:
   - queue/tasks/hayate.yaml
   - queue/reports/hayate_report_cmd_675.yaml
   origin: '[[cmd_675]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L184
   title: set -u配下で任意引数を追加するbash関数は既存呼び出し互換を守れ
   summary: '`download_attachment_image()` に第2引数を追加した際、旧テストが1引数呼び出しのままで `local attachment_nam'
@@ -8427,6 +8439,9 @@ lessons:
   when: 報告YAMLやレビュー結果を作成・検証する時
   how: '2026-03-08'
   origin: '[[cmd_648]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L178
   title: Claude Codeドキュメントのホスト移行（docs.anthropic.com→code.claude.com）
   summary: Agent Teamsの公式ドキュメントURLが docs.anthropic.com/en/docs/claude-code/ から code.claude.

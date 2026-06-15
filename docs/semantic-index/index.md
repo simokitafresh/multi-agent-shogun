@@ -2408,6 +2408,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-13T20:36:58+09:00 be35y9x3e toolu_01J9oLibzyRqTF3Q5fsn1Uzw /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3d9b6263-9f10-4af5-98e9-0576dc |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-14T01:03:53+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T09:54:01+09:00 CDPはスキルを使ったか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-15T12:57:06+09:00 続けて |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -3693,7 +3694,7 @@ codd:
 |------|---|
 | id | project_clinic_expense_tracker |
 | label | Clinic Expense Tracker |
-| aliases | clinic-expense-tracker, Clinic Expense Tracker, clinic-expense-tracker project, Clinic Expense Tracker PJ, cliniq-expander, クリニック経費, 経費証票管理, 若友会経費, 佐瀬会計提出, マネーフォワード, MoneyForward, みずほ明細, 証憑, 証票, Gmail証票, 領収書, 領収書整理, 確定申告, 経費SQLite, 経費データ投入, クリニック経営, clinic expens, clinic expense, 経費元マスタ, monthly_status, 現況マトリクス, 経費・領収書ステータス管理, SSOT, Render DB, 設定画面, settings画面, expense_sources CRUD, download-db, upload-db, 取得済み, 未取得, 自動取得, 手動取得, collection_method, 4色分類, 取得ルート, 殿裁定 取得済み 該当証票PDFがDriveに保存されていること |
+| aliases | clinic-expense-tracker, Clinic Expense Tracker, clinic-expense-tracker project, Clinic Expense Tracker PJ, cliniq-expander, クリニック経費, 経費証票管理, 若友会経費, 佐瀬会計提出, マネーフォワード, MoneyForward, みずほ明細, 証憑, 証票, Gmail証票, 領収書, 領収書整理, 確定申告, 経費SQLite, 経費データ投入, クリニック経営, clinic expens, clinic expense, 経費元マスタ, monthly_status, 現況マトリクス, 経費・領収書ステータス管理, SSOT, Render DB, 設定画面, settings画面, expense_sources CRUD, download-db, upload-db, 取得済み, 未取得, 自動取得, 手動取得, collection_method, 4色分類, 取得ルート, 殿裁定 取得済み 該当証票PDFがDriveに保存されていること, 殿裁定 |
 | related_concepts | external_project_registry |
 
 | 種別 | パス/参照 |

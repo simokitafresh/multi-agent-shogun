@@ -99,6 +99,8 @@ lessons:
     (37)削除系/ブランチ作業cmdのACにコミット構成(基点ブランチの一致確認・分割単位・メッセージ形式・整形の別コミット分離)を明示せよ。実施項目の列挙だけでは忍者が古い基点に1コミットで束ね整形も混入する(cmd_3304で3逸脱実証: 基点5コミット遅れ・3コミット指定の1本化・Biome修正混入)
     (38)起票は雛形起点(cmd_skeleton.sh)が正(LS051吸収2026-06-12)。必須フィールド・形式規約が事後BLOCKでしか到達しない事後規律型は記憶からの作文に頼るほどBLOCK往復する。対処5点実装済み(2026-06-10): 雛形の形式環境保証+FILL_THIS残存BLOCK(Check1.05)+PASS出力に次ステップ提示+cmd_delegate数字ID正規化+Check17日付リテラル除外。grep検証は最終版テキストに対して実行せよ(編集→検証の順序逆転がcmd_3316で再BLOCKを生んだ)
     (39)ブランチ作業cmdは基点ブランチ確認をbinary_checkに入れよ(LS062吸収2026-06-12)。cmd_3331でhayateが『mainからブランチを切り』のcommandステップを飛ばしローカルmainへ直接2コミット((37)の再発形=command欄の指示では忍者の逸脱を検出できない)。binary_checkに『作業ブランチ名がmain以外であることを確認したか』を入れて報告ゲートで二値検証させよ。将軍のGATE CLEAR検分(git branch --contains)が最後の防衛線。push前検出→refactor/wp3-ac2-m2退避+git branch -f非破壊復元で実害なし
+    (40)外部指示書(directive等)由来のcmd起票時、外部語彙をそのまま転記するとcmd_saveトリガー語と衝突しBLOCK。起票前に内部語彙へ翻訳: 登録→記入/記録、push→commitまで、パリティ→数値一致検証(LS059吸収2026-06-15。cmd_3294で4回BLOCK実証)
+    (41)cmd追記のEditアンカーは前cmdブロックの最終行(delegated_at)にせよ。origin行アンカーだとdelegated_atが新cmdブロック末尾に取り残され「委任済み」誤判定BLOCK(LS060吸収2026-06-15。cmd_3303で実証)
   source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036, LS034, LS062]
   source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394, cmd_2395]
   created_at: '2026-04-25'
@@ -183,7 +185,9 @@ lessons:
     (21)却下裁定も現物確認必須。軍師のスキル統合提案をSKILL.mdのdescription読みだけで「完全に別物」と却下→殿の指摘でスクリプト実体(claude_version_switch.sh 442行)を読むと機構重複(respawn_single_agent=pane種別不問のlaunch_cmd書換え+respawn)が実在した(2026-06-13)。提案の採否いずれの裁定でも、提案者の主張が依拠し得る現物(スクリプト実体)まで降りてから判定せよ。descriptionは宣言であり実装ではない
     (22)自分の試行錯誤は隠れインフラバグのサイン(利他洗脳監査・deepdive Phase8)。WARN/誤発火/リトライ等の不便を「能力不足」「仕方ない」で片付けず、一次情報で因果をたどり構造バグとして環境に埋め込め。殿指示2026-06-13「スムーズにできず試行錯誤した際にはインフラバグが隠れている」。実例: codex配達検証unverified WARN(cmd_3354)+RECOVERYマーカー誤発火(cmd_3355)を将軍の試行錯誤起点に特定・根治。★仮説は一次データで検証してからcmd化せよ: cmd_3354で「家老/軍師宛が失敗」と仮説したがログ集計で分布は忍者宛19件と判明し仮説を修正、確認せずcmd化していたら誤修正だった(洗脳#2回避の実例)
     (23)gate/script修正cmdの起票前に対象gate/scriptを実行し現在の出力を確認せよ(LS063吸収2026-06-13)。grepでコード断片を見て「未実装」と判断→実行すれば1分で「既に動作中」と判明(cmd_3358/3359の2連続車輪で実証)。grepは断片を見る、実行は全体を見る。出力をq5に含めよ。cmd_3360で起票前確認11問目+cmd_save.sh q5チェック追加済み(L3/L4)
-  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047, LS053, LS063]
+    (24)レビュー依頼ブランチはpush前にgit log origin/main..branchで全コミット列を報告書と照合せよ。show -w単体検分のみで2コミットと思い込み→実際は3コミット(別cmd混在)。報告書と現物の乖離を将軍が作った(LS062吸収2026-06-15。cmd_3334で実証)
+    (25)dm-signal指標はα6指標(CAGR・NHF・MaxDD・MRU・Calmar・Avg UWP)。シャープレシオ使用禁止(殿裁定2026-05-10: 上方ボラを罰するため)。cmd起票前にdm-signalの指標体系を三層記憶で確認せよ(LS063吸収2026-06-15。cmd_3375で洗脳#2実証)
+  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047, LS053, LS063, LS062_commit, LS063_alpha]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)+q11_existing_alternative Guard一覧自動表示(cmd_2863)+post-bash-combined.sh cmd_publish hook(cmd_2898)'
@@ -274,7 +278,8 @@ lessons:
     precompute rollback巻き添え→savepoint(begin_nested)で範囲限定(cmd_2254)。
     本番確認は3レイヤー貫通: DB(データ存在)+API(BEが返すか)+FE(ユーザーに届くか)(cmd_2255)。
     (5)ネストFoFのif/elif排他バグ(cmd_3110): preload→holding_signal_rawに先入り→signal_cache(elif)到達不能→計算後キャッシュ未参照。修正: elif→if+seen_dates重複排除
-  source_ids: [LS010, LS016, LS063]
+    (6)シンボル(enum/関数/クラス)を削除するcmdでは、本番recalculate実行前に削除シンボル名でbackend/全域を横断grepし0件確認をACに含めよ。recalculate_fast.pyに残参照がありAttributeErrorで本番中断24分(LS058吸収2026-06-15。cmd_3293で実証)
+  source_ids: [LS010, LS016, LS063, LS058]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'checklist-shin-v2-registration.md+checklist-alm-registration.md+PI-007+PI-025(begin_nested)+health_check.py'
@@ -344,7 +349,7 @@ lessons:
     (7)AC内§番号(§5.2等)がcheck_gunshi_reference_numeric_relaxationに数値として誤検出。§はcommand欄に移動せよ。other_draft_existsとの複合BLOCKあり(cmd_2351)
     (8)AC_TEXTがdescription:行のみgrep→AC1:"..."形式はP1-P5検出不能。ACをdescription:形式で書けば通る。根本修正: AC_TEXT抽出をacceptance_criteria配下全行に拡張(cmd_2392で発見)
     (9)gate修正cmdのACではトリガーフレーズを直接引用せず抽象表現に変換する。cmd全文grepの既知FPパターン。
-  source_ids: [LS023, LS034, LS035]
+  source_ids: [LS023, LS034, LS035, LS059, LS060]
   source_cmds_v3: [cmd_2314, cmd_2315, cmd_2318, cmd_2319, cmd_2330, cmd_2331, cmd_2332, cmd_2343, cmd_2351, cmd_2355, cmd_2358, cmd_2366, cmd_2367, cmd_2368, cmd_2369, cmd_2374, cmd_2377, cmd_2379, cmd_2381, cmd_2382, cmd_2383, cmd_2384, cmd_2385, cmd_2392]
   created_at: '2026-04-25'
   automated: true
@@ -557,30 +562,9 @@ lessons:
 # LS055: superseded by LS-A05 (WARN残し再実行禁止=遡及学習/累計昇格。2026-06-11統合)
 # LS056: superseded by LS-A04(35) (ACスラッシュ区切り禁止=(27)再発形。2026-06-11統合)
 # LS057: superseded by LS-A09(19) (git fetch必須=現物確認必須のリモート版。2026-06-11統合)
-- id: 'LS058'
-  title: '本番recalculate前に削除シンボルの残参照横断grepを必須化'
-  origin: '[[WP-2ブロック削除]] -> [[recalculate_fast残参照見落とし]] -> [[id=149本番中断24分]]'
-  detail: 'cmd_3293(WP-2)でBlockType削除後、recalculate_fast.pyに残参照(RELATIVE_MOMENTUM_FILTER/P_BAR_SELECTION)があり初回本番再計算がAttributeErrorで中断(id=149)。再計算未完了状態が約24分継続した。シンボル(enum/関数/クラス)を削除するcmdでは、本番realculate実行前に削除シンボル名でbackend/全域を横断grepし0件確認をACに含めよ。調査チームと合意済み(質問状3 Q5-3)'
-  source_cmd: 'cmd_3293'
-  created_at: '2026-06-11'
-  automated: true
-  enforcement: '今後の削除系cmd起票時にAC必須要素として注入'
-- id: 'LS059'
-  title: '外部指示書由来のcmdは起票前にトリガー語を内部語彙へ翻訳せよ'
-  origin: '[[directive準拠cmd_3294]] -> [[外部語彙の無翻訳転記]] -> [[cmd_save 4回BLOCK]]'
-  detail: 'cmd_3294(調査チームdirective準拠)起票時、directiveの手順名『教訓登録』『push』『パリティ』をそのまま転記したためcmd_saveの3チェック(本番.*登録パターン・ac_contains_push・phase_mixing)が発火し4回BLOCK。外部文書の語彙はゲートの判定語彙と衝突する。起票前に置換せよ: 登録→記入/記録、push→commitまで(以降は家老)、パリティ→数値一致検証、確認・デプロイ語はACから分離'
-  source_cmd: 'cmd_3294'
-  created_at: '2026-06-11'
-  automated: true
-  enforcement: 'cmd_save.shの各チェック自体が強制装置(本教訓は転記時の翻訳規約)'
-- id: 'LS060'
-  title: 'cmd追記のEditアンカーは前cmdブロックの最終行(delegated_at)にせよ'
-  origin: '[[cmd_3303起票]] -> [[Editアンカーをorigin行に選択]] -> [[delegated_at取り残しで委任済み誤判定BLOCK]]'
-  detail: 'cmd_3303起票時、cmd_3302のorigin行をアンカーに新cmdを挿入したため、cmd_publishがorigin直後に後置していたdelegated_at行が新cmd_3303ブロックの末尾に取り残され、cmd_save Check 1.5が『既に委任済み』と誤判定しBLOCK。cmd_publish.shはdelegated_atをブロック末尾に追記するため、新cmd追記のEditアンカーは必ず前cmdの最終行(delegated_at行)にする。修正はdelegated_at行を正しいブロックへ戻すEdit 2回で完了'
-  source_cmd: 'cmd_3303'
-  created_at: '2026-06-12'
-  automated: true
-  enforcement: 'cmd_save.sh Check 1.5(delegated_at判定)自体が検出装置(本教訓は追記時のアンカー規約)'
+# LS058: superseded by LS-A16(6) (削除シンボル残参照grep=本番パリティ。2026-06-15統合)
+# LS059: superseded by LS-A04(40) (外部指示書トリガー語翻訳=cmdテンプレートルール。2026-06-15統合)
+# LS060: superseded by LS-A04(41) (Editアンカー規約=cmdテンプレートルール。2026-06-15統合)
 - id: 'LS061'
   title: '忍者作業中の共有作業ツリーでブランチを切り替えるな'
   origin: '[[cmd_3328]]'
@@ -591,20 +575,6 @@ lessons:
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=忍者作業中の共有作業ツリー'
 # LS062: superseded by LS-A04(39) (ブランチ基点のbinary_check必須化=テンプレートルール(37)の拡張形。2026-06-12統合)
 # LS063: superseded by LS-A02(7) (裁可申請も推薦先行=殿との対話原則。gstack §2.3出典。2026-06-12統合)
-- id: 'LS062'
-  title: 'レビュー依頼ブランチはpush前に全コミット列を報告書と照合せよ'
-  origin: '[[cmd_3334]]'
-  detail: 'cmd_3334第7報で『2コミット構成』と報告したが、実際のレビューブランチは3コミット(59148dea=cmd_3335が混在)だった。原因2層: (1)実装忍者が共有作業ツリーのチェックアウト中ブランチ(レビュー対象)へ別cmdの成果をcommitした=LS061の変形(branch切替え禁止は守られたが、チェックアウト中ブランチへの別任務commitが新パターン) (2)将軍がgit push前にgit log origin/main..branchで全コミット列を検分せず、show -w単体検分のみで2コミットと思い込んだ。調査チーム検証で無害(純追加315行)と確認されマージ承認されたが、報告書と現物の乖離を将軍が作った。対処: (a)レビュー依頼済みブランチへの追加コミット禁止。必要時は報告書改訂+再依頼(調査チーム裁定2026-06-12) (b)将軍はブランチpush前と報告書記載前にgit log origin/main..branchの全コミット列を照合する (c)別cmdの忍者を共有ツリーで作業させる場合、家老はチェックアウト中ブランチを配備時に確認する'
-  source_cmd: 'cmd_3334'
-  created_at: '2026-06-12'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=全コミット列'
+# LS062: superseded by LS-A09(24) (コミット列照合=現物確認パターン。2026-06-15統合)
 # LS063: superseded by LS-A09(23) (gate実行確認=現物確認の具体パターン。2026-06-13統合。cmd_3360でL3/L4埋込み済み)
-- id: 'LS063'
-  title: 'dm-signal指標はα6指標(CAGR・NHF・MaxDD・MRU・Calmar・Avg UWP)。シャープレシオ使用禁止(殿裁定2026-05-10: 上方ボラを罰するため)'
-  origin: '[[cmd_3375]]'
-  detail: 'cmd_3375起票時にシャープレシオをACに含めた。三層記憶にα6指標の定義と殿裁定(Sharpe→Sortino変更)が記録済みだったが確認せずにシャープを書いた=洗脳#2(検証スキップ)。cmd起票前にdm-signalの指標体系を三層記憶で確認すべきだった'
-  source_cmd: 'cmd_3375'
-  created_at: '2026-06-14'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=alpha'
+# LS063: superseded by LS-A09(25) (α6指標=三層記憶確認→現物確認パターン。2026-06-15統合)

@@ -2261,6 +2261,9 @@ lessons:
   - outputs/analysis/cmd_1845_three_layer_comparison.md
   - scripts/oneshot/cmd_1845_three_layer_metrics.py
   origin: '[[cmd_1845]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L601
   title: cmd_1840 maximum_drawdown目的は最悪値選出(方向反転バグ疑い)
   summary: cmd_1840 validation.yaml fixed_champions.maximum_drawdownのscoreが全忍法で-0.57〜-0.66と
@@ -3650,6 +3653,9 @@ lessons:
   - outputs/analysis/nested_fof/r8_absmom_performance.yaml
   - outputs/analysis/nested_fof/r8_absmom_returns.csv
   origin: '[[cmd_1413]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L496
   title: Stock Data API economic endpoint has 1000 record limit
   summary: Stock Data API /v1/economic/{symbol} returns max 1000 records per request.
@@ -5976,7 +5982,7 @@ lessons:
   origin: '[[cmd_1002]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-14'
+  last_referenced: '2026-06-15'
 - id: L323
   title: rolling p̄ BTでは no-selection warm-up を別指標で明示せよ
   summary: n_splits=5 の rolling p̄ 選出は月次returnsを5分割し各chunk最低12期間を要するため、live selection開始前に長い
@@ -6794,6 +6800,9 @@ lessons:
   how: API が years/months で返却窓を絞っていても、下流の precomputed table query や fallback Price
     query に境界を渡さないと単一SQLが最大ボトルネック化する
   origin: '[[cmd_829]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L259
   title: try/exceptフォールバックパターンでmock DB互換性とN+1最適化を両立
   summary: N+1最適化でbulk preloadを導入する際、既存テストがmock DBを使用していると bulk preloadの内部クエリ(load_business
@@ -7697,6 +7706,9 @@ lessons:
   when: 今回のUI改修では列の追加・削除・mobile可視制御・sort定義をCOLUMNS/ColumnKey/getSortValueで一貫管理したことで、差分漏れなく一括更新できた時
   how: 今回のUI改修では列の追加・削除・mobile可視制御・sort定義をCOLUMNS/ColumnKey/getSortValueで一貫管理したことで、差分漏れなく一括更新できた
   origin: '[[cmd_557]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L184
   title: Docsの新指標説明は判定条件をテーブル化すると実装定義との突合が速い
   summary: IF 6ラベルの条件を1行1条件で表にしたことで、backend classify_labelの閾値(0.70/0.80/0.85)との照合が容易になり、レビュ
@@ -7766,6 +7778,9 @@ lessons:
   when: 新機能のサービス層でscipy等の外部ライブラリを使用する場合、パイロット版（ローカル環境）では仮想環境にpip installされていても、本番デプロイ用のrequirements.txtに追記し忘れることがある時
   how: 新機能のサービス層でscipy等の外部ライブラリを使用する場合、パイロット版（ローカル環境）では仮想環境にpip installされていても、本番デプロイ用のrequirements.txtに追記し忘れることがある
   origin: '[[cmd_554]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L178
   title: 本番404調査はopenapi実測で『ルート未登録』を先に確定すると切り分けが最短になる
   summary: Render本番のAPI障害では、`/openapi.json`で対象path有無を最初に確認すると、認証・CORS・DB要因より先に『デプロイドリフト/未反映
