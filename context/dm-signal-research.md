@@ -104,6 +104,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 既存忍法比較: 四つ目は性能レンジ内(激攻CAGR 62.41%は変わり身62.25%同水準)。突出優位なし。
 - L413: DM7+ XLU1銘柄ではtop_n軸が冗長(top_n=1とtop_n=2が完全同一リターン)。48→24体に圧縮可能（cmd_1078）
 - L493: 四つ目(MultiView)忍法のnumpy再実装で4窓union+タイミングオフセットに不一致リスク（cmd_1410）
+- **新四つ目(WeightedMultiView)GS完了(cmd_3386→3388)**: 45150パターン・42秒・147/147月次突合一致。根因教訓: universe yamlのsource_type=local_sqliteは本番PostgreSQLと入力が異なる→UUID完備でもDB経路に切替必須。open-to-open比較が正道(PI-008)。→ [[cmd_3388_根因特定+0不一致達成]] → `docs/research/cmd_3388_weighted_yotsume_full.md`
 - CoDD設計書: [[cmd-284]](四つ目GSスクリプト), [[champion-selector]](GS champion選出ロジック) → `docs/research/cmd_1991_codd_extract/modules/`
 
 ---
