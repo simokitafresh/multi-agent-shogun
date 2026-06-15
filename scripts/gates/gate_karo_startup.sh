@@ -566,12 +566,13 @@ function flush_entry() {
         n++
         v[n] = verdict
         cid[n] = current_cmd_id
+        gr[n] = gate_result
         if (review_type ~ /^(draft|report)$/) {
             old_n++
             old_v[old_n] = verdict
         }
     }
-    review_type = ""; verdict = ""; current_cmd_id = ""
+    review_type = ""; verdict = ""; current_cmd_id = ""; gate_result = ""
 }
 /^[[:space:]]*-[[:space:]]*cmd_id:/ {
     flush_entry()
@@ -583,6 +584,9 @@ function flush_entry() {
 }
 /^  verdict:/ {
     s=$0; sub(/^  verdict:[[:space:]]*/, "", s); verdict=trim(s); next
+}
+/^  gate_result:/ {
+    s=$0; sub(/^  gate_result:[[:space:]]*/, "", s); gate_result=trim(s); next
 }
 END {
     flush_entry()
@@ -607,6 +611,7 @@ END {
         i = last_idx[key]
         new_total++
         ok = (v[i] ~ /^(APPROVE|LGTM|PASS|CLEAR|VERIFIED|VERIFIED_FACTS|CONDITIONAL_PASS)$/)
+        if (!ok && gr[i] ~ /^(CLEAR|PASS)$/) ok = 1
         if (!ok) new_warn++
     }
     if (new_total == 0) {
