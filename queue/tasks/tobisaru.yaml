@@ -1,11 +1,15 @@
 task:
-  readonly_ref:
-  - path: 'scripts/cmd_save.sh'
-    reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3381_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3381 (deployed 2026-06-14T16:47:52). Read from the beginning.
-  ac_version: ff1a6f20
+  acceptance_criteria:
+    AC1:
+      binary_checks:
+      - check: shellcheck -x -S error scripts/note_draft.sh がexit 0か
+        result: ''
+      description: 'scripts/note_draft.sh L426周辺のskill-auto-improveコメント内の括弧をshellcheck SC1036エラーが出ない形式に修正する（例: 括弧をエスケープ、または該当行をbashコメント#形式に変換）'
+    AC2:
+      binary_checks:
+      - check: 関連テストが全PASSか
+        result: ''
+      description: 既存テストにリグレッションなし。bash scripts/test_select.sh note_draft でPASS
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -20,64 +24,49 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3381
+  parent_cmd: cmd_karo_ci_fix_note_draft_sc1036_20260615
   project: infra
-  purpose: 殿指示(2026-06-14)『偽陽性はバグだ』。cmd_save.sh L723 check_deferral_language_warnが品質向上文脈の語(N回連続startup BLOCK解消で起動品質向上)を先送りと誤判定。grepパターンに文脈除外を追加する
-  scout_exempt: true
-  status: idle
+  purpose: 'CI RED修正 — scripts/note_draft.sh L426のskill-auto-improveコメント内の括弧がshellcheck SC1036エラー。CIログ: In scripts/note_draft.sh line 426: SC1036 (error): ''('' is invalid here。コメント内の括弧をエスケープまたはコメント形式を修正してshellcheck PASSにする。'
+  status: assigned
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh
-  target_path_warning: '⚠ target_pathが存在しない: /mnt/c/tools/multi-agent-shogun/scripts/bulletin_action.sh'
-  task_id: cmd_3381_full
-  task_type: full
+  target_path: scripts/note_draft.sh
+  task_id: cmd_karo_ci_fix_note_draft_sc1036_20260615_normal
+  task_type: ci_fix
   related_lessons:
-  - id: 'L436'
-    summary: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル `projec'
-    detail: 'archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル `projec'
-  - id: 'L577'
-    summary: 'cmd_quality_log.shはgate_resultをCLEAR/FAIL/BLOCK/WARNに限定しており、cmd_save PASSをそのまま共通'
-    detail: 'cmd_quality_log.shはgate_resultをCLEAR/FAIL/BLOCK/WARNに限定しており、cmd_save PASSをそのまま共通'
-  - id: 'L522'
-    summary: 'cmd_save.shのassumptionsパーサーが行頭非空白のみを終了条件にしていたため、インデント済みCMD_BLOCKでは兄弟キー(environme'
-    detail: 'cmd_save.shのassumptionsパーサーが行頭非空白のみを終了条件にしていたため、インデント済みCMD_BLOCKでは兄弟キー(environme'
-  - id: 'L580'
-    summary: '新しいgate/hookを作るcmdでWARN表示だけをACにすると、検知は増えるが運用は変わらない。cmd設計段階でBLOCK/exit 1/強制/自動実行/'
-    detail: '新しいgate/hookを作るcmdでWARN表示だけをACにすると、検知は増えるが運用は変わらない。cmd設計段階でBLOCK/exit 1/強制/自動実行/'
-  - id: 'L758'
-    summary: '( ... ) 200>lockfile のサブシェルブロック内ではlocal宣言が無効(bash仕様: local is function-only)。変数名'
-    detail: '( ... ) 200>lockfile のサブシェルブロック内ではlocal宣言が無効(bash仕様: local is function-only)。変数名'
-  - id: 'L539'
-    summary: 'cmd_2387のcommandに説明文としてパリティ修正後等の語句がありPARITY_REがマッチしてtarget_date ACが誤注入された。comman'
-    detail: 'cmd_2387のcommandに説明文としてパリティ修正後等の語句がありPARITY_REがマッチしてtarget_date ACが誤注入された。comman'
-  - id: 'L304'
-    summary: 'gate_cycle_health.shのgrep -c pattern || echo 0は、0マッチ時にgrep -cが0を出力しつつexit 1→echo'
-    detail: 'gate_cycle_health.shのgrep -c pattern || echo 0は、0マッチ時にgrep -cが0を出力しつつexit 1→echo'
-  - id: 'L806'
-    summary: 'cmd_save.shにチェックを追加しても、cmd_skeleton.shへの反映を強制する仕組みがなかった。batsテスト追加(LS_NEW: check_'
-    detail: 'cmd_save.shにチェックを追加しても、cmd_skeleton.shへの反映を強制する仕組みがなかった。batsテスト追加(LS_NEW: check_'
-  - id: 'L646'
-    summary: '推薦/監査系スクリプトで共有運用ファイルを読むgrep pipelineは、0件が正常な状態なら末尾に|| trueを置き空値として継続させる。Batsはenv'
-    detail: '推薦/監査系スクリプトで共有運用ファイルを読むgrep pipelineは、0件が正常な状態なら末尾に|| trueを置き空値として継続させる。Batsはenv'
-  - id: 'L389'
-    summary: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
-    detail: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
+  - id: 'L795'
+    summary: 'gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し、最後の値をfreshness時'
+    detail: 'gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し、最後の値をfreshness時'
+  - id: 'L723'
+    summary: 'context_freshness_check.shがlast_updated経過日数ではなくsource_commit_count_sinceで警告を出す仕様'
+    detail: 'context_freshness_check.shがlast_updated経過日数ではなくsource_commit_count_sinceで警告を出す仕様'
+  - id: 'L415'
+    summary: 'auto_draft_lesson.shのL105-112でPROJECT(報告YAML由来=ユーザー制御値)がPython文字列リテラルに直接bash展開され'
+    detail: 'auto_draft_lesson.shのL105-112でPROJECT(報告YAML由来=ユーザー制御値)がPython文字列リテラルに直接bash展開され'
+  - id: 'L674'
+    summary: 'gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA'
+    detail: 'gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA'
+  - id: 'L691'
+    summary: 'WSL上ではファイルが実行可能に見えても、git indexが100644ならGitHub Actions checkout後は実行権限が無い。テストでscri'
+    detail: 'WSL上ではファイルが実行可能に見えても、git indexが100644ならGitHub Actions checkout後は実行権限が無い。テストでscri'
+  - id: 'L401'
+    summary: 'pending_decision_write.shで同一ファイル内にsys.argv方式(安全)とpython3 -c展開方式(危険)が混在。新規追加時に危険パ'
+    detail: 'pending_decision_write.shで同一ファイル内にsys.argv方式(安全)とpython3 -c展開方式(危険)が混在。新規追加時に危険パ'
+  - id: 'L694'
+    summary: '新スクリプト追加時は3点確認: (1)script_dir基準の絶対パス(デフォルトパスにCWD依存の相対パスを使うな) (2)git mode 100755 '
+    detail: '新スクリプト追加時は3点確認: (1)script_dir基準の絶対パス(デフォルトパスにCWD依存の相対パスを使うな) (2)git mode 100755 '
+  - id: 'L316'
+    summary: 'pre-bash-report-deny.shでemit_deny(JSON出力)後にexit 1がなくexit 0に落ちていた。Claude Code hoo'
+    detail: 'pre-bash-report-deny.shでemit_deny(JSON出力)後にexit 1がなくexit 0に落ちていた。Claude Code hoo'
+  - id: 'L542'
+    summary: 'environment_change=lesson登録のテストは、本番lessons.yamlの特定ID存在に依存するとSSOT更新でCI RED化する。TES'
+    detail: 'environment_change=lesson登録のテストは、本番lessons.yamlの特定ID存在に依存するとSSOT更新でCI RED化する。TES'
+  - id: 'L119'
+    summary: 'inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat'
+    detail: 'inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "semantic_dictionary_design — セマンティック辞書構想:  docs/research/semantic_index_design.md context/lord-conversation-index.md scripts/semantic_map_generate.sh scripts/insight_write.sh scripts/semantic_index_update.sh"
-  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)"
-  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh scripts/cmd_skeleton.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比) docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md — 軍師idle: コミットチェックWAパターン(2026-04-10) docs/research/gunshi_idle_cross_contamination_20260503.md — 軍師idle: クロスプロジェクト汚染分析(2026-05-03) docs/research/gunshi_idle_cross_project_fp_20260426.md — 軍師idle: クロスプロジェクトFP分析(2026-04-26) docs/research/gunshi_idle_gate_fail_rate_anatomy_20260502.md — 軍師idle: ゲート失敗率解剖(2026-05-02) docs/research/gunshi_idle_gate_fail_trend_20260430.md — 軍師idle: ゲート失敗トレンド分析(2026-04-30) docs/research/gunshi_idle_gate_fire_traceback_20260510.md — 軍師idle: ゲート発火トレースバック(2026-05-10) docs/research/gunshi_idle_gate_fp_analysis_20260527.md — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27) docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md — 軍師idle: LG003ゲートWA分析(2026-05-19) docs/research/gunshi_idle_lu_dict_pattern_20260415.md — 軍師idle: LU辞書パターン分析(2026-04-15)"
-  related_causal_links:
-  - "[[L723_grep_vE_不足]]"
-  - "[[品質向上文脈FP]]"
-  - "[[殿指示_偽陽性はバグ_20260614]]"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
   growth_loop_defense:
@@ -92,36 +81,29 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L436: archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル `projec
-      - L577: cmd_quality_log.shはgate_resultをCLEAR/FAIL/BLOCK/WARNに限定しており、cmd_save PASSをそのまま共通
-      - L522: cmd_save.shのassumptionsパーサーが行頭非空白のみを終了条件にしていたため、インデント済みCMD_BLOCKでは兄弟キー(environme
-      - L580: 新しいgate/hookを作るcmdでWARN表示だけをACにすると、検知は増えるが運用は変わらない。cmd設計段階でBLOCK/exit 1/強制/自動実行/
-      - L758: ( ... ) 200>lockfile のサブシェルブロック内ではlocal宣言が無効(bash仕様: local is function-only)。変数名
-      - L539: cmd_2387のcommandに説明文としてパリティ修正後等の語句がありPARITY_REがマッチしてtarget_date ACが誤注入された。comman
-      - L304: gate_cycle_health.shのgrep -c pattern || echo 0は、0マッチ時にgrep -cが0を出力しつつexit 1→echo
-      - L806: cmd_save.shにチェックを追加しても、cmd_skeleton.shへの反映を強制する仕組みがなかった。batsテスト追加(LS_NEW: check_
-      - L646: 推薦/監査系スクリプトで共有運用ファイルを読むgrep pipelineは、0件が正常な状態なら末尾に|| trueを置き空値として継続させる。Batsはenv
-      - L389: 検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数
+      - L795: gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し、最後の値をfreshness時
+      - L723: context_freshness_check.shがlast_updated経過日数ではなくsource_commit_count_sinceで警告を出す仕様
+      - L415: auto_draft_lesson.shのL105-112でPROJECT(報告YAML由来=ユーザー制御値)がPython文字列リテラルに直接bash展開され
+      - L674: gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA
+      - L691: WSL上ではファイルが実行可能に見えても、git indexが100644ならGitHub Actions checkout後は実行権限が無い。テストでscri
+      - L401: pending_decision_write.shで同一ファイル内にsys.argv方式(安全)とpython3 -c展開方式(危険)が混在。新規追加時に危険パ
+      - L694: 新スクリプト追加時は3点確認: (1)script_dir基準の絶対パス(デフォルトパスにCWD依存の相対パスを使うな) (2)git mode 100755 
+      - L316: pre-bash-report-deny.shでemit_deny(JSON出力)後にexit 1がなくexit 0に落ちていた。Claude Code hoo
+      - L542: environment_change=lesson登録のテストは、本番lessons.yamlの特定ID存在に依存するとSSOT更新でCI RED化する。TES
+      - L119: inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
-  - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
-  - "2026-06-14T16:20:45+09:00 | 【INFOバッチ】 2026-06-14 16:16:03|CI緑: run 27491494373"
-  - "2026-06-14T15:03:33+09:00 | 【INFOバッチ】 2026-06-14 14:54:21|CI緑: run 27489644660"
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'check_deferral_language_warn(L718-729)の除外パターンに品質向上文脈(向上/改善/解消/強化+セッション等)が追加されており、既存テストがPASSすることを確認する'
-  - id: 'AC2'
-    checks:
-    - check: '真のdeferral expression(L723のgrepパターンに該当する正当な検知対象)は引き続きWARN判定されることをテストで確認する'
-  - id: 'AC3'
-    checks:
-    - check: '偽陽性再現ケース(N回連続startup BLOCKの解消で起動品質が向上する)をテストに追加しWARN非発火を確認する'
+  - "2026-06-14T01:06:35+09:00 | 【家老】復帰済み。CI RED修正(test 1256 flaky fix)+batch commit 24ファイル push完了。CI run 27471827867 queued。全忍者idle、"
+  - "2026-06-13T10:15:46+09:00 | 📊 CI RED修正完了(test_switch_cli 2テスト)。push済み。CI GREEN待ち"
+  - "2026-06-11T12:55:30+09:00 | 以上。cmd_3285完了報告サマリ： **実装内容（全AC PASS）:** - **AC1**: `scripts/pending_approval_set.sh` — flock安全なadd/r"
+  - "2026-06-11T12:55:30+09:00 | 以上。cmd_3285完了報告サマリ： **実装内容（全AC PASS）:** - **AC1**: `scripts/pending_approval_set.sh` — flock安全なadd/r"
+  ac_version: 19927f28
+  _ac_task_id: cmd_karo_ci_fix_note_draft_sc1036_20260615_normal
+  _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3381.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3381.yaml
+  report_filename: tobisaru_report_cmd_karo_ci_fix_note_draft_sc1036_20260615.yaml
+  report_path: queue/reports/tobisaru_report_cmd_karo_ci_fix_note_draft_sc1036_20260615.yaml
   bloom_level: 
-  deployed_at: "2026-06-14T16:48:12"
+  deployed_at: "2026-06-15T12:57:23"
