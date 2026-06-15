@@ -1,5 +1,11 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-14 cmd_3374 -->
+<!-- last_updated: 2026-06-16 cmd_3396 -->
+
+## 2026-06-16
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_3396 | 教訓useful_rate改善(3セッション連続ALERT解消) | CLEAR | NEVER_USEFUL教訓8件タグ固有化。シミュ21.3%→23.0%。軍師RC→二重登録対応→LGTM |
 
 ## 2026-06-14
 

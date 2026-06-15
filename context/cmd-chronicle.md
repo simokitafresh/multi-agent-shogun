@@ -500,3 +500,5 @@
 | cmd_3391 | 殿指示(2026-06-15 作ってくれ)。GS不要の理論設計パラメータで加速D(method=diff)pf_L3 PFを本番登録する。入力=全奥義(pf_L2)群。NHF+AvgUWP重視の構造(加速Dは安定モメンタム維持型を自動選出) | dm-signal | 06-15 | pf_L3-加速D(MomentumAcceleration |
 | cmd_3392 | 変わり身pf_L3近傍5パターン登録+α6指標比較(period 1-4M × select_n 1-3) | — | 06-16 | — |
 | cmd_3393 | 殿指示(2026-06-15 やろう)。NHF最高のNew FoF_4M_copy_copy_copy(変わり身 period=2M select_n=2 NHF=82%)の近傍5パターンを本番登録し、α6指標(特にNHF・AvgUWP)を比較して最適パラメータを特定する | dm-signal | 06-16 | New FoF_4M_copy_copy_copy近傍5パタ |
+| cmd_3395 | startup gate教訓健全度ALERTが3セッション連続BLOCK(2026-06-14〜16)。useful_rate=21.3%(閾値30%)。軍師idle分析(docs/research/gunshi_idle_useful_rate_measurement_fix_20260615.md)でNEVER_USEFUL教訓Top7の共通根因=tag精度不足を特定済み。GS・gate・infra固有教訓がPF登録等の無関係cmdに無差別注入されている。教訓タグを内容に合致する具体タグに変更し、injected>=5かつuseful=0の教訓をwithheldに降格することでS/N比を改善する | infra | 06-16 | — |
+| cmd_3396 | startup健全度ALERTが3セッション連続(2026-06-14〜16)。useful_rate=21.3%(閾値30%)。軍師idle分析でNEVER_USEFUL教訓Top7の共通根因=タグ精度不足を特定済み。固有教訓が無関係cmdに無差別注入されている。タグを内容に合致する具体タグに変更し、低スコア教訓をwithhold降格してS/N比を改善する | infra | 06-16 | 軍師指摘反映済み。NEVER_USEFUL教訓: infra |

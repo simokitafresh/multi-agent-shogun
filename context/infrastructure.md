@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-15 cmd_karo_hotfix_review_quality_warn_gate_result_20260615 -->
+<!-- last_updated: 2026-06-16 cmd_3396 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -649,7 +649,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L809 -->
+<!-- last_synced_lesson: L810 -->
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
@@ -1176,6 +1176,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L807: SG-PRE25 FP根因: 読点「、」区切りのwrite_markerが同文内別節に存在する場合の誤判定（cmd_3380）
 - L808: yaml_field_set.shの変更はlesson_write.sh --retagで上書きされる。SSoT(lessons.md)先行修正が必須（cmd_3382）
 - L809: review_quality集計はgate_result=CLEARでのverdict上書きが必要（cmd_karo_hotfix_review_quality_warn_gate_result_20260615）
+- L810: タグ変更の効果はgate_lesson_health.shに即座に反映されない（cmd_3396）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
