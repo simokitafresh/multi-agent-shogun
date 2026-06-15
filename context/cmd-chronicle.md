@@ -509,3 +509,5 @@
 | cmd_3383 | 殿指示(2026-06-15)。変わり身BBの名前TrendReversalFilterは本質(トレンドフォロー+ミーンリバージョンのペア戦略)と不一致。FE+BE両方でBB名を本質と一致させるために、影響範囲と依存関係を徹底調査する偵察cmd | dm-signal | 06-15 | TrendReversalFilterの全参照箇所を調査完了 |
 | cmd_3384 | 殿裁定(2026-06-15)。既存四つ目(MultiViewMomentumFilter)はunion(set)で4視点の投票数情報が消失する設計バグ。新BBを実装し、4視点の投票数に比例したウェイトをcontext.final_weightsに書込むことでengine既存伝搬経路(L179)を活用する | dm-signal | 06-15 | WeightedMultiViewMomentumFilte |
 | cmd_3385 | 殿指示(2026-06-15)。新四つ目(WeightedMultiView)BBのGSスクリプトを作成し、1パラメータ組合せで小規模実行してメモリ・時間・パリティを確認する。全探索は道具が動作確認できてから。構成PFは既存7忍法21体のみ(OOM防止。殿指示) | dm-signal | 06-15 | — |
+| cmd_3387 | 殿指示(2026-06-15 道具磨きが先+止まらずに行動)。cmd_3386 smoke結果で日次vs月次の解像度差が28/106不一致を生んだ。殿定義の突合基準(ticker種類・weight・monthly return)に合わせて検証ロジックを月次解像度に修正し、修正後の道具で全探索(6パラメータ組×7525パターン=約2分)を実行する | dm-signal | 06-15 | run_077_weighted_yotsume.pyをmo |
+| cmd_3388 | 殿指示(2026-06-15 取れるまで磨こう)。cmd_3387で月次突合に修正したが57/141不一致が残った。GS月次再構成と本番monthly_returnsの計算パス差異を特定し、GS側を本番と同一の計算パスに修正して不一致0件を達成する | dm-signal | 06-15 | cmd_3387で残った57/141月次不一致の根因はwei |
