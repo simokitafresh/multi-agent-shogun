@@ -508,3 +508,4 @@
 | cmd_3380 | 殿指示(2026-06-14)『偽陽性はバグだ。バグは修正しよう』。SG-PRE25がcommand欄の実行参照(bash scripts/X.sh等)を変更対象ファイルと誤判定し、毎セッション5件の家老waive作業が発生(10分/セッション負の複利)。軍師提案(blt_20260614_162444)に基づきcommand欄のファイル参照を自動分類するヒューリスティックを追加する | infra | 06-14 | SG-PRE25のcommand欄偽陽性修正完了。exec_ |
 | cmd_3383 | 殿指示(2026-06-15)。変わり身BBの名前TrendReversalFilterは本質(トレンドフォロー+ミーンリバージョンのペア戦略)と不一致。FE+BE両方でBB名を本質と一致させるために、影響範囲と依存関係を徹底調査する偵察cmd | dm-signal | 06-15 | TrendReversalFilterの全参照箇所を調査完了 |
 | cmd_3384 | 殿裁定(2026-06-15)。既存四つ目(MultiViewMomentumFilter)はunion(set)で4視点の投票数情報が消失する設計バグ。新BBを実装し、4視点の投票数に比例したウェイトをcontext.final_weightsに書込むことでengine既存伝搬経路(L179)を活用する | dm-signal | 06-15 | WeightedMultiViewMomentumFilte |
+| cmd_3385 | 殿指示(2026-06-15)。新四つ目(WeightedMultiView)BBのGSスクリプトを作成し、1パラメータ組合せで小規模実行してメモリ・時間・パリティを確認する。全探索は道具が動作確認できてから。構成PFは既存7忍法21体のみ(OOM防止。殿指示) | dm-signal | 06-15 | — |
