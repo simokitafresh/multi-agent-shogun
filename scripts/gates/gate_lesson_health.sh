@@ -33,6 +33,7 @@ LESSON_EFFECT_STATUS_FILE="${LESSON_EFFECT_STATUS_FILE:-$SCRIPT_DIR/queue/lesson
 LESSON_EFFECT_NOTIFY_STATE="${LESSON_EFFECT_NOTIFY_STATE:-$SCRIPT_DIR/queue/lesson_effectiveness_notify_state.txt}"
 LESSON_EFFECT_NTFY_ENABLED="${LESSON_EFFECT_NTFY_ENABLED:-1}"
 LESSON_EFFECT_MIN_SAMPLES="${LESSON_EFFECT_MIN_SAMPLES:-5}"  # 退役スキャン確定閾値と揃え、少数feedbackノイズでBLOCKしない
+LESSON_EFFECT_USEFUL_MIN="${LESSON_EFFECT_USEFUL_MIN:-2}"   # health計測用の最小サンプル数。退役(5)より低く設定(30cmd窓で各教訓が5件に達しない計測バグ修正)
 INJECTION_WARN_THRESHOLD=10
 ACCUMULATION_THRESHOLD=10
 UNSORTED_THRESHOLD=10
@@ -362,7 +363,8 @@ check_lesson_effectiveness() {
 
     local metric
     metric=$(awk -F'\t' -v cmd_file="$cmd_file" -v active_file="$active_file" -v project="$target_project" \
-        -v min_samples="$LESSON_EFFECT_MIN_SAMPLES" '
+        -v min_samples="$LESSON_EFFECT_MIN_SAMPLES" \
+        -v useful_min="$LESSON_EFFECT_USEFUL_MIN" '
         BEGIN {
             while ((getline line < cmd_file) > 0) {
                 gsub(/\r$/, "", line)
@@ -398,7 +400,7 @@ check_lesson_effectiveness() {
         }
         END {
             for (lid in lesson_total) {
-                if (lesson_total[lid] >= min_samples) {
+                if (lesson_total[lid] >= useful_min) {
                     total_feedback += lesson_total[lid]
                     useful += (lid in lesson_useful) ? lesson_useful[lid] : 0
                 }
