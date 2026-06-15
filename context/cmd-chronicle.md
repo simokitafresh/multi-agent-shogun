@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-16 -->
+<!-- last_updated: 2026-06-16 cmd_3401 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -503,3 +503,6 @@
 | cmd_3395 | startup gate教訓健全度ALERTが3セッション連続BLOCK(2026-06-14〜16)。useful_rate=21.3%(閾値30%)。軍師idle分析(docs/research/gunshi_idle_useful_rate_measurement_fix_20260615.md)でNEVER_USEFUL教訓Top7の共通根因=tag精度不足を特定済み。GS・gate・infra固有教訓がPF登録等の無関係cmdに無差別注入されている。教訓タグを内容に合致する具体タグに変更し、injected>=5かつuseful=0の教訓をwithheldに降格することでS/N比を改善する | infra | 06-16 | — |
 | cmd_3396 | startup健全度ALERTが3セッション連続(2026-06-14〜16)。useful_rate=21.3%(閾値30%)。軍師idle分析でNEVER_USEFUL教訓Top7の共通根因=タグ精度不足を特定済み。固有教訓が無関係cmdに無差別注入されている。タグを内容に合致する具体タグに変更し、低スコア教訓をwithhold降格してS/N比を改善する | infra | 06-16 | 軍師指摘反映済み。NEVER_USEFUL教訓: infra |
 | cmd_3397 | 殿裁定(2026-06-16): 全PFはhide_portfolio=trueで作成(PI-027)。しかしmodels.pyのDBカラムdefault=False、migrations.pyもDEFAULT FALSE。tier_visibility_settings経由ではTrue(repository.py:40)だがモデル直接作成時にFalseになる構造的穴。殿が自分でuncategorized PFを全てhideにした事故(2026-06-16 00:50)の再発防止 | dm-signal | 06-16 | models.pyのhide_portfolioをdefau |
+| cmd_3398 | 覚醒設計書v3(軍師3往復レビュー確定済み)の実装。cmd_save.sh Check19(parity_ac_missing)を入口方式(title/purpose文字列トリガー)から出口判定(AC YAML構造判定: description非空+binary_check非空+未記入マーカー不在)に変更する。加えてsession_alerts.txtをstop hookで毎応答動的更新し、セッション中のALERT・BLOCK・殿指示をリアルタイム表示する(起動時1回のstartup gateでは時間経過で忘れる。殿指摘2026-06-16) | infra | 06-16 | — |
+| cmd_3399 | cmd_save.sh実行時間15-39秒がcmd起票の最大ボトルネック(殿指摘2026-06-16)。計測で3大ボトルネック特定: (1)chronicle検索が477件中466件返却(フィルタ不在)、(2)semantic_search.shが4秒、(3)lord_conversation全件走査。chronicle検索のフィルタ精度向上+semantic_searchキャッシュ化+独立チェック並列化で実行時間を半減させる | infra | 06-16 | — |
+| cmd_3400 | 覚醒設計書v3(軍師3往復レビュー確定済み)の実装。cmd_save.sh Check19を入口方式(文字列トリガー)から出口判定(AC YAML構造判定)に変更する。加えてsession_alerts.txtをstop hookで毎応答動的更新し、セッション中のALERTをリアルタイム表示する(殿指摘2026-06-16: 起動時1回では時間経過で忘れる)。品質の仕組みが先(殿指摘: 100億年の複利) | infra | 06-16 | — |
