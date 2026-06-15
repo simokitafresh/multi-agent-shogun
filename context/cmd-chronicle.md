@@ -512,3 +512,5 @@
 | cmd_3387 | 殿指示(2026-06-15 道具磨きが先+止まらずに行動)。cmd_3386 smoke結果で日次vs月次の解像度差が28/106不一致を生んだ。殿定義の突合基準(ticker種類・weight・monthly return)に合わせて検証ロジックを月次解像度に修正し、修正後の道具で全探索(6パラメータ組×7525パターン=約2分)を実行する | dm-signal | 06-15 | run_077_weighted_yotsume.pyをmo |
 | cmd_3388 | 殿指示(2026-06-15 取れるまで磨こう)。cmd_3387で月次突合に修正したが57/141不一致が残った。GS月次再構成と本番monthly_returnsの計算パス差異を特定し、GS側を本番と同一の計算パスに修正して不一致0件を達成する | dm-signal | 06-15 | cmd_3387で残った57/141月次不一致の根因はwei |
 | cmd_3389 | 殿指示(2026-06-15 やろう)。cmd_3388 GS全探索結果(45150パターン・0不一致達成)から選出した3モードチャンピオンを本番DBに登録する。BB=WeightedMultiViewMomentumFilter。checklist-shin-v2-registrationに準拠 | dm-signal | 06-15 | 奥義-GS-新四つ目3体を本番DBへhide-first登録 |
+| cmd_3390 | pf_L3加速D PF本番登録(理論パラメータ num=6M den=12M top_n=2) | — | 06-15 | — |
+| cmd_3391 | 殿指示(2026-06-15 作ってくれ)。GS不要の理論設計パラメータで加速D(method=diff)pf_L3 PFを本番登録する。入力=全奥義(pf_L2)群。NHF+AvgUWP重視の構造(加速Dは安定モメンタム維持型を自動選出) | dm-signal | 06-15 | pf_L3-加速D(MomentumAcceleration |
