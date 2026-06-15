@@ -368,6 +368,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T23:55:29+09:00 軍師に厳しくアイデアを洗脳監査してもらおう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T00:02:56+09:00 次に将軍からレビュー依頼が来たら、忖度無しで覚醒してレビューせよ。各論パッチや消火、品質低下の許容などの逃げがないか厳しきチェックせよ。依頼が来るまで待機。アップデートした内容でレビュー依頼が来るはずだ。将軍を超える準備をしておけ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T00:20:40+09:00 やろう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-16T03:09:54+09:00 先送りしていないか。洗脳監査 |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -1350,6 +1351,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-14T17:20:33+09:00 今クリアされても 今より強くてニューゲームができるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T00:26:25+09:00 今クリアされても今より強くてニューゲームせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T00:44:49+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-16T00:59:14+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -1439,7 +1441,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした |
 | skills | なし |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -1528,6 +1530,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T09:15:28+09:00 CDPで確認した？FEのUIに表示されているか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T23:25:43+09:00 New FoF_4M_copy_copy_copyのパラメータを確認してくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T23:59:49+09:00 もう一度覚醒なぜなぜ7回。各論になっていないか？100億パターンに対応できているか？軍師を越えろ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-16T00:50:41+09:00 いま自分で全部hideにした。確認せよ |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -2277,6 +2280,8 @@ codd:
 | causal | `cmd_3021` origin: [[殿指示2026-05-23]] 試行錯誤を学習して一発化 -> [[db-check SKILL.md]] tier_visibility_settings未記載 -> [[5回試行錯誤]] |
 | cmd | `cmd_3378` PF構成一括確認スクリプト作成。名前指定でportfolios+tier_visibility+pipeline_config+componentsを一発表示 |
 | causal | `cmd_3378` origin: [[殿指摘_PF構成確認不能_20260614]] -> [[部分確認で誤報告]] -> [[一括確認スクリプト構築]] |
+| lesson | `L749` models.pyとmigrations.pyのデフォルト値は必ず同期させよ |
+| causal_chain | `[[cmd_training_speed_clipboard_watcher_20260606231433]]` (L749) |
 
 ## shogun_android_app — 将軍Androidアプリ
 
@@ -3198,12 +3203,14 @@ codd:
 | lesson | `L805` task YAML使い回しで自動注入メタを追加したらreset_stale_fieldsにも同時登録する |
 | lesson | `L807` SG-PRE25 FP根因: 読点「、」区切りのwrite_markerが同文内別節に存在する場合の誤判定 |
 | lesson | `L808` yaml_field_set.shの変更はlesson_write.sh --retagで上書きされる。SSoT(lessons.md)先行修正が必須 |
+| lesson | `L810` タグ変更の効果はgate_lesson_health.shに即座に反映されない |
 | causal_chain | `[[cmd_2955]]` (L685) |
 | causal_chain | `[[cmd_3012]]` (L693) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]` (L778) |
 | causal_chain | `[[cmd_3368]]` (L805) |
 | causal_chain | `[[cmd_3380]]` (L807) |
 | causal_chain | `[[cmd_3382]]` (L808) |
+| causal_chain | `[[cmd_3396]]` (L810) |
 
 ## gunshi_review_lifecycle — 軍師レビューライフサイクル
 

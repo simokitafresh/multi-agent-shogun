@@ -2970,7 +2970,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-26
 - **出典**: cmd_1412
 - **記録者**: karo
-- **tags**: [communication, gate, bash, yaml, git, inbox]
+- **tags**: [git_uncommitted_gate, inbox_write, git]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行し、外部プロジェクト(DM-signal等)のファイル変更を検出できなかった
 - inbox_write.sh git_uncommitted_gateがSCRIPT_DIR(multi-agent-shogun)でgit statusを実行し、外部プロジェクト(DM-signal等)のファイル変更を検出できなかった。task YAMLのproject:→projects/{project}.yamlのpath:→git -C {project_path}で正しいリポジトリを参照する。cmd_1412で3忍者15ファイルcommit漏れの根因。
@@ -5295,7 +5295,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **出典**: cmd_karo_infra_recon_core
 - **記録者**: hayate
 - **status**: confirmed
-- **tags**: [infra,recon,process,yaml]
+- **tags**: [yaml_dump_detection, recon_gate, yaml_writer]
 - **target_files**: [queue/tasks/hayate.yaml (status assigned->acknowledged->in_progress),queue/reports/hayate_report_cmd_karo_infra_recon_core.yaml]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた
@@ -5639,7 +5639,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **出典**: cmd_2607
 - **記録者**: kagemaru
 - **status**: confirmed
-- **tags**: [infra,gate,bash]
+- **tags**: [cmd_quality_log, gate_result_enum, infra_gate]
 - **target_files**: [scripts/cmd_save.sh,.claude/hooks/pre-write-edit-combined.sh]
 - **when**: 新しいgate_result値を追加する時は
 - **how**: 新しい結果値を追加するcmdでは、共通loggerのenum拡張をscopeに含めるか、今回のようにscope内で同形式追記を実装するかを事前確認すべき
@@ -6166,7 +6166,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-18
 - **出典**: cmd_karo_kjrc_B_staff_records
 - **記録者**: --origin
-- **tags**: [infra,gate,yaml,inbox]
+- **tags**: [report_path_missing, karo_direct, inbox_write]
 - **target_files**: [queue/tasks/*.yaml,queue/reports/*_report_*.yaml,scripts/report_field_set.sh,scripts/inbox_write.sh,scripts/gates/gate_report_format.sh]
 - **origin**: [[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]
 - **when**: task YAMLにreport_pathが無い、またはkaro_direct/手動配備で報告テンプレート生成の有無が不確かな時
@@ -6253,7 +6253,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-19
 - **出典**: cmd_karo_ci_fix_verdict_derive
 - **記録者**: karo
-- **tags**: [gate-verdict-waive]
+- **tags**: [verdict_waive, gate_verdict, waive_reason]
 - **target_files**: [scripts/gates/gate_report_autofix_main.py,scripts/report_field_set.sh,tests/unit/test_report_template_gate_compat.bats]
 - **origin**: [[cmd_karo_ci_fix_verdict_derive]]
 - **when**: 未設定
@@ -7811,7 +7811,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-06-11
 - **出典**: cmd_3284
 - **記録者**: tobisaru
-- **tags**: [infra,ninja-monitor,gate,git]
+- **tags**: [auto_commit_before_clear, ninja-monitor, git]
 - **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_clear_guard.bats]
 - **origin**: [[cmd_3284]]
 - **when**: 未設定
@@ -7900,7 +7900,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-06-11
 - **出典**: cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956
 - **記録者**: tobisaru
-- **tags**: [infra,gate,gate]
+- **tags**: [startup_gate, gate_exit_code]
 - **target_files**: [scripts/gates/gate_gunshi_startup.sh]
 - **origin**: [[cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956]]
 - **when**: 未設定
@@ -7988,7 +7988,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-06-12
 - **出典**: cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622
 - **記録者**: hayate
-- **tags**: [infra,context,frontend,gate,git]
+- **tags**: [context_freshness_gate, gate_timeout, git]
 - **target_files**: [context/dm-signal-frontend.md,queue/reports/hayate_report_cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622.yaml,queue/tasks/hayate.yaml]
 - **origin**: [[cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622]]
 - **when**: 未設定
@@ -8195,3 +8195,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - gunshi FAIL + 家老waive → GATE CLEARのパターン(cmd_3376等)でverdictがFAILのまま残るため、gate_result=CLEAR/PASSのエントリはWARN対象から除外する必要がある。flush_entry()でgr[]に保存し、END blockで上書きする3点セット実装
+
+### L810: タグ変更の効果はgate_lesson_health.shに即座に反映されない
+- **日付**: 2026-06-16
+- **出典**: cmd_3396
+- **記録者**: kotaro
+- **tags**: [infra,db,gate,bash]
+- **target_files**: [projects/infra/lessons.yaml,projects/dm-signal/lessons.yaml]
+- **origin**: [[cmd_3396]]
+- **when**: 未設定
+- **how**: 未設定
+- lesson_write.sh --retagでタグを変更しても、gate_lesson_health.shはlesson_impact.tsvの過去feedbackデータから計算するため、実測useful_rateは即座に変化しない。効果が現れるのは今後30cmd窓分のデータが入れ替わってから。シミュレーション(タグ変更対象除外後): 21.3%→23.0%。lesson_candidateとしてgateの即時計測限界を記録

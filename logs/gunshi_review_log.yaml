@@ -1467,13 +1467,13 @@
 - cmd_id: cmd_karo_hotfix_review_quality_warn_gate_result_20260615
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   gate_prediction: CLEAR
   gate_prediction_reason: "hotfix。gate_karo_startup.sh awkに5行追加。最小変更"
   confidence: HIGH
   changed_lines: 0
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
-  findings_summary: "6観点OK。AC1(gate_result=CLEARのFAILをWARN除外)は最小変更。前提確認(cmd_3376/3378/3379にFAIL+CLEAR実在)。偽ALERT3セッション解消"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。AC1(gate_result=CLEARのFAILをWARN除外)は最小変更。前提確認(cmd_3376/3378/3379にFAIL+CLEAR実在)。偽ALERT3セッション解消。adversarial遡及: gate変更→CLEAR限定フィルタで正当FAIL隠蔽なし"
   observations:
     - "事実1: cmd_3376/3378/3379にverdict:FAIL+gate_result:CLEARのエントリ実在確認(grep)"
     - "事実2: 現行コード(committed)にはgate_resultパース/追跡ロジックなし。kotaroの未commit変更で追加中"
@@ -1485,13 +1485,13 @@
 - cmd_id: cmd_karo_ci_fix_note_draft_sc1036_20260615
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   gate_prediction: CLEAR
   gate_prediction_reason: "CI fix。コメント内括弧修正のみ。機能変更なし"
   confidence: HIGH
   changed_lines: 0
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "6観点OK。shellcheck SC1036(コメント内括弧)修正。最小スコープCI fix。機能影響なし"
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。shellcheck SC1036(コメント内括弧)修正。最小スコープCI fix。機能影響なし。adversarial遡及: コメントのみ変更→ロジック影響なし"
   observations:
     - "事実1: CI REDの根拠=shellcheck SC1036 error at note_draft.sh L426"
     - "事実2: 修正対象はコメント内の括弧のみ。bash実行ロジックに影響なし"
@@ -1504,13 +1504,13 @@
   review_type: report
   report_ninja: kotaro
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   gate_prediction: WARN
   gate_prediction_reason: "lesson_candidate有→draft_lessons BLOCKリスク。家老がlesson処理後にCLEAR"
   confidence: HIGH
   changed_lines: 6
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "4観点OK。gate_result=CLEARのFAIL除外修正。WARN率36%→9%。bats 30/30 PASS。commit b9b9692c確認"
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。gate_result=CLEARのFAIL除外修正。WARN率36%→9%。bats 30/30 PASS。commit b9b9692c確認。adversarial遡及: gate変更6行→CLEAR限定フィルタ+bats30全PASS"
   observations:
     - "事実1: commit b9b9692c2でgate_karo_startup.sh修正確認。flush_entry()にgr[n]=gate_result追加+gate_resultパース追加+END blockでCLEAR判定"
     - "事実2: kotaro WA率0%(直近6件中0件)。causal_verification充実(rg確認+設計意図確認)"
@@ -1520,3 +1520,387 @@
   brainwash_check: "#1防止: 4観点全検証。数値: WARN率36%→9%(gate実行確認), bats 30/30, WA率0%(6件中0件)。GATE CLEAR未知のため確証バイアスなし"
   step3_5_verified: true
   timestamp: "2026-06-15T13:04:00"
+- cmd_id: cmd_karo_ci_fix_note_draft_sc1036_20260615
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "CI fix。コメント形式変換のみ。precheck ERRORS=0"
+  confidence: HIGH
+  changed_lines: 2
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。SC1036修正(- → # 変換)。shellcheck exit 0。bats 90/90 PASS。adversarial遡及: コメントのみ→ロジック影響なし"
+  observations:
+    - "事実1: auto-commit 7d14c533がskill_auto_improveの-形式を再追加→SC1036再発。6ac00607eで#形式に変換"
+    - "事実2: bats 24/24(skill_feedback_loop)+66/66(cmd_complete_gate)=90/90全PASS"
+    - "事実3: lessons_useful 10件全てfalse(全て未参照)。CI fixにinfra教訓は無関係"
+  causal_chain: "auto-commitが-形式再追加→SC1036再発→#形式変換→CI GREEN=正の複利"
+  brainwash_check: "#1防止: 4観点確認。数値: bats 90/90, shellcheck exit 0, files_modified=1"
+  step3_5_verified: true
+  timestamp: "2026-06-15T13:08:00"
+- cmd_id: cmd_3386
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  gate_prediction: CLEAR
+  gate_prediction_reason: "殿指示準拠。GS道具作成+1組合せ計測+出力突合。scope明確"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。run_077_weighted_yotsume.py作成(BlockType差替)+1組合せ計測+出力突合。殿指示(道具磨き先)準拠。OOMリスク低(1組合せ)"
+  observations:
+    - "事実1: assumptions trust=verified。run_077_yotsume.py存在+WeightedMultiViewMomentumFilter 8ファイル確認済み"
+    - "事実2: q_ambiguityに突合先条件確認(check_pf_config.py)を明記。曖昧さ対処済み"
+    - "事実3: diagnosis記載あり。cmd_3385 WARN累計BLOCK→新規起票で累計リセット。経緯が透明"
+  causal_chain: "殿指示(道具磨き先)→1組合せ計測+出力突合→全探索cmdの安全設計=OOM予防の正の複利"
+  brainwash_check: "#1防止: 6観点全検証。数値: AC3件, timeout=30min, 1組合せ(OOMリスク最小)"
+  ambiguity_points: none
+  timestamp: "2026-06-15T13:12:00"
+- cmd_id: cmd_3386
+  review_type: report
+  report_ninja: hayate
+  verdict: FAIL
+  gate_result: null
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no 3件(AC1/2/3)。忍者FAIL報告"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。忍者FAIL判定妥当。前提崩壊(BlockType差替のみ不十分→投票数ウェイト実装必要)を正しく検出。106日中78一致/28不一致(入力解像度差)"
+  observations:
+    - "事実1: assumption_invalidation=true。fast pathがunion等加重を持つためWeighted版は投票数ウェイト実装が追加必要"
+    - "事実2: 7525パターン全実行成功(errors=0)。道具としては動作確認完了。不一致原因=monthly vs daily入力解像度差"
+    - "事実3: decision_candidate有。日次入力比較の専用検証が次cmd課題。knowledge_candidate有(本番PF構成4UUID確認)"
+  origin: "[[cmd_3386]] -> [[union等加重fast_path不一致]] -> [[Weighted投票数ウェイトGS追加が必要]]"
+  causal_chain: "BlockType差替のみ→fast pathがunion加重を直書き→Weighted出力が異なる→投票数ウェイト実装追加が必要=次cmdの材料"
+  brainwash_check: "#1防止: 4観点確認。数値: 7525パターン0errors, 106日78一致/28不一致(73.6%), RSS計測不能(WSL制約)"
+  step3_5_verified: true
+  timestamp: "2026-06-15T13:30:00"
+- cmd_id: cmd_3387
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "DM-signal研究cmd。突合ロジック月次化+全探索。scope明確"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。cmd_3386結果+軍師分析に基づく月次突合修正+全探索。殿定義準拠。timeout30分で十分(smoke22秒×6=~2分)"
+  observations:
+    - "事実1: assumptions=verified。cmd_3386 smoke結果(9b2b493a)+軍師分析(blt_20260615_133444)参照"
+    - "事実2: 全探索=6組×7525=45150パターン。smoke22秒/組→全探索~2分。OOMリスク低(smoke時OOMなし)"
+    - "事実3: AC2で月次突合0不一致→解像度差確定。不一致残存→差分原因報告。切分けロジックが設計に含まれる"
+  causal_chain: "cmd_3386日次比較28不一致→殿定義月次突合→月次化修正→解像度差排除→信頼できるGS結果=正の複利"
+  brainwash_check: "#1防止: 6観点全検証。数値: 45150パターン, timeout30min, smoke22秒/組"
+  ambiguity_points: none
+  timestamp: "2026-06-15T14:17:00"
+- cmd_id: cmd_3387
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck ERRORS=0。全AC yes。全探索45150完走"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。月次突合修正+全探索45150完走。AC2不一致57/141は差分原因記録済み(AC条件充足)。decision_candidate有(57不一致の原因切分けが次課題)"
+  observations:
+    - "事実1: 月次突合でも57/141不一致。max_abs_diff=0.076。解像度差だけが原因ではない"
+    - "事実2: 全探索45150 success/0 errors/42.4秒。SQLite出力確認。commit f9dbae09"
+    - "事実3: assumption_invalidation=true。月次突合0不一致の前提崩壊。本番monthly_returns vs GS再構成に構造的差分あり"
+  origin: "[[cmd_3387]] -> [[月次突合57不一致残存]] -> [[本番monthly_returns vs GS再構成の構造的差分]]"
+  causal_chain: "日次比較28不一致→月次化修正→月次比較でも57不一致→解像度差だけでなく本番データ自体との構造的差分あり→次cmdで原因切分け必要"
+  brainwash_check: "#1防止: 4観点全検証。数値: 45150/45150成功, 57/141不一致(40.4%不一致), max_abs_diff=0.076, 42.4秒"
+  step3_5_verified: true
+  timestamp: "2026-06-15T14:58:00"
+- cmd_id: gunshi_idle_pre11_lessons_useful_empty_20260615
+  review_type: self_study
+  verdict: LESSON_IDENTIFIED
+  findings_summary: "cmd_3387 LGTM→BLOCK。lessons_useful=[]空リストを見落とし。precheckのSG-PRE11は常にSKIP(LESSONS_USEFUL_MSG未設定)。SG-PRE20は_rl_count=1(sedパターン問題)で検出精度が低い"
+  observations:
+    - "事実1: SG-PRE11のLESSONS_USEFUL_MSGは一度も設定されない→常にSKIP(L265)。実質無効"
+    - "事実2: SG-PRE20のsedパターン/^  related_lessons:/,/^  [^ ]/がnested YAML子要素で早期終了→_rl_count=1(実際10)"
+    - "事実3: lessons_useful=[]をレビュー時に目視で検出すべきだった。precheck依存は洗脳#3(他者依存)"
+  operational_simulation: "SG-PRE11を有効化すれば空リスト検出が自動化される。SG-PRE20のsedパターン修正で正確なカウントも可能。次D0ターゲット"
+  causal_chain: "lessons_useful=[]→precheckのSG-PRE11無効+SG-PRE20カウントずれ→軍師見落とし→GATE BLOCK→手動修正→CLEAR"
+  brainwash_check: "#3防止: precheck依存で自分の目視を怠った。数値: 10件related_lessons vs 0件useful(空リスト)"
+  origin: "[[cmd_3387_LGTM_BLOCK]] -> [[SG-PRE11無効+SG-PRE20カウントずれ]] -> [[lessons_useful空リスト見落とし]]"
+  cs_checklist: "CS1:precheck全ソース確認。CS2:sed/grep再現テストで根因確認。CS3:SG-PRE11 L265, SG-PRE20 L615-616コード比較。CS4:D0ターゲット特定(SG-PRE11有効化)。CS5:sedパターン修正も検討。CS6:precheck依存→見落とし→BLOCK→手動修正の因果鎖"
+  timestamp: "2026-06-15T15:05:00"
+- cmd_id: cmd_3388
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "DM-signal研究cmd。根因特定+修正+0不一致達成。殿指示明確"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。57不一致の根因特定(open vs close推定)+修正+0不一致達成。殿指示(取れるまで磨く)準拠。既知パターン(PI-008)"
+  observations:
+    - "事実1: 殿指摘: open vs close比較ミスが根因の可能性大。他忍法GSで0不一致達成済み"
+    - "事実2: max_abs_diff=0.076。open/closeの差異で説明がつくオーダー"
+    - "事実3: q_ambiguityに全件説明不可時の追加調査を注記。scope外はチャンピオン選定(別cmd)"
+  causal_chain: "月次突合57不一致→open vs close比較ミス推定(PI-008)→GS側open化修正→0不一致=信頼できるGS結果=正の複利"
+  brainwash_check: "#1防止: 6観点全検証。数値: 57不一致, max_abs_diff=0.076, timeout=45min"
+  ambiguity_points: none
+  timestamp: "2026-06-15T15:17:00"
+- cmd_id: cmd_3388
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: WARN
+  gate_prediction_reason: "draft_lessons 1件(tasks/lessons.md)。家老lesson処理後にCLEAR"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "4観点OK。0不一致達成(147/147一致、max_abs_diff=7.5e-11)。根因=local_sqlite vs PostgreSQL入力差。全探索45150完走"
+  observations:
+    - "事実1: 根因特定: gsl2_shin_ninpo_21.yamlのsource_type=local_sqliteが本番PostgreSQL月次系列と乖離。UUID完備なのでDB source昇格で解消"
+    - "事実2: 0不一致達成。compared_months=147, mismatches=0, max_abs_diff=7.5e-11(IEEE 754ノイズ)"
+    - "事実3: 全探索45150 success/0 errors/42.3秒。SQLite出力 md5=9be74c3f。commit f7061378"
+  origin: "[[cmd_3388]] -> [[local_sqlite入力差が根因]] -> [[DB source昇格で0不一致達成]]"
+  causal_chain: "57不一致→local_sqlite vs PostgreSQL入力差→DB source昇格→0不一致=殿指示(取れるまで磨く)達成=正の複利"
+  brainwash_check: "#1防止: 4観点全検証。数値: 147/147一致(100%), max_abs_diff=7.5e-11, 45150/45150, 42.3秒"
+  step3_5_verified: true
+  timestamp: "2026-06-15T15:28:00"
+- cmd_id: cmd_3389
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "本番PF登録。checklist-shin-v2準拠。P1-P6パリティAC付き"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。GS全探索0不一致(cmd_3388)→3モードチャンピオン本番登録。checklist準拠+P1-P6パリティ検証。殿指示(やろう)準拠。adversarial遡及: 本番DB INSERT→P5 hide-first+P6既存不変+パリティで防御確認"
+  observations:
+    - "事実1: 3モード=激攻(b12/n1/4体)+鉄壁(b12/n2/4体)+常勝(b12/n2/3体)。構成PF名が明確"
+    - "事実2: AC9項目(AC1-3作成+AC4 fullrecalculate+P1-P6パリティ)。checklist-shin-v2-registration準拠"
+    - "事実3: P5(hide-first)+P6(既存PF不変)で安全措置。is_visible=false登録→検証後公開"
+  causal_chain: "cmd_3388 GS0不一致→殿指示(やろう)→3モード本番登録→deterioration monitor対象拡大=正の複利"
+  brainwash_check: "#1防止: 6観点全検証+P1-P6全確認。数値: 3モード×9AC=27チェックポイント, timeout45min"
+  ambiguity_points: none
+  timestamp: "2026-06-15T17:17:00"
+- cmd_id: cmd_3389
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: WARN
+  gate_prediction_reason: "draft_lessons残存推定。家老lesson処理後にCLEAR"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。★3体本番登録+fullrecalculate+0不一致+公開完了。激攻/鉄壁/常勝全てbc全yes(11項目)。adversarial遡及: P5+P6+パリティ=本番DB防御確認"
+  observations:
+    - "事実1: 3体UUID確認。激攻=18c25b63、鉄壁=c31d7ef6、常勝=de08cc11。fullrecalculate id=165 completed"
+    - "事実2: 月次突合147共通月mismatch=0。holding_weight mismatch=0。max_abs_diff=7.5e-11(IEEE 754ノイズ)"
+    - "事実3: P5(hide-first登録→検証後公開)+P6(既存PF不変)の安全措置確認。Dashboard+Admin UI CDP表示確認"
+  origin: "[[cmd_3389]] -> [[3モード本番登録+0不一致]] -> [[奥義-GS-新四つ目本番公開完了]]"
+  causal_chain: "GS0不一致(cmd_3388)→殿指示(やろう)→3体登録+fullrecalculate+月次突合→0不一致で公開=新四つ目本番稼働開始=正の複利"
+  brainwash_check: "#1防止: 4観点+11bc全検証。数値: 3体×(147月0不一致)+P1-P6全PASS"
+  step3_5_verified: true
+  timestamp: "2026-06-15T17:38:00"
+- cmd_id: cmd_3391
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "本番PF登録。P1-P5パリティAC付き。理論パラメータ+殿指示"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。pf_L3加速D理論設計(6M/12M/top_n=2)本番登録。BB実装+奥義25体確認済み。checklist準拠+P1-P5パリティ。殿指示(作ってくれ)。adversarial遡及: 本番DB INSERT→P5 hide-first+パリティで防御確認"
+  observations:
+    - "事実1: 加速D理論パラメータ=cmd_3377 BB効果分析で裏付け(NHF76.4% AvgUWP1.3月=全忍法最良)"
+    - "事実2: 入力=全奥義(pf_L2)25体。MomentumAccelerationFilter BB実装8ファイル確認済み"
+    - "事実3: q_ambiguityにPF名称(奥義-pf_L3-加速D)の殿確認を注記。命名規則変更可能"
+  causal_chain: "殿指示(NHF+AvgUWP重視)→理論パラメータ設計(6M/12M/top_n=2)→本番登録→α6実績値蓄積=正の複利"
+  brainwash_check: "#1防止: 6観点全検証。数値: AC3+P5=8項目, 奥義25体入力, timeout30min"
+  ambiguity_points: none
+  timestamp: "2026-06-15T22:33:00"
+- cmd_id: cmd_3391
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck ERRORS=0。全AC+P yes。本番PF登録+α6記録完了"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。pf_L3加速D本番登録完了。α6: CAGR=91.15% NHF=73.2% AvgUWP=1.4月。8bc全yes。既存PF不変(P3: 差分0)。adversarial遡及: P3差分0+P5+既存不変確認"
+  observations:
+    - "事実1: id=df9395c7。奥義25体(copy含む)コンポーネント。fullrecalculate 290秒completed。monthly_returns 112件"
+    - "事実2: α6指標: CAGR=91.15%, NHF=73.2%, MaxDD=-27.17%, Calmar=3.35, AvgUWP=1.4月。NHF+AvgUWP重視設計に合致"
+    - "事実3: decision_candidate 3件(copy含む25体範囲/folder_id未作成/MRU定義)。殿裁定待ち事項"
+  origin: "[[cmd_3391]] -> [[pf_L3加速D本番登録+α6指標]] -> [[NHF73.2%+AvgUWP1.4月実績値蓄積]]"
+  causal_chain: "殿指示(NHF+AvgUWP重視)→理論パラメータ(6M/12M/top_n=2)→本番登録→α6実績値: NHF73.2% AvgUWP1.4月=設計意図通り=正の複利"
+  brainwash_check: "#1防止: 4観点全検証。数値: 8bc全yes, 112件monthly_returns, P3差分0(既存不変), α6 6指標記録"
+  step3_5_verified: true
+  timestamp: "2026-06-15T22:59:00"
+- cmd_id: cmd_3393
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "本番PF登録5体。近傍実験。P1-P5パリティ付き。殿指示"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。変わり身pf_L3近傍5パターン登録+α6比較。ベースラインA(NHF82%)の感度分析。殿指示(やろう)。cmd_3391と同パターン。adversarial遡及: 5体DB INSERT→P3既存不変+P5 hide-first確認"
+  observations:
+    - "事実1: ベースラインA(id=0c5a0768)=TrendReversalFilter period=2M select_n=2 NHF=82.0%。本番DB確認済み"
+    - "事実2: 近傍5パターン=period{1,3,4}×n=2 + period=2×n{1,3}。6パターン全数比較でパラメータ感度定量化"
+    - "事実3: fullrecalculate×5≈25分 < timeout 45分。P3既存PF不変確認付き"
+  causal_chain: "NHF82%チャンピオン→殿指示(近傍実験)→5パターン登録+α6比較→過適合検知+最適点特定=正の複利"
+  brainwash_check: "#1防止: 6観点全検証。数値: 5パターン+P5=8項目, 6パターン比較テーブル, timeout45min"
+  ambiguity_points: none
+  timestamp: "2026-06-15T23:51:00"
+- cmd_id: cmd_3393
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: WARN
+  gate_prediction_reason: "lesson_candidate有(component_portfolios件数の曖昧さ)"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。近傍5パターン登録+α6比較完了。C=Calmar最高6.22/MaxDD-19.1%。E=CAGR最高121.3%。8bc全yes"
+  observations:
+    - "事実1: 5パターン全てfullrecalculate完了(ID=168)。monthly_returns B=122/C=121/D=119/E,F=122件"
+    - "事実2: α6比較: C(period=3/n=2)がCalmar最高6.22+MaxDD最小-19.1%。E(period=2/n=1)がCAGR最高121.3%"
+    - "事実3: lesson_candidate有: component_portfolios(候補プール21体) vs fof_component_weights(選択後n体)の区別が曖昧"
+  origin: "[[cmd_3393]] -> [[近傍5パターン登録+α6比較]] -> [[C/E有力パラメータ特定]]"
+  causal_chain: "NHF82%チャンピオン→近傍5パターン→α6比較→C(Calmar最高)/E(CAGR最高)=パラメータ安定性確認=正の複利"
+  brainwash_check: "#1防止: 4観点全検証。数値: 8bc全yes, 5パターン×122件monthly_returns, α6 6指標×6パターン比較"
+  step3_5_verified: true
+  timestamp: "2026-06-16T00:24:00"
+- cmd_id: cmd_3396
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  gate_result: CLEAR
+  gate_prediction: BLOCK
+  gate_prediction_reason: "AC1前提不正確(universal=3/7)。dm-signal版のみ修正→infra版経由注入継続→useful_rate改善なし→AC3 FAIL予測"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "RC: AC1前提崩壊(universal=3/7件のみ)+二重登録問題(infra版経由注入継続)+AC2範囲狭(injected>=5=1件のみ)。修正案あり"
+  observations:
+    - "事実1: L577/L633/L544のdm-signal版のみuniversal。L775/L791/L783はinfra版で具体タグ済み。L299はgrid-search/architecture"
+    - "事実2: L577/L633/L544/L299はdm-signal+infra両方に存在。infra版はtags=infra/gate/gate-verdict-waive/communication(内容不一致の誤タグ)"
+    - "事実3: deploy_task.sh L4992:universal=keyword関連性フィルタ、L4999:空タグ=無条件注入、L5004:具体タグ=task_tags重複マッチ。infra版誤タグ経由が主要漏洩パス"
+    - "事実4: AC2 injected>=5はL775の1件のみ。NEVER_USEFUL全体(injected>=2)は20件超"
+  origin: "[[cmd_3396]] -> [[前提崩壊(universal=3/7)]] -> [[二重登録+infra誤タグ経由注入]]"
+  causal_chain: "軍師分析(NEVER_USEFUL Top7)→将軍cmd化→AC1がuniversal前提→現物確認で3/7のみ→infra版コピー(誤タグ)が主要漏洩パス→dm-signal版のみ修正は効果不足→useful_rate未改善=負の複利"
+  brainwash_check: "#2防止: 全7件×2版(dm-signal+infra)のタグ現物grep確認14エントリ。数値: universal=3件/具体タグ=4件/infra版誤タグ=4件。deploy_task.sh注入ロジック3パス(L4992/L4999/L5004)現物読了"
+  ambiguity_points: "AC1:7件全てuniversal前提が不正確(3/7のみ)。AC2:injected>=5=1件のみ(Top7全体はinjected>=2)"
+  severity: normal
+  hole_action: none
+  timestamp: "2026-06-16T02:00:00"
+- cmd_id: cmd_3396
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: WARN
+  gate_prediction_reason: "lesson_candidate有→draft_lessons BLOCKリスク。家老がlesson処理後にCLEAR"
+  confidence: HIGH
+  changed_lines: 21793
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。Top7+L625=8件タグ修正完了。dm-signal版(b3702d287)+infra版両対応。教訓件数804不変。シミュレーション23.0%。files_modified欠落(dm-signal/lessons.yaml)あるがcommand欄に記載なくSG-PRE25 PASS"
+  observations:
+    - "事実1: dm-signal版L577/L633/L544もタグ修正済み(commit b3702d287)。universal→gs_monthly等の固有タグに変更。RC指摘の二重登録問題に対応"
+    - "事実2: infra版8件全てタグ修正確認。L775=auto_commit_before_clear, L577=cmd_quality_log等。教訓件数804→804(不変)"
+    - "事実3: lesson_write.sh --retagによるフォーマット変換(multi-line→inline)で21793行diff。内容変更なし(件数一致+title抜き打ち確認)"
+    - "事実4: シミュレーション23.0%(8件除外後17/74)。gate実測は30cmd窓入替後に効果検証必要"
+  origin: "[[cmd_3396]] -> [[8件タグ修正+dm-signal版対応]] -> [[useful_rate 21.3%→シミュ23.0%]]"
+  causal_chain: "NEVER_USEFUL Top7+L625→タグ修正8件(dm-signal+infra両版)→固有タグでtask_tagsマッチ精度向上→無関係cmd注入減→useful_rate改善=正の複利"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "21793行diffはlesson_write.sh --retagのフォーマット変換(multi-line→inline)。教訓件数804不変、title/summary抜き打ち確認で内容損失なし。セキュリティ/gate機能への影響なし"
+  brainwash_check: "#2防止: dm-signal版+infra版の両コピー現物確認(grep)。数値: 教訓件数804→804(不変)、diff +808/-10442(フォーマット変換)、タグ修正8件、シミュレーション23.0%。GATE CLEAR未知でバイアスなし"
+  step3_5_verified: true
+  timestamp: "2026-06-16T02:12:00"
+- cmd_id: cmd_3397
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "2ファイル2行変更。テスト確認付き。PI-027コード強制化"
+  confidence: HIGH
+  changed_lines: 2
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。PI-027コード強制化(hide_portfolio default=False→True)。2ファイル2行。殿裁定直結。LG001適用: git show HEADでFalse確認(忍者作業中のdisk上はTrue)"
+  observations:
+    - "事実1: git show HEAD:models.py→default=False, disk→default=True。忍者作業進行中。cmdの前提はHEAD基準で正確"
+    - "事実2: repository.py:40はhide_portfolio:True設定済み。tier_visibility_settings経由の作成パスは既に正しい。models.pyのdefaultはDB直接作成時のfallback"
+    - "事実3: migrations.pyのadd_column_if_missingはカラム未存在時のみ適用。既存DBのhide_portfolio=False行には影響なし(殿が手動修正済み)"
+  origin: "[[殿裁定2026-06-16_hide-first恒久化]] -> [[PI-027_models.py_default=False]] -> [[cmd_3397_コード強制化]]"
+  causal_chain: "殿手動hide(uncategorized 9件)→構造的穴発見(models.py default=False)→PI-027コード強制化→全PF作成時hide自動=正の複利(殿の手動作業ゼロ化)"
+  brainwash_check: "#2防止: git show HEAD vs disk差分で忍者作業中を確認(LG001)。数値: 2ファイル2行変更、PI-027=projects/dm-signal.yaml L73確認。repository.py:40/viewer_tiers.py:60の既存True設定も確認"
+  ambiguity_points: none
+  timestamp: "2026-06-16T02:20:00"
+- cmd_id: cmd_3397
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: WARN
+  gate_prediction_reason: "lesson_candidate有→draft_lessons BLOCKリスク。家老lesson処理後にCLEAR"
+  confidence: HIGH
+  changed_lines: 2
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。PI-027コード強制化。models.py+migrations.pyのdefault=True変更。12/12 PASS。2ファイル2行。commit確認済み"
+  observations:
+    - "事実1: SG-PRE3 PASS。両ファイルにcmd commit存在。grep models.py:77 default=True, migrations.py:83 DEFAULT TRUE"
+    - "事実2: pytest 12 passed 2.21s。既存テスト全PASS。repository.py:40は既にTrue→今回はモデルfallback統一"
+    - "事実3: lesson_candidate: models.pyとmigrations.pyのデフォルト同期。再利用可能な具体知見"
+  origin: "[[cmd_3397]] -> [[PI-027_コード強制化]] -> [[hide_portfolio_default=True]]"
+  causal_chain: "殿手動hide事故→PI-027コード強制化→models.py+migrations.py default=True→全PF作成時hide自動=正の複利"
+  brainwash_check: "#2防止: git show HEAD確認(draft時)→commit後grep確認(report時)。数値: 2ファイル2行, 12/12 test PASS, WA率0%(9件中0件)"
+  step3_5_verified: true
+  timestamp: "2026-06-16T02:35:00"
+- cmd_id: cmd_3401
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  gate_prediction: CLEAR
+  gate_prediction_reason: "v3設計3往復確定済み。scripts変更+batsテスト付き"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。覚醒設計書v3実装(Check19出口判定化+session_alerts stop hook)。v3設計3往復確定。殿指摘2件準拠。AC3にbatsテスト必須"
+  observations:
+    - "事実1: v3設計は掲示板blt_20260616_000901+000944で3往復確定。穴G-K受容済み。3本柱(出口計測+session_alerts+clear_prep引継)のうち前2本を本cmdで実装"
+    - "事実2: Check19累計WARN=9件(cmd_design_quality確認)。直前D0(56c113304)で重複カウントFP修正済みだが、Check19の入口方式自体が根因→出口判定への原理転換が本質対処"
+    - "事実3: session_alerts.txtはtxt形式(cat+grep)。stop hookでの毎応答更新コスト最小。起動時忘却防止(殿指摘)"
+  origin: "[[覚醒設計書v3_3往復確定]] -> [[Check19累計WARN9件]] -> [[cmd_3401_出口判定+session_alerts]]"
+  causal_chain: "入口方式(文字列トリガー)→FP9件→出口判定(構造判定)で根因解消+session_alertsでリアルタイム追跡→品質の仕組み先行=正の複利(殿指摘:100億年)"
+  brainwash_check: "#2防止: v3設計全文読了+Check19発火実績9件確認+D0(FPカウント修正)との関係整理。数値: AC3件, WARN9件, v3=3往復, timeout45min。100億年: 出口判定はCheck17-20横展開可能な原理転換"
+  ambiguity_points: none
+  timestamp: "2026-06-16T03:00:00"
+- cmd_id: cmd_karo_skill_refs_update_20260616
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  gate_prediction: CLEAR
+  gate_prediction_reason: "skill_refs WARN6件修正のhotfix。script_refs_checked_at更新のみ"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, premortem]
+  findings_summary: "簡略レビュー。karo_direct hotfix。6 SKILL.mdのscript_refs_checked_at更新。gate_skill_script_refs.sh WARN6件→0件化が目標"
+  observations:
+    - "事実1: WARN6件=4スキル(note_draft.sh変更由来)+2スキル(gate_lesson_health.sh変更由来)。全件timestamp更新+契約確認コメント追記"
+    - "事実2: previous_failures: attempt1でbc.commit空+verdict空→gate BLOCK。再配備"
+  origin: "[[gate_skill_script_refs WARN6件]] -> [[script_refs_checked_at更新]]"
+  causal_chain: "note_draft.sh/gate_lesson_health.sh変更→6 SKILL.md script_refs stale→WARN6件→更新で解消=正の複利"
+  brainwash_check: "#1防止: gate_skill_script_refs.sh実行でWARN6件現物確認。数値: 6スキル, WARN6件, timeout20min"
+  ambiguity_points: none
+  timestamp: "2026-06-16T03:12:00"

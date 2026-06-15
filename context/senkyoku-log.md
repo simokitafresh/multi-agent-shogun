@@ -6,6 +6,7 @@
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | cmd_3396 | 教訓useful_rate改善(3セッション連続ALERT解消) | CLEAR | NEVER_USEFUL教訓8件タグ固有化。シミュ21.3%→23.0%。軍師RC→二重登録対応→LGTM |
+| cmd_3397 | hide_portfolio DBデフォルトTrue化(PI-027コード強制) | CLEAR | 殿裁定直結。models.py+migrations.py 2行変更。テスト12/12 PASS |
 
 ## 2026-06-14
 

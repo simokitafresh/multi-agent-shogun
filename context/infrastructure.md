@@ -1289,6 +1289,8 @@ done | sort -u
 - → [[gunshi_idle_numbers_cold_bugfix_20260426]] numbersのコールドバグ修正: インフラバグ実例
 - → [[gunshi_idle_observations_gap_analysis_20260519]] MCP observations gapの分析: 三層記憶インフラの穴
 - → [[gunshi_idle_precision_fix_inbox_nudge_20260527]] inbox nudge精度修正: watcher誤検知根因
+- → [[karo-direct]] 家老自立配備スキル: 将軍cmd不要の直接配備標準化
+- → [[gunshi_idle_dream_gate_analysis_20260507]] dreamゲート分析: Phase設計品質検証
 - → [[gunshi_idle_project_dir_false_rc_20260430]] project_dir false RC: gate判定バグの根因
 - → [[gunshi_idle_recording_error_analysis_20260409]] recording error分析: lord_conversation記録失敗の根因
 - → [[gunshi_idle_session_efficiency_20260503]] セッション効率分析: CTX消費ボトルネックの特定

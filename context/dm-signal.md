@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-16 cmd_3393 -->
-<!-- last_synced_lesson: L748 -->
+<!-- last_updated: 2026-06-16 cmd_3397 -->
+<!-- last_synced_lesson: L749 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -252,18 +252,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L677-L708は振り分け済 → ops索引(L677:SQLite検証/L678:合成ベンチ/L680:CLI引数照合/L684:output-dir alias/L688:Payload meta/L692:SSOT照合/L708:valid_start_date), ops§6-7(L690:sync完了判定/L701:fullrecalc復元), research§GS結果(L685:selector流用/L686:SQLite月次), research§パリティ(L699:NULL除外), research索引(L693:時間解像度), core§19.2(L694:top_n分離/L696:FoF top_n/L703:ticker×weight判定), frontend§12(L702:UUID漏れ/L704:precomputed weights/L705:月初Signal)。重複削除: L679≡L678, L681-L683≡L680, L689≡L688, L691≡L690, L695≡L694, L698≡L696, L700≡L699, L706≡L705。L687/L697/L707自動生成→削除）
 - （L709-L720は振り分け済 → core§19.4(L709[PI]), ops§6-7(L714+L715統合), ops索引(L710/L713/L716/L717), frontend§12(L719+L720統合)。L711/L712/L718はAUTO-DEPRECATE→スキップ）
 - （L721-L735は振り分け済 → ops教訓索引(L721/L723/L729/L730/L733/L735), core§19.2(L722/L734), research§38(L724/L725/L726/L728)。L727はL728重複→統合）
-- L737: 奥義PFの命名BBはL1コンポーネントBBと対応していない（cmd_3377）
-- L738: 奥義命名BBとL1コンポーネントBB非対応は正常挙動（cmd_3377）
-- L739: portfolio.config.pipeline_configのselection_pipelineはblocks配列を持つdict形式（cmd_3378）
-- L740: PF構成確認はcheck_pf_config.pyで全層一括確認（cmd_3378）
-- L741: BB↔忍法完全対応表（cmd_3377）
-- L742: BB↔忍法対応+パラメータ範囲の確認方法（cmd_3377）
-- L743: PF構成確認手順(確認方法付き)（cmd_3378）
-- L744: API境界の文字列は4層（BE enum/FE型/DB JSON/script JSON）で同時管理が必要（cmd_3383）
-- L745: blocks/__init__.pyのimport行+__all__追加は2 commitに分割必須（cmd_3384）
-- L746: [自動生成] 有効教訓の記録を怠った: cmd_3387（cmd_3387）
-- L747: UUID付きGS universeを本番パリティに使う時はsource_typeをDBへ昇格する（cmd_3388）
-- L748: FoFのconfig.component_portfoliosとfof_component_weightsの件数の意味の違い（cmd_3393）
+- （L737-L749は振り分け済 → ops索引(L737/L738統合:奥義BB命名正常挙動/L740:check_pf_config/L743:PF構成確認/L745:import分割/L747:UUID GS source_type), core§19.2(L739:pipeline_config構造/L741:BB忍法対応表/L742:パラメータ確認/L748:FoF components件数差), core§5(L744:API境界4層管理), ops§6-7(L749:models+migrations同期)。L746は自動生成→削除）
 
 ## 因果リンク
 

@@ -160,6 +160,7 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-06-15: gate=cmd_complete_gate result=FAIL executor=kagemaru reason=kagemaru:empty_lessons_useful:related=['L634','L633','L621','L620','L619','L618','L617','L616','L615','L614']
 
 - 2026-06-13: gate=gate_report_format result=FAIL executor=unknown reason=worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; lessons_useful[0]: missing \"id\" field (must have lesson ID like L074); lessons_useful[0]: missing \"useful\"...
 - 2026-06-13: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: item count 1/5 (<50% of task template); status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; res...

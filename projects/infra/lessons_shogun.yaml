@@ -578,3 +578,27 @@ lessons:
 # LS062: superseded by LS-A09(24) (コミット列照合=現物確認パターン。2026-06-15統合)
 # LS063: superseded by LS-A09(23) (gate実行確認=現物確認の具体パターン。2026-06-13統合。cmd_3360でL3/L4埋込み済み)
 # LS063: superseded by LS-A09(25) (α6指標=三層記憶確認→現物確認パターン。2026-06-15統合)
+- id: 'LS062'
+  title: '先送り表現検出はcmd全文grepのFPパターン'
+  origin: '[[cmd_3388]]'
+  detail: 'q_ambiguityの段階的がcmd_text_deferral_languageに発火。先送り表現チェックは全文grep。LS-A04(15)と同構造。置換で解消'
+  source_cmd: 'cmd_3388'
+  created_at: '2026-06-15'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=先送り表現'
+- id: 'LS063'
+  title: '累計昇格はcmd cancel+新ID起票で回避(LS-A04/LS-A22再発)'
+  origin: '[[cmd_3390_累計BLOCK]] -> [[新ID起票]] -> [[cmd_3391_PASS]]'
+  detail: 'cmd_3390で3種WARN累計昇格(parity_ac_missing+bare_layer+gate_script_q5)が同時BLOCK。累計は前cmd群(3386-3389)から引継ぎ。新ID(cmd_3391)で累計リセットし1回でPASS。根因: 本番登録cmdはトリガー語が多く複数WARNが同時発火→累計が一気に上昇する構造'
+  source_cmd: 'cmd_3391'
+  created_at: '2026-06-15'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=累計昇格'
+- id: 'LS064'
+  title: 'DB直接接続試行錯誤=スキル不使用の構造的バグ(LS-A17再発)'
+  origin: '[[cmd_session_20260616]]'
+  detail: '/db-checkスキルが存在するのにpsycopg2直接接続を4回試行錯誤。根因: skill_recommend.sh/prompt_state_inject.shにdb-checkの推薦トリガーなし。スキルはSKILL.md TRIGGER定義のみ=LLM記憶依存=/clear後に消える。自動化ターゲット: skill_recommend.shにdb-checkトリガー追加+pre-bash hookでpsycopg2直接接続WARN'
+  source_cmd: 'cmd_session_20260616'
+  created_at: '2026-06-16'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=db-check skill_recommend'

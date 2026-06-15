@@ -1,24 +1,11 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  acceptance_criteria:
-    AC1:
-      binary_checks:
-      - check: gate_karo_startup.sh実行でWARN率が30%以下か
-        result: ''
-      - check: 修正が3行以内の最小変更か（新仕組み追加なし）
-        result: ''
-      description: 'review_quality_scale_summary()のawk内でgate_resultフィールドを追跡し、cmd_id単位の最終gate_resultがCLEAR/PASSの場合はFAIL verdictをWARN対象から除外する。具体的には: (a)/^  gate_result:/パターンでgate_resultを取得 (b)flush_entry()でgr[n]に保存 (c)END blockのnew_warn計算でlast_idx[key]のgr値がCLEAR/PASSならokを上書き'
-    AC2:
-      binary_checks:
-      - check: gate出力にWARN:が出ていないか
-        result: ''
-      description: 修正後にbash scripts/gates/gate_karo_startup.sh実行→レビュー品質スケールのWARN率が30%以下であること
-    AC3:
-      binary_checks:
-      - check: bats test_gate_karo_startup.bats のreview_quality関連テスト全PASS
-        result: ''
-      description: 関連テスト(test_gate_karo_startup.bats)でreview_quality関連テストがPASS。既存テストにリグレッションなし
+  readonly_ref:
+  - path: 'scripts/gates/gate_lesson_health.sh'
+    reason: command欄の必読/参照専用ファイル
+  _ac_task_id: cmd_3396_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3396 (deployed 2026-06-16T01:56:16). Read from the beginning.
+  ac_version: b2979e1c
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -33,49 +20,57 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_review_quality_warn_gate_result_20260615
+  parent_cmd: cmd_3396
   project: infra
-  purpose: 'gate_karo_startup.sh review_quality_scale_summary()でgate_result=CLEARのcmdをWARN対象から除外する修正。根因: cmd_3376/3378/3379/3381はGATE CLEARされたがgunshi_review_logのverdictがFAILのまま→計測が旧FAILを永続カウント→WARN率36%が3セッション連続ALERT。'
+  purpose: startup健全度ALERTが3セッション連続(2026-06-14〜16)。useful_rate=21.3%(閾値30%)。軍師idle分析でNEVER_USEFUL教訓Top7の共通根因=タグ精度不足を特定済み。固有教訓が無関係cmdに無差別注入されている。タグを内容に合致する具体タグに変更し、低スコア教訓をwithhold降格してS/N比を改善する
   status: idle
   stop_for: []
-  target_path: scripts/gates/gate_karo_startup.sh
-  task_id: cmd_karo_hotfix_review_quality_warn_gate_result_20260615_normal
-  task_type: hotfix
+  target_path: /mnt/c/tools/multi-agent-shogun/projects
+  task_id: cmd_3396_full
+  task_type: full
   related_lessons:
-  - id: 'L486'
-    summary: 'gate_karo_startup.shでcapture-pane x6を並列化(subshell+tmpfile)したが37ms→35msのみ(-2ms)。W'
-    detail: 'gate_karo_startup.shでcapture-pane x6を並列化(subshell+tmpfile)したが37ms→35msのみ(-2ms)。W'
-  - id: 'L274'
-    summary: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
-    detail: '新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した'
-  - id: 'L774'
-    summary: 'review_quality_scale_summary()は当初draft|reportのみ・全イテレーションカウントで正常な反復レビュー(RC→LGTM)が'
-    detail: 'review_quality_scale_summary()は当初draft|reportのみ・全イテレーションカウントで正常な反復レビュー(RC→LGTM)が'
-  - id: 'L697'
-    summary: 'REQUEST_CHANGESで穴を発見した場合、D0即実装(20行以下)またはcmd提案で即ふさぐ。severity:normalで先送りしない。gate_g'
-    detail: 'REQUEST_CHANGESで穴を発見した場合、D0即実装(20行以下)またはcmd提案で即ふさぐ。severity:normalで先送りしない。gate_g'
-  - id: 'L795'
-    summary: 'gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し、最後の値をfreshness時'
-    detail: 'gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し、最後の値をfreshness時'
-  - id: 'L549'
-    summary: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
-    detail: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
-  - id: 'L723'
-    summary: 'context_freshness_check.shがlast_updated経過日数ではなくsource_commit_count_sinceで警告を出す仕様'
-    detail: 'context_freshness_check.shがlast_updated経過日数ではなくsource_commit_count_sinceで警告を出す仕様'
-  - id: 'L674'
-    summary: 'gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA'
-    detail: 'gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA'
-  - id: 'L574'
-    summary: 'gate_report_formatのように複数スキルの後段で発火するgateは、直近実行スキル推定に任せるとdashboard-update等へ誤帰属する。g'
-    detail: 'gate_report_formatのように複数スキルの後段で発火するgateは、直近実行スキル推定に任せるとdashboard-update等へ誤帰属する。g'
-  - id: 'L532'
-    summary: '現在のwarn_missing_prev_cmd_lesson()は次のcmd_save保存時(L1070)に発火する。前cmdCLEAR直後にはリマインドしな'
-    detail: '現在のwarn_missing_prev_cmd_lesson()は次のcmd_save保存時(L1070)に発火する。前cmdCLEAR直後にはリマインドしな'
+  - id: 'L324'
+    summary: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
+    detail: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
+  - id: 'L752'
+    summary: 'bashの${variable: -N}はvariableがN文字未満の場合に空文字を返す(エラーなし)。cache_scopeが短いパスで全テストが同一キャッ'
+    detail: 'bashの${variable: -N}はvariableがN文字未満の場合に空文字を返す(エラーなし)。cache_scopeが短いパスで全テストが同一キャッ'
+  - id: 'L747'
+    summary: 'search_log_write.shはgit index上100644だったがsemantic_search.shはbashで呼ぶ前に-xを要求していたため、'
+    detail: 'search_log_write.shはgit index上100644だったがsemantic_search.shはbashで呼ぶ前に-xを要求していたため、'
+  - id: 'L662'
+    summary: 'gate_skill_script_refs.shはPythonプロセス起動+skillsスキャンで1回約900ms。startup gateが3-5回呼び出す'
+    detail: 'gate_skill_script_refs.shはPythonプロセス起動+skillsスキャンで1回約900ms。startup gateが3-5回呼び出す'
+  - id: 'L585'
+    summary: 'sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの'
+    detail: 'sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの'
+  - id: 'L361'
+    summary: 'clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し'
+    detail: 'clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し'
+  - id: 'L330'
+    summary: 'restart_watchers.shのL7で${BASH_SOURCE[0]}から$SCRIPT_DIRを解決済みだが、L101は$(dirname $0)で'
+    detail: 'restart_watchers.shのL7で${BASH_SOURCE[0]}から$SCRIPT_DIRを解決済みだが、L101は$(dirname $0)で'
+  - id: 'L301'
+    summary: 'bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保'
+    detail: 'bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保'
+  - id: 'L296'
+    summary: 'IF: bashでIFS=タブ文字のreadを使いTSV解析する場合 THEN: 空フィールドにプレースホルダを使用せよ BECAUSE: タブはIFSホワイト'
+    detail: 'IF: bashでIFS=タブ文字のreadを使いTSV解析する場合 THEN: 空フィールドにプレースホルダを使用せよ BECAUSE: タブはIFSホワイト'
+  - id: 'L263'
+    summary: 'bashのwhile readループ変数名は呼出元のlocal変数と動的スコープで衝突する。ライブラリ関数内のwhile read変数は必ずプレフィックス付き('
+    detail: 'bashのwhile readループ変数名は呼出元のlocal変数と動的スコープで衝突する。ライブラリ関数内のwhile read変数は必ずプレフィックス付き('
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "growth_loop — 学習ループ:  AGENTS.md 学習ループ原則 context/growth-loop.md context/infrastructure.md 知識サイクル現状 scripts/gates/gate_cycle_health.sh 三層学習ループ健全性計測 scripts/karo_workaround_log.sh WA記録(成績表フィードバック) scripts/ci_status_check.sh CI状態チェック(品質フィードバック) scripts/lesson_impact_analysis.sh 教訓効果分析(注入率/参照率/CLEAR-BLOCK A/B) scripts/ralph_loop_metrics.sh ラルフループ定量計測(5指標: パターン再発/revert/完了速度/lesson-CLEAR相関/PI違反) scripts/knowledge_metrics.sh 教訓有効性+陳腐化検出(JSON/TSV出力対応) docs/research/gunshi_idle_growth_loop_nazenaze_20260515.md — 軍師idle: 成長ループなぜなぜ分析(2026-05-15) docs/research/gunshi_idle_immune_effectiveness_20260512.md — 軍師idle: 免疫システム有効性測定(2026-05-12) docs/research/gunshi_idle_immune_system_evidence_20260426.md — 軍師idle: 免疫システム証拠収集(2026-04-26) docs/research/gunshi_idle_immunity_measurement_20260510.md — 軍師idle: 免疫計測フレームワーク(2026-05-10)"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  - "gunshi_review_lifecycle — 軍師レビューライフサイクル:  logs/gunshi_review_log.yaml skills/review-bundle/SKILL.md skills/gate-sync/SKILL.md skills/idle-persist/SKILL.md docs/research/gunshi_gp193_t1_prevention_20260414.md — 軍師GP193: T1防止設計(2026-04-14) docs/research/gunshi_gp194_split_deploy_bc_scope_20260415.md — 軍師GP194: 分割配備BCスコープ(2026-04-15) docs/research/gunshi_idle_ac_scope_nazenaze_20260519.md — 軍師idle: ACスコープなぜなぜ分析(2026-05-19) docs/research/gunshi_idle_accuracy_goodhart_20260512.md — 軍師idle: 精度Goodhart過適合分析(2026-05-12) docs/research/gunshi_idle_altruism_cost_analysis_20260512.md — 軍師idle: 利他コスト分析(2026-05-12) docs/research/gunshi_idle_altruism_proposals_20260512.md — 軍師idle: 利他改善提案(2026-05-12) docs/research/gunshi_idle_draft_lessons_trend_20260426.md — 軍師idle: ドラフト教訓トレンド分析(2026-04-26) docs/research/gunshi_idle_effectiveness_score_baseline_20260512.md — 軍師idle: 有効性スコアベースライン測定(2026-05-12) docs/research/gunshi_idle_fail_pattern_active_20260428.md — 軍師idle: アクティブ失敗パターン分析(2026-04-28) docs/research/gunshi_idle_lgtm_block_pattern_20260414.md — 軍師idle: LGTM BLOCKパターン分析(2026-04-14)"
+  related_causal_links:
+  - "[[startup_gate_lesson_health_ALERT_3session]]"
+  - "[[tag精度不足_NEVER_USEFUL_7件]]"
+  - "[[useful_rate_21pct_ALERT]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -95,27 +90,34 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L486: gate_karo_startup.shでcapture-pane x6を並列化(subshell+tmpfile)したが37ms→35msのみ(-2ms)。W
-      - L274: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
-      - L774: review_quality_scale_summary()は当初draft|reportのみ・全イテレーションカウントで正常な反復レビュー(RC→LGTM)が
-      - L697: REQUEST_CHANGESで穴を発見した場合、D0即実装(20行以下)またはcmd提案で即ふさぐ。severity:normalで先送りしない。gate_g
-      - L795: gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し、最後の値をfreshness時
-      - L549: queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形
-      - L723: context_freshness_check.shがlast_updated経過日数ではなくsource_commit_count_sinceで警告を出す仕様
-      - L674: gate_cmd_state.sh line 18: _self=$0 → _self=${BASH_SOURCE[0]}。$0はシェルの呼び出し方に依存しPA
-      - L574: gate_report_formatのように複数スキルの後段で発火するgateは、直近実行スキル推定に任せるとdashboard-update等へ誤帰属する。g
-      - L532: 現在のwarn_missing_prev_cmd_lesson()は次のcmd_save保存時(L1070)に発火する。前cmdCLEAR直後にはリマインドしな
+      - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ
+      - L752: bashの${variable: -N}はvariableがN文字未満の場合に空文字を返す(エラーなし)。cache_scopeが短いパスで全テストが同一キャッ
+      - L747: search_log_write.shはgit index上100644だったがsemantic_search.shはbashで呼ぶ前に-xを要求していたため、
+      - L662: gate_skill_script_refs.shはPythonプロセス起動+skillsスキャンで1回約900ms。startup gateが3-5回呼び出す
+      - L585: sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの
+      - L361: clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し
+      - L330: restart_watchers.shのL7で${BASH_SOURCE[0]}から$SCRIPT_DIRを解決済みだが、L101は$(dirname $0)で
+      - L301: bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保
+      - L296: IF: bashでIFS=タブ文字のreadを使いTSV解析する場合 THEN: 空フィールドにプレースホルダを使用せよ BECAUSE: タブはIFSホワイト
+      - L263: bashのwhile readループ変数名は呼出元のlocal変数と動的スコープで衝突する。ライブラリ関数内のwhile read変数は必ずプレフィックス付き(
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-14T12:45:10+09:00 | 【INFOバッチ】 2026-06-14 12:43:07|cmd_3376"
-  - "2026-06-14T12:28:50+09:00 | 【家老】cmd_3376 初回配備開始 (title=cmd起票前に三層記憶(殿裁定・定義)を自動検索し結果をcmd_save.shで強制表示する仕組み, ninja=saizo) cmd起票前に三層"
-  ac_version: 942ca472
-  _ac_task_id: cmd_karo_hotfix_review_quality_warn_gate_result_20260615_normal
-  _ac_worker_id: 
+  - "2026-06-14T17:53:35+09:00 | 【INFOバッチ】 2026-06-14 17:50:26|CI緑: run 27493379190"
+  - "2026-06-14T17:38:12+09:00 | 【INFOバッチ】 2026-06-14 17:26:23|CI緑: run 27492798496"
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'NEVER_USEFUL教訓Top7(L775・L577・L791・L783・L633・L544・L299)のタグをuniversalから内容固有タグに変更し、変更後のタグでgrep確認する'
+  - id: 'AC2'
+    checks:
+    - check: 'injected>=5かつuseful=0の教訓を全件特定し、lesson_impact.tsvの実データに基づきwithhold降格またはタグ修正を実施する'
+  - id: 'AC3'
+    checks:
+    - check: '修正後にbash scripts/gates/gate_lesson_health.sh を実行し、useful_rateが修正前(21.3%)から改善されていることを数値で報告する'
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_karo_hotfix_review_quality_warn_gate_result_20260615.yaml
-  report_path: queue/reports/kotaro_report_cmd_karo_hotfix_review_quality_warn_gate_result_20260615.yaml
+  report_filename: kotaro_report_cmd_3396.yaml
+  report_path: queue/reports/kotaro_report_cmd_3396.yaml
   bloom_level: 
-  deployed_at: "2026-06-15T12:50:34"
+  deployed_at: "2026-06-16T01:56:38"

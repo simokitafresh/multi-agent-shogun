@@ -210,6 +210,8 @@ cmd_2673-2676で4件全てL5化完了(2026-05-11):
 - → [[gunshi_idle_silent_failure_audit_20260605]] サイレント失敗監査: 成長ループの穴の可視化
 - → [[gunshi_idle_skill_enforcement_5layer_20260515]] スキル強制5層設計: Level5到達の実装実例
 - → [[gunshi_idle_skill_growth_audit_20260506]] スキル成長監査: 成長ループのスキル次元の計測
+- → [[gunshi_idle_adversarial_retroactive_application_20260614]] 敵対的遡及適用分析: 教訓の遡及適用パターン
+- → [[gunshi_idle_useful_rate_measurement_fix_20260615]] useful_rate計測バグ修正: 教訓健全度ALERTの根因
 - → [[gunshi_idle_skill_growth_loop_nazenaze_20260502]] スキル成長ループのなぜなぜ: idle→skill精度の連鎖
 - → [[gunshi_idle_skill_growth_nazenaze_20260512]] スキル成長のなぜなぜ継続分析
 - → [[gunshi_idle_skill_precision_cycle2_20260609]] スキル精度サイクル2: 成長ループの計測と改善

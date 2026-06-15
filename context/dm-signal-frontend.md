@@ -79,6 +79,9 @@ Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式
 | Compare loading | `/compare` はchart data loading中もPF選択などの比較コントロールを保持。 | cmd_2569; `frontend/app/compare/page.tsx` |
 | Drawdowns | all drawdowns表示変更(cmd_2571)は同日revert済み。現行Drawdowns/API/FAQはrevert後挙動を正とする。 | ab5eac9d → 1aa09525; `frontend/app/drawdowns/page.tsx`, `frontend/lib/api-client.ts`, `frontend/lib/faq-content.ts` |
 
+- L654: FE設計書§2はcmd更新時に陳腐化。diff確認をAC化すべき（cmd_2297）
+- L655: FE設計書§2陳腐化(L654と同根)（cmd_2297）
+
 ## 2.6 直近FE変更索引（2026-05-07〜05-27）
 
 | 対象 | 結論 | 参照 |
@@ -148,6 +151,7 @@ PF切替計測実績(CDP): 547.2ms中央値(cmd_2312, 2026-04-26)。旧1008ms(cm
 - L245: フォルダフィルタ共通化は状態モデル(multi/single)を揃えてから抽出せよ（cmd_783）
 - L277: 履歴グラフUIは時系列snapshot蓄積と取得窓の両方が揃わないと単月表示へ退化する（cmd_859）
 - L280: 入替推奨UIは候補(candidate)語彙+連続月数条件+Progressive Disclosureで設計せよ（cmd_859）
+- L719: FE表示名変更時は新名優先+旧名fallbackを同時実装せよ（cmd_karo_direct_fe_ptu_fix）
 
 ## 6. デザインシステム
 
@@ -180,6 +184,8 @@ PF切替計測実績(CDP): 547.2ms中央値(cmd_2312, 2026-04-26)。旧1008ms(cm
 **signals handoff/cache実装(cmd_2283)**: SignalsContextにhandoff cacheを追加。PF切替/ページ遷移時の初期表示データ引き継ぎを担う。→ `frontend/contexts/signals-context.tsx`, `frontend/lib/__tests__/constants.test.ts`
 **next-portfolio predictive prefetch(cmd_2300)**: usePrefetchで次PF予測prefetchを計測・実装。SignalsContext/usePrefetchのテストを拡張。→ `frontend/hooks/usePrefetch.ts`, `frontend/contexts/signals-context.tsx`
 **idle fetch defer(cmd_2308)**: dashboard/monthly-returns/annual-returnsのfull fetchをidle schedulerへ遅延。初期表示優先のため`frontend/lib/idle-scheduler.ts`を追加。→ `frontend/app/dashboard/page.tsx`, `frontend/app/monthly-returns/page.tsx`, `frontend/app/annual-returns/page.tsx`
+- L650: perf_measure.pyはviewer認証専用。admin計測にはCDPプリフライト手順か別スクリプトが必要（cmd_2271）
+- L656: 固定待機排除はDOMポーリングで行う（cmd_2310）
 
 **本番ベースライン計測(cmd_719+720)**: /dashboard First Load JS 238kB(最重量)。最遅API=monthly-returns 1721.5ms/62.7KB。キャッシュヒット率85-90%。偵察時に記載された「Renderコールドスタート15s+」は、backend が `plan: pro` のため本件では誤認。
 完了済み施策: SignalsContext useMemo化(cmd_740) / katex CSS→docs移動(cmd_741) / signal-pie-chart dynamic import(cmd_742) / prefetch縮退83→3本(cmd_733) / uvicorn workers 2→revert→再投入(cmd_743/751/763) / SWR化(cmd_765) / date-fns除去+lucide optimize+MtdChart dynamic import(cmd_786) / ETag FE対応(cmd_760) / 401連鎖崩壊修正(cmd_758) / Phase2a共通化4件(cmd_784-787)。
@@ -216,6 +222,9 @@ PF切替計測実績(CDP): 547.2ms中央値(cmd_2312, 2026-04-26)。旧1008ms(cm
 - L244: usePrefetch request stormは10N+3本。route gate+request budget導入が先決（cmd_783）
 - L247: 全PFプリフェッチは1PFあたり約10API自動発火でrequest storm化する（cmd_783）
 - L248: グローバルProviderのroute非依存prefetchは別ページでAPIファンアウト再発する（cmd_783）
+
+- L651: cdp_measure.sh curl CDP check: WSL2でcurlがWindowsローカルポートに接続不可（cmd_2288）
+- L653: cdp_measure baseline比較は生成JSONへの統合確認を必須にする（cmd_2291）
 
 ## 9. PWA・テスト・デプロイ
 
@@ -257,6 +266,9 @@ SEO: グローバルmetadataのみ。OG/robots.txt/sitemap未実装。
 
 cmd_295 Phase1の全tier hide_portfolio=trueがGlobal変更をブロックしていた不具合。
 修正: 全TierのTierVisibilitySettings.portfolio_settingsを空dict化(DB操作)。_safe_json_field防御も同時追加。
+- L702: FoF UUID漏れはFEキャッシュだけでなくAPI display fallbackも検証する（cmd_2451）
+- L704: FoF Monthly Trade表示は動的展開よりprecomputed weightsを優先せよ（cmd_2452）
+- L705: Monthly Trade FoF表示はyear_month月初Signalのdisplay_ticker_weightsを優先参照（cmd_2453）
 
 ## 11.6 Visibility vis_L2/L3/L4 MECEマトリクス (cmd_2596)
 
@@ -272,16 +284,7 @@ cmd_295 Phase1の全tier hide_portfolio=trueがGlobal変更をブロックして
 
 L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-signal-ops.md` 教訓索引に記載済み
 - （L340は§4 APIクライアントへ振り分け済）
-- L650: perf_measure.pyはviewer認証専用。admin計測にはCDPプリフライト手順か別スクリプトが必要（cmd_2271）
-- L651: cdp_measure.sh curl CDP check: WSL2でcurlがWindowsローカルポートに接続不可（cmd_2288）
-- L653: cdp_measure baseline比較は生成JSONへの統合確認を必須にする（cmd_2291）
-- L654: FE設計書§2計測セクションはcmd更新時に陳腐化。diff確認をAC化すべき（cmd_2297）
-- L655: FE設計書§2陳腐化(L654と同根)（cmd_2297）
-- L656: 計測スクリプトの固定待機排除はDOMポーリングで行う（cmd_2310）
-- L702: FoF UUID漏れはFEキャッシュだけでなくAPI display fallbackも検証する（cmd_2451）
-- L704: FoF Monthly Trade表示は動的展開よりprecomputed weightsを優先せよ（cmd_2452）
-- L705: Monthly Trade FoF表示はyear_month月初Signalのdisplay_ticker_weightsを優先参照（cmd_2453）
-- L719: FE表示名変更時は新名優先+旧名fallbackを同時実装せよ（cmd_karo_direct_fe_ptu_fix）
+- （L650/L651/L653/L656→§8性能最適化、L654/L655→§2.5、L702/L704/L705→§11.5、L719→§5に振り分け済み 2026-06-16）
 
 ## 13. 2026-03 holding表示バグ (cmd_499)
 

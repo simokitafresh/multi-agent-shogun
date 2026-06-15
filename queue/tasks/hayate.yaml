@@ -1,8 +1,42 @@
 task:
-  _ac_task_id: cmd_3375_full
+  readonly_ref:
+  - path: 'check_pf_config.py'
+    reason: command欄の必読/参照専用ファイル
+  _ac_task_id: cmd_3389_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3375 (deployed 2026-06-14T12:19:51). Read from the beginning.
-  ac_version: d3846d90
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3389 (deployed 2026-06-15T17:15:18). Read from the beginning.
+  ac_version: 5a562a55
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: '奥義-GS-新四つ目-激攻がAdmin UIで作成され、pipeline_configにWeightedMultiViewMomentumFilter・base_period_months=12・top_n=1が設定され、構成PF4体(GSシン抜き身-激攻・GSシン加速D-激攻・GSシン加速D-鉄壁・GSシン加速R-鉄壁)が紐付けられている'
+  - id: 'AC2'
+    checks:
+    - check: '奥義-GS-新四つ目-鉄壁がAdmin UIで作成され、pipeline_configにWeightedMultiViewMomentumFilter・base_period_months=12・top_n=2が設定され、構成PF4体(GSシン追い風-激攻・GSシン加速D-激攻・GSシン加速D-鉄壁・GSシン加速R-鉄壁)が紐付けられている'
+  - id: 'AC3'
+    checks:
+    - check: '奥義-GS-新四つ目-常勝がAdmin UIで作成され、pipeline_configにWeightedMultiViewMomentumFilter・base_period_months=12・top_n=2が設定され、構成PF3体(GSシン変わり身-常勝・GSシン四つ目-常勝・GSシン加速D-激攻)が紐付けられている'
+  - id: 'AC4'
+    checks:
+    - check: '3体全てでfullrecalculateが正常完了しmonthly_returnsにデータが生成されている'
+  - id: 'P1'
+    checks:
+    - check: '3体全てのpipeline_configがcheck_pf_config.pyでWeightedMultiViewMomentumFilter+正しいパラメータであることを確認する'
+  - id: 'P2'
+    checks:
+    - check: '3体全てのholding_signalがGS結果と月次突合で一致する(IEEE 754ノイズ1e-12許容)'
+  - id: 'P3'
+    checks:
+    - check: '3体全てのmonthly_return_openがGS結果のmonthly returnと一致する'
+  - id: 'P4'
+    checks:
+    - check: 'FE Dashboard/Admin UIで3体全てが正しく表示されていることをCDP経由で確認する'
+  - id: 'P5'
+    checks:
+    - check: '3体全てis_visible=falseで登録し、全検証完了後に公開する(hide-first原則)'
+  - id: 'P6'
+    checks:
+    - check: '既存PFのゴールデンデータが不変であることを確認する(新PF登録で既存PFに影響なし)'
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -28,80 +62,86 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3375
+  parent_cmd: cmd_3389
   project: dm-signal
-  purpose: 殿指示(2026-06-14)。忍法=ビルディングブロック(BB)ごとの特性を定量的に把握したい。各BBがリターン・リスクリターン・Avg UWPにどう貢献するかを分析する。シン忍法(pf_L1)と奥義(pf_L2)を対象に、全忍法PFのメトリクスをBB別に集計・比較する
+  purpose: 殿指示(2026-06-15 やろう)。cmd_3388 GS全探索結果(45150パターン・0不一致達成)から選出した3モードチャンピオンを本番DBに登録する。BB=WeightedMultiViewMomentumFilter。checklist-shin-v2-registrationに準拠
   scout_exempt: true
   status: idle
   stop_for: []
   target_path: /mnt/c/Python_app/DM-signal
-  task_id: cmd_3375_full
+  task_id: cmd_3389_full
   task_type: full
-  skill_hint: /db-check
+  skill_hint: /db-check, /pf-registration
   related_lessons:
-  - id: 'L027'
-    summary: 'IF C抜き身のCANDIDATE_SET不一致 — CS4 [歴史的記述](4体)→C11_CCNh(11体)を実装・検証する時 THEN **修正内容**:'
-    detail: 'IF C抜き身のCANDIDATE_SET不一致 — CS4 [歴史的記述](4体)→C11_CCNh(11体)を実装・検証する時 THEN **修正内容**:'
-  - id: 'L635'
-    summary: '架空の関係(staff-role_type)を作る危険を回避。records.role_type_idで永続化キーを持ち、表示時にrole_typesから名称解'
-    detail: '架空の関係(staff-role_type)を作る危険を回避。records.role_type_idで永続化キーを持ち、表示時にrole_typesから名称解'
-  - id: 'L294'
-    summary: 'cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想'
-    detail: 'cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想'
-  - id: 'L083'
-    summary: 'launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手'
-    detail: 'launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手'
-  - id: 'L748'
-    summary: 'memory_db_query.shでstale cache更新がtimeoutした場合に既存cacheへ戻すと正本DBより件数が少ない結果を返した。cache'
-    detail: 'memory_db_query.shでstale cache更新がtimeoutした場合に既存cacheへ戻すと正本DBより件数が少ない結果を返した。cache'
+  - id: 'L362'
+    summary: 'O(n²)ペア比較でSequenceMatcherを毎回新規生成していた。quick_ratio() O(n+m)で閾値未満を早期排除+テキスト事前計算で、35'
+    detail: 'O(n²)ペア比較でSequenceMatcherを毎回新規生成していた。quick_ratio() O(n+m)で閾値未満を早期排除+テキスト事前計算で、35'
+  - id: 'L173'
+    summary: 'instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github'
+    detail: 'instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github'
+  - id: 'L145'
+    summary: 'IF ashigaru.mdの内容を修正する時 THEN build_instructions.shのソースファイル(roles/,templates/等)を修'
+    detail: 'IF ashigaru.mdの内容を修正する時 THEN build_instructions.shのソースファイル(roles/,templates/等)を修'
+  - id: 'L135'
+    summary: 'IF build_instructions.sh時 THEN 副作用のないヘルプ確認を想定すると生成差分が発生する'
+    detail: 'IF build_instructions.sh時 THEN 副作用のないヘルプ確認を想定すると生成差分が発生する'
+  - id: 'L432'
+    summary: 'Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff'
+    detail: 'Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff'
+  - id: 'L090'
+    summary: 'copilot-instructions.mdとsystem.mdはgitignoreで管理外。CLAUDE.md修正→commitしても派生ファイルは自動再生'
+    detail: 'copilot-instructions.mdとsystem.mdはgitignoreで管理外。CLAUDE.md修正→commitしても派生ファイルは自動再生'
+  - id: 'L785'
+    summary: 'GA-044では.githooks/pre-pushは300秒full suiteだが、実際のcore.hooksPathは.git/hooksで60秒test'
+    detail: 'GA-044では.githooks/pre-pushは300秒full suiteだが、実際のcore.hooksPathは.git/hooksで60秒test'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   related_causal_links:
-  - "[[PF設計判断根拠不足]]"
-  - "[[忍法BB特性未定量化]]"
-  - "[[殿指示_BB特性分析_20260614]]"
+  - "[[cmd_3388_0不一致達成]]"
+  - "[[cmd_3389_3モード登録]]"
+  - "[[殿指示_本番登録]]"
   context_hints:
   - "context/robustness-verification-catalog.md"
   - "context/gs-speedup-knowledge.md"
   - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
-  - "context/training-cycle.md"
   production_invariants:
   - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
   - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
   - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
   - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
   - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L027: IF C抜き身のCANDIDATE_SET不一致 — CS4 [歴史的記述](4体)→C11_CCNh(11体)を実装・検証する時 THEN **修正内容**:
-      - L635: 架空の関係(staff-role_type)を作る危険を回避。records.role_type_idで永続化キーを持ち、表示時にrole_typesから名称解
-      - L294: cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想
-      - L083: launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手
-      - L748: memory_db_query.shでstale cache更新がtimeoutした場合に既存cacheへ戻すと正本DBより件数が少ない結果を返した。cache
+      - L362: O(n²)ペア比較でSequenceMatcherを毎回新規生成していた。quick_ratio() O(n+m)で閾値未満を早期排除+テキスト事前計算で、35
+      - L173: instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github
+      - L145: IF ashigaru.mdの内容を修正する時 THEN build_instructions.shのソースファイル(roles/,templates/等)を修
+      - L135: IF build_instructions.sh時 THEN 副作用のないヘルプ確認を想定すると生成差分が発生する
+      - L432: Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff
+      - L090: copilot-instructions.mdとsystem.mdはgitignoreで管理外。CLAUDE.md修正→commitしても派生ファイルは自動再生
+      - L785: GA-044では.githooks/pre-pushは300秒full suiteだが、実際のcore.hooksPathは.git/hooksで60秒test
     ────────────────────────────────────────
     
     
   memory_db_context:
   - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
   - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
-  - "2026-06-14T02:45:07+09:00 | 【INFOバッチ】 2026-06-14 02:37:43|CI緑: run 27473782628"
-  - "2026-06-14T02:29:39+09:00 | 【INFOバッチ】 2026-06-14 02:14:29|cmd_3373 2026-06-14 02:24:37|cmd_3374 2026-06-14 02:26:36|CI緑: run 274"
-  - "2026-06-14T12:11:13+09:00 | DM シグナルの話をしよう ゲーム シグナルのレイヤー1 レイヤー2の民法の特徴を捉えたい やごとに違いがあるのか忍法 というのは ビルディングブロックだ つまり そのビルディング ブックがどのような"
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: '本番DBから全pf_L1忍法PFと全L2奥義PFのmonthly_returnsを取得し、PF別にCAGR・カルマー・MaxDD・Avg UWP・シャープを算出する'
-  - id: 'AC2'
-    checks:
-    - check: 'BB別(分身・追い風・抜き身・変わり身・加速D・加速R・四つ目)に指標を集計し、BB間の特性差をテーブルで整理する'
-  - id: 'AC3'
-    checks:
-    - check: 'pf_L1とpf_L2の同一BB適用PFを比較し、重ねがけによる指標変化(改善・悪化)を定量化する'
+  - "2026-06-15T15:34:39+09:00 | 【INFOバッチ】 2026-06-15 15:27:44|cmd_3388"
+  - "2026-06-15T15:03:50+09:00 | 【INFOバッチ】 2026-06-15 15:01:14|cmd_3387"
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3375.yaml
-  report_path: queue/reports/hayate_report_cmd_3375.yaml
+  report_filename: hayate_report_cmd_3389.yaml
+  report_path: queue/reports/hayate_report_cmd_3389.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -117,5 +157,4 @@ task:
     - pattern: 'field_missing'
       count: 18
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
-  deployed_at: "2026-06-14T12:20:09"
-  progress: 完了。prod PostgreSQL portfolios/monthly_returnsからpf_L1 21体・pf_L2 21体、monthly_return_open 6,692行を取得し、BB別平均とL2-L1共通期間差分を報告YAMLに記録。gate_report_format PASS。
+  deployed_at: "2026-06-15T17:15:46"
