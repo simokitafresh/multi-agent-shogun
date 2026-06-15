@@ -14,9 +14,10 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-06-15T12:23:04+0900 -->
+<!-- script_refs_checked_at: 2026-06-16T03:15:00+0900 -->
 
 Script refs verified: 2026-06-12. `note_draft.sh` の契約は `<markdown_file>` 1件を受け取りCDP経由でnote下書きを作る形式のまま。932936059は外部reCAPTCHA画像チャレンジ未解決を運用FAILではなくSKIPとして`skill_execution_log.yaml`へ記録し、exit 0で返す変更。Gate20も同じ外部reCAPTCHAチャレンジ由来の`note-draft`結果をFAIL率分母から除外する。引数・CDP_PORT・通常PASS/FAILログの契約変更なし。
+Script refs verified: 2026-06-16 cmd_karo_skill_refs_update_20260616. `note_draft.sh` 直近変更(6ac00607e)はshellcheckコメント形式修正(markdown list→shell comment)のみ。引数・CDP_PORT・通常PASS/FAILログの契約変更なし。
 
 # /cdp-browse
 
@@ -169,4 +170,4 @@ scripts/cdp/cdp_cli.sh screenshot "/tmp/dm-signal-admin.png"
 
 - → [[cdp-severity.md]] CDP計測・canary・ブラウザ実測の異常分類（操作失敗時の重大度判定基準）
 
-<!-- script_refs_checked_at: 2026-06-15T12:23:04+0900 -->
+<!-- script_refs_checked_at: 2026-06-16T03:15:00+0900 -->

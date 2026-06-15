@@ -25,7 +25,7 @@ allowed-tools:
   - Edit
 ---
 
-<!-- script_refs_checked_at: 2026-06-13T01:09:39+09:00 -->
+<!-- script_refs_checked_at: 2026-06-16T03:15:00+0900 -->
 
 # /shogun-teire — 知識基盤の定期棚卸し（8観点監査）
 
@@ -33,6 +33,7 @@ allowed-tools:
 
 Script refs verified: 2026-06-13 cmd_karo_hotfix_skill_refs_stale_20260613. `gate_lesson_health.sh` 直近変更(90c32efdd)は`check_role_lesson_origins_batch()`をPython3 heredocからbash for loopに変換（高速化）。棚卸しで読む引数なし全project走査/`<project_id>`単体走査、METRIC行、WARN/ALERT出力契約は維持。
 Script refs verified: 2026-06-12. `gate_lesson_health.sh` はhotfix feedbackを長期useful率健康指標から除外する。自己修復hotfixの短期バーストで通常/full作業向けの教訓有用性をWARN化しないため。棚卸しで読む引数なし全project走査/`<project_id>`単体走査、METRIC行、WARN/ALERT出力契約は維持。
+Script refs verified: 2026-06-16 cmd_karo_skill_refs_update_20260616. `gate_lesson_health.sh` 直近変更(fcec9b309)はmin_samples内部分離(health計測用LESSON_EFFECT_USEFUL_MIN=2新設、退役判定min_samples=5維持)。引数なし全project走査/`<project_id>`単体走査、METRIC行、WARN/ALERT出力契約は変更なし。
 Script refs verified: 2026-06-07 cmd_3206. `gate_lesson_health.sh` はrole lesson origin確認をbatch化、`gate_yaml_status.sh` はLC_ALL=Cでstatus scan高速化、`gate_pd_sync.sh` はawk経路高速化、`count_gate_metrics.sh` は最新cmd状態集計、`knowledge_metrics.sh` の引数体系、`lesson_deprecate.sh <project> <lesson_id> "<reason>" [cmd_id]` は維持。棚卸し手順は現行script契約と一致。
 Script refs verified: 2026-06-11. `gate_lesson_health.sh` はlesson useful率集計の最小サンプルを5件へ戻し、退役スキャン確定閾値と揃えて少数feedbackノイズで退役候補0件のALERT/BLOCKを作らないようにした。棚卸しで読む引数なし全project走査/`<project_id>`単体走査、METRIC行、WARN/ALERT出力契約は維持。
 Script refs verified: 2026-06-02T20:46:12+09:00 infra-bug audit after gate_lesson_health.sh inline-field parser fix.
@@ -504,4 +505,4 @@ for lesson in data['lessons']:
 - **Curator** = lesson_write.sh等のスクリプト（自動整理・登録・context索引追記）
 - 監査時: 各役割が機能しているか（生成→査読→整理のサイクルが回っているか）を検査
 
-<!-- script_refs_checked_at: 2026-06-13T01:09:39+09:00 -->
+<!-- script_refs_checked_at: 2026-06-16T03:15:00+0900 -->
