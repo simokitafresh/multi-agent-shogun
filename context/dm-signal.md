@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-06-15 cmd_3384 -->
-<!-- last_synced_lesson: L745 -->
+<!-- last_synced_lesson: L746 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -261,6 +261,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L743: PF構成確認手順(確認方法付き)（cmd_3378）
 - L744: API境界の文字列は4層（BE enum/FE型/DB JSON/script JSON）で同時管理が必要（cmd_3383）
 - L745: blocks/__init__.pyのimport行+__all__追加は2 commitに分割必須（cmd_3384）
+- L746: [自動生成] 有効教訓の記録を怠った: cmd_3387（cmd_3387）
 
 ## 因果リンク
 
