@@ -262,7 +262,22 @@ fi
 # ─── SG-PRE11: lessons_useful形式検証 ───
 echo ""
 echo "■ SG-PRE11: lessons_useful形式検証"
-echo "${LESSONS_USEFUL_MSG:-  SKIP}"
+if [ -f "$REPORT_PATH" ]; then
+    _lu_has_items=$(sed -n '/^lessons_useful:/,/^[^ ]/p' "$REPORT_PATH" | grep -c '^\s*- id:' 2>/dev/null || true)
+    [[ "$_lu_has_items" =~ ^[0-9]+$ ]] || _lu_has_items=0
+    _lu_is_empty_list=$(grep -cE '^lessons_useful:\s*\[\s*\]' "$REPORT_PATH" 2>/dev/null || true)
+    [[ "$_lu_is_empty_list" =~ ^[0-9]+$ ]] || _lu_is_empty_list=0
+    _lu_field_exists=0
+    grep -q '^lessons_useful:' "$REPORT_PATH" 2>/dev/null && _lu_field_exists=1
+    if [ "${_lu_is_empty_list:-0}" -gt 0 ] || { [ "$_lu_field_exists" -eq 1 ] && [ "${_lu_has_items:-0}" -eq 0 ]; }; then
+        echo "  ERROR: lessons_useful空リスト。related_lessonsが注入済みならフィードバック必須→GATE BLOCK確実"
+        ERRORS=$((ERRORS + 1))
+    else
+        echo "  PASS: lessons_useful ${_lu_has_items}件"
+    fi
+else
+    echo "${LESSONS_USEFUL_MSG:-  SKIP}"
+fi
 
 # ─── SG-PRE12: lesson_candidate有 → gate_prediction WARN必須 (GP-195) ───
 echo ""
