@@ -2401,8 +2401,8 @@ def project_matches(entry):
     return current_project == "infra"
 
 entries = (data.get("entries") or []) if isinstance(data, dict) else []
-matching_count = 0
-matching_cmd_ids = []
+matching_cmd_ids_set = set()
+matching_cmd_ids_ordered = []
 for entry in entries:
     if not isinstance(entry, dict):
         continue
@@ -2424,15 +2424,16 @@ for entry in entries:
         )
     ):
         continue
-    matching_count += 1
     entry_cmd = str(entry.get("cmd_id", "") or "").strip()
-    if entry_cmd:
-        matching_cmd_ids.append(entry_cmd)
+    # FP fix: count unique cmd_ids only (same cmd retry creates duplicate WARN entries)
+    if entry_cmd and entry_cmd != cmd_id and entry_cmd not in matching_cmd_ids_set:
+        matching_cmd_ids_set.add(entry_cmd)
+        matching_cmd_ids_ordered.append(entry_cmd)
 
 if output_mode == "cmd_ids":
-    print(",".join(matching_cmd_ids[-10:]))
+    print(",".join(matching_cmd_ids_ordered[-10:]))
 else:
-    print(matching_count)
+    print(len(matching_cmd_ids_set))
 PY
 }
 
