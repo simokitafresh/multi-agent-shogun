@@ -167,6 +167,9 @@ lessons:
   - tests/unit/test_gate_shogun_startup.bats
   - skills/dream/SKILL.md
   origin: '[[cmd_karo_hotfix_startup_lesson_skill_health_20260612]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L798
   title: superseded_by運用の件数gateはactive件数で測る
   summary: projects/infra/lessons_shogun.yamlでLS052をLS048へsuperseded化してactive件数は31→30になったが、
@@ -284,6 +287,9 @@ lessons:
   target_files:
   - context/dm-signal-core.md
   origin: '[[cmd_karo_hotfix_ga053_core_context_freshness_202606121637]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L791
   title: context_freshness gateはgit timeout時に0件OKへ倒さずtimeoutをWARN/ALERT化する
   summary: 通常gateはCONTEXT_FRESHNESS_GATE_GIT_TIMEOUT=1でOKだったが、CFC_GIT_TIMEOUT=10の直接checkではd
@@ -320,6 +326,9 @@ lessons:
   target_files:
   - context/dm-signal-ops.md
   origin: '[[cmd_karo_hotfix_ga051_context_freshness_202606121555]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L789
   title: semantic_stress候補はHIT再検証で消化してからalias昇格を検討する
   summary: NO_MATCH候補は生成時点の失敗であり、後続のmemory DB fallbackや索引更新でHIT可能になる。pending消化時はalias類似昇格だけ
@@ -503,6 +512,9 @@ lessons:
   - scripts/inbox_write.sh
   - tests/unit/test_inbox_write.bats
   origin: '[[cmd_karo_hotfix_ga041_context_freshness_202606111520]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L778
   title: 配備時auto-deprecatedは計測分母を縮めて低usefulを隠す
   summary: deploy_task.shが教訓注入の副作用でlessons.yamlへdeprecated:trueを書き込むと、gate_lesson_health.sh
@@ -1113,6 +1125,9 @@ lessons:
   - queue/tasks/kagemaru.yaml
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
+  deprecated: true
+  deprecated_at: '2026-06-15T03:25:17+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
   summary: 外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split
@@ -1129,6 +1144,9 @@ lessons:
   - context/dm-signal.md
   - context/dm-signal-ops.md
   origin: '[[cmd_karo_context_freshness_ga407_20260603]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L737
   title: 'FAST_METADATAガードの適用範囲: 教育的表示を追加したら同時にFAST_METADATAガードも追加せよ'
   summary: cmd_save.shに教育的メタデータ表示(show_lord_conversation_matches&, Q11 research dir
@@ -2701,7 +2719,7 @@ lessons:
   origin: '[[cmd_karo_kj_role_filter]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-15'
 - id: L633
   title: verdict自動導出は免除文脈(waive_reason)をgate検出へ残す
   summary: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
@@ -3073,6 +3091,9 @@ lessons:
   - skills/pf-registration/SKILL.md
   - skills/gs-bench-gate/SKILL.md
   origin: '[[cmd_2738]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L609
   title: Next.js srcなし時は実装実体のapp/componentsを正としてテスト配置
   summary: ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp
@@ -3089,6 +3110,9 @@ lessons:
   - frontend/vitest.setup.ts
   - frontend/components/PortfolioForm.test.tsx
   origin: '[[cmd_2719]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L608
   title: npm audit fix --omit=devはdevDependencies削除する
   summary: npm audit fix --omit=devを実行するとdevDependencies(@tailwindcss/postcss等)がnode_module
@@ -5434,6 +5458,9 @@ lessons:
   target_files:
   - archive_completed.sh
   origin: '[[cmd_training_L4_R3]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L425
   title: grep繰返しパターンをO(1)連想配列に置換する定石
   summary: ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュ
@@ -6360,6 +6387,9 @@ lessons:
   target_files:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
+  deprecated: true
+  deprecated_at: '2026-06-15T03:25:18+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
   summary: Python子プロセスがstderrにメッセージ、stdoutに値を出力する設計で、bash側が2>&1で混合→grepで再分離するパターンは、Python例外
@@ -7017,7 +7047,7 @@ lessons:
   origin: '[[cmd_1397]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-14'
+  last_referenced: '2026-06-15'
 - id: L293
   title: チェックリスト参照cmdでは隣接Step制約をACに転写必須
   summary: cmd_1397でチェックリストStep7(再計算禁止=殿が実行)がcmdに転写されず、影丸が再計算を実行してしまった。チェックリストを参照するcmdを書く際は
@@ -7817,6 +7847,9 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-16'
   origin: '[[cmd_973]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L227
   title: WSL2のWrite toolはCRLF改行を生成する
   summary: Write toolで作成した.shファイルがCRLF改行になり、bash実行時にset -euが失敗する。WSL2(/mnt/c/)でスクリプト作成後はsed
@@ -9243,6 +9276,9 @@ lessons:
   when: skill.md(小文字)でスキル配置時
   how: DM-signal側2スキルがskill.md小文字で配置
   origin: '[[draft]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L102
   title: lesson_tracking.tsvのデータソース相違 — タスク記述はqueue/gate_metrics.yamlだが実在はlogs/lesson_tracking.tsv
   summary: タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正
@@ -9257,6 +9293,9 @@ lessons:
   - queue/gate_metrics.yamlだが実在はlogs/lesson_tracking.ts
   - queue/gate_metrics.yaml
   origin: '[[cmd_414]]'
+  deprecated: true
+  deprecated_at: '2026-06-15T03:25:18+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)
   summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV
@@ -9340,6 +9379,9 @@ lessons:
   when: archive_dashboard()のgrep戦果行パターン不一致 — AUTO移行後時
   how: archive_dashboard()のgrep '^\| [0-9]'は戦果行(| cmd_XXX |)にマッチしない
   origin: '[[cmd_406]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L094
   title: scripts/shutsujin_departure.sh(session設定)にモデル名ハードコード残存
   summary: rootのshutsujin_departure.shはcmd_405でSSOT化済みだが、scripts/shutsujin_departure.sh(セッシ

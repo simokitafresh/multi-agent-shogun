@@ -1,8 +1,44 @@
 ssot_path: /mnt/c/Python_app/DM-signal/tasks/lessons.md
-last_synced: '2026-06-14T17:03:46'
+last_synced: '2026-06-15T03:52:18'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons_archive.yaml
-lesson_count: 740
+lesson_count: 742
 lessons:
+- id: L745
+  title: blocks/__init__.pyのimport行+__all__追加は2 commitに分割必須
+  summary: pre-commitフックcheck_mixed_format_commit.pyがimport_only_hunk+functional_hunkの混在をBL
+  tags:
+  - dm-signal
+  - testing
+  - gate
+  - git
+  - research
+  source_cmd: cmd_3384
+  when: 未設定
+  how: 未設定
+  target_files:
+  - backend/app/services/pipeline/blocks/weighted_multi_view_momentum_filter.py
+  - backend/tests/test_weighted_multi_view_momentum_filter.py
+  - backend/app/schemas/pipeline.py
+  - backend/app/services/pipeline/blocks/__init__.py
+  - backend/app/jobs/shared.py
+  origin: '[[cmd_3384]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-13'
+- id: L744
+  title: API境界の文字列は4層（BE enum/FE型/DB JSON/script JSON）で同時管理が必要
+  summary: 'TrendReversalFilterのリネーム調査で判明: API境界の文字列値はBE enum(pipeline.py)+FE型(pipeline.ts)+'
+  tags:
+  - dm-signal
+  - db
+  - api
+  - deploy
+  source_cmd: cmd_3383
+  when: 未設定
+  how: 未設定
+  target_files:
+  - 偵察のみ（docs/research/cmd_3383_trend_reversal_filter_rename_recon.md を新規作成しDM-signalリポジトリにcommit済み）
+  origin: '[[cmd_3383]]'
 - id: L743
   title: PF構成確認手順(確認方法付き)
   summary: '確認方法: check_pf_config.py PF名で全構成一発表示。hide判定=tier_visibility_settings全Tier確認必須(po'
@@ -97,6 +133,9 @@ lessons:
   - backend/cmd_3377_bb_analysis.py
   - docs/research/cmd_3377_bb_effect_analysis.md
   origin: '[[cmd_3377]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L737
   title: 奥義PFの命名BBはL1コンポーネントBBと対応していない
   summary: '奥義-GS-{BB}-{目的}の{BB}は、コンポーネントのL1 BBとは対応していない。例: 奥義-GS-追い風-激攻のコンポーネントに追い風BBは含まれない'
@@ -1126,9 +1165,6 @@ lessons:
   - outputs/analysis/cmd_2386_l1_champions.yaml
   - outputs/analysis/cmd_2386_l1_champion_report.md
   origin: '[[cmd_2386]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L672
   title: cmd_2366 selector再実行時はchampion_list自動追記を明示的に避ける
   summary: cmd_2366_l1_champion_select.pyはデフォルトでoutputs/robustness/champion_list.yamlへappen
@@ -1406,7 +1442,7 @@ lessons:
   - tasks/lessons.md
   origin: '[[cmd_2311]]'
   deprecated: true
-  deprecated_at: '2026-06-14T17:06:11+09:00'
+  deprecated_at: '2026-06-15T03:52:36+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/kotaro.yaml参照（ファイル消滅）'
 - id: L656
   title: 計測スクリプトの固定待機排除はDOMポーリングで行う
@@ -1739,7 +1775,7 @@ lessons:
   origin: '[[cmd_2016]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-15'
 - id: L633
   title: monthly専用GS serial pathはprecomputed union maskを再利用せよ
   summary: 四つ目(yotsume)のように monthly-only かつ precomputed union mask が既にあるGSでは、serial
@@ -2107,6 +2143,9 @@ lessons:
   - outputs/analysis/alm_research/cmd_1863_1795_kasoku_diff_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/cmd_1863_1795_kasoku_ratio_l1_wf_alm_returns.csv
   origin: '[[cmd_1863]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L609
   title: WF回帰テストは同一CSV2回実行での決定論確認
   summary: l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行→np.allclose=Trueで決定論を検証するもの。異なる世代のCSVや旧出力との
@@ -2122,6 +2161,9 @@ lessons:
   - outputs/analysis/alm_research/cmd_1856_regression_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/cmd_1856_regression_l1_wf_validation.yaml
   origin: '[[cmd_1856]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L608
   title: 進行中月パリティ差異は構造的問題
   summary: GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致
@@ -2190,9 +2232,6 @@ lessons:
   - outputs/analysis/cmd_1848_is_oos_champion_analysis.md
   - scripts/oneshot/cmd_1848_is_oos_champion_analysis.py
   origin: '[[cmd_1848]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L603
   title: 'cmd_1844 oikaze MaxDD champion ID誤記: N2→N4'
   summary: cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661はN2ではなくN4。パターンID頭部のNXXXとCSVキャッシュで照合確
@@ -4594,6 +4633,9 @@ lessons:
   - outputs/analysis/cmd_1106_parity_analysis.csv
   - outputs/analysis/cmd_1106_parity_analysis.py
   origin: '[[cmd_1106]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L425
   title: シン四神v2パリティ不一致の95%はRC4解像度差異
   summary: 完全月にも不一致が残る(92.2%)。partial/MTD月はわずか7件。主因はPI-001の日次vs月次解像度差異で、リバランス周期(2-3ヶ月)単位のブロ
@@ -6365,7 +6407,7 @@ lessons:
   origin: '[[cmd_861]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-14'
+  last_referenced: '2026-06-15'
 - id: L293
   title: 多層防御の生命線はLayer4の上流完全独立性
   summary: '過適合防止を多層実装する場合、最終ゲート(Layer4: DSR/OOS R²/CPCV/ランク持続性)は上流Layer1-3の出力を一切参照せず生リターン系列'
@@ -7121,6 +7163,9 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-11'
   origin: '[[cmd_748]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L227
   title: HttpOnly cookie auth を localStorage boolean で同期代替すると public UI に stale auth
     が残る
@@ -8478,9 +8523,6 @@ lessons:
   when: 7アプローチ(AND/MAJORITY/CUSUM/Sharpe/VolWeighted/Idiosyncratic/LogisticCV)全て80%未達時
   how: 7アプローチ(AND/MAJORITY/CUSUM/Sharpe/VolWeighted/Idiosyncratic/LogisticCV)全て80%未達
   origin: '[[cmd_274]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L110
   title: 日次/週次粒度変更は月次崩壊予測precision最大65.5%止まり(80%未達)
   summary: IF 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%時 THEN 22特徴量(週次αスロープ/歪度/尖度/
@@ -8578,6 +8620,9 @@ lessons:
   - deploy_task.sh
   - archive_completed.sh
   origin: '[[cmd_253]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L102
   title: MultiViewの4視点skip_months=[0,1,2,3]はクラス変数固定でconfigで変更不可
   summary: SKIP_MONTHS_LIST=[0,1,2,3]はクラス変数として定義されており、pipeline_configのconfig辞書からは変更できない。パラメ
@@ -8662,6 +8707,9 @@ lessons:
   when: cmd_222でget_kasoku_contextにcumulative_return計算パスを追加したが、main()でload_cumulative_returns_from_dbを呼ばず、simulate_patternへのパススルーもない時
   how: cmd_222でget_kasoku_contextにcumulative_return計算パスを追加したが、main()でload_cumulative_returns_from_dbを呼ばず、simulate_patternへのパススルーもない
   origin: '[[cmd_227]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-15'
 - id: L094
   title: oikaze cutoff_score epsilon tolerance(1e-12)が必要
   summary: 本番MonthlyReturnMomentumFilterBlock._cumretはprod(1+monthly_return)-1、GS側cumulativ
@@ -9434,7 +9482,7 @@ lessons:
   - scripts/analysis/data_sync/download_all_prices.py
   origin: '[[legacy_lesson_L025]]'
   deprecated: true
-  deprecated_at: '2026-06-14T17:06:11+09:00'
+  deprecated_at: '2026-06-15T03:52:36+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
 - id: L024
   title: signal_historyのキーはPhase 2のmonth_last_trading_daysと同型でなければならない（2026-02-15）
