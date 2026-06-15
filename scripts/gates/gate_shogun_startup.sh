@@ -3398,6 +3398,19 @@ else
     printf '%s\t__OK__\n' "$_startup_run_id" >> "$STARTUP_ALERT_HISTORY"
 fi
 
+# --- session_alerts.txt: 起動時初期生成（覚醒設計書v3 cmd_3401） ---
+# 目的: stop hookで毎応答リアルタイム表示するためのALERT台帳を初期化する
+# 形式: [TODO] アラート内容 (stop hookが [TODO]/[DONE] で管理)
+_session_alerts_file="$SCRIPT_DIR/queue/session_alerts.txt"
+{
+    printf '# session_alerts — generated: %s\n' "$_startup_run_id"
+    if [ ${#alerts[@]} -gt 0 ]; then
+        for a in "${alerts[@]}"; do
+            printf '[TODO] %s\n' "$a"
+        done
+    fi
+} > "$_session_alerts_file"
+
 # Step 6: ALERT項目をinsightsに自動保存（将軍の「後でやる」放置防止）
 if { [ "$overall" = "ALERT" ] || [ "$overall" = "BLOCK" ]; } && [ ${#alerts[@]} -gt 0 ]; then
     for a in "${alerts[@]}"; do

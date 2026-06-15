@@ -5296,63 +5296,45 @@ AC_TEXT=$(echo "$CMD_BLOCK" | awk '
   found { print }
 ' || true)
 
-# --- Check 19: パリティcmdのP1-P6全基準チェック（WARN） ---
-# 本番DB操作cmd（パリティ/登録/recalculate含む）のACにP1-P6が網羅されているか
-# トリガー対象はtitle+purpose+AC_TEXTのみ（not_in_scopeの否定文による誤検知防止）
-# FP修正(2026-04-27): descriptionにPARITY_PATH等の変数名があると偽陽性。title+purposeのみでトリガー
-# FP修正(2026-04-29): 過去形コンテキスト(修正後/修正版/修正済み/完了)の行を除外して分析cmdの誤検出を防ぐ
-_CHECK19_TRIGGER=$(echo "$CMD_BLOCK" | grep -E 'title:|purpose:' | grep -viE '修正後|修正版|修正済み|完了|check_parity_ac_requirements|parity_ac_missing' || true)
-# scope_mode=SCOUT/VERIFYはDB変更なし→パリティP3-P5不要
-_CHECK19_SCOPE="$(cmd_block_get_field "scope_mode")"
-_CHECK19_PROJECT="$(cmd_block_get_field "project")"
-_CHECK19_SCOUT_EXEMPT="$(cmd_block_get_field "scout_exempt")"
-if [[ -n "${_CHECK19_PROJECT:-}" && "${_CHECK19_PROJECT}" != "dm-signal" ]]; then
-    _CHECK19_TRIGGER=""
+# --- Check 19: AC YAML構造判定（description非空+binary_check非空+未記入マーカー不在） ---
+# 起源: 覚醒設計書v3(軍師3往復レビュー確定済み 2026-06-16)
+# 設計: 入口方式(parity文字列トリガー) → 出口判定(AC YAML構造)に変更(cmd_3401)
+# 目的: description/binary_checkが実際に埋まっているかを構造で検証。文字列マッチ依存=偽陽性根因を廃止
+_CHECK19_ISSUES=()
+
+if [[ -n "${AC_TEXT:-}" ]]; then
+    # (1) FILL_THISマーカー残存チェック（ACセクション内限定）
+    if printf '%s\n' "$AC_TEXT" | grep -q 'FILL_THIS'; then
+        _FILL_COUNT=$(printf '%s\n' "$AC_TEXT" | grep -c 'FILL_THIS' || true)
+        _CHECK19_ISSUES+=("FILL_THISマーカー残存: ${_FILL_COUNT}件")
+        printf '%s\n' "$AC_TEXT" | grep -n 'FILL_THIS' | head -3 >&2
+    fi
+
+    # (2) description: の値が空の行を検出
+    _DESC_EMPTY_COUNT=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*description:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+    if [[ "${_DESC_EMPTY_COUNT:-0}" -gt 0 ]]; then
+        _CHECK19_ISSUES+=("description空値: ${_DESC_EMPTY_COUNT}件")
+    fi
+
+    # (3) binary_check: フィールドが不在 または 空値チェック
+    _AC_ENTRY_COUNT=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' || true)
+    _BC_TOTAL=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*binary_check:' || true)
+    _BC_EMPTY=$(printf '%s\n' "$AC_TEXT" | grep -E '^[[:space:]]*binary_check:' | grep -cE 'binary_check:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+    if [[ "${_AC_ENTRY_COUNT:-0}" -gt 0 && "${_BC_TOTAL:-0}" -eq 0 ]]; then
+        _CHECK19_ISSUES+=("binary_checkフィールド不在(AC${_AC_ENTRY_COUNT}件全て)")
+    elif [[ "${_BC_EMPTY:-0}" -gt 0 ]]; then
+        _CHECK19_ISSUES+=("binary_check空値: ${_BC_EMPTY}件")
+    fi
 fi
-if [[ "${_CHECK19_SCOUT_EXEMPT:-}" == "true" ]]; then
-    _CHECK19_TRIGGER=""
-fi
-if [[ "${_CHECK19_SCOPE}" != "SCOUT" && "${_CHECK19_SCOPE}" != "VERIFY" ]] && echo "$_CHECK19_TRIGGER" | grep -qiE 'パリティ|parity|登録.*本番|本番.*登録|recalculate.*sync'; then
-    PARITY_MISSING=()
-    # P1: holding_signal
-    if ! echo "$AC_TEXT" | grep -qi 'holding_signal'; then
-        PARITY_MISSING+=("P1:holding_signal完全一致")
-    fi
-    # P2: monthly_return
-    if ! echo "$AC_TEXT" | grep -qi 'monthly_return.*1e-6\|monthly_return.*差\|return.*一致'; then
-        PARITY_MISSING+=("P2:monthly_return完全一致(1e-6)")
-    fi
-    # P3: 既存PF不変
-    if ! echo "$AC_TEXT" | grep -qi 'ゴールデン\|golden\|既存.*不変\|不変.*確認'; then
-        PARITY_MISSING+=("P3:既存PF不変(ゴールデンデータ)")
-    fi
-    # P4: FE UI
-    if ! echo "$AC_TEXT" | grep -qi 'FE\|UI\|frontend\|Dashboard\|ページ'; then
-        PARITY_MISSING+=("P4:FE UI全ページ整合")
-    fi
-    # P5: hide-first
-    if ! echo "$AC_TEXT" | grep -qi 'hide\|is_visible\|非表示'; then
-        PARITY_MISSING+=("P5:hide-first原則")
-    fi
-    if [[ ${#PARITY_MISSING[@]} -gt 0 ]]; then
-        echo "WARNING: パリティcmdのAC基準欠落を検出(dm-signal-ops.md §6-7 チェックリスト参照)"
-        for m in "${PARITY_MISSING[@]}"; do
-            echo "  ✗ $m"
-        done
-        # Level5: 不足ACテンプレートを自動提案(コピペで追加可能)
-        echo "  ─── 追加AC候補(コピペ用) ───"
-        for m in "${PARITY_MISSING[@]}"; do
-            case "$m" in
-                P1*) echo "  - \"holding_signal全PF完全一致を実API diffで検証\"" ;;
-                P2*) echo "  - \"monthly_returns全PF全期間の差分が1e-6以内をAPI diffで検証\"" ;;
-                P3*) echo "  - \"既存PFのゴールデンデータ不変を確認(変更対象外PFに影響なし)\"" ;;
-                P4*) echo "  - \"FE Dashboard/各ページで表示が正常であることをCDP確認\"" ;;
-                P5*) echo "  - \"hide-first原則: 新PFはis_visible=falseで登録し確認後に公開\"" ;;
-            esac
-        done
-        echo "  ─────────────────────────"
-        record_warn_reason "parity_ac_missing" "check=check_parity_ac_requirements"
-    fi
+
+if [[ ${#_CHECK19_ISSUES[@]} -gt 0 ]]; then
+    echo "WARNING: AC YAML構造判定(Check19)で不備を検出" >&2
+    for _issue in "${_CHECK19_ISSUES[@]}"; do
+        echo "  ✗ $_issue" >&2
+    done
+    printf '  修正: 各ACにdescription+binary_checkを記入し、FILL_THISを実内容で埋めよ\n' >&2
+    printf '  例:\n  acceptance_criteria:\n    AC1:\n      description: "具体的な達成条件"\n      binary_check: "確認方法を1行で"\n' >&2
+    record_warn_reason "ac_structure_incomplete" "check=check_ac_structure_quality"
 fi
 
 # --- Check 20: assumptionsフィールド検査（BLOCK昇格 cmd_1906） ---
