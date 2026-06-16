@@ -4061,10 +4061,13 @@ def extract_title_purpose(cmd_text):
             fields[key] = strip_scalar(value)
     return " ".join(value.strip() for value in fields.values() if value.strip())
 
-query = extract_title_purpose(os.environ.get("CMD_BLOCK_FOR_CHRONICLE", ""))
+# chronicle検索精度向上: titleのみをクエリに使用(purpose全文はトークン過多で全件マッチを引き起こす)
+_block_text_chr = os.environ.get("CMD_BLOCK_FOR_CHRONICLE", "")
+_title_match = re.search(r'^\s*title:\s*(.+)$', _block_text_chr, re.MULTILINE)
+query = _title_match.group(1).strip().strip("'\"") if _title_match else extract_title_purpose(_block_text_chr)
 query_words = tokenize(query)
 if not query_words:
-    print("INFO: [CHRONICLE] cmd履歴検索: title/purpose空のため0件")
+    print("INFO: [CHRONICLE] cmd履歴検索: title空のため0件")
     raise SystemExit(0)
 
 entries = []
