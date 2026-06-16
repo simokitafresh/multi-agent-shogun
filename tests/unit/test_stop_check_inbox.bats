@@ -517,3 +517,29 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
     [[ "$output" != *"LS065"* ]]
     [ ! -f "$_q6_flag" ]
 }
+
+@test "T-SCI-022: shogun quantity expression triggers AC1 WARN (cmd_3420 AC1)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"FoFが21件登録されている"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 数量表現"* ]]
+}
+
+@test "T-SCI-023: shogun partial count assertion triggers AC2 WARN (cmd_3420 AC2)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"21体のうち2体を確認した結果問題なしと判断した"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 部分データから全体断定パターン"* ]]
+}

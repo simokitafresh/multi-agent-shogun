@@ -196,6 +196,24 @@ detect_f009_lord_delegation() {
   return 1
 }
 
+# cmd_3420: 数量表現検出 — 殿への回答でN体/N件等が含まれる場合に全件照合を強制
+# 洗脳#1(部分データで全体断定)と#8(部分完了報告)のL5化
+# AC1: 数量表現含む回答にWARN注入
+# AC2: 部分データ→全体断定パターン検出(より重大)
+detect_quantity_in_lord_response() {
+  local message="$1"
+  # AC2: 部分→全体断定パターン(優先チェック)
+  # 「X体のうちY体」「X件中Y件」等、部分サンプルで全体を断定する構造を検出
+  if echo "$message" | grep -qE '[0-9]+[体件個][[:space:]]*のうち[[:space:]]*[0-9]+|[0-9]+[体件個][[:space:]]*中[[:space:]]*[0-9]+[体件個]'; then
+    printf 'WARN: 部分データから全体断定パターン検出(洗脳#1)。「X体のうちY体確認」はX体全体の確認ではない。全数を一次データで確認してから結論せよ。\n' >&2
+    return 0
+  fi
+  # AC1: 数量表現検出(N体/N件/N個/N名等)
+  if echo "$message" | grep -qE '[0-9]+[体件個種名枚冊台本通]'; then
+    printf 'WARN: 数量表現(N体/N件等)検出(洗脳#1/#8防御)。全件照合が完了しているか？部分データで断定するな。一次データとの件数照合を添えよ。\n' >&2
+  fi
+}
+
 # cmd_TRAINING: shogunのみjqでlast_assistant_message抽出→brainwash check。忍者/家老はpayload直接マッチ(jq不要, ~7ms削減)
 if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; then
   last_assistant_message="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
@@ -238,6 +256,8 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
         printf 'WARN: 三層記憶タグ[MEM:]欠落。DM-Signal/技術調査回答は記憶DB/セマンティック/Obsidianを検索し[MEM:]タグで引用元を明記せよ(cmd_3418: 三層記憶ファーストを徹底)。\n' >&2
       fi
     fi
+    # cmd_3420 AC1/AC2: 数量表現→全件照合強制WARN(洗脳#1/#8 L5化)
+    detect_quantity_in_lord_response "$last_assistant_message"
     # cmd_3251 AC2: F009 殿への操作依頼パターン → BLOCK
     if detect_f009_lord_delegation "$last_assistant_message"; then
       printf '{"decision":"block","reason":"BLOCK F009: 殿への操作依頼を検出。殿にcommit/push/kill/respawn/CLI操作を依頼するな。自分で実行せよ(CLAUDE.md: 殿への操作押し返し禁止)。"}\n'
