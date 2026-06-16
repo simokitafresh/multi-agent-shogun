@@ -379,6 +379,9 @@ lessons:
   - scripts/note_draft.sh
   - scripts/gates/gate_shogun_startup.sh
   origin: '[[cmd_karo_hotfix_note_draft_fail_rate_20260612]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L793
   title: 運用ログ全体parse不能時は対象ブロック単体parseと正規ゲートで変更影響を検証する
   summary: logs/gunshi_review_log.yamlは既存先頭構造によりyaml.safe_load全体parseが失敗したが、変更3ブロックは単体safe_
@@ -5079,6 +5082,9 @@ lessons:
   target_files:
   - gate_shogun_startup.sh
   origin: '[[cmd_1904]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L472
   title: shogun-procedures.md は gitignore対象外ファイルのため変更はコミット不可
   summary: instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含
@@ -9603,6 +9609,9 @@ lessons:
   - deploy_task.sh
   - lesson_tags.yaml
   origin: '[[cmd_397]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L087
   title: 教訓効果メトリクスΔはBLOCKリトライ行膨張+構造BLOCK混入で歪む — cmd単位dedup+品質BLOCK分離が必須
   summary: knowledge_metrics.shのΔ計算は全TSV行を独立カウントするが(1)BLOCK→CLEARリトライが1cmdあたり最大5行に膨張し教訓あり群の
