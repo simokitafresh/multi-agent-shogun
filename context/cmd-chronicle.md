@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-16 cmd_3420 -->
+<!-- last_updated: 2026-06-16 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -520,3 +520,6 @@
 | cmd_3415 | LS066(表面的行動パターン)がL0教訓記録止まりでL3-L5未貫通。殿指摘(2026-06-16): lesson-sortで教訓健全度対処→根因でない、tmp削減で記憶DB対処→根源を捨てる。startup BLOCKの対処アクション選択時に根因到達を二値強制する仕組みがない=意志依存(殿前セッション指摘: L0-L7未貫通) | infra | 06-16 | gate_shogun_startup.shのstartup |
 | cmd_3416 | 殿指示(2026-06-16): DM-Signalウェブアプリにメモリリークがないか確認。三層記憶にFE/BEメモリリーク情報なし=未検証空間。BE(FastAPI/Render)+FE(Next.js/Render)の両面でメモリリークリスクを調査する | dm-signal | 06-16 | — |
 | cmd_3418 | 殿指示(2026-06-16): 技術的質問でコードを読めば分かると感じた瞬間に三層記憶をスキップする傾向をL0-L7に貫通させよ。現状L3-L4は殿の質問検知時(prompt_state_inject.sh L826)のみ。殿の質問以外の技術調査(cmd起票前・idle分析)では三層記憶チェックなし=意志依存 | infra | 06-16 | prompt_state_inject.shにDM-Sign |
+| cmd_3421 | 殿が奥義新四つ目を誤削除(2026-06-16)。本番DB確認: portfolios=0件、旧UUID孤児データ=0件、構成PF7体=全存在。cmd_3389(GATE CLEAR 2026-06-15)と同一パラメータで再登録する | dm-signal | 06-16 | — |
+| cmd_3423 | 殿が奥義新四つ目を誤削除(2026-06-16)。本番DB確認済み: portfolios=0件、孤児データ=0件、構成PF7体=全存在。cmd_3389と同一パラメータで再登録する | dm-signal | 06-16 | 奥義-GS-新四つ目3体(激攻/鉄壁/常勝)をhide-fi |
+| cmd_3422 | 殿が奥義新四つ目を誤削除(2026-06-16)。本番DB確認: portfolios=0件、旧UUID孤児データ=0件、構成PF7体=全存在。cmd_3389(GATE CLEAR 2026-06-15)と同一パラメータで再登録する | dm-signal | 06-16 | — |
