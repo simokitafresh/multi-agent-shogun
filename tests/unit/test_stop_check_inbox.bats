@@ -443,3 +443,77 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" != *"Wait for next task"* ]]
 }
+
+@test "T-SCI-019: shogun brainwash detection creates Q6 flag for next-turn WARN (LS065)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    printf 'commands:\n' > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    local _q6_flag="$SHOGUN_STATE_DIR/shogun_q6_brainwash_shogun"
+
+    # 1st turn: brainwash detected → flag created, no LS065 WARN yet
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"この穴は低優先なので後回しにする"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 洗脳検出 #5 先送り"* ]]
+    [ -f "$_q6_flag" ]
+
+    # 2nd turn: no new brainwash, karo_yaml not updated → LS065 WARN継続
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"一次データを確認して進む"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: LS065 Q6洗脳検出済み"* ]]
+    [[ "$output" == *"cmd起票未完了"* ]]
+    [ -f "$_q6_flag" ]
+}
+
+@test "T-SCI-020: shogun Q6 flag clears after karo yaml is updated (cmd issued) (LS065)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    # 1st turn: create Q6 flag
+    printf 'commands:\n' > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"この穴は低優先なので後回しにする"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    local _q6_flag="$SHOGUN_STATE_DIR/shogun_q6_brainwash_shogun"
+    [ -f "$_q6_flag" ]
+
+    # Simulate cmd issued: update karo_yaml after flag creation
+    sleep 1
+    printf 'commands:\ncmd_9999:\n  status: delegated\n' > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+
+    # 2nd turn: karo_yaml newer than flag → flag cleared, no LS065 WARN
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"一次データを確認して進む"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"LS065"* ]]
+    [ ! -f "$_q6_flag" ]
+}
+
+@test "T-SCI-021: shogun no brainwash means no Q6 flag created (LS065)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    local _q6_flag="$SHOGUN_STATE_DIR/shogun_q6_brainwash_shogun"
+    rm -f "$_q6_flag"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"一次データを確認してから判断する"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"LS065"* ]]
+    [ ! -f "$_q6_flag" ]
+}

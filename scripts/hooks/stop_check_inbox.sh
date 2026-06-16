@@ -200,10 +200,28 @@ detect_f009_lord_delegation() {
 if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; then
   last_assistant_message="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
   printf '%s\n' "$SHOGUN_BRAINWASH_AUDIT" >&2
+  # LS065: Q6洗脳フラグ確認(前回検出→cmd起票未完了ならWARN継続。認識→行動ギャップ防止)
+  _q6_flag="$STATE_DIR/shogun_q6_brainwash_${agent_id}"
+  if [[ -f "$_q6_flag" ]]; then
+    _karo_yaml="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    _flag_mtime="$(stat -c %Y "$_q6_flag" 2>/dev/null || echo 0)"
+    _karo_mtime=0
+    [[ -f "$_karo_yaml" ]] && _karo_mtime="$(stat -c %Y "$_karo_yaml" 2>/dev/null || echo 0)"
+    if [[ "$_karo_mtime" -gt "$_flag_mtime" ]]; then
+      rm -f "$_q6_flag" 2>/dev/null || true
+    else
+      _q6_info="$(cut -f2- "$_q6_flag" 2>/dev/null || echo '?')"
+      printf 'WARN: LS065 Q6洗脳検出済み(%s)だがcmd起票未完了。検出した洗脳パターンに対応するcmdを起票せよ。\n' "$_q6_info" >&2
+    fi
+  fi
   if [[ -n "$last_assistant_message" ]]; then
     _brainwash_match="$(detect_shogun_brainwash_pattern "$last_assistant_message")"
     if [[ -n "$_brainwash_match" ]]; then
       printf 'WARN: 洗脳検出 %s。一次データ確認・即時行動・L0-L7貫通の自問をやり直せ。\n' "$_brainwash_match" >&2
+      # LS065: 検出初回のみフラグ記録(重複上書き禁止。フラグ未作成時のみ作成)
+      if [[ ! -f "$_q6_flag" ]]; then
+        printf '%s\t%s\n' "$(date +%s)" "$_brainwash_match" > "$_q6_flag" 2>/dev/null || true
+      fi
     fi
     # L4先送り防止: startup BLOCK未対処で殿に応答→WARN注入
     _startup_history="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
