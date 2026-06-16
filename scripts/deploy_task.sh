@@ -4818,6 +4818,29 @@ try:
                         tag_match_count[t] = len(re.findall(pat, task_text))
                 task_tags = sorted(set(task_tags), key=lambda t: -tag_match_count.get(t, 0))[:3]
 
+    # (3) タグ推定が空かつtarget_pathあり → pathディレクトリベースでタグ推定
+    # cmd_3413: task_tags空+target_pathあり時の全教訓フォールバック(L5017-5018)を削減するため
+    # target_pathのディレクトリ構造からプロジェクト文脈タグを推定する
+    if not task_tags and has_target_path:
+        _path_lower = target_path.lower().replace('\\', '/')
+        _path_tag_rules_dir = [
+            (r'(?:^|/)scripts/', 'infra'),
+            (r'(?:^|/)context/', 'infra'),
+            (r'(?:^|/)config/', 'infra'),
+            (r'(?:^|/)queue/', 'infra'),
+            (r'(?:^|/)instructions/', 'infra'),
+            (r'(?:^|/)docs/', 'infra'),
+            (r'(?:^|/)backend/', 'api'),
+            (r'(?:^|/)frontend/', 'frontend'),
+            (r'(?:^|/)tests?/', 'testing'),
+        ]
+        for _ppat, _ptag in _path_tag_rules_dir:
+            if re.search(_ppat, _path_lower):
+                task_tags = [_ptag]
+                tag_inferred = True
+                print(f'[INJECT] path-dir tag inferred: {target_path!r} -> tags={task_tags}', file=sys.stderr)
+                break
+
     # Keep only active lessons: status=confirmed or undefined (default=confirmed)
     confirmed_lessons = []
     filtered_draft = 0
@@ -5016,6 +5039,7 @@ try:
     # cmd_3271: target_pathなし時は全量fallback禁止（has_target_pathがある場合のみ実行）
     if not task_tags and has_target_path:
         tag_candidates = [l for l in confirmed_lessons if l not in universal_lessons]
+        print(f'[INJECT] WARN: full-lesson fallback triggered (path-dir inference failed, target_path={target_path!r}, candidates={len(tag_candidates)})', file=sys.stderr)
     elif not task_tags:
         print(f'[INJECT] no target_path + no task_tags: skipping full-lesson fallback ({len(confirmed_lessons)} lessons withheld)', file=sys.stderr)
 
