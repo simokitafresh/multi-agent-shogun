@@ -611,8 +611,14 @@ END { check_and_emit() }
 
 # --- AC2: brainwash_check Quality Check三問未記録検出 (cmd_3373) ---
 # 直近12件以上のbrainwash_checkで過半数が三問(Q1:品質向上/Q2:学習機会/Q3:次品質向上)未記録の場合にBLOCK
+# FP修正(2026-06-16): draft reviewはquality_gate q1/q2/q3で品質三問回答済み。
+# review_type=draftのbrainwash_checkに品質三問キーワードを重複要求するのは冗長→draft除外。
+# report/self_study/consultationのbrainwash_checkのみ検査対象。
 _bw_no_qc=$(tail -400 "$LOG_FILE" 2>/dev/null | awk '
+    /review_type:/ { rt=$0 }
     /brainwash_check:/ {
+        # draft reviewはquality_gate q1/q2/q3で品質三問回答済み→除外
+        if (rt ~ /review_type:[[:space:]]*draft/) { next }
         line=$0
         has_any = (line ~ /品質向上|Q1:|Q2:|Q3:|学習機会|次品質向上|quality_improvement|learning_opportunity|next_quality/)
         if (!has_any) no_qc++
