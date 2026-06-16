@@ -323,6 +323,21 @@ _setup_cmd_block() {
     [[ "$output" == *"先送り表現を検出"* ]]
 }
 
+@test "cmd_3407: deferral language in diagnosis field does not warn (LS-A04-13)" {
+    CMD_BLOCK_NC='    title: "改修cmd"
+    purpose: "偽陽性BLOCK解消"
+    command: "fix the issue"
+    quality_gate:
+      q1_firefighting: "品質向上"
+      diagnosis: "BLOCK理由: 段階的に後回しにしていたため 対策: 今回一括対応"'
+    export CMD_BLOCK_NC
+
+    run bash -c 'check_deferral_language_warn "$CMD_BLOCK_NC" 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"先送り表現を検出"* ]]
+}
+
 # --- Check 6: GP重複検出 ---
 
 @test "Check6: GP番号一致でWARN出力" {

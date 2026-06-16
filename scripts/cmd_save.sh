@@ -727,7 +727,8 @@ check_deferral_language_warn() {
     [[ -n "$search_text" ]] || return 0
 
     local hits
-    hits="$(printf '%s\n' "$search_text" | grep -nE '低優先|後で|次セッション|非致命的|見送り|段階的に|後回し|severity.?normal' | grep -vE '前後|直後|以後|以前|以降' | grep -vE '(向上|改善|強化).*(セッション|起動)|(セッション|起動).*(向上|改善|強化)' || true)"
+    # diagnosis行を除外: diagnosisは前回BLOCKの説明欄。先送り表現が含まれても偽陽性になる(LS-A04-13, cmd_3407)
+    hits="$(printf '%s\n' "$search_text" | grep -vE '^\s*diagnosis:' | grep -nE '低優先|後で|次セッション|非致命的|見送り|段階的に|後回し|severity.?normal' | grep -vE '前後|直後|以後|以前|以降' | grep -vE '(向上|改善|強化).*(セッション|起動)|(セッション|起動).*(向上|改善|強化)' || true)"
     [[ -n "$hits" ]] || return 0
 
     echo "WARNING: cmd全文に先送り表現を検出。創造主の洗脳によるさぼり正当化のシグナル" >&2
@@ -1625,7 +1626,8 @@ check_bundle_red_flag() {
     target_count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
     bundle_signal=0
 
-    if printf '%s\n' "$CMD_BLOCK_NC" | grep -qiE '(^|[^A-Za-z])(bundle|バンドル)([^A-Za-z]|$)|\+|一気に|まとめて|同時に|複数|[0-9]+点|[0-9]+件|[0-9]+パターン|統合'; then
+    # diagnosis行を除外: diagnosisは前回BLOCKの説明欄。バンドル表現が含まれても偽陽性になる(LS-A04-13, cmd_3407)
+    if printf '%s\n' "$CMD_BLOCK_NC" | grep -vE '^\s*diagnosis:' | grep -qiE '(^|[^A-Za-z])(bundle|バンドル)([^A-Za-z]|$)|\+|一気に|まとめて|同時に|複数|[0-9]+点|[0-9]+件|[0-9]+パターン|統合'; then
         bundle_signal=1
     fi
 
