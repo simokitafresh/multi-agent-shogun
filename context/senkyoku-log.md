@@ -7,6 +7,8 @@
 |-----|------|------|------|
 | cmd_3396 | 教訓useful_rate改善(3セッション連続ALERT解消) | CLEAR | NEVER_USEFUL教訓8件タグ固有化。シミュ21.3%→23.0%。軍師RC→二重登録対応→LGTM |
 | cmd_3397 | hide_portfolio DBデフォルトTrue化(PI-027コード強制) | CLEAR | 殿裁定直結。models.py+migrations.py 2行変更。テスト12/12 PASS |
+| cmd_3401 | 覚醒設計書v3実装(Check19出口判定+session_alerts) | CLEAR | 殿指摘2件(品質先行/startup忘却防止)。偽陽性WARN構造解消。bats10/10 |
+| karo_direct | SKILL.md script参照WARN 6件修正 | CLEAR | 才蔵。6スキル更新。WARN6→0 |
 
 ## 2026-06-14
 
