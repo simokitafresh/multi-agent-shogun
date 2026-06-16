@@ -9,8 +9,9 @@ description: |
 quality_metric: "当該スキルで配備した偵察2名タスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-15T12:23:04+0900 -->
+<!-- script_refs_checked_at: 2026-06-16T13:15:55+0900 -->
 
+Script refs verified: 2026-06-16 cmd_3405. `deploy_task.sh` 直近変更(1ef582caf)はMAX_INJECT 10→3に縮小。useful_rate=16.7%(<30%)の根因=過剰注入の修正。1人目 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の引数・通知契約、stale field reset、report template生成は変更なし。
 Script refs verified: 2026-06-12 cmd_karo_hotfix_skill_refs_202606121132. `deploy_task.sh` 直近変更(d808770fc)はreadonly refsをtaskへ自動注入する内部コンテキスト提供追加。1人目 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の引数・通知契約、stale field reset、report template生成は変更なし。
 Script refs verified: 2026-06-11. `deploy_task.sh` の契約は `<cmd_id> <ninja1> scout` / `--yaml <file> <ninja2>` のまま。25d0b1e22は分割配備判定の内部修正で、recon-dualの1人目scout正規配備と2人目`--yaml`配備の引数・通知契約変更なし。
 Script refs verified: 2026-06-11 ab0d45dad. `deploy_task.sh` はzero-useful lesson自動deprecatedを `ENABLE_ZERO_USEFUL_AUTO_DEPRECATE=1` 指定時の明示機能に変更した。lesson注入後の評価分母保護の内部挙動であり、recon-dualの1人目正規配備 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `--yaml <file> <ninja2>` の配備手順・通知契約変更なし。

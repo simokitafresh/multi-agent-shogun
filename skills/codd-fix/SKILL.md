@@ -9,8 +9,9 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-14T16:37:23+0900 -->
+<!-- script_refs_checked_at: 2026-06-16T13:15:55+0900 -->
 
+Script refs verified: 2026-06-16 cmd_3408. `cmd_complete_gate.sh` 直近変更(6eb86ef61)はcommand_files_modified_mismatch FP解消。(1)`read_markers`に11語追加("同構造","と同一","と同じ","同等","踏襲","に基づ","を参考","突合","比較","一覧","解析","分析","取得","検索","出力","表示","呼び出","呼出")。(2)`exec_prefix`検出: bash/python3等がパス直前の場合は実行のみ参照として除外。(3)`clause_boundary`検出: 読点「、」区切りでread_markerとwrite_markerが別節の場合は除外。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
 Script refs verified: 2026-06-14 cmd_3379. `cmd_complete_gate.sh` 直近変更(23edb564f)はGATE CLEAR後にgunshi_gate_reflux.shを2回実行する修正（通常パス+emergency overrideパス両方）。1回目はGATE CLEAR通知前、2回目はGATE CLEAR通知後の軍師report追記分のgate_result null残存を防止（cmd_3370）。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
 Script refs verified: 2026-06-10. `cmd_complete_gate.sh` 呼び出し契約は `bash scripts/cmd_complete_gate.sh <cmd_id>` のまま。新機能: (1)command/files_modified coverageが報告YAMLの`verified_existing_dependency`欄を参照し実行のみ/既存依存ファイルを照合対象から除外(LG037), (2)`check_safety_pattern_removal`で速度修行cmdのcommitから安全パターン削除をBLOCK検出, (3)軍師verdict事前チェック(GATE判定前にreview_logのFAIL/WARNをWARN表示)。`test_select.sh` は`find`→`git ls-files`/`git grep`に高速化済み。新マッピング: `scripts/hooks/*`変更→hookベース名でテスト検索(`test_{hook_base}*.bats`+`test_hook_dispatchers*.bats`)。(4)lesson_impact.tsv空行混入防御: ensure_impact_headerのCR汚染対策+update_lesson_impact_tsvの空行フィルタ追加+DictWriter lineterminator="\n"明示。(5)CR strip でDictReader restkey(list型)クラッシュ修正(isinstance(v,str)判定追加)。
 
@@ -96,4 +97,4 @@ bash scripts/test_select.sh <changed-file>
 - `--no-push`なしで実行するな。忍者はpush禁止
 - 事象ではなく広すぎる実装指示を渡すな
 
-<!-- script_refs_checked_at: 2026-06-14T16:37:23+0900 -->
+<!-- script_refs_checked_at: 2026-06-16T13:15:55+0900 -->
