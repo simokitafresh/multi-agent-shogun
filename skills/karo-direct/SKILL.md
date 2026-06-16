@@ -10,8 +10,9 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-16T13:15:55+0900 -->
+<!-- script_refs_checked_at: 2026-06-16T20:02:35+0900 -->
 
+Script refs verified: 2026-06-16 cmd_3413. `deploy_task.sh` 直近変更(9fe724dda)はtask_tags空+target_pathあり時のpath-dirタグ推定追加。lesson注入タグ生成の内部ロジックであり、`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_training_...>` の引数・通知契約、report template生成、safe_inbox_write経路は変更なし。
 Script refs verified: 2026-06-16 cmd_3405. `deploy_task.sh` 直近変更(1ef582caf)はMAX_INJECT 10→3に縮小。useful_rate=16.7%(<30%)の根因=過剰注入の修正。`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_training_...>` の引数・通知契約、report template生成、safe_inbox_write経路は変更なし。
 Script refs verified: 2026-06-12 cmd_karo_hotfix_skill_refs_202606121132. `deploy_task.sh` 直近変更(d808770fc)はreadonly refsをtaskへ自動注入する内部コンテキスト提供追加。`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_training_...>` の引数・通知契約、report template生成、safe_inbox_write経路は変更なし。
 Script refs verified: 2026-06-11. `deploy_task.sh` の契約は `--yaml <file> <ninja>` / `--direct <ninja> <cmd_id>` のまま。25d0b1e22は分割配備判定の内部修正で、karo_directのci_fix/recon2/hotfix用YAML配備とtraining用direct配備の引数・通知契約変更なし。
