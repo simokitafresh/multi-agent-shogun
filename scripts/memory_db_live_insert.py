@@ -207,36 +207,32 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
     cache_dir = os.path.dirname(cache_path)
     os.makedirs(cache_dir, exist_ok=True)
     lock_path = f"{cache_path}.lock"
-    tmp_path = ""
     with open(lock_path, "w", encoding="utf-8") as lock_handle:
         fcntl.flock(lock_handle, fcntl.LOCK_EX)
-        # Orphan sweep: the exclusive flock guarantees no other backup is live,
-        # so any pre-existing tmp for this cache is a dead leftover (e.g. the
-        # writing process was SIGKILLed before its finally block could run).
-        for stale in glob.glob(
-            os.path.join(cache_dir, f".{os.path.basename(cache_path)}.*.tmp*")
-        ):
+        # Orphan sweep: remove any stale tmp files left by pre-fix runs or
+        # edge cases.  The exclusive flock guarantees no other backup is live.
+        # Two patterns cover both old-style ({basename}.tmp.{PID}) and new-style
+        # (.{basename}.{random}.tmp) naming in case of future regressions.
+        _cache_base = os.path.basename(cache_path)
+        _stale_patterns = [
+            os.path.join(cache_dir, f".{_cache_base}.*.tmp*"),
+            os.path.join(cache_dir, f"{_cache_base}.tmp.*"),
+        ]
+        for stale in [f for p in _stale_patterns for f in glob.glob(p)]:
             try:
                 os.unlink(stale)
             except OSError:
                 pass
-        fd, tmp_path = tempfile.mkstemp(
-            prefix=f".{os.path.basename(cache_path)}.",
-            suffix=".tmp",
-            dir=cache_dir,
-        )
-        os.close(fd)
-        try:
-            create_sqlite_backup(db_path, output_path=tmp_path, suffix="ext4_cache")
-            os.replace(tmp_path, cache_path)
-            for suffix in ("-wal", "-shm"):
-                cache_sidecar = f"{cache_path}{suffix}"
-                if os.path.exists(cache_sidecar):
-                    os.unlink(cache_sidecar)
-            tmp_path = ""
-        finally:
-            if tmp_path and os.path.exists(tmp_path):
-                os.unlink(tmp_path)
+        # Write backup directly to cache_path — no intermediate tmp file.
+        # SIGKILL safety: if the process is killed during backup, cache_path
+        # may be left incomplete, but it is a read-only cache; the canonical
+        # DB (db_path) is never modified.  The next invocation recreates
+        # cache_path cleanly under the exclusive lock.
+        create_sqlite_backup(db_path, output_path=cache_path, suffix="ext4_cache")
+        for suffix in ("-wal", "-shm"):
+            cache_sidecar = f"{cache_path}{suffix}"
+            if os.path.exists(cache_sidecar):
+                os.unlink(cache_sidecar)
     return cache_path
 
 
