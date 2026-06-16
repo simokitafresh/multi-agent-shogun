@@ -9,13 +9,13 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 104046 | event_id, concept_name, relevance_score |
-| table | event_links | 6113 | source_event_id, target_concept, link_type |
-| table | event_state_transitions | 1196 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
-| table | events | 72816 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
-| table | events_fts | 72816 | summary, detail |
-| table | search_logs | 6119 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
-| view | conversations | 37460 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 104937 | event_id, concept_name, relevance_score |
+| table | event_links | 6262 | source_event_id, target_concept, link_type |
+| table | event_state_transitions | 1282 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
+| table | events | 73400 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
+| table | events_fts | 73400 | summary, detail |
+| table | search_logs | 6203 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
+| view | conversations | 37514 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -34,18 +34,18 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 37460 |
-| inbox | 7500 |
-| cmd_archive | 7055 |
-| report | 5223 |
-| bulletin | 5167 |
-| insight | 3677 |
+| conversation | 37514 |
+| inbox | 7576 |
+| cmd_archive | 7299 |
+| report | 5307 |
+| bulletin | 5188 |
+| insight | 3723 |
 | skill_execution | 2961 |
-| cmd_quality | 1810 |
-| gate | 955 |
-| cmd_save | 598 |
-| cmd_delegate | 235 |
-| lesson | 121 |
+| cmd_quality | 1830 |
+| gate | 969 |
+| cmd_save | 616 |
+| cmd_delegate | 239 |
+| lesson | 124 |
 | pending_decision | 45 |
 | workaround | 6 |
 | project | 2 |
