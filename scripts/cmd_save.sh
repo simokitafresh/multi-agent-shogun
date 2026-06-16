@@ -5727,7 +5727,7 @@ check_ac_phase_mixing() {
         lt = tolower(text)
         # Exclude concrete file/script references before keyword matching.
         # Example: scripts/deploy_task.sh contains "deploy" but is not a delivery action.
-        gsub(/[A-Za-z0-9_.\/-]+\.(sh|bash|py|tsx|ts|jsx|js|yaml|yml|json|sql|html|css|toml|cfg|env)/, " ", lt)
+        gsub(/[A-Za-z0-9_.\/-]+\.(sh|bash|py|tsx|ts|jsx|js|yaml|yml|json|sql|html|css|toml|cfg|env|bats)/, " ", lt)
         # Exclude function calls that happen to contain phase keywords.
         # Example: deploy_task() names a function; "deploy" alone remains a delivery action.
         gsub(/[a-z_][a-z0-9_]*[[:space:]]*\(/, " ", lt)
