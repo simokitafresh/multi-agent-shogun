@@ -68,7 +68,7 @@ CMD_SAVE_SHOGUN_LESSON_ACK_FILE="${CMD_SAVE_SHOGUN_LESSON_ACK_FILE:-$PROJECT_DIR
 PREFLIGHT_AUTOLEARN_FILE="${CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE:-$PROJECT_DIR/logs/preflight_autolearn.txt}"
 LORD_CONVERSATION_FILE="${CMD_SAVE_LORD_CONVERSATION_FILE:-$PROJECT_DIR/queue/lord_conversation.jsonl}"
 CMD_CHRONICLE_FILE="${CMD_SAVE_CMD_CHRONICLE_FILE:-$PROJECT_DIR/context/cmd-chronicle.md}"
-CMD_SAVE_LORD_CONVERSATION_MAX_LINES="${CMD_SAVE_LORD_CONVERSATION_MAX_LINES:-1000}"
+CMD_SAVE_LORD_CONVERSATION_MAX_LINES="${CMD_SAVE_LORD_CONVERSATION_MAX_LINES:-200}"
 CMD_SAVE_LORD_CONVERSATION_MAX_BYTES="${CMD_SAVE_LORD_CONVERSATION_MAX_BYTES:-2097152}"
 CMD_SAVE_CHRONICLE_MAX_LINES="${CMD_SAVE_CHRONICLE_MAX_LINES:-1200}"
 CMD_SAVE_CHRONICLE_MAX_BYTES="${CMD_SAVE_CHRONICLE_MAX_BYTES:-2097152}"
@@ -88,6 +88,10 @@ CMD_SAVE_PERSISTENT_STDERR_LOG="${CMD_SAVE_PERSISTENT_STDERR_LOG:-$PROJECT_DIR/l
 # .tmp=YAML版(awk処理用) .json=JSON版(Python高速パース用, yaml.safe_load→json.loadで7x高速化)
 CMD_SAVE_SCAN_FILE_CACHE="/tmp/cmd_save_scan_$$.tmp"
 CMD_SAVE_SCAN_JSON_CACHE="/tmp/cmd_save_scan_$$.json"
+# semantic_search セッション内キャッシュ: PPIDベースでpreflight→save間でも共有
+# クエリのsha256ハッシュをファイル名にし、同一クエリの2回目呼び出しをスキップする
+_SEMANTIC_SESSION_CACHE_DIR="${TMPDIR:-/tmp}/cmd_save_semantic_${PPID}"
+mkdir -p "$_SEMANTIC_SESSION_CACHE_DIR" 2>/dev/null || true
 CMD_SAVE_ACCUMULATE_BLOCKS="${CMD_SAVE_ACCUMULATE_BLOCKS:-1}"
 BLOCK_DURATION_MINUTES=0
 BLOCK_RETRY_NUDGE="止まるな、修正して再実行せよ"
@@ -4088,10 +4092,11 @@ try:
             rest = " ".join(parts[2:])
             total_cmds += 1
             words = tokenize(f"{title} {rest}")
-            score = similarity(query_words, words)
-            if score <= 0:
+            overlap_set = query_words & words
+            if len(overlap_set) < 2:
                 continue
-            overlap = sorted(query_words & words)
+            score = similarity(query_words, words)
+            overlap = sorted(overlap_set)
             entries.append((score, cmd_id, title[:100], overlap[:5]))
 except OSError:
     print("INFO: [CHRONICLE] cmd履歴検索: cmd-chronicle.md読込失敗のため0件")
@@ -4143,7 +4148,20 @@ show_three_layer_memory_ruling_info() {
     ' | head -10 | tr '\n' ' ' | sed -E 's/^[[:space:]]+|[[:space:]]+$//g' || true)"
     [[ -n "${query//[[:space:]]/}" ]] || return 0
 
-    local output rc
+    # セッション内キャッシュ確認（PPIDベース tmpファイル）
+    local cache_key cache_file output rc
+    cache_key="$(printf '%s' "1_1_${query}" | sha256sum 2>/dev/null | cut -d' ' -f1 || printf '%s' "1_1_${query}" | cksum | cut -d' ' -f1)"
+    cache_file="${_SEMANTIC_SESSION_CACHE_DIR}/${cache_key}.cache"
+    if [[ -f "$cache_file" ]]; then
+        echo "INFO: [MEMORY_RULING] 三層記憶検索: セッション内キャッシュヒット(key=${cache_key:0:8}...)。スキップ" >&2
+        output="$(cat "$cache_file")"
+        [[ -n "${output//[[:space:]]/}" ]] && {
+            echo "INFO: [MEMORY_RULING] 三層記憶検索(title+purpose基準) [cached]:" >&2
+            printf '%s\n' "$output" | sed 's/^/  /' >&2
+        }
+        return 0
+    fi
+
     if command -v timeout >/dev/null 2>&1; then
         if output="$(
             SEMANTIC_DISABLE_LLM=1 \
@@ -4166,6 +4184,12 @@ show_three_layer_memory_ruling_info() {
         else
             rc=$?
         fi
+    fi
+
+    # 成功・タイムアウトのいずれもキャッシュに保存（2回目以降をスキップ可能にする）
+    # タイムアウト(rc=124)時は空キャッシュを作成 → 次回実行でキャッシュヒット→即スキップ
+    if [[ "$rc" -eq 0 || "$rc" -eq 124 ]]; then
+        printf '%s\n' "${output}" > "$cache_file" 2>/dev/null || true
     fi
 
     [[ "$rc" -eq 0 && -n "${output//[[:space:]]/}" ]] || return 0
@@ -4929,6 +4953,22 @@ check_gunshi_design_num_relax() {
         return 0
     fi
 
+    # 出口判定: AC YAML構造が適切なら本Check17をスキップ（覚醒設計書v3 cmd_3402）
+    # 原理: description非空+binary_check非空+FILL_THIS不在ならAC記入済み=数値精査不要
+    if [[ -n "${AC_TEXT:-}" ]]; then
+        local _c17_fill _c17_desc_empty _c17_ac_cnt _c17_bc_total _c17_bc_empty
+        _c17_fill=$(printf '%s\n' "$AC_TEXT" | grep -c 'FILL_THIS' || true)
+        _c17_desc_empty=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*description:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+        _c17_ac_cnt=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' || true)
+        _c17_bc_total=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*binary_check:' || true)
+        _c17_bc_empty=$(printf '%s\n' "$AC_TEXT" | grep -E '^[[:space:]]*binary_check:' | grep -cE 'binary_check:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+        if [[ "${_c17_fill:-0}" -eq 0 && "${_c17_desc_empty:-0}" -eq 0 && \
+              ( "${_c17_ac_cnt:-0}" -eq 0 || "${_c17_bc_total:-0}" -gt 0 ) && \
+              "${_c17_bc_empty:-0}" -eq 0 ]]; then
+            return 0  # AC構造OK → Check17スキップ（出口判定 覚醒設計書v3）
+        fi
+    fi
+
     # q8_why_whatの存在確認（なければ上のBLOCKで終了済み）
     local Q8_LINE
     Q8_LINE="$(cmd_block_get_field "quality_gate.q8_why_what")"
@@ -5060,6 +5100,22 @@ check_research_tool_explicit() {
     local PROJECT_ID
     PROJECT_ID="$(cmd_block_get_field "project")"
     [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
+
+    # 出口判定: AC YAML構造が適切なら本Check18をスキップ（覚醒設計書v3 cmd_3402）
+    # 原理: description非空+binary_check非空+FILL_THIS不在ならAC記入済み=道具パス精査不要
+    if [[ -n "${AC_TEXT:-}" ]]; then
+        local _c18_fill _c18_desc_empty _c18_ac_cnt _c18_bc_total _c18_bc_empty
+        _c18_fill=$(printf '%s\n' "$AC_TEXT" | grep -c 'FILL_THIS' || true)
+        _c18_desc_empty=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*description:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+        _c18_ac_cnt=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' || true)
+        _c18_bc_total=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*binary_check:' || true)
+        _c18_bc_empty=$(printf '%s\n' "$AC_TEXT" | grep -E '^[[:space:]]*binary_check:' | grep -cE 'binary_check:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+        if [[ "${_c18_fill:-0}" -eq 0 && "${_c18_desc_empty:-0}" -eq 0 && \
+              ( "${_c18_ac_cnt:-0}" -eq 0 || "${_c18_bc_total:-0}" -gt 0 ) && \
+              "${_c18_bc_empty:-0}" -eq 0 ]]; then
+            return 0  # AC構造OK → Check18スキップ（出口判定 覚醒設計書v3）
+        fi
+    fi
 
     # title + command本文から研究ツールキーワード検出
     local FULL_CMD TITLE_LINE SEARCH_TEXT WF_SEARCH_TEXT
@@ -5342,8 +5398,23 @@ fi
 # 目的: 全cmdにassumptionsがない/未検証前提があるcmdをBLOCKし、暗黙前提の混入を防ぐ（cmd_2157: AC≥3→全cmd）
 # cmd_1906: trust:unverified→BLOCK昇格。trust:verified+sourceにファイルパスがある場合実在確認
 if true; then
+    # 出口判定: AC YAML構造が適切なら本Check20をスキップ（覚醒設計書v3 cmd_3402）
+    # 原理: description非空+binary_check非空+FILL_THIS不在ならAC記入済み=assumptions精査不要
+    _c20_ac_ok=false
+    if [[ -n "${AC_TEXT:-}" ]]; then
+        _c20_fill=$(printf '%s\n' "$AC_TEXT" | grep -c 'FILL_THIS' || true)
+        _c20_desc_empty=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*description:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+        _c20_ac_cnt=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' || true)
+        _c20_bc_total=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*binary_check:' || true)
+        _c20_bc_empty=$(printf '%s\n' "$AC_TEXT" | grep -E '^[[:space:]]*binary_check:' | grep -cE 'binary_check:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+        if [[ "${_c20_fill:-0}" -eq 0 && "${_c20_desc_empty:-0}" -eq 0 && \
+              ( "${_c20_ac_cnt:-0}" -eq 0 || "${_c20_bc_total:-0}" -gt 0 ) && \
+              "${_c20_bc_empty:-0}" -eq 0 ]]; then
+            _c20_ac_ok=true  # AC構造OK → Check20スキップ（出口判定 覚醒設計書v3）
+        fi
+    fi
     # assumptions存在チェックはpreflight(Check 3)済み。以下は内容検証のみ
-    if echo "$CMD_BLOCK_NC" | grep -q "assumptions:"; then
+    if [[ "$_c20_ac_ok" == false ]] && echo "$CMD_BLOCK_NC" | grep -q "assumptions:"; then
         # AC1: trust: unverified が含まれる場合BLOCK(exit 1)
         if echo "$CMD_BLOCK_NC" | grep -A5 "assumptions:" | grep -q "trust:.*unverified\|trust: unverified"; then
             record_block_reason "未検証前提あり。現物確認してtrust:verifiedに変更せよ"
