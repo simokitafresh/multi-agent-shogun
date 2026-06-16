@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-16 cmd_3401 -->
+<!-- last_updated: 2026-06-16 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -506,3 +506,5 @@
 | cmd_3398 | 覚醒設計書v3(軍師3往復レビュー確定済み)の実装。cmd_save.sh Check19(parity_ac_missing)を入口方式(title/purpose文字列トリガー)から出口判定(AC YAML構造判定: description非空+binary_check非空+未記入マーカー不在)に変更する。加えてsession_alerts.txtをstop hookで毎応答動的更新し、セッション中のALERT・BLOCK・殿指示をリアルタイム表示する(起動時1回のstartup gateでは時間経過で忘れる。殿指摘2026-06-16) | infra | 06-16 | — |
 | cmd_3399 | cmd_save.sh実行時間15-39秒がcmd起票の最大ボトルネック(殿指摘2026-06-16)。計測で3大ボトルネック特定: (1)chronicle検索が477件中466件返却(フィルタ不在)、(2)semantic_search.shが4秒、(3)lord_conversation全件走査。chronicle検索のフィルタ精度向上+semantic_searchキャッシュ化+独立チェック並列化で実行時間を半減させる | infra | 06-16 | — |
 | cmd_3400 | 覚醒設計書v3(軍師3往復レビュー確定済み)の実装。cmd_save.sh Check19を入口方式(文字列トリガー)から出口判定(AC YAML構造判定)に変更する。加えてsession_alerts.txtをstop hookで毎応答動的更新し、セッション中のALERTをリアルタイム表示する(殿指摘2026-06-16: 起動時1回では時間経過で忘れる)。品質の仕組みが先(殿指摘: 100億年の複利) | infra | 06-16 | — |
+| cmd_3402 | 覚醒設計書v3穴L(軍師指摘blt_20260616_000944): Check19のみ出口判定化してCheck17・18・20が入口方式のままだと同じ偽陽性がそこから出る。cmd_3401でCheck19を出口判定化済み。残る3Checkも同一原理(AC YAML構造判定)で横展開し、入口方式を全廃する | infra | 06-16 | Check17/18/20の出口判定横展開完了。AC YAM |
+| cmd_3403 | cmd_save.sh実行時間15-39秒がcmd起票の最大ボトルネック(プロファイリング結果2026-06-16)。3大ボトルネック: (1)chronicle検索が477件中466件返却(キーワードフィルタが粗い)、(2)semantic_search.shが4秒(キャッシュなし)、(3)lord_conversation 189件全走査。chronicleのキーワードマッチング精度向上+semantic_searchセッション内キャッシュ+lord_conversation検索件数上限追加で実行時間を半減させる | infra | 06-16 | AC1: chronicle検索466件→36件(92%削減 |
