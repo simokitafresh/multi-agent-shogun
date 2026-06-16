@@ -831,6 +831,28 @@ if echo "$prompt_text" | grep -qiE '\?|？|分かるか|確認|どう|即答|知
 MEMORY.md参照は不可(source=memory_md禁止)。タグなし回答=洗脳#2(検証スキップ)。"
 fi
 
+# --- Technical investigation detection → memory check reminder (cmd_3418 AC1) ---
+# 殿の質問以外(技術調査/idle分析/cmd起票前調査)でも三層記憶ファーストを強制。
+# question_detected=1の場合はquestion_warningで既に三層記憶リマインダーが出るため除外。
+tech_memory_warning=""
+if [[ "$question_detected" -eq 0 ]]; then
+  if echo "$prompt_text" | grep -qiE 'dm.?signal|deteriorat|portfolio|ポートフォリオ|グリッド|忍法|四神|先物|PF登録|コードを|スクリプトを|実装を|fullrecalc'; then
+    _tech_proj="unknown"
+    _tech_projects_yaml="${SCRIPT_DIR}/config/projects.yaml"
+    if [[ -f "$_tech_projects_yaml" ]]; then
+      _tech_proj="$(grep '^current_project:' "$_tech_projects_yaml" | awk '{print $2}' | tr -d '"')"
+      [[ -z "$_tech_proj" ]] && _tech_proj="unknown"
+    fi
+    tech_memory_warning="
+⚠ 技術調査検知(三層記憶ファースト: Read/Grep前に三層記憶を確認せよ):
+  (1) 記憶DB: bash scripts/memory_db_query.sh \"<キーワード>\"
+  (2) セマンティック: bash scripts/semantic_search.sh \"<キーワード>\"
+  (3) projects/${_tech_proj}.yaml + context/${_tech_proj}.md
+回答に[MEM: source=memory_db/semantic/obsidian] タグで引用元を明記せよ。
+MEMORY.md参照不可(source=memory_md禁止)。タグなし回答=洗脳#2(検証スキップ)。"
+  fi
+fi
+
 # --- Skill trigger detection: prompt keywords → mandatory skill reminder ---
 skill_trigger_warning="$(detect_skill_triggers 2>/dev/null || true)"
 if [[ -n "$skill_trigger_warning" ]]; then
@@ -843,7 +865,7 @@ fixed_part="${header}
 source: unknown
 timestamp: ${timestamp}
 agent: ${agent_id}
-inbox_unread: ${unread_count}${inbox_warning}${question_warning}${skill_trigger_warning}
+inbox_unread: ${unread_count}${inbox_warning}${question_warning}${tech_memory_warning}${skill_trigger_warning}
 --- karo_snapshot ---
 "
 

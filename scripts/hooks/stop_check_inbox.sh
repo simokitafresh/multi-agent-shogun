@@ -231,6 +231,13 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
         printf 'WARN: startup先送りBLOCK 現在未解消%s件。cmd起票またはD0修正で穴を塞げ(洗脳#5)。\n' "$_block_count" >&2
       fi
     fi
+    # cmd_3418 AC2: 技術回答で[MEM:]タグ欠落WARN
+    # DM-Signal/技術調査キーワードを含む回答で三層記憶引用タグが欠落している場合
+    if echo "$last_assistant_message" | grep -qiE 'dm.?signal|deteriorat|portfolio|グリッド|忍法|四神|先物|PF登録|fullrecalc|コードを|スクリプトを'; then
+      if [[ "$last_assistant_message" != *'[MEM:'* ]]; then
+        printf 'WARN: 三層記憶タグ[MEM:]欠落。DM-Signal/技術調査回答は記憶DB/セマンティック/Obsidianを検索し[MEM:]タグで引用元を明記せよ(cmd_3418: 三層記憶ファーストを徹底)。\n' >&2
+      fi
+    fi
     # cmd_3251 AC2: F009 殿への操作依頼パターン → BLOCK
     if detect_f009_lord_delegation "$last_assistant_message"; then
       printf '{"decision":"block","reason":"BLOCK F009: 殿への操作依頼を検出。殿にcommit/push/kill/respawn/CLI操作を依頼するな。自分で実行せよ(CLAUDE.md: 殿への操作押し返し禁止)。"}\n'
