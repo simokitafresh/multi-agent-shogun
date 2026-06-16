@@ -4228,6 +4228,8 @@ pattern = re.compile(
 read_markers = (
     "読む", "読んで", "読み", "確認", "参照", "調査", "精査", "review", "read", "inspect", "refer",
     "実行", "実行のみ", "変更対象外", "走らせ", "検証", "run", "execute",
+    "同構造", "と同一", "と同じ", "同等", "踏襲", "に基づ", "を参考",
+    "突合", "比較", "一覧", "解析", "分析", "取得", "検索", "出力", "表示", "呼び出", "呼出",
 )
 write_markers = (
     "修正", "更新", "変更", "編集", "実装", "追加", "削除", "作成", "反映",
@@ -4340,8 +4342,23 @@ for idx, match in enumerate(matches):
     next_ref_before_write = idx + 1 < len(matches) and matches[idx + 1].start() < sentence_end and (
         write_pos < 0 or matches[idx + 1].start() - match.end() < write_pos
     )
-    readonly_ref = read_pos >= 0 and (write_pos < 0 or read_pos < write_pos) and (
-        write_pos < 0 or next_ref_before_write
+    # 実行前置き動詞検出: bash/python3等がパス直前 → 実行のみ参照として除外
+    exec_verbs = {"bash", "python3", "python", "sh", "bats", "node"}
+    prefix_text = command[max(0, match.start() - 60):match.start()]
+    prefix_tokens = prefix_text.split()
+    is_exec_prefix = bool(prefix_tokens) and prefix_tokens[-1].lower() in exec_verbs
+    # 読点「、」区切り検出: read_markerとwrite_markerの間に「、」→ 別節のwrite_marker → 除外
+    has_clause_boundary = False
+    if read_pos >= 0 and write_pos >= 0 and read_pos < write_pos:
+        jp_comma = sentence_tail.find("、", read_pos)
+        ascii_comma = sentence_tail.find(",", read_pos)
+        clause_positions = [p for p in [jp_comma, ascii_comma] if p >= 0]
+        if clause_positions:
+            has_clause_boundary = min(clause_positions) < write_pos
+    readonly_ref = is_exec_prefix or has_clause_boundary or (
+        read_pos >= 0 and (write_pos < 0 or read_pos < write_pos) and (
+            write_pos < 0 or next_ref_before_write
+        )
     )
     refs.append((ref, readonly_ref))
 

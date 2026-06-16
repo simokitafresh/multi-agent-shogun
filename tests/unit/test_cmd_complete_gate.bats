@@ -383,6 +383,47 @@ EOF
     [[ "$output" == *"ALL_CLEAR=true"* ]]
 }
 
+@test "command/files_modified coverage excludes exec_prefix refs (bash/python3 直前)" {
+    _write_command_coverage_fixture \
+        "scripts/target.sh を修正し bash scripts/verify.sh で検証。python3 scripts/check.py で確認。" \
+        "  - path: scripts/target.sh
+    change: modified"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+    [[ "$output" != *"missing: scripts/verify.sh"* ]]
+    [[ "$output" != *"missing: scripts/check.py"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
+@test "command/files_modified coverage excludes clause_boundary refs (読点で別節のwrite_marker)" {
+    _write_command_coverage_fixture \
+        "scripts/target.sh を修正。scripts/semantic_search.sh を呼び出し、チェックを追加。" \
+        "  - path: scripts/target.sh
+    change: modified"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+    [[ "$output" != *"missing: scripts/semantic_search.sh"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
+@test "command/files_modified coverage excludes extended read_markers (分析/呼び出/出力)" {
+    _write_command_coverage_fixture \
+        "scripts/target.sh を修正。scripts/analysis.sh で分析。scripts/call.sh を呼び出して出力確認。" \
+        "  - path: scripts/target.sh
+    change: modified"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+    [[ "$output" != *"missing: scripts/analysis.sh"* ]]
+    [[ "$output" != *"missing: scripts/call.sh"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
 @test "command/files_modified coverage excludes verified_existing_dependency refs (LG037)" {
     _write_command_coverage_fixture \
         "scripts/cmd_complete_gate.sh と scripts/deploy_task.sh を修正" \
