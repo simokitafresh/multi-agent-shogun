@@ -905,7 +905,7 @@ YAML
 @test "brainwash_check without Quality Check 3 questions blocks when majority missing (AC2 cmd_3373)" {
     {
         for i in $(seq -w 01 12); do
-            printf -- '- cmd_id: cmd_qc_%s\n  review_type: draft\n  verdict: APPROVE\n  confidence: MEDIUM\n  ambiguity_points: none\n  brainwash_check: "確認済み（三問なし）"\n  observations:\n    - "事実1"\n    - "事実2"\n' "$i"
+            printf -- '- cmd_id: cmd_qc_%s\n  review_type: report\n  verdict: APPROVE\n  confidence: MEDIUM\n  ambiguity_points: none\n  brainwash_check: "確認済み（三問なし）"\n  observations:\n    - "事実1"\n    - "事実2"\n' "$i"
         done
     } > "$TEST_TMPDIR/logs/gunshi_review_log.yaml"
 

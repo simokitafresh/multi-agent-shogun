@@ -17,6 +17,8 @@ setup() {
     {
         printf '#!/usr/bin/env bash\nset -euo pipefail\n'
         printf 'PROJECT_DIR="%s"\n' "$TEST_TMPDIR"
+        printf '_SEMANTIC_SESSION_CACHE_DIR="%s/semantic_cache"\n' "$TEST_TMPDIR"
+        printf 'mkdir -p "$_SEMANTIC_SESSION_CACHE_DIR" 2>/dev/null || true\n'
         printf 'CMD_BLOCK_NC="${1:-}"\n'
         sed -n '/^show_three_layer_memory_ruling_info()/,/^}$/p' "$SRC_SAVE_SCRIPT"
         printf 'show_three_layer_memory_ruling_info "$CMD_BLOCK_NC" 2>&1\n'
