@@ -878,7 +878,7 @@ EOF
 }
 
 # Duplicate ac_version/modifier/report-path tests are covered by test_deploy_task_ac_version.bats.
-@test "deploy_task injects all related_lessons when below MAX_INJECT=10" {
+@test "deploy_task injects at most MAX_INJECT=3 related_lessons when candidates exceed cap" {
     mkdir -p "$TEST_PROJECT/projects/testproj"
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
 lessons:
@@ -923,11 +923,11 @@ import yaml
 with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
     data = yaml.safe_load(f) or {}
 related = (data.get('task') or {}).get('related_lessons') or []
-assert len(related) == 4, related
+assert len(related) == 3, related
 print(len(related))
 "
     [ "$status" -eq 0 ]
-    [ "$output" = "4" ]
+    [ "$output" = "3" ]
 }
 
 @test "deploy_task does not mark MIN_SAMPLES-below lessons as withheld" {
@@ -1392,7 +1392,7 @@ print(','.join(ids))
     [ "$status" -eq 0 ]
 }
 
-@test "deploy_task tag fallback injects all tag-matched lessons below MAX_INJECT=10" {
+@test "deploy_task tag fallback injects at most MAX_INJECT=3 tag-matched lessons" {
     mkdir -p "$TEST_PROJECT/projects/testproj"
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
 lessons:
@@ -1442,12 +1442,12 @@ with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
     data = yaml.safe_load(f) or {}
 related = (data.get('task') or {}).get('related_lessons') or []
 ids = [entry.get('id') for entry in related]
-assert len(related) == 4, related
-assert ids == ['L921', 'L922', 'L923', 'L920'], ids
+assert len(related) == 3, related
+assert ids == ['L921', 'L922', 'L923'], ids
 print('|'.join(ids))
 "
     [ "$status" -eq 0 ]
-    [ "$output" = "L921|L922|L923|L920" ]
+    [ "$output" = "L921|L922|L923" ]
 }
 
 @test "deploy_task does not inject non-platform cross-project lessons when command keywords match" {

@@ -5035,8 +5035,9 @@ try:
 
     # cmd_karo_gp196: AC1 — MAX_INJECT=10 総合注入上限（universalは内数）
     # cmd_2270: 3→10に拡大。キーワード関連度スコアリングで上位10件に絞る
+    # cmd_3405: 10→3に縮小。useful_rate=16.7%(<30%)の根因=過剰注入修正
     # tag fallback/useful_rate処理より前に定義し、条件分岐での未定義参照を防ぐ
-    MAX_INJECT = 10
+    MAX_INJECT = 3
 
     # ═══ スコアリング: タグマッチ候補内でキーワードスコア順位付け ═══
     scored = []

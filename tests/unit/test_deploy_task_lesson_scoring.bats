@@ -142,8 +142,8 @@ PY
     [ "$first_id" = "L_HIGH" ]
 }
 
-@test "AC1: MAX_INJECT=10がdeploy_task.shに設定されている" {
-    grep -n 'MAX_INJECT = 10' "$PROJECT_ROOT/scripts/deploy_task.sh" | grep -q 'MAX_INJECT'
+@test "AC1: MAX_INJECT=3がdeploy_task.shに設定されている" {
+    grep -n 'MAX_INJECT = 3' "$PROJECT_ROOT/scripts/deploy_task.sh" | grep -q 'MAX_INJECT'
 }
 
 # ─── AC2: DM-Signal教訓優先テスト ───
