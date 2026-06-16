@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-16 -->
+<!-- last_updated: 2026-06-16 cmd_3420 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -518,3 +518,5 @@
 | cmd_3413 | 教訓健全度useful_rate=20.0%が3セッション連続ALERT(閾値30%)。根因=deploy_task.sh L5011-5018でtask_tags空+target_pathあり時に全教訓がフォールバック候補に入りNOT_USEFUL量産。軍師分析(blt_20260616_130837)+家老報告(blt_20260616_130903)で根因一致。target_pathのディレクトリからタグ推定し注入精度を向上する | infra | 06-16 | deploy_task.sh L4821-4842にpath |
 | cmd_3414 | memory_db_live_insert.py(L223)がmkstempでフルSQLiteバックアップを作成し、SIGKILL時にfinally(L238)未到達→孤児tmp蓄積(218個/7.2GB)。記録量は一切削減せず、SIGKILL時にtmpが残らない安全な書込み方式に改善する(殿厳命: 記憶DBはすべてを記録するから意味がある。選別も解釈もしない) | infra | 06-16 | create_memory_db_ext4_cache()の |
 | cmd_3415 | LS066(表面的行動パターン)がL0教訓記録止まりでL3-L5未貫通。殿指摘(2026-06-16): lesson-sortで教訓健全度対処→根因でない、tmp削減で記憶DB対処→根源を捨てる。startup BLOCKの対処アクション選択時に根因到達を二値強制する仕組みがない=意志依存(殿前セッション指摘: L0-L7未貫通) | infra | 06-16 | gate_shogun_startup.shのstartup |
+| cmd_3416 | 殿指示(2026-06-16): DM-Signalウェブアプリにメモリリークがないか確認。三層記憶にFE/BEメモリリーク情報なし=未検証空間。BE(FastAPI/Render)+FE(Next.js/Render)の両面でメモリリークリスクを調査する | dm-signal | 06-16 | — |
+| cmd_3418 | 殿指示(2026-06-16): 技術的質問でコードを読めば分かると感じた瞬間に三層記憶をスキップする傾向をL0-L7に貫通させよ。現状L3-L4は殿の質問検知時(prompt_state_inject.sh L826)のみ。殿の質問以外の技術調査(cmd起票前・idle分析)では三層記憶チェックなし=意志依存 | infra | 06-16 | prompt_state_inject.shにDM-Sign |
