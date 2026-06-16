@@ -526,6 +526,11 @@ if [[ -n "${command:-}" && "$command" == *"respawn-pane"* ]]; then
     fi
 fi
 
+# === Guard 14: DB direct connection skill recommendation (LS064: /db-check skill不使用防止) ===
+if [[ "$command" == *psycopg2* || "$command" == *"DATABASE_URL"* || "$command" == *create_db_engine* ]] && [[ "$command" != *"db-check"* && "$command" != *"check_pf_config"* ]]; then
+    echo "★ [Guard14] WARN: DB直接接続を検出。/db-checkスキルの使用を検討せよ(LS064: skill不使用=構造的バグ)" >&2
+fi
+
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
    "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git reset'* && \
