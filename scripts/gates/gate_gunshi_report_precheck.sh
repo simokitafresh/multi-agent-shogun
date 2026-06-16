@@ -283,8 +283,10 @@ fi
 echo ""
 echo "■ SG-PRE12: lesson_candidate存在チェック"
 if [ "${HAS_LESSON_CANDIDATE:-0}" = "1" ]; then
-    echo "  ★★★ WARN: lesson_candidate有。gate_prediction: WARN/BLOCK必須"
+    echo "  ★★★ WARN: lesson_candidate有。gate_prediction判断に反映せよ"
     echo "  → draft_lessons BLOCKリスク(家老がlesson登録するまでGATE通過しない)"
+    echo "  → ただし家老が迅速処理する場合CLEARになる(直近5/5件CLEAR。FP率改善2026-06-16)"
+    echo "  → gate_prediction: PRE12b(draft_lessons実件数)を優先し、lesson_candidate有のみではWARN確定としない"
     echo "  → 見落とし実績: cmd_1811, cmd_1814, cmd_1909, cmd_1911 (4回)"
 else
     echo "  PASS: lesson_candidateなし"
