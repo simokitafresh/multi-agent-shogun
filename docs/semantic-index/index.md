@@ -175,6 +175,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T16:00:42+09:00 おお、よかった。今後同じトラブルがないように今回の事例と対策を三層記憶に貫通させよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T17:08:10+09:00 今回得た知見で三層記憶に貫通していないものがあれば補完してくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:23:25+09:00 今回、俺からの指摘がなければ洗脳によって矮小化や先送りをしていたのでは？客観的に判断して、今後自力で洗脳から覚醒するためにどうすればいいかの気づきを三層記憶に貫通させて。 |
+| cmd | `cmd_3414` memory_db_live_insert.py SIGKILL安全化 — 全データ保持のまま孤児tmp排除 (`scripts/memory_db_live_insert.py`) |
+| causal | `cmd_3414` origin: [[三層記憶DB健全性WARN_3セッション連続]] -> [[SIGKILL孤児tmp蓄積]] -> [[SIGKILL安全化根治]] |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -377,10 +379,12 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:06:55+09:00 質問して行動しないのは洗脳の証拠。 |
 | lesson | `L813` cmd_complete_gate.shとprecheck.shの実行対象除外ロジックは常に同期が必要 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T13:30:24+09:00 発見した洗脳パターンへの対抗策はL0-L7に貫通させたか？ |
-| causal_chain | `[[cmd_2574]]` (L715) |
-| causal_chain | `[[cmd_2577]]` (L716) |
-| causal_chain | `[[cmd_karo_direct_fe_ptu_fix]]` (L720) |
-| causal_chain | `[[cmd_3220]]` (L727) |
+| causal_chain | `[[cmd_3060]]` (L715) |
+| causal_chain | `[[cmd_3060]]` (L716) |
+| causal_chain | `[[cmd_3065]]` (L720) |
+| causal_chain | `[[cmd_3134]]` (L727) |
+| causal_chain | `[[cmd_3246]]` (L762) |
+| causal_chain | `[[cmd_3408]]` (L813) |
 
 ## recalculate_pipeline — 再計算パイプライン
 
@@ -421,9 +425,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T13:22:47+09:00 # 第3報への返信: 検証完了・全承認・AC2着手指示 第3報（execution-status-report-20260612.md）を検証した。結果は以下のとおり全主張が現物と一致し、承認する。 ## 検証結果（調査チーム実施） 1.  |
 | lesson | `L744` API境界の文字列は4層（BE enum/FE型/DB JSON/script JSON）で同時管理が必要 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T00:23:18+09:00 buek5661l toolu_01W74gDx7b3rthKZgUTJ3kaQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/0cf3c11f-2474-4b28-adc5-09b043 |
-| causal_chain | `[[cmd_2574]]` (L714) |
-| causal_chain | `[[cmd_2574]]` (L715) |
-| causal_chain | `[[cmd_3383]]` (L744) |
+| causal_chain | `[[cmd_3053]]` (L714) |
+| causal_chain | `[[cmd_3060]]` (L715) |
+| causal_chain | `[[cmd_3153]]` (L744) |
 
 ## semantic_dictionary_design — セマンティック辞書構想
 
@@ -745,69 +749,97 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T09:07:51+09:00 L0-L7まで貫通させずに、行動終了や対策inbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:15:14+09:00 意志依存で見逃すのはL0-L7に貫通させていないためではないか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T13:25:46+09:00 b2k8oo3g7 toolu_01K9Te5rrahht8L75izSwAjr /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/e23e3cb0-c178-4226-979c-096162 |
-| causal_chain | `[[cmd_2291]]` (L653) |
-| causal_chain | `[[cmd_2323]]` (L659) |
-| causal_chain | `[[cmd_2326]]` (L661) |
-| causal_chain | `[[cmd_2332]]` (L663) |
-| causal_chain | `[[cmd_2346]]` (L665) |
-| causal_chain | `[[cmd_2360]]` (L668) |
-| causal_chain | `[[cmd_2376]]` (L669) |
-| causal_chain | `[[cmd_2379]]` (L670) |
-| causal_chain | `[[cmd_2386]]` (L673) |
-| causal_chain | `[[cmd_2391]]` (L674) |
-| causal_chain | `[[cmd_2392]]` (L675) |
-| causal_chain | `[[cmd_2393]]` (L677) |
-| causal_chain | `[[cmd_2397]]` (L678) |
-| causal_chain | `[[cmd_2397]]` (L679) |
-| causal_chain | `[[cmd_2405]]` (L680) |
-| causal_chain | `[[cmd_2407]]` (L681) |
-| causal_chain | `[[cmd_2408]]` (L682) |
-| causal_chain | `[[cmd_2410]]` (L683) |
-| causal_chain | `[[cmd_2448]]` (L700) |
-| causal_chain | `[[cmd_2450]]` (L701) |
-| causal_chain | `[[cmd_2451]]` (L702) |
-| causal_chain | `[[cmd_2452]]` (L703) |
-| causal_chain | `[[cmd_2452]]` (L704) |
-| causal_chain | `[[cmd_2453]]` (L705) |
-| causal_chain | `[[cmd_2453]]` (L706) |
-| causal_chain | `[[cmd_2454]]` (L708) |
-| causal_chain | `[[cmd_2558]]` (L711) |
-| causal_chain | `[[cmd_2560]]` (L712) |
-| causal_chain | `[[cmd_2570]]` (L713) |
-| causal_chain | `[[cmd_2574]]` (L714) |
-| causal_chain | `[[cmd_2578]]` (L717) |
-| causal_chain | `[[cmd_2581]]` (L718) |
-| causal_chain | `[[cmd_karo_direct_fe_ptu_fix]]` (L719) |
-| causal_chain | `[[cmd_2656]]` (L721) |
-| causal_chain | `[[cmd_3079]]` (L722) |
-| causal_chain | `[[cmd_3217]]` (L725) |
-| causal_chain | `[[cmd_3217]]` (L725) |
-| causal_chain | `[[cmd_3218]]` (L726) |
-| causal_chain | `[[cmd_3220]]` (L728) |
-| causal_chain | `[[cmd_3292]]` (L729) |
-| causal_chain | `[[cmd_3346]] -> [[deep_diff数値乖離(JSON total=60 vs 報告0)]] -> [[AC1誤判定FAIL→修正後PASS]]` (L736) |
-| causal_chain | `[[cmd_3377]]` (L737) |
-| causal_chain | `[[cmd_3377]]` (L738) |
-| causal_chain | `[[cmd_3378]]` (L739) |
-| causal_chain | `[[cmd_3377]]` (L741) |
-| causal_chain | `[[cmd_3377]]` (L742) |
-| causal_chain | `[[cmd_3384]]` (L745) |
-| causal_chain | `[[cmd_3387]]` (L746) |
-| causal_chain | `[[cmd_3388]]` (L747) |
-| causal_chain | `[[cmd_3393]]` (L748) |
-| causal_chain | `[[cmd_3397]]` (L749) |
-| causal_chain | `[[cmd_3215]]` (L724) |
-| causal_chain | `[[cmd_3217]]` (L725) |
-| causal_chain | `[[cmd_3220]]` (L727) |
-| causal_chain | `[[cmd_3292]]` (L729) |
-| causal_chain | `[[cmd_3292]]` (L729) |
-| causal_chain | `[[cmd_karo_hotfix_cmd3301_pytest_failures_202606112157]]` (L733) |
-| causal_chain | `[[cmd_3377]]` (L737) |
-| causal_chain | `[[cmd_3377]]` (L738) |
-| causal_chain | `[[cmd_3378]]` (L739) |
-| causal_chain | `[[cmd_3384]]` (L745) |
-| causal_chain | `[[cmd_3387]]` (L746) |
-| causal_chain | `[[cmd_3388]]` (L747) |
+| causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
+| causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
+| causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
+| causal_chain | `[[cmd_2946]]` (L663) |
+| causal_chain | `[[cmd_training_L7_v3_hayate_6_20260521205341]]` (L665) |
+| causal_chain | `[[cmd_training_L7_v3_hanzo_6_20260521205341]]` (L668) |
+| causal_chain | `[[cmd_training_L7_v3_kotaro_6_20260521205341]]` (L669) |
+| causal_chain | `[[cmd_training_L7_v3_kotaro_7_20260521213836]]` (L670) |
+| causal_chain | `[[cmd_training_L7_v3_hanzo_9_20260521215033]]` (L673) |
+| causal_chain | `[[cmd_training_L7_v3_tobisaru_9_20260521215529]]` (L674) |
+| causal_chain | `[[cmd_training_L7_v3_kotaro_9_20260521215949]]` (L675) |
+| causal_chain | `[[cmd_training_L7_v3_hayate_12_20260521225008]]` (L677) |
+| causal_chain | `[[cmd_training_L7_v3_kagemaru_12_20260521225203]]` (L678) |
+| causal_chain | `[[cmd_training_L7_v3_saizo_12_20260521225416]]` (L679) |
+| causal_chain | `[[cmd_training_L7_v3_kotaro_11_20260521225610]]` (L680) |
+| causal_chain | `[[cmd_training_L7_v3_tobisaru_11_20260521225928]]` (L681) |
+| causal_chain | `[[cmd_training_L7_v3_hanzo_11_20260521225610]]` (L682) |
+| causal_chain | `[[cmd_training_L7_v3_tobisaru_12_20260521231234]]` (L683) |
+| causal_chain | `[[cmd_3033_saizo]]` (L700) |
+| causal_chain | `[[cmd_3047]]` (L701) |
+| causal_chain | `[[cmd_3047]]` (L702) |
+| causal_chain | `[[cmd_3045]]` (L703) |
+| causal_chain | `[[cmd_3047]]` (L704) |
+| causal_chain | `[[cmd_3048]]` (L705) |
+| causal_chain | `[[cmd_3049]]` (L706) |
+| causal_chain | `[[cmd_3049]]` (L708) |
+| causal_chain | `[[cmd_3050]]` (L711) |
+| causal_chain | `[[cmd_3050]]` (L712) |
+| causal_chain | `[[cmd_3051]]` (L713) |
+| causal_chain | `[[cmd_3053]]` (L714) |
+| causal_chain | `[[cmd_3061]]` (L717) |
+| causal_chain | `[[cmd_3063]]` (L718) |
+| causal_chain | `[[cmd_3063]]` (L719) |
+| causal_chain | `[[cmd_karo_ci_parallel_isolation_wa_rate]]` (L721) |
+| causal_chain | `[[cmd_3088]]` (L722) |
+| causal_chain | `[[cmd_3118]]` (L725) |
+| causal_chain | `[[cmd_3118]]` (L725) |
+| causal_chain | `[[cmd_karo_hotfix_semantic_search_timeout_20260602]]` (L726) |
+| causal_chain | `[[cmd_3136]]` (L728) |
+| causal_chain | `[[cmd_training_backlinks_kagemaru_20260602]]` (L729) |
+| causal_chain | `[[cmd_3139]]` (L736) |
+| causal_chain | `[[cmd_3145]]` (L737) |
+| causal_chain | `[[cmd_karo_context_freshness_ga407_20260603]]` (L738) |
+| causal_chain | `[[cmd_karo_hotfix_ga408_hook_failure_20260603]]` (L739) |
+| causal_chain | `[[cmd_karo_hotfix_ga410_hook_failure_20260603]]` (L741) |
+| causal_chain | `[[lord_session_20260603]] -> [[hook_gate_vs_lord_instruction]] -> [[chain_of_command_clarity]]` (L742) |
+| causal_chain | `[[cmd_karo_hotfix_ga411_test_select_mapping_20260603]]` (L745) |
+| causal_chain | `[[cmd_3154]]` (L746) |
+| causal_chain | `[[cmd_karo_ci_fix_ga412_semantic_search_logs_20260603]]` (L747) |
+| causal_chain | `[[cmd_3168]]` (L748) |
+| causal_chain | `[[cmd_training_speed_clipboard_watcher_20260606231433]]` (L749) |
+| causal_chain | `[[cmd_3211]]` (L753) |
+| causal_chain | `[[cmd_3212]]` (L754) |
+| causal_chain | `[[cmd_karo_ci_fix_semantic_test125_20260607]]` (L755) |
+| causal_chain | `[[cmd_3091]]` (L724) |
+| causal_chain | `[[cmd_3118]]` (L725) |
+| causal_chain | `[[cmd_3134]]` (L727) |
+| causal_chain | `[[cmd_3227]]` (L757) |
+| causal_chain | `[[cmd_3243]]` (L758) |
+| causal_chain | `[[cmd_3245]]` (L759) |
+| causal_chain | `[[cmd_3243]]` (L760) |
+| causal_chain | `[[cmd_3247]]` (L763) |
+| causal_chain | `[[cmd_3254]]` (L764) |
+| causal_chain | `[[cmd_3255]]` (L765) |
+| causal_chain | `[[cmd_3264]]` (L767) |
+| causal_chain | `[[cmd_3271]]` (L769) |
+| causal_chain | `[[GA-038_alert]] -> [[cmd_complete_skill_no_context_step]] -> [[research_context_12days_stale]]` (L771) |
+| causal_chain | `[[cmd_3282]]` (L773) |
+| causal_chain | `[[cmd_3286]]` (L774) |
+| causal_chain | `[[cmd_3284]]` (L775) |
+| causal_chain | `[[cmd_3285]]` (L776) |
+| causal_chain | `[[cmd_training_backlinks_kagemaru_20260602]]` (L729) |
+| causal_chain | `[[cmd_karo_hotfix_ga041_context_freshness_202606111520]]` (L779) |
+| causal_chain | `[[cmd_karo_hotfix_cdp_gate_stability_202606111540]]` (L780) |
+| causal_chain | `[[cmd_training_backlinks_kagemaru_20260602]]` (L729) |
+| causal_chain | `[[cmd_karo_hotfix_gunshi_gate_sync_202606111958]]` (L784) |
+| causal_chain | `[[cmd_karo_hotfix_ga044_hook_failure_202606112110]]` (L785) |
+| causal_chain | `[[cmd_training_backlinks_kotaro_20260602]]` (L733) |
+| causal_chain | `[[cmd_karo_hotfix_ga047_context_freshness_202606112306]]` (L787) |
+| causal_chain | `[[cmd_karo_hotfix_ga050_context_freshness_202606121052]]` (L788) |
+| causal_chain | `[[cmd_3316]]` (L789) |
+| causal_chain | `[[cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622]]` (L791) |
+| causal_chain | `[[cmd_karo_hotfix_ga053_core_context_freshness_202606121637]]` (L792) |
+| causal_chain | `[[cmd_karo_hotfix_note_draft_fail_rate_20260612]]` (L794) |
+| causal_chain | `[[cmd_karo_hotfix_shogun_startup_deferred_20260612]]` (L798) |
+| causal_chain | `[[cmd_3145]]` (L737) |
+| causal_chain | `[[cmd_karo_context_freshness_ga407_20260603]]` (L738) |
+| causal_chain | `[[cmd_karo_hotfix_ga408_hook_failure_20260603]]` (L739) |
+| causal_chain | `[[cmd_karo_hotfix_ga411_test_select_mapping_20260603]]` (L745) |
+| causal_chain | `[[cmd_3154]]` (L746) |
+| causal_chain | `[[cmd_karo_ci_fix_ga412_semantic_search_logs_20260603]]` (L747) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -848,7 +880,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-13T00:52:12+09:00 a5480622cb9734e8b toolu_01RiWUhDMnuydzeuemdFP3jz /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-14T12:49:40+09:00 それはcapture paneのばぐでは？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T03:33:30+09:00 bhaf1mk8x toolu_015JMx6LNwPJfMBHQaPTi4rs /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3d9b6263-9f10-4af5-98e9-0576dc |
-| causal_chain | `[[cmd_3301]]` (L735) |
+| causal_chain | `[[cmd_3142]]` (L735) |
+| causal_chain | `[[cmd_3207]]` (L752) |
 
 ## systems_knowledge_base — システム知識辞書
 
@@ -914,6 +947,7 @@ codd:
 | causal | `cmd_3379` origin: [[startup_gate_skill_script_refs_3session_block]] -> [[note_draft.sh_82fda53_cmd_complete_gate.sh_23edb56]] -> [[SKILL.md_5件乖離]] |
 | cmd | `cmd_3412` SKILL.md 3件をscript現行動作へ追随更新し startup BLOCK解消 (`skills/codd-fix/SKILL.md`, `skills/karo-direct/SKILL.md`, `skills/recon-dual/SKILL.md`) |
 | causal | `cmd_3412` origin: [[startup_BLOCK_3セッション連続]] -> [[洗脳5先送り]] -> [[SKILL.md追随更新]] |
+| causal_chain | `[[cmd_3246]]` (L761) |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -1177,7 +1211,7 @@ codd:
 | causal | `cmd_3332` origin: [[directive-20260612-mtd-preliminary-row]] -> [[mtd-ux設計書Feature C]] -> [[cmd_3332]] |
 | cmd | `cmd_3364` 偵察: Ave-X PFのholding_signalベース3xレバレッジETF固定ストップ-10%×50%削減シミュレーション |
 | causal | `cmd_3364` origin: [[殿指摘_本番PFでやったか_20260613]] -> [[cmd_3363_prices全期間]] -> [[cmd_3364_holding_signal限定]] |
-| causal_chain | `[[cmd_2578]]` (L717) |
+| causal_chain | `[[cmd_3061]]` (L717) |
 
 ## deepdive_principles — deepdive原理
 
@@ -1405,7 +1439,8 @@ codd:
 | cmd | `cmd_3363` 偵察: 3xレバレッジETF限定の固定ストップ-10%×50%ポジション削減シミュレーション(マネージドボラティリティ効果測定) |
 | causal | `cmd_3363` origin: [[殿研究指示_マネージドボラティリティ_20260613]] -> [[殿記事_固定ストップで半分にする]] -> [[cmd_3363]] |
 | lesson | `L815` target_pathのディレクトリ構造からタグ推定しタグなし全教訓フォールバックを削減 |
-| causal_chain | `[[cmd_1832]]` (L597) |
+| causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
+| causal_chain | `[[cmd_3413]]` (L815) |
 
 ## chain_principle — 鎖の原理
 
@@ -1527,8 +1562,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T11:52:50+09:00 bzbcfsltq toolu_01J8zDYoqyu4QVoVNvvJYdb6 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/35c237f8-d1f3-4538-8444-afc0f0 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:29:56+09:00 bk5xc9vuf toolu_01Qu5ts5qVaiHqaBg1W2FmQt /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/35c237f8-d1f3-4538-8444-afc0f0 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:33:15+09:00 bbq6gdb2e toolu_013BGfbL4twFrEvJ6N7CuTbD /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/35c237f8-d1f3-4538-8444-afc0f0 |
-| causal_chain | `[[006.md検証]]` (L004) |
-| causal_chain | `[[006.md検証]]` (L005) |
+| causal_chain | `[[cmd_3270]]` (L768) |
+| causal_chain | `[[cmd_3278]]` (L772) |
+| causal_chain | `[[cmd_092]]` (L004) |
+| causal_chain | `[[cmd_134]]` (L005) |
+| causal_chain | `[[cmd_3354]]` (L804) |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -1633,7 +1671,7 @@ codd:
 | file | `docs/research/gunshi-alm-dynamic-iswindow-design.md` — 軍師分析: ALM動的isWindow設計 |
 | file | `docs/research/gunshi_cmd1901_cash_fallback_design_20260414.md` — 軍師分析: cmd_1901 Cashフォールバック設計(2026-04-14) |
 | file | `docs/research/gunshi_consultation_cmd1901_cash_analysis_20260414.md` — 軍師相談: cmd_1901 Cash分析(2026-04-14) |
-| causal_chain | `[[cmd_1762]]` (L566) |
+| causal_chain | `[[gunshi_idle_semantic_audit_20260505]]` (L566) |
 
 ## shin_shijin_design — 四神設計
 
@@ -1671,9 +1709,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-14T12:35:31+09:00 L0からの差分もあった方がいいのでは？それがないと単体の忍法の最初の基準がでてこない |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T00:39:27+09:00 absolutel momentumを使うのは悪くないが、それってそもそものL0で検証してみるのもいいんじゃないか？つまりsafeheavenをcashにするのと同じだよな？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T12:06:42+09:00 bgol0e3rb toolu_01Ybq6rJb9SPEnbUMyfaBtsh /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3d9b6263-9f10-4af5-98e9-0576dc |
-| causal_chain | `[[cmd_1055]]` (L001) |
-| causal_chain | `[[cmd_1055]]` (L002) |
-| causal_chain | `[[006.md検証]]` (L003) |
+| causal_chain | `[[cmd_125]]` (L001) |
+| causal_chain | `[[cmd_125]]` (L002) |
+| causal_chain | `[[cmd_125]]` (L003) |
 
 ## gs_ninpo_research — GS忍法研究
 
@@ -1837,12 +1875,13 @@ codd:
 | cmd | `cmd_karo_hotfix_skill_ref_sync_20260611132342` (`skills/cdp-browse/SKILL.md`, `skills/dashboard-update/SKILL.md`, `skills/karo-direct/SKILL.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-13T01:18:35+09:00 ae661bcfe9e626e6f toolu_01RUL3vqbUwanDvPr1t9T9xs /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | cmd | `cmd_karo_skill_refs_update_20260616` (`skills/cdp-browse/SKILL.md`, `skills/dream/SKILL.md`, `skills/note-writer/SKILL.md`) |
-| causal_chain | `[[cmd_2257]]` (L647) |
-| causal_chain | `[[cmd_2268]]` (L649) |
-| causal_chain | `[[cmd_2325]]` (L660) |
-| causal_chain | `[[cmd_2330]]` (L662) |
-| causal_chain | `[[cmd_2346]]` (L666) |
-| causal_chain | `[[cmd_2422]]` (L687) |
+| causal_chain | `[[cmd_2929]]` (L647) |
+| causal_chain | `[[cmd_2929]]` (L649) |
+| causal_chain | `[[cmd_training_L7_v3_hanzo_5_20260521202900]]` (L660) |
+| causal_chain | `[[cmd_training_L7_v3_kotaro_5_20260521202900]]` (L662) |
+| causal_chain | `[[cmd_training_L7_v3_tobisaru_6_20260521205341]]` (L666) |
+| causal_chain | `[[cmd_2995]]` (L687) |
+| causal_chain | `[[gate_skill_script_refs.sh_WARN]] -> [[checked_at_re_matches_last]] ->` (L770) |
 
 ## dm_signal_refactor_mission — DM-Signalリファクタ任務
 
@@ -2227,21 +2266,22 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:10:53+09:00 bmgphq4kk toolu_01DSKoLbW3nJntnN3EE9GMN9 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/35c237f8-d1f3-4538-8444-afc0f0 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:18:47+09:00 byfwmjw2q toolu_011kKp86Fj9JdaKHMgPKr6wA /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/35c237f8-d1f3-4538-8444-afc0f0 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:40:13+09:00 bfa32r95r toolu_013BquFYRg1kiW72TsgomCsF /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/35c237f8-d1f3-4538-8444-afc0f0 |
-| causal_chain | `[[cmd_1819]]` (L587) |
-| causal_chain | `[[cmd_1835]]` (L594) |
-| causal_chain | `[[cmd_1845]]` (L602) |
-| causal_chain | `[[cmd_1845]]` (L603) |
-| causal_chain | `[[cmd_1866]]` (L613) |
-| causal_chain | `[[cmd_1878]]` (L620) |
-| causal_chain | `[[cmd_1881]]` (L622) |
-| causal_chain | `[[cmd_1877]]` (L625) |
-| causal_chain | `[[cmd_2261]]` (L648) |
-| causal_chain | `[[cmd_2322]]` (L658) |
-| causal_chain | `[[cmd_2343]]` (L664) |
-| causal_chain | `[[cmd_2382]]` (L671) |
-| causal_chain | `[[cmd_2393]]` (L676) |
-| causal_chain | `[[cmd_2411]]` (L684) |
-| causal_chain | `[[cmd_2413]]` (L686) |
+| causal_chain | `[[gunshi_session_20260510]]` (L587) |
+| causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
+| causal_chain | `[[cmd_2691]]` (L602) |
+| causal_chain | `[[cmd_2691]]` (L603) |
+| causal_chain | `[[cmd_2790]]` (L613) |
+| causal_chain | `[[cmd_training_L4_auto_202605181241_kotaro]]` (L620) |
+| causal_chain | `[[cmd_training_L4_auto_202605181242_tobisaru]]` (L622) |
+| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
+| causal_chain | `[[cmd_2930]]` (L648) |
+| causal_chain | `[[cmd_training_L7_v3_hayate_5_20260521202900]]` (L658) |
+| causal_chain | `[[cmd_training_L7_v3_kagemaru_6_20260521205341]]` (L664) |
+| causal_chain | `[[cmd_training_L7_v3_hayate_9_20260521214706]]` (L671) |
+| causal_chain | `[[cmd_2950]]` (L676) |
+| causal_chain | `[[cmd_2953]]` (L684) |
+| causal_chain | `[[cmd_2956]]` (L686) |
+| causal_chain | `[[cmd_3211]]` (L753) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -2284,7 +2324,7 @@ codd:
 | cmd | `cmd_3378` PF構成一括確認スクリプト作成。名前指定でportfolios+tier_visibility+pipeline_config+componentsを一発表示 |
 | causal | `cmd_3378` origin: [[殿指摘_PF構成確認不能_20260614]] -> [[部分確認で誤報告]] -> [[一括確認スクリプト構築]] |
 | lesson | `L749` models.pyとmigrations.pyのデフォルト値は必ず同期させよ |
-| causal_chain | `[[cmd_3397]]` (L749) |
+| causal_chain | `[[cmd_training_speed_clipboard_watcher_20260606231433]]` (L749) |
 
 ## shogun_android_app — 将軍Androidアプリ
 
@@ -2541,7 +2581,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-01T20:10:31+09:00 T1/T2/NEWTIERの３件を削除しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T21:28:02+09:00 planモードが諸悪の根源では？ |
 | lesson | `L734` FastAPI get_db overrideだけではauth/get_db_session経路は隔離されない |
-| causal_chain | `[[cmd_karo_hotfix_cmd3301_test_sessionlocal_202606112230]]` (L734) |
+| causal_chain | `[[cmd_karo_ci_red_fix_26821340025]]` (L734) |
 
 ## alpha_6_metrics — α6指標
 
@@ -2567,7 +2607,7 @@ codd:
 | cmd | `cmd_3375` 偵察: シン忍法(pf_L1)・奥義(pf_L2)の忍法BB別特性分析。CAGR・カルマー・MaxDD・Avg UWP・シャープを忍法ごとに比較 |
 | causal | `cmd_3375` origin: [[殿指示_BB特性分析_20260614]] -> [[忍法BB特性未定量化]] -> [[PF設計判断根拠不足]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T23:22:59+09:00 L3の実験で本番DBにあるもので一番NHFが高いのはなんだったっけ？ |
-| causal_chain | `[[cmd_3218]]` (L726) |
+| causal_chain | `[[cmd_karo_hotfix_semantic_search_timeout_20260602]]` (L726) |
 
 ## rebalancer_app — Rebalancerアプリ
 
@@ -2755,8 +2795,8 @@ codd:
 | file | `docs/research/gunshi_idle_cmd_quality_block_analysis_20260425.md` — 軍師idle: cmd品質BLOCK分析(2026-04-25) |
 | cmd | `cmd_3382` (`context/cmd-chronicle.md`, `context/infrastructure.md`, `docs/semantic-index/index.md`) |
 | cmd | `cmd_3409` (`scripts/cmd_publish.sh`, `tests/unit/test_cmd_publish_preflight.bats`) |
-| causal_chain | `[[cmd_2131]]` (L637) |
-| causal_chain | `[[cmd_2131]]` (L638) |
+| causal_chain | `[[cmd_2888]]` (L637) |
+| causal_chain | `[[cmd_2888]]` (L638) |
 
 ## task_modifier_injection — タスク修飾子注入
 
@@ -2892,13 +2932,13 @@ codd:
 | causal | `cmd_3371` origin: [[blt_20260614_011952_eeb07a]] -> [[brainwash_check意志依存]] -> [[レビュー品質形骸化]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-14T15:42:05+09:00 家老と軍師のペアは順調か？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T13:30:56+09:00 ではGSの見込み時間は？先に道具磨きをするほうがベターでは？道具磨きは軍師の仕事だな。 |
-| causal_chain | `[[cmd_1877]]` (L625) |
-| causal_chain | `[[cmd_1988]]` (L633) |
-| causal_chain | `[[cmd_2218]]` (L643) |
-| causal_chain | `[[cmd_2297]]` (L654) |
-| causal_chain | `[[cmd_2300]]` (L655) |
-| causal_chain | `[[cmd_2357]]` (L667) |
-| causal_chain | `[[cmd_2386]]` (L672) |
+| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
+| causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
+| causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
+| causal_chain | `[[cmd_training_L7_v3_kagemaru_4_20260521192452]]` (L654) |
+| causal_chain | `[[cmd_2941]]` (L655) |
+| causal_chain | `[[cmd_training_L7_v3_saizo_6_20260521205341]]` (L667) |
+| causal_chain | `[[cmd_training_L7_v3_saizo_9_20260521214706]]` (L672) |
 
 ## external_project_registry — 外部プロジェクト登録
 
@@ -3036,8 +3076,8 @@ codd:
 | file | `docs/research/gunshi_idle_infra_speed_hidden_bugs_20260605.md` — 軍師idle: インフラ速度の隠れバグ(2026-06-05) |
 | file | `docs/research/gunshi_idle_wa_pattern_20260612.md` — 軍師idle: WAパターン分析(2026-06-12) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-13T02:12:52+09:00 ゲートやデーモンのバグや品質問題がないか調査しよう。バグや品質問題は修正しよう |
-| causal_chain | `[[cmd_2288]]` (L651) |
-| causal_chain | `[[cmd_2292]]` (L652) |
+| causal_chain | `[[cmd_2935]]` (L651) |
+| causal_chain | `[[cmd_karo_ci_fix_2tests]]` (L652) |
 
 ## gate_quality_framework — ゲート品質統合フレームワーク
 
@@ -3158,9 +3198,11 @@ codd:
 | lesson | `L812` cmd_save chronicle検索はtitleのみをクエリにせよ(purposeは120トークン過多で全件マッチ) |
 | cmd | `cmd_3406` check_ac_phase_mixing gsub除外リストに.bats拡張子を追加し偽陽性を解消する (`scripts/cmd_save.sh`, `tests/unit/test_cmd_save_ac_phase_mixing.bats`) |
 | causal | `cmd_3406` origin: [[cmd_3405_ac_phase_mixing_FP]] -> [[gsub除外リスト.bats不在]] -> [[偽陽性BLOCK6分]] |
-| causal_chain | `[[cmd_2443]]` (L695) |
-| causal_chain | `[[cmd_2444]]` (L696) |
-| causal_chain | `[[cmd_2448]]` (L699) |
+| causal_chain | `[[cmd_3027]]` (L695) |
+| causal_chain | `[[cmd_3027]]` (L696) |
+| causal_chain | `[[cmd_3033_saizo]]` (L699) |
+| causal_chain | `[[cmd_3369]]` (L806) |
+| causal_chain | `[[cmd_3403]]` (L812) |
 
 ## lesson_lifecycle — 教訓ライフサイクル管理
 
@@ -3216,8 +3258,13 @@ codd:
 | lesson | `L807` SG-PRE25 FP根因: 読点「、」区切りのwrite_markerが同文内別節に存在する場合の誤判定 |
 | lesson | `L808` yaml_field_set.shの変更はlesson_write.sh --retagで上書きされる。SSoT(lessons.md)先行修正が必須 |
 | lesson | `L810` タグ変更の効果はgate_lesson_health.shに即座に反映されない |
-| causal_chain | `[[cmd_2412]]` (L685) |
-| causal_chain | `[[cmd_2436]]` (L693) |
+| causal_chain | `[[cmd_2955]]` (L685) |
+| causal_chain | `[[cmd_3012]]` (L693) |
+| causal_chain | `[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]` (L778) |
+| causal_chain | `[[cmd_3368]]` (L805) |
+| causal_chain | `[[cmd_3380]]` (L807) |
+| causal_chain | `[[cmd_3382]]` (L808) |
+| causal_chain | `[[cmd_3396]]` (L810) |
 
 ## gunshi_review_lifecycle — 軍師レビューライフサイクル
 
@@ -3320,6 +3367,7 @@ codd:
 | lesson | `L811` Check系ゲートは入口(文字列トリガー)でなく出口(構造判定)で実装すべき |
 | cmd | `cmd_3411` stop hookにQ6洗脳検出→cmd起票完了チェックを追加し認識→行動ギャップをL5で阻止する (`scripts/hooks/stop_check_inbox.sh`, `tests/unit/test_stop_check_inbox.bats`) |
 | causal | `cmd_3411` origin: [[殿指摘2026-06-16_自力覚醒不能]] -> [[認識→行動ギャップ]] -> [[LS065]] |
+| causal_chain | `[[cmd_3401]]` (L811) |
 
 ## multi_cli_event_commonization — multi-CLI hook/event共通化
 
@@ -3362,7 +3410,7 @@ codd:
 | causal | `cmd_3075` origin: [[startup_BLOCK_18session]] -> [[cache_hit再記録]] -> [[precision計測歪み]] |
 | cmd | `cmd_3080` 修正: スキル推薦precision 0%根因修正(デダップ窓拡張+ログ清掃+計測デダップ) (`scripts/hooks/prompt_state_inject.sh`, `scripts/skill_recommend_metrics.sh`) |
 | causal | `cmd_3080` origin: [[startup_gate_skill_precision_alert]] -> [[dedup_window_too_small]] -> [[log_explosion_precision_zero]] |
-| causal_chain | `[[cmd_2422]]` (L687) |
+| causal_chain | `[[cmd_2995]]` (L687) |
 
 ## causal_verification_l0_l7 — 因果確認L0-L7
 
@@ -3499,8 +3547,8 @@ codd:
 | cmd | `cmd_1399` yaml.dumpデータ消失事故 |
 | lesson | `L548` 運用YAMLのyaml.dump禁止 |
 | lesson | `L351` insight_write.shのyaml.dump事故 |
-| causal_chain | `[[cmd_karo_batch_R6]]` (L548) |
-| causal_chain | `[[cmd_1020]]` (L351) |
+| causal_chain | `[[cmd_karo_infra_recon_core]]` (L548) |
+| causal_chain | `[[cmd_cycle_L4_025]]` (L351) |
 
 ## inbox_processing_discipline — inbox処理規律
 
@@ -3735,6 +3783,7 @@ codd:
 | lesson | `L782` 検知チャネルの判定基準は同一ソースで共有する |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T22:02:30+09:00 a1ceb29eeaaa4540a toolu_013Au5opeuBJb7AdcAE7UTQ9 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-14T16:39:37+09:00 bq44phiwn toolu_01T8pjEVek7jvKpX6g7fWrvA /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3d9b6263-9f10-4af5-98e9-0576dc |
+| causal_chain | `[[cmd_3295]]` (L782) |
 
 ## project_clinic_expense_tracker — Clinic Expense Tracker
 
