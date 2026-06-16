@@ -18,6 +18,7 @@ setup() {
     export TEST_ACK="$TEST_TMPDIR/shogun_lesson_ack.yaml"
     export TEST_CMD_SAVE="$TEST_TMPDIR/cmd_save_stub.sh"
     export TEST_CMD_DELEGATE="$TEST_TMPDIR/cmd_delegate_stub.sh"
+    export TEST_CMD_ACK="$TEST_TMPDIR/shogun_lesson_ack_stub.sh"
     cat > "$TEST_CMD_SAVE" <<'SH'
 #!/usr/bin/env bash
 echo "stub cmd_save $1"
@@ -30,6 +31,12 @@ echo "stub cmd_delegate $1 $2"
 exit 0
 SH
     chmod +x "$TEST_CMD_DELEGATE"
+    cat > "$TEST_CMD_ACK" <<'SH'
+#!/usr/bin/env bash
+echo "stub shogun_lesson_ack $@"
+exit 0
+SH
+    chmod +x "$TEST_CMD_ACK"
 }
 
 teardown() {
@@ -76,6 +83,7 @@ run_publish() {
         CMD_PUBLISH_SHOGUN_LESSON_LIMIT=35 \
         CMD_PUBLISH_CMD_SAVE_SCRIPT="$TEST_CMD_SAVE" \
         CMD_PUBLISH_CMD_DELEGATE_SCRIPT="$TEST_CMD_DELEGATE" \
+        CMD_PUBLISH_SHOGUN_LESSON_ACK_SCRIPT="$TEST_CMD_ACK" \
         CMD_PUBLISH_GIT_ROOT="${TEST_GIT_ROOT:-$PROJECT_ROOT}" \
         bash "$PUBLISH_SCRIPT" cmd_curr "cmd_currを書いた。配備せよ。"
 }
@@ -95,7 +103,7 @@ run_publish() {
     [[ "$output" != *"stub cmd_save"* ]]
 }
 
-@test "AC2: 前cmd BLOCK履歴あり + 教訓未記録なら具体的なlesson_write_shogun.sh例を表示する" {
+@test "AC2: 前cmd BLOCK履歴あり + 教訓未記録なら自動ack実行してcmd_save.shへ進行する" {
     write_queue draft
     write_lessons 1
     write_quality_log_for_prev_block
@@ -104,10 +112,31 @@ run_publish() {
     run_publish
     echo "$output" >&2
 
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: 前cmd_prevで1回BLOCK"* ]]
+    [[ "$output" == *"LS-A06で自動ack実行中"* ]]
+    [[ "$output" == *"stub shogun_lesson_ack cmd_prev LS-A06"* ]]
+    [[ "$output" == *"OK: 自動ack完了(cmd_prev → LS-A06)"* ]]
+    [[ "$output" == *"stub cmd_save cmd_curr"* ]]
+}
+
+@test "AC2b: 自動ackが失敗したらBLOCKしてcmd_saveを呼ばない" {
+    write_queue draft
+    write_lessons 1
+    write_quality_log_for_prev_block
+    printf '%s\n' cmd_prev > "$TEST_LAST_CMD"
+    cat > "$TEST_CMD_ACK" <<'SH'
+#!/usr/bin/env bash
+echo "stub shogun_lesson_ack FAILED $@" >&2
+exit 1
+SH
+    chmod +x "$TEST_CMD_ACK"
+
+    run_publish
+    echo "$output" >&2
+
     [ "$status" -ne 0 ]
-    [[ "$output" == *"BLOCK: 前cmd_prevで1回BLOCKされたが教訓未記録"* ]]
-    [[ "$output" == *'bash scripts/lesson_write_shogun.sh "cmd_prevのBLOCK教訓"'* ]]
-    [[ "$output" == *"bash scripts/shogun_lesson_ack.sh cmd_prev LS-A05"* ]]
+    [[ "$output" == *"BLOCK: 自動ack失敗(cmd_prev → LS-A06)"* ]]
     [[ "$output" != *"stub cmd_save"* ]]
 }
 

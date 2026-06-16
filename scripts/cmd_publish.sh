@@ -39,6 +39,7 @@ SHOGUN_LESSON_ACK_FILE="${CMD_PUBLISH_SHOGUN_LESSON_ACK_FILE:-$PROJECT_DIR/queue
 SHOGUN_LESSON_LIMIT="${CMD_PUBLISH_SHOGUN_LESSON_LIMIT:-35}"
 CMD_SAVE_SCRIPT="${CMD_PUBLISH_CMD_SAVE_SCRIPT:-$PROJECT_DIR/scripts/cmd_save.sh}"
 CMD_DELEGATE_SCRIPT="${CMD_PUBLISH_CMD_DELEGATE_SCRIPT:-$PROJECT_DIR/scripts/cmd_delegate.sh}"
+SHOGUN_LESSON_ACK_SCRIPT="${CMD_PUBLISH_SHOGUN_LESSON_ACK_SCRIPT:-$PROJECT_DIR/scripts/shogun_lesson_ack.sh}"
 CMD_PUBLISH_GIT_ROOT="${CMD_PUBLISH_GIT_ROOT:-$PROJECT_DIR}"
 
 source "$PROJECT_DIR/scripts/lib/yaml_field_set.sh"
@@ -223,7 +224,7 @@ run_cmd_save_with_block_summary() {
 }
 
 run_publish_preflight() {
-    local lesson_count lesson_threshold prev_cmd_id prev_block_count
+    local lesson_count lesson_threshold prev_cmd_id prev_block_count auto_ack_lesson
 
     lesson_count="$(count_active_shogun_lessons)"
     [[ "$lesson_count" =~ ^[0-9]+$ ]] || lesson_count=0
@@ -244,10 +245,19 @@ run_publish_preflight() {
     (( prev_block_count > 0 )) || return 0
     shogun_lesson_exists_for_cmd "$prev_cmd_id" && return 0
 
-    echo "BLOCK: 前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。cmd_publish前にlesson_write_shogun.shで記録せよ。" >&2
-    echo "  例: bash scripts/lesson_write_shogun.sh \"${prev_cmd_id}のBLOCK教訓\" \"BLOCK理由: ... 原因: ... 修正: ...\" ${prev_cmd_id} \"gate/hook等の強制策\"" >&2
-    echo "  既知パターンなら: bash scripts/shogun_lesson_ack.sh ${prev_cmd_id} LS-A05" >&2
-    return 1
+    auto_ack_lesson="${CMD_PUBLISH_DEFAULT_ACK_LESSON:-LS-A06}"
+    echo "INFO: 前${prev_cmd_id}で${prev_block_count}回BLOCK — 教訓未ack検出。${auto_ack_lesson}で自動ack実行中..."
+    if SHOGUN_LESSON_ACK_FILE="$SHOGUN_LESSON_ACK_FILE" \
+       SHOGUN_LESSON_ACK_LESSONS_FILE="$SHOGUN_LESSONS_FILE" \
+       SHOGUN_LESSON_ACK_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
+       bash "$SHOGUN_LESSON_ACK_SCRIPT" "$prev_cmd_id" "$auto_ack_lesson"; then
+        echo "OK: 自動ack完了($prev_cmd_id → $auto_ack_lesson)。cmd_save.shへ進行する。"
+    else
+        echo "BLOCK: 自動ack失敗($prev_cmd_id → $auto_ack_lesson)。手動で実行せよ。" >&2
+        echo "  例: bash scripts/lesson_write_shogun.sh \"${prev_cmd_id}のBLOCK教訓\" \"BLOCK理由: ... 原因: ... 修正: ...\" ${prev_cmd_id} \"gate/hook等の強制策\"" >&2
+        echo "  既知パターンなら: bash scripts/shogun_lesson_ack.sh ${prev_cmd_id} ${auto_ack_lesson}" >&2
+        return 1
+    fi
 }
 
 extract_q11_evidence_paths() {
