@@ -88,9 +88,12 @@ CMD_SAVE_PERSISTENT_STDERR_LOG="${CMD_SAVE_PERSISTENT_STDERR_LOG:-$PROJECT_DIR/l
 # .tmp=YAML版(awk処理用) .json=JSON版(Python高速パース用, yaml.safe_load→json.loadで7x高速化)
 CMD_SAVE_SCAN_FILE_CACHE="/tmp/cmd_save_scan_$$.tmp"
 CMD_SAVE_SCAN_JSON_CACHE="/tmp/cmd_save_scan_$$.json"
-# semantic_search セッション内キャッシュ: PPIDベースでpreflight→save間でも共有
+# semantic_search セッション内キャッシュ: TMUX_PANEベース(安定)でpreflight→save間でも共有
+# TMUX_PANEはpane固有でセッション内で不変。PPIDはBashサブプロセスごとに変わるため不適。
 # クエリのsha256ハッシュをファイル名にし、同一クエリの2回目呼び出しをスキップする
-_SEMANTIC_SESSION_CACHE_DIR="${TMPDIR:-/tmp}/cmd_save_semantic_${PPID}"
+_SEMANTIC_SESSION_CACHE_KEY="${TMUX_PANE:-${PPID}}"
+_SEMANTIC_SESSION_CACHE_KEY="${_SEMANTIC_SESSION_CACHE_KEY//%/pane}"  # %8 → pane8
+_SEMANTIC_SESSION_CACHE_DIR="${TMPDIR:-/tmp}/cmd_save_semantic_${_SEMANTIC_SESSION_CACHE_KEY}"
 mkdir -p "$_SEMANTIC_SESSION_CACHE_DIR" 2>/dev/null || true
 CMD_SAVE_ACCUMULATE_BLOCKS="${CMD_SAVE_ACCUMULATE_BLOCKS:-1}"
 BLOCK_DURATION_MINUTES=0
