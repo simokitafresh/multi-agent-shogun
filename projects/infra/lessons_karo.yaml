@@ -57,6 +57,10 @@ lessons:
     - deploy_task.sh resolve_cmdでpurpose内シングルクォートがyaml_field_set_batchの検証を崩す→--directモードで回避(cmd_3116/cmd_3125で2回発生)。将軍cmdのpurposeに'が含まれる場合はdeploy_task.sh --directを使え
     v16吸収(2026-06-09):
     - GATE実行前に軍師review結果(verdict)を確認せよ(cmd_3245/3246: 軍師FAILがある状態でGATE CLEARを通した=完了急ぎ洗脳#8)。軍師がFAILを指摘している場合、根因1行+対策1行を記録してからGATE処理。GATE前確認ポイント: grep verdict logs/gunshi_review_log.yaml | tail -5
+    v19吸収(2026-06-16):
+    - cross-project教訓(dm-signal版+infra版の二重登録)はタグ同期必須(cmd_3396: L633/L577/L544のinfra版誤タグ経由で無関係cmdに注入継続。片方だけ修正は不完全)。教訓登録時に`grep -rn "id: LXXX" projects/`で全コピーを確認→全コピーのタグを同期せよ
+    - cmd_save WARN累計昇格の偽陽性は2根因: (a)同一cmd保存リトライでWARNエントリ重複カウント(軍師D0 56c113304修正)。(b)入口方式文字列トリガーの広汎マッチ(cmd_3401で出口判定化解消)。累計昇格BLOCKが偽陽性の場合は計測ロジック(count_same_warn_pattern)自体を疑え
+    - gate_prediction PRE12のlesson_candidate有→WARN過多FP(軍師D0 aa42b21b9修正)。PRE12bのdraft_lessons実件数を優先する判断ガイダンス追加済み
     v18吸収(2026-06-15):
     - 計測gateの3セッション連続ALERTは計測ロジック自体のバグを疑え(cmd_karo_hotfix_review_quality: review_quality_scale_summaryがgate_result=CLEARを未考慮→旧FAIL永続カウント36%→9%修正b9b9692c2。軍師D0: lesson_effect useful_rateがmin_samples=5でhealth計測不能→0/0偽ALERT→useful_min=2分離fcec9b309)。共通根因=計測ロジックの前提条件が環境変化(review_logにgate_result追加/教訓数>100)で崩壊。§0.1問い2の適用拡大: gate ALERTが3回連続なら計測ロジック自体をbash実行で調査
     v17吸収(2026-06-10):

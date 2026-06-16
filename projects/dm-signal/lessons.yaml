@@ -150,7 +150,7 @@ lessons:
   origin: '[[cmd_3377]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-16'
 - id: L740
   title: PF構成確認はcheck_pf_config.pyで全層一括確認
   summary: hide判定はtier_visibility_settings全Tier確認必須。pipeline_configがBBの実体。portfoliosテーブルだけで
@@ -309,6 +309,9 @@ lessons:
   - frontend/components/__tests__/monthly_trade_table_fof_uuid.test.tsx
   - frontend/lib/__tests__/monthly-trade-display.test.ts
   origin: '[[cmd_3293]] -> [[WP-2のresolveDisplayText変更棄却]] -> [[cmd_3294コード復元+テスト固定]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L730
   title: 削除済みBlockTypeはruntime全経路で残参照検査する
   summary: Kalman/selection block削除後、静的な主要箇所の削除は完了していたが、初回本番mode=portfolio再計算でrecalculate_f
@@ -1557,6 +1560,9 @@ lessons:
   target_files:
   - 偵察のみ
   origin: '[[cmd_2297]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L653
   title: cdp_measure baseline比較は生成JSONへの統合確認を必須にする
   summary: cdp_measure.sh Phase4はcdp_benchmark.pyを--baseline/current比較器として呼ぶが、実際のcdp_benchm
@@ -2104,6 +2110,9 @@ lessons:
   - outputs/analysis/alm_research/okugi_alm_alm/cmd_1877_bunshin_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/okugi_alm_alm/cmd_1877_bunshin_l1_wf_validation.yaml
   origin: '[[cmd_1879]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L617
   title: gate_artifact_map.shで進行表の成果物所在チェック — 完了ブロック空欄→WARN
   summary: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ
@@ -2335,7 +2344,7 @@ lessons:
   origin: '[[cmd_1845]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-15'
+  last_referenced: '2026-06-16'
 - id: L601
   title: cmd_1840 maximum_drawdown目的は最悪値選出(方向反転バグ疑い)
   summary: cmd_1840 validation.yaml fixed_champions.maximum_drawdownのscoreが全忍法で-0.57〜-0.66と
@@ -3147,6 +3156,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-03'
   origin: '[[cmd_training_L4_R39_hanzo]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L542
   title: cmd用語の定義は高コスト分析前にテストへ固定せよ
   summary: High/Lowのような研究用語をcmdや将軍メモで定義していても、実装とテストに同じ意味を固定しないと、もっともらしいYAMLが大量に出ても結論がずれる。高コ
@@ -3984,6 +3996,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: パリティ検証時は初月を考慮すべき
   origin: '[[cmd_1271]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L479
   title: selection付きFoFのinit月はholding_signal=Noneで独立検証不可
   summary: selection blocks付きFoFの最初の月はmonthly_returns.holding_signal=Noneだがmonthly_returnは非
@@ -5490,6 +5505,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-17'
   origin: '[[cmd_1030]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L368
   title: 'GS忍法間共有化: 性能インパクトはcontext build(0.058%)でなくsimulate_pattern(99.94%)が支配的'
   summary: 5忍法のcontext build共有で削減できるのは約48s/83,482s(0.058%)。性能改善はsimulate_pattern最適化に集中すべき。共
@@ -8218,6 +8236,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: 今後はAC4に『対象テスト』と『全体静的検証』の別判定を明文化すると再判定コストを下げられる
   origin: '[[cmd_515]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L151
   title: OPEN/CLOSE切替導入時はbenchmark側の*_open適用も同時チェック必須
   summary: IF Monthly/Annual/Rolling summary等でbenchmark側だけclose固定の箇所が残り、portfolioとbenchmark
@@ -8289,6 +8310,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: '2026-03-03'
   origin: '[[cmd_495]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L145
   title: FoF差分調査では holding_signal文字列比較だけだと影響を過小評価する
   summary: Ave-X/裏Ave-Xなどで holding_signal(UUID列)はA/B同一でも、構成PF側の変化で展開tickerウェイトは大きく変化した。FoFの

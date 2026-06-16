@@ -8206,3 +8206,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - lesson_write.sh --retagでタグを変更しても、gate_lesson_health.shはlesson_impact.tsvの過去feedbackデータから計算するため、実測useful_rateは即座に変化しない。効果が現れるのは今後30cmd窓分のデータが入れ替わってから。シミュレーション(タグ変更対象除外後): 21.3%→23.0%。lesson_candidateとしてgateの即時計測限界を記録
+
+### L811: Check系ゲートは入口(文字列トリガー)でなく出口(構造判定)で実装すべき
+- **日付**: 2026-06-16
+- **出典**: cmd_3401
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality,testing,yaml]
+- **target_files**: [scripts/cmd_save.sh,scripts/gates/gate_shogun_startup.sh,scripts/hooks/stop_session_alerts.sh,.claude/settings.json,tests/test_cmd_save_check19_exit_gate.bats]
+- **origin**: [[cmd_3401]]
+- **when**: 未設定
+- **how**: 未設定
+- 入口判定(cmdキーワード)は偽陽性・偽陰性が不可避。出口判定(AC YAML構造: description非空+binary_check非空+FILL_THIS不在)はコンテンツそのものを検証するため根源的。stop hookも同じ原理でリアルタイム追跡が実現できる

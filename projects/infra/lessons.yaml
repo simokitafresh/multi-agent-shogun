@@ -1,8 +1,26 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-16T02:13:16'
+last_synced: '2026-06-16T03:21:38'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 805
+lesson_count: 806
 lessons:
+- id: L811
+  title: Check系ゲートは入口(文字列トリガー)でなく出口(構造判定)で実装すべき
+  summary: '入口判定(cmdキーワード)は偽陽性・偽陰性が不可避。出口判定(AC YAML構造: description非空+binary_check非空+FILL_THI'
+  tags:
+  - infra
+  - cmd-quality
+  - testing
+  - yaml
+  source_cmd: cmd_3401
+  when: 未設定
+  how: 未設定
+  target_files:
+  - scripts/cmd_save.sh
+  - scripts/gates/gate_shogun_startup.sh
+  - scripts/hooks/stop_session_alerts.sh
+  - .claude/settings.json
+  - tests/test_cmd_save_check19_exit_gate.bats
+  origin: '[[cmd_3401]]'
 - id: L810
   title: タグ変更の効果はgate_lesson_health.shに即座に反映されない
   summary: lesson_write.sh --retagでタグを変更しても、gate_lesson_health.shはlesson_impact.tsvの過去feedb
@@ -217,6 +235,9 @@ lessons:
   - projects/infra/lessons_shogun.yaml
   - scripts/gates/gate_shogun_startup.sh
   origin: '[[cmd_karo_hotfix_shogun_startup_deferred_20260612]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L797
   title: semantic_map_generateの副作用差分はcommit前にscope検査する
   summary: semantic_map_generate.sh実行後、docs/semantic-index/index.mdとcontext/semantic-map.md
@@ -270,7 +291,7 @@ lessons:
   origin: '[[cmd_karo_hotfix_skill_script_refs_20260612]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-15'
+  last_referenced: '2026-06-16'
 - id: L794
   title: 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する
   summary: 全ログではnote-draft 4/13=31%だったが、Gate20が読むtail 5000行では1/3=33%だった。FAIL率修正では対象gateの入力窓
@@ -388,9 +409,6 @@ lessons:
   target_files:
   - context/infrastructure.md
   origin: '[[cmd_karo_hotfix_ga050_context_freshness_202606121052]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L787
   title: context_freshnessはsource commitを分類してから索引更新する
   summary: source pathsが広いcontextでは、ALERT件数=全て同じcontextへ追記すべき情報ではない。commitを研究正本/補助資料/core寄り
@@ -644,9 +662,6 @@ lessons:
   - scripts/gates/gate_report_autofix_main.py
   - tests/unit/test_gate_report_autofix.bats
   origin: '[[cmd_3282]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L772
   title: causal_backlink_counts.shの検索スコープ盲点 — whitelist型gitignoreでskills/除外+semantic-index対象外
   summary: 'cmd_3278でhayateとkotaroが独立に発見した同根の盲点2件: (1)kotaro実証: rg --debugでwhitelist型gitigno'
@@ -776,9 +791,6 @@ lessons:
   - scripts/skill_recommend_metrics.sh
   - tests/unit/test_skill_recommend_metrics.bats
   origin: '[[cmd_3255]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L764
   title: _deprecate_lessons_in_fileがflow-style YAML未対応で自動deprecationが無効化
   summary: 'flow-style教訓(- {id: L723, ...})にdeprecated:trueを書き込めず、auto-deprecationがログ上は実行済みだ'
@@ -1117,9 +1129,6 @@ lessons:
   when: hook/gate由来の行動を報告する時
   how: 殿の直接指示とシステムルールを別語で表現する
   origin: '[[lord_session_20260603]] -> [[hook_gate_vs_lord_instruction]] -> [[chain_of_command_clarity]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L741
   title: pre-push hook_failureはfull log artifactを保存しなければ根因再現不能になる
   summary: GA-410はpre-pushでtest_select 11/162選択後にbatsが非0終了したが、hook_failures.yamlはstderr先頭20
@@ -1135,7 +1144,7 @@ lessons:
   origin: '[[cmd_karo_hotfix_ga410_hook_failure_20260603]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-13'
+  last_referenced: '2026-06-16'
 - id: L740
   title: 新hook機能実装時のtest setup()ディレクトリ作成漏れパターン
   summary: 新しいhook機能(collect_task_yaml_mixed_commit_violations)実装時、テストのsetup()でqueue/tasks/
@@ -1166,7 +1175,7 @@ lessons:
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
   deprecated: true
-  deprecated_at: '2026-06-16T02:13:47+09:00'
+  deprecated_at: '2026-06-16T03:21:58+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -1283,6 +1292,9 @@ lessons:
   target_files:
   - context/gunshi-fof-deterioration-analysis.md
   origin: '[[cmd_training_backlinks_saizo_20260602]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L730
   title: 孤立Markdownは因果リンクセクション追加で双方向接続を確立できる
   summary: cdp-severity.mdは[[リンク]]ゼロで孤立していた。cdp-philosophy.mdがL92で[[cdp-severity.md]]を参照済みだ
@@ -2451,6 +2463,9 @@ lessons:
   - scripts/gates/gate_report_format_main.py
   - tests/unit/test_gate_report_format_pass_no_improvement.bats
   origin: '[[cmd_training_L7_v3_kagemaru_4_20260521192452]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L653
   title: hot pathのYAML scalar出力でフィールドごとPython起動を避ける
   summary: skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数
@@ -3014,6 +3029,9 @@ lessons:
   - scripts/causal_backlinks.sh
   - tests/unit/test_lesson_write_shogun.bats
   origin: '[[cmd_2818]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L617
   title: AC内の存在しない運用YAML IDは開始時grepで検出し報告する
   summary: cmd_2817のAC2はINS-20260516-150159095を指定していたが、現行queue/insights.yamlには存在せず、同時刻の未解決I
@@ -3187,9 +3205,6 @@ lessons:
   - scripts/cmd_complete_gate.sh
   - tests/unit/test_cmd_complete_gate_auto_lesson_write.bats
   origin: '[[cmd_2697]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L606
   title: cmd_complete_gate.shのpython3 heredocはevalと組み合わせてshlex.quote済み変数をbash変数化できる
   summary: 'if _lc_raw=$(REPORT_PATH="$f" python3 - 2>/dev/null <<PYEOF...PYEOF);
@@ -3275,7 +3290,7 @@ lessons:
   origin: '[[cmd_2691]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-15'
+  last_referenced: '2026-06-16'
 - id: L601
   title: drift検出cmdは個別パスをtask YAMLに注入せよ
   summary: semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690
@@ -3334,9 +3349,6 @@ lessons:
   - queue/tasks/hayate.yaml
   - queue/reports/hayate_report_cmd_2686.yaml
   origin: '[[cmd_2686]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L597
   title: 'lesson_write.sh REFLUX_CHECK: 日本語テキストでREFLUX_KEYWORDSが空の場合はSKIPPEDにし偽WARNを抑制せよ'
   summary: lesson_write.shのREFLUX_CHECK穴検出はawk正規表現[a-z_][a-z_0-9]{2,}でASCII文字のみ抽出。日本語主体の教訓で
@@ -3869,9 +3881,6 @@ lessons:
   - scripts/lesson_write.sh
   - lib/lord_conversation.sh
   origin: '[[cmd_karo_direct_semantic_index_review]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L562
   title: CoDD propagate設計時は入口ファイル種別を実装で確認する
   summary: CLI説明だけではsource→designに見えるが、実装にはMD→MD経路もあり、逆にYAML frontmatterは入口対象外だった。辞書や設定ファイル
@@ -4168,6 +4177,9 @@ lessons:
   target_files:
   - tests/unit/test_cmd_save_environment_change.bats
   origin: '[[cmd_karo_ci_fix_env_change]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L542
   title: CI用fixtureはSSOT可変IDに依存させるな
   summary: environment_change=lesson登録のテストは、本番lessons.yamlの特定ID存在に依存するとSSOT更新でCI RED化する。TES
@@ -4939,6 +4951,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: '|| trueを追加することで解決'
   origin: '[[cmd_1955]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L479
   title: 計測対象のズレは盲点を構造的に生む — referenced率≠useful率
   summary: gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入
@@ -6186,6 +6201,9 @@ lessons:
   target_files:
   - ac_physical_verify.sh
   origin: '[[cmd_cycle_L4_044]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L368
   title: 'send_alertの呼び出し漏れパターン: 計算済み値の未消費'
   summary: usage_monitor.shでw_pct(7dバケット使用率)を計算・表示していたがsend_alertに渡していなかった。値を計算したら全消費箇所で使われ
@@ -6458,7 +6476,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-16T02:13:48+09:00'
+  deprecated_at: '2026-06-16T03:21:58+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -7729,9 +7747,6 @@ lessons:
   when: ホワイトリスト型gitignoreで新規lib追加時は
   how: ホワイトリスト型gitignore環境でscripts/lib/に新規shファイル追加時、.gitignoreホワイトリスト追記漏れでCIのみ失敗する
   origin: '[[cmd_1046]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L244
   title: bare except:がSystemExitを捕捉しPython埋込判定を無効化する
   summary: 'cmd_complete_gate.shのPython埋込でsys.exit(0)がbare except:に捕捉されていた。except
@@ -7744,9 +7759,6 @@ lessons:
   target_files:
   - cmd_complete_gate.sh
   origin: '[[cmd_1045]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L243
   title: field_deps.tsvのようなログ追記専用ファイルにはローテーション設計を初期実装時に組込むべき
   summary: field_get.shの_field_get_log()がfield_deps.tsvに無条件追記し続け5.3MB/40K行に肥大。 ログ系ファイルを新設する
@@ -8364,9 +8376,6 @@ lessons:
   target_files:
   - task_sasuke_basic.yaml
   origin: '[[cmd_714]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L190
   title: 並列impl配備時は全忍者のcommit完了を確認してからreview配備せよ。cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit
     statusで未コミット差分を確認すべき
@@ -8801,6 +8810,9 @@ lessons:
   target_files:
   - dashboard_auto_section.sh
   origin: '[[cmd_541]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L151
   title: Git hook導入時はスクリプト内容だけでなく executable bit(100755) のコミット有無を必須確認
   summary: IF Git hookをリポジトリに導入する時 THEN スクリプト内容だけでなくexecutable bit(100755)のコミット有無を必ず確認せよ
@@ -8865,6 +8877,9 @@ lessons:
   when: AC6系(教訓注入関連)をレビューする時
   how: git diff確認に加え、summary-only lessonを使ったdeploy_task再現実行を実施せよ
   origin: '[[cmd_533]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L145
   title: ashigaru.md生成はbuild_instructions.shで行われる→source filesを修正すべき(L005の実践確認)
   summary: IF ashigaru.mdの内容を修正する時 THEN build_instructions.shのソースファイル(roles/,templates/等)を修
@@ -8980,9 +8995,6 @@ lessons:
   - deploy_task.sh
   - cmd_complete_gate.sh
   origin: '[[cmd_529]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L136
   title: preflight_gate_flags upgradeのhas_found_trueスコープ不整合でlesson_done_source BLOCKが頻発
   summary: IF preflight_gate_flagsのupgradeロジックを修正する時 THEN has_found_true変数のスコープがif/else両ブロッ
@@ -9214,9 +9226,6 @@ lessons:
   - cmd_complete_gate.sh
   - deploy_task.sh
   origin: '[[cmd_466]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L116
   title: .gitignore whitelist-basedリポジトリでは新規スクリプト作成時に必ずwhitelist追加が必要
   summary: scripts/lesson_effectiveness.shがgit addで拒否された。whitelist方式の.gitignoreでは新規ファイルは自動的
@@ -9385,7 +9394,7 @@ lessons:
   - queue/gate_metrics.yaml
   origin: '[[cmd_414]]'
   deprecated: true
-  deprecated_at: '2026-06-16T02:13:48+09:00'
+  deprecated_at: '2026-06-16T03:21:59+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)
@@ -9506,9 +9515,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: get_model()のawkが各エージェント名行でat/am変数をリセットしていたため、ターゲットエージェント設定後に次エージェント行でリセットされた
   origin: '[[cmd_404]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L091
   title: 'L085再発(派生ファイル未更新): CLAUDE.md変更時は全派生ファイルをACスコープに含めよ'
   summary: CLAUDE.mdの変更が.github/copilot-instructions.mdとagents/default/system.mdに反映されなかった。C
@@ -10123,9 +10129,6 @@ lessons:
   target_files:
   - cmd_complete_gate.sh
   origin: '[[cmd_311]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-13'
 - id: L037
   title: WSL2でWrite tool作成の.shファイルはCRLF混入が確実に発生する
   summary: 'auto_failure_lesson.sh作成時にもCRLF混入(L008)。Write tool経由の新規.shは100%CRLFになる前提でsed
