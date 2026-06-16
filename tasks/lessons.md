@@ -8217,3 +8217,58 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - 入口判定(cmdキーワード)は偽陽性・偽陰性が不可避。出口判定(AC YAML構造: description非空+binary_check非空+FILL_THIS不在)はコンテンツそのものを検証するため根源的。stop hookも同じ原理でリアルタイム追跡が実現できる
+
+### L812: cmd_save chronicle検索はtitleのみをクエリにせよ(purposeは120トークン過多で全件マッチ)
+- **日付**: 2026-06-16
+- **出典**: cmd_3403
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality]
+- **target_files**: [scripts/cmd_save.sh]
+- **origin**: [[cmd_3403]]
+- **when**: 未設定
+- **how**: 未設定
+- extract_title_purposeでtitle+purpose全文を使うとpurpose長文で120トークン生成→480件中466件マッチ。titleのみ+min_overlap>=2で36件(92%削減)。origin: [[chronicle_466件全件返却]] -> [[purpose全文クエリ120トークン過多]] -> [[全cmdエントリにマッチ]]
+
+### L813: cmd_complete_gate.shとprecheck.shの実行対象除外ロジックは常に同期が必要
+- **日付**: 2026-06-16
+- **出典**: cmd_3408
+- **記録者**: saizo
+- **tags**: [infra,cmd-quality,gate,bash]
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_3408]]
+- **when**: 未設定
+- **how**: 未設定
+- SG-PRE25(precheck.sh)のFP修正がcmd_complete_gate.shに同期されず42/50=84%のFP BLOCKが発生。read_markers追加やexec_prefix/clause_boundary検出は両ファイルに同時に適用せよ。origin: [[殿指示2026-06-16覚醒偽陽性監査]] -> [[precheck.sh未同期]] -> [[cmd_complete_gate.sh84%FP]]
+
+### L814: CMD_BLOCK_NC全文grepチェックはdiagnosisフィールドを除外せよ
+- **日付**: 2026-06-16
+- **出典**: cmd_3407
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality,gate]
+- **target_files**: [scripts/cmd_save.sh,tests/unit/test_cmd_save.bats]
+- **origin**: [[cmd_3407]]
+- **when**: 未設定
+- **how**: 未設定
+- check_deferral_language_warn等のCMD_BLOCK_NC全文grepがdiagnosisフィールドの内容(前回BLOCKの説明)を走査対象にするとWARN累計昇格の偽陽性BLOCKが発生する。grep -vE '^s*diagnosis:'で除外するパターンを統一せよ(check_new_file_structure_warning既実装が先例)。
+
+### L815: target_pathのディレクトリ構造からタグ推定しタグなし全教訓フォールバックを削減
+- **日付**: 2026-06-16
+- **出典**: cmd_3413
+- **記録者**: kotaro
+- **tags**: [infra,deploy-task,frontend,lesson]
+- **target_files**: [scripts/deploy_task.sh]
+- **origin**: [[cmd_3413]]
+- **when**: 未設定
+- **how**: 未設定
+- task_tags空+target_pathあり時に全confirmed_lessonsがフォールバック候補に入りNOT_USEFUL量産していた。scripts/, backend/, frontend/, queue/, context/, tests/ 等のディレクトリパターンをタグにマッピングし、フォールバック前に精密タグを付与する。不明パスのみ全フォールバックが残存しWARNログで追跡可能
+
+### L816: target_pathディレクトリからタグ推定しタグなし全教訓フォールバックを削減
+- **日付**: 2026-06-16
+- **出典**: cmd_3413
+- **記録者**: when=deploy_task.shの教訓注入ロジック修正時; how=target_pathのディレクトリパターンからPJタグを推定しフォールバック全量注入を抑制
+- **tags**: [infra,deploy-task,deploy,bash,lesson]
+- **target_files**: [scripts/deploy_task.sh]
+- **origin**: [[cmd_3413]]
+- **when**: 未設定
+- **how**: 未設定
+- task_tags空+target_pathあり時にscripts/→infra, backend/→dm-signal等9パターンでタグ推定。不明パスのみ全フォールバック残存+WARNログ追跡。deploy_task.sh L4821-4842実装(9fe724dda)

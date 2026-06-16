@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_3401_full
+  _ac_task_id: cmd_3414_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3401 (deployed 2026-06-16T02:52:49). Read from the beginning.
-  ac_version: 92748f34
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3414 (deployed 2026-06-16T13:27:19). Read from the beginning.
+  ac_version: e3c46bc8
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -17,106 +17,63 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3401
+  parent_cmd: cmd_3414
   project: infra
-  purpose: '覚醒設計書v3(軍師3往復レビュー確定済み)の実装。cmd_save.sh Check19を入口方式(文字列トリガー)から出口判定(AC YAML構造判定)に変更する。加えてsession_alerts.txtをstop hookで毎応答動的更新し、セッション中のALERTをリアルタイム表示する(殿指摘2026-06-16: 起動時1回では時間経過で忘れる)。品質の仕組みが先(殿指摘: 100億年の複利)'
+  purpose: 'memory_db_live_insert.py(L223)がmkstempでフルSQLiteバックアップを作成し、SIGKILL時にfinally(L238)未到達→孤児tmp蓄積(218個/7.2GB)。記録量は一切削減せず、SIGKILL時にtmpが残らない安全な書込み方式に改善する(殿厳命: 記憶DBはすべてを記録するから意味がある。選別も解釈もしない)'
   status: done
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts
-  task_id: cmd_3401_full
+  target_path: scripts/memory_db_live_insert.py
+  task_id: cmd_3414_full
   task_type: full
   related_lessons:
-  - id: 'L618'
-    summary: 'causal_backlinks.sh初版はrg --files後に各ファイルへrgを実行し20s超。rg -l --fixed-strings単発に修正。次回'
-    detail: 'causal_backlinks.sh初版はrg --files後に各ファイルへrgを実行し20s超。rg -l --fixed-strings単発に修正。次回'
-  - id: 'L741'
-    summary: 'GA-410はpre-pushでtest_select 11/162選択後にbatsが非0終了したが、hook_failures.yamlはstderr先頭20'
-    detail: 'GA-410はpre-pushでtest_select 11/162選択後にbatsが非0終了したが、hook_failures.yamlはstderr先頭20'
-  - id: 'L369'
-    summary: '[^A]*?は文字Aをリテラルに除外するため、ACブロック記述にAPIやyAml等のA含有文字列があると途中切れする。.*?にすべき。正規表現の文字クラス[^X'
-    detail: '[^A]*?は文字Aをリテラルに除外するため、ACブロック記述にAPIやyAml等のA含有文字列があると途中切れする。.*?にすべき。正規表現の文字クラス[^X'
-  - id: 'L152'
-    summary: 'IF lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時 THEN KM_JSON_CACHEの無効化条'
-    detail: 'IF lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時 THEN KM_JSON_CACHEの無効化条'
-  - id: 'L602'
-    summary: 'karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te'
-    detail: 'karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te'
-  - id: 'L543'
-    summary: 'CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlの'
-    detail: 'CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlの'
-  - id: 'L146'
-    summary: 'IF AC6系(教訓注入関連)をレビューする時 THEN git diff確認に加え、summary-only lessonを使ったdeploy_task再現実'
-    detail: 'IF AC6系(教訓注入関連)をレビューする時 THEN git diff確認に加え、summary-only lessonを使ったdeploy_task再現実'
-  - id: 'L798'
-    summary: 'projects/infra/lessons_shogun.yamlでLS052をLS048へsuperseded化してactive件数は31→30になったが、'
-    detail: 'projects/infra/lessons_shogun.yamlでLS052をLS048へsuperseded化してactive件数は31→30になったが、'
-  - id: 'L731'
-    summary: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
-    detail: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
-  - id: 'L654'
-    summary: 'task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母'
-    detail: 'task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母'
+  - id: 'L744'
+    summary: 'memory_db_import.pyでEventRow型を14→15要素に拡張した際、build_lord_ruling_cache()のfor文アンパックが'
+    detail: 'memory_db_import.pyでEventRow型を14→15要素に拡張した際、build_lord_ruling_cache()のfor文アンパックが'
+  - id: 'L633'
+    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+  - id: 'L238'
+    summary: 'usage_status.shのキャッシュ破損は全CLI(Claude含む)の使用量表示を停止させる'
+    detail: 'usage_status.shのキャッシュ破損は全CLI(Claude含む)の使用量表示を停止させる'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
-  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh scripts/cmd_skeleton.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比) docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md — 軍師idle: コミットチェックWAパターン(2026-04-10) docs/research/gunshi_idle_cross_contamination_20260503.md — 軍師idle: クロスプロジェクト汚染分析(2026-05-03) docs/research/gunshi_idle_cross_project_fp_20260426.md — 軍師idle: クロスプロジェクトFP分析(2026-04-26) docs/research/gunshi_idle_gate_fail_rate_anatomy_20260502.md — 軍師idle: ゲート失敗率解剖(2026-05-02) docs/research/gunshi_idle_gate_fail_trend_20260430.md — 軍師idle: ゲート失敗トレンド分析(2026-04-30) docs/research/gunshi_idle_gate_fire_traceback_20260510.md — 軍師idle: ゲート発火トレースバック(2026-05-10) docs/research/gunshi_idle_gate_fp_analysis_20260527.md — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27) docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md — 軍師idle: LG003ゲートWA分析(2026-05-19) docs/research/gunshi_idle_lu_dict_pattern_20260415.md — 軍師idle: LU辞書パターン分析(2026-04-15)"
-  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json"
   related_causal_links:
-  - "[[殿指摘_startup忘却_リアルタイム化]]"
-  - "[[殿指摘_品質最優先_100億年複利]]"
-  - "[[覚醒設計書v3_3往復確定]]"
+  - "[[SIGKILL孤児tmp蓄積]]"
+  - "[[SIGKILL安全化根治]]"
+  - "[[三層記憶DB健全性WARN_3セッション連続]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
+  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
   - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L618: causal_backlinks.sh初版はrg --files後に各ファイルへrgを実行し20s超。rg -l --fixed-strings単発に修正。次回
-      - L741: GA-410はpre-pushでtest_select 11/162選択後にbatsが非0終了したが、hook_failures.yamlはstderr先頭20
-      - L369: [^A]*?は文字Aをリテラルに除外するため、ACブロック記述にAPIやyAml等のA含有文字列があると途中切れする。.*?にすべき。正規表現の文字クラス[^X
-      - L152: IF lessons.yamlを更新した後にdashboard_auto_section.shの出力を確認する時 THEN KM_JSON_CACHEの無効化条
-      - L602: karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te
-      - L543: CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlの
-      - L146: IF AC6系(教訓注入関連)をレビューする時 THEN git diff確認に加え、summary-only lessonを使ったdeploy_task再現実
-      - L798: projects/infra/lessons_shogun.yamlでLS052をLS048へsuperseded化してactive件数は31→30になったが、
-      - L731: causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数
-      - L654: task YAMLのacceptance_criteriaはlist形式だけでなくAC1キーのdict形式も運用される。report gateがlistだけを母
+      - L744: memory_db_import.pyでEventRow型を14→15要素に拡張した際、build_lord_ruling_cache()のfor文アンパックが
+      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
+      - L238: usage_status.shのキャッシュ破損は全CLI(Claude含む)の使用量表示を停止させる
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-06T18:04:07+09:00 | cmd_3199 publish中。 殿。設計書v3 → 軍師覚醒レビュー3往復完了 → cmd_3199起票。 **流れ:** 1. 殿の指摘「三層記憶を使わないから間違う」「MEMORY.mdが邪"
-  - "2026-05-24T17:06:50+09:00 | 殿、設計書v3に穴が残っている。軍師の指摘3件を反映してv4にアップデートし再レビューを回すか、殿の指示を待つか。 殿、どう進めるか。 [meta] stop_reason=end_turn"
-  - "2026-06-15T23:54:43+09:00 | 自動で優先順位のチェックリスト作成、チェックリストが全て完了するまでhookで未完了だと見えるのはどうだ？L0-L7に貫通させないと、deepdiveになってしまう"
-  - "2026-06-14T17:35:08+09:00 | 【改善トリガー】hook_failure ALERT (GA-071)"
+  - "2026-05-09T23:16:20+09:00 | **根因特定。** report_field_set.sh L238: ```bash if [[ "$val" == "PASS" || "$val" == "FAIL" || "$val" == "
+  - "2026-03-16T17:06:45+09:00 | 【教訓ALERT】ALERT: dm-signalの未振り分け教訓12件 → /lesson-sort推奨 ALERT: infraのlesson→context未合流231件(total:231,s"
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'cmd_save.sh Check19の判定をAC YAML構造判定(description非空+binary_check非空+未記入マーカー不在)に変更する'
+    - check: 'SIGKILL時にtmpファイルが残存しない書込み方式が実装されている(signal handler/atexit/atomic rename等)'
   - id: 'AC2'
     checks:
-    - check: 'session_alerts.txtを起動時に初期生成し、stop hookで毎応答更新する仕組みを実装する'
+    - check: '全データが欠損なく記録される(記録量の削減・選別・間引きは禁止)'
   - id: 'AC3'
     checks:
-    - check: 'batsテストを作成しCheck19の出口判定+session_alerts動的更新が正常動作することを確認する'
+    - check: '既存のlive_insert機能(events INSERT+FTS5更新+cache同期)が正常動作し、L0-L7接続先(gate_three_layer_health.sh起動gate+prompt_state_inject.shのFTS5 preflight)に影響がない'
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3401.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3401.yaml
+  report_filename: tobisaru_report_cmd_3414.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3414.yaml
   bloom_level: 
-  deployed_at: "2026-06-16T02:53:20"
+  deployed_at: "2026-06-16T13:28:14"

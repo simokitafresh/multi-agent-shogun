@@ -3309,6 +3309,9 @@ PY
             echo "  BLOCK: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続"
             echo "  先送り判断検出: ${STARTUP_WARN_STREAK_THRESHOLD}セッション連続で未解消。低優先/後で扱いにした穴の証拠として今ふさげ。"
             show_startup_streak_cmd_proposals "$_streak_key" | sed 's/^/  /'
+            echo "  ⚠ 根因確認(L0-L7貫通必須): 上記類似cmdの対処履歴を参照し回答せよ"
+            echo "    Q: このBLOCKの根因は何か。表面的対処(WARN消し・先送り)ではないか？"
+            echo "    → 根因到達後のみ先へ進め。根因が異なる場合は別cmdを起票。同一根因なら今すぐ根本修正せよ"
             alerts+=("startup連続出現BLOCK: ${_streak_key}")
             alerts+=("先送り判断: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続")
         done <<< "$_streak_result"

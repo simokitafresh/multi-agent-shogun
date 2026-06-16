@@ -1,11 +1,11 @@
 task:
   readonly_ref:
-  - path: 'scripts/gates/gate_lesson_health.sh'
+  - path: 'deploy_task.sh'
     reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3396_full
+  _ac_task_id: cmd_3413_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3396 (deployed 2026-06-16T01:56:16). Read from the beginning.
-  ac_version: b2979e1c
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3413 (deployed 2026-06-16T13:17:40). Read from the beginning.
+  ac_version: 6fd13abe
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -20,104 +20,74 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3396
+  parent_cmd: cmd_3413
   project: infra
-  purpose: startup健全度ALERTが3セッション連続(2026-06-14〜16)。useful_rate=21.3%(閾値30%)。軍師idle分析でNEVER_USEFUL教訓Top7の共通根因=タグ精度不足を特定済み。固有教訓が無関係cmdに無差別注入されている。タグを内容に合致する具体タグに変更し、低スコア教訓をwithhold降格してS/N比を改善する
+  purpose: 教訓健全度useful_rate=20.0%が3セッション連続ALERT(閾値30%)。根因=deploy_task.sh L5011-5018でtask_tags空+target_pathあり時に全教訓がフォールバック候補に入りNOT_USEFUL量産。軍師分析(blt_20260616_130837)+家老報告(blt_20260616_130903)で根因一致。target_pathのディレクトリからタグ推定し注入精度を向上する
+  recommended_skills:
+  - shogun-claude-version-switch
+  - switch-to-codex
   status: idle
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/projects
-  task_id: cmd_3396_full
+  target_path: scripts/deploy_task.sh
+  task_id: cmd_3413_full
   task_type: full
   related_lessons:
-  - id: 'L324'
-    summary: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
-    detail: 'echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ'
-  - id: 'L752'
-    summary: 'bashの${variable: -N}はvariableがN文字未満の場合に空文字を返す(エラーなし)。cache_scopeが短いパスで全テストが同一キャッ'
-    detail: 'bashの${variable: -N}はvariableがN文字未満の場合に空文字を返す(エラーなし)。cache_scopeが短いパスで全テストが同一キャッ'
-  - id: 'L747'
-    summary: 'search_log_write.shはgit index上100644だったがsemantic_search.shはbashで呼ぶ前に-xを要求していたため、'
-    detail: 'search_log_write.shはgit index上100644だったがsemantic_search.shはbashで呼ぶ前に-xを要求していたため、'
-  - id: 'L662'
-    summary: 'gate_skill_script_refs.shはPythonプロセス起動+skillsスキャンで1回約900ms。startup gateが3-5回呼び出す'
-    detail: 'gate_skill_script_refs.shはPythonプロセス起動+skillsスキャンで1回約900ms。startup gateが3-5回呼び出す'
-  - id: 'L585'
-    summary: 'sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの'
-    detail: 'sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの'
-  - id: 'L361'
-    summary: 'clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し'
-    detail: 'clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し'
-  - id: 'L330'
-    summary: 'restart_watchers.shのL7で${BASH_SOURCE[0]}から$SCRIPT_DIRを解決済みだが、L101は$(dirname $0)で'
-    detail: 'restart_watchers.shのL7で${BASH_SOURCE[0]}から$SCRIPT_DIRを解決済みだが、L101は$(dirname $0)で'
-  - id: 'L301'
-    summary: 'bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保'
-    detail: 'bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保'
-  - id: 'L296'
-    summary: 'IF: bashでIFS=タブ文字のreadを使いTSV解析する場合 THEN: 空フィールドにプレースホルダを使用せよ BECAUSE: タブはIFSホワイト'
-    detail: 'IF: bashでIFS=タブ文字のreadを使いTSV解析する場合 THEN: 空フィールドにプレースホルダを使用せよ BECAUSE: タブはIFSホワイト'
-  - id: 'L263'
-    summary: 'bashのwhile readループ変数名は呼出元のlocal変数と動的スコープで衝突する。ライブラリ関数内のwhile read変数は必ずプレフィックス付き('
-    detail: 'bashのwhile readループ変数名は呼出元のlocal変数と動的スコープで衝突する。ライブラリ関数内のwhile read変数は必ずプレフィックス付き('
+  - id: 'L451'
+    summary: 'deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、'
+    detail: 'deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、'
+  - id: 'L576'
+    summary: 'サブドメイン自動付与はパスやタグだけだとGS固有教訓をinfraに誤推定し得る。cmdが例示したIDは個別にsubdomainを確認しdry-runで非対象ta'
+    detail: 'サブドメイン自動付与はパスやタグだけだとGS固有教訓をinfraに誤推定し得る。cmdが例示したIDは個別にsubdomainを確認しdry-runで非対象ta'
+  - id: 'L312'
+    summary: 'inject_report_template()がtask[''report_template'']を設定するが、deploy_task.shのSTALE_FIEL'
+    detail: 'inject_report_template()がtask[''report_template'']を設定するが、deploy_task.shのSTALE_FIEL'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "growth_loop — 学習ループ:  AGENTS.md 学習ループ原則 context/growth-loop.md context/infrastructure.md 知識サイクル現状 scripts/gates/gate_cycle_health.sh 三層学習ループ健全性計測 scripts/karo_workaround_log.sh WA記録(成績表フィードバック) scripts/ci_status_check.sh CI状態チェック(品質フィードバック) scripts/lesson_impact_analysis.sh 教訓効果分析(注入率/参照率/CLEAR-BLOCK A/B) scripts/ralph_loop_metrics.sh ラルフループ定量計測(5指標: パターン再発/revert/完了速度/lesson-CLEAR相関/PI違反) scripts/knowledge_metrics.sh 教訓有効性+陳腐化検出(JSON/TSV出力対応) docs/research/gunshi_idle_growth_loop_nazenaze_20260515.md — 軍師idle: 成長ループなぜなぜ分析(2026-05-15) docs/research/gunshi_idle_immune_effectiveness_20260512.md — 軍師idle: 免疫システム有効性測定(2026-05-12) docs/research/gunshi_idle_immune_system_evidence_20260426.md — 軍師idle: 免疫システム証拠収集(2026-04-26) docs/research/gunshi_idle_immunity_measurement_20260510.md — 軍師idle: 免疫計測フレームワーク(2026-05-10)"
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
-  - "gunshi_review_lifecycle — 軍師レビューライフサイクル:  logs/gunshi_review_log.yaml skills/review-bundle/SKILL.md skills/gate-sync/SKILL.md skills/idle-persist/SKILL.md docs/research/gunshi_gp193_t1_prevention_20260414.md — 軍師GP193: T1防止設計(2026-04-14) docs/research/gunshi_gp194_split_deploy_bc_scope_20260415.md — 軍師GP194: 分割配備BCスコープ(2026-04-15) docs/research/gunshi_idle_ac_scope_nazenaze_20260519.md — 軍師idle: ACスコープなぜなぜ分析(2026-05-19) docs/research/gunshi_idle_accuracy_goodhart_20260512.md — 軍師idle: 精度Goodhart過適合分析(2026-05-12) docs/research/gunshi_idle_altruism_cost_analysis_20260512.md — 軍師idle: 利他コスト分析(2026-05-12) docs/research/gunshi_idle_altruism_proposals_20260512.md — 軍師idle: 利他改善提案(2026-05-12) docs/research/gunshi_idle_draft_lessons_trend_20260426.md — 軍師idle: ドラフト教訓トレンド分析(2026-04-26) docs/research/gunshi_idle_effectiveness_score_baseline_20260512.md — 軍師idle: 有効性スコアベースライン測定(2026-05-12) docs/research/gunshi_idle_fail_pattern_active_20260428.md — 軍師idle: アクティブ失敗パターン分析(2026-04-28) docs/research/gunshi_idle_lgtm_block_pattern_20260414.md — 軍師idle: LGTM BLOCKパターン分析(2026-04-14)"
   related_causal_links:
-  - "[[startup_gate_lesson_health_ALERT_3session]]"
-  - "[[tag精度不足_NEVER_USEFUL_7件]]"
-  - "[[useful_rate_21pct_ALERT]]"
+  - "[[deploy_task.sh全教訓フォールバック]]"
+  - "[[target_pathベースタグ推定追加]]"
+  - "[[教訓健全度ALERT_3セッション連続]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
+  - "context/gs-speedup-knowledge.md"
   - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L324: echo str | grep -q patternは2 subprocessをforkする。[[ str == *pattern* ]]は純bashで同等のマ
-      - L752: bashの${variable: -N}はvariableがN文字未満の場合に空文字を返す(エラーなし)。cache_scopeが短いパスで全テストが同一キャッ
-      - L747: search_log_write.shはgit index上100644だったがsemantic_search.shはbashで呼ぶ前に-xを要求していたため、
-      - L662: gate_skill_script_refs.shはPythonプロセス起動+skillsスキャンで1回約900ms。startup gateが3-5回呼び出す
-      - L585: sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの
-      - L361: clear_prep_check.shでidle|noneを処理する際、split後のfor文でnames[i]!=空文字チェックのみだとnone文字列が通過し
-      - L330: restart_watchers.shのL7で${BASH_SOURCE[0]}から$SCRIPT_DIRを解決済みだが、L101は$(dirname $0)で
-      - L301: bash変数展開でPythonコードにパスを注入すると特殊文字でPythonコード破壊。ヒアドキュメント+sys.argvで安全性確保
-      - L296: IF: bashでIFS=タブ文字のreadを使いTSV解析する場合 THEN: 空フィールドにプレースホルダを使用せよ BECAUSE: タブはIFSホワイト
-      - L263: bashのwhile readループ変数名は呼出元のlocal変数と動的スコープで衝突する。ライブラリ関数内のwhile read変数は必ずプレフィックス付き(
+      - L451: deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、
+      - L576: サブドメイン自動付与はパスやタグだけだとGS固有教訓をinfraに誤推定し得る。cmdが例示したIDは個別にsubdomainを確認しdry-runで非対象ta
+      - L312: inject_report_template()がtask['report_template']を設定するが、deploy_task.shのSTALE_FIEL
     ────────────────────────────────────────
     
     
-  memory_db_context:
-  - "2026-06-14T17:53:35+09:00 | 【INFOバッチ】 2026-06-14 17:50:26|CI緑: run 27493379190"
-  - "2026-06-14T17:38:12+09:00 | 【INFOバッチ】 2026-06-14 17:26:23|CI緑: run 27492798496"
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'NEVER_USEFUL教訓Top7(L775・L577・L791・L783・L633・L544・L299)のタグをuniversalから内容固有タグに変更し、変更後のタグでgrep確認する'
+    - check: 'deploy_task.shのtask_tags空時フォールバック(L5011-5018)にtarget_pathベースタグ推定ロジックが追加されている'
   - id: 'AC2'
     checks:
-    - check: 'injected>=5かつuseful=0の教訓を全件特定し、lesson_impact.tsvの実データに基づきwithhold降格またはタグ修正を実施する'
+    - check: 'タグ推定により全教訓フォールバック(L5017-5018)に到達するケースが減少することをログ出力で確認する'
   - id: 'AC3'
     checks:
-    - check: '修正後にbash scripts/gates/gate_lesson_health.sh を実行し、useful_rateが修正前(21.3%)から改善されていることを数値で報告する'
+    - check: '既存テスト(bats)がPASSする'
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_3396.yaml
-  report_path: queue/reports/kotaro_report_cmd_3396.yaml
+  report_filename: kotaro_report_cmd_3413.yaml
+  report_path: queue/reports/kotaro_report_cmd_3413.yaml
   bloom_level: 
-  deployed_at: "2026-06-16T01:56:38"
+  deployed_at: "2026-06-16T13:18:21"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'deploy_task.sh L4821-4842にpath-dirタグ推定ロジックを追加。task_tags空+target_pathあり時にscripts/→infra, backend/→api等でタグ推定し全教訓フォールバック(L5017-5018)を削減。全教訓フォールバック時にWARNログも追加。bats 297件PASS。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'deploy_task.sh L4821-4842にpath-dirタグ推定ロジックを追加。task_tags空+target_pathあり時にscripts/→infra, backend/→api等でタグ推定し全教訓フォールバック(L5017-5018)を削減。全教訓フォールバック時にWARNログも追加。bats 297件PASS。'

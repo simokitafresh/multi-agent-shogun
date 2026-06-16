@@ -1,5 +1,5 @@
 entries:
-- cmd_id: "cmd_3378"
+- cmd_id: "cmd_3409"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
@@ -8,48 +8,18 @@ entries:
   project: ""
   supplementary_cmds: 0
   source: "cmd_complete_gate"
-  timestamp: "2026-06-14T05:37:08Z"
-- cmd_id: "cmd_3379"
+  timestamp: "2026-06-16T03:32:14Z"
+- cmd_id: "cmd_3409"
   ac_count: 0
-  gate_result: "PASS"
+  gate_result: "CLEAR"
   karo_rework: "no"
   gunshi_verdict: "APPROVE"
   ninja_blockers: 0
-  project: "infra"
+  project: ""
   supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T07:33:58Z"
-- cmd_id: "cmd_3379"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T07:34:09Z"
-- cmd_id: "cmd_3380"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T07:36:37Z"
-- cmd_id: "cmd_3380"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T07:36:52Z"
-- cmd_id: "cmd_3381"
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-16T03:33:01Z"
+- cmd_id: "cmd_3411"
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
@@ -58,1471 +28,208 @@ entries:
   project: "infra"
   supplementary_cmds: 0
   source: "cmd_save_warn"
-  timestamp: "2026-06-14T07:39:22Z"
-  notes: "先送り表現検出|check=cmd_text_deferral_language"
-- cmd_id: "cmd_3381"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T07:39:22Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点。L723のコード現物確認+FPパターン特定済み"
-  notes: "q5=code_readingのみ。コード読みだけでは前提未検証。isolated_test/structure_verified/production_verifiedのいずれかで実確認せよ"
-- cmd_id: "cmd_3381"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-14T07:40:57Z"
-  notes: "先送り表現検出|check=cmd_text_deferral_language"
-- cmd_id: "cmd_3381"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-14T07:41:47Z"
-  notes: "先送り表現検出|check=cmd_text_deferral_language"
-- cmd_id: "cmd_3381"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-14T07:43:22Z"
-  notes: "先送り表現検出|check=cmd_text_deferral_language"
-- cmd_id: "cmd_3379"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-14T07:43:33Z"
-  notes: "command_files_modified_mismatch"
-- cmd_id: "cmd_3379"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-14T07:43:53Z"
-  notes: "command_files_modified_mismatch"
-- cmd_id: "cmd_3379"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-14T07:44:23Z"
-  notes: "command_files_modified_mismatch"
-- cmd_id: "cmd_3381"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T07:44:32Z"
-  block_duration_minutes: 5
-- cmd_id: "cmd_3381"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T07:44:46Z"
-- cmd_id: "cmd_3379"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-14T07:45:00Z"
-- cmd_id: "cmd_3382"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T07:48:05Z"
-  checks: "warn_missing_prev_cmd_lesson"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点。家老分析+gate出力を根拠に起票"
-  notes: "前cmd_3381で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3381 LS-A05"
-- cmd_id: "cmd_3382"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T07:48:56Z"
-  block_duration_minutes: 1
-- cmd_id: "cmd_3382"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T07:49:11Z"
-- cmd_id: "cmd_3381"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-14T07:57:21Z"
-- cmd_id: "cmd_3380"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-14T08:06:10Z"
-- cmd_id: "cmd_3382"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-14T08:07:43Z"
-- cmd_id: "cmd_3383"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-14T18:09:39Z"
-  notes: "info|check=measurement_env_info|measurement_env記入提案"
-- cmd_id: "cmd_3383"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T18:09:39Z"
-  checks: "warn_missing_prev_cmd_lesson"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点。rg -c結果を根拠に起票"
-  notes: "前cmd_3382で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3382 LS-A05"
-- cmd_id: "cmd_3383"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-14T18:12:17Z"
-  notes: "info|check=measurement_env_info|measurement_env記入提案"
-- cmd_id: "cmd_3383"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T18:12:17Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点。rg -c結果を根拠に起票"
-  notes: "WARN累計昇格: 「info|check=measurement_env_info|measurement_env記入提案」が1回繰り返されています(cmd_ids=cmd_3383)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3383"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T18:12:57Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: measurement_env未記入(1回目)+lesson未記録(1回目) / 対策: measurement_env追加+lesson_ack実行済み"
-  notes: "quality_gate: 不正フィールド名 1件検出。正しいフィールド名に修正せよ"
-- cmd_id: "cmd_3383"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T18:13:44Z"
-  block_duration_minutes: 4
-- cmd_id: "cmd_3383"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T18:14:10Z"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-14T18:18:43Z"
-  notes: "研究cmd道具未記載|check=check_research_tool_explicit"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-14T18:18:43Z"
-  notes: "dm-signal文脈なし生L0-L4表記|check=check_dm_signal_bare_layer_reference"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T18:18:43Z"
-  checks: "warn_missing_prev_cmd_lesson"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点。殿との設計議論+コード現物確認を根拠に起票"
-  notes: "前cmd_3383で3回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3383 LS-A05"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-14T18:21:33Z"
-  notes: "研究cmd道具未記載|check=check_research_tool_explicit"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T18:21:33Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 生L表記(1回目)+lesson未記録(1回目) / 対策: pf_L3→FoFレイヤーに修正+lesson_ack実行済み。研究道具WARNはBB実装cmdであり研究スクリプト不使用のため非該当"
-  notes: "WARN累計昇格: 「研究cmd道具未記載|check=check_research_tool_explicit」が1回繰り返されています(cmd_ids=cmd_3384)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-14T18:23:00Z"
-  notes: "研究cmd道具未記載|check=check_research_tool_explicit"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T18:23:00Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 生L表記(1回目)+lesson未記録(1回目) / 対策: pf_L3→FoFレイヤーに修正+lesson_ack実行済み。研究道具WARNはBB実装cmdであり研究スクリプト不使用のため非該当"
-  notes: "WARN累計昇格: 「研究cmd道具未記載|check=check_research_tool_explicit」が2回繰り返されています(cmd_ids=cmd_3384,cmd_3384)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-14T18:24:27Z"
-  notes: "研究cmd道具未記載|check=check_research_tool_explicit"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T18:24:27Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: check_research_tool_explicit累計昇格(3回) / 対策: q11に研究道具不使用を明記済み。本cmdはBB実装であり研究スクリプト(run_077/l1_alm_wf_engine)は使用しない。Check18がproject=dm-signalだけで発火する偽陽性"
-  notes: "WARN累計昇格: 「研究cmd道具未記載|check=check_research_tool_explicit」が3回繰り返されています(cmd_ids=cmd_3384,cmd_3384,cmd_3384)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3383"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-14T18:25:16Z"
-- cmd_id: "cmd_3383"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-14T18:25:57Z"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T18:28:56Z"
-  block_duration_minutes: 10
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T18:31:19Z"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T18:31:52Z"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T18:32:34Z"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-14T18:33:01Z"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-14T18:52:36Z"
-- cmd_id: "cmd_3384"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-14T18:54:27Z"
-- cmd_id: "cmd_3385"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T02:58:41Z"
-  notes: "dm-signal文脈なし生L0-L4表記|check=check_dm_signal_bare_layer_reference"
-- cmd_id: "cmd_3385"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T02:58:41Z"
-  notes: "gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence"
-- cmd_id: "cmd_3385"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T02:58:41Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点。殿計測値+CDP確認+ls確認を根拠に起票"
-  notes: "WARN累計昇格: 「dm-signal文脈なし生L0-L4表記|check=check_dm_signal_bare_layer_reference」が1回繰り返されています(cmd_ids=cmd_3384)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3385"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T03:02:39Z"
-  notes: "gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence"
-- cmd_id: "cmd_3385"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T03:02:39Z"
-  notes: "dm-signal文脈なし生L0-L4表記|check=check_dm_signal_bare_layer_reference"
-- cmd_id: "cmd_3385"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T03:02:40Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 生L表記+gate_script_q5(いずれも1回目) / 対策: pf_L1/pf_L2に変更+q5にGS研究cmd非gate修正を明記"
-  notes: "WARN累計昇格: 「dm-signal文脈なし生L0-L4表記|check=check_dm_signal_bare_layer_reference」が2回繰り返されています(cmd_ids=cmd_3384,cmd_3385)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3385"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T03:05:11Z"
-  notes: "gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence"
-- cmd_id: "cmd_3385"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T03:05:11Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 生L表記3回+gate_script_q5 2回(累計昇格) / 対策: 全L表記→pf_L表記に修正+q5にGS研究cmd非gate修正を明記。pf_L2構成PFは既存7忍法のみ(組合せ爆発回避。殿指示)"
-  notes: "WARN累計昇格: 「gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence」が2回繰り返されています(cmd_ids=cmd_3385,cmd_3385)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3385"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T03:09:46Z"
-  notes: "gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence"
-- cmd_id: "cmd_3385"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T03:09:46Z"
-  notes: "parity_ac_missing|check=check_parity_ac_requirements"
-- cmd_id: "cmd_3385"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T03:09:47Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 前版は全探索scope+生L表記+gate_script_q5の3種累計昇格 / 対策: scopeを1組合せ計測+パリティに縮小。全pf_L表記。q5にGS研究cmd非gate修正を明記"
-  notes: "WARN累計昇格: 「gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence」が3回繰り返されています(cmd_ids=cmd_3385,cmd_3385,cmd_3385)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_karo_hotfix_skill_refs_noise_lesson_20260615"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T03:45:59Z"
-- cmd_id: "cmd_karo_hotfix_skill_refs_noise_lesson_20260615"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T03:54:35Z"
-- cmd_id: "cmd_3386"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T04:00:50Z"
-  notes: "parity_ac_missing|check=check_parity_ac_requirements"
-- cmd_id: "cmd_3386"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T04:00:51Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: cmd_3385がWARN累計昇格(research_tool+bare_layer_ref+gate_script_q5)で通過不能 / 対策: cmd_3386として新規起票(累計リセット)。研究道具パスをAC明記、gate修正非該当をq5に記述、生レイヤー表記を中黒区切りに変換"
-  notes: "WARN累計昇格: 「parity_ac_missing|check=check_parity_ac_requirements」が1回繰り返されています(cmd_ids=cmd_3385)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_karo_hotfix_review_quality_warn_gate_result_20260615"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T04:02:55Z"
-- cmd_id: "cmd_karo_hotfix_review_quality_warn_gate_result_20260615"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T04:03:24Z"
-- cmd_id: "cmd_3386"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T04:04:53Z"
-  block_duration_minutes: 4
-- cmd_id: "cmd_3386"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T04:07:13Z"
-- cmd_id: "cmd_3386"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T04:08:10Z"
-- cmd_id: "cmd_karo_ci_fix_note_draft_sc1036_20260615"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T04:08:44Z"
-- cmd_id: "cmd_karo_ci_fix_note_draft_sc1036_20260615"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T04:10:19Z"
-- cmd_id: "cmd_karo_ci_fix_note_draft_sc1036_20260615"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T04:11:21Z"
-- cmd_id: "cmd_3387"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T05:10:17Z"
-  notes: "gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence"
-- cmd_id: "cmd_3387"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T05:10:17Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: cmd_3386のsmoke結果+軍師分析に基づき月次突合ロジック修正+全探索を1cmdに統合"
-  notes: "WARN累計昇格: 「gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence」が4回繰り返されています(cmd_ids=cmd_3385,cmd_3385,cmd_3385,cmd_3385)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3387"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T05:11:41Z"
-  notes: "gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence"
-- cmd_id: "cmd_3387"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T05:11:41Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: gate_script_q5_execution_evidence累計昇格(GS分析ファイル修正をgate修正と誤検知) / 対策: q5にgate/hook非該当の明示を追加。本cmdはGS分析ファイルの修正でありinfra修正ではない"
-  notes: "WARN累計昇格: 「gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence」が5回繰り返されています(cmd_ids=cmd_3385,cmd_3385,cmd_3385,cmd_3385,cmd_3387)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3387"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T05:13:34Z"
-  block_duration_minutes: 3
-- cmd_id: "cmd_3387"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T05:14:18Z"
-- cmd_id: "cmd_3387"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T05:14:59Z"
-- cmd_id: "cmd_3387"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T05:57:54Z"
-  notes: "kagemaru:empty_lessons_useful:related=['L634','L633','L621','L620','L619','L618','L617','L616','L615','L614']"
-- cmd_id: "cmd_3387"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T06:01:16Z"
-- cmd_id: "cmd_3387"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T06:01:45Z"
-- cmd_id: "cmd_3388"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T06:11:20Z"
-  notes: "先送り表現検出|check=cmd_text_deferral_language"
-- cmd_id: "cmd_3388"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T06:12:17Z"
-- cmd_id: "cmd_3388"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T06:12:58Z"
-- cmd_id: "cmd_3388"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T06:13:45Z"
-- cmd_id: "cmd_3388"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T06:14:16Z"
-- cmd_id: "cmd_3388"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T06:27:44Z"
-- cmd_id: "cmd_3388"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T06:27:57Z"
-- cmd_id: "cmd_3389"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T08:10:49Z"
-  notes: "parity_ac_missing|check=check_parity_ac_requirements"
-- cmd_id: "cmd_3389"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T08:10:49Z"
+  timestamp: "2026-06-16T03:34:30Z"
   notes: "causal_verification_missing|check=check_causal_verification_requirement"
-- cmd_id: "cmd_3389"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T08:10:49Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: cmd_3388のGS結果+チャンピオン構成を入力とし3モード一括登録"
-  notes: "WARN累計昇格: 「parity_ac_missing|check=check_parity_ac_requirements」が2回繰り返されています(cmd_ids=cmd_3385,cmd_3386)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3389"
+- cmd_id: "cmd_3411"
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
   gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T08:12:31Z"
-  notes: "parity_ac_missing|check=check_parity_ac_requirements"
-- cmd_id: "cmd_3389"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T08:12:32Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: causal_verification_missing+parity_ac_missing(本番登録cmdにP1-P4とcausal_verificationが必要) / 対策: P1-P4追加+causal_verification追加"
-  notes: "WARN累計昇格: 「parity_ac_missing|check=check_parity_ac_requirements」が3回繰り返されています(cmd_ids=cmd_3385,cmd_3386,cmd_3389)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3389"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T08:13:39Z"
-  block_duration_minutes: 3
-- cmd_id: "cmd_3389"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T08:14:19Z"
-- cmd_id: "cmd_3389"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T08:14:54Z"
-- cmd_id: "cmd_3389"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T08:39:07Z"
-- cmd_id: "cmd_3390"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T13:19:55Z"
-  notes: "parity_ac_missing|check=check_parity_ac_requirements"
-- cmd_id: "cmd_3390"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T13:19:55Z"
-  notes: "dm-signal文脈なし生L0-L4表記|check=check_dm_signal_bare_layer_reference"
-- cmd_id: "cmd_3390"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T13:19:56Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 理論パラメータでのL3登録。GS不要"
-  notes: "WARN累計昇格: 「parity_ac_missing|check=check_parity_ac_requirements」が4回繰り返されています(cmd_ids=cmd_3385,cmd_3386,cmd_3389,cmd_3389)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3390"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T13:21:53Z"
-  notes: "dm-signal文脈なし生L0-L4表記|check=check_dm_signal_bare_layer_reference"
-- cmd_id: "cmd_3390"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T13:21:53Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: parity_ac_missing累計昇格(title本番登録語がトリガー。P1-P5追加済みだがP2のreturn一致パターン不足) / 対策: P2にmonthly_return_openキーワードを明示"
-  notes: "WARN累計昇格: 「dm-signal文脈なし生L0-L4表記|check=check_dm_signal_bare_layer_reference」が4回繰り返されています(cmd_ids=cmd_3384,cmd_3385,cmd_3385,cmd_3390)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3390"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T13:22:53Z"
-  notes: "dm-signal文脈なし生L0-L4表記|check=check_dm_signal_bare_layer_reference"
-- cmd_id: "cmd_3390"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T13:22:54Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: parity_ac_missing累計昇格(title本番登録語がトリガー。P1-P5追加済みだがP2のreturn一致パターン不足) / 対策: P2にmonthly_return_openキーワードを明示"
-  notes: "WARN累計昇格: 「dm-signal文脈なし生L0-L4表記|check=check_dm_signal_bare_layer_reference」が5回繰り返されています(cmd_ids=cmd_3384,cmd_3385,cmd_3385,cmd_3390,cmd_3390)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3390"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T13:25:08Z"
-  notes: "dm-signal文脈なし生L0-L4表記|check=check_dm_signal_bare_layer_reference"
-- cmd_id: "cmd_3390"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T13:25:09Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: parity_ac_missing累計昇格(title本番登録語がトリガー。P1-P5追加済みだがP2のreturn一致パターン不足) / 対策: P2にmonthly_return_openキーワードを明示"
-  notes: "WARN累計昇格: 「dm-signal文脈なし生L0-L4表記|check=check_dm_signal_bare_layer_reference」が6回繰り返されています(cmd_ids=cmd_3384,cmd_3385,cmd_3385,cmd_3390,cmd_3390,cmd_3390)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3391"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T13:27:14Z"
-- cmd_id: "cmd_3391"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T13:28:05Z"
-- cmd_id: "cmd_3391"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T13:29:10Z"
-- cmd_id: "cmd_3391"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T13:29:54Z"
-- cmd_id: "cmd_3391"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T13:59:51Z"
-- cmd_id: "cmd_3391"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T14:00:07Z"
-- cmd_id: "cmd_3392"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T14:35:58Z"
-  notes: "parity_ac_missing|check=check_parity_ac_requirements"
-- cmd_id: "cmd_3392"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T14:35:58Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 近傍5パターンの一括登録+比較"
-  notes: "WARN累計昇格: 「parity_ac_missing|check=check_parity_ac_requirements」が5回繰り返されています(cmd_ids=cmd_3385,cmd_3386,cmd_3389,cmd_3389,cmd_3390)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3392"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T14:37:07Z"
-  notes: "parity_ac_missing|check=check_parity_ac_requirements"
-- cmd_id: "cmd_3392"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T14:37:08Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: parity_ac_missing(P2のreturn一致キーワード不足) / 対策: P2にmonthly_return一致を明示"
-  notes: "WARN累計昇格: 「parity_ac_missing|check=check_parity_ac_requirements」が6回繰り返されています(cmd_ids=cmd_3385,cmd_3386,cmd_3389,cmd_3389,cmd_3390,cmd_3392)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3393"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T14:39:33Z"
-  notes: "parity_ac_missing|check=check_parity_ac_requirements"
-- cmd_id: "cmd_3393"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T14:39:34Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: cmd_3392でparity_ac_missing累計昇格。cmd_3393で新規起票(累計リセット) / 対策: P2にreturn一致キーワード明示済み"
-  notes: "WARN累計昇格: 「parity_ac_missing|check=check_parity_ac_requirements」が7回繰り返されています(cmd_ids=cmd_3385,cmd_3386,cmd_3389,cmd_3389,cmd_3390,cmd_3392,cmd_3392)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3393"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T14:40:27Z"
-  notes: "parity_ac_missing|check=check_parity_ac_requirements"
-- cmd_id: "cmd_3393"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T14:40:28Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: cmd_3392でparity_ac_missing累計昇格。cmd_3393で新規起票(累計リセット) / 対策: P2にreturn一致キーワード明示済み"
-  notes: "WARN累計昇格: 「parity_ac_missing|check=check_parity_ac_requirements」が8回繰り返されています(cmd_ids=cmd_3385,cmd_3386,cmd_3389,cmd_3389,cmd_3390,cmd_3392,cmd_3392,cmd_3393)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3393"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T14:41:22Z"
-  notes: "parity_ac_missing|check=check_parity_ac_requirements"
-- cmd_id: "cmd_3393"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T14:41:22Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: cmd_3392でparity_ac_missing累計昇格。cmd_3393で新規起票(累計リセット) / 対策: P2にreturn一致キーワード明示済み"
-  notes: "WARN累計昇格: 「parity_ac_missing|check=check_parity_ac_requirements」が9回繰り返されています(cmd_ids=cmd_3385,cmd_3386,cmd_3389,cmd_3389,cmd_3390,cmd_3392,cmd_3392,cmd_3393,cmd_3393)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3393"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T14:43:01Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: cmd_3392でparity_ac_missing累計昇格。cmd_3393で新規起票(累計リセット) / 対策: P2にreturn一致キーワード明示済み"
-  notes: "environment_change未実装。file=projects/dm-signal.yaml に pattern=trend_reversal が見つからない"
-- cmd_id: "cmd_3393"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T14:43:57Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: cmd_3392でparity_ac_missing累計昇格。cmd_3393で新規起票(累計リセット) / 対策: P2にreturn一致キーワード明示済み"
-  notes: "environment_change未実装。file=projects/dm-signal.yaml に pattern=trend_reversal が見つからない"
-- cmd_id: "cmd_3393"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T14:45:06Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: cmd_3392でparity_ac_missing累計昇格。cmd_3393で新規起票(累計リセット) / 対策: P2にreturn一致キーワード明示済み"
-  notes: "environment_change未実装。file=projects/dm-signal.yaml に pattern=trend_reversal が見つからない"
-- cmd_id: "cmd_3393"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T14:46:35Z"
-  block_duration_minutes: 7
-- cmd_id: "cmd_3393"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T14:47:25Z"
-- cmd_id: "cmd_3393"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T14:48:15Z"
-- cmd_id: "cmd_3393"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T15:24:15Z"
-- cmd_id: "cmd_3393"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-15T15:24:33Z"
-- cmd_id: "cmd_3395"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
   source: "cmd_save_warn"
-  timestamp: "2026-06-15T16:11:47Z"
+  timestamp: "2026-06-16T03:34:30Z"
   notes: "gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence"
-- cmd_id: "cmd_3395"
+- cmd_id: "cmd_3411"
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
   source: "cmd_save_warn"
-  timestamp: "2026-06-15T16:11:47Z"
-  notes: "設計書数値緩和|check=check_gunshi_reference_numeric_relaxation"
-- cmd_id: "cmd_3396"
+  timestamp: "2026-06-16T03:36:06Z"
+  notes: "causal_verification_missing|check=check_causal_verification_requirement"
+- cmd_id: "cmd_3411"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-16T03:36:06Z"
+  notes: "gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence"
+- cmd_id: "cmd_3411"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-16T03:37:21Z"
+  notes: "causal_verification_missing|check=check_causal_verification_requirement"
+- cmd_id: "cmd_3411"
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
   source: "cmd_save"
-  timestamp: "2026-06-15T16:54:43Z"
-- cmd_id: "cmd_3396"
+  timestamp: "2026-06-16T03:38:44Z"
+- cmd_id: "cmd_3411"
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
   source: "cmd_save"
-  timestamp: "2026-06-15T16:55:03Z"
-- cmd_id: "cmd_3396"
+  timestamp: "2026-06-16T03:38:57Z"
+- cmd_id: "cmd_3411"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
   source: "cmd_complete_gate"
-  timestamp: "2026-06-15T17:13:41Z"
-- cmd_id: "cmd_3397"
+  timestamp: "2026-06-16T03:46:10Z"
+- cmd_id: "cmd_3411"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-16T03:46:16Z"
+- cmd_id: "cmd_3412"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-16T04:11:12Z"
+- cmd_id: "cmd_3412"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-16T04:11:27Z"
+- cmd_id: "cmd_3413"
   ac_count: 0
   gate_result: "BLOCK"
   karo_rework: "no"
   gunshi_verdict: "APPROVE"
   ninja_blockers: 0
-  project: "dm-signal"
+  project: "infra"
   supplementary_cmds: 0
   source: "cmd_save"
-  timestamp: "2026-06-15T17:26:34Z"
+  timestamp: "2026-06-16T04:13:11Z"
   checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 2部構成形式で記載。PI-027のコード強制化"
+  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点+根因コード行番号特定済み"
   notes: "q5=code_readingのみ。コード読みだけでは前提未検証。isolated_test/structure_verified/production_verifiedのいずれかで実確認せよ"
-- cmd_id: "cmd_3397"
+- cmd_id: "cmd_3413"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-16T04:15:38Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: q5=code_readingのみ(初回) / 対策: git blame+git logでstructure_verifiedに昇格。L5011(b032849f92)とL5017(462ea2ee31)の因果を確認"
+  notes: "environment_changeが非構造化。構造化形式で記載せよ: type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な文字列"
+- cmd_id: "cmd_3413"
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
   gunshi_verdict: "APPROVE"
   ninja_blockers: 0
-  project: "dm-signal"
+  project: "infra"
   supplementary_cmds: 0
   source: "cmd_save"
-  timestamp: "2026-06-15T17:27:43Z"
-  block_duration_minutes: 1
-- cmd_id: "cmd_3397"
+  timestamp: "2026-06-16T04:16:46Z"
+  block_duration_minutes: 4
+- cmd_id: "cmd_3413"
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
   gunshi_verdict: "APPROVE"
   ninja_blockers: 0
-  project: "dm-signal"
+  project: "infra"
   supplementary_cmds: 0
   source: "cmd_save"
-  timestamp: "2026-06-15T17:28:39Z"
-- cmd_id: "cmd_3397"
+  timestamp: "2026-06-16T04:16:57Z"
+- cmd_id: "cmd_3414"
   ac_count: 0
-  gate_result: "PASS"
+  gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "APPROVE"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
-  project: "dm-signal"
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-16T04:20:02Z"
+  notes: "three_layer_penetration_missing|check=check_three_layer_penetration"
+- cmd_id: "cmd_3414"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-16T04:20:02Z"
+  notes: "gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence"
+- cmd_id: "cmd_3414"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
   supplementary_cmds: 0
   source: "cmd_save"
-  timestamp: "2026-06-15T17:29:13Z"
-- cmd_id: "cmd_3397"
+  timestamp: "2026-06-16T04:20:03Z"
+  checks: "cmd_save_main|warn_missing_prev_cmd_lesson"
+  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点+根因コード行特定+家老報告証跡"
+  notes: "WARN累計昇格: 「gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence」が1回繰り返されています(cmd_ids=cmd_3411)。WARNを解消してからcmd_save.shを実行せよ"
+- cmd_id: "cmd_3414"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-16T04:23:53Z"
+  checks: "warn_missing_prev_cmd_lesson"
+  diagnosis: "BLOCK理由: (1)q5実行証拠不足→gate_three_layer_health.sh+cleanup dry-run結果追加 (2)三層貫通不足→L0-L7 5接続先をAC3/command/q8に明記 / 対策: 全接続先言及+gate実行証拠"
+  notes: "前cmd_3413で2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3413 LS-A05"
+- cmd_id: "cmd_3412"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
@@ -1531,93 +238,8 @@ entries:
   project: ""
   supplementary_cmds: 0
   source: "cmd_complete_gate"
-  timestamp: "2026-06-15T17:34:29Z"
-- cmd_id: "cmd_3398"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T17:41:30Z"
-  notes: "ac_phase_mixing|check=check_ac_phase_mixing"
-- cmd_id: "cmd_3398"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T17:41:30Z"
-  checks: "cmd_save_main|warn_missing_prev_cmd_lesson"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 2部構成形式で記載。覚醒設計書v3の施策2+施策3を1cmdで実装"
-  notes: "前cmd_3397で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3397 LS-A05"
-- cmd_id: "cmd_3398"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T17:42:54Z"
-  notes: "ac_phase_mixing|check=check_ac_phase_mixing"
-- cmd_id: "cmd_3398"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T17:42:55Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: ac_phase_mixing(AC1に実装+計測共起)+前cmd_3397教訓未記録(ack済み) / 対策: AC1を実装のみに分離。計測はAC3で分担。教訓ackはLS-A04(q5_code_reading既知パターン)"
-  notes: "WARN累計昇格: 「ac_phase_mixing|check=check_ac_phase_mixing」が1回繰り返されています(cmd_ids=cmd_3398)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3400"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-15T17:44:47Z"
-  notes: "ac_phase_mixing|check=check_ac_phase_mixing"
-- cmd_id: "cmd_3400"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T17:44:48Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票。cmd_3398は累計WARNで新IDに移行) / 対策: AC内の実装+確認共起を分離済み。トリガー語をdiagnosisから除去済み"
-  notes: "WARN累計昇格: 「ac_phase_mixing|check=check_ac_phase_mixing」が2回繰り返されています(cmd_ids=cmd_3398,cmd_3398)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3401"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-15T17:47:14Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票。cmd_3400はトリガー語残存で新IDに移行) / 対策: AC全文から発火キーワードを除去済み。診断文にもトリガー語なし"
-  notes: "雛形のFILL_THISが残存。全プレースホルダを実内容で埋めよ"
-- cmd_id: "cmd_3401"
+  timestamp: "2026-06-16T04:24:12Z"
+- cmd_id: "cmd_3414"
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
@@ -1626,9 +248,9 @@ entries:
   project: "infra"
   supplementary_cmds: 0
   source: "cmd_save"
-  timestamp: "2026-06-15T17:51:52Z"
+  timestamp: "2026-06-16T04:24:47Z"
   block_duration_minutes: 5
-- cmd_id: "cmd_3401"
+- cmd_id: "cmd_3414"
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
@@ -1637,4 +259,68 @@ entries:
   project: "infra"
   supplementary_cmds: 0
   source: "cmd_save"
-  timestamp: "2026-06-15T17:52:11Z"
+  timestamp: "2026-06-16T04:25:11Z"
+- cmd_id: "cmd_3412"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-16T04:25:23Z"
+- cmd_id: "cmd_3415"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-16T04:33:25Z"
+  checks: "warn_missing_prev_cmd_lesson"
+  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: L5貫通をACに明記+q5にgate実行証拠"
+  notes: "前cmd_3414で2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3414 LS-A05"
+- cmd_id: "cmd_3413"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-16T04:33:54Z"
+- cmd_id: "cmd_3413"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-16T04:34:28Z"
+- cmd_id: "cmd_3415"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-16T04:34:41Z"
+  block_duration_minutes: 1
+- cmd_id: "cmd_3415"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-16T04:35:41Z"

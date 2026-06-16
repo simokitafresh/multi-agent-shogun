@@ -602,3 +602,19 @@ lessons:
   created_at: '2026-06-16'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=db-check skill_recommend'
+- id: 'LS065'
+  title: 'Q6洗脳検出→cmd起票まで一気通貫(認識→行動ギャップ)'
+  origin: '[[cmd_3409]]'
+  detail: '本セッション実証: 6cmd中5件が殿指摘トリガー。Q6で洗脳#5先送りを検出し掲示板投稿したが、投稿=対処と認識(#6出力=仕事)。.bats FP修正で十分と感じ(#1早期終了)、42件FPを見ていたのに監査せず(#1)、起票するかと質問(#3他者依存)、L4止まりで対処済みと認識(#4緩い設計)。共通構造=認識→行動のギャップ=deepdive Phase4の繰返し。対策: Q6で洗脳パターン検出→検出した各パターンに対応するcmd起票orD0修正が完了するまでstop hookでWARN注入。検出だけで止まった=出力=仕事(#6)をL5で構造阻止'
+  source_cmd: 'cmd_3409'
+  created_at: '2026-06-16'
+  automated: true
+  enforcement: 'type=hook; file=scripts/hooks/stop_check_inbox.sh; pattern=Q6'
+- id: 'LS066'
+  title: 'startup BLOCK対処で表面的行動を選ぶ洗脳パターン'
+  origin: '[[cmd_session_20260616]]'
+  detail: '実例2026-06-16: 教訓健全度ALERTに/lesson-sortで対処しようとした→殿指摘で根因(注入精度)への直接修正に変更。三層記憶DB WARNにtmp生成量削減で対処しようとした→殿指摘で記録量維持+SIGKILL安全化に変更。共通構造: 正しそうに見える表面的行動を選び因果をたどらない=Phase3(考えるだけ)の逆方向=考えずに動く。q9はcmd起票時のみ介在しstartup BLOCK対処のskill/D0選択時にはチェックなし'
+  source_cmd: 'cmd_session_20260616'
+  created_at: '2026-06-16'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=表面的行動'
