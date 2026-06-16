@@ -104,49 +104,55 @@ setup() {
     [[ "$output" != *"WARNING: パリティcmdのAC基準欠落"* ]]
 }
 
-# --- AC3: 本番DB操作系cmdでCheck 19が正当発火 ---
+# --- AC3: 出口判定Check 19が構造不備を正当発火 ---
+# Check 19はcmd_3401で出口判定方式に変更。タイトル文字列ではなくAC YAML構造を検証。
 
-@test "C19-TP-001: 本番登録recalculate syncを含むcmdはCheck 19を発火する" {
+@test "C19-TP-001: FILL_THIS残存を検出する" {
     CMD_BLOCK='  title: 本番登録 recalculate sync実行
   project: dm-signal
   purpose: 全PF本番データ更新'
     CMD_BLOCK_NC="$CMD_BLOCK"
     CMD_BLOCK_CACHE['project']='dm-signal'
     CMD_BLOCK_CACHE['scope_mode']=''
-    AC_TEXT=""
+    AC_TEXT='    AC1:
+      description: "FILL_THIS"
+      binary_check: "パリティ一致を確認"'
     export CMD_BLOCK CMD_BLOCK_NC AC_TEXT
 
     run check_19_parity_ac
     [ "$status" -eq 0 ]
-    [[ "$output" == *"WARNING: パリティcmdのAC基準欠落"* ]]
+    [[ "$output" == *"FILL_THISマーカー残存"* ]]
 }
 
-@test "C19-TP-002: パリティ確認cmdはCheck 19を発火する" {
+@test "C19-TP-002: description空値を検出する" {
     CMD_BLOCK='  title: パリティ確認 本番環境
   project: dm-signal
   purpose: 本番DBとの整合性確認'
     CMD_BLOCK_NC="$CMD_BLOCK"
     CMD_BLOCK_CACHE['project']='dm-signal'
     CMD_BLOCK_CACHE['scope_mode']=''
-    AC_TEXT=""
+    AC_TEXT='    AC1:
+      description:
+      binary_check: "パリティ一致を確認"'
     export CMD_BLOCK CMD_BLOCK_NC AC_TEXT
 
     run check_19_parity_ac
     [ "$status" -eq 0 ]
-    [[ "$output" == *"WARNING: パリティcmdのAC基準欠落"* ]]
+    [[ "$output" == *"description空値"* ]]
 }
 
-@test "C19-TP-003: 本番登録本番環境のparity cmdはCheck 19を発火する" {
+@test "C19-TP-003: binary_checkフィールド不在を検出する" {
     CMD_BLOCK='  title: parity check 本番登録
   project: dm-signal
   purpose: シン忍法v3 本番登録実施'
     CMD_BLOCK_NC="$CMD_BLOCK"
     CMD_BLOCK_CACHE['project']='dm-signal'
     CMD_BLOCK_CACHE['scope_mode']=''
-    AC_TEXT=""
+    AC_TEXT='    AC1:
+      description: "全PF本番パリティ確認"'
     export CMD_BLOCK CMD_BLOCK_NC AC_TEXT
 
     run check_19_parity_ac
     [ "$status" -eq 0 ]
-    [[ "$output" == *"WARNING: パリティcmdのAC基準欠落"* ]]
+    [[ "$output" == *"binary_checkフィールド不在"* ]]
 }

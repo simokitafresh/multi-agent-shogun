@@ -125,8 +125,8 @@ warn_seed_log() {
         echo "entries:"
         local i
         for ((i = 1; i <= count; i++)); do
-            cat <<'YAML'
-  - cmd_id: "cmd_warntest"
+            cat <<YAML
+  - cmd_id: "cmd_warntest_prev_${i}"
     ac_count: 0
     gate_result: "WARN"
     karo_rework: "no"
@@ -310,7 +310,7 @@ run_q5_pair_save() {
 
     [ "$status" -ne 0 ]
     [[ "$output" == *"WARN累計昇格"* ]]
-    [[ "$output" == *"cmd_ids=cmd_warntest"* ]]
+    [[ "$output" == *"cmd_ids=cmd_warntest_prev_1"* ]]
     [ -f "$TEST_PREFLIGHT_AUTOLEARN" ]
     [[ "$(cat "$TEST_PREFLIGHT_AUTOLEARN")" == *"check=quality_gate_q8_compound_question"* ]]
     [[ "$(cat "$TEST_PREFLIGHT_AUTOLEARN")" == *"count=1"* ]]
@@ -329,7 +329,7 @@ run_q5_pair_save() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"WARN累計昇格"* ]]
     [[ "$output" == *"q8_複利の問い"* ]]
-    [[ "$output" == *"cmd_ids=cmd_warntest,cmd_warntest"* ]]
+    [[ "$output" == *"cmd_ids=cmd_warntest_prev_1,cmd_warntest_prev_2"* ]]
     [[ "$output" == *"BLOCK"* ]]
 }
 
