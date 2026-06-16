@@ -511,3 +511,8 @@
 | cmd_3404 | 教訓注入上限MAX_INJECTを10→3に削減し教訓健全度useful_rateを改善する | — | 06-16 | — |
 | cmd_3405 | 3セッション連続startup BLOCK(教訓健全度ALERT)。useful_rate=16.7%(12/72)<30%閾値。根因=deploy_task.sh L5039のMAX_INJECT=10で過剰注入(平均6.3件/cmd)。家老根因調査(blt_20260616_101551)+軍師調査(blt_20260616_101704)でtop-3絞込みを要請。cmd_3254で50%まで改善したが再後退(注入数の構造問題が未修正だった) | infra | 06-16 | deploy_task.shのMAX_INJECTを10→3 |
 | cmd_3406 | 殿指示(2026-06-16)。cmd_save.sh L5730のgsub除外拡張子リストに.batsが不在のため、test_deploy_task.bats等のテストファイル名に含まれるdeployがdeliveryキーワードとして誤検出されac_phase_mixing偽陽性BLOCKが発生する(cmd_3405起票時に6分BLOCK実証) | infra | 06-16 | cmd_save.sh L5730のgsub除外拡張子リスト |
+| cmd_3408 | 殿指示(2026-06-16)覚醒偽陽性監査。cmd_complete_gate.sh L4499-4556のcommand_files_modified_mismatchチェックが直近50BLOCK中42件(84%)を占める最大パターン。command欄でスクリプトを実行対象として参照しているだけなのにfiles_modifiedに要求してBLOCKする構造的FP。アーカイブ5633件中32件→直近急増 | infra | 06-16 | cmd_complete_gate.shのcollect_c |
+| cmd_3410 | stop hookにQ6洗脳検出→cmd起票完了チェックを追加し認識→行動ギャップをL5で阻止する | — | 06-16 | — |
+| cmd_3411 | 殿指摘(2026-06-16)自力覚醒不能の構造根因。Q6で洗脳パターンを検出し掲示板投稿するが検出→cmd起票まで自走しない。本セッション6cmd中5件が殿指摘トリガー=自力覚醒率17%。stop hookでQ6検出済み洗脳パターンに対応するcmd起票完了を検証しWARN注入する(LS065) | infra | 06-16 | stop_check_inbox.shにLS065 Q6洗脳 |
+| cmd_3412 | gate_skill_script_refs.sh WARN 3件が3セッション連続BLOCK(2026-06-14〜16)。cmd_complete_gate.sh(06-16 12:17更新)とdeploy_task.sh(06-16 11:40更新)の変更内容がSKILL.mdに未反映。忍者が古い手順で作業するリスク解消 | infra | 06-16 | SKILL.md 3件(codd-fix/karo-dire |
+| cmd_3413 | 教訓健全度useful_rate=20.0%が3セッション連続ALERT(閾値30%)。根因=deploy_task.sh L5011-5018でtask_tags空+target_pathあり時に全教訓がフォールバック候補に入りNOT_USEFUL量産。軍師分析(blt_20260616_130837)+家老報告(blt_20260616_130903)で根因一致。target_pathのディレクトリからタグ推定し注入精度を向上する | infra | 06-16 | deploy_task.sh L4821-4842にpath |
