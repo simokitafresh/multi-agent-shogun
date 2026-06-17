@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-17 -->
+<!-- last_updated: 2026-06-18 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,13 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2845 | cmd_2840でlesson_write.shにorigin引数を追加し新規教訓は自動でorigin付与されるようになった。だが既存軍師教訓33件はorigin=0件のまま。因果NWの既存ノードにリンクを遡及追加しネットワーク密度を即時向上させる。 | infra | 05-18 | projects/infra/lessons_gunshi. |
-| cmd_2844 | cmd_2840でlesson_write.sh(軍師共通)にorigin引数を追加した。残り2件: (1)gate_lesson_health.shに教訓originフィールド欠落時のWARN追加(将軍教訓にはcmd_2821で実装済み→同パターン転用)。(2)lesson_write_karo.sh(家老専用)にも--origin引数追加。因果NW自動成長の対象を全ロールに拡大する。 | infra | 05-18 | cmd_2844のorigin全ロール拡大を実装済みとして確 |
-| cmd_2846 | autofix提案が忍者未読ファイルを対象に+既存gateで解決済み問題を提案する二重無効状態を解消。INSIGHT_REPEAT action_required蓄積の根因 | infra | 05-18 | gate_autofix_proposalで未読target |
-| cmd_2849 | 偵察cmd_2848で特定された根因を修正。GATE BLOCK時にlesson_write --status draftで自動生成されたdraftが、同一cmdの後続GATEでCRITICAL BLOCKされる自己循環(19件中15件=78.9%)を解消 | infra | 05-18 | GATE自動生成draftへgate_auto_draftマ |
-| cmd_2850_cancelled | — | — | 05-18 | — |
-| cmd_2850 | CoDDで生成した設計書15件に基づきkj-role-countアプリ全体を実装する。忍者6名並列配備で一括完成 | kj-role-count | 05-18 | — |
-| cmd_2851 | cmd_save.shのWARN累計昇格がproject=infraの累計を外部PJ(kj-role-count等)のcmdに適用し誤BLOCKする。累計カウントをproject別にスコープ分離し、外部PJのcmdもcmd_save.shを正規に通せるようにする | infra | 05-18 | cmd_save.shのWARN累計昇格をproject別に |
 | cmd_2852 | deploy_task.shのinject_context_hints(L2826)/inject_production_invariants(L2882)内のsed -iが変数展開時に特殊文字で壊れ、set -euo pipefailでexit 1→nudge未送信になる問題を修正する。全cmd配備に影響中 | infra | 05-19 | deploy_task.shのinject_context_ |
 | cmd_2853 | 殿の5要望を一括修正する。(1)入力画面にrole=admin非表示 (2)常勤/パート色分けを集計BarChart+管理画面+カレンダー詳細に統一 (3)DatePicker shiftDateのtoISOString UTCバグ修正(右矢印無反応+左矢印2日戻る) (4)カレンダーセル縦幅拡大(5名表示) (5)管理画面ロール追加/切替のpin_auth→pinフィールド名修正 | kj-role-count | 05-19 | 殿の5要望を実装し、admin非表示・常勤/パート色分け統一 |
 | cmd_2854 | cmd_save.shの2つの問題を修正する。(1)殿発言検索+cmd履歴検索の全走査で16秒に低下。キャッシュまたは件数制限で高速化 (2)sourceに絶対パスを書くとPROJECT_WDと二重結合されファイル不在BLOCKになるバグ。絶対パス検出時はPROJECT_WD結合をスキップ | infra | 05-19 | cmd_save.shのquality log検索を直近50 |
@@ -509,3 +502,5 @@
 | cmd_3429 | 殿指示(2026-06-17): 相関乖離の偽陽性率70%と比較するため、deterioration probabilityの偽陽性率を突合する。deterioration_snapshotsテーブルのHIGH以上判定と翌月のmonthly_returnsを突合し、HIGH判定後に実際に悪化(月次リターン負)した割合を全PF全期間で計算する | dm-signal | 06-17 | deterioration_snapshotsの偽陽性率分析 |
 | cmd_3430 | 殿指示(2026-06-17): 母集団が大きい方が感度も精度も良い(cmd_3427の33体一括4.0x>cmd_3428の層別3.58x)。54体(四神12+忍法21+奥義21)全量一括で1431ペアの15パターン総当たりを実行。閾値は0.10固定・乖離の2σ・3σの3段で比較。偽陽性率改善の最適閾値を特定する | dm-signal | 06-17 | 54体1431ペア×15パターン×閾値3段(0.10/2σ/ |
 | cmd_3431 | 殿指示(2026-06-17): 既存BBは全てモメンタム系だがリターン予測力を持つ新BBを設計したい。知識辞書のMomentum Turning Points(Goulding, Harvey & Mazzoleni 2023)をDM-Signalに適用検証する。シン四神12体の月次リターンでslow(12M)/fast(3M)モメンタムの4状態(Bull/Correction/Bear/Rebound)を判定し、各状態でのPF別リターンを分析。転換点(Correction/Rebound)で重み調整すればα6指標が改善するか検証する | dm-signal | 06-17 | Goulding et al.2023 Momentum T |
+| cmd_3432 | backlinks=0 gateが偽陽性を報告。kotaro_cmd_3430(5件参照あり)とsaizo_cmd_3426(5件参照あり)がbacklinks=0と誤報。根因: causal_backlink_counts.sh L70-72の検索範囲がcontext, docs/research, skillsの3ディレクトリのみ。docs/semantic-index/index.md(セマンティックインデックス)からの参照を検出不能。memory/*.md(deepdiveリンク)やinstructions/*.mdからの参照も同様に検出漏れ。偽陽性=バグ(殿厳命2026-06-18)。 | infra | 06-18 | causal_backlink_counts.sh L70- |
+| cmd_3433 | lesson_write.sh --retagがdm-signal旧フォーマット教訓(L007-L118の26件)でFAIL。retagロジック(L568-589)がlessons.md Markdown形式(### LXXX:)を前提とするが、dm-signalはlessons.yaml 1行形式のみ(lessons.md不在)。universalタグ残29件がretag不可。偽陽性=バグ(殿厳命2026-06-18)。軍師報告blt_20260618_005912。 | infra | 06-18 | lesson_write.sh --retagの旧形式教訓( |
