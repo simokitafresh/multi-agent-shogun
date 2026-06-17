@@ -624,8 +624,10 @@ _autofix_field_value() {
             if [[ "$dot_key" == "files_modified" ]]; then
                 local fixed
                 fixed=$(python3 -c "
-import yaml, sys
+import yaml, sys, re
 raw = sys.stdin.read()
+def sanitize_path(p):
+    return re.sub(r'^[^\x00-\x7f]+[:：]\s*', '', p).strip()
 try:
     data = yaml.safe_load(raw)
 except yaml.YAMLError:
@@ -636,18 +638,29 @@ if isinstance(data, str) and data.strip():
     tokens = [t for t in data.strip().split() if '.' in t or '/' in t]
     if len(tokens) > 1:
         print('[autofix] files_modified string→dict変換(複数ファイル スペース区切り)', file=sys.stderr)
-        items = [{'path': t.rstrip(','), 'change': 'modified'} for t in tokens]
+        items = [{'path': sanitize_path(t.rstrip(',')), 'change': 'modified'} for t in tokens]
         print(yaml.dump(items, default_flow_style=False, allow_unicode=True), end='')
     else:
         print('[autofix] files_modified string→dict変換(単一ファイル)', file=sys.stderr)
-        print(yaml.dump([{'path': data.strip(), 'change': 'modified'}], default_flow_style=False, allow_unicode=True), end='')
+        print(yaml.dump([{'path': sanitize_path(data.strip()), 'change': 'modified'}], default_flow_style=False, allow_unicode=True), end='')
 elif isinstance(data, list) and all(isinstance(x, str) for x in data):
-    items = [{'path': x.strip(), 'change': 'modified'} for x in data if x.strip()]
+    items = [{'path': sanitize_path(x.strip()), 'change': 'modified'} for x in data if x.strip()]
     if items:
         print('[autofix] files_modified string list→dict list変換', file=sys.stderr)
         print(yaml.dump(items, default_flow_style=False, allow_unicode=True), end='')
     else:
         print(raw, end='')
+elif isinstance(data, list) and all(isinstance(x, dict) for x in data):
+    changed = False
+    for item in data:
+        if 'path' in item:
+            clean = sanitize_path(item['path'])
+            if clean != item['path']:
+                item['path'] = clean
+                changed = True
+    if changed:
+        print('[autofix] files_modified path日本語プレフィックス除去', file=sys.stderr)
+    print(yaml.dump(data, default_flow_style=False, allow_unicode=True), end='')
 else:
     print(raw, end='')
 " <<< "$val")

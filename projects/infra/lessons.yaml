@@ -327,6 +327,9 @@ lessons:
   - docs/semantic-index/index.md
   - context/semantic-map.md
   origin: '[[cmd_karo_hotfix_insight_repeat_backlog_20260612]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-17'
 - id: L796
   title: script_refs_checked_atはファイル内最後の値を更新する
   summary: gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し最後の値をfreshness基準
@@ -428,6 +431,9 @@ lessons:
   - queue/reports/hayate_report_cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622.yaml
   - queue/tasks/hayate.yaml
   origin: '[[cmd_karo_hotfix_ga052_frontend_context_freshness_202606121622]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L790
   title: context_freshness調査はgate timeout差分も記録する
   summary: context_freshness gateは高速化のため短いgit timeoutを持つ。外部repoのgit logがtimeoutするとsource
@@ -994,6 +1000,9 @@ lessons:
   target_files:
   - scripts/semantic_index_update.sh
   origin: '[[cmd_karo_ci_fix_semantic_test125_20260607]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-17'
 - id: L754
   title: 'bash_speed_training.sh update_entry_field_unlocked: 引用符なしscript_pathにマッチしないバグ+インデント4スペース固定バグ'
   summary: ledgerはinit_ledger_unlocked(yaml_quote経由)では引用符付きで生成されるが、別プロセスが引用符除去したため現行ledgerは
@@ -1150,8 +1159,8 @@ lessons:
   - db
   - cache
   source_cmd: cmd_3153
-  when: 未設定
-  how: 未設定
+  when: memory_db_import.py等でEventRow型タプルを拡張する時
+  how: grep -rn EventRow scripts/でアンパック箇所を全列挙し全て更新。for文のタプル要素数不一致でValueError
   target_files:
   - scripts/memory_db_import.py
   - scripts/memory_db_live_insert.py
@@ -1430,6 +1439,9 @@ lessons:
   - scripts/semantic_index.py
   - tests/unit/test_semantic_search.bats
   origin: '[[cmd_karo_hotfix_semantic_search_timeout_20260602]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L725
   title: 全件backfillは概念辞書をプリコンパイルしてから実行する
   summary: cmd_3118で31636件の空conceptsに対し素朴なconcepts_for_text()を実行した結果、約15分を要した。全履歴backfill系は
@@ -1637,6 +1649,9 @@ lessons:
   target_files:
   - scripts/hooks/prompt_state_inject.sh
   origin: '[[cmd_3050]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L710
   title: AC偽PASS検出 — HITだけでなく正しい概念へのHITかを検証せよ
   summary: spec v2 AC2で8語中4件がsemantic_dictionary_designに偽マッチ→AC2 PASS→偽マッチ50%見逃し。レビュー時は何にHI
@@ -1722,6 +1737,9 @@ lessons:
   - scripts/hooks/prompt_state_inject.sh
   - tests/unit/test_session_state_hooks.bats
   origin: '[[cmd_3048]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L704
   title: セマンティック監査エージェントP0報告は全件現物検証必須
   summary: 本セッションでP0候補5件が全て偽陽性(100%)→P1-P3に降格。エージェントは行番号・文脈を誤読しやすい。LG033(既存確認必須)の監査エージェント版。
@@ -2340,6 +2358,9 @@ lessons:
   target_files:
   - scripts/gates/gate_autofix_proposal.sh
   origin: '[[cmd_training_L7_v3_tobisaru_6_20260521205341]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-17'
 - id: L665
   title: direct alias構文のfixtureは本番source値を含める
   summary: semantic_index_updateのDIRECT昇格はユニットテスト上はtraining/L7R sourceでPASSしていたが、本番queue/in
@@ -3048,6 +3069,9 @@ lessons:
   target_files:
   - scripts/ninja_monitor.sh
   origin: '[[cmd_training_L4_auto_202605181241_kotaro]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L619
   title: draft_lessonsは自動生成元と検査元の閉ループで判定せよ
   summary: draft_lessons BLOCKを調査する時はauto_draft_lesson.sh単体ではなく、cmd_complete_gate.shのBLOCK時
@@ -3454,6 +3478,9 @@ lessons:
   - queue/tasks/hayate.yaml
   - queue/reports/hayate_report_cmd_karo_skillmd_test_mapping.yaml
   origin: '[[cmd_karo_skillmd_test_mapping]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L594
   title: deploy_taskからinbox_writeをset -e直下で直接呼ぶと送信失敗が配備後処理全体を中断する
   summary: deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1
@@ -3576,6 +3603,9 @@ lessons:
   when: report_reviewをinboxで受信し報告YAMLが不在だった時
   how: タスクYAMLのtask_type/parent_cmdでkaro_direct配備か確認。karo_direct→レビュー不要を家老に返信。通常配備→FAIL判定
   origin: '[[gunshi_session_20260510]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-17'
 - id: L586
   title: 分析報告で止まるな — D0実装可能か即判定せよ(LG018構造的再発防止)
   summary: 'LG018(提案は行動ではない)が本セッションで3回再発。根因: 掲示板投稿=トークン出力=仕事した感覚(Phase2)。対策: 気づき→掲示板の前にD0適用条'
@@ -4433,6 +4463,9 @@ lessons:
   - scripts/gates/gate_skill_health.sh
   - tests/skill_routing_eval.bats
   origin: '[[cmd_2278]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-17'
 - id: L528
   title: 共有workspaceでのcommitは--onlyでpath固定する
   summary: git diff --cached --name-onlyで2ファイルだけ確認した直後、共有indexに別担当成果物が入り、通常のgit commitが4ファイ
@@ -5485,6 +5518,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 今回も overflow compaction 時に inbox レコードが癒着したため、呼出側で明示的に改行を戻して T-008 と T-009 で再発防止を確認した
   origin: '[[cmd_training_L4_R21_saizo]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L434
   title: inbox分析結果は揮発する — docs/research永続化を同時実行せよ
   summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
@@ -5494,6 +5530,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
   origin: '[[gunshi_self_drive]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-17'
 - id: L433
   title: モデル切替は/modelではなくrespawn(CLI再起動)が正しい手順。/model opusは200K化、respawnなら1M+CLAUDE.md再読込保証
   summary: '殿裁定: Claude CLIのモデル切替はrespawn方式が正解。(1)/model opusは200Kコンテキストに縮退 (2)claude↔codexは'
@@ -7440,6 +7479,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 全量読みを前提とした作業設計は避けよ
   origin: '[[cmd_1261]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-17'
 - id: L274
   title: Gate拡張時はalerts配列+overall更新パターンを踏襲
   summary: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
@@ -8173,6 +8215,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: '2026-03-13'
   origin: '[[cmd_873]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L212
   title: '一次データ不可侵原則: 外部知識(論文/API仕様/書籍等)は原典のまま保存し、自軍の解釈・適用は別セクション/別ファイルに分離する。改変は捏造。全PJ共通適用'
   summary: 'IF: 外部知識を記録・引用する時 THEN: 一次データ層と解釈・適用層を分離せよ BECAUSE: 一次データの改変は捏造であり、知識の信頼性が失われる'
@@ -8739,6 +8784,9 @@ lessons:
   when: Claude Code Hooksのshスクリプトを作成する時
   how: set -euのみ使用しpipefailは使うな
   origin: '[[hooks]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L163
   title: MAX_ENTRIES等の定数変更時は既存テストの前提値も同時更新が必要
   summary: IF MAX_ENTRIES等の定数変更時 THEN impl側の定数変更とテストの前提値の整合性チェックをACに含めるべき
@@ -8873,6 +8921,9 @@ lessons:
   when: commit関連のACを検証する時
   how: git commit --dry-runではなく実commit(失敗想定)またはhook直接実行で検証せよ
   origin: '[[cmd_537]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-17'
 - id: L149
   title: shellスクリプトでrgを使うな、grepを使え
   summary: IF shellスクリプトやgit hookでテキスト検索を行う時 THEN rgではなく標準のgrepを使え
@@ -9139,6 +9190,9 @@ lessons:
   when: WSL2 Python3.12環境では外部feed偵察時に
   how: pip --userもPEP668で拒否されるため、偵察手順に --break-system-packages か事前venv確認を含めるべき
   origin: '[[cmd_506]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L128
   title: OSS参照タスクはcanonical repository解決を初手に入れる
   summary: IF OSS参照タスク時 THEN task記載URLが移転/非公開化されている場合がある
@@ -9561,6 +9615,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: get_model()のawkが各エージェント名行でat/am変数をリセットしていたため、ターゲットエージェント設定後に次エージェント行でリセットされた
   origin: '[[cmd_404]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-16'
 - id: L091
   title: 'L085再発(派生ファイル未更新): CLAUDE.md変更時は全派生ファイルをACスコープに含めよ'
   summary: CLAUDE.mdの変更が.github/copilot-instructions.mdとagents/default/system.mdに反映されなかった。C
