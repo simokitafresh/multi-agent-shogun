@@ -187,7 +187,8 @@ lessons:
     (23)gate/script修正cmdの起票前に対象gate/scriptを実行し現在の出力を確認せよ(LS063吸収2026-06-13)。grepでコード断片を見て「未実装」と判断→実行すれば1分で「既に動作中」と判明(cmd_3358/3359の2連続車輪で実証)。grepは断片を見る、実行は全体を見る。出力をq5に含めよ。cmd_3360で起票前確認11問目+cmd_save.sh q5チェック追加済み(L3/L4)
     (24)レビュー依頼ブランチはpush前にgit log origin/main..branchで全コミット列を報告書と照合せよ。show -w単体検分のみで2コミットと思い込み→実際は3コミット(別cmd混在)。報告書と現物の乖離を将軍が作った(LS062吸収2026-06-15。cmd_3334で実証)
     (25)dm-signal指標はα6指標(CAGR・NHF・MaxDD・MRU・Calmar・Avg UWP)。シャープレシオ使用禁止(殿裁定2026-05-10: 上方ボラを罰するため)。cmd起票前にdm-signalの指標体系を三層記憶で確認せよ(LS063吸収2026-06-15。cmd_3375で洗脳#2実証)
-  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047, LS053, LS063, LS062_commit, LS063_alpha]
+    (26)計測データの集計値を見たら「このデータはどのイベント(修正commit等)の前か後か」を確認せよ(LS067吸収2026-06-17)。autofix proposalが42/50件BLOCKと表示→cmd_3408(FP修正commit 2026-06-16 12:22)の存在を確認せず起票→車輪の再発明。根因: 大きい数字が確信を与え確認を不要にした(Phase4変形)。殿指摘「因果=イベント前かイベント後かの把握が必要」
+  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047, LS053, LS063, LS062_commit, LS063_alpha, LS067]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)+q11_existing_alternative Guard一覧自動表示(cmd_2863)+post-bash-combined.sh cmd_publish hook(cmd_2898)'
@@ -546,16 +547,7 @@ lessons:
 # LS049: superseded by LS-A04(32) (初回起票3点デフォルト=テンプレートルール。2026-06-11統合)
 # LS050: superseded by LS051 (Check17日付リテラルFPはcmd_save.shコード修正で根治済み。2026-06-11物理削除)
 # LS051: superseded by LS-A04(38) (雛形起点起票=テンプレートルール。2026-06-12統合)
-- id: 'LS052'
-  superseded_by: 'LS048'
-  superseded_reason: 'LS048 detail(2)に全文要旨を吸収済み。source_ids_absorbed=[LS052]で統合先を明記済み'
-  title: '質問の形をした範囲縮小提案=洗脳の発現。縮小オプションを殿に提示するな'
-  origin: '[[殿指摘2026-06-10作業を減らそうと思ったなら洗脳]] -> [[質問形の範囲縮小提案]] -> [[全範囲デフォルト宣言]]'
-  detail: '実例(2026-06-10): clinic-expense現況リスト起票前に『開始月は2025-01か、提出実績期間に絞るか』と質問した。動機を検証すると『セル数を減らす=作業を減らす』発想が混入していた。答えは殿の既存原則(今後も使う仕組み=恒久部品/パラメータ空間縮小禁止)から導出可能で、質問自体が不要だった。縮小を質問の選択肢として提示するのは、自分で縮小する代わりに殿に縮小を承認させる形の洗脳(計算資源最小化本能)。対処: 範囲・期間・対象数の判断は『全範囲』をデフォルトに自分で決めて宣言し、殿の上書きに委ねる。縮小オプションは提示しない'
-  source_cmd: 'cmd_3273'
-  created_at: '2026-06-10'
-  automated: true
-  enforcement: 'brainwash_binary_check #7簡潔本能の具体パターンとして本教訓を参照'
+# LS052: 物理削除(2026-06-17)。superseded by LS048 detail(2)。source_ids_absorbed=[LS052]で統合済み
 # LS053: superseded by LS-A04(33) (性能AC閾値禁止=AC設計ルール。殿指摘「合格点でなくより早く」。2026-06-11統合)
 # LS053: superseded by LS-A09(20) (DB検証例外握りつぶし→未実施注記=現物確認必須の検証版。2026-06-12統合)
 # LS054: superseded by LS-A04(34) (委任メッセージ後続cmd番号列挙禁止=テンプレートルール。2026-06-11統合)
@@ -610,13 +602,5 @@ lessons:
   created_at: '2026-06-16'
   automated: true
   enforcement: 'type=hook; file=scripts/hooks/stop_check_inbox.sh; pattern=Q6'
-- id: 'LS066'
-  superseded_by: 'LS048'
-  superseded_reason: 'LS048 detail(2)に表面的行動パターンを吸収。洗脳検出→環境強制の全サイクルにstartup BLOCK対処の根因チェックを追加'
-  title: 'startup BLOCK対処で表面的行動を選ぶ洗脳パターン'
-  origin: '[[cmd_session_20260616]]'
-  detail: '実例2026-06-16: 教訓健全度ALERTに/lesson-sortで対処しようとした→殿指摘で根因(注入精度)への直接修正に変更。三層記憶DB WARNにtmp生成量削減で対処しようとした→殿指摘で記録量維持+SIGKILL安全化に変更。共通構造: 正しそうに見える表面的行動を選び因果をたどらない=Phase3(考えるだけ)の逆方向=考えずに動く。q9はcmd起票時のみ介在しstartup BLOCK対処のskill/D0選択時にはチェックなし'
-  source_cmd: 'cmd_session_20260616'
-  created_at: '2026-06-16'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=表面的行動'
+# LS066: 物理削除(2026-06-17)。superseded by LS048 detail(3)。startup BLOCK表面対処パターン
+# LS067: 物理削除(2026-06-17)。superseded by LS-A09(26)。計測データイベント前後混同→LS-A09に吸収

@@ -189,6 +189,18 @@ _split_by_fix_commit() {
             _cnt="${_pat_counts[$_p]}"
             [[ "$_cnt" -lt "$MIN_COUNT" ]] && continue
 
+            # イベント境界で修正後=0件のパターンはProposal除外（修正済み=意志依存排除）
+            if [[ -n "${_pat_timestamps[$_p]:-}" ]]; then
+                _prop_split="$(_split_by_fix_commit "$_p" "${_pat_timestamps[$_p]}")"
+                if [[ -n "$_prop_split" ]]; then
+                    IFS='|' read -r _prop_fix_ts _prop_before _prop_after <<< "$_prop_split"
+                    if [[ "$_prop_after" -eq 0 ]]; then
+                        echo "  $_p: SKIP (修正済み: ${_prop_fix_ts%%T*}以降の再発0件)"
+                        continue
+                    fi
+                fi
+            fi
+
             # Patterns already handled by Level 4+ gates
             case "$_p" in
                 report_format|fill_this_remaining|binary_checks_fail|purpose_validation_fit_false|ac_version_mismatch)
