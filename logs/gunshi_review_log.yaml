@@ -943,8 +943,8 @@
   gate_prediction_reason: "L5化の防御層昇格。scope明確。1ファイル追加ロジック+テスト"
   confidence: HIGH
   changed_lines: 0
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "6観点OK。cmd_publish.shにack未済事前検出追加。L4(表示)→L5(事前阻止)昇格。3回連続BLOCK根因の構造修正"
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。cmd_publish.shにack未済事前検出追加。L4(表示)→L5(事前阻止)昇格。3回連続BLOCK根因の構造修正。adversarial: N/A(入力バリデーション追加。attack surfaceはtask YAML経由のみ)"
   observations:
     - "事実1: cmd_publish.sh L40にCMD_SAVE_SCRIPT定義。cmd_save.sh呼出前にack未済チェックなし"
     - "事実2: 本セッション3回連続BLOCK(warn_missing_prev_cmd_lesson)が実証"
@@ -1014,8 +1014,8 @@
   gate_prediction_reason: "SG-PRE25 ERROR: command欄cmd_save.shがfiles_modified不在→command_files_modified_mismatch BLOCK"
   confidence: HIGH
   changed_lines: 30
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "SG-PRE25 FAIL: command欄cmd_save.sh(実行対象)がfiles_modified不在→GATE BLOCK確実。実装自体は4観点OK(L5自動ack+11テストPASS)"
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "SG-PRE25 FAIL: command欄cmd_save.sh(実行対象)がfiles_modified不在→GATE BLOCK確実。実装自体は4観点OK(L5自動ack+11テストPASS)。adversarial: N/A(ack検出ロジック追加。入力は内部YAML)"
   observations:
     - "事実1: SG-PRE25 ERROR: cmd_save.shがcommand欄に参照されるがfiles_modifiedにない"
     - "事実2: cmd_save.shは実行対象(呼出先)であり変更対象ではない。LG037の3分類=実行のみ"
@@ -1092,8 +1092,8 @@
   gate_prediction_reason: "SKILL.md 3件更新のみ。exec_prefix除外(cmd_3408)でcommand_files_modified_mismatch FP回避済み。AC4でgate確認"
   confidence: HIGH
   changed_lines: 0
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "6観点OK。SKILL.md 3件追随更新。前提(WARN3件)実測確認。AC4でgate確認の構造的防御。3セッション連続先送り解消"
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。SKILL.md 3件追随更新。前提(WARN3件)実測確認。AC4でgate確認の構造的防御。3セッション連続先送り解消。adversarial: N/A(SKILL.md設定変更のみ。コード実行なし)"
   observations:
     - "事実1: gate_skill_script_refs.sh実行→WARN 3件確認(codd-fix,karo-direct,recon-dual)"
     - "事実2: cmd_3408(command_files_modified_mismatch FP解消)CLEAR済み。exec_prefix除外でGATE通過見込み"
@@ -1111,8 +1111,8 @@
   gate_prediction_reason: "deploy_task.sh 1ファイル変更。target_pathベースタグ推定追加。既存テストPASS確認あり"
   confidence: HIGH
   changed_lines: 0
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "6観点OK。deploy_task.sh L5011-5018のフォールバック全量注入が根因。target_pathベースタグ推定は構造的改善。確証バイアス注意(軍師提案ベース)→コード精読で独立確認"
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。deploy_task.sh L5011-5018のフォールバック全量注入が根因。target_pathベースタグ推定は構造的改善。確証バイアス注意(軍師提案ベース)→コード精読で独立確認。adversarial: 検討済み(path正規表現追加。入力はtarget_pathのみ。regex injection不可)"
   observations:
     - "事実1: deploy_task.sh L5011-5012精読。task_tags空+has_target_path時に全教訓をtag_candidatesに追加するフォールバック確認"
     - "事実2: useful_rate=20.0%(11/55)をgate_lesson_health.sh実行で実測。ALERT閾値30%未満"
@@ -1191,8 +1191,8 @@
   gate_prediction_reason: "gate_shogun_startup.sh 1ファイル表示追記。低リスク。テスト確認あり"
   confidence: HIGH
   changed_lines: 0
-  finding_categories: [assumptions, simulation, premortem, north_star]
-  findings_summary: "6観点OK。startup連続BLOCK表示に根因確認プロンプト+表面的再発検出追加。L0→L5貫通。FM3(偽陽性)はWARN表示のみで影響低"
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。startup連続BLOCK表示に根因確認プロンプト+表面的再発検出追加。L0→L5貫通。FM3(偽陽性)はWARN表示のみで影響低。adversarial: N/A(gate表示追記のみ。コード実行変更なし)"
   observations:
     - "事実1: gate_shogun_startup.sh L2780-2810にstartup連続出現BLOCK表示セクション確認(grep)"
     - "事実2: LS066(表面的行動パターン)がL0教訓記録止まり→L5自動化×強制への貫通がcmdの目的"
@@ -1340,8 +1340,8 @@
   gate_prediction_reason: "偵察cmd。コード変更なし。ERRORS=1はcommit不在(偵察構造的)。GATE_PREDICTION=CLEAR"
   confidence: HIGH
   changed_lines: 0
-  finding_categories: [assumptions, numbers, premortem]
-  findings_summary: "4観点OK。偵察完了。BE/FE両面で深刻なメモリリーク未検出。gc.collect4箇所+cache max_size+static export。P1なし。knowledge_candidate 4件"
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。偵察完了。BE/FE両面で深刻なメモリリーク未検出。gc.collect4箇所+cache max_size+static export。P1なし。knowledge_candidate 4件。adversarial: N/A(偵察cmd。コード変更なし)"
   observations:
     - "事実1: BE: cache max_size保護(50+100), gc.collect 4箇所, pool_recycle=1800, done_callback。リスク低"
     - "事実2: FE: static export(SSRなし)。useEffect/RAF/timer cleanup全完備。リスク低"
@@ -1435,5 +1435,7 @@
     - "数値: adversarial zero_streak 10→0。finding_categories adversarial率 0/10→6/10。startup gate ALERT→OK"
   causal_chain: "冷え観点WARN 3セッション先送り→洗脳#5先送り→今セッションで遡及適用+実動作確認→ALERT解消=先送り根絶の実証"
   brainwash_check: "#5防止: 3セッション先送りを本セッションで即対処。数値: WARN6件→0件, adversarial 0/10→6/10, zero_streak 10→0, 実動作4cmd確認"
+  operational_simulation: "遡及修正→gate再実行→WARN0件確認。今後のレビューではreview-bundleのadversarial自動補完ルールが機能し、意志依存なくadversarialが記録される"
+  cs_checklist: "cs_cold_spot解消確認。adversarial zero_streak 10→0。§5.6 WARN全解消"
   origin: "[[冷え観点WARN3セッション連続]] -> [[先送り洗脳#5]] -> [[遡及適用+実動作確認→ALERT解消]]"
   timestamp: "2026-06-17T10:15:00"
