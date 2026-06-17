@@ -1,93 +1,92 @@
 task:
-  readonly_ref:
-  - path: 'deploy_task.sh'
-    reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3413_full
+  _ac_task_id: cmd_3427_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3413 (deployed 2026-06-16T13:17:40). Read from the beginning.
-  ac_version: 6fd13abe
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3427 (deployed 2026-06-17T15:19:37). Read from the beginning.
+  ac_version: 19ffa24e
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
+  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
+  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
+  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
+  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
+  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
+  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
+  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
+  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
+  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
+  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3413
-  project: infra
-  purpose: 教訓健全度useful_rate=20.0%が3セッション連続ALERT(閾値30%)。根因=deploy_task.sh L5011-5018でtask_tags空+target_pathあり時に全教訓がフォールバック候補に入りNOT_USEFUL量産。軍師分析(blt_20260616_130837)+家老報告(blt_20260616_130903)で根因一致。target_pathのディレクトリからタグ推定し注入精度を向上する
+  parent_cmd: cmd_3427
+  project: dm-signal
+  purpose: '殿指示(2026-06-17): (1)PF間相関がmax(≈1.0)に近づいた時、PFリターンは上昇と下降のどちらが多かったか。max相関接近=危機シグナルなのかバブルシグナルなのかを判定する。(2)長期窓(18-36M)の平均相関をベースラインとし、直近短期(2M)相関との乖離が高まっているかでレジームチェンジ・危機予測が可能か検証する。cmd_3425/3426のデータを活用'
   recommended_skills:
   - shogun-claude-version-switch
   - switch-to-codex
-  status: idle
+  status: done
   stop_for: []
-  target_path: scripts/deploy_task.sh
-  task_id: cmd_3413_full
+  target_path: docs/research
+  task_id: cmd_3427_full
   task_type: full
   related_lessons:
-  - id: 'L451'
-    summary: 'deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、'
-    detail: 'deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、'
-  - id: 'L576'
-    summary: 'サブドメイン自動付与はパスやタグだけだとGS固有教訓をinfraに誤推定し得る。cmdが例示したIDは個別にsubdomainを確認しdry-runで非対象ta'
-    detail: 'サブドメイン自動付与はパスやタグだけだとGS固有教訓をinfraに誤推定し得る。cmdが例示したIDは個別にsubdomainを確認しdry-runで非対象ta'
-  - id: 'L312'
-    summary: 'inject_report_template()がtask[''report_template'']を設定するが、deploy_task.shのSTALE_FIEL'
-    detail: 'inject_report_template()がtask[''report_template'']を設定するが、deploy_task.shのSTALE_FIEL'
+  - id: 'L797'
+    summary: 'semantic_map_generate.sh実行後、docs/semantic-index/index.mdとcontext/semantic-map.md'
+    detail: 'semantic_map_generate.sh実行後、docs/semantic-index/index.mdとcontext/semantic-map.md'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   related_causal_links:
-  - "[[deploy_task.sh全教訓フォールバック]]"
-  - "[[target_pathベースタグ推定追加]]"
-  - "[[教訓健全度ALERT_3セッション連続]]"
+  - "[[殿仮説_乖離レジーム検出]]"
+  - "[[殿問い_max相関接近時の方向]]"
+  - "[[相関方向+乖離分析偵察]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
+  - "context/robustness-verification-catalog.md"
   - "context/gs-speedup-knowledge.md"
-  - "context/training-cycle.md"
+  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
+  production_invariants:
+  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
+  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
+  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
+  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
+  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L451: deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、
-      - L576: サブドメイン自動付与はパスやタグだけだとGS固有教訓をinfraに誤推定し得る。cmdが例示したIDは個別にsubdomainを確認しdry-runで非対象ta
-      - L312: inject_report_template()がtask['report_template']を設定するが、deploy_task.shのSTALE_FIEL
+      - L797: semantic_map_generate.sh実行後、docs/semantic-index/index.mdとcontext/semantic-map.md
     ────────────────────────────────────────
     
     
+  memory_db_context:
+  - "2026-06-17T15:00:23+09:00 | 【INFOバッチ】 2026-06-17 14:48:10|CI緑: run 27668229059"
+  - "2026-06-17T14:45:10+09:00 | 【INFOバッチ】 2026-06-17 14:37:15|cmd_3426"
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'deploy_task.shのtask_tags空時フォールバック(L5011-5018)にtarget_pathベースタグ推定ロジックが追加されている'
+    - check: 'シン四神12体+奥義21体の2Mローリング相関が上位10%(≈0.95以上)に達した全時点で、同時期のPF平均リターン(上昇/下降)の割合が集計されMarkdownテーブルで報告される'
   - id: 'AC2'
     checks:
-    - check: 'タグ推定により全教訓フォールバック(L5017-5018)に到達するケースが減少することをログ出力で確認する'
+    - check: '長期窓(18M・24M・36Mの3パターン)の平均相関と直近2M相関の乖離を時系列で計算し、乖離が上昇した後に危機(MaxDD開始等)が続いた頻度が報告される'
   - id: 'AC3'
     checks:
-    - check: '既存テスト(bats)がPASSする'
+    - check: 'AC1とAC2の結果を統合し、相関ベースのレジーム検出シグナルの実用可能性について結論が報告される'
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_3413.yaml
-  report_path: queue/reports/kotaro_report_cmd_3413.yaml
+  report_filename: kotaro_report_cmd_3427.yaml
+  report_path: queue/reports/kotaro_report_cmd_3427.yaml
   bloom_level: 
-  deployed_at: "2026-06-16T13:18:21"
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    tried_approaches:
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    approach_summary: 'deploy_task.sh L4821-4842にpath-dirタグ推定ロジックを追加。task_tags空+target_pathあり時にscripts/→infra, backend/→api等でタグ推定し全教訓フォールバック(L5017-5018)を削減。全教訓フォールバック時にWARNログも追加。bats 297件PASS。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'deploy_task.sh L4821-4842にpath-dirタグ推定ロジックを追加。task_tags空+target_pathあり時にscripts/→infra, backend/→api等でタグ推定し全教訓フォールバック(L5017-5018)を削減。全教訓フォールバック時にWARNログも追加。bats 297件PASS。'
+  deployed_at: "2026-06-17T15:19:59"
