@@ -80,6 +80,8 @@ review:
 
 **finding_categories自動補完**: ambiguity_points が `none` 以外の場合、finding_categories に `ambiguity` を含めよ。記録漏れ防止(2026-05-24: 全セッションambiguity 0件だが実態2件検出)。
 
+**adversarial自動補完**: 全レビューでfinding_categoriesに `adversarial` を含めよ。adversarial_review フィールドに検討結果(PASS/N/A+reason)を必ず記載。scripts/変更cmdは必須。その他cmdもN/Aで記録。記録なし=冷え観点zero_streak蓄積→WARN→3セッション先送りCRITICAL(2026-06-17遡及修正で解消した事故の再発防止)。
+
 **GATE結果確証バイアス防止**: report reviewでGATE CLEARを既に知っている場合、brainwash_checkに「GATE CLEAR既知で確証バイアスリスクあり」と明記し、成果物を`git show`で全行独立確認せよ。GATE結果を知った上で「問題ない」と感じるのはP1(早期終了)の典型(2026-05-24: cmd_3037でリスク顕在化、cmd_karo_ci_fix_cs_checklistでLGTM→BLOCK発生)。
 
 ### Step 2: review_log追記
