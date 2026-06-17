@@ -67,11 +67,15 @@ try:
     p_ctx    = subprocess.Popen(["rg", "--files", "context",      "-g", "*.md"],      text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     p_docs   = subprocess.Popen(["rg", "--files", "docs/research", "-g", "*.md"],     text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     p_skills = subprocess.Popen(["rg", "--files", "skills",        "-g", "SKILL.md"], text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-    p_srch_ctx   = subprocess.Popen(RG_SEARCH_ARGS + ["context"],      text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-    p_srch_docs  = subprocess.Popen(RG_SEARCH_ARGS + ["docs/research"], text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-    p_srch_skills= subprocess.Popen(RG_SEARCH_ARGS + ["skills"],        text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    p_srch_ctx    = subprocess.Popen(RG_SEARCH_ARGS + ["context"],           text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    p_srch_docs   = subprocess.Popen(RG_SEARCH_ARGS + ["docs/research"],    text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    p_srch_skills = subprocess.Popen(RG_SEARCH_ARGS + ["skills"],           text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    p_srch_semidx = subprocess.Popen(RG_SEARCH_ARGS + ["--no-ignore", "docs/semantic-index"], text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    p_srch_mem    = subprocess.Popen(RG_SEARCH_ARGS + ["--no-ignore", "memory"],             text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    p_srch_inst   = subprocess.Popen(RG_SEARCH_ARGS + ["--no-ignore", "instructions"],       text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 except OSError:
     p_ctx = p_docs = p_skills = p_srch_ctx = p_srch_docs = p_srch_skills = None
+    p_srch_semidx = p_srch_mem = p_srch_inst = None
 
 def _collect(proc) -> list[str]:
     if proc is None:
@@ -85,8 +89,9 @@ out_docs   = _collect(p_docs)
 out_skills = _collect(p_skills)
 targets = sorted(dict.fromkeys(out_ctx + out_docs + out_skills))
 
-# Gather search results (merge from 3 parallel searches)
-search_lines = _collect(p_srch_ctx) + _collect(p_srch_docs) + _collect(p_srch_skills)
+# Gather search results (merge from 6 parallel searches)
+search_lines = (_collect(p_srch_ctx) + _collect(p_srch_docs) + _collect(p_srch_skills)
+                + _collect(p_srch_semidx) + _collect(p_srch_mem) + _collect(p_srch_inst))
 
 wiki_sources: dict[str, set[str]] = defaultdict(set)
 path_sources: dict[str, set[str]] = defaultdict(set)
