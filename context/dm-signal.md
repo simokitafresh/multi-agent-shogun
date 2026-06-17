@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-16 cmd_3397 -->
-<!-- last_synced_lesson: L749 -->
+<!-- last_updated: 2026-06-17 cmd_3425 -->
+<!-- last_synced_lesson: L750 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -253,6 +253,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L709-L720は振り分け済 → core§19.4(L709[PI]), ops§6-7(L714+L715統合), ops索引(L710/L713/L716/L717), frontend§12(L719+L720統合)。L711/L712/L718はAUTO-DEPRECATE→スキップ）
 - （L721-L735は振り分け済 → ops教訓索引(L721/L723/L729/L730/L733/L735), core§19.2(L722/L734), research§38(L724/L725/L726/L728)。L727はL728重複→統合）
 - （L737-L749は振り分け済 → ops索引(L737/L738統合:奥義BB命名正常挙動/L740:check_pf_config/L743:PF構成確認/L745:import分割/L747:UUID GS source_type), core§19.2(L739:pipeline_config構造/L741:BB忍法対応表/L742:パラメータ確認/L748:FoF components件数差), core§5(L744:API境界4層管理), ops§6-7(L749:models+migrations同期)。L746は自動生成→削除）
+- L750: シン四神12体は全ペアで最悪時相関≈1.0: 同一5ticker宇宙内の分散は最悪時に消える（cmd_3425）
 
 ## 因果リンク
 
