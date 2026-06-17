@@ -586,8 +586,10 @@ for j in range(heading_idx + 1, min(heading_idx + 10, len(lines))):
         break
 
 if not found:
-    print(f'ERROR: tags line not found for {retag_id}', file=sys.stderr)
-    sys.exit(1)
+    # Old-format lesson (no tags line) → insert tags line after heading
+    insert_pos = heading_idx + 1
+    lines.insert(insert_pos, f'- **tags**: {tags_str}')
+    print(f'{retag_id} tags: (none) → {tags_str} [inserted]')
 
 with open(lessons_file, 'w', encoding='utf-8') as f:
     f.write('\n'.join(lines))
