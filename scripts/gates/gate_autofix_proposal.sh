@@ -132,8 +132,16 @@ fi
 _split_by_fix_commit() {
     local pattern="$1" ts_list="$2"
     if [[ -z "$_fix_log_data" || -z "$ts_list" ]]; then echo ""; return; fi
-    local fix_line
+    local fix_line base_pattern
     fix_line="$(printf '%s\n' "$_fix_log_data" | grep -iF -- "$pattern" | head -1)"
+    if [[ -z "$fix_line" && "$pattern" == *:* ]]; then
+        base_pattern="${pattern%%:*}"
+        fix_line="$(printf '%s\n' "$_fix_log_data" | grep -iF -- "$base_pattern" | head -1)"
+    fi
+    if [[ -z "$fix_line" && "$pattern" == *_* ]]; then
+        local hyphen_pattern="${pattern//_/-}"
+        fix_line="$(printf '%s\n' "$_fix_log_data" | grep -iF -- "$hyphen_pattern" | head -1)"
+    fi
     if [[ -z "$fix_line" ]]; then echo ""; return; fi
     local fix_ts fix_epoch
     fix_ts="$(printf '%s\n' "$fix_line" | awk '{print $1}')"
