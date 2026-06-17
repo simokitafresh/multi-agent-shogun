@@ -12,6 +12,7 @@ INSIGHT_SCRIPT="$REPO_ROOT/scripts/insight_write.sh"
 WINDOW="${GATE_AUTOFIX_WINDOW:-50}"
 MIN_COUNT="${GATE_AUTOFIX_MIN_COUNT:-3}"
 CACHE_TTL="${GATE_AUTOFIX_CACHE_TTL:-30}"
+FIX_SINCE="${GATE_AUTOFIX_FIX_SINCE:-120 days ago}"
 
 if [[ ! -f "$LOG_FILE" ]]; then
     echo "SKIP: gate_metrics.log not found"
@@ -72,11 +73,13 @@ function normalize(raw,    s, t, n, i) {
 }
 NF > 0 { rows++ }
 NF >= 4 && $4 {
+    row_ts = $1
     n = split($4, reasons, "|")
     for (i = 1; i <= n; i++) {
         r = normalize(reasons[i])
         if (r) {
             cnt[r]++
+            ts_arr[r] = (ts_arr[r] == "") ? row_ts : (ts_arr[r] "|" row_ts)
             if (ecnt[r] < 2) {
                 ex_raw = reasons[i]
                 gsub(/^[[:space:]]+|[[:space:]]+$/, "", ex_raw)
@@ -91,19 +94,21 @@ NF >= 4 && $4 {
 }
 END {
     printf "ROWS\t%d\n", rows
-    for (p in cnt) printf "PAT\t%d\t%s\t%s\n", cnt[p], p, examples[p]
+    for (p in cnt) printf "PAT\t%d\t%s\t%s\t%s\n", cnt[p], p, examples[p], ts_arr[p]
 }' "$_tmp_recent")"
 
 # Parse awk output into bash associative arrays
 _rows=0
 declare -A _pat_counts=()
 declare -A _pat_examples=()
-while IFS=$'\t' read -r _tag _f1 _f2 _f3; do
+declare -A _pat_timestamps=()
+while IFS=$'\t' read -r _tag _f1 _f2 _f3 _f4; do
     case "$_tag" in
         ROWS) _rows="$_f1" ;;
         PAT)
             _pat_counts["$_f2"]="$_f1"
             _pat_examples["$_f2"]="${_f3:-}"
+            _pat_timestamps["$_f2"]="${_f4:-}"
             ;;
     esac
 done <<< "$_awk_data"
@@ -114,6 +119,35 @@ mapfile -t _sorted_patterns < <(
         printf '%s\t%s\n' "${_pat_counts[$_p]}" "$_p"
     done | sort -rn | cut -f2
 )
+
+# FP修正commitログ取得（GATE_AUTOFIX_FIX_LOG環境変数はテスト用オーバーライド）
+if [[ -n "${GATE_AUTOFIX_FIX_LOG:-}" ]]; then
+    _fix_log_data="$GATE_AUTOFIX_FIX_LOG"
+else
+    _fix_log_data="$(git -C "$REPO_ROOT" log --format="%aI %s" --since="$FIX_SINCE" 2>/dev/null || true)"
+fi
+
+# パターンに関連するFP修正commitを検索し修正前/後のBLOCK件数を分離する
+# 出力: "fix_ts|before|after" または空文字（修正commitなし）
+_split_by_fix_commit() {
+    local pattern="$1" ts_list="$2"
+    if [[ -z "$_fix_log_data" || -z "$ts_list" ]]; then echo ""; return; fi
+    local fix_line
+    fix_line="$(printf '%s\n' "$_fix_log_data" | grep -iF -- "$pattern" | head -1)"
+    if [[ -z "$fix_line" ]]; then echo ""; return; fi
+    local fix_ts fix_epoch
+    fix_ts="$(printf '%s\n' "$fix_line" | awk '{print $1}')"
+    fix_epoch="$(date -d "$fix_ts" +%s 2>/dev/null)" || { echo ""; return; }
+    local before=0 after=0
+    IFS='|' read -ra _sba_ts_arr <<< "$ts_list"
+    local _bts _bts_epoch
+    for _bts in "${_sba_ts_arr[@]}"; do
+        [[ -z "$_bts" ]] && continue
+        _bts_epoch="$(date -d "$_bts" +%s 2>/dev/null)" || continue
+        if (( _bts_epoch < fix_epoch )); then (( before++ )); else (( after++ )); fi
+    done
+    printf '%s|%d|%d\n' "$fix_ts" "$before" "$after"
+}
 
 {
     echo "=== Auto-Fix Proposal Scan ==="
@@ -131,7 +165,17 @@ mapfile -t _sorted_patterns < <(
         esac
         _ex="${_pat_examples[$_p]:-}"
         [[ -z "$_ex" ]] && _ex="-"
-        echo "  [$_cnt] $_p :: $_cat :: $_ex"
+        # FP修正commit境界の検出と分離表示
+        _split_info=""
+        if [[ -n "${_pat_timestamps[$_p]:-}" ]]; then
+            _split_info="$(_split_by_fix_commit "$_p" "${_pat_timestamps[$_p]}")"
+        fi
+        if [[ -n "$_split_info" ]]; then
+            IFS='|' read -r _fix_ts _before _after <<< "$_split_info"
+            echo "  [$_cnt] $_p :: $_cat :: $_ex  [イベント境界:${_fix_ts%%T*} 修正前=${_before}件/修正後=${_after}件]"
+        else
+            echo "  [$_cnt] $_p :: $_cat :: $_ex"
+        fi
     done
 
     echo "Proposal threshold: $MIN_COUNT"
