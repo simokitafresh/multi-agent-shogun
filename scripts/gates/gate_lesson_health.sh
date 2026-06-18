@@ -361,10 +361,29 @@ check_lesson_effectiveness() {
         return 0
     fi
 
+    # Pass 0: Build mature lesson list (all-time feedback >= useful_min).
+    # Bootstrap教訓(全期間で1回しかfeedbackがない)を直近窓の集計から除外する。
+    local mature_file
+    mature_file=$(mktemp)
+    awk -F'\t' -v useful_min="$LESSON_EFFECT_USEFUL_MIN" '
+        $1 == "timestamp" { next }
+        {
+            action=$5; lid=$4
+            gsub(/\r$/, "", action); gsub(/\r$/, "", lid)
+            if (tolower(action) == "feedback" && lid != "") all_total[lid]++
+        }
+        END {
+            for (lid in all_total) {
+                if (all_total[lid] >= useful_min) print lid
+            }
+        }
+    ' "$LESSON_IMPACT_FILE" > "$mature_file"
+
     local metric
     metric=$(awk -F'\t' -v cmd_file="$cmd_file" -v active_file="$active_file" -v project="$target_project" \
         -v min_samples="$LESSON_EFFECT_MIN_SAMPLES" \
-        -v useful_min="$LESSON_EFFECT_USEFUL_MIN" '
+        -v useful_min="$LESSON_EFFECT_USEFUL_MIN" \
+        -v mature_file="$mature_file" '
         BEGIN {
             while ((getline line < cmd_file) > 0) {
                 gsub(/\r$/, "", line)
@@ -376,6 +395,12 @@ check_lesson_effectiveness() {
                 if (parts[1] != "" && parts[2] != "") active[parts[1] SUBSEP parts[2]] = 1
             }
             close(active_file)
+            # Load mature lesson list (all-time feedback >= useful_min)
+            while ((getline line < mature_file) > 0) {
+                gsub(/\r$/, "", line)
+                if (line != "") mature[line] = 1
+            }
+            close(mature_file)
         }
         $1 == "timestamp" { next }
         {
@@ -394,20 +419,22 @@ check_lesson_effectiveness() {
                 injected++
                 if (ref == "yes" || ref == "true" || ref == "1") referenced++
             } else if (action == "feedback") {
+                # Only count feedback for mature lessons (all-time feedback >= useful_min)
+                # to exclude Bootstrap noise (first-time NOT_USEFUL from untested lessons).
+                if (!(lid in mature)) next
                 lesson_total[lid]++
                 if (toupper(result) == "USEFUL") lesson_useful[lid]++
             }
         }
         END {
             for (lid in lesson_total) {
-                if (lesson_total[lid] >= useful_min) {
-                    total_feedback += lesson_total[lid]
-                    useful += (lid in lesson_useful) ? lesson_useful[lid] : 0
-                }
+                total_feedback += lesson_total[lid]
+                useful += (lid in lesson_useful) ? lesson_useful[lid] : 0
             }
             printf "%d\t%d\t%d\t%d\n", referenced+0, injected+0, useful+0, total_feedback+0
         }
     ' "$LESSON_IMPACT_FILE")
+    rm -f "$mature_file"
     rm -f "$cmd_file" "$active_file"
 
     local referenced_count=0 injected_count=0 useful_count=0 total_feedback_count=0
