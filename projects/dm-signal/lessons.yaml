@@ -2951,6 +2951,9 @@ lessons:
   - scripts/analysis/standard_pf_preprocessing/cmd_1759_switching_stability.py
   - outputs/analysis/alm_research/cmd_1759_topn_by_family.yaml
   origin: '[[cmd_1759]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L562
   title: ALM L0 4体でWard FoFを組む場合K=5は構造的不可(体数<クラスタ数)
   summary: ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage
@@ -2968,6 +2971,9 @@ lessons:
   - scripts/analysis/standard_pf_preprocessing/cmd_1759_switching_stability.py
   - outputs/analysis/alm_research/cmd_1759_topn_by_family.yaml
   origin: '[[cmd_1759]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L561
   title: 'ALM保存バリデーション: pipeline_configがDict[str,Any]のためalm_config内容が未検証でDBに保存される'
   summary: portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype='standard'であればlookback_p

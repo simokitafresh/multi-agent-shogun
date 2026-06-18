@@ -164,6 +164,9 @@ lessons:
   target_files:
   - scripts/gates/gate_karo_startup.sh
   origin: '[[cmd_karo_hotfix_review_quality_warn_gate_result_20260615]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L808
   title: yaml_field_set.shの変更はlesson_write.sh --retagで上書きされる。SSoT(lessons.md)先行修正が必須
   summary: yaml_field_set.shでlessons.yamlのwhen/howフィールドを修正した後にlesson_write.sh --retagを実行すると
@@ -3974,6 +3977,9 @@ lessons:
   - scripts/lesson_write.sh
   - lib/lord_conversation.sh
   origin: '[[cmd_karo_direct_semantic_index_review]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L562
   title: CoDD propagate設計時は入口ファイル種別を実装で確認する
   summary: CLI説明だけではsource→designに見えるが、実装にはMD→MD経路もあり、逆にYAML frontmatterは入口対象外だった。辞書や設定ファイル
@@ -3991,6 +3997,9 @@ lessons:
   - tmp/cmd_2556_codd_probe/docs/context.md
   - tmp/cmd_2556_codd_probe/src/app/service.py
   origin: '[[cmd_2556]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L561
   title: MECE辞書cmdは旧AC/report_path混入を検出したらpurpose+inboxを正本化し報告に明記する
   summary: cmd_2554 task YAMLには旧cmd_2549/2553のAC/report_path/target_pathが残っていた。任務目的と最新inbox
