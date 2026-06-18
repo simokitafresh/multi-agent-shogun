@@ -451,4 +451,26 @@ retry_policy: |
 - → [[shogun-pd-sync]] 未決裁定→context反映スキル（PD解決後の知識還流）
 - → [[shogun-clear-prep]] /clear前準備スキル（状態確認+殿報告自動化）
 - → [[shogun-teire]] 知識棚卸しスキル（8観点監査）
+- → [[cdp-browse]] ブラウザ確認スキル（本番画面確認・CI RED後の画面検証）
+
+## §15 ブラウザ確認（cdp-browse）
+
+**家老もCDPを使え。** CI RED後の画面検証・本番FE確認に `/cdp-browse` スキルを使う。推測で画面状態を判断するな。
+
+**使用場面:**
+- CI RED後の画面検証: ページ表示崩れ・認証画面異常をブラウザで確認する時
+- 本番FE確認: 忍者の修正後に実際の画面をブラウザで確認する時
+- スクリーンショットが判断の一次情報になる時（§0.1問い2「現物確認」の手段）
+
+```bash
+# CDP daemonのヘルスチェック（自動起動される）
+scripts/cdp/cdp_cli.sh healthz
+# URL遷移
+scripts/cdp/cdp_cli.sh navigate "https://example.com"
+# スクリーンショット保存（一次情報として報告に添付）
+scripts/cdp/cdp_cli.sh screenshot "/tmp/confirm.png"
+```
+
+CDPポート未応答でも止まるな。`preflight_cdp_flow` が自動起動する。
+詳細手順 → `skills/cdp-browse/SKILL.md`
 - → [[recon-dual]] 偵察2名並列配備スキル（recon2タスクタイプの標準配備）

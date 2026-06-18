@@ -455,6 +455,27 @@ task YAMLに`checklist:`があれば段取りリストに従う。`checklist_upd
 
 Compaction Recovery・/clear Recovery → CLAUDE.md手順 + `instructions/ashigaru-procedures.md` §Compaction Recovery / §/clear Recovery
 
+## ブラウザ確認スキル（cdp-browse）
+
+本番画面確認・画面検証には `/cdp-browse` スキルを使え。推測で画面状態を判断するな。
+
+**使用場面:**
+- 本番動作確認: 修正後のFE/APIをブラウザで実際に確認する時
+- 画面崩れ・認証画面異常をブラウザで確認する時
+- スクリーンショット/AX snapshotが判断の証跡になる時
+
+```bash
+# CDP daemonのヘルスチェック（自動起動される）
+scripts/cdp/cdp_cli.sh healthz
+# URL遷移
+scripts/cdp/cdp_cli.sh navigate "https://example.com"
+# スクリーンショット保存
+scripts/cdp/cdp_cli.sh screenshot "/tmp/confirm.png"
+```
+
+CDPポート未応答でも止まるな。`preflight_cdp_flow` が自動起動する（`never_stop_for` 対象）。
+詳細手順 → `skills/cdp-browse/SKILL.md`
+
 ## Analysis Paralysis Guard
 
 Read/Grep/Globが5回連続でEdit/Write/Bashなし→即停止。何がブロックか1文述べよ→コードを書くか報告に記載。
