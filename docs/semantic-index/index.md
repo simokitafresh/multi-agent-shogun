@@ -395,6 +395,8 @@ codd:
 | causal | `cmd_3428` depends_on: cmd_3427 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-17T19:57:30+09:00 ではやろう。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-18T00:46:43+09:00 覚醒して洗脳 監査 |
+| cmd | `cmd_3435` 偵察: セマンティクス因果グラフ現状分析+自動推論設計 — 操作的オントロジーPhase 1 (`archive/cmd-chronicle/2026-05.md`, `context/infrastructure.md`, `context/semantic-map.md`) |
+| causal | `cmd_3435` origin: [[殿指示_オントロジー記事_20260618]] -> [[因果グラフ断片化_197連結成分]] -> [[操作的オントロジーPhase1設計]] |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
