@@ -191,6 +191,16 @@ while queue:
             visited[neighbor] = {"depth": depth + 1, "via": node, "edge_type": etype}
             queue.append((neighbor, depth + 1))
             neighbor_info = node_map.get(neighbor)
+            # 影響ノードの検証スクリプト候補を抽出（FM注意: 不在時はtest_scripts=[]でfallback）
+            test_scripts = []
+            if neighbor_info:
+                for (rtype, rval) in neighbor_info.get("resources", []):
+                    if rtype == "file":
+                        # バッククォートで囲まれたパスを抽出
+                        fp_m = re.search(r"`([^`]+)`", rval)
+                        fp = fp_m.group(1) if fp_m else rval
+                        if "tests/" in fp or fp.endswith(".bats") or fp.endswith("_test.sh"):
+                            test_scripts.append(fp)
             affected.append({
                 "concept_id": neighbor,
                 "label": neighbor_info["label"] if neighbor_info else "",
@@ -198,16 +208,19 @@ while queue:
                 "depth": depth + 1,
                 "via": node,
                 "edge_type": etype,
+                "test_scripts": test_scripts,  # [] = 検証スクリプト不在(skip/warn対象)
             })
 
 # ─── 出力 ───
 if output_format == "json":
+    no_test = sum(1 for n in affected if not n["test_scripts"])
     result = {
         "cmd_id": cmd_id,
         "start_concepts": start_concepts,
         "affected_nodes": affected,
         "depth": max_depth,
         "total": len(affected),
+        "no_test_scripts_count": no_test,  # 検証スクリプト不在ノード数
     }
     print(json.dumps(result, ensure_ascii=False))
 else:

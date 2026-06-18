@@ -6795,7 +6795,12 @@ PY
         if [ -n "$_traverse_output" ]; then
             _traverse_count=$(echo "$_traverse_output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('total',0))" 2>/dev/null || echo "0")
             _traverse_starts=$(echo "$_traverse_output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(','.join(d.get('start_concepts',[])))" 2>/dev/null || echo "")
-            echo "  start_concepts: ${_traverse_starts:-none} | affected: ${_traverse_count} nodes"
+            _no_test_count=$(echo "$_traverse_output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('no_test_scripts_count',0))" 2>/dev/null || echo "0")
+            echo "  start_concepts: ${_traverse_starts:-none} | affected: ${_traverse_count} nodes | no_test_scripts: ${_no_test_count}"
+            # フォールバック: 検証スクリプト不在ノードがある場合はWARN（実行はskip）
+            if [ "${_no_test_count:-0}" -gt 0 ]; then
+                echo "  [WARN] ${_no_test_count} affected node(s) have no test scripts (skip execution)"
+            fi
             if [ "${_traverse_count:-0}" -gt 0 ] && [ -n "${_traverse_starts:-}" ]; then
                 _traverse_summary="因果トラバース ${CMD_ID}: 起点[${_traverse_starts}] → 影響${_traverse_count}ノード(depth=3)"
                 (BULLETIN_NOTIFY=karo,gunshi timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" \
