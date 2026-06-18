@@ -6784,6 +6784,33 @@ PY
     fi
     run_report_memory_semantic_scan || echo "  [WARN] report memory semantic scan failed (non-blocking)"
 
+    # ─── Semantic causal traverse（GATE CLEAR時 パルス伝達, cmd_3439） ───
+    echo ""
+    echo "Semantic causal traverse (GATE CLEAR):"
+    if [ -f "$SCRIPT_DIR/scripts/semantic_causal_traverse.sh" ]; then
+        _traverse_output=$(bash "$SCRIPT_DIR/scripts/semantic_causal_traverse.sh" \
+            --cmd-id "$CMD_ID" \
+            --depth 3 \
+            --format json 2>/dev/null || true)
+        if [ -n "$_traverse_output" ]; then
+            _traverse_count=$(echo "$_traverse_output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('total',0))" 2>/dev/null || echo "0")
+            _traverse_starts=$(echo "$_traverse_output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(','.join(d.get('start_concepts',[])))" 2>/dev/null || echo "")
+            echo "  start_concepts: ${_traverse_starts:-none} | affected: ${_traverse_count} nodes"
+            if [ "${_traverse_count:-0}" -gt 0 ] && [ -n "${_traverse_starts:-}" ]; then
+                _traverse_summary="因果トラバース ${CMD_ID}: 起点[${_traverse_starts}] → 影響${_traverse_count}ノード(depth=3)"
+                (BULLETIN_NOTIFY=karo,gunshi timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" \
+                    "$_traverse_summary" false >/dev/null 2>&1 || true) &
+                echo "  bulletin: queued (async)"
+            else
+                echo "  bulletin: SKIP (no start concepts or no affected nodes)"
+            fi
+        else
+            echo "  SKIP (traverse returned no output)"
+        fi
+    else
+        echo "  SKIP (semantic_causal_traverse.sh not found)"
+    fi
+
     echo ""
     echo "Context freshness nudge (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/context_freshness_check.sh" ]; then
