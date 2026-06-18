@@ -814,3 +814,172 @@ PY
     grep -q 'semantic_index_gap' "$PROJECT_ROOT/scripts/gunshi_next_action.sh"
     grep -q 'semantic_index_candidate' "$PROJECT_ROOT/scripts/gunshi_next_action.sh"
 }
+
+# ── provisional concept 自動生成テスト (AC1/AC2) ───────────────────────────
+
+_setup_provisional_index() {
+    # semantic_causal_automationを含むテスト用index.mdを上書き
+    cat > "$SEMANTIC_INDEX_PATH" <<'EOF'
+# セマンティクスインデックス SSOT
+
+## semantic_dictionary_design — セマンティック辞書構想
+
+| 属性 | 値 |
+|------|---|
+| id | semantic_dictionary_design |
+| label | セマンティック辞書構想 |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索 |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/semantic_index_design.md` |
+
+## semantic_causal_automation — セマンティック因果自動化
+
+| 属性 | 値 |
+|------|---|
+| id | semantic_causal_automation |
+| label | セマンティック因果自動化 |
+| aliases | セマンティック因果自動化, 因果辺自動還流 |
+| related_concepts | |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/semantic_index_update.sh` |
+
+## growth_loop — 学習ループ
+
+| 属性 | 値 |
+|------|---|
+| id | growth_loop |
+| label | 学習ループ |
+| aliases | 学習ループ, 成長ループ |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/growth-loop.md` |
+EOF
+    mkdir -p "$TEST_TMPDIR/logs"
+    export SEMANTIC_NO_MATCH_FILEPATH_LOG="$TEST_TMPDIR/logs/no_match_filepaths.yaml"
+}
+
+@test "AC1: NO_MATCH累積3回でprovisional conceptがindex.mdに挿入される" {
+    _setup_provisional_index
+    local payload_base='{"id":"cmd_prov_test","title":"test","files":["context/totally_unknown_concept.md"]}'
+
+    # 1回目: count=1, provisional未生成
+    run env \
+        SEMANTIC_INDEX_PATH="$SEMANTIC_INDEX_PATH" \
+        SEMANTIC_NO_MATCH_FILEPATH_LOG="$SEMANTIC_NO_MATCH_FILEPATH_LOG" \
+        SEMANTIC_INSIGHT_WRITE="$SEMANTIC_INSIGHT_WRITE" \
+        SEMANTIC_INSIGHTS_PATH="${SEMANTIC_INSIGHTS_PATH:-$TEST_TMPDIR/queue/insights.yaml}" \
+        SEMANTIC_MAP_GENERATE=/dev/null \
+        SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION=1 \
+        bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete "$payload_base"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NO_MATCH_TRACKED: context/totally_unknown_concept.md count=1"* ]]
+    ! grep -q "provisional_totally_unknown_concept" "$SEMANTIC_INDEX_PATH"
+
+    # 2回目: count=2, provisional未生成
+    run env \
+        SEMANTIC_INDEX_PATH="$SEMANTIC_INDEX_PATH" \
+        SEMANTIC_NO_MATCH_FILEPATH_LOG="$SEMANTIC_NO_MATCH_FILEPATH_LOG" \
+        SEMANTIC_INSIGHT_WRITE="$SEMANTIC_INSIGHT_WRITE" \
+        SEMANTIC_INSIGHTS_PATH="${SEMANTIC_INSIGHTS_PATH:-$TEST_TMPDIR/queue/insights.yaml}" \
+        SEMANTIC_MAP_GENERATE=/dev/null \
+        SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION=1 \
+        bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete "$payload_base"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NO_MATCH_TRACKED: context/totally_unknown_concept.md count=2"* ]]
+    ! grep -q "provisional_totally_unknown_concept" "$SEMANTIC_INDEX_PATH"
+
+    # 3回目: count=3, provisional生成
+    run env \
+        SEMANTIC_INDEX_PATH="$SEMANTIC_INDEX_PATH" \
+        SEMANTIC_NO_MATCH_FILEPATH_LOG="$SEMANTIC_NO_MATCH_FILEPATH_LOG" \
+        SEMANTIC_INSIGHT_WRITE="$SEMANTIC_INSIGHT_WRITE" \
+        SEMANTIC_INSIGHTS_PATH="${SEMANTIC_INSIGHTS_PATH:-$TEST_TMPDIR/queue/insights.yaml}" \
+        SEMANTIC_MAP_GENERATE=/dev/null \
+        SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION=1 \
+        bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete "$payload_base"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NO_MATCH_TRACKED: context/totally_unknown_concept.md count=3"* ]]
+    [[ "$output" == *"PROVISIONAL_CONCEPT_GENERATED: provisional_totally_unknown_concept"* ]]
+    grep -q "provisional_totally_unknown_concept" "$SEMANTIC_INDEX_PATH"
+
+    # provisional conceptの必須フィールドを確認
+    grep -q "| id | provisional_totally_unknown_concept |" "$SEMANTIC_INDEX_PATH"
+    grep -q "| status | provisional |" "$SEMANTIC_INDEX_PATH"
+    grep -q "| auto_generated | true |" "$SEMANTIC_INDEX_PATH"
+    grep -q "| file | \`context/totally_unknown_concept.md\` |" "$SEMANTIC_INDEX_PATH"
+
+    # no_match_filepaths.yaml の状態確認
+    grep -q "provisional_generated: true" "$SEMANTIC_NO_MATCH_FILEPATH_LOG"
+    grep -q "provisional_totally_unknown_concept" "$SEMANTIC_NO_MATCH_FILEPATH_LOG"
+}
+
+@test "AC2: NO_MATCH累積1-2回ではprovisional conceptが生成されない" {
+    _setup_provisional_index
+    local payload1='{"id":"cmd_ac2_1","title":"test","files":["context/yet_another_unknown.md"]}'
+    local payload2='{"id":"cmd_ac2_2","title":"test","files":["context/yet_another_unknown.md"]}'
+
+    # 1回目
+    run env \
+        SEMANTIC_INDEX_PATH="$SEMANTIC_INDEX_PATH" \
+        SEMANTIC_NO_MATCH_FILEPATH_LOG="$SEMANTIC_NO_MATCH_FILEPATH_LOG" \
+        SEMANTIC_INSIGHT_WRITE="$SEMANTIC_INSIGHT_WRITE" \
+        SEMANTIC_INSIGHTS_PATH="${SEMANTIC_INSIGHTS_PATH:-$TEST_TMPDIR/queue/insights.yaml}" \
+        SEMANTIC_MAP_GENERATE=/dev/null \
+        SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION=1 \
+        bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete "$payload1"
+    [ "$status" -eq 0 ]
+    ! grep -q "provisional_yet_another_unknown" "$SEMANTIC_INDEX_PATH"
+
+    # 2回目
+    run env \
+        SEMANTIC_INDEX_PATH="$SEMANTIC_INDEX_PATH" \
+        SEMANTIC_NO_MATCH_FILEPATH_LOG="$SEMANTIC_NO_MATCH_FILEPATH_LOG" \
+        SEMANTIC_INSIGHT_WRITE="$SEMANTIC_INSIGHT_WRITE" \
+        SEMANTIC_INSIGHTS_PATH="${SEMANTIC_INSIGHTS_PATH:-$TEST_TMPDIR/queue/insights.yaml}" \
+        SEMANTIC_MAP_GENERATE=/dev/null \
+        SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION=1 \
+        bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete "$payload2"
+    [ "$status" -eq 0 ]
+    ! grep -q "provisional_yet_another_unknown" "$SEMANTIC_INDEX_PATH"
+
+    # countが2であることをファイルで確認
+    python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$SEMANTIC_NO_MATCH_FILEPATH_LOG"))
+entry = data["no_match_files"]["context/yet_another_unknown.md"]
+assert entry["count"] == 2, f"expected count=2, got {entry['count']}"
+assert entry["provisional_generated"] == False, "provisional_generated should be False"
+PY
+}
+
+@test "AC1: provisional conceptはsemantic_causal_automationセクションの直後に挿入される" {
+    _setup_provisional_index
+    local payload='{"id":"cmd_pos_test","title":"test","files":["context/unique_position_check.md"]}'
+
+    # 3回実行してprovisional生成
+    for i in 1 2 3; do
+        env \
+            SEMANTIC_INDEX_PATH="$SEMANTIC_INDEX_PATH" \
+            SEMANTIC_NO_MATCH_FILEPATH_LOG="$SEMANTIC_NO_MATCH_FILEPATH_LOG" \
+            SEMANTIC_INSIGHT_WRITE="$SEMANTIC_INSIGHT_WRITE" \
+            SEMANTIC_INSIGHTS_PATH="${SEMANTIC_INSIGHTS_PATH:-$TEST_TMPDIR/queue/insights.yaml}" \
+            SEMANTIC_MAP_GENERATE=/dev/null \
+            SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION=1 \
+            bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete "$payload" >/dev/null
+    done
+
+    # semantic_causal_automationより後にprovisionalが来ることを確認
+    python3 - <<PY
+content = open("$SEMANTIC_INDEX_PATH", encoding="utf-8").read()
+pos_anchor = content.find("## semantic_causal_automation")
+pos_provisional = content.find("## provisional_unique_position_check")
+assert pos_anchor >= 0, "anchor concept not found"
+assert pos_provisional >= 0, "provisional concept not found"
+assert pos_provisional > pos_anchor, f"provisional({pos_provisional}) should be after anchor({pos_anchor})"
+PY
+}

@@ -132,6 +132,8 @@ tag_bh_q = float(os.environ.get("SEMANTIC_TAG_PROPAGATION_BH_Q", "0.75"))
 tag_source_per_concept = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_SOURCE_PER_CONCEPT", "1"))
 tag_source_limit = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_SOURCE_LIMIT", "5"))
 insight_recent_dedup_limit = int(os.environ.get("SEMANTIC_INSIGHT_RECENT_DEDUP_LIMIT", "50"))
+no_match_threshold = int(os.environ.get("SEMANTIC_NO_MATCH_THRESHOLD", "3"))
+no_match_filepath_log = Path(os.environ.get("SEMANTIC_NO_MATCH_FILEPATH_LOG", str(semantic_root / "logs" / "no_match_filepaths.yaml")))
 
 try:
     payload = json.loads(payload_raw)
@@ -942,9 +944,11 @@ def infer_concepts_from_files(files_modified, concepts):
     Stage1: | file | 直接ルックアップ(HIGH)
     Stage2: ディレクトリプレフィックス(DIR_PREFIX_MAP)
     Stage3: ファイル名ステム × aliasスコアリング(LOW)
+    Returns: (concept_results, no_match_files) where no_match_files is a set of unmatched file paths.
     """
     file_concept_map = build_file_concept_map(concepts)
     results = {}
+    no_match_files = set()
 
     for fp in (files_modified or []):
         fp = str(fp).strip()
@@ -968,14 +972,194 @@ def infer_concepts_from_files(files_modified, concepts):
         stem = Path(fp).stem
         parts = fp.replace("/", " ").replace("_", " ").replace("-", " ")
         stem_fields = [fp, stem, parts]
+        stage3_matched = False
         for concept in concepts:
             level, _, _ = score_concept(concept, stem_fields)
             if level != "NONE":
                 results[concept["id"]] = max_confidence(results.get(concept["id"]), "LOW")
+                stage3_matched = True
 
-    return results
+        if not stage3_matched:
+            no_match_files.add(fp)
+
+    return results, no_match_files
 
 # ── /infer_concepts_from_files ─────────────────────────────────────────────
+
+# ── provisional concept 自動生成 ────────────────────────────────────────────
+
+def load_no_match_filepaths():
+    """logs/no_match_filepaths.yaml を読み込む。存在しない場合は空dictを返す。"""
+    if not no_match_filepath_log.exists():
+        return {"no_match_files": {}}
+    try:
+        import yaml as _yaml_nm
+        data = _yaml_nm.safe_load(no_match_filepath_log.read_text(encoding="utf-8")) or {}
+        if not isinstance(data.get("no_match_files"), dict):
+            data["no_match_files"] = {}
+        return data
+    except Exception as exc:
+        print(f"WARN: failed to load no_match_filepaths: {exc}", file=sys.stderr)
+        return {"no_match_files": {}}
+
+def save_no_match_filepaths(data):
+    """logs/no_match_filepaths.yaml に書き込む。"""
+    try:
+        import yaml as _yaml_nm
+        no_match_filepath_log.parent.mkdir(parents=True, exist_ok=True)
+        no_match_filepath_log.write_text(
+            _yaml_nm.dump(data, allow_unicode=True, default_flow_style=False),
+            encoding="utf-8",
+        )
+    except Exception as exc:
+        print(f"WARN: failed to save no_match_filepaths: {exc}", file=sys.stderr)
+
+def update_no_match_count(fp, cmd_id):
+    """fpのNO_MATCHカウントをインクリメントし、新しいカウントを返す。"""
+    data = load_no_match_filepaths()
+    files = data["no_match_files"]
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    if fp not in files:
+        files[fp] = {
+            "count": 1,
+            "first_seen": now_str,
+            "last_seen": now_str,
+            "source_cmds": [cmd_id] if cmd_id else [],
+            "provisional_generated": False,
+        }
+    else:
+        files[fp]["count"] = int(files[fp].get("count", 0)) + 1
+        files[fp]["last_seen"] = now_str
+        cmds = list(files[fp].get("source_cmds") or [])
+        if cmd_id and cmd_id not in cmds:
+            cmds.append(cmd_id)
+        files[fp]["source_cmds"] = cmds
+    save_no_match_filepaths(data)
+    return files[fp]["count"]
+
+def should_generate_provisional(fp, count, concepts):
+    """T2/T3/T4の全条件を満たすか判定。
+    T2: count >= THRESHOLD (デフォルト3)
+    T3: ステム長>=4 かつ 純数字でない
+    T4: 同名の仮conceptが未存在 かつ provisional_generatedフラグ未設定
+    """
+    if count < no_match_threshold:
+        return False
+    # T3
+    stem = Path(fp).stem.lower()
+    if len(stem) < 4 or re.fullmatch(r"\d+", stem):
+        return False
+    # T4: index.md内に既存provisional確認
+    provisional_id = f"provisional_{stem}"
+    if any(c["id"] == provisional_id for c in concepts):
+        return False
+    # provisional_generated フラグ確認
+    data = load_no_match_filepaths()
+    if data.get("no_match_files", {}).get(fp, {}).get("provisional_generated"):
+        return False
+    return True
+
+def make_provisional_concept_block(fp, cmd_id, count):
+    """仮conceptのMarkdownブロックを生成する。"""
+    stem = Path(fp).stem.lower()
+    derived_label = stem.replace("_", " ").replace("-", " ").title()
+    provisional_id = f"provisional_{stem}"
+    normalized_path = fp.replace("/", " ").replace("_", " ").replace("-", " ")
+    # aliases: 重複排除
+    aliases_list = []
+    seen_a = set()
+    for alias in [stem, fp, normalized_path, provisional_id]:
+        alias_n = norm(alias)
+        if alias_n and alias_n not in seen_a:
+            aliases_list.append(alias)
+            seen_a.add(alias_n)
+    aliases_str = ", ".join(aliases_list)
+    now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    promotion_threshold = int(os.environ.get("SEMANTIC_PROVISIONAL_PROMOTION_THRESHOLD", "5"))
+    cmd_ref = cmd_id or "unknown"
+    block = (
+        f"## {provisional_id} — 仮: {derived_label}\n"
+        f"\n"
+        f"| 属性 | 値 |\n"
+        f"|------|---|\n"
+        f"| id | {provisional_id} |\n"
+        f"| label | 仮: {derived_label} |\n"
+        f"| aliases | {aliases_str} |\n"
+        f"| status | provisional |\n"
+        f"| auto_generated | true |\n"
+        f"| source_cmd | {cmd_ref} |\n"
+        f"| source_files | {fp} |\n"
+        f"| no_match_count | {count} |\n"
+        f"| created_at | {now_iso} |\n"
+        f"| promotion_threshold | {promotion_threshold} |\n"
+        f"| related_concepts | |\n"
+        f"\n"
+        f"| 種別 | パス/参照 |\n"
+        f"|------|----------|\n"
+        f"| file | `{fp}` |\n"
+        f"| causal | `{cmd_ref}` -> [[{provisional_id}]] (auto_generated) |\n"
+        f"\n"
+    )
+    return provisional_id, block
+
+def insert_provisional_concept(text, concepts, provisional_block):
+    """仮conceptブロックをsemantic_causal_automationセクションの直後に挿入。
+    anchorが存在しない場合はテキスト末尾に追加する。
+    """
+    anchor_id = os.environ.get("SEMANTIC_PROVISIONAL_ANCHOR", "semantic_causal_automation")
+    anchor_concept = next((c for c in concepts if c["id"] == anchor_id), None)
+    insert_pos = anchor_concept["end"] if anchor_concept is not None else len(text)
+    provisional_marker = "<!-- PROVISIONAL CONCEPTS - auto-generated, pending human review -->\n"
+    prefix = "" if provisional_marker in text else provisional_marker
+    updated = text[:insert_pos] + prefix + provisional_block + text[insert_pos:]
+    return updated
+
+def handle_no_match_files(no_match_files, cmd_id, text, concepts):
+    """NO_MATCHファイルの累積カウント更新と仮concept生成を行う。
+    Returns: (updated_text, updated_concepts, changed_flag)
+    """
+    if not no_match_files:
+        return text, concepts, False
+    changed = False
+    for fp in sorted(no_match_files):
+        count = update_no_match_count(fp, cmd_id)
+        print(f"NO_MATCH_TRACKED: {fp} count={count}")
+        if not should_generate_provisional(fp, count, concepts):
+            continue
+        # 高類似既存conceptがあればaliasとして吸収
+        stem = Path(fp).stem.lower()
+        best = best_similar_concept(stem, concepts)
+        if best and best[0] >= 70.0:
+            score, concept_id, label, matched_alias = best
+            concepts_by_id_local = {c["id"]: c for c in concepts}
+            concept = concepts_by_id_local.get(concept_id)
+            if concept:
+                new_block, block_changed = append_aliases_to_block(concept["block"], [stem])
+                if block_changed:
+                    text = text[:concept["start"]] + new_block + text[concept["end"]:]
+                    concepts = parse_concepts(text)
+                    changed = True
+                    print(f"PROVISIONAL_ABSORBED: {fp} -> {concept_id} stem={stem} score={score:.1f}")
+            _absorb_data = load_no_match_filepaths()
+            if fp in _absorb_data.get("no_match_files", {}):
+                _absorb_data["no_match_files"][fp]["provisional_generated"] = True
+                _absorb_data["no_match_files"][fp]["provisional_id"] = f"absorbed_into_{concept_id}"
+                save_no_match_filepaths(_absorb_data)
+            continue
+        # 仮concept生成
+        provisional_id, provisional_block = make_provisional_concept_block(fp, cmd_id, count)
+        text = insert_provisional_concept(text, concepts, provisional_block)
+        concepts = parse_concepts(text)
+        changed = True
+        print(f"PROVISIONAL_CONCEPT_GENERATED: {provisional_id} for {fp} count={count}")
+        _gen_data = load_no_match_filepaths()
+        if fp in _gen_data.get("no_match_files", {}):
+            _gen_data["no_match_files"][fp]["provisional_generated"] = True
+            _gen_data["no_match_files"][fp]["provisional_id"] = provisional_id
+            save_no_match_filepaths(_gen_data)
+    return text, concepts, changed
+
+# ── /provisional concept 自動生成 ───────────────────────────────────────────
 
 def shell_quote_backtick(value):
     return "`" + str(value).replace("`", "'") + "`"
@@ -1389,7 +1573,7 @@ if source_type == "cmd_complete":
 
     if _files_modified:
         _cmd_id = str(payload.get("id") or payload.get("cmd_id") or "").strip()
-        _file_inferred = infer_concepts_from_files(_files_modified, concepts)
+        _file_inferred, _no_match_files = infer_concepts_from_files(_files_modified, concepts)
 
         # HIGH/MEDIUM のみ causal 行を追記 (LOW は信頼度不足のため除外)
         _concepts_by_id = {c["id"]: c for c in concepts}
@@ -1416,6 +1600,12 @@ if source_type == "cmd_complete":
             concepts = parse_concepts(text)
             index_path.write_text(text, encoding="utf-8")
             print(f"FILES_MODIFIED_CAUSAL: {_cmd_id} -> {', '.join(_fi_written)}")
+            print("__SEMANTIC_INDEX_CHANGED__")
+
+        # NO_MATCH累積カウンタ更新 + 仮concept生成
+        text, concepts, _nm_changed = handle_no_match_files(_no_match_files, _cmd_id, text, concepts)
+        if _nm_changed:
+            index_path.write_text(text, encoding="utf-8")
             print("__SEMANTIC_INDEX_CHANGED__")
 # ── /files_modified 因果辺自動生成 ─────────────────────────────────────────
 
