@@ -2081,6 +2081,8 @@ lessons:
   how: '2026-04-13'
   origin: '[[cmd_1882]]'
 - id: L620
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: L2奥義2×2因子分析でL1傾向継続だが縮小。GS固定の2種混在(DB vs champion)が一因
   summary: L1ではBB+15pp/動的-27〜-41pp。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定にはproduction_db①とgs_sta
   tags:
@@ -2188,6 +2190,8 @@ lessons:
   - scripts/oneshot/cmd_1865_alm_cpcv.py
   origin: '[[cmd_1865]]'
 - id: L613
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 'ALM忍法WF検証: 超越条件C(UWP<5M)は132ヶ月OOS期間には非現実的閾値。IS最適化チャンピオンはランダム選択と統計的有意差なし(SPA
     p>0.4)'
   summary: 'V3超越条件: 条件C(UWP<5M)は2015-2026の132ヶ月OOS全期間で計算するため実績UWP=7-41Mとなり全セル失敗。フォールド単位のUWP('
@@ -2206,6 +2210,8 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-16'
 - id: L612
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 超越条件C UWP<5M閾値は132M OOSに非現実+SPA全42非有意
   summary: cmd_1866 ALM忍法全方位検証でV3超越条件のUWP<5M閾値が132ヶ月OOS期間に対して非現実的に厳しい。全42セルFAIL。V7
     SPA検定も全4
@@ -2220,6 +2226,8 @@ lessons:
   - scripts/oneshot/cmd_1866_alm_validation.py
   origin: '[[cmd_1866]]'
 - id: L611
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: バグ汚染ファイル削除時のスコープ確認
   summary: cmd_1863でcmd_1819-1822のバグ汚染ファイルを削除した際にcmdの記載はalm_research内87件だったがgrid_search以下にも
   tags:
@@ -2236,6 +2244,8 @@ lessons:
   - outputs/analysis/alm_research/cmd_1863_1795_kasoku_ratio_l1_wf_alm_returns.csv
   origin: '[[cmd_1863]]'
 - id: L610
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 'バグ汚染ファイル削除時のスコープ確認: alm_research以外にもWFエンジン入力CSVが存在'
   summary: cmd_1863 AC1でcmd_1819_*/cmd_1821_*/cmd_1822_*をプロジェクト全体で削除したところ、alm_research/以外のg
   tags:
@@ -2255,6 +2265,8 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-15'
 - id: L609
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: WF回帰テストは同一CSV2回実行での決定論確認
   summary: l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行→np.allclose=Trueで決定論を検証するもの。異なる世代のCSVや旧出力との
   tags:
@@ -2300,6 +2312,8 @@ lessons:
   - scripts/oneshot/cmd_1855_register_bunshin_gekko.py
   origin: '[[cmd_1855]]'
 - id: L606
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: WF回帰テストは同一CSV2回実行での決定論確認(異なるCSV世代間比較は別用途)
   summary: l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行しnp.allclose=Trueで決定論を検証するもの。エンジン改良やCSV再生成で異
   tags:
@@ -2320,6 +2334,8 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-14'
 - id: L605
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 'CAGRチャンピオン系は構造的に過適合リスクが高い: 全忍法でMEDIUM以上、NHF/MaxDD系は全てLOW'
   summary: '近傍分析結果: CAGRチャンピオン(激攻)は7忍法中5体がMEDIUM以上(oikaze15.3pp/kawarimi15.7pp/nukimi18.7pp/'
   tags:
@@ -2403,6 +2419,8 @@ lessons:
   how: wide monthly_fastのcache-miss読込は split(',') で列数を検証し、空文字をNaNへ変換する経路が安全
   origin: '[[cmd_1841]]'
 - id: L599
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: TrendReversalFilterBlockのinsufficient_candidates early returnでcurrent_tickersが残りbatch不一致
   summary: momentum不足月(期間先頭など)でmomentum_results<2のearly returnを実行するが、context.current_ticker
   tags:
@@ -2565,6 +2583,8 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-18'
 - id: L588
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: l1_alm_wf_engine.pyは直列化でもOOM不可避：468MB CSV→anon-rss=13GB(28倍膨張)
   summary: 小太郎がoikaze(468MB)を単独実行してanon-rss=13GBでOOM Kill死亡。メモリ膨張率は約28倍(pandas内部展開+演算バッファ)。
   tags:
@@ -2576,6 +2596,8 @@ lessons:
   how: 小太郎がoikaze(468MB)を単独実行してanon-rss=13GBでOOM Kill死亡
   origin: '[[cmd_1825]]'
 - id: L587
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: METRIC_NAMES変更時はselect_champions_multi_isのmetrics_np dictも同期更新が必要
   summary: l1_alm_wf_engine.pyのMETRIC_NAMESを変更した際、select_champions_multi_isのforループ内metrics_
   tags:
@@ -2733,6 +2755,8 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-14'
 - id: L576
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: FoFのMVMF/SVMF/MomentumFilterで月次データlookupにexact-matchを使用するとCash全損になる
   summary: FoFパイプラインのMVMF/SVMF/MomentumFilterは月次データのmomentumキャッシュをdict{月末日:float}で保存し、conte
   tags:
@@ -2863,6 +2887,8 @@ lessons:
   - outputs/analysis/alm_research/cmd_1764_objective_ranking.yaml
   origin: '[[cmd_1763]]'
 - id: L566
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: ALM吸収はシン吸収と異なりメトリクスが変わる
   summary: シン吸収=同一champion params→月次選択も同一→完全同一メトリクス。ALM吸収=同一IS設定(pattern_id)だが異なる目的関数(UWP
     v
@@ -2879,6 +2905,8 @@ lessons:
   - docs/research/cmd_1749_alm_ui_mock.html
   origin: '[[cmd_1762]]'
 - id: L565
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 旧加速忍法はkasoku_ratio/kasoku_diffの区別なし
   summary: DBの旧加速PF(加速-激攻/常勝/鉄壁)はratio/diffを統合した旧四神ベースL2。シン版以降からR/D分離。旧版比較テーブルではR/D共通データとして
   tags:
@@ -2934,6 +2962,8 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-18'
 - id: L562
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: ALM L0 4体でWard FoFを組む場合K=5は構造的不可(体数<クラスタ数)
   summary: ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage
     EWはK<N_b
@@ -2954,6 +2984,8 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-18'
 - id: L561
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 'ALM保存バリデーション: pipeline_configがDict[str,Any]のためalm_config内容が未検証でDBに保存される'
   summary: portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype='standard'であればlookback_p
   tags:
@@ -2968,6 +3000,8 @@ lessons:
   - docs/research/cmd_1753_mtd_analysis.md
   origin: '[[cmd_1753]]'
 - id: L560
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 'ALM実装時: pipeline_config.alm_configのcandidate_lookbacksをbuffer計算に含める必要がある'
   summary: recalculate_fast.py L708-715のbuffer計算はportfolio.lookback_periodsのみ参照。ALM
     PFのcand
@@ -3009,6 +3043,8 @@ lessons:
   - docs/research/cmd_1750_alm_design.md
   origin: '[[cmd_1750]]'
 - id: L557
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: WF-OOS負の劣化率は過適合否定の十分条件ではない
   summary: OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認
   tags:
@@ -3028,6 +3064,8 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-16'
 - id: L556
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 'grid search CSVとALM L0 champion metricsの不一致: ユニバース差がパリティ破壊'
   summary: grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(17
   tags:
@@ -3056,6 +3094,8 @@ lessons:
   how: '2026-04-05'
   origin: '[[cmd_1743]]'
 - id: L554
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: family ALM研究はmetricsと相関をベクトル化しないと時間で破綻する
   summary: cmd_1741ではPhase1のcompute_metrics_from_returns個別呼出とPhase2の候補×PF個別rolling
     corrが長時間
@@ -3103,6 +3143,8 @@ lessons:
   - outputs/analysis/cmd_1035_parity_verification.json
   origin: '[[cmd_1741]]'
 - id: L551
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: ALM batch統合ではobjective単位fallbackでparityを守る
   summary: '1940戦略中7件(0.36%)でMDD/TEのrolling丸め差が発生。objective単位でlegacy fallbackに切替えることでparity '
   tags:
@@ -3116,6 +3158,8 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-14'
 - id: L550
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 実データbatch parityではbenchmark共通を仮定するな
   summary: 65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとの
   tags:
@@ -3126,6 +3170,8 @@ lessons:
   how: '2026-04-04'
   origin: '[[cmd_karo_batch_R5]]'
 - id: L549
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: ALM batch 統合では objective 単位 fallback で parity を守る
   summary: cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdow
   tags:
@@ -3165,6 +3211,8 @@ lessons:
   - outputs/analysis/cmd_1035_parity_verification.json
   origin: '[[cmd_1735]]'
 - id: L546
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: ALM foundation cacheは240 fixed seriesの完全性検証が必須
   summary: cmd_1737でfixed_returns_240.csvを再利用したところ、実体はfixed_top5の24列しかなくtop_n=1-10のOOS/PBO計
   tags:
@@ -3398,6 +3446,8 @@ lessons:
   - scripts/analysis/nested_fof/r30_denoised_optics_vs_ward.py
   origin: '[[cmd_1623]]'
 - id: L529
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: NewHigh/UWP選出指標はLB短区間で差別化力が弱い
   summary: NewHigh/UWP選出はLB短(1-4ヶ月)では同一体を選出し差別化不可。LBが短いとcumulativeの新高値/underwaterが1-2回しか発生せ
   tags:
@@ -3506,6 +3556,8 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-14'
 - id: L521
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: β中立指標(Sortino/Calmar)のα効率はmomentumの2倍以上だが超越条件は不十分
   summary: momentum選出はβ=1.105で構造的高βバイアス(α4.2%)。Sortino/CalmarはβΝ中立(β~1.0)でα10%/7.9%と高効率。しかし
   tags:
@@ -3571,6 +3623,8 @@ lessons:
   - scripts/analysis/nested_fof/r28_beta_decomposition.py
   origin: '[[cmd_1591]]'
 - id: L516
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: WF-OOSでCalmar劣化がMaxDD悪化に起因する場合CAGR劣化と分離して評価すべし
   summary: K=3のCal mar劣化41.6%はCAGR劣化7.2%+MaxDD悪化58.7%の組合せ。CAGR維持良好なのにCalmar単体でOVERFIT判定は粒度不
   tags:
@@ -5197,6 +5251,8 @@ lessons:
   how: '2026-03-17'
   origin: '[[cmd_1037]]'
 - id: L397
+  deprecated: true
+  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: GS忍法ndarray(16KB-750KB)は全てL2/L3内。cache missはボトルネックではない(<5%)。Python interpreter
     overhead支配。ループ排除が本命
   summary: cmd_1037 kagemaru角度4
