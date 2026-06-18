@@ -876,6 +876,107 @@ def score_concept(concept, fields):
         return "LOW", exact_terms, partial_terms
     return "NONE", exact_terms, partial_terms
 
+# ── files_modified → concept 推論 (infer_concepts_from_files) ──────────────
+
+DIR_PREFIX_MAP = [
+    # (正規表現パターン, concept_id, confidence)
+    (r"^scripts/gates/",                  "gate_quality_framework",        "MEDIUM"),
+    (r"^scripts/hooks/",                  "hook_automation_framework",     "MEDIUM"),
+    (r"^scripts/lesson_",                 "lesson_lifecycle",              "HIGH"),
+    (r"^scripts/inbox_",                  "inbox_processing_discipline",   "HIGH"),
+    (r"^scripts/inbox_watcher",           "inbox_watcher_process_model",   "HIGH"),
+    (r"^scripts/semantic_",               "semantic_causal_automation",    "HIGH"),
+    (r"^scripts/memory_db_",              "local_memory_db",               "HIGH"),
+    (r"^scripts/obsidian_",               "three_layer_memory_system",     "MEDIUM"),
+    (r"^scripts/deploy_task\.sh",         "agent_formation_management",    "HIGH"),
+    (r"^scripts/ninja_monitor",           "daemon_supervision",            "HIGH"),
+    (r"^scripts/cmd_save",                "cmd_quality_logging",           "HIGH"),
+    (r"^scripts/cmd_complete_gate",       "gate_quality_framework",        "HIGH"),
+    (r"^scripts/report_field_set",        "report_quality_protocol",       "HIGH"),
+    (r"^context/dm-signal",               "dmsignal_operations",           "MEDIUM"),
+    (r"^context/growth-loop",             "growth_loop",                   "HIGH"),
+    (r"^context/infrastructure",          "infrastructure_ops",            "HIGH"),
+    (r"^context/memory-db",               "local_memory_db",               "HIGH"),
+    (r"^context/training-cycle",          "training_cycle_quality",        "MEDIUM"),
+    (r"^context/semantic-map",            "semantic_causal_automation",    "HIGH"),
+    (r"^docs/semantic-index/",            "semantic_causal_automation",    "HIGH"),
+    (r"^docs/research/gunshi_",           "semantic_causal_automation",    "LOW"),
+    (r"^docs/research/",                  None,                            "LOW"),
+    (r"^tests/unit/test_semantic",        "semantic_causal_automation",    "MEDIUM"),
+    (r"^tests/unit/test_cmd_",            "cmd_quality_logging",           "MEDIUM"),
+    (r"^tests/unit/test_memory",          "local_memory_db",               "MEDIUM"),
+    (r"^tests/unit/",                     "test_quality_framework",        "LOW"),
+    (r"^skills/",                         "skill_design_rules",            "MEDIUM"),
+    (r"^instructions/",                   "chain_principle",               "LOW"),
+    (r"^projects/dm-signal",              "dmsignal_operations",           "MEDIUM"),
+    (r"^config/",                         "agent_formation_management",    "LOW"),
+    (r"^\.(claude|codex)/hooks/",         "hook_automation_framework",     "HIGH"),
+    (r"^\.(claude|codex)/hooks/pre-bash", "destructive_operations_guard",  "MEDIUM"),
+]
+
+def build_file_concept_map(concepts):
+    """Stage 1: | file | 行を逆引きマップに変換 filepath → set[concept_id]"""
+    fcm = {}
+    for concept in concepts:
+        for line in concept["block"].splitlines():
+            m = re.match(r'^\|\s*file\s*\|\s*`([^`]+)`', line.strip())
+            if m:
+                fp = m.group(1)
+                fcm.setdefault(fp, set()).add(concept["id"])
+    return fcm
+
+def max_confidence(a, b):
+    """2つのconfidence文字列のうち高い方を返す"""
+    _rank = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
+    return a if _rank.get(a, 0) >= _rank.get(b, 0) else b
+
+def match_dir_prefix(fp):
+    """Stage 2: DIR_PREFIX_MAPでファイルパスをマッチ → (concept_id, confidence) or None"""
+    for pattern, concept_id, confidence in DIR_PREFIX_MAP:
+        if re.search(pattern, fp) and concept_id:
+            return concept_id, confidence
+    return None
+
+def infer_concepts_from_files(files_modified, concepts):
+    """4段階フォールバックでfiles_modified → {concept_id: confidence} を推論する。
+    Stage1: | file | 直接ルックアップ(HIGH)
+    Stage2: ディレクトリプレフィックス(DIR_PREFIX_MAP)
+    Stage3: ファイル名ステム × aliasスコアリング(LOW)
+    """
+    file_concept_map = build_file_concept_map(concepts)
+    results = {}
+
+    for fp in (files_modified or []):
+        fp = str(fp).strip()
+        if not fp:
+            continue
+
+        # Stage 1: 直接ルックアップ
+        if fp in file_concept_map:
+            for cid in file_concept_map[fp]:
+                results[cid] = max_confidence(results.get(cid), "HIGH")
+            continue
+
+        # Stage 2: ディレクトリプレフィックス
+        prefix_match = match_dir_prefix(fp)
+        if prefix_match:
+            cid, conf = prefix_match
+            results[cid] = max_confidence(results.get(cid), conf)
+            continue
+
+        # Stage 3: ファイル名ステム × aliasスコアリング
+        stem = Path(fp).stem
+        parts = fp.replace("/", " ").replace("_", " ").replace("-", " ")
+        stem_fields = [fp, stem, parts]
+        for concept in concepts:
+            level, _, _ = score_concept(concept, stem_fields)
+            if level != "NONE":
+                results[concept["id"]] = max_confidence(results.get(concept["id"]), "LOW")
+
+    return results
+
+# ── /infer_concepts_from_files ─────────────────────────────────────────────
+
 def shell_quote_backtick(value):
     return "`" + str(value).replace("`", "'") + "`"
 
@@ -1279,6 +1380,44 @@ if source_type == "absorb_pending":
     else:
         print("ABSORB_PENDING: no semantic insight changes")
     sys.exit(0)
+
+# ── files_modified → concept 因果辺 自動生成 (cmd_complete のみ) ──────────
+if source_type == "cmd_complete":
+    _files_modified = payload.get("files") or []
+    if isinstance(_files_modified, str):
+        _files_modified = [p.strip() for p in re.split(r"[, \n]+", _files_modified) if p.strip()]
+
+    if _files_modified:
+        _cmd_id = str(payload.get("id") or payload.get("cmd_id") or "").strip()
+        _file_inferred = infer_concepts_from_files(_files_modified, concepts)
+
+        # HIGH/MEDIUM のみ causal 行を追記 (LOW は信頼度不足のため除外)
+        _concepts_by_id = {c["id"]: c for c in concepts}
+        _matched = [
+            (cid, conf)
+            for cid, conf in _file_inferred.items()
+            if conf in ("HIGH", "MEDIUM") and cid in _concepts_by_id
+        ]
+        # 開始位置の降順でソートし、オフセットを保ちながら書込む
+        _matched.sort(key=lambda x: _concepts_by_id[x[0]]["start"], reverse=True)
+
+        _fi_updated = text
+        _fi_written = []
+        for _cid, _conf in _matched:
+            _concept = _concepts_by_id[_cid]
+            _causal_row = f"| causal | {shell_quote_backtick(_cmd_id)} files_modified: [[{_cid}]] |"
+            _new_block, _row_changed = append_row_to_block(_concept["block"], _causal_row)
+            if _row_changed:
+                _fi_updated = _fi_updated[:_concept["start"]] + _new_block + _fi_updated[_concept["end"]:]
+                _fi_written.append(_cid)
+
+        if _fi_written:
+            text = _fi_updated
+            concepts = parse_concepts(text)
+            index_path.write_text(text, encoding="utf-8")
+            print(f"FILES_MODIFIED_CAUSAL: {_cmd_id} -> {', '.join(_fi_written)}")
+            print("__SEMANTIC_INDEX_CHANGED__")
+# ── /files_modified 因果辺自動生成 ─────────────────────────────────────────
 
 fields = flatten_text(payload)
 known_terms = concept_terms(concepts)
