@@ -1698,7 +1698,7 @@
 - cmd_id: cmd_3442
   review_type: draft
   verdict: REQUEST_CHANGES
-  gate_result: null
+  gate_result: CLEAR
   confidence: LOW
   changed_lines: 0
   finding_categories: [assumptions, numbers, simulation, premortem, adversarial]
@@ -1719,3 +1719,51 @@
   severity: normal
   origin: "[[cmd_3442]] -> [[AC1/AC3前提崩壊]] -> [[REQUEST_CHANGES]]"
   timestamp: "2026-06-18T23:05:00"
+- cmd_id: cmd_3442
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_3442_full
+  report_verdict: PASS
+  verdict: LGTM
+  gate_result: CLEAR
+  confidence: MEDIUM
+  changed_lines: 47
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "AC2実装OK(Phase3 test_scripts実行+47行追加)。AC1/AC3はWAIVE(前セッション完了確認)。SG-PRE25 ERROR: command欄にlesson_write.sh残存→GATE BLOCKリスク。家老にcommand欄修正依頼"
+  observations:
+    - "事実1: git diff f28283764~1..f28283764 = +47行。Phase3 traverseブロック内にtest_scripts抽出+bats/bash実行+PASS/FAIL集計の非ブロッキングロジック追加"
+    - "事実2: SG-PRE25 ERROR: command欄のlesson_write.shがfiles_modifiedに不在。LG037分類=実行のみ参照(AC1のretag実行指示)。AC1はWAIVE済みだがcmd spec未修正"
+    - "事実3: テスト結果 subsystems 21/21 PASS、semantic_index_update 37/37 PASS"
+    - "事実4: lesson_candidate品質OK: 列挙と実行を別ACで分離すべき。具体的で再利用可能"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "Phase3追加は非ブロッキング(WARN only)。timeout 60sで保護。FAIL時もGATE全体は止まらない。rollback容易(git revert 1 commit)"
+  step3_5_verified: true
+  causal_chain: "AC1 WAIVE→command欄未修正→lesson_write.sh残存→SG-PRE25 ERROR→GATE BLOCKリスク。実装自体はPhase3列挙止まり→実行ロジック追加で解消"
+  brainwash_check: "#1防止: GATE CLEAR未知のためバイアスなし。数値: diff +47行、テスト58/58 PASS。#2防止: SG-PRE25 ERRORを検出しBLOCKリスクを明示"
+  ambiguity_points: none
+  lesson_quality: OK
+  origin: "[[cmd_3442]] -> [[Phase3_test_scripts実行ロジック]] -> [[LGTM+GATE_BLOCK注意]]"
+  timestamp: "2026-06-18T23:15:00"
+- cmd_id: idle_useful_rate_infra_universal_20260618
+  review_type: self_study
+  verdict: null
+  findings_summary: "useful_rate 2.0%真因: infra教訓universal 97件。dm-signal retag完了済みだがinfra側未対処。L472等がID重複で両PJに存在"
+  observations:
+    - "事実1: infra lessons.yaml 815件中universal=97件"
+    - "事実2: L472がdm-signal(tags:deploy)とinfra(tags:universal)の両方に存在"
+    - "事実3: retag後(2026-06-18T01:00以降)のフィードバック=USEFUL 1, NOT_USEFUL 22 → 4.3%"
+  causal_chain: "dm-signal retag完了→infra universal未対処→infra教訓97件が全cmdに無差別注入→NOT_USEFUL量産→useful_rate 2.0%"
+  cs_checklist:
+    CS1: "lesson_impact.tsv全量+infra/dm-signal lessons.yaml全量確認"
+    CS2: "自システムデータ(gate_lesson_health.sh+lesson_impact.tsv)で問題存在検証済み"
+    CS3: "deploy_task.sh L4456-4466(_lesson_project_allowed)のコード確認でinfra=platform→全cmd注入を確認"
+    CS4: "D0対処=infra universal retag実行。このセッション内で行動に変換"
+    CS5: "ID重複問題(L472等)は追加調査対象"
+    CS6: "dm-signal retag完了→効果なし→infra側根因発見の因果鎖"
+  operational_simulation: "infra universal 97件をretag→infra cmd注入が減少→useful_rate改善(推定20%+)"
+  finding_categories: [assumptions, numbers, north_star]
+  brainwash_check: "#5防止: 計測ラグで済ませず真因(infra universal 97件)まで掘った。数値: 815件中universal=97件、retag後NOT_USEFUL=22/23件"
+  origin: "[[gunshi_idle_useful_rate_infra_universal_20260618]] -> [[LG027]] -> [[useful_rate真因]]"
+  timestamp: "2026-06-18T23:20:00"

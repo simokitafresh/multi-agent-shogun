@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_3433_full
+  _ac_task_id: cmd_3441_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3433 (deployed 2026-06-18T01:04:01). Read from the beginning.
-  ac_version: 9d5851af
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3441 (deployed 2026-06-18T22:41:08). Read from the beginning.
+  ac_version: 37d28c14
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -17,69 +17,73 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: 
+  parent_cmd: cmd_3441
   project: infra
-  purpose: lesson_write.sh --retagがdm-signal旧フォーマット教訓(L007-L118の26件)でFAIL。retagロジック(L568-589)がlessons.md Markdown形式(### LXXX:)を前提とするが、dm-signalはlessons.yaml 1行形式のみ(lessons.md不在)。universalタグ残29件がretag不可。偽陽性=バグ(殿厳命2026-06-18)。軍師報告blt_20260618_005912。
+  purpose: '殿裁定(2026-06-18): CDPは全員が使えるべき。現状: cdp-browseスキルにロール制限なしだが忍者/家老の指南書(ashigaru.md/karo.md)にCDP言及ゼロ。道具の存在を知らないから使えない。忍者の本番確認、家老のCI RED後の画面検証にCDPが使えることを指南書に明記し、cdp-browseスキルのTRIGGERに忍者/家老パターンを追加する。cmd_3440をac_phase_mixing累計昇格回避のため新ID再発行。'
   recommended_skills:
   - shogun-claude-version-switch
   - switch-to-codex
   status: idle
   stop_for: []
-  target_path: scripts/lesson_write.sh
-  task_id: cmd_3433_full
+  target_path: instructions/ashigaru.md
+  task_id: cmd_3441_full
   task_type: full
-  previous_failures:
-    attempt: 1
-    last_block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-    tried_approaches:
-    - 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-    approach_summary: '54体1431ペア×15パターン×閾値3段(0.10/2σ/3σ)=45セル完了。最高リフト=4M-12M×0.10固定=2.98x。母集団拡大(33体→54体)でリフト低下(4.00x→2.98x)。2σ/3σは54体全量では乖離の分散大(std=0.35以上)でシグナルほぼ0件=機能しない。0.10固定が唯一実用的な閾値。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-      approach_summary: '54体1431ペア×15パターン×閾値3段(0.10/2σ/3σ)=45セル完了。最高リフト=4M-12M×0.10固定=2.98x。母集団拡大(33体→54体)でリフト低下(4.00x→2.98x)。2σ/3σは54体全量では乖離の分散大(std=0.35以上)でシグナルほぼ0件=機能しない。0.10固定が唯一実用的な閾値。'
   related_lessons:
-  - id: 'L086'
-    summary: 'auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは'
-    detail: 'auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは'
-  - id: 'L266'
-    summary: 'lesson_write.shの出力REFLUX_CHECK WARNを家老が必ず処理すること。忍者任せにせず家老がWARN内容をralph_loop_clos'
-    detail: 'lesson_write.shの出力REFLUX_CHECK WARNを家老が必ず処理すること。忍者任せにせず家老がWARN内容をralph_loop_clos'
-  - id: 'L348'
-    summary: 'lesson_write.shで--strategicだけが$7位置引数固定で検出されていた。他の全フラグ(--force/--status/--tags等)は'
-    detail: 'lesson_write.shで--strategicだけが$7位置引数固定で検出されていた。他の全フラグ(--force/--status/--tags等)は'
+  - id: 'L472'
+    summary: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含'
+    detail: 'instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含'
+  - id: 'L589'
+    summary: 'build_instructions.sh再生成後にgit addした際、既存stageのscripts/gates/gate_report_format.sh'
+    detail: 'build_instructions.sh再生成後にgit addした際、既存stageのscripts/gates/gate_report_format.sh'
+  - id: 'L541'
+    summary: 'environment_change=lesson登録のテストは、本番lessons.yamlの特定ID存在に依存するとSSOT更新でCI RED化する。TES'
+    detail: 'environment_change=lesson登録のテストは、本番lessons.yamlの特定ID存在に依存するとSSOT更新でCI RED化する。TES'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   related_causal_links:
-  - "[[blt_20260618_005912_軍師バグ報告]]"
-  - "[[lesson_write_retag_markdown前提]]"
-  - "[[universalタグ29件修正不能]]"
+  - "[[CDP全ロール開放]]"
+  - "[[指南書CDP言及ゼロ]]"
+  - "[[殿裁定_CDP全員使用_20260618]]"
   context_hints:
   - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L086: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは
-      - L266: lesson_write.shの出力REFLUX_CHECK WARNを家老が必ず処理すること。忍者任せにせず家老がWARN内容をralph_loop_clos
-      - L348: lesson_write.shで--strategicだけが$7位置引数固定で検出されていた。他の全フラグ(--force/--status/--tags等)は
+      - L472: instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含
+      - L589: build_instructions.sh再生成後にgit addした際、既存stageのscripts/gates/gate_report_format.sh
+      - L541: environment_change=lesson登録のテストは、本番lessons.yamlの特定ID存在に依存するとSSOT更新でCI RED化する。TES
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-09T13:31:32+09:00 | 覚醒完了。報告で止まらず、全件自分で修正した。 - SKILL.md役割制限: 合計9件(前回3+今回6)にフィルタ追記 - 教訓タグ細粒度化: 8件をlesson_write.sh --retagで"
-  - "2026-06-08T23:05:19+09:00 | 任務完了。 **実施内容まとめ:** - `scripts/lesson_write.sh`に`infer_subdomain_tag_from_files()`関数を追加（12パターン: gate/"
-  - "2026-06-09T13:31:32+09:00 | 覚醒完了。報告で止まらず、全件自分で修正した。 - SKILL.md役割制限: 合計9件(前回3+今回6)にフィルタ追記 - 教訓タグ細粒度化: 8件をlesson_write.sh --retagで"
+  - "2026-06-18T21:25:15+09:00 | 【INFOバッチ】 2026-06-18 21:10:37|CI緑: run 27757643794"
+  - "2026-06-18T20:53:53+09:00 | 【INFOバッチ】 2026-06-18 20:40:54|cmd_3438 2026-06-18 20:53:16|cmd_3439"
+  - "2026-06-18T22:34:05+09:00 | CDPは全員が使えるものだよな。誰もがいつでもCDPを自由自在に使えるべきだ"
+  - "2026-06-15T09:54:01+09:00 | CDPはスキルを使ったか？"
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'lesson_write.sh --retagがYAML 1行形式(lessons.yaml)の教訓に対してタグ変更できること。bash lesson_write.sh dm-signal --retag L007 --new-tags gsでFAILしないことをgrep確認'
+    - check: 'ashigaru.mdにブラウザ操作スキル(cdp-browse)の利用手順が追記されていること'
   - id: 'AC2'
     checks:
-    - check: '既存のMarkdown形式(lessons.md)のretag動作が維持されること。infraプロジェクトの教訓でretag動作をgrep確認'
+    - check: 'karo.mdまたはkaro-operations.mdにブラウザ操作スキルの利用手順が追記されていること'
+  - id: 'AC3'
+    checks:
+    - check: 'cdp-browse SKILL.mdのTRIGGERに忍者/家老のユースケース(画面確認等)が追記されていること'
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_3433.yaml
-  report_path: queue/reports/kotaro_report_cmd_3433.yaml
+  report_filename: kotaro_report_cmd_3441.yaml
+  report_path: queue/reports/kotaro_report_cmd_3441.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -99,4 +103,4 @@ task:
     - reason: 'binary_checks_fail'
       count: 3
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-06-18T01:04:30"
+  deployed_at: "2026-06-18T22:41:34"

@@ -3964,6 +3964,9 @@ lessons:
   - scripts/analysis/grid_search/grid_search_metrics_v2.py
   - scripts/analysis/grid_search/verify_all_portfolios.py
   origin: '[[cmd_1353]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L487
   title: PI強制化波及先未更新チェック必須
   summary: grid_search_metrics_v2.pyにPI-009(pipeline_config必須)を追加した際にsimulate_strategy_vect

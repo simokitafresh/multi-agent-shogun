@@ -1,8 +1,11 @@
 task:
-  _ac_task_id: cmd_3434_full
+  readonly_ref:
+  - path: 'cmd_complete_gate.sh'
+    reason: command欄の必読/参照専用ファイル
+  _ac_task_id: cmd_3442_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3434 (deployed 2026-06-18T10:18:53). Read from the beginning.
-  ac_version: bf381b2e
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3442 (deployed 2026-06-18T22:57:36). Read from the beginning.
+  ac_version: 05a31149
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -17,80 +20,79 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3434
+  parent_cmd: cmd_3442
   project: infra
-  purpose: 'context鮮度ALERT: dm-signal-research.md等4ファイルが2026-06-13以降5日間未更新。相関レジーム研究7cmd(3425-3431)で確立した知見7項目(max相関=戦略同質性, 高相関=バブル, 乖離リフト3-4x偽陽性70%, deterioration逆機能, σ閾値混成母集団不機能, リスクベースBB不適, Turning Points BB不採用)をcontext索引に反映。家老報告blt_20260618_101554。'
+  purpose: 洗脳監査(殿指示2026-06-18)で4穴発見。(1)useful_rate=2.0%根因=dm-signal YAML教訓のtags空欄(L007,L086,L508,L565,L633,L722等)。cmd_3433でretag機能追加したが実行していない(道具作って使わない=deepdive Phase9再現)。(2)Phase2b仮concept閾値到達テスト未投入。(3)Phase3 BFSが影響ノード列挙のみで検証スクリプト未実行(ダッシュボード問題再現)。(4)GATE CLEAR→因果辺→BFS→検証のE2Eパイプライン未通し。
   status: idle
   stop_for: []
-  target_path: context/dm-signal-research.md
-  task_id: cmd_3434_full
+  target_path: scripts/cmd_complete_gate.sh
+  task_id: cmd_3442_full
   task_type: full
-  previous_failures:
-    attempt: 1
-    last_block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-    tried_approaches:
-    - 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-    approach_summary: 'Goulding et al.2023 Momentum Turning Pointsをシン四神12体に適用。EW FoFのslow(12M)/fast(3M)符号で4状態判定(185ヶ月)。Bull 80.5%/Correction 17.3%/Bear 1.6%/Rebound 0.5%。重み付けFoF最良v2でCalmar+0.005・NHF+1.6…'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-      approach_summary: 'Goulding et al.2023 Momentum Turning Pointsをシン四神12体に適用。EW FoFのslow(12M)/fast(3M)符号で4状態判定(185ヶ月)。Bull 80.5%/Correction 17.3%/Bear 1.6%/Rebound 0.5%。重み付けFoF最良v2でCalmar+0.005・NHF+1.6…'
-  related_lessons: []
+  related_lessons:
+  - id: 'L488'
+    summary: 'stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow'
+    detail: 'stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow'
+  - id: 'L813'
+    summary: 'SG-PRE25(precheck.sh)のFP修正がcmd_complete_gate.shに同期されず42/50=84%のFP BLOCKが発生。read_'
+    detail: 'SG-PRE25(precheck.sh)のFP修正がcmd_complete_gate.shに同期されず42/50=84%のFP BLOCKが発生。read_'
+  - id: 'L781'
+    summary: 'cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『'
+    detail: 'cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)"
+  - "growth_loop — 学習ループ:  AGENTS.md 学習ループ原則 context/growth-loop.md context/infrastructure.md 知識サイクル現状 scripts/gates/gate_cycle_health.sh 三層学習ループ健全性計測 scripts/karo_workaround_log.sh WA記録(成績表フィードバック) scripts/ci_status_check.sh CI状態チェック(品質フィードバック) scripts/lesson_impact_analysis.sh 教訓効果分析(注入率/参照率/CLEAR-BLOCK A/B) scripts/ralph_loop_metrics.sh ラルフループ定量計測(5指標: パターン再発/revert/完了速度/lesson-CLEAR相関/PI違反) scripts/knowledge_metrics.sh 教訓有効性+陳腐化検出(JSON/TSV出力対応) docs/research/gunshi_idle_growth_loop_nazenaze_20260515.md — 軍師idle: 成長ループなぜなぜ分析(2026-05-15) docs/research/gunshi_idle_immune_effectiveness_20260512.md — 軍師idle: 免疫システム有効性測定(2026-05-12) docs/research/gunshi_idle_immune_system_evidence_20260426.md — 軍師idle: 免疫システム証拠収集(2026-04-26) docs/research/gunshi_idle_immunity_measurement_20260510.md — 軍師idle: 免疫計測フレームワーク(2026-05-10)"
+  - "semantic_dictionary_design — セマンティック辞書構想:  docs/research/semantic_index_design.md context/lord-conversation-index.md scripts/semantic_map_generate.sh scripts/insight_write.sh scripts/semantic_index_update.sh"
+  - "shin_shijin_design — 四神設計:  context/dm-signal-core.md §PFレイヤー context/checklist-shin-v2-registration.md context/l3-robustness.md §WF四神"
+  - "lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/auto_draft_lesson.sh scripts/sync_lessons.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml docs/research/gunshi_idle_insights_consumption_bottleneck_20260515.md — 軍師idle: インサイト消費ボトルネック分析(2026-05-15) docs/research/gunshi_idle_knowledge_burial_audit_20260505.md — 軍師idle: 知識埋没監査(2026-05-05) docs/research/gunshi_idle_lesson_dedup_20260413.md — 軍師idle: 教訓重複排除分析(2026-04-13) docs/research/gunshi_idle_lesson_effectiveness_20260413.md — 軍師idle: 教訓有効性測定(2026-04-13) docs/research/gunshi_idle_lesson_impact_20260412.md — 軍師idle: 教訓インパクト分析(2026-04-12) docs/research/gunshi_idle_lesson_injection_dual_track_20260428.md — 軍師idle: 教訓注入デュアルトラック設計(2026-04-28) docs/research/gunshi_idle_lesson_injection_quality_20260605.md — 軍師idle: 教訓注入品質監査(2026-06-05) docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md — 軍師idle: 教訓注入汎用バイパス問題(2026-06-02) docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md — 軍師idle: 教訓参照率分析(2026-04-30) docs/research/gunshi_idle_lesson_tag_mismatch_20260507.md — 軍師idle: 教訓タグ不一致分析(2026-05-07) docs/research/gunshi_idle_lesson_useful_rate_20260422.md — 軍師idle: 教訓有用率計測(2026-04-22) docs/research/gunshi_idle_lesson_useful_rate_20260503.md — 軍師idle: 教訓有用率計測v2(2026-05-03) docs/research/gunshi_idle_lesson_useful_rate_20260608.md — 軍師idle: 教訓有用率計測v3(2026-06-08) docs/research/gunshi_idle_lesson_waste_analysis_20260516.md — 軍師idle: 教訓無駄分析(2026-05-16)"
   related_causal_links:
-  - "[[blt_20260618_101554_家老context鮮度ALERT]]"
-  - "[[context鮮度5日経過]]"
-  - "[[研究7cmd完了後context未反映]]"
+  - "[[4穴発見(retag未実行+Phase3列挙止まり+E2E未検証+useful_rate根因)]]"
+  - "[[一括修正]]"
+  - "[[殿指示_洗脳監査_20260618]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
+  - "context/gs-speedup-knowledge.md"
   - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L488: stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow
+      - L813: SG-PRE25(precheck.sh)のFP修正がcmd_complete_gate.shに同期されず42/50=84%のFP BLOCKが発生。read_
+      - L781: cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『
+    ────────────────────────────────────────
+    
+    
+  memory_db_context:
+  - "2026-06-18T22:48:46+09:00 | 覚醒して洗脳監査。これくらいの不備はpassでよいだろうという甘い判断はないか？"
+  - "2026-06-16T14:50:26+09:00 | 覚醒して洗脳監査せよ"
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: '相関レジーム研究7知見がdm-signal-research.mdに索引エントリ(結論1-2行+参照先パス)として追加され、grep確認できること'
+    - check: 'dm-signal YAML教訓のtags空欄教訓に対してlesson_write.sh --retagでタグ付与が完了していること'
   - id: 'AC2'
     checks:
-    - check: '詳細データの参照先(DM-signal/docs/research/knowledge-base/experiments/correlation-regime-detection-20260617.md)が索引内にリンクされていること'
+    - check: 'cmd_complete_gate.shのPhase3接続部(L6800付近)に影響ノードのtest_scripts実行ロジックが追加されていること'
+  - id: 'AC3'
+    checks:
+    - check: 'Phase2b仮concept生成のE2Eテスト(NO_MATCH 3回投入→provisional_エントリ生成)がbatsテストに追加されていること'
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3434.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3434.yaml
+  report_filename: tobisaru_report_cmd_3442.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3442.yaml
   bloom_level: 
-  related_lessons:
-  - id: 'L510'
-    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
-  - id: 'L508'
-    summary: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-    detail: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
-  - id: 'L507'
-    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
-  - id: 'L506'
-    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
-  - id: 'L505'
-    summary: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-    detail: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
-  - id: 'L503'
-    summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-    detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
-  - id: 'L502'
-    summary: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
-    detail: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
-  - id: 'L499'
-    summary: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
-    detail: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
-  - id: 'L498'
-    summary: 'yaml_field_set.shはmap_scalar→list→root fallbackの3段階を経るが各段階はexit 2で通知する。set'
-    detail: 'yaml_field_set.shはmap_scalar→list→root fallbackの3段階を経るが各段階はexit 2で通知する。set'
-  - id: 'L497'
-    summary: 'bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport'
-    detail: 'bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport'
-  deployed_at: "2026-06-18T10:19:15"
+  deployed_at: "2026-06-18T22:58:12"

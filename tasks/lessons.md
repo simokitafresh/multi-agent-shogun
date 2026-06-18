@@ -869,7 +869,7 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **日付**: 2026-02-27
 - **出典**: cmd_404
 - **記録者**: hanzo
-- **tags**: [universal]
+- **tags**: [bash]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: get_model()のawkが各エージェント名行でat/am変数をリセットしていたため、ターゲットエージェント設定後に次エージェント行でリセットされた
 - get_model()のawkが各エージェント名行でat/am変数をリセットしていたため、ターゲットエージェント設定後に次エージェント行でリセットされた。BEGIN{at=;am=}で初期化しエージェント名行ではリセットしない方式が正。
@@ -1031,7 +1031,7 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **日付**: 2026-02-28
 - **出典**: cmd_446
 - **記録者**: saizo
-- **tags**: [universal]
+- **tags**: [infra]
 - **if**: dedupログ仕様時
 - **then**: ACにログ文言が含まれる場合、語順・語彙・プレフィックス空白も含めて一致確認が必要
 - **because**: N>0条件付き出力にするとN=0要件を落としやすい
@@ -1241,7 +1241,7 @@ SCRIPT_DIRをbashから明示的に渡すべき。
 - **日付**: 2026-03-03
 - **出典**: cmd_496
 - **記録者**: hanzo
-- **tags**: [universal]
+- **tags**: [infra]
 - **if**: 非同期通知ラッパー(常時exit 0)の結果をif判定で使う時
 - **then**: 同期モードまたは結果ファイル連携で結果を取得せよ
 - **because**: ntfy.shのように常時exit 0の設計では、呼び出し側のif/elseでsend失敗を判定できないため
@@ -1594,7 +1594,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-04
 - **出典**: cmd_545
 - **記録者**: sasuke
-- **tags**: [universal]
+- **tags**: [bash]
 - **if**: set -e環境で非0戻り値を返す判定関数を呼び出す時
 - **then**: `if func; then rc=0; else rc=$?; fi` 形式で受けよ
 - **because**: `func; rc=$?`形式ではset -eにより即exitしてしまうため
@@ -1681,7 +1681,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-05
 - **出典**: testing
 - **記録者**: cmd_558
-- **tags**: [universal]
+- **tags**: [testing]
 - **if**: MAX_ENTRIES等の定数変更時
 - **then**: impl側の定数変更とテストの前提値の整合性チェックをACに含めるべき
 - **because**: cmd_558でMAX_ENTRIES 200→300変更時に既存テストT-LC-008/009の修正が追加発生
@@ -1705,7 +1705,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-05
 - **出典**: cmd_567
 - **記録者**: kirimaru
-- **tags**: [universal]
+- **tags**: [lesson]
 - **if**: 教訓効果率の低い教訓群を分析する時
 - **then**: 自動退役は『低効果』だけでなく『仕組み化完了フラグ』連動で回すべき
 - **because**: 効果率0%群には、価値が低い教訓だけでなく、既にコード化され人間参照が不要になった教訓が混在するため
@@ -1717,7 +1717,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-05
 - **出典**: cmd_571
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [bash, maintenance]
 - **if**: ストリーミング受信デーモンを新規実装する時
 - **then**: 受信側にもflock/pidfileによる単一起動ロックを持たせよ
 - **because**: 起動経路が複数ある場合、起動側のpkill/nohupだけでは多重起動を完全に防げないため
@@ -1803,7 +1803,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-06
 - **出典**: ストリーム購読デーモンのwatchdogがkeepalive/open行のread成功でも活動時刻を更新していたため、ntfyのkeepalive(45秒間隔)が流れ続けるとwatchdogが永遠延命され、実メッセージ停滞を30分で検知する設計が無効化された。LAST_STREAM_ACTIVITYとLAST_MESSAGE_ACTIVITYを分離し、message処理成功時のみ後者を更新すべき。2名独立一致
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [infra]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-03-06
 - watchdogの活動時刻は『read成功』ではなく『意味のあるイベント処理成功』で更新すべし
@@ -1923,7 +1923,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-09
 - **出典**: cmd_689
 - **記録者**: sasuke
-- **tags**: [universal]
+- **tags**: [infra]
 - **when**: Compose で terminal の pinch-zoom `minScale` を `contentWidth` から算出する時
 - **how**: `Text.onTextLayout` の viewport 制約済み幅ではなく `TextMeasurer` などの非制約測定を使え
 - IF Compose で terminal の pinch-zoom `minScale` を `contentWidth` から算出する時 THEN `Text.onTextLayout` の viewport 制約済み幅ではなく `TextMeasurer` などの非制約測定を使え BECAUSE viewport 幅に丸められると `minScale=1.0` に固定され、実機で desktop view へ入れなくなる。
@@ -2186,7 +2186,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-13
 - **出典**: cmd_874
 - **記録者**: sasuke
-- **tags**: [universal]
+- **tags**: [lesson]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-03-13
 - 教訓IDをproject非考慮で集計すると注入回数・有効率・退役判定が別PJ間で相互污染する。cmd_874で検出:同一IDの20組が両PJで同一退役理由。file_missing判定もinfra root基準固定で外部PJパスを誤判定。自動淘汰ロジックでは特に致命的
@@ -2285,7 +2285,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-15
 - **出典**: cmd_957
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [git]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある
 - dm_signal_decisions名義にauto-ops/確定申告の裁定が混入していた(cmd_957)。正本突合を速く正確にするには内容種別だけでなく『このobsは当該entity/projectの知識か』を最初に切り分ける必要がある。
@@ -2321,7 +2321,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-16
 - **出典**: cmd_972（殿直接指摘で撤去）
 - **記録者**: shogun
-- **tags**: [infra, universal]
+- **tags**: [gate, hook, testing]
 - **when**: 外部記事・ベストプラクティスからHook/ゲートを新規導入する場合
 - **how**: 既存のGATEシステム（cmd_complete_gate.sh）との重複チェックを必須化。即時フィードバック（PostToolUse）は補完関係、完了時チェック（Stop）は重複の可能性大
 - cmd_969〜972でHarness Engineering記事の手法を取り込んだ際、Stop Hookで全batsテスト(299件)をフル実行するゲートを追加した。結果: (1)22分ハングで全エージェントが停止不能 (2)将軍・家老も巻き込まれた (3)既存のcmd_complete_gate.shと完全に重複。**外部記事の推奨を取り込む前に「既存インフラで同じことをやっていないか」を確認せよ。** PostToolUse Hook（即時フィードバック）はGATEシステムと層が違うので有用だが、Stop Hook（完了時チェック）はGATEと同じ層であり重複する。stop_hook_inbox.sh（inbox未読チェック+report欠如チェック）も同様に既存GATEと重複するため未接続のまま削除。
@@ -2410,7 +2410,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-16
 - **出典**: /tmp/mcas_usage_status_cache_*が壊れるとCodexだけでなくClaude側も表示不能になる連鎖障害が発生した
 - **記録者**: キャッシュ破損時はrm /tmp/mcas_usage_status_cache_*で復旧。usage_status.shの障害切り分けではキャッシュ確認を最初に行え
-- **tags**: [universal]
+- **tags**: [tmux]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: usage_status.shの障害切り分けではキャッシュ確認を最初に行え
 - usage_status.shのキャッシュ破損は全CLI(Claude含む)の使用量表示を停止させる
@@ -2463,7 +2463,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-18
 - **出典**: cmd_1041
 - **記録者**: saizo
-- **tags**: [universal]
+- **tags**: [infra]
 - **when**: field_deps.tsvのようなログ追記専用ファイルにはローテーション設計を初期実装時に
 - **how**: 2026-03-18
 - field_get.shの_field_get_log()がfield_deps.tsvに無条件追記し続け5.3MB/40K行に肥大。 ログ系ファイルを新設する際は、初期実装時にサイズ上限+ローテーションを組込む設計を標準とすべき。 rotate_log.sh(10MB/5世代)のパターンが既に存在するため流用可能。
@@ -2490,7 +2490,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-18
 - **出典**: cmd_1046
 - **記録者**: saizo
-- **tags**: [universal]
+- **tags**: [bash, testing]
 - **when**: デフォルト値return時は
 - **how**: 2026-03-18
 - 関数がデフォルト値をechoしつつreturn 1する設計は、set -euo pipefailの呼び出し元でクラッシュする。デフォルト値を返すならreturn 0が正しい。
@@ -2826,7 +2826,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-23
 - **出典**: cmd_1277
 - **記録者**: kagemaru
-- **tags**: [universal]
+- **tags**: [hook, testing]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-03-23
 - batsテスト名にskipが含まれるとPostToolUse hookがSKIP検出と誤判定する。hookはTAP出力の ok N (hash) skip パターンのみをカウントすべき。
@@ -3096,7 +3096,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-30
 - **出典**: cmd_1528
 - **記録者**: kotaro
-- **tags**: [universal]
+- **tags**: [infra]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: GP採番時にIDユニーク性を保証する仕組み(例: gunshi_log_append.shで既存ID重複チェック)が必要
 - GP-125がFoFログ詳細化とWAバリデーション強化の完全別提案を同一IDで共有。GP-113/GP-114/GP-126も進化・派生で複数エントリ。GP採番時にIDユニーク性を保証する仕組み(例: gunshi_log_append.shで既存ID重複チェック)が必要
@@ -3267,7 +3267,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_005
 - **記録者**: kagemaru
-- **tags**: [universal]
+- **tags**: [infra]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-03-31
 - chronicle_metrics.shのparse_rowが5/6セル固定分岐で39行クラッシュ。タイトル/key_result内のパイプ文字(||)がセル数を増やすため。MM-DD形式の日付セルをアンカーに前後をスライスする方式に変更し全537行解析成功。構造化テキストのパースではセル数依存より不変パターン検出が堅牢。
@@ -3376,7 +3376,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: test_cmd
 - **記録者**: saizo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [lesson, testing]
 - **retired**: true
 - **retired_at**: 2026-03-31
 - **when**: テスト設計・実行・結果判定を行う時
@@ -3504,7 +3504,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_034
 - **記録者**: tobisaru
-- **tags**: [universal]
+- **tags**: [bash]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-03-31
 - sed -nで抽出した値が空文字の場合、後段の比較(==MISSING)に静かに不一致し処理がスキップされる。抽出直後に空文字チェック+exit1が必須。set -euoでは防げない(sedが正常終了するため)
@@ -3711,7 +3711,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_053
 - **記録者**: hayate
-- **tags**: [universal]
+- **tags**: [infra]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: section_c_detail()がsection_c()と同一matrixを内部構築していたが返却せず、呼出し元で再計算が必要だった
 - section_c_detail()がsection_c()と同一matrixを内部構築していたが返却せず、呼出し元で再計算が必要だった。内部データをraw_matrixとして返却する設計により重複計算を除去。他のsection関数群(section_a等)でも同パターン適用可能
@@ -3747,7 +3747,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_059
 - **記録者**: hayate
-- **tags**: [universal]
+- **tags**: [infra]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: JSONLへの追記順が時系列と一致する保証はなく、手動編集や非同期追記で新エントリがアーカイブされ古エントリが残るケースがある
 - conversation_retention.shのoverflow切り捨てがファイル内位置順で行われていた。JSONLへの追記順が時系列と一致する保証はなく、手動編集や非同期追記で新エントリがアーカイブされ古エントリが残るケースがある。MAX_ENTRIESで切り捨てる前にtimestampでソートすることで常に最新エントリの保持を保証。一般原則:位置ベースのスライスは論理順序と一致するか確認せよ。
@@ -3945,7 +3945,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_080
 - **記録者**: tobisaru
-- **tags**: [universal]
+- **tags**: [bash, testing]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 外部入力を受ける算術パラメータには必ず境界値クランプを入れるべき
 - make_barのpctが100超/負の場合にfilled/emptyが範囲外になり、forループの挙動が不正になる。set -euo pipefail環境では算術異常がスクリプト即終了に繋がるリスクもある。外部入力を受ける算術パラメータには必ず境界値クランプを入れるべき
@@ -3954,7 +3954,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_082
 - **記録者**: kagemaru
-- **tags**: [universal]
+- **tags**: [bash]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: ((var++))のgrepスキャンを定期実行すべき
 - switch_project.shのLine 62にL074と同一パターン存在。sent=0→((sent++))→式値0→exit 1→set -e即死で、PJ切替通知が最初の1エージェントしか届かない潜伏バグ。((var++))のgrepスキャンを定期実行すべき
@@ -3972,7 +3972,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_086
 - **記録者**: tobisaru
-- **tags**: [universal]
+- **tags**: [infra]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: aware/naive混在を許さない設計が必要
 - datetime.now(timezone(timedelta(hours=9)))でaware cutoffを作り、fromisoformat()でnaive dtを解析すると、比較時にTypeErrorが発生。except (ValueError, TypeError)で握り潰されるため、TZなしエントリは永久にアーカイブされないサイレントバグとなる。aware/naive混在を許さない設計が必要。
@@ -3999,7 +3999,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_085
 - **記録者**: kotaro
-- **tags**: [universal]
+- **tags**: [bash, testing]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-03-31
 - set -euo pipefailスクリプトでgrep|sed パイプラインを使いフィールド未存在時にgrepが1を返すとpipefailで即終了する。grep結果を変数に受け(||true付き)空なら早期returnする2段階方式が安全
@@ -4026,7 +4026,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_092
 - **記録者**: tobisaru
-- **tags**: [universal]
+- **tags**: [bash, maintenance]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する
 - awkのEND{print>stderr}で更新カウントを外に渡す際、/tmp/固定ファイル名を使うと並列実行時に上書き競合が発生する。mktemp一意ファイルで受けるか、コマンド置換でstderrをキャプチャすべき。infraスクリプト全般に適用可能。
@@ -4053,7 +4053,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_090
 - **記録者**: saizo
-- **tags**: [universal]
+- **tags**: [bash]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化
 - workaround_pattern_resolve.shで2回のsed -iで2行挿入していた。1回目成功+2回目失敗時、resolved_at行のみ残り、冪等チェック(resolved_at存在確認)が永久に解決済みと判断→fix_cmd_id欠損が永続化。awk単一パス+tmpfile+mvの原子的書込みで構造的に排除。一般原則: 複数行の追記が1レコードを構成する場合、個別sed -iではなく単一パス(awk/perl)+mvで原子性を確保すべき
@@ -4110,7 +4110,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-01
 - **出典**: cmd_training_L4_R3
 - **記録者**: kotaro
-- **tags**: [universal]
+- **tags**: [bash]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 特にダッシュボード等の定期実行スクリプトでは累積効果が大きい
 - ループ内でgrepを繰返すパターンは、ループ前にdeclare -A + whileロードで連想配列化すればO(n*m)→O(n+m)に削減できる。特にダッシュボード等の定期実行スクリプトでは累積効果が大きい
@@ -4189,7 +4189,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-02
 - **出典**: gunshi_self_drive
 - **記録者**: gunshi
-- **tags**: [universal]
+- **tags**: [communication, reporting]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行
 - inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行
@@ -4199,7 +4199,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_training_L4_R21_saizo
 - **記録者**: saizo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash, communication, yaml]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 今回も overflow compaction 時に inbox レコードが癒着したため、呼出側で明示的に改行を戻して T-008 と T-009 で再発防止を確認した
 - 関数出力を command substitution で受けると末尾改行が落ちる。今回も overflow compaction 時に inbox レコードが癒着したため、呼出側で明示的に改行を戻して T-008 と T-009 で再発防止を確認した。
@@ -4209,7 +4209,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_training_L4_R22_test_hayate
 - **記録者**: hayate
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [maintenance, yaml]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-02
 - archive cmd YAML は `commands.<cmd_id>.project/status` のネスト形で保存される。トップレベル `project:` を前提にした軽量regexはローカルfixtureでは通っても本番アーカイブで recent cmd 検出を静かに失敗させる。先頭行だけを走査する軽量抽出でも、実運用のネストとインデントを前提に設計すべきである。
@@ -4219,7 +4219,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_training_L4_R23_tobisaru
 - **記録者**: tobisaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [gate, reporting, yaml]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 一般原則: 同一スクリプト内で同じファイルを複数箇所で読む場合、初回読込結果をキャッシュせよ
 - gate_report_autofix.shの4つのFix(20,14,6,19)が各々try/except内でタスクYAMLをopen+yaml.safe_loadしていた。各回~10ms×4=~40msで全体の40%。キャッシュdict+ヘルパー関数で1回読込に集約。一般原則: 同一スクリプト内で同じファイルを複数箇所で読む場合、初回読込結果をキャッシュせよ
@@ -4229,7 +4229,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1738
 - **記録者**: saizo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [infra]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-04
 - Python の word-boundary regex は Unicode 単語境界として振る舞うため、cmd_1736を のように日本語隣接では cmd_1736 を抽出できない。ASCII識別子抽出では明示 lookaround を使うべし。
@@ -4238,7 +4238,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-05
 - **出典**: gunshi_S6_compound
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [review]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: review_logヘッダに原理1行追加(L6-8)
 - cmd_1741でSQL一括をAPPROVEしDB毎回接続の負の複利を見逃した。Foundation Cacheを自分で設計したのに次cmdで活用チェックしなかった。根因: 因果推論が実装選択の繰り返し効果を追跡していなかった。review_logヘッダに原理1行追加(L6-8)。過去5cmd遡及テストで12件の負の複利を全て検出
@@ -4247,7 +4247,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-05
 - **出典**: gunshi_S6_principle
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [gate]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決
 - compound_chain見逃しに30行gate追加(c3d323f)→将軍は既存q5に1行追加で解決。各論パッチは問題ごとに増殖し複雑化。原理を既存の1箇所に埋め込めば未来の全類似問題に対応。gate revert(8812148)+review_logヘッダ1行。殿:原理にたどり着けばすべてに対処できる
@@ -4257,7 +4257,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1758
 - **記録者**: hanzo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [git, hook, reporting, testing]
 - **when**: 報告YAMLやレビュー結果を作成・検証する時
 - **how**: 2026-04-06
 - Guard1がコミットメッセージ内のno-verifyやHUSKY等の文字列に反応しcommitをブロック。pre-commitフック(GP-136)もテストスクリプト内のyaml_dump文字列を検知。対策:テストでは動的文字列構築、報告/コミットメッセージではトリガー文字列を言い換え
@@ -4267,7 +4267,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_precheck_consolidate
 - **記録者**: tobisaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: IS_DM_SIGNAL=0/1のフラグ値、FILES_MODIFIEDのマルチライン、BINARY_CHECKS_MSGの日本語文字列全て正常動作を確認
 - 複数python3 -c呼出をengine.pyに統合する際、shlex.quote出力+eval方式で文字列/マルチライン値を安全にbash変数に展開できる。REPO_ROOT配下のquote済み変数はeval安全。IS_DM_SIGNAL=0/1のフラグ値、FILES_MODIFIEDのマルチライン、BINARY_CHECKS_MSGの日本語文字列全て正常動作を確認
@@ -4277,7 +4277,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_gate_double_grep
 - **記録者**: hanzo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: awk内でexit 0を呼んでもEND{if(p)exit 1}が実行され上書きされる
 - awk内でexit 0を呼んでもEND{if(p)exit 1}が実行され上書きされる。対策: found変数(found=1;exit)+END{if(!found)exit 1}で成功フラグを明示的に管理。p変数をENDで参照すると常に真になるため誤検知が発生する
@@ -4287,7 +4287,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_vercel_false_positive
 - **記録者**: kotaro
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [gate, testing]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 修正: config/projects.yaml動的読込+外部リポ全滅時のSKIPロジック
 - gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正: config/projects.yaml動的読込+外部リポ全滅時のSKIPロジック。同様のgate設計時は常にprojects.yamlから動的取得し、環境依存の参照はSKIP扱いにすること。
@@ -4297,7 +4297,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_deploy_yaml_speedup
 - **記録者**: kagemaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash, yaml]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-07
 - yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑なPythonブロックを全bashに書き換えずに済む。単純なフィールド取得(RESOLVE_PY)はawkで置換可能。
@@ -4306,7 +4306,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-07
 - **出典**: cmd_1783
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [gate, review]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: q5は検証ソースを明示するフィールドのため設計書参照の一次情報となる
 - cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準にする方が信頼性が高い。q5は検証ソースを明示するフィールドのため設計書参照の一次情報となる。軍師補足で指摘され半蔵が実装済み。cmd_save.shのAC3検知ロジックに適用
@@ -4326,7 +4326,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_karo_fix_precommit_comment
 - **記録者**: gate_auto
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [gate, git, lesson]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-08
 - draft教訓12件が未査読のままGATE到達
@@ -4336,7 +4336,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_karo_fix_gate_split_loop
 - **記録者**: kagemaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash, cmd_lifecycle, deploy, gate, maintenance, reporting]
 - **when**: タスク配備やデプロイ手順を変更・実行する時
 - **how**: cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresult空欄が誤BLOCKを招く
 - cmd_complete_gate.shのbinary_checks AWKは全ACを検証する設計だったが、分割配備（一部ACのみ担当）では担当外ACのresult空欄が誤BLOCKを招く。assigned_acsをawk -vで渡しグループ単位でスキップするのが正解。commitグループは常にチェック対象にする必要があるため特別扱いが必要。
@@ -4345,7 +4345,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-08
 - **出典**: cmd_gunshi_ruling_20260408
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [review]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は軍師が直接修正してよい
 - 殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は軍師が直接修正してよい。修正後に家老がレビューする。鎖(軍師修正→家老レビュー)が切れなければF-G05の原理に違反しない。見つけた問題に必ず行動を紐付ける(REQUEST_CHANGESまたは直接修正)。注記で流さない。根因: ルールの字面に従い原理(鎖を切るな)で判断しなかった。原理準拠=保護対象を守る最善手を選ぶこと
@@ -4355,7 +4355,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_karo_fix_stale_reset
 - **記録者**: kagemaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash, deploy]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、cmd未発見(return 1)時にstaleフィールドが残留する
 - deploy_task.shのresolve_cmd_to_task()でSTALE_FIELD_RESET_PYがawk成功後にのみ実行される構造だったため、cmd未発見(return 1)時にstaleフィールドが残留する。修正: STALE_RESET処理をawk呼出し前に移動。原則: taskファイルのクリーンアップは状態解決の依存を持ってはならない
@@ -4374,7 +4374,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-08
 - **出典**: cmd_1800
 - **記録者**: kotaro
-- **tags**: [universal]
+- **tags**: [git]
 - **when**: 復元コミットでenum値変更リスク — 削除→復元時は
 - **how**: 復元後はgit diff HEAD~2..HEAD -- fileで元コミットとの差分確認が必須
 - commit復元時にファイル内容が元と異なる場合がある。462ea2eでlog_terminal_input.shのdirection inbound→promptに変更が長期未検出。unit testも同時復元されると整合が取れて検出不能になる。復元後はgit diff HEAD~2..HEAD -- fileで元コミットとの差分確認が必須。
@@ -4385,7 +4385,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: hanzo
 - **status**: retired
 - **retired_reason**: .gitignore glob化(973349e)で根因消滅。scripts/もglob対応済み
-- **tags**: [universal]
+- **tags**: [git]
 - **when**: whitelist型.gitignoreではスクリプト追加時に
 - **how**: .gitignoreに!パス エントリを追加しないとgit add/commit対象にならずCIでファイル不在扱いになる
 - whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。.gitignoreに!パス エントリを追加しないとgit add/commit対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること。
@@ -4395,7 +4395,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_root_fixes
 - **記録者**: hayate
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [cmd_lifecycle, gate, git]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: dashboard.md は AUTO域マーカー欠落の修正対象だったが、.gitignore:7 の * により未追跡/ignore対象だった
 - dashboard.md は AUTO域マーカー欠落の修正対象だったが、.gitignore:7 の * により未追跡/ignore対象だった。local修正と scripts/dashboard_auto_section.sh の正常実行は達成できても、report templateの commit binary_check は yes にできず verdict PASS と両立しない。dashboard系修正タスクでは deploy時に ignore対象検知と commit不要扱い、または対象ファイル側の追跡方針見直しが必要。
@@ -4406,7 +4406,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: kotaro
 - **status**: retired
 - **retired_reason**: .gitignore glob化(66a87ab)でcontext/*.mdが追跡対象に。git log使用可能
-- **tags**: [universal]
+- **tags**: [context, git]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: git log使用可能
 - context/*.mdはwhitelist.gitignoreにより未追跡。git log -- context/gunshi-*.mdは何も返さない。last_updated日付にgit commit日を指定するタスクでは、gitignoreファイルは作業実施日(2026-04-09)を代用すること。同パターンのcontextファイルは全て同様。
@@ -4415,7 +4415,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-09
 - **出典**: cmd_root_fixes
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [git]
 - **when**: whitelist型.gitignoreではスクリプト追加時に
 - **how**: !パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱いになる
 - whitelist型.gitignoreではファイルをローカルに作成しただけでは不十分。!パスエントリを追加しないとgit追跡対象にならずCIでファイル不在扱いになる。scripts/追加時は必ずgitignoreのscripts/ブロックに行追加すること
@@ -4424,7 +4424,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-09
 - **出典**: cmd_karo_ci_fix
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [bash, deploy, testing]
 - **when**: deploy_task.sh source追加時は
 - **how**: deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリストも同時更新必須
 - deploy_task.shに新規source行を追加する際はテストスキャフォールド(deploy_task_scaffold.bash)のsymlinkリストも同時更新必須。CI環境ではscaffoldがtmpにプロジェクトを再構成するため、source対象ファイルがsymlink未登録だとsetup_file失敗→テストスキップ→CI赤。cmd_save系テストでも抽出関数がFIREFIGHTING_PATTERN等の外部変数を参照する場合、テストsetup_fileでsource+exportが必要
@@ -4434,7 +4434,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1811
 - **記録者**: hanzo
 - **status**: rejected (L457と同一パターン)
-- **tags**: [universal]
+- **tags**: [git]
 - **when**: 新規ファイル追加時は
 - **how**: .gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される
 - .gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される。L457と同じパターン。新規Kotlinファイル追加時は.gitignoreへの!パス追記も実装の一部として意識する必要がある。
@@ -4444,7 +4444,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1814
 - **記録者**: kagemaru
 - **status**: dismissed
-- **tags**: [universal]
+- **tags**: [git]
 - **dismiss_reason**: L457/L459と同一パターン(gitignore whitelist)。軍師register_recommended:false。重複登録不要
 - **when**: ShogunScreen.ktはgitignore whitelist未登録だった — 新規UIファイル追加時は
 - **how**: android/ui/配下の新規Kotlinファイル追加時は.gitignoreに!パスエントリを追加することが実装の一部として必要
@@ -4456,7 +4456,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: hanzo
 - **status**: dismissed
 - **dismiss_reason**: L463として統合登録済み
-- **tags**: [universal]
+- **tags**: [infra]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: Android公式推奨はenableEdgeToEdge()使用時、imePadding()をコンテンツ側のColumnに置く設計(https://developer.android.com/develop/ui/compose/layouts/insets)
 - MainActivity.ktのNavigationBarにimePadding()を適用したため、キーボード出現時にNavBarがキーボード上に浮く視覚バグが発生。Android公式推奨はenableEdgeToEdge()使用時、imePadding()をコンテンツ側のColumnに置く設計(https://developer.android.com/develop/ui/compose/layouts/insets)。おしお殿コードはimePadding()なしでデフォルトScaffold動作に委ねており正しい。修正: (1)NavigationBarからimePadding()削除 (2)ShogunScreen/AgentsScreen PaneFullScreenのColumnにimePadding()追加
@@ -4467,7 +4467,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **記録者**: kotaro
 - **status**: dismissed
 - **dismiss_reason**: L463として統合登録済み
-- **tags**: [universal]
+- **tags**: [infra]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: enableEdgeToEdge()使用時、imePadding()をNavigationBar(Scaffold bottomBar)に配置するとIME insetsが早期消費され、後続ContentColumnのimePadding()が無効化される
 - enableEdgeToEdge()使用時、imePadding()をNavigationBar(Scaffold bottomBar)に配置するとIME insetsが早期消費され、後続ContentColumnのimePadding()が無効化される。さらにNavigationBarの高さが動的変化しジャンプが発生。公式推奨: imePadding()はScaffold content lambda内のColumnへ(https://developer.android.com/develop/ui/compose/system/insets#ime)。cmd_721はNavigationBar.imePadding削除まで正しかったが、InputRowではなくColumnレベルに追加すべきだった。
@@ -4476,7 +4476,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-09
 - **出典**: cmd_1815
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [infra]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: NavigationBarにはsystemBars insetsのみ使用
 - MainActivity.ktのNavigationBarにimePadding()を適用するとIME insetsが早期消費され後続ColumnのimePaddingが無効化される。Android公式推奨はimePadding()をコンテンツ側ColumnまたはBoxに配置すること。NavigationBarにはsystemBars insetsのみ使用。出典: developer.android.com/develop/ui/compose/layouts/insets。4回失敗(cmd_713/718/721/1810)の根本原因。
@@ -4485,7 +4485,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-10
 - **出典**: cmd_1829
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [reporting, tmux]
 - **when**: 報告YAMLやレビュー結果を作成・検証する時
 - **how**: 自分が報告した数字も確認対象
 - capture-paneの走行中タイミングは想像。metaファイル/ログが真実。kasoku_diff推定20min→meta実測5.7min(3.5倍過大推定)。自分が報告した数字も確認対象
@@ -4494,7 +4494,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-10
 - **出典**: cmd_1843
 - **記録者**: gunshi
-- **tags**: [universal]
+- **tags**: [testing]
 - **when**: テスト設計・実行・結果判定を行う時
 - **how**: cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM
 - cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。draft review時にLG002(並行配備衝突チェック)を道具磨きのテストACにも適用すべきだった。道具磨きcmdのACにテスト実行が含まれる場合、同一入力を使う並行cmdの有無を確認せよ
@@ -4504,7 +4504,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1851
 - **記録者**: hanzo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash, tmux]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-11
 - CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo)は通常pane_current_command=nodeだが、CLI死亡時はbash/zshに戻る。よってbash/zsh/sh判定で全CLI種別（claude/codex両方）をカバー可能。軍師補足から得た知見。
@@ -4513,7 +4513,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-13
 - **出典**: cmd_karo_mismatch_fix
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [deploy, reporting, yaml]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: cmd_karo_mismatch_fixで修正
 - 新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッションで10回以上処理。根因はninja_monitorのcheck_report_done_idle_mismatchがsnapshot上のreport cmd_idとtask YAMLのtask_idを照合していないため。cmd_karo_mismatch_fixで修正。L1464-1468にtask_id比較追加。
@@ -4523,7 +4523,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1885
 - **記録者**: hanzo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [gate, reporting, testing]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生
 - 忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAILが発生。gate_report_format.shにautofix pre-stepを組み込むことで手順依存を排除。GP-107 Q1-Q4全PASS確認済。
@@ -4532,7 +4532,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-13
 - **出典**: cmd_1885
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [gate, reporting, testing]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAIL発生
 - 忍者がautofix未実行のままgate_report_formatを実行するとverdictブランク等の機械的エラーでFAIL発生。gate_report_format.shにautofix pre-stepを組み込むことで手順依存を排除。GP-107 Q1-Q4全PASS確認済。FAIL率40.9%→22.7%。
@@ -4542,7 +4542,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1889
 - **記録者**: hayate
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [cmd_lifecycle, context, gate]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-13
 - `context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive projectのcontextだけを見る一方、`gate_context_freshness.sh` が `context/*.md` 全件走査のままだと、dashboard上の対象4件を更新しても別project/古文書のWARNでACが偽FAILになる。監視系は同一対象集合を共有すべし。
@@ -4551,7 +4551,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-15
 - **出典**: cmd_karo_gp190
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [gate, git, reporting]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 旧設計はscout_exempt=trueでもcommit checkを注入しresult:noを設定
 - 旧設計はscout_exempt=trueでもcommit checkを注入しresult:noを設定。gate_report_formatがresult:noをFAIL判定するためverdict_override(WA)が頻発。注入しない方が根本解
@@ -4561,7 +4561,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1903
 - **記録者**: hanzo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [context, git]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 次回以降 instructions/*.md を変更するcmdは git-ignored か事前確認が必要
 - instructions/shogun-procedures.md はgitignoreで !instructions/shogun.md等の個別許可リストに含まれず。変更はローカルのみ。次回以降 instructions/*.md を変更するcmdは git-ignored か事前確認が必要
@@ -4571,7 +4571,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1904
 - **記録者**: kagemaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash, gate, review, startup]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: 9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった
 - 9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数でも空文字として扱いエラーにならないため、archiveファイルのみで動作し不具合に気づきにくい。同一スクリプト内でも変数使用前に定義を確認すること。
@@ -4581,7 +4581,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1909
 - **記録者**: kotaro
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [lesson, yaml]
 - **when**: ac_assigned注入時は
 - **how**: awkで両形式を解析するパーサが必要
 - inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、field_get.shではac_assignedを取得できない。awkで両形式を解析するパーサが必要。
@@ -4591,7 +4591,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1910
 - **記録者**: hanzo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [cmd_lifecycle]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: dashboard_auto_section.shの_ARCH_TITLES_CACHE/_ARCH_CFC_CACHE/_ARCH_COUNT_CACHEが/tmp/固定名ファイルを使用
 - dashboard_auto_section.shの_ARCH_TITLES_CACHE/_ARCH_CFC_CACHE/_ARCH_COUNT_CACHEが/tmp/固定名ファイルを使用。テスト環境と本番環境でファイル数が一致すると誤ったキャッシュをHITし、context_freshness_check.shが誤データを参照。_proj_hash(PROJECT_DIRのcksum)をサフィックスに付与しプロジェクトスコープ化で解決。CTX_WARN_CACHE等は既にproj_hash分離済みだったが、arch cacheだけ漏れていた。
@@ -4601,7 +4601,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1911
 - **記録者**: tobisaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [git, hook, testing]
 - **when**: テスト設計・実行・結果判定を行う時
 - **how**: 2026-04-15
 - T-SCI-005はbackground sleep 0.05sでhookのinitial check完了前に書き込まれることがある。sleep値を短縮(0.01)すると悪化し、タイムアウト延長のみでは不十分。正解: background sleep(0.2s) >> hook startup時間(~0.05s)かつ << inotifywait timeout(1.0s)の関係を保つことで両端の競合を排除
@@ -4610,7 +4610,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-15
 - **出典**: cmd_karo_ci_fix_ga056
 - **記録者**: tobisaru
-- **tags**: [universal]
+- **tags**: [git, maintenance, testing, yaml]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: bats --jobs 8で並列実行時、テスト間で同一パスのファイル(/tmp/test_*.yaml等)を読み書きすると競合しランダムFAIL
 - bats --jobs 8で並列実行時、テスト間で同一パスのファイル(/tmp/test_*.yaml等)を読み書きすると競合しランダムFAIL。CI環境(GitHub Actions)でのみ再現。修正: mktemp or テスト名付きパスでper-test隔離。gate_report_format.shにenv var override追加で後方互換確保
@@ -4620,7 +4620,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_karo_ci_fix_ga056
 - **記録者**: tobisaru
 - **status**: reviewed
-- **tags**: [universal]
+- **tags**: [gate, testing]
 - **when**: テスト設計・実行・結果判定を行う時
 - **how**: QUEUE_FILE/gate_pass_cache/gate_fire_log等のテスト用共有ファイルをsetup_file()で1回のみ生成すると、--jobs 8並列実行時に複数テストが同時書き込み→後発の書き込みが前の内容を上書き→grep検索失敗→if ブロックスキップ
 - QUEUE_FILE/gate_pass_cache/gate_fire_log等のテスト用共有ファイルをsetup_file()で1回のみ生成すると、--jobs 8並列実行時に複数テストが同時書き込み→後発の書き込みが前の内容を上書き→grep検索失敗→if ブロックスキップ→期待出力なし→テスト失敗。修正: setup()でBATST_TEST_NUMBERやenv var経由でper-testファイルパスを生成する。
@@ -4629,7 +4629,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-16
 - **出典**: gunshi_codd_session_20260416
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [gate, lesson]
 - **when**: gate健全性を判定するなら
 - **how**: 回答率でなく有効率を計測せよ
 - gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入効果(before/after)の計測を全GP実装時に義務化すべき。IF gate健全性を判定するなら THEN 回答率でなく有効率を計測せよ BECAUSE 参照率は偽の健全性を示す(76%OK→実態26%)
@@ -4639,7 +4639,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1955
 - **記録者**: kagemaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash, testing]
 - **when**: テスト設計・実行・結果判定を行う時
 - **how**: || trueを追加することで解決
 - set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加することで解決。テスト環境(空のgate_metrics.log)が本番では現れない条件を先に検出した。
@@ -4648,7 +4648,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-16
 - **出典**: cmd_1955
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [bash, testing]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-16
 - set -o pipefailが有効なbashスクリプトでgrepがマッチ0件だとexit 1でスクリプト全体が異常終了する。grep pattern file || trueで保護が必須。gate_cycle_health.sh高速化cmd_1955影丸で発見。bashスクリプト全般に適用できる一般教訓
@@ -4678,7 +4678,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1973
 - **記録者**: kagemaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash, wsl2]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-16
 - model_switch_preflight.shが11パターンを別々にgrepし9.4s費やしていた。全パターンを単一正規表現に結合して1回のgrepにすることで0.76s(12.4x)に削減。WSL2では1ファイル読み込みのI/Oコストが支配的なためgrep呼出回数削減が最大の効果を持つ。
@@ -4688,7 +4688,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1976
 - **記録者**: tobisaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash, gate, performance, wsl2]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-16
 - gate_vercel_phase.sh高速化でawk 43回→1回の単一起動を試みたが、WSL2 /mnt/c上では逆にavg 1142msと遅化。原因: Windowsファイルシステム上で多数ファイルを一括でawkに渡すとWindows Defenderが一括スキャンを開始しI/O待ちが急増。per-file awk維持が正解。WSL2 /mnt/c最適化では「プロセス起動回数削減」より「I/Oアクセスパターン」が支配的な場合がある。
@@ -4698,7 +4698,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_1984
 - **記録者**: tobisaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [gate, maintenance, performance, startup, tmux, wsl2]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-16
 - gate_karo_startup.shでcapture-pane x6を並列化(subshell+tmpfile)したが37ms→35msのみ(-2ms)。WSL2のサブシェル起動コスト(~5ms/個x6=30ms)が並列化の利益と相殺。L485(awk並列統合の遅化)と同構造。WSL2 /mnt/c上ではサブプロセス起動コストが支配的なため、並列化よりも呼び出し回数削減が有効。
@@ -4718,7 +4718,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_karo_ci_fix_1987
 - **記録者**: kagemaru
 - **status**: approved
-- **tags**: [universal]
+- **tags**: [gate, maintenance, testing]
 - **when**: テスト設計・実行・結果判定を行う時
 - **how**: stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardown()が同一パスを操作しレースコンディションが発生した
 - stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardown()が同一パスを操作しレースコンディションが発生した。修正: 環境変数でオーバーライド可能にしテストからTEST_ROOT配下のパスを渡す。原則: テスト用副作用ファイルはTEST_ROOT/BATSの一時ディレクトリ内に収め/tmp固定パスを使わない。
@@ -4737,7 +4737,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_karo_gp210_fix
 - **記録者**: kagemaru
 - **status**: approved
-- **tags**: [universal]
+- **tags**: [communication, hook, maintenance]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 修正: 起動側で余分な環境変数を渡さずstop hookのデフォルトと同じパスを使わせる
 - restart_watchers.shがSHOGUN_STATE_DIR=/tmp/shogun_stateで起動→watcher=/tmp/shogun_state/shogun_idle_{agent}参照。Stop hookはデフォルト/tmpへ書込→パス不一致→[BUSY]常時→60秒遅延。修正: 起動側で余分な環境変数を渡さずstop hookのデフォルトと同じパスを使わせる
@@ -4766,7 +4766,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2042
 - **記録者**: hanzo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash, cmd_lifecycle, gate, yaml]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 実際のshogun_to_karo.yamlはcmd_xxx: (map key)形式を使用しており、全cmdがNOT FOUNDとなっていた
 - gate_yaml_status.shのawk(-v cmd_id)は'- id: cmd_xxx'形式のみ検索していた。実際のshogun_to_karo.yamlはcmd_xxx: (map key)形式を使用しており、全cmdがNOT FOUNDとなっていた。修正: awk内でmap key形式も検出するよう両方対応。バグ修正と速度改善を同時実施
@@ -4776,7 +4776,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2055
 - **記録者**: kagemaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash, gate, performance, wsl2]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-18
 - grep→rg置換でgrep単独は256ms→112ms(-56%)改善。しかしWSL2のブロック解析(while IFS read+bash正規表現)が~400ms以上費やすため全体スクリプト(578ms→576ms)の改善は誤差範囲。高コストなブロック解析をawk化すれば大幅改善が見込める。
@@ -4786,7 +4786,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2064
 - **記録者**: hanzo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [communication, reporting]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: string ops置換パターン: _self=BASH_SOURCE[0]; not_abs→PWD prefix追加; SCRIPT_DIR=strip /scripts/xxx.sh suffix
 - report_field_set.sh/inbox_write.shのSCRIPT_DIRとSELF_SCRIPT_PATHで subshell(dirname/cd+pwd/basename)を使っていた。string ops置換パターン: _self=BASH_SOURCE[0]; not_abs→PWD prefix追加; SCRIPT_DIR=strip /scripts/xxx.sh suffix。SELF_SCRIPT_PATH 3 subshells 3.1ms/call削減、SCRIPT_DIR fallback 1.85ms/call削減。WSL2で固定パスの既知スクリプトに有効。
@@ -4796,7 +4796,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2063
 - **記録者**: kagemaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [gate, maintenance, performance, reporting, wsl2]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-18
 - cmd_2038の計測は/tmpディレクトリで行われており実測71ms。しかし実運用ディレクトリ/mnt/c/tools/multi-agent-shogunでは同一スクリプトが148ms。WSL2のWindows FSオーバーヘッドがpython3プロセス起動コストを倍増させる。コスト削減はプロセス数削減で初めて実効性を持つ。
@@ -4806,7 +4806,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_karo_ci_fix_571
 - **記録者**: kagemaru
 - **status**: approved
-- **tags**: [universal]
+- **tags**: [bash, git, performance, testing]
 - **when**: テスト設計・実行・結果判定を行う時
 - **how**: テストでexport PATH=$MOCK_BIN:$PATHを設定してもbash -lcサブシェルで無効化される
 - bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport PATH=$MOCK_BIN:$PATHを設定してもbash -lcサブシェルで無効化される。CI環境はtmuxが非インストールのためMOCK_BINのモックが必要だが機能せず失敗。bash -cに変更で解決。ローカル実行は実tmux存在で発現しない。
@@ -4816,7 +4816,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_karo_ci_fix_2066
 - **記録者**: kotaro
 - **status**: approved
-- **tags**: [universal]
+- **tags**: [bash, testing, yaml]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: yaml_field_set.shはmap_scalar→list→root fallbackの3段階を経るが各段階はexit 2で通知する
 - yaml_field_set.shはmap_scalar→list→root fallbackの3段階を経るが各段階はexit 2で通知する。set -euo pipefail環境から呼ぶとmap_scalarのexit 2がset -eを発火させ後段のfallbackに到達しない。rc=0;cmd||rc=$?パターンで解決
@@ -4826,7 +4826,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_karo_ci_fix_568
 - **記録者**: tobisaru
 - **status**: approved
-- **tags**: [universal]
+- **tags**: [gate, maintenance, testing]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: bats --jobs 8の並列実行でsetup()がglobでtmpファイルを削除するとcatが失敗する可能性
 - gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats --jobs 8の並列実行でsetup()がglobでtmpファイルを削除するとcatが失敗する可能性。L488/L489と同じ構造。対策: TEST_ROOTベースのパス or MKTEMPのprefixをglobに含めない形で独立させる
@@ -4836,7 +4836,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2075
 - **記録者**: kagemaru
 - **status**: approved
-- **tags**: [universal]
+- **tags**: [bash, hook, testing]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: '# skip'パターンを明示的に追加する必要がある
 - **retired**: true
@@ -4858,7 +4858,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2090
 - **記録者**: hayate
 - **status**: approved
-- **tags**: [universal]
+- **tags**: [bash, context, gate, wsl2]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-18
 - gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file awk を何十回も起動する固定費が重い。存在判定キャッシュは維持しつつ、抽出だけを rg 一括へ寄せると大きく縮む。
@@ -4868,7 +4868,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2081
 - **記録者**: tobisaru
 - **status**: approved
-- **tags**: [universal]
+- **tags**: [cmd_lifecycle, codd, gate, performance]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja gate実行)で毎回キャッシュミスし980msブロック
 - CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja gate実行)で毎回キャッシュミスし980msブロック。この問題はmy fix前から存在。before 200msのspec計測は軽量環境(gate_log小)での値。同環境interleaved比較が唯一公正な手法。Fix実施後の同環境比較: 330ms→220ms(-33%)
@@ -4888,7 +4888,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_karo_ci_fix_cli_lookup
 - **記録者**: hayate
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash, performance, tmux, yaml]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-18
 - cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser で次 section を探すときに空行で break すると codex/copilot など後続 section が見えなくなるため、trim 後の空行と comment-only 行は continue で飛ばす。
@@ -4898,7 +4898,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2084
 - **記録者**: saizo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash, reporting, testing, wsl2, yaml]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 大きなロジック変更の前に実行器差分を先に測るべし
 - report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML 走査では、挙動を変えず gawk→mawk 優先に切り替えるだけで ready path median 0.11s→0.08s(-27.3%)。大きなロジック変更の前に実行器差分を先に測るべし。
@@ -4908,7 +4908,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2085
 - **記録者**: kagemaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [gate, maintenance, reporting]
 - **when**: archive_completed.shやreport/gate走査のキャッシュを設計し、入力ファイル集合が処理中に移動・削除され得る時
 - **how**: キャッシュキーに件数だけを使わず、archive_reports後のファイル集合変化を実測してからTTLキャッシュまたは外部index化を選ぶ
 - archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2 NTFSの個別[ -f ]チェック(~7ms/件)の根本問題は解決できていない。TTLキャッシュまたはqueue/gates外部index化が真の解決策。
@@ -4918,7 +4918,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2086
 - **記録者**: hanzo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [wsl2, yaml]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: Python GILも追加制約
 - 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GILも追加制約。解決策: キャッシュで同一データの繰り返しアクセスを排除(95.5%削減)。並列化はWSL2 NTFSでは逆効果
@@ -4937,7 +4937,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-04-18
 - **出典**: gunshi_session_20260418
 - **記録者**: karo
-- **tags**: [universal]
+- **tags**: [gate, review, startup, testing]
 - **when**: gate_cycle_health/gate_gunshi_startup等の学習ループ健全性メトリクスを設計・レビューする時
 - **how**: gate数など入力指標ではなく、gate_fire_logのFAIL件数や再発防止数のような出力指標で健全性を判定する
 - gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check 11に自動計測埋込み済み
@@ -4947,7 +4947,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2092
 - **記録者**: hanzo
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [bash, gate, performance, testing, wsl2]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-04-18
 - **retired**: true
@@ -4959,7 +4959,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **出典**: cmd_2091
 - **記録者**: kagemaru
 - **status**: confirmed
-- **tags**: [universal]
+- **tags**: [gate, insight, performance]
 - **when**: insight dedup: count変動時に
 - **how**: 2026-04-18
 - **retired**: true
@@ -8305,3 +8305,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - 因果辺の[[link]]参照668/669がdeclared concept_idに一致しない。origin/depends_onで使われるcmd_XXX/殿裁定/LS-教訓が全て浮遊ノード。files_modified→concept推論とNO_MATCH仮concept生成で解決可能。
+
+### L820: Phase3: BFS影響ノード列挙→実行を分離実装する際は『実行ロジック追加』を別ACで明示しないと列挙止まりで完了扱いになる
+- **日付**: 2026-06-18
+- **出典**: cmd_3442
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality,testing,bash]
+- **target_files**: [scripts/cmd_complete_gate.sh]
+- **origin**: [[cmd_3442]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3438でsemantic_causal_traverse.shの統合実装時、影響ノードをJSON出力するところまで実装して完了と判断。test_scripts実行ロジックが未実装のまま洗脳監査まで発覚しなかった(2日後)。根因: AC設計で『列挙』と『実行』が同一ACに混在。分離すればbinaryチェックが機能する。
