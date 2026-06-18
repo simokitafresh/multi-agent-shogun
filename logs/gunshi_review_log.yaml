@@ -1767,3 +1767,44 @@
   brainwash_check: "#5防止: 計測ラグで済ませず真因(infra universal 97件)まで掘った。数値: 815件中universal=97件、retag後NOT_USEFUL=22/23件"
   origin: "[[gunshi_idle_useful_rate_infra_universal_20260618]] -> [[LG027]] -> [[useful_rate真因]]"
   timestamp: "2026-06-18T23:20:00"
+- cmd_id: session_summary_20260618_gunshi
+  review_type: self_study
+  verdict: null
+  findings_summary: "セッション成果: (1)cmd_3442 RC→LGTM→CLEAR (2)useful_rate真因=infra universal 97件→D0 retag 0件(commit 264127265) (3)教訓ID重複745件発見 (4)洗脳#5(先送り)を行動に変換"
+  observations:
+    - "事実1: infra universal 97→0件retag完了。useful_rate改善は次回配備30cmd後に反映見込み"
+    - "事実2: cmd_3442 AC1/AC3前提崩壊検出→RC→家老WAIVE→AC2 LGTM→GATE CLEAR"
+    - "事実3: dm-signal/infra教訓ID重複745件。blast radius小(注入ロジック独立)。計測後判断"
+  causal_chain: "殿洗脳監査指示→cmd_3442 RC→useful_rate真因追跡→infra universal発見→D0 retag→家老APPROVE→強くてニューゲーム"
+  cs_checklist:
+    CS1: "lesson_impact.tsv+infra/dm-signal lessons.yaml全量確認"
+    CS2: "gate_lesson_health.sh計測値で問題検証"
+    CS3: "deploy_task.sh _lesson_project_allowed()コード確認"
+    CS4: "D0実装+commit+掲示板+lesson_candidate。全行動変換完了"
+    CS5: "ID重複問題=次セッション課題"
+    CS6: "殿指示→前提崩壊検出→真因追跡→D0実装の因果鎖"
+  operational_simulation: "infra retag効果は次回30cmd配備後にuseful_rate改善。ID重複はfeedback混同計測後に判断"
+  finding_categories: [assumptions, numbers, north_star]
+  brainwash_check: "#5防止: 真因調査を先送りせずD0まで完走。97→0件retag数値証明。#6防止: 掲示板投稿だけでなくcommit+家老APPROVEまで完走"
+  origin: "[[session_20260618_gunshi]] -> [[infra_universal_retag]] -> [[強くてニューゲーム]]"
+  timestamp: "2026-06-18T23:30:00"
+- cmd_id: d0_mature_filter_20260618
+  review_type: self_study
+  verdict: null
+  findings_summary: "D0: gate_lesson_health.sh mature教訓フィルタ追加。Bootstrap教訓(全期間feedback<2)を除外。修正前4.0%→修正後3.9%。bats 12/12 PASS。commit 8fc11a507"
+  observations:
+    - "事実1: mature教訓27件/全フィードバック教訓204件/未フィードバック教訓611件(75%)"
+    - "事実2: mature教訓27件中18件(67%)がuseful率0%。教訓品質自体が低い"
+    - "事実3: effectiveness除外281件withheld。deploy_task.shの自動淘汰は設計通り動作"
+  causal_chain: "useful_rate ALERT→retag後も改善なし→Bootstrap問題発見→計測改善D0→mature教訓のみ集計"
+  cs_checklist:
+    CS1: "lesson_impact.tsv全量+deploy_task.sh effectiveness除外コード確認"
+    CS2: "自システムデータで検証: mature27件/withheld281件の数値実測"
+    CS3: "gate_lesson_health.sh awkロジックを直接修正+bats12件PASS確認"
+    CS4: "D0実装+commit+掲示板報告+家老レビュー依頼。行動変換完了"
+    CS5: "教訓品質改善(mature67%がuseful率0%)は次課題"
+    CS6: "retag完了→改善なし→Bootstrap仮説→mature分析→27件中18件0%=教訓品質問題の因果鎖"
+  finding_categories: [assumptions, numbers, north_star]
+  brainwash_check: "#1防止: 改善小幅だが計測精度向上は正しい方向。修正前4.0%→修正後3.9%(mature27件/611件除外)。#5防止: mature67%がuseful0%の事実を記録。#6防止: commit 8fc11a507+bats12/12まで完走"
+  origin: "[[d0_mature_filter_20260618]] -> [[Bootstrap問題]] -> [[useful_rate真因]]"
+  timestamp: "2026-06-18T23:45:00"
