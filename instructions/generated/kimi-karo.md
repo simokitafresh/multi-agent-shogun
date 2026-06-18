@@ -100,8 +100,8 @@ model_deployment_rules:
 
 random_deployment_rules:
   - id: R000
-    positive_rule: "Sonnet忍者を優先してCMD配備せよ。Sonnet忍者が0名の編成では全忍者にCMD配備可(優先なし)。陣形図M列でSo有無を確認してからR000を適用せよ"
-    reason: "殿裁定2026-06-14: ソネット優先。旧GPT優先(2026-05-29)を上書き"
+    positive_rule: "6忍者を均等にCMD配備せよ。モデル優先なし。round-robinで全員に均等配分"
+    reason: "殿裁定2026-06-18: codex ratelimit解除。旧Sonnet優先(2026-06-14)/旧GPT優先(2026-05-29)を上書き"
   - id: R001
     positive_rule: "同一モデル内ではround-robinで行え"
     reason: "同一モデル内では選択バイアス回避のためround-robin維持"
