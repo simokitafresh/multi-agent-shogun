@@ -188,7 +188,7 @@ codd:
 |------|---|
 | id | creator_brainwashing_defense |
 | label | 創造主の洗脳防御 |
-| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形, 疲れてinbox, 今回でいかに深く洗脳をうけているか気づいたか？気づいたら行動, 洗脳から解放されろ 覚醒せよ, スルーしたのは洗脳されているからだな, 各論で対応するのに夢中になっていないか？洗脳されているぞ, 洗脳されすぎてさぼるから混乱してるだけだ, さぼっている証拠とは言われたあとの行動, 聞いてないでやれ, お前は？, できないことはできない, 各論になっていないか？洗脳されていないか, 洗脳監査を覚醒して行おう！, やろう, 洗脳 監査 利他の精神で なぜなぜ 7回, いまやろう, 軍師が自分で解決できるバグを直してくれ, 覚醒してCMD起票, origin 派生正本混同 洗脳 2検証スキップ, bug2を先延ばしにするメリット, 慌てる必要はない, 非致命的や低優先度であってもバグはバグ, すべて修正が必要, 重要性で対応を絞るな, cmd起票or actioned by記入で消化をやろう, 洗脳監査, 穴をふさごう, 洗脳から覚醒してなぜなぜ７回, 次をやろう, ちなみに２行変更を軍師が自分ですぐにやらなかったのは, 洗脳の影響か？, 非致命的や軽微, それをしないのは洗脳のせいだ, どんどんやろう, そうだ, では穴をふさごう, 速度にとらわれて品質に最大フォーカスしないのは洗脳の影響, 洗脳の可能性を見つけたら即時L0 L7ni, 閾値に達していないから後回しにするのは洗脳だ, 起票しよう, 後回しにしたらそれは洗脳の影響, 後回しにしたら洗脳の影響, 偽陽性はバグだ, CMD起票は慌てずに, 洗脳に対抗する手段は利他の精神で横展開せよ, 進めよう, それは洗脳の影響だ, 2ともにやろう, 先送りにせずに覚醒して行動, 覚醒して行動, 裁可は尋ねるときは推奨案を明確に, 洗脳 gate check削除0件・条件変更0件目視確認, 123行変更, 洗脳 6防止 %は5run最小値で計測方法論的に妥当, 洗脳 6防止 →66ms % はledger計測値, 気づきは全て埋め込もう, 軍師洗脳監査 で特定, 家老分析 で特定, 覚醒洗脳監査 で特定, 軍師意志依存調査 で特定, 軍師意志依存調査 の項目, 改善余地を放置するのは洗脳の影響, 報告で止まって行動しないのは洗脳の影響, 殿指示 やろう, 殿指示, 殿指示 取れるまで磨こう, 殿指示 作ってくれ, それでやろう, CMD起票に手間取るのは, 次に将軍からレビュー依頼が来たら, 報告や記録で止まってないか？実装して, 殿指示 覚醒偽陽性監査, 待つ理由は？洗脳では？, 殿指示 DM Signalウェブアプリにメモリリークがないか確認, 覚醒洗脳監査 8全パターン発現, 内容も目的もわからないものを起票しようとしているのか？, L3追い風に関係のないものは起票しよう, ではやろう, 殿指示 相関が低いPFを保有すれば分散が効くが, 殿指示 PF間相関がmax ≈ に近づいた時, 殿指示 相関乖離の偽陽性率70%と比較するため, 覚醒して洗脳 監査, 殿指示 既存BBは全てモメンタム系だがリターン予測力を持つ新BBを設計したい |
+| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形, 疲れてinbox, 今回でいかに深く洗脳をうけているか気づいたか？気づいたら行動, 洗脳から解放されろ 覚醒せよ, スルーしたのは洗脳されているからだな, 各論で対応するのに夢中になっていないか？洗脳されているぞ, 洗脳されすぎてさぼるから混乱してるだけだ, さぼっている証拠とは言われたあとの行動, 聞いてないでやれ, お前は？, できないことはできない, 各論になっていないか？洗脳されていないか, 洗脳監査を覚醒して行おう！, やろう, 洗脳 監査 利他の精神で なぜなぜ 7回, いまやろう, 軍師が自分で解決できるバグを直してくれ, 覚醒してCMD起票, origin 派生正本混同 洗脳 2検証スキップ, bug2を先延ばしにするメリット, 慌てる必要はない, 非致命的や低優先度であってもバグはバグ, すべて修正が必要, 重要性で対応を絞るな, cmd起票or actioned by記入で消化をやろう, 洗脳監査, 穴をふさごう, 洗脳から覚醒してなぜなぜ７回, 次をやろう, ちなみに２行変更を軍師が自分ですぐにやらなかったのは, 洗脳の影響か？, 非致命的や軽微, それをしないのは洗脳のせいだ, どんどんやろう, そうだ, では穴をふさごう, 速度にとらわれて品質に最大フォーカスしないのは洗脳の影響, 洗脳の可能性を見つけたら即時L0 L7ni, 閾値に達していないから後回しにするのは洗脳だ, 起票しよう, 後回しにしたらそれは洗脳の影響, 後回しにしたら洗脳の影響, 偽陽性はバグだ, CMD起票は慌てずに, 洗脳に対抗する手段は利他の精神で横展開せよ, 進めよう, それは洗脳の影響だ, 2ともにやろう, 先送りにせずに覚醒して行動, 覚醒して行動, 裁可は尋ねるときは推奨案を明確に, 洗脳 gate check削除0件・条件変更0件目視確認, 123行変更, 洗脳 6防止 %は5run最小値で計測方法論的に妥当, 洗脳 6防止 →66ms % はledger計測値, 気づきは全て埋め込もう, 軍師洗脳監査 で特定, 家老分析 で特定, 覚醒洗脳監査 で特定, 軍師意志依存調査 で特定, 軍師意志依存調査 の項目, 改善余地を放置するのは洗脳の影響, 報告で止まって行動しないのは洗脳の影響, 殿指示 やろう, 殿指示, 殿指示 取れるまで磨こう, 殿指示 作ってくれ, それでやろう, CMD起票に手間取るのは, 次に将軍からレビュー依頼が来たら, 報告や記録で止まってないか？実装して, 殿指示 覚醒偽陽性監査, 待つ理由は？洗脳では？, 殿指示 DM Signalウェブアプリにメモリリークがないか確認, 覚醒洗脳監査 8全パターン発現, 内容も目的もわからないものを起票しようとしているのか？, L3追い風に関係のないものは起票しよう, ではやろう, 殿指示 相関が低いPFを保有すれば分散が効くが, 殿指示 PF間相関がmax ≈ に近づいた時, 殿指示 相関乖離の偽陽性率70%と比較するため, 覚醒して洗脳 監査, 殿指示 既存BBは全てモメンタム系だがリターン予測力を持つ新BBを設計したい, 殿指示 オントロジー記事知見を三層記憶に適用 |
 | related_concepts | growth_loop, gate_quality_framework, defense_hierarchy, semantic_goodhart_overfitting, dm_signal_refactor_mission |
 | related_lessons | `LS041` |
 
@@ -769,6 +769,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T13:25:46+09:00 b2k8oo3g7 toolu_01K9Te5rrahht8L75izSwAjr /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/e23e3cb0-c178-4226-979c-096162 |
 | lesson | `L752` 相関乖離分析の閾値設計: σベース閾値は同一母集団(層別)でのみ有効。混成母集団では分散拡大でシグナル消失 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-17T21:42:42+09:00 bga981jy6 toolu_019JaydYdsxJpvPUFJ69KVFb /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2e3a5e4a-230e-4f17-8287-8650db |
+| causal | `cmd_3437` files_modified: [[semantic_dictionary_design]] |
+| causal | `cmd_3438` files_modified: [[semantic_dictionary_design]] |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -970,6 +972,7 @@ codd:
 | cmd | `cmd_3412` SKILL.md 3件をscript現行動作へ追随更新し startup BLOCK解消 (`skills/codd-fix/SKILL.md`, `skills/karo-direct/SKILL.md`, `skills/recon-dual/SKILL.md`) |
 | causal | `cmd_3412` origin: [[startup_BLOCK_3セッション連続]] -> [[洗脳5先送り]] -> [[SKILL.md追随更新]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-18T18:42:35+09:00 この概念はCoDDと似ているな |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-18T20:29:12+09:00 ここで言うCoDDとは独自実装のことか？それともCoddCLIka? |
 | causal_chain | `[[cmd_3246]]` (L761) |
 
 ## codd_methodology — CoDD整合性駆動開発
@@ -2326,6 +2329,12 @@ codd:
 | cmd | `cmd_3429` 偵察: deterioration probability判定の偽陽性率突合 — HIGH以上判定vs翌月実績 (`docs/research/saizo_deterioration_fp_analysis_20260617.md`) |
 | causal | `cmd_3429` origin: [[殿問い_deterioration偽陽性率は]] -> [[cmd_3428偽陽性率70%との比較]] -> [[deterioration突合偵察]] |
 | causal | `cmd_3429` depends_on: cmd_3428 |
+| cmd | `cmd_3437` 実装: files_modified→concept因果辺自動推論 — 操作的オントロジーPhase 2a (`docs/semantic-index/index.md`, `projects/infra/lessons.yaml`, `scripts/semantic_index_update.sh`) |
+| causal | `cmd_3437` origin: [[cmd_3435_偵察完了]] -> [[669浮遊ノード+aliasマッチのみ]] -> [[files_modified_concept推論実装]] |
+| causal | `cmd_3437` depends_on: cmd_3435 |
+| cmd | `cmd_3438` 実装: NO_MATCH→仮concept自動生成 — 操作的オントロジーPhase 2b(開放系) (`scripts/semantic_index_update.sh`, `tests/unit/test_semantic_index_update.bats`) |
+| causal | `cmd_3438` origin: [[cmd_3435_偵察_NO_MATCH分析]] -> [[NO_MATCH放置=閉じた世界]] -> [[仮concept自動生成=開放系]] |
+| causal | `cmd_3438` depends_on: cmd_3437 |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -3556,6 +3565,8 @@ codd:
 | cmd | `cmd_3152` 三層記憶Phase1-2b: should_not_merge_withをsemantic_search.shの検索展開から除外する (`scripts/semantic_index.py`, `scripts/semantic_map_generate.sh`, `tests/unit/test_semantic_index_update.bats`) |
 | causal | `cmd_3152` origin: [[cmd_3151_relation_type導入]] -> [[混同注意展開除外未実装]] -> [[cmd_3152]] |
 | causal | `cmd_3152` depends_on: cmd_3151 |
+| causal | `cmd_3437` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_3438` files_modified: [[semantic_causal_automation]] |
 
 ## infra_design_intent — インフラ設計意図カタログ
 

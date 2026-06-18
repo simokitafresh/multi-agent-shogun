@@ -1963,6 +1963,9 @@ lessons:
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.csv
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.meta.yaml
   origin: '[[cmd_1899]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L629
   title: 'golden data有効性: 生成時のコード状態を確認せよ'
   summary: バグ状態で生成されたgolden dataは検証基準にならない。生成日+対応commitを記録すべき。TRFバグ下で生成→全コンポーネント選択=バグ値だった実例
@@ -2912,6 +2915,9 @@ lessons:
   - scripts/analysis/alm_research/cmd_1763_objective_ranking.py
   - outputs/analysis/alm_research/cmd_1761_full_metrics.yaml
   origin: '[[cmd_1761]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L564
   title: MINIMIZE_METRICSへのランタイムpatchでargmin方向を動的変更できる
   summary: cmd_1736のMINIMIZE_METRICSセットにunderwater_periodを追加することで、build_alm_selection_matri
@@ -5312,6 +5318,9 @@ lessons:
   - docs/research/core-local-analysis.md
   - docs/research/ops-procedures.md
   origin: '[[cmd_1035]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L389
   title: PeriodIndex.to_timestamp(how='end')は23:59:59.999を生成し月末フィルタでoffset。normalize()で00:00:00化が必要
   summary: PeriodIndex.to_timestamp(how='end')は月末23:59:59.999999を生成。本番blockが<= pd.Timestamp
@@ -8643,6 +8652,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-02-24'
   origin: '[[subtask_288_scatter]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L122
   title: TTL付きGETキャッシュはwrite操作後に自動無効化されない
   summary: movePortfolioToFolder(POST)成功後、getSignalsLight(GET/TTL=3600s)が古いfolder_idを返し続けた。
@@ -9947,6 +9959,9 @@ lessons:
   how: '新FoFを `/api/portfolios/save` で登録後、`recalculate-sync` を呼んだが `changes` フィールド未送信のため「Legacy
     save: no changes provided, skipping recalculation」で再'
   origin: '[[legacy_lesson_L007]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L006
   title: 本番API呼び出しは PowerShell `Invoke-RestMethod` を使う（2026-02-14）
   summary: 'IF Python requests ライブラリで本番 Render API を呼ぶと、接続がハングして一切レスポンスが返らなかった時 THEN

@@ -2937,6 +2937,9 @@ lessons:
   - scripts/gates/gate_shogun_startup.sh
   - scripts/yaml_auto_archive.sh
   origin: '[[cmd_2856]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L629
   title: 偵察時はlayout.tsxのnavItemsを設計書URLスキームと最初に照合せよ
   summary: layout.tsxのnavItemsと設計書画面一覧を照合するだけでルーティング逆転を即発見。FE request bodyとBE Pydanticモデルのフ
@@ -3930,6 +3933,9 @@ lessons:
   target_files:
   - semantic_index_update.sh
   origin: '[[cmd_2564]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L564
   title: CI上の実行ビット差はgit indexで確認し、bash起動するスクリプトは-x依存にしない
   summary: WSL2 NTFSでは100644ファイルでも実行可能に見える場合があり、ローカルPASSがCIの-x判定FAILを隠す。bash "$script"
@@ -6050,6 +6056,9 @@ lessons:
   target_files:
   - inbox_mark_read.sh
   origin: '[[cmd_cycle_L4_055]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L389
   title: パリティチェックの全SKIP=PASS偽陰性パターン
   summary: 検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数
@@ -9227,6 +9236,9 @@ lessons:
   when: tmuxのsend-keysやset-optionでターゲットを指定する時
   how: 'ウィンドウINDEXではなくNAME(例: shogun:main)を使え'
   origin: '[[cmd_494]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L122
   title: SKILL.md手順追加時に原則セクションとの矛盾を確認せよ
   summary: IF SKILL.md手順追加時 THEN SKILL.md原則に所要時間やEdit不要等の制約記載がある場合、新Stepが制約に抵触しないか確認
@@ -10542,6 +10554,9 @@ lessons:
   when: .gitignoreがwhitelist方式の場合、新規スクリプト追加時は
   how: scripts/配下に新ファイルを作成してもwhitelist未追加だとgitignoreされ、git addしてもcommitに含まれない
   origin: '[[cmd_140]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L006
   title: lesson_write.shには既存教訓との重複チェック機能がない
   summary: IF lesson_write.shで新規教訓を登録する時 THEN タイトル類似度チェックまたはsource_cmd重複チェックを事前に実施せよ
