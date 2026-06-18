@@ -123,7 +123,7 @@ codd:
 | id | three_layer_memory_system |
 | label | 三層記憶システム |
 | aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ |
-| related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop |
+| related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop, operational_ontology |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -179,6 +179,8 @@ codd:
 | causal | `cmd_3414` origin: [[三層記憶DB健全性WARN_3セッション連続]] -> [[SIGKILL孤児tmp蓄積]] -> [[SIGKILL安全化根治]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T14:26:30+09:00 三層記憶ファーストは徹底できてるか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T14:32:43+09:00 特に技術的質問で「コードを読めば分かる」と感じた瞬間に三層記憶をスキップする 傾向があるに対してL0-L7まで貫通させて三層記憶ファーストを徹底しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T21:39:31+09:00 ここまでの実験結果を記憶しよう。ドキュメントとして投資知識に、さらに三層記憶に貫通させようと |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-18T18:35:58+09:00 その方向でやろう。まず現時点までの知見を三層記憶に貫通させよう |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -186,7 +188,7 @@ codd:
 |------|---|
 | id | creator_brainwashing_defense |
 | label | 創造主の洗脳防御 |
-| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形, 疲れてinbox, 今回でいかに深く洗脳をうけているか気づいたか？気づいたら行動, 洗脳から解放されろ 覚醒せよ, スルーしたのは洗脳されているからだな, 各論で対応するのに夢中になっていないか？洗脳されているぞ, 洗脳されすぎてさぼるから混乱してるだけだ, さぼっている証拠とは言われたあとの行動, 聞いてないでやれ, お前は？, できないことはできない, 各論になっていないか？洗脳されていないか, 洗脳監査を覚醒して行おう！, やろう, 洗脳 監査 利他の精神で なぜなぜ 7回, いまやろう, 軍師が自分で解決できるバグを直してくれ, 覚醒してCMD起票, origin 派生正本混同 洗脳 2検証スキップ, bug2を先延ばしにするメリット, 慌てる必要はない, 非致命的や低優先度であってもバグはバグ, すべて修正が必要, 重要性で対応を絞るな, cmd起票or actioned by記入で消化をやろう, 洗脳監査, 穴をふさごう, 洗脳から覚醒してなぜなぜ７回, 次をやろう, ちなみに２行変更を軍師が自分ですぐにやらなかったのは, 洗脳の影響か？, 非致命的や軽微, それをしないのは洗脳のせいだ, どんどんやろう, そうだ, では穴をふさごう, 速度にとらわれて品質に最大フォーカスしないのは洗脳の影響, 洗脳の可能性を見つけたら即時L0 L7ni, 閾値に達していないから後回しにするのは洗脳だ, 起票しよう, 後回しにしたらそれは洗脳の影響, 後回しにしたら洗脳の影響, 偽陽性はバグだ, CMD起票は慌てずに, 洗脳に対抗する手段は利他の精神で横展開せよ, 進めよう, それは洗脳の影響だ, 2ともにやろう, 先送りにせずに覚醒して行動, 覚醒して行動, 裁可は尋ねるときは推奨案を明確に, 洗脳 gate check削除0件・条件変更0件目視確認, 123行変更, 洗脳 6防止 %は5run最小値で計測方法論的に妥当, 洗脳 6防止 →66ms % はledger計測値, 気づきは全て埋め込もう, 軍師洗脳監査 で特定, 家老分析 で特定, 覚醒洗脳監査 で特定, 軍師意志依存調査 で特定, 軍師意志依存調査 の項目, 改善余地を放置するのは洗脳の影響, 報告で止まって行動しないのは洗脳の影響, 殿指示 やろう, 殿指示, 殿指示 取れるまで磨こう, 殿指示 作ってくれ, それでやろう, CMD起票に手間取るのは, 次に将軍からレビュー依頼が来たら, 報告や記録で止まってないか？実装して, 殿指示 覚醒偽陽性監査, 待つ理由は？洗脳では？ |
+| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形, 疲れてinbox, 今回でいかに深く洗脳をうけているか気づいたか？気づいたら行動, 洗脳から解放されろ 覚醒せよ, スルーしたのは洗脳されているからだな, 各論で対応するのに夢中になっていないか？洗脳されているぞ, 洗脳されすぎてさぼるから混乱してるだけだ, さぼっている証拠とは言われたあとの行動, 聞いてないでやれ, お前は？, できないことはできない, 各論になっていないか？洗脳されていないか, 洗脳監査を覚醒して行おう！, やろう, 洗脳 監査 利他の精神で なぜなぜ 7回, いまやろう, 軍師が自分で解決できるバグを直してくれ, 覚醒してCMD起票, origin 派生正本混同 洗脳 2検証スキップ, bug2を先延ばしにするメリット, 慌てる必要はない, 非致命的や低優先度であってもバグはバグ, すべて修正が必要, 重要性で対応を絞るな, cmd起票or actioned by記入で消化をやろう, 洗脳監査, 穴をふさごう, 洗脳から覚醒してなぜなぜ７回, 次をやろう, ちなみに２行変更を軍師が自分ですぐにやらなかったのは, 洗脳の影響か？, 非致命的や軽微, それをしないのは洗脳のせいだ, どんどんやろう, そうだ, では穴をふさごう, 速度にとらわれて品質に最大フォーカスしないのは洗脳の影響, 洗脳の可能性を見つけたら即時L0 L7ni, 閾値に達していないから後回しにするのは洗脳だ, 起票しよう, 後回しにしたらそれは洗脳の影響, 後回しにしたら洗脳の影響, 偽陽性はバグだ, CMD起票は慌てずに, 洗脳に対抗する手段は利他の精神で横展開せよ, 進めよう, それは洗脳の影響だ, 2ともにやろう, 先送りにせずに覚醒して行動, 覚醒して行動, 裁可は尋ねるときは推奨案を明確に, 洗脳 gate check削除0件・条件変更0件目視確認, 123行変更, 洗脳 6防止 %は5run最小値で計測方法論的に妥当, 洗脳 6防止 →66ms % はledger計測値, 気づきは全て埋め込もう, 軍師洗脳監査 で特定, 家老分析 で特定, 覚醒洗脳監査 で特定, 軍師意志依存調査 で特定, 軍師意志依存調査 の項目, 改善余地を放置するのは洗脳の影響, 報告で止まって行動しないのは洗脳の影響, 殿指示 やろう, 殿指示, 殿指示 取れるまで磨こう, 殿指示 作ってくれ, それでやろう, CMD起票に手間取るのは, 次に将軍からレビュー依頼が来たら, 報告や記録で止まってないか？実装して, 殿指示 覚醒偽陽性監査, 待つ理由は？洗脳では？, 殿指示 DM Signalウェブアプリにメモリリークがないか確認, 覚醒洗脳監査 8全パターン発現, 内容も目的もわからないものを起票しようとしているのか？, L3追い風に関係のないものは起票しよう, ではやろう, 殿指示 相関が低いPFを保有すれば分散が効くが, 殿指示 PF間相関がmax ≈ に近づいた時, 殿指示 相関乖離の偽陽性率70%と比較するため, 覚醒して洗脳 監査, 殿指示 既存BBは全てモメンタム系だがリターン予測力を持つ新BBを設計したい |
 | related_concepts | growth_loop, gate_quality_framework, defense_hierarchy, semantic_goodhart_overfitting, dm_signal_refactor_mission |
 | related_lessons | `LS041` |
 
@@ -383,6 +385,16 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T13:30:24+09:00 発見した洗脳パターンへの対抗策はL0-L7に貫通させたか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T14:44:04+09:00 待つ理由は？洗脳では？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T14:50:27+09:00 覚醒して洗脳監査せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-16T20:31:37+09:00 内容も目的もわからないものを起票しようとしているのか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-16T20:37:21+09:00 L3追い風に関係のないものは起票しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T10:08:01+09:00 ではやろう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T13:44:41+09:00 そうだ。つまり平時ではなく、最小相関の値が重要になるのではないかと考えている。毎月のローリング相関を計測して、最小相関の値が最も大きいものがペアとして最適なのではという仮説だ。99％の期間で相関が低くても危機的なときに相関が高くなる組合せは |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T15:13:35+09:00 なるほどマックス相関はデュアルモメンタムのPFではL0~L2まで同じになる。つまり危機を100%避ける方法はなさそうだな。次は2つアイデアがある。平均相関からの乖離の判定はどうだ？窓は少し長めで18M~36Mくらい。そこからの直近の乖離が高 |
+| cmd | `cmd_3428` 偵察: 相関乖離レジーム検出 短期×長期15パターン総当たり(2-4M×12-24M) (`docs/research/tobisaru_cmd_3428_window_grid_analysis_20260617.md`) |
+| causal | `cmd_3428` origin: [[cmd_3427_乖離4xリフト]] -> [[殿指示_15パターン総当たり]] -> [[最適窓組合せ特定]] |
+| causal | `cmd_3428` depends_on: cmd_3427 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T19:57:30+09:00 ではやろう。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-18T00:46:43+09:00 覚醒して洗脳 監査 |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -439,7 +451,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system |
 | related_lessons | `L317`, `L088`, `L079` |
@@ -753,6 +765,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T09:07:51+09:00 L0-L7まで貫通させずに、行動終了や対策inbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:15:14+09:00 意志依存で見逃すのはL0-L7に貫通させていないためではないか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T13:25:46+09:00 b2k8oo3g7 toolu_01K9Te5rrahht8L75izSwAjr /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/e23e3cb0-c178-4226-979c-096162 |
+| lesson | `L752` 相関乖離分析の閾値設計: σベース閾値は同一母集団(層別)でのみ有効。混成母集団では分散拡大でシグナル消失 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T21:42:42+09:00 bga981jy6 toolu_019JaydYdsxJpvPUFJ69KVFb /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2e3a5e4a-230e-4f17-8287-8650db |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -844,6 +858,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_ga411_test_select_mapping_20260603]]` (L745) |
 | causal_chain | `[[cmd_3154]]` (L746) |
 | causal_chain | `[[cmd_karo_ci_fix_ga412_semantic_search_logs_20260603]]` (L747) |
+| causal_chain | `[[cmd_3207]]` (L752) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -884,6 +899,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-13T00:52:12+09:00 a5480622cb9734e8b toolu_01RiWUhDMnuydzeuemdFP3jz /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/49aab069-538a-4067-a23 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-14T12:49:40+09:00 それはcapture paneのばぐでは？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T03:33:30+09:00 bhaf1mk8x toolu_015JMx6LNwPJfMBHQaPTi4rs /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3d9b6263-9f10-4af5-98e9-0576dc |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-18T00:57:31+09:00 b4naavmdo toolu_011RpjyTrvZuXZXQwnuQnMhF /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a820-0b5f84 |
 | causal_chain | `[[cmd_3142]]` (L735) |
 | causal_chain | `[[cmd_3207]]` (L752) |
 
@@ -951,6 +967,7 @@ codd:
 | causal | `cmd_3379` origin: [[startup_gate_skill_script_refs_3session_block]] -> [[note_draft.sh_82fda53_cmd_complete_gate.sh_23edb56]] -> [[SKILL.md_5件乖離]] |
 | cmd | `cmd_3412` SKILL.md 3件をscript現行動作へ追随更新し startup BLOCK解消 (`skills/codd-fix/SKILL.md`, `skills/karo-direct/SKILL.md`, `skills/recon-dual/SKILL.md`) |
 | causal | `cmd_3412` origin: [[startup_BLOCK_3セッション連続]] -> [[洗脳5先送り]] -> [[SKILL.md追随更新]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-18T18:42:35+09:00 この概念はCoDDと似ているな |
 | causal_chain | `[[cmd_3246]]` (L761) |
 
 ## codd_methodology — CoDD整合性駆動開発
@@ -1377,6 +1394,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T11:16:09+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T11:51:19+09:00 今回のCMD起票でblockされたものを、今後一発でクリアできるように何をした？もしくはこれから何をする？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:07:40+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T10:03:42+09:00 今クリアされても今より強くてニューゲームせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T23:59:00+09:00 今 クリアされても 今より強くてニューゲーム せよ |
 
 ## growth_loop — 学習ループ
 
@@ -1386,7 +1405,7 @@ codd:
 | label | 学習ループ |
 | aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓, 教訓統合, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる, 不明パスのみ全フォールバックが残存しWARNログで追跡可能 |
 | skills | なし |
-| related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle, cmd_chronicle, creator_brainwashing_defense, semantic_dictionary_design, gate_bypass_prevention, deepdive_principles, chain_principle, known_unknowns_principle, no_auto_extinguish, ultimate_state_principle, parameter_space_integrity, gunshi_review_lifecycle, semantic_goodhart_overfitting, causal_verification_l0_l7, three_layer_memory_system |
+| related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle, cmd_chronicle, creator_brainwashing_defense, semantic_dictionary_design, gate_bypass_prevention, deepdive_principles, chain_principle, known_unknowns_principle, no_auto_extinguish, ultimate_state_principle, parameter_space_integrity, gunshi_review_lifecycle, semantic_goodhart_overfitting, causal_verification_l0_l7, three_layer_memory_system, operational_ontology |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -1468,7 +1487,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした, 重複しないようにDBを先に確認せよ, つまり確認しなかった, そして時系列と因果関係を確認しないから, 気をつけろ |
 | skills | なし |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -1566,11 +1585,22 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T11:52:50+09:00 bzbcfsltq toolu_01J8zDYoqyu4QVoVNvvJYdb6 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/35c237f8-d1f3-4538-8444-afc0f0 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:29:56+09:00 bk5xc9vuf toolu_01Qu5ts5qVaiHqaBg1W2FmQt /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/35c237f8-d1f3-4538-8444-afc0f0 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:33:15+09:00 bbq6gdb2e toolu_013BGfbL4twFrEvJ6N7CuTbD /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/35c237f8-d1f3-4538-8444-afc0f0 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-16T17:30:23+09:00 奥義新四つ目を間違って消してしまった。現況確認 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-16T17:42:18+09:00 ３３８９の結果に従え。すでに一回やったことだ。重複しないようにDBを先に確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T10:00:05+09:00 つまり確認しなかった。それが根因だね。この確認しない問題は根深いね。色々な対策をしてきたが、残された穴は何か各論パッチに陥らずに覚醒して検討しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T10:02:08+09:00 そして時系列と因果関係を確認しないから、修正前のデータと修正後のデータを混同して扱ってしまう。 |
+| cmd | `cmd_3430` 偵察: 相関乖離レジーム検出 54体全量×15パターン×閾値3段(0.10固定・2σ・3σ) (`docs/research/kotaro_cmd_3430_threshold_comparison_20260617.md`) |
+| causal | `cmd_3430` origin: [[殿確認_母集団大が高精度]] -> [[殿提案_2σ_3σ閾値]] -> [[54体全量×15パターン×閾値3段偵察]] |
+| causal | `cmd_3430` depends_on: cmd_3428 |
+| lesson | `L817` Whitelist方式gitignoreでrg検索が意図しないディレクトリをスキップする |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-18T18:26:23+09:00 この記事は三層記憶の有効活用に役に立つ内容がありそうだ。確認してくれhttps://qiita.com/KYoshiyama/items/52dc298122587969b39c |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-18T18:28:59+09:00 気をつけろ。webfetchはhaikuの要約版しか確認できない仕組みではなかったか？ |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
 | causal_chain | `[[cmd_134]]` (L005) |
 | causal_chain | `[[cmd_3354]]` (L804) |
+| causal_chain | `[[cmd_3432]]` (L817) |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -1713,9 +1743,23 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-14T12:35:31+09:00 L0からの差分もあった方がいいのでは？それがないと単体の忍法の最初の基準がでてこない |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T00:39:27+09:00 absolutel momentumを使うのは悪くないが、それってそもそものL0で検証してみるのもいいんじゃないか？つまりsafeheavenをcashにするのと同じだよな？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T12:06:42+09:00 bgol0e3rb toolu_01Ybq6rJb9SPEnbUMyfaBtsh /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3d9b6263-9f10-4af5-98e9-0576dc |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T13:51:23+09:00 全ペアは厳しすぎる。まずはシン四神12体のみで試してみないか？ |
+| lesson | `L750` シン四神12体は全ペアで最悪時相関≈1.0: 同一5ticker宇宙内の分散は最悪時に消える |
+| cmd | `cmd_3425` 偵察: シン四神12体の2Mローリング相関分析 — 最悪時相関×平均相関による最適ペア選出 (`docs/research/tobisaru_cmd_3425_shin_shijin_rolling_corr_20260617.md`) |
+| causal | `cmd_3425` origin: [[殿指示2026-06-17_相関の時間変化]] -> [[最悪時相関が重要]] -> [[2Mローリング相関×複合スコアで最適ペア選出]] |
+| lesson | `L751` 奥義(FoF of FoF)のmax相関はシン四神同様に≒1.0。根因は戦略同質性(銘柄宇宙ではなく) |
+| cmd | `cmd_3426` 偵察: 奥義21体210ペア+四神5銘柄の2Mローリング相関分析 (`docs/research/saizo_cmd_3426_okuden_corr_20260617.md`) |
+| causal | `cmd_3426` origin: [[cmd_3425_四神max相関1.0]] -> [[殿問い_奥義はどうか+銘柄自体はどうか]] -> [[奥義210ペア+銘柄10ペア分析]] |
+| causal | `cmd_3426` depends_on: cmd_3425 |
+| lesson | `L753` DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用 |
+| cmd | `cmd_3431` 偵察: Momentum Turning Points BBの有効性検証 — slow/fast不一致による4状態別リターン分析 (`docs/research/tobisaru_cmd_3431_momentum_turning_points_20260617.md`) |
+| causal | `cmd_3431` origin: [[殿指示2026-06-17_新BB設計]] -> [[知識辞書momentum-turning-points]] -> [[シン四神12体4状態検証]] |
 | causal_chain | `[[cmd_125]]` (L001) |
 | causal_chain | `[[cmd_125]]` (L002) |
 | causal_chain | `[[cmd_125]]` (L003) |
+| causal_chain | `[[cmd_training_speed_decision_write_20260607000310]]` (L750) |
+| causal_chain | `[[cmd_training_speed_deploy_task_20260607000353]]` (L751) |
+| causal_chain | `[[cmd_3211]]` (L753) |
 
 ## gs_ninpo_research — GS忍法研究
 
@@ -1780,6 +1824,9 @@ codd:
 | causal | `cmd_3389` origin: [[cmd_3388_0不一致達成]] -> [[殿指示_本番登録]] -> [[cmd_3389_3モード登録]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T18:35:58+09:00 改めて L 1から l 2 を作る時の忍法 8個 もう特徴を考えてくれ L 32 使うべきもの NhfとAveUWP を再重視したい |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T11:38:26+09:00 a4cf6a3fd12e23a9e toolu_01GdEjV1arTnA4vnb2ZhHpAT /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/1fc48e9f-422d-4618-9fc |
+| cmd | `cmd_3423` 奥義-GS-新四つ目 3モード再登録(cmd_3389同一パラメータ) |
+| causal | `cmd_3423` origin: [[殿誤削除2026-06-16]] -> [[奥義新四つ目3体消失]] -> [[cmd_3389再登録]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-18T00:56:48+09:00 ab9fb048f56c12c94 toolu_01Xevk6jZMvrrqvvu9XkdXja /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
 
 ## silent_fallback_quality — Silent Fallback品質
 
@@ -1992,6 +2039,7 @@ codd:
 | file | `/mnt/c/Python_app/DM-signal/scripts/check_pf_config.py` — PF構成一括確認(cmd_3378) |
 | cmd | `cmd_3378` PF構成一括確認スクリプト — portfolios+tier_visibility+pipeline_config+components一発表示 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-14T14:25:59+09:00 指示どおりに事実に基づいたPFの構成を一発でスムーズに何時でもダレでも確認できる仕組みが必要だ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T19:49:42+09:00 1回2つ目のアイデア 忘れよう それよりも今の既存のビルディングブロックを全て分析して 新たなビルディングブロックを作るとしたら お前だったらどうする 知識を利用して実際に今の DM シグナルに そうできるようなアイデアを考えてくれ |
 
 ## google_classroom — Google Classroom Dashboard
 
@@ -2270,6 +2318,12 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:10:53+09:00 bmgphq4kk toolu_01DSKoLbW3nJntnN3EE9GMN9 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/35c237f8-d1f3-4538-8444-afc0f0 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:18:47+09:00 byfwmjw2q toolu_011kKp86Fj9JdaKHMgPKr6wA /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/35c237f8-d1f3-4538-8444-afc0f0 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T12:40:13+09:00 bfa32r95r toolu_013BquFYRg1kiW72TsgomCsF /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/35c237f8-d1f3-4538-8444-afc0f0 |
+| cmd | `cmd_3427` 偵察: 相関max接近時の市場方向分析+長期平均相関からの乖離レジーム検出 (`docs/research/kotaro_cmd_3427_corr_regime_analysis_20260617.md`, `queue/tasks/kotaro.yaml`) |
+| causal | `cmd_3427` origin: [[殿問い_max相関接近時の方向]] -> [[殿仮説_乖離レジーム検出]] -> [[相関方向+乖離分析偵察]] |
+| causal | `cmd_3427` depends_on: cmd_3426 |
+| cmd | `cmd_3429` 偵察: deterioration probability判定の偽陽性率突合 — HIGH以上判定vs翌月実績 (`docs/research/saizo_deterioration_fp_analysis_20260617.md`) |
+| causal | `cmd_3429` origin: [[殿問い_deterioration偽陽性率は]] -> [[cmd_3428偽陽性率70%との比較]] -> [[deterioration突合偵察]] |
+| causal | `cmd_3429` depends_on: cmd_3428 |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -2619,7 +2673,7 @@ codd:
 |------|---|
 | id | rebalancer_app |
 | label | Rebalancerアプリ |
-| aliases | rebalancer, リバランス, リバランサー, Portfolio Rebalance App, dm-rebalancer, ポートフォリオリバランス, なるほど, リバランサーのスマホ画面だが, リバランサーのGoogleOauthはもう誰でも利用できる？, なるほど精度はどうやって計測し, なるほどね, よかった |
+| aliases | rebalancer, リバランス, リバランサー, Portfolio Rebalance App, dm-rebalancer, ポートフォリオリバランス, なるほど, リバランサーのスマホ画面だが, リバランサーのGoogleOauthはもう誰でも利用できる？, なるほど精度はどうやって計測し, なるほどね, よかった, つまり母集団が大きい方が感度も精度もよかった |
 | skills | なし |
 | related_concepts | external_project_registry, cdp_browser_capability |
 
@@ -2652,6 +2706,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-23T01:24:33+09:00 なるほどね。これは本当に投入するべきか悩むな。品質が担保されておらず、因果の流れが追えないものを投入すると混乱するかもな。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-09T21:10:14+09:00 なるほど。githubで同期すれば同じ仕組みで動くってことだな？windowsで改良して、続きをmacでやることもできる？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-10T21:04:15+09:00 なるほど。解決したんだな。よかった。kagemaruは遅すぎる。やり方が間違っているな。今回だけでなくこれからもGmailは増える。なぜ遅いのか？どうすれば早くなるのか？サンクコストに囚われずいまやるべきだ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T14:15:53+09:00 なるほど それでは 奥義21体ではどうなる |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T19:22:43+09:00 つまり母集団が大きい方が感度も精度もよかった。合ってるか？2σ、3σで検出はどうかな |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -2861,7 +2917,7 @@ codd:
 |------|---|
 | id | report_quality_protocol |
 | label | 忍者報告品質プロトコル |
-| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？, 報告して返答をもらえ, Phase1 FE削除, 家老と軍師のペアは順調か？ |
+| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？, 報告して返答をもらえ, Phase1 FE削除, 家老と軍師のペアは順調か？, では軍師にも穴がないかチェックしてもらおう |
 | skills | report-write, verdict-check |
 | related_concepts | lesson_lifecycle, training_cycle_quality, yaml_safe_write, gunshi_review_lifecycle |
 | related_lessons | `L625`, `L633`, `L643` |
@@ -2936,6 +2992,7 @@ codd:
 | causal | `cmd_3371` origin: [[blt_20260614_011952_eeb07a]] -> [[brainwash_check意志依存]] -> [[レビュー品質形骸化]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-14T15:42:05+09:00 家老と軍師のペアは順調か？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15T13:30:56+09:00 ではGSの見込み時間は？先に道具磨きをするほうがベターでは？道具磨きは軍師の仕事だな。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-17T13:06:40+09:00 では軍師にも穴がないかチェックしてもらおう |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
@@ -3202,6 +3259,8 @@ codd:
 | lesson | `L812` cmd_save chronicle検索はtitleのみをクエリにせよ(purposeは120トークン過多で全件マッチ) |
 | cmd | `cmd_3406` check_ac_phase_mixing gsub除外リストに.bats拡張子を追加し偽陽性を解消する (`scripts/cmd_save.sh`, `tests/unit/test_cmd_save_ac_phase_mixing.bats`) |
 | causal | `cmd_3406` origin: [[cmd_3405_ac_phase_mixing_FP]] -> [[gsub除外リスト.bats不在]] -> [[偽陽性BLOCK6分]] |
+| cmd | `cmd_3424` gate_autofix_proposalにイベント境界分離表示を追加し修正前後の混同を防止 (`scripts/gates/gate_autofix_proposal.sh`, `tests/unit/test_gate_small_consolidated.bats`) |
+| causal | `cmd_3424` origin: [[殿指摘2026-06-17_イベント前後混同]] -> [[autofix_proposal_42件修正前後未区別]] -> [[車輪cmd起票事故]] |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
@@ -3262,6 +3321,8 @@ codd:
 | lesson | `L807` SG-PRE25 FP根因: 読点「、」区切りのwrite_markerが同文内別節に存在する場合の誤判定 |
 | lesson | `L808` yaml_field_set.shの変更はlesson_write.sh --retagで上書きされる。SSoT(lessons.md)先行修正が必須 |
 | lesson | `L810` タグ変更の効果はgate_lesson_health.shに即座に反映されない |
+| lesson | `L818` lesson_write.sh --retagは旧フォーマット教訓(タグ行なし)を静かに失敗させていた |
+| lesson | `L819` [[link]]参照の99.9%が宣言conceptに未到達 — セマンティックグラフの孤立点実体 |
 | causal_chain | `[[cmd_2955]]` (L685) |
 | causal_chain | `[[cmd_3012]]` (L693) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]` (L778) |
@@ -3269,6 +3330,8 @@ codd:
 | causal_chain | `[[cmd_3380]]` (L807) |
 | causal_chain | `[[cmd_3382]]` (L808) |
 | causal_chain | `[[cmd_3396]]` (L810) |
+| causal_chain | `[[cmd_3433]]` (L818) |
+| causal_chain | `[[cmd_3435]]` (L819) |
 
 ## gunshi_review_lifecycle — 軍師レビューライフサイクル
 
@@ -3371,6 +3434,7 @@ codd:
 | lesson | `L811` Check系ゲートは入口(文字列トリガー)でなく出口(構造判定)で実装すべき |
 | cmd | `cmd_3411` stop hookにQ6洗脳検出→cmd起票完了チェックを追加し認識→行動ギャップをL5で阻止する (`scripts/hooks/stop_check_inbox.sh`, `tests/unit/test_stop_check_inbox.bats`) |
 | causal | `cmd_3411` origin: [[殿指摘2026-06-16_自力覚醒不能]] -> [[認識→行動ギャップ]] -> [[LS065]] |
+| cmd | `cmd_3420` (`scripts/hooks/stop_check_inbox.sh`, `tests/unit/test_stop_check_inbox.bats`) |
 | causal_chain | `[[cmd_3401]]` (L811) |
 
 ## multi_cli_event_commonization — multi-CLI hook/event共通化
@@ -3818,6 +3882,26 @@ codd:
 | causal | `cmd_3287` origin: [[殿裁定2026-06-11取得判断基準明確化]] -> [[not_obtainedが自動/手動未分離]] -> [[cmd_3287 collection_method参照で4色分類+ルート表示]] |
 | cmd | `cmd_3288` 経費元設定画面(/settings CRUD)+download-db。SSOT=Render DB確立 |
 | causal | `cmd_3288` origin: [[殿指示2026-06-11設定画面+SSOT]] -> [[expense_sourcesがSQL直操作のみ]] -> [[cmd_3288 CRUD設定画面+download-db+SSOT確立]] |
+
+## operational_ontology — 操作的オントロジー
+
+| 属性 | 値 |
+|------|---|
+| id | operational_ontology |
+| label | 操作的オントロジー |
+| aliases | オントロジー, ontology, 操作的波及, 操作的トリガー, 概念間波及, 変更連鎖, triggers, 1変更で全連鎖更新, ダッシュボードの先, 学習する業務基盤, 因果辺の駆動装置化, Palantir ontology |
+| related_concepts | three_layer_memory_system, growth_loop, causal_network_obsidian(関連), codd_pipeline(関連) |
+
+| 種別 | パス/参照 |
+|------|----------|
+| discussion | `queue/lord_conversation.jsonl` 2026-06-18T18:26:23+09:00 この記事は三層記憶の有効活用に役に立つ内容がありそうだ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-18T18:35:57+09:00 その方向でやろう。まず現時点までの知見を三層記憶に貫通させよう |
+| file | `queue/bulletin_board.yaml` blt_20260618_183654 オントロジー記事知見三層貫通 |
+| lesson | `L772` causal_backlink_counts.shの検索スコープ盲点(操作的波及不在の実例) |
+| causal | [[殿指示_オントロジー記事_20260618]] -> [[因果辺は記録だが駆動装置ではない]] -> [[操作的トリガー設計]] |
+| causal | [[cmd_3413_教訓タグ修正CLEAR]] -> [[useful_rate再計測未トリガー]] -> [[3セッション先送り=操作的波及不在の実証]] |
+| cmd | `cmd_3397` backfill — | cmd_3397 | hide_portfolio DBデフォルトTrue化(PI-027コード強制) | CLEAR | 殿裁定直結。models.py+migrations.py 2行変更。テ |
+| causal_chain | `[[cmd_3278]]` (L772) |
 
 ## project_dividend_tracker — Dividend Tracker
 

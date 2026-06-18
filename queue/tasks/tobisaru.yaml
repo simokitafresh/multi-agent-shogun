@@ -20,7 +20,7 @@ task:
   parent_cmd: cmd_3434
   project: infra
   purpose: 'context鮮度ALERT: dm-signal-research.md等4ファイルが2026-06-13以降5日間未更新。相関レジーム研究7cmd(3425-3431)で確立した知見7項目(max相関=戦略同質性, 高相関=バブル, 乖離リフト3-4x偽陽性70%, deterioration逆機能, σ閾値混成母集団不機能, リスクベースBB不適, Turning Points BB不採用)をcontext索引に反映。家老報告blt_20260618_101554。'
-  status: done
+  status: idle
   stop_for: []
   target_path: context/dm-signal-research.md
   task_id: cmd_3434_full

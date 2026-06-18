@@ -8272,3 +8272,36 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - task_tags空+target_pathあり時にscripts/→infra, backend/→dm-signal等9パターンでタグ推定。不明パスのみ全フォールバック残存+WARNログ追跡。deploy_task.sh L4821-4842実装(9fe724dda)
+
+### L817: Whitelist方式gitignoreでrg検索が意図しないディレクトリをスキップする
+- **日付**: 2026-06-18
+- **出典**: cmd_3432
+- **記録者**: saizo
+- **tags**: [infra,testing]
+- **target_files**: [scripts/causal_backlink_counts.sh]
+- **origin**: [[cmd_3432]]
+- **when**: 未設定
+- **how**: 未設定
+- docs/semantic-index/memory/instructionsがgitignoreのWhiteList(*全除外)により--no-ignoreなしのrgでスキップされた。新ディレクトリをrg検索に追加する際は--files確認でgitignore影響を事前検証すべき。origin: [[index.md参照_gitignore除外]] -> [[rg検索スキップ]] -> [[backlinks=0偽陽性]]
+
+### L818: lesson_write.sh --retagは旧フォーマット教訓(タグ行なし)を静かに失敗させていた
+- **日付**: 2026-06-18
+- **出典**: cmd_3433
+- **記録者**: kotaro
+- **tags**: [infra,lesson,bash,lesson,reporting]
+- **target_files**: [scripts/lesson_write.sh]
+- **origin**: [[cmd_3433]]
+- **when**: 未設定
+- **how**: 未設定
+- dm-signal旧形式教訓(### L007:等)にはタグ行がなく、retagがERROR→FAILしていた。修正: タグ行がない場合はヘッダ直後に挿入。origin: [[blt_20260618_005912_軍師バグ報告]] -> [[lesson_write_retag_markdown前提]] -> [[universalタグ29件修正不能]]
+
+### L819: [[link]]参照の99.9%が宣言conceptに未到達 — セマンティックグラフの孤立点実体
+- **日付**: 2026-06-18
+- **出典**: cmd_3435
+- **記録者**: saizo
+- **tags**: [infra,lesson]
+- **target_files**: [docs/research/saizo_causal_dag_analysis_cmd3435_20260618.md,docs/research/saizo_files_modified_concept_inference_design_cmd3435_20260618.md,docs/research/saizo_provisional_concept_autogen_design_cmd3435_20260618.md]
+- **origin**: [[cmd_3435]]
+- **when**: 未設定
+- **how**: 未設定
+- 因果辺の[[link]]参照668/669がdeclared concept_idに一致しない。origin/depends_onで使われるcmd_XXX/殿裁定/LS-教訓が全て浮遊ノード。files_modified→concept推論とNO_MATCH仮concept生成で解決可能。

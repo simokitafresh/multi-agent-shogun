@@ -2691,3 +2691,573 @@
   cs_checklist: "cs_cold_spot解消確認。adversarial zero_streak 10→0。§5.6 WARN全解消"
   origin: "[[冷え観点WARN3セッション連続]] -> [[先送り洗脳#5]] -> [[遡及適用+実動作確認→ALERT解消]]"
   timestamp: "2026-06-17T10:15:00"
+- cmd_id: cmd_3424
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "1ファイルawk拡張+テスト追加。出力フォーマット変更のみ。scope明確"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。gate_autofix_proposalにイベント境界分離表示追加。殿指摘(修正前後データ混同)への直接対処。前提verified。FM3(テスト前提崩壊)はcommand欄にbats確認指示あり"
+  observations:
+    - "事実1: gate_metrics.log $1=ISO8601,$3=CLEAR/BLOCK,$4=理由。assumptions verified正しい(head -5実測)"
+    - "事実2: gate_autofix_proposal.sh L40-95 awk集計に修正前後分離ロジック0件(現物確認)。target_path実在"
+    - "事実3: 関連テスト2件(test_gate_shogun_startup/test_gate_small_consolidated)。出力変更で前提崩壊リスクあり→command欄にbats確認指示で対処"
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "awk内git log呼出。入力はgate_metrics.log(内部データ)。command injection経路なし"
+  causal_chain: "殿指摘(修正前後混同)→autofix 42件未分離→将軍車輪cmd→イベント境界表示追加→修正前後可視化→誤判断防止=正の複利"
+  brainwash_check: "#1防止: 6観点+adversarial全検証。数値: AC2件, FM3件, 関連テスト2件, gate_metrics.log 5行実測。Q1:品質向上(根本対処) Q2:奪わない(awk実装スキル) Q3:上がる(計測スクリプト先例)"
+  ambiguity_points: none
+  origin: "[[殿指摘2026-06-17_修正前後混同]] -> [[autofix_proposal_42件未分離]] -> [[cmd_3424 イベント境界表示]]"
+  timestamp: "2026-06-17T10:30:00"
+- cmd_id: cmd_3424
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck ERRORS=0。全AC yes。bats 5/5 PASS。infra対象adversarial PASS"
+  confidence: HIGH
+  changed_lines: 106
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。イベント境界分離表示追加。bats 5/5 PASS実動作確認。+103/-3行。kotaro WA率0%。adversarial: infra gate変更→awk内git log呼出=内部データのみ"
+  observations:
+    - "事実1: bats 5/5 PASS実動作確認(test_gate_small_consolidated --filter autofix)。AC1修正前3/後2分離+AC2合計表示維持"
+    - "事実2: test_gate_shogun_startup.batsのautofix参照3箇所はmock呼出のみ(L1326-1337)。出力フォーマット非依存→前提崩壊なし"
+    - "事実3: GATE_AUTOFIX_FIX_LOGテスト注入は正しい設計(本番ではgit log自動取得)。FIX_SINCE=120daysは直近4ヶ月カバーで妥当"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "SG-PRE18 WARN対応。gate出力変更のみ(exit code不変)。awk内git log呼出=内部データ。GATE_AUTOFIX_FIX_LOGは未設定時無視。rollback=git revert可"
+  causal_chain: "殿指摘(修正前後混同)→autofix未分離→kotaro実装→bats 5/5 PASS→修正前後可視化=誤判断構造防止"
+  brainwash_check: "#2防止: bats 5/5実動作確認済み(洗脳#2=binary_checks鵜呑み防止)。数値: 5テストPASS, +103/-3行, kotaro WA 0/9。Q1:品質向上 Q2:奪わない Q3:上がる"
+  step3_5_verified: true
+  origin: "[[cmd_3424]] -> [[イベント境界分離表示]] -> [[修正前後混同防止=殿指摘直接対処]]"
+  timestamp: "2026-06-17T10:37:00"
+- cmd_id: cmd_3425
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "偵察cmd。コード変更なし。DB読取+分析レポートのみ"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。偵察cmd。シン四神12体66ペア2Mローリング相関分析。殿指示(最悪時相関が重要)の直接対応。前提verified。adversarial:N/A(DB読取のみ)"
+  observations:
+    - "事実1: C(12,2)=66ペア正しい。AC3件順序依存(データ→ランキング→FoF)妥当"
+    - "事実2: 殿発言「極めて短い期間」(13:47)と2M窓の整合性。殿初期発言「毎月のローリング」(13:44)と整合。偵察なので窓幅は結果見て調整可能"
+    - "事実3: q11独立確認: semantic_search「ローリング相関PFペア」→0件。cmd_3222/3224はVIXシグナル=別領域。車輪なし"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察cmd。コード変更なし。DB読取のみ"
+  causal_chain: "殿指示(平時でなく最悪時相関が重要)→2Mローリング相関66ペア→max相関×平均複合スコア→最適ペアEW FoF検証=正の複利(全PF横展開の設計精度向上)"
+  brainwash_check: "#1防止: 6観点全検証。数値: 66ペア=C(12,2), AC3件, FM3件, q11 0件。Q1:品質向上(新手法) Q2:奪わない(分析スキル) Q3:上がる(横展開設計精度)"
+  ambiguity_points: none
+  origin: "[[殿指示2026-06-17_最悪時相関]] -> [[2Mローリング相関66ペア]] -> [[cmd_3425偵察]]"
+  timestamp: "2026-06-17T14:00:00"
+- cmd_id: cmd_3425
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no(commit waive偵察cmd)+lesson_candidate有→draft_lessons BLOCKリスク。家老lesson処理+commit waive対応でCLEAR可能"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。偵察完了。全66ペアmax相関0.9956〜1.0=同一5ticker宇宙内の分散は最悪時消滅。殿仮説の定量的裏付け。lesson_candidate有(高価値)。tobisaru WA率0%"
+  observations:
+    - "事実1: 全66ペアmax相関0.9956〜1.0000。同一5ticker宇宙(GLD/TECL/TMV/TQQQ/XLU)のPFは最悪時ほぼ完全相関→分散効果ゼロ"
+    - "事実2: 複合スコア首位=朱雀激攻×玄武鉄壁(0.0900)。Calmar最高=玄武鉄壁×白虎鉄壁(1.73)。2手法で異なるペア→評価軸選択が結果左右"
+    - "事実3: discretion_fills MRU=Max Run-up、Avg UWP=完了UW期間平均月数(進行中除外)。cmd未定義だが合理的解釈"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察cmd。DB読取のみ。コード変更なし"
+  causal_chain: "殿指示(最悪時相関重要)→2Mローリング相関66ペア計算→全ペアmax≈1.0発見→同一ticker宇宙の分散幻想を定量証明=殿仮説裏付け"
+  brainwash_check: "#1防止: 4観点+precheck。数値: 66ペア, max 0.9956-1.0, 共通期間3572日, AC3/3 yes, tobisaru WA 0/8。Q1:品質向上 Q2:奪わない Q3:上がる"
+  step3_5_verified: true
+  origin: "[[cmd_3425]] -> [[全66ペアmax相関≈1.0]] -> [[同一ticker宇宙の分散幻想定量証明]]"
+  timestamp: "2026-06-17T14:08:00"
+- cmd_id: cmd_3426
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "偵察cmd。コード変更なし。DB読取+分析レポートのみ。cmd_3425横展開"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。偵察cmd。奥義21体210ペア+四神5銘柄10ペア2Mローリング相関。cmd_3425横展開。殿の2問い(奥義はどうか/銘柄自体はどうか)への対応。adversarial:N/A"
+  observations:
+    - "事実1: C(21,2)=210ペア、C(5,2)=10ペア正しい。AC3件順序依存"
+    - "事実2: depends_on cmd_3425 CLEAR済み(14:11:45)。saizo配備。cmd_3425スクリプト再利用可能"
+    - "事実3: q11: 奥義ローリング相関は未実施(cmd_3425は四神のみ)。cmd-chronicle 0件。車輪なし"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察cmd。DB読取のみ"
+  causal_chain: "cmd_3425(四神max≈1.0)→殿問い(奥義は?銘柄自体は?)→奥義210ペア+銘柄10ペア分析→根因切り分け(銘柄宇宙vs重み)=正の複利"
+  brainwash_check: "#1防止: 6観点全検証。数値: 210=C(21,2), 10=C(5,2), AC3件, FM3件。Q1:品質向上(根因切分) Q2:奪わない Q3:上がる(実用基盤)"
+  ambiguity_points: none
+  origin: "[[cmd_3425_四神max1.0]] -> [[殿問い_奥義+銘柄]] -> [[cmd_3426偵察]]"
+  timestamp: "2026-06-17T14:22:00"
+- cmd_id: cmd_3426
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no(commit waive偵察cmd)+lesson_candidate有→draft_lessons BLOCKリスク。cmd_3425同パターン。家老対応でCLEAR"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。奥義21体max相関0.9976〜1.0=四神同様。銘柄自体はGLD×TMV max=0.2605(多様性あり)。根因=戦略同質性(銘柄宇宙ではない)。Calmar top=3.41(四神1.73の2倍)。saizo WA率0%"
+  observations:
+    - "事実1: 奥義210ペアmax相関0.9976〜1.0。四神66ペア(0.9956〜1.0)と同水準。FoF of FoFでも最悪時分散ゼロ"
+    - "事実2: 銘柄レベル: GLD×TMV max=0.2605,avg=-0.30(負相関!)。TECL×TQQQ max=0.9956。銘柄自体には多様性あり→根因は戦略同質性"
+    - "事実3: 奥義top5 EW FoF Calmar=2.68〜3.41。四神1.73の約2倍。FoF of FoFのレバレッジ効果"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察cmd。DB読取のみ"
+  causal_chain: "四神max≈1.0→奥義でも同様→銘柄自体は多様(GLD×TMV=0.26)→根因は銘柄宇宙でなく戦略同質性=殿問いへの回答"
+  brainwash_check: "#1防止: 4観点+precheck。数値: 210ペアmax0.9976-1.0, 10ペアGLD×TMV=0.2605, Calmar3.41, AC3/3 yes, saizo WA 0/8"
+  step3_5_verified: true
+  origin: "[[cmd_3426]] -> [[奥義max≈1.0+銘柄多様性確認]] -> [[根因=戦略同質性(銘柄宇宙ではない)]]"
+  timestamp: "2026-06-17T14:33:00"
+- cmd_id: cmd_3427
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "偵察cmd。コード変更なし。cmd_3425/3426データの条件付き集計+レジーム分析"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。偵察cmd。相関max接近時の市場方向+長期乖離レジーム検出。殿2アイデア(方向+乖離)の直接検証。cmd_3425/3426 CLEAR済みデータ再利用。adversarial:N/A"
+  observations:
+    - "事実1: depends_on cmd_3426 CLEAR済み。共通期間3572日。上位10%閾値≈0.95は四神max分布(0.9956-1.0)に対し妥当"
+    - "事実2: 長期窓18M/24M/36Mの3パターン。殿発言「窓は少し長めで18M」(15:13:35)を含む+検証幅拡張"
+    - "事実3: q11: レジーム×相関分析は未実施(cmd-chronicle 0件)。cmd_3425/3426は相関計算のみ"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察cmd。DB読取のみ"
+  causal_chain: "cmd_3425/3426(max≈1.0+根因=戦略同質性)→殿問い(方向は?乖離で予測できるか?)→条件付き分析+レジーム検出=正の複利(新シグナル設計根拠)"
+  brainwash_check: "#1防止: 6観点全検証。数値: AC3件, FM3件, 長期窓3パターン, 上位10%閾値。Q1:品質向上 Q2:奪わない Q3:上がる(新シグナル設計根拠)"
+  ambiguity_points: none
+  origin: "[[殿問い_方向+乖離レジーム]] -> [[cmd_3425/3426データ活用]] -> [[cmd_3427偵察]]"
+  timestamp: "2026-06-17T15:22:00"
+- cmd_id: cmd_3427
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no(commit waive)+files_modifiedパスに「偵察のみ:」プレフィックス混入→GATE BLOCK見込み"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。高相関=バブル(上昇率65-69%)=危機ではない。2M-18M/24M乖離≥0.10→危機4xリフト(n=25-27)。36M無効。現在(2026-06)=安全局面。files_modifiedパス不正(プレフィックス混入)→GATE BLOCKリスク"
+  observations:
+    - "事実1: AC1 高相関(avg≥0.60)時=バブル(上昇率65-69%,+0.21-0.36%/日)。危機シグナルではない。殿問い回答"
+    - "事実2: AC2 2M-18M/24M乖離≥0.10→翌3M危機率4倍(リフト3.9-4.0x,n=25-27)。36M乖離は逆効果(0.79x)。有効窓特定"
+    - "事実3: files_modified path='偵察のみ: docs/research/...'。プレフィックス混入。実ファイルは実在(ls確認8725bytes)。GATE BLOCK原因"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察cmd。DB読取のみ"
+  causal_chain: "殿問い(方向+乖離)→33体528ペア2568日分析→高相関=バブル+乖離=危機先行(4xリフト)→レジーム検出実用可能性あり"
+  brainwash_check: "#1防止: 4観点+precheck。数値: 528ペア=C(33,2), 2568日, 上昇率65-69%, リフト3.9-4.0x(n=25-27), kotaro WA 0/9"
+  step3_5_verified: true
+  origin: "[[cmd_3427]] -> [[高相関=バブル+乖離=危機先行4x]] -> [[レジーム検出実用可能性確認]]"
+  timestamp: "2026-06-17T15:32:00"
+- cmd_id: cmd_3428
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "偵察cmd。DB読取+分析のみ。cmd_3427手法の15パターン網羅拡張"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。偵察cmd。短期3×長期5=15パターン×3層=45セルのリフト値グリッドサーチ。殿指示直接対応。cmd_3427 CLEAR済みデータ再利用。adversarial:N/A"
+  observations:
+    - "事実1: 15パターン=3短期(2/3/4M)×5長期(12/15/18/21/24M)。3層別=45セル。殿指示に基づく網羅的探索"
+    - "事実2: depends_on cmd_3427 CLEAR済み。共通期間2568日。長期窓24M(504日)でも2064日有効=十分"
+    - "事実3: q11: 15パターン総当たりは未実施。cmd_3427は2M×18M/24M/36Mの3パターンのみ。車輪なし"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察cmd。DB読取のみ"
+  causal_chain: "cmd_3427(乖離4xリフト2窓)→殿指示(15パターン総当たり)→3層別グリッドサーチ→最適窓確定=レジーム検出シグナル設計基盤"
+  brainwash_check: "#1防止: 6観点全検証。数値: 15パターン=3×5, 45セル=15×3層, AC3件, FM2件。Q1:品質向上 Q2:奪わない Q3:上がる(最適窓確定)"
+  ambiguity_points: none
+  origin: "[[cmd_3427_乖離4xリフト]] -> [[殿指示_15パターン]] -> [[cmd_3428偵察]]"
+  timestamp: "2026-06-17T18:47:00"
+- cmd_id: cmd_3428
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no(commit waive偵察cmd)。lesson_candidateなし"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。45セル完了。最適: 四神4M-15M(2.41x)/忍法4M-24M(2.75x)/奥義2M-24M(3.58x)。階層上位ほどリフト高。COVID先行検出成功。低相関危機は検知不可(限界正直報告)。tobisaru WA率0%"
+  observations:
+    - "事実1: 45セル(3層×15パターン)リフト値完了。長期24Mが全層で最高。4M短期が最有力"
+    - "事実2: discretion_fills: 乖離閾値をq75分位数で定義(AC記載0.10固定とは異なるが分位数の方がデータ適応的で合理的)"
+    - "事実3: COVID 2020-03は3M前から1M前まで高乖離★連続で先行検出成功。低相関局面危機(2025-11/2026-06)は検知不可=限界"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察cmd。DB読取のみ"
+  causal_chain: "cmd_3427(2窓4xリフト)→15パターン総当たり→四神4M-15M/忍法4M-24M/奥義2M-24Mが最適→COVID先行検出成功→レジーム検出実用基盤確立"
+  brainwash_check: "#1防止: 4観点+precheck。数値: 45セル, 最適リフト2.41-3.58x, COVID先行検出3M, tobisaru WA 0/8"
+  step3_5_verified: true
+  origin: "[[cmd_3428]] -> [[15パターン最適窓特定]] -> [[レジーム検出実用基盤確立]]"
+  timestamp: "2026-06-17T19:02:00"
+- cmd_id: cmd_3429
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "偵察cmd。DB読取+突合集計のみ。shallow depth"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。偵察cmd。deterioration偽陽性率突合。HIGH判定vs翌月実績。cmd_3428偽陽性率70%との比較。データ期間短い(2026-03〜)=サンプル注意。adversarial:N/A"
+  observations:
+    - "事実1: deterioration_snapshots 2026-03以降(約4ヶ月)。HIGH/VERY_HIGH件数が少ない可能性→偵察で件数報告すれば判断可能"
+    - "事実2: ラベル6種(GOOD/MODERATE/ELEVATED/HIGH/VERY_HIGH/EXTREME)は殿設計書(MCP deterioration_probability_design)で確定"
+    - "事実3: q11: deterioration偽陽性率突合は未実施。cmd-chronicle 0件。車輪なし"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察cmd。DB読取のみ"
+  causal_chain: "殿問い(deterioration偽陽性率は?)→cmd_3428偽陽性率70%との比較基準確立→両手法精度比較=シグナル設計判断根拠"
+  brainwash_check: "#1防止: 6観点全検証。数値: AC3件, FM2件, ラベル6種。Q1:品質向上 Q2:奪わない Q3:上がる(精度比較基盤)"
+  ambiguity_points: none
+  origin: "[[殿問い_deterioration偽陽性率]] -> [[cmd_3428偽陽性70%比較]] -> [[cmd_3429偵察]]"
+  timestamp: "2026-06-17T19:20:00"
+- cmd_id: cmd_3429
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no(commit waive)+files_modified='偵察のみ'(パス不正)→GATE BLOCK"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。DETERIORATING FP率62.5%(リフト1.51=逆機能!)。ベースライン41.4%。相関乖離70%より低いがベースラインより悪い=HIGH判定時むしろリターン正。ラベル名不一致(cmd:HIGH→DB:DETERIORATING)を妥当に解決。saizo WA率0%"
+  observations:
+    - "事実1: ラベル名不一致=cmd記載HIGH/VERY_HIGHが実DBにはDETERIORATING/WATCH等。saizo がcoordinate確認(deterioration.py L268-296)で解決。妥当"
+    - "事実2: DETERIORATING FP率62.5%(15/24)>ベースライン41.4%。リフト1.51=逆機能。WATCH/EW=0.60(有効だがn=4)"
+    - "事実3: データ制約: 233件中81件(35%)欠損。DETERIORATING有効24件のみ。統計的有意性に注意"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察cmd。DB読取のみ"
+  causal_chain: "殿問い(deterioration FP率)→DB突合→DETERIORATING FP62.5%>ベースライン41.4%=逆機能発見→相関乖離70%との比較完了"
+  brainwash_check: "#1防止: 4観点+precheck。数値: FP62.5%(15/24), ベースライン41.4%, リフト1.51, 欠損35%, saizo WA 0/8"
+  step3_5_verified: true
+  origin: "[[cmd_3429]] -> [[DETERIORATING FP62.5%逆機能発見]] -> [[相関乖離70%との比較完了]]"
+  timestamp: "2026-06-17T19:28:00"
+- cmd_id: cmd_3430
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "偵察cmd。DB読取+1431ペア計算。cmd_3428手法の全量拡張+σ閾値"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。偵察cmd。54体1431ペア×15パターン×閾値3段(0.10/2σ/3σ)=45セル。殿指示(母集団大=高精度+σ閾値で偽陽性改善)直接対応。adversarial:N/A"
+  observations:
+    - "事実1: C(54,2)=1431ペア。15×3閾値=45セル。月次データなので1431ペアでも計算軽い"
+    - "事実2: σ閾値: mean+2σ(上位2.3%)、mean+3σ(上位0.1%)。3σでサンプル極少の可能性→件数報告で判断可能"
+    - "事実3: q11: 54体全量+σ閾値は未実施。cmd_3428は層別+q75。車輪なし"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察cmd。DB読取のみ"
+  causal_chain: "殿確認(母集団大=高精度)+殿提案(σ閾値)→54体全量1431ペア×45セル→偽陽性率改善の最適閾値特定=シグナル設計完成"
+  brainwash_check: "#1防止: 6観点全検証。数値: 1431=C(54,2), 45=15×3, AC3件, FM2件。Q1:品質向上 Q2:奪わない Q3:上がる(最適閾値確定)"
+  ambiguity_points: none
+  origin: "[[殿確認_母集団大高精度]] -> [[殿提案_σ閾値]] -> [[cmd_3430偵察]]"
+  timestamp: "2026-06-17T19:30:00"
+- cmd_id: cmd_3430
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no(commit waive)+lesson_candidate有→GATE BLOCK。家老対応でCLEAR"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。54体全量: 最高2.98x(4M-12M×0.10)。母集団拡大でリフト低下(33体4.00x→54体2.98x)。2σ/3σはstd大でシグナル消失。0.10固定が唯一実用的。lesson高価値(σ閾値は同質母集団限定)"
+  observations:
+    - "事実1: 母集団拡大でリフト低下(33体4.00x→54体2.98x)。殿予測(大=高精度)に反する結果。混成母集団の分散拡大が原因"
+    - "事実2: 2σ/3σはstd=0.25-0.39で閾値が実データ最大値近接→シグナル0-1件=機能しない。0.10固定のみ実用的"
+    - "事実3: 2024-11に2σ唯一超過(乖離+47.5%)。現在2026-06は乖離マイナス=安全局面"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察cmd。DB読取のみ"
+  causal_chain: "殿指示(母集団大+σ閾値)→54体全量検証→混成母集団で分散拡大→σ閾値無効化+リフト低下→0.10固定が唯一実用+層別が有効"
+  brainwash_check: "#1防止: 4観点+precheck。数値: 1431ペア, 45セル, リフト2.98x, 2σシグナル0-1件, kotaro WA 0/9"
+  step3_5_verified: true
+  origin: "[[cmd_3430]] -> [[54体混成リフト低下+σ閾値無効]] -> [[0.10固定唯一実用+層別有効]]"
+  timestamp: "2026-06-17T19:45:00"
+- cmd_id: cmd_3431
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "偵察cmd。DB読取+学術手法検証。コード変更なし"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。偵察cmd。Momentum Turning Points(Goulding+2023)をシン四神12体に適用検証。4状態(Bull/Correction/Bear/Rebound)別リターン+重み調整FoF。知識辞書MD実在確認。adversarial:N/A"
+  observations:
+    - "事実1: knowledge-base/methods/momentum-turning-points.md実在確認(DM-Signalリポジトリ内)"
+    - "事実2: 4状態=slow(12M)×fast(3M)符号組合せ。196ヶ月-12M lookback=184ヶ月有効。Correction/Reboundのサンプル数注意"
+    - "事実3: 相関研究(3425-3430)で分散の限界判明→リターン予測型新BB探索への方向転換。殿指示の因果連鎖"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察cmd。DB読取のみ"
+  causal_chain: "相関研究で分散限界判明→殿指示(リターン予測型新BB)→知識辞書Momentum Turning Points→シン四神12体検証=新BB探索の第一歩"
+  brainwash_check: "#1防止: 6観点全検証。数値: 12体, 196ヶ月, 4状態, AC3件, FM3件。Q1:品質向上 Q2:奪わない Q3:上がる(新BB設計根拠)"
+  ambiguity_points: none
+  origin: "[[殿指示_新BB設計]] -> [[知識辞書momentum-turning-points]] -> [[cmd_3431偵察]]"
+  timestamp: "2026-06-17T20:06:00"
+- cmd_id: cmd_3431
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no(commit waive)+lesson_candidate有→GATE BLOCK"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。Bull 80.5%/Bear 3件/Rebound 1件=極端偏重。v2 Calmar+0.005だがCAGR-1.02pp。過適合HIGH→新BB不採用結論は妥当。L605活用(useful=true)。代替案3件提示"
+  observations:
+    - "事実1: Bull 80.5%(149M)、Bear 3件、Rebound 1件。EW FoF自体がモメンタムフィルタ内包→市場より強くBull偏重=状態判定の情報量低い"
+    - "事実2: v2重み調整FoF: Calmar+0.005/NHF+1.63pp/CAGR-1.02pp。改善幅極小。EW FoF自体がCAGR41%で改善余地小"
+    - "事実3: L605(激攻/常勝/鉄壁3目的)がuseful=trueで重みスキーム設計に活用。教訓の実践的適用の好例"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察cmd。DB読取のみ"
+  causal_chain: "殿指示(新BB)→Momentum Turning Points適用→Bull偏重でBear/Rebound観測不足→新BB不採用→代替案(個別PFモメンタム/市場指数/相関複合)"
+  brainwash_check: "#1防止: 4観点+precheck。数値: 185M, Bull80.5%, Bear3件, Calmar+0.005, CAGR-1.02pp, tobisaru WA 0/8"
+  step3_5_verified: true
+  origin: "[[cmd_3431]] -> [[Bull偏重+Bear/Rebound不足→不採用]] -> [[代替案3件提示]]"
+  timestamp: "2026-06-17T20:22:00"
+- cmd_id: cmd_3432
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: WARN
+  gate_prediction_reason: "lesson_candidate有→draft_lessons BLOCKリスク。家老処理待ち"
+  confidence: HIGH
+  changed_lines: 12
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。検索範囲3→6ディレクトリ+--no-ignore追加。gitignore whitelist対策。実行時間+7%。except None代入済み"
+  observations:
+    - "事実1: gitignore whitelist方式(*全除外)がrgの暗黙スキップ根因。--no-ignoreで解消(忍者独自発見)"
+    - "事実2: 実行時間1.009s→1.080s(+7%)。AC3基準(2倍以内)クリア"
+    - "事実3: except OSError時のNone代入にp_srch_semidx/p_srch_mem/p_srch_inst追加済み(draft FM対処確認)"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "scripts/変更cmd。--no-ignoreリスク→combined_patternフィルタで限定。revert容易"
+  causal_chain: "gitignore whitelist→rg暗黙スキップ→docs/semantic-index等未検索→backlinks=0偽陽性→--no-ignore追加で解消"
+  brainwash_check: "#1防止: 4観点+precheck ERRORS=0。数値: 1.009s→1.080s(+7%)、AC3件全yes。#8防止: except None代入確認(git show commitで独立検証)"
+  step3_5_verified: true
+  origin: "[[cmd_3432]] -> [[gitignore_whitelist_rg_skip]] -> [[LGTM+WARN]]"
+  timestamp: "2026-06-18T01:00:00"
+- cmd_id: cmd_3433
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: WARN
+  gate_prediction_reason: "lesson_candidate有→draft_lessons BLOCKリスク"
+  confidence: HIGH
+  changed_lines: 6
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。旧形式retagバグ修正(4行変更)。AC1+AC2 PASS。commit 1cab9d00c確認"
+  observations:
+    - "事実1: 忍者発見=lessons.mdは存在する(軍師報告の「不在」が不正確)。本質はタグ行の有無"
+    - "事実2: 修正=L588のexit(1)→heading_idx+1にタグ行挿入。4行追加2行削除の最小変更"
+    - "事実3: L348(lesson_write.shフラグ引数)がuseful=true。教訓の実践的適用"
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "4行変更。既存パス維持(AC2)。revert容易"
+  causal_chain: "旧形式教訓にタグ行なし→retag L588でexit(1)→ERROR→タグ行挿入ロジック追加で解消"
+  brainwash_check: "#1防止: 4観点+precheck。数値: 4行追加2行削除、AC2件全yes、commit 1cab9d00c。#2防止: git show commitで独立確認"
+  step3_5_verified: true
+  origin: "[[cmd_3433]] -> [[lesson_write_retag_旧形式対応]] -> [[LGTM]]"
+  timestamp: "2026-06-18T01:10:00"
+- cmd_id: cmd_3434
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_prediction: BLOCK
+  gate_prediction_reason: "vercel_phase参照切れ L107(既存問題、cmd_3434 scope外)。家老WA修正後CLEAR"
+  confidence: HIGH
+  changed_lines: 20
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。§41追加は適切。GATE BLOCK予測: L107既存参照切れ(cmd_3388→cmd_3387 or cmd_3386)がcmd_3434 scope外で残存"
+  observations:
+    - "事実1: §41追加(L523-550付近)に7知見テーブル+参照先パス+因果リンク。Vercelスタイル準拠"
+    - "事実2: L107 docs/research/cmd_3388_weighted_yotsume_full.md は不在。候補: cmd_3387_weighted_yotsume_full.md(DM-signal側)"
+    - "事実3: gate_vercel_phase FAIL=L107参照切れ。cmd_3434の変更(§41)とは無関係の既存問題"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "context索引追記のみ。DB操作なし"
+  causal_chain: "研究7cmd完了→context索引未反映→5日間鮮度ALERT→§41追加で解消。BLOCK予測: L107既存参照切れがscope外で残存"
+  brainwash_check: "#1防止: 4観点+precheck ERRORS=1確認。数値: §41, L107参照切れ, 7知見。#2防止: BLOCK予測を明記しLGTMと両立させない安全策を家老に依頼"
+  step3_5_verified: true
+  origin: "[[cmd_3434]] -> [[context鮮度ALERT解消]] -> [[LGTM+BLOCK予測(L107既存)]]"
+  timestamp: "2026-06-18T10:24:00"
+- cmd_id: cmd_3435
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: BLOCK
+  gate_prediction: WARN
+  gate_prediction_reason: "lesson_candidate有→draft_lessons BLOCKリスク。★実際はcommand_files_modified_mismatch。draft時にcommand欄の読取参照(index.md等)をREQ_CHANGES除外すべきだった(LG037見落とし)"
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。Phase1設計完了。748ノード/854エッジ/191連結成分。宣言79全連結、浮遊669=断片化本体。設計書3本"
+  observations:
+    - "事実1: 宣言concept79個は最大成分87に全て含まれる=宣言conceptは全連結。浮遊ノード669(99.9%)が断片化の本体"
+    - "事実2: 殿の422/235 vs 忍者748/854は測定スコープ差(浮遊ノード含む/含まない)。忍者が差異を設計書に明記"
+    - "事実3: 設計書3本(DAG分析6925B+推論設計10283B+NO_MATCH設計8264B)をls確認"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察+設計書作成のみ。コード変更なし"
+  causal_chain: "殿指示→因果辺DAG分析→浮遊669/宣言79の構造解明→4段階フォールバック推論+NO_MATCH仮concept設計"
+  brainwash_check: "#1防止: 4観点+precheck ERRORS=0。数値: 748ノード、854エッジ、191連結成分、concept到達率0.1%、設計書3本"
+  step3_5_verified: true
+  origin: "[[cmd_3435]] -> [[オントロジーPhase1完了]] -> [[LGTM]]"
+  timestamp: "2026-06-18T19:12:00"
+- cmd_id: cmd_3435
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。偵察: DAG分析+自動推論設計+NO_MATCH取込設計。AC3件妥当。設計のみ(実装は後続)"
+  observations:
+    - "事実1: index.md因果辺235エッジ/422ノード/197連結成分。ほぼ孤立点集合=操作的波及不可能"
+    - "事実2: semantic_index_update.shのcmd_complete接続(L945)が既存の唯一の接続点"
+    - "事実3: q11確認 auto*infer*causal/NO_MATCH*auto*concept ともに0件=未実装"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察+設計書作成のみ。コード変更なし"
+  causal_chain: "殿指示(オントロジー記事知見)→因果グラフ断片化計測→自動成長設計→後続実装cmdへ"
+  brainwash_check: "#1防止: 6観点。数値: AC3件、235エッジ、422ノード、197連結成分。#8防止: 偵察cmdなのでFM=設計品質は後続で検証"
+  ambiguity_points: none
+  origin: "[[cmd_3435]] -> [[操作的オントロジーPhase1]] -> [[APPROVE]]"
+  timestamp: "2026-06-18T19:03:00"
+- cmd_id: cmd_3434
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  changed_lines: 10
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。context鮮度ALERT解消。相関レジーム研究7知見の索引追記。AC2件妥当"
+  observations:
+    - "事実1: q11でcorrelation-regime 0件=未反映確認。掲示板blt_214144に7知見サマリ存在確認"
+    - "事実2: dm-signal-research.md末尾に相関レジーム研究エントリなし(将軍q10確認)"
+    - "事実3: 詳細データはDM-signal側knowledge-base/experiments/に永続化済み"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "context索引追記のみ。DB操作なし"
+  causal_chain: "研究7cmd完了→context索引未反映→5日間鮮度ALERT→索引追記で解消"
+  brainwash_check: "#1防止: 6観点。数値: AC2件、7知見、5日間未更新。#8防止: FM3件列挙"
+  ambiguity_points: none
+  origin: "[[cmd_3434]] -> [[context鮮度ALERT]] -> [[APPROVE]]"
+  timestamp: "2026-06-18T10:20:00"
+- cmd_id: cmd_3433
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  changed_lines: 15
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "6観点OK。lesson_write.sh retagにYAML 1行形式分岐追加。軍師報告バグの修正。AC2件妥当。関連テスト8本"
+  observations:
+    - "事実1: L568 re.match(### LXXX:)がYAML 1行形式(- {id: LXXX, tags: [xxx]})に非対応。軍師が発見→掲示板報告→即cmd化"
+    - "事実2: 対象26件(L007-L118)はtagsフィールド存在するがlesson_write.shが検出不能"
+    - "事実3: 関連テスト8本あり。test_lesson_write.batsが直接カバー"
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "scripts/変更。retag分岐追加のみ。既存パス維持(AC2)。revert容易"
+  causal_chain: "lessons.md不在(dm-signal)→Markdown前提retag失敗→universal29件修正不能→YAML分岐追加で解消"
+  brainwash_check: "#1防止: 6観点+precheck。数値: AC2件、関連テスト8本、対象26件(L007-L118)。#8防止: FM3件(パース崩壊/既存破壊/sync乖離)を列挙"
+  ambiguity_points: none
+  origin: "[[cmd_3433]] -> [[lesson_write_retag_yaml対応]] -> [[APPROVE]]"
+  timestamp: "2026-06-18T01:05:00"
+- cmd_id: cmd_3432
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  changed_lines: 6
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "6観点OK。検索範囲3→6ディレクトリ拡大。FM注意: except OSError時のNone代入拡張要。path_pattern変更不要(ソース追加のみ)"
+  observations:
+    - "事実1: HEAD時点ではL70-72の3ディレクトリのみ。L73-75はディスク上に忍者作業中変更として存在(LG001適用でgit show HEADで確認)"
+    - "事実2: docs/semantic-index/index.mdにdocs/research/kotaro_cmd_3430...がパス形式で参照されている→combined_patternでマッチしpath_sourcesに格納される"
+    - "事実3: path_pattern(L60)はtargetsパターン。ソース側追加(L73-75)のみでは変更不要"
+  causal_chain: "検索範囲3ディレクトリ限定→docs/semantic-index等からの参照未検出→backlinks=0偽陽性→startup gate偽BLOCK"
+  brainwash_check: "#8防止: FM2(except None代入)を指摘。3行追加で安易にAPPROVEせず事前検死でFM3件列挙"
+  origin: "[[cmd_3432]] -> [[causal_backlink_counts検索範囲不足]] -> [[APPROVE+FM注意]]"
+  timestamp: "2026-06-18T00:55:00"
+- cmd_id: self_study_useful_rate_retag_20260618
+  review_type: self_study
+  verdict: null
+  findings_summary: "教訓useful_rate 5.4% ALERT対処。universalタグ15件→固有タグ(gs/alm/fof等)にretag完了。184→170件"
+  observations:
+    - "NOT_USEFUL頻出Top9(L606-L620)全てALM/GS固有がuniversalで全cmdに無差別注入。直近300行で39件NOT_USEFUL"
+    - "lesson_write.sh --retagで15件修正。yaml_field_set.shはYAML構造破壊する(hookが正しくBLOCK)"
+  causal_chain: "universalタグ残存184件→全cmdに無差別注入→NOT_USEFUL量産→useful_rate 5.4%→タグ固有化15件で170件に削減"
+  cs_checklist:
+    CS1: "lesson_impact.tsv直近300行全量確認"
+    CS2: "gate_lesson_health.sh計測値5.4%を起点に根因分析"
+    CS3: "lesson_write.sh --retagの実動作確認済み"
+    CS4: "15件retag→永続化→掲示板投稿。行動変換完了"
+    CS5: "残170件universalのバッチ分類をバックグラウンド実行中"
+    CS6: "universal→無差別注入→NOT_USEFUL→rate低下の因果鎖"
+  finding_categories: [assumptions, numbers, north_star]
+  brainwash_check: "修正前universal=184→修正後170(14件削減)。NOT_USEFUL頻出Top15件実測確認。#5チェック: 残170件は継続対処(Phase 2)"
+  origin: "[[gunshi_idle_useful_rate_batch_retag_20260618]] -> [[LG027]] -> [[教訓有効率改善]]"
+  timestamp: "2026-06-18T00:35:00"
