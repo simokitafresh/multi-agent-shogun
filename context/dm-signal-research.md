@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-06-13 cmd_karo_hotfix_context_freshness_alerts_20260613 -->
+<!-- last_updated: 2026-06-18 cmd_3434 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -520,6 +520,24 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 
 ---
 
+## §41. 相関レジーム研究 (cmd_3425-3431, 2026-06-17)
+
+→ 詳細資料: `DM-signal/docs/research/knowledge-base/experiments/correlation-regime-detection-20260617.md`
+
+**結論: デュアルモメンタムPFは最悪時に全ペアで相関≈1.0。戦略同質性が根因。乖離リフト3-4xは有望だが偽陽性70%。deterioration HIGH判定は逆機能(翌月+8.04%平均回帰)。**
+
+| # | 知見 | 結論(1-2行) | 出典 |
+|---|------|------------|------|
+| 1 | max相関=戦略同質性 | L0/L1/L2全ペアmax相関≈1.0(0.9956-1.0000)。銘柄宇宙ではなく同一市場環境下の戦略同質性が根因。銘柄レベルGLD×TMVはmax0.26/avg-0.30(真の負相関) | cmd_3425/3426 |
+| 2 | 高相関=バブル | avg_corr≥0.60時は上昇率65-69%/日次+0.21-0.36%。高相関は危機ではなくバブル(上昇)シグナル | cmd_3427 |
+| 3 | 乖離リフト3-4x・偽陽性70% | 短期(2-4M)-長期(18-24M)乖離でリフト3-4x。偽陽性率70%で実用困難。層別同質母集団が有効。COVID 2020-03は3M前先行検出成功 | cmd_3427/3428 |
+| 4 | deterioration逆機能 | DETERIORATING判定→翌月平均+8.04%(平均回帰反発)。HIGH判定は逆機能。WATCH/EARLY_WARNING(n=4)偽陽性25%で有望だがサンプル不足 | cmd_3429 |
+| 5 | σ閾値混成母集団不機能 | 異層混合でstd拡大(0.25-0.39)→μ+2σがデータ最大値に近接しシグナル0-1件。固定閾値(0.10)・同質母集団が安定 | cmd_3430 |
+| 6 | リスクベースBB不適 | VolScal/CVaR/リスクパリティはリターン差活用構造のDM-Signalに方向が違う(等リターン前提・不適) | cmd_3430 |
+| 7 | Turning Points BB不採用 | Bull 80.5%偏重でBear/Rebound観測不足(3件/1件)。高品質PFに転換点BBを適用すると情報量ゼロ・過適合リスクHIGH | cmd_3431 |
+
+---
+
 ## 因果リンク
 
 - ← [[dm-signal]] 研究層
@@ -546,6 +564,7 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 - → [[cmd_3223_V8閾値チューニング]] V8閾値チューニング(cmd_3223)
 - → [[cmd_3225_レイヤー別+マネージドボラ]] レイヤー別+マネージドボラ分析(cmd_3225)
 - → [[cmd_3332_MTD速報行]] MTD Daily Returns UX速報行(cmd_3332)
+- → [[cmd_3425_3431_相関レジーム研究]] 相関レジーム7知見(戦略同質性/高相関=バブル/乖離リフト3-4x/deterioration逆機能/σ閾値不適/リスクベースBB不適/Turning Points不採用)(2026-06-17)
 - → [[cmd-1869-2x2-factor-analysis]] [[cmd-1870-beta-adjusted-2x2]] 2×2因子+β調整(CoDD extract: cmd_1991)
 
 <!-- 軍師idle分析リンク(cmd_3278自動追記) -->
