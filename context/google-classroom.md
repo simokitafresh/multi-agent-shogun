@@ -1,5 +1,5 @@
 # Google Classroom Dashboard — Context Index
-<!-- last_updated: 2026-05-27 -->
+<!-- last_updated: 2026-06-19 -->
 
 > Playwright headlessでGoogle Classroomをスクレイピング→ダッシュボード+試験対策まとめ生成。
 > PJ復帰: 2026-03-23殿裁定。CDP統合せず別PJ。
@@ -11,9 +11,13 @@
 - path: `/mnt/c/Python_app/google_classroom`、repo: `https://github.com/simokitafresh/google_classroom`
 - priority: `high`、status: `active`
 - `current_project` は `dm-signal`。Google Classroom は active だが現在フォーカスPJではない
-- 6月前期中間試験(6/2-4)対策が進行中。試験時間割・科目別範囲をClassroomから自動取得し`public/shiken_summary.html`に表示
+- **運用形態(2026-06-19)**: 殿が別ノートPCで1日4回スクレイピング自動実行(012.md Phase 0相当を実現)。メインPC依存排除済み
+- **学年**: 8年ふじ組(2026年度)。build_dashboard.pyのCOURSE_NAME_MAPに8年コース追加済み
+- **スクリプト19本**: build_dashboard.py(2017行), scrape_classroom.py(1034行), auto_update.py, download_attachment_images.py, capture_form_images.py, refresh_session.py等
+- **堅牢化**: scrape失敗時full update fail(20fea50), ダッシュボード縮小ガード(37de46b), 日付処理改善(最終編集時刻補完)
+- **auto-update**: 4時間間隔でauto-commit+push(git log: 01:25, 05:25, 09:25, 13:25, 17:25, 21:25)
 - 開発履歴の正本: `/mnt/c/Python_app/google_classroom/docs/dev-history.md`(008.md設計)
-- 計画文書: `/mnt/c/Python_app/google_classroom/docs/future/` (008: dev-history, 009: NotebookLM連携, 010: 学習サポート自動化)
+- 計画文書: `/mnt/c/Python_app/google_classroom/docs/future/` (008: dev-history, 009: NotebookLM連携, 010: 学習サポート自動化, 011: マルチノード環境, 012: mini PC無人運用)
 
 ## §1 スクレイピング/セレクタ
 
