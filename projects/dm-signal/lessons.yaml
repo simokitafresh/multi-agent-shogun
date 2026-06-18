@@ -1,5 +1,5 @@
 ssot_path: /mnt/c/Python_app/DM-signal/tasks/lessons.md
-last_synced: '2026-06-18T01:07:21'
+last_synced: '2026-06-18T22:44:04'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons_archive.yaml
 lesson_count: 750
 lessons:
@@ -85,9 +85,6 @@ lessons:
   target_files:
   - docs/research/cmd_3393_fof_neighbor_alpha6_comparison_20260616.md
   origin: '[[cmd_3393]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L747
   title: UUID付きGS universeを本番パリティに使う時はsource_typeをDBへ昇格する
   summary: gsl2_shin_ninpo_21.yamlはsource_type=local_sqliteだがcomponent UUIDを持つ。production
@@ -1562,7 +1559,7 @@ lessons:
   - tasks/lessons.md
   origin: '[[cmd_2311]]'
   deprecated: true
-  deprecated_at: '2026-06-18T01:10:57+09:00'
+  deprecated_at: '2026-06-18T22:51:02+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/kotaro.yaml参照（ファイル消滅）'
 - id: L656
   title: 計測スクリプトの固定待機排除はDOMポーリングで行う
@@ -1726,9 +1723,6 @@ lessons:
   - docs/research/sync_cron_manual_test_20260422.md
   - 偵察のみ
   origin: '[[cmd_2235]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L644
   title: cron新設時は既存cronとの処理重複を先に照合せよ
   summary: 'daily_etl.py の Step1(DataFetcherJob) と Step1.5(generate_ticker_daily_returns)
@@ -1816,9 +1810,6 @@ lessons:
   - scripts/analysis/cmd_2142_bunshin_profile_harness.py
   - scripts/analysis/grid_search/run_077_bunshin.py
   origin: '[[cmd_2142]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L638
   title: upfront cleanup後の長時間再計算はworker restartで本番データを空にしうる
   summary: MonthlyReturnをPhase 0で先消しすると、FoF再生成前にRender workerが再起動した場合monthly_returns
@@ -1873,9 +1864,6 @@ lessons:
   - docs/research/gunshi_phase4_improvement_plan_20260417.md
   - docs/research/standard-pf-preprocessing-journal.md
   origin: '[[cmd_2021]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L634
   title: マイグレーションスクリプトのテーブル名バグが本番未適用の根因
   summary: add_cascade_delete.pyに存在しない'performance'テーブルが含まれていたため、スクリプトが実行されると即エラーでロールバックする構
@@ -1943,9 +1931,6 @@ lessons:
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.csv
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.meta.yaml
   origin: '[[cmd_1899]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L630
   title: 'dict.get(target_date)禁止: blocks/内はbisect helper統一'
   summary: FoFパイプラインblocks/内でdict.get(context.target_date)は禁止。get_momentum_value_at_date()統
@@ -2059,9 +2044,6 @@ lessons:
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_validation.yaml
   origin: '[[cmd_1877]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L623
   title: 既存GS CSVの有効性はmeta.yaml universe_idで判定せよ — 行数判定は誤り
   summary: '既存ファイルの再実行要否を行数(例: bunshin 7526行)で判定すると、universe変更後も旧ファイルを有効と誤判定する。meta.yamlのuni'
@@ -2129,9 +2111,6 @@ lessons:
   - outputs/analysis/alm_research/cmd_1878_l2_okugi_comparison.csv
   - scripts/oneshot/cmd_1878_l2_okugi_comparison.py
   origin: '[[cmd_1878]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L618
   title: 長時間計算はBash tool直接実行。Agent toolバックグラウンド+sleepポーリング禁止
   summary: WFエンジンやGS等の長時間計算はBash toolのrun_in_background trueとtimeout 600000で直接実行せよ。Agent
@@ -2584,7 +2563,7 @@ lessons:
   origin: '[[cmd_1829]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-14'
+  last_referenced: '2026-06-18'
 - id: L588
   title: l1_alm_wf_engine.pyは直列化でもOOM不可避：468MB CSV→anon-rss=13GB(28倍膨張)
   summary: 小太郎がoikaze(468MB)を単独実行してanon-rss=13GBでOOM Kill死亡。メモリ膨張率は約28倍(pandas内部展開+演算バッファ)。
@@ -3227,9 +3206,6 @@ lessons:
   target_files:
   - context/dm-signal-research.md
   origin: '[[cmd_1707]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L543
   title: numpy cumsum rolling windowでBipower Variationをベクトル化すると50x高速化
   summary: Lee-Mykland(2008) jump detectionのBV計算はPythonループで各t点のlocal window sum。bv_products
@@ -3267,6 +3243,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: L538のような深度依存効果の発見後、研究スクリプトのYAML出力にdepth_summaryを追加することで次回実行時に知見を自動検証できる
   origin: '[[cmd_training_L4_R38_kotaro]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L540
   title: preprocessing_fnを毎回生成するとidが変わり_preprocess_cacheが無効化される
   summary: simulate_signals()の_preprocess_cacheはfn_id=id(preprocessing_fn)をキーとする。呼び出し側でmake
@@ -4188,6 +4167,9 @@ lessons:
   - scripts/analysis/grid_search/grid_search_metrics_v2.py
   - scripts/analysis/grid_search/sync_experiments_prices.py
   origin: '[[cmd_1240]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L471
   title: 白虎DM6のIEEE754差異は全パリティフェーズで再現する既知問題
   summary: 白虎(DM6/^VIX)のmonthly_return_open IEEE754差異はPhase1(cmd_1233)とPhase4(cmd_1239)で同一パ
@@ -4578,9 +4560,6 @@ lessons:
   when: パリティ検証の許容誤差は要件定義時に
   how: 偵察・検証cmdでは許容誤差を明示的にAC定義すべき
   origin: '[[cmd_1194]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L445
   title: DTB3を株式用momentum関数で処理してはならない
   summary: pct_change(金利水準変化率)とcalculate_risk_free_return_vectorized(累積複利リターン)は全く異なる値。経済指標は
@@ -5016,9 +4995,6 @@ lessons:
   - outputs/analysis/cmd_1078_screening_DM7P_RXLU.csv
   - scripts/analysis/cmd_1078_dm7p_rxlu_redo.py
   origin: '[[cmd_1078]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L413
   title: DM7+ XLU1銘柄でtop_n軸冗長
   summary: DM7+でrelative=XLU(1銘柄)の場合、top_n=1とtop_n=2は完全同一リターンを生成する。relative1つではtop_n>=1は常に同
@@ -5769,9 +5745,6 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: 本番DB確認はPostgreSQL必須
   origin: '[[cmd_1025]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L356
   title: 32体ユニバースのパターン爆発はsize4が86.8%支配。加速が全体の66.1%
   summary: C(32,4)=35,960がC(32,2)+C(32,3)=5,456の6.6倍。サイズ上限k=3で全忍法一律86.8%削減。加速のC(18,2)×2=306
@@ -5827,9 +5800,6 @@ lessons:
   target_files:
   - outputs/analysis/shin_shijin_script_catalog.md
   origin: '[[cmd_1021]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L352
   title: CPCVでlower-is-betterメトリクス使用時はスコア反転必要
   summary: CPCVのbest_index関数はhigher-is-betterメトリクスを前提に最高スコアを選択する。Underwater_PeriodやLeft-tai
@@ -6749,9 +6719,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: レジーム検出追加時は(1)break検出と(2)break後の悪化方向判定を分離
   origin: '[[cmd_860]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L284
   title: 統計指標UIは信号機パターン(3色+灰)+Progressive Disclosure 3層。7±2超えは判断麻痺
   summary: 全手法を緑(健全)/黄(注意)/赤(要対応)+灰(データ不足)の4状態に正規化。既存deterioration-colors.tsパターンと互換。Layer1=
@@ -6797,9 +6764,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-12'
   origin: '[[cmd_860]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L280
   title: 入替推奨UIは候補(candidate)語彙+連続月数条件+Progressive Disclosureで設計せよ
   summary: 投資UIの語彙は行動に直結。recommend→candidateの語彙選択がwhipsaw抑制の生命線。遅行指標ベースのアクション提案は単月閾値ではなく連続月
@@ -7264,9 +7228,6 @@ lessons:
   target_files:
   - docs/rule/trade-rule.md
   origin: '[[cmd_768]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L240
   title: '誤解14 IF-THEN: Open/Closeデフォルト判断はOpen-to-Open'
   summary: Open/Closeのデフォルトを判断する時は、このシステムのデフォルトがOpen-to-OpenでありClose-to-Closeではないことを前提にする。D
@@ -8500,9 +8461,6 @@ lessons:
   - trade_performance.py
   - return_calculator.py
   origin: '[[cmd_475]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L137
   title: FoF計測はLayerTimer.substepではなくL3 metadata.profilingを確認する
   summary: IF timing.pyのsubstep実装だけ見ると誤認しやすい時 THEN timing.pyのsubstep実装だけ見ると誤認しやすい
@@ -9110,9 +9068,6 @@ lessons:
   when: dual DB読込でclose_fallback='open'を指定しても、補完されるのはclose系列が完全に空の場合のみ時
   how: dual DB読込でclose_fallback='open'を指定しても、補完されるのはclose系列が完全に空の場合のみ
   origin: '[[cmd_215]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L082
   title: monthly_returns.portfolio_id(varchar)とportfolios.id(uuid)の型不整合
   summary: monthly_returns.portfolio_idはvarchar型、portfolios.idはuuid型。SQLでJOIN/IN比較する際にid::t
@@ -9725,9 +9680,6 @@ lessons:
   when: C抜き身のCANDIDATE_SET不一致 — CS4 [歴史的記述](4体)→C11_CCNh(11体)を実装・検証する時
   how: C抜き身のCANDIDATE_SET不一致 — CS4 [歴史的記述](4体)→C11_CCNh(11体)を実装・検証する時
   origin: '[[legacy_lesson_L027]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L026
   title: 本番FoFコンポーネント取得は `/api/portfolios/get` のみ（2026-02-15）
   summary: FoFのcomponent_portfoliosを取得するため `/api/admin/fof-portfolios` を呼んだら `404
@@ -9755,7 +9707,7 @@ lessons:
   - scripts/analysis/data_sync/download_all_prices.py
   origin: '[[legacy_lesson_L025]]'
   deprecated: true
-  deprecated_at: '2026-06-18T01:10:57+09:00'
+  deprecated_at: '2026-06-18T22:51:03+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
 - id: L024
   title: signal_historyのキーはPhase 2のmonth_last_trading_daysと同型でなければならない（2026-02-15）

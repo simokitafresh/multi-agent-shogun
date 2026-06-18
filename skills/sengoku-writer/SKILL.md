@@ -213,9 +213,16 @@ ls -1 /mnt/c/Python_app/DM-signal/marketing-director/content/articles/shogun/sen
 - 第十六話: `sengoku-16-six-wisdoms.md` — 六つの知恵を盗んできた
 - 第十七話: `sengoku-17-four-stolen-wisdoms.md` — 盗んで鍛えて鎖に載せた四つの知恵
 - 第十八話: `sengoku-18-ralph-loop.md` — 記憶を消しても強くなる・ラルフの輪
+- 第十九話: `sengoku-19-dream-consolidation.md` — dream統合
+- 第十九話(別): `sengoku-19-exam-prep.md` — 試験対策
+- 第二十話: `sengoku-20-concrete-failure-preload.md` — 具体的失敗の事前装填
+- 第二十一話: `sengoku-21-full-blueprint.md` — 全体設計図
+- 第二十二話: `sengoku-22-three-layer-memory.md` — 忘れても思い出せる城を建てた
+- 第二十三話: `sengoku-23-operational-ontology.md` — 城が自分で考え始めた
 
-次の記事は **第十九話** から。`sengoku-19-{テーマ}.md` で命名する。
+次の記事は **第二十四話** から。`sengoku-24-{テーマ}.md` で命名する。
 執筆前に直近の記事を読み、トーンを合わせること。
+**既刊一覧は陳腐化する。必ずStep 1.5でlsして実物確認せよ。**
 
 ## 文字数の目安
 
@@ -233,6 +240,13 @@ ls -1 /mnt/c/Python_app/DM-signal/marketing-director/content/articles/shogun/sen
 ### Step 6: note.comに下書き保存
 
 CDP経由でnote.comに下書き保存する。実行は共通ヘルパー `scripts/note_draft.sh` に委譲する。
+
+**CDP前提条件(2026-06-18実証):**
+- HeadlessChrome不可。note.comのProseMirrorエディタはGUI Chromeでのみ描画される
+- ポート確認順序: `curl -s http://localhost:9234/json/version` → `curl -s http://localhost:9222/json/version` の順で確認。HeadlessかどうかはUser-Agentの`HeadlessChrome`文字列で判定
+- GUI Chromeが未起動の場合: `powershell.exe -Command "Start-Process 'C:\Program Files\Google\Chrome\Application\chrome.exe' -ArgumentList '--remote-debugging-port=9234','--user-data-dir=C:\temp\chrome_note_cdp','https://note.com/dashboard'"` で隔離プロファイル付きGUI起動(D009: --user-data-dir必須)
+- ログイン未完了の場合: note_draft.shの自動ログインが失敗したら、CDPでログインボタンをクリック(`js_eval: buttons.find(b => b.textContent.trim() === 'ログイン').click()`)してから再実行
+- スピナー永続時: ダイレクトURL遷移ではなくダッシュボードからクリック遷移、またはPage.reloadで解消
 
 引数はMarkdownファイル1件のみ。`CDP_PORT` 未指定時は9234を使う。
 

@@ -3594,7 +3594,7 @@ lessons:
   origin: '[[cmd_2662]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-14'
+  last_referenced: '2026-06-18'
 - id: L588
   title: 因果分析は5W1H(WHY/WHAT/WHEN/WHERE/WHO/HOW)で漏れなく — WHOで送信者特定
   summary: cmd_karo_lesson_4fieldの誤FAIL分析でwhy/what/when/howだけでは根因に到達できなかった。whereで場所(家老のkaro
@@ -4310,6 +4310,9 @@ lessons:
   target_files:
   - tests/unit/test_cmd_save_environment_change.bats
   origin: '[[cmd_karo_ci_fix_env_change]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L540
   title: YAML文字列の一部を正規表現で削除するな
   summary: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
@@ -5138,6 +5141,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 次回以降 instructions/*.md を変更するcmdは git-ignored か事前確認が必要
   origin: '[[cmd_1903]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-18'
 - id: L471
   title: 'scout_exemptのcommit check: 注入するより注入しない方がシンプル'
   summary: 旧設計はscout_exempt=trueでもcommit checkを注入しresult:noを設定。gate_report_formatがresult:no
