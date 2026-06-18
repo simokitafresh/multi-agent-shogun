@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_3414_full
+  _ac_task_id: cmd_3434_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3414 (deployed 2026-06-16T13:27:19). Read from the beginning.
-  ac_version: e3c46bc8
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3434 (deployed 2026-06-18T10:18:53). Read from the beginning.
+  ac_version: bf381b2e
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -17,63 +17,80 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3414
+  parent_cmd: cmd_3434
   project: infra
-  purpose: 'memory_db_live_insert.py(L223)がmkstempでフルSQLiteバックアップを作成し、SIGKILL時にfinally(L238)未到達→孤児tmp蓄積(218個/7.2GB)。記録量は一切削減せず、SIGKILL時にtmpが残らない安全な書込み方式に改善する(殿厳命: 記憶DBはすべてを記録するから意味がある。選別も解釈もしない)'
+  purpose: 'context鮮度ALERT: dm-signal-research.md等4ファイルが2026-06-13以降5日間未更新。相関レジーム研究7cmd(3425-3431)で確立した知見7項目(max相関=戦略同質性, 高相関=バブル, 乖離リフト3-4x偽陽性70%, deterioration逆機能, σ閾値混成母集団不機能, リスクベースBB不適, Turning Points BB不採用)をcontext索引に反映。家老報告blt_20260618_101554。'
   status: done
   stop_for: []
-  target_path: scripts/memory_db_live_insert.py
-  task_id: cmd_3414_full
+  target_path: context/dm-signal-research.md
+  task_id: cmd_3434_full
   task_type: full
-  related_lessons:
-  - id: 'L744'
-    summary: 'memory_db_import.pyでEventRow型を14→15要素に拡張した際、build_lord_ruling_cache()のfor文アンパックが'
-    detail: 'memory_db_import.pyでEventRow型を14→15要素に拡張した際、build_lord_ruling_cache()のfor文アンパックが'
-  - id: 'L633'
-    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
-    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
-  - id: 'L238'
-    summary: 'usage_status.shのキャッシュ破損は全CLI(Claude含む)の使用量表示を停止させる'
-    detail: 'usage_status.shのキャッシュ破損は全CLI(Claude含む)の使用量表示を停止させる'
+  previous_failures:
+    attempt: 1
+    last_block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
+    tried_approaches:
+    - 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
+    approach_summary: 'Goulding et al.2023 Momentum Turning Pointsをシン四神12体に適用。EW FoFのslow(12M)/fast(3M)符号で4状態判定(185ヶ月)。Bull 80.5%/Correction 17.3%/Bear 1.6%/Rebound 0.5%。重み付けFoF最良v2でCalmar+0.005・NHF+1.6…'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
+      approach_summary: 'Goulding et al.2023 Momentum Turning Pointsをシン四神12体に適用。EW FoFのslow(12M)/fast(3M)符号で4状態判定(185ヶ月)。Bull 80.5%/Correction 17.3%/Bear 1.6%/Rebound 0.5%。重み付けFoF最良v2でCalmar+0.005・NHF+1.6…'
+  related_lessons: []
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   related_causal_links:
-  - "[[SIGKILL孤児tmp蓄積]]"
-  - "[[SIGKILL安全化根治]]"
-  - "[[三層記憶DB健全性WARN_3セッション連続]]"
+  - "[[blt_20260618_101554_家老context鮮度ALERT]]"
+  - "[[context鮮度5日経過]]"
+  - "[[研究7cmd完了後context未反映]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
   - "context/training-cycle.md"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L744: memory_db_import.pyでEventRow型を14→15要素に拡張した際、build_lord_ruling_cache()のfor文アンパックが
-      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
-      - L238: usage_status.shのキャッシュ破損は全CLI(Claude含む)の使用量表示を停止させる
-    ────────────────────────────────────────
-    
-    
-  memory_db_context:
-  - "2026-05-09T23:16:20+09:00 | **根因特定。** report_field_set.sh L238: ```bash if [[ "$val" == "PASS" || "$val" == "FAIL" || "$val" == "
-  - "2026-03-16T17:06:45+09:00 | 【教訓ALERT】ALERT: dm-signalの未振り分け教訓12件 → /lesson-sort推奨 ALERT: infraのlesson→context未合流231件(total:231,s"
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'SIGKILL時にtmpファイルが残存しない書込み方式が実装されている(signal handler/atexit/atomic rename等)'
+    - check: '相関レジーム研究7知見がdm-signal-research.mdに索引エントリ(結論1-2行+参照先パス)として追加され、grep確認できること'
   - id: 'AC2'
     checks:
-    - check: '全データが欠損なく記録される(記録量の削減・選別・間引きは禁止)'
-  - id: 'AC3'
-    checks:
-    - check: '既存のlive_insert機能(events INSERT+FTS5更新+cache同期)が正常動作し、L0-L7接続先(gate_three_layer_health.sh起動gate+prompt_state_inject.shのFTS5 preflight)に影響がない'
+    - check: '詳細データの参照先(DM-signal/docs/research/knowledge-base/experiments/correlation-regime-detection-20260617.md)が索引内にリンクされていること'
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3414.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3414.yaml
+  report_filename: tobisaru_report_cmd_3434.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3434.yaml
   bloom_level: 
-  deployed_at: "2026-06-16T13:28:14"
+  related_lessons:
+  - id: 'L510'
+    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
+    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh'
+  - id: 'L508'
+    summary: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
+    detail: '''6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python'
+  - id: 'L507'
+    summary: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
+    detail: 'archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_reports実行ごとにreportが移動してファイル数が変わる→キャッシュミス率高。warm連続実行(同一セッション内)でのみ効果大(630ms)。コールド実行では構築オーバーヘッドで悪化(1644ms)。WSL2'
+  - id: 'L506'
+    summary: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
+    detail: 'report_merge.sh の再改善で 1-pass 集計ロジック変更も試したが優位が安定しなかった。/mnt/c WSL2 上の短命 YAML'
+  - id: 'L505'
+    summary: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
+    detail: 'cli_profiles.yaml のように profile section 間へ空行を入れる運用は普通に起こる。line-based parser'
+  - id: 'L503'
+    summary: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+    detail: '''CoDD計測でbefore/afterが共に~330msと出た原因: knowledge_metrics.shがgate_metrics.log更新(他ninja'
+  - id: 'L502'
+    summary: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
+    detail: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file'
+  - id: 'L499'
+    summary: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
+    detail: '''gate_ninja_workaround_rate.shのキャッシュ_WA_TMP=.3021703はglobパターン/tmp/shogun_wa_rate_cache_*にマッチする。bats'
+  - id: 'L498'
+    summary: 'yaml_field_set.shはmap_scalar→list→root fallbackの3段階を経るが各段階はexit 2で通知する。set'
+    detail: 'yaml_field_set.shはmap_scalar→list→root fallbackの3段階を経るが各段階はexit 2で通知する。set'
+  - id: 'L497'
+    summary: 'bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport'
+    detail: 'bash -lc（ログインシェル）はログインスクリプト(/etc/profile等)を読み込んでPATHをリセットする。テストでexport'
+  deployed_at: "2026-06-18T10:19:15"
