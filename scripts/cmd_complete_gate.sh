@@ -6797,9 +6797,56 @@ PY
             _traverse_starts=$(echo "$_traverse_output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(','.join(d.get('start_concepts',[])))" 2>/dev/null || echo "")
             _no_test_count=$(echo "$_traverse_output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('no_test_scripts_count',0))" 2>/dev/null || echo "0")
             echo "  start_concepts: ${_traverse_starts:-none} | affected: ${_traverse_count} nodes | no_test_scripts: ${_no_test_count}"
-            # フォールバック: 検証スクリプト不在ノードがある場合はWARN（実行はskip）
+            # フォールバック: 検証スクリプト不在ノードがある場合はWARN
             if [ "${_no_test_count:-0}" -gt 0 ]; then
                 echo "  [WARN] ${_no_test_count} affected node(s) have no test scripts (skip execution)"
+            fi
+            # ─── Phase3: 影響ノードのtest_scripts実行（cmd_3442） ───
+            _ts_list=$(echo "$_traverse_output" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+scripts = []
+for node in d.get('affected_nodes', []):
+    for ts in node.get('test_scripts', []):
+        if ts not in scripts:
+            scripts.append(ts)
+print('\n'.join(scripts))
+" 2>/dev/null || echo "")
+            if [ -n "$_ts_list" ]; then
+                _ts_pass=0
+                _ts_fail=0
+                echo "  Executing test_scripts for affected nodes:"
+                while IFS= read -r _ts; do
+                    [ -z "$_ts" ] && continue
+                    _ts_path="$SCRIPT_DIR/$_ts"
+                    if [ ! -f "$_ts_path" ]; then
+                        echo "    [SKIP] $_ts (not found at $_ts_path)"
+                        continue
+                    fi
+                    if [[ "$_ts" == *.bats ]]; then
+                        if timeout 60 bats "$_ts_path" >/dev/null 2>&1; then
+                            echo "    [PASS] $_ts"
+                            _ts_pass=$((_ts_pass + 1))
+                        else
+                            echo "    [FAIL] $_ts"
+                            _ts_fail=$((_ts_fail + 1))
+                        fi
+                    else
+                        if timeout 60 bash "$_ts_path" >/dev/null 2>&1; then
+                            echo "    [PASS] $_ts"
+                            _ts_pass=$((_ts_pass + 1))
+                        else
+                            echo "    [FAIL] $_ts"
+                            _ts_fail=$((_ts_fail + 1))
+                        fi
+                    fi
+                done <<< "$_ts_list"
+                echo "  test_scripts result: PASS=${_ts_pass} FAIL=${_ts_fail}"
+                if [ "${_ts_fail:-0}" -gt 0 ]; then
+                    echo "  [WARN] ${_ts_fail} test script(s) FAILED in affected nodes (non-blocking)"
+                fi
+            else
+                echo "  test_scripts: none to execute (all affected nodes have no test scripts)"
             fi
             if [ "${_traverse_count:-0}" -gt 0 ] && [ -n "${_traverse_starts:-}" ]; then
                 _traverse_summary="因果トラバース ${CMD_ID}: 起点[${_traverse_starts}] → 影響${_traverse_count}ノード(depth=3)"
