@@ -410,7 +410,7 @@ check_lesson_effectiveness() {
             if (cmd !~ /^cmd_/) next
             if (!(cmd in selected)) next
             if (project != "" && proj != project) next
-            if (!((proj SUBSEP lid) in active)) next
+            if (!((proj SUBSEP lid) in active) && !(("infra" SUBSEP lid) in active)) next
             if (result == "pending" || ref == "pending") next
             # hotfix feedback is dominated by self-healing tasks and is too bursty
             # for the long-window lesson usefulness health signal.

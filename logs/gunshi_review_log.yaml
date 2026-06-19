@@ -1826,7 +1826,7 @@
 - cmd_id: cmd_3445_saizo
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "分割cmd。問題B(Compose遷移)に絞ったAC2件。元cmd_3445 APPROVE済み。SyncManager.kt 15KB=Sonnet scope内。scout_exempt=true適切"
   observations:
@@ -1907,7 +1907,7 @@
 - cmd_id: cmd_3447
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: ungated
   confidence: HIGH
   findings_summary: "万全偵察4名。cmd_3445結論(useWideViewPort=false)が実機で不正確→再検証。AC3件(AC1/2忍者scope、AC3家老突合)。4名独立でviewport根因確定"
   observations:
