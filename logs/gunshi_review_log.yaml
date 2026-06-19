@@ -1808,3 +1808,18 @@
   brainwash_check: "#1防止: 改善小幅だが計測精度向上は正しい方向。修正前4.0%→修正後3.9%(mature27件/611件除外)。#5防止: mature67%がuseful0%の事実を記録。#6防止: commit 8fc11a507+bats12/12まで完走"
   origin: "[[d0_mature_filter_20260618]] -> [[Bootstrap問題]] -> [[useful_rate真因]]"
   timestamp: "2026-06-18T23:45:00"
+- cmd_id: cmd_3445
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "偵察cmd。2名並列(GPT+Sonnet)でAndroid WebView viewport+Compose StateFlow根因特定。assumptions verified(殿ブラウザ確認+git blame+semantic_search)。AC3件scope完結。FM3件全対処"
+  observations:
+    - "事実1: target_path実在(MainActivity.kt 15220B, SyncManager.kt 15284B, SyncWorker.kt 1199B)"
+    - "事実2: assumptions trust:verifiedで殿確認日付(2026-06-19)+git log 12コミット+git blame行番号付き"
+    - "事実3: AC3(ビルド検証)はコード提示がscope。実機テストは殿環境"
+  causal_chain: "殿指示→12回場当たり修正で根因未到達→偵察cmd→2名並列で問題分離(viewport/遷移)→根因特定後に修正cmd"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  brainwash_check: "#1防止: AC3件×FM3件全検証。#2防止: target_path ls確認+assumptions trust検証。数値: AC3件/FM3件/assumptions 5ソース全verified"
+  origin: "[[cmd_3445]] -> [[google-classroom_v1-v2.3]] -> [[根因偵察]]"
+  timestamp: "2026-06-19T15:00:00"
