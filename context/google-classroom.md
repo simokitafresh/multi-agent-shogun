@@ -1,5 +1,5 @@
 # Google Classroom Dashboard — Context Index
-<!-- last_updated: 2026-06-20 -->
+<!-- last_updated: 2026-06-20 cmd_karo_hotfix_ga093 -->
 
 > Playwright headlessでGoogle Classroomをスクレイピング→ダッシュボード+試験対策まとめ生成。
 > PJ復帰: 2026-03-23殿裁定。CDP統合せず別PJ。
