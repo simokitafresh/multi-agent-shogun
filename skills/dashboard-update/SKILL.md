@@ -19,7 +19,7 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-06-11T13:26:58+09:00 -->
+<!-- script_refs_checked_at: 2026-06-20T00:47:00+0900 -->
 
 Script refs verified: 2026-06-11. `dashboard_update.sh` の契約は `<cmd_id> [--dry-run]` のまま。`gate_report_format.sh` は `bash scripts/gates/gate_report_format.sh <report_yaml_path>` で報告YAMLを検証し、binary_checks由来verdict自動導出・未記入BLOCK・PASS cache・auto-commit contamination WARNの契約変更なし。
 
@@ -180,4 +180,4 @@ bash scripts/ntfy.sh "📊 Dashboard: {直近cmd結果} | idle:{N}名 | pipeline
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `gate_report_format.sh` の現行契約を再確認。dashboard更新前の報告YAML検証は、binary_checks由来verdict自動導出・lessons_useful空リストBLOCK・中間FAILログ抑止を含む現在のgate出力を正本にする。
 
-<!-- script_refs_checked_at: 2026-06-11T13:26:58+09:00 -->
+<!-- script_refs_checked_at: 2026-06-20T00:47:00+0900 -->

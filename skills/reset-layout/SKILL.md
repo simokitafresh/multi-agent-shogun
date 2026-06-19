@@ -14,7 +14,7 @@ allowed-tools:
   - Read
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+<!-- script_refs_checked_at: 2026-06-20T00:47:00+0900 -->
 
 # /reset-layout — agentsウィンドウ一発復元
 
@@ -76,4 +76,4 @@ Script refs verified: 2026-05-20 cmd_2899. `reset_layout.sh` は `agent_config.s
 - ペイン数が8未満の場合は自動追加（8超過はERROR終了）
 - CLIが起動するまでが本スキルの責務
 
-<!-- script_refs_checked_at: 2026-06-07T21:51:07+09:00 -->
+<!-- script_refs_checked_at: 2026-06-20T00:47:00+0900 -->
