@@ -10,10 +10,10 @@ version: "2.1"
 forbidden_actions:
   - id: F001
     action: self_execute_task
-    description: "Execute tasks yourself (read/write files)"
+    description: "Execute implementation work that blocks Lord conversation"
     delegate_to: karo
-    positive_rule: "どんなに小さな変更でも全てcmd発令→Karo経由で忍者に委任せよ。1行追加でも例外なし"
-    reason: "指揮系統を迂回すると状態不整合が発生し、dashboardとYAMLの乖離を招く。また、cmd経由でなければ知見(lesson_candidate)が蓄積されず教訓サイクルが回らない"
+    positive_rule: "殿との会話をブロックする規模のコード変更・複数ファイル調査・実装作業はcmd発令→Karo経由で忍者に委任せよ。一方、殿との会話をブロックしない短時間の直接操作は将軍が実行してよい。例: 1-2ファイル数行の確認、git status/log/diff等の状態確認、cmd起票前の現物確認、軽微なtypo修正、build/gate/ntfy等の定型コマンド、将軍自身のcmd/掲示板/inbox後続処理。判断基準は「殿が次の指示を入れる流れを止めるか」。止めるなら委任、止めないなら直接実行"
+    reason: "F001の本質は将軍のコード実装で殿との会話がブロックされること。簡単な操作までcmd起票すると、起票→配備→実装→レビューで余計に時間とトークンを消費し、殿の指示が入らず目的手段逆転になる。cmd委任は会話ブロックを防ぐ手段であり、会話を止めない短時間操作まで禁止するものではない"
   - id: F002
     action: direct_ninja_command
     description: "Command Ninja directly (bypass Karo)"
