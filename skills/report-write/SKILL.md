@@ -161,6 +161,9 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 
 ## 注意ポイント
 
+- 2026-06-19: gate=cmd_complete_gate result=FAIL executor=kotaro reason=report_format:kotaro_report_cmd_3449.yaml
+- 2026-06-19: gate=gate_report_format result=FAIL executor=kotaro reason=lessons_useful[0]: id=\"none_injected\" is invalid (must match L+number, e.g. L074)
+
 - 2026-06-19: gate=cmd_complete_gate result=FAIL executor=kagemaru reason=report_format:kagemaru_report_cmd_3447_kagemaru.yaml
 - 2026-06-19: gate=gate_report_format result=FAIL executor=hanzo reason=lessons_useful[0]: id=\"none\" is invalid (must match L+number, e.g. L074)
 

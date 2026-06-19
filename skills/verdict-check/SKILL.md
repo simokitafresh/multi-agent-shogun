@@ -103,6 +103,8 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 - **verdict を Edit toolで直接書くな** — 独立フィールドとして扱うほど矛盾の温床になる
 
 ## 注意ポイント
+
+- 2026-06-19: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks: null (must be dict with AC entries); verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); knowledge_candidate: found=true but item...
 - 2026-06-17: gate=cmd_complete_gate result=FAIL executor=tobisaru reason=tobisaru:binary_checks_fail|command_files_modified_mismatch
 
 - 2026-06-17: gate=cmd_complete_gate result=FAIL executor=saizo reason=saizo:binary_checks_fail|command_files_modified_mismatch

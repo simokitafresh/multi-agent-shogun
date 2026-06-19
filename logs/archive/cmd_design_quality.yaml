@@ -55127,3 +55127,24 @@ entries:
   checks: "cmd_save_main"
   diagnosis: "BLOCK理由: q5=code_readingのみ(初回) / 対策: git blame+git logでstructure_verifiedに昇格。L5011(b032849f92)とL5017(462ea2ee31)の因果を確認"
   notes: "environment_changeが非構造化。構造化形式で記載せよ: type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な文字列"
+- cmd_id: "cmd_3413"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-16T04:16:46Z"
+  block_duration_minutes: 4
+- cmd_id: "cmd_3413"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-16T04:16:57Z"

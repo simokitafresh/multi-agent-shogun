@@ -1,147 +1,65 @@
 task:
-  readonly_ref:
-  - path: 'check_pf_config.py'
-    reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3389_full
+  _ac_task_id: cmd_3448_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3389 (deployed 2026-06-15T17:15:18). Read from the beginning.
-  ac_version: 5a562a55
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: '奥義-GS-新四つ目-激攻がAdmin UIで作成され、pipeline_configにWeightedMultiViewMomentumFilter・base_period_months=12・top_n=1が設定され、構成PF4体(GSシン抜き身-激攻・GSシン加速D-激攻・GSシン加速D-鉄壁・GSシン加速R-鉄壁)が紐付けられている'
-  - id: 'AC2'
-    checks:
-    - check: '奥義-GS-新四つ目-鉄壁がAdmin UIで作成され、pipeline_configにWeightedMultiViewMomentumFilter・base_period_months=12・top_n=2が設定され、構成PF4体(GSシン追い風-激攻・GSシン加速D-激攻・GSシン加速D-鉄壁・GSシン加速R-鉄壁)が紐付けられている'
-  - id: 'AC3'
-    checks:
-    - check: '奥義-GS-新四つ目-常勝がAdmin UIで作成され、pipeline_configにWeightedMultiViewMomentumFilter・base_period_months=12・top_n=2が設定され、構成PF3体(GSシン変わり身-常勝・GSシン四つ目-常勝・GSシン加速D-激攻)が紐付けられている'
-  - id: 'AC4'
-    checks:
-    - check: '3体全てでfullrecalculateが正常完了しmonthly_returnsにデータが生成されている'
-  - id: 'P1'
-    checks:
-    - check: '3体全てのpipeline_configがcheck_pf_config.pyでWeightedMultiViewMomentumFilter+正しいパラメータであることを確認する'
-  - id: 'P2'
-    checks:
-    - check: '3体全てのholding_signalがGS結果と月次突合で一致する(IEEE 754ノイズ1e-12許容)'
-  - id: 'P3'
-    checks:
-    - check: '3体全てのmonthly_return_openがGS結果のmonthly returnと一致する'
-  - id: 'P4'
-    checks:
-    - check: 'FE Dashboard/Admin UIで3体全てが正しく表示されていることをCDP経由で確認する'
-  - id: 'P5'
-    checks:
-    - check: '3体全てis_visible=falseで登録し、全検証完了後に公開する(hide-first原則)'
-  - id: 'P6'
-    checks:
-    - check: '既存PFのゴールデンデータが不変であることを確認する(新PF登録で既存PFに影響なし)'
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
-  engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
-  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
-  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
-  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
-  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
-  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
-  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
-  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
-  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
-  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
-  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3448 (deployed 2026-06-19T18:49:27). Read from the beginning.
+  ac_version: c99685c0
+  engineering_preferences: []
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3389
-  project: dm-signal
-  purpose: 殿指示(2026-06-15 やろう)。cmd_3388 GS全探索結果(45150パターン・0不一致達成)から選出した3モードチャンピオンを本番DBに登録する。BB=WeightedMultiViewMomentumFilter。checklist-shin-v2-registrationに準拠
+  parent_cmd: cmd_3448
+  project: google-classroom
+  purpose: 'cmd_3447万全偵察(3名一致)でviewportは正常(360-430px)と確定。根因候補2つ: (1)height:100vhがWebView dynamic viewportで誤計算しサイドバー高さが2行分に切詰め (2)同期HTMLが不完全(linkCount<20)。本cmdでonPageFinished JS診断ログをUI表示+CSS修正(100vh→top:0;bottom:0;height:auto;max-height:100dvh)を同時適用しビルド+GitHub Release。'
   scout_exempt: true
   status: idle
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal
-  task_id: cmd_3389_full
+  target_path: /mnt/c/Python_app/google_classroom/android/app/src/main/java/com/classroom/app
+  task_id: cmd_3448_full
   task_type: full
-  skill_hint: /db-check, /pf-registration
   related_lessons:
-  - id: 'L362'
-    summary: 'O(n²)ペア比較でSequenceMatcherを毎回新規生成していた。quick_ratio() O(n+m)で閾値未満を早期排除+テキスト事前計算で、35'
-    detail: 'O(n²)ペア比較でSequenceMatcherを毎回新規生成していた。quick_ratio() O(n+m)で閾値未満を早期排除+テキスト事前計算で、35'
-  - id: 'L173'
-    summary: 'instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github'
-    detail: 'instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github'
-  - id: 'L145'
-    summary: 'IF ashigaru.mdの内容を修正する時 THEN build_instructions.shのソースファイル(roles/,templates/等)を修'
-    detail: 'IF ashigaru.mdの内容を修正する時 THEN build_instructions.shのソースファイル(roles/,templates/等)を修'
-  - id: 'L135'
-    summary: 'IF build_instructions.sh時 THEN 副作用のないヘルプ確認を想定すると生成差分が発生する'
-    detail: 'IF build_instructions.sh時 THEN 副作用のないヘルプ確認を想定すると生成差分が発生する'
-  - id: 'L432'
-    summary: 'Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff'
-    detail: 'Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff'
-  - id: 'L090'
-    summary: 'copilot-instructions.mdとsystem.mdはgitignoreで管理外。CLAUDE.md修正→commitしても派生ファイルは自動再生'
-    detail: 'copilot-instructions.mdとsystem.mdはgitignoreで管理外。CLAUDE.md修正→commitしても派生ファイルは自動再生'
-  - id: 'L785'
-    summary: 'GA-044では.githooks/pre-pushは300秒full suiteだが、実際のcore.hooksPathは.git/hooksで60秒test'
-    detail: 'GA-044では.githooks/pre-pushは300秒full suiteだが、実際のcore.hooksPathは.git/hooksで60秒test'
+  - id: 'L235'
+    summary: 'IF Android Gradle project を WSL2 の `/mnt/c/...` で回し、KSP が `build/generated/ksp/.'
+    detail: 'IF Android Gradle project を WSL2 の `/mnt/c/...` で回し、KSP が `build/generated/ksp/.'
+  - id: 'L628'
+    summary: '主流手順(from main import app)はPASSだがarchitecture.mdのbackend.main方式はauth.pyの絶対import'
+    detail: '主流手順(from main import app)はPASSだがarchitecture.mdのbackend.main方式はauth.pyの絶対import'
+  - id: 'L626'
+    summary: 'frontend新規作成時、初期Next版に既知脆弱性がありnpm installで警告。npm view next version+postcss overr'
+    detail: 'frontend新規作成時、初期Next版に既知脆弱性がありnpm installで警告。npm view next version+postcss overr'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   related_causal_links:
-  - "[[cmd_3388_0不一致達成]]"
-  - "[[cmd_3389_3モード登録]]"
-  - "[[殿指示_本番登録]]"
-  context_hints:
-  - "context/robustness-verification-catalog.md"
-  - "context/gs-speedup-knowledge.md"
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
-  production_invariants:
-  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
-  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
-  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
-  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
-  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  - "[[cmd_3447偵察3名突合]]"
+  - "[[viewport正常確定+100vh誤計算仮説]]"
+  - "[[診断+CSS修正]]"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L362: O(n²)ペア比較でSequenceMatcherを毎回新規生成していた。quick_ratio() O(n+m)で閾値未満を早期排除+テキスト事前計算で、35
-      - L173: instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github
-      - L145: IF ashigaru.mdの内容を修正する時 THEN build_instructions.shのソースファイル(roles/,templates/等)を修
-      - L135: IF build_instructions.sh時 THEN 副作用のないヘルプ確認を想定すると生成差分が発生する
-      - L432: Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff
-      - L090: copilot-instructions.mdとsystem.mdはgitignoreで管理外。CLAUDE.md修正→commitしても派生ファイルは自動再生
-      - L785: GA-044では.githooks/pre-pushは300秒full suiteだが、実際のcore.hooksPathは.git/hooksで60秒test
+      - L235: IF Android Gradle project を WSL2 の `/mnt/c/...` で回し、KSP が `build/generated/ksp/.
+      - L628: 主流手順(from main import app)はPASSだがarchitecture.mdのbackend.main方式はauth.pyの絶対import
+      - L626: frontend新規作成時、初期Next版に既知脆弱性がありnpm installで警告。npm view next version+postcss overr
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
-  - "2026-06-11T13:15:29+09:00 | 一次データ確認完了。 | エージェント | 設定 | 状態 | |-------------|------|------| | **家老** | gpt-5.5 **medium fast** | 殿"
-  - "2026-06-15T15:34:39+09:00 | 【INFOバッチ】 2026-06-15 15:27:44|cmd_3388"
-  - "2026-06-15T15:03:50+09:00 | 【INFOバッチ】 2026-06-15 15:01:14|cmd_3387"
+  - "2026-06-19T18:26:31+09:00 | 【偵察結果】3名一致: viewport正常(360-430px)。根因はviewportではない。候補: (1)100vhがWebViewで誤計算→サイドバー高さ切詰め (2)同期HTMLが不完全。"
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'MainActivity.ktのonPageFinishedにJS診断ログ(viewport幅+sidebar scrollHeight+clientHeight+linkCount+hamburgerDisplay)が追加され、設定画面にデバッグ情報として表示されること'
+  - id: 'AC2'
+    checks:
+    - check: 'build_dashboard.pyのモバイルCSS .sidebarが height:100vh から top:0;bottom:0;height:auto;max-height:100dvh に修正されpublic/index.htmlが再生成されていること'
+  - id: 'AC3'
+    checks:
+    - check: 'assembleDebugでビルド成功しAPKが生成されていること'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3389.yaml
-  report_path: queue/reports/hayate_report_cmd_3389.yaml
+  report_filename: hayate_report_cmd_3448.yaml
+  report_path: queue/reports/hayate_report_cmd_3448.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -157,4 +75,4 @@ task:
     - pattern: 'field_missing'
       count: 18
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
-  deployed_at: "2026-06-15T17:15:46"
+  deployed_at: "2026-06-19T18:50:26"

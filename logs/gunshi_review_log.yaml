@@ -1919,3 +1919,57 @@
   brainwash_check: "#2防止: 前段結論の覆しを認識。CDPデータ+殿スクショの一次確認。AC3件/FM3件全検証"
   origin: "[[cmd_3447]] -> [[cmd_3445結論覆し]] -> [[4名万全偵察]]"
   timestamp: "2026-06-19T18:10:00"
+- cmd_id: gunshi_d0_cross_project_active_fix
+  review_type: self_study
+  verdict: D0_IMPLEMENTED
+  findings_summary: "infra教訓のcross-project注入時にactive判定バグ。lesson_impact.tsvのproject=cmd_projectでactiveチェックするため、infra教訓のフィードバック全除外。修正: infraフォールバック追加。useful率0.0%→6.0%"
+  observations:
+    - "事実1: L235はinfra/lessons.yamlにのみ存在。google-classroom cmdに注入→feedback project=google-classroom→active(google-classroom,L235)=false→除外"
+    - "事実2: 修正前useful=0/14(0.0%)→修正後useful=3/50(6.0%)。infra教訓36件のフィードバックが計測復帰"
+    - "事実3: bats 13/13 PASS。既存テストに影響なし"
+  causal_chain: "infra教訓(platform型)→全cmdに注入→lesson_impact.tsvにcmd_project記録→activeチェックがcmd_project×lesson_idのみ→infra教訓除外→useful率0.0%に低下(計測バグ)→ALERT偽悪化"
+  cs_checklist:
+    CS1: "gate_lesson_health.sh L295-435を全量読了。active_file構築→cmdフィルタ→activeチェックの流れを追跡"
+    CS2: "自システムのlesson_impact.tsvでL235のfeedback 3件(USEFUL 2件)を実測し、計測除外を検証"
+    CS3: "修正1行(L413)のawk条件追加。infra SUBSEPフォールバック"
+    CS4: "D0即実装+commit+家老通知。分析→コード修正→計測→テスト→commit"
+    CS5: "他のplatform型PJがないか確認済み(infraのみ)。将来platform PJ追加時は同修正必要だが現時点ではinfra固定で十分"
+    CS6: "根因=active判定のcross-projectフォールバック欠如→infra教訓全除外→useful率偽悪化→ALERT継続→無駄な改善活動の原因"
+  finding_categories: [assumptions, numbers, simulation]
+  brainwash_check: "#2防止: 修正前0/14→修正後3/50を実測。#6防止: 分析だけでなくD0実装+commit完了。#8防止: bats 13/13全PASS確認"
+  origin: "[[LG027]] -> [[cross-project active判定バグ]] -> [[useful率0.0%偽悪化]]"
+  timestamp: "2026-06-19T19:55:00"
+- cmd_id: cmd_3449
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "分割cmd報告ファイル名glob拡張。L202 verified。AC2件scope完結。FM3件(glob過剰/旧形式競合/nullglob)全てbatsカバー"
+  observations:
+    - "事実1: L202 new_fmt=${ninja}_report_${cmd}.yaml確認。分割cmd_3447_kagemuruのkagemaru_report_cmd_3447_kagemaru.yamlにマッチしない"
+    - "事実2: blt_20260619_185700(軍師)とblt_20260619_194243(家老)で根因一致。cmd_3447でGATE 3回リトライ→MISSING"
+  causal_chain: "分割cmd方式導入時のGATE検索パターン未拡張→報告ファイル名不一致→GATE MISSING→滞留→手動介入。glob拡張で全分割cmdのGATE自動完了が保証(正の複利)"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  brainwash_check: "#2防止: L202現物確認+分割cmdファイル名実在確認。#8防止: 冷え観点(ambiguity/adversarial)を意識的に検討し記録。FM3件全列挙"
+  origin: "[[blt_20260619_185700]] -> [[cmd_3447_GATE滞留]] -> [[cmd_complete_gate分割cmd未対応]]"
+  timestamp: "2026-06-19T20:12:00"
+- cmd_id: cmd_3449
+  review_type: report
+  report_ninja: kotaro
+  verdict: FAIL
+  gate_result: BLOCK
+  fail_reasons:
+    - "lessons_useful空リスト→GATE BLOCK確実。根因: related_lessonsフィールド不在(deploy_task.sh教訓0件注入)"
+  lesson_quality: OK
+  escalation_needed: false
+  findings_summary: "4観点(前提/数値/検死/完全性)OK。実装品質良好。FAIL理由はインフラ起因(LG014: 道具バグ)"
+  observations:
+    - "事実1: タスクYAMLにrelated_lessonsフィールドなし。deploy_task.shが教訓マッチ0件で注入省略"
+    - "事実2: commit 460e302a確認。split_fmtパターン追加(bash L205-206, Python L3060-3065)"
+    - "事実3: シミュレーション検証PASS(saizo_report_cmd_3445_saizo.yamlで実在分割cmd報告を検出)"
+  step3_5_verified: true
+  causal_chain: "deploy_task.sh教訓マッチ0件→related_lessons未注入→忍者lessons_useful記入不可→空リスト→GATE BLOCK。道具バグ(LG014)"
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  brainwash_check: "#2防止: SG-PRE11 ERROR確認→GATE BLOCK予測。#6防止: FAIL判定+インフラバグ根因報告。数値: PRE11=ERROR, commit=verified, FM検出=3件"
+  origin: "[[cmd_3449]] -> [[related_lessons未注入]] -> [[lessons_useful空→GATE BLOCK]]"
+  timestamp: "2026-06-19T20:23:00"
