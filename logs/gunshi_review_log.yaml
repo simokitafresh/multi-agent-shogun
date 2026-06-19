@@ -1857,7 +1857,7 @@
 - cmd_id: cmd_3446
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "修正cmd。v1.9(905c048)ベースに偵察修正2点+既知3バグ修正。AC3件=command3ステップ1:1。depends_on cmd_3445 CLEAR。timeout30分shallow"
   observations:
@@ -1886,3 +1886,20 @@
   brainwash_check: "#2防止: commit hash cb1540bを外部リポジトリのgit logで実在確認。#1防止: 問題B scope逸脱を検出し家老に競合リスク情報提供"
   origin: "[[cmd_3445]] -> [[hayate_report]] -> [[WebView+Compose根因修正]]"
   timestamp: "2026-06-19T15:10:00"
+- cmd_id: cmd_3446
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_3446_full
+  verdict: LGTM
+  gate_result: null
+  findings_summary: "4観点OK。commit 2d8f82b実在。useWideViewPort=false(2件)+snapshotFlow(3件)確認。6ファイル変更(4修正+2削除)。BC文言sha256粒度問題は情報提供"
+  observations:
+    - "事実1: commit 2d8f82b google-classroomリポジトリに実在(git log確認)"
+    - "事実2: SyncManager.ktに差分検出用sha256が8件残存。SHA256ファイル照合(検証)は削除済み"
+    - "事実3: NotificationHelper.kt/SyncWorker.kt削除確認(ls not found)"
+  causal_chain: "殿指示サンクコスト捨て→905c048ベース→偵察2根因修正+既知3修正→最小差分commit→assembleDebug SUCCESS"
+  step3_5_verified: true
+  finding_categories: [assumptions, numbers, premortem]
+  brainwash_check: "#2防止: commit 2d8f82b+AC1/AC2をgrep実測確認。sha256残存8件の意図を区別(差分検出vs検証)"
+  origin: "[[cmd_3446]] -> [[hayate_report]] -> [[クリーン再構築完了]]"
+  timestamp: "2026-06-19T17:30:00"
