@@ -582,6 +582,22 @@ send_codex_task_nudge() {
     run_tmux_with_timeout send-keys -t "$pane_target" Enter >/dev/null 2>&1 || return 1
 }
 
+capture_codex_delivery_snapshot() {
+    local target="$1"
+    local pane_target="$2"
+    local snapshot=""
+
+    [ -n "$pane_target" ] || return 0
+    echo "[inbox_write] post-nudge capture ${target} (-S -30):" >&2
+    snapshot=$(tmux capture-pane -t "$pane_target" -p -S -30 2>/dev/null || true)
+    if [ -n "$snapshot" ]; then
+        printf '%s\n' "$snapshot" >&2
+    else
+        echo "[inbox_write] post-nudge capture empty for ${target}; fallback tail -30:" >&2
+        tmux capture-pane -t "$pane_target" -p 2>/dev/null | tail -30 >&2 || echo "[inbox_write] post-nudge capture unavailable for ${target}" >&2
+    fi
+}
+
 verify_codex_task_delivery() {
     local target="$1"
     local msg_id="$2"
@@ -635,6 +651,7 @@ maybe_verify_codex_delivery() {
             pane_snapshot=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
             if echo "$pane_snapshot" | grep -qE '• (Working|Ran |Waiting)'; then
                 echo "[inbox_write] codex delivery verified (pane working) for ${target}" >&2
+                capture_codex_delivery_snapshot "$target" "$pane_target"
                 return 0
             fi
         fi
@@ -645,6 +662,7 @@ maybe_verify_codex_delivery() {
             if [ -n "$pane_target" ] && [ "$unread_count" -gt 0 ] 2>/dev/null; then
                 if send_codex_task_nudge "$target" "$pane_target" "$unread_count"; then
                     echo "[inbox_write] codex nudge retry ${attempt}/${retries} sent to ${target}" >&2
+                    capture_codex_delivery_snapshot "$target" "$pane_target"
                 else
                     echo "[inbox_write] codex nudge retry ${attempt}/${retries} failed for ${target}" >&2
                 fi
@@ -661,6 +679,7 @@ maybe_verify_codex_delivery() {
             else
                 echo "[inbox_write] codex delivery verified after retry ${attempt}/${retries} for ${target}" >&2
             fi
+            capture_codex_delivery_snapshot "$target" "$pane_target"
             return 0
         fi
 

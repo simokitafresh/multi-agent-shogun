@@ -509,6 +509,7 @@ lessons:
     (3)grep脱却: aliases拡充はgrepの延長。DB FTS5フォールバックで到達方法を変えよ(殿指摘)
     (4)配管設計: 全書込みスクリプトにリアルタイムINSERT+/clear時バッチ再構築。WAL必須。穴=未接続スクリプト
     (5)道具を作っても使わなければ存在しない。記憶DB無視=さぼり。品質他責は言い訳。迂回路を環境で封じよ(cmd_3007案A)
+    (6)三層貫通=3層全てに書き込んで各層から独立に検索到達可能にすること(殿厳命2026-06-19)。掲示板投稿だけでは1層(記憶DB)のみ=未貫通。Layer1=記憶DB直接INSERT、Layer2=index.md aliases追加、Layer3=lesson origin[[リンク]]。通信チャネル副作用に依存するな
   source_ids: [LS041, LS042, LS043, LS044, LS045]
   source_cmds_v3: [cmd_2964, cmd_2965, cmd_2984, cmd_2994, cmd_3007]
   created_at: '2026-05-23'
@@ -604,3 +605,20 @@ lessons:
   enforcement: 'type=hook; file=scripts/hooks/stop_check_inbox.sh; pattern=Q6'
 # LS066: 物理削除(2026-06-17)。superseded by LS048 detail(3)。startup BLOCK表面対処パターン
 # LS067: 物理削除(2026-06-17)。superseded by LS-A09(26)。計測データイベント前後混同→LS-A09に吸収
+- id: 'LS066'
+  title: 'queue/inbox symlinkは設計上の必然。実体ディレクトリ化禁止'
+  origin: '未指定'
+  detail: 'symlink先=~/.claude/projects/{path}/inbox(Claude Code auto-memory)。設計意図: CLI再起動永続+パス自動解決+Mac移植対応。家老がCodex sandbox制限で実体ディレクトリ化→inotify死亡+watcher停止+ナッジ滞留8件。将軍が設計意図未確認で承認(LS-A09違反)。変更前にreadlink+設計意図カタログ照合必須'
+  source_cmd: 'session_20260619_symlink'
+  created_at: '2026-06-19'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=symlink'
+# LS067: superseded by LS-A23(6) (三層貫通定義。2026-06-19統合)
+- id: 'LS068'
+  title: 'F001改訂: 殿との会話をブロックしない操作は将軍直接実行'
+  origin: '未指定'
+  detail: 'F001の本質=殿との会話ブロック防止。簡単な操作(ビルド/push/aliases/symlink/version bump)までcmd起票→quality_gate7段階で30分浪費=本末転倒。改訂: 殿との会話をブロックしない操作は将軍直接。ブロックする規模のコード変更のみcmd委任。実証: v5.4ビルド+リリース=将軍直接5分 vs cmd起票試行で殿に止められた'
+  source_cmd: 'session_20260619_F001'
+  created_at: '2026-06-19'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=F001改訂'

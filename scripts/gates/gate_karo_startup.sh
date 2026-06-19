@@ -557,12 +557,48 @@ END {
 review_quality_scale_summary() {
     local review_log="${1:-$SCRIPT_DIR/logs/gunshi_review_log.yaml}"
     local limit="${2:-20}"
+    local status_file="${3:-$SCRIPT_DIR/queue/shogun_to_karo.yaml}"
+    local gate_metrics_file="${4:-$SCRIPT_DIR/logs/gate_metrics.log}"
     [ -f "$review_log" ] || { echo "DATA_MISSING"; return 0; }
+    [ -f "$status_file" ] || status_file="/dev/null"
+    [ -f "$gate_metrics_file" ] || gate_metrics_file="/dev/null"
     [[ "$limit" =~ ^[0-9]+$ ]] || limit=20
     awk -v limit="$limit" '
 function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^["'\''"]|["'\''"]$/, "", s); return s }
+FILENAME == ARGV[1] {
+    if ($0 ~ /^[[:space:]]+cmd_[A-Za-z0-9_]+:/) {
+        s = $0
+        sub(/^[[:space:]]+/, "", s)
+        sub(/:.*/, "", s)
+        status_cmd = trim(s)
+        next
+    }
+    if (status_cmd != "" && $0 ~ /^[[:space:]]+status:/) {
+        s = $0
+        sub(/^[[:space:]]+status:[[:space:]]*/, "", s)
+        cmd_status[status_cmd] = trim(s)
+        next
+    }
+    next
+}
+FILENAME == ARGV[2] {
+    cmd = ""; result = ""
+    # Current gate_metrics format: ts<TAB>cmd_id<TAB>result<TAB>reason...
+    if (NF >= 3 && $2 ~ /^cmd_/) {
+        cmd = trim($2)
+        result = trim($3)
+    # Legacy test fixtures: ts<TAB>result<TAB>cmd_id<TAB>worker...
+    } else if (NF >= 3 && $3 ~ /^cmd_/) {
+        cmd = trim($3)
+        result = trim($2)
+    }
+    if (cmd != "" && result ~ /^(CLEAR|PASS)$/) {
+        gate_clear[cmd] = 1
+    }
+    next
+}
 function flush_entry() {
-    if (verdict != "" && verdict != "null") {
+    if (verdict != "" && verdict != "null" && review_type ~ /^(draft|report|verify)$/) {
         n++
         v[n] = verdict
         cid[n] = current_cmd_id
@@ -612,6 +648,8 @@ END {
         new_total++
         ok = (v[i] ~ /^(APPROVE|LGTM|PASS|CLEAR|VERIFIED|VERIFIED_FACTS|CONDITIONAL_PASS)$/)
         if (!ok && gr[i] ~ /^(CLEAR|PASS)$/) ok = 1
+        if (!ok && cid[i] != "" && cmd_status[cid[i]] ~ /^(done|completed|cancelled)$/) ok = 1
+        if (!ok && cid[i] != "" && gate_clear[cid[i]]) ok = 1
         if (!ok) new_warn++
     }
     if (new_total == 0) {
@@ -622,7 +660,7 @@ END {
     old_rate = (old_total > 0) ? int(old_warn * 100 / old_total) : 0
     printf "RATE %d %d %d %d\n", new_rate, new_warn, new_total, old_rate
 }
-' "$review_log"
+' "$status_file" "$gate_metrics_file" "$review_log"
 }
 
 if [[ "${GATE_KARO_STARTUP_LIB_ONLY:-0}" == "1" ]]; then
@@ -832,7 +870,52 @@ awk -v root="$SCRIPT_DIR" '
         next
     }
     FILENAME ~ /queue\/inbox\/karo\.yaml$/ {
+        if (/^- /) {
+            if (inbox_entry && inbox_read_false && inbox_type == "cmd_new") {
+                unread_cmd_new++
+                if (unread_cmd_new <= 3) {
+                    item = inbox_id
+                    if (item == "") item = "unknown"
+                    if (inbox_ts != "") item = item "@" inbox_ts
+                    if (inbox_content != "") item = item " " inbox_content
+                    gsub(/\|/, "/", item)
+                    unread_cmd_new_items = unread_cmd_new_items (unread_cmd_new_items != "" ? "; " : "") item
+                }
+            }
+            inbox_entry = 1
+            inbox_read_false = 0
+            inbox_type = ""
+            inbox_id = ""
+            inbox_ts = ""
+            inbox_content = ""
+        }
         if (/read: false/) unread++
+        if (inbox_entry && /^[[:space:]]*type:/) {
+            inbox_type = $0
+            sub(/^[[:space:]]*type:[[:space:]]*/, "", inbox_type)
+            gsub(/["'"'"']/, "", inbox_type)
+            gsub(/[[:space:]]+$/, "", inbox_type)
+        }
+        if (inbox_entry && /^[[:space:]]*read:[[:space:]]*false/) inbox_read_false = 1
+        if (inbox_entry && /^[[:space:]]*id:/) {
+            inbox_id = $0
+            sub(/^[[:space:]]*id:[[:space:]]*/, "", inbox_id)
+            gsub(/["'"'"']/, "", inbox_id)
+            gsub(/[[:space:]]+$/, "", inbox_id)
+        }
+        if (inbox_entry && /^[[:space:]]*timestamp:/) {
+            inbox_ts = $0
+            sub(/^[[:space:]]*timestamp:[[:space:]]*/, "", inbox_ts)
+            gsub(/["'"'"']/, "", inbox_ts)
+            gsub(/[[:space:]]+$/, "", inbox_ts)
+        }
+        if (inbox_entry && /^[[:space:]]*content:/) {
+            inbox_content = $0
+            sub(/^[[:space:]]*content:[[:space:]]*/, "", inbox_content)
+            gsub(/["'"'"']/, "", inbox_content)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", inbox_content)
+            if (length(inbox_content) > 80) inbox_content = substr(inbox_content, 1, 80) "..."
+        }
         next
     }
     FILENAME ~ /queue\/insights\.yaml$/ {
@@ -938,6 +1021,17 @@ awk -v root="$SCRIPT_DIR" '
         if (/^    delegated_at:/) { has_da = 1; next }
     }
     END {
+        if (inbox_entry && inbox_read_false && inbox_type == "cmd_new") {
+            unread_cmd_new++
+            if (unread_cmd_new <= 3) {
+                item = inbox_id
+                if (item == "") item = "unknown"
+                if (inbox_ts != "") item = item "@" inbox_ts
+                if (inbox_content != "") item = item " " inbox_content
+                gsub(/\|/, "/", item)
+                unread_cmd_new_items = unread_cmd_new_items (unread_cmd_new_items != "" ? "; " : "") item
+            }
+        }
         if (ins_id != "" && ins_status == "pending") {
             pending_insights++
             pending_insight_id[pending_insights] = ins_id
@@ -949,6 +1043,7 @@ awk -v root="$SCRIPT_DIR" '
             orphan_cmds = orphan_cmds (orphan_cmds != "" ? ", " : "") cmd
         }
         print "UNREAD|" unread+0
+        print "UNREAD_CMD_NEW|" unread_cmd_new+0 "|" unread_cmd_new_items
         print "INSIGHTS|" pending_insights+0
         insight_start = pending_insights - 2
         if (insight_start < 1) insight_start = 1
@@ -1013,6 +1108,7 @@ while IFS='|' read -r _agg_key _agg_a _agg_b _agg_c _agg_d _agg_e _agg_f; do
     case "$_agg_key" in
         STATUS) _NINJA_STATUS_CACHE[$_agg_a]=$_agg_b ;;
         UNREAD) unread=${_agg_a:-0} ;;
+        UNREAD_CMD_NEW) unread_cmd_new=${_agg_a:-0}; unread_cmd_new_items=${_agg_b:-} ;;
         INSIGHTS) _insight_pending_count=${_agg_a:-0} ;;
         INSIGHT_ITEM) _insight_recent_items="${_insight_recent_items}    ${_agg_a} [${_agg_b:-medium}] ${_agg_c}"$'\n' ;;
         GP) _gp_pending_count=${_agg_a:-0} ;;
@@ -1177,6 +1273,18 @@ echo "■ inbox未読"
 if [ -f "$SCRIPT_DIR/queue/inbox/karo.yaml" ]; then
     unread=${unread:-0}
     echo "  未読: ${unread}件"
+    if [ "${unread_cmd_new:-0}" -gt 0 ]; then
+        echo "  ALERT: 未処理cmd_new ${unread_cmd_new}件。配備漏れ防止のため通常作業禁止"
+        [ -n "${unread_cmd_new_items:-}" ] && echo "    ${unread_cmd_new_items}"
+        overall="ALERT"
+        alerts+=("未処理cmd_new: ${unread_cmd_new}件")
+    elif [ "$unread" -gt 0 ]; then
+        echo "  WARN: inbox未読あり。nudge/Stop hookに依存せず通常作業前に処理せよ"
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("inbox未読: ${unread}件")
+        fi
+    fi
 else
     echo "  未読: 0件 (inbox不在)"
     unread=0
@@ -1212,7 +1320,7 @@ fi
 
 # --- Check 3.8: レビュー品質スケール計測 ---
 echo "■ レビュー品質スケール"
-_review_quality_line="$(review_quality_scale_summary "$SCRIPT_DIR/logs/gunshi_review_log.yaml" 20 2>/dev/null || echo "DATA_MISSING")"
+_review_quality_line="$(review_quality_scale_summary "$SCRIPT_DIR/logs/gunshi_review_log.yaml" 20 "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null || echo "DATA_MISSING")"
 if [[ "$_review_quality_line" == RATE* ]]; then
     read -r _rq_tag _rq_rate _rq_warn _rq_total _rq_old_rate <<< "$_review_quality_line"
     if [ -n "${_rq_old_rate:-}" ] && [ "${_rq_old_rate}" != "${_rq_rate}" ] 2>/dev/null; then
@@ -1404,6 +1512,7 @@ if [ -x "$skill_summary_script" ]; then
     if [ -f "$SCRIPT_DIR/logs/skill_execution_log.yaml" ]; then
         _skill_current_sig="$(stat -c '%Y:%s' "$SCRIPT_DIR/logs/skill_execution_log.yaml" 2>/dev/null || echo '')"
     fi
+    _skill_current_sig="${_skill_current_sig}|gate:$(stat -c '%Y:%s' "$SCRIPT_DIR/scripts/gates/gate_karo_startup.sh" 2>/dev/null || echo '')"
     if [[ -f "$_SKILL_SUMMARY_CACHE" ]]; then
         IFS= read -r _skill_cache_sig < "$_SKILL_SUMMARY_CACHE" || _skill_cache_sig=""
     fi
@@ -1456,6 +1565,26 @@ if [ -x "$skill_recommend_metrics_script" ] || [ -f "$skill_recommend_metrics_sc
     fi
 else
     echo "    SKIP: skill_recommend_metrics.sh 不在"
+fi
+echo ""
+
+# --- Check 10.5: Codex hook禁止event ---
+echo "■ Codex hook設定"
+codex_hook_gate="$SCRIPT_DIR/scripts/gates/gate_codex_hooks_no_stop.sh"
+if [ -x "$codex_hook_gate" ] || [ -f "$codex_hook_gate" ]; then
+    set +e
+    _codex_hook_out="$(bash "$codex_hook_gate" "$SCRIPT_DIR/.codex/hooks.json" 2>&1)"
+    _codex_hook_status=$?
+    set -e
+    printf '%s\n' "$_codex_hook_out" | sed 's/^/  /'
+    if [ "$_codex_hook_status" -ne 0 ]; then
+        if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+        alerts+=("Codex hook設定: Stop/UserPromptSubmit禁止違反")
+    fi
+else
+    echo "  WARN: gate_codex_hooks_no_stop.sh 不在"
+    if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+    alerts+=("Codex hook設定: gate不在")
 fi
 echo ""
 

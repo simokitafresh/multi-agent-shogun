@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-19 cmd_karo_hotfix_cmd3453_symlink_ops -->
+<!-- last_updated: 2026-06-20 cmd_3457 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,18 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2897 | ac_phase_mixing FP率100%(3/3)。commitは忍者の通常完了動作であり実装ACに書くのが自然。deliveryキーワードからcommit/コミットを除外し偽陽性を根絶する | infra | 05-20 | cmd_save.shのAC phase mixing de |
-| cmd_2898 | 将軍がcmd_save BLOCK後にフリーズする根因=どの行のどのキーワードがBLOCKを引き起こしたか不明で1箇所ずつ修正→再BLOCK→探す→修正の繰り返し。全BLOCK要因を一括表示し1回の修正で全解消できるようにする | infra | 05-20 | cmd_save.shのBLOCK/WARN終了サマリにチェ |
-| cmd_2900 | gws CLIのGmail操作知識がcontext/infrastructure.mdに不足。auth statusが暗号化credentialsを検出できないバグがあり、将軍がログアウトと誤判断→殿に無駄なブラウザ認証を依頼した。実APIで確認すれば1秒で動くことを確認できた。知識不足が確認不足を招く構造を修正する | infra | 05-20 | context/infrastructure.md §gws |
-| cmd_2902 | 因果NW成長が停止している根因=cmdのoriginフィールドが空/noneでもWARN止まりで通過する。causal_resource_rows()は実装済みだがorigin空では辺が生成されずsemantic_index還流が不発。originに[[リンク]]1つ以上を必須化しBLOCKで強制する | infra | 05-20 | origin空/none/リンクなしをBLOCKとして固定す |
-| cmd_2903 | 掲示板が100件に膨張(open85件)。bulletin_archive.shがPython SyntaxErrorで動かない(L177-178のf-stringエスケープ漏れ)。真因=手動実行前提で自動パスがなくバグが放置された。構文修正+bulletin_write.shに閾値超過時の自動アーカイブ呼出しを追加し、掲示板肥大化を構造的に防止する | infra | 05-20 | bulletin_archive.shのSyntaxErro |
-| cmd_2904 | Codex CLI忍者がidle時にsafe_send_clear()で無条件respawn-pane -kされ無限ループ(198回/今日)。根因=L754のcodex分岐がtask statusを確認せずidle/in_progress問わず一律respawn。idleならcodex /newで十分。respawnはin_progress時のみ必要。task status分岐を追加し無限ループを根絶する | infra | 05-20 | Codex idle+no_task時に_handle_au |
-| cmd_2906 | cmd_2904がCodex+idle時にsafe_send_clearを呼ばない即returnを追加した結果、Codex忍者がidle時にCTXリセットされなくなった(GPT忍者3名のCTX蓄積中)。修正: (1)_handle_auto_clearの即returnを削除 (2)safe_send_clear内のCodex分岐でtask statusを確認し、idle/done→respawn分岐スキップ→clear_cmd=/new経路に落ちる。in_progress→respawn-pane -k維持 | infra | 05-20 | ninja_monitor.shのCodex idle時 / |
-| cmd_2907 | cmd_2906でCodex idle時を/new経路に変更したが、Codex CLIが/newをtask in progressで拒否しCTXリセット不能。元のrespawn-pane -k経路に戻す | infra | 05-20 | Codex safe_send_clearのテスト期待値をr |
-| cmd_2908 | cmd_save.sh/cmd_publish.sh BLOCK時にPostToolUse hookのGuard 0が発火せず、将軍がBLOCK後に停止する。根因はexit_code抽出jqがClaude Codeの実payload構造にマッチしないこと | infra | 05-20 | post-bash Guard 0がClaude Code実 |
-| cmd_2910 | 因果辺のoriginノード名の68%がセマンティクスインデックス未登録。GATE CLEAR時にoriginノードをaliases照合し、未登録ノードをinsights.yamlにpending蓄積→概念自動成長を実現する | infra | 05-20 | cmd_complete originノードを専用にalia |
-| cmd_2911 | lessons_karo.yamlが35件上限に到達し新規教訓追加がBLOCK。LK-A01にv8吸収(設計意図確認)とLK013(STALL再配備3点確認)をA系列に統合し件数を削減する | infra | 05-20 | LK-A01へv8設計意図確認を統合し、LK013をLK-A |
-| cmd_2912 | insights.yamlに蓄積されたpending概念22件がセマンティクスインデックスに昇格されず手動待ち。類似概念スコア照合で既存概念のaliases自動拡張し、因果NWの到達性を自動的に拡大する | infra | 05-20 | pending semantic insightsを類似度ス |
 | cmd_2915 | L7成長速度最大化のなぜなぜ7回→軍師検証で律速=aliases品質と判明。改善にはNO_MATCHの内容(purpose/target_path)が必要だが現在記録されていない。計測基盤を先に作り、データ駆動でaliases拡充する道具を整える | infra | 05-21 | HEAD既存のsemantic NO_MATCH記録を現物確 |
 | cmd_2917 | deploy_task.shがexit 1で終了した場合、maybe_notify_draft_review(L6712)が成功パスにのみ存在するため軍師へのdraft_review通知が送信されない。EXIT trap(L323)にdraft_reviewフォールバックを追加し、配備失敗時も軍師レビューフローが途切れないようにする | infra | 05-21 | deploy_task.shのEXIT trapにdraft |
 | cmd_2918 | L7現物確認でNO_MATCH率表示が家老gateのみで将軍gateにないことを発見。L7は将軍が管理するがL7健全度が起動時に見えない。家老gate(L181 show_semantic_no_match_metrics)と同じ計測セクションを将軍gateに追加する | infra | 05-21 | 将軍startup gateにセマンティックNO_MATCH |
@@ -489,3 +477,7 @@
 | cmd_3449 | cmd_3447でGATE滞留発生(2026-06-19)。軍師根因特定(blt_20260619_185700): 分割cmd(cmd_XXXX_ninja)の報告ファイル名=ninja_report_cmd_XXXX_ninja.yaml。親cmdのGATEが期待するファイル名=ninja_report_cmd_XXXX.yaml(L202)。名前不一致でMISSING判定。glob展開を拡張し分割cmd報告を検出可能にする | infra | 06-19 | 分割cmd報告ファイル名(ninja_report_cmd_ |
 | cmd_3452 | 殿指示(2026-06-19 21:22): 動作していないhook/gate/デーモンがないか覚醒して調査。log_terminal_response.sh(Stop hook)がゼロ出力で沈黙していたバグを発端に、全10hookの動作検証を実施。確認済み6本(session_start_inject/pretool-dispatch/posttool-dispatch/stop_check_inbox/log_terminal_input/prompt_state_inject)。未検証4本(stop-lint-gate/stop_session_alerts/session_end_clear_check/log_terminal_response=cmd_3451で修復中)を重点検証 | infra | 06-19 | 未検証hook 4本を条件付きで実行検証し、修復が必要な沈黙 |
 | cmd_3450 | 殿指示(2026-06-19 21:14)。v5.3-diag診断データでsidebarClientHeight=88(2行分)が確認された。前セッション偵察(18:26)で根因特定済み: height:100vhがWebViewで誤計算されサイドバー高さが切り詰められる。モバイルビューでサイドバーをheight:0またはdisplay:noneで完全非表示にする | google-classroom | 06-19 | モバイルビューの.sidebarにheight:0+over |
+| cmd_3454 | — | — | 06-20 | — |
+| cmd_3455 | 殿指摘(2026-06-19 22:34): 記憶DBへの書込みが掲示板/inbox/insightの副作用に依存しており、知識を直接INSERTする専用ツールがない。三層貫通でLayer1に書くとき通信チャネルを迂回路にしていた。memory_db_knowledge_write.shを作成し、通信に依存しない直接書込みを可能にする | infra | 06-20 | memory_db_knowledge_write.shを追 |
+| cmd_3456 | 殿指示(2026-06-19 22:47): classroomを進めよう。cmd_3450 CSS修正(commit 5db49a5 height:0+overflow:hidden)がv5.3-diag以降に入っている。v5.4としてリリースし、殿の実機でv5.3-diag診断データ(sidebarClientHeight)が0になることを検証する | google-classroom | 06-20 | — |
+| cmd_3457 | 殿裁定(2026-06-19 22:56): F001の本質は将軍がコード実装すると殿との会話がブロックされること。簡単な操作までcmd起票すると余計に時間とトークンを消費し殿の指示が入らず目的手段逆転。F001を改訂し殿との会話をブロックしない操作は将軍直接実行、ブロックする規模のコード変更のみcmd委任と明記する | infra | 06-20 | F001を殿会話ブロック基準へ改訂し、将軍の短時間直接操作許 |

@@ -747,10 +747,59 @@ fi
 # --- Inbox unread count ---
 inbox_file="$SCRIPT_DIR/queue/inbox/${agent_id}.yaml"
 unread_count=0
+unread_cmd_new_count=0
+unread_cmd_new_items=""
 if [[ -f "$inbox_file" ]]; then
   unread_count="$(awk '/^[[:space:]]*read:[[:space:]]*false[[:space:]]*$/{c++} END{print c+0}' "$inbox_file" 2>/dev/null || echo 0)"
   if [[ ! "$unread_count" =~ ^[0-9]+$ ]]; then
     unread_count=0
+  fi
+  if [[ "$agent_id" == "karo" ]]; then
+    unread_cmd_new_summary="$(awk '
+      function finalize() {
+        if (in_entry && unread && type == "cmd_new") {
+          count++
+          if (count <= 3) {
+            item = id
+            if (item == "") item = "unknown"
+            if (content != "") item = item " " content
+            gsub(/\|/, "/", item)
+            items = items (items != "" ? "; " : "") item
+          }
+        }
+      }
+      /^- / {
+        finalize()
+        in_entry=1; unread=0; type=""; id=""; content=""
+      }
+      in_entry && /^[[:space:]]*read:[[:space:]]*false/ { unread=1 }
+      in_entry && /^[[:space:]]*type:/ {
+        type=$0
+        sub(/^[[:space:]]*type:[[:space:]]*/, "", type)
+        gsub(/["'"'"']/, "", type)
+        gsub(/[[:space:]]+$/, "", type)
+      }
+      in_entry && /^[[:space:]]*id:/ {
+        id=$0
+        sub(/^[[:space:]]*id:[[:space:]]*/, "", id)
+        gsub(/["'"'"']/, "", id)
+        gsub(/[[:space:]]+$/, "", id)
+      }
+      in_entry && /^[[:space:]]*content:/ {
+        content=$0
+        sub(/^[[:space:]]*content:[[:space:]]*/, "", content)
+        gsub(/["'"'"']/, "", content)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", content)
+        if (length(content) > 70) content = substr(content, 1, 70) "..."
+      }
+      END {
+        finalize()
+        print count+0 "|" items
+      }
+    ' "$inbox_file" 2>/dev/null || echo "0|")"
+    unread_cmd_new_count="${unread_cmd_new_summary%%|*}"
+    unread_cmd_new_items="${unread_cmd_new_summary#*|}"
+    [[ "$unread_cmd_new_count" =~ ^[0-9]+$ ]] || unread_cmd_new_count=0
   fi
 fi
 
@@ -802,7 +851,10 @@ fi
 inbox_warning=""
 # 1通でも重要な報告が含まれる可能性(殿指摘2026-04-16)。全未読で警告
 if (( unread_count >= 1 )); then
-  if [[ "$agent_id" == "shogun" ]]; then
+  if [[ "$agent_id" == "karo" && "$unread_cmd_new_count" -gt 0 ]]; then
+    inbox_warning="
+🚨 KARO CMD_NEW ${unread_cmd_new_count}件未処理。配備漏れ直結。通常作業・殿への状況回答より先にinboxを読み、cmd_newを処理せよ。対象: ${unread_cmd_new_items}"
+  elif [[ "$agent_id" == "shogun" ]]; then
     inbox_warning="
 ⚠️ INBOX ${unread_count}件未読。殿に応答する前にinboxと掲示板を確認せよ。"
   else
