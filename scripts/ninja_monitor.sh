@@ -3256,7 +3256,7 @@ count_unread_messages_cached() {
 }
 
 check_inbox_renudge() {
-    local all_agents=("karo" "gunshi" "${NINJA_NAMES[@]}")
+    local all_agents=("shogun" "karo" "gunshi" "${NINJA_NAMES[@]}")
     local now
     now=$EPOCHSECONDS
 
@@ -3951,13 +3951,13 @@ check_ninja_cli_dead() {
 
         # pane_dead判定を先に実施（Codex dead時はpane_current_command=nodeでスキップされる問題を修正）
         local _early_pane_dead
+        local pane_cmd=""
         _early_pane_dead=$(tmux display-message -t "$pane_target" -p '#{pane_dead}' 2>/dev/null || echo "0")
         if [ "$_early_pane_dead" = "1" ]; then
             # pane自体が死んでいる → CLI死亡確定
             :
         else
             # pane生存時: pane_current_commandでCLI死亡を判定
-            local pane_cmd
             pane_cmd=$(tmux display-message -t "$pane_target" -p '#{pane_current_command}' 2>/dev/null || true)
 
             # bash/zsh/sh以外はCLI稼働中 → スキップ
@@ -4160,7 +4160,7 @@ check_shogun_ctx() {
 # cmd_320改修: CLIの実モデル値を検出し、@model_nameと比較。不整合があれば自動修正。
 # 実モデル検出失敗時はsettings.yaml/cli_profiles.yamlにフォールバック（AC3）。
 check_model_names() {
-    local all_agents=("karo" "gunshi" "${NINJA_NAMES[@]}")
+    local all_agents=("shogun" "karo" "gunshi" "${NINJA_NAMES[@]}")
 
     for name in "${all_agents[@]}"; do
         local target
@@ -4209,7 +4209,7 @@ check_model_names() {
 # tmuxペイン変数 @inbox_count に設定。pane-border-formatで参照される。
 # 未読0: 空文字（非表示）、未読1以上: " 📨N"
 update_inbox_counts() {
-    local all_agents=("karo" "gunshi" "${NINJA_NAMES[@]}")
+    local all_agents=("shogun" "karo" "gunshi" "${NINJA_NAMES[@]}")
     local inbox_dir="$SCRIPT_DIR/queue/inbox"
 
     for name in "${all_agents[@]}"; do
