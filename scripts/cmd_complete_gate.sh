@@ -1682,7 +1682,7 @@ is_lessons_useful_empty_warn_task_type() {
     local task_type
     task_type=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]"'"'"'')
     case "$task_type" in
-        scout|verify) return 0 ;;
+        scout|verify|recon) return 0 ;;
         *) return 1 ;;
     esac
 }

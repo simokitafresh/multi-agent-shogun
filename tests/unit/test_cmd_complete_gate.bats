@@ -1287,6 +1287,13 @@ EOF
     [[ "$output" == *"[WARN] sasuke: lessons_useful空。task_type=verify のためBLOCK対象外"* ]]
     [ "$ALL_CLEAR" = true ]
     [ "${#BLOCK_REASONS[@]}" -eq 0 ]
+
+    # recon (偵察) も教訓注入なし/少が一般的→WARN扱い
+    handle_empty_lessons_useful_check "sasuke" "recon" "" > "$TEST_TMPDIR/lessons_useful_output.txt"
+    output="$(cat "$TEST_TMPDIR/lessons_useful_output.txt")"
+    [[ "$output" == *"[WARN] sasuke: lessons_useful空。task_type=recon のためBLOCK対象外"* ]]
+    [ "$ALL_CLEAR" = true ]
+    [ "${#BLOCK_REASONS[@]}" -eq 0 ]
 }
 
 @test "lessons_useful empty remains BLOCK for exact task type" {
