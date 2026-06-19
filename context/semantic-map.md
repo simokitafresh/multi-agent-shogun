@@ -1,4 +1,3 @@
-<!-- last_updated: 2026-06-19 cmd_3447 -->
 ---
 codd:
   node_id: design:semantic-map

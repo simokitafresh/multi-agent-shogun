@@ -160,6 +160,23 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-06-19: gate=cmd_complete_gate result=FAIL executor=kagemaru reason=report_format:kagemaru_report_cmd_3447_kagemaru.yaml
+- 2026-06-19: gate=gate_report_format result=FAIL executor=hanzo reason=lessons_useful[0]: id=\"none\" is invalid (must match L+number, e.g. L074)
+
+- 2026-06-19: gate=cmd_complete_gate result=FAIL executor=hanzo reason=hanzo:empty_lessons_useful:related=[cmd_3447_hanzo_normal,]
+- 2026-06-19: gate=cmd_complete_gate result=FAIL executor=kagemaru reason=kagemaru:empty_lessons_useful:related=[cmd_3447_kagemaru_normal,]
+
+- 2026-06-19: gate=cmd_complete_gate result=FAIL executor=hayate reason=report_format:saizo_report_cmd_3445_saizo.yaml|saizo:invalid_lessons_useful_format
+- 2026-06-19: gate=gate_report_format result=FAIL executor=saizo reason=lessons_useful[0]: useful=NOT_USEFUL is str (must be true or false); lessons_useful[1]: useful=NOT_USEFUL is str (must be true or false)
+
+- 2026-06-19: gate=cmd_complete_gate result=FAIL executor=hayate reason=saizo:invalid_lessons_useful_format
+- 2026-06-19: gate=gate_report_format result=FAIL executor=unknown reason=worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; files_modified: MISSING; lessons_useful[0]: missing \"id\" field (must have lesson ID like L074); lessons_usef...
+
+- 2026-06-19: gate=cmd_complete_gate result=FAIL executor=hayate reason=report_format:saizo_report_cmd_3445_saizo.yaml|saizo:empty_lessons_useful:related=['L219','L211',cmd_3445_saizo_normal,,MISSING;parent_cmd:MISSING;ac_version_read:MISSING;binary...
+- 2026-06-19: gate=cmd_complete_gate result=FAIL executor=hayate reason=report_format:saizo_report_cmd_3445_saizo.yaml
+
+- 2026-06-19: gate=gate_report_format result=FAIL executor=saizo reason=binary_checks: null (must be dict with AC entries); status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must b...
 - 2026-06-15: gate=cmd_complete_gate result=FAIL executor=kagemaru reason=kagemaru:empty_lessons_useful:related=['L634','L633','L621','L620','L619','L618','L617','L616','L615','L614']
 
 - 2026-06-13: gate=gate_report_format result=FAIL executor=unknown reason=worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; lessons_useful[0]: missing \"id\" field (must have lesson ID like L074); lessons_useful[0]: missing \"useful\"...
@@ -318,3 +335,4 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_field_set.sh` の現行契約を再確認。lessons_useful空リスト、binary_checks空欄、status pending、summary空欄はgate_report_format.shでBLOCKされるため提出前に必ずgateを通す。
 Script refs verified: 2026-06-08 9a1c5df09. `report_field_set.sh` のfiles_modified autofixがスペース区切り複数パス（拡張子or/を含む2+トークン）を検出し個別dict変換する。files_modifiedをスペース区切り文字列で渡しても正しくlist of dict化される。推奨形式（YAML list）への影響なし。
 Script refs verified: 2026-06-09 06f5a0856. `report_field_set.sh` にlessons_useful全体上書きBLOCKガード追加。テンプレート注入済み件数より少ないリストで全体上書きすると拒否される。個別per-item書込み(`lessons_useful.0.useful true`等)を推奨。Step 2のコメントに制約注記済み。
+<!-- script_refs_checked_at: 2026-06-18T23:50:10+09:00 -->

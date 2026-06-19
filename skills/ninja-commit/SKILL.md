@@ -89,3 +89,4 @@ Script refs verified: 2026-06-08 9a1c5df09. `report_field_set.sh` のfiles_modif
 Script refs verified: 2026-06-09 06f5a0856. `report_field_set.sh` にlessons_useful全体上書きBLOCKガード追加(既存件数>新件数で拒否)。ninja-commitはcommit_hash記録のみで影響なし。
 
 <!-- script_refs_checked_at: 2026-06-09T09:25:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-18T23:50:10+09:00 -->

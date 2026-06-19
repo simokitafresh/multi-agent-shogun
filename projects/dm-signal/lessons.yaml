@@ -1985,6 +1985,9 @@ lessons:
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.csv
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.meta.yaml
   origin: '[[cmd_1899]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L627
   title: '横展開漏れ検出: コード修正時にgrep同パターン全ファイル確認必須'
   summary: '1箇所修正→他ファイルにコピペ散在→漏れ。TRF/MAFが04f74830 bisect修正で漏れた実例。チェック: grep修正前パターンで残存0件確認。PI'
@@ -2014,6 +2017,9 @@ lessons:
   - outputs/scripts/
   - backend/
   origin: '[[cmd_karo_gs_vectorized]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L625
   title: GS dir旧ファイル混在はchampion_selector汚染リスク — GS前にdir棚卸し+退避を先行ステップに入れよ
   summary: GS出力ディレクトリに旧universe/旧cmd出力が残存するとchampion_selectorが旧データを読み込み汚染される。GS実行前にdir内棚卸し+
@@ -3809,6 +3815,9 @@ lessons:
   target_files:
   - queue/reports/kotaro_report_cmd_1447.yaml
   origin: '[[cmd_1447]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L501
   title: is_custom_weightガード除去時の暗黙的副作用
   summary: 'commit d49a9174がis_kalman_metaガードを除去した際、prev_ward_weightsが全FoFで更新される副作用が発生。Ward '
@@ -7341,6 +7350,9 @@ lessons:
   when: Monthly TradeまたはMonthly Returnsの計算を修正する時
   how: 同一年月・同一PFでMonthly Trade Return = Monthly Returns Returnが完全一致することを検証せよ
   origin: '[[cmd_766]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L234
   title: 'RULE10 IF-THEN: シグナル判定はClose固定、Openはリターン計算限定'
   summary: モメンタム/シグナル判定は常にClose価格を使い、Open価格での判定を禁止する。Open/Close選択を許すのはリターン計算だけで、判定とリターンで価格系
@@ -7350,6 +7362,9 @@ lessons:
   when: モメンタム/シグナル判定を修正する時
   how: シグナル判定は常にClose価格を使い、Open価格での判定を厳禁とする
   origin: '[[cmd_766]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L233
   title: 'RULE09 IF-THEN: Open/Closeは独立計算系列、混在禁止'
   summary: Open/Closeは独立計算系列として扱い、同一計算パス内でOpen価格とClose価格を混在させるな。混在させるとリターン計算が数学的に不正になる。
@@ -8037,6 +8052,9 @@ lessons:
   when: タスク配備やデプロイ手順を変更・実行する時
   how: Render本番のAPI障害では、`/openapi.json`で対象path有無を最初に確認すると、認証・CORS・DB要因より先に『デプロイドリフト/未反映』を即断できる
   origin: '[[cmd_553]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L177
   title: 本番404切り分けはopenapi.json実測でデプロイ未反映を即時判定できる
   summary: IF FastAPI系の404では本番/openapi.jsonに当該pathが存在するか先に見ると、コード不具合ではなくデプロイドリフトを短時間で確定できる時
