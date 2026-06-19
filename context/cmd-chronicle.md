@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-18 -->
+<!-- last_updated: 2026-06-19 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,37 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2852 | deploy_task.shのinject_context_hints(L2826)/inject_production_invariants(L2882)内のsed -iが変数展開時に特殊文字で壊れ、set -euo pipefailでexit 1→nudge未送信になる問題を修正する。全cmd配備に影響中 | infra | 05-19 | deploy_task.shのinject_context_ |
-| cmd_2853 | 殿の5要望を一括修正する。(1)入力画面にrole=admin非表示 (2)常勤/パート色分けを集計BarChart+管理画面+カレンダー詳細に統一 (3)DatePicker shiftDateのtoISOString UTCバグ修正(右矢印無反応+左矢印2日戻る) (4)カレンダーセル縦幅拡大(5名表示) (5)管理画面ロール追加/切替のpin_auth→pinフィールド名修正 | kj-role-count | 05-19 | 殿の5要望を実装し、admin非表示・常勤/パート色分け統一 |
-| cmd_2854 | cmd_save.shの2つの問題を修正する。(1)殿発言検索+cmd履歴検索の全走査で16秒に低下。キャッシュまたは件数制限で高速化 (2)sourceに絶対パスを書くとPROJECT_WDと二重結合されファイル不在BLOCKになるバグ。絶対パス検出時はPROJECT_WD結合をスキップ | infra | 05-19 | cmd_save.shのquality log検索を直近50 |
-| cmd_2856 | 運用YAMLの肥大化を書込み時に自動制御する汎用機構を構築する。各書込みスクリプトが追記後にwc -l > 閾値なら即アーカイブ退避し、索引層を常に小さく保つ。startup gateやcronではなく書込み時に実行することで待機時間ゼロ | infra | 05-19 | yaml_auto_archive.shをcmd_save. |
-| cmd_2859 | startup gateで3セッション連続WARN。9件のSKILL.mdが参照scriptより古い。scriptの最新動作をSKILL.mdに反映する | infra | 05-19 | 8件のSKILL.mdに各scriptの最新動作を反映。ga |
-| cmd_2862 | gate_report_format FAILが直近でも発生(2026-05-19)。根因=忍者がEdit toolで報告YAMLを直接編集しフィールドをstr化/MISSING化する。report_field_set.sh経由なら型ガードが効くが直接Editを阻止する仕組みがない。PreToolUse hookで報告YAML直接Editを検出しBLOCKする | infra | 05-19 | — |
-| cmd_2863 | 本セッションでcmd_2857(self_gate_check既存)とcmd_2862(Guard 3既存)の車輪再発明が2回発生。根因=将軍のgrep検索キーワード不足で既存Guardを見落とし。cmd_save.shがhook/gate変更cmd検出時に対象ファイルのGuard一覧を自動抽出し表示することで、grepキーワード精度に依存しない確認を強制する | infra | 05-19 | cmd_save.shのq11でgate/hook変更cmd |
-| cmd_2864 | 教訓健全度ALERT 3セッション連続。根因分析: fb>=3の全77件がuseful=0%。deploy_task.sh L3953の`if score > 0`でcontent1回マッチ(score=1)でも注入される。汎用キーワード(修正/実装等)が広くマッチし無関係教訓を量産。MIN_KEYWORD_SCORE変数を導入しscore>=2に引き上げ、弱いマッチを除外する | infra | 05-19 | MIN_KEYWORD_SCORE=2をdeploy_tas |
-| cmd_2871 | 軍師提案。verdictはbinary_checksから常に導出可能な計算値(ALL yes→PASS, else FAIL)。独立フィールドとして存在すること自体が矛盾の温床でGP-072c2-c5の4層防御が必要になっている。gate_report_format.shでverdictをbcから自動計算し上書きすることで、verdict関連FAIL/workaround/修正サイクルを構造的に消滅させる | infra | 05-19 | gate_report_format.shでverdictを |
-| cmd_2869 | 成長ループ第2段[E]。cmd_save.sh q11の既存代替確認がgrep単独で車輪を見逃す(cmd_2857/2862/2863の3連続車輪)。semantic_search.sh(因果辺トラバース付き=cmd_2866)をq11チェックに統合し、概念レベルで関連cmdを自動発見する | infra | 05-19 | cmd_save.sh q11にsemantic_searc |
-| cmd_2870 | 成長ループ第3段[F]。セマンティック辞書のresourcesはリポジトリ内ファイルのみ。GitHub/Zenn/外部記事等のURLをresourcesとして格納可能にし、外部知識と内部因果辺を接続する。コリ先生OpenPBX等の外部リポが辞書から到達可能になる | infra | 05-19 | semantic-index resourcesにurl種別 |
-| cmd_2868 | cmd_2866(因果辺トラバース統合)で概念拡張検索が動くが、トラバース結果の有用性が計測されない。lesson_impact.tsvにtraversal_depth列(直接マッチ=0, 1ホップ=1, 2ホップ=2)を追加し、depth別のuseful率を分析可能にする。成長ループの[D]精度計測を閉じる | infra | 05-19 | lesson_impact.tsvにtraversal_de |
-| cmd_2867 | Obsidian×セマンティック統合パイプライン(cmd_2866)の成長ループを閉じる。因果辺(origin [[リンク]])が毎日追加されるが辞書更新と概念発見が手動。lesson_write/cmd完了時にsemantic_map_generate.sh自動実行+未登録[[リンク]]ターゲット検出→insight_write自動通知で、使うほど辞書が賢くなる免疫系ループを構築する | infra | 05-19 | semantic_index_updateがoriginの[ |
-| cmd_2866 | Obsidian因果辺(origin [[リンク]])とセマンティック辞書とcausal_backlinks.shが独立して動いている。semantic_search.shに因果辺トラバースを統合し、概念マッチ→因果辺拡張→関連resourcesを一括返却するパイプラインを構築する | infra | 05-19 | semantic_search.shに因果辺トラバースを統合 |
-| cmd_2865 | なぜなぜ7回の真因=教訓注入の計測基盤不在。deploy_task.shが教訓注入時のkeyword scoreを記録せず、score帯別のuseful率分析が不可能。score列をlesson_impact.tsvに追加し、改善サイクルの因果追跡を可能にする | infra | 05-19 | lesson_impact.tsvにscore列を追加し、教 |
-| cmd_2873 | デーモン重複実行が頻出(本セッション: ninja_monitor 3重、inbox_watcher全員2重)。根因=統一管理層不在。restart_watchers.shはwatcherのみ管轄でninja_monitor/ntfy_listenerは対象外。全デーモンを統一管理するdaemon_supervisor.shを作成し、プロセス数チェック+重複停止+ヘルスチェック+自動再起動+ntfy通知を一括実行する | infra | 05-19 | daemon_supervisor.shを追加し、inbox |
-| cmd_2872 | 本セッションでreview_log 0バイト破壊事故。根因=cmd_complete_gate.shのnohup+disown並行実行時に共有ファイル(review_log/dashboard.md等)書込みにflockなし。全共有ファイル書込みにflock追加し並行安全性を構造保証する | infra | 05-19 | cmd_complete_gate.shの共有ファイル直接書 |
-| cmd_2874 | 殿指示「辞書の育成をやろう」。Phase 1(cmd_2860-2867)でaliases追加+自動成長ループ構築済み。Phase 2=品質向上: (1)noise aliases除去(task notification文字列やtool-use-id等の非意味的文字列がlord_conversation自動取込で混入) (2)未カバードメイン概念追加(修行サイクル/デーモン管理/外部PJ群/報告品質) (3)aliases精度向上(自然言語バリエーション追加) | infra | 05-19 | semantic index Phase 2としてnoise |
-| cmd_2875 | semantic_search(cmd_2869)は概念レベル検索を実現したが、因果辺トラバース(causal_backlinks.sh)は未統合。道具はあるが使う仕組みに埋め込まれていない=意志依存。cmd起票時にq11のsemantic_search結果と合わせてcausal_backlinksの結果も自動表示し、関連cmd/教訓の因果辺を起票前に強制提示する | infra | 05-19 | cmd_save.shのq11 semantic_searc |
-| cmd_2878 | 報告YAMLのorigin付与率が1.2%(61/4938)。根因=gate_report_format.shとreport_field_set.shにorigin関連チェックがゼロ(grep確認済み)。Level 1(ドキュメント記載のみ)→Level 5(gate強制+書込み支援)に昇格し、因果ネットワークの成長速度を構造的に加速する | infra | 05-19 | cmd_2878: gate_report_formatのo |
-| cmd_2881 | startup gate BLOCK 3セッション連続。dashboard-update FAIL率16%(8/50)だがskill_execution_logにFAIL 1件のみ。ログ乖離の有無を含め根因を特定し対処方針を出す | infra | 05-19 | dashboard-update Gate20 8/50は実 |
-| cmd_2882 | cmd_2881偵察で判明: dashboard-update FAIL率16%(8/50)は全てcmd_test_*6件+誤呼出し2件。実運用FAILゼロ。分母からテスト用cmdを除外し3セッション連続startup BLOCKを解消する | infra | 05-19 | Gate20のskill FAIL率でcmd_test_*と |
-| cmd_2884 | 教訓健全度ALERT(useful_rate=16.7%)の根因=フィードバック記録率17%(参照36→記録6)。注入教訓のうち参照したがフィードバック未記録分を自動的にnot_usefulとして記録し、effectiveness_scoreの分母を正常化する | infra | 05-19 | record_lesson_feedback.shに未記載の |
-| cmd_2885 | Obsidian [[リンク]]1597あるが大半が静的deepdive参照。cmd間因果辺が成長しない根因=origin記入(入口)はあるがsemantic-map還流(出口)がない。GATE CLEAR時にorigin+depends_onから因果辺を自動追記し、cmd数に比例してNWを成長させる | infra | 05-19 | GATE CLEAR時のsemantic index更新pa |
-| cmd_2887 | 前セッションでscope/context stale残存が2件連続FAIL(cmd_2875+cmd_2880)。家老がLK-A02 v7で修正済みだがテスト未追加。再発防止テストを追加する | infra | 05-19 | reset_stale_fieldsのscope/conte |
-| cmd_2888 | ac_phase_mixing等のgate FPが今セッション6回BLOCK。高FP gateを自動検出し修正候補を提案する仕組みで、gate品質の学習速度を最大化する | infra | 05-19 | Gate 13.8のFP率計算を独立スクリプト化し、閾値超g |
-| cmd_2891 | CoDD台帳の最終更新が5/15で17日間停滞。修行サイクルにCoDD速度改善ラウンドを追加し、idle忍者にCoDD refactorを自動配備+軍師レビューで品質担保。インフラ最適化と忍者成長を同時に回す | infra | 05-19 | context/training-cycle.mdにCoDD |
-| cmd_2892 | 196ファイル1766テストが蓄積。追加のみで淘汰なし。殿の3問検証(リグレッション検出実績/変更頻度/維持コスト)で低価値テストを特定し統合/削除方針を出す | infra | 05-19 | unit 196ファイル/現状1765テストを3問基準で棚卸 |
-| cmd_2893 | cmd_2892偵察で低価値テスト10ファイル(削除4+統合6)を特定。790行削減+10ファイル削減でCI保守コストを下げる | infra | 05-19 | 低価値bats 10ファイルを4削除+6統合し、unitファ |
-| cmd_2894 | cmd_2892偵察の10件は5%。196ファイル中62ファイル(32%)が1-3テストの小ファイルで同一スクリプトのテストが分散。スクリプト単位で統合し196→推定130ファイルに圧縮する | infra | 05-19 | 1-3件の小規模Bats 51ファイルを6本のスクリプト単位 |
-| cmd_2895 | テスト196ファイル蓄積の根因=追加時にファイル粒度ガイドラインなし。追加test_*.bats作成時に同一対象スクリプトの既存テストファイルを検出→統合を促しファイル肥大化を構造的に防止する | infra | 05-19 | pre-commitで新規tests/unit/test_* |
 | cmd_2897 | ac_phase_mixing FP率100%(3/3)。commitは忍者の通常完了動作であり実装ACに書くのが自然。deliveryキーワードからcommit/コミットを除外し偽陽性を根絶する | infra | 05-20 | cmd_save.shのAC phase mixing de |
 | cmd_2898 | 将軍がcmd_save BLOCK後にフリーズする根因=どの行のどのキーワードがBLOCKを引き起こしたか不明で1箇所ずつ修正→再BLOCK→探す→修正の繰り返し。全BLOCK要因を一括表示し1回の修正で全解消できるようにする | infra | 05-20 | cmd_save.shのBLOCK/WARN終了サマリにチェ |
 | cmd_2900 | gws CLIのGmail操作知識がcontext/infrastructure.mdに不足。auth statusが暗号化credentialsを検出できないバグがあり、将軍がログアウトと誤判断→殿に無駄なブラウザ認証を依頼した。実APIで確認すれば1秒で動くことを確認できた。知識不足が確認不足を招く構造を修正する | infra | 05-20 | context/infrastructure.md §gws |
@@ -513,3 +482,6 @@
 | cmd_3440 | 殿裁定(2026-06-18): CDPは全員が使えるべき。現状: cdp-browseスキルにロール制限なしだが忍者/家老の指南書(ashigaru.md/karo.md)にCDP言及ゼロ。道具の存在を知らないから使えない。三層記憶と同じ構造。忍者の本番確認、家老のCI RED後の画面検証にCDPが使えることを指南書に明記し、cdp-browseスキルのTRIGGERに忍者/家老パターンを追加する。 | infra | 06-18 | — |
 | cmd_3441 | 殿裁定(2026-06-18): CDPは全員が使えるべき。現状: cdp-browseスキルにロール制限なしだが忍者/家老の指南書(ashigaru.md/karo.md)にCDP言及ゼロ。道具の存在を知らないから使えない。忍者の本番確認、家老のCI RED後の画面検証にCDPが使えることを指南書に明記し、cdp-browseスキルのTRIGGERに忍者/家老パターンを追加する。cmd_3440をac_phase_mixing累計昇格回避のため新ID再発行。 | infra | 06-18 | ashigaru.md・karo-operations.md |
 | cmd_3442 | 洗脳監査(殿指示2026-06-18)で4穴発見。(1)useful_rate=2.0%根因=dm-signal YAML教訓のtags空欄(L007,L086,L508,L565,L633,L722等)。cmd_3433でretag機能追加したが実行していない(道具作って使わない=deepdive Phase9再現)。(2)Phase2b仮concept閾値到達テスト未投入。(3)Phase3 BFSが影響ノード列挙のみで検証スクリプト未実行(ダッシュボード問題再現)。(4)GATE CLEAR→因果辺→BFS→検証のE2Eパイプライン未通し。 | infra | 06-18 | AC1: dm-signal lessons.yaml 75 |
+| cmd_3443 | 洗脳監査(殿指示2026-06-18)でuseful_rate=2.0%の真因がtags空欄ではないと判明(軍師指摘blt_230320)。cmd_3432以降(タグ修正済み)でもuseful=1/23=4.3%。一次データ確認: L809(review_quality集計/infra)+L563(DNA制約/dm-signal)+L562(ALM Ward FoF/dm-signal)がPhase3 BFS実装cmd(infra)に注入されNOT_USEFUL。タグ付きでもinfra cmdにdm-signal教訓が注入される経路がdeploy_task.shに存在する。経路を特定し修正設計を出す。 | infra | 06-19 | — |
+| cmd_3444 | 偵察: Classroom Androidアプリ2大バグの根因特定 — WebViewハンバーガー不完全展開+同期後画面遷移失敗 | — | 06-19 | — |
+| cmd_3445 | 殿指示(2026-06-19 14:25): GPT+Sonnet忍者2名に別々の視点でデバッグ偵察。v1.0-v2.3の12回イテレーションで場当たり修正を繰り返したが根因未到達。問題A=file://プロトコルでWebViewのviewportが768px超→モバイルCSS不発→ハンバーガーメニュー不完全展開。問題B=同期完了後にCompose UIが再コンポーズされずダッシュボードに遷移しない。ブラウザでは同じHTMLが正常動作(殿確認済み)。 | google-classroom | 06-19 | Android WebView viewport根因とCom |
