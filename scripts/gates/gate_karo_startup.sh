@@ -8,6 +8,10 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# L821: ハードコード忍者名を排除。get_ninja_namesで動的取得
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh" 2>/dev/null || true
+_KARO_NINJA_NAMES="$(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo saizo kotaro tobisaru')"
 
 overall="OK"
 alerts=()
@@ -316,7 +320,7 @@ show_active_cmd_semantic_context() {
 
     active_count=0
     shown_count=0
-    for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
+    for ninja in $_KARO_NINJA_NAMES; do
         task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
         [ -f "$task_file" ] || continue
         IFS='|' read -r status cmd_id target_path < <(
@@ -477,7 +481,7 @@ skill_execution_summary_fast() {
 
     echo "skill | fail_count | last_fail | top_stumbling_point"
     [ -f "$log_file" ] || return 0
-    grep -E "^- ts:|^  (skill|result|used|stumbling_points):" "$log_file" 2>/dev/null | awk '
+    grep -E "^- ts:|^  (skill|result|used|stumbling_points|source):" "$log_file" 2>/dev/null | awk '
 function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
 function unquote(s) {
     s = trim(s)
@@ -494,6 +498,10 @@ function finish() {
         # 最新結果を追跡(時系列順: 後のエントリが上書き)
         latest_result[skill] = r
         latest_ts[skill] = ts
+        latest_source[skill] = source
+        if (r == "PASS" && source != "") {
+            pass_source[skill, source] = 1
+        }
     }
     if (r == "FAIL" && u != "false" && skill != "" && !is_fake) {
         count[skill]++
@@ -511,7 +519,7 @@ function finish() {
 /^- ts:/ {
     if (in_entry) finish()
     in_entry = 1
-    skill = result = used = point = ""
+    skill = result = used = point = source = ""
     line = $0
     sub(/^- ts:[[:space:]]*/, "", line)
     ts = unquote(line)
@@ -541,11 +549,34 @@ in_entry && /^  stumbling_points:/ {
     point = unquote(line)
     next
 }
+in_entry && /^  source:/ {
+    line = $0
+    sub(/^  source:[[:space:]]*/, "", line)
+    source = unquote(line)
+    next
+}
 END {
     if (in_entry) finish()
     for (s in count) {
         # 最新結果がPASS/SKIPなら過去FAILは解消済み→除外
         if (latest_result[s] == "PASS" || latest_result[s] == "SKIP") continue
+        # 短縮cmdで後発FAILしても、同一skillに完全cmdのPASSがあれば解消済みとして扱う
+        resolved_by_alias = 0
+        if (latest_source[s] != "") {
+            for (k in pass_source) {
+                split(k, parts, SUBSEP)
+                ps_skill = parts[1]
+                ps_source = parts[2]
+                if (ps_skill != s) continue
+                if (ps_source == latest_source[s] \
+                    || index(ps_source, latest_source[s] "_") == 1 \
+                    || index(latest_source[s], ps_source "_") == 1) {
+                    resolved_by_alias = 1
+                    break
+                }
+            }
+        }
+        if (resolved_by_alias) continue
         printf "%d|%s|%s|%s\n", count[s], last[s], s, top_point[s]
     }
 }
@@ -1222,7 +1253,7 @@ echo "■ 忍者ペインCTX実態"
 declare -A _CTX_TMPF
 declare -A _NINJA_PANE_IDX
 declare -a _CTX_PIDS=()
-for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
+for ninja in $_KARO_NINJA_NAMES; do
     task_status=${_NINJA_STATUS_CACHE[$ninja]:-}
     pane_idx=${_PANE_IDX_BY_AGENT[$ninja]:-}
     _NINJA_PANE_IDX[$ninja]=$pane_idx
@@ -1239,7 +1270,7 @@ done
 for _pid in "${_CTX_PIDS[@]}"; do wait "$_pid" 2>/dev/null || true; done
 
 stall_count=0
-for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
+for ninja in $_KARO_NINJA_NAMES; do
     task_status=${_NINJA_STATUS_CACHE[$ninja]:-}
     pane_idx=${_NINJA_PANE_IDX[$ninja]}
     if [[ "$task_status" =~ ^(assigned|in_progress)$ ]] && [ -n "$pane_idx" ]; then
@@ -1436,7 +1467,7 @@ echo ""
 echo "■ 自走チェック"
 # 全忍者がidle or completedか確認（Check 2.5のstatusキャッシュを再利用: R3）
 active_ninjas=0
-for ninja in hayate kagemaru hanzo saizo kotaro tobisaru; do
+for ninja in $_KARO_NINJA_NAMES; do
     ninja_status=${_NINJA_STATUS_CACHE[$ninja]:-""}
     if [ -z "$ninja_status" ]; then
         task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
@@ -1513,6 +1544,7 @@ if [ -x "$skill_summary_script" ]; then
         _skill_current_sig="$(stat -c '%Y:%s' "$SCRIPT_DIR/logs/skill_execution_log.yaml" 2>/dev/null || echo '')"
     fi
     _skill_current_sig="${_skill_current_sig}|gate:$(stat -c '%Y:%s' "$SCRIPT_DIR/scripts/gates/gate_karo_startup.sh" 2>/dev/null || echo '')"
+    _skill_current_sig="${_skill_current_sig}|summary:$(stat -c '%Y:%s' "$SCRIPT_DIR/scripts/skill_execution_log.sh" 2>/dev/null || echo '')"
     if [[ -f "$_SKILL_SUMMARY_CACHE" ]]; then
         IFS= read -r _skill_cache_sig < "$_SKILL_SUMMARY_CACHE" || _skill_cache_sig=""
     fi
