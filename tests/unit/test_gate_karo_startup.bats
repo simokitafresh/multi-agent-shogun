@@ -19,7 +19,8 @@ setup() {
              "$TEST_TMPDIR/memory" \
              "$TEST_TMPDIR/logs" \
              "$TEST_TMPDIR/data" \
-             "$TEST_TMPDIR/docs/semantic-index"
+             "$TEST_TMPDIR/docs/semantic-index" \
+             "$TEST_TMPDIR/.codex"
 
     # Copy the gate script
     cp "$SRC_GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
@@ -28,12 +29,17 @@ setup() {
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh"
     cp "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh" "$TEST_TMPDIR/scripts/gates/gate_three_layer_health.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_three_layer_health.sh"
+    cp "$PROJECT_ROOT/scripts/gates/gate_codex_hooks_no_stop.sh" "$TEST_TMPDIR/scripts/gates/gate_codex_hooks_no_stop.sh"
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_codex_hooks_no_stop.sh"
     cp "$PROJECT_ROOT/scripts/lib/known_ninjas.sh" "$TEST_TMPDIR/scripts/lib/known_ninjas.sh"
     cp "$PROJECT_ROOT/scripts/cleanup_three_layer_tmp.sh" "$TEST_TMPDIR/scripts/cleanup_three_layer_tmp.sh"
     chmod +x "$TEST_TMPDIR/scripts/cleanup_three_layer_tmp.sh"
     cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
     cp "$PROJECT_ROOT/scripts/skill_execution_log.sh" "$TEST_TMPDIR/scripts/skill_execution_log.sh"
     chmod +x "$TEST_TMPDIR/scripts/skill_execution_log.sh"
+    cat > "$TEST_TMPDIR/.codex/hooks.json" <<'EOF'
+{"hooks":{"PreToolUse":[],"PostToolUse":[]}}
+EOF
 
     # --- Default fixtures: all checks pass ---
 

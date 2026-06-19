@@ -2267,3 +2267,78 @@
   brainwash_check: "#2防止: precheck SG-PRE25 ERROR即FAIL判定。LG036/Step3.5。#6防止: 4観点OKでもGATEフォーマット不備はFAIL。Q1:品質向上(F001改訂)。Q2:不要(ルール改訂)。Q3:向上(将軍判断基準明確化)"
   origin: "[[cmd_3457]] -> [[SG-PRE25_CLAUDE.md不在]] -> [[FAIL_フォーマット修正]]"
   timestamp: "2026-06-19T23:57:00"
+- cmd_id: cmd_karo_hotfix_ga092_google_classroom_context_freshness_20260620
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  findings_summary: "karo_direct hotfix。GA-092 context_freshness ALERT調査。AC4件scope完結"
+  observations:
+    - "事実1: kagemaru taskYAML確認。AC1(一次情報記録)→AC4(ALERT消去)の順序自然"
+    - "事実2: context_freshness_check.sh実在(AC2参照)"
+  causal_chain: "context_freshness ALERT→未反映or偽陽性→調査+修正→ALERT解消(正の複利)"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  brainwash_check: "#2防止: taskYAML+スクリプト実在確認。#8防止: FM列挙(偽陽性判定精度LOW)。Q1:品質向上(ALERT解消)。Q2:不要(調査)。Q3:向上(context鮮度保証)"
+  origin: "[[GA-092_ALERT]] -> [[context_freshness]] -> [[APPROVE]]"
+  timestamp: "2026-06-20T00:24:00"
+- cmd_id: cmd_karo_hotfix_ga093_prepush_test_select_mapping_20260620
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "karo_direct hotfix。GA-093 pre-push hook failure。AC5件scope完結"
+  observations:
+    - "事実1: hanzo taskYAML確認。hook_artifact 20260620T001302参照。AC1→AC5で調査→修正→検証"
+    - "事実2: test_select mapping問題→AC3で修正+テスト更新を要求"
+  causal_chain: "pre-push exit 1→mapping不足or実FAIL→調査+修正→hook正常化(正の複利=防御層強化)"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  brainwash_check: "#2防止: taskYAML+artifact path確認。#8防止: FM列挙。Q1:品質向上(hook failure解消)。Q2:不要(調査)。Q3:向上(pre-push防御層強化)"
+  origin: "[[GA-093_ALERT]] -> [[prepush_hook_failure]] -> [[APPROVE]]"
+  timestamp: "2026-06-20T00:24:00"
+- cmd_id: cmd_3448
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  gate_result: CLEAR
+  lesson_quality: OK
+  escalation_needed: false
+  findings_summary: "4観点OK。100vh→height:auto+max-height:100dvh修正。assembleDebug成功。precheck全PASS"
+  observations:
+    - "事実1: build_dashboard.py .sidebar.open height:100vh除去+height:auto/max-height:100dvh追加"
+    - "事実2: assembleDebug BUILD SUCCESSFUL。commit fe4215ca"
+  step3_5_verified: true
+  causal_chain: "cmd_3447万全偵察→100vh根因確定→CSS修正→assembleDebug成功→APK生成(正の複利=viewport依存除去)"
+  finding_categories: [assumptions, numbers, premortem]
+  brainwash_check: "#2防止: precheck全PASS+commit hash確認。#8防止: purpose_gap(GitHub Release未実施)を確認しAC外と判断。Q1:品質向上(CSS根因修正)。Q2:不要(UI修正)。Q3:向上(viewport依存除去)"
+  origin: "[[cmd_3447_万全偵察]] -> [[100vh根因]] -> [[cmd_3448_CSS修正_LGTM]]"
+  timestamp: "2026-06-20T00:27:00"
+- cmd_id: cmd_karo_hotfix_insights_pending_triage_20260620
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  gate_result: null
+  lesson_quality: OK
+  escalation_needed: false
+  findings_summary: "4観点OK。pending 17→0件。ノイズresolve 13件+semantic index追記4件。precheck全PASS"
+  observations:
+    - "事実1: insight_resolve.sh経由で13件resolve。semantic-index/index.mdに3概念追記で4件resolve"
+    - "事実2: 作業前17件→作業後0件の数値差分をAC5で報告"
+  step3_5_verified: true
+  causal_chain: "insights pending 17件蓄積→ノイズresolve+semantic追記→0件(正の複利=起動gate負荷軽減)"
+  finding_categories: [assumptions, numbers, premortem]
+  brainwash_check: "#2防止: precheck全PASS確認。#8防止: 17→0件の数値差分確認。Q1:品質向上(insightキュー健全化)。Q2:不要(トリアージ)。Q3:向上(pending 0で起動速度向上)"
+  origin: "[[insights_pending_17件]] -> [[triage_resolve]] -> [[LGTM]]"
+  timestamp: "2026-06-20T00:28:00"
+- cmd_id: cmd_karo_hotfix_insights_pending_triage_tobisaru_20260620
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "karo_direct hotfix。insights triage第2弾。AC5件scope完結"
+  observations:
+    - "事実1: tobisaru taskYAML確認。saizo完了後の残pending処理"
+  causal_chain: "saizo完了後の新規pending→tobisaru第2弾で処理(正の複利=insightキュー継続健全化)"
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  brainwash_check: "#2防止: taskYAML確認。#8防止: saizo完了後の残件確認。Q1:品質向上(継続健全化)。Q2:不要(トリアージ)。Q3:向上(pending蓄積防止)"
+  origin: "[[insights_pending_第2弾]] -> [[APPROVE]]"
+  timestamp: "2026-06-20T00:28:00"

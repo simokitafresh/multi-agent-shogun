@@ -1,11 +1,17 @@
 task:
-  readonly_ref:
-  - path: 'cmd_complete_gate.sh'
-    reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3442_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3442 (deployed 2026-06-18T22:57:36). Read from the beginning.
-  ac_version: 05a31149
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      description: 作業開始時点のpending insight件数とID一覧を一次情報(queue/insights.yaml)から記録していること
+    AC2:
+      description: 低情報・重複・既存概念で検索到達済みのinsightは scripts/insight_resolve.sh 経由でresolvedへ変更し、理由を残していること
+    AC3:
+      description: semantic_map_generate:new_file系は対象ファイル実在と関連概念を確認し、必要ならcontext/semantic-map.mdまたはdocs/semantic-index/index.mdへ最小追記、不要ならresolve理由を残していること
+    AC4:
+      description: 残pendingがある場合は、各IDごとに今処理できない理由が外部blockerか権限外かを報告YAMLに明記していること。単なる『後で』は禁止
+    AC5:
+      description: 作業後にpending件数を再計測し、作業前→作業後の数値差分をbinary_checksへ記録していること
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -20,45 +26,28 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3442
+  parent_cmd: none
   project: infra
-  purpose: 洗脳監査(殿指示2026-06-18)で4穴発見。(1)useful_rate=2.0%根因=dm-signal YAML教訓のtags空欄(L007,L086,L508,L565,L633,L722等)。cmd_3433でretag機能追加したが実行していない(道具作って使わない=deepdive Phase9再現)。(2)Phase2b仮concept閾値到達テスト未投入。(3)Phase3 BFSが影響ノード列挙のみで検証スクリプト未実行(ダッシュボード問題再現)。(4)GATE CLEAR→因果辺→BFS→検証のE2Eパイプライン未通し。
-  status: idle
+  purpose: 先送り防止 — queue/insights.yaml のpending残件を分類し、ノイズはresolve、概念化または実修正が必要なものは同ターンで処理または明確なblocker付きで報告する
+  status: done
   stop_for: []
-  target_path: scripts/cmd_complete_gate.sh
-  task_id: cmd_3442_full
-  task_type: full
+  task_id: none
+  task_type: hotfix
   related_lessons:
-  - id: 'L488'
-    summary: 'stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow'
-    detail: 'stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow'
-  - id: 'L813'
-    summary: 'SG-PRE25(precheck.sh)のFP修正がcmd_complete_gate.shに同期されず42/50=84%のFP BLOCKが発生。read_'
-    detail: 'SG-PRE25(precheck.sh)のFP修正がcmd_complete_gate.shに同期されず42/50=84%のFP BLOCKが発生。read_'
-  - id: 'L781'
-    summary: 'cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『'
-    detail: 'cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『'
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L202'
+    summary: '今回の Android UI は `Kinpaku` / `Zouge` / `Surface4` などの戦国色トークンを多画面で直接参照していたため、`lig'
+    detail: '今回の Android UI は `Kinpaku` / `Zouge` / `Surface4` などの戦国色トークンを多画面で直接参照していたため、`lig'
+  - id: 'L623'
+    summary: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
+    detail: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)"
-  - "growth_loop — 学習ループ:  AGENTS.md 学習ループ原則 context/growth-loop.md context/infrastructure.md 知識サイクル現状 scripts/gates/gate_cycle_health.sh 三層学習ループ健全性計測 scripts/karo_workaround_log.sh WA記録(成績表フィードバック) scripts/ci_status_check.sh CI状態チェック(品質フィードバック) scripts/lesson_impact_analysis.sh 教訓効果分析(注入率/参照率/CLEAR-BLOCK A/B) scripts/ralph_loop_metrics.sh ラルフループ定量計測(5指標: パターン再発/revert/完了速度/lesson-CLEAR相関/PI違反) scripts/knowledge_metrics.sh 教訓有効性+陳腐化検出(JSON/TSV出力対応) docs/research/gunshi_idle_growth_loop_nazenaze_20260515.md — 軍師idle: 成長ループなぜなぜ分析(2026-05-15) docs/research/gunshi_idle_immune_effectiveness_20260512.md — 軍師idle: 免疫システム有効性測定(2026-05-12) docs/research/gunshi_idle_immune_system_evidence_20260426.md — 軍師idle: 免疫システム証拠収集(2026-04-26) docs/research/gunshi_idle_immunity_measurement_20260510.md — 軍師idle: 免疫計測フレームワーク(2026-05-10)"
-  - "semantic_dictionary_design — セマンティック辞書構想:  docs/research/semantic_index_design.md context/lord-conversation-index.md scripts/semantic_map_generate.sh scripts/insight_write.sh scripts/semantic_index_update.sh"
-  - "shin_shijin_design — 四神設計:  context/dm-signal-core.md §PFレイヤー context/checklist-shin-v2-registration.md context/l3-robustness.md §WF四神"
-  - "lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/auto_draft_lesson.sh scripts/sync_lessons.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml docs/research/gunshi_idle_insights_consumption_bottleneck_20260515.md — 軍師idle: インサイト消費ボトルネック分析(2026-05-15) docs/research/gunshi_idle_knowledge_burial_audit_20260505.md — 軍師idle: 知識埋没監査(2026-05-05) docs/research/gunshi_idle_lesson_dedup_20260413.md — 軍師idle: 教訓重複排除分析(2026-04-13) docs/research/gunshi_idle_lesson_effectiveness_20260413.md — 軍師idle: 教訓有効性測定(2026-04-13) docs/research/gunshi_idle_lesson_impact_20260412.md — 軍師idle: 教訓インパクト分析(2026-04-12) docs/research/gunshi_idle_lesson_injection_dual_track_20260428.md — 軍師idle: 教訓注入デュアルトラック設計(2026-04-28) docs/research/gunshi_idle_lesson_injection_quality_20260605.md — 軍師idle: 教訓注入品質監査(2026-06-05) docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md — 軍師idle: 教訓注入汎用バイパス問題(2026-06-02) docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md — 軍師idle: 教訓参照率分析(2026-04-30) docs/research/gunshi_idle_lesson_tag_mismatch_20260507.md — 軍師idle: 教訓タグ不一致分析(2026-05-07) docs/research/gunshi_idle_lesson_useful_rate_20260422.md — 軍師idle: 教訓有用率計測(2026-04-22) docs/research/gunshi_idle_lesson_useful_rate_20260503.md — 軍師idle: 教訓有用率計測v2(2026-05-03) docs/research/gunshi_idle_lesson_useful_rate_20260608.md — 軍師idle: 教訓有用率計測v3(2026-06-08) docs/research/gunshi_idle_lesson_waste_analysis_20260516.md — 軍師idle: 教訓無駄分析(2026-05-16)"
-  related_causal_links:
-  - "[[4穴発見(retag未実行+Phase3列挙止まり+E2E未検証+useful_rate根因)]]"
-  - "[[一括修正]]"
-  - "[[殿指示_洗脳監査_20260618]]"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/gs-speedup-knowledge.md"
   - "context/training-cycle.md"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
@@ -72,27 +61,22 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L488: stop-lint-gate.shのfail_hash_fileを/tmp固定パスにすると、bats --jobs 8の並列実行でsetup()/teardow
-      - L813: SG-PRE25(precheck.sh)のFP修正がcmd_complete_gate.shに同期されず42/50=84%のFP BLOCKが発生。read_
-      - L781: cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L202: 今回の Android UI は `Kinpaku` / `Zouge` / `Surface4` などの戦国色トークンを多画面で直接参照していたため、`lig
+      - L623: queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-18T22:48:46+09:00 | 覚醒して洗脳監査。これくらいの不備はpassでよいだろうという甘い判断はないか？"
-  - "2026-06-16T14:50:26+09:00 | 覚醒して洗脳監査せよ"
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'dm-signal YAML教訓のtags空欄教訓に対してlesson_write.sh --retagでタグ付与が完了していること'
-  - id: 'AC2'
-    checks:
-    - check: 'cmd_complete_gate.shのPhase3接続部(L6800付近)に影響ノードのtest_scripts実行ロジックが追加されていること'
-  - id: 'AC3'
-    checks:
-    - check: 'Phase2b仮concept生成のE2Eテスト(NO_MATCH 3回投入→provisional_エントリ生成)がbatsテストに追加されていること'
+  - "2026-06-19T23:03:21+09:00 | ヘルプを頼れ。 tab to queue message 48% context left"
+  - "2026-06-19T22:27:09+09:00 | 殿、本セッション最終状況: **確定した設計:** - queue/inbox = プロジェクトツリー実体(正本) - `~/.claude/projects/.../inbox` = symlink"
+  - "2026-06-12T11:56:08+09:00 | 復帰処理と起動BLOCK対応が完了した。殿へ報告する。 --- **復帰完了でござる。startup BLOCK 4件を全て処理し、新cmd 2本を配備した。** ## 復帰時に発見・処理した事項 *"
+  - "2026-05-20T21:40:41+09:00 | 対応済み8件closed。insights.yaml未消化4件: | ID | 内容 | 対応 | |---|---|---| | INS-154647 | semantic_index_update"
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_hotfix_insights_pending_triage_tobisaru_20260620_normal
+  _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3442.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3442.yaml
+  report_filename: tobisaru_report_cmd_karo_hotfix_insights_pending_triage_tobisaru_20260620.yaml
+  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_insights_pending_triage_tobisaru_20260620.yaml
   bloom_level: 
-  deployed_at: "2026-06-18T22:58:12"
+  deployed_at: "2026-06-20T00:28:03"

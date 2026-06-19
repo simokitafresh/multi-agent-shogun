@@ -1,28 +1,6 @@
 entries:
 - cmd_id: "cmd_3414"
   ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-16T04:20:02Z"
-  notes: "three_layer_penetration_missing|check=check_three_layer_penetration"
-- cmd_id: "cmd_3414"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-16T04:20:02Z"
-  notes: "gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence"
-- cmd_id: "cmd_3414"
-  ac_count: 0
   gate_result: "BLOCK"
   karo_rework: "no"
   gunshi_verdict: "APPROVE"
@@ -2172,3 +2150,23 @@ entries:
   source: "cmd_complete_gate"
   timestamp: "2026-06-19T11:25:18Z"
   notes: "report_format:kotaro_report_cmd_3449.yaml"
+- cmd_id: "cmd_3448"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-19T15:30:24Z"
+- cmd_id: "cmd_karo_hotfix_ga092_google_classroom_context_freshness_20260620"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-19T15:32:17Z"

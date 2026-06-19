@@ -1931,6 +1931,9 @@ lessons:
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.csv
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.meta.yaml
   origin: '[[cmd_1899]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L630
   title: 'dict.get(target_date)禁止: blocks/内はbisect helper統一'
   summary: FoFパイプラインblocks/内でdict.get(context.target_date)は禁止。get_momentum_value_at_date()統
@@ -3162,7 +3165,7 @@ lessons:
   origin: '[[cmd_karo_batch_R7]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-14'
+  last_referenced: '2026-06-20'
 - id: L550
   deprecated: true
   deprecated_reason: ALMディスコン(殿裁定2026-05-10)
@@ -3260,6 +3263,9 @@ lessons:
   target_files:
   - context/dm-signal-research.md
   origin: '[[cmd_1707]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L543
   title: numpy cumsum rolling windowでBipower Variationをベクトル化すると50x高速化
   summary: Lee-Mykland(2008) jump detectionのBV計算はPythonループで各t点のlocal window sum。bv_products
@@ -5894,6 +5900,9 @@ lessons:
   - outputs/analysis/shin_shijin_cpcv_DM7P.md
   - scripts/analysis/shin_shijin_cpcv_engine.py
   origin: '[[cmd_1020]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L350
   title: サブディレクトリCSVはgitignoreの*.csvでは除外されない
   summary: outputs/grid_search/*.csvは直下のみマッチし、shin_shijin_l1/等のサブディレクトリCSVには効かない。サブディレクトリ含む
@@ -6823,6 +6832,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: '2026-03-12'
   origin: '[[cmd_860]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L281
   title: レバレッジETF fat tails(尖度5-8)は正規性仮定の全統計手法でリスク。t分布 or ノンパラメトリック手法を優先すべき
   summary: DM-Signal active 91PFにはTQQQ/TECL/SPXL/TMF等3xレバレッジETF含む。月次リターン尖度5-8(正規=3)。正規尤度ベイズ
@@ -7296,6 +7308,9 @@ lessons:
   target_files:
   - docs/rule/trade-rule.md
   origin: '[[cmd_768]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L240
   title: '誤解14 IF-THEN: Open/Closeデフォルト判断はOpen-to-Open'
   summary: Open/Closeのデフォルトを判断する時は、このシステムのデフォルトがOpen-to-OpenでありClose-to-Closeではないことを前提にする。D
@@ -7428,6 +7443,9 @@ lessons:
   target_files:
   - frontend/src/
   origin: '[[cmd_748]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L228
   title: FE api-client.tsが304をエラー扱い — 既存ETag実装3件が実質無効
   summary: FE api-client.tsはresponse.ok(200-299のみtrue)で成功判定しており、304 Not Modifiedがエラー扱いされる。I
@@ -8226,7 +8244,7 @@ lessons:
   origin: '[[cmd_535]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-16'
+  last_referenced: '2026-06-19'
 - id: L163
   title: ルートディスコンは『差し替え+_deprecated退避』にすると復活が1コミットで戻せる
   summary: 'IF ルートディスコンを実施する時 THEN 復活手順（最小）: 復活手順（最小）:'

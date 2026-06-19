@@ -55148,3 +55148,25 @@ entries:
   supplementary_cmds: 0
   source: "cmd_save"
   timestamp: "2026-06-16T04:16:57Z"
+- cmd_id: "cmd_3414"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-16T04:20:02Z"
+  notes: "three_layer_penetration_missing|check=check_three_layer_penetration"
+- cmd_id: "cmd_3414"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-16T04:20:02Z"
+  notes: "gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence"

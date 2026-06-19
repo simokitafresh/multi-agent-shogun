@@ -2139,7 +2139,7 @@ codd:
 |------|---|
 | id | google_classroom |
 | label | Google Classroom Dashboard |
-| aliases | Google Classroom, Classroom, Classroom Dashboard, グーグルクラスルーム, classroom scraper, Classroomスクレイピング, auto_login, scrape_classroom, classroom内にあるスキルは？, google classroom, classroomの話をしよう, いまはclassroomだけから情報を得ているんだけど, classroom側のリポジトリにもこの知識を残そう, classroomの件は後でいい, auto_update, build_dashboard, 別ノートPC自動運用, 8年ふじ組, download_attachment_images, 012.md mini PC無人運用, 万全偵察 Classroom Androidアプリ サイドバー2行問題の根因特定 |
+| aliases | Google Classroom, Classroom, Classroom Dashboard, グーグルクラスルーム, classroom scraper, Classroomスクレイピング, auto_login, scrape_classroom, classroom内にあるスキルは？, google classroom, classroomの話をしよう, いまはclassroomだけから情報を得ているんだけど, classroom側のリポジトリにもこの知識を残そう, classroomの件は後でいい, auto_update, build_dashboard, 別ノートPC自動運用, 8年ふじ組, download_attachment_images, 012.md mini PC無人運用, 万全偵察 Classroom Androidアプリ サイドバー2行問題の根因特定, GA context freshness ALERT調査 — google classroom md が source |
 | skills | なし |
 | related_concepts | external_project_registry, cdp_browser_capability, kj_partshift |
 
@@ -2176,6 +2176,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T02:10:26+09:00 C:\Python_app\google_classroom\docs\future\013_v3_review.mdを読んでくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T13:33:08+09:00 C:\Python_app\google_classroom\docs\future\013.mdも更新しておいて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T17:49:24+09:00 閲覧は完璧だが、ハンバーガメニューがClassroomという題名と最新情報の２行しか出ない。メニューボタンのタップでスライドでメニューが出たり消えたりはする |
+| causal | `cmd_karo_hotfix_ga092_google_classroom_context_freshness_20260620` files_modified: [[google_classroom]] |
+| cmd | `cmd_karo_hotfix_ga092_google_classroom_context_freshness_20260620` (`context/google-classroom.md`) |
 
 ## agent_formation_management — 編成管理
 
@@ -2924,6 +2926,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T14:53:55+09:00 b0ks1rm09 toolu_018PJNp1Mao8pQKJrAL2eMgP /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8aa671c0-250c-404e-8b5a-7431d2 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T19:30:31+09:00 ba20go4hw toolu_01Fg1BzEFQybHohRNKj5AGjw /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/4a506363-f3ac-467a-9aa8-dd3a4c |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-09T03:49:26+09:00 bkjmko816 toolu_01GLF9DF39vvGJ8NAga1nd8e /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a4c26483-24e1-4831-b429-d353ea |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T00:30:35+09:00 bzkj20tun toolu_01JQKVqCWnRipndLdigXqR7G /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2e3a5e4a-230e-4f17-8287-8650db |
 
 ## kj_partshift — KJ Partshift Checker（シフト見える化MVP）
 
@@ -3598,8 +3601,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T22:51:40+09:00 • Stop hook (failed) error: hook returned invalid stop hook JSON output はインフラバグでは？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T23:02:03+09:00 つまりcodexCLIはstop hookを使わないようにするのがいいのでは？共通とは結果の共通であり、システムの共通ではない。違うものを同じように扱うのは怠慢。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T23:09:38+09:00 未完了: - commitは不可。git add 時点で .git/index.lock: Read-only file system により拒否された。作業ツリー修正は残っている が、この環境ではgit index更新ができない。 • S |
-| causal_chain | `[[cmd_3401]]` (L811) |
 | research | `docs/research/gunshi_idle_l6_false_positive_fix_20260619.md` — gate L6 awk偽陽性修正+BLOCK2件遡及解消(軍師idle 2026-06-19) |
+| causal_chain | `[[cmd_3401]]` (L811) |
 
 ## multi_cli_event_commonization — multi-CLI hook/event共通化
 
@@ -3642,9 +3645,9 @@ codd:
 | causal | `cmd_3075` origin: [[startup_BLOCK_18session]] -> [[cache_hit再記録]] -> [[precision計測歪み]] |
 | cmd | `cmd_3080` 修正: スキル推薦precision 0%根因修正(デダップ窓拡張+ログ清掃+計測デダップ) (`scripts/hooks/prompt_state_inject.sh`, `scripts/skill_recommend_metrics.sh`) |
 | causal | `cmd_3080` origin: [[startup_gate_skill_precision_alert]] -> [[dedup_window_too_small]] -> [[log_explosion_precision_zero]] |
-| causal_chain | `[[cmd_2995]]` (L687) |
 | file | `scripts/gates/gate_codex_hooks_no_stop.sh` Codex CLI hookにstop系hookがないことを検証するgate |
 | file | `tests/unit/test_gate_codex_hooks_no_stop.bats` |
+| causal_chain | `[[cmd_2995]]` (L687) |
 
 ## causal_verification_l0_l7 — 因果確認L0-L7
 

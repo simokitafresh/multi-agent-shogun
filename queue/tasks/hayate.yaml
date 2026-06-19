@@ -45,8 +45,6 @@ task:
     ────────────────────────────────────────
     
     
-  memory_db_context:
-  - "2026-06-19T18:26:31+09:00 | 【偵察結果】3名一致: viewport正常(360-430px)。根因はviewportではない。候補: (1)100vhがWebViewで誤計算→サイドバー高さ切詰め (2)同期HTMLが不完全。"
   acceptance_criteria:
   - id: 'AC1'
     checks:
@@ -75,4 +73,6 @@ task:
     - pattern: 'field_missing'
       count: 18
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
-  deployed_at: "2026-06-19T18:50:26"
+  deployed_at: "2026-06-20T00:19:32"
+  memory_db_context:
+  - "2026-06-19T18:26:31+09:00 | 【偵察結果】3名一致: viewport正常(360-430px)。根因はviewportではない。候補: (1)100vhがWebViewで誤計算→サイドバー高さ切詰め (2)同期HTMLが不完全。"

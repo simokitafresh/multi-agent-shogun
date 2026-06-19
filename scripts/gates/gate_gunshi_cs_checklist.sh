@@ -996,7 +996,7 @@ _infra_no_verify=$(awk '
     in_obs && /^    - / { obs=obs " " $0 }
     in_obs && /^  [^ ]/ { in_obs=0 }
     /timestamp:/ && rt=="report" && id != "" {
-        if (obs ~ /scripts\/|ninja_monitor/) {
+        if (obs ~ /scripts\/|\.sh|gate_|hook_|monitor|deploy_task|ninja_monitor/) {
             if (obs !~ /実行|実測|実験|動作確認|テスト実行|bash.*\.sh/) {
                 print id
             }

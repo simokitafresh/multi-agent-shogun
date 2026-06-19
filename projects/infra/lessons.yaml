@@ -554,6 +554,9 @@ lessons:
   target_files:
   - context/dm-signal-research.md
   origin: '[[cmd_karo_hotfix_ga047_context_freshness_202606112306]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L786
   title: 検知チャネル間の除外基準はtask YAMLなど同一ソースへ源流注入する
   summary: cmd_complete_gateとSG-PRE25のように同じ事象を判定する複数チャネルで、片側だけが報告YAMLの任意記録に依存すると記録漏れで偽陽性が再発
@@ -752,6 +755,9 @@ lessons:
   - scripts/ninja_monitor.sh
   - tests/unit/test_ninja_monitor_clear_guard.bats
   origin: '[[cmd_3284]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L774
   title: レビュー品質メトリクスはcmd_id単位最終verdict集計が正しい。全type対応必須
   summary: review_quality_scale_summary()は当初draft|reportのみ・全イテレーションカウントで正常な反復レビュー(RC→LGTM)が
@@ -2913,6 +2919,9 @@ lessons:
   - tests/unit/test_cmd_save_q11_fp_reduction.bats
   - tests/unit/test_cmd_save_q5.bats
   origin: '[[cmd_2863]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L630
   title: bulletin_write.shのSCRIPT_DIRはrepo root(parentディレクトリ)であり、scripts/yaml_auto_archive.shは$SCRIPT_DIR/scripts/yaml_auto_archive.shで到達する
   summary: bulletin_write.shのSCRIPT_DIRはscripts/ではなくそのparent(repo root)。他のスクリプトで$SCRIPT_DIR
@@ -4144,6 +4153,9 @@ lessons:
   target_files:
   - 偵察のみ
   origin: '[[cmd_2465]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L550
   title: deploy_task.sh Python heredocへの引数渡しでDIRECT_MODE伝達
   summary: deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys
@@ -4243,6 +4255,9 @@ lessons:
   - queue/tasks/hayate.yaml (status assigned->acknowledged->in_progress)
   - queue/reports/hayate_report_cmd_karo_infra_recon_core.yaml
   origin: '[[cmd_karo_infra_recon_core]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L543
   title: bats fixtureで運用YAMLの可変IDに依存するな
   summary: CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlの
@@ -6620,6 +6635,9 @@ lessons:
   target_files:
   - queue/insights.yaml
   origin: '[[cmd_cycle_L4_025]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L350
   title: load_cmds系関数はcommands値がlist/dict両形式を想定すべき
   summary: shogun_to_karo.yamlのcommands値はdict(キー=cmd_id)だがアーカイブはlist。yaml.safe_loadの返値をisin
@@ -7465,6 +7483,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: PostToolUseは事後実行のためpermissionDecision:denyが効かない
   origin: '[[cmd_1265]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L281
   title: bats mock環境でsource先stub追加漏れ
   summary: ntfy_listener.shにscript_update.shのsource行が追加されたがtest側のmock setup()にstub追加が漏れた。so
@@ -7965,6 +7986,9 @@ lessons:
   - block_destructive.sh
   - shutsujin_departure.sh
   origin: '[[cmd_1041]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L240
   title: test_result_guard.sh正規表現がbats TAP出力のテスト番号+テスト名を誤マッチ
   summary: parse_skip_count()の汎用正規表現 r"(\d+)\s+(?:tests?\s+)?skips?\b" は bats TAP出力
@@ -8109,6 +8133,9 @@ lessons:
   target_files:
   - cmd_complete_gate.sh
   origin: '[[cmd_972]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-19'
 - id: L228
   title: ast-grepのregex ruleはkind併記が要る
   summary: 'ast-grep rule を regex ベースで書く場合、kind を伴わない composite rule は `Rule must
@@ -8865,7 +8892,7 @@ lessons:
   origin: '[[hooks]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-16'
+  last_referenced: '2026-06-19'
 - id: L163
   title: MAX_ENTRIES等の定数変更時は既存テストの前提値も同時更新が必要
   summary: IF MAX_ENTRIES等の定数変更時 THEN impl側の定数変更とテストの前提値の整合性チェックをACに含めるべき
