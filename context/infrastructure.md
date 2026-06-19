@@ -418,6 +418,7 @@ L112対応履歴: `task_id || subtask_id` フォールバック適用済み。�
 ## inbox_watcher.sh
 
 inotifywait検知→`inboxN`短ナッジ送信。symlink注意。fingerprint dedup(cmd_255)。
+`queue/inbox` はClaude Code auto-memory連携のため意図的にsymlinkとして維持する。実体ディレクトリへ置換するとinbox_watcherが旧inode/別経路を監視し続け、未読ナッジが滞留する。symlinkを触る前に `ls -ld queue/inbox` とwatcher再起動要否を確認し、`rm`/`unlink`/`mv`/`mkdir`/`cp` で `queue/inbox` を操作する場合はpre-bash hookがWARNを出す(cmd_3453)。
 プロセス構造: 親=本体(inotifywait+メインループ)、子=MTIME_POLLサブシェル(L960)。WSL2 DrvFsでinotifywaitがinode置換でhangする問題への対策として、stat mtimeポーリングを子プロセスで並列実行しmtime変化検知時にinotifywaitをkillする。psで2プロセス見えるのは正常（親子関係。二重起動ではない）。
 2026-03-03 運用修正: Codexで`@agent_state=active`残留時はcapture-paneでidle/busyを再判定し補正。BUSY deferはretry消費しない。`profiles.codex.inbox_busy_max_defer_sec`(既定30秒)超過で強制nudge。
 - L002: FG bashでnudge不可（cmd_125）

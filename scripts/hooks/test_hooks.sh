@@ -58,6 +58,21 @@ expect_block() {
     fi
 }
 
+expect_warn_stderr() {
+    local desc="$1" cmd="$2" expected="$3"
+    TOTAL=$((TOTAL + 1))
+    local output err_file rc
+    err_file="$(mktemp)"
+    output="$(pre_bash_combined_eval_command "$cmd" "$REPO_ROOT" 2>"$err_file")" && rc=$? || rc=$?
+    if [[ $rc -eq 0 ]] && [[ "$output" != *'"deny"'* ]] && grep -Fq "$expected" "$err_file"; then
+        PASS=$((PASS + 1))
+    else
+        FAIL=$((FAIL + 1))
+        printf "  FAIL [expected WARN] %s\n    cmd: %s\n    exit=%d output=%s stderr=%s\n" "$desc" "$cmd" "$rc" "$output" "$(cat "$err_file")"
+    fi
+    rm -f "$err_file"
+}
+
 expect_memory_context() {
     local desc="$1" cmd="$2" agent="$3" must_have="$4" must_not_have="$5"
     TOTAL=$((TOTAL + 1))
@@ -207,6 +222,7 @@ expect_block "${_ysd} on inbox/"      "python3 -c \"import yaml; ${_ysd}(data, o
 expect_block "${_yd} on reports/"     "python3 -c \"import yaml; ${_yd}(data, open('queue/reports/r.yaml','w'))\""
 expect_allow "${_yd} on non-op file"  "python3 -c \"import yaml; ${_yd}(data, open('output.yaml','w'))\""
 expect_allow "no python3 context"     "echo ${_yd} queue/"
+expect_warn_stderr "queue/inbox symlink replacement warning" "rm queue/inbox && mkdir queue/inbox" "WARN(cmd_3453): queue/inbox is an intentional symlink"
 
 # ─── Guard 3: report-deny (bash redirect) ───
 echo "--- Guard 3: report-deny ---"

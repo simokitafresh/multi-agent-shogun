@@ -293,6 +293,15 @@ if [[ -n "$command" && "$command" =~ (^|[\;\&\|])[[:space:]]*(git[[:space:]]+fil
     emit_deny "WARNING: git-filter-repo deletes files from WORKING TREE too, not just git history. Back up large files BEFORE running."
 fi
 
+# === Guard 0.5: queue/inbox symlink replacement warning (cmd_3453) ===
+# queue/inbox is intentionally a symlink for Claude Code auto-memory integration.
+# Replacing it with a real directory silently breaks inbox_watcher notification.
+if [[ -n "${command:-}" && "$command" == *'queue/inbox'* ]]; then
+    if [[ "$command" =~ (^|[\;\&\|])[[:space:]]*(rm|unlink|mv|mkdir|cp)[[:space:]] ]]; then
+        echo "WARN(cmd_3453): queue/inbox is an intentional symlink for Claude Code auto-memory integration. Do not replace it with a real directory; verify with 'ls -ld queue/inbox' before changing." >&2
+    fi
+fi
+
 # === Guard 1: no-verify + hook bypass detection (G3: extended beyond commit-only) ===
 # Outer fast-check: --no-verify, HUSKY=0, or potential git commit -n
 if [[ "$payload" == *'--no-verify'* || "$payload" == *'HUSKY=0'* ]] || \

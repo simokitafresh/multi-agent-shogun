@@ -506,6 +506,12 @@ pre_bash_combined_eval_command() {
         return 1
     fi
 
+    if [[ "$command" == *'queue/inbox'* ]]; then
+        if [[ "$command" =~ (^|[\;\&\|])[[:space:]]*(rm|unlink|mv|mkdir|cp)[[:space:]] ]]; then
+            printf '%s\n' "WARN(cmd_3453): queue/inbox is an intentional symlink for Claude Code auto-memory integration. Do not replace it with a real directory; verify with 'ls -ld queue/inbox' before changing." >&2
+        fi
+    fi
+
     if [[ "$command" == *'--no-verify'* ]]; then
         if [[ "$command" =~ git[[:space:]] && "$command" == *'--no-verify'* ]]; then
             pre_bash_combined_emit_deny "BLOCKED: --no-verify is forbidden on git commands. Fix hooks, do not bypass them."
