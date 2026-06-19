@@ -29,7 +29,7 @@ task:
   parent_cmd: none
   project: infra
   purpose: 先送り防止 — queue/insights.yaml のpending残件を分類し、ノイズはresolve、概念化または実修正が必要なものは同ターンで処理または明確なblocker付きで報告する
-  status: done
+  status: acknowledged
   stop_for: []
   task_id: none
   task_type: hotfix
