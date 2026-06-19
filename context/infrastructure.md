@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-18 cmd_3442 -->
+<!-- last_updated: 2026-06-19 cmd_karo_hotfix_cmd3453_symlink_ops -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`

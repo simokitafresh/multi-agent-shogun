@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-19 -->
+<!-- last_updated: 2026-06-19 cmd_karo_hotfix_cmd3453_symlink_ops -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -487,3 +487,5 @@
 | cmd_3445 | 殿指示(2026-06-19 14:25): GPT+Sonnet忍者2名に別々の視点でデバッグ偵察。v1.0-v2.3の12回イテレーションで場当たり修正を繰り返したが根因未到達。問題A=file://プロトコルでWebViewのviewportが768px超→モバイルCSS不発→ハンバーガーメニュー不完全展開。問題B=同期完了後にCompose UIが再コンポーズされずダッシュボードに遷移しない。ブラウザでは同じHTMLが正常動作(殿確認済み)。 | google-classroom | 06-19 | Android WebView viewport根因とCom |
 | cmd_3448 | cmd_3447万全偵察(3名一致)でviewportは正常(360-430px)と確定。根因候補2つ: (1)height:100vhがWebView dynamic viewportで誤計算しサイドバー高さが2行分に切詰め (2)同期HTMLが不完全(linkCount<20)。本cmdでonPageFinished JS診断ログをUI表示+CSS修正(100vh→top:0;bottom:0;height:auto;max-height:100dvh)を同時適用しビルド+GitHub Release。 | google-classroom | 06-19 | WebView onPageFinished診断ログを設定画 |
 | cmd_3449 | cmd_3447でGATE滞留発生(2026-06-19)。軍師根因特定(blt_20260619_185700): 分割cmd(cmd_XXXX_ninja)の報告ファイル名=ninja_report_cmd_XXXX_ninja.yaml。親cmdのGATEが期待するファイル名=ninja_report_cmd_XXXX.yaml(L202)。名前不一致でMISSING判定。glob展開を拡張し分割cmd報告を検出可能にする | infra | 06-19 | 分割cmd報告ファイル名(ninja_report_cmd_ |
+| cmd_3452 | 殿指示(2026-06-19 21:22): 動作していないhook/gate/デーモンがないか覚醒して調査。log_terminal_response.sh(Stop hook)がゼロ出力で沈黙していたバグを発端に、全10hookの動作検証を実施。確認済み6本(session_start_inject/pretool-dispatch/posttool-dispatch/stop_check_inbox/log_terminal_input/prompt_state_inject)。未検証4本(stop-lint-gate/stop_session_alerts/session_end_clear_check/log_terminal_response=cmd_3451で修復中)を重点検証 | infra | 06-19 | 未検証hook 4本を条件付きで実行検証し、修復が必要な沈黙 |
+| cmd_3450 | 殿指示(2026-06-19 21:14)。v5.3-diag診断データでsidebarClientHeight=88(2行分)が確認された。前セッション偵察(18:26)で根因特定済み: height:100vhがWebViewで誤計算されサイドバー高さが切り詰められる。モバイルビューでサイドバーをheight:0またはdisplay:noneで完全非表示にする | google-classroom | 06-19 | モバイルビューの.sidebarにheight:0+over |
