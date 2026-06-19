@@ -20,8 +20,8 @@ TASK_TIMEOUT=45      # タスク停滞閾値（分）
 INBOX_TIMEOUT=10     # 未読メッセージ滞留閾値（分）
 ALERT_COOLDOWN=600   # 同一アラート再送抑止（秒）— 10分
 
-# 監視対象: 全忍者（settings.yamlから動的取得 — cmd_1136）
-read -ra MONITORED_AGENTS <<< "$(get_ninja_names)"
+# 監視対象: 全エージェント（L821: get_ninja_namesだと家老/軍師が対象外。原理1行で全員カバー）
+read -ra MONITORED_AGENTS <<< "$(get_all_agents)"
 
 # --- アラートcooldown管理 ---
 declare -A LAST_ALERT_TIME
