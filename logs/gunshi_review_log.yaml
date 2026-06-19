@@ -1904,3 +1904,18 @@
   brainwash_check: "#2防止: commit 2d8f82b+AC1/AC2をgrep実測確認。sha256残存8件の意図を区別(差分検出vs検証)"
   origin: "[[cmd_3446]] -> [[hayate_report]] -> [[クリーン再構築完了]]"
   timestamp: "2026-06-19T17:30:00"
+- cmd_id: cmd_3447
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "万全偵察4名。cmd_3445結論(useWideViewPort=false)が実機で不正確→再検証。AC3件(AC1/2忍者scope、AC3家老突合)。4名独立でviewport根因確定"
+  observations:
+    - "事実1: cmd_3445のuseWideViewPort=false結論が殿実機テストで覆された(サイドバー2行問題)"
+    - "事実2: CDP確認でsidebar DOM正常(21children,20links)。ブラウザ正常。WebView固有問題"
+    - "事実3: 4名独立調査(GPT+Sonnet)で結論突合→確度向上の設計"
+  causal_chain: "cmd_3445偵察→修正(cmd_3446)→実機で不正確→殿指示4名万全偵察→viewport根因再確定"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  brainwash_check: "#2防止: 前段結論の覆しを認識。CDPデータ+殿スクショの一次確認。AC3件/FM3件全検証"
+  origin: "[[cmd_3447]] -> [[cmd_3445結論覆し]] -> [[4名万全偵察]]"
+  timestamp: "2026-06-19T18:10:00"
