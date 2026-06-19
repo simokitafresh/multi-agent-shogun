@@ -622,7 +622,9 @@ discover_panes() {
     done <<< "$mapping"
 
     local found=0
-    for name in "${NINJA_NAMES[@]}"; do
+    # L821: 全エージェント(家老+軍師+忍者)をPANE_TARGETSに登録。各論パッチ(個別check関数)不要
+    local _all_discover=("karo" "gunshi" "${NINJA_NAMES[@]}")
+    for name in "${_all_discover[@]}"; do
         local _target="${_pmap[$name]:-}"
         if [ -n "$_target" ]; then
             PANE_TARGETS[$name]="shogun:${_target}"
@@ -631,7 +633,7 @@ discover_panes() {
     done
     unset _pmap
 
-    log "Pane discovery: ${found}/${#NINJA_NAMES[@]} ninja found"
+    log "Pane discovery: ${found}/${#_all_discover[@]} agents found"
 }
 
 # ─── ペイン生存チェック (cmd_183) ───
@@ -3932,12 +3934,14 @@ write_karo_snapshot() {
     } 200>"$lock_file"
 }
 
-# ─── CLI死亡検知+自動再起動 (cmd_1851) ───
-# 全忍者ペインのpane_current_commandを確認し、bash/zshならCLI死亡と判定。
+# ─── CLI死亡検知+自動再起動 (cmd_1851 + L821拡張) ───
+# 全エージェント(家老+軍師+忍者)のpane_current_commandを確認し、bash/zshならCLI死亡と判定。
+# L821: NINJA_NAMESのみだと家老/軍師が監視対象外(各論パッチ禁止。原理1行で全員カバー)。
 # 5分以内に2回以上再起動した場合はntfy ALERTのみ送信してループ防止。
 check_ninja_cli_dead() {
     local now=$EPOCHSECONDS
-    for name in "${NINJA_NAMES[@]}"; do
+    local _all_agents=("karo" "gunshi" "${NINJA_NAMES[@]}")
+    for name in "${_all_agents[@]}"; do
         local pane_target="${PANE_TARGETS[$name]:-}"
         [ -z "$pane_target" ] && continue
 
@@ -5125,9 +5129,8 @@ while true; do
     # ═══ ペイン生存チェック (cmd_183) ═══
     check_pane_survival
 
-    # ═══ 家老+軍師pane dead検知 (L821: NINJA_NAMESに含まれないため個別チェック) ═══
-    check_karo_pane_dead_once
-    check_gunshi_pane_dead_once
+    # ═══ 全エージェントCLI死亡検知 (L821: 原理1行で全員カバー。各論パッチ禁止) ═══
+    check_ninja_cli_dead
 
     # 案B: バッチ通知用配列を初期化
     NEWLY_IDLE=()
