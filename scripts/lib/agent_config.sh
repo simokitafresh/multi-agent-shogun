@@ -144,7 +144,9 @@ get_ninja_names() {
 
 get_all_agents() {
     _agent_config_load
-    echo "karo $_AGENT_CONFIG_ALL_NAMES"
+    # L821: shogunも含める。将軍は別windowだが監視/健全性チェックの対象
+    # _AGENT_CONFIG_ALL_NAMESにgunshiが含まれるため重複排除
+    echo "shogun karo $_AGENT_CONFIG_ALL_NAMES"
 }
 
 get_agent_role() {

@@ -623,7 +623,7 @@ discover_panes() {
 
     local found=0
     # L821: 全エージェント(家老+軍師+忍者)をPANE_TARGETSに登録。各論パッチ(個別check関数)不要
-    local _all_discover=("karo" "gunshi" "${NINJA_NAMES[@]}")
+    local _all_discover=("shogun" "karo" "gunshi" "${NINJA_NAMES[@]}")
     for name in "${_all_discover[@]}"; do
         local _target="${_pmap[$name]:-}"
         if [ -n "$_target" ]; then
@@ -3312,6 +3312,10 @@ check_inbox_renudge() {
                     if [ -n "$_kpcmd" ] && compgen -G "$SCRIPT_DIR/queue/archive/cmds/${_kpcmd}_completed_"* > /dev/null 2>&1; then
                         continue  # archived=GATE CLEAR済み
                     fi
+                    if [ -n "$_kpcmd" ] && awk -F '\t' -v cmd="$_kpcmd" '$2 == cmd && $3 == "CLEAR" { found=1; exit } END { exit(found ? 0 : 1) }' "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null; then
+                        log "KARO-PENDING-SKIP-GATE-CLEAR: $_kpcmd already has gate CLEAR"
+                        continue
+                    fi
                     # 軍師review済みの報告は「家老未処理」ではない。通知を繰り返すと空振りinboxになる。
                     if [ -n "$_kpcmd" ] && [[ "$_reviewed_report_cmds" == *"|$_kpcmd|"* ]]; then
                         log "KARO-PENDING-SKIP-REVIEWED: $_kpcmd already has gunshi report review"
@@ -3940,7 +3944,7 @@ write_karo_snapshot() {
 # 5分以内に2回以上再起動した場合はntfy ALERTのみ送信してループ防止。
 check_ninja_cli_dead() {
     local now=$EPOCHSECONDS
-    local _all_agents=("karo" "gunshi" "${NINJA_NAMES[@]}")
+    local _all_agents=("shogun" "karo" "gunshi" "${NINJA_NAMES[@]}")
     for name in "${_all_agents[@]}"; do
         local pane_target="${PANE_TARGETS[$name]:-}"
         [ -z "$pane_target" ] && continue
