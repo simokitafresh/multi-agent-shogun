@@ -5013,73 +5013,8 @@ check_karo_idle_cycle() {
     fi
 }
 
-check_karo_pane_dead_once() {
-    local karo_target="${KARO_PANE:-}"
-    local karo_dead=""
-    local karo_launch=""
-    local karo_respawn_cmd=""
-    local karo_node_dir=""
-
-    if [ -z "$karo_target" ]; then
-        karo_target=$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f '#{==:#{@agent_id},karo}' 2>/dev/null | head -1)
-        [ -n "$karo_target" ] && KARO_PANE="$karo_target"
-    fi
-    [ -n "$karo_target" ] || return 0
-
-    karo_dead=$(tmux display-message -t "$karo_target" -p '#{pane_dead}' 2>/dev/null || echo "0")
-    [ "$karo_dead" = "1" ] || return 0
-
-    log "KARO-DEAD: 家老pane dead検知。CLI終了の可能性。自動respawn実行 target=${karo_target}"
-
-    karo_launch=$(cli_launch_cmd karo 2>/dev/null || echo "")
-    if [ -z "$karo_launch" ]; then
-        log "KARO-RESPAWN-SKIP: launch_cmd empty target=${karo_target}"
-        return 0
-    fi
-
-    karo_respawn_cmd="cd $SCRIPT_DIR && $karo_launch"
-    if [[ "$karo_launch" == *"/bin/codex"* ]]; then
-        karo_node_dir="${karo_launch%/bin/codex*}/bin"
-        karo_respawn_cmd="export PATH=\"${karo_node_dir}:\$PATH\" && cd $SCRIPT_DIR && $karo_launch"
-    fi
-
-    if tmux respawn-pane -k -t "$karo_target" "$karo_respawn_cmd" 2>/dev/null; then
-        log "KARO-RESPAWN: 家老pane respawn完了 target=${karo_target}"
-        bash "$SCRIPT_DIR/scripts/ntfy.sh" "家老CLI dead→自動respawn完了" 2>/dev/null || true
-    else
-        log "KARO-RESPAWN-WARN: respawn-pane failed target=${karo_target}"
-    fi
-}
-
-check_gunshi_pane_dead_once() {
-    local gunshi_target="${GUNSHI_PANE:-}"
-    local gunshi_dead=""
-    local gunshi_launch=""
-
-    if [ -z "$gunshi_target" ]; then
-        gunshi_target=$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f '#{==:#{@agent_id},gunshi}' 2>/dev/null | head -1)
-        [ -n "$gunshi_target" ] && GUNSHI_PANE="$gunshi_target"
-    fi
-    [ -n "$gunshi_target" ] || return 0
-
-    gunshi_dead=$(tmux display-message -t "$gunshi_target" -p '#{pane_dead}' 2>/dev/null || echo "0")
-    [ "$gunshi_dead" = "1" ] || return 0
-
-    log "GUNSHI-DEAD: 軍師pane dead検知。自動respawn実行 target=${gunshi_target}"
-
-    gunshi_launch=$(cli_launch_cmd gunshi 2>/dev/null || echo "")
-    if [ -z "$gunshi_launch" ]; then
-        log "GUNSHI-RESPAWN-SKIP: launch_cmd empty target=${gunshi_target}"
-        return 0
-    fi
-
-    if tmux respawn-pane -k -t "$gunshi_target" "cd $SCRIPT_DIR && $gunshi_launch" 2>/dev/null; then
-        log "GUNSHI-RESPAWN: 軍師pane respawn完了 target=${gunshi_target}"
-        bash "$SCRIPT_DIR/scripts/ntfy.sh" "軍師CLI dead→自動respawn完了" 2>/dev/null || true
-    else
-        log "GUNSHI-RESPAWN-WARN: respawn-pane failed target=${gunshi_target}"
-    fi
-}
+# check_karo_pane_dead_once / check_gunshi_pane_dead_once は削除済み (L821)
+# check_ninja_cli_dead() が全エージェント配列で統一カバー
 
 # ─── 初期ペイン探索 ───
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" = "1" ]; then
@@ -5394,7 +5329,7 @@ while true; do
     check_karo_idle_cycle       # 家老idle自走サイクル起動チェック (cmd_1498)
     check_ntfy_listener_health  # ntfy_listenerゾンビ検知 (cmd_635)
     check_inbox_watcher_health  # inbox_watcher死亡検知+自動再起動 (おしお殿知見)
-    check_ninja_cli_dead        # 忍者CLI死亡検知+自動再起動 (cmd_1851)
+    # check_ninja_cli_dead — L5133で全エージェント版を毎サイクル先頭で実行済み(L821統合)
     run_lock_cleanup            # /tmp orphan lock files定期削除
     check_bulletin_archive      # 掲示板自動アーカイブ（肥大防止）
     drain_memory_db_live_insert_queue  # memory_db live insert退避queue排水
