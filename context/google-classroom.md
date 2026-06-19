@@ -1,5 +1,5 @@
 # Google Classroom Dashboard — Context Index
-<!-- last_updated: 2026-06-19 -->
+<!-- last_updated: 2026-06-20 -->
 
 > Playwright headlessでGoogle Classroomをスクレイピング→ダッシュボード+試験対策まとめ生成。
 > PJ復帰: 2026-03-23殿裁定。CDP統合せず別PJ。
@@ -12,6 +12,7 @@
 - priority: `high`、status: `active`
 - `current_project` は `dm-signal`。Google Classroom は active だが現在フォーカスPJではない
 - **運用形態(2026-06-19)**: 殿が別ノートPCで1日4回スクレイピング自動実行(012.md Phase 0相当を実現)。メインPC依存排除済み
+- **Android/WebView(2026-06-20)**: v5.6系でサイドバー2行表示の根因を `height:100vh`/padding/display復元に特定し、`build_dashboard.py` と生成HTMLへ反映。`SyncManager` は404耐性追加済み
 - **学年**: 8年ふじ組(2026年度)。build_dashboard.pyのCOURSE_NAME_MAPに8年コース追加済み
 - **スクリプト19本**: build_dashboard.py(2017行), scrape_classroom.py(1034行), auto_update.py, download_attachment_images.py, capture_form_images.py, refresh_session.py等
 - **堅牢化**: scrape失敗時full update fail(20fea50), ダッシュボード縮小ガード(37de46b), 日付処理改善(最終編集時刻補完)
