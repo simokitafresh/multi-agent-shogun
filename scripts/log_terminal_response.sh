@@ -19,7 +19,10 @@ export LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.jsonl"
 export LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 
 extract_detail_with_jq() {
-  local transcript_path stop_reason response line
+  local transcript_path stop_reason response
+  transcript_path=""
+  stop_reason=""
+  response=""
 
   # Fast path for the common Stop payload shape: transcript_path + transcript JSONL.
   # Avoids a parser process before append_lord_conversation's required DB/JSONL writer.
@@ -34,23 +37,42 @@ extract_detail_with_jq() {
     stop_reason="${BASH_REMATCH[1]}"
   fi
   if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
-    line="$(awk '
-      /"type"[[:space:]]*:[[:space:]]*"assistant"/ && /"role"[[:space:]]*:[[:space:]]*"assistant"/ { last = $0 }
-      END { print last }
-    ' "$transcript_path" 2>/dev/null || true)"
-    if [ -n "$line" ]; then
-      if [ -z "$stop_reason" ] && [[ "$line" =~ \"stop_reason\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
-        stop_reason="${BASH_REMATCH[1]}"
+    response="$(python3 - "$transcript_path" <<'PY' 2>/dev/null || true
+import json
+import sys
+
+last_text = ""
+last_stop = ""
+with open(sys.argv[1], encoding="utf-8") as fh:
+    for raw in fh:
+        try:
+            obj = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        message = obj.get("message") or {}
+        if obj.get("type") != "assistant" or message.get("role") != "assistant":
+            continue
+        parts = message.get("content") or []
+        texts = [
+            (part.get("text") or "").strip()
+            for part in parts
+            if isinstance(part, dict) and part.get("type") == "text" and (part.get("text") or "").strip()
+        ]
+        if texts:
+            last_text = "\n".join(texts)
+            last_stop = message.get("stop_reason") or obj.get("stop_reason") or ""
+if last_text:
+    print(last_text)
+    if last_stop:
+        print(f"\n[meta] stop_reason={last_stop}")
+PY
+)"
+    if [ -n "$response" ]; then
+      printf '%s' "$response"
+      if [ -n "$stop_reason" ] && [[ "$response" != *"[meta] stop_reason="* ]]; then
+        printf '\n\n[meta] stop_reason=%s' "$stop_reason"
       fi
-      if [[ "$line" =~ \"text\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
-        response="${BASH_REMATCH[1]}"
-        response="${response//\\n/$'\n'}"
-        response="${response//\\\"/\"}"
-        response="${response//\\\\/\\}"
-        printf '%s' "$response"
-        [ -z "$stop_reason" ] || printf '\n\n[meta] stop_reason=%s' "$stop_reason"
-        return 0
-      fi
+      return 0
     fi
   fi
 

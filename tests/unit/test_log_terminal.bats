@@ -112,6 +112,84 @@ PY
     ! echo "${result[2]}" | grep -q "pane_noise_should_not_be_used"
 }
 
+@test "T-TL-007: response skips assistant tool_use-only transcript tail and records last text" {
+    cat > "$TEST_TRANSCRIPT" <<'JSONL'
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"text before tool use"}],"stop_reason":null}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_1","name":"Bash","input":{"command":"true"}}],"stop_reason":"tool_use"}}
+JSONL
+    export MOCK_CAPTURE_OUTPUT="pane_noise_should_not_be_used"
+
+    run bash -c "python3 - <<'PY' | bash '$TEST_TMPDIR/scripts/log_terminal_response.sh'
+import json
+import os
+print(json.dumps({
+  'transcript_path': os.environ['TEST_TRANSCRIPT'],
+  'stop_reason': 'tool_use'
+}))
+PY"
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_LORD_CONV" ]
+
+    readarray -t result < <(python3 - <<PY
+import json
+with open("$TEST_LORD_CONV", "r", encoding="utf-8") as f:
+    obj = json.loads(f.read().strip().splitlines()[-1])
+print(obj.get("direction", ""))
+print(obj.get("source", ""))
+print(obj.get("detail", "").replace("\\n", "\\\\n"))
+PY
+)
+    [ "${result[0]}" = "response" ]
+    [ "${result[1]}" = "terminal" ]
+    echo "${result[2]}" | grep -q "text before tool use"
+    echo "${result[2]}" | grep -q "stop_reason=tool_use"
+    ! echo "${result[2]}" | grep -q "pane_noise_should_not_be_used"
+}
+
+@test "T-TL-008: response script live-inserts recorded response into memory DB FTS" {
+    cat > "$TEST_TRANSCRIPT" <<'JSONL'
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"cmd_3451 response fts searchable sentinel"}],"stop_reason":"end_turn"}}
+JSONL
+    mkdir -p "$TEST_TMPDIR/data"
+    export LORD_CONVERSATION_DB="$TEST_TMPDIR/data/multi_agent_shogun_memory.db"
+    python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$LORD_CONVERSATION_DB" >/dev/null
+
+    run bash -c "python3 - <<'PY' | bash '$TEST_TMPDIR/scripts/log_terminal_response.sh'
+import json
+import os
+print(json.dumps({'transcript_path': os.environ['TEST_TRANSCRIPT']}))
+PY"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(python3 - "$LORD_CONVERSATION_DB" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+row = conn.execute(
+    """
+    SELECT e.agent, e.target, e.direction, e.detail
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'searchable'
+      AND e.detail LIKE '%cmd_3451 response fts searchable sentinel%'
+    ORDER BY e.rowid DESC
+    LIMIT 1
+    """
+).fetchone()
+print(row[0] if row else "")
+print(row[1] if row else "")
+print(row[2] if row else "")
+print("sentinel" in row[3] if row else False)
+PY
+)
+    [ "${result[0]}" = "shogun" ]
+    [ "${result[1]}" = "lord" ]
+    [ "${result[2]}" = "response" ]
+    [ "${result[3]}" = "True" ]
+}
+
 @test "T-TL-005: lord input to karo pane is recorded with target and live inserted into events" {
     export MOCK_AGENT_ID="karo"
     mkdir -p "$TEST_TMPDIR/archive" "$TEST_TMPDIR/data"
