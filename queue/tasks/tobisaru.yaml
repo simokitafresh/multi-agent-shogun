@@ -3,15 +3,13 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: 作業開始時点のpending insight件数とID一覧を一次情報(queue/insights.yaml)から記録していること
+      description: multi-agent-shogun全体からハードコード定数候補を横断抽出し、カテゴリ別件数を記録する
     AC2:
-      description: 低情報・重複・既存概念で検索到達済みのinsightは scripts/insight_resolve.sh 経由でresolvedへ変更し、理由を残していること
+      description: config配下yaml間の二重定義(launch_cmd/gist_url等)を検出し、SSOT候補と統一案を記録する
     AC3:
-      description: semantic_map_generate:new_file系は対象ファイル実在と関連概念を確認し、必要ならcontext/semantic-map.mdまたはdocs/semantic-index/index.mdへ最小追記、不要ならresolve理由を残していること
+      description: docs/research/ssot-audit-round1.md に全体サマリ、二重定義セクション、各忍者個別mdへのリンクを作成する
     AC4:
-      description: 残pendingがある場合は、各IDごとに今処理できない理由が外部blockerか権限外かを報告YAMLに明記していること。単なる『後で』は禁止
-    AC5:
-      description: 作業後にpending件数を再計測し、作業前→作業後の数値差分をbinary_checksへ記録していること
+      description: 未統合の個別mdがある場合は、未統合理由と次に統合すべきファイルを明記する
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -26,20 +24,24 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: none
+  parent_cmd: cmd_3458_tobisaru
   project: infra
-  purpose: 先送り防止 — queue/insights.yaml のpending残件を分類し、ノイズはresolve、概念化または実修正が必要なものは同ターンで処理または明確なblocker付きで報告する
+  purpose: 'SSOT全方位偵察 周回1: 全体横断の重複検出と最終集約表を作る'
+  report_filename: tobisaru_report_cmd_3458_tobisaru.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3458_tobisaru.yaml
+  scope_note: '担当範囲: 全体横断。各忍者の個別mdが未完成でも、自身の全体grepで docs/research/ssot-audit-round1.md を初版作成する。個別成果が出たら追記統合する。'
   status: acknowledged
   stop_for: []
-  task_id: none
-  task_type: hotfix
+  target_path: /mnt/c/tools/multi-agent-shogun
+  task_id: cmd_3458_tobisaru_normal
+  task_type: normal
   related_lessons:
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L202'
-    summary: '今回の Android UI は `Kinpaku` / `Zouge` / `Surface4` などの戦国色トークンを多画面で直接参照していたため、`lig'
-    detail: '今回の Android UI は `Kinpaku` / `Zouge` / `Surface4` などの戦国色トークンを多画面で直接参照していたため、`lig'
+  - id: 'L474'
+    summary: 'inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、fie'
+    detail: 'inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、fie'
+  - id: 'L445'
+    summary: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑'
+    detail: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑'
   - id: 'L623'
     summary: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
     detail: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
@@ -47,36 +49,42 @@ task:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
+  recommended_skills:
+  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L202: 今回の Android UI は `Kinpaku` / `Zouge` / `Surface4` などの戦国色トークンを多画面で直接参照していたため、`lig
+      - L474: inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、fie
+      - L445: yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑
       - L623: queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar
     ────────────────────────────────────────
     
     
-  memory_db_context:
-  - "2026-06-19T23:03:21+09:00 | ヘルプを頼れ。 tab to queue message 48% context left"
-  - "2026-06-19T22:27:09+09:00 | 殿、本セッション最終状況: **確定した設計:** - queue/inbox = プロジェクトツリー実体(正本) - `~/.claude/projects/.../inbox` = symlink"
-  - "2026-06-12T11:56:08+09:00 | 復帰処理と起動BLOCK対応が完了した。殿へ報告する。 --- **復帰完了でござる。startup BLOCK 4件を全て処理し、新cmd 2本を配備した。** ## 復帰時に発見・処理した事項 *"
-  - "2026-05-20T21:40:41+09:00 | 対応済み8件closed。insights.yaml未消化4件: | ID | 内容 | 対応 | |---|---|---| | INS-154647 | semantic_index_update"
   ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_insights_pending_triage_tobisaru_20260620_normal
+  _ac_task_id: cmd_3458_tobisaru_normal
   _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_karo_hotfix_insights_pending_triage_tobisaru_20260620.yaml
-  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_insights_pending_triage_tobisaru_20260620.yaml
   bloom_level: 
-  deployed_at: "2026-06-20T00:28:03"
+  deployed_at: "2026-06-20T03:52:40"
+
+  session_state:
+    attempt: 2
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/4 ACs). 全ACの二値チェックを記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'SSOT全方位偵察周回1: 全体横断集約md(ssot-audit-round1.md)を作成。3名個別md統合+config yaml間二重定義3件を検出。カテゴリ別件数記録完了。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/4 ACs). 全ACの二値チェックを記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - attempt: 2
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'SSOT全方位偵察周回1: 全体横断集約md(ssot-audit-round1.md)を作成。3名個別md統合+config yaml間二重定義3件を検出。カテゴリ別件数記録完了。'
