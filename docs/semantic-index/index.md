@@ -1673,6 +1673,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T23:33:15+09:00 家老がidleになるまで待とう。今は自走している。確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T23:42:09+09:00 他にもスキルがあるはずだ。すべてのスキルを確認したか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T23:45:25+09:00 歯車などないぞ。確認したのか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T00:20:15+09:00 何が問題で、何を直したんだ？本当にコードは隅々まで確認したか？ |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -3181,6 +3182,7 @@ codd:
 | cmd | `cmd_2873` デーモン統一管理 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-19T14:43:18+09:00 デーモン異常は頻出する。異常時に全再起動のセーフテーの仕組みはないのか？ |
 | file | `scripts/daemon_watchdog.sh` デーモンcron監視+自動再起動(ninja_monitor/ntfy_listener/inbox_watcher) |
+| file | `tests/unit/test_ntfy_agent_id_warning.bats` ntfy通知時のagent_id警告テスト |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -3597,6 +3599,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T23:02:03+09:00 つまりcodexCLIはstop hookを使わないようにするのがいいのでは？共通とは結果の共通であり、システムの共通ではない。違うものを同じように扱うのは怠慢。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T23:09:38+09:00 未完了: - commitは不可。git add 時点で .git/index.lock: Read-only file system により拒否された。作業ツリー修正は残っている が、この環境ではgit index更新ができない。 • S |
 | causal_chain | `[[cmd_3401]]` (L811) |
+| research | `docs/research/gunshi_idle_l6_false_positive_fix_20260619.md` — gate L6 awk偽陽性修正+BLOCK2件遡及解消(軍師idle 2026-06-19) |
 
 ## multi_cli_event_commonization — multi-CLI hook/event共通化
 
@@ -3640,6 +3643,8 @@ codd:
 | cmd | `cmd_3080` 修正: スキル推薦precision 0%根因修正(デダップ窓拡張+ログ清掃+計測デダップ) (`scripts/hooks/prompt_state_inject.sh`, `scripts/skill_recommend_metrics.sh`) |
 | causal | `cmd_3080` origin: [[startup_gate_skill_precision_alert]] -> [[dedup_window_too_small]] -> [[log_explosion_precision_zero]] |
 | causal_chain | `[[cmd_2995]]` (L687) |
+| file | `scripts/gates/gate_codex_hooks_no_stop.sh` Codex CLI hookにstop系hookがないことを検証するgate |
+| file | `tests/unit/test_gate_codex_hooks_no_stop.bats` |
 
 ## causal_verification_l0_l7 — 因果確認L0-L7
 
