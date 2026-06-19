@@ -129,6 +129,54 @@ PY
     [ "${result[1]}" = "cmd_3159 原文をraw_contentへ保存する" ]
 }
 
+@test "memory_db_knowledge_write inserts knowledge directly without communication side effects" {
+    init_memory_db
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_knowledge_write.sh" \
+        "Layer1直接パス不在を解消する [[三層貫通設計ギャップ]]" \
+        "cmd_3455_test_source" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --cmd-id "cmd_3455"
+    [ "$status" -eq 0 ]
+    [[ "$output" == OK:\ knowledge:* ]]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+row = conn.execute(
+    """
+    SELECT event_type, direction, summary, cmd_id, source_file, raw_content
+    FROM events
+    WHERE event_type='knowledge'
+    """
+).fetchone()
+print("|".join(row))
+print(conn.execute("SELECT COUNT(*) FROM events WHERE event_type IN ('bulletin','inbox','insight')").fetchone()[0])
+print(conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM events_fts
+    JOIN events AS e ON e.rowid = events_fts.rowid
+    WHERE events_fts MATCH 'Layer1'
+      AND e.event_type='knowledge'
+    """
+).fetchone()[0])
+print(conn.execute(
+    """
+    SELECT COUNT(*)
+    FROM event_links
+    WHERE target_concept='三層貫通設計ギャップ'
+    """
+).fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "knowledge|direct_insert|Layer1直接パス不在を解消する [[三層貫通設計ギャップ]]|cmd_3455|cmd_3455_test_source|Layer1直接パス不在を解消する [[三層貫通設計ギャップ]]" ]
+    [ "${result[1]}" = "0" ]
+    [ "${result[2]}" = "1" ]
+    [ "${result[3]}" = "1" ]
+}
+
 @test "cmd_quality_log keeps YAML success when live DB insert fails" {
     mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/bad-db"
 
