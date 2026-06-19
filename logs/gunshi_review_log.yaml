@@ -1811,7 +1811,7 @@
 - cmd_id: cmd_3445
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "偵察cmd。2名並列(GPT+Sonnet)でAndroid WebView viewport+Compose StateFlow根因特定。assumptions verified(殿ブラウザ確認+git blame+semantic_search)。AC3件scope完結。FM3件全対処"
   observations:
@@ -1854,12 +1854,27 @@
   brainwash_check: "#1防止: 分析内容は良好だがLG006でFAIL判定。フォーマット不備をLGTM+注記で流さない。binary_checks 2件yes確認済みだが構造がnull判定される不備"
   origin: "[[cmd_3445_saizo]] -> [[report_format_fail]] -> [[LG006]]"
   timestamp: "2026-06-19T15:15:00"
+- cmd_id: cmd_3446
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  findings_summary: "修正cmd。v1.9(905c048)ベースに偵察修正2点+既知3バグ修正。AC3件=command3ステップ1:1。depends_on cmd_3445 CLEAR。timeout30分shallow"
+  observations:
+    - "事実1: 905c048=v1.9実在確認(git log --oneline)。purposeのv1.7は表記揺れ"
+    - "事実2: 偵察結果2本(docs/research/cmd_3445_*.md)に基づく最小差分修正"
+    - "事実3: SHA256検証廃止(Render CDN圧縮で原理的不一致)+通知機能削除(殿裁定)"
+  causal_chain: "殿指示(サンクコスト捨て)→v1.9ベース→偵察2根因(viewport+snapshotFlow)+既知3修正(SHA256/copyTo/通知)→最小差分再構築"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  brainwash_check: "#2防止: 905c048実在をgit log確認。v1.7/v1.9表記揺れ検出→commit hash明記で混乱なし判定。AC3件/FM3件全検証"
+  origin: "[[cmd_3446]] -> [[cmd_3445偵察]] -> [[クリーン再構築]]"
+  timestamp: "2026-06-19T17:25:00"
 - cmd_id: cmd_3445
   review_type: report
   report_ninja: hayate
   report_task_id: cmd_3445_full
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   findings_summary: "4観点OK。commit cb1540b実在(google-classroom repo)。BUILD SUCCESSFUL 46s+HTML5条件all=True。hayateが問題A+B両方修正(MainActivity.kt +124/-57)→saizo競合リスク情報提供"
   observations:
     - "事実1: commit cb1540b google-classroomリポジトリに実在。git log --oneline -1で確認"
