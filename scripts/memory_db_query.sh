@@ -288,6 +288,10 @@ def main() -> int:
                 cursor = conn.execute(statement)
                 if cursor.description is None:
                     continue
+                # agent混同防止: eventsテーブルSELECTでagentカラムなし→WARN
+                col_names = [d[0] for d in cursor.description]
+                if "agent" not in col_names and "events" in statement.lower():
+                    print("★ WARN: eventsテーブル検索にagentカラムなし。他エージェントの記録と混同する危険。SELECT agent,... またはWHERE agent='自分'を追加せよ", file=sys.stderr)
                 for row in cursor:
                     print("|".join(format_value(value) for value in row))
         except sqlite3.DatabaseError as exc:

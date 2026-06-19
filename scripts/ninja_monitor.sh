@@ -2108,7 +2108,8 @@ _training_pipeline_has_work() {
 _retrospective_recurrence_rate() {
     local dq_file="${1:-$SCRIPT_DIR/logs/cmd_design_quality.yaml}"
     [ -f "$dq_file" ] || { printf '0 0 0\n'; return 0; }
-    grep -E '^[[:space:]]*-[[:space:]]*cmd_id:|^[[:space:]]*(gate_result|notes|timestamp):' "$dq_file" 2>/dev/null | awk '
+    local _ninja_rx_nm="^($(get_ninja_names 2>/dev/null | sed 's/ /|/g' || echo 'hayate|kagemaru|hanzo|saizo|kotaro|tobisaru'))$"
+    grep -E '^[[:space:]]*-[[:space:]]*cmd_id:|^[[:space:]]*(gate_result|notes|timestamp):' "$dq_file" 2>/dev/null | awk -v ninja_rx="$_ninja_rx_nm" '
 function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^["'\''"]|["'\''"]$/, "", s); return s }
 function skip_pattern(p) { return p ~ /^draft_lessons/ || p ~ /^ci_failure/ || p ~ /:binary_checks_fail/ }
 function normalize_class(p, parts, cls) {
@@ -2116,7 +2117,7 @@ function normalize_class(p, parts, cls) {
     if (p == "" || skip_pattern(p)) return ""
     split(p, parts, ":")
     cls = trim(parts[1])
-    if (cls ~ /^(hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)$/ && length(parts) > 1) cls = trim(parts[2])
+    if (cls ~ ninja_rx && length(parts) > 1) cls = trim(parts[2])
     if (cls ~ /environment_change/ || cls ~ /WARN累計昇格/) return ""
     return cls
 }
@@ -3308,6 +3309,10 @@ check_inbox_renudge() {
                 # FNR==1で新ファイル開始を検出し前ファイルの結果を出力。ls→compgen -Gに変更(エラー出力防止)
                 while IFS='|' read -r _kts _kpcmd; do
                     [ "$_kts" = "done" ] || continue
+                    if [ -z "$_kpcmd" ] || [ "$_kpcmd" = "none" ]; then
+                        log "KARO-PENDING-SKIP-NO-PARENT-CMD: done task has no parent_cmd"
+                        continue
+                    fi
                     # GATE CLEAR済みならpending workではない
                     if [ -n "$_kpcmd" ] && compgen -G "$SCRIPT_DIR/queue/archive/cmds/${_kpcmd}_completed_"* > /dev/null 2>&1; then
                         continue  # archived=GATE CLEAR済み
@@ -3817,10 +3822,18 @@ write_karo_snapshot() {
                             _ctx="${_ctx_num}%"
                         fi
                     fi
-                    # モデル短縮名を取得（一次情報=CLIバナーから検出。設定値・起動コマンドは二次情報）
+                    # モデル短縮名を取得（SSOT=実際に稼働しているモデル）
+                    # Codex: 末尾ステータスバーに常時表示(gpt-X.X mode · Context N%)
+                    # Claude: 末尾にモデル名なし→起動バナー(▝▜█████▛▘)を全スクロールバックで検索
+                    # 2026-06-20: -S -200では起動バナーに届かない+ログ内モデル名誤検出バグ修正
                     local _model_name="" _model_short="?"
                     if [ -n "$_pane_target" ]; then
-                        _model_name=$(tmux capture-pane -t "$_pane_target" -p -S -200 2>/dev/null | grep -m1 -oiE '(Opus|Sonnet|Haiku) [0-9]+\.[0-9]+|gpt-[0-9.]+' || echo "")
+                        # 1st: Codex末尾ステータスバー(SSOT常時表示。軽い)
+                        _model_name=$(tmux capture-pane -t "$_pane_target" -p 2>/dev/null | tail -20 | grep -m1 -oiE 'gpt-[0-9.]+[a-z ]*' || echo "")
+                        # 2nd: Claude起動バナー(▝▜█████▛▘。末尾にモデル名なし→全スクロールバック必須)
+                        if [ -z "$_model_name" ]; then
+                            _model_name=$(tmux capture-pane -t "$_pane_target" -p -S - 2>/dev/null | grep '▝▜█████▛▘' | head -1 | grep -oiE '(Opus|Sonnet|Haiku) [0-9]+\.[0-9]+' || echo "")
+                        fi
                     fi
                     if [ -z "$_model_name" ]; then
                         _model_name=$(get_model_display_name "$name" 2>/dev/null || echo "")

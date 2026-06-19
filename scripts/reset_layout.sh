@@ -98,10 +98,18 @@ done < <(tmux list-panes -t shogun:agents \
 
 # --- ps batch (CLI process detection) ---
 declare -A _MB_CLI_RUNNING
+# 子プロセスにCLI名があるか (従来ロジック)
 while read -r _ppid _comm; do
     _ppid="${_ppid#"${_ppid%%[![:space:]]*}"}"
     [[ -n "$_ppid" ]] && _MB_CLI_RUNNING["$_ppid"]=1
 done < <(ps -eo ppid,comm 2>/dev/null | grep -E 'claude|codex|copilot|kimi' || true)
+# pane_pid自体がCLIプロセスか (Claude Codeはpane直接プロセスとして動く。子はMCPサーバーのみ)
+for _pp in "${_MB_PID[@]}"; do
+    [[ -z "$_pp" ]] && continue
+    [[ -n "${_MB_CLI_RUNNING[$_pp]:-}" ]] && continue
+    _self_comm=$(ps -p "$_pp" -o comm= 2>/dev/null || true)
+    [[ "$_self_comm" =~ (claude|codex|copilot|kimi) ]] && _MB_CLI_RUNNING["$_pp"]=1
+done
 
 # --- settings.yaml batch: agent → type, model_name (replaces N×python3 subshells) ---
 declare -A _MB_AGENT_TYPE _MB_AGENT_MODEL_NAME

@@ -293,12 +293,13 @@ if [[ -n "$command" && "$command" =~ (^|[\;\&\|])[[:space:]]*(git[[:space:]]+fil
     emit_deny "WARNING: git-filter-repo deletes files from WORKING TREE too, not just git history. Back up large files BEFORE running."
 fi
 
-# === Guard 0.5: queue/inbox symlink replacement warning (cmd_3453) ===
-# queue/inbox is intentionally a symlink for Claude Code auto-memory integration.
-# Replacing it with a real directory silently breaks inbox_watcher notification.
+# === Guard 0.5: intentional symlink replacement warning ===
+# queue/inbox is intentionally a symlink for CLI memory/inbox integration.
+# Replacing it with a real directory silently breaks notification delivery.
+# Provenance: cmd_3453, 2026-06-20 inbox symlink replacement regression.
 if [[ -n "${command:-}" && "$command" == *'queue/inbox'* ]]; then
     if [[ "$command" =~ (^|[\;\&\|])[[:space:]]*(rm|unlink|mv|mkdir|cp)[[:space:]] ]]; then
-        echo "WARN(cmd_3453): queue/inbox is an intentional symlink for Claude Code auto-memory integration. Do not replace it with a real directory; verify with 'ls -ld queue/inbox' before changing." >&2
+        echo "WARN: queue/inbox is an intentional symlink for CLI memory/inbox integration. Do not replace it with a real directory; verify with 'ls -ld queue/inbox' before changing." >&2
     fi
 fi
 
@@ -386,7 +387,7 @@ fi
 if [[ -n "${command:-}" ]]; then
     if [[ "$command" == *'shogun_to_karo'* ]]; then
         if [[ "$command" == *'sed '* || "$command" == *'sed -'* || "$command" == *"re.sub"* || "$command" == *"\.replace("* || "$command" == *'awk '* ]]; then
-            emit_deny "BLOCK: shogun_to_karo.yamlへのsed/regex操作は禁止。Edit toolで手動変更せよ。(cmd_2134事故: gate迂回防止)"
+            emit_deny "BLOCK: shogun_to_karo.yamlへのsed/regex操作は禁止。Edit toolで手動変更せよ。status遷移gateの迂回を防ぐため。"
         fi
     fi
 fi
@@ -408,7 +409,7 @@ if [[ "$payload" == *'capture-pane'* ]]; then
             emit_deny "BLOCK: capture-pane -S -${lines} は不十分。-S -30 以上を使え（末尾${lines}行では忍者の作業状態を見落とす）"
         fi
     fi
-    echo "INFO(LG007): capture-pane出力は過去の残像。現在の状態はファイルmtime(inbox/task YAML)で確認せよ。" >&2
+    echo "INFO: capture-pane出力は過去の残像。現在の状態はファイルmtime(inbox/task YAML)で確認せよ。" >&2
 fi
 
 # === Guard 7: inbox_mark_read without prior Read — prevent stop hook bypass ===
@@ -426,7 +427,7 @@ if [[ "$payload" == *'inbox_mark_read'* ]]; then
             if [[ -f "$read_log" ]]; then
                 recent_reads="$(tail -5 "$read_log" 2>/dev/null || true)"
                 if [[ "$recent_reads" != *"$inbox_pattern"* ]]; then
-                    emit_deny "BLOCK: inbox_mark_read前にRead toolでinboxを読め。中身を確認せずに既読化するとメッセージ処理漏れが発生する(2026-04-07実証)"
+                    emit_deny "BLOCK: inbox_mark_read前にRead toolでinboxを読め。中身を確認せずに既読化するとメッセージ処理漏れが発生する。"
                 fi
             else
                 # read_log不在: Codex CLI or 起動直後。BLOCKではなくWARN(所見5: Codex互換)
@@ -440,7 +441,7 @@ fi
 # Note: regex limits to python execution context to avoid blocking mentions in message strings
 if [[ "$payload" == *'wf_runner.py'* ]]; then
     if [[ -n "${command:-}" && "$command" =~ python[23]?[[:space:]].*wf_runner\.py ]]; then
-        emit_deny "BLOCKED: wf_runner.py は並列OOMリスクのため使用禁止(LG025)。代替: l1_alm_wf_engine.py --csv で1本ずつ直列実行せよ。"
+        emit_deny "BLOCKED: wf_runner.py は並列OOMリスクのため使用禁止。代替: l1_alm_wf_engine.py --csv で1本ずつ直列実行せよ。"
     fi
 fi
 
@@ -460,6 +461,12 @@ if [[ "$command" =~ sed[[:space:]]+-i.*gate_result.*gunshi_review_log\.yaml || "
     if [[ "$_agent_id" == "gunshi" ]]; then
         emit_deny "BLOCKED: gate_result手動sed禁止。/gate-sync スキルを使え (殿裁定: スキル無視はバグ)"
     fi
+fi
+
+# Guard 9b: CLI切替/編成変更の手動操作BLOCK (殿裁定2026-06-20: スキル100%使用の仕組み)
+# respawn-pane/model_switch/CLI起動を手動で行おうとしたら/shogun-cli-switchを強制
+if [[ "$command" =~ respawn-pane|model_switch|/model[[:space:]] ]] && [[ ! "$command" =~ ninja_monitor|reset_layout|shogun-cli-switch|gate_|startup ]]; then
+    emit_deny "BLOCKED: CLI切替/編成変更は /shogun-cli-switch スキルを使え。手動respawn-pane/model_switch禁止 (殿裁定: スキル無視はバグ。意志依存は洗脳#3)"
 fi
 
 # === Guard 10: D0 effect measurement enforcement (覚醒なぜなぜ7回 2026-06-10: commit=仕事の根因) ===
@@ -514,30 +521,12 @@ PY
     fi
 fi
 
-# === Guard 13: respawn-pane task status safety (2026-06-13 軍師判断ミス: task in_progress中にrespawn→タスク消失) ===
-if [[ -n "${command:-}" && "$command" == *"respawn-pane"* ]]; then
-    # respawn対象ペインからagent_idを抽出し、task statusがidle以外ならBLOCK
-    _rp_pane=""
-    if [[ "$command" =~ -t[[:space:]]+([^[:space:]]+) ]]; then
-        _rp_pane="${BASH_REMATCH[1]}"
-    elif [[ "$command" =~ -t([^[:space:]]+) ]]; then
-        _rp_pane="${BASH_REMATCH[1]}"
-    fi
-    if [[ -n "$_rp_pane" ]]; then
-        _rp_agent=$(tmux display-message -t "$_rp_pane" -p '#{@agent_id}' 2>/dev/null || true)
-        if [[ -n "$_rp_agent" ]]; then
-            _rp_task_status=$(grep '^  status:' "$SCRIPT_DIR/queue/tasks/${_rp_agent}.yaml" 2>/dev/null | head -1 | awk '{print $2}')
-            if [[ -n "$_rp_task_status" && "$_rp_task_status" != "idle" && "$_rp_task_status" != "done" && "$_rp_task_status" != "failed" ]]; then
-                echo "BLOCK: respawn-pane対象${_rp_agent}のtask status=${_rp_task_status}(idle/done/failed以外)。タスク保持中のrespawnはタスク消失を招く(2026-06-13事故)。task完了を待つかtask statusをidle化してから実行せよ" >&2
-                exit 2
-            fi
-        fi
-    fi
-fi
+# Guard 13: 削除(2026-06-20)。各論パッチ(respawn-paneのみBLOCK)はバグ。
+# 原理的解決=三層記憶skill_routing概念。検索すれば正しいスキルに到達する。
 
 # === Guard 14: DB direct connection skill recommendation (LS064: /db-check skill不使用防止) ===
 if [[ "$command" == *psycopg2* || "$command" == *"DATABASE_URL"* || "$command" == *create_db_engine* ]] && [[ "$command" != *"db-check"* && "$command" != *"check_pf_config"* ]]; then
-    echo "★ [Guard14] WARN: DB直接接続を検出。/db-checkスキルの使用を検討せよ(LS064: skill不使用=構造的バグ)" >&2
+    echo "★ [Guard14] WARN: DB直接接続を検出。/db-checkスキルの使用を検討せよ。DB確認手順の分散を防ぐため。" >&2
 fi
 
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===

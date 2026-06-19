@@ -296,7 +296,8 @@ lessons:
     idle時に殿入力待ちで止まるな。入力・確認・還流の鎖が切れている箇所を自走で塞げ。
     運用YAML肥大化対策は書込み時自動アーカイブ(Vercelスタイル)。走査側の変更不要(cmd_2856)
     SKILL.md陳腐化を3セッション放置=洗脳#5(先送り)の証拠。gateが検出してもcmd化しなければ穴(cmd_3129)
-  source_ids: [LS027, LS028, LS060, LS030, LS042]
+    /db-checkスキルが存在するのにpsycopg2直接接続を4回試行錯誤(LS064吸収2026-06-20)。skill_recommend.shにトリガーなし=LLM記憶依存=/clear後に消える。Guard14でpsycopg2直接接続WARN実装済み
+  source_ids: [LS027, LS028, LS060, LS030, LS042, LS064]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'cmd_save.sh Session State(GP-201)+report_field_set.sh GP-072c5(bc:no→verdict:PASS BLOCK)+context/codd.md+prompt_state_inject.sh(概念→スキル推奨L1)+deploy_task.sh(inject_semantic_concepts L4)+gunshi Guard9(L2)'
@@ -350,6 +351,7 @@ lessons:
     (7)AC内§番号(§5.2等)がcheck_gunshi_reference_numeric_relaxationに数値として誤検出。§はcommand欄に移動せよ。other_draft_existsとの複合BLOCKあり(cmd_2351)
     (8)AC_TEXTがdescription:行のみgrep→AC1:"..."形式はP1-P5検出不能。ACをdescription:形式で書けば通る。根本修正: AC_TEXT抽出をacceptance_criteria配下全行に拡張(cmd_2392で発見)
     (9)gate修正cmdのACではトリガーフレーズを直接引用せず抽象表現に変換する。cmd全文grepの既知FPパターン。
+    (10)先送り表現チェック(cmd_text_deferral_language)も全文grep。q_ambiguityの「段階的」が先送り表現としてFP発火。LS-A04(15)と同構造(cmd_3388。LS062吸収2026-06-20)
   source_ids: [LS023, LS034, LS035, LS059, LS060]
   source_cmds_v3: [cmd_2314, cmd_2315, cmd_2318, cmd_2319, cmd_2330, cmd_2331, cmd_2332, cmd_2343, cmd_2351, cmd_2355, cmd_2358, cmd_2366, cmd_2367, cmd_2368, cmd_2369, cmd_2374, cmd_2377, cmd_2379, cmd_2381, cmd_2382, cmd_2383, cmd_2384, cmd_2385, cmd_2392]
   created_at: '2026-04-25'
@@ -571,14 +573,7 @@ lessons:
 # LS062: superseded by LS-A09(24) (コミット列照合=現物確認パターン。2026-06-15統合)
 # LS063: superseded by LS-A09(23) (gate実行確認=現物確認の具体パターン。2026-06-13統合。cmd_3360でL3/L4埋込み済み)
 # LS063: superseded by LS-A09(25) (α6指標=三層記憶確認→現物確認パターン。2026-06-15統合)
-- id: 'LS062'
-  title: '先送り表現検出はcmd全文grepのFPパターン'
-  origin: '[[cmd_3388]]'
-  detail: 'q_ambiguityの段階的がcmd_text_deferral_languageに発火。先送り表現チェックは全文grep。LS-A04(15)と同構造。置換で解消'
-  source_cmd: 'cmd_3388'
-  created_at: '2026-06-15'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=先送り表現'
+# LS062: superseded by LS-A22(10) (先送り表現FP=cmd全文grepの既知パターン。2026-06-20統合)
 - id: 'LS063'
   title: '累計昇格はcmd cancel+新ID起票で回避(LS-A04/LS-A22再発)'
   origin: '[[cmd_3390_累計BLOCK]] -> [[新ID起票]] -> [[cmd_3391_PASS]]'
@@ -587,14 +582,7 @@ lessons:
   created_at: '2026-06-15'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=累計昇格'
-- id: 'LS064'
-  title: 'DB直接接続試行錯誤=スキル不使用の構造的バグ(LS-A17再発)'
-  origin: '[[cmd_session_20260616]]'
-  detail: '/db-checkスキルが存在するのにpsycopg2直接接続を4回試行錯誤。根因: skill_recommend.sh/prompt_state_inject.shにdb-checkの推薦トリガーなし。スキルはSKILL.md TRIGGER定義のみ=LLM記憶依存=/clear後に消える。自動化ターゲット: skill_recommend.shにdb-checkトリガー追加+pre-bash hookでpsycopg2直接接続WARN'
-  source_cmd: 'cmd_session_20260616'
-  created_at: '2026-06-16'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=db-check skill_recommend'
+# LS064: superseded by LS-A17 (DB直接接続=スキル不使用。Guard14実装済み。2026-06-20統合)
 - id: 'LS065'
   title: 'Q6洗脳検出→cmd起票まで一気通貫(認識→行動ギャップ)'
   origin: '[[cmd_3409]]'
@@ -607,7 +595,7 @@ lessons:
 # LS067: 物理削除(2026-06-17)。superseded by LS-A09(26)。計測データイベント前後混同→LS-A09に吸収
 - id: 'LS066'
   title: 'queue/inbox symlinkは設計上の必然。実体ディレクトリ化禁止'
-  origin: '未指定'
+  origin: '[[cmd_karo_hotfix_cmd3453_symlink_ops]] -> [[symlink設計意図未確認]] -> [[inotify死亡+watcher停止]]'
   detail: 'symlink先=~/.claude/projects/{path}/inbox(Claude Code auto-memory)。設計意図: CLI再起動永続+パス自動解決+Mac移植対応。家老がCodex sandbox制限で実体ディレクトリ化→inotify死亡+watcher停止+ナッジ滞留8件。将軍が設計意図未確認で承認(LS-A09違反)。変更前にreadlink+設計意図カタログ照合必須'
   source_cmd: 'session_20260619_symlink'
   created_at: '2026-06-19'
@@ -616,9 +604,25 @@ lessons:
 # LS067: superseded by LS-A23(6) (三層貫通定義。2026-06-19統合)
 - id: 'LS068'
   title: 'F001改訂: 殿との会話をブロックしない操作は将軍直接実行'
-  origin: '未指定'
+  origin: '[[殿裁定_20260619]] -> [[cmd起票過剰=トークン浪費]] -> [[F001改訂]]'
   detail: 'F001の本質=殿との会話ブロック防止。簡単な操作(ビルド/push/aliases/symlink/version bump)までcmd起票→quality_gate7段階で30分浪費=本末転倒。改訂: 殿との会話をブロックしない操作は将軍直接。ブロックする規模のコード変更のみcmd委任。実証: v5.4ビルド+リリース=将軍直接5分 vs cmd起票試行で殿に止められた'
   source_cmd: 'session_20260619_F001'
   created_at: '2026-06-19'
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=F001改訂'
+- id: 'LS069'
+  title: '殿の発言帰属捏造禁止 — 言っていないことを殿裁定として記録するな'
+  origin: '未指定'
+  detail: '2026-06-20: 将軍がrespawn時にreset-layoutを使用し、hookコメントに殿裁定2026-06-20と記載したが、殿はreset-layoutとは言っていない(殿はshogun-cli-switchと指摘)。殿の発言を確認せず自分の解釈を殿の言葉として帰属させた=嘘。Guard15(pre-write-edit-combined.sh)で殿発言帰属時にlord_conversation直近inbound自動表示を実装。Guard13でrespawn-pane直接実行をBLOCKしshogun-cli-switchへ誘導'
+  source_cmd: 'session_20260620'
+  created_at: '2026-06-20'
+  automated: true
+  enforcement: 'type=hook; file=.claude/hooks/pre-write-edit-combined.sh Guard15+pre-bash-combined.sh Guard13; pattern=殿裁定.*殿の発言帰属'
+- id: 'LS070'
+  title: 'model_detect.sh tail -1バグ — ログ内他CLIバナー誤検出+試行錯誤はバグ'
+  origin: '[[reset_layout_cli_detect_miss]] -> [[ninja_monitor_model_overwrite]] -> [[model_detect_tail1_bug]] -> [[殿指摘_試行錯誤はバグ]]'
+  detail: '2026-06-20: (1)model_detect.sh L47 tail -1が最後のバナーマッチを取り、将軍pane内のsonnet CLIログバナーを誤検出→pane枠線にSonnet表示。head -1に修正(最初=自分の起動バナー)。(2)ninja_monitor.sh内のcapture-pane検出コードは副次パスだが同じバグがあり修正(末尾10行限定→全スクロールバック+バナー特有文字)。(3)reset_layout.sh CLI検出: pane_pid自体のcomm未確認→動作中sonnet忍者3名にCLI起動送信→作業中断。(4)試行錯誤の連鎖: 末尾10行→殿「見逃すのでは」→末尾20行→殿「codex末尾にモデル名出てないか」→バナー全検索→殿「解決してるのか」→check_model_names別パス発見→model_detect.sh tail -1が真犯人。確認せずに修正→再発→殿指摘で真因到達。試行錯誤=確認不足のバグ'
+  source_cmd: 'session_20260620'
+  created_at: '2026-06-20'
+  automated: true
+  enforcement: 'type=fix; file=scripts/lib/model_detect.sh; pattern=head -1'

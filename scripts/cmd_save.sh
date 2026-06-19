@@ -430,6 +430,8 @@ is_gate_or_script_modification_cmd() {
         in_command && /^[[:space:]]{4,}/ { print; next }
     ')"
 
+    # 偵察/棚卸しcmdはscriptsディレクトリを走査対象にするだけでgate修正ではない
+    printf '%s\n' "$search_text" | grep -qiE '偵察|棚卸し|audit|recon|調査' && return 1
     printf '%s\n' "$search_text" | grep -qiE 'gate|hook|script|\.sh|ゲート|フック|スクリプト' || return 1
     printf '%s\n' "$search_text" | grep -qiE '修正|改善|追加|変更|更新|精度|誤判定|偽陽性|fix|modify|update|improve|add' || return 1
     return 0

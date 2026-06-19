@@ -236,7 +236,7 @@ if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
         _stk_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .content // ""' 2>/dev/null)" || true
     fi
     if printf '%s' "$_stk_content" | grep -qE '^\s*-\s+id:\s+cmd_'; then
-        emit_deny "BLOCK: shogun_to_karo.yamlのcmdはリスト形式(- id: cmd_XXX)禁止。辞書形式(  cmd_XXX:)で書け。archive済みcmdを参照せよ(LS-A04(13))"
+        emit_deny "BLOCK: shogun_to_karo.yamlのcmdはリスト形式(- id: cmd_XXX)禁止。辞書形式(  cmd_XXX:)で書け。archive済みcmd形式を参照せよ。"
         exit 2
     fi
     # Guard 0d: inbox未読時はcmd起票BLOCK (LS048: 読まずに既読するな。起動時と同じ態度で正しく深く読め)
@@ -254,14 +254,14 @@ non_gc = [msg for msg in data.get("messages", [])
 print(len(non_gc))
 ' 2>/dev/null || echo 99)
             if [[ "$_non_gate_clear" -gt 0 ]]; then
-                emit_deny "BLOCK: inbox未読${_unread_count}件(うち指示系${_non_gate_clear}件)。Read toolで全文読み、作業への影響を自問し、対処してからcmd起票せよ(LS048)"
+                emit_deny "BLOCK: inbox未読${_unread_count}件(うち指示系${_non_gate_clear}件)。Read toolで全文読み、作業への影響を自問し、対処してからcmd起票せよ。"
                 exit 2
             fi
         fi
     fi
     # Guard 0b: on_hold禁止。cmdは直列でdraft→publishせよ。配備順序は家老が判断する(殿裁定2026-05-03)
     if printf '%s' "$_stk_content" | grep -qE 'status:\s*on_hold'; then
-        emit_deny "BLOCK: status: on_hold禁止。cmdは直列でdraft→publishせよ。配備順序の制御は家老の仕事。on_holdは将軍がステート管理を抱え込む迂回(殿裁定2026-05-03)"
+        emit_deny "BLOCK: status: on_hold禁止。cmdは直列でdraft→publishせよ。配備順序の制御は家老の仕事。on_holdは将軍がステート管理を抱え込む迂回になる。"
         exit 2
     fi
     # Guard 0c: preflight_autolearnで昇格済みのcmd本文パイプ警告をpre-writeでBLOCK。
@@ -323,14 +323,14 @@ print(len(non_gc))
 1. 対象現物を確認したか？
 2. 既存代替で足りないことを確認したか？
 3. cmd_save.sh関連チェック名を確認したか？
-4. project=dm-signalでcommandにgrid_search/walk_forwardを含む場合、ACにrun_077またはl1_alm_wf_engineのフルパスを含めたか？(LS023/LS027: 研究道具チェック累計昇格)
-5. titleにパリティ/新規作成/new_fileを含まないか？diagnosisにもトリガーワードが残っていないか？(LS026/LS028: タイトル/diagnosis偽陽性)
+4. project=dm-signalでcommandにgrid_search/walk_forwardを含む場合、ACにrun_077またはl1_alm_wf_engineのフルパスを含めたか？
+5. titleにパリティ/新規作成/new_fileを含まないか？diagnosisにもトリガーワードが残っていないか？
 6. command欄のステップ数≦AC数か？各ステップの成果物がACに対応しているか？(command_steps_over_ac 10回累計BLOCK)
 7. CMD全文に目視確認/セルフレビュー/自問を含まないか？「現物確認」「grep確認」等の客観表現に置換せよ(self_reread 4回累計BLOCK)
 8. q11にgrep/rg結果(コマンド+件数)を含めたか？特にスクリプト変更cmdはgate/hook追加と判定される(q11_existing_alternative_verification 17回累計BLOCK)
 9. environment_changeのpatternを対象fileでgrep確認したか？例: rg -nF \"pattern文字列\" \"対象ファイル\" → 1件以上(environment_change未実装pattern累計BLOCK)
-10. semantic_search.shで関連概念を検索したか？未実行ならここで止まり bash scripts/semantic_search.sh \"cmd主題または対象概念\" を実行し、既知キーワードgrepだけでは見落とす関連概念を確認せよ([[grep依存=既知限定]] -> [[将軍semantic_search未使用]] -> [[殿指摘2026-05-22]])
-11. gate/script修正cmdは、起票前に対象gate/scriptを実行し、q5_verified_sourceへ実行コマンド・exit code・出力要点を記録したか？(LS063: grep断片だけで未実装判断する車輪を防ぐ)
+10. semantic_search.shで関連概念を検索したか？未実行ならここで止まり bash scripts/semantic_search.sh \"cmd主題または対象概念\" を実行し、既知キーワードgrepだけでは見落とす関連概念を確認せよ。
+11. gate/script修正cmdは、起票前に対象gate/scriptを実行し、q5_verified_sourceへ実行コマンド・exit code・出力要点を記録したか？
 
 quality_gate template (cmd_save.sh必須フィールド):
   q1_firefighting: \"\"
@@ -346,7 +346,7 @@ quality_gate template (cmd_save.sh必須フィールド):
   q11_not_already_done: \"\"
   q_ambiguity: \"\"
   timeout_minutes: \"\"  # 計測/研究/見積/探索cmdの場合は想定実行時間上限(分)を記入
-  diagnosis: \"BLOCK理由: ... 対策: ...\"  # 初回起票でも2部構成必須(LS049)
+  diagnosis: \"BLOCK理由: ... 対策: ...\"  # 初回起票でも2部構成必須
 
 environment_change template (cmd_save.sh構造化形式):
   environment_change: \"type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な既存文字列\"
@@ -356,9 +356,9 @@ environment_change template (cmd_save.sh構造化形式):
   - patternにバックスラッシュ・パイプ禁止。grep検証で誤解釈される文字を避ける
 
 cmd-level required fields (quality_gate外。cmd直下に配置):
-  timeout_minutes: 30  # quality_gate内ではなくcmd直下(LS049)
+  timeout_minutes: 30  # quality_gate内ではなくcmd直下
   depends_on: none  # or cmd_XXXX
-  origin: \"[[発端]] -> [[原因]] -> [[結果]]\"  # none禁止。最低1つの[[リンク]]必須(LS049)"
+  origin: \"[[発端]] -> [[原因]] -> [[結果]]\"  # none禁止。最低1つの[[リンク]]必須"
         if [[ -n "$_dynamic_checks" ]]; then
             _checklist="${_checklist}
 
@@ -444,7 +444,7 @@ fi
 if [[ "$tool_name" == "Edit" && "$file_path" == *'/lessons.yaml' ]]; then
     old_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .old_string // ""' 2>/dev/null)" || true
     if [[ "$old_string" == *'tags:'* ]]; then
-        emit_deny "BLOCKED: lessons.yamlのtags直接Edit禁止。\\nWHY: lessons.md←→lessons.yaml同期不整合が発生する(LK052実証済み)。\\nFIX: bash scripts/lesson_write.sh <project_id> --retag <lesson_id> --new-tags \\\"tag1,tag2\\\""
+        emit_deny "BLOCKED: lessons.yamlのtags直接Edit禁止。\\nWHY: lessons.md←→lessons.yaml同期不整合が発生する。\\nFIX: bash scripts/lesson_write.sh <project_id> --retag <lesson_id> --new-tags \\\"tag1,tag2\\\""
         exit 2
     fi
 fi
@@ -501,7 +501,7 @@ fi
 if [[ "$file_path" =~ (hooks/|gates/gate_.*_startup|gates/gate_gunshi_|CLAUDE\.md|instructions/|\.claude/settings|config/settings\.yaml|gunshi_review_log\.yaml) ]]; then
     _agent_id=$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")
     if [[ "$_agent_id" == "gunshi" ]]; then
-        echo "INFO(LG026): 高リスクファイル編集検出。S0セルフレビュー6項目を実施せよ(前提/数値/シミュレーション/検死/検証/NorthStar)。commit messageにS0記録必須。" >&2
+        echo "INFO: 高リスクファイル編集検出。S0セルフレビュー6項目を実施せよ(前提/数値/シミュレーション/検死/検証/NorthStar)。commit messageにS0記録必須。" >&2
     fi
 fi
 
@@ -517,11 +517,11 @@ fi
 if [[ "$file_path" == *'docs/research/gunshi_'* ]]; then
     _agent_id="${_agent_id:-$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")}"
     if [[ "$_agent_id" == "gunshi" ]]; then
-        echo "INFO(LG020): 設計書保存検出。数値は全て入力データからwc -l/head実測で再計算せよ。推定値は未実測と明記。" >&2
+        echo "INFO: 設計書保存検出。数値は全て入力データからwc -l/head実測で再計算せよ。推定値は未実測と明記。" >&2
         # LG028: 計算量推定で内部ループ計上漏れ防止
         _content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // .content // ""' 2>/dev/null)" || true
         if printf '%s' "$_content" | grep -qiE '(秒|ms|WF|combo|ループ|loop|計算量|推定|パターン)'; then
-            echo "INFO(LG028): 計算量記述検出。外側ループ×内側ループ×単位時間で推定せよ。外側のみは過小評価(cmd_1949: 10倍外れ)。" >&2
+            echo "INFO: 計算量記述検出。外側ループ×内側ループ×単位時間で推定せよ。外側のみの見積もりは過小評価になりやすい。" >&2
         fi
     fi
 fi
@@ -530,8 +530,45 @@ fi
 if [[ "$tool_name" == "Write" && "$file_path" =~ (scripts/gates/|scripts/hooks/|\.claude/hooks/) ]]; then
     _agent_id="${_agent_id:-$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")}"
     if [[ "$_agent_id" == "gunshi" ]]; then
-        echo "INFO(LG023/032): 新スクリプト作成検出。既存の仕組み(startup gate/stop hook/inbox/既存Guard)に乗せて解決できないか先に確認せよ。" >&2
+        echo "INFO: 新スクリプト作成検出。既存の仕組み(startup gate/stop hook/inbox/既存Guard)に乗せて解決できないか先に確認せよ。" >&2
     fi
+fi
+
+# Guard 15: 削除(2026-06-20)。各論パッチ(5フレーズのみ検出)はバグ。
+# 原理的解決=SessionContext(Step 1.7)がlord_conversation実際発言を自動表示。
+
+# === Guard 17: settings.yaml CLI/model変更は /shogun-cli-switch 経由必須 (殿裁定2026-06-20) ===
+# 手動Edit禁止。スキルが settings.yaml を変更→respawn→検証まで一貫実行する
+if [[ "$file_path" =~ config/settings\.yaml ]]; then
+    _write_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // .content // ""' 2>/dev/null)" || true
+    if printf '%s' "$_write_content" | grep -qE 'type:[[:space:]]*(claude|codex)|model_name:'; then
+        echo "BLOCK: settings.yaml CLI/model変更は /shogun-cli-switch スキルを使え。手動Edit禁止 (殿裁定: スキル100%使用。意志依存はバグ)" >&2
+        exit 2
+    fi
+fi
+
+# === Guard 16: 操作的オントロジー — 定義元(SSOT)がある値の直書き検出 (2026-06-20) ===
+# 殿裁定: オントロジー=三層記憶と同列の前提。定義が1箇所に集約され変更が自動伝播する。しないのはバグ
+# 対象: agent_config.shが提供するリスト(忍者名/全エージェント名)の直書き
+# 許容: get_ninja_names/get_all_agents/get_allowed_targets/os.environ.get/${:-}経由の参照
+if [[ "$file_path" =~ \.(sh|py|md)$ ]]; then
+    _write_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // .content // ""' 2>/dev/null)" || true
+    if [ -n "$_write_content" ]; then
+        if ! printf '%s' "$_write_content" | grep -qE 'get_ninja_names|get_all_agents|get_allowed_targets|os\.environ\.get|\$\{.*:-'; then
+            _onto_names="$(source "$SCRIPT_DIR/scripts/lib/agent_config.sh" 2>/dev/null && get_ninja_names 2>/dev/null)" || true
+            if [ -n "$_onto_names" ]; then
+                _onto_count=0
+                for _nn in $_onto_names; do
+                    printf '%s' "$_write_content" | grep -q "$_nn" && ((_onto_count++)) || true
+                done
+                if [ "$_onto_count" -ge 3 ]; then
+                    echo "BLOCK: 操作的オントロジー違反 — エージェント名${_onto_count}名を直書き。agent_config.shのget_ninja_names()/get_all_agents()を使え。定義元=config/settings.yaml。" >&2
+                    exit 2
+                fi
+            fi
+        fi
+    fi
+    unset _write_content _onto_count _onto_names
 fi
 
 exit 0
