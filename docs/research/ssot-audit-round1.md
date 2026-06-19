@@ -13,23 +13,26 @@ cmd: `cmd_3458`
 | hayate | [hayate.md](ssot-audit-round1/hayate.md) | `scripts/lib/**`, `scripts/gates/**` | 完了 |
 | kagemaru | [kagemaru.md](ssot-audit-round1/kagemaru.md) | `.claude/**`, `.codex/**`, `scripts/*.sh`, `scripts/*.py`(ルートのみ) | 完了 |
 | hanzo | [hanzo.md](ssot-audit-round1/hanzo.md) | daemon/monitor/watch/layout/switch/model系スクリプト | 完了 |
-| saizo | — | 未割当(cmd_3458対象外) | なし |
+| saizo | [saizo.md](ssot-audit-round1/saizo.md) | `config/**`, `queue/*.yaml`, `skills/**/SKILL.md`, `skills/**/scripts/**` | 完了 |
 | kotaro | — | 別cmd(cmd_3449_impl)担当 | なし |
 
 ---
 
 ## 2. AC1: カテゴリ別ハードコード件数 (全体横断)
 
-計測対象: `scripts/`, `.claude/`, `.codex/`, `config/`
+計測対象: `scripts/`, `.claude/`, `.codex/`, `config/`, `skills/`
 
-| カテゴリ | ファイル数 | 主な発見 | 詳細 |
+| カテゴリ | ファイル数/件数 | 主な発見 | 詳細 |
 |---|---:|---|---|
-| Agent名(ninja 6名) | 33 | fallback roster、日本語名マッピング等 | hayate #1-6, kagemaru K-01, hanzo D1 |
-| tmux window literal | 22 | `shogun:agents`/`shogun:main`/`shogun:2` が複数ファイルに分散 | hayate #7-10, kagemaru K-03/K-04, hanzo D2 |
-| 絶対パス (`/mnt/c/tools/...`) | 14 | フックJSON・スクリプト内埋め込み | kagemaru K-05 |
-| model/CLI literal | 多数 | `opus`/`sonnet`/`haiku`/`gpt-*`等 | hayate #11-16, kagemaru K-08, hanzo D3 |
-| Commander roles (shogun/karo/gunshi) | 多数 | 役割名ハードコード | kagemaru K-02, hanzo (switch_cli_mode等) |
-| 外部PJパス (DM-Signal等) | 5+ | `/mnt/c/Python_app/DM-signal`等 | hayate #26-30 |
+| Agent名(ninja 6名) | 33ファイル | fallback roster、日本語名マッピング等 | H:#1-6, K:K-01, Hz:D1 |
+| tmux window literal | 22ファイル | `shogun:agents`/`shogun:main`/`shogun:2` が複数ファイルに分散 | H:#7-10, K:K-03/K-04, Hz:D2 |
+| 絶対パス (`/mnt/c/tools/...`) | 14ファイル | フックJSON・スクリプト内埋め込み | K:K-05 |
+| model/CLI literal | 多数ファイル | `opus`/`sonnet`/`haiku`/`gpt-*`等 | H:#11-16, K:K-08, Hz:D3 |
+| Commander roles (shogun/karo/gunshi) | 多数ファイル | 役割名ハードコード | K:K-02, Hz:(switch_cli_mode等) |
+| 外部PJパス scripts内 (DM-Signal等) | 5+ファイル | `/mnt/c/Python_app/DM-signal`等 | H:#26-30 |
+| skills内ハードコードユーザーパス | 14件 | `/home/simokitafresh/`直書き(CLI/codd paths) | S:#9-17 |
+| skills内ハードコードPJパス | 7件 | `/mnt/c/Python_app/DM-signal`等 | S:#18-24 |
+| config yaml間二重定義 | 4件 | gist_url/launch_cmd/skill.paths/cli-switch定数 | S:D1-D4 |
 
 **最重要 SSOT 参照先**:
 
@@ -78,7 +81,27 @@ cmd: `cmd_3458`
 
 **統一案**: どちらかを正本とし、もう一方を削除または参照にする。使用箇所をgrepして確認の上、不要な方を除去する。
 
-### 3-4. `effort` — ドメイン差異 (SSOT問題なし)
+### 3-4. `shogun_cli_switch.sh` 定数 — config yamlとの同値重複
+
+| ファイル:行 | 定数 | 値 | SSOT |
+|---|---|---|---|
+| `skills/shogun-cli-switch/scripts/shogun_cli_switch.sh:11` | `PINNED_CMD` | `/home/simokitafresh/bin/claude ...` | `cli_profiles.yaml:claude.launch_cmd` と同値 |
+| `skills/shogun-cli-switch/scripts/shogun_cli_switch.sh:12` | `LATEST_CMD` | `/home/simokitafresh/.local/bin/claude ...` | `settings.yaml:shogun.launch_cmd` と同値 |
+| `skills/shogun-cli-switch/scripts/shogun_cli_switch.sh:13-16` | `PINNED_BIN/BACKUP/STABLE/LATEST_BIN` | 各パス | SSOTなし |
+
+**統一案**: スクリプト冒頭で  +  で動的取得し、6定数を除去。
+
+### 3-5. codd-venv path — 3 SKILL.mdに同値重複
+
+| ファイル | 値 |
+|---|---|
+| `skills/codd/SKILL.md:24` | `/home/simokitafresh/.codd-venv/bin/codd` |
+| `skills/codd-fix/SKILL.md:24` | 同上 |
+| `skills/codd-refactor/SKILL.md:55` | 同上 |
+
+**統一案**: `config/tool_paths.yaml` 等に集約し、各SKILL.mdから参照。または環境変数 `CODD_BIN` を標準化。
+
+### 3-6. `effort` — ドメイン差異 (SSOT問題なし)
 
 | ファイル | 値 | ドメイン |
 |---|---|---|
@@ -103,7 +126,8 @@ cmd: `cmd_3458`
 | **P2** | hookの運用YAMLガードパターンを1か所に集約 | 5hookが独立正規表現でpath setを定義 | kagemaru K-10 |
 | **P2** | model family分類を `model_resolve.sh` に統一 | reset_layout/ninja_monitor/model_analysisが独自分類 | hanzo D3 |
 | **P2** | `watcher supervision` を `daemon_supervisor.sh` 中心に整理 | restart_watchers/daemon_watchdog/ninja_monitorが重複管理 | hanzo D4 |
-| **P3** | `config/settings.yaml:gist_url` vs `config/projects.yaml` の重複解消 | dm-signal/infraのgist_urlがグローバルと同値 | hayate P3, 本集約 AC2-3-1 |
+| **P2** | `shogun_cli_switch.sh` の6定数を `cli_launch_cmd` 動的取得に置換 | skills内の最大重複グループ。launch_cmd更新時のdrift直行 | S:D4 |
+| **P3** | `config/settings.yaml:gist_url` vs `config/projects.yaml` の重複解消 | dm-signal/infraのgist_urlがグローバルと同値 | S:D1 |
 | **P3** | `settings.yaml:shogun.launch_cmd` のバイナリパス整合 | `.local/bin`(auto) vs `bin/`(pin)の不一致 | 本集約 AC2-3-2 |
 | **P3** | `skill.save_path` / `skill.local_path` 二重定義解消 | 同一値の重複フィールド | 本集約 AC2-3-3 |
 
@@ -113,7 +137,7 @@ cmd: `cmd_3458`
 
 | 対象 | 理由 | 対応 |
 |---|---|---|
-| saizo.md | saizo はcmd_3458偵察に未割当。別タスク担当 | 次周回で偵察スコープ追加時に作成 |
+| saizo.md | 集約md初版作成後に完了。AC2(config/skills二重定義)を補完 | 統合済み(本集約に反映) |
 | kotaro.md | kotaro は cmd_3449_impl 担当でcmd_3458対象外 | 次周回で偵察スコープ追加時に作成 |
 
 **次に統合すべきファイル**: saizo偵察(スコープ未定義)をP2として設定し、`skills/**`, `tests/**`, `queue/**`ディレクトリのSSOT調査を追加することを推奨する。
@@ -125,3 +149,4 @@ cmd: `cmd_3458`
 - `docs/research/ssot-audit-round1/hayate.md` — scripts/lib + gates (30項目)
 - `docs/research/ssot-audit-round1/kagemaru.md` — .claude + .codex + root scripts (10グループ)
 - `docs/research/ssot-audit-round1/hanzo.md` — daemon/monitor/watch/layout/switch/model (4重複グループ)
+- `docs/research/ssot-audit-round1/saizo.md` — config/queue/skills (25件: D1-D4+skills路径14+PJパス7)
