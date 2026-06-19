@@ -413,7 +413,8 @@ LEARNING_PY
     fi
     _SS_TASK_YAML="$_SS_TASK_DIR/${_SS_NINJA}.yaml"
     _SS_VALID=false
-    for _nn in kagemaru hanzo hayate tobisaru saizo kotaro sasuke kirimaru; do
+    source "$REPO_ROOT/scripts/lib/agent_config.sh" 2>/dev/null || true
+    for _nn in $(get_ninja_names 2>/dev/null); do
         [ "$_nn" = "$_SS_NINJA" ] && { _SS_VALID=true; break; }
     done
     if [ "$_SS_VALID" = "true" ] && [ -f "$_SS_TASK_YAML" ]; then

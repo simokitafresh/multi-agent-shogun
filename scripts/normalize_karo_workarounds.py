@@ -114,17 +114,17 @@ def normalize_entry(raw):
     norm['timestamp'] = raw.get('timestamp', '')
 
     # ninja — extract from text if not explicitly set or invalid
-    VALID_NINJAS = {'hayate', 'kagemaru', 'hanzo', 'saizo', 'kotaro', 'tobisaru'}
+    _ninja_env = os.environ.get('NINJA_NAMES', 'hayate kagemaru hanzo saizo kotaro tobisaru')
+    VALID_NINJAS = set(_ninja_env.split())
     ninja = raw.get('ninja', '')
     # Convert bool/non-string to string
     if isinstance(ninja, bool) or not isinstance(ninja, str):
         ninja = ''
     if not ninja or ninja not in VALID_NINJAS:
         text = raw.get('detail', '') + ' ' + raw.get('root_cause', '') + ' ' + raw.get('issue', '')
-        ninja_names = ['hayate', 'kagemaru', 'hanzo', 'saizo', 'kotaro', 'tobisaru',
-                       '疾風', '影丸', '半蔵', '才蔵', '小太郎', '飛猿']
-        name_map = {'疾風': 'hayate', '影丸': 'kagemaru', '半蔵': 'hanzo',
-                    '才蔵': 'saizo', '小太郎': 'kotaro', '飛猿': 'tobisaru'}
+        _name_map_env = os.environ.get('NINJA_NAME_MAP', '疾風=hayate 影丸=kagemaru 半蔵=hanzo 才蔵=saizo 小太郎=kotaro 飛猿=tobisaru')
+        name_map = dict(pair.split('=', 1) for pair in _name_map_env.split() if '=' in pair)
+        ninja_names = list(VALID_NINJAS) + list(name_map.keys())
         ninja = 'unknown'
         for name in ninja_names:
             if name in text:

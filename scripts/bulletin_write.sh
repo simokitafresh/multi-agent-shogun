@@ -30,7 +30,7 @@ if [[ -f "$AGENT_CONFIG" ]]; then
 fi
 
 if [[ -z "$KNOWN_AGENTS_RAW" ]]; then
-    KNOWN_AGENTS_RAW="shogun karo gunshi hayate kagemaru hanzo saizo kotaro tobisaru"
+    KNOWN_AGENTS_RAW="shogun karo gunshi $(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo saizo kotaro tobisaru')"
 fi
 
 is_known_agent() {

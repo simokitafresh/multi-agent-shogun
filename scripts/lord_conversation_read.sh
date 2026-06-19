@@ -50,8 +50,7 @@ jq -Rr --arg agent_id "$agent_id" '
       error("JSONL entry is not an object")
     else
       select(
-        (($entry.target // "") | tostring) == ""
-        or (($entry.target // "") | tostring) == $agent_id
+        (($entry.target // "") | tostring) == $agent_id
         or (($entry.agent // "") | tostring) == $agent_id
       )
       | $line

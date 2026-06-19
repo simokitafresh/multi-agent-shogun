@@ -65,6 +65,7 @@ fi
 # cli_lookup.sh — CLI Profile SSOT参照（CLI種別判定・パターン取得）
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+export DEPLOY_NINJA_NAMES="$(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo saizo kotaro tobisaru')"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/ctx_utils.sh"
@@ -1925,11 +1926,12 @@ _apply_binary_check_waivers() {
         return 0
     fi
 
-    TASK_FILE_ENV="$task_file" BC_FULL_ENV="$bc_full" python3 - <<'PY_BC_WAIVE'
+    PYTHONPATH="$SCRIPT_DIR" TASK_FILE_ENV="$task_file" BC_FULL_ENV="$bc_full" python3 - <<'PY_BC_WAIVE'
 import os
 import sys
 
 import yaml
+from scripts.lib.yaml_atomic import yaml_text
 
 
 def to_list(value):
@@ -2014,7 +2016,7 @@ if is_research:
             if not str(item.get('waive_reason') or '').strip():
                 item['waive_reason'] = '研究cmd: commit不要'
 
-print(yaml.safe_dump({'binary_checks': bc}, allow_unicode=True, sort_keys=False).rstrip())
+print(yaml_text({'binary_checks': bc}, sort_keys=False).rstrip())
 PY_BC_WAIVE
 }
 
@@ -5976,7 +5978,7 @@ try:
             'report_format': 'report YAMLのフォーマットエラー。report_field_set.sh使用必須',
             'report_yaml_missing': 'report YAMLが存在しない。report_pathのファイルを作成・記入せよ',
         }
-        NINJA_NAMES = {'kagemaru', 'hanzo', 'hayate', 'tobisaru', 'saizo', 'kotaro', 'sasuke', 'kirimaru'}
+        NINJA_NAMES = set(os.environ.get('DEPLOY_NINJA_NAMES', 'kagemaru hanzo hayate tobisaru saizo kotaro').split())
         try:
             block_cats = {}
             with open(gate_metrics_path, encoding='utf-8') as gmf:

@@ -869,8 +869,12 @@ fi
 
 (
 _AGG_FILES=()
+_ninja_task_globs=()
+for _nn in $(get_ninja_names 2>/dev/null); do
+    _ninja_task_globs+=("$SCRIPT_DIR/queue/tasks/${_nn}.yaml")
+done
 for _agg_file in \
-  "$SCRIPT_DIR"/queue/tasks/{hayate,kagemaru,hanzo,saizo,kotaro,tobisaru}.yaml \
+  "${_ninja_task_globs[@]}" \
   "$SCRIPT_DIR/queue/inbox/karo.yaml" \
   "$SCRIPT_DIR/queue/insights.yaml" \
   "$SCRIPT_DIR/logs/gunshi_review_log.yaml" \

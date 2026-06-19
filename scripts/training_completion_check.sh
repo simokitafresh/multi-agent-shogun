@@ -15,6 +15,7 @@
 set -euo pipefail
 
 REPO_ROOT="${SHOGUN_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+source "$REPO_ROOT/scripts/lib/agent_config.sh" 2>/dev/null || true
 GATE_FIRE_LOG="${TRAINING_COMPLETION_GATE_LOG:-$REPO_ROOT/logs/gate_fire_log.yaml}"
 SKILL_AUTO_IMPROVE="${TRAINING_COMPLETION_IMPROVE_SCRIPT:-$REPO_ROOT/scripts/skill_auto_improve.sh}"
 pass_count="${TRAINING_COMPLETION_PASS_COUNT:-3}"
@@ -71,7 +72,7 @@ if [ -n "$date_prefix" ]; then
 else
     # Fallback: strip known suffixes to get group base
     group_base="$cmd_id"
-    for ninja in hayate kagemaru hanzo saizo kotaro tobisaru sasuke kirimaru; do
+    for ninja in $(get_ninja_names 2>/dev/null || echo "hayate kagemaru hanzo saizo kotaro tobisaru"); do
         group_base="${group_base%_${ninja}}"
     done
     group_base="${group_base%_normal}"

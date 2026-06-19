@@ -158,7 +158,7 @@ echo ""
 # 根源: Codex rate limit→CLI切替→settings.yaml未更新→GPTに戻った因果を見逃した
 echo "■ 前セッション殿裁定（三層記憶）"
 _lord_rulings=$(sqlite3 "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" \
-  "SELECT ts || ' | ' || substr(summary, 1, 120) FROM events WHERE agent = 'lord' AND direction = 'inbound' AND ts >= datetime('now', '-6 hours') ORDER BY ts DESC LIMIT 5;" 2>/dev/null) || _lord_rulings=""
+  "SELECT ts || ' | ' || substr(summary, 1, 120) FROM events WHERE agent = 'lord' AND direction = 'inbound' AND target = 'gunshi' AND ts >= datetime('now', '-6 hours') ORDER BY ts DESC LIMIT 5;" 2>/dev/null) || _lord_rulings=""
 if [ -n "$_lord_rulings" ]; then
     echo "  直近6h殿→軍師（時系列で因果をたどれ）:"
     echo "$_lord_rulings" | while IFS= read -r line; do

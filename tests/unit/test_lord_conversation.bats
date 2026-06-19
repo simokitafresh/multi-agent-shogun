@@ -397,7 +397,7 @@ PY
     [[ "$output" == *"DB INSERT skipped"* ]]
 }
 
-@test "T-LC-015: lord_conversation_read filters by target or agent and keeps unscoped entries" {
+@test "T-LC-015: lord_conversation_read filters by target or agent and excludes unscoped entries" {
     cat > "$LORD_CONVERSATION" <<'EOF'
 {"agent":"lord","target":"shogun","summary":"to shogun"}
 {"agent":"shogun","target":"lord","summary":"from shogun"}
@@ -410,8 +410,9 @@ EOF
     [ "$status" -eq 0 ]
     echo "$output" | grep -q "to shogun"
     echo "$output" | grep -q "from shogun"
-    echo "$output" | grep -q "no target"
-    echo "$output" | grep -q "empty target"
+    # target未指定/空のエントリは混線防止のため除外される
+    ! echo "$output" | grep -q "no target"
+    ! echo "$output" | grep -q "empty target"
     ! echo "$output" | grep -q "to karo"
 }
 
@@ -420,7 +421,7 @@ EOF
 {"agent":"lord","target":"shogun","summary":"first"}
 {"agent":"lord","target":"karo","summary":"excluded"}
 {"agent":"lord","target":"shogun","summary":"second"}
-{"agent":"lord","summary":"third"}
+{"agent":"shogun","target":"lord","summary":"third"}
 EOF
 
     run env LORD_CONVERSATION_FILE="$LORD_CONVERSATION" bash "$PROJECT_ROOT/scripts/lord_conversation_read.sh" shogun 2

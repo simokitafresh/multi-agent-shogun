@@ -8,6 +8,8 @@
 set -euo pipefail
 
 REPO_ROOT="${SHOGUN_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+source "$REPO_ROOT/scripts/lib/agent_config.sh" 2>/dev/null || true
+export SKILL_IMPROVE_NINJA_NAMES="$(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo saizo kotaro tobisaru')"
 LOG_FILE="${SKILL_EXECUTION_LOG_FILE:-$REPO_ROOT/logs/skill_execution_log.yaml}"
 SKILLS_DIRS="${SKILL_AUTO_IMPROVE_SKILLS_DIRS:-$REPO_ROOT/skills:$HOME/.codex/skills:$HOME/.claude/skills}"
 top_n=3
@@ -226,7 +228,8 @@ def skill_file_for(skill_name, logged_path):
     return None
 
 
-NINJA_NAMES_RE = r"(?:sasuke|kirimaru|hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)"
+_ninja_env = os.environ.get("SKILL_IMPROVE_NINJA_NAMES", "hayate kagemaru hanzo saizo kotaro tobisaru")
+NINJA_NAMES_RE = r"(?:" + "|".join(_ninja_env.split()) + ")"
 
 
 def normalize_reason(value):

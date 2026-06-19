@@ -520,6 +520,127 @@ inbox_unread_count() {
     ' "$inbox_file"
 }
 
+inbox_gate_metrics_has_clear() {
+    local cmd_id="$1"
+    local gate_log="$SCRIPT_DIR/logs/gate_metrics.log"
+
+    [ -n "$cmd_id" ] || return 1
+    [ -f "$gate_log" ] || return 1
+
+    awk -F '\t' -v cmd="$cmd_id" '$2 == cmd && $3 == "CLEAR" { found = 1; exit } END { exit(found ? 0 : 1) }' "$gate_log"
+}
+
+inbox_extract_report_path_from_content() {
+    local content="$1"
+    local candidate=""
+
+    candidate=$(printf '%s' "$content" \
+        | grep -oE 'queue/(archive/)?reports/[A-Za-z0-9_.-]+\.yaml|[A-Za-z0-9_-]+_report_[A-Za-z0-9_-]+\.yaml' \
+        | head -1 || true)
+    [ -n "$candidate" ] || return 0
+
+    case "$candidate" in
+        queue/*) printf '%s/%s\n' "$SCRIPT_DIR" "$candidate" ;;
+        *)       printf '%s/queue/reports/%s\n' "$SCRIPT_DIR" "$candidate" ;;
+    esac
+}
+
+inbox_extract_parent_cmd_from_report() {
+    local report_path="$1"
+    [ -f "$report_path" ] || return 0
+
+    inbox_yaml_field_get "$report_path" "parent_cmd" ""
+}
+
+inbox_extract_cmd_id_for_completion_guard() {
+    local content="$1"
+    local cmd_id="" report_path=""
+
+    cmd_id=$(printf '%s' "$content" | grep -oE 'cmd_[A-Za-z0-9_]+' | head -1 || true)
+    if [ -n "$cmd_id" ]; then
+        printf '%s\n' "$cmd_id"
+        return 0
+    fi
+
+    report_path=$(inbox_extract_report_path_from_content "$content")
+    if [ -n "$report_path" ]; then
+        cmd_id=$(inbox_extract_parent_cmd_from_report "$report_path")
+        [ -n "$cmd_id" ] && printf '%s\n' "$cmd_id"
+    fi
+}
+
+inbox_review_log_has_lgtm() {
+    local cmd_id="$1"
+    local ninja="$2"
+    local review_log="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
+
+    [ -n "$cmd_id" ] || return 1
+    [ -n "$ninja" ] || return 1
+    [ -f "$review_log" ] || return 1
+
+    awk -v cmd="$cmd_id" -v ninja="$ninja" '
+        function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); gsub(/^'\''|'\''$/, "", s); gsub(/^"|"$/, "", s); return s }
+        function flush() {
+            if (cur_cmd == cmd && review_type == "report" && report_ninja == ninja && verdict == "LGTM") {
+                found = 1
+            }
+        }
+        /^- cmd_id:[[:space:]]*/ {
+            if (in_entry) flush()
+            in_entry = 1
+            cur_cmd = $0; sub(/^- cmd_id:[[:space:]]*/, "", cur_cmd); cur_cmd = trim(cur_cmd)
+            review_type = report_ninja = verdict = ""
+            next
+        }
+        !in_entry { next }
+        /^  review_type:[[:space:]]*/ {
+            review_type = $0; sub(/^  review_type:[[:space:]]*/, "", review_type); review_type = trim(review_type); next
+        }
+        /^  report_ninja:[[:space:]]*/ {
+            report_ninja = $0; sub(/^  report_ninja:[[:space:]]*/, "", report_ninja); report_ninja = trim(report_ninja); next
+        }
+        /^  verdict:[[:space:]]*/ {
+            verdict = $0; sub(/^  verdict:[[:space:]]*/, "", verdict); verdict = trim(verdict); next
+        }
+        END { if (in_entry) flush(); exit(found ? 0 : 1) }
+    ' "$review_log"
+}
+
+inbox_type_is_ninja_report_notification() {
+    case "$1" in
+        report_received|report_completed|report_done|report_ready|report_notification_missing)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+inbox_should_auto_read_completed_notification() {
+    local target="$1"
+    local type="$2"
+    local content="$3"
+    local from_agent="$4"
+    local cmd_id=""
+
+    [ "$target" = "karo" ] || return 1
+
+    cmd_id=$(inbox_extract_cmd_id_for_completion_guard "$content")
+    [ -n "$cmd_id" ] || return 1
+
+    if [ "$type" = "report_review_result" ]; then
+        inbox_gate_metrics_has_clear "$cmd_id" || return 1
+    elif inbox_type_is_ninja_report_notification "$type"; then
+        if ! inbox_gate_metrics_has_clear "$cmd_id" && ! inbox_review_log_has_lgtm "$cmd_id" "$from_agent"; then
+            return 1
+        fi
+    else
+        return 1
+    fi
+
+    INBOX_AUTO_READ_COMPLETED_CMD="$cmd_id"
+    return 0
+}
+
 inbox_message_marked_read() {
     local inbox_file="$1"
     local msg_id="$2"
@@ -1513,13 +1634,22 @@ max_attempts=3
 
 # cmd_inbox_write_speed: メッセージブロック構築をflockサブシェル外に移動(ネストサブシェル削減)
 # MSG_ID/TIMESTAMPはflockループ前に確定済み。リトライ時も同一メッセージを再送するため安全。
+MESSAGE_READ_STATE="false"
+INBOX_COMPLETED_DUPLICATE=0
+INBOX_AUTO_READ_COMPLETED_CMD=""
+if inbox_should_auto_read_completed_notification "$TARGET" "$TYPE" "$CONTENT" "$FROM"; then
+    MESSAGE_READ_STATE="true"
+    INBOX_COMPLETED_DUPLICATE=1
+    echo "[inbox_write] auto-read completed notification: target=${TARGET} type=${TYPE} cmd=${INBOX_AUTO_READ_COMPLETED_CMD}" >&2
+fi
+
 if [ -n "$ACTION" ]; then
     _msg_block="$(inbox_build_message_block \
         action "$ACTION" \
         content "$CONTENT" \
         from "$FROM" \
         id "$MSG_ID" \
-        read "false" \
+        read "$MESSAGE_READ_STATE" \
         timestamp "$TIMESTAMP" \
         type "$TYPE")"$'\n'
 else
@@ -1527,7 +1657,7 @@ else
         content "$CONTENT" \
         from "$FROM" \
         id "$MSG_ID" \
-        read "false" \
+        read "$MESSAGE_READ_STATE" \
         timestamp "$TIMESTAMP" \
         type "$TYPE")"$'\n'
 fi
@@ -1554,7 +1684,7 @@ while [ $attempt -lt $max_attempts ]; do
         fi
 
         # Hook: report_received/task_done/report_completed/report_done from ninja → auto-update task YAML to done
-        if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ] || [ "$TYPE" = "report_completed" ] || [ "$TYPE" = "report_done" ]; then
+        if [ "$INBOX_COMPLETED_DUPLICATE" -eq 0 ] && { [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ] || [ "$TYPE" = "report_completed" ] || [ "$TYPE" = "report_done" ]; }; then
             ensure_agent_config_loaded
             is_ninja=0
             for ninja in $NINJA_NAMES; do
@@ -1631,7 +1761,7 @@ while [ $attempt -lt $max_attempts ]; do
 
         # GP-133: report_review_result from gunshi → review_gate.done placeholder上書き
         # 軍師のLGTM verdict受信時にplaceholderを正式版に上書きし、archive_completed.shが報告をアーカイブ可能にする
-        if [ "$TYPE" = "report_review_result" ] && [ "$FROM" = "gunshi" ]; then
+        if [ "$INBOX_COMPLETED_DUPLICATE" -eq 0 ] && [ "$TYPE" = "report_review_result" ] && [ "$FROM" = "gunshi" ]; then
             # メッセージからcmd_idとverdictを抽出
             _rr_cmd_id=$(echo "$CONTENT" | grep -oP 'cmd_[A-Za-z0-9_]+' | head -1 || true)
             _rr_verdict=$(echo "$CONTENT" | grep -oP 'verdict: \K(LGTM|FAIL)' | head -1 || true)
@@ -1655,7 +1785,9 @@ REVIEWEOF
         # gunshi_notify.sh(cmd_complete_gate.sh経由)が後から発火しても重複送信しない
         if [ "$TYPE" = "report_review" ] && [ "$TARGET" = "gunshi" ]; then
             _dr_cmd_id=$(echo "$CONTENT" | grep -oP 'cmd_\w+' | head -1 || true)
-            _dr_ninja=$(echo "$CONTENT" | grep -oP '\b(hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)\b' | head -1 || true)
+            _dr_ninja_pattern="$(get_ninja_names 2>/dev/null | sed 's/ /|/g')"
+            _dr_ninja_pattern="${_dr_ninja_pattern:-hayate|kagemaru|hanzo|saizo|kotaro|tobisaru}"
+            _dr_ninja=$(echo "$CONTENT" | grep -oP "\b(${_dr_ninja_pattern})\b" | head -1 || true)
             if [ -n "$_dr_cmd_id" ] && [ -n "$_dr_ninja" ]; then
                 _dr_gates_dir="$SCRIPT_DIR/queue/gates/${_dr_cmd_id}"
                 mkdir -p "$_dr_gates_dir"

@@ -365,6 +365,11 @@ fi
 # ─── SG-PRE15: 並列負荷警告 (計測値汚染リスク) ───
 echo ""
 echo "■ SG-PRE15: 並列負荷警告(before/after計測値の信頼性)"
+source "$REPO_ROOT/scripts/lib/agent_config.sh" 2>/dev/null || true
+_ninja_task_files=()
+for _nn in $(get_ninja_names 2>/dev/null); do
+    [ -f "$REPO_ROOT/queue/tasks/${_nn}.yaml" ] && _ninja_task_files+=("$REPO_ROOT/queue/tasks/${_nn}.yaml")
+done
 BUSY_NINJAS=$(awk '
     /^[[:space:]]*status:/ {
         st=$2; gsub(/["'"'"']/, "", st)
@@ -372,7 +377,7 @@ BUSY_NINJAS=$(awk '
         nextfile
     }
     END{print busy+0}
-' "$REPO_ROOT"/queue/tasks/{hayate,kagemaru,hanzo,saizo,kotaro,tobisaru}.yaml 2>/dev/null || echo 0)
+' "${_ninja_task_files[@]}" 2>/dev/null || echo 0)
 if [ "$BUSY_NINJAS" -ge 3 ]; then
     echo "  ★★★ WARN: ${BUSY_NINJAS}名の忍者が稼働中。before/after計測値がWSL2 I/O負荷で汚染されている可能性。全忍者idle後の再計測を推奨"
 elif [ "$BUSY_NINJAS" -ge 1 ]; then

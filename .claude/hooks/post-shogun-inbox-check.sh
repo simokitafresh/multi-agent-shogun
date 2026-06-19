@@ -96,6 +96,8 @@ if [ -f "$LORD_CONV" ]; then
         return ""
     }
     /"direction"[[:space:]]*:[[:space:]]*"inbound"/{
+        agent_val = json_value($0, "agent")
+        if (agent_val != "lord" && agent_val != "") next
         ts_raw = json_value($0, "ts")
         summary = json_value($0, "summary")
         target = json_value($0, "target")
@@ -165,7 +167,7 @@ if [ -n "$EFFECT_REMIND" ]; then
         _blt_action_count=$(awk '/action_type:.*action_required/{ar=1} ar && /actioned_by:.*'\'''\''/{c++; ar=0} END{print c+0}' "$_blt_file" 2>/dev/null || echo 0)
     fi
     if [ "$_insight_count" -gt 0 ] || [ "$_blt_action_count" -gt 0 ]; then
-        SELF_DRIVE="★自走チェック: CLEAR後に殿待ちで止まるな(LS-A06/LS049)。insightキュー=${_insight_count}件 掲示板action_required=${_blt_action_count}件"
+        SELF_DRIVE="★自走チェック: CLEAR後に殿待ちで止まるな。insightキュー=${_insight_count}件 掲示板action_required=${_blt_action_count}件"
     fi
 fi
 

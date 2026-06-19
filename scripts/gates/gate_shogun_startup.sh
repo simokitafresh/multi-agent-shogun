@@ -2032,7 +2032,8 @@ fi
 echo "■ 遡及学習(WARN/BLOCK頻度+再発率)"
 _DQ_FILE_125="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
 if [ -f "$_DQ_FILE_125" ]; then
-    _retro_result=$(grep -E '^[[:space:]]*-[[:space:]]*cmd_id:|^[[:space:]]*(gate_result|notes|timestamp):' "$_TMP_DQ_RECENT" 2>/dev/null | awk '
+    _ninja_rx_125="^($(get_ninja_names 2>/dev/null | sed 's/ /|/g' || echo 'hayate|kagemaru|hanzo|saizo|kotaro|tobisaru'))$"
+    _retro_result=$(grep -E '^[[:space:]]*-[[:space:]]*cmd_id:|^[[:space:]]*(gate_result|notes|timestamp):' "$_TMP_DQ_RECENT" 2>/dev/null | awk -v ninja_rx="$_ninja_rx_125" '
 function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^["'\''"]|["'\''"]$/, "", s); return s }
 function skip_pattern(p) { return p ~ /^draft_lessons/ || p ~ /^ci_failure/ || p ~ /:binary_checks_fail/ }
 function normalize_class(p, parts, cls) {
@@ -2040,7 +2041,7 @@ function normalize_class(p, parts, cls) {
     if (p == "" || skip_pattern(p)) return ""
     split(p, parts, ":")
     cls = trim(parts[1])
-    if (cls ~ /^(hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)$/ && length(parts) > 1) cls = trim(parts[2])
+    if (cls ~ ninja_rx && length(parts) > 1) cls = trim(parts[2])
     if (cls ~ /environment_change/ || cls ~ /WARN累計昇格/) return ""
     return cls
 }

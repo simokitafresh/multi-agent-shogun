@@ -9,6 +9,10 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh" 2>/dev/null || true
+_NINJA_LIST="$(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo saizo kotaro tobisaru')"
+
 _gate_wa_self="${BASH_SOURCE[0]}"
 [[ "$_gate_wa_self" != /* ]] && _gate_wa_self="$PWD/$_gate_wa_self"
 SCRIPT_DIR="${_gate_wa_self%/scripts/gates/gate_ninja_workaround_rate.sh}"
@@ -51,7 +55,7 @@ fi
 
 # 高速化: mktemp(13ms)をPID固定パスに変更
 _WA_TMP="/tmp/shogun_wa_wrk_$$"
-awk -v quiet="$QUIET" -v last_n="$LAST_N" -v ninja_filter="$NINJA_FILTER" '
+awk -v quiet="$QUIET" -v last_n="$LAST_N" -v ninja_filter="$NINJA_FILTER" -v ninja_list="$_NINJA_LIST" '
 function trim(s) {
     sub(/^[ \t\r\n]+/, "", s)
     sub(/[ \t\r\n]+$/, "", s)
@@ -75,7 +79,7 @@ function parse_bool(s, lower) {
 }
 function extract_ninja(explicit, detail, root_cause, issue, workaround_detail, text) {
     explicit = trim(explicit)
-    if (explicit == "hayate" || explicit == "kagemaru" || explicit == "hanzo" || explicit == "saizo" || explicit == "kotaro" || explicit == "tobisaru") {
+    if (index(" " ninja_list " ", " " explicit " ") > 0) {
         return explicit
     }
 

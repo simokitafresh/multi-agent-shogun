@@ -6,6 +6,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="${BULLETIN_ROOT_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh" 2>/dev/null || true
+export BULLETIN_ALL_AGENTS="shogun karo gunshi $(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo saizo kotaro tobisaru')"
 BULLETIN_FILE="$SCRIPT_DIR/queue/bulletin_board.yaml"
 LOCK_FILE="${BULLETIN_FILE}.lock"
 
@@ -98,7 +100,7 @@ def default_confirm_agents():
     agents = ["shogun", "karo"]
     in_agents = False
     if not os.path.exists(settings_file):
-        return ["shogun", "karo", "gunshi", "hayate", "kagemaru", "hanzo", "saizo", "kotaro", "tobisaru"]
+        return os.environ.get("BULLETIN_ALL_AGENTS", "shogun karo gunshi hayate kagemaru hanzo saizo kotaro tobisaru").split()
     with open(settings_file, encoding="utf-8") as fh:
         for line in fh:
             if line.startswith("  agents:"):
