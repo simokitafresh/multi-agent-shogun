@@ -241,8 +241,25 @@ cli_type() {
         return 0
     fi
 
-    local result
-    result=$(_cli_lookup_settings_get "$agent" "type" "claude")
+    local result=""
+    # L821: pane実態が一次情報。settings.yamlは二次情報(multi-CLIで動的変更される)
+    if [[ -n "${TMUX:-}" ]]; then
+        local _pane_idx
+        _pane_idx=$(tmux list-panes -t "${TMUX_WINDOW:-shogun:2}" -F '#{pane_index} #{@agent_id}' 2>/dev/null \
+            | awk -v a="$agent" '$2==a {print $1; exit}')
+        if [[ -n "$_pane_idx" ]]; then
+            local _cmd
+            _cmd=$(tmux display-message -t "${TMUX_WINDOW:-shogun:2}.${_pane_idx}" -p '#{pane_current_command}' 2>/dev/null)
+            case "$_cmd" in
+                node) result="codex" ;;
+                claude) result="claude" ;;
+            esac
+        fi
+    fi
+    # tmux外 or pane未検出時はsettings.yamlフォールバック
+    if [[ -z "$result" ]]; then
+        result=$(_cli_lookup_settings_get "$agent" "type" "claude")
+    fi
     # 不正なCLI種別はclaude にフォールバック
     case "$result" in
         claude|codex|copilot|kimi) ;;

@@ -288,6 +288,12 @@ except Exception:
     print("")
 PY
 )
+    # L821: @agent_state=active but no task = stale state (Codex sandbox blocks Stop hook)
+    if [[ "$tmux_state" =~ ^(active|bash_running)$ ]] && [[ -z "$task_status" ]]; then
+        echo "  [runtime] ${agent}@${target}: stale active (no task), forcing idle"
+        tmux set-option -p -t "$target" @agent_state idle >/dev/null 2>&1 || true
+        tmux_state="idle"
+    fi
     if [[ "$tmux_state" =~ ^(active|bash_running)$ ]] || [[ "$task_status" =~ ^(assigned|acknowledged|in_progress|pending)$ ]]; then
         tmux set-option -p -t "$target" @agent_cli "$TARGET_CLI" >/dev/null 2>&1 || true
         tmux set-option -p -t "$target" @model_name "$display_name" >/dev/null 2>&1 || true
