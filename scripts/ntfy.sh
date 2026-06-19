@@ -17,14 +17,32 @@ fi
 
 # Validate caller agent_id (warn-only; do not block send)
 AGENT_ID=""
+TMUX_AGENT_ERROR=""
 if [ -n "${TMUX_PANE:-}" ]; then
-  AGENT_ID="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+  _tmux_agent_output="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>&1)"
+  _tmux_agent_status=$?
+  if [ "$_tmux_agent_status" -eq 0 ]; then
+    AGENT_ID="$_tmux_agent_output"
+  else
+    TMUX_AGENT_ERROR="$_tmux_agent_output"
+  fi
 fi
 if [ -z "$AGENT_ID" ]; then
-  AGENT_ID="$(tmux display-message -p '#{@agent_id}' 2>/dev/null || true)"
+  _tmux_agent_output="$(tmux display-message -p '#{@agent_id}' 2>&1)"
+  _tmux_agent_status=$?
+  if [ "$_tmux_agent_status" -eq 0 ]; then
+    AGENT_ID="$_tmux_agent_output"
+  elif [ -z "$TMUX_AGENT_ERROR" ]; then
+    TMUX_AGENT_ERROR="$_tmux_agent_output"
+  fi
 fi
 if [ -z "$AGENT_ID" ]; then
-  echo "WARNING: ntfy called with unavailable agent_id (outside tmux?)" >&2
+  if { [ -n "${TMUX:-}" ] || [ -n "${TMUX_PANE:-}" ]; } \
+    && printf '%s\n' "$TMUX_AGENT_ERROR" | grep -Eqi 'operation not permitted|permission denied'; then
+    echo "WARNING: ntfy called with unavailable agent_id (tmux permission denied)" >&2
+  else
+    echo "WARNING: ntfy called with unavailable agent_id (outside tmux?)" >&2
+  fi
 elif [ "$AGENT_ID" != "shogun" ] && [ "$AGENT_ID" != "karo" ]; then
   # ninja_monitor daemon inherits TMUX_PANE from launch context — suppress warning
   CALLER="${BASH_SOURCE[1]:-}"; CALLER="${CALLER##*/}"  # pure bash basename
@@ -32,6 +50,7 @@ elif [ "$AGENT_ID" != "shogun" ] && [ "$AGENT_ID" != "karo" ]; then
     echo "WARNING: ntfy called by non-authorized agent: ${AGENT_ID}" >&2
   fi
 fi
+unset _tmux_agent_output _tmux_agent_status
 
 # Pure bash: avoid cd+pwd subshell (saves ~5ms)
 _ntfy_script="${BASH_SOURCE[0]}"

@@ -2284,7 +2284,7 @@
 - cmd_id: cmd_karo_hotfix_ga093_prepush_test_select_mapping_20260620
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   findings_summary: "karo_direct hotfix。GA-093 pre-push hook failure。AC5件scope完結"
   observations:
@@ -2342,3 +2342,38 @@
   brainwash_check: "#2防止: taskYAML確認。#8防止: saizo完了後の残件確認。Q1:品質向上(継続健全化)。Q2:不要(トリアージ)。Q3:向上(pending蓄積防止)"
   origin: "[[insights_pending_第2弾]] -> [[APPROVE]]"
   timestamp: "2026-06-20T00:28:00"
+- cmd_id: cmd_karo_hotfix_ga092_google_classroom_context_freshness_20260620
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  gate_synced_at: "2026-06-20T00:32:16+09:00"
+  lesson_quality: OK
+  escalation_needed: false
+  findings_summary: "4観点OK。GA-092真陽性→context更新→ALERT消滅。commit 7c07036bc。precheck全PASS"
+  observations:
+    - "事実1: google_classroom repoに2026-06-20のAndroid/WebView commit 5件を確認→真陽性"
+    - "事実2: context_freshness再実行でgoogle-classroom.md ALERT消滅確認"
+  step3_5_verified: true
+  causal_chain: "source commit 5件→context未反映→ALERT真陽性→context更新→ALERT消滅(正の複利)"
+  finding_categories: [assumptions, numbers, premortem]
+  brainwash_check: "#2防止: precheck全PASS+commit実在確認。Q1:品質向上(context鮮度回復)。Q2:不要(context更新)。Q3:向上(context_freshness信頼性維持)"
+  origin: "[[GA-092_ALERT]] -> [[真陽性]] -> [[context更新_LGTM]]"
+  timestamp: "2026-06-20T00:33:00"
+- cmd_id: cmd_karo_hotfix_insights_pending_triage_tobisaru_20260620
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: null
+  lesson_quality: OK
+  escalation_needed: false
+  findings_summary: "4観点OK。pending=0件(saizo第1弾処理済み)。変更なし。precheck WARN(commit不在=正当)"
+  observations:
+    - "事実1: pending=0件をqueue/insights.yaml一次確認。done=75/resolved=28/total=103"
+    - "事実2: 変更なし→commit不要。precheck WARNは正当(偵察のみ→commit not found)"
+  step3_5_verified: true
+  causal_chain: "saizo第1弾で17→0件→tobisaru第2弾はpending 0→変更なし(正常完了)"
+  finding_categories: [assumptions, numbers]
+  brainwash_check: "#2防止: pending=0を一次確認。#8防止: commit不在WARNを正当と判断(変更なし)。Q1:品質向上(確認完了)。Q2:不要。Q3:向上(pending蓄積なし確認)"
+  origin: "[[insights_pending_第2弾]] -> [[pending_0確認]] -> [[LGTM]]"
+  timestamp: "2026-06-20T00:33:00"

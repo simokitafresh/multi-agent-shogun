@@ -110,33 +110,42 @@ except yaml.YAMLError:
 except FileNotFoundError:
     sys.exit(0)
 
-stats = defaultdict(lambda: {"fail_count": 0, "last_fail": "", "points": Counter()})
+latest = {}
+passes_by_skill = defaultdict(set)
 for entry in entries:
     if not isinstance(entry, dict):
-        continue
-    result = str(entry.get("result") or "").strip().upper()
-    if result != "FAIL":
         continue
     if str(entry.get("used", True)).strip().lower() == "false":
         continue
     skill_name = str(entry.get("skill") or "").strip()
     if not skill_name:
         continue
-    item = stats[skill_name]
-    item["fail_count"] += 1
+    result = str(entry.get("result") or "").strip().upper()
+    source = str(entry.get("source") or "").strip()
+    if result == "PASS" and source:
+        passes_by_skill[skill_name].add(source)
     ts = str(entry.get("ts") or "").strip()
-    if ts and ts >= item["last_fail"]:
-        item["last_fail"] = ts
-    point = str(entry.get("stumbling_points") or "").strip()
-    if point:
-        item["points"][point] += 1
+    if skill_name not in latest or ts >= str(latest[skill_name].get("ts") or ""):
+        latest[skill_name] = entry
 
 rows = []
-for skill_name, item in stats.items():
-    top_point = ""
-    if item["points"]:
-        top_point = sorted(item["points"].items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
-    rows.append((item["fail_count"], item["last_fail"], skill_name, top_point))
+for skill_name, entry in latest.items():
+    result = str(entry.get("result") or "").strip().upper()
+    if result != "FAIL":
+        continue
+    fail_source = str(entry.get("source") or "").strip()
+    if fail_source:
+        source_resolved = any(
+            pass_source == fail_source
+            or pass_source.startswith(fail_source + "_")
+            or fail_source.startswith(pass_source + "_")
+            for pass_source in passes_by_skill.get(skill_name, set())
+        )
+        if source_resolved:
+            continue
+    last_fail = str(entry.get("ts") or "").strip()
+    top_point = str(entry.get("stumbling_points") or "").strip()
+    rows.append((1, last_fail, skill_name, top_point))
 
 for fail_count, last_fail, skill_name, top_point in sorted(rows, key=lambda row: (-row[0], row[2])):
     print(f"{skill_name} | {fail_count} | {last_fail} | {top_point}")
