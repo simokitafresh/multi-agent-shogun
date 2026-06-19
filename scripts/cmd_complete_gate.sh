@@ -200,12 +200,17 @@ PY
     fi
     # 2. 新形式 (既存)
     local new_fmt="$SCRIPT_DIR/queue/reports/${ninja}_report_${cmd}.yaml"
+    # 2.5. 分割cmd形式: ninja_report_cmd_XXXX_ninja.yaml — 分割cmdGATE滞留対処(cmd_3449)
+    local split_fmt="$SCRIPT_DIR/queue/reports/${ninja}_report_${cmd}_${ninja}.yaml"
     # 3. 旧形式フォールバック（安全化: parent_cmd一致チェック）
     local old_fmt="$SCRIPT_DIR/queue/reports/${ninja}_report.yaml"
     [ -f "$new_fmt" ] && auto_unwrap_report_yaml "$new_fmt"
+    [ -f "$split_fmt" ] && auto_unwrap_report_yaml "$split_fmt"
     [ -f "$old_fmt" ] && auto_unwrap_report_yaml "$old_fmt"
     if [ -f "$new_fmt" ]; then
         echo "$new_fmt"
+    elif [ -f "$split_fmt" ]; then
+        echo "$split_fmt"
     elif [ -f "$old_fmt" ]; then
         # parent_cmd一致チェック（旧報告の誤採用防止）
         report_parent=$(grep -E "^\s*parent_cmd:" "$old_fmt" | head -1 | sed 's/.*parent_cmd:\s*//' | tr -d "'" | tr -d '"')
@@ -3055,6 +3060,11 @@ def resolve_report_file(ninja_name, task):
     new_fmt = os.path.join(reports_dir, f"{ninja_name}_report_{cmd_id}.yaml")
     if os.path.exists(new_fmt):
         return new_fmt
+
+    # 分割cmd形式: ninja_report_cmd_XXXX_ninja.yaml — 分割cmdGATE滞留対処(cmd_3449)
+    split_fmt = os.path.join(reports_dir, f"{ninja_name}_report_{cmd_id}_{ninja_name}.yaml")
+    if os.path.exists(split_fmt):
+        return split_fmt
 
     old_fmt = os.path.join(reports_dir, f"{ninja_name}_report.yaml")
     if os.path.exists(old_fmt):
