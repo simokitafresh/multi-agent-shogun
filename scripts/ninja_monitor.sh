@@ -5057,6 +5057,20 @@ while true; do
     # ═══ ペイン生存チェック (cmd_183) ═══
     check_pane_survival
 
+    # ═══ 家老pane dead検知 (L821: 家老はNINJA_NAMESに含まれないため個別チェック) ═══
+    _karo_dead=$(tmux display-message -t shogun:agents.1 -p '#{pane_dead}' 2>/dev/null || echo "0")
+    if [ "$_karo_dead" = "1" ]; then
+        log "KARO-DEAD: 家老pane dead検知。Codex CLIがstatus 0で正常終了した可能性。自動respawn実行"
+        local _karo_launch
+        _karo_launch=$(cli_launch_cmd karo 2>/dev/null || echo "")
+        if [ -n "$_karo_launch" ]; then
+            local _karo_node_dir="${_karo_launch%/bin/codex*}/bin"
+            tmux respawn-pane -k -t shogun:agents.1 "export PATH=\"${_karo_node_dir}:\$PATH\" && cd $SCRIPT_DIR && $_karo_launch" 2>/dev/null || true
+            log "KARO-RESPAWN: 家老pane respawn完了"
+            bash "$SCRIPT_DIR/scripts/ntfy.sh" "家老CLI dead→自動respawn完了" 2>/dev/null || true
+        fi
+    fi
+
     # 案B: バッチ通知用配列を初期化
     NEWLY_IDLE=()
 
