@@ -40,6 +40,7 @@ lesson_candidate:
   title: ''
   detail: ''
   project: infra
+  origin: '[[cmd_3458_saizo]] -> [[SSOT重複監査]] -> [[config_queue_skills_hardcode_25件検出]]'
 lessons_useful:
 - id: L625
   useful: true
@@ -82,7 +83,7 @@ post_deploy_evidence:
 binary_checks:
   commit:
   - check: git commitが完了したか(untracked/modified=0)
-    result: 'no'
+    result: 'yes'
   AC1:
   - check: config/**,queue/*.yaml,skills/**/SKILL.md,skills/**/scripts/**内の同一値二重定義とハードコード定数を抽出して表に記録したか
     result: 'yes'
@@ -100,4 +101,7 @@ self_gate_check:
   lesson_candidate: PASS
   status_valid: PASS
   purpose_fit: PASS
-verdict: FAIL
+verdict: PASS
+commit_hash: 239e47047cde3e280ada243bb3a57967e90e211e
+autofix_applied:
+- verdict binary_checks導出→PASS
