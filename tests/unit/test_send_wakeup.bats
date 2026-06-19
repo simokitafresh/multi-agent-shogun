@@ -191,6 +191,49 @@ teardown() {
     rm -rf "$TEST_TMPDIR"
 }
 
+@test "T-SW-013: inbox_watcher resolves queue/inbox symlink to real file" {
+    local root="$TEST_TMPDIR/root"
+    local real_inbox="$TEST_TMPDIR/real_inbox"
+    mkdir -p "$root/scripts/lib" "$root/lib" "$root/queue" "$real_inbox"
+    ln -s "$real_inbox" "$root/queue/inbox"
+    ln -s "$PROJECT_ROOT/scripts/lib/lock_path.sh" "$root/scripts/lib/lock_path.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/cli_lookup.sh" "$root/scripts/lib/cli_lookup.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/tmux_utils.sh" "$root/scripts/lib/tmux_utils.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/script_update.sh" "$root/scripts/lib/script_update.sh"
+    ln -s "$PROJECT_ROOT/lib/agent_state.sh" "$root/lib/agent_state.sh"
+    ln -s "$PROJECT_ROOT/scripts/inbox_watcher.sh" "$root/scripts/inbox_watcher.sh"
+    cat > "$real_inbox/test_agent.yaml" <<'YAML'
+messages:
+- content: 'symlink'
+  from: 'karo'
+  id: 'msg_symlink'
+  read: false
+  timestamp: '2026-06-19T00:00:00'
+  type: 'task_assigned'
+YAML
+
+    run bash -c "INBOX_WATCHER_LIB_ONLY=1 source '$root/scripts/inbox_watcher.sh' test_agent dummy-pane; printf '%s\n' \"\$INBOX\"; get_unread_info"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"$real_inbox/test_agent.yaml"* ]]
+    [[ "$output" == *$'1\tfalse\t'* ]]
+}
+
+@test "T-SW-014: inbox_watcher alerts and exits on broken queue/inbox symlink" {
+    local root="$TEST_TMPDIR/root_broken"
+    mkdir -p "$root/scripts/lib" "$root/lib" "$root/queue"
+    ln -s "$TEST_TMPDIR/missing_inbox_target" "$root/queue/inbox"
+    ln -s "$PROJECT_ROOT/scripts/lib/lock_path.sh" "$root/scripts/lib/lock_path.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/cli_lookup.sh" "$root/scripts/lib/cli_lookup.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/tmux_utils.sh" "$root/scripts/lib/tmux_utils.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/script_update.sh" "$root/scripts/lib/script_update.sh"
+    ln -s "$PROJECT_ROOT/lib/agent_state.sh" "$root/lib/agent_state.sh"
+    ln -s "$PROJECT_ROOT/scripts/inbox_watcher.sh" "$root/scripts/inbox_watcher.sh"
+
+    run bash -c "INBOX_WATCHER_LIB_ONLY=1 source '$root/scripts/inbox_watcher.sh' test_agent dummy-pane"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"ALERT: queue/inbox symlink is broken"* ]]
+}
+
 # --- T-SW-001: self-watch active → skip nudge ---
 
 @test "T-SW-001: send_wakeup skips nudge when agent has active self-watch" {

@@ -36,6 +36,29 @@ CONFIRM_SCRIPT="$SCRIPT_DIR/scripts/bulletin_confirm.sh"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \
     || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
+
+resolve_inbox_file_path() {
+    local inbox_file="$1"
+    local resolved=""
+
+    resolved=$(readlink -f "$inbox_file" 2>/dev/null || true)
+    if [ -n "$resolved" ]; then
+        printf '%s\n' "$resolved"
+        return 0
+    fi
+
+    local inbox_dir inbox_base resolved_dir
+    inbox_dir="${inbox_file%/*}"
+    inbox_base="${inbox_file##*/}"
+    resolved_dir=$(readlink -f "$inbox_dir" 2>/dev/null || true)
+    if [ -n "$resolved_dir" ]; then
+        printf '%s/%s\n' "$resolved_dir" "$inbox_base"
+    else
+        printf '%s\n' "$inbox_file"
+    fi
+}
+
+INBOX="$(resolve_inbox_file_path "$INBOX")"
 LOCKFILE="$(lock_path "$INBOX")"
 CONFIRM_LIST_FILE=""
 

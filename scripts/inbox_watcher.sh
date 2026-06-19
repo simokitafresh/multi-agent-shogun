@@ -28,6 +28,7 @@ source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
+source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
 
 AGENT_ID="$1"
 PANE_TARGET="$2"
@@ -38,8 +39,36 @@ STATE_DIR="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}"
 IDLE_FLAG_DIR="$STATE_DIR"
 mkdir -p "$STATE_DIR"
 
-INBOX="$SCRIPT_DIR/queue/inbox/${AGENT_ID}.yaml"
-LOCKFILE="${INBOX}.lock"
+resolve_inbox_file_path() {
+    local inbox_file="$1"
+    local resolved=""
+
+    resolved=$(readlink -f "$inbox_file" 2>/dev/null || true)
+    if [ -n "$resolved" ]; then
+        printf '%s\n' "$resolved"
+        return 0
+    fi
+
+    local inbox_dir inbox_base resolved_dir
+    inbox_dir="${inbox_file%/*}"
+    inbox_base="${inbox_file##*/}"
+    resolved_dir=$(readlink -f "$inbox_dir" 2>/dev/null || true)
+    if [ -n "$resolved_dir" ]; then
+        printf '%s/%s\n' "$resolved_dir" "$inbox_base"
+    else
+        printf '%s\n' "$inbox_file"
+    fi
+}
+
+INBOX_DIR_LINK="$SCRIPT_DIR/queue/inbox"
+if [ -L "$INBOX_DIR_LINK" ] && [ ! -e "$INBOX_DIR_LINK" ]; then
+    echo "[inbox_watcher] ALERT: queue/inbox symlink is broken: $INBOX_DIR_LINK -> $(readlink "$INBOX_DIR_LINK" 2>/dev/null || echo unknown)" >&2
+    exit 1
+fi
+
+INBOX_LINK_PATH="$SCRIPT_DIR/queue/inbox/${AGENT_ID}.yaml"
+INBOX="$(resolve_inbox_file_path "$INBOX_LINK_PATH")"
+LOCKFILE="$(lock_path "$INBOX")"
 SEND_KEYS_TIMEOUT=5  # seconds — prevents hang (PID 274337 incident)
 # ASW_PROCESS_TIMEOUT=0: disable timeout on tmux commands to shogun pane
 if [ "${ASW_PROCESS_TIMEOUT:-}" = "0" ]; then

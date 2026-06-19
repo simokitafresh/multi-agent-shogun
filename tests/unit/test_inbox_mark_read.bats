@@ -113,6 +113,22 @@ for entry in data.get('entries', []):
     [ "$(_get_read_status testagent msg_003)" = "true" ]
 }
 
+@test "queue/inbox symlink marks real target without symlink lock file" {
+    local real_inbox="$TEST_ROOT/real_inbox"
+    rm -rf "$TEST_ROOT/queue/inbox"
+    mkdir -p "$real_inbox"
+    ln -s "$real_inbox" "$TEST_ROOT/queue/inbox"
+    _create_inbox testagent
+
+    run bash "$TEST_SCRIPT" testagent msg_001
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Marked 1 message"* ]]
+
+    [ "$(_get_read_status testagent msg_001)" = "true" ]
+    [ -f "$real_inbox/testagent.yaml" ]
+    [ ! -e "$TEST_ROOT/queue/inbox/testagent.yaml.lock" ]
+}
+
 @test "does not alter read:false text inside message content" {
     cat > "$TEST_ROOT/queue/inbox/testagent.yaml" << 'YAML'
 messages:

@@ -141,6 +141,29 @@ lock_path() {
     esac
 }
 
+resolve_inbox_file_path() {
+    local inbox_file="$1"
+    local resolved=""
+
+    resolved=$(readlink -f "$inbox_file" 2>/dev/null || true)
+    if [ -n "$resolved" ]; then
+        printf '%s\n' "$resolved"
+        return 0
+    fi
+
+    # File may not exist yet. Resolve the parent directory so queue/inbox
+    # symlinks still write to the real mailbox location on first delivery.
+    local inbox_dir inbox_base resolved_dir
+    inbox_dir="${inbox_file%/*}"
+    inbox_base="${inbox_file##*/}"
+    resolved_dir=$(readlink -f "$inbox_dir" 2>/dev/null || true)
+    if [ -n "$resolved_dir" ]; then
+        printf '%s/%s\n' "$resolved_dir" "$inbox_base"
+    else
+        printf '%s\n' "$inbox_file"
+    fi
+}
+
 inbox_yaml_field_get() {
     local yaml_file="$1"
     local field_name="$2"
@@ -1112,7 +1135,8 @@ if [ "$FROM" = "shogun" ] && [ "$TYPE" = "task_new" ]; then
     exit 1
 fi
 
-INBOX="$SCRIPT_DIR/queue/inbox/${TARGET}.yaml"
+INBOX_LINK_PATH="$SCRIPT_DIR/queue/inbox/${TARGET}.yaml"
+INBOX="$(resolve_inbox_file_path "$INBOX_LINK_PATH")"
 LOCKFILE="$(lock_path "$INBOX")"
 INBOX_DIR="${INBOX%/*}"
 [ -d "$INBOX_DIR" ] || mkdir -p "$INBOX_DIR"

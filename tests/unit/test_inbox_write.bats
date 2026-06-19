@@ -176,6 +176,22 @@ setup() {
     grep -q "^  timestamp: " "$TEST_INBOX_DIR/test_agent.yaml"
 }
 
+@test "T-003c: queue/inbox symlink writes to real target and uses real lock path" {
+    setup_basic_test_env
+    local real_inbox_dir="$TEST_TMPDIR/real_inbox"
+    rm -rf "$TEST_TMPDIR/queue/inbox"
+    mkdir -p "$real_inbox_dir"
+    ln -s "$real_inbox_dir" "$TEST_TMPDIR/queue/inbox"
+
+    run bash "$TEST_INBOX_WRITE" "test_agent" "symlink message" "wake_up" "karo"
+    [ "$status" -eq 0 ]
+
+    [ -f "$real_inbox_dir/test_agent.yaml" ]
+    [ -f "$TEST_TMPDIR/queue/inbox/test_agent.yaml" ]
+    grep -q "^- content: 'symlink message'" "$real_inbox_dir/test_agent.yaml"
+    [ -e "$real_inbox_dir/test_agent.yaml.lock" ]
+}
+
 @test "T-003b: shogun cmd_new without cmd_id is blocked with LS-A07 guidance" {
     setup_basic_test_env
     run bash "$TEST_INBOX_WRITE" "test_agent" "配備せよ" "cmd_new" "shogun"
