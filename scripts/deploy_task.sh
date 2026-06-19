@@ -2313,7 +2313,7 @@ lesson_candidate:
   title: ""
   detail: ""
   project: ${project}
-lessons_useful: []  # ★教訓なし。追加教訓があればid/useful/reason形式で記入
+lessons_useful: []  # ★教訓注入なし。このフィールドを変更するな。空リストのまま提出せよ
 skill_candidate:
   found: false  # 同じ手順を3回以上繰り返したらfound: trueにせよ
   # found: true の場合は以下も記入:
@@ -2376,7 +2376,7 @@ EOF
     if [ -z "$_lu_ids" ]; then
         # GP-088/cmd_2665: related_lessonsなし or id抽出不能 → 空リストを維持
         if grep -Eq '^lessons_useful:[[:space:]]*(null|~)[[:space:]]*$' "$report_file" 2>/dev/null; then
-            sed -Ei 's/^lessons_useful:[[:space:]]*(null|~)[[:space:]]*$/lessons_useful: []  # ★教訓なし。追加教訓があればid\/useful\/reason形式で記入/' "$report_file"
+            sed -Ei 's/^lessons_useful:[[:space:]]*(null|~)[[:space:]]*$/lessons_useful: []  # ★教訓注入なし。このフィールドを変更するな。空リストのまま提出せよ/' "$report_file"
             log "report_template: lessons_useful empty-list fallback"
         fi
     else
@@ -2954,7 +2954,7 @@ EOF
 
         if [ -z "$_lu_ids" ]; then
             cat >> "$report_file" <<'EOF'
-lessons_useful: []  # ★教訓なし。追加教訓があればid/useful/reason形式で記入
+lessons_useful: []  # ★教訓注入なし。このフィールドを変更するな。空リストのまま提出せよ
 EOF
         else
             _lu_block="lessons_useful:  # ★教訓注入済み。[]で上書きするな。各教訓にuseful+reasonを記入せよ"
