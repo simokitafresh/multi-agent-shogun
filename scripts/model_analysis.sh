@@ -7,7 +7,7 @@
 #   bash scripts/model_analysis.sh --detail          # 人間用テーブル(5セクション)
 #   bash scripts/model_analysis.sh --summary         # key=value (dashboard統合用)
 #   bash scripts/model_analysis.sh --json            # 機械可読JSON
-#   bash scripts/model_analysis.sh --compare opus codex   # 2モデル対比
+#   bash scripts/model_analysis.sh --compare <model1> <model2>   # 2モデル対比
 #
 # Data Sources:
 #   1. logs/gate_metrics.log    — CLEAR/BLOCK結果
@@ -34,6 +34,7 @@ TRACKING="$SCRIPT_DIR/logs/lesson_tracking.tsv"
 NINJA_MONITOR="$SCRIPT_DIR/logs/ninja_monitor.log"
 DEPLOY_LOG="$SCRIPT_DIR/logs/deploy_task.log"
 ARCHIVE_DIR="$SCRIPT_DIR/queue/archive"
+source "$SCRIPT_DIR/scripts/lib/model_family.sh"
 
 # Argument parse
 MODE=""
@@ -49,7 +50,7 @@ case "${1:-}" in
         CMP_MODEL1="${2:-}"
         CMP_MODEL2="${3:-}"
         if [[ -z "$CMP_MODEL1" ]] || [[ -z "$CMP_MODEL2" ]]; then
-            echo "ERROR: --compare requires two model names (e.g. --compare opus codex)" >&2
+            echo "ERROR: --compare requires two model names (e.g. --compare <model1> <model2>)" >&2
             exit 1
         fi
         ;;
@@ -103,17 +104,7 @@ if [[ "$MODE" == "summary" ]]; then
         _label="${_label//_/ }"
         _low="${_label//-/ }"
         _low="${_low,,}"
-        if [[ "$_low" == *opus* ]] && [[ "$_low" == *4.6* || "$_low" == *4\ 6* ]]; then
-            ACTIVE_FAM_MAP["opus_4_6"]=1
-        elif [[ "$_low" == *gpt* || "$_low" == *codex* ]] && [[ "$_low" == *5.4* || "$_low" == *5\ 4* || "$_low" == *5.5* || "$_low" == *5\ 5* ]]; then
-            ACTIVE_FAM_MAP["gpt_5"]=1
-        else
-            _slug="${_label,,}"
-            _slug="${_slug//[^a-z0-9]/_}"
-            _slug="${_slug#"${_slug%%[!_]*}"}"
-            _slug="${_slug%"${_slug##*[!_]}"}"
-            ACTIVE_FAM_MAP["${_slug:-unknown}"]=1
-        fi
+        ACTIVE_FAM_MAP["$(model_family_from_label "$_label")"]=1
     done < <(awk '
     /^    [a-z][a-z_]*:$/ { name=$1; sub(/:$/,"",name); type=""; mn="" }
     /^      type:/ { type=$2 }
@@ -124,15 +115,26 @@ if [[ "$MODE" == "summary" ]]; then
     ACTIVE_FAMILIES=$(IFS=,; echo "${!ACTIVE_FAM_MAP[*]}")
 
     # Step 2: Process gate_metrics.log with awk (column 6 models only, matching Python behavior)
-    awk -F'\t' -v active_fams="$ACTIVE_FAMILIES" '
+    awk -F'\t' -v active_fams="$ACTIVE_FAMILIES" \
+        -v mf_opus46="$MODEL_FAMILY_OPUS_46" \
+        -v mf_gpt5="$MODEL_FAMILY_GPT_5" \
+        -v mf_opus_token="$MODEL_FAMILY_TOKEN_OPUS" \
+        -v mf_gpt_token="$MODEL_FAMILY_TOKEN_GPT" \
+        -v mf_codex_token="$MODEL_FAMILY_TOKEN_CODEX" \
+        -v mf_v46_dot="$MODEL_FAMILY_VERSION_46_DOT" \
+        -v mf_v46_space="$MODEL_FAMILY_VERSION_46_SPACE" \
+        -v mf_v54_dot="$MODEL_FAMILY_VERSION_54_DOT" \
+        -v mf_v54_space="$MODEL_FAMILY_VERSION_54_SPACE" \
+        -v mf_v55_dot="$MODEL_FAMILY_VERSION_55_DOT" \
+        -v mf_v55_space="$MODEL_FAMILY_VERSION_55_SPACE" '
     function normalize(raw,   r) {
         r = raw; gsub(/_/, " ", r); gsub(/  +/, " ", r); gsub(/^ +| +$/, "", r)
         return (r == "" ? "unknown" : r)
     }
     function get_family(label,   low) {
         low = tolower(label); gsub(/-/, " ", low); gsub(/_/, " ", low)
-        if (low ~ /opus/ && (low ~ /4\.6/ || low ~ /4 6/)) return "opus_4_6"
-        if ((low ~ /gpt/ || low ~ /codex/) && (low ~ /5\.4/ || low ~ /5 4/ || low ~ /5\.5/ || low ~ /5 5/)) return "gpt_5"
+        if (index(low, mf_opus_token) && (index(low, mf_v46_dot) || index(low, mf_v46_space))) return mf_opus46
+        if ((index(low, mf_gpt_token) || index(low, mf_codex_token)) && (index(low, mf_v54_dot) || index(low, mf_v54_space) || index(low, mf_v55_dot) || index(low, mf_v55_space))) return mf_gpt5
         low = tolower(normalize(label)); gsub(/[^a-z0-9]+/, "_", low); gsub(/^_+|_+$/, "", low)
         return (low == "" ? "unknown" : low)
     }
@@ -292,6 +294,8 @@ ARCHIVE_DIR = os.environ.get("ARCHIVE_DIR", "")
 MODE = os.environ["MODE"]
 CMP_MODEL1 = os.environ.get("CMP_MODEL1", "").lower()
 CMP_MODEL2 = os.environ.get("CMP_MODEL2", "").lower()
+sys.path.insert(0, os.path.join(os.path.dirname(GATE_LOG), "..", "scripts", "lib"))
+from model_family import extract_model_family, model_slug
 
 # Read ninja names from settings.yaml (cmd_1136)
 def _load_ninja_names():
@@ -320,21 +324,6 @@ def model_sort_key(model_label):
     if normalized == "unknown":
         return (1, normalized.lower())
     return (0, normalized.lower())
-
-def model_slug(model_label):
-    slug = re.sub(r"[^a-z0-9]+", "_", normalize_model_label(model_label).lower()).strip("_")
-    return slug or "unknown"
-
-def extract_model_family(label):
-    """Extract a family key from a model label for matching across label formats."""
-    low = label.lower().replace("-", " ").replace("_", " ")
-    if "opus" in low and ("4.6" in low or "4 6" in low):
-        return "opus_4_6"
-    if ("gpt" in low or "codex" in low) and (
-        "5.4" in low or "5 4" in low or "5.5" in low or "5 5" in low
-    ):
-        return "gpt_5"
-    return model_slug(label)
 
 def load_yaml(path):
     if not os.path.isfile(path):

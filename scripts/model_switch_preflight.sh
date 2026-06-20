@@ -16,6 +16,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$SCRIPT_DIR/scripts/lib/model_family.sh"
 
 TARGET="${1:-}"
 
@@ -67,7 +68,7 @@ check_hardcodes() {
     done
 
     # 全パターンを単一正規表現に結合（11grep→1grep。WSL2 I/O 11x削減）
-    local combined_pattern="(is_codex|gpt-5\.|claude-(opus|sonnet|haiku)-[0-9]${_agent_patterns})"
+    local combined_pattern="(is_codex|${MODEL_FAMILY_TOKEN_GPT}-5\\.|claude-(${MODEL_FAMILY_OPUS}|${MODEL_FAMILY_TOKEN_SONNET}|${MODEL_FAMILY_HAIKU})-[0-9]${_agent_patterns})"
 
     local found
     found=$(rg -n \

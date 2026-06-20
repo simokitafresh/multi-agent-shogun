@@ -750,6 +750,10 @@ import yaml, sys, os, re
 
 settings_path = os.environ.get('SETTINGS_FILE', '')
 dashboard_path = os.environ.get('DASHBOARD', '')
+project_dir = os.path.dirname(os.path.dirname(settings_path)) if settings_path else ''
+if project_dir:
+    sys.path.insert(0, os.path.join(project_dir, 'scripts', 'lib'))
+from model_family import FAMILY_CODEX, FAMILY_OPUS, model_display_group
 
 if not settings_path or not dashboard_path or not os.path.exists(settings_path):
     sys.exit(0)
@@ -767,16 +771,8 @@ expected = {}
 for name, conf in agents.items():
     if not isinstance(conf, dict):
         continue
-    if conf.get('type') == 'codex':
-        expected[name] = 'Codex'
-    elif conf.get('model_name', ''):
-        mn = conf['model_name']
-        if 'haiku' in mn.lower():
-            expected[name] = 'Haiku'
-        else:
-            expected[name] = 'Opus'
-    else:
-        expected[name] = 'Opus'
+    label = conf.get('type') if conf.get('type') == FAMILY_CODEX else conf.get('model_name', FAMILY_OPUS)
+    expected[name] = model_display_group(label)
 
 table_pattern = re.compile(r'^\|\s*(\w+)\s*\|\s*\d+\s*\|\s*(\w+)\s*\|')
 for line in dashboard_text.split('\n'):

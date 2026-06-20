@@ -68,6 +68,8 @@ from collections import defaultdict
 
 base_dir = Path(sys.argv[1])
 settings_file = Path(sys.argv[2])
+sys.path.insert(0, str(base_dir / "scripts" / "lib"))
+from model_family import FAMILY_CODEX, FAMILY_HAIKU, FAMILY_OPUS, model_display_group
 queue_tasks_dir = base_dir / "queue" / "tasks"
 archive_tasks_dir = base_dir / "archive" / "tasks"
 
@@ -123,13 +125,10 @@ def load_ninja_models(path: Path):
         for ninja, cfg in agents.items():
             if not isinstance(cfg, dict):
                 continue
-            model_name = str(cfg.get("model_name", "")).lower()
-            if cfg.get("type") == "codex":
-                ninja_model[ninja] = "codex"
-            elif "haiku" in model_name:
-                ninja_model[ninja] = "haiku"
+            if cfg.get("type") == FAMILY_CODEX:
+                ninja_model[ninja] = model_display_group(FAMILY_CODEX).lower()
             else:
-                ninja_model[ninja] = "opus"
+                ninja_model[ninja] = model_display_group(str(cfg.get("model_name", FAMILY_OPUS))).lower()
     except Exception:
         current_ninja = None
         in_agents = False
@@ -145,14 +144,14 @@ def load_ninja_models(path: Path):
             if ninja_match:
                 current_ninja = ninja_match.group(1)
                 if current_ninja not in ninja_model:
-                    ninja_model[current_ninja] = "opus"
+                    ninja_model[current_ninja] = model_display_group(FAMILY_OPUS).lower()
                 continue
             if not current_ninja:
                 continue
-            if re.search(r"^\s{6}type:\s*codex\s*$", raw):
-                ninja_model[current_ninja] = "codex"
-            elif re.search(r"^\s{6}model_name:.*haiku", raw):
-                ninja_model[current_ninja] = "haiku"
+            if re.search(r"^\s{6}type:\s*" + re.escape(FAMILY_CODEX) + r"\s*$", raw):
+                ninja_model[current_ninja] = model_display_group(FAMILY_CODEX).lower()
+            elif re.search(r"^\s{6}model_name:.*" + re.escape(FAMILY_HAIKU), raw):
+                ninja_model[current_ninja] = model_display_group(FAMILY_HAIKU).lower()
     return ninja_model
 
 def list_yaml_files():
@@ -190,7 +189,7 @@ for file_path in files:
     durations.append({
         "task_id": task_id,
         "assigned_to": assigned_to,
-        "model": ninja_model.get(assigned_to, "opus"),
+        "model": ninja_model.get(assigned_to, model_display_group(FAMILY_OPUS).lower()),
         "task_type": task_type,
         "duration_min": duration_min,
         "source": source,
@@ -229,11 +228,11 @@ for ninja in sorted(ninja_avg.keys()):
     print(f"  - {ninja}: {avg:.1f}分 (N={n})")
 
 print("2) モデル別平均所要時間（分）")
-for model in ["opus", "codex", "haiku"]:
+for model in [FAMILY_OPUS, FAMILY_CODEX, FAMILY_HAIKU]:
     if model in model_avg:
         avg, n = model_avg[model]
         print(f"  - {model}: {avg:.1f}分 (N={n})")
-for model in sorted(k for k in model_avg.keys() if k not in {"opus", "codex", "haiku"}):
+for model in sorted(k for k in model_avg.keys() if k not in {FAMILY_OPUS, FAMILY_CODEX, FAMILY_HAIKU}):
     avg, n = model_avg[model]
     print(f"  - {model}: {avg:.1f}分 (N={n})")
 
@@ -292,6 +291,15 @@ by_project_output = sys.argv[6] == "true"
 by_model_output = sys.argv[7] == "true"
 base_dir = Path(sys.argv[8])
 model_output = sys.argv[9] == "true"
+sys.path.insert(0, str(base_dir / "scripts" / "lib"))
+from model_family import (
+    FAMILY_CODEX,
+    FAMILY_HAIKU,
+    FAMILY_OPUS,
+    extract_model_family,
+    model_display_group,
+    model_slug,
+)
 
 try:
     import yaml as _yaml
@@ -530,7 +538,7 @@ def load_lesson_catalog(root_dir):
     return lesson_catalog, deprecated
 
 def load_ninja_model_map(settings_path):
-    """settings.yamlからninja→model(opus/codex/haiku)マッピングを構築"""
+    """settings.yamlからninja→model_family constantsマッピングを構築"""
     ninja_model = {}
     if _yaml is None:
         return ninja_model
@@ -542,13 +550,10 @@ def load_ninja_model_map(settings_path):
     for ninja, cfg in agents.items():
         if not isinstance(cfg, dict):
             continue
-        model_name = str(cfg.get("model_name", "")).lower()
-        if cfg.get("type") == "codex":
-            ninja_model[ninja] = "codex"
-        elif "haiku" in model_name:
-            ninja_model[ninja] = "haiku"
+        if cfg.get("type") == FAMILY_CODEX:
+            ninja_model[ninja] = model_display_group(FAMILY_CODEX).lower()
         else:
-            ninja_model[ninja] = "opus"
+            ninja_model[ninja] = model_display_group(str(cfg.get("model_name", FAMILY_OPUS))).lower()
     return ninja_model
 
 # === lesson ID → metadata 逆引きマップ構築 + deprecated集合 ===
@@ -885,17 +890,6 @@ if by_model_output:
                 if row["gate_result"] == "CLEAR":
                     model_stats[model_name]["effective"] += 1
 
-    def extract_model_family(label):
-        low = label.lower().replace("-", " ").replace("_", " ")
-        if "opus" in low and ("4.6" in low or "4 6" in low):
-            return "opus_4_6"
-        if ("gpt" in low or "codex" in low) and (
-            "5.4" in low or "5 4" in low or "5.5" in low or "5 5" in low
-        ):
-            return "gpt_5"
-        import re as _re
-        return _re.sub(r"[^a-z0-9]+", "_", low).strip("_") or "unknown"
-
     def build_active_families_from_settings(settings_path, profiles_path):
         families = set()
         try:
@@ -968,7 +962,7 @@ if model_output:
     for row in rows:
         ninja_names = [n.strip() for n in row["ninja"].split(",") if n.strip()]
         for ninja_name in ninja_names:
-            model = ninja_model_map.get(ninja_name, "opus")
+            model = ninja_model_map.get(ninja_name, FAMILY_OPUS)
             if row["gate_result"] == "CLEAR":
                 model_clear_stats[model]["clear"] += 1
             elif row["gate_result"] == "BLOCK":
@@ -1114,7 +1108,7 @@ else:
         print()
         print("=== モデル別CLEAR率 ===")
         print(f"{'モデル':<10}{'CLEAR':<8}{'BLOCK':<8}{'CLEAR率':<12}{'N':<6}")
-        for model in ["opus", "codex", "haiku"]:
+        for model in [FAMILY_OPUS, FAMILY_CODEX, FAMILY_HAIKU]:
             s = model_clear_stats.get(model, {"clear": 0, "block": 0})
             n = s["clear"] + s["block"]
             if n == 0:
@@ -1134,7 +1128,7 @@ else:
         else:
             header = f"{'モデル':<10}" + "".join(f"{t:<12}" for t in all_types_model)
             print(header)
-            for model in ["opus", "codex", "haiku"]:
+            for model in [FAMILY_OPUS, FAMILY_CODEX, FAMILY_HAIKU]:
                 cells = []
                 for tt in all_types_model:
                     s = model_type_clear_stats[model][tt]

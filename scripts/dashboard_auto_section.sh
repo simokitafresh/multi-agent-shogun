@@ -28,6 +28,7 @@ _dashboard_script="${BASH_SOURCE[0]:-$0}"
 [[ "$_dashboard_script" != /* ]] && _dashboard_script="$PWD/$_dashboard_script"
 SCRIPT_DIR="${_dashboard_script%/*}"
 PROJECT_DIR="${SCRIPT_DIR%/*}"
+source "$PROJECT_DIR/scripts/lib/model_family.sh"
 unset _dashboard_script
 
 DRY_RUN=false
@@ -45,6 +46,8 @@ LESSON_EFFECT_STATUS_FILE="$PROJECT_DIR/queue/lesson_effectiveness_status.txt"
 GATE_FIRE_LOG="$PROJECT_DIR/logs/gate_fire_log.yaml"
 LESSON_IMPACT_FILE="$PROJECT_DIR/logs/lesson_impact.tsv"
 SKILL_METRICS_SCRIPT="$PROJECT_DIR/scripts/skill_metrics.sh"
+# shellcheck source=/dev/null
+source "$PROJECT_DIR/scripts/lib/model_family.sh"
 
 # ─── 初回CLEAR率 (gate_fire_logから計算。累積CLEAR率の隣に表示) ───
 compute_first_fire_rate() {
@@ -758,7 +761,18 @@ if [[ -f "$LESSON_IMPACT_FILE" ]] && [[ -s "$LESSON_IMPACT_FILE" ]]; then
         cp "$_HEAVY_CACHE_DIR/recent30.tsv" "$TMP_RECENT"
     else
     # cmd_1392: Python→gawk化 (TSV集計: Recent 30 cmd metrics)
-    gawk -v gate_path="$GATE_LOG" '
+    gawk -v gate_path="$GATE_LOG" \
+        -v mf_opus46="$MODEL_FAMILY_OPUS_46" \
+        -v mf_gpt5="$MODEL_FAMILY_GPT_5" \
+        -v mf_opus_token="$MODEL_FAMILY_TOKEN_OPUS" \
+        -v mf_gpt_token="$MODEL_FAMILY_TOKEN_GPT" \
+        -v mf_codex_token="$MODEL_FAMILY_TOKEN_CODEX" \
+        -v mf_v46_dot="$MODEL_FAMILY_VERSION_46_DOT" \
+        -v mf_v46_space="$MODEL_FAMILY_VERSION_46_SPACE" \
+        -v mf_v54_dot="$MODEL_FAMILY_VERSION_54_DOT" \
+        -v mf_v54_space="$MODEL_FAMILY_VERSION_54_SPACE" \
+        -v mf_v55_dot="$MODEL_FAMILY_VERSION_55_DOT" \
+        -v mf_v55_space="$MODEL_FAMILY_VERSION_55_SPACE" '
 BEGIN { FS="\t"; OFS="\t" }
 FILENAME == gate_path { if (NF >= 6) cmd_model[$2] = $6; next }
 FNR == 1 { for (i = 1; i <= NF; i++) col[$i] = i; next }
@@ -789,8 +803,8 @@ END {
         for (mi = 1; mi <= mn; mi++) {
             m = mdl_arr[mi]; gsub(/^[ \t]+|[ \t]+$/, "", m); if (m == "") continue
             low = tolower(m); gsub(/[-_]/, " ", low); fam = "unknown"
-            if (index(low, "opus") && (index(low, "4.6") || index(low, "4 6"))) fam = "opus_4_6"
-            else if ((index(low, "gpt") || index(low, "codex")) && (index(low, "5.4") || index(low, "5 4") || index(low, "5.5") || index(low, "5 5"))) fam = "gpt_5"
+            if (index(low, mf_opus_token) && (index(low, mf_v46_dot) || index(low, mf_v46_space))) fam = mf_opus46
+            else if ((index(low, mf_gpt_token) || index(low, mf_codex_token)) && (index(low, mf_v54_dot) || index(low, mf_v54_space) || index(low, mf_v55_dot) || index(low, mf_v55_space))) fam = mf_gpt5
             else { fam = low; gsub(/[^a-z0-9]+/, "_", fam); gsub(/^_|_$/, "", fam); if (fam == "") fam = "unknown" }
             if (row_action[i] == "injected") {
                 o_mdl_inj[fam]++; o_mdl_total[fam]++

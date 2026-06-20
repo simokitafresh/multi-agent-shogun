@@ -25,6 +25,7 @@ SCRIPT_DIR="${_iw_self%/scripts/inbox_watcher.sh}"
 
 # cli_lookup.sh を source（CLI種別をsettings.yaml+cli_profiles.yamlから動的取得）
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+source "$SCRIPT_DIR/scripts/lib/model_family.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
@@ -880,7 +881,8 @@ process_unread() {
                     ;;
                 model_switch)
                     # Whitelist: only /model <known-provider-prefix> allowed
-                    if [[ "$special_content" =~ ^/model[[:space:]]+(claude-|gpt-|o[0-9]|opus|sonnet|haiku) ]]; then
+                    _model_input_re="^/model[[:space:]]+(claude-|${MODEL_FAMILY_TOKEN_GPT}-|o[0-9]|${MODEL_FAMILY_OPUS}|${MODEL_FAMILY_TOKEN_SONNET}|${MODEL_FAMILY_HAIKU})"
+                    if [[ "$special_content" =~ $_model_input_re ]]; then
                         if ! send_cli_command "$special_content"; then
                             special_ok=false
                         fi

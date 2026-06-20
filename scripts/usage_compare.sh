@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Compare Usage API utilization between primary and secondary Claude accounts.
 set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$SCRIPT_DIR/scripts/lib/model_family.sh"
+SEVEN_DAY_SECONDARY_KEY="seven_day_${MODEL_FAMILY_TOKEN_SONNET}"
 
 PRIMARY_DIR="${PRIMARY_DIR:-$HOME/.claude}"
 SECONDARY_DIR="${SECONDARY_DIR:-$HOME/.claude-secondary}"
@@ -159,16 +162,17 @@ print_table() {
     jq -rn \
         --slurpfile p "$primary_file" \
         --slurpfile s "$secondary_file" \
+        --arg secondary_key "$SEVEN_DAY_SECONDARY_KEY" \
         '($p[0].five_hour.utilization // "null"),
          ($p[0].seven_day.utilization // "null"),
-         ($p[0].seven_day_sonnet.utilization // "null"),
+         ($p[0][$secondary_key].utilization // "null"),
          ($s[0].five_hour.utilization // "null"),
          ($s[0].seven_day.utilization // "null"),
-         ($s[0].seven_day_sonnet.utilization // "null")' 2>/dev/null \
+         ($s[0][$secondary_key].utilization // "null")' 2>/dev/null \
     | awk '
         { vals[NR] = $0 }
         END {
-            labels[1]="5h usage"; labels[2]="7d usage"; labels[3]="7d sonnet"
+            labels[1]="5h usage"; labels[2]="7d usage"; labels[3]="7d secondary"
             printf "=== Claude Usage Compare ===\n"
             printf "%-14s | %-8s | %-9s\n", "Bucket", "Primary", "Secondary"
             printf "------------------------------------------\n"

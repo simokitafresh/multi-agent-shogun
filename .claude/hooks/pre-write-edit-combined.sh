@@ -645,7 +645,7 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
         }
         _g16_count_model_name_literal() {
             local _c _code
-            _code="$(_g16_strip_comments "$1" | grep -vE 'model_resolve|resolve_model_display|cli_lookup|cli_model_display|cli_launch_cmd|model_detect|detect_real_model|model_colors|@model_name|model_name:' 2>/dev/null || true)"
+            _code="$(_g16_strip_comments "$1" | grep -vE 'model_resolve|resolve_model_display|cli_lookup|cli_model_display|cli_launch_cmd|model_detect|detect_real_model|model_colors|model_family|@model_name|model_name:' 2>/dev/null || true)"
             _c="$(printf '%s' "$_code" | grep -ciE '\b(opus|sonnet|haiku|claude-opus|claude-sonnet|claude-haiku|gpt-5(\.[0-9])?)\b' 2>/dev/null)" || _c=0
             printf '%s' "${_c##*$'\n'}"
         }
@@ -666,7 +666,7 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
             '\$HOME|\$\{HOME\}|~/|os\.environ\.get'
             'get_project_path|os\.environ\.get.*DM_SIGNAL\|os\.environ\.get.*PROJECT_PATH'
             'pane_lookup|TMUX_WINDOW|resolve_window_target'
-            'model_resolve|resolve_model_display|cli_lookup|cli_model_display|cli_launch_cmd'
+            'model_resolve|resolve_model_display|cli_lookup|cli_model_display|cli_launch_cmd|model_family'
         )
         _G16_FNS=( "_g16_count_agent_names" "_g16_count_repo_path" "_g16_count_home_path" "_g16_count_project_path" "_g16_count_tmux_window_target" "_g16_count_model_name_literal" )
         _G16_SSOTS=(
@@ -675,7 +675,7 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
             '$HOME 環境変数'
             'config/projects.yaml → scripts/lib/project_path.sh get_project_path()'
             'tmux @agent_id実態 → scripts/lib/pane_lookup.sh pane_lookup() / TMUX_WINDOW'
-            'config/settings.yaml + live banner → scripts/lib/model_resolve.sh resolve_model_display() / cli_lookup.sh'
+            'config/settings.yaml + live banner → scripts/lib/model_resolve.sh resolve_model_display() / cli_lookup.sh / model_family.py'
         )
         # ───────────────────────────────────────────────────────────────────────
 

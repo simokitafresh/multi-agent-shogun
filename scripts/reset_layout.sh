@@ -26,9 +26,10 @@ fi
 # キャッシュは /tmp (WSL2 ext4) に保存。/tmp のみ削除で再生成。
 # ═══════════════════════════════════════════════════════════════
 _LIB_CACHE="/tmp/shogun_reset_layout_lib.sh"
-if [[ ! -f "$_LIB_CACHE" ]]; then
+if [[ ! -f "$_LIB_CACHE" ]] || ! grep -q 'MODEL_FAMILY_OPUS_46' "$_LIB_CACHE" 2>/dev/null; then
     cat "$SCRIPT_DIR/scripts/lib/agent_config.sh" \
         "$SCRIPT_DIR/scripts/lib/cli_lookup.sh" \
+        "$SCRIPT_DIR/scripts/lib/model_family.sh" \
         "$SCRIPT_DIR/scripts/lib/model_colors.sh" \
         "$SCRIPT_DIR/scripts/lib/model_detect.sh" \
         "$SCRIPT_DIR/scripts/lib/model_resolve.sh" \
@@ -40,6 +41,7 @@ if [[ ! -f "$_LIB_CACHE" ]]; then
         # shellcheck source=/dev/null
         source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
         source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+        source "$SCRIPT_DIR/scripts/lib/model_family.sh"
         source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
         source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
         source "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
@@ -217,12 +219,7 @@ _resolve_agent_group() {
             echo "$cli_type"
             ;;
         claude|*)
-            case "$(_normalize_model_name "$model_display")" in
-                Opus) echo "opus" ;;
-                Sonnet) echo "sonnet" ;;
-                Haiku) echo "haiku" ;;
-                *) echo "claude" ;;
-            esac
+            model_family_reset_group "$model_display"
             ;;
     esac
 }
@@ -577,7 +574,7 @@ _summary=$(tmux list-panes -t "$AGENTS_WINDOW_TARGET" \
     -F '#{pane_index}	#{@agent_id}	#{pane_dead}	#{@agent_group}	#{@agent_cli}	#{@model_name}')
 while IFS=$'\t' read -r _p _id _dead _group _cli _model; do
     [[ -z "$_p" ]] && continue
-    _model="${_model:-Opus}"
+    _model="${_model:-$MODEL_FAMILY_DISPLAY_OPUS}"
     _bg=$(resolve_bg_color "$_id" "$_model")
     printf "  %-4s %-10s %-5s %-8s %-8s %-10s %s\n" "$_p" "$_id" "$_dead" "$_group" "$_cli" "$_model" "$_bg"
 done <<< "$_summary"
