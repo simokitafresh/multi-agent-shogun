@@ -260,9 +260,17 @@ _run_post() {
 
 @test "Guard 16: get_ninja_names使用で忍者名直書きを許可する" {
     local sh_file="$TMP_DIR/test_agents3.sh"
-    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"names=$(get_ninja_names)\nfor n in hayate hanzo saizo kotaro tobisaru kagemaru; do echo $n; done\n"}}'
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"names=$(get_ninja_names)\nfor n in $names; do echo $n; done\n"}}'
     [ "$status" -eq 0 ]
     [[ "$output" != *'BLOCK: 操作的オントロジー違反'* ]]
+}
+
+@test "Guard 16: get_ninja_names使用と忍者名直書き混在はBLOCKする" {
+    local sh_file="$TMP_DIR/test_agents_mixed.sh"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"names=$(get_ninja_names)\nfor n in hayate hanzo saizo; do echo $n; done\n"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'SSOT参照もあるが直書きが残っている'* ]]
+    [[ "$output" == *'エージェント名'* ]]
 }
 
 @test "Guard 16: repo絶対パス直書きでBLOCKする" {
@@ -275,9 +283,17 @@ _run_post() {
 
 @test "Guard 16: SCRIPT_DIR使用でrepoパス直書きを許可する" {
     local sh_file="$TMP_DIR/test_repo_ok.sh"
-    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"REPO=$SCRIPT_DIR/scripts/lib/something.sh\necho '"$PROJECT_ROOT"'\n"}}'
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"REPO=$SCRIPT_DIR/scripts/lib/something.sh\necho $REPO\n"}}'
     [ "$status" -eq 0 ]
     [[ "$output" != *'BLOCK: 操作的オントロジー違反'* ]]
+}
+
+@test "Guard 16: SCRIPT_DIR使用とrepo絶対パス直書き混在はBLOCKする" {
+    local sh_file="$TMP_DIR/test_repo_mixed.sh"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"REPO=$SCRIPT_DIR/scripts/lib/something.sh\nLEGACY='"$PROJECT_ROOT"'/scripts/legacy.sh\n"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'SSOT参照もあるが直書きが残っている'* ]]
+    [[ "$output" == *'repoルートパス'* ]]
 }
 
 @test "Guard 16: user-home絶対パス直書きでBLOCKする" {
@@ -290,7 +306,30 @@ _run_post() {
 
 @test "Guard 16: HOME変数使用でhomeパス直書きを許可する" {
     local sh_file="$TMP_DIR/test_home_ok.sh"
-    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"BIN=$HOME/bin/claude\necho '"$HOME"'/bin\n"}}'
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"BIN=$HOME/bin/claude\necho $BIN\n"}}'
     [ "$status" -eq 0 ]
     [[ "$output" != *'BLOCK: 操作的オントロジー違反'* ]]
+}
+
+@test "Guard 16: HOME変数使用とuser-home絶対パス直書き混在はBLOCKする" {
+    local sh_file="$TMP_DIR/test_home_mixed.sh"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"BIN=$HOME/bin/claude\nLEGACY='"$HOME"'/bin/claude\n"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'SSOT参照もあるが直書きが残っている'* ]]
+    [[ "$output" == *'user-homeパス'* ]]
+}
+
+@test "Guard 16: Pythonのrepo絶対パス直書きもBLOCKする" {
+    local py_file="$TMP_DIR/test_repo_path.py"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$py_file"'","content":"REPO = \"'"$PROJECT_ROOT"'\"\nprint(REPO)\n"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'repoルートパス'* ]]
+}
+
+@test "Guard 16: Pythonのos.environ使用とhome絶対パス直書き混在はBLOCKする" {
+    local py_file="$TMP_DIR/test_home_mixed.py"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$py_file"'","content":"import os\nhome = os.environ.get(\"HOME\")\nlegacy = \"'"$HOME"'/bin/claude\"\n"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'SSOT参照もあるが直書きが残っている'* ]]
+    [[ "$output" == *'user-homeパス'* ]]
 }

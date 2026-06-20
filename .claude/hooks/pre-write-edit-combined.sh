@@ -557,25 +557,34 @@ if [[ "$file_path" =~ \.(sh|py)$ ]]; then
 
         # ── 検出関数 (content=$1, stdout=count) ────────────────────────────────
         _g16_count_agent_names() {
-            local _names _cnt=0 _n
+            local _names _cnt=0 _n _code
             _names="$(source "$SCRIPT_DIR/scripts/lib/agent_config.sh" 2>/dev/null \
                 && get_ninja_names 2>/dev/null)" || true
             [ -n "$_names" ] || { printf '0'; return; }
+            _code="$(_g16_strip_comments "$1")"
             for _n in $_names; do
-                printf '%s' "$1" | grep -q "$_n" && ((_cnt++)) || true
+                printf '%s' "$_code" | grep -q "$_n" && ((_cnt++)) || true
             done
             printf '%s' "$_cnt"
         }
+        _g16_strip_comments() {
+            # コメント行(#始まり/Python #始まり)を除外。コードのみを検査
+            printf '%s' "$1" | grep -v '^\s*#' 2>/dev/null || true
+        }
         _g16_count_repo_path() {
-            local _rp="$SCRIPT_DIR" _c
+            local _rp="$SCRIPT_DIR" _c _code _escaped
             [[ -n "$_rp" ]] || { printf '0'; return; }
-            _c="$(printf '%s' "$1" | grep -cF "$_rp" 2>/dev/null)" || _c=0
+            _code="$(_g16_strip_comments "$1")"
+            # 部分一致防止: パスの後に/・空白・引用符・行末のいずれかを要求
+            _escaped="$(printf '%s' "$_rp" | sed 's/[.[\\/^$*+?(){}|]/\\&/g')"
+            _c="$(printf '%s' "$_code" | grep -cE "${_escaped}(/|[[:space:]]|\"|'|$)" 2>/dev/null)" || _c=0
             printf '%s' "${_c##*$'\n'}"
         }
         _g16_count_home_path() {
-            local _hp="${HOME:-}" _c
+            local _hp="${HOME:-}" _c _code
             [[ -n "$_hp" ]] || { printf '0'; return; }
-            _c="$(printf '%s' "$1" | grep -cF "$_hp" 2>/dev/null)" || _c=0
+            _code="$(_g16_strip_comments "$1")"
+            _c="$(printf '%s' "$_code" | grep -cF "$_hp" 2>/dev/null)" || _c=0
             printf '%s' "${_c##*$'\n'}"
         }
         # ───────────────────────────────────────────────────────────────────────
@@ -584,15 +593,15 @@ if [[ "$file_path" =~ \.(sh|py)$ ]]; then
         # 新概念追加: 以下5配列に対応インデックスで1要素ずつ追加するだけ
         # _G16_CONCEPTS    : 概念ラベル (エラーメッセージに使用)
         # _G16_MIN_COUNTS  : 直書き検出の最小閾値
-        # _G16_EXEMPTS     : 免除パターン (ERE; マッチすれば該当概念スキップ)
+        # _G16_ALLOWED     : 正当なSSOT参照パターン (ERE; メッセージ補足用。直書き検出は免除しない)
         # _G16_FNS         : 検出関数名 (content=$1 でcount返す)
         # _G16_SSOTS       : SSOTポインタ (エラーメッセージ内)
         _G16_CONCEPTS=( "エージェント名" "repoルートパス" "user-homeパス" )
         _G16_MIN_COUNTS=( 3 1 1 )
-        _G16_EXEMPTS=(
+        _G16_ALLOWED=(
             'get_ninja_names|get_all_agents|get_allowed_targets|os\.environ\.get|\$\{.*:-'
             'SCRIPT_DIR|repo_root|git rev-parse'
-            '\$HOME|\$\{HOME\}|~/'
+            '\$HOME|\$\{HOME\}|~/|os\.environ\.get'
         )
         _G16_FNS=( "_g16_count_agent_names" "_g16_count_repo_path" "_g16_count_home_path" )
         _G16_SSOTS=(
@@ -605,27 +614,26 @@ if [[ "$file_path" =~ \.(sh|py)$ ]]; then
         _g16_i=0
         for _g16_concept in "${_G16_CONCEPTS[@]}"; do
             _g16_min="${_G16_MIN_COUNTS[$_g16_i]}"
-            _g16_exempt="${_G16_EXEMPTS[$_g16_i]}"
+            _g16_allowed="${_G16_ALLOWED[$_g16_i]}"
             _g16_fn="${_G16_FNS[$_g16_i]}"
             _g16_ssot="${_G16_SSOTS[$_g16_i]}"
             ((_g16_i++)) || true
-
-            # 免除パターンにマッチすれば該当概念はスキップ
-            if printf '%s' "$_g16_content" | grep -qE "$_g16_exempt"; then
-                continue
-            fi
 
             # 検出関数で直書き件数を取得
             _g16_cnt="$("$_g16_fn" "$_g16_content")" || _g16_cnt=0
 
             if [ "${_g16_cnt:-0}" -ge "$_g16_min" ]; then
-                echo "BLOCK: 操作的オントロジー違反 — ${_g16_concept}${_g16_cnt}件を直書き。SSOT=${_g16_ssot} を使え。" >&2
+                if printf '%s' "$_g16_content" | grep -qE "$_g16_allowed"; then
+                    echo "BLOCK: 操作的オントロジー違反 — ${_g16_concept}${_g16_cnt}件を直書き。SSOT参照もあるが直書きが残っている。SSOT=${_g16_ssot} に統一せよ。" >&2
+                else
+                    echo "BLOCK: 操作的オントロジー違反 — ${_g16_concept}${_g16_cnt}件を直書き。SSOT=${_g16_ssot} を使え。" >&2
+                fi
                 exit 2
             fi
         done
 
-        unset _g16_content _g16_concept _g16_min _g16_exempt _g16_fn _g16_ssot _g16_cnt _g16_i
-        unset _G16_CONCEPTS _G16_MIN_COUNTS _G16_EXEMPTS _G16_FNS _G16_SSOTS
+        unset _g16_content _g16_concept _g16_min _g16_allowed _g16_fn _g16_ssot _g16_cnt _g16_i
+        unset _G16_CONCEPTS _G16_MIN_COUNTS _G16_ALLOWED _G16_FNS _G16_SSOTS
         unset -f _g16_count_agent_names _g16_count_repo_path _g16_count_home_path
     fi
 fi
