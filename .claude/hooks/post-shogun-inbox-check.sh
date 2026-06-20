@@ -1,6 +1,9 @@
 #!/bin/dash
 [ -z "$TMUX_PANE" ] && exit 0
-SCRIPT_DIR="${SHOGUN_ROOT:-/mnt/c/tools/multi-agent-shogun}"
+# Derive repo root dynamically via git (no hardcoded path)
+_REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+[ -z "$_REPO_ROOT" ] && exit 0
+SCRIPT_DIR="${SHOGUN_ROOT:-$_REPO_ROOT}"
 _NON_SHOGUN_CACHE="/tmp/shogun_not_shogun_${TMUX_PANE}"
 [ -e "$_NON_SHOGUN_CACHE" ] && exit 0
 
