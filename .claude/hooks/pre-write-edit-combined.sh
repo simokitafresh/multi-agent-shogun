@@ -244,6 +244,9 @@ if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
     _inbox_file="${GUARD_0D_INBOX_OVERRIDE:-$SCRIPT_DIR/queue/inbox/shogun.yaml}"
     if [[ -f "$_inbox_file" ]]; then
         _unread_count=$(grep -cE '^[[:space:]]*read:[[:space:]]*false' "$_inbox_file" 2>/dev/null || echo 0)
+        _unread_count="${_unread_count##*$'\n'}"
+        _unread_count="${_unread_count//[^0-9]/}"
+        : "${_unread_count:=0}"
         if [[ "$_unread_count" -gt 0 ]]; then
             _non_gate_clear=$(INBOX_FILE="$_inbox_file" python3 -c '
 import yaml, os
