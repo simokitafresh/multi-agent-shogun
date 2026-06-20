@@ -16,6 +16,7 @@ Usage: python3 scripts/normalize_karo_workarounds.py [--dry-run]
     category: report_yaml_format|commit_missing|...
     detail: '概要'
     root_cause: '原因'
+    brainwash_check: '洗脳#X検証記録'
     resolved_by_cmd: ''
 """
 import re
@@ -159,6 +160,9 @@ def normalize_entry(raw):
     # root_cause
     norm['root_cause'] = raw.get('root_cause', '')
 
+    # brainwash_check
+    norm['brainwash_check'] = raw.get('brainwash_check', '')
+
     # resolved_by_cmd
     norm['resolved_by_cmd'] = raw.get('resolved_by_cmd', '')
 
@@ -187,6 +191,9 @@ def format_yaml_entry(entry):
     root_cause = entry['root_cause'].replace("'", "''") if entry['root_cause'] else ''
     if root_cause:
         lines.append(f"  root_cause: '{root_cause}'")
+
+    brainwash = entry.get('brainwash_check', '').replace("'", "''") if entry.get('brainwash_check') else ''
+    lines.append(f"  brainwash_check: '{brainwash}'")
 
     resolved = entry['resolved_by_cmd']
     if resolved:
@@ -217,10 +224,24 @@ def main():
         c = e['category']
         cats[c] = cats.get(c, 0) + 1
 
+    # brainwash_check未記入検出 (workaround=trueのエントリのみ対象)
+    bc_missing = sum(1 for e in normalized if e['workaround'] is True and not e.get('brainwash_check', '').strip())
+    bc_filled = sum(1 for e in normalized if e['workaround'] is True and e.get('brainwash_check', '').strip())
+    bc_total_wa = wa_true
+
     print(f"\n=== 正規化結果 ===")
     print(f"Total: {len(normalized)}")
     print(f"Workaround: true={wa_true}, false={wa_false}, unknown={wa_null}")
     print(f"Categories: {dict(sorted(cats.items(), key=lambda x: -x[1]))}")
+    print(f"\n=== brainwash_check検証 ===")
+    print(f"WA(true)件数: {bc_total_wa}")
+    print(f"brainwash_check記入済み: {bc_filled}")
+    print(f"brainwash_check未記入: {bc_missing}")
+    if bc_total_wa > 0:
+        pct = bc_missing * 100 // bc_total_wa
+        print(f"未記入率: {pct}%")
+        if bc_missing > 0:
+            print(f"[WARN] brainwash_check未記入WAが{bc_missing}件あります。karo_workaround_log.sh --waでBRAINWASH_CHECK必須です。")
 
     # Output
     output_lines = ["workarounds:"]
