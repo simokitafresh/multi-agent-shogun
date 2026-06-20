@@ -32,7 +32,7 @@ PROJECTS_YAML="${REPO_ROOT}/config/projects.yaml"
 PI_YAML="${REPO_ROOT}/projects/dm-signal.yaml"
 
 DM_PATH="$(awk '/id: dm-signal/{found=1} found && /path:/{match($0, /"([^"]+)"/, a); print a[1]; found=0; exit}' "$PROJECTS_YAML" 2>/dev/null)" || DM_PATH=""
-[[ -z "$DM_PATH" ]] && DM_PATH="/mnt/c/Python_app/DM-signal"
+[[ -z "$DM_PATH" ]] && exit 0  # projects.yamlに未登録 → DM-Signal以外として処理
 
 INFRA_PATH="$(awk '/id: infra/{found=1} found && /path:/{match($0, /"([^"]+)"/, a); print a[1]; found=0; exit}' "$PROJECTS_YAML" 2>/dev/null)" || INFRA_PATH=""
 [[ -z "$INFRA_PATH" ]] && INFRA_PATH="$(get_repo_root)"
