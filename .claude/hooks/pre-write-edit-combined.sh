@@ -551,7 +551,7 @@ fi
 # 殿裁定: オントロジー=三層記憶と同列の前提。定義が1箇所に集約され変更が自動伝播する。しないのはバグ
 # テーブル駆動: 新概念追加 = 5並列配列に1要素追加するだけ
 # 列: _G16_CONCEPTS / _G16_MIN_COUNTS / _G16_EXEMPTS / _G16_FNS / _G16_SSOTS
-if [[ "$file_path" =~ \.(sh|py|md)$ ]]; then
+if [[ "$file_path" =~ \.(sh|py)$ ]]; then
     _g16_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // .content // ""' 2>/dev/null)" || true
     if [ -n "$_g16_content" ]; then
 
@@ -567,14 +567,16 @@ if [[ "$file_path" =~ \.(sh|py|md)$ ]]; then
             printf '%s' "$_cnt"
         }
         _g16_count_repo_path() {
-            local _rp="$SCRIPT_DIR"
+            local _rp="$SCRIPT_DIR" _c
             [[ -n "$_rp" ]] || { printf '0'; return; }
-            printf '%s' "$1" | grep -cF "$_rp" 2>/dev/null || printf '0'
+            _c="$(printf '%s' "$1" | grep -cF "$_rp" 2>/dev/null)" || _c=0
+            printf '%s' "${_c##*$'\n'}"
         }
         _g16_count_home_path() {
-            local _hp="${HOME:-}"
+            local _hp="${HOME:-}" _c
             [[ -n "$_hp" ]] || { printf '0'; return; }
-            printf '%s' "$1" | grep -cF "$_hp" 2>/dev/null || printf '0'
+            _c="$(printf '%s' "$1" | grep -cF "$_hp" 2>/dev/null)" || _c=0
+            printf '%s' "${_c##*$'\n'}"
         }
         # ───────────────────────────────────────────────────────────────────────
 
