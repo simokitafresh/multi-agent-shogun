@@ -8457,3 +8457,27 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - Guard16(cmd_3463)で忍者名SSOT確立時、Commanderロール(shogun/karo/gunshi)はsettings.yaml由来でないため意図的に除外されなかったが、is_core_agent()がinbox_write.sh内ローカルのまま残りagent_config.shと二重実装状態になった。SSOTパターン拡張時は必ず『同等機能の二重実装』をrg検索して検出せよ。発見したら即agent_config.sh統合を起票せよ。
+
+### L832: WSL2 WindowsFS上のforループ+globは件数×syscall overhead → find一発+gawk内フィルタに変換
+- **日付**: 2026-06-20
+- **出典**: cmd_3472
+- **記録者**: kotaro
+- **tags**: [infra,bash,wsl2]
+- **target_files**: [scripts/ralph_loop_metrics.sh]
+- **origin**: [[cmd_3472]]
+- **when**: 未設定
+- **how**: 未設定
+- WSL2(/mnt/c)上でglobを245回forループ実行すると18秒超のI/O待ちが発生。find一発(0.1秒)+gawk内でIDセット照合に変換すると18倍速。bash shellのglobはWindowsFSでのstat/opendir syscallを毎回発行するため、件数が多いほど線形に遅くなる
+
+### L833: [自動生成] 有効教訓の記録を怠った: cmd_3474
+- **日付**: 2026-06-20
+- **出典**: cmd_3474
+- **記録者**: gate_auto
+- **status**: draft
+- **source**: gate_auto_draft
+- **tags**: [infra,lesson,reporting]
+- **target_files**: [/mnt/c/tools/multi-agent-shogun/scripts,scripts/karo_workaround_log.sh,scripts/normalize_karo_workarounds.py]
+- **origin**: [[cmd_3474]]
+- **when**: 未設定
+- **how**: 未設定
+- lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ

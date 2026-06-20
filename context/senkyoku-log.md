@@ -1,5 +1,14 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-20 cmd_3470 -->
+<!-- last_updated: 2026-06-20 cmd_3474 -->
+
+## 2026-06-20 (session 2)
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| D0 startup BLOCK解消 | 追体験自動化ターゲットWARN 3セッション連続+教訓健全度ALERT 3セッション連続 | ALERT→WARN(useful_rate 18.5→33.3%)。16教訓deprecated。Q6ラベル付き投稿 | Phase4実証=行動が変わっていなかった。一次データ(target_re L947)確認→根因到達 |
+| D0 掲示板+insights | 掲示板未確認14件+action_required17件+insights19件一括処理 | 全件confirmed/actioned/done | backlinks=0の5件もsemantic-index接続。NO_MATCH 7alias追加 |
+| cmd_3474 | WA記録brainwash_check必須化(家老CRITICALエスカレーション) | delegated | cmd_3473 cancel(q5累計)の再起票。98/100件未記入の構造的欠落 |
+| cmd_3475 | SKILL.md 7本script追従更新(3セッション先送り解消) | delegated | 9 WARN→0件目標。陳腐化=スキル不使用(LS-A17)の温床 |
 
 ## 2026-06-16
 

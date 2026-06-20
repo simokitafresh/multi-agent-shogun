@@ -1,8 +1,36 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-20T15:48:25'
+last_synced: '2026-06-20T16:48:03'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 826
+lesson_count: 828
 lessons:
+- id: L833
+  title: '[自動生成] 有効教訓の記録を怠った: cmd_3474'
+  summary: '**source**: gate_auto_draft lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ'
+  tags:
+  - infra
+  - lesson
+  - reporting
+  source_cmd: cmd_3474
+  when: 未設定
+  how: 未設定
+  target_files:
+  - /mnt/c/tools/multi-agent-shogun/scripts
+  - scripts/karo_workaround_log.sh
+  - scripts/normalize_karo_workarounds.py
+  origin: '[[cmd_3474]]'
+- id: L832
+  title: WSL2 WindowsFS上のforループ+globは件数×syscall overhead → find一発+gawk内フィルタに変換
+  summary: WSL2(/mnt/c)上でglobを245回forループ実行すると18秒超のI/O待ちが発生。find一発(0.1秒)+gawk内でIDセット照合に変換すると
+  tags:
+  - infra
+  - bash
+  - wsl2
+  source_cmd: cmd_3472
+  when: 未設定
+  how: 未設定
+  target_files:
+  - scripts/ralph_loop_metrics.sh
+  origin: '[[cmd_3472]]'
 - id: L831
   title: 'Commanderロールは忍者名SSOT確立時に意図的でなく後回しにされた: is_core_agentの二重実装が証拠'
   summary: Guard16(cmd_3463)で忍者名SSOT確立時、Commanderロール(shogun/karo/gunshi)はsettings.yaml由来でない
@@ -17,6 +45,9 @@ lessons:
   target_files:
   - docs/research/commander_role_ssot_analysis.md
   origin: '[[cmd_3470]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L830
   title: Q6自動化ターゲットWARN解消にはファイルパスの明示が必要
   summary: gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo
@@ -1438,7 +1469,7 @@ lessons:
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
   deprecated: true
-  deprecated_at: '2026-06-20T15:51:09+09:00'
+  deprecated_at: '2026-06-20T16:55:56+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -3843,9 +3874,6 @@ lessons:
   - projects/dm-signal/lessons.yaml
   - tests/unit/test_deploy_task_target_files.bats
   origin: '[[cmd_2606]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L575
   title: skill_auto_improveはログ由来skill_pathより設定skills_dirsを優先する
   summary: 既存ログにhome側skill_pathが残っているとrepo内SKILL.mdではなくhome側を更新しAC対象が未更新になる。skill_indexは設定s
@@ -5496,9 +5524,6 @@ lessons:
   target_files:
   - deploy_task.sh
   origin: '[[cmd_karo_fix_stale_reset]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L450
   title: 軍師直接修正権限 — 軽微事実誤りは鎖維持下で直接修正可
   summary: '殿裁定(2026-04-08): 軍師がレビュー中に発見した軽微な事実誤り(数値欠落・パス誤記等)は軍師が直接修正してよい。修正後に家老がレビューする。鎖(軍師'
@@ -6710,7 +6735,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-20T15:51:10+09:00'
+  deprecated_at: '2026-06-20T16:55:59+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -7120,9 +7145,6 @@ lessons:
   target_files:
   - deploy_task.sh
   origin: '[[cmd_training_structural_002]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L311
   title: 'WA率60.8%の3構造問題: autofix不網羅+uncategorized分類漏れ+事前防止hook欠如'
   summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
@@ -8391,6 +8413,9 @@ lessons:
   target_files:
   - ninja_monitor.sh
   origin: '[[cmd_777]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L204
   title: STALL誤判定の実態は「idle+status未更新」が主因。pstree方式で予防的防御層追加が有効
   summary: 30日分134件のSTALL-DETECTEDログを分析した結果、ほぼ全件が「ペインが確実にidle状態なのにtask YAML statusが未更新」パターン
@@ -9531,7 +9556,7 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-20'
   deprecated: true
-  deprecated_at: '2026-06-20T15:51:10+09:00'
+  deprecated_at: '2026-06-20T16:55:59+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)

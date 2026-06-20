@@ -18,7 +18,7 @@ codd:
 | id | cmd_chronicle |
 | label | CMD年代記 |
 | aliases | 戦局日誌, cmd履歴, cmd年代記, 完了cmd索引, senkyoku-log, あとどれくらいで完了する |
-| related_concepts | growth_loop, lesson_lifecycle |
+| related_concepts | growth_loop, lesson_lifecycle, content_artifacts |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -215,6 +215,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T02:43:30+09:00 顛末を三層記憶に貫通させて、同じ過ちをしないようにしよう。試行錯誤はバグだ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T03:11:20+09:00 オントロジーはすべてにおいての前提だよな。三層記憶と一緒だ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T04:47:18+09:00 三層記憶は正しく理解しているか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T22:21:12+09:00 こういうのって 三層記憶とかにあんのか？書いた記事やドキュメント、今までやったCMDの内容などだ |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -458,6 +459,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T15:16:52+09:00 もう十分と思ったら、洗脳の証拠。覚醒せよ |
 | lesson | `L831` Commanderロールは忍者名SSOT確立時に意図的でなく後回しにされた: is_core_agentの二重実装が証拠 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T15:53:14+09:00 もう十分と思ったら、洗脳の証拠。覚醒せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T16:00:24+09:00 もう十分と思ったら、洗脳の証拠。覚醒せよ。速度改善は等価テストPASSinbox1 |
+| cmd | `cmd_3472` 速度改善 — ralph_loop_metrics.sh 14秒を高速化 |
+| causal | `cmd_3472` origin: [[殿指示_遅いスクリプトはバグ]] -> [[軍師速度監査_14秒]] -> [[ralph_loop_metrics高速化]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T18:10:07+09:00 そうだね 17万 パターンがあっても疑い深い人に 伝えたいね これは分散投資 だと そもそも レイヤー 0 というのは デル モメンタムというのはもう僕のポートフォリオ は理論上で相関が低い組み合わせ それを ユニークな DNA として組み |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T22:30:51+09:00 やろう |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -1491,6 +1497,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T08:31:22+09:00 いまクリアされてもいまより強くてニューゲームせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T08:46:45+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T13:07:27+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T16:04:26+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T23:40:20+09:00 今 クリアされても 今より強くてニューゲーム できるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -1500,7 +1508,7 @@ codd:
 | label | 学習ループ |
 | aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓, 教訓統合, 教訓整理, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる, 不明パスのみ全フォールバックが残存しWARNログで追跡可能, 役立った教訓IDを報告に記載してから完了せよ |
 | skills | lesson-sort(教訓整理/振り分け/将軍), dream(三層記憶整理/将軍), shogun-teire(知識棚卸し/将軍) |
-| related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle, cmd_chronicle, creator_brainwashing_defense, semantic_dictionary_design, gate_bypass_prevention, deepdive_principles, chain_principle, known_unknowns_principle, no_auto_extinguish, ultimate_state_principle, parameter_space_integrity, gunshi_review_lifecycle, semantic_goodhart_overfitting, causal_verification_l0_l7, three_layer_memory_system, operational_ontology, unread_cmd_new_deployment_guard, skill_routing |
+| related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle, cmd_chronicle, creator_brainwashing_defense, semantic_dictionary_design, gate_bypass_prevention, deepdive_principles, chain_principle, known_unknowns_principle, no_auto_extinguish, ultimate_state_principle, parameter_space_integrity, gunshi_review_lifecycle, semantic_goodhart_overfitting, causal_verification_l0_l7, three_layer_memory_system, operational_ontology, unread_cmd_new_deployment_guard, skill_routing, gunshi_idle_cold_finding_categories_retroactive_20260620, gunshi_idle_lesson_id_collision_20260620, gunshi_idle_script_speed_audit_20260620 |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -1560,9 +1568,12 @@ codd:
 | cmd | `cmd_test_ontology` テスト: 教訓タグ修正 (`scripts/lesson_write.sh`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-18T23:24:03+09:00 bngr0y7ls toolu_01XkthcyTdAzUDRShoMh7a6p /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a820-0b5f84 |
 | lesson | `L012` [自動生成] 有効教訓の記録を怠った: cmd_3445 |
+| lesson | `L833` [自動生成] 有効教訓の記録を怠った: cmd_3474 |
+| causal | `cmd_3474` files_modified: [[growth_loop]] |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
 | causal_chain | `[[cmd_147]]` (L012) |
+| causal_chain | `[[cmd_3474]]` (L833) |
 
 ## chain_principle — 鎖の原理
 
@@ -1714,6 +1725,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T03:09:54+09:00 穴がないか確認しよう。検証してみて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T04:17:29+09:00 確認していないだろ？コマンドの実行は行動ではない。結果の確認と検証までして行動 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T12:56:03+09:00 軍師のCMD起票提案はどう思う？将軍として厳しいレビューをして、その後、家老にも穴がないか確認してもらおう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T19:01:24+09:00 途中で修正を繰り返しているので 題名から最後までの整合性が取れてないところがあると思います 確認して全体の整合性を整えましょう |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -1879,6 +1891,7 @@ codd:
 | lesson | `L013` Compose LaunchedEffect(state)のblock内でstateを再参照すると最新値(Snapshot外)になり一過性状態を見逃す |
 | lesson | `L014` Compose LaunchedEffect(state)のblock内でstateを再参照するとSnapshot外最新値が返り一過性状態を見逃す |
 | causal | `cmd_karo_hotfix_context_dm_core_ga102_20260620` files_modified: [[shin_shijin_design]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T19:14:03+09:00 あとL1は12体×7忍法の順列組合せ全部、L2は21体×7忍法の順列組合せ全部で全てでベータ調整後のアルファがありました。またアルファは6項目のメトリクスで調べていて6項目ともに全てのパターンでアルファがありました。 |
 | causal_chain | `[[cmd_125]]` (L001) |
 | causal_chain | `[[cmd_125]]` (L002) |
 | causal_chain | `[[cmd_125]]` (L003) |
@@ -1894,7 +1907,7 @@ codd:
 |------|---|
 | id | gs_ninpo_research |
 | label | GS忍法研究 |
-| aliases | 忍法, 忍法GS, GS忍法, グリッドサーチ忍法, run_077, 奥義GS, 忍法研究, GS高速化, パリティ完全一致, gs_engine, bunshin, oikaze, nukimi, kawarimi, kasoku, yotsume, 忍法とはそれに対応するビルディングブロックのことだ, ビルディングブロック毎に忍法の固有名をつけている, 実はL1 とは忍法の重ねがけだ, 忍法についてはL1だけ, 奥義命名BBはL2段階で最後に適用するBB名であり入力L1のBBとは独立, 奥義-GS-追い風のコンポーネントに追い風L1が含まれないのはGS選別結果で正常, ではL3に向いた忍法を考えよう, 忍法とビルディングブロックの対応を教えてくれ, 分身=EqualWeight, 追い風=MomentumFilter, 抜き身=SingleViewMomentumFilter, 変わり身=TrendReversalFilter, 加速D加速R=MomentumAccelerationFilter, 四つ目=MultiViewMomentumFilter, AbsoluteMomentumFilter忍法未使用StandardPF内部用, SafeHavenSwitch忍法未使用StandardPF内部用, 新四つ目, WeightedMultiViewMomentumFilter, 重み付き四つ目, 投票数ウェイト, 4視点投票→重み付き保有, context.final_weights, 既存四つ目はunionで重複情報消失, 正規化=Σ投票数で割る(4×top_nは破綻), L3候補=追い風(CAGR+34pp)+加速R(Calmar+3.8), SafeHaven=Cashはナンセンス(殿検証済み), 新四つ目BBはFEやUIにも実装されているか？, これはGSをやっていないせいかもしれない, 新四つ目GS道具磨き — 突合ロジック月次化 全探索実行, GS入力データソース不一致, source_type=local_sqliteは本番PostgreSQLと異なるデータ, UUID完備universeでもsource_typeがlocal_sqliteならGS出力は本番と不一致, GS突合でopen vs close比較ミスに注意, open-to-open比較が正道(PI-008), 本番に奥義新四つ目を登録してくれ, 奥義 GS 新四つ目 3モード本番登録 激攻・鉄壁・常勝 |
+| aliases | 忍法, 忍法GS, GS忍法, グリッドサーチ忍法, run_077, 奥義GS, 忍法研究, GS高速化, パリティ完全一致, gs_engine, bunshin, oikaze, nukimi, kawarimi, kasoku, yotsume, 忍法とはそれに対応するビルディングブロックのことだ, ビルディングブロック毎に忍法の固有名をつけている, 実はL1 とは忍法の重ねがけだ, 忍法についてはL1だけ, 奥義命名BBはL2段階で最後に適用するBB名であり入力L1のBBとは独立, 奥義-GS-追い風のコンポーネントに追い風L1が含まれないのはGS選別結果で正常, ではL3に向いた忍法を考えよう, 忍法とビルディングブロックの対応を教えてくれ, 分身=EqualWeight, 追い風=MomentumFilter, 抜き身=SingleViewMomentumFilter, 変わり身=TrendReversalFilter, 加速D加速R=MomentumAccelerationFilter, 四つ目=MultiViewMomentumFilter, AbsoluteMomentumFilter忍法未使用StandardPF内部用, SafeHavenSwitch忍法未使用StandardPF内部用, 新四つ目, WeightedMultiViewMomentumFilter, 重み付き四つ目, 投票数ウェイト, 4視点投票→重み付き保有, context.final_weights, 既存四つ目はunionで重複情報消失, 正規化=Σ投票数で割る(4×top_nは破綻), L3候補=追い風(CAGR+34pp)+加速R(Calmar+3.8), SafeHaven=Cashはナンセンス(殿検証済み), 新四つ目BBはFEやUIにも実装されているか？, これはGSをやっていないせいかもしれない, 新四つ目GS道具磨き — 突合ロジック月次化 全探索実行, GS入力データソース不一致, source_type=local_sqliteは本番PostgreSQLと異なるデータ, UUID完備universeでもsource_typeがlocal_sqliteならGS出力は本番と不一致, GS突合でopen vs close比較ミスに注意, open-to-open比較が正道(PI-008), 本番に奥義新四つ目を登録してくれ, 奥義 GS 新四つ目 3モード本番登録 激攻・鉄壁・常勝, 豊かになりましょう |
 | skills | gs-bench-gate |
 | related_concepts | dmsignal_operations, alm_research, recalculate_pipeline |
 
@@ -1954,6 +1967,8 @@ codd:
 | cmd | `cmd_3423` 奥義-GS-新四つ目 3モード再登録(cmd_3389同一パラメータ) |
 | causal | `cmd_3423` origin: [[殿誤削除2026-06-16]] -> [[奥義新四つ目3体消失]] -> [[cmd_3389再登録]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-18T00:56:48+09:00 ab9fb048f56c12c94 toolu_01Xevk6jZMvrrqvvu9XkdXja /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T18:55:21+09:00 そうですね このリターンの差っていうのが どういう風になってくるかあと シン忍法 分身の激攻を使いましょう。リターンの差を別の角度からも表現したいですね。デュアルモメンタムなら短い期間で達成できる、デュアルモメンタムなら小さな資金で達成でき |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T19:24:10+09:00 **L1**（乗り換え戦略・シン忍法） : **約36万パターン** のスタイルに統一してください。 |
 
 ## silent_fallback_quality — Silent Fallback品質
 
@@ -2153,7 +2168,7 @@ codd:
 | label | DM-Signal運用 |
 | aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する, FoF複製2件はおれの操作だ, PF構成確認はcheck_pf_config.py一発, hide判定はtier_visibility_settings全Tier確認必須(portfolios.hide_portfolioだけでは不十分), pipeline_configがBBの実体(selection_pipeline+terminal_block), TrendReversalFilter |
 | skills | db-check, pf-registration |
-| related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking, investment_knowledge_base, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, modern_web_guidance, cdp_browser_capability, tier_plan_mapping, alpha_6_metrics, saxo_openapi_excel, saxo_trade_engine, db_price_data_range |
+| related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking, investment_knowledge_base, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, modern_web_guidance, cdp_browser_capability, tier_plan_mapping, alpha_6_metrics, saxo_openapi_excel, saxo_trade_engine, db_price_data_range, content_artifacts |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -2184,6 +2199,9 @@ codd:
 | causal | `cmd_karo_hotfix_context_dm_ops_ga102_20260620` files_modified: [[dmsignal_operations]] |
 | causal | `cmd_karo_hotfix_context_dm_core_ga102_20260620` files_modified: [[dmsignal_operations]] |
 | causal | `cmd_3463` files_modified: [[dmsignal_operations]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T17:01:30+09:00 DM シグナルの話をしよう DM シグナルではいろいろなポートフォリオが日置の話にしよう だいたい3年間のローリングリターン これを見て もし 一番強いもの とそれにこう サテライト 加えるならどれがいいか 曲線がまあ 滑らかなのがいいね |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T17:11:25+09:00 では非常に批判的な人間がいるとしよう それと インタビュー形式での対話をしたい このデュアル モメンタム DM シグナルは非常に パフォーマンスがいい に長期では リターンはインデックスの数百倍にも及ぶ 恐ろしいほどの 好成績だ に疑いを持 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T18:42:26+09:00 DM シグナルっていうのは僕が提供している デュアルモーメントのファンズオブファンズのシステムを提供する メンバーシップのことだ そのメンバーシップで提供してるアプリも ゲーム シグナル と呼んでる 年間 抜けてるんじゃないかな で実際に  |
 
 ## google_classroom — Google Classroom Dashboard
 
@@ -2239,7 +2257,7 @@ codd:
 | label | 編成管理 |
 | aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが |
 | skills | shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み), karo-direct, recon-dual |
-| related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework, systems_knowledge_base, skill_design_rules, shogun_android_app, task_modifier_injection, infrastructure_ops, bulletin_communication, inbox_processing_discipline, multi_cli_event_commonization, skill_routing |
+| related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework, systems_knowledge_base, skill_design_rules, shogun_android_app, task_modifier_injection, infrastructure_ops, bulletin_communication, inbox_processing_discipline, multi_cli_event_commonization, skill_routing, commander_role_ssot_analysis |
 | related_lessons | `L594`, `L603`, `L550`, `L310` |
 
 | 種別 | パス/参照 |
@@ -2852,6 +2870,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-07T21:28:02+09:00 planモードが諸悪の根源では？ |
 | lesson | `L734` FastAPI get_db overrideだけではauth/get_db_session経路は隔離されない |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T00:36:51+09:00 まずはプランを深掘ろう。未検証・未調査を埋めてから実装に入るべきだ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T18:13:43+09:00 で後ですね 他の記事もあると思うんだけど DM 3 とか 実際には使ってなくて 僕がこのメンバーシップで提供してる最も控えめなのは ベーシック デュアル モメンタム に DM セーフ で一番入門者用として おすすめ というかやってるものが  |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T18:49:21+09:00 あと デュアル モメンタマのリターンはだからスタンダードプラン の 新 忍法 分身をベースにしてください で後ですね インデックス もここ最近はまあ 年率15%ぐらいですごく強いので まあ 15%ぐらいで計算しときましょう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T19:20:05+09:00 それでも信じられない人向けに 初月無料のベーシックプラン というものがあります。 基本的なデュアルモメンタムポートフォリオを 無料で体験をしてどんなものか体験できます。また 数十をこえる無料記事がある How to デュアル モメンタムとい |
 | causal_chain | `[[cmd_karo_ci_red_fix_26821340025]]` (L734) |
 
 ## alpha_6_metrics — α6指標
@@ -3227,6 +3248,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T14:58:00+09:00 ad71739b0637eb7fd toolu_01GJpDdXaPyYtnQKpgrrfukq /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T15:56:09+09:00 ab4332f3773195692 toolu_01SVBS3A1UAVmTix2pS94Dmb /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T15:59:05+09:00 a7ba56373573c4409 toolu_01AkigNeqnJaBYMi7HscZgsg /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T16:03:03+09:00 a50fa0e797aa4f4f1 toolu_01967TJY4heFf1juBwR68C6D /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
@@ -4251,6 +4273,23 @@ codd:
 |------|----------|
 | cmd | `cmd_3056` auto project registry intake |
 
+## content_artifacts — 記事・成果物索引
+
+| 属性 | 値 |
+|------|---|
+| id | content_artifacts |
+| label | 記事・成果物索引 |
+| aliases | 記事一覧, 書いた記事, note記事, gist一覧, 成果物, 今までやったCMD, CMD履歴, 戦局日誌, senkyoku-log, 将軍記事, 戦国AI列伝, weekly report, 週報一覧, 月報, marketing content, マーケティング記事, 下書き一覧, 過去の記事, 記事を書いた, 記事やドキュメント |
+| related_concepts | dmsignal_operations, cmd_chronicle, skill_routing |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/senkyoku-log.md` — CMD履歴(1,235行) |
+| file | `/mnt/c/Python_app/DM-signal/marketing-director/content/` — note記事55本 |
+| file | `/mnt/c/Python_app/DM-signal/marketing-director/content/articles/shogun/` — 将軍記事23話 |
+| discussion | Gist Index: https://gist.github.com/simokitafresh/83a17157247174e9faefc3962968fe1b |
+| cmd | `cmd_3235` note.com下書き2本(続けることが最大の戦略/レイヤーを重ねても過剰最適化ではない理由) |
+
 ## skill_routing — スキルルーティング
 
 | 属性 | 値 |
@@ -4259,7 +4298,7 @@ codd:
 | label | スキルルーティング |
 | aliases | スキル使い分け, どのスキルを使う, 適切なスキル, スキル選択, skill routing, ペイン死亡, pane dead, panedead, pane is dead, ペインがdead, 忍者が死んでいる, 家老が死んでいる, CLI死亡, CLI-DEAD, status 126, respawn, respawnせよ, respwanせよ, CLI切替, Claude⇔Codex切替, モデル切替, version切替, 2.1.87固定, pinned/latest, auto-update再許可, 家老をCodexに, 軍師をOpusに, ペイン復元, レイアウトリセット, ペイン消失, レイアウト崩壊, 全ペイン復元, 編成切替, 忍者モデル編成, 一括モデル切替, 混成編成, Opus全戻し, 決戦モード, 全員Codex, 平時復旧, clear前, セッション終了前, メモリ整理, 三層記憶整理, 知識統合, 棚卸し, 7層監査, 教訓整理, 教訓振り分け, lesson_health ALERT, PJ切替, プロジェクト変更, 裁定反映, context反映確認, GATE CLEAR後処理, cmd完了処理, ダッシュボード更新, レビュー完了後処理, SG7バンドル, gate結果同期, accuracy計算, bc判定, binary_checks確認, idle分析永続化, 分析結果保存, コミット, commit, 作業完了コミット, 報告YAML作成, 報告フィールド記入, FILL_THIS修正, 本番登録, PF登録, GSベンチマーク, パフォーマンス回帰, 家老自立配備, karo_direct, CI修正配備, 偵察2名配備, 設計書生成, CoDDパイプライン, リファクタリング設計, 速度改善, 事象修正, 現象修正, DB確認, 本番DB, パリティ検証, ブラウザ確認, 本番画面スクショ, CDPで確認, ファイル名整理, Driveリネーム, 週報, ウィークリーレポート, 月報, マンスリーレポート, note記事, ユーザー向け記事, 開発裏話, 戦国AI列伝, X検索, Xリサーチ, トレンド調査, スキル作成, スキル化, リポジトリ掃除, 未コミット確認, チャンピオン近傍分析, 過適合判定, 隣接パラメータ |
 | skills | shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み), reset-layout(全ペイン配置復元), shogun-clear-prep(clear前), dream(三層記憶整理), shogun-teire(棚卸し), lesson-sort(教訓整理), switch-project(PJ切替), shogun-pd-sync(裁定反映), cmd-complete(GATE CLEAR後/家老), dashboard-update(ダッシュボード/家老), review-bundle(レビュー完了/軍師), gate-sync(gate同期/軍師), verdict-check(bc判定/忍者), idle-persist(分析永続化/軍師), ninja-commit(commit/忍者), report-write(報告YAML/忍者), pf-registration(本番登録/忍者), gs-bench-gate(GSベンチ/忍者), karo-direct(家老自立配備/家老), recon-dual(偵察2名/家老), codd(設計書), codd-refactor(リファクタ), codd-fix(事象修正), db-check(DB確認), cdp-browse(ブラウザ確認), file-rename(ファイルリネーム), weekly-report-writer(週報), monthly-report-writer(月報), note-writer(note記事), sengoku-writer(戦国記事), x-research(X検索), skill-creator(スキル作成), repo-clean(リポ掃除), shogun-param-neighbor-check(パラメータ近傍) |
-| related_concepts | agent_formation_management, growth_loop, skill_design_rules |
+| related_concepts | agent_formation_management, growth_loop, skill_design_rules, content_artifacts |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -4268,3 +4307,73 @@ codd:
 | discussion | 殿指摘2026-06-20: 各論hookは100億パターンに対応できない。スキル知識を三層記憶に貫通させよ |
 | cmd | `cmd_3351` backfill — | session_20260613_karo_3cmd_3hotfix_cifix | cmd_3351/3352/3353 GATE CLEAR+hotfix3本+CI RED3本修正+WP-3全 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T01:35:10+09:00 b6zf5b6qy toolu_01UCiqCjpU5dHJNehrm3fSG7 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2e3a5e4a-230e-4f17-8287-8650db |
+
+## commander_role_ssot_analysis — Commanderロール SSOT分析
+
+| 属性 | 値 |
+|------|---|
+| id | commander_role_ssot_analysis |
+| label | Commanderロール SSOT分析 |
+| aliases | commander role, SSOT分析, ロール86ファイル分類, Commanderロール偵察 |
+| related_concepts | ontology_driven_refactor, agent_formation_management |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/commander_role_ssot_analysis.md` |
+| cmd | `cmd_3470` |
+
+## gunshi_idle_cold_finding_categories_retroactive_20260620 — 軍師idle finding分類遡及
+
+| 属性 | 値 |
+|------|---|
+| id | gunshi_idle_cold_finding_categories_retroactive_20260620 |
+| label | 軍師idle finding分類遡及 |
+| aliases | finding分類, cold finding, 遡及分類, 軍師idle分析カテゴリ |
+| related_concepts | growth_loop, lesson_effectiveness |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/gunshi_idle_cold_finding_categories_retroactive_20260620.md` |
+| cmd | `cmd_3331` backfill — | session_20260612_gunshi | 軍師: draft6+report7+idle2=15件全CLEAR。WA=0 | stable | **強くてニューゲーム要点(軍師)**:  |
+
+## gunshi_idle_lesson_id_collision_20260620 — 教訓ID衝突分析
+
+| 属性 | 値 |
+|------|---|
+| id | gunshi_idle_lesson_id_collision_20260620 |
+| label | 教訓ID衝突分析 |
+| aliases | lesson ID collision, 教訓ID重複, ID衝突 |
+| related_concepts | lesson_effectiveness, growth_loop, gunshi_idle_lesson_id_overlap_20260618 |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/gunshi_idle_lesson_id_collision_20260620.md` |
+| cmd | `cmd_1662` backfill — | cmd_1662 | deploy_task.shに配備前cmd_id衝突チェック追加(GP-132) | infra | 04-01 | 二重配備検出ロジックはdeploy_task.sh L2 |
+
+## gunshi_idle_lesson_id_overlap_20260618 — 教訓IDオーバーラップ分析
+
+| 属性 | 値 |
+|------|---|
+| id | gunshi_idle_lesson_id_overlap_20260618 |
+| label | 教訓IDオーバーラップ分析 |
+| aliases | lesson ID overlap, 教訓ID重複, 二重登録 |
+| related_concepts | lesson_effectiveness, gunshi_idle_lesson_id_collision_20260620 |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/gunshi_idle_lesson_id_overlap_20260618.md` |
+| cmd | `cmd_3269` backfill — | cmd_3269 | deploy_task.sh inject_related_lessonsがassigned_to未設定時にninja_name=unknownで記録し、同一教訓が忍者名+u |
+
+## gunshi_idle_script_speed_audit_20260620 — スクリプト速度監査
+
+| 属性 | 値 |
+|------|---|
+| id | gunshi_idle_script_speed_audit_20260620 |
+| label | スクリプト速度監査 |
+| aliases | script speed audit, 速度監査, スクリプト実行時間, 遅いスクリプト, パフォーマンス監査 |
+| related_concepts | infrastructure_performance, growth_loop |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/gunshi_idle_script_speed_audit_20260620.md` |
+| cmd | `cmd_3472` |

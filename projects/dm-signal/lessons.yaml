@@ -1862,6 +1862,7 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-18'
+  deprecated: true
 - id: L632
   title: snapshot比較器は保存していない字段を比較対象に含めるな
   summary: snapshot_recalc_results.py が monthly_returns.holding_signal を保存していないのに
@@ -2025,7 +2026,7 @@ lessons:
   origin: '[[cmd_1877]]'
 - id: L623
   title: 既存GS CSVの有効性はmeta.yaml universe_idで判定せよ — 行数判定は誤り
-  summary: '既存ファイルの再実行要否を行数(例: bunshin 7526行)で判定すると、universe変更後も旧ファイルを有効と誤判定する。meta.yamlのuni'
+  deprecated: true
   tags:
   - gs
   source_cmd: cmd_1877
@@ -2061,7 +2062,7 @@ lessons:
   origin: '[[cmd_1882]]'
 - id: L620
   title: L2奥義2×2因子分析でL1傾向継続だが縮小。GS固定の2種混在(DB vs champion)が一因
-  summary: L1ではBB+15pp/動的-27〜-41pp。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定にはproduction_db①とgs_sta
+  deprecated: true
   tags:
   - alm
   - gs
@@ -2178,6 +2179,7 @@ lessons:
   - outputs/analysis/cmd_1866_alm_validation_report.md
   - scripts/oneshot/cmd_1866_alm_validation.py
   origin: '[[cmd_1866]]'
+  deprecated: true
 - id: L612
   title: 超越条件C UWP<5M閾値は132M OOSに非現実+SPA全42非有意
   summary: cmd_1866 ALM忍法全方位検証でV3超越条件のUWP<5M閾値が132ヶ月OOS期間に対して非現実的に厳しい。全42セルFAIL。V7
@@ -2192,9 +2194,10 @@ lessons:
   - outputs/analysis/cmd_1866_alm_validation_report.md
   - scripts/oneshot/cmd_1866_alm_validation.py
   origin: '[[cmd_1866]]'
+  deprecated: true
 - id: L611
   title: バグ汚染ファイル削除時のスコープ確認
-  summary: cmd_1863でcmd_1819-1822のバグ汚染ファイルを削除した際にcmdの記載はalm_research内87件だったがgrid_search以下にも
+  deprecated: true
   tags:
   - gs
   - alm
@@ -2210,7 +2213,7 @@ lessons:
   origin: '[[cmd_1863]]'
 - id: L610
   title: 'バグ汚染ファイル削除時のスコープ確認: alm_research以外にもWFエンジン入力CSVが存在'
-  summary: cmd_1863 AC1でcmd_1819_*/cmd_1821_*/cmd_1822_*をプロジェクト全体で削除したところ、alm_research/以外のg
+  deprecated: true
   tags:
   - gs
   - alm
@@ -2226,7 +2229,7 @@ lessons:
   origin: '[[cmd_1863]]'
 - id: L609
   title: WF回帰テストは同一CSV2回実行での決定論確認
-  summary: l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行→np.allclose=Trueで決定論を検証するもの。異なる世代のCSVや旧出力との
+  deprecated: true
   tags:
   - gs
   - wf
@@ -2243,7 +2246,7 @@ lessons:
   origin: '[[cmd_1856]]'
 - id: L608
   title: 進行中月パリティ差異は構造的問題
-  summary: GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致
+  deprecated: true
   tags:
   - gs
   - monthly_return
@@ -2256,7 +2259,7 @@ lessons:
   origin: '[[cmd_1855]]'
 - id: L607
   title: 進行中月(当月)monthly_returnはGS作成日依存のため差異が生じる
-  summary: GS CSV monthly_fast.csvの当月(2026-04)エントリはCSV作成日(2026-04-09)時点の暫定値。本番recalculateを後
+  deprecated: true
   tags:
   - gs
   - monthly_return
@@ -2268,7 +2271,7 @@ lessons:
   origin: '[[cmd_1855]]'
 - id: L606
   title: WF回帰テストは同一CSV2回実行での決定論確認(異なるCSV世代間比較は別用途)
-  summary: l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行しnp.allclose=Trueで決定論を検証するもの。エンジン改良やCSV再生成で異
+  deprecated: true
   tags:
   - gs
   - wf
@@ -2434,7 +2437,7 @@ lessons:
   last_referenced: '2026-06-16'
 - id: L594
   title: PythonのsetはPYTHONHASHSEEDに依存する非決定論的な順序を持つ。GS sequential検証でlist(set())を使う場合はsorted()に置換せよ
-  summary: TrendReversalFilterBlock.execute() L78でtickers = list(context.current_tickers)がs
+  deprecated: true
   tags:
   - gs
   - testing
@@ -3598,7 +3601,7 @@ lessons:
   origin: '[[cmd_1488]]'
 - id: L508
   title: silent fallbackパターン禁止(PI-018)
-  summary: except Exceptionでデータ値(Cash/0.0/True/1.0/SPY等)をfallback返却するコードは嘘をつく。cmd_1483で38箇所
+  deprecated: true
   tags:
   - pipeline
   - quality
@@ -3812,7 +3815,7 @@ lessons:
   origin: '[[cmd_1411]]'
 - id: L493
   title: 四つ目(MultiView)忍法のnumpy再実装で4窓union+タイミングオフセットに不一致リスク
-  summary: 四つ目-激攻のGS記録CAGR=0.714 vs numpy快速パス計算CAGR=0.488(差0.226)。他20体は整合。MultiView4窓moment
+  deprecated: true
   tags:
   - deploy
   - pipeline
@@ -4484,7 +4487,7 @@ lessons:
   origin: '[[cmd_1194]]'
 - id: L445
   title: DTB3を株式用momentum関数で処理してはならない
-  summary: pct_change(金利水準変化率)とcalculate_risk_free_return_vectorized(累積複利リターン)は全く異なる値。経済指標は
+  deprecated: true
   tags:
   - dm-signal
   source_cmd: cmd_1194
@@ -6531,6 +6534,7 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-20'
+  deprecated: true
 - id: L290
   title: 悪化確率指標と構造変化検定を同義扱いするな
   summary: P(det) は rolling recent vs long の方向付き悪化確率であり、未知の break date を探索する structural
@@ -7509,6 +7513,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 個別に実装すると2回のSW更新(CACHE_NAME 2回インクリメント)が必要で非効率
   origin: '[[cmd_646]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L204
   title: API永続キャッシュはUI state用localStorageと分離し、auth-scope付き IndexedDB を主格にすべき
   summary: selected PF や folder filter のような小さなUI stateは localStorage で十分だが、 multi-year

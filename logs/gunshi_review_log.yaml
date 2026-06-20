@@ -1335,3 +1335,204 @@
   ambiguity_points: "カテゴリB(約20件/15ファイル)は概算のみ。実装時に正確計測が必要。is_core_agent移管後のsource順序(agent_config.sh sourcing timing)は次cmdでの検証事項"
   origin: "[[Commanderロール86ファイル最大穴]] -> [[cmd_3470偵察SSOT設計]] -> [[次cmd実装フェーズ]]"
   timestamp: "2026-06-20T16:00:00"
+- cmd_id: cmd_karo_hotfix_model_family_ssot_20260620
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "APPROVE: AC1-4全yes。model_family.sh/py SSOTにsonnet/haiku/opus汎用family分類追加+reset_layout cache更新条件MODEL_FAMILY_HELPER_VERSION=2。Guard16同等grep対象直書き0件確認。bash -n/py_compile/dry-run全PASS"
+  observations:
+    - "事実1: commit 45690bdd3133実在。files_modified 3件(model_family.sh 80行/model_family.py 46行/reset_layout.sh 581行)全コミット済み"
+    - "事実2: Guard16同等rg: 検出正規表現本体1件のみ。AC3条件(SSOT本体除外後0件)クリア"
+    - "事実3: bash -n 7ファイルPASS、py_compile PASS、model_analysis --summary PASS、knowledge_metrics --model PASS、reset_layout --dry-run PASS"
+  causal_chain: "cmd_3468 FAIL(AC3未達) → hotfix: model_family SSOT拡張(sonnet/haiku/opus汎用分類追加) → Guard16同等grep 0件達成"
+  brainwash_check: "dry-run値3件中3件確認(bash -n/py_compile/Guard16同等rg)。AC4対象7ファイル全bash -n PASSを実数で確認。洗脳#6(出力=仕事)リスク: reset_layout --dry-run完走だがWORKER_IDの実環境動作は未検証。既存テストなしのため範囲内"
+  ambiguity_points: none
+  origin: "[[cmd_3468_FAIL_AC3]] -> [[model_family_SSOT拡張]] -> [[Guard16_0件達成]]"
+  gate_prediction: CLEAR
+  timestamp: "2026-06-20T16:00:00+09:00"
+- cmd_id: cmd_karo_hotfix_commander_role_ssot_20260620
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  findings_summary: "APPROVE: AC1-5全yes。agent_config.sh 3関数SSOT追加(get_commander_names/is_commander_role/get_commander_inbox_path)。inbox_write.sh SSOT参照化。guard_no_hardcoded_ninja_list.sh Commander WARN追加。Bats 45/45 PASS。adversarial: fallback設計あり(agent_config未ロード時はローカルfallback)。blast_radius大だが安全策あり"
+  observations:
+    - "事実1: commit 1e7a7cc4b実在(実装)。dd3b2d6e(task status mark)。4ファイル変更: agent_config.sh+24行、inbox_write.sh+11/-5行、gate+36行、bats+9行"
+    - "事実2: global git diff --check FAIL → kotaro.yaml既存whitespace(scope外)。対象4ファイルのscoped diffはPASS。適切判断"
+    - "事実3: blast_radius大(SG-PRE18 WARN): inbox_write.sh変更はis_commander_role fallback二重保護(SSOT優先+ローカルフォールバック)設計。既存テスト45件全PASS確認"
+    - "事実4: Commander残存直書き A_inbox_path=31, B_role_branch=82 → WARNで可視化、一括BLOCKは既存件数多くWARN設計が妥当"
+  causal_chain: "cmd_3470偵察(Commander直書き92ファイル7カテゴリ) → SSOT関数追加+代表消費者置換+Guard WARN接続"
+  brainwash_check: "Bats 45/45=全テストPASS数値確認済み。SG-PRE18 adversarial必須→fallback設計を実コードで確認。inbox_write fast-path副作用確認。8パターン: #4(緩い設計)チェック→WARN選択はBLOCKより緩いが既存直書き82件の段階的移行として合理的"
+  ambiguity_points: none
+  origin: "[[cmd_3470]] -> [[Commander直書き]] -> [[agent_config.sh SSOT+Guard WARN接続]]"
+  gate_prediction: CLEAR
+  timestamp: "2026-06-20T16:01:00+09:00"
+- cmd_id: cmd_3472
+  review_type: draft
+  gate_result: CLEAR
+  verdict: FAIL
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "FAIL: 報告YAML未提出(テンプレート状態)。diff確認済みのため実装は開始されているが、AC1(高速化)・AC2(出力値同一確認)・commitが全て未完了。status=assigned。レビュー対象の実装差分は26行(未コミット)。家老はkotaroへ完了待ちを催促せよ"
+  observations:
+    - "事実1: queue/reports/kotaro_report_cmd_3472.yaml → status: pending、result.summary空、binary_checks全result空、verdict空のテンプレート状態"
+    - "事実2: git status → scripts/ralph_loop_metrics.sh Modified(未コミット)。diffはfor+glob→find+gawk一発変換26行(正しい方向)"
+    - "事実3: AC2(出力値同一確認)は報告に記載なし。高速化量も未計測"
+  fail_reasons:
+    - "報告YAML未提出(テンプレート状態)"
+    - "commit未完了"
+    - "AC2出力値同一確認なし"
+  causal_chain: "cmd_3472 assigned → kotaro実装着手(未コミット) → 報告未提出 → レビュー不可"
+  brainwash_check: "status: assigned確認。報告3件中0件完了=0%。実装差分自体は確認済みだがbinary_checks記入なし。洗脳#1(早期終了)防止: 報告がない状態でAPPROVEは不可"
+  ambiguity_points: none
+  origin: "[[殿指示_遅いスクリプト=バグ]] -> [[ralph_loop_metrics_14秒]] -> [[kotaro未提出]]"
+  gate_prediction: BLOCK
+  timestamp: "2026-06-20T16:02:00+09:00"
+- cmd_id: cmd_karo_hotfix_commander_role_ssot_20260620
+  review_type: report
+  verdict: APPROVE
+  report_ninja: hayate
+  gate_result: CLEAR
+  finding_categories: [assumptions, simulation, premortem, adversarial]
+  findings_summary: "APPROVE: precheck ERRORS=0。SG-PRE3 WARNは実装commit(1e7a7cc4b)実在で解消。SG-PRE18 adversarial必須→fallback設計とBats 45/45で安全確認。task_clarity 92点。status_detail: DONE"
+  observations:
+    - "事実1: precheck ERRORS=0。SG-PRE1(gate format)PASS。SG-PRE9(binary_checks no)PASS。SG-PRE10(ac_version d41d8cd9)PASS"
+    - "事実2: SG-PRE3 commit WARN → 実装commit 1e7a7cc4b実在確認(commit hashは分離している設計。dd3b2d6e=task statusのみ)。報告commit_hash=dd3b2d6eはtask完了markだが実装は1e7a7cc4b。軽微な表記混在だが機能上問題なし"
+    - "事実3: SG-PRE18 adversarial WARN: inbox_write.sh+gate変更。fallback二重保護設計+Bats 45/45 PASS確認済み。blast_radius大だが安全策あり"
+  causal_chain: "cmd_3470偵察→Commander SSOT実装→hayate完了→report APPROVE"
+  brainwash_check: "precheck ERRORS=0実測。binary_checks全yes=5/5確認。Bats 45件全PASS数値確認。8パターン: #4(緩い設計)→WARN選択は段階的移行として合理的(82件残存のため即BLOCKは過剰)"
+  ambiguity_points: none
+  origin: "[[cmd_3470]] -> [[Commander直書き]] -> [[agent_config.sh SSOT接続]]"
+  gate_prediction: CLEAR
+  sg7_bundle:
+    gate_prediction: CLEAR
+    blast_radius: medium
+    adversarial_review: fallback二重保護確認済み
+    lessons_applied: L270(test env差分対策)/L272(bats setup更新)/L634(無関係)
+    lesson_candidate: none
+  timestamp: "2026-06-20T16:03:00+09:00"
+- cmd_id: cmd_3468
+  review_type: report
+  verdict: APPROVE
+  report_ninja: kagemaru
+  gate_result: CLEAR
+  finding_categories: [assumptions, simulation, premortem, adversarial]
+  findings_summary: "APPROVE: precheck ERRORS=0。WA率50%(1件/2件)は注意だが直近WA件数が少なく重み付け低。status_detail: WITH_CONCERNS(モデル名分析カテゴリ値と設定値の未分離)は設計限界の正直な開示であり適切。binary_checks全yes。SG-PRE18 adversarial WARN→既存SSOTを活用した最小変更"
+  observations:
+    - "事実1: precheck ERRORS=0。SG-PRE1(gate format)PASS。SG-PRE9(binary_checks no)PASS。commit 45690bdd実在"
+    - "事実2: kagemaru WA率50%(直近2件中1件)→ SG-PRE2注意。ただし件数が2件と少なく統計的重みは低"
+    - "事実3: WITH_CONCERNS: task_clarity 70点。モデル名直書きの対象に分析カテゴリ値を含めるか未分離。decision_candidateに記録し後続cmdへ繋ぐ設計が適切(先送りではなく範囲外の設計課題)"
+    - "事実4: SG-PRE26: [MEM: memory_db ts=2026-06-20T15:50]cmd_3472 DELEGATED済み。cmd_3468完了後の次taskは家老が判断済み"
+    - "事実5: hook_failures count=1(inbox_mark_read exec BLOCK) → 未読既読化未完了。影響: 軽微(既読化省略のみ、実装完了に影響なし)"
+  causal_chain: "殿指示_オントロジー_20260620 → Guard16テーブルtmux/model追加 → kagemaru完了 → WITH_CONCERNSで報告"
+  brainwash_check: "binary_checks 3/3 all yes実測。model literal残件0=rg実行結果数値確認。8パターン: #4(緩い設計)→task_clarity 70点の低さを正直に開示しており洗脳なし。#5(先送り)→分析カテゴリ値とCLI値の分離はdecision_candidateで記録、次cmdへ接続"
+  ambiguity_points: none
+  origin: "[[殿指示_オントロジー_20260620]] -> [[SSOT調査_cmd_3458_3461]] -> [[tmux_model_Guard16追加]]"
+  gate_prediction: CLEAR
+  sg7_bundle:
+    gate_prediction: CLEAR
+    blast_radius: large
+    adversarial_review: 既存SSOTヘルパ活用+最小変更。changed_lines +20/-1=21。大規模構造追加なし
+    lessons_applied: L731(直接literal/backlink混同防止)/L041(pane lookup経由)
+    lesson_candidate: none
+    concerns: "分析カテゴリ値とCLI設定値の分離設計が次cmd課題(decision_candidateに記録済み)"
+  timestamp: "2026-06-20T16:04:00+09:00"
+- cmd_id: cmd_karo_hotfix_model_family_ssot_20260620
+  review_type: report
+  verdict: APPROVE
+  report_ninja: hanzo
+  gate_result: CLEAR
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  findings_summary: "APPROVE: precheck ERRORS=0。全3ファイルcommit確認済み(SG-PRE3 PASS)。binary_checks全yes。AC指定5ファイルのmodel literal残存0件(Guard16同等rg)。WA率0%。task_clarity 88点"
+  observations:
+    - "事実1: precheck ERRORS=0。SG-PRE3全PASS(kagemaru commitと同じ45690bddに3ファイル全コミット)。SG-PRE10 ac_version一致"
+    - "事実2: Guard16同等rg: 検出正規表現本体1件のみ(SSOT本体自体)。対象直書き0件=AC3条件クリア"
+    - "事実3: model_analysis/knowledge_metrics/dashboard_auto_section/reset_layout dry-run全PASS。MODEL_FAMILY_HELPER_VERSION=2でcache鮮度保証"
+    - "事実4: 先行差分(kagemaru commit 45690bdd)が混在した状態で作業。scope外差分を除外しcommitした設計判断が適切"
+  causal_chain: "cmd_3468 FAIL AC3 → hotfix: model_family SSOT拡張(sonnet/haiku/opus汎用分類追加) → Guard16 0件達成"
+  brainwash_check: "binary_checks 4/4全yes実測。bash -n 7ファイル全PASS数値確認。Guard16同等rg 0件確認。8パターン: #6(出力=仕事)チェック→dry-run完走だが実環境テストなし。既存Batsへの不用意挿入を避けた判断(L639適用)は適切"
+  ambiguity_points: none
+  origin: "[[cmd_3468_FAIL_AC3]] -> [[モデル分類literal分散]] -> [[model_family_SSOT参照統一]]"
+  gate_prediction: CLEAR
+  sg7_bundle:
+    gate_prediction: CLEAR
+    blast_radius: low
+    adversarial_review: "SG-PRE18 PASS(infra対象ファイルなし)。changed_lines +20/-1=21。安全"
+    lessons_applied: L639(既存Batsへの不用意挿入回避)/L036(SSOTのgit checkout回避)/L466(無関係)
+    lesson_candidate: none
+  timestamp: "2026-06-20T16:05:00+09:00"
+- cmd_id: cmd_training_L1_report_write_saizo_20260620
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, adversarial]
+  findings_summary: "修行L4 target_path実在確認済み。AC5/bc14。定型修行パターン、手詰まりなし"
+  observations:
+    - "事実1: target_path docs/research/commander_role_ssot_analysis.md 実在確認(test -f)"
+    - "事実2: saizo ninja_weak_points WA3件(template未使用1/scope_contamination1/stale_report1)確認"
+  causal_chain: "修行L4配備→target_path改善→[[リンク]]追加→知識ネットワーク強化=正の複利"
+  brainwash_check: "target_path 1件存在確認。AC5/bc14数値確認。saizo WA3件pattern確認。#1早期終了チェック: 定型修行だが6観点全実施"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "修行L4(docs/research/ Markdown改善)。scripts/infra/本番コード変更なし。blast radius極小"
+  origin: "[[cmd_training_L1_report_write_saizo_20260620]] -> [[修行L4]] -> [[APPROVE]]"
+  timestamp: "2026-06-20T16:18:00+09:00"
+- cmd_id: idle_lesson_useful_rate_improvement_20260620
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "教訓有効率18.5%根因分析。上位not useful 7件中3件(L696/L660/L614)がwhen/how未設定。キーワードのみ注入→タスク無関係→not useful。D0でwhen/how追加実施"
+  observations:
+    - "事実1: useful率18.5%(5/27, 直近30cmd)。gate_lesson_health ALERT"
+    - "事実2: L696/L660/L614はwhen/how未設定。lesson_impact.tsv feedback 0-1件のみ"
+    - "事実3: reports内lessons_useful not_useful 319件中、上位7教訓が計157件(49%)"
+  causal_chain: "when/how未設定→tech_termsキーワードのみ注入→タスク無関係→not useful回答→有効率低下"
+  brainwash_check: "319件中useful 40件=12.5%実測。上位7教訓157件/319件=49%。3件when未設定を数値確認。#5先送りチェック: D0でwhen/how追加を同一ターンで実行"
+  cs_checklist: "CS1:lesson_impact.tsv+reports全量確認。CS2:自システムの319件not_useful実データで検証。CS3:deploy_task.sh inject_related_lessons現物コード確認。CS4:D0でwhen/how追加。CS5:注入ロジック改善はcmd起票提案。CS6:when未設定→キーワードのみ→not useful→有効率低下の因果追跡"
+  operational_simulation: "when/how追加後、対象教訓のwhenが限定的条件になるためキーワードマッチ時にwhen条件不一致でスコア降格→注入減少→useful率改善の見込み"
+  origin: "[[gate_lesson_health_ALERT]] -> [[when_how未設定3件]] -> [[useful率18.5%]]"
+  timestamp: "2026-06-20T16:25:00+09:00"
+- cmd_id: cmd_3474
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "WA記録brainwash_check必須化。AC2/bc2。normalize_karo_workarounds.py 1本対象。rg brainwash_check→0件一次確認"
+  observations:
+    - "事実1: rg -c brainwash_check normalize_karo_workarounds.py → 0件(q11独立確認)"
+    - "事実2: AC2件/bc2件。1スクリプト対象の軽量cmd"
+    - "事実3: 家老CRITICALエスカレーション起因。100件中98件brainwash_check未記入"
+  causal_chain: "brainwash_check未記入WA98件→洗脳監査構造欠如→バリデーション追加=意志依存→強制変換=正の複利"
+  brainwash_check: "rg 0件一次確認。AC2/bc2数値確認。q11独立検証済み。#1早期終了: 軽量cmdだが6観点全実施"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "1スクリプトWARN追加。blast radius極小"
+  origin: "[[家老CRITICALエスカレーション]] -> [[brainwash_check未記入98件]] -> [[cmd_3474 APPROVE]]"
+  timestamp: "2026-06-20T16:32:00+09:00"
+- cmd_id: cmd_3474
+  review_type: report
+  verdict: LGTM
+  report_ninja: tobisaru
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "LGTM。AC1既実装確認+AC2 WARN追加+フィールド書込み。bc 4/4全yes。SG-PRE11 FP(related_lessons空)"
+  observations:
+    - "事実1: precheck ERRORS=1はSG-PRE11偽陽性。related_lessons:[]なのにlessons_useful:[]をERROR判定"
+    - "事実2: AC1既実装(normalize_karo_workarounds.py L228-244)。git log 48204a464確認"
+    - "事実3: AC2 karo_workaround_log.sh L313-315 WARN追加、L395 SAFE_BRAINWASH_CHECK、L412 書込み追加"
+  causal_chain: "brainwash_check未記入98件→WARN+フィールド書込み追加→今後WA記録時に構造的に洗脳監査強制"
+  brainwash_check: "bc 4/4全yes確認。files_modified 2件×command突合OK。SG-PRE11 FP 1件特定(偽陽性根因=related_lessons空チェック欠如)"
+  step3_5_verified: true
+  origin: "[[cmd_3474]] -> [[brainwash_check WA必須化]] -> [[LGTM]]"
+  sg7_bundle:
+    gate_prediction: CLEAR
+    blast_radius: low
+    lesson_candidate: none
+  timestamp: "2026-06-20T16:47:00+09:00"
