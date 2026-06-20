@@ -1,9 +1,12 @@
 task:
-  _ac_task_id: cmd_3465_full
+  _ac_task_id: cmd_3467_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3465 (deployed 2026-06-20T13:18:04). Read from the beginning.
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3467 (deployed 2026-06-20T14:23:14). Read from the beginning.
   ac_assigned:
+  - AC1
   - AC2
+  - AC3
+  ac_version: ad4680a2
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -22,14 +25,14 @@ task:
   - repo絶対パス消費者の全面書換え
   origin: '[[殿指示_オントロジー_20260620]] -> [[SSOT調査_cmd_3458_3461]] -> [[Phase2_3_SSOT是正_Guard汎化]]'
   parallel_ok: []
-  parent_cmd: cmd_3465
+  parent_cmd: cmd_3467
   project: infra
-  purpose: '殿指示(2026-06-20): オントロジー→行動せよ。cmd_3463-3464で消費者側(直書きBLOCK)を構築。本cmdは供給者側(SSOT正本)を保護する。正本が壊れると全ヘルパーが誤値を返しオントロジー全崩壊。家老設計案(blt_20260620_130157): フィールド×許可スクリプトのテーブル駆動'
+  purpose: '殿指示(2026-06-20): Phase1-3完了。Phase4=因果リンク[[A]]→[[B]]を記録から駆動装置に変換。pre-write-edit hookで変更対象ファイルの[[リンク]]を逆引きし、影響を受けるファイルを自動表示する。殿定義: 概念Aが変わったらAに依存する全てが自動で変わる'
   status: done
   stop_for: []
-  subtask_id: cmd_3463_AC2_config_ssot_fix
+  subtask_id: cmd_3467_full
   target_path: /mnt/c/tools/multi-agent-shogun/.claude/hooks
-  task_id: cmd_3465_full
+  task_id: cmd_3467_full
   task_type: full
   validation:
   - python3 -c "import yaml; yaml.safe_load(open('config/projects.yaml')); yaml.safe_load(open('config/settings.yaml')); yaml.safe_load(open('config/cli_profiles.yaml'))"
@@ -37,20 +40,23 @@ task:
   - id: 'L544'
     summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
     detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
-  - id: 'L653'
-    summary: 'skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数'
-    detail: 'skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数'
-  - id: 'L357'
-    summary: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
-    detail: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
+  - id: 'L540'
+    summary: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
+    detail: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
+  - id: 'L015'
+    summary: 'IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O'
+    detail: 'IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)"
+  - "command_files_modified_verification — Command×Files Modified照合:  scripts/gates/gate_gunshi_report_precheck.sh (SG-PRE25) scripts/gates/gate_gunshi_cs_checklist.sh (L4 step3_5_verified検出) instructions/gunshi.md (Step 3.5定義+review_logテンプレート) projects/infra/lessons_gunshi.yaml (LG036/LG037)"
   related_causal_links:
-  - "[[Guard17拡張_正本保護]]"
-  - "[[cmd_3463_オントロジーPhase2_3]]"
-  - "[[軍師穴検出_正本無保護]]"
+  - "[[Guard18_逆引き影響範囲表示]]"
+  - "[[因果リンク記録のみ]]"
+  - "[[殿指示_オントロジーPhase4_20260620]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -61,29 +67,28 @@ task:
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L544: queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg 'yaml.
-      - L653: skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数
-      - L357: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.
+      - L540: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
+      - L015: IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - '2026-06-20T13:14:18+09:00 | [MEM: memory_db ts=2026-06-20T03:28 "まずはSSOTが正しい場所にあるかの調査→曖昧なものを正す→オントロジーを動かそう"] **現在地と次の予定:** | 段階 '
-  - "2026-06-20T12:44:04+09:00 | 【INFOバッチ】 2026-06-20 12:30:00|cmd_3463"
-  - "2026-06-20T00:08:33+09:00 | workaround率: 5/100 = 5%。直近5件は0%。健全。 次のidle Step 5: パターン発見→因果推論→行動。 本セッション全体の行動を振り返り、殿の指摘から得た教訓をL0-L7"
-  - "2026-06-16T12:39:46+09:00 | 【家老】cmd_3411 初回配備開始 (title=stop hookにQ6洗脳検出→cmd起票完了チェックを追加し認識→行動ギャップをL5で阻止する, ninja=tobisaru) stop h"
+  - '2026-06-20T14:15:29+09:00 | [MEM: memory_db ts=2026-06-20T03:26 "オントロジーの真髄は『概念Aが変わったら、Aに依存する全てが自動で変わる』だ"] **計測結果**: [[リンク]]1594行'
+  - "2026-06-20T14:05:11+09:00 | 【INFOバッチ】 2026-06-20 14:03:04|cmd_3466"
+  - "2026-06-08T20:12:46+09:00 | 【将軍】/clear準備完了。PD:0 cmd:0 🚨:0 未commit:1(自動生成) 掲示板:対応済 稼働中:なし。本セッション11cmd全CLEAR+note記事2本+全スキル自動成長基盤Ph"
+  - "2026-04-17T00:07:06+09:00 | 【将軍】/clear準備完了。PD:0 cmd:1(処理中) 🚨:0。セッション成果: インフラ32本+DM-Signal Phase1-3完了(oikaze 145x/yotsume 71x)"
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'Guard17を拡張し、config/projects.yamlのprojects[].pathフィールドとconfig/cli_profiles.yamlのprofiles[].launch_cmdフィールドの手動Edit/WriteをBLOCKする。許可される経路(project_path.sh/shogun-cli-switchスキル等)はテーブルで定義する'
+    - check: '因果リンク逆引きインデックスを生成するスクリプト(scripts/lib/causal_index.sh)を作成する。全ファイルの[[リンク]]をスキャンし、リンクターゲット→参照元ファイルの逆引きマップをキャッシュファイルに出力する'
   - id: 'AC2'
     checks:
-    - check: 'batsテストを追加し、正本保護の正常系(BLOCK)と免除系(許可スクリプト経由)の両方を検証する'
+    - check: 'pre-write-edit-combined.shにGuard18(因果リンク影響範囲表示)を追加する。Write/Edit対象ファイルが[[リンク]]のターゲットになっている場合、参照元ファイル一覧をcontext表示する(BLOCKではなく情報表示)'
   - id: 'AC3'
     checks:
-    - check: 'docs/research/ssot-registry.mdの各概念行にGuard17保護状態を追記する'
-  ac_version: d48acaf0
+    - check: 'batsテストを追加し、因果リンク影響範囲表示の正常系(表示あり)と非該当系(表示なし)を検証する'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3465.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3465.yaml
+  report_filename: kagemaru_report_cmd_3467.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3467.yaml
   bloom_level: 
-  deployed_at: "2026-06-20T13:18:55"
+  deployed_at: "2026-06-20T14:23:49"
