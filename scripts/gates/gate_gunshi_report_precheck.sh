@@ -273,9 +273,14 @@ if [ -f "$REPORT_PATH" ]; then
     [[ "$_lu_is_empty_list" =~ ^[0-9]+$ ]] || _lu_is_empty_list=0
     _lu_field_exists=0
     grep -q '^lessons_useful:' "$REPORT_PATH" 2>/dev/null && _lu_field_exists=1
-    if [ "${_lu_is_empty_list:-0}" -gt 0 ] || { [ "$_lu_field_exists" -eq 1 ] && [ "${_lu_has_items:-0}" -eq 0 ]; }; then
-        echo "  ERROR: lessons_useful空リスト。related_lessonsが注入済みならフィードバック必須→GATE BLOCK確実"
+    # related_lessonsが空なら lessons_useful: [] は正当(FP防止 2026-06-20 cmd_3474で発見)
+    _rl_has_items=$(sed -n '/^  related_lessons:/,/^  [a-z]/p' "${TASK_FILE:-/dev/null}" 2>/dev/null | grep -c '^\s*- id:' 2>/dev/null || true)
+    [[ "$_rl_has_items" =~ ^[0-9]+$ ]] || _rl_has_items=0
+    if { [ "${_lu_is_empty_list:-0}" -gt 0 ] || { [ "$_lu_field_exists" -eq 1 ] && [ "${_lu_has_items:-0}" -eq 0 ]; }; } && [ "${_rl_has_items:-0}" -gt 0 ]; then
+        echo "  ERROR: lessons_useful空リスト。related_lessonsが注入済み(${_rl_has_items}件)ならフィードバック必須→GATE BLOCK確実"
         ERRORS=$((ERRORS + 1))
+    elif { [ "${_lu_is_empty_list:-0}" -gt 0 ] || { [ "$_lu_field_exists" -eq 1 ] && [ "${_lu_has_items:-0}" -eq 0 ]; }; } && [ "${_rl_has_items:-0}" -eq 0 ]; then
+        echo "  PASS: lessons_useful空リスト(related_lessonsも空のため正当)"
     else
         echo "  PASS: lessons_useful ${_lu_has_items}件"
     fi
@@ -554,8 +559,18 @@ fi
 echo ""
 echo "■ SG-PRE20: related_lessons+lessons_useful整合"
 if [ -f "${TASK_FILE:-}" ]; then
-    _rl_count=$(grep -c '^\s*- id:' <(sed -n '/^  related_lessons:/,/^  [^ ]/p' "$TASK_FILE") 2>/dev/null || echo 0)
-    _lu_count=$(grep -c '^\s*- id:' <(sed -n '/^lessons_useful:/,/^[^ ]/p' "$REPORT_PATH") 2>/dev/null || echo 0)
+    _rl_count=$(awk '
+        /^  related_lessons:/ { sec=1; next }
+        sec && /^  [A-Za-z_][A-Za-z0-9_]*:/ { sec=0 }
+        sec && /^  - id:/ { c++ }
+        END { print c+0 }
+    ' "$TASK_FILE" 2>/dev/null)
+    _lu_count=$(awk '
+        /^lessons_useful:/ { sec=1; next }
+        sec && /^[A-Za-z_][A-Za-z0-9_]*:/ { sec=0 }
+        sec && /^[[:space:]]*- id:/ { c++ }
+        END { print c+0 }
+    ' "$REPORT_PATH" 2>/dev/null)
     if [ "${_rl_count:-0}" -gt 0 ] && [ "${_lu_count:-0}" -eq 0 ]; then
         echo "  WARN: related_lessons ${_rl_count}件注入済みだがlessons_useful空リスト → BLOCK確実"
         ERRORS=$((ERRORS + 1))

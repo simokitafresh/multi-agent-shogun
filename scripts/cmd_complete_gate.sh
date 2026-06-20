@@ -5149,7 +5149,13 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
     MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
 
     # related_lessonsの有無をチェック（空リスト[]やnullは除外）
-    rl_count=$(awk '/related_lessons:/,/^[^ ]/{if(/^\s*- /)c++} END{print c+0}' "$task_file" 2>/dev/null)
+    # task:配下の2-space fieldだけを範囲にする。次フィールド以降のAC/standard_skillsを誤って教訓扱いしない。
+    rl_count=$(awk '
+        /^  related_lessons:/ { sec=1; next }
+        sec && /^  [A-Za-z_][A-Za-z0-9_]*:/ { sec=0 }
+        sec && /^  - id:/ { c++ }
+        END { print c+0 }
+    ' "$task_file" 2>/dev/null)
     has_lessons=$([ "${rl_count:-0}" -gt 0 ] && echo "yes" || echo "no")
 
     if [ "$has_lessons" = "yes" ]; then
@@ -5225,7 +5231,17 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
                 ALL_CLEAR=false
             else
                 # related_lessonsからlesson IDを抽出してメッセージに表示
-                rl_ids=$(awk '/related_lessons:/,/^[^ ]/{if(/id:/){val=$0; sub(/.*id:\s*/, "", val); gsub(/[" \t]/, "", val); if(c++) printf ","; printf "%s", val}}' "$task_file" 2>/dev/null)
+                rl_ids=$(awk '
+                    /^  related_lessons:/ { sec=1; next }
+                    sec && /^  [A-Za-z_][A-Za-z0-9_]*:/ { sec=0 }
+                    sec && /id:/ {
+                        val=$0
+                        sub(/.*id:[[:space:]]*/, "", val)
+                        gsub(/[" \t]/, "", val)
+                        if (c++) printf ","
+                        printf "%s", val
+                    }
+                ' "$task_file" 2>/dev/null)
                 [ -z "$rl_ids" ] && rl_ids="(parse_error)"
                 handle_empty_lessons_useful_check "$ninja_name" "$task_type" "$rl_ids"
             fi
