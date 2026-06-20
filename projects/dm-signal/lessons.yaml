@@ -249,7 +249,7 @@ lessons:
   origin: '[[cmd_3377]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-15'
+  last_referenced: '2026-06-20'
 - id: L737
   title: 奥義PFの命名BBはL1コンポーネントBBと対応していない
   summary: '奥義-GS-{BB}-{目的}の{BB}は、コンポーネントのL1 BBとは対応していない。例: 奥義-GS-追い風-激攻のコンポーネントに追い風BBは含まれない'
@@ -3986,6 +3986,9 @@ lessons:
   - outputs/analysis/nested_fof/r1_equal_weight_performance.yaml
   - outputs/analysis/nested_fof/r1_vs_individual_comparison.csv
   origin: '[[cmd_1410]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L492
   title: oikaze NaN修正はGS結果に影響なし — momentum_cubeにNaN未発生のためブロック固有
   summary: oikazeブロックでは全28116パターンでNaN修正前後のCAGR/MaxDD差分がゼロ。momentum_cubeにNaN値が発生しないデータ構造のため。

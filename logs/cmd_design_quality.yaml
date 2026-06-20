@@ -1,52 +1,4 @@
 entries:
-- cmd_id: "cmd_3422"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-16T08:50:21Z"
-  notes: "gate/hook追加cmdに行動変換キーワードなし|check=gate_hook_action_conversion"
-- cmd_id: "cmd_3422"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-16T08:50:21Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票。cmd_3421は累計蓄積でcancel) / 対策: env_changeをinfra既存パターン(LS-A16)に変更+q11にPF登録であることを明記"
-  notes: "WARN累計昇格: 「gate/hook追加cmdに行動変換キーワードなし|check=gate_hook_action_conversion」が1回繰り返されています(cmd_ids=cmd_3421)。WARNを解消してからcmd_save.shを実行せよ"
-- cmd_id: "cmd_3422"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-16T08:51:24Z"
-  notes: "gate/hook追加cmdに行動変換キーワードなし|check=gate_hook_action_conversion"
-- cmd_id: "cmd_3422"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-16T08:51:24Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票。cmd_3421は累計蓄積でcancel) / 対策: env_changeをinfra既存パターン(LS-A16)に変更+q11にPF登録であることを明記"
-  notes: "WARN累計昇格: 「gate/hook追加cmdに行動変換キーワードなし|check=gate_hook_action_conversion」が1回繰り返されています(cmd_ids=cmd_3421)。WARNを解消してからcmd_save.shを実行せよ"
 - cmd_id: "cmd_3423"
   ac_count: 0
   gate_result: "PASS"
@@ -2153,3 +2105,23 @@ entries:
   supplementary_cmds: 0
   source: "cmd_complete_gate"
   timestamp: "2026-06-20T00:25:11Z"
+- cmd_id: "cmd_karo_hotfix_context_dm_ops_ga102_20260620"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-20T01:30:21Z"
+- cmd_id: "cmd_karo_hotfix_context_dm_ops_ga102_20260620"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "yes"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-20T01:31:08Z"

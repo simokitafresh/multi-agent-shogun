@@ -1960,6 +1960,7 @@ codd:
 | file | `context/dm-signal-core.md` |
 | file | `context/dm-signal-ops.md` |
 | cmd | `cmd_2776` セマンティック辞書5概念追加 |
+| causal | `cmd_karo_hotfix_context_dm_ops_ga102_20260620` files_modified: [[silent_fallback_quality]] |
 
 ## skill_design_rules — Skill設計ルール
 
@@ -2158,6 +2159,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-17T19:49:42+09:00 1回2つ目のアイデア 忘れよう それよりも今の既存のビルディングブロックを全て分析して 新たなビルディングブロックを作るとしたら お前だったらどうする 知識を利用して実際に今の DM シグナルに そうできるようなアイデアを考えてくれ |
 | causal | `cmd_3439` files_modified: [[dmsignal_operations]] |
 | causal | `cmd_3442` files_modified: [[dmsignal_operations]] |
+| causal | `cmd_karo_hotfix_context_dm_ops_ga102_20260620` files_modified: [[dmsignal_operations]] |
 
 ## google_classroom — Google Classroom Dashboard
 
@@ -2719,6 +2721,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T21:00:28+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T21:18:27+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T00:44:43+09:00 続けて |
+| causal | `cmd_karo_hotfix_context_dm_ops_ga102_20260620` files_modified: [[cdp_browser_capability]] |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -3332,7 +3335,7 @@ codd:
 |------|---|
 | id | gate_quality_framework |
 | label | ゲート品質統合フレームワーク |
-| aliases | ゲート統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, ゲート偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, クオリティゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, ゲート偽陽性ALERTはバグだな, startup BLOCK 3セッション連続, cmd_skeleton, cmd起票雛形, 起票雛形ジェネレータ, FILL_THIS残存BLOCK, cmd起票フロー3ステップ, skeleton→save→delegate, cmd_delegate数字ID正規化, Check17日付リテラル除外, 性能の劣るLLMでもスムーズにCMD起票, GA context freshness ALERTを一次情報で調査し, GA context freshness ALERTの根因を調査し, GA dm signal frontend md context freshness ALERTの原因特定・横展開・防御, GA dm signal core md context freshness ALERTの原因特定・横展開・防御層反映, startup gateのSKILL md script参照WARNが3セッション連続BLOCK, startup gate教訓健全度がALERT useful rate % 3回連続BLOCK, review_quality_scale_summary, WARN率計算gate_result未考慮バグ, LESSON_EFFECT_USEFUL_MIN, useful_rate計測min_samples分離, gate_result=CLEARなのにFAIL永続カウント, cross-project教訓タグ同期, 二重登録教訓タグ不整合, count_same_warn_pattern cmd_id重複カウント偽陽性, Check19出口判定化, session_alerts リアルタイムhook, 覚醒設計書v3, 3セッション連続startup BLOCK 教訓健全度ALERT, cmd save品質ゲート |
+| aliases | ゲート統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, ゲート偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, クオリティゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, ゲート偽陽性ALERTはバグだな, startup BLOCK 3セッション連続, cmd_skeleton, cmd起票雛形, 起票雛形ジェネレータ, FILL_THIS残存BLOCK, cmd起票フロー3ステップ, skeleton→save→delegate, cmd_delegate数字ID正規化, Check17日付リテラル除外, 性能の劣るLLMでもスムーズにCMD起票, GA context freshness ALERTを一次情報で調査し, GA context freshness ALERTの根因を調査し, GA dm signal frontend md context freshness ALERTの原因特定・横展開・防御, GA dm signal core md context freshness ALERTの原因特定・横展開・防御層反映, startup gateのSKILL md script参照WARNが3セッション連続BLOCK, startup gate教訓健全度がALERT useful rate % 3回連続BLOCK, review_quality_scale_summary, WARN率計算gate_result未考慮バグ, LESSON_EFFECT_USEFUL_MIN, useful_rate計測min_samples分離, gate_result=CLEARなのにFAIL永続カウント, cross-project教訓タグ同期, 二重登録教訓タグ不整合, count_same_warn_pattern cmd_id重複カウント偽陽性, Check19出口判定化, session_alerts リアルタイムhook, 覚醒設計書v3, 3セッション連続startup BLOCK 教訓健全度ALERT, cmd save品質ゲート, GA context freshness ALERTのdm signal ops mdを一次情報で照合し |
 | skills | |
 | related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework, creator_brainwashing_defense, chain_principle, no_auto_extinguish, multi_cli_event_commonization, command_files_modified_verification |
 | related_lessons | `L512`, `L079`, `L633` |

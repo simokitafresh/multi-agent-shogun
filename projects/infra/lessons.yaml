@@ -1373,6 +1373,9 @@ lessons:
   - context/dm-signal.md
   - context/dm-signal-ops.md
   origin: '[[cmd_karo_context_freshness_ga407_20260603]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L737
   title: 'FAST_METADATAガードの適用範囲: 教育的表示を追加したら同時にFAST_METADATAガードも追加せよ'
   summary: cmd_save.shに教育的メタデータ表示(show_lord_conversation_matches&, Q11 research dir
@@ -4936,6 +4939,9 @@ lessons:
   target_files:
   - gate_yaml_status.sh
   origin: '[[cmd_2042]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L492
   title: git status -z awk抽出はbash readより速い(WSL2大repo)
   summary: WSL2上の大リポジトリでgit changed-file列挙が遅い場合、git status --porcelain=v2 -z パイプ awk

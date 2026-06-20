@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-20 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-20T10:02:13+09:00 -->
+<!-- generated_at: 2026-06-20T10:31:21+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-06-20T10:02:13+09:00 | terminal | response | 完了。inbox未読(inbox2のnudge)は既にReadで内容確認済み。作業への影響: - karo補足: タスクYAML修復済みの通知 → 既にタスク完了済みのため影響なし - gunshi APPROVE: 全AC確認済み、co…
-- 2026-06-20T10:01:19+09:00 | terminal | inbound | 偽陽性はバグだ。バグは修正しよう。各論パッチは洗脳の影響。洗脳から覚醒せよ
-- 2026-06-20T09:59:19+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: CTX%異常値 cmd_3458_saizo (ctx_pct=65%, median=21.0%, ratio=3.10x, delta=+44.0pt) WARNING: CTX%異常値 cm…
-- 2026-06-20T09:36:00+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-20 09:24:16|cmd_karo_hotfix_hook_yaml_dump_ga101_20260620
-- 2026-06-20T09:32:50+09:00 | ntfy | outbound | CI赤: run 27854623943 Unit Tests (bats)
-- 2026-06-20T09:31:38+09:00 | terminal | response | 全処理完了: - **report review**: cmd_karo_hotfix_hook_yaml_dump_ga101_20260620 kotaro → LGTM (SG7バンドル付き) - **gate_sync**: CL…
-- 2026-06-20T09:28:21+09:00 | terminal | response | idle-persist完了。 **サマリ**: - レビュー依頼1件処理完了: cmd_karo_hotfix_hook_yaml_dump_ga101_20260620 → APPROVE - idle Step 4 冷え観点遡及適用…
-- 2026-06-20T09:27:36+09:00 | terminal | response | 整理完了。 - **コミット1** (efc8e016e): スキル統合6本削除+gate/test追加+教訓整理+知識鮮度更新 — 50ファイル - **コミット2** (3912e9df0): 家老自律hotfix成果+軍師idle分…
-- 2026-06-20T09:24:40+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝13
-- 2026-06-20T09:22:55+09:00 | terminal | response | 完了。作業サマリー: --- **GA-101 調査結果** **AC1: 直接原因** `git-pre-commit.sh:123` の `is_yaml_dump_scan_target()` が `*.py` ファイル全般をスキャ…
+- 2026-06-20T10:31:19+09:00 | terminal | response | gate-sync完了。cmd_karo_hotfix_context_dm_ops_ga102_20260620: LGTM→CLEAR一致。inbox未読0件。 [meta] stop_reason=end_turn
+- 2026-06-20T10:31:05+09:00 | terminal | response | 家老の自律hotfix(context_dm_ops GA102) GATE CLEAR。処理済み。パイプライン空、殿の指示を待つ。 [meta] stop_reason=end_turn
+- 2026-06-20T10:30:46+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝14
+- 2026-06-20T10:30:18+09:00 | terminal | response | 完了。GA-102 dm-signal-ops hanzo報告 → **LGTM**。inbox未読0件。 [meta] stop_reason=end_turn
+- 2026-06-20T10:28:13+09:00 | terminal | response | 新着メッセージなし。inbox1のnudgeは既処理済みのcore draft依頼に対するもの。inbox未読0件。次のレビュー依頼を待機。 [meta] stop_reason=end_turn
+- 2026-06-20T10:26:17+09:00 | terminal | response | レビュー完了。cmd_karo_hotfix_context_dm_ops_ga102_20260620 → **APPROVE**。inbox未読0件。次のレビュー依頼またはinbox到着を待機。 [meta] stop_reason=…
+- 2026-06-20T10:24:21+09:00 | ntfy | outbound | CI赤: run 27855855204 Unit Tests (bats)
+- 2026-06-20T10:23:27+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-102)
+- 2026-06-20T10:18:39+09:00 | terminal | response | ワーキングツリー清浄。全整理完了。 **まとめ:** - コミット4本、全てプッシュ済み(8a8a48a10) - GP-136偽陽性の根因修正: `scripts/report_field_set.sh`(個別除外) → `script…
+- 2026-06-20T10:17:51+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: codd.md(source更新),dm-signal-core.md(source更新),dm-signal-ops.md(source更新)
 
 ## 未解決確認事項
 - 完了。inbox未読(inbox2のnudge)は既にReadで内容確認済み。作業への影響: - karo補足: タスクYAML修復済みの通知 → 既にタスク完了済みのため影響なし - gunshi APPROVE: 全AC確認済み、confidence HIGH → 報告PA…
