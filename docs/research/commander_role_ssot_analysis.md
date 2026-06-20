@@ -17,7 +17,7 @@ Commanderロールには同等の保護がない。本文書はパターン分�
 - 実測: 92ファイル (殿指摘の86は概算)
 - 実測日時: 2026-06-20T15:38 JST
 
-## 参照: SSOT Registry (docs/research/ssot-registry.md)
+## 参照: SSOT Registry ([[ssot-registry.md]])
 
 `ロール名` 行より:
 - SSOT正本: `config/settings.yaml:cli.agents` + `instructions/parts/roles/*`
@@ -235,15 +235,62 @@ NOTIFY_TARGETS=("shogun" "karo" "gunshi")  # → COMMANDER_ROLES_ARRAYから生�
 
 ---
 
+## 実装済み確認 (2026-06-20T16:10 JST)
+
+[[agent_config.sh]] (`scripts/lib/agent_config.sh`) L155-175 に以下が実装済み:
+
+```bash
+# L155: get_commander_names() — COMMANDER_ROLES定数相当の関数
+get_commander_names() {
+    echo "$_AGENT_CONFIG_COMMANDER_NAMES"
+}
+
+# L160: is_commander_role() — カテゴリB二重実装解消済み (inbox_write.sh の is_core_agent から委譲)
+is_commander_role() {
+    local name="$1"
+    case " $_AGENT_CONFIG_COMMANDER_NAMES " in
+        *" $name "*) return 0 ;;
+    esac
+    return 1
+}
+
+# L168: get_commander_inbox_path() — カテゴリA literal直書きのヘルパー化済み
+get_commander_inbox_path() {
+    local role="$1"
+    if ! is_commander_role "$role"; then return 1; fi
+    printf '%s/queue/inbox/%s.yaml\n' "$_AGENT_CONFIG_SCRIPT_DIR" "$role"
+}
+```
+
+[[inbox_write.sh]] (`scripts/inbox_write.sh`) L51-53 での委譲確認:
+
+```bash
+is_core_agent() {
+    if type is_commander_role >/dev/null 2>&1; then
+        is_commander_role "$1"   # ← agent_config.sh L160 への委譲実装済み
+```
+
+`get_commander_inbox_path` は [[inbox_write.sh]] L1500 でも使用確認済み:
+```bash
+GUNSHI_INBOX="$(get_commander_inbox_path gunshi)"  # L1500
+```
+
+**bulletin_write.sh 未解消確認** ([[bulletin_write.sh]] L321):
+```bash
+NOTIFY_TARGETS=("shogun" "karo" "gunshi")  # ← ★★☆ 依然hardcode残存 (2026-06-20確認)
+```
+
+---
+
 ## 実装優先順位
 
-| 優先 | 実装内容 | ROI |
+| 優先 | 実装内容 | 状態 (2026-06-20確認) |
 |------|---------|-----|
-| ★★★ | `is_commander_role()` を agent_config.sh に追加 + inbox_write.sh 移管 | 二重実装解消。全スクリプトが統一APIを使える |
-| ★★☆ | `get_commander_inbox_path()` 追加 + カテゴリA 30件置換 | ファイルパス変更時の一点修正を保証 |
-| ★★☆ | bulletin_write.sh の NOTIFY_TARGETS を COMMANDER_ROLES から生成 | Commander追加時の自動反映 |
-| ★☆☆ | Guard16b: `queue/inbox/{commander}.yaml` 直書き検出 | 回帰防止 |
-| ☆☆☆ | カテゴリC(inbox宛先)ヘルパー化 | 少数件数でROI低い |
+| ★★★ | `is_commander_role()` を agent_config.sh に追加 + inbox_write.sh 移管 | ✅ 完了 (L160/L51) |
+| ★★☆ | `get_commander_inbox_path()` 追加 + カテゴリA 30件置換 | ✅ 関数完了/全件置換は未確認 |
+| ★★☆ | bulletin_write.sh の NOTIFY_TARGETS を COMMANDER_ROLES から生成 | ❌ 未完了 (L321 hardcode残存) |
+| ★☆☆ | Guard16b: `queue/inbox/{commander}.yaml` 直書き検出 | ❌ 未実装 |
+| ☆☆☆ | カテゴリC(inbox宛先)ヘルパー化 | ❌ 未実装(ROI低) |
 
 ---
 
@@ -272,4 +319,5 @@ Phase 3: Guard追加
 - `[[Commanderロール86ファイル最大穴]]` → `[[is_core_agent二重実装]]` → `[[agent_config.sh未統合]]`
 - `[[忍者名SSOT確立_Guard16]]` → `[[Commanderロール未保護]]` → `[[本分析]]`
 - `[[殿指摘_洗脳早期終了_20260620]]` → `[[SSOT棚卸し]]` → `[[偵察分類SSOT設計]]`
-- 参照: `docs/research/ssot-registry.md` ロール名行
+- 実装先: [[agent_config.sh]] L155-175 / [[inbox_write.sh]] L51-56 / [[bulletin_write.sh]] L321(未解消)
+- 参照: [[ssot-registry.md]] ロール名行
