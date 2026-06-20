@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-06-13 cmd_3363 -->
+<!-- last_updated: 2026-06-20 cmd_karo_hotfix_context_dm_core_ga102_20260620 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -224,6 +224,7 @@ UUID・銘柄構成・リバランス設定 → `projects/dm-signal.yaml` (e) sh
 | 採用 | AbsoluteMomentumFilter / EqualWeight | 門番 / 分身(全忍法terminal) |
 | 補助 | SafeHavenSwitch | 門番補助 |
 | 採用 | ReversalFilter → **逆風**(cmd_249採用決定) / MultiViewMomentumFilter → **四つ目**(cmd_284フルGS完了) | シン忍法v2で7忍法体制確定 |
+| 採用 | WeightedMultiViewMomentumFilter → **重み付き四つ目**(cmd_3384) | 4視点投票数比例ウェイト。奥義-GS-新四つ目(激攻/鉄壁/常勝)3体登録(cmd_3389) |
 | 採用 | WardTwoStageEW → **Ward二段EW**(cmd_1437/1443/1444) | ネステッドFoF terminal。Ward階層クラスタリング+二段均等加重。本番稼働中(旧忍法-Ward) |
 | 未採用/削除済 | MonthlyReturnMomentumFilter / PBarSelectionBlock / RelativeMomentumFilter / KalmanMeta | WP-2でdead endpoints・未使用BBとして削除済み(commit d1bc8b22)。古い調査結果を実装前提にしない |
 | 未採用 | ComponentPrice / CashTerminal | インフラ/スケルトン |
