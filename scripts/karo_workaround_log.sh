@@ -19,6 +19,7 @@ unset _self
 LOG_FILE="${KARO_WORKAROUND_LOG_FILE:-$REPO_ROOT/logs/karo_workarounds.yaml}"
 LOCK_FILE="${KARO_WORKAROUND_LOCK_FILE:-/tmp/karo_workarounds.lock}"
 DISABLE_ALERTS="${KARO_WORKAROUND_DISABLE_ALERTS:-false}"
+BRAINWASH_CHECK="${KARO_WA_BRAINWASH_CHECK:-}"
 
 # shellcheck source=scripts/lib/known_ninjas.sh
 source "$REPO_ROOT/scripts/lib/known_ninjas.sh"
@@ -309,6 +310,11 @@ if [[ "$WA_MODE" = true ]]; then
     verify_environment_change "$ENVIRONMENT_CHANGE"
 fi
 
+# AC2(cmd_3474): brainwash_check未記入WARN (--waモード)
+if [[ "$WA_MODE" = true && -z "$BRAINWASH_CHECK" ]]; then
+    echo "[karo_workaround_log] WARN: brainwash_check未記入。KARO_WA_BRAINWASH_CHECK='洗脳#X確認内容'で渡せ: $CMD_ID/$NINJA_NAME" >&2
+fi
+
 # --- Count category entries excluding resolved (AC1+AC3: cmd_1211, GP-084: Python→awk) ---
 count_category_entries() {
     local category="$1"
@@ -386,6 +392,7 @@ EOF
         SAFE_FIX=$(yaml_escape_sq "$FIX")
         SAFE_MISSED_SG=$(yaml_escape_sq "$MISSED_SG")
         SAFE_ENVIRONMENT_CHANGE=$(yaml_escape_sq "$ENVIRONMENT_CHANGE")
+        SAFE_BRAINWASH_CHECK=$(yaml_escape_sq "$BRAINWASH_CHECK")
         {
             cat <<EOF
 - cmd_id: $CMD_ID
@@ -402,6 +409,7 @@ EOF
             if [[ "$WA_MODE" = true && -n "$ENVIRONMENT_CHANGE" ]]; then
                 echo "  environment_change: '$SAFE_ENVIRONMENT_CHANGE'"
             fi
+            echo "  brainwash_check: '$SAFE_BRAINWASH_CHECK'"
             cat <<EOF
   resolved_by_cmd: ''
 EOF
