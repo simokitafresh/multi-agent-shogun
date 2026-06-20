@@ -3442,6 +3442,10 @@ if [ ${#alerts[@]} -gt 0 ]; then
     done
     if [ -n "$_deferred_alerts" ]; then
         _deferred_message="将軍startup先送りBLOCK自動エスカレーション: ${_deferred_alerts}。将軍がcmd起票しないため家老karo_directで対処を検討せよ"
+        mkdir -p "$SCRIPT_DIR/queue/locks"
+        _deferred_lock="$SCRIPT_DIR/queue/locks/shogun_startup_escalation.lock"
+        (
+        flock -x 9
         _deferred_dup_status=$(python3 - "$SCRIPT_DIR/queue/inbox/karo.yaml" "$_deferred_message" <<'PY' 2>/dev/null || true
 import sys
 from pathlib import Path
@@ -3478,7 +3482,8 @@ PY
                 "$_deferred_message" \
                 escalation shogun 2>/dev/null || true
         fi
-        unset _deferred_message _deferred_dup_status
+        ) 9>"$_deferred_lock"
+        unset _deferred_message _deferred_dup_status _deferred_lock
     fi
 fi
 }
