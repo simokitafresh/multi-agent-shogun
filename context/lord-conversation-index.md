@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-20 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-20T10:35:46+09:00 -->
+<!-- generated_at: 2026-06-20T11:11:52+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-20T11:11:51+09:00 | terminal | response | BLOCK: cmd_3461の教訓未記録。既知パターン(累計昇格→新ID起票)→LS063でack。
+- 2026-06-20T11:02:29+09:00 | terminal | inbound | ではオントロジーに戻ろう
+- 2026-06-20T10:42:04+09:00 | ntfy | outbound | CI赤: run 27856256421 Unit Tests (bats)
+- 2026-06-20T10:38:38+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-20 10:30:19|cmd_karo_hotfix_context_dm_ops_ga102_20260620 2026-06-20 10:35:01|cmd_karo_hotfix_context…
 - 2026-06-20T10:35:45+09:00 | terminal | response | gate-sync完了。GA-102 dm-signal-core: LGTM→CLEAR一致。inbox未読0件。 [meta] stop_reason=end_turn
 - 2026-06-20T10:35:42+09:00 | terminal | response | 家老の自律hotfix(context_dm_core GA102) GATE CLEAR。処理済み。殿の指示を待つ。 [meta] stop_reason=end_turn
 - 2026-06-20T10:33:45+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_context_dm_core_ga102_20260620 完了
 - 2026-06-20T10:33:28+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝15
 - 2026-06-20T10:33:21+09:00 | terminal | response | 完了。GA-102 dm-signal-core tobisaru報告 → **LGTM**。inbox未読0件。 [meta] stop_reason=end_turn
 - 2026-06-20T10:33:11+09:00 | terminal | response | 既読化完了。 **状態**: cmd_karo_hotfix_context_dm_core_ga102_20260620 完了済み。 - gate PASS、commit d969b42b4、家老報告済み - 軍師APPROVE（con…
-- 2026-06-20T10:32:48+09:00 | terminal | response | uncommitted変更ゼロ。タスク完了。 **完了サマリ:** - AC1: `2026-06-13 cmd_3363`以降のgit logを一次確認。WeightedMultiViewMomentumFilterBlock追加(cm…
-- 2026-06-20T10:31:19+09:00 | terminal | response | gate-sync完了。cmd_karo_hotfix_context_dm_ops_ga102_20260620: LGTM→CLEAR一致。inbox未読0件。 [meta] stop_reason=end_turn
-- 2026-06-20T10:31:05+09:00 | terminal | response | 家老の自律hotfix(context_dm_ops GA102) GATE CLEAR。処理済み。パイプライン空、殿の指示を待つ。 [meta] stop_reason=end_turn
-- 2026-06-20T10:30:46+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝14
 
 ## 未解決確認事項
 - uncommitted変更ゼロ。タスク完了。 **完了サマリ:** - AC1: `2026-06-13 cmd_3363`以降のgit logを一次確認。WeightedMultiViewMomentumFilterBlock追加(cmd_3384)と奥義-GS-新四つ目3体…
