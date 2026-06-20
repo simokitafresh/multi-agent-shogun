@@ -545,6 +545,7 @@ fi
 needs_destructive_python() {
     local cmd="$1"
 
+    # shellcheck disable=SC2221,SC2222  # FP: independent glob patterns in same case arm
     case "$cmd" in
         *"rm "*|*"sudo"*|*"su "*|*"kill"*|*"git push"*|*"git reset"*|*"git checkout"*|*"git restore"*|*"git clean"*|*"tmux kill"*) return 0 ;;
         *"mkfs"*|*"fdisk"*|*"mount"*|*"umount"*) return 0 ;;

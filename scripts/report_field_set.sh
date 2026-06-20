@@ -319,6 +319,7 @@ for i, item in enumerate(data):
 " <<< "$val" || return 1
                 # D0: フルフィールド書込み時に既存件数より少なければBLOCK(上書き消去防止)
                 local _existing_count _new_count
+                # shellcheck disable=SC2154  # $file is set in outer scope
                 _existing_count=$(python3 -c "
 import yaml, sys
 try:
