@@ -3225,6 +3225,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T14:51:16+09:00 a23732239a3f95ef3 toolu_01Kr7p5w42XaD3T3tHLiGqdJ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T14:55:59+09:00 adccb149d2da2a2d0 toolu_01Se6rvnHGHVCWcpoQcEUgnV /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T14:58:00+09:00 ad71739b0637eb7fd toolu_01GJpDdXaPyYtnQKpgrrfukq /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T15:56:09+09:00 ab4332f3773195692 toolu_01SVBS3A1UAVmTix2pS94Dmb /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T15:59:05+09:00 a7ba56373573c4409 toolu_01AkigNeqnJaBYMi7HscZgsg /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
@@ -3371,6 +3373,7 @@ codd:
 | file | `docs/research/gunshi_idle_wa_pattern_20260612.md` — 軍師idle: WAパターン分析(2026-06-12) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-13T02:12:52+09:00 ゲートやデーモンのバグや品質問題がないか調査しよう。バグや品質問題は修正しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T18:42:00+09:00 b3ii26t26 toolu_01PrpkRkRg9wvabMLGs9iDQ2 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/5855900d-be66-42f9-8452-2a43ad |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T15:58:53+09:00 a1f6f244d70999f1f toolu_014UUKvjxHFDzA3QgAcR1MTx /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
 | causal_chain | `[[cmd_2935]]` (L651) |
 | causal_chain | `[[cmd_karo_ci_fix_2tests]]` (L652) |
 
