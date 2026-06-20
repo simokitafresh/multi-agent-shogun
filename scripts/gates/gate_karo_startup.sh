@@ -1719,10 +1719,11 @@ echo ""
 if [ "${#alerts[@]}" -gt 0 ]; then
     mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
     # §3.2: python3→awk置換(~650ms削減)。alert文字列は空白を含むためtmp経由で1行1alertにする。
-    _current_alerts_file="$_TMP_D/current_alerts"
+    _current_alerts_file="$(mktemp)"
     printf '%s\n' "${alerts[@]}" > "$_current_alerts_file"
     _streak_result=$(awk -F'\t' -v threshold="$STARTUP_WARN_STREAK_THRESHOLD" '
-    FNR == NR {
+    BEGIN { n_runs = 0 }
+    NR == FNR {
         if ($0 != "") current[$0] = 1
         next
     }
