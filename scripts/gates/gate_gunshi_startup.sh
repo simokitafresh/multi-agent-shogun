@@ -109,6 +109,39 @@ print(summary)
 PY_LC
 } &
 _PID_PREV_SESSION=$!
+# §3.2: 掲示板チェックも並列化(python3+yaml.safe_load ~650ms)
+{ python3 - "$SCRIPT_DIR/queue/bulletin_board.yaml" gunshi <<'PY_BLT' > "$_TMP_D/bulletin" 2>/dev/null
+import sys, yaml
+path, agent = sys.argv[1:3]
+try:
+    with open(path, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+except Exception:
+    print("0"); raise SystemExit(0)
+entries = data.get("entries") or []
+pending = []
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    rc = entry.get("requires_confirmation", False)
+    if not rc:
+        continue
+    if isinstance(rc, list) and agent not in rc:
+        continue
+    if str(entry.get("status", "")).lower() == "closed":
+        continue
+    confirmed = entry.get("confirmed_by") or []
+    if agent in confirmed:
+        continue
+    text = str(entry.get("content", "")).splitlines()
+    head = text[0] if text else ""
+    pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
+print(len(pending))
+for item in pending[:3]:
+    print(item)
+PY_BLT
+} &
+_PID_BULLETIN=$!
 
 echo "=== 軍師起動チェック $(date '+%H:%M:%S') ==="
 echo ""
@@ -190,34 +223,9 @@ fi
 echo "■ 掲示板未確認"
 bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
 if [ -f "$bulletin_file" ]; then
-    bulletin_result=$(python3 - "$bulletin_file" gunshi <<'PY'
-import sys, yaml
-path, agent = sys.argv[1:3]
-with open(path, encoding="utf-8") as fh:
-    data = yaml.safe_load(fh) or {}
-entries = data.get("entries") or []
-pending = []
-for entry in entries:
-    if not isinstance(entry, dict):
-        continue
-    rc = entry.get("requires_confirmation", False)
-    if not rc:
-        continue
-    if isinstance(rc, list) and agent not in rc:
-        continue
-    if str(entry.get("status", "")).lower() == "closed":
-        continue
-    confirmed = entry.get("confirmed_by") or []
-    if agent in confirmed:
-        continue
-    text = str(entry.get("content", "")).splitlines()
-    head = text[0] if text else ""
-    pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
-print(len(pending))
-for item in pending[:3]:
-    print(item)
-PY
-)
+    # §3.2: 並列化済み。結果をtmpから読出し
+    wait "$_PID_BULLETIN" 2>/dev/null || true
+    bulletin_result="$(cat "$_TMP_D/bulletin" 2>/dev/null)" || bulletin_result="0"
     bulletin_count=$(printf '%s\n' "$bulletin_result" | head -1)
     if [ "${bulletin_count:-0}" -gt 0 ]; then
         echo "  WARN: 未確認掲示板 ${bulletin_count}件"
@@ -278,7 +286,9 @@ fi
 
 echo "■ 観点別集計（Adaptive gating）"
 if [ -f "$REVIEW_LOG" ]; then
-    category_stats=$(python3 - "$REVIEW_LOG" <<'PY'
+    # §3.2: category_stats python3を並列化(~650ms削減)
+    python3 - "$REVIEW_LOG" <<'PY' > "$_TMP_D/category_stats" 2>/dev/null &
+    _PID_CAT_STATS=$!
 import re
 import sys
 
@@ -378,7 +388,8 @@ for name, threshold, patterns in catalog:
             hits += 1
     print(f"ALL_{name}|{hits}|{len(all_window)}")
 PY
-)
+    wait "$_PID_CAT_STATS" 2>/dev/null || true
+    category_stats="$(cat "$_TMP_D/category_stats" 2>/dev/null)"
     while IFS='|' read -r cat_name cat_hits cat_total cat_zero cat_threshold; do
         [ -n "$cat_name" ] || continue
         # ALL_ prefix = reference line (training+production combined)
