@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-20 cmd_3457 -->
+<!-- last_updated: 2026-06-20 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -481,3 +481,4 @@
 | cmd_3455 | 殿指摘(2026-06-19 22:34): 記憶DBへの書込みが掲示板/inbox/insightの副作用に依存しており、知識を直接INSERTする専用ツールがない。三層貫通でLayer1に書くとき通信チャネルを迂回路にしていた。memory_db_knowledge_write.shを作成し、通信に依存しない直接書込みを可能にする | infra | 06-20 | memory_db_knowledge_write.shを追 |
 | cmd_3456 | 殿指示(2026-06-19 22:47): classroomを進めよう。cmd_3450 CSS修正(commit 5db49a5 height:0+overflow:hidden)がv5.3-diag以降に入っている。v5.4としてリリースし、殿の実機でv5.3-diag診断データ(sidebarClientHeight)が0になることを検証する | google-classroom | 06-20 | — |
 | cmd_3457 | 殿裁定(2026-06-19 22:56): F001の本質は将軍がコード実装すると殿との会話がブロックされること。簡単な操作までcmd起票すると余計に時間とトークンを消費し殿の指示が入らず目的手段逆転。F001を改訂し殿との会話をブロックしない操作は将軍直接実行、ブロックする規模のコード変更のみcmd委任と明記する | infra | 06-20 | F001を殿会話ブロック基準へ改訂し、将軍の短時間直接操作許 |
+| cmd_3463 | 殿指示(2026-06-20): SSOTが正しい場所にあるか調査→曖昧なものを正す→オントロジーを動かす。Phase 1完了(cmd_3458+3461)。Phase 2として曖昧SSOT(gist_url重複・launch_cmd不一致・skill path重複)を是正し、Phase 3としてGuard16をテーブル駆動に汎化+リポジトリパスの消費者書き換えを実施する。忍者名パターン(SSOT→ヘルパー→Guard→消費者)を全概念に横展開する基盤を構築する | infra | 06-20 | docs/research/ssot-registry.md |
