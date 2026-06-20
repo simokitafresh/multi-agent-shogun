@@ -424,10 +424,18 @@ if [[ "$payload" == *'inbox_mark_read'* ]]; then
         if [[ -n "$mark_agent" ]]; then
             read_log="/tmp/claude_read_log_${mark_agent}.txt"
             inbox_pattern="queue/inbox/${mark_agent}.yaml"
+            mark_msg_id=""
+            if [[ "$command" =~ inbox_mark_read\.sh[[:space:]]+[a-z_]+[[:space:]]+([^[:space:];&|]+) ]]; then
+                mark_msg_id="${BASH_REMATCH[1]}"
+            fi
             if [[ -f "$read_log" ]]; then
                 recent_reads="$(tail -5 "$read_log" 2>/dev/null || true)"
                 if [[ "$recent_reads" != *"$inbox_pattern"* ]]; then
-                    emit_deny "BLOCK: inbox_mark_read前にRead toolでinboxを読め。中身を確認せずに既読化するとメッセージ処理漏れが発生する。"
+                    if [[ -n "$mark_msg_id" ]]; then
+                        echo "[Guard7] WARN: read_logに${inbox_pattern}なし。ただしmsg_id指定の個別既読化はCodex互換のため許可: ${mark_msg_id}" >&2
+                    else
+                        emit_deny "BLOCK: inbox_mark_read前にRead toolでinboxを読め。中身を確認せずに既読化するとメッセージ処理漏れが発生する。"
+                    fi
                 fi
             else
                 # read_log不在: Codex CLI or 起動直後。BLOCKではなくWARN(所見5: Codex互換)
