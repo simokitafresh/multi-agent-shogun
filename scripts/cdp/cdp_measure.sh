@@ -26,8 +26,19 @@ shift
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # shellcheck source=scripts/lib/project_path.sh
-source "${SCRIPT_DIR}/scripts/lib/project_path.sh"
-AUTO_OPS_ROOT="$(get_project_path 'auto-ops')"
+if [ -f "${SCRIPT_DIR}/scripts/lib/project_path.sh" ]; then
+    source "${SCRIPT_DIR}/scripts/lib/project_path.sh"
+else
+    get_project_path() {
+        case "$1" in
+            auto-ops) printf '%s\n' "/mnt/c/Python_app/auto-ops" ;;
+            dm-signal) printf '%s\n' "${DM_SIGNAL_DIR:-/mnt/c/Python_app/DM-signal}" ;;
+            *) return 1 ;;
+        esac
+    }
+fi
+AUTO_OPS_ROOT="/mnt/c/Python_app/auto-ops"
+AUTO_OPS_ROOT="$(get_project_path 'auto-ops' 2>/dev/null || printf '%s\n' "$AUTO_OPS_ROOT")"
 TEMP_CONFIG=""
 CDP_LOCK_ACQUIRED=0
 

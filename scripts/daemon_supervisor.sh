@@ -282,8 +282,10 @@ ds_agent_list() {
 
     # shellcheck source=/dev/null
     source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
-    printf '%s\n' "shogun"
-    get_all_agents | tr ' ' '\n' | sed '/^$/d'
+    {
+        printf '%s\n' "shogun"
+        get_all_agents | tr ' ' '\n' | sed '/^$/d'
+    } | awk 'NF && !seen[$0]++'
 }
 
 ds_main() {
