@@ -9,7 +9,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROJECTS_YAML="$REPO_ROOT/config/projects.yaml"
-CODD_BIN="${CODD_BIN:-/home/simokitafresh/.codd-venv/bin/codd}"
+CODD_BIN="${CODD_BIN:-${HOME}/.codd-venv/bin/codd}"
 
 usage() {
     echo "Usage: $0 <project-id> | --path <project-path> [project-id]" >&2

@@ -960,8 +960,8 @@ run_codd_propagate_update() {
     echo "CoDD propagate update (GATE CLEAR):"
 
     if [ -z "$codd_bin" ]; then
-        if [ -x "/home/simokitafresh/.codd-venv/bin/codd" ]; then
-            codd_bin="/home/simokitafresh/.codd-venv/bin/codd"
+        if [ -x "${HOME}/.codd-venv/bin/codd" ]; then
+            codd_bin="${HOME}/.codd-venv/bin/codd"
         elif command -v codd >/dev/null 2>&1; then
             codd_bin="$(command -v codd)"
         fi
@@ -972,7 +972,7 @@ run_codd_propagate_update() {
         return 0
     fi
 
-    output=$(PATH="/home/simokitafresh/.codd-venv/bin:$PATH" timeout "$timeout_sec" "$codd_bin" propagate --path "$codd_path" --update 2>&1)
+    output=$(PATH="${HOME}/.codd-venv/bin:$PATH" timeout "$timeout_sec" "$codd_bin" propagate --path "$codd_path" --update 2>&1)
     rc=$?
     if [ "$rc" -eq 0 ]; then
         echo "  OK: codd propagate --path ${codd_path} --update"

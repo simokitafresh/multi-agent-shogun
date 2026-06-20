@@ -4042,7 +4042,7 @@ check_ninja_cli_dead() {
                 # pane_dead=1: send-keysは無効。respawn-paneでペインプロセスを再生成
                 log "CLI-DEAD: ${_name_bg} pane_dead=1 → respawn-pane使用"
                 # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
-                local _node_path="/home/simokitafresh/.nvm/versions/node/v20.20.0/bin"
+                local _node_path="${HOME}/.nvm/versions/node/v20.20.0/bin"
                 tmux respawn-pane -k -t "$_pane_target_bg" "export PATH=\"${_node_path}:\$PATH\" && cd '${_script_dir_bg}' && ${_launch_bg}" 2>/dev/null || true
             else
                 # pane_dead=0: シェルは生きているがCLIが終了した状態。send-keysで再起動
