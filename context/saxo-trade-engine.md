@@ -1,6 +1,6 @@
 # Saxo Trade Engine — システムトレード基盤設計
 <!-- created: 2026-05-24 -->
-<!-- last_updated: 2026-06-06 cmd_karo_hotfix_context_freshness_ga007_20260606 -->
+<!-- last_updated: 2026-06-20 cmd_karo_hotfix_context_saxo_ga100_20260620 -->
 <!-- status: 設計段階 -->
 
 ## §1 目的
@@ -92,6 +92,8 @@ OAuth2フロー。LIVE環境はrefresh_tokenで長期維持可能。
 
 - 2026-05-29確認: 直近の非auto commitは `600b2edc`（2026-05-26, causal links追加）。本文内容は同commitの追加内容と一致し、追加更新は鮮度メタデータのみ。
 - 2026-06-06確認: git log --since=2026-05-30 -- docs / research / saxo_openapi_excel_user_guide.md context/saxo-trade-engine.md は該当なし。Saxo本文の新規source commitはないが、参照先ドキュメント不在を§8へ明記した。
+- 2026-06-20確認（GA-100）: `git log --since=2026-06-06 -- context/saxo-trade-engine.md` は2026-06-06のGA-007更新のみ。`gate_context_freshness`の直接原因はlast_updated=2026-06-06後のinfra root fallback source commit検知で、Saxo固有本文の新規根拠commitではない。外部Saxo API仕様は未調査のため本文仕様は維持し、鮮度メタデータのみ更新。
+- GA-099/L825接続: GA-099と同じく「context更新がcmd完了時に強制されず、後段gateで発見される」カテゴリ。saxo固有ではなくinfra context全般の横展開問題。防御層案は、context_freshness hotfix配備時にtarget contextの`last_updated`更新または維持判断行の追加を報告gateで必須化すること。
 
 ## 因果リンク
 
