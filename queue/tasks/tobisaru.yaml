@@ -28,7 +28,7 @@ task:
   parent_cmd: cmd_3464
   project: infra
   purpose: '殿指示(2026-06-20): オントロジーに戻ろう→行動せよ。cmd_3463でリポジトリパスのSSOT化完了。次の概念=PJパス(/mnt/c/Python_app/DM-signal等)の直書きを消費者書換え+Guard16テーブル追加で解消する。軍師+家老レビュー済み(blt_20260620_130005+130157+130244)'
-  status: done
+  status: idle
   stop_for: []
   subtask_id: cmd_3464_full
   target_path: /mnt/c/tools/multi-agent-shogun/scripts

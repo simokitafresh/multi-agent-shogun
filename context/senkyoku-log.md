@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-20 cmd_karo_hotfix_gunshi_cold_gate_20260620 -->
+<!-- last_updated: 2026-06-20 cmd_3466 -->
 
 ## 2026-06-16
 

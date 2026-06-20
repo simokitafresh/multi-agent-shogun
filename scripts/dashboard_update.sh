@@ -379,15 +379,30 @@ if TEMPLATE_PATH and os.path.exists(TEMPLATE_PATH):
                 break
 
 with open(DASHBOARD) as f:
-    lines = f.read().split('\n')
+    dashboard_text = f.read()
+    lines = dashboard_text.split('\n')
 
 if not any(line.startswith(insert_target) for line in lines):
     dashboard_is_empty = all(not line.strip() for line in lines)
-    if dashboard_is_empty and TEMPLATE_PATH and os.path.exists(TEMPLATE_PATH):
+    has_template_header = 'Dashboard Template' in dashboard_text
+    has_auto_markers = '<!-- DASHBOARD_AUTO_START -->' in dashboard_text or '<!-- DASHBOARD_AUTO_END -->' in dashboard_text
+    has_karo_markers = '<!-- KARO_SECTION_START -->' in dashboard_text or '<!-- KARO_SECTION_END -->' in dashboard_text
+    has_section_headers = any(line.startswith('## ') for line in lines)
+    # A partially written dashboard template can contain the template comment and H1
+    # but miss both AUTO/KARO sections. Treat that as recoverable template corruption,
+    # while still refusing arbitrary non-empty dashboards without 最新更新.
+    dashboard_is_partial_template = (
+        has_template_header
+        and not has_auto_markers
+        and not has_karo_markers
+        and not has_section_headers
+    )
+    if (dashboard_is_empty or dashboard_is_partial_template) and TEMPLATE_PATH and os.path.exists(TEMPLATE_PATH):
         with open(TEMPLATE_PATH) as tf:
             template_content = tf.read()
         atomic_write_text(DASHBOARD, template_content)
-        print(f'WARN: DATA_QUALITY dashboard.md missing {insert_target}; restored empty dashboard from template', file=sys.stderr)
+        reason = 'empty dashboard' if dashboard_is_empty else 'partial template dashboard'
+        print(f'WARN: DATA_QUALITY dashboard.md missing {insert_target}; restored {reason} from template', file=sys.stderr)
         lines = template_content.split('\n')
     else:
         print(f"ERROR: DATA_QUALITY '{insert_target}' section not found in dashboard.md; dashboard_update cannot append latest update", file=sys.stderr)
@@ -619,7 +634,34 @@ STEP68_PY
         NOW_DATE=$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M')
         NOW_TIME=$(TZ=Asia/Tokyo date '+%H:%M')
         # 現行ヘッダー: "# 🏯 Dashboard [project] — YYYY-MM-DD HH:MM 更新"
-        sed -E -i "1s|^(# 🏯 Dashboard \\[[^]]+\\] — )[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}( 更新)$|\\1${NOW_DATE}\\2|" "$DASHBOARD"
+        # Template v3.0 has an HTML comment before the H1, so update the first matching
+        # dashboard heading wherever it appears. Also handle unreplaced placeholders.
+        python3 - "$DASHBOARD" "$NOW_DATE" <<'HEADER_PY'
+import re
+import sys
+
+path, now_date = sys.argv[1], sys.argv[2]
+with open(path, encoding='utf-8') as f:
+    lines = f.read().splitlines()
+
+updated = False
+for i, line in enumerate(lines):
+    if not line.startswith('# 🏯 Dashboard '):
+        continue
+    m = re.match(r'^(# 🏯 Dashboard \[)([^]]+)(\] — )(.+?)( 更新)$', line)
+    if not m:
+        continue
+    project = m.group(2)
+    if project == '{PJ名}':
+        project = 'infra'
+    lines[i] = f"{m.group(1)}{project}{m.group(3)}{now_date}{m.group(5)}"
+    updated = True
+    break
+
+if updated:
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(lines) + '\n')
+HEADER_PY
         # 旧テンプレート互換（残存環境向け）
         sed -i "s/忍者配備状況（[0-9]\{2\}:[0-9]\{2\}更新）/忍者配備状況（${NOW_TIME}更新）/" "$DASHBOARD"
     fi

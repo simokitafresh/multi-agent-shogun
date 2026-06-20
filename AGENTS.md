@@ -373,7 +373,7 @@ bash scripts/bulletin_write.sh karo "全員共有の内容"
 
 **全ての行動の前に、前提を一次情報で確認せよ。** 確認してから行動。順序は絶対。
 - **三層記憶を最初に検索せよ（殿厳命2026-06-10: 使用しないのはバグ）。** /clearで消えた前セッションの殿の裁定・時系列は三層記憶(記憶DB/セマンティック/Obsidian)にある。検索せずに二次情報で結論するな。三層記憶→一次情報→行動の順序
-- **三層記憶に書き戻せ（貫通義務）。** 新知識は三層全てに貫通: (1)記憶DB=掲示板投稿→自動INSERT (2)セマンティック=semantic-map.mdにalias (3)Obsidian=originに[[リンク]]。contextファイル更新だけでは三層貫通ではない
+- **三層記憶に書き戻せ（貫通義務）。** 新知識は三層全てに貫通: (1)記憶DB=Layer1直接書込み `bash scripts/memory_db_knowledge_write.sh "<知識>" "<source>"`（通信報告が目的の場合のみ掲示板/inbox→自動INSERT） (2)セマンティック=semantic-map.mdにalias (3)Obsidian=originに[[リンク]]。contextファイル更新だけでは三層貫通ではない
 - 一次情報 = capture-pane(実態)、本番DB、コードの現物、CLIバナー、テスト実行結果
 - 二次情報 = settings.yaml、karo_snapshot、dashboard、報告YAML、他者の報告
 - **二次情報で判断を止めるな。** 二次情報は一次情報の即時キャッシュであるべき。タイムラグ=乖離=誤判断

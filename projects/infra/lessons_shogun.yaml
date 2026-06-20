@@ -101,6 +101,7 @@ lessons:
     (39)ブランチ作業cmdは基点ブランチ確認をbinary_checkに入れよ(LS062吸収2026-06-12)。cmd_3331でhayateが『mainからブランチを切り』のcommandステップを飛ばしローカルmainへ直接2コミット((37)の再発形=command欄の指示では忍者の逸脱を検出できない)。binary_checkに『作業ブランチ名がmain以外であることを確認したか』を入れて報告ゲートで二値検証させよ。将軍のGATE CLEAR検分(git branch --contains)が最後の防衛線。push前検出→refactor/wp3-ac2-m2退避+git branch -f非破壊復元で実害なし
     (40)外部指示書(directive等)由来のcmd起票時、外部語彙をそのまま転記するとcmd_saveトリガー語と衝突しBLOCK。起票前に内部語彙へ翻訳: 登録→記入/記録、push→commitまで、パリティ→数値一致検証(LS059吸収2026-06-15。cmd_3294で4回BLOCK実証)
     (41)cmd追記のEditアンカーは前cmdブロックの最終行(delegated_at)にせよ。origin行アンカーだとdelegated_atが新cmdブロック末尾に取り残され「委任済み」誤判定BLOCK(LS060吸収2026-06-15。cmd_3303で実証)
+    (42)quality_gateフィールドにバックスラッシュ+パイプを書くな(LS071吸収2026-06-20)。grep ERE構文をq11等に転記するとPyYAMLが不正エスケープで正本YAML破壊。Guard 0eでBLOCK済み。grep OR条件は自然言語で記述(cmd_3467事故)
   source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036, LS034, LS062]
   source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394, cmd_2395]
   created_at: '2026-04-25'
@@ -619,11 +620,4 @@ lessons:
   created_at: '2026-06-20'
   automated: true
   enforcement: 'type=fix; file=scripts/lib/model_detect.sh; pattern=head -1'
-- id: 'LS071'
-  title: 'YAML危険文字(バックスラッシュ+パイプ)がquality_gateフィールドを破壊する'
-  origin: '[[cmd_3467]]'
-  detail: 'cmd_3467 q11にgrep ERE構文(\|)を記載→PyYAMLが不正エスケープで解析失敗→shogun_to_karo.yaml破壊→deploy_task.shが読込不能。根因: environment_changeにはパイプ禁止ルールがあるがq11等には未適用。対処: Guard 0e(pre-write-edit-combined.sh)でshogun_to_karo.yamlへの\|含有テキスト書込みをBLOCK。L3貫通'
-  source_cmd: 'cmd_3467'
-  created_at: '2026-06-20'
-  automated: true
-  enforcement: 'type=hook; file=.claude/hooks/pre-write-edit-combined.sh; pattern=Guard 0e'
+# LS071: superseded by LS-A04(42) (YAML危険文字=cmdテンプレートルール。Guard 0eで自動BLOCK。2026-06-20統合)

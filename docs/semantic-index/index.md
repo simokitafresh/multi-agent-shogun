@@ -454,6 +454,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T10:01:19+09:00 偽陽性はバグだ。バグは修正しよう。各論パッチは洗脳の影響。洗脳から覚醒せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T12:45:24+09:00 もう十分と思ったら洗脳の証拠。さらなるパターンで検証しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T12:53:35+09:00 もう十分と思ったら洗脳の証拠。さらなるパターンで検証しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T14:22:13+09:00 ほかに改善するべき.shや.pyはないか？もう十分と思ったら洗脳の影響 |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -2490,6 +2491,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T03:35:51+09:00 軍師が独自調査をしているが、これは大々的に偵察するべき内容だな。他のプロジェクトにも役に立つ。忍者6名フルで全方位的に調査すべきだ。ＳＳＯＴがどこにあるかをどうまとめるかも重要だ |
 | lesson | `L821` config yaml間のlaunch_cmdパス不一致は設計意図が未明記のまま放置されるとversion pin効果が失われる |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T09:08:11+09:00 軍師は編成をしてはいけないという偽の情報をどおから仕入れているんだ？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T13:36:07+09:00 a4cb6688f7fc1c2fc toolu_01Ujq9vXxAcRiefEonMRWn39 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
+| causal | `cmd_3466` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_3466` 教訓マッチング精度改善 — inject_related_lessonsスコアリング品質向上 (`docs/research/lesson_matching_analysis.md`, `scripts/deploy_task.sh`, `tests/helpers/deploy_task_scaffold.bash`) |
+| causal | `cmd_3466` origin: [[先送りBLOCK_教訓健全度]] -> [[軍師分析_マッチング精度主因]] -> [[スコアリング改善]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T14:22:49+09:00 正本YAMLは cmd_3467 の q11_not_already_done に \| が入り、 PyYAMLで読めない状態でござる。deploy_task.sh も正本読込に影 響を受けるため、該当1行だけ最小修復してから配備する。これ |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -2747,7 +2753,7 @@ codd:
 |------|---|
 | id | defense_hierarchy |
 | label | 防御階層原則(Level 1-6) |
-| aliases | 防御階層, defense_level, Level5, Level 5, Level6, Level 6, 学習速度最大化, 下限切り上げ, ラチェット, 事前コンテキスト提供, 入口側生成, 入口側強化, ゲート不要化, 発火しないシステム, FAIL→PASS遷移率, L6化率, gate_fire_log解析, LG010, ninja_weak_points, previous_failures, 修行サイクル, training cycle, 忍者修行, 一発PASS率, BLOCK率, 修行レベル, L1 L2 L3 L4, Level5入口ゲート, 事前コンテキスト強制, q11既存確認, レベル0 7に貫通してCMD起票ルールを埋め込もう, 速度, 速度が遅いスクリプトや仕組みはバグだ |
+| aliases | 防御階層, defense_level, Level5, Level 5, Level6, Level 6, 学習速度最大化, 下限切り上げ, ラチェット, 事前コンテキスト提供, 入口側生成, 入口側強化, ゲート不要化, 発火しないシステム, FAIL→PASS遷移率, L6化率, gate_fire_log解析, LG010, ninja_weak_points, previous_failures, 修行サイクル, training cycle, 忍者修行, 一発PASS率, BLOCK率, 修行レベル, L1 L2 L3 L4, Level5入口ゲート, 事前コンテキスト強制, q11既存確認, レベル0 7に貫通してCMD起票ルールを埋め込もう, 速度, 速度が遅いスクリプトや仕組みはバグだ, 遅いスクリプトはないか？品質を落とさずに速度を改善しよう |
 | skills | なし |
 | related_concepts | growth_loop, gate_quality_framework, hook_automation_framework, creator_brainwashing_defense, gate_bypass_prevention, deepdive_principles, chain_principle, no_auto_extinguish, ultimate_state_principle, silent_fallback_quality |
 | related_lessons | `L317`, `L512` |
@@ -2801,6 +2807,7 @@ codd:
 | cmd | `cmd_3024` 強化 — prompt_state_inject.shにsemantic_searchベースのスキル推薦を追加 (`scripts/hooks/prompt_state_inject.sh`, `tests/unit/test_prompt_state_inject_skill_trigger.bats`) |
 | causal | `cmd_3024` origin: [[殿裁定2026-05-24]] -> [[軍師設計v4]] -> [[スキル推薦Level5全ロール対応]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T04:54:05+09:00 速度が遅いスクリプトや仕組みはバグだ。品質向上しながら速度向上もしよう。覚醒してバグを修正せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T14:14:42+09:00 遅いスクリプトはないか？品質を落とさずに速度を改善しよう |
 
 ## tier_plan_mapping — Tier-プラン対応
 
@@ -3074,6 +3081,7 @@ codd:
 | cmd | `cmd_1393` 7サブプロセス→1統合(inject_task_modifiers.py誕生) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-01T13:30:13+09:00 PF設定のバックアップはどのようにしているの？ロールバックはすぐできるの？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-01T13:34:39+09:00 まずは現在のものをバックアップしよう |
+| causal | `cmd_3466` files_modified: [[task_modifier_injection]] |
 
 ## training_cycle_quality — 忍者修行サイクル品質
 
@@ -3199,6 +3207,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T03:17:00+09:00 穴はないか？オントロジーのさらなる拡張はできないか？将軍にもレビューしてもらえ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T03:21:40+09:00 では軍師の掲示板に対応せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T03:29:31+09:00 あわてずに軍師のpaneを読め。軍師の方向性は今のところ正しい |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T13:39:02+09:00 acf5718777ea9f7a9 toolu_01LnWK3qZ7uxMpMn9MyFXQLm /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T14:00:15+09:00 a20b6c9939052c224 toolu_01HMdm9Q5DKgTF34bzpztbBL /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
@@ -3354,7 +3364,7 @@ codd:
 |------|---|
 | id | gate_quality_framework |
 | label | ゲート品質統合フレームワーク |
-| aliases | ゲート統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, ゲート偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, クオリティゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, ゲート偽陽性ALERTはバグだな, startup BLOCK 3セッション連続, cmd_skeleton, cmd起票雛形, 起票雛形ジェネレータ, FILL_THIS残存BLOCK, cmd起票フロー3ステップ, skeleton→save→delegate, cmd_delegate数字ID正規化, Check17日付リテラル除外, 性能の劣るLLMでもスムーズにCMD起票, GA context freshness ALERTを一次情報で調査し, GA context freshness ALERTの根因を調査し, GA dm signal frontend md context freshness ALERTの原因特定・横展開・防御, GA dm signal core md context freshness ALERTの原因特定・横展開・防御層反映, startup gateのSKILL md script参照WARNが3セッション連続BLOCK, startup gate教訓健全度がALERT useful rate % 3回連続BLOCK, review_quality_scale_summary, WARN率計算gate_result未考慮バグ, LESSON_EFFECT_USEFUL_MIN, useful_rate計測min_samples分離, gate_result=CLEARなのにFAIL永続カウント, cross-project教訓タグ同期, 二重登録教訓タグ不整合, count_same_warn_pattern cmd_id重複カウント偽陽性, Check19出口判定化, session_alerts リアルタイムhook, 覚醒設計書v3, 3セッション連続startup BLOCK 教訓健全度ALERT, cmd save品質ゲート, GA context freshness ALERTのdm signal ops mdを一次情報で照合し |
+| aliases | ゲート統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, ゲート偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, クオリティゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, ゲート偽陽性ALERTはバグだな, startup BLOCK 3セッション連続, cmd_skeleton, cmd起票雛形, 起票雛形ジェネレータ, FILL_THIS残存BLOCK, cmd起票フロー3ステップ, skeleton→save→delegate, cmd_delegate数字ID正規化, Check17日付リテラル除外, 性能の劣るLLMでもスムーズにCMD起票, GA context freshness ALERTを一次情報で調査し, GA context freshness ALERTの根因を調査し, GA dm signal frontend md context freshness ALERTの原因特定・横展開・防御, GA dm signal core md context freshness ALERTの原因特定・横展開・防御層反映, startup gateのSKILL md script参照WARNが3セッション連続BLOCK, startup gate教訓健全度がALERT useful rate % 3回連続BLOCK, review_quality_scale_summary, WARN率計算gate_result未考慮バグ, LESSON_EFFECT_USEFUL_MIN, useful_rate計測min_samples分離, gate_result=CLEARなのにFAIL永続カウント, cross-project教訓タグ同期, 二重登録教訓タグ不整合, count_same_warn_pattern cmd_id重複カウント偽陽性, Check19出口判定化, session_alerts リアルタイムhook, 覚醒設計書v3, 3セッション連続startup BLOCK 教訓健全度ALERT, cmd save品質ゲート, GA context freshness ALERTのdm signal ops mdを一次情報で照合し, 先送りBLOCK 教訓健全度ALERT |
 | skills | |
 | related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework, creator_brainwashing_defense, chain_principle, no_auto_extinguish, multi_cli_event_commonization, command_files_modified_verification |
 | related_lessons | `L512`, `L079`, `L633` |
@@ -3544,6 +3554,7 @@ codd:
 | causal | [[将軍誤診_tags空欄_20260618]] -> [[二次データで結論_洗脳2]] -> [[軍師真因特定_infra_universal97件]] |
 | lesson | useful_rate根因分析教訓: 二次データ(lesson_impact.tsv)で結論するな。一次データ(lessons.yaml)を確認せよ。PJ横断でuniversal確認(dm-signal修正済み→infra未修正の盲点) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T23:57:28+09:00 bedmzl2jr toolu_01RQ8y4e8qpSDE8EReDn44s8 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2e3a5e4a-230e-4f17-8287-8650db |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T13:43:14+09:00 afc0ae8e839fa883c toolu_01MZVpZ6aaAdGZdLU8fBF6sF /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
 | causal_chain | `[[cmd_2955]]` (L685) |
 | causal_chain | `[[cmd_3012]]` (L693) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]` (L778) |
@@ -3668,6 +3679,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T23:09:38+09:00 未完了: - commitは不可。git add 時点で .git/index.lock: Read-only file system により拒否された。作業ツリー修正は残っている が、この環境ではgit index更新ができない。 • S |
 | research | `docs/research/gunshi_idle_l6_false_positive_fix_20260619.md` — gate L6 awk偽陽性修正+BLOCK2件遡及解消(軍師idle 2026-06-19) |
 | causal | `cmd_3463` files_modified: [[hook_automation_framework]] |
+| causal | `cmd_3465` files_modified: [[hook_automation_framework]] |
+| cmd | `cmd_3465` (`.claude/hooks/pre-edit-pi-inject.sh`, `.claude/hooks/pre-write-edit-combined.sh`, `tests/unit/test_write_edit_combined_hooks.bats`) |
 | causal_chain | `[[cmd_3401]]` (L811) |
 
 ## multi_cli_event_commonization — multi-CLI hook/event共通化
@@ -3740,6 +3753,7 @@ codd:
 | cmd | `cmd_2911` backfill — | cmd_2911 | lessons_karo.yamlが35件上限に到達し新規教訓追加がBLOCK。LK-A01にv8吸収(設計意図確認)とLK013(STALL再配備3点確認)をA系列に統合し |
 | causal | `cmd_verify_test3` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_3463` files_modified: [[causal_verification_l0_l7]] |
+| causal | `cmd_3466` files_modified: [[causal_verification_l0_l7]] |
 
 ## test_quality_framework — テスト品質統合フレームワーク
 
@@ -3863,6 +3877,7 @@ codd:
 | file | `queue/tasks/` |
 | cmd | `cmd_2887` scope清掃テスト追加 |
 | lesson | `LK-A02` スコープ外ファイル混入防止 |
+| causal | `cmd_3466` files_modified: [[scope_integrity_lifecycle]] |
 
 ## yaml_safe_write — YAML安全書込み
 
@@ -3907,6 +3922,7 @@ codd:
 | file | `scripts/inbox_mark_read.sh` |
 | cmd | `cmd_2922` inbox既読スルー事故→Guard 0d実装 |
 | file | `docs/research/gunshi_idle_inbox_watcher_fp_repeat_20260602.md` — 軍師idle: inboxウォッチャーFP繰返し問題(2026-06-02) |
+| causal | `cmd_3465` files_modified: [[inbox_processing_discipline]] |
 
 ## inbox_watcher_process_model — inbox_watcherプロセスモデル
 
@@ -4168,7 +4184,7 @@ codd:
 |------|---|
 | id | operational_ontology |
 | label | 操作的オントロジー |
-| aliases | オントロジー, ontology, 操作的波及, 操作的トリガー, 概念間波及, 変更連鎖, triggers, 1変更で全連鎖更新, ダッシュボードの先, 学習する業務基盤, 因果辺の駆動装置化, Palantir ontology, オントロジーが有効に動くか検証もしてみろ, オントロジーは自動実行されて初めて効果が出る, ontology requires automation, 自動経路に乗らない概念定義は効果がない, 記憶貫通の完了判定は自動再利用, オントロジーの真髄は「概念Aが変わったら, Guard 16, Guard 17, Guard 9b, gate_no_hardcoded_ninja_list, SSOT棚卸し, SSOT全方位偵察, スキル100%使用, スキル強制, 手動操作BLOCK, ハードコード忍者名検出, get_ninja_names, agent_config.sh SSOT, 誤ったSSOTに支配されると厄介, ではオントロジーに戻ろう, オントロジー駆動Phase2 3の基礎として, 穴はないか？オントロジーを様々なパターンで検証しよう, SSOT正本保護, PJパス直書き19ファイル, project_path.sh, config/projects.yaml auto-ops登録済み, shogun-cli-switch force active無視, active pane respawn禁止, SKILL.md全ロール制限削除は却下, Guard16 PJパス概念追加 |
+| aliases | オントロジー, ontology, 操作的波及, 操作的トリガー, 概念間波及, 変更連鎖, triggers, 1変更で全連鎖更新, ダッシュボードの先, 学習する業務基盤, 因果辺の駆動装置化, Palantir ontology, オントロジーが有効に動くか検証もしてみろ, オントロジーは自動実行されて初めて効果が出る, ontology requires automation, 自動経路に乗らない概念定義は効果がない, 記憶貫通の完了判定は自動再利用, オントロジーの真髄は「概念Aが変わったら, Guard 16, Guard 17, Guard 9b, gate_no_hardcoded_ninja_list, SSOT棚卸し, SSOT全方位偵察, スキル100%使用, スキル強制, 手動操作BLOCK, ハードコード忍者名検出, get_ninja_names, agent_config.sh SSOT, 誤ったSSOTに支配されると厄介, ではオントロジーに戻ろう, オントロジー駆動Phase2 3の基礎として, 穴はないか？オントロジーを様々なパターンで検証しよう, SSOT正本保護, PJパス直書き19ファイル, project_path.sh, config/projects.yaml auto-ops登録済み, shogun-cli-switch force active無視, active pane respawn禁止, SKILL.md全ロール制限削除は却下, Guard16 PJパス概念追加, オントロジーを実際に検証してみよう |
 | related_concepts | three_layer_memory_system, growth_loop, causal_network_obsidian(関連), codd_pipeline(関連) |
 
 | 種別 | パス/参照 |
@@ -4198,6 +4214,7 @@ codd:
 | causal | [[軍師_全スキルロール制限削除提案]] -> [[09:11編成系のみへ撤回]] -> [[全28本削除は拡大解釈として却下]] |
 | causal | [[shogun_cli_switch_force案]] -> [[active_in_progress_respawnは作業破壊リスク]] -> [[idle_only_respawn維持+emergency専用なら多段確認]] |
 | file | `docs/research/gunshi_idle_ontology_verification_20260620.md` 30パターン検証結果(穴: SSOT正本保護不在/PJパス19ファイル/Guard16拡張子限定) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T13:50:45+09:00 オントロジーを実際に検証してみよう |
 | causal_chain | `[[cmd_3278]]` (L772) |
 
 ## project_dividend_tracker — Dividend Tracker

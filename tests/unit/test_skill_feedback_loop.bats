@@ -744,6 +744,61 @@ EOF
     grep -q 'cmd_4000' "$TEST_REPO/dashboard.md"
 }
 
+@test "dashboard_update.sh restores partial template dashboard from template when 最新更新 is missing" {
+    TEST_REPO="$TEST_TMPDIR/repo"
+    mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/config" \
+             "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
+    cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
+    cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
+    cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
+#!/usr/bin/env bash
+EOF
+    cat > "$TEST_REPO/config/settings.yaml" <<'EOF'
+cli:
+  agents: {}
+EOF
+    cat > "$TEST_REPO/config/dashboard_template.md" <<'EOF'
+<!-- Dashboard Template v3.0
+  insert_target: 最新更新
+-->
+# 🏯 Dashboard [{PJ名}] — {YYYY-MM-DD HH:MM} 更新
+<!-- DASHBOARD_AUTO_START -->
+<!-- DASHBOARD_AUTO_END -->
+## 最新更新
+EOF
+    cat > "$TEST_REPO/dashboard.md" <<'EOF'
+<!-- Dashboard Template v3.0
+  insert_target: 最新更新
+-->
+# 🏯 Dashboard [{PJ名}] — {YYYY-MM-DD HH:MM} 更新
+EOF
+    cat > "$TEST_REPO/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_4002:
+    purpose: recovered partial purpose
+EOF
+    cat > "$TEST_REPO/queue/reports/saizo_report_cmd_4002.yaml" <<'EOF'
+worker_id: saizo
+parent_cmd: cmd_4002
+status: completed
+result:
+  summary: recovered partial report
+EOF
+    cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
+# dashboard-update
+EOF
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_4002
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"UPDATED: cmd_4002 line appended"* ]]
+    [[ "$output" == *"restored partial template dashboard from template"* ]]
+    grep -q '<!-- DASHBOARD_AUTO_START -->' "$TEST_REPO/dashboard.md"
+    grep -q '^## 最新更新' "$TEST_REPO/dashboard.md"
+    grep -q 'cmd_4002' "$TEST_REPO/dashboard.md"
+    grep -q "^# 🏯 Dashboard \\[infra\\] — $(date +%Y-%m-%d)" "$TEST_REPO/dashboard.md"
+}
+
 @test "dashboard_update.sh blocks non-empty dashboard without 最新更新" {
     TEST_REPO="$TEST_TMPDIR/repo"
     mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/config" \

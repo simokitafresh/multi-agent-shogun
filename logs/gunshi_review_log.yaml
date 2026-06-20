@@ -2121,7 +2121,7 @@
 - cmd_id: cmd_3464
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
   findings_summary: "APPROVE。オントロジー横展開PJパス19ファイル書換え+Guard16テーブル追加。cmd_3463 AC5同構造。軍師検証結果直接反映(blt_125254)"
@@ -2163,7 +2163,7 @@
 - cmd_id: cmd_3465
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
   findings_summary: "APPROVE。Guard17 SSOT正本保護。フィールド×許可スクリプトのテーブル駆動。家老設計案準拠。AC分割配備済み(kagemaru=AC2, kotaro=AC3)"
@@ -2180,3 +2180,131 @@
   ambiguity_points: none
   brainwash_check: "AC3件カウント確認。Guard17 L542-548確認(grep実測)。家老設計案blt_20260620_130157確認(Read)。忍者commit3件存在確認(ac_physical_verify)。#2防止: 全前提を一次情報で検証済み"
   timestamp: "2026-06-20T13:35:00"
+- cmd_id: idle_lesson_id_collision_20260620
+  review_type: self_study
+  verdict: null
+  finding_categories: [assumptions, numbers]
+  findings_summary: "教訓ID衝突分析: 前セッション報告の訂正。746件はID衝突(同一IDで内容異なる)であり二重注入ではない。useful率主因はマッチング精度"
+  observations:
+    - "事実1: infra L754=bash_speed_training vs dm L754=WeightedMultiView。内容完全に別物"
+    - "事実2: deploy_task.shはPJ別読込。ID衝突は注入精度に直接影響しない"
+    - "事実3: useful率18.5%(5/27)。主因はキーワードスコアマッチング精度"
+  cs_checklist:
+    CS1_source: "infra/dm-signal両lessons.yaml全件pythonで実測。内容比較5件サンプル確認"
+    CS2_self_data: "lesson_impact.tsv直近2000件+gate_lesson_health.sh実行で計測"
+    CS3_code: "deploy_task.sh inject_related_lessons L4009-4450を実コード確認"
+    CS4_action: "前セッション報告訂正+docs/research永続化+掲示板投稿"
+    CS5_unverified: "キーワードスコア閾値の最適値は未検証"
+    CS6_causal: "ID衝突→二重注入と誤判定→cmd起票提案→実態はマッチング精度問題"
+  causal_chain: "前セッション衝突件数のみ計測→内容比較スキップ→重複と誤報告→本セッション内容比較→衝突と判明→報告訂正。根因=LG042(否定的存在主張は全範囲実測)"
+  brainwash_check: "infra 821件, dm 751件, 衝突746件(python実測)。内容比較5件で全件title不一致確認。#2防止: 件数だけでなく内容を検証。前セッション#2(件数のみで結論)を本セッションで是正"
+  operational_simulation: "ID衝突はdeploy_task.shのPJ別読込で吸収される。忍者に注入される教訓は正しいPJのものだけ。useful率への直接影響なし"
+  timestamp: "2026-06-20T13:38:00"
+- cmd_id: cmd_3465_kagemaru
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  gate_result: CLEAR
+  changed_lines: 0
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "LGTM。Guard17テーブル化+bats6件(AC2)完遂。44/44 PASS実動作確認。AC3(ssot-registry)はscope外(ac_assigned=[AC2])"
+  observations:
+    - "事実1: bats 44/44 PASS実動作確認。Guard17テスト6件=BLOCK正常2+除外1+MultiEdit1+免除2"
+    - "事実2: 3commit(2cc8d6462/d9d59c817/936c46406)全実在。Guard17テーブル3ファイル×フィールド×許可経路"
+    - "事実3: AC3未充足はac_assigned=[AC2]のためscope外。cmd全体GATEは家老判断で保留が正当"
+  origin: "[[cmd_3465]] -> [[Guard17テーブル化AC2]] -> [[LGTM]]"
+  causal_chain: "SSOT無保護→Guard17テーブル化+テスト→正本変更BLOCK。複利: テーブル行追加で新概念自動保護=正の複利"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "settings.yaml Guard17 BLOCKテスト欠如あるが既存コードパス統合済み。テーブル化で既存保護regression低リスク"
+  step3_5_verified: true
+  brainwash_check: "bats 44/44(実行確認)。3commit実在(git show確認)。SG-PRE25 ERROR=AC3 scope外偽陽性(LG037分類)。#2防止: precheck結果を鵜呑みにせず原因分析"
+  hole_action: none
+  timestamp: "2026-06-20T13:40:00"
+- cmd_id: cmd_3464
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  gate_result: CLEAR
+  changed_lines: 128
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "LGTM。AC1:17ファイルPJパス直書き全件get_project_path()変換(commit 782be65a6)。AC2:Guard16 PJパス概念はcmd_3465で実装確認(git d9d59c817)。AC3:ssot-registry.md PJパス行更新済み。bats 44/44 PASS実動作確認"
+  observations:
+    - "事実1: commit 782be65a6で17ファイル全件 /mnt/c/Python_app/ 直書きをget_project_path()呼び出しに変換。rg残件はtest_hooks.sh fixture・oneshot・guard検出コード内のみ（除外理由正当）"
+    - "事実2: Guard16 PJパス概念はcmd_3465(git commit d9d59c817)で実装済み。pre-write-edit-combined.sh現物に _g16_count_project_path・_G16_CONCEPTS PJパスエントリを確認。bats 44/44 PASS"
+    - "事実3: ssot-registry.md PJパス行がGuard16あり・消費者数18に更新済みをRead toolで現物確認。AC3要件と一致"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "gate/hook修正はPJパスsource追記のみ。既存ロジック変更なし。rollback不能リスクなし。Guard16は既存テーブルへの概念追加であり他Guard動作に影響なし"
+  origin: "[[cmd_3464]] -> [[PJパス直書き消費者書換え+Guard16追加]] -> [[LGTM]]"
+  causal_chain: "PJパス直書き→get_project_path()SSOT化→Guard16でWrite/Edit時自動BLOCK。複利: Guard16が今後の直書き混入を自動阻止"
+  brainwash_check: "bats 44/44実行確認。rg残件を自前実行で一次確認。ssot-registry ReadToolで現物確認。GATE CLEAR既知で確証バイアスリスクあり→git show/grep/Read toolで一次ソース独立確認実施済み(17ファイル全件+Guard16実装+ssot-registry)。#2防止: Guard16実装をcmd_3465 git logで独立確認"
+  step3_5_verified: true
+  hole_action: none
+  timestamp: "2026-06-20T13:45:00"
+- cmd_id: cmd_3466
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "APPROVE。教訓マッチング精度改善。inject_related_lessonsスコアリング品質向上。useful率21.4%→改善目標。殿指示直接起票"
+  observations:
+    - "事実1: inject_related_lessons L4009実在確認。useful率=現在21.4%(gate_lesson_health実測)。draftの37.5%とは計測時点差異"
+    - "事実2: q11 rg lesson_matching 0件=前例なし確認。deploy_task.sh変更は全配備に影響する中核スクリプト"
+    - "事実3: AC3個、timeout30分。分析→改善→テストの自然な順序"
+  origin: "[[先送りBLOCK教訓健全度]] -> [[軍師分析マッチング精度]] -> [[cmd_3466_APPROVE]]"
+  causal_chain: "useful率低→教訓注入の多数が無駄→忍者CTX消費→学習効果低下。スコアリング改善=全配備に複利で効く正の複利"
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "deploy_task.sh中核スクリプト変更だがAC3で既存テストPASS確認を要求。スコアリング改善は既存フロー内変更"
+  ambiguity_points: none
+  brainwash_check: "useful率21.4%(gate_lesson_health実測)。AC3件カウント。inject_related_lessons L4009(rg確認)。q11前例なし(rg確認)。#2防止: 全数値を実測で確認"
+  timestamp: "2026-06-20T13:45:00"
+- cmd_id: cmd_3466
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hayate
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "infra変更+bats全PASS+2経路閉鎖のみ。既存防御維持"
+  confidence: HIGH
+  changed_lines: 138
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "LGTM。keyword_score=0 bypass 2経路(target_path boost / tag fallback)を最小変更で閉鎖。bats 68件全PASS実動作確認。_cross_project_score bypass不能確認"
+  observations:
+    - "事実1: keyword_score=0でtarget_path boost+tag fallbackの2経路がbypassしていた。L5104に`keyword_score > 0`条件、L5144-5148に`_lesson_matches_task_target_path`制限を追加して閉鎖"
+    - "事実2: bats 68件全PASS(6+14+13+35)実動作確認。cmd_3466固有テスト2件がbefore(injected)/after(excluded)の差分を明示的にカバー"
+    - "事実3: _cross_project_score経路はgrepで設定ロジック不在を確認(L5097の1箇所getのみ)。常に0→bypass不能"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "deploy_task.sh中核スクリプト。2箇所のみ条件追加(削除・書換えなし)。_cross_project_score bypass不能(設定ロジック不在)。tag fallback full-lesson path→scored空→tag fallback→target_path二重フィルタ。rollback=commit revert1発"
+  causal_chain: "useful率低→L317パターンをdeploy_task.sh 2箇所に適用→keyword_score=0 bypass閉鎖→useful率改善(次配備サイクルで実計測)"
+  brainwash_check: "bats 68件全実行確認。_cross_project_score grep実行で設定ロジック不在確認。GATE CLEAR未知=確証バイアスなし。precheck WARN(二重配備saizo=canceled+adversarial対象)は非BLOCK"
+  step3_5_verified: true
+  origin: "[[先送りBLOCK_教訓健全度]] -> [[target_path_boost_relevance_bypass]] -> [[LGTM]]"
+  timestamp: "2026-06-20T13:57:40"
+- cmd_id: cmd_3467
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "APPROVE。オントロジーPhase4因果リンク駆動装置。Guard18(影響範囲context表示)。emit_context=BLOCKなし情報表示。殿定義の完成形"
+  observations:
+    - "事実1: Guard18はL685-727に既に実装済み(忍者作業完了)。emit_context L23実在。BLOCKなし情報表示のみ"
+    - "事実2: causal_index.shがリンク逆引きマップを生成しキャッシュに保存。hookは読み取りのみ"
+    - "事実3: q11確認=causal_index grep 0件→起票時点で未実装。現在は実装済み(LG001: 忍者作業であり既存ではない)"
+  origin: "[[殿指示_オントロジーPhase4]] -> [[因果リンク逆引き]] -> [[cmd_3467_APPROVE]]"
+  causal_chain: "因果リンク記録のみ→変更時波及先不可視→Guard18情報表示で自動可視化。複利: 全ファイル変更時に波及先表示=見落とし防止"
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "Guard18はemit_contextで情報表示のみ。BLOCKなし。hookの既存動作に副作用なし"
+  ambiguity_points: none
+  brainwash_check: "emit_context L23(grep確認)。Guard18 L685-727(grep確認)。AC3件カウント。BLOCKなし設計=偽陽性リスクなし。#2防止: 全前提を一次情報で確認"
+  timestamp: "2026-06-20T14:26:00"
