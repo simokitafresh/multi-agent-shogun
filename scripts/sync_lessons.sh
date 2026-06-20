@@ -44,6 +44,22 @@ if [ ! -f "$SSOT_FILE" ]; then
     exit 1
 fi
 
+# §3.2速度改善: SSOT(lessons.md)が変更されていなければ再syncスキップ
+# lessons.mdのmtimeがlessons.yamlのmtimeより古い→変更なし→スキップ
+if [ -f "$INDEX_FILE" ] && [ "${FORCE_SYNC:-}" != "1" ]; then
+    _ssot_mtime=$(stat -c '%Y' "$SSOT_FILE" 2>/dev/null || echo 0)
+    _index_mtime=$(stat -c '%Y' "$INDEX_FILE" 2>/dev/null || echo 0)
+    if [ "$_ssot_mtime" -lt "$_index_mtime" ] 2>/dev/null; then
+        # archive.yamlも確認(lesson_write.shがarchiveに直接書く場合)
+        # 同秒は安全側にsync(-lt: 厳密に古い場合のみスキップ。同秒=変更直後の可能性)
+        _archive_mtime=$(stat -c '%Y' "$ARCHIVE_FILE" 2>/dev/null || echo 0)
+        if [ "$_archive_mtime" -lt "$_index_mtime" ] 2>/dev/null; then
+            echo "SKIP: lessons.md/archive unchanged (mtime check). Use FORCE_SYNC=1 to override."
+            exit 0
+        fi
+    fi
+fi
+
 # Ensure output directory exists
 mkdir -p "$(dirname "$CACHE_FILE")"
 
