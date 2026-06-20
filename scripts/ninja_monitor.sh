@@ -657,23 +657,18 @@ check_pane_survival() {
 
     # LK009 enforcement: @agent_id重複検知+自動修復
     # 同一agent_idが複数paneに存在 = CLI再起動時の汚染
-    local pane_mapping
+    local pane_mapping pane_base
     pane_mapping=$(tmux list-panes -t "$agents_window" -F '#{pane_index} #{@agent_id}' 2>/dev/null || true)
-    local -A expected_pane  # agent_name → expected pane_index (from PANE_TARGETS)
-    for name in "${NINJA_NAMES[@]}"; do
-        local pt="${PANE_TARGETS[$name]:-}"
-        if [ -n "$pt" ]; then
-            # extract pane_index from "shogun:agents.N" or "shogun:2.N"
-            expected_pane[$name]="${pt##*.}"
-        fi
-    done
-    # also check karo and gunshi
-    for name in karo gunshi; do
-        local pt_core=""
-        pt_core=$(echo "$pane_mapping" | awk -v n="$name" '$2==n {print $1; exit}')
-        if [ -n "$pt_core" ]; then
-            expected_pane[$name]="$pt_core"
-        fi
+    pane_base=$(printf '%s\n' "$pane_mapping" | awk 'NR==1 || $1 < min { min=$1 } END { print min }')
+    [[ "$pane_base" =~ ^[0-9]+$ ]] || pane_base=1
+
+    local -A expected_pane  # agent_name → expected pane_index (from settings order, not current @agent_id)
+    local -a expected_agents
+    read -ra expected_agents <<< "$(get_all_agents)"
+    local idx=0
+    for name in "${expected_agents[@]}"; do
+        expected_pane[$name]=$((pane_base + idx))
+        idx=$((idx + 1))
     done
     while read -r pidx aid; do
         [ -z "$aid" ] && continue

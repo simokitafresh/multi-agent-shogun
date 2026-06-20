@@ -317,20 +317,9 @@ PY
     tmux set-option -p -t "$target" @model_name "$display_name" >/dev/null 2>&1 || true
     tmux set-option -p -t "$target" @agent_state active >/dev/null 2>&1 || true
 
-    pane_dead=$(tmux display-message -t "$target" -p '#{pane_dead}' 2>/dev/null || echo "1")
-    if [[ "$pane_dead" == "1" ]]; then
-        echo "  [runtime] ${agent}@${target}: pane dead — respawning"
-        tmux respawn-pane -t "$target" 2>/dev/null || true
-        sleep 1
-    fi
-
-    tmux send-keys -t "$target" C-c
-    sleep 0.4
-    tmux send-keys -t "$target" C-c
-    sleep 0.4
-    tmux send-keys -t "$target" "cd \"${SCRIPT_DIR}\" && clear" Enter
-    sleep 0.3
-    tmux send-keys -t "$target" "$launch" Enter
+    # CLIごと再起動が基本(殿指摘2026-06-21)。respawn-pane -kでプロセスを確実に終了→再起動。
+    # 旧方式(Ctrl-C+send-keys)はハングCLIに対応できなかった。
+    tmux respawn-pane -k -t "$target" "cd \"${SCRIPT_DIR}\" && $launch"
 
     if [[ "$TARGET_CLI" == "codex" ]]; then
         wait_for_codex_boot "$agent" "$target" || true

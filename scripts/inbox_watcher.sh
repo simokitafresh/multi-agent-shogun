@@ -27,7 +27,7 @@ SCRIPT_DIR="${_iw_self%/scripts/inbox_watcher.sh}"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 [ ! -f "$SCRIPT_DIR/scripts/lib/model_family.sh" ] || source "$SCRIPT_DIR/scripts/lib/model_family.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
-source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
+[ ! -f "$SCRIPT_DIR/scripts/lib/pane_lookup.sh" ] || source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
@@ -122,6 +122,11 @@ ensure_current_pane_target() {
     current_agent=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_id}' 2>/dev/null || true)
     if [ "$current_agent" = "$AGENT_ID" ]; then
         return 0
+    fi
+
+    if ! declare -f pane_lookup >/dev/null 2>&1; then
+        echo "[$(date)] [PANE-RETARGET-WARN] $AGENT_ID current pane $PANE_TARGET has @agent_id='${current_agent:-empty}', and pane_lookup is unavailable" >&2
+        return 1
     fi
 
     resolved=$(pane_lookup "$AGENT_ID" 2>/dev/null || true)
@@ -403,6 +408,7 @@ clear_first_unread_seen() {
 maybe_force_idle_flag() {
     local effective_cli="$1"
     [ "$effective_cli" = "claude" ] || return 1
+    ensure_current_pane_target || return 1
 
     local idle_flag="${IDLE_FLAG_DIR}/shogun_idle_${AGENT_ID}"
     [ -f "$idle_flag" ] && return 1
@@ -475,6 +481,7 @@ get_effective_cli_type() {
 # CLI種別はcli_profiles.yamlのフィールドで動的に判定（name-based分岐なし）
 send_cli_command() {
     local cmd="$1"
+    ensure_current_pane_target || return 1
     if [ "${ASW_DISABLE_ESCALATION:-0}" = "1" ]; then
         echo "[$(date)] [SKIP] Escalation disabled for $AGENT_ID (cli_command: $cmd)" >&2
         return 0
@@ -589,6 +596,7 @@ send_wakeup() {
     local unread_count="$1"
     local has_task_assigned="${2:-false}"
     local current_fp="${3:-}"
+    ensure_current_pane_target || return 1
     if [ "${ASW_DISABLE_ESCALATION:-0}" = "1" ]; then
         echo "[$(date)] [SKIP] Escalation disabled for $AGENT_ID (nudge: inbox${unread_count})" >&2
         return 0
