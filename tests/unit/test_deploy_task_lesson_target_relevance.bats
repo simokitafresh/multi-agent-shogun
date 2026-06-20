@@ -165,3 +165,77 @@ EOF
     [ "$status" -eq 0 ]
     [ "$output" = "L_SEMANTIC_INDEX_TARGET" ]
 }
+
+@test "cmd_3466: target_files一致だけでキーワード0点教訓を注入しない" {
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L_PATH_ONLY_LOW_USEFUL
+    title: unrelated report formatting
+    summary: binary_checks and verdict report fields
+    content: report yaml gate validation
+    tags: [deploy]
+    target_files: [scripts/deploy_task.sh]
+    helpful_count: 999
+  - id: L_KEYWORD_RELEVANT
+    title: deploy task lesson scoring
+    summary: deploy_task related_lessons scoring must use keyword relevance
+    content: lesson injection scoring target path behavior
+    tags: [deploy]
+    helpful_count: 1
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  project: infra
+  task_id: cmd_3466_path_only
+  parent_cmd: cmd_3466
+  task_type: impl
+  title: "deploy matching score"
+  description: "Improve deploy_task related_lessons keyword scoring"
+  target_path: scripts/deploy_task.sh
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run related_lesson_ids
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"L_PATH_ONLY_LOW_USEFUL"* ]]
+    [[ "$output" == *"L_KEYWORD_RELEVANT"* ]]
+}
+
+@test "cmd_3466: tag fallback excludes tag-only helpful_count lessons without target_path match" {
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L_TAG_ONLY_GENERIC
+    title: unrelated workflow procedure
+    summary: generic process lesson unrelated to the target file
+    content: process status report yaml
+    tags: [deploy]
+    helpful_count: 999
+  - id: L_TARGET_FALLBACK
+    title: unrelated fallback title
+    summary: fallback only because target file matches
+    content: no task query words here
+    tags: [deploy]
+    target_files: [scripts/deploy_task.sh]
+    helpful_count: 1
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  project: infra
+  task_id: cmd_3466_tag_fallback
+  parent_cmd: cmd_3466
+  task_type: exact
+  title: "deploy zzzz qqqq"
+  description: "zzzz qqqq"
+  target_path: scripts/deploy_task.sh
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run related_lesson_ids
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"L_TAG_ONLY_GENERIC"* ]]
+    [[ "$output" == *"L_TARGET_FALLBACK"* ]]
+}

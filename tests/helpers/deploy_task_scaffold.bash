@@ -9,6 +9,8 @@ deploy_task_setup_file() {
     export SRC_CLI_LOOKUP_SCRIPT="$PROJECT_ROOT/scripts/lib/cli_lookup.sh"
     export SRC_FIELD_GET_SCRIPT="$PROJECT_ROOT/scripts/lib/field_get.sh"
     export SRC_YAML_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
+    export SRC_PROJECT_PATH_SCRIPT="$PROJECT_ROOT/scripts/lib/project_path.sh"
+    export SRC_REPO_ROOT_SCRIPT="$PROJECT_ROOT/scripts/lib/repo_root.sh"
     export SRC_AGENT_STATE_LIB="$PROJECT_ROOT/lib/agent_state.sh"
     export SRC_CTX_UTILS_SCRIPT="$PROJECT_ROOT/scripts/lib/ctx_utils.sh"
     export SRC_PANE_LOOKUP_SCRIPT="$PROJECT_ROOT/scripts/lib/pane_lookup.sh"
@@ -25,6 +27,8 @@ deploy_task_setup_file() {
     [ -f "$SRC_CLI_LOOKUP_SCRIPT" ] || return 1
     [ -f "$SRC_FIELD_GET_SCRIPT" ] || return 1
     [ -f "$SRC_YAML_FIELD_SET_SCRIPT" ] || return 1
+    [ -f "$SRC_PROJECT_PATH_SCRIPT" ] || return 1
+    [ -f "$SRC_REPO_ROOT_SCRIPT" ] || return 1
     [ -f "$SRC_AGENT_STATE_LIB" ] || return 1
     [ -f "$SRC_CTX_UTILS_SCRIPT" ] || return 1
     [ -f "$SRC_PANE_LOOKUP_SCRIPT" ] || return 1
@@ -56,6 +60,8 @@ deploy_task_setup_file() {
     cp "$SRC_CLI_LOOKUP_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/cli_lookup.sh"
     cp "$SRC_FIELD_GET_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/field_get.sh"
     cp "$SRC_YAML_FIELD_SET_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/yaml_field_set.sh"
+    cp "$SRC_PROJECT_PATH_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/project_path.sh"
+    cp "$SRC_REPO_ROOT_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/repo_root.sh"
     cp "$SRC_AGENT_STATE_LIB" "$DEPLOY_TASK_TEMPLATE_DIR/lib/agent_state.sh"
     cp "$SRC_CTX_UTILS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/ctx_utils.sh"
     cp "$SRC_PANE_LOOKUP_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/pane_lookup.sh"

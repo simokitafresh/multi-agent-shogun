@@ -5098,7 +5098,10 @@ try:
         if cross_project_score and score < cross_project_score:
             score = cross_project_score
 
-        if _lesson_matches_task_target_path(lesson):
+        # cmd_3466: target_path boost is a ranking boost, not a relevance bypass.
+        # keyword_score=0 + target_files basename match was injecting low-useful lessons
+        # whose only relation was "this file changed before".
+        if keyword_score > 0 and _lesson_matches_task_target_path(lesson):
             score += TARGET_PATH_MATCH_BOOST
 
         if score <= 0:
@@ -5138,12 +5141,15 @@ try:
         if not has_target_path:
             print(f'[INJECT] no target_path: skipping tag fallback (would inject {min(len(tag_candidates), MAX_INJECT)} lessons by helpful_count)', file=sys.stderr)
         else:
-            _relevant_fallback = [l for l in tag_candidates if l.get('tags') or l.get('target_files')]
+            _relevant_fallback = [
+                l for l in tag_candidates
+                if _lesson_matches_task_target_path(l)
+            ]
             _tag_fallback = [(l.get('helpful_count',0) or 0, l.get('id',''), str(l.get('summary', l.get('title','')))[:80]) for l in _relevant_fallback]
             _tag_fallback.sort(key=lambda x: -x[0])
             scored = [(1, lid, summ) for hc, lid, summ in _tag_fallback[:MAX_INJECT]]
             if scored:
-                print(f'[INJECT] tag fallback: keyword score=0, using {len(scored)} tag-matched lessons by helpful_count', file=sys.stderr)
+                print(f'[INJECT] tag fallback: keyword score=0, using {len(scored)} target_path-matched lessons by helpful_count', file=sys.stderr)
 
     # cmd_1564+karo_idle_fix: useful_rate feedback基盤
     # cmd_2700: mature feedback effectiveness_scoreが低い教訓は注入候補から除外
