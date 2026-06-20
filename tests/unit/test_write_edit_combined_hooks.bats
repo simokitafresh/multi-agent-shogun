@@ -361,3 +361,49 @@ _run_post() {
     [ "$status" -eq 2 ]
     [[ "$output" == *'repoルートパス'* ]]
 }
+
+@test "Guard 17: config/projects.yaml projects path manual WriteをBLOCKする" {
+    local projects_file="$TMP_DIR/config/projects.yaml"
+    mkdir -p "$TMP_DIR/config"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$projects_file"'","content":"projects:\n  - id: infra\n    path: /mnt/c/tools/multi-agent-shogun\n"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'projects.yaml projects[].path変更は'* ]]
+    [[ "$output" == *'手動Edit/Write禁止'* ]]
+}
+
+@test "Guard 17: config/projects.yaml path以外の手動WriteはBLOCKしない" {
+    local projects_file="$TMP_DIR/config/projects.yaml"
+    mkdir -p "$TMP_DIR/config"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$projects_file"'","content":"projects:\n  - id: infra\n    name: infra\n"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'projects.yaml projects[].path変更は'* ]]
+}
+
+@test "Guard 17: config/cli_profiles.yaml launch_cmd manual EditをBLOCKする" {
+    local profiles_file="$TMP_DIR/config/cli_profiles.yaml"
+    mkdir -p "$TMP_DIR/config"
+    _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$profiles_file"'","new_string":"profiles:\n  claude:\n    launch_cmd: /home/user/bin/claude\n"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'cli_profiles.yaml profiles[].launch_cmd変更は'* ]]
+    [[ "$output" == *'/shogun-cli-switch'* ]]
+}
+
+@test "Guard 17: config/cli_profiles.yaml launch_cmd MultiEditもBLOCKする" {
+    local profiles_file="$TMP_DIR/config/cli_profiles.yaml"
+    mkdir -p "$TMP_DIR/config"
+    _run_pre '{"tool_name":"MultiEdit","tool_input":{"file_path":"'"$profiles_file"'","edits":[{"old_string":"launch_cmd: old","new_string":"launch_cmd: codex --fast\n"}]}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'cli_profiles.yaml profiles[].launch_cmd変更は'* ]]
+}
+
+@test "Guard 17: project_path.sh許可経路のBash payloadはPre Write/Edit hookでBLOCKしない" {
+    _run_pre '{"tool_name":"Bash","tool_input":{"command":"source scripts/lib/project_path.sh && get_project_path infra"}}'
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "Guard 17: shogun-cli-switch許可経路のBash payloadはPre Write/Edit hookでBLOCKしない" {
+    _run_pre '{"tool_name":"Bash","tool_input":{"command":"bash scripts/switch_cli_mode.sh --help"}}'
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}

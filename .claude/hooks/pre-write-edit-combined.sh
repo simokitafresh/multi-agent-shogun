@@ -537,15 +537,50 @@ fi
 # Guard 15: 削除(2026-06-20)。各論パッチ(5フレーズのみ検出)はバグ。
 # 原理的解決=SessionContext(Step 1.7)がlord_conversation実際発言を自動表示。
 
-# === Guard 17: settings.yaml CLI/model変更は /shogun-cli-switch 経由必須 (殿裁定2026-06-20) ===
-# 手動Edit禁止。スキルが settings.yaml を変更→respawn→検証まで一貫実行する
-if [[ "$file_path" =~ config/settings\.yaml ]]; then
-    _write_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // .content // ""' 2>/dev/null)" || true
-    if printf '%s' "$_write_content" | grep -qE 'type:[[:space:]]*(claude|codex)|model_name:'; then
-        echo "BLOCK: settings.yaml CLI/model変更は /shogun-cli-switch スキルを使え。手動Edit禁止 (殿裁定: スキル100%使用。意志依存はバグ)" >&2
-        exit 2
-    fi
+# === Guard 17: config SSOTフィールド変更は許可スクリプト経由必須 (殿裁定2026-06-20) ===
+# 手動Edit禁止。SSOTごとに許可経路を定義し、変更・検証・伝播を一貫実行する。
+_g17_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | [(.new_string // empty), (.content // empty), ((.edits // [])[]?.new_string // empty)] | join("\n")' 2>/dev/null)" || true
+if [[ -n "$_g17_content" ]]; then
+    _G17_FILES=(
+        'config/settings\.yaml$'
+        'config/projects\.yaml$'
+        'config/cli_profiles\.yaml$'
+    )
+    _G17_FIELDS=(
+        'type:[[:space:]]*(claude|codex)|model_name:'
+        '^[[:space:]]*path:[[:space:]]*'
+        '^[[:space:]]*launch_cmd:[[:space:]]*'
+    )
+    _G17_CONCEPTS=(
+        'settings.yaml CLI/model'
+        'projects.yaml projects[].path'
+        'cli_profiles.yaml profiles[].launch_cmd'
+    )
+    _G17_ROUTES=(
+        '/shogun-cli-switch スキル'
+        'scripts/lib/project_path.sh と project登録/更新用の許可スクリプト'
+        '/shogun-cli-switch スキルまたは scripts/lib/cli_lookup.sh 経由'
+    )
+
+    _g17_i=0
+    for _g17_file_re in "${_G17_FILES[@]}"; do
+        _g17_field_re="${_G17_FIELDS[$_g17_i]}"
+        _g17_concept="${_G17_CONCEPTS[$_g17_i]}"
+        _g17_route="${_G17_ROUTES[$_g17_i]}"
+        ((_g17_i++)) || true
+
+        if [[ "$file_path" =~ $_g17_file_re ]] && printf '%s\n' "$_g17_content" | grep -qE "$_g17_field_re"; then
+            echo "BLOCK: ${_g17_concept}変更は ${_g17_route} を使え。手動Edit/Write禁止 (SSOT保護: 定義元破壊は全ヘルパーへ伝播する)" >&2
+            unset _g17_content _g17_i _g17_file_re _g17_field_re _g17_concept _g17_route
+            unset _G17_FILES _G17_FIELDS _G17_CONCEPTS _G17_ROUTES
+            exit 2
+        fi
+    done
+
+    unset _g17_i _g17_file_re _g17_field_re _g17_concept _g17_route
+    unset _G17_FILES _G17_FIELDS _G17_CONCEPTS _G17_ROUTES
 fi
+unset _g17_content
 
 # === Guard 16: 操作的オントロジー — 定義元(SSOT)がある値の直書き検出 (2026-06-20) ===
 # 殿裁定: オントロジー=三層記憶と同列の前提。定義が1箇所に集約され変更が自動伝播する。しないのはバグ
