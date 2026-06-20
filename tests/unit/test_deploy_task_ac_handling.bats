@@ -1392,7 +1392,7 @@ print(','.join(ids))
     [ "$status" -eq 0 ]
 }
 
-@test "deploy_task tag fallback injects at most MAX_INJECT=3 tag-matched lessons" {
+@test "deploy_task tag fallback injects at most MAX_INJECT=3 target-matched lessons" {
     mkdir -p "$TEST_PROJECT/projects/testproj"
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
 lessons:
@@ -1402,30 +1402,34 @@ lessons:
     status: confirmed
     helpful_count: 4
     tags: [deploy]
+    target_files: [scripts/deploy.sh]
   - id: L921
     title: cobalt harbor
     summary: velvet prism harbor
     status: confirmed
     helpful_count: 9
     tags: [deploy]
+    target_files: [scripts/deploy.sh]
   - id: L922
     title: ember satellite
     summary: lattice canyon signal
     status: confirmed
     helpful_count: 7
     tags: [deploy]
+    target_files: [scripts/deploy.sh]
   - id: L923
     title: fable orchard
     summary: copper meadow syntax
     status: confirmed
     helpful_count: 6
     tags: [deploy]
+    target_files: [scripts/deploy.sh]
 EOF
 
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
   title: "deploy rollout"
-  description: "trigger tag fallback without keyword overlap"
+  description: "trigger target-matched fallback without keyword overlap"
   task_type: impl
   project: testproj
   target_path: "scripts/deploy.sh"
