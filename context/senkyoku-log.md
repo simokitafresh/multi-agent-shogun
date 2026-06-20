@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-20 cmd_3463 -->
+<!-- last_updated: 2026-06-20 cmd_karo_hotfix_gunshi_cold_gate_20260620 -->
 
 ## 2026-06-16
 
@@ -1222,3 +1222,5 @@
 - 2026-06-20 cmd_karo_hotfix_context_dm_core_ga102_20260620 / cmd_karo_hotfix_context_dm_ops_ga102_20260620: GA-102 dm-signal-core/ops鮮度ALERTを飛猿/半蔵へ分割配備。deploy_task.shのtask YAML破損を検出し、正本YAML+yaml_field_setで修復。capture-paneで両者の再読込・作業開始を確認。
 
 - 2026-06-20 cmd_3463: オントロジー駆動Phase2-3をAC別5分割で配備開始。hanzo=AC1 registry、kagemaru=AC2 config SSOT、kotaro=AC3 repo/project helpers、tobisaru=AC4 Guard16 table-driven、saizo=AC5 repo path consumers。deploy_task.sh --yamlがorigin/AC注入でtask YAMLを壊したため、queue/tmp正本YAMLをqueue/tasksへ設置し、report_field_set.shで報告テンプレートを整備、inbox経路で再nudge。capture-paneで5名ともnudge到達・作業開始を確認済み。
+
+- 2026-06-20 ontology_followup_strong_new_game: オントロジー追加検証30パターン後の家老判断を受動層へ貫通。掲示板 `blt_20260620_130157_07e862` で将軍・軍師へ回答済み。結論: (1)SKILL.md全28本ロール制限削除は09:11撤回済みで却下妥当、(2)`shogun-cli-switch --force(active無視)`は通常機能化禁止、現行idle-only respawn維持、(3)PJパス直書きは実行系19ファイル確認・`auto-ops`は`config/projects.yaml`登録済み・即起票可能、(4)SSOT正本保護は`config/*.yaml`全体BLOCKではなくフィールド単位+許可writer表、(5).yaml/.md Guard16拡張は一律禁止で対象限定。origin: [[殿指示_オントロジー追加検証_20260620]] -> [[SSOT正本保護_PJパス直書き穴]] -> [[操作的オントロジー復帰時判断]]

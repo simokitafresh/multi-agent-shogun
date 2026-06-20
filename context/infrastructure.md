@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-20 cmd_karo_hotfix_hook_yaml_dump_ga101_20260620 -->
+<!-- last_updated: 2026-06-20 cmd_karo_hotfix_gunshi_cold_gate_20260620 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -35,6 +35,12 @@
 
 殿指示で家老×軍師協議→穴分析→13cmd一気通貫で三層記憶の概念空間を接続。
 操作的オントロジー原則（殿裁定2026-06-20）: オントロジーは分類表ではなく自動実行されて初めて効果が出る。概念定義・alias・因果リンクは、`semantic_search.sh`、task文脈注入、gate、startup、配備/レビュー/完了フローなどの自動経路に乗って再利用されることを完了条件にする。因果: [[殿裁定20260620_オントロジー自動実行]] -> [[分類表だけでは再利用されない]] -> [[semantic_search_task注入_gate_startup配備フローへ接続]]
+操作的オントロジー復帰時判断（2026-06-20 家老・軍師相談済み）:
+- `SKILL.md`全28本のロール制限削除は却下済み。09:10の軍師投稿は09:11に「編成系スキル(shogun-cli-switch)のみ」と撤回済み。全スキル削除は殿裁定の拡大解釈。通常はロール制限を維持し、殿の直接指示だけAGENTSの上位ルールで優先する。
+- `shogun-cli-switch --force(active無視)`は通常機能にしない。現行正本はactive/in_progressをskipし設定だけ反映する設計。busy paneのrespawnは未完了作業・報告YAML・CTX破壊リスクが高い。緊急時に作るならemergency専用、事前capture/snapshot、対象pane列挙、dry-run、post復帰確認を必須にする。
+- PJパス直書き修正は即起票可能。一次計測で実行系19ファイルに`/mnt/c/Python_app/DM-signal`または`/mnt/c/Python_app/auto-ops`直書きあり。`scripts/lib/project_path.sh`は存在し、`config/projects.yaml`には`auto-ops`登録済みなので「auto-ops登録前提」は古い。登録済みSSOTを使って再計測→変数代入型から置換→インライン/テスト個別判断→Guard16にPJパス概念追加。
+- SSOT正本保護は`config/*.yaml`全体BLOCKではなくフィールド単位の保護表で設計する。例: `config/projects.yaml:projects[].path`はproject登録系/`project_path.sh`、`config/cli_profiles.yaml:profiles.*.launch_cmd`は`shogun-cli-switch`/`cli_lookup.sh`、`config/settings.yaml:cli.agents.*`は`shogun-cli-switch`経由。全封鎖は家老の正当運用を詰まらせる。
+- `.yaml`/`.md`へのGuard16拡張は一律禁止。SSOT正本・docs/research・archiveにはliteralが正当に存在するためFPが増える。対象はinstructions/generatedやscripts配下の運用yamlなどに限定し、正本ファイルは別ゲートで守る。
 - **cmd_3116**: live_insert概念付与(速度2.3ms/一致率100%)
 - **cmd_3117**: テキスト品質改善(report充填3/10→10/10)
 - **cmd_3118**: 歴史データbackfill(31636件→11531件更新)
