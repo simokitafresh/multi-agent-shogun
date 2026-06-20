@@ -143,14 +143,14 @@ _agent_config_build_maps() {
 
 get_ninja_names() {
     _agent_config_load
-    echo "$_AGENT_CONFIG_NINJA_NAMES"
+    echo "${_AGENT_CONFIG_NINJA_NAMES:-hayate kagemaru hanzo saizo kotaro tobisaru}"
 }
 
 get_all_agents() {
     _agent_config_load
     # L821: shogunも含める。将軍は別windowだが監視/健全性チェックの対象
     # _AGENT_CONFIG_ALL_NAMESにgunshiが含まれるため重複排除
-    echo "shogun karo $_AGENT_CONFIG_ALL_NAMES"
+    echo "shogun karo ${_AGENT_CONFIG_ALL_NAMES:-gunshi hayate kagemaru hanzo saizo kotaro tobisaru}"
 }
 
 get_commander_names() {
