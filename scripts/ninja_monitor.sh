@@ -984,7 +984,7 @@ safe_send_clear() {
     local _launch_cmd
     _launch_cmd=$(cli_launch_cmd "$agent_name" 2>/dev/null || echo "")
     if [ -z "${_launch_cmd:-}" ]; then
-        _launch_cmd="/home/simokitafresh/bin/claude --effort high"
+        _launch_cmd="$HOME/bin/claude --effort high"
     fi
     log "RESPAWN-PANE: $agent_name respawn-pane -k (CTX確実0%復帰), reason=$reason"
     tmux respawn-pane -k -t "$pane" "cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {

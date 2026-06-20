@@ -4,12 +4,16 @@
 bunshin(最小CSV)でフェーズ別時間を計測し、kasoku_diff推定に使用。
 
 使い方:
-  cd /mnt/c/Python_app/DM-signal
-  python3 /mnt/c/tools/multi-agent-shogun/scripts/oneshot/wf_profile.py
+  cd $(get_project_path dm-signal)
+  python3 scripts/oneshot/wf_profile.py
 """
-import sys, time, os
-sys.path.insert(0, "/mnt/c/Python_app/DM-signal")
-os.chdir("/mnt/c/Python_app/DM-signal")
+import sys, time, os, subprocess
+_dm_signal_path = subprocess.check_output(
+    ["bash", "-c", "source scripts/lib/project_path.sh && get_project_path dm-signal"],
+    text=True, cwd=os.path.join(os.path.dirname(__file__), "../..")
+).strip()
+sys.path.insert(0, _dm_signal_path)
+os.chdir(_dm_signal_path)
 
 import numpy as np
 import cProfile
