@@ -160,6 +160,10 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-06-20: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:saizo_report_cmd_3463.yaml|report_format:tobisaru_report_cmd_3463.yaml
+
+- 2026-06-20: gate=gate_report_format result=FAIL executor=tobisaru reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ;...
+- 2026-06-20: gate=gate_report_format result=FAIL executor=saizo reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ;...
 
 - 2026-06-20: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:kotaro_report_cmd_3458_kotaro.yaml|report_format:saizo_report_cmd_3458_saizo.yaml|report_format:tobisaru_report_cmd_3458_tobisaru.yaml
 - 2026-06-20: gate=gate_report_format result=FAIL executor=hanzo reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/5 ACs). 全ACの二値チェックを記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"compl...

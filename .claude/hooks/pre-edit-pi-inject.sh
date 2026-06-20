@@ -23,7 +23,11 @@ file_path="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) |
 [[ -z "$file_path" ]] && exit 0
 
 # DM-Signal path を config/projects.yaml から動的取得
-REPO_ROOT="${REPO_ROOT:-/mnt/c/tools/multi-agent-shogun}"
+# Source repo_root helper (no hardcoded path)
+_PEI_ROOT="${BASH_SOURCE[0]%/.claude/hooks/*}"
+# shellcheck source=scripts/lib/repo_root.sh
+source "${_PEI_ROOT}/scripts/lib/repo_root.sh"
+REPO_ROOT="${REPO_ROOT:-$(get_repo_root)}"
 PROJECTS_YAML="${REPO_ROOT}/config/projects.yaml"
 PI_YAML="${REPO_ROOT}/projects/dm-signal.yaml"
 
@@ -31,7 +35,7 @@ DM_PATH="$(awk '/id: dm-signal/{found=1} found && /path:/{match($0, /"([^"]+)"/,
 [[ -z "$DM_PATH" ]] && DM_PATH="/mnt/c/Python_app/DM-signal"
 
 INFRA_PATH="$(awk '/id: infra/{found=1} found && /path:/{match($0, /"([^"]+)"/, a); print a[1]; found=0; exit}' "$PROJECTS_YAML" 2>/dev/null)" || INFRA_PATH=""
-[[ -z "$INFRA_PATH" ]] && INFRA_PATH="/mnt/c/tools/multi-agent-shogun"
+[[ -z "$INFRA_PATH" ]] && INFRA_PATH="$(get_repo_root)"
 
 is_under_path() {
     local child="$1"

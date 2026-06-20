@@ -12,7 +12,11 @@ fi
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
 [[ "$payload" != *'"Skill"'* ]] && exit 0
 
-REPO="/mnt/c/tools/multi-agent-shogun"
+# Source repo_root helper (no hardcoded path)
+_PSE_ROOT="${BASH_SOURCE[0]%/.claude/hooks/*}"
+# shellcheck source=scripts/lib/repo_root.sh
+source "${_PSE_ROOT}/scripts/lib/repo_root.sh"
+REPO="$(get_repo_root)"
 
 # --- スキル名を抽出 (jq不要: awk) ---
 skill_name="$(printf '%s' "$payload" | awk '

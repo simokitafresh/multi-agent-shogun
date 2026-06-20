@@ -1,46 +1,40 @@
 task:
-  parent_cmd: cmd_karo_hotfix_hook_yaml_dump_ga101_20260620
-  task_type: hotfix
+  parent_cmd: cmd_3463
+  task_id: cmd_3463_AC3_repo_project_helpers
+  subtask_id: cmd_3463_AC3_repo_project_helpers
+  task_type: implementation
+  status: done
   project: infra
-  target_path: scripts/lib/yaml_atomic.py
-  purpose: "GA-101 hook_failureを一次情報で切り分け、yaml.dump検出がコード品質問題かhook設定問題かを判定して再発防止を提示または最小修正する"
-  title: "GA-101 yaml.dump hook failure調査+防御層"
+  target_path: scripts/lib
+  report_filename: kotaro_report_cmd_3463.yaml
+  report_path: queue/reports/kotaro_report_cmd_3463.yaml
+  ac_assigned: [AC3]
+  title: "cmd_3463 AC3 repo/project path helpers"
+  purpose: "repo rootとproject pathをSSOTから取得する共通helperを作り、AC4/AC5の依存基盤にする"
   command: |
-    queue/inbox/karo.yaml の GA-101 を起点に、pre-commit GP-136 が scripts/lib/yaml_atomic.py の yaml.dump をBLOCKした原因を調査せよ。
-    対象一次情報: scripts/lib/yaml_atomic.py, scripts/gates/gate_no_direct_yaml_dump.sh, .claude/hooks/pre-bash-combined.sh, scripts/hooks/git-pre-commit.sh, tests/unit/test_gate_no_direct_yaml_dump.bats。
-    Q1: なぜhookに引っかかったか。yaml_atomic.pyの設計意図とhookの検出条件から、コード品質問題かhook設定問題かを判定せよ。
-    Q2: 同じ種類の引っかかりが他の忍者/ファイルで起きていないか。hook failure logまたは関連ログからパターンを確認せよ。
-    Q3: 次に引っかからない防御層を1つ以上提示し、小さく安全なら実装してテストせよ。大きければ後続cmd案にする。
+    queue/shogun_to_karo.yaml の cmd_3463 を正本として読む。
+    AC3のみ担当せよ。
+    scripts/lib/repo_root.sh に get_repo_root を実装する。git rev-parse --show-toplevel を使い、失敗時の扱いも明確にする。
+    scripts/lib/project_path.sh に get_project_path を実装する。config/projects.yaml を読み、project idからpathを返す。
+    shellcheckまたは既存テスト流儀に合う単体テストを追加/更新し、AC4/AC5担当がsourceできる形にする。
   acceptance_criteria:
     - id: AC1
-      checks:
-        - check: "GA-101の直接原因を、staged diff・hook検出条件・対象ファイル行番号付きで説明した"
+      description: "docs/research/ssot-registry.md に全10概念のSSOT正本・ヘルパー関数・Guard状態・消費者ファイル数を記録した"
     - id: AC2
-      checks:
-        - check: "yaml_atomic.pyが許可されるべき例外か、禁止されるべき直接dumpかを設計意図から二値判定した"
+      description: "config/projects.yamlとconfig/settings.yamlの曖昧SSOTを是正する"
     - id: AC3
+      description: "scripts/lib/repo_root.sh と scripts/lib/project_path.sh を作る"
       checks:
-        - check: "同種hook_failureの横展開をhook failure logまたは関連ログで確認し、件数/パターンを報告した"
+        - check: "get_repo_root がこのrepo rootを返す"
+        - check: "get_project_path dm-signal/infra がconfig/projects.yaml由来のpathを返す"
+        - check: "関連テストまたは直接実行で成功を確認"
     - id: AC4
-      checks:
-        - check: "再発防止の防御層を実装または後続cmd案として提示し、関連テスト/pre-commit相当確認を実行した"
+      description: ".claude/hooks/pre-write-edit-combined.sh Guard16をテーブル駆動化する"
+    - id: AC5
+      description: "scripts/と.claude/hooks/のrepo絶対パス消費者を書き換える"
   not_in_scope:
-    - 運用YAMLへの直接yaml.dump利用を許可すること
-    - 他者の広範なdirty変更を一括commit/revertすること
-    - hookを緩めて本物のyaml.dump事故を見逃すこと
-  status: idle
-  task_id: cmd_karo_hotfix_hook_yaml_dump_ga101_20260620_normal
-  report_filename: kotaro_report_cmd_karo_hotfix_hook_yaml_dump_ga101_20260620.yaml
-  report_path: queue/reports/kotaro_report_cmd_karo_hotfix_hook_yaml_dump_ga101_20260620.yaml
-  ac_version: 25385424
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    approach_summary: 'GA-101: git-pre-commit.sh の is_yaml_dump_scan_target() が scripts/lib/yaml_atomic.py を除外していなかった。yaml.dump集中管理の正当な場所として除外ガードを追加し、テスト#9で確認済み。commit: ceb764369 fix(infra): GA-101 yaml_atomic.py を pre-commit yaml.dump スキャン除外に追加'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'GA-101: git-pre-commit.sh の is_yaml_dump_scan_target() が scripts/lib/yaml_atomic.py を除外していなかった。yaml.dump集中管理の正当な場所として除外ガードを追加し、テスト#9で確認済み。commit: ceb764369 fix(infra): GA-101 yaml_atomic.py を pre-commit yaml.dump スキャン除外に追加'
+    - config是正
+    - hook Guard16本体の書換え
+  validation:
+    - "bash -lc 'source scripts/lib/repo_root.sh; test \"$(get_repo_root)\" = \"$(git rev-parse --show-toplevel)\"'"
+  origin: "[[殿指示_オントロジー_20260620]] -> [[SSOT調査_cmd_3458_3461]] -> [[Phase2_3_SSOT是正_Guard汎化]]"

@@ -499,6 +499,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-12T13:22:47+09:00 # 第3報への返信: 検証完了・全承認・AC2着手指示 第3報（execution-status-report-20260612.md）を検証した。結果は以下のとおり全主張が現物と一致し、承認する。 ## 検証結果（調査チーム実施） 1.  |
 | lesson | `L744` API境界の文字列は4層（BE enum/FE型/DB JSON/script JSON）で同時管理が必要 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-16T00:23:18+09:00 buek5661l toolu_01W74gDx7b3rthKZgUTJ3kaQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/0cf3c11f-2474-4b28-adc5-09b043 |
+| causal | `cmd_karo_hotfix_context_dm_core_ga102_20260620` files_modified: [[recalculate_pipeline]] |
 | causal_chain | `[[cmd_3053]]` (L714) |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3153]]` (L744) |
@@ -1301,6 +1302,7 @@ codd:
 | causal | `cmd_3332` origin: [[directive-20260612-mtd-preliminary-row]] -> [[mtd-ux設計書Feature C]] -> [[cmd_3332]] |
 | cmd | `cmd_3364` 偵察: Ave-X PFのholding_signalベース3xレバレッジETF固定ストップ-10%×50%削減シミュレーション |
 | causal | `cmd_3364` origin: [[殿指摘_本番PFでやったか_20260613]] -> [[cmd_3363_prices全期間]] -> [[cmd_3364_holding_signal限定]] |
+| causal | `cmd_karo_hotfix_context_dm_core_ga102_20260620` files_modified: [[production_parity]] |
 | causal_chain | `[[cmd_3061]]` (L717) |
 
 ## deepdive_principles — deepdive原理
@@ -1864,6 +1866,7 @@ codd:
 | causal | `cmd_3431` origin: [[殿指示2026-06-17_新BB設計]] -> [[知識辞書momentum-turning-points]] -> [[シン四神12体4状態検証]] |
 | lesson | `L013` Compose LaunchedEffect(state)のblock内でstateを再参照すると最新値(Snapshot外)になり一過性状態を見逃す |
 | lesson | `L014` Compose LaunchedEffect(state)のblock内でstateを再参照するとSnapshot外最新値が返り一過性状態を見逃す |
+| causal | `cmd_karo_hotfix_context_dm_core_ga102_20260620` files_modified: [[shin_shijin_design]] |
 | causal_chain | `[[cmd_125]]` (L001) |
 | causal_chain | `[[cmd_125]]` (L002) |
 | causal_chain | `[[cmd_125]]` (L003) |
@@ -1961,6 +1964,7 @@ codd:
 | file | `context/dm-signal-ops.md` |
 | cmd | `cmd_2776` セマンティック辞書5概念追加 |
 | causal | `cmd_karo_hotfix_context_dm_ops_ga102_20260620` files_modified: [[silent_fallback_quality]] |
+| causal | `cmd_karo_hotfix_context_dm_core_ga102_20260620` files_modified: [[silent_fallback_quality]] |
 
 ## skill_design_rules — Skill設計ルール
 
@@ -2160,6 +2164,7 @@ codd:
 | causal | `cmd_3439` files_modified: [[dmsignal_operations]] |
 | causal | `cmd_3442` files_modified: [[dmsignal_operations]] |
 | causal | `cmd_karo_hotfix_context_dm_ops_ga102_20260620` files_modified: [[dmsignal_operations]] |
+| causal | `cmd_karo_hotfix_context_dm_core_ga102_20260620` files_modified: [[dmsignal_operations]] |
 
 ## google_classroom — Google Classroom Dashboard
 
@@ -2722,6 +2727,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T21:18:27+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T00:44:43+09:00 続けて |
 | causal | `cmd_karo_hotfix_context_dm_ops_ga102_20260620` files_modified: [[cdp_browser_capability]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T11:53:10+09:00 続けて |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -4118,7 +4124,7 @@ codd:
 |------|---|
 | id | operational_ontology |
 | label | 操作的オントロジー |
-| aliases | オントロジー, ontology, 操作的波及, 操作的トリガー, 概念間波及, 変更連鎖, triggers, 1変更で全連鎖更新, ダッシュボードの先, 学習する業務基盤, 因果辺の駆動装置化, Palantir ontology, オントロジーが有効に動くか検証もしてみろ, オントロジーは自動実行されて初めて効果が出る, ontology requires automation, 自動経路に乗らない概念定義は効果がない, 記憶貫通の完了判定は自動再利用, オントロジーの真髄は「概念Aが変わったら, Guard 16, Guard 17, Guard 9b, gate_no_hardcoded_ninja_list, SSOT棚卸し, SSOT全方位偵察, スキル100%使用, スキル強制, 手動操作BLOCK, ハードコード忍者名検出, get_ninja_names, agent_config.sh SSOT, 誤ったSSOTに支配されると厄介 |
+| aliases | オントロジー, ontology, 操作的波及, 操作的トリガー, 概念間波及, 変更連鎖, triggers, 1変更で全連鎖更新, ダッシュボードの先, 学習する業務基盤, 因果辺の駆動装置化, Palantir ontology, オントロジーが有効に動くか検証もしてみろ, オントロジーは自動実行されて初めて効果が出る, ontology requires automation, 自動経路に乗らない概念定義は効果がない, 記憶貫通の完了判定は自動再利用, オントロジーの真髄は「概念Aが変わったら, Guard 16, Guard 17, Guard 9b, gate_no_hardcoded_ninja_list, SSOT棚卸し, SSOT全方位偵察, スキル100%使用, スキル強制, 手動操作BLOCK, ハードコード忍者名検出, get_ninja_names, agent_config.sh SSOT, 誤ったSSOTに支配されると厄介, ではオントロジーに戻ろう |
 | related_concepts | three_layer_memory_system, growth_loop, causal_network_obsidian(関連), codd_pipeline(関連) |
 
 | 種別 | パス/参照 |
@@ -4141,6 +4147,7 @@ codd:
 | causal | [[cmd_3458_SSOT全方位偵察]] -> [[710行棚卸し表]] -> [[Phase2_SSOT修正基盤]] |
 | file | `scripts/gates/gate_no_hardcoded_ninja_list.sh` |
 | file | `.git/hooks/pre-push` ontology integrity check追加 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-20T11:02:30+09:00 ではオントロジーに戻ろう |
 | causal_chain | `[[cmd_3278]]` (L772) |
 
 ## project_dividend_tracker — Dividend Tracker

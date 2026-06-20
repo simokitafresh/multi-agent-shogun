@@ -2000,7 +2000,7 @@ fi
 
 # --- Gate 12.2: 三層記憶引用率([MEM]タグ計測) (cmd_3199, Step 1.7) ---
 echo "■ 三層記憶引用率([MEM]タグ)"
-_lord_conv_12_2="/mnt/c/tools/multi-agent-shogun/data/lord_conversation.jsonl"
+_lord_conv_12_2="$SCRIPT_DIR/data/lord_conversation.jsonl"
 if [ -f "$_lord_conv_12_2" ]; then
     _shogun_resp_12_2=$(tail -200 "$_lord_conv_12_2" 2>/dev/null | grep '"direction":"response"' | tail -20)
     IFS=$'\t' read -r _resp_count_12_2 _mem_count_12_2 _mem_md_count_12_2 <<< "$(printf '%s\n' "$_shogun_resp_12_2" | awk '

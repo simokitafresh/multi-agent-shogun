@@ -4,7 +4,11 @@
 # L164: set -eu only (pipefailは使うな)
 set -eu
 
-REPO="/mnt/c/tools/multi-agent-shogun"
+# Source repo_root helper (no hardcoded path)
+_PSG_ROOT="${BASH_SOURCE[0]%/.claude/hooks/*}"
+# shellcheck source=scripts/lib/repo_root.sh
+source "${_PSG_ROOT}/scripts/lib/repo_root.sh"
+REPO="$(get_repo_root)"
 
 payload="$(cat)"
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0

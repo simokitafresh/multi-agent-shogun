@@ -10,9 +10,10 @@ payload="$(cat 2>/dev/null || true)"
 [[ "$payload" != *'.sh"'* && "$payload" != *'.sh'* && "$payload" != *'.bash"'* && "$payload" != *'.bash'* ]] && exit 0
 
 # Defer PROJECT_ROOT computation to after fast-path checks
-_PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || true
+_PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || \
+    _PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || true
 
-HOOK_PAYLOAD="$payload" PROJECT_ROOT="${_PROJECT_ROOT:-/mnt/c/tools/multi-agent-shogun}" python3 - <<'PY'
+HOOK_PAYLOAD="$payload" PROJECT_ROOT="${_PROJECT_ROOT}" python3 - <<'PY'
 import json
 import os
 import subprocess

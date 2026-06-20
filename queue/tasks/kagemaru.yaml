@@ -1,36 +1,43 @@
 task:
-  parent_cmd: cmd_karo_hotfix_context_saxo_ga100_20260620
-  task_type: hotfix
+  parent_cmd: cmd_3463
+  task_id: cmd_3463_AC2_config_ssot_fix
+  subtask_id: cmd_3463_AC2_config_ssot_fix
+  task_type: implementation
+  status: done
   project: infra
-  target_path: context/saxo-trade-engine.md
-  purpose: "GA-100 context_freshness ALERTのsaxo-trade-engine.mdを一次情報で照合し、必要な更新または維持判断を記録して再発を防ぐ"
-  title: "GA-100 saxo-trade-engine context鮮度更新"
+  target_path: config/settings.yaml
+  report_filename: kagemaru_report_cmd_3463.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3463.yaml
+  ac_assigned: [AC2]
+  title: "cmd_3463 AC2 config SSOT是正"
+  purpose: "gist_url重複、shogun launch_cmd不一致、skill path重複を正し、config内SSOT曖昧性を減らす"
   command: |
-    queue/inbox/karo.yaml の GA-100 を起点に、context/saxo-trade-engine.md を対象として鮮度更新を行え。
-    一次情報はこのrepo内の関連commit/log/contextで確認すること。外部Saxo API仕様の最新版調査が必要と判断した場合は、調査範囲と理由を報告し、推測で本文更新しない。
-    Q1: なぜこのgateが鳴ったか？直接原因と根本原因を last_updated / source commits since / 更新トリガーの観点で答えよ。
-    Q2: 同じカテゴリの穴が他にないか？GA-099の結果と突合し、saxo固有か横展開かを分けよ。
-    Q3: 次にこのgateが鳴らないようにする防御層を1つ提示し、必要なら最小実装または後続cmd案にする。
-    context/saxo-trade-engine.md は、内容更新が必要なら索引層スタイルで更新し、不要なら根拠を本文に短く残して last_updated を 2026-06-20 cmd_karo_hotfix_context_saxo_ga100_20260620 に更新せよ。
+    queue/shogun_to_karo.yaml の cmd_3463 を正本として読む。
+    AC2のみ担当せよ。
+    1. config/projects.yaml の dm-signal/infra gist_url が config/settings.yaml と同一なら削除する。mcas固有値は残す。
+    2. config/settings.yaml の shogun launch_cmd を config/cli_profiles.yaml の claude profile launch_cmd と一致させる。
+    3. config/settings.yaml の skill.save_path と skill.local_path を統一する。消す/残すの判断は既存消費者をrgで確認して根拠を報告せよ。
+    4. YAML構文確認と関連rgを実行する。
+    operational YAMLの編集は yaml_field_set.sh 等の安全手段を使い、yaml.dump/safe_dumpで上書きしない。
   acceptance_criteria:
     - id: AC1
-      checks:
-        - check: "context/saxo-trade-engine.md のlast_updated後commit差分を確認し、更新要否を根拠付きで判断した"
+      description: "docs/research/ssot-registry.md に全10概念のSSOT正本・ヘルパー関数・Guard状態・消費者ファイル数を記録した"
     - id: AC2
+      description: "config/projects.yamlとconfig/settings.yamlの曖昧SSOTを是正する"
       checks:
-        - check: "context/saxo-trade-engine.md を必要最小限で更新、または維持判断を本文に記録し、last_updatedを2026-06-20 cmd_karo_hotfix_context_saxo_ga100_20260620へ更新した"
+        - check: "dm-signal/infraの重複gist_urlが削除済み、mcas固有gist_urlは維持"
+        - check: "settings shogun launch_cmdがcli_profiles claude launch_cmdと一致"
+        - check: "skill path重複の統一結果と消費者影響を報告"
+        - check: "対象YAMLがyaml.safe_loadで読める"
     - id: AC3
-      checks:
-        - check: "bash scripts/gates/gate_context_freshness.sh または同等の対象確認で saxo-trade-engine.md がGA-100対象から外れたことを確認した"
+      description: "scripts/lib/repo_root.sh と scripts/lib/project_path.sh を作る"
     - id: AC4
-      checks:
-        - check: "GA-099/L825との接続を報告し、同じcontext更新未強制問題の防御層または後続cmd案を1つ書いた"
+      description: ".claude/hooks/pre-write-edit-combined.sh Guard16をテーブル駆動化する"
+    - id: AC5
+      description: "scripts/と.claude/hooks/のrepo絶対パス消費者を書き換える"
   not_in_scope:
-    - context/saxo-trade-engine.md以外のcontext更新
-    - 外部API仕様の未確認断定
-    - dm-signal本番DB/API操作
-  status: idle
-  task_id: cmd_karo_hotfix_context_saxo_ga100_20260620_normal
-  report_filename: kagemaru_report_cmd_karo_hotfix_context_saxo_ga100_20260620.yaml
-  report_path: queue/reports/kagemaru_report_cmd_karo_hotfix_context_saxo_ga100_20260620.yaml
-  ac_version: ea4c275b
+    - hook実装変更
+    - repo絶対パス消費者の全面書換え
+  validation:
+    - "python3 -c \"import yaml; yaml.safe_load(open('config/projects.yaml')); yaml.safe_load(open('config/settings.yaml')); yaml.safe_load(open('config/cli_profiles.yaml'))\""
+  origin: "[[殿指示_オントロジー_20260620]] -> [[SSOT調査_cmd_3458_3461]] -> [[Phase2_3_SSOT是正_Guard汎化]]"

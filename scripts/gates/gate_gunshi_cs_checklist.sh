@@ -860,7 +860,7 @@ fi
 
 # --- CS-X: 三層記憶活用+[MEM]関連性検証 (Step 1.7参照) ---
 # 将軍の回答に[MEM:]タグが含まれるか、および memory_md禁止ルールを検証する
-_lord_conv_file="/mnt/c/tools/multi-agent-shogun/data/lord_conversation.jsonl"
+_lord_conv_file="$REPO_ROOT/data/lord_conversation.jsonl"
 if [ -f "$_lord_conv_file" ]; then
     # 最新20件の将軍応答で[MEM]タグ引用率を計測
     _shogun_responses=$(tail -200 "$_lord_conv_file" 2>/dev/null | grep '"direction":"response"' | tail -20)

@@ -32,7 +32,7 @@ PROJECT_DIR=""
 if [ "${IS_DM_SIGNAL:-0}" = "1" ]; then
     PROJECT_DIR="/mnt/c/Python_app/DM-Signal"
 else
-    PROJECT_DIR="/mnt/c/tools/multi-agent-shogun"
+    PROJECT_DIR="$REPO_ROOT"
 fi
 
 print_sg_pre9() {

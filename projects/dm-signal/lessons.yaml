@@ -1,8 +1,29 @@
 ssot_path: /mnt/c/Python_app/DM-signal/tasks/lessons.md
-last_synced: '2026-06-18T22:44:04'
+last_synced: '2026-06-20T10:32:53'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons_archive.yaml
-lesson_count: 750
+lesson_count: 751
 lessons:
+- id: L754
+  title: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象
+  summary: 新規BBが blocks/__init__.py と schemas/pipeline.py に登録された場合、context/dm-signal-core.m
+  tags:
+  - dm-signal
+  - context
+  - BB
+  - context_freshness
+  subdomain: be
+  source_cmd: cmd_karo_hotfix_context_dm_core_ga102_20260620
+  when: DM-Signalに新規BB/Blockを登録するとき
+  how: blocks/__init__.pyとschemas/pipeline.pyの登録変更時にdm-signal-core.md §4 BB種別分類も照合・更新する
+  target_files:
+  - context/dm-signal-core.md
+  - /mnt/c/Python_app/DM-signal/backend/app/services/blocks/__init__.py
+  - /mnt/c/Python_app/DM-signal/backend/app/schemas/pipeline.py
+  origin: '[[cmd_3384]] -> [[BB分類context更新未強制]] -> [[GA-102 dm-signal-core freshness
+    ALERT]]'
+  deprecated: true
+  deprecated_at: '2026-06-20T10:35:04+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): context/dm-signal-core.m参照（ファイル消滅）'
 - id: L753
   title: 'DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用'
   summary: Goulding et al.2023の4状態を適用したところBull 80.5%/Bear 3件/Rebound 1件という極端な分布。EW
@@ -32,9 +53,6 @@ lessons:
   target_files:
   - docs/research/kotaro_cmd_3430_threshold_comparison_20260617.md
   origin: '[[cmd_3430]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L751
   title: 奥義(FoF of FoF)のmax相関はシン四神同様に≒1.0。根因は戦略同質性(銘柄宇宙ではなく)
   summary: 奥義21体210ペアのmax相関=0.9976〜1.0。シン四神(≥0.9956)とほぼ同じ。一方、5銘柄自体のmax相関はGLD×TMV=0.2605(低い!
@@ -101,9 +119,6 @@ lessons:
   - scripts/analysis/grid_search/run_077_weighted_yotsume.py
   - docs/research/cmd_3388_weighted_yotsume_db_parity_fix.md
   origin: '[[cmd_3388]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L746
   title: '[自動生成] 有効教訓の記録を怠った: cmd_3387'
   summary: '**source**: gate_auto_draft lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ'
@@ -198,9 +213,6 @@ lessons:
   when: 未設定
   how: 未設定
   origin: '[[cmd_3377]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L740
   title: PF構成確認はcheck_pf_config.pyで全層一括確認
   summary: hide判定はtier_visibility_settings全Tier確認必須。pipeline_configがBBの実体。portfoliosテーブルだけで
@@ -368,9 +380,6 @@ lessons:
   - frontend/components/__tests__/monthly_trade_table_fof_uuid.test.tsx
   - frontend/lib/__tests__/monthly-trade-display.test.ts
   origin: '[[cmd_3293]] -> [[WP-2のresolveDisplayText変更棄却]] -> [[cmd_3294コード復元+テスト固定]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L730
   title: 削除済みBlockTypeはruntime全経路で残参照検査する
   summary: Kalman/selection block削除後、静的な主要箇所の削除は完了していたが、初回本番mode=portfolio再計算でrecalculate_f
@@ -389,9 +398,6 @@ lessons:
   - backend/app/api/kalman.py
   - backend/app/api/portfolios.py
   origin: '[[cmd_3293]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L729
   title: 削除cmdのtodo更新先は実在パスを配備時に検証する
   summary: AC4は.agent/task-force/tasks/todo.md更新を要求したが、同パスは存在せず、実チェックリストはsummary.md側だった。sum
@@ -496,9 +502,6 @@ lessons:
   target_files:
   - 偵察のみ（コード変更なし。運用YAML task/reportのみ更新）
   origin: '[[cmd_karo_recon_p_average_freshness_api_failure_202606041948]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L722
   title: pipeline_config同期偵察はトップレベル差分とブロック差分を別々に検証する
   summary: PortfolioEditorはトップレベルPortfolioフィールドだけを更新し、BE saveはmodel_dumpをそのままconfig保存する。pip
@@ -892,9 +895,6 @@ lessons:
   - backend/app/
   - queue/reports/hayate_report_cmd_2444.yaml
   origin: '[[cmd_2444]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L696
   title: FoF登録ではPortfolio直下top_nを構成数に使うな
   summary: Portfolio直下top_nはPydanticで1..2制約があるUI/標準PF由来フィールド。FoF構成数やGS subset_sizeを入れるとtop_
@@ -910,9 +910,6 @@ lessons:
   - backend/app/
   - queue/reports/hayate_report_cmd_2444.yaml
   origin: '[[cmd_2444]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L695
   title: pipeline_config内側top_nとPortfolio直下top_nは別経路で分離検証必須
   summary: pipeline_config.blocks config top_n/select_nはDict[str,Any]で型制約なし(1-4全PASS)。Portf
@@ -943,9 +940,6 @@ lessons:
   - backend/app/
   - queue/reports/hayate_report_cmd_2443.yaml
   origin: '[[cmd_2443]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L693
   title: day lookback指定と月次return入力が混在する研究cmdでは時間解像度の写像を成果物へ明記する
   summary: cmd_2436ではlookback候補が10D/21D/84D/210D/315Dだった一方、AC2の入力は本番DB monthly_return_openだ
@@ -975,9 +969,6 @@ lessons:
   target_files:
   - context/dm-signal-research.md
   origin: '[[cmd_karo_ctx_freshness_research]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L691
   title: fullrecalculate完了はrecalculation_status DB行で二重確認せよ
   summary: Render restart中は/admin/recalculate-statusがidle風に見えてもrecalculation_statusではinterr
@@ -996,9 +987,6 @@ lessons:
   - outputs/registration/cmd_2424/pre_existing_shin_monthly.csv
   - outputs/registration/cmd_2424/post_existing_shin_monthly.csv
   origin: '[[cmd_2424]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L690
   title: recalculate-syncのAPI statusだけで完了判定せずDB statusを確認する
   summary: Render restart中は/admin/recalculate-statusがidle風に見えてもrecalculation_statusではinterr
@@ -1065,9 +1053,6 @@ lessons:
   - /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_2422_l2_champions_constrained.yaml
   - /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_2422_l2_champion_report.md
   origin: '[[cmd_2422]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L686
   title: robustness実行前にSQLite月次保存形式を確認する
   summary: L2 SQLiteはmonthlyテーブルではなくmonthly_blob/monthly_meta形式だったため、既存gs_grid_robustness.p
@@ -1272,9 +1257,6 @@ lessons:
   - scripts/oneshot/cmd_2391_l1_robustness_run.py
   - outputs/robustness/20260429/L1/
   origin: '[[cmd_2391]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L673
   title: cmd_2366 selector再実行時はchampion_list自動追記を制御せよ
   summary: cmd_2366_l1_champion_select.pyはデフォルトでoutputs/robustness/champion_list.yamlへappen
@@ -1329,9 +1311,6 @@ lessons:
   - scripts/oneshot/cmd_2382_yotsume_parity_verify.py
   - outputs/analysis/cmd_2382_yotsume_open_parity/sqlite_monthly_return_open_parity.csv
   origin: '[[cmd_2382]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L670
   title: Oikaze NumPy GSはproduction first_signal_monthまで初期EqualWeightを再現する
   summary: 本番fullrecalculateはMomentumFilterの初回signal月まではFoF初期配分(EqualWeight)のmonthly_return
@@ -1477,9 +1456,6 @@ lessons:
   - /mnt/c/Python_app/DM-signal/outputs/grid_search/shin_shijin_l1/
   - 偵察・検証のみ。恒久コード変更なし。報告YAMLのみ更新。
   origin: '[[cmd_2330]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L661
   title: verify_gs_db.pyはNaN除外後の非NaN行数を期待値にする必要がある
   summary: GS CSVにはwarm-up期間のNaN月次リターンが含まれるが、gs_db_utils.write_monthlyはNaNをDROPして挿入する。verif
@@ -1565,7 +1541,7 @@ lessons:
   - tasks/lessons.md
   origin: '[[cmd_2311]]'
   deprecated: true
-  deprecated_at: '2026-06-18T22:51:02+09:00'
+  deprecated_at: '2026-06-20T10:35:04+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/kotaro.yaml参照（ファイル消滅）'
 - id: L656
   title: 計測スクリプトの固定待機排除はDOMポーリングで行う
@@ -1607,9 +1583,6 @@ lessons:
   target_files:
   - 偵察のみ
   origin: '[[cmd_2297]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L653
   title: cdp_measure baseline比較は生成JSONへの統合確認を必須にする
   summary: cdp_measure.sh Phase4はcdp_benchmark.pyを--baseline/current比較器として呼ぶが、実際のcdp_benchm
@@ -1714,9 +1687,6 @@ lessons:
   - backend/app/jobs/generators/trade_performance.py
   - backend/app/services/return_calculator.py
   origin: '[[cmd_2253]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L645
   title: sync-status解除だけでL3完走と見なしてはならない
   summary: Layer 3 manual syncでは sync-status が unlocked に戻っても current run の Layer
@@ -1885,9 +1855,6 @@ lessons:
   target_files:
   - docs/research/codd_phase4_schema_drift_analysis.md
   origin: '[[cmd_2016]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L633
   title: monthly専用GS serial pathはprecomputed union maskを再利用せよ
   summary: 四つ目(yotsume)のように monthly-only かつ precomputed union mask が既にあるGSでは、serial
@@ -2105,8 +2072,6 @@ lessons:
   how: '2026-04-13'
   origin: '[[cmd_1882]]'
 - id: L620
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: L2奥義2×2因子分析でL1傾向継続だが縮小。GS固定の2種混在(DB vs champion)が一因
   summary: L1ではBB+15pp/動的-27〜-41pp。L2ではBB+5.4pp/動的-12.9ppに縮小。L2のGS固定にはproduction_db①とgs_sta
   tags:
@@ -2155,9 +2120,6 @@ lessons:
   - outputs/analysis/alm_research/okugi_alm_alm/cmd_1877_bunshin_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/okugi_alm_alm/cmd_1877_bunshin_l1_wf_validation.yaml
   origin: '[[cmd_1879]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L617
   title: gate_artifact_map.shで進行表の成果物所在チェック — 完了ブロック空欄→WARN
   summary: gate_artifact_map.shを進行表(l2-okugi-progress.md)のチェックに使え。GS完了ブロックに成果物所在が空欄ならWARN。フ
@@ -2214,8 +2176,6 @@ lessons:
   - scripts/oneshot/cmd_1865_alm_cpcv.py
   origin: '[[cmd_1865]]'
 - id: L613
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 'ALM忍法WF検証: 超越条件C(UWP<5M)は132ヶ月OOS期間には非現実的閾値。IS最適化チャンピオンはランダム選択と統計的有意差なし(SPA
     p>0.4)'
   summary: 'V3超越条件: 条件C(UWP<5M)は2015-2026の132ヶ月OOS全期間で計算するため実績UWP=7-41Mとなり全セル失敗。フォールド単位のUWP('
@@ -2234,8 +2194,6 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-16'
 - id: L612
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 超越条件C UWP<5M閾値は132M OOSに非現実+SPA全42非有意
   summary: cmd_1866 ALM忍法全方位検証でV3超越条件のUWP<5M閾値が132ヶ月OOS期間に対して非現実的に厳しい。全42セルFAIL。V7
     SPA検定も全4
@@ -2250,8 +2208,6 @@ lessons:
   - scripts/oneshot/cmd_1866_alm_validation.py
   origin: '[[cmd_1866]]'
 - id: L611
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: バグ汚染ファイル削除時のスコープ確認
   summary: cmd_1863でcmd_1819-1822のバグ汚染ファイルを削除した際にcmdの記載はalm_research内87件だったがgrid_search以下にも
   tags:
@@ -2268,8 +2224,6 @@ lessons:
   - outputs/analysis/alm_research/cmd_1863_1795_kasoku_ratio_l1_wf_alm_returns.csv
   origin: '[[cmd_1863]]'
 - id: L610
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 'バグ汚染ファイル削除時のスコープ確認: alm_research以外にもWFエンジン入力CSVが存在'
   summary: cmd_1863 AC1でcmd_1819_*/cmd_1821_*/cmd_1822_*をプロジェクト全体で削除したところ、alm_research/以外のg
   tags:
@@ -2285,12 +2239,7 @@ lessons:
   - outputs/analysis/alm_research/cmd_1863_1795_kasoku_diff_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/cmd_1863_1795_kasoku_ratio_l1_wf_alm_returns.csv
   origin: '[[cmd_1863]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L609
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: WF回帰テストは同一CSV2回実行での決定論確認
   summary: l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行→np.allclose=Trueで決定論を検証するもの。異なる世代のCSVや旧出力との
   tags:
@@ -2307,9 +2256,6 @@ lessons:
   - outputs/analysis/alm_research/cmd_1856_regression_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/cmd_1856_regression_l1_wf_validation.yaml
   origin: '[[cmd_1856]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L608
   title: 進行中月パリティ差異は構造的問題
   summary: GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致
@@ -2336,8 +2282,6 @@ lessons:
   - scripts/oneshot/cmd_1855_register_bunshin_gekko.py
   origin: '[[cmd_1855]]'
 - id: L606
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: WF回帰テストは同一CSV2回実行での決定論確認(異なるCSV世代間比較は別用途)
   summary: l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行しnp.allclose=Trueで決定論を検証するもの。エンジン改良やCSV再生成で異
   tags:
@@ -2354,12 +2298,7 @@ lessons:
   - outputs/analysis/alm_research/cmd_1856_regression_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/cmd_1856_regression_l1_wf_validation.yaml
   origin: '[[cmd_1856]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L605
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 'CAGRチャンピオン系は構造的に過適合リスクが高い: 全忍法でMEDIUM以上、NHF/MaxDD系は全てLOW'
   summary: '近傍分析結果: CAGRチャンピオン(激攻)は7忍法中5体がMEDIUM以上(oikaze15.3pp/kawarimi15.7pp/nukimi18.7pp/'
   tags:
@@ -2418,9 +2357,6 @@ lessons:
   - outputs/analysis/cmd_1845_three_layer_comparison.md
   - scripts/oneshot/cmd_1845_three_layer_metrics.py
   origin: '[[cmd_1845]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L601
   title: cmd_1840 maximum_drawdown目的は最悪値選出(方向反転バグ疑い)
   summary: cmd_1840 validation.yaml fixed_champions.maximum_drawdownのscoreが全忍法で-0.57〜-0.66と
@@ -2443,8 +2379,6 @@ lessons:
   how: wide monthly_fastのcache-miss読込は split(',') で列数を検証し、空文字をNaNへ変換する経路が安全
   origin: '[[cmd_1841]]'
 - id: L599
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: TrendReversalFilterBlockのinsufficient_candidates early returnでcurrent_tickersが残りbatch不一致
   summary: momentum不足月(期間先頭など)でmomentum_results<2のearly returnを実行するが、context.current_ticker
   tags:
@@ -2536,7 +2470,7 @@ lessons:
   origin: '[[cmd_1835]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-14'
+  last_referenced: '2026-06-20'
 - id: L593
   title: GSパターン数のC(n,k)スケーリング — universe体数変更で組合せ爆発
   summary: 12→20体でパターン数7.9倍(C(n,2)+C(n,3)+C(n,4))。CSV 5.5倍、PrefixMomentCache 6.9倍。体数変更時はパター
@@ -2607,8 +2541,6 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-18'
 - id: L588
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: l1_alm_wf_engine.pyは直列化でもOOM不可避：468MB CSV→anon-rss=13GB(28倍膨張)
   summary: 小太郎がoikaze(468MB)を単独実行してanon-rss=13GBでOOM Kill死亡。メモリ膨張率は約28倍(pandas内部展開+演算バッファ)。
   tags:
@@ -2620,8 +2552,6 @@ lessons:
   how: 小太郎がoikaze(468MB)を単独実行してanon-rss=13GBでOOM Kill死亡
   origin: '[[cmd_1825]]'
 - id: L587
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: METRIC_NAMES変更時はselect_champions_multi_isのmetrics_np dictも同期更新が必要
   summary: l1_alm_wf_engine.pyのMETRIC_NAMESを変更した際、select_champions_multi_isのforループ内metrics_
   tags:
@@ -2666,9 +2596,6 @@ lessons:
   target_files:
   - tasks/lessons.md
   origin: '[[cmd_1796]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L584
   title: '[自動生成] draft教訓の査読を怠った: cmd_1796'
   summary: draft教訓1件が未査読のままGATE到達
@@ -2736,9 +2663,6 @@ lessons:
   when: champion選出に38メトリクスを追加しつつ既存6目的関数の選出速度と互換性を維持する時
   how: select_champions_multi_isの目的関数は増やさず、選出後champion行へ_compute_metric_values_for_pattern()で後計算添付する
   origin: '[[cmd_1791]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L579
   title: '[自動生成] draft教訓の査読を怠った: cmd_1786'
   summary: draft教訓31件が未査読のままGATE到達
@@ -2775,12 +2699,7 @@ lessons:
   target_files:
   - queue/tasks/kotaro.yaml
   origin: '[[cmd_1786]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L576
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: FoFのMVMF/SVMF/MomentumFilterで月次データlookupにexact-matchを使用するとCash全損になる
   summary: FoFパイプラインのMVMF/SVMF/MomentumFilterは月次データのmomentumキャッシュをdict{月末日:float}で保存し、conte
   tags:
@@ -2817,9 +2736,6 @@ lessons:
   target_files:
   - queue/tasks/kotaro.yaml
   origin: '[[cmd_1786]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L573
   title: FoF月次キャッシュをdictに変えるときも lookup は exact get でなく bisect helper に統一せよ
   summary: 2026-04-03 の perf commit(cdda5ea1, 8f411ae9)で MVMF/SVMF/MF の monthly cache
@@ -2892,9 +2808,6 @@ lessons:
   - outputs/analysis/alm_research/cmd_1764_objective_ranking.csv
   - outputs/analysis/alm_research/cmd_1764_objective_ranking.yaml
   origin: '[[cmd_1764]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L567
   title: tail_contributionは多様性低下要因。nhfとcagrは多様性貢献度最高
   summary: C(6,3)=20通り多様性分析でtail_contributionを含む10コンボは全て下位11-20位(スコア2.9-3.0台)。逆にnhfとcagrを含む
@@ -2911,8 +2824,6 @@ lessons:
   - outputs/analysis/alm_research/cmd_1764_objective_ranking.yaml
   origin: '[[cmd_1763]]'
 - id: L566
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: ALM吸収はシン吸収と異なりメトリクスが変わる
   summary: シン吸収=同一champion params→月次選択も同一→完全同一メトリクス。ALM吸収=同一IS設定(pattern_id)だが異なる目的関数(UWP
     v
@@ -2929,8 +2840,6 @@ lessons:
   - docs/research/cmd_1749_alm_ui_mock.html
   origin: '[[cmd_1762]]'
 - id: L565
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 旧加速忍法はkasoku_ratio/kasoku_diffの区別なし
   summary: DBの旧加速PF(加速-激攻/常勝/鉄壁)はratio/diffを統合した旧四神ベースL2。シン版以降からR/D分離。旧版比較テーブルではR/D共通データとして
   tags:
@@ -2964,9 +2873,6 @@ lessons:
   - outputs/analysis/alm_research/cmd_1760_underwater_period_vs_shin.yaml
   - scripts/analysis/standard_pf_preprocessing/cmd_1760_uwp_alm_research.py
   origin: '[[cmd_1760]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L563
   title: DNA制約(domain knowledge)は1M-12Mフルセットより高いIS max_run_upを3/4ファミリーで達成する
   summary: フル12パターン vs DNA制約版の比較でDM3(+22.7%)/DM6(+86.3%)/DM7+(+56.2%)が改善。DNA制約はパラメータ空間を削減して
@@ -2986,8 +2892,6 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-18'
 - id: L562
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: ALM L0 4体でWard FoFを組む場合K=5は構造的不可(体数<クラスタ数)
   summary: ALM L0 4体(DM2/DM3/DM6/DM7+)ではK=5以上のWard FoFは不可能(体数4<K=5)。Ward Two-Stage
     EWはK<N_b
@@ -3008,8 +2912,6 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-18'
 - id: L561
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 'ALM保存バリデーション: pipeline_configがDict[str,Any]のためalm_config内容が未検証でDBに保存される'
   summary: portfolios.pyのnormalize_lookback_weights()はALMを認識せずtype='standard'であればlookback_p
   tags:
@@ -3024,8 +2926,6 @@ lessons:
   - docs/research/cmd_1753_mtd_analysis.md
   origin: '[[cmd_1753]]'
 - id: L560
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 'ALM実装時: pipeline_config.alm_configのcandidate_lookbacksをbuffer計算に含める必要がある'
   summary: recalculate_fast.py L708-715のbuffer計算はportfolio.lookback_periodsのみ参照。ALM
     PFのcand
@@ -3067,8 +2967,6 @@ lessons:
   - docs/research/cmd_1750_alm_design.md
   origin: '[[cmd_1750]]'
 - id: L557
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: WF-OOS負の劣化率は過適合否定の十分条件ではない
   summary: OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認
   tags:
@@ -3088,8 +2986,6 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-16'
 - id: L556
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 'grid search CSVとALM L0 champion metricsの不一致: ユニバース差がパリティ破壊'
   summary: grid search monthly CSVは標準PFユニバース(183ヶ月)で計算済みだが、ALM L0 nhf championは動的選出ユニバース(17
   tags:
@@ -3118,8 +3014,6 @@ lessons:
   how: '2026-04-05'
   origin: '[[cmd_1743]]'
 - id: L554
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: family ALM研究はmetricsと相関をベクトル化しないと時間で破綻する
   summary: cmd_1741ではPhase1のcompute_metrics_from_returns個別呼出とPhase2の候補×PF個別rolling
     corrが長時間
@@ -3167,8 +3061,6 @@ lessons:
   - outputs/analysis/cmd_1035_parity_verification.json
   origin: '[[cmd_1741]]'
 - id: L551
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: ALM batch統合ではobjective単位fallbackでparityを守る
   summary: '1940戦略中7件(0.36%)でMDD/TEのrolling丸め差が発生。objective単位でlegacy fallbackに切替えることでparity '
   tags:
@@ -3182,8 +3074,6 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-20'
 - id: L550
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: 実データbatch parityではbenchmark共通を仮定するな
   summary: 65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとの
   tags:
@@ -3194,8 +3084,6 @@ lessons:
   how: '2026-04-04'
   origin: '[[cmd_karo_batch_R5]]'
 - id: L549
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: ALM batch 統合では objective 単位 fallback で parity を守る
   summary: cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdow
   tags:
@@ -3206,9 +3094,6 @@ lessons:
   how: maximum_drawdown/tracking_errorなど丸め差が出るobjective単位でfallbackを用意し、raw parityとfallback後parityを両方記録する
   origin: '[[cmd_karo_batch_R7]]'
   retired: true
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L548
   title: bulk metrics RFはPFごとの月次軸で解決せよ
   summary: DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。
@@ -3238,8 +3123,6 @@ lessons:
   - outputs/analysis/cmd_1035_parity_verification.json
   origin: '[[cmd_1735]]'
 - id: L546
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: ALM foundation cacheは240 fixed seriesの完全性検証が必須
   summary: cmd_1737でfixed_returns_240.csvを再利用したところ、実体はfixed_top5の24列しかなくtop_n=1-10のOOS/PBO計
   tags:
@@ -3294,9 +3177,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-03'
   origin: '[[cmd_training_L4_R39_hanzo]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L542
   title: cmd用語の定義は高コスト分析前にテストへ固定せよ
   summary: High/Lowのような研究用語をcmdや将軍メモで定義していても、実装とテストに同じ意味を固定しないと、もっともらしいYAMLが大量に出ても結論がずれる。高コ
@@ -3307,9 +3187,6 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: '2026-04-03'
   origin: '[[cmd_training_L4_R39_hayate]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L541
   title: 'depth_summaryパターン: 研究スクリプトに知見検証セクションを標準追加せよ'
   summary: L538のような深度依存効果の発見後、研究スクリプトのYAML出力にdepth_summaryを追加することで次回実行時に知見を自動検証できる。group_su
@@ -3348,9 +3225,6 @@ lessons:
   - tasks/lessons.md
   - outputs/analysis/standard_pf_preprocessing/signal_correlation_analysis.yaml
   origin: '[[cmd_1701]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L538
   title: EMA間接波及はネスト深度で増幅する — depth=1改善→depth=2/3で損失拡大
   summary: 59 FoF全数でEMA span=5間接波及を検証。改善11/59、平均Δcagr=-0.087。depth=1(四神等)で正効果(朱雀+11%)だがdept
@@ -3444,9 +3318,6 @@ lessons:
   - outputs/analysis/standard_pf_preprocessing/gerber_threshold_study_results.yaml
   - scripts/analysis/standard_pf_preprocessing/gerber_threshold_study.py
   origin: '[[cmd_1628]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L531
   title: build_signal_cache_valueのholding_signal or signalフォールバック注意
   summary: signal_cacheの値はbuild_signal_cache_valueで変換済み(holding_signal or signal)。DB
@@ -3476,8 +3347,6 @@ lessons:
   - scripts/analysis/nested_fof/r30_denoised_optics_vs_ward.py
   origin: '[[cmd_1623]]'
 - id: L529
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: NewHigh/UWP選出指標はLB短区間で差別化力が弱い
   summary: NewHigh/UWP選出はLB短(1-4ヶ月)では同一体を選出し差別化不可。LBが短いとcumulativeの新高値/underwaterが1-2回しか発生せ
   tags:
@@ -3582,12 +3451,7 @@ lessons:
   - scripts/analysis/nested_fof/r28_momentum_persistence_full.py
   - scripts/analysis/nested_fof/r28d_sortino_beta_decomposition.py
   origin: '[[cmd_1595]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L521
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: β中立指標(Sortino/Calmar)のα効率はmomentumの2倍以上だが超越条件は不十分
   summary: momentum選出はβ=1.105で構造的高βバイアス(α4.2%)。Sortino/CalmarはβΝ中立(β~1.0)でα10%/7.9%と高効率。しかし
   tags:
@@ -3653,8 +3517,6 @@ lessons:
   - scripts/analysis/nested_fof/r28_beta_decomposition.py
   origin: '[[cmd_1591]]'
 - id: L516
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: WF-OOSでCalmar劣化がMaxDD悪化に起因する場合CAGR劣化と分離して評価すべし
   summary: K=3のCal mar劣化41.6%はCAGR劣化7.2%+MaxDD悪化58.7%の組合せ。CAGR維持良好なのにCalmar単体でOVERFIT判定は粒度不
   tags:
@@ -3854,9 +3716,6 @@ lessons:
   - tasks/lessons.md
   - backend/app/jobs/recalculate_fof.py
   origin: '[[cmd_1445]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L500
   title: ガード条件除去時の暗黙的副作用チェック必須
   summary: IF ガード条件(is_kalman_meta等)を除去または変更する THEN そのガードが保護していた全変数のスコープと副作用を確認せよ
@@ -3919,9 +3778,6 @@ lessons:
   - outputs/analysis/nested_fof/r8_absmom_performance.yaml
   - outputs/analysis/nested_fof/r8_absmom_returns.csv
   origin: '[[cmd_1413]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L496
   title: Stock Data API economic endpoint has 1000 record limit
   summary: Stock Data API /v1/economic/{symbol} returns max 1000 records per request.
@@ -4080,9 +3936,6 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: selection block種類が変わってもverify_fof_parity_batch.pyの検証フローは安定動作
   origin: '[[cmd_1345]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L485
   title: FoF初月hs_cross不一致は全FoF共通パターン
   summary: verify_fof_parity_batch.pyのhs_cross_checkで全FoFの最初月がFAILする。monthly_returns.holdin
@@ -4159,9 +4012,6 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: パリティ検証時は初月を考慮すべき
   origin: '[[cmd_1271]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L479
   title: selection付きFoFのinit月はholding_signal=Noneで独立検証不可
   summary: selection blocks付きFoFの最初の月はmonthly_returns.holding_signal=Noneだがmonthly_returnは非
@@ -4330,9 +4180,6 @@ lessons:
   when: パリティ検証ツールを新規作成する
   how: 既存ツール(15+)とのtolerance差異を確認せよ
   origin: '[[cmd_1235]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L466
   title: FoF component_portfoliosはUUID格納。旧四神=fof型、シン四神=standard型の構造差
   summary: component_portfoliosはportfolios.idのUUIDリストで格納。名前解決にはportfoliosテーブルとのJOINが必須。また、旧
@@ -4776,9 +4623,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: REFLUX WARNのランブック対応は新規ランブック作成ではなく既存contextの該当セクションへの索引行追加が適切
   origin: '[[cmd_1188]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L435
   title: run_077_*.pyのOUT_DIRはuniverse非連動でハードコード
   summary: run_077_nukimi.pyのOUT_DIRはoutputs/grid_search/にハードコード。--universe指定でもサブディレクトリ分離され
@@ -4847,9 +4691,6 @@ lessons:
   - scripts/analysis/grid_search/run_077_kasoku_ratio.py
   - scripts/analysis/grid_search/run_077_kawarimi.py
   origin: '[[cmd_1186]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L431
   title: 既存PF更新時はUUID維持でFoF参照を保護
   summary: v1→v2チャンピオン入替時、既存10体のUUIDを維持して更新することでFoF(忍法)のcomponent_portfolios参照が壊れない。POST
@@ -4933,9 +4774,6 @@ lessons:
   - outputs/analysis/cmd_1106_parity_analysis.csv
   - outputs/analysis/cmd_1106_parity_analysis.py
   origin: '[[cmd_1106]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L425
   title: シン四神v2パリティ不一致の95%はRC4解像度差異
   summary: 完全月にも不一致が残る(92.2%)。partial/MTD月はわずか7件。主因はPI-001の日次vs月次解像度差異で、リバランス周期(2-3ヶ月)単位のブロ
@@ -5000,9 +4838,6 @@ lessons:
   target_files:
   - backend/app/jobs/recalculate_fof.py
   origin: '[[cmd_1101]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L420
   title: 本番リターン列のopen/close区別必須
   summary: monthly_returnsテーブルにはmonthly_return(Close)とmonthly_return_open(Open)の2列。GSはOpen-
@@ -5084,9 +4919,6 @@ lessons:
   - outputs/analysis/cmd_1078_screening_DM7P_RXLU.csv
   - scripts/analysis/cmd_1078_dm7p_rxlu_redo.py
   origin: '[[cmd_1078]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L414
   title: DM7+ 24M RXLU CPCV Max_Run-up PBO=1.0
   summary: DM7+ 24M lookbackをRXLU固定でCPCV検定するとMax_Run-up PBOが1.0になりやすい。24M窓は変化が極めて緩慢でCPCVの短期
@@ -5124,9 +4956,6 @@ lessons:
   target_files:
   - frontend/lib/constants.ts
   origin: '[[cmd_1079]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L411
   title: GS並列実行時のメモリ競合によるBus error
   summary: '初回DM2実行時にBus error(core dump)。原因: 他GSプロセス(kasoku_diff等)並走でfree memory
@@ -5266,9 +5095,6 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: '2026-03-17'
   origin: '[[cmd_1037]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L400
   title: 多角度偵察の価値は個別発見の合算ではなく相互作用の可視化。6角度統合で乗算的相乗効果(T3×T1, T3×T5)と設計依存(T3→T5)が明確化された
   summary: cmd_1037 kotaro AC7統合
@@ -5299,8 +5125,6 @@ lessons:
   how: '2026-03-17'
   origin: '[[cmd_1037]]'
 - id: L397
-  deprecated: true
-  deprecated_reason: ALMディスコン(殿裁定2026-05-10)
   title: GS忍法ndarray(16KB-750KB)は全てL2/L3内。cache missはボトルネックではない(<5%)。Python interpreter
     overhead支配。ループ排除が本命
   summary: cmd_1037 kagemaru角度4
@@ -5426,9 +5250,6 @@ lessons:
   - docs/research/core-local-analysis.md
   - docs/research/ops-procedures.md
   origin: '[[cmd_1035]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L388
   title: PPE result pickleがoverhead最大要因。月次リターンndarrayのserializeが支配
   summary: IF PPE結果をmain processにreturnする THEN result pickleがオーバーヘッド最大要因になる。 50Kパターンで877ms（
@@ -5701,9 +5522,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-17'
   origin: '[[cmd_1030]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L368
   title: 'GS忍法間共有化: 性能インパクトはcontext build(0.058%)でなくsimulate_pattern(99.94%)が支配的'
   summary: 5忍法のcontext build共有で削減できるのは約48s/83,482s(0.058%)。性能改善はsimulate_pattern最適化に集中すべき。共
@@ -5794,9 +5612,6 @@ lessons:
   - outputs/analysis/cmd_1027_shin_ninpou_benchmark.md
   - scripts/analysis/cmd_1027_shin_ninpou_benchmark.py
   origin: '[[cmd_1027]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L361
   title: 歴史GS出力と現DB rerunの比較はnear-match帯を設けよ
   summary: snapshot未固定のhistorical CSV比較ではnear-match帯(差分0.01以下)を設け、同一snapshot pinned時だけ完全一致を
@@ -5811,9 +5626,6 @@ lessons:
   - outputs/analysis/cmd_1027_shin_ninpou_benchmark.md
   - scripts/analysis/cmd_1027_shin_ninpou_benchmark.py
   origin: '[[cmd_1027]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L360
   title: 大規模GS(100万超)はチャンク分割+中間CSV保存+忍者並列実行(2026-03-17)
   summary: 大規模GS(100万パターン超)はチャンク分割(≤5分/チャンク)+中間CSV保存+忍者並列実行。一括実行はエラー時に全結果消失リスク。READ-onlyのため
@@ -6037,9 +5849,6 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: ただしDM2+とDM7+はXLU+TQQQを共通に持つため、XLUの出現頻度30%閾値で区別する必要がある
   origin: '[[cmd_1014]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L342
   title: 2段重ねBTのStage1変更はnominal_output変動を伴い大幅Sharpe変動の主因
   summary: IF 2段重ねBTの過適合検証で近傍パラメータを変動させる THEN Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_
@@ -6049,9 +5858,6 @@ lessons:
   when: 2段重ねBTの過適合検証で近傍パラメータを変動させる
   how: Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_output)を変えるため、Stage2パラメータ変動より遥かに大きなSharpe変動を引き起こす
   origin: '[[cmd_1012]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L341
   title: 既存GSチャンピオン流用時はdeployed portfolio configを正本にする
   summary: IF 既存GSチャンピオンパラメータ固定で分析やBTを組む THEN outputs/grid_search/*.meta.yamlのglobal
@@ -6127,9 +5933,6 @@ lessons:
   target_files:
   - scripts/analysis/p_bar_family_backtest.py
   origin: '[[cmd_1008]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L335
   title: 3体プール×n_splits=5×mpf=1ではp̄が統計的に退化し、tie expansionが100%発生する。3体プールでの最小有効mpfは2
   summary: cmd_1008 全4ファミリーで確認
@@ -6197,9 +6000,6 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: sync-fof API実行後の検証は60秒以上待て
   origin: '[[cmd_1004]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L329
   title: 生成artifactの指摘修正はgenerator scriptへも同修正を戻せ
   summary: IF 再レビューでreport artifact文言だけを直してPASSに近づける場合 THEN 修正を出力元scriptにも戻し再生成可能な状態でcommit
@@ -6264,9 +6064,6 @@ lessons:
   - frontend/app/monthly-returns/__tests__/page.test.tsx
   - frontend/app/monthly-returns/page.tsx
   origin: '[[cmd_1003]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L325
   title: FoF valid_start_dateとdownstream warm-upは別物
   summary: 'FoFで構成PFのsignal開始日だけを共通期間に使うと、長lookback selection block(例: 加速18M/24M)は開始直後に全除外/C'
@@ -6298,9 +6095,6 @@ lessons:
   - backend/tests/test_p_bar_selection_block.py
   - scripts/analysis/p_bar_window_backtest.py
   origin: '[[cmd_1002]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L323
   title: rolling p̄ BTでは no-selection warm-up を別指標で明示せよ
   summary: n_splits=5 の rolling p̄ 選出は月次returnsを5分割し各chunk最低12期間を要するため、live selection開始前に長い
@@ -6371,9 +6165,6 @@ lessons:
   target_files:
   - test_right_tail_metrics.py
   origin: '[[cmd_976]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L316
   title: 'WSL→Windows venv Ruff hook: repo-relative pathを使え'
   summary: WSLから.venv/Scripts/ruff.exeを呼ぶ場合、/mnt/c/... absolute pathを渡すとC:\mnt\c\...と誤解釈されE
@@ -6384,9 +6175,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-16'
   origin: '[[cmd_969佐助発見]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L315
   title: Payload cacheとvalidator cache分離構成ではinvalidatorが両層同時破棄必須
   summary: response payload(IDB)とETag validator(IDB/Map)を別管理している構成で片方だけclearすると、If-None-Mat
@@ -6449,9 +6237,6 @@ lessons:
   target_files:
   - frontend/lib/api-client.ts
   origin: '[[cmd_962]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L310
   title: 'apiCache.clear()はETag IDB(dm-signal-etag-store)を削除しない。clear直後のAPI呼出でETag送信→304→キャッシュなしエラーが発生しうる。clearSignalsCache()は独自対策済みだが汎用clear()にはない。修正対象:
     frontend/lib/api-cache.ts:204-212, frontend/lib/api-client.ts:254-259'
@@ -6564,9 +6349,6 @@ lessons:
   - docs/research/knowledge-base/pitfalls/ml-fund-failure-patterns.md
   - docs/research/knowledge-base/portfolio/ml-asset-allocation.md
   origin: '[[cmd_862]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L303
   title: Sharpe inference実装ではkurtosisとexcess kurtosisを混同するな
   summary: pandas .kurt()はexcess kurtosisを返す。PSR/DSR実装時にγ₄+3が必要な場面でγ₄を使うと過小評価
@@ -6614,9 +6396,6 @@ lessons:
   - docs/research/knowledge-base/preprocessing/financial-data-analysis.md
   - docs/research/knowledge-base/preprocessing/fractional-differentiation.md
   origin: '[[cmd_861]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L300
   title: バッチ手法追加は新バッチ並走が安全
   summary: 既存安定稼働バッチに手法を追加するより新バッチとして並走させる方が安全。deterioration_batch(244行)は触らずpersistence_bat
@@ -6697,9 +6476,6 @@ lessons:
   - docs/research/knowledge-base/preprocessing/financial-data-analysis.md
   - docs/research/knowledge-base/preprocessing/fractional-differentiation.md
   origin: '[[cmd_861]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L295
   title: DSRは試行数直接補正の唯一手法。大規模GS(>10万パターン)で必須
   summary: 154,350パターンGSでは隣接感度/HAC/WFVでも偶然性championを完全排除できない。DSRは試行回数Nを数式に直接反映しP(SR*>0|N)を算
@@ -6732,9 +6508,6 @@ lessons:
   - docs/research/knowledge-base/preprocessing/financial-data-analysis.md
   - docs/research/knowledge-base/preprocessing/fractional-differentiation.md
   origin: '[[cmd_861]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L293
   title: 多層防御の生命線はLayer4の上流完全独立性
   summary: '過適合防止を多層実装する場合、最終ゲート(Layer4: DSR/OOS R²/CPCV/ランク持続性)は上流Layer1-3の出力を一切参照せず生リターン系列'
@@ -6770,6 +6543,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: month/pf cluster か hierarchical shrinkage を前提にせよ
   origin: '[[cmd_860]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L290
   title: 悪化確率指標と構造変化検定を同義扱いするな
   summary: P(det) は rolling recent vs long の方向付き悪化確率であり、未知の break date を探索する structural
@@ -6957,7 +6733,7 @@ lessons:
   origin: '[[cmd_852]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-15'
+  last_referenced: '2026-06-20'
 - id: L273
   title: live API完全一致監査はcurrent partial monthを凍結or除外しないと日次更新ノイズで誤FAIL化する
   summary: cmd_856で/api/signalsは91PF全件一致だが、/api/monthly-returnsと/api/performanceは15/15PFで不一
@@ -7077,9 +6853,6 @@ lessons:
   how: SWRのstale cacheをIndexedDB永続化しても、ETag/If-None-Matchのvalidatorがメモリにしか無ければhard
     reload後の再検証は常に200 full payloadへ退化する
   origin: '[[cmd_830]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L262
   title: recursive FoF expanderはroute層からrequest-scope cacheを注入しない限りquery storm化する
   summary: expand_portfolio_to_tickers()自体がcache引数を受け取れても、呼び出し側がrequest全体で共有しなければ同じcomponen
@@ -7121,9 +6894,6 @@ lessons:
   how: API が years/months で返却窓を絞っていても、下流の precomputed table query や fallback Price
     query に境界を渡さないと単一SQLが最大ボトルネック化する
   origin: '[[cmd_829]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L259
   title: try/exceptフォールバックパターンでmock DB互換性とN+1最適化を両立
   summary: N+1最適化でbulk preloadを導入する際、既存テストがmock DBを使用していると bulk preloadの内部クエリ(load_business
@@ -7458,9 +7228,6 @@ lessons:
   target_files:
   - frontend/lib/api-cache.ts
   origin: '[[cmd_758]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L229
   title: SWR化は invalidation 削除だけでは成立せず、cache hit を迂回する fresh fetch 経路が必要
   summary: IndexedDB 永続 cache を持つ request 層で cache hit 時 short-circuit return している場合、
@@ -7488,9 +7255,6 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-11'
   origin: '[[cmd_748]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L227
   title: HttpOnly cookie auth を localStorage boolean で同期代替すると public UI に stale auth
     が残る
@@ -7561,9 +7325,6 @@ lessons:
   when: 報告YAMLやレビュー結果を作成・検証する時
   how: '2026-03-10'
   origin: '[[cmd_737]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L220
   title: CDP計測のwait_for_readyがダッシュボードAPI応答遅延で恒常的にタイムアウトする
   summary: require_pf_name=Trueだけでなくspinner閾値をcold計測用に緩和するか、計測開始前にバックエンドAPIウォームアップ(performa
@@ -7639,9 +7400,6 @@ lessons:
   how: CDP自動認証でlocal fileを先に試すと401を重ねてrate limitに達しうるため、process envが無い場合はRender env
     APIを優先し、local fileは最後のfallbackにすべき
   origin: '[[cmd_695]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L214
   title: CDP性能計測の前提確認では timing より先に『正常画面か』を検査すべき
   summary: '`localhost:3000` や static export 配信先で CDP 計測を始めても、実 DOM が 「只今、城の修繕中にございます」の障害画面な'
@@ -8011,9 +7769,6 @@ lessons:
   when: 今回のUI改修では列の追加・削除・mobile可視制御・sort定義をCOLUMNS/ColumnKey/getSortValueで一貫管理したことで、差分漏れなく一括更新できた時
   how: 今回のUI改修では列の追加・削除・mobile可視制御・sort定義をCOLUMNS/ColumnKey/getSortValueで一貫管理したことで、差分漏れなく一括更新できた
   origin: '[[cmd_557]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L184
   title: Docsの新指標説明は判定条件をテーブル化すると実装定義との突合が速い
   summary: IF 6ラベルの条件を1行1条件で表にしたことで、backend classify_labelの閾値(0.70/0.80/0.85)との照合が容易になり、レビュ
@@ -8038,9 +7793,6 @@ lessons:
   - frontend/app/compare-summary/page.tsx
   - frontend/app/deterioration/page.tsx
   origin: '[[cmd_556]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L182
   title: FolderFilterChipがcompare-summaryとdeteriorationで完全重複しており共通コンポーネント抽出候補
   summary: FolderFilterChipコンポーネントがcompare-summary/page.tsxとdeterioration/page.tsxで完全重複(同一コ
@@ -8051,9 +7803,6 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-05'
   origin: '[[cmd_555]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L181
   title: DeteriorationページのAPIレスポンスにはfolder_idが含まれないためuseSignalsのportfoliosから別途マップ構築が必要
   summary: IF api.getDeteriorationList()のレスポンスにfolder_idが含まれない時 THEN api.getDeteriorationLi
@@ -8086,9 +7835,6 @@ lessons:
   when: 新機能のサービス層でscipy等の外部ライブラリを使用する場合、パイロット版（ローカル環境）では仮想環境にpip installされていても、本番デプロイ用のrequirements.txtに追記し忘れることがある時
   how: 新機能のサービス層でscipy等の外部ライブラリを使用する場合、パイロット版（ローカル環境）では仮想環境にpip installされていても、本番デプロイ用のrequirements.txtに追記し忘れることがある
   origin: '[[cmd_554]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L178
   title: 本番404調査はopenapi実測で『ルート未登録』を先に確定すると切り分けが最短になる
   summary: Render本番のAPI障害では、`/openapi.json`で対象path有無を最初に確認すると、認証・CORS・DB要因より先に『デプロイドリフト/未反映
@@ -8166,9 +7912,6 @@ lessons:
   target_files:
   - backend/app/services/deterioration.py
   origin: '[[cmd_550]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L172
   title: 新規テーブル導入時はインデックス作成をif/else外に置くと自己修復性が上がる
   summary: IF migrationで「新規作成分岐」と「既存追設分岐」を分ける場合、時 THEN migrationで「新規作成分岐」と「既存追設分岐」を分ける場合、
@@ -8413,9 +8156,6 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: 今後はAC4に『対象テスト』と『全体静的検証』の別判定を明文化すると再判定コストを下げられる
   origin: '[[cmd_515]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L151
   title: OPEN/CLOSE切替導入時はbenchmark側の*_open適用も同時チェック必須
   summary: IF Monthly/Annual/Rolling summary等でbenchmark側だけclose固定の箇所が残り、portfolioとbenchmark
@@ -8486,9 +8226,6 @@ lessons:
   how: 'build_signal_cache_value()はmomentum_data.weightsが存在する全パイプラインFoFで{"holding_signal":
     str, "weights": dict}を返す'
   origin: '[[本番ログ "''dict'' object has no attribute ''strip''"]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L146
   title: 比較軸に『最新引け』を含む調査は latest_close_date を先に確定すべき
   summary: 本件は latest_close_date=2026-03-02 で 3/2引けと同値だった。先に最新日を確定しておくと、軸が実質重複かどうかを早期判定できる。
@@ -8499,9 +8236,6 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: '2026-03-03'
   origin: '[[cmd_495]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-16'
 - id: L145
   title: FoF差分調査では holding_signal文字列比較だけだと影響を過小評価する
   summary: Ave-X/裏Ave-Xなどで holding_signal(UUID列)はA/B同一でも、構成PF側の変化で展開tickerウェイトは大きく変化した。FoFの
@@ -8512,9 +8246,6 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-03'
   origin: '[[cmd_495]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L144
   title: docs/research/参照先消失はcontext圧縮時のリンク先存在確認不足が根因
   summary: Vercel構造(索引→詳細)のcontext/*.mdで参照するdocs/research/ファイル16件が消失。CLAUDE.md禁則(リンク先なき圧縮=禁
@@ -8623,9 +8354,6 @@ lessons:
   when: L010を実装・検証する時
   how: deprecated
   origin: '[[参照先scripts消滅(大掃除で削除済み)]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L134
   title: L025
   summary: IF L025を実装・検証する時 THEN deprecated deprecated
@@ -8786,9 +8514,6 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: '2026-02-23'
   origin: '[[cmd_282]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L118
   title: DTB3はeconomic_indicatorsではなくdaily_pricesテーブルにticker='DTB3'として格納。close_priceカラムに利回りデータ。economic_indicatorsテーブルは空。
   summary: IF hayate(cmd_282,subtask_282_integ)時 THEN hayate(cmd_282,subtask_282_integ)
@@ -8961,9 +8686,6 @@ lessons:
   - deploy_task.sh
   - archive_completed.sh
   origin: '[[cmd_253]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L102
   title: MultiViewの4視点skip_months=[0,1,2,3]はクラス変数固定でconfigで変更不可
   summary: SKIP_MONTHS_LIST=[0,1,2,3]はクラス変数として定義されており、pipeline_configのconfig辞書からは変更できない。パラメ
@@ -9036,9 +8758,6 @@ lessons:
   target_files:
   - base.py
   origin: '[[cmd_234]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L095
   title: kasoku main()がcumulative_returnsを未ロード — 転換コード死蔵
   summary: IF cmd_222でget_kasoku_contextにcumulative_return計算パスを追加したが、main()でload_cumulative
@@ -9048,9 +8767,6 @@ lessons:
   when: cmd_222でget_kasoku_contextにcumulative_return計算パスを追加したが、main()でload_cumulative_returns_from_dbを呼ばず、simulate_patternへのパススルーもない時
   how: cmd_222でget_kasoku_contextにcumulative_return計算パスを追加したが、main()でload_cumulative_returns_from_dbを呼ばず、simulate_patternへのパススルーもない
   origin: '[[cmd_227]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L094
   title: oikaze cutoff_score epsilon tolerance(1e-12)が必要
   summary: 本番MonthlyReturnMomentumFilterBlock._cumretはprod(1+monthly_return)-1、GS側cumulativ
@@ -9109,9 +8825,6 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: confirmed
   origin: '[[cmd_225]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L089
   title: GS-本番パリティはデータソース一致が前提条件
   summary: IF GS内部の初期化処理ロジックが全4スクリプトで同一でも、データソース(CSV vs DB)が異なればパリティは保証されない時 THEN
@@ -9182,9 +8895,6 @@ lessons:
   when: is_running=Noneは状態不明であり完了(False)と誤判定してはならない時
   how: is_running=Noneは状態不明であり完了(False)と誤判定してはならない
   origin: '[[cmd_215]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L083
   title: close_fallback=openは部分欠損closeを補完しない
   summary: IF dual DB読込でclose_fallback='open'を指定しても、補完されるのはclose系列が完全に空の場合のみ時 THEN
@@ -9302,9 +9012,6 @@ lessons:
   target_files:
   - verify_all_portfolios.py
   origin: '[[cmd_205]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L073
   title: FoFパリティ検証ではコンポーネント初期化月をスキップするな
   summary: IF FoFのEqualWeight計算はコンポーネントの初期化月(Cash)も含めて平均する時 THEN FoFのEqualWeight計算はコンポーネントの
@@ -9671,9 +9378,6 @@ lessons:
   when: 064_champion CSVはcmd_064時点の旧チャンピオンで期間は2014-03から2026-01の143ヶ月時
   how: 064_champion CSVはcmd_064時点の旧チャンピオンで期間は2014-03から2026-01の143ヶ月
   origin: '[[cmd_160]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-15'
 - id: L038
   title: sync_lessons.shは最後の## N.以降の### L0xx:エントリを全てスキップする(in_numbered_sectionフラグ未リセット)
   summary: IF sync_lessons.shを実施する時 THEN cmd_137 cmd_137
@@ -9714,9 +9418,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: UPDATE方式(既存PFにpipeline_config付与+/api/portfolios/saveで一括保存)でUUID維持しつつ設定変更が安全かつ確実
   origin: '[[cmd_128]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-14'
 - id: L034
   title: Claude CodeはRead未実施のファイルへのWrite/Editを拒否する
   summary: タスクYAML(queue/tasks/)・inbox(queue/inbox/)・報告YAML(queue/reports/)等を書く前に必ず対象ファイルをR
@@ -9835,7 +9536,7 @@ lessons:
   - scripts/analysis/data_sync/download_all_prices.py
   origin: '[[legacy_lesson_L025]]'
   deprecated: true
-  deprecated_at: '2026-06-18T22:51:03+09:00'
+  deprecated_at: '2026-06-20T10:35:05+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
 - id: L024
   title: signal_historyのキーはPhase 2のmonth_last_trading_daysと同型でなければならない（2026-02-15）

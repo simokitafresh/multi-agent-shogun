@@ -38,10 +38,13 @@ IFS=$'\t' read -r file_path _replace_all _old_string < <(
 ) || exit 0
 [[ -z "$file_path" ]] && exit 0
 
-# PROJECT_ROOT via string ops (no subshell)
+# PROJECT_ROOT via string ops (no subshell); fallback to git rev-parse
 _PROJECT_ROOT="${BASH_SOURCE[0]%/.claude/hooks/*}"
-[[ -z "$_PROJECT_ROOT" || "$_PROJECT_ROOT" == "${BASH_SOURCE[0]}" ]] && \
-    _PROJECT_ROOT="/mnt/c/tools/multi-agent-shogun"
+if [[ -z "$_PROJECT_ROOT" || "$_PROJECT_ROOT" == "${BASH_SOURCE[0]}" ]]; then
+    # shellcheck source=scripts/lib/repo_root.sh
+    source "${BASH_SOURCE[0]%/*}/../../scripts/lib/repo_root.sh" 2>/dev/null || true
+    _PROJECT_ROOT="$(get_repo_root 2>/dev/null || echo .)"
+fi
 
 case "$file_path" in
     *queue/reports/*_report_*.yaml) ;;

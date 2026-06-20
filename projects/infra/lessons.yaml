@@ -94,6 +94,9 @@ lessons:
   target_files:
   - docs/research/ssot-audit-round1.md
   origin: '[[cmd_3458_tobisaru]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L820
   title: 'Phase3: BFS影響ノード列挙→実行を分離実装する際は『実行ロジック追加』を別ACで明示しないと列挙止まりで完了扱いになる'
   summary: cmd_3438でsemantic_causal_traverse.shの統合実装時、影響ノードをJSON出力するところまで実装して完了と判断。test_scr
@@ -3531,6 +3534,9 @@ lessons:
   - queue/reports/saizo_report_cmd_karo_lk004_inbox_root_cause.yaml
   - queue/tasks/saizo.yaml
   origin: '[[cmd_karo_lk004_inbox_root_cause]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L593
   title: エラーログは最終行(実際のエラー)を必ず含めよ — 1行目Tracebackは情報ゼロ
   summary: gate_fire_logがPython Tracebackの1行目のみ記録→診断不能。修正(cc020f3e)で最終行抽出。ログ記録時はエラーの実メッセージ行
@@ -7309,6 +7315,9 @@ lessons:
   when: 報告YAMLやレビュー結果を作成・検証する時
   how: 新規ガード追加時はこの関数を再利用することで、レポート命名規則の変更に自動追従できる
   origin: '[[cmd_1292]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L290
   title: karo_workarounds.yamlの混在フォーマット対応
   summary: karo_workarounds.yamlには3種類のフォーマットが混在(cmd:/cmd_id:/nested timestamp)。yaml.safe_lo
@@ -7525,6 +7534,9 @@ lessons:
   - scripts/gates/gate_karo_startup.sh
   - scripts/gates/gate_gunshi_startup.sh
   origin: '[[cmd_1261]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L273
   title: PostToolUse hookがテスト名中のskipに誤検知
   summary: batsテスト名にskipsを含むテスト(例:deploy_task skips ac_priority)が存在すると、PostToolUse

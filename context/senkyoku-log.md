@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-20 cmd_karo_hotfix_context_dm_ops_ga102_20260620 -->
+<!-- last_updated: 2026-06-20 cmd_3463 -->
 
 ## 2026-06-16
 
@@ -1220,3 +1220,5 @@
 - 2026-06-20 cmd_karo_hotfix_hook_yaml_dump_ga101_20260620: GA-101 hook_failure(yaml.dump GP-136)を小太郎へkaro_direct配備。deploy_task.shのtask YAML破損を検出し、正本YAML+yaml_field_setで修復。capture-paneで再nudge到達・task再読込・inbox既読化開始を確認。
 
 - 2026-06-20 cmd_karo_hotfix_context_dm_core_ga102_20260620 / cmd_karo_hotfix_context_dm_ops_ga102_20260620: GA-102 dm-signal-core/ops鮮度ALERTを飛猿/半蔵へ分割配備。deploy_task.shのtask YAML破損を検出し、正本YAML+yaml_field_setで修復。capture-paneで両者の再読込・作業開始を確認。
+
+- 2026-06-20 cmd_3463: オントロジー駆動Phase2-3をAC別5分割で配備開始。hanzo=AC1 registry、kagemaru=AC2 config SSOT、kotaro=AC3 repo/project helpers、tobisaru=AC4 Guard16 table-driven、saizo=AC5 repo path consumers。deploy_task.sh --yamlがorigin/AC注入でtask YAMLを壊したため、queue/tmp正本YAMLをqueue/tasksへ設置し、report_field_set.shで報告テンプレートを整備、inbox経路で再nudge。capture-paneで5名ともnudge到達・作業開始を確認済み。

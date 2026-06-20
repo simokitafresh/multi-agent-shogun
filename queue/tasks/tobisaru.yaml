@@ -1,52 +1,52 @@
 task:
-  parent_cmd: cmd_karo_hotfix_context_dm_core_ga102_20260620
-  task_type: hotfix
+  parent_cmd: cmd_3463
+  task_id: cmd_3463_AC4_guard16_table
+  subtask_id: cmd_3463_AC4_guard16_table
+  task_type: implementation
+  status: done
   project: infra
-  target_path: context/dm-signal-core.md
-  purpose: "GA-102 context_freshness ALERTのdm-signal-core.mdを一次情報で照合し、必要な更新または維持判断を記録して対象から外す"
-  title: "GA-102 dm-signal-core context鮮度更新"
+  target_path: .claude/hooks/pre-write-edit-combined.sh
+  report_filename: tobisaru_report_cmd_3463.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3463.yaml
+  ac_assigned: [AC4]
+  title: "cmd_3463 AC4 Guard16 table-driven化"
+  purpose: "Guard16を忍者名専用からテーブル駆動に汎化し、repo絶対パスとuser-home絶対パスの直書きをBLOCKできるようにする"
   command: |
-    queue/inbox/karo.yaml の GA-102 を起点に、context/dm-signal-core.md を対象として鮮度更新せよ。
-    一次情報は /mnt/c/Python_app/DM-signal のgit log/diff、該当docs/context、現コードとする。推測で本文更新しない。
-    Q1: なぜgateが鳴ったかを last_updated / source commits since / 更新トリガーの観点で説明せよ。
-    Q2: dm-signal-core.md内で更新が必要な記述と維持できる記述を分けよ。
-    Q3: 次に同カテゴリが鳴らない防御層を1つ提示せよ。
+    queue/shogun_to_karo.yaml の cmd_3463 を正本として読む。
+    AC4のみ担当せよ。
+    .claude/hooks/pre-write-edit-combined.sh の Guard16 をテーブル駆動に変更する。
+    既存の忍者名検出は維持し、追加で repo absolute path と user-home absolute path の hardcode BLOCK を追加する。
+    将来の概念追加が行追加で済む形にする。関連テストは tests/unit/test_write_edit_combined_hooks.bats を優先して追加/更新する。
   acceptance_criteria:
     - id: AC1
-      checks:
-        - check: "dm-signal-core.mdのlast_updated後commit差分を一次情報で確認し、更新要否を根拠付きで判断した"
+      description: "docs/research/ssot-registry.md に全10概念のSSOT正本・ヘルパー関数・Guard状態・消費者ファイル数を記録した"
     - id: AC2
-      checks:
-        - check: "必要最小限の本文更新または維持判断行を追加し、last_updatedを2026-06-20 cmd_karo_hotfix_context_dm_core_ga102_20260620へ更新した"
+      description: "config/projects.yamlとconfig/settings.yamlの曖昧SSOTを是正する"
     - id: AC3
-      checks:
-        - check: "gate_context_freshness.shまたは同等確認でdm-signal-core.mdが対象から外れたことを確認した"
+      description: "scripts/lib/repo_root.sh と scripts/lib/project_path.sh を作る"
     - id: AC4
+      description: ".claude/hooks/pre-write-edit-combined.sh Guard16をテーブル駆動化する"
       checks:
-        - check: "GA-099/L825との接続と、context更新未強制への防御層案を報告した"
+        - check: "既存の忍者名直書きBLOCKが維持される"
+        - check: "repo絶対パス直書きがBLOCKされる"
+        - check: "user-home絶対パス直書きがBLOCKされる"
+        - check: "対象テストがPASSする"
+    - id: AC5
+      description: "scripts/と.claude/hooks/のrepo絶対パス消費者を書き換える"
   not_in_scope:
-    - context/dm-signal-core.md以外のcontext更新
-    - 本番DB/API操作
-    - 未確認のDM-Signal仕様変更を断定すること
-  status: done
-  task_id: cmd_karo_hotfix_context_dm_core_ga102_20260620_normal
-  report_filename: tobisaru_report_cmd_karo_hotfix_context_dm_core_ga102_20260620.yaml
-  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_context_dm_core_ga102_20260620.yaml
-  ac_version: b22b7db6
+    - scripts全体のrepo path消費者書換え
+    - config是正
+  validation:
+    - "bats tests/unit/test_write_edit_combined_hooks.bats"
+  origin: "[[殿指示_オントロジー_20260620]] -> [[SSOT調査_cmd_3458_3461]] -> [[Phase2_3_SSOT是正_Guard汎化]]"
 
   session_state:
-    attempt: 4
-    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    attempt: 2
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
     tried_approaches:
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    approach_summary: 'dm-signal-core.md鮮度更新完了。WeightedMultiViewMomentumFilterBlock(cmd_3384)をBB種別分類に追加し、last_updatedを2026-06-20へ更新。gate_context_freshness.sh: 総合判定OK'
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
     prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
     - attempt: 2
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'dm-signal-core.md鮮度更新完了。WeightedMultiViewMomentumFilterBlock(cmd_3384)をBB種別分類に追加し、last_updatedを2026-06-20へ更新。gate_context_freshness.sh: 総合判定OK'
-    - attempt: 3
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'dm-signal-core.md鮮度更新完了。WeightedMultiViewMomentumFilterBlock(cmd_3384)をBB種別分類に追加し、last_updatedを2026-06-20へ更新。gate_context_freshness.sh: 総合判定OK'
-    - attempt: 4
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'dm-signal-core.md鮮度更新完了。WeightedMultiViewMomentumFilterBlock(cmd_3384)をBB種別分類に追加し、last_updatedを2026-06-20へ更新。gate_context_freshness.sh: 総合判定OK'
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
