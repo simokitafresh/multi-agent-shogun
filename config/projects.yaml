@@ -3,7 +3,6 @@ projects:
     name: "DM-Signal"
     path: "/mnt/c/Python_app/DM-signal"
     context_file: "context/dm-signal.md"
-    gist_url: "https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c"
     context_files:
       - file: "context/dm-signal-core.md"
         tags: [implementation, db, pipeline, api]
@@ -20,7 +19,6 @@ projects:
     name: "Multi-Agent Infrastructure"
     path: "/mnt/c/tools/multi-agent-shogun"
     context_file: "context/infrastructure.md"
-    gist_url: "https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c"
     priority: medium
     status: active
 

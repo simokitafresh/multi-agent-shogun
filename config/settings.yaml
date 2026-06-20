@@ -1,7 +1,6 @@
 language: ja
 shell: bash
 skill:
-  save_path: /mnt/c/tools/multi-agent-shogun/skills/
   local_path: /mnt/c/tools/multi-agent-shogun/skills/
 cli:
   default: claude
@@ -11,7 +10,7 @@ cli:
       model_name: claude-opus-4-6
       role: shogun
       japanese_name: 将軍
-      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions
+      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
     karo:
       type: claude
       model_name: claude-opus-4-6
