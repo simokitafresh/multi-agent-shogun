@@ -119,6 +119,7 @@ is_yaml_dump_scan_target() {
     [[ "$file" == *pre_bash_combined_guard* ]] && return 1
     [[ "$file" == scripts/hooks/* ]] && return 1
     [[ "$file" == skills/* ]] && return 1  # skills/のスクリプトはcli_profiles.yaml操作用。運用YAML非対象
+    [[ "$file" == scripts/lib/yaml_atomic.py ]] && return 1  # GA-101: yaml.dump集中管理の正当な場所。除外対象
     [[ "$file" == *.sh || "$file" == *.py ]]
 }
 

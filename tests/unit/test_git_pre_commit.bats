@@ -227,6 +227,25 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "allows yaml.dump in scripts/lib/yaml_atomic.py (GA-101: centralized dump)" {
+    mkdir -p "$TEST_ROOT/scripts/lib"
+    cat > "$TEST_ROOT/scripts/lib/yaml_atomic.py" <<'EOF'
+"""Atomic YAML rewrite helper. Direct PyYAML dumps are intentionally centralized here."""
+import yaml
+
+def atomic_yaml_write(path, data):
+    yaml.dump(data, open(path, "w"))
+EOF
+    (
+        cd "$TEST_ROOT"
+        git add scripts/lib/yaml_atomic.py
+    )
+
+    run_hook
+
+    [ "$status" -eq 0 ]
+}
+
 @test "warns when added bats file has existing script-level candidates" {
     cat > "$TEST_ROOT/tests/unit/test_cmd_save_new_rule.bats" <<'EOF'
 #!/usr/bin/env bats
