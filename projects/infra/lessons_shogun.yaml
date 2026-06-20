@@ -619,3 +619,11 @@ lessons:
   created_at: '2026-06-20'
   automated: true
   enforcement: 'type=fix; file=scripts/lib/model_detect.sh; pattern=head -1'
+- id: 'LS071'
+  title: 'YAML危険文字(バックスラッシュ+パイプ)がquality_gateフィールドを破壊する'
+  origin: '[[cmd_3467]]'
+  detail: 'cmd_3467 q11にgrep ERE構文(\|)を記載→PyYAMLが不正エスケープで解析失敗→shogun_to_karo.yaml破壊→deploy_task.shが読込不能。根因: environment_changeにはパイプ禁止ルールがあるがq11等には未適用。対処: Guard 0e(pre-write-edit-combined.sh)でshogun_to_karo.yamlへの\|含有テキスト書込みをBLOCK。L3貫通'
+  source_cmd: 'cmd_3467'
+  created_at: '2026-06-20'
+  automated: true
+  enforcement: 'type=hook; file=.claude/hooks/pre-write-edit-combined.sh; pattern=Guard 0e'

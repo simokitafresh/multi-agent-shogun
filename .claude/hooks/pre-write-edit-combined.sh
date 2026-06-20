@@ -264,6 +264,11 @@ print(len(non_gc))
         emit_deny "BLOCK: status: on_hold禁止。cmdは直列でdraft→publishせよ。配備順序の制御は家老の仕事。on_holdは将軍がステート管理を抱え込む迂回になる。"
         exit 2
     fi
+    # Guard 0e: YAML危険文字(バックスラッシュ+パイプ等)検出。PyYAMLが不正エスケープで破壊される (cmd_3467事故)
+    if printf '%s' "$_stk_content" | grep -qF '\|'; then
+        emit_deny "BLOCK: shogun_to_karo.yamlにバックスラッシュ+パイプ(\\|)を含むテキストは禁止。PyYAMLが不正エスケープで破壊される。grep OR条件は\\|ではなく自然言語(AおよびB)で記述せよ"
+        exit 2
+    fi
     # Guard 0c: preflight_autolearnで昇格済みのcmd本文パイプ警告をpre-writeでBLOCK。
     # cmd_save.shのcheck_cmd_text_pipe_dangerと同じ対象(purpose/command)だけを見る。
     if [[ -s "$PREFLIGHT_AUTOLEARN_FILE" ]] && grep -q 'check=check_cmd_text_pipe_danger' "$PREFLIGHT_AUTOLEARN_FILE" 2>/dev/null; then
@@ -681,5 +686,55 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
         unset -f _g16_count_agent_names _g16_strip_comments _g16_count_repo_path _g16_count_home_path _g16_count_project_path
     fi
 fi
+
+# === Guard 18: causal backlink impact context (informational only) ===
+# If the edited file is the target of [[links]], show the referring files so
+# concept changes drive their dependent context. Never BLOCK here.
+guard18_causal_backlinks() {
+    local target="$1" rel base stem cache line link source output script
+    [[ -n "$target" ]] || return 0
+
+    rel="$target"
+    [[ "$rel" == "$SCRIPT_DIR/"* ]] && rel="${rel#"$SCRIPT_DIR/"}"
+    base="${rel##*/}"
+    stem="${base%.*}"
+    script="$SCRIPT_DIR/scripts/lib/causal_index.sh"
+
+    if [[ -x "$script" ]]; then
+        output="$("$script" --lookup "$rel" 2>/dev/null || true)"
+        [[ -n "$output" ]] || output="$("$script" lookup "$rel" 2>/dev/null || true)"
+        if [[ -n "$output" ]]; then
+            printf '%s\n' "$output" | awk 'NF && !seen[$0]++ { print "- " $0 }' | head -20
+            return 0
+        fi
+    fi
+
+    for cache in \
+        "${CAUSAL_INDEX_CACHE:-}" \
+        "$SCRIPT_DIR/.cache/causal_index.tsv" \
+        "$SCRIPT_DIR/.cache/causal_backlinks.tsv" \
+        "$SCRIPT_DIR/logs/causal_index.tsv"
+    do
+        [[ -n "$cache" && -f "$cache" ]] || continue
+        while IFS=$'\t' read -r link source _rest || [[ -n "$link$source" ]]; do
+            link="${link#[[}"
+            link="${link%]]}"
+            if [[ "$link" == "$rel" || "$link" == "$base" || "$link" == "$stem" ]]; then
+                [[ -n "$source" ]] && printf '%s\n' "$source"
+            fi
+        done < "$cache" | awk 'NF && !seen[$0]++ { print "- " $0 }' | head -20
+        return 0
+    done
+}
+
+_g18_backlinks="$(guard18_causal_backlinks "$file_path")"
+if [[ -n "$_g18_backlinks" ]]; then
+    emit_context "Guard18: 因果リンク影響範囲(情報表示)
+対象: $file_path
+このファイルを[[リンク]]ターゲットとして参照するファイル:
+$_g18_backlinks"
+fi
+unset _g18_backlinks
+unset -f guard18_causal_backlinks
 
 exit 0
