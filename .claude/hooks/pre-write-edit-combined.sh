@@ -622,6 +622,13 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
             _c="$(printf '%s' "$_code" | grep -cF "$_hp" 2>/dev/null)" || _c=0
             printf '%s' "${_c##*$'\n'}"
         }
+        _g16_count_project_path() {
+            # /mnt/c/Python_app/ を含む絶対パスの直書きを検出 (config/projects.yaml のパス群)
+            local _c _code
+            _code="$(_g16_strip_comments "$1")"
+            _c="$(printf '%s' "$_code" | grep -cE '/mnt/c/Python_app/' 2>/dev/null)" || _c=0
+            printf '%s' "${_c##*$'\n'}"
+        }
         # ───────────────────────────────────────────────────────────────────────
 
         # ── オントロジーテーブル (並列配列) ────────────────────────────────────
@@ -631,18 +638,20 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
         # _G16_ALLOWED     : 正当なSSOT参照パターン (ERE; メッセージ補足用。直書き検出は免除しない)
         # _G16_FNS         : 検出関数名 (content=$1 でcount返す)
         # _G16_SSOTS       : SSOTポインタ (エラーメッセージ内)
-        _G16_CONCEPTS=( "エージェント名" "repoルートパス" "user-homeパス" )
-        _G16_MIN_COUNTS=( 3 1 1 )
+        _G16_CONCEPTS=( "エージェント名" "repoルートパス" "user-homeパス" "PJパス" )
+        _G16_MIN_COUNTS=( 3 1 1 1 )
         _G16_ALLOWED=(
             'get_ninja_names|get_all_agents|get_allowed_targets|os\.environ\.get|\$\{.*:-'
             'SCRIPT_DIR|repo_root|git rev-parse'
             '\$HOME|\$\{HOME\}|~/|os\.environ\.get'
+            'get_project_path|os\.environ\.get.*DM_SIGNAL\|os\.environ\.get.*PROJECT_PATH'
         )
-        _G16_FNS=( "_g16_count_agent_names" "_g16_count_repo_path" "_g16_count_home_path" )
+        _G16_FNS=( "_g16_count_agent_names" "_g16_count_repo_path" "_g16_count_home_path" "_g16_count_project_path" )
         _G16_SSOTS=(
             'config/settings.yaml → agent_config.sh get_ninja_names()/get_all_agents()'
             'scripts/lib/repo_root.sh → repo_root()'
             '$HOME 環境変数'
+            'config/projects.yaml → scripts/lib/project_path.sh get_project_path()'
         )
         # ───────────────────────────────────────────────────────────────────────
 
@@ -669,7 +678,7 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
 
         unset _g16_content _g16_concept _g16_min _g16_allowed _g16_fn _g16_ssot _g16_cnt _g16_i
         unset _G16_CONCEPTS _G16_MIN_COUNTS _G16_ALLOWED _G16_FNS _G16_SSOTS
-        unset -f _g16_count_agent_names _g16_strip_comments _g16_count_repo_path _g16_count_home_path
+        unset -f _g16_count_agent_names _g16_strip_comments _g16_count_repo_path _g16_count_home_path _g16_count_project_path
     fi
 fi
 
