@@ -6052,8 +6052,8 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **記録者**: hayate
 - **tags**: [infra,gate,bash]
 - **target_files**: [scripts/gates/gate_lesson_health.sh,skills/dream/SKILL.md,skills/karo-direct/SKILL.md,skills/shogun-teire/SKILL.md]
-- **when**: 未設定
-- **how**: 未設定
+- **when**: gateスクリプトでシェルスクリプト参照を抽出するregexを書く時
+- **how**: ハイフンを含む形式 `[A-Za-z0-9_-]+\.sh` でregexを記述し、実gateで反証確認する
 - PHANTOM偽陽性4件はdetail内enforcement誤抽出だけでなく、grep -oE '[a-z_]+.sh' が pre-bash-combined.sh を combined.sh として切り出す問題でも発生した。script参照抽出では[A-Za-z0-9_-]+.sh等でハイフンを含め、実gateで反証確認する。
 
 ### L615: yaml_field_set_batch AWK L524バグが引き起こすYAML破損: yaml.dump width指定が防御策
@@ -6551,8 +6551,8 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **tags**: [skill-script-refs]
 - **target_files**: [skills/dashboard-update/SKILL.md,skills/report-write/SKILL.md,skills/verdict-check/SKILL.md]
 - **origin**: [[cmd_training_L7_v3_hanzo_5_20260521202900]]
-- **when**: 未設定
-- **how**: 未設定
+- **when**: gate_skill_script_refs WARNが発生し、SKILL.md更新後もWARNが残る時
+- **how**: 指定SKILL.md以外の依存(karo-direct/ninja-commit/recon-dual等)も確認し、全WARN解消を目標にする
 - SKILL.md 3件を更新してもgate_skill_script_refs.shがWARN継続。原因:karo-direct/ninja-commit/recon-dualが未更新。指定スクリプト3件以外の依存も確認し全WARN解消を目標にせよ
 
 ### L661: flock外のリソースカウントはrace conditionを引き起こす。カウントチェックはロック取得後に実行すべき
@@ -6948,8 +6948,8 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **tags**: [infra,gate,bash]
 - **target_files**: [scripts/hooks/prompt_state_inject.sh,scripts/skill_execution_log.sh,scripts/skill_recommend_metrics.sh,scripts/gates/gate_shogun_startup.sh]
 - **origin**: [[cmd_3027]]
-- **when**: 未設定
-- **how**: 未設定
+- **when**: set -eが有効なgateスクリプトでALERT集計用サブスクリプトをcommand substitutionで呼び出す時
+- **how**: set +eでサブスクリプトを呼び出し、出力と終了値を変数で分離捕捉してからoverall/alertsに反映する
 - startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとstatus判定前にgate本体が終了する。ALERT用途の子scriptはset +eで出力と終了値を捕捉してからoverall/alertsへ反映する。enforcement: cmd_3027のskill_recommend_metrics.sh呼出し箇所で実装済み
 
 ### L697: REQUEST_CHANGESで穴を見つけたら即対処せよ — severity分類で先送りするな
