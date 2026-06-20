@@ -106,13 +106,14 @@ $3 == "CLEAR" && !seen[$2]++ {
 #          gate cmd IDで直接glob(~23ファイル)してWSL2 Windows FS開銷を削減
 : > "$TMP/start_times.tsv"
 : > "$TMP/lesson_counts_raw.tsv"
-mapfile -t _gate_ids < <(awk -F'|' '$1+0>0{print $1+0}' "$TMP/gate_outcomes.tsv")
-archive_scan_files=()
-for _id in "${_gate_ids[@]}"; do
-    for _f in "$ARCHIVE_DIR"/cmd_${_id}_*.yaml; do
-        [ -f "$_f" ] && archive_scan_files+=("$_f")
-    done
-done
+# GATE対象cmd IDをセットファイルに書き出し（forループ+glob廃止 → find一発+gawkフィルタ）
+awk -F'|' '$1+0>0{print $1+0}' "$TMP/gate_outcomes.tsv" > "$TMP/gate_id_set.txt"
+mapfile -t archive_scan_files < <(
+    find "$ARCHIVE_DIR" -maxdepth 1 -name "cmd_[0-9]*.yaml" -print | \
+    gawk -v idfile="$TMP/gate_id_set.txt" '
+    BEGIN { while((getline line < idfile) > 0) ids[line+0]=1 }
+    { n=$0; sub(/.*\/cmd_/,"",n); sub(/[^0-9].*/,"",n); if(n+0 in ids) print }'
+)
 echo "  archive cmdsスキャン中(GATE対象 ${#archive_scan_files[@]}件)..." >&2
 if [ "${#archive_scan_files[@]}" -gt 0 ]; then
     gawk -v tmpdir="$TMP" '
