@@ -38,6 +38,13 @@ _run_post() {
     run bash -c 'printf "%s" "$1" | bash "$2"' _ "$payload" "$POST_HOOK"
 }
 
+_mark_read_for_current_agent() {
+    local file_path="$1" agent_id
+    agent_id="$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || echo 'unknown')"
+    [ -n "$agent_id" ] || agent_id="unknown"
+    printf '%s\n' "$file_path" > "/tmp/claude_read_log_${agent_id}.txt"
+}
+
 @test "pre combined hook denies report yaml writes" {
     _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$TMP_REPORT"'"}}'
     [ "$status" -ne 0 ]
@@ -414,7 +421,7 @@ _run_post() {
     local cache_file="$TMP_DIR/causal_index.tsv"
     mkdir -p "$TMP_DIR/docs"
     printf 'existing\n' > "$target_file"
-    printf '%s\n' "$target_file" > "/tmp/claude_read_log_kagemaru.txt"
+    _mark_read_for_current_agent "$target_file"
     printf 'linked-target\tdocs/source-a.md\nlinked-target\tdocs/source-b.md\n' > "$cache_file"
 
     run bash -c 'printf "%s" "$1" | CAUSAL_INDEX_CACHE="$5" PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" bash "$2"' _ \
@@ -434,7 +441,7 @@ _run_post() {
     local cache_file="$TMP_DIR/causal_index.tsv"
     mkdir -p "$TMP_DIR/docs"
     printf 'existing\n' > "$target_file"
-    printf '%s\n' "$target_file" > "/tmp/claude_read_log_kagemaru.txt"
+    _mark_read_for_current_agent "$target_file"
     printf 'linked-target\tdocs/source-a.md\n' > "$cache_file"
 
     run bash -c 'printf "%s" "$1" | CAUSAL_INDEX_CACHE="$5" PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" bash "$2"' _ \
