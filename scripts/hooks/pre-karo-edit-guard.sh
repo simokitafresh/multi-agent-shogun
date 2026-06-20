@@ -9,7 +9,11 @@
 # それ以外（忍者稼働中ならBLOCK）: ~/.claude/skills/ scripts/ tests/ 外部プロジェクト等
 set -euo pipefail
 
-PROJ_DIR="${PRE_KARO_EDIT_PROJ_DIR:-/mnt/c/tools/multi-agent-shogun}"
+# Source repo_root helper (no hardcoded path)
+_PKG_ROOT="${BASH_SOURCE[0]%/scripts/hooks/*}"
+# shellcheck source=scripts/lib/repo_root.sh
+source "${_PKG_ROOT}/scripts/lib/repo_root.sh"
+PROJ_DIR="${PRE_KARO_EDIT_PROJ_DIR:-$(get_repo_root)}"
 TASKS_DIR="${PROJ_DIR}/queue/tasks"
 
 emit_deny() {

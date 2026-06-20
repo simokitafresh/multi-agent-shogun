@@ -25,6 +25,12 @@ die() { echo "ERROR: $*" >&2; exit 1; }
 readonly AUTO_OPS_DIR="/mnt/c/Python_app/auto-ops"
 readonly CDP_PORT="${CDP_PORT:-9234}"
 
+# Source repo_root helper (no hardcoded path)
+_ND_ROOT="${BASH_SOURCE[0]%/scripts/*}"
+# shellcheck source=scripts/lib/repo_root.sh
+source "${_ND_ROOT}/scripts/lib/repo_root.sh"
+_REPO_ROOT="$(get_repo_root)"
+
 MD_FILE="$(realpath "$1")"
 
 echo "[note_draft] Markdown: ${MD_FILE}"
@@ -35,7 +41,7 @@ echo "[note_draft] CDP port: ${CDP_PORT}"
 if ! curl -s --max-time 3 "http://localhost:${CDP_PORT}/json/version" >/dev/null 2>&1; then
   echo "[note_draft] SKIP: Chrome CDP not reachable on port ${CDP_PORT}. Chrome is not running."
   # skill_execution_logにSKIP記録
-  SKILL_LOG="/mnt/c/tools/multi-agent-shogun/logs/skill_execution_log.yaml"
+  SKILL_LOG="${_REPO_ROOT}/logs/skill_execution_log.yaml"
   AGENT_ID="${AGENT_ID:-$(tmux display-message -t "${TMUX_PANE}" -p '#{@agent_id}' 2>/dev/null || echo unknown)}"
   TS="$(date '+%Y-%m-%dT%H:%M:%S%z')"
   cat >> "$SKILL_LOG" << LOGEOF
@@ -47,7 +53,7 @@ if ! curl -s --max-time 3 "http://localhost:${CDP_PORT}/json/version" >/dev/null
   stumbling_points: "Chrome CDP not reachable on port ${CDP_PORT}"
   gate: "none"
   source: "note_draft.sh"
-  skill_path: "/mnt/c/tools/multi-agent-shogun/scripts/note_draft.sh"
+  skill_path: "${BASH_SOURCE[0]}"
 LOGEOF
   echo "[note_draft] Logged to skill_execution_log: SKIP"
   exit 0
@@ -387,7 +393,7 @@ print(f"[note_draft] Done: {final_url}")
 PYEOF
 
 # ── Step 7: Record to skill_execution_log ──
-SKILL_LOG="/mnt/c/tools/multi-agent-shogun/logs/skill_execution_log.yaml"
+SKILL_LOG="${_REPO_ROOT}/logs/skill_execution_log.yaml"
 AGENT_ID="${AGENT_ID:-$(tmux display-message -t "${TMUX_PANE}" -p '#{@agent_id}' 2>/dev/null || echo unknown)}"
 TS="$(date '+%Y-%m-%dT%H:%M:%S%z')"
 if [[ $PY_EXIT -eq 0 ]]; then
@@ -417,7 +423,7 @@ cat >> "$SKILL_LOG" << LOGEOF
   stumbling_points: "${STUMBLING}"
   gate: "none"
   source: "note_draft.sh"
-  skill_path: "/mnt/c/tools/multi-agent-shogun/scripts/note_draft.sh"
+  skill_path: "${BASH_SOURCE[0]}"
 LOGEOF
 echo "[note_draft] Logged to skill_execution_log: ${RESULT}"
 exit "$EXIT_CODE"

@@ -14,8 +14,14 @@ Baseline: cmd_686 = 4482ms
 import sys
 import time
 import json
+import subprocess
+import os
 
-sys.path.insert(0, '/mnt/c/tools/multi-agent-shogun/scripts/cdp')
+# Derive repo root dynamically (no hardcoded path)
+_repo_root = subprocess.check_output(
+    ['git', 'rev-parse', '--show-toplevel'], text=True
+).strip()
+sys.path.insert(0, os.path.join(_repo_root, 'scripts', 'cdp'))
 from cdp_helper import cdp_get, js_eval, navigate, get_tab, cdp_send
 
 PROD_URL = "https://dm-signal-frontend.onrender.com"

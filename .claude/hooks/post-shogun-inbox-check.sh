@@ -48,7 +48,7 @@ if [ "${AGENT_ID:-}" != "shogun" ] || is_file_older_than_minutes "$_AID_CACHE" 3
 fi
 [ "$AGENT_ID" = "shogun" ] || exit 0
 
-INBOX="${SHOGUN_INBOX_PATH:-/mnt/c/tools/multi-agent-shogun/queue/inbox/shogun.yaml}"
+INBOX="${SHOGUN_INBOX_PATH:-${SCRIPT_DIR}/queue/inbox/shogun.yaml}"
 [ -f "$INBOX" ] || exit 0
 
 # 復帰完了チェック: マーカーが存在しない or 480分超過(前セッション残骸)→警告(LS084)
@@ -77,7 +77,7 @@ else
 fi
 
 # 殿の直近指示を取得(LS055: 100億回従う原理的保証)
-LORD_CONV="${SHOGUN_LORD_CONV_PATH:-/mnt/c/tools/multi-agent-shogun/queue/lord_conversation.jsonl}"
+LORD_CONV="${SHOGUN_LORD_CONV_PATH:-${SCRIPT_DIR}/queue/lord_conversation.jsonl}"
 LORD_LAST=""
 if [ -f "$LORD_CONV" ]; then
     _LORD_STAMP=$(file_stamp "$LORD_CONV")
@@ -119,7 +119,7 @@ fi
 # 未読gate_clearメッセージから数値改善目的のcmdを検出し、効果検証リマインダーを強制注入
 EFFECT_REMIND=""
 if [ "${UNREAD:-0}" -gt 0 ]; then
-    _STKY="${SHOGUN_TO_KARO_PATH:-/mnt/c/tools/multi-agent-shogun/queue/shogun_to_karo.yaml}"
+    _STKY="${SHOGUN_TO_KARO_PATH:-${SCRIPT_DIR}/queue/shogun_to_karo.yaml}"
     if [ -f "$_STKY" ]; then
         _STKY_STAMP=$(file_stamp "$_STKY")
         _EFFECT_KEY="${_INBOX_STAMP}|${_STKY_STAMP}"
