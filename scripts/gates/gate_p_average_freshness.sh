@@ -18,7 +18,16 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 # shellcheck source=scripts/lib/project_path.sh
-source "${SCRIPT_DIR}/scripts/lib/project_path.sh"
+if [ -f "${SCRIPT_DIR}/scripts/lib/project_path.sh" ]; then
+    source "${SCRIPT_DIR}/scripts/lib/project_path.sh"
+else
+    get_project_path() {
+        case "$1" in
+            dm-signal) printf '%s\n' "${DM_SIGNAL_DIR:-/mnt/c/Python_app/DM-signal}" ;;
+            *) return 1 ;;
+        esac
+    }
+fi
 _DM_PATH="$(get_project_path 'dm-signal')"
 ENV_FILE="${P_AVERAGE_ENV_FILE:-${_DM_PATH}/backend/.env}"
 API_BASE="${P_AVERAGE_API_BASE:-https://dm-signal-backend.onrender.com}"

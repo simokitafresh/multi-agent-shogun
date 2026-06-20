@@ -34,7 +34,34 @@ TRACKING="$SCRIPT_DIR/logs/lesson_tracking.tsv"
 NINJA_MONITOR="$SCRIPT_DIR/logs/ninja_monitor.log"
 DEPLOY_LOG="$SCRIPT_DIR/logs/deploy_task.log"
 ARCHIVE_DIR="$SCRIPT_DIR/queue/archive"
-source "$SCRIPT_DIR/scripts/lib/model_family.sh"
+if [ -f "$SCRIPT_DIR/scripts/lib/model_family.sh" ]; then
+    source "$SCRIPT_DIR/scripts/lib/model_family.sh"
+else
+    MODEL_FAMILY_OPUS_46="${MODEL_FAMILY_OPUS_46:-opus-4.6}"
+    MODEL_FAMILY_GPT_5="${MODEL_FAMILY_GPT_5:-gpt-5}"
+    MODEL_FAMILY_TOKEN_OPUS="${MODEL_FAMILY_TOKEN_OPUS:-opus}"
+    MODEL_FAMILY_TOKEN_GPT="${MODEL_FAMILY_TOKEN_GPT:-gpt}"
+    MODEL_FAMILY_TOKEN_CODEX="${MODEL_FAMILY_TOKEN_CODEX:-codex}"
+    MODEL_FAMILY_VERSION_46_DOT="${MODEL_FAMILY_VERSION_46_DOT:-4.6}"
+    MODEL_FAMILY_VERSION_46_SPACE="${MODEL_FAMILY_VERSION_46_SPACE:-4 6}"
+    MODEL_FAMILY_VERSION_54_DOT="${MODEL_FAMILY_VERSION_54_DOT:-5.4}"
+    MODEL_FAMILY_VERSION_54_SPACE="${MODEL_FAMILY_VERSION_54_SPACE:-5 4}"
+    MODEL_FAMILY_VERSION_55_DOT="${MODEL_FAMILY_VERSION_55_DOT:-5.5}"
+    MODEL_FAMILY_VERSION_55_SPACE="${MODEL_FAMILY_VERSION_55_SPACE:-5 5}"
+    model_family_from_label() {
+        local label="${1:-}" low
+        low="${label,,}"
+        low="${low//-/ }"
+        low="${low//_/ }"
+        if [[ "$low" == *"$MODEL_FAMILY_TOKEN_OPUS"* && ( "$low" == *"$MODEL_FAMILY_VERSION_46_DOT"* || "$low" == *"$MODEL_FAMILY_VERSION_46_SPACE"* ) ]]; then
+            printf '%s\n' "$MODEL_FAMILY_OPUS_46"
+        elif [[ ( "$low" == *"$MODEL_FAMILY_TOKEN_GPT"* || "$low" == *"$MODEL_FAMILY_TOKEN_CODEX"* ) && ( "$low" == *"$MODEL_FAMILY_VERSION_54_DOT"* || "$low" == *"$MODEL_FAMILY_VERSION_54_SPACE"* || "$low" == *"$MODEL_FAMILY_VERSION_55_DOT"* || "$low" == *"$MODEL_FAMILY_VERSION_55_SPACE"* ) ]]; then
+            printf '%s\n' "$MODEL_FAMILY_GPT_5"
+        else
+            printf '%s\n' "${low// /_}"
+        fi
+    }
+fi
 
 # Argument parse
 MODE=""

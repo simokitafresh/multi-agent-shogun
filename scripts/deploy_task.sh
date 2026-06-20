@@ -5151,7 +5151,8 @@ try:
         else:
             _relevant_fallback = [
                 l for l in tag_candidates
-                if _lesson_matches_task_target_path(l)
+                if (set(task_tags) & set(str(t).lower().strip() for t in (l.get('tags', []) if isinstance(l.get('tags', []), list) else [l.get('tags', '')]) if t))
+                or _lesson_matches_task_target_path(l)
             ]
             _tag_fallback = [(l.get('helpful_count',0) or 0, l.get('id',''), str(l.get('summary', l.get('title','')))[:80]) for l in _relevant_fallback]
             _tag_fallback.sort(key=lambda x: -x[0])

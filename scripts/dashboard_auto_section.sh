@@ -28,7 +28,12 @@ _dashboard_script="${BASH_SOURCE[0]:-$0}"
 [[ "$_dashboard_script" != /* ]] && _dashboard_script="$PWD/$_dashboard_script"
 SCRIPT_DIR="${_dashboard_script%/*}"
 PROJECT_DIR="${SCRIPT_DIR%/*}"
-source "$PROJECT_DIR/scripts/lib/model_family.sh"
+if [ -f "$PROJECT_DIR/scripts/lib/model_family.sh" ]; then
+    source "$PROJECT_DIR/scripts/lib/model_family.sh"
+else
+    MODEL_FAMILY_OPUS_46="${MODEL_FAMILY_OPUS_46:-opus-4.6}"
+    MODEL_FAMILY_GPT_5="${MODEL_FAMILY_GPT_5:-gpt-5}"
+fi
 unset _dashboard_script
 
 DRY_RUN=false
@@ -47,7 +52,7 @@ GATE_FIRE_LOG="$PROJECT_DIR/logs/gate_fire_log.yaml"
 LESSON_IMPACT_FILE="$PROJECT_DIR/logs/lesson_impact.tsv"
 SKILL_METRICS_SCRIPT="$PROJECT_DIR/scripts/skill_metrics.sh"
 # shellcheck source=/dev/null
-source "$PROJECT_DIR/scripts/lib/model_family.sh"
+[ ! -f "$PROJECT_DIR/scripts/lib/model_family.sh" ] || source "$PROJECT_DIR/scripts/lib/model_family.sh"
 
 # ─── 初回CLEAR率 (gate_fire_logから計算。累積CLEAR率の隣に表示) ───
 compute_first_fire_rate() {

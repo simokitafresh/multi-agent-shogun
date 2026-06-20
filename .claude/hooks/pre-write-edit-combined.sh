@@ -225,8 +225,17 @@ file_path="$(json_string_after "$payload" "file_path")"
 
 [[ "$tool_name" != "Write" && "$tool_name" != "Edit" && "$tool_name" != "MultiEdit" ]] && exit 0
 [[ -z "$file_path" ]] && exit 0
-# §3.2速度改善: プロジェクト外パスは全Guardスキップ(~30ms→0ms)
-[[ "$file_path" == /tmp/* || "$file_path" == /dev/* ]] && exit 0
+# §3.2速度改善: 明らかに無関係な一時/デバイスパスだけGuardスキップ。
+# CI/Batsは/tmp配下にqueue/config/scripts/docsを作ってGuard自体を検証するため、/tmp全面skipは防御層を無効化する。
+case "$file_path" in
+    /dev/*) exit 0 ;;
+    /tmp/*)
+        case "$file_path" in
+            */queue/reports/*|*/queue/shogun_to_karo.yaml|*/config/projects.yaml|*/config/cli_profiles.yaml|*.sh|*.bash|*.py|*/docs/*) ;;
+            *) exit 0 ;;
+        esac
+        ;;
+esac
 
 # === Guard 0: shogun_to_karo.yaml起票前確認+リスト形式BLOCK ===
 if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then

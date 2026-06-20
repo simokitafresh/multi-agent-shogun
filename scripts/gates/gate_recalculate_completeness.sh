@@ -7,7 +7,16 @@ set -euo pipefail
 
 _GRC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # shellcheck source=scripts/lib/project_path.sh
-source "${_GRC_ROOT}/scripts/lib/project_path.sh"
+if [ -f "${_GRC_ROOT}/scripts/lib/project_path.sh" ]; then
+    source "${_GRC_ROOT}/scripts/lib/project_path.sh"
+else
+    get_project_path() {
+        case "$1" in
+            dm-signal) printf '%s\n' "${DM_SIGNAL_DIR:-/mnt/c/Python_app/DM-signal}" ;;
+            *) return 1 ;;
+        esac
+    }
+fi
 DM_SIGNAL_DIR="${DM_SIGNAL_DIR:-$(get_project_path 'dm-signal')}"
 ENV_FILE="${ENV_FILE:-$DM_SIGNAL_DIR/backend/.env}"
 HOSTADDR_CACHE_FILE="${GATE_RECALCULATE_HOSTADDR_CACHE:-/tmp/gate_recalculate_completeness_hostaddr.cache}"

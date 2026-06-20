@@ -11,7 +11,16 @@ set -euo pipefail
 
 _GAM_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # shellcheck source=scripts/lib/project_path.sh
-source "${_GAM_ROOT}/scripts/lib/project_path.sh"
+if [ -f "${_GAM_ROOT}/scripts/lib/project_path.sh" ]; then
+    source "${_GAM_ROOT}/scripts/lib/project_path.sh"
+else
+    get_project_path() {
+        case "$1" in
+            dm-signal) printf '%s\n' "${DM_SIGNAL_DIR:-/mnt/c/Python_app/DM-signal}" ;;
+            *) return 1 ;;
+        esac
+    }
+fi
 
 PROGRESS_FILE="${1:-context/l2-okugi-progress.md}"
 GS_BASE="$(get_project_path 'dm-signal')/outputs/grid_search"
