@@ -27,6 +27,7 @@ SCRIPT_DIR="${_iw_self%/scripts/inbox_watcher.sh}"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 [ ! -f "$SCRIPT_DIR/scripts/lib/model_family.sh" ] || source "$SCRIPT_DIR/scripts/lib/model_family.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
+source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
@@ -114,6 +115,27 @@ if [ ! -f "$INBOX" ]; then
 fi
 
 echo "[$(date)] inbox_watcher started — agent: $AGENT_ID, pane: $PANE_TARGET, cli: $CLI_TYPE_AT_STARTUP, script_hash: $SCRIPT_HASH" >&2
+
+ensure_current_pane_target() {
+    local current_agent resolved
+
+    current_agent=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_id}' 2>/dev/null || true)
+    if [ "$current_agent" = "$AGENT_ID" ]; then
+        return 0
+    fi
+
+    resolved=$(pane_lookup "$AGENT_ID" 2>/dev/null || true)
+    if [ -z "$resolved" ]; then
+        echo "[$(date)] [PANE-RETARGET-WARN] $AGENT_ID current pane $PANE_TARGET has @agent_id='${current_agent:-empty}', and pane_lookup failed" >&2
+        return 1
+    fi
+
+    if [ "$resolved" != "$PANE_TARGET" ]; then
+        echo "[$(date)] [PANE-RETARGET] $AGENT_ID: $PANE_TARGET(@agent_id=${current_agent:-empty}) -> $resolved" >&2
+        PANE_TARGET="$resolved"
+    fi
+    return 0
+}
 
 # Ensure inotifywait is available. Unit tests source this file with
 # INBOX_WATCHER_LIB_ONLY=1 to exercise helper functions without daemon deps.
