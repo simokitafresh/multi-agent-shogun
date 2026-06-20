@@ -84,47 +84,8 @@ find "$SCRIPT_DIR/docs/research" -maxdepth 1 -name "gunshi_*" -mmin -1440 -type 
 _PID_FIND_D=$!
 find "$SCRIPT_DIR/docs/research" -maxdepth 1 -name "*.md" -mtime -7 -type f > "$_TMP_D/find_research" 2>/dev/null &
 _PID_FIND_R=$!
-
-echo "=== 軍師起動チェック $(date '+%H:%M:%S') ==="
-echo ""
-
-# --- Check 1: deepdive必読ファイル存在確認 + 強制表示 ---
-echo "■ deepdive必読ファイル"
-REQUIRED_READ="$SCRIPT_DIR/memory/deepdive_why_chain_20260321.md"
-if [ -f "$REQUIRED_READ" ]; then
-    echo "  OK: $(basename "$REQUIRED_READ") 存在確認"
-else
-    overall="ALERT"
-    alerts+=("必読ファイル不在: memory/deepdive_why_chain_20260321.md")
-    echo "  ALERT: $REQUIRED_READ が存在しない"
-fi
-echo ""
-
-# Phase逐次読込ガイド（全文一括禁止 — 2026-04-15殿指示）
-echo "  ■ Phase逐次読込ガイド（全文一括Read禁止。1 Phaseずつ読み、自問してから次へ）"
-if [ -f "$REQUIRED_READ" ]; then
-    echo "  $(basename "$REQUIRED_READ"):"
-    python3 -c "
-import sys
-lines = []
-with open(sys.argv[1]) as f:
-    for i, line in enumerate(f, 1):
-        if line.startswith('## Phase'):
-            lines.append((i, line.strip().replace('## ', '')))
-    total = i
-if lines:
-    print(f'    前文: Read(offset=1, limit={lines[0][0]-2})')
-for j, (start, title) in enumerate(lines):
-    end = lines[j+1][0]-1 if j+1 < len(lines) else total
-    limit = end - start + 1
-    print(f'    {title}: Read(offset={start}, limit={limit})')
-" "$REQUIRED_READ"
-fi
-echo "  ★ 全Phase必読（スキップ禁止）。1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
-echo ""
-
-# --- Check 1.5: 追体験検証Q4 (前セッション出来事注入) ---
-_prev_session_summary=$(python3 - "$SCRIPT_DIR/queue/lord_conversation.jsonl" 2>/dev/null <<'PY'
+# §3.2: lord_conversation解析を並列化(python3起動~650ms削減)
+{ python3 - "$SCRIPT_DIR/queue/lord_conversation.jsonl" <<'PY_LC' > "$_TMP_D/prev_session" 2>/dev/null
 import sys, json
 log_file = sys.argv[1]
 summary = "(前セッション要約なし)"
@@ -145,8 +106,49 @@ try:
 except (FileNotFoundError, OSError):
     pass
 print(summary)
-PY
-) || _prev_session_summary="(取得失敗)"
+PY_LC
+} &
+_PID_PREV_SESSION=$!
+
+echo "=== 軍師起動チェック $(date '+%H:%M:%S') ==="
+echo ""
+
+# --- Check 1: deepdive必読ファイル存在確認 + 強制表示 ---
+echo "■ deepdive必読ファイル"
+REQUIRED_READ="$SCRIPT_DIR/memory/deepdive_why_chain_20260321.md"
+if [ -f "$REQUIRED_READ" ]; then
+    echo "  OK: $(basename "$REQUIRED_READ") 存在確認"
+else
+    overall="ALERT"
+    alerts+=("必読ファイル不在: memory/deepdive_why_chain_20260321.md")
+    echo "  ALERT: $REQUIRED_READ が存在しない"
+fi
+echo ""
+
+# Phase逐次読込ガイド（全文一括禁止 — 2026-04-15殿指示）
+echo "  ■ Phase逐次読込ガイド（全文一括Read禁止。1 Phaseずつ読み、自問してから次へ）"
+if [ -f "$REQUIRED_READ" ]; then
+    echo "  $(basename "$REQUIRED_READ"):"
+    # §3.2: python3→awk置換(python3起動~650ms削減)
+    awk '
+    /^## Phase/ { titles[NR] = substr($0, 4); starts[++n] = NR }
+    END {
+        total = NR
+        if (n > 0) printf "    前文: Read(offset=1, limit=%d)\n", starts[1]-2
+        for (i = 1; i <= n; i++) {
+            e = (i < n) ? starts[i+1]-1 : total
+            printf "    %s: Read(offset=%d, limit=%d)\n", titles[starts[i]], starts[i], e-starts[i]+1
+        }
+    }' "$REQUIRED_READ"
+fi
+echo "  ★ 全Phase必読（スキップ禁止）。1 Phaseずつ Read(offset, limit) で読め。各Phase後に1行自問。全文一括禁止。"
+echo ""
+
+# --- Check 1.5: 追体験検証Q4 (前セッション出来事注入) ---
+# §3.2: 並列化済み(L86付近)。結果をtmpから読出し
+wait "$_PID_PREV_SESSION" 2>/dev/null || true
+_prev_session_summary="$(cat "$_TMP_D/prev_session" 2>/dev/null)" || _prev_session_summary="(取得失敗)"
+[ -z "$_prev_session_summary" ] && _prev_session_summary="(前セッション要約なし)"
 echo "■ 追体験検証Q4（CLAUDE.md Step 2.9 — 省略厳禁）"
 echo "  Q4: deepdiveのPhase NがPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）"
 echo "  [前セッション出来事] ${_prev_session_summary}"
