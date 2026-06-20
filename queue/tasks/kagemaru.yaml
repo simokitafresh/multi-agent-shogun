@@ -1,43 +1,89 @@
 task:
-  parent_cmd: cmd_3463
-  task_id: cmd_3463_AC2_config_ssot_fix
-  subtask_id: cmd_3463_AC2_config_ssot_fix
-  task_type: implementation
-  status: done
-  project: infra
-  target_path: config/settings.yaml
-  report_filename: kagemaru_report_cmd_3463.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3463.yaml
-  ac_assigned: [AC2]
-  title: "cmd_3463 AC2 config SSOT是正"
-  purpose: "gist_url重複、shogun launch_cmd不一致、skill path重複を正し、config内SSOT曖昧性を減らす"
-  command: |
-    queue/shogun_to_karo.yaml の cmd_3463 を正本として読む。
-    AC2のみ担当せよ。
-    1. config/projects.yaml の dm-signal/infra gist_url が config/settings.yaml と同一なら削除する。mcas固有値は残す。
-    2. config/settings.yaml の shogun launch_cmd を config/cli_profiles.yaml の claude profile launch_cmd と一致させる。
-    3. config/settings.yaml の skill.save_path と skill.local_path を統一する。消す/残すの判断は既存消費者をrgで確認して根拠を報告せよ。
-    4. YAML構文確認と関連rgを実行する。
-    operational YAMLの編集は yaml_field_set.sh 等の安全手段を使い、yaml.dump/safe_dumpで上書きしない。
-  acceptance_criteria:
-    - id: AC1
-      description: "docs/research/ssot-registry.md に全10概念のSSOT正本・ヘルパー関数・Guard状態・消費者ファイル数を記録した"
-    - id: AC2
-      description: "config/projects.yamlとconfig/settings.yamlの曖昧SSOTを是正する"
-      checks:
-        - check: "dm-signal/infraの重複gist_urlが削除済み、mcas固有gist_urlは維持"
-        - check: "settings shogun launch_cmdがcli_profiles claude launch_cmdと一致"
-        - check: "skill path重複の統一結果と消費者影響を報告"
-        - check: "対象YAMLがyaml.safe_loadで読める"
-    - id: AC3
-      description: "scripts/lib/repo_root.sh と scripts/lib/project_path.sh を作る"
-    - id: AC4
-      description: ".claude/hooks/pre-write-edit-combined.sh Guard16をテーブル駆動化する"
-    - id: AC5
-      description: "scripts/と.claude/hooks/のrepo絶対パス消費者を書き換える"
+  _ac_task_id: cmd_3465_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3465 (deployed 2026-06-20T13:18:04). Read from the beginning.
+  ac_assigned:
+  - AC2
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   not_in_scope:
-    - hook実装変更
-    - repo絶対パス消費者の全面書換え
+  - hook実装変更
+  - repo絶対パス消費者の全面書換え
+  origin: '[[殿指示_オントロジー_20260620]] -> [[SSOT調査_cmd_3458_3461]] -> [[Phase2_3_SSOT是正_Guard汎化]]'
+  parallel_ok: []
+  parent_cmd: cmd_3465
+  project: infra
+  purpose: '殿指示(2026-06-20): オントロジー→行動せよ。cmd_3463-3464で消費者側(直書きBLOCK)を構築。本cmdは供給者側(SSOT正本)を保護する。正本が壊れると全ヘルパーが誤値を返しオントロジー全崩壊。家老設計案(blt_20260620_130157): フィールド×許可スクリプトのテーブル駆動'
+  status: done
+  stop_for: []
+  subtask_id: cmd_3463_AC2_config_ssot_fix
+  target_path: /mnt/c/tools/multi-agent-shogun/.claude/hooks
+  task_id: cmd_3465_full
+  task_type: full
   validation:
-    - "python3 -c \"import yaml; yaml.safe_load(open('config/projects.yaml')); yaml.safe_load(open('config/settings.yaml')); yaml.safe_load(open('config/cli_profiles.yaml'))\""
-  origin: "[[殿指示_オントロジー_20260620]] -> [[SSOT調査_cmd_3458_3461]] -> [[Phase2_3_SSOT是正_Guard汎化]]"
+  - python3 -c "import yaml; yaml.safe_load(open('config/projects.yaml')); yaml.safe_load(open('config/settings.yaml')); yaml.safe_load(open('config/cli_profiles.yaml'))"
+  related_lessons:
+  - id: 'L544'
+    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
+    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
+  - id: 'L653'
+    summary: 'skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数'
+    detail: 'skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数'
+  - id: 'L357'
+    summary: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
+    detail: 'lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  related_causal_links:
+  - "[[Guard17拡張_正本保護]]"
+  - "[[cmd_3463_オントロジーPhase2_3]]"
+  - "[[軍師穴検出_正本無保護]]"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/training-cycle.md"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L544: queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg 'yaml.
+      - L653: skill_execution_log.shは記録1件につきyaml_scalarを最大9回呼ぶため、python3起動を関数内に置くと固定コストがフィールド数
+      - L357: lesson_auto_tag.shの--applyモード(L133)がyaml.dumpで運用YAML(lessons.yaml)を上書きする。CLAUDE.
+    ────────────────────────────────────────
+    
+    
+  memory_db_context:
+  - '2026-06-20T13:14:18+09:00 | [MEM: memory_db ts=2026-06-20T03:28 "まずはSSOTが正しい場所にあるかの調査→曖昧なものを正す→オントロジーを動かそう"] **現在地と次の予定:** | 段階 '
+  - "2026-06-20T12:44:04+09:00 | 【INFOバッチ】 2026-06-20 12:30:00|cmd_3463"
+  - "2026-06-20T00:08:33+09:00 | workaround率: 5/100 = 5%。直近5件は0%。健全。 次のidle Step 5: パターン発見→因果推論→行動。 本セッション全体の行動を振り返り、殿の指摘から得た教訓をL0-L7"
+  - "2026-06-16T12:39:46+09:00 | 【家老】cmd_3411 初回配備開始 (title=stop hookにQ6洗脳検出→cmd起票完了チェックを追加し認識→行動ギャップをL5で阻止する, ninja=tobisaru) stop h"
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'Guard17を拡張し、config/projects.yamlのprojects[].pathフィールドとconfig/cli_profiles.yamlのprofiles[].launch_cmdフィールドの手動Edit/WriteをBLOCKする。許可される経路(project_path.sh/shogun-cli-switchスキル等)はテーブルで定義する'
+  - id: 'AC2'
+    checks:
+    - check: 'batsテストを追加し、正本保護の正常系(BLOCK)と免除系(許可スクリプト経由)の両方を検証する'
+  - id: 'AC3'
+    checks:
+    - check: 'docs/research/ssot-registry.mdの各概念行にGuard17保護状態を追記する'
+  ac_version: d48acaf0
+  role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kagemaru_report_cmd_3465.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3465.yaml
+  bloom_level: 
+  deployed_at: "2026-06-20T13:18:55"

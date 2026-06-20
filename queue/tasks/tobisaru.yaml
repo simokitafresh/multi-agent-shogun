@@ -1,52 +1,97 @@
 task:
-  parent_cmd: cmd_3463
-  task_id: cmd_3463_AC4_guard16_table
-  subtask_id: cmd_3463_AC4_guard16_table
-  task_type: implementation
-  status: done
-  project: infra
-  target_path: .claude/hooks/pre-write-edit-combined.sh
-  report_filename: tobisaru_report_cmd_3463.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3463.yaml
-  ac_assigned: [AC4]
-  title: "cmd_3463 AC4 Guard16 table-driven化"
-  purpose: "Guard16を忍者名専用からテーブル駆動に汎化し、repo絶対パスとuser-home絶対パスの直書きをBLOCKできるようにする"
-  command: |
-    queue/shogun_to_karo.yaml の cmd_3463 を正本として読む。
-    AC4のみ担当せよ。
-    .claude/hooks/pre-write-edit-combined.sh の Guard16 をテーブル駆動に変更する。
-    既存の忍者名検出は維持し、追加で repo absolute path と user-home absolute path の hardcode BLOCK を追加する。
-    将来の概念追加が行追加で済む形にする。関連テストは tests/unit/test_write_edit_combined_hooks.bats を優先して追加/更新する。
-  acceptance_criteria:
-    - id: AC1
-      description: "docs/research/ssot-registry.md に全10概念のSSOT正本・ヘルパー関数・Guard状態・消費者ファイル数を記録した"
-    - id: AC2
-      description: "config/projects.yamlとconfig/settings.yamlの曖昧SSOTを是正する"
-    - id: AC3
-      description: "scripts/lib/repo_root.sh と scripts/lib/project_path.sh を作る"
-    - id: AC4
-      description: ".claude/hooks/pre-write-edit-combined.sh Guard16をテーブル駆動化する"
-      checks:
-        - check: "既存の忍者名直書きBLOCKが維持される"
-        - check: "repo絶対パス直書きがBLOCKされる"
-        - check: "user-home絶対パス直書きがBLOCKされる"
-        - check: "対象テストがPASSする"
-    - id: AC5
-      description: "scripts/と.claude/hooks/のrepo絶対パス消費者を書き換える"
+  _ac_task_id: cmd_3464_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3464 (deployed 2026-06-20T13:10:19). Read from the beginning.
+  ac_assigned:
+  - AC1
+  - AC2
+  - AC3
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   not_in_scope:
-    - scripts全体のrepo path消費者書換え
-    - config是正
+  - SSOT正本(config/projects.yaml等)のliteral削除
+  - docs/research/archive内の説明・履歴文字列の全面変更
+  - 外部PJリポジトリ内の参照修正
+  origin: '[[殿指示_オントロジー_20260620]] -> [[SSOT調査_cmd_3458_3461]] -> [[Phase2_3_SSOT是正_Guard汎化]]'
+  parallel_ok: []
+  parent_cmd: cmd_3464
+  project: infra
+  purpose: '殿指示(2026-06-20): オントロジーに戻ろう→行動せよ。cmd_3463でリポジトリパスのSSOT化完了。次の概念=PJパス(/mnt/c/Python_app/DM-signal等)の直書きを消費者書換え+Guard16テーブル追加で解消する。軍師+家老レビュー済み(blt_20260620_130005+130157+130244)'
+  status: done
+  stop_for: []
+  subtask_id: cmd_3464_full
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts
+  task_id: cmd_3464_full
+  task_type: full
   validation:
-    - "bats tests/unit/test_write_edit_combined_hooks.bats"
-  origin: "[[殿指示_オントロジー_20260620]] -> [[SSOT調査_cmd_3458_3461]] -> [[Phase2_3_SSOT是正_Guard汎化]]"
-
-  session_state:
+  - rg '/mnt/c/Python_app/' scripts/ .claude/ --type sh --type py
+  - bats tests/unit/test_write_edit_combined_hooks.bats
+  - python3 -c "import pathlib; p=pathlib.Path('docs/research/ssot-registry.md'); assert p.exists(); assert 'PJパス' in p.read_text()"
+  previous_failures:
     attempt: 2
-    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; r…'
     tried_approaches:
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; r…'
     prior_attempts:
     - attempt: 1
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; r…'
     - attempt: 2
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; r…'
+  related_lessons:
+  - id: 'L554'
+    summary: 'test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/'
+    detail: 'test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/'
+  - id: 'L015'
+    summary: 'IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O'
+    detail: 'IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O'
+  - id: 'L641'
+    summary: 'Batsのloadで@testを含む断片を読ませると@test: command not foundで失敗する。小規模Bats統合で元ファイルごとのsetup/'
+    detail: 'Batsのloadで@testを含む断片を読ませると@test: command not foundで失敗する。小規模Bats統合で元ファイルごとのsetup/'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  related_causal_links:
+  - "[[Guard16テーブル横展開]]"
+  - "[[PJパス直書き19ファイル]]"
+  - "[[cmd_3463_オントロジーPhase2_3]]"
+  context_hints:
+  - "context/training-cycle.md"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L554: test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/
+      - L015: IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O
+      - L641: Batsのloadで@testを含む断片を読ませると@test: command not foundで失敗する。小規模Bats統合で元ファイルごとのsetup/
+    ────────────────────────────────────────
+    
+    
+  memory_db_context:
+  - "2026-06-20T12:44:04+09:00 | 【INFOバッチ】 2026-06-20 12:30:00|cmd_3463"
+  - "2026-06-20T10:38:38+09:00 | 【INFOバッチ】 2026-06-20 10:30:19|cmd_karo_hotfix_context_dm_ops_ga102_20260620 2026-06-20 10:35:01|cmd_"
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'scripts/・.claude/配下のPJパス直書き(/mnt/c/Python_app/で始まる絶対パス)を全件get_project_path呼び出しまたは変数参照に書き換える'
+  - id: 'AC2'
+    checks:
+    - check: 'Guard16のテーブルにPJパス概念を追加し、PJパス直書きを含む.sh/.pyのWrite/EditをBLOCKする'
+  - id: 'AC3'
+    checks:
+    - check: 'docs/research/ssot-registry.mdのPJパス行を更新し、ヘルパー・Guard・消費者残数を最新値に反映する'
+  ac_version: bbadfcfb
+  role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: tobisaru_report_cmd_3464.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3464.yaml
+  bloom_level: 
+  deployed_at: "2026-06-20T13:11:04"

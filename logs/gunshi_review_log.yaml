@@ -1973,7 +1973,7 @@
 - cmd_id: cmd_3463
   review_type: report
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   report_ninja: hanzo
   finding_categories: [assumptions, numbers, premortem, adversarial]
   findings_summary: "LGTM。cmd_3463 AC1 ssot-registry.md作成。10概念×4列の表。rg実測で消費者ファイル数固定"
@@ -1993,7 +1993,7 @@
 - cmd_id: cmd_3463
   review_type: report
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   report_ninja: kagemaru
   finding_categories: [assumptions, numbers, premortem, adversarial]
   findings_summary: "LGTM。cmd_3463 AC2 config SSOT是正。gist_url重複削除+launch_cmd一致+skill path統合。yaml.safe_load 3ファイル検証"
@@ -2013,7 +2013,7 @@
 - cmd_id: cmd_3463
   review_type: report
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   report_ninja: kotaro
   finding_categories: [assumptions, premortem, adversarial]
   findings_summary: "LGTM。cmd_3463 AC3 repo_root.sh+project_path.sh新規作成。bats 8テスト全PASS。commit c8e499c70"
@@ -2033,7 +2033,7 @@
 - cmd_id: cmd_3463
   review_type: report
   verdict: FAIL
-  gate_result: null
+  gate_result: CLEAR
   report_ninja: saizo
   finding_categories: [assumptions]
   findings_summary: "FAIL。cmd_3463 AC5 saizo報告テンプレートのまま。status=pending、result/binary_checks全空"
@@ -2048,7 +2048,7 @@
 - cmd_id: cmd_3463
   review_type: report
   verdict: FAIL
-  gate_result: null
+  gate_result: CLEAR
   report_ninja: tobisaru
   finding_categories: [assumptions]
   findings_summary: "FAIL。cmd_3463 AC4 tobisaru報告テンプレートのまま。status=pending、result/binary_checks全空"
@@ -2063,7 +2063,7 @@
 - cmd_id: cmd_3463
   review_type: report
   verdict: LGTM
-  gate_result: null
+  gate_result: CLEAR
   report_ninja: tobisaru
   finding_categories: [assumptions, premortem, adversarial]
   findings_summary: "LGTM。cmd_3463 AC4 Guard16テーブル駆動化。並列配列5本。bats 29/29 PASS。commit 30b68b16a。注意: files_modified空(家老補完要)"
@@ -2080,3 +2080,103 @@
   step3_5_verified: true
   brainwash_check: "commit 30b68b16a実在(git show --stat)。bats 29/29(家老一次確認)。files_modified空→SG7で家老補完要と明記。numbers:N/A。simulation:N/A"
   timestamp: "2026-06-20T12:18:00"
+- cmd_id: cmd_3463
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: saizo
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "LGTM(機能面)。cmd_3463 AC5 repoパス消費者21件書換え。f427fd7ba=正当。dfbad7b59=scope外20ファイル混入(運用データ)。家老workaround要"
+  observations:
+    - "事実: f427fd7ba=AC5本体commit(12ファイル書換え)。rg残存2件=例外(コメント/docstring)"
+    - "事実: dfbad7b59=運用データバッチcommit(20ファイル)。scope外12件混入(context/logs/projects/queue/skills)"
+    - "事実: 家老一次確認でgate_report_format PASS。bash -n 11本+py_compile 1本全PASS"
+  origin: "[[cmd_3463_AC5]] -> [[saizo報告LGTM(scope汚染注意)]]"
+  causal_chain: "repoパス直書き21件→helper書換え→残存2件(例外)。scope汚染: dfbad7b59にstaged全ファイル混入→files_modified 12件vs commit stat 20件不一致"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "hooks/gates変更。f427fd7baのdiffはrepoパス→get_repo_root()置換のみ。dfbad7b59のscope外は運用データで機能影響なし"
+  step3_5_verified: true
+  brainwash_check: "f427fd7ba/dfbad7b59両commit実在(git show)。files_modified 12件 vs dfbad7b59 stat 20件→8件差分=scope外。numbers: 書換え21件→残存2件(例外)を報告値と突合。GATE CLEAR未着"
+  timestamp: "2026-06-20T12:28:00"
+- cmd_id: cmd_3463_gate_sync
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "gate_sync: cmd_3463 CLEAR。5AC全LGTM→CLEAR一致"
+  observations:
+    - "事実: gate_result CLEAR受信(msg_20260620_123000)。AC1-5全完了"
+  origin: "[[cmd_3463]] -> [[GATE_CLEAR]]"
+  causal_chain: "5AC分割配備→全LGTM→GATE CLEAR"
+  cs_checklist:
+    CS1_source_check: "OK"
+    CS2_own_data: "OK"
+    CS3_code_compare: "N/A"
+    CS4_action_convert: "OK"
+    CS5_unchecked_angle: "N/A"
+    CS6_causal: "OK"
+  operational_simulation: "5AC全CLEAR。accuracy維持"
+  brainwash_check: "1件gate_clear受信。5AC全LGTM→CLEAR一致(1/1件)"
+  timestamp: "2026-06-20T12:30:00"
+- cmd_id: cmd_3464
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "APPROVE。オントロジー横展開PJパス19ファイル書換え+Guard16テーブル追加。cmd_3463 AC5同構造。軍師検証結果直接反映(blt_125254)"
+  observations:
+    - "事実: rg 19件=軍師検証(30パターン)と一致。project_path.sh存在。auto-ops登録済み(家老確認)"
+    - "事実: q11 get_project_path消費者0件=書換え未実施を確認。Guard16テーブルにPJパス概念なし"
+    - "事実: assumptions trust=verified。全前提が一次情報確認済み"
+  origin: "[[cmd_3464_PJパス書換え]] -> [[軍師検証30パターン]] -> [[APPROVE]]"
+  causal_chain: "軍師検証→PJパス19ファイル穴特定→家老設計合意→将軍承認→cmd起票。複利の問い: PJパスGuard16追加=以降のPJパス直書き全てBLOCK=正の複利"
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "scripts/hooks変更あり(Guard16テーブル追加)。テーブル行追加のみで既存ロジック変更なし。前例(cmd_3463 AC4)と同構造"
+  ambiguity_points: none
+  brainwash_check: "19ファイル=軍師検証値と一致(rg実測)。AC3件カウント。numbers: 19ファイル(検証値突合)。simulation: AC1→2→3順序依存確認。前例cmd_3463 AC5で同構造成功実績"
+  timestamp: "2026-06-20T13:13:00"
+- cmd_id: cmd_karo_hotfix_gunshi_cold_gate_20260620
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  gate_result: CLEAR
+  changed_lines: 359
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "LGTM。冷え観点baseline gate修正。gate変更8行+bats350行。cold WARN 7→0件実測確認。bats 31/31 PASS。startup CRITICAL消失実測確認"
+  observations:
+    - "事実1: gate_gunshi_cs_checklist.sh変更+8/-1行。baseline_marker定数+start変数max条件追加のみ"
+    - "事実2: gate実行cold WARN before=7→after=0。startup CS観点PASS、3セッション連続CRITICAL消失"
+    - "事実3: bats 31/31 PASS。350行テスト追加で正常系+免除系両面検証済み"
+  origin: "[[軍師startup先送りCRITICAL]] -> [[冷え観点D0分析gate未反映]] -> [[cmd_karo_hotfix_gunshi_cold_gate_20260620_LGTM]]"
+  causal_chain: "冷え観点3セッション連続WARN→D0遡及分析→baselineエントリ作成→gate側baseline境界追加→歴史的WARN解消+将来検出維持。複利: baseline概念=将来遡及分析もbaseline更新で自動反映=正の複利"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "350/358行batsテスト。gate変更8行start変数max条件追加のみ。rollback=1commit revert"
+  step3_5_verified: true
+  brainwash_check: "cold WARN 7→0(実行確認)。bats 31/31(実行確認)。startup CRITICAL消失(実行確認)。gate変更8行/テスト350行。#2防止: 3スクリプト実行で動作検証済み"
+  hole_action: none
+  timestamp: "2026-06-20T13:30:00"
+- cmd_id: cmd_3465
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "APPROVE。Guard17 SSOT正本保護。フィールド×許可スクリプトのテーブル駆動。家老設計案準拠。AC分割配備済み(kagemaru=AC2, kotaro=AC3)"
+  observations:
+    - "事実1: Guard17現在実装はsettings.yaml限定(L542-548)。projects.yaml/cli_profiles.yaml未保護確認"
+    - "事実2: 家老設計案(blt_20260620_130157)がフィールド単位保護表を定義済み。cmd仕様と整合"
+    - "事実3: 忍者commit3件存在(作業進行中)。AC分割配備=kagemaru(AC2)+kotaro(AC3)"
+  origin: "[[殿指示_オントロジー]] -> [[SSOT供給者側保護]] -> [[cmd_3465_APPROVE]]"
+  causal_chain: "SSOT無保護→手動Edit破壊→全ヘルパー誤値→オントロジー崩壊。Guard17テーブル駆動=新概念追加時も自動保護=正の複利"
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "draft段階。Guard17テーブル駆動は既存settings.yaml保護パターンの横展開。フィールド限定で偽陽性リスク低"
+  ambiguity_points: none
+  brainwash_check: "AC3件カウント確認。Guard17 L542-548確認(grep実測)。家老設計案blt_20260620_130157確認(Read)。忍者commit3件存在確認(ac_physical_verify)。#2防止: 全前提を一次情報で検証済み"
+  timestamp: "2026-06-20T13:35:00"
