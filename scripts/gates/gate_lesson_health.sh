@@ -306,10 +306,20 @@ check_lesson_effectiveness() {
     else
         _active_pids=("${_target_pids[@]}")
     fi
+    # §3.2: 14PJ×awk→1回のawk+複数ファイル引数(ファイルI/O削減)
+    local _lesson_files=()
     for _active_pid in "${_active_pids[@]}"; do
         _active_lessons_file="$SCRIPT_DIR/projects/${_active_pid}/lessons.yaml"
-        [ -f "$_active_lessons_file" ] || continue
-        awk -v pid="$_active_pid" '
+        [ -f "$_active_lessons_file" ] && _lesson_files+=("$_active_lessons_file")
+    done
+    if [ ${#_lesson_files[@]} -gt 0 ]; then
+        awk '
+            BEGINFILE {
+                # ファイルパスからPJ IDを抽出: projects/{id}/lessons.yaml
+                pid = FILENAME
+                sub(/.*\/projects\//, "", pid)
+                sub(/\/lessons.*/, "", pid)
+            }
             function flush_current() {
                 if (id != "" && !deprecated) print pid "\t" id
             }
@@ -324,9 +334,9 @@ check_lesson_effectiveness() {
             }
             /^[[:space:]]+deprecated:[[:space:]]*true/ { deprecated = 1 }
             /^[[:space:]]+status:[[:space:]]*deprecated/ { deprecated = 1 }
-            END { flush_current() }
-        ' "$_active_lessons_file" >> "$active_file"
-    done
+            ENDFILE { flush_current(); id = "" }
+        ' "${_lesson_files[@]}" > "$active_file"
+    fi
 
     tac "$LESSON_IMPACT_FILE" | awk -F'\t' -v limit="$LESSON_EFFECT_WINDOW_CMDS" \
         -v project="$target_project" '
