@@ -1,11 +1,44 @@
 task:
-  _ac_task_id: cmd_3464_full
+  _ac_task_id: cmd_training_L1_report_write_tobisaru_20260620_normal
   _ac_worker_id: null
   _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3464 (deployed 2026-06-20T13:10:19). Read from the beginning.
   ac_assigned:
   - AC1
   - AC2
   - AC3
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  ac_version: b9649a49
+  acceptance_criteria:
+    AC1:
+      binary_checks:
+      - '改善点を3つ特定したか: yes/no'
+      - '各改善点に対象ファイル・根拠を添えたか: yes/no'
+      description: 指定ファイルの改善点を3つ特定し、根拠付きで報告する
+    AC2:
+      binary_checks:
+      - '最高インパクト1件を実装したか: yes/no'
+      - '対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加したか: yes/no'
+      - '追加した[[ファイル名]]リンクのリンク先ファイルから特定行を引用して報告したか: yes/no'
+      - '関連テストまたは明示的な検証を実行したか: yes/no'
+      description: 改善点のうち最高インパクト1件を実装し、対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加し、リンク先ファイルの特定行引用と必要な検証を報告する
+    AC3:
+      binary_checks:
+      - 'lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no'
+      - 'AC1/AC2/AC3/AC4/AC5のbinary_checksを全てyes/noで記入したか: yes/no'
+      - 'verdictがbinary_checksと矛盾していないか: yes/no'
+      description: lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる
+    AC4:
+      binary_checks:
+      - 'task.related_lessonsの注入教訓を1件以上参照したか: yes/no'
+      - '参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no'
+      description: 注入教訓から1件以上を作業判断に参照し、lessons_usefulに有用性と理由を記入する
+    AC5:
+      binary_checks:
+      - 'bash scripts/causal_backlink_counts.sh --zero --limit 20でincoming backlink baselineを確認したか: yes/no'
+      - 'bash scripts/markdown_link_counts.sh --top 20でbaselineを確認したか: yes/no'
+      - 'git diffで対象Markdownの孤立解消またはファイル間直接[[ファイル名]]リンク数増加を確認したか: yes/no'
+      description: 対象ファイルの現在のincoming backlink数とファイル間直接[[ファイル名]]リンク数baselineを計測し、変更後に孤立解消または直接リンク数増加を報告する
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -25,73 +58,87 @@ task:
   - 外部PJリポジトリ内の参照修正
   origin: '[[殿指示_オントロジー_20260620]] -> [[SSOT調査_cmd_3458_3461]] -> [[Phase2_3_SSOT是正_Guard汎化]]'
   parallel_ok: []
-  parent_cmd: cmd_3464
+  parent_cmd: cmd_training_L1_report_write_tobisaru_20260620
   project: infra
-  purpose: '殿指示(2026-06-20): オントロジーに戻ろう→行動せよ。cmd_3463でリポジトリパスのSSOT化完了。次の概念=PJパス(/mnt/c/Python_app/DM-signal等)の直書きを消費者書換え+Guard16テーブル追加で解消する。軍師+家老レビュー済み(blt_20260620_130005+130157+130244)'
+  purpose: 'L4修行: 指定ファイルの改善点3つを特定し、最高インパクト1件を実装し、[[リンク]]で知識ネットワークを育て、報告YAMLを一発PASS品質で完成させる'
   status: idle
   stop_for: []
   subtask_id: cmd_3464_full
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts
-  task_id: cmd_3464_full
+  target_path: docs/research/gunshi_idle_cold_finding_categories_retroactive_20260620.md
+  task_id: cmd_training_L1_report_write_tobisaru_20260620_normal
   task_type: full
   validation:
   - rg '/mnt/c/Python_app/' scripts/ .claude/ --type sh --type py
   - bats tests/unit/test_write_edit_combined_hooks.bats
   - python3 -c "import pathlib; p=pathlib.Path('docs/research/ssot-registry.md'); assert p.exists(); assert 'PJパス' in p.read_text()"
-  previous_failures:
-    attempt: 2
-    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; r…'
-    tried_approaches:
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; r…'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; r…'
-    - attempt: 2
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; r…'
   related_lessons:
-  - id: 'L554'
-    summary: 'test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/'
-    detail: 'test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/'
-  - id: 'L015'
-    summary: 'IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O'
-    detail: 'IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O'
-  - id: 'L641'
-    summary: 'Batsのloadで@testを含む断片を読ませると@test: command not foundで失敗する。小規模Bats統合で元ファイルごとのsetup/'
-    detail: 'Batsのloadで@testを含む断片を読ませると@test: command not foundで失敗する。小規模Bats統合で元ファイルごとのsetup/'
+  - id: 'L548'
+    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
+    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L540'
+    summary: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
+    detail: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  related_causal_links:
-  - "[[Guard16テーブル横展開]]"
-  - "[[PJパス直書き19ファイル]]"
-  - "[[cmd_3463_オントロジーPhase2_3]]"
+  semantic_concepts:
+  - "training_cycle_quality — 忍者修行サイクル品質:  context/training-cycle.md logs/gate_fire_log.yaml scripts/ninja_monitor.sh docs/research/gunshi-idle-S8-workaround-analysis.md — 軍師idle分析: 修行S8ワークアラウンド分析 docs/research/gunshi_idle_adversarial_cold_analysis_20260426.md — 軍師idle: adversarial cold視点分析(2026-04-26) docs/research/gunshi_idle_adversarial_cold_fix_20260430.md — 軍師idle: adversarial cold修正(2026-04-30) docs/research/gunshi_idle_adversarial_cold_fix_20260608.md — 軍師idle: adversarial cold修正v2(2026-06-08) docs/research/gunshi_idle_ambiguity_cold_analysis_20260426.md — 軍師idle: 曖昧cold視点分析(2026-04-26) docs/research/gunshi_idle_block_pattern_analysis_20260512.md — 軍師idle: BLOCKパターン分析(2026-05-12) docs/research/gunshi_idle_block_quality_audit_20260514.md — 軍師idle: BLOCK品質監査(2026-05-14) docs/research/gunshi_idle_cold_perspective_ambiguity_20260603.md — 軍師idle: cold視点曖昧性分析(2026-06-03) docs/research/gunshi_idle_cold_perspective_audit_20260515.md — 軍師idle: cold視点監査(2026-05-15) docs/research/gunshi_idle_cold_perspective_retroactive_20260605.md — 軍師idle: cold視点遡及分析(2026-06-05) docs/research/gunshi_idle_cold_perspective_retroactive_20260606.md — 軍師idle: cold視点遡及分析v2(2026-06-06) docs/research/gunshi_idle_cold_streak_analysis_20260428.md — 軍師idle: cold連続パターン分析(2026-04-28) docs/research/gunshi_idle_cold_streak_structural_20260429.md — 軍師idle: cold連続構造的原因(2026-04-29) docs/research/gunshi_idle_l2_completion_check_20260413.md — 軍師idle: L2完了チェック(2026-04-13) docs/research/gunshi_idle_l7_autopromote_nazenaze_20260521.md — 軍師idle: L7自動昇格なぜなぜ(2026-05-21) docs/research/gunshi_idle_l7_causal_network_learning_20260520.md — 軍師idle: L7因果ネットワーク学習設計(2026-05-20)"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L554: test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/
-      - L015: IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O
-      - L641: Batsのloadで@testを含む断片を読ませると@test: command not foundで失敗する。小規模Bats統合で元ファイルごとのsetup/
+      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L540: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
     ────────────────────────────────────────
     
     
-  memory_db_context:
-  - "2026-06-20T12:44:04+09:00 | 【INFOバッチ】 2026-06-20 12:30:00|cmd_3463"
-  - "2026-06-20T10:38:38+09:00 | 【INFOバッチ】 2026-06-20 10:30:19|cmd_karo_hotfix_context_dm_ops_ga102_20260620 2026-06-20 10:35:01|cmd_"
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'scripts/・.claude/配下のPJパス直書き(/mnt/c/Python_app/で始まる絶対パス)を全件get_project_path呼び出しまたは変数参照に書き換える'
-  - id: 'AC2'
-    checks:
-    - check: 'Guard16のテーブルにPJパス概念を追加し、PJパス直書きを含む.sh/.pyのWrite/EditをBLOCKする'
-  - id: 'AC3'
-    checks:
-    - check: 'docs/research/ssot-registry.mdのPJパス行を更新し、ヘルパー・Guard・消費者残数を最新値に反映する'
-  ac_version: bbadfcfb
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3464.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3464.yaml
+  report_filename: tobisaru_report_cmd_training_L1_report_write_tobisaru_20260620.yaml
+  report_path: queue/reports/tobisaru_report_cmd_training_L1_report_write_tobisaru_20260620.yaml
   bloom_level: 
-  deployed_at: "2026-06-20T13:11:04"
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 1
+    top_pattern: 'report_yaml_format(1件)'
+    breakdown: 'report_yaml_format(1件)'
+    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_fail_top3:
+    - pattern: 'bc_result_empty'
+      count: 150
+    - pattern: 'verdict_invalid'
+      count: 32
+    - pattern: 'lu_structure_error'
+      count: 22
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
+    gate_blocks:
+    - reason: 'binary_checks_fail'
+      count: 5
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+    - reason: 'report_format'
+      count: 2
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'lesson_candidate_fields_empty'
+      count: 1
+      hint: 'gate BLOCK: lesson_candidate_fields_empty'
+  deployed_at: "2026-06-20T14:41:40"

@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-20 cmd_3466 -->
+<!-- last_updated: 2026-06-20 cmd_3470 -->
 
 ## 2026-06-16
 

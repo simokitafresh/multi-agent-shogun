@@ -8394,3 +8394,66 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **then**: pre-commit/yaml_dump_scan_targetの例外とテストを同時に追加する
 - **because**: 文字列検出hookは正当な集中管理までBLOCKし、作業を止めるため
 - scripts/lib/yaml_atomic.pyのようなyaml.dump集中管理ファイルはGP-136のスキャン対象外にすべき。is_yaml_dump_scan_target()に明示的除外を追加しなければ新規追加時に必ずBLOCKされる。origin: [[GA-101]] -> [[hook例外漏れ]] -> [[pre-commit偽陽性BLOCK]]
+
+### L827: 新規libスクリプト追加時は対応hookテストのtest_select mappingを同時追加する
+- **日付**: 2026-06-20
+- **出典**: cmd_karo_hotfix_ga103_prepush_causal_index_20260620
+- **記録者**: hayate
+- **source**: gunshi_lgtm_lesson_candidate
+- **tags**: [test, hook, pre-push]
+- **subdomain**: infra
+- **target_files**: [scripts/test_select.sh,scripts/lib/*.sh,.claude/hooks/*.sh,tests/unit/test_write_edit_combined_hooks.bats]
+- **origin**: [[GA-103]] -> [[test_select_mapping_gap]] -> [[pre-push_hook_failure]]
+- **when**: 新規scripts/lib/*.shがhookやpre-push対象の挙動に関わる時
+- **how**: 対応するbats/pytestを追加した後、bash scripts/test_select.sh <new_file>で該当テストが選択されることを確認し、未選択ならscripts/test_select.shへmappingを追加する
+- **if**: 新規libスクリプトがhookの実行経路に入る
+- **then**: test_select mappingを同じcommitで追加する
+- **because**: 単体テストが存在してもpre-push選択層に繋がらないと回帰を検知できないため
+- scripts/lib/causal_index.sh追加後、Guard18の実装・テストは存在したがpre-push選択層にmappingがなく、artifactでno test mapping WARNが出た。新規libがhookの挙動に使われる場合、単体テスト追加だけでなくscripts/test_select.shの影響範囲mappingを同時に確認する。
+
+### L828: SKILL.md script参照同期は更新対象数とscript集合をreportに残す
+- **日付**: 2026-06-20
+- **出典**: cmd_karo_hotfix_skill_script_refs_20260620_1442
+- **記録者**: karo
+- **tags**: [skill, gate, report]
+- **subdomain**: infra
+- **target_files**: [skills/*/SKILL.md,scripts/gates/gate_skill_script_refs.sh,queue/reports/*]
+- **origin**: [[shogun_startup_escalation_20260620_143754]] -> [[SKILL.md_script_refs_WARN_3sessions]] -> [[skill_script_ref_sync]]
+- **when**: gate_skill_script_refs.shのWARNを解消する時
+- **how**: gate出力の走査SKILL数・script参照数・対象SKILL本数・対象script本数を報告YAMLのevidence/detailsへ数値で記録し、再実行後のWARN 0と比較する
+- gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象script本数を報告YAMLに残すと、次回の同種同期で取りこぼしを比較しやすい。
+
+### L829: docs/researchの軍師idle分析docは実ファイル名リンクを初期作成時に埋め込む
+- **日付**: 2026-06-20
+- **出典**: cmd_training_L1_report_write_tobisaru_20260620
+- **記録者**: karo
+- **tags**: [docs, research, obsidian, backlink]
+- **subdomain**: infra
+- **target_files**: [docs/research/*.md,scripts/causal_backlink_counts.sh,scripts/markdown_link_counts.sh]
+- **origin**: [[gunshi_idle_cold_finding_categories_retroactive_20260620]] -> [[概念リンクのみで実ファイル未接続]] -> [[0_backlinks孤立]]
+- **when**: docs/researchに軍師idle分析Markdownを新規作成する時
+- **how**: 因果リンクセクションへ概念リンクだけでなく、実在する[[deepdive_why_chain_20260321]]や[[gate_gunshi_cs_checklist]]等のファイル名リンクを追加し、markdown_link_countsまたはgrepで増加を確認する
+- gunshi idleが生成する分析Markdownは因果リンクセクションに概念リンクだけを記載し、実ファイル名リンクが欠如するとbacklink上で孤立する。初期生成テンプレートまたは作成手順で関連するdeepdive/gate/contextの実ファイル名リンクを最低1件入れる。
+
+### L830: Q6自動化ターゲットWARN解消にはファイルパスの明示が必要
+- **日付**: 2026-06-20
+- **出典**: cmd_karo_hotfix_shogun_startup_escalation_20260620_1436
+- **記録者**: karo
+- **tags**: [startup, gate, shogun, deepdive]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_shogun_startup.sh,projects/infra/lessons_shogun.yaml]
+- **origin**: [[将軍Q6回答_抽象的自動化ターゲット]] -> [[path_re抽出失敗_SKIP]] -> [[追体験自動化ターゲット実装証拠WARN_3セッション連続]]
+- **when**: 将軍startupのQ6自動化ターゲットWARNを調査または解消する時
+- **how**: Q6本文に scripts/gates/xxx.sh や context/xxx.md など実在ファイルパスを含め、gate_shogun_startup.shのtarget表示とgrep検証でSKIPしないことを確認する
+- gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdownテーブル等でパスが含まれないとSKIP→WARNになるため、Q6回答には検証対象ファイルパスを明示する。
+
+### L831: Commanderロールは忍者名SSOT確立時に意図的でなく後回しにされた: is_core_agentの二重実装が証拠
+- **日付**: 2026-06-20
+- **出典**: cmd_3470
+- **記録者**: saizo
+- **tags**: [infra,bash,yaml,inbox]
+- **target_files**: [docs/research/commander_role_ssot_analysis.md]
+- **origin**: [[cmd_3470]]
+- **when**: 未設定
+- **how**: 未設定
+- Guard16(cmd_3463)で忍者名SSOT確立時、Commanderロール(shogun/karo/gunshi)はsettings.yaml由来でないため意図的に除外されなかったが、is_core_agent()がinbox_write.sh内ローカルのまま残りagent_config.shと二重実装状態になった。SSOTパターン拡張時は必ず『同等機能の二重実装』をrg検索して検出せよ。発見したら即agent_config.sh統合を起票せよ。

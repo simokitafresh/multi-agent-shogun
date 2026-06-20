@@ -1,43 +1,98 @@
 task:
-  parent_cmd: 
-  task_id: cmd_3465_normal
-  task_type: implementation
-  project: infra
-  target_path: docs/research/ssot-registry.md
-  purpose: "cmd_3465 AC3: ssot-registry.mdにGuard17正本保護状態を追記し、cmd_3465を全AC充足へ進める"
-  command: |
-    queue/shogun_to_karo.yaml の cmd_3465 を正本として読み、AC3だけを実施せよ。
-    現状: 影丸がAC2(Guard17 bats追加+最小実装)を完了し、関連commitは
-    2cc8d6462 / d9d59c817 / 936c46406。batsは44/44 PASS、PI hook batsは12/12 PASS。
-    ただし docs/research/ssot-registry.md はまだGuard17正本保護状態が古く、
-    cmd_3465 AC3「各概念行にGuard17保護状態を追記」が未充足。
-
-    やること:
-    1. .claude/hooks/pre-write-edit-combined.sh のGuard17現物を読み、保護対象を確認する。
-       少なくとも config/projects.yaml:projects[].path と config/cli_profiles.yaml:profiles.*.launch_cmd が
-       Guard17で手動Edit/Write BLOCK対象になっていることを確認。
-    2. docs/research/ssot-registry.md の該当行(PJパス、launch_cmd、必要ならモデル名/既存settings系)の
-       Guard状態へGuard17正本保護の状態を追記する。
-    3. 変更後に rg でGuard17記載が入ったことを確認し、markdownの表を壊していないことを確認する。
-
-    注意:
-    - Guard実装やbatsを再修正しない。AC3のドキュメント反映だけ。
-    - 飛猿のcmd_3464が同じssot-registry.mdを触っている可能性があるため、作業前にgit statusと直近commitを確認し、既存変更を壊すな。
-  acceptance_criteria:
-    - id: AC3
-      description: "docs/research/ssot-registry.mdの各概念行にGuard17保護状態を追記する"
-      checks:
-        - check: "PJパス行にGuard16消費者直書き防止とGuard17 projects[].path正本保護の両方が記載されている"
-        - check: "launch_cmd行にGuard17 cli_profiles launch_cmd正本保護が記載されている"
-        - check: "rg 'Guard17|projects\\[\\]\\.path|profiles.*launch_cmd' docs/research/ssot-registry.md で確認できる"
+  _ac_task_id: cmd_3472_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3472 (deployed 2026-06-20T15:51:10). Read from the beginning.
+  ac_version: e41affad
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   not_in_scope:
-    - ".claude/hooks/pre-write-edit-combined.shの追加変更"
-    - "tests/unit/test_write_edit_combined_hooks.batsの追加変更"
-    - "cmd_3464のPJパス消費者書換え"
+  - 掲示板未確認14件の消化
+  - スキル別FAIL率/SKILL.md script参照/教訓健全度ALERTの全面解消
+  origin: '[[shogun_startup_escalation_20260620_1436]] -> [[deferred_warn_repeated]] -> [[karo_direct_hotfix_or_boundary]]'
+  parallel_ok: []
+  parent_cmd: cmd_3472
+  project: infra
+  purpose: '殿指示「遅いスクリプトはバグ」(2026-06-20)。軍師速度監査: ralph_loop_metrics.sh 14-20秒がTOP1。hook(17ms)の850倍。根因=for+glob+gawkループ'
+  status: assigned
+  stop_for: []
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts
+  task_id: cmd_3472_full
+  task_type: full
   validation:
-    - "rg -n 'Guard17|projects\\[\\]\\.path|profiles.*launch_cmd' docs/research/ssot-registry.md"
-    - "python3 - <<'PY' でmarkdown表の該当行数を確認"
-  status: idle
-  _ac_task_id: 
-  report_path: 
-  report_filename: 
+  - bash -n scripts/gates/gate_shogun_startup.sh
+  - bash scripts/gates/gate_shogun_startup.sh | tail -80
+  previous_failures:
+    attempt: 1
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'gate_shogun_startup.sh の追体験自動化ターゲットWARNを分析。根因=Q6自動化ターゲットにファイルパスが含まれない場合SKIP→WARN。WARNメッセージにファイルパス明示ガイダンスを追加し解消法を将軍に提示。将軍教訓active31件WARNは設計通り(バグなし)。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'gate_shogun_startup.sh の追体験自動化ターゲットWARNを分析。根因=Q6自動化ターゲットにファイルパスが含まれない場合SKIP→WARN。WARNメッセージにファイルパス明示ガイダンスを追加し解消法を将軍に提示。将軍教訓active31件WARNは設計通り(バグなし)。'
+  related_lessons:
+  - id: 'L798'
+    summary: 'projects/infra/lessons_shogun.yamlでLS052をLS048へsuperseded化してactive件数は31→30になったが、'
+    detail: 'projects/infra/lessons_shogun.yamlでLS052をLS048へsuperseded化してactive件数は31→30になったが、'
+  - id: 'L205'
+    summary: '2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.'
+    detail: '2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.'
+  - id: 'L831'
+    summary: 'Guard16(cmd_3463)で忍者名SSOT確立時、Commanderロール(shogun/karo/gunshi)はsettings.yaml由来でない'
+    detail: 'Guard16(cmd_3463)で忍者名SSOT確立時、Commanderロール(shogun/karo/gunshi)はsettings.yaml由来でない'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  semantic_concepts:
+  - "defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)"
+  related_causal_links:
+  - "[[ralph_loop_metrics高速化]]"
+  - "[[殿指示_遅いスクリプトはバグ]]"
+  - "[[軍師速度監査_14秒]]"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/training-cycle.md"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L798: projects/infra/lessons_shogun.yamlでLS052をLS048へsuperseded化してactive件数は31→30になったが、
+      - L205: 2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.
+      - L831: Guard16(cmd_3463)で忍者名SSOT確立時、Commanderロール(shogun/karo/gunshi)はsettings.yaml由来でない
+    ────────────────────────────────────────
+    
+    
+  memory_db_context:
+  - "2026-06-20T15:06:40+09:00 | 【INFOバッチ】 2026-06-20 15:00:01|cmd_karo_hotfix_shogun_startup_escalation_20260620_1436 2026-06-20 15:"
+  - '2026-06-20T14:15:29+09:00 | [MEM: memory_db ts=2026-06-20T03:26 "オントロジーの真髄は『概念Aが変わったら、Aに依存する全てが自動で変わる』だ"] **計測結果**: [[リンク]]1594行'
+  - "2026-06-20T14:26:48+09:00 | 殿、第2回網羅計測で**TOP3では見えなかった巨大バグ**を2つ発見した: 1. **ralph_loop_metrics.sh: 20.3秒** — 第1回TOP1(precheck 5.8秒)の"
+  - "2026-03-31T07:16:27+09:00 | 【家老】cmd_cycle_L4_073 初回配備開始 (title=修行L4-R13: ralph_loop_metrics.shの改善3点特定+1点実装, ninja=hanzo) '修行L4-R"
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'ralph_loop_metrics.shのfor+glob+gawkループをbatch処理に書き換え、実行時間を改善前より短縮する'
+  - id: 'AC2'
+    checks:
+    - check: '改善後のralph_loop_metrics.shが出力値を改善前と同一に保つことを確認する'
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_3472.yaml
+  report_path: queue/reports/kotaro_report_cmd_3472.yaml
+  bloom_level: 
+  deployed_at: "2026-06-20T15:53:14"

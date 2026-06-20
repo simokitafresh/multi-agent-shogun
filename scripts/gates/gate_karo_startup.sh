@@ -1718,45 +1718,30 @@ echo ""
 # --- ストリーク検出: 3セッション連続WARN/ALERT→BLOCK昇格 (L7横展開: gate_shogun_startup.sh準拠) ---
 if [ "${#alerts[@]}" -gt 0 ]; then
     mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
-    _streak_result=$(python3 - "$STARTUP_ALERT_HISTORY" "${STARTUP_WARN_STREAK_THRESHOLD}" "${alerts[@]}" <<'PY' 2>/dev/null || true
-import sys
-from pathlib import Path
-
-path = Path(sys.argv[1])
-try:
-    threshold = int(sys.argv[2])
-except ValueError:
-    threshold = 3
-current = [a.strip() for a in sys.argv[3:] if a.strip()]
-if not current or threshold <= 1:
-    sys.exit(0)
-
-runs = []
-if path.exists():
-    current_run = None
-    current_keys = set()
-    for raw in path.read_text(encoding="utf-8", errors="ignore").splitlines():
-        parts = raw.split("\t", 1)
-        if len(parts) != 2:
-            continue
-        run_id, key = parts
-        if current_run is None:
-            current_run = run_id
-        if run_id != current_run:
-            runs.append(current_keys)
-            current_run = run_id
-            current_keys = set()
-        if key != "__OK__":
-            current_keys.add(key)
-    if current_run is not None:
-        runs.append(current_keys)
-
-previous = runs[-(threshold - 1):]
-for key in current:
-    if len(previous) == threshold - 1 and all(key in run for run in previous):
-        print(key)
-PY
-)
+    # §3.2: python3→awk置換(~650ms削減)。alert文字列は空白を含むためtmp経由で1行1alertにする。
+    _current_alerts_file="$_TMP_D/current_alerts"
+    printf '%s\n' "${alerts[@]}" > "$_current_alerts_file"
+    _streak_result=$(awk -F'\t' -v threshold="$STARTUP_WARN_STREAK_THRESHOLD" '
+    FNR == NR {
+        if ($0 != "") current[$0] = 1
+        next
+    }
+    NF == 2 && $2 != "__OK__" {
+        if ($1 != prev_run) { if (prev_run != "") n_runs++; prev_run = $1 }
+        run_keys[n_runs, $2] = 1
+    }
+    END {
+        if (prev_run != "") n_runs++
+        start = n_runs - (threshold - 1)
+        if (start < 0) start = 0
+        for (k in current) {
+            streak = 0
+            for (r = start; r < n_runs; r++) {
+                if ((r, k) in run_keys) streak++
+            }
+            if (streak == threshold - 1) print k
+        }
+    }' "$_current_alerts_file" "$STARTUP_ALERT_HISTORY" 2>/dev/null || true)
     if [ -n "$_streak_result" ]; then
         echo "■ ★★★ CRITICAL: startup WARN/ALERT連続出現 ★★★"
         while IFS= read -r _streak_key; do

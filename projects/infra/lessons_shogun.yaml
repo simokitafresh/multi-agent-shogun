@@ -217,6 +217,7 @@ lessons:
     復帰手順スキップ=マーカー+hook。hookラベル+引用マーク=awk自動付与。
     watcher 2プロセス/agentは正常(親子関係)。pgrep -cfで重複と誤判断→kill→全滅。restart_watchers.shの親子構造を確認せよ(cmd_2924)
     $(</dev/stdin)はWSL2で/dev/stdin不在時crash→全hookでcat 2>/dev/null使用(cmd_3207)。関数追加時はテストのmock/export -fリスト確認必須(cmd_3207→CI RED)
+    model_detect.sh tail -1バグ(LS070吸収2026-06-20): ログ内他CLIバナー誤検出→head -1修正。試行錯誤=確認不足のバグ(殿指摘)
   source_ids: [LS033, LS037, LS074, LS084, LS086, LS087, LS051]
   created_at: '2026-04-24'
   automated: true
@@ -612,12 +613,5 @@ lessons:
   created_at: '2026-06-20'
   automated: true
   enforcement: 'type=hook; file=.claude/hooks/pre-write-edit-combined.sh Guard15+pre-bash-combined.sh Guard13; pattern=殿裁定.*殿の発言帰属'
-- id: 'LS070'
-  title: 'model_detect.sh tail -1バグ — ログ内他CLIバナー誤検出+試行錯誤はバグ'
-  origin: '[[reset_layout_cli_detect_miss]] -> [[ninja_monitor_model_overwrite]] -> [[model_detect_tail1_bug]] -> [[殿指摘_試行錯誤はバグ]]'
-  detail: '2026-06-20: (1)model_detect.sh L47 tail -1が最後のバナーマッチを取り、将軍pane内のsonnet CLIログバナーを誤検出→pane枠線にSonnet表示。head -1に修正(最初=自分の起動バナー)。(2)ninja_monitor.sh内のcapture-pane検出コードは副次パスだが同じバグがあり修正(末尾10行限定→全スクロールバック+バナー特有文字)。(3)reset_layout.sh CLI検出: pane_pid自体のcomm未確認→動作中sonnet忍者3名にCLI起動送信→作業中断。(4)試行錯誤の連鎖: 末尾10行→殿「見逃すのでは」→末尾20行→殿「codex末尾にモデル名出てないか」→バナー全検索→殿「解決してるのか」→check_model_names別パス発見→model_detect.sh tail -1が真犯人。確認せずに修正→再発→殿指摘で真因到達。試行錯誤=確認不足のバグ'
-  source_cmd: 'session_20260620'
-  created_at: '2026-06-20'
-  automated: true
-  enforcement: 'type=fix; file=scripts/lib/model_detect.sh; pattern=head -1'
+# LS070: superseded by LS-A11 (model_detect tail→head = infra修正実績。2026-06-20統合)
 # LS071: superseded by LS-A04(42) (YAML危険文字=cmdテンプレートルール。Guard 0eで自動BLOCK。2026-06-20統合)
