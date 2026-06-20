@@ -38,6 +38,9 @@ lessons:
   - scripts/gates/gate_context_freshness.sh
   - scripts/context_freshness_check.sh
   origin: '[[GA-099]] -> [[context更新トリガー未強制]] -> [[context_freshness ALERT残存]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L824
   title: startup WARN測定は解消行動への接続まで検証せよ
   summary: 3セッション連続WARNを検出しても、cmd起票済みID・action_required解消・実装証拠へ接続しないと同じWARNを再生産する。次回追加すべきチェ
@@ -1896,6 +1899,9 @@ lessons:
   - scripts/gates/gate_karo_startup.sh
   - tests/unit/test_cmd_complete_gate.bats
   origin: '[[cmd_3047]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L701
   title: if条件失敗後のrc取得はelse内で行う
   summary: bashで `if parsed=$(cmd); then ... fi; rc=$?` と書くと、elseなしif文全体の終了ステータスが0になり、cmd失敗

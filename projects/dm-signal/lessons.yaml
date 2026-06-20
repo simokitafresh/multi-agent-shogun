@@ -815,6 +815,9 @@ lessons:
   - frontend/components/monthly-trade-table.tsx
   - frontend/lib/monthly-trade-display.ts
   origin: '[[cmd_2451]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L701
   title: fullrecalculate後は非対象PFのmonthly_returns件数diffを必ず復元判断まで行う
   summary: cmd_2450で秘奥義4体登録後にfullrecalculateを実行したところ、対象外20体のmonthly_returnsが0行から3741行生成され、A
