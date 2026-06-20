@@ -242,3 +242,55 @@ _run_post() {
     [[ "$output" == *'Read toolで全文読み'* ]]
     [[ "$output" == *'指示系'* ]]
 }
+
+@test "Guard 16: 忍者名3件直書きでBLOCKする" {
+    local sh_file="$TMP_DIR/test_agents.sh"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"TARGETS=\"hayate hanzo saizo\"\necho $TARGETS\n"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'BLOCK: 操作的オントロジー違反'* ]]
+    [[ "$output" == *'エージェント名'* ]]
+}
+
+@test "Guard 16: 忍者名2件は許可する" {
+    local sh_file="$TMP_DIR/test_agents2.sh"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"echo hayate hanzo\n"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'BLOCK: 操作的オントロジー違反'* ]]
+}
+
+@test "Guard 16: get_ninja_names使用で忍者名直書きを許可する" {
+    local sh_file="$TMP_DIR/test_agents3.sh"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"names=$(get_ninja_names)\nfor n in hayate hanzo saizo kotaro tobisaru kagemaru; do echo $n; done\n"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'BLOCK: 操作的オントロジー違反'* ]]
+}
+
+@test "Guard 16: repo絶対パス直書きでBLOCKする" {
+    local sh_file="$TMP_DIR/test_repo_path.sh"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"REPO='"$PROJECT_ROOT"'/scripts/lib/something.sh\necho $REPO\n"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'BLOCK: 操作的オントロジー違反'* ]]
+    [[ "$output" == *'repoルートパス'* ]]
+}
+
+@test "Guard 16: SCRIPT_DIR使用でrepoパス直書きを許可する" {
+    local sh_file="$TMP_DIR/test_repo_ok.sh"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"REPO=$SCRIPT_DIR/scripts/lib/something.sh\necho '"$PROJECT_ROOT"'\n"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'BLOCK: 操作的オントロジー違反'* ]]
+}
+
+@test "Guard 16: user-home絶対パス直書きでBLOCKする" {
+    local sh_file="$TMP_DIR/test_home_path.sh"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"BIN='"$HOME"'/bin/claude\necho $BIN\n"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'BLOCK: 操作的オントロジー違反'* ]]
+    [[ "$output" == *'user-homeパス'* ]]
+}
+
+@test "Guard 16: HOME変数使用でhomeパス直書きを許可する" {
+    local sh_file="$TMP_DIR/test_home_ok.sh"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"BIN=$HOME/bin/claude\necho '"$HOME"'/bin\n"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'BLOCK: 操作的オントロジー違反'* ]]
+}

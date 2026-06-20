@@ -549,26 +549,83 @@ fi
 
 # === Guard 16: 操作的オントロジー — 定義元(SSOT)がある値の直書き検出 (2026-06-20) ===
 # 殿裁定: オントロジー=三層記憶と同列の前提。定義が1箇所に集約され変更が自動伝播する。しないのはバグ
-# 対象: agent_config.shが提供するリスト(忍者名/全エージェント名)の直書き
-# 許容: get_ninja_names/get_all_agents/get_allowed_targets/os.environ.get/${:-}経由の参照
+# テーブル駆動: 新概念追加 = 5並列配列に1要素追加するだけ
+# 列: _G16_CONCEPTS / _G16_MIN_COUNTS / _G16_EXEMPTS / _G16_FNS / _G16_SSOTS
 if [[ "$file_path" =~ \.(sh|py|md)$ ]]; then
-    _write_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // .content // ""' 2>/dev/null)" || true
-    if [ -n "$_write_content" ]; then
-        if ! printf '%s' "$_write_content" | grep -qE 'get_ninja_names|get_all_agents|get_allowed_targets|os\.environ\.get|\$\{.*:-'; then
-            _onto_names="$(source "$SCRIPT_DIR/scripts/lib/agent_config.sh" 2>/dev/null && get_ninja_names 2>/dev/null)" || true
-            if [ -n "$_onto_names" ]; then
-                _onto_count=0
-                for _nn in $_onto_names; do
-                    printf '%s' "$_write_content" | grep -q "$_nn" && ((_onto_count++)) || true
-                done
-                if [ "$_onto_count" -ge 3 ]; then
-                    echo "BLOCK: 操作的オントロジー違反 — エージェント名${_onto_count}名を直書き。agent_config.shのget_ninja_names()/get_all_agents()を使え。定義元=config/settings.yaml。" >&2
-                    exit 2
-                fi
+    _g16_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // .content // ""' 2>/dev/null)" || true
+    if [ -n "$_g16_content" ]; then
+
+        # ── 検出関数 (content=$1, stdout=count) ────────────────────────────────
+        _g16_count_agent_names() {
+            local _names _cnt=0 _n
+            _names="$(source "$SCRIPT_DIR/scripts/lib/agent_config.sh" 2>/dev/null \
+                && get_ninja_names 2>/dev/null)" || true
+            [ -n "$_names" ] || { printf '0'; return; }
+            for _n in $_names; do
+                printf '%s' "$1" | grep -q "$_n" && ((_cnt++)) || true
+            done
+            printf '%s' "$_cnt"
+        }
+        _g16_count_repo_path() {
+            local _rp="$SCRIPT_DIR"
+            [[ -n "$_rp" ]] || { printf '0'; return; }
+            printf '%s' "$1" | grep -cF "$_rp" 2>/dev/null || printf '0'
+        }
+        _g16_count_home_path() {
+            local _hp="${HOME:-}"
+            [[ -n "$_hp" ]] || { printf '0'; return; }
+            printf '%s' "$1" | grep -cF "$_hp" 2>/dev/null || printf '0'
+        }
+        # ───────────────────────────────────────────────────────────────────────
+
+        # ── オントロジーテーブル (並列配列) ────────────────────────────────────
+        # 新概念追加: 以下5配列に対応インデックスで1要素ずつ追加するだけ
+        # _G16_CONCEPTS    : 概念ラベル (エラーメッセージに使用)
+        # _G16_MIN_COUNTS  : 直書き検出の最小閾値
+        # _G16_EXEMPTS     : 免除パターン (ERE; マッチすれば該当概念スキップ)
+        # _G16_FNS         : 検出関数名 (content=$1 でcount返す)
+        # _G16_SSOTS       : SSOTポインタ (エラーメッセージ内)
+        _G16_CONCEPTS=( "エージェント名" "repoルートパス" "user-homeパス" )
+        _G16_MIN_COUNTS=( 3 1 1 )
+        _G16_EXEMPTS=(
+            'get_ninja_names|get_all_agents|get_allowed_targets|os\.environ\.get|\$\{.*:-'
+            'SCRIPT_DIR|repo_root|git rev-parse'
+            '\$HOME|\$\{HOME\}|~/'
+        )
+        _G16_FNS=( "_g16_count_agent_names" "_g16_count_repo_path" "_g16_count_home_path" )
+        _G16_SSOTS=(
+            'config/settings.yaml → agent_config.sh get_ninja_names()/get_all_agents()'
+            'scripts/lib/repo_root.sh → repo_root()'
+            '$HOME 環境変数'
+        )
+        # ───────────────────────────────────────────────────────────────────────
+
+        _g16_i=0
+        for _g16_concept in "${_G16_CONCEPTS[@]}"; do
+            _g16_min="${_G16_MIN_COUNTS[$_g16_i]}"
+            _g16_exempt="${_G16_EXEMPTS[$_g16_i]}"
+            _g16_fn="${_G16_FNS[$_g16_i]}"
+            _g16_ssot="${_G16_SSOTS[$_g16_i]}"
+            ((_g16_i++)) || true
+
+            # 免除パターンにマッチすれば該当概念はスキップ
+            if printf '%s' "$_g16_content" | grep -qE "$_g16_exempt"; then
+                continue
             fi
-        fi
+
+            # 検出関数で直書き件数を取得
+            _g16_cnt="$("$_g16_fn" "$_g16_content")" || _g16_cnt=0
+
+            if [ "${_g16_cnt:-0}" -ge "$_g16_min" ]; then
+                echo "BLOCK: 操作的オントロジー違反 — ${_g16_concept}${_g16_cnt}件を直書き。SSOT=${_g16_ssot} を使え。" >&2
+                exit 2
+            fi
+        done
+
+        unset _g16_content _g16_concept _g16_min _g16_exempt _g16_fn _g16_ssot _g16_cnt _g16_i
+        unset _G16_CONCEPTS _G16_MIN_COUNTS _G16_EXEMPTS _G16_FNS _G16_SSOTS
+        unset -f _g16_count_agent_names _g16_count_repo_path _g16_count_home_path
     fi
-    unset _write_content _onto_count _onto_names
 fi
 
 exit 0
