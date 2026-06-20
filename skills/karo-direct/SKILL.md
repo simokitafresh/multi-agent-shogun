@@ -136,3 +136,7 @@ Script refs verified: 2026-06-10. `deploy_task.sh` は(1)TRIGGER cross-validatio
 - [[cmd-complete]] — cmd完了処理（GATE CLEAR後の全ステップ自動化）
 - [[reset-layout]] — エージェントウィンドウのレイアウト復元（ペイン消失時）
 - [[cdp-browse]] — ブラウザ自動化スキル（hotfix作業でウェブ確認が必要な場合）
+
+Script refs verified: 2026-06-20 3421a1dc9+48204a464+782be65a6. `deploy_task.sh` 直近変更は教訓matching scoring調整、操作的オントロジー/targetフィルタ/スキル強制、PJパスSSOT化。`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>` の配備契約、通知、report template生成は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->

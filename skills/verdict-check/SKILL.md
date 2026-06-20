@@ -151,3 +151,7 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `gate_report_format.sh` の現行契約を再確認。binary_checks未記入または欠落時はverdict自動導出できずBLOCKするため、verdict編集ではなくbinary_checksを修正する。
 Script refs verified: 2026-06-10 6bf403d2c. `gate_report_format.sh` はauto-commit contamination check(cmd_3264)を追加。bc:commit=yes時にtarget_path配下の未commit変更・auto-commit巻込みをWARN検出する。verdict自動導出(binary_checks→PASS/FAIL上書き)の契約は変更なし。verdict-checkの手順変更は不要。
+
+Script refs verified: 2026-06-20 48204a464. `gate_report_format.sh` 直近変更は操作的オントロジー/targetフィルタ/スキル強制の内部検査強化。binary_checksからverdictを自動導出する契約と、未記入/FILL_THIS/不正値BLOCKは変更なし。
+
+<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->

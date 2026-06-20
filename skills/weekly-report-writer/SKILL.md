@@ -500,3 +500,7 @@ Script refs verified: 2026-06-10 e81c63081+ba757a1f7+14aa13952. `note_draft.sh` 
 
 - [[monthly-report-writer]] — 月次レポート（週報の月間版。より詳細な長期パフォーマンス分析含む）
 - [[x-research]] — X/Twitter検索調査のみ実行する場合（週報生成を伴わない単体調査）
+
+Script refs verified: 2026-06-20 782be65a6. `note_draft.sh` 直近変更はPJパス直書き除去でget_project_pathを使う内部SSOT化。週報Markdown生成後の `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"` 呼び出し契約は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->

@@ -170,3 +170,7 @@ FoFのholding_signal同一判定は展開後ticker×weightで行う(L703)。
 - DB操作は直列(並列タイムアウト実証済み)
 
 <!-- script_refs_checked_at: 2026-06-07T18:52:00+09:00 -->
+
+Script refs verified: 2026-06-20 782be65a6. `parity_check.sh` 直近変更はPJパス直書き除去でget_project_path経由へ置換した内部SSOT化。PF登録後のパリティ検証手順・ゼロ差分要求・直列DB操作の契約変更なし。
+
+<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->

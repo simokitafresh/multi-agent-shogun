@@ -65,3 +65,7 @@ Script refs verified: 2026-06-05 cmd_3146/cmd_3144. `deploy_task.sh` はlesson i
 Script refs verified: 2026-06-08 ceb10419a cmd_3231. `deploy_task.sh` はtarget_pathなし時にMIN_KEYWORD_SCOREを8へ引上げ、tag fallbackを無効化(低関連教訓のNOT_USEFUL量産防止)。注入精度の変更であり、偵察2名配備の手順変更なし。
 Script refs verified: 2026-06-09 e72eb99d4+3de0d29cc. `deploy_task.sh` はinject_semantic_conceptsで推薦ログにninja_nameフィールドを記録(precision照合キー修正)。`yaml_field_set.sh` はskip_childrenがYAMLリスト要素を見逃すバグ修正。いずれも内部変更であり、偵察2名配備の手順変更なし。
 Script refs verified: 2026-06-10 d38c43e8c+9c6df92d8+a9dc1b7c8. `deploy_task.sh` はlesson_impact.tsvの空行混入防御(CR汚染対策)、boost適用にkeyword_score>0必須化+flow-style deprecation対応、TRIGGER cross-validation追加(スキル推薦偽陽性防止)。全て内部注入精度/データ整合性の変更であり、偵察2名配備の手順変更なし。
+
+Script refs verified: 2026-06-20 3421a1dc9+48204a464+782be65a6. `deploy_task.sh` 直近変更は教訓matching scoring調整、操作的オントロジー/targetフィルタ/スキル強制、PJパスSSOT化。1人目正規配備 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `--yaml <file> <ninja2>` の契約は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->

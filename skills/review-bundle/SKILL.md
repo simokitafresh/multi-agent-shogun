@@ -178,3 +178,7 @@ BULLETIN_NOTIFY=shogun,karo bash scripts/bulletin_write.sh gunshi "cmd_<cmd_id> 
 - Script refs verified: 2026-05-22 cmd_2952. `bulletin_write.sh` は明示 `posted_by` 形式を推奨し、旧形式(content先頭)も互換維持する。`requires_confirmation` / `BULLETIN_NOTIFY` のCSV正規化、不正agent名ERROR、`action_type=info|action_required` 制約、DEDUP、全文inbox通知、archive自動実行を前提にする。
 
 Script refs verified: 2026-06-03 cmd_3144. `bulletin_write.sh` 直近変更(c356e7ae)はDB insert同期/非同期切替(内部のみ)。`inbox_write.sh` 直近変更(0ec9b1fc)はreport_done typeのhook対象追加(Step 3のreview_feedback送信には影響なし)。`yaml_field_set.sh` 直近変更(670918b3)はsingle-quoteエスケープ修正(内部バグフィックス)。SKILL.md記載の手順は現行と一致。
+
+Script refs verified: 2026-06-20 48204a464. `bulletin_write.sh`/`inbox_write.sh` 直近変更は操作的オントロジー、targetフィルタ、スキル強制の内部反映。review_log記録後の掲示板投稿・家老通知の呼び出し契約は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->

@@ -27,6 +27,10 @@ allowed-tools:
 
 <!-- script_refs_checked_at: 2026-06-16T03:15:00+0900 -->
 
+Script refs verified: 2026-06-20 2088b6421. `gate_lesson_health.sh` 直近変更はinfra教訓のcross-project注入をuseful率計測へ正しく反映する修正。棚卸し時のlesson health確認・ALERT時のlesson-sort連携判断への契約変更なし。
+
+<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->
+
 # /shogun-teire — 知識基盤の定期棚卸し（8観点監査）
 
 7層知識基盤を横断的に監査し、衛生状態・整合性・鮮度を検査する。殿の承認なしに変更を実行してはならない。

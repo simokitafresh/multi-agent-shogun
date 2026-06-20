@@ -182,3 +182,7 @@ PJフォーカスを {old-name} → {new-name} に切り替えました。
 3. 切替は殿のみ — 将軍CLI（殿の入力口）でのみ発動する構造的制限
 4. 未完了タスク警告 — ブロックせず警告のみ（殿が判断する）
 5. 所要時間: 1-2分（登録済みPJ）/ 3-5分（新規オンボーディング込み）
+
+Script refs verified: 2026-06-20 677d0c7f9. `check_project_codd_ready.sh` 直近変更はCodd/nodeのhome直書き除去でSSOT化した内部修正。project切替時のCodd readiness確認契約は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->

@@ -26,6 +26,10 @@ allowed-tools:
 
 <!-- script_refs_checked_at: 2026-06-16T03:15:00+0900 -->
 
+Script refs verified: 2026-06-20 2088b6421+3867e2be2. `gate_lesson_health.sh` 直近変更はinfra教訓のcross-project注入をuseful率計測へ正しく反映する修正、`memory_db_query.sh` 直近変更はmodel_detect/SSOT検出/skill_routing三層貫通等の内部改善。dreamの読取・棚卸し・MCP操作手順への契約変更なし。
+
+<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->
+
 # /dream — Memory Consolidation (5 Phase)
 
 **三層記憶(記憶DB+セマンティック+Obsidian) + MEMORY.md + memory/*.md** の統合・整理を行う。REM睡眠に倣い、知識基盤を強化する。

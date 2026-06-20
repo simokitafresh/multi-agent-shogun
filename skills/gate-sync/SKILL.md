@@ -69,3 +69,7 @@ BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "gate予測精度�
 
 Script refs verified: 2026-06-09 cmd_karo_skill_update_batch1. `yaml_field_set.sh` 直近変更(3de0d29c)は_yaml_field_set_apply_rootのskip_children条件修正(YAMLリスト要素`- id:`等の子要素認識漏れ修正)。内部バグフィックスのみ、インターフェース変更なし。本スキルはroot操作を使わないため直接影響なし。flock+readback検証の契約は維持。
 Script refs verified: 2026-06-07 cmd_3206. `yaml_field_set.sh` はlock path純bash化で高速化されたが、flock+root fallback+readback検証の契約は維持。`bulletin_write.sh` の明示posted_by形式と通知先CSV仕様も変更なし。SKILL.md記載のreview_log更新と掲示板通知手順は現行と一致。
+
+Script refs verified: 2026-06-20 48204a464. `bulletin_write.sh` 直近変更は操作的オントロジー/targetフィルタ/スキル強制の内部反映で、`bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]` の掲示板投稿契約は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->
