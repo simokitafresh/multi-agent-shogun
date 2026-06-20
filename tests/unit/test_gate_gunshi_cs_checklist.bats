@@ -396,6 +396,356 @@ YAML
     [[ "$output" != *"冷え観点がfinding_categoriesに未反映"* ]]
 }
 
+@test "retroactive cold baseline suppresses only historical warnings" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_baseline_01
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_baseline_02
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_baseline_03
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_baseline_04
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_baseline_05
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_baseline_06
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_baseline_07
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_baseline_08
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_baseline_09
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_baseline_10
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_baseline_11
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: idle_cold_finding_categories_retroactive_20260620
+  review_type: self_study
+  findings_summary: "冷え観点(numbers/simulation)遡及分析済み"
+  brainwash_check: "18件中12件(67%)が惰性省略"
+  cs_checklist:
+    CS1: "OK"
+  causal_chain: "過去冷え観点WARN→遡及分析→baseline"
+  operational_simulation: "以後のレビューだけを検出対象にする"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"冷え観点がfinding_categoriesに未反映"* ]]
+}
+
+@test "future cold violation after retroactive baseline still warns" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_future_01
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_future_02
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_future_03
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_future_04
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_future_05
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_future_06
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_future_07
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_future_08
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_future_09
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_future_10
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: idle_cold_finding_categories_retroactive_20260620
+  review_type: self_study
+  findings_summary: "冷え観点(numbers/simulation)遡及分析済み"
+  brainwash_check: "18件中12件(67%)が惰性省略"
+  cs_checklist:
+    CS1: "OK"
+  causal_chain: "過去冷え観点WARN→遡及分析→baseline"
+  operational_simulation: "以後のレビューだけを検出対象にする"
+- cmd_id: cmd_future_11
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"cmd_future_11: cold_categories="* ]]
+    [[ "$output" == *"numbers"* ]]
+    [[ "$output" == *"simulation"* ]]
+}
+
+@test "future cold category exclusion reason in brainwash_check is accepted" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_na_01
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_na_02
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_na_03
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_na_04
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_na_05
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_na_06
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_na_07
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_na_08
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_na_09
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: cmd_na_10
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+- cmd_id: idle_cold_finding_categories_retroactive_20260620
+  review_type: self_study
+  findings_summary: "冷え観点(numbers/simulation)遡及分析済み"
+  brainwash_check: "18件中12件(67%)が惰性省略"
+  cs_checklist:
+    CS1: "OK"
+  causal_chain: "過去冷え観点WARN→遡及分析→baseline"
+  operational_simulation: "以後のレビューだけを検出対象にする"
+- cmd_id: cmd_na_11
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, premortem]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認 numbers:N/A simulation:N/A north_star:N/A ambiguity:N/A adversarial:N/A"
+  observations:
+    - "事実1"
+    - "事実2"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"冷え観点がfinding_categoriesに未反映"* ]]
+}
+
 @test "adversarial cold category reaches threshold and exits ERROR" {
     export GUNSHI_CS_ADVERSARIAL_STREAK_CACHE="$TEST_TMPDIR/adversarial_streak.cache"
     export GUNSHI_CS_ADVERSARIAL_STREAK_THRESHOLD=5

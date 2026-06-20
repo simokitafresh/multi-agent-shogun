@@ -335,6 +335,7 @@ catalog = [
 entries = []
 current = None
 capture_categories = False
+baseline_marker = "idle_cold_finding_categories_retroactive_20260620"
 
 def clean(value):
     return value.strip().strip("\"'")
@@ -378,7 +379,13 @@ with open(path, encoding="utf-8") as fh:
 
 flush()
 reviews = [e for e in entries if e["review_type"] in ("draft", "report")]
-start = max(0, len(reviews) - 20)
+baseline_index = -1
+for idx, entry in enumerate(entries):
+    if entry["id"] == baseline_marker:
+        reviews_before_baseline = [e for e in entries[:idx] if e["review_type"] in ("draft", "report")]
+        baseline_index = len(reviews_before_baseline) - 1
+        break
+start = max(0, len(reviews) - 20, baseline_index + 1)
 warnings = []
 for idx in range(start, len(reviews)):
     entry = reviews[idx]
