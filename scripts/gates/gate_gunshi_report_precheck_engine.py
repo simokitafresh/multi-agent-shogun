@@ -284,6 +284,49 @@ def main():
 
     result['SAME_CMD_NINJAS'] = ' '.join(same_cmd_ninjas_parts)
 
+    # ── 3b. adversarial/blast_radius/task_type統合判定 ────────────────────
+    # §3.2拡張: SG-PRE15.5/PRE16/PRE18の6回python3 -c → engine統合
+    HIGH_BLAST = (
+        'deploy_task.sh', 'CLAUDE.md', 'ninja_monitor.sh',
+        'inbox_write.sh', 'cmd_complete_gate.sh',
+    )
+    target_path = ''
+    if task_file and os.path.exists(task_file):
+        try:
+            target_path = str(task.get('target_path', ''))
+        except Exception:
+            pass
+    # 旧条件互換: 'scripts/' in target_path で自動化系を拾う(endswith不要)
+    AUTO_KEYWORDS = ('scripts/', '.sh', 'gate_', 'hook_', 'monitor', 'cron', 'cleanup')
+    adv_target = any(k in target_path for k in AUTO_KEYWORDS) if target_path else False
+    adv_fm_scripts = any(
+        any(k in p for k in ('scripts/', '.sh', 'gate_', 'hook_', 'monitor', 'cron', 'cleanup'))
+        for p in fm_paths
+    )
+    adv_blast = any(any(p.endswith(hb) for hb in HIGH_BLAST) for p in fm_paths)
+    # 旧条件互換: task_type in (impl, fix) も条件に含める
+    task_type_str = ''
+    if task_file and os.path.exists(task_file):
+        try:
+            task_type_str = str(task.get('task_type', ''))
+        except Exception:
+            pass
+    task_type_be = ('backend/' in target_path and task_type_str in ('impl', 'fix')) if target_path else False
+
+    # golden/snapshot参照検出
+    has_golden = False
+    if task_type_be:
+        import re
+        texts = str((report.get('result') or {}).get('summary', '')) + str((report.get('result') or {}).get('details', ''))
+        has_golden = bool(re.search(r'(golden|snapshot|ゴールデン|パリティ).{0,30}(確認|検証|比較|一致|PASS)', texts, re.IGNORECASE))
+
+    result['ADV_TARGET_MATCH'] = '1' if adv_target else '0'
+    result['ADV_FM_SCRIPTS'] = '1' if adv_fm_scripts else '0'
+    result['ADV_BLAST_HIGH'] = '1' if adv_blast else '0'
+    result['TASK_TYPE_BE'] = '1' if task_type_be else '0'
+    result['HAS_GOLDEN_REF'] = '1' if has_golden else '0'
+    result['TARGET_PATH'] = target_path
+
     # ── 4. GATE_PREDICTION自動計算 ───────────────────────────────────────
     # SG7 gate_predictionをエンジンが自動決定。軍師の判断を介在させない(Phase 4)
     gate_pred = 'CLEAR'
