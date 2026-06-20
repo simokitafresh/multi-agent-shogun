@@ -139,6 +139,9 @@ lessons:
   - backend/app/services/pipeline/blocks/__init__.py
   - backend/app/jobs/shared.py
   origin: '[[cmd_3384]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L744
   title: API境界の文字列は4層（BE enum/FE型/DB JSON/script JSON）で同時管理が必要
   summary: 'TrendReversalFilterのリネーム調査で判明: API境界の文字列値はBE enum(pipeline.py)+FE型(pipeline.ts)+'
@@ -1396,6 +1399,9 @@ lessons:
   - scripts/analysis/gs_grid_robustness.py
   - outputs/robustness/20260428/L0/
   origin: '[[cmd_2357]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L666
   title: ACはWHAT(二値判定)のみ記載。HOW(検証手法)を混入させるな
   summary: ACには達成基準(WHAT=二値で判定できる完了条件)のみ書く。HOW(具体的な検証手法・実装方法)はtask YAML分解時に家老が決める領域。軍師のcmdレ
@@ -1642,6 +1648,9 @@ lessons:
   target_files:
   - tasks/lessons.md
   origin: '[[cmd_2288]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L650
   title: perf_measure.pyはviewer認証専用。admin計測には別手順が必要
   summary: perf_measure.pyのrequires_viewer_auth判定はadmin以外の全ページでviewer認証を自動実行する。L484(admin→v
@@ -1971,6 +1980,9 @@ lessons:
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.csv
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.meta.yaml
   origin: '[[cmd_1899]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L628
   title: 'パリティスクリプトtarget_date: productionの日付定義と揃えよ'
   summary: productionと異なるtarget_dateで選択ブロック再実行するとskip_months>0で差が増幅。パリティスクリプト作成時はproduction
@@ -2038,6 +2050,9 @@ lessons:
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/okugi_shin_alm/cmd_1877_kasoku_ratio_l1_wf_validation.yaml
   origin: '[[cmd_1877]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L624
   title: 道具の全引数(--output-prefix等)をcmdに明記せよ — デフォルト依存はprefix不統一の原因
   summary: GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する。全引数を明示的にcmdに記載してデフォ
@@ -4213,6 +4228,9 @@ lessons:
   target_files:
   - recalculate_fast.py
   origin: '[[cmd_1245]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L473
   title: GS price_data_cacheに非市場ティッカー(^VIX/DTB3)を含めるな
   summary: close_pricesはload_prices()でstock_trading_maskにより株式取引日のみに絞られる。^VIXやDTB3は祝日にも公開される
@@ -4267,6 +4285,9 @@ lessons:
   - verify_gs_parity_pi009.py
   origin: '[[cmd_1238]]'
   retired: true
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L469
   title: FoF holding_signalはcomponent PF UUIDカンマ区切り。GS engineはFoF非対応
   summary: FoFのholding_signalはcomponent PFのUUIDをカンマ区切りで格納(Standard PFのticker名とは構造が異なる)。GS
@@ -4282,6 +4303,9 @@ lessons:
   target_files:
   - grid_search_metrics_v2.py
   origin: '[[cmd_1237]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L468
   title: パリティ検証ツール間のtolerance不統一(0.0001/1e-6/1e-12)
   summary: IF パリティ検証ツールを新規作成する THEN 既存ツール群とのtolerance差異を確認せよ BECAUSE verify_all_portfolios(
@@ -4641,6 +4665,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-21'
   origin: '[[cmd_1194]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L444
   title: 'GS-Production パリティ: コアアルゴリズム等価、差異源はデータとパス選択'
   summary: 5ステップ全件対比でコアアルゴリズムの構造的差異はゼロ。数値差異の主因は(1)データソース差異(experiments.db vs PostgreSQL)と(2
@@ -9918,6 +9945,9 @@ lessons:
   how: プロジェクト全体のスクリプト（`verify_dm2_parity.py` 等50件以上）は全て `requests.get(url, auth=(user,
     pw))` パターンを使用
   origin: '[[legacy_lesson_L015]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L014
   title: experiments.db と 本番DB の UUID は別体系（2026-02-14）
   summary: パリティ検証スクリプトで experiments.db のUUIDを本番APIのholding_signalと比較したら全不一致

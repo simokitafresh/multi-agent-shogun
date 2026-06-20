@@ -33,9 +33,10 @@ fi
 # flock で排他ロック（L169教訓: atomic操作必須）
 (
     flock -w 10 200 || { echo "[ntfy_inbox_archive] ERROR: flock timeout" >&2; exit 1; }
-    INBOX_PATH="$INBOX" ARCHIVE_PATH="$ARCHIVE" DAYS="$DAYS" "$PYTHON" - << 'PYEOF'
-import yaml, os, sys, tempfile
+    PYTHONPATH="$SCRIPT_DIR" INBOX_PATH="$INBOX" ARCHIVE_PATH="$ARCHIVE" DAYS="$DAYS" "$PYTHON" - << 'PYEOF'
+import yaml, os, sys
 from datetime import datetime, timezone, timedelta
+from scripts.lib.yaml_atomic import atomic_yaml_write
 
 inbox_path = os.environ['INBOX_PATH']
 archive_path = os.environ['ARCHIVE_PATH']
@@ -75,26 +76,11 @@ arch_entries = arch_data.get('inbox', [])
 arch_entries.extend(archive)
 arch_data['inbox'] = arch_entries
 
-# atomic write: archive
-tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(archive_path), suffix='.tmp')
-try:
-    with os.fdopen(tmp_fd, 'w') as f:
-        yaml.dump(arch_data, f, allow_unicode=True, default_flow_style=False)
-    os.replace(tmp_path, archive_path)
-except Exception:
-    os.unlink(tmp_path)
-    raise
+atomic_yaml_write(archive_path, arch_data)
 
 # atomic write: inbox (keep only non-archived)
 data['inbox'] = keep
-tmp_fd2, tmp_path2 = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix='.tmp')
-try:
-    with os.fdopen(tmp_fd2, 'w') as f:
-        yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-    os.replace(tmp_path2, inbox_path)
-except Exception:
-    os.unlink(tmp_path2)
-    raise
+atomic_yaml_write(inbox_path, data)
 
 print(f'Archived {len(archive)} old ntfy messages (>{days} days)')
 PYEOF

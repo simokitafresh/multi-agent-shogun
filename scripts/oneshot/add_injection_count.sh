@@ -26,8 +26,9 @@ add_injection_count() {
     (
         flock -w 10 200 || { echo "ERROR: lock timeout for $file" >&2; exit 1; }
 
-        python3 << PYEOF
-import yaml, os, tempfile
+        PYTHONPATH="$SCRIPT_DIR" python3 << PYEOF
+import yaml, os
+from scripts.lib.yaml_atomic import atomic_yaml_write
 
 cache_file = "$file"
 
@@ -61,15 +62,7 @@ for line in content.split('\n'):
         break
 header = '\n'.join(header_lines) + '\n' if header_lines else ''
 
-tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(cache_file), suffix='.tmp')
-try:
-    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
-        f.write(header)
-        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2, sort_keys=False)
-    os.replace(tmp_path, cache_file)
-except Exception:
-    os.unlink(tmp_path)
-    raise
+atomic_yaml_write(cache_file, data, header=header, indent=2, sort_keys=False)
 
 print(f'OK: {cache_file} — added injection_count to {added} entries (skipped {skipped})')
 PYEOF

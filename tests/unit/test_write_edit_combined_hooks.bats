@@ -95,8 +95,7 @@ _run_post() {
     [[ "$output" == *'environment_changeのpatternを対象fileでgrep確認したか'* ]]
     [[ "$output" == *'semantic_search.shで関連概念を検索したか'* ]]
     [[ "$output" == *'bash scripts/semantic_search.sh'* ]]
-    [[ "$output" == *'grep依存=既知限定'* ]]
-    [[ "$output" == *'将軍semantic_search未使用'* ]]
+    [[ "$output" == *'既知キーワードgrepだけでは見落とす関連概念を確認せよ'* ]]
     [[ "$output" == *'rg -nF'*'対象ファイル'* ]]
 }
 
@@ -240,6 +239,6 @@ _run_post() {
         "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY" "$fake_inbox"
     [ "$status" -eq 2 ]
     [[ "$output" == *'"permissionDecision":"deny"'* ]]
-    [[ "$output" == *'LS048'* ]]
+    [[ "$output" == *'Read toolで全文読み'* ]]
     [[ "$output" == *'指示系'* ]]
 }

@@ -1,90 +1,41 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
+  parent_cmd: cmd_3461_tobisaru
+  task_id: cmd_3461_tobisaru_normal
+  task_type: recon
+  status: idle
+  project: dm-signal
+  target_path: /mnt/c/Python_app/DM-signal
+  purpose: 'cmd_3461 integration: dm-signalリポジトリ内だけのSSOT棚卸し最終成果物 docs/ssot-audit.md を作成する。全PJ横断は禁止。'
+  title: 'SSOT偵察 dm-signal final integration'
+  command: |
+    dm-signalリポジトリ内だけを対象に、backend/frontend/scripts/config/docsのハードコード定数と設定値二重定義を統合調査する。
+    可能なら docs/research/ssot-audit-parts/*.md も読む。ただし未完なら待たず、自分でもrgして /mnt/c/Python_app/DM-signal/docs/ssot-audit.md を完成させる。
+    最終成果物には (1)hardcoded constants table (2)duplicate settings section (3)P1-P3 priority fix list を必ず含める。
   acceptance_criteria:
-    AC1:
-      description: multi-agent-shogun全体からハードコード定数候補を横断抽出し、カテゴリ別件数を記録する
-    AC2:
-      description: config配下yaml間の二重定義(launch_cmd/gist_url等)を検出し、SSOT候補と統一案を記録する
-    AC3:
-      description: docs/research/ssot-audit-round1.md に全体サマリ、二重定義セクション、各忍者個別mdへのリンクを作成する
-    AC4:
-      description: 未統合の個別mdがある場合は、未統合理由と次に統合すべきファイルを明記する
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok: []
-  parent_cmd: cmd_3458_tobisaru
-  project: infra
-  purpose: 'SSOT全方位偵察 周回1: 全体横断の重複検出と最終集約表を作る'
-  report_filename: tobisaru_report_cmd_3458_tobisaru.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3458_tobisaru.yaml
-  scope_note: '担当範囲: 全体横断。各忍者の個別mdが未完成でも、自身の全体grepで docs/research/ssot-audit-round1.md を初版作成する。個別成果が出たら追記統合する。'
-  status: acknowledged
-  stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun
-  task_id: cmd_3458_tobisaru_normal
-  task_type: normal
-  related_lessons:
-  - id: 'L474'
-    summary: 'inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、fie'
-    detail: 'inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、fie'
-  - id: 'L445'
-    summary: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑'
-    detail: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑'
-  - id: 'L623'
-    summary: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
-    detail: 'queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar'
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
-  recommended_skills:
-  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/training-cycle.md"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L474: inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、fie
-      - L445: yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑
-      - L623: queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar
-    ────────────────────────────────────────
-    
-    
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_3458_tobisaru_normal
-  _ac_worker_id: 
-  role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  bloom_level: 
-  deployed_at: "2026-06-20T03:52:40"
+    - id: AC1
+      checks:
+        - check: '/mnt/c/Python_app/DM-signal/docs/ssot-audit.md を作成し、ハードコード定数表に file:line / value / category / suspected_ssot を含めた。rg -c SSOT docs/ssot-audit.md が1以上'
+    - id: AC2
+      checks:
+        - check: 'backend/frontend/scripts/config/docs間の設定値二重定義セクションを作り、wc/grep等で行数を確認した'
+    - id: AC3
+      checks:
+        - check: 'P1/P2/P3優先修正リストを作り、grep -c P1 docs/ssot-audit.md が1以上であることを確認した'
+  not_in_scope:
+    - SSOT違反の修正実装
+    - 本番DB/API実行
+    - dm-signal以外のリポジトリ調査
+  report_path: queue/reports/tobisaru_report_cmd_3461_tobisaru.yaml
+  report_filename: tobisaru_report_cmd_3461_tobisaru.yaml
 
   session_state:
     attempt: 2
-    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
     tried_approaches:
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/4 ACs). 全ACの二値チェックを記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    approach_summary: 'SSOT全方位偵察周回1: 全体横断集約md(ssot-audit-round1.md)を作成。3名個別md統合+config yaml間二重定義3件を検出。カテゴリ別件数記録完了。'
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
     prior_attempts:
     - attempt: 1
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/4 ACs). 全ACの二値チェックを記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
     - attempt: 2
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'SSOT全方位偵察周回1: 全体横断集約md(ssot-audit-round1.md)を作成。3名個別md統合+config yaml間二重定義3件を検出。カテゴリ別件数記録完了。'
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+  progress: "AC1 yes: docs/ssot-audit.md作成、rg -c SSOT=4。AC2 yes: Duplicate Setting Definitions作成、wc -l=98。AC3 yes: Priority Fix List作成、grep -c P1=2。commit=f8fd7c15"

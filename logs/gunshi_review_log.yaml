@@ -1724,3 +1724,72 @@
   causal_chain: "dm-signal全体統合SSOT偵察→LGTM"
   brainwash_check: "gate_report_format PASS実測(GP-062 WARNは統合役正当)。1件中1件確認"
   timestamp: "2026-06-20T05:21:00"
+- cmd_id: cmd_karo_recon_startup_defer_escalation_20260620
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, north_star, adversarial]
+  findings_summary: "session_alerts先送りBLOCK偵察。3セッション連続WARNの根因特定"
+  observations:
+    - "事実: 追体験自動化ターゲットWARN+洗脳連鎖2x2危険象限が3セッション連続"
+  origin: "[[session_alerts先送り3連続]] -> [[根因偵察]] -> [[恒久対処]]"
+  causal_chain: "3セッション連続WARN→家老エスカレーション→偵察配備→根因特定"
+  ambiguity_points: none
+  adversarial_review: "N/A — 偵察"
+  brainwash_check: "purpose=startup先送りBLOCK自動エスカレーション確認。1件中1件"
+  timestamp: "2026-06-20T08:50:00"
+- cmd_id: cmd_karo_recon_startup_defer_escalation_20260620
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  finding_categories: [assumptions, premortem]
+  findings_summary: "LGTM。偵察報告。startup先送りBLOCK根因特定"
+  observations:
+    - "事実: gate_report_format PASS。偵察(code変更なし)"
+  origin: "[[cmd_karo_recon_startup_defer_escalation]] -> [[kagemaru報告LGTM]]"
+  causal_chain: "3セッション連続WARN→偵察→根因特定→将軍D0修正"
+  brainwash_check: "gate_report_format PASS実測。1件中1件確認"
+  timestamp: "2026-06-20T08:54:00"
+- cmd_id: cmd_karo_hotfix_context_freshness_ga099_20260620
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, north_star, adversarial]
+  findings_summary: "GA-099 context_freshness ALERT hotfix。根因特定+防御層"
+  observations:
+    - "事実: purpose=根因一次情報特定+防御層提案/最小実装"
+  origin: "[[GA099_context_freshness]] -> [[hotfix配備]]"
+  causal_chain: "context_freshness ALERT→根因特定→防御層"
+  ambiguity_points: none
+  adversarial_review: "N/A — hotfix"
+  brainwash_check: "purpose確認。hotfixパターン。1件中1件"
+  timestamp: "2026-06-20T08:59:00"
+- cmd_id: cmd_karo_hotfix_context_freshness_ga099_20260620
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hanzo
+  finding_categories: [assumptions, premortem]
+  findings_summary: "LGTM。GA-099 context_freshness ALERT根因調査。gate_report_format PASS"
+  observations:
+    - "事実: gate_report_format PASS確認"
+  origin: "[[GA099_context_freshness]] -> [[hanzo報告LGTM]]"
+  causal_chain: "context_freshness ALERT→根因特定→防御層"
+  brainwash_check: "gate_report_format PASS実測。1件中1件確認"
+  timestamp: "2026-06-20T09:04:00"
+- cmd_id: cmd_karo_hotfix_context_saxo_ga100_20260620
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  finding_categories: [assumptions, premortem]
+  findings_summary: "LGTM。GA-100 saxo context鮮度更新。gate_report_format PASS"
+  observations:
+    - "事実: gate_report_format PASS確認"
+  origin: "[[GA100_saxo_context]] -> [[kagemaru報告LGTM]]"
+  causal_chain: "saxo context鮮度ALERT→更新→LGTM"
+  brainwash_check: "gate_report_format PASS実測。1件中1件確認"
+  timestamp: "2026-06-20T09:10:00"

@@ -111,7 +111,7 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
-@test "skill_execution_log summary lists FAIL counts descending with top stumbling point" {
+@test "skill_execution_log summary lists only latest unresolved FAIL with top stumbling point" {
     cat > "$TEST_SKILL_LOG" <<'EOF'
 executions:
 - ts: "2026-05-02T10:00:00+0900"
@@ -139,8 +139,33 @@ EOF
     run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$SKILL_LOG_SCRIPT" summary
     [ "$status" -eq 0 ]
     [[ "${lines[0]}" == "skill | fail_count | last_fail | top_stumbling_point" ]]
-    [[ "${lines[1]}" == "dashboard-update | 2 | 2026-05-02T10:02:00+0900 | verdict missing" ]]
-    [[ "${lines[2]}" == "report-write | 1 | 2026-05-02T10:01:00+0900 | field empty" ]]
+    [[ "${lines[1]}" == "report-write | 1 | 2026-05-02T10:01:00+0900 | field empty" ]]
+    [[ "$output" != *"dashboard-update |"* ]]
+}
+
+@test "skill_execution_log summary treats short cmd FAIL as resolved by full cmd PASS" {
+    cat > "$TEST_SKILL_LOG" <<'EOF'
+executions:
+- ts: "2026-06-20T00:37:23+0900"
+  skill: "dashboard-update"
+  executor: "karo"
+  result: "PASS"
+  used: "true"
+  stumbling_points: "dashboard_update.sh exit=0 cmd=cmd_karo_hotfix_ga093_prepush_test_select_mapping_20260620 dry_run=false"
+  source: "cmd_karo_hotfix_ga093_prepush_test_select_mapping_20260620"
+- ts: "2026-06-20T00:38:28+0900"
+  skill: "dashboard-update"
+  executor: "karo"
+  result: "FAIL"
+  used: "true"
+  stumbling_points: "dashboard_update.sh exit=1 cmd=cmd_karo_hotfix_ga093 dry_run=false"
+  source: "cmd_karo_hotfix_ga093"
+EOF
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$SKILL_LOG_SCRIPT" summary
+    [ "$status" -eq 0 ]
+    [[ "${lines[0]}" == "skill | fail_count | last_fail | top_stumbling_point" ]]
+    [[ "${#lines[@]}" -eq 1 ]]
 }
 
 @test "skill log readers tolerate legacy unescaped traceback quotes" {

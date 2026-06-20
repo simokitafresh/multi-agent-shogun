@@ -169,15 +169,15 @@ append_ntfy_inbox() {
         (
             flock -w 5 200 || exit 1
 
-            INBOX_PATH="$INBOX" NTFY_MSG_ID="$msg_id" NTFY_TIMESTAMP="$timestamp" \
+            PYTHONPATH="$SCRIPT_DIR" INBOX_PATH="$INBOX" NTFY_MSG_ID="$msg_id" NTFY_TIMESTAMP="$timestamp" \
             NTFY_MESSAGE="$message" NTFY_STATUS="$status" NTFY_CORRUPT_DIR="$CORRUPT_DIR" python3 <<'PYEOF'
 import os
 import shutil
 import sys
-import tempfile
 from datetime import datetime
 
 import yaml
+from scripts.lib.yaml_atomic import atomic_yaml_write
 
 inbox_path = os.environ["INBOX_PATH"]
 msg_id = os.environ.get("NTFY_MSG_ID", "")
@@ -228,14 +228,7 @@ try:
         "status": status,
     })
 
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix=".tmp")
-    try:
-        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2, sort_keys=False)
-        os.replace(tmp_path, inbox_path)
-    except Exception:
-        os.unlink(tmp_path)
-        raise
+    atomic_yaml_write(inbox_path, data, indent=2, sort_keys=False)
 
     print("written")
 except Exception as exc:

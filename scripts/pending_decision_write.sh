@@ -249,14 +249,9 @@ try:
     _pending = _total - _resolved
     ordered_data = {'summary': {'total': _total, 'resolved': _resolved, 'pending': _pending}, 'decisions': data['decisions']}
 
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(data_path), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(ordered_data, f, default_flow_style=False, allow_unicode=True, indent=2, sort_keys=False)
-        os.replace(tmp_path, data_path)
-    except:
-        os.unlink(tmp_path)
-        raise
+    sys.path.insert(0, os.path.dirname(os.path.dirname(data_path)))
+    from scripts.lib.yaml_atomic import atomic_yaml_write
+    atomic_yaml_write(data_path, ordered_data, indent=2, sort_keys=False)
 
     _sync_dashboard_add_pending(dashboard_path, new_id, summary, source_cmd)
 
@@ -434,14 +429,9 @@ try:
     _pending = _total - _resolved
     ordered_data = {'summary': {'total': _total, 'resolved': _resolved, 'pending': _pending}, 'decisions': data['decisions']}
 
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(data_path), suffix='.tmp')
-    try:
-        with os.fdopen(tmp_fd, 'w') as f:
-            yaml.dump(ordered_data, f, default_flow_style=False, allow_unicode=True, indent=2, sort_keys=False)
-        os.replace(tmp_path, data_path)
-    except:
-        os.unlink(tmp_path)
-        raise
+    sys.path.insert(0, os.path.dirname(os.path.dirname(data_path)))
+    from scripts.lib.yaml_atomic import atomic_yaml_write
+    atomic_yaml_write(data_path, ordered_data, indent=2, sort_keys=False)
 
     _sync_dashboard_remove_pending(dashboard_path, pd_id, _pending)
 

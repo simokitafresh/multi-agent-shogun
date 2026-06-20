@@ -383,6 +383,67 @@ PY
     grep -q "^  from: 'karo'" "$TEST_INBOX_DIR/test_agent.yaml"
 }
 
+@test "completed report_review_result to karo is auto-read and does not re-trigger gate" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/scripts"
+    printf '2026-06-20T01:00:00\tcmd_9999\tCLEAR\tall_gates_passed\timpl\tunknown\tunknown\tnone\t\n' > "$TEST_TMPDIR/logs/gate_metrics.log"
+    cat > "$TEST_TMPDIR/scripts/cmd_complete_gate.sh" <<'SCRIPT'
+#!/bin/bash
+echo "gate should not run" >> "$INBOX_WRITE_GATE_SENTINEL"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/cmd_complete_gate.sh"
+    export INBOX_WRITE_GATE_SENTINEL="$TEST_TMPDIR/gate_ran"
+
+    run bash "$TEST_INBOX_WRITE" "karo" "cmd_9999 報告レビュー。verdict: LGTM。" "report_review_result" "gunshi"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"auto-read completed notification"* ]]
+    grep -q "^  read: true" "$TEST_INBOX_DIR/karo.yaml"
+    [ ! -e "$INBOX_WRITE_GATE_SENTINEL" ]
+}
+
+@test "completed report_received to karo is auto-read and skips auto-done side effects" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/logs"
+    printf '2026-06-20T01:00:00\tcmd_9998\tCLEAR\tall_gates_passed\thotfix\tunknown\tunknown\tnone\t\n' > "$TEST_TMPDIR/logs/gate_metrics.log"
+
+    run bash "$TEST_INBOX_WRITE" "karo" "tobisaru、cmd_9998報告完了。報告: queue/reports/tobisaru_report_cmd_9998.yaml" "report_received" "tobisaru"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"auto-read completed notification"* ]]
+    grep -q "^  read: true" "$TEST_INBOX_DIR/karo.yaml"
+}
+
+@test "reviewed ninja report notification to karo is auto-read even before gate clear" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/logs"
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_9997
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+YAML
+
+    run bash "$TEST_INBOX_WRITE" "karo" "tobisaru、cmd_9997報告完了。報告: queue/reports/tobisaru_report_cmd_9997.yaml" "report_received" "tobisaru"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"auto-read completed notification"* ]]
+    grep -q "^  read: true" "$TEST_INBOX_DIR/karo.yaml"
+}
+
+@test "report_review_result is not auto-read from review_log alone because it carries gate side effects" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/scripts"
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_9996
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+YAML
+
+    run bash "$TEST_INBOX_WRITE" "karo" "cmd_9996 tobisaru報告レビュー。verdict: LGTM。" "report_review_result" "gunshi"
+    [ "$status" -eq 0 ]
+    ! [[ "$output" == *"auto-read completed notification"* ]]
+    grep -q "^  read: false" "$TEST_INBOX_DIR/karo.yaml"
+}
+
 # =============================================================================
 # T-008: Overflow Protection — 50件超で古い既読を削除
 # =============================================================================

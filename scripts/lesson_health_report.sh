@@ -22,6 +22,7 @@ from datetime import datetime
 from pathlib import Path
 
 import yaml
+from scripts.lib.yaml_atomic import atomic_yaml_write
 
 _CLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
@@ -171,8 +172,7 @@ def load_baseline():
 
 def save_baseline(data):
     """baselineファイルを保存"""
-    with open(BASELINE_FILE, "w", encoding="utf-8") as f:
-        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    atomic_yaml_write(BASELINE_FILE, data, sort_keys=False)
 
 
 def main():

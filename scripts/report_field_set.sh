@@ -623,8 +623,9 @@ _autofix_field_value() {
             # string/string-list → dict-list (忍者がパス文字列だけを書く頻出パターン)
             if [[ "$dot_key" == "files_modified" ]]; then
                 local fixed
-                fixed=$(python3 -c "
+                fixed=$(PYTHONPATH="$SCRIPT_DIR" python3 -c "
 import yaml, sys, re
+from scripts.lib.yaml_atomic import yaml_text
 raw = sys.stdin.read()
 def sanitize_path(p):
     return re.sub(r'^[^\x00-\x7f]+[:：]\s*', '', p).strip()
@@ -639,15 +640,15 @@ if isinstance(data, str) and data.strip():
     if len(tokens) > 1:
         print('[autofix] files_modified string→dict変換(複数ファイル スペース区切り)', file=sys.stderr)
         items = [{'path': sanitize_path(t.rstrip(',')), 'change': 'modified'} for t in tokens]
-        print(yaml.dump(items, default_flow_style=False, allow_unicode=True), end='')
+        print(yaml_text(items), end='')
     else:
         print('[autofix] files_modified string→dict変換(単一ファイル)', file=sys.stderr)
-        print(yaml.dump([{'path': sanitize_path(data.strip()), 'change': 'modified'}], default_flow_style=False, allow_unicode=True), end='')
+        print(yaml_text([{'path': sanitize_path(data.strip()), 'change': 'modified'}]), end='')
 elif isinstance(data, list) and all(isinstance(x, str) for x in data):
     items = [{'path': sanitize_path(x.strip()), 'change': 'modified'} for x in data if x.strip()]
     if items:
         print('[autofix] files_modified string list→dict list変換', file=sys.stderr)
-        print(yaml.dump(items, default_flow_style=False, allow_unicode=True), end='')
+        print(yaml_text(items), end='')
     else:
         print(raw, end='')
 elif isinstance(data, list) and all(isinstance(x, dict) for x in data):
@@ -660,7 +661,7 @@ elif isinstance(data, list) and all(isinstance(x, dict) for x in data):
                 changed = True
     if changed:
         print('[autofix] files_modified path日本語プレフィックス除去', file=sys.stderr)
-    print(yaml.dump(data, default_flow_style=False, allow_unicode=True), end='')
+    print(yaml_text(data), end='')
 else:
     print(raw, end='')
 " <<< "$val")
@@ -672,8 +673,9 @@ else:
             # dict → list of 1 dict (忍者がlistでなくdictで書く頻出パターン)
             if [[ "$dot_key" == "lessons_useful" ]]; then
                 local fixed
-                fixed=$(python3 -c "
+                fixed=$(PYTHONPATH="$SCRIPT_DIR" python3 -c "
 import yaml, sys
+from scripts.lib.yaml_atomic import yaml_text
 raw = sys.stdin.read()
 try:
     data = yaml.safe_load(raw)
@@ -682,12 +684,12 @@ except yaml.YAMLError:
     sys.exit(0)
 if isinstance(data, dict) and ('id' in data or 'useful' in data or 'reason' in data):
     print('[autofix] lessons_useful dict→list変換(単体dictをlistに包む)', file=sys.stderr)
-    print(yaml.dump([data], default_flow_style=False, allow_unicode=True), end='')
+    print(yaml_text([data]), end='')
 elif isinstance(data, dict) and all(isinstance(v, dict) for v in data.values()):
     # {0: {id:..}, 1: {id:..}} 形式 → list化
     items = [v for k, v in sorted(data.items(), key=lambda x: str(x[0]))]
     print('[autofix] lessons_useful 数値キーdict→list変換', file=sys.stderr)
-    print(yaml.dump(items, default_flow_style=False, allow_unicode=True), end='')
+    print(yaml_text(items), end='')
 else:
     print(raw, end='')
 " <<< "$val")
@@ -699,8 +701,9 @@ else:
             # list of 1 dict → dict (忍者がdictをlistで包む頻出パターン)
             if [[ "$dot_key" == "lesson_candidate" ]]; then
                 local fixed
-                fixed=$(python3 -c "
+                fixed=$(PYTHONPATH="$SCRIPT_DIR" python3 -c "
 import yaml, sys
+from scripts.lib.yaml_atomic import yaml_text
 raw = sys.stdin.read()
 try:
     data = yaml.safe_load(raw)
@@ -709,7 +712,7 @@ except yaml.YAMLError:
     sys.exit(0)
 if isinstance(data, list) and len(data) == 1 and isinstance(data[0], dict):
     print('[autofix] lesson_candidate list→dict変換(要素1のlistからdict抽出)', file=sys.stderr)
-    print(yaml.dump(data[0], default_flow_style=False, allow_unicode=True), end='')
+    print(yaml_text(data[0]), end='')
 elif isinstance(data, list) and len(data) >= 1:
     # 複数要素listの場合: 全要素をキー統合してdictに
     merged = {}
@@ -718,7 +721,7 @@ elif isinstance(data, list) and len(data) >= 1:
             merged.update(item)
     if merged:
         print('[autofix] lesson_candidate list→dict変換(複数要素を統合)', file=sys.stderr)
-        print(yaml.dump(merged, default_flow_style=False, allow_unicode=True), end='')
+        print(yaml_text(merged), end='')
     else:
         print(raw, end='')
 else:
@@ -731,8 +734,9 @@ else:
         assumption_invalidation)
             if [[ "$dot_key" == "assumption_invalidation" ]]; then
                 local fixed
-                fixed=$(python3 -c "
+                fixed=$(PYTHONPATH="$SCRIPT_DIR" python3 -c "
 import yaml, sys
+from scripts.lib.yaml_atomic import yaml_text
 raw = sys.stdin.read().strip()
 lower = raw.lower().strip('\"\\'')
 try:
@@ -754,7 +758,7 @@ else:
     data = {'found': True, 'affected_cmds': [], 'detail': raw}
 
 print('[autofix] assumption_invalidation scalar→dict変換', file=sys.stderr)
-print(yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False), end='')
+print(yaml_text(data, sort_keys=False), end='')
 " <<< "$val")
                 echo "$fixed"
                 return 0
@@ -1141,8 +1145,9 @@ END {
 # --- Python fallback (multi-line text, new block creation) ---
 _report_field_set_python() {
     local rp="$1" dk="$2" val="$3" sv="$4"
-    python3 -c "
-import sys, os, yaml, tempfile, re
+    PYTHONPATH="$SCRIPT_DIR" python3 -c "
+import sys, os, yaml, re
+from scripts.lib.yaml_atomic import atomic_yaml_write
 
 report_path = sys.argv[1]
 dot_key = sys.argv[2]
@@ -1261,28 +1266,9 @@ else:
         ai.setdefault('affected_cmds', [])
         ai.setdefault('detail', '')
 
-dir_name = os.path.dirname(report_path) or '.'
-fd, tmp_path = tempfile.mkstemp(dir=dir_name, suffix='.tmp')
 try:
-    with os.fdopen(fd, 'w') as f:
-        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-    # Round-trip validation: reload and verify key fields survive yaml.dump
-    with open(tmp_path, 'r') as f:
-        reloaded = yaml.safe_load(f)
-    if not isinstance(reloaded, dict):
-        raise ValueError('yaml.dump produced non-dict output')
-    # Verify critical fields survived round-trip
-    for ck in ['worker_id', 'parent_cmd', 'verdict', 'status', 'ac_version_read']:
-        orig = data.get(ck)
-        reload_val = reloaded.get(ck)
-        if orig is not None and reload_val is None:
-            raise ValueError(f'yaml.dump lost field: {ck}')
-    os.replace(tmp_path, report_path)
+    atomic_yaml_write(report_path, data, sort_keys=False)
 except Exception as e:
-    try:
-        os.unlink(tmp_path)
-    except OSError:
-        pass
     print(f'[report_field_set] YAML_DUMP_CORRUPTION: {e}. Original file preserved.', file=sys.stderr)
     sys.exit(1)
 
@@ -1501,8 +1487,9 @@ done
 # --- GP-072c2: Post-write dict→list auto-conversion ---
 # per-item書込み(lessons_useful.0.id等)後に数値キーdictをリストに変換
 if [[ "$DOT_KEY" == lessons_useful.* ]] || [[ "$DOT_KEY" == binary_checks.*.* ]]; then
-    python3 -c "
-import yaml, sys, os, tempfile
+    PYTHONPATH="$SCRIPT_DIR" python3 -c "
+import yaml, sys, os
+from scripts.lib.yaml_atomic import atomic_yaml_write
 rp = sys.argv[1]
 dk = sys.argv[2]
 if not os.path.exists(rp):
@@ -1530,11 +1517,7 @@ if isinstance(bc, dict):
             bc[ac_key] = new_list
             changed = True
 if changed:
-    dir_name = os.path.dirname(rp) or '.'
-    fd, tmp = tempfile.mkstemp(dir=dir_name, suffix='.tmp')
-    with os.fdopen(fd, 'w') as f:
-        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-    os.replace(tmp, rp)
+    atomic_yaml_write(rp, data, sort_keys=False)
     print(f'[report_field_set] dict→list auto-conversion applied for {dk}', file=sys.stderr)
 " "$REPORT_PATH" "$DOT_KEY" 2>&1 || true
     _report_field_set_validate_or_restore

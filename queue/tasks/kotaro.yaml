@@ -1,28 +1,38 @@
 task:
-  _ac_task_id: 
-  _ac_worker_id: 
-  _deploy_notice: 'STALE TASK INVALID. This YAML is the latest instruction for cmd_3449 (deployed 2026-06-19T20:11:10). Read from the beginning.'
-  ac_version: 37d28c14
-  parent_cmd: cmd_3449
-  project: infra
-  recommended_skills:
-  - shogun-claude-version-switch
-  - switch-to-codex
-  status: completed
-  task_id: cmd_3449_impl
-  task_type: impl
-  purpose: 'cmd_3447でGATE滞留発生(2026-06-19)。軍師根因特定(blt_20260619_185700): 分割cmd(cmd_XXXX_ninja)の報告ファイル名=ninja_report_cmd_XXXX_ninja.yaml。親cmdのGATEが期待するファイル名=ninja_report_cmd_XXXX.yaml(L202)。名前不一致でMISSING判定。glob展開を拡張し分割cmd報告を検出可能にする'
+  parent_cmd: cmd_3461_kotaro
+  task_id: cmd_3461_kotaro_normal
+  task_type: recon
+  status: idle
+  project: dm-signal
+  target_path: /mnt/c/Python_app/DM-signal/docs
+  purpose: 'cmd_3461 shard: dm-signal docs/context/knowledge-base内のSSOT記述と重複説明の棚卸し。全PJ横断は禁止。'
+  title: 'SSOT偵察 dm-signal docs shard'
+  command: |
+    /mnt/c/Python_app/DM-signal/docs と context を対象に、SSOTと明記された正本、重複説明、古い参照、固定値一覧を抽出する。
+    結果を /mnt/c/Python_app/DM-signal/docs/research/ssot-audit-parts/docs-context.md に表形式で保存する。
+    修正実装は禁止。事実・ファイル・行・推定SSOTだけを記録する。
+  acceptance_criteria:
+    - id: AC1
+      checks:
+        - check: 'docs/context内のSSOT正本候補と重複説明候補を表にし、各行に file:line / value_or_topic / category / suspected_ssot を含めた'
+    - id: AC2
+      checks:
+        - check: 'backend/frontend/config/scriptsへ波及しそうな重複記述を別表にした'
+    - id: AC3
+      checks:
+        - check: '/mnt/c/Python_app/DM-signal/docs/research/ssot-audit-parts/docs-context.md を作成し、rg -c SSOT で1以上を確認した'
+  not_in_scope:
+    - ドキュメント修正
+    - SSOT違反の修正実装
+    - dm-signal以外のリポジトリ調査
+  report_path: queue/reports/kotaro_report_cmd_3461_kotaro.yaml
+  report_filename: kotaro_report_cmd_3461_kotaro.yaml
 
   session_state:
-    attempt: 2
-    last_block_reason: 'lessons_useful[0]: id=\"none_injected\" is invalid (must match L+number, e.g. L074)'
+    attempt: 1
+    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
     tried_approaches:
-    - 'lessons_useful[0]: id=\"none_injected\" is invalid (must match L+number, e.g. L074)'
-    approach_summary: '分割cmd報告ファイル名(ninja_report_cmd_XXXX_ninja.yaml)をGATEが検出できない問題を修正。bash/Python両resolve関数に split_fmt パターン追加。シミュレーション検証PASS'
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
     prior_attempts:
     - attempt: 1
-      block_reason: 'lessons_useful[0]: id=\"none_injected\" is invalid (must match L+number, e.g. L074)'
-      approach_summary: '分割cmd報告ファイル名(ninja_report_cmd_XXXX_ninja.yaml)をGATEが検出できない問題を修正。bash/Python両resolve関数に split_fmt パターン追加。シミュレーション検証PASS'
-    - attempt: 2
-      block_reason: 'lessons_useful[0]: id=\"none_injected\" is invalid (must match L+number, e.g. L074)'
-      approach_summary: '分割cmd報告ファイル名(ninja_report_cmd_XXXX_ninja.yaml)をGATEが検出できない問題を修正。bash/Python両resolve関数に split_fmt パターン追加。シミュレーション検証PASS'
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'

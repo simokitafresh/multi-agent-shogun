@@ -119,24 +119,13 @@ echo "  shogun → shogun:main ($!)"
 LAUNCHED_AGENTS+=("shogun")
 LAUNCHED_PIDS+=("$!")
 
-# 家老
-_cli=$(tmux show-options -p -t "shogun:agents.1" -v @agent_cli 2>/dev/null || echo "claude")
-unset ASW_DISABLE_ESCALATION
-nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" karo "shogun:agents.1" "$_cli" \
-    &>> "$SCRIPT_DIR/logs/inbox_watcher_karo.log" 200>&- &
-disown
-echo "  karo → shogun:agents.1 ($!)"
-LAUNCHED_AGENTS+=("karo")
-LAUNCHED_PIDS+=("$!")
-
-# 忍者+軍師（settings.yamlから動的取得 — cmd_1136）
+# 全エージェント（settings.yaml + @agent_idから動的取得 — cmd_1136）
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 
 for name in $(get_all_agents); do
-    [[ "$name" == "karo" ]] && continue  # karo is handled above
     pane=$(pane_lookup "$name" 2>/dev/null)
     [[ -z "$pane" ]] && continue
     _cli=$(tmux show-options -p -t "$pane" -v @agent_cli 2>/dev/null || echo "claude")

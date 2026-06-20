@@ -30,6 +30,25 @@ grep -q "EXPECTED_WATCHER_COUNT=\"\${EXPECTED_WATCHER_COUNT:-9}\"" "$PROJECT_ROO
     [ "$status" -eq 0 ]
 }
 
+@test "restart_watchers resolves karo watcher pane via pane_lookup instead of fixed pane" {
+    PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+script="$PROJECT_ROOT/scripts/restart_watchers.sh"
+grep -Fq "source \"\$SCRIPT_DIR/scripts/lib/pane_lookup.sh\"" "$script"
+grep -Fq "for name in \$(get_all_agents)" "$script"
+grep -Fq "pane=\$(pane_lookup \"\$name\"" "$script"
+if grep -q "shogun:agents\\.1" "$script"; then
+    echo "fixed karo pane remains"
+    exit 1
+fi
+echo "KARO_WATCHER_DYNAMIC_PANE=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"KARO_WATCHER_DYNAMIC_PANE=yes"* ]]
+}
+
 @test "shutsujin departure watcher path kills old watchers and verifies exact normal count" {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     run bash -c '

@@ -8,6 +8,10 @@
 
 set -euo pipefail
 
+_NR_SELF="${BASH_SOURCE[0]}"
+[[ "$_NR_SELF" != /* ]] && _NR_SELF="$PWD/$_NR_SELF"
+SCRIPT_DIR="${_NR_SELF%/scripts/lib/normalize_report.sh}"
+
 REPORT_FILE="${1:-}"
 
 if [ -z "$REPORT_FILE" ]; then
@@ -48,8 +52,9 @@ if [[ "$_nr_needs_python" == "false" && "$_nr_fields_found" -eq 3 ]]; then
 fi
 
 # Python3でYAML操作（既存コードベースと同一手法）
-python3 - "$REPORT_FILE" <<'PYEOF'
-import yaml, sys, os, tempfile
+PYTHONPATH="$SCRIPT_DIR" python3 - "$REPORT_FILE" <<'PYEOF'
+import yaml, sys, os
+from scripts.lib.yaml_atomic import atomic_yaml_write
 
 report_file = sys.argv[1]
 
@@ -106,16 +111,7 @@ for field in CANDIDATE_FIELDS:
 if not modified:
     sys.exit(1)  # 修正不要
 
-# Atomic write（書き込み中の破損防止）
-dir_path = os.path.dirname(os.path.abspath(report_file))
-fd, tmp_path = tempfile.mkstemp(dir=dir_path, suffix='.tmp')
-try:
-    with os.fdopen(fd, 'w') as f:
-        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-    os.replace(tmp_path, report_file)
-except Exception:
-    os.unlink(tmp_path)
-    raise
+atomic_yaml_write(report_file, data, sort_keys=False)
 
 for m in modified:
     print(m)

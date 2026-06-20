@@ -602,17 +602,10 @@ lessons:
   automated: true
   enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=symlink'
 # LS067: superseded by LS-A23(6) (三層貫通定義。2026-06-19統合)
-- id: 'LS068'
-  title: 'F001改訂: 殿との会話をブロックしない操作は将軍直接実行'
-  origin: '[[殿裁定_20260619]] -> [[cmd起票過剰=トークン浪費]] -> [[F001改訂]]'
-  detail: 'F001の本質=殿との会話ブロック防止。簡単な操作(ビルド/push/aliases/symlink/version bump)までcmd起票→quality_gate7段階で30分浪費=本末転倒。改訂: 殿との会話をブロックしない操作は将軍直接。ブロックする規模のコード変更のみcmd委任。実証: v5.4ビルド+リリース=将軍直接5分 vs cmd起票試行で殿に止められた'
-  source_cmd: 'session_20260619_F001'
-  created_at: '2026-06-19'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=F001改訂'
+# LS068: superseded by shogun.md F001(改訂済み。positive_rule/reasonに全文反映。独立教訓としての追加価値なし。2026-06-20統合)
 - id: 'LS069'
   title: '殿の発言帰属捏造禁止 — 言っていないことを殿裁定として記録するな'
-  origin: '未指定'
+  origin: '[[session_20260620]] -> [[殿発言帰属未確認]] -> [[Guard15+Guard13実装]]'
   detail: '2026-06-20: 将軍がrespawn時にreset-layoutを使用し、hookコメントに殿裁定2026-06-20と記載したが、殿はreset-layoutとは言っていない(殿はshogun-cli-switchと指摘)。殿の発言を確認せず自分の解釈を殿の言葉として帰属させた=嘘。Guard15(pre-write-edit-combined.sh)で殿発言帰属時にlord_conversation直近inbound自動表示を実装。Guard13でrespawn-pane直接実行をBLOCKしshogun-cli-switchへ誘導'
   source_cmd: 'session_20260620'
   created_at: '2026-06-20'

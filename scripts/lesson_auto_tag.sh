@@ -28,8 +28,9 @@ fi
 
 export TAG_DICT PROJECTS_YAML SCRIPT_DIR MODE
 
-python3 -c '
-import os, sys, re, yaml, tempfile, shutil
+PYTHONPATH="$SCRIPT_DIR" python3 -c '
+import os, sys, re, yaml
+from scripts.lib.yaml_atomic import atomic_yaml_write
 _CLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
 script_dir = os.environ["SCRIPT_DIR"]
@@ -128,25 +129,17 @@ for project in active_projects:
             modified = True
 
     if mode == "apply" and modified:
-        # Atomic write: tempfile + shutil.move
-        dir_name = os.path.dirname(lessons_path)
-        fd, tmp_path = tempfile.mkstemp(suffix=".yaml", dir=dir_name)
+        header_lines = []
+        with open(lessons_path, "r", encoding="utf-8") as orig:
+            for line in orig:
+                if line.startswith("#"):
+                    header_lines.append(line)
+                else:
+                    break
         try:
-            with os.fdopen(fd, "w", encoding="utf-8") as tmp_f:
-                # Preserve header comments
-                with open(lessons_path, "r", encoding="utf-8") as orig:
-                    for line in orig:
-                        if line.startswith("#"):
-                            tmp_f.write(line)
-                        else:
-                            break
-                yaml.dump(lessons_data, tmp_f, allow_unicode=True,
-                          default_flow_style=False, sort_keys=False)
-            shutil.move(tmp_path, lessons_path)
+            atomic_yaml_write(lessons_path, lessons_data, header="".join(header_lines), sort_keys=False)
             print(f"[APPLY] {pid}: lessons.yaml updated")
         except Exception as e:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
             print(f"[ERROR] {pid}: {e}", file=sys.stderr)
             sys.exit(1)
 

@@ -3,7 +3,7 @@ name: shogun-cli-switch
 argument-hint: "[status|to-claude|to-codex|pin-2.1.87|unpin-latest] [--agent <name>] [--scope core|all|csv]"
 quality_metric: "将軍系: CLI/version切替cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
 description: |
-  【将軍専用】multi-agent-shogun のCLI種別(Claude⇔Codex)とClaude Code version運用を切り替える。
+  multi-agent-shogun のCLI種別(Claude⇔Codex)とClaude Code version運用を切り替える。全ロールが殿の指示のもとに使用可能。
   switch-to-codex / switch-to-opus / shogun-claude-version-switch の上位互換。
   settings.yaml更新→tmux変数同期→idle paneのみrespawn。in_progress/active paneはスキップして設定だけ反映する。
   TRIGGER: /shogun-cli-switch、Claude auto-update再許可、2.1.87固定へロールバック、Claude version確認、pinned/latest切替、Claude⇔Codex切替、家老をCodexに、軍師をOpusに、CLI pane respawn、編成切替、忍者モデル編成、一括モデル切替、混成編成、モデル混成、Opus全戻し、決戦モード、全員Codex切替、Codex-only編成、緊急Codex編成、平時編成へ戻す、Codex-only解除、Claude復旧後ロールバック、ペイン死亡復旧、respawnせよ

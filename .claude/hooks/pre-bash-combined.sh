@@ -465,7 +465,7 @@ fi
 
 # Guard 9b: CLI切替/編成変更の手動操作BLOCK (殿裁定2026-06-20: スキル100%使用の仕組み)
 # respawn-pane/model_switch/CLI起動を手動で行おうとしたら/shogun-cli-switchを強制
-if [[ "$command" =~ respawn-pane|model_switch|/model[[:space:]] ]] && [[ ! "$command" =~ ninja_monitor|reset_layout|shogun-cli-switch|gate_|startup ]]; then
+if [[ "$command" =~ respawn-pane|model_switch|/model[[:space:]] ]] && [[ ! "$command" =~ ninja_monitor|reset_layout|shogun-cli-switch|gate_|startup|yaml_field_set|switch_cli_mode ]]; then
     emit_deny "BLOCKED: CLI切替/編成変更は /shogun-cli-switch スキルを使え。手動respawn-pane/model_switch禁止 (殿裁定: スキル無視はバグ。意志依存は洗脳#3)"
 fi
 

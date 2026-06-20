@@ -739,6 +739,113 @@ cat "$SCRIPT_DIR/inbox.log"
     [[ "$output" == *"karo|karo_idle_cycle|全忍者idle+パイプライン空。改善サイクルを回せ。"* ]]
 }
 
+@test "check_ninja_cli_dead covers karo pane through unified agent map" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+TMUX_LOG="$TMP_ROOT/tmux.log"
+export SCRIPT_DIR TMUX_LOG
+mkdir -p "$SCRIPT_DIR/scripts" "$TMP_ROOT/bin"
+
+cat > "$SCRIPT_DIR/scripts/ntfy.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s\n" "$1" >> "$SCRIPT_DIR/ntfy.log"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/ntfy.sh"
+
+cat > "$TMP_ROOT/bin/tmux" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s\n" "$*" >> "$TMUX_LOG"
+case "$1" in
+  list-panes) printf "shogun:agents.7\n" ;;
+  display-message) printf "1\n" ;;
+  respawn-pane) exit 0 ;;
+esac
+EOF
+chmod +x "$TMP_ROOT/bin/tmux"
+PATH="$TMP_ROOT/bin:$PATH"
+
+log() { echo "$1" >> "$LOG"; }
+build_cli_command() { printf "/home/simokitafresh/bin/claude --effort high --dangerously-skip-permissions\n"; }
+sleep() { :; }
+NINJA_NAMES=()
+declare -A PANE_TARGETS CLI_DEAD_RESTART_TIMES CLI_DEAD_LOOP_LAST_NTFY
+PANE_TARGETS[karo]="shogun:agents.7"
+CLI_DEAD_LOOP_WINDOW=300
+CLI_DEAD_LOOP_THRESHOLD=2
+
+check_ninja_cli_dead
+sleep 1
+
+cat "$TMUX_LOG"
+cat "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"display-message -t shogun:agents.7"* ]]
+    [[ "$output" == *"CLI-DEAD: karo@shogun:agents.7"* ]]
+}
+
+@test "check_ninja_cli_dead covers gunshi pane through unified agent map" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+TMUX_LOG="$TMP_ROOT/tmux.log"
+export SCRIPT_DIR TMUX_LOG
+mkdir -p "$SCRIPT_DIR/scripts" "$TMP_ROOT/bin"
+
+cat > "$SCRIPT_DIR/scripts/ntfy.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "$SCRIPT_DIR/scripts/ntfy.sh"
+
+cat > "$TMP_ROOT/bin/tmux" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s\n" "$*" >> "$TMUX_LOG"
+case "$1" in
+  display-message) printf "1\n" ;;
+  respawn-pane) exit 0 ;;
+esac
+EOF
+chmod +x "$TMP_ROOT/bin/tmux"
+PATH="$TMP_ROOT/bin:$PATH"
+
+log() { echo "$1" >> "$LOG"; }
+build_cli_command() { printf "/home/simokitafresh/.local/share/codex/bin/codex --full-auto\n"; }
+sleep() { :; }
+NINJA_NAMES=()
+declare -A PANE_TARGETS CLI_DEAD_RESTART_TIMES CLI_DEAD_LOOP_LAST_NTFY
+PANE_TARGETS[gunshi]="shogun:agents.9"
+CLI_DEAD_LOOP_WINDOW=300
+CLI_DEAD_LOOP_THRESHOLD=2
+
+check_ninja_cli_dead
+sleep 1
+
+cat "$TMUX_LOG"
+cat "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"display-message -t shogun:agents.9"* ]]
+    [[ "$output" == *"CLI-DEAD: gunshi@shogun:agents.9"* ]]
+}
+
 @test "check_yaml_size counts lines and completed statuses with one awk pass" {
     run bash -lc '
 set -euo pipefail
@@ -955,6 +1062,119 @@ fi
     [[ "$output" != *"KARO-PENDING-INBOX"* ]]
     [[ "$output" != *"pending_work"* ]]
     [[ "$output" != *"DIRECT_NUDGE:inbox0"* ]]
+}
+
+@test "check_inbox_renudge: gate CLEAR done task does not create duplicate karo pending inbox" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs"
+
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$SCRIPT_DIR/queue/inbox/gunshi.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$SCRIPT_DIR/queue/tasks/kotaro.yaml" <<'"'"'EOF'"'"'
+task:
+  status: done
+  parent_cmd: cmd_gate_clear_done
+EOF
+cat > "$SCRIPT_DIR/logs/gate_metrics.log" <<'"'"'EOF'"'"'
+2026-06-20T01:00:00	cmd_gate_clear_done	CLEAR	all_gates_passed	impl	unknown	unknown	none
+EOF
+
+NINJA_NAMES=()
+KARO_PANE="shogun:agents.1"
+declare -A RENUDGE_FINGERPRINT RENDUDGE_COUNT RENUDGE_COUNT RENUDGE_LAST_SEND
+log() { echo "$1" >> "$LOG"; }
+check_idle() { return 0; }
+safe_send_keys_atomic() {
+    echo "DIRECT_NUDGE:$2" >> "$TMP_ROOT/direct_nudge.log"
+    return 0
+}
+send_inbox_message() {
+    printf "%s|%s|%s|%s\n" "$1" "$3" "$2" "${4:-ninja_monitor}" >> "$TMP_ROOT/inbox_messages.log"
+    return 0
+}
+
+check_inbox_renudge
+
+cat "$LOG"
+if [ -f "$TMP_ROOT/inbox_messages.log" ]; then
+    cat "$TMP_ROOT/inbox_messages.log"
+fi
+if [ -f "$TMP_ROOT/direct_nudge.log" ]; then
+    cat "$TMP_ROOT/direct_nudge.log"
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"KARO-PENDING-SKIP-GATE-CLEAR: cmd_gate_clear_done already has gate CLEAR"* ]]
+    [[ "$output" != *"KARO-PENDING-INBOX"* ]]
+    [[ "$output" != *"pending_work"* ]]
+    [[ "$output" != *"DIRECT_NUDGE:inbox0"* ]]
+}
+
+@test "check_inbox_renudge: done task without parent_cmd does not create pending inbox" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs"
+
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$SCRIPT_DIR/queue/inbox/gunshi.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$SCRIPT_DIR/queue/tasks/tobisaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: done
+  parent_cmd: none
+EOF
+
+NINJA_NAMES=()
+KARO_PANE="shogun:agents.1"
+declare -A RENUDGE_FINGERPRINT RENDUDGE_COUNT RENUDGE_COUNT RENUDGE_LAST_SEND
+log() { echo "$1" >> "$LOG"; }
+check_idle() { return 0; }
+safe_send_keys_atomic() {
+    echo "DIRECT_NUDGE:$2" >> "$TMP_ROOT/direct_nudge.log"
+    return 0
+}
+send_inbox_message() {
+    printf "%s|%s|%s|%s\n" "$1" "$3" "$2" "${4:-ninja_monitor}" >> "$TMP_ROOT/inbox_messages.log"
+    return 0
+}
+
+check_inbox_renudge
+
+cat "$LOG"
+if [ -f "$TMP_ROOT/inbox_messages.log" ]; then
+    cat "$TMP_ROOT/inbox_messages.log"
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"KARO-PENDING-SKIP-NO-PARENT-CMD"* ]]
+    [[ "$output" != *"KARO-PENDING-INBOX"* ]]
+    [[ "$output" != *"pending_work"* ]]
 }
 
 @test "check_stall: repeated same-task stalls trigger stall_escalate with mandatory replacement" {

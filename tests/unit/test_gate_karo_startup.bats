@@ -99,7 +99,7 @@ executions:
 - ts: "2026-05-02T10:01:00+0900"
   skill: "report-write"
   executor: "hanzo"
-  result: "PASS"
+  result: "FAIL"
   stumbling_points: "none"
 EOF
 

@@ -8316,3 +8316,66 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - cmd_3438でsemantic_causal_traverse.shの統合実装時、影響ノードをJSON出力するところまで実装して完了と判断。test_scripts実行ロジックが未実装のまま洗脳監査まで発覚しなかった(2日後)。根因: AC設計で『列挙』と『実行』が同一ACに混在。分離すればbinaryチェックが機能する。
+
+### L821: config yaml間のlaunch_cmdパス不一致は設計意図が未明記のまま放置されるとversion pin効果が失われる
+- **日付**: 2026-06-20
+- **出典**: cmd_3458_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,yaml,grid_search]
+- **target_files**: [docs/research/ssot-audit-round1.md]
+- **origin**: [[cmd_3458_tobisaru]]
+- **when**: 未設定
+- **how**: 未設定
+- settings.yaml shogunのlaunch_cmd(/home/simokitafresh/.local/bin/claude)とcli_profiles.yaml claudeのlaunch_cmd(/home/simokitafresh/bin/claude)が異なるバイナリを指している。.local/bin/=auto-update版、bin/=pin版(2.1.87)。将軍は手動起動なのでsettings.yaml launch_cmdが何に使われるかコメントなし。SSOTが不明瞭なままだと将軍がauto-update版で起動されるリスクがある。
+
+### L822: pre-push hook_failureはtimeout WARNと最終BLOCK原因を分離して分類する
+- **日付**: 2026-06-20
+- **出典**: cmd_karo_hotfix_GA097_hook_failure_20260620
+- **記録者**: hanzo
+- **tags**: [infra,testing,gate]
+- **target_files**: [偵察のみ: code変更なし。報告YAMLのみ記入。]
+- **origin**: [[cmd_karo_hotfix_GA097_hook_failure_20260620]]
+- **when**: 未設定
+- **how**: 未設定
+- pre-push artifactではtest_select timeoutが出ていてもpush allowedなら直接原因ではない。最後にexit 1へ至らせたBLOCK行(今回はontology violation detected)を原因分類の主証拠にし、同種判定はartifact全体の最終BLOCK文字列で数える。
+
+### L823: report precheckはrelated_lessonsなしのlessons_useful空リストをFAILにしない
+- **日付**: 2026-06-20
+- **出典**: cmd_3461
+- **記録者**: gunshi
+- **tags**: [gate, report, precheck]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_gunshi_report_precheck.sh,scripts/gates/gate_report_format.sh]
+- **origin**: [[cmd_3461_hayate_saizo_FAIL撤回]] -> [[precheck偽陽性]] -> [[related_lessons有無未確認]]
+- **when**: gate_gunshi_report_precheck.shでlessons_useful空リストを判定するとき
+- **how**: task/reportにrelated_lessonsがある場合だけlessons_useful記入を要求し、related_lessonsなしなら空リストを正当扱いする
+- **if**: related_lessonsが存在しない報告でlessons_useful: []
+- **then**: FAILではなくPASS/WARNなしにする
+- **because**: 注入教訓が無いタスクではlessons_useful空リストがテンプレート上の正しい状態であり、FAILは偽陽性になる
+- gate_gunshi_report_precheck.shがlessons_useful空リストだけでFAIL判定したが、taskにrelated_lessonsが無いhayate/saizo報告はgate_report_format PASSで正当だった。precheckはtask/reportのrelated_lessons有無を確認し、注入教訓が無い場合のlessons_useful: []を許容する。origin: [[cmd_3461_hayate_saizo_FAIL撤回]] -> [[precheck偽陽性]] -> [[related_lessons有無未確認]]
+
+### L824: startup WARN測定は解消行動への接続まで検証せよ
+- **日付**: 2026-06-20
+- **出典**: cmd_karo_recon_startup_defer_escalation_20260620
+- **記録者**: kagemaru
+- **tags**: [infra,testing,gate]
+- **target_files**: [queue/tasks/kagemaru.yaml,queue/reports/kagemaru_report_cmd_karo_recon_startup_defer_escalation_20260620.yaml]
+- **origin**: [[cmd_karo_recon_startup_defer_escalation_20260620]]
+- **when**: 未設定
+- **how**: 未設定
+- 3セッション連続WARNを検出しても、cmd起票済みID・action_required解消・実装証拠へ接続しないと同じWARNを再生産する。次回追加すべきチェック: startup連続出現BLOCKのhotfixは、測定値だけでなく解消行動への参照が存在するかを二値確認する。 origin: [[startup連続出現BLOCK]] -> [[解消行動未接続]] -> [[escalation再生産]]
+
+### L825: context_freshnessは検出だけでなくcmd完了フローの必須入力へ接続せよ
+- **日付**: 2026-06-20
+- **出典**: cmd_karo_hotfix_context_freshness_ga099_20260620
+- **記録者**: hanzo
+- **tags**: [gate, context, context_freshness, cmd_complete]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,skills/cmd-complete/SKILL.md,scripts/gates/gate_context_freshness.sh,scripts/context_freshness_check.sh]
+- **origin**: [[GA-099]] -> [[context更新トリガー未強制]] -> [[context_freshness ALERT残存]]
+- **when**: context_freshness ALERTがcmd完了後に残るとき
+- **how**: 検出結果をcmd完了フローの必須入力に接続し、更新しない場合はreasonを構造化する
+- **if**: cmd完了時にcontext_freshnessがALERT/WARNを返す
+- **then**: 候補contextの更新または未更新理由を報告YAML/完了gateに必須化する
+- **because**: 検出だけでは古いcontextが残り、同じALERTを再生産する
+- GA-099の4対象はlast_updated後のsource commit増加をgateが検出したが、cmd完了時にどのcontextを更新すべきかを必須化する防御層が弱く、古いcontextが残った。次回はcmd_complete_gateのcontext_updateまたはcmd設計時のstaleness_triggersから対象contextを必須化するチェックを追加する。origin: [[GA-099]] -> [[cmd完了時context更新未強制]] -> [[context鮮度ALERT]]

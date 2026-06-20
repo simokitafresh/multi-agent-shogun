@@ -404,11 +404,11 @@ archive_pending_decisions_for_cmd_locked() {
         flock -w 10 200 || { echo "[pending_decisions] WARN: flock timeout on pending_decisions" >&2; exit 1; }
         flock -w 10 201 || { echo "[pending_decisions] WARN: flock timeout on pending_decisions_archive" >&2; exit 1; }
 
-        python3 - "$PENDING_DECISIONS_FILE" "$PENDING_DECISIONS_ARCHIVE" "$cmd_id" <<'PY'
+        PYTHONPATH="$PROJECT_DIR" python3 - "$PENDING_DECISIONS_FILE" "$PENDING_DECISIONS_ARCHIVE" "$cmd_id" <<'PY'
 import os
 import sys
-import tempfile
 import yaml
+from scripts.lib.yaml_atomic import atomic_yaml_write
 
 pending_path, archive_path, cmd_id = sys.argv[1:4]
 
@@ -419,16 +419,7 @@ def load_yaml(path):
         return yaml.safe_load(f) or {}
 
 def write_yaml(path, data):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), suffix=".tmp")
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2, sort_keys=False)
-        os.replace(tmp_path, path)
-    except Exception:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        raise
+    atomic_yaml_write(path, data, indent=2, sort_keys=False)
 
 def build_doc(decisions):
     total = len(decisions)
@@ -543,13 +534,13 @@ sync_stk_status_from_archive() {
         (
             flock -w 10 200 || { echo "[stk-sync] WARN: flock timeout" >&2; echo "0 0"; exit 1; }
 
-            python3 - "$QUEUE_FILE" "$ARCHIVE_CMD_DIR" "$REPORTS_DIR" "$ARCHIVE_REPORT_DIR" "$STK_ARCHIVE_DIR" <<'PY'
+            PYTHONPATH="$PROJECT_DIR" python3 - "$QUEUE_FILE" "$ARCHIVE_CMD_DIR" "$REPORTS_DIR" "$ARCHIVE_REPORT_DIR" "$STK_ARCHIVE_DIR" <<'PY'
 import os
 import sys
-import tempfile
 from datetime import datetime, timedelta, timezone
 
 import yaml
+from scripts.lib.yaml_atomic import atomic_yaml_write
 
 stk_path, archive_cmd_dir, reports_dir, archive_report_dir, stk_archive_dir = sys.argv[1:6]
 SAFE_STATUSES = {"pending", "in_progress", "acknowledged", "assigned", "parked", "draft"}
@@ -630,11 +621,7 @@ for cmd_id, entry in cmds.items():
     if status in DONE_STATUSES:
         archive_path = os.path.join(archive_cmd_dir, f"{cmd_id}_{status}_{date_stamp}.yaml")
         if not os.path.exists(archive_path):
-            os.makedirs(archive_cmd_dir, exist_ok=True)
-            with open(archive_path, "w", encoding="utf-8") as f:
-                yaml.dump({"commands": {cmd_id: entry}}, f,
-                          default_flow_style=False, allow_unicode=True,
-                          indent=2, sort_keys=False)
+            atomic_yaml_write(archive_path, {"commands": {cmd_id: entry}}, indent=2, sort_keys=False)
         archived += 1
         sync_removed.append(cmd_id)
         continue
@@ -684,16 +671,7 @@ if trim_to_archive:
         else:
             existing_cmds = {}
         existing_cmds.update(entries)
-        fd, tmp_path = tempfile.mkstemp(dir=stk_archive_dir, suffix=".tmp")
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as f:
-                yaml.dump({"commands": existing_cmds}, f, default_flow_style=False,
-                          allow_unicode=True, indent=2, sort_keys=False)
-            os.replace(tmp_path, archive_path)
-        except Exception:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
-            raise
+        atomic_yaml_write(archive_path, {"commands": existing_cmds}, indent=2, sort_keys=False)
 
 all_removed = sync_removed + trim_removed
 trim_archived = len(trim_removed)
