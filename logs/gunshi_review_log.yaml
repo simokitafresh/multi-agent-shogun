@@ -1793,3 +1793,43 @@
   causal_chain: "saxo context鮮度ALERT→更新→LGTM"
   brainwash_check: "gate_report_format PASS実測。1件中1件確認"
   timestamp: "2026-06-20T09:10:00"
+- cmd_id: cmd_karo_hotfix_hook_yaml_dump_ga101_20260620
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  findings_summary: "APPROVE。GA-101 yaml.dump hook偽陽性調査+防御。yaml_atomic.pyの設計意図(中央集約)とpre-commit L122(*.py対象化)の偽陽性。hook設定問題。AC4件scope内完結"
+  observations:
+    - "事実: yaml_atomic.py L53/L84にyaml.dump。設計意図=中央集約でround-trip検証付き"
+    - "事実: pre-commit is_yaml_dump_scan_target L122が*.pyを対象→yaml_atomic.py変更時に偽陽性BLOCK"
+    - "事実: gate_no_direct_yaml_dump.shはscripts/*.shのみ対象でyaml_atomic.pyは範囲外"
+  origin: "[[GA101_yaml_dump_hook]] -> [[pre-commit偽陽性]] -> [[APPROVE]]"
+  causal_chain: "yaml_atomic.py変更→pre-commit L122 *.py対象→yaml.dump文字列検出→BLOCK。正当例外の除外不足が根因。複利の問い: 除外条件修正1回=以降の全yaml_atomic.py変更で偽陽性ゼロ=正の複利"
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "scripts/lib/yaml_atomic.py変更cmd。攻撃者視点: 除外追加→将来の正当yaml.dump誤用素通りリスク→AC2で設計意図二値判定+AC4でテスト要求で対処済み"
+  ambiguity_points: none
+  brainwash_check: "5/5ファイル存在確認(ls -la実測)。AC4個/not_in_scope3個カウント。yaml_atomic.py L53+L84のyaml.dumpを現物確認。pre-commit L114-122のscan_target条件を現物確認"
+  timestamp: "2026-06-20T09:20:00"
+- cmd_id: idle_cold_finding_categories_retroactive_20260620
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "冷え観点(numbers/simulation) zero_streak根因=惰性省略67%(12/18件)。対策: brainwash_checkに除外理由必須化"
+  observations:
+    - "事実: numbers zero_streak=10, simulation zero_streak=10(startup gate計測)"
+    - "事実: cmd_3461系12件でnumbers/simulation適用可能だったが惰性省略"
+    - "事実: hotfix系6件はnumbers/simulation論点なし(意図的除外が妥当)"
+  origin: "[[冷え観点zero_streak]] -> [[cmd_3461惰性省略]] -> [[Phase4早期終了本能再現]]"
+  causal_chain: "大量レビュー→1件あたり深度低下→numbers/simulation惰性省略→zero_streak蓄積→3セッションCRITICAL。複利の問い: 除外理由記録1回=以降の全レビューで惰性/意図区別可能=正の複利"
+  cs_checklist:
+    CS1_source_check: "OK — review_log直近30件+gate出力を全数確認"
+    CS2_own_data: "OK — gate_gunshi_cs_checklist.sh出力でWARN対象18件特定"
+    CS3_code_compare: "OK — finding_categoriesの実パターンをgrep確認"
+    CS4_action_convert: "OK — D0実装検討(Step 6で判定)"
+    CS5_unchecked_angle: "brainwash_check除外理由記録のBLOCK化は段階的導入が妥当"
+    CS6_causal: "OK — 惰性省略→zero_streak→CRITICAL→Phase4構造"
+  operational_simulation: "brainwash_checkに除外理由記録を追加すると: (1)レビュー時間+10秒/件 (2)惰性省略と意図的除外が区別可能 (3)cs_checklist WARNが適正化"
+  brainwash_check: "18件中12件(67%)が惰性省略。3セッション先送り。#5(先送り)が3セッション作動していた。今回の行動=分析永続化+D0検討で#6(出力=仕事)を回避"
+  timestamp: "2026-06-20T09:25:00"

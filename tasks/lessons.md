@@ -8379,3 +8379,18 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **then**: 候補contextの更新または未更新理由を報告YAML/完了gateに必須化する
 - **because**: 検出だけでは古いcontextが残り、同じALERTを再生産する
 - GA-099の4対象はlast_updated後のsource commit増加をgateが検出したが、cmd完了時にどのcontextを更新すべきかを必須化する防御層が弱く、古いcontextが残った。次回はcmd_complete_gateのcontext_updateまたはcmd設計時のstaleness_triggersから対象contextを必須化するチェックを追加する。origin: [[GA-099]] -> [[cmd完了時context更新未強制]] -> [[context鮮度ALERT]]
+
+### L826: yaml.dump集中管理ファイルはhookスキャン対象から除外必須
+- **日付**: 2026-06-20
+- **出典**: cmd_karo_hotfix_hook_yaml_dump_ga101_20260620
+- **記録者**: kotaro
+- **tags**: [hook, pre-commit, yaml, GP-136]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/git-pre-commit.sh,scripts/lib/yaml_atomic.py,tests/unit/test_git_pre_commit.bats]
+- **origin**: [[GA-101]] -> [[yaml_atomic.py集中管理]] -> [[pre-commit偽陽性BLOCK]]
+- **when**: yaml.dump集中管理ヘルパーを追加・変更するとき
+- **how**: hookのスキャン対象判定に集中管理ファイルの明示除外と回帰テストを追加する
+- **if**: yaml.dumpを安全ラッパー内で意図的に使う
+- **then**: pre-commit/yaml_dump_scan_targetの例外とテストを同時に追加する
+- **because**: 文字列検出hookは正当な集中管理までBLOCKし、作業を止めるため
+- scripts/lib/yaml_atomic.pyのようなyaml.dump集中管理ファイルはGP-136のスキャン対象外にすべき。is_yaml_dump_scan_target()に明示的除外を追加しなければ新規追加時に必ずBLOCKされる。origin: [[GA-101]] -> [[hook例外漏れ]] -> [[pre-commit偽陽性BLOCK]]

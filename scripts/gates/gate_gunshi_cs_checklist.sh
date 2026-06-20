@@ -396,7 +396,11 @@ for idx in range(start, len(reviews)):
                 cold = False
                 break
         if cold and name not in entry_categories:
-            missing.append(name)
+            # brainwash_checkに除外理由(N/A等)があれば意図的除外として許容
+            bw_text = "\n".join(entry["text"]).lower()
+            exclusion_pattern = rf"{name}\s*[:：]\s*(n/?a|なし|対象外|論点なし)"
+            if not re.search(exclusion_pattern, bw_text):
+                missing.append(name)
     if missing:
         warnings.append(f"{entry['id']}:{','.join(missing)}")
 

@@ -1,38 +1,46 @@
 task:
-  parent_cmd: cmd_3461_kotaro
-  task_id: cmd_3461_kotaro_normal
-  task_type: recon
-  status: idle
-  project: dm-signal
-  target_path: /mnt/c/Python_app/DM-signal/docs
-  purpose: 'cmd_3461 shard: dm-signal docs/context/knowledge-base内のSSOT記述と重複説明の棚卸し。全PJ横断は禁止。'
-  title: 'SSOT偵察 dm-signal docs shard'
+  parent_cmd: cmd_karo_hotfix_hook_yaml_dump_ga101_20260620
+  task_type: hotfix
+  project: infra
+  target_path: scripts/lib/yaml_atomic.py
+  purpose: "GA-101 hook_failureを一次情報で切り分け、yaml.dump検出がコード品質問題かhook設定問題かを判定して再発防止を提示または最小修正する"
+  title: "GA-101 yaml.dump hook failure調査+防御層"
   command: |
-    /mnt/c/Python_app/DM-signal/docs と context を対象に、SSOTと明記された正本、重複説明、古い参照、固定値一覧を抽出する。
-    結果を /mnt/c/Python_app/DM-signal/docs/research/ssot-audit-parts/docs-context.md に表形式で保存する。
-    修正実装は禁止。事実・ファイル・行・推定SSOTだけを記録する。
+    queue/inbox/karo.yaml の GA-101 を起点に、pre-commit GP-136 が scripts/lib/yaml_atomic.py の yaml.dump をBLOCKした原因を調査せよ。
+    対象一次情報: scripts/lib/yaml_atomic.py, scripts/gates/gate_no_direct_yaml_dump.sh, .claude/hooks/pre-bash-combined.sh, scripts/hooks/git-pre-commit.sh, tests/unit/test_gate_no_direct_yaml_dump.bats。
+    Q1: なぜhookに引っかかったか。yaml_atomic.pyの設計意図とhookの検出条件から、コード品質問題かhook設定問題かを判定せよ。
+    Q2: 同じ種類の引っかかりが他の忍者/ファイルで起きていないか。hook failure logまたは関連ログからパターンを確認せよ。
+    Q3: 次に引っかからない防御層を1つ以上提示し、小さく安全なら実装してテストせよ。大きければ後続cmd案にする。
   acceptance_criteria:
     - id: AC1
       checks:
-        - check: 'docs/context内のSSOT正本候補と重複説明候補を表にし、各行に file:line / value_or_topic / category / suspected_ssot を含めた'
+        - check: "GA-101の直接原因を、staged diff・hook検出条件・対象ファイル行番号付きで説明した"
     - id: AC2
       checks:
-        - check: 'backend/frontend/config/scriptsへ波及しそうな重複記述を別表にした'
+        - check: "yaml_atomic.pyが許可されるべき例外か、禁止されるべき直接dumpかを設計意図から二値判定した"
     - id: AC3
       checks:
-        - check: '/mnt/c/Python_app/DM-signal/docs/research/ssot-audit-parts/docs-context.md を作成し、rg -c SSOT で1以上を確認した'
+        - check: "同種hook_failureの横展開をhook failure logまたは関連ログで確認し、件数/パターンを報告した"
+    - id: AC4
+      checks:
+        - check: "再発防止の防御層を実装または後続cmd案として提示し、関連テスト/pre-commit相当確認を実行した"
   not_in_scope:
-    - ドキュメント修正
-    - SSOT違反の修正実装
-    - dm-signal以外のリポジトリ調査
-  report_path: queue/reports/kotaro_report_cmd_3461_kotaro.yaml
-  report_filename: kotaro_report_cmd_3461_kotaro.yaml
+    - 運用YAMLへの直接yaml.dump利用を許可すること
+    - 他者の広範なdirty変更を一括commit/revertすること
+    - hookを緩めて本物のyaml.dump事故を見逃すこと
+  status: idle
+  task_id: cmd_karo_hotfix_hook_yaml_dump_ga101_20260620_normal
+  report_filename: kotaro_report_cmd_karo_hotfix_hook_yaml_dump_ga101_20260620.yaml
+  report_path: queue/reports/kotaro_report_cmd_karo_hotfix_hook_yaml_dump_ga101_20260620.yaml
+  ac_version: 25385424
 
   session_state:
     attempt: 1
-    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
     tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'GA-101: git-pre-commit.sh の is_yaml_dump_scan_target() が scripts/lib/yaml_atomic.py を除外していなかった。yaml.dump集中管理の正当な場所として除外ガードを追加し、テスト#9で確認済み。commit: ceb764369 fix(infra): GA-101 yaml_atomic.py を pre-commit yaml.dump スキャン除外に追加'
     prior_attempts:
     - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'GA-101: git-pre-commit.sh の is_yaml_dump_scan_target() が scripts/lib/yaml_atomic.py を除外していなかった。yaml.dump集中管理の正当な場所として除外ガードを追加し、テスト#9で確認済み。commit: ceb764369 fix(infra): GA-101 yaml_atomic.py を pre-commit yaml.dump スキャン除外に追加'

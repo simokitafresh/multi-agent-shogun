@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-20 cmd_karo_hotfix_context_saxo_ga100_20260620 -->
+<!-- last_updated: 2026-06-20 cmd_karo_hotfix_hook_yaml_dump_ga101_20260620 -->
 
 ## 2026-06-16
 
@@ -1216,3 +1216,5 @@
 - 2026-06-20 cmd_karo_hotfix_context_freshness_ga099_20260620: GA-099 context_freshness ALERTを半蔵へkaro_direct配備。deploy_task.shのtask YAML破損を検出し、正本YAML+yaml_field_setで修復、capture-paneでnudge到達・最新YAML再読込・in_progressを確認。元alertは処理済み、半蔵報告待ち。
 
 - 2026-06-20 cmd_karo_hotfix_context_saxo_ga100_20260620: GA-100 saxo-trade-engine.md鮮度ALERTを影丸へkaro_direct配備。deploy_task.shのtask YAML破損を検出し、正本YAML+yaml_field_setで修復。capture-paneでGA-100検索・git blame/log・gate再実行まで作業開始を確認。
+
+- 2026-06-20 cmd_karo_hotfix_hook_yaml_dump_ga101_20260620: GA-101 hook_failure(yaml.dump GP-136)を小太郎へkaro_direct配備。deploy_task.shのtask YAML破損を検出し、正本YAML+yaml_field_setで修復。capture-paneで再nudge到達・task再読込・inbox既読化開始を確認。

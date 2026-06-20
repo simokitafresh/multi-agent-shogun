@@ -3218,6 +3218,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: bulk metrics用prepared frameのRFは各PFの実date軸に対して個別解決せよ
   origin: '[[cmd_karo_batch_R6]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L547
   title: パラメータ空間をサイレント縮小するな(殿厳命2026-04-04)
   summary: '計算量を理由にパラメータ空間を縮小すると殿の時間を奪う。4回連続事故: top_n=5決め打ち/lookback6個/PBO5組合せ/MaxDD1点。対処:
