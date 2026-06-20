@@ -887,7 +887,7 @@ for _agg_file in \
   "$SCRIPT_DIR/queue/shogun_to_karo.yaml"; do
     [[ -f "$_agg_file" ]] && _AGG_FILES+=("$_agg_file")
 done
-_AGG_SIG="$(stat -c '%Y:%s' "${_AGG_FILES[@]}" 2>/dev/null | tr '\n' ';' || true)"
+_AGG_SIG="$(stat -c '%n:%y:%s' "${_AGG_FILES[@]}" 2>/dev/null | tr '\n' ';' || true)"
 if [[ -f "$_AGGREGATE_CACHE" ]]; then
     IFS= read -r _agg_cache_sig < "$_AGGREGATE_CACHE" || _agg_cache_sig=""
     if [[ "$_agg_cache_sig" == "$_AGG_SIG" ]]; then
@@ -1263,6 +1263,9 @@ declare -A _NINJA_PANE_IDX
 declare -a _CTX_PIDS=()
 for ninja in $_KARO_NINJA_NAMES; do
     task_status=${_NINJA_STATUS_CACHE[$ninja]:-}
+    if [ -z "$task_status" ] && [ -f "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" ]; then
+        task_status=$(awk '/^[[:space:]]*status:/ { print $2; exit }' "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" 2>/dev/null || true)
+    fi
     pane_idx=${_PANE_IDX_BY_AGENT[$ninja]:-}
     _NINJA_PANE_IDX[$ninja]=$pane_idx
     if [[ "$task_status" =~ ^(assigned|in_progress)$ ]] && [ -n "$pane_idx" ]; then
@@ -1280,6 +1283,9 @@ for _pid in "${_CTX_PIDS[@]}"; do wait "$_pid" 2>/dev/null || true; done
 stall_count=0
 for ninja in $_KARO_NINJA_NAMES; do
     task_status=${_NINJA_STATUS_CACHE[$ninja]:-}
+    if [ -z "$task_status" ] && [ -f "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" ]; then
+        task_status=$(awk '/^[[:space:]]*status:/ { print $2; exit }' "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" 2>/dev/null || true)
+    fi
     pane_idx=${_NINJA_PANE_IDX[$ninja]}
     if [[ "$task_status" =~ ^(assigned|in_progress)$ ]] && [ -n "$pane_idx" ]; then
         if [[ -f "${_CTX_TMPF[$ninja]}" ]]; then
@@ -1804,6 +1810,10 @@ if [ ${#alerts[@]} -gt 0 ]; then
     done
     if [ -n "$_deferred_alerts" ]; then
         _deferred_message="家老startup先送りCRITICAL自動エスカレーション: ${_deferred_alerts}。家老が対処できないため将軍cmd起票を検討せよ"
+        mkdir -p "$SCRIPT_DIR/queue/locks"
+        _deferred_lock="$SCRIPT_DIR/queue/locks/karo_startup_escalation.lock"
+        (
+        flock -x 9
         _deferred_dup_status=$(python3 - "$SCRIPT_DIR/queue/inbox/shogun.yaml" "$_deferred_message" <<'PY' 2>/dev/null || true
 import sys
 from pathlib import Path
@@ -1840,6 +1850,7 @@ PY
                 "$_deferred_message" \
                 escalation karo 2>/dev/null || true
         fi
-        unset _deferred_message _deferred_dup_status
+        ) 9>"$_deferred_lock"
+        unset _deferred_message _deferred_dup_status _deferred_lock
     fi
 fi

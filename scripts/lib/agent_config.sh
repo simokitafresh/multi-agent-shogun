@@ -52,6 +52,15 @@ _agent_config_load() {
         return 0
     fi
 
+    if [[ ! -f "$_AGENT_CONFIG_SETTINGS" ]]; then
+        _AGENT_CONFIG_RAW=$'gunshi\tgunshi\tgunshi\nhayate\tninja\thayate\nkagemaru\tninja\tkagemaru\nhanzo\tninja\thanzo\nsaizo\tninja\tsaizo\nkotaro\tninja\tkotaro\ntobisaru\tninja\ttobisaru'
+        _AGENT_CONFIG_NINJA_NAMES="hayate kagemaru hanzo saizo kotaro tobisaru"
+        _AGENT_CONFIG_ALL_NAMES="gunshi hayate kagemaru hanzo saizo kotaro tobisaru"
+        _AGENT_CONFIG_LAYOUT_COL1_WIDTH_PCT="38"
+        _AGENT_CONFIG_LAYOUT_KARO_HEIGHT="24"
+        return 0
+    fi
+
     if [[ -f "$_AGENT_CONFIG_CACHE" && "$_AGENT_CONFIG_CACHE" -nt "$_AGENT_CONFIG_SETTINGS" ]]; then
         # shellcheck source=/dev/null
         if source "$_AGENT_CONFIG_CACHE" 2>/dev/null \

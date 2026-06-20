@@ -87,6 +87,46 @@ assert not missing, f"missing stale reset fields: {sorted(missing)}"
 PY
 }
 
+@test "memory_db_context injection quotes double and single quotes safely" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/scripts"
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_quote
+  task_id: cmd_quote_impl
+  status: assigned
+  purpose: "ontology quote regression"
+YAML
+    cat > "$tmpdir/scripts/memory_db_query.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' '2026-06-20 | 殿: "オントロジー" and can'\''t stop'
+EOF
+    chmod +x "$tmpdir/scripts/memory_db_query.sh"
+    cat > "$tmpdir/run_inject.sh" <<EOF
+#!/usr/bin/env bash
+set -e
+SCRIPT_DIR="$tmpdir"
+log() { :; }
+$(sed -n '/^inject_memory_db_context()/,/^}/p' "$PROJECT_ROOT/scripts/deploy_task.sh")
+inject_memory_db_context "$tmpdir/queue/tasks/sasuke.yaml"
+EOF
+    chmod +x "$tmpdir/run_inject.sh"
+
+    run bash "$tmpdir/run_inject.sh"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+ctx = task.get('memory_db_context') or []
+assert ctx == ['2026-06-20 | 殿: "オントロジー" and can\'t stop'], ctx
+PY
+}
+
 @test "cmd_3300: deploy_task injects command readonly refs into task YAML" {
     tmpdir="$(mktemp -d)"
     mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue" "$tmpdir/scripts/lib"

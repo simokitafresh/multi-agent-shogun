@@ -3228,9 +3228,17 @@ inject_memory_db_context() {
     # task YAMLに memory_db_context フィールドとして注入
     local indent="  "
     local inject_block="${indent}memory_db_context:"
-    local line
+    local line seen_lines=$'\n'
     while IFS= read -r line; do
-        [ -n "$line" ] && inject_block="${inject_block}"$'\n'"${indent}- \"$(echo "$line" | sed 's/"/\\"/g')\""
+        if [ -n "$line" ]; then
+            case "$seen_lines" in
+                *$'\n'"$line"$'\n'*) continue ;;
+            esac
+            seen_lines="${seen_lines}${line}"$'\n'
+            line="${line//$'\r'/}"
+            line="${line//\'/\'\'}"
+            inject_block="${inject_block}"$'\n'"${indent}- '${line}'"
+        fi
     done <<< "$(echo "$result" | head -5)"
 
     # 既存のmemory_db_contextを除去してから追加
