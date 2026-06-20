@@ -192,7 +192,7 @@ maybe_cache_check_mode() {
 
     cache_scope="${WA_FILE//[\/: .#*?!]/_}"
     cache_base="$cache_dir/check_v1_${cache_scope: -48}"
-    current_sig="$(stat -c '%Y:%s' "$WA_FILE" 2>/dev/null):$KNOWN_NINJAS_CSV"
+    current_sig="$(stat -c '%n:%y:%s' "$WA_FILE" 2>/dev/null):$KNOWN_NINJAS_CSV"
 
     if [[ -f "$cache_base.out" && -f "$cache_base.exit" && -f "$cache_base.sig" ]] \
         && [[ "$(cat "$cache_base.sig" 2>/dev/null)" == "$current_sig" ]]; then

@@ -27,7 +27,7 @@ collect_changed_files() {
     local staged_files
 
     if [ -f "$index_file" ]; then
-        index_sig="$(stat -c '%Y:%s' "$index_file" 2>/dev/null || true)"
+        index_sig="$(stat -c '%n:%y:%s' "$index_file" 2>/dev/null || true)"
         expected_header="${SHOGUN_ROOT}|${index_sig}"
         if [ -n "$index_sig" ] && [ -f "$cache_file" ]; then
             IFS= read -r cache_header < "$cache_file" || true

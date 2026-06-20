@@ -18,7 +18,8 @@ if [ ! -f "$FIRE_LOG" ]; then
 fi
 
 # --- mtimeキャッシュ: 同一ファイルの2回目以降はほぼゼロms ---
-cache_sig=$(stat -c '%Y:%s' "$FIRE_LOG" 2>/dev/null || printf '0:0')
+# 秒単位mtimeでは同一秒・同サイズ更新を見逃すため、ナノ秒mtime+path+sizeを署名に含める。
+cache_sig=$(stat -c '%n:%y:%s' "$FIRE_LOG" 2>/dev/null || printf 'missing')
 cache_key="${FIRE_LOG}_${cache_sig}"
 cache_key="${cache_key//[^A-Za-z0-9_.-]/_}"
 cache_tail="$cache_key"

@@ -63,7 +63,7 @@ phase_guide_cached() {
     local cache_sig current_sig
 
     [[ -f "$source_file" ]] || return 1
-    current_sig="$(stat -c '%Y:%s' "$source_file" 2>/dev/null || echo '')"
+    current_sig="$(stat -c '%n:%y:%s' "$source_file" 2>/dev/null || echo '')"
     if [[ -f "$cache_file" ]]; then
         IFS= read -r cache_sig < "$cache_file" || cache_sig=""
         if [[ "$cache_sig" == "$current_sig" ]]; then
@@ -209,7 +209,7 @@ show_active_cmd_semantic_context_one() {
     semantic_current_sig="$(
         {
             printf '%s\n' "$target_path"
-            stat -c '%Y:%s' "$SCRIPT_DIR/docs/semantic-index/index.md" 2>/dev/null || true
+            stat -c '%n:%y:%s' "$SCRIPT_DIR/docs/semantic-index/index.md" 2>/dev/null || true
         } | sha256sum | awk '{print $1}'
     )"
     semantic_cache_key="${target_path//[^A-Za-z0-9_.-]/_}"
@@ -1555,10 +1555,10 @@ if [ -x "$skill_summary_script" ]; then
     _skill_cache_sig=""
     _skill_current_sig=""
     if [ -f "$SCRIPT_DIR/logs/skill_execution_log.yaml" ]; then
-        _skill_current_sig="$(stat -c '%Y:%s' "$SCRIPT_DIR/logs/skill_execution_log.yaml" 2>/dev/null || echo '')"
+        _skill_current_sig="$(stat -c '%n:%y:%s' "$SCRIPT_DIR/logs/skill_execution_log.yaml" 2>/dev/null || echo '')"
     fi
-    _skill_current_sig="${_skill_current_sig}|gate:$(stat -c '%Y:%s' "$SCRIPT_DIR/scripts/gates/gate_karo_startup.sh" 2>/dev/null || echo '')"
-    _skill_current_sig="${_skill_current_sig}|summary:$(stat -c '%Y:%s' "$SCRIPT_DIR/scripts/skill_execution_log.sh" 2>/dev/null || echo '')"
+    _skill_current_sig="${_skill_current_sig}|gate:$(stat -c '%n:%y:%s' "$SCRIPT_DIR/scripts/gates/gate_karo_startup.sh" 2>/dev/null || echo '')"
+    _skill_current_sig="${_skill_current_sig}|summary:$(stat -c '%n:%y:%s' "$SCRIPT_DIR/scripts/skill_execution_log.sh" 2>/dev/null || echo '')"
     if [[ -f "$_SKILL_SUMMARY_CACHE" ]]; then
         IFS= read -r _skill_cache_sig < "$_SKILL_SUMMARY_CACHE" || _skill_cache_sig=""
     fi

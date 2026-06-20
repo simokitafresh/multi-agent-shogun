@@ -21,9 +21,10 @@ fi
 
 _cache_file=""
 if [[ "${GATE_AUTOFIX_DISABLE_CACHE:-0}" != "1" && "$CACHE_TTL" =~ ^[0-9]+$ && "$CACHE_TTL" -gt 0 ]]; then
-    _log_sig="$(stat -c '%Y:%s' "$LOG_FILE" 2>/dev/null || printf 'unknown')"
+    _log_sig="$(stat -c '%n:%y:%s' "$LOG_FILE" 2>/dev/null || printf 'unknown')"
+    _log_sig_hash="$(printf '%s' "$_log_sig" | sha256sum | awk '{print $1}')"
     _root_key="${REPO_ROOT//[^A-Za-z0-9._-]/_}"
-    _cache_file="/tmp/gate_autofix_proposal_${_root_key}_${WINDOW}_${MIN_COUNT}_${_log_sig//[^A-Za-z0-9._-]/_}.cache"
+    _cache_file="/tmp/gate_autofix_proposal_${_root_key}_${WINDOW}_${MIN_COUNT}_${_log_sig_hash}.cache"
     _now="$(date +%s)"
     if [[ -f "$_cache_file" ]]; then
         _cache_mtime="$(stat -c '%Y' "$_cache_file" 2>/dev/null || printf 0)"

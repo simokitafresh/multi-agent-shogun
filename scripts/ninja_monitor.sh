@@ -5356,7 +5356,8 @@ while true; do
     # 状態変化時のみ呼び出す（コスト最適化）
     current_idle=$(grep "^idle|" "$SCRIPT_DIR/queue/karo_snapshot.txt" 2>/dev/null | head -1 || echo "")
     # gate_metrics変化検知: wc -l(全量134KB読込)→stat mtime+size(メタデータのみ) (L511同原則: 全量scan回避)
-    current_gate_sig=$(stat -c '%Y:%s' "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null || echo "0:0")
+    # 秒単位mtimeでは同一秒・同サイズ更新を見逃すため、ナノ秒mtime+path+sizeを使う。
+    current_gate_sig=$(stat -c '%n:%y:%s' "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null || echo "missing")
     # context_warn_sig: 5分間隔キャッシュ（context_freshness_check.sh毎サイクル起動→WSL2プロセス起動コスト削減）
     _ctx_warn_now=$EPOCHSECONDS
     if (( _ctx_warn_now - CONTEXT_WARN_SIG_CHECK_LAST >= CONTEXT_WARN_SIG_CHECK_INTERVAL )); then

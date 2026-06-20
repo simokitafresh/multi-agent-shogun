@@ -183,14 +183,15 @@ warnings_output() {
             "$ROOT_DIR/queue/archive/cmds"
         do
             if [[ -e "$path" ]]; then
-                sig_parts+=("$(stat -c '%Y:%s' "$path" 2>/dev/null || printf '0:0')")
+                sig_parts+=("$(stat -c '%n:%y:%s' "$path" 2>/dev/null || printf 'missing')")
             else
                 sig_parts+=("missing")
             fi
         done
-        local sig
+        local sig sig_hash
         sig="$(printf '%s|' "${sig_parts[@]}")"
-        cache_file="/tmp/gate_context_freshness_${root_key}_${today_key}_${stale_key}_${sig//[^A-Za-z0-9._-]/_}.cache"
+        sig_hash="$(printf '%s' "$sig" | sha256sum | awk '{print $1}')"
+        cache_file="/tmp/gate_context_freshness_${root_key}_${today_key}_${stale_key}_${sig_hash}.cache"
         local now cache_mtime
         now="$(date +%s)"
         if [[ -f "$cache_file" ]]; then

@@ -22,7 +22,7 @@ is_file_older_than_minutes() {
 }
 
 file_stamp() {
-    stat -c '%Y:%s' "$1" 2>/dev/null
+    stat -c '%n:%y:%s' "$1" 2>/dev/null
 }
 
 # PostToolUse hook: 将軍のinbox未読件数を表示
