@@ -1243,7 +1243,8 @@ for hint, values in hint_tokens.items():
                 tokens.append(token)
 
 if not paths:
-    print("SKIP\t検証対象ファイル未指定")
+    hint_keys = list(hint_paths.keys())
+    print(f"SKIP\t検証対象ファイル未指定 — 自動化ターゲットにscripts/**/*.sh等のファイルパスまたは{hint_keys}キーワードを含めよ (target='{target[:60]}')")
     raise SystemExit(0)
 if not tokens:
     print("SKIP\t検証キーワード未指定")
@@ -1291,6 +1292,7 @@ PY
                 ;;
             *)
                 echo "  WARN: 自動化ターゲット実装証拠 grep検証スキップ — ${_q6_target_proof_detail}"
+                echo "  ★ 解消法: Q6自動化ターゲットにscripts/**/*.sh等のファイルパスを明示せよ (例: scripts/bulletin_write.sh / scripts/gates/gate_shogun_startup.sh)"
                 if [ "$overall" = "OK" ]; then
                     overall="WARN"
                 fi
