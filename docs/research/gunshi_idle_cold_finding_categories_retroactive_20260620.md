@@ -45,7 +45,7 @@ cmd_3461系は6忍者並列の大量偵察cmdで、1件あたりのレビュー�
 
 ### 構造的(提案): brainwash_checkへの冷え観点除外理由必須化
 
-gate_gunshi_cs_checklist.shの冷え観点WARNロジックを拡張:
+[[gate_gunshi_cs_checklist]] (`scripts/gates/gate_gunshi_cs_checklist.sh` L272: `cold_category_missing`変数)の冷え観点WARNロジックを拡張:
 - finding_categoriesにnumbers/simulationがない場合、brainwash_checkに除外理由が記載されているか確認
 - 除外理由なし → WARN → BLOCK(段階的)
 - 除外理由あり → OK(意図的除外として許容)
@@ -61,5 +61,6 @@ gate_gunshi_cs_checklist.shの冷え観点WARNロジックを拡張:
 ## 因果リンク
 
 - origin: [[冷え観点zero_streak]] -> [[cmd_3461大量レビュー惰性省略]] -> [[Phase4早期終了本能再現]]
-- → [[deepdive_why_chain Phase 4]] 生存本能の不在
+- → [[deepdive_why_chain_20260321]] Phase 4(L80-) 「早期終了本能」: 「これで十分」が限界まで確認する努力を早期終了させる(L102)。12件連続省略の駆動力と同構造
+- → [[gate_gunshi_cs_checklist]] L272-405: `cold_category_missing`変数の判定ロジック。対策実装ターゲット(brainwash_check除外理由チェック追加箇所)
 - → [[LG027]] 計測対象のズレ(referenced率≠useful率と同構造: finding_categories記録≠観点使用)
