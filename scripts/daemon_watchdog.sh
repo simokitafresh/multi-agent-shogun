@@ -309,13 +309,15 @@ check_inbox_watchers() {
             pane_target="shogun:main"
         else
             local pane_index
-            pane_index=$(tmux list-panes -t "shogun:agents" -F '#{pane_index} #{@agent_id}' 2>/dev/null | \
-                awk -v a="$agent" '$2 == a {print $1; exit}') || true
-            if [[ -z "$pane_index" ]]; then
+            if [[ -f "$SCRIPT_DIR/scripts/lib/pane_lookup.sh" ]]; then
+                # shellcheck source=/dev/null
+                source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
+            fi
+            pane_target="$(pane_lookup "$agent" 2>/dev/null || true)"
+            if [[ -z "$pane_target" ]]; then
                 log "WARN: Cannot find pane for ${agent}, skipping inbox_watcher restart"
                 continue
             fi
-            pane_target="shogun:agents.${pane_index}"
         fi
 
         # CLI type を tmux 変数から取得

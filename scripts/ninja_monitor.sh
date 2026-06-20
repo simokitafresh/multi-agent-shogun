@@ -37,6 +37,7 @@ LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
 TRAINING_EFFECT_LOG="$SCRIPT_DIR/logs/training_effect.log"  # 修行before/after FAIL率比較ログ (cmd_2767)
 STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
 source "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
@@ -69,10 +70,10 @@ NTFY_HEALTH_THRESHOLD_MIN=10 # ntfy_listenerヘルスチェックしきい値（
 NTFY_RESTART_COOLDOWN_MIN=5  # ntfy_listener連続再起動防止クールダウン（分）
 REDISCOVER_EVERY=30 # N回ポーリングごとにペイン再探索
 # 家老ペインターゲット（@agent_idから動的解決。EH6: ハードコード排除完了）
-KARO_PANE=$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f '#{==:#{@agent_id},karo}' 2>/dev/null | head -1)
-KARO_PANE="${KARO_PANE:-shogun:agents.1}"  # fallback
+KARO_PANE=$(pane_lookup karo 2>/dev/null || true)
+KARO_PANE="${KARO_PANE:-${TMUX_WINDOW:-shogun:agents}.1}"  # fallback
 # 軍師ペインターゲット（@agent_idから動的解決）
-GUNSHI_PANE=$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f '#{==:#{@agent_id},gunshi}' 2>/dev/null | head -1)
+GUNSHI_PANE=$(pane_lookup gunshi 2>/dev/null || true)
 GUNSHI_PANE="${GUNSHI_PANE:-}"  # 軍師不在時は空（処理スキップ）
 NTFY_BATCH_FLUSH_INTERVAL=900 # INFOバッチ通知フラッシュ間隔（秒）
 
@@ -640,8 +641,9 @@ discover_panes() {
 # 期待される忍者ペインと実ペインを比較し、消失を検知して家老に通知
 check_pane_survival() {
     local actual_agents
-    if ! actual_agents=$(tmux list-panes -t shogun:agents -F '#{@agent_id}' 2>/dev/null) || [ -z "$actual_agents" ]; then
-        log "PANE-CHECK: Failed to list panes for shogun:agents"
+    local agents_window="${TMUX_WINDOW:-shogun:agents}"
+    if ! actual_agents=$(tmux list-panes -t "$agents_window" -F '#{@agent_id}' 2>/dev/null) || [ -z "$actual_agents" ]; then
+        log "PANE-CHECK: Failed to list panes for ${agents_window}"
         return
     fi
 
@@ -656,7 +658,7 @@ check_pane_survival() {
     # LK009 enforcement: @agent_id重複検知+自動修復
     # 同一agent_idが複数paneに存在 = CLI再起動時の汚染
     local pane_mapping
-    pane_mapping=$(tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id}' 2>/dev/null || true)
+    pane_mapping=$(tmux list-panes -t "$agents_window" -F '#{pane_index} #{@agent_id}' 2>/dev/null || true)
     local -A expected_pane  # agent_name → expected pane_index (from PANE_TARGETS)
     for name in "${NINJA_NAMES[@]}"; do
         local pt="${PANE_TARGETS[$name]:-}"
@@ -688,8 +690,8 @@ check_pane_survival() {
             done
             if [ -n "$correct_agent" ]; then
                 log "AGENT-ID-COLLISION: pane ${pidx} has @agent_id='${aid}' but should be '${correct_agent}' → fixing"
-                tmux set-option -t "shogun:agents.${pidx}" -p @agent_id "$correct_agent" 2>/dev/null || true
-                tmux set-option -t "shogun:agents.${pidx}" -p @agent_state idle 2>/dev/null || true
+                tmux set-option -t "${agents_window}.${pidx}" -p @agent_id "$correct_agent" 2>/dev/null || true
+                tmux set-option -t "${agents_window}.${pidx}" -p @agent_state idle 2>/dev/null || true
                 bash "$SCRIPT_DIR/scripts/ntfy.sh" "【@agent_id修復】pane ${pidx}: ${aid}→${correct_agent}(LK009)" 2>/dev/null || true
             fi
         fi
@@ -715,7 +717,7 @@ check_pane_survival() {
     fi
 
     log "PANE-LOST: ${missing_str} (${#missing[@]}名消失)"
-    bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "ペイン消失: ${missing_str} (${#missing[@]}名)。OOM Kill等の可能性。tmux list-panes -t shogun:agents で確認されたし" pane_lost ninja_monitor >> "$LOG" 2>&1
+    bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "ペイン消失: ${missing_str} (${#missing[@]}名)。OOM Kill等の可能性。tmux list-panes -t ${agents_window} で確認されたし" pane_lost ninja_monitor >> "$LOG" 2>&1
     PREV_PANE_MISSING="$missing_str"
 }
 
@@ -3505,7 +3507,7 @@ update_all_context_pct() {
     while read -r pane_idx agent_id; do
         [ -z "$pane_idx" ] && continue
         update_context_pct "shogun:$pane_idx" "${agent_id:-}"
-    done < <(tmux list-panes -t shogun:agents -F '2.#{pane_index} #{@agent_id}' 2>/dev/null)
+    done < <(tmux list-panes -t "${TMUX_WINDOW:-shogun:agents}" -F '#{window_index}.#{pane_index} #{@agent_id}' 2>/dev/null)
 }
 
 # ─── STEP 1: ninja_states.yaml 自動生成 ───
@@ -3705,8 +3707,7 @@ check_inbox_watcher_health() {
         if [ "$agent" = "shogun" ]; then
             pane_target="shogun:main"
         else
-            pane_target=$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' \
-                -f "#{==:#{@agent_id},${agent}}" 2>/dev/null | head -1)
+            pane_target="$(pane_lookup "$agent" 2>/dev/null || true)"
         fi
 
         if [ -z "$pane_target" ]; then

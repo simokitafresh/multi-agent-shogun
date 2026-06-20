@@ -70,6 +70,7 @@ for _ea in "${EXPECTED_AGENTS[@]}"; do
 done
 unset _ea
 NUM_AGENTS=${#EXPECTED_AGENTS[@]}
+AGENTS_WINDOW_TARGET="${TMUX_WINDOW:-shogun:agents}"
 
 # シェル設定
 SHELL_SETTING=$(grep '^shell:' config/settings.yaml 2>/dev/null | awk '{print $2}')
@@ -93,7 +94,7 @@ while IFS=$'\t' read -r _pi _aid _dead _pid _mod _grp _cli; do
     _MB_GROUP["$_pi"]="$_grp"
     _MB_CLI["$_pi"]="$_cli"
     _MB_PANE_COUNT=$((_MB_PANE_COUNT+1))
-done < <(tmux list-panes -t shogun:agents \
+done < <(tmux list-panes -t "$AGENTS_WINDOW_TARGET" \
     -F '#{pane_index}	#{@agent_id}	#{pane_dead}	#{pane_pid}	#{@model_name}	#{@agent_group}	#{@agent_cli}')
 
 # --- ps batch (CLI process detection) ---
@@ -160,48 +161,7 @@ done < <(awk '
 # --- Pre-build all CLI commands (replaces per-agent build_cli_command calls) ---
 declare -A _MB_CLI_CMD
 for _ag in "${EXPECTED_AGENTS[@]}"; do
-    _type="${_MB_AGENT_TYPE[$_ag]:-claude}"
-    _base="${_MB_PROFILE_CMD[$_type]:-$HOME/bin/claude --dangerously-skip-permissions}"
-    _sargs="${_MB_PROFILE_ARGS[$_type]:-}"
-    _mname="${_MB_AGENT_MODEL_NAME[$_ag]:-}"
-
-    case "$_type" in
-        claude)
-            _model_short=""
-            case "$_mname" in
-                *[Ss]onnet*) _model_short="sonnet" ;;
-                *[Hh]aiku*)  _model_short="haiku" ;;
-            esac
-            _bin="${_base%% *}"
-            _flags="${_base#* }"
-            [[ "$_flags" == "$_base" ]] && _flags=""
-            if [[ -n "$_model_short" ]]; then
-                _MB_CLI_CMD["$_ag"]="${_bin} --model ${_model_short} --effort high ${_flags}"
-            else
-                _MB_CLI_CMD["$_ag"]="${_bin} --effort high ${_flags}"
-            fi
-            ;;
-        codex)
-            _extra=""
-            if [[ "$_mname" == gpt-* ]]; then
-                _effort="${_mname##*-}"
-                case "$_effort" in
-                    medium|low|high) _extra="-c model_reasoning_effort=${_effort}" ;;
-                esac
-            fi
-            if [[ -n "$_sargs" && "$_sargs" != '""' ]]; then
-                _extra="${_sargs}${_extra:+ $_extra}"
-            fi
-            if [[ -n "$_extra" ]]; then
-                _MB_CLI_CMD["$_ag"]="${_base} ${_extra}"
-            else
-                _MB_CLI_CMD["$_ag"]="$_base"
-            fi
-            ;;
-        *)
-            _MB_CLI_CMD["$_ag"]="$_base"
-            ;;
-    esac
+    _MB_CLI_CMD["$_ag"]="$(cli_launch_cmd "$_ag")"
 done
 
 # ═══════════════════════════════════════════════════════════════
@@ -235,13 +195,13 @@ _resolve_model_display() {
     local agent_id="$1"
     local pane="${2:-}"
     if [[ -n "$pane" ]]; then
-        resolve_model_display "$agent_id" "shogun:agents.${pane}"
+        resolve_model_display "$agent_id" "${AGENTS_WINDOW_TARGET}.${pane}"
     else
         resolve_model_display "$agent_id"
     fi
 }
 
-# 表示グループを解決（将軍編成の現在値: karo / codex / opus / haiku / claude）
+# 表示グループを解決（将軍編成の現在値）
 _resolve_agent_group() {
     local agent_id="$1"
     local cli_type="$2"
@@ -257,11 +217,11 @@ _resolve_agent_group() {
             echo "$cli_type"
             ;;
         claude|*)
-            case "$model_display" in
-                *[Oo]pus*)   echo "opus" ;;
-                *[Ss]onnet*) echo "sonnet" ;;
-                *[Hh]aiku*)  echo "haiku" ;;
-                *)           echo "claude" ;;
+            case "$(_normalize_model_name "$model_display")" in
+                Opus) echo "opus" ;;
+                Sonnet) echo "sonnet" ;;
+                Haiku) echo "haiku" ;;
+                *) echo "claude" ;;
             esac
             ;;
     esac
@@ -319,7 +279,7 @@ if [[ "$PANE_COUNT" -lt "$NUM_AGENTS" ]]; then
         if [[ "$DRY_RUN" == true ]]; then
             log_dry "  split-window: 新ペイン追加 ($((m+1))/${missing})"
         else
-            tmux split-window -t shogun:agents -h
+            tmux split-window -t "$AGENTS_WINDOW_TARGET" -h
             sleep 0.3
         fi
         pane_add_count=$((pane_add_count+1))
@@ -330,7 +290,7 @@ if [[ "$PANE_COUNT" -lt "$NUM_AGENTS" ]]; then
         declare -A _existing_ids
         while IFS=$'\t' read -r _pi _aid; do
             [[ -n "$_aid" ]] && _existing_ids["$_aid"]=1
-        done < <(tmux list-panes -t shogun:agents -F '#{pane_index}	#{@agent_id}')
+        done < <(tmux list-panes -t "$AGENTS_WINDOW_TARGET" -F '#{pane_index}	#{@agent_id}')
 
         _missing_agents=()
         for _agent in "${EXPECTED_AGENTS[@]}"; do
@@ -340,11 +300,11 @@ if [[ "$PANE_COUNT" -lt "$NUM_AGENTS" ]]; then
         _unassigned_panes=()
         while IFS=$'\t' read -r _pi _aid; do
             [[ -z "$_aid" ]] && _unassigned_panes+=("$_pi")
-        done < <(tmux list-panes -t shogun:agents -F '#{pane_index}	#{@agent_id}')
+        done < <(tmux list-panes -t "$AGENTS_WINDOW_TARGET" -F '#{pane_index}	#{@agent_id}')
 
         for ((_a=0; _a<${#_missing_agents[@]}; _a++)); do
             if [[ $_a -lt ${#_unassigned_panes[@]} ]]; then
-                tmux set-option -p -t "shogun:agents.${_unassigned_panes[$_a]}" @agent_id "${_missing_agents[$_a]}"
+                tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${_unassigned_panes[$_a]}" @agent_id "${_missing_agents[$_a]}"
                 log "  ${_missing_agents[$_a]} → agents.${_unassigned_panes[$_a]} に割当"
             fi
         done
@@ -380,7 +340,7 @@ for ((i=0; i<=LAST_IDX; i++)); do
             if [[ "$DRY_RUN" == true ]]; then
                 log_dry "  swap: agents.${target_pane}(${actual}) <-> agents.${found_pane}(${expected})"
             else
-                tmux swap-pane -s "shogun:agents.${target_pane}" -t "shogun:agents.${found_pane}"
+                tmux swap-pane -s "${AGENTS_WINDOW_TARGET}.${target_pane}" -t "${AGENTS_WINDOW_TARGET}.${found_pane}"
                 log "  swap: agents.${target_pane}(${actual}) <-> agents.${found_pane}(${expected})"
             fi
             # batch mapをswap後の状態に同期
@@ -414,17 +374,17 @@ for ((i=0; i<=LAST_IDX; i++)); do
         if [[ "$DRY_RUN" == true ]]; then
             log_dry "  respawn: agents.${p} (${agent_id}) — 死亡ペイン"
         else
-            tmux respawn-pane -t "shogun:agents.${p}"
+            tmux respawn-pane -t "${AGENTS_WINDOW_TARGET}.${p}"
             sleep 0.5
 
             # cd + PS1設定
             prompt_str=$(_generate_prompt "${agent_id}" "${PROMPT_COLORS[$i]}")
-            tmux send-keys -t "shogun:agents.${p}" "cd \"${SCRIPT_DIR}\" && export PS1='${prompt_str}' && clear" Enter
+            tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "cd \"${SCRIPT_DIR}\" && export PS1='${prompt_str}' && clear" Enter
             sleep 0.5
 
             # CLI起動（mega batch pre-built command — settings.yaml+cli_profiles.yaml準拠）
             cli_cmd="${_MB_CLI_CMD[$agent_id]}"
-            tmux send-keys -t "shogun:agents.${p}" "$cli_cmd" Enter
+            tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "$cli_cmd" Enter
 
             log "  respawn: agents.${p} (${agent_id})"
         fi
@@ -466,11 +426,11 @@ for ((i=0; i<=LAST_IDX; i++)); do
         else
             # cd + PS1設定
             prompt_str=$(_generate_prompt "${agent_id}" "${PROMPT_COLORS[$i]}")
-            tmux send-keys -t "shogun:agents.${p}" "cd \"${SCRIPT_DIR}\" && export PS1='${prompt_str}' && clear" Enter
+            tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "cd \"${SCRIPT_DIR}\" && export PS1='${prompt_str}' && clear" Enter
             sleep 0.5
 
             # CLI起動
-            tmux send-keys -t "shogun:agents.${p}" "$cli_cmd" Enter
+            tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "$cli_cmd" Enter
 
             log "  CLI起動: agents.${p} (${agent_id})"
         fi
@@ -528,22 +488,22 @@ for ((i=0; i<=LAST_IDX; i++)); do
         var_fix_count=$((var_fix_count+1))
     else
         # 常に再設定（ずれ防止）
-        tmux set-option -p -t "shogun:agents.${p}" @agent_id "$agent_id"
-        tmux set-option -p -t "shogun:agents.${p}" @model_name "$model_display"
-        tmux set-option -p -t "shogun:agents.${p}" @agent_group "$agent_group"
-        tmux set-option -p -t "shogun:agents.${p}" @agent_cli "$cli_t"
+        tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @agent_id "$agent_id"
+        tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @model_name "$model_display"
+        tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @agent_group "$agent_group"
+        tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @agent_cli "$cli_t"
 
         # 背景色（モデル別動的決定）
         bg_color=$(resolve_bg_color "$agent_id" "$model_display")
-        tmux select-pane -t "shogun:agents.${p}" -P "bg=${bg_color}"
+        tmux select-pane -t "${AGENTS_WINDOW_TARGET}.${p}" -P "bg=${bg_color}"
 
         # ペインタイトル
-        tmux select-pane -t "shogun:agents.${p}" -T "$model_display"
+        tmux select-pane -t "${AGENTS_WINDOW_TARGET}.${p}" -T "$model_display"
 
         # 死亡→復活したペインのみcontext変数初期化（生存ペインは維持）
         if [[ "${RESPAWNED[$i]}" == "1" ]]; then
-            tmux set-option -p -t "shogun:agents.${p}" @context_pct "--"
-            tmux set-option -p -t "shogun:agents.${p}" @current_task ""
+            tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @context_pct "--"
+            tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @current_task ""
         fi
 
         var_fix_count=$((var_fix_count+1))
@@ -558,9 +518,9 @@ log_ok "変数正規化: ${var_fix_count}ペイン処理"
 log "Step 4.5: pane-border-format再適用"
 
 if [[ "$DRY_RUN" == true ]]; then
-    log_dry "  tmux set-option -w -t shogun:2 pane-border-format '...model-based colors...'"
+    log_dry "  tmux set-option -w -t ${AGENTS_WINDOW_TARGET} pane-border-format '...model-based colors...'"
 else
-    tmux set-option -w -t shogun:2 pane-border-format \
+    tmux set-option -w -t "$AGENTS_WINDOW_TARGET" pane-border-format \
       "$AGENTS_PANE_BORDER_FORMAT" \
       2>/dev/null
     log_ok "pane-border-format再適用完了（Window 2）"
@@ -571,11 +531,11 @@ fi
 # ═══════════════════════════════════════════════════════════════
 log "Step 5: レイアウト適用（動的LAYOUT_STRING生成）"
 
-LAYOUT_STRING=$(generate_layout_string "shogun:agents" "$PANE_BASE")
+LAYOUT_STRING=$(generate_layout_string "$AGENTS_WINDOW_TARGET" "$PANE_BASE")
 if [[ "$DRY_RUN" == true ]]; then
-    log_dry "  tmux select-layout -t shogun:agents '${LAYOUT_STRING}'"
+    log_dry "  tmux select-layout -t ${AGENTS_WINDOW_TARGET} '${LAYOUT_STRING}'"
 else
-    tmux select-layout -t "shogun:agents" "$LAYOUT_STRING"
+    tmux select-layout -t "$AGENTS_WINDOW_TARGET" "$LAYOUT_STRING"
     log_ok "レイアウト適用完了"
 fi
 
@@ -613,7 +573,7 @@ echo "  ────────────────────────
 printf "  %-4s %-10s %-5s %-8s %-8s %-10s %s\n" "Pane" "AgentID" "Dead" "Group" "CLI" "Model" "BG"
 echo "  ──────────────────────────────────────────────────────────"
 # Summary query: 1 tmux call for current state (after any modifications above)
-_summary=$(tmux list-panes -t shogun:agents \
+_summary=$(tmux list-panes -t "$AGENTS_WINDOW_TARGET" \
     -F '#{pane_index}	#{@agent_id}	#{pane_dead}	#{@agent_group}	#{@agent_cli}	#{@model_name}')
 while IFS=$'\t' read -r _p _id _dead _group _cli _model; do
     [[ -z "$_p" ]] && continue

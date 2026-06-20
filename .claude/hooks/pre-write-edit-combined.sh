@@ -637,6 +637,18 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
             _c="$(printf '%s' "$_code" | grep -cE '/mnt/c/Python_app/' 2>/dev/null)" || _c=0
             printf '%s' "${_c##*$'\n'}"
         }
+        _g16_count_tmux_window_target() {
+            local _c _code
+            _code="$(_g16_strip_comments "$1" | grep -vE 'pane_lookup|TMUX_WINDOW|resolve_window_target' 2>/dev/null || true)"
+            _c="$(printf '%s' "$_code" | grep -cE 'shogun:(2|agents)(\.|["'\''[:space:]]|$)' 2>/dev/null)" || _c=0
+            printf '%s' "${_c##*$'\n'}"
+        }
+        _g16_count_model_name_literal() {
+            local _c _code
+            _code="$(_g16_strip_comments "$1" | grep -vE 'model_resolve|resolve_model_display|cli_lookup|cli_model_display|cli_launch_cmd|model_detect|detect_real_model|model_colors|@model_name|model_name:' 2>/dev/null || true)"
+            _c="$(printf '%s' "$_code" | grep -ciE '\b(opus|sonnet|haiku|claude-opus|claude-sonnet|claude-haiku|gpt-5(\.[0-9])?)\b' 2>/dev/null)" || _c=0
+            printf '%s' "${_c##*$'\n'}"
+        }
         # ───────────────────────────────────────────────────────────────────────
 
         # ── オントロジーテーブル (並列配列) ────────────────────────────────────
@@ -646,20 +658,24 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
         # _G16_ALLOWED     : 正当なSSOT参照パターン (ERE; メッセージ補足用。直書き検出は免除しない)
         # _G16_FNS         : 検出関数名 (content=$1 でcount返す)
         # _G16_SSOTS       : SSOTポインタ (エラーメッセージ内)
-        _G16_CONCEPTS=( "エージェント名" "repoルートパス" "user-homeパス" "PJパス" )
-        _G16_MIN_COUNTS=( 3 1 1 1 )
+        _G16_CONCEPTS=( "エージェント名" "repoルートパス" "user-homeパス" "PJパス" "tmuxウィンドウ名" "モデル名" )
+        _G16_MIN_COUNTS=( 3 1 1 1 1 1 )
         _G16_ALLOWED=(
             'get_ninja_names|get_all_agents|get_allowed_targets|os\.environ\.get|\$\{.*:-'
             'SCRIPT_DIR|repo_root|git rev-parse'
             '\$HOME|\$\{HOME\}|~/|os\.environ\.get'
             'get_project_path|os\.environ\.get.*DM_SIGNAL\|os\.environ\.get.*PROJECT_PATH'
+            'pane_lookup|TMUX_WINDOW|resolve_window_target'
+            'model_resolve|resolve_model_display|cli_lookup|cli_model_display|cli_launch_cmd'
         )
-        _G16_FNS=( "_g16_count_agent_names" "_g16_count_repo_path" "_g16_count_home_path" "_g16_count_project_path" )
+        _G16_FNS=( "_g16_count_agent_names" "_g16_count_repo_path" "_g16_count_home_path" "_g16_count_project_path" "_g16_count_tmux_window_target" "_g16_count_model_name_literal" )
         _G16_SSOTS=(
             'config/settings.yaml → agent_config.sh get_ninja_names()/get_all_agents()'
             'scripts/lib/repo_root.sh → repo_root()'
             '$HOME 環境変数'
             'config/projects.yaml → scripts/lib/project_path.sh get_project_path()'
+            'tmux @agent_id実態 → scripts/lib/pane_lookup.sh pane_lookup() / TMUX_WINDOW'
+            'config/settings.yaml + live banner → scripts/lib/model_resolve.sh resolve_model_display() / cli_lookup.sh'
         )
         # ───────────────────────────────────────────────────────────────────────
 
@@ -686,7 +702,7 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
 
         unset _g16_content _g16_concept _g16_min _g16_allowed _g16_fn _g16_ssot _g16_cnt _g16_i
         unset _G16_CONCEPTS _G16_MIN_COUNTS _G16_ALLOWED _G16_FNS _G16_SSOTS
-        unset -f _g16_count_agent_names _g16_strip_comments _g16_count_repo_path _g16_count_home_path _g16_count_project_path
+        unset -f _g16_count_agent_names _g16_strip_comments _g16_count_repo_path _g16_count_home_path _g16_count_project_path _g16_count_tmux_window_target _g16_count_model_name_literal
     fi
 fi
 

@@ -765,7 +765,11 @@ else
 fi
 
 # (B) tmux list-panes を1回だけ呼び出してキャッシュ
-_PANE_MAP=$(tmux list-panes -t shogun:2 -F '#{pane_index} #{@agent_id}' 2>/dev/null || true)
+_AGENTS_WINDOW_TARGET="${TMUX_WINDOW:-shogun:agents}"
+if ! tmux list-panes -t "$_AGENTS_WINDOW_TARGET" >/dev/null 2>&1; then
+    _AGENTS_WINDOW_TARGET="shogun:agents"
+fi
+_PANE_MAP=$(tmux list-panes -t "$_AGENTS_WINDOW_TARGET" -F '#{pane_index} #{@agent_id}' 2>/dev/null || true)
 declare -A _PANE_IDX_BY_AGENT
 while IFS=' ' read -r _pane_idx _pane_agent; do
     [[ -z "${_pane_idx:-}" || -z "${_pane_agent:-}" ]] && continue
@@ -1265,7 +1269,7 @@ for ninja in $_KARO_NINJA_NAMES; do
         _tmpf=$(mktemp)
         _CTX_TMPF[$ninja]=$_tmpf
         (
-            _pane_output=$(tmux capture-pane -t "shogun:2.$pane_idx" -p -J -S -30 2>/dev/null || true)
+            _pane_output=$(tmux capture-pane -t "${_AGENTS_WINDOW_TARGET}.${pane_idx}" -p -J -S -30 2>/dev/null || true)
             karo_startup_extract_ctx_pct "$_pane_output" > "$_tmpf" || true
         ) &
         _CTX_PIDS+=($!)

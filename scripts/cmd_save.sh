@@ -5333,7 +5333,13 @@ show_gunshi_recent_issues
 
 # --- 軍師ペイン活動状況表示（informational — WARN_COUNTに加算しない） ---
 show_gunshi_pane_status() {
-    local PANE_TARGET="shogun:2.2"
+    local PANE_TARGET=""
+    if [[ -f "$SCRIPT_DIR/scripts/lib/pane_lookup.sh" ]]; then
+        # shellcheck source=/dev/null
+        source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
+        PANE_TARGET="$(pane_lookup gunshi 2>/dev/null || true)"
+    fi
+    PANE_TARGET="${PANE_TARGET:-${TMUX_WINDOW:-shogun:agents}.2}"
 
     # ペイン存在確認（tmux未起動 or ペインなし → スキップ）
     if ! tmux capture-pane -t "$PANE_TARGET" -p >/dev/null 2>&1; then

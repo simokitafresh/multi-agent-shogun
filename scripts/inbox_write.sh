@@ -1315,16 +1315,15 @@ fi
 # Pre-action auto-capture: 将軍→エージェント送信時、送信先ペインの現在状態を送信前に自動表示+ログ
 # 目的: 「観察なき行動」を構造的に防止（知性の外部化原則 2026-03-21）
 if [ "${INBOX_WRITE_TEST:-}" != "1" ] && { [ "$FROM" = "shogun" ] || [ "$FROM" = "karo" ]; }; then
-    _pane_idx=""
-    while IFS=' ' read -r _idx _aid; do
-        if [ "$_aid" = "$TARGET" ]; then
-            _pane_idx="$_idx"
-            break
-        fi
-    done < <(tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id}' 2>/dev/null || true)
+    _pane_target=""
+    if [[ -f "$SCRIPT_DIR/scripts/lib/pane_lookup.sh" ]]; then
+        # shellcheck source=/dev/null
+        source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
+        _pane_target="$(pane_lookup "$TARGET" 2>/dev/null || true)"
+    fi
 
-    if [ -n "$_pane_idx" ]; then
-        _capture=$(tmux capture-pane -t "shogun:agents.${_pane_idx}" -p 2>/dev/null | tail -8 || true)
+    if [ -n "$_pane_target" ]; then
+        _capture=$(tmux capture-pane -t "$_pane_target" -p 2>/dev/null | tail -8 || true)
         echo "[pre-send capture] ${TARGET} pane state BEFORE message:"
         echo "$_capture"
         echo "★10回問い: このアクションを10回繰り返したら正の複利か負の複利か？"

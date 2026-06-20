@@ -13,6 +13,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 
 # --- 設定 ---
 INTERVAL=60          # チェック間隔（秒）
@@ -155,24 +156,7 @@ check_watcher_alive() {
 
         # 自動再起動を試みる
         local pane_target
-        pane_target=$(python3 -c "
-import yaml, sys
-try:
-    with open('${SCRIPT_DIR}/config/settings.yaml') as f:
-        cfg = yaml.safe_load(f) or {}
-    # Lookup pane from known mapping
-    import yaml as _y
-    with open('${SCRIPT_DIR}/config/settings.yaml') as _sf:
-        _sdata = _y.safe_load(_sf)
-    agents = ['karo'] + list((_sdata or {}).get('cli', {}).get('agents', {}).keys())
-    if '${agent}' in agents:
-        idx = agents.index('${agent}') + 1  # pane index (1-based)
-        print(f'shogun:agents.{idx}')
-    else:
-        print('')
-except:
-    print('')
-" 2>/dev/null || echo "")
+        pane_target="$(pane_lookup "$agent" 2>/dev/null || true)"
 
         if [ -n "$pane_target" ]; then
             local watcher_cli
@@ -193,11 +177,10 @@ except:
 check_pane_alive() {
     local agent="$1"
 
-    # Find pane by @agent_id
-    local pane_id
-    pane_id=$(tmux list-panes -t shogun:agents -F '#{pane_index}' -f "#{==:#{@agent_id},${agent}}" 2>/dev/null | head -1)
+    local pane_target
+    pane_target="$(pane_lookup "$agent" 2>/dev/null || true)"
 
-    if [ -z "$pane_id" ]; then
+    if [ -z "$pane_target" ]; then
         # Pane not found at all
         if should_alert "pane_missing_${agent}"; then
             log "ALERT: pane for ${agent} not found"
@@ -210,7 +193,7 @@ check_pane_alive() {
 
     # Check if pane has a running process (not just shell prompt)
     local pane_pid
-    pane_pid=$(tmux list-panes -t shogun:agents -F '#{pane_pid}' -f "#{==:#{@agent_id},${agent}}" 2>/dev/null | head -1)
+    pane_pid=$(tmux display-message -t "$pane_target" -p '#{pane_pid}' 2>/dev/null || true)
 
     if [ -n "$pane_pid" ]; then
         # Check if Claude/codex/copilot/kimi process is running under this pane
@@ -221,7 +204,7 @@ check_pane_alive() {
             # Shell running but no child process (CLI may have exited)
             # Check if pane shows a shell prompt (indicating CLI died)
             local last_line
-            last_line=$(tmux capture-pane -t "shogun:agents.${pane_id}" -p -J 2>/dev/null | grep -v '^$' | tail -1)
+            last_line=$(tmux capture-pane -t "$pane_target" -p -J 2>/dev/null | grep -v '^$' | tail -1)
 
             local _shell_prompt_re='[$#>][[:space:]]*$'
             if [[ "$last_line" =~ $_shell_prompt_re ]]; then

@@ -1709,8 +1709,11 @@ handle_empty_lessons_useful_check() {
 # ─── gate_metrics model label helpers ───
 agent_pane_target() {
     local agent_name="$1"
-    tmux list-panes -t shogun:2 -F '#{session_name}:#{window_index}.#{pane_index}	#{@agent_id}' 2>/dev/null \
-        | awk -F '\t' -v agent="$agent_name" '$2==agent {print $1; exit}'
+    if [[ -f "$SCRIPT_DIR/scripts/lib/pane_lookup.sh" ]]; then
+        # shellcheck source=/dev/null
+        source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
+        pane_lookup "$agent_name" 2>/dev/null || true
+    fi
 }
 
 normalize_model_label() {

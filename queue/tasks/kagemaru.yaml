@@ -1,12 +1,12 @@
 task:
-  _ac_task_id: cmd_3467_full
+  _ac_task_id: cmd_3468_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3467 (deployed 2026-06-20T14:23:14). Read from the beginning.
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3468 (deployed 2026-06-20T15:31:19). Read from the beginning.
   ac_assigned:
   - AC1
   - AC2
   - AC3
-  ac_version: ad4680a2
+  ac_version: cb037a1c
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -25,38 +25,37 @@ task:
   - repo絶対パス消費者の全面書換え
   origin: '[[殿指示_オントロジー_20260620]] -> [[SSOT調査_cmd_3458_3461]] -> [[Phase2_3_SSOT是正_Guard汎化]]'
   parallel_ok: []
-  parent_cmd: cmd_3467
+  parent_cmd: cmd_3468
   project: infra
-  purpose: '殿指示(2026-06-20): Phase1-3完了。Phase4=因果リンク[[A]]→[[B]]を記録から駆動装置に変換。pre-write-edit hookで変更対象ファイルの[[リンク]]を逆引きし、影響を受けるファイルを自動表示する。殿定義: 概念Aが変わったらAに依存する全てが自動で変わる'
-  status: done
+  purpose: '殿指摘(2026-06-20 15:16「もう十分と思ったら洗脳の証拠」): Guard16テーブルは4概念のみ。SSOT調査で特定された9カテゴリ中5つが未保護。tmuxウィンドウ名(20ファイル)+モデル名直書き(8ファイル)をGuard16テーブルに追加し消費者を書き換える'
+  status: failed
   stop_for: []
   subtask_id: cmd_3467_full
-  target_path: /mnt/c/tools/multi-agent-shogun/.claude/hooks
-  task_id: cmd_3467_full
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts
+  task_id: cmd_3468_full
   task_type: full
   validation:
   - python3 -c "import yaml; yaml.safe_load(open('config/projects.yaml')); yaml.safe_load(open('config/settings.yaml')); yaml.safe_load(open('config/cli_profiles.yaml'))"
   related_lessons:
-  - id: 'L544'
-    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
-    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg ''yaml.'
-  - id: 'L540'
-    summary: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
-    detail: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
-  - id: 'L015'
-    summary: 'IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O'
-    detail: 'IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O'
+  - id: 'L731'
+    summary: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
+    detail: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
+  - id: 'L058'
+    summary: 'hayate(subtask_340_impl_a)'
+    detail: 'hayate(subtask_340_impl_a)'
+  - id: 'L041'
+    summary: 'IF tmuxペインにエージェント固有の状態を保持させたい時 THEN @user_option(例: @agent_id)を使用せよ'
+    detail: 'IF tmuxペインにエージェント固有の状態を保持させたい時 THEN @user_option(例: @agent_id)を使用せよ'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
   - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)"
-  - "command_files_modified_verification — Command×Files Modified照合:  scripts/gates/gate_gunshi_report_precheck.sh (SG-PRE25) scripts/gates/gate_gunshi_cs_checklist.sh (L4 step3_5_verified検出) instructions/gunshi.md (Step 3.5定義+review_logテンプレート) projects/infra/lessons_gunshi.yaml (LG036/LG037)"
   related_causal_links:
-  - "[[Guard18_逆引き影響範囲表示]]"
-  - "[[因果リンク記録のみ]]"
-  - "[[殿指示_オントロジーPhase4_20260620]]"
+  - "[[9概念中4つのみGuard16]]"
+  - "[[tmux_model_Guard16追加]]"
+  - "[[殿指摘_洗脳早期終了_20260620]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -66,29 +65,29 @@ task:
   - "context/training-cycle.md"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L544: queue/tasksなど運用YAMLはyaml.dump禁止だが、長大なデーモン内の補助Pythonに残存していた。中核スクリプト偵察では rg 'yaml.
-      - L540: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
-      - L015: IF Claude Codeで複数アカウントを運用する時 THEN CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_O
+      - L731: causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数
+      - L058: hayate(subtask_340_impl_a)
+      - L041: IF tmuxペインにエージェント固有の状態を保持させたい時 THEN @user_option(例: @agent_id)を使用せよ
     ────────────────────────────────────────
     
     
   memory_db_context:
+  - "2026-06-20T15:06:40+09:00 | 【INFOバッチ】 2026-06-20 15:00:01|cmd_karo_hotfix_shogun_startup_escalation_20260620_1436 2026-06-20 15:"
   - '2026-06-20T14:15:29+09:00 | [MEM: memory_db ts=2026-06-20T03:26 "オントロジーの真髄は『概念Aが変わったら、Aに依存する全てが自動で変わる』だ"] **計測結果**: [[リンク]]1594行'
-  - "2026-06-20T14:05:11+09:00 | 【INFOバッチ】 2026-06-20 14:03:04|cmd_3466"
-  - "2026-06-08T20:12:46+09:00 | 【将軍】/clear準備完了。PD:0 cmd:0 🚨:0 未commit:1(自動生成) 掲示板:対応済 稼働中:なし。本セッション11cmd全CLEAR+note記事2本+全スキル自動成長基盤Ph"
-  - "2026-04-17T00:07:06+09:00 | 【将軍】/clear準備完了。PD:0 cmd:1(処理中) 🚨:0。セッション成果: インフラ32本+DM-Signal Phase1-3完了(oikaze 145x/yotsume 71x)"
+  - "2026-04-26T15:25:20+09:00 | 【INFOバッチ】 2026-04-26 15:16:45|cmd_2297 2026-04-26 15:20:13|cmd_2295 2026-04-26 15:24:03|cmd_2298"
+  - "2026-03-29T15:21:05+09:00 | 【INFOバッチ】 2026-03-29 15:09:58|cmd_1485 2026-03-29 15:16:04|CI緑: run 23702848423 2026-03-29 15:18:10|"
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: '因果リンク逆引きインデックスを生成するスクリプト(scripts/lib/causal_index.sh)を作成する。全ファイルの[[リンク]]をスキャンし、リンクターゲット→参照元ファイルの逆引きマップをキャッシュファイルに出力する'
+    - check: 'Guard16テーブルにtmuxウィンドウ名概念(shogun:2等の直書き検出+pane_lookup経由免除)とモデル名概念(opus/sonnet等の直書き検出+model_resolve/cli_lookup経由免除)を追加する'
   - id: 'AC2'
     checks:
-    - check: 'pre-write-edit-combined.shにGuard18(因果リンク影響範囲表示)を追加する。Write/Edit対象ファイルが[[リンク]]のターゲットになっている場合、参照元ファイル一覧をcontext表示する(BLOCKではなく情報表示)'
+    - check: 'tmuxウィンドウ名を直書きしている全ファイルをpane_lookup/tmux変数参照に書き換える'
   - id: 'AC3'
     checks:
-    - check: 'batsテストを追加し、因果リンク影響範囲表示の正常系(表示あり)と非該当系(表示なし)を検証する'
+    - check: 'モデル名を直書きしている全ファイルをmodel_resolve/cli_lookup参照に書き換える'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3467.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3467.yaml
+  report_filename: kagemaru_report_cmd_3468.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3468.yaml
   bloom_level: 
-  deployed_at: "2026-06-20T14:23:49"
+  deployed_at: "2026-06-20T15:31:57"

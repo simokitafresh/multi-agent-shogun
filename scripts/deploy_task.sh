@@ -450,7 +450,7 @@ deploy_task_post_deploy_verify() {
     local ninja_name="$1"
     local pane_target unread_count agent_state capture_tail prompt_seen
 
-    pane_target=$(tmux list-panes -t shogun:agents -F 'shogun:agents.#{pane_index}' -f "#{==:#{@agent_id},${ninja_name}}" 2>/dev/null | head -1)
+    pane_target="$(pane_lookup "$ninja_name" 2>/dev/null || true)"
     if [ -z "$pane_target" ]; then
         log "POST-DEPLOY VERIFY ${ninja_name}: pane not found; retry suggestion: bash scripts/deploy_task.sh ${ninja_name} <cmd_id>"
         return 0

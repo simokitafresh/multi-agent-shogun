@@ -42,12 +42,13 @@ format_age() {
 printf "%-10s %-9s %-5s %-12s %s\n" "AGENT" "STATE" "CTX" "LAST_ACTIVE" "AGE"
 
 NOW=$(date +%s)
+AGENTS_WINDOW_TARGET="${TMUX_WINDOW:-shogun:agents}"
 # 全ペインデータを1回のtmux呼出しで取得（N+1回→1回）
 declare -A PANE_DATA=()
 while IFS='|' read -r pane_index pane_agent pane_state pane_last pane_ctx; do
     [ -n "$pane_agent" ] || continue
     PANE_DATA["$pane_agent"]="${pane_state}|${pane_last}|${pane_ctx}"
-done < <(tmux list-panes -t shogun:agents -F '#{pane_index}|#{@agent_id}|#{@agent_state}|#{@last_active}|#{@context_pct}' 2>/dev/null || true)
+done < <(tmux list-panes -t "$AGENTS_WINDOW_TARGET" -F '#{pane_index}|#{@agent_id}|#{@agent_state}|#{@last_active}|#{@context_pct}' 2>/dev/null || true)
 
 for name in "${AGENT_ORDER[@]}"; do
     if [[ -z "${PANE_DATA[$name]+_}" ]]; then

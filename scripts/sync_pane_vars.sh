@@ -94,7 +94,7 @@ _spv_pids+=($!)
 
 for agent in "${!AGENT_PANES[@]}"; do
     pane="${AGENT_PANES[$agent]}"
-    sync_one_pane "$agent" "shogun:agents.${pane}" "agents.${pane}" > "$_spv_tmp/${pane}_${agent}" 2>&1 &
+    sync_one_pane "$agent" "${TMUX_WINDOW:-shogun:agents}.${pane}" "agents.${pane}" > "$_spv_tmp/${pane}_${agent}" 2>&1 &
     _spv_pids+=($!)
 done
 
