@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-06-13 GA-063 context freshness touch; no ops changes since 2026-06-12 -->
+<!-- last_updated: 2026-06-20 cmd_karo_hotfix_context_dm_ops_ga102_20260620 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -805,6 +805,18 @@ import metrics_research_engine as MRE
 | 7c9c86f9 recalculation status timezone | §42に接続済み | `docs/rule/db-operations-runbook.md`へUTC/JST cutover証跡を追加。§42のpost-deploy監視記録と同系統 |
 | 03aec06d price ratio facade test | 本文追加不要 | `backend/tests/test_price_ratio_facade_compat.py`追加のみ。運用手順・API仕様変更なし |
 | efdd75c4 price ratio facade split | 本文追加不要 | `backend/app/services/price_ratio_calculator.py`から実装分離。facade維持の内部refactorで運用手順差分なし |
+
+## §44 2026-06-20 source freshness照合
+
+| commit | ops更新判断 | 根拠 |
+|------|------|------|
+| 239b6b66/0b4a4124/9d69e482 cmd_3384 WeightedMultiViewMomentumFilter | FoF selection pipelineの新ブロックとして運用影響あり。recalculate_fof.pyはWeightedMultiViewMomentumFilterもbase_period_months条件対象に含める。詳細仕様はcore/research側へ委譲し、opsでは再計算経路の存在だけ索引化 | `backend/app/jobs/shared.py`, `backend/app/services/pipeline/blocks/weighted_multi_view_momentum_filter.py`, `backend/app/jobs/recalculate_fof.py`, `backend/tests/test_weighted_multi_view_momentum_filter.py` |
+| f9dbae09/f7061378 weighted yotsume GS parity | 本文追加は不要、運用証跡として維持判断 | 変更は`docs/research/cmd_3387_weighted_yotsume_full.md`と`docs/research/cmd_3388_weighted_yotsume_db_parity_fix.md`中心。GS/DBパリティ詳細はresearch正本で保持し、ops手順の変更なし |
+| 18c8a071/207c0df4 cmd_3397 hide_portfolio default=True | §32のhide登録思想と整合。全PF hide-firstの恒久化として運用上注意 | `backend/app/db/models.py`/`migrations.py`で`hide_portfolio` default False→True。新規PF作成時は明示解除しない限り非表示が既定 |
+| f01ae710/eb89859c/cdb92c5d/110b7911/ecc7e624/027f0ee0 research + lessons | 本文追加不要 | 研究結果・教訓タグ更新は`docs/research/*`/`tasks/lessons.md`側が正本。ops手順・本番API仕様変更なし |
+| 4b88dfdc/fb6f0c97/86cf2c29/273ba153 cmd_3461 SSOT audit shards | 本文追加不要 | `docs/research/ssot-audit-parts/*.md`追加・復旧。棚卸し証跡であり、DM-Signal運用手順の変更なし |
+
+GA-102原因: `dm-signal-ops.md`のlast_updatedは2026-06-13で、2026-06-14以後にops pathspec対象commitが増加したため`gate_context_freshness.sh`がsource commits ALERTを出した。GA-099/L825と同じく、context更新トリガーがcmd完了フローに強制接続されていない後追い検出である。防御層案: DM-Signal外部repoで`backend/app/jobs|services|api|docs/rule`を含むcmd完了時、cmd_complete_gateのcontext_update必須入力に該当split contextを自動候補注入する。
 
 ## 因果リンク
 
