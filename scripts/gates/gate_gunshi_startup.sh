@@ -1028,21 +1028,14 @@ _fire_log="$SCRIPT_DIR/logs/gate_fire_log.yaml"
 _wa_log="$SCRIPT_DIR/logs/karo_workarounds.yaml"
 if [ -f "$_fire_log" ]; then
     # 免疫効果 = 同一ファイルでFAIL後にPASSした件数(gateが止めて忍者が自力修正)
-    _healed=$(python3 -c "
-import re, sys
-lines = open(sys.argv[1]).readlines()
-fails = set()
-healed = 0
-for l in lines:
-    m = re.search(r'file: \"([^\"]+)\".*result: (FAIL|PASS)', l)
-    if m:
-        f, r = m.group(1), m.group(2)
-        if r == 'FAIL':
-            fails.add(f)
-        elif r == 'PASS' and f in fails:
-            healed += 1
-print(healed)
-" "$_fire_log" 2>/dev/null || echo 0)
+    # §3.2: python3→awk置換(~650ms削減)
+    _healed=$(awk '
+        match($0, /file: "([^"]+)".*result: (FAIL|PASS)/, m) {
+            if (m[2] == "FAIL") fails[m[1]] = 1
+            else if (m[2] == "PASS" && m[1] in fails) healed++
+        }
+        END { print healed+0 }
+    ' "$_fire_log" 2>/dev/null || echo 0)
     _fail_total=$(grep -c 'result: FAIL' "$_fire_log" 2>/dev/null || echo 0)
     # 現存報告のFAIL数(ノイズ除外)
     _fail_live=0

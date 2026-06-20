@@ -32,6 +32,15 @@ normalize_target() {
 build_index() {
     local cache="${1:-$DEFAULT_CACHE}" tmp
     mkdir -p "${cache%/*}"
+    # §3.2: TTLキャッシュ(300秒=5分)。キャッシュが新しければスキップ
+    local ttl="${CAUSAL_INDEX_TTL:-300}"
+    if [ -f "$cache" ]; then
+        local age=$(( $(date +%s) - $(stat -c '%Y' "$cache" 2>/dev/null || echo 0) ))
+        if [ "$age" -lt "$ttl" ]; then
+            printf '%s\n' "$cache"
+            return 0
+        fi
+    fi
     tmp="$(mktemp "${cache}.tmp.XXXXXX")"
 
     rg --hidden --no-heading --line-number --glob '!.git/**' --glob '!node_modules/**' \
