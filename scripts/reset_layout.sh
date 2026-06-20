@@ -26,7 +26,7 @@ fi
 # キャッシュは /tmp (WSL2 ext4) に保存。/tmp のみ削除で再生成。
 # ═══════════════════════════════════════════════════════════════
 _LIB_CACHE="/tmp/shogun_reset_layout_lib.sh"
-if [[ ! -f "$_LIB_CACHE" ]] || ! grep -q 'MODEL_FAMILY_OPUS_46' "$_LIB_CACHE" 2>/dev/null; then
+if [[ ! -f "$_LIB_CACHE" ]] || ! grep -q 'MODEL_FAMILY_HELPER_VERSION="2"' "$_LIB_CACHE" 2>/dev/null; then
     cat "$SCRIPT_DIR/scripts/lib/agent_config.sh" \
         "$SCRIPT_DIR/scripts/lib/cli_lookup.sh" \
         "$SCRIPT_DIR/scripts/lib/model_family.sh" \

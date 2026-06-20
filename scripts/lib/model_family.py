@@ -24,6 +24,12 @@ def extract_model_family(label: str) -> str:
         "5.4" in low or "5 4" in low or "5.5" in low or "5 5" in low
     ):
         return FAMILY_GPT_5
+    if "sonnet" in low:
+        return FAMILY_SONNET
+    if "haiku" in low:
+        return FAMILY_HAIKU
+    if "opus" in low:
+        return FAMILY_OPUS
     return model_slug(low)
 
 

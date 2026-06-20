@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # model_family.sh — model label → stable analytics family helpers.
 
+MODEL_FAMILY_HELPER_VERSION="2"
 MODEL_FAMILY_OPUS_46="opus_4_6"
 MODEL_FAMILY_GPT_5="gpt_5"
 MODEL_FAMILY_CODEX="codex"
@@ -33,6 +34,18 @@ model_family_from_label() {
     fi
     if [[ ( "$low" == *gpt* || "$low" == *codex* ) && ( "$low" == *5.4* || "$low" == *5\ 4* || "$low" == *5.5* || "$low" == *5\ 5* ) ]]; then
         printf '%s\n' "$MODEL_FAMILY_GPT_5"
+        return 0
+    fi
+    if [[ "$low" == *sonnet* ]]; then
+        printf '%s\n' "$MODEL_FAMILY_SONNET"
+        return 0
+    fi
+    if [[ "$low" == *haiku* ]]; then
+        printf '%s\n' "$MODEL_FAMILY_HAIKU"
+        return 0
+    fi
+    if [[ "$low" == *opus* ]]; then
+        printf '%s\n' "$MODEL_FAMILY_OPUS"
         return 0
     fi
     slug="${low//[^a-z0-9]/_}"
