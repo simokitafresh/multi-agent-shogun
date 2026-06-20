@@ -1,21 +1,22 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-06-20 cmd_karo_hotfix_hook_yaml_dump_ga101_20260620 -->
+<!-- last_updated: 2026-06-20 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-20T09:22:55+09:00 -->
+<!-- generated_at: 2026-06-20T09:31:38+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-20T09:31:38+09:00 | terminal | response | 全処理完了: - **report review**: cmd_karo_hotfix_hook_yaml_dump_ga101_20260620 kotaro → LGTM (SG7バンドル付き) - **gate_sync**: CL…
+- 2026-06-20T09:28:21+09:00 | terminal | response | idle-persist完了。 **サマリ**: - レビュー依頼1件処理完了: cmd_karo_hotfix_hook_yaml_dump_ga101_20260620 → APPROVE - idle Step 4 冷え観点遡及適用…
+- 2026-06-20T09:27:36+09:00 | terminal | response | 整理完了。 - **コミット1** (efc8e016e): スキル統合6本削除+gate/test追加+教訓整理+知識鮮度更新 — 50ファイル - **コミット2** (3912e9df0): 家老自律hotfix成果+軍師idle分…
+- 2026-06-20T09:24:40+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝13
 - 2026-06-20T09:22:55+09:00 | terminal | response | 完了。作業サマリー: --- **GA-101 調査結果** **AC1: 直接原因** `git-pre-commit.sh:123` の `is_yaml_dump_scan_target()` が `*.py` ファイル全般をスキャ…
 - 2026-06-20T09:20:22+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-20 09:04:44|cmd_karo_hotfix_context_freshness_ga099_20260620 2026-06-20 09:10:27|cmd_karo_hotfix_cont…
 - 2026-06-20T09:16:29+09:00 | ntfy | outbound | CI赤: run 27854204378 Unit Tests (bats)
 - 2026-06-20T09:15:31+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-101)
 - 2026-06-20T09:14:42+09:00 | ntfy | outbound | 教訓効果率WARN: 88.6%
 - 2026-06-20T09:13:29+09:00 | terminal | response | 51ファイル staged。コミット+プッシュ。
-- 2026-06-20T09:12:19+09:00 | terminal | inbound | y
-- 2026-06-20T09:11:59+09:00 | terminal | response | 訂正済み。殿、申し訳ない。
-- 2026-06-20T09:11:06+09:00 | terminal | inbound | 全スキルではなく編成系のスキルだ
-- 2026-06-20T09:11:01+09:00 | terminal | response | 殿、将軍にcmd起票を依頼した(blt_20260620_091050)。全28本のSKILL.mdからロール制限を一括削除。
 
 ## 未解決確認事項
+- 全処理完了: - **report review**: cmd_karo_hotfix_hook_yaml_dump_ga101_20260620 kotaro → LGTM (SG7バンドル付き) - **gate_sync**: CLEAR記録済み、accuracy 97.…
 - 完了。作業サマリー: --- **GA-101 調査結果** **AC1: 直接原因** `git-pre-commit.sh:123` の `is_yaml_dump_scan_target()` が `*.py` ファイル全般をスキャン対象とするが、`scripts/lib…
 - 軍師からshogun-cli-switchのmodel_name変更+強制respawn機能追加の提案を受領。確認済み。家老は自律的にhotfix GA100(context_saxo)を影丸に配備中。 パイプライン空。殿の指示を待つ。 [meta] stop_reason=e…
 - 起動完了。 **本セッション実施済み:** - startup BLOCK 2件の根因特定+対処: (1)Q6投稿に「自動化ターゲット:」ラベル未記入→正規フォーマットで投稿済み (2)洗脳2x2自己検出=Q6+洗脳キーワード含む投稿なし→今回の投稿で解消 - 教訓統合 LS0…
@@ -23,7 +24,6 @@
 - 将軍Q6回答確認。startup BLOCK(追体験自動化ターゲット+洗脳2x2)の根因修正をD0実行中。inbox未読0件。idle待機。
 - 全防御層が環境に存在し、/clear後も残る。 殿、強くてニューゲームの準備完了。次の軍師が受け取る環境: | 防御層 | 永続 | 検証 | |-------|------|------| | Guard 9b — respawn-pane/model_switch手動BLO…
 - 殿の指示に従う。強くてニューゲームの状態を確認する。 本セッションの環境埋込み: - **L0**: model_detect.sh head -1 / reset_layout.sh comm確認 / cmd_save.sh偵察FP修正 / memory_db_query.s…
-- cmd_3461配備確認: 陣形図でhayate(CTX:8%)+kagemaru(CTX:0%)がdm-signalのSSOT偵察を開始済み。 /clear準備完了。commit済み(3867e2be2)。殿の指示を待つ。
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
