@@ -9,9 +9,9 @@ case "$payload" in
     *) exit 0 ;;
 esac
 
-# Fast-path: only process Write/Edit
+# Fast-path: only process Write/Edit/MultiEdit
 case "$payload" in
-    *'"Write"'*|*'"Edit"'*) ;;
+    *'"Write"'*|*'"Edit"'*|*'"MultiEdit"'*) ;;
     *) exit 0 ;;
 esac
 
@@ -223,7 +223,7 @@ file_path="$(json_string_after "$payload" "file_path")"
 [[ -n "$file_path" ]] || file_path="$(json_string_after "$payload" "filePath")"
 [[ -n "$file_path" ]] || file_path="$(json_string_after "$payload" "path")"
 
-[[ "$tool_name" != "Write" && "$tool_name" != "Edit" ]] && exit 0
+[[ "$tool_name" != "Write" && "$tool_name" != "Edit" && "$tool_name" != "MultiEdit" ]] && exit 0
 [[ -z "$file_path" ]] && exit 0
 
 # === Guard 0: shogun_to_karo.yaml起票前確認+リスト形式BLOCK ===
@@ -551,8 +551,8 @@ fi
 # 殿裁定: オントロジー=三層記憶と同列の前提。定義が1箇所に集約され変更が自動伝播する。しないのはバグ
 # テーブル駆動: 新概念追加 = 5並列配列に1要素追加するだけ
 # 列: _G16_CONCEPTS / _G16_MIN_COUNTS / _G16_EXEMPTS / _G16_FNS / _G16_SSOTS
-if [[ "$file_path" =~ \.(sh|py)$ ]]; then
-    _g16_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // .content // ""' 2>/dev/null)" || true
+if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
+    _g16_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | [(.new_string // empty), (.content // empty), ((.edits // [])[]?.new_string // empty)] | join("\n")' 2>/dev/null)" || true
     if [ -n "$_g16_content" ]; then
 
         # ── 検出関数 (content=$1, stdout=count) ────────────────────────────────
@@ -634,7 +634,7 @@ if [[ "$file_path" =~ \.(sh|py)$ ]]; then
 
         unset _g16_content _g16_concept _g16_min _g16_allowed _g16_fn _g16_ssot _g16_cnt _g16_i
         unset _G16_CONCEPTS _G16_MIN_COUNTS _G16_ALLOWED _G16_FNS _G16_SSOTS
-        unset -f _g16_count_agent_names _g16_count_repo_path _g16_count_home_path
+        unset -f _g16_count_agent_names _g16_strip_comments _g16_count_repo_path _g16_count_home_path
     fi
 fi
 

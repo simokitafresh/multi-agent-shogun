@@ -333,3 +333,31 @@ _run_post() {
     [[ "$output" == *'SSOT参照もあるが直書きが残っている'* ]]
     [[ "$output" == *'user-homeパス'* ]]
 }
+
+@test "Guard 16: MultiEditのedits配列内repo絶対パス直書きもBLOCKする" {
+    local sh_file="$TMP_DIR/test_multiedit.sh"
+    _run_pre '{"tool_name":"MultiEdit","tool_input":{"file_path":"'"$sh_file"'","edits":[{"old_string":"old","new_string":"REPO='"$PROJECT_ROOT"'/scripts/lib/x.sh\n"}]}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'repoルートパス'* ]]
+}
+
+@test "Guard 16: .bash拡張子のrepo絶対パス直書きもBLOCKする" {
+    local bash_file="$TMP_DIR/test_repo_path.bash"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$bash_file"'","content":"REPO='"$PROJECT_ROOT"'/scripts/lib/x.sh\n"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'repoルートパス'* ]]
+}
+
+@test "Guard 16: コメントだけのrepo絶対パスは許可する" {
+    local sh_file="$TMP_DIR/test_comment_only.sh"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$sh_file"'","content":"# Location: '"$PROJECT_ROOT"'/scripts/example.sh\necho ok\n"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'BLOCK: 操作的オントロジー違反'* ]]
+}
+
+@test "Guard 16: camelCase toolInput/filePathでもrepo絶対パス直書きをBLOCKする" {
+    local sh_file="$TMP_DIR/test_camel.sh"
+    _run_pre '{"toolName":"Write","toolInput":{"filePath":"'"$sh_file"'","content":"REPO='"$PROJECT_ROOT"'/scripts/lib/x.sh\n"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'repoルートパス'* ]]
+}
