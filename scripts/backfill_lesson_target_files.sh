@@ -7,7 +7,9 @@ set -e
 _bltf_self="${BASH_SOURCE[0]:-$0}"
 [[ "$_bltf_self" != /* ]] && _bltf_self="$PWD/$_bltf_self"
 SCRIPT_DIR="${_bltf_self%/scripts/backfill_lesson_target_files.sh}"
-DM_SIGNAL_DIR="/mnt/c/Python_app/DM-signal"
+# shellcheck source=scripts/lib/project_path.sh
+source "$SCRIPT_DIR/scripts/lib/project_path.sh"
+DM_SIGNAL_DIR="$(get_project_path 'dm-signal')"
 LESSONS_FILE="$DM_SIGNAL_DIR/tasks/lessons.md"
 DRY_RUN="${1:-}"
 

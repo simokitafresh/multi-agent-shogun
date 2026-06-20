@@ -105,8 +105,17 @@ _tf_scan_dirs = ('scripts', 'tests', 'context', 'config', 'backend', 'frontend',
 for _tf_candidate in (os.environ.get('SCRIPT_DIR', ''), os.environ.get('PROJECT_PATH', '')):
     if _tf_candidate and _tf_candidate not in _tf_search_bases:
         _tf_search_bases.append(_tf_candidate)
-if project_id == 'dm-signal' and '/mnt/c/Python_app/DM-signal' not in _tf_search_bases:
-    _tf_search_bases.append('/mnt/c/Python_app/DM-signal')
+if project_id == 'dm-signal':
+    _dm_yaml = os.path.join(os.environ.get('SCRIPT_DIR', ''), 'config', 'projects.yaml')
+    _dm_path = ''
+    try:
+        _dm_content = open(_dm_yaml).read()
+        _dm_m = re.search(r'- id: dm-signal.*?path:\s+"([^"]+)"', _dm_content, re.DOTALL)
+        _dm_path = _dm_m.group(1) if _dm_m else ''
+    except Exception:
+        pass
+    if _dm_path and _dm_path not in _tf_search_bases:
+        _tf_search_bases.append(_dm_path)
 
 def _add_tracked_filenames_from_git(base):
     try:

@@ -65,6 +65,7 @@ fi
 # cli_lookup.sh — CLI Profile SSOT参照（CLI種別判定・パターン取得）
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+source "$SCRIPT_DIR/scripts/lib/project_path.sh"
 export DEPLOY_NINJA_NAMES="$(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo saizo kotaro tobisaru')"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
@@ -3430,7 +3431,7 @@ ${command_text}"
         hints+=("context/gs-speedup-knowledge.md")
     fi
     if [ "$is_dm_signal" = true ] || printf '%s\n' "$haystack" | grep -Eqi 'terminology|用語|dm-signal-terminology|disambiguation|解釈|Flair|ALM|FOF|PF'; then
-        hints+=("/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md")
+        hints+=("$(get_project_path 'dm-signal' 2>/dev/null || echo '')/context/dm-signal-terminology.md")
     fi
     if [ "$project" = "infra" ] || [ "$task_type" = "training" ] || printf '%s\n' "$haystack" | grep -Eqi 'training-cycle|修行|L[1-4]|訓練|idle'; then
         hints+=("context/training-cycle.md")

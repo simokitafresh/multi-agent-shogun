@@ -85,8 +85,16 @@ else:
             sys.exit(1)
 
         project = cmd.get('project', '')
-        project_dirs = {'dm-signal': '/mnt/c/Python_app/DM-Signal'}
-        project_dir = project_dirs.get(project, '')
+        def _get_pj_path(pj_id, _root):
+            import re as _re
+            _yaml = os.path.join(_root, 'config', 'projects.yaml')
+            try:
+                _content = open(_yaml).read()
+                _m = _re.search(r'- id: ' + _re.escape(pj_id) + r'.*?path:\s+\"([^\"]+)\"', _content, _re.DOTALL)
+                return _m.group(1) if _m else ''
+            except Exception:
+                return ''
+        project_dir = _get_pj_path(project, repo_root) if project else ''
 
         acs = cmd.get('acceptance_criteria', [])
         ac_count = len(acs) if isinstance(acs, list) else 0

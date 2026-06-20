@@ -9,8 +9,12 @@
 
 set -euo pipefail
 
+_GAM_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=scripts/lib/project_path.sh
+source "${_GAM_ROOT}/scripts/lib/project_path.sh"
+
 PROGRESS_FILE="${1:-context/l2-okugi-progress.md}"
-GS_BASE="/mnt/c/Python_app/DM-signal/outputs/grid_search"
+GS_BASE="$(get_project_path 'dm-signal')/outputs/grid_search"
 WARN_COUNT=0
 TOTAL_DONE=0
 TOTAL_BLOCKS=0

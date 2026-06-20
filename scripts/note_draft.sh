@@ -22,13 +22,16 @@ die() { echo "ERROR: $*" >&2; exit 1; }
 [[ $# -ge 1 ]] || die "Usage: $0 <markdown_file>"
 [[ -f "$1" ]] || die "File not found: $1"
 
-readonly AUTO_OPS_DIR="/mnt/c/Python_app/auto-ops"
 readonly CDP_PORT="${CDP_PORT:-9234}"
 
 # Source repo_root helper (no hardcoded path)
 _ND_ROOT="${BASH_SOURCE[0]%/scripts/*}"
 # shellcheck source=scripts/lib/repo_root.sh
 source "${_ND_ROOT}/scripts/lib/repo_root.sh"
+# shellcheck source=scripts/lib/project_path.sh
+source "${_ND_ROOT}/scripts/lib/project_path.sh"
+AUTO_OPS_DIR="$(get_project_path 'auto-ops')"
+readonly AUTO_OPS_DIR
 _REPO_ROOT="$(get_repo_root)"
 
 MD_FILE="$(realpath "$1")"

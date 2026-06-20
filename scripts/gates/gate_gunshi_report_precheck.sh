@@ -10,6 +10,10 @@ set -euo pipefail
 
 REPORT_PATH="$1"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=scripts/lib/project_path.sh
+source "${REPO_ROOT}/scripts/lib/project_path.sh"
+DM_SIGNAL_PATH="$(get_project_path 'dm-signal')"
+export DM_SIGNAL_PATH
 
 if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
     echo "FAIL: report file not found: ${REPORT_PATH:-<empty>}" >&2
@@ -30,7 +34,7 @@ eval "$(python3 "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck_engine.py"
 # Project directory (commit検証用)
 PROJECT_DIR=""
 if [ "${IS_DM_SIGNAL:-0}" = "1" ]; then
-    PROJECT_DIR="/mnt/c/Python_app/DM-Signal"
+    PROJECT_DIR="${DM_SIGNAL_PATH}"
 else
     PROJECT_DIR="$REPO_ROOT"
 fi
@@ -565,13 +569,15 @@ if [ -n "${PARENT_CMD:-}" ]; then
             REPORT_HASHES="$_REPORT_HASHES" \
             REPO_ROOT="$REPO_ROOT" \
             IS_DM_SIGNAL="${IS_DM_SIGNAL:-0}" \
+            DM_SIGNAL_PATH="${DM_SIGNAL_PATH}" \
             python3 - <<'PY'
 import os
 import subprocess
 
 repos = [os.environ["REPO_ROOT"]]
-if os.environ.get("IS_DM_SIGNAL") == "1" and os.path.isdir("/mnt/c/Python_app/DM-Signal/.git"):
-    repos.append("/mnt/c/Python_app/DM-Signal")
+_dm_path = os.environ.get("DM_SIGNAL_PATH", "")
+if os.environ.get("IS_DM_SIGNAL") == "1" and _dm_path and os.path.isdir(f"{_dm_path}/.git"):
+    repos.append(_dm_path)
 
 added_total = 0
 deleted_total = 0
@@ -612,12 +618,12 @@ PY
             TOTAL_DELETED=$((TOTAL_DELETED + deleted))
         done < <(git -C "$REPO_ROOT" log --no-merges --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
         # DM-Signalリポジトリ（プロジェクトがDM-Signalの場合）
-        if [ "${IS_DM_SIGNAL:-0}" = "1" ] && [ -d "/mnt/c/Python_app/DM-Signal/.git" ]; then
+        if [ "${IS_DM_SIGNAL:-0}" = "1" ] && [ -d "${DM_SIGNAL_PATH}/.git" ]; then
             while IFS=$'\t' read -r added deleted _; do
                 [[ "$added" == "-" ]] && continue
                 TOTAL_ADDED=$((TOTAL_ADDED + added))
                 TOTAL_DELETED=$((TOTAL_DELETED + deleted))
-            done < <(git -C "/mnt/c/Python_app/DM-Signal" log --no-merges --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
+            done < <(git -C "${DM_SIGNAL_PATH}" log --no-merges --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
         fi
     fi
     TOTAL_CHANGED=$((TOTAL_ADDED + TOTAL_DELETED))

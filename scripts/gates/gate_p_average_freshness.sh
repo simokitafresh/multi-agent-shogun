@@ -17,7 +17,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-ENV_FILE="${P_AVERAGE_ENV_FILE:-/mnt/c/Python_app/DM-signal/backend/.env}"
+# shellcheck source=scripts/lib/project_path.sh
+source "${SCRIPT_DIR}/scripts/lib/project_path.sh"
+_DM_PATH="$(get_project_path 'dm-signal')"
+ENV_FILE="${P_AVERAGE_ENV_FILE:-${_DM_PATH}/backend/.env}"
 API_BASE="${P_AVERAGE_API_BASE:-https://dm-signal-backend.onrender.com}"
 CACHE_FILE="${P_AVERAGE_CACHE_FILE:-/tmp/gate_p_average_cache.txt}"
 CURL_BIN="${P_AVERAGE_CURL_BIN:-curl}"
@@ -36,7 +39,7 @@ fi
 # 認証情報を取得
 if [ ! -f "$ENV_FILE" ]; then
     echo "ALERT: p̄鮮度: backend/.env が見つかりません"
-    echo "  action: /mnt/c/Python_app/DM-signal/backend/.env を配置し ADMIN_USER および ADMIN_PASS を設定せよ"
+    echo "  action: ${_DM_PATH}/backend/.env を配置し ADMIN_USER および ADMIN_PASS を設定せよ"
     bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — backend/.env不在"
     exit 1
 fi

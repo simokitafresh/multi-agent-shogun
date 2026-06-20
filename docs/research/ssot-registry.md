@@ -17,7 +17,7 @@
 |---|---|---|---|---:|---|
 | 忍者名 | `config/settings.yaml:cli.agents` | `scripts/lib/agent_config.sh:get_ninja_names`, `get_all_agents`, `get_allowed_targets`, `get_agent_role` | `.claude/hooks/pre-write-edit-combined.sh` Guard16あり。忍者名/全エージェント名直書きを検出 | 29 | `\b(hayate\|kagemaru\|hanzo\|saizo\|kotaro\|tobisaru)\b` |
 | リポジトリパス | 未整備。現状は各scriptの`SCRIPT_DIR`/`ROOT_DIR`算出と直書きが混在 | 未整備。cmd_3463 AC3で`scripts/lib/repo_root.sh`予定 | 未整備。Guard16の対象外 | 21 | `/mnt/c/tools/multi-agent-shogun\|SCRIPT_DIR\|ROOT_DIR\|REPO_ROOT\|get_repo_root` |
-| PJパス | `config/projects.yaml:projects[].path` | 未整備。cmd_3463 AC3で`scripts/lib/project_path.sh`予定 | 未整備。Guard16の対象外 | 8 | `/mnt/c/Python_app\|projects\.yaml\|project_path\|PROJECT_PATH\|get_project_path` |
+| PJパス | `config/projects.yaml:projects[].path` | `scripts/lib/project_path.sh:get_project_path` (cmd_3463 AC3実装済み) | `.claude/hooks/pre-write-edit-combined.sh` Guard16あり。`/mnt/c/Python_app/`直書きを検出 (cmd_3464 AC2) | 18 | `/mnt/c/Python_app\|projects\.yaml\|project_path\|PROJECT_PATH\|get_project_path` |
 | `gist_url` | `config/settings.yaml:gist_url`がグローバル正本候補。`config/projects.yaml`にはPJ固有値も存在 | 未整備 | 未整備 | 0 | `gist_url\|gist\.github\.com` |
 | `launch_cmd` | `config/cli_profiles.yaml:profiles.*.launch_cmd`。`config/settings.yaml:cli.agents.shogun.launch_cmd`は曖昧SSOTとしてcmd_3463 AC2対象 | `scripts/lib/cli_lookup.sh:cli_launch_cmd` | `.claude/hooks/pre-write-edit-combined.sh` Guard17あり。`settings.yaml`のCLI/model手動変更をBLOCK | 4 | `launch_cmd\|cli_launch_cmd\|/bin/claude\|/.local/bin/claude\|codex` |
 | スキルパス | `config/settings.yaml:skill.save_path`/`skill.local_path`が同値二重定義。cmd_3463 AC2対象 | 未整備 | 未整備 | 7 | `skill\.save_path\|skill\.local_path\|skills/\|SKILL\.md` |

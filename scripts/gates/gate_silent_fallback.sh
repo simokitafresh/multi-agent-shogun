@@ -13,6 +13,10 @@
 
 set -euo pipefail
 
+_GSF_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=scripts/lib/project_path.sh
+source "${_GSF_ROOT}/scripts/lib/project_path.sh"
+
 usage() {
     cat <<'EOF'
 Usage: bash scripts/gates/gate_silent_fallback.sh [--diff <commit>] [--path <dir>]
@@ -27,7 +31,7 @@ Options:
 EOF
 }
 
-DM_SIGNAL_PATH="/mnt/c/Python_app/DM-signal"
+DM_SIGNAL_PATH="$(get_project_path 'dm-signal')"
 TARGET_PATH="${DM_SIGNAL_PATH}/backend/app"
 DIFF_BASE=""
 MODE="audit"

@@ -5,7 +5,10 @@
 # 前提: backend/.envにDATABASE_URLが設定されていること
 set -euo pipefail
 
-DM_SIGNAL_DIR="${DM_SIGNAL_DIR:-/mnt/c/Python_app/DM-signal}"
+_GRC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=scripts/lib/project_path.sh
+source "${_GRC_ROOT}/scripts/lib/project_path.sh"
+DM_SIGNAL_DIR="${DM_SIGNAL_DIR:-$(get_project_path 'dm-signal')}"
 ENV_FILE="${ENV_FILE:-$DM_SIGNAL_DIR/backend/.env}"
 HOSTADDR_CACHE_FILE="${GATE_RECALCULATE_HOSTADDR_CACHE:-/tmp/gate_recalculate_completeness_hostaddr.cache}"
 HOSTADDR_CACHE_TTL_SEC="${GATE_RECALCULATE_HOSTADDR_TTL_SEC:-86400}"

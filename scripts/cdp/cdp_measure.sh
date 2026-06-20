@@ -25,7 +25,9 @@ fi
 shift
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-AUTO_OPS_ROOT="/mnt/c/Python_app/auto-ops"
+# shellcheck source=scripts/lib/project_path.sh
+source "${SCRIPT_DIR}/scripts/lib/project_path.sh"
+AUTO_OPS_ROOT="$(get_project_path 'auto-ops')"
 TEMP_CONFIG=""
 CDP_LOCK_ACQUIRED=0
 
@@ -47,9 +49,9 @@ cdp_helper.cleanup_chrome(${CDP_PORT:-9222})
 " 2>/dev/null || true
 }
 trap _cdp_cleanup EXIT
-PERF_MEASURE="/mnt/c/Python_app/auto-ops/workflows/perf_measure.py"
-PERF_CONFIG="/mnt/c/Python_app/auto-ops/workflows/perf_config.yaml"
-OUTPUT_BASE="/mnt/c/Python_app/DM-signal/outputs"
+PERF_MEASURE="${AUTO_OPS_ROOT}/workflows/perf_measure.py"
+PERF_CONFIG="${AUTO_OPS_ROOT}/workflows/perf_config.yaml"
+OUTPUT_BASE="$(get_project_path 'dm-signal')/outputs"
 FRONTEND_URL="${FRONTEND_URL:-https://dm-signal-frontend.onrender.com}"
 FRONTEND_HEALTH_URL="${FRONTEND_HEALTH_URL:-${FRONTEND_URL}/}"
 # BACKEND_URL不要 — CDP哲学: UI操作でログイン。API直呼出しはしない
@@ -104,7 +106,7 @@ if ! flock -n 9; then
     exit 75
 fi
 CDP_LOCK_ACQUIRED=1
-ENV_FILE="/mnt/c/Python_app/DM-signal/backend/.env"
+ENV_FILE="$(get_project_path 'dm-signal')/backend/.env"
 ADMIN_URL="${FRONTEND_URL}/admin"
 echo -n "  CDP Admin Login (UI): "
 set +e

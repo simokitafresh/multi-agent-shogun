@@ -7,6 +7,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd)"
+# shellcheck source=scripts/lib/project_path.sh
+source "${REPO_ROOT}/scripts/lib/project_path.sh"
 INBOX="${GUNSHI_NEXT_ACTION_INBOX:-$REPO_ROOT/queue/inbox/gunshi.yaml}"
 WA_LOG="${GUNSHI_NEXT_ACTION_WA_LOG:-$REPO_ROOT/logs/karo_workarounds.yaml}"
 REVIEW_LOG="${GUNSHI_NEXT_ACTION_REVIEW_LOG:-$REPO_ROOT/logs/gunshi_review_log.yaml}"
@@ -62,7 +64,7 @@ if [[ -n "$latest_reports" ]]; then
     dm_signal_reports=$(echo "$latest_reports" | tr '\n' '\0' | xargs -0 grep -l 'project: dm-signal' 2>/dev/null || true)
     while IFS= read -r rpt; do
         [[ -z "$rpt" ]] && continue
-        proj_dir="/mnt/c/Python_app/DM-signal"
+        proj_dir="$(get_project_path 'dm-signal' 2>/dev/null || echo "")"
         # files_modifiedからパスを抽出
         fm_paths=$(grep -A1 'path:' "$rpt" 2>/dev/null | grep 'path:' | sed 's/.*path: *//' | tr -d "'" || true)
         if [[ -n "$fm_paths" ]]; then

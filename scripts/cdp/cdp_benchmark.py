@@ -22,7 +22,24 @@ from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_PERF_SCRIPT = Path("/mnt/c/Python_app/auto-ops/workflows/perf_measure.py")
+
+
+def _get_project_path(project_id: str) -> "Path | None":
+    """config/projects.yaml から project_id の path を取得する。"""
+    import re as _re
+    yaml_path = REPO_ROOT / "config" / "projects.yaml"
+    if not yaml_path.exists():
+        return None
+    try:
+        content = yaml_path.read_text()
+        m = _re.search(r"- id: " + _re.escape(project_id) + r'.*?path:\s+"([^"]+)"', content, _re.DOTALL)
+        return Path(m.group(1)) if m else None
+    except Exception:
+        return None
+
+
+_auto_ops_root = _get_project_path("auto-ops")
+DEFAULT_PERF_SCRIPT = _auto_ops_root / "workflows/perf_measure.py" if _auto_ops_root else None
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "outputs" / "cdp-baselines"
 
 

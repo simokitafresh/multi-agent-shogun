@@ -11,7 +11,10 @@
 
 set -euo pipefail
 
-DM_SIGNAL_PATH="${DM_SIGNAL_PATH:-/mnt/c/Python_app/DM-signal}"
+_PC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/lib/project_path.sh
+source "${_PC_ROOT}/scripts/lib/project_path.sh"
+DM_SIGNAL_PATH="${DM_SIGNAL_PATH:-$(get_project_path 'dm-signal')}"
 ENV_PATH="${ENV_PATH:-${DM_SIGNAL_PATH}/backend/.env}"
 EXPERIMENTS_DB="${EXPERIMENTS_DB:-${DM_SIGNAL_PATH}/analysis_runs/experiments.db}"
 

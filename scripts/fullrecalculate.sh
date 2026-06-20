@@ -13,7 +13,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SHOGUN_DIR="$(dirname "$SCRIPT_DIR")"
-DM_SIGNAL_PATH="/mnt/c/Python_app/DM-signal"
+# shellcheck source=scripts/lib/project_path.sh
+source "$SHOGUN_DIR/scripts/lib/project_path.sh"
+DM_SIGNAL_PATH="$(get_project_path 'dm-signal')"
 ENV_PATH="${DM_SIGNAL_PATH}/backend/.env"
 BASELINE_DIR="${SHOGUN_DIR}/outputs/baselines"
 
