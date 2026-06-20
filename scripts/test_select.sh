@@ -271,6 +271,11 @@ for changed in "${CHANGED_FILES[@]}"; do
         done
     fi
 
+    # causal_index.sh変更→Guard18 backlink context tests。
+    if [[ "$changed" == *causal_index.sh ]]; then
+        add_test_if_exists "$TEST_DIR"/test_write_edit_combined_hooks.bats
+    fi
+
     # report_field_set.sh変更→deploy_task+gate_report_formatテスト(間接依存)
     if [[ "$changed" == *report_field_set* ]]; then
         for tf in "$TEST_DIR"/test_deploy_task*.bats "$TEST_DIR"/test_gate_report_format*.bats; do
