@@ -49,10 +49,14 @@ EOF
 }
 
 is_core_agent() {
-    case "$1" in
-        shogun|karo|gunshi)
-            return 0
-            ;;
+    if type is_commander_role >/dev/null 2>&1; then
+        is_commander_role "$1"
+        return $?
+    fi
+
+    # Keep filesystem fast-path side-effect free; full SSOT is used once agent_config is loaded.
+    case " shogun karo gunshi " in
+        *" $1 "*) return 0 ;;
     esac
     return 1
 }
@@ -1492,7 +1496,8 @@ if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ] || [ "$TYPE" = "
                         # GP-102: 修正指示→監視通知に変更(消火→品質向上)
                         # 旧: 軍師に修正を指示 → 軍師が代行修正 = 消火の移転(忍者が学ばない)
                         # 新: 軍師に監視通知のみ → 忍者がBLOCKエラーを見て自分で修正 → 学習ループ回転
-                        GUNSHI_INBOX="$SCRIPT_DIR/queue/inbox/gunshi.yaml"
+                        ensure_agent_config_loaded
+                        GUNSHI_INBOX="$(get_commander_inbox_path gunshi)"
                         ROUTE_TS=$(date -Is)
                         ROUTE_ID="msg_$(date +%s%N | head -c 16)"
                         (

@@ -43,6 +43,9 @@ setup_file() {
     cat > "$GIT_TEMPLATE_DIR/scripts/lib/agent_config.sh" << 'MOCK'
 get_ninja_names() { echo "testninja"; }
 get_allowed_targets() { echo "karo shogun testninja gunshi"; }
+get_commander_names() { echo "shogun karo gunshi"; }
+is_commander_role() { case " $(get_commander_names) " in *" $1 "*) return 0 ;; esac; return 1; }
+get_commander_inbox_path() { is_commander_role "$1" || return 1; echo "${INBOX_WRITE_ROOT_OVERRIDE}/queue/inbox/${1}.yaml"; }
 MOCK
 
     printf '#!/bin/bash\necho "NO-FIX-NEEDED"\n' > "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_autofix.sh"
@@ -1051,6 +1054,9 @@ EOF
     cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
 get_ninja_names() { echo "ninja_a ninja_b ninja_c"; }
 get_allowed_targets() { echo "karo shogun gunshi ninja_a ninja_b ninja_c"; }
+get_commander_names() { echo "shogun karo gunshi"; }
+is_commander_role() { case " $(get_commander_names) " in *" $1 "*) return 0 ;; esac; return 1; }
+get_commander_inbox_path() { is_commander_role "$1" || return 1; echo "${INBOX_WRITE_ROOT_OVERRIDE}/queue/inbox/${1}.yaml"; }
 MOCK
 
     cat > "$TEST_TMPDIR/queue/tasks/ninja_a.yaml" <<'YAML'
@@ -1092,6 +1098,9 @@ YAML
     cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
 get_ninja_names() { echo "ninja_a ninja_b"; }
 get_allowed_targets() { echo "karo shogun gunshi ninja_a ninja_b"; }
+get_commander_names() { echo "shogun karo gunshi"; }
+is_commander_role() { case " $(get_commander_names) " in *" $1 "*) return 0 ;; esac; return 1; }
+get_commander_inbox_path() { is_commander_role "$1" || return 1; echo "${INBOX_WRITE_ROOT_OVERRIDE}/queue/inbox/${1}.yaml"; }
 MOCK
 
     cat > "$TEST_TMPDIR/queue/tasks/ninja_a.yaml" <<'YAML'

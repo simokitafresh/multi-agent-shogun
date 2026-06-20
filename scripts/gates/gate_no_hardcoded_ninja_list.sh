@@ -11,13 +11,16 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 source "$ROOT_DIR/scripts/lib/agent_config.sh" 2>/dev/null || true
 NINJA_NAMES=$(get_ninja_names 2>/dev/null) || NINJA_NAMES="hayate kagemaru hanzo saizo kotaro tobisaru"
+COMMANDER_NAMES=$(get_commander_names 2>/dev/null) || COMMANDER_NAMES="shogun karo gunshi"
 read -ra names_arr <<< "$NINJA_NAMES"
+read -ra commander_arr <<< "$COMMANDER_NAMES"
 
 # Build grep pattern: any line with 3+ ninja names
 # Use rg for speed (>10x faster than python3 on WSL2 NTFS)
 _pattern="$(IFS='|'; echo "${names_arr[*]}")"
 
 violations=""
+commander_warnings=""
 while IFS= read -r match; do
     [ -z "$match" ] && continue
     file="${match%%:*}"
@@ -51,6 +54,31 @@ done < <(rg -n "$_pattern" \
     "$ROOT_DIR/scripts/gates" "$ROOT_DIR/.claude/hooks" \
     "$ROOT_DIR/scripts/"*.sh "$ROOT_DIR/scripts/"*.py 2>/dev/null || true)
 
+_commander_pattern="$(IFS='|'; echo "${commander_arr[*]}")"
+while IFS= read -r match; do
+    [ -z "$match" ] && continue
+    file="${match%%:*}"
+    rest="${match#*:}"
+    lineno="${rest%%:*}"
+    line="${rest#*:}"
+
+    stripped="${line#"${line%%[![:space:]]*}"}"
+    [[ "$stripped" == "#"* ]] && continue
+    [[ "$file" == *gate_no_hardcoded_ninja_list* ]] && continue
+    [[ "$line" == *get_commander_names* ]] && continue
+    [[ "$line" == *is_commander_role* ]] && continue
+    [[ "$line" == *get_commander_inbox_path* ]] && continue
+
+    if [[ "$line" =~ queue/inbox/(${_commander_pattern})\.yaml ]] \
+        || [[ "$line" =~ (shogun\|karo\|gunshi|shogun[[:space:]]+karo[[:space:]]+gunshi) ]]; then
+        commander_warnings="${commander_warnings}${file}:${lineno}: ${stripped}
+"
+    fi
+done < <(rg -n "queue/inbox/(${_commander_pattern})\\.yaml|shogun\\|karo\\|gunshi|shogun[[:space:]]+karo[[:space:]]+gunshi" \
+    --glob '*.sh' --glob '*.py' \
+    "$ROOT_DIR/scripts/gates" "$ROOT_DIR/.claude/hooks" \
+    "$ROOT_DIR/scripts/"*.sh "$ROOT_DIR/scripts/"*.py 2>/dev/null || true)
+
 if [ -n "$violations" ]; then
     {
         echo "BLOCK: hardcoded ninja name lists detected. Use get_ninja_names() from scripts/lib/agent_config.sh."
@@ -60,6 +88,14 @@ if [ -n "$violations" ]; then
     } >&2
     exit 1
 else
+    if [ -n "$commander_warnings" ]; then
+        {
+            echo "WARN: hardcoded commander inbox path / role checks detected. Use get_commander_inbox_path(), is_commander_role(), or get_commander_names() from scripts/lib/agent_config.sh."
+            echo "Commander ontology: shogun/karo/gunshi must share the same SSOT as other agent roles."
+            echo ""
+            printf '%s' "$commander_warnings"
+        } >&2
+    fi
     echo "OK: no hardcoded ninja name lists (ontology intact)"
     exit 0
 fi

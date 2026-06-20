@@ -10,6 +10,9 @@
 #   get_agent_role <name> → ninja / gunshi / karo
 #   get_japanese_name <name> → 日本語名
 #   get_allowed_targets   → inbox_writeの送信先一覧（karo + gunshi + 全ninja + shogun）
+#   get_commander_names   → commander role(shogun/karo/gunshi)をスペース区切りで返す
+#   is_commander_role <name> → commander roleなら0
+#   get_commander_inbox_path <name> → commander roleのinbox path
 #
 # キャッシュ: 初回呼び出し時にsettings.yamlを読み込み、同一プロセス内はキャッシュ
 
@@ -36,6 +39,7 @@ _AGENT_CONFIG_CACHE="/tmp/shogun_agent_config_${_ac_cache_key}.cache"
 _AGENT_CONFIG_RAW=""
 _AGENT_CONFIG_NINJA_NAMES=""
 _AGENT_CONFIG_ALL_NAMES=""
+_AGENT_CONFIG_COMMANDER_NAMES="shogun karo gunshi"
 _AGENT_CONFIG_LAYOUT_COL1_WIDTH_PCT=""
 _AGENT_CONFIG_LAYOUT_KARO_HEIGHT=""
 # Associative arrays for O(1) per-agent lookups (eliminates echo|awk spawns)
@@ -147,6 +151,26 @@ get_all_agents() {
     # L821: shogunも含める。将軍は別windowだが監視/健全性チェックの対象
     # _AGENT_CONFIG_ALL_NAMESにgunshiが含まれるため重複排除
     echo "shogun karo $_AGENT_CONFIG_ALL_NAMES"
+}
+
+get_commander_names() {
+    echo "$_AGENT_CONFIG_COMMANDER_NAMES"
+}
+
+is_commander_role() {
+    local name="$1"
+    case " $_AGENT_CONFIG_COMMANDER_NAMES " in
+        *" $name "*) return 0 ;;
+    esac
+    return 1
+}
+
+get_commander_inbox_path() {
+    local role="$1"
+    if ! is_commander_role "$role"; then
+        return 1
+    fi
+    printf '%s/queue/inbox/%s.yaml\n' "$_AGENT_CONFIG_SCRIPT_DIR" "$role"
 }
 
 get_agent_role() {
