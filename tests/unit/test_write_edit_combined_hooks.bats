@@ -19,6 +19,7 @@ setup() {
     TMP_CMD_QUALITY="$TMP_DIR/cmd_design_quality.yaml"
     printf 'result: ok\n' > "$TMP_REPORT"
     printf 'commands: {}\n' > "$TMP_STK"
+    printf 'messages: []\n' > "$TMP_DIR/default_inbox.yaml"
     # 0-byte: cmd_save_block_top3()の[[ -s ]]チェックをfalseにしてPython yaml load(859KB,~1.5s)をスキップ
     touch "$TMP_CMD_QUALITY"
 }
@@ -29,7 +30,7 @@ teardown() {
 
 _run_pre() {
     local payload="$1"
-    run bash -c 'printf "%s" "$1" | PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" bash "$2"' _ "$payload" "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY"
+    run bash -c 'printf "%s" "$1" | PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" GUARD_0D_INBOX_OVERRIDE="$5" bash "$2"' _ "$payload" "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY" "$TMP_DIR/default_inbox.yaml"
 }
 
 _run_post() {
@@ -404,6 +405,42 @@ _run_post() {
 
 @test "Guard 17: shogun-cli-switch許可経路のBash payloadはPre Write/Edit hookでBLOCKしない" {
     _run_pre '{"tool_name":"Bash","tool_input":{"command":"bash scripts/switch_cli_mode.sh --help"}}'
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "Guard 18: causal backlink target edit shows informational context" {
+    local target_file="$TMP_DIR/docs/linked-target.md"
+    local cache_file="$TMP_DIR/causal_index.tsv"
+    mkdir -p "$TMP_DIR/docs"
+    printf 'existing\n' > "$target_file"
+    printf '%s\n' "$target_file" > "/tmp/claude_read_log_kagemaru.txt"
+    printf 'linked-target\tdocs/source-a.md\nlinked-target\tdocs/source-b.md\n' > "$cache_file"
+
+    run bash -c 'printf "%s" "$1" | CAUSAL_INDEX_CACHE="$5" PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" bash "$2"' _ \
+        '{"tool_name":"Edit","tool_input":{"file_path":"'"$target_file"'","new_string":"updated\n"}}' \
+        "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY" "$cache_file"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"additionalContext"'* ]]
+    [[ "$output" == *'Guard18: 因果リンク影響範囲'* ]]
+    [[ "$output" == *'docs/source-a.md'* ]]
+    [[ "$output" == *'docs/source-b.md'* ]]
+    [[ "$output" != *'"permissionDecision":"deny"'* ]]
+}
+
+@test "Guard 18: non backlink target edit stays silent" {
+    local target_file="$TMP_DIR/docs/unlinked-target.md"
+    local cache_file="$TMP_DIR/causal_index.tsv"
+    mkdir -p "$TMP_DIR/docs"
+    printf 'existing\n' > "$target_file"
+    printf '%s\n' "$target_file" > "/tmp/claude_read_log_kagemaru.txt"
+    printf 'linked-target\tdocs/source-a.md\n' > "$cache_file"
+
+    run bash -c 'printf "%s" "$1" | CAUSAL_INDEX_CACHE="$5" PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" bash "$2"' _ \
+        '{"tool_name":"Edit","tool_input":{"file_path":"'"$target_file"'","new_string":"updated\n"}}' \
+        "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY" "$cache_file"
+
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 }
