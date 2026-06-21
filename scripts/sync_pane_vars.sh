@@ -40,7 +40,11 @@ source "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 declare -A AGENT_PANES=()
 _sp_idx=1
+# get_all_agents() は監視用に shogun を含む (agent_config.sh L160) が、shogun は
+# shogun:main で別途同期する(下記 L92)。agents window に shogun ペインは無いため除外し、
+# karo=agents.1, gunshi=agents.2, ... の正準マッピング(pane_lookup.sh準拠)に揃える。
 for _sp_agent in $(get_all_agents); do
+    [ "$_sp_agent" = "shogun" ] && continue
     AGENT_PANES[$_sp_agent]=$_sp_idx
     ((_sp_idx++)) || true
 done

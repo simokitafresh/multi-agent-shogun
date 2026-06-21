@@ -663,8 +663,16 @@ check_pane_survival() {
     [[ "$pane_base" =~ ^[0-9]+$ ]] || pane_base=1
 
     local -A expected_pane  # agent_name → expected pane_index (from settings order, not current @agent_id)
-    local -a expected_agents
-    read -ra expected_agents <<< "$(get_all_agents)"
+    local -a expected_agents=()
+    # get_all_agents() は監視用に shogun を含む (agent_config.sh L160) が、agents window に
+    # shogun ペインは無い(将軍は shogun:main)。含めると expected_pane が +1 ずれ、
+    # 正しい @agent_id を「衝突」と誤判定して破壊してしまう。shogun を除外し
+    # karo=pane(base), gunshi=pane(base+1), ... の正準マッピング(pane_lookup.sh準拠)に揃える。
+    local _em_agent
+    for _em_agent in $(get_all_agents); do
+        [ "$_em_agent" = "shogun" ] && continue
+        expected_agents+=("$_em_agent")
+    done
     local idx=0
     for name in "${expected_agents[@]}"; do
         expected_pane[$name]=$((pane_base + idx))
