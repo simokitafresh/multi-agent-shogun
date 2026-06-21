@@ -1381,7 +1381,7 @@ MOCK
     SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"総合判定: ALERT"* ]]
-    [[ "$output" == *"when/how品質向上"* ]]
+    [[ "$output" == *"低useful教訓の改善/淘汰を実行せよ"* ]]
     [[ "$output" != *"教訓健全度: ALERT → /lesson-sort実行せよ"* ]]
 }
 
