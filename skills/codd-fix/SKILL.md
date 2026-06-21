@@ -103,4 +103,6 @@ bash scripts/test_select.sh <changed-file>
 - `--no-push`なしで実行するな。忍者はpush禁止
 - 事象ではなく広すぎる実装指示を渡すな
 
-<!-- script_refs_checked_at: 2026-06-16T13:15:55+0900 -->
+Script refs verified: 2026-06-21 615d1c2d7 cmd_3476. `cmd_complete_gate.sh` 直近変更は`files_modified`内のchange/statusで`checked_not_modified`を受け付ける追加（「確認したが変更不要」の明示経路として`verified_existing_dependency`と同じ除外ソース）。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-21T12:59:24+09:00 -->
