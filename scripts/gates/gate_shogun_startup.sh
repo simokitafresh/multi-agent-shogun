@@ -3407,7 +3407,7 @@ fi
 # --- session_alerts.txt: 起動時初期生成（覚醒設計書v3 cmd_3401） ---
 # 目的: stop hookで毎応答リアルタイム表示するためのALERT台帳を初期化する
 # 形式: [TODO] アラート内容 (stop hookが [TODO]/[DONE] で管理)
-_session_alerts_file="$SCRIPT_DIR/queue/session_alerts.txt"
+_session_alerts_file="$SCRIPT_DIR/queue/session_alerts_shogun.txt"
 {
     printf '# session_alerts — generated: %s\n' "$_startup_run_id"
     if [ ${#alerts[@]} -gt 0 ]; then

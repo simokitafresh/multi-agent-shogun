@@ -147,10 +147,10 @@ teardown() {
 
 # ─── stop_session_alerts テスト ──────────────────────────────
 
-# T-007: session_alerts.txt不在 → exit 0（BLOCK出力なし）
-@test "T-007: missing session_alerts.txt causes clean exit" {
-    # MOCK_AGENT_IDでtmux依存を排除
-    export MOCK_AGENT_ID="test_tobisaru"
+# T-007: session_alerts_shogun.txt不在 → exit 0（BLOCK出力なし）
+@test "T-007: missing session_alerts_shogun.txt causes clean exit" {
+    # MOCK_AGENT_IDでtmux依存を排除（将軍ロールでテスト）
+    export MOCK_AGENT_ID="test_shogun"
     local fake_root="$TEST_TMPDIR/shogun_root"
     mkdir -p "$fake_root/queue"
     # alerts fileを作らない
@@ -161,8 +161,16 @@ teardown() {
 set -euo pipefail
 _sa_self="$PROJECT_ROOT/scripts/hooks/stop_session_alerts.sh"
 SHOGUN_ROOT="$fake_root"
-ALERTS_FILE="\$SHOGUN_ROOT/queue/session_alerts.txt"
 AGENT_ID="\${MOCK_AGENT_ID:-unknown}"
+AGENT_ROLE=""
+case "\$AGENT_ID" in
+    shogun*) AGENT_ROLE="shogun" ;;
+    karo*)   AGENT_ROLE="karo" ;;
+    gunshi*) AGENT_ROLE="gunshi" ;;
+    *)       AGENT_ROLE="" ;;
+esac
+if [[ -z "\$AGENT_ROLE" ]]; then exit 0; fi
+ALERTS_FILE="\$SHOGUN_ROOT/queue/session_alerts_\${AGENT_ROLE}.txt"
 FAIL_HASH_FILE="/tmp/stop_session_alerts_\${AGENT_ID}_fail_hash"
 
 if [[ ! -f "\$ALERTS_FILE" ]] || [[ ! -s "\$ALERTS_FILE" ]]; then
@@ -195,18 +203,20 @@ INNER
     [[ "$output" != *"decision"* ]]
 }
 
-# T-008: session_alerts.txt空 → exit 0
-@test "T-008: empty session_alerts.txt causes clean exit" {
-    export MOCK_AGENT_ID="test_tobisaru"
+# T-008: session_alerts_shogun.txt空 → exit 0
+@test "T-008: empty session_alerts_shogun.txt causes clean exit" {
+    export MOCK_AGENT_ID="test_shogun"
     local fake_root="$TEST_TMPDIR/shogun_root2"
     mkdir -p "$fake_root/queue"
-    touch "$fake_root/queue/session_alerts.txt"  # 空ファイル
+    touch "$fake_root/queue/session_alerts_shogun.txt"  # 空ファイル
 
     cat > "$TEST_TMPDIR/run_stop_alerts2.sh" <<INNER2
 #!/usr/bin/env bash
 set -euo pipefail
 SHOGUN_ROOT="$fake_root"
-ALERTS_FILE="\$SHOGUN_ROOT/queue/session_alerts.txt"
+AGENT_ID="test_shogun"
+AGENT_ROLE="shogun"
+ALERTS_FILE="\$SHOGUN_ROOT/queue/session_alerts_\${AGENT_ROLE}.txt"
 if [[ ! -f "\$ALERTS_FILE" ]] || [[ ! -s "\$ALERTS_FILE" ]]; then exit 0; fi
 TODO_COUNT=\$(grep -c '^\[TODO\]' "\$ALERTS_FILE" 2>/dev/null || true)
 if [[ "\${TODO_COUNT:-0}" -eq 0 ]]; then exit 0; fi
@@ -219,20 +229,21 @@ INNER2
     [[ "$output" != *"decision"* ]]
 }
 
-# T-009: [TODO]あり → JSON block出力
-@test "T-009: session_alerts.txt with TODO items triggers BLOCK output" {
-    export MOCK_AGENT_ID="test_tobisaru_t009"
+# T-009: [TODO]あり → JSON block出力（将軍ロール）
+@test "T-009: session_alerts_shogun.txt with TODO items triggers BLOCK output" {
+    export MOCK_AGENT_ID="test_shogun_t009"
     local fake_root="$TEST_TMPDIR/shogun_root3"
     mkdir -p "$fake_root/queue"
-    printf '# session_alerts\n[TODO] memory health WARN\n[TODO] PD未解決2件\n' > "$fake_root/queue/session_alerts.txt"
-    rm -f "/tmp/stop_session_alerts_test_tobisaru_t009_fail_hash" 2>/dev/null || true
+    printf '# session_alerts_shogun\n[TODO] memory health WARN\n[TODO] PD未解決2件\n' > "$fake_root/queue/session_alerts_shogun.txt"
+    rm -f "/tmp/stop_session_alerts_test_shogun_t009_fail_hash" 2>/dev/null || true
 
     cat > "$TEST_TMPDIR/run_stop_alerts3.sh" <<INNER3
 #!/usr/bin/env bash
 set -euo pipefail
 SHOGUN_ROOT="$fake_root"
-ALERTS_FILE="\$SHOGUN_ROOT/queue/session_alerts.txt"
-AGENT_ID="test_tobisaru_t009"
+AGENT_ID="test_shogun_t009"
+AGENT_ROLE="shogun"
+ALERTS_FILE="\$SHOGUN_ROOT/queue/session_alerts_\${AGENT_ROLE}.txt"
 FAIL_HASH_FILE="/tmp/stop_session_alerts_\${AGENT_ID}_fail_hash"
 if [[ ! -f "\$ALERTS_FILE" ]] || [[ ! -s "\$ALERTS_FILE" ]]; then exit 0; fi
 TODO_COUNT=\$(grep -c '^\[TODO\]' "\$ALERTS_FILE" 2>/dev/null || true)
@@ -263,21 +274,23 @@ INNER3
     [[ "$output" == *"SESSION ALERTS"* ]]
     [[ "$output" == *"2件"* ]]
 
-    rm -f "/tmp/stop_session_alerts_test_tobisaru_t009_fail_hash" 2>/dev/null || true
+    rm -f "/tmp/stop_session_alerts_test_shogun_t009_fail_hash" 2>/dev/null || true
 }
 
-# T-010: [TODO]なし([DONE]のみ) → exit 0
-@test "T-010: session_alerts.txt with only DONE items causes clean exit" {
-    export MOCK_AGENT_ID="test_tobisaru_t010"
+# T-010: [TODO]なし([DONE]のみ) → exit 0（将軍ロール）
+@test "T-010: session_alerts_shogun.txt with only DONE items causes clean exit" {
+    export MOCK_AGENT_ID="test_shogun_t010"
     local fake_root="$TEST_TMPDIR/shogun_root4"
     mkdir -p "$fake_root/queue"
-    printf '# session_alerts\n[DONE] memory health WARN\n[DONE] PD未解決2件\n' > "$fake_root/queue/session_alerts.txt"
+    printf '# session_alerts_shogun\n[DONE] memory health WARN\n[DONE] PD未解決2件\n' > "$fake_root/queue/session_alerts_shogun.txt"
 
     cat > "$TEST_TMPDIR/run_stop_alerts4.sh" <<INNER4
 #!/usr/bin/env bash
 set -euo pipefail
 SHOGUN_ROOT="$fake_root"
-ALERTS_FILE="\$SHOGUN_ROOT/queue/session_alerts.txt"
+AGENT_ID="test_shogun_t010"
+AGENT_ROLE="shogun"
+ALERTS_FILE="\$SHOGUN_ROOT/queue/session_alerts_\${AGENT_ROLE}.txt"
 if [[ ! -f "\$ALERTS_FILE" ]] || [[ ! -s "\$ALERTS_FILE" ]]; then exit 0; fi
 TODO_COUNT=\$(grep -c '^\[TODO\]' "\$ALERTS_FILE" 2>/dev/null || true)
 if [[ "\${TODO_COUNT:-0}" -eq 0 ]]; then exit 0; fi

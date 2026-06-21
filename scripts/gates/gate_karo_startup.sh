@@ -1798,6 +1798,17 @@ else
     printf '%s\t__OK__\n' "$_startup_run_id" >> "$STARTUP_ALERT_HISTORY"
 fi
 
+# --- session_alerts_karo.txt: 起動時初期生成（stop hookのロール分離対応 cmd_3487） ---
+_session_alerts_file="$SCRIPT_DIR/queue/session_alerts_karo.txt"
+{
+    printf '# session_alerts_karo — generated: %s\n' "$_startup_run_id"
+    if [ ${#alerts[@]} -gt 0 ]; then
+        for a in "${alerts[@]}"; do
+            printf '[TODO] %s\n' "$a"
+        done
+    fi
+} > "$_session_alerts_file"
+
 # --- L1先送り自動エスカレーション: 先送りCRITICAL検出→将軍にinbox送信 ---
 if [ ${#alerts[@]} -gt 0 ]; then
     _deferred_alerts=""
