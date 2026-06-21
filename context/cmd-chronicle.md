@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-21 cmd_3484 -->
+<!-- last_updated: 2026-06-21 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -464,3 +464,4 @@
 | cmd_3481 | 殿指摘(2026-06-21)全件対処。config.tomlのmodel_reasoning_effort・service_tierが全Codex共有で、per-agent設定不可。hayateだけlowにしたくても全員lowになる。対策案3種(CLI引数・per-agent toml・一時書換え)の調査+実装 | infra | 06-21 | Codex per-agent effort/service |
 | cmd_3483 | 教訓健全度ALERT(useful_rate=22.2%, 3セッション連続)の残課題。cmd_3466(スコアリング改善)とD0タグ修正31件の後も残50件の0%有効教訓がinjection候補に残り、タスクと無関係な教訓が注入される。これら50件のwhen/howフィールドをタスク種別(偵察/実装/修正等)に限定し、inject_related_lessonsのマッチング精度を構造的に向上させる | infra | 06-21 | lesson_impact.tsvから0%有効教訓を抽出し、 |
 | cmd_3485 | cmd_3475で実証されたバグの構造的防止。ninja_monitorのauto_void_if_parent_cmd_completed(L1460)がstatus/voided_at/void_reasonのみ設定しparent_cmd/task_idを残すため、次cmd配備時にcmd_complete_gateの報告待ち対象に残りGATE BLOCKする(LK006)。家老掲示板blt_20260621_161244で報告済み | infra | 06-21 | auto_void_if_parent_cmd_comple |
+| cmd_3487 | session_alerts.txtは将軍startup gateが生成する将軍固有ALERTだが、stop_session_alerts.shが全エージェント共通パスを読むため家老・軍師・忍者にも表示される。忍者がスコープ外と判断するしかない状況を構造修正する | infra | 06-21 | stop_session_alerts.shをロール分離修正 |

@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-04-09 -->
+<!-- last_updated: 2026-06-21 cmd_3487 -->
 # 軍師なぜなぜ合成 — 7回転×3サイクル
 <!-- 2026-04-03 | author: gunshi | 殿指示: 全サイクルを将軍に伝えよ -->
 
@@ -133,3 +133,4 @@ ALM研究の前提条件(道具)が整えば、**CAGR目的関数のDMA/DMS検�
 - [[gunshi_idle_adversarial_cold_spot_analysis_20260611]] — 軍師idle: adversarial観点冷え分析(2026-06-11)
 - [[gunshi_gp193_t1_prevention_20260414]] — 軍師GP193: T1防止設計(2026-04-14)
 - [[gunshi_gp194_split_deploy_bc_scope_20260415]] — 軍師GP194: 分割配備BCスコープ(2026-04-15)
+- [[gunshi_idle_cold_viewpoint_retroactive_20260621]] — 軍師idle: 冷え観点遡及分析+洗脳自己監査(2026-06-21)
