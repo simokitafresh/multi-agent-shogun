@@ -156,3 +156,4 @@ tmux capture-pane -t shogun:2.6 -p | head -3  # → Sonnet 4.6 with low effort �
 - [[shogun-all-codex-switch]] — 全忍者をCodex CLIに一括切替（モデル系ではなくCLI種別の切替）
 - [[shogun-peacetime-rollback]] — CodexからClaude（平時編成）への一括ロールバック
 - [[hensei]] — 忍者モデル編成切替
+<!-- script_refs_checked_at: 2026-06-21T16:30:05+09:00 -->

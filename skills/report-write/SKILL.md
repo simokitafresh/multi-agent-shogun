@@ -160,6 +160,8 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-06-21: gate=gate_report_format result=FAIL executor=kagemaru reason=YAML parse error: while parsing a block mapping
 - 2026-06-21: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:hanzo_report_cmd_3475.yaml|hanzo:binary_checks_fail
 
 - 2026-06-21: gate=gate_report_format result=FAIL executor=hanzo reason=lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな); assumption_invalidation: missing \"affected_cmds\" field; assumption_invalidation: missing \"detail\" field

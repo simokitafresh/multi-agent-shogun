@@ -72,4 +72,4 @@ Script refs verified: 2026-06-21 d81b77654. `deploy_task.sh` 直近変更はtag 
 
 Script refs verified: 2026-06-21 1e18f1984. `deploy_task.sh` 直近変更は`NO_WHEN_PENALTY=3`導入によるwhen条件未設定教訓のスコア降格（useful_rate改善目的）。注入精度の内部変更であり、1人目正規配備 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `--yaml <file> <ninja2>` の配備契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-21T12:59:24+09:00 -->
+<!-- script_refs_checked_at: 2026-06-21T16:30:05+09:00 -->

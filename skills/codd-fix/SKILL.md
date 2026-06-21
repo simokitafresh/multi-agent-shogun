@@ -105,4 +105,4 @@ bash scripts/test_select.sh <changed-file>
 
 Script refs verified: 2026-06-21 615d1c2d7 cmd_3476. `cmd_complete_gate.sh` 直近変更は`files_modified`内のchange/statusで`checked_not_modified`を受け付ける追加（「確認したが変更不要」の明示経路として`verified_existing_dependency`と同じ除外ソース）。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-21T12:59:24+09:00 -->
+<!-- script_refs_checked_at: 2026-06-21T16:30:05+09:00 -->

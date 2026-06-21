@@ -20,7 +20,7 @@ task:
   parent_cmd: cmd_3483
   project: infra
   purpose: 教訓健全度ALERT(useful_rate=22.2%, 3セッション連続)の残課題。cmd_3466(スコアリング改善)とD0タグ修正31件の後も残50件の0%有効教訓がinjection候補に残り、タスクと無関係な教訓が注入される。これら50件のwhen/howフィールドをタスク種別(偵察/実装/修正等)に限定し、inject_related_lessonsのマッチング精度を構造的に向上させる
-  status: done
+  status: idle
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/projects
   task_id: cmd_3483_full
