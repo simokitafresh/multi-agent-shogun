@@ -8469,15 +8469,3 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **how**: 未設定
 - WSL2(/mnt/c)上でglobを245回forループ実行すると18秒超のI/O待ちが発生。find一発(0.1秒)+gawk内でIDセット照合に変換すると18倍速。bash shellのglobはWindowsFSでのstat/opendir syscallを毎回発行するため、件数が多いほど線形に遅くなる
 
-### L833: [自動生成] 有効教訓の記録を怠った: cmd_3474
-- **日付**: 2026-06-20
-- **出典**: cmd_3474
-- **記録者**: gate_auto
-- **status**: draft
-- **source**: gate_auto_draft
-- **tags**: [infra,lesson,reporting]
-- **target_files**: [/mnt/c/tools/multi-agent-shogun/scripts,scripts/karo_workaround_log.sh,scripts/normalize_karo_workarounds.py]
-- **origin**: [[cmd_3474]]
-- **when**: 未設定
-- **how**: 未設定
-- lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ

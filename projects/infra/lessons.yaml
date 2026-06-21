@@ -201,7 +201,7 @@ lessons:
 - id: L821
   title: config yaml間のlaunch_cmdパス不一致は設計意図が未明記のまま放置されるとversion pin効果が失われる
   summary: settings.yaml shogunのlaunch_cmd(/home/simokitafresh/.local/bin/claude)とcli_profi
-  tags:
+  tags: [cli,config,version]
   - infra
   - yaml
   - grid_search
@@ -1589,6 +1589,9 @@ lessons:
   target_files:
   - context/gunshi-fof-deterioration-analysis.md
   origin: '[[cmd_training_backlinks_saizo_20260602]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L730
   title: 孤立Markdownは因果リンクセクション追加で双方向接続を確立できる
   summary: cdp-severity.mdは[[リンク]]ゼロで孤立していた。cdp-philosophy.mdがL92で[[cdp-severity.md]]を参照済みだ
@@ -2926,6 +2929,9 @@ lessons:
   - tests/unit/test_agent_state.bats
   - tests/unit/test_usage_status.bats
   origin: '[[cmd_2893]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L638
   title: FP率計算は累計昇格BLOCKもFP候補に含める
   summary: ac_phase_mixingのような頻発BLOCKは累計昇格で閾値が下がった結果でもあり、FP率計算時にはcmd_design_quality全記録を対象にす
@@ -2988,7 +2994,7 @@ lessons:
 - id: L634
   title: stats APIの集計粒度不足はFEフィルタでは補えない(kj-role-count)
   summary: role_type_idでDB集計時点で絞る必要がある。FEのみのフィルタはAPI応答が全ロール合算のため機能しない。BE側にrole_type_idパラメータ
-  tags:
+  tags: [kj-role-count]
   - infra
   - db
   - api
@@ -3006,7 +3012,7 @@ lessons:
 - id: L633
   title: verdict自動導出は免除文脈(waive_reason)をgate検出へ残す
   summary: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
-  tags:
+  tags: [gate,verdict,autofix]
   - verdict_waive
   - gate_verdict
   - waive_reason
@@ -3140,7 +3146,7 @@ lessons:
 - id: L625
   title: report_path未注入taskでは完了報告前にreport_field_setで報告YAMLを明示作成する
   summary: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-  tags:
+  tags: [report,gate,deploy]
   - report_path_missing
   - karo_direct
   - inbox_write
@@ -3215,7 +3221,7 @@ lessons:
 - id: L620
   title: 同一バグを複数セッションが独立発見→auto-commitで先行入り済みのパターン
   summary: build_pane_head_tail_excerpt()の6-10行欠落バグをkotaroとkagemaruが独立発見。kotoraがimplement→e
-  tags:
+  tags: [monitor,auto-commit]
   - infra
   - git
   source_cmd: cmd_training_L4_auto_202605181241_kotaro
@@ -3609,7 +3615,7 @@ lessons:
 - id: L594
   title: deploy_taskからinbox_writeをset -e直下で直接呼ぶと送信失敗が配備後処理全体を中断する
   summary: deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1
-  tags:
+  tags: [deploy,inbox]
   - infra
   - deploy
   - testing
@@ -4288,7 +4294,7 @@ lessons:
 - id: L548
   title: 運用YAML yaml.dump残存を偵察で検出せよ
   summary: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
-  tags:
+  tags: [yaml,recon]
   - recon-yaml-dump
   source_cmd: cmd_karo_infra_recon_core
   when: queue/tasks・queue/reports・queue/inboxなど運用YAMLを書き換えるスクリプトや偵察を担当する時
@@ -5257,7 +5263,7 @@ lessons:
 - id: L474
   title: ac_assigned注入時はinline/multi-line両YAMLフォーマットを考慮すること
   summary: inject_task_modifiers.pyがyaml.dumpでinline list [AC1,AC2]をmulti-line形式に変換するため、fie
-  tags:
+  tags: [deploy,yaml,task]
   - lesson
   - yaml
   source_cmd: cmd_1909
@@ -5379,6 +5385,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-11'
   origin: '[[cmd_1851]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L465
   title: 道具磨きcmdのテスト実行ACと並行研究cmdの入力衝突チェック
   summary: cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。dr
@@ -5592,7 +5601,7 @@ lessons:
 - id: L445
   title: yaml.safe_load→yaml.load(SafeLoader)で機能等価かつgrep検知を回避できる
   summary: yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑
-  tags:
+  tags: [yaml,guard]
   - bash
   - yaml
   source_cmd: cmd_deploy_yaml_speedup
@@ -7390,7 +7399,7 @@ lessons:
 - id: L291
   title: resolve_expected_report_fileの再利用でガード追加時のレポート命名追従
   summary: resolve_expected_report_file()はreport_filename/parent_cmdからファイル名を解決する既存関数。新規ガード追
-  tags:
+  tags: [gate,report]
   - reporting
   source_cmd: cmd_1292
   when: 報告YAMLやレビュー結果を作成・検証する時
@@ -7636,6 +7645,9 @@ lessons:
   - normalize_report.sh
   - gate_dc_duplicate.sh
   origin: '[[cmd_1255]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L271
   title: 報告YAMLフォーマット修正必要なし — cmd_1252
   summary: gate_report_format.sh cmd_1248でlessons_useful dict形式+binary_checks string形式のバリデー
@@ -7664,6 +7676,9 @@ lessons:
   target_files:
   - agent_config.sh
   origin: '[[cmd_1242]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L269
   title: bashのwhile readでYAMLブロック境界判定は不安定→awkを使え
   summary: while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。
@@ -10086,6 +10101,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-02-26'
   origin: '[[common.sh新規作成時にCRLF混入でbash -n失敗した実体験]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L057
   title: cmd_338
   summary: IF auto_deploy機能の発火タイミングを設計する時 THEN ninja_monitorのidle検知依存で最大25秒のラグが発生することを考慮せよ
@@ -10262,6 +10280,9 @@ lessons:
   when: tmuxペインにエージェント固有の状態を保持させたい時
   how: '@user_option(例: @agent_id)を使用せよ'
   origin: '[[cmd_314]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L040
   title: WSL2環境でUsage API応答時間5秒超
   summary: IF WSL2環境でUsage APIを呼び出す監視スクリプトを実装する時 THEN timeout設定を10秒以上に設定せよ
@@ -10309,6 +10330,9 @@ lessons:
   when: テストデータrevertでgit checkout -- SSOT時
   how: '対策: SSOTのrevertはgit管理外ファイルのみか、当該テストエントリのみ手動削除で対処すべき'
   origin: '[[cmd_310]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L035
   title: cmd_complete_gate.shの検証で副作用が発火する可能性
   summary: cmd_complete_gate.shはテスト用cmdでもinbox_archiveチェックを走らせる。検証時は運用データに副作用を与え得るため、隔離データま
