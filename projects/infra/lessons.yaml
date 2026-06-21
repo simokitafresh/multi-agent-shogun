@@ -203,6 +203,9 @@ lessons:
   - scripts/lib/yaml_atomic.py
   - tests/unit/test_git_pre_commit.bats
   origin: '[[GA-101]] -> [[yaml_atomic.py集中管理]] -> [[pre-commit偽陽性BLOCK]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-21'
 - id: L825
   title: context_freshnessは検出だけでなくcmd完了フローの必須入力へ接続せよ
   summary: GA-099の4対象はlast_updated後のsource commit増加をgateが検出したが、cmd完了時にどのcontextを更新すべきかを必須化す
@@ -1537,6 +1540,9 @@ lessons:
   - queue/tasks/kagemaru.yaml
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
+  deprecated: true
+  deprecated_at: '2026-06-21T15:46:06+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
   summary: 外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split
@@ -6278,6 +6284,9 @@ lessons:
   target_files:
   - review_gate.sh
   origin: '[[cmd_cycle_L4_064]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-21'
 - id: L390
   title: embedded PythonのベアexceptはKeyboardInterrupt/SystemExitを隠す
   summary: bash埋込みPythonのtmpファイルcleanupでexcept:を使うとKeyboardInterrupt時にも不要なunlink処理が走る。excep
@@ -6794,6 +6803,9 @@ lessons:
   target_files:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
+  deprecated: true
+  deprecated_at: '2026-06-21T15:46:06+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
   summary: Python子プロセスがstderrにメッセージ、stdoutに値を出力する設計で、bash側が2>&1で混合→grepで再分離するパターンは、Python例外
@@ -8357,6 +8369,9 @@ lessons:
   target_files:
   - settings.yaml
   origin: '[[cmd_875]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-21'
 - id: L214
   title: ローカルIDを複数PJで再利用する系ではメトリクスキーを(project,id)にせよ
   summary: 教訓IDをproject非考慮で集計すると注入回数・有効率・退役判定が別PJ間で相互污染する。cmd_874で検出:同一IDの20組が両PJで同一退役理由。fi
@@ -9618,6 +9633,9 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-20'
+  deprecated: true
+  deprecated_at: '2026-06-21T15:46:07+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)
   summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV

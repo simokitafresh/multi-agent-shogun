@@ -4397,6 +4397,14 @@ for idx, match in enumerate(matches):
     prefix_text = command[max(0, match.start() - 60):match.start()]
     prefix_tokens = prefix_text.split()
     is_exec_prefix = bool(prefix_tokens) and prefix_tokens[-1].lower() in exec_verbs
+    # ロジックパラメータ検出: "{file}上書きロジック" 等、ファイル参照直後に名詞→実際の変更対象はロジックを持つ親ファイル
+    logic_nouns = ("ロジック", "処理", "関数", "コード", "スクリプト", "機能", "仕組み")
+    post_ref_text = command[match.end():match.end()+20]
+    is_logic_param = any(post_ref_text.startswith(n) or post_ref_text.startswith("上書き" + n) or post_ref_text.startswith("復元" + n) or post_ref_text.startswith("読取" + n) for n in logic_nouns)
+    if is_logic_param:
+        readonly_ref = True
+        refs.append((ref, readonly_ref))
+        continue
     # 読点「、」区切り検出: read_markerとwrite_markerの間に「、」→ 別節のwrite_marker → 除外
     has_clause_boundary = False
     if read_pos >= 0 and write_pos >= 0 and read_pos < write_pos:
