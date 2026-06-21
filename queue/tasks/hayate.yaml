@@ -1,17 +1,11 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  acceptance_criteria:
-    AC1:
-      description: 'docs/research/commander_role_ssot_analysis.mdを読み、HIGH RISK分類(A: inbox path、B: role判定条件分岐)を実装対象として明記する'
-    AC2:
-      description: scripts/lib/agent_config.shに is_commander_role / get_commander_names / get_commander_inbox_path 相当のSSOT関数を追加し、既存get_agent_role/get_allowed_targetsと矛盾しないことを検証する
-    AC3:
-      description: scripts/inbox_write.sh等の代表的な高リスク消費者を新SSOT関数へ置換し、Commander直書きの残存を用途別件数で報告する
-    AC4:
-      description: Guard16または隣接GuardへCommander inbox path/role判定の検出行を追加し、テストで新規直書きが警告またはBLOCKされることを示す
-    AC5:
-      description: bash -n対象ファイル、関連Bats/既存テスト、git diff --checkを実行しPASSを報告する
+  readonly_ref:
+  - path: 'shogun_to_karo.yaml'
+    reason: command欄の必読/参照専用ファイル
+  _ac_task_id: cmd_3477_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3477 (deployed 2026-06-21T13:19:03). Read from the beginning.
+  ac_version: 9580af21
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -25,36 +19,33 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope:
-  - 全92ファイルの一括置換
-  - role名そのものの変更
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_commander_role_ssot_20260620
+  parent_cmd: cmd_3477
   project: infra
-  purpose: 'cmd_3470偵察結果を実装へ進める: Commanderロール(shogun/karo/gunshi)の高リスク直書きをSSOT関数とGuardへ接続する'
+  purpose: karo_workarounds分析(2026-06-21)で発見。cmd_3466でcanceled cmdのtask YAMLが残存しcmd_complete_gateの報告待ち対象に残った。家老が手動でparent_cmdを退避して回避(stale_report WA)。deploy_task.shにcancel処理が完全不在(grep 0件)。cmd_complete_gate.shにもcanceled判定なし(grep 0件)
   status: idle
   stop_for: []
-  target_path: scripts/lib/agent_config.sh
-  task_id: cmd_karo_hotfix_commander_role_ssot_20260620_normal
-  task_type: hotfix
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts
+  task_id: cmd_3477_full
+  task_type: full
   related_lessons:
-  - id: 'L270'
-    summary: 'cmd_1136でagent_config.shを12スクリプトに導入した際、テスト環境(INBOX_WRITE_TEST=1/ファイル不在時のgraceful'
-    detail: 'cmd_1136でagent_config.shを12スクリプトに導入した際、テスト環境(INBOX_WRITE_TEST=1/ファイル不在時のgraceful'
-  - id: 'L272'
-    summary: 'agent_config.sh/normalize_report.sh/gate_dc_duplicate.sh追加時にテストsetupへのコピーが漏れた(L2'
-    detail: 'agent_config.sh/normalize_report.sh/gate_dc_duplicate.sh追加時にテストsetupへのコピーが漏れた(L2'
-  - id: 'L634'
-    summary: 'role_type_idでDB集計時点で絞る必要がある。FEのみのフィルタはAPI応答が全ロール合算のため機能しない。BE側にrole_type_idパラメータ'
-    detail: 'role_type_idでDB集計時点で絞る必要がある。FEのみのフィルタはAPI応答が全ロール合算のため機能しない。BE側にrole_type_idパラメータ'
+  - id: 'L540'
+    summary: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
+    detail: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
+  - id: 'L189'
+    summary: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット'
+    detail: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット'
+  - id: 'L467'
+    summary: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ'
+    detail: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
-  recommended_skills:
-  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
+  related_causal_links:
+  - "[[cancel_cleanup自動化]]"
+  - "[[cancel処理不在]]"
+  - "[[cmd_3466_stale_report_WA]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -74,20 +65,42 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L270: cmd_1136でagent_config.shを12スクリプトに導入した際、テスト環境(INBOX_WRITE_TEST=1/ファイル不在時のgraceful
-      - L272: agent_config.sh/normalize_report.sh/gate_dc_duplicate.sh追加時にテストsetupへのコピーが漏れた(L2
-      - L634: role_type_idでDB集計時点で絞る必要がある。FEのみのフィルタはAPI応答が全ロール合算のため機能しない。BE側にrole_type_idパラメータ
+      - L540: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
+      - L189: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット
+      - L467: 新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-20T15:06:40+09:00 | 【INFOバッチ】 2026-06-20 15:00:01|cmd_karo_hotfix_shogun_startup_escalation_20260620_1436 2026-06-20 15:"
-  - "2026-06-20T15:00:42+09:00 | 家老の自律hotfix(shogun_startup_escalation) GATE CLEAR。先送りBLOCK 6件はstartup gateの累積 — 家老が自律的に対処を進めている。 殿の指"
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_commander_role_ssot_20260620_normal
-  _ac_worker_id: 
+  - '2026-06-21T12:48:13+09:00 | AC3: 4/4 PASS、AC4: 3/3 PASS。draft review時にFAILだったテストが全て修正されている。 **判定: LGTM** [MEM: memory_db ts=2026'
+  - '2026-06-21T11:56:28+09:00 | 【INFOバッチ】 2026-06-21 11:47:26|CI緑: run 27871149349'
+  - '2026-06-21T13:06:07+09:00 | 完了しました。 --- **cmd_3475 完了サマリ**: - **AC1**: 3本のSKILL.md(codd-fix/karo-direct/recon-dual)を更新し、参照スクリプトの'
+  - '2026-06-21T13:05:34+09:00 | 陣形図からsaizoはCTX:63%で作業中(cmd_3475)。saizo完了報告を待つ。 Dispatch-then-Stop。 [meta] stop_reason=end_turn'
+  - '2026-06-21T13:01:01+09:00 | inbox未読0件。stop hookが検知している「karo/task_assigned」はhanzo宛のnudge(deploy_task.shがkaro名義で送信したもの)であり、家老inbox'
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'cmd_complete_gate.shにcanceled cmd除外ロジックを追加する'
+  - id: 'AC2'
+    checks:
+    - check: 'deploy_task.shにcancel cleanup関数を追加する'
+  - id: 'AC3'
+    checks:
+    - check: 'tests/unit/test_cmd_complete_gate.batsが通過する'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_hotfix_commander_role_ssot_20260620.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_hotfix_commander_role_ssot_20260620.yaml
+  report_filename: hayate_report_cmd_3477.yaml
+  report_path: queue/reports/hayate_report_cmd_3477.yaml
   bloom_level: 
-  deployed_at: "2026-06-20T15:45:56"
+  deployed_at: "2026-06-21T13:19:30"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'canceled cmdをcmd_complete_gateの報告待ち対象から除外し、deploy_taskでcancel済みcmdの残留taskをidleへ清掃する処理を追加。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'canceled cmdをcmd_complete_gateの報告待ち対象から除外し、deploy_taskでcancel済みcmdの残留taskをidleへ清掃する処理を追加。'
+  completed_at: "2026-06-21T13:24:02"

@@ -1,12 +1,17 @@
 task:
-  _ac_task_id: cmd_3474_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3474 (deployed 2026-06-20T16:30:26). Read from the beginning.
-  ac_assigned:
-  - AC1
-  - AC2
-  - AC3
-  ac_version: fa3c270a
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      description: bash scripts/gates/gate_lesson_health.sh 2>/dev/null | grep useful率 で修正前の数値を報告に記録する
+    AC2:
+      description: 'tasks/lessons.mdの以下4教訓のwhen/howを限定的条件に修正する: (1)L620: when=複数エージェント/セッションが同一ファイルを並列修正する時, how=git log --onelineで先行commitの有無を確認しstash/rebase判断 (2)L611: when=cmd_complete_gate CLEAR後にlesson_candidateが空の時, how=reporting前にlesson_candidate有無を確認しgate_auto生成を活用 (3)L634: when=kj-role-countプロジェクトでstats API集計クエリを設計する時, how=FE要件から逆算して必要な集計粒度をBE APIに実装する (4)L058: whenを「WSL2環境で新規.shファイルをWrite toolで作成した時」に修正, howを「sed -i s/\r$// で即座にCRLF除去しbash -nで構文検証」に修正'
+    AC3:
+      description: bash scripts/sync_lessons.sh infra を実行しprojects/infra/lessons.yamlに反映されたことをrg L620 projects/infra/lessons.yamlで確認
+    AC4:
+      description: bash scripts/gates/gate_lesson_health.sh 2>/dev/null | grep useful率 で修正後の数値を報告に記録し修正前→後の差分を明記
+    AC5:
+      description: python3 -c "import yaml; yaml.safe_load(open('tasks/lessons.md'))" は非対応のためスキップ。git diff --check をPASSさせる
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -20,58 +25,33 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope:
-  - SSOT正本(config/projects.yaml等)のliteral削除
-  - docs/research/archive内の説明・履歴文字列の全面変更
-  - 外部PJリポジトリ内の参照修正
-  origin: '[[殿指示_オントロジー_20260620]] -> [[SSOT調査_cmd_3458_3461]] -> [[Phase2_3_SSOT是正_Guard汎化]]'
   parallel_ok: []
-  parent_cmd: cmd_3474
+  parent_cmd: cmd_karo_hotfix_lesson_useful_rate_v2_20260621
   project: infra
-  purpose: '家老エスカレーション(2026-06-20 15:57): brainwash_check未記入WA 5件が3セッション連続CRITICAL。実態は100件中98件が未記入。normalize_karo_workarounds.pyにbrainwash_checkフィールドバリデーションを追加し、未記入WAの記録をブロックする'
+  purpose: '教訓useful率ALERT(18.2%)改善: 上位NOT_USEFUL教訓のwhen/howを限定化し無関係注入を減らす'
   status: idle
   stop_for: []
-  subtask_id: cmd_3464_full
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts
-  task_id: cmd_3474_full
-  task_type: full
-  validation:
-  - rg '/mnt/c/Python_app/' scripts/ .claude/ --type sh --type py
-  - bats tests/unit/test_write_edit_combined_hooks.bats
-  - python3 -c "import pathlib; p=pathlib.Path('docs/research/ssot-registry.md'); assert p.exists(); assert 'PJパス' in p.read_text()"
+  target_path: tasks/lessons.md
+  task_id: cmd_karo_hotfix_lesson_useful_rate_v2_20260621_normal
+  task_type: hotfix
   related_lessons: []
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "bulletin_communication — 掲示板通信基盤:  scripts/bulletin_write.sh scripts/bulletin_archive.sh scripts/bulletin_close.sh scripts/bulletin_confirm.sh queue/bulletin_board.yaml docs/research/gunshi_idle_bulletin_nazenaze_7_20260515.md — 軍師idle: 掲示板なぜなぜ#7分析(2026-05-15)"
   memory_db_context:
-  - '2026-06-20T16:02:25+09:00 | 【INFOバッチ】 2026-06-20 15:50:59|cmd_3470 2026-06-20 16:01:30|cmd_3472'
-  - '2026-06-20T15:06:40+09:00 | 【INFOバッチ】 2026-06-20 15:00:01|cmd_karo_hotfix_shogun_startup_escalation_20260620_1436 2026-06-20 15:'
-  - '2026-05-19T16:07:00+09:00 | 【INFOバッチ】 2026-05-19 15:57:20|CI緑: run 26080838457 2026-05-19 16:04:00|cmd_2876'
-  - '2026-03-20T19:26:18+09:00 | 【INFOバッチ】 2026-03-20 19:15:57|cmd_1148 2026-03-20 19:20:54|cmd_1162'
-  related_causal_links:
-  - "[[brainwash_check未記入WA98件]]"
-  - "[[バリデーション必須化]]"
-  - "[[家老CRITICALエスカレーション_20260620]]"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  - '2026-06-09T10:59:49+09:00 | **洗脳監査完走状況更新:** | # | 問題 | 完走? | |---|------|-------| | 1 | 教訓有効率18.2% | **未完走**(タグ遡及変更依頼済み。家老対応待ち) '
+  - '2026-06-08T22:46:46+09:00 | review_log記録完了。idle-persistの全ステップ(ファイル保存→掲示板→review_log)が完走。 --- **idle自走セッションまとめ**: **完了した3分析**: 1.'
+  - '2026-06-20T15:21:21+09:00 | D0 report_precheck速度改善: commit 67334cb76でCLOSE。 本セッション全成果: - **レビュー17件**: draft 8件全APPROVE + report '
+  - '2026-06-16T01:56:47+09:00 | 【家老】cmd_3396 初回配備開始 (title=教訓useful_rate改善: 低useful教訓のタグ精度向上+淘汰でuseful_rate向上, ninja=kotaro) 教訓usefu'
   context_hints:
   - "context/training-cycle.md"
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'normalize_karo_workarounds.pyにbrainwash_check未記入検出ロジックを追加し、未記入件数をサマリに表示する'
-  - id: 'AC2'
-    checks:
-    - check: '家老WA記録フロー(karo-operations.md §3またはWA記録スクリプト)にbrainwash_checkフィールド必須化を追加する'
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_hotfix_lesson_useful_rate_v2_20260621_normal
+  _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3474.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3474.yaml
+  report_filename: tobisaru_report_cmd_karo_hotfix_lesson_useful_rate_v2_20260621.yaml
+  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_lesson_useful_rate_v2_20260621.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -94,7 +74,10 @@ task:
     - reason: 'report_format'
       count: 2
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'empty_lessons_useful'
+      count: 2
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
     - reason: 'lesson_candidate_fields_empty'
       count: 1
       hint: 'gate BLOCK: lesson_candidate_fields_empty'
-  deployed_at: "2026-06-20T16:30:55"
+  deployed_at: "2026-06-21T12:34:34"

@@ -6,8 +6,8 @@ description: |
   multi-agent-shogun のCLI種別(Claude⇔Codex)とClaude Code version運用を切り替える。全ロールが殿の指示のもとに使用可能。
   switch-to-codex / switch-to-opus / shogun-claude-version-switch の上位互換。
   settings.yaml更新→tmux変数同期→idle paneのみrespawn。in_progress/active paneはスキップして設定だけ反映する。
-  TRIGGER: /shogun-cli-switch、Claude auto-update再許可、2.1.87固定へロールバック、Claude version確認、pinned/latest切替、Claude⇔Codex切替、家老をCodexに、軍師をOpusに、CLI pane respawn、編成切替、忍者モデル編成、一括モデル切替、混成編成、モデル混成、Opus全戻し、決戦モード、全員Codex切替、Codex-only編成、緊急Codex編成、平時編成へ戻す、Codex-only解除、Claude復旧後ロールバック、ペイン死亡復旧、respawnせよ
-  DO NOT TRIGGER: 通常の /model 操作、レイアウト全崩壊（→/reset-layout）
+  TRIGGER: /shogun-cli-switch、Claude auto-update再許可、2.1.87固定へロールバック、Claude version確認、pinned/latest切替、Claude⇔Codex切替、家老をCodexに、軍師をOpusに、CLI pane respawn、編成切替、忍者モデル編成、一括モデル切替、混成編成、モデル混成、Opus全戻し、決戦モード、全員Codex切替、Codex-only編成、緊急Codex編成、平時編成へ戻す、Codex-only解除、Claude復旧後ロールバック、ペイン死亡復旧、respawnせよ、GPT-5.5にしたい、GPTモデルに変更、モデルをGPTに、モデル変更
+  DO NOT TRIGGER: 同一CLI内の /model 操作（Claude系内でOpus↔Sonnet等）、レイアウト全崩壊（→/reset-layout）
 ---
 
 <!-- script_refs_checked_at: 2026-06-21T00:40:00+0900 -->
@@ -15,6 +15,8 @@ description: |
 Script refs verified: 2026-06-20. `shogun_cli_switch.sh` は `status/pin-2.1.87/unpin-latest/to-claude/to-codex/--agent/--scope/--dry-run/--settings-only` を契約にする。CLI切替は `scripts/switch_cli_mode.sh`、Claude version切替は `config/cli_profiles.yaml` の `profiles.claude.launch_cmd` と個別 `settings.yaml launch_cmd` を正本にする。
 Script refs verified: 2026-06-20 L821. `switch_cli_mode.sh` にstale active補正追加(@agent_state=active+task空→idle強制)。I/F変更なし。Codex sandbox環境でStop hookブロック→active残留→respawnスキップのインフラバグ修正。
 Script refs verified: 2026-06-21. `switch_cli_mode.sh` relaunch方式をCtrl-C+send-keys→`respawn-pane -k`に変更(殿指摘2026-06-21: CLIごと再起動が基本)。ハングCLIにCtrl-Cが効かず再起動不能だった問題を根治。I/F変更なし。
+Script refs verified: 2026-06-21T13:58. CLI種別とモデルの関係セクション追加(殿指摘2026-06-21)。GPT-5.5はCodex CLI必須、Claude CLIで`--model gpt-5.5`は表示のみ変更。TRIGGER拡張(モデル変更系キーワード追加)。DO NOT TRIGGER明確化(同一CLI内の/modelは対象外)。
+Script refs verified: 2026-06-21T15:06. switch_cli_mode.sh 4修正(殿指示2026-06-21): (1)CLI種別変更時respawn強制(active判定バイパス) (2)model_nameファミリー不整合リセット (3)respawn前reset追加(Codex exit 2根因修正) (4)cooldown 5秒(高速連続respawn防止)。pre-bash-combined.sh Guard 9b簡素化(respawn-pane通過、model_switchのみBLOCK)。session_start_inject.sh cli_switch_pending待機状態追加。CLAUDE.md Step 0待機判定追加。双方向6連続100%成功+3人同時切替検証済み。
 
 # Shogun CLI Switch
 
@@ -23,33 +25,81 @@ Script refs verified: 2026-06-21. `switch_cli_mode.sh` relaunch方式をCtrl-C+s
 multi-agent-shogun の指揮官/指定agentを Claude Code と Codex CLI の間で切り替え、必要に応じて Claude Code の pinned/latest version も切り替える。
 旧 `/switch-to-codex` と `/switch-to-opus` は本スキルへ統合済み。旧 `/shogun-claude-version-switch` の機能も保持する。
 
-## Commands
+## 殿の指示→実行フロー（誰でも・いつでも・何回でも）
+
+殿の指示を受けたら以下のフローで手順を導出し実行せよ。
+
+### Step 1: モデルファミリー判定
+
+| 殿の指示に含まれるキーワード | モデルファミリー | 必要なCLI |
+|---------------------------|----------------|----------|
+| GPT-5.5, GPT | GPT系 | **Codex CLI** |
+| Opus, Sonnet, Haiku, Claude | Claude系 | **Claude CLI** |
+
+### Step 2: CLI種別切替（必要な場合のみ）
 
 ```bash
 # 現状確認
 ~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh status
 
-# 全Claude paneを 2.1.87 へ固定
-~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh pin-2.1.87
+# GPT系に切替（1人）
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --agent <name>
 
-# 全Claude paneを最新版へ
-~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh unpin-latest
+# Claude系に切替（1人）
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-claude --agent <name>
 
-# 特定paneだけ最新版に（他は変更なし）
-~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh unpin-latest --agent hayate
-
-# 特定paneをピン止めに戻す（個別オーバーライド削除）
-~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh pin-2.1.87 --agent hayate
-
-# 指定agentをCodexへ切替
-~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --agent karo
-
-# 指定agentをClaude/Opusへ復帰
-~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-claude --agent karo
-
-# 複数agentまたはcore(shogun,karo)を切替
-~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --scope shogun,karo,gunshi
+# 複数人同時（CSV指定）
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --scope hayate,kagemaru,saizo
 ```
+
+### Step 3: effort/fast設定
+
+| 項目 | Claude CLI | Codex CLI |
+|------|-----------|-----------|
+| **model** | `respawn-pane -k "claude --dangerously-skip-permissions --model sonnet --effort low"` | `~/.codex/config.toml` の `model = "gpt-5.5"` (**全Codex共有**) |
+| **effort** | `--effort low\|medium\|high`（起動引数） | `config.toml` の `model_reasoning_effort = "low"` → respawn (**全Codex共有**) |
+| **fast** | respawn後に `/fast` → Tab → Enter | `config.toml` の `service_tier = "fast"` → respawn (**全Codex共有**) |
+
+**Codex注意**: config.tomlは全Codex忍者共有。変更は全Codex忍者に影響するが、respawnした忍者のみ反映。
+
+### Step 4: 一次確認（必須）
+
+```bash
+# バナーで実モデルを確認（設定変更≠反映。一次確認が必須）
+tmux capture-pane -t shogun:2.<pane> -p | head -5    # Claude CLI
+tmux capture-pane -t shogun:2.<pane> -p | tail -2    # Codex CLI
+```
+
+### 実行例
+
+```bash
+# 例1: 「hanzoをGPT5.5 low fastonに」
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --agent hanzo
+# config.toml: model_reasoning_effort="low", service_tier="fast" (既定ならrespawn不要)
+tmux capture-pane -t shogun:2.5 -p | tail -2  # → gpt-5.5 low fast 確認
+
+# 例2: 「saizo をSonnet low に」(既にClaude CLIなら)
+tmux respawn-pane -k -t shogun:2.6 "/home/simokitafresh/bin/claude --dangerously-skip-permissions --model sonnet --effort low"
+tmux capture-pane -t shogun:2.6 -p | head -3  # → Sonnet 4.6 with low effort 確認
+
+# 例3: 「hayateとkagemaruを同時にCodexに」
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --scope hayate,kagemaru
+
+# 例4: version切替
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh pin-2.1.87      # 全員2.1.87固定
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh unpin-latest     # 全員最新版
+```
+
+### anti-pattern（殿指摘2026-06-21）
+
+**動いているCLIを弄ろうとするな。paneを殺す→正しいCLI+設定で起動が正道。**
+
+| ❌ 間違い | ✅ 正しい |
+|----------|----------|
+| `/model gpt-5.5` で Claude→GPT変更 | `to-codex --agent <name>` |
+| settings.yaml model_name変更のみ | respawn-pane -k + 起動引数 |
+| `--effort low` を Codex CLI に渡す | config.toml の `model_reasoning_effort` |
+| Claude CLI で `/fast` → Sonnet fast | `/fast` は Opus 4.6 に強制変更される |
 
 ## Safety
 
@@ -76,6 +126,30 @@ multi-agent-shogun の指揮官/指定agentを Claude Code と Codex CLI の間�
 - `--agent` 指定時: CLI切替では単一agentの `type` を変更、version切替では個別 `launch_cmd` を操作（cli_lookup.sh のオーバーライド機構を利用）
 - `--agent` + `pin-2.1.87`: 個別オーバーライドを削除しプロファイルデフォルト(ピン止め)に戻す
 - shutsujin再起動時は指揮官(shogun/karo/gunshi)をデフォルトClaude/Opusへ戻す。Codex切替は手動実行時のみの一時状態である
+
+## 実践検証結果（2026-06-21 殿指示で検証）
+
+| # | 操作 | 方法 | 結果 | 知見 |
+|---|------|------|------|------|
+| P1 | Codex→Claude | `to-claude --agent` | ✅ | スキルが設定+respawn一括実行 |
+| P2 | Opus→Sonnet(同一CLI) | `/model sonnet` | ✅ | 同一CLI内は`/model`でOK |
+| P3 | Claude→Codex | `to-codex --agent` | ✅ | 根因修正済み(reset+cooldown)。双方向6連続成功 |
+| P4 | effort変更(Claude) | `respawn-pane -k --model --effort` | ✅ | pane殺す→起動引数指定が正道 |
+| P5 | effort変更(Codex) | config.toml→respawn | ✅ | config.toml変更は即時反映されない。respawn必須 |
+| P6 | fast off(Codex) | config.toml service_tier→respawn | ✅ | service_tier=default/fast。respawnで反映 |
+| P7 | fast toggle(Claude) | `/fast` Tab Enter | ✅ | fast ONはOpus 4.6に強制変更。Sonnet fastは不可 |
+| C1 | 2人同時切替 | `--scope hayate,kagemaru` | ✅ | CSV指定で一括切替 |
+| C2 | 3人同時切替 | `--scope hayate,kagemaru,saizo` | ✅ | CLI種別変更はrespawn強制(active判定バイパス) |
+
+**修正済みの問題と対策**:
+- **Codex exit 2 (pane dead)**: 根因=Claude CLIのターミナル設定残留。対策=respawn前にreset実行+5秒cooldown。双方向6回連続100%成功で検証済み
+- **CLI種別変更時のrespawnスキップ**: 根因=@agent_state=active残留。対策=current_cli≠TARGET_CLIならstale/busy判定スキップ
+- **model_nameファミリー不整合**: 根因=to-claude時にGPT model_nameが残留。対策=CLI種別変更時に不整合model_nameを自動リセット
+- **CLI switch後の自動recovery**: 対策=@cli_switch_pending→CLAUDE.md Step 0でrecovery全スキップ→CTX:0%待機
+
+**運用注意**:
+- config.toml(effort/service_tier)は全Codex忍者共有。変更は全員に影響するがrespawnした忍者のみ反映
+- Claude `/fast` ONはモデルをOpus 4.6に強制変更する。Sonnet fastは存在しない
 
 ## 関連スキル
 

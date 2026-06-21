@@ -23,17 +23,17 @@ cli:
       japanese_name: 軍師
     hayate:
       type: codex
-      model_name: gpt-5.5-low
+      model_name: 
       role: ninja
       japanese_name: 疾風
     kagemaru:
       type: codex
-      model_name: gpt-5.5-low
+      model_name: 
       role: ninja
       japanese_name: 影丸
     hanzo:
-      type: claude
-      model_name: gpt-5.5-low
+      type: codex
+      model_name: 
       role: ninja
       japanese_name: 半蔵
     saizo:

@@ -471,10 +471,11 @@ if [[ "$command" =~ sed[[:space:]]+-i.*gate_result.*gunshi_review_log\.yaml || "
     fi
 fi
 
-# Guard 9b: CLI切替/編成変更の手動操作BLOCK (殿裁定2026-06-20: スキル100%使用の仕組み)
-# respawn-pane/model_switch/CLI起動を手動で行おうとしたら/shogun-cli-switchを強制
-if [[ "$command" =~ respawn-pane|model_switch|/model[[:space:]] ]] && [[ ! "$command" =~ ninja_monitor|reset_layout|shogun-cli-switch|gate_|startup|yaml_field_set|switch_cli_mode ]]; then
-    emit_deny "BLOCKED: CLI切替/編成変更は /shogun-cli-switch スキルを使え。手動respawn-pane/model_switch禁止 (殿裁定: スキル無視はバグ。意志依存は洗脳#3)"
+# Guard 9b: inbox_writeのmodel_switch type BLOCK (殿裁定2026-06-20: スキル100%使用の仕組み)
+# respawn-paneは正規操作（殿指摘2026-06-21: pane殺す→起動が正道）。BLOCKしない
+# model_switchのみBLOCK対象（inbox_write経由のmodel切替を防止）
+if [[ "$command" =~ model_switch ]] && [[ ! "$command" =~ ninja_monitor|reset_layout|shogun-cli-switch|gate_|startup|yaml_field_set|switch_cli_mode|memory_db_query|inbox_write|semantic_search|send-keys ]]; then
+    emit_deny "BLOCKED: model_switchはスキル経由で実行せよ (殿裁定: スキル無視はバグ)"
 fi
 
 # === Guard 10: D0 effect measurement enforcement (覚醒なぜなぜ7回 2026-06-10: commit=仕事の根因) ===

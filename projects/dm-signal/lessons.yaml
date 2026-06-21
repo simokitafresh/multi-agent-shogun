@@ -1478,6 +1478,9 @@ lessons:
   - outputs/grid_search/20260427/L0/shin/gs_kawarimi_DM7P.db
   - scripts/analysis/cmd_2325_kawarimi_csv_to_db.py
   origin: '[[cmd_2325]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-21'
 - id: L659
   title: source_type=csvのGS runnerでもDB前提をpreflightで切り分ける
   summary: run_077_oikaze.pyはsource_type=csvでもALM青龍-常勝 portfolioをDB参照し、現DBに存在せず停止した。一方pipel
@@ -2014,7 +2017,7 @@ lessons:
   origin: '[[cmd_1877]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-20'
+  last_referenced: '2026-06-21'
 - id: L624
   title: 道具の全引数(--output-prefix等)をcmdに明記せよ — デフォルト依存はprefix不統一の原因
   summary: GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する。全引数を明示的にcmdに記載してデフォ
@@ -2335,6 +2338,9 @@ lessons:
   - outputs/analysis/cmd_1845_three_layer_comparison.md
   - scripts/oneshot/cmd_1845_three_layer_metrics.py
   origin: '[[cmd_1845]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-21'
 - id: L602
   title: 'cmd_1844 oikaze MaxDD champion ID誤記: N2→N4(20体GSで subset=2の誤記)'
   summary: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661_10M_N2_R1 はokugi_shin_ninpo_20body '
@@ -3209,7 +3215,7 @@ lessons:
   origin: '[[cmd_training_L4_R38_kagemaru]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-20'
+  last_referenced: '2026-06-21'
 - id: L539
   title: FoF悪化の主因は尖り削減ではなくネスト深度増幅 — r=-0.199で仮説棄却
   summary: 65PFのEMA前後シグナル相関行列+尖り削減量とFoF Δcagr相関分析。r=-0.199(弱い負の相関)。尖り削減量はFoF悪化の主因ではない。cmd_1
@@ -4174,6 +4180,9 @@ lessons:
   when: パリティ検証ツールを新規作成する
   how: 既存ツール(15+)とのtolerance差異を確認せよ
   origin: '[[cmd_1235]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-21'
 - id: L466
   title: FoF component_portfoliosはUUID格納。旧四神=fof型、シン四神=standard型の構造差
   summary: component_portfoliosはportfolios.idのUUIDリストで格納。名前解決にはportfoliosテーブルとのJOINが必須。また、旧
@@ -4828,7 +4837,7 @@ lessons:
   origin: '[[cmd_1101]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-20'
+  last_referenced: '2026-06-21'
 - id: L420
   title: 本番リターン列のopen/close区別必須
   summary: monthly_returnsテーブルにはmonthly_return(Close)とmonthly_return_open(Open)の2列。GSはOpen-
@@ -6121,6 +6130,9 @@ lessons:
   target_files:
   - tests/test_admin_tiers.py
   origin: '[[cmd_987]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-21'
 - id: L320
   title: p̄検定は朱雀(DM3)のDNA「債券方向スイッチ」と構造的に不適合
   summary: p̄検定は月次リターンの一貫した正のリターンを検定する。 朱雀のDNAはTMF/TMV切替で「大きな方向転換で稼ぐ」設計であり、
@@ -6237,6 +6249,9 @@ lessons:
   target_files:
   - frontend/lib/api-client.ts
   origin: '[[cmd_962]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-21'
 - id: L310
   title: 'apiCache.clear()はETag IDB(dm-signal-etag-store)を削除しない。clear直後のAPI呼出でETag送信→304→キャッシュなしエラーが発生しうる。clearSignalsCache()は独自対策済みだが汎用clear()にはない。修正対象:
     frontend/lib/api-cache.ts:204-212, frontend/lib/api-client.ts:254-259'
@@ -7730,6 +7745,9 @@ lessons:
   - frontend/app/dashboard/page.tsx
   - frontend/app/summary/page.tsx
   origin: '[[cmd_564]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-21'
 - id: L188
   title: window.location遷移を採用する構成ではContext単独の状態共有は永続化要件を満たさない
   summary: IF ページ間遷移がwindow.location.hrefだとSPA状態が毎回破棄されるため、永続化要件にはlocalStorageまたはURLパラメータを併

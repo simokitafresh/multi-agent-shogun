@@ -1,12 +1,12 @@
 task:
-  _ac_task_id: cmd_3468_full
+  _ac_task_id: cmd_3478_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3468 (deployed 2026-06-20T15:31:19). Read from the beginning.
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3478 (deployed 2026-06-21T13:42:21). Read from the beginning.
   ac_assigned:
   - AC1
   - AC2
   - AC3
-  ac_version: cb037a1c
+  ac_version: 8a69fd79
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -25,37 +25,35 @@ task:
   - repo絶対パス消費者の全面書換え
   origin: '[[殿指示_オントロジー_20260620]] -> [[SSOT調査_cmd_3458_3461]] -> [[Phase2_3_SSOT是正_Guard汎化]]'
   parallel_ok: []
-  parent_cmd: cmd_3468
+  parent_cmd: cmd_3478
   project: infra
-  purpose: '殿指摘(2026-06-20 15:16「もう十分と思ったら洗脳の証拠」): Guard16テーブルは4概念のみ。SSOT調査で特定された9カテゴリ中5つが未保護。tmuxウィンドウ名(20ファイル)+モデル名直書き(8ファイル)をGuard16テーブルに追加し消費者を書き換える'
+  purpose: 家老context_freshness ALERT GA-111(2026-06-21)。codd.md(06-11)・memory-db-queries.md(06-06)・obsidian-link-principles.md(06-11)の3件がsource commit未反映。hardcode修正(677d0c7f9)・knowledge writer追加(a29eea6ee)・semantic_causal_traverse追加(6fa0e374f)の反映が必要
   status: idle
   stop_for: []
   subtask_id: cmd_3467_full
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts
-  task_id: cmd_3468_full
+  target_path: /mnt/c/tools/multi-agent-shogun/context
+  task_id: cmd_3478_full
   task_type: full
   validation:
   - python3 -c "import yaml; yaml.safe_load(open('config/projects.yaml')); yaml.safe_load(open('config/settings.yaml')); yaml.safe_load(open('config/cli_profiles.yaml'))"
   related_lessons:
-  - id: 'L731'
-    summary: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
-    detail: 'causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数'
-  - id: 'L058'
-    summary: 'hayate(subtask_340_impl_a)'
-    detail: 'hayate(subtask_340_impl_a)'
-  - id: 'L041'
-    summary: 'IF tmuxペインにエージェント固有の状態を保持させたい時 THEN @user_option(例: @agent_id)を使用せよ'
-    detail: 'IF tmuxペインにエージェント固有の状態を保持させたい時 THEN @user_option(例: @agent_id)を使用せよ'
+  - id: 'L832'
+    summary: 'WSL2(/mnt/c)上でglobを245回forループ実行すると18秒超のI/O待ちが発生。find一発(0.1秒)+gawk内でIDセット照合に変換すると'
+    detail: 'WSL2(/mnt/c)上でglobを245回forループ実行すると18秒超のI/O待ちが発生。find一発(0.1秒)+gawk内でIDセット照合に変換すると'
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L787'
+    summary: 'source pathsが広いcontextでは、ALERT件数=全て同じcontextへ追記すべき情報ではない。commitを研究正本/補助資料/core寄り'
+    detail: 'source pathsが広いcontextでは、ALERT件数=全て同じcontextへ追記すべき情報ではない。commitを研究正本/補助資料/core寄り'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)"
   related_causal_links:
-  - "[[9概念中4つのみGuard16]]"
-  - "[[tmux_model_Guard16追加]]"
-  - "[[殿指摘_洗脳早期終了_20260620]]"
+  - "[[GA-111_context_freshness_ALERT]]"
+  - "[[context鮮度回復]]"
+  - "[[source_commit未反映3件]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -63,31 +61,42 @@ task:
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L731: causal_backlink_counts.shのzero一覧はincoming backlinkの孤立を示す一方、今回のACは直接[[ファイル名]]リンク数
-      - L058: hayate(subtask_340_impl_a)
-      - L041: IF tmuxペインにエージェント固有の状態を保持させたい時 THEN @user_option(例: @agent_id)を使用せよ
+      - L832: WSL2(/mnt/c)上でglobを245回forループ実行すると18秒超のI/O待ちが発生。find一発(0.1秒)+gawk内でIDセット照合に変換すると
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L787: source pathsが広いcontextでは、ALERT件数=全て同じcontextへ追記すべき情報ではない。commitを研究正本/補助資料/core寄り
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - "2026-06-20T15:06:40+09:00 | 【INFOバッチ】 2026-06-20 15:00:01|cmd_karo_hotfix_shogun_startup_escalation_20260620_1436 2026-06-20 15:"
-  - '2026-06-20T14:15:29+09:00 | [MEM: memory_db ts=2026-06-20T03:26 "オントロジーの真髄は『概念Aが変わったら、Aに依存する全てが自動で変わる』だ"] **計測結果**: [[リンク]]1594行'
-  - "2026-04-26T15:25:20+09:00 | 【INFOバッチ】 2026-04-26 15:16:45|cmd_2297 2026-04-26 15:20:13|cmd_2295 2026-04-26 15:24:03|cmd_2298"
-  - "2026-03-29T15:21:05+09:00 | 【INFOバッチ】 2026-03-29 15:09:58|cmd_1485 2026-03-29 15:16:04|CI緑: run 23702848423 2026-03-29 15:18:10|"
+  - '2026-06-21T13:38:29+09:00 | 【将軍】context鮮度ALERT: codd.md(source更新),google-classroom.md(source更新),infrastructure.md(source更新),memo'
+  - '2026-06-21T12:54:27+09:00 | 【三層ループALERT】WARNING: CTX%異常値 cmd_3474 (ctx_pct=55%, median=0.0%, ratio=infx, delta=+55.0pt) WARNING:'
+  - '2026-04-18T20:49:02+09:00 | 【改善トリガー】ci_red ALERT (GA-111)'
+  - '2026-06-21T12:48:13+09:00 | AC3: 4/4 PASS、AC4: 3/3 PASS。draft review時にFAILだったテストが全て修正されている。 **判定: LGTM** [MEM: memory_db ts=2026'
+  - '2026-06-21T11:56:28+09:00 | 【INFOバッチ】 2026-06-21 11:47:26|CI緑: run 27871149349'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'Guard16テーブルにtmuxウィンドウ名概念(shogun:2等の直書き検出+pane_lookup経由免除)とモデル名概念(opus/sonnet等の直書き検出+model_resolve/cli_lookup経由免除)を追加する'
+    - check: 'context/codd.mdをsource commit 677d0c7f9の変更内容と照合し、hardcodeパス修正を反映する'
   - id: 'AC2'
     checks:
-    - check: 'tmuxウィンドウ名を直書きしている全ファイルをpane_lookup/tmux変数参照に書き換える'
+    - check: 'context/memory-db-queries.mdをsource commit a29eea6eeの変更内容と照合し、memory_db_knowledge_write.shの追加を反映する'
   - id: 'AC3'
     checks:
-    - check: 'モデル名を直書きしている全ファイルをmodel_resolve/cli_lookup参照に書き換える'
+    - check: 'context/obsidian-link-principles.mdをsource commit 6fa0e374fの変更内容と照合し、semantic_causal_traverse.shの追加を反映する'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3468.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3468.yaml
+  report_filename: kagemaru_report_cmd_3478.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3478.yaml
   bloom_level: 
-  deployed_at: "2026-06-20T15:31:57"
+  deployed_at: "2026-06-21T13:42:40"

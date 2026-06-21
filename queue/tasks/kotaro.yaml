@@ -21,13 +21,13 @@ task:
   - スキル別FAIL率/SKILL.md script参照/教訓健全度ALERTの全面解消
   origin: '[[shogun_startup_escalation_20260620_1436]] -> [[deferred_warn_repeated]] -> [[karo_direct_hotfix_or_boundary]]'
   parallel_ok: []
-  parent_cmd: cmd_3472
+  parent_cmd: 
   project: infra
   purpose: '殿指示「遅いスクリプトはバグ」(2026-06-20)。軍師速度監査: ralph_loop_metrics.sh 14-20秒がTOP1。hook(17ms)の850倍。根因=for+glob+gawkループ'
-  status: done
+  status: idle
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/scripts
-  task_id: cmd_3472_full
+  task_id: 
   task_type: full
   validation:
   - bash -n scripts/gates/gate_shogun_startup.sh

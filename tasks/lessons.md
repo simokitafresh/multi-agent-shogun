@@ -8469,3 +8469,58 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **how**: 未設定
 - WSL2(/mnt/c)上でglobを245回forループ実行すると18秒超のI/O待ちが発生。find一発(0.1秒)+gawk内でIDセット照合に変換すると18倍速。bash shellのglobはWindowsFSでのstat/opendir syscallを毎回発行するため、件数が多いほど線形に遅くなる
 
+
+### L833: CLI種別がモデルファミリーを決定 — Claude CLI=Claude系、Codex CLI=GPT系
+- **日付**: 2026-06-21
+- **出典**: cmd_karo_hotfix_model_family_ssot_20260620
+- **記録者**: gunshi
+- **tags**: [infra, tmux, cli]
+- **target_files**: [context/infrastructure.md,config/settings.yaml,scripts/switch_cli_mode.sh]
+- **origin**: [[cmd_karo_hotfix_model_family_ssot_20260620]]
+- **when**: 未設定
+- **how**: 未設定
+- 正道=paneを殺す→正しいCLI+設定で起動。settings.yamlのmodel_nameは表示メタデータであり実行モデルを決定しない。anti-pattern=/modelコマンド送信、settings.yaml変更のみ。GPT-5.5にはCodex CLI必須。origin: [[殿指摘_CLI_model_20260621]] -> [[respawn方式正道]] -> [[Guard9b修正]]
+
+### L834: switch_cli_mode.sh @agent_state=active残留バグ — recovery後にactive化→task=none/idleでもrespawnスキップ
+- **日付**: 2026-06-21
+- **出典**: cmd_karo_hotfix_model_family_ssot_20260620
+- **記録者**: gunshi
+- **tags**: [infra, tmux, cli]
+- **target_files**: [scripts/switch_cli_mode.sh]
+- **origin**: [[cmd_karo_hotfix_model_family_ssot_20260620]]
+- **when**: 未設定
+- **how**: 未設定
+- Claude recovery後に@agent_state=activeに遷移するが、task statusがidle/none/doneの場合にidleに補正されない。結果: respawn対象なのにスキップ(2/3名スキップ実証)。修正案: task statusがidle/none/doneなら@agent_stateをidle強制補正してからrespawn判定。origin: [[複数同時切替検証C2]] -> [[active残留]] -> [[2/3スキップ]]
+
+### L835: switch_cli_mode.sh @agent_state=active残留バグ
+- **日付**: 2026-06-21
+- **出典**: cmd_karo_hotfix_model_family_ssot_20260620
+- **記録者**: gunshi
+- **tags**: [infra, tmux, cli]
+- **target_files**: [scripts/switch_cli_mode.sh]
+- **origin**: [[cmd_karo_hotfix_model_family_ssot_20260620]]
+- **when**: 未設定
+- **how**: 未設定
+- Claude recovery後に@agent_state=activeに遷移→task=none/idleでもrespawnスキップ(2/3名)。修正案: task idle/none/doneなら@agent_stateをidle強制補正。origin: [[複数同時切替検証C2]] -> [[active残留]] -> [[2/3スキップ]]
+
+### L836: @model_name tmux変数同期漏れ — to-claude後に旧Codex値のまま
+- **日付**: 2026-06-21
+- **出典**: cmd_karo_hotfix_model_family_ssot_20260620
+- **記録者**: gunshi
+- **tags**: [infra, tmux, cli]
+- **target_files**: [scripts/switch_cli_mode.sh]
+- **origin**: [[cmd_karo_hotfix_model_family_ssot_20260620]]
+- **when**: 未設定
+- **how**: 未設定
+- switch_cli_mode.shのrelaunched後に@model_nameがCLIバナーから更新されない。status表示不正確の原因。修正案: relaunch後にCLIバナーからモデル名を検出し@model_name更新。origin: [[C3検証]] -> [[@model_name同期漏れ]] -> [[status表示不正確]]
+
+### L837: 2層SSOT設計(殿承認) — デフォルト層(cli_profiles.yaml)+動的層(settings.yaml)でCLI/model編成管理
+- **日付**: 2026-06-21
+- **出典**: cmd_karo_hotfix_model_family_ssot_20260620
+- **記録者**: gunshi
+- **tags**: [infra, tmux, cli, settings]
+- **target_files**: [config/cli_profiles.yaml,config/settings.yaml,scripts/shutsujin_departure.sh]
+- **origin**: [[cmd_karo_hotfix_model_family_ssot_20260620]]
+- **when**: 未設定
+- **how**: 未設定
+- デフォルト層=tmux再起動時復帰。動的層=起動後にオントロジー駆動で変更追随。実装必要: (1)cli_profiles.yamlにdefaultsセクション追加 (2)shutsujin_departure.shにdefault復元ロジック追加。設計書: docs/research/gunshi_idle_cli_model_ontology_design_20260621.md。origin: [[殿指摘_CLI_model_20260621]] -> [[2層SSOT設計]] -> [[オントロジー駆動動的編成]]

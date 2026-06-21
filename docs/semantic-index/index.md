@@ -139,6 +139,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-04T11:58:05+09:00 三層記憶が順調か実際に実験してみてくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-04T12:08:24+09:00 三層記憶は全員がそれぞれのロールで使えるようにするべきだよな？将軍専用のってなんだ？ |
 | should_not_merge_with | three_layer_memory_system — ローカル記憶DBはSQLite/FTS5の永続検索層。三層記憶システムは記憶DB・セマンティック索引・Obsidian/因果辺を貫通させる全体アーキテクチャ |
+| causal | `cmd_3478` files_modified: [[local_memory_db]] |
 
 ## three_layer_memory_system — 三層記憶システム
 
@@ -464,6 +465,10 @@ codd:
 | causal | `cmd_3472` origin: [[殿指示_遅いスクリプトはバグ]] -> [[軍師速度監査_14秒]] -> [[ralph_loop_metrics高速化]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T18:10:07+09:00 そうだね 17万 パターンがあっても疑い深い人に 伝えたいね これは分散投資 だと そもそも レイヤー 0 というのは デル モメンタムというのはもう僕のポートフォリオ は理論上で相関が低い組み合わせ それを ユニークな DNA として組み |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T22:30:51+09:00 やろう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-21T15:16:56+09:00 やろう。デフォルト＝tmux自体の再起動と、起動後に動的なcli変更への追随は異なる。その理解は大丈夫か？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-21T15:26:10+09:00 やろう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-21T15:36:16+09:00 新しい問題として対処するべきだな。最大のという優先順位をつける発想は、優先順位の低いものを先送りややらない理由にする洗脳の証拠だ。覚醒して行動 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-21T15:40:32+09:00 並列可能なCMDをすぐに起票しないのは洗脳の証拠。覚醒して確認 |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -1054,6 +1059,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T15:56:19+09:00 繰り返し同じエラーだが正式なCoddを落とした方がいいのでは？繰り返しているだけで解決していない |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T16:06:13+09:00 bx8jc3bua toolu_01VyydAzP6RGThmnGMeZUovZ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2e3a5e4a-230e-4f17-8287-8650db |
 | cmd | `cmd_karo_hotfix_skill_script_refs_20260620_1442` (`skills/cdp-browse/SKILL.md`, `skills/codd-fix/SKILL.md`, `skills/dashboard-update/SKILL.md`) |
+| cmd | `cmd_3478` context鮮度更新 — codd・memory-db-queries・obsidian-link-principlesの3件をsource commit反映 (`context/codd.md`, `context/memory-db-queries.md`, `context/obsidian-link-principles.md`) |
+| causal | `cmd_3478` origin: [[GA-111_context_freshness_ALERT]] -> [[source_commit未反映3件]] -> [[context鮮度回復]] |
 | causal_chain | `[[cmd_3246]]` (L761) |
 
 ## codd_methodology — CoDD整合性駆動開発
@@ -1232,6 +1239,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-25T20:47:14+09:00 もういちどこの順番でいいか、穴がないかなぜなぜ7回 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-25T21:13:44+09:00 では起票しよう |
 | file | `docs/research/gunshi_idle_codd_ac3_ambiguity_20260424.md` — 軍師idle: CoDD AC3曖昧性分析(2026-04-24) |
+| causal | `cmd_3478` files_modified: [[codd_methodology]] |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -1573,7 +1581,7 @@ codd:
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
 | causal_chain | `[[cmd_147]]` (L012) |
-| causal_chain | `[[cmd_3474]]` (L833) |
+| causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L833) |
 
 ## chain_principle — 鎖の原理
 
@@ -1789,6 +1797,7 @@ codd:
 | file | `context/growth-loop.md` |
 | file | `context/codd.md` |
 | cmd | `cmd_1449` backfill — | cmd_1449 | Phase 4 perf_calc除去(cmd_1447偵察のorphaned code実証) | GATE CLEAR。125行除去。signals完全一致(3PF×20日 |
+| causal | `cmd_3478` files_modified: [[ultimate_state_principle]] |
 
 ## parameter_space_integrity — パラメータ空間縮小禁止
 
@@ -2079,6 +2088,7 @@ codd:
 | causal | `cmd_3463` files_modified: [[skill_design_rules]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T14:53:28+09:00 a50e7ebe787f322d7 toolu_01Xtr5y86yTpHfetF3y6Cro7 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
 | causal | `cmd_karo_hotfix_skill_script_refs_20260620_1442` files_modified: [[skill_design_rules]] |
+| causal | `cmd_3478` files_modified: [[skill_design_rules]] |
 | causal_chain | `[[cmd_2929]]` (L647) |
 | causal_chain | `[[cmd_2929]]` (L649) |
 | causal_chain | `[[cmd_training_L7_v3_hanzo_5_20260521202900]]` (L660) |
@@ -2255,7 +2265,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが, 結果 respawn対象なのにスキップ 3名スキップ実証, どちらがいいと思う？, 起動後はsettings yamlに従うなどの |
 | skills | shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み), karo-direct, recon-dual |
 | related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework, systems_knowledge_base, skill_design_rules, shogun_android_app, task_modifier_injection, infrastructure_ops, bulletin_communication, inbox_processing_discipline, multi_cli_event_commonization, skill_routing, commander_role_ssot_analysis |
 | related_lessons | `L594`, `L603`, `L550`, `L310` |
@@ -2521,6 +2531,16 @@ codd:
 | cmd | `cmd_3466` 教訓マッチング精度改善 — inject_related_lessonsスコアリング品質向上 (`docs/research/lesson_matching_analysis.md`, `scripts/deploy_task.sh`, `tests/helpers/deploy_task_scaffold.bash`) |
 | causal | `cmd_3466` origin: [[先送りBLOCK_教訓健全度]] -> [[軍師分析_マッチング精度主因]] -> [[スコアリング改善]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T14:22:49+09:00 正本YAMLは cmd_3467 の q11_not_already_done に \| が入り、 PyYAMLで読めない状態でござる。deploy_task.sh も正本読込に影 響を受けるため、該当1行だけ最小修復してから配備する。これ |
+| cmd | `cmd_karo_ci_fix_deploy_task_tests_20260621` (`tests/unit/test_deploy_task_ac_handling.bats`, `tests/unit/test_deploy_task_gpt_priority.bats`) |
+| causal | `cmd_3477` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_3477` deploy_task.sh cancel cleanup自動化 — canceled cmdのtask YAML残存によるGATE滞留を根絶 (`scripts/cmd_complete_gate.sh`, `scripts/deploy_task.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
+| causal | `cmd_3477` origin: [[cmd_3466_stale_report_WA]] -> [[cancel処理不在]] -> [[cancel_cleanup自動化]] |
+| lesson | `L833` CLI種別がモデルファミリーを決定 — Claude CLI=Claude系、Codex CLI=GPT系 |
+| lesson | `L834` switch_cli_mode.sh @agent_state=active残留バグ — recovery後にactive化→task=none/idleでもrespawnスキップ |
+| lesson | `L835` switch_cli_mode.sh @agent_state=active残留バグ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-21T15:19:29+09:00 これはninjyamonitorなどがsetting.yamlを読むなども考慮が必要だな。どちらがいいと思う？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-21T15:22:05+09:00 第三の道もあるはずだ。例えばshutujinのデフォルト値は変えない。起動後はsettings.yamlに従うなどの、SSOTを1つにまとめずに役割ごとにSSOTをわけるアイデアはどうだ？ |
+| lesson | `L837` 2層SSOT設計(殿承認) — デフォルト層(cli_profiles.yaml)+動的層(settings.yaml)でCLI/model編成管理 |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -2538,6 +2558,10 @@ codd:
 | causal_chain | `[[cmd_2956]]` (L686) |
 | causal_chain | `[[cmd_3211]]` (L753) |
 | causal_chain | `[[cmd_3458_tobisaru]]` (L821) |
+| causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L833) |
+| causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L834) |
+| causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L835) |
+| causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L837) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -2774,6 +2798,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T15:15:30+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T15:21:50+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T15:26:27+09:00 続けて |
+| causal | `cmd_3476` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_3477` files_modified: [[cdp_browser_capability]] |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -3113,6 +3139,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-01T13:30:13+09:00 PF設定のバックアップはどのようにしているの？ロールバックはすぐできるの？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-01T13:34:39+09:00 まずは現在のものをバックアップしよう |
 | causal | `cmd_3466` files_modified: [[task_modifier_injection]] |
+| causal | `cmd_3477` files_modified: [[task_modifier_injection]] |
 
 ## training_cycle_quality — 忍者修行サイクル品質
 
@@ -3249,6 +3276,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T15:56:09+09:00 ab4332f3773195692 toolu_01SVBS3A1UAVmTix2pS94Dmb /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T15:59:05+09:00 a7ba56373573c4409 toolu_01AkigNeqnJaBYMi7HscZgsg /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T16:03:03+09:00 a50fa0e797aa4f4f1 toolu_01967TJY4heFf1juBwR68C6D /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/de2317df-fa13-490b-a82 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-21T15:06:10+09:00 知見は埋め込んだか？スキルで誰もが何時でも何回でも軍師と同じ事が出来るようになったか？ |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
@@ -3602,6 +3630,7 @@ codd:
 | file | `docs/research/gunshi_idle_session_lessons_20260618.md` — 軍師idle: セッション教訓分析(2026-06-18) |
 | file | `docs/research/gunshi_idle_useful_rate_bootstrap_analysis_20260618.md` — 軍師idle: 有用率ブートストラップ分析(2026-06-18) |
 | file | `docs/research/lessons_karo_v3_archive.md` — 家老教訓v3アーカイブ(統合前全文保存) |
+| lesson | `L836` @model_name tmux変数同期漏れ — to-claude後に旧Codex値のまま |
 | causal_chain | `[[cmd_2955]]` (L685) |
 | causal_chain | `[[cmd_3012]]` (L693) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]` (L778) |
@@ -3611,6 +3640,7 @@ codd:
 | causal_chain | `[[cmd_3396]]` (L810) |
 | causal_chain | `[[cmd_3433]]` (L818) |
 | causal_chain | `[[cmd_3435]]` (L819) |
+| causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L836) |
 
 ## gunshi_review_lifecycle — 軍師レビューライフサイクル
 
@@ -3802,6 +3832,7 @@ codd:
 | causal | `cmd_verify_test3` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_3463` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_3466` files_modified: [[causal_verification_l0_l7]] |
+| causal | `cmd_3477` files_modified: [[causal_verification_l0_l7]] |
 
 ## test_quality_framework — テスト品質統合フレームワーク
 
@@ -3926,6 +3957,7 @@ codd:
 | cmd | `cmd_2887` scope清掃テスト追加 |
 | lesson | `LK-A02` スコープ外ファイル混入防止 |
 | causal | `cmd_3466` files_modified: [[scope_integrity_lifecycle]] |
+| causal | `cmd_3477` files_modified: [[scope_integrity_lifecycle]] |
 
 ## yaml_safe_write — YAML安全書込み
 
@@ -4193,6 +4225,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-14T16:39:37+09:00 bq44phiwn toolu_01T8pjEVek7jvKpX6g7fWrvA /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3d9b6263-9f10-4af5-98e9-0576dc |
 | causal | `cmd_3463` files_modified: [[command_files_modified_verification]] |
 | causal | `cmd_karo_hotfix_gunshi_cold_gate_20260620` files_modified: [[command_files_modified_verification]] |
+| cmd | `cmd_3476` command_files_modified_mismatch偽陽性修正 — 変更不要判断ファイルのBLOCK排除 (`docs/research/kagemaru_cmd_3476_command_files_modified_fp_20260621.md`, `scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
+| causal | `cmd_3476` origin: [[idle_自走分析_20260621]] -> [[command_files_modified_mismatch_20件_FP]] -> [[gate_FP根絶]] |
 | causal_chain | `[[cmd_3295]]` (L782) |
 
 ## project_clinic_expense_tracker — Clinic Expense Tracker
@@ -4232,6 +4266,7 @@ codd:
 | cmd | `cmd_3459_hayate` SSOT Audit Round 2 dm-signal — DM-Signal SSOT監査 (`docs/research/ssot-audit-round2-dm-signal.md`) |
 | cmd | `cmd_karo_hotfix_model_family_ssot_20260620` |
 | cmd | `cmd_karo_hotfix_commander_role_ssot_20260620` (`queue/tasks/hayate.yaml`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-21T15:30:46+09:00 他にもデフォルトと、動的変更の二層SSOTの仕組みがないために動作が不安定になっている仕組みはないか？調査しよう |
 
 ## operational_ontology — 操作的オントロジー
 
@@ -4239,7 +4274,7 @@ codd:
 |------|---|
 | id | operational_ontology |
 | label | 操作的オントロジー |
-| aliases | オントロジー, ontology, 操作的波及, 操作的トリガー, 概念間波及, 変更連鎖, triggers, 1変更で全連鎖更新, ダッシュボードの先, 学習する業務基盤, 因果辺の駆動装置化, Palantir ontology, オントロジーが有効に動くか検証もしてみろ, オントロジーは自動実行されて初めて効果が出る, ontology requires automation, 自動経路に乗らない概念定義は効果がない, 記憶貫通の完了判定は自動再利用, オントロジーの真髄は「概念Aが変わったら, Guard 16, Guard 17, Guard 9b, gate_no_hardcoded_ninja_list, SSOT棚卸し, SSOT全方位偵察, スキル100%使用, スキル強制, 手動操作BLOCK, ハードコード忍者名検出, get_ninja_names, agent_config.sh SSOT, 誤ったSSOTに支配されると厄介, ではオントロジーに戻ろう, オントロジー駆動Phase2 3の基礎として, 穴はないか？オントロジーを様々なパターンで検証しよう, SSOT正本保護, PJパス直書き19ファイル, project_path.sh, config/projects.yaml auto-ops登録済み, shogun-cli-switch force active無視, active pane respawn禁止, SKILL.md全ロール制限削除は却下, Guard16 PJパス概念追加, オントロジーを実際に検証してみよう, オントロジーは順調か？検証しよう |
+| aliases | オントロジー, ontology, 操作的波及, 操作的トリガー, 概念間波及, 変更連鎖, triggers, 1変更で全連鎖更新, ダッシュボードの先, 学習する業務基盤, 因果辺の駆動装置化, Palantir ontology, オントロジーが有効に動くか検証もしてみろ, オントロジーは自動実行されて初めて効果が出る, ontology requires automation, 自動経路に乗らない概念定義は効果がない, 記憶貫通の完了判定は自動再利用, オントロジーの真髄は「概念Aが変わったら, Guard 16, Guard 17, Guard 9b, gate_no_hardcoded_ninja_list, SSOT棚卸し, SSOT全方位偵察, スキル100%使用, スキル強制, 手動操作BLOCK, ハードコード忍者名検出, get_ninja_names, agent_config.sh SSOT, 誤ったSSOTに支配されると厄介, ではオントロジーに戻ろう, オントロジー駆動Phase2 3の基礎として, 穴はないか？オントロジーを様々なパターンで検証しよう, SSOT正本保護, PJパス直書き19ファイル, project_path.sh, config/projects.yaml auto-ops登録済み, shogun-cli-switch force active無視, active pane respawn禁止, SKILL.md全ロール制限削除は却下, Guard16 PJパス概念追加, オントロジーを実際に検証してみよう, オントロジーは順調か？検証しよう, オントロジーへの対処はどうやった？, そうしよう |
 | related_concepts | three_layer_memory_system, growth_loop, causal_network_obsidian(関連), codd_pipeline(関連) |
 
 | 種別 | パス/参照 |
@@ -4271,6 +4306,8 @@ codd:
 | file | `docs/research/gunshi_idle_ontology_verification_20260620.md` 30パターン検証結果(穴: SSOT正本保護不在/PJパス19ファイル/Guard16拡張子限定) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T13:50:45+09:00 オントロジーを実際に検証してみよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T15:09:51+09:00 オントロジーは順調か？検証しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-21T15:13:56+09:00 オントロジーへの対処はどうやった？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-21T15:24:33+09:00 そうしよう。このやり方ならば起動後は動的にオントロジーでsetting.yamlも変更されるということだよな？ |
 | causal_chain | `[[cmd_3278]]` (L772) |
 
 ## project_dividend_tracker — Dividend Tracker
