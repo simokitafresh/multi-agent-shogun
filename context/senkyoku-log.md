@@ -1,5 +1,13 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-20 cmd_3474 -->
+<!-- last_updated: 2026-06-21 cmd_3478 -->
+
+## 2026-06-21
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| startup BLOCK対処 | 教訓健全度ALERT 3連続+掲示板4件+SKILL.md WARN | 掲示板確認完了。教訓健全度=根因対処済み(NO_WHEN_PENALTY+19件D0タグ+家老v2 hotfix GATE CLEAR)。窓サイクル待ち | 根因=828教訓中199件when未設定→無関係注入。注入側+登録側の両面対処 |
+| idle自走分析 | Step 1-5(insights/WA/cmd品質/軍師log/パターン発見) | BLOCK TOP1=command_files_modified_mismatch(20件/50=40%、7ユニークcmd)。根因=忍者の変更不要判断をgateに伝達する手段不在 | cmd_3408(第1波FP修正)後の第2波FP。gate_metrics.log+コード確認で特定 |
+| cmd_3476 | command_files_modified_mismatch FP根絶 | delegated | BLOCK率40%削減見込み。偵察+修正一体cmd |
 
 ## 2026-06-20 (session 2)
 
