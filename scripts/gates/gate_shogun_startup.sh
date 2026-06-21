@@ -3144,7 +3144,7 @@ if [ "${_DEFER_G13:-0}" = "1" ]; then
     if echo "$lesson_result" | grep -q "ALERT"; then
         overall="ALERT"
         if grep -Eq 'METRIC: .*status=ALERT .*useful_rate=([0-9](\.[0-9]+)?|[12][0-9](\.[0-9]+)?)%?' "$_TMP_G13"; then
-            alerts+=("教訓健全度: ALERT → when/how品質向上・低useful教訓の改善/淘汰を実行せよ")
+            alerts+=("教訓健全度: ALERT → 低useful教訓の改善/淘汰を実行せよ（when/how欠落はgate出力で欠落時のみ）")
         elif grep -q "未振り分け" "$_TMP_G13"; then
             alerts+=("教訓健全度: ALERT → /lesson-sort実行せよ")
         else
