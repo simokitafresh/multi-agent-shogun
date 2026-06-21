@@ -2999,7 +2999,7 @@ lessons:
   - db
   - api
   source_cmd: cmd_karo_kj_role_filter
-  when: 未設定
+  when: kj-role-count APIの集計・FEフィルタ設計時
   how: 未設定
   target_files:
   - backend/routers/stats.py
@@ -3181,13 +3181,13 @@ lessons:
 - id: L623
   title: task YAML nested binary_checksへのyaml_field_set.sh直指定は構文破壊リスクがある
   summary: queue/tasks/hayate.yamlのAC別result更新で汎用yaml_field_set.shをACブロックに使ったところ、ネストしたbinar
-  tags:
+  tags: [deploy,yaml]
   - infra
   - testing
   - bash
   - yaml
   source_cmd: cmd_karo_kjrc_A_db_models
-  when: 未設定
+  when: task YAMLのbinary_checksをyaml_field_set.shで操作する時
   how: 未設定
   target_files:
   - backend/database.py
@@ -4822,11 +4822,11 @@ lessons:
     2.2x改善も実測でregression'
   summary: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python
     GIL
-  tags:
+  tags: [performance,wsl2]
   - wsl2
   - yaml
   source_cmd: cmd_2086
-  when: 同種の作業・判断・検証を行う時
+  when: WSL2でNTFS上の並列I/O処理を設計する時
   how: Python GILも追加制約
   origin: '[[cmd_2086]]'
   helpful_count: 0
@@ -5033,13 +5033,13 @@ lessons:
 - id: L493
   title: gate_yaml_status.shのawkはlist形式のみ対応で、map key形式のcmdを常にERRORで返していた
   summary: 'gate_yaml_status.shのawk(-v cmd_id)は''- id: cmd_xxx''形式のみ検索していた。実際のshogun_to_karo.y'
-  tags:
+  tags: [gate,yaml_status]
   - bash
   - cmd_lifecycle
   - gate
   - yaml
   source_cmd: cmd_2042
-  when: 同種の作業・判断・検証を行う時
+  when: gate_yaml_status.shのawk解析ロジックを変更する時
   how: '実際のshogun_to_karo.yamlはcmd_xxx: (map key)形式を使用しており、全cmdがNOT FOUNDとなっていた'
   target_files:
   - gate_yaml_status.sh
@@ -5605,7 +5605,7 @@ lessons:
   - bash
   - yaml
   source_cmd: cmd_deploy_yaml_speedup
-  when: 同種の作業・判断・検証を行う時
+  when: yaml.dumpガードをgrep検知で実装する時
   how: '2026-04-07'
   origin: '[[cmd_deploy_yaml_speedup]]'
   helpful_count: 0
@@ -8251,11 +8251,11 @@ lessons:
 - id: L219
   title: 偵察タスクの履歴参照パスは実在パスで配るべし
   summary: cmd_887_B の分析対象に archive/completed_changelog.yaml とあったが、現行実体は queue/completed_ch
-  tags:
+  tags: [recon,deploy]
   - recon
   - yaml
   source_cmd: cmd_887
-  when: 同種の作業・判断・検証を行う時
+  when: 偵察タスクに履歴参照パスを配備する時
   how: '2026-03-13'
   target_files:
   - queue/completed_changelog.yaml
@@ -8345,11 +8345,11 @@ lessons:
 - id: L211
   title: 大規模偵察(8名以上)には統合専任担当(水平H)をcmd設計段階で組み込むべき
   summary: A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可
-  tags:
+  tags: [recon,万全偵察]
   - recon
   - process
   source_cmd: cmd_862
-  when: 同種の作業・判断・検証を行う時
+  when: 8名以上の大規模偵察cmdを設計する時
   how: '2026-03-12'
   origin: '[[cmd_862]]'
 - id: L210
