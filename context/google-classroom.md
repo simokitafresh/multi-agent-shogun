@@ -51,4 +51,8 @@ Render cronjob化に向けたDocker構成の注意点。
 
 - L001: `auto_login.py`と`scrape_classroom.py`は密結合。並列配備で作業重複発生。密結合ファイルは同一忍者に配備 or ファイル境界を明示（cmd_1055）
 
+## §5 SSOT監査
+
+- SSOT棚卸し結果 → `docs/research/ssot-audit-round2-google-classroom.md` (cmd_3459 hayate)
+
 <!-- last_synced_lesson: L011 -->

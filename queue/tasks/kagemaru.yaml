@@ -28,7 +28,7 @@ task:
   parent_cmd: cmd_3468
   project: infra
   purpose: '殿指摘(2026-06-20 15:16「もう十分と思ったら洗脳の証拠」): Guard16テーブルは4概念のみ。SSOT調査で特定された9カテゴリ中5つが未保護。tmuxウィンドウ名(20ファイル)+モデル名直書き(8ファイル)をGuard16テーブルに追加し消費者を書き換える'
-  status: done
+  status: idle
   stop_for: []
   subtask_id: cmd_3467_full
   target_path: /mnt/c/tools/multi-agent-shogun/scripts

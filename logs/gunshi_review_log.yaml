@@ -1290,6 +1290,7 @@
   timestamp: "2026-06-20T15:50:00+09:00"
 - cmd_id: cmd_3468
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   reviewer: gunshi
   reviewed_at: '2026-06-20T16:15:00+09:00'
@@ -1337,6 +1338,7 @@
   timestamp: "2026-06-20T16:00:00"
 - cmd_id: cmd_karo_hotfix_model_family_ssot_20260620
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star]
@@ -1353,6 +1355,7 @@
   timestamp: "2026-06-20T16:00:00+09:00"
 - cmd_id: cmd_karo_hotfix_commander_role_ssot_20260620
   review_type: draft
+  gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
   finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
@@ -1581,7 +1584,7 @@
   review_type: report
   verdict: LGTM
   report_ninja: hanzo
-  gate_result: null
+  gate_result: CLEAR
   gate_prediction: WARN
   confidence: HIGH
   finding_categories: [assumptions, numbers, simulation, premortem, adversarial]

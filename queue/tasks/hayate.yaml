@@ -32,7 +32,7 @@ task:
   parent_cmd: cmd_karo_hotfix_commander_role_ssot_20260620
   project: infra
   purpose: 'cmd_3470偵察結果を実装へ進める: Commanderロール(shogun/karo/gunshi)の高リスク直書きをSSOT関数とGuardへ接続する'
-  status: done
+  status: idle
   stop_for: []
   target_path: scripts/lib/agent_config.sh
   task_id: cmd_karo_hotfix_commander_role_ssot_20260620_normal

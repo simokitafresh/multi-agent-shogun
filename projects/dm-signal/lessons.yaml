@@ -371,6 +371,9 @@ lessons:
   - frontend/components/__tests__/monthly_trade_table_fof_uuid.test.tsx
   - frontend/lib/__tests__/monthly-trade-display.test.ts
   origin: '[[cmd_3293]] -> [[WP-2のresolveDisplayText変更棄却]] -> [[cmd_3294コード復元+テスト固定]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L730
   title: 削除済みBlockTypeはruntime全経路で残参照検査する
   summary: Kalman/selection block削除後、静的な主要箇所の削除は完了していたが、初回本番mode=portfolio再計算でrecalculate_f
@@ -1777,6 +1780,9 @@ lessons:
   - scripts/analysis/cmd_2142_bunshin_profile_harness.py
   - scripts/analysis/grid_search/run_077_bunshin.py
   origin: '[[cmd_2142]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L638
   title: upfront cleanup後の長時間再計算はworker restartで本番データを空にしうる
   summary: MonthlyReturnをPhase 0で先消しすると、FoF再生成前にRender workerが再起動した場合monthly_returns
@@ -4177,6 +4183,9 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-22'
   origin: '[[cmd_1234]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L465
   title: 'SelectionBlock set→list非決定性: タイ存在時にPYTHONHASHSEED依存で結果変動'
   summary: 全SelectionBlockでtickers=list(context.current_tickers)を使用。setの反復順序はPYTHONHASHSEED
@@ -6743,6 +6752,9 @@ lessons:
   - frontend/lib/__tests__/api-client-etag.test.ts
   - frontend/lib/api-client.ts
   origin: '[[cmd_847]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L271
   title: years付きmonthly fast pathは境界月だけdaily fallbackを残すと完全一致と高速化を両立できる
   summary: 日次→月次precompute置換ではyears>0のcutoffが月途中になるとpartial month parityが崩れる。境界月のみdaily
@@ -6762,6 +6774,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: output:exportとSW bypassが揃っていてもportal配下のnavがclick同期でsetIsOpen(false)を打つとLink/router遷移は消される
   origin: '[[cmd_832]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L269
   title: FoF request-scope cache の key は auth ではなく portfolio_id+signal_date に寄せ、masking
     は route 後段に隔離せよ
@@ -9168,6 +9183,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 新忍法追加時にも適用
   origin: '[[saizo]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L057
   title: 168バッチGS結果は忍法ごとにCSV有無が異なる
   summary: IF 変わり身(kawarimi)は168バッチにresults CSVのみで月次リターンCSVが未生成時 THEN 変わり身(kawarimi)は168バッチ
@@ -9335,6 +9353,9 @@ lessons:
   when: bunshin GS(781通り)をNumPyベクトル化+前処理キャッシュ化で高速化時
   how: bunshin GS(781通り)をNumPyベクトル化+前処理キャッシュ化で高速化
   origin: '[[cmd_161]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L040
   title: nukimi C2候補はgekkou列のみ使用、close/openは同一CSVデータで暫定統一
   summary: IF 064_champion CSVは単一系列のため、load_monthly_returns_dual_from_csvのclose_fallback=op
@@ -9384,6 +9405,9 @@ lessons:
   when: POST /admin/recalculate-syncにstart_dateを指定しても実際はstart_date=2000-01-01で全期間実行される時
   how: POST /admin/recalculate-syncにstart_dateを指定しても実際はstart_date=2000-01-01で全期間実行される
   origin: '[[cmd_128]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-20'
 - id: L035
   title: FoF参照L0 PFはDELETE不可→UPDATE方式が安全
   summary: L0 PFがFoFコンポーネントとして参照されている場合、DELETE APIは400を返す。UPDATE方式(既存PFにpipeline_config付与+/
