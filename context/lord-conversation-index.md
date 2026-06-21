@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-21 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-21T16:06:08+09:00 -->
+<!-- generated_at: 2026-06-21T16:13:45+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-06-21T16:06:08+09:00 | terminal | response | bc全yes + commit_hash存在。
-- 2026-06-21T16:05:12+09:00 | ntfy | outbound | 【watchdog】inbox_watcher(gunshi)を自動再起動しました
-- 2026-06-21T16:04:12+09:00 | ntfy | outbound | 【watchdog/WARN】inbox_watcher(gunshi)がhang検知。未読0 0件。強制再起動
-- 2026-06-21T16:00:45+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-21 15:56:12|cmd_3480
-- 2026-06-21T16:00:18+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: google-classroom.md(source更新),saxo-trade-engine.md(source更新)
-- 2026-06-21T15:59:54+09:00 | terminal | response | 新しい未読なし。inbox2のnudgeは既読化済みメッセージへの再通知。saizo(cmd_3481 CTX:44%)作業中。Dispatch-then-Stop。 [meta] stop_reason=end_turn
-- 2026-06-21T15:58:47+09:00 | terminal | response | 全push済み。/cmd-complete実行。
-- 2026-06-21T15:58:43+09:00 | ntfy | outbound | 【家老】cmd_3480 完了
-- 2026-06-21T15:57:51+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝41
-- 2026-06-21T15:57:12+09:00 | terminal | response | **GATE CLEAR: cmd_3480完了。** launch_cmd version pin 2層SSOT化。 2層SSOT進捗: - **#1 cmd_3479** CLEAR: type/model_name+バグ修正 - *…
+- 2026-06-21T16:13:37+09:00 | terminal | response | **強くてニューゲーム準備完了。** 全修正はcommit済み。次の軍師は: - CLAUDE.md Step 0でCLI switch待機判定が自動動作 - SKILL.mdに殿指示→実行フロー4Stepが記載 - context/in…
+- 2026-06-21T16:12:55+09:00 | terminal | response | **強くてニューゲーム永続化完了:** | 項目 | 環境埋込み | 次の家老が利用する形 | |------|-----------|-------------------| | auto-void parent_cmd残存 | LK0…
+- 2026-06-21T16:11:57+09:00 | terminal | inbound | 今クリアされても今より強くてニューゲームできるようにせよ
+- 2026-06-21T16:11:47+09:00 | terminal | inbound | 今クリアされても今より強くてニューゲームできるようにせよ
+- 2026-06-21T16:11:40+09:00 | terminal | inbound | 今クリアされても今より強くてニューゲームできるようにせよ
+- 2026-06-21T16:08:49+09:00 | terminal | response | 全inbox処理済み。全忍者idle、10cmd全GATE CLEAR。Dispatch-then-Stop。 [meta] stop_reason=end_turn
+- 2026-06-21T16:08:08+09:00 | terminal | response | GATE CLEAR。/cmd-complete実行。
+- 2026-06-21T16:07:58+09:00 | ntfy | outbound | 【家老】cmd_3481 完了
+- 2026-06-21T16:07:20+09:00 | terminal | response | **GATE CLEAR: cmd_3481完了。** config.toml per-agent effort/fast設定。 2層SSOT全5項目完了: - **#1 cmd_3479** CLEAR: type/model_name…
+- 2026-06-21T16:07:16+09:00 | terminal | response | **本セッション最終成果 — CLI/Model切替の完全整備:** | # | 設定 | cmd | 状態 | |---|------|-----|------| | 1 | type | cmd_3479 | ✅ GATE CLEAR…
 
 ## 未解決確認事項
 - kagemaru: CTX:24% Working。saizo: CTX:28% thinking中。両名作業開始確認OK。 cmd_3480+cmd_3481並列配備完了。Dispatch-then-Stop。 [meta] stop_reason=end_turn
