@@ -798,6 +798,71 @@ STALE_FIELD_RESET_PY
     _STALE_RESET_DONE=1
 }
 
+deploy_task_cmd_status_is_canceled() {
+    local cmd_id="$1"
+    [ -n "$cmd_id" ] || return 1
+    python3 - "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$cmd_id" <<'PY'
+import sys
+import yaml
+
+path, cmd_id = sys.argv[1], sys.argv[2]
+try:
+    with open(path, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    raise SystemExit(1)
+
+entry = None
+commands = data.get("commands")
+if isinstance(commands, dict):
+    entry = commands.get(cmd_id)
+elif isinstance(commands, list):
+    for item in commands:
+        if isinstance(item, dict) and str(item.get("id", "")).strip() == cmd_id:
+            entry = item
+            break
+
+if not isinstance(entry, dict):
+    raise SystemExit(1)
+
+status = str(entry.get("status", "")).strip().lower()
+raise SystemExit(0 if status in {"canceled", "cancelled"} else 1)
+PY
+}
+
+deploy_task_cleanup_canceled_cmd() {
+    local ninja_name="$1"
+    local cmd_id="$2"
+    local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
+    local task_parent report_path report_filename
+
+    [ -n "$ninja_name" ] || return 1
+    [ -n "$cmd_id" ] || return 1
+    deploy_task_cmd_status_is_canceled "$cmd_id" || return 1
+    [ -f "$task_file" ] || return 0
+
+    task_parent=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    [ "$task_parent" = "$cmd_id" ] || return 0
+
+    report_path=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "report_path" "" 2>/dev/null || true)
+    report_filename=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "report_filename" "" 2>/dev/null || true)
+    if [ -z "$report_path" ] && [ -n "$report_filename" ]; then
+        report_path="queue/reports/${report_filename}"
+    fi
+
+    reset_stale_fields "$ninja_name"
+    yaml_field_set "$task_file" "task" "status" "idle" >/dev/null 2>&1 || true
+    yaml_field_set "$task_file" "task" "parent_cmd" "" >/dev/null 2>&1 || true
+    yaml_field_set "$task_file" "task" "task_id" "" >/dev/null 2>&1 || true
+    yaml_field_set "$task_file" "task" "_ac_task_id" "" >/dev/null 2>&1 || true
+    yaml_field_set "$task_file" "task" "report_path" "" >/dev/null 2>&1 || true
+    yaml_field_set "$task_file" "task" "report_filename" "" >/dev/null 2>&1 || true
+
+    log "cancel_cleanup: ${cmd_id} cleared stale task for ${ninja_name} report=${report_path:-none}"
+    echo "CANCEL_CLEANUP: ${cmd_id} is canceled; cleared stale task for ${ninja_name}"
+    return 0
+}
+
 # ─── --yamlモード: task YAMLに記録されたスクリプトの鮮度チェック ───
 # command欄から "bash scripts/..." or "scripts/..." パターンを抽出し、
 # YAML作成後にgitコミットされたスクリプトがあればWARN。BLOCKにはしない（段階的導入）。
@@ -7735,6 +7800,11 @@ deploy_task_main() {
         fi
         log "deploy_lock: acquired ${deploy_lock_file}"
         deploy_task_check_deadline "after_deploy_lock" || return $?
+    fi
+
+    if [ -n "$CMD_ID" ] && deploy_task_cleanup_canceled_cmd "$NINJA_NAME" "$CMD_ID"; then
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        return 0
     fi
 
     pre_resolve_status=$(field_get "$task_yaml" "status" "unknown")

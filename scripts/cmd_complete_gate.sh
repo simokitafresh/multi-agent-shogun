@@ -80,6 +80,38 @@ TASKS_DIR="$SCRIPT_DIR/queue/tasks"
 # LOG_DIR/GATE_METRICS_LOG already set above for early CLEAR check
 mkdir -p "$GATES_DIR" "$LOG_DIR"
 
+cmd_status_is_canceled() {
+    local cmd_id="$1"
+    [ -n "$cmd_id" ] || return 1
+    python3 - "$YAML_FILE" "$cmd_id" <<'PY'
+import sys
+import yaml
+
+path, cmd_id = sys.argv[1], sys.argv[2]
+try:
+    with open(path, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    raise SystemExit(1)
+
+entry = None
+commands = data.get("commands")
+if isinstance(commands, dict):
+    entry = commands.get(cmd_id)
+elif isinstance(commands, list):
+    for item in commands:
+        if isinstance(item, dict) and str(item.get("id", "")).strip() == cmd_id:
+            entry = item
+            break
+
+if not isinstance(entry, dict):
+    raise SystemExit(1)
+
+status = str(entry.get("status", "")).strip().lower()
+raise SystemExit(0 if status in {"canceled", "cancelled"} else 1)
+PY
+}
+
 # ─── CMD_ID単位ロック（cmd_2119） ───
 # 同一cmdに対する並行cmd_complete_gate実行を抑止する。
 # 早期exit系の判定より前で確保し、二重GATE CLEAR後処理を防ぐ。
@@ -4104,6 +4136,11 @@ while IFS= read -r _cache_tf; do
     _CMD_TASK_MAP["$_cache_tf"]=1
     MATCHING_TASK_FILES+=("$_cache_tf")
 done < <({ grep -l "parent_cmd: ${CMD_ID}" "$TASKS_DIR"/*.yaml 2>/dev/null; grep -l "cmd_id: ${CMD_ID}" "$TASKS_DIR"/*.yaml 2>/dev/null; } | sort -u || true)
+if cmd_status_is_canceled "$CMD_ID"; then
+    MATCHING_TASK_FILES=()
+    _CMD_TASK_MAP=()
+    echo "Canceled cmd detected: ${CMD_ID}; task/report wait checks excluded"
+fi
 MATCHING_TASK_FILES_INITIAL_COUNT=${#MATCHING_TASK_FILES[@]}
 MATCHING_TASK_FILES_PROCESSED_COUNT=0
 MATCHING_TASK_FILES_SKIPPED_COUNT=0

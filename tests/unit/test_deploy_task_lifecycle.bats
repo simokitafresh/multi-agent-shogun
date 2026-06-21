@@ -1116,6 +1116,46 @@ PY
     rm -rf "$direct_root"
 }
 
+@test "cancel cleanup clears canceled cmd task metadata before redeploy" {
+    local direct_root
+    direct_root="$(mktemp -d "$BATS_TMPDIR/cancel_cleanup.XXXXXX")"
+    prepare_source_fixture "$direct_root"
+
+    cat > "$direct_root/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_8888:
+    id: cmd_8888
+    status: canceled
+EOF
+    mkdir -p "$direct_root/queue/reports"
+    touch "$direct_root/queue/reports/tobisaru_report_cmd_8888.yaml"
+    bash "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$direct_root/queue/tasks/tobisaru.yaml" task report_filename tobisaru_report_cmd_8888.yaml
+    bash "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$direct_root/queue/tasks/tobisaru.yaml" task report_path queue/reports/tobisaru_report_cmd_8888.yaml
+
+    SCRIPT_DIR="$direct_root"
+    DIRECT_MODE=false
+    CMD_ID=cmd_8888
+    log() { :; }
+    source "$REAL_PROJECT_ROOT/scripts/lib/field_get.sh"
+    source "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
+    eval "$(extract_function reset_stale_fields)"
+    eval "$(extract_function deploy_task_cmd_status_is_canceled)"
+    eval "$(extract_function deploy_task_cleanup_canceled_cmd)"
+
+    run deploy_task_cleanup_canceled_cmd "tobisaru" "cmd_8888"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CANCEL_CLEANUP: cmd_8888 is canceled"* ]]
+
+    run get_task_values "$direct_root/queue/tasks/tobisaru.yaml" status parent_cmd task_id report_path report_filename
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"status=idle"* ]]
+    [[ "$output" == *"parent_cmd=<missing>"* || "$output" == *"parent_cmd=\"\""* ]]
+    [[ "$output" == *"report_path=<missing>"* || "$output" == *"report_path=\"\""* ]]
+    assert_missing_fields "$direct_root/queue/tasks/tobisaru.yaml" target_path progress description related_lessons
+
+    rm -rf "$direct_root"
+}
+
 @test "--directモード: reset_stale_fieldsがstaleフィールドを清掃する(AC2)" {
     local direct_root
     direct_root="$(mktemp -d "$BATS_TMPDIR/stale_reset_direct.XXXXXX")"

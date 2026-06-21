@@ -18,6 +18,8 @@ setup_file() {
         printf '\n'
         sed -n '/^log_gate_stderr_file()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^cmd_status_is_canceled()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^level_heading()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^check_context_update()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -72,6 +74,42 @@ end = text.index("\n# ─── changelog自動記録関数", start)
 print(text[start:end])
 PY
     } > "$GATE_HELPERS_FILE"
+}
+
+@test "canceled cmd excludes matching task files from completion tracking" {
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export CMD_ID="$TEST_CMD_ID"
+    declare -A _CMD_TASK_MAP
+    MATCHING_TASK_FILES=()
+
+    cat > "$YAML_FILE" <<EOF
+commands:
+  $TEST_CMD_ID:
+    id: $TEST_CMD_ID
+    status: canceled
+EOF
+    cat > "$TASKS_DIR/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  status: assigned
+EOF
+
+    while IFS= read -r _cache_tf; do
+        [ -f "$_cache_tf" ] || continue
+        _CMD_TASK_MAP["$_cache_tf"]=1
+        MATCHING_TASK_FILES+=("$_cache_tf")
+    done < <({ grep -l "parent_cmd: ${CMD_ID}" "$TASKS_DIR"/*.yaml 2>/dev/null; grep -l "cmd_id: ${CMD_ID}" "$TASKS_DIR"/*.yaml 2>/dev/null; } | sort -u || true)
+
+    [ "${#MATCHING_TASK_FILES[@]}" -eq 1 ]
+    if cmd_status_is_canceled "$CMD_ID"; then
+        MATCHING_TASK_FILES=()
+        _CMD_TASK_MAP=()
+    fi
+
+    [ "${#MATCHING_TASK_FILES[@]}" -eq 0 ]
+    run bash -c '[[ -z "${_CMD_TASK_MAP[*]}" ]]'
+    [ "$status" -eq 0 ]
 }
 
 @test "auto_resolve_cmd_related_insights resolves pending insights that mention cmd_id" {
