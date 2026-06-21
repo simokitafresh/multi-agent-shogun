@@ -4042,6 +4042,7 @@ DEDUP_THRESHOLD = 0.25
 USEFUL_RATE_THRESHOLD = 0.40  # effectiveness_score below this → exclude from injection candidates
 USEFUL_RATE_DECAY = 0.3       # legacy constant retained for tests/docs that compare deploy_task constants
 TARGET_PATH_MATCH_BOOST = int(os.environ.get('TARGET_PATH_MATCH_BOOST', '50'))
+NO_WHEN_PENALTY = int(os.environ.get('NO_WHEN_PENALTY', '3'))  # when未設定教訓のスコア降格値(useful_rate改善)
 MIN_KEYWORD_SCORE_BY_TASK_TYPE = {
     'default': int(os.environ.get('MIN_KEYWORD_SCORE', '2')),
     'impl': int(os.environ.get('MIN_KEYWORD_SCORE_IMPL', '6')),
@@ -5094,6 +5095,12 @@ try:
             keyword_score += title_text.count(kw) * 3 + other_text.count(kw) * 1
 
         score = keyword_score
+
+        # D0: when未設定教訓のスコア降格 — when条件なしはキーワードのみで注入され
+        # NOT_USEFUL率が高い(199/828=24%がwhen未設定, useful_rate 19%)
+        l_when = str(lesson.get('when', '') or '').strip()
+        if not l_when or l_when == '未設定':
+            score -= NO_WHEN_PENALTY
 
         # cmd_3254: boostはkeyword_score>0の教訓にのみ適用
         # 根因: keyword_score=0でもboost(20)+project(2)=22でMIN_KEYWORD_SCOREを突破し
