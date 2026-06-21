@@ -3017,7 +3017,7 @@ lessons:
   - gate_verdict
   - waive_reason
   source_cmd: cmd_karo_ci_fix_verdict_derive
-  when: 未設定
+  when: autofix_main.pyのverdict導出やwaive_reason処理を変更する時
   how: 未設定
   target_files:
   - scripts/gates/gate_report_autofix_main.py
@@ -3225,7 +3225,7 @@ lessons:
   - infra
   - git
   source_cmd: cmd_training_L4_auto_202605181241_kotaro
-  when: 未設定
+  when: ninja_monitorやauto-commit関連のバグ修正・調査時
   how: 未設定
   target_files:
   - scripts/ninja_monitor.sh
@@ -3329,13 +3329,13 @@ lessons:
 - id: L613
   title: 'deploy_task.sh: STKのac_assignedはinject関数で明示転記が必要'
   summary: resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from
-  tags:
+  tags: [deploy,ac_assigned]
   - infra
   - deploy
   - bash
   - yaml
   source_cmd: cmd_2790
-  when: 未設定
+  when: deploy_task.shのSTK転記・ac_assigned関連を変更する時
   how: 未設定
   target_files:
   - scripts/deploy_task.sh
@@ -3345,12 +3345,12 @@ lessons:
 - id: L612
   title: 進行中CIをcheck failedと表示するな
   summary: CI表示の偵察ではlatest runとlatest completed runを分けて確認せよ。latest runがin_progressでconclusi
-  tags:
+  tags: [ci,monitor]
   - infra
   - recon
   - reporting
   source_cmd: cmd_2792
-  when: 未設定
+  when: ci_status_check.shやCI表示ロジックを変更する時
   how: 未設定
   target_files:
   - '偵察のみ: コード変更なし'
@@ -3358,12 +3358,12 @@ lessons:
 - id: L611
   title: '[自動生成] 有効教訓の記録を怠った: cmd_2788'
   summary: lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
-  tags:
+  tags: [report,lesson_useful]
   - infra
   - lesson
   - reporting
   source_cmd: cmd_2788
-  when: 未設定
+  when: 報告YAML作成時にlessons_usefulを記入する時
   how: 未設定
   target_files:
   - scripts/record_lesson_feedback.sh
@@ -3371,7 +3371,7 @@ lessons:
 - id: L610
   title: SKILL.mdにallowed_projectsフィールドを追加することでPreToolUseフックがproject制約を機械的に照合できる
   summary: 'SKILL.mdのフロントマター(---..---)にallowed_projects: [dm-signal]を追加するだけで、既存のhookインフラがpro'
-  tags:
+  tags: [skill,hook]
   - infra
   - gate
   source_cmd: cmd_2738
@@ -3387,7 +3387,7 @@ lessons:
 - id: L609
   title: Next.js srcなし時は実装実体のapp/componentsを正としてテスト配置
   summary: ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp
-  tags:
+  tags: [frontend,nextjs]
   - rebalancer
   - frontend
   source_cmd: cmd_2719
@@ -3403,7 +3403,7 @@ lessons:
 - id: L608
   title: npm audit fix --omit=devはdevDependencies削除する
   summary: npm audit fix --omit=devを実行するとdevDependencies(@tailwindcss/postcss等)がnode_module
-  tags:
+  tags: [frontend,npm]
   - rebalancer
   - frontend
   - monitor
@@ -3418,7 +3418,7 @@ lessons:
 - id: L607
   title: auto lesson_writeパターン(register_recommended→自動登録)
   summary: cmd_complete_gate CLEAR時にregister_recommended:trueを検知→lesson_write.sh自動実行。教訓登録の手
-  tags:
+  tags: [gate,lesson_write]
   - infra
   - gate
   - bash
@@ -3434,7 +3434,7 @@ lessons:
   title: cmd_complete_gate.shのpython3 heredocはevalと組み合わせてshlex.quote済み変数をbash変数化できる
   summary: 'if _lc_raw=$(REPORT_PATH="$f" python3 - 2>/dev/null <<PYEOF...PYEOF);
     then eval '
-  tags:
+  tags: [gate,cmd_complete]
   - infra
   - frontend
   - gate
