@@ -190,7 +190,17 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 **修正(b3f55d9)**: `build_cli_command()`でopus時は`--model`スキップ → デフォルト1M起動。sonnet/haikuのみ`--model`指定。
 **殿裁定**: high effortで十分(Max=3-10xコスト、レートリミットリスク)。
 **モデル切替はrespawn方式**(殿裁定): `/model`コマンドではなくCLI再起動(respawn)が正しい手順。理由: (1)/model opusは200Kになる (2)claude↔codexは/modelで切替不可 (3)respawnならCLAUDE.md/instructions再読込が保証される。/henseiスキルもrespawn方式に再設計要。
-**codex CLI**: デフォルト272K。1Mには`~/.codex/config.toml`に`model_context_window=1000000`+`model_auto_compact_token_limit=900000`必要。デフォルトモデル=gpt-5.5(旧gpt-5は廃止名)。effort=config.tomlの`model_reasoning_effort=medium`。
+**CLI種別がモデルファミリーを決定（殿指摘2026-06-21）**:
+| CLI | モデルファミリー | effort指定 | fast指定 |
+|-----|-----------------|-----------|---------|
+| Claude CLI (`~/bin/claude`) | Claude系(Opus/Sonnet/Haiku) | `--effort low\|medium\|high` | `/fast`トグル |
+| Codex CLI (`codex`) | GPT系(gpt-5.5等) | `config.toml model_reasoning_effort` | `config.toml service_tier=fast` |
+
+**GPT-5.5を使うにはCodex CLIが必要**。Claude CLIで`--model gpt-5.5`を指定しても表示が変わるだけで実際のモデルはClaude系のまま。
+**settings.yamlのmodel_nameは表示メタデータ**。CLIの実行モデルを決定しない。実モデルはCLI種別+起動設定で決まる。
+**anti-pattern（殿指摘）**: 動いているCLIに`/model`コマンドを送る、settings.yamlだけ変更する、は全て失敗する。正道=paneを殺す→正しいCLI+設定で起動。
+**Codex exit 2根因（2026-06-21解決）**: Claude CLIのターミナル設定がrespawn-pane -k後も残留→Codexが不正ターミナル状態で起動→exit 2。対策=switch_cli_mode.shがrespawn前に`reset`実行+cooldown 5秒。双方向6連続100%成功で検証済み。
+**codex CLI**: デフォルト272K。1Mには`~/.codex/config.toml`に`model_context_window=1000000`+`model_auto_compact_token_limit=900000`必要。デフォルトモデル=gpt-5.5(旧gpt-5は廃止名)。effort=config.tomlの`model_reasoning_effort`。
 → `lib/cli_adapter.sh` L88 | 詳細: `docs/research/gunshi-cli-model-context.md`（respawn手順/セレクタの罠/effort優先順位/codex config設定方法）
 
 ### Codex multi-CLI統合(2026-05-11確立)
@@ -657,7 +667,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L833 -->
+<!-- last_synced_lesson: L836 -->
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
@@ -1208,6 +1218,9 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L831: Commanderロールは忍者名SSOT確立時に意図的でなく後回しにされた: is_core_agentの二重実装が証拠（cmd_3470）
 - L832: WSL2 WindowsFS上のforループ+globは件数×syscall overhead → find一発+gawk内フィルタに変換（cmd_3472）
 - L833: [自動生成] 有効教訓の記録を怠った: cmd_3474（cmd_3474）
+- L834: switch_cli_mode.sh @agent_state=active残留バグ — recovery後にactive化→task=none/idleでもrespawnスキップ（cmd_karo_hotfix_model_family_ssot_20260620）
+- L835: switch_cli_mode.sh @agent_state=active残留バグ（cmd_karo_hotfix_model_family_ssot_20260620）
+- L836: @model_name tmux変数同期漏れ — to-claude後に旧Codex値のまま（cmd_karo_hotfix_model_family_ssot_20260620）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
