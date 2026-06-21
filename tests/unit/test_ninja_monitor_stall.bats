@@ -1616,6 +1616,11 @@ auto_void_if_parent_cmd_completed saizo "${PANE_TARGETS[saizo]}" "TEST"
 echo "STATUS=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/saizo.yaml" status)"
 echo "REPORT_PATH=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/saizo.yaml" report_path)"
 echo "REPORT_FILENAME=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/saizo.yaml" report_filename)"
+if grep -qE "^[[:space:]]+parent_cmd:|^[[:space:]]+task_id:" "$SCRIPT_DIR/queue/tasks/saizo.yaml"; then
+    echo "IDENTIFIERS_PRESENT=1"
+else
+    echo "IDENTIFIERS_PRESENT=0"
+fi
 cat "$TEST_MESSAGES"
 cat "$TEST_LOG"
 '
@@ -1623,6 +1628,7 @@ cat "$TEST_LOG"
     [[ "$output" == *"STATUS=idle"* ]]
     [[ "$output" == *"REPORT_PATH="* ]]
     [[ "$output" == *"REPORT_FILENAME="* ]]
+    [[ "$output" == *"IDENTIFIERS_PRESENT=0"* ]]
     [[ "$output" == *"karo|auto_void|"* ]]
     [[ "$output" == *"hayate_report_cmd_2682.yaml"* ]]
     [[ "$output" == *"CLEAR:saizo:AUTO-VOID(TEST)"* ]]

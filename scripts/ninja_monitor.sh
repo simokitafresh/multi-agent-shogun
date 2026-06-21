@@ -1505,6 +1505,12 @@ auto_void_if_parent_cmd_completed() {
         fi
         yaml_field_set "$task_file" "task" "report_path" "" 2>/dev/null || true
         yaml_field_set "$task_file" "task" "report_filename" "" 2>/dev/null || true
+        # Completed parent_cmd/tasks must not remain report-wait targets for the next cmd.
+        awk '
+            /^[[:space:]]+parent_cmd:[[:space:]]*/ { next }
+            /^[[:space:]]+task_id:[[:space:]]*/ { next }
+            { print }
+        ' "$task_file" > "${task_file}.tmp.$$" && mv "${task_file}.tmp.$$" "$task_file"
         yaml_field_set "$task_file" "task" "voided_at" "$voided_at" 2>/dev/null || true
         yaml_field_set "$task_file" "task" "void_reason" "parent_cmd_completed_by_$(basename "$still_completed_report")" 2>/dev/null || true
     ) 200>"$lock_file" || return 1
