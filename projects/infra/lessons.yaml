@@ -1,8 +1,27 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-21T15:28:45'
+last_synced: '2026-06-21T16:06:22'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 832
+lesson_count: 833
 lessons:
+- id: L838
+  title: Codex CLIのper-agent effortはmodel_name接尾辞(gpt-X.X-{effort})で設定する
+  summary: config.tomlのmodel_reasoning_effortは全Codex共有。per-agent制御にはcli_launch_cmdが-c
+    model
+  tags:
+  - infra
+  - testing
+  - yaml
+  - grid_search
+  source_cmd: cmd_3481
+  when: 未設定
+  how: 未設定
+  target_files:
+  - 'config/settings.yaml (hayate/kagemaru/hanzo model_name: gpt-5.5-low)'
+  - 'config/cli_profiles.yaml (defaults.agents hayate/kagemaru/hanzo model_name: gpt-5.5-low)'
+  - scripts/lib/cli_lookup.sh (_CLI_LAUNCH_SERVICE_TIER追加+service_tier per-agent対応)
+  - tests/unit/test_cli_adapter.bats (setup_fileにunset TMUX追加)
+  - 'docs/research/cmd_3481_codex_per_agent_effort_design.md (新規: 調査結果)'
+  origin: '[[cmd_3481]]'
 - id: L837
   title: 2層SSOT設計(殿承認) — デフォルト層(cli_profiles.yaml)+動的層(settings.yaml)でCLI/model編成管理
   summary: 'デフォルト層=tmux再起動時復帰。動的層=起動後にオントロジー駆動で変更追随。実装必要: (1)cli_profiles.yamlにdefaultsセクション'
@@ -662,9 +681,6 @@ lessons:
   - docs/semantic-index/index.md
   - context/semantic-map.md
   origin: '[[cmd_karo_hotfix_insight_repeat_backlog_20260612]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-17'
 - id: L796
   title: script_refs_checked_atはファイル内最後の値を更新する
   summary: gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し最後の値をfreshness基準
@@ -1308,9 +1324,6 @@ lessons:
   target_files:
   - scripts/semantic_index_update.sh
   origin: '[[cmd_karo_ci_fix_semantic_test125_20260607]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-17'
 - id: L754
   title: 'bash_speed_training.sh update_entry_field_unlocked: 引用符なしscript_pathにマッチしないバグ+インデント4スペース固定バグ'
   summary: ledgerはinit_ledger_unlocked(yaml_quote経由)では引用符付きで生成されるが、別プロセスが引用符除去したため現行ledgerは
@@ -1540,9 +1553,6 @@ lessons:
   - queue/tasks/kagemaru.yaml
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
-  deprecated: true
-  deprecated_at: '2026-06-21T15:46:06+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
   summary: 外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split
@@ -3791,9 +3801,6 @@ lessons:
   when: report_reviewをinboxで受信し報告YAMLが不在だった時
   how: タスクYAMLのtask_type/parent_cmdでkaro_direct配備か確認。karo_direct→レビュー不要を家老に返信。通常配備→FAIL判定
   origin: '[[gunshi_session_20260510]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-17'
 - id: L586
   title: 分析報告で止まるな — D0実装可能か即判定せよ(LG018構造的再発防止)
   summary: 'LG018(提案は行動ではない)が本セッションで3回再発。根因: 掲示板投稿=トークン出力=仕事した感覚(Phase2)。対策: 気づき→掲示板の前にD0適用条'
@@ -5782,9 +5789,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '対策: Idle Activities報告時にinbox送信とdocs/research永続化を同時実行'
   origin: '[[gunshi_self_drive]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-17'
 - id: L433
   title: モデル切替は/modelではなくrespawn(CLI再起動)が正しい手順。/model opusは200K化、respawnなら1M+CLAUDE.md再読込保証
   summary: '殿裁定: Claude CLIのモデル切替はrespawn方式が正解。(1)/model opusは200Kコンテキストに縮退 (2)claude↔codexは'
@@ -6803,9 +6807,6 @@ lessons:
   target_files:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
-  deprecated: true
-  deprecated_at: '2026-06-21T15:46:06+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
   summary: Python子プロセスがstderrにメッセージ、stdoutに値を出力する設計で、bash側が2>&1で混合→grepで再分離するパターンは、Python例外
@@ -7661,9 +7662,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 全量読みを前提とした作業設計は避けよ
   origin: '[[cmd_1261]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-17'
 - id: L274
   title: Gate拡張時はalerts配列+overall更新パターンを踏襲
   summary: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
@@ -9002,7 +9000,7 @@ lessons:
   origin: '[[cmd_548]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-20'
+  last_referenced: '2026-06-21'
 - id: L158
   title: ローテーション機能レビューでは境界値テストに加えて過剰初期データの実地検証が有効
   summary: IF ローテーション機能をレビューする時 THEN 境界値テストに加え、200超の初期データ(例:250件)を用いた追記検証を実施せよ
@@ -9633,9 +9631,6 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-20'
-  deprecated: true
-  deprecated_at: '2026-06-21T15:46:07+09:00'
-  deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)
   summary: 'gate_metricsのデータはqueue/gate_metrics.yaml(YAML)ではなくlogs/gate_metrics.log(TSV
@@ -10542,6 +10537,9 @@ lessons:
   target_files:
   - cli_lookup.sh
   origin: '[[cmd_208]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-21'
 - id: L019
   title: grep -c || echo 0で0件時に0\\n0が生まれる
   summary: grep -c patternは0件時も'0'を出力してexit 1を返す。|| echo 0を付けると'0'出力後にecho 0が追加実行され、変数が'0\n

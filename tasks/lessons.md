@@ -8524,3 +8524,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - デフォルト層=tmux再起動時復帰。動的層=起動後にオントロジー駆動で変更追随。実装必要: (1)cli_profiles.yamlにdefaultsセクション追加 (2)shutsujin_departure.shにdefault復元ロジック追加。設計書: docs/research/gunshi_idle_cli_model_ontology_design_20260621.md。origin: [[殿指摘_CLI_model_20260621]] -> [[2層SSOT設計]] -> [[オントロジー駆動動的編成]]
+
+### L838: Codex CLIのper-agent effortはmodel_name接尾辞(gpt-X.X-{effort})で設定する
+- **日付**: 2026-06-21
+- **出典**: cmd_3481
+- **記録者**: saizo
+- **tags**: [infra,testing,yaml,grid_search]
+- **target_files**: [config/settings.yaml (hayate/kagemaru/hanzo model_name: gpt-5.5-low),config/cli_profiles.yaml (defaults.agents hayate/kagemaru/hanzo model_name: gpt-5.5-low),scripts/lib/cli_lookup.sh (_CLI_LAUNCH_SERVICE_TIER追加+service_tier per-agent対応),tests/unit/test_cli_adapter.bats (setup_fileにunset TMUX追加),docs/research/cmd_3481_codex_per_agent_effort_design.md (新規: 調査結果)]
+- **origin**: [[cmd_3481]]
+- **when**: 未設定
+- **how**: 未設定
+- config.tomlのmodel_reasoning_effortは全Codex共有。per-agent制御にはcli_launch_cmdが-c model_reasoning_effort={effort}を生成するインフラが既存。settings.yamlのmodel_nameをgpt-5.5-lowとするだけでper-agent設定が機能する。tmuxテストでのfixture不一致はunset TMUXで解消
