@@ -69,6 +69,10 @@ setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
+    # cli_type()のtmux実態取得をバイパスする（fixture設定が優先されるよう）
+    # TMUXをunsetしないとtmuxの現在のpane状態がfixture値を上書きする
+    unset TMUX
+
     # cli_adapter.sh を1回だけsource（export -fでテスト間共有）
     export CLI_ADAPTER_SETTINGS="${SETTINGS_DIR}/settings_none.yaml"
     source "${PROJECT_ROOT}/lib/cli_adapter.sh"

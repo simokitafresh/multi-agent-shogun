@@ -341,7 +341,7 @@ _cli_launch_read_settings() {
     local cli_default="claude"
     local line=""
 
-    _CLI_LAUNCH_TYPE="" _CLI_LAUNCH_MODEL=""
+    _CLI_LAUNCH_TYPE="" _CLI_LAUNCH_MODEL="" _CLI_LAUNCH_SERVICE_TIER=""
 
     [[ -f "$settings_path" ]] || { _CLI_LAUNCH_TYPE="$cli_default"; return 0; }
 
@@ -382,6 +382,9 @@ _cli_launch_read_settings() {
         elif [[ "$line" == "      model_name: "* ]]; then
             _cli_lookup_normalize_scalar "${line#*"model_name": }"
             _CLI_LAUNCH_MODEL="$REPLY"
+        elif [[ "$line" == "      service_tier: "* ]]; then
+            _cli_lookup_normalize_scalar "${line#*"service_tier": }"
+            _CLI_LAUNCH_SERVICE_TIER="$REPLY"
         elif [[ "$line" =~ ^"    "[^[:space:]] || ! "$line" =~ ^[[:space:]] ]]; then
             break
         fi
@@ -479,9 +482,10 @@ _cli_launch_read_profile() {
 cli_launch_cmd() {
     local agent="$1"
 
-    # settings.yaml を1回のみ読み込み type と model_name を取得
+    # settings.yaml を1回のみ読み込み type / model_name / service_tier を取得
     _cli_launch_read_settings "$agent"
     local model_name="$_CLI_LAUNCH_MODEL"
+    local service_tier="$_CLI_LAUNCH_SERVICE_TIER"
 
     # cli_profiles.yaml を1回のみ読み込み launch_cmd と launch_args を取得
     _cli_launch_read_profile "$_CLI_LAUNCH_TYPE"
@@ -496,6 +500,12 @@ cli_launch_cmd() {
         case "$effort" in
             medium|low|high)
                 extra_args="-c model_reasoning_effort=${effort}"
+                ;;
+        esac
+        # Codex: settings.yaml の service_tier フィールドで per-agent 上書き
+        case "$service_tier" in
+            fast|auto|default)
+                extra_args="${extra_args:+$extra_args }-c service_tier=${service_tier}"
                 ;;
         esac
     elif [[ "$model_name" == claude-* && "$_CLI_LAUNCH_TYPE" == "claude" ]]; then
