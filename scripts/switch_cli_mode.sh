@@ -288,11 +288,16 @@ except Exception:
     print("")
 PY
 )
-    # L821: @agent_state=active but no task = stale state (Codex sandbox blocks Stop hook)
-    if [[ "$tmux_state" =~ ^(active|bash_running)$ ]] && [[ -z "$task_status" ]]; then
-        echo "  [runtime] ${agent}@${target}: stale active (no task), forcing idle"
+    # L821+C2修正: @agent_state=active but task idle/done/empty = stale state
+    # 原因: Claude recovery後にactive残留。Codex sandbox Stop hook block。
+    # task_statusがidle/done/completed/空なら実際はidle → respawnすべき
+    # stale補正後はcheck_agent_busyもバイパス（CLI子プロセスがbusyに見えるため）
+    local stale_corrected=false
+    if [[ "$tmux_state" =~ ^(active|bash_running)$ ]] && [[ -z "$task_status" || "$task_status" =~ ^(idle|done|completed)$ ]]; then
+        echo "  [runtime] ${agent}@${target}: stale active (task=${task_status:-none}), forcing idle"
         tmux set-option -p -t "$target" @agent_state idle >/dev/null 2>&1 || true
         tmux_state="idle"
+        stale_corrected=true
     fi
     if [[ "$tmux_state" =~ ^(active|bash_running)$ ]] || [[ "$task_status" =~ ^(assigned|acknowledged|in_progress|pending)$ ]]; then
         tmux set-option -p -t "$target" @agent_cli "$TARGET_CLI" >/dev/null 2>&1 || true
@@ -300,12 +305,15 @@ PY
         echo "  [runtime] ${agent}@${target}: busy (${tmux_state:-unknown}/${task_status:-none}), relaunch skipped"
         return 0
     fi
-    if ! check_agent_busy "$target" "$agent"; then
-        pane_state=$(get_agent_state_label "$target" "$agent" 2>/dev/null || echo "unknown")
-        tmux set-option -p -t "$target" @agent_cli "$TARGET_CLI" >/dev/null 2>&1 || true
-        tmux set-option -p -t "$target" @model_name "$display_name" >/dev/null 2>&1 || true
-        echo "  [runtime] ${agent}@${target}: not idle (${pane_state}), relaunch skipped"
-        return 0
+    # stale補正済みならcheck_agent_busyバイパス（CLI子プロセスがbusyに見える偽陽性を回避）
+    if [[ "$stale_corrected" != true ]]; then
+        if ! check_agent_busy "$target" "$agent"; then
+            pane_state=$(get_agent_state_label "$target" "$agent" 2>/dev/null || echo "unknown")
+            tmux set-option -p -t "$target" @agent_cli "$TARGET_CLI" >/dev/null 2>&1 || true
+            tmux set-option -p -t "$target" @model_name "$display_name" >/dev/null 2>&1 || true
+            echo "  [runtime] ${agent}@${target}: not idle (${pane_state}), relaunch skipped"
+            return 0
+        fi
     fi
 
     if [[ "$DRY_RUN" == true ]]; then
