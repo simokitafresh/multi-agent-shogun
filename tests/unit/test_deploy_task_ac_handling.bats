@@ -885,21 +885,29 @@ lessons:
   - id: L910
     title: rollback safeguard
     summary: rollback branch before deploy cutover
+    when: deploy cutover
+    how: rollback safeguard
     status: confirmed
     helpful_count: 10
   - id: L911
     title: database migration guard
     summary: database schema check before release
+    when: database migration
+    how: schema check
     status: confirmed
     helpful_count: 9
   - id: L912
     title: cache invalidation order
     summary: cache purge after config update
+    when: config update
+    how: cache purge order
     status: confirmed
     helpful_count: 8
   - id: L913
     title: notification fallback route
     summary: notification fallback when primary webhook fails
+    when: webhook failure
+    how: fallback route
     status: confirmed
     helpful_count: 7
 EOF
@@ -937,61 +945,85 @@ lessons:
   - id: L001
     title: deploy alpha orbit maple quartz
     summary: deploy alpha orbit maple quartz
+    when: deploy alpha
+    how: orbit maple quartz
     status: confirmed
     helpful_count: 20
   - id: L002
     title: deploy beta cobalt harbor prism
     summary: deploy beta cobalt harbor prism
+    when: deploy beta
+    how: cobalt harbor prism
     status: confirmed
     helpful_count: 19
   - id: L003
     title: deploy gamma ember satellite lattice
     summary: deploy gamma ember satellite lattice
+    when: deploy gamma
+    how: ember satellite lattice
     status: confirmed
     helpful_count: 18
   - id: L004
     title: deploy delta fable orchard copper
     summary: deploy delta fable orchard copper
+    when: deploy delta
+    how: fable orchard copper
     status: confirmed
     helpful_count: 17
   - id: L005
     title: deploy epsilon granite meadow syntax
     summary: deploy epsilon granite meadow syntax
+    when: deploy epsilon
+    how: granite meadow syntax
     status: confirmed
     helpful_count: 16
   - id: L006
     title: deploy zeta horizon velvet engine
     summary: deploy zeta horizon velvet engine
+    when: deploy zeta
+    how: horizon velvet engine
     status: confirmed
     helpful_count: 15
   - id: L007
     title: deploy eta ivory lagoon vector
     summary: deploy eta ivory lagoon vector
+    when: deploy eta
+    how: ivory lagoon vector
     status: confirmed
     helpful_count: 14
   - id: L008
     title: deploy theta jade canyon signal
     summary: deploy theta jade canyon signal
+    when: deploy theta
+    how: jade canyon signal
     status: confirmed
     helpful_count: 13
   - id: L009
     title: deploy iota kernel citadel packet
     summary: deploy iota kernel citadel packet
+    when: deploy iota
+    how: kernel citadel packet
     status: confirmed
     helpful_count: 12
   - id: L010
     title: deploy kappa lunar bridge token
     summary: deploy kappa lunar bridge token
+    when: deploy kappa
+    how: lunar bridge token
     status: confirmed
     helpful_count: 11
   - id: L_LOW
     title: deploy low sample nova metric
     summary: deploy low sample nova metric
+    when: deploy low sample
+    how: nova metric
     status: confirmed
     helpful_count: 1
   - id: L_BAD
     title: deploy mature bad omega parser
     summary: deploy mature bad omega parser
+    when: deploy mature
+    how: bad omega parser
     status: confirmed
     helpful_count: 0
 EOF
@@ -1073,12 +1105,16 @@ lessons:
   - id: L_GOOD
     title: deploy filter good lesson
     summary: deploy filter good lesson
+    when: deploy filter
+    how: good lesson
     status: confirmed
     helpful_count: 1
     tags: [deploy]
   - id: L_BAD
     title: deploy filter bad lesson
     summary: deploy filter bad lesson
+    when: deploy filter
+    how: bad lesson
     status: confirmed
     helpful_count: 100
     tags: [deploy]

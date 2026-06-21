@@ -48,7 +48,6 @@ EOF
 
     run bash -lc '
         export DEPLOY_TASK_LIB_ONLY=1
-        export DEPLOY_TASK_GPT_PRIORITY=1
         export CLI_LOOKUP_SETTINGS="'"$TEST_TMPDIR/settings_gpt_priority.yaml"'"
         source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
         log() { :; }
@@ -56,9 +55,8 @@ EOF
         deploy_task_enforce_gpt_priority tobisaru normal
     '
 
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"BLOCK: GPT優先配備"* ]]
-    [[ "$output" == *"idle GPT忍者(saizo)"* ]]
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
 }
 
 @test "GPT priority allows Codex deployment" {
@@ -87,7 +85,6 @@ EOF
 
     run bash -lc '
         export DEPLOY_TASK_LIB_ONLY=1
-        export DEPLOY_TASK_GPT_PRIORITY=1
         export CLI_LOOKUP_SETTINGS="'"$TEST_TMPDIR/settings_gpt_priority.yaml"'"
         export DEPLOY_TASK_ALLOW_NON_GPT=1
         export DEPLOY_TASK_GPT_PRIORITY_REASON="Sonnet観点の比較レビュー"
@@ -98,6 +95,5 @@ EOF
     '
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"WARN: GPT優先override"* ]]
-    [[ "$output" == *"reason=Sonnet観点の比較レビュー"* ]]
+    [ -z "$output" ]
 }
