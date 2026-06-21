@@ -1,11 +1,8 @@
 task:
-  readonly_ref:
-  - path: 'shogun_to_karo.yaml'
-    reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3477_full
+  _ac_task_id: cmd_3483_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3477 (deployed 2026-06-21T13:19:03). Read from the beginning.
-  ac_version: 9580af21
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3483 (deployed 2026-06-21T16:45:27). Read from the beginning.
+  ac_version: 955ffb7b
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -20,80 +17,15 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3477
+  parent_cmd: cmd_3483
   project: infra
-  purpose: karo_workarounds分析(2026-06-21)で発見。cmd_3466でcanceled cmdのtask YAMLが残存しcmd_complete_gateの報告待ち対象に残った。家老が手動でparent_cmdを退避して回避(stale_report WA)。deploy_task.shにcancel処理が完全不在(grep 0件)。cmd_complete_gate.shにもcanceled判定なし(grep 0件)
-  status: idle
+  purpose: 教訓健全度ALERT(useful_rate=22.2%, 3セッション連続)の残課題。cmd_3466(スコアリング改善)とD0タグ修正31件の後も残50件の0%有効教訓がinjection候補に残り、タスクと無関係な教訓が注入される。これら50件のwhen/howフィールドをタスク種別(偵察/実装/修正等)に限定し、inject_related_lessonsのマッチング精度を構造的に向上させる
+  status: done
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts
-  task_id: cmd_3477_full
+  target_path: /mnt/c/tools/multi-agent-shogun/projects
+  task_id: cmd_3483_full
   task_type: full
-  related_lessons:
-  - id: 'L540'
-    summary: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
-    detail: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
-  - id: 'L189'
-    summary: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット'
-    detail: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット'
-  - id: 'L467'
-    summary: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ'
-    detail: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ'
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  related_causal_links:
-  - "[[cancel_cleanup自動化]]"
-  - "[[cancel処理不在]]"
-  - "[[cmd_3466_stale_report_WA]]"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L540: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
-      - L189: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前に家老がgit statusで未コミット
-      - L467: 新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ
-    ────────────────────────────────────────
-    
-    
-  memory_db_context:
-  - '2026-06-21T12:48:13+09:00 | AC3: 4/4 PASS、AC4: 3/3 PASS。draft review時にFAILだったテストが全て修正されている。 **判定: LGTM** [MEM: memory_db ts=2026'
-  - '2026-06-21T11:56:28+09:00 | 【INFOバッチ】 2026-06-21 11:47:26|CI緑: run 27871149349'
-  - '2026-06-21T13:06:07+09:00 | 完了しました。 --- **cmd_3475 完了サマリ**: - **AC1**: 3本のSKILL.md(codd-fix/karo-direct/recon-dual)を更新し、参照スクリプトの'
-  - '2026-06-21T13:05:34+09:00 | 陣形図からsaizoはCTX:63%で作業中(cmd_3475)。saizo完了報告を待つ。 Dispatch-then-Stop。 [meta] stop_reason=end_turn'
-  - '2026-06-21T13:01:01+09:00 | inbox未読0件。stop hookが検知している「karo/task_assigned」はhanzo宛のnudge(deploy_task.shがkaro名義で送信したもの)であり、家老inbox'
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'cmd_complete_gate.shにcanceled cmd除外ロジックを追加する'
-  - id: 'AC2'
-    checks:
-    - check: 'deploy_task.shにcancel cleanup関数を追加する'
-  - id: 'AC3'
-    checks:
-    - check: 'tests/unit/test_cmd_complete_gate.batsが通過する'
-  role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3477.yaml
-  report_path: queue/reports/hayate_report_cmd_3477.yaml
-  bloom_level: 
-  deployed_at: "2026-06-21T13:19:30"
-
-  session_state:
+  previous_failures:
     attempt: 1
     last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
     tried_approaches:
@@ -103,4 +35,62 @@ task:
     - attempt: 1
       block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
       approach_summary: 'canceled cmdをcmd_complete_gateの報告待ち対象から除外し、deploy_taskでcancel済みcmdの残留taskをidleへ清掃する処理を追加。'
-  completed_at: "2026-06-21T13:24:02"
+  skill_hint: /pf-registration
+  related_lessons:
+  - id: 'L703'
+    summary: 'auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst'
+    detail: 'auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst'
+  - id: 'L317'
+    summary: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
+    detail: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
+  - id: 'L835'
+    summary: 'Claude recovery後に@agent_state=activeに遷移→task=none/idleでもrespawnスキップ(2/3名)。修正案: t'
+    detail: 'Claude recovery後に@agent_state=activeに遷移→task=none/idleでもrespawnスキップ(2/3名)。修正案: t'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  semantic_concepts:
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
+  - "growth_loop — 学習ループ:  AGENTS.md 学習ループ原則 context/growth-loop.md context/infrastructure.md 知識サイクル現状 scripts/gates/gate_cycle_health.sh 三層学習ループ健全性計測 scripts/karo_workaround_log.sh WA記録(成績表フィードバック) scripts/ci_status_check.sh CI状態チェック(品質フィードバック) scripts/lesson_impact_analysis.sh 教訓効果分析(注入率/参照率/CLEAR-BLOCK A/B) scripts/ralph_loop_metrics.sh ラルフループ定量計測(5指標: パターン再発/revert/完了速度/lesson-CLEAR相関/PI違反) scripts/knowledge_metrics.sh 教訓有効性+陳腐化検出(JSON/TSV出力対応) docs/research/gunshi_idle_growth_loop_nazenaze_20260515.md — 軍師idle: 成長ループなぜなぜ分析(2026-05-15) docs/research/gunshi_idle_immune_effectiveness_20260512.md — 軍師idle: 免疫システム有効性測定(2026-05-12) docs/research/gunshi_idle_immune_system_evidence_20260426.md — 軍師idle: 免疫システム証拠収集(2026-04-26) docs/research/gunshi_idle_immunity_measurement_20260510.md — 軍師idle: 免疫計測フレームワーク(2026-05-10)"
+  - "provisional_lessons — 仮: Lessons:  projects/infra/lessons.yaml"
+  - "lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/auto_draft_lesson.sh scripts/sync_lessons.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml docs/research/gunshi_idle_insights_consumption_bottleneck_20260515.md — 軍師idle: インサイト消費ボトルネック分析(2026-05-15) docs/research/gunshi_idle_knowledge_burial_audit_20260505.md — 軍師idle: 知識埋没監査(2026-05-05) docs/research/gunshi_idle_lesson_dedup_20260413.md — 軍師idle: 教訓重複排除分析(2026-04-13) docs/research/gunshi_idle_lesson_effectiveness_20260413.md — 軍師idle: 教訓有効性測定(2026-04-13) docs/research/gunshi_idle_lesson_impact_20260412.md — 軍師idle: 教訓インパクト分析(2026-04-12) docs/research/gunshi_idle_lesson_injection_dual_track_20260428.md — 軍師idle: 教訓注入デュアルトラック設計(2026-04-28) docs/research/gunshi_idle_lesson_injection_quality_20260605.md — 軍師idle: 教訓注入品質監査(2026-06-05) docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md — 軍師idle: 教訓注入汎用バイパス問題(2026-06-02) docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md — 軍師idle: 教訓参照率分析(2026-04-30) docs/research/gunshi_idle_lesson_tag_mismatch_20260507.md — 軍師idle: 教訓タグ不一致分析(2026-05-07) docs/research/gunshi_idle_lesson_useful_rate_20260422.md — 軍師idle: 教訓有用率計測(2026-04-22) docs/research/gunshi_idle_lesson_useful_rate_20260503.md — 軍師idle: 教訓有用率計測v2(2026-05-03) docs/research/gunshi_idle_lesson_useful_rate_20260608.md — 軍師idle: 教訓有用率計測v3(2026-06-08) docs/research/gunshi_idle_lesson_waste_analysis_20260516.md — 軍師idle: 教訓無駄分析(2026-05-16) docs/research/gunshi_idle_lesson_useful_rate_improvement_20260620.md — 軍師idle: 教訓有用率改善分析(2026-06-20) docs/research/gunshi_idle_session_lessons_20260617.md — 軍師idle: セッション教訓分析(2026-06-17) docs/research/gunshi_idle_session_lessons_20260618.md — 軍師idle: セッション教訓分析(2026-06-18) docs/research/gunshi_idle_useful_rate_bootstrap_analysis_20260618.md — 軍師idle: 有用率ブートストラップ分析(2026-06-18) docs/research/lessons_karo_v3_archive.md — 家老教訓v3アーカイブ(統合前全文保存)"
+  recommended_skills:
+  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
+  - "lesson-sort(教訓整理/振り分け/将軍)"
+  - "dream(三層記憶整理/将軍)"
+  - "shogun-teire(知識棚卸し/将軍)"
+  related_causal_links:
+  - "[[PD-047_裁定]]"
+  - "[[cmd_3466_残課題_50件タグ]]"
+  - "[[when_how精緻化]]"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/training-cycle.md"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L703: auto-commitが先に変更を取り込むとD0 commitが空になる(65d98b20事故)。D0 commit前にgit diff --cachedでst
+      - L317: 直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ
+      - L835: Claude recovery後に@agent_state=activeに遷移→task=none/idleでもrespawnスキップ(2/3名)。修正案: t
+    ────────────────────────────────────────
+    
+    
+  memory_db_context:
+  - '2026-06-21T16:35:31+09:00 | エスカレーション対処完了。 対処まとめ: - **問題1(gate_skill_script_refs WARN)**: 4件全てスクリプト内部変更のみでSKILL.md記述影響なし→checked_'
+  - '2026-06-21T12:47:42+09:00 | startup BLOCK対処完了、idle自走分析完了、cmd_3476起票・委任完了。 現状: - cmd_3476(command_files_modified_mismatch FP修正)を家'
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'lesson_impact.tsvから0%有効率(useful=0かつnot_useful>=1)の教訓ID一覧を抽出し、対象件数を報告に記載する'
+  - id: 'AC2'
+    checks:
+    - check: '対象教訓のwhen/howフィールドをタスク種別キーワード(偵察/実装/修正/本番登録等)で限定化し、教訓YAMLを更新する'
+  role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: hayate_report_cmd_3483.yaml
+  report_path: queue/reports/hayate_report_cmd_3483.yaml
+  bloom_level: 
+  deployed_at: "2026-06-21T16:45:51"

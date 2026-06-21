@@ -1,0 +1,93 @@
+worker_id: hayate
+task_id: cmd_3483_full
+parent_cmd: cmd_3483
+timestamp: '2026-06-21T16:50:50+09:00'
+status: completed
+ac_version_read: 955ffb7b
+result:
+  summary: lesson_impact.tsvから0%有効教訓を抽出し、high-inject 50件のwhen/howをタスク種別+対象+具体状況へ限定化した。
+  details: 'AC1: feedback集計で0%現役infra教訓は82件、injected/withheld score上位のhigh-inject対象は50件(L550,L310,L585,L808,L781,L086,L266,L565,L589,L696,L828,L700,L778,L603,L761,L291,L594,L634,L351,L542,L629,L311,L321,L554,L633,L007,L551,L647,L825,L775,L274,L215,L445,L493,L722,L623,L653,L234,L314,L357,L583,L541,L562,L563,L790,L809,L102,L103,L466,L412)。AC2:
+    対象50件のwhen/howをタスク種別・対象ファイル種・具体状況の3要素へ更新。誤って触れた非対象32件はHEADのwhen/howへ復元し、検証でchanged_non_target=0。'
+purpose_validation:
+  cmd_purpose: 0%有効教訓のwhen/howをタスク種別へ限定し、inject_related_lessonsのマッチング精度を構造的に向上させる
+  fit: true
+  purpose_gap: ''
+simplicity_check: 既存のlessons.yamlメタデータ(when/how)のみを精緻化し、新規スコアリング機構や閾値は追加していない。
+assumption_check: 補足inboxで50件=high-inject絞込と確認。全体0%現役82件はAC1に記録し、AC2はhigh-inject上位50件に限定した。
+task_clarity:
+  score: 85
+  unclear_points: 初期ACでは50件の抽出条件が未定義だったが、補足inboxでhigh-inject絞込と確認できた。
+  discretion_fills: high-injectはlesson_impact.tsvのinjected/withheld score降順上位50件として扱った。
+status_detail: DONE
+test_triage: in_branch
+causal_verification:
+  cause_checked: 1) logs/lesson_impact.tsvをfeedback USEFUL/NOT_USEFULで集計し0%現役infra教訓82件を確認。2)
+    injected/withheldのscoreを集計しscore>=10が49件、次点L412(score=9)を含む上位50件が補足のhigh-inject
+    50件に一致すると判断。3) cmd_3466報告とdocs/research/lesson_matching_analysis.mdでスコアリング改善後も教訓内容側のwhen/how精緻化が残課題であることを確認。
+  design_intent_checked: '守る意図: cmd_3466のkeyword_score主導スコアリングを変更せず、教訓側のwhen/howでタスク種別+対象+具体状況を明示してマッチング材料を改善する。非対象32件は復元し、対象50件だけに限定した。'
+  evidence: 'bounded: logs/lesson_impact.tsv、projects/infra/lessons.yaml、queue/archive/reports/hayate_report_cmd_3466_20260620.yaml、docs/research/lesson_matching_analysis.md。検証:
+    YAML safe_load OK、lesson_impact_analysis.sh実行OK、top50=50/bad_top=0/changed_non_target=0。'
+  origin: '[[cmd_3466_残課題_50件タグ]] -> [[0%有効教訓_high_inject]] -> [[when_how精緻化]]'
+files_modified:
+- path: projects/infra/lessons.yaml
+  change: modified
+- path: queue/tasks/hayate.yaml
+  change: modified
+- path: queue/reports/hayate_report_cmd_3483.yaml
+  change: modified
+lesson_candidate:
+  found: false
+  no_lesson_reason: L317/補足inboxの既知課題(教訓マッチング精度とwhen/how粒度)に沿ってメタデータを修正したため、新規教訓候補なし。
+  title: ''
+  detail: ''
+  project: infra
+  origin: '[[cmd_3466_残課題_50件タグ]] -> [[0%有効教訓_high_inject]] -> [[when_how精緻化]]'
+lessons_useful:
+- id: L703
+  useful: true
+  reason: L703に従い、commit前に対象差分とstage状態を確認し、auto-commit巻込みを避ける方針として有用。
+- id: L317
+  useful: true
+  reason: L317は今回の根因そのもの(該当場面なしのNOT_USEFUL量産)で、when/howをタスク種別+対象+具体状況へ限定する判断に直結した。
+- id: L835
+  useful: false
+  reason: L835はrespawn/agent_state系で、今回のlesson metadata更新には関係しないため未使用。
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+knowledge_candidate:
+  found: false
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ''
+hook_failures:
+  count: 0
+  details: ''
+post_deploy_evidence:
+  required: false
+  deploy_live_at: ''
+  evidence_run_start_at: ''
+  evidence_run_completed_at: ''
+  run_completed: false
+  source: ''
+binary_checks:
+  AC1:
+  - check: lesson_impact.tsvから0%有効率(useful=0かつnot_useful>=1)の教訓ID一覧を抽出し、対象件数を報告に記載する
+    result: 'yes'
+  AC2:
+  - check: 対象教訓のwhen/howフィールドをタスク種別キーワード(偵察/実装/修正/本番登録等)で限定化し、教訓YAMLを更新する
+    result: 'yes'
+  commit:
+  - check: git commitが完了したか(untracked/modified=0)
+    result: 'yes'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verdict: PASS
+commit_hash: fec304524135da3f4ab60d873aea6de3ca4187a3
+autofix_applied:
+- verdict binary_checks導出→PASS
