@@ -146,7 +146,14 @@ layout_is_normalized() {
         return 1
     fi
 
-    read -ra expected_agents <<< "$(get_all_agents 2>/dev/null || echo "")"
+    # get_all_agents() は監視用に shogun を含む (agent_config.sh L160) が、agents window に
+    # shogun ペインは無い(将軍は shogun:main)。除外しないと expected が実ペイン(8)と食い違い
+    # 常に「未正規化」と誤判定し、不要な reset_layout.sh を誘発する。
+    local _la_agent
+    for _la_agent in $(get_all_agents 2>/dev/null || echo ""); do
+        [[ "$_la_agent" == "shogun" ]] && continue
+        expected_agents+=("$_la_agent")
+    done
     expected_count=${#expected_agents[@]}
     [[ "$expected_count" -gt 0 ]] || return 1
 

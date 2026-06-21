@@ -60,7 +60,16 @@ if [[ -n "$_LIB_CACHE" ]]; then
     source "$_LIB_CACHE"
 fi
 
-read -ra EXPECTED_AGENTS <<< "$(get_all_agents)"
+# get_all_agents() は監視用に shogun を含む (agent_config.sh L160) が、agents window に
+# shogun ペインは無い(将軍は shogun:main 専有)。含めると NUM_AGENTS が実ペイン数(8)を超え、
+# Step1で余剰ペイン追加 / Step2で誤swap が起き、2-3-3レイアウトが崩壊する。
+# shogun を除外し karo=pane(base), gunshi=pane(base+1)... の正準マッピング(pane_lookup.sh準拠)に揃える。
+EXPECTED_AGENTS=()
+for _ea0 in $(get_all_agents); do
+    [ "$_ea0" = "shogun" ] && continue
+    EXPECTED_AGENTS+=("$_ea0")
+done
+unset _ea0
 # karo=red, gunshi=cyan, ninjas=yellow (動的生成)
 PROMPT_COLORS=()
 for _ea in "${EXPECTED_AGENTS[@]}"; do
