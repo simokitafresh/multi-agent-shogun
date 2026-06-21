@@ -240,6 +240,23 @@ ${raw_state}"
   fi
 fi
 
+# --- CLI switch pending check (殿指示2026-06-21: respawn後は待機状態) ---
+# switch_cli_mode.shがrespawnした場合、@cli_switch_pending=trueが設定される。
+# startup gateや重い注入を全てスキップし、軽量な待機状態で起動する。
+cli_switch_pending=""
+if [[ -n "${TMUX_PANE:-}" ]]; then
+  cli_switch_pending=$(tmux display-message -t "$TMUX_PANE" -p '#{@cli_switch_pending}' 2>/dev/null || true)
+fi
+if [[ "$cli_switch_pending" == "true" ]]; then
+  # フラグをクリア（次回の通常起動ではrecoveryが走るように）
+  tmux set-option -p -t "$TMUX_PANE" @cli_switch_pending "" >/dev/null 2>&1 || true
+  # 最小限の注入で終了: agentとsnaphotのみ、startup gate/session_alerts/auto_idle_actionsスキップ
+  cat <<HOOK_JSON
+{"additionalContext": "=== CLI Switch Respawn (待機状態) ===\nsource: cli_switch\ntimestamp: $(date '+%Y-%m-%dT%H:%M:%S%z')\nagent: ${agent_id}\n★ CLI切替によるrespawn。recovery手順は不要。待機せよ。\n--- karo_snapshot ---\n${karo_snapshot}\n"}
+HOOK_JSON
+  exit 0
+fi
+
 # --- Role startup gate ---
 # cmd_2683: 起動手順スキップを防ぐため、SessionStart時に役職別startup gateを
 # 自動実行し、その結果をadditionalContextへ注入する。

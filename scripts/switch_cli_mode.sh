@@ -254,6 +254,22 @@ update_agent_type() {
             exit 1
         fi
     fi
+
+    # CLI種別変更時にmodel_nameのファミリー不整合を解消（殿指摘2026-06-21）
+    # Claude CLIにGPTモデル / Codex CLIにClaudeモデルが残るとbuild_cli_commandが壊れる
+    # 不整合時はmodel_nameを空にリセット→各CLIのデフォルト動作に委ねる
+    local current_model
+    current_model=$(cli_profile_get "$agent" "model_name" 2>/dev/null || true)
+    local need_reset=false
+    case "$TARGET_CLI" in
+        claude) [[ "$current_model" =~ ^gpt ]] && need_reset=true ;;
+        codex)  [[ "$current_model" =~ ^claude ]] && need_reset=true ;;
+    esac
+    if [[ "$need_reset" == true ]]; then
+        bash "${SCRIPT_DIR}/scripts/lib/yaml_field_set.sh" "$SETTINGS_FILE" "$agent" "model_name" "" >/dev/null 2>&1 || true
+        echo "  [settings] ${agent}: model_name reset (${current_model} incompatible with ${TARGET_CLI})"
+    fi
+
     echo "  [settings] ${agent}: ${current} -> ${TARGET_CLI}"
 }
 
@@ -288,6 +304,14 @@ except Exception:
     print("")
 PY
 )
+    # CLI種別変更時は状態に関わらずrespawn強制(殿指摘2026-06-21: pane殺す→正しいCLIで起動が正道)
+    # 現在のCLIと目標CLIが異なればrespawnは殿の明示的意図。stale/busy判定をスキップ
+    local current_cli
+    current_cli=$(tmux display-message -t "$target" -p '#{@agent_cli}' 2>/dev/null || true)
+    if [[ -n "$current_cli" && "$current_cli" != "$TARGET_CLI" ]]; then
+        echo "  [runtime] ${agent}@${target}: CLI type change (${current_cli}->${TARGET_CLI}), forcing respawn"
+        # stale/busy判定をスキップして直接respawnへ
+    else
     # L821+C2修正: @agent_state=active but task idle/done/empty = stale state
     # 原因: Claude recovery後にactive残留。Codex sandbox Stop hook block。
     # task_statusがidle/done/completed/空なら実際はidle → respawnすべき
@@ -315,6 +339,7 @@ PY
             return 0
         fi
     fi
+    fi  # end of CLI type change else block
 
     if [[ "$DRY_RUN" == true ]]; then
         echo "  [runtime] ${agent}@${target}: relaunch -> ${launch}"
@@ -323,14 +348,31 @@ PY
 
     tmux set-option -p -t "$target" @agent_cli "$TARGET_CLI" >/dev/null 2>&1 || true
     tmux set-option -p -t "$target" @model_name "$display_name" >/dev/null 2>&1 || true
-    tmux set-option -p -t "$target" @agent_state active >/dev/null 2>&1 || true
+    tmux set-option -p -t "$target" @agent_state idle >/dev/null 2>&1 || true
+    # CLI switch respawn: 待機状態で起動(殿指示2026-06-21: respawn後は何も起こらず待機)
+    tmux set-option -p -t "$target" @cli_switch_pending true >/dev/null 2>&1 || true
 
     # CLIごと再起動が基本(殿指摘2026-06-21)。respawn-pane -kでプロセスを確実に終了→再起動。
     # 旧方式(Ctrl-C+send-keys)はハングCLIに対応できなかった。
-    tmux respawn-pane -k -t "$target" "cd \"${SCRIPT_DIR}\" && $launch"
+    # 高速連続respawn防止: 前回respawnから5秒未満なら待機(Codex exit 2根因対策 2026-06-21)
+    local last_respawn_file="/tmp/shogun_last_respawn_${agent}"
+    if [[ -f "$last_respawn_file" ]]; then
+        local last_ts now_ts elapsed
+        last_ts=$(cat "$last_respawn_file" 2>/dev/null || echo 0)
+        now_ts=$(date +%s)
+        elapsed=$((now_ts - last_ts))
+        if [[ "$elapsed" -lt 5 ]]; then
+            local wait_sec=$((5 - elapsed))
+            echo "  [runtime] ${agent}@${target}: respawn cooldown ${wait_sec}s (Codex exit 2 prevention)"
+            sleep "$wait_sec"
+        fi
+    fi
+    date +%s > "$last_respawn_file"
+    # ターミナルリセット付きrespawn(根因対策2026-06-21: Claude CLIのターミナル設定残留→Codex exit 2)
+    tmux respawn-pane -k -t "$target" "reset 2>/dev/null; cd \"${SCRIPT_DIR}\" && $launch"
 
     if [[ "$TARGET_CLI" == "codex" ]]; then
-        wait_for_codex_boot "$agent" "$target" || true
+        sleep 5  # boot待ち(wait_for_codex_boot廃止: pstreeポーリングがCodex exit 2の寄与因子)
     fi
 
     echo "  [runtime] ${agent}@${target}: relaunched (${TARGET_CLI})"
