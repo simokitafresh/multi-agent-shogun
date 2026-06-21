@@ -25,15 +25,15 @@ defaults:
       launch_cmd: "/home/simokitafresh/bin/claude --dangerously-skip-permissions"
     hayate:
       type: codex
-      model_name: ""
+      model_name: gpt-5.5-low
       launch_cmd: "/home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
     kagemaru:
       type: codex
-      model_name: ""
+      model_name: gpt-5.5-low
       launch_cmd: "/home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
     hanzo:
       type: codex
-      model_name: ""
+      model_name: gpt-5.5-low
       launch_cmd: "/home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
     saizo:
       type: claude
