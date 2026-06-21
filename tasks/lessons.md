@@ -544,8 +544,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **日付**: 2026-02-26
 - **出典**: common.sh新規作成時にCRLF混入でbash -n失敗した実体験
 - **記録者**: karo
-- **when**: 同種の作業・判断・検証を行う時
-- **how**: 2026-02-26
+- **when**: WSL2環境で新規.shファイルをWrite toolで作成した時
+- **how**: sed -i 's/\r$//' で即座にCRLF除去しbash -nで構文検証
 - hayate(subtask_340_impl_a)
 
 ### L059: 共通スクリプトのリファクタ後はインタフェース契約の確認が必要。usage_status.shは引数なし統合出力設計だがusage_statusbar_loop.shが引数付き2回呼出しで重複表示バグ。呼出し側と被呼出し側のI/F整合を検証せよ。
@@ -6022,8 +6022,8 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **status**: confirmed
 - **tags**: [infra,lesson,reporting]
 - **target_files**: [scripts/record_lesson_feedback.sh]
-- **when**: 未設定
-- **how**: 未設定
+- **when**: cmd_complete_gate CLEAR後にlesson_candidateが空の時
+- **how**: reporting前にlesson_candidate有無を確認しgate_auto生成を活用
 - lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
 
 ### L612: 進行中CIをcheck failedと表示するな
@@ -6114,8 +6114,8 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **tags**: [infra,git]
 - **target_files**: [scripts/ninja_monitor.sh]
 - **origin**: [[cmd_training_L4_auto_202605181241_kotaro]]
-- **when**: 未設定
-- **how**: 未設定
+- **when**: 複数エージェント/セッションが同一ファイルを並列修正する時
+- **how**: git log --onelineで先行commitの有無を確認しstash/rebase判断
 - build_pane_head_tail_excerpt()の6-10行欠落バグをkotaroとkagemaruが独立発見。kotoraがimplement→editするも、kagemaruのauto-commit(2726fe55)で既に同一修正がHEAD入り済みのためno-op。複数忍者が同一ターゲットのL4修行を並列実施する場合、既存変更を先に確認(git log --oneline -5 -- target_file)することで重複実装を防げる
 
 ### L621: 並列修行で同一バグ独立発見→git log -5確認で重複防止
@@ -6267,8 +6267,8 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **tags**: [infra,db,api]
 - **target_files**: [backend/routers/stats.py,frontend/app/dashboard/page.tsx,frontend/lib/api.ts]
 - **origin**: [[cmd_karo_kj_role_filter]]
-- **when**: 未設定
-- **how**: 未設定
+- **when**: kj-role-countプロジェクトでstats API集計クエリを設計する時
+- **how**: FE要件から逆算して必要な集計粒度をBE APIに実装する
 - role_type_idでDB集計時点で絞る必要がある。FEのみのフィルタはAPI応答が全ロール合算のため機能しない。BE側にrole_type_idパラメータ追加が必要。
 
 ### L635: DB関係不在時はUI要件を永続化キーと表示集計に分離解釈せよ(kj-role-count)
