@@ -68,4 +68,6 @@ Script refs verified: 2026-06-10 d38c43e8c+9c6df92d8+a9dc1b7c8. `deploy_task.sh`
 
 Script refs verified: 2026-06-20 3421a1dc9+48204a464+782be65a6. `deploy_task.sh` 直近変更は教訓matching scoring調整、操作的オントロジー/targetフィルタ/スキル強制、PJパスSSOT化。1人目正規配備 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `--yaml <file> <ninja2>` の契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->
+Script refs verified: 2026-06-21 d81b77654. `deploy_task.sh` 直近変更はtag fallbackをtarget_files一致教訓に限定し、CIのlesson fallbackテストを現行仕様へ合わせたもの。1人目正規配備 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `--yaml <file> <ninja2>` の契約は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-21T00:11:55+09:00 -->

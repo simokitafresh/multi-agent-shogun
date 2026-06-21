@@ -29,7 +29,9 @@ allowed-tools:
 
 Script refs verified: 2026-06-20 2088b6421. `gate_lesson_health.sh` 直近変更はinfra教訓のcross-project注入をuseful率計測へ正しく反映する修正。棚卸し時のlesson health確認・ALERT時のlesson-sort連携判断への契約変更なし。
 
-<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->
+Script refs verified: 2026-06-21 0bb457ecf+729635be5. `gate_lesson_health.sh` 直近変更はactive lesson抽出高速化、`knowledge_metrics.sh` 直近変更はmodel family literalのSSOT化。棚卸し時のlesson health確認、knowledge metrics確認、ALERT時の原因別連携判断への契約変更なし。
+
+<!-- script_refs_checked_at: 2026-06-21T00:11:55+09:00 -->
 
 # /shogun-teire — 知識基盤の定期棚卸し（8観点監査）
 

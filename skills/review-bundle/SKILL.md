@@ -181,4 +181,6 @@ Script refs verified: 2026-06-03 cmd_3144. `bulletin_write.sh` 直近変更(c356
 
 Script refs verified: 2026-06-20 48204a464. `bulletin_write.sh`/`inbox_write.sh` 直近変更は操作的オントロジー、targetフィルタ、スキル強制の内部反映。review_log記録後の掲示板投稿・家老通知の呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->
+Script refs verified: 2026-06-21 1e7a7cc4b. `inbox_write.sh` 直近変更はcommander role SSOT反映。review_log記録後の掲示板投稿・家老通知の呼び出し契約は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-21T00:11:55+09:00 -->

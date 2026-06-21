@@ -23,7 +23,9 @@ allowed-tools:
 
 Script refs verified: 2026-06-20 a16c93387+48204a464. `dashboard_update.sh` 直近変更はLS071統合/Guard18運用データ反映、`gate_report_format.sh` 直近変更は操作的オントロジー/targetフィルタ/スキル強制の内部検査強化。dashboard生成コマンドと報告YAML検証契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->
+Script refs verified: 2026-06-21 729635be5. `dashboard_update.sh` 直近変更はmodel family literalのSSOT化。`bash scripts/dashboard_update.sh <cmd_id> [--dry-run]` の生成契約、報告YAML検証契約は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-21T00:11:55+09:00 -->
 
 Script refs verified: 2026-06-11. `dashboard_update.sh` の契約は `<cmd_id> [--dry-run]` のまま。`gate_report_format.sh` は `bash scripts/gates/gate_report_format.sh <report_yaml_path>` で報告YAMLを検証し、binary_checks由来verdict自動導出・未記入BLOCK・PASS cache・auto-commit contamination WARNの契約変更なし。
 

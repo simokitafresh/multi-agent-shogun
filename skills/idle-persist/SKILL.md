@@ -93,4 +93,6 @@ Script refs verified: 2026-06-07 cmd_3206. `inbox_write.sh` はサブシェル�
 
 Script refs verified: 2026-06-20 48204a464. `bulletin_write.sh`/`inbox_write.sh` 直近変更は操作的オントロジー、targetフィルタ、スキル強制の内部反映。idle分析保存→掲示板投稿→review_log記録→家老通知の呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->
+Script refs verified: 2026-06-21 1e7a7cc4b. `inbox_write.sh` 直近変更はcommander role SSOT反映。`bash scripts/inbox_write.sh karo "{知見1行要約}" gunshi_lesson_candidate gunshi` の契約とidle分析保存→掲示板→review_log→家老通知手順は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-21T00:11:55+09:00 -->
