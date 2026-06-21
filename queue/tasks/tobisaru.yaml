@@ -1,44 +1,12 @@
 task:
-  _ac_task_id: cmd_training_L1_report_write_tobisaru_20260620_normal
+  _ac_task_id: cmd_3474_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3464 (deployed 2026-06-20T13:10:19). Read from the beginning.
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3474 (deployed 2026-06-20T16:30:26). Read from the beginning.
   ac_assigned:
   - AC1
   - AC2
   - AC3
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  ac_version: b9649a49
-  acceptance_criteria:
-    AC1:
-      binary_checks:
-      - '改善点を3つ特定したか: yes/no'
-      - '各改善点に対象ファイル・根拠を添えたか: yes/no'
-      description: 指定ファイルの改善点を3つ特定し、根拠付きで報告する
-    AC2:
-      binary_checks:
-      - '最高インパクト1件を実装したか: yes/no'
-      - '対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加したか: yes/no'
-      - '追加した[[ファイル名]]リンクのリンク先ファイルから特定行を引用して報告したか: yes/no'
-      - '関連テストまたは明示的な検証を実行したか: yes/no'
-      description: 改善点のうち最高インパクト1件を実装し、対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加し、リンク先ファイルの特定行引用と必要な検証を報告する
-    AC3:
-      binary_checks:
-      - 'lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no'
-      - 'AC1/AC2/AC3/AC4/AC5のbinary_checksを全てyes/noで記入したか: yes/no'
-      - 'verdictがbinary_checksと矛盾していないか: yes/no'
-      description: lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる
-    AC4:
-      binary_checks:
-      - 'task.related_lessonsの注入教訓を1件以上参照したか: yes/no'
-      - '参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no'
-      description: 注入教訓から1件以上を作業判断に参照し、lessons_usefulに有用性と理由を記入する
-    AC5:
-      binary_checks:
-      - 'bash scripts/causal_backlink_counts.sh --zero --limit 20でincoming backlink baselineを確認したか: yes/no'
-      - 'bash scripts/markdown_link_counts.sh --top 20でbaselineを確認したか: yes/no'
-      - 'git diffで対象Markdownの孤立解消またはファイル間直接[[ファイル名]]リンク数増加を確認したか: yes/no'
-      description: 対象ファイルの現在のincoming backlink数とファイル間直接[[ファイル名]]リンク数baselineを計測し、変更後に孤立解消または直接リンク数増加を報告する
+  ac_version: fa3c270a
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -58,36 +26,35 @@ task:
   - 外部PJリポジトリ内の参照修正
   origin: '[[殿指示_オントロジー_20260620]] -> [[SSOT調査_cmd_3458_3461]] -> [[Phase2_3_SSOT是正_Guard汎化]]'
   parallel_ok: []
-  parent_cmd: cmd_training_L1_report_write_tobisaru_20260620
+  parent_cmd: cmd_3474
   project: infra
-  purpose: 'L4修行: 指定ファイルの改善点3つを特定し、最高インパクト1件を実装し、[[リンク]]で知識ネットワークを育て、報告YAMLを一発PASS品質で完成させる'
+  purpose: '家老エスカレーション(2026-06-20 15:57): brainwash_check未記入WA 5件が3セッション連続CRITICAL。実態は100件中98件が未記入。normalize_karo_workarounds.pyにbrainwash_checkフィールドバリデーションを追加し、未記入WAの記録をブロックする'
   status: idle
   stop_for: []
   subtask_id: cmd_3464_full
-  target_path: docs/research/gunshi_idle_cold_finding_categories_retroactive_20260620.md
-  task_id: cmd_training_L1_report_write_tobisaru_20260620_normal
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts
+  task_id: cmd_3474_full
   task_type: full
   validation:
   - rg '/mnt/c/Python_app/' scripts/ .claude/ --type sh --type py
   - bats tests/unit/test_write_edit_combined_hooks.bats
   - python3 -c "import pathlib; p=pathlib.Path('docs/research/ssot-registry.md'); assert p.exists(); assert 'PJパス' in p.read_text()"
-  related_lessons:
-  - id: 'L548'
-    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L540'
-    summary: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
-    detail: '_overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P'
+  related_lessons: []
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "training_cycle_quality — 忍者修行サイクル品質:  context/training-cycle.md logs/gate_fire_log.yaml scripts/ninja_monitor.sh docs/research/gunshi-idle-S8-workaround-analysis.md — 軍師idle分析: 修行S8ワークアラウンド分析 docs/research/gunshi_idle_adversarial_cold_analysis_20260426.md — 軍師idle: adversarial cold視点分析(2026-04-26) docs/research/gunshi_idle_adversarial_cold_fix_20260430.md — 軍師idle: adversarial cold修正(2026-04-30) docs/research/gunshi_idle_adversarial_cold_fix_20260608.md — 軍師idle: adversarial cold修正v2(2026-06-08) docs/research/gunshi_idle_ambiguity_cold_analysis_20260426.md — 軍師idle: 曖昧cold視点分析(2026-04-26) docs/research/gunshi_idle_block_pattern_analysis_20260512.md — 軍師idle: BLOCKパターン分析(2026-05-12) docs/research/gunshi_idle_block_quality_audit_20260514.md — 軍師idle: BLOCK品質監査(2026-05-14) docs/research/gunshi_idle_cold_perspective_ambiguity_20260603.md — 軍師idle: cold視点曖昧性分析(2026-06-03) docs/research/gunshi_idle_cold_perspective_audit_20260515.md — 軍師idle: cold視点監査(2026-05-15) docs/research/gunshi_idle_cold_perspective_retroactive_20260605.md — 軍師idle: cold視点遡及分析(2026-06-05) docs/research/gunshi_idle_cold_perspective_retroactive_20260606.md — 軍師idle: cold視点遡及分析v2(2026-06-06) docs/research/gunshi_idle_cold_streak_analysis_20260428.md — 軍師idle: cold連続パターン分析(2026-04-28) docs/research/gunshi_idle_cold_streak_structural_20260429.md — 軍師idle: cold連続構造的原因(2026-04-29) docs/research/gunshi_idle_l2_completion_check_20260413.md — 軍師idle: L2完了チェック(2026-04-13) docs/research/gunshi_idle_l7_autopromote_nazenaze_20260521.md — 軍師idle: L7自動昇格なぜなぜ(2026-05-21) docs/research/gunshi_idle_l7_causal_network_learning_20260520.md — 軍師idle: L7因果ネットワーク学習設計(2026-05-20)"
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  - "bulletin_communication — 掲示板通信基盤:  scripts/bulletin_write.sh scripts/bulletin_archive.sh scripts/bulletin_close.sh scripts/bulletin_confirm.sh queue/bulletin_board.yaml docs/research/gunshi_idle_bulletin_nazenaze_7_20260515.md — 軍師idle: 掲示板なぜなぜ#7分析(2026-05-15)"
+  memory_db_context:
+  - '2026-06-20T16:02:25+09:00 | 【INFOバッチ】 2026-06-20 15:50:59|cmd_3470 2026-06-20 16:01:30|cmd_3472'
+  - '2026-06-20T15:06:40+09:00 | 【INFOバッチ】 2026-06-20 15:00:01|cmd_karo_hotfix_shogun_startup_escalation_20260620_1436 2026-06-20 15:'
+  - '2026-05-19T16:07:00+09:00 | 【INFOバッチ】 2026-05-19 15:57:20|CI緑: run 26080838457 2026-05-19 16:04:00|cmd_2876'
+  - '2026-03-20T19:26:18+09:00 | 【INFOバッチ】 2026-03-20 19:15:57|cmd_1148 2026-03-20 19:20:54|cmd_1162'
+  related_causal_links:
+  - "[[brainwash_check未記入WA98件]]"
+  - "[[バリデーション必須化]]"
+  - "[[家老CRITICALエスカレーション_20260620]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -95,27 +62,16 @@ task:
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L540: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
-    ────────────────────────────────────────
-    
-    
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'normalize_karo_workarounds.pyにbrainwash_check未記入検出ロジックを追加し、未記入件数をサマリに表示する'
+  - id: 'AC2'
+    checks:
+    - check: '家老WA記録フロー(karo-operations.md §3またはWA記録スクリプト)にbrainwash_checkフィールド必須化を追加する'
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_training_L1_report_write_tobisaru_20260620.yaml
-  report_path: queue/reports/tobisaru_report_cmd_training_L1_report_write_tobisaru_20260620.yaml
+  report_filename: tobisaru_report_cmd_3474.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3474.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -141,4 +97,4 @@ task:
     - reason: 'lesson_candidate_fields_empty'
       count: 1
       hint: 'gate BLOCK: lesson_candidate_fields_empty'
-  deployed_at: "2026-06-20T14:41:40"
+  deployed_at: "2026-06-20T16:30:55"

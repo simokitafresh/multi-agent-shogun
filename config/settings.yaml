@@ -32,7 +32,7 @@ cli:
       role: ninja
       japanese_name: 影丸
     hanzo:
-      type: codex
+      type: claude
       model_name: gpt-5.5-low
       role: ninja
       japanese_name: 半蔵

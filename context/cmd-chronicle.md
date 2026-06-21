@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-20 -->
+<!-- last_updated: 2026-06-21 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,37 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2915 | L7成長速度最大化のなぜなぜ7回→軍師検証で律速=aliases品質と判明。改善にはNO_MATCHの内容(purpose/target_path)が必要だが現在記録されていない。計測基盤を先に作り、データ駆動でaliases拡充する道具を整える | infra | 05-21 | HEAD既存のsemantic NO_MATCH記録を現物確 |
-| cmd_2917 | deploy_task.shがexit 1で終了した場合、maybe_notify_draft_review(L6712)が成功パスにのみ存在するため軍師へのdraft_review通知が送信されない。EXIT trap(L323)にdraft_reviewフォールバックを追加し、配備失敗時も軍師レビューフローが途切れないようにする | infra | 05-21 | deploy_task.shのEXIT trapにdraft |
-| cmd_2918 | L7現物確認でNO_MATCH率表示が家老gateのみで将軍gateにないことを発見。L7は将軍が管理するがL7健全度が起動時に見えない。家老gate(L181 show_semantic_no_match_metrics)と同じ計測セクションを将軍gateに追加する | infra | 05-21 | 将軍startup gateにセマンティックNO_MATCH |
-| cmd_2919 | 殿のクエリがsemantic_searchを経由するが、NO_MATCH時の記録がない。L7の最重要消費者(殿)側の計測が盲点。NO_MATCHカウントのみ記録し(クエリ内容は非記録)、startup gateで可視化する | infra | 05-21 | prompt_state_injectのsemantic_s |
-| cmd_2920 | L7成長速度の律速=aliases品質(軍師検証確定)。cmd_complete時にsemantic_index_update.shがpurposeからaliases候補を生成する基盤(L437 candidate_aliases)は既にあるが、NO_MATCH時の候補を既存概念のaliases拡充に使う経路がない。NO_MATCHログ(cmd_2915)のpurposeキーワードをpending aliasesに自動蓄積し、L7f(score閾値自動昇格)基盤でaliasesに自動追加する | infra | 05-21 | NO_MATCH purposeをpending alias |
-| cmd_2921 | gate_skill_script_refs.shの3セッション連続WARNを解消する。5件全て現物確認済みでインタフェース変更なし | infra | 05-21 | gate_skill_script_refs.shのWARN |
-| cmd_2922 | semantic_searchのヒット率を定量計測し、NO_MATCHデータをaliases自動成長パイプライン(cmd_2920)に流す道具を作る。軍師実測でヒット率45.7%、因果展開timeout誤判定バグも発見済み | infra | 05-21 | semantic_searchのalias層ヒット率を3入力 |
-| cmd_2913 | cmd_2909のstartup gate表示は1回/セッション。家老がcmd受領時に毎回semantic_searchを実行し因果概念を表示することで消費頻度を大幅に向上させる | infra | 05-21 | cmd_2913は家老task_haltにより中止。軍師レビ |
-| cmd_2923 | 既存Guard 0にinbox未読チェック追加+既存inbox_mark_read.shに対処引数必須化。既存cmd_save.sh Session Stateが自動でBLOCK履歴を蓄積し累計昇格する(自己改善ループは既存インフラに内蔵済み) | infra | 05-21 | — |
-| cmd_2924 | cmd_2922(ストレステストツール本体)を3つの自動発火トリガーに接続する。軍師5W1H設計(blt_013243)に基づく。手動実行→自動組込みで意志依存をゼロにする | infra | 05-21 | L7 semantic stress testの3トリガー配 |
-| cmd_2926 | idle忍者の修行ACに対象スクリプトの機能用途をaliases候補として提案するステップを追加。6忍者並列でaliases品質を加速。修行の成果がL7パイプラインに直結する | infra | 05-21 | context/training-cycle.mdのCoDD |
-| cmd_2927 | index.mdにrelated_conceptsフィールド追加。semantic_search.shで1概念ヒット時に関連概念も注入。45概念の相互接続で配備時コンテキスト密度を倍増する | infra | 05-21 | semantic indexにrelated_concept |
-| cmd_2925 | semantic_searchの道具は存在するが全ロールの手順に未記載。家老karo.md=0件、忍者ashigaru.md/CLAUDE.md=0件、軍師gunshi.md=レビュー時0件。Phase 4: 手順にないものは使われない。全ロールのinstructions/recovery手順にsemantic概念確認ステップを追加する | infra | 05-21 | cmd_2925は家老task_haltにより中止。軍師レビ |
-| cmd_2928 | skill_auto_improve.shのreasonグルーピングがcmdID/ninjaID含みで同一根因が別パターン化。古いパターンのlast_failが更新されず14日カットオフで除外→Gate 20.7が12件中1件しか表示しない。グルーピングキーを正規化し、last_failを常時最新に更新する | infra | 05-21 | skill_auto_improveのFAIL reason |
-| cmd_2931 | 教訓注入のuseful率7.1%(95注入中2有用)。現在のkeyword/tag/pathマッチは意味を理解しない。semantic_searchが既にdeploy_task.shで概念を検出しているため、概念にrelated_lessonsフィールドを追加し、検出された概念の教訓をスコアブーストで優先注入する | infra | 05-21 | semantic概念related_lessonsとdepl |
-| cmd_2932 | 教訓健全度ALERT(useful_rate=16%)の根因修正。DM-Signal固有教訓(L510/L630/L594/L509/L097)がcross-project opt-inで全infra taskに漏洩→全件NOT_USEFUL。有効性0%教訓のauto-deprecated化+cross-project scoringにproject固有語比率フィルタを追加し、注入精度を改善する | infra | 05-21 | deploy_task.shのcross-project教訓 |
-| cmd_2933 | assumptions_bulletin_count_grep_evidenceのFP率66%(2/3)を改善する。claimにblt_XXXX(掲示板ID)を含む場合は掲示板自体が検証済みソースであり、grep証跡不要。bulletin ID引用をgrep_evidence_patの許容パターンに追加する | infra | 05-21 | cmd_save.shのbulletin件数claim検証で |
-| cmd_2935 | 殿が5/21 02:39にスクショで確認した事象: 1着信に対しnudge(inbox1)が2回送信される。既存のdebounce/dedup機構があるにもかかわらず二重送信が発生する根因を特定する | infra | 05-21 | 二重nudgeの根因は同一agentに複数のinbox_wa |
-| cmd_2936 | 修行中の忍者がAC5で概念名付きaliases候補を提案する形式を設計し、parse_pending_semantic_insightsがその形式を認識→概念名で直接マッチ→similarity_score不要でauto-promote可能にする。修行6忍者並列で高品質aliases蓄積を加速する | infra | 05-21 | 修行AC5を概念名付きalias行へ更新し、直接昇格を検証す |
-| cmd_2937 | cmd_2935偵察結果に基づく修正。根因=同一agentにinbox_watcher.shが2本以上常駐し同一イベントを並列処理。singleton lockでagent別1プロセスを保証し、debounce/fingerprint check+writeを同一flock内でatomic化する | infra | 05-21 | inbox_watcherのagent別singletonと |
-| cmd_2938 | cmd_2936で修行AC5→auto-promote直結を実装したがPENDING_ALIAS_DIRECT=0件。なぜなぜ7回: (1)忍者のinsight_writeのsource引数が未指定→parse側フィルタ(L651 training含む)に不合致→スキップ (2)insight自体がinsights.yamlに残っていない(archiveに退避or書込失敗)。修正: 修行テンプレートにinsight_write source=training引数を明示+書込後のgrep検証ACを追加+parse側のsourceフィルタ緩和 | infra | 05-21 | DIRECT経路のtraining source alias |
-| cmd_2941 | スキル自動成長エスカレーションが3セッション連続。report-writeスキルのFAIL理由 assumption_invalidation: is str (must be dict) がSKILL.md改良5回で未解消。根因はgate_report_format_main.py L154のdict型チェックに対し、report_field_set.shまたはテンプレートがstring型で生成している可能性。スクリプト側を修正し、assumption_invalidationが常にdict形式で出力されるようにする | infra | 05-21 | report_field_set.shのassumption |
-| cmd_2942 | verdict-checkスキル自動成長が3セッション連続エスカレーション。binary_checks resultにyes/no以外(空/waive/PASS/FAIL)が混入しcmd_complete_gateがBLOCK。SKILL.md改良5回で未解消=忍者の意志依存。report_field_set.shにbinary_checks result値のバリデーション(yes/no以外をBLOCK)を追加し、不正値を構造的に排除する | infra | 05-21 | binary_checks resultのyes/noバリデ |
-| cmd_2943 | dashboard-updateスキル自動成長が3セッション連続エスカレーション。dashboard_update.sh exit=1が複数cmd(cmd_2739/cmd_karo_test/cmd_2514等)で再発。SKILL.md改良5回で未解消=スクリプト側のエラーハンドリングまたはデータ前提にバグ。exit=1の根因を特定し修正する | infra | 05-21 | dashboard_update.shのreport探索をp |
-| cmd_2945 | 教訓健全度ALERT(useful_rate=16.7%)が3セッション連続。根因: 忍者がreport YAMLでuseful:false/trueと記入しているが、lesson_impact.tsvにフィードバックが還流されていない(全件status=pending)。lesson_deprecation_scan.shが退役候補を検出できず、低useful教訓が永続注入される。cmd_complete_gate.shまたは完了処理フローでreport YAMLのlessons_useful→lesson_impact.tsvへの書戻しを修正する | infra | 05-21 | lesson_impact.tsvへlessons_usef |
-| cmd_2944 | cmd-completeスキル自動成長が3セッション連続エスカレーション。2パターン: (1)lesson_done_missing=cmd_complete_gateがlesson reviewフラグ不在を検出 (2)ac_version_mismatch task=d41d8cd9(空ハッシュ)=karo_direct配備でタスクYAMLにac_version未設定。SKILL.md改良5回で未解消。スクリプト側でkaro_direct配備時のac_version自動補完+lesson_done検出ロジック修正 | infra | 05-21 | _compute_ac_hash()修正(check:フィー |
-| cmd_2946 | cmd_2936でDIRECT経路を実装、cmd_2938でテスト21件PASSしたが、本番でPENDING_ALIAS_DIRECT昇格が0件。修行12回転(hayate4+kagemaru4+saizo4)でinsight蓄積されたがaliasesに昇格していない。テストは通るが本番で動かない=テストと本番の乖離。semantic_index_update.shのDIRECT昇格コードパスがなぜ本番で発火しないかを特定し修正する | infra | 05-21 | semantic_index_update.shのDIREC |
-| cmd_2948 | 起動チェックでSKILL.md参照WARNが3セッション連続。scriptが更新されたがSKILL.mdが追従していない4件を更新し、スキル記述と実装の乖離を解消する | infra | 05-21 | SKILL.md 4件を現script仕様へ追従更新し、対象 |
-| cmd_2949 | cmd_2947でYAML存在チェックを追加したが、kagemaru R9で再発(本セッション4件消失)。忍者のinbox_write(家老通知)完了前にclear発動する競合が残存。3条件(YAML存在+verdict存在+家老通知完了)に拡張して根絶する | infra | 05-21 | ninja_monitorのauto-clear repor |
-| cmd_2950 | 修行がtarget_path未指定で全ラウンド実行されており、忍者が裁量でスクリプト選択→aliases薄概念が放置。deploy_task.shの修行配備時にaliases品質の低い概念のスクリプトを優先指定し、修行が自然にaliases品質を引き上げる仕組みにする | infra | 05-21 | aliases薄概念Top10を出す semantic_al |
-| cmd_2951 | deploy_task.shが次ラウンド配備時に前ラウンドのGATE未完了のまま忍者に/clear送信し、報告YAMLが消失する(本セッション6件、GPT忍者18.5%/Sonnet5.6%)。配備前にpending report存在チェックを追加し、GATE完了まで配備をBLOCKする | infra | 05-21 | deploy_task.shが対象忍者のGATE未処理報告を |
 | cmd_2952 | deploy_task.sh(cmd_2950/2951変更)+bulletin_write.sh変更がSKILL.md 5件に未反映。startup gate 3セッション連続WARN解消 | infra | 05-22 | SKILL.md 5件をbulletin_write.sh/ |
 | cmd_2953 | 修行targetを[[リンク]]数昇順で選択し、孤立ファイルから順にリンクネットワークを育てる。現状944 mdファイル中88%が孤立。修行ACに[[リンク]]追加を組込み、Obsidianグラフを修行サイクルで自然に成長させる | infra | 05-22 | 修行targetをMarkdownリンク数昇順で選び、孤立M |
 | cmd_2955 | cmd_2954設計変更(軍師REQUEST_CHANGES)。ファイル間直接リンクではなく概念名リンクのみ挿入。各resourcesファイルに所属概念名への[[概念名]]リンクを挿入し、概念をハブとするスター型ネットワークを構築 | infra | 05-22 | docs/semantic-index/index.mdから |

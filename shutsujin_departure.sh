@@ -544,7 +544,15 @@ PANE_BASE=$(tmux show-options -gv pane-base-index 2>/dev/null || echo 0)
 # ═══════════════════════════════════════════════════════════════════════════════
 # STEP 5.1: agents ウィンドウ追加（家老+軍師+忍者6名 = 8ペイン）
 # ═══════════════════════════════════════════════════════════════════════════════
-_deploy_count=$(get_all_agents | wc -w)
+# get_all_agents() は監視/健全性チェック用に shogun を含む (agent_config.sh L160)。
+# 将軍は window0:main を専有するため、window2(agents) の配備対象からは除外する。
+# 除外を怠ると AGENT_COUNT が実ペイン数(8)を超え「can't find pane: 9」で起動失敗する。
+_WIN2_AGENTS=()
+for _ag in $(get_all_agents); do
+    [ "$_ag" = "shogun" ] && continue
+    _WIN2_AGENTS+=("$_ag")
+done
+_deploy_count=${#_WIN2_AGENTS[@]}
 log_war "⚔️ 家老・忍者の陣を構築中（${_deploy_count}名配備）..."
 
 # shogun セッションに agents ウィンドウを追加
@@ -577,7 +585,9 @@ fi
 # → pane_lookup静的フォールバック・reset_layoutのswapが不要
 
 # 列割当（表示位置の決定。split順序には影響しない）
-read -ra _ALL_AG <<< "$(get_all_agents)"
+# window2 配備対象（shogun 除外済み）を使う。get_all_agents 順を保つため
+# karo=PB, gunshi=PB+1, hayate=PB+2 ... の連番がそのまま維持される。
+_ALL_AG=("${_WIN2_AGENTS[@]}")
 _ninja_ci=0; _COL1=(); _COL2=(); _COL3=()
 for _ag in "${_ALL_AG[@]}"; do
     _r=$(get_agent_role "$_ag")
@@ -591,6 +601,8 @@ for _ag in "${_ALL_AG[@]}"; do
         _COL1+=("$_ag")
     fi
 done
+# 布陣図表示(STEP 7)用の列要素数
+_COL1_N=${#_COL1[@]}; _COL2_N=${#_COL2[@]}; _COL3_N=${#_COL3[@]}
 
 # 8ペイン作成（連続番号: PB〜PB+7）
 # Step 1: 上下2行に分割

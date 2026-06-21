@@ -1536,3 +1536,71 @@
     blast_radius: low
     lesson_candidate: none
   timestamp: "2026-06-20T16:47:00+09:00"
+- cmd_id: cmd_karo_hotfix_lesson_useful_rate_20260621
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "SSOT(tasks/lessons.md)のL696/L660/L614 when/how未設定を修正するhotfix。軍師D0は派生ファイルのみ修正→sync_lessonsで上書きされた根因を解消"
+  observations:
+    - "事実1: tasks/lessons.md L6951(L696)/L6547付近(L660)/L6049付近(L614)全てwhen:未設定を確認"
+    - "事実2: projects/infra/lessons.yamlのL696/L660/L614もwhen:未設定に戻っている(軍師D0がsync_lessonsで上書きされた)"
+    - "事実3: AC2がSSOT(tasks/lessons.md)対象。派生ファイルではなくSSOT修正が正しい永続化パス"
+  causal_chain: "軍師D0→派生ファイルのみ修正→sync_lessons上書き→SSOT未修正が根因→本cmdでSSOT修正=永続化"
+  brainwash_check: "SSOT 3件when未設定を行番号で確認(L6951/L6547/L6049)。派生ファイル上書き1件検証。#2検証スキップなし"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "教訓when/howテキスト修正のみ。blast radius極小"
+  origin: "[[gate_lesson_health_ALERT]] -> [[軍師D0派生ファイル上書き]] -> [[SSOT修正hotfix]]"
+  timestamp: "2026-06-21T00:18:00+09:00"
+- cmd_id: cmd_karo_hotfix_lesson_useful_rate_20260621
+  review_type: report
+  verdict: LGTM
+  report_ninja: saizo
+  gate_result: CLEAR
+  gate_prediction: WARN
+  finding_categories: [assumptions, premortem, adversarial]
+  findings_summary: "LGTM。SSOT(tasks/lessons.md)L696/L660/L614 when/how修正+sync_lessons反映。useful率16.7%維持(歴史データ依存)。GATE_PREDICTION WARN=draft_lessons"
+  observations:
+    - "事実1: precheck ERRORS=0。GATE_PREDICTION=WARN(tasks/lessons.mdにdraft教訓1件)"
+    - "事実2: AC1-5 bc全yes。commit d1719969e。SSOT修正→sync反映→yaml.safe_load PASS"
+    - "事実3: useful率4/24=16.7%→修正後も同値。歴史データ依存で即時変化なしは正当"
+  causal_chain: "SSOT when/how修正→sync反映→将来の注入精度向上→useful率改善(次回配備以降に効果発現)"
+  brainwash_check: "bc 5AC全yes。commit d1719969e確認。SSOT 3件修正+sync反映をrg確認(報告記載)。WARN(draft_lessons)は作業外既存draft"
+  step3_5_verified: true
+  origin: "[[cmd_karo_hotfix_lesson_useful_rate_20260621]] -> [[SSOT when/how修正]] -> [[LGTM]]"
+  sg7_bundle:
+    gate_prediction: WARN
+    blast_radius: low
+    lesson_candidate: none
+  timestamp: "2026-06-21T00:40:00+09:00"
+- cmd_id: cmd_karo_hotfix_model_family_ssot_20260620
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  gate_result: null
+  gate_prediction: WARN
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial]
+  findings_summary: "LGTM。model_family SSOT補強+reset_layout cache version更新。precheck ERRORS=0、GATE_PREDICTION=WARN(draft_lessons既存1件)。主要テスト再実行PASS、分類実値確認PASS"
+  observations:
+    - "事実1: precheck ERRORS=0。SG-PRE3/3b commit 45690bdd3133実在、3ファイル全commit確認。GATE_PREDICTION=WARNはtasks/lessons.md draft教訓由来"
+    - "事実2: 独立再実行でbash -n 7ファイル、py_compile、git diff --check、model_analysis/knowledge_metrics/dashboard_auto_section/reset_layout dry-run全PASS。出力行数は1/41/136/52"
+    - "事実3: shell/python分類実値でsonnet/haiku/opus/opus4.6/gpt5系を確認。Guard16同等grepはreset_layout CLI判定等の正当残存のみ"
+  causal_chain: "model分類literal分散→model_family SSOTへ汎用family分類追加→分析/dashboard/reset_layoutの分類ブレ低減"
+  brainwash_check: "GATE CLEAR既知/前回APPROVE既知による#1早期終了リスクあり。precheck1回+主要コマンド7系統+分類6ラベル×2実装を再実行確認。changed_lines +20/-1=21で大規模削減なし"
+  step3_5_verified: true
+  semantic_check: "semantic_search model family SSOT reset_layoutは外部PJ SSOT概念を返し、今回model_family固有概念は薄い。task注入external_project_registryは本修正に直接関係なし"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "scripts/libとreset_layout変更。blast radiusはreset_layout cache更新条件だが --dry-run PASS、cli_type=codex分岐がgroup判定を先に処理するためCodex系reset_groupフォールバックは欠陥ではない"
+  origin: "[[cmd_3468_FAIL_AC3]] -> [[モデル分類literal分散]] -> [[model_family_SSOT参照統一]]"
+  sg7_bundle:
+    gate_prediction: WARN
+    blast_radius: low
+    lesson_candidate: none
+  timestamp: "2026-06-21T12:01:27+09:00"

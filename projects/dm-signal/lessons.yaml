@@ -2578,6 +2578,9 @@ lessons:
   target_files:
   - tasks/lessons.md
   origin: '[[cmd_1796]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-21'
 - id: L584
   title: '[自動生成] draft教訓の査読を怠った: cmd_1796'
   summary: draft教訓1件が未査読のままGATE到達
@@ -3093,7 +3096,7 @@ lessons:
   origin: '[[cmd_karo_batch_R6]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-20'
+  last_referenced: '2026-06-21'
 - id: L547
   title: パラメータ空間をサイレント縮小するな(殿厳命2026-04-04)
   summary: '計算量を理由にパラメータ空間を縮小すると殿の時間を奪う。4回連続事故: top_n=5決め打ち/lookback6個/PBO5組合せ/MaxDD1点。対処:
