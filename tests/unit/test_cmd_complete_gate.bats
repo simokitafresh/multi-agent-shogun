@@ -443,6 +443,41 @@ EOF
     [[ "$output" == *"ALL_CLEAR=true"* ]]
 }
 
+@test "command/files_modified coverage excludes files_modified verified_existing_dependency refs" {
+    _write_command_coverage_fixture \
+        "scripts/cmd_complete_gate.sh と CLAUDE.md を修正" \
+        "  - path: scripts/cmd_complete_gate.sh
+    change: modified
+  - path: CLAUDE.md
+    change: verified_existing_dependency
+    reason: 変更不要と確認済み"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"missing: CLAUDE.md"* ]]
+    [[ "$output" == *"OK (command欄ファイル参照 全1件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
+@test "command/files_modified coverage excludes checked_not_modified refs" {
+    _write_command_coverage_fixture \
+        "scripts/cmd_complete_gate.sh と CLAUDE.md を修正" \
+        "  - path: scripts/cmd_complete_gate.sh
+    change: modified"
+
+    cat >> "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
+checked_not_modified:
+  - path: CLAUDE.md
+    reason: 正本再生成後に差分不要と確認
+EOF
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"missing: CLAUDE.md"* ]]
+    [[ "$output" == *"OK (command欄ファイル参照 全1件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
 @test "command/files_modified coverage excludes verified_existing_dependency before target_path selection" {
     _write_command_coverage_fixture \
         "refactor-workorder-20260611.md を必読参照し、backend/app/api/main.py を修正" \

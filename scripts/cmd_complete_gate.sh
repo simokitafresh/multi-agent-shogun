@@ -4411,6 +4411,8 @@ PY
 
 collect_report_verified_existing_deps() {
     # 報告YAMLのverified_existing_dependency欄からLG037「実行のみ/既存依存」ファイルを収集。
+    # files_modified内のchange/statusでも同じ意思表示を受け付ける。
+    # checked_not_modifiedは「確認したが変更不要」の明示経路として同じ除外ソースにする。
     # 加えて、指示ファイルが実在しないため代替記録した旨が報告されているパスは変更漏れ扱いしない。
     local task_file ninja_name report_file
     if ! declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
@@ -4422,19 +4424,76 @@ collect_report_verified_existing_deps() {
         report_file=$(resolve_report_file "$ninja_name")
         [ -f "$report_file" ] || continue
         awk '
+            function trim(s) {
+                gsub(/^[[:space:]"'"'"']+|[[:space:]"'"'"']+$/, "", s)
+                return s
+            }
+            function emit_if_dep(path, marker) {
+                path=trim(path)
+                marker=trim(marker)
+                if (path != "" && marker ~ /(verified_existing_dependency|checked_not_modified|not_modified|変更不要|参照のみ|既存依存|実行のみ|read.?only|no.?change)/) {
+                    print path
+                }
+            }
             /^verified_existing_dependency:/ { in_ved=1; next }
             in_ved && /^[^[:space:]-]/ { in_ved=0 }
             in_ved && /^[[:space:]-]*(path|file):/ {
                 v=$0
                 sub(/.*(path|file):[[:space:]]*/, "", v)
-                gsub(/^["'"'"']+|["'"'"']+$/, "", v)
+                v=trim(v)
                 if (v != "") print v
             }
             in_ved && /^[[:space:]]*-[[:space:]]+[^{]/ {
                 v=$0
                 sub(/^[[:space:]]*-[[:space:]]*/, "", v)
-                gsub(/^["'"'"']+|["'"'"']+$/, "", v)
+                v=trim(v)
                 if (v != "" && v !~ /^(path|file|reason|category):/) print v
+            }
+            /^checked_not_modified:/ { in_checked=1; next }
+            in_checked && /^[^[:space:]-]/ { in_checked=0 }
+            in_checked && /^[[:space:]-]*(path|file):/ {
+                v=$0
+                sub(/.*(path|file):[[:space:]]*/, "", v)
+                v=trim(v)
+                if (v != "") print v
+            }
+            in_checked && /^[[:space:]]*-[[:space:]]+[^{]/ {
+                v=$0
+                sub(/^[[:space:]]*-[[:space:]]*/, "", v)
+                v=trim(v)
+                if (v != "" && v !~ /^(path|file|reason|category):/) print v
+            }
+            /^files_modified:/ {
+                in_files=1
+                fm_path=""
+                fm_marker=""
+                next
+            }
+            in_files && /^[^[:space:]-]/ {
+                emit_if_dep(fm_path, fm_marker)
+                in_files=0
+                fm_path=""
+                fm_marker=""
+            }
+            in_files && /^[[:space:]]*-[[:space:]]*(path|file):/ {
+                emit_if_dep(fm_path, fm_marker)
+                fm_path=$0
+                sub(/.*(path|file):[[:space:]]*/, "", fm_path)
+                fm_path=trim(fm_path)
+                fm_marker=""
+                next
+            }
+            in_files && /^[[:space:]]*(path|file):/ {
+                fm_path=$0
+                sub(/.*(path|file):[[:space:]]*/, "", fm_path)
+                fm_path=trim(fm_path)
+                next
+            }
+            in_files && /^[[:space:]]*(change|status|category|reason):/ {
+                marker=$0
+                sub(/.*(change|status|category|reason):[[:space:]]*/, "", marker)
+                fm_marker=fm_marker " " marker
+                next
             }
             /(存在せず|不存在|実在せず|直接更新不可)/ {
                 line=$0
@@ -4442,6 +4501,9 @@ collect_report_verified_existing_deps() {
                     print substr(line, RSTART, RLENGTH)
                     line=substr(line, RSTART + RLENGTH)
                 }
+            }
+            END {
+                if (in_files) emit_if_dep(fm_path, fm_marker)
             }
         ' "$report_file" 2>/dev/null || true
     done | awk 'NF && !seen[$0]++'
