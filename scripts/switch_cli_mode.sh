@@ -39,6 +39,7 @@ SETTINGS_FILE="${SCRIPT_DIR}/config/settings.yaml"
 source "${SCRIPT_DIR}/lib/cli_adapter.sh"
 # cli_lookup.shはcli_adapter.sh内でsource済みのため省略 (WSL2 ~30ms節約)
 source "${SCRIPT_DIR}/lib/agent_state.sh"
+source "${SCRIPT_DIR}/scripts/lib/model_detect.sh"
 
 TARGET_CLI="${1:-}"
 SCOPE="core"
@@ -289,6 +290,20 @@ restart_agent_cli() {
     display_name=$(cli_profile_get "$agent" "display_name")
     display_name="${display_name:-$TARGET_CLI}"
 
+    refresh_runtime_model_name() {
+        local _agent="$1"
+        local _target="$2"
+        local _fallback="$3"
+        local _detected=""
+        if declare -F detect_real_model >/dev/null 2>&1; then
+            _detected=$(detect_real_model "$_agent" "$_target" 2>/dev/null || true)
+        fi
+        tmux set-option -p -t "$_target" @model_name "${_detected:-$_fallback}" >/dev/null 2>&1 || true
+        if [[ -n "$_detected" ]]; then
+            echo "  [runtime] ${_agent}@${_target}: @model_name=${_detected} (detected)"
+        fi
+    }
+
     local tmux_state task_status pane_state
     tmux_state=$(tmux display-message -t "$target" -p '#{@agent_state}' 2>/dev/null || true)
     task_status=$(python3 - "$SCRIPT_DIR" "$agent" <<'PY'
@@ -374,6 +389,8 @@ PY
     if [[ "$TARGET_CLI" == "codex" ]]; then
         sleep 5  # boot待ち(wait_for_codex_boot廃止: pstreeポーリングがCodex exit 2の寄与因子)
     fi
+
+    refresh_runtime_model_name "$agent" "$target" "$display_name"
 
     echo "  [runtime] ${agent}@${target}: relaunched (${TARGET_CLI})"
 }

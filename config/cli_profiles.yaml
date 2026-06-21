@@ -8,6 +8,36 @@
 #   scripts/lib/cli_lookup.sh (本ファイルを読み取る)
 #   inbox_watcher.sh, ninja_monitor.sh がこのファイルを参照
 
+defaults:
+  agents:
+    shogun:
+      type: claude
+      model_name: claude-opus-4-6
+    karo:
+      type: claude
+      model_name: claude-opus-4-6
+    gunshi:
+      type: claude
+      model_name: claude-opus-4-6
+    hayate:
+      type: codex
+      model_name: ""
+    kagemaru:
+      type: codex
+      model_name: ""
+    hanzo:
+      type: codex
+      model_name: ""
+    saizo:
+      type: claude
+      model_name: claude-sonnet-4-6
+    kotaro:
+      type: claude
+      model_name: claude-sonnet-4-6
+    tobisaru:
+      type: claude
+      model_name: claude-sonnet-4-6
+
 profiles:
   claude:
     # 表示名 (sync_pane_vars.sh → tmux @model_name)

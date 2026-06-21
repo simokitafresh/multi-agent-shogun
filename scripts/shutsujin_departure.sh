@@ -44,36 +44,42 @@ else
     mkdir -p "$STATE_DIR"
 fi
 
-# ─── 指揮官デフォルトCLI復元（Opus保証） ───
-# /shogun-cli-switch でsettings.yamlが変更されていても、再起動時はデフォルトOpusに戻す。
-# 殿裁定(2026-04-22): デフォルトは将軍・家老・軍師=Opus。Codex切替は手動スキル実行時のみ。
+# ─── デフォルトCLI復元（2層SSOT） ───
+# 動的層(settings.yaml)は /shogun-cli-switch で変更されるが、tmux再起動時は
+# デフォルト層(cli_profiles.yaml defaults.agents)へ戻す。
 _SETTINGS="$SCRIPT_DIR/config/settings.yaml"
-# 3x awk → 1 awk: settings.yaml を1回だけ読んで全指揮官のtypeを取得（~20ms削減）
-declare -A _COMMANDER_TYPES=()
-while IFS=$'\t' read -r _cmd _type; do
-    [[ -n "$_cmd" ]] && _COMMANDER_TYPES["$_cmd"]="$_type"
-done < <(awk '
-    /^    (shogun|karo|gunshi):/ {
-        match($0, /^    ([a-z]+):/, arr); cur = arr[1]
-    }
-    cur != "" && /^      type:/ {
-        v = $0; sub(/.*type:[[:space:]]*/, "", v); gsub(/[[:space:]\r]/, "", v)
-        printf "%s\t%s\n", cur, v; cur = ""
-    }
-    cur != "" && /^    [a-z][a-z_]*:[[:space:]]*$/ && !/^    (shogun|karo|gunshi):/ { cur = "" }
-' "$_SETTINGS" 2>/dev/null)
-for _commander in shogun karo gunshi; do
-    _current_type="${_COMMANDER_TYPES[$_commander]:-}"
-    if [[ "$_current_type" == "codex" ]]; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[DRY-RUN] Reset ${_commander} type: codex → claude (default Opus)"
-        else
-            sed -i "/^    ${_commander}:/,/^    [a-z]/{s/type: codex/type: claude/}" "$_SETTINGS" 2>/dev/null
-            echo "[shutsujin] Reset ${_commander}: codex → claude (default Opus)"
-        fi
+_CLI_PROFILES="$SCRIPT_DIR/config/cli_profiles.yaml"
+while IFS=$'\t' read -r _agent _type _model_name; do
+    [[ -n "$_agent" && -n "$_type" ]] || continue
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[DRY-RUN] Restore ${_agent}: type=${_type} model_name=${_model_name}"
+    else
+        bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$_SETTINGS" "$_agent" type "$_type" >/dev/null 2>&1 || true
+        bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$_SETTINGS" "$_agent" model_name "$_model_name" >/dev/null 2>&1 || true
+        echo "[shutsujin] Restore ${_agent}: type=${_type} model_name=${_model_name:-<empty>}"
     fi
-done
-unset _COMMANDER_TYPES
+done < <(awk '
+    function flush_agent() {
+        if (agent != "" && type != "") print agent "\t" type "\t" model
+        agent=""; type=""; model=""
+    }
+    /^defaults:/ { in_defaults=1; next }
+    in_defaults && /^profiles:/ { flush_agent(); exit }
+    in_defaults && /^  agents:/ { in_agents=1; next }
+    in_agents && /^    [a-z][a-z_]*:/ {
+        flush_agent()
+        agent=$1; sub(/:$/, "", agent); type=""; model=""
+    }
+    in_agents && agent != "" && /^      type:/ {
+        type=$0; sub(/.*type:[[:space:]]*/, "", type); gsub(/["'\''\r]/, "", type)
+    }
+    in_agents && agent != "" && /^      model_name:/ {
+        model=$0; sub(/.*model_name:[[:space:]]*/, "", model); gsub(/["'\''\r]/, "", model)
+    }
+    END {
+        flush_agent()
+    }
+' "$_CLI_PROFILES" 2>/dev/null)
 
 # dry-run hot path では agent_config.sh 以外の source を遅延する
 source_optional "$SCRIPT_DIR/scripts/lib/agent_config.sh"
