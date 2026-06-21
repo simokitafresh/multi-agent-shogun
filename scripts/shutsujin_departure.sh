@@ -49,19 +49,37 @@ fi
 # デフォルト層(cli_profiles.yaml defaults.agents)へ戻す。
 _SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 _CLI_PROFILES="$SCRIPT_DIR/config/cli_profiles.yaml"
-while IFS=$'\t' read -r _agent _type _model_name; do
+_default_effort=$(awk '
+    /^defaults:/ { in_defaults=1; next }
+    in_defaults && /^profiles:/ { exit }
+    in_defaults && /^  effort:/ {
+        effort=$0; sub(/.*effort:[[:space:]]*/, "", effort); gsub(/["'\''\r]/, "", effort)
+        print effort
+        exit
+    }
+' "$_CLI_PROFILES" 2>/dev/null)
+if [[ -n "$_default_effort" ]]; then
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[DRY-RUN] Restore effort=${_default_effort}"
+    else
+        bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$_SETTINGS" root effort "$_default_effort" >/dev/null 2>&1 || true
+        echo "[shutsujin] Restore effort=${_default_effort}"
+    fi
+fi
+while IFS='|' read -r _agent _type _model_name _launch_cmd; do
     [[ -n "$_agent" && -n "$_type" ]] || continue
     if [[ "$DRY_RUN" == true ]]; then
-        echo "[DRY-RUN] Restore ${_agent}: type=${_type} model_name=${_model_name}"
+        echo "[DRY-RUN] Restore ${_agent}: type=${_type} model_name=${_model_name} launch_cmd=${_launch_cmd}"
     else
         bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$_SETTINGS" "$_agent" type "$_type" >/dev/null 2>&1 || true
         bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$_SETTINGS" "$_agent" model_name "$_model_name" >/dev/null 2>&1 || true
-        echo "[shutsujin] Restore ${_agent}: type=${_type} model_name=${_model_name:-<empty>}"
+        bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$_SETTINGS" "$_agent" launch_cmd "$_launch_cmd" >/dev/null 2>&1 || true
+        echo "[shutsujin] Restore ${_agent}: type=${_type} model_name=${_model_name:-<empty>} launch_cmd=${_launch_cmd:-<empty>}"
     fi
 done < <(awk '
     function flush_agent() {
-        if (agent != "" && type != "") print agent "\t" type "\t" model
-        agent=""; type=""; model=""
+        if (agent != "" && type != "") print agent "|" type "|" model "|" launch
+        agent=""; type=""; model=""; launch=""
     }
     /^defaults:/ { in_defaults=1; next }
     in_defaults && /^profiles:/ { flush_agent(); exit }
@@ -75,6 +93,9 @@ done < <(awk '
     }
     in_agents && agent != "" && /^      model_name:/ {
         model=$0; sub(/.*model_name:[[:space:]]*/, "", model); gsub(/["'\''\r]/, "", model)
+    }
+    in_agents && agent != "" && /^      launch_cmd:/ {
+        launch=$0; sub(/.*launch_cmd:[[:space:]]*/, "", launch); gsub(/["'\''\r]/, "", launch)
     }
     END {
         flush_agent()
