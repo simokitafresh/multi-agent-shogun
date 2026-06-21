@@ -10,10 +10,11 @@ description: |
   DO NOT TRIGGER: 通常の /model 操作、レイアウト全崩壊（→/reset-layout）
 ---
 
-<!-- script_refs_checked_at: 2026-06-20T00:46:40+0900 -->
+<!-- script_refs_checked_at: 2026-06-21T00:40:00+0900 -->
 
 Script refs verified: 2026-06-20. `shogun_cli_switch.sh` は `status/pin-2.1.87/unpin-latest/to-claude/to-codex/--agent/--scope/--dry-run/--settings-only` を契約にする。CLI切替は `scripts/switch_cli_mode.sh`、Claude version切替は `config/cli_profiles.yaml` の `profiles.claude.launch_cmd` と個別 `settings.yaml launch_cmd` を正本にする。
 Script refs verified: 2026-06-20 L821. `switch_cli_mode.sh` にstale active補正追加(@agent_state=active+task空→idle強制)。I/F変更なし。Codex sandbox環境でStop hookブロック→active残留→respawnスキップのインフラバグ修正。
+Script refs verified: 2026-06-21. `switch_cli_mode.sh` relaunch方式をCtrl-C+send-keys→`respawn-pane -k`に変更(殿指摘2026-06-21: CLIごと再起動が基本)。ハングCLIにCtrl-Cが効かず再起動不能だった問題を根治。I/F変更なし。
 
 # Shogun CLI Switch
 
