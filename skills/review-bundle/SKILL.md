@@ -82,6 +82,8 @@ review:
 
 **adversarial自動補完**: 全レビューでfinding_categoriesに `adversarial` を含めよ。adversarial_review フィールドに検討結果(PASS/N/A+reason)を必ず記載。scripts/変更cmdは必須。その他cmdもN/Aで記録。記録なし=冷え観点zero_streak蓄積→WARN→3セッション先送りCRITICAL(2026-06-17遡及修正で解消した事故の再発防止)。
 
+**6観点全記録(冷え観点防止)**: draftレビューではfinding_categoriesに6観点カタログ全て(assumptions, numbers, simulation, premortem, north_star, adversarial)を記載せよ。reportレビューでも4観点(assumptions, numbers, premortem)+adversarialを記載。1観点のみの記載は冷え観点WARNの直接原因(2026-06-21: 11件冷え+3セッション連続ALERT事故)。観点を通したが所見なしの場合もfinding_categoriesに含めよ。
+
 **GATE結果確証バイアス防止**: report reviewでGATE CLEARを既に知っている場合、brainwash_checkに「GATE CLEAR既知で確証バイアスリスクあり」と明記し、成果物を`git show`で全行独立確認せよ。GATE結果を知った上で「問題ない」と感じるのはP1(早期終了)の典型(2026-05-24: cmd_3037でリスク顕在化、cmd_karo_ci_fix_cs_checklistでLGTM→BLOCK発生)。
 
 ### Step 2: review_log追記
