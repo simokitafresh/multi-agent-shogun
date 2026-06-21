@@ -1,6 +1,6 @@
 # CoDD (Coherence-Driven Development) 索引
 
-<!-- last_updated: 2026-06-08 cmd_3232 -->
+<!-- last_updated: 2026-06-21 cmd_3478 -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
 
@@ -124,6 +124,7 @@
 | `review` / `verify` / `policy` / `audit` | 品質確認を単発でなく層として回す。レビュー、整合性、方針、監査を分離する | `memory/reference_codd_oshio_articles.md` |
 | `measure` | 健全性を数値で監視し、リファクタや運用劣化を感覚でなくスコアで検知する | `memory/reference_codd_oshio_articles.md` |
 | `ai_command` | `codd.yaml` で generate=Opus, implement=Codex など役割別に使い分け可能 | `~/.claude/skills/codd/SKILL.md` |
+| 将軍インフラ内CoDD実行パス | `scripts/check_project_codd_ready.sh` と `cmd_complete_gate.sh` のCoDD後処理は、固定ユーザー名ではなく `${HOME}/.codd-venv/bin/codd` を既定にする。Node/Codex再起動PATHも `${HOME}/.nvm/...` 参照へ寄せ、ユーザーhome直書きを避ける | commit `677d0c7f9` (`scripts/check_project_codd_ready.sh`, `scripts/cmd_complete_gate.sh`, `scripts/ninja_monitor.sh`) |
 
 ## §6 参照
 

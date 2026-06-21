@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-06 cmd_karo_hotfix_context_freshness_ga007_20260606 -->
+<!-- last_updated: 2026-06-21 cmd_3478 -->
 # Memory DB Query Templates
 
 DB: `data/multi_agent_shogun_memory.db`
@@ -8,6 +8,25 @@ Freshness source: `context/memory-db-schema.md` generated 2026-06-06 by cmd_karo
 
 All templates below are read-only `SELECT` / `WITH` queries that work with
 `scripts/memory_db_query.sh`. Output is pipe-separated, without headers. The runner uses the ext4 cache path by default for the live DB and falls back to the source DB when cache creation is disabled, unavailable, or non-default DB caching is not requested.
+
+## 0. Direct Layer1 Knowledge Write
+
+Use case: Write a knowledge event directly to Layer1 SQLite without using
+bulletin, inbox, insight, or any communication side effect. This is for facts
+that must enter the memory DB as knowledge, not for sending reports.
+
+```bash
+bash scripts/memory_db_knowledge_write.sh "knowledge text" "source" --cmd-id cmd_3455
+echo "knowledge text" | bash scripts/memory_db_knowledge_write.sh - "source"
+```
+
+The writer stores `event_type='knowledge'`, `direction='direct_insert'`,
+keeps the original text in `raw_content`, indexes FTS text, and extracts
+Obsidian-style `[[links]]` into `event_links`. It defaults to
+`data/multi_agent_shogun_memory.db` or `SHOGUN_MEMORY_DB`.
+
+Source: commit `a29eea6ee` (`scripts/memory_db_knowledge_write.sh`,
+`tests/unit/test_cmd_quality_memory_db.bats`).
 
 ## 1. Recent Conversation Turns By Agent
 

@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-06 cmd_karo_hotfix_context_freshness_ga007_20260606 -->
+<!-- last_updated: 2026-06-21 cmd_3478 -->
 # Obsidianリンク×セマンティクスインデックス 分離原則
 
 <!-- created: 2026-05-22 | origin: 殿×将軍×軍師 対話で確立 -->
@@ -48,6 +48,13 @@ SQLiteは記憶台帳、Obsidianは人間の認知編集層、セマンティッ
 
 - `docs/semantic-index/index.md`, `context/semantic-map.md`, `scripts/semantic_search.sh`には2026-06-05以降の更新があるが、内容は検索境界・修行リンク・index生成の更新であり、本ファイルの分離原則（検索入口と直接リンクの分離、自動リンク生成禁止、リンク先引用による検証）は維持。
 - `scripts/semantic_search.sh`の2026-06-05更新はsemantic/causal expansionのbounded化。リンク生成を自動化せず、検索を入口に留める本原則と整合する。
+
+### 2026-06-21 因果トラバース実装
+
+- `scripts/semantic_causal_traverse.sh` は `docs/semantic-index/index.md` の `related_concepts` をBFS(depth既定3)で辿り、cmdまたはconcept起点の影響ノードを列挙する。`relation_type=混同注意` は伝播対象外。
+- `cmd_complete_gate.sh` はGATE CLEAR時に因果トラバースを実行し、起点conceptと影響ノード数を出力し、影響があれば家老・軍師向け掲示板投稿を非同期で行う。
+- これはObsidianリンクの自動生成ではない。セマンティック索引を操作的波及の入口として使い、直接リンクの品質原則（人が読んで張る、ハブ化禁止、リンク先引用で検証）は維持する。
+- Source: commit `6fa0e374f` (`scripts/semantic_causal_traverse.sh`, `scripts/cmd_complete_gate.sh`)。
 
 ## Why（なぜこの結論か）
 
