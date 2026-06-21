@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-21 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-21T16:13:45+09:00 -->
+<!-- generated_at: 2026-06-21T17:51:50+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-06-21T16:13:37+09:00 | terminal | response | **強くてニューゲーム準備完了。** 全修正はcommit済み。次の軍師は: - CLAUDE.md Step 0でCLI switch待機判定が自動動作 - SKILL.mdに殿指示→実行フロー4Stepが記載 - context/in…
-- 2026-06-21T16:12:55+09:00 | terminal | response | **強くてニューゲーム永続化完了:** | 項目 | 環境埋込み | 次の家老が利用する形 | |------|-----------|-------------------| | auto-void parent_cmd残存 | LK0…
-- 2026-06-21T16:11:57+09:00 | terminal | inbound | 今クリアされても今より強くてニューゲームできるようにせよ
-- 2026-06-21T16:11:47+09:00 | terminal | inbound | 今クリアされても今より強くてニューゲームできるようにせよ
-- 2026-06-21T16:11:40+09:00 | terminal | inbound | 今クリアされても今より強くてニューゲームできるようにせよ
-- 2026-06-21T16:08:49+09:00 | terminal | response | 全inbox処理済み。全忍者idle、10cmd全GATE CLEAR。Dispatch-then-Stop。 [meta] stop_reason=end_turn
-- 2026-06-21T16:08:08+09:00 | terminal | response | GATE CLEAR。/cmd-complete実行。
-- 2026-06-21T16:07:58+09:00 | ntfy | outbound | 【家老】cmd_3481 完了
-- 2026-06-21T16:07:20+09:00 | terminal | response | **GATE CLEAR: cmd_3481完了。** config.toml per-agent effort/fast設定。 2層SSOT全5項目完了: - **#1 cmd_3479** CLEAR: type/model_name…
-- 2026-06-21T16:07:16+09:00 | terminal | response | **本セッション最終成果 — CLI/Model切替の完全整備:** | # | 設定 | cmd | 状態 | |---|------|-----|------| | 1 | type | cmd_3479 | ✅ GATE CLEAR…
+- 2026-06-21T17:51:45+09:00 | terminal | response | clear_prep_check実行中。完了通知を待つ。
+- 2026-06-21T17:51:32+09:00 | terminal | response | **根因発見。** L705はdm-signal版のタグを`dm-signal,fof,monthly-trade`に修正済み(本セッションD0)。しかしinfra版のタグは`infra,bash`のまま（cmd_3483でwhen/ho…
+- 2026-06-21T17:49:56+09:00 | terminal | inbound | 覚醒してidle監査
+- 2026-06-21T17:49:41+09:00 | terminal | inbound | 今クリアされても今より強くてニューゲーム出来るようにせよ
+- 2026-06-21T17:49:07+09:00 | terminal | inbound | 50件のhigh-inject 0%有効が変化なしなのは窓のスライド待ちか？それとも修正が効いていないのか確認しよう
+- 2026-06-21T17:45:22+09:00 | terminal | response | PI-INFRA-004として受動的知識層に登録完了。三層貫通でLayer 1(記憶DB)にも書き込む。
+- 2026-06-21T17:45:16+09:00 | terminal | response | cmd_3484/3485の注入記録がlesson_impact.tsvに存在しない。deploy_task.shの出力を確認すると、cmd_3484は`[INJECT] No lessons for project=infra`、cmd…
+- 2026-06-21T17:44:03+09:00 | terminal | inbound | service_tierのwatch itemはどこかに記録したか？
+- 2026-06-21T17:43:50+09:00 | terminal | inbound | 3483の効果を検証しよう
+- 2026-06-21T17:33:16+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: CTX%異常値 cmd_3481 (ctx_pct=74%, median=24.5%, ratio=3.02x, delta=+49.5pt) WARNING: CTX%異常値 cmd_3476…
 
 ## 未解決確認事項
-- kagemaru: CTX:24% Working。saizo: CTX:28% thinking中。両名作業開始確認OK。 cmd_3480+cmd_3481並列配備完了。Dispatch-then-Stop。 [meta] stop_reason=end_turn
-- hanzo: CTX:15%、Working。作業開始確認OK。 cmd_3479配備完了。Dispatch-then-Stop。 [meta] stop_reason=end_turn
-- [MEM: memory_db ts=2026-06-21 "P5=Codex config.toml effort変更は即時反映されない(全Codex共有で影響範囲大)"] [MEM: semantic concept=agent_formation_management "…
-- **Step 6: 行動確認** 設計書の実装はD0範囲を超える（cli_profiles.yaml+shutsujin_departure.sh+テスト）。cmd起票提案を掲示板に投稿済み（Step 5で家老に送信）。 idle-persist完了。 **まとめ**: - 設…
-- 軍師からCLI/Model 2層SSOT設計報告: デフォルト層(cli_profiles.yaml)+動的層(settings.yaml)。殿承認済み。shutsujinにdefault復元追加。確認済み。 全inbox既読、パイプライン空、全忍者idle。殿の次の指示を待つ…
-- 全知見の環境埋め込み完了。最終検証 — 全ての修正箇所を確認。
-- 【CLI再起動失敗】hayate: pane_cmd=bash（まだshell）。手動確認が必要。
-- CLI Switch Respawnを確認。recovery不要。inbox待機中。 [meta] stop_reason=end_turn
+- cmd_3484/3485の注入記録がlesson_impact.tsvに存在しない。deploy_task.shの出力を確認すると、cmd_3484は`[INJECT] No lessons for project=infra`、cmd_3485も同様だった。タグ精緻化の効果…
+- cmd_3484 GATE CLEAR確認・記録完了。本セッション全レビュー完了: | cmd | type | verdict | GATE | |-----|------|---------|------| | cmd_3483 | draft+report | RC→LG…
+- cmd_3484 LGTM(3回目)記録完了。cmd_3485 GATE CLEAR確認済み。idle待機。
+- 家老がcmd_3484の再レビュー処理中。状況: | cmd | 状態 | 内容 | |-----|------|------| | cmd_3483 | GATE CLEAR ✅ | 教訓タグ精緻化50件 | | cmd_3484 | レビュー中 🔄 | 2層SSOT偵察 |…
+- 2点確認OK: binary_checks全yes(5件)、commit_hash存在。report_received即処理。
+- cmd_3485確認。LK006で登録済みのauto-void parent_cmdバグの構造的修正。§0.1: - **問い0**: バグ修正×10回=正の複利(auto-void後のGATE BLOCK完全消滅) - **問い2**: assumptions verifie…
+- cmd_3483: LGTM→GATE CLEAR確認。review_log更新完了。 影響の自問: - review_reminderはタイムラグによる重複。レビュー結果は既に家老inbox に到着済み - GATE CLEARでcmd_3483完了。useful率改善の効果…
+- 2点確認OK: binary_checks全yes、commit_hash存在。 report_received即処理(LK086): (0)2点確認済み→(1)WA記録→(2)既読化。
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
@@ -43,6 +43,12 @@
 - cmd_3479
 - cmd_3480
 - cmd_3481
+- cmd_3482
+- cmd_3483
+- cmd_3484
+- cmd_3485
+- PD-038
+- PD-047
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

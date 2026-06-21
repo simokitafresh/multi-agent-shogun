@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-21 -->
+<!-- last_updated: 2026-06-21 cmd_3484 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -462,3 +462,5 @@
 | cmd_3479 | 殿承認の2層SSOT設計(2026-06-21)実装。デフォルト層(cli_profiles.yaml defaults)と動的層(settings.yaml)を分離し、tmux再起動時にデフォルト編成に復帰する仕組みを追加。併せてswitch_cli_mode.shのバグ2件(L835: agent_state=active残留→respawnスキップ、L836: model_name tmux変数同期漏れ)を修正する | infra | 06-21 | cmd_3479: cli_profiles default |
 | cmd_3480 | 殿指摘(2026-06-21)全件対処。cli_profiles.yaml defaultsにlaunch_cmd追加し、shutsujin_departure.shでtmux再起動時にデフォルト(pinned 2.1.87)に復帰させる。cmd_3479(type/model_name)と並列実施 | infra | 06-21 | cli_profiles.yaml defaultsにlau |
 | cmd_3481 | 殿指摘(2026-06-21)全件対処。config.tomlのmodel_reasoning_effort・service_tierが全Codex共有で、per-agent設定不可。hayateだけlowにしたくても全員lowになる。対策案3種(CLI引数・per-agent toml・一時書換え)の調査+実装 | infra | 06-21 | Codex per-agent effort/service |
+| cmd_3483 | 教訓健全度ALERT(useful_rate=22.2%, 3セッション連続)の残課題。cmd_3466(スコアリング改善)とD0タグ修正31件の後も残50件の0%有効教訓がinjection候補に残り、タスクと無関係な教訓が注入される。これら50件のwhen/howフィールドをタスク種別(偵察/実装/修正等)に限定し、inject_related_lessonsのマッチング精度を構造的に向上させる | infra | 06-21 | lesson_impact.tsvから0%有効教訓を抽出し、 |
+| cmd_3485 | cmd_3475で実証されたバグの構造的防止。ninja_monitorのauto_void_if_parent_cmd_completed(L1460)がstatus/voided_at/void_reasonのみ設定しparent_cmd/task_idを残すため、次cmd配備時にcmd_complete_gateの報告待ち対象に残りGATE BLOCKする(LK006)。家老掲示板blt_20260621_161244で報告済み | infra | 06-21 | auto_void_if_parent_cmd_comple |
