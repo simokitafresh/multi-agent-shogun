@@ -775,6 +775,7 @@ try:
         "実行", "実行のみ", "変更対象外", "走らせ", "検証", "run", "execute",
         "同構造", "と同一", "と同じ", "同等", "踏襲", "に基づ", "を参考",
         "突合", "比較", "一覧", "解析", "分析", "取得", "検索", "出力", "表示", "呼び出", "呼出",
+        "コピー", "copy", "ベース", "由来", "from",
     )
     write_markers = (
         "修正", "更新", "変更", "編集", "実装", "追加", "削除", "作成", "反映",
@@ -855,7 +856,22 @@ try:
             write_refs.append(base)
 
     fm_bases = set(os.path.basename(p.strip()) for p in fm_raw.split('\n') if p.strip())
-    unmatched = sorted(set(write_refs) - fm_bases)
+    # task YAMLのreadonly_refを除外 (cmd_complete_gateのcollect_task_readonly_refsと同一化)
+    task_readonly = set()
+    for tf in glob.glob(os.path.join(repo, 'queue', 'tasks', '*.yaml')):
+        try:
+            with open(tf) as f:
+                td = yaml.safe_load(f) or {}
+            task = td.get('task', {}) or {}
+            if task.get('parent_cmd', '') != cmd_id:
+                continue
+            for rr in (task.get('readonly_ref') or []):
+                p = rr.get('path', rr) if isinstance(rr, dict) else str(rr)
+                if p:
+                    task_readonly.add(os.path.basename(p.strip()))
+        except Exception:
+            pass
+    unmatched = sorted(set(write_refs) - fm_bases - task_readonly)
 
     lines = []
     if readonly_refs:
