@@ -378,7 +378,7 @@ if TEMPLATE_PATH and os.path.exists(TEMPLATE_PATH):
                 insert_target = '## ' + tline.split('insert_target:')[1].strip()
                 break
 
-with open(DASHBOARD) as f:
+with open(DASHBOARD, encoding='utf-8', errors='replace') as f:
     dashboard_text = f.read()
     lines = dashboard_text.split('\n')
 
@@ -531,7 +531,7 @@ else:
     new_section_body = '（なし）\n'
 
 # Read dashboard.md
-with open(dashboard_path) as f:
+with open(dashboard_path, encoding='utf-8', errors='replace') as f:
     content = f.read()
 
 # Split on 要対応 heading (emoji/prefix/suffix tolerant)
@@ -603,7 +603,7 @@ if not os.path.exists(dashboard_path):
     sys.exit(0)
 
 try:
-    with open(dashboard_path) as f:
+    with open(dashboard_path, encoding='utf-8', errors='replace') as f:
         content = f.read()
     heading_match = re.search(r'^## [^\n]*要対応[^\n]*\n', content, re.MULTILINE)
     if not heading_match:
@@ -761,7 +761,7 @@ if not settings_path or not dashboard_path or not os.path.exists(settings_path):
 try:
     with open(settings_path) as f:
         settings = yaml.safe_load(f)
-    with open(dashboard_path) as f:
+    with open(dashboard_path, encoding='utf-8', errors='replace') as f:
         dashboard_text = f.read()
 except Exception:
     sys.exit(0)
