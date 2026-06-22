@@ -1,6 +1,6 @@
 # Saxo Trade Engine — システムトレード基盤設計
 <!-- created: 2026-05-24 -->
-<!-- last_updated: 2026-06-20 cmd_karo_hotfix_context_saxo_ga100_20260620 -->
+<!-- last_updated: 2026-06-22 cmd_3490 -->
 <!-- status: 設計段階 -->
 
 ## §1 目的

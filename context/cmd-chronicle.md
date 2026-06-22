@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-21 -->
+<!-- last_updated: 2026-06-22 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,45 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_2952 | deploy_task.sh(cmd_2950/2951変更)+bulletin_write.sh変更がSKILL.md 5件に未反映。startup gate 3セッション連続WARN解消 | infra | 05-22 | SKILL.md 5件をbulletin_write.sh/ |
-| cmd_2953 | 修行targetを[[リンク]]数昇順で選択し、孤立ファイルから順にリンクネットワークを育てる。現状944 mdファイル中88%が孤立。修行ACに[[リンク]]追加を組込み、Obsidianグラフを修行サイクルで自然に成長させる | infra | 05-22 | 修行targetをMarkdownリンク数昇順で選び、孤立M |
-| cmd_2955 | cmd_2954設計変更(軍師REQUEST_CHANGES)。ファイル間直接リンクではなく概念名リンクのみ挿入。各resourcesファイルに所属概念名への[[概念名]]リンクを挿入し、概念をハブとするスター型ネットワークを構築 | infra | 05-22 | docs/semantic-index/index.mdから |
-| cmd_2954 | index.mdの46概念×resourcesをパースし、同一概念内resources間+概念⇔resourcesの双方向[[リンク]]を自動挿入。孤立率88%を一括削減。殿直接指示 | infra | 05-22 | — |
-| cmd_2957 | deploy_task.sh inject_direct_training_templateのAC2/AC5が概念名リンク(ハブ方式)を許容している。殿確定の分離原則(context/obsidian-link-principles.md)に準拠し、ファイル間直接リンク方式に修正する | infra | 05-22 | deploy_task.shのL4修行テンプレートをファイル |
-| cmd_2959 | 参照scriptがSKILL.mdより新しい11ファイルを更新し、スキル指示とスクリプト実態の乖離を解消する | infra | 05-22 | SKILL.md 13件の参照script仕様追従を更新し、 |
-| cmd_2960 | shutsujin_departure.sh L945が将軍watcherをASW_DISABLE_ESCALATION=1で起動し、GATE CLEAR通知が将軍に届かない。cmd_2403/2694で対症療法したが真因が残存。shutsujin側を修正し構造的に根絶する | infra | 05-22 | shutsujin_departure.shの将軍watch |
-| cmd_2962 | 将軍がcmd起票時にsemantic_search.shを使っていない。grepでは既知キーワードしか探せず、関連概念の見落としが起きる。起票前hookに10問目を追加し、将軍が毎回semantic_searchを実行する構造にする | infra | 05-22 | Guard 0の起票前確認を10問へ更新し、semantic |
-| cmd_2963 | lord_conversation.jsonlのアーカイブディレクトリは3月に作成済みだが退避処理が未実装で全セッションの対話が消失している。clear_prep_check.shに全文退避+知識抽出を追加し、長期記憶を構造的に保存する | infra | 05-22 | clear_prep_check.shにlord_conve |
-| cmd_2964 | 全文記録(24MB/79日)とsemantic_search(0.3秒)は動いているが、セッション中に発見した知識がObsidianリンクやaliasesに整理されずに消えている。全ロールの/clear前処理と作業完了時に記憶整理Phaseを追加し、短期記憶→長期記憶の移行を構造的に強制する | infra | 05-22 | 全ロール記憶整理Phaseとしてclear_prep_che |
-| cmd_2965 | 全文記録(lord_conversation_archive 24MB/79日分)がJSONLファイルで概念検索不能。SQLite(multi_agent_shogun_memory.db)に構造化して格納し、semantic_searchから到達可能にする。先にDBを作ることでLLMが外部DBに飛びつくパターンマッチを環境で封じる(殿裁定2026-05-22) | infra | 05-22 | SQLite記憶DBインポータを追加し、lord_conve |
-| cmd_2966 | cmd_2965のconversationsテーブルは殿×将軍の対話のみ。殿は家老/軍師/忍者にも直接指示する。全ロールの全イベント(inbox/掲示板/gate/報告/insight)を統合するeventsテーブルに拡張し、conceptsカラムでsemantic_search照合結果を格納してObsidian/セマンティクスインデックスと連携する | infra | 05-22 | memory_db_init.shを追加し、eventsテー |
-| cmd_2968 | 報告テンプレートのverdictフィールドにYAMLコメント付き空文字列が残存し、忍者がautofix前に保存するとverdict空でGATE BLOCKが発生(14件検出)。テンプレートからコメント行を除去し汚染を根絶する | infra | 05-22 | 報告テンプレートのverdict空値コメントを生成元から除去 |
-| cmd_2970 | eventsテーブルのdetailをLIKE検索すると24MB全スキャン。FTS5仮想テーブルで全文検索を高速化し、parent_event_id(因果チェーン)とimportance(重要度)カラムを追加して検索品質と到達可能性を向上する | infra | 05-22 | events_fts(FTS5)をsummary/detai |
-| cmd_2971 | deploy_task.sh/restart_watchers.sh変更後にSKILL.md 4件が未更新で3session連続WARNが発生。scriptの最新挙動をSKILL.mdに反映しgate判定をOKにする | infra | 05-22 | SKILL.md 4件を最新script挙動に追従し、gat |
-| cmd_2972 | is_gate_or_hook_addition_cmd()がSKILL.md追従/DB拡張/semantic_search等の非gate追加cmdをgate追加と誤判定しFP率100%(3/3)。L299除外キーワードに追従/更新/拡張を追加し偽陽性を解消する | infra | 05-22 | is_gate_or_hook_addition_cmdの追 |
-| cmd_2973 | dashboard-update/verdict-check/cmd-complete/report-writeの4スキルがSKILL.md改良5回超で効果なし。code_fix_requiredエスカレーション9件。各スキルのFAIL根因を特定し修正cmdの設計材料を作る | infra | 05-22 | 4スキルFAILは、dashboard_updateのrep |
-| cmd_2974 | GPT忍者へのnudge自動到達率が0%(11/11手動)。deploy_task.shのEXIT trap内でnudgeが確実に送信されるよう修正し、配備後の自動到達を保証する | infra | 05-22 | deploy_task.shのEXIT nudge arm位 |
-| cmd_2975 | CI並列実行時にflaky test 2件(T-005+AC4-2)が発生。テスト間の状態共有が根因。並列隔離で安定化する | infra | 05-22 | T-005とAC4-2の並列flaky要因をテストfixtu |
-| cmd_2976 | memory_db_import.pyにFTS5+拡張列が実装済みだがDBが再構築されていない。再実行してDBスキーマを最新化する | infra | 05-22 | memory_db_import.pyを再実行し、data/ |
-| cmd_2977 | eventsテーブルが全件conversation型。bulletin_board.yamlのエントリをevent_type=bulletinとして投入し、GATE CLEAR/家老報告/INSIGHT等の非会話イベントを検索可能にする | infra | 05-22 | memory_db_import.pyのbulletin投入 |
-| cmd_2978 | insights.yamlの気づきエントリをevent_type=insightとして記憶DBに投入し、学習ループの気づきを検索可能にする | infra | 05-22 | insights.yamlをmemory DBのevents |
-| cmd_2979 | eventsテーブルのconcepts列がJSON配列のTEXT格納で検索が遅い。event_concepts(event_id, concept_name)ジャンクションテーブルに正規化しJOINで高速検索+概念別集計を可能にする | infra | 05-22 | memory_db_import.pyにevent_conc |
-| cmd_2981 | 記憶DBが手動実行でしか更新されない。clear_prep_check.shの記憶整理Phaseにmemory_db_import.py実行を追加し、毎/clear時にDBが自動再構築されるようにする | infra | 05-22 | clear_prep_checkの記憶整理Phaseでmem |
-| cmd_2982 | append_lord_conversation()でJSONL書込み後にDBへもINSERTし、lord_conversation全イベントがリアルタイムでDBに蓄積されるようにする | infra | 05-22 | append_lord_conversation()のJSO |
-| cmd_2984 | journal_mode=DELETEでリアルタイムINSERTと再構築が競合しdatabase locked発生。WALモードに変更し並行書込みを許可する。再構築もDROP+CREATEからINSERT OR REPLACEに変更し時間短縮 | infra | 05-22 | memory_db_import.pyのWAL再構築を確認し |
-| cmd_2985 | inbox_write.shの全agent間通信(配備指示/報告完了/gate_clear/nudge)をevent_type=inboxとして記憶DBにリアルタイムINSERTする | infra | 05-22 | inbox_write.shのYAML永続化成功後にeven |
-| cmd_2987 | 忍者の報告YAML書込み(report_field_set.sh)をevent_type=reportとして記憶DBにINSERTし、学習ループの成果(binary_checks/lesson_candidate)がDB検索可能になるようにする | infra | 05-22 | memory_db_live_insert.pyにrepor |
-| cmd_2991 | cmd品質記録(cmd_design_quality.yaml)をevent_type=cmd_qualityとして記憶DBにリアルタイムINSERTし、gate FP/BLOCK分析がDB検索で即座に可能になるようにする | infra | 05-22 | cmd_design_qualityの品質記録をevent_ |
-| cmd_2992 | memory_db_import.pyの/clear時再構築にskill_execution_log/完了cmd archive/pending_decisionsの3ソースを追加し、バッチ再構築時の網羅性を完成させる | infra | 05-22 | memory_db_import.pyのバッチ再構築にski |
-| cmd_2995 | スクリプト内部変更(DB INSERT追加等)でもSKILL.md追従WARNが発火する偽陽性を解消する。3セッション連続BLOCK再発の構造的原因 | infra | 05-22 | script_refs_checked_at markerを |
-| cmd_2997 | ルート直下の0バイト空DB削除と、eventsテーブルと完全重複するconversationsテーブル(27,154件同数)を整理する | infra | 05-22 | 0バイトDBを削除し、conversations実体テーブル |
-| cmd_2998 | 日本語の長いクエリでFTS5検索がタイムアウト(10秒超)する問題を改善する | infra | 05-22 | semantic_search.shのmemory_db_s |
-| cmd_3000 | Google Chrome公式のAIエージェント向けモダンWeb APIスキルを導入し、FE開発品質を向上させる | infra | 05-22 | Modern Web Guidanceを導入し、semant |
-| cmd_3001 | 記憶DBのスキーマ+event_type分布+サンプル行をmemory_db_import.pyの--build後に自動生成し、LLMが自然言語→SQL変換できる基盤を構築する | infra | 05-22 | memory_db_import.pyのschema mar |
-| cmd_3002 | memory_db_query.shにSELECT以外のSQL(DELETE/UPDATE/DROP等)をBLOCKするガードを追加し、記憶DBの安全な汎用クエリ実行を保証する | infra | 05-22 | memory_db_query.shにSELECT-only |
-| cmd_3005 | 全PJ(dm-signal/infra/google-classroom/database/simple-ocr等)のドキュメントファイルを棚卸しし、記憶DBに投入すべき知識資産の全体像を把握する | infra | 05-22 | 全登録PJのmd/yaml/yml/txt/rstをフル走査 |
-| cmd_3007 | 知識パスへのgrep実行を検知し、記憶DB検索結果を自動注入する。3層記憶を経由せずに行動する迂回路をふさぐ | infra | 05-22 | 知識パスgrep/rg検知時にmemory DB検索結果をa |
-| cmd_3008 | 記憶DB検索時にtarget=自分のagent_idでフィルタしていないため、殿が他ロールに向けた発言を自分宛てと誤認するバグを修正する | infra | 05-22 | memory DB検索のtargetフィルタ実装を検証する回 |
 | cmd_3009 | post-shogun-inbox-check.shがlord_conversation.jsonlのinboundを全件表示し、殿が家老paneに入力した内容を将軍が自分宛てと誤認するバグを修正する | infra | 05-23 | post-shogun-inbox-check.shの殿発言 |
 | cmd_3010 | 記憶3層ハーネスPhase 2。cmd_3005棚卸し結果から品質保証済みの3カテゴリ132件を記憶DBに投入し、検索精度を向上させる | infra | 05-23 | — |
 | cmd_3011 | 記憶DBにcontext/教訓/チェックリスト等のドキュメントファイルを投入する手段がない。build_dbに7番目のソースとしてドキュメントファイル投入を追加する | infra | 05-23 | memory_db_import.pyの--doc-dirs |
@@ -465,3 +426,5 @@
 | cmd_3483 | 教訓健全度ALERT(useful_rate=22.2%, 3セッション連続)の残課題。cmd_3466(スコアリング改善)とD0タグ修正31件の後も残50件の0%有効教訓がinjection候補に残り、タスクと無関係な教訓が注入される。これら50件のwhen/howフィールドをタスク種別(偵察/実装/修正等)に限定し、inject_related_lessonsのマッチング精度を構造的に向上させる | infra | 06-21 | lesson_impact.tsvから0%有効教訓を抽出し、 |
 | cmd_3485 | cmd_3475で実証されたバグの構造的防止。ninja_monitorのauto_void_if_parent_cmd_completed(L1460)がstatus/voided_at/void_reasonのみ設定しparent_cmd/task_idを残すため、次cmd配備時にcmd_complete_gateの報告待ち対象に残りGATE BLOCKする(LK006)。家老掲示板blt_20260621_161244で報告済み | infra | 06-21 | auto_void_if_parent_cmd_comple |
 | cmd_3487 | session_alerts.txtは将軍startup gateが生成する将軍固有ALERTだが、stop_session_alerts.shが全エージェント共通パスを読むため家老・軍師・忍者にも表示される。忍者がスコープ外と判断するしかない状況を構造修正する | infra | 06-21 | stop_session_alerts.shをロール分離修正 |
+| cmd_3488 | 殿指摘(2026-06-22): semantic_search.shで「L1パイプライン BB」がNO_MATCH。根因: semantic_index.py L854-861のマッチングが部分文字列のみで、クエリを空白分割した個別単語がalias内に全出現するかの判定がない。aliasに合わせてクエリを書き直すのは方向性が間違い(殿指摘「バグに合わせるな」) | infra | 06-22 | semantic_searchのfirst-layer al |
+| cmd_3490 | 殿構想(2026-06-22): pf_L1のselection blockを複数BB直列に拡張(pf_L1+)。run_077_oikaze.pyをコピー改変しGSループ除去、固定パラメータでBB1→BB2直列パイプライン実行→本番holding_signalと月次パリティ突合するスクリプトを作成。1パターン(GSシン追い風-激攻+pf_L2追い風チャンピオン)でパリティ0不一致を確認 | dm-signal | 06-22 | run_l1plus_backtest.pyを追加し、BB1 |
