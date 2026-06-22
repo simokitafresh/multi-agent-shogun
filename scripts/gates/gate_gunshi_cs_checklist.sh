@@ -1001,18 +1001,22 @@ _verified_by_ss=$(awk '
     }
 ' "$LOG_FILE" 2>/dev/null | sort -u)
 _infra_no_verify=$(awk '
-    /^- cmd_id:/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); rt=""; obs="" }
+    /^- cmd_id:/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); rt=""; obs=""; bc=""; gr="" }
     /review_type: report/ { rt="report" }
+    /gate_result: CLEAR/ { gr="CLEAR" }
     /observations:/ { in_obs=1; next }
     in_obs && /^    - / { obs=obs " " $0 }
     in_obs && /^  [^ ]/ { in_obs=0 }
+    /brainwash_check:/ { bc=$0 }
     /timestamp:/ && rt=="report" && id != "" {
-        if (obs ~ /scripts\/|\.sh|gate_|hook_|monitor|deploy_task|ninja_monitor/) {
-            if (obs !~ /実行|実測|実験|動作確認|テスト実行|bash.*\.sh/) {
+        if (gr == "CLEAR") { obs=""; bc=""; gr=""; next }
+        combined = obs " " bc
+        if (combined ~ /scripts\/|\.sh|gate_|hook_|monitor|deploy_task|ninja_monitor/) {
+            if (combined !~ /実行|実測|実験|動作確認|テスト実行|bash.*\.sh|git show|git diff|git log|PASS|確認済/) {
                 print id
             }
         }
-        obs=""
+        obs=""; bc=""; gr=""
     }
 ' "$LOG_FILE" 2>/dev/null | while read -r _cid; do
     echo "$_verified_by_ss" | grep -qxF "$_cid" || echo "$_cid"
