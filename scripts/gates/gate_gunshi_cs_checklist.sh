@@ -629,7 +629,8 @@ _bw_no_qc=$(tail -400 "$LOG_FILE" 2>/dev/null | awk '
     /review_type:/ { rt=$0 }
     /brainwash_check:/ {
         # draft reviewはquality_gate q1/q2/q3で品質三問回答済み→除外
-        if (rt ~ /review_type:[[:space:]]*draft/) { next }
+        # report reviewは成果物品質確認(4観点)であり品質三問はdraft時に回答済み→除外
+        if (rt ~ /review_type:[[:space:]]*(draft|report)/) { next }
         line=$0
         has_any = (line ~ /品質向上|Q1:|Q2:|Q3:|学習機会|次品質向上|quality_improvement|learning_opportunity|next_quality/)
         if (!has_any) no_qc++

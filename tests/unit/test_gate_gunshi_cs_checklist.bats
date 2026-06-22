@@ -1254,8 +1254,10 @@ YAML
 
 @test "brainwash_check without Quality Check 3 questions blocks when majority missing (AC2 cmd_3373)" {
     {
+        # draft/reportは品質三問チェック対象外(draft=quality_gate回答済み、report=成果物確認)
+        # self_study/consultationのbrainwash_checkが対象
         for i in $(seq -w 01 12); do
-            printf -- '- cmd_id: cmd_qc_%s\n  review_type: report\n  verdict: APPROVE\n  confidence: MEDIUM\n  ambiguity_points: none\n  brainwash_check: "確認済み（三問なし）"\n  observations:\n    - "事実1"\n    - "事実2"\n' "$i"
+            printf -- '- cmd_id: cmd_qc_%s\n  review_type: self_study\n  verdict: N/A\n  confidence: MEDIUM\n  ambiguity_points: none\n  brainwash_check: "確認済み（三問なし）"\n  cs_checklist:\n    CS1: OK\n  causal_chain: "因果"\n  observations:\n    - "事実1"\n    - "事実2"\n' "$i"
         done
     } > "$TEST_TMPDIR/logs/gunshi_review_log.yaml"
 
