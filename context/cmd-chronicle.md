@@ -419,3 +419,7 @@
 | cmd_3493 | 殿指示(2026-06-22): 22分は長い。道具を磨け。(1)DBロードを441パターン共通で1回に集約 (2)パリティ基準にticker×weight一致を追加 (3)441パターン一括実行モードでBB1×BB2全組合せを1実行→結果を1テーブル(441行×α6指標)に集約。見込み5-8分 | dm-signal | 06-22 | run_l1plus_backtest.pyに--batch |
 | cmd_3494 | 殿指示(2026-06-22): pf_L2奥義21体(新四つ目除く)を構成PFとして7忍法GSを実行しpf_L3(秘奥義)を生成。Phase0=L3用universe YAML作成+分身smoke runでpeak RSS実測。L2 GS実績: 構成21体peak RSS 10.1GB(cmd_2402)。WSL2 available 20GB。構成PF数同一だが奥義=複合PFのためRSS増加の可能性→実測必須(軍師指摘) | dm-signal | 06-23 | L3用hiougi_ougi_21.yamlを作成し、run |
 | cmd_3495 | 殿指示(2026-06-22): pf_L3秘奥義GS 7忍法直列の1本目。Phase0(cmd_3494)でRSS安全確認済み(peak 104.6MB)。pf_L2奥義21体を構成PFとして追い風(MomentumFilter)の全パラメータ空間をGSで探索。run_077_oikaze.py --universe hiougi_ougi_21.yaml | dm-signal | 06-23 | run_077_oikaze.pyをhiougi_ougi_ |
+| cmd_3496 | pf_L3秘奥義GS 7忍法直列の2本目。run_077_nukimi.py --universe hiougi_ougi_21.yaml | dm-signal | 06-23 | run_077_nukimi.pyをhiougi_ougi_ |
+| cmd_3501 | pf_L3秘奥義GS直列3本目。run_077_kawarimi.py --universe hiougi_ougi_21.yaml。並列配備禁止(LS-A15) | dm-signal | 06-23 | pf_L3秘奥義GS直列3本目としてkawarimiをLin |
+| cmd_3502 | pf_L3秘奥義GS直列4本目。run_077_yotsume.py --universe hiougi_ougi_21.yaml。並列配備禁止(LS-A15) | dm-signal | 06-23 | Linux venvでrun_077_yotsume.pyを |
+| cmd_3503 | pf_L3秘奥義GS直列5本目(最重量)。run_077_kasoku_diff.py --universe hiougi_ougi_21.yaml。並列配備禁止(LS-A15) | dm-signal | 06-23 | pf_L3秘奥義GS直列5本目(kasoku_diff)をL |
