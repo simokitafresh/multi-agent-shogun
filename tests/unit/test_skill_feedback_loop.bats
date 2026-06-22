@@ -796,7 +796,7 @@ EOF
     grep -q '<!-- DASHBOARD_AUTO_START -->' "$TEST_REPO/dashboard.md"
     grep -q '^## 最新更新' "$TEST_REPO/dashboard.md"
     grep -q 'cmd_4002' "$TEST_REPO/dashboard.md"
-    grep -q "^# 🏯 Dashboard \\[infra\\] — $(date +%Y-%m-%d)" "$TEST_REPO/dashboard.md"
+    grep -q "^# 🏯 Dashboard \\[infra\\] — $(TZ=Asia/Tokyo date +%Y-%m-%d)" "$TEST_REPO/dashboard.md"
 }
 
 @test "dashboard_update.sh blocks non-empty dashboard without 最新更新" {
