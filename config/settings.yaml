@@ -16,44 +16,52 @@ cli:
       model_name: claude-opus-4-6
       role: karo
       japanese_name: 家老
+      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
     gunshi:
       type: claude
       model_name: claude-opus-4-6
       role: gunshi
       japanese_name: 軍師
+      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
     hayate:
       type: codex
       model_name: gpt-5.5-low
       role: ninja
       japanese_name: 疾風
       service_tier: 
+      launch_cmd: /home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen
     kagemaru:
       type: codex
       model_name: gpt-5.5-low
       role: ninja
       japanese_name: 影丸
+      launch_cmd: /home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen
     hanzo:
       type: codex
       model_name: gpt-5.5-low
       role: ninja
       japanese_name: 半蔵
+      launch_cmd: /home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen
     saizo:
-      type: claude
-      model_name: claude-sonnet-4-6
+      type: codex
+      model_name: gpt-5.5
       role: ninja
       japanese_name: 才蔵
+      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
     kotaro:
-      type: claude
-      model_name: claude-sonnet-4-6
+      type: codex
+      model_name: gpt-5.5
       role: ninja
       japanese_name: 小太郎
+      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
     tobisaru:
-      type: claude
-      model_name: claude-sonnet-4-6
+      type: codex
+      model_name: gpt-5.5
       role: ninja
       japanese_name: 飛猿
+      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
 idle_cycle: off
-effort: high  # v2.1.68でmediumデフォルト化→high固定(~/.claude/settings.json)
+effort: high
 ntfy_topic: shogun-simokitafresh
 gist_url: https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
 screenshot:

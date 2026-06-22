@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-06-20 cmd_karo_hotfix_context_dm_core_ga102_20260620 -->
+<!-- last_updated: 2026-06-23 cmd_3494 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 

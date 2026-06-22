@@ -100,6 +100,8 @@ tmux capture-pane -t shogun:2.6 -p | head -3  # → Sonnet 4.6 with low effort �
 | settings.yaml model_name変更のみ | respawn-pane -k + 起動引数 |
 | `--effort low` を Codex CLI に渡す | config.toml の `model_reasoning_effort` |
 | Claude CLI で `/fast` → Sonnet fast | `/fast` は Opus 4.6 に強制変更される |
+| `codex --full-auto` で起動 | `codex` 単体起動(0.141.0でexit 2) |
+| switch_cli_mode.sh後にsettings.yaml未確認 | 切替後に`grep type settings.yaml`で一次確認必須(2026-06-23: tmux変数のみ更新しsettings未反映の事故) |
 
 ## Safety
 
@@ -107,6 +109,7 @@ tmux capture-pane -t shogun:2.6 -p | head -3  # → Sonnet 4.6 with low effort �
 - CLI/version 切替は設定変更だけでは不十分。**idle paneのrespawnが必須**
 - `active` / `in_progress` 相当のpaneはスキップし、設定だけを次回起動へ反映する
 - `--settings-only` は「次回 respawn 時に反映したい」時だけ使え。CLI切替では `scripts/switch_cli_mode.sh --no-relaunch` に対応する
+- **切替後にsettings.yamlのtype/model_nameが正しいか`grep`で一次確認必須**。switch_cli_mode.shがtmux変数のみ更新しsettings未反映の事故あり(2026-06-23 LK007)
 - 正本ランブックを先に読む: `docs/research/claude-code-version-runbook.md`
 - Codex切替の前提: `~/.codex/config.toml` に `model_context_window = 1000000`、`model_auto_compact_token_limit = 900000`、hooks有効化があること
 - Codexロール指示: `instructions/generated/codex-{role}.md` と AGENTS.md Recovery手順を使う

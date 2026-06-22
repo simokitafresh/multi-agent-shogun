@@ -333,7 +333,12 @@ def load_project_paths() -> dict[str, str]:
 
 
 PROJECT_PATHS = load_project_paths()
-AUTO_COMMIT_SUBJECT_RE = re.compile(r"^chore: (auto-commit|batch context)\b")
+AUTO_COMMIT_SUBJECT_RE = re.compile(
+    r"^chore: (auto-commit|batch context|auto-generated index|lord-conversation-index|"
+    r"運用コンテキスト更新|commit pending changes|session cleanup|"
+    r"gunshi idle分析|家老自律hotfix|スキル統合|三層記憶貫通|運用データ蓄積|"
+    r"LS\d+→LS-|運用ファイル)\b"
+)
 DM_SIGNAL_CONTEXT_PATHS: dict[str, list[str]] = {
     "context/dm-signal.md": [
         "context/dm-signal-terminology.md",

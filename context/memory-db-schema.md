@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-21 -->
+<!-- last_updated: 2026-06-23 cmd_3494 -->
 
 # Memory DB Schema
 
