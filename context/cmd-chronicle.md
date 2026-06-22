@@ -428,3 +428,4 @@
 | cmd_3487 | session_alerts.txtは将軍startup gateが生成する将軍固有ALERTだが、stop_session_alerts.shが全エージェント共通パスを読むため家老・軍師・忍者にも表示される。忍者がスコープ外と判断するしかない状況を構造修正する | infra | 06-21 | stop_session_alerts.shをロール分離修正 |
 | cmd_3488 | 殿指摘(2026-06-22): semantic_search.shで「L1パイプライン BB」がNO_MATCH。根因: semantic_index.py L854-861のマッチングが部分文字列のみで、クエリを空白分割した個別単語がalias内に全出現するかの判定がない。aliasに合わせてクエリを書き直すのは方向性が間違い(殿指摘「バグに合わせるな」) | infra | 06-22 | semantic_searchのfirst-layer al |
 | cmd_3490 | 殿構想(2026-06-22): pf_L1のselection blockを複数BB直列に拡張(pf_L1+)。run_077_oikaze.pyをコピー改変しGSループ除去、固定パラメータでBB1→BB2直列パイプライン実行→本番holding_signalと月次パリティ突合するスクリプトを作成。1パターン(GSシン追い風-激攻+pf_L2追い風チャンピオン)でパリティ0不一致を確認 | dm-signal | 06-22 | run_l1plus_backtest.pyを追加し、BB1 |
+| cmd_3493 | 殿指示(2026-06-22): 22分は長い。道具を磨け。(1)DBロードを441パターン共通で1回に集約 (2)パリティ基準にticker×weight一致を追加 (3)441パターン一括実行モードでBB1×BB2全組合せを1実行→結果を1テーブル(441行×α6指標)に集約。見込み5-8分 | dm-signal | 06-22 | run_l1plus_backtest.pyに--batch |
