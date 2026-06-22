@@ -30,7 +30,9 @@ Script refs verified: 2026-06-20 2088b6421+3867e2be2. `gate_lesson_health.sh` �
 
 Script refs verified: 2026-06-21 0bb457ecf+7b329e854. `gate_lesson_health.sh` 直近変更はactive lesson抽出高速化、`memory_db_query.sh` 直近変更は運用auto-commit由来のmtime更新。/dreamの読取・棚卸し・MCP操作手順への契約変更なし。
 
-<!-- script_refs_checked_at: 2026-06-21T00:11:55+09:00 -->
+Script refs verified: 2026-06-21 a46df2367. `gate_lesson_health.sh` 直近変更はLESSON_EFFECT_WINDOW_CMDSを30→10に縮小(計測窓調整)。/dreamの読取・棚卸し・MCP操作手順への契約変更なし。
+
+<!-- script_refs_checked_at: 2026-06-21T20:50:00+09:00 -->
 
 # /dream — Memory Consolidation (5 Phase)
 

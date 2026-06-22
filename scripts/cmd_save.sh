@@ -2735,14 +2735,30 @@ if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
     fi
 fi
 
-# --- Check 2.5: 同時draft複数BLOCK（LS088: 1CMD1ゲート。一括起票禁止） ---
+# --- Check 2.5: 同時draft複数BLOCK（LS088: 1CMD1ゲート） ---
+# depends_onで直列依存が明示されているdraft群は共存可能（先に書いておくパターン）
 OTHER_DRAFTS=$(awk -v current="$CMD_ID" '
     /^  cmd_[^:]+:/ { id = $1; sub(/:$/, "", id); sub(/^  /, "", id); next }
     id && id != current && /status:.*draft/ { print id }
 ' "$QUEUE_FILE" 2>/dev/null)
 if [[ -n "$OTHER_DRAFTS" ]]; then
-    printf 'BLOCK\tother_draft_exists: %s もdraft状態。1本ずつゲートを通せ(LS088)\n' "$(echo "$OTHER_DRAFTS" | tr '\n' ',')" >&2
-    record_block_reason "other_draft_exists"
+    # depends_onで鎖になっているdraftは許容（並列ではなく直列待ち）
+    _independent_drafts=""
+    while IFS= read -r _other_id; do
+        [[ -z "$_other_id" ]] && continue
+        _dep="$(awk -v id="$_other_id" '
+            $0 ~ "^  "id":" { found=1; next }
+            found && /^  cmd_/ { exit }
+            found && /depends_on:/ { sub(/.*depends_on:[[:space:]]*/, ""); gsub(/["'"'"']/, ""); print; exit }
+        ' "$QUEUE_FILE" 2>/dev/null)"
+        if [[ -z "$_dep" || "$_dep" == "none" ]]; then
+            _independent_drafts+="$_other_id"$'\n'
+        fi
+    done <<< "$OTHER_DRAFTS"
+    if [[ -n "${_independent_drafts//[[:space:]]/}" ]]; then
+        printf 'BLOCK\tother_draft_exists: %s もdraft状態でdepends_onなし。1本ずつゲートを通せ(LS088)\n' "$(echo "$_independent_drafts" | tr '\n' ',')" >&2
+        record_block_reason "other_draft_exists"
+    fi
 fi
 
 # --- Session State: 同一cmdの過去BLOCK履歴を表示 ---
@@ -3745,6 +3761,8 @@ check_dm_signal_bare_layer_reference() {
         [[ "$trimmed" =~ (/|[[:alnum:]_-]+\.(md|py|sh|yaml|yml|csv|json|txt|db|sqlite)) ]] && continue
         [[ "$trimmed" =~ (pf_L[0-4]|calc_L[0-4]|ctx_L[0-4]|doc_L[0-4]|sg_L[0-4]) ]] && continue
         [[ "$trimmed" =~ (正則化|ノルム|norm|regularization|regression|loss|lambda|λ|距離|行列|ベクトル|vector|matrix) ]] && continue
+        # DM-Signal固有名詞と同一行のL表記は正当(例: "L2 GS実績", "L3用universe", "秘奥義GS")
+        [[ "$trimmed" =~ (GS|奥義|秘奥義|忍法|四神|universe|smoke|RSS|チャンピオン|構成PF|cmd_[0-9]) ]] && continue
 
         if [[ "$trimmed" =~ (^|[^A-Za-z0-9_])L[0-4]([^A-Za-z0-9_]|$) ]]; then
             raw_hits+="${trimmed}"$'\n'
@@ -5637,7 +5655,11 @@ is_db_operation_command_text() {
     local command_text="${1:-}"
     [[ -n "${command_text//[[:space:]]/}" ]] || return 1
 
-    printf '%s\n' "$command_text" | grep -qiE '(^|[^A-Za-z0-9_])(migrate|ALTER[[:space:]]+TABLE|schema|database|init_database|SQLite|DROP|TRUNCATE|DELETE[[:space:]]+FROM)([^A-Za-z0-9_]|$)' || return 1
+    # GS出力SQLite(quick_check/出力/結果)は読取のみでDB操作ではない
+    local filtered
+    filtered="$(printf '%s\n' "$command_text" | grep -viE 'quick_check|GS.*SQLite|SQLite.*出力|SQLite.*結果|SQLite.*記録|grid_search')"
+    [[ -n "${filtered//[[:space:]]/}" ]] || return 1
+    printf '%s\n' "$filtered" | grep -qiE '(^|[^A-Za-z0-9_])(migrate|ALTER[[:space:]]+TABLE|schema|database|init_database|SQLite|DROP|TRUNCATE|DELETE[[:space:]]+FROM)([^A-Za-z0-9_]|$)' || return 1
 }
 
 check_db_backup_ac_warn() {

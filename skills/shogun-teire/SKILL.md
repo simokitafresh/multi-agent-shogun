@@ -31,7 +31,9 @@ Script refs verified: 2026-06-20 2088b6421. `gate_lesson_health.sh` 直近変更
 
 Script refs verified: 2026-06-21 0bb457ecf+729635be5. `gate_lesson_health.sh` 直近変更はactive lesson抽出高速化、`knowledge_metrics.sh` 直近変更はmodel family literalのSSOT化。棚卸し時のlesson health確認、knowledge metrics確認、ALERT時の原因別連携判断への契約変更なし。
 
-<!-- script_refs_checked_at: 2026-06-21T00:11:55+09:00 -->
+Script refs verified: 2026-06-21 a46df2367. `gate_lesson_health.sh` 直近変更はLESSON_EFFECT_WINDOW_CMDSを30→10に縮小(計測窓調整)。棚卸し時のlesson health確認への契約変更なし。
+
+<!-- script_refs_checked_at: 2026-06-21T20:50:00+09:00 -->
 
 # /shogun-teire — 知識基盤の定期棚卸し（8観点監査）
 

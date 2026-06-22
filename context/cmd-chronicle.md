@@ -423,3 +423,4 @@
 | cmd_3501 | pf_L3秘奥義GS直列3本目。run_077_kawarimi.py --universe hiougi_ougi_21.yaml。並列配備禁止(LS-A15) | dm-signal | 06-23 | pf_L3秘奥義GS直列3本目としてkawarimiをLin |
 | cmd_3502 | pf_L3秘奥義GS直列4本目。run_077_yotsume.py --universe hiougi_ougi_21.yaml。並列配備禁止(LS-A15) | dm-signal | 06-23 | Linux venvでrun_077_yotsume.pyを |
 | cmd_3503 | pf_L3秘奥義GS直列5本目(最重量)。run_077_kasoku_diff.py --universe hiougi_ougi_21.yaml。並列配備禁止(LS-A15) | dm-signal | 06-23 | pf_L3秘奥義GS直列5本目(kasoku_diff)をL |
+| cmd_3504 | pf_L3秘奥義GS直列最終(6本目)。run_077_kasoku_ratio.py --universe hiougi_ougi_21.yaml。並列配備禁止(LS-A15) | dm-signal | 06-23 | run_077_kasoku_ratio.pyをhiougi |

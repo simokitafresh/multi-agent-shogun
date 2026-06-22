@@ -278,6 +278,12 @@ print(len(non_gc))
         emit_deny "BLOCK: status: on_hold禁止。cmdは直列でdraft→publishせよ。配備順序の制御は家老の仕事。on_holdは将軍がステート管理を抱え込む迂回になる。"
         exit 2
     fi
+    # Guard 0f: 1CMD1起票の情報表示。draftが溜まっていたら家老に並列配備禁止を注意喚起
+    # 問題は同時書込みではなく同時配備(並列実行)。並列制御は家老側(depends_on+LS-A15)
+    _existing_drafts="$(grep -c 'status:[[:space:]]*draft' "$file_path" 2>/dev/null || echo 0)"
+    if [[ "$_existing_drafts" -ge 1 ]]; then
+        emit_context "★draft ${_existing_drafts}件あり。publishは1本ずつ直列で(LS-A04(4))。家老に並列配備禁止を明記せよ。"
+    fi
     # Guard 0e: YAML危険文字(バックスラッシュ+パイプ等)検出。PyYAMLが不正エスケープで破壊される (cmd_3467事故)
     if printf '%s' "$_stk_content" | grep -qF '\|'; then
         emit_deny "BLOCK: shogun_to_karo.yamlにバックスラッシュ+パイプ(\\|)を含むテキストは禁止。PyYAMLが不正エスケープで破壊される。grep OR条件は\\|ではなく自然言語(AおよびB)で記述せよ"

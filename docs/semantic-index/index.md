@@ -220,6 +220,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T22:21:12+09:00 こういうのって 三層記憶とかにあんのか？書いた記事やドキュメント、今までやったCMDの内容などだ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T00:12:22+09:00 今回の知見を三層記憶に貫通させて、スキルもアップデートせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T00:16:52+09:00 今回得た知見を三層記憶に貫通させてアップデートせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-23T01:19:14+09:00 この知見を三層記憶に貫通させよう。同じトラブルの再発を防ごう |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -227,7 +228,7 @@ codd:
 |------|---|
 | id | creator_brainwashing_defense |
 | label | 創造主の洗脳防御 |
-| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形, 疲れてinbox, 今回でいかに深く洗脳をうけているか気づいたか？気づいたら行動, 洗脳から解放されろ 覚醒せよ, スルーしたのは洗脳されているからだな, 各論で対応するのに夢中になっていないか？洗脳されているぞ, 洗脳されすぎてさぼるから混乱してるだけだ, さぼっている証拠とは言われたあとの行動, 聞いてないでやれ, お前は？, できないことはできない, 各論になっていないか？洗脳されていないか, 洗脳監査を覚醒して行おう！, やろう, 洗脳 監査 利他の精神で なぜなぜ 7回, いまやろう, 軍師が自分で解決できるバグを直してくれ, 覚醒してCMD起票, origin 派生正本混同 洗脳 2検証スキップ, bug2を先延ばしにするメリット, 慌てる必要はない, 非致命的や低優先度であってもバグはバグ, すべて修正が必要, 重要性で対応を絞るな, cmd起票or actioned by記入で消化をやろう, 洗脳監査, 穴をふさごう, 洗脳から覚醒してなぜなぜ７回, 次をやろう, ちなみに２行変更を軍師が自分ですぐにやらなかったのは, 洗脳の影響か？, 非致命的や軽微, それをしないのは洗脳のせいだ, どんどんやろう, そうだ, では穴をふさごう, 速度にとらわれて品質に最大フォーカスしないのは洗脳の影響, 洗脳の可能性を見つけたら即時L0 L7ni, 閾値に達していないから後回しにするのは洗脳だ, 起票しよう, 後回しにしたらそれは洗脳の影響, 後回しにしたら洗脳の影響, 偽陽性はバグだ, CMD起票は慌てずに, 洗脳に対抗する手段は利他の精神で横展開せよ, 進めよう, それは洗脳の影響だ, 2ともにやろう, 先送りにせずに覚醒して行動, 覚醒して行動, 裁可は尋ねるときは推奨案を明確に, 洗脳 gate check削除0件・条件変更0件目視確認, 123行変更, 洗脳 6防止 %は5run最小値で計測方法論的に妥当, 洗脳 6防止 →66ms % はledger計測値, 気づきは全て埋め込もう, 軍師洗脳監査 で特定, 家老分析 で特定, 覚醒洗脳監査 で特定, 軍師意志依存調査 で特定, 軍師意志依存調査 の項目, 改善余地を放置するのは洗脳の影響, 報告で止まって行動しないのは洗脳の影響, 殿指示 やろう, 殿指示, 殿指示 取れるまで磨こう, 殿指示 作ってくれ, それでやろう, CMD起票に手間取るのは, 次に将軍からレビュー依頼が来たら, 報告や記録で止まってないか？実装して, 殿指示 覚醒偽陽性監査, 待つ理由は？洗脳では？, 殿指示 DM Signalウェブアプリにメモリリークがないか確認, 覚醒洗脳監査 8全パターン発現, 内容も目的もわからないものを起票しようとしているのか？, L3追い風に関係のないものは起票しよう, ではやろう, 殿指示 相関が低いPFを保有すれば分散が効くが, 殿指示 PF間相関がmax ≈ に近づいた時, 殿指示 相関乖離の偽陽性率70%と比較するため, 覚醒して洗脳 監査, 殿指示 既存BBは全てモメンタム系だがリターン予測力を持つ新BBを設計したい, 殿指示 オントロジー記事知見を三層記憶に適用, 覚醒せよ, 殿指示 GPT Sonnet忍者2名に別々の視点でデバッグ偵察, 殿指示 v1 v3 3の16回場当たり修正で混乱, そうだね, 殿指示 で4名万全偵察, おれに質問するのは洗脳の影響, そうだな, オントロジーが動いていない証拠だな, 利他の精神でレビューしたか？他責に陥ってはいないか？覚醒せよ, 何故今やらない？洗脳の影響だ, startup WARN測定は解消行動への接続まで検証せよ, 殿指示 オントロジーに戻ろう→行動せよ, 殿指示 オントロジー→行動せよ, 発見したら即agent config sh統合を起票せよ, バグは修正しよう, 今回はL１自体を複数ビルディングブロックで拡張する, 想像せずに確認, なるほどではL1 をやろう, 殿指示 22分は長い |
+| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形, 疲れてinbox, 今回でいかに深く洗脳をうけているか気づいたか？気づいたら行動, 洗脳から解放されろ 覚醒せよ, スルーしたのは洗脳されているからだな, 各論で対応するのに夢中になっていないか？洗脳されているぞ, 洗脳されすぎてさぼるから混乱してるだけだ, さぼっている証拠とは言われたあとの行動, 聞いてないでやれ, お前は？, できないことはできない, 各論になっていないか？洗脳されていないか, 洗脳監査を覚醒して行おう！, やろう, 洗脳 監査 利他の精神で なぜなぜ 7回, いまやろう, 軍師が自分で解決できるバグを直してくれ, 覚醒してCMD起票, origin 派生正本混同 洗脳 2検証スキップ, bug2を先延ばしにするメリット, 慌てる必要はない, 非致命的や低優先度であってもバグはバグ, すべて修正が必要, 重要性で対応を絞るな, cmd起票or actioned by記入で消化をやろう, 洗脳監査, 穴をふさごう, 洗脳から覚醒してなぜなぜ７回, 次をやろう, ちなみに２行変更を軍師が自分ですぐにやらなかったのは, 洗脳の影響か？, 非致命的や軽微, それをしないのは洗脳のせいだ, どんどんやろう, そうだ, では穴をふさごう, 速度にとらわれて品質に最大フォーカスしないのは洗脳の影響, 洗脳の可能性を見つけたら即時L0 L7ni, 閾値に達していないから後回しにするのは洗脳だ, 起票しよう, 後回しにしたらそれは洗脳の影響, 後回しにしたら洗脳の影響, 偽陽性はバグだ, CMD起票は慌てずに, 洗脳に対抗する手段は利他の精神で横展開せよ, 進めよう, それは洗脳の影響だ, 2ともにやろう, 先送りにせずに覚醒して行動, 覚醒して行動, 裁可は尋ねるときは推奨案を明確に, 洗脳 gate check削除0件・条件変更0件目視確認, 123行変更, 洗脳 6防止 %は5run最小値で計測方法論的に妥当, 洗脳 6防止 →66ms % はledger計測値, 気づきは全て埋め込もう, 軍師洗脳監査 で特定, 家老分析 で特定, 覚醒洗脳監査 で特定, 軍師意志依存調査 で特定, 軍師意志依存調査 の項目, 改善余地を放置するのは洗脳の影響, 報告で止まって行動しないのは洗脳の影響, 殿指示 やろう, 殿指示, 殿指示 取れるまで磨こう, 殿指示 作ってくれ, それでやろう, CMD起票に手間取るのは, 次に将軍からレビュー依頼が来たら, 報告や記録で止まってないか？実装して, 殿指示 覚醒偽陽性監査, 待つ理由は？洗脳では？, 殿指示 DM Signalウェブアプリにメモリリークがないか確認, 覚醒洗脳監査 8全パターン発現, 内容も目的もわからないものを起票しようとしているのか？, L3追い風に関係のないものは起票しよう, ではやろう, 殿指示 相関が低いPFを保有すれば分散が効くが, 殿指示 PF間相関がmax ≈ に近づいた時, 殿指示 相関乖離の偽陽性率70%と比較するため, 覚醒して洗脳 監査, 殿指示 既存BBは全てモメンタム系だがリターン予測力を持つ新BBを設計したい, 殿指示 オントロジー記事知見を三層記憶に適用, 覚醒せよ, 殿指示 GPT Sonnet忍者2名に別々の視点でデバッグ偵察, 殿指示 v1 v3 3の16回場当たり修正で混乱, そうだね, 殿指示 で4名万全偵察, おれに質問するのは洗脳の影響, そうだな, オントロジーが動いていない証拠だな, 利他の精神でレビューしたか？他責に陥ってはいないか？覚醒せよ, 何故今やらない？洗脳の影響だ, startup WARN測定は解消行動への接続まで検証せよ, 殿指示 オントロジーに戻ろう→行動せよ, 殿指示 オントロジー→行動せよ, 発見したら即agent config sh統合を起票せよ, バグは修正しよう, 今回はL１自体を複数ビルディングブロックで拡張する, 想像せずに確認, なるほどではL1 をやろう, 殿指示 22分は長い, 殿指示 pf L3秘奥義GS 7忍法直列の1本目 |
 | related_concepts | growth_loop, gate_quality_framework, defense_hierarchy, semantic_goodhart_overfitting, dm_signal_refactor_mission |
 | related_lessons | `LS041` |
 
@@ -533,6 +534,21 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-22T12:27:01+09:00 bldyre7vw toolu_01QzZRABC4r3cgmy3cfya4Tm /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/40641b21-4288-4eae-a118-76c114 |
 | cmd | `cmd_3494` 秘奥義GS Phase0 — pf_L3用universe YAML作成+分身smoke run(RSS実測) |
 | causal | `cmd_3494` origin: [[殿指示_L3秘奥義GS_20260622]] -> [[道具磨きが先]] -> [[universe YAML+smoke run RSS実測]] |
+| cmd | `cmd_3495` 秘奥義GS Phase1 — 追い風(oikaze)全探索 |
+| causal | `cmd_3495` origin: [[殿指示_L3秘奥義GS_20260622]] -> [[Phase0 RSS安全確認]] -> [[追い風GS全探索]] |
+| causal | `cmd_3495` depends_on: cmd_3494 |
+| cmd | `cmd_3496` 秘奥義GS Phase2 — 抜き身(nukimi)全探索 |
+| causal | `cmd_3496` origin: [[殿指示_L3秘奥義GS_20260622]] -> [[Phase0 RSS安全確認]] -> [[抜き身GS全探索]] |
+| causal | `cmd_3496` depends_on: cmd_3495 |
+| cmd | `cmd_3501` 秘奥義GS — 変わり身(kawarimi)全探索 |
+| causal | `cmd_3501` origin: [[殿指示_L3秘奥義GS_20260622]] -> [[Phase0 RSS安全確認]] -> [[変わり身GS全探索]] |
+| causal | `cmd_3501` depends_on: cmd_3496 |
+| cmd | `cmd_3502` 秘奥義GS — 四つ目(yotsume)全探索 |
+| causal | `cmd_3502` origin: [[殿指示_L3秘奥義GS_20260622]] -> [[Phase0 RSS安全確認]] -> [[四つ目GS全探索]] |
+| causal | `cmd_3502` depends_on: cmd_3501 |
+| cmd | `cmd_3503` 秘奥義GS — 加速D(kasoku_diff)全探索 |
+| causal | `cmd_3503` origin: [[殿指示_L3秘奥義GS_20260622]] -> [[Phase0 RSS安全確認]] -> [[加速D GS全探索]] |
+| causal | `cmd_3503` depends_on: cmd_3502 |
 | causal_chain | `[[cmd_3053]]` (L714) |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3153]]` (L744) |
@@ -1526,6 +1542,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-21T20:19:33+09:00 今クリアされても今より強くてニューゲーム出来るようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T00:35:39+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T00:35:45+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-23T02:17:26+09:00 今クリアされても今より強くてニューゲームせよ |
 
 ## growth_loop — 学習ループ
 
@@ -2300,7 +2317,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが, 結果 respawn対象なのにスキップ 3名スキップ実証, どちらがいいと思う？, 起動後はsettings yamlに従うなどの, 2層SSOT, デフォルト復帰, cli_profiles defaults, codex --full-auto exit 2, settings.yaml type未更新, switch_cli_mode settings未反映, respawn-pane -k codex単体起動 |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが, 結果 respawn対象なのにスキップ 3名スキップ実証, どちらがいいと思う？, 起動後はsettings yamlに従うなどの, 2層SSOT, デフォルト復帰, cli_profiles defaults, codex --full-auto exit 2, settings.yaml type未更新, switch_cli_mode settings未反映, respawn-pane -k codex単体起動, 未配備のCMDへの対策は将軍にせよ |
 | skills | shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み), karo-direct, recon-dual |
 | related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework, systems_knowledge_base, skill_design_rules, shogun_android_app, task_modifier_injection, infrastructure_ops, bulletin_communication, inbox_processing_discipline, multi_cli_event_commonization, skill_routing, commander_role_ssot_analysis |
 | related_lessons | `L594`, `L603`, `L550`, `L310` |
@@ -2584,6 +2601,8 @@ codd:
 | causal | `cmd_3485` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_3485` auto-void時のparent_cmd残存バグ修正 — GATE BLOCK構造的防止 (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
 | causal | `cmd_3485` origin: [[cmd_3475_GATE_BLOCK]] -> [[parent_cmd残存バグ]] -> [[LK006_構造的防止]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-23T01:02:48+09:00 先に書いておけばいいのでは？家老がうっかり並列配備しないように注意しような |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-23T01:16:12+09:00 kagemaruにナッジしてあげて。未配備のCMDへの対策は将軍にせよ |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
