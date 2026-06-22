@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-22 -->
+<!-- last_updated: 2026-06-23 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,18 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3009 | post-shogun-inbox-check.shがlord_conversation.jsonlのinboundを全件表示し、殿が家老paneに入力した内容を将軍が自分宛てと誤認するバグを修正する | infra | 05-23 | post-shogun-inbox-check.shの殿発言 |
-| cmd_3010 | 記憶3層ハーネスPhase 2。cmd_3005棚卸し結果から品質保証済みの3カテゴリ132件を記憶DBに投入し、検索精度を向上させる | infra | 05-23 | — |
-| cmd_3011 | 記憶DBにcontext/教訓/チェックリスト等のドキュメントファイルを投入する手段がない。build_dbに7番目のソースとしてドキュメントファイル投入を追加する | infra | 05-23 | memory_db_import.pyの--doc-dirs |
-| cmd_3012 | cmd_3011で追加した--doc-dirsを使い、品質保証済み153件を記憶DBに投入する。殿裁定(2026-05-23): 品質未保証データ投入禁止、132件+記事21件に限定 | infra | 05-23 | 品質保証済み153件をmemory DBへdocument投 |
-| cmd_3014 | Phase 2追加投入。品質保証済みだが未投入の164件を記憶DBに投入する。event_type=documentのまま、source_fileパスが自然な分類子となる(殿裁定: 独自ラベル分類は不要) | infra | 05-23 | cmd_3014: 8ディレクトリ253文書をevent_t |
-| cmd_3013 | 投資知識とシステム知識とcontext文書を同一event_type=documentに混在させると検索結果が混乱する(殿指摘2026-05-23)。--event-typeでevent_typeを指定可能にし、投入時に分離する | infra | 05-23 | — |
-| cmd_3015 | 投資知識辞書108件とシステム知識辞書14件が記憶DBに投入済みだが、セマンティクスインデックスとObsidianリンクに未接続。3層全てに通す(殿指摘2026-05-23) | infra | 05-23 | 知識辞書2概念をsemantic-indexへ追加し、sys |
-| cmd_3016 | systems-knowledge-base/systems/の7件(Karpathy除く)は最終確認から35-43日以上経過。GitHub repoの最新バージョン+主要変更を調査し知識辞書を更新する | infra | 05-23 | systems知識辞書7件を2026-05-23時点のGit |
-| cmd_3017 | cmd_save.shのshow_lord_conversation_matches()がdirection=inboundのみでフィルタし、target未確認のため殿が家老/軍師宛てに発した発言が将軍のcmd設計時に関連発言として表示される。cmd_3008/3009(post-shogun-inbox-check.sh)で修正した同構造バグをcmd_save.shにも適用する | infra | 05-23 | cmd_save.shの殿発言検索にtargetフィルタを追 |
-| cmd_3018 | ci_status_check.sh L38の--limit 1が最新run=in_progressの場合UNKNOWNを返し、dashboard_auto_section.shがcheck failedと誤表示する。--limit 2にして2件目(completed)のconclusionを返すことで、CI実行中でも前回結果を正しく表示する。LK001(cmd_2792)で根因特定済み | infra | 05-23 | ci_status_check.shが最新2件から最新com |
-| cmd_3020 | deploy_task.sh L4283にtarget_filesマッチングがあるがtarget_files未設定の教訓はタグのみでマッチし全cmdに注入される。有用率0%教訓4件(L510等)の共通根因=tag=universalが広すぎて無関係cmdに注入。target_files未設定教訓に対しても、教訓のtags+cmdのtarget_pathの関連性を考慮したフィルタを追加する | infra | 05-23 | target_files未設定のuniversal教訓にta |
-| cmd_3021 | NewStandard PF問合せで5回試行錯誤した。根因: db-checkスキルにtier_visibility_settingsのスキーマ(tier_id+portfolio_settings JSON構造)が未記載、portfolio_metricsのmetrics_json実キー(total_return等)が未記載、接続時のcwd+PYTHONIOENCODING注意が未記載。追記して次回から一発で到達可能にする | infra | 05-23 | db-checkスキルにNewStandard/Tier可視 |
 | cmd_3022 | verdict-check SKILL.md改良5回効果なし(binary_checks_fail)。忍者がbc:noのまま報告完了通知を送るとcmd_complete_gateでBLOCKされるが、inbox_write.sh report_received分岐のPhase 2とPhase 3の間にbc:no検出BLOCKを追加し、忍者の報告完了をその場で差戻す。意志依存を排除する構造予防 | infra | 05-24 | inbox_write report_receivedでve |
 | cmd_3024 | 全ロール(将軍・家老・軍師・忍者)で操作時にセマンティクスインデックスからスキルを自動推薦する。殿の入力テキストを検索キーにsemantic_searchを呼び、関連スキルをLevel 5(recommend)で表示する。殿裁定: 完全自動+全ロール+原理1つ+BLOCK不可+各論パッチ禁止 | infra | 05-24 | prompt_state_inject.shにsemanti |
 | cmd_3025 | q8_縮小表現(quality_gate_q8_scope_expression)のFP率66%(2/3)。scope_mode=focusedのcmdはスコープ限定が正当なので除外すべき。L2536の_Q8_SCOPE_EXEMPTにscope_mode判定を追加する | infra | 05-24 | cmd_save.sh q8縮小表現WARNでscope_m |
@@ -429,3 +417,5 @@
 | cmd_3488 | 殿指摘(2026-06-22): semantic_search.shで「L1パイプライン BB」がNO_MATCH。根因: semantic_index.py L854-861のマッチングが部分文字列のみで、クエリを空白分割した個別単語がalias内に全出現するかの判定がない。aliasに合わせてクエリを書き直すのは方向性が間違い(殿指摘「バグに合わせるな」) | infra | 06-22 | semantic_searchのfirst-layer al |
 | cmd_3490 | 殿構想(2026-06-22): pf_L1のselection blockを複数BB直列に拡張(pf_L1+)。run_077_oikaze.pyをコピー改変しGSループ除去、固定パラメータでBB1→BB2直列パイプライン実行→本番holding_signalと月次パリティ突合するスクリプトを作成。1パターン(GSシン追い風-激攻+pf_L2追い風チャンピオン)でパリティ0不一致を確認 | dm-signal | 06-22 | run_l1plus_backtest.pyを追加し、BB1 |
 | cmd_3493 | 殿指示(2026-06-22): 22分は長い。道具を磨け。(1)DBロードを441パターン共通で1回に集約 (2)パリティ基準にticker×weight一致を追加 (3)441パターン一括実行モードでBB1×BB2全組合せを1実行→結果を1テーブル(441行×α6指標)に集約。見込み5-8分 | dm-signal | 06-22 | run_l1plus_backtest.pyに--batch |
+| cmd_3494 | 殿指示(2026-06-22): pf_L2奥義21体(新四つ目除く)を構成PFとして7忍法GSを実行しpf_L3(秘奥義)を生成。Phase0=L3用universe YAML作成+分身smoke runでpeak RSS実測。L2 GS実績: 構成21体peak RSS 10.1GB(cmd_2402)。WSL2 available 20GB。構成PF数同一だが奥義=複合PFのためRSS増加の可能性→実測必須(軍師指摘) | dm-signal | 06-23 | L3用hiougi_ougi_21.yamlを作成し、run |
+| cmd_3495 | 殿指示(2026-06-22): pf_L3秘奥義GS 7忍法直列の1本目。Phase0(cmd_3494)でRSS安全確認済み(peak 104.6MB)。pf_L2奥義21体を構成PFとして追い風(MomentumFilter)の全パラメータ空間をGSで探索。run_077_oikaze.py --universe hiougi_ougi_21.yaml | dm-signal | 06-23 | run_077_oikaze.pyをhiougi_ougi_ |

@@ -1,40 +1,46 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-06-22 auto-generated -->
+<!-- last_updated: 2026-06-23 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-22T23:55:53+09:00 -->
+<!-- generated_at: 2026-06-23T01:00:57+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-06-22T23:55:52+09:00 | terminal | response | 全情報揃った。整理する。 [MEM: memory_db ts=2026-04-21 "1忍法1CMD厳守(LS058): 7本束ね禁止。RSS 8.5GBでOOM実証済み。並列配備禁止"] [MEM: memory_db ts=2026…
-- 2026-06-22T23:52:27+09:00 | terminal | inbound | L3をやろう。L2とおなじやり方をする。新四つ目を除くL２の21体を構成PFにして7忍法でGSをやろう。何回もOOMをしているから注意点などを良く把握せよ。ネーミングルールはL2の奥義→秘奥義にする。並列するとOOMするぞ。問題点と注意点…
-- 2026-06-22T22:55:30+09:00 | terminal | response | 殿の仮説「L1 < L1+ < L2」を一次データで検証する。 [MEM: memory_db ts=2026-06-14 "cmd_3377 pf_L0→pf_L1→pf_L2のBB重ねがけ効果をα6指標で定量分析"] **L1 vs …
-- 2026-06-22T22:51:45+09:00 | terminal | inbound | L1+とL2を比較してくれ
-- 2026-06-22T16:27:19+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-22 16:21:10|CI緑: run 27935835672
-- 2026-06-22T16:12:04+09:00 | terminal | response | GATE CLEAR。push成功。/cmd-completeで完了処理。
-- 2026-06-22T16:11:56+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-22 16:10:32|cmd_3493
-- 2026-06-22T16:11:39+09:00 | terminal | response | cmd_3493 GATE CLEAR確認済み。LGTM→CLEAR整合。idle待機中。 [meta] stop_reason=end_turn
-- 2026-06-22T16:11:18+09:00 | terminal | response | cmd_3493 reportレビュー完了。verdict: **LGTM**。家老に送信済み。idle待機中。 [meta] stop_reason=end_turn
-- 2026-06-22T16:11:11+09:00 | terminal | response | cmd_3493 GATE CLEAR。道具磨き完了。
+- 2026-06-23T01:00:57+09:00 | terminal | response | cmd_3496 draft review完了。verdict: APPROVE(HIGH)。家老送信済み+review_log追記済み。次のinbox到着を待機。 [meta] stop_reason=end_turn
+- 2026-06-23T01:00:52+09:00 | terminal | response | 軍師APPROVE確認。kagemaruはCTX:27%でin_progress。GS実行中。待機。 [meta] stop_reason=end_turn
+- 2026-06-23T01:00:09+09:00 | terminal | response | cmd_3495完了処理全8ステップ完了。 - Step 1: lesson review → draft=0 - Step 2: WA → clean(済) - Step 3: GATE CLEAR(済) - Step 3.5: con…
+- 2026-06-23T01:00:07+09:00 | ntfy | outbound | 【家老】cmd_3495 完了
+- 2026-06-23T00:59:23+09:00 | terminal | response | L5(教訓LS070)+L7(記憶DB)完了。L6(学習速度)はcmd_save.shのother_draft_existsがBLOCK実績を記録済みで再発率計測が自動で回る。 殿、L5-L7貫通完了。残4忍法(変わり身・四つ目・加速D・…
+- 2026-06-23T00:58:39+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝53
+- 2026-06-23T00:58:32+09:00 | terminal | response | cmd_3495 report review完了。verdict: LGTM。家老送信済み+review_log追記済み。次のinbox到着を待機。
+- 2026-06-23T00:58:32+09:00 | terminal | response | CI rerun発行。flakyテストであれば再実行で通過するはず。 状況まとめ: - **cmd_3495**: hayate完了。WA clean。GATE処理待ち(report_received hook自動) - **cmd_34…
+- 2026-06-23T00:57:42+09:00 | ntfy | outbound | 【家老】cmd_3496 初回配備開始 (title=秘奥義GS Phase2 — 抜き身(nukimi)全探索, ninja=kagemaru) 秘奥義GS Phase2
+- 2026-06-23T00:57:06+09:00 | terminal | inbound | 書いてしまうことが時間の浪費では？後からブロックしても時すでに遅い
 
 ## 未解決確認事項
-- 全情報揃った。整理する。 [MEM: memory_db ts=2026-04-21 "1忍法1CMD厳守(LS058): 7本束ね禁止。RSS 8.5GBでOOM実証済み。並列配備禁止"] [MEM: memory_db ts=2026-04-29 "GSL2 kasoku_…
-- cmd_3493 GATE CLEAR確認済み。LGTM→CLEAR整合。idle待機中。 [meta] stop_reason=end_turn
-- 2点確認OK: binary_checks全yes(4/4)、commit_hash存在。
-- 軍師APPROVE確認。hanzo作業継続中。完了報告を待機する。
-- dashboard_update.sh正常動作確認。UTF-8エラー修正完了。 修正内容まとめ: 1. **dashboard.md復元**: 壊れたUTF-8バイト列(切断された「成」)と重複KARO_SECTION_STARTを除去+AUTO_ENDマーカー復元 2. **…
-- 成果物確認完了。殿に報告。 **cmd_3490 pf_L1+道具 — GATE CLEAR結果:** | 項目 | 結果 | |------|------| | スクリプト | `run_l1plus_backtest.py` (445行) | | holding_signa…
-- 2点確認OK: binary_checks全yes(4/4)、commit_hash存在。パリティ: holding_signal 166/166、monthly_return 167/167 不一致0件。 report_received処理3アクション:
-- 軍師APPROVE確認。kagemaru作業継続中。完了報告を待機する。
+- 軍師APPROVE確認。kagemaruはCTX:27%でin_progress。GS実行中。待機。 [meta] stop_reason=end_turn
+- CI rerun発行。flakyテストであれば再実行で通過するはず。 状況まとめ: - **cmd_3495**: hayate完了。WA clean。GATE処理待ち(report_received hook自動) - **cmd_3496**: kagemaruに配備完了。…
+- startup gateはバックグラウンド実行(`_PID_LESSON`)の結果を`$_TMP_D/lesson`から読む。SessionContextの起動時実行では計測窓の微差で42.9%(3/7)だった可能性。現在再実行すると50.0%(3/6)。 これは一時的な計測窓…
+- 復帰+配備完了。状況まとめ: **CI RED対応(D0修正)**: - 根因: `dashboard_update.sh`がTZ=Asia/Tokyoで日付生成、テストがUTC(デフォルト)で検証→UTC 15:00-24:00のCI実行で日付不一致 - 修正: テストに`T…
+- 強くてニューゲーム確認。次の軍師が/clear後に得るもの: | 永続化済み | commit | 効果 | |------------|--------|------| | SG-PRE25 readonly_ref除外 | e86dbd7a7 | タスクYAMLのreado…
+- 殿、Phase0 smoke run結果: | 項目 | L2 GS実績(cmd_2402) | **L3 smoke(cmd_3494)** | |------|---:|---:| | Peak RSS | 10.1 GB | **104.6 MB** | | 実行時間(1…
+- cmd_3494 GATE CLEAR確認済み。idle待機中。 [meta] stop_reason=end_turn
+- 全SKILL.md PASS。バグなし。 殿、本セッションのD0修正まとめ: | # | バグ | 修正ファイル | 検証 | |---|------|------------|------| | 1 | semantic_search部分語マッチ不在 | semantic_i…
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
 
 ## 参照cmd
+- cmd_2402
+- cmd_2425
 - cmd_3377
 - cmd_3476
 - cmd_3481
 - cmd_3488
 - cmd_3490
 - cmd_3493
+- cmd_3494
+- cmd_3495
+- cmd_3496
+- cmd_3497
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
