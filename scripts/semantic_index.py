@@ -56,6 +56,11 @@ def expansion_related_concept_ids(concept: dict) -> list[str]:
     ]
 
 
+def query_words_all_in_term(query_fold: str, term_fold: str) -> bool:
+    query_words = [word for word in query_fold.split() if word]
+    return len(query_words) >= 2 and all(word in term_fold for word in query_words)
+
+
 def relation_type_for(seed: dict, related_id: str) -> str:
     for item in seed.get("related_concepts", []):
         if item.get("id") == related_id:
@@ -857,6 +862,7 @@ def main() -> None:
                 if (
                     term.casefold() in query_fold
                     or (query_fold in term.casefold() and len(query_fold) >= len(term.casefold()) * min_ratio)
+                    or query_words_all_in_term(query_fold, term.casefold())
                 )
             ]
             if matched_terms:

@@ -97,7 +97,7 @@ setup() {
 |------|---|
 | id | gs_ninpo_research |
 | label | GS忍法研究 |
-| aliases | 忍法 |
+| aliases | 忍法, L1パイプラインはBB1つ+EWで入力はL0四神PF累積リターン |
 | related_concepts | growth_loop |
 
 | 種別 | パス/参照 |
@@ -241,6 +241,18 @@ PY
     first_heading="$(grep '^## ' <<< "$output" | head -n 1)"
     [ "$first_heading" = "## gs_ninpo_research — GS忍法研究" ]
     [[ "$output" == *"## alm_research — ALM研究"* ]]
+    [[ "$output" != *"should-not-run"* ]]
+}
+
+@test "first layer matches multi-word query when every query word appears in one alias" {
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "L1パイプライン BB"
+
+    [ "$status" -eq 0 ]
+    first_heading="$(grep '^## ' <<< "$output" | head -n 1)"
+    [ "$first_heading" = "## gs_ninpo_research — GS忍法研究" ]
+    [[ "$output" == *"matched: L1パイプラインはBB1つ+EWで入力はL0四神PF累積リターン"* ]]
     [[ "$output" != *"should-not-run"* ]]
 }
 
