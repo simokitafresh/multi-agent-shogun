@@ -2317,3 +2317,161 @@
   brainwash_check: "git show現物確認(洗脳#2防止)。10/10テスト数値。infra変更のためadversarial実施"
   step3_5_verified: true
   timestamp: "2026-06-21T20:08:00+09:00"
+- cmd_id: cmd_karo_ci_fix_useful_rate_test_20260621
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: kotaro
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "LGTM。CI RED修正。test_gate_shogun_startup.bats L1384期待文字列を新ALERTメッセージに更新。1行変更。テスト1/1 PASS"
+  observations:
+    - "事実1: git show 91fdca05bで変更内容独立確認。1行のみ(when/how品質向上→低useful教訓の改善/淘汰を実行せよ)"
+    - "事実2: precheck ERRORS=0。commit実在+files_modified整合"
+    - "事実3: kotaro WA率16.7%だが本件はCI修正定型で品質リスクなし。前回BLOCK(bc空欄)は今回解消済み"
+  causal_chain: "5184d6454でgate_shogun_startup.sh L3147 ALERTメッセージ変更→テスト期待文字列未更新→CI RED→期待文字列追従修正"
+  brainwash_check: "GATE CLEAR既知。確証バイアスリスクあり→git show 91fdca05bで1行diff独立確認。1/1テストPASS。#2回避"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "テスト期待文字列1行更新のみ。本番コード変更なし"
+  origin: "[[gate_shogun_startup.sh_L3147_メッセージ変更]] -> [[テスト期待文字列不一致]] -> [[CI_RED修正完了]]"
+  step3_5_verified: true
+  sg7_bundle:
+    gate_prediction: CLEAR
+    blast_radius: low
+    lesson_candidate: none
+  timestamp: "2026-06-21T21:05:00+09:00"
+- cmd_id: cmd_3488
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "APPROVE。semantic_search部分語マッチ追加。L854-861にall-words-in-alias条件をOR追加。3AC構成妥当。殿指摘(バグに合わせるな)の根本修正"
+  observations:
+    - "事実1: semantic_index.py L854-861現物確認。casefold部分文字列マッチのみ。all-words-in-alias未実装(rg 0件確認済み)"
+    - "事実2: 関連テスト2本(test_semantic_index_update.bats, test_semantic_search.bats)が既存マッチのガード"
+    - "事実3: OR条件追加なので既存マッチは維持。FP増加リスクは低(aliasは技術用語)"
+  ambiguity_points: none
+  causal_chain: "殿クエリ「L1パイプライン BB」NO_MATCH→部分文字列のみで単語分割マッチなし→all-words-in-alias追加→三層記憶到達性向上(正の複利)"
+  brainwash_check: "L854-861現物確認+rg 0件実測で#2回避。3AC/30min/1忍者で分割不要。テスト2本で回帰検知"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "マッチングアルゴリズムOR条件追加のみ。既存マッチ維持。セキュリティ影響なし"
+  origin: "[[殿指摘_バグに合わせるな_20260622]] -> [[semantic_index部分文字列のみ]] -> [[all-words-in-alias追加cmd_3488]]"
+  timestamp: "2026-06-22T12:57:00+09:00"
+- cmd_id: cmd_3488
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hayate
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "LGTM。semantic_search部分語マッチ追加。query_words_all_in_term関数追加(2語以上で全単語in term)。OR条件で既存マッチ維持。81/81テストPASS+新テスト1件追加"
+  observations:
+    - "事実1: git show e90573bb2で実装確認。query_words_all_in_term関数: len(query_words)>=2 and all(word in term_fold)。過剰マッチ防止+既存維持"
+    - "事実2: precheck ERRORS=0。SG-PRE25 command×files_modified照合OK。commit実在"
+    - "事実3: テスト81/81 PASS(semantic関連5ファイル)。新テスト「L1パイプライン BB→gs_ninpo_research」追加。回帰ガード確立"
+  causal_chain: "殿クエリNO_MATCH→部分文字列マッチのみ→all-words-in-alias追加→三層記憶到達性向上"
+  brainwash_check: "git show e90573bb2で6行diff独立確認。81/81テスト数値。#2回避"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "Pythonマッチングロジック追加のみ。外部入力はcasefold済みクエリ文字列。注入リスクなし"
+  origin: "[[殿指摘_バグに合わせるな_20260622]] -> [[semantic_index部分文字列のみ]] -> [[all-words-in-alias追加完了]]"
+  step3_5_verified: true
+  sg7_bundle:
+    gate_prediction: CLEAR
+    blast_radius: low
+    lesson_candidate: none
+  timestamp: "2026-06-22T13:00:00+09:00"
+- cmd_id: cmd_3490
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "APPROVE。pf_L1+ BB直列BTスクリプト+1パターンパリティ。run_077コピー改変。3AC構成妥当。殿構想の研究基盤道具"
+  observations:
+    - "事実1: assumptions 2件verified(gs_data_loader DB取得+PipelineContext黒板方式BB直列)。q11 rg 0件で未実装確認"
+    - "事実2: 1パターンのみ実行(GSシン追い風-激攻)でパリティ確認。441パターン全量は別cmd"
+    - "事実3: 新規スクリプト作成のため既存コード変更なし。副作用リスクゼロ"
+  ambiguity_points: none
+  causal_chain: "殿構想pf_L1+→道具磨きが先(殿原則)→BB直列BT道具+パリティ確認→441パターン研究の信頼性基盤(正の複利)"
+  brainwash_check: "assumptions 2件verified+q11 rg 0件実測。1パターンで60min妥当(分割不要)。#2回避"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "新規スクリプト作成。既存コード変更なし"
+  origin: "[[殿構想_L1plus_20260622]] -> [[道具磨きが先]] -> [[BB直列BT道具cmd_3490]]"
+  timestamp: "2026-06-22T14:33:00+09:00"
+- cmd_id: cmd_3490
+  review_type: report
+  verdict: FAIL
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  gate_prediction: BLOCK
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "FAIL。SG-PRE25 ERROR: command欄run_077_oikaze.pyがfiles_modifiedに不在→GATE BLOCK予測。報告にverified_existing_dependency追記が必要"
+  observations:
+    - "事実1: SG-PRE25 ERROR=run_077_oikaze.py不在。LG037=既存依存(コピー元)だがgateは区別不能→BLOCK"
+    - "事実2: 成果物品質は高い。holding_signal 166/166・monthly_return 167/167不一致0"
+    - "事実3: files_modifiedにrun_l1plus_backtest.py+docs/research計測記録あり。run_077はコピー元参照のみ"
+  fail_reasons:
+    - "command欄run_077_oikaze.pyがfiles_modifiedに不在→cmd_complete_gate BLOCKリスク"
+  causal_chain: "command欄にコピー元run_077記載→files_modified不在→SG-PRE25 ERROR→GATE BLOCK予測"
+  brainwash_check: "成果物品質高いがGATE BLOCK予測でFAIL(LG006)。SG-PRE25 ERROR 1件。#4回避"
+  origin: "[[cmd_3490]] -> [[command欄run_077参照]] -> [[SG-PRE25_files_modified不在]]"
+  step3_5_verified: true
+  timestamp: "2026-06-22T14:38:00+09:00"
+- cmd_id: cmd_3493
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial]
+  findings_summary: "APPROVE。pf_L1+道具磨き。DBロード1回化+weight比較+441一括。cmd_3490 CLEAR依存OK。殿指示(22分→5-8分)への直接対応"
+  observations:
+    - "事実1: q11 batch-all/weight_match 0件確認。未実装。depends_on cmd_3490 CLEAR済み"
+    - "事実2: AC3件/60分。441パターン=21×21。cmd_3490で1.445MBなのでメモリ問題なし"
+    - "事実3: q5にresearch道具明記(gate_script_q5偽陽性回避)。α6指標定義dm-signal.yaml確認済み"
+  ambiguity_points: none
+  causal_chain: "殿指摘22分は長い→DBロード毎回→1回集約+weight比較+441一括→5-8分(正の複利)"
+  brainwash_check: "q11 rg 0件+cmd_3490 CLEAR確認で#2回避。3AC/60min/1忍者で分割不要"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "research道具改修。本番コード変更なし"
+  origin: "[[殿指示_道具磨き_20260622]] -> [[22分は長い]] -> [[DBロード1回化+weight比較+441一括cmd_3493]]"
+  timestamp: "2026-06-22T15:52:00+09:00"
+- cmd_id: cmd_3493
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+  report_ninja: hanzo
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "LGTM。pf_L1+道具磨き完了。441パターン343秒(5分43秒)。DBロード1回。weight_match追加。単発パリティ維持(不一致0)"
+  observations:
+    - "事実1: 441パターン=21×21。75,411月次行。343秒/192MB RSS。見込み5-8分内"
+    - "事実2: 単発パリティ: holding_signal 0不一致・monthly_return 0不一致。max_abs_diff=5e-11"
+    - "事実3: SG-PRE25 PASS(readonly_ref修正e86dbd7a7が機能)。precheck ERRORS=0"
+  causal_chain: "殿指摘22分→DBロード毎回→1回集約+441一括→343秒(83.6%短縮)"
+  brainwash_check: "precheck ERRORS=0。パリティ0不一致。441行×α6指標出力。#2回避"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "research道具改修。本番コード変更なし"
+  origin: "[[殿指示_22分は長い]] -> [[道具磨き]] -> [[441一括343秒cmd_3493完了]]"
+  step3_5_verified: true
+  sg7_bundle:
+    gate_prediction: CLEAR
+    blast_radius: low
+    lesson_candidate: none
+  timestamp: "2026-06-22T16:12:00+09:00"
