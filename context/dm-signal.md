@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-23 cmd_3515_final_summary -->
-<!-- last_synced_lesson: L768 -->
+<!-- last_updated: 2026-06-23 cmd_3518 -->
+<!-- last_synced_lesson: L769 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -257,6 +257,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L766: WF trial速度改善は選抜cacheのwarm/coldを分けて3回測る（cmd_3514）
 - L767: cmd_3514成果物は忍法名をパスに含めて混線を防ぐ（cmd_3514）
 - L768: L1 kasoku_diff monthly-row SQLiteは/mnt/c p9で停滞するためローカルcopyまたは事前matrix cacheを使う（cmd_3515）
+- L769: α6キー名はAC文言と実装SSOTを事前照合せよ（cmd_3518）
 
 ## 因果リンク
 

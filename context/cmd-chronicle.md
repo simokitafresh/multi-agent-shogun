@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-23 -->
+<!-- last_updated: 2026-06-23 cmd_3518 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -433,3 +433,4 @@
 | cmd_3514 | 殿指示(2026-06-23): cmd_3513(分身のみ)で/goal速度改善56%短縮を実証。次は7忍法×5スクリプト=35タスクに拡大。各忍法はBBが異なるため最適化ポイントが異なる。Codex /goalで各忍法×各スクリプトに-5%×3ターンの複利速度改善を実施。6忍者並列配備 | dm-signal | 06-23 | yotsume 5 trial再検証完了。trial_reg |
 | cmd_3515 | 殿指示(2026-06-23 15:05,15:14): 12+21+21+21体を4視点+レジームで分析。シン四神(12体)のtrial対応+SPYベンチマーク比較も含む。cmd_3512-3514で整備した5本のtrial scripts(IS/OOS/Expanding/WF/Regime)を全レイヤーに拡張し75体+SPY全量検証 | dm-signal | 06-23 | kasoku_ratio残4試練(oos/expanding |
 | cmd_3516 | 殿指示(2026-06-23 18:23): 任意のPFだけを実行するモードの追加。cmd_3515で全GS空間探索が走り75体チャンピオン検証に数十分かかった根因はrobustness_common.pyがGS DBの全パターンをロードする設計。チャンピオン名(pattern_id)を指定して該当パターンだけ抽出しtrial実行するオプションを追加し、75体検証を数分で完了可能にする | dm-signal | 06-23 | robustness_common.pyに--pattern |
+| cmd_3517 | 殿指示(2026-06-23 19:21/19:56): α6は6項目のはずだが3項目しか出力されていない+TQQQもベンチマークに追加。プランドキュメント: docs/research/plan_alpha6_robustness_verification.md Step 1。robustness_common.pyのmetrics辞書にMRU・Calmar・Avg UWPを追加し、TQQQベンチマークに対応し、smoke確認で6項目出力+既存3項目回帰一致を検証する | dm-signal | 06-23 | robustness trial出力をα6全6項目へ拡張し、 |

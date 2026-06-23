@@ -1,5 +1,5 @@
 # GS高速化×完全一致 — 知見集約ドキュメント（索引）
-<!-- last_updated: 2026-04-20 cmd_karo_ctx_reflux_2188 memory-structure-unification section added -->
+<!-- last_updated: 2026-06-23 cmd_3518 -->
 <!-- Vercel分割: 詳細 → docs/research/gs-speedup-details.md -->
 <!-- GS実行ランブック → docs/research/gs-runbook.md (軍師作成 2026-04-03) -->
 
@@ -101,6 +101,7 @@
 - L759: WF trial高速化は選抜結果と月次リターン精度を分離して検証する（cmd_3513）
 - L760: 薄いtrial wrapperでも同一月次コンテキスト再計算を疑う（cmd_3513）
 - L761: WF robustness trialは初回選抜キャッシュ生成と定常実行を分けて計測する（cmd_3514）
+- L769: robustness_commonはα6全6項目(CAGR/NHF/MaxDD/MRU/Calmar/Avg UWP)を共通出力し、SPY/TQQQ benchmark layerを同一経路で扱う（cmd_3517）
 
 ---
 
