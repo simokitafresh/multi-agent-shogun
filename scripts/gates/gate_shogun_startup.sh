@@ -1303,6 +1303,7 @@ PY
         ;;
     FOUND_MISSING_AUTOMATION)
         echo "  WARN: Q6回答は検出したが自動化ターゲット未記入 — 行動変換先を書け"
+        echo "  action: Q6回答に「自動化ターゲット: scripts/... の具体ファイル + 実装済み/テスト追加済みの証拠」を1行で書け。検討/予定/後では不可。"
         if [ "$overall" = "OK" ]; then
             overall="WARN"
         fi
@@ -3154,6 +3155,11 @@ if [ "${_DEFER_G13:-0}" = "1" ]; then
         if [ "$overall" != "ALERT" ]; then
             overall="WARN"
             alerts+=("教訓健全度: WARN")
+        fi
+        if grep -Eq 'METRIC: .*status=WARN .*useful_rate=' "$_TMP_G13"; then
+            echo "  action: useful_rate WARNは仕様上の真陽性。低useful教訓の改善/淘汰または注入スコアリング修正cmdを起票せよ。"
+        else
+            echo "  action: gate_lesson_health.shのWARN本文を確認し、原因別に対処cmdへ接続せよ。"
         fi
     fi
 fi

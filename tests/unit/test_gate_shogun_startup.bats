@@ -393,6 +393,7 @@ EOF
     SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: Q6回答は検出したが自動化ターゲット未記入"* ]]
+    [[ "$output" == *"action: Q6回答に「自動化ターゲット: scripts/... の具体ファイル + 実装済み/テスト追加済みの証拠」を1行で書け"* ]]
     [[ "$output" == *"追体験自動化ターゲット: WARN"* ]]
     [[ "$output" == *"総合判定: WARN"* ]]
 }
@@ -1383,6 +1384,21 @@ MOCK
     [[ "$output" == *"総合判定: ALERT"* ]]
     [[ "$output" == *"低useful教訓の改善/淘汰を実行せよ"* ]]
     [[ "$output" != *"教訓健全度: ALERT → /lesson-sort実行せよ"* ]]
+}
+
+@test "Gate 13 useful_rate WARN emits concrete action" {
+    cat > "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo "INFO: useful率(直近10cmd): 7/21 = 33.3%"
+echo "METRIC: lesson_effectiveness_threshold status=WARN rate=100.0% useful_rate=33.3% window_cmds=10 referenced=14 injected=14 useful=7 total_feedback=21 scope=all"
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"教訓健全度: WARN"* ]]
+    [[ "$output" == *"action: useful_rate WARNは仕様上の真陽性。低useful教訓の改善/淘汰または注入スコアリング修正cmdを起票せよ。"* ]]
 }
 
 @test "Gate 13 unsorted ALERT recommends lesson-sort" {
