@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-23 cmd_3514 -->
-<!-- last_synced_lesson: L767 -->
+<!-- last_updated: 2026-06-23 cmd_3515_final_summary -->
+<!-- last_synced_lesson: L768 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -256,6 +256,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L750-L765は振り分け済 → research§27(L750/L751/L752/L753:シン四神相関分析), gs-speedup§3(L756/L758/L759/L760/L761:trial高速化手法), gs-speedup§4(L762:cache設計), ops索引(L763/L764:速度AC方法論)。L757/L765は自動生成→削除）
 - L766: WF trial速度改善は選抜cacheのwarm/coldを分けて3回測る（cmd_3514）
 - L767: cmd_3514成果物は忍法名をパスに含めて混線を防ぐ（cmd_3514）
+- L768: L1 kasoku_diff monthly-row SQLiteは/mnt/c p9で停滞するためローカルcopyまたは事前matrix cacheを使う（cmd_3515）
 
 ## 因果リンク
 
