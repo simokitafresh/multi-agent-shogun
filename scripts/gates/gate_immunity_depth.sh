@@ -39,14 +39,27 @@ else
     echo "  SKIP: gate_metrics.logなし"
 fi
 
-# --- 観点2: 免疫速度 (FAIL件数サマリ。時間分布は未実装) ---
+# --- 観点2: 免疫速度 (FAIL→同一cmd LGTM到達時間) ---
 echo ""
-echo "■ 観点2: 免疫速度 (FAIL件数サマリ)"
+echo "■ 観点2: 免疫速度 (FAIL→LGTM回復時間)"
 if [ -f logs/gunshi_review_log.yaml ]; then
-    FAIL_COUNT=$(grep -c 'verdict: FAIL' logs/gunshi_review_log.yaml 2>/dev/null || echo 0)
-    LGTM_COUNT=$(grep -c 'verdict: LGTM' logs/gunshi_review_log.yaml 2>/dev/null || echo 0)
-    echo "  軍師FAIL: ${FAIL_COUNT}件 / LGTM: ${LGTM_COUNT}件"
-    echo "  ※ 時間分布(FAIL→再提出間隔)は未実装。件数のみ"
+    # FAIL cmdごとに最初のFAIL timestamp と最初のLGTM timestampの差分を計算
+    awk '
+    /^- cmd_id:/ { cmd=$3 }
+    /verdict: FAIL/ && cmd { fail_ts[cmd] = last_ts }
+    /verdict: LGTM/ && cmd && (cmd in fail_ts) && !(cmd in recovered) {
+        recovered[cmd] = last_ts
+    }
+    /timestamp:/ { gsub(/"/, "", $2); last_ts = $2 }
+    END {
+        n = 0
+        for (c in recovered) {
+            printf "    %s: FAIL→LGTM\n", c
+            n++
+        }
+        printf "  FAIL→LGTM回復: %d件 / 未回復FAIL: %d件\n", n, length(fail_ts) - n
+    }
+    ' logs/gunshi_review_log.yaml
 fi
 
 # --- 観点3: 初見対応力 (gate種別の初回FAIL月) ---
@@ -89,16 +102,29 @@ if [ -f projects/infra/lessons_gunshi.yaml ]; then
     fi
 fi
 
-# --- 観点6: 第二層往復 (RC/verify件数サマリ。cmd対応付けは未実装) ---
+# --- 観点6: 第二層往復 (RC→同一cmdのverify/APPROVE対応付け) ---
 echo ""
-echo "■ 観点6: 第二層往復 (件数サマリ)"
+echo "■ 観点6: 第二層往復 (RC→解決の対応付け)"
 if [ -f logs/gunshi_review_log.yaml ]; then
-    RC_COUNT=$(grep -c 'verdict: REQUEST_CHANGES' logs/gunshi_review_log.yaml 2>/dev/null || true)
-    RC_COUNT=${RC_COUNT:-0}
-    VERIFY_COUNT=$(grep -c 'review_type: verify' logs/gunshi_review_log.yaml 2>/dev/null || true)
-    VERIFY_COUNT=${VERIFY_COUNT:-0}
-    echo "  REQUEST_CHANGES: ${RC_COUNT}件 / verify: ${VERIFY_COUNT}件"
-    echo "  ※ 同一cmd対応付けの完走率は未実装。件数のみ"
+    # cmd_idごとにRC→その後のverify/APPROVEを対応付け
+    awk '
+    /^- cmd_id:/ { cmd=$3 }
+    /verdict: REQUEST_CHANGES/ && cmd { rc[cmd]++ }
+    /verdict: APPROVE/ && cmd && (cmd in rc) && !(cmd in resolved) { resolved[cmd] = "APPROVE" }
+    /review_type: verify/ && cmd && (cmd in rc) && !(cmd in resolved) { resolved[cmd] = "VERIFY" }
+    END {
+        rc_total = length(rc)
+        resolved_total = length(resolved)
+        printf "  RC発行cmd: %d件\n", rc_total
+        for (c in rc) {
+            status = (c in resolved) ? resolved[c] : "UNRESOLVED"
+            printf "    %s: RC→%s\n", c, status
+        }
+        if (rc_total > 0) {
+            printf "  RC解決率: %d/%d (%d%%)\n", resolved_total, rc_total, (resolved_total * 100 / rc_total)
+        }
+    }
+    ' logs/gunshi_review_log.yaml
 fi
 
 echo ""
