@@ -426,3 +426,4 @@
 | cmd_3504 | pf_L3秘奥義GS直列最終(6本目)。run_077_kasoku_ratio.py --universe hiougi_ougi_21.yaml。並列配備禁止(LS-A15) | dm-signal | 06-23 | run_077_kasoku_ratio.pyをhiougi |
 | cmd_3505 | 殿指示(2026-06-22): pf_L2奥義21体を構成PFとして7忍法GSを実行しpf_L3(秘奥義)を生成。6忍法はGATE CLEAR済み(cmd_3495-3504)。残り分身のフルGSを実行する。cmd_3494はsmoke run(1パターン限定)のみでチャンピオン選出用の全探索DBが不在 | dm-signal | 06-23 | 分身GSをhiougi_ougi_21ユニバースで全探索実行 |
 | cmd_3506 | 殿指示(2026-06-22): pf_L3秘奥義GS全7忍法完走後にチャンピオン選出。cmd_2366_l1_champion_select.pyにpf_L3対応(specs_for_layer L3+DB対応表)を追加し、7忍法×3モード(激攻・常勝・鉄壁)のTop1を選出。α6指標比較テーブルを生成 | dm-signal | 06-23 | cmd_2366_l1_champion_select.py |
+| cmd_3508 | 殿指示(2026-06-23): pf_L3全パターンWF-β調整を5分以内に完了できる道具を先に作れ。cmd_3507で半蔵35分超=load_matrixが全パターン月次リターンを(months×patterns)numpy配列に一括展開(加速D=3.5億セル≈1.3GB)しボトルネック。忍法単位でバッチ処理し、分身(7,525パターン)で動作確認→全7忍法見積もり→5分以内の確信を得てから全量実行 | dm-signal | 06-23 | cmd_2369_l1_wf_alpha_select.py |
