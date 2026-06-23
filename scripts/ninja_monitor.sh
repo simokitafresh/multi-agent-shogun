@@ -1467,12 +1467,13 @@ auto_void_if_parent_cmd_completed() {
 
     local task_status parent_cmd task_id completed_report completed_base
     IFS='|' read -r task_status parent_cmd task_id < <(awk '
-        BEGIN { s=""; pc=""; ti=""; ai="" }
+        BEGIN { s=""; pc=""; ti=""; sti=""; ai="" }
         /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
+        /^[ \t]*subtask_id:/ && sti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); sti=v }
         /^[ \t]*_ac_task_id:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ai=v }
         /^[ \t]*status:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); s=v }
         /^[ \t]*parent_cmd:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pc=v }
-        END { print s "|" pc "|" (ti!=""?ti:ai) }
+        END { print s "|" pc "|" (sti!=""?sti:(ti!=""?ti:ai)) }
     ' "$task_file")
     case "$task_status" in
         assigned|acknowledged|in_progress|pending) ;;
