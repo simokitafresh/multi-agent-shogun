@@ -378,6 +378,7 @@ function flush_run() {
 function add_key(key) {
     if (key == "" || key == "__OK__") return
     if (key ~ /^startup連続出現BLOCK:/ || key ~ /^先送り判断:/) return
+    if (key ~ /改善cmd接続済/) return
     if (current_keys == "") current_keys = key
     else current_keys = current_keys "\034" key
 }
@@ -3282,7 +3283,14 @@ try:
     threshold = int(sys.argv[2])
 except ValueError:
     threshold = 3
-current = [a.strip() for a in sys.argv[3:] if a.strip()]
+current = [
+    a.strip()
+    for a in sys.argv[3:]
+    if a.strip()
+    and not a.strip().startswith("startup連続出現BLOCK:")
+    and not a.strip().startswith("先送り判断:")
+    and "改善cmd接続済" not in a
+]
 if not current or threshold <= 1:
     sys.exit(0)
 
