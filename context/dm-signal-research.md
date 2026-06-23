@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-06-23 cmd_3494 -->
+<!-- last_updated: 2026-06-23 cmd_3516 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -545,6 +545,14 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 | 7 | Turning Points BB不採用 | Bull 80.5%偏重でBear/Rebound観測不足(3件/1件)。高品質PFに転換点BBを適用すると情報量ゼロ・過適合リスクHIGH | cmd_3431 |
 
 ---
+
+## §42. 75体+SPY堅牢性全量検証 (cmd_3515, 2026-06-23)
+
+cmd_3512-3514で整備した5本のtrial scripts(IS/OOS/Expanding/WF/Regime)を全レイヤー75体+SPYに拡張し全量検証。
+- **結果**: 375/375比較行 + SPY 5/5。欠損0。PASS 308 / FAIL 67 (82.1% PASS)
+- **レイヤー別PASS率**: L0(シン四神)=55%, L1(シン忍法)=75%, L2(奥義)=97%, L3(秘奥義)=98%
+- **成果物**: `→ /mnt/c/Python_app/DM-signal/outputs/analysis/grid_search_robustness/cmd_3515/summary.json`, `summary.md`
+- **教訓**: L768(L1 kasoku_diff: /mnt/c上のSQLiteはp9停滞→/tmpへbyteコピーで回避)
 
 ## 因果リンク
 

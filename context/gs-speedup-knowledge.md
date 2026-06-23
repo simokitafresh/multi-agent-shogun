@@ -313,6 +313,11 @@ GS実行エンジン・パリティ検証・ベンチマーク・診断の4軸�
 [[cmd-1717-oos-validation]] — OOS(Out-of-Sample)検証
 [[shin-shijin-l1-gs]] — シン四神L1 GS設計
 
+### 任意PF指定モード (cmd_3516, 2026-06-23)
+- `robustness_common.py --pattern-ids`で任意チャンピオンのみ抽出しtrial実行。全量探索34分/trial→数分に短縮
+- `filter_matrix_by_pattern_ids()`でmatrixフィルタ。`if pattern_ids is None:`で後方互換保持
+- 4ファイル変更: robustness_common.py, trial_nukimi_cache.py, trial_wf.py, trial_regime.py
+
 ### ゴールデン出力・その他
 [[dump-all-pf-golden]] / [[dump-all-pf-holding-signals-golden]] / [[dump-standard-pf-golden]] — 本番PFゴールデン出力（パリティ基準値）
 [[sync-experiments-prices]] — 実験価格データ同期
