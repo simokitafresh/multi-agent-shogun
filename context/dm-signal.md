@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-23 cmd_3513 -->
-<!-- last_synced_lesson: L757 -->
+<!-- last_updated: 2026-06-23 cmd_3514 -->
+<!-- last_synced_lesson: L764 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -259,6 +259,13 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L753: DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用（cmd_3431）
 - L756: robustness_common高速化はwfを別経路として分離計測する（cmd_3513）
 - L757: [自動生成] 有効教訓の記録を怠った: cmd_3513（cmd_3513）
+- L758: 薄いtrial wrapperでも同一arrに対するモード別再計算をwrapper内キャッシュで削れる（cmd_3513）
+- L759: WF trial高速化は選抜結果と月次リターン精度を分離して検証する（cmd_3513）
+- L760: 薄いtrial wrapperでも同一月次コンテキスト再計算を疑う（cmd_3513）
+- L761: WF robustness trialは初回選抜キャッシュ生成と定常実行を分けて計測する（cmd_3514）
+- L762: trial群の速度改善は出力メタデータを変えないcache設計にする（cmd_3514）
+- L763: 5本一括速度ACは最終反復値だけでなく中央値/反復条件を固定する（cmd_3514）
+- L764: 速度改善ACは最終HEAD反復で判定する（cmd_3514）
 
 ## 因果リンク
 

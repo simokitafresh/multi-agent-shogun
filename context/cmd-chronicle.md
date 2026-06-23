@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-23 -->
+<!-- last_updated: 2026-06-23 cmd_3514 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -429,3 +429,4 @@
 | cmd_3508 | 殿指示(2026-06-23): pf_L3全パターンWF-β調整を5分以内に完了できる道具を先に作れ。cmd_3507で半蔵35分超=load_matrixが全パターン月次リターンを(months×patterns)numpy配列に一括展開(加速D=3.5億セル≈1.3GB)しボトルネック。忍法単位でバッチ処理し、分身(7,525パターン)で動作確認→全7忍法見積もり→5分以内の確信を得てから全量実行 | dm-signal | 06-23 | cmd_2369_l1_wf_alpha_select.py |
 | cmd_3510 | 殿指示(2026-06-23): WFのみでは不十分。4つの試練+レジーム分析の道具を先に作れ。cmd_2369のstreaming基盤(cmd_3508で高速化済み)にOOS(前半β→後半α)・Expanding Window・レジーム分析(本番RegimeAnalysisService同一方式: SPY月次動的閾値μ±0.5σ)の3モードを追加する。分身smoke runで動作確認+時間計測し、全量実行の確信を得る | dm-signal | 06-23 | cmd_2369 WF-alpha選抜ツールへOOS/Exp |
 | cmd_3512 | 殿指示(2026-06-23): (1)5独立スクリプト並列が発展性がある (2)品質維持で速度+メモリ+進捗 (3)小さく試す。cmd_2369の共通基盤をrobustness_common.pyに切り出し、5独立スクリプト(trial_is/trial_oos/trial_expanding/trial_wf/trial_regime)を作成。各スクリプトに進捗stderr+CLI引数。分身1忍法の小テストで動作確認 | dm-signal | 06-23 | robustness_common.pyと5独立CLI(tr |
+| cmd_3513 | 殿指示(2026-06-23): Codex /goalで5独立スクリプト(trial_is/oos/expanding/wf/regime)の実行速度を-5%×3ラウンド改善させる。家老がidle忍者のCodexペインにsend-keysで/goal目標文を送り、忍者が自律的に達成する。品質維持(diff 0)を合格条件とする。分身DB(7,525パターン)の小テストで計測 | dm-signal | 06-23 | pending: trial_oos.py /goal sp |

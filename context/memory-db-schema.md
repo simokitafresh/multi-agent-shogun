@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-23 cmd_3494 -->
+<!-- last_updated: 2026-06-23 cmd_3514 -->
 
 # Memory DB Schema
 
@@ -9,13 +9,13 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 127808 | event_id, concept_name, relevance_score |
-| table | event_links | 8195 | source_event_id, target_concept, link_type |
-| table | event_state_transitions | 1634 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
-| table | events | 84249 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
-| table | events_fts | 84249 | summary, detail |
-| table | search_logs | 8295 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
-| view | conversations | 40066 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 132039 | event_id, concept_name, relevance_score |
+| table | event_links | 8658 | source_event_id, target_concept, link_type |
+| table | event_state_transitions | 1716 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
+| table | events | 86810 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
+| table | events_fts | 86810 | summary, detail |
+| table | search_logs | 9241 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
+| view | conversations | 41152 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -34,20 +34,20 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 40066 |
-| inbox | 9290 |
-| cmd_archive | 8776 |
-| report | 7531 |
-| bulletin | 5616 |
-| insight | 5056 |
+| conversation | 41152 |
+| inbox | 9592 |
+| cmd_archive | 9027 |
+| report | 7896 |
+| bulletin | 5687 |
+| insight | 5295 |
 | skill_execution | 2961 |
-| cmd_quality | 2294 |
-| gate | 1325 |
-| cmd_save | 789 |
-| cmd_delegate | 304 |
-| lesson | 155 |
+| cmd_quality | 2424 |
+| gate | 1347 |
+| cmd_save | 843 |
+| cmd_delegate | 326 |
+| lesson | 157 |
 | pending_decision | 46 |
-| knowledge | 27 |
+| knowledge | 44 |
 | workaround | 11 |
 | project | 2 |
 | infrastructure_state | 1 |
