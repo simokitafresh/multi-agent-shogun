@@ -3,15 +3,60 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: gate_context_freshness.shをcache有無の両方で実行し、現時点OKとGA-120発火時ALERTの差分仮説を数値・commit hash付きで説明する
+      description: bash scripts/gates/gate_shogun_startup.sh と bash scripts/gates/gate_lesson_health.sh を実行し、該当2WARN/BLOCKの再現行と原因コード行を報告YAMLに記録する
     AC2:
-      description: google-classroom.mdとsaxo-trade-engine.mdについて、last_updated以後の関連commitを列挙し、本文更新が必要か、メタデータ維持で足りるかを一次情報で判定する
+      description: Q6自動化ターゲットWARNについて、現在の将軍回答/掲示板/会話ログが検出されない理由を特定し、false positiveなら scripts/gates/gate_shogun_startup.sh と tests/unit/test_gate_shogun_startup.bats に回帰テスト付きで修正する。真陽性ならその根拠と次回防止の環境変更を記録する
     AC3:
-      description: 同カテゴリの横展開候補と、次回鳴らさない防御層(Level1-6)を具体化し、lesson_candidateとdecision_candidateを報告する
+      description: 教訓健全度WARNについて、rate=100.0% useful_rate=33.3% の扱いが仕様かバグかを tests/unit/test_gate_lesson_health.bats と実装から確認し、必要なら scripts/gates/gate_lesson_health.sh または startup側分類を修正して回帰テストを追加する
+    AC4:
+      description: 修正後に bash -n scripts/gates/gate_shogun_startup.sh scripts/gates/gate_lesson_health.sh と関連batsを実行し、修正前→修正後の該当WARN/BLOCK数を数値で報告する
+  command: 家老karo_direct。将軍startup自動エスカレーション対応。Q6自動化ターゲットWARNと教訓健全度WARNを一次情報で再現し、false positiveならgateとテストを修正、真陽性なら次回以降先送りにならない環境変更を実装して報告せよ。
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  not_in_scope:
+  - 将軍startup gate全体の大規模再設計
+  - lesson_sortの実行代行
+  - dashboard更新
+  parallel_ok: []
+  parent_cmd: cmd_karo_hotfix_shogun_startup_q6_lesson_20260624
+  project: infra
+  purpose: 将軍startup gateで3セッション連続BLOCKになっている追体験自動化ターゲットWARNと教訓健全度WARNを一次情報で再現し、false positiveならgate/テストを修正、真陽性なら次回以降先送りにならない具体的な環境変更を実装して報告する。
+  status: done
+  stop_for: []
+  target_path: scripts/gates/gate_shogun_startup.sh
+  task_id: cmd_karo_hotfix_shogun_startup_q6_lesson_20260624_normal
+  task_type: hotfix
+  title: '将軍startup先送りBLOCK: Q6自動化ターゲット + 教訓健全度WARN 恒久対処'
+  related_lessons: []
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "growth_loop — 学習ループ:  AGENTS.md 学習ループ原則 context/growth-loop.md context/infrastructure.md 知識サイクル現状 scripts/gates/gate_cycle_health.sh 三層学習ループ健全性計測 scripts/karo_workaround_log.sh WA記録(成績表フィードバック) scripts/ci_status_check.sh CI状態チェック(品質フィードバック) scripts/lesson_impact_analysis.sh 教訓効果分析(注入率/参照率/CLEAR-BLOCK A/B) scripts/ralph_loop_metrics.sh ラルフループ定量計測(5指標: パターン再発/revert/完了速度/lesson-CLEAR相関/PI違反) scripts/knowledge_metrics.sh 教訓有効性+陳腐化検出(JSON/TSV出力対応) docs/research/gunshi_idle_growth_loop_nazenaze_20260515.md — 軍師idle: 成長ループなぜなぜ分析(2026-05-15) docs/research/gunshi_idle_immune_effectiveness_20260512.md — 軍師idle: 免疫システム有効性測定(2026-05-12) docs/research/gunshi_idle_immune_system_evidence_20260426.md — 軍師idle: 免疫システム証拠収集(2026-04-26) docs/research/gunshi_idle_immunity_measurement_20260510.md — 軍師idle: 免疫計測フレームワーク(2026-05-10)"
+  - "deepdive_principles — deepdive原理:  context/training-cycle.md docs/research/gunshi_idle_deepdive_design_impl_phantom_20260516.md — 軍師idle: deepdive設計実装ファントム問題(2026-05-16)"
+  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh scripts/cmd_skeleton.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比) docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md — 軍師idle: コミットチェックWAパターン(2026-04-10) docs/research/gunshi_idle_cross_contamination_20260503.md — 軍師idle: クロスプロジェクト汚染分析(2026-05-03) docs/research/gunshi_idle_cross_project_fp_20260426.md — 軍師idle: クロスプロジェクトFP分析(2026-04-26) docs/research/gunshi_idle_gate_fail_rate_anatomy_20260502.md — 軍師idle: ゲート失敗率解剖(2026-05-02) docs/research/gunshi_idle_gate_fail_trend_20260430.md — 軍師idle: ゲート失敗トレンド分析(2026-04-30) docs/research/gunshi_idle_gate_fire_traceback_20260510.md — 軍師idle: ゲート発火トレースバック(2026-05-10) docs/research/gunshi_idle_gate_fp_analysis_20260527.md — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27) docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md — 軍師idle: LG003ゲートWA分析(2026-05-19) docs/research/gunshi_idle_lu_dict_pattern_20260415.md — 軍師idle: LU辞書パターン分析(2026-04-15)"
+  recommended_skills:
+  - "lesson-sort(教訓整理/振り分け/将軍)"
+  - "dream(三層記憶整理/将軍)"
+  - "shogun-teire(知識棚卸し/将軍)"
+  memory_db_context:
+  - '2026-06-12T21:48:02+09:00 | **処理完了。家老の自走hotfix「startup_lesson_skill_health」のGATE CLEAR通知であった。** 将軍startup gateの教訓・スキル健全度系の残項目を家老'
+  - '2026-05-21T00:56:18+09:00 | insightに記録した。将軍startup gateでNO_MATCH件数を毎回見るので、20件蓄積時に気づく。意志依存ではなく計測データが自然にトリガーする。 殿の指示を待つ。 [meta] st'
+  - '2026-06-24T00:15:07+09:00 | 殿、強くてニューゲーム準備完了。 **次の軍師が自動的に得るもの(最終完全版):** | 埋込み先 | 内容 | |---------|------| | startup gate Check 12 '
+  - '2026-06-23T21:37:44+09:00 | cmd_3518 **GATE CLEAR**。α6全量再実行(プランStep 2)完了。cmd_3520は既にLGTM送信済み。 今セッション全cmd: - cmd_3510-3517: 全CLEA'
+  - '2026-06-24T00:16:28+09:00 | 教訓効果率WARN: 100.0%'
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -29,45 +74,11 @@ task:
   - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
   - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: 'GA-120 context_freshness ALERT対応。発火内容: google-classroom.md / saxo-trade-engine.md が last_updated=2026-06-22 後のsource commitsでALERT。家老一次確認では 2026-06-23 14:58 時点の gate_context_freshness はOK、関連commit候補は c1797c377 chore: batch context auto-commit before /clear (kagemaru)。過去類似: GA-092 google_classroom context freshness, GA-100 saxo context freshness。発火時点と現時点の差分、cache/debounce/auto-commit除外、source repo判定を重点調査せよ。'
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope:
-  - context本文の正式更新
-  - gate_context_freshness.shのコード修正
-  - lesson-sort実行
-  parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_ga120_context_freshness_recon_20260623
-  project: infra
-  purpose: GA-120 context_freshness ALERTの発火理由を、google-classroom.md/saxo-trade-engine.mdのlast_updated・source commit・gate cache差分から特定し、再発防御層を提案する
-  status: done
-  stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/context
-  task_id: cmd_karo_hotfix_ga120_context_freshness_recon_20260623_normal
-  task_type: hotfix
-  related_lessons: []
-  memory_db_context:
-  - '2026-04-19T11:16:18+09:00 | 【改善トリガー】hook_failure ALERT (GA-120)'
-  - '2026-06-23T00:24:24+09:00 | context_freshness ALERT解消完了。才蔵の完了報告を待機する。 [meta] stop_reason=end_turn'
-  - '2026-06-22T14:15:20+09:00 | 【改善トリガー】context_freshness ALERT (GA-114)'
-  - '2026-06-23T14:36:05+09:00 | 【改善トリガー】lesson_health ALERT (GA-118)'
-  - '2026-06-23T13:27:05+09:00 | session alerts 2件を[DONE]に更新、inbox 3件全て既読化完了。 - 軍師report_review_result: cmd_3512 LGTM → GATE CLEAR+ar'
   ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_ga120_context_freshness_recon_20260623_normal
+  _ac_task_id: cmd_karo_hotfix_shogun_startup_q6_lesson_20260624_normal
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_hotfix_ga120_context_freshness_recon_20260623.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_hotfix_ga120_context_freshness_recon_20260623.yaml
+  report_filename: hayate_report_cmd_karo_hotfix_shogun_startup_q6_lesson_20260624.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_hotfix_shogun_startup_q6_lesson_20260624.yaml
   bloom_level: 
-  deployed_at: "2026-06-23T15:00:37"
+  deployed_at: "2026-06-24T00:22:05"
