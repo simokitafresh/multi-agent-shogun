@@ -128,3 +128,39 @@ teardown() {
     [[ "$output" != *"q5テンプレート"* ]]
     [[ "$output" != *"git log確認:"* ]]
 }
+
+@test "cmd_3520: generic report format wording is not causal scope" {
+    local CMD_BLOCK='    project: infra
+    title: "報告書生成"
+    purpose: "L1検証結果をfixed report formatでMarkdown報告書へ整形する"
+    command: |
+      docs/research/report_generator.sh で固定report formatの出力を生成する
+    acceptance_criteria:
+      - id: AC1
+        description: "固定report formatのMarkdown報告書が生成される"'
+
+    run bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"INFO: [CAUSAL_VERIFICATION]"* ]]
+    [[ "$output" != *"q5テンプレート"* ]]
+}
+
+@test "cmd_3520: report_field_set and gate_report_format remain causal scope" {
+    local CMD_BLOCK='    project: infra
+    title: "報告YAML gate改善"
+    purpose: "report_field_set.shとgate_report_format.shの連携を修正する"
+    command: |
+      report_field_set.sh と gate_report_format.sh の回帰を修正する
+    acceptance_criteria:
+      - id: AC1
+        description: "report_field_set.sh経由の報告YAML更新がgate_report_format.shをPASSする"'
+
+    run bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: [CAUSAL_VERIFICATION]"* ]]
+    [[ "$output" == *"q5テンプレート"* ]]
+}

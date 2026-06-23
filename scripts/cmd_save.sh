@@ -1496,7 +1496,7 @@ cmd_save_is_causal_verification_scope() {
         in_ac && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_ac=0 }
         in_ac { print }
     ')"
-    printf '%s\n' "$search_text" | grep -qiE 'hook|gate|daemon|semantic|search|memory[ _-]?db|記憶DB|deploy_task|配備フロー|report[_ -]?format|cmd_save|inbox_watcher|ninja_monitor'
+    printf '%s\n' "$search_text" | grep -qiE 'hook|gate|daemon|semantic|search|memory[ _-]?db|記憶DB|deploy_task|配備フロー|report_field_set|gate_report_format|cmd_save|inbox_watcher|ninja_monitor'
 }
 
 show_causal_verification_q5_template() {
