@@ -1075,7 +1075,7 @@ fi
 echo ""
 echo "■ 免疫深度サマリ"
 if [ -f "$SCRIPT_DIR/scripts/gates/gate_immunity_depth.sh" ]; then
-    _depth_out=$(bash "$SCRIPT_DIR/scripts/gates/gate_immunity_depth.sh" 2>/dev/null | grep -E '種類|FAIL→LGTM回復|RC解決率|RC発行|月別|未回復' | head -10)
+    _depth_out=$(bash "$SCRIPT_DIR/scripts/gates/gate_immunity_depth.sh" 2>/dev/null | grep -E '種類|FAIL→LGTM回復|RC解決率|RC発行|月別|未回復|^[[:space:]]+[0-9]{4}-[0-9]{2}:' | head -10)
     if [ -n "$_depth_out" ]; then
         printf '%s\n' "$_depth_out" | sed 's/^/  /'
     else
