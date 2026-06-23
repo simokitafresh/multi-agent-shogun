@@ -63,6 +63,15 @@ multi-agent-shogun の指揮官/指定agentを Claude Code と Codex CLI の間�
 
 **Codex注意**: config.tomlは全Codex忍者共有。変更は全Codex忍者に影響するが、respawnした忍者のみ反映。
 
+**per-agent effort回避策（家老medium+忍者low共存）** (殿指示2026-06-23で実証):
+Codex CLIには`--reasoning-effort`起動引数がない。per-agent effortはconfig.toml共有のため直接設定不可。
+回避手順:
+1. `sed -i 's/model_reasoning_effort = "low"/model_reasoning_effort = "medium"/' ~/.codex/config.toml`
+2. 対象agentのみ `tmux respawn-pane -k -t <pane> "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"`
+3. `sed -i 's/model_reasoning_effort = "medium"/model_reasoning_effort = "low"/' ~/.codex/config.toml` (即座に戻す)
+4. バナーで `medium fast` を確認
+**制約**: 対象agentが再respawn(/clear等)されるとconfig.toml現在値(low)に戻る(揮発的)。ninja_monitorのidle /clearでrespawnされる忍者はconfig.toml現在値を取得する。
+
 ### Step 4: 一次確認（必須）
 
 ```bash
@@ -89,7 +98,30 @@ tmux capture-pane -t shogun:2.6 -p | head -3  # → Sonnet 4.6 with low effort �
 # 例4: version切替
 ~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh pin-2.1.87      # 全員2.1.87固定
 ~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh unpin-latest     # 全員最新版
+
+# 例5: 「karoをGPT5.5 medium fast onに」(per-agent effort回避策)
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --agent karo
+sed -i 's/model_reasoning_effort = "low"/model_reasoning_effort = "medium"/' ~/.codex/config.toml
+tmux respawn-pane -k -t shogun:2.1 "/home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"
+sed -i 's/model_reasoning_effort = "medium"/model_reasoning_effort = "low"/' ~/.codex/config.toml
+tmux capture-pane -t shogun:2.1 -p | tail -2  # → gpt-5.5 medium fast 確認
 ```
+
+# 例6: 「karoをGPT5.5 medium、忍者6名をGPT5.5 low fastに」(一括切替 2026-06-23実証)
+# Step1: config.toml→medium、家老をCodexに切替(respawn込み)
+sed -i 's/model_reasoning_effort = "low"/model_reasoning_effort = "medium"/' ~/.codex/config.toml
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --agent karo
+# Step2: config.toml→low(忍者用)、忍者6名をCodexに切替(respawn込み)
+sed -i 's/model_reasoning_effort = "medium"/model_reasoning_effort = "low"/' ~/.codex/config.toml
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh to-codex --scope hayate,kagemaru,hanzo,saizo,kotaro,tobisaru
+# Step3: settings.yaml model_name同期(switch_cli_mode.shがリセットするため)
+bash scripts/lib/yaml_field_set.sh config/settings.yaml karo model_name gpt-5.5-medium
+for a in hayate kagemaru hanzo saizo kotaro tobisaru; do bash scripts/lib/yaml_field_set.sh config/settings.yaml "$a" model_name gpt-5.5-low; done
+# Step4: バナー一次確認
+sleep 8 && for p in 1 3 4 5 6 7 8; do echo "pane $p: $(tmux capture-pane -t shogun:2.$p -p | grep -o 'gpt-5.5[^·]*')"; done
+```
+
+**実績**: 回1(3分/1名)→回3(2分/7名)。Step1-4を順序実行すれば全員2分で切替可能。
 
 ### anti-pattern（殿指摘2026-06-21）
 
