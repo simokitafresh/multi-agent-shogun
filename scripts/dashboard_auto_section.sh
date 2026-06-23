@@ -261,6 +261,7 @@ start_ci_status_refresh_async() {
 # GP-cmd_2081: task files MTIMEキャッシュ — stat+tr subshell排除→-nt演算子(~50ms削減)
 declare -A CMD_NINJAS=()
 declare -A NINJA_CMD=()
+declare -A NINJA_STATUS=()
 _task_files_arr=()
 for _tnn in $ALL_NINJAS; do
     _tf="$TASKS_DIR/${_tnn}.yaml"
@@ -284,25 +285,42 @@ if [[ ${#_task_files_arr[@]} -gt 0 ]]; then
         _task_map_src="$_TASK_MAP_CACHE"
     else
         awk '
+            function emit() {
+                if (ninja != "") print ninja "|" parent "|" status
+            }
             FNR == 1 {
+                emit()
                 fname = FILENAME
                 sub(/.*\//, "", fname)
                 sub(/\.yaml$/, "", fname)
                 ninja = fname
+                parent = ""
+                status = ""
             }
             /^[[:space:]]*parent_cmd:/ {
                 v = $0
                 sub(/.*parent_cmd:[[:space:]]*/, "", v)
                 gsub(/["'"'"'[:space:]]/, "", v)
-                if (v != "") { print ninja "|" v; nextfile }
+                if (v != "" && parent == "") parent = v
             }
+            /^[[:space:]]*status:/ {
+                v = $0
+                sub(/.*status:[[:space:]]*/, "", v)
+                gsub(/["'"'"'[:space:]]/, "", v)
+                if (v != "" && status == "") status = v
+            }
+            END { emit() }
         ' "${_task_files_arr[@]}" > "$_TASK_MAP_CACHE" 2>/dev/null || true
         touch "$_TASK_MAP_KEY" 2>/dev/null || true
         _task_map_src="$_TASK_MAP_CACHE"
     fi
-    while IFS='|' read -r _n _pcmd; do
+    while IFS='|' read -r _n _pcmd _tstatus; do
+        [[ -n "$_tstatus" ]] && NINJA_STATUS[$_n]="$_tstatus"
         [[ -z "$_pcmd" ]] && continue
         NINJA_CMD[$_n]="$_pcmd"
+        case "$_tstatus" in
+            idle|done|completed) continue ;;
+        esac
         jp="${_JP_CACHE[$_n]:-$_n}"
         if [[ -n "${CMD_NINJAS[$_pcmd]:-}" ]]; then
             CMD_NINJAS[$_pcmd]="${CMD_NINJAS[$_pcmd]},${jp}"
@@ -327,7 +345,19 @@ fi
 ACTIVE_COUNT=0
 ACTIVE_NAMES=""
 for _an in $ALL_NINJAS; do
-    if [[ ",$IDLE_LIST," != *",${_an},"* ]]; then
+    _task_status="${NINJA_STATUS[$_an]:-}"
+    _snap_status="${SNAP_STATUS[$_an]:-}"
+    _is_active=true
+    case "$_task_status" in
+        idle|done|completed) _is_active=false ;;
+        assigned|acknowledged|in_progress|working) _is_active=true ;;
+        "")
+            if [[ ",$IDLE_LIST," == *",${_an},"* ]] || [[ "$_snap_status" == "done" || "$_snap_status" == "completed" ]]; then
+                _is_active=false
+            fi
+            ;;
+    esac
+    if [[ "$_is_active" == true ]]; then
         ACTIVE_COUNT=$((ACTIVE_COUNT + 1))
         _jp_an="${_JP_CACHE[$_an]:-$_an}"
         if [[ -n "$ACTIVE_NAMES" ]]; then
@@ -977,20 +1007,27 @@ fi
         jp="${_JP_CACHE[$ninja]:-$ninja}"
         model="${_MODEL_CACHE[$ninja]:-unknown}"
 
-        # Status from idle list
-        status="稼働中"
-        if [[ ",$IDLE_LIST," == *",${ninja},"* ]]; then
-            status="idle"
-        fi
-
-        # Status from snapshot (done override)
+        # Status from task YAML first, then snapshot/idle fallback.
+        task_status="${NINJA_STATUS[$ninja]:-}"
         snap_status="${SNAP_STATUS[$ninja]:-}"
-        [[ "$snap_status" == "done" || "$snap_status" == "completed" ]] && status="done"
+        status="稼働中"
+        case "$task_status" in
+            idle) status="idle" ;;
+            done|completed) status="done" ;;
+            assigned|acknowledged|in_progress|working) status="稼働中" ;;
+            "")
+                if [[ ",$IDLE_LIST," == *",${ninja},"* ]]; then
+                    status="idle"
+                elif [[ "$snap_status" == "done" || "$snap_status" == "completed" ]]; then
+                    status="done"
+                fi
+                ;;
+        esac
 
         # parent_cmd from pre-built NINJA_CMD (O(1) lookup, avoids repeated get_task_parent_cmd)
         cmd="—"
         _cmd="${NINJA_CMD[$ninja]:-}"
-        [[ -n "$_cmd" ]] && cmd="$_cmd"
+        [[ -n "$_cmd" && "$status" == "稼働中" ]] && cmd="$_cmd"
 
         # cmd title from TITLE_MAP (O(1) lookup, GP-XXX)
         title="—"
@@ -1303,8 +1340,20 @@ if ! grep -qF "$MARKER_START" "$DASHBOARD"; then
 fi
 
 if ! grep -qF "$MARKER_END" "$DASHBOARD"; then
-    echo "ERROR: DATA_QUALITY $MARKER_END not found in dashboard.md; refusing to overwrite non-empty dashboard without auto markers" >&2
-    exit 1
+    if grep -qF "<!-- KARO_SECTION_START -->" "$DASHBOARD"; then
+        awk -v end="$MARKER_END" '
+            $0 == "<!-- KARO_SECTION_START -->" && !inserted {
+                print end
+                inserted = 1
+            }
+            { print }
+        ' "$DASHBOARD" > "${DASHBOARD}.tmp.repair"
+        mv "${DASHBOARD}.tmp.repair" "$DASHBOARD"
+        echo "WARN: DATA_QUALITY $MARKER_END missing; repaired before KARO_SECTION_START" >&2
+    else
+        echo "ERROR: DATA_QUALITY $MARKER_END not found in dashboard.md; refusing to overwrite non-empty dashboard without auto markers" >&2
+        exit 1
+    fi
 fi
 
 # Replace content between markers (inclusive)
