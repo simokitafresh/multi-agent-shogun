@@ -17,6 +17,7 @@ Script refs verified: 2026-06-20 L821. `switch_cli_mode.sh` にstale active補�
 Script refs verified: 2026-06-21. `switch_cli_mode.sh` relaunch方式をCtrl-C+send-keys→`respawn-pane -k`に変更(殿指摘2026-06-21: CLIごと再起動が基本)。ハングCLIにCtrl-Cが効かず再起動不能だった問題を根治。I/F変更なし。
 Script refs verified: 2026-06-21T13:58. CLI種別とモデルの関係セクション追加(殿指摘2026-06-21)。GPT-5.5はCodex CLI必須、Claude CLIで`--model gpt-5.5`は表示のみ変更。TRIGGER拡張(モデル変更系キーワード追加)。DO NOT TRIGGER明確化(同一CLI内の/modelは対象外)。
 Script refs verified: 2026-06-21T15:06. switch_cli_mode.sh 4修正(殿指示2026-06-21): (1)CLI種別変更時respawn強制(active判定バイパス) (2)model_nameファミリー不整合リセット (3)respawn前reset追加(Codex exit 2根因修正) (4)cooldown 5秒(高速連続respawn防止)。pre-bash-combined.sh Guard 9b簡素化(respawn-pane通過、model_switchのみBLOCK)。session_start_inject.sh cli_switch_pending待機状態追加。CLAUDE.md Step 0待機判定追加。双方向6連続100%成功+3人同時切替検証済み。
+Script refs verified: 2026-06-24T00:35. switch_cli_mode.sh model_name SSOT修正系列(c3d290416→5972c7c34→d796b5a43)確認済み。現行契約は「CLI種別変更時に不整合model_nameを空へリセットし、settings.yaml/tmux変数同期とrespawnを行う」。gpt-5.5-low等のper-agent model_name確定値は必要時にyaml_field_setで明示設定する。I/F変更なし。
 
 # Shogun CLI Switch
 
@@ -159,4 +160,4 @@ tmux capture-pane -t shogun:2.6 -p | head -3  # → Sonnet 4.6 with low effort �
 - [[shogun-all-codex-switch]] — 全忍者をCodex CLIに一括切替（モデル系ではなくCLI種別の切替）
 - [[shogun-peacetime-rollback]] — CodexからClaude（平時編成）への一括ロールバック
 - [[hensei]] — 忍者モデル編成切替
-<!-- script_refs_checked_at: 2026-06-21T16:30:05+09:00 -->
+<!-- script_refs_checked_at: 2026-06-24T00:35:00+09:00 -->
