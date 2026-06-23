@@ -1397,8 +1397,28 @@ MOCK
     SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"総合判定: WARN"* ]]
-    [[ "$output" == *"教訓健全度: WARN"* ]]
+    [[ "$output" == *"教訓健全度useful_rate改善cmd接続済: WARN"* ]]
+    [[ "$output" != *"⚠ 教訓健全度: WARN"* ]]
     [[ "$output" == *"action: useful_rate WARNは仕様上の真陽性。低useful教訓の改善/淘汰または注入スコアリング修正cmdを起票せよ。"* ]]
+}
+
+@test "Gate 13 useful_rate WARN does not continue old lesson health streak" {
+    cat > "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo "INFO: useful率(直近10cmd): 7/21 = 33.3%"
+echo "METRIC: lesson_effectiveness_threshold status=WARN rate=100.0% useful_rate=33.3% window_cmds=10 referenced=14 injected=14 useful=7 total_feedback=21 scope=all"
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
+    cat > "$TEST_TMPDIR/logs/shogun_startup_alert_history.tsv" <<'EOF'
+run1	教訓健全度: WARN
+run2	教訓健全度: WARN
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"教訓健全度useful_rate改善cmd接続済: WARN"* ]]
+    [[ "$output" != *"BLOCK: 教訓健全度: WARN が3セッション連続"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
 }
 
 @test "Gate 13 unsorted ALERT recommends lesson-sort" {

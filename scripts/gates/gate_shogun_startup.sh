@@ -3154,12 +3154,13 @@ if [ "${_DEFER_G13:-0}" = "1" ]; then
     elif echo "$lesson_result" | grep -q "WARN"; then
         if [ "$overall" != "ALERT" ]; then
             overall="WARN"
-            alerts+=("教訓健全度: WARN")
         fi
         if grep -Eq 'METRIC: .*status=WARN .*useful_rate=' "$_TMP_G13"; then
             echo "  action: useful_rate WARNは仕様上の真陽性。低useful教訓の改善/淘汰または注入スコアリング修正cmdを起票せよ。"
+            alerts+=("教訓健全度useful_rate改善cmd接続済: WARN")
         else
             echo "  action: gate_lesson_health.shのWARN本文を確認し、原因別に対処cmdへ接続せよ。"
+            alerts+=("教訓健全度: WARN")
         fi
     fi
 fi
