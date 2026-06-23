@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-23 cmd_3494 -->
+<!-- last_updated: 2026-06-23 cmd_3513 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -1222,7 +1222,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L835: switch_cli_mode.sh @agent_state=active残留バグ（cmd_karo_hotfix_model_family_ssot_20260620）
 - L836: @model_name tmux変数同期漏れ — to-claude後に旧Codex値のまま（cmd_karo_hotfix_model_family_ssot_20260620）
 - L837: 2層SSOT設計(殿承認) — デフォルト層(cli_profiles.yaml)+動的層(settings.yaml)でCLI/model編成管理（cmd_karo_hotfix_model_family_ssot_20260620）
-- L838: Codex CLIのper-agent effortはmodel_name接尾辞(gpt-X.X-{effort})で設定する（cmd_3481）
+- L838: Codex CLIのper-agent effortはmodel_name接尾辞(gpt-X.X-{effort})でsettings.yaml上に記録する（cmd_3481）。ただしCodex CLIの実effortはconfig.toml(全Codex共有)が決定。per-agent effort共存(家老medium+忍者low)はconfig.toml変更→対象respawn→config.toml復元の回避策で実現(2026-06-23殿指示で実証。揮発的=再respawnで戻る)
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

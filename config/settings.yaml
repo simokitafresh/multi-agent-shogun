@@ -12,11 +12,11 @@ cli:
       japanese_name: 将軍
       launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
     karo:
-      type: claude
-      model_name: claude-opus-4-6
+      type: codex
+      model_name: gpt-5.5-medium
       role: karo
       japanese_name: 家老
-      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
+      launch_cmd: /home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen
     gunshi:
       type: claude
       model_name: claude-opus-4-6

@@ -137,7 +137,7 @@
 
 | 項目 | 値 |
 |------|-----|
-| verified_at | 2026-05-23 |
+| verified_at | 2026-06-23 |
 | method | GitHub API (`repos`, `commits?per_page=1`, `releases`) + `python3 -m pip index versions codd-dev` |
 | source | github.com/yohey-w/codd-dev releases / PyPI codd-dev / zenn.dev/shio_shoppaize (記事群) |
 | notes | GitHub latest releaseはv2.20.0、PyPI latestはv2.19.0。bash非対応はmemory/tool_codd_lessons.mdで実証済み |

@@ -163,7 +163,7 @@
 
 | 項目 | 値 |
 |------|-----|
-| verified_at | 2026-05-23 |
+| verified_at | 2026-06-23 |
 | method | GitHub API (`repos`, `commits?per_page=1`, `releases`) + codd-dev release確認 |
 | source | github.com/yohey-w/multi-agent-shogun releases, github.com/yohey-w/codd-dev releases, zenn.dev/shio_shoppaize |
 | baseline | docs/research/system-comparison-2026-03-13.md §2.5 |

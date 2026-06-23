@@ -200,7 +200,7 @@ Claude Code, OpenCode, Gemini CLI, Kilo, Codex, Copilot, Cursor, Windsurf, Antig
 
 | 項目 | 値 |
 |------|-----|
-| verified_at | 2026-05-23 |
+| verified_at | 2026-06-23 |
 | method | GitHub API (`repos`, `commits?per_page=1`, `releases`) + npm view (`get-shit-done-cc`) |
 | source | github.com/gsd-build/get-shit-done 公式リポジトリ直接取得 |
 | stars_verified | 63,626 (API取得。前回28,539から+35,087) |

@@ -173,7 +173,7 @@
 
 ## Verification
 
-- verified_at: 2026-05-23
+- verified_at: 2026-06-23
 - method: GitHub API (`repos`, `commits?per_page=1`, `releases`) + npm view (`@anthropic-ai/claude-code`, `@anthropic-ai/claude-agent-sdk`)
 - source: github.com/anthropics/claude-code/releases, code.claude.com/docs/en/whats-new, code.claude.com/docs/en/agent-teams, www.anthropic.com/engineering/building-c-compiler
 

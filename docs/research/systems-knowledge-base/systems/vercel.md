@@ -169,7 +169,7 @@
 
 | 項目 | 値 |
 |------|-----|
-| verified_at | 2026-05-23 |
+| verified_at | 2026-06-23 |
 | method | GitHub REST API (`repos`, `releases`, `commits?per_page=1`) + Vercel公式blog/docsのMarkdown取得 + 前回比較文書との差分確認 |
 | source | `vercel-labs/agent-browser` 公式repo、Vercel公式blog、Vercel公式docs、`docs/research/system-comparison-2026-03-13.md` |
 | stars_verified | 33,992 (`agent-browser`, 2026-05-23 API取得) |

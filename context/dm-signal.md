@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-17 cmd_3431 -->
-<!-- last_synced_lesson: L753 -->
+<!-- last_updated: 2026-06-23 cmd_3513 -->
+<!-- last_synced_lesson: L757 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -257,6 +257,8 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L751: 奥義(FoF of FoF)のmax相関はシン四神同様に≒1.0。根因は戦略同質性(銘柄宇宙ではなく)（cmd_3426）
 - L752: 相関乖離分析の閾値設計: σベース閾値は同一母集団(層別)でのみ有効。混成母集団では分散拡大でシグナル消失（cmd_3430）
 - L753: DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用（cmd_3431）
+- L756: robustness_common高速化はwfを別経路として分離計測する（cmd_3513）
+- L757: [自動生成] 有効教訓の記録を怠った: cmd_3513（cmd_3513）
 
 ## 因果リンク
 

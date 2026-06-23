@@ -202,7 +202,7 @@ Claude Code (or 10 other hosts)
 
 | 項目 | 内容 |
 |------|------|
-| verified_at | 2026-05-23 |
+| verified_at | 2026-06-23 |
 | method | GitHub API (`repos`, `commits?per_page=1`, `contents/package.json`, `contents/CHANGELOG.md`) |
 | source | github.com/garrytan/gstack (CHANGELOG v1.43.1.0〜v1.43.3.0確認) |
 | confidence | HIGH — GitHub直接確認。Garry TanのX発言は検索結果引用(直接fetch不可) |

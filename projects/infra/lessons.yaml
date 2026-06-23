@@ -1778,6 +1778,9 @@ lessons:
   target_files:
   - tests/unit/test_learning_ops_small_consolidated.bats
   origin: '[[cmd_karo_ci_fix_freshness_test_20260529]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-22'
 - id: L722
   title: Edit toolでのindex.md変更がauto_intake_semantic_indexに上書きされるリスク
   summary: semantic_map_generate.shのauto_intake_semantic_index()がindex.mdを読み書きする。Edit
@@ -1794,7 +1797,7 @@ lessons:
   origin: '[[cmd_3088]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-18'
+  last_referenced: '2026-06-23'
 - id: L721
   title: 'Bats並列隔離: cacheパスをenv変数化+TEST_TMPDIR export'
   summary: 本体gateのcacheパスをenv変数化(デフォルト維持)+Bats setupでTEST_TMPDIR配下をexport。CI --jobs並列時の/tmp
@@ -1857,6 +1860,9 @@ lessons:
   - docs/semantic-index/index.md
   - tests/unit/test_semantic_index_update.bats
   origin: '[[cmd_3063]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-23'
 - id: L717
   title: metricsの時刻形式混在と観測不能推薦を分母に入れると品質指標が歪む
   summary: skill_recommend_metrics.shは+09:00と+0900を文字列比較しており、推薦後の実行ログ抽出が不安定だった。また実行ログに現れないス
@@ -2063,7 +2069,7 @@ lessons:
   origin: '[[cmd_3045]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-21'
+  last_referenced: '2026-06-23'
 - id: L702
   title: bash if条件失敗後のrcはelse内で捕捉せよ
   summary: if parsed=$(cmd); then ... fi; rc=$? だとrc=0(if文全体の成功)。失敗rcは else rc=$?
@@ -3108,7 +3114,7 @@ lessons:
   origin: '[[cmd_karo_ci_fix_verdict_derive]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-18'
+  last_referenced: '2026-06-23'
 - id: L632
   title: TSV列追加時はテストの列参照をヘッダー名方式にせよ
   summary: 固定列番号(cut -f11等)ではなくヘッダー行からフィールド名で列位置を解決せよ。cmd_2865でscore列追加後cmd_2868でtraversal_
@@ -3244,7 +3250,7 @@ lessons:
   origin: '[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-21'
+  last_referenced: '2026-06-23'
 - id: L624
   title: yaml_field_setのnested指定は構文破壊リスク→dot notation専用ツール要
   summary: yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用
@@ -3312,6 +3318,9 @@ lessons:
   target_files:
   - scripts/ninja_monitor.sh
   origin: '[[cmd_training_L4_auto_202605181241_kotaro]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-23'
 - id: L619
   title: draft_lessonsは自動生成元と検査元の閉ループで判定せよ
   summary: draft_lessons BLOCKを調査する時はauto_draft_lesson.sh単体ではなく、cmd_complete_gate.shのBLOCK時
@@ -3447,6 +3456,9 @@ lessons:
   target_files:
   - scripts/record_lesson_feedback.sh
   origin: '[[cmd_2788]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-23'
 - id: L610
   title: SKILL.mdにallowed_projectsフィールドを追加することでPreToolUseフックがproject制約を機械的に照合できる
   summary: 'SKILL.mdのフロントマター(---..---)にallowed_projects: [dm-signal]を追加するだけで、既存のhookインフラがpro'
@@ -4126,7 +4138,7 @@ lessons:
   origin: '[[cmd_2564]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-18'
+  last_referenced: '2026-06-23'
 - id: L564
   title: CI上の実行ビット差はgit indexで確認し、bash起動するスクリプトは-x依存にしない
   summary: WSL2 NTFSでは100644ファイルでも実行可能に見える場合があり、ローカルPASSがCIの-x判定FAILを隠す。bash "$script"
@@ -4632,6 +4644,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: CLEARリマインドはL3086 CLEAR判定ブロック内(L3096直後)でcount_cmd_save_blocks_for_cmd(CMD_ID)を呼びBLOCK回数>0かつ教訓未記録ならREMIND出力する新処理が必要
   origin: '[[cmd_2282]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-23'
 - id: L530
   title: 共有workspaceでのgit commitは--onlyオプションでpath固定する
   summary: multi-agent共有workspaceで通常のgit commitを実行すると共有indexに別担当忍者の成果物が混入する。git commit
@@ -4864,6 +4879,9 @@ lessons:
   - gate_loop_health.sh
   origin: '[[cmd_2091]]'
   retired: true
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-23'
 - id: L511
   title: 'WSL2 NTFS: BEGIN getline from tac+early-breakが1-pass全量awk比較で-86%'
   summary: gate_metrics.log全量scan(21ms)→tac末尾から読みN件でbreak(3ms)。awk内getlineでSIGPIPEを送れるのがキモ。
@@ -4916,7 +4934,7 @@ lessons:
   origin: '[[cmd_2086]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-18'
+  last_referenced: '2026-06-23'
 - id: L507
   title: gate_statusキャッシュはreportファイル数が安定している場合のみ有効
   summary: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
@@ -5264,6 +5282,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-16'
   origin: '[[cmd_1963]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-22'
 - id: L481
   title: pipefail下でgrepのno-matchはexit 1 — ||trueで保護必須
   summary: set -o pipefailが有効なbashスクリプトでgrepがマッチ0件だとexit 1でスクリプト全体が異常終了する。grep pattern
@@ -5310,6 +5331,9 @@ lessons:
   how: QUEUE_FILE/gate_pass_cache/gate_fire_log等のテスト用共有ファイルをsetup_file()で1回のみ生成すると、--jobs
     8並列実行時に複数テストが同時書き込み→後発の書き込みが前の内容を上書き→grep検索失敗→if ブロックスキップ
   origin: '[[cmd_karo_ci_fix_ga056]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-23'
 - id: L477
   title: bats並列実行(--jobs N)の共有ファイル競合 — per-testパス化が必須
   summary: bats --jobs 8で並列実行時、テスト間で同一パスのファイル(/tmp/test_*.yaml等)を読み書きすると競合しランダムFAIL。CI環境(Gi
@@ -6889,6 +6913,9 @@ lessons:
   target_files:
   - lesson_effectiveness.sh
   origin: '[[cmd_cycle_L4_012]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-22'
 - id: L342
   title: ホワイトリスト.gitignoreではscriptsディレクトリ内の新規ファイルもgit add -f必須
   summary: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
@@ -9052,6 +9079,9 @@ lessons:
   when: ローテーション機能をレビューする時
   how: 境界値テストに加え、200超の初期データ(例:250件)を用いた追記検証を実施せよ
   origin: '[[cmd_547]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-23'
 - id: L157
   title: 追記型YAMLの上限制御はappend直後に同一トランザクションで実施すべき
   summary: IF 追記型YAMLの上限制御時 THEN append処理とローテーションを分離すると肥大化区間が残る
@@ -9071,6 +9101,9 @@ lessons:
   when: set -e環境で非0戻り値を返す判定関数を呼び出す時
   how: '`if func; then rc=0; else rc=$?; fi` 形式で受けよ'
   origin: '[[cmd_545]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-23'
 - id: L155
   title: lib/配下の共通関数は呼出し元の環境変数依存を明示バリデーションすべき
   summary: IF lib/配下の共通関数を実装する時 THEN 呼出し元の環境変数依存を関数冒頭で明示バリデーションせよ
@@ -9559,6 +9592,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: task_id||subtask_idフォールバック実装が必要
   origin: '[[cmd_462]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-23'
 - id: L111
   title: ACにテストファイル実行が含まれる場合は実行前にファイル実在を確認せよ
   summary: IF ACにテストファイル実行が含まれる時 THEN 実行前にファイルの実在を確認し、不在なら停止して報告せよ
@@ -9864,7 +9900,7 @@ lessons:
   origin: '[[cmd_391]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-18'
+  last_referenced: '2026-06-23'
 - id: L085
   title: 報告YAML命名変更はCLAUDE.md自動ロード+common/ビルドパーツ+全スクリプトの横断更新が必須
   summary: cmd_392はashigaru.md/karo.mdのみをAC3スコープとしたが、CLAUDE.md:20(全エージェント自動ロード)、instruction
@@ -10277,6 +10313,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: ただしTask3ではタイミング交絡あり(修正前コードレビュー→修正後コード検証)
   origin: '[[cmd_317v2]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-22'
 - id: L049
   title: コードレビューで既存対策を見落とす共通パターン — 全文精読とコメント確認の重要性
   summary: inbox_write.shの3件の独立レビューが全て同じ偽陽性(環境変数渡し済み+ホワイトリスト実装済み)を 報告した。コード中にHIGH-1/HIGH-2の
@@ -10298,6 +10337,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: task_id一致チェックをL311後に追加して修正済み
   origin: '[[cmd_317v2]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-22'
 - id: L047
   title: 'deploy_task.sh: Python -c文字列にシェル変数直接埋込はインジェクション危険'
   summary: python3 -c内で$name等を直接補間すると、シングルクォートを含む入力でコード実行可能。環境変数経由(os.environ)か外部.pyファイル+引数
@@ -10331,6 +10373,9 @@ lessons:
   when: 報告YAMLからAC達成状況を自動パースする時
   how: acceptance_criteria/ac_status/ac_checklistの3パターン全てに対応せよ
   origin: '[[cmd_317]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-23'
 - id: L044
   title: reports/*.yamlに扁平/ネスト2構造が混在
   summary: 忍者名_report.yaml(ルートレベルフィールド)とsubtask_*.yaml(report:キー配下)で構造が異なる。スキーマ検証やパーサーは両方に対
