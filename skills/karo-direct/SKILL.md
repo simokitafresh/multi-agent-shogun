@@ -141,6 +141,6 @@ Script refs verified: 2026-06-20 3421a1dc9+48204a464+782be65a6. `deploy_task.sh`
 
 Script refs verified: 2026-06-21 d81b77654. `deploy_task.sh` 直近変更はtag fallbackをtarget_files一致教訓に限定し、CIのlesson fallbackテストを現行仕様へ合わせたもの。`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>` の配備契約、通知、report template生成は変更なし。
 
-Script refs verified: 2026-06-21 1e18f1984. `deploy_task.sh` 直近変更は`NO_WHEN_PENALTY=3`導入によるwhen条件未設定教訓のスコア降格（useful_rate改善目的）。注入精度の内部変更であり、`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>` の配備契約、通知、report template生成は変更なし。
+Script refs verified: 2026-06-23 1586d6f48. `deploy_task.sh` 直近変更はGS/DB検出時execution_env自動注入(L5防御、cmd_3496事故恒久対策)。配備契約(`--yaml`/`--direct`)・通知・report template生成は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-21T16:30:05+09:00 -->
+<!-- script_refs_checked_at: 2026-06-23T12:17:00+09:00 -->
