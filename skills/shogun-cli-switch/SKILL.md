@@ -18,6 +18,7 @@ Script refs verified: 2026-06-21. `switch_cli_mode.sh` relaunch方式をCtrl-C+s
 Script refs verified: 2026-06-21T13:58. CLI種別とモデルの関係セクション追加(殿指摘2026-06-21)。GPT-5.5はCodex CLI必須、Claude CLIで`--model gpt-5.5`は表示のみ変更。TRIGGER拡張(モデル変更系キーワード追加)。DO NOT TRIGGER明確化(同一CLI内の/modelは対象外)。
 Script refs verified: 2026-06-21T15:06. switch_cli_mode.sh 4修正(殿指示2026-06-21): (1)CLI種別変更時respawn強制(active判定バイパス) (2)model_nameファミリー不整合リセット (3)respawn前reset追加(Codex exit 2根因修正) (4)cooldown 5秒(高速連続respawn防止)。pre-bash-combined.sh Guard 9b簡素化(respawn-pane通過、model_switchのみBLOCK)。session_start_inject.sh cli_switch_pending待機状態追加。CLAUDE.md Step 0待機判定追加。双方向6連続100%成功+3人同時切替検証済み。
 Script refs verified: 2026-06-24T00:35. switch_cli_mode.sh model_name SSOT修正系列(c3d290416→5972c7c34→d796b5a43)確認済み。現行契約は「CLI種別変更時に不整合model_nameを空へリセットし、settings.yaml/tmux変数同期とrespawnを行う」。gpt-5.5-low等のper-agent model_name確定値は必要時にyaml_field_setで明示設定する。I/F変更なし。
+Script refs verified: 2026-06-24T08:25. `switch_cli_mode.sh` から `shutsujin_departure.sh` 呼出しを削除。理由: shutsujin_departureはセッション起動時の平時デフォルト復元であり、CLI切替直後に呼ぶとsettings.yamlをデフォルト層へ巻き戻して切替を打ち消す。post-switch verification(settings.type + tmux @agent_cli)を追加し、不一致なら成功表示せずexit 1。
 
 # Shogun CLI Switch
 
@@ -75,9 +76,22 @@ Codex CLIには`--reasoning-effort`起動引数がない。per-agent effortはco
 ### Step 4: 一次確認（必須）
 
 ```bash
-# バナーで実モデルを確認（設定変更≠反映。一次確認が必須）
-tmux capture-pane -t shogun:2.<pane> -p | head -5    # Claude CLI
-tmux capture-pane -t shogun:2.<pane> -p | tail -2    # Codex CLI
+# 1) settings.yamlは固定行sed禁止。YAMLパースで対象agentだけ確認
+python3 - <<'PY'
+import yaml
+agent = "<agent>"
+print(yaml.safe_load(open("config/settings.yaml"))["cli"]["agents"][agent])
+PY
+
+# 2) tmux変数確認
+tmux display-message -t shogun:2.<pane> -p 'agent=#{@agent_id} cli=#{@agent_cli} model=#{@model_name} state=#{@agent_state} task=#{@task_id} current=#{pane_current_command} start=#{pane_start_command}'
+
+# 3) バナーで実モデルを確認（設定変更≠反映。一次確認が必須）
+tmux capture-pane -t shogun:2.<pane> -p -S -60 | tail -30
+
+# 4) 実プロセス確認（pane_current_command=bashでも子プロセスにclaude/codexがいる場合がある）
+pid=$(tmux display-message -t shogun:2.<pane> -p '#{pane_pid}')
+ps -o pid,ppid,stat,comm,args --forest -g "$pid" | sed -n '1,40p'
 ```
 
 ### 実行例
@@ -135,6 +149,8 @@ sleep 8 && for p in 1 3 4 5 6 7 8; do echo "pane $p: $(tmux capture-pane -t shog
 | Claude CLI で `/fast` → Sonnet fast | `/fast` は Opus 4.6 に強制変更される |
 | `codex --full-auto` で起動 | `codex` 単体起動(0.141.0でexit 2) |
 | switch_cli_mode.sh後にsettings.yaml未確認 | 切替後に`grep type settings.yaml`で一次確認必須(2026-06-23: tmux変数のみ更新しsettings未反映の事故) |
+| CLI切替後に`shutsujin_departure.sh`実行 | セッション起動時だけ実行。切替中に呼ぶとsettings.yamlを平時デフォルトへ巻き戻す |
+| `sed -n '27,33p' config/settings.yaml`など固定行で対象agent確認 | YAMLパースで`cli.agents.<agent>`を直接読む |
 
 ## Safety
 
@@ -143,6 +159,9 @@ sleep 8 && for p in 1 3 4 5 6 7 8; do echo "pane $p: $(tmux capture-pane -t shog
 - `active` / `in_progress` 相当のpaneはスキップし、設定だけを次回起動へ反映する
 - `--settings-only` は「次回 respawn 時に反映したい」時だけ使え。CLI切替では `scripts/switch_cli_mode.sh --no-relaunch` に対応する
 - **切替後にsettings.yamlのtype/model_nameが正しいか`grep`で一次確認必須**。switch_cli_mode.shがtmux変数のみ更新しsettings未反映の事故あり(2026-06-23 LK007)
+- **固定行sedでsettings確認禁止**。行番号は差分で動く。必ずPython/YAMLで `cli.agents.<agent>` を読む
+- **切替後に実pane確認必須**。`tmux display-message`、`capture-pane`、必要時は`ps --forest -g #{pane_pid}`で「実CLI/実モデル/実プロセス」を確認する
+- **shutsujin_departure.shはruntime CLI switchで実行禁止**。これはセッション起動時のデフォルト復元スクリプトであり、切替状態を巻き戻す
 - 正本ランブックを先に読む: `docs/research/claude-code-version-runbook.md`
 - Codex切替の前提: `~/.codex/config.toml` に `model_context_window = 1000000`、`model_auto_compact_token_limit = 900000`、hooks有効化があること
 - Codexロール指示: `instructions/generated/codex-{role}.md` と AGENTS.md Recovery手順を使う
