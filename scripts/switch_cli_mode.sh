@@ -267,17 +267,21 @@ update_agent_type() {
         codex)  [[ "$current_model" =~ ^claude ]] && need_reset=true ;;
     esac
     if [[ "$need_reset" == true ]]; then
-        # Step1: settings.yamlの旧model_nameをクリア
-        bash "${SCRIPT_DIR}/scripts/lib/yaml_field_set.sh" "$SETTINGS_FILE" "$agent" "model_name" "" >/dev/null 2>&1 || true
-        # Step2: cli_profile_getキャッシュをクリアし、profilesデフォルトを取得
-        unset "_CLI_LOOKUP_PROFILE_CACHE[${agent}:model_name]" 2>/dev/null || true
-        local default_model
-        default_model=$(cli_profile_get "$agent" "model_name" 2>/dev/null || true)
-        default_model="${default_model:-}"
-        # Step3: デフォルト値があればsettings.yamlに設定
-        if [[ -n "$default_model" ]]; then
-            bash "${SCRIPT_DIR}/scripts/lib/yaml_field_set.sh" "$SETTINGS_FILE" "$agent" "model_name" "$default_model" >/dev/null 2>&1 || true
+        # cli_profiles.yaml defaults.agents.<agent>.model_name から直接取得(cli_profile_getのcache/override問題を回避)
+        local profiles_file="${SCRIPT_DIR}/config/cli_profiles.yaml"
+        local default_model=""
+        if [[ -f "$profiles_file" ]]; then
+            default_model=$(awk -v agent="$agent" '
+                /^defaults:/ { in_defaults=1; next }
+                in_defaults && /^[^ ]/ { in_defaults=0 }
+                in_defaults && /^  agents:/ { in_agents=1; next }
+                in_agents && /^  [^ ]/ { in_agents=0 }
+                in_agents && $0 ~ "^    " agent ":" { found=1; next }
+                found && /^    [^ ]/ { found=0 }
+                found && /model_name:/ { gsub(/.*model_name:[[:space:]]*"?/, ""); gsub(/".*/, ""); print; exit }
+            ' "$profiles_file")
         fi
+        bash "${SCRIPT_DIR}/scripts/lib/yaml_field_set.sh" "$SETTINGS_FILE" "$agent" "model_name" "${default_model:-}" >/dev/null 2>&1 || true
         echo "  [settings] ${agent}: model_name reset (${current_model} incompatible with ${TARGET_CLI}) → ${default_model:-empty}"
     fi
 
