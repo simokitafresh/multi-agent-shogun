@@ -267,12 +267,18 @@ update_agent_type() {
         codex)  [[ "$current_model" =~ ^claude ]] && need_reset=true ;;
     esac
     if [[ "$need_reset" == true ]]; then
-        # SSOT(cli_profiles.yaml)からデフォルトmodel_nameを取得して設定
+        # Step1: settings.yamlの旧model_nameをクリア
+        bash "${SCRIPT_DIR}/scripts/lib/yaml_field_set.sh" "$SETTINGS_FILE" "$agent" "model_name" "" >/dev/null 2>&1 || true
+        # Step2: cli_profile_getキャッシュをクリアし、profilesデフォルトを取得
+        unset "_CLI_LOOKUP_PROFILE_CACHE[${agent}:model_name]" 2>/dev/null || true
         local default_model
         default_model=$(cli_profile_get "$agent" "model_name" 2>/dev/null || true)
         default_model="${default_model:-}"
-        bash "${SCRIPT_DIR}/scripts/lib/yaml_field_set.sh" "$SETTINGS_FILE" "$agent" "model_name" "$default_model" >/dev/null 2>&1 || true
-        echo "  [settings] ${agent}: model_name reset (${current_model} incompatible with ${TARGET_CLI}) → ${default_model}"
+        # Step3: デフォルト値があればsettings.yamlに設定
+        if [[ -n "$default_model" ]]; then
+            bash "${SCRIPT_DIR}/scripts/lib/yaml_field_set.sh" "$SETTINGS_FILE" "$agent" "model_name" "$default_model" >/dev/null 2>&1 || true
+        fi
+        echo "  [settings] ${agent}: model_name reset (${current_model} incompatible with ${TARGET_CLI}) → ${default_model:-empty}"
     fi
 
     echo "  [settings] ${agent}: ${current} -> ${TARGET_CLI}"
