@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-23 cmd_3518 -->
+<!-- last_updated: 2026-06-23 cmd_3520 -->
 
 ## 2026-06-21
 
@@ -1229,6 +1229,8 @@
 | session_20260620_karo_cmd3457_checkpoint | cmd_3457 F001改訂完了後の復帰点 | stable | **強くてニューゲーム要点(家老)**: cmd_3457は半蔵commit `1b7b2703e` で完遂。軍師FAILはSG-PRE25形式のみで、report `files_modified` に `CLAUDE.md` verified_existing_dependency を追加して解消。GATEのrelated_lessons awk誤読でL822 draftが生成されたため削除し、`lessons_useful` は既存L173へ差替。現行/archived report両方L173。archive cmdsに `cmd_3457_completed_20260620.yaml` status completed。dashboard反映済み、Karo inbox未読0、全忍者idle。git pushはDNS解決不可でnon-blocking WARN。残注意: `gate_context_freshness.sh` はdm-signal-core/ops ALERT(今回cmdとは無関係)、未push/dirty多数は既存D0/自動生成作業混在のため勝手にrevert/commitするな。origin: [[cmd_3457]] -> [[F001目的手段逆転]] -> [[会話ブロック基準]] |
 | cmd_3461 | dm-signalリポジトリ内SSOT棚卸し | done | 6分割偵察で shard 5件 + final `docs/ssot-audit.md` を作成。全archive report PASS、子cmd CLEAR済み。kagemaru履歴修復でhanzo/saizo成果物が未追跡化したため家老が補正commit `273ba153` で永続化。L823登録(precheckはrelated_lessonsなしのlessons_useful空をFAILにしない)。 |
 | cmd_3517 | trial scripts α6全6項目+TQQQ benchmark道具磨き | GATE CLEAR | robustness_common系をα6全6項目出力へ拡張し、SPY/TQQQ benchmark layerを同一経路化。才蔵commit `2c7aa1f1`、smoke+既存3項目回帰一致+TQQQ 5trial確認済み。Step2全量再実行/Step3報告書生成は次cmd。 |
+| cmd_3518 | α6全量再実行+固定体裁報告書生成 | GATE CLEAR | 6忍者分割でL0/L1/L2/L3+SPY/TQQQを5 trial再実行。固定体裁報告書 `outputs/analysis/grid_search_robustness/cmd_3518/alpha6_robustness_report.md` を生成し、L2/L3は10 JSON・α6欠損0・cmd_3515既存3項目1008値差分0。trial_wf fold出力のα6欠損は飛猿commit `b471e2b9` で補完。 |
+| cmd_3520 | cmd_save.sh causal_verification scope report偽陽性除外 | GATE CLEAR | 影丸commit `10459a367`。`report`一般語をscope判定から外し、`report_field_set`/`gate_report_format`実体名は維持。unit 6 PASS、軍師LGTM、archive済み。 |
 | session_20260620_karo_strong_new_game | /new前強ニュー化チェックポイント | active | **復帰要点**: 将軍startup先送りBLOCK escalation重複2件(`msg_20260620_084652_*`)は処理済み・karo inbox未読0。家老karo_directで影丸へ `cmd_karo_recon_startup_defer_escalation_20260620` を配備済み。目的=「追体験自動化ターゲットWARN + 洗脳連鎖2x2危険象限が3セッション連続」の発火元/根因/恒久hotfix案を偵察。deploy_task注入でtask YAMLが壊れたため、家老が `/tmp/karo_direct_startup_escalation_recon.yaml` から最小正規YAMLへ修復し、影丸は修復済みtaskを再読して作業中。復帰後は `queue/tasks/kagemaru.yaml` と `queue/reports/kagemaru_report_cmd_karo_recon_startup_defer_escalation_20260620.yaml` を確認し、影丸報告を待つ。cmd_3461本体はarchive `queue/archive/cmds/cmd_3461_done_20260620.yaml` でstatus done、DM-Signal成果物はcommit `4b88dfdc`/`fb6f0c97`/`86cf2c29`/`f8fd7c15`/補正`273ba153`。対象成果物未追跡0。multi-agent-shogun側dirtyは大量にあり他作業由来を含むため勝手にrevert/一括commit禁止。 |
 
 - 2026-06-20 cmd_karo_hotfix_context_freshness_ga099_20260620: GA-099 context_freshness ALERTを半蔵へkaro_direct配備。deploy_task.shのtask YAML破損を検出し、正本YAML+yaml_field_setで修復、capture-paneでnudge到達・最新YAML再読込・in_progressを確認。元alertは処理済み、半蔵報告待ち。

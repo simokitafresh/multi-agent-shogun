@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-23 cmd_3518 -->
+<!-- last_updated: 2026-06-23 cmd_3520 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -434,3 +434,4 @@
 | cmd_3515 | 殿指示(2026-06-23 15:05,15:14): 12+21+21+21体を4視点+レジームで分析。シン四神(12体)のtrial対応+SPYベンチマーク比較も含む。cmd_3512-3514で整備した5本のtrial scripts(IS/OOS/Expanding/WF/Regime)を全レイヤーに拡張し75体+SPY全量検証 | dm-signal | 06-23 | kasoku_ratio残4試練(oos/expanding |
 | cmd_3516 | 殿指示(2026-06-23 18:23): 任意のPFだけを実行するモードの追加。cmd_3515で全GS空間探索が走り75体チャンピオン検証に数十分かかった根因はrobustness_common.pyがGS DBの全パターンをロードする設計。チャンピオン名(pattern_id)を指定して該当パターンだけ抽出しtrial実行するオプションを追加し、75体検証を数分で完了可能にする | dm-signal | 06-23 | robustness_common.pyに--pattern |
 | cmd_3517 | 殿指示(2026-06-23 19:21/19:56): α6は6項目のはずだが3項目しか出力されていない+TQQQもベンチマークに追加。プランドキュメント: docs/research/plan_alpha6_robustness_verification.md Step 1。robustness_common.pyのmetrics辞書にMRU・Calmar・Avg UWPを追加し、TQQQベンチマークに対応し、smoke確認で6項目出力+既存3項目回帰一致を検証する | dm-signal | 06-23 | robustness trial出力をα6全6項目へ拡張し、 |
+| cmd_3518 | プランドキュメント docs/research/plan_alpha6_robustness_verification.md Step 2+3。cmd_3517でα6全項目+TQQQ対応済み。全レイヤー(シン四神・シン忍法・奥義・秘奥義)+SPY+TQQQ×5 trialを全量再実行し、固定体裁報告書(まとめ+正率+詳細+ベンチマーク)をMarkdown+gistで生成する。家老・軍師はプランドキュメントを読み、実行と結果がプランに背かないか厳重に確認せよ | dm-signal | 06-23 | L1 kasoku_ratioを5 trialsで再実行し、 |
