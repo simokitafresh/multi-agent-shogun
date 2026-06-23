@@ -546,7 +546,7 @@ v7吸収(2026-05-19):
   created_at: '2026-06-21'
 - id: 'LK007'
   title: 'switch_cli_mode.sh settings.yaml未更新+Codex起動コマンド問題'
-  origin: '未指定'
+  origin: '[[session_20260623_cli_switch]] -> [[switch_cli_mode settings未反映]] -> [[手動修正3名成功]]'
   detail: 'switch_cli_mode.sh to-codex --scopeでtmux変数(@agent_cli/@model_name)は更新されたがsettings.yaml type/model_nameは未更新だった。また、Codex 0.141.0ではcodex --full-autoがexit 2。respawn時にCodexプロンプトに旧Claude CLI起動コマンドがsend-keysで貼付。対処: (1)yaml_field_set.shで手動settings更新 (2)respawn-pane -k ''codex''でクリーン起動。origin: [[session_20260623_cli_switch]] -> [[switch_cli_mode settings未反映]] -> [[手動修正3名成功]]'
   source_cmd: 'session_20260623'
   when: '同種の状況が再発した時'
