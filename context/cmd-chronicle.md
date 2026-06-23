@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-23 cmd_3520 -->
+<!-- last_updated: 2026-06-24 cmd_karo_recon_ga122_context_freshness_20260624 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,22 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3022 | verdict-check SKILL.md改良5回効果なし(binary_checks_fail)。忍者がbc:noのまま報告完了通知を送るとcmd_complete_gateでBLOCKされるが、inbox_write.sh report_received分岐のPhase 2とPhase 3の間にbc:no検出BLOCKを追加し、忍者の報告完了をその場で差戻す。意志依存を排除する構造予防 | infra | 05-24 | inbox_write report_receivedでve |
-| cmd_3024 | 全ロール(将軍・家老・軍師・忍者)で操作時にセマンティクスインデックスからスキルを自動推薦する。殿の入力テキストを検索キーにsemantic_searchを呼び、関連スキルをLevel 5(recommend)で表示する。殿裁定: 完全自動+全ロール+原理1つ+BLOCK不可+各論パッチ禁止 | infra | 05-24 | prompt_state_inject.shにsemanti |
-| cmd_3025 | q8_縮小表現(quality_gate_q8_scope_expression)のFP率66%(2/3)。scope_mode=focusedのcmdはスコープ限定が正当なので除外すべき。L2536の_Q8_SCOPE_EXEMPTにscope_mode判定を追加する | infra | 05-24 | cmd_save.sh q8縮小表現WARNでscope_m |
-| cmd_3026 | gate_skill_script_refs.shが4スキル(codd-fix/idle-persist/karo-direct/recon-dual)で参照スクリプトがSKILL.mdより新しいとWARN。3セッション連続startup BLOCK要因。各SKILL.mdのscript_refs_checked_atを現在日時に更新し、参照スクリプトの変更がSKILL.md手順に影響しないか確認する | infra | 05-24 | 4スキルのscript_refs_checked_atを20 |
-| cmd_3027 | Phase 1(cmd_3024)でスキル推薦表示を全ロールに実装した。Phase 2は推薦が正しかったか計測する基盤を構築する。(2a)推薦ログ記録 (2b)source正規化 (2c)startup gate集計 (2d)recall miss補完の4段。全てロール非依存 | infra | 05-24 | スキル推薦ログ、source正規化、startup gate |
-| cmd_3028 | render_lord_decisionsが将軍のresponse(軍師D0承認等)を殿の裁定として分類する問題を修正。lord_conversation.jsonl消費者17本の波及確認も実施 | infra | 05-24 | render_lord_decisionsをinbound限 |
-| cmd_3029 | gate_fp_relaxation_proposal.py L119でWARN累計昇格(escalated_to_block)をFP(偽陽性)としてカウントしているバグを修正。WARN累計昇格=WARNが正しく問題を検出した証拠(TP)。TPをFPカウントするためFP率が実際より高く計算されALERTが誤発火し3セッション連続startup BLOCKを引き起こした | infra | 05-24 | WARN累計昇格をFPカウントから除外し、escalated |
-| cmd_3030 | skill_auto_improve_stateのcode_fix_requiredが直近50件FAIL率0%でも14日間ALERTし続ける。直近FAIL率0%なら自動解除してALERT誤発火を防止。現状cmd_2993の1イベントが3忍者×5回=15回ALERTに膨張 | infra | 05-24 | gate_shogun_startupのcode_fix_r |
-| cmd_3032 | context/infrastructure.mdが24日間未更新で連日WARN。lord_conversationデータフロー(live→アーカイブ→記憶DB)、記憶DB構造、Codex respawn-pane裁定、CI並列隔離等が未反映。将軍が/clear後にインフラ構造を参照できない真因を解消 | infra | 05-24 | context/infrastructure.mdへlord |
-| cmd_3035 | cmd_3033(将軍Level 0-7)とcmd_3034(軍師Level 4)で将軍・軍師の洗脳防御を実装したが家老gateには洗脳チェックがない。家老の判断(配備/workaround分類/LGTM)でAnthropicの早期終了本能が影響するケースを防御する | infra | 05-24 | 家老startup gateにworkaround brai |
-| cmd_3036 | CLAUDE.md Step 8にQ6(洗脳チェック)を追加したがgate検出がなく省略しても何も起きない(Level 2止まり)。gate_shogun_startup.shでQ6回答の有無を検証しLevel 4(gate BLOCK)に到達させる。軍師はcmd_3034でLevel 4実装済み。将軍も同等に | infra | 05-24 | gate_shogun_startup.shへQ6洗脳チェッ |
-| cmd_3037 | 家老だけinstructions洗脳防御0件(将軍12件/軍師6件)の穴を塞ぐ。§0.1日常フィルタ+idle深い監査+軍師第三者検証の2層構造 | infra | 05-24 | 家老向け洗脳防御を§0.1/idle自走/instructi |
-| cmd_3040 | lord_conversation_read.shは引数必須の手動実行道具スクリプト。hooks登録不可だがgateが意志依存と誤検出し7セッション連続ALERT。allowlistに追加して偽陽性を解消する | infra | 05-24 | lord_conversation_read.shをenfo |
-| cmd_3041 | PDF/画像/ドキュメントの内容を確認してからリネームする汎用スキルを作成。Drive(gws)とローカル(mv)の両対応。全件内容確認を構造的に強制する | infra | 05-24 | skills/file-rename/SKILL.mdを新規 |
-| cmd_3042 | cmd_3041+追加commit(27a9e4c7)でsource_location+FTS5は反映済み。未反映の日付3列(file_created_at/file_added_at/renamed_at)とINSERT前正規化ルールを追加する | infra | 05-24 | file-rename SKILL.mdへrename_pa |
-| cmd_3044 | リネーム間違い時に元ファイル名に戻せる仕組みがない。リネーム前にファイル名一覧を保存し一括ロールバック可能にする。リスクは先にふさぐ(殿指示) | infra | 05-24 | file-renameスキルにリネーム前バックアップ、JSO |
 | cmd_3046 | lord_conversation.jsonlが202行でMAX_ENTRIES=200を超過しsession_summary喪失リスク。200→500に拡張 | infra | 05-25 | conversation_retention.shのMAX_ |
 | cmd_3045 | skill_auto_improve.shがcode_fix_cleared済みパターンを再分類→再エスカレーションするバグの修正。report-writeとverdict-checkで偽エスカレーションが毎起動発生し将軍の確認コストが累積する | infra | 05-25 | code_fix_cleared済みskill_auto_i |
 | cmd_3048 | 殿の入力受信時に記憶DB FTS5検索で過去の関連裁定を将軍に自動注入する。現在grep/rg実行時のみDB利用で殿対話時は未接続(なぜなぜ7回で特定した穴)。prompt_state_inject.sh内に関数追加 | infra | 05-25 | prompt_state_inject.shの殿入力時mem |
