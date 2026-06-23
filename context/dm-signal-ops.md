@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-06-23 cmd_3494 -->
+<!-- last_updated: 2026-06-23 cmd_3512 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -77,7 +77,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L754 -->
+<!-- last_synced_lesson: L755 -->
 
 ## §36 API認証
 
@@ -721,6 +721,7 @@ import metrics_research_engine as MRE
 
 設計書: → https://gist.github.com/simokitafresh/14b6cf497b3abbefb85a2f3d102d778d
 - FE Admin UI: ALM config編集機能が先(殿指示)。設計確定済み(ALMトグルでLookback↔ALM設定切替)
+- L755: GS実行環境標準化: Linux venv必須+PowerShell禁止（cmd_3508）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true

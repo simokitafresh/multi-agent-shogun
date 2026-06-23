@@ -1,5 +1,5 @@
 # 長期ロバストネス検証カタログ
-<!-- last_updated: 2026-04-28 Phase 7.1 L0実証+アルファ空間原則追加 -->
+<!-- last_updated: 2026-06-23 cmd_3512 -->
 
 > 目的: WF四神 / 忍法 / 奥義について、3年 / 5年 / 10年スパンの頑健性をいつでも再検証できるよう、実行可能な手法を8種に整理した実務カタログ。
 
@@ -26,6 +26,7 @@
 | foldパーセンタイル検証 | 固定 champion が各 fold の母集団内でランダム以上を維持するか | L0 | `scripts/oneshot/cmd_2214_wf_shin_fold_percentiles.py` |
 | α6指標top安定性 | 計算期間短縮で top 集合が崩れないか | L0/L1 | `scripts/analysis/standard_pf_preprocessing/cmd_2215_wf_alm_top_stability.py` |
 | レジーム条件付き検証 | Bull/Bear/Sideways すべてで α が保てるか | L2/L3 | `scripts/oneshot/cmd_1934_v2_fast.py` |
+| **4つの試練(殿定義2026-04-15)** | **IS/OOS/Expanding/WFの4手法+レジームでαの多角的堅牢性を検証** | **L0-L3全層** | **`scripts/analysis/grid_search/cmd_2369_l1_wf_alpha_select.py`(cmd_3508高速化+cmd_3510で4手法統合)** |
 
 ## §2. 共通前提
 
