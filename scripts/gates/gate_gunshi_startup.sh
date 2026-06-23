@@ -1071,6 +1071,20 @@ if [ "$_three_exit" -ne 0 ]; then
     fi
 fi
 
+# --- Check 12: 免疫深度サマリ (gate_immunity_depth.sh 2026-06-23) ---
+echo ""
+echo "■ 免疫深度サマリ"
+if [ -f "$SCRIPT_DIR/scripts/gates/gate_immunity_depth.sh" ]; then
+    _depth_out=$(bash "$SCRIPT_DIR/scripts/gates/gate_immunity_depth.sh" 2>/dev/null | grep -E '種類|FAIL→LGTM回復|RC解決率|月別' | head -5)
+    if [ -n "$_depth_out" ]; then
+        printf '%s\n' "$_depth_out" | sed 's/^/  /'
+    else
+        echo "  INFO: gate_immunity_depth.sh出力なし"
+    fi
+else
+    echo "  SKIP: gate_immunity_depth.sh不在"
+fi
+
 # --- Alert history記録 (gate_shogun_startup.sh準拠) ---
 mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
 _startup_run_id="$(date '+%Y-%m-%dT%H:%M:%S%z')"
