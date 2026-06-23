@@ -39,25 +39,19 @@ else
     echo "  SKIP: gate_metrics.logなし"
 fi
 
-# --- 観点2: 免疫速度 (FAIL→同一cmd LGTM到達時間) ---
+# --- 観点2: 免疫速度 (FAIL→同一cmd LGTM回復件数) ---
 echo ""
-echo "■ 観点2: 免疫速度 (FAIL→LGTM回復時間)"
+echo "■ 観点2: 免疫速度 (FAIL→LGTM回復件数)"
 if [ -f logs/gunshi_review_log.yaml ]; then
-    # FAIL cmdごとに最初のFAIL timestamp と最初のLGTM timestampの差分を計算
+    # エントリごとにcmd_id+verdictを収集し、同一cmdのFAIL→LGTM遷移を検出
     awk '
     /^- cmd_id:/ { cmd=$3 }
-    /verdict: FAIL/ && cmd { fail_ts[cmd] = last_ts }
-    /verdict: LGTM/ && cmd && (cmd in fail_ts) && !(cmd in recovered) {
-        recovered[cmd] = last_ts
-    }
-    /timestamp:/ { gsub(/"/, "", $2); last_ts = $2 }
+    /verdict: FAIL/ && cmd { failed[cmd] = 1 }
+    /verdict: LGTM/ && cmd && (cmd in failed) { recovered[cmd] = 1 }
     END {
-        n = 0
-        for (c in recovered) {
-            printf "    %s: FAIL→LGTM\n", c
-            n++
-        }
-        printf "  FAIL→LGTM回復: %d件 / 未回復FAIL: %d件\n", n, length(fail_ts) - n
+        f = length(failed); r = length(recovered)
+        for (c in recovered) printf "    %s: FAIL→LGTM\n", c
+        printf "  FAIL→LGTM回復: %d件 / 未回復FAIL: %d件\n", r, f - r
     }
     ' logs/gunshi_review_log.yaml
 fi
