@@ -5208,7 +5208,7 @@ ${FULL_CMD}"
 
     # GS検出 → ACにrun_077が含まれるか確認
     if [[ "$HIT_GS" == true ]]; then
-        if ! echo "$AC_SECTION" | grep -qE 'run_077|grid_search/run|shin_shijin_l1_gs'; then
+        if ! echo "$AC_SECTION" | grep -qE 'run_077|grid_search/run|shin_shijin_l1_gs|wf_alpha_select|champion_select'; then
             if [[ "$HIT" == false ]]; then
                 echo "WARNING: 研究cmd道具明示チェック(Check 18)。ACに研究スクリプトパスが未記載(cmd_1822教訓)" >&2
                 HIT=true
@@ -5223,7 +5223,7 @@ ${FULL_CMD}"
 
     # WF検出 → ACにl1_alm_wf_engineが含まれるか確認
     if [[ "$HIT_WF" == true ]]; then
-        if ! echo "$AC_SECTION" | grep -qE 'l1_alm_wf_engine|wf_engine'; then
+        if ! echo "$AC_SECTION" | grep -qE 'l1_alm_wf_engine|wf_engine|wf_alpha_select'; then
             if [[ "$HIT" == false ]]; then
                 echo "WARNING: 研究cmd道具明示チェック(Check 18)。ACに研究スクリプトパスが未記載(cmd_1822教訓)" >&2
                 HIT=true

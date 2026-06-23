@@ -74,6 +74,7 @@ cat <<SKELETON
       source: "FILL_THIS: 一次情報のパス(コード現物/DB/設計書§)"
       trust: verified
     depends_on: none
+    execution_env: "FILL_THIS_or_DELETE: Linux venv必須/RSS計測=/usr/bin/time -v等。不要なら行削除(GS/DB系cmdは必須。origin: cmd_3496 kagemaru PowerShell事故)"
     timeout_minutes: 30
     quality_gate:
       q1_firefighting: "FILL_THIS: 消火でなく品質向上である理由"
@@ -105,6 +106,7 @@ cat >&2 <<'GUIDE'
 7. PASS後: bash scripts/cmd_delegate.sh cmd_<id> "<家老への配備メッセージ>" (inbox_write直接のcmd_newはgateがBLOCK)
 8. 新規ファイル/ディレクトリを伴うcmdは意図的新設である理由をdiagnosisに書け(new_file WARN対策。無自覚な新設=車輪の再発明検査)
 9. 性能ACに合格点(閾値)を書くな(LS053)。構造的二値(プロセス起動O(1)等)+実測値報告+理論限界比で書け。閾値はデータ量変化で無意味化し、到達で最適化が止まる
+10. execution_env: GS/DB/本番系cmdでは実行環境制約を明記(Linux venv/RSS計測方法等)。不要なcmdでは行ごと削除。origin: cmd_3496 kagemaru PowerShell経由Windows python事故
 10. gate/hook/script修正cmd: q5に実行証拠(コマンド・exit code・出力要点)を必ず記載せよ。grep/コード断片だけは不可(LS063: check_gate_script_execution_evidence)
 11. インフラ(gate/hook/daemon/記憶DB/semantic)cmd: q5/q8/originにgit log・教訓・設計意図を明記せよ(check_causal_verification_requirement)
 12. 同一BLOCKが3回以上続いたら: quality_gate.nazenaze_root_cause になぜなぜ7回分析を記載せよ(VALID_QG_FIELDSに登録済み)

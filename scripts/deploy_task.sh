@@ -5803,8 +5803,42 @@ inject_bloom_level() {
     log "[BLOOM_LVL] Injected bloom_level (empty)"
 }
 
-# inject_execution_controls: cmd_1393で inject_task_modifiers.py に統合（stub）
-inject_execution_controls() { log "inject_execution_controls: merged into inject_task_modifiers (no-op)"; }
+# inject_execution_controls: GS/忍法/DB系タスクにexecution_env制約を自動注入(L5)
+# origin: cmd_3496 kagemaru PowerShell経由Windows python事故(2026-06-23)
+# Guard 0f(L1将軍hook)+本関数(L5事前コンテキスト)で二層防御
+inject_execution_controls() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    # 既にexecution_envがtask YAMLにあればスキップ
+    grep -q 'execution_env:' "$task_file" 2>/dev/null && {
+        log "inject_execution_controls: execution_env already present, skip"
+        return 0
+    }
+
+    local purpose command_text haystack
+    purpose=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "" 2>/dev/null || true)
+    command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "" 2>/dev/null || true)
+    haystack="${purpose} ${command_text}"
+
+    # GS/忍法/DB操作を検出
+    if printf '%s\n' "$haystack" | grep -Eqi 'grid.?search|GS実行|忍法|秘奥義|run_077|wf_runner|fullrecalculate|本番DB|migration'; then
+        local indent="  "
+        local inject_line="${indent}execution_env: \"Linux venv必須。RSS計測=/usr/bin/time -v。PowerShell/Windows python禁止(cmd_3496事故)\""
+        # description行の前に挿入
+        local tmp_file
+        tmp_file=$(mktemp)
+        awk -v line="$inject_line" '
+            /^  description:/ && !done { print line; done=1 }
+            { print }
+        ' "$task_file" > "$tmp_file"
+        cp "$tmp_file" "$task_file"
+        rm -f "$tmp_file"
+        log "inject_execution_controls: execution_env injected (GS/DB detected)"
+    else
+        log "inject_execution_controls: no GS/DB keywords, skip"
+    fi
+}
 
 # ─── ninja_weak_points自動注入（cmd_1307: 忍者別過去失敗パターン注入） ───
 # karo_workarounds.yamlから忍者名でフィルタし、category別件数をtask YAMLに注入
