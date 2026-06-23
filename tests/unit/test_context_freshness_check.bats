@@ -485,3 +485,25 @@ EOF
     [[ "$output" == *"ALERT: context/infrastructure.md source commits"* ]]
     [[ "$output" != *"dm-signal.md"* ]]
 }
+
+@test "infra scoped contexts do not share root fallback counts" {
+    _create_context "context/codd.md" "$STALE_DATE"
+    _create_context "context/obsidian-link-principles.md" "$STALE_DATE"
+    _create_source_commit "scripts/codd/generate.py" "test: codd source changed"
+    _create_shogun_to_karo "cmd_933" "infra"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_933
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/codd.md source commits 1件"* ]]
+    [[ "$output" != *"context/obsidian-link-principles.md source commits 1件"* ]]
+}
+
+@test "git timeout is reported instead of treated as zero source commits" {
+    _create_context "context/codd.md" "$STALE_DATE"
+    _create_source_commit "scripts/codd/generate.py" "test: codd source changed"
+    _create_shogun_to_karo "cmd_934" "infra"
+
+    CFC_GIT_TIMEOUT=0 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: context/codd.md source commit check failed"* ]]
+}

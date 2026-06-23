@@ -377,6 +377,30 @@ DM_SIGNAL_CONTEXT_PATHS: dict[str, list[str]] = {
         "tasks/lessons.md",
     ],
 }
+INFRA_CONTEXT_PATHS: dict[str, list[str]] = {
+    "context/codd.md": [
+        "scripts/codd",
+        "scripts/codd_",
+        "skills/codd",
+        "skills/codd-refactor",
+    ],
+    "context/memory-db-queries.md": [
+        "scripts/memory_db_",
+        "scripts/lord_conversation_",
+        "data",
+    ],
+    "context/memory-db-schema.md": [
+        "scripts/memory_db_",
+        "scripts/lord_conversation_",
+        "data",
+    ],
+    "context/obsidian-link-principles.md": [
+        "scripts/obsidian_",
+        "scripts/causal_",
+        "scripts/semantic_",
+        "docs/semantic-index",
+    ],
+}
 # WSL2 NTFS上でgit logが7秒以上かかるため並列実行と組み合わせてこの値で打ち切る。
 # テスト用小さいrepoでは瞬時完了するため精度に影響しない。
 # 環境変数 CFC_GIT_TIMEOUT で上書き可能（テスト/開発用）。
@@ -386,6 +410,8 @@ _GIT_TIMEOUT: int = int(os.environ.get("CFC_GIT_TIMEOUT", "3"))
 def source_repo_for_context(project_id: str, rel_path: str) -> tuple[str, list[str], bool]:
     project_path = PROJECT_PATHS.get(project_id, "")
     base = os.path.basename(rel_path)
+    if project_id == "infra" and rel_path in INFRA_CONTEXT_PATHS:
+        return root, INFRA_CONTEXT_PATHS[rel_path], False
     if project_path and os.path.abspath(project_path) != os.path.abspath(root):
         if base.startswith(f"{project_id}.") or base.startswith(f"{project_id}-"):
             if project_id == "dm-signal" and rel_path in DM_SIGNAL_CONTEXT_PATHS:
@@ -417,11 +443,11 @@ def _root_fallback_commit_count_since(updated_at: date) -> int:
         )
     except Exception as e:
         print(f"WARN: source_commit_count_since git failed: {root} — {e}", file=sys.stderr)
-        return 0
+        return -1
 
     if result.returncode != 0:
         print(f"WARN: source_commit_count_since git returncode={result.returncode}: {root}", file=sys.stderr)
-        return 0
+        return -1
 
     count = 0
     current_subject = ""
@@ -482,11 +508,11 @@ def source_commit_count_since(project_id: str, rel_path: str, updated_at: date) 
         )
     except Exception as e:
         print(f"WARN: source_commit_count_since git failed: {repo_path} — {e}", file=sys.stderr)
-        return 0
+        return -1
 
     if result.returncode != 0:
         print(f"WARN: source_commit_count_since git returncode={result.returncode}: {repo_path}", file=sys.stderr)
-        return 0
+        return -1
 
     count = 0
     for subject in result.stdout.splitlines():
@@ -809,6 +835,13 @@ def build_source_warning(rel_path: str, commit_count: int, updated_at: date) -> 
     )
 
 
+def build_source_check_warning(rel_path: str, updated_at: date) -> str:
+    return (
+        f"WARN: {rel_path} source commit check failed "
+        f"since last_updated={updated_at.isoformat()}。timeout/returncodeを確認せよ"
+    )
+
+
 def is_excluded_context_file(rel_path: str) -> bool:
     normalized = rel_path.strip().lstrip("./")
     return normalized in exclude_entries or os.path.basename(normalized) in exclude_entries
@@ -836,7 +869,9 @@ if mode == "--dashboard-warnings":
     min_source_commits = int(os.environ.get("CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS", "1"))
     for project_id, rel_path, abs_path, updated_at in files_for_git:
         cc = commit_counts.get((project_id, rel_path), 0)
-        if cc >= min_source_commits:
+        if cc < 0:
+            warnings.append(build_source_check_warning(rel_path, updated_at))
+        elif cc >= min_source_commits:
             warnings.append(build_source_warning(rel_path, cc, updated_at))
 elif mode == "--cmd-warnings":
     project_id = find_cmd_project(cmd_id)
@@ -854,8 +889,11 @@ elif mode == "--cmd-warnings":
             files_for_git.append((current_project, rel_path, abs_path, updated_at))
         commit_counts = batch_source_commit_counts(files_for_git)
         for current_project, rel_path, abs_path, updated_at in files_for_git:
-            if commit_counts.get((current_project, rel_path), 0) > 0:
-                warnings.append(build_source_warning(rel_path, commit_counts[(current_project, rel_path)], updated_at))
+            cc = commit_counts.get((current_project, rel_path), 0)
+            if cc < 0:
+                warnings.append(build_source_check_warning(rel_path, updated_at))
+            elif cc > 0:
+                warnings.append(build_source_warning(rel_path, cc, updated_at))
 
 for line in sorted(dict.fromkeys(warnings)):
     print(line)
