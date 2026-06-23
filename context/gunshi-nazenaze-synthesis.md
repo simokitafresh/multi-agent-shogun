@@ -134,3 +134,4 @@ ALM研究の前提条件(道具)が整えば、**CAGR目的関数のDMA/DMS検�
 - [[gunshi_gp193_t1_prevention_20260414]] — 軍師GP193: T1防止設計(2026-04-14)
 - [[gunshi_gp194_split_deploy_bc_scope_20260415]] — 軍師GP194: 分割配備BCスコープ(2026-04-15)
 - [[gunshi_idle_cold_viewpoint_retroactive_20260621]] — 軍師idle: 冷え観点遡及分析+洗脳自己監査(2026-06-21)
+- [[gunshi_idle_adversarial_cold_recurrence_20260623]] — 軍師idle: adversarial冷え観点 再発分析(2026-06-23)
