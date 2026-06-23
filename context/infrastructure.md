@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-23 cmd_3513 -->
+<!-- last_updated: 2026-06-23 cmd_3515 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -351,7 +351,7 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 | pending/cmd監視 | `check_undeployed_cmds` | 未配備cmdを検出し、配備漏れを家老へ通知する。 |
 | pending/cmd監視 | `check_stale_cmds` | 古いcmd状態を検出し、stale作業や放置を表面化する。 |
 | 整合性回収 | `check_report_done_idle_mismatch` | 報告doneとpane/task状態の不一致を検出し、ghost状態を回収する。 |
-| 整合性回収 | `auto_void_if_parent_cmd_completed` | parent cmd完了後に残る後発タスクを自動voidし、二重配備被害を止める。 |
+| 整合性回収 | `auto_void_if_parent_cmd_completed` | parent cmd完了後に残る後発タスクを自動voidし、二重配備被害を止める。分割配備では `subtask_id` を `task_id`/`_ac_task_id` より優先して照合し、同一parent_cmd内の別担当taskを他忍者の完了報告で誤voidしない（cmd_3515/LK010）。 |
 | handler | `_handle_auto_clear` | auto-clear条件成立時の実処理を担う内部handler。 |
 | handler | `_handle_idle_notify` | idle通知の送信・抑制を扱う内部handler。 |
 | handler | `_handle_deploy_stall` | 配備後STALLを検知し、本人/家老への回復通知へつなぐ。 |

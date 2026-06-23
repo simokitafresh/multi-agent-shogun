@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-21 cmd_3478 -->
+<!-- last_updated: 2026-06-23 cmd_3515 -->
 
 ## 2026-06-21
 
@@ -1245,3 +1245,4 @@
 - 2026-06-23 cmd_karo_hotfix_ga120_context_freshness_recon_20260623: GA-120 context_freshness ALERT偵察を疾風へkaro_direct配備し、軍師LGTMで完了。根因は `CFC_GIT_TIMEOUT=1` と source repo root fallback の複合で、google-classroomは実repoに3件更新あり、saxoは専用repoなしのroot fallback偽ALERT。LK009登録、PD-048/049作成。
 
 | session_20260623_karo_strong_new_game_ga120 | GA-120処理後の強ニュー化チェックポイント | stable | **復帰要点(家老)**: 家老inbox未読0、CI GREEN、dashboard 15:09時点でパイプライン空。疾風GA-120偵察は完了済みで、`queue/tasks/hayate.yaml` は status idle / parent_cmdなし / task_idなしへ復帰。軍師レビューLGTM+adversarial補足PASS(差分238行だがqueue内task/reportのみ、本番コード変更なし)。正式還流: LK009(context_freshnessはtimeout/root_fallback/repo path/commit_countを数値記録)、PD-048(config/projects.yamlをsource repo解決へ統合するか)、PD-049(root fallback ALERTをWARN降格またはsource_map必須化するか)、semantic-map `context_freshness source解決`、記憶DB `knowledge:ca1e98b92e284beb`。軍師LG033再発候補は既存LG033+gate実装済みのため新規登録せず、再発例として返信済み。軍師から「強ニュー準備完了」報告あり: gate_immunity_depth.sh(6commit)+startup Check12+semantic-map+SKILL.md+infra L838+記憶DB3件+stats更新。未決裁定はPD-038/048/049の3件。dirtyは `context/semantic-map.md`, `context/senkyoku-log.md`, `projects/infra/lessons_karo.yaml`, `queue/tasks/hayate.yaml` の4件で、既存ユーザー/他者変更を勝手にrevertしない。 |
+| session_20260623_cmd3515_karo_strong_new_game | cmd_3515進行中のAUTO-VOID誤判定修復+強ニュー化 | active | **復帰要点(家老)**: cmd_3515はhayate(AC1/AC2)・saizo(L2)・kotaro(L3)・kagemaru(L0)がPASS/LGTM済み、hanzo(L1)だけ処理継続中、tobisaruは上流欠損でFAIL済みのためhanzo完了後に再統合が必要。kagemaruは`AUTO-VOID`で一度誤voidされたが、`task_id=cmd_3515_l0_shin_shijin`へ復旧し完了済み。根因は`ninja_monitor.sh`が`subtask_id`を見ず`_ac_task_id=cmd_3515_normal`でhayate完了報告と同一視したこと。恒久対策として`scripts/ninja_monitor.sh`のAUTO-VOID判定で`subtask_id`を優先する修正を投入、`bash -n scripts/ninja_monitor.sh` PASS、LK010登録、記憶DB `knowledge:2ea19c39a2d0621d`、`context/infrastructure.md`へ索引追記済み。復帰後は家老inbox未読確認→hanzo pane/報告確認→hanzo完了後にtobisaru再統合配備へ進む。origin: [[cmd_3515]] -> [[AUTO-VOID_subtask_id無視]] -> [[kagemaru_L0_task誤void修復]] |
