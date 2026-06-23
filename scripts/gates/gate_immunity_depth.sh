@@ -39,13 +39,14 @@ else
     echo "  SKIP: gate_metrics.logなし"
 fi
 
-# --- 観点2: 免疫速度 (FAIL→CLEAR/PASSの時間分布) ---
+# --- 観点2: 免疫速度 (FAIL件数サマリ。時間分布は未実装) ---
 echo ""
-echo "■ 観点2: 免疫速度 (report FAIL→再提出の間隔)"
+echo "■ 観点2: 免疫速度 (FAIL件数サマリ)"
 if [ -f logs/gunshi_review_log.yaml ]; then
     FAIL_COUNT=$(grep -c 'verdict: FAIL' logs/gunshi_review_log.yaml 2>/dev/null || echo 0)
-    echo "  FAIL判定数: ${FAIL_COUNT}件"
-    echo "  (時間分布計測はFAIL→同cmd再報告のtimestamp差分で行う。現在はカウントのみ)"
+    LGTM_COUNT=$(grep -c 'verdict: LGTM' logs/gunshi_review_log.yaml 2>/dev/null || echo 0)
+    echo "  軍師FAIL: ${FAIL_COUNT}件 / LGTM: ${LGTM_COUNT}件"
+    echo "  ※ 時間分布(FAIL→再提出間隔)は未実装。件数のみ"
 fi
 
 # --- 観点3: 初見対応力 (gate種別の初回FAIL月) ---
@@ -88,19 +89,16 @@ if [ -f projects/infra/lessons_gunshi.yaml ]; then
     fi
 fi
 
-# --- 観点6: 第二層往復 (REQUEST_CHANGES回数) ---
+# --- 観点6: 第二層往復 (RC/verify件数サマリ。cmd対応付けは未実装) ---
 echo ""
-echo "■ 観点6: 第二層往復 (RC→再レビュー回数)"
+echo "■ 観点6: 第二層往復 (件数サマリ)"
 if [ -f logs/gunshi_review_log.yaml ]; then
     RC_COUNT=$(grep -c 'verdict: REQUEST_CHANGES' logs/gunshi_review_log.yaml 2>/dev/null || true)
     RC_COUNT=${RC_COUNT:-0}
     VERIFY_COUNT=$(grep -c 'review_type: verify' logs/gunshi_review_log.yaml 2>/dev/null || true)
     VERIFY_COUNT=${VERIFY_COUNT:-0}
     echo "  REQUEST_CHANGES: ${RC_COUNT}件 / verify: ${VERIFY_COUNT}件"
-    if [ "${RC_COUNT}" -gt 0 ] 2>/dev/null; then
-        VERIFY_RATIO=$((VERIFY_COUNT * 100 / RC_COUNT))
-        echo "  RC→verify完走率: ${VERIFY_RATIO}% (${VERIFY_COUNT}/${RC_COUNT})"
-    fi
+    echo "  ※ 同一cmd対応付けの完走率は未実装。件数のみ"
 fi
 
 echo ""
