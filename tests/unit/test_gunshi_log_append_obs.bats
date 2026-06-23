@@ -80,9 +80,56 @@ ENTRY
 - cmd_id: t005
   review_type: report
   verdict: APPROVE
+  finding_categories: [assumptions, numbers, premortem, adversarial]
   brainwash_check: "1/1確認済み 修正前0→修正後1"
   observations:
     - 事実1: テスト実施済み
+ENTRY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+# --- finding_categories必須チェック(draft/report) ---
+
+@test "draft without finding_categories → BLOCK exit 2" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: t_fc1
+  review_type: draft
+  verdict: APPROVE
+  observations:
+    - "test observation"
+  brainwash_check: "1/1確認済み 修正前0→修正後1"
+ENTRY
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"finding_categories"* ]]
+}
+
+@test "report with finding_categories but no adversarial → BLOCK exit 2" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: t_fc2
+  review_type: report
+  verdict: LGTM
+  finding_categories: [assumptions, numbers, premortem]
+  observations:
+    - "test observation"
+  brainwash_check: "1/1確認済み 修正前0→修正後1"
+ENTRY
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"adversarial"* ]]
+}
+
+@test "draft with multiline finding_categories including adversarial → OK exit 0" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: t_fc3
+  review_type: draft
+  verdict: APPROVE
+  finding_categories:
+    - assumptions
+    - numbers
+    - adversarial
+  observations:
+    - "test observation"
+  brainwash_check: "1/1確認済み 修正前0→修正後1"
 ENTRY
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]

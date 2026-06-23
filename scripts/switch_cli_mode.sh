@@ -422,7 +422,42 @@ else
     done
 
     bash "${SCRIPT_DIR}/scripts/sync_pane_vars.sh" >/dev/null 2>&1 || true
-    bash "${SCRIPT_DIR}/scripts/shutsujin_departure.sh" >/dev/null 2>&1 || true
+fi
+
+verify_switch_result() {
+    local agent="$1"
+    local settings_type settings_model target pane_cli pane_model rc=0
+
+    settings_type=$(cli_type "$agent" 2>/dev/null || true)
+    settings_model=$(cli_profile_get "$agent" "model_name" 2>/dev/null || true)
+    if [[ "$settings_type" != "$TARGET_CLI" ]]; then
+        echo "ERROR: ${agent} settings.yaml type mismatch: expected=${TARGET_CLI} actual=${settings_type:-empty}" >&2
+        rc=1
+    fi
+
+    target=$(agent_pane_target "$agent" 2>/dev/null || true)
+    if [[ -n "$target" ]] && tmux list-panes -t "$target" >/dev/null 2>&1; then
+        pane_cli=$(tmux display-message -t "$target" -p '#{@agent_cli}' 2>/dev/null || true)
+        pane_model=$(tmux display-message -t "$target" -p '#{@model_name}' 2>/dev/null || true)
+        if [[ "$pane_cli" != "$TARGET_CLI" ]]; then
+            echo "ERROR: ${agent}@${target} tmux @agent_cli mismatch: expected=${TARGET_CLI} actual=${pane_cli:-empty}" >&2
+            rc=1
+        fi
+        echo "  [verify] ${agent}: settings.type=${settings_type:-empty} settings.model=${settings_model:-empty} tmux.cli=${pane_cli:-empty} tmux.model=${pane_model:-empty}"
+    else
+        echo "  [verify] ${agent}: settings.type=${settings_type:-empty} settings.model=${settings_model:-empty} pane=<not-found>"
+    fi
+    return "$rc"
+}
+
+verify_failed=0
+for agent in "${TARGET_AGENTS[@]}"; do
+    verify_switch_result "$agent" || verify_failed=1
+done
+
+if [[ "$verify_failed" -ne 0 ]]; then
+    echo "[switch_cli_mode] ERROR: post-switch verification failed" >&2
+    exit 1
 fi
 
 echo "[switch_cli_mode] completed"

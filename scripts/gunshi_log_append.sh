@@ -41,6 +41,20 @@ if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study) ]]; then
     fi
 fi
 
+# --- finding_categories必須チェック(draft/report) --- 冷え観点L4化 2026-06-24: 3セッション連続再発の根治
+if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report) ]]; then
+    if [[ "$ENTRY" != *"finding_categories:"* ]]; then
+        echo "BLOCK: finding_categoriesが未記入(review_type=draft/report)。6観点カタログ全てを記載せよ(冷え観点防止)" >&2
+        exit 2
+    fi
+    # インラインリスト [a, b, adversarial] と複数行リスト (- adversarial) の両方に対応
+    FC_BLOCK=$(echo "$ENTRY" | awk '/finding_categories:/{found=1; print; next} found{if(/^\s*-\s/){print;next} exit}')
+    if ! echo "$FC_BLOCK" | grep -qi 'adversarial'; then
+        echo "BLOCK: finding_categoriesにadversarialが未記載。全レビューでadversarial必須(3セッション連続再発の根治)" >&2
+        exit 2
+    fi
+fi
+
 # --- brainwash_check数値強制(draft/report/self_study/consultation) --- 覚醒洗脳監査2026-06-09: L4貫通
 # brainwash_checkに数値(0-9)が含まれない場合BLOCK。「OK」「確認済み」は形骸化(LG027横展開)
 if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study|consultation) ]]; then

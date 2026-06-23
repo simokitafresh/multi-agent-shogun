@@ -3973,6 +3973,14 @@ check_ninja_cli_dead() {
         local pane_target="${PANE_TARGETS[$name]:-}"
         [ -z "$pane_target" ] && continue
 
+        # 殿が直接操作中のペインは自動再起動対象外(殿裁定2026-06-24)
+        # gunshiペインは殿が手動で起動/停止する。ninja_monitorが勝手に再起動するのはバグ。
+        local _lord_active
+        _lord_active=$(tmux display-message -t "$pane_target" -p '#{@lord_active}' 2>/dev/null || echo "")
+        if [ "$_lord_active" = "1" ]; then
+            continue
+        fi
+
         # pane_dead判定を先に実施（Codex dead時はpane_current_command=nodeでスキップされる問題を修正）
         local _early_pane_dead
         local pane_cmd=""
@@ -3986,7 +3994,17 @@ check_ninja_cli_dead() {
 
             # bash/zsh/sh以外はCLI稼働中 → スキップ
             case "$pane_cmd" in
-                bash|zsh|sh) ;;
+                bash|zsh|sh)
+                    local pane_pid cli_child
+                    pane_pid=$(tmux display-message -t "$pane_target" -p '#{pane_pid}' 2>/dev/null || true)
+                    if [[ "$pane_pid" =~ ^[0-9]+$ ]]; then
+                        cli_child=$(ps -o comm= -g "$pane_pid" 2>/dev/null | awk '$1 ~ /^(claude|codex|node)$/ {print $1; exit}' || true)
+                        if [ -n "$cli_child" ]; then
+                            log "CLI-DEAD-SKIP: ${name}@${pane_target} pane_current_command=${pane_cmd} but live CLI child=${cli_child}"
+                            continue
+                        fi
+                    fi
+                    ;;
                 *) continue ;;
             esac
         fi
@@ -4038,7 +4056,9 @@ check_ninja_cli_dead() {
 
         log "CLI-DEAD: ${name} 再起動実行。launch_cmd=${launch_cmd}"
 
-        # pane_dead判定: remain-on-exitでペインが死亡状態ならsend-keysは無効
+        # pane_deadは記録用に取得するが、復旧は常にrespawn-paneで行う。
+        # send-keys復旧はClaude Code 2.1.87でpane_current_command=bash誤検知時に
+        # launch_cmdを生きているCLIプロンプトへ混入させるため禁止。
         local pane_dead
         pane_dead=$(tmux display-message -t "$pane_target" -p '#{pane_dead}' 2>/dev/null || echo "0")
 
@@ -4049,22 +4069,10 @@ check_ninja_cli_dead() {
         local _pane_dead_bg="$pane_dead"
         local _script_dir_bg="$SCRIPT_DIR"
         (
-            if [ "$_pane_dead_bg" = "1" ]; then
-                # pane_dead=1: send-keysは無効。respawn-paneでペインプロセスを再生成
-                log "CLI-DEAD: ${_name_bg} pane_dead=1 → respawn-pane使用"
-                # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
-                local _node_path="${HOME}/.nvm/versions/node/v20.20.0/bin"
-                tmux respawn-pane -k -t "$_pane_target_bg" "export PATH=\"${_node_path}:\$PATH\" && cd '${_script_dir_bg}' && ${_launch_bg}" 2>/dev/null || true
-            else
-                # pane_dead=0: シェルは生きているがCLIが終了した状態。send-keysで再起動
-                tmux send-keys -t "$_pane_target_bg" C-c 2>/dev/null || true
-                sleep 1
-                tmux send-keys -t "$_pane_target_bg" C-c 2>/dev/null || true
-                sleep 1
-                tmux send-keys -t "$_pane_target_bg" "cd \"${_script_dir_bg}\" && clear" Enter 2>/dev/null || true
-                sleep 1
-                tmux send-keys -t "$_pane_target_bg" "$_launch_bg" Enter 2>/dev/null || true
-            fi
+            log "CLI-DEAD: ${_name_bg} pane_dead=${_pane_dead_bg} → respawn-pane使用"
+            # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
+            local _node_path="${HOME}/.nvm/versions/node/v20.20.0/bin"
+            tmux respawn-pane -k -t "$_pane_target_bg" "export PATH=\"${_node_path}:\$PATH\" && cd '${_script_dir_bg}' && ${_launch_bg}" 2>/dev/null || true
             sleep 30
             # LK009 enforcement: CLI再起動後に@agent_idを再設定（pane変数汚染防止）
             local _current_agent_id

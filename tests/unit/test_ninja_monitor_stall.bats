@@ -766,7 +766,12 @@ cat > "$TMP_ROOT/bin/tmux" <<'"'"'EOF'"'"'
 printf "%s\n" "$*" >> "$TMUX_LOG"
 case "$1" in
   list-panes) printf "shogun:agents.7\n" ;;
-  display-message) printf "1\n" ;;
+  display-message)
+    case "$*" in
+      *@lord_active*) printf "0\n" ;;
+      *) printf "1\n" ;;
+    esac
+    ;;
   respawn-pane) exit 0 ;;
 esac
 EOF
@@ -777,6 +782,7 @@ log() { echo "$1" >> "$LOG"; }
 build_cli_command() { printf "/home/simokitafresh/bin/claude --effort high --dangerously-skip-permissions\n"; }
 sleep() { :; }
 NINJA_NAMES=()
+unset PANE_TARGETS CLI_DEAD_RESTART_TIMES CLI_DEAD_LOOP_LAST_NTFY
 declare -A PANE_TARGETS CLI_DEAD_RESTART_TIMES CLI_DEAD_LOOP_LAST_NTFY
 PANE_TARGETS[karo]="shogun:agents.7"
 CLI_DEAD_LOOP_WINDOW=300
@@ -819,7 +825,12 @@ cat > "$TMP_ROOT/bin/tmux" <<'"'"'EOF'"'"'
 #!/usr/bin/env bash
 printf "%s\n" "$*" >> "$TMUX_LOG"
 case "$1" in
-  display-message) printf "1\n" ;;
+  display-message)
+    case "$*" in
+      *@lord_active*) printf "0\n" ;;
+      *) printf "1\n" ;;
+    esac
+    ;;
   respawn-pane) exit 0 ;;
 esac
 EOF
@@ -830,6 +841,7 @@ log() { echo "$1" >> "$LOG"; }
 build_cli_command() { printf "/home/simokitafresh/.local/share/codex/bin/codex --full-auto\n"; }
 sleep() { :; }
 NINJA_NAMES=()
+unset PANE_TARGETS CLI_DEAD_RESTART_TIMES CLI_DEAD_LOOP_LAST_NTFY
 declare -A PANE_TARGETS CLI_DEAD_RESTART_TIMES CLI_DEAD_LOOP_LAST_NTFY
 PANE_TARGETS[gunshi]="shogun:agents.9"
 CLI_DEAD_LOOP_WINDOW=300
@@ -844,6 +856,133 @@ cat "$LOG"
     [ "$status" -eq 0 ]
     [[ "$output" == *"display-message -t shogun:agents.9"* ]]
     [[ "$output" == *"CLI-DEAD: gunshi@shogun:agents.9"* ]]
+}
+
+@test "check_ninja_cli_dead skips shell parent when Claude child is alive" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+TMUX_LOG="$TMP_ROOT/tmux.log"
+export SCRIPT_DIR TMUX_LOG
+mkdir -p "$SCRIPT_DIR/scripts" "$TMP_ROOT/bin"
+
+cat > "$SCRIPT_DIR/scripts/ntfy.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "$SCRIPT_DIR/scripts/ntfy.sh"
+
+cat > "$TMP_ROOT/bin/tmux" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s\n" "$*" >> "$TMUX_LOG"
+case "$1" in
+  display-message)
+    case "$*" in
+      *pane_dead*) printf "0\n" ;;
+      *pane_current_command*) printf "bash\n" ;;
+      *pane_pid*) printf "4242\n" ;;
+      *) printf "\n" ;;
+    esac
+    ;;
+  respawn-pane|send-keys) printf "UNEXPECTED %s\n" "$*" >> "$TMUX_LOG"; exit 1 ;;
+esac
+EOF
+chmod +x "$TMP_ROOT/bin/tmux"
+PATH="$TMP_ROOT/bin:$PATH"
+
+ps() { printf "bash\nclaude\n"; }
+log() { echo "$1" >> "$LOG"; }
+sleep() { :; }
+NINJA_NAMES=()
+unset PANE_TARGETS CLI_DEAD_RESTART_TIMES CLI_DEAD_LOOP_LAST_NTFY
+declare -A PANE_TARGETS CLI_DEAD_RESTART_TIMES CLI_DEAD_LOOP_LAST_NTFY
+PANE_TARGETS[gunshi]="shogun:agents.2"
+CLI_DEAD_LOOP_WINDOW=300
+CLI_DEAD_LOOP_THRESHOLD=2
+
+check_ninja_cli_dead
+
+cat "$TMUX_LOG"
+cat "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CLI-DEAD-SKIP: gunshi@shogun:agents.2 pane_current_command=bash but live CLI child=claude"* ]]
+    [[ "$output" != *"UNEXPECTED"* ]]
+    [[ "$output" != *"再起動実行"* ]]
+}
+
+@test "check_ninja_cli_dead uses respawn-pane instead of send-keys for live shell recovery" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+TMUX_LOG="$TMP_ROOT/tmux.log"
+export SCRIPT_DIR TMUX_LOG
+mkdir -p "$SCRIPT_DIR/scripts" "$TMP_ROOT/bin"
+
+cat > "$SCRIPT_DIR/scripts/ntfy.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "$SCRIPT_DIR/scripts/ntfy.sh"
+
+cat > "$TMP_ROOT/bin/tmux" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s\n" "$*" >> "$TMUX_LOG"
+case "$1" in
+  display-message)
+    case "$*" in
+      *pane_dead*) printf "0\n" ;;
+      *pane_current_command*) printf "bash\n" ;;
+      *pane_pid*) printf "4242\n" ;;
+      *@agent_id*) printf "gunshi\n" ;;
+      *) printf "\n" ;;
+    esac
+    ;;
+  respawn-pane) exit 0 ;;
+  send-keys) printf "UNEXPECTED_SEND_KEYS %s\n" "$*" >> "$TMUX_LOG"; exit 1 ;;
+esac
+EOF
+chmod +x "$TMP_ROOT/bin/tmux"
+PATH="$TMP_ROOT/bin:$PATH"
+
+ps() { printf "bash\n"; }
+log() { echo "$1" >> "$LOG"; }
+build_cli_command() { printf "/home/simokitafresh/bin/claude --dangerously-skip-permissions\n"; }
+sleep() { :; }
+NINJA_NAMES=()
+unset PANE_TARGETS CLI_DEAD_RESTART_TIMES CLI_DEAD_LOOP_LAST_NTFY
+declare -A PANE_TARGETS CLI_DEAD_RESTART_TIMES CLI_DEAD_LOOP_LAST_NTFY
+PANE_TARGETS[gunshi]="shogun:agents.2"
+CLI_DEAD_LOOP_WINDOW=300
+CLI_DEAD_LOOP_THRESHOLD=2
+
+check_ninja_cli_dead
+sleep 1
+wait
+
+cat "$TMUX_LOG"
+cat "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"respawn-pane -k -t shogun:agents.2"* ]]
+    [[ "$output" == *"CLI-DEAD: gunshi pane_dead=0 → respawn-pane使用"* ]]
+    [[ "$output" != *"UNEXPECTED_SEND_KEYS"* ]]
 }
 
 @test "check_yaml_size counts lines and completed statuses with one awk pass" {

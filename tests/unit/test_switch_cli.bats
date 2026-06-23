@@ -21,7 +21,7 @@ cli:
   agents:
     karo:
       type: claude
-      model: claude-opus-4-6
+      model_name: claude-opus-4-6
     sasuke:
       type: codex
     kirimaru:
@@ -30,18 +30,18 @@ cli:
       type: codex
     kagemaru:
       type: claude
-      model: claude-opus-4-6
+      model_name: claude-opus-4-6
     hanzo:
       type: claude
-      model: claude-opus-4-6
+      model_name: claude-opus-4-6
     saizo:
       type: codex
     kotaro:
       type: claude
-      model: claude-opus-4-6
+      model_name: claude-opus-4-6
     tobisaru:
       type: claude
-      model: claude-opus-4-6
+      model_name: claude-opus-4-6
 YAML
 
     # cli_adapter.sh をロード（テスト用settings使用）
@@ -197,6 +197,28 @@ wait_for_codex_boot_mock saizo shogun:agents.7
     [[ "$output" == *"dry-run complete"* ]]
 }
 
+@test "switch_cli_mode: runtime switch must not call shutsujin_departure default restore" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+if sed -n "/^if \\[\\[ \"\\$NO_RELAUNCH\"/,/^echo \"\\[switch_cli_mode\\] completed\"/p" "$PROJECT_ROOT/scripts/switch_cli_mode.sh" | grep -q "shutsujin_departure.sh"; then
+  echo "switch_cli_mode calls shutsujin_departure during runtime switch"
+  exit 1
+fi
+'
+    [ "$status" -eq 0 ]
+}
+
+@test "switch_cli_mode: post-switch verification is enforced before success" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+grep -q "verify_switch_result" "$PROJECT_ROOT/scripts/switch_cli_mode.sh"
+grep -q "post-switch verification failed" "$PROJECT_ROOT/scripts/switch_cli_mode.sh"
+'
+    [ "$status" -eq 0 ]
+}
+
 
 # =============================================================================
 # settings.yaml 更新テスト（Python部分）
@@ -213,7 +235,7 @@ path = "${TEST_TMP}/settings_update.yaml"
 with open(path, 'r') as f:
     data = yaml.safe_load(f) or {}
 
-data['cli']['agents']['sasuke'] = {'type': 'claude', 'model': 'claude-opus-4-6'}
+data['cli']['agents']['sasuke'] = {'type': 'claude', 'model_name': 'claude-opus-4-6'}
 
 with open(path, 'w') as f:
     yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
@@ -241,7 +263,7 @@ path = "${TEST_TMP}/settings_update2.yaml"
 with open(path, 'r') as f:
     data = yaml.safe_load(f) or {}
 
-data['cli']['agents']['karo']['model'] = 'claude-haiku-4-5'
+data['cli']['agents']['karo']['model_name'] = 'claude-haiku-4-5'
 
 with open(path, 'w') as f:
     yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
