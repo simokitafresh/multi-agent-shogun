@@ -722,6 +722,8 @@ import metrics_research_engine as MRE
 設計書: → https://gist.github.com/simokitafresh/14b6cf497b3abbefb85a2f3d102d778d
 - FE Admin UI: ALM config編集機能が先(殿指示)。設計確定済み(ALMトグルでLookback↔ALM設定切替)
 - L755: GS実行環境標準化: Linux venv必須+PowerShell禁止（cmd_3508）
+- L763: 5本一括速度ACは最終反復値だけでなく中央値/反復条件を固定する（cmd_3514）
+- L764: 速度改善ACは最終HEAD反復で判定する（cmd_3514）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true

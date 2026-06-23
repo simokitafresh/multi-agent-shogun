@@ -353,6 +353,10 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 v2全面再設計: DNA事前制約+データ駆動lookback→12体。R28 Ward ClSel研究(27cmd)完結。
 **確定**: K=4 Momentum唯一3条件PASS。β調整後超越条件全FAIL(ClSel αなし)。Ward FoFはPD-004でkeep。
 - 確定パラメータ表・R10-R27・パリティ検証・奥義-シン忍法(cmd_1822/1840/1844)・GS高速化第2世代(79x)・CPCV/相関/パターン分析 → `docs/research/dm-signal-research-shin-shijin-v2.md`
+- L750: シン四神12体は全ペアで最悪時相関≈1.0: 同一5ticker宇宙内の分散は最悪時に消える（cmd_3425）
+- L751: 奥義(FoF of FoF)のmax相関はシン四神同様に≒1.0。根因は戦略同質性（cmd_3426）
+- L752: 相関乖離分析の閾値設計: σベース閾値は同一母集団(層別)でのみ有効。混成母集団では分散拡大でシグナル消失（cmd_3430）
+- L753: DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用（cmd_3431）
 
 ---
 

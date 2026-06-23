@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-23 cmd_3513 -->
-<!-- last_synced_lesson: L764 -->
+<!-- last_updated: 2026-06-23 cmd_3514 -->
+<!-- last_synced_lesson: L767 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -253,19 +253,9 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L709-L720は振り分け済 → core§19.4(L709[PI]), ops§6-7(L714+L715統合), ops索引(L710/L713/L716/L717), frontend§12(L719+L720統合)。L711/L712/L718はAUTO-DEPRECATE→スキップ）
 - （L721-L735は振り分け済 → ops教訓索引(L721/L723/L729/L730/L733/L735), core§19.2(L722/L734), research§38(L724/L725/L726/L728)。L727はL728重複→統合）
 - （L737-L749は振り分け済 → ops索引(L737/L738統合:奥義BB命名正常挙動/L740:check_pf_config/L743:PF構成確認/L745:import分割/L747:UUID GS source_type), core§19.2(L739:pipeline_config構造/L741:BB忍法対応表/L742:パラメータ確認/L748:FoF components件数差), core§5(L744:API境界4層管理), ops§6-7(L749:models+migrations同期)。L746は自動生成→削除）
-- L750: シン四神12体は全ペアで最悪時相関≈1.0: 同一5ticker宇宙内の分散は最悪時に消える（cmd_3425）
-- L751: 奥義(FoF of FoF)のmax相関はシン四神同様に≒1.0。根因は戦略同質性(銘柄宇宙ではなく)（cmd_3426）
-- L752: 相関乖離分析の閾値設計: σベース閾値は同一母集団(層別)でのみ有効。混成母集団では分散拡大でシグナル消失（cmd_3430）
-- L753: DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用（cmd_3431）
-- L756: robustness_common高速化はwfを別経路として分離計測する（cmd_3513）
-- L757: [自動生成] 有効教訓の記録を怠った: cmd_3513（cmd_3513）
-- L758: 薄いtrial wrapperでも同一arrに対するモード別再計算をwrapper内キャッシュで削れる（cmd_3513）
-- L759: WF trial高速化は選抜結果と月次リターン精度を分離して検証する（cmd_3513）
-- L760: 薄いtrial wrapperでも同一月次コンテキスト再計算を疑う（cmd_3513）
-- L761: WF robustness trialは初回選抜キャッシュ生成と定常実行を分けて計測する（cmd_3514）
-- L762: trial群の速度改善は出力メタデータを変えないcache設計にする（cmd_3514）
-- L763: 5本一括速度ACは最終反復値だけでなく中央値/反復条件を固定する（cmd_3514）
-- L764: 速度改善ACは最終HEAD反復で判定する（cmd_3514）
+- （L750-L765は振り分け済 → research§27(L750/L751/L752/L753:シン四神相関分析), gs-speedup§3(L756/L758/L759/L760/L761:trial高速化手法), gs-speedup§4(L762:cache設計), ops索引(L763/L764:速度AC方法論)。L757/L765は自動生成→削除）
+- L766: WF trial速度改善は選抜cacheのwarm/coldを分けて3回測る（cmd_3514）
+- L767: cmd_3514成果物は忍法名をパスに含めて混線を防ぐ（cmd_3514）
 
 ## 因果リンク
 

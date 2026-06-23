@@ -96,6 +96,11 @@
 - 値=月次リターン(float)、NaNなし
 - 逐次版・高速化版それぞれで出力し、md5比較
 - L416: numpy.where内除算のRuntimeWarning回避: np.maximum(b,1)でsafe denominator使用（cmd_1080）
+- L756: robustness_common高速化はwfを別経路として分離計測する（cmd_3513）
+- L758: 薄いtrial wrapperでも同一arrに対するモード別再計算をwrapper内キャッシュで削れる（cmd_3513）
+- L759: WF trial高速化は選抜結果と月次リターン精度を分離して検証する（cmd_3513）
+- L760: 薄いtrial wrapperでも同一月次コンテキスト再計算を疑う（cmd_3513）
+- L761: WF robustness trialは初回選抜キャッシュ生成と定常実行を分けて計測する（cmd_3514）
 
 ---
 
@@ -149,6 +154,7 @@
 | 追い風 (`oikaze`) | 342MB | 272MB | OK (`274MB`) | `docs/research/gunshi_gs_memory_speed_optimization_20260420.md` |
 | 四つ目 (`yotsume`) | 1.0GB級 | 0.80GB級 | OK（2026-04-20 local harness: 親 peak `331MB` + worker snapshot `235MB`×2 ≒ `801MB`） | `context/l3-robustness.md` §8.4.1 + local harness |
 | 分身 (`bunshin`) | 138MB | 134MB | N/A（直列構造） | `docs/research/gunshi_gs_memory_speed_optimization_20260420.md` |
+- L762: trial群の速度改善は出力メタデータを変えないcache設計にする（cmd_3514）
 
 ---
 

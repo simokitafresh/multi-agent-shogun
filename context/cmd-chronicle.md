@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-23 cmd_3513 -->
+<!-- last_updated: 2026-06-23 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -430,3 +430,4 @@
 | cmd_3510 | 殿指示(2026-06-23): WFのみでは不十分。4つの試練+レジーム分析の道具を先に作れ。cmd_2369のstreaming基盤(cmd_3508で高速化済み)にOOS(前半β→後半α)・Expanding Window・レジーム分析(本番RegimeAnalysisService同一方式: SPY月次動的閾値μ±0.5σ)の3モードを追加する。分身smoke runで動作確認+時間計測し、全量実行の確信を得る | dm-signal | 06-23 | cmd_2369 WF-alpha選抜ツールへOOS/Exp |
 | cmd_3512 | 殿指示(2026-06-23): (1)5独立スクリプト並列が発展性がある (2)品質維持で速度+メモリ+進捗 (3)小さく試す。cmd_2369の共通基盤をrobustness_common.pyに切り出し、5独立スクリプト(trial_is/trial_oos/trial_expanding/trial_wf/trial_regime)を作成。各スクリプトに進捗stderr+CLI引数。分身1忍法の小テストで動作確認 | dm-signal | 06-23 | robustness_common.pyと5独立CLI(tr |
 | cmd_3513 | 殿指示(2026-06-23): Codex /goalで5独立スクリプト(trial_is/oos/expanding/wf/regime)の実行速度を-5%×3ラウンド改善させる。家老がidle忍者のCodexペインにsend-keysで/goal目標文を送り、忍者が自律的に達成する。品質維持(diff 0)を合格条件とする。分身DB(7,525パターン)の小テストで計測 | dm-signal | 06-23 | pending: trial_oos.py /goal sp |
+| cmd_3514 | 殿指示(2026-06-23): cmd_3513(分身のみ)で/goal速度改善56%短縮を実証。次は7忍法×5スクリプト=35タスクに拡大。各忍法はBBが異なるため最適化ポイントが異なる。Codex /goalで各忍法×各スクリプトに-5%×3ターンの複利速度改善を実施。6忍者並列配備 | dm-signal | 06-23 | yotsume 5 trial再検証完了。trial_reg |
