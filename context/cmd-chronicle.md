@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-24 cmd_karo_recon_ga122_context_freshness_20260624 -->
+<!-- last_updated: 2026-06-24 cmd_karo_hotfix_ga125_context_freshness_source_mapping_20260624 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -419,3 +419,5 @@
 | cmd_3516 | 殿指示(2026-06-23 18:23): 任意のPFだけを実行するモードの追加。cmd_3515で全GS空間探索が走り75体チャンピオン検証に数十分かかった根因はrobustness_common.pyがGS DBの全パターンをロードする設計。チャンピオン名(pattern_id)を指定して該当パターンだけ抽出しtrial実行するオプションを追加し、75体検証を数分で完了可能にする | dm-signal | 06-23 | robustness_common.pyに--pattern |
 | cmd_3517 | 殿指示(2026-06-23 19:21/19:56): α6は6項目のはずだが3項目しか出力されていない+TQQQもベンチマークに追加。プランドキュメント: docs/research/plan_alpha6_robustness_verification.md Step 1。robustness_common.pyのmetrics辞書にMRU・Calmar・Avg UWPを追加し、TQQQベンチマークに対応し、smoke確認で6項目出力+既存3項目回帰一致を検証する | dm-signal | 06-23 | robustness trial出力をα6全6項目へ拡張し、 |
 | cmd_3518 | プランドキュメント docs/research/plan_alpha6_robustness_verification.md Step 2+3。cmd_3517でα6全項目+TQQQ対応済み。全レイヤー(シン四神・シン忍法・奥義・秘奥義)+SPY+TQQQ×5 trialを全量再実行し、固定体裁報告書(まとめ+正率+詳細+ベンチマーク)をMarkdown+gistで生成する。家老・軍師はプランドキュメントを読み、実行と結果がプランに背かないか厳重に確認せよ | dm-signal | 06-23 | L1 kasoku_ratioを5 trialsで再実行し、 |
+| cmd_3522 | 殿指示(2026-06-24): 想像せずに確認せよ。確認を便利にする道具が三層記憶だ。将軍がGS全量探索パターン数を記事に書く際、三層記憶を検索せず推測値を5回連発。全て既存の三層記憶に実数(合計7,521,549)があった。根因: stop_check_inbox.sh L252の[MEM]タグ検査は殿への応答(last_assistant_message)のみ対象。Write toolやgh gist edit経由の数値出力は検査対象外 | infra | 06-24 | 数値を含むWrite/gh gist edit出力時に三層記 |
+| cmd_3523 | 殿指示(2026-06-24): 穴を塞ぐのではなく穴が生まれない仕組みを作れ。洗脳の本質は確認の拒否。確認なしの出力を構造的に不可能にする。将軍の全応答で確認行為(三層記憶検索/capture-pane/DB検索/grep/bats等)の実行回数が0ならWARN。パターンマッチではなく確認行為の有無そのものを検査する | infra | 06-24 | 将軍応答ターンの確認行為ゼロをStop hookでWARNす |

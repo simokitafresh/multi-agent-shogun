@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-24 cmd_karo_recon_ga122_context_freshness_20260624 -->
+<!-- last_updated: 2026-06-24 cmd_karo_hotfix_ga125_context_freshness_source_mapping_20260624 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -205,7 +205,7 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 
 ### Codex multi-CLI統合(2026-05-11確立)
 
-**2026-06-02上書き原則**: CLI固有hook設定(`.claude/settings.json` / `.codex/hooks.json`)を安全網の正本にするな。正本は共通イベント層(`config/cli_events.yaml`予定)とし、Claude/Codexで使えるeventはhookへ生成、Codex Stopのように危険または未対応のeventはdaemon/gate/scriptで補完する。詳細設計: `docs/research/multi-cli-hook-event-commonization-design_20260602.md`。因果: [[multi_cli_hook_gap]] -> [[codex_stop_block_loop]] -> [[common_event_layer_required]]。
+**2026-06-24上書き原則**: CLI固有hook設定(`.claude/settings.json` / `.codex/hooks.json`)を安全網の正本にするな。正本は共通イベント層(`config/cli_events.yaml`)とし、同一実装の押し付けではなくCLI能力に合わせたadapterへ落とす。Codex最新版は`SessionStart`/`UserPromptSubmit`/`Stop`を公式サポートするが、Codex同一event hookは並行実行されるため、順序依存処理は単一adapterに合成する。Codex Stop block系は旧事故があるため未検証のまま戻さず、daemon/gate/scriptで等価保証する。詳細設計: `docs/research/multi-cli-hook-event-commonization-design_20260602.md`。因果: [[multi_cli_hook_gap]] -> [[codex_stop_block_loop]] -> [[cli_capability_adapter_required]]。
 
 **因果確認L0-L7**: hook/gate/daemon/semantic/search等を変更する前に、git log/blame、教訓、設計書、semantic/causal linksで「なぜ現在の実装がそうなっているか」を確認する。multi-CLI前提のため、因果確認の強制もClaude/Codex固有hookではなく、`cmd_save.sh`、`deploy_task.sh`、`gate_report_format.sh`、task/report YAML、memory DB、semantic index、daemon/gateを正本にする。詳細: `docs/research/causal-verification-l0-l7-design_20260602.md`。因果: [[semantic_search_timeout_infra_bug]] -> [[past_design_intent_unchecked_risk]] -> [[causal_verification_l0_l7_required]]。
 
@@ -214,7 +214,7 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 | 項目 | 設定 | 正本 |
 |------|------|------|
 | config | `~/.codex/config.toml` | `project_doc_max_bytes=131072`(87KB超対応)。`[features] hooks=true`必須(`codex_hooks`は非推奨) |
-| hooks | `.codex/hooks.json`(プロジェクトレベル) | Claude Codeの`.claude/hooks/`スクリプトを共有。ただしCodexはPreToolUse/PostToolUseのみ。Stopは`ninja_monitor.sh`等のdaemon補完、UserPromptSubmitはstartup prompt代替。Stop/UserPromptSubmitを`.codex/hooks.json`へ戻すな |
+| hooks | `.codex/hooks.json`(プロジェクトレベル) | Codex公式hookをCLI能力adapterとして使う。`SessionStart`→`scripts/hooks/codex_session_start.sh`、`UserPromptSubmit`→`scripts/hooks/codex_user_prompt_submit.sh`。Codexは同一event内hookを並行実行するため、`log_terminal_input.sh`と`prompt_state_inject.sh`を別hookに分けるな。Stop block系は未検証のため戻さずdaemon補完 |
 | hook BLOCK | `emit_deny()`内で**exit 2** | exit 1=hookエラー(CLIクラッシュ)。exit 2=意図的BLOCK(CLI続行)。Claude Codeはexit 1でも続行するがCodexは死ぬ |
 | hook承認 | 初回のみ`/hooks`でtrust操作 | 承認は永続化(respawn後も再承認不要)。pane高さ15行だとStop行が画面外 — 一時拡大(`tmux resize-pane -y 30`)で承認 |
 | skills | `~/.codex/skills/` → プロジェクト正本symlink | 独立コピー禁止。`ln -s /mnt/c/tools/multi-agent-shogun/skills/{name}`でsymlink。skill_auto_improve.shの改善が即反映 |
@@ -667,7 +667,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L839 -->
+<!-- last_synced_lesson: L845 -->
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
@@ -1224,6 +1224,11 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L837: 2層SSOT設計(殿承認) — デフォルト層(cli_profiles.yaml)+動的層(settings.yaml)でCLI/model編成管理（cmd_karo_hotfix_model_family_ssot_20260620）
 - L838: Codex CLIのper-agent effortはmodel_name接尾辞(gpt-X.X-{effort})でsettings.yaml上に記録する（cmd_3481）。ただしCodex CLIの実effortはconfig.toml(全Codex共有)が決定。per-agent effort共存(家老medium+忍者low)はconfig.toml変更→対象respawn→config.toml復元の回避策で実現(2026-06-23殿指示で実証。揮発的=再respawnで戻る)
 - L839: root fallback対象contextはpathspec有無と同一countを偵察報告に必ず記録する（cmd_karo_recon_ga122_context_freshness_20260624）
+- L841: busy deferの経過時間はfingerprint作成前でも進む一次時刻を使う（cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624）
+- L842: CI赤のadapter仕様追従漏れは旧期待値テスト名まで一次情報で数える（cmd_karo_ci_fix_ga124_codex_hook_adapter_commit_20260624）
+- L843: Stop hook単独でtool payload内容を前提にしない（cmd_3522）
+- L844: 確認行為カウントでRead toolのみの確認はBash hookでは観測できない（cmd_3523）
+- L845: context_freshness偵察は実gateと低レベルcheckのtimeout差分を分けて報告する（cmd_karo_recon_ga125_context_freshness_backup_20260624）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
