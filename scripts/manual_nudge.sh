@@ -8,11 +8,9 @@ set -euo pipefail
 AGENT_ID="${1:?Usage: bash scripts/manual_nudge.sh <agent_id> [message]}"
 MESSAGE="${2:-inbox1}"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-source "$SCRIPT_DIR/scripts/lib/cli_adapter.sh" 2>/dev/null || true
-
-# agent→pane target解決
-PANE_TARGET=$(agent_pane_target "$AGENT_ID" 2>/dev/null || true)
+# agent→pane target解決 (inbox_write.sh resolve_agent_pane_targetと同一ロジック)
+PANE_TARGET=$(tmux list-panes -a -F '#{session_name}:#{window_name}.#{pane_index} #{@agent_id}' 2>/dev/null \
+    | awk -v agent="$AGENT_ID" '$2 == agent { print $1; exit }')
 if [ -z "$PANE_TARGET" ]; then
     echo "ERROR: pane target not found for $AGENT_ID" >&2
     exit 1
