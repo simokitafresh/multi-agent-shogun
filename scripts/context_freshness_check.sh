@@ -316,6 +316,49 @@ def last_updated_date(abs_path: str) -> date | None:
 
 def load_project_paths() -> dict[str, str]:
     paths: dict[str, str] = {}
+    config_yaml = os.path.join(root, "config", "projects.yaml")
+    try:
+        current_id = ""
+        current_status = "active"
+        current_path = ""
+
+        def flush_current() -> None:
+            if current_id and current_path and current_status == "active":
+                paths[current_id] = current_path
+
+        with open(config_yaml, encoding="utf-8") as f:
+            for raw_line in f:
+                line = raw_line.split("#", 1)[0].rstrip()
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                if line.startswith("  - "):
+                    flush_current()
+                    current_id = ""
+                    current_status = "active"
+                    current_path = ""
+                    remainder = stripped[2:].strip()
+                    if ":" in remainder:
+                        key, value = remainder.split(":", 1)
+                        if key.strip() == "id":
+                            current_id = normalize_scalar(value)
+                    continue
+                if not line.startswith("    ") or line.startswith("      "):
+                    continue
+                if ":" not in stripped:
+                    continue
+                key, value = stripped.split(":", 1)
+                key = key.strip()
+                if key == "id":
+                    current_id = normalize_scalar(value)
+                elif key == "status":
+                    current_status = normalize_scalar(value) or "active"
+                elif key == "path":
+                    current_path = normalize_scalar(value)
+        flush_current()
+    except Exception:
+        paths = {}
+
     for project_id in ACTIVE_PROJECT_IDS:
         project_yaml = os.path.join(root, "projects", f"{project_id}.yaml")
         try:
@@ -412,6 +455,8 @@ def source_repo_for_context(project_id: str, rel_path: str) -> tuple[str, list[s
     base = os.path.basename(rel_path)
     if project_id == "infra" and rel_path in INFRA_CONTEXT_PATHS:
         return root, INFRA_CONTEXT_PATHS[rel_path], False
+    if project_id == "infra" and base != "infrastructure.md":
+        return "", [], False
     if project_path and os.path.abspath(project_path) != os.path.abspath(root):
         if base.startswith(f"{project_id}.") or base.startswith(f"{project_id}-"):
             if project_id == "dm-signal" and rel_path in DM_SIGNAL_CONTEXT_PATHS:

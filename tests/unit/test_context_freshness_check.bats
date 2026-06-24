@@ -453,6 +453,31 @@ EOF
     [[ "$output" != *"infrastructure.md"* ]]
 }
 
+@test "project path falls back to config/projects.yaml when project yaml is absent" {
+    local source_repo="$TEST_TMPDIR/source/google-classroom"
+    mkdir -p "$source_repo"
+    cat >> "$TEST_TMPDIR/config/projects.yaml" <<PROJ
+  - id: google-classroom
+    status: active
+    path: "$source_repo"
+PROJ
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'classroom update\n' > "$source_repo/app.py"
+    git -C "$source_repo" add app.py
+    GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
+    GIT_COMMITTER_DATE="${TODAY}T00:00:00+09:00" \
+        git -C "$source_repo" commit -q -m "feature: classroom source changed"
+
+    _create_context "context/google-classroom.md" "$STALE_DATE"
+    _create_archive_cmd "cmd_940" "google-classroom" "completed" "$TODAY"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/google-classroom.md source commits 1件"* ]]
+}
+
 @test "dm-signal root and core contexts ignore unrelated external commits" {
     local source_repo="$TEST_TMPDIR/source/dm-signal"
     mkdir -p "$source_repo/marketing-director/content" "$TEST_TMPDIR/projects"
@@ -472,6 +497,18 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" != *"context/dm-signal.md"* ]]
     [[ "$output" != *"context/dm-signal-core.md"* ]]
+}
+
+@test "unmapped infra fallback context does not inherit root source alerts" {
+    _create_context "context/saxo-trade-engine.md" "$STALE_DATE"
+    _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_source_commit "scripts/source_change.sh"
+    _create_archive_cmd "cmd_941" "infra" "completed" "$TODAY"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context/infrastructure.md"* ]]
+    [[ "$output" != *"context/saxo-trade-engine.md"* ]]
 }
 
 @test "infra context uses same-repo path git log" {
