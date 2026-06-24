@@ -2721,9 +2721,11 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L833) |
 | causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L834) |
 | causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L835) |
+| causal_chain | `[[runtime_cli_switch]] -> [[shutsujin_departure_default_restore]] -> [[settings_tmux_pane_mismatch]]` (L840) |
 | causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L837) |
 | causal_chain | `[[cmd_3481]]` (L838) |
 | causal_chain | `[[cmd_karo_ci_fix_semantic_test125_20260607]]` (L755) |
+| causal_chain | `[[runtime_cli_switch]] -> [[shutsujin_departure_default_restore]] -> [[settings_tmux_pane_mismatch]]` (L840) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -3506,6 +3508,7 @@ codd:
 | file | `scripts/daemon_watchdog.sh` デーモンcron監視+自動再起動(ninja_monitor/ntfy_listener/inbox_watcher) |
 | file | `tests/unit/test_ntfy_agent_id_warning.bats` ntfy通知時のagent_id警告テスト |
 | causal | `cmd_3485` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624` files_modified: [[daemon_supervision]] |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -3609,8 +3612,12 @@ codd:
 | causal | `cmd_3468` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_3485` files_modified: [[infrastructure_ops]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-24T09:12:32+09:00 最初にやるべきはスクリプトでの全デーモンの再起動では？やらない理由を説明して欲しい |
+| lesson | `L841` busy deferの経過時間はfingerprint作成前でも進む一次時刻を使う |
+| causal | `cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624` files_modified: [[infrastructure_ops]] |
+| cmd | `cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624` (`scripts/inbox_watcher.sh`, `scripts/lib/script_update.sh`, `tests/unit/test_inbox_watcher_dedup.bats`) |
 | causal_chain | `[[cmd_2935]]` (L651) |
 | causal_chain | `[[cmd_karo_ci_fix_2tests]]` (L652) |
+| causal_chain | `[[cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624]]` (L841) |
 
 ## gate_quality_framework — ゲート品質統合フレームワーク
 
@@ -3998,6 +4005,7 @@ codd:
 | causal | `cmd_3080` origin: [[startup_gate_skill_precision_alert]] -> [[dedup_window_too_small]] -> [[log_explosion_precision_zero]] |
 | file | `scripts/gates/gate_codex_hooks_no_stop.sh` Codex CLI hookにstop系hookがないことを検証するgate |
 | file | `tests/unit/test_gate_codex_hooks_no_stop.bats` |
+| causal | `cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624` files_modified: [[multi_cli_event_commonization]] |
 | causal_chain | `[[cmd_2995]]` (L687) |
 
 ## codex_goal_mode — Codex /goal 自律目標モード
@@ -4076,7 +4084,7 @@ codd:
 |------|---|
 | id | semantic_causal_automation |
 | label | セマンティック因果自動化 |
-| aliases | セマンティック因果自動化, 因果辺自動還流, obsidian自動リンク, semantic persistence, リンク滞留解消, 因果ネットワーク自動成長, obsidian_link_stagnation, semantic_map_generate, codd_refactor_registry_stale, semantic searchのヒット率を定量計測し, node id design semantic map, 教訓セマンティック還流, 教訓還流検査, operational noise filter, セマンティック検索, 概念検索スクリプト, alias_layer_search, llm_fallback_search, semantic_search, concept_lookup, alias_search, index_search, causal_expand, クエリ照合, 二層検索 |
+| aliases | セマンティック因果自動化, 因果辺自動還流, obsidian自動リンク, semantic persistence, リンク滞留解消, 因果ネットワーク自動成長, obsidian_link_stagnation, semantic_map_generate, codd_refactor_registry_stale, semantic searchのヒット率を定量計測し, node id design semantic map, 教訓セマンティック還流, 教訓還流検査, operational noise filter, セマンティック検索, 概念検索スクリプト, alias_layer_search, llm_fallback_search, semantic_search, concept_lookup, alias_search, index_search, causal_expand, クエリ照合, 二層検索, 掲示板action required の semantic map generate new file INSIGHT |
 | skills | |
 | related_concepts | semantic_dictionary_design, causal_traversal_pipeline, lesson_lifecycle, local_memory_db, deepdive_principles, known_unknowns_principle, multi_cli_event_commonization, causal_verification_l0_l7, three_layer_memory_system |
 
@@ -4240,6 +4248,7 @@ codd:
 | file | `scripts/restart_watchers.sh` |
 | cmd | `cmd_2924` watcher親子関係誤判断→kill全滅事故 |
 | note | プロセス構造: 親=本体(inotifywait+メインループL945)、子=MTIME_POLLサブシェル(L960)。psで2プロセス見えるのは正常(親子関係)。子プロセスはWSL2 DrvFs inotifywait hang対策(stat mtime 10秒ポーリング→mtime変化でhung inotifywaitをkill) |
+| causal | `cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624` files_modified: [[inbox_watcher_process_model]] |
 
 ## saxo_openapi_excel — Saxo Bank OpenAPI for Excel
 
