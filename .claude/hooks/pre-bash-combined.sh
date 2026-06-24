@@ -40,6 +40,55 @@ _pre_bash_self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${_pre_bash_self%/.claude/hooks/pre-bash-combined.sh}"
 unset _pre_bash_self
 
+mark_memory_or_gist_numeric_flags() {
+    local agent_id state_dir
+    agent_id="${TMUX_AGENT_ID:-}"
+    if [[ -z "$agent_id" && -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
+        agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+    fi
+    [[ "$agent_id" == "shogun" ]] || return 0
+    state_dir="${SHOGUN_STATE_DIR:-/tmp}"
+    mkdir -p "$state_dir" 2>/dev/null || true
+
+    if [[ "$command" =~ (^|[[:space:]/])(memory_db_query|semantic_search)\.sh([[:space:]]|$) ]]; then
+        : > "$state_dir/shogun_memory_search_seen_${agent_id}" 2>/dev/null || true
+    fi
+
+    [[ "$command" == *"gh gist edit"* ]] || return 0
+    if [[ "$command" =~ [0-9][0-9,]*([.][0-9]+)?[[:space:]]*(件|体|個|名|枚|冊|台|本|通|種|パターン|%|％|円|万円|億|兆|倍|秒|分|時間|日|ヶ月|年) ]]; then
+        : > "$state_dir/shogun_numeric_tool_output_${agent_id}" 2>/dev/null || true
+        return 0
+    fi
+    COMMAND_FOR_GIST_NUMERIC="$command" python3 - "$state_dir/shogun_numeric_tool_output_${agent_id}" <<'PY' 2>/dev/null || true
+import os
+import re
+import shlex
+import sys
+from pathlib import Path
+
+command = os.environ.get("COMMAND_FOR_GIST_NUMERIC", "")
+flag = Path(sys.argv[1])
+number_unit_re = re.compile(r"(?:\d[\d,]*(?:\.\d+)?|\d+(?:\.\d+)?)\s*(?:件|体|個|名|枚|冊|台|本|通|種|パターン|%|％|円|万円|億|兆|倍|秒|分|時間|日|ヶ月|年)")
+try:
+    tokens = shlex.split(command)
+except ValueError:
+    tokens = []
+for token in tokens:
+    path = Path(token)
+    if not path.is_file() or path.stat().st_size > 262144:
+        continue
+    try:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        continue
+    if number_unit_re.search(text):
+        flag.write_text("", encoding="utf-8")
+        break
+PY
+}
+
+mark_memory_or_gist_numeric_flags
+
 knowledge_grep_query() {
     local cache_dir cache_key cache_file now last ttl query
 

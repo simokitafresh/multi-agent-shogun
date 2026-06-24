@@ -214,10 +214,129 @@ detect_quantity_in_lord_response() {
   fi
 }
 
+detect_numeric_tool_memory_gap() {
+  local hook_payload="$1"
+  python3 - "$hook_payload" <<'PY' 2>/dev/null || true
+import json
+import os
+import re
+import sys
+
+payload_raw = sys.argv[1]
+try:
+    payload = json.loads(payload_raw)
+except Exception:
+    payload = {}
+
+number_unit_re = re.compile(
+    r"(?:\d[\d,]*(?:\.\d+)?|\d+(?:\.\d+)?)\s*"
+    r"(?:件|体|個|名|枚|冊|台|本|通|種|パターン|%|％|円|万円|億|兆|倍|秒|分|時間|日|ヶ月|年)"
+)
+memory_re = re.compile(r"(?:^|[/\s])(?:memory_db_query|semantic_search)\.sh\b")
+
+
+def strings(value):
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for item in value.values():
+            yield from strings(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from strings(item)
+
+
+def dicts(value):
+    if isinstance(value, dict):
+        yield value
+        for item in value.values():
+            yield from dicts(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from dicts(item)
+
+
+def tool_name(obj):
+    return str(obj.get("tool_name") or obj.get("toolName") or obj.get("name") or "")
+
+
+def tool_input(obj):
+    value = obj.get("tool_input")
+    if value is None:
+        value = obj.get("toolInput")
+    if value is None:
+        value = obj.get("input")
+    return value if isinstance(value, dict) else {}
+
+
+def has_memory_search(obj):
+    name = tool_name(obj)
+    ti = tool_input(obj)
+    command = str(ti.get("command") or ti.get("cmd") or "")
+    if name == "Bash" and memory_re.search(command):
+        return True
+    return any(memory_re.search(text) for text in strings(obj))
+
+
+def numeric_write_or_gist(obj):
+    name = tool_name(obj)
+    ti = tool_input(obj)
+    if name == "Write":
+        content = str(ti.get("content") or "")
+        return bool(number_unit_re.search(content))
+    if name == "Bash":
+        command = str(ti.get("command") or ti.get("cmd") or "")
+        if re.search(r"\bgh\s+gist\s+edit\b", command):
+            return any(number_unit_re.search(text) for text in strings(obj))
+    return False
+
+
+events = [payload]
+transcript = payload.get("transcript_path") or payload.get("transcriptPath") or ""
+if isinstance(transcript, str) and transcript and os.path.isfile(transcript):
+    try:
+        with open(transcript, encoding="utf-8") as fh:
+            lines = fh.readlines()[-240:]
+        for raw in lines:
+            try:
+                events.append(json.loads(raw))
+            except json.JSONDecodeError:
+                continue
+    except OSError:
+        pass
+
+all_objects = [obj for event in events for obj in dicts(event)]
+memory_seen = any(has_memory_search(obj) for obj in all_objects)
+gist_edit_seen = any(
+    tool_name(obj) == "Bash"
+    and re.search(r"\bgh\s+gist\s+edit\b", str(tool_input(obj).get("command") or tool_input(obj).get("cmd") or ""))
+    for obj in all_objects
+)
+numeric_output = any(numeric_write_or_gist(obj) for obj in all_objects)
+if not numeric_output and gist_edit_seen:
+    numeric_output = any(number_unit_re.search(text) for event in events for text in strings(event))
+if numeric_output and not memory_seen:
+    print(
+        "WARN: 数値を含むWrite/gh gist edit出力だが同一セッション内の三層記憶検索(memory_db_query.sh/semantic_search.sh)が未検出。推測値を出す前に記憶DB/セマンティックを確認せよ(cmd_3522)。"
+    )
+PY
+}
+
+detect_numeric_flag_memory_gap() {
+  local agent="$1"
+  local numeric_flag="$STATE_DIR/shogun_numeric_tool_output_${agent}"
+  local memory_flag="$STATE_DIR/shogun_memory_search_seen_${agent}"
+  [[ -f "$numeric_flag" ]] || return 0
+  [[ -f "$memory_flag" ]] && return 0
+  printf 'WARN: 数値を含むWrite/gh gist edit出力フラグあり、同一セッション内の三層記憶検索(memory_db_query.sh/semantic_search.sh)フラグなし。推測値を出す前に記憶DB/セマンティックを確認せよ(cmd_3522)。\n' >&2
+}
+
 # cmd_TRAINING: shogunのみjqでlast_assistant_message抽出→brainwash check。忍者/家老はpayload直接マッチ(jq不要, ~7ms削減)
 if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; then
   last_assistant_message="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
   printf '%s\n' "$SHOGUN_BRAINWASH_AUDIT" >&2
+  detect_numeric_flag_memory_gap "$agent_id"
+  detect_numeric_tool_memory_gap "$payload"
   # LS065: Q6洗脳フラグ確認(前回検出→cmd起票未完了ならWARN継続。認識→行動ギャップ防止)
   _q6_flag="$STATE_DIR/shogun_q6_brainwash_${agent_id}"
   if [[ -f "$_q6_flag" ]]; then

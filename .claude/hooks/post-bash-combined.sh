@@ -11,6 +11,22 @@ fi
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
 [[ "$payload" != *'"Bash"'* ]] && exit 0
 
+mark_post_bash_numeric_gist_flag() {
+    [[ "$payload" == *'gh gist edit'* ]] || return 0
+    [[ "$payload" =~ [0-9][0-9,]*([.][0-9]+)?[[:space:]]*(件|体|個|名|枚|冊|台|本|通|種|パターン|%|％|円|万円|億|兆|倍|秒|分|時間|日|ヶ月|年) ]] || return 0
+    local agent_id state_dir
+    agent_id="${TMUX_AGENT_ID:-}"
+    if [[ -z "$agent_id" && -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
+        agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+    fi
+    [[ "$agent_id" == "shogun" ]] || return 0
+    state_dir="${SHOGUN_STATE_DIR:-/tmp}"
+    mkdir -p "$state_dir" 2>/dev/null || true
+    : > "$state_dir/shogun_numeric_tool_output_${agent_id}" 2>/dev/null || true
+}
+
+mark_post_bash_numeric_gist_flag
+
 # === Guard 0: cmd_save.sh BLOCK reminder ===
 if [[ "$payload" == *'cmd_save.sh'* || "$payload" == *'cmd_publish.sh'* ]]; then
     cmd_save_meta="$(PAYLOAD="$payload" jq -r '

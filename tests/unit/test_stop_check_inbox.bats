@@ -543,3 +543,118 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: 部分データから全体断定パターン"* ]]
 }
+
+@test "T-SCI-024: numeric Write without memory search warns (cmd_3522 AC2-a)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    local transcript="$TEST_ROOT/transcript.jsonl"
+    cat > "$transcript" <<'EOF'
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_write","name":"Write","input":{"file_path":"/tmp/article.md","content":"GS全量探索は7,521,549パターンである。"}}],"stop_reason":"tool_use"}}
+EOF
+
+    PAYLOAD="$(python3 - <<PY
+import json
+print(json.dumps({"stop_hook_active": False, "last_assistant_message": "記事を更新した", "transcript_path": "$transcript"}))
+PY
+)" TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 数値を含むWrite/gh gist edit出力"* ]]
+}
+
+@test "T-SCI-025: numeric Write after memory_db_query passes (cmd_3522 AC2-b)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    local transcript="$TEST_ROOT/transcript.jsonl"
+    cat > "$transcript" <<'EOF'
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_mem","name":"Bash","input":{"command":"bash scripts/memory_db_query.sh --search GS全量探索"}}],"stop_reason":"tool_use"}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_write","name":"Write","input":{"file_path":"/tmp/article.md","content":"GS全量探索は7,521,549パターンである。"}}],"stop_reason":"tool_use"}}
+EOF
+
+    PAYLOAD="$(python3 - <<PY
+import json
+print(json.dumps({"stop_hook_active": False, "last_assistant_message": "記事を更新した", "transcript_path": "$transcript"}))
+PY
+)" TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN: 数値を含むWrite/gh gist edit出力"* ]]
+}
+
+@test "T-SCI-026: non-numeric Write passes without memory search (cmd_3522 AC2-c)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    local transcript="$TEST_ROOT/transcript.jsonl"
+    cat > "$transcript" <<'EOF'
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_write","name":"Write","input":{"file_path":"/tmp/article.md","content":"GS全量探索の概要を整理した。"}}],"stop_reason":"tool_use"}}
+EOF
+
+    PAYLOAD="$(python3 - <<PY
+import json
+print(json.dumps({"stop_hook_active": False, "last_assistant_message": "記事を更新した", "transcript_path": "$transcript"}))
+PY
+)" TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN: 数値を含むWrite/gh gist edit出力"* ]]
+}
+
+@test "T-SCI-027: numeric gh gist edit without memory search warns (cmd_3522 AC1)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    local transcript="$TEST_ROOT/transcript.jsonl"
+    cat > "$transcript" <<'EOF'
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_gist","name":"Bash","input":{"command":"gh gist edit abc123 --filename article.md /tmp/article.md"}}],"stop_reason":"tool_use"}}
+{"type":"user","tool_result":{"tool_use_id":"toolu_gist","content":"Updated gist article.md with GS全量探索7,521,549パターン"}}
+EOF
+
+    PAYLOAD="$(python3 - <<PY
+import json
+print(json.dumps({"stop_hook_active": False, "last_assistant_message": "Gistを更新した", "transcript_path": "$transcript"}))
+PY
+)" TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 数値を含むWrite/gh gist edit出力"* ]]
+}
+
+@test "T-SCI-028: numeric tool flag without memory flag warns at Stop (cmd_3522 runtime path)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    : > "$SHOGUN_STATE_DIR/shogun_numeric_tool_output_shogun"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"記事を更新した"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 数値を含むWrite/gh gist edit出力フラグあり"* ]]
+}
+
+@test "T-SCI-029: numeric tool flag with memory flag passes at Stop (cmd_3522 runtime path)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    : > "$SHOGUN_STATE_DIR/shogun_numeric_tool_output_shogun"
+    : > "$SHOGUN_STATE_DIR/shogun_memory_search_seen_shogun"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"記事を更新した"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN: 数値を含むWrite/gh gist edit出力フラグあり"* ]]
+}

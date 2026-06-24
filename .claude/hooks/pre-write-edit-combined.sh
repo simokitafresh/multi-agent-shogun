@@ -37,6 +37,20 @@ unset _pre_write_self
 PREFLIGHT_AUTOLEARN_FILE="${PREFLIGHT_AUTOLEARN_FILE:-$SCRIPT_DIR/logs/preflight_autolearn.txt}"
 CMD_DESIGN_QUALITY_FILE="${CMD_DESIGN_QUALITY_FILE:-$SCRIPT_DIR/logs/cmd_design_quality.yaml}"
 
+mark_numeric_write_for_memory_check() {
+    [[ "${tool_name:-}" == "Write" ]] || return 0
+    local agent_id state_dir
+    agent_id="${TMUX_AGENT_ID:-}"
+    if [[ -z "$agent_id" && -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
+        agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+    fi
+    [[ "$agent_id" == "shogun" ]] || return 0
+    [[ "$payload" =~ [0-9][0-9,]*([.][0-9]+)?[[:space:]]*(件|体|個|名|枚|冊|台|本|通|種|パターン|%|％|円|万円|億|兆|倍|秒|分|時間|日|ヶ月|年) ]] || return 0
+    state_dir="${SHOGUN_STATE_DIR:-/tmp}"
+    mkdir -p "$state_dir" 2>/dev/null || true
+    : > "$state_dir/shogun_numeric_tool_output_${agent_id}" 2>/dev/null || true
+}
+
 cmd_save_block_top3() {
     [[ -s "$CMD_DESIGN_QUALITY_FILE" ]] || return 0
     CMD_DESIGN_QUALITY_FILE="$CMD_DESIGN_QUALITY_FILE" python3 - <<'PY' 2>/dev/null || true
@@ -225,6 +239,7 @@ file_path="$(json_string_after "$payload" "file_path")"
 
 [[ "$tool_name" != "Write" && "$tool_name" != "Edit" && "$tool_name" != "MultiEdit" ]] && exit 0
 [[ -z "$file_path" ]] && exit 0
+mark_numeric_write_for_memory_check
 # §3.2速度改善: 明らかに無関係な一時/デバイスパスだけGuardスキップ。
 # CI/Batsは/tmp配下にqueue/config/scripts/docsを作ってGuard自体を検証するため、/tmp全面skipは防御層を無効化する。
 case "$file_path" in
