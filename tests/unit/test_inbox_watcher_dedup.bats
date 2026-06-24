@@ -190,3 +190,58 @@ echo "COOLDOWN_30S_SUPPRESSED=yes"
     [ "$status" -eq 0 ]
     [[ "$output" == *"COOLDOWN_30S_SUPPRESSED=yes"* ]]
 }
+
+@test "T-IWD-005: stale unread forces nudge even before fingerprint file exists" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/state"
+touch "$TMP_ROOT/tmux.log"
+
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+export INBOX_WATCHER_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/inbox_watcher.sh" karo dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+
+get_effective_cli_type() { echo codex; }
+agent_has_self_watch() { return 1; }
+check_agent_busy() { return 1; }
+cli_profile_get() { echo 30; }
+sleep() { :; }
+timeout() { shift; "$@"; }
+tmux() {
+    case "$1" in
+        display-message)
+            case "${*: -1}" in
+                *pane_in_mode*) echo 0 ;;
+                *) echo active ;;
+            esac
+            ;;
+        set-buffer) echo "SET_BUFFER $*" >> "$TMP_ROOT/tmux.log" ;;
+        paste-buffer) echo "PASTE $*" >> "$TMP_ROOT/tmux.log" ;;
+        send-keys) echo "ENTER $*" >> "$TMP_ROOT/tmux.log" ;;
+        set-option) echo "SET_OPTION $*" >> "$TMP_ROOT/tmux.log" ;;
+        *) ;;
+    esac
+}
+
+printf "%s" "$(( $(date +%s) - 45 ))" > "$FIRST_UNREAD_SEEN"
+rm -f "$FINGERPRINT_FILE"
+
+send_wakeup 1 false "$(printf msg_stale | sha256sum | cut -d " " -f1)"
+
+sent_count="$(grep -c "^PASTE " "$TMP_ROOT/tmux.log" || true)"
+[ "$sent_count" = "1" ]
+echo "STALE_UNREAD_FORCED_NUDGE=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"STALE_UNREAD_FORCED_NUDGE=yes"* ]]
+}
+
+@test "T-IWD-006: inbox_watcher self-restart releases the actual singleton fd" {
+    grep -q 'exec 209>"$SINGLETON_LOCK_FILE"' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
+    grep -q 'SCRIPT_UPDATE_SINGLETON_FD=209' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
+    grep -q 'SCRIPT_UPDATE_SINGLETON_FD' "$PROJECT_ROOT/scripts/lib/script_update.sh"
+}

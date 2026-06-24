@@ -49,10 +49,12 @@ check_script_update() {
         else
             echo "[$(date)] [AUTO-RESTART] Change detected ($restart_reason) [$detail], restarting..." >&2
         fi
-        # Release singleton flock (fd 9) before exec so the new process can acquire it.
-        # Without this, daemon_watchdog may spawn a competing instance during the brief
-        # window between exec replacing the process and the new process opening fd 9.
-        exec 9>&- 2>/dev/null || true
+        # Release singleton flock before exec so the new process can acquire it.
+        # Callers can set SCRIPT_UPDATE_SINGLETON_FD when their lock fd is not 9.
+        local singleton_fd="${SCRIPT_UPDATE_SINGLETON_FD:-9}"
+        if [[ "$singleton_fd" =~ ^[0-9]+$ ]]; then
+            eval "exec ${singleton_fd}>&-" 2>/dev/null || true
+        fi
         exec "$SCRIPT_PATH" "$@"
     fi
 }

@@ -972,6 +972,7 @@ if ! flock -n 209; then
     echo "[$(date)] inbox_watcher already running for $AGENT_ID; exiting duplicate" >&2
     exit 0
 fi
+SCRIPT_UPDATE_SINGLETON_FD=209
 
 # ─── Startup: ensure @agent_state is initialized (deadlock prevention) ───
 # If @agent_state is not set (fresh pane, after reset), initialize to idle.
