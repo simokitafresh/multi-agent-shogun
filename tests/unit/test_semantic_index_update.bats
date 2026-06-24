@@ -805,6 +805,51 @@ assert rows["INS-MANUAL"]["status"] == "pending"
 PY
 }
 
+@test "semantic map generator auto-resolves handled new_file insights when enabled" {
+    export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
+    mkdir -p "$TEST_TMPDIR/docs/research" "$TEST_TMPDIR/tests/unit"
+    touch "$TEST_TMPDIR/docs/research/handled.md"
+    touch "$TEST_TMPDIR/tests/unit/_tmp_generated.bats"
+    touch "$TEST_TMPDIR/docs/research/unhandled.md"
+    cat >> "$SEMANTIC_INDEX_PATH" <<'EOF'
+| file | `docs/research/handled.md` |
+EOF
+    cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'
+insights:
+- id: INS-HANDLED
+  ts: "2026-06-24T00:00:00+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `docs/research/handled.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  status: pending
+- id: INS-TMP
+  ts: "2026-06-24T00:00:01+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `tests/unit/_tmp_generated.bats` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  status: pending
+- id: INS-UNHANDLED
+  ts: "2026-06-24T00:00:02+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `docs/research/unhandled.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  status: pending
+EOF
+
+    run env INSIGHTS_FILE="$SEMANTIC_INSIGHTS_PATH" SEMANTIC_INSIGHT_AUTO_RESOLVE=1 SEMANTIC_NEW_FILE_LIST=$'docs/research/handled.md\ntests/unit/_tmp_generated.bats\ndocs/research/unhandled.md' bash "$PROJECT_ROOT/scripts/semantic_map_generate.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"semantic insights auto-resolved: 2"* ]]
+
+    python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
+rows = {e["id"]: e for e in data["insights"]}
+assert rows["INS-HANDLED"]["status"] == "done"
+assert rows["INS-TMP"]["status"] == "done"
+assert rows["INS-UNHANDLED"]["status"] == "pending"
+PY
+}
+
 @test "CoDD and gunshi idle wiring mention semantic index propagation checks" {
     grep -q 'semantic_map_generate.sh --body-only' "$PROJECT_ROOT/codd/codd.yaml"
     grep -q 'semantic_index_drift' "$PROJECT_ROOT/instructions/gunshi.md"

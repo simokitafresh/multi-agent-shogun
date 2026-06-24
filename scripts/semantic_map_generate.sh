@@ -345,6 +345,8 @@ def new_file_candidates():
         if path in seen:
             continue
         seen.add(path)
+        if is_ignored_new_file_candidate(path):
+            continue
         if path.startswith((".git/", "queue/", "logs/", "tmp/")):
             continue
         out.append(path)
@@ -357,6 +359,14 @@ def new_file_candidates():
         pass
 
     return out
+
+def is_ignored_new_file_candidate(path):
+    name = Path(path).name
+    return (
+        path.startswith("tests/unit/_tmp_")
+        or "/_tmp_" in path
+        or name.startswith("_tmp_")
+    )
 
 def queue_new_file_insights(text):
     insight_script = Path(os.environ.get("SEMANTIC_INSIGHT_WRITE", str(repo_root / "scripts" / "insight_write.sh")))
@@ -671,11 +681,14 @@ auto_resolve_semantic_index_insights() {
     [ -s "$insights_file" ] || return 0
 
     local ids
-    ids=$(INSIGHTS_FILE_ENV="$insights_file" python3 - <<'PY' 2>/dev/null || true
+    ids=$(INSIGHTS_FILE_ENV="$insights_file" SEMANTIC_INDEX_PATH_ENV="$index_path" python3 - <<'PY' 2>/dev/null || true
 import json
 import os
+import re
+from pathlib import Path
 
 path = os.environ["INSIGHTS_FILE_ENV"]
+index_path = os.environ["SEMANTIC_INDEX_PATH_ENV"]
 
 def parse_scalar(raw):
     value = raw.strip()
@@ -704,9 +717,33 @@ with open(path, encoding="utf-8") as f:
 if current:
     entries.append(current)
 
+known_resources = set()
+try:
+    text = Path(index_path).read_text(encoding="utf-8")
+    known_resources.update(re.findall(r"\|\s*file\s*\|\s*`([^`]+)`\s*\|", text))
+except OSError:
+    pass
+
+def is_ignored_new_file_candidate(path):
+    name = Path(path).name
+    return (
+        path.startswith("tests/unit/_tmp_")
+        or "/_tmp_" in path
+        or name.startswith("_tmp_")
+    )
+
 for entry in entries:
-    if entry.get("status") == "pending" and entry.get("source") == "semantic_index_update":
+    if entry.get("status") != "pending":
+        continue
+    source = entry.get("source")
+    if source == "semantic_index_update":
         print(entry["id"])
+        continue
+    if source == "semantic_map_generate:new_file":
+        match = re.search(r"`([^`]+)`", entry.get("insight", ""))
+        rel_path = match.group(1) if match else ""
+        if rel_path in known_resources or is_ignored_new_file_candidate(rel_path):
+            print(entry["id"])
 PY
     )
 
