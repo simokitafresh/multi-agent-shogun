@@ -573,6 +573,32 @@ EOF
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
+@test "latest commit_missing workaround with existing commit → no WA regression ALERT" {
+    cat > "$TEST_TMPDIR/bin/git" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "$*" == *"cat-file -e"* ]]; then
+  exit 0
+fi
+exec /usr/bin/git "$@"
+MOCK
+    chmod +x "$TEST_TMPDIR/bin/git"
+    cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_200
+  workaround: false
+  category: clean
+  root_cause: ""
+- cmd_id: cmd_memory_health
+  workaround: true
+  category: commit_missing
+  detail: "報告YAML commit_hash補正"
+  root_cause: "4aec408c897e8b565a55ce4f277d8fe276d18a49 を確認"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: 最新commit_missing WAはcommit実在確認済み (cmd_memory_health 4aec408c)"* ]]
+    [[ "$output" != *"ALERT: WA復活 — 最新cmd cmd_memory_health"* ]]
+}
+
 @test "WA data quality issues → startup gate shows False WA TOP3" {
     cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
 - cmd_id: cmd_400

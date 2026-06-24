@@ -1474,9 +1474,38 @@ if [ -f "$wa_file" ]; then
     echo "  直近${WA_TOTAL}件: workaround=${WA_COUNT}件"
     echo "  連続clean: ${WA_CLEAN_STREAK}件 (総記録${WA_ENTRY_TOTAL}件)"
     if [ "${WA_REGRESSION:-0}" -eq 1 ]; then
-        echo "  ALERT: WA復活 — 最新cmd ${WA_LATEST_CMD} が workaround=true (category=${WA_LATEST_CAT})"
-        overall="ALERT"
-        alerts+=("WA復活: ${WA_LATEST_CMD} (${WA_LATEST_CAT})")
+        _wa_latest_resolved=0
+        if [ "${WA_LATEST_CAT:-}" = "commit_missing" ]; then
+            _wa_latest_commit="$(
+                awk -v target="$WA_LATEST_CMD" '
+                    function scan_hash(s) {
+                        while (match(s, /[0-9a-f]{40}/)) {
+                            print substr(s, RSTART, RLENGTH)
+                            s = substr(s, RSTART + RLENGTH)
+                        }
+                    }
+                    /^[[:space:]]*-[[:space:]]*cmd_id:/ {
+                        active = 0
+                        c = $0
+                        sub(/^.*cmd_id:[[:space:]]*/, "", c)
+                        gsub(/["'"'"']/, "", c)
+                        gsub(/[[:space:]]+$/, "", c)
+                        if (c == target) active = 1
+                        next
+                    }
+                    active && /^[[:space:]]*(detail|root_cause):/ { scan_hash($0) }
+                ' "$wa_file" | tail -1
+            )"
+            if [ -n "$_wa_latest_commit" ] && git -C "$SCRIPT_DIR" cat-file -e "${_wa_latest_commit}^{commit}" 2>/dev/null; then
+                _wa_latest_resolved=1
+                echo "  OK: 最新commit_missing WAはcommit実在確認済み (${WA_LATEST_CMD} ${_wa_latest_commit:0:8})"
+            fi
+        fi
+        if [ "$_wa_latest_resolved" -eq 0 ]; then
+            echo "  ALERT: WA復活 — 最新cmd ${WA_LATEST_CMD} が workaround=true (category=${WA_LATEST_CAT})"
+            overall="ALERT"
+            alerts+=("WA復活: ${WA_LATEST_CMD} (${WA_LATEST_CAT})")
+        fi
     fi
     if [ "$WA_COUNT" -gt 0 ]; then
         echo "  カテゴリ: ${WA_CATS}"
