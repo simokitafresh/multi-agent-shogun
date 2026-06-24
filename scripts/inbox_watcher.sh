@@ -386,7 +386,7 @@ refresh_debounce_file() {
 get_first_unread_age() {
     if [ -f "$FIRST_UNREAD_SEEN" ]; then
         local first_seen
-        read -r first_seen < "$FIRST_UNREAD_SEEN" 2>/dev/null || first_seen=""
+        IFS= read -r first_seen < "$FIRST_UNREAD_SEEN" 2>/dev/null || true
         if [[ "$first_seen" =~ ^[0-9]+$ ]]; then
             echo $(( $(date +%s) - first_seen ))
             return
@@ -671,17 +671,21 @@ send_wakeup() {
                 busy_rc=$?
             fi
             if [ "$busy_rc" -eq 1 ]; then
-                if [ "$fp_age" -lt "$busy_max_defer" ]; then
-                    echo "[$(date)] [BUSY] Agent $AGENT_ID is active+busy, deferring nudge (age=${fp_age}s < ${busy_max_defer}s)" >&2
+                local unread_age
+                unread_age=$(get_first_unread_age)
+                if [ "$fp_age" -lt "$busy_max_defer" ] && [ "$unread_age" -lt "$busy_max_defer" ]; then
+                    echo "[$(date)] [BUSY] Agent $AGENT_ID is active+busy, deferring nudge (age=${fp_age}s/unread=${unread_age}s < ${busy_max_defer}s)" >&2
                     return 2
                 fi
-                echo "[$(date)] [BUSY-FORCE] Agent $AGENT_ID active+busy for ${fp_age}s, forcing nudge" >&2
+                echo "[$(date)] [BUSY-FORCE] Agent $AGENT_ID active+busy for fp=${fp_age}s unread=${unread_age}s, forcing nudge" >&2
             elif [ "$busy_rc" -eq 2 ]; then
-                if [ "$fp_age" -lt "$busy_max_defer" ]; then
-                    echo "[$(date)] [BUSY-UNKNOWN] Agent $AGENT_ID active with unknown pane state, deferring nudge (age=${fp_age}s < ${busy_max_defer}s)" >&2
+                local unread_age
+                unread_age=$(get_first_unread_age)
+                if [ "$fp_age" -lt "$busy_max_defer" ] && [ "$unread_age" -lt "$busy_max_defer" ]; then
+                    echo "[$(date)] [BUSY-UNKNOWN] Agent $AGENT_ID active with unknown pane state, deferring nudge (age=${fp_age}s/unread=${unread_age}s < ${busy_max_defer}s)" >&2
                     return 2
                 fi
-                echo "[$(date)] [BUSY-UNKNOWN-FORCE] Agent $AGENT_ID active with unknown pane state for ${fp_age}s, forcing nudge" >&2
+                echo "[$(date)] [BUSY-UNKNOWN-FORCE] Agent $AGENT_ID active with unknown pane state for fp=${fp_age}s unread=${unread_age}s, forcing nudge" >&2
             fi
         fi
         # @agent_state=idle時にflag補完（flag方式との整合性）
