@@ -10,7 +10,7 @@ description: |
   DO NOT TRIGGER: 同一CLI内の /model 操作（Claude系内でOpus↔Sonnet等）、レイアウト全崩壊（→/reset-layout）
 ---
 
-<!-- script_refs_checked_at: 2026-06-21T00:40:00+0900 -->
+<!-- script_refs_checked_at: 2026-06-24T09:12:00+09:00 -->
 
 Script refs verified: 2026-06-20. `shogun_cli_switch.sh` は `status/pin-2.1.87/unpin-latest/to-claude/to-codex/--agent/--scope/--dry-run/--settings-only` を契約にする。CLI切替は `scripts/switch_cli_mode.sh`、Claude version切替は `config/cli_profiles.yaml` の `profiles.claude.launch_cmd` と個別 `settings.yaml launch_cmd` を正本にする。
 Script refs verified: 2026-06-20 L821. `switch_cli_mode.sh` にstale active補正追加(@agent_state=active+task空→idle強制)。I/F変更なし。Codex sandbox環境でStop hookブロック→active残留→respawnスキップのインフラバグ修正。
@@ -19,6 +19,7 @@ Script refs verified: 2026-06-21T13:58. CLI種別とモデルの関係セクシ�
 Script refs verified: 2026-06-21T15:06. switch_cli_mode.sh 4修正(殿指示2026-06-21): (1)CLI種別変更時respawn強制(active判定バイパス) (2)model_nameファミリー不整合リセット (3)respawn前reset追加(Codex exit 2根因修正) (4)cooldown 5秒(高速連続respawn防止)。pre-bash-combined.sh Guard 9b簡素化(respawn-pane通過、model_switchのみBLOCK)。session_start_inject.sh cli_switch_pending待機状態追加。CLAUDE.md Step 0待機判定追加。双方向6連続100%成功+3人同時切替検証済み。
 Script refs verified: 2026-06-24T00:35. switch_cli_mode.sh model_name SSOT修正系列(c3d290416→5972c7c34→d796b5a43)確認済み。現行契約は「CLI種別変更時に不整合model_nameを空へリセットし、settings.yaml/tmux変数同期とrespawnを行う」。gpt-5.5-low等のper-agent model_name確定値は必要時にyaml_field_setで明示設定する。I/F変更なし。
 Script refs verified: 2026-06-24T08:25. `switch_cli_mode.sh` から `shutsujin_departure.sh` 呼出しを削除。理由: shutsujin_departureはセッション起動時の平時デフォルト復元であり、CLI切替直後に呼ぶとsettings.yamlをデフォルト層へ巻き戻して切替を打ち消す。post-switch verification(settings.type + tmux @agent_cli)を追加し、不一致なら成功表示せずexit 1。
+Script refs verified: 2026-06-24T09:12. `switch_cli_mode.sh` 最新commit 78e46781d を確認。08:25追随内容(出陣リセット呼出し削除 + post-switch verification)のI/F変更なし。skill手順変更不要、mtime追随のみ。
 
 # Shogun CLI Switch
 
