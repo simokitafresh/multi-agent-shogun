@@ -102,6 +102,14 @@ executions:
   result: "FAIL"
   stumbling_points: "none"
 EOF
+    cat > "$TEST_TMPDIR/logs/gate_metrics.log" <<'EOF'
+2026-06-24T00:00:00	cmd_fixture_done	CLEAR	none	unknown	unknown	unknown	none		unknown	unknown
+EOF
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_fixture_done"
+  gate_result: "CLEAR"
+EOF
 
     # Check 9.5: three-layer memory health minimal PASS fixture
     python3 - "$TEST_TMPDIR/data/three_layer_health.db" <<'PY'
@@ -174,6 +182,7 @@ MOCK
     export KARO_NINJA_WA_CACHE="$TEST_TMPDIR/karo_ninja_wa_cache"
     export KARO_SKILL_SUMMARY_CACHE="$TEST_TMPDIR/karo_skill_summary_cache"
     export KARO_AGGREGATE_CACHE="$TEST_TMPDIR/karo_startup_aggregate_cache"
+    export KARO_QUALITY_MISSING_CUTOFF="2026-06-01T00:00:00"
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/data/three_layer_health.db"
     export SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=999999999
     export ORIG_PATH="$PATH"
@@ -184,6 +193,7 @@ teardown() {
     export PATH="$ORIG_PATH"
     unset SHOGUN_MEMORY_DB_CACHE_PATH
     unset SHOGUN_THREE_LAYER_CACHE_WARN_BYTES
+    unset KARO_QUALITY_MISSING_CUTOFF
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 
@@ -641,6 +651,29 @@ EOF
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK: 配備漏れcmdなし"* ]]
+}
+
+@test "GATE CLEAR without cmd_design_quality record → WARN 品質記録漏れ" {
+    cat > "$TEST_TMPDIR/logs/gate_metrics.log" <<'EOF'
+2026-06-24T00:00:00	cmd_fixture_missing_quality	CLEAR	none	unknown	unknown	unknown	none		unknown	unknown
+EOF
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_other"
+  gate_result: "CLEAR"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ cmd品質記録漏れチェック"* ]]
+    [[ "$output" == *"WARN: 1件のGATE CLEAR cmdがcmd_design_quality未記録: cmd_fixture_missing_quality"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
+@test "GATE CLEAR with cmd_design_quality record → OK 品質記録済み" {
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ cmd品質記録漏れチェック"* ]]
+    [[ "$output" == *"OK: GATE CLEAR済みcmdはcmd_design_quality記録済み"* ]]
 }
 
 # === Test 14: GP pending 2件 → WARN表示 (AC1) ===

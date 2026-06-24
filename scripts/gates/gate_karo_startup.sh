@@ -884,18 +884,22 @@ for _agg_file in \
   "$SCRIPT_DIR/logs/gunshi_review_log.yaml" \
   "$SCRIPT_DIR/queue/pending_decisions.yaml" \
   "$SCRIPT_DIR/logs/karo_workarounds.yaml" \
-  "$SCRIPT_DIR/queue/shogun_to_karo.yaml"; do
+  "$SCRIPT_DIR/queue/shogun_to_karo.yaml" \
+  "$SCRIPT_DIR/logs/gate_metrics.log" \
+  "$SCRIPT_DIR/logs/cmd_design_quality.yaml" \
+  "$SCRIPT_DIR/logs/archive/cmd_design_quality.yaml"; do
     [[ -f "$_agg_file" ]] && _AGG_FILES+=("$_agg_file")
 done
 _AGG_SIG="$(stat -c '%n:%y:%s' "${_AGG_FILES[@]}" 2>/dev/null | tr '\n' ';' || true)"
+_QUALITY_MISSING_CUTOFF="${KARO_QUALITY_MISSING_CUTOFF:-$(date -d '24 hours ago' '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || date -v-1d '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || echo '')}"
 if [[ -f "$_AGGREGATE_CACHE" ]]; then
     IFS= read -r _agg_cache_sig < "$_AGGREGATE_CACHE" || _agg_cache_sig=""
-    if [[ "$_agg_cache_sig" == "$_AGG_SIG" ]]; then
+    if [[ "$_agg_cache_sig" == "$_AGG_SIG|quality_cutoff=$_QUALITY_MISSING_CUTOFF" ]]; then
         tail -n +2 "$_AGGREGATE_CACHE" > "$_aggregate_tmp"
         exit 0
     fi
 fi
-awk -v root="$SCRIPT_DIR" '
+awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
     FILENAME ~ /queue\/tasks\/[^/]+\.yaml$/ {
         if (FNR == 1) {
             file = FILENAME
@@ -999,6 +1003,33 @@ awk -v root="$SCRIPT_DIR" '
     }
     FILENAME ~ /logs\/gunshi_review_log\.yaml$/ {
         if ($0 !~ /^#/ && /status:[[:space:]]*pending[[:space:]]*$/) gp_pending++
+        next
+    }
+    FILENAME ~ /logs\/gate_metrics\.log$/ {
+        gcmd = ""; gresult = ""
+        gts = $1
+        gsub(/Z$/, "", gts)
+        if (quality_cutoff != "" && gts < quality_cutoff) next
+        if (NF >= 3 && $2 ~ /^cmd_/) {
+            gcmd = $2
+            gresult = $3
+        } else if (NF >= 3 && $3 ~ /^cmd_/) {
+            gcmd = $3
+            gresult = $2
+        }
+        gsub(/["'"'"']/, "", gcmd)
+        gsub(/["'"'"']/, "", gresult)
+        if (gcmd != "" && gresult ~ /^(CLEAR|PASS)$/) gate_clear[gcmd] = 1
+        next
+    }
+    FILENAME ~ /logs\/(archive\/)?cmd_design_quality\.yaml$/ {
+        if (/^[[:space:]]*-[[:space:]]*cmd_id:/ || /^[[:space:]]*cmd_id:/) {
+            qcmd = $0
+            sub(/^.*cmd_id:[[:space:]]*/, "", qcmd)
+            gsub(/["'"'"']/, "", qcmd)
+            gsub(/[[:space:]]+$/, "", qcmd)
+            if (qcmd ~ /^cmd_/) quality_logged[qcmd] = 1
+        }
         next
     }
     FILENAME ~ /queue\/pending_decisions\.yaml$/ {
@@ -1133,10 +1164,19 @@ awk -v root="$SCRIPT_DIR" '
         }
         print "WABRAINWASH|" bw_missing "|" bw_cmds
         print "ORPHAN|" orphan_found+0 "|" orphan_cmds
+        qmiss = 0
+        qmiss_cmds = ""
+        for (gcmd in gate_clear) {
+            if (!(gcmd in quality_logged)) {
+                qmiss++
+                if (qmiss <= 5) qmiss_cmds = qmiss_cmds (qmiss_cmds != "" ? ", " : "") gcmd
+            }
+        }
+        print "QUALITY_MISSING|" qmiss+0 "|" qmiss_cmds
     }
 ' "${_AGG_FILES[@]}" > "$_aggregate_tmp" 2>/dev/null || true
 {
-    printf '%s\n' "$_AGG_SIG"
+    printf '%s\n' "$_AGG_SIG|quality_cutoff=$_QUALITY_MISSING_CUTOFF"
     cat "$_aggregate_tmp"
 } > "$_AGGREGATE_CACHE"
 ) &
@@ -1156,6 +1196,7 @@ while IFS='|' read -r _agg_key _agg_a _agg_b _agg_c _agg_d _agg_e _agg_f; do
         WACLEAN) wa_clean_result="${_agg_a}|${_agg_b}|${_agg_c}|${_agg_d}|${_agg_e}" ;;
         WABRAINWASH) wa_brainwash_result="${_agg_a}|${_agg_b}" ;;
         ORPHAN) orphan_result="${_agg_a}|${_agg_b}" ;;
+        QUALITY_MISSING) quality_missing_result="${_agg_a}|${_agg_b}" ;;
     esac
 done < "$_aggregate_tmp"
 if [[ -f "$_phase_guide_1_tmp" ]]; then _phase_guide_1="$(<"$_phase_guide_1_tmp")"; fi
@@ -1519,6 +1560,20 @@ if [ -f "$stk_file" ]; then
     fi
 else
     echo "  SKIP: shogun_to_karo.yaml不在"
+fi
+echo ""
+
+# --- Check 9.1: GATE CLEAR済みだがcmd品質記録なし ---
+echo "■ cmd品質記録漏れチェック"
+quality_missing_result=${quality_missing_result:-"0|"}
+IFS='|' read -r QUALITY_MISSING_COUNT QUALITY_MISSING_CMDS <<< "$quality_missing_result"
+if [ "${QUALITY_MISSING_COUNT:-0}" -gt 0 ]; then
+    echo "  WARN: ${QUALITY_MISSING_COUNT}件のGATE CLEAR cmdがcmd_design_quality未記録: ${QUALITY_MISSING_CMDS}"
+    echo "  action: /cmd-complete または cmd_quality_log.sh で品質記録まで完了せよ"
+    if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+    alerts+=("cmd品質記録漏れ${QUALITY_MISSING_COUNT}件: ${QUALITY_MISSING_CMDS}")
+else
+    echo "  OK: GATE CLEAR済みcmdはcmd_design_quality記録済み"
 fi
 echo ""
 
