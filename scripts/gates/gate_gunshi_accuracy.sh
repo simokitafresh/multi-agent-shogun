@@ -2,10 +2,12 @@
 # gate_gunshi_accuracy.sh — 軍師gate予測精度の公正計算
 # 誰でもいつでも: bash scripts/gates/gate_gunshi_accuracy.sh
 #
-# 公正計算ルール(2026-06-24確立):
+# 公正計算ルール(2026-06-24 v2 — 殿指示: 偽陽性はバグ):
 #   FAIL→BLOCK予測→家老修正→CLEAR = 正解(BLOCKを検出し家老が修正した)
+#   RC→BLOCK予測→忍者修正→CLEAR = 正解(RC指摘が反映された正常フロー)
+#   LGTM→WARN予測→家老迅速処理→CLEAR = 正解(lesson_candidate有→家老処理=予測範囲内)
 #   LGTM→CLEAR予測→CLEAR = 正解
-#   LGTM→WARN/BLOCK予測→CLEAR = 誤答(LGTMならCLEARであるべき)
+#   LGTM→BLOCK予測→CLEAR = 誤答(LGTMならBLOCK予測は判定ミス)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -36,9 +38,13 @@ for e in entries:
     pred = pred_m.group(1)
     result = result_m.group(1)
     verdict = verdict_m.group(1) if verdict_m else "?"
-    # 公正計算: FAIL→BLOCK→修正CLEAR = 正解
+    # 公正計算: 軍師が問題を検出→修正→CLEARは正解
     if verdict == "FAIL" and pred == "BLOCK" and result == "CLEAR":
-        correct = True
+        correct = True  # FAIL検出→家老修正→CLEAR
+    elif verdict == "REQUEST_CHANGES" and pred == "BLOCK" and result == "CLEAR":
+        correct = True  # RC指摘→忍者修正→CLEAR
+    elif verdict == "LGTM" and pred == "WARN" and result == "CLEAR":
+        correct = True  # lesson_candidate有→家老迅速処理→CLEAR
     else:
         correct = pred == result
     results.append({"cmd": cmd, "pred": pred, "result": result, "verdict": verdict, "correct": correct})
