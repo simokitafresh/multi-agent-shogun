@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-24 cmd_karo_hotfix_ga125_context_freshness_source_mapping_20260624 -->
+<!-- last_updated: 2026-06-25 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,12 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3046 | lord_conversation.jsonlが202行でMAX_ENTRIES=200を超過しsession_summary喪失リスク。200→500に拡張 | infra | 05-25 | conversation_retention.shのMAX_ |
-| cmd_3045 | skill_auto_improve.shがcode_fix_cleared済みパターンを再分類→再エスカレーションするバグの修正。report-writeとverdict-checkで偽エスカレーションが毎起動発生し将軍の確認コストが累積する | infra | 05-25 | code_fix_cleared済みskill_auto_i |
-| cmd_3048 | 殿の入力受信時に記憶DB FTS5検索で過去の関連裁定を将軍に自動注入する。現在grep/rg実行時のみDB利用で殿対話時は未接続(なぜなぜ7回で特定した穴)。prompt_state_inject.sh内に関数追加 | infra | 05-25 | prompt_state_inject.shの殿入力時mem |
-| cmd_3049 | cmd_3048のFTS5は漢字/カタカナでagent=lord 0件(unicode61 CJK問題)。ext4上のlord専用キャッシュ(5417件)にLIKE検索(3-4ms)で差替え。殿の入力から2-4文字チャンクを抽出しOR検索。実データ検証で10件中8件ヒット確認済み | infra | 05-25 | lord ruling cache LIKE検索の検証を追加 |
-| cmd_3050 | prompt_state_inject.shのsemantic_search呼出しがtimeout 0.30sで全語TIMEOUT(10/10=100%)。SEMANTIC_DISABLE_CAUSAL=1+SEMANTIC_DISABLE_MEMORY_DB=1追加+timeout 0.60sで安定HIT(8語全完了、max 298ms)。セマンティクスインデックス質的向上spec v3 Phase 1 | infra | 05-25 | prompt_state_inject.shのsemanti |
-| cmd_3051 | ブラックホール概念修復(5概念94件の30文字超aliases削除)+alias長上限validation追加+殿の6原則を独立概念化。8語正しいHIT率 12.5%→改善。spec v3 Phase 2 | infra | 05-25 | 5概念の長文aliasesを削除し、6原則概念を追加、sem |
 | cmd_3052 | Phase 2後の品質スコア63%(28/44)を93%(40/43)に改善。全概念ノイズalias掃除(39件30文字超+2件短いノイズ)+14語alias追加+first-layerスコアソート追加+validation(min_length+重複検出)+品質テスト自動実行+誤配置修正+リンク修復。spec v6 Phase 3a | infra | 05-26 | semantic index Phase 3a: spec準 |
 | cmd_3053 | 共有repoでstage→auto-commit間に他忍者のauto-commitが割込みstage済みdiffを吸収する。cmd_3050でsaizoが発見。ninja_monitor.shのauto-commit前にgit diff --cachedで他忍者のstageを検出しスキップする条件を追加 | infra | 05-26 | ninja_monitorのauto-commit前に既存s |
 | cmd_3054 | gate_improvement_triggerが同一ファイル+同一alert_typeで毎起動ALERTを発行し将軍の確認コストが累積。codd.md staleが3日連続(GA-379/380/382)。同一file+alert_typeの24h dedup条件を追加 | infra | 05-26 | gate_improvement_triggerに同一fil |
