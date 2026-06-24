@@ -117,3 +117,23 @@ _run_post() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"報告YAMLへの直接Edit/Write検出"* ]]
 }
+
+@test "pre dispatcher increments shogun verification action count for rg (cmd_3523 AC2)" {
+    local state_dir="$BATS_TEST_TMPDIR/state_pre_count"
+    mkdir -p "$state_dir"
+
+    run env TMUX_AGENT_ID="shogun" SHOGUN_STATE_DIR="$state_dir" TMUX_PANE="" bash -c \
+        'printf "%s" "{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"rg -n needle context/infrastructure.md\"}}" | "$PRE_DISPATCH"'
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$state_dir/shogun_verification_action_count_shogun" | tr -d '[:space:]')" -eq 1 ]
+}
+
+@test "post dispatcher increments shogun verification action count for capture-pane (cmd_3523 AC2)" {
+    local state_dir="$BATS_TEST_TMPDIR/state_post_count"
+    mkdir -p "$state_dir"
+
+    run env TMUX_AGENT_ID="shogun" SHOGUN_STATE_DIR="$state_dir" TMUX_PANE="" bash -c \
+        'printf "%s" "{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"tmux capture-pane -p -S -30\"},\"tool_result\":{\"stdout\":\"ok\",\"stderr\":\"\",\"exit_code\":0}}" | "$POST_DISPATCH"'
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$state_dir/shogun_verification_action_count_shogun" | tr -d '[:space:]')" -eq 1 ]
+}

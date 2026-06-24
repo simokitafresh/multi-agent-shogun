@@ -89,6 +89,26 @@ PY
 
 mark_memory_or_gist_numeric_flags
 
+mark_shogun_verification_action_count() {
+    local agent_id state_dir count_file
+    agent_id="${TMUX_AGENT_ID:-}"
+    if [[ -z "$agent_id" && -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
+        agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+    fi
+    [[ "$agent_id" == "shogun" ]] || return 0
+    [[ -n "${command:-}" ]] || return 0
+    if [[ "$command" =~ (^|[[:space:]/])(memory_db_query|semantic_search)\.sh([[:space:]]|$) ]] \
+        || [[ "$command" =~ (^|[[:space:]/])(rg|grep|bats|db-check)([[:space:]]|$) ]] \
+        || [[ "$command" =~ tmux[[:space:]].*capture-pane ]]; then
+        state_dir="${SHOGUN_STATE_DIR:-/tmp}"
+        mkdir -p "$state_dir" 2>/dev/null || true
+        count_file="$state_dir/shogun_verification_action_count_${agent_id}"
+        printf '1\n' >> "$count_file" 2>/dev/null || true
+    fi
+}
+
+mark_shogun_verification_action_count
+
 knowledge_grep_query() {
     local cache_dir cache_key cache_file now last ttl query
 

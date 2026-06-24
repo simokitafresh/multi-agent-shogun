@@ -658,3 +658,31 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
     [ "$status" -eq 0 ]
     [[ "$output" != *"WARN: 数値を含むWrite/gh gist edit出力フラグあり"* ]]
 }
+
+@test "T-SCI-030: shogun Stop warns when verification action count is zero (cmd_3523 AC1)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"確認なしで応答する"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 確認行為ゼロ"* ]]
+}
+
+@test "T-SCI-031: shogun Stop passes when verification action count is at least one (cmd_3523 AC1)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    printf '1\n' > "$SHOGUN_STATE_DIR/shogun_verification_action_count_shogun"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"一次確認後に応答する"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN: 確認行為ゼロ"* ]]
+    [ ! -f "$SHOGUN_STATE_DIR/shogun_verification_action_count_shogun" ]
+}

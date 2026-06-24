@@ -331,10 +331,27 @@ detect_numeric_flag_memory_gap() {
   printf 'WARN: 数値を含むWrite/gh gist edit出力フラグあり、同一セッション内の三層記憶検索(memory_db_query.sh/semantic_search.sh)フラグなし。推測値を出す前に記憶DB/セマンティックを確認せよ(cmd_3522)。\n' >&2
 }
 
+detect_verification_action_gap() {
+  local agent="$1"
+  local count_file="$STATE_DIR/shogun_verification_action_count_${agent}"
+  local count=0
+  if [[ -f "$count_file" ]]; then
+    count="$(wc -l < "$count_file" 2>/dev/null | tr -d '[:space:]' || echo 0)"
+  fi
+  case "$count" in
+    ''|*[!0-9]*) count=0 ;;
+  esac
+  if [[ "$count" -eq 0 ]]; then
+    printf 'WARN: 確認行為ゼロ。将軍応答前に三層記憶検索/capture-pane/DB検索/grep/bats等の一次確認を1回以上実行せよ(cmd_3523)。\n' >&2
+  fi
+  rm -f "$count_file" 2>/dev/null || true
+}
+
 # cmd_TRAINING: shogunのみjqでlast_assistant_message抽出→brainwash check。忍者/家老はpayload直接マッチ(jq不要, ~7ms削減)
 if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; then
   last_assistant_message="$(printf '%s' "$payload" | jq -r '.last_assistant_message // empty' 2>/dev/null || true)"
   printf '%s\n' "$SHOGUN_BRAINWASH_AUDIT" >&2
+  detect_verification_action_gap "$agent_id"
   detect_numeric_flag_memory_gap "$agent_id"
   detect_numeric_tool_memory_gap "$payload"
   # LS065: Q6洗脳フラグ確認(前回検出→cmd起票未完了ならWARN継続。認識→行動ギャップ防止)

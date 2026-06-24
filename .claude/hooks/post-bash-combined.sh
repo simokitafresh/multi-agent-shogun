@@ -27,6 +27,27 @@ mark_post_bash_numeric_gist_flag() {
 
 mark_post_bash_numeric_gist_flag
 
+mark_post_bash_verification_action_count() {
+    local command agent_id state_dir count_file
+    command="$(printf '%s' "$payload" | jq -r '.tool_input.command // .toolInput.command // empty' 2>/dev/null || true)"
+    [[ -n "$command" ]] || return 0
+    agent_id="${TMUX_AGENT_ID:-}"
+    if [[ -z "$agent_id" && -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
+        agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+    fi
+    [[ "$agent_id" == "shogun" ]] || return 0
+    if [[ "$command" =~ (^|[[:space:]/])(memory_db_query|semantic_search)\.sh([[:space:]]|$) ]] \
+        || [[ "$command" =~ (^|[[:space:]/])(rg|grep|bats|db-check)([[:space:]]|$) ]] \
+        || [[ "$command" =~ tmux[[:space:]].*capture-pane ]]; then
+        state_dir="${SHOGUN_STATE_DIR:-/tmp}"
+        mkdir -p "$state_dir" 2>/dev/null || true
+        count_file="$state_dir/shogun_verification_action_count_${agent_id}"
+        printf '1\n' >> "$count_file" 2>/dev/null || true
+    fi
+}
+
+mark_post_bash_verification_action_count
+
 # === Guard 0: cmd_save.sh BLOCK reminder ===
 if [[ "$payload" == *'cmd_save.sh'* || "$payload" == *'cmd_publish.sh'* ]]; then
     cmd_save_meta="$(PAYLOAD="$payload" jq -r '
