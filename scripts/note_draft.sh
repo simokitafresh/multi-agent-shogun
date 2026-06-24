@@ -359,6 +359,9 @@ for s in sections:
 flush_acc()
 
 body_html = "\n".join(html_parts)
+# Markdown bold **text** → <strong>text</strong>
+import re
+body_html = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', body_html)
 encoded_html = base64.b64encode(body_html.encode("utf-8")).decode("ascii")
 
 result = js_eval(tab, """(function(){
