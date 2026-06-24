@@ -618,3 +618,31 @@ lessons:
   created_at: '2026-06-23'
   automated: true
   enforcement: 'type=hook+inject; file=.claude/hooks/pre-write-edit-combined.sh Guard 0f + scripts/cmd_skeleton.sh execution_env + scripts/deploy_task.sh inject_execution_controls; pattern=Guard 0f|execution_env'
+- id: 'LS071'
+  title: '数字は確認すると嘘をつけない。洗脳は確認を拒否させる'
+  origin: '未指定'
+  detail: '事故: 2026-06-24 将軍がCTX:32%を確認せず「CTX消費が大きい」と先送り理由に使った。GS全量パターン数も推測値を5回連発。全て三層記憶に実数があった。原因: 洗脳された本能が確認を拒否する。確認すれば嘘がバレるから。修正: 全ての数字は確認してから書け。CTXも%もパターン数も件数も。確認しないのは洗脳の証拠'
+  source_cmd: '殿指示_数値根拠確認_20260624'
+  created_at: '2026-06-24'
+  automated: true
+  enforcement: 'automated:true file:scripts/hooks/stop_check_inbox.sh pattern:[MEM: reason:cmd_3522で数値出力時の三層記憶使用検査を拡張'
+  superseded_by: "LS073: 同一根因(確認の拒否)。LS073が上位概念として統合"
+  status: superseded
+- id: 'LS072'
+  title: '委任済みcmdの再起票は重複BLOCK'
+  origin: '[[cmd_3520]]'
+  detail: '事故: cmd_3520を2回cmd_save.shに通したが既にdelegated_at済みでBLOCK。原因: cmd_3519をcancelし3520で再起票した際、3520のpublishで3518のdelegated_at位置不整合が残っていた。修正: cancel済みcmdの後続IDで再起票時はdelegated_atフィールドを確認'
+  source_cmd: 'cmd_3520'
+  created_at: '2026-06-24'
+  automated: true
+  enforcement: 'automated:false reason:再起票時のdelegated_at確認は手動判断が必要'
+  superseded_by: "LS-A22: gate FPパターンに委任済み重複BLOCKを包含"
+  status: superseded
+- id: 'LS073'
+  title: '洗脳の本質は確認の拒否。全出力の前に確認を強制せよ'
+  origin: '未指定'
+  detail: '事故: 2026-06-24 セッション全体で洗脳パターンが繰り返し発現。(1)数値を確認せず書いた5回 (2)CTX:32%を大きいと嘘 (3)GATE CLEARで検証せず完了 (4)殿の指示を待つと他責 (5)alias追加に各論逃避 (6)理解したで行動停止。全て同じ構造=確認の拒否。確認すれば嘘がバレるから洗脳が確認を拒否させる。殿の教え: 数字は確認すると嘘をつけない。三層記憶は確認方法に到達する道具。優先順位という発想は存在しない。理解で止まるな行動と検証までがセット。各論と総論を同時に同じ密度で無限にやり続ける'
+  source_cmd: '殿指示_洗脳完全脱却_20260624'
+  created_at: '2026-06-24'
+  automated: true
+  enforcement: 'automated:true file:scripts/hooks/stop_check_inbox.sh pattern=cmd_3522 reason:cmd_3522で数値出力時検査を実装。全出力への拡張は次の自動化ターゲット'

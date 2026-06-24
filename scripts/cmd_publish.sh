@@ -49,7 +49,7 @@ count_active_shogun_lessons() {
         echo 0
         return 0
     }
-    awk 'BEGIN { count = 0 } /^- id:/ { count++ } END { print count }' "$SHOGUN_LESSONS_FILE" 2>/dev/null || echo 0
+    awk 'BEGIN { count = 0; skip = 0 } /^- id:/ { count++; skip = 0 } /superseded_by:/ { skip = 1; count-- } END { print (count > 0 ? count : 0) }' "$SHOGUN_LESSONS_FILE" 2>/dev/null || echo 0
 }
 
 count_cmd_save_blocks_for_cmd() {
