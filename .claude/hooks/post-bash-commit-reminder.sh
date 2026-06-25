@@ -148,9 +148,9 @@ for f in sorted(filtered)[:10]:
 if len(filtered) > 10:
     msg += f"  ... +{len(filtered) - 10} files\n"
 msg += (
-    "\n報告を提出する前にcommitせよ:\n"
-    f"  cd {project_path} && git add -A && git commit -m 'feat: <cmd_id> <summary>'\n"
-    "\ncommit漏れはcmd_complete_gateでBLOCKされ家老の手動対応(WA)が発生する。"
+    "\n報告を提出する前に、自分の任務scope内ファイルだけをcommitせよ:\n"
+    f"  cd {project_path} && git add <scope内file...> && git commit -m 'feat: <cmd_id> <summary>'\n"
+    "\nscope外/他忍者担当の変更はstageせず、家老へ報告せよ。commit漏れはcmd_complete_gateでBLOCKされ家老の手動対応(WA)が発生する。"
 )
 
 emit_context(msg)

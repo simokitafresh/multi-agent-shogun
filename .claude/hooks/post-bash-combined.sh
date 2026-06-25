@@ -337,7 +337,7 @@ if [[ "$payload" == *'inbox_write'* && "$payload" == *'report_received'* ]]; the
                             if (( count > 10 )); then
                                 msg+="  ... +$((count - 10)) files"$'\n'
                             fi
-                            msg+=$'\n'"報告を提出する前にcommitせよ:"$'\n'"  cd ${project_path} && git add -A && git commit -m 'feat: <cmd_id> <summary>'"$'\n'$'\n'"commit漏れはcmd_complete_gateでBLOCKされ家老の手動対応(WA)が発生する。"
+                            msg+=$'\n'"報告を提出する前に、自分の任務scope内ファイルだけをcommitせよ:"$'\n'"  cd ${project_path} && git add <scope内file...> && git commit -m 'feat: <cmd_id> <summary>'"$'\n'$'\n'"scope外/他忍者担当の変更はstageせず、家老へ報告せよ。commit漏れはcmd_complete_gateでBLOCKされ家老の手動対応(WA)が発生する。"
                             printf '%s' "$msg" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
                         fi
                     fi

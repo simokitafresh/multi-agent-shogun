@@ -126,6 +126,10 @@ EOF
     [ "$hook_name" = "PostToolUse" ]
     [[ "$context" == *'COMMIT MISSING 警告'* ]]
     [[ "$context" == *'tracked.txt'* ]]
+    [[ "$context" == *'任務scope内ファイルだけをcommitせよ'* ]]
+    [[ "$context" == *'git add <scope内file...>'* ]]
+    [[ "$context" == *'scope外/他忍者担当の変更はstageせず'* ]]
+    [[ "$context" != *'git add -A'* ]]
 }
 
 @test "commit-reminder path stays silent when project is clean" {
