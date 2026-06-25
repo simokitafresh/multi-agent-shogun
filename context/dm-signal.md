@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-26 cmd_3539 -->
-<!-- last_synced_lesson: L781 -->
+<!-- last_updated: 2026-06-26 cmd_karo_hotfix_ga135_lesson_health_dm_signal_unclassified_20260626 -->
+<!-- last_synced_lesson: L782 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -264,6 +264,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L777: pre-commit import-only分割は未使用importを自動除去する（cmd_3533）
 - L780: lefthook import-only分割時は同一ファイルのunstaged機能差分退避に注意（cmd_3536）
 - L781: pd.to_datetime はリスト内包表記内で個別呼出しせず、リスト一括でベクトル化呼出しせよ（cmd_3539）
+- L782: FoFネストN+1: expand_portfolio_to_tickersのportfolio_cache/signal_cacheを呼出し元から渡し、構成PFを事前一括取得してキャッシュに格納せよ（cmd_3542）
 
 ## 因果リンク
 

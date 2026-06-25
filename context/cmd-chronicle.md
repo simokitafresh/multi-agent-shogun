@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-26 -->
+<!-- last_updated: 2026-06-26 cmd_karo_hotfix_ga135_lesson_health_dm_signal_unclassified_20260626 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -419,3 +419,5 @@
 | cmd_3540 | cmd_3539でmetrics_impl.py L195を修正したが、同一パターン(リスト内包表記内pd.to_datetime個別呼出し)がtrades_impl.py L116/L259に残存。忍者lesson_candidateで検出済み。全数値完全一致必須 | dm-signal | 06-26 | trades_impl.py L116/L259のpd.to |
 | cmd_3541 | cmd_3539/3540でmetrics_impl/trades_implを修正したが、同一パターンがrecalculate_fast.py L2622に残存。backend全域grep確認済みで最後の1箇所。全数値完全一致必須 | dm-signal | 06-26 | recalculate_fast.py L2622のpd.t |
 | cmd_3543 | 軍師idle自走分析(2026-06-26 blt_20260626_031051): monthly_trade_impl.pyが1PFあたり69s(全サービス中最大)。get_signal_payload_at_date 1002回+expand_portfolio_to_tickers 489回=DBクエリ1023回で67.7s。N+1クエリ解消で速度改善。修正前後で全数値完全一致必須(DataFrame.equals()=Trueで検証) | dm-signal | 06-26 | monthly_trade_impl.pyでFoF展開入力を |
+| cmd_3544 | 軍師速度バグ全体マップ(2026-06-26 blt_20260626_032240): monthly_returns_calculator.pyが1PFあたり3.8s、DBクエリ30回。N+1クエリ解消で速度改善。修正前後で全数値完全一致必須(DataFrame.equals()=Trueで検証) | dm-signal | 06-26 | monthly_returnsの最新N件取得をcount() |
+| cmd_3542 | 軍師idle自走分析(2026-06-26 blt_20260626_030029): annual_returns_calculator.py が1PFあたり5.3s(全サービス中最大)。DB execute 37回=3.4s(63%)がN+1的多数クエリで根因。クエリ統合で速度改善。修正前後で全数値完全一致必須(DataFrame.equals()=Trueで検証) | dm-signal | 06-26 | annual_returns_calculator.pyのD |
