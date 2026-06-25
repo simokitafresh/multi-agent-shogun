@@ -524,12 +524,12 @@ def _root_fallback_commit_count_since(updated_at: date) -> int:
     return count
 
 
-def source_commit_count_since(project_id: str, rel_path: str, updated_at: date) -> int:
+def source_commit_summary_since(project_id: str, rel_path: str, updated_at: date) -> tuple[int, list[str]]:
     repo_path, pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
     if not repo_path or not os.path.isdir(repo_path):
-        return 0
+        return 0, []
     if root_fallback:
-        return _root_fallback_commit_count_since(updated_at)
+        return _root_fallback_commit_count_since(updated_at), []
 
     cmd = [
         "git",
@@ -537,7 +537,7 @@ def source_commit_count_since(project_id: str, rel_path: str, updated_at: date) 
         repo_path,
         "log",
         f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00",
-        "--pretty=%s",
+        "--pretty=format:%h%x00%s",
     ]
     if pathspecs:
         cmd.extend(["--", *pathspecs])
@@ -553,37 +553,44 @@ def source_commit_count_since(project_id: str, rel_path: str, updated_at: date) 
         )
     except Exception as e:
         print(f"WARN: source_commit_count_since git failed: {repo_path} — {e}", file=sys.stderr)
-        return -1
+        return -1, []
 
     if result.returncode != 0:
         print(f"WARN: source_commit_count_since git returncode={result.returncode}: {repo_path}", file=sys.stderr)
-        return -1
+        return -1, []
 
     count = 0
-    for subject in result.stdout.splitlines():
+    details: list[str] = []
+    for raw_line in result.stdout.splitlines():
+        if "\x00" in raw_line:
+            short_hash, subject = raw_line.split("\x00", 1)
+        else:
+            short_hash, subject = "", raw_line
         subject = subject.strip()
         if not subject or AUTO_COMMIT_SUBJECT_RE.match(subject):
             continue
         count += 1
-    return count
+        if len(details) < 3:
+            details.append(f"{short_hash} {subject}".strip())
+    return count, details
 
 
 def _compute_one_commit_count(
     args: tuple[str, str, str, date],
-) -> tuple[tuple[str, str], int]:
+) -> tuple[tuple[str, str], int, list[str]]:
     """ThreadPoolExecutor worker: source_commit_count_since を呼んで結果を返す"""
     project_id, rel_path, _abs_path, updated_at = args
-    count = source_commit_count_since(project_id, rel_path, updated_at)
-    return (project_id, rel_path), count
+    count, details = source_commit_summary_since(project_id, rel_path, updated_at)
+    return (project_id, rel_path), count, details
 
 
-def batch_source_commit_counts(
+def batch_source_commit_summaries(
     infos: list[tuple[str, str, str, date]],
-) -> dict[tuple[str, str], int]:
+) -> dict[tuple[str, str], tuple[int, list[str]]]:
     """(project_id, rel_path) → commit_count を並列計算（ThreadPoolExecutor）"""
     if not infos:
         return {}
-    counts: dict[tuple[str, str], int] = {}
+    summaries: dict[tuple[str, str], tuple[int, list[str]]] = {}
 
     root_fallback_groups: dict[date, list[tuple[str, str]]] = {}
     direct_infos: list[tuple[str, str, str, date]] = []
@@ -609,11 +616,11 @@ def batch_source_commit_counts(
             if future in root_futures:
                 count = future.result()
                 for key in root_futures[future]:
-                    counts[key] = count
+                    summaries[key] = (count, [])
             else:
-                key, count = future.result()
-                counts[key] = count
-    return counts
+                key, count, details = future.result()
+                summaries[key] = (count, details)
+    return summaries
 
 
 def scan_archive_metadata(abs_path: str) -> tuple[str, str, str]:
@@ -873,11 +880,19 @@ def build_warning(rel_path: str, days_old: int | None) -> str:
     return f"WARN: {rel_path} last_updated {days_old}日前。更新要否を確認せよ"
 
 
-def build_source_warning(rel_path: str, commit_count: int, updated_at: date) -> str:
-    return (
+def build_source_warning(
+    rel_path: str,
+    commit_count: int,
+    updated_at: date,
+    details: list[str] | None = None,
+) -> str:
+    message = (
         f"ALERT: {rel_path} source commits {commit_count}件 "
         f"since last_updated={updated_at.isoformat()}。更新要否を確認せよ"
     )
+    if details:
+        message += f" latest: {' | '.join(details)}"
+    return message
 
 
 def build_source_check_warning(rel_path: str, updated_at: date) -> str:
@@ -910,14 +925,14 @@ if mode == "--dashboard-warnings":
             warnings.append(build_warning(rel_path, None))
             continue
         files_for_git.append((project_id, rel_path, abs_path, updated_at))
-    commit_counts = batch_source_commit_counts(files_for_git)
+    commit_summaries = batch_source_commit_summaries(files_for_git)
     min_source_commits = int(os.environ.get("CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS", "1"))
     for project_id, rel_path, abs_path, updated_at in files_for_git:
-        cc = commit_counts.get((project_id, rel_path), 0)
+        cc, details = commit_summaries.get((project_id, rel_path), (0, []))
         if cc < 0:
             warnings.append(build_source_check_warning(rel_path, updated_at))
         elif cc >= min_source_commits:
-            warnings.append(build_source_warning(rel_path, cc, updated_at))
+            warnings.append(build_source_warning(rel_path, cc, updated_at, details))
 elif mode == "--cmd-warnings":
     project_id = find_cmd_project(cmd_id)
     if project_id:
@@ -932,13 +947,13 @@ elif mode == "--cmd-warnings":
                 warnings.append(build_warning(rel_path, None))
                 continue
             files_for_git.append((current_project, rel_path, abs_path, updated_at))
-        commit_counts = batch_source_commit_counts(files_for_git)
+        commit_summaries = batch_source_commit_summaries(files_for_git)
         for current_project, rel_path, abs_path, updated_at in files_for_git:
-            cc = commit_counts.get((current_project, rel_path), 0)
+            cc, details = commit_summaries.get((current_project, rel_path), (0, []))
             if cc < 0:
                 warnings.append(build_source_check_warning(rel_path, updated_at))
             elif cc > 0:
-                warnings.append(build_source_warning(rel_path, cc, updated_at))
+                warnings.append(build_source_warning(rel_path, cc, updated_at, details))
 
 for line in sorted(dict.fromkeys(warnings)):
     print(line)

@@ -476,6 +476,8 @@ PROJ
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT: context/google-classroom.md source commits 1件"* ]]
+    [[ "$output" == *"latest: "* ]]
+    [[ "$output" == *"feature: classroom source changed"* ]]
 }
 
 @test "dm-signal root and core contexts ignore unrelated external commits" {
