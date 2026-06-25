@@ -8722,3 +8722,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - pre-push artifactは旧テスト内容を記録しており、現在の作業ツリー/HEADでは同じ失敗が再現しない場合がある。artifactの直接失敗と現物の再実行結果を混同すると、修正済み箇所へ不要な再修正を入れる。報告では artifact timestamp と current HEAD/test result を分離する。origin: [[hook_failure_ALERT_GA133]] -> [[stale_artifact_expectation]] -> [[unnecessary_fix_risk]]
+
+### L856: context_freshness_check: docs/semantic-index pathspecが過広でindex.md成長更新が偽陽性ALERTを常時発火
+- **日付**: 2026-06-26
+- **出典**: cmd_karo_recon_ga134_obsidian_link_principles_20260626
+- **記録者**: saizo
+- **tags**: [infra,bash]
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_karo_recon_ga134_obsidian_link_principles_20260626]]
+- **when**: 未設定
+- **how**: 未設定
+- obsidian-link-principles.mdのsource pathspecにdocs/semantic-indexを含むため、index.mdへのaliases/discussion追加(ルーティン成長)が毎回ALERTをトリガーする。L779(dm-signal-core.md pathspec過広)と同構造。修正はcontext_freshness_check.sh L440-445のpathspec精細化で対応可能。origin: [[GA-134_context_freshness_ALERT]] -> [[docs/semantic-index過広pathspec]] -> [[index.md成長更新が偽陽性発火]]

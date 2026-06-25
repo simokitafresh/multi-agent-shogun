@@ -8,39 +8,6 @@ entries:
   project: "dm-signal"
   supplementary_cmds: 0
   source: "cmd_save_warn"
-  timestamp: "2026-06-23T02:59:42Z"
-  notes: "研究cmd道具未記載|check=check_research_tool_explicit"
-- cmd_id: "cmd_3509"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-23T03:01:51Z"
-  notes: "研究cmd道具未記載|check=check_research_tool_explicit"
-- cmd_id: "cmd_3509"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-23T03:04:27Z"
-  notes: "研究cmd道具未記載|check=check_research_tool_explicit"
-- cmd_id: "cmd_3509"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
   timestamp: "2026-06-23T03:08:12Z"
   notes: "研究cmd道具未記載|check=check_research_tool_explicit"
 - cmd_id: "cmd_3509"
@@ -2165,3 +2132,37 @@ entries:
   checks: "cmd_save_main"
   diagnosis: "BLOCK理由: q5=code_readingのみ(structure_verified未記載) / 対策: q5をstructure_verifiedに昇格し現物確認4箇所+家老レビューAPPROVEの証跡を追記"
   notes: "WARN累計昇格: 「設計書数値緩和|check=check_gunshi_reference_numeric_relaxation」が4回繰り返されています(cmd_ids=cmd_3527,cmd_3529,cmd_3534,cmd_3535)。WARNを解消してからcmd_save.shを実行せよ"
+- cmd_id: "cmd_karo_recon_ga134_obsidian_link_principles_20260626"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-25T16:41:44Z"
+- cmd_id: "cmd_3538"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-25T16:43:05Z"
+  notes: "設計書数値緩和|check=check_gunshi_reference_numeric_relaxation"
+- cmd_id: "cmd_3538"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-25T16:43:05Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: cmd_3537で設計書数値緩和WARN累計昇格(LS-A22(11)FP: q8の1タップとACのテスト件数は無関係概念) / 対策: cmd cancel+新ID起票で累計リセット。q8 WHATにテスト件数を同期し数値一致"
+  notes: "WARN累計昇格: 「設計書数値緩和|check=check_gunshi_reference_numeric_relaxation」が5回繰り返されています(cmd_ids=cmd_3527,cmd_3529,cmd_3534,cmd_3535,cmd_3537)。WARNを解消してからcmd_save.shを実行せよ"

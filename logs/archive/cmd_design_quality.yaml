@@ -60381,3 +60381,36 @@ entries:
   supplementary_cmds: 0
   source: "cmd_complete_gate"
   timestamp: "2026-06-23T02:56:46Z"
+- cmd_id: "cmd_3509"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-23T02:59:42Z"
+  notes: "研究cmd道具未記載|check=check_research_tool_explicit"
+- cmd_id: "cmd_3509"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-23T03:01:51Z"
+  notes: "研究cmd道具未記載|check=check_research_tool_explicit"
+- cmd_id: "cmd_3509"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-23T03:04:27Z"
+  notes: "研究cmd道具未記載|check=check_research_tool_explicit"

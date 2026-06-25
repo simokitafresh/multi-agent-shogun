@@ -951,6 +951,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-24T10:49:29+09:00 数百万パターン以上やった上で、今回はL0-L7の75体を例に出しているだけ。前提条件が異なってしまっている |
 | lesson | `L777` pre-commit import-only分割は未使用importを自動除去する |
 | lesson | `L780` lefthook import-only分割時は同一ファイルのunstaged機能差分退避に注意 |
+| lesson | `L856` context_freshness_check: docs/semantic-index pathspecが過広でindex.md成長更新が偽陽性ALERTを常時発火 |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -1049,6 +1050,7 @@ codd:
 | causal_chain | `[[cmd_3261]]` (L766) |
 | causal_chain | `[[殿指示編成変更]] -> [[軍師がロール制限で拒否]] -> [[殿裁定: 殿命令>全ロール制限]]` (L777) |
 | causal_chain | `[[cmd_karo_hotfix_cdp_gate_stability_202606111540]]` (L780) |
+| causal_chain | `[[cmd_karo_recon_ga134_obsidian_link_principles_20260626]]` (L856) |
 
 ## investment_knowledge_base — 投資知識辞書
 

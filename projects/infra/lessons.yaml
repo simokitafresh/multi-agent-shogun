@@ -1,8 +1,20 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-25T19:40:45'
+last_synced: '2026-06-26T01:41:14'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 850
+lesson_count: 851
 lessons:
+- id: L856
+  title: 'context_freshness_check: docs/semantic-index pathspecが過広でindex.md成長更新が偽陽性ALERTを常時発火'
+  summary: obsidian-link-principles.mdのsource pathspecにdocs/semantic-indexを含むため、index.mdへのa
+  tags:
+  - infra
+  - bash
+  source_cmd: cmd_karo_recon_ga134_obsidian_link_principles_20260626
+  when: 未設定
+  how: 未設定
+  target_files:
+  - 偵察のみ
+  origin: '[[cmd_karo_recon_ga134_obsidian_link_principles_20260626]]'
 - id: L855
   title: hook artifact調査では発火時点と現時点を分けて報告する
   summary: pre-push artifactは旧テスト内容を記録しており、現在の作業ツリー/HEADでは同じ失敗が再現しない場合がある。artifactの直接失敗と現物の
@@ -532,9 +544,6 @@ lessons:
   - scripts/gates/gate_context_freshness.sh
   - scripts/context_freshness_check.sh
   origin: '[[GA-099]] -> [[context更新トリガー未強制]] -> [[context_freshness ALERT残存]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L824
   title: startup WARN測定は解消行動への接続まで検証せよ
   summary: 3セッション連続WARNを検出しても、cmd起票済みID・action_required解消・実装証拠へ接続しないと同じWARNを再生産する。次回追加すべきチェ
@@ -1256,7 +1265,7 @@ lessons:
   origin: '[[cmd_karo_hotfix_ga041_context_freshness_202606111520]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-06-26'
 - id: L778
   title: 配備時auto-deprecatedは計測分母を縮めて低usefulを隠す
   summary: deploy_task.shが教訓注入の副作用でlessons.yamlへdeprecated:trueを書き込むと、gate_lesson_health.sh
@@ -1837,7 +1846,7 @@ lessons:
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
   deprecated: true
-  deprecated_at: '2026-06-25T19:41:05+09:00'
+  deprecated_at: '2026-06-26T01:41:45+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -2378,9 +2387,6 @@ lessons:
   - scripts/gates/gate_karo_startup.sh
   - tests/unit/test_cmd_complete_gate.bats
   origin: '[[cmd_3047]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L701
   title: if条件失敗後のrc取得はelse内で行う
   summary: bashで `if parsed=$(cmd); then ... fi; rc=$?` と書くと、elseなしif文全体の終了ステータスが0になり、cmd失敗
@@ -3102,9 +3108,6 @@ lessons:
   target_files:
   - scripts/skill_execution_log.sh
   origin: '[[cmd_training_L7_v3_saizo_4_20260521192535]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L652
   title: テスト用lib-only sourceはdaemon依存チェックを通さない
   summary: INBOX_WATCHER_LIB_ONLY=1で関数だけsourceするテストは、inotifywaitのようなdaemon実行時依存を要求するとCI最小環境
@@ -3272,9 +3275,6 @@ lessons:
   - tests/unit/test_deploy_task_small_consolidated.bats
   - tests/unit/test_gate_small_consolidated.bats
   origin: '[[cmd_2894]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L640
   title: bats長いrunブロックへの統合時は挿入位置を構文単位で確認する
   summary: 'テスト統合で既存@testブロック内にコピペすると構文が壊れる。挿入位置は@test境界の前後に限定。origin: [[cmd_2893]]
@@ -3527,7 +3527,7 @@ lessons:
   origin: '[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-06-26'
 - id: L624
   title: yaml_field_setのnested指定は構文破壊リスク→dot notation専用ツール要
   summary: yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用
@@ -5184,7 +5184,7 @@ lessons:
   origin: '[[cmd_2086]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-06-26'
 - id: L507
   title: gate_statusキャッシュはreportファイル数が安定している場合のみ有効
   summary: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo
@@ -6971,9 +6971,6 @@ lessons:
   target_files:
   - lesson_auto_tag.sh
   origin: '[[cmd_cycle_L4_029]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L356
   title: YAML文字列化dictのパースにast.literal_evalは使えない(不完全文字列で失敗)
   summary: lesson_candidateのtitle/detailに格納されたPython dict repr文字列は閉じ括弧が欠損している場合がある。ast.lite
@@ -7091,7 +7088,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-25T19:41:06+09:00'
+  deprecated_at: '2026-06-26T01:41:45+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -9945,7 +9942,7 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-20'
   deprecated: true
-  deprecated_at: '2026-06-25T19:41:06+09:00'
+  deprecated_at: '2026-06-26T01:41:45+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)

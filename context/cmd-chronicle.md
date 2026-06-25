@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-25 -->
+<!-- last_updated: 2026-06-26 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,16 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3052 | Phase 2後の品質スコア63%(28/44)を93%(40/43)に改善。全概念ノイズalias掃除(39件30文字超+2件短いノイズ)+14語alias追加+first-layerスコアソート追加+validation(min_length+重複検出)+品質テスト自動実行+誤配置修正+リンク修復。spec v6 Phase 3a | infra | 05-26 | semantic index Phase 3a: spec準 |
-| cmd_3053 | 共有repoでstage→auto-commit間に他忍者のauto-commitが割込みstage済みdiffを吸収する。cmd_3050でsaizoが発見。ninja_monitor.shのauto-commit前にgit diff --cachedで他忍者のstageを検出しスキップする条件を追加 | infra | 05-26 | ninja_monitorのauto-commit前に既存s |
-| cmd_3054 | gate_improvement_triggerが同一ファイル+同一alert_typeで毎起動ALERTを発行し将軍の確認コストが累積。codd.md staleが3日連続(GA-379/380/382)。同一file+alert_typeの24h dedup条件を追加 | infra | 05-26 | gate_improvement_triggerに同一fil |
-| cmd_3055 | Phase 3a後の品質88%(44/50)を維持しつつ、2文字語3語(証拠/結論/丁寧)の概念マッピングをテスト駆動で判定する。テストが判断し、将軍も殿も判断しない(自動化×強制) | infra | 05-26 | Phase 3bの2文字語3語をテスト駆動で概念マッピングし |
-| cmd_3057 | stress_testのlordソースにtask-notification junk(toolu_/task-id等)が混入しNO_MATCH率を汚染している。2層防御フィルタを自動実行で実装し、正確なNO_MATCH率baselineを確立する | infra | 05-26 | semantic_stress_testのlord入力とca |
-| cmd_3056 | 知識は無限に増える。PJ登録/ファイル作成/教訓追加の3経路で概念が自動的にセマンティクスインデックスに流入する仕組みを構築し、過去cmdの紐付けバックフィルで既存概念のcmd参照0件を解消する | infra | 05-26 | semantic_map_generate.shにPJ登録/ |
-| cmd_3060 | セマンティクスインデックスの検索にaliases辞書引き(ブラインド6%)に加え記憶DB三層検索パス(FTS5+bm25()+IDF)を追加し、殿の実発言に対する概念到達率を56%以上に引き上げる。三層記憶アーキテクチャ(殿設計)の最初の接続 | infra | 05-26 | 記憶DB FTS→event_concepts→IDF概念ラ |
-| cmd_3061 | startup gate 3セッション連続BLOCK。推薦precision 14%/偽陽性86%を改善し、recall miss(cmd-complete, dashboard-update)を解消する | infra | 05-26 | skill_recommend_metrics.shの計測対 |
-| cmd_3062 | deploy_task.sh inject_related_lessonsがtarget_pathを無視し汎用教訓を注入するため、aliases修正等の特定ファイル向けタスクでUSEFUL率0%。target_path重み付けで教訓の関連度を向上させる | infra | 05-26 | inject_related_lessonsでtarget_ |
-| cmd_3064 | cmd_3061軍師FAIL(Goodhart)の根因対処。growth_loop L677の4スキル集中を概念分離し、SKILL.md【X専用】パースでロールフィルタを追加。metrics.sh evaluable分母定義をrevertしてbaseline正常化 | infra | 05-26 | growth_loopのスキル集中を概念分離し、semant |
 | cmd_3065 | パスA(cmd_3063 FTS5タグ伝播)で到達した概念から、related_conceptsをO(1) lookupして隣接概念に連鎖する層2パスを実装。片方向56%(102/180)の双方向強制化+バックリンク数事前計算+接続強度スコアで三層記憶の連想ネットワークを完成させる | infra | 05-27 | related_concepts隣接ランキングと双方向強制化 |
 | cmd_3066 | 固定50語テスト=Goodhart(50語100%vsブラインド6%で実証)。ブラインドテストのみで改善判定する計測基盤を構築し、NO_MATCH高頻度語→品質テスト→テストセット追加の自動パイプラインで計測自体を自動成長させる | infra | 05-27 | semantic_stress_testのNO_MATCH高 |
 | cmd_3067 | 追体験Q1-Q6が形骸化しテキスト処理に堕している(殿指摘2026-05-27)。結論を知っているから通過するだけで行動変容が生まれない。固定Q→殿の生発言Q動的生成(自己参照パラドックス回避)+自動化ターゲット必須フィールドで行動変換を強制する | infra | 05-27 | gate_shogun_startup.shの追体験検証に殿 |

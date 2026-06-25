@@ -45,7 +45,7 @@ lessons:
   origin: '[[Up vs. Down Market Timing Toggleレビュー1回目]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-06-26'
 - id: L778
   title: FE-only表示変更でも既存metrics[]のキャッシュ契約を検証する
   summary: FE-onlyの表示変更でも「既にpayloadにある」は計算関数だけでは保証にならない。`portfolio_metrics` キャッシュが古ければ必須指標以
@@ -2427,7 +2427,7 @@ lessons:
   origin: '[[cmd_1877]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-06-26'
 - id: L624
   title: 道具の全引数(--output-prefix等)をcmdに明記せよ — デフォルト依存はprefix不統一の原因
   summary: GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する。全引数を明示的にcmdに記載してデフォ
@@ -4026,7 +4026,7 @@ lessons:
   origin: '[[cmd_1483]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-06-26'
 - id: L507
   title: lazy-loaded cache forward-fillは危険
   summary: signal_cache forward-fillがlazy-loadedキャッシュで古いシグナル(Cash含む)を全後続月に伝播。exact-match+qu
