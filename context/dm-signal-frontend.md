@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-06-23 cmd_3494 -->
+<!-- last_updated: 2026-06-25 cmd_karo_hotfix_ga130 -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -105,6 +105,15 @@ Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式
 | Frontend lint/type整理 | Next/Biome lint baselineを有効化し、api-client response型を`frontend/lib/types/api.ts`へ抽出。admin/fof周辺はformat正規化済み | 138fe43d, 663b3354, b293806f; `frontend/.eslintrc.json`, `frontend/next.config.mjs`, `frontend/lib/api-client.ts`, `frontend/lib/types/api.ts`, `frontend/hooks/useAdminPage.ts`, `frontend/app/admin/fof/components/WeightBreakdown.tsx` |
 | Dashboard MTD表示 | MTDチャートにas-of labelを追加し、MTD Daily Tableへdesktop-only daily columnsを追加。確定値計算ではなく表示層の精度・明示性改善 | 0ed68575, c530b4b3; `frontend/app/dashboard/page.tsx`, `frontend/components/mtd-chart.tsx`, `frontend/components/mtd-daily-table.tsx`, `frontend/lib/mtd-as-of-label.ts`, `frontend/lib/types/market.ts` |
 | Metrics/Compare Summary表示 | MetricsのUp/Down Market chartはmobile横スクロールからviewport内に収まるbin統合へ変更。Compare SummaryのAvg UWPは小数第1位表示 | 46c50462, 509ed49b, 36e39ae3; `frontend/components/up-down-market-chart.tsx`, `frontend/components/compare-summary-table.tsx`, `frontend/lib/types/compare-summary.ts` |
+
+## 2.9 直近FE変更索引（2026-06-25）
+
+| 対象 | 結論 | 参照 |
+|------|------|------|
+| Compare Summary / Deterioration benchmark | SPY/TQQQのP_det benchmark表示とpage_visibility enforcementを追加。Compare Summary/Deteriorationの型とsummary dataにbenchmark行前提あり | 59146c43; `frontend/app/compare-summary/page.tsx`, `frontend/app/compare-summary/summary-data.ts`, `frontend/app/deterioration/page.tsx`, `frontend/components/compare-summary-table.tsx`, `frontend/lib/types/compare-summary.ts`, `frontend/lib/types/deterioration.ts` |
+| Metrics continuity risk | Metrics/Summary tableにcontinuity risk系指標を追加。Docs termsも対応済み | eaf2741d; `frontend/components/metrics-table.tsx`, `frontend/components/summary-table.tsx`, `frontend/lib/types/metrics.ts`, `frontend/components/docs/terms-content.tsx` |
+| Compare Summary table header | Compare Summary table headerをtable内sticky化。横スクロール中の列ラベル視認性を改善 | eafa53df; `frontend/components/compare-summary-table.tsx` |
+| Compare Chart benchmark dropdown | Compare Chartのbenchmark selectorにPFのbenchmark_tickerに依らない追加候補TQQQを常時合流。defaultはSPY優先を維持 | 099ccf20; `frontend/app/compare/page.tsx`, `frontend/app/compare/__tests__/benchmark-options.test.tsx` |
 
 ## 3. 状態管理
 
