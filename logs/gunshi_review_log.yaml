@@ -1374,7 +1374,7 @@
 - cmd_id: cmd_3533
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: CLEAR
   gate_prediction: CLEAR
   confidence: HIGH
   changed_lines: 378
@@ -1394,3 +1394,133 @@
   brainwash_check: "AC5件scope確認(全忍者scope内)。FM4件全対処。設計書378行全文確認。cmd_3532教訓適用(AC×unclear_points矛盾チェック→矛盾なし)。#2なし #8なし"
   origin: "[[殿指示_p値計算_20260625]] -> [[p̄パイプラインBM未対応]] -> [[設計書5段階実装APPROVE]]"
   timestamp: "2026-06-25T19:18:00+09:00"
+- cmd_id: cmd_karo_hotfix_ga133_pre_push_clear_prep_memory_db_20260625
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "APPROVE。GA-133 hook_failure ALERT。pre-push Check 8d文言不整合。AC4個。現物は更新済みの可能性(家老事前確認)"
+  observations:
+    - "家老notes: 現物test_clear_prep_check.batsは既に鮮度チェック文言に更新済み。artifactが古い失敗を拾っている可能性"
+    - "AC2でテスト×スクリプト現物照合→不整合あれば修正、なければ再現不可の根拠記録"
+    - "target_path=tests/unit/test_clear_prep_check.bats。infra修正"
+  operational_simulation: "半蔵がhook artifact読解→テスト×スクリプト照合→テスト実行PASS確認→横展開候補記録"
+  ambiguity_points: none
+  causal_chain: "pre-push artifact(古い文言期待)→GA-133発火→現物は更新済みか確認→テスト実行で最終判定"
+  brainwash_check: "AC4件scope確認。家老事前確認と整合。FM2件対処(古いartifact/現物不整合)。#2なし(cmd_3532教訓: AC記述×実行可能性cross-check→全AC忍者scope内) #8なし"
+  origin: "[[GA-133]] -> [[clear_prep_memory_db_expectation_stale]] -> [[pre_push_test_alignment]]"
+  timestamp: "2026-06-25T19:36:00+09:00"
+- cmd_id: cmd_karo_hotfix_ga133_pre_push_clear_prep_memory_db_20260625
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  gate_result: CLEAR
+  gate_prediction: WARN
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。GA-133偵察のみ。artifact旧文言→現物更新済み(2f70261f77)。Bats 14/14 PASS。修正なし"
+  observations:
+    - "artifact 4件が同じ旧期待文字列(memory DB再構築)で失敗。現物は鮮度チェック文言に更新済み"
+    - "git blame 2f70261f77(2026-06-25 19:27:24)でテスト+スクリプト両方更新確認"
+    - "bats 14/14 PASS。コード修正なし。files_modified=偵察のみ"
+  operational_simulation: "修正なしのため影響なし。lesson_candidateは発火時点/現時点分離の知見"
+  step3_5_verified: true
+  causal_chain: "pre-push artifact旧文言→GA-133発火→現物は2f70261f77で更新済み→テスト14/14 PASS→修正不要"
+  brainwash_check: "テスト14/14確認。git blame確認。AC4件×unclear_points矛盾チェック(cmd_3532教訓)→矛盾なし。#2なし #8なし"
+  origin: "[[GA-133]] -> [[旧artifact文言]] -> [[現物更新済み確認→修正不要]]"
+  timestamp: "2026-06-25T19:40:00+09:00"
+- cmd_id: cmd_3533
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: CLEAR
+  gate_prediction: WARN
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。p̄ベンチマーク拡張。BE1407 PASS/SKIP=0。FE18 PASS。build PASS。commit 128be0f4実在。files_modified 14件"
+  observations:
+    - "commit 128be0f4実在: cmd_3533 add benchmark p-average support"
+    - "テスト: BE1407 passed/SKIP=0/xfailed5/xpassed6。FE18 passed。npm run build PASS"
+    - "hook_failures 1件: pre-commit import-only→局所import wrapper化で解消。既存テスト破壊なし"
+  operational_simulation: "デプロイ後にCompare SummaryのSPY/TQQQ行にp̄ドット表示確認。既存PF p̄計算は影響なし"
+  step3_5_verified: true
+  causal_chain: "殿指示p̄ダッシュ表示→5段階実装(PK→テーブル→バッチ→API→FE)→1407テストPASS→全BM自動適用(正の複利)"
+  brainwash_check: "commit実在確認。テスト1407/0SKIP。AC5件×unclear_points矛盾チェック(cmd_3532教訓)→矛盾なし。#2なし #8なし"
+  origin: "[[殿指示_p値計算_20260625]] -> [[kagemaru 5段階実装]] -> [[LGTM 1407PASS]]"
+  timestamp: "2026-06-25T19:47:00+09:00"
+- cmd_id: cmd_3534
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity, north_star]
+  findings_summary: "APPROVE。Compare Summary列再選別(7列削除+Alpha/MinMo追加)。FEのみ。AC4個。設計書369行review-2反映済み"
+  observations:
+    - "assumptions verified: Alpha metrics_impl.py L971、MinMo L1274-1281。本番API確認済み"
+    - "BE変更ゼロ(AC4)。削除は表示列のみ、型・抽出・dot描画は残置(D1設計方針)"
+    - "cmd_3533(p̄拡張) GATE CLEAR済み。リベース前提クリア"
+  operational_simulation: "疾風がcmd_3533マージ後コードでリベース→列定義修正→抽出追加→テスト3本更新→npm test+build PASS→BE diff空確認"
+  ambiguity_points: none
+  causal_chain: "殿指示列冗長→capture派生3列+劣化系4ドット削除+Alpha/MinMo追加→判断軸明確化(正の複利)"
+  brainwash_check: "AC4件scope確認(全FE)。設計書369行確認済み。FM3件全対処。#2なし(AC×unclear_points矛盾チェック→矛盾なし) #8なし"
+  origin: "[[殿指示_Compare表示再選別_20260625]] -> [[列冗長+判断軸ぶれ]] -> [[FEのみ列再選別APPROVE]]"
+  timestamp: "2026-06-25T20:35:00+09:00"
+- cmd_id: cmd_3534
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。Compare Summary列再選別。FE5件。テスト279 PASS。build PASS。BE diff空。commit fbb0b47c実在"
+  observations:
+    - "commit fbb0b47c実在: cmd_3534 update compare summary metrics"
+    - "テスト: 49 suites/279 tests PASS。npm run build PASS。API Basic auth確認済み"
+    - "AC4: git diff --name-only -- backend 空(BE変更ゼロ証明)"
+  operational_simulation: "デプロイ後にCompare Summary画面でAlpha/MinMo列表示+7列削除を確認"
+  step3_5_verified: true
+  causal_chain: "殿指示列冗長→7列削除+Alpha/MinMo追加(FEのみ)→279テストPASS→判断軸明確化(正の複利)"
+  brainwash_check: "commit実在確認。テスト279/build PASS。BE diff空。AC4件×unclear_points矛盾チェック→矛盾なし。#2なし #8なし"
+  origin: "[[殿指示_Compare表示再選別_20260625]] -> [[hayate FE実装]] -> [[LGTM 279PASS]]"
+  timestamp: "2026-06-25T20:52:00+09:00"
+- cmd_id: cmd_3536
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity, north_star]
+  findings_summary: "APPROVE。Up/Down timing切替。BE+FE。AC4個。設計書review-1反映済み。assumptions verified"
+  observations:
+    - "assumptions verified: open列models.py既存、トグル基盤layout.tsx既存、cmd_3535 cancel→再起票"
+    - "q6_not_hiding: 計算式不変(入力列のみ差替)。CLOSE出力=現行完全一致。legacy endpoint無変更"
+    - "AC4個scope内(BE service+API+DDL+FE api-client+page+テスト)"
+  operational_simulation: "影丸が設計書§7順序で実装。BE→API→DDL→FE→テスト全PASS→build PASS"
+  ambiguity_points: none
+  causal_chain: "殿指示Up/Down CLOSE固定→timing引数+入力列切替→ページ内不整合解消→timing切替パターン確立(正の複利)"
+  brainwash_check: "AC4件scope確認。設計書review-1確認済み。FM3件全対処。#2なし(AC×unclear_points矛盾チェック→矛盾なし) #8なし"
+  origin: "[[殿指示_UpDown_timing切替_20260625]] -> [[ページ内不整合]] -> [[timing切替APPROVE]]"
+  timestamp: "2026-06-25T21:50:00+09:00"
+- cmd_id: cmd_3536
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: null
+  gate_prediction: WARN
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。Up/Down timing切替。BE11+FE9 PASS。build PASS。commit 5bef6b44実在。家老補正含む"
+  observations:
+    - "commit 5bef6b44実在: cmd_3536 make up-down market timing aware"
+    - "家老補正commit bf4db2a9: invalid timing検証をportfolio lookup前へ移動(400順序補正)"
+    - "files_modified 15件(BE6+FE5+docs4)。CLOSE回帰なし。legacy endpoint無変更"
+  operational_simulation: "デプロイ後にmetricsページUp/Down表でトグル切替→表・チャート再取得確認"
+  step3_5_verified: true
+  causal_chain: "殿指示Up/Down CLOSE固定→timing引数+入力列切替+stale guard→ページ内不整合解消→timing切替パターン確立(正の複利)"
+  brainwash_check: "commit実在確認。テスト全PASS。AC4件×unclear_points矛盾チェック→矛盾なし。#2なし #8なし"
+  origin: "[[殿指示_UpDown_timing切替_20260625]] -> [[kagemaru実装+家老補正]] -> [[LGTM全PASS]]"
+  timestamp: "2026-06-25T23:16:00+09:00"

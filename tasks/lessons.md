@@ -8712,3 +8712,13 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - gate_context_freshness.shは全監視対象を出すため、対象contextが解消しても別context ALERTが残り得る。報告では対象contextの解消証跡と、別contextの横展開候補を分けて記録する。
+
+### L855: hook artifact調査では発火時点と現時点を分けて報告する
+- **日付**: 2026-06-25
+- **出典**: cmd_karo_hotfix_ga133_pre_push_clear_prep_memory_db_20260625
+- **記録者**: hanzo
+- **tags**: [infra,testing,recon,reporting]
+- **origin**: [[cmd_karo_hotfix_ga133_pre_push_clear_prep_memory_db_20260625]]
+- **when**: 未設定
+- **how**: 未設定
+- pre-push artifactは旧テスト内容を記録しており、現在の作業ツリー/HEADでは同じ失敗が再現しない場合がある。artifactの直接失敗と現物の再実行結果を混同すると、修正済み箇所へ不要な再修正を入れる。報告では artifact timestamp と current HEAD/test result を分離する。origin: [[hook_failure_ALERT_GA133]] -> [[stale_artifact_expectation]] -> [[unnecessary_fix_risk]]

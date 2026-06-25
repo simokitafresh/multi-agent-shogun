@@ -1,8 +1,20 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-25T18:31:30'
+last_synced: '2026-06-25T19:40:45'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 849
+lesson_count: 850
 lessons:
+- id: L855
+  title: hook artifact調査では発火時点と現時点を分けて報告する
+  summary: pre-push artifactは旧テスト内容を記録しており、現在の作業ツリー/HEADでは同じ失敗が再現しない場合がある。artifactの直接失敗と現物の
+  tags:
+  - infra
+  - testing
+  - recon
+  - reporting
+  source_cmd: cmd_karo_hotfix_ga133_pre_push_clear_prep_memory_db_20260625
+  when: 未設定
+  how: 未設定
+  origin: '[[cmd_karo_hotfix_ga133_pre_push_clear_prep_memory_db_20260625]]'
 - id: L854
   title: context freshness hotfixでは対象context以外のALERTを横展開候補として報告に分離する
   summary: gate_context_freshness.shは全監視対象を出すため、対象contextが解消しても別context ALERTが残り得る。報告では対象co
@@ -1825,7 +1837,7 @@ lessons:
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
   deprecated: true
-  deprecated_at: '2026-06-25T18:31:56+09:00'
+  deprecated_at: '2026-06-25T19:41:05+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -4551,9 +4563,6 @@ lessons:
   - scripts/sync_lessons.sh
   - tests/unit/test_cmd_save_environment_change.bats
   origin: '[[cmd_2480]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L553
   title: '[自動生成] 有効教訓の記録を怠った: cmd_2481'
   summary: lessons_usefulが空のサブタスクが1件。役立った教訓IDを報告に記載してから完了せよ
@@ -6769,6 +6778,9 @@ lessons:
   target_files:
   - cmd_save.sh
   origin: '[[cmd_cycle_L4_043]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-25'
 - id: L372
   title: tmux display-messageはフォーマット文字列で複数変数を一括取得可能
   summary: tmux display-messageの-pオプションは複数の#{@var}を1つのフォーマット文字列に結合できる。区切り文字(|等)で連結しIFS
@@ -7079,7 +7091,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-25T18:31:57+09:00'
+  deprecated_at: '2026-06-25T19:41:06+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -8256,6 +8268,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-19'
   origin: '[[cmd_1105]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-25'
 - id: L249
   title: 教訓還流の仕組み変更は3層同時修正必須
   summary: テンプレート(deploy_task.sh)・忍者ルール(ashigaru.md)・家老レビュー条件(karo.md)を同時修正しないと形骸化する。1箇所だけで
@@ -9930,7 +9945,7 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-20'
   deprecated: true
-  deprecated_at: '2026-06-25T18:31:57+09:00'
+  deprecated_at: '2026-06-25T19:41:06+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)
