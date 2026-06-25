@@ -32,6 +32,8 @@ def main():
         'TASK_FILE': '',
         'BC_HAS_NO': '0',
         'BC_NO_ITEMS': '',
+        'BC_YES_CLARITY_CONTRADICTION': '0',
+        'BC_YES_CLARITY_TERMS': '',
         'TEST_TRIAGE': '',
         'HAS_LESSON_CANDIDATE': '0',
     }
@@ -155,6 +157,66 @@ def main():
     result['BC_HAS_NO'] = '1' if bc_no_items else '0'
     result['BC_NO_ITEMS'] = ', '.join(bc_no_items)
     result['TEST_TRIAGE'] = str(report.get('test_triage', '') or '').strip()
+
+    # ── 2b1. binary_checks yes × task_clarity矛盾検出 (LG043) ─────────────
+    # binary_checksが全yesでも、unclear/discretion等に未達成・委譲・保留語が残れば
+    # AC未達成をyesで通した虚偽yesの可能性が高い(cmd_3532実証)。
+    def _flatten_text(value: object) -> str:
+        if value is None:
+            return ''
+        if isinstance(value, dict):
+            return ' '.join(_flatten_text(v) for v in value.values())
+        if isinstance(value, (list, tuple, set)):
+            return ' '.join(_flatten_text(v) for v in value)
+        return str(value)
+
+    bc_result_values = []
+    if isinstance(report_bc, dict):
+        for checks in report_bc.values():
+            if not isinstance(checks, list):
+                continue
+            for check_item in checks:
+                if isinstance(check_item, dict):
+                    bc_result_values.append(_normalize_bc_result(check_item.get('result', '')))
+
+    all_reported_checks_yes = bool(bc_result_values) and all(
+        res in ('yes', 'pass', 'true', 'ok') for res in bc_result_values
+    )
+    clarity_text = ' '.join(
+        _flatten_text(report.get(key))
+        for key in (
+            'task_clarity',
+            'unclear_points',
+            'discretion_fills',
+            'assumption_check',
+            'purpose_validation',
+            'purpose_gap',
+        )
+    )
+    contradiction_terms = (
+        'デプロイ後',
+        '家老実施',
+        '家老が実施',
+        '後で',
+        '未実施',
+        '未確認',
+        '未達',
+        '未完了',
+        '保留',
+        '未解決',
+        'スコープ外',
+        'scope外',
+        'pending',
+        'todo',
+        'fill_this',
+    )
+    matched_terms = [
+        term for term in contradiction_terms
+        if term.lower() in clarity_text.lower()
+    ]
+    if all_reported_checks_yes and matched_terms:
+        result['BC_YES_CLARITY_CONTRADICTION'] = '1'
+        result['BC_YES_CLARITY_TERMS'] = ', '.join(matched_terms)
 
     # ── 2b2. waive_reason×commit_hash矛盾検出 (GP-248) ───────────────
     # commit bc:no + waive_reason付き だが commit_hash非空 → 矛盾WARN
@@ -334,6 +396,9 @@ def main():
     if result.get('BC_HAS_NO') == '1':
         gate_pred = 'BLOCK'
         gate_pred_reasons.append('bc:no検出')
+    if result.get('BC_YES_CLARITY_CONTRADICTION') == '1':
+        gate_pred = 'BLOCK'
+        gate_pred_reasons.append('binary_checks yes×task_clarity矛盾(LG043)')
     if has_lc:
         if gate_pred != 'BLOCK':
             gate_pred = 'WARN'

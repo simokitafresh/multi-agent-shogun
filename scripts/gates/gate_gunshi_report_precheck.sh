@@ -255,6 +255,17 @@ if [ -n "${WAIVE_COMMIT_CONTRADICTION:-}" ]; then
     echo "  → waive_reasonが事実と矛盾。commit存在するのにbc commit:no。FAILが正しい可能性"
 fi
 
+# ─── SG-PRE9c: binary_checks yes×task_clarity矛盾検出 (LG043) ───
+echo ""
+echo "■ SG-PRE9c: binary_checks yes×task_clarity矛盾検出(LG043)"
+if [ "${BC_YES_CLARITY_CONTRADICTION:-0}" = "1" ]; then
+    echo "  ★★★ ERROR: binary_checks全yesだがtask_clarity/assumption/purpose_gapに未達成・委譲・保留語あり: ${BC_YES_CLARITY_TERMS}"
+    echo "  → cmd_3532再発防止: unclear/discretionに『デプロイ後に家老実施』等が残るなら虚偽yes。LGTMではなくFAIL/REQUEST_CHANGES"
+    ERRORS=$((ERRORS + 1))
+else
+    echo "  PASS: binary_checks全yesとtask_clarity系の明示矛盾なし"
+fi
+
 # ─── SG-PRE10: ac_version照合 ───
 echo ""
 echo "■ SG-PRE10: ac_version照合"

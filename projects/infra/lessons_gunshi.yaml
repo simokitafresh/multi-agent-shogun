@@ -535,3 +535,18 @@ lessons:
   enforcement: 'review_logヘッダ追記候補+本教訓のstartup自動ロード。2件とも軍師自己検出→自己訂正済み(第二層ループ機能の実証)'
   when: レビュー・分析で「存在しない」「〜が発生源」等の存在/否定主張を書く時
   how: 探索範囲(repo/ディレクトリ/コード経路)を列挙→各範囲を自分のls/grep/git showで実測→全範囲埋まってから主張する
+- id: LG043
+  title: binary_checks yes と task_clarity 矛盾を照合せよ — unclear/discretion に未達成委譲があれば虚偽yes
+  detail: |
+    cmd_3532でAC2「本番APIで確認」=yesだったが、報告YAMLのunclear_pointsに「デプロイ後に家老実施」と残っていた。
+    これはAC未達成をbinary_checks yesで通した虚偽yesであり、軍師初回LGTMが洗脳#2(検証スキップ)で見落とした。
+    binary_checks全yesだけを見て安心せず、task_clarity.unclear_points / discretion_fills / assumption_check / purpose_gap に「後で」「家老が実施」「未実施」「未確認」「スコープ外」等が残っていないか照合せよ。
+    yes判定と未達成・委譲・保留の記述が同居したらLGTMではなくFAIL/REQUEST_CHANGESにする。
+  source_cmd: cmd_3532
+  origin: '[[cmd_3532_LGTM撤回]] -> [[AC2虚偽yes見落とし]] -> [[cross-check必須化]]'
+  created_at: '2026-06-26'
+  automated: true
+  enforcement_level: 3
+  enforcement: 'gate_gunshi_report_precheck SG-PRE9cでbinary_checks全yes×task_clarity/assumption/purpose_gap未達成語をERROR化し、gate_prediction BLOCKへ落とす'
+  when: report reviewでbinary_checksが全yes、またはLGTMを出す直前
+  how: binary_checks yesを読むだけで止めず、unclear_points/discretion_fills/assumption_check/purpose_gapをgrepし、未達成委譲語があればFAIL/REQUEST_CHANGES
