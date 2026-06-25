@@ -3840,7 +3840,12 @@ write_karo_snapshot() {
         if ! flock -x -w 5 200; then
             log "ERROR: write_karo_snapshot flock failed"
         else
-            {
+            local tmp_file
+            tmp_file=$(mktemp "${snapshot_file}.tmp.XXXXXX") || {
+                log "ERROR: write_karo_snapshot mktemp failed"
+                return 1
+            }
+            if {
                 echo "# 家老陣形図(karo_snapshot) — ninja_monitor.sh自動生成"
                 echo "# Generated: $timestamp"
 
@@ -4008,8 +4013,13 @@ write_karo_snapshot() {
                 done
                 idle_list="${idle_list%,}"
                 echo "idle|${idle_list:-none}"
-
-            } > "$snapshot_file"
+            } > "$tmp_file"; then
+                mv "$tmp_file" "$snapshot_file"
+            else
+                rm -f "$tmp_file"
+                log "ERROR: write_karo_snapshot temp write failed"
+                return 1
+            fi
         fi
     } 200>"$lock_file"
 }

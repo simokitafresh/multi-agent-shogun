@@ -2042,6 +2042,27 @@ PY
     [ "$status" -eq 0 ]
 }
 
+@test "write_karo_snapshot publishes atomically via temp file and mv" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+python3 - "$PROJECT_ROOT/scripts/ninja_monitor.sh" <<'"'"'PY'"'"'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text()
+start = text.index("write_karo_snapshot() {")
+end = text.index("refresh_karo_snapshot_fast_path() {")
+body = text[start:end]
+assert "mktemp \"${snapshot_file}.tmp.XXXXXX\"" in body
+assert "} > \"$tmp_file\"; then" in body
+assert "mv \"$tmp_file\" \"$snapshot_file\"" in body
+assert "} > \"$snapshot_file\"" not in body
+PY
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "check_and_update_done_task: flat task YAML uses yaml_field_set root fallback for completed_at" {
     run bash -c '
 set -euo pipefail
