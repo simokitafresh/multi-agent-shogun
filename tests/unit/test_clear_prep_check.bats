@@ -165,25 +165,16 @@ EOF
     grep -q "clear_prep_check:memory_phase" "$TEST_TMPDIR/insight_calls.log"
 }
 
-@test "Check 8d rebuilds memory DB during memory phase" {
+@test "Check 8d reports memory DB freshness without full rebuild" {
     write_active_session_with_completed_cmd
-    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/data"
-    cat > "$TEST_TMPDIR/scripts/memory_db_import.py" <<'EOF'
-import pathlib
-
-root = pathlib.Path(__file__).resolve().parents[1]
-db = root / "data" / "multi_agent_shogun_memory.db"
-db.parent.mkdir(parents=True, exist_ok=True)
-db.write_text("rebuilt\n", encoding="utf-8")
-print(f"memory_db_import: db={db}")
-EOF
+    mkdir -p "$TEST_TMPDIR/data"
+    # Create a fake DB file (freshness check only needs file existence + mtime)
+    echo "fake_db" > "$TEST_TMPDIR/data/multi_agent_shogun_memory.db"
 
     run bash "$TEST_TMPDIR/scripts/clear_prep_check.sh"
 
-    [[ "$output" == *"[8d.記憶整理Phase] memory DB再構築:"* ]]
-    [[ "$output" == *"OK: data/multi_agent_shogun_memory.db mtime="* ]]
-    [[ "$output" == *"memory_db_import: db="* ]]
-    [ -f "$TEST_TMPDIR/data/multi_agent_shogun_memory.db" ]
+    [[ "$output" == *"[8d.記憶整理Phase] memory DB鮮度チェック:"* ]]
+    [[ "$output" == *"data/multi_agent_shogun_memory.db"* ]]
 }
 
 @test "Check 8 alerts when cmd_save BLOCK exists and no shogun lesson was written" {

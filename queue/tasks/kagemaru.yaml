@@ -1,23 +1,27 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  acceptance_criteria:
-    AC1:
-      description: gate_context_freshness.shのGA-130発火理由を一次情報で説明する。直接原因・根本原因・横展開候補・次の防御層を報告YAMLに記録する
-    AC2:
-      description: context/dm-signal-frontend.mdをDM-Signal frontendの最新commit/現物と照合し、古い記述を更新または根拠付きで維持し、last_updatedを2026-06-25 cmd_karo_hotfix_ga130形式へ更新する
-    AC3:
-      description: bash scripts/gates/gate_context_freshness.sh を実行し、dm-signal-frontend.md がALERT対象から外れることを確認する
-    AC4:
-      description: 同種再発を防ぐlesson_candidateまたは防御層改善候補を報告YAMLに記録する
+  _ac_task_id: cmd_3533_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3533 (deployed 2026-06-25T19:12:55). Read from the beginning.
+  ac_version: 591ad213
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
+  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
+  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
+  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
+  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
+  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
+  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
+  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
+  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
+  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
+  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -28,59 +32,74 @@ task:
   - DM-Signalアプリ機能実装
   - 無関係なcontext freshness ALERTの同時修正
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_ga130_context_freshness_dm_signal_frontend_20260625
-  project: infra
-  purpose: 'GA-130 context_freshness ALERTを解消する: context/dm-signal-frontend.mdを一次データと照合し、必要な内容とlast_updatedを更新する'
-  status: idle
+  parent_cmd: cmd_3533
+  project: dm-signal
+  purpose: '殿指示(2026-06-25): Compare SummaryのSPY/TQQQ行でp̄列がダッシュ表示。設計書docs/spec/p-average-benchmark-extension.md(378行, review-1反映済み)に全実装が記載。既存PK不整合是正(R1-01) + 新テーブル + バッチ拡張 + API + FEの5段階'
+  status: in_progress
   stop_for: []
-  target_path: context/dm-signal-frontend.md
-  task_id: cmd_karo_hotfix_ga130_context_freshness_dm_signal_frontend_20260625_normal
-  task_type: hotfix
+  target_path: /mnt/c/Python_app/DM-signal/backend/app
+  task_id: cmd_3533_full
+  task_type: full
+  skill_hint: /db-check
   related_lessons:
+  - id: 'L508'
+    summary: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
+    detail: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
   - id: 'L779'
     summary: 'dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER'
     detail: 'dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER'
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L633'
-    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
-    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+  - id: 'L738'
+    summary: '外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split'
+    detail: '外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  related_causal_links:
+  - "[[p̄パイプラインBM未対応]]"
+  - "[[殿指示_p値計算_20260625]]"
+  - "[[設計書p-average-benchmark-extension]]"
   context_hints:
-  - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  - "context/robustness-verification-catalog.md"
+  - "context/gs-speedup-knowledge.md"
+  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
+  production_invariants:
+  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
+  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
+  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
+  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
+  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
+      - L508: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL
       - L779: dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
+      - L738: 外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - '2026-06-25T15:05:14+09:00 | 【改善トリガー】context_freshness ALERT (GA-128)'
-  - '2026-06-25T01:21:36+09:00 | 【改善トリガー】context_freshness ALERT (GA-126)'
-  - '2026-06-25T15:46:51+09:00 | **4観点:** 1. **前提**: DM-Signal git logで3commit特定。gate cache署名粗さが古いALERT再送の根因。OK 2. **数値**: files_modi'
-  - '2026-06-25T15:35:53+09:00 | 【将軍】context鮮度ALERT: dm-signal-ops.md(source更新)'
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_ga130_context_freshness_dm_signal_frontend_20260625_normal
-  _ac_worker_id: 
+  - '2026-06-25T18:38:16+09:00 | 【INFOバッチ】 2026-06-25 18:31:49|cmd_karo_hotfix_ga132_context_freshness_dm_signal_research_20260625 20'
+  - '2026-06-25T17:49:58+09:00 | 【INFOバッチ】 2026-06-25 17:39:20|CI緑: run 28156567244'
+  - '2026-06-25T17:41:49+09:00 | 「anchorポートフォリオ」は殿の用語ではなく、`metrics.py` line 322の内部変数名`visible_anchor_portfolio_id`のこと。**Compare summa'
+  - '2026-06-25T17:32:35+09:00 | compare summry画面のTQQQのmetricsが信ぴょう性がない。maxDDが-12.2%と現実と極端に乖離している。調査が必要だ'
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: '前提是正(R1-01): p_average_resultsのPKをmodel/migration双方で(portfolio_id, n_splits)に統一する。schemaテストで検証'
+  - id: 'AC2'
+    checks:
+    - check: 'BEバッチ+DB: p̄用BM結果テーブルとバッチのSPY/TQQQ対応を設計書§4.1-4.2に従い構築する'
+  - id: 'AC3'
+    checks:
+    - check: 'BE API: GET /api/p-averageがbenchmark-SPY/benchmark-TQQQ行をtype=benchmarkで返し、GET /api/p-average/benchmark-SPYが詳細を返すこと'
+  - id: 'AC4'
+    checks:
+    - check: 'FE: Compare SummaryのSPY/TQQQ行にp̄ドットが表示されること。npm run build成功+関連テスト全パス'
+  - id: 'AC5'
+    checks:
+    - check: 'BE全テストスイートが破壊されていないこと'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_karo_hotfix_ga130_context_freshness_dm_signal_frontend_20260625.yaml
-  report_path: queue/reports/kagemaru_report_cmd_karo_hotfix_ga130_context_freshness_dm_signal_frontend_20260625.yaml
+  report_filename: kagemaru_report_cmd_3533.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3533.yaml
   bloom_level: 
-  deployed_at: "2026-06-25T16:17:43"
-  progress: "completed: context/dm-signal-frontend.md更新+commit 2f2da1791、context_freshness gate OK、report gate PASS"
+  deployed_at: "2026-06-25T19:13:17"

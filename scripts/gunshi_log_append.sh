@@ -53,6 +53,10 @@ if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report) ]]; then
         echo "BLOCK: finding_categoriesにadversarialが未記載。全レビューでadversarial必須(3セッション連続再発の根治)" >&2
         exit 2
     fi
+    if ! echo "$FC_BLOCK" | grep -qi 'ambiguity'; then
+        echo "BLOCK: finding_categoriesにambiguityが未記載。全レビューでambiguity必須(冷え観点遡及 2026-06-25)" >&2
+        exit 2
+    fi
 fi
 
 # --- brainwash_check数値強制(draft/report/self_study/consultation) --- 覚醒洗脳監査2026-06-09: L4貫通

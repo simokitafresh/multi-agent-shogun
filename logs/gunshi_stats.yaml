@@ -56,14 +56,14 @@
 # → docs/research/gunshi_idle_bats_speed_redesign_20260603.md (v2)
 # → docs/research/three-layer-memory-operating-principles_20260603.md (レビュー統合)
 #
-# ─── 本セッション成果 (2026-06-25T15:55更新) ───
-# draft review 14件: cmd_3522(RC)+cmd_3523+GA-125偵察+GA-125backup+GA-125hotfix+GA-126偵察+cmd_3524+cmd_3525+cmd_3526+cmd_3527+cmd_3528+cmd_3530+GA-128+GA-129。APPROVE 13+RC 1
-# report review 13件: cmd_3522-3530(kagemaru×5)+GA-125backup(kotaro)+GA-125hotfix(kagemaru)+GA-125(hanzo)+GA-126(tobisaru)+cmd_3524(saizo)+cmd_3525(saizo)+GA-128(hanzo)+GA-129(hanzo)。全LGTM→全CLEAR
+# ─── 本セッション成果 (2026-06-25T16:43更新) ───
+# draft review 17件: cmd_3522(RC)+cmd_3523+GA-125偵察+GA-125backup+GA-125hotfix+GA-126+cmd_3524+cmd_3525+cmd_3526+cmd_3527+cmd_3528+cmd_3530+cmd_3531+GA-128+GA-129+GA-130+GA-131。APPROVE 16+RC 1
+# report review 16件: 上記全cmd報告。全LGTM→全CLEAR。context_freshness GA-125/126/128/129/130/131全完走
 # D0実装3件(3commit): gate_gunshi_accuracy.sh偽陽性バグ修正(100%)+ninja_monitor CTXフォールバック(691d97666)+HOOK-STALE-UNKNOWN idle override(01950f399)。全件家老LGTM+follow-up
+# DM-Signal実装: α6+5指標(3524/3525)+Metrics本番(3530)+Deterioration BM(3527)+TQQQ Capture(3526)+Compare Chart TQQQ(3531)+L3秘奥義登録(3528)
 # idle自走Step1-8完了+永続化+利他サイクル完走(karo_direct GATE漏れ→Check 9.1 L4化→LK012)
-# 殿指摘対応5件: (1)偽陽性バグ修正 (2)強くてニューゲーム永続化 (3)Codex忍者idle放置バグ(CTX+@agent_state) (4)hayate GPT切替 (5)cmd_3526 gate_result BLOCK→CLEAR修正
-# 洗脳検出: #5先送り(gate_result null→即促し)+Q6投稿+将軍Q6第三者検証(#7変種妥当)
-# accuracy: 全体100%(57/57)、直近100%(10/10)。偽陽性0件
+# 殿指摘対応5件: (1)偽陽性バグ修正 (2)Codex忍者idle放置バグ(CTX+@agent_state) (3)hayate GPT切替 (4)cmd_3526 gate_result修正 (5)強くてニューゲーム永続化
+# accuracy: 全体100%(59/59)、直近100%(10/10)。偽陽性0件
 #
 # ─── 前セッション成果 (2026-06-24T00:14) ───
 # draft review 20件+plan review 2件: cmd_3495-3520+GA-120+final_summary+α6プランv1/v2。APPROVE 19+RC 2

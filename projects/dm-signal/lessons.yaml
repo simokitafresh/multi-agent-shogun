@@ -1,8 +1,41 @@
 ssot_path: /mnt/c/Python_app/DM-signal/tasks/lessons.md
-last_synced: '2026-06-25T14:53:31'
+last_synced: '2026-06-25T18:19:12'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons_archive.yaml
-lesson_count: 770
+lesson_count: 772
 lessons:
+- id: L775
+  title: monthly_df_cache渡しbenchmarkモードではDrawdownPeriodテーブルをスキップせよ
+  summary: calculate_metrics()にmonthly_df_cacheを渡す場合(benchmarkモード)、portfolio_idはanchor(可視ポー
+  tags:
+  - dm-signal
+  - db
+  - cache
+  source_cmd: cmd_3532
+  when: 未設定
+  how: 未設定
+  target_files:
+  - backend/app/services/metrics_impl.py
+  origin: '[[cmd_3532]]'
+- id: L774
+  title: Compare Chartのベンチマーク追加はNone状態分離・ティッカー正規化・実API疎通を同時に固定する
+  summary: Compare Chartのベンチマーク候補はPF設定由来の文字列に依存するため、小文字・空白混入でSPY優先や重複排除が崩れる。また既存stateが
+    `nul
+  tags:
+  - dm-signal
+  - compare-chart
+  - frontend
+  - benchmark
+  - testing
+  source_cmd: compare-chart-tqqq-benchmark-review-1
+  when: Compare Chartのベンチマーク選択肢を増やすとき
+  how: '`benchmark_ticker` を `trim().toUpperCase()` で正規化し、`undefined`=未初期化 / `null`=None選択
+    / `string`=ticker に分離し、`/api/benchmark/{ticker}?years=0` の実データ疎通をACに入れる'
+  target_files:
+  - frontend/app/compare/page.tsx
+  - frontend/app/compare/__tests__/benchmark-options.test.tsx
+  - backend/app/api/benchmark.py
+  - docs/spec/compare-chart-tqqq-benchmark.md
+  origin: '[[Compare Chart TQQQベンチマーク追加レビュー1回目]]'
 - id: L773
   title: 'biome→ruff cycle: import_only_hunks回避はBenchmarkモデル継続行の活用'
   summary: biome失敗→ruffが再ステージ→DETERIORATION_BENCHMARKS単独importでimport_only_hunks=1→commit
@@ -201,9 +234,6 @@ lessons:
   target_files:
   - scripts/analysis/grid_search/trial_is.py
   origin: '[[cmd_3514]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L760
   title: 薄いtrial wrapperでも同一月次コンテキスト再計算を疑う
   summary: regime trialは3モードで同じSPY月次整列・bull/neutral/bear row index・regime別window_metricsを繰り
@@ -303,7 +333,7 @@ lessons:
   origin: '[[cmd_3384]] -> [[BB分類context更新未強制]] -> [[GA-102 dm-signal-core freshness
     ALERT]]'
   deprecated: true
-  deprecated_at: '2026-06-25T14:53:58+09:00'
+  deprecated_at: '2026-06-25T18:19:52+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): context/dm-signal-core.m参照（ファイル消滅）'
 - id: L753
   title: 'DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用'
@@ -1827,7 +1857,7 @@ lessons:
   - tasks/lessons.md
   origin: '[[cmd_2311]]'
   deprecated: true
-  deprecated_at: '2026-06-25T14:53:58+09:00'
+  deprecated_at: '2026-06-25T18:19:53+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/kotaro.yaml参照（ファイル消滅）'
 - id: L656
   title: 計測スクリプトの固定待機排除はDOMポーリングで行う
@@ -3986,6 +4016,9 @@ lessons:
   - tasks/lessons.md
   - backend/app/jobs/recalculate_fof.py
   origin: '[[cmd_1445]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-25'
 - id: L500
   title: ガード条件除去時の暗黙的副作用チェック必須
   summary: IF ガード条件(is_kalman_meta等)を除去または変更する THEN そのガードが保護していた全変数のスコープと副作用を確認せよ
@@ -4017,6 +4050,9 @@ lessons:
   target_files:
   - tasks/lessons.md
   origin: '[[cmd_1440]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-25'
 - id: L498
   title: ローリングSharpe選抜は遅行指標でWardクラスタ構造選抜に劣後する
   summary: 36ヶ月ローリングSharpe Top4選抜(R10)はCAGR67.9%でR2(Ward+BestCAGR=74.5%)を-6.5%下回った。Sharpeは過
@@ -4115,9 +4151,6 @@ lessons:
   - outputs/analysis/nested_fof/r1_equal_weight_performance.yaml
   - outputs/analysis/nested_fof/r1_vs_individual_comparison.csv
   origin: '[[cmd_1410]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L492
   title: oikaze NaN修正はGS結果に影響なし — momentum_cubeにNaN未発生のためブロック固有
   summary: oikazeブロックでは全28116パターンでNaN修正前後のCAGR/MaxDD差分がゼロ。momentum_cubeにNaN値が発生しないデータ構造のため。
@@ -4206,6 +4239,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: selection block種類が変わってもverify_fof_parity_batch.pyの検証フローは安定動作
   origin: '[[cmd_1345]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-25'
 - id: L485
   title: FoF初月hs_cross不一致は全FoF共通パターン
   summary: verify_fof_parity_batch.pyのhs_cross_checkで全FoFの最初月がFAILする。monthly_returns.holdin
@@ -6407,6 +6443,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: p̄に依存する機能実装前にデータ充填の確認が必要
   origin: '[[cmd_981]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-25'
 - id: L318
   title: p̄(richmanbtc式)は安定型(青龍)を構造的に優遇し、方向スイッチ型(朱雀/TMF-TMV)を排除する
   summary: p̄検定は月次リターンの一貫した正のリターンを測定するため、退避が少ない安定型DM PFを優遇し、50%程度で方向を外す朱雀のDNA(債券方向スイッチ)と構造的
@@ -6853,6 +6892,9 @@ lessons:
   when: 健全度・崩壊確率・検出確率などの確率値を非専門家向けUIやレポートに表示する時
   how: 確率値だけでなく頻度リフレーミングと百分位ランクを併記し、過信を誘発しない表現にする
   origin: '[[cmd_860]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-25'
 - id: L286
   title: ルールベース戦略のOOS検証はpipeline blockではなくGS runner上位の評価層に配置
   summary: allocation blockはholdings決定の責務に留め、predictive validationはrunner側のwalk-forward
@@ -6991,9 +7033,6 @@ lessons:
   when: CDPでproduction viewer pagesのreload時間やready状態を計測する時
   how: '`h1`など固定selectorではなく、認証壁・封鎖ページ・ページ固有DOMを確認してviewer実DOMに対応したready判定を設定する'
   origin: '[[cmd_852]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L273
   title: live API完全一致監査はcurrent partial monthを凍結or除外しないと日次更新ノイズで誤FAIL化する
   summary: cmd_856で/api/signalsは91PF全件一致だが、/api/monthly-returnsと/api/performanceは15/15PFで不一
@@ -7467,6 +7506,9 @@ lessons:
   target_files:
   - recalculate_fast.py
   origin: '[[cmd_764]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-25'
 - id: L231
   title: 大フック/大APIクライアントは helper test だけでは保守性劣化を防げない
   summary: DM-Signal では `useAdminPage.ts` と `signals-context.tsx` が browser API・localStorag
@@ -9824,7 +9866,7 @@ lessons:
   - scripts/analysis/data_sync/download_all_prices.py
   origin: '[[legacy_lesson_L025]]'
   deprecated: true
-  deprecated_at: '2026-06-25T14:53:59+09:00'
+  deprecated_at: '2026-06-25T18:19:54+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
 - id: L024
   title: signal_historyのキーはPhase 2のmonth_last_trading_daysと同型でなければならない（2026-02-15）

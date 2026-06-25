@@ -18,6 +18,7 @@ SNAPSHOT_STALE_THRESHOLD=600  # 10分（秒）
 
 issues=0
 issue_reasons=()
+_cpc_start_epoch="$(date +%s)"
 
 echo "=== clear_prep_check $(date '+%Y-%m-%dT%H:%M:%S%z') ==="
 
@@ -188,86 +189,43 @@ PY
 archive_lord_conversation
 
 run_session_memory_db_import() {
-  local memory_db_import="$ROOT_DIR/scripts/memory_db_import.py"
   local memory_db="$ROOT_DIR/data/multi_agent_shogun_memory.db"
 
-  echo "[8d.記憶整理Phase] memory DB再構築:"
-  if [ ! -f "$memory_db_import" ]; then
-    echo "  SKIP (memory_db_import.py不在)"
-    return 0
-  fi
-
-  if [ -f "$memory_db" ] && ! memory_db_needs_rebuild "$memory_db"; then
-    local current_mtime
-    current_mtime="$(stat -c '%Y' "$memory_db" 2>/dev/null || echo 0)"
-    echo "  OK: ${memory_db#"$ROOT_DIR"/} mtime=${current_mtime}"
-    echo "  memory_db_import: cache_fresh db=${memory_db}"
-    return 0
-  fi
-
-  local before_mtime=0
-  if [ -f "$memory_db" ]; then
-    before_mtime="$(stat -c '%Y' "$memory_db" 2>/dev/null || echo 0)"
-  fi
-
-  local import_output
-  if import_output="$(python3 "$memory_db_import" 2>&1)"; then
-    local after_mtime=0
-    if [ -f "$memory_db" ]; then
-      after_mtime="$(stat -c '%Y' "$memory_db" 2>/dev/null || echo 0)"
-    fi
-    if [ "$after_mtime" -gt 0 ] && [ "$after_mtime" -ge "$before_mtime" ]; then
-      echo "  OK: ${memory_db#"$ROOT_DIR"/} mtime=${after_mtime}"
-      echo "  ${import_output}"
-    else
-      echo "  ALERT: DB mtime未更新 before=${before_mtime} after=${after_mtime}"
-      issues=$((issues + 1))
-      issue_reasons+=("記憶DBmtime未更新")
-    fi
-  else
-    echo "  ALERT: memory_db_import.py failed"
-    echo "${import_output//$'\n'/$'\n'  }"
+  echo "[8d.記憶整理Phase] memory DB鮮度チェック:"
+  # フルリビルド廃止: memory_db_live_insert_async.pyがリアルタイム更新済み。
+  # clear_prep_checkはチェックスクリプトであり構築スクリプトではない。
+  # フルリビルドは memory_db_query.sh --build / memory_db_init.sh で別途実行。
+  # 修正理由: memory_db_import.py フルリビルドが2分以上かかりclear_prep全体を2m41sに肥大化(殿指摘2026-06-25)
+  if [ ! -f "$memory_db" ]; then
+    echo "  ALERT: DB不在 ${memory_db#"$ROOT_DIR"/}"
     issues=$((issues + 1))
-    issue_reasons+=("記憶DB再構築失敗")
+    issue_reasons+=("記憶DB不在")
+    return 0
+  fi
+
+  local db_mtime db_age_sec now_epoch
+  db_mtime="$(stat -c '%Y' "$memory_db" 2>/dev/null || echo 0)"
+  now_epoch="$(date +%s)"
+  db_age_sec=$(( now_epoch - db_mtime ))
+
+  local event_count
+  event_count="$(python3 -c "
+import sqlite3, sys
+try:
+    c = sqlite3.connect('${memory_db}')
+    r = c.execute('SELECT COUNT(*) FROM events').fetchone()[0]
+    print(r)
+except Exception as e:
+    print(f'ERR:{e}', file=sys.stderr)
+    print(0)
+" 2>/dev/null)"
+
+  if [ "$db_age_sec" -gt 3600 ]; then
+    echo "  WARN: DB古い (${db_age_sec}秒前, events=${event_count}件) — memory_db_query.sh実行で自動更新"
+  else
+    echo "  OK: ${memory_db#"$ROOT_DIR"/} age=${db_age_sec}s events=${event_count}"
   fi
   return 0
-}
-
-memory_db_needs_rebuild() {
-  local memory_db="$1"
-  local source
-  for source in \
-    "$ROOT_DIR/docs/semantic-index/index.md" \
-    "$ROOT_DIR/queue/bulletin_board.yaml" \
-    "$ROOT_DIR/queue/insights.yaml" \
-    "$ROOT_DIR/logs/skill_execution_log.yaml" \
-    "$ROOT_DIR/queue/pending_decisions.yaml"
-  do
-    if [ -f "$source" ] && [ "$source" -nt "$memory_db" ]; then
-      return 0
-    fi
-  done
-
-  # WSL2 NTFS最適化: find(3700ms)→ディレクトリmtime比較(O(1))
-  # アーカイブファイルは追加のみ(不変)なのでディレクトリmtimeが最新ファイルmtimeと等価
-  local newer_archive=""
-  for _check_dir in \
-      "$ROOT_DIR/logs/lord_conversation_archive" \
-      "$ROOT_DIR/queue/archive/cmds" \
-      "$ROOT_DIR/queue/archive/bulletin_board"
-  do
-    if [[ -d "$_check_dir" && "$_check_dir" -nt "$memory_db" ]]; then
-      newer_archive="$_check_dir"
-      break
-    fi
-  done
-  if [ -n "$newer_archive" ]; then
-    return 0
-  fi
-
-  find "$ROOT_DIR/queue/archive" -maxdepth 1 -type f \
-    \( -name 'bulletin_*.yaml' -o -name 'bulletin_board_archive.yaml' \) \
-    -newer "$memory_db" -print -quit 2>/dev/null | grep -q .
 }
 
 run_session_memory_semantic_scan() {
@@ -1105,6 +1063,18 @@ else
   echo "[STATUS] OK"
 fi
 echo "========================"
+
+# 実行時間計測+閾値超過WARN (殿指摘2026-06-25: 遅い=バグ)
+_cpc_end_epoch="$(date +%s)"
+_cpc_elapsed=$(( _cpc_end_epoch - _cpc_start_epoch ))
+_cpc_threshold=30  # 30秒超で自動WARN
+if [ "$_cpc_elapsed" -gt "$_cpc_threshold" ]; then
+  echo "[PERF] WARN: clear_prep_check ${_cpc_elapsed}s > ${_cpc_threshold}s閾値。速度バグの可能性"
+  issue_reasons+=("clear_prep速度${_cpc_elapsed}s")
+  issues=$((issues + 1))
+else
+  echo "[PERF] OK: clear_prep_check ${_cpc_elapsed}s"
+fi
 
 # /clear前に復帰完了マーカーを削除。次セッションが復帰手順(startup gate)を踏むまで
 # post-shogun-inbox-check.shのRECOVERY INCOMPLETE警告が正しく発火する(残骸の主検知。TTLは安全網)

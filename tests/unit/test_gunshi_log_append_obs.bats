@@ -80,7 +80,7 @@ ENTRY
 - cmd_id: t005
   review_type: report
   verdict: APPROVE
-  finding_categories: [assumptions, numbers, premortem, adversarial]
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
   brainwash_check: "1/1確認済み 修正前0→修正後1"
   observations:
     - 事実1: テスト実施済み
@@ -118,7 +118,7 @@ ENTRY
     [[ "$output" == *"adversarial"* ]]
 }
 
-@test "draft with multiline finding_categories including adversarial → OK exit 0" {
+@test "draft with multiline finding_categories including adversarial+ambiguity → OK exit 0" {
     run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
 - cmd_id: t_fc3
   review_type: draft
@@ -127,12 +127,27 @@ ENTRY
     - assumptions
     - numbers
     - adversarial
+    - ambiguity
   observations:
     - "test observation"
   brainwash_check: "1/1確認済み 修正前0→修正後1"
 ENTRY
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
+}
+
+@test "report with finding_categories but no ambiguity → BLOCK exit 2" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: t_fc4
+  review_type: report
+  verdict: LGTM
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  observations:
+    - "test observation"
+  brainwash_check: "1/1確認済み 修正前0→修正後1"
+ENTRY
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"ambiguity"* ]]
 }
 
 # --- 非対象review_type → チェックなし ---

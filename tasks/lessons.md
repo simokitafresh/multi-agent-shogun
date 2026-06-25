@@ -8690,3 +8690,25 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: cmd-complete手順が現物script構成とずれる時
 - **how**: SKILL.mdに現物pathとarchive済みcmd分岐を書き、Batsで退行検査する
 - cmd_3531完了処理中、cmd-completeスキルのStep3が存在しないscripts/gates/cmd_complete_gate.shを示していた。実体はscripts/cmd_complete_gate.sh。さらにStep5の直接status更新はcmd_complete_gateが既にarchive済みにしたcmdで失敗し得るため、gate_yaml_status.shで状態を確認し、active queueに無ければarchive/dashboard/gate_metricsのCLEAR証跡で完了扱いにする。
+
+### L853: GATE CLEAR済みWAの永続ALERT防止: cmd_design_quality品質ログを解決判定に活用
+- **日付**: 2026-06-25
+- **出典**: cmd_karo_hotfix_wa_resolved_gate_20260625170121
+- **記録者**: saizo
+- **tags**: [infra,gate,recon,gate,git]
+- **target_files**: [scripts/gates/gate_karo_startup.sh]
+- **origin**: [[cmd_karo_hotfix_wa_resolved_gate_20260625170121]]
+- **when**: 未設定
+- **how**: 未設定
+- workaround=trueでもcmd_design_qualityにgate_result=CLEARが記録されていれば処理済みとみなす。commit_missing以外(偵察report補正等)の処理済みWAが永続ALERTになる問題を解消。累積ALERT判定もCLEAR済み除外で実カウント化し偽ALERTを防止。origin: [[gate_karo_startup_ALERT]] -> [[processed_workaround_false_persistent_alert]] -> [[WA解決判定拡張]]
+
+### L854: context freshness hotfixでは対象context以外のALERTを横展開候補として報告に分離する
+- **日付**: 2026-06-25
+- **出典**: cmd_karo_hotfix_ga132_context_freshness_dm_signal_research_20260625
+- **記録者**: hayate
+- **tags**: [infra,context,gate,bash,monitor]
+- **target_files**: [context/dm-signal-research.md]
+- **origin**: [[cmd_karo_hotfix_ga132_context_freshness_dm_signal_research_20260625]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_context_freshness.shは全監視対象を出すため、対象contextが解消しても別context ALERTが残り得る。報告では対象contextの解消証跡と、別contextの横展開候補を分けて記録する。
