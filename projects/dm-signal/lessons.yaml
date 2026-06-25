@@ -169,6 +169,9 @@ lessons:
   target_files:
   - backend/app/services/metrics_impl.py
   origin: '[[cmd_3532]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L774
   title: Compare Chartのベンチマーク追加はNone状態分離・ティッカー正規化・実API疎通を同時に固定する
   summary: Compare Chartのベンチマーク候補はPF設定由来の文字列に依存するため、小文字・空白混入でSPY優先や重複排除が崩れる。また既存stateが
@@ -565,11 +568,14 @@ lessons:
   - frontend
   - fof
   source_cmd: cmd_3393
-  when: 未設定
+  when: FoFのcomponent_portfoliosまたはfof_component_weightsを変更する時
   how: 未設定
   target_files:
   - docs/research/cmd_3393_fof_neighbor_alpha6_comparison_20260616.md
   origin: '[[cmd_3393]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L747
   title: UUID付きGS universeを本番パリティに使う時はsource_typeをDBへ昇格する
   summary: gsl2_shin_ninpo_21.yamlはsource_type=local_sqliteだがcomponent UUIDを持つ。production
@@ -7886,6 +7892,9 @@ lessons:
   - frontend/lib/__tests__/api-client-auth.test.ts
   - frontend/lib/api-client.ts
   origin: '[[cmd_686]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L212
   title: CDP性能計測ではtiming計測前に正常画面かを先に検査すべき。障害画面(城の修繕中等)が表示されていればtimingは無意味
   summary: 'IF: CDP性能計測を実施する時 THEN: wall-clock計測前にbody text/ready state/auth modalの3点を確認し、正常'
@@ -8631,6 +8640,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: 今後はAC4に『対象テスト』と『全体静的検証』の別判定を明文化すると再判定コストを下げられる
   origin: '[[cmd_515]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L151
   title: OPEN/CLOSE切替導入時はbenchmark側の*_open適用も同時チェック必須
   summary: IF Monthly/Annual/Rolling summary等でbenchmark側だけclose固定の箇所が残り、portfolioとbenchmark

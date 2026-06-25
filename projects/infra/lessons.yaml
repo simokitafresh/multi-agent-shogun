@@ -1,8 +1,37 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-26T04:28:21'
+last_synced: '2026-06-26T08:35:23'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 852
+lesson_count: 854
 lessons:
+- id: L859
+  title: notify_targetsフィールドを読むスクリプトは書き戻し時にも保持せよ
+  summary: bulletin_confirm/actionのようなYAML再書込みスクリプトがnotify_targetsをparse/writeしないと、確認・actio
+  tags:
+  - infra
+  - bulletin
+  - yaml
+  source_cmd: cmd_karo_hotfix_bulletin_confirm_close_20260626081815
+  when: 未設定
+  how: 未設定
+  target_files:
+  - scripts/bulletin_confirm.sh
+  - scripts/bulletin_action.sh
+  - tests/unit/test_bulletin_board.bats
+  origin: '[[cmd_karo_hotfix_bulletin_confirm_close_20260626081815]]'
+- id: L858
+  title: gateキャッシュは人間可読状態行とexit_codeを構造検証してから再利用する
+  summary: p_average_freshnessでキャッシュ1行目がexit_code=1だけでも6時間以内なら再利用され、exit=1だがALERT行なしとなり改善トリ
+  tags:
+  - infra
+  - api
+  - testing
+  - gate
+  source_cmd: cmd_karo_recon_ga137_p_average_freshness_20260626
+  when: 未設定
+  how: 未設定
+  target_files:
+  - 偵察のみ（コード変更なし）
+  origin: '[[cmd_karo_recon_ga137_p_average_freshness_20260626]]'
 - id: L857
   title: lesson_health未振り分けALERTはID一覧まで出さないと次アクションが遅れる
   summary: gate_lesson_health.shは未振り分け件数をALERTするが、該当ID一覧はcontextを別途抽出しないと分からない。ALERT出力に未振り分
@@ -139,6 +168,9 @@ lessons:
   - scripts/gates/gate_context_freshness.sh
   - tests/unit/test_gate_context_freshness.bats
   origin: '[[cmd_karo_hotfix_ga129_context_freshness_dm_signal_ops_20260625]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L848
   title: context_freshness ALERTにはsource commit要約を同梱せよ
   summary: source commits N件だけのALERTでは、担当者が毎回git logから再調査する。ALERT行に非auto commitのhash/subjec
@@ -1339,6 +1371,9 @@ lessons:
   - scripts/ninja_monitor.sh
   - tests/unit/test_ninja_monitor_clear_guard.bats
   origin: '[[cmd_3284]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L774
   title: レビュー品質メトリクスはcmd_id単位最終verdict集計が正しい。全type対応必須
   summary: review_quality_scale_summary()は当初draft|reportのみ・全イテレーションカウントで正常な反復レビュー(RC→LGTM)が
@@ -1728,6 +1763,9 @@ lessons:
   - scripts/gates/gate_three_layer_health.sh
   - tests/unit/test_memory_db.bats
   origin: '[[cmd_3168]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L747
   title: bashで呼ぶhelperを-xで存在判定するな
   summary: search_log_write.shはgit index上100644だったがsemantic_search.shはbashで呼ぶ前に-xを要求していたため、
@@ -1857,7 +1895,7 @@ lessons:
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
   deprecated: true
-  deprecated_at: '2026-06-26T04:28:50+09:00'
+  deprecated_at: '2026-06-26T08:35:56+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -1980,9 +2018,6 @@ lessons:
   target_files:
   - context/gunshi-fof-deterioration-analysis.md
   origin: '[[cmd_training_backlinks_saizo_20260602]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L730
   title: 孤立Markdownは因果リンクセクション追加で双方向接続を確立できる
   summary: cdp-severity.mdは[[リンク]]ゼロで孤立していた。cdp-philosophy.mdがL92で[[cdp-severity.md]]を参照済みだ
@@ -3314,9 +3349,6 @@ lessons:
   - tests/unit/test_agent_state.bats
   - tests/unit/test_usage_status.bats
   origin: '[[cmd_2893]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L638
   title: FP率計算は累計昇格BLOCKもFP候補に含める
   summary: ac_phase_mixingのような頻発BLOCKは累計昇格で閾値が下がった結果でもあり、FP率計算時にはcmd_design_quality全記録を対象にす
@@ -4741,9 +4773,6 @@ lessons:
   target_files:
   - tests/unit/test_cmd_save_environment_change.bats
   origin: '[[cmd_karo_ci_fix_env_change]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L541
   title: CI用fixtureは現行SSOTの可変IDに依存させない
   summary: environment_change=lesson登録のテストは、本番lessons.yamlの特定ID存在に依存するとSSOT更新でCI RED化する。TES
@@ -4996,9 +5025,6 @@ lessons:
   - /mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh
   - queue/reports/saizo_report_cmd_karo_ci_fix_ga159.yaml
   origin: '[[cmd_karo_ci_fix_ga159]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L523
   title: 偵察cmdの実行禁止事項はinbox通知でなくhookで強制せよ
   summary: 偵察cmdでcron/fullrecalculate/Render API POSTなどの実行禁止事項がある場合、inbox_writeで伝えるだけでは意志依存
@@ -5740,9 +5766,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-11'
   origin: '[[cmd_1851]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L465
   title: 道具磨きcmdのテスト実行ACと並行研究cmdの入力衝突チェック
   summary: cmd_1843(wf_runner テスト)がcmd_1840(kasoku_diff WF)と同一CSV入力で同時実行→合計RSS 15GB超過OOM。dr
@@ -6350,9 +6373,6 @@ lessons:
   - inbox_prune.sh
   - inbox_write.sh
   origin: '[[cmd_cycle_L4_083]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L411
   title: /tmpロックファイルは揮発性で信頼できない
   summary: cmd_friction_log.shのLOCK_FILEが/tmpにあった。/tmpはOS再起動やクリーンアップで消失する。gate_improvement_
@@ -7102,7 +7122,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-26T04:28:50+09:00'
+  deprecated_at: '2026-06-26T08:35:56+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -8709,6 +8729,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: '2026-03-13'
   origin: '[[cmd_873]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L212
   title: '一次データ不可侵原則: 外部知識(論文/API仕様/書籍等)は原典のまま保存し、自軍の解釈・適用は別セクション/別ファイルに分離する。改変は捏造。全PJ共通適用'
   summary: 'IF: 外部知識を記録・引用する時 THEN: 一次データ層と解釈・適用層を分離せよ BECAUSE: 一次データの改変は捏造であり、知識の信頼性が失われる'
@@ -9393,6 +9416,9 @@ lessons:
   target_files:
   - dashboard_auto_section.sh
   origin: '[[cmd_541]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L151
   title: Git hook導入時はスクリプト内容だけでなく executable bit(100755) のコミット有無を必須確認
   summary: IF Git hookをリポジトリに導入する時 THEN スクリプト内容だけでなくexecutable bit(100755)のコミット有無を必ず確認せよ
@@ -9947,9 +9973,6 @@ lessons:
   when: skill.md(小文字)でスキル配置時
   how: DM-signal側2スキルがskill.md小文字で配置
   origin: '[[draft]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L102
   title: lesson_tracking.tsvのデータソース相違 — タスク記述はqueue/gate_metrics.yamlだが実在はlogs/lesson_tracking.tsv
   summary: タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正
@@ -9964,11 +9987,8 @@ lessons:
   - queue/gate_metrics.yamlだが実在はlogs/lesson_tracking.ts
   - queue/gate_metrics.yaml
   origin: '[[cmd_414]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
   deprecated: true
-  deprecated_at: '2026-06-26T04:28:51+09:00'
+  deprecated_at: '2026-06-26T08:35:57+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)
@@ -10489,9 +10509,6 @@ lessons:
   when: WSL2環境で新規.shファイルをWrite toolで作成した時
   how: sed -i 's/\r$//' で即座にCRLF除去しbash -nで構文検証
   origin: '[[common.sh新規作成時にCRLF混入でbash -n失敗した実体験]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L057
   title: cmd_338
   summary: IF auto_deploy機能の発火タイミングを設計する時 THEN ninja_monitorのidle検知依存で最大25秒のラグが発生することを考慮せよ
@@ -10677,9 +10694,6 @@ lessons:
   when: tmuxペインにエージェント固有の状態を保持させたい時
   how: '@user_option(例: @agent_id)を使用せよ'
   origin: '[[cmd_314]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L040
   title: WSL2環境でUsage API応答時間5秒超
   summary: IF WSL2環境でUsage APIを呼び出す監視スクリプトを実装する時 THEN timeout設定を10秒以上に設定せよ
@@ -10730,9 +10744,6 @@ lessons:
   when: テストデータrevertでgit checkout -- SSOT時
   how: '対策: SSOTのrevertはgit管理外ファイルのみか、当該テストエントリのみ手動削除で対処すべき'
   origin: '[[cmd_310]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L035
   title: cmd_complete_gate.shの検証で副作用が発火する可能性
   summary: cmd_complete_gate.shはテスト用cmdでもinbox_archiveチェックを走らせる。検証時は運用データに副作用を与え得るため、隔離データま
@@ -11097,3 +11108,4 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: タスクYAML・inbox・報告YAML等を書く前に必ず対象ファイルをReadせよ
   origin: '[[cmd_125]]'
+when: 記憶DBクエリのcache/timeout設定を変更する時
