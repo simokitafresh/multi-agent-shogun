@@ -1,111 +1,120 @@
 task:
-  readonly_ref:
-  - path: 'monthly_trade_impl.py'
-    reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3543_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3543 (deployed 2026-06-26T03:14:41). Read from the beginning.
-  ac_version: 6fb64825
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
-  engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
-  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
-  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
-  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
-  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
-  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
-  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
-  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
-  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
-  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
-  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope:
-  - context/dm-signal-research.md以外の大規模知識整理
-  - DM-Signalアプリ機能実装
-  - 無関係なcontext freshness ALERTの同時修正
-  notes: 'gate_alert content: - alert_id: GA-132 - 検知内容: ALERT: dm-signal-research.md (source commits since last_updated=2026-06-23) - Q1: なぜこのgateが鳴ったか？直接原因と根本原因の仮説を立てよ - Q2: 同じカテゴリの穴が他にないか？横展開候補を洗い出せ - Q3: 次にこのgateが鳴らないようにする防御層は何か？ - 補足: contextが古い。更新トリガー設計の穴を確認すること。'
-  origin: '[[context_freshness_ALERT_GA132]] -> [[dm_signal_research_context_stale]] -> [[context更新トリガー防御]]'
-  parallel_ok: []
-  parent_cmd: cmd_3543
-  project: dm-signal
-  purpose: '軍師idle自走分析(2026-06-26 blt_20260626_031051): monthly_trade_impl.pyが1PFあたり69s(全サービス中最大)。get_signal_payload_at_date 1002回+expand_portfolio_to_tickers 489回=DBクエリ1023回で67.7s。N+1クエリ解消で速度改善。修正前後で全数値完全一致必須(DataFrame.equals()=Trueで検証)'
-  status: idle
-  stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/backend/app/services
-  task_id: cmd_3543_full
-  task_type: full
-  skill_hint: /db-check
-  related_lessons:
-  - id: 'L083'
-    summary: 'launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手'
-    detail: 'launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手'
-  - id: 'L480'
-    summary: 'set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること'
-    detail: 'set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること'
-  - id: 'L389'
-    summary: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
-    detail: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      description: gate_alerts.yaml・gate_p_average_cache・gate実行結果・DM-Signalのcalculated_at等の一次情報から、なぜGA-137が発火したかを直接原因と根本原因に分けて報告する
+    AC2:
+      description: 同カテゴリの偽ALERT/一時API失敗/DNS失敗/バッチ未実行判定の穴が scripts/gate_p_average_freshness.sh・scripts/gate_improvement_trigger.sh・scripts/gate_auto_respond.sh・DM-Signal側運用経路に他にもあるか横展開し、件数と根拠を報告する
+    AC3:
+      description: 次回同じALERTが無駄打ちしない防御層案をLevel 1-6で提示し、即修正候補ファイルと最小テスト案を明記する
+  credential_warning: ⚠ 認証が必要なタスクだがtarget_pathが未設定。認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)"
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
-  - "skill_routing — スキルルーティング:  skills/*/SKILL.md"
-  related_causal_links:
-  - "[[N+1クエリ最適化]]"
-  - "[[monthly_trade_DB_N+1_1023回ボトルネック]]"
-  - "[[軍師idle速度分析_20260626]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/robustness-verification-catalog.md"
-  - "context/gs-speedup-knowledge.md"
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
   - "context/training-cycle.md"
-  production_invariants:
-  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
-  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
-  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
-  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
-  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L083: launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手
-      - L480: set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること
-      - L389: 検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数
+      - L213: cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit
     ────────────────────────────────────────
     
+    【3-strike rule】
+      - 初期仮説は最低3本。hypothesis_count に現在の本数を維持せよ
+      - 3回連続で仮説が外れたら、追加探索で粘らずエスカレーションせよ
+      ────────────────────────────────────────
     
+    ■ gate_alert受信内容
+    - alert_id: GA-137
+    - gate: p_average_freshness
+    - 補足: p̄計算が古い。なぜバッチが実行されていない？バッチ実行の仕組みに穴はないか？
+    
+    ■ 家老の一次確認済み事実
+    - 2026-06-26 07:38時点 `bash scripts/gates/gate_p_average_freshness.sh` は
+      `OK: p̄ calculated_at within 30 days (0d ago, 2026-06-25T06:58:10.526249+00:00)`
+    - `/tmp/gate_p_average_cache.txt` も exit_code=0
+    - 過去alertでは DNS解決失敗(API_BASE / curl_exit=6) が複数回記録されている
+    
+    ■ 調査で必ず見るもの
+    - `logs/gate_alerts.yaml`
+    - `scripts/gates/gate_p_average_freshness.sh`
+    - `scripts/gate_improvement_trigger.sh`
+    - `scripts/gate_auto_respond.sh`
+    - DM-Signal 側の p̄更新経路（batch / API / backend）
+    
+    ■ 報告で必須
+    - なぜ「今はOKなのに ALERT が飛んだ」のかを時系列で説明
+    - 真の stale と 一時API失敗/通信失敗/認証失敗/分類不良 を区別
+    - 家老が次に「即修正」「将軍cmd起票」「経過観察」のどれを取るべきか明記
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  hypothesis_count: 3
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  not_in_scope:
+  - 調査根拠なしのコード修正
+  - 無関係なDM-Signal機能実装
+  - p_average以外のgate ALERT同時調査
+  parallel_ok: []
+  parent_cmd: cmd_karo_recon_ga137_p_average_freshness_20260626
+  project: infra
+  purpose: GA-137 p_average_freshness ALERT調査 — 現在gateはOKだが2026-06-26 07:36にALERTが発火した経路を一次情報で特定し、直接原因/根本原因/横展開/防御層を家老が即判断できる報告を作る
+  report_template:
+    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+    forbidden:
+    - 方針提案・設計判断は禁止。事実と分析のみ報告せよ
+    notes:
+    - 他の忍者の報告を参照するな（並行偵察の独立性）
+    required_fields:
+    - findings
+    - verdict
+    - confidence
+    - blind_spots
+  status: done
+  stop_for: []
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_p_average_freshness.sh
+  task_id: cmd_karo_recon_ga137_p_average_freshness_20260626_normal
+  task_type: recon
+  three_strike_rule: 仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告
+  related_lessons:
+  - id: 'L213'
+    summary: 'cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit'
+    detail: 'cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit'
   memory_db_context:
-  - '2026-06-26T03:01:05+09:00 | 【INFOバッチ】 2026-06-26 02:52:14|cmd_3540'
-  - '2026-06-26T02:45:30+09:00 | 【INFOバッチ】 2026-06-26 02:32:31|cmd_3539 2026-06-26 02:42:38|CI緑: run 28188861577'
-  - '2026-06-26T03:12:46+09:00 | monthly_trade_impl.pyの根因を特定して将軍に報告済み。annual_returns(cmd_3542)完了後の次cmdとして推薦。idle待機。 [meta] stop_reaso'
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'monthly_trade_impl.pyのget_signal_payload_at_date/expand_portfolio_to_tickersのDB呼出し回数を削減し、修正前と比較して計算時間が短縮されること。修正前後のtime計測結果を報告に記載'
-  - id: 'AC2'
-    checks:
-    - check: '修正前後でmonthly_trade計算の全出力値がDataFrame.equals()=Trueで完全一致すること。既存テスト(python -m pytest tests/)をローカル実行し全PASSすること'
+  - '2026-06-26T07:36:33+09:00 | 【改善トリガー】p_average_freshness ALERT (GA-137)'
+  - '2026-04-21T00:04:56+09:00 | 【改善トリガー】context_freshness ALERT (GA-137)'
+  - '2026-06-25T18:59:29+09:00 | 設計書は存在する。**Status: 📋 設計（実装待ち）。実装cmdは未起票。** [MEM: memory_db ts=2026-06-22 "p_average_freshness ALERT '
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_recon_ga137_p_average_freshness_20260626_normal
+  _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3543.yaml
-  report_path: queue/reports/hayate_report_cmd_3543.yaml
+  report_filename: hayate_report_cmd_karo_recon_ga137_p_average_freshness_20260626.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_recon_ga137_p_average_freshness_20260626.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -128,4 +137,4 @@ task:
     - reason: 'binary_checks_fail'
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-06-26T03:15:08"
+  deployed_at: "2026-06-26T07:40:21"
