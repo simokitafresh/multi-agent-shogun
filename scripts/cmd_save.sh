@@ -5005,7 +5005,12 @@ check_gunshi_design_num_relax() {
     # WHAT部分から数値を抽出
     local WHAT_PART Q8_NUMS Q8_MAX
     WHAT_PART="${Q8_LINE#*WHAT:}"
-    # FP修正(2026-04-27): 複利の問い「10回繰り返したら」の10は設計パラメータではない
+    # FP修正(2026-06-26): WHEN/WHERE/WHO/HOW/複利セクションの数値はWHATの設計パラメータではない
+    # 根因: WHO「忍者1名」の1がWHAT数値として抽出されFP(cmd_3537/3538。L3030-3034と同じ除去が必要)
+    WHAT_PART="${WHAT_PART%%WHEN:*}"
+    WHAT_PART="${WHAT_PART%%WHERE:*}"
+    WHAT_PART="${WHAT_PART%%WHO:*}"
+    WHAT_PART="${WHAT_PART%%HOW:*}"
     WHAT_PART="${WHAT_PART%%複利:*}"
     # FP修正(2026-06-10 LS050): 日付リテラル(2026/7/1, 2026-06-10, ISO時刻)は設計数値ではない
     WHAT_PART="$(echo "$WHAT_PART" | sed -E 's#(19|20)[0-9]{2}[-/][0-9]{1,2}([-/][0-9]{1,2})?(T[0-9:]+)?##g')"
