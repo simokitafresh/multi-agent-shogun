@@ -1427,14 +1427,22 @@ report_file_has_verdict() {
     local name="$1"
     local report_file="$2"
     local trigger="$3"
-    local verdict
+    local verdict report_status
 
     verdict=$(yaml_field_get "$report_file" "verdict")
+    report_status=$(yaml_field_get "$report_file" "status" "" 2>/dev/null || true)
     case "$verdict" in
         PASS|FAIL|PASS_NO_IMPROVEMENT)
             return 0
             ;;
         "")
+            if [ "$report_status" = "pending" ]; then
+                log "REPORT-PENDING-BLOCK: $name report is still template/pending (${trigger}, report=$(basename "$report_file"))"
+                if [ "$trigger" != "STAGE1-TIMEOUT" ]; then
+                    notify_karo_throttled report_pending "$name" "【自動検知】${name}の報告YAMLがpendingのまま。/clear保留中。対象: $(basename "$report_file")"
+                fi
+                return 1
+            fi
             log "VERDICT-EMPTY-BLOCK: $name report exists but verdict empty (${trigger}, report=$(basename "$report_file"))"
             notify_karo_throttled verdict_empty "$name" "【自動検知】${name}の報告にverdictが未記入。/clear保留中。対象: $(basename "$report_file")"
             return 1
