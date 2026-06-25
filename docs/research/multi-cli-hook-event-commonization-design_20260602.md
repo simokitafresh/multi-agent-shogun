@@ -12,6 +12,8 @@ Claude Code CLIとCodex CLIを同一軍規で運用するには、CLI固有hook�
 
 2026-06-02追加原則: multi-CLI徹底とは「Claude hookをCodexへ移植する」ことではない。CLIが違っても同じ規律が成立するよう、正本をCLI外の共通script/gate/template/DBへ置き、hookは使えるCLIでの早期検出に留める。因果確認L0-L7も同じ原則に従い、設計意図確認をhook専用にしてはならない。
 
+2026-06-24追加裁定: Codex最新版の公式manualで `SessionStart` / `UserPromptSubmit` / `Stop` supportを確認済み。旧記述「CodexにUserPromptSubmit相当なし」は破棄する。ただし、Codexは同一eventに複数matching hookがあると並行実行するため、Claude型のhook列をそのまま移植してはならない。共通化対象はhook実装ではなく軍規イベントであり、CLIごとの実行モデルへadapterする。実装正本は `config/cli_events.yaml`、Codex prompt/session adapterは `scripts/hooks/codex_user_prompt_submit.sh` / `scripts/hooks/codex_session_start.sh`。Codex Stopはevent自体の存在とblock/re-prompt安全性を分け、block系Stop hookは未検証のためdaemon等価保証のまま維持する。因果: [[codex_manual_update]] -> [[old_hook_assumption_invalidated]] -> [[cli_capability_adapter_required]]。
+
 三層記憶への貫通:
 
 - 全文/DB層: 本設計書とlive memory eventに保存する。

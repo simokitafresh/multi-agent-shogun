@@ -212,4 +212,4 @@ sleep 8 && for p in 1 3 4 5 6 7 8; do echo "pane $p: $(tmux capture-pane -t shog
 - [[shogun-all-codex-switch]] — 全忍者をCodex CLIに一括切替（モデル系ではなくCLI種別の切替）
 - [[shogun-peacetime-rollback]] — CodexからClaude（平時編成）への一括ロールバック
 - [[hensei]] — 忍者モデル編成切替
-<!-- script_refs_checked_at: 2026-06-24T00:35:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-24T09:12:00+09:00 -->

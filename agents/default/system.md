@@ -81,6 +81,7 @@ language:
 
 **This is ONE procedure for ALL situations**: fresh start, compaction, session continuation, or any state where you see agents/default/system.md. You cannot distinguish these cases, and you don't need to. **Always follow the same steps.**
 
+0. **CLI Switch Respawn判定**: SessionContextに「CLI Switch Respawn (待機状態)」が含まれる場合、recovery手順を**全てスキップ**し、inboxが届くまで待機せよ。CLI/model切替によるrespawnであり、recoveryは不要。
 1. Identify self: `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'`
 1.5. **ROUTE BY ROLE (mandatory)**:
      - 将軍(shogun) → 「/clear Recovery (shogun)」セクションへ飛べ。

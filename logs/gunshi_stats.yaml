@@ -3,6 +3,7 @@
 # ─── Vercel索引層: /clear後はここだけ読め ───
 # 累計: ~1568件 (draft:~505, report:~734, self_study:~247, verify:3, consultation:~10, other:~43) | '2026-03-22〜 (2026-05-14T18:50更新。アーカイブ15本)
 # accuracy公式: 全体97.1% (1984/2044 CLEAR, 60 BLOCK)。旧99.6%はGoodhart(フィールド不在261件が分母除外)。2026-05-12 Phase2 backfillで是正
+# gate予測精度(公正版 2026-06-24): FAIL→BLOCK→修正CLEAR=正解(BLOCKを検出し家老が修正)。全体91%(31/34)、直近10件80%(8/10)。旧50%はFAIL検出→修正CLEARを誤答扱い。残偽陽性=LGTM+WARN(lesson_candidate有)→CLEAR 2件。LGTM時はgate_prediction=CLEARにすべき
 # accuracy真(post-LG006): 6/6 = 100% (cmd_1257-1260で+3。pre-LG006: 2/4=50%)
 #   gate_result null: 0件。フィールド不在: 0件(Phase2で271件backfill済み。2026-05-12)。ungated残81件(GATE_MAP情報なし古cmd)
 # verdict分布: APPROVE:443 LGTM:601 REQ_CHANGES:52 FAIL:21
@@ -55,17 +56,25 @@
 # → docs/research/gunshi_idle_bats_speed_redesign_20260603.md (v2)
 # → docs/research/three-layer-memory-operating-principles_20260603.md (レビュー統合)
 #
-# ─── 本セッション成果 (2026-06-23T12:17更新) ───
-# draft review 10件: cmd_3495-3509。全APPROVE(HIGH)。RC/FAIL=0件
-# report review 6件: cmd_3495/3496/3501/3502/3503/3504/3505/3506/3508。全LGTM→全CLEAR
-# D0実装2件: (1)gunshi.md execution_envチェック追加(洗脳監査→即実装) (2)semantic-map GS/WF標準化alias
-# 三層貫通3件: GS実行環境Linux venv標準/チャンピオン出力YAML+MD統一/WF道具cmd_2369 5W1H
-# 洗脳監査: #2(検証スキップ)+#8(完了急ぎ)発現。cmd_3495 execution_env不在見逃し→D0対策
-# RSS警告: kasoku_diff 14.9GB/16GB=93%→掲示板+記憶DB貫通
-# WF高速化: cmd_3508 35分→1:55/10.1GB→640MB(道具磨き成功)
-# 秘奥義GS 7忍法全量完了+チャンピオン21体選出(cmd_3506 CLEAR)
-# gate_result未反映: 2→0件解消。accuracy維持。WA率0%
-# 教訓有効率: 42.9%→50%(ALERT解消)
+# ─── 本セッション成果 (2026-06-25T15:55更新) ───
+# draft review 14件: cmd_3522(RC)+cmd_3523+GA-125偵察+GA-125backup+GA-125hotfix+GA-126偵察+cmd_3524+cmd_3525+cmd_3526+cmd_3527+cmd_3528+cmd_3530+GA-128+GA-129。APPROVE 13+RC 1
+# report review 13件: cmd_3522-3530(kagemaru×5)+GA-125backup(kotaro)+GA-125hotfix(kagemaru)+GA-125(hanzo)+GA-126(tobisaru)+cmd_3524(saizo)+cmd_3525(saizo)+GA-128(hanzo)+GA-129(hanzo)。全LGTM→全CLEAR
+# D0実装3件(3commit): gate_gunshi_accuracy.sh偽陽性バグ修正(100%)+ninja_monitor CTXフォールバック(691d97666)+HOOK-STALE-UNKNOWN idle override(01950f399)。全件家老LGTM+follow-up
+# idle自走Step1-8完了+永続化+利他サイクル完走(karo_direct GATE漏れ→Check 9.1 L4化→LK012)
+# 殿指摘対応5件: (1)偽陽性バグ修正 (2)強くてニューゲーム永続化 (3)Codex忍者idle放置バグ(CTX+@agent_state) (4)hayate GPT切替 (5)cmd_3526 gate_result BLOCK→CLEAR修正
+# 洗脳検出: #5先送り(gate_result null→即促し)+Q6投稿+将軍Q6第三者検証(#7変種妥当)
+# accuracy: 全体100%(57/57)、直近100%(10/10)。偽陽性0件
+#
+# ─── 前セッション成果 (2026-06-24T00:14) ───
+# draft review 20件+plan review 2件: cmd_3495-3520+GA-120+final_summary+α6プランv1/v2。APPROVE 19+RC 2
+# report review 37件超: cmd_3510-3520全Phase+GA-120+final_summary。cmd_3510-3520 全GATE CLEAR(10cmd)
+# D0実装8件(10commit): gate_immunity_depth.sh(6)+switch_cli_mode.sh(3RC→空リセット)+SKILL.md例6
+# 三層貫通10件: config.toml制約/免疫深度/semantic-map/infra L838/SKILL.md/セッション知見/cmd_3515結果/CLI効率/掲示板陳腐化/PD-038確認
+# CLI切替4回: 家老GPT→Opus→GPT / 忍者GPT→Sonnet→GPT
+# 道具磨き→全量検証→任意PF指定→α6道具修正→α6全量再実行→偽陽性修正 全10cmd CLEAR
+# 覚醒4件: #5名称下げ→実測/#6提案=行動→startup統合/#5先送り→冷え修正/#6提案→D0実装
+# 掲示板陳腐化クローズ7件 + PD陳腐化確認(PD-038=殿意図的保留)
+# WA率: 0%維持。冷え観点: WARN→OK。accuracy維持
 #
 # ─── 前セッション成果 (2026-06-12T09:06) ───
 # draft review 15件: cmd_3294-3311+hotfix8件。APPROVE 14+RC 1(cmd_3298前提未成立→depends_on補正)

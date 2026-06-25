@@ -8535,3 +8535,134 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - config.tomlのmodel_reasoning_effortは全Codex共有。per-agent制御にはcli_launch_cmdが-c model_reasoning_effort={effort}を生成するインフラが既存。settings.yamlのmodel_nameをgpt-5.5-lowとするだけでper-agent設定が機能する。tmuxテストでのfixture不一致はunset TMUXで解消
+
+### L839: root fallback対象contextはpathspec有無と同一countを偵察報告に必ず記録する
+- **日付**: 2026-06-24
+- **出典**: cmd_karo_recon_ga122_context_freshness_20260624
+- **記録者**: saizo
+- **tags**: [infra,recon,git,reporting]
+- **origin**: [[cmd_karo_recon_ga122_context_freshness_20260624]]
+- **when**: 未設定
+- **how**: 未設定
+- GA-122では対象5contextの直接更新は各0件だったが、root fallbackが2026-06-24以降のinfra非context commit 7件を全対象へ同一適用してALERT化した。context_freshness偵察ではroot_fallback=true/false、repo、pathspec、timeout秒数、通常/cache無効差分、対象別直接commit数を必ず報告する。
+
+### L840: runtime CLI switchで起動時デフォルト復元を呼ぶな
+- **日付**: 2026-06-24
+- **出典**: cmd_karo_hotfix_cli_switch_runtime_restore_20260624
+- **記録者**: karo
+- **tags**: [infra,cli,settings,tmux,skills]
+- **target_files**: [scripts/switch_cli_mode.sh,skills/shogun-cli-switch/SKILL.md,docs/semantic-index/index.md]
+- **origin**: [[runtime_cli_switch]] -> [[shutsujin_departure_default_restore]] -> [[settings_tmux_pane_mismatch]]
+- **when**: Claude/Codex切替、モデル編成変更、pane respawn後の検証時
+- **how**: runtime切替中はshutsujin_departure.shを呼ばない。settings.yamlは固定行sedで見ずYAMLパースで対象agentを読む。成功判定はsettings/tmux変数/実pane banner+process treeの三点照合で行い、不一致なら成功表示せず修正する。
+- switch_cli_mode.shが切替直後にscripts/shutsujin_departure.shを呼ぶと、起動時デフォルト層(cli_profiles.yaml defaults)がsettings.yamlを巻き戻し、切替スクリプトの成功表示と実態が乖離する。これは「設定変更=完了」の誤認と同根であり、スキル手順とpost-switch verificationに埋め込む。
+
+### L841: busy deferの経過時間はfingerprint作成前でも進む一次時刻を使う
+- **日付**: 2026-06-24
+- **出典**: cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624
+- **記録者**: kagemaru
+- **tags**: [infra,inbox,testing,inbox]
+- **target_files**: [scripts/inbox_watcher.sh,scripts/lib/script_update.sh,tests/unit/test_inbox_watcher_dedup.bats]
+- **origin**: [[cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624]]
+- **when**: 未設定
+- **how**: 未設定
+- nudge送信前にbusy returnする経路ではfingerprintファイルが作られず、fingerprint mtimeだけをdefer経過時間にするとage=0sが永久継続する。defer解除条件はfirst_unread_seen等、send前にも必ず記録される一次時刻を併用して検証する。origin: [[cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624]] -> [[fingerprint未作成]] -> [[busy_defer永久化]]
+
+### L842: CI赤のadapter仕様追従漏れは旧期待値テスト名まで一次情報で数える
+- **日付**: 2026-06-24
+- **出典**: cmd_karo_ci_fix_ga124_codex_hook_adapter_commit_20260624
+- **記録者**: hanzo
+- **tags**: [infra,testing,testing,gate,bash]
+- **target_files**: [scripts/hooks/codex_user_prompt_submit.sh,scripts/hooks/codex_session_start.sh,tests/unit/test_gate_codex_hooks_no_stop.bats]
+- **origin**: [[cmd_karo_ci_fix_ga124_codex_hook_adapter_commit_20260624]]
+- **when**: 未設定
+- **how**: 未設定
+- GA-124 Q1: 直接原因はCI上の旧テスト 'blocks Codex UserPromptSubmit hook' がstatus=1を期待した一方、HEAD gate仕様はcodex_user_prompt_submit.sh単一adapterを許可するためstatus=0になったこと。Q2: 根本原因はgate仕様変更commitとadapter/テスト差分のcommit境界が分離し、CIに仕様追従テストとadapter実体が乗らなかったこと。Q3: 横展開候補はhook/gate仕様変更時に対応adapter実体・テスト名・期待値を同一commit scopeでgit show確認するチェック。次回防御層はgate/test変更commit前に関連adapterファイルのtracked/untracked差分を自動列挙してcommit漏れをBLOCKするLevel5 pre-commit候補。
+
+### L843: Stop hook単独でtool payload内容を前提にしない
+- **日付**: 2026-06-24
+- **出典**: cmd_3522
+- **記録者**: kagemaru
+- **tags**: [infra,testing,process,bash]
+- **target_files**: [.claude/hooks/pre-write-edit-combined.sh,.claude/hooks/pre-bash-combined.sh,.claude/hooks/post-bash-combined.sh,scripts/hooks/stop_check_inbox.sh,tests/unit/test_stop_check_inbox.bats]
+- **origin**: [[cmd_3522]]
+- **when**: 未設定
+- **how**: 未設定
+- Stop hook payloadはlast_assistant_message中心で、Write/Bash tool_input/resultを常時含む前提にすると実運用で穴が残る。tool内容が必要な検査はPreToolUse/PostToolUseでフラグ化し、Stop hookでは突合に限定する。origin: [[cmd_3522]] -> [[Stop_payload制約]] -> [[tool_payload検査はPrePostで取得]]
+
+### L844: 確認行為カウントでRead toolのみの確認はBash hookでは観測できない
+- **日付**: 2026-06-24
+- **出典**: cmd_3523
+- **記録者**: kagemaru
+- **tags**: [infra,testing,frontend,review,bash]
+- **target_files**: [.claude/hooks/pre-bash-combined.sh,.claude/hooks/post-bash-combined.sh,scripts/hooks/stop_check_inbox.sh,tests/unit/test_stop_check_inbox.bats,tests/unit/test_hook_dispatchers.bats]
+- **origin**: [[cmd_3523]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3523ではAC指定のpre-bash/post-bashカウントによりBash確認行為は検出できるが、Read toolだけで一次確認した将軍応答はカウント0としてWARNになる。今回は軍師レビューでWARN偽陽性許容と判断済みだが、将来Read toolも確認行為に含めるならpretool-dispatchのRead経路にも同じカウンタ追記が必要。origin: [[cmd_3523]] -> [[Bash hook限定カウント]] -> [[Read確認は未観測]]
+
+### L845: context_freshness偵察は実gateと低レベルcheckのtimeout差分を分けて報告する
+- **日付**: 2026-06-24
+- **出典**: cmd_karo_recon_ga125_context_freshness_backup_20260624
+- **記録者**: kotaro
+- **tags**: [infra,gate,recon,gate,git]
+- **target_files**: [scripts/context_freshness_check.sh,scripts/gates/gate_context_freshness.sh,scripts/dashboard_auto_section.sh,context/google-classroom.md,context/saxo-trade-engine.md]
+- **origin**: [[cmd_karo_recon_ga125_context_freshness_backup_20260624]]
+- **when**: 未設定
+- **how**: 未設定
+- GA-125では低レベルcheck(CFC_GIT_TIMEOUT=10)は対象2件50件ALERT、実gateはGIT_TIMEOUT=1でOKだった。context_freshness偵察ではdashboard表示、低レベルcheck、実gateの3値を分け、repo/pathspec/root_fallback/timeoutを数値で報告しないと真陽性と表示残りを混同する。origin: [[GA-125]] -> [[timeout差分未分離]] -> [[context_freshness判定混同]]
+
+### L846: context_freshness ALERT調査ではroot_fallbackを必ず数値化する
+- **日付**: 2026-06-24
+- **出典**: cmd_karo_recon_ga125_context_freshness_20260624
+- **記録者**: hanzo
+- **tags**: [infra,recon,gate,git]
+- **target_files**: [queue/reports/hanzo_report_cmd_karo_recon_ga125_context_freshness_20260624.yaml]
+- **origin**: [[cmd_karo_recon_ga125_context_freshness_20260624]]
+- **when**: 未設定
+- **how**: 未設定
+- source commits件数はcontext->project mappingが外れると外部repoではなくinfra root fallbackの件数になる。ALERT調査では対象contextごとに project_id/repo_path/pathspec/root_fallback/commit_count を報告し、本文更新要否とgate設計問題を分ける。
+
+### L847: context_freshness ALERTはsource commit件名とpathspecをタスクへ自動注入せよ
+- **日付**: 2026-06-25
+- **出典**: cmd_karo_recon_ga126_obsidian_link_principles_20260625
+- **記録者**: tobisaru
+- **tags**: [infra,context,deploy,recon,bash]
+- **target_files**: [context/obsidian-link-principles.md,scripts/context_freshness_check.sh,scripts/gates/gate_context_freshness.sh,scripts/dashboard_auto_section.sh,tests/unit/test_context_freshness_check.bats]
+- **origin**: [[cmd_karo_recon_ga126_obsidian_link_principles_20260625]]
+- **when**: 未設定
+- **how**: 未設定
+- source commits N件だけでは忍者が再調査から始める。context_freshness_check.shが検知時にcommit hash/subject/pathspec/source mapping名を出し、deploy_task.shがその証拠をtask YAMLへ注入すれば、更新要否判断に直行できる。origin: [[GA-126]] -> [[source commits 3件の中身未注入]] -> [[偵察でgit log再実行]]
+
+### L848: context_freshness ALERTにはsource commit要約を同梱せよ
+- **日付**: 2026-06-25
+- **出典**: cmd_karo_hotfix_ga128_context_freshness_google_classroom_20260625
+- **記録者**: hanzo
+- **tags**: [infra,context,recon,git]
+- **target_files**: [context/google-classroom.md,scripts/context_freshness_check.sh,tests/unit/test_context_freshness_check.bats]
+- **origin**: [[cmd_karo_hotfix_ga128_context_freshness_google_classroom_20260625]]
+- **when**: 未設定
+- **how**: 未設定
+- source commits N件だけのALERTでは、担当者が毎回git logから再調査する。ALERT行に非auto commitのhash/subjectを最大3件同梱すれば、更新要否判断とcontext反映へ直行できる。
+
+### L849: context_freshness gate cache署名は監視対象ファイル内容を含める
+- **日付**: 2026-06-25
+- **出典**: cmd_karo_hotfix_ga129_context_freshness_dm_signal_ops_20260625
+- **記録者**: hanzo
+- **tags**: [infra,context,gate,monitor,cache]
+- **target_files**: [context/dm-signal-ops.md,scripts/gates/gate_context_freshness.sh,tests/unit/test_gate_context_freshness.bats]
+- **origin**: [[cmd_karo_hotfix_ga129_context_freshness_dm_signal_ops_20260625]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_context_freshnessのcache署名がcontextディレクトリmtimeだけだと、context/*.md本文更新直後に古いALERT/OKを短時間再利用し得る。監視対象markdown各ファイルのmtime/sizeと判定パラメータを署名へ含める。 origin: [[GA-129_context_freshness_ALERT]] -> [[cache署名粗さ]] -> [[stale gate result再利用]]
+
+### L850: context_freshnessが作業開始時点でOKでも発火ログとsource差分を分けて報告する
+- **日付**: 2026-06-25
+- **出典**: cmd_karo_hotfix_ga130_context_freshness_dm_signal_frontend_20260625
+- **記録者**: kagemaru
+- **tags**: [infra,context,gate,yaml,git]
+- **target_files**: [context/dm-signal-frontend.md]
+- **origin**: [[cmd_karo_hotfix_ga130_context_freshness_dm_signal_frontend_20260625]]
+- **when**: 未設定
+- **how**: 未設定
+- GA-130はlogs/gate_alerts.yamlで16:14発火していたが、作業開始時点のgateは既にOKだった。context_freshness hotfixでは現時点gate結果だけでなく、発火時刻・last_updated・source commit件数・cache有無を分けて記録しないと、直接原因と解消済み状態が混ざる。次回チェック: gate OKでもlogs/gate_alerts.yamlのalert_detailとsource git log --sinceを必ず報告YAMLに残す

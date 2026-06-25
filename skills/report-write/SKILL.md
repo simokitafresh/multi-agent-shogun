@@ -160,6 +160,31 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-06-24: gate=gate_report_format result=FAIL executor=hanzo reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/3 ACs). 全ACの二値チェックを記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"compl...
+
+- 2026-06-24: gate=gate_report_format result=FAIL executor=kagemaru reason=lessons_useful[0]: id=\"L_SCOPE\" is invalid (must match L+number, e.g. L074)
+- 2026-06-24: gate=gate_report_format result=FAIL executor=hanzo reason=Traceback: AttributeError: 'str' object has no attribute 'get'
+
+- 2026-06-23: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:tobisaru_report_cmd_3518.yaml
+- 2026-06-23: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:kotaro_report_cmd_3518.yaml|report_format:tobisaru_report_cmd_3518.yaml
+
+- 2026-06-23: gate=gate_report_format result=FAIL executor=unknown reason=worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; lessons_useful[0]: missing \"id\" field (must have lesson ID like L074); lessons_useful[1]: missing \"id\" fie...
+- 2026-06-23: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:hanzo_report_cmd_3515_l1_kasoku_ratio.yaml|report_format:tobisaru_report_cmd_3515_l1_kasoku_diff.yaml|hanzo:binary_checks_fail|tobisaru:binary_checks_fail|command_...
+
+- 2026-06-23: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:hanzo_report_cmd_3515_l1_kasoku_ratio.yaml|report_format:kotaro_report_cmd_3515_l1_nukimi.yaml|report_format:tobisaru_report_cmd_3515_l1_kasoku_diff.yaml|hanzo:bin...
+- 2026-06-23: gate=gate_report_format result=FAIL executor=hanzo reason=binary_checks: AC self-verification missing (0/1 ACs). 全ACの二値チェックを記入せよ; result.summary: MISSING or empty
+
+- 2026-06-23: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:hanzo_report_cmd_3515.yaml|report_format:kagemaru_report_cmd_3515.yaml
+- 2026-06-23: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:hanzo_report_cmd_3515.yaml|report_format:hayate_report_cmd_3515.yaml|report_format:kagemaru_report_cmd_3515.yaml|report_format:kotaro_report_cmd_3515.yaml|command_...
+
+- 2026-06-23: gate=gate_report_format result=FAIL executor=kagemaru reason=stale_report: filename has ga118_lesson_health but parent_cmd=GA-118 (cmd_id mismatch)
+- 2026-06-23: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:saizo_report_cmd_3514_nukimi.yaml|saizo:empty_lessons_useful:related=['L565','L086','L633']|saizo:ac_version_mismatch:task=2cc8762f:report=pending
+
+- 2026-06-23: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks: MISSING; files_modified: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; verdict: \"None\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_I...
+- 2026-06-23: gate=gate_report_format result=FAIL executor=hanzo reason=lesson_candidate: missing \"found\" field; lesson_candidate: found=false but no no_lesson_reason; lessons_useful[0]: missing \"reason\" field; lessons_useful[1]: missing \"reaso...
+
+- 2026-06-23: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:hanzo_report_cmd_3513.yaml|report_format:kotaro_report_cmd_3513.yaml|report_format:saizo_report_cmd_3513.yaml|report_format:tobisaru_report_cmd_3513.yaml|hanzo:emp...
+- 2026-06-23: gate=gate_report_format result=FAIL executor=unknown reason=worker_id: MISSING; ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lessons_useful: MISSING; lesson_candidate: missing \"found\" field; lesson_candida...
 
 - 2026-06-21: gate=gate_report_format result=FAIL executor=kagemaru reason=YAML parse error: while parsing a block mapping
 - 2026-06-21: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:hanzo_report_cmd_3475.yaml|hanzo:binary_checks_fail

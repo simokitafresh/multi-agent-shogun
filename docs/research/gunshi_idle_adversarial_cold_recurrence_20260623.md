@@ -38,7 +38,7 @@ cmd_3504〜cmd_3509のdraft/reportレビュー計10件。全てGS/WF計算系cmd
 | # | 対策 | Level | 状態 |
 |---|------|-------|------|
 | 1 | 次レビューからfinding_categoriesに6観点全記載を意識 | L2(doc) | 即時 |
-| 2 | gate_gunshi_cs_checklist.shの冷え観点WARNがreview-bundle実行前にチェックされる仕組み | L4(BLOCK) | 中期検討 |
+| 2 | gunshi_log_append.shにfinding_categories必須チェック+adversarial BLOCK追加 | L4(BLOCK) | 完了(D0実装 2026-06-24T08:11, bats 9/9 PASS, 家老LGTM) |
 
 ## 因果リンク
 

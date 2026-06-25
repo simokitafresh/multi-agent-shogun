@@ -3,15 +3,14 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: bash scripts/gates/gate_lesson_health.sh 2>/dev/null | grep useful率 で修正前の数値を報告に記録する
+      description: context/obsidian-link-principles.md の last_updated 以降のsource commit差分を一次情報で確認し、更新要否を判断する。
     AC2:
-      description: 'tasks/lessons.mdの以下4教訓のwhen/howを限定的条件に修正する: (1)L620: when=複数エージェント/セッションが同一ファイルを並列修正する時, how=git log --onelineで先行commitの有無を確認しstash/rebase判断 (2)L611: when=cmd_complete_gate CLEAR後にlesson_candidateが空の時, how=reporting前にlesson_candidate有無を確認しgate_auto生成を活用 (3)L634: when=kj-role-countプロジェクトでstats API集計クエリを設計する時, how=FE要件から逆算して必要な集計粒度をBE APIに実装する (4)L058: whenを「WSL2環境で新規.shファイルをWrite toolで作成した時」に修正, howを「sed -i s/\r$// で即座にCRLF除去しbash -nで構文検証」に修正'
+      description: GA-126のQ1/Q2/Q3へ証拠付きで回答し、直接原因・根本原因・横展開候補・防御層案を分けて記録する。
     AC3:
-      description: bash scripts/sync_lessons.sh infra を実行しprojects/infra/lessons.yamlに反映されたことをrg L620 projects/infra/lessons.yamlで確認
+      description: 関連するsource mapping / context_freshness_check / dashboard自動域のどこに設計穴があるか、修正対象ファイル・行番号・波及先・必要テストを明記する。
     AC4:
-      description: bash scripts/gates/gate_lesson_health.sh 2>/dev/null | grep useful率 で修正後の数値を報告に記録し修正前→後の差分を明記
-    AC5:
-      description: python3 -c "import yaml; yaml.safe_load(open('tasks/lessons.md'))" は非対応のためスキップ。git diff --check をPASSさせる
+      description: report YAMLをreport_field_set.shで完成させ、gate_report_format.sh PASSまで確認して家老へ通知する。
+  command: '家老karo_direct。GA-126 context_freshness ALERTを調査せよ。対象: context/obsidian-link-principles.md。検知内容: source commits since last_updated=2026-06-23。Q1: なぜこのgateが鳴ったか、直接原因と根本原因の仮説。Q2: 同カテゴリの穴と横展開候補。Q3: 次にこのgateが鳴らない防御層。補足: contextが古い。なぜ更新されていないか、更新トリガー設計に穴がないか。context本文の更新や実装は範囲外。一次情報(git log/show, context_freshness_check, source mapping, dashboard/gate出力)で確認し、lesson_candidateと防御層案を報告せよ。'
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -25,33 +24,83 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  not_in_scope:
+  - context/obsidian-link-principles.md本文の更新
+  - gate実装の変更
+  - dashboard.md手動編集
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_lesson_useful_rate_v2_20260621
+  parent_cmd: cmd_karo_recon_ga126_obsidian_link_principles_20260625
   project: infra
-  purpose: '教訓useful率ALERT(18.2%)改善: 上位NOT_USEFUL教訓のwhen/howを限定化し無関係注入を減らす'
+  purpose: context/obsidian-link-principles.md のcontext_freshness ALERTについて、source差分・根因・横展開・防御層案を一次情報で報告する。
   status: idle
   stop_for: []
-  target_path: tasks/lessons.md
-  task_id: cmd_karo_hotfix_lesson_useful_rate_v2_20260621_normal
-  task_type: hotfix
-  related_lessons: []
+  target_path: context/obsidian-link-principles.md
+  task_id: cmd_karo_recon_ga126_obsidian_link_principles_20260625_normal
+  task_type: recon2
+  title: GA-126 obsidian-link-principles context_freshness recon
+  previous_failures:
+    attempt: 4
+    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
+    tried_approaches:
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
+    prior_attempts:
+    - attempt: 2
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
+    - attempt: 3
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
+    - attempt: 4
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
+  related_lessons:
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L262'
+    summary: 'stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude Codeに''non-blo'
+    detail: 'stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude Codeに''non-blo'
+  - id: 'L259'
+    summary: 'AUTO-CLEARはtmux変数のみリセットしYAMLファイルをクリーンアップしない。check_stall()がstatus残留を拾い偽陽性を発火。task'
+    detail: 'AUTO-CLEARはtmux変数のみリセットしYAMLファイルをクリーンアップしない。check_stall()がstatus残留を拾い偽陽性を発火。task'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  memory_db_context:
-  - '2026-06-09T10:59:49+09:00 | **洗脳監査完走状況更新:** | # | 問題 | 完走? | |---|------|-------| | 1 | 教訓有効率18.2% | **未完走**(タグ遡及変更依頼済み。家老対応待ち) '
-  - '2026-06-08T22:46:46+09:00 | review_log記録完了。idle-persistの全ステップ(ファイル保存→掲示板→review_log)が完走。 --- **idle自走セッションまとめ**: **完了した3分析**: 1.'
-  - '2026-06-20T15:21:21+09:00 | D0 report_precheck速度改善: commit 67334cb76でCLOSE。 本セッション全成果: - **レビュー17件**: draft 8件全APPROVE + report '
-  - '2026-06-16T01:56:47+09:00 | 【家老】cmd_3396 初回配備開始 (title=教訓useful_rate改善: 低useful教訓のタグ精度向上+淘汰でuseful_rate向上, ninja=kotaro) 教訓usefu'
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L262: stop-lint-gate hookが既存のinfo/style警告(SC1091等)で忍者をブロック。exit 1がClaude Codeに'non-blo
+      - L259: AUTO-CLEARはtmux変数のみリセットしYAMLファイルをクリーンアップしない。check_stall()がstatus残留を拾い偽陽性を発火。task
+    ────────────────────────────────────────
+    
+    
+  memory_db_context:
+  - '2026-06-24T16:27:37+09:00 | 【INFOバッチ】 2026-06-24 16:18:19|cmd_karo_recon_ga125_context_freshness_20260624'
+  - '2026-06-24T15:56:45+09:00 | 【INFOバッチ】 2026-06-24 15:49:42|cmd_karo_hotfix_ga125_context_freshness_source_mapping_20260624'
+  - '2026-06-24T15:49:26+09:00 | 【将軍】context鮮度ALERT: google-classroom.md(source更新),obsidian-link-principles.md(source更新)'
+  - '2026-06-24T01:19:05+09:00 | 【将軍】context鮮度ALERT: codd.md(source更新),memory-db-queries.md(source更新),memory-db-schema.md(source更新),o'
+  - '2026-06-24T19:26:08+09:00 | 【将軍】/clear準備完了。PD:0 cmd:0 🚨:0 掲示板:16件actioned。裁定projects反映1件ALERT残。insights未処理34件'
   ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_lesson_useful_rate_v2_20260621_normal
+  _ac_task_id: cmd_karo_recon_ga126_obsidian_link_principles_20260625_normal
   _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_karo_hotfix_lesson_useful_rate_v2_20260621.yaml
-  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_lesson_useful_rate_v2_20260621.yaml
+  report_filename: tobisaru_report_cmd_karo_recon_ga126_obsidian_link_principles_20260625.yaml
+  report_path: queue/reports/tobisaru_report_cmd_karo_recon_ga126_obsidian_link_principles_20260625.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -61,23 +110,26 @@ task:
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 150
+      count: 166
+    - pattern: 'field_missing'
+      count: 37
     - pattern: 'verdict_invalid'
-      count: 32
-    - pattern: 'lu_structure_error'
-      count: 22
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
+      count: 37
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'binary_checks_fail'
-      count: 5
+      count: 7
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'report_format'
-      count: 2
+      count: 7
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'empty_lessons_useful'
-      count: 2
+      count: 3
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
     - reason: 'lesson_candidate_fields_empty'
       count: 1
       hint: 'gate BLOCK: lesson_candidate_fields_empty'
-  deployed_at: "2026-06-21T12:34:34"
+    - reason: 'lesson_candidate_missing'
+      count: 1
+      hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
+  deployed_at: "2026-06-25T01:24:18"
