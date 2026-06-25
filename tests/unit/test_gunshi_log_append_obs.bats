@@ -128,6 +128,7 @@ ENTRY
     - numbers
     - adversarial
     - ambiguity
+  ambiguity_points: none
   observations:
     - "test observation"
   brainwash_check: "1/1確認済み 修正前0→修正後1"
@@ -148,6 +149,36 @@ ENTRY
 ENTRY
     [ "$status" -eq 2 ]
     [[ "$output" == *"ambiguity"* ]]
+}
+
+# --- ambiguity_points必須チェック(draft) ---
+
+@test "draft without ambiguity_points → BLOCK exit 2" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: t_ap1
+  review_type: draft
+  verdict: APPROVE
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  observations:
+    - "test observation"
+  brainwash_check: "1/1確認済み 修正前0→修正後1"
+ENTRY
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"ambiguity_points"* ]]
+}
+
+@test "report without ambiguity_points → OK (report is exempt)" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: t_ap2
+  review_type: report
+  verdict: LGTM
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  observations:
+    - "test observation"
+  brainwash_check: "1/1確認済み 修正前0→修正後1"
+ENTRY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
 }
 
 # --- 非対象review_type → チェックなし ---

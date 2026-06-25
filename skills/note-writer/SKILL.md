@@ -18,7 +18,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-<!-- script_refs_checked_at: 2026-06-16T03:15:00+0900 -->
+<!-- script_refs_checked_at: 2026-06-26T01:00:00+09:00 -->
 
 Script refs verified: 2026-06-20 782be65a6. `note_draft.sh` 直近変更はPJパス直書き除去でget_project_pathを使う内部SSOT化。`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`、Markdown→note下書き保存、PASS/FAIL/SKIP記録の契約は変更なし。
 
@@ -200,4 +200,4 @@ Markdown→note.com変換ルール:
 - ProseMirrorエディタがスピナーで停止している場合、`Page.reload` で最大2回リトライする（`wait_for_prosemirror`）
 - 下書き保存ボタン押下後、最終URLを `[note_draft] Done: ...` に出力し、`skill_execution_log.yaml` にPASS/FAIL/SKIPを記録する
 
-<!-- script_refs_checked_at: 2026-06-16T03:15:00+0900 -->
+<!-- script_refs_checked_at: 2026-06-26T01:00:00+09:00 -->

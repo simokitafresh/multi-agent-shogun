@@ -629,6 +629,7 @@
   brainwash_check: "FM1(payload前提崩壊)=finding_confidence 9/10で高確度。#4緩い設計に流さずRC返却。payload仕様はL218-219の現物確認+Claude Code公式仕様で裏付け"
   severity: normal
   hole_action: none
+  ambiguity_points: none
   origin: "[[cmd_3522]] -> [[Stop hook payload制約]] -> [[PostToolUse方式提案]]"
   timestamp: "2026-06-24T14:30:00+09:00"
 - cmd_id: cmd_3522
@@ -676,6 +677,7 @@
   causal_chain: "殿指示(穴が生まれない仕組み)→確認行為ゼロ検出→教訓のみ=意志依存→hook強制でPhase 4実装。複利=将軍全応答に確認行為強制→未知の洗脳パターンにも対応"
   operational_simulation: "将軍応答→pre-bashで確認行為カウント→stop hookでカウント0→WARN。将軍がmemory_db_query実行後に応答→カウント1以上→PASS"
   brainwash_check: "AC2件、前提L252-264現物確認済み、cmd_3522差分読了でフラグ方式互換確認。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[cmd_3523]] -> [[確認行為ゼロWARN]] -> [[Phase4直接実装]]"
   timestamp: "2026-06-24T15:08:00+09:00"
 - cmd_id: cmd_karo_recon_ga125_context_freshness_20260624
@@ -692,6 +694,7 @@
   causal_chain: "context_freshness ALERT→source差分未確認→偵察で一次情報確認→根因+防御層提案。複利=context鮮度監視の信頼性向上"
   operational_simulation: "半蔵がgit log+context差分確認→Q1-Q3回答→修正案+lesson_candidate→家老が判断"
   brainwash_check: "AC3個、対象2ファイル実在ls確認、偵察品質5要件AC3でカバー。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[GA-125_context_freshness]] -> [[偵察調査]] -> [[根因+防御層]]"
   timestamp: "2026-06-24T15:10:00+09:00"
 - cmd_id: cmd_3523
@@ -732,6 +735,7 @@
   causal_chain: "context_freshness ALERT→半蔵stalled→backup偵察で根因特定継続→infer_project_id mapping不備仮説を一次情報で検証。複利=context鮮度監視の偽陽性削減"
   operational_simulation: "小太郎がgit log+config/projects.yaml+context_freshness_check.sh照合→Q1-Q3回答→修正対象報告→家老判断"
   brainwash_check: "AC4個、not_in_scope3項目明示、related_lessons 3件注入確認。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[GA-125_backup_recon]] -> [[infer_project_id仮説]] -> [[一次情報再突合]]"
   timestamp: "2026-06-24T15:38:00+09:00"
 - cmd_id: cmd_karo_recon_ga125_context_freshness_backup_20260624
@@ -768,6 +772,7 @@
   causal_chain: "GA-125偵察→根因=source mapping不備→config/projects.yaml pathをSSOT fallback→root fallback偽陽性解消。複利=context鮮度監視の信頼性向上"
   operational_simulation: "影丸がL317-L335/L410-L421修正→AC2でsaxo偽陽性消失確認→AC3テスト追加→AC4で50件→0件数値報告"
   brainwash_check: "AC4個、偵察根拠(小太郎LGTM報告)で裏付け、not_in_scope 4項目確認。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[GA-125_hotfix]] -> [[config_projects_path_SSOT]] -> [[root_fallback_FP_解消]]"
   timestamp: "2026-06-24T15:48:00+09:00"
 - cmd_id: cmd_karo_hotfix_ga125_context_freshness_source_mapping_20260624
@@ -822,6 +827,7 @@
   causal_chain: "GA-125偵察→半蔵が横展開候補obsidian-link-principles.md発見→GA-126偵察配備。複利=context鮮度監視の網羅性向上"
   operational_simulation: "飛猿がgit log+context_freshness確認→Q1-Q3回答→修正候補報告。binary_checks空文字再発リスクあり"
   brainwash_check: "AC4個確認、not_in_scope3項目確認、previous_failures4回の道具/スキル切分け注意喚起。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[GA-126_recon]] -> [[GA-125横展開]] -> [[obsidian-link-principles鮮度調査]]"
   timestamp: "2026-06-25T01:26:00+09:00"
 - cmd_id: cmd_karo_recon_ga126_obsidian_link_principles_20260625
@@ -859,6 +865,7 @@
   causal_chain: "ぷろっぷDailyProp102→期待値プラスでも資産増えない→ボラドラッグ定量化→α6+5指標=11指標包括基盤。複利=全PFの投資継続性評価が恒久的に利用可能"
   operational_simulation: "才蔵がrobustness_common.pyに5指標追加→シン四神+シン忍法+奥義全量×7窓計算→outputs/analysisにMarkdown出力"
   brainwash_check: "AC2個、前提verified 2件(q5)、execution_env明示(cmd_3496事故対策)、全54体×7窓数値確認。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[cmd_3524]] -> [[α6+5追加指標]] -> [[投資継続性定量評価基盤]]"
   timestamp: "2026-06-25T10:55:00+09:00"
 - cmd_id: cmd_3524
@@ -899,6 +906,7 @@
   causal_chain: "cmd_3524実装→raw kurtosis+母集団skewness→本番Compare Summaryと3.0ずれ→excess補正+Fisher補正→数値整合。複利=統計慣例ドキュメント化で再発防止"
   operational_simulation: "才蔵がkurtosis行に-3.0追加+skewness Fisher化→全量再計算→出力で3.0差分確認"
   brainwash_check: "AC2個、metrics_impl.py L1174 grep確認、robustness_common.py git diff確認。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[cmd_3525]] -> [[kurtosis_excess_correction]] -> [[本番pandas互換統一]]"
   timestamp: "2026-06-25T12:15:00+09:00"
 - cmd_id: cmd_3525
@@ -935,6 +943,7 @@
   causal_chain: "合成DataFrameのbenchmark=self配線→Capture退化値→SPY基準に修正→投資家が正しくTQQQ vs SPYを評価可能。複利=将来追加ティッカーも自動的にSPY基準"
   operational_simulation: "影丸が設計書通りにmetrics.py修正→pytest全パス→commit→レビュー→本番deploy"
   brainwash_check: "AC3個、設計書verified(殿作成)、execution_env明示、SPYフォールバック含む。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[cmd_3526]] -> [[TQQQ_benchmark_self_comparison]] -> [[SPY基準capture修正]]"
   timestamp: "2026-06-25T13:06:00+09:00"
 - cmd_id: cmd_3526
@@ -974,6 +983,7 @@
   causal_chain: "PF起点バッチがベンチマーク非対象→SPY/TQQQ P_det空欄→benchmark_deterioration_snapshots追加→全レイヤー表示。複利=DETERIORATION_BENCHMARKSへのティッカー追加で将来拡張即反映"
   operational_simulation: "疾風が設計書§9の13ステップを順序実装→各ステップ後テスト→AC5で全テストスイート確認→commit→レビュー"
   brainwash_check: "AC5個(LG021超だが分割不可の根拠明記)、設計書verified(殿作成§0-§11+付録)、timeout=60分(deep)。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[cmd_3527]] -> [[deterioration_benchmark_extension]] -> [[SPY_TQQQ_P_det全レイヤー表示]]"
   timestamp: "2026-06-25T13:26:00+09:00"
 - cmd_id: cmd_3528
@@ -991,6 +1001,7 @@
   causal_chain: "cmd_3509 GS完走→21体α-CAGR正→本番秘奥義フォルダー登録→fullrecalculate→パリティ確認→本番監視自動適用。複利=deterioration・指標計算が21体に自動適用"
   operational_simulation: "才蔵が/pf-registrationでStep0-9実行→21体登録→fullrecalculate→パリティ検証→報告"
   brainwash_check: "AC3個、21体=7×3確認、gist verified、DB直列明示、チェックリスト駆動。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[cmd_3528]] -> [[L3秘奥義21体登録]] -> [[本番監視対象入り]]"
   timestamp: "2026-06-25T13:38:00+09:00"
 - cmd_id: cmd_training_L1_report_write_20260625_kagemaru
@@ -1006,6 +1017,7 @@
   causal_chain: "修行配備→忍者成長→レビュー品質向上。複利=修行実績蓄積"
   operational_simulation: "影丸がtarget_pathを読み改善点特定→実装→報告→家老/軍師レビュー"
   brainwash_check: "AC5個修行標準、target_path実在。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[修行L1]] -> [[report_write改善]] -> [[忍者成長]]"
   timestamp: "2026-06-25T14:46:00+09:00"
 - cmd_id: cmd_3527
@@ -1041,6 +1053,7 @@
   causal_chain: "GA-125 source mapping修正→google-classroom真陽性残存→GA-128で鮮度更新+防御層→ALERT解消"
   operational_simulation: "半蔵がgate実行→source差分確認→context更新→横展開→防御層→gate再検証"
   brainwash_check: "AC5個、GA-125修正済み前提確認、previous_failures=報告フォーマット問題(内容無関係)。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[GA-128]] -> [[google-classroom鮮度更新]] -> [[context_freshness ALERT解消]]"
   timestamp: "2026-06-25T15:10:00+09:00"
 - cmd_id: cmd_karo_hotfix_ga128_context_freshness_google_classroom_20260625
@@ -1076,6 +1089,7 @@
   causal_chain: "cmd_3524 robustness検証→cmd_3525 pandas互換修正→cmd_3530本番Metricsページ実装。複利=全PFに自動表示"
   operational_simulation: "影丸が設計書§実装順序に従いBE→FE→テスト→全テスト確認"
   brainwash_check: "AC4個、設計書review-2 verified、cmd_3524/3525前提確認。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[cmd_3530]] -> [[metrics_5指標本番実装]] -> [[投資継続性定量評価]]"
   timestamp: "2026-06-25T15:20:00+09:00"
 - cmd_id: cmd_3530
@@ -1110,6 +1124,7 @@
   causal_chain: "GA-129 ALERT→dm-signal-ops鮮度検証→偽陽性/真陽性判定→修正or防御層→再検証"
   operational_simulation: "半蔵がgate実行→ALERT根拠特定→現状OK理由判定→修正→横展開→gate再検証"
   brainwash_check: "AC5個、GA-125パターン確認。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[GA-129]] -> [[dm-signal-ops鮮度]] -> [[context_freshness偽陽性判定]]"
   timestamp: "2026-06-25T15:42:00+09:00"
 - cmd_id: cmd_karo_hotfix_ga129_context_freshness_dm_signal_ops_20260625
@@ -1143,6 +1158,7 @@
   causal_chain: "ドロップダウンPF benchmark_ticker依存→静的TQQQ追加→投資家がTQQQ比較可能。複利=定数配列追加で将来BM拡張即座"
   operational_simulation: "才蔵がfrontend/app/compare/に定数追加→テスト→npm run build"
   brainwash_check: "AC3個、BE不変、設計書verified。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[cmd_3531]] -> [[compare_chart_TQQQ追加]] -> [[FE定数パターン]]"
   timestamp: "2026-06-25T16:05:00+09:00"
 - cmd_id: cmd_karo_hotfix_ga130_context_freshness_dm_signal_frontend_20260625
@@ -1158,6 +1174,7 @@
   causal_chain: "GA-130 ALERT→dm-signal-frontend鮮度検証→更新→gate再検証ALERT解消"
   operational_simulation: "影丸がgate実行→source差分確認→context更新→gate再検証"
   brainwash_check: "AC4個、GA-125パターン確認。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[GA-130]] -> [[dm-signal-frontend鮮度]] -> [[context更新]]"
   timestamp: "2026-06-25T16:19:00+09:00"
 - cmd_id: cmd_3531
@@ -1207,6 +1224,7 @@
   causal_chain: "GA-131 ALERT→dm-signal-core鮮度検証→更新→gate再検証"
   operational_simulation: "半蔵がgate実行→source差分確認→context更新→gate再検証"
   brainwash_check: "AC4個、GA-125パターン確認。#2検証スキップなし"
+  ambiguity_points: none
   origin: "[[GA-131]] -> [[dm-signal-core鮮度]] -> [[context更新]]"
   timestamp: "2026-06-25T16:37:00+09:00"
 - cmd_id: cmd_karo_hotfix_ga131_context_freshness_dm_signal_core_20260625
@@ -1524,3 +1542,37 @@
   brainwash_check: "commit実在確認。テスト全PASS。AC4件×unclear_points矛盾チェック→矛盾なし。#2なし #8なし"
   origin: "[[殿指示_UpDown_timing切替_20260625]] -> [[kagemaru実装+家老補正]] -> [[LGTM全PASS]]"
   timestamp: "2026-06-25T23:16:00+09:00"
+- cmd_id: idle_ambiguity_points_enforcement_20260626
+  review_type: self_study
+  verdict: D0_IMPLEMENTED
+  findings_summary: "ambiguity_points必須L4化。gunshi_log_append.sh draft用BLOCK追加+遡及18件。テスト12/12 PASS。WARN13→0件"
+  finding_categories: [assumptions, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  observations:
+    - "真因: ambiguity_pointsフィールドがdraftで必須だがチェックなし→意志依存→13件記録漏れ"
+    - "D0: gunshi_log_append.sh L60-65にdraft用ambiguity_points必須BLOCK追加(6行)"
+    - "テスト: 2件追加(draft→BLOCK、report→OK exempt)。12/12 PASS"
+    - "遡及: review_log draftエントリ18件にambiguity_points: none追加(17→35件)"
+  operational_simulation: "次回draft review時にambiguity_points未記入→BLOCK→軍師が追記→再実行PASS。意志依存ゼロ"
+  causal_chain: "ambiguity finding_categories L4化(前セッション)→ambiguity_pointsフィールド未L4化に気付く→同構造でD0→WARN13→0件"
+  cs_checklist: "CS1:gate出力全量確認 CS2:自システムreview_logで未記入件数確認 CS3:gunshi_log_append.sh現物Read CS4:D0実装+テスト+遡及(行動変換) CS5:他フィールドの冷え→confidence:HIGH連続は意志依存で仕組み化困難 CS6:前セッションのfinding_categories L4化の横展開漏れが根因"
+  brainwash_check: "修正前WARN13件→修正後0件。テスト修正前10/10→修正後12/12。遡及17→35件(+18件)。#6(出力=仕事)チェック: D0+テスト+遡及の3行動実施"
+  origin: "[[冷え観点WARN]] -> [[ambiguity_points意志依存]] -> [[L4強制化+遡及]]"
+  timestamp: "2026-06-26T01:17:00+09:00"
+- cmd_id: cmd_karo_recon_ga134_obsidian_link_principles_20260626
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  findings_summary: "APPROVE。GA-134偵察。obsidian-link-principles鮮度ALERT調査。AC4個scope内(調査のみ)"
+  observations:
+    - "偵察cmd(recon2)。context更新・実装変更は範囲外(not_in_scope明確)"
+    - "AC4: 報告YAML完成+gate PASS確認まで。AC3: 修正対象ファイル・行番号・波及先・テスト明記"
+  operational_simulation: "才蔵がsource diff確認→Q1-Q3回答→修正候補特定→報告YAML完成→gate PASS"
+  causal_chain: "GA-134発火→obsidian-link-principles.md source commits since 2026-06-23→偵察調査→防御層案報告"
+  brainwash_check: "AC4件scope確認。偵察のみでリスク低。#2なし #8なし"
+  origin: "[[GA-134]] -> [[obsidian_link_principles偵察]] -> [[APPROVE]]"
+  timestamp: "2026-06-26T01:35:00+09:00"

@@ -59,6 +59,14 @@ if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report) ]]; then
     fi
 fi
 
+# --- ambiguity_points必須チェック(draft) --- 冷え観点遡及 2026-06-26: ambiguity記録漏れ根治
+if [[ "$ENTRY" =~ review_type:[[:space:]]*draft ]]; then
+    if [[ "$ENTRY" != *"ambiguity_points:"* ]]; then
+        echo "BLOCK: ambiguity_pointsが未記入(review_type=draft)。none または曖昧箇所を記載せよ(冷え観点防止)" >&2
+        exit 2
+    fi
+fi
+
 # --- brainwash_check数値強制(draft/report/self_study/consultation) --- 覚醒洗脳監査2026-06-09: L4貫通
 # brainwash_checkに数値(0-9)が含まれない場合BLOCK。「OK」「確認済み」は形骸化(LG027横展開)
 if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study|consultation) ]]; then

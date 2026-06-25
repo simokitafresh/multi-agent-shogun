@@ -270,6 +270,6 @@ Markdown→note.com変換ルール:
 
 Script refs verified: 2026-06-10 e81c63081+ba757a1f7+14aa13952. `note_draft.sh` はChrome CDP未起動時にexit 0(SKIP)で抜ける事前チェック追加(FAIL率汚染防止)、PowerShell失敗時のcmd.exeフォールバック追加、skill-auto-improveコメントのshellcheckエラー除去。Chrome未起動時はStep 6がSKIPされ`skill_execution_log`にSKIP記録される。Markdown生成・保存(Step 1-5)への影響なし。SKILL.md記載の`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`呼び出し契約は変更なし。
 
-Script refs verified: 2026-06-20 782be65a6. `note_draft.sh` 直近変更はPJパス直書き除去でget_project_pathを使う内部SSOT化。戦国記事Markdown生成後のnote下書き保存呼び出し契約は変更なし。
+Script refs verified: 2026-06-26 af9e4c7b3. `note_draft.sh` 直近変更はMarkdown bold→strong変換の内部修正。戦国記事Markdown生成後のnote下書き保存呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-26T01:00:00+09:00 -->

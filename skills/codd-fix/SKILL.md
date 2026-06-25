@@ -105,6 +105,6 @@ bash scripts/test_select.sh <changed-file>
 
 Script refs verified: 2026-06-21 615d1c2d7 cmd_3476. `cmd_complete_gate.sh` 直近変更は`files_modified`内のchange/statusで`checked_not_modified`を受け付ける追加（「確認したが変更不要」の明示経路として`verified_existing_dependency`と同じ除外ソース）。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
 
-Script refs verified: 2026-06-23 e86dbd7a7. `cmd_complete_gate.sh` 直近変更はSG-PRE25偽陽性修正(タスクYAML readonly_ref除外+コピー系read_markers追加)。codd-fixの呼び出し契約は変更なし。
+Script refs verified: 2026-06-26 e658e3c37. `cmd_complete_gate.sh` 直近変更はgate design-doc command scope偽陽性修正。codd-fixの呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-23T00:30:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-26T01:00:00+09:00 -->

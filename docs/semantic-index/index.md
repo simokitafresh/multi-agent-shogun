@@ -1645,6 +1645,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T16:42:50+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T16:43:07+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T19:22:08+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T00:11:08+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T01:13:09+09:00 覚醒して自立自走 |
 
 ## growth_loop — 学習ループ
 
@@ -3442,6 +3444,8 @@ codd:
 | file | `docs/research/gunshi_idle_adversarial_cold_fix_20260430.md` — 軍師idle: adversarial cold修正(2026-04-30) |
 | file | `docs/research/gunshi_idle_adversarial_cold_fix_20260608.md` — 軍師idle: adversarial cold修正v2(2026-06-08) |
 | file | `docs/research/gunshi_idle_ambiguity_cold_analysis_20260426.md` — 軍師idle: 曖昧cold視点分析(2026-04-26) |
+| file | `docs/research/gunshi_idle_ambiguity_cold_enforcement_20260625.md` — 軍師idle: ambiguity冷え観点L4強制化+遡及適用(2026-06-25) |
+| file | `docs/research/design-benchmark-deterioration-tqqq-spy.md` — 設計書: ベンチマーク(TQQQ・SPY)Deterioration Monitor追加(2026-06-25) |
 | file | `docs/research/gunshi_idle_block_pattern_analysis_20260512.md` — 軍師idle: BLOCKパターン分析(2026-05-12) |
 | file | `docs/research/gunshi_idle_block_quality_audit_20260514.md` — 軍師idle: BLOCK品質監査(2026-05-14) |
 | file | `docs/research/gunshi_idle_cold_perspective_ambiguity_20260603.md` — 軍師idle: cold視点曖昧性分析(2026-06-03) |
@@ -3461,7 +3465,7 @@ codd:
 |------|---|
 | id | report_quality_protocol |
 | label | 忍者報告品質プロトコル |
-| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？, 報告して返答をもらえ, Phase1 FE削除, 家老と軍師のペアは順調か？, では軍師にも穴がないかチェックしてもらおう, 自分で解決困難であれば分析して掲示板に投稿し, 問題は軍師が将軍と俺の会話を自分ごととしてとらえた点だ, ちょっとまて, 軍師のことは軍師に任せろ, では軍師の掲示板に対応せよ, あわてずに軍師のpaneを読め, これが必要なのは将軍, 軍師にもアドバイスをもらえ, 作業開始時点のgateは既にOKだった |
+| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？, 報告して返答をもらえ, Phase1 FE削除, 家老と軍師のペアは順調か？, では軍師にも穴がないかチェックしてもらおう, 自分で解決困難であれば分析して掲示板に投稿し, 問題は軍師が将軍と俺の会話を自分ごととしてとらえた点だ, ちょっとまて, 軍師のことは軍師に任せろ, では軍師の掲示板に対応せよ, あわてずに軍師のpaneを読め, これが必要なのは将軍, 軍師にもアドバイスをもらえ, 作業開始時点のgateは既にOKだった, 設計書を家老にレビューしてもらおう |
 | skills | report-write, verdict-check |
 | related_concepts | lesson_lifecycle, training_cycle_quality, yaml_safe_write, gunshi_review_lifecycle |
 | related_lessons | `L625`, `L633`, `L643` |
@@ -3559,6 +3563,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-21T18:32:07+09:00 今は将軍用が全員に見えている。これが必要なのは将軍、家老、軍師のみだ。CMDは将軍が起票する。調査して掲示板に投稿せよ。1の方針が正しい |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T00:00:37+09:00 いいかL2を過去に実行したということは、必ず出来るはずだ。その時にどう対処したかがわかれば、万全に出来るはずだ。軍師にもアドバイスをもらえ |
 | lesson | `L850` context_freshnessが作業開始時点でOKでも発火ログとsource差分を分けて報告する |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T01:24:56+09:00 設計書を家老にレビューしてもらおう。実装を前提に未確定や未調査がないようにして貰え。任意などの未確定は禁止 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T01:31:09+09:00 設計書レビューは家老自身にやらせろ。codex gpt5.5 mediumでopusと違う視点があるから意味がある。 |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |

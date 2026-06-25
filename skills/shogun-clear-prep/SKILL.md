@@ -13,9 +13,9 @@ allowed-tools:
   - Bash
 ---
 
-<!-- script_refs_checked_at: 2026-06-12T20:37:38+09:00 -->
+<!-- script_refs_checked_at: 2026-06-26T01:00:00+09:00 -->
 
-Script refs verified: 2026-06-12 cmd_karo_hotfix_skill_script_refs_20260612. `clear_prep_check.sh` は引数なし実行で/clear前チェックを出力し、終了コードはissues>0で1/なしで0の契約を維持。直近変更(4fbdfc12b)は/clear前に`SHOGUN_RECOVERY_MARKER`既定`/tmp/shogun_recovery_complete`を削除し、次セッションのstartup recovery未完了を検出できるようにする後処理追加で、/shogun-clear-prepの実行手順(Step 1-3)は変更なし。
+Script refs verified: 2026-06-26 a7ba82b4a. `clear_prep_check.sh` 直近変更はL804整数比較バグ修正+batch context auto-commit。引数なし実行で/clear前チェックを出力し、終了コードはissues>0で1/なしで0の契約を維持。/shogun-clear-prepの実行手順(Step 1-3)は変更なし。
 Script refs verified: 2026-06-11. `clear_prep_check.sh` の契約は引数なし実行で/clear前チェックを出力する形式のまま。a7ba82b4aは知識埋込みチェック内の整数比較修正で、/shogun-clear-prepの実行手順・入力・完了報告契約変更なし。
 
 # /shogun-clear-prep — 将軍の/clear前準備
