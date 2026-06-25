@@ -254,7 +254,7 @@ source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 get_ctx_pct() {
     local name="$1"
     local pane
-    pane=$(pane_lookup "$name" 2>/dev/null)
+    pane=$(pane_lookup "$name" 2>/dev/null) || true
     if [[ -z "$pane" ]]; then
         echo "100"
         return
