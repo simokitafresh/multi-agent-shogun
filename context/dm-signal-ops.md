@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-06-26 cmd_3546 -->
+<!-- last_updated: 2026-06-26 cmd_3547 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -29,7 +29,7 @@ Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal
 
 - L690: recalculate-sync完了判定はAPI statusだけでなくDB recalculation_status行で確認する（cmd_2424）
 - L701: fullrecalculate後は非対象PFのmonthly_returns件数diffを確認し復元判断まで行う（cmd_2450）
-- L783: Render本番fullrecalculate完了確認はrecalculate-statusではなくtiming-historyの新規DB記録を一次証跡にせよ。recalculate-statusはロードバランサーで別インスタンスに当たり不正確になりうる。cmd_3546で102PF fullrecalculate前後のsignals/metrics完全一致(signal_diffs=0, metrics_diffs=0, run_id=20260625_194042, elapsed=352s)を `docs/research/cmd_3546/snapshot_and_verify_v4.py` + `diff_result_v4_20260625_194638.json` で証明済み。
+- L783: fullrecalculate完了確認はtiming-history DB記録が一次証跡。recalculate-statusはLB別インスタンス不正確（cmd_3546, 102PF完全一致証明済み）
 ローカルでやらないこと: recalculate_fast.pyの直接実行（Render上で動くコード）。
 
 ### DM-Signal本番FE CDP確認手順（2026-05-05実証済み）
@@ -225,6 +225,8 @@ OPT一覧(1-15):
 - L190: 集計要件でrole分離が必要ならイベント記録時点で識別子を保存しないと後段SQLでは復元不能（cmd_574）
 - L202: Render Static Siteのheaders.pathはrootと配下階層を別globで覆わねば全txtを捕捉できぬ（cmd_643）
 - L321: admin tier系テストはRender env同期を実APIに飛ばすとローカルsuiteを汚染する（cmd_987）
+- L766: WF trial速度計測はcache warm/coldを分けて3回測る（cmd_3514）
+- L768: SQLite /mnt/c p9停滞→ローカルcopyまたは事前matrix cacheを使う（cmd_3515）
 
 ## §12 計算データ管理
 
@@ -238,6 +240,7 @@ PD-028裁定: GS制約同期は仕組み化しない。BBカタログにPydantic
 - L621: monthly_fast成果物探索はcache-onlyも許容せよ(.csv欠損+.cache.*.npyのみ残存ケースあり)（cmd_1882）
 - L585: AC output_pathはoutputs/grid_searchとoutputs/analysisを混同するな（cmd_1796）
 - L142: CSV記述は入力ソースと成果物を分離しないと知識汚染が再発（cmd_492）
+- L767: 成果物パスに忍法名を含めて混線を防ぐ（cmd_3514）
 
 ## §14 ドキュメントインデックス
 
@@ -762,6 +765,10 @@ import metrics_research_engine as MRE
 | lesson metadata | `tasks/lessons.md` にwhen/how系field backfill + concrete tags追加。教訓検索・注入の粒度が上がっている | cmd_2748, cmd_2836 |
 | knowledge links | `docs/research/knowledge-base/methods/*.md` 全般に投資知識リンクを接続。method横断探索時はknowledge-base indexだけでなく各method末尾リンクも見る | cmd_3015 |
 | Home holiday | FE Homeへ休日認識追加。封鎖ページでも市場営業日表示に関わる変更として扱う | cmd_2880 |
+
+- L773: biome→ruff cycle回避はBenchmarkモデル継続行を活用（cmd_3527）
+- L777: pre-commit import-only分割は未使用importを自動除去する（cmd_3533）
+- L780: lefthook import-only分割時は同一ファイルのunstaged機能差分退避に注意（cmd_3536）
 
 ## §39 PF物理削除手順 (2026-06-01)
 

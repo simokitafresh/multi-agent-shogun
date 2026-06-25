@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-04-13 -->
+<!-- last_updated: 2026-06-26 cmd_3547 -->
 <!-- Vercel圧縮: 2026-04-13 267行→索引化 -->
 # fullrecalculate速度向上 分析 (索引)
 
@@ -31,3 +31,4 @@ Tier 1全項目+Tier 2 NEW-1/2a実装済み。残: NEW-2b(whileループNumPy化
 ## 因果リンク
 
 - → [[gunshi-fullrecalc-resilience-analysis.md]] 速度改善がzero-signal解消に寄与した一方、処理時間依存の正確性保証は中断耐性リスクを残す
+- → [[gunshi_idle_dm_signal_speed_profiling_20260626]] 2026-06-26 サービス別1PF計測結果(cProfile)。monthly_trade 86s→4.5s等、N+1クエリ最適化の修正前後数値

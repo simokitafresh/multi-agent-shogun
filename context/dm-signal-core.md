@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-06-25 cmd_karo_hotfix_ga131 -->
+<!-- last_updated: 2026-06-26 cmd_3547 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -323,6 +323,9 @@ PipelineContext(黒板): `current_tickers`(絞込) / `momentum_data`(各BB結果
 | continuity risk API | `backend/app/api/metrics.py` / `backend/app/services/metrics_impl.py` はContinuity Risk指標をmetrics payloadへ追加済み。互換テストは `backend/tests/test_metrics_continuity_risk.py` | commit `eaf2741d` |
 | compare benchmark capture | compare summaryのadditional benchmark取得はmetrics API側でSPY/TQQQ等のbenchmark captureを補強済み | commit `499bfe37` |
 
+- L775: monthly_df_cache渡しbenchmarkモードではDrawdownPeriodテーブルをスキップせよ（cmd_3532）
+- L781: pd.to_datetimeはリスト内包個別呼出し禁止、リスト一括ベクトル化呼出し（cmd_3539）
+
 ## 8. APIエンドポイント概要
 
 FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success,data,error,message}`。FE `api-client.ts` は TTL付きGET (`annual-returns`/`monthly-returns`/`rolling-returns`/`monthly-trade` 等) で auth-scope込み `cacheKey` を生成し、保存済みETagを `If-None-Match` 送信、`304 Not Modified` は成功扱いで保存済みpayloadへ復元する。参照: `/mnt/c/Python_app/DM-signal/frontend/lib/api-client.ts`
@@ -341,6 +344,8 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 - L314: CORS expose_headersなしではFEがカスタムレスポンスヘッダを読めない（cmd_964）
 - L315: Payload cache+validator cache分離構成ではinvalidatorが両層同時破棄必須（cmd_964）
 - L412: BE定数変更時はFE定数(frontend/lib/constants.ts)も必ず確認・同期せよ（cmd_1079）
+
+- L769: α6キー名はAC文言と実装SSOTを事前照合せよ（cmd_3518）
 
 ### §8.5 Deterioration Benchmark Layer (2026-06-25)
 
@@ -561,6 +566,7 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - Monthly Trade FoF表示はUUIDそのものではなく表示ticker/weightsを使う。`display_ticker_weights` / precomputed weights / year_month月初Signalの優先順を維持する
 - FoF valid_start_date/lookbackは型・参照期間を修正済み。lookback修正は`backend/app/jobs/recalculate_fof.py`と`backend/tests/test_fof_valid_start_lookback.py`
 - signal change audit logging追加済み。`backend/app/db/models.py` / `backend/app/db/migrations.py` / flush処理で変更ログを扱う
+- L782: FoFネストN+1はportfolio_cache/signal_cacheを呼出し元から渡し構成PFを事前一括取得（cmd_3542）
 - 2026-05-05: `_collect_signal_change_logs`はbatch IN clauseでstack depth limit回避済み(commit 5c8a9cf2)
 
 ## §22 CI/テスト基盤 2026-05更新 (cmd_2652〜2660)

@@ -422,3 +422,4 @@
 | cmd_3544 | 軍師速度バグ全体マップ(2026-06-26 blt_20260626_032240): monthly_returns_calculator.pyが1PFあたり3.8s、DBクエリ30回。N+1クエリ解消で速度改善。修正前後で全数値完全一致必須(DataFrame.equals()=Trueで検証) | dm-signal | 06-26 | monthly_returnsの最新N件取得をcount() |
 | cmd_3542 | 軍師idle自走分析(2026-06-26 blt_20260626_030029): annual_returns_calculator.py が1PFあたり5.3s(全サービス中最大)。DB execute 37回=3.4s(63%)がN+1的多数クエリで根因。クエリ統合で速度改善。修正前後で全数値完全一致必須(DataFrame.equals()=Trueで検証) | dm-signal | 06-26 | annual_returns_calculator.pyのD |
 | cmd_3546 | 殿指示(2026-06-26): ローカル検証だけでは不十分。本番環境でfullrecalculate実行前後で全PF全指標の数値が完全一致することを証明せよ | dm-signal | 06-26 | 本番Render環境fullrecalculate前後の全P |
+| cmd_3547 | 殿指示(2026-06-26): 速度バグ起票。cmd_3542/3543/3544でバルクパスのN+1は修正済みだが、monthly_returns_calculator.py:262とmonthly_trade_impl.py:419のMTDフォールバックパスがcalculate_monthly_returnにcache params(portfolio_cache/signal_cache)を渡していない。現物確認済み(2026-06-26 07:42) | dm-signal | 06-26 | MTDフォールバック2箇所にportfolio_cache/ |
