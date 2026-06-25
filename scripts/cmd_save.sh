@@ -2376,6 +2376,29 @@ def read_project_from_yaml(path, target_cmd):
     except Exception:
         return ""
 
+canceled_cache = {}
+
+def is_cmd_canceled(target_cmd):
+    """Check if cmd has status=canceled in queue or archive YAML."""
+    if not target_cmd:
+        return False
+    if target_cmd in canceled_cache:
+        return canceled_cache[target_cmd]
+    result = False
+    for path in ([queue_path] if queue_path and os.path.exists(queue_path) else []):
+        try:
+            with open(path, encoding="utf-8") as fh:
+                payload = yaml.safe_load(fh) or {}
+            commands = payload.get("commands", payload)
+            if isinstance(commands, dict):
+                cmd_data = commands.get(target_cmd)
+                if isinstance(cmd_data, dict) and str(cmd_data.get("status", "")).strip() == "canceled":
+                    result = True
+        except Exception:
+            pass
+    canceled_cache[target_cmd] = result
+    return result
+
 def resolve_cmd_project(target_cmd, entry):
     if not target_cmd:
         return ""
@@ -2437,7 +2460,8 @@ for entry in entries:
         continue
     entry_cmd = str(entry.get("cmd_id", "") or "").strip()
     # FP fix: count unique cmd_ids only (same cmd retry creates duplicate WARN entries)
-    if entry_cmd and entry_cmd != cmd_id and entry_cmd not in matching_cmd_ids_set:
+    # FP fix (2026-06-26): skip canceled cmds — their WARNs are invalid (cmd_3537 canceled but counted)
+    if entry_cmd and entry_cmd != cmd_id and entry_cmd not in matching_cmd_ids_set and not is_cmd_canceled(entry_cmd):
         matching_cmd_ids_set.add(entry_cmd)
         matching_cmd_ids_ordered.append(entry_cmd)
 
