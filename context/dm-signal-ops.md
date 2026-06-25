@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-06-23 cmd_3512 -->
+<!-- last_updated: 2026-06-25 cmd_karo_hotfix_ga129_context_freshness_dm_signal_ops_20260625 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -211,6 +211,8 @@ OPT一覧(1-15):
 | 項目 | 結論 | 参照 |
 |---|---|---|
 | cmd_790 APIベースライン | 15体×3 endpoint + `/api/signals` + `/api/metrics/summary` を `2026-03-11-v2/` に固定保存。monthly-returns は169-231ヶ月、全件 `year_month` あり。 | `→ /mnt/c/tools/multi-agent-shogun/queue/archive/cmds/cmd_790_completed_20260311.yaml` / `→ /mnt/c/tools/multi-agent-shogun/queue/archive/reports/hanzo_report_cmd_790_20260311.yaml` / `→ /mnt/c/tools/multi-agent-shogun/queue/archive/reports/saizo_report_cmd_790_20260311.yaml` |
+| cmd_3526/3530 Metrics/Compare Summary | `/api/metrics/summary` は追加benchmark capture修正(cmd_3526)と投資継続性5指標(cmd_3530)を反映済み。関連FEはMetrics/Compare Summary/Summary table、関連BEは `backend/app/api/metrics.py` + `backend/app/services/metrics_impl.py`。 | DM-Signal commits `499bfe37`, `eaf2741d` |
+| 59146c43 deterioration benchmark | Compare SummaryにSPY/TQQQ P_det benchmark表示、deterioration benchmark services、page_visibility enforcementを追加。運用確認時はbenchmark_returns/deterioration_benchmarks/page_visibilityの3系統を見る。 | DM-Signal commit `59146c43` |
 | cmd_791 Phase2b BE最適化 | `/api/monthly-returns` から `expanded_tickers` 除去 + months前倒しを実装。15体diff完全一致PASS、monthly-trade側 `expanded_tickers` は維持。 | `→ /mnt/c/tools/multi-agent-shogun/queue/archive/cmds/cmd_791_completed_20260311.yaml` / `→ /mnt/c/tools/multi-agent-shogun/queue/archive/reports/kotaro_report_cmd_791_183558.yaml` / `→ /mnt/c/tools/multi-agent-shogun/queue/archive/reports/kagemaru_report_cmd_791_20260311.yaml` |
 | cmd_792 ETag有効化 | FEの304誤判定を修正。`etagStore → apiCache` 復元経路で既存ETag 3件を実動化。`tsc --noEmit` PASS、api-client tests 19 PASS。 | `→ /mnt/c/tools/multi-agent-shogun/queue/archive/cmds/cmd_792_completed_20260311.yaml` / `→ /mnt/c/tools/multi-agent-shogun/queue/archive/reports/hanzo_report_cmd_792_190031.yaml` |
 | cmd_763 workers=2復帰 | 認証修正完了後の復帰cmd。CDP比較基準は workers=1時点で cold 128ms / warm 149ms / PF切替 1005ms。 | `→ /mnt/c/tools/multi-agent-shogun/queue/archive/cmds/cmd_763_completed_20260311.yaml` |

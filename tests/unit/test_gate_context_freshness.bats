@@ -17,7 +17,7 @@ SH
 teardown() {
     rm -rf "$TEST_TMPDIR"
     unset CONTEXT_FRESHNESS_ROOT CONTEXT_FRESHNESS_CHECK_SCRIPT CONTEXT_FRESHNESS_NTFY_SCRIPT
-    unset CONTEXT_FRESHNESS_TODAY CONTEXT_FRESHNESS_GATE_DISABLE_CACHE
+    unset CONTEXT_FRESHNESS_TODAY CONTEXT_FRESHNESS_GATE_DISABLE_CACHE CONTEXT_FRESHNESS_GATE_CACHE_TTL
     unset CONTEXT_FRESHNESS_ALERT_STATE_DIR CONTEXT_FRESHNESS_ALERT_NOW CONTEXT_FRESHNESS_ALERT_DEBOUNCE_SECONDS
 }
 
@@ -164,4 +164,41 @@ SH
     [ "$status" -eq 1 ]
     [[ "$output" == *"ALERT: source-changed.md (source commits since last_updated=2026-05-10)"* ]]
     [[ "$output" == *"--- 更新cmdテンプレート TOP3 ---"* ]]
+}
+
+@test "cache invalidates when context markdown content changes" {
+    cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
+#!/usr/bin/env bash
+if grep -q "fresh marker" "$CONTEXT_FRESHNESS_ROOT/context/cache-target.md"; then
+  echo "--- 総合判定: OK ---"
+else
+  echo "ALERT: context/cache-target.md source commits 1件 since last_updated=2026-05-10。更新要否を確認せよ"
+fi
+SH
+    chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
+    write_context_file context/cache-target.md 2026-05-10
+
+    CONTEXT_FRESHNESS_ROOT="$TEST_TMPDIR" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$TEST_TMPDIR/scripts/context_freshness_check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT="$TEST_TMPDIR/scripts/ntfy.sh" \
+    CONTEXT_FRESHNESS_TODAY="2026-05-11" \
+    CONTEXT_FRESHNESS_GATE_CACHE_TTL=600 \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$TEST_TMPDIR/alert_state" \
+    run bash "$PROJECT_ROOT/scripts/gates/gate_context_freshness.sh"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"ALERT: cache-target.md"* ]]
+
+    printf '\nfresh marker\n' >> "$TEST_TMPDIR/context/cache-target.md"
+
+    CONTEXT_FRESHNESS_ROOT="$TEST_TMPDIR" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$TEST_TMPDIR/scripts/context_freshness_check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT="$TEST_TMPDIR/scripts/ntfy.sh" \
+    CONTEXT_FRESHNESS_TODAY="2026-05-11" \
+    CONTEXT_FRESHNESS_GATE_CACHE_TTL=600 \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$TEST_TMPDIR/alert_state" \
+    run bash "$PROJECT_ROOT/scripts/gates/gate_context_freshness.sh"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"--- 総合判定: OK ---"* ]]
 }

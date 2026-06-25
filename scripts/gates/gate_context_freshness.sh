@@ -178,7 +178,6 @@ warnings_output() {
         for path in \
             "$CHECK_SCRIPT" \
             "$ROOT_DIR/config/projects.yaml" \
-            "$ROOT_DIR/context" \
             "$ROOT_DIR/context/cmd-chronicle.md" \
             "$ROOT_DIR/queue/archive/cmds"
         do
@@ -188,6 +187,10 @@ warnings_output() {
                 sig_parts+=("missing")
             fi
         done
+        while IFS= read -r path; do
+            sig_parts+=("$(stat -c '%n:%Y:%s' "$path" 2>/dev/null || printf 'missing')")
+        done < <(find "$ROOT_DIR/context" -maxdepth 1 -type f -name '*.md' -print 2>/dev/null | sort)
+        sig_parts+=("git_timeout=${GIT_TIMEOUT}")
         local sig sig_hash
         sig="$(printf '%s|' "${sig_parts[@]}")"
         sig_hash="$(printf '%s' "$sig" | sha256sum | awk '{print $1}')"
