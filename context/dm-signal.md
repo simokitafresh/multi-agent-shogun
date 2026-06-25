@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-25 cmd_karo_hotfix_ga132_context_freshness_dm_signal_research_20260625 -->
-<!-- last_synced_lesson: L775 -->
+<!-- last_updated: 2026-06-25 cmd_3533 -->
+<!-- last_synced_lesson: L777 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -261,6 +261,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L772: tracked限定のリンク集計では未tracked対象の改善が見えない（cmd_training_L1_report_write_20260625_kagemaru）
 - L773: biome→ruff cycle: import_only_hunks回避はBenchmarkモデル継続行の活用（cmd_3527）
 - L775: monthly_df_cache渡しbenchmarkモードではDrawdownPeriodテーブルをスキップせよ（cmd_3532）
+- L777: pre-commit import-only分割は未使用importを自動除去する（cmd_3533）
 
 ## 因果リンク
 

@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-25 cmd_karo_hotfix_ga132_context_freshness_dm_signal_research_20260625 -->
+<!-- last_updated: 2026-06-25 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -421,3 +421,4 @@
 | cmd_3530 | 殿指示(2026-06-25): cmd_3524/3525で検証済みの5指標を本番Metricsページに実装。設計書docs/spec/metrics-page-continuity-risk-indicators.md(review-2反映済み)に全コード記載。BE: metrics_impl.pyに3指標close/open追加+Skew/Kurt open修正+metrics.pyキャッシュformat/構造検証+summary追加BM MinMo None変換。FE: integer型追加+用語集 | dm-signal | 06-25 | Metricsページに継続性5指標を本番実装し、BE/FE表 |
 | cmd_3531 | 殿指示(2026-06-25): Compare Chart画面のベンチマークドロップダウンにTQQQを追加。現状None/SPYのみ→None/SPY/TQQQにする。BE変更不要(API任意ティッカー対応済み)。FE frontend/app/compare/ 配下に定数追加+availableBenchmarksに合流。設計書docs/spec/compare-chart-tqqq-benchmark.md | dm-signal | 06-25 | Compare Chart benchmark dropdo |
 | cmd_3532 | 殿指摘(2026-06-25): Compare summary画面のTQQQのMaxDDが-12.2%と表示され現実(-80%)と極端に乖離。根因: calculate_metrics()のMaxDD処理がmonthly_df_cache(TQQQ月次データ)ではなくvisible_anchor_portfolio_id(DM-safe)のDrawdownPeriodテーブルを参照。MaxDD・MDD Date・Drawdown Length・Recovery Time・Underwater Period・Avg Underwater Period・PTU・Peak/Trough/Recovery Date・Calmar Ratioが汚染 | dm-signal | 06-25 | calculate_metrics()でmonthly_df |
+| cmd_3533 | 殿指示(2026-06-25): Compare SummaryのSPY/TQQQ行でp̄列がダッシュ表示。設計書docs/spec/p-average-benchmark-extension.md(378行, review-1反映済み)に全実装が記載。既存PK不整合是正(R1-01) + 新テーブル + バッチ拡張 + API + FEの5段階 | dm-signal | 06-25 | p-average benchmark拡張を実装し、SPY/ |
