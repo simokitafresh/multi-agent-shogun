@@ -1026,9 +1026,9 @@ get_context_pct() {
     else
         ctx_num=""
     fi
-    # @context_pctが明示的にセットされていれば（0%含む）その値を信頼する
-    # 0%はsafe_send_clear後のリセット値。Source 2に進むと旧CTX表示を拾ってしまう
-    if [ -n "$ctx_num" ]; then
+    # @context_pctが非0なら信頼する。0%はrespawn直後の正値でもあるが、
+    # CLI種別乖離時に stale 0% として残るため capture-pane で再検出する。
+    if [ -n "$ctx_num" ] && [ "$ctx_num" -gt 0 ] 2>/dev/null; then
         echo "$ctx_num"
         return 0
     fi
