@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-06-23 cmd_3516 -->
+<!-- last_updated: 2026-06-25 cmd_karo_hotfix_ga132 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -386,6 +386,7 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 | M82 | Factor Momentum | 既存factor portfolioの過去1年return符号でlong/short月次rotationし、個別UMDをfactor自己相関で説明する。 | `docs/research/knowledge-base/methods/factor-momentum.md` |
 | M83 | ADTS / CADTS Bandit Portfolio | discount+sliding-window Thompson Samplingで非定常stock pickingを行い、離散weight superarmへ拡張する。 | `docs/research/knowledge-base/methods/bandit-portfolio-adts.md` |
 | M84 | Expert Aggregation WASA | awake expertだけを指数重みで集約し、specialized CRP poolから距離閾値で助言を選ぶonline portfolio手法。 | `docs/research/knowledge-base/methods/expert-aggregation-wasa.md` |
+| S06 | Tail Risk Hedging: Put vs Trend | OTM Putは長期負リターンの保険コスト、Multi-Asset Trendは長期正リターン+テールヘッジ。急速下落はPut有利、緩やかな下落はTrend有利。 | `docs/research/knowledge-base/sources/aqr-ilmanen-2021-tail-risk-hedging-put-vs-trend.md` |
 
 ## §DMS-TVP レイヤー別動的選出 研究進捗 (2026-04-30)
 
@@ -553,6 +554,30 @@ cmd_3512-3514で整備した5本のtrial scripts(IS/OOS/Expanding/WF/Regime)を�
 - **レイヤー別PASS率**: L0(シン四神)=55%, L1(シン忍法)=75%, L2(奥義)=97%, L3(秘奥義)=98%
 - **成果物**: `→ /mnt/c/Python_app/DM-signal/outputs/analysis/grid_search_robustness/cmd_3515/summary.json`, `summary.md`
 - **教訓**: L768(L1 kasoku_diff: /mnt/c上のSQLiteはp9停滞→/tmpへbyteコピーで回避)
+
+### cmd_3517/3518: α6 robustness全6項目化 (2026-06-23)
+
+cmd_3515はα6のうち3項目のみで「全量探索完了」と扱っていたため、cmd_3517で道具を修正し、cmd_3518で全量再実行。α6はCAGR/NHF/MaxDD/MRU/Calmar/Avg UWPの6項目。
+- 設計・経緯: `/mnt/c/Python_app/DM-signal/docs/research/plan_alpha6_robustness_verification.md`
+- 実装: `scripts/analysis/grid_search/robustness_common.py`, `scripts/analysis/grid_search/trial_wf.py`
+- 成果物: `/mnt/c/Python_app/DM-signal/outputs/analysis/grid_search_robustness/cmd_3518/`
+- 注意: 今後「α6 robustness」を参照する場合、cmd_3515単独では3/6項目不足。cmd_3517/3518以後の成果物を正本にする。
+
+## §43. Continuity-risk metrics (cmd_3524/3525, 2026-06-25)
+
+cmd_3524で堅牢性trial JSONへ5つの連続性リスク指標を追加し、cmd_3525でpandas基準に整合。対象はL0/L1/L2の378行。
+
+| 指標 | 定義 | 用途 |
+|------|------|------|
+| VDrag | arithmetic mean - geometric mean | volatility dragの大きさ |
+| Skewness | Fisher-adjusted skewness | tail非対称性 |
+| Kurtosis | Fisher-adjusted excess kurtosis | fat-tail度 |
+| MinMo | `(1.96*sigma/mu)^2` | 必要月数の目安 |
+| MaxConsecLoss | 最大連続マイナス月数 | 連敗耐性 |
+
+- 成果物: `/mnt/c/Python_app/DM-signal/outputs/analysis/grid_search_robustness/cmd_3525_continuity_metrics.md`
+- source_dir: `/mnt/c/Python_app/DM-signal/outputs/analysis/grid_search_robustness/cmd_3525`
+- 実装: `scripts/analysis/grid_search/cmd_3524_continuity_metrics_report.py`, `scripts/analysis/grid_search/robustness_common.py`
 
 ## 因果リンク
 
