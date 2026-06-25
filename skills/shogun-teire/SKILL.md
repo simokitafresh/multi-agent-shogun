@@ -25,13 +25,15 @@ allowed-tools:
   - Edit
 ---
 
-<!-- script_refs_checked_at: 2026-06-16T03:15:00+0900 -->
+<!-- script_refs_checked_at: 2026-06-26T07:20:00+09:00 -->
 
 Script refs verified: 2026-06-20 2088b6421. `gate_lesson_health.sh` 直近変更はinfra教訓のcross-project注入をuseful率計測へ正しく反映する修正。棚卸し時のlesson health確認・ALERT時のlesson-sort連携判断への契約変更なし。
 
 Script refs verified: 2026-06-21 0bb457ecf+729635be5. `gate_lesson_health.sh` 直近変更はactive lesson抽出高速化、`knowledge_metrics.sh` 直近変更はmodel family literalのSSOT化。棚卸し時のlesson health確認、knowledge metrics確認、ALERT時の原因別連携判断への契約変更なし。
 
 Script refs verified: 2026-06-21 a46df2367. `gate_lesson_health.sh` 直近変更はLESSON_EFFECT_WINDOW_CMDSを30→10に縮小(計測窓調整)。棚卸し時のlesson health確認への契約変更なし。
+
+Script refs verified: 2026-06-26 558ec6eae. `gate_lesson_health.sh` 直近変更は未振り分け教訓のID一覧をALERT出力に表示する改善。棚卸し時のlesson health確認への契約変更なし。
 
 <!-- script_refs_checked_at: 2026-06-21T20:50:00+09:00 -->
 
@@ -513,4 +515,4 @@ for lesson in data['lessons']:
 - **Curator** = lesson_write.sh等のスクリプト（自動整理・登録・context索引追記）
 - 監査時: 各役割が機能しているか（生成→査読→整理のサイクルが回っているか）を検査
 
-<!-- script_refs_checked_at: 2026-06-16T03:15:00+0900 -->
+<!-- script_refs_checked_at: 2026-06-26T07:20:00+09:00 -->

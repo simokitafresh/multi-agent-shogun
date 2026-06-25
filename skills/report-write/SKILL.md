@@ -382,4 +382,6 @@ Script refs verified: 2026-06-09 06f5a0856. `report_field_set.sh` にlessons_use
 
 Script refs verified: 2026-06-20 efb4b9c02. `report_field_set.sh` 直近変更はSC2221/SC2222/SC2154 shellcheck警告のdisableコメント追加のみ。report YAML各フィールド設定、stdin YAML、lessons_useful保護、binary_checks yes/no契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-26T02:10:00+09:00 -->
+Script refs verified: 2026-06-26 b12637002. `report_field_set.sh` 直近変更はstatus=completed済み報告へのcommit前フィールド書込みをBLOCKするガード追加。report-writeはstatus completedにする前に全フィールドを記入するため、通常フローでは影響なし。completedマーク後に修正が必要な場合はstatusをin_progressに戻してから再記入する。
+
+<!-- script_refs_checked_at: 2026-06-26T07:25:00+09:00 -->

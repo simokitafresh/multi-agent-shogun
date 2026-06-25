@@ -93,4 +93,6 @@ Script refs verified: 2026-06-09 06f5a0856. `report_field_set.sh` にlessons_use
 
 Script refs verified: 2026-06-20 efb4b9c02. `report_field_set.sh` 直近変更はSC2221/SC2222/SC2154 shellcheck警告のdisableコメント追加で、フィールド設定・binary_checks yes/no・commit_hash記録契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-26T02:10:00+09:00 -->
+Script refs verified: 2026-06-26 b12637002. `report_field_set.sh` 直近変更はstatus=completed済み報告へのcommit前フィールド書込みをBLOCKするガード追加。ninja-commitはcommit後にcommit_hashを記録するため、commit前にstatus completedになることはなく影響なし。
+
+<!-- script_refs_checked_at: 2026-06-26T07:25:00+09:00 -->

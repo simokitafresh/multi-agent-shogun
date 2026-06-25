@@ -110,4 +110,5 @@ cat >&2 <<'GUIDE'
 10. gate/hook/script修正cmd: q5に実行証拠(コマンド・exit code・出力要点)を必ず記載せよ。grep/コード断片だけは不可(LS063: check_gate_script_execution_evidence)
 11. インフラ(gate/hook/daemon/記憶DB/semantic)cmd: q5/q8/originにgit log・教訓・設計意図を明記せよ(check_causal_verification_requirement)
 12. 同一BLOCKが3回以上続いたら: quality_gate.nazenaze_root_cause になぜなぜ7回分析を記載せよ(VALID_QG_FIELDSに登録済み)
+13. ACフェーズ混在禁止(ac_phase_mixing): 同一AC内に実装キーワード(実装/追加/修正/fix等)と計測/deploy(計測/benchmark/push/deploy等)を共起させるな。分割せよ: AC-impl=「実装+テストPASS+commit」、AC-verify=「計測/CDP確認/deploy」。snake_case変数名・ファイルパスは自動除外されるがAC本文の自然言語キーワードは発火する。他責(FP扱い)で放置するな=洗脳(殿指摘2026-06-26)
 GUIDE
