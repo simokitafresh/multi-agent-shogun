@@ -1501,6 +1501,34 @@ if [ -f "$wa_file" ]; then
                 echo "  OK: 最新commit_missing WAはcommit実在確認済み (${WA_LATEST_CMD} ${_wa_latest_commit:0:8})"
             fi
         fi
+        # フォールバック: cmd_design_qualityにgate_result=CLEARが記録されていれば処理済みとみなす
+        # commit_missing以外のカテゴリ(report_yaml_format等)やhash不在偵察reportが対象
+        if [ "$_wa_latest_resolved" -eq 0 ] && [ -n "${WA_LATEST_CMD:-}" ]; then
+            _dq_file="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
+            if [ -f "$_dq_file" ]; then
+                _dq_clear="$(awk -v cmd="$WA_LATEST_CMD" '
+                    /^- cmd_id:/ {
+                        current=$0
+                        sub(/^[[:space:]]*-[[:space:]]*cmd_id:[[:space:]]*"?/, "", current)
+                        sub(/"[[:space:]]*$/, "", current)
+                        sub(/[[:space:]]*$/, "", current)
+                        found=(current == cmd)
+                        next
+                    }
+                    found && /gate_result:/ {
+                        val=$0
+                        sub(/.*gate_result:[[:space:]]*"?/, "", val)
+                        sub(/"[[:space:]]*$/, "", val)
+                        sub(/[[:space:]]*$/, "", val)
+                        if (val == "CLEAR") { print "1"; exit }
+                    }
+                ' "$_dq_file")"
+                if [ "${_dq_clear:-}" = "1" ]; then
+                    _wa_latest_resolved=1
+                    echo "  OK: 最新WA cmd_design_qualityでGATE CLEAR確認済み (${WA_LATEST_CMD}, category=${WA_LATEST_CAT})"
+                fi
+            fi
+        fi
         if [ "$_wa_latest_resolved" -eq 0 ]; then
             echo "  ALERT: WA復活 — 最新cmd ${WA_LATEST_CMD} が workaround=true (category=${WA_LATEST_CAT})"
             overall="ALERT"
@@ -1511,9 +1539,55 @@ if [ -f "$wa_file" ]; then
         echo "  カテゴリ: ${WA_CATS}"
         echo "  原因: ${WA_CAUSES}"
         if [ "${WA_MAX_COUNT:-0}" -ge 3 ]; then
-            echo "  ALERT: 同カテゴリ ${WA_MAX_CAT} が直近5件で ${WA_MAX_COUNT}件累積"
-            overall="ALERT"
-            alerts+=("workaround同カテゴリ累積: ${WA_MAX_CAT}=${WA_MAX_COUNT}")
+            # CLEAR済みcmdを除いた実カウントで判定(誤分類・処理済みWAの永続ALERT防止)
+            _dq_file="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
+            _effective_cat_count="$WA_MAX_COUNT"
+            if [ -f "$_dq_file" ] && [ -n "${WA_MAX_CAT:-}" ]; then
+                _effective_cat_count="$(awk -v cat_name="$WA_MAX_CAT" '
+                    FILENAME == ARGV[1] {
+                        if (/^- cmd_id:/) {
+                            current=$0
+                            sub(/^[[:space:]]*-[[:space:]]*cmd_id:[[:space:]]*/, "", current)
+                            gsub(/["'"'"']/, "", current)
+                            gsub(/[[:space:]]+$/, "", current)
+                            cur_cmd=current
+                        }
+                        if (/workaround: true/) { wa_cmds[cur_cmd]=1 }
+                        if (/^[[:space:]]*category:/) {
+                            val=$0
+                            sub(/.*category:[[:space:]]*/, "", val)
+                            gsub(/[[:space:]]+$/, "", val)
+                            cat_map[cur_cmd]=val
+                        }
+                        next
+                    }
+                    FILENAME == ARGV[2] {
+                        if (/^- cmd_id:/) {
+                            dq=$0
+                            sub(/^[[:space:]]*-[[:space:]]*cmd_id:[[:space:]]*"?/, "", dq)
+                            sub(/"[[:space:]]*$/, "", dq)
+                            sub(/[[:space:]]*$/, "", dq)
+                            cur_dq=dq
+                        }
+                        if (/gate_result:/ && /CLEAR/) { cleared[cur_dq]=1 }
+                        next
+                    }
+                    END {
+                        effective=0
+                        for (cmd in wa_cmds) {
+                            if (cat_map[cmd] == cat_name && !cleared[cmd]) effective++
+                        }
+                        print effective+0
+                    }
+                ' "$wa_file" "$_dq_file")"
+            fi
+            if [ "${_effective_cat_count:-0}" -ge 3 ]; then
+                echo "  ALERT: 同カテゴリ ${WA_MAX_CAT} が直近5件で ${WA_MAX_COUNT}件累積"
+                overall="ALERT"
+                alerts+=("workaround同カテゴリ累積: ${WA_MAX_CAT}=${WA_MAX_COUNT}")
+            else
+                echo "  INFO: 同カテゴリ ${WA_MAX_CAT} 累積=${WA_MAX_COUNT}件 (CLEAR済み除外後実=${_effective_cat_count}件、ALERT閾値3件未満)"
+            fi
         fi
     fi
     if [ "${WA_BRAINWASH_MISSING:-0}" -gt 0 ]; then
