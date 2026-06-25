@@ -109,6 +109,7 @@ teardown() {
     [[ "$output" == *"posted_by: 'saizo'"* ]]
     [[ "$output" == *"action_type: 'info'"* ]]
     [[ "$output" == *"actioned_by: ''"* ]]
+    [[ "$output" == *"notify_targets:"* ]]
     [[ "$output" == *"confirmed_by: []"* ]]
 }
 
@@ -205,6 +206,11 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"shogun|掲示板新規投稿("* ]]
     [[ "$output" == *"gunshi|掲示板新規投稿("* ]]
+    run cat "$TEST_TMPDIR/queue/bulletin_board.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"notify_targets:"* ]]
+    [[ "$output" == *"- 'shogun'"* ]]
+    [[ "$output" == *"- 'gunshi'"* ]]
 }
 
 @test "bulletin_write prints entry id before watcher warning when watcher is absent" {
@@ -300,6 +306,16 @@ EOF
     [[ "$output" == *"status: 'open'"* ]]
 }
 
+@test "bulletin_confirm closes entry after all notify_targets confirm" {
+    entry_id="$(env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY='shogun' TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "将軍のみ通知")"
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" bash "$TEST_TMPDIR/scripts/bulletin_confirm.sh" shogun "$entry_id"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"|1|closed" ]]
+    run cat "$TEST_TMPDIR/queue/bulletin_board.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"status: 'closed'"* ]]
+}
+
 @test "bulletin_confirm closes entry after all agents confirm" {
     entry_id="$(env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "全員確認" true)"
     for agent in shogun karo gunshi saizo; do
@@ -315,6 +331,33 @@ EOF
     [[ "$output" == *"status: 'closed'"* ]]
 }
 
+@test "bulletin_confirm closes old all-agent broadcast after posted_by plus one confirmation" {
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: 'blt_old_all'
+  content: |-
+    全員通知が古くなった
+  posted_by: 'saizo'
+  posted_at: '2026-06-26T00:00:00+00:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by:
+    - 'saizo'
+  status: 'open'
+EOF
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_CONFIRM_NOW="2026-06-26T07:00:00+00:00" bash "$TEST_TMPDIR/scripts/bulletin_confirm.sh" shogun blt_old_all
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"blt_old_all|2|closed"* ]]
+    run cat "$TEST_TMPDIR/queue/bulletin_board.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"- 'saizo'"* ]]
+    [[ "$output" == *"- 'shogun'"* ]]
+    [[ "$output" == *"notify_targets: []"* ]]
+    [[ "$output" == *"status: 'closed'"* ]]
+}
+
 @test "bulletin_close closes entry explicitly" {
     entry_id="$(env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "手動クローズ")"
     run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" bash "$TEST_TMPDIR/scripts/bulletin_close.sh" "$entry_id"
@@ -324,5 +367,17 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"action_type: 'info'"* ]]
     [[ "$output" == *"actioned_by: ''"* ]]
+    [[ "$output" == *"status: 'closed'"* ]]
+}
+
+@test "bulletin_action closes action_required entry" {
+    cp "$PROJECT_ROOT/scripts/bulletin_action.sh" "$TEST_TMPDIR/scripts/bulletin_action.sh"
+    chmod +x "$TEST_TMPDIR/scripts/bulletin_action.sh"
+    entry_id="$(env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" saizo "要対応" false action_required)"
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" bash "$TEST_TMPDIR/scripts/bulletin_action.sh" shogun "$entry_id"
+    [ "$status" -eq 0 ]
+    run cat "$TEST_TMPDIR/queue/bulletin_board.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"actioned_by: 'shogun'"* ]]
     [[ "$output" == *"status: 'closed'"* ]]
 }

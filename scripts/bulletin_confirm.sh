@@ -29,8 +29,10 @@ fi
     python3 - "$BULLETIN_FILE" "$ENTRY_ID" "$AGENT_ID" "$SCRIPT_DIR/config/settings.yaml" <<'PY'
 import os
 import sys
+from datetime import datetime, timezone
 
 bulletin_file, entry_id, agent_id, settings_file = sys.argv[1:5]
+now_override = os.environ.get("BULLETIN_CONFIRM_NOW", "")
 
 def unquote(value):
     value = str(value).strip()
@@ -75,7 +77,7 @@ def parse_bulletin(path):
                     i += 1
                 entry["content"] = "\n".join(content)
                 continue
-            if line.startswith("  requires_confirmation:") or line.startswith("  confirmed_by:"):
+            if line.startswith("  requires_confirmation:") or line.startswith("  confirmed_by:") or line.startswith("  notify_targets:"):
                 key, raw = line.strip().split(":", 1)
                 raw = raw.strip()
                 if raw:
@@ -114,6 +116,24 @@ def default_confirm_agents():
                     agents.append(name)
     return agents
 
+def parse_dt(value):
+    text = str(value or "").strip().strip("'\"")
+    if not text:
+        return None
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+def now_dt():
+    parsed = parse_dt(now_override)
+    return parsed if parsed is not None else datetime.now(timezone.utc)
+
 entries = parse_bulletin(bulletin_file)
 if not isinstance(entries, list):
     print("ERROR: entries list missing", file=sys.stderr)
@@ -138,14 +158,33 @@ target["confirmed_by"] = confirmed
 
 rc = target.get("requires_confirmation", False)
 status = str(target.get("status", "open") or "open")
-if isinstance(rc, list):
+notify_targets = target.get("notify_targets") or []
+if not isinstance(notify_targets, list):
+    notify_targets = []
+
+if str(target.get("action_type", "info")).strip() == "action_required" and str(target.get("actioned_by", "")).strip():
+    status = "closed"
+elif isinstance(rc, list):
     if all(agent in confirmed for agent in rc):
+        status = "closed"
+    else:
+        status = "open"
+elif notify_targets:
+    if all(agent in confirmed for agent in notify_targets):
         status = "closed"
     else:
         status = "open"
 else:
     confirm_agents = default_confirm_agents()
-    if all(agent in confirmed for agent in confirm_agents):
+    posted_by = str(target.get("posted_by", "")).strip()
+    posted_at = parse_dt(target.get("posted_at", ""))
+    old_enough = posted_at is not None and (now_dt() - posted_at).total_seconds() >= 21600
+    confirmed_others = [agent for agent in confirmed if agent and agent != posted_by]
+    # For all-agent broadcasts (notify_targets=[]), waiting for every role to confirm
+    # makes entries stale-open because not every recipient has a mark_read path.
+    if posted_by and posted_by in confirmed and confirmed_others and old_enough:
+        status = "closed"
+    elif all(agent in confirmed for agent in confirm_agents):
         status = "closed"
     else:
         status = "open"
@@ -180,6 +219,13 @@ with open(tmp_file, "w", encoding="utf-8") as fh:
             at = "info"
         fh.write(f"  action_type: '{sq(at)}'\n")
         fh.write(f"  actioned_by: '{sq(entry.get('actioned_by', ''))}'\n")
+        notify_targets = entry.get("notify_targets") or []
+        if notify_targets:
+            fh.write("  notify_targets:\n")
+            for agent in notify_targets:
+                fh.write(f"    - '{sq(agent)}'\n")
+        else:
+            fh.write("  notify_targets: []\n")
         confirmed_list = entry.get("confirmed_by") or []
         if confirmed_list:
             fh.write("  confirmed_by:\n")

@@ -73,7 +73,7 @@ def parse_bulletin(path):
                     i += 1
                 entry["content"] = "\n".join(content)
                 continue
-            if line.startswith("  requires_confirmation:") or line.startswith("  confirmed_by:"):
+            if line.startswith("  requires_confirmation:") or line.startswith("  confirmed_by:") or line.startswith("  notify_targets:"):
                 key, raw = line.strip().split(":", 1)
                 raw = raw.strip()
                 if raw:
@@ -110,6 +110,8 @@ if target is None:
     sys.exit(1)
 
 target["actioned_by"] = agent_id
+if str(target.get("action_type", "info")).strip() == "action_required":
+    target["status"] = "closed"
 
 def sq(value):
     return str(value).replace("'", "''")
@@ -140,6 +142,13 @@ with open(tmp_file, "w", encoding="utf-8") as fh:
             at = "info"
         fh.write(f"  action_type: '{sq(at)}'\n")
         fh.write(f"  actioned_by: '{sq(entry.get('actioned_by', ''))}'\n")
+        notify_targets = entry.get("notify_targets") or []
+        if notify_targets:
+            fh.write("  notify_targets:\n")
+            for agent in notify_targets:
+                fh.write(f"    - '{sq(agent)}'\n")
+        else:
+            fh.write("  notify_targets: []\n")
         confirmed_list = entry.get("confirmed_by") or []
         if confirmed_list:
             fh.write("  confirmed_by:\n")
