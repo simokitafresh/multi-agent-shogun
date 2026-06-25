@@ -382,4 +382,4 @@ Script refs verified: 2026-06-09 06f5a0856. `report_field_set.sh` にlessons_use
 
 Script refs verified: 2026-06-20 efb4b9c02. `report_field_set.sh` 直近変更はSC2221/SC2222/SC2154 shellcheck警告のdisableコメント追加のみ。report YAML各フィールド設定、stdin YAML、lessons_useful保護、binary_checks yes/no契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-20T14:58:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-26T02:10:00+09:00 -->
