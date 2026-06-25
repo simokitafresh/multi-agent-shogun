@@ -4107,7 +4107,7 @@ DEDUP_THRESHOLD = 0.25
 USEFUL_RATE_THRESHOLD = 0.40  # effectiveness_score below this → exclude from injection candidates
 USEFUL_RATE_DECAY = 0.3       # legacy constant retained for tests/docs that compare deploy_task constants
 TARGET_PATH_MATCH_BOOST = int(os.environ.get('TARGET_PATH_MATCH_BOOST', '50'))
-NO_WHEN_PENALTY = int(os.environ.get('NO_WHEN_PENALTY', '3'))  # when未設定教訓のスコア降格値(useful_rate改善)
+NO_WHEN_PENALTY = int(os.environ.get('NO_WHEN_PENALTY', '10'))  # when未設定教訓のスコア降格値(useful_rate改善。3→10: 219件when未設定のキーワード衝突注入をほぼ排除)
 MIN_KEYWORD_SCORE_BY_TASK_TYPE = {
     'default': int(os.environ.get('MIN_KEYWORD_SCORE', '2')),
     'impl': int(os.environ.get('MIN_KEYWORD_SCORE_IMPL', '6')),
