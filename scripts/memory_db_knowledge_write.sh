@@ -74,12 +74,15 @@ agent_id="${agent_id:-memory_db_knowledge_write}"
 
 python3 - "$SCRIPT_DIR" "$db_path" "$knowledge_text" "$source_text" "$cmd_id" "$agent_id" <<'PY'
 import hashlib
+import sqlite3
 import sys
+import time
 
 repo_root, db_path, knowledge_text, source_text, cmd_id, agent_id = sys.argv[1:7]
 sys.path.insert(0, f"{repo_root}/scripts")
 import memory_db_live_insert as live_insert
 
+live_insert.SQLITE_BUSY_TIMEOUT_MS = 1000
 knowledge = live_insert.normalize_text(knowledge_text)
 source = live_insert.normalize_text(source_text)
 explicit_cmd_id = live_insert.normalize_text(cmd_id)
@@ -96,26 +99,35 @@ event_cmd_id = explicit_cmd_id or live_insert.infer_cmd_id(summary, detail)
 event_hash = hashlib.sha1(f"{ts}\n{agent}\n{source}\n{knowledge}".encode("utf-8")).hexdigest()[:16]
 event_id = f"knowledge:{event_hash}"
 
-live_insert.append_event(
-    db_path,
-    (
-        event_id,
-        ts,
-        "knowledge",
-        agent,
-        "",
-        "direct_insert",
-        summary,
-        detail,
-        "memory_db_knowledge_write",
-        event_cmd_id,
-        "[]",
-        source,
-        None,
-        "normal",
-    ),
-    concept_text_extra=f"{source}\n{event_cmd_id}",
-    raw_content=knowledge,
+event_row = (
+    event_id,
+    ts,
+    "knowledge",
+    agent,
+    "",
+    "direct_insert",
+    summary,
+    detail,
+    "memory_db_knowledge_write",
+    event_cmd_id,
+    "[]",
+    source,
+    None,
+    "normal",
 )
+
+for attempt in range(1, 11):
+    try:
+        live_insert.append_event(
+            db_path,
+            event_row,
+            concept_text_extra=f"{source}\n{event_cmd_id}",
+            raw_content=knowledge,
+        )
+        break
+    except sqlite3.OperationalError as exc:
+        if "database is locked" not in str(exc).lower() or attempt == 10:
+            raise
+        time.sleep(1)
 print(f"OK: {event_id}")
 PY
