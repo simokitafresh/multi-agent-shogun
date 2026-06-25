@@ -540,6 +540,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T21:27:12+09:00 進めよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T02:03:50+09:00 他にバグはないか？覚醒せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T02:18:39+09:00 今できることを先送りしていないか？覚醒して行動 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T03:30:53+09:00 本番環境で再計算時に数値が変わらないことを証明しているか？ローカルでの検証は洗脳の証拠。覚醒せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T03:38:00+09:00 ではやろう |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -557,7 +559,7 @@ codd:
 |------|---|
 | id | recalculate_pipeline |
 | label | 再計算パイプライン |
-| aliases | fullrecalculate, recalc, 再計算フロー, recalculate_fast, ネストFoF, nested FoF, FoF of FoF, トポロジカルソート, signal_cache, holding_signal_raw, deferred flush, recalculate_fof, FoF再計算, 2段目FoF, 奥義GS, 秘奥義, つまり秘奥義もnew FoFもL3だな |
+| aliases | fullrecalculate, recalc, 再計算フロー, recalculate_fast, ネストFoF, nested FoF, FoF of FoF, トポロジカルソート, signal_cache, holding_signal_raw, deferred flush, recalculate_fof, FoF再計算, 2段目FoF, 奥義GS, 秘奥義, つまり秘奥義もnew FoFもL3だな, 呼出し元でFoF構成PF 1段目・2段目 を事前一括取得 |
 | skills | db-check |
 | related_concepts | production_parity, dmsignal_operations, alm_research, gs_ninpo_research |
 
@@ -615,9 +617,16 @@ codd:
 | cmd | `cmd_3541` 修正 — recalculate_fast.py pd.to_datetime個別呼出しベクトル化(横展開最終) |
 | causal | `cmd_3541` origin: [[cmd_3539_lesson_candidate]] -> [[recalculate_fast同一パターン残存]] -> [[横展開最終]] |
 | causal | `cmd_3541` depends_on: cmd_3539 |
+| lesson | `L782` FoFネストN+1: expand_portfolio_to_tickersのportfolio_cache/signal_cacheを呼出し元から渡し、構成PFを事前一括取得してキャッシュに格納せよ |
+| lesson | `L783` Render本番fullrecalculate完了確認はtiming-historyが唯一信頼できる手段 |
+| cmd | `cmd_3546` 検証 — 速度最適化全修正の本番fullrecalculate数値完全一致証明 |
+| causal | `cmd_3546` origin: [[殿指摘_ローカル検証は洗脳_20260626]] -> [[本番数値未検証]] -> [[fullrecalculate前後完全一致証明]] |
+| causal | `cmd_3546` depends_on: cmd_3544 |
 | causal_chain | `[[cmd_3053]]` (L714) |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3153]]` (L744) |
+| causal_chain | `[[cmd_3295]]` (L782) |
+| causal_chain | `[[cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956]]` (L783) |
 
 ## semantic_dictionary_design — セマンティック辞書構想
 
@@ -1450,6 +1459,8 @@ codd:
 | causal | `cmd_karo_hotfix_context_dm_core_ga102_20260620` files_modified: [[production_parity]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T15:16:59+09:00 b4efmyfpe toolu_01DddEuGtwcomtdcMAG568w5 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | causal | `cmd_karo_hotfix_ga131` files_modified: [[production_parity]] |
+| cmd | `cmd_3544` 修正 — monthly_returns_calculator.py DB N+1クエリ最適化(1PF=3.8s/30クエリ) |
+| causal | `cmd_3544` origin: [[軍師idle速度分析_20260626]] -> [[monthly_returns_DB_N+1_30回ボトルネック]] -> [[N+1クエリ最適化]] |
 | causal_chain | `[[cmd_3061]]` (L717) |
 
 ## deepdive_principles — deepdive原理
@@ -1654,6 +1665,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T19:22:08+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T00:11:08+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T01:13:09+09:00 覚醒して自立自走 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T06:46:07+09:00 いまクリアしても今より強くてニューゲーム出来るようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -1755,7 +1767,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, DB確認, 本番DB確認, ブラウザ確認, 画面確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした, 重複しないようにDBを先に確認せよ, つまり確認しなかった, そして時系列と因果関係を確認しないから, 気をつけろ, ナッジが届いているか確認せよ, cmd 3450と3451のGATE CLEARを確認せよ, 家老がidleになるまで待とう, 他にインフラバグはないか？覚醒して確認, 他にもバグが混ざっていないか確認せよ, 同じバグが家老のstartup gateにもないか確認せよ, 穴がないか確認しよう, 2層SSOTにするべき仕組みが他にないか確認しよう, 殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」, コードを確認せよ, codexのドキュメントを読んで仕様を確認せよ, 報告するときは確認しよう, かならず内容を確認しろ, やったことを全て時系列で遡りながら確認すればいいだけだ, 現時点で確認できるところを確認しよう, 3527と3528, 最新を確認せよ |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, DB確認, 本番DB確認, ブラウザ確認, 画面確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした, 重複しないようにDBを先に確認せよ, つまり確認しなかった, そして時系列と因果関係を確認しないから, 気をつけろ, ナッジが届いているか確認せよ, cmd 3450と3451のGATE CLEARを確認せよ, 家老がidleになるまで待とう, 他にインフラバグはないか？覚醒して確認, 他にもバグが混ざっていないか確認せよ, 同じバグが家老のstartup gateにもないか確認せよ, 穴がないか確認しよう, 2層SSOTにするべき仕組みが他にないか確認しよう, 殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」, コードを確認せよ, codexのドキュメントを読んで仕様を確認せよ, 報告するときは確認しよう, かならず内容を確認しろ, やったことを全て時系列で遡りながら確認すればいいだけだ, 現時点で確認できるところを確認しよう, 3527と3528, 最新を確認せよ, 修正前後で数値の完全一致は担保できてるか？覚醒して確認せよ |
 | skills | db-check(DB確認/本番DB/パリティ検証), cdp-browse(ブラウザ確認/本番画面スクショ/CDPで確認) |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -1907,6 +1919,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T15:02:57+09:00 設計書はさらに更新されているぞ。最新を確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T16:04:42+09:00 3530を本番環境で確認してくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T17:58:22+09:00 https://t.co/ApSValNNLYを読み取って、投資知識辞書に投入しよう。内容を説明してくれ。投資知識辞書には全文を解釈無しで入れておかないとあとでおかしくなる。投資知識辞書の使い方をよく確認してくれ。webfetchはhaik |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T03:24:03+09:00 起票せよ。修正前後で数値の完全一致は担保できてるか？覚醒して確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T03:26:01+09:00 修正前後で数値の完全一致は担保できてるか？覚醒して確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T04:58:20+09:00 byno3rl06 toolu_01QXSNVthWAivRGr886gCoWt /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee7a06fc-dedf-4c67-85c4-653ec1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T04:58:45+09:00 b1jefpfyh toolu_015bnyE2kKQm9saPoU8XQfsS /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee7a06fc-dedf-4c67-85c4-653ec1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T04:58:47+09:00 btq8u2h15 toolu_01LqqH8A8ufZPojLR7AQ2jKA /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee7a06fc-dedf-4c67-85c4-653ec1 |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -3059,6 +3076,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T16:38:07+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T23:08:56+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T03:03:14+09:00 続けて |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T03:46:27+09:00 続けて |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -3126,6 +3144,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T02:05:01+09:00 実行速度が遅い.pyはないか？遅いのはバグの1種だ。品質を完全に保ちながらバグを修正しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T02:41:17+09:00 他に速度バグはないか？覚醒して調査 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T02:55:43+09:00 他に速度バグはないか？覚醒して調査 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T03:18:35+09:00 他に速度バグはないか？覚醒して調査 |
+| cmd | `cmd_3543` 修正 — monthly_trade_impl.py DB N+1クエリ最適化(1PF=69s致命的ボトルネック) |
+| causal | `cmd_3543` origin: [[軍師idle速度分析_20260626]] -> [[monthly_trade_DB_N+1_1023回ボトルネック]] -> [[N+1クエリ最適化]] |
 
 ## tier_plan_mapping — Tier-プラン対応
 
@@ -3749,7 +3770,7 @@ codd:
 |------|---|
 | id | gate_quality_framework |
 | label | ゲート品質統合フレームワーク |
-| aliases | ゲート統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, ゲート偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, クオリティゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, ゲート偽陽性ALERTはバグだな, startup BLOCK 3セッション連続, cmd_skeleton, cmd起票雛形, 起票雛形ジェネレータ, FILL_THIS残存BLOCK, cmd起票フロー3ステップ, skeleton→save→delegate, cmd_delegate数字ID正規化, Check17日付リテラル除外, 性能の劣るLLMでもスムーズにCMD起票, GA context freshness ALERTを一次情報で調査し, GA context freshness ALERTの根因を調査し, GA dm signal frontend md context freshness ALERTの原因特定・横展開・防御, GA dm signal core md context freshness ALERTの原因特定・横展開・防御層反映, startup gateのSKILL md script参照WARNが3セッション連続BLOCK, startup gate教訓健全度がALERT useful rate % 3回連続BLOCK, review_quality_scale_summary, WARN率計算gate_result未考慮バグ, LESSON_EFFECT_USEFUL_MIN, useful_rate計測min_samples分離, gate_result=CLEARなのにFAIL永続カウント, cross-project教訓タグ同期, 二重登録教訓タグ不整合, count_same_warn_pattern cmd_id重複カウント偽陽性, Check19出口判定化, session_alerts リアルタイムhook, 覚醒設計書v3, 3セッション連続startup BLOCK 教訓健全度ALERT, cmd save品質ゲート, GA context freshness ALERTのdm signal ops mdを一次情報で照合し, 先送りBLOCK 教訓健全度ALERT, session alerts txtは将軍startup gateが生成する将軍固有ALERTだが, hookでsession alerts txtがでているが, GA context freshness ALERTの直接原因・根本原因・横展開候補・次回防止防御層を一次情報で特定し, GA context freshness ALERTの根因を |
+| aliases | ゲート統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, ゲート偽陽性, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, クオリティゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, ゲート偽陽性ALERTはバグだな, startup BLOCK 3セッション連続, cmd_skeleton, cmd起票雛形, 起票雛形ジェネレータ, FILL_THIS残存BLOCK, cmd起票フロー3ステップ, skeleton→save→delegate, cmd_delegate数字ID正規化, Check17日付リテラル除外, 性能の劣るLLMでもスムーズにCMD起票, GA context freshness ALERTを一次情報で調査し, GA context freshness ALERTの根因を調査し, GA dm signal frontend md context freshness ALERTの原因特定・横展開・防御, GA dm signal core md context freshness ALERTの原因特定・横展開・防御層反映, startup gateのSKILL md script参照WARNが3セッション連続BLOCK, startup gate教訓健全度がALERT useful rate % 3回連続BLOCK, review_quality_scale_summary, WARN率計算gate_result未考慮バグ, LESSON_EFFECT_USEFUL_MIN, useful_rate計測min_samples分離, gate_result=CLEARなのにFAIL永続カウント, cross-project教訓タグ同期, 二重登録教訓タグ不整合, count_same_warn_pattern cmd_id重複カウント偽陽性, Check19出口判定化, session_alerts リアルタイムhook, 覚醒設計書v3, 3セッション連続startup BLOCK 教訓健全度ALERT, cmd save品質ゲート, GA context freshness ALERTのdm signal ops mdを一次情報で照合し, 先送りBLOCK 教訓健全度ALERT, session alerts txtは将軍startup gateが生成する将軍固有ALERTだが, hookでsession alerts txtがでているが, GA context freshness ALERTの直接原因・根本原因・横展開候補・次回防止防御層を一次情報で特定し, GA context freshness ALERTの根因を, 該当ID一覧はcontextを別途抽出しないと分からない |
 | skills | |
 | related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework, creator_brainwashing_defense, chain_principle, no_auto_extinguish, multi_cli_event_commonization, command_files_modified_verification |
 | related_lessons | `L512`, `L079`, `L633` |
@@ -3875,11 +3896,13 @@ codd:
 | causal | `cmd_3487` origin: [[blt_20260621_183352_fd3fef]] -> [[stop_session_alerts固定パス]] -> [[ロール分離修正]] |
 | causal | `cmd_3520` files_modified: [[gate_quality_framework]] |
 | cmd | `cmd_3520` (`scripts/cmd_save.sh`, `tests/unit/test_cmd_save_causal_verification.bats`) |
+| lesson | `L857` lesson_health未振り分けALERTはID一覧まで出さないと次アクションが遅れる |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
 | causal_chain | `[[cmd_3369]]` (L806) |
 | causal_chain | `[[cmd_3403]]` (L812) |
+| causal_chain | `[[cmd_karo_hotfix_ga135_lesson_health_dm_signal_unclassified_20260626]]` (L857) |
 
 ## lesson_lifecycle — 教訓ライフサイクル管理
 
@@ -4741,6 +4764,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T02:15:47+09:00 bk3jq08kv toolu_01Rh4re9gKspE1qkiX93GEq7 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T02:16:30+09:00 bnwh73yux toolu_01Unkbtpn6TvbWAqVPvpdwmU /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T02:17:19+09:00 bdcs3kp3p toolu_01D3KFyv66m9uCe4HfoWGgEh /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T03:36:15+09:00 pre-commitはstaged以外の未コミットファイルも検査し て失敗するため、このままではscope内commitが作れま せん。となるのはインフラバグでは？どう対処する？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T03:39:02+09:00 そもそも アンステージとやみコミット ミ プッシュが残っているのが問題では |
 | causal_chain | `[[cmd_karo_recon_ga125_context_freshness_20260624]]` (L846) |
 
 ## commander_role_ssot_analysis — Commanderロール SSOT分析

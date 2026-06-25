@@ -1,8 +1,43 @@
 ssot_path: /mnt/c/Python_app/DM-signal/tasks/lessons.md
-last_synced: '2026-06-26T02:32:02'
+last_synced: '2026-06-26T05:03:15'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons_archive.yaml
-lesson_count: 778
+lesson_count: 780
 lessons:
+- id: L783
+  title: Render本番fullrecalculate完了確認はtiming-historyが唯一信頼できる手段
+  summary: recalculate-statusはロードバランサー問題で別インスタンスに当たりrunning=Falseを返す。timing-historyのDBエントリが
+  tags:
+  - dm-signal
+  - db
+  - deploy
+  - pipeline
+  source_cmd: cmd_3546
+  when: 未設定
+  how: 未設定
+  target_files:
+  - docs/research/cmd_3546/snapshot_and_verify.py
+  - docs/research/cmd_3546/snapshot_and_verify_v2.py
+  - docs/research/cmd_3546/snapshot_and_verify_v3.py
+  - docs/research/cmd_3546/snapshot_and_verify_v4.py
+  - docs/research/cmd_3546/diff_result_v4_20260625_194638.json
+  origin: '[[cmd_3546]]'
+- id: L782
+  title: 'FoFネストN+1: expand_portfolio_to_tickersのportfolio_cache/signal_cacheを呼出し元から渡し、構成PFを事前一括取得してキャッシュに格納せよ'
+  summary: annual_returns_calculator.pyでFoF構成PFのPortfolio+SignalがN+1(計15回超)になっていた。根因は(1)cal
+  tags:
+  - dm-signal
+  - testing
+  - fof
+  - cache
+  source_cmd: cmd_3542
+  when: 未設定
+  how: 未設定
+  target_files:
+  - backend/app/services/annual_returns_calculator.py
+  - backend/app/services/return_calculator.py
+  - backend/app/services/price_ratio_impl.py
+  - backend/tests/test_get_portfolio_all_tickers.py
+  origin: '[[cmd_3542]]'
 - id: L781
   title: pd.to_datetime はリスト内包表記内で個別呼出しせず、リスト一括でベクトル化呼出しせよ
   summary: DTB3データ15122件でリスト内包表記内pd.to_datetime個別呼出し=764ms。pd.to_datetime([dates])ベクトル化=4ms
@@ -451,7 +486,7 @@ lessons:
   origin: '[[cmd_3384]] -> [[BB分類context更新未強制]] -> [[GA-102 dm-signal-core freshness
     ALERT]]'
   deprecated: true
-  deprecated_at: '2026-06-26T02:32:33+09:00'
+  deprecated_at: '2026-06-26T05:03:33+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): context/dm-signal-core.m参照（ファイル消滅）'
 - id: L753
   title: 'DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用'
@@ -1341,9 +1376,6 @@ lessons:
   - backend/app/
   - queue/reports/hayate_report_cmd_2444.yaml
   origin: '[[cmd_2444]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L695
   title: pipeline_config内側top_nとPortfolio直下top_nは別経路で分離検証必須
   summary: pipeline_config.blocks config top_n/select_nはDict[str,Any]で型制約なし(1-4全PASS)。Portf
@@ -1806,9 +1838,6 @@ lessons:
   - scripts/analysis/gs_grid_robustness.py
   - outputs/robustness/20260428/L0/
   origin: '[[cmd_2357]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L666
   title: ACはWHAT(二値判定)のみ記載。HOW(検証手法)を混入させるな
   summary: ACには達成基準(WHAT=二値で判定できる完了条件)のみ書く。HOW(具体的な検証手法・実装方法)はtask YAML分解時に家老が決める領域。軍師のcmdレ
@@ -1972,7 +2001,7 @@ lessons:
   - tasks/lessons.md
   origin: '[[cmd_2311]]'
   deprecated: true
-  deprecated_at: '2026-06-26T02:32:33+09:00'
+  deprecated_at: '2026-06-26T05:03:34+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/kotaro.yaml参照（ファイル消滅）'
 - id: L656
   title: 計測スクリプトの固定待機排除はDOMポーリングで行う
@@ -2592,6 +2621,9 @@ lessons:
   - scripts/oneshot/cmd_1850_cpcv_three_layer.py
   - scripts/oneshot/cmd_1865_alm_cpcv.py
   origin: '[[cmd_1865]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L613
   title: 'ALM忍法WF検証: 超越条件C(UWP<5M)は132ヶ月OOS期間には非現実的閾値。IS最適化チャンピオンはランダム選択と統計的有意差なし(SPA
     p>0.4)'
@@ -3151,9 +3183,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-07'
   origin: '[[cmd_1787]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L572
   title: GS runnerの正規パスはbackend/app/jobsではなくscripts/analysis/grid_search
   summary: task YAMLのtarget_pathがbackend/app/jobs/run_077_kasoku_ratio.pyと誤記。実際はscripts/ana
@@ -3479,9 +3508,6 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: '2026-04-04'
   origin: '[[cmd_karo_batch_R5]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L549
   title: ALM batch 統合では objective 単位 fallback で parity を守る
   summary: cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdow
@@ -3565,9 +3591,6 @@ lessons:
   target_files:
   - context/dm-signal-research.md
   origin: '[[cmd_1707]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L543
   title: numpy cumsum rolling windowでBipower Variationをベクトル化すると50x高速化
   summary: Lee-Mykland(2008) jump detectionのBV計算はPythonループで各t点のlocal window sum。bv_products
@@ -4209,9 +4232,6 @@ lessons:
   - outputs/analysis/nested_fof/r2_vs_r6_ext_comparison.yaml
   - outputs/analysis/nested_fof/r4_allocation_log.csv
   origin: '[[cmd_1412]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L495
   title: 将軍先行分析とのCAGR差異は独立実装間の想定差
   summary: R2独立実装でCAGR差異(74.5% vs 将軍80.8%)発生。R1は完全一致(63.8%)のため計算ロジックは正確。差異はクラスタリングのNaN処理や距離
@@ -4430,6 +4450,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: パリティ検証時は初月を考慮すべき
   origin: '[[cmd_1271]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L479
   title: selection付きFoFのinit月はholding_signal=Noneで独立検証不可
   summary: selection blocks付きFoFの最初の月はmonthly_returns.holding_signal=Noneだがmonthly_returnは非
@@ -4443,6 +4466,9 @@ lessons:
   - scripts/analysis/grid_search/verify_fof_parity_batch.py
   origin: '[[cmd_1270]]'
   retired: true
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L478
   title: 吸収(absorption)はGS概念でありDB物理は独立PF登録
   summary: 'シン四神v2の吸収ルール(例: 朱雀-常勝=朱雀-激攻同一変種→消滅)はGS選出の概念整理であり、本番DBでは吸収対象PFも独立エントリとして全体が登録される。'
@@ -5125,6 +5151,9 @@ lessons:
   - outputs/analysis/cmd_1102_l2_parity.py
   - outputs/analysis/cmd_1116_parity_result.csv
   origin: '[[cmd_1116]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L428
   title: valid_start_date計算は全構成シンボル(relative+absolute+safe_haven+DTB3)を含めよ
   summary: GS側Fix Bがrelative_assetsのみでcommon_startを計算しsafe_haven(例:TQQQ 2010開始)が含まれず本番と不一致。
@@ -5649,6 +5678,9 @@ lessons:
   - docs/research/core-local-analysis.md
   - docs/research/ops-procedures.md
   origin: '[[cmd_1035]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L388
   title: PPE result pickleがoverhead最大要因。月次リターンndarrayのserializeが支配
   summary: IF PPE結果をmain processにreturnする THEN result pickleがオーバーヘッド最大要因になる。 50Kパターンで877ms（
@@ -6668,9 +6700,6 @@ lessons:
   - frontend/lib/api-cache.ts
   - frontend/lib/api-client.ts
   origin: '[[cmd_962]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L309
   title: static export(output:'export')アプリでは<Link>SPA遷移を使うな — window.location.hrefで統一せよ
   summary: Next.js 14.x App Router + output:'export'環境では、<Link>によるclient-side navigation(RS
@@ -6922,6 +6951,9 @@ lessons:
   - docs/research/knowledge-base/preprocessing/financial-data-analysis.md
   - docs/research/knowledge-base/preprocessing/fractional-differentiation.md
   origin: '[[cmd_861]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L293
   title: 多層防御の生命線はLayer4の上流完全独立性
   summary: '過適合防止を多層実装する場合、最終ゲート(Layer4: DSR/OOS R²/CPCV/ランク持続性)は上流Layer1-3の出力を一切参照せず生リターン系列'
@@ -7980,6 +8012,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-08'
   origin: '[[cmd_646]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L202
   title: Render Static Siteのheaders.pathはrootと配下階層を別globで覆わねば全txtを捕捉できぬ
   summary: Render公式docsの例では/*.cssと/**/*.cssが併記されており、**だけではroot直下を包含しない。Static ExportのRSC
@@ -9342,6 +9377,9 @@ lessons:
   when: dual DB読込でclose_fallback='open'を指定しても、補完されるのはclose系列が完全に空の場合のみ時
   how: dual DB読込でclose_fallback='open'を指定しても、補完されるのはclose系列が完全に空の場合のみ
   origin: '[[cmd_215]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L082
   title: monthly_returns.portfolio_id(varchar)とportfolios.id(uuid)の型不整合
   summary: monthly_returns.portfolio_idはvarchar型、portfolios.idはuuid型。SQLでJOIN/IN比較する際にid::t
@@ -9810,6 +9848,9 @@ lessons:
   when: 064_champion CSVは単一系列のため、load_monthly_returns_dual_from_csvのclose_fallback=openで同一データを使用時
   how: 064_champion CSVは単一系列のため、load_monthly_returns_dual_from_csvのclose_fallback=openで同一データを使用
   origin: '[[cmd_160]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L039
   title: 064_champion CSVとC12 UUIDは別データ。064はcmd_064時点の旧チャンピオン(143ヶ月)、C12はcmd_123登録の新パターン(177-192ヶ月)。GS比較には同一ソースデータが必須。
   summary: IF 064_champion CSVはcmd_064時点の旧チャンピオンで期間は2014-03から2026-01の143ヶ月時 THEN 064_champi
@@ -9984,7 +10025,7 @@ lessons:
   - scripts/analysis/data_sync/download_all_prices.py
   origin: '[[legacy_lesson_L025]]'
   deprecated: true
-  deprecated_at: '2026-06-26T02:32:34+09:00'
+  deprecated_at: '2026-06-26T05:03:34+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
 - id: L024
   title: signal_historyのキーはPhase 2のmonth_last_trading_daysと同型でなければならない（2026-02-15）
@@ -10103,9 +10144,6 @@ lessons:
   how: プロジェクト全体のスクリプト（`verify_dm2_parity.py` 等50件以上）は全て `requests.get(url, auth=(user,
     pw))` パターンを使用
   origin: '[[legacy_lesson_L015]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L014
   title: experiments.db と 本番DB の UUID は別体系（2026-02-14）
   summary: パリティ検証スクリプトで experiments.db のUUIDを本番APIのholding_signalと比較したら全不一致

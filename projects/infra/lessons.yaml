@@ -1,8 +1,22 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-26T01:41:14'
+last_synced: '2026-06-26T04:28:21'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 851
+lesson_count: 852
 lessons:
+- id: L857
+  title: lesson_health未振り分けALERTはID一覧まで出さないと次アクションが遅れる
+  summary: gate_lesson_health.shは未振り分け件数をALERTするが、該当ID一覧はcontextを別途抽出しないと分からない。ALERT出力に未振り分
+  tags:
+  - infra
+  - gate
+  - bash
+  - lesson
+  source_cmd: cmd_karo_hotfix_ga135_lesson_health_dm_signal_unclassified_20260626
+  when: 未設定
+  how: 未設定
+  target_files:
+  - gate_lesson_health.sh
+  origin: '[[cmd_karo_hotfix_ga135_lesson_health_dm_signal_unclassified_20260626]]'
 - id: L856
   title: 'context_freshness_check: docs/semantic-index pathspecが過広でindex.md成長更新が偽陽性ALERTを常時発火'
   summary: obsidian-link-principles.mdのsource pathspecにdocs/semantic-indexを含むため、index.mdへのa
@@ -933,9 +947,6 @@ lessons:
   - tests/unit/test_gate_shogun_startup.bats
   - skills/dream/SKILL.md
   origin: '[[cmd_karo_hotfix_startup_lesson_skill_health_20260612]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L798
   title: superseded_by運用の件数gateはactive件数で測る
   summary: projects/infra/lessons_shogun.yamlでLS052をLS048へsuperseded化してactive件数は31→30になったが、
@@ -1846,7 +1857,7 @@ lessons:
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
   deprecated: true
-  deprecated_at: '2026-06-26T01:41:45+09:00'
+  deprecated_at: '2026-06-26T04:28:50+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -2478,9 +2489,6 @@ lessons:
   - scripts/skill_recommend_metrics.sh
   - scripts/gates/gate_shogun_startup.sh
   origin: '[[cmd_3027]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L695
   title: set -e下でALERT集計scriptを呼ぶ時は終了値捕捉を明示する
   summary: startup gateはset -eで動くため、Phase 3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶと
@@ -2894,9 +2902,6 @@ lessons:
   - scripts/report_field_set.sh
   - tests/unit/test_report_field_set_validation.bats
   origin: '[[cmd_training_L7_v3_saizo_6_20260521205341]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L666
   title: idle系スクリプトのCACHE_TTLデフォルト2秒はキャッシュ効果がほぼない
   summary: gate_autofix_proposal.shのCACHE_TTLデフォルト=2秒は、idle時の頻繁呼出し(通常5-60秒間隔)に対してキャッシュが効かず毎
@@ -3691,6 +3696,9 @@ lessons:
   - skills/karo-direct/SKILL.md
   - skills/shogun-teire/SKILL.md
   origin: '[[cmd_2793]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L613
   title: 'deploy_task.sh: STKのac_assignedはinject関数で明示転記が必要'
   summary: resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from
@@ -4291,9 +4299,6 @@ lessons:
   - scripts/clear_prep_check.sh
   - skills/shogun-clear-prep/SKILL.md
   origin: '[[cmd_2603]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L572
   title: 低ROI/対応不要はスコープ縮小の隠語 — パラメータ空間縮小禁止と同根
   summary: 「低ROI」「対応不要」は作業量を理由にスコープを縮小する隠語。パラメータ空間縮小禁止(CLAUDE.md)と同根。優先順位=実行順であり全部やる。一部対処は穴
@@ -4621,9 +4626,6 @@ lessons:
   target_files:
   - deploy_task.sh
   origin: '[[cmd_karo_fix_direct_ac_loss]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L549
   title: gate/hookはflat/nested両task YAML形式をfixtureで検証
   summary: queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形
@@ -4711,9 +4713,6 @@ lessons:
   - queue/tasks/hayate.yaml (status assigned->acknowledged->in_progress)
   - queue/reports/hayate_report_cmd_karo_infra_recon_core.yaml
   origin: '[[cmd_karo_infra_recon_core]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L543
   title: bats fixtureで運用YAMLの可変IDに依存するな
   summary: CIで検証したい対象が「構造化environment_changeのfile/pattern検証」なら、projects/infra/lessons.yamlの
@@ -5362,9 +5361,6 @@ lessons:
   target_files:
   - gate_report_format.sh
   origin: '[[cmd_2063]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L495
   title: SCRIPT_DIR/SELF_SCRIPT_PATH string ops化パターン
   summary: report_field_set.sh/inbox_write.shのSCRIPT_DIRとSELF_SCRIPT_PATHで subshell(dirname
@@ -5562,6 +5558,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: '|| trueを追加することで解決'
   origin: '[[cmd_1955]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L479
   title: 計測対象のズレは盲点を構造的に生む — referenced率≠useful率
   summary: gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入
@@ -5574,6 +5573,9 @@ lessons:
   target_files:
   - gate_lesson_health.sh
   origin: '[[gunshi_codd_session_20260416]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L478
   title: bats --jobs 8並列実行で共有ファイルへの競合書き込みが発生しテストが断続的に失敗する
   summary: QUEUE_FILE/gate_pass_cache/gate_fire_log等のテスト用共有ファイルをsetup_file()で1回のみ生成すると、--jo
@@ -6142,6 +6144,9 @@ lessons:
   target_files:
   - gate_lesson_health.sh
   origin: '[[cmd_training_L4_R7]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L428
   title: deploy_task.sh内のPython utility関数が3箇所に重複(約180行)
   summary: _sv/_yaml_lines/_list_item/_safe_section_replaceが3箇所にコピペ。yaml.dump禁止の代替として各Pytho
@@ -6605,6 +6610,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: 検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる
   origin: '[[cmd_cycle_L4_063]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L388
   title: gitignoreホワイトリスト方式でのcommit不可パターン
   summary: 修行サイクルの対象ファイルがgitignoreホワイトリスト(デフォルト全除外)に未登録の場合、改善を実装してもgit commitできない。対象ファイルのco
@@ -7094,7 +7102,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-26T01:41:45+09:00'
+  deprecated_at: '2026-06-26T04:28:50+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -7545,9 +7553,6 @@ lessons:
   - deploy_task.sh
   - inject_task_modifiers.py
   origin: '[[cmd_training_structural_001]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L309
   title: '教訓注入の3構造問題: universalタグ誤分類+ファイルレベルマッチング欠如+負帰還ループ欠如'
   summary: '教訓活用率6.2%(146注入中9活用)の根因は3つ: (1)L063等がuniversalタグだが実際は極めて狭い操作範囲(Python
@@ -7734,6 +7739,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: DB操作cmdでは(1)データファイル間の参照関係(2)API必須フィールド(3)認証方式(4)必要なエンドポイントの存在を現物確認してからACを書け
   origin: '[[cmd_1397]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L293
   title: チェックリスト参照cmdでは隣接Step制約をACに転写必須
   summary: cmd_1397でチェックリストStep7(再計算禁止=殿が実行)がcmdに転写されず、影丸が再計算を実行してしまった。チェックリストを参照するcmdを書く際は
@@ -8830,6 +8838,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-10'
   origin: '[[cmd_738]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L202
   title: Compose で固定テーマ定数が広く直参照されている時は Material colorScheme 追加だけでは多テーマ化できない
   summary: 今回の Android UI は `Kinpaku` / `Zouge` / `Surface4` などの戦国色トークンを多画面で直接参照していたため、`lig
@@ -9957,7 +9968,7 @@ lessons:
   harmful_count: 0
   last_referenced: '2026-06-20'
   deprecated: true
-  deprecated_at: '2026-06-26T01:41:45+09:00'
+  deprecated_at: '2026-06-26T04:28:51+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)
@@ -10185,6 +10196,9 @@ lessons:
   target_files:
   - cli_profiles.yaml
   origin: '[[cmd_390]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L082
   title: Codexは~/.codex/を全エージェント共有。分離機構なし
   summary: CLAUDE_CONFIG_DIRのような分離機構がCodexにはない。history.jsonl・state_5.sqlite・sessions/が全Code
@@ -10676,6 +10690,9 @@ lessons:
   when: WSL2環境でUsage APIを呼び出す監視スクリプトを実装する時
   how: timeout設定を10秒以上に設定せよ
   origin: '[[cmd_314]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L038
   title: cmd_complete_gate.shテスト実行で本番lessonsにdraftが副作用で残る問題
   summary: L035の実害事例。V2検証でcmd_311に対してgate実行した際、saizo未完了状態でauto-draftが本番lessonsに書き込まれた。検証時は必
@@ -10933,9 +10950,6 @@ lessons:
   when: Claude Codeで複数アカウントを運用する時
   how: CLAUDE_CONFIG_DIRで~/.claude丸ごと切替、CLAUDE_CODE_OAUTH_TOKENで認証のみ切替を使い分けよ
   origin: '[[saizo]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L014
   title: grep --excludeはWSL2 /mnt/c上で不安定
   summary: IF grep --exclude時 THEN grep --exclude-dirやgrep --excludeはWSL2の/mnt/c(Windows

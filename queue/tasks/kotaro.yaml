@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_3540_full
+  _ac_task_id: cmd_3546_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3540 (deployed 2026-06-26T02:45:12). Read from the beginning.
-  ac_version: bcfc0564
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3546 (deployed 2026-06-26T03:47:57). Read from the beginning.
+  ac_version: f0b98a35
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -32,36 +32,36 @@ task:
   - gate実装の変更
   - 半蔵reportの編集
   parallel_ok: []
-  parent_cmd: cmd_3540
+  parent_cmd: cmd_3546
   project: dm-signal
-  purpose: cmd_3539でmetrics_impl.py L195を修正したが、同一パターン(リスト内包表記内pd.to_datetime個別呼出し)がtrades_impl.py L116/L259に残存。忍者lesson_candidateで検出済み。全数値完全一致必須
+  purpose: '殿指示(2026-06-26): ローカル検証だけでは不十分。本番環境でfullrecalculate実行前後で全PF全指標の数値が完全一致することを証明せよ'
   status: idle
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/backend/app/services
+  target_path: /mnt/c/Python_app/DM-signal/backend
   target_path_warning: '⚠ target_pathが存在しない: scripts/gates/context_freshness_check.sh'
-  task_id: cmd_3540_full
+  task_id: cmd_3546_full
   task_type: full
   related_lessons:
-  - id: 'L779'
-    summary: 'dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER'
-    detail: 'dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER'
-  - id: 'L188'
-    summary: '影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。'
-    detail: '影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。'
-  - id: 'L529'
-    summary: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
-    detail: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
+  - id: 'L294'
+    summary: 'cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想'
+    detail: 'cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想'
+  - id: 'L203'
+    summary: 'xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール'
+    detail: 'xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール'
+  - id: 'L040'
+    summary: 'IF WSL2環境でUsage APIを呼び出す監視スクリプトを実装する時 THEN timeout設定を10秒以上に設定せよ'
+    detail: 'IF WSL2環境でUsage APIを呼び出す監視スクリプトを実装する時 THEN timeout設定を10秒以上に設定せよ'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/auto_draft_lesson.sh scripts/sync_lessons.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml docs/research/gunshi_idle_insights_consumption_bottleneck_20260515.md — 軍師idle: インサイト消費ボトルネック分析(2026-05-15) docs/research/gunshi_idle_knowledge_burial_audit_20260505.md — 軍師idle: 知識埋没監査(2026-05-05) docs/research/gunshi_idle_lesson_dedup_20260413.md — 軍師idle: 教訓重複排除分析(2026-04-13) docs/research/gunshi_idle_lesson_effectiveness_20260413.md — 軍師idle: 教訓有効性測定(2026-04-13) docs/research/gunshi_idle_lesson_impact_20260412.md — 軍師idle: 教訓インパクト分析(2026-04-12) docs/research/gunshi_idle_lesson_injection_dual_track_20260428.md — 軍師idle: 教訓注入デュアルトラック設計(2026-04-28) docs/research/gunshi_idle_lesson_injection_quality_20260605.md — 軍師idle: 教訓注入品質監査(2026-06-05) docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md — 軍師idle: 教訓注入汎用バイパス問題(2026-06-02) docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md — 軍師idle: 教訓参照率分析(2026-04-30) docs/research/gunshi_idle_lesson_tag_mismatch_20260507.md — 軍師idle: 教訓タグ不一致分析(2026-05-07) docs/research/gunshi_idle_lesson_useful_rate_20260422.md — 軍師idle: 教訓有用率計測(2026-04-22) docs/research/gunshi_idle_lesson_useful_rate_20260503.md — 軍師idle: 教訓有用率計測v2(2026-05-03) docs/research/gunshi_idle_lesson_useful_rate_20260608.md — 軍師idle: 教訓有用率計測v3(2026-06-08) docs/research/gunshi_idle_lesson_waste_analysis_20260516.md — 軍師idle: 教訓無駄分析(2026-05-16) docs/research/gunshi_idle_lesson_useful_rate_improvement_20260620.md — 軍師idle: 教訓有用率改善分析(2026-06-20) docs/research/gunshi_idle_session_lessons_20260617.md — 軍師idle: セッション教訓分析(2026-06-17) docs/research/gunshi_idle_session_lessons_20260618.md — 軍師idle: セッション教訓分析(2026-06-18) docs/research/gunshi_idle_self_run_20260624.md — 軍師idle: idle自走Step1-8完了分析(2026-06-24) docs/research/gunshi_idle_useful_rate_bootstrap_analysis_20260618.md — 軍師idle: 有用率ブートストラップ分析(2026-06-18) docs/research/lessons_karo_v3_archive.md — 家老教訓v3アーカイブ(統合前全文保存)"
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
+  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh docs/research/gunshi_idle_brainwash_audit_20260624.md docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)"
+  - "recalculate_pipeline — 再計算パイプライン:  /mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fast.py context/dm-signal-core.md §19.2 docs/research/fullrecalculate-architecture-2026-03-28.md /mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fof.py /mnt/c/Python_app/DM-signal/backend/app/jobs/shared.py preload_fof_signals_for_portfolios"
   related_causal_links:
-  - "[[cmd_3539_lesson_candidate]]"
-  - "[[trades_impl同一パターン残存]]"
-  - "[[横展開修正]]"
+  - "[[fullrecalculate前後完全一致証明]]"
+  - "[[本番数値未検証]]"
+  - "[[殿指摘_ローカル検証は洗脳_20260626]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -71,37 +71,34 @@ task:
   - "context/robustness-verification-catalog.md"
   - "context/gs-speedup-knowledge.md"
   - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
-  - "context/training-cycle.md"
   production_invariants:
   - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
   - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
   - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
   - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
   - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
+  execution_env: "Linux venv必須。RSS計測=/usr/bin/time -v。PowerShell/Windows python禁止(cmd_3496事故)"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L779: dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER
-      - L188: 影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。
-      - L529: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を
+      - L294: cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想
+      - L203: xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール
+      - L040: IF WSL2環境でUsage APIを呼び出す監視スクリプトを実装する時 THEN timeout設定を10秒以上に設定せよ
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - '2026-06-26T02:33:10+09:00 | 殿、cmd_3538(PFリンク)とcmd_3539(metrics速度改善)の両方がGATE CLEAR。陣形図でsaizo=completed確認済み。 本セッション全cmd完了。殿の次の指示があ'
-  - '2026-06-26T02:32:25+09:00 | cmd_3539報告レビュー完了。LGTM。 **殿への成果報告**: 軍師がプロファイリングで特定した速度バグ(pd.to_datetime 15,122回)を才蔵が修正。764ms→4ms(99.'
-  - '2026-06-26T02:30:36+09:00 | cmd_3539完了。 **実施内容**: - `metrics_impl.py` L195: リスト内包表記内の `pd.to_datetime` 個別呼出し（15,122回）をベクトル化1回に変換'
-  - '2026-04-09T08:19:43+09:00 | **根本原因が判明した。** 殿、報告する。 **根因: `MainActivity.kt L195`の`NavigationBar(modifier = Modifier.imePadding())'
-  - '2026-06-26T02:44:24+09:00 | 殿、残存速度バグ3箇所を特定: | # | ファイル | 行 | 用途 | |---|---|---|---| | 1 | trades_impl.py | L116 | Trades計算(API) '
+  - '2026-06-26T03:17:41+09:00 | 【INFOバッチ】 2026-06-26 03:01:17|cmd_3541 2026-06-26 03:15:03|CI緑: run 28190411780'
+  - '2026-06-26T03:01:05+09:00 | 【INFOバッチ】 2026-06-26 02:52:14|cmd_3540'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'trades_impl.py L116/L259のpd.to_datetime個別呼出しをベクトル化に変換し、修正前後で全出力値が完全一致すること'
+    - check: 'Render本番の全PF全指標スナップショットを/api/signals+/api/metricsから取得し保存すること'
   - id: 'AC2'
     checks:
-    - check: '既存テスト(python -m pytest tests/)が全PASSすること'
+    - check: 'Render本番でfullrecalculateを実行し、全PF全指標の実行前後差分がゼロであること'
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_3540.yaml
-  report_path: queue/reports/kotaro_report_cmd_3540.yaml
+  report_filename: kotaro_report_cmd_3546.yaml
+  report_path: queue/reports/kotaro_report_cmd_3546.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -130,4 +127,4 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-06-26T02:45:37"
+  deployed_at: "2026-06-26T03:48:33"

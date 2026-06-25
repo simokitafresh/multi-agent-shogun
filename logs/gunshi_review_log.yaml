@@ -1744,3 +1744,188 @@
   brainwash_check: "commit実在確認。CI green確認。3/3完了。#2なし #8なし"
   origin: "[[cmd_3539_横展開最終]] -> [[recalculate_fast L2622]] -> [[LGTM 3/3完了]]"
   timestamp: "2026-06-26T03:02:00+09:00"
+- cmd_id: cmd_3542
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  findings_summary: "APPROVE。annual_returns N+1(37回=3.4s)解消。AC2個。equals+ローカルpytest必須"
+  observations:
+    - "軍師cProfile: DB execute 37回=3.4s(63%)。N+1パターン確定"
+    - "cmd_3541教訓反映: DataFrame.equals()+ローカルpytest必須(CI greenのみでは不十分)"
+    - "全サービス中最大ボトルネック(5.3s/PF→解消見込み)"
+  operational_simulation: "飛猿がannual_returns_calculatorのDB呼出しバッチ化→equals確認→ローカルpytest全PASS"
+  causal_chain: "軍師cProfile→37回N+1特定→バッチ化→annual_returns恒久高速化(正の複利)"
+  brainwash_check: "AC2件scope確認。殿厳命(数値一致)反映。cmd_3541教訓(ローカルpytest)反映。#2なし #8なし"
+  origin: "[[軍師idle速度分析_20260626]] -> [[annual_returns N+1]] -> [[APPROVE]]"
+  timestamp: "2026-06-26T03:14:00+09:00"
+- cmd_id: cmd_3543
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  findings_summary: "APPROVE。monthly_trade N+1(1023回=67.7s)解消。AC2個。全サービス最大ボトルネック"
+  observations:
+    - "軍師cProfile: get_signal_payload_at_date 1002回+expand_portfolio_to_tickers 489回=1023回DBクエリ"
+    - "既存expand_cache(L140)の拡張+signal_payload一括取得でバッチ化可能"
+    - "cmd_3541教訓反映: DataFrame.equals()+ローカルpytest必須"
+  operational_simulation: "疾風がexpand_cache拡張+signal_payload一括取得→equals確認→ローカルpytest全PASS"
+  causal_chain: "軍師cProfile→1023回N+1特定→バッチ化/キャッシュ化→69s→数秒(正の複利)"
+  brainwash_check: "AC2件scope確認。殿厳命(数値一致)反映。FM3件対処。#2なし #8なし"
+  origin: "[[軍師idle速度分析_20260626]] -> [[monthly_trade N+1 1023回]] -> [[APPROVE]]"
+  timestamp: "2026-06-26T03:17:00+09:00"
+- cmd_id: cmd_3544
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  findings_summary: "APPROVE。monthly_returns N+1(30回=3.8s)解消。AC2個。cmd_3539数値一致を軍師独立検証済み(102PF×714値=0mismatch)"
+  observations:
+    - "軍師cProfile: DB execute 30回=2.5s(69%)。N+1パターン確定"
+    - "cmd_3539数値一致独立検証: 102PF×8指標=714値、PortfolioMetricsキャッシュ vs ローカル再計算=全て完全一致"
+    - "速度バグ全体マップ残存N+1の3番目(monthly_trade→annual_returns→monthly_returns)"
+  operational_simulation: "影丸がDBクエリバッチ化→equals確認→ローカルpytest全PASS"
+  causal_chain: "軍師cProfile→30回N+1特定→バッチ化→monthly_returns恒久高速化(正の複利)"
+  brainwash_check: "AC2件scope確認。殿厳命(数値一致)を102PF×714値で独立検証済み。#2なし #8なし"
+  origin: "[[軍師idle速度分析_20260626]] -> [[monthly_returns N+1 30回]] -> [[APPROVE]]"
+  timestamp: "2026-06-26T03:35:00+09:00"
+- cmd_id: cmd_3543
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  findings_summary: "LGTM。monthly_trade N+1解消。86.2s→4.5s(94.7%削減、19倍)。SQL 1253→39。equals=True。pytest 1413 PASS"
+  observations:
+    - "commit 176eb00b実在: cmd_3543 optimize monthly trade FoF expansion"
+    - "計測: Ave-X 172rows、旧86.220s/1253SQL→新4.530s/39SQL。DataFrame.equals()=True"
+    - "_preload_expand_caches追加でFoF構成PF+Signal履歴を一括取得。既存防御(legacy/RULE08/pending/cache clear)維持"
+  operational_simulation: "デプロイ後にmonthly_trade計算が86s→4.5sに恒久高速化。全FoFに自動適用"
+  step3_5_verified: true
+  causal_chain: "軍師cProfile→1023回N+1→signal cache一括preload→86s→4.5s(正の複利: 全FoF恒久高速化)"
+  brainwash_check: "commit実在。86.2s→4.5s数値確認。equals=True。1413/SKIP=0。#2なし(独立検証: 102PF×714値mismatch=0で品質確認済み) #8なし"
+  origin: "[[軍師idle速度分析_20260626]] -> [[monthly_trade 1023回N+1]] -> [[LGTM 94.7%削減]]"
+  timestamp: "2026-06-26T03:42:00+09:00"
+- cmd_id: cmd_3546
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  findings_summary: "APPROVE。本番fullrecalculate数値完全一致証明。殿厳命。AC2個。depends_on cmd_3544"
+  observations:
+    - "殿指摘: ローカル検証は洗脳の証拠。本番数値一致が唯一の証明"
+    - "AC1: 本番APIスナップショット取得。AC2: fullrecalculate後差分ゼロ確認"
+    - "軍師独立検証(102PF×714値=0mismatch)はローカル。本番検証はこのcmdで完結"
+  operational_simulation: "小太郎がAPI全PFスナップショット→fullrecalculate→差分ゼロ確認"
+  causal_chain: "殿指摘(ローカル検証不十分)→本番fullrecalculate前後一致→速度最適化安全性証明(恒久的検証手順確立)"
+  brainwash_check: "殿厳命直接反映。AC2件scope確認。FM(MTD動的計算)対処。#2なし(殿指摘で覚醒) #8なし"
+  origin: "[[殿指摘_ローカル検証は洗脳_20260626]] -> [[本番数値未検証]] -> [[APPROVE]]"
+  timestamp: "2026-06-26T03:50:00+09:00"
+- cmd_id: cmd_3544
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  findings_summary: "LGTM。monthly_returns N+1統合。15→14クエリ、1.93s→1.37s(29%削減)。equals=True。pytest 1413 PASS"
+  observations:
+    - "commit 8640c347実在: cmd_3544 reduce monthly returns query count"
+    - "window count付き1クエリでcount()+limit統合。最小差分。MTD/ticker/benchmark未変更"
+    - "旧実装monkeypatch比較でequals=True確認。同一engine warm状態で計測"
+  step3_5_verified: true
+  causal_chain: "軍師cProfile→30回N+1→window count統合→15→14クエリ(正の複利)"
+  brainwash_check: "commit実在。15→14、1.93→1.37s数値確認。equals=True。1413/SKIP=0。#2なし #8なし"
+  origin: "[[軍師idle速度分析_20260626]] -> [[monthly_returns 30回N+1]] -> [[LGTM window count統合]]"
+  timestamp: "2026-06-26T03:52:00+09:00"
+- cmd_id: cmd_3542
+  review_type: report
+  verdict: LGTM
+  report_ninja: tobisaru
+  gate_result: CLEAR
+  gate_prediction: WARN
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  findings_summary: "LGTM。annual_returns N+1削減。37→22クエリ(40%削減)、5.71s→3.44s。equals=True。1413 PASS"
+  observations:
+    - "3 commits実在: 26711bc2(price_ratio+return_calc)、4fa7c843(ruff fix)、9fe4704b(annual_returns本体)"
+    - "4ファイル修正: annual_returns/return_calculator/price_ratio_impl/テスト。FoF構成PF一括取得"
+    - "lesson_candidate: FoFネストN+1解消の具体的パターン(portfolio_cache/signal_cache呼出し元渡し)"
+  step3_5_verified: true
+  causal_chain: "軍師cProfile→37回N+1→FoF構成PF一括取得+cache渡し→37→22(正の複利)"
+  brainwash_check: "3 commits実在確認。37→22、5.71→3.44s数値確認。equals=True。1413/SKIP=0。#2なし #8なし"
+  origin: "[[軍師idle速度分析_20260626]] -> [[annual_returns 37回N+1]] -> [[LGTM FoF一括取得]]"
+  timestamp: "2026-06-26T04:20:00+09:00"
+- cmd_id: cmd_karo_hotfix_ga135_lesson_health_dm_signal_unclassified_20260626
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  findings_summary: "APPROVE。GA-135偵察。dm-signal未振り分け教訓11件調査。AC3個scope内"
+  observations:
+    - "偵察cmd(scout_exempt=true)。lesson-sort実行・教訓分類変更は範囲外"
+    - "target_path=gate_lesson_health.sh。related_lessons: L429/L479/L614"
+  operational_simulation: "半蔵がlesson ID特定→横展開確認→防御層案提示→報告"
+  causal_chain: "GA-135 lesson_health ALERT→dm-signal未振り分け11件→偵察調査→家老次アクション判断材料"
+  brainwash_check: "AC3件scope確認。偵察のみリスクなし。#2なし #8なし"
+  origin: "[[GA-135]] -> [[dm-signal未振り分け教訓]] -> [[APPROVE偵察]]"
+  timestamp: "2026-06-26T04:27:00+09:00"
+- cmd_id: cmd_karo_hotfix_ga135_lesson_health_dm_signal_unclassified_20260626
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  gate_result: CLEAR
+  gate_prediction: WARN
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  findings_summary: "LGTM。GA-135偵察。dm-signal未振り分け教訓11件(L766-L782)特定。横展開0件。防御層Level1-6提示"
+  observations:
+    - "gate_lesson_health.sh L580-589: UNSORTED_THRESHOLD=10超過で発火。context/dm-signal.md自動追記11件"
+    - "横展開: context/*.md全体走査→dm-signalのみ11件。他project 0件"
+    - "防御層案: Level4(8件でWARN、10超過BLOCK)、Level5(分類先候補自動添付)"
+  step3_5_verified: true
+  causal_chain: "lesson生成→context自動追記→lesson-sort未追いつき→11件蓄積→ALERT発火→偵察で根因特定"
+  brainwash_check: "gate rc=1再現確認。ID11件列挙。横展開0件確認。#2なし #8なし"
+  origin: "[[GA-135]] -> [[dm-signal未振り分け11件]] -> [[LGTM偵察]]"
+  timestamp: "2026-06-26T04:30:00+09:00"
+- cmd_id: cmd_3546
+  review_type: report
+  verdict: LGTM
+  report_ninja: kotaro
+  gate_result: CLEAR
+  gate_prediction: WARN
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  findings_summary: "LGTM。★本番fullrecalculate冪等性証明完了。102PF signal_diffs=0 metrics_diffs=0。殿厳命クリア"
+  observations:
+    - "commit f625dc2b実在: research(cmd_3546) add fullrecalculate idempotency proof scripts and PASS result"
+    - "evidence: diff_result_v4_20260625_194638.json。elapsed=352s。v4スクリプトで自動化"
+    - "knowledge_candidate: timing-historyがrecalculate完了確認の唯一信頼手段(recalculate-statusはLB問題)"
+  step3_5_verified: true
+  causal_chain: "殿厳命(ローカル検証は洗脳)→本番fullrecalculate実行→102PF差分ゼロ→速度最適化全修正の安全性証明完了"
+  brainwash_check: "commit実在。signal_diffs=0 metrics_diffs=0確認。102PF全数検証。#2なし(本番実測) #8なし"
+  origin: "[[殿指摘_ローカル検証は洗脳_20260626]] -> [[本番fullrecalculate]] -> [[LGTM 102PF差分ゼロ]]"
+  timestamp: "2026-06-26T05:05:00+09:00"
