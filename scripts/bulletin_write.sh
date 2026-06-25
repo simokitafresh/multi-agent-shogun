@@ -111,6 +111,45 @@ normalize_action_type() {
     esac
 }
 
+compute_notify_targets() {
+    local posted_by="$1"
+    local raw_targets=""
+    local token=""
+    local normalized=()
+    local i=0
+    local joined=""
+    declare -A seen=()
+
+    if [[ -n "${BULLETIN_NOTIFY:-}" ]]; then
+        raw_targets="$BULLETIN_NOTIFY"
+    else
+        raw_targets="shogun,karo,gunshi"
+    fi
+
+    IFS=',' read -ra _bw_nt_tokens <<< "$raw_targets"
+    for token in "${_bw_nt_tokens[@]}"; do
+        token="${token#"${token%%[![:space:]]*}"}"
+        token="${token%"${token##*[![:space:]]}"}"
+        [[ -z "$token" ]] && continue
+        [[ "$token" == "$posted_by" ]] && continue
+        if [[ -z "${seen[$token]+x}" ]]; then
+            normalized+=("$token")
+            seen["$token"]=1
+        fi
+    done
+
+    if [[ ${#normalized[@]} -eq 0 ]]; then
+        printf '\n'
+        return 0
+    fi
+
+    joined="${normalized[0]}"
+    for ((i = 1; i < ${#normalized[@]}; i++)); do
+        joined+=",${normalized[$i]}"
+    done
+    printf '%s\n' "$joined"
+}
+
 POSTED_BY=""
 if [[ $# -ge 2 ]] && is_known_agent "$1"; then
     POSTED_BY="$1"
@@ -170,6 +209,7 @@ ACTION_TYPE="$(normalize_action_type "$ACTION_TYPE")"
 if [[ -n "${BULLETIN_NOTIFY:-}" ]]; then
     BULLETIN_NOTIFY="$(normalize_csv_agents "$BULLETIN_NOTIFY" "BULLETIN_NOTIFY")"
 fi
+NOTIFY_TARGETS_CSV="$(compute_notify_targets "$POSTED_BY")"
 
 DATE_FIELDS="$(date '+%Y-%m-%dT%H:%M:%S %s%N %Y%m%d_%H%M%S')"
 read -r POSTED_AT DATE_NANOS ENTRY_STAMP <<< "$DATE_FIELDS"
@@ -253,6 +293,15 @@ PY
         esac
         printf "  action_type: '%s'\n" "$(_bw_sq "$ACTION_TYPE")"
         printf "  actioned_by: ''\n"
+        if [[ -n "$NOTIFY_TARGETS_CSV" ]]; then
+            printf "  notify_targets:\n"
+            IFS=',' read -ra _bw_nt_agents <<< "$NOTIFY_TARGETS_CSV"
+            for _bw_nt_a in "${_bw_nt_agents[@]}"; do
+                [[ -n "$_bw_nt_a" ]] && printf "    - '%s'\n" "$(_bw_sq "$_bw_nt_a")"
+            done
+        else
+            printf "  notify_targets: []\n"
+        fi
         printf "  confirmed_by: []\n"
         printf "  status: 'open'\n"
     } > "${BULLETIN_FILE}.new_entry"
@@ -315,24 +364,22 @@ INBOX_WRITE="$SCRIPT_DIR/scripts/inbox_write.sh"
 if [[ -f "$INBOX_WRITE" ]]; then
     # BULLETIN_NOTIFY: 環境変数で通知先を限定可能(カンマ区切り)
     # 未指定時は将軍+家老+軍師の全3者
-    if [[ -n "${BULLETIN_NOTIFY:-}" ]]; then
-        IFS=',' read -ra NOTIFY_TARGETS <<< "$BULLETIN_NOTIFY"
+    if [[ -n "$NOTIFY_TARGETS_CSV" ]]; then
+        IFS=',' read -ra NOTIFY_TARGETS <<< "$NOTIFY_TARGETS_CSV"
     else
-        NOTIFY_TARGETS=("shogun" "karo" "gunshi")
+        NOTIFY_TARGETS=()
     fi
     # GP-208: 掲示板全文をinboxに含める。80文字要約→全文。
     # 理由: 通知だけでは読みに行く行動は強制できない。
     # inboxを読む行動は既に強制されている(startup gate+stop hook)。
     # その中に全文があれば、別途掲示板を読みに行く必要がない。
     for target in "${NOTIFY_TARGETS[@]}"; do
-        if [[ "$target" != "$POSTED_BY" ]]; then
-            if ! bash "$INBOX_WRITE" "$target" "掲示板新規投稿($ENTRY_ID): ${CONTENT}" bulletin_notify "$POSTED_BY" 2>/dev/null; then
-                echo "[bulletin_write] WARN: inbox_write failed for ${target} — bulletin notification not delivered" >&2
-                continue
-            fi
-            if ! pgrep -f "inbox_watcher.sh ${target}" >/dev/null 2>&1; then
-                echo "[bulletin_write] WARN: inbox_watcher not running for ${target} — nudge may be lost" >&2
-            fi
+        if ! bash "$INBOX_WRITE" "$target" "掲示板新規投稿($ENTRY_ID): ${CONTENT}" bulletin_notify "$POSTED_BY" 2>/dev/null; then
+            echo "[bulletin_write] WARN: inbox_write failed for ${target} — bulletin notification not delivered" >&2
+            continue
+        fi
+        if ! pgrep -f "inbox_watcher.sh ${target}" >/dev/null 2>&1; then
+            echo "[bulletin_write] WARN: inbox_watcher not running for ${target} — nudge may be lost" >&2
         fi
     done
 fi

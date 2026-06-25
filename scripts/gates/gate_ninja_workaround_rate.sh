@@ -44,11 +44,13 @@ fi
 # WSL2 NTFS最適化: python3起動(150ms)をmtimeキャッシュで回避
 _WA_CACHE="/tmp/shogun_wa_rate_cache_${NINJA_FILTER:-all}_${LAST_N}.txt"
 _WA_MTIME=$(stat -c%Y "$WA_FILE" 2>/dev/null || echo 0)
-_WA_CACHED_MTIME=-1
+_WA_SELF_MTIME=$(stat -c%Y "${BASH_SOURCE[0]}" 2>/dev/null || echo 0)
+_WA_CACHE_SIG="${_WA_MTIME}:${_WA_SELF_MTIME}"
+_WA_CACHED_SIG=""
 if [ -f "$_WA_CACHE" ]; then
-    IFS= read -r _WA_CACHED_MTIME < "$_WA_CACHE" || _WA_CACHED_MTIME=-1
+    IFS= read -r _WA_CACHED_SIG < "$_WA_CACHE" || _WA_CACHED_SIG=""
 fi
-if [ "$_WA_MTIME" = "$_WA_CACHED_MTIME" ] && [ -f "$_WA_CACHE" ]; then
+if [ "$_WA_CACHE_SIG" = "$_WA_CACHED_SIG" ] && [ -f "$_WA_CACHE" ]; then
     sed '1d' "$_WA_CACHE"
     exit 0
 fi
@@ -98,6 +100,18 @@ function extract_ninja(explicit, detail, root_cause, issue, workaround_detail, t
     if (index(text, "tobisaru") > 0) return "tobisaru"
     return "unknown"
 }
+function effective_category(cat, detail, root_cause, issue, workaround_detail, text) {
+    text = tolower(detail " " root_cause " " issue " " workaround_detail)
+    if (cat == "commit_missing") {
+        if (text ~ /commit_hash|files_modified|command_files_modified_mismatch|偵察commit不要|commit不要|binary_checks\.commit|報告yaml.*commit|report.*commit/) {
+            return "report_yaml_format"
+        }
+        if (text !~ /commit.*漏れ|commit.*なし|commit.*missing|コミット.*漏れ|コミット.*なし|未commit|未コミット|untracked|modified/) {
+            return "uncategorized"
+        }
+    }
+    return cat
+}
 function reset_current() {
     current_cmd = ""
     current_ninja = ""
@@ -136,7 +150,7 @@ function flush_current(    ninja, wa) {
     entry_count++
     entry_ninja[entry_count] = ninja
     entry_wa[entry_count] = wa
-    entry_cat[entry_count] = current_category
+    entry_cat[entry_count] = effective_category(current_category, current_detail, current_root_cause, current_issue, current_workaround_detail)
     entry_cmd[entry_count] = (current_cmd == "" ? "?" : current_cmd)
     reset_current()
 }
@@ -328,7 +342,7 @@ END {
 ' "$WA_FILE" > "$_WA_TMP" 2>/dev/null || true
 
 {
-    echo "$_WA_MTIME"
+    echo "$_WA_CACHE_SIG"
     cat "$_WA_TMP"
 } > "$_WA_CACHE" 2>/dev/null || true
 cat "$_WA_TMP"

@@ -36,7 +36,13 @@ def classify_category(text):
                  r'フォーマット|lesson_candidate|verdict.*CONDITIONAL|report.*ラップ|'
                  r'旧形式|FILL_THIS|fields.*欠落', text, re.IGNORECASE):
         return "report_yaml_format"
-    if re.search(r'commit.*漏れ|commit.*なし|commit.*missing|uncommit', text, re.IGNORECASE):
+    if re.search(r'commit_hash|files_modified|command_files_modified_mismatch|'
+                 r'偵察commit不要|commit不要|binary_checks\.commit|報告YAML.*commit|'
+                 r'report.*commit', text, re.IGNORECASE):
+        return "report_yaml_format"
+    if re.search(r'commit.*漏れ|commit.*なし|commit.*missing|コミット.*漏れ|'
+                 r'コミット.*なし|未commit|未コミット|uncommit|untracked|modified',
+                 text, re.IGNORECASE):
         return "commit_missing"
     if re.search(r'消失|missing|not found|stale.*report|空テンプレート|報告YAML消失|'
                  r'報告.*欠損|テンプレート残存', text, re.IGNORECASE):

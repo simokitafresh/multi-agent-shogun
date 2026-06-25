@@ -254,18 +254,21 @@ classify_category() {
     local issue="$1"
     local pattern_report="lessons_useful|binary_checks|lesson_candidate|report_field_set|verdict|ac_version|report.*フォーマット|フォーマット|(dict|list|string).*(→|変換|形式)"
     local pattern_disappear="消失|missing|not found|消失|不在"
-    local pattern_commit="commit|コミット|git commit|untracked|modified"
+    local pattern_report_commit_meta="commit_hash|files_modified|command_files_modified_mismatch|偵察commit不要|commit不要|binary_checks\\.commit|報告YAML.*commit|report.*commit"
+    local pattern_commit_missing="commit.*漏れ|commit.*なし|commit.*missing|コミット.*漏れ|コミット.*なし|未commit|未コミット|untracked|modified"
     local pattern_stale="stale|古い|残骸|旧cmd|残存"
     local pattern_double="二重|double|重複配備|二重配備"
     local pattern_redeploy="再配備|redeploy|task_redeploy"
     local pattern_report_missing="報告.*未作成|report.*未作成|報告YAML.*未|report_yaml_missing"
     if [[ "$issue" =~ $pattern_report ]]; then
         echo "report_yaml_format"
+    elif [[ "$issue" =~ $pattern_report_commit_meta ]]; then
+        echo "report_yaml_format"
     elif [[ "$issue" =~ $pattern_report_missing ]]; then
         echo "report_missing"
     elif [[ "$issue" =~ $pattern_disappear ]]; then
         echo "file_disappearance"
-    elif [[ "$issue" =~ $pattern_commit ]]; then
+    elif [[ "$issue" =~ $pattern_commit_missing ]]; then
         echo "commit_missing"
     elif [[ "$issue" =~ $pattern_stale ]]; then
         echo "stale_report"

@@ -925,35 +925,59 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
                     unread_cmd_new_items = unread_cmd_new_items (unread_cmd_new_items != "" ? "; " : "") item
                 }
             }
+            if (inbox_entry && inbox_read_true && inbox_content != "" &&
+                (inbox_type == "skill_hint" ||
+                 inbox_content ~ /(実行せよ|配備せよ|future fix|変更対象|即修正候補|対応せよ)/)) {
+                read_actionable_key = inbox_id "|" inbox_type
+                if (!(read_actionable_key in read_actionable_seen)) {
+                    read_actionable_seen[read_actionable_key] = 1
+                    read_actionable++
+                    if (read_actionable <= 5) {
+                        item = inbox_id
+                        if (item == "") item = "unknown"
+                        if (inbox_ts != "") item = item "@" inbox_ts
+                        if (inbox_type != "") item = item " [" inbox_type "]"
+                        if (inbox_content != "") item = item " " inbox_content
+                        gsub(/\|/, "/", item)
+                        read_actionable_items = read_actionable_items (read_actionable_items != "" ? "; " : "") item
+                    }
+                }
+            }
             inbox_entry = 1
             inbox_read_false = 0
+            inbox_read_true = 0
             inbox_type = ""
             inbox_id = ""
             inbox_ts = ""
             inbox_content = ""
         }
         if (/read: false/) unread++
-        if (inbox_entry && /^[[:space:]]*type:/) {
+        if (inbox_entry && (/^[[:space:]]*type:/ || /^-[[:space:]]*type:/)) {
             inbox_type = $0
+            sub(/^-[[:space:]]*/, "", inbox_type)
             sub(/^[[:space:]]*type:[[:space:]]*/, "", inbox_type)
             gsub(/["'"'"']/, "", inbox_type)
             gsub(/[[:space:]]+$/, "", inbox_type)
         }
-        if (inbox_entry && /^[[:space:]]*read:[[:space:]]*false/) inbox_read_false = 1
-        if (inbox_entry && /^[[:space:]]*id:/) {
+        if (inbox_entry && (/^[[:space:]]*read:[[:space:]]*false/ || /^-[[:space:]]*read:[[:space:]]*false/)) inbox_read_false = 1
+        if (inbox_entry && (/^[[:space:]]*read:[[:space:]]*true/ || /^-[[:space:]]*read:[[:space:]]*true/)) inbox_read_true = 1
+        if (inbox_entry && (/^[[:space:]]*id:/ || /^-[[:space:]]*id:/)) {
             inbox_id = $0
+            sub(/^-[[:space:]]*/, "", inbox_id)
             sub(/^[[:space:]]*id:[[:space:]]*/, "", inbox_id)
             gsub(/["'"'"']/, "", inbox_id)
             gsub(/[[:space:]]+$/, "", inbox_id)
         }
-        if (inbox_entry && /^[[:space:]]*timestamp:/) {
+        if (inbox_entry && (/^[[:space:]]*timestamp:/ || /^-[[:space:]]*timestamp:/)) {
             inbox_ts = $0
+            sub(/^-[[:space:]]*/, "", inbox_ts)
             sub(/^[[:space:]]*timestamp:[[:space:]]*/, "", inbox_ts)
             gsub(/["'"'"']/, "", inbox_ts)
             gsub(/[[:space:]]+$/, "", inbox_ts)
         }
-        if (inbox_entry && /^[[:space:]]*content:/) {
+        if (inbox_entry && (/^[[:space:]]*content:/ || /^-[[:space:]]*content:/)) {
             inbox_content = $0
+            sub(/^-[[:space:]]*/, "", inbox_content)
             sub(/^[[:space:]]*content:[[:space:]]*/, "", inbox_content)
             gsub(/["'"'"']/, "", inbox_content)
             gsub(/^[[:space:]]+|[[:space:]]+$/, "", inbox_content)
@@ -1102,6 +1126,24 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
                 unread_cmd_new_items = unread_cmd_new_items (unread_cmd_new_items != "" ? "; " : "") item
             }
         }
+        if (inbox_entry && inbox_read_true && inbox_content != "" &&
+            (inbox_type == "skill_hint" ||
+             inbox_content ~ /(実行せよ|配備せよ|future fix|変更対象|即修正候補|対応せよ)/)) {
+            read_actionable_key = inbox_id "|" inbox_type
+            if (!(read_actionable_key in read_actionable_seen)) {
+                read_actionable_seen[read_actionable_key] = 1
+                read_actionable++
+                if (read_actionable <= 5) {
+                    item = inbox_id
+                    if (item == "") item = "unknown"
+                    if (inbox_ts != "") item = item "@" inbox_ts
+                    if (inbox_type != "") item = item " [" inbox_type "]"
+                    if (inbox_content != "") item = item " " inbox_content
+                    gsub(/\|/, "/", item)
+                    read_actionable_items = read_actionable_items (read_actionable_items != "" ? "; " : "") item
+                }
+            }
+        }
         if (ins_id != "" && ins_status == "pending") {
             pending_insights++
             pending_insight_id[pending_insights] = ins_id
@@ -1114,6 +1156,7 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         }
         print "UNREAD|" unread+0
         print "UNREAD_CMD_NEW|" unread_cmd_new+0 "|" unread_cmd_new_items
+        print "READ_ACTIONABLE|" read_actionable+0 "|" read_actionable_items
         print "INSIGHTS|" pending_insights+0
         insight_start = pending_insights - 2
         if (insight_start < 1) insight_start = 1
@@ -1188,6 +1231,7 @@ while IFS='|' read -r _agg_key _agg_a _agg_b _agg_c _agg_d _agg_e _agg_f; do
         STATUS) _NINJA_STATUS_CACHE[$_agg_a]=$_agg_b ;;
         UNREAD) unread=${_agg_a:-0} ;;
         UNREAD_CMD_NEW) unread_cmd_new=${_agg_a:-0}; unread_cmd_new_items=${_agg_b:-} ;;
+        READ_ACTIONABLE) read_actionable=${_agg_a:-0}; read_actionable_items=${_agg_b:-} ;;
         INSIGHTS) _insight_pending_count=${_agg_a:-0} ;;
         INSIGHT_ITEM) _insight_recent_items="${_insight_recent_items}    ${_agg_a} [${_agg_b:-medium}] ${_agg_c}"$'\n' ;;
         GP) _gp_pending_count=${_agg_a:-0} ;;
@@ -1369,6 +1413,14 @@ if [ -f "$SCRIPT_DIR/queue/inbox/karo.yaml" ]; then
         if [ "$overall" != "ALERT" ]; then
             overall="WARN"
             alerts+=("inbox未読: ${unread}件")
+        fi
+    fi
+    if [ "${read_actionable:-0}" -gt 0 ]; then
+        echo "  WARN: 既読actionable候補 ${read_actionable}件。read=trueを処理済みと見なすな"
+        [ -n "${read_actionable_items:-}" ] && echo "    ${read_actionable_items}"
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("既読actionable候補: ${read_actionable}件")
         fi
     fi
 else
