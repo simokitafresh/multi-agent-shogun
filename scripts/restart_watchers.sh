@@ -126,7 +126,8 @@ source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 
 for name in $(get_all_agents); do
-    pane=$(pane_lookup "$name" 2>/dev/null)
+    [[ "$name" == "shogun" ]] && continue  # 将軍は行115-120で別途起動済み
+    pane=$(pane_lookup "$name" 2>/dev/null) || true
     [[ -z "$pane" ]] && continue
     _cli=$(tmux show-options -p -t "$pane" -v @agent_cli 2>/dev/null || echo "claude")
     unset ASW_DISABLE_ESCALATION
