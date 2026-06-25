@@ -2008,6 +2008,40 @@ grep "^idle|saizo,kagemaru$" "$snapshot"
     [ "$status" -eq 0 ]
 }
 
+@test "main loop: snapshot fast path runs before slow maintenance checks" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+python3 - "$PROJECT_ROOT/scripts/ninja_monitor.sh" <<'"'"'PY'"'"'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text()
+main = text[text.index("while true; do"):]
+fast = main.index("refresh_karo_snapshot_fast_path")
+slow = main.index("check_gate_improvement")
+assert fast < slow, (fast, slow)
+PY
+'
+    [ "$status" -eq 0 ]
+}
+
+@test "dashboard context warning signature is bounded by timeout" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+python3 - "$PROJECT_ROOT/scripts/ninja_monitor.sh" <<'"'"'PY'"'"'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text()
+assert "CONTEXT_WARN_SIG_TIMEOUT=${CONTEXT_WARN_SIG_TIMEOUT:-20}" in text
+assert "timeout \"$CONTEXT_WARN_SIG_TIMEOUT\" bash \"$SCRIPT_DIR/scripts/context_freshness_check.sh\" --dashboard-warnings" in text
+PY
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "check_and_update_done_task: flat task YAML uses yaml_field_set root fallback for completed_at" {
     run bash -c '
 set -euo pipefail

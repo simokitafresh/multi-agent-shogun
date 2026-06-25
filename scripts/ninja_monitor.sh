@@ -153,6 +153,7 @@ UNPUSHED_COUNT_CHECK_INTERVAL=120  # unpushedキャッシュ有効期間（秒�
 CONTEXT_WARN_SIG_CACHE="missing"   # context_freshness_check.sh --dashboard-warningsキャッシュ値（毎サイクル→300s間隔に削減）
 CONTEXT_WARN_SIG_CHECK_LAST=0      # context_warn_sigキャッシュ最終更新時刻（epoch秒）
 CONTEXT_WARN_SIG_CHECK_INTERVAL=300  # context_warn_sigキャッシュ有効期間（秒）— 5分（CI_STATUS_CACHEと同様）
+CONTEXT_WARN_SIG_TIMEOUT=${CONTEXT_WARN_SIG_TIMEOUT:-20}  # dashboard警告署名生成の上限秒数。詰まり時はsnapshot更新を優先する
 CLI_DEAD_LOOP_WINDOW=300    # CLI死亡ループ防止ウィンドウ（秒）— 5分 (cmd_1851)
 CLI_DEAD_LOOP_THRESHOLD=2   # CLI死亡ループ防止閾値（回）— 5分以内にN回以上でALERT (cmd_1851)
 
@@ -4013,6 +4014,13 @@ write_karo_snapshot() {
     } 200>"$lock_file"
 }
 
+refresh_karo_snapshot_fast_path() {
+    # 陣形図は復帰用の生存情報。重い監視チェックより前に必ず一度発行する。
+    write_state_file
+    check_model_names
+    write_karo_snapshot
+}
+
 # ─── CLI死亡検知+自動再起動 (cmd_1851 + L821拡張) ───
 # 全エージェント(家老+軍師+忍者)のpane_current_commandを確認し、bash/zshならCLI死亡と判定。
 # L821: NINJA_NAMESのみだと家老/軍師が監視対象外(各論パッチ禁止。原理1行で全員カバー)。
@@ -5327,6 +5335,10 @@ while true; do
         run_cdp_cleanup
     fi
 
+    # ═══ STEP 1a: 家老陣形図の早期更新 ═══
+    # 後段の定期gate/maintenanceが詰まっても、家老復帰・dashboardが古いsnapshotを掴まないようにする。
+    refresh_karo_snapshot_fast_path
+
     # ═══ 停滞検知チェック（全忍者） ═══
     for name in "${NINJA_NAMES[@]}"; do
         check_stall "$name"
@@ -5409,10 +5421,8 @@ while true; do
     # ═══ archive自動退避 (cmd_279) ═══
     check_auto_archive
 
-    # ═══ STEP 1: ninja_states.yaml 自動生成 ═══
-    write_state_file
-    check_model_names     # @model_name+bg_color整合性（毎サイクル。実態ベース検出→即時追随）
-    write_karo_snapshot   # 家老陣形図更新（毎サイクル）
+    # ═══ STEP 1b: 後段チェック反映後の最終snapshot更新 ═══
+    refresh_karo_snapshot_fast_path
     check_karo_idle_cycle       # 家老idle自走サイクル起動チェック (cmd_1498)
     check_ntfy_listener_health  # ntfy_listenerゾンビ検知 (cmd_635)
     check_inbox_watcher_health  # inbox_watcher死亡検知+自動再起動 (おしお殿知見)
@@ -5430,7 +5440,7 @@ while true; do
     # context_warn_sig: 5分間隔キャッシュ（context_freshness_check.sh毎サイクル起動→WSL2プロセス起動コスト削減）
     _ctx_warn_now=$EPOCHSECONDS
     if (( _ctx_warn_now - CONTEXT_WARN_SIG_CHECK_LAST >= CONTEXT_WARN_SIG_CHECK_INTERVAL )); then
-        CONTEXT_WARN_SIG_CACHE=$(bash "$SCRIPT_DIR/scripts/context_freshness_check.sh" --dashboard-warnings 2>/dev/null \
+        CONTEXT_WARN_SIG_CACHE=$(timeout "$CONTEXT_WARN_SIG_TIMEOUT" bash "$SCRIPT_DIR/scripts/context_freshness_check.sh" --dashboard-warnings 2>/dev/null \
             | cksum | awk '{print $1 ":" $2}' || echo "missing")
         CONTEXT_WARN_SIG_CHECK_LAST=$_ctx_warn_now
     fi
