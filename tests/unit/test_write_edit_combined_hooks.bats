@@ -10,13 +10,14 @@ setup_file() {
 }
 
 setup() {
-    export TMP_DIR TMP_REPORT TMP_STK TMP_AUTOLEARN TMP_CMD_QUALITY
+    export TMP_DIR TMP_REPORT TMP_STK TMP_AUTOLEARN TMP_CMD_QUALITY TEST_AGENT_ID
     TMP_DIR="$(mktemp -d)"
     mkdir -p "$TMP_DIR/queue/reports"
     TMP_REPORT="$TMP_DIR/queue/reports/hanzo_report_cmd_100.yaml"
     TMP_STK="$TMP_DIR/queue/shogun_to_karo.yaml"
     TMP_AUTOLEARN="$TMP_DIR/preflight_autolearn.txt"
     TMP_CMD_QUALITY="$TMP_DIR/cmd_design_quality.yaml"
+    TEST_AGENT_ID="bats_we_${BATS_TEST_NUMBER:-$$}_$$"
     printf 'result: ok\n' > "$TMP_REPORT"
     printf 'commands: {}\n' > "$TMP_STK"
     printf 'messages: []\n' > "$TMP_DIR/default_inbox.yaml"
@@ -25,12 +26,13 @@ setup() {
 }
 
 teardown() {
+    rm -f "/tmp/claude_read_log_${TEST_AGENT_ID:-unknown}.txt"
     rm -rf "$TMP_DIR"
 }
 
 _run_pre() {
     local payload="$1"
-    run bash -c 'printf "%s" "$1" | PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" GUARD_0D_INBOX_OVERRIDE="$5" bash "$2"' _ "$payload" "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY" "$TMP_DIR/default_inbox.yaml"
+    run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$6" PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" GUARD_0D_INBOX_OVERRIDE="$5" bash "$2"' _ "$payload" "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY" "$TMP_DIR/default_inbox.yaml" "$TEST_AGENT_ID"
 }
 
 _run_post() {
@@ -39,10 +41,8 @@ _run_post() {
 }
 
 _mark_read_for_current_agent() {
-    local file_path="$1" agent_id
-    agent_id="$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || echo 'unknown')"
-    [ -n "$agent_id" ] || agent_id="unknown"
-    printf '%s\n' "$file_path" > "/tmp/claude_read_log_${agent_id}.txt"
+    local file_path="$1"
+    printf '%s\n' "$file_path" > "/tmp/claude_read_log_${TEST_AGENT_ID}.txt"
 }
 
 @test "pre combined hook denies report yaml writes" {
@@ -424,9 +424,9 @@ _mark_read_for_current_agent() {
     _mark_read_for_current_agent "$target_file"
     printf 'linked-target\tdocs/source-a.md\nlinked-target\tdocs/source-b.md\n' > "$cache_file"
 
-    run bash -c 'printf "%s" "$1" | CAUSAL_INDEX_CACHE="$5" PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" bash "$2"' _ \
+    run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$6" CAUSAL_INDEX_CACHE="$5" PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" bash "$2"' _ \
         '{"tool_name":"Edit","tool_input":{"file_path":"'"$target_file"'","new_string":"updated\n"}}' \
-        "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY" "$cache_file"
+        "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY" "$cache_file" "$TEST_AGENT_ID"
 
     [ "$status" -eq 0 ]
     [[ "$output" == *'"additionalContext"'* ]]
@@ -444,9 +444,9 @@ _mark_read_for_current_agent() {
     _mark_read_for_current_agent "$target_file"
     printf 'linked-target\tdocs/source-a.md\n' > "$cache_file"
 
-    run bash -c 'printf "%s" "$1" | CAUSAL_INDEX_CACHE="$5" PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" bash "$2"' _ \
+    run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$6" CAUSAL_INDEX_CACHE="$5" PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" bash "$2"' _ \
         '{"tool_name":"Edit","tool_input":{"file_path":"'"$target_file"'","new_string":"updated\n"}}' \
-        "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY" "$cache_file"
+        "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY" "$cache_file" "$TEST_AGENT_ID"
 
     [ "$status" -eq 0 ]
     [ -z "$output" ]

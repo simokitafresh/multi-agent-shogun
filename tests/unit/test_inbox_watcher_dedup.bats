@@ -101,9 +101,18 @@ echo "WAKEUP_SENT_ONCE=yes"
     run bash -c '
 set -euo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/root/scripts/lib" "$TMP_ROOT/root/lib" "$TMP_ROOT/root/queue/inbox" "$TMP_ROOT/state"
+ln -s "$PROJECT_ROOT/scripts/lib/lock_path.sh" "$TMP_ROOT/root/scripts/lib/lock_path.sh"
+ln -s "$PROJECT_ROOT/scripts/lib/cli_lookup.sh" "$TMP_ROOT/root/scripts/lib/cli_lookup.sh"
+ln -s "$PROJECT_ROOT/scripts/lib/tmux_utils.sh" "$TMP_ROOT/root/scripts/lib/tmux_utils.sh"
+ln -s "$PROJECT_ROOT/scripts/lib/script_update.sh" "$TMP_ROOT/root/scripts/lib/script_update.sh"
+ln -s "$PROJECT_ROOT/lib/agent_state.sh" "$TMP_ROOT/root/lib/agent_state.sh"
+ln -s "$PROJECT_ROOT/scripts/inbox_watcher.sh" "$TMP_ROOT/root/scripts/inbox_watcher.sh"
+
 AGENT_ID="unit_fp_$$"
-INBOX_FILE="$PROJECT_ROOT/queue/inbox/${AGENT_ID}.yaml"
-trap "rm -f \"$INBOX_FILE\"" EXIT
+INBOX_FILE="$TMP_ROOT/root/queue/inbox/${AGENT_ID}.yaml"
 
 cat > "$INBOX_FILE" <<'"'"'YAML'"'"'
 messages:
@@ -121,8 +130,9 @@ messages:
   type: "task_supplement"
 YAML
 
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
 export INBOX_WATCHER_LIB_ONLY=1
-source "$PROJECT_ROOT/scripts/inbox_watcher.sh" "$AGENT_ID" dummy-pane
+source "$TMP_ROOT/root/scripts/inbox_watcher.sh" "$AGENT_ID" dummy-pane
 unset INBOX_WATCHER_LIB_ONLY
 
 first="$(get_unread_info)"

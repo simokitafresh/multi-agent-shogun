@@ -460,7 +460,10 @@ esac
 
 # Check read log for existing files
 if [ -f "$file_path" ]; then
-    agent_id="$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || echo 'unknown')"
+    agent_id="${MOCK_AGENT_ID:-${AGENT_ID:-${TMUX_AGENT_ID:-}}}"
+    if [[ -z "$agent_id" ]]; then
+        agent_id="$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || echo 'unknown')"
+    fi
     [[ -z "$agent_id" ]] && agent_id="unknown"
     LOG_FILE="/tmp/claude_read_log_${agent_id}.txt"
     if ! { [ -f "$LOG_FILE" ] && grep -qFx "$file_path" "$LOG_FILE" 2>/dev/null; }; then

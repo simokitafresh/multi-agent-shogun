@@ -3,6 +3,8 @@
 
 setup() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    export SHOGUN_STATE_DIR="$BATS_TEST_TMPDIR/state"
+    mkdir -p "$SHOGUN_STATE_DIR"
 }
 
 @test "T-IWH-001: dead watcher is detected and restart logged" {
@@ -160,6 +162,8 @@ trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts"
 touch "$SCRIPT_DIR/scripts/inbox_watcher.sh"
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+mkdir -p "$SHOGUN_STATE_DIR"
 
 TEST_LOG="$(mktemp)"
 log() { echo "$1" >> "$TEST_LOG"; }

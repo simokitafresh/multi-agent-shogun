@@ -7,13 +7,19 @@ run_embedded_test() {
     local content_func="$3"
 
     # Place temp file in tests/unit/ so BATS_TEST_FILENAME/../.. resolves to PROJECT_ROOT
-    local unique_path="$(dirname "$BATS_TEST_FILENAME")/_tmp_${BATS_TEST_NUMBER:-$$}_$(basename "$original_path")"
+    local unique_path
+    unique_path="$(mktemp "$(dirname "$BATS_TEST_FILENAME")/_tmp_${BATS_TEST_NUMBER:-0}_$(basename "$original_path" .bats).XXXXXX.bats")"
     "$content_func" > "$unique_path"
 
-    run bats --filter "^${test_name}$" "$unique_path"
+    run env -u BATS_TMPDIR -u BATS_TEST_TMPDIR -u BATS_TEST_NUMBER -u BATS_TEST_FILENAME bats --filter "^${test_name}$" "$unique_path"
+    local nested_status="$status"
+    local nested_output="$output"
     rm -f "$unique_path"
 
-    [ "$status" -eq 0 ]
+    if [ "$nested_status" -ne 0 ]; then
+        printf '%s\n' "$nested_output" >&2
+    fi
+    [ "$nested_status" -eq 0 ]
 }
 
 @test "restart_watchers kills old watchers and verifies exact normal count" {
