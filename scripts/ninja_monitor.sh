@@ -871,12 +871,23 @@ check_idle() {
                     return 1
                     ;;
                 *)
-                    # check_agent_busy=unknownでも、pane_tailにidle_patternがあればidle補正
-                    # 根因: Codex CLIで@agent_state=active残存+check_agent_busy=2(unknown)→永久busy
-                    local _stale_idle_pat _stale_pane_tail
+                    # check_agent_busy=unknownでも、busy markerが無くidle_patternがあればidle補正。
+                    # busy-first原則を維持する。thinking中でもfooterにprompt記号が残るため、
+                    # idle_pattern単独では誤clearにつながる。
+                    local _stale_busy_pat _stale_idle_pat _stale_pane_tail
+                    _stale_busy_pat=$(cli_profile_get "$agent_name" "busy_patterns" 2>/dev/null || echo "")
+                    if [ -z "$_stale_busy_pat" ]; then
+                        _stale_busy_pat="$AGENT_STATE_DEFAULT_BUSY_PATTERN"
+                    else
+                        _stale_busy_pat="${_stale_busy_pat}|${AGENT_STATE_DEFAULT_BUSY_PATTERN}"
+                    fi
                     _stale_idle_pat=$(cli_profile_get "$agent_name" "idle_pattern" 2>/dev/null || echo "")
                     [ -z "$_stale_idle_pat" ] && _stale_idle_pat="❯|›"
-                    _stale_pane_tail=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
+                    _stale_pane_tail=$(tmux capture-pane -t "$pane_target" -p -S -30 2>/dev/null || true)
+                    if [ -n "$_stale_pane_tail" ] && printf '%s\n' "$_stale_pane_tail" | grep -qiE "$_stale_busy_pat"; then
+                        log "HOOK-STALE-UNKNOWN-BUSY: ${agent_name} @agent_state=${agent_state} stale+unknown, pane busy_pattern matched -> keep busy"
+                        return 1
+                    fi
                     if [ -n "$_stale_pane_tail" ] && printf '%s\n' "$_stale_pane_tail" | grep -qE "$_stale_idle_pat"; then
                         log "HOOK-STALE-IDLE-OVERRIDE: ${agent_name} @agent_state=${agent_state} stale+unknown, but pane idle_pattern matched -> idle"
                         tmux set-option -p -t "$pane_target" @agent_state idle 2>/dev/null || true
