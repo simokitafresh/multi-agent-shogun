@@ -4302,6 +4302,23 @@ def ref_matches_target(ref, target):
         return True
     return os.path.basename(ref) == os.path.basename(target)
 
+def is_design_spec_instruction_ref(ref, local_text, sentence_tail, match_start):
+    # "設計書docs/spec/foo.mdの変更1-4を実装" means implement the changes
+    # described in the design document, not edit the design document itself.
+    # If docs/spec is the target_path, ref_matches_target() below still keeps it
+    # as an actual target before this readonly rule is applied.
+    clean_ref = ref.strip().strip("./")
+    if not (clean_ref.startswith("docs/spec/") and clean_ref.endswith(".md")):
+        return False
+    tail = (local_text + " " + sentence_tail)[:160]
+    section_ref = (
+        re.search(r"^\s*の?(?:§|第?\d+章|変更\d|変更[0-9０-９一二三四五六七八九十]+|実装順序)", local_text)
+        is not None
+    )
+    instruction_words = ("実装" in tail) or ("従い" in tail) or ("通り" in tail) or ("記載" in tail)
+    explicit_design_context = ("設計書" in sentence_tail) or ("設計書" in command[max(0, match_start - 40):match_start])
+    return (section_ref and instruction_words) or (explicit_design_context and instruction_words)
+
 def ref_matches_verified_dependency(ref):
     ref = ref.strip().strip("./")
     if not ref:
@@ -4405,6 +4422,9 @@ for idx, match in enumerate(matches):
     if is_logic_param:
         readonly_ref = True
         refs.append((ref, readonly_ref))
+        continue
+    if target_paths and not any(ref_matches_target(ref, target) for target in target_paths) and is_design_spec_instruction_ref(ref, local, sentence_tail, match.start()):
+        refs.append((ref, True))
         continue
     # 読点「、」区切り検出: read_markerとwrite_markerの間に「、」→ 別節のwrite_marker → 除外
     has_clause_boundary = False

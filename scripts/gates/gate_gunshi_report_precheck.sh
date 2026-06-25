@@ -799,6 +799,41 @@ try:
         # Keep real files such as README.md by checking repository existence.
         return not os.path.isfile(os.path.join(repo, clean_ref))
 
+    def ref_matches_target(ref, target):
+        ref = ref.strip().strip('./')
+        target = target.strip().strip('./')
+        if not ref or not target:
+            return False
+        if ref == target or ref.endswith('/' + target) or target.endswith('/' + ref):
+            return True
+        if ref.startswith(target.rstrip('/') + '/'):
+            return True
+        return os.path.basename(ref) == os.path.basename(target)
+
+    raw_targets = spec.get('target_path', spec.get('target_paths', ''))
+    if isinstance(raw_targets, str):
+        target_paths = [raw_targets]
+    elif isinstance(raw_targets, (list, tuple)):
+        target_paths = [str(v) for v in raw_targets]
+    else:
+        target_paths = []
+    target_paths = [p.strip().strip("`'\"") for p in target_paths if str(p).strip()]
+
+    def is_design_spec_instruction_ref(ref, local_text, sentence_tail, match_start):
+        # "設計書docs/spec/foo.mdの変更1-4を実装" is a reference to the
+        # design-doc instructions, not a requirement to edit the md file.
+        clean_ref = ref.strip().strip('./')
+        if not (clean_ref.startswith('docs/spec/') and clean_ref.endswith('.md')):
+            return False
+        if target_paths and any(ref_matches_target(ref, target) for target in target_paths):
+            return False
+        tail = (local_text + ' ' + sentence_tail)[:160]
+        prefix = cmd_text[max(0, match_start - 40):match_start]
+        section_ref = re.search(r'^\s*の?(?:§|第?\d+章|変更\d|変更[0-9０-９一二三四五六七八九十]+|実装順序)', local_text) is not None
+        instruction_words = ('実装' in tail) or ('従い' in tail) or ('通り' in tail) or ('記載' in tail)
+        explicit_design_context = ('設計書' in sentence_tail) or ('設計書' in prefix)
+        return (section_ref and instruction_words) or (explicit_design_context and instruction_words)
+
     matches = list(pattern.finditer(cmd_text))
     seen = set()
     write_refs = []
@@ -827,6 +862,9 @@ try:
         if read_pos < 0:
             read_pos = marker_pos(sentence_tail, read_markers)
         write_pos = marker_pos(sentence_tail, write_markers)
+        if is_design_spec_instruction_ref(ref, local, sentence_tail, match.start()):
+            readonly_refs.append(os.path.basename(ref))
+            continue
         next_ref_before_write = idx + 1 < len(matches) and matches[idx + 1].start() < sentence_end and (
             write_pos < 0 or matches[idx + 1].start() - match.end() < write_pos
         )
