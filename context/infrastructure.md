@@ -336,7 +336,7 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 
 | カテゴリ | 関数 | 1行説明 |
 |----------|------|---------|
-| 状態管理 | `write_karo_snapshot` | 家老復帰用の陣形図を生成し、cmd・忍者状態・報告状況を集約する。 |
+| 状態管理 | `write_karo_snapshot` | 家老復帰用の陣形図を生成し、cmd・忍者状態・報告状況を集約する。重い監視処理より前に早期発行し、temp file + mvでatomic publishする。 |
 | 状態管理 | `check_idle` | pane実態から忍者/家老がidleかを判定し、誤clearや誤配備を防ぐ入口になる。 |
 | 状態管理 | `handle_confirmed_idle` | idle確定後の通知・auto-clear・auto-deployなど後続処理を統括する。 |
 | 状態管理 | `handle_busy` | busy中paneの監視状態を更新し、idle向け処理を発火させない。 |
@@ -416,6 +416,7 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 ## ninja_monitor.sh
 
 idle検知+コンテキストリセット送信（Codex=/new, Claude=/clear）、is_task_deployed二重チェック、STALE-TASK検出、CLEAR_DEBOUNCE=300s、karo_snapshot自動生成、状態遷移検知(cmd_255)。
+karo_snapshotは重いmaintenance/gate処理より前に早期発行し、temp file + mvでatomic publishする。古い表示残り/監視詰まりの再発防止はL851を参照。
 実装正本は[[ninja_monitor.sh]]。修行自動配備の設計根拠は[[training-cycle.md]]、詳細仕様は[[infra-details.md]] §3を参照。
 三段階/clear(cmd_1039/1040): Stage 1: YAML status確認(acknowledged/in_progress→skip)→Stage 2: 再確認(race condition防止)→Stage 3: /clear送信。作業中忍者の誤クリア防止。
 auto-done判定: parent_cmdだけでなくtask_idも一致チェック必須。Wave間で誤done発生実績あり(L048)。
@@ -667,7 +668,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L850 -->
+<!-- last_synced_lesson: L852 -->
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
@@ -1234,6 +1235,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L848: context_freshness ALERTにはsource commit要約を同梱せよ（cmd_karo_hotfix_ga128_context_freshness_google_classroom_20260625）
 - L849: context_freshness gate cache署名は監視対象ファイル内容を含める（cmd_karo_hotfix_ga129_context_freshness_dm_signal_ops_20260625）
 - L850: context_freshnessが作業開始時点でOKでも発火ログとsource差分を分けて報告する（cmd_karo_hotfix_ga130_context_freshness_dm_signal_frontend_20260625）
+- L851: karo_snapshotは重い監視処理より前に早期発行しatomic publishする（snapshot_staleness_fix_20260625）
+- L852: cmd-completeスキルは現物script pathとarchive済みcmd扱いを明記する（cmd_complete_skill_path_fix_20260625）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

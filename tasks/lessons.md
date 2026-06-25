@@ -8666,3 +8666,27 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - GA-130はlogs/gate_alerts.yamlで16:14発火していたが、作業開始時点のgateは既にOKだった。context_freshness hotfixでは現時点gate結果だけでなく、発火時刻・last_updated・source commit件数・cache有無を分けて記録しないと、直接原因と解消済み状態が混ざる。次回チェック: gate OKでもlogs/gate_alerts.yamlのalert_detailとsource git log --sinceを必ず報告YAMLに残す
+
+### L851: karo_snapshotは重い監視処理より前に早期発行しatomic publishする
+- **日付**: 2026-06-25
+- **出典**: snapshot_staleness_fix_20260625
+- **記録者**: karo
+- **tags**: [infra, monitor, snapshot, atomic, gate]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_stall.bats]
+- **origin**: [[snapshot_staleness]] -> [[slow_monitor_checks]] -> [[early_atomic_snapshot]]
+- **when**: karo_snapshot/dashboardが古い・欠落する時
+- **how**: ninja_monitor.shでsnapshotを重い監視処理の前に発行し、temp file + mvでatomic publishする
+- snapshot遅延バグでは、ninja_monitor.shが重いmaintenance/gate処理の後でsnapshotを書いていたため、処理が詰まるとdashboard/snapshotに古い表示が残った。修正はrefresh_karo_snapshot_fast_pathを重い処理の前に呼び、temp file + mvでatomic publishすること。検証はsnapshot fast path/context warning/write_karo_snapshotのBats 4件PASSと実snapshot鮮度確認。
+
+### L852: cmd-completeスキルは現物script pathとarchive済みcmd扱いを明記する
+- **日付**: 2026-06-25
+- **出典**: cmd_complete_skill_path_fix_20260625
+- **記録者**: karo
+- **tags**: [infra, skill, cmd-complete, archive, yaml]
+- **subdomain**: infra
+- **target_files**: [skills/cmd-complete/SKILL.md,scripts/cmd_complete_gate.sh,scripts/gates/gate_yaml_status.sh,tests/unit/test_cmd_complete_skill.bats]
+- **origin**: [[cmd_3531_completion]] -> [[stale_skill_path]] -> [[cmd_complete_skill_static_test]]
+- **when**: cmd-complete手順が現物script構成とずれる時
+- **how**: SKILL.mdに現物pathとarchive済みcmd分岐を書き、Batsで退行検査する
+- cmd_3531完了処理中、cmd-completeスキルのStep3が存在しないscripts/gates/cmd_complete_gate.shを示していた。実体はscripts/cmd_complete_gate.sh。さらにStep5の直接status更新はcmd_complete_gateが既にarchive済みにしたcmdで失敗し得るため、gate_yaml_status.shで状態を確認し、active queueに無ければarchive/dashboard/gate_metricsのCLEAR証跡で完了扱いにする。

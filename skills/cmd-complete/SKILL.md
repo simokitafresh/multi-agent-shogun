@@ -44,7 +44,7 @@ bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> "<修正内容>" "<修
 
 ### Step 3: cmd_complete_gate
 ```bash
-bash scripts/gates/cmd_complete_gate.sh <cmd_id>
+bash scripts/cmd_complete_gate.sh <cmd_id>
 ```
 GATE CLEAR → Step 3.5へ。BLOCK → 停止。BLOCK理由を報告。
 
@@ -66,8 +66,11 @@ bash scripts/cmd_quality_log.sh <cmd_id> <gate_result> <karo_rework:yes/no> <sup
 
 ### Step 5: status → completed
 ```bash
-bash scripts/lib/yaml_field_set.sh queue/shogun_to_karo.yaml "<cmd_id>" status completed
+bash scripts/gates/gate_yaml_status.sh <cmd_id>
 ```
+`cmd_complete_gate.sh` が既にactive queueからarchive済みにしたcmdは `gate_yaml_status.sh` が
+`not found` を返すことがある。その場合は `rg <cmd_id> archive queue dashboard.md logs/gate_metrics.log`
+でarchive/dashboard/gate_metrics上のCLEARを確認し、status更新は不要としてStep 6へ進む。
 
 ### Step 6: dashboard更新
 [[dashboard-update]] スキルを実行。
