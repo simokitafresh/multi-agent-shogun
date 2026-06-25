@@ -1929,3 +1929,93 @@
   brainwash_check: "commit実在。signal_diffs=0 metrics_diffs=0確認。102PF全数検証。#2なし(本番実測) #8なし"
   origin: "[[殿指摘_ローカル検証は洗脳_20260626]] -> [[本番fullrecalculate]] -> [[LGTM 102PF差分ゼロ]]"
   timestamp: "2026-06-26T05:05:00+09:00"
+- cmd_id: self_study_S63
+  review_type: self_study
+  findings_summary: "idle自走Step1-8完走。WA率0%(直近10件clean)。accuracy100%。GP pending 0件。semantic-map更新(速度プロファイリング設計書登録)。将軍Q6第三者検証完了(洗脳#5 SKILL.md先送り=将軍自走で自動化ターゲット特定済み)"
+  observations:
+    - "karo_workarounds直近10件all clean(WA率0%維持)。教訓41件automated:true 100%"
+    - "semantic-map行22再計算パイプラインにN+1解消/to_datetimeベクトル化/速度プロファイリングaliases追加+設計書resource追加"
+    - "将軍Q6: SKILL.md先送り9セッション連続=WARN慣れ。Level4対処(BLOCK昇格)が正解。将軍自走到達済み"
+  operational_simulation: "semantic-mapにaliases追加→将来の速度関連クエリでsemantic_search.shがhit→忍者/家老が速度設計書に到達可能。負の影響なし"
+  cs_checklist: "CS1:全量確認(WA10件+GP tracker+lessons41件)。CS2:自システム計測で確認(grep -c)。CS3:review_log末尾現物確認。CS4:semantic-map更新+掲示板投稿で行動変換。CS5:教訓有効率40%は前セッション分析済み追加角度なし。CS6:WARN慣れ→BLOCK昇格の因果推論"
+  causal_chain: "idle開始→データ走査(WA/GP/semantic)→semantic-map速度知見未登録発見→aliases+resource追加→環境永続化(Phase 5免疫記憶)"
+  brainwash_check: "WA10件all clean数値確認。GP pending 0件確認。semantic-map diff 1箇所確認。#5なし(全Step完走) #6なし(semantic-map編集=行動) #8なし"
+  origin: "[[idle自走S63]] -> [[semantic-map速度知見未登録]] -> [[aliases追加で環境永続化]]"
+  timestamp: "2026-06-26T07:20:00+09:00"
+- cmd_id: cmd_karo_recon_ga137_p_average_freshness_20260626
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  findings_summary: "APPROVE。GA-137偵察。AC3個。全target実在。家老一次確認(OK=0d ago)と合致。FM3件対処済み"
+  observations:
+    - "target_path gate_p_average_freshness.sh実在(8277bytes)。gate_improvement_trigger.sh(18919bytes)、gate_auto_respond.sh(9010bytes)も実在"
+    - "家老一次確認: 現在gate OK(0d ago, 2026-06-25T06:58:10)。cache exit_code=0。過去alertはDNS失敗(curl_exit=6)複数回"
+    - "credential_warning付きだが偵察(読取のみ)でリスク低。execution_envは偵察のため不要"
+  operational_simulation: "hayateがgate_alerts.yaml→gate実行→DM-Signal p̄経路→横展開→防御層案→報告"
+  causal_chain: "GA-137発火→家老一次確認OK→偵察配備→直接原因/根本原因/横展開/防御層→次アクション判断材料"
+  brainwash_check: "target 3ファイル実在確認(ls -la)。AC3個scope内。FM3件全対処。#2なし(全ファイル実在確認) #8なし"
+  origin: "[[GA-137]] -> [[p_average_freshness偵察]] -> [[APPROVE]]"
+  timestamp: "2026-06-26T07:42:00+09:00"
+- cmd_id: cmd_karo_recon_ga137_p_average_freshness_20260626
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  gate_result: CLEAR
+  gate_prediction: WARN
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  findings_summary: "LGTM。GA-137偵察。p̄ staleではなくcache分類不良(exit=1+ALERT行なし→detail-not-captured)。API実測OK。横展開5件中2件detail欠落。即修正候補2ファイル特定"
+  observations:
+    - "直接原因: gate_p_average_freshness.sh L38-44キャッシュ読取時に内容検証なし。exit_code=1だけのcacheを6h以内なら再利用"
+    - "根本原因: gate_improvement_trigger.sh L339-353のfallback detailが原因分類に進まず exit_code=1のみ保存"
+    - "横展開: p_average ALERT 5件中GA-107/GA-137の2件がdetail-not-captured。GA-004/018/113はDNS詳細あり"
+    - "家老前提反証: calculated_at=2026-06-25T06:58:10(0d ago)→p̄ staleではない"
+  operational_simulation: "hayateがgate_alerts確認→cache再現テスト→直接/根本原因分離→横展開→防御層案→報告"
+  step3_5_verified: true
+  causal_chain: "GA-137発火→cache exit=1+ALERT行なし→detail-not-captured→偽ALERT→偵察で根因特定(cache構造検証不在)"
+  brainwash_check: "API実測calculated_at確認。5件中2件detail-not-captured数値確認。gate_alerts.yaml一次データ確認。#2なし(再現テスト実施確認) #8なし"
+  origin: "[[GA-137]] -> [[cache分類不良]] -> [[LGTM偵察]]"
+  timestamp: "2026-06-26T07:47:00+09:00"
+- cmd_id: cmd_3547
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, adversarial, ambiguity, north_star]
+  ambiguity_points: none
+  findings_summary: "APPROVE。MTDフォールバック2箇所cache未渡し=cmd_3542横展開漏れ。既知パターン。前提verified。殿直接指示"
+  observations:
+    - "assumptions verified: calculate_monthly_returnのcache引数はcmd_3542で追加済み(trust:verified 2026-06-26)"
+    - "2ファイル各1箇所修正。monthly_returns_calculator.py:262+monthly_trade_impl.py:419"
+    - "AC3でパリティ強制(signal_diffs=0/metrics_diffs=0)。MTDパスは現在月のみ呼出し(影響限定的)"
+  operational_simulation: "影丸がL262/L419にcache渡し追加→pytest→snapshot_and_verify→パリティPASS→報告"
+  causal_chain: "cmd_3542横展開漏れ→MTDフォールバックにN+1残存→殿指示→cache渡し2箇所修正(正の複利)"
+  brainwash_check: "前提verified(trust:verified)確認。AC3個scope内。FM3件対処。q5現物確認(2026-06-26 07:42)記載。#2なし #8なし"
+  origin: "[[殿指示_速度バグ起票_20260626]] -> [[cmd_3542横展開漏れ]] -> [[APPROVE MTD cache渡し]]"
+  timestamp: "2026-06-26T07:52:00+09:00"
+- cmd_id: cmd_3547
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  ambiguity_points: none
+  findings_summary: "LGTM。MTDフォールバック2箇所cache渡し修正。pytest 69 passed。12PF MTD突合 mismatches=0/signal_diffs=0/metrics_diffs=0"
+  observations:
+    - "commit a02b623bd920実在(PRE3b PASS)。2ファイル修正=cmd scope一致"
+    - "pytest 69 passed/8.05s。本番DBサンプル12PF MTD cache有無突合 value_mismatches=0"
+    - "recalculate job側は変更なし(diff/rg確認)。表示API側のみ。monthly_returns側にFoF preload追加(discretion_fills妥当)"
+  operational_simulation: "影丸がL262/L419にcache渡し→pytest 69 PASS→12PF MTD突合→パリティPASS→報告"
+  step3_5_verified: true
+  causal_chain: "cmd_3542横展開漏れ→MTDフォールバックN+1残存→cache渡し2箇所修正→69test PASS+12PF数値一致(正の複利)"
+  brainwash_check: "commit実在。69 passed数値確認。12PF mismatches=0確認。recalculate未変更rg確認。#2なし #8なし"
+  origin: "[[殿指示_速度バグ起票_20260626]] -> [[cmd_3542横展開漏れ]] -> [[LGTM MTD cache渡し修正]]"
+  timestamp: "2026-06-26T08:08:00+09:00"
