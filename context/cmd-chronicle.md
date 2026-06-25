@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-25 -->
+<!-- last_updated: 2026-06-25 cmd_karo_hotfix_ga129 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -418,3 +418,4 @@
 | cmd_3524 | 殿指示(2026-06-25): α6の6指標に加え、ボラティリティドラッグ・歪度・尖度・最低継続期間・最大連敗期間の5指標をrobustness_common.pyに追加し、シン四神(12体)+シン忍法(21体)+奥義(21体)×7窓で計算する。発端: ぷろっぷ記事DailyProp#102(期待値プラスでも資産増えない問題)から投資継続性の定量評価が必要 | dm-signal | 06-25 | cmd_3524: α6 robustness共通出力へ連続 |
 | cmd_3525 | cmd_3524レビューで発見: robustness_common.pyのKurtosisがraw(正規=3.0)、Skewnessが母集団式。本番metrics_impl.py L1174はpandas .kurt()=excess(正規=0.0)、L1170は.skew()=Fisher補正。Compare Summary画面と数値不一致を修正しシン四神・シン忍法・奥義全量×7窓で再計算 | dm-signal | 06-25 | cmd_3525: continuity_risk_metr |
 | cmd_3526 | 殿指示(2026-06-25): Compare Summary画面のTQQQ行でUpside/Downside Captureが常に100%/0/1の退化値になる不具合を修正。根因: 合成DataFrameのbenchmark_returnにTQQQ自身を代入しているため自己比較になる。修正: benchmark_returnをSPYに変更しCapture=TQQQ vs SPYの実値にする。設計書: docs/spec/compare-summary-benchmark-capture-fix.md | dm-signal | 06-25 | Compare Summary追加ベンチマークTQQQのca |
+| cmd_3530 | 殿指示(2026-06-25): cmd_3524/3525で検証済みの5指標を本番Metricsページに実装。設計書docs/spec/metrics-page-continuity-risk-indicators.md(review-2反映済み)に全コード記載。BE: metrics_impl.pyに3指標close/open追加+Skew/Kurt open修正+metrics.pyキャッシュformat/構造検証+summary追加BM MinMo None変換。FE: integer型追加+用語集 | dm-signal | 06-25 | Metricsページに継続性5指標を本番実装し、BE/FE表 |

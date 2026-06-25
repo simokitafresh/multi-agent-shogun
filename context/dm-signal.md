@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-25 cmd_training_L1_report_write_20260625_kagemaru -->
-<!-- last_synced_lesson: L772 -->
+<!-- last_updated: 2026-06-25 cmd_karo_hotfix_ga129 -->
+<!-- last_synced_lesson: L773 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -259,6 +259,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L768: L1 kasoku_diff monthly-row SQLiteは/mnt/c p9で停滞するためローカルcopyまたは事前matrix cacheを使う（cmd_3515）
 - L769: α6キー名はAC文言と実装SSOTを事前照合せよ（cmd_3518）
 - L772: tracked限定のリンク集計では未tracked対象の改善が見えない（cmd_training_L1_report_write_20260625_kagemaru）
+- L773: biome→ruff cycle: import_only_hunks回避はBenchmarkモデル継続行の活用（cmd_3527）
 
 ## 因果リンク
 
