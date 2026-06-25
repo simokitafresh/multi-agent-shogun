@@ -606,7 +606,6 @@ YAML
     ! grep -Fq 'lessons_useful: null' "$report_path"
 
     bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" timestamp "2026-05-10T00:00:00"
-    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" status completed
     bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" result.summary "テンプレート初期値のgate互換性を確認"
     bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" result.details "lesson_candidate.no_lesson_reasonとlessons_usefulは初期値のまま"
     bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" purpose_validation.cmd_purpose "lesson default compatibility"

@@ -226,6 +226,37 @@ assert lc["title"] == "既存タイトル", lc
 PY
 }
 
+@test "status completed: commit check未完了なら事前BLOCK" {
+    cat >> "$TEST_REPORT" <<'YAML'
+binary_checks:
+  AC1:
+    - check: behavior verified
+      result: yes
+  commit:
+    - check: git commitが完了したか
+      result: ""
+YAML
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' status completed 2>&1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: commit check未完了のまま status=completed は禁止"* ]]
+    ! grep -Fq "status: completed" "$TEST_REPORT"
+}
+
+@test "status completed: commit check yesなら通す" {
+    cat >> "$TEST_REPORT" <<'YAML'
+binary_checks:
+  AC1:
+    - check: behavior verified
+      result: yes
+  commit:
+    - check: git commitが完了したか
+      result: yes
+YAML
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' status completed 2>&1"
+    [ "$status" -eq 0 ]
+    grep -Fq "status: completed" "$TEST_REPORT"
+}
+
 @test "origin: omitted value inherits origin from parent_cmd archive" {
     local archive_dir="$PROJECT_ROOT/queue/archive/cmds"
     local archive_file="$archive_dir/cmd_rfs_origin_auto_completed_20990101.yaml"

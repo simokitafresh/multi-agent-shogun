@@ -494,6 +494,57 @@ if found is True:
 " <<< "$val" || return 1
             fi
             ;;
+        status)
+            # Commit check is a completion precondition.  Blocking at write-time
+            # prevents the common bad loop: status=completed -> report gate FAIL
+            # -> operator fixes the report after already declaring completion.
+            if [[ "$dot_key" == "status" ]]; then
+                local status_val
+                status_val="${val%\"}"
+                status_val="${status_val#\"}"
+                status_val="${status_val%\'}"
+                status_val="${status_val#\'}"
+                status_val="$(echo "$status_val" | xargs)"
+                if [[ "$status_val" == "completed" || "$status_val" == "done" ]]; then
+                    REPORT_PATH="$REPORT_PATH" python3 -c "
+import os
+import sys
+import yaml
+
+rp = os.environ.get('REPORT_PATH', '')
+if not rp or not os.path.exists(rp):
+    sys.exit(0)
+with open(rp, encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+bc = data.get('binary_checks', {})
+commit_checks = bc.get('commit') if isinstance(bc, dict) else None
+if not commit_checks:
+    sys.exit(0)
+if not isinstance(commit_checks, list):
+    print('BLOCK: binary_checks.commit がlistではない。report templateを修復せよ', file=sys.stderr)
+    sys.exit(1)
+missing = []
+for i, item in enumerate(commit_checks):
+    if not isinstance(item, dict):
+        missing.append(str(i))
+        continue
+    raw_result = item.get('result', '')
+    if raw_result is True:
+        result = 'yes'
+    elif raw_result is False:
+        result = 'no'
+    else:
+        result = str(raw_result or '').strip().strip('\"\\'').lower()
+    if result != 'yes':
+        missing.append(str(i))
+if missing:
+    print('BLOCK: commit check未完了のまま status=completed は禁止。先にgit commitし binary_checks.commit.*.result を yes にせよ', file=sys.stderr)
+    print('  例: bash scripts/report_field_set.sh <report> binary_checks.commit.0.result yes', file=sys.stderr)
+    sys.exit(1)
+" || return 1
+                fi
+            fi
+            ;;
         verdict)
             # GP-072c2+c3+c4: verdict書込み時に前提条件チェック
             if [[ "$dot_key" == "verdict" ]] && [[ "$val" == "PASS" || "$val" == "FAIL" || "$val" == "PASS_NO_IMPROVEMENT" ]]; then
