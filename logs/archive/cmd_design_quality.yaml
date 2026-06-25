@@ -60591,3 +60591,13 @@ entries:
   source: "cmd_save"
   timestamp: "2026-06-23T04:45:58Z"
   block_duration_minutes: 3
+- cmd_id: "cmd_3513"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "REQUEST_CHANGES"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-23T04:46:34Z"

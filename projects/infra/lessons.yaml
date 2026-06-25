@@ -9402,6 +9402,9 @@ lessons:
   when: commit関連のACを検証する時
   how: git commit --dry-runではなく実commit(失敗想定)またはhook直接実行で検証せよ
   origin: '[[cmd_537]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L149
   title: shellスクリプトでrgを使うな、grepを使え
   summary: IF shellスクリプトやgit hookでテキスト検索を行う時 THEN rgではなく標準のgrepを使え

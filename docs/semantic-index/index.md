@@ -612,6 +612,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T13:25:23+09:00 L3の21体を作ったのは覚えているか？まだ本番に登録していない。L3の21体を本番の秘奥義フォルダーに登録しよう。いつも通りにhideで登録。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T14:23:09+09:00 bvm2vkgwk toolu_01MaTiPN8XgxHxCsyAru29Hk /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/c8c03421-8d41-4fb9-bd09-0a5a08 |
 | causal | `cmd_karo_hotfix_ga131` files_modified: [[recalculate_pipeline]] |
+| cmd | `cmd_3541` 修正 — recalculate_fast.py pd.to_datetime個別呼出しベクトル化(横展開最終) |
+| causal | `cmd_3541` origin: [[cmd_3539_lesson_candidate]] -> [[recalculate_fast同一パターン残存]] -> [[横展開最終]] |
+| causal | `cmd_3541` depends_on: cmd_3539 |
 | causal_chain | `[[cmd_3053]]` (L714) |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3153]]` (L744) |
@@ -3055,6 +3058,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-24T21:37:21+09:00 記事がノートの独自md方式になっていないな。下書を自分でCDPでみてみろ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T16:38:07+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-25T23:08:56+09:00 続けて |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T03:03:14+09:00 続けて |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -3121,6 +3125,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T13:22:03+09:00 スクリプトをcodexの/goalを使って実行速度を-5%を三回達成させるCMDを出すのはどうだ？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T02:05:01+09:00 実行速度が遅い.pyはないか？遅いのはバグの1種だ。品質を完全に保ちながらバグを修正しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T02:41:17+09:00 他に速度バグはないか？覚醒して調査 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T02:55:43+09:00 他に速度バグはないか？覚醒して調査 |
 
 ## tier_plan_mapping — Tier-プラン対応
 
