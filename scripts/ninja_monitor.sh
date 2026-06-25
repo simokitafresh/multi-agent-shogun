@@ -871,6 +871,18 @@ check_idle() {
                     return 1
                     ;;
                 *)
+                    # check_agent_busy=unknownでも、pane_tailにidle_patternがあればidle補正
+                    # 根因: Codex CLIで@agent_state=active残存+check_agent_busy=2(unknown)→永久busy
+                    local _stale_idle_pat _stale_pane_tail
+                    _stale_idle_pat=$(cli_profile_get "$agent_name" "idle_pattern" 2>/dev/null || echo "")
+                    [ -z "$_stale_idle_pat" ] && _stale_idle_pat="❯|›"
+                    _stale_pane_tail=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
+                    if [ -n "$_stale_pane_tail" ] && printf '%s\n' "$_stale_pane_tail" | grep -qE "$_stale_idle_pat"; then
+                        log "HOOK-STALE-IDLE-OVERRIDE: ${agent_name} @agent_state=${agent_state} stale+unknown, but pane idle_pattern matched -> idle"
+                        tmux set-option -p -t "$pane_target" @agent_state idle 2>/dev/null || true
+                        [ ! -f "${STATE_DIR}/shogun_idle_${agent_name}" ] && touch "${STATE_DIR}/shogun_idle_${agent_name}"
+                        return 0
+                    fi
                     log "HOOK-STALE-UNKNOWN: ${agent_name} @agent_state=${agent_state} stale, pane state unknown -> keep busy"
                     return 1
                     ;;
