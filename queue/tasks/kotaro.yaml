@@ -1,11 +1,8 @@
 task:
-  readonly_ref:
-  - path: 'tests/test_metrics_summary_additional_benchmarks.py'
-    reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3532_full
+  _ac_task_id: cmd_3540_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3532 (deployed 2026-06-25T17:55:08). Read from the beginning.
-  ac_version: 398de900
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3540 (deployed 2026-06-26T02:45:12). Read from the beginning.
+  ac_version: bcfc0564
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -35,36 +32,36 @@ task:
   - gate実装の変更
   - 半蔵reportの編集
   parallel_ok: []
-  parent_cmd: cmd_3532
+  parent_cmd: cmd_3540
   project: dm-signal
-  purpose: '殿指摘(2026-06-25): Compare summary画面のTQQQのMaxDDが-12.2%と表示され現実(-80%)と極端に乖離。根因: calculate_metrics()のMaxDD処理がmonthly_df_cache(TQQQ月次データ)ではなくvisible_anchor_portfolio_id(DM-safe)のDrawdownPeriodテーブルを参照。MaxDD・MDD Date・Drawdown Length・Recovery Time・Underwater Period・Avg Underwater Period・PTU・Peak/Trough/Recovery Date・Calmar Ratioが汚染'
+  purpose: cmd_3539でmetrics_impl.py L195を修正したが、同一パターン(リスト内包表記内pd.to_datetime個別呼出し)がtrades_impl.py L116/L259に残存。忍者lesson_candidateで検出済み。全数値完全一致必須
   status: idle
   stop_for: []
   target_path: /mnt/c/Python_app/DM-signal/backend/app/services
   target_path_warning: '⚠ target_pathが存在しない: scripts/gates/context_freshness_check.sh'
-  task_id: cmd_3532_full
+  task_id: cmd_3540_full
   task_type: full
   related_lessons:
   - id: 'L779'
     summary: 'dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER'
     detail: 'dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER'
-  - id: 'L319'
-    summary: 'gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ'
-    detail: 'gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ'
-  - id: 'L232'
-    summary: 'bats tests/unit/（294件、--jobs 4）がpre-pushのtimeout 120秒を超過。テストスイート増加に伴いtimeout延長かテ'
-    detail: 'bats tests/unit/（294件、--jobs 4）がpre-pushのtimeout 120秒を超過。テストスイート増加に伴いtimeout延長かテ'
+  - id: 'L188'
+    summary: '影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。'
+    detail: '影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。'
+  - id: 'L529'
+    summary: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
+    detail: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "alm_research — ALM研究:  /mnt/c/Python_app/DM-signal/docs/research/alm-integration-design.md context/gunshi-alm-38metrics-design.md context/robustness-verification-catalog.md docs/research/gunshi-alm-dynamic-iswindow-design.md — 軍師分析: ALM動的isWindow設計 docs/research/gunshi_cmd1901_cash_fallback_design_20260414.md — 軍師分析: cmd_1901 Cashフォールバック設計(2026-04-14) docs/research/gunshi_consultation_cmd1901_cash_analysis_20260414.md — 軍師相談: cmd_1901 Cash分析(2026-04-14)"
-  - "alpha_6_metrics — α6指標:  projects/dm-signal.yaml alpha_6_metrics context/l3-robustness.md L299 context/robustness-verification-catalog.md docs/obsidian-promoted/alpha6_article_correlation_memory_loop_20260624.md — α6記事Gist修正・α6相関係数・三層記憶確認漏れの復帰用要点 docs/research/statistics-convention-kurtosis-skewness.md — Kurtosis raw vs excess整合性知見。本番pandas=excess、robustness_common=raw→修正方針"
+  - "lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/auto_draft_lesson.sh scripts/sync_lessons.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml docs/research/gunshi_idle_insights_consumption_bottleneck_20260515.md — 軍師idle: インサイト消費ボトルネック分析(2026-05-15) docs/research/gunshi_idle_knowledge_burial_audit_20260505.md — 軍師idle: 知識埋没監査(2026-05-05) docs/research/gunshi_idle_lesson_dedup_20260413.md — 軍師idle: 教訓重複排除分析(2026-04-13) docs/research/gunshi_idle_lesson_effectiveness_20260413.md — 軍師idle: 教訓有効性測定(2026-04-13) docs/research/gunshi_idle_lesson_impact_20260412.md — 軍師idle: 教訓インパクト分析(2026-04-12) docs/research/gunshi_idle_lesson_injection_dual_track_20260428.md — 軍師idle: 教訓注入デュアルトラック設計(2026-04-28) docs/research/gunshi_idle_lesson_injection_quality_20260605.md — 軍師idle: 教訓注入品質監査(2026-06-05) docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md — 軍師idle: 教訓注入汎用バイパス問題(2026-06-02) docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md — 軍師idle: 教訓参照率分析(2026-04-30) docs/research/gunshi_idle_lesson_tag_mismatch_20260507.md — 軍師idle: 教訓タグ不一致分析(2026-05-07) docs/research/gunshi_idle_lesson_useful_rate_20260422.md — 軍師idle: 教訓有用率計測(2026-04-22) docs/research/gunshi_idle_lesson_useful_rate_20260503.md — 軍師idle: 教訓有用率計測v2(2026-05-03) docs/research/gunshi_idle_lesson_useful_rate_20260608.md — 軍師idle: 教訓有用率計測v3(2026-06-08) docs/research/gunshi_idle_lesson_waste_analysis_20260516.md — 軍師idle: 教訓無駄分析(2026-05-16) docs/research/gunshi_idle_lesson_useful_rate_improvement_20260620.md — 軍師idle: 教訓有用率改善分析(2026-06-20) docs/research/gunshi_idle_session_lessons_20260617.md — 軍師idle: セッション教訓分析(2026-06-17) docs/research/gunshi_idle_session_lessons_20260618.md — 軍師idle: セッション教訓分析(2026-06-18) docs/research/gunshi_idle_self_run_20260624.md — 軍師idle: idle自走Step1-8完了分析(2026-06-24) docs/research/gunshi_idle_useful_rate_bootstrap_analysis_20260618.md — 軍師idle: 有用率ブートストラップ分析(2026-06-18) docs/research/lessons_karo_v3_archive.md — 家老教訓v3アーカイブ(統合前全文保存)"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
   related_causal_links:
-  - "[[metrics_impl_DrawdownPeriod_anchor汚染]]"
-  - "[[ベンチマークモードMaxDD計算パス修正]]"
-  - "[[殿指摘_TQQQ_MaxDD乖離_20260625]]"
+  - "[[cmd_3539_lesson_candidate]]"
+  - "[[trades_impl同一パターン残存]]"
+  - "[[横展開修正]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -74,57 +71,43 @@ task:
   - "context/robustness-verification-catalog.md"
   - "context/gs-speedup-knowledge.md"
   - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
+  - "context/training-cycle.md"
   production_invariants:
   - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
   - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
   - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
   - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
   - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L779: dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER
-      - L319: gate_cycle_health/inbox_write/yaml_field_setの3スクリプトについてtests/とtests/unit/に別テストファ
-      - L232: bats tests/unit/（294件、--jobs 4）がpre-pushのtimeout 120秒を超過。テストスイート増加に伴いtimeout延長かテ
+      - L188: 影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。
+      - L529: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - '2026-06-25T17:49:58+09:00 | 【INFOバッチ】 2026-06-25 17:39:20|CI緑: run 28156567244'
-  - '2026-06-25T17:28:10+09:00 | 三層記憶貫通完了。[MEM: memory_db ts=2026-06-25 knowledge:260f88916dc751e2 "clear_prep_check.sh速度バグ修正"] **現況*'
-  - '2026-06-25T17:41:49+09:00 | 「anchorポートフォリオ」は殿の用語ではなく、`metrics.py` line 322の内部変数名`visible_anchor_portfolio_id`のこと。**Compare summa'
-  - '2026-06-25T17:32:35+09:00 | compare summry画面のTQQQのmetricsが信ぴょう性がない。maxDDが-12.2%と現実と極端に乖離している。調査が必要だ'
+  - '2026-06-26T02:33:10+09:00 | 殿、cmd_3538(PFリンク)とcmd_3539(metrics速度改善)の両方がGATE CLEAR。陣形図でsaizo=completed確認済み。 本セッション全cmd完了。殿の次の指示があ'
+  - '2026-06-26T02:32:25+09:00 | cmd_3539報告レビュー完了。LGTM。 **殿への成果報告**: 軍師がプロファイリングで特定した速度バグ(pd.to_datetime 15,122回)を才蔵が修正。764ms→4ms(99.'
+  - '2026-06-26T02:30:36+09:00 | cmd_3539完了。 **実施内容**: - `metrics_impl.py` L195: リスト内包表記内の `pd.to_datetime` 個別呼出し（15,122回）をベクトル化1回に変換'
+  - '2026-04-09T08:19:43+09:00 | **根本原因が判明した。** 殿、報告する。 **根因: `MainActivity.kt L195`の`NavigationBar(modifier = Modifier.imePadding())'
+  - '2026-06-26T02:44:24+09:00 | 殿、残存速度バグ3箇所を特定: | # | ファイル | 行 | 用途 | |---|---|---|---| | 1 | trades_impl.py | L116 | Trades計算(API) '
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'metrics_impl.pyのcalculate_metrics()で、monthly_df_cacheが渡された場合はget_mdd_from_drawdown_periodおよびcalculate_mdd_from_priceをスキップし、monthly_df_cacheのportfolio_cumulative列から月次精度でMaxDDを計算するように修正する'
+    - check: 'trades_impl.py L116/L259のpd.to_datetime個別呼出しをベクトル化に変換し、修正前後で全出力値が完全一致すること'
   - id: 'AC2'
     checks:
-    - check: 'GET /api/metrics/summary?years=0のレスポンスでbenchmarks[ticker=TQQQ]のMaximum Drawdownが-70%以下(絶対値70%以上)であることを本番APIで確認する'
-  - id: 'AC3'
-    checks:
-    - check: '汚染候補メトリクス(MDD Date・Drawdown Length・Recovery Time・Underwater Period・Avg Underwater Period・PTU・Peak Date・Trough Date・Recovery Date・Calmar Ratio)がTQQQの月次データから計算された値であることを確認する'
-  - id: 'AC4'
-    checks:
-    - check: '既存テストスイートが破壊されていないことを確認する'
+    - check: '既存テスト(python -m pytest tests/)が全PASSすること'
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_3532.yaml
-  report_path: queue/reports/kotaro_report_cmd_3532.yaml
+  report_filename: kotaro_report_cmd_3540.yaml
+  report_path: queue/reports/kotaro_report_cmd_3540.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 2
+    total_workarounds: 3
     top_pattern: 'report_yaml_format(2件)'
-    breakdown: 'report_yaml_format(2件)'
+    breakdown: 'report_yaml_format(2件), uncategorized(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
@@ -147,4 +130,4 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-06-25T17:56:10"
+  deployed_at: "2026-06-26T02:45:37"

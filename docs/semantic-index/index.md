@@ -3120,6 +3120,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T12:54:57+09:00 どちらにしても全348万パターンは時間がかかりすぎるな。とりあえず実行速度をより早くするための道具磨きを使用。品質を下げてはだめだな。メモリと一時ファイルのサイズ、実行速度、inbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T13:22:03+09:00 スクリプトをcodexの/goalを使って実行速度を-5%を三回達成させるCMDを出すのはどうだ？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T02:05:01+09:00 実行速度が遅い.pyはないか？遅いのはバグの1種だ。品質を完全に保ちながらバグを修正しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T02:41:17+09:00 他に速度バグはないか？覚醒して調査 |
 
 ## tier_plan_mapping — Tier-プラン対応
 
@@ -3570,6 +3571,9 @@ codd:
 | lesson | `L850` context_freshnessが作業開始時点でOKでも発火ログとsource差分を分けて報告する |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T01:24:56+09:00 設計書を家老にレビューしてもらおう。実装を前提に未確定や未調査がないようにして貰え。任意などの未確定は禁止 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T01:31:09+09:00 設計書レビューは家老自身にやらせろ。codex gpt5.5 mediumでopusと違う視点があるから意味がある。 |
+| cmd | `cmd_3540` 修正 — trades_impl.py pd.to_datetime個別呼出しベクトル化(cmd_3539横展開) |
+| causal | `cmd_3540` origin: [[cmd_3539_lesson_candidate]] -> [[trades_impl同一パターン残存]] -> [[横展開修正]] |
+| causal | `cmd_3540` depends_on: cmd_3539 |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
