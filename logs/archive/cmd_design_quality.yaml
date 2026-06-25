@@ -59946,3 +59946,24 @@ entries:
   checks: "cmd_save_main|warn_missing_prev_cmd_lesson"
   diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: Phase0+cmd_3495と同一テンプレート"
   notes: "前cmd_3495で2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3495 LS-A05"
+- cmd_id: "cmd_3496"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-22T15:44:42Z"
+  block_duration_minutes: 2
+- cmd_id: "cmd_3496"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-22T15:45:27Z"

@@ -2441,3 +2441,35 @@
   brainwash_check: "files_modified 1件、gate OK確認、source 4件git log特定。#2検証スキップなし"
   origin: "[[GA-130]] -> [[dm-signal-frontend鮮度更新]] -> [[gate OK]]"
   timestamp: "2026-06-25T16:24:00+09:00"
+- cmd_id: cmd_karo_hotfix_ga131_context_freshness_dm_signal_core_20260625
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, adversarial]
+  findings_summary: "APPROVE。GA-131 dm-signal-core鮮度hotfix。AC4個。GA-125シリーズ同パターン。発火/現時点分離記録"
+  observations:
+    - "AC1に発火時点と現時点OKの分離記録を要求(GA-130 lesson反映)"
+  causal_chain: "GA-131 ALERT→dm-signal-core鮮度検証→更新→gate再検証"
+  operational_simulation: "半蔵がgate実行→source差分確認→context更新→gate再検証"
+  brainwash_check: "AC4個、GA-125パターン確認。#2検証スキップなし"
+  origin: "[[GA-131]] -> [[dm-signal-core鮮度]] -> [[context更新]]"
+  timestamp: "2026-06-25T16:37:00+09:00"
+- cmd_id: cmd_karo_hotfix_ga131_context_freshness_dm_signal_core_20260625
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  gate_result: null
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "LGTM。dm-signal-core鮮度更新。source 8件照合。robustness/continuity/deterioration BM追記。gate OK"
+  observations:
+    - "発火/現時点分離記録: GA-131 detected_at=16:32:47、作業時点gate=OK"
+    - "source 8件のうちcore/backend関連をrobustness/continuity/deterioration BMに絞って索引追記"
+  causal_chain: "GA-131→source 8件→core索引追記→last_updated更新→gate OK"
+  step3_5_verified: true
+  brainwash_check: "AC4全PASS、gate OK確認、source 8件git log特定。#2検証スキップなし"
+  origin: "[[GA-131]] -> [[dm-signal-core鮮度更新]] -> [[gate OK]]"
+  timestamp: "2026-06-25T16:40:00+09:00"
