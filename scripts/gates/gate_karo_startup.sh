@@ -1335,7 +1335,7 @@ for ninja in $_KARO_NINJA_NAMES; do
             ctx=""
         fi
         rm -f "${_CTX_TMPF[$ninja]}"
-        if [[ "$task_status" =~ ^(assigned|in_progress)$ && ( "$ctx" == "0%" || -z "$ctx" ) ]]; then
+        if [[ "$task_status" == "assigned" && ( "$ctx" == "0%" || -z "$ctx" ) ]]; then
             echo "  ⚠ $ninja: CTX=${ctx:-EMPTY} status=$task_status → STALL疑い"
             stall_count=$((stall_count + 1))
         else
@@ -1350,7 +1350,7 @@ done
 if [ "$stall_count" -gt 0 ]; then
     echo "  ALERT: ${stall_count}名STALL疑い。ペインを目視確認せよ"
     overall="ALERT"
-    alerts+=("${stall_count}名STALL疑い(assigned+CTX:0%)")
+    alerts+=("${stall_count}名STALL疑い(assigned+CTX:0%/EMPTY)")
 fi
 echo ""
 
@@ -1943,6 +1943,9 @@ if [ ${#alerts[@]} -gt 0 ]; then
     _alert_flag="$SCRIPT_DIR/queue/gates/karo_alert_pending.txt"
     printf '%s\n' "${alerts[@]}" > "$_alert_flag"
     echo "  [L4] ALERT pendingフラグ設置: $_alert_flag (stop hookがBLOCK)"
+else
+    _alert_flag="$SCRIPT_DIR/queue/gates/karo_alert_pending.txt"
+    rm -f "$_alert_flag"
 fi
 
 # --- Alert history記録 (gate_shogun_startup.sh準拠) ---

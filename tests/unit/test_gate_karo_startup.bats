@@ -207,10 +207,12 @@ executions:
   result: "PASS"
   stumbling_points: "none"
 EOF
+    printf 'stale alert\n' > "$TEST_TMPDIR/queue/gates/karo_alert_pending.txt"
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
     [[ "$output" == *"総合判定: OK"* ]]
     [[ "$output" == *"スキル品質: 全PASS"* ]]
+    [ ! -e "$TEST_TMPDIR/queue/gates/karo_alert_pending.txt" ]
 }
 
 @test "skill FAIL summary is displayed at startup" {
@@ -424,7 +426,7 @@ MOCK
     [[ "$output" != *"STALL疑い"* ]]
 }
 
-@test "active pane with unparseable CTX still raises STALL suspicion" {
+@test "in_progress pane with unparseable CTX does not raise startup STALL suspicion" {
     cat > "$TEST_TMPDIR/queue/tasks/hanzo.yaml" <<'YAML'
 task:
   status: in_progress
@@ -444,8 +446,33 @@ MOCK
 
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"hanzo: CTX=EMPTY status=in_progress → STALL疑い"* ]]
+    [[ "$output" == *"hanzo: CTX=? status=in_progress"* ]]
+    [[ "$output" != *"STALL疑い"* ]]
+}
+
+@test "assigned pane with unparseable CTX still raises STALL suspicion" {
+    cat > "$TEST_TMPDIR/queue/tasks/hanzo.yaml" <<'YAML'
+task:
+  status: assigned
+YAML
+    cat > "$TEST_TMPDIR/bin/tmux" <<'MOCK'
+#!/usr/bin/env bash
+case "$1" in
+  list-panes)
+    printf '5 hanzo\n'
+    ;;
+  capture-pane)
+    printf 'waiting without context meter\n'
+    ;;
+esac
+MOCK
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"hanzo: CTX=EMPTY status=assigned → STALL疑い"* ]]
     [[ "$output" == *"ALERT: 1名STALL疑い"* ]]
+    [[ "$output" == *"1名STALL疑い(assigned+CTX:0%/EMPTY)"* ]]
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
