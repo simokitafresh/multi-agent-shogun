@@ -678,7 +678,7 @@ lessons:
   origin: '[[cmd_3377]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-06-26'
 - id: L737
   title: 奥義PFの命名BBはL1コンポーネントBBと対応していない
   summary: '奥義-GS-{BB}-{目的}の{BB}は、コンポーネントのL1 BBとは対応していない。例: 奥義-GS-追い風-激攻のコンポーネントに追い風BBは含まれない'
@@ -2664,6 +2664,9 @@ lessons:
   - outputs/analysis/alm_research/cmd_1856_regression_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/cmd_1856_regression_l1_wf_validation.yaml
   origin: '[[cmd_1856]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L608
   title: 進行中月パリティ差異は構造的問題
   summary: GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致

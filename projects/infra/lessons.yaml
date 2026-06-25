@@ -1866,7 +1866,7 @@ lessons:
   origin: '[[cmd_karo_context_freshness_ga407_20260603]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-06-26'
 - id: L737
   title: 'FAST_METADATAガードの適用範囲: 教育的表示を追加したら同時にFAST_METADATAガードも追加せよ'
   summary: cmd_save.shに教育的メタデータ表示(show_lord_conversation_matches&, Q11 research dir
@@ -3768,6 +3768,9 @@ lessons:
   - frontend/vitest.setup.ts
   - frontend/components/PortfolioForm.test.tsx
   origin: '[[cmd_2719]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L608
   title: npm audit fix --omit=devはdevDependencies削除する
   summary: npm audit fix --omit=devを実行するとdevDependencies(@tailwindcss/postcss等)がnode_module

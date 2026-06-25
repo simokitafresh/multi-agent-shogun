@@ -1,65 +1,4 @@
 entries:
-- cmd_id: "cmd_3509"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-06-23T03:08:12Z"
-  notes: "研究cmd道具未記載|check=check_research_tool_explicit"
-- cmd_id: "cmd_3509"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-23T03:10:55Z"
-- cmd_id: "cmd_3509"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-23T03:11:53Z"
-- cmd_id: "cmd_3509"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-23T03:12:40Z"
-- cmd_id: "cmd_3510"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-23T03:34:32Z"
-- cmd_id: "cmd_3510"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-23T03:35:26Z"
 - cmd_id: "cmd_3510"
   ac_count: 0
   gate_result: "CLEAR"
@@ -2146,7 +2085,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2157,7 +2096,7 @@ entries:
   ac_count: 0
   gate_result: "BLOCK"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -2166,3 +2105,57 @@ entries:
   checks: "cmd_save_main"
   diagnosis: "BLOCK理由: cmd_3537で設計書数値緩和WARN累計昇格(LS-A22(11)FP: q8の1タップとACのテスト件数は無関係概念) / 対策: cmd cancel+新ID起票で累計リセット。q8 WHATにテスト件数を同期し数値一致"
   notes: "WARN累計昇格: 「設計書数値緩和|check=check_gunshi_reference_numeric_relaxation」が5回繰り返されています(cmd_ids=cmd_3527,cmd_3529,cmd_3534,cmd_3535,cmd_3537)。WARNを解消してからcmd_save.shを実行せよ"
+- cmd_id: "cmd_3538"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-25T16:48:46Z"
+  block_duration_minutes: 6
+- cmd_id: "cmd_3538"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-25T16:49:16Z"
+- cmd_id: "cmd_3538"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-25T17:00:53Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: cmd_3537で設計書数値緩和WARN累計昇格(LS-A22(11)FP: q8の1タップとACのテスト件数は無関係概念) / 対策: cmd cancel+新ID起票で累計リセット。q8 WHATにテスト件数を同期し数値一致"
+  notes: "cmd_3538 は既に委任済みです。"
+- cmd_id: "cmd_3538"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-25T17:19:04Z"
+- cmd_id: "cmd_3538"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "yes"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 1
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-25T17:19:57Z"

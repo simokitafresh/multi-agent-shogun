@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_3536_full
+  _ac_task_id: idle
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3536 (deployed 2026-06-25T21:45:48). Read from the beginning.
-  ac_version: 4e18176c
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3538 (deployed 2026-06-26T01:55:18). Read from the beginning.
+  ac_version: 3abddce9
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -32,42 +32,32 @@ task:
   - DM-Signalアプリ機能実装
   - 無関係なcontext freshness ALERTの同時修正
   parallel_ok: []
-  parent_cmd: cmd_3536
+  parent_cmd: 
   project: dm-signal
-  purpose: '殿指示(2026-06-25): metricsページのUp vs. Down表・チャートがCLOSE固定でトグルに追従しない。設計書docs/spec/up-down-market-timing-toggle.md(review-1反映済み)。BE timing keyword-only + 入力列切替 + DDL補完、FE api-client後方互換 + stale guard'
+  purpose: '殿指示(2026-06-26): Compare SummaryのPF名をタップするとそのPFのSummaryページに飛べるようにする。設計書compare-summary-portfolio-link.md確定済み(家老レビューAPPROVE)'
   status: idle
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal
-  task_id: cmd_3536_full
+  target_path: /mnt/c/Python_app/DM-signal/frontend/components
+  task_id: idle
   task_type: full
-  previous_failures:
-    attempt: 1
-    last_block_reason: 'knowledge_candidate: found=true but items is empty'
-    tried_approaches:
-    - 'knowledge_candidate: found=true but items is empty'
-    approach_summary: 'p-average benchmark拡張を実装し、SPY/TQQQのp̄計算・保存・API配信・Compare Summary表示を追加。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'knowledge_candidate: found=true but items is empty'
-      approach_summary: 'p-average benchmark拡張を実装し、SPY/TQQQのp̄計算・保存・API配信・Compare Summary表示を追加。'
   related_lessons:
-  - id: 'L508'
-    summary: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-    detail: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
   - id: 'L779'
     summary: 'dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER'
     detail: 'dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER'
-  - id: 'L190'
-    summary: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき'
-    detail: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき'
+  - id: 'L738'
+    summary: '外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split'
+    detail: '外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split'
+  - id: 'L609'
+    summary: 'ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp'
+    detail: 'ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   related_causal_links:
-  - "[[ページ内不整合]]"
-  - "[[殿指示_UpDown_timing切替_20260625]]"
-  - "[[設計書up-down-market-timing-toggle]]"
+  - "[[UX改善_比較→詳細フロー短縮]]"
+  - "[[殿指示_Compare_Summary_PFリンク_20260626]]"
+  - "[[設計書compare-summary-portfolio-link]]"
   context_hints:
   - "context/robustness-verification-catalog.md"
   - "context/gs-speedup-knowledge.md"
@@ -80,32 +70,56 @@ task:
   - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L508: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL
       - L779: dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER
-      - L190: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき
+      - L738: 外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split
+      - L609: ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - '2026-06-25T21:13:35+09:00 | 【INFOバッチ】 2026-06-25 21:13:34|CI緑: run 28168044573'
-  - '2026-06-25T20:58:27+09:00 | 【INFOバッチ】 2026-06-25 20:50:35|cmd_3534'
-  - '2026-06-25T17:52:52+09:00 | cmd_publish.sh実行中（cmd_save.sh gate検証中）。完了通知を待つ。 殿、cmd_3532を起票中。根因と修正方針: - **根因**: `calculate_metrics'
-  - '2026-06-25T17:43:22+09:00 | ほかのLLMの分析を張る。参考にしてはい、その理解で合っています。 より正確に書くと： - `TQQQ` 追加ベンチマーク行は、`_build_benchmark_metrics_df()` でTQQ'
+  - '2026-06-26T01:43:48+09:00 | 【INFOバッチ】 2026-06-26 01:41:42|cmd_karo_recon_ga134_obsidian_link_principles_20260626'
+  - '2026-06-26T00:42:27+09:00 | 【INFOバッチ】 2026-06-26 00:30:05|CI緑: run 28180411464'
+  - '2026-06-26T01:50:34+09:00 | 殿、cmd_3538を家老に委任した。Compare Summary PF名リンク実装。家老CTX:86%のため、/clear後に配備される見込み。 家老のinbox1件(殿からのinbox1指示)も'
+  - '2026-06-26T01:20:24+09:00 | 殿、設計書を出力した。 `/mnt/c/Python_app/DM-signal/docs/spec/compare-summary-portfolio-link.md` **要点**: - `com'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'BE: RegimeAnalysisServiceにkeyword-only timing引数を導入し、OPEN時はopen列を入力にする。CLOSE出力は現行値と完全一致(回帰なし)。invalid timingはValueError'
+    - check: 'compare-summary-table.tsxの通常PF行(is_benchmark=false)のname列セルがNext.js Linkコンポーネントでラップされ、href属性が/summary?portfolio=encodeURIComponent(row.id)形式であること'
   - id: 'AC2'
     checks:
-    - check: 'BE API: GET /api/regime-analysis/{id}にtiming queryを導入する(既定close・不正値はステータスコードで拒否)。migrations.pyのfresh DDLにopen系列を補完する'
+    - check: 'ベンチマーク行(is_benchmark=true)のname列セルはリンク化されず、従来通りテキスト表示であること'
   - id: 'AC3'
     checks:
-    - check: 'FE: api-clientに後方互換timing引数を導入し、metricsページでuseExecutionTimingの値を伝播+stale response guardを設置する'
+    - check: 'リンクのスタイリングが設計書スタイリングセクションに準拠し、text-inherit+hover:underlineのみ、装飾クラスが一切ないこと'
   - id: 'AC4'
     checks:
-    - check: 'BE/FEテストスイートが全パスしnpm run buildが成功すること'
+    - check: 'LinkにprefetchがFalse設定であること'
+  - id: 'AC5'
+    checks:
+    - check: 'compare-summary-table.test.tsxにリンク存在・ベンチマーク非リンク・href形式・装飾禁止のテストが追加され全PASSすること'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3536.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3536.yaml
+  report_filename: kagemaru_report_cmd_3538.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3538.yaml
   bloom_level: 
-  deployed_at: "2026-06-25T21:46:57"
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 1
+    top_pattern: 'commit_missing(1件)'
+    breakdown: 'commit_missing(1件)'
+    warning: '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁'
+    gate_fail_top3:
+    - pattern: 'bc_result_empty'
+      count: 120
+    - pattern: 'lu_structure_error'
+      count: 45
+    - pattern: 'field_missing'
+      count: 40
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
+    gate_blocks:
+    - reason: 'report_format'
+      count: 9
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'empty_lessons_useful'
+      count: 2
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+  deployed_at: "2026-06-26T01:55:48"

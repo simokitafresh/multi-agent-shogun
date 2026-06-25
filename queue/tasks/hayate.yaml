@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_3534_full
+  _ac_task_id: idle
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3534 (deployed 2026-06-25T20:30:45). Read from the beginning.
-  ac_version: 0545df5c
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3538 (deployed 2026-06-26T01:51:54). Read from the beginning.
+  ac_version: 3abddce9
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -34,32 +34,32 @@ task:
   notes: 'gate_alert content: - alert_id: GA-132 - 検知内容: ALERT: dm-signal-research.md (source commits since last_updated=2026-06-23) - Q1: なぜこのgateが鳴ったか？直接原因と根本原因の仮説を立てよ - Q2: 同じカテゴリの穴が他にないか？横展開候補を洗い出せ - Q3: 次にこのgateが鳴らないようにする防御層は何か？ - 補足: contextが古い。更新トリガー設計の穴を確認すること。'
   origin: '[[context_freshness_ALERT_GA132]] -> [[dm_signal_research_context_stale]] -> [[context更新トリガー防御]]'
   parallel_ok: []
-  parent_cmd: cmd_3534
+  parent_cmd: 
   project: dm-signal
-  purpose: '殿指示(2026-06-25): Compare Summaryの列が冗長。capture派生3列(U/D Spread/Ratio/Vector)と劣化系4ドット(G1/G2/P/p̄)を表から外し、Alpha(annualized)とMin Months vs Benchmark(t-test)を前面に出す。設計書docs/spec/compare-summary-metric-reselection.md(369行,review-2反映済み)。BE変更ゼロ、FEのみで完結'
+  purpose: '殿指示(2026-06-26): Compare SummaryのPF名をタップするとそのPFのSummaryページに飛べるようにする。設計書compare-summary-portfolio-link.md確定済み(家老レビューAPPROVE)'
   status: idle
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/frontend
-  task_id: cmd_3534_full
+  target_path: /mnt/c/Python_app/DM-signal/frontend/components
+  task_id: idle
   task_type: full
   related_lessons:
-  - id: 'L508'
-    summary: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-    detail: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-  - id: 'L190'
-    summary: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき'
-    detail: 'cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき'
   - id: 'L779'
     summary: 'dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER'
     detail: 'dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER'
+  - id: 'L738'
+    summary: '外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split'
+    detail: '外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split'
+  - id: 'L609'
+    summary: 'ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp'
+    detail: 'ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   related_causal_links:
-  - "[[列冗長+判断軸ぶれ]]"
-  - "[[殿指示_Compare表示再選別_20260625]]"
-  - "[[設計書compare-summary-metric-reselection]]"
+  - "[[UX改善_比較→詳細フロー短縮]]"
+  - "[[殿指示_Compare_Summary_PFリンク_20260626]]"
+  - "[[設計書compare-summary-portfolio-link]]"
   context_hints:
   - "context/robustness-verification-catalog.md"
   - "context/gs-speedup-knowledge.md"
@@ -72,33 +72,35 @@ task:
   - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L508: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL
-      - L190: cmd_707で3名並列impl後review時、才蔵のみcommit済み・小太郎と影丸が未コミット。review配備前にgit status確認すべき
       - L779: dm-signal-core.mdが専用pathspec未定義のため、marketing/docs/tasks等を含む外部repo全commit 7件でALER
+      - L738: 外部repo全体commitを分割context全てへ適用すると、backend-only変更でfrontend/researchまでALERTする。split
+      - L609: ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - '2026-06-25T19:55:06+09:00 | 【INFOバッチ】 2026-06-25 19:41:01|cmd_karo_hotfix_ga133_pre_push_clear_prep_memory_db_20260625 2026-06-2'
-  - '2026-06-25T19:08:54+09:00 | 【INFOバッチ】 2026-06-25 19:04:04|CI緑: run 28160787105'
-  - '2026-06-25T20:20:59+09:00 | C:Python_appDM-signaldocsspeccompare-summary-metric-reselection.mdを読んで実装してくれ'
-  - '2026-06-25T17:41:49+09:00 | 「anchorポートフォリオ」は殿の用語ではなく、`metrics.py` line 322の内部変数名`visible_anchor_portfolio_id`のこと。**Compare summa'
+  - '2026-06-26T00:42:27+09:00 | 【INFOバッチ】 2026-06-26 00:30:05|CI緑: run 28180411464'
+  - '2026-06-26T01:20:24+09:00 | 殿、設計書を出力した。 `/mnt/c/Python_app/DM-signal/docs/spec/compare-summary-portfolio-link.md` **要点**: - `com'
+  - '2026-06-26T01:16:26+09:00 | compare summaryの画面でPF名をタップすると、そのPFのsummaryページに飛ぶことができたら便利だと思う。DM-signalのリポジトリに設計書を出力して欲しい。'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'compare-summary.tsのCOMPARE_SUMMARY_COLUMNSから設計書§4.1の削除対象列定義を除去し、Down Cap直後にAlpha(percent・highToLow)とMin Mo. vs BM(integer・lowToHigh)の列定義を配置する。PortfolioSummaryMetrics・SortableColumnを拡張する'
+    - check: 'compare-summary-table.tsxの通常PF行(is_benchmark=false)のname列セルがNext.js Linkコンポーネントでラップされ、href属性が/summary?portfolio=encodeURIComponent(row.id)形式であること'
   - id: 'AC2'
     checks:
-    - check: 'summary-data.tsのMETRIC_NAMESにALPHA・MIN_MONTHS_VS_BMを追記し、extractMetricsFromの戻り値にalpha_annualized・min_months_vs_benchmarkの抽出を含める'
+    - check: 'ベンチマーク行(is_benchmark=true)のname列セルはリンク化されず、従来通りテキスト表示であること'
   - id: 'AC3'
     checks:
-    - check: 'FEテスト(compare-summary-table.test.tsx・summary-data.test.ts)を新仕様へ更新し、page.test.tsx(deterioration/p-average API失敗時も表示継続)を新規追加する。npm test全パス+npm run build成功'
+    - check: 'リンクのスタイリングが設計書スタイリングセクションに準拠し、text-inherit+hover:underlineのみ、装飾クラスが一切ないこと'
   - id: 'AC4'
     checks:
-    - check: 'git diff --name-only -- backendが空であること(BE変更ゼロの証明)'
+    - check: 'LinkにprefetchがFalse設定であること'
+  - id: 'AC5'
+    checks:
+    - check: 'compare-summary-table.test.tsxにリンク存在・ベンチマーク非リンク・href形式・装飾禁止のテストが追加され全PASSすること'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3534.yaml
-  report_path: queue/reports/hayate_report_cmd_3534.yaml
+  report_filename: hayate_report_cmd_3538.yaml
+  report_path: queue/reports/hayate_report_cmd_3538.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -121,4 +123,4 @@ task:
     - reason: 'binary_checks_fail'
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-06-25T20:31:10"
+  deployed_at: "2026-06-26T01:52:16"
