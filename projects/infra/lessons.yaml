@@ -8815,6 +8815,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 当初想定されたBash長時間実行中の誤判定はログ上では確認できなかった
   origin: '[[cmd_777]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L203
   title: xAI x_searchはResponses API+grok-4ファミリー限定
   summary: xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール

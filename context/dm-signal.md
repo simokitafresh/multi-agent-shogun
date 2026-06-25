@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-25 cmd_3536 -->
-<!-- last_synced_lesson: L780 -->
+<!-- last_updated: 2026-06-26 cmd_3539 -->
+<!-- last_synced_lesson: L781 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -263,6 +263,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L775: monthly_df_cache渡しbenchmarkモードではDrawdownPeriodテーブルをスキップせよ（cmd_3532）
 - L777: pre-commit import-only分割は未使用importを自動除去する（cmd_3533）
 - L780: lefthook import-only分割時は同一ファイルのunstaged機能差分退避に注意（cmd_3536）
+- L781: pd.to_datetime はリスト内包表記内で個別呼出しせず、リスト一括でベクトル化呼出しせよ（cmd_3539）
 
 ## 因果リンク
 

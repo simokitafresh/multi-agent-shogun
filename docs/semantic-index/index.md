@@ -4530,6 +4530,8 @@ codd:
 | file | `projects/dm-signal.yaml` DB price data ranges |
 | discussion | MEMORY.md: DB価格データ範囲+DTB3: QQQ/SPY/XLU=2006~, SPXL=2008~, TQQQ=2010~。DTB3はpricesではなくeconomic_indicatorsテーブル。504日=24M×21営業日 |
 | cmd | `cmd_3088` aliases拡充 — DTB3/XLU/QQQデータ期間をセマンティック辞書に登録 |
+| lesson | `L781` pd.to_datetime はリスト内包表記内で個別呼出しせず、リスト一括でベクトル化呼出しせよ |
+| causal_chain | `[[cmd_3289-3293 5連続BLOCK]] -> [[readonly_ref判定乖離]] -> [[改善提案]]` (L781) |
 
 ## multi_cli_event_commonization — Multi-CLI Event共通化
 

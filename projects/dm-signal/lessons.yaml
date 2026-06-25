@@ -1,8 +1,20 @@
 ssot_path: /mnt/c/Python_app/DM-signal/tasks/lessons.md
-last_synced: '2026-06-25T23:12:44'
+last_synced: '2026-06-26T02:32:02'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons_archive.yaml
-lesson_count: 777
+lesson_count: 778
 lessons:
+- id: L781
+  title: pd.to_datetime はリスト内包表記内で個別呼出しせず、リスト一括でベクトル化呼出しせよ
+  summary: DTB3データ15122件でリスト内包表記内pd.to_datetime個別呼出し=764ms。pd.to_datetime([dates])ベクトル化=4ms
+  tags:
+  - dm-signal
+  - lesson
+  source_cmd: cmd_3539
+  when: 未設定
+  how: 未設定
+  target_files:
+  - backend/app/services/metrics_impl.py
+  origin: '[[cmd_3539]]'
 - id: L780
   title: lefthook import-only分割時は同一ファイルのunstaged機能差分退避に注意
   summary: import-only commitを同一ファイルのunstaged機能差分が残る状態で実行すると、lefthookのunstaged patch復元が失敗し作
@@ -439,7 +451,7 @@ lessons:
   origin: '[[cmd_3384]] -> [[BB分類context更新未強制]] -> [[GA-102 dm-signal-core freshness
     ALERT]]'
   deprecated: true
-  deprecated_at: '2026-06-25T23:13:20+09:00'
+  deprecated_at: '2026-06-26T02:32:33+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): context/dm-signal-core.m参照（ファイル消滅）'
 - id: L753
   title: 'DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用'
@@ -1960,7 +1972,7 @@ lessons:
   - tasks/lessons.md
   origin: '[[cmd_2311]]'
   deprecated: true
-  deprecated_at: '2026-06-25T23:13:20+09:00'
+  deprecated_at: '2026-06-26T02:32:33+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/kotaro.yaml参照（ファイル消滅）'
 - id: L656
   title: 計測スクリプトの固定待機排除はDOMポーリングで行う
@@ -2016,9 +2028,6 @@ lessons:
   - /mnt/c/Python_app/DM-signal/outputs/cmd_2291_measurements.json
   - /mnt/c/Python_app/DM-signal/outputs/cmd_2291_measurements/
   origin: '[[cmd_2291]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L652
   title: context §0のL2体数・L3状態・四神体数が実態と乖離しており更新が必要
   summary: context/dm-signal-core.md §0のL2「12体登録」は実態20体、L3「未着手」は奥義-SSS21体存在、四神「重複吸収後10体」は実態
@@ -6057,9 +6066,6 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: 本番DB確認はPostgreSQL必須
   origin: '[[cmd_1025]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L356
   title: 32体ユニバースのパターン爆発はsize4が86.8%支配。加速が全体の66.1%
   summary: C(32,4)=35,960がC(32,2)+C(32,3)=5,456の6.6倍。サイズ上限k=3で全忍法一律86.8%削減。加速のC(18,2)×2=306
@@ -7959,6 +7965,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: multi-year 時系列APIレスポンスまで同じ層へ載せると容量不足と同期ブロックを招く
   origin: '[[cmd_646]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L203
   title: SWのAPIバイパス設定がキャッシュ永続化の阻害要因
   summary: 現行sw.jsはL75-79で/api/*リクエストを完全バイパスしている。 このため、APIレスポンスはSW Cache APIに保存されず、
@@ -9966,7 +9975,7 @@ lessons:
   - scripts/analysis/data_sync/download_all_prices.py
   origin: '[[legacy_lesson_L025]]'
   deprecated: true
-  deprecated_at: '2026-06-25T23:13:21+09:00'
+  deprecated_at: '2026-06-26T02:32:34+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
 - id: L024
   title: signal_historyのキーはPhase 2のmonth_last_trading_daysと同型でなければならない（2026-02-15）

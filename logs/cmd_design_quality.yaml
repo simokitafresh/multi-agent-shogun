@@ -1,44 +1,4 @@
 entries:
-- cmd_id: "cmd_3510"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T03:48:27Z"
-- cmd_id: "cmd_3510"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T03:48:37Z"
-- cmd_id: "cmd_3511"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-23T04:00:40Z"
-- cmd_id: "cmd_3511"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-23T04:01:46Z"
 - cmd_id: "cmd_3512"
   ac_count: 0
   gate_result: "PASS"
@@ -2159,3 +2119,33 @@ entries:
   supplementary_cmds: 1
   source: "cmd_complete_gate"
   timestamp: "2026-06-25T17:19:57Z"
+- cmd_id: "cmd_3539"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-25T17:22:20Z"
+- cmd_id: "cmd_3539"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-25T17:23:01Z"
+- cmd_id: "cmd_3539"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-25T17:34:33Z"
