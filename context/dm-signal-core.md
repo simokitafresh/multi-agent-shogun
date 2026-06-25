@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-06-22 cmd_3490 -->
+<!-- last_updated: 2026-06-25 cmd_karo_hotfix_ga131 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -315,6 +315,14 @@ PipelineContext(黒板): `current_tickers`(絞込) / `momentum_data`(各BB結果
 - L317: MetricsCalculator右尾4指標は実装済みだがFE未露出（cmd_976）
 - L497: R2 Ward selection reuse via compute_monthly_selections。存在しない関数をimportするな（cmd_1413）
 
+### §5.5 Robustness / Continuity Metrics (2026-06-25)
+
+| 領域 | 現状 | 根拠 |
+|------|------|------|
+| alpha6 robustness | `scripts/analysis/grid_search/robustness_common.py` がalpha6/continuity系指標を返す。L0/SPY foundation、L1/L2/L3 trial系CLIは同共通関数を経由 | commits `063e17c9`, `2c7aa1f1`, `2fe6671a`, `46a7aafc` |
+| continuity risk API | `backend/app/api/metrics.py` / `backend/app/services/metrics_impl.py` はContinuity Risk指標をmetrics payloadへ追加済み。互換テストは `backend/tests/test_metrics_continuity_risk.py` | commit `eaf2741d` |
+| compare benchmark capture | compare summaryのadditional benchmark取得はmetrics API側でSPY/TQQQ等のbenchmark captureを補強済み | commit `499bfe37` |
+
 ## 8. APIエンドポイント概要
 
 FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success,data,error,message}`。FE `api-client.ts` は TTL付きGET (`annual-returns`/`monthly-returns`/`rolling-returns`/`monthly-trade` 等) で auth-scope込み `cacheKey` を生成し、保存済みETagを `If-None-Match` 送信、`304 Not Modified` は成功扱いで保存済みpayloadへ復元する。参照: `/mnt/c/Python_app/DM-signal/frontend/lib/api-client.ts`
@@ -333,6 +341,10 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 - L314: CORS expose_headersなしではFEがカスタムレスポンスヘッダを読めない（cmd_964）
 - L315: Payload cache+validator cache分離構成ではinvalidatorが両層同時破棄必須（cmd_964）
 - L412: BE定数変更時はFE定数(frontend/lib/constants.ts)も必ず確認・同期せよ（cmd_1079）
+
+### §8.5 Deterioration Benchmark Layer (2026-06-25)
+
+`/api/deterioration` はSPY/TQQQ benchmark return、P(det) benchmark表示、page visibility enforcementを追加済み。DB正本は `backend/app/db/models.py` / `backend/app/db/migrations.py`、計算正本は `backend/app/services/benchmark_returns.py` と `backend/app/services/deterioration_benchmarks.py`、batch連携は `backend/app/jobs/deterioration_batch.py`。根拠: commit `59146c43`、spec `docs/spec/deterioration-benchmark-extension.md`。
 
 ## 10. ディレクトリ構成
 
