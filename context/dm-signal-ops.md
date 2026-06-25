@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-06-25 cmd_karo_hotfix_ga129 -->
+<!-- last_updated: 2026-06-26 cmd_3546 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -29,6 +29,7 @@ Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal
 
 - L690: recalculate-sync完了判定はAPI statusだけでなくDB recalculation_status行で確認する（cmd_2424）
 - L701: fullrecalculate後は非対象PFのmonthly_returns件数diffを確認し復元判断まで行う（cmd_2450）
+- L783: Render本番fullrecalculate完了確認はrecalculate-statusではなくtiming-historyの新規DB記録を一次証跡にせよ。recalculate-statusはロードバランサーで別インスタンスに当たり不正確になりうる。cmd_3546で102PF fullrecalculate前後のsignals/metrics完全一致(signal_diffs=0, metrics_diffs=0, run_id=20260625_194042, elapsed=352s)を `docs/research/cmd_3546/snapshot_and_verify_v4.py` + `diff_result_v4_20260625_194638.json` で証明済み。
 ローカルでやらないこと: recalculate_fast.pyの直接実行（Render上で動くコード）。
 
 ### DM-Signal本番FE CDP確認手順（2026-05-05実証済み）

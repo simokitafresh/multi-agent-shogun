@@ -572,9 +572,10 @@ for _pid in "${_target_pids[@]}"; do
     [ -z "$_cf" ] && _cf="context/${_pid}.md"
     _context_path="$SCRIPT_DIR/$_cf"
 
-    # 高速化: context fileを1回のawk passでsynced_num+unsorted_countを取得
+    # 高速化: context fileを1回のawk passでsynced_num+unsorted_count+unsorted_idsを取得
     _synced_num=0
     _unsorted=0
+    _unsorted_ids=""
     if [ -f "$_context_path" ]; then
         _ctx_data=$(awk '
             /<!-- last_synced_lesson: L[0-9]+ -->/ {
@@ -582,11 +583,18 @@ for _pid in "${_target_pids[@]}"; do
             }
             /^## 教訓索引（自動追記）/ { in_sec=1; next }
             in_sec && /^## / { in_sec=0 }
-            in_sec && /^- L/ { c++ }
-            END { printf "%d|%d\n", synced+0, c+0 }
+            in_sec && /^- L/ {
+                c++
+                if (match($0, /L[0-9]+/)) {
+                    ids = ids (ids ? "," : "") substr($0, RSTART, RLENGTH)
+                }
+            }
+            END { printf "%d|%d|%s\n", synced+0, c+0, ids }
         ' "$_context_path")
         _synced_num="${_ctx_data%%|*}"
-        _unsorted="${_ctx_data##*|}"
+        _rest="${_ctx_data#*|}"
+        _unsorted="${_rest%%|*}"
+        _unsorted_ids="${_rest#*|}"
     fi
 
     # ─── 1回のawk passで全統計を取得 ───
@@ -646,11 +654,11 @@ for _pid in "${_target_pids[@]}"; do
     # ─── check_unsorted_lessons 相当 ───
     if [ "${_unsorted:-0}" -gt "$UNSORTED_THRESHOLD" ]; then
         emit_actionable \
-            "ALERT: ${_pid}の未振り分け教訓${_unsorted}件 → /lesson-sort推奨" \
+            "ALERT: ${_pid}の未振り分け教訓${_unsorted}件 → /lesson-sort推奨 (ids: ${_unsorted_ids:-unknown})" \
             "/lesson-sort を実行し、未振り分け教訓を適切なcontextセクションへ移動せよ。"
         EXIT_CODE=1
     elif [ "${_unsorted:-0}" -gt 0 ]; then
-        echo "OK: ${_pid}の未振り分け教訓${_unsorted}件(閾値${UNSORTED_THRESHOLD}以下)"
+        echo "OK: ${_pid}の未振り分け教訓${_unsorted}件(閾値${UNSORTED_THRESHOLD}以下, ids: ${_unsorted_ids:-unknown})"
     fi
 
     # ─── injection_count チェック相当 ───
