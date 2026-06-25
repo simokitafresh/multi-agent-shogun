@@ -1075,13 +1075,23 @@ get_context_pct() {
                 fi
             fi
         fi
-    else
-        # フォールバック: agent_name未指定時は両パターン試行
+    fi
+
+    # フォールバック: プロファイルなし or ctx_patternマッチ失敗時
+    # CLI type設定と実態の乖離でctx_patternが合わない場合に全パターンを試す
+    if [ -z "$ctx_num" ]; then
         ctx_num=$(echo "$output" | grep -oE 'CTX:[0-9]+%' | tail -1 | grep -oE '[0-9]+')
         if [ -n "$ctx_num" ]; then
             _ctx_pct_emit "$pane_target" "$ctx_num"; return
         fi
-
+    fi
+    if [ -z "$ctx_num" ]; then
+        ctx_num=$(echo "$output" | grep -oE 'Context [0-9]+% used' | tail -1 | grep -oE '[0-9]+')
+        if [ -n "$ctx_num" ]; then
+            _ctx_pct_emit "$pane_target" "$ctx_num"; return
+        fi
+    fi
+    if [ -z "$ctx_num" ]; then
         local remaining
         remaining=$(echo "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
         if [ -n "$remaining" ]; then
@@ -3488,13 +3498,21 @@ update_context_pct() {
             fi
         fi
     else
-        # フォールバック: agent_name未指定 or プロファイルなし
+        ctx_num=""
+    fi
+
+    # フォールバック: プロファイルなし or ctx_patternマッチ失敗時
+    # CLI type設定と実態の乖離(例: claude設定だがCodexで起動)でctx_patternが合わない場合に全パターンを試す
+    if [ -z "$ctx_num" ]; then
         ctx_num=$(printf '%s' "$output" | grep -oE 'CTX:[0-9]+%' | tail -1 | grep -oE '[0-9]+')
-        if [ -z "$ctx_num" ]; then
-            local remaining
-            remaining=$(printf '%s' "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
-            [ -n "$remaining" ] && ctx_num=$((100 - remaining))
-        fi
+    fi
+    if [ -z "$ctx_num" ]; then
+        ctx_num=$(printf '%s' "$output" | grep -oE 'Context [0-9]+% used' | tail -1 | grep -oE '[0-9]+')
+    fi
+    if [ -z "$ctx_num" ]; then
+        local remaining
+        remaining=$(printf '%s' "$output" | grep -oE '[0-9]+% context left' | tail -1 | grep -oE '[0-9]+')
+        [ -n "$remaining" ] && ctx_num=$((100 - remaining))
     fi
 
     if [ -n "$ctx_num" ] && [ "$ctx_num" -gt 0 ] 2>/dev/null; then
