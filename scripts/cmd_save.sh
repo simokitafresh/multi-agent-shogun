@@ -5792,6 +5792,10 @@ check_ac_phase_mixing() {
         # Exclude function calls that happen to contain phase keywords.
         # Example: deploy_task() names a function; "deploy" alone remains a delivery action.
         gsub(/[a-z_][a-z0-9_]*[[:space:]]*\(/, " ", lt)
+        # Exclude snake_case identifiers (DB tables, variables, config keys).
+        # Example: benchmark_p_average_results is a table name, not a measurement action.
+        # FP fix (2026-06-26): cmd_3533 "benchmark_p_average_results" triggered benchmark keyword.
+        gsub(/[a-z][a-z0-9]*(_[a-z][a-z0-9]*)+/, " ", lt)
         if (lt !~ /実装|追加|修正|改修|変更|作成|導入|implement|implementation|add|fix|modify|change|create|introduce/) return
         # Exempt "implementing measurement" pattern: measurement term as object of impl verb
         # e.g. "計測機能を追加" "計測ロジックを実装" "benchmarkを作成" = measurement is the target
