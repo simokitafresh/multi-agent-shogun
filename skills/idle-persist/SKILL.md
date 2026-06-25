@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキル利用後の軍師review精度（logs/gunshi_review_log.yamlで当該分析由来レビューのgate_prediction==gate_resultとなった割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-13T15:21:03+0900 -->
+<!-- script_refs_checked_at: 2026-06-26T08:36:00+09:00 -->
 
 # /idle-persist — idle分析永続化スキル
 
@@ -95,4 +95,6 @@ Script refs verified: 2026-06-20 48204a464. `bulletin_write.sh`/`inbox_write.sh`
 
 Script refs verified: 2026-06-21 1e7a7cc4b. `inbox_write.sh` 直近変更はcommander role SSOT反映。`bash scripts/inbox_write.sh karo "{知見1行要約}" gunshi_lesson_candidate gunshi` の契約とidle分析保存→掲示板→review_log→家老通知手順は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-21T00:11:55+09:00 -->
+Script refs verified: 2026-06-26 cmd_karo_hotfix_skill_refs_20260626082009. `bulletin_write.sh` の現物未commit差分は `compute_notify_targets` 追加と `notify_targets` 記録追加。投稿者を通知先から除外する既存挙動、`BULLETIN_NOTIFY=shogun`、`requires_confirmation=false`、`action_type=info`、`bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]` の呼び出し契約は変更なし。idle分析保存→掲示板投稿→review_log記録→家老通知手順は現行と一致。
+
+<!-- script_refs_checked_at: 2026-06-26T08:36:00+09:00 -->
