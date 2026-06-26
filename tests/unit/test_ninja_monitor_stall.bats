@@ -4,6 +4,36 @@
 
 setup() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    TEST_BIN="$BATS_TEST_TMPDIR/bin"
+    mkdir -p "$TEST_BIN"
+    if ! command -v sqlite3 >/dev/null 2>&1; then
+        cat > "$TEST_BIN/sqlite3" <<'EOF'
+#!/usr/bin/env python3
+import sqlite3
+import sys
+
+if len(sys.argv) < 2:
+    sys.exit(1)
+
+db_path = sys.argv[1]
+sql = sys.argv[2] if len(sys.argv) > 2 else sys.stdin.read()
+conn = sqlite3.connect(db_path)
+try:
+    stripped = sql.strip()
+    if stripped.lower().startswith("select"):
+        cur = conn.execute(stripped.rstrip(";"))
+    else:
+        cur = conn.executescript(sql)
+    if getattr(cur, "description", None):
+        for row in cur.fetchall():
+            print("|".join("" if value is None else str(value) for value in row))
+    conn.commit()
+finally:
+    conn.close()
+EOF
+        chmod +x "$TEST_BIN/sqlite3"
+    fi
+    export PATH="$TEST_BIN:$PATH"
 }
 
 @test "check_undeployed_cmds: pending+delegated_at 10分超でntfy送信し重複通知しない" {
@@ -737,6 +767,126 @@ cat "$SCRIPT_DIR/inbox.log"
     [ "$status" -eq 0 ]
     [[ "$output" == *"KARO-IDLE-CYCLE: All 2 ninjas idle/completed/done + pipeline empty"* ]]
     [[ "$output" == *"karo|karo_idle_cycle|全忍者idle+パイプライン空。改善サイクルを回せ。"* ]]
+}
+
+@test "check_shogun_idle_analysis_trigger sends after all idle and pipeline empty for 10 minutes" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+export SCRIPT_DIR
+LAST_SHOGUN_IDLE_ANALYSIS_TRIGGER=0
+SHOGUN_IDLE_ANALYSIS_COOLDOWN=3600
+SHOGUN_IDLE_ANALYSIS_ALL_IDLE_SINCE=$((EPOCHSECONDS - 660))
+mkdir -p "$SCRIPT_DIR/queue" "$SCRIPT_DIR/config" "$SCRIPT_DIR/scripts"
+
+cat > "$SCRIPT_DIR/config/settings.yaml" <<'"'"'EOF'"'"'
+idle_cycle: on
+EOF
+cat > "$SCRIPT_DIR/queue/karo_snapshot.txt" <<'"'"'EOF'"'"'
+ninja|hayate|cmd_a|idle
+ninja|kagemaru|cmd_b|done
+EOF
+cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<'"'"'EOF'"'"'
+commands:
+EOF
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$SCRIPT_DIR/inbox.log"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+log() { echo "$1" >> "$LOG"; }
+
+check_shogun_idle_analysis_trigger
+
+cat "$LOG"
+cat "$SCRIPT_DIR/inbox.log"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SHOGUN-IDLE-ANALYSIS: All 2 ninjas idle/completed/done + pipeline empty"* ]]
+    [[ "$output" == *"shogun|idle_analysis_trigger|全忍者idle+パイプライン空が10分以上継続。idle時自己分析 Step 1-7 を開始せよ。"* ]]
+}
+
+@test "check_shogun_idle_analysis_trigger debounces duplicate sends within 60 minutes" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+export SCRIPT_DIR
+LAST_SHOGUN_IDLE_ANALYSIS_TRIGGER=$((EPOCHSECONDS - 300))
+SHOGUN_IDLE_ANALYSIS_COOLDOWN=3600
+SHOGUN_IDLE_ANALYSIS_ALL_IDLE_SINCE=$((EPOCHSECONDS - 660))
+mkdir -p "$SCRIPT_DIR/queue" "$SCRIPT_DIR/config" "$SCRIPT_DIR/scripts"
+
+printf "idle_cycle: on\n" > "$SCRIPT_DIR/config/settings.yaml"
+printf "ninja|hayate|cmd_a|idle\nninja|kagemaru|cmd_b|done\n" > "$SCRIPT_DIR/queue/karo_snapshot.txt"
+printf "commands:\n" > "$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$SCRIPT_DIR/inbox.log"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+log() { echo "$1" >> "$LOG"; }
+
+check_shogun_idle_analysis_trigger
+test ! -f "$SCRIPT_DIR/inbox.log"
+'
+    [ "$status" -eq 0 ]
+}
+
+@test "check_shogun_idle_analysis_trigger skips while pipeline has pending command" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+export SCRIPT_DIR
+LAST_SHOGUN_IDLE_ANALYSIS_TRIGGER=0
+SHOGUN_IDLE_ANALYSIS_COOLDOWN=3600
+SHOGUN_IDLE_ANALYSIS_ALL_IDLE_SINCE=$((EPOCHSECONDS - 660))
+mkdir -p "$SCRIPT_DIR/queue" "$SCRIPT_DIR/config" "$SCRIPT_DIR/scripts"
+
+printf "idle_cycle: on\n" > "$SCRIPT_DIR/config/settings.yaml"
+printf "ninja|hayate|cmd_a|idle\nninja|kagemaru|cmd_b|done\n" > "$SCRIPT_DIR/queue/karo_snapshot.txt"
+cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<'"'"'EOF'"'"'
+commands:
+- id: cmd_pending
+  status: pending
+EOF
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$SCRIPT_DIR/inbox.log"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+log() { echo "$1" >> "$LOG"; }
+
+check_shogun_idle_analysis_trigger
+test ! -f "$SCRIPT_DIR/inbox.log"
+'
+    [ "$status" -eq 0 ]
 }
 
 @test "check_ninja_cli_dead covers karo pane through unified agent map" {

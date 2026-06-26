@@ -144,6 +144,9 @@ TRAINING_AUTO_DEPLOY_STATE_PREFIX="$STATE_DIR/shogun_training_auto_deploy"
 SPEED_TRAINING_LEDGER="${SPEED_TRAINING_LEDGER:-$SCRIPT_DIR/logs/script_speed_training_ledger.yaml}"
 KARO_IDLE_COOLDOWN=1800   # 家老idle自走サイクルクールダウン（秒）— 30分
 LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epoch秒）
+SHOGUN_IDLE_ANALYSIS_COOLDOWN=3600  # 将軍idle分析triggerクールダウン（秒）— 60分
+LAST_SHOGUN_IDLE_ANALYSIS_TRIGGER=0 # 将軍idle分析trigger最終通知時刻（epoch秒）
+SHOGUN_IDLE_ANALYSIS_ALL_IDLE_SINCE=0 # 全忍者idle+pipeline空の継続開始時刻（epoch秒）
 CI_STATUS_CACHE="UNKNOWN"       # CI statusキャッシュ値（L4-R24: GitHubAPI毎サイクル削減）
 CI_STATUS_CHECK_LAST=0          # CI statusキャッシュ最終更新時刻（epoch秒）
 CI_STATUS_CHECK_INTERVAL=300    # CI statusキャッシュ有効期間（秒）— 5分
@@ -5055,12 +5058,8 @@ drain_memory_db_live_insert_queue() {
     LAST_MEMORY_DB_LIVE_DRAIN=$now
 }
 
-# ═══ 家老idle自走サイクル起動チェック (cmd_1498) ═══
-# 全忍者idle/completed/done + パイプライン空 → 家老に改善サイクル起動を通知
-check_karo_idle_cycle() {
-    # 自走プロトコルoff時は通知しない
-    local idle_cycle_flag
-    idle_cycle_flag=$(awk '
+get_idle_cycle_flag() {
+    awk '
         /^[[:space:]]*idle_cycle:[[:space:]]*/ {
             v=$0
             sub(/^[^:]*:[[:space:]]*/, "", v)
@@ -5069,16 +5068,17 @@ check_karo_idle_cycle() {
             print v
             exit
         }
-    ' "$SCRIPT_DIR/config/settings.yaml" 2>/dev/null || true)
-    if [ "$idle_cycle_flag" = "off" ]; then
+    ' "$SCRIPT_DIR/config/settings.yaml" 2>/dev/null || true
+}
+
+get_idle_pipeline_state() {
+    local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
+    if [ ! -f "$snapshot_file" ]; then
+        echo "0|0|0"
         return
     fi
 
-    local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
-    [ ! -f "$snapshot_file" ] && return
-
-    # 条件1: 全忍者がidle/completed/doneか確認
-    local ninja_total active_count snapshot_counts
+    local snapshot_counts ninja_total active_count pending_count
     snapshot_counts=$(awk -F'|' '
         /^ninja\|/ {
             total++
@@ -5087,6 +5087,25 @@ check_karo_idle_cycle() {
         END { print total+0 "|" active+0 }
     ' "$snapshot_file" 2>/dev/null || echo "0|0")
     IFS='|' read -r ninja_total active_count <<< "$snapshot_counts"
+
+    pending_count=$(awk '/^[[:space:]]+status:[[:space:]]*(pending|new)/ {c++} END {print c+0}' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || echo 0)
+    echo "${ninja_total:-0}|${active_count:-0}|${pending_count:-0}"
+}
+
+# ═══ 家老idle自走サイクル起動チェック (cmd_1498) ═══
+# 全忍者idle/completed/done + パイプライン空 → 家老に改善サイクル起動を通知
+check_karo_idle_cycle() {
+    # 自走プロトコルoff時は通知しない
+    local idle_cycle_flag
+    idle_cycle_flag=$(get_idle_cycle_flag)
+    if [ "$idle_cycle_flag" = "off" ]; then
+        return
+    fi
+
+    # 条件1: 全忍者がidle/completed/doneか確認
+    local ninja_total active_count pending_count idle_state
+    idle_state=$(get_idle_pipeline_state)
+    IFS='|' read -r ninja_total active_count pending_count <<< "$idle_state"
     [ "${ninja_total:-0}" -eq 0 ] && return
 
     if [ "${active_count:-0}" -gt 0 ]; then
@@ -5094,8 +5113,6 @@ check_karo_idle_cycle() {
     fi
 
     # 条件2: パイプラインに未処理cmdがないか確認
-    local pending_count
-    pending_count=$(awk '/^[[:space:]]+status:[[:space:]]*(pending|new)/ {c++} END {print c+0}' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || echo 0)
     if [ "${pending_count:-0}" -gt 0 ]; then
         return
     fi
@@ -5115,6 +5132,46 @@ check_karo_idle_cycle() {
         log "KARO-IDLE-CYCLE: Sent improvement cycle nudge to karo"
     else
         log "ERROR: KARO-IDLE-CYCLE inbox_write failed"
+    fi
+}
+
+# ═══ 将軍idle分析trigger (cmd_3549) ═══
+# 全忍者idle/completed/done + パイプライン空が10分以上継続 → 将軍にidle分析開始を通知
+check_shogun_idle_analysis_trigger() {
+    local idle_cycle_flag
+    idle_cycle_flag=$(get_idle_cycle_flag)
+    if [ "$idle_cycle_flag" = "off" ]; then
+        return
+    fi
+
+    local ninja_total active_count pending_count idle_state
+    idle_state=$(get_idle_pipeline_state)
+    IFS='|' read -r ninja_total active_count pending_count <<< "$idle_state"
+    if [ "${ninja_total:-0}" -eq 0 ] || [ "${active_count:-0}" -gt 0 ] || [ "${pending_count:-0}" -gt 0 ]; then
+        SHOGUN_IDLE_ANALYSIS_ALL_IDLE_SINCE=0
+        return
+    fi
+
+    local now idle_age elapsed
+    now=$EPOCHSECONDS
+    if [ "${SHOGUN_IDLE_ANALYSIS_ALL_IDLE_SINCE:-0}" -eq 0 ]; then
+        SHOGUN_IDLE_ANALYSIS_ALL_IDLE_SINCE=$now
+        return
+    fi
+    idle_age=$(( now - SHOGUN_IDLE_ANALYSIS_ALL_IDLE_SINCE ))
+    [ "$idle_age" -lt 600 ] && return
+
+    elapsed=$(( now - LAST_SHOGUN_IDLE_ANALYSIS_TRIGGER ))
+    if [ "$elapsed" -lt "$SHOGUN_IDLE_ANALYSIS_COOLDOWN" ]; then
+        return
+    fi
+
+    log "SHOGUN-IDLE-ANALYSIS: All ${ninja_total} ninjas idle/completed/done + pipeline empty for ${idle_age}s → nudging shogun"
+    if timeout 15 bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun "全忍者idle+パイプライン空が10分以上継続。idle時自己分析 Step 1-7 を開始せよ。" idle_analysis_trigger ninja_monitor >> "$LOG" 2>&1; then
+        LAST_SHOGUN_IDLE_ANALYSIS_TRIGGER=$now
+        log "SHOGUN-IDLE-ANALYSIS: Sent idle_analysis_trigger to shogun"
+    else
+        log "ERROR: SHOGUN-IDLE-ANALYSIS inbox_write failed"
     fi
 }
 
@@ -5434,6 +5491,7 @@ while true; do
     # ═══ STEP 1b: 後段チェック反映後の最終snapshot更新 ═══
     refresh_karo_snapshot_fast_path
     check_karo_idle_cycle       # 家老idle自走サイクル起動チェック (cmd_1498)
+    check_shogun_idle_analysis_trigger  # 将軍idle時自己分析trigger (cmd_3549)
     check_ntfy_listener_health  # ntfy_listenerゾンビ検知 (cmd_635)
     check_inbox_watcher_health  # inbox_watcher死亡検知+自動再起動 (おしお殿知見)
     # check_ninja_cli_dead — L5133で全エージェント版を毎サイクル先頭で実行済み(L821統合)
