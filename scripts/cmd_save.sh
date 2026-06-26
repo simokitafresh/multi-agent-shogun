@@ -533,7 +533,7 @@ show_q11_semantic_search_matches() {
     if [[ "$rc" -eq 0 ]]; then
         [[ -n "${output//[[:space:]]/}" ]] || return 0
         echo "INFO: q11 semantic_search 関連概念/既存cmd候補:" >&2
-        printf '%s\n' "$output" | sed 's/^/  /' >&2
+        head -50 <<< "$output" | sed 's/^/  /' >&2
         show_q11_causal_backlinks "${query}
 ${output}"
         return 0
@@ -4247,7 +4247,7 @@ show_three_layer_memory_ruling_info() {
     [[ "$rc" -eq 0 && -n "${output//[[:space:]]/}" ]] || return 0
 
     echo "INFO: [MEMORY_RULING] 三層記憶検索(title+purpose基準):" >&2
-    printf '%s\n' "$output" | sed 's/^/  /' >&2
+    printf '%s\n' "$output" | head -50 | sed 's/^/  /' >&2
 }
 
 # WSL2最適化: 非同期化（全出力>&2、判定に影響しない）
