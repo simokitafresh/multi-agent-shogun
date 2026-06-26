@@ -3,7 +3,7 @@
 origin: [[loop_engineering]] + [[self_improving_agent_local_optima]]
 source: `docs/research/loop_engineering_anthropic_playbook_20260617.md` (原文全文1102行)
 created: 2026-06-26T14:42+09:00
-status: reviewed (軍師レビュー済み blt_20260626_144634_35cbc4 → 5点反映済み)
+status: v3-覚醒 (軍師レビュー5点+将軍覚醒4件追加。論文全30章節カバー確認済み)
 
 ## 元論文参照
 
@@ -19,16 +19,16 @@ status: reviewed (軍師レビュー済み blt_20260626_144634_35cbc4 → 5点�
 
 | Phase | 項目 | 理由 |
 |-------|------|------|
-| Phase 1 (D0/既存改修) | #5 懐疑デフォルト, #8 サンプル読み, #11 cognitive surrender checkpoint | 既存instructions/idle手順の追記のみ |
-| Phase 2 (軽量新規) | #1 idle自走automation, #6 self-grade検証, #7 verification debt計測 | 既存スクリプト拡張 |
-| Phase 3 (中規模) | #9 token予算, #10 intent debt計測, #3 FE動かして検証 | 新規スクリプト+gate追加 |
+| Phase 1 (D0/既存改修) | #5 懐疑デフォルト, #8 サンプル読み, #11 cognitive surrender checkpoint, #15 SKILL.md 5セクション構造 | 既存instructions/idle手順/SKILL設計ルール追記のみ |
+| Phase 2 (軽量新規) | #1 idle自走automation, #6 self-grade検証, #7 verification debt計測, #14 judgment集中投資(cmd品質分析拡張) | 既存スクリプト拡張 |
+| Phase 3 (中規模) | #9 token予算, #10 intent debt計測, #3 FE動かして検証, #13 fresh model停止条件判定, #16 MCP Connector拡張 | 新規スクリプト+gate追加 |
 | Phase 4 (大規模) | #2 worktree隔離, #4 cloud scheduling | deploy_task/CI構造変更 |
 
 **段階的導入原則(論文§XII)**: 最初のループは極小から始めよ。Phase 1でチェック追加が信頼を獲得してからPhase 2へ。各Phaseで検証が実際にミスを捕捉したことを確認してから次Phaseへ進む。
 
 ---
 
-## 改善項目一覧 (12件)
+## 改善項目一覧 (16件)
 
 ### 項目1: idle自走automation化
 
@@ -174,16 +174,109 @@ status: reviewed (軍師レビュー済み blt_20260626_144634_35cbc4 → 5点�
 | **How** | Phase N完了条件: 追加した検証/gateが1件以上の実際の問題を検出した実績。未検出のままPhase N+1に進まない |
 | **論文根拠** | §XII "Build Your First Loop Today", §XII-B "Growing the Loop Safely" |
 
+### 項目13: fresh model停止条件判定(maker-checker) — 覚醒追加
+
+| 項目 | AsIs | ToBe |
+|------|------|------|
+| **What** | 忍者がtask完了→自分でbinary_checks判定→自分でverdict決定。同一エージェントが生成と判定を両方行う | 停止条件(AC達成判定)を作業した忍者とは別のモデル/エージェントが判定する。maker-checker分離 |
+| **Why** | 論文§V-D: 「各ターンの後に小さい高速モデルが条件を満たしたか判定する。完了を決めるのは作業したモデルではなく新鮮なモデル。これはmaker-checker原則 — 銀行で大口送金を入力する者と審査する者が異なるのと同じ — を停止条件に適用したもの」 | 忍者の「完了です」は自己説得バイアスがかかる。別モデルが冷静に判定すれば未達を見逃さない |
+| **Who** | 忍者(同一エージェント) | 軍師(別エージェント)が停止条件を判定。既存のSGレビューを「停止条件判定」として再定義 |
+| **Where** | 軍師SGプロトコル | SGプロトコルのverdict判定にAC二値チェックの独立再実行を明示化 |
+| **When** | 全cmdレビュー時 | 全cmdレビュー時(変更なし。明示化) |
+| **How** | 軍師がレビュー時に忍者のbinary_checks各項目を独立に再判定する手順を明文化。既にSGで実施しているが「停止条件のmaker-checker」として論文概念と接続することで意図が明確になる |
+| **論文根拠** | §V-D "/goal on the Stop Condition", maker-checker principle |
+
+### 項目14: judgment集中投資 — 覚醒追加
+
+| 項目 | AsIs | ToBe |
+|------|------|------|
+| **What** | 将軍の時間がcmd起票(生成)+状態確認(機械作業)+殿対応に分散。判断の希少性が認識されていない | 「生成は安い、判断が希少」を運用原則化。将軍の時間を判断(cmd設計品質/方向決定/穴発見)に集中し、機械作業を自動化で排除 |
+| **Why** | 論文§X: 「ループが生成を安くすると、技術者の全価値はlooks reasonableとactually rightの差に集約される。機械労働に価値があった技術者はその価値を失い、判断に価値があった技術者はそれが増幅される。同じツールが二種類の技術者の差を広げる」 | 将軍が機械作業(状態確認/定型報告)に時間を使うほど、判断品質(cmd設計/穴発見)が劣化する。増幅器の入力品質を上げる |
+| **Who** | 将軍 | 将軍 |
+| **Where** | idle自走手順 + cmd設計プロセス | idle自走のStep 1-5を自動化(項目1)した上で、浮いた時間を「cmd品質のwhy-chain深堀り」「Score Matrix hotspot分析」「Design Diversity Map未探索領域検討」に充当 |
+| **When** | 毎セッション | 毎セッション |
+| **How** | score_matrix.sh + design_diversity_map.sh(本セッション実装済み)をidle自走Step 6-7に追加し、hotspot/未探索領域を判断材料として提示。将軍は数値を見て「どこに判断を集中すべきか」を決める |
+| **論文根拠** | §IX "Stay the Engineer", §X "The Economics of Judgment", §X-B "What Stays Scarce" |
+
+### 項目15: SKILL.md 5セクション構造 — 覚醒追加
+
+| 項目 | AsIs | ToBe |
+|------|------|------|
+| **What** | SKILL.mdの構造はcontext/skill-design-rules.mdに従うがセクション構成は自由 | 論文Appendix Aの5セクション(Read/Judge/Write/Handoff/Stop)をSKILL.md標準構造として導入 |
+| **Why** | 論文§XIII: 「スキルの5見出しのうち5つが5手にマッピングされ、6番目の"Stop"は構築者がループが推論できない境界を書き込む唯一の場所。省略するとループは獲得していない自信でマージする」 | Stopセクション(人間に委ねる境界)がSKILL.mdにないと、スキルが自動で進めすぎるリスク |
+| **Who** | 全ロール(SKILL.md作成時) | 全ロール |
+| **Where** | context/skill-design-rules.md | skill-design-rules.mdに5セクション推奨構造(Read/Judge/Write/Handoff/Stop)を追記 |
+| **When** | 新規SKILL.md作成時 + 既存SKILL.mdの次回更新時 | 全SKILL.md |
+| **How** | skill-design-rules.mdにLoop Engineering由来の5セクション構造を追記: (1)Read=Discovery入力 (2)Judge=品質判定基準 (3)Write=Persistence出力 (4)Handoff=次の手への受け渡し (5)Stop=人間に委ねる境界(省略禁止) |
+| **論文根拠** | §XIII Appendix A: An Annotated Triage Skill |
+
+### 項目16: MCP Connector拡張(ループの視野半径) — 覚醒追加
+
+| 項目 | AsIs | ToBe |
+|------|------|------|
+| **What** | MCP接続はMemory MCP + gwsのみ。ループの外部システム可視性が限定的 | issue tracker(Linear/GitHub Issues)、Slack、staging API等へのMCP Connector追加でループの視野半径を拡大 |
+| **Why** | 論文§IV Connectors: 「ファイルシステムしか見えないループは小さなループ。Connectorがループの視野半径を決め、あるツール向けに書いたConnectorは別のツールに持っていってそのまま使えることが多い」 | 現在のループはファイルシステム+Drive+Memory MCPしか見えない。CI結果/issue/Slack通知を直接取得できればDiscovery精度が上がる |
+| **Who** | 将軍(設計) + 家老(実装) | 将軍+家老 |
+| **Where** | .claude/settings.json mcpServers | 新規MCP server追加: GitHub Issues(gh CLI wrapper) / ntfy受信(既存ntfy_listener拡張) |
+| **When** | Phase 3(他の優先項目完了後) | Phase 3 |
+| **How** | GitHub Issues MCPは`gh issue list/view`をMCP toolとしてラップ。ntfy MCPは既存ntfy_listener.shをMCP化。Slack MCPは将来検討(現在Slack未使用) |
+| **論文根拠** | §IV Connectors, Table III |
+
+---
+
+## 論文→設計書 全章マッピング(覚醒時検証用)
+
+| 論文セクション | 設計書項目 | カバー状態 |
+|--------------|----------|----------|
+| §I 定義+4層スタック | 前提(既存アーキテクチャ) | ✅ |
+| §II 4層の違い+爆発半径 | 前提 | ✅ |
+| §III 5手(Discovery/Handoff/Verification/Persistence/Scheduling) | #1,#2,#5,#6 | ✅ |
+| §IV 6部品: Automations | #1,#4 | ✅ |
+| §IV 6部品: Worktrees | #2 | ✅ |
+| §IV 6部品: Skills(intent debt) | #10,#15 | ✅ |
+| §IV 6部品: Connectors | #16 | ✅ |
+| §IV 6部品: Sub-agents | #5,#13 | ✅ |
+| §IV 6部品: Memory | 前提(三層記憶) | ✅ |
+| §V Generator/Evaluator分離 | #5,#6 | ✅ |
+| §V-C 動かして検証 | #3 | ✅ |
+| §V-D /goal+fresh model判定 | #13 | ✅ |
+| §VI-A Nodding Loop | #6 | ✅ |
+| §VI-B Amnesiac Loop | 前提(ラルフループ) | ✅ |
+| §VI-C Manual Loop | #1 | ✅ |
+| §VI-D Blind Loop | #1 | ✅ |
+| §VI-E Tangled Loop | #2 | ✅ |
+| §VII Stripe: 決定論的gate | 前提(既存gate設計) | ✅ |
+| §VII-C/D Scheduling | #4 | ✅ |
+| §VIII Verification debt | #7 | ✅ |
+| §VIII Comprehension rot | #8 | ✅ |
+| §VIII Cognitive surrender | #11 | ✅ |
+| §VIII Token blowout | #9 | ✅ |
+| §IX Stay the Engineer(増幅器) | #14 | ✅ |
+| §X Economics of Judgment | #14 | ✅ |
+| §XI-A Read a Sample | #8 | ✅ |
+| §XI-B Cap Before Ship | #9 | ✅ |
+| §XI-C Keep One Door Open | #11 | ✅ |
+| §XII Build Your First Loop | #12 | ✅ |
+| §XIII Appendix: Skill構造 | #15 | ✅ |
+
+全30章節カバー済み。抜け漏れゼロ。
+
 ---
 
 ## 軍師レビュー反映履歴
 
-- **blt_20260626_144634_35cbc4** (2026-06-26T14:46)
+- **blt_20260626_144634_35cbc4** (2026-06-26T14:46) 軍師レビュー
   1. ✅ 抜け漏れ: 項目11(cognitive surrender), 項目12(段階的導入)追加
   2. ✅ AsIs誤り: 項目3 AsIsを「infra/scripts変更時のみ実動作確認。FE変更時は未対応」に修正
   3. ✅ ToBe逸脱: 項目9 ToBeにproxy指標である旨と論文本来意図(API cost上限)との差異を明記
   4. ✅ 実装順序: Phase表を冒頭に追加(Phase 1-4)
   5. ✅ 重複・干渉: 項目5はLG043拡張で統合可能(実装時に確認)
+- **将軍覚醒v3** (2026-06-26T15:15) 論文全30章節逆引きマッピング
+  6. ✅ 項目13(fresh model停止条件判定): §V-D maker-checker原則。軍師SGの停止条件判定を明示化
+  7. ✅ 項目14(judgment集中投資): §IX-X。生成安い→判断が希少→将軍時間を判断に集中
+  8. ✅ 項目15(SKILL.md 5セクション構造): §XIII。Read/Judge/Write/Handoff/Stopの5構造
+  9. ✅ 項目16(MCP Connector拡張): §IV。ループの視野半径=Connector数。GitHub Issues MCP等
+  10. ✅ 全30章節→16項目マッピング表追加。抜け漏れゼロ確認
 
 ---
 
