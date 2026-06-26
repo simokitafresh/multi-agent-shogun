@@ -1823,15 +1823,38 @@ EOF
 2026-05-21 00:00:03 inject_semantic_concepts: NO_MATCH purpose=missing beta target_path=scripts/b.sh
 2026-05-21 00:00:04 inject_semantic_concepts: NO_MATCH purpose=missing alpha target_path=scripts/c.sh
 EOF
+    cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-stress-1
+  ts: "2099-01-01T00:00:00+09:00"
+  insight: "[[設計書を実装しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=設計書を実装しよう"
+  priority: low
+  source: semantic_stress_test
+  status: pending
+- id: INS-stress-2
+  ts: "2099-01-01T00:00:01+09:00"
+  insight: "[[設計書を実装しよう]] semantic_stress_test test_set_candidate: high_frequency_NO_MATCH count=1 source=lord query=設計書を実装しよう quality_gate=blind_hit_rate_non_regression fixed_50_role=regression_detection_only"
+  priority: medium
+  source: semantic_stress_test
+  status: resolved
+- id: INS-other
+  ts: "2099-01-01T00:00:02+09:00"
+  insight: "semantic_index_update新概念候補"
+  priority: low
+  source: semantic_index_update
+  status: pending
+EOF
 
     SHOGUN_STARTUP_NO_MATCH_SCAN_LINES=20 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"■ セマンティックNO_MATCH計測"* ]]
-    [[ "$output" == *"NO_MATCH率: 75.0% (3/4, scan_lines=20)"* ]]
-    [[ "$output" == *"ヒット率: 25.0% (1/4)"* ]]
+    [[ "$output" == *"NO_MATCH率: 83.3% (5/6, scan_lines=20)"* ]]
+    [[ "$output" == *"ヒット率: 16.7% (1/6)"* ]]
+    [[ "$output" == *"計測source: deploy_task=4 semantic_stress_test=2"* ]]
     [[ "$output" == *"TOP3 miss purpose:"* ]]
-    [[ "$output" == *"1. missing alpha (2件)"* ]]
-    [[ "$output" == *"2. missing beta (1件)"* ]]
+    [[ "$output" == *"missing alpha (2件)"* ]]
+    [[ "$output" == *"設計書を実装しよう (2件)"* ]]
+    [[ "$output" == *"missing beta (1件)"* ]]
 }
 
 @test "semantic NO_MATCH metrics displays lord query count without query content" {

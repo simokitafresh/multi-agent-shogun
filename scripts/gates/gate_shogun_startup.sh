@@ -147,6 +147,7 @@ PY
 	show_semantic_no_match_metrics() {
 	    local deploy_log="${SHOGUN_STARTUP_DEPLOY_LOG:-$SCRIPT_DIR/logs/deploy_task.log}"
 	    local prompt_log="${SHOGUN_STARTUP_PROMPT_SEMANTIC_NO_MATCH_LOG:-$SCRIPT_DIR/logs/semantic_no_match_metrics.log}"
+	    local insights_file="${SHOGUN_STARTUP_INSIGHTS_FILE:-$SCRIPT_DIR/queue/insights.yaml}"
 	    local scan_lines="${SHOGUN_STARTUP_NO_MATCH_SCAN_LINES:-500}"
 
 	    echo "■ セマンティックNO_MATCH計測"
@@ -157,61 +158,102 @@ PY
 	    else
 	        echo "  殿クエリNO_MATCHカウント: 0件 (logなし)"
 	    fi
-	    if [ ! -f "$deploy_log" ]; then
-	        echo "  SKIP: logs/deploy_task.log 不在"
-	        echo ""
-        return 0
-    fi
 
-    tail -n "$scan_lines" "$deploy_log" 2>/dev/null | awk '
-        /inject_semantic_concepts:/ {
-            attempts++
-            if (/NO_MATCH/) {
-                no_match++
-                purpose = $0
-                sub(/^.*NO_MATCH purpose=/, "", purpose)
-                sub(/[[:space:]]target_path=.*/, "", purpose)
-                gsub(/[[:space:]]+/, " ", purpose)
-                gsub(/^[[:space:]]+|[[:space:]]+$/, "", purpose)
-                if (purpose == "") purpose = "(purposeなし)"
-                miss[purpose]++
-            }
-        }
-        END {
-            if (attempts == 0) {
-                print "  semantic注入試行: 0件"
-                exit
-            }
-            rate = int((no_match * 1000 / attempts) + 0.5) / 10
-            hit_rate = int(((attempts - no_match) * 1000 / attempts) + 0.5) / 10
-            printf "  NO_MATCH率: %.1f%% (%d/%d, scan_lines=%d)\n", rate, no_match, attempts, scan_lines
-            printf "  ヒット率: %.1f%% (%d/%d)\n", hit_rate, attempts - no_match, attempts
-            if (no_match == 0) {
-                print "  TOP3 miss purpose: none"
-                exit
-            }
-            print "  TOP3 miss purpose:"
-            for (purpose in miss) {
-                order[++n] = purpose
-            }
-            for (i = 1; i <= n; i++) {
-                for (j = i + 1; j <= n; j++) {
-                    if (miss[order[j]] > miss[order[i]]) {
-                        tmp = order[i]; order[i] = order[j]; order[j] = tmp
-                    }
-                }
-            }
-            limit = (n < 3) ? n : 3
-            for (i = 1; i <= limit; i++) {
-                p = order[i]
-                shown = p
-                if (length(shown) > 100) shown = substr(shown, 1, 97) "..."
-                printf "    %d. %s (%d件)\n", i, shown, miss[p]
-            }
-        }
-    ' scan_lines="$scan_lines"
-    echo ""
-}
+	    {
+	        if [ -f "$deploy_log" ]; then
+	            tail -n "$scan_lines" "$deploy_log" 2>/dev/null | awk '
+	                /inject_semantic_concepts:/ {
+	                    purpose = ""
+	                    if (/NO_MATCH/) {
+	                        purpose = $0
+	                        sub(/^.*NO_MATCH purpose=/, "", purpose)
+	                        sub(/[[:space:]]target_path=.*/, "", purpose)
+	                        gsub(/[[:space:]]+/, " ", purpose)
+	                        gsub(/^[[:space:]]+|[[:space:]]+$/, "", purpose)
+	                        if (purpose == "") purpose = "(purposeなし)"
+	                        printf "deploy\tno_match\t%s\n", purpose
+	                    } else {
+	                        print "deploy\thit\t"
+	                    }
+	                }
+	            '
+	        fi
+	        if [ -f "$insights_file" ]; then
+	            python3 - "$insights_file" <<'PY' 2>/dev/null || true
+import re
+import sys
+import yaml
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    items = (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get("insights") or []
+except Exception:
+    items = []
+
+for item in items:
+    if not isinstance(item, dict):
+        continue
+    if str(item.get("source") or "") != "semantic_stress_test":
+        continue
+    insight = str(item.get("insight") or "")
+    if "NO_MATCH" not in insight:
+        continue
+    label = insight
+    match = re.search(r"query=(.*?)(?:\s+quality_gate=|\s+fixed_50_role=|$)", insight)
+    if match:
+        label = match.group(1)
+    label = re.sub(r"\s+", " ", label).strip() or "(queryなし)"
+    print(f"semantic_stress_test\tno_match\t{label}")
+PY
+	        fi
+	    } | awk -F'\t' -v scan_lines="$scan_lines" '
+	        $2 == "hit" || $2 == "no_match" {
+	            attempts++
+	            source[$1]++
+	        }
+	        $2 == "no_match" {
+	            no_match++
+	            purpose = $3
+	            if (purpose == "") purpose = "(purposeなし)"
+	            miss[purpose]++
+	        }
+	        END {
+	            if (attempts == 0) {
+	                print "  semantic注入試行: 0件"
+	                exit
+	            }
+	            rate = int((no_match * 1000 / attempts) + 0.5) / 10
+	            hit_rate = int(((attempts - no_match) * 1000 / attempts) + 0.5) / 10
+	            printf "  NO_MATCH率: %.1f%% (%d/%d, scan_lines=%d)\n", rate, no_match, attempts, scan_lines
+	            printf "  ヒット率: %.1f%% (%d/%d)\n", hit_rate, attempts - no_match, attempts
+	            printf "  計測source: deploy_task=%d semantic_stress_test=%d\n", source["deploy"] + 0, source["semantic_stress_test"] + 0
+	            if (no_match == 0) {
+	                print "  TOP3 miss purpose: none"
+	                exit
+	            }
+	            print "  TOP3 miss purpose:"
+	            for (purpose in miss) {
+	                order[++n] = purpose
+	            }
+	            for (i = 1; i <= n; i++) {
+	                for (j = i + 1; j <= n; j++) {
+	                    if (miss[order[j]] > miss[order[i]]) {
+	                        tmp = order[i]; order[i] = order[j]; order[j] = tmp
+	                    }
+	                }
+	            }
+	            limit = (n < 3) ? n : 3
+	            for (i = 1; i <= limit; i++) {
+	                p = order[i]
+	                shown = p
+	                if (length(shown) > 100) shown = substr(shown, 1, 97) "..."
+	                printf "    %d. %s (%d件)\n", i, shown, miss[p]
+	            }
+	        }
+	    '
+	    echo ""
+	}
 
 	collect_gate4_yaml_batch() {
 	    local karo_inbox_file="$1"
