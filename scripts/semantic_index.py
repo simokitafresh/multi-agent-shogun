@@ -61,6 +61,16 @@ def query_words_all_in_term(query_fold: str, term_fold: str) -> bool:
     return len(query_words) >= 2 and all(word in term_fold for word in query_words)
 
 
+def is_single_generic_word_match(query_fold: str, term_fold: str) -> bool:
+    query_words = [word for word in query_fold.split() if word]
+    if len(query_words) < 2:
+        return False
+    term_words = [word for word in term_fold.split() if word]
+    if len(term_words) != 1:
+        return False
+    return term_words[0] in query_words
+
+
 def relation_type_for(seed: dict, related_id: str) -> str:
     for item in seed.get("related_concepts", []):
         if item.get("id") == related_id:
@@ -860,9 +870,12 @@ def main() -> None:
                 term
                 for term in terms
                 if (
-                    term.casefold() in query_fold
-                    or (query_fold in term.casefold() and len(query_fold) >= len(term.casefold()) * min_ratio)
-                    or query_words_all_in_term(query_fold, term.casefold())
+                    not is_single_generic_word_match(query_fold, term.casefold())
+                    and (
+                        term.casefold() in query_fold
+                        or (query_fold in term.casefold() and len(query_fold) >= len(term.casefold()) * min_ratio)
+                        or query_words_all_in_term(query_fold, term.casefold())
+                    )
                 )
             ]
             if matched_terms:
