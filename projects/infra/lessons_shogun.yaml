@@ -640,3 +640,19 @@ lessons:
   created_at: '2026-06-24'
   automated: true
   enforcement: 'automated:true file:scripts/hooks/stop_check_inbox.sh pattern=cmd_3522 reason:cmd_3522で数値出力時検査を実装。全出力への拡張は次の自動化ターゲット'
+- id: 'LS074'
+  title: 'cmd_3520 委任済み重複BLOCK'
+  origin: '[[cmd_3520]]'
+  detail: 'cmd_3520を2回cmd_save.shに通したが既にdelegated_at済みでBLOCK。LS072(委任済みcmdの再起票は重複BLOCK)と同パターン'
+  source_cmd: 'cmd_3520'
+  created_at: '2026-06-26'
+  automated: true
+  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=delegated_at'
+- id: 'LS075'
+  title: 'cmd_3550 diagnosis内FILL_THIS残存+q5 code_reading'
+  origin: '[[cmd_3550]]'
+  detail: 'diagnosisの対策記述にFILL_THISリテラル文字列を含めたためgate検出。q5はcode_readingのみで不足。LS-A04(38)の再発形'
+  source_cmd: 'cmd_3550'
+  created_at: '2026-06-26'
+  automated: true
+  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=FILL_THIS'
