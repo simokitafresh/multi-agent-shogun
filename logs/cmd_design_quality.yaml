@@ -2166,3 +2166,36 @@ entries:
   checks: "cmd_save_main"
   diagnosis: "BLOCK理由: 該当なし(Phase 3並列起票) / 対策: 全フィールド記入+q5 structure_verified"
   notes: "other_draft_exists"
+- cmd_id: "cmd_3556"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-26T12:08:36Z"
+  notes: "gate/script修正cmd q5実行証拠なし|check=gate_script_q5_execution_evidence"
+- cmd_id: "cmd_3556"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-26T12:08:36Z"
+  notes: "causal_verification_missing|check=check_causal_verification_requirement"
+- cmd_id: "cmd_3556"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-26T12:08:36Z"
+  notes: "ac_phase_mixing|check=check_ac_phase_mixing"
