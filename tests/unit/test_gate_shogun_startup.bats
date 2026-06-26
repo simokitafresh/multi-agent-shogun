@@ -32,9 +32,11 @@ setup_file() {
 
     cp "$PROJECT_ROOT/scripts/gates/gate_fp_relaxation_proposal.py" "$SHARED_BASE/scripts/gates/"
     cp "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh" "$SHARED_BASE/scripts/gates/"
+    cp "$PROJECT_ROOT/scripts/weekly_metrics_trend.sh" "$SHARED_BASE/scripts/"
     cp "$PROJECT_ROOT/scripts/cleanup_three_layer_tmp.sh" "$SHARED_BASE/scripts/"
     cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$SHARED_BASE/scripts/"
     chmod +x "$SHARED_BASE/scripts/gates/gate_three_layer_health.sh" \
+             "$SHARED_BASE/scripts/weekly_metrics_trend.sh" \
              "$SHARED_BASE/scripts/cleanup_three_layer_tmp.sh"
     cat > "$SHARED_BASE/scripts/gates/q6_target_fixture.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -173,11 +175,16 @@ EOF
 - cmd_id: cmd_100
   karo_rework: false
   gate_result: PASS
+  timestamp: "2099-01-01T00:00:00Z"
 EOF
     cat > "$SHARED_BASE/logs/karo_workarounds.yaml" <<'EOF'
 - cmd_id: cmd_100
   workaround: false
   category: none
+EOF
+    cat > "$SHARED_BASE/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
+2099-01-01T00:00:00Z	cmd_100	hayate	L001	feedback	USEFUL	yes	infra	full	unknown	0	0
 EOF
 
     # Gate 11: dashboard + review log (no proposals)
@@ -275,6 +282,7 @@ setup() {
     export SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=1
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/data/three_layer_health.db"
     export SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=999999999
+    export WEEKLY_METRICS_NOW="2099-01-01T00:00:00Z"
 }
 
 teardown() {
@@ -285,6 +293,7 @@ teardown() {
     unset SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT
     unset SHOGUN_MEMORY_DB_CACHE_PATH
     unset SHOGUN_THREE_LAYER_CACHE_WARN_BYTES
+    unset WEEKLY_METRICS_NOW
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 
@@ -293,7 +302,61 @@ teardown() {
     SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
+    [[ "$output" == *"■ 週次品質指標トレンド"* ]]
+    [[ "$output" == *"OK: weekly metrics trend"* ]]
     [[ "$output" == *"総合判定: OK"* ]]
+}
+
+@test "weekly metrics three-week worsening is surfaced as startup ALERT" {
+    cat > "$TEST_TMPDIR/logs/weekly_metrics_trend.yaml" <<'EOF'
+snapshots:
+- week_start: "2098-12-11T00:00:00Z"
+  week_end: "2098-12-18T00:00:00Z"
+  useful_rate: 80.0
+  useful: 8
+  feedback_total: 10
+  rework_rate: 10.0
+  rework: 1
+  cmd_quality_total: 10
+  block_rate: 10.0
+  blocks: 1
+  source: "weekly_metrics_trend.sh"
+- week_start: "2098-12-18T00:00:00Z"
+  week_end: "2098-12-25T00:00:00Z"
+  useful_rate: 70.0
+  useful: 7
+  feedback_total: 10
+  rework_rate: 20.0
+  rework: 2
+  cmd_quality_total: 10
+  block_rate: 20.0
+  blocks: 2
+  source: "weekly_metrics_trend.sh"
+EOF
+    cat > "$TEST_TMPDIR/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
+2098-12-31T00:00:00Z	cmd_1	hayate	L001	feedback	USEFUL	yes	infra	full	unknown	0	0
+2098-12-31T01:00:00Z	cmd_2	hayate	L002	feedback	NOT_USEFUL	no	infra	full	unknown	0	0
+EOF
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_1"
+  gate_result: "BLOCK"
+  karo_rework: "yes"
+  timestamp: "2098-12-31T00:00:00Z"
+- cmd_id: "cmd_2"
+  gate_result: "PASS"
+  karo_rework: "no"
+  timestamp: "2098-12-31T01:00:00Z"
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ 週次品質指標トレンド"* ]]
+    [[ "$output" == *"ALERT: useful_rate 3週連続悪化"* ]]
+    [[ "$output" == *"ALERT: rework_rate 3週連続悪化"* ]]
+    [[ "$output" == *"ALERT: block_rate 3週連続悪化"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
 @test "CI RED failure sends ci_red_fix to karo and shows WARN" {

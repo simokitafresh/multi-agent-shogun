@@ -1823,6 +1823,27 @@ else
     echo "  karo_snapshot.txt不在 — 判定不可"
 fi
 
+# --- Gate 10.2: 週次品質指標トレンド ---
+echo "■ 週次品質指標トレンド"
+_WEEKLY_METRICS_SCRIPT="$SCRIPT_DIR/scripts/weekly_metrics_trend.sh"
+if [ -x "$_WEEKLY_METRICS_SCRIPT" ]; then
+    _weekly_metrics_output="$(bash "$_WEEKLY_METRICS_SCRIPT" 2>&1)" || _weekly_metrics_rc=$?
+    _weekly_metrics_rc="${_weekly_metrics_rc:-0}"
+    if [ -n "$_weekly_metrics_output" ]; then
+        while IFS= read -r _weekly_metrics_line; do
+            [ -n "$_weekly_metrics_line" ] || continue
+            echo "  $_weekly_metrics_line"
+        done <<< "$_weekly_metrics_output"
+    fi
+    if [ "$_weekly_metrics_rc" -ne 0 ]; then
+        overall="ALERT"
+        alerts+=("週次品質指標トレンド: 3週連続悪化")
+    fi
+    unset _weekly_metrics_rc
+else
+    echo "  SKIP: scripts/weekly_metrics_trend.sh 未配備"
+fi
+
 # --- Gate 10.5: idle時BLOCK提案自動化 ---
 echo "■ idle時BLOCK提案"
 _AUTOFIX_PROPOSAL_GATE="$GATE_DIR/gate_autofix_proposal.sh"
