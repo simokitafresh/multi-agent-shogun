@@ -10,7 +10,7 @@ description: |
   DO NOT TRIGGER: 同一CLI内の /model 操作（Claude系内でOpus↔Sonnet等）、レイアウト全崩壊（→/reset-layout）
 ---
 
-<!-- script_refs_checked_at: 2026-06-24T09:12:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-27T02:57:33+0900 -->
 
 Script refs verified: 2026-06-20. `shogun_cli_switch.sh` は `status/pin-2.1.87/unpin-latest/to-claude/to-codex/--agent/--scope/--dry-run/--settings-only` を契約にする。CLI切替は `scripts/switch_cli_mode.sh`、Claude version切替は `config/cli_profiles.yaml` の `profiles.claude.launch_cmd` と個別 `settings.yaml launch_cmd` を正本にする。
 Script refs verified: 2026-06-20 L821. `switch_cli_mode.sh` にstale active補正追加(@agent_state=active+task空→idle強制)。I/F変更なし。Codex sandbox環境でStop hookブロック→active残留→respawnスキップのインフラバグ修正。
@@ -212,4 +212,4 @@ sleep 8 && for p in 1 3 4 5 6 7 8; do echo "pane $p: $(tmux capture-pane -t shog
 - [[shogun-all-codex-switch]] — 全忍者をCodex CLIに一括切替（モデル系ではなくCLI種別の切替）
 - [[shogun-peacetime-rollback]] — CodexからClaude（平時編成）への一括ロールバック
 - [[hensei]] — 忍者モデル編成切替
-<!-- script_refs_checked_at: 2026-06-24T09:12:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-27T02:57:33+0900 -->

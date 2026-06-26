@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキル同期後の軍師review精度（logs/gunshi_review_log.yamlでgate_prediction==gate_resultとなった割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-26T08:36:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-27T02:57:33+0900 -->
 
 # /gate-sync — gate結果同期スキル
 
@@ -74,4 +74,4 @@ Script refs verified: 2026-06-20 48204a464. `bulletin_write.sh` 直近変更は�
 
 Script refs verified: 2026-06-26 cmd_karo_hotfix_skill_refs_20260626082009. `bulletin_write.sh` の現物未commit差分は `compute_notify_targets` 追加と `notify_targets` 記録追加。投稿者を通知先から除外する既存挙動、`BULLETIN_NOTIFY` CSV、`requires_confirmation`、`action_type=info|action_required`、`bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]` の呼び出し契約は変更なし。本スキルの掲示板投稿手順変更は不要。
 
-<!-- script_refs_checked_at: 2026-06-26T08:36:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-27T02:57:33+0900 -->
