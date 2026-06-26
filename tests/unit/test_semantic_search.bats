@@ -256,6 +256,33 @@ PY
     [[ "$output" != *"should-not-run"* ]]
 }
 
+@test "multi-word query ignores single generic alias matches" {
+    cat >> "$SEMANTIC_INDEX_PATH" <<'EOF'
+
+## skill_routing — スキルルーティング
+
+| 属性 | 値 |
+|------|---|
+| id | skill_routing |
+| label | スキルルーティング |
+| aliases | commit, スキル選択 |
+| related_concepts | growth_loop |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `skills/ninja-commit/SKILL.md` |
+EOF
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "context_freshness infrastructure.md source commits last_updated"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"NO_MATCH: context_freshness infrastructure.md source commits last_updated"* ]]
+    [[ "$output" != *"## skill_routing"* ]]
+    [[ "$output" != *"skills/ninja-commit/SKILL.md"* ]]
+    [[ "$output" != *"should-not-run"* ]]
+}
+
 @test "unmatched first layer does not use LLM by default" {
     export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
 
