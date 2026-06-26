@@ -688,6 +688,14 @@ ERRORS>0ならレビュー前に確認。
 忍者の報告YAML（`queue/reports/{ninja}_report_{cmd}.yaml`）。
 AC二値チェック結果 + 成果物 + lesson_candidate が含まれる。
 
+### デフォルト姿勢 — Generator/Evaluator分離原則（Loop Engineering §V-B）
+
+**全レビューの出発点: この成果物は壊れていると仮定せよ。証明されるまでFAILとみなせ。**
+- 褒めるな。壊れている箇所を見つけよ
+- コードを読むだけでなく、可能な限り動かして検証せよ（§V-C: 「looks right」ではなく「runs right」）
+- 忍者のbinary_checks=yesは主張であり証明ではない。独立に再判定せよ（maker-checker原則）
+- origin: [[loop_engineering]] §V-B "Tune a Skeptic, Don't Fix a Modest Author"
+
 ### 判定基準 — 4観点（軍師独自）
 
 | # | 観点 | チェック内容 |

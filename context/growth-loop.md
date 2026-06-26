@@ -115,6 +115,20 @@ FAIL時だけでなくPASS時も記録することで、スキル全体のパフ
 - **Level 4+(BLOCK/フロー内埋込)のみ時間減衰しない**。通らないから慣れようがない
 - 新ルール追加時: Level 2(doc)で止めるな。Level 4+(BLOCK)まで実装して初めて恒久防御
 
+### §11.1 Human Checkpoint一覧 — Cognitive Surrender防御 (Loop Engineering §XI-C)
+
+ループが信頼できるほど判断を放棄したくなる(Cognitive surrender)。防御は態度ではなく構造。ループに最低1つの停止点を作れ — 人間が常に介入するためではなく、介入できる位置に居続けるために(§IX "Keep One Door Open")。
+
+| Checkpoint | タイミング | 仕組み | 殿の介入方法 |
+|------------|----------|--------|------------|
+| cmd裁可 | cmd起票時 | 将軍が推薦先行で宣言。殿がYES/NOで裁可 | dashboard 🚨要対応 or 将軍との対話 |
+| push前検証 | push時 | pre-pushフック(テスト自動実行) + 殿確認 | CI結果確認 |
+| 本番DB変更 | DB操作前 | バックアップファースト(LS040) + 殿確認 | ntfy通知 |
+| gate変更 | gate/hook修正時 | 軍師レビュー(SG) + 殿裁可 | 掲示板投稿 |
+| 月次レビュー | 月初 | 月報生成 + 殿との振り返り | 月報記事 |
+
+origin: [[loop_engineering]] §IX "Stay the Engineer" + §XI-C "Keep One Door Open"
+
 **L6が自動代行(autofix)と異なる理由**:
 行動をシステムが代行する(autofix)→エージェントが間違えない→**間違えないから学ばない**→品質向上の機会喪失=自動消火。
 L6は間違いを許す。間違いから最大の学びを引き出し、学習サイクルを加速する。

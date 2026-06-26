@@ -193,5 +193,19 @@ gate_report_autofix.shは76回発動、うち直近7件が実報告。忍者に�
 - workaround 50件中84%が手順的問題 → 全てgateで解決済み
 - 能力拡張型スキル(weekly-report等)は品質を下げていない — 判断をエージェントに残しているため
 
+### 推奨セクション構造 — Loop Engineering §XIII由来 (5 Moves対応)
+
+SKILL.mdの本文を以下5セクションで構成することを推奨する。全スキルに必須ではないが、新規作成時はこの構造をデフォルトにする。
+
+| セクション | 対応するMove | 内容 |
+|-----------|------------|------|
+| Read | Discovery | このスキルが読む入力(CI結果、issue、state file等) |
+| Judge | Verification | 各候補に対する判定基準(actionableか、noiseか、優先度) |
+| Write | Persistence | 出力先(state file、PR、inbox等)。conversationに残すな |
+| Handoff | Handoff | 次の手への受け渡し(worktree指定、task line出力等) |
+| Stop | Human checkpoint | 省略禁止。人間に委ねる境界を明示する。「何を自動でやらないか」を書く場所。省略するとスキルは獲得していない自信で行動する |
+
+origin: [[loop_engineering]] §XIII Appendix A "An Annotated Triage Skill"
+
 <!-- 軍師idle分析リンク(cmd_3278自動追記) -->
 - [[gunshi_idle_adaptive_gating_bucket_split_20260521]] — 軍師idle: 適応型ゲートバケット分割設計(2026-05-21)

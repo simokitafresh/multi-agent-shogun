@@ -1814,6 +1814,8 @@ if [ -f "$snapshot" ]; then
         echo "  Step 3: cmd_design_quality直近10件分析"
         echo "  Step 4: gunshi_review_log確認"
         echo "  Step 5: パターン発見→why-chain→アクション"
+        echo "  Step 6: Comprehension rot防止 — 直近GATE CLEARの忍者変更を1件git show -wでsample read (Loop Engineering §XI-A)"
+        echo "  Step 7: Score Matrix + Design Diversity Map — bash scripts/score_matrix.sh && bash scripts/design_diversity_map.sh (Loop Engineering §X judgment集中投資)"
     else
         echo "  稼働中cmd: ${active_cmds}件、idle忍者: ${idle_or_done}/${total_ninjas}"
     fi
