@@ -1197,6 +1197,100 @@ echo "PASS: in_progress respawns"
     [[ "$output" == *"PASS: in_progress respawns"* ]]
 }
 
+@test "max_clear_per_cmd reads settings value and defaults to 3" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/config"
+
+test "$(get_max_clear_per_cmd "$TMP_ROOT/config/missing.yaml")" = "3"
+cat > "$TMP_ROOT/config/settings.yaml" <<YAML
+token_budget:
+  max_clear_per_cmd: 5
+YAML
+test "$(get_max_clear_per_cmd "$TMP_ROOT/config/settings.yaml")" = "5"
+
+cat > "$TMP_ROOT/config/settings.yaml" <<YAML
+token_budget:
+  max_clear_per_cmd: invalid
+YAML
+test "$(get_max_clear_per_cmd "$TMP_ROOT/config/settings.yaml")" = "3"
+
+echo "PASS: max_clear_per_cmd settings"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: max_clear_per_cmd settings"* ]]
+}
+
+@test "safe_send_clear forces idle and notifies karo after max_clear_per_cmd is exceeded" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/config" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/config/settings.yaml" <<YAML
+token_budget:
+  max_clear_per_cmd: 1
+YAML
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: in_progress
+  parent_cmd: cmd_loop
+YAML
+
+check_idle() { return 0; }
+can_send_clear_with_report_gate() { return 0; }
+auto_commit_before_clear() { return 0; }
+cli_type() { echo "codex"; }
+cli_profile_get() {
+    case "$2" in
+        clear_cmd) echo "/new" ;;
+        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        *) echo "" ;;
+    esac
+}
+send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TMP_ROOT/messages.log"; }
+tmux() {
+    if [ "$1" = "respawn-pane" ]; then
+        echo "RESPAWN:$*" >> "$LOG"
+        return 0
+    fi
+    return 0
+}
+export -f tmux
+
+safe_send_clear "shogun:2.3" "hayate" "TEST-FIRST"
+BLOCKED=0
+safe_send_clear "shogun:2.3" "hayate" "TEST-SECOND" || BLOCKED=$?
+
+test "$BLOCKED" -eq 1
+test "$(grep -c "RESPAWN:respawn-pane" "$LOG")" -eq 1
+grep -q "CLEAR-LOOP-BLOCK: hayate cmd=cmd_loop count=2/1 forced_idle reason=TEST-SECOND" "$LOG"
+grep -q "karo|clear_loop_block|.*cmd=cmd_loop" "$TMP_ROOT/messages.log"
+grep -q "status: idle" "$SCRIPT_DIR/queue/tasks/hayate.yaml"
+
+echo "PASS: clear loop forced idle"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: clear loop forced idle"* ]]
+}
+
 # --- cmd_3264: auto-commit in_progress ninja exclusion tests ---
 
 @test "auto_commit: excludes in_progress ninja target_path files from other ninja clear" {

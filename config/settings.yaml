@@ -62,6 +62,8 @@ cli:
       launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
 idle_cycle: on
 effort: high
+token_budget:
+  max_clear_per_cmd: 3
 ntfy_topic: shogun-simokitafresh
 gist_url: https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c
 screenshot:

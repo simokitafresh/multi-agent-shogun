@@ -239,6 +239,89 @@ yaml_field_get() {
     FIELD_GET_NO_LOG=1 field_get "$file" "$field" "$default" 2>/dev/null
 }
 
+get_max_clear_per_cmd() {
+    local settings_file="${1:-$SCRIPT_DIR/config/settings.yaml}"
+    local value=""
+
+    if [ -f "$settings_file" ]; then
+        value=$(awk '
+            /^[^[:space:]#][^:]*:/ {
+                in_token_budget = ($0 ~ /^token_budget:[[:space:]]*$/)
+                next
+            }
+            in_token_budget && /^[[:space:]]+max_clear_per_cmd:[[:space:]]*/ {
+                sub(/^[^:]*:[[:space:]]*/, "")
+                gsub(/["'\''[:space:]]/, "")
+                print
+                exit
+            }
+        ' "$settings_file" 2>/dev/null || true)
+    fi
+
+    if [[ "$value" =~ ^[0-9]+$ ]] && [ "$value" -gt 0 ]; then
+        echo "$value"
+    else
+        echo "3"
+    fi
+}
+
+_clear_loop_state_file() {
+    local agent_name="$1"
+    mkdir -p "$STATE_DIR"
+    printf '%s/shogun_clear_count_%s.tsv\n' "$STATE_DIR" "$agent_name"
+}
+
+_task_parent_cmd_for_clear_count() {
+    local agent_name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
+    local parent_cmd=""
+
+    if [ -f "$task_file" ]; then
+        parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "")
+        [ -n "$parent_cmd" ] || parent_cmd=$(yaml_field_get "$task_file" "task_id" "")
+        [ -n "$parent_cmd" ] || parent_cmd=$(yaml_field_get "$task_file" "_ac_task_id" "")
+    fi
+    printf '%s\n' "${parent_cmd:-no_cmd}"
+}
+
+record_clear_attempt_or_force_idle() {
+    local agent_name="$1"
+    local reason="${2:-UNKNOWN}"
+    local cmd_id="${3:-}"
+    local max_clear
+    local state_file count previous_cmd
+    local task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
+
+    [ -n "$cmd_id" ] || cmd_id=$(_task_parent_cmd_for_clear_count "$agent_name")
+    if [ "$cmd_id" = "no_cmd" ]; then
+        log "CLEAR-COUNT-SKIP: $agent_name has no cmd context, reason=$reason"
+        return 0
+    fi
+    max_clear=$(get_max_clear_per_cmd)
+    state_file=$(_clear_loop_state_file "$agent_name")
+
+    if [ -f "$state_file" ]; then
+        IFS=$'\t' read -r previous_cmd count < "$state_file" || true
+    fi
+    if [ "$previous_cmd" != "$cmd_id" ] || ! [[ "${count:-0}" =~ ^[0-9]+$ ]]; then
+        count=0
+    fi
+    count=$((count + 1))
+    printf '%s\t%s\n' "$cmd_id" "$count" > "$state_file"
+
+    if [ "$count" -le "$max_clear" ]; then
+        log "CLEAR-COUNT: $agent_name cmd=$cmd_id count=${count}/${max_clear} reason=$reason"
+        return 0
+    fi
+
+    if [ -f "$task_file" ]; then
+        yaml_field_set "$task_file" "task" "status" "idle" 2>/dev/null || true
+    fi
+    send_inbox_message karo "【CLEAR-LOOP-BLOCK】${agent_name} が同一cmd=${cmd_id}で /clear ${count}回。上限=${max_clear}超過のためtaskをidle化して空回りを停止。reason=${reason}" clear_loop_block
+    log "CLEAR-LOOP-BLOCK: $agent_name cmd=$cmd_id count=${count}/${max_clear} forced_idle reason=$reason"
+    return 1
+}
+
 build_pane_head_tail_excerpt() {
     local pane_target="$1"
     local capture line
@@ -960,6 +1043,10 @@ safe_send_clear() {
     # must exist first, otherwise auto-clear can erase the post-task reporting work.
     if ! can_send_clear_with_report_gate "$agent_name" "$reason"; then
         log "CLEAR-BLOCKED: $agent_name report gate blocked reset, reason=$reason"
+        return 1
+    fi
+
+    if ! record_clear_attempt_or_force_idle "$agent_name" "$reason"; then
         return 1
     fi
 
