@@ -394,7 +394,9 @@ def propagate_memory_db_concept_tags(concepts):
                 target_event_id = str(candidate["target_event_id"])
                 recency_weight = recency_weights.get(concept_name, 1.0)
                 bm25_position_weight = 1.0 / position
-                bh_decay = min(1.0, tag_bh_q * candidate_count / position)
+                # candidate_count=1の場合、BH減衰を適用しない(唯一の候補に
+                # rank-based decayは無意味。GA-138で単一候補排除FPを実証)
+                bh_decay = 1.0 if candidate_count == 1 else min(1.0, tag_bh_q * candidate_count / position)
                 candidate_scores[(target_event_id, concept_name)] = (
                     candidate_scores.get((target_event_id, concept_name), 0.0)
                     + bm25_position_weight * recency_weight * bh_decay
