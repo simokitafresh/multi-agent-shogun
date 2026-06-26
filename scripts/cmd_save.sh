@@ -1102,6 +1102,17 @@ load_cmd_block() {
 
     [[ -n "$CMD_BLOCK" ]] || return 1
 
+    # Guard: cmdブロック内の重複フィールド検出 (2026-06-26)
+    # cancel→再起票でEdit操作ミスにより同一ブロック内にフィールドが重複すると
+    # yaml.safe_loadが最後の値を採用し、意図した修正が反映されない
+    local _dup_fields
+    _dup_fields=$(printf '%s\n' "$CMD_BLOCK" | grep -oE '^\s{4}[a-z_]+:' | sort | uniq -d | tr -d ' ' || true)
+    if [[ -n "$_dup_fields" ]]; then
+        echo "BLOCK: cmdブロック内にフィールド重複を検出。YAMLパーサが最後の値のみ採用するため意図した修正が反映されない" >&2
+        echo "  重複フィールド: $(printf '%s' "$_dup_fields" | tr '\n' ' ')" >&2
+        echo "  対処: Edit toolで重複セクションを削除し、正しい値のみ残せ" >&2
+    fi
+
     CMD_BLOCK_NC="$CMD_BLOCK"
     CMD_BLOCK_FOUND=1
     return 0
