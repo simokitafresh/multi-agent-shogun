@@ -1,5 +1,11 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-23 cmd_3520 -->
+<!-- last_updated: 2026-06-26 cmd_karo_hotfix_lesson_health_useful_20260626173325 -->
+
+## 2026-06-26
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_karo_hotfix_lesson_health_useful_20260626173325 | 教訓健全度ALERT 3連続解消 | CLEAR。useful_rate 14.3%(1/7)→50.0%(1/2)、L862登録 | 根因=project固有deprecated同IDがinfra fallbackで復活し低useful分母を温存。presence判定をactive判定から分離 |
 
 ## 2026-06-21
 
