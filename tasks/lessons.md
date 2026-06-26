@@ -8809,3 +8809,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: precheck/gateに文字列検出・regex・in演算子・grepパターンを追加するとき
 - **how**: 陽性テストに加え、正当な文字列を含む陰性ケースを追加し、検査対象フィールドと範囲を固定する
 - precheckでregex量化子・in演算子・grep/terms検出を追加する時は、正当な使用が誤検出されない陰性テストを必ず追加する。判定キーワード(WARN/ERROR/未実施等)を説明メッセージやpurpose_gap等の非判定文脈に含める場合は、検査対象フィールド/範囲を限定する。
+
+### L864: docs/research追加commitはcontext_update候補を自動注入する
+- **日付**: 2026-06-26
+- **出典**: cmd_karo_hotfix_ga141_context_freshness_dm_signal_research_20260626
+- **記録者**: hanzo
+- **tags**: [infra, context, gate, research]
+- **target_files**: [context/dm-signal-research.md,scripts/gates/gate_context_freshness.sh]
+- **origin**: [[cmd_3546]] -> [[context_update_missing]] -> [[GA-141 dm-signal-research freshness ALERT]]
+- **when**: docs/research配下の成果物を追加・更新するcmdを完了するとき
+- **how**: 対応するcontext索引候補をreport/templateへ注入し、cmd完了前に反映要否を二値確認する
+- DM-Signal repoでdocs/research配下に研究成果物が追加・更新されたcmdでは、cmd完了前に対応context索引への1行反映要否を自動チェックし、必要ならreport/templateへcontext_update候補を注入する。cmd_3546の本番fullrecalculate冪等性証明成果物はdm-signal-research.mdへ紐づかず、翌日のGA-141 context_freshness ALERTで検出された。

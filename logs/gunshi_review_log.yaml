@@ -521,3 +521,17 @@
   causal_chain: "殿指示(偽陽性はバグだ)→3件FP発見→共通根因=文字列マッチ範囲制限不足→LG039系譜として永続化"
   altruism_check: "needed — lesson_candidate送信(Step 5)"
   timestamp: "2026-06-26T18:10:00+09:00"
+- cmd_id: cmd_karo_hotfix_ga141_context_freshness_dm_signal_research_20260626
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  ambiguity_points: none
+  findings_summary: "APPROVE。定型context freshness hotfix。dm-signal-research.md更新+gate ALERT解消。AC4件"
+  observations:
+    - "L854(別ALERT残存注意)+L849(cache署名)+L297(TSV解析)注入済み"
+  causal_chain: "GA-141 context_freshness ALERT→dm-signal-research.md更新→gate ALERT解消(正の複利)"
+  brainwash_check: "4AC scope内。FM2件対処。定型hotfix。#2なし #8なし"
+  origin: "[[GA-141_context_freshness]] -> [[dm-signal-research更新]] -> [[APPROVE hotfix]]"
+  timestamp: "2026-06-26T18:31:00+09:00"

@@ -1761,7 +1761,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T14:18:08+09:00 三層学習ループの自動成長は順調か？覚醒して確認 |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
-| causal_chain | `[[legacy_lesson_L012]]` (L012) |
+| causal_chain | `[[cmd_147]]` (L012) |
 | causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L833) |
 | causal_chain | `[[cmd_3227]]` (L757) |
 
@@ -1951,8 +1951,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T15:57:53+09:00 bhridpgj1 toolu_016oUp2doQ3wV2FbYWoMsKM9 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/63743d01-6a3b-463a-896e-584b6a |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
-| causal_chain | `[[006.md検証]]` (L004) |
-| causal_chain | `[[006.md検証]]` (L005) |
+| causal_chain | `[[cmd_092]]` (L004) |
+| causal_chain | `[[cmd_134]]` (L005) |
 | causal_chain | `[[cmd_3354]]` (L804) |
 | causal_chain | `[[cmd_3432]]` (L817) |
 | causal_chain | `[[cmd_3523]]` (L844) |
@@ -2142,14 +2142,14 @@ codd:
 | cmd | `cmd_3524` α6検証に5追加指標(VDrag・Skew・Kurt・MinMo・MaxConsecLoss)を追加 — シン四神・シン忍法・奥義全量 |
 | causal | `cmd_3524` origin: [[殿指示_α6追加指標_20260625]] -> [[ぷろっぷDailyProp102_期待値プラスでも資産増えない]] -> [[robustness_common_5指標追加]] |
 | causal | `cmd_karo_hotfix_ga131` files_modified: [[shin_shijin_design]] |
-| causal_chain | `[[cmd_1055]]` (L001) |
-| causal_chain | `[[cmd_1055]]` (L002) |
-| causal_chain | `[[006.md検証]]` (L003) |
+| causal_chain | `[[cmd_125]]` (L001) |
+| causal_chain | `[[cmd_125]]` (L002) |
+| causal_chain | `[[cmd_125]]` (L003) |
 | causal_chain | `[[cmd_training_speed_decision_write_20260607000310]]` (L750) |
 | causal_chain | `[[cmd_training_speed_deploy_task_20260607000353]]` (L751) |
 | causal_chain | `[[cmd_3211]]` (L753) |
-| causal_chain | `[[cmd_3445_saizo]]` (L013) |
-| causal_chain | `[[cmd_3445]]` (L014) |
+| causal_chain | `[[cmd_150]]` (L013) |
+| causal_chain | `[[cmd_151]]` (L014) |
 
 ## gs_ninpo_research — GS忍法研究
 
