@@ -297,8 +297,10 @@ check_lesson_effectiveness() {
     # 高速化: cmd_fileを$$固定パスに (mktemp呼び出し削減)
     local cmd_file="/tmp/_glh_cmds_$$"
     local active_file="/tmp/_glh_active_lessons_$$"
+    local presence_file="/tmp/_glh_lesson_presence_$$"
 
     : > "$active_file"
+    : > "$presence_file"
     local _active_pid _active_lessons_file
     local _active_pids=()
     if [ -n "$target_project" ]; then
@@ -336,6 +338,19 @@ check_lesson_effectiveness() {
             /^[[:space:]]+status:[[:space:]]*deprecated/ { deprecated = 1 }
             ENDFILE { flush_current(); id = "" }
         ' "${_lesson_files[@]}" > "$active_file"
+        awk '
+            BEGINFILE {
+                pid = FILENAME
+                sub(/.*\/projects\//, "", pid)
+                sub(/\/lessons.*/, "", pid)
+            }
+            /^- / && /id:[[:space:]]*['\''"]?L[0-9]+/ {
+                id = $0
+                sub(/^.*id:[[:space:]]*['\''"]?/, "", id)
+                sub(/[^L0-9].*$/, "", id)
+                if (id != "") print pid "\t" id
+            }
+        ' "${_lesson_files[@]}" > "$presence_file"
     fi
 
     tac "$LESSON_IMPACT_FILE" | awk -F'\t' -v limit="$LESSON_EFFECT_WINDOW_CMDS" \
@@ -362,7 +377,7 @@ check_lesson_effectiveness() {
     local window_cmds
     window_cmds=$(awk 'END{print NR}' "$cmd_file")
     if [ "$window_cmds" -eq 0 ]; then
-        rm -f "$cmd_file" "$active_file"
+        rm -f "$cmd_file" "$active_file" "$presence_file"
         emit_actionable \
             "WARN: 教訓効果率計算対象cmdなし(scope:${scope})" \
             "scope 設定と logs/lesson_impact.tsv の project 列を確認せよ。"
@@ -375,22 +390,38 @@ check_lesson_effectiveness() {
     # Bootstrap教訓(全期間で1回しかfeedbackがない)を直近窓の集計から除外する。
     local mature_file
     mature_file=$(mktemp)
-    awk -F'\t' -v useful_min="$LESSON_EFFECT_USEFUL_MIN" '
+    awk -F'\t' -v useful_min="$LESSON_EFFECT_USEFUL_MIN" -v active_file="$active_file" -v presence_file="$presence_file" '
+        BEGIN {
+            while ((getline line < active_file) > 0) {
+                split(line, parts, "\t")
+                if (parts[1] != "" && parts[2] != "") active[parts[1] SUBSEP parts[2]] = 1
+            }
+            close(active_file)
+            while ((getline line < presence_file) > 0) {
+                split(line, parts, "\t")
+                if (parts[1] != "" && parts[2] != "") present[parts[1] SUBSEP parts[2]] = 1
+            }
+            close(presence_file)
+        }
         $1 == "timestamp" { next }
         {
-            action=$5; lid=$4
-            gsub(/\r$/, "", action); gsub(/\r$/, "", lid)
-            if (tolower(action) == "feedback" && lid != "") all_total[lid]++
+            action=$5; lid=$4; proj=$8
+            gsub(/\r$/, "", action); gsub(/\r$/, "", lid); gsub(/\r$/, "", proj)
+            if (tolower(action) != "feedback" || lid == "") next
+            lesson_key = ""
+            if ((proj SUBSEP lid) in active) lesson_key = proj SUBSEP lid
+            else if (!((proj SUBSEP lid) in present) && (("infra" SUBSEP lid) in active)) lesson_key = proj SUBSEP "infra:" lid
+            if (lesson_key != "") all_total[lesson_key]++
         }
         END {
-            for (lid in all_total) {
-                if (all_total[lid] >= useful_min) print lid
+            for (lesson_key in all_total) {
+                if (all_total[lesson_key] >= useful_min) print lesson_key
             }
         }
     ' "$LESSON_IMPACT_FILE" > "$mature_file"
 
     local metric
-    metric=$(awk -F'\t' -v cmd_file="$cmd_file" -v active_file="$active_file" -v project="$target_project" \
+    metric=$(awk -F'\t' -v cmd_file="$cmd_file" -v active_file="$active_file" -v presence_file="$presence_file" -v project="$target_project" \
         -v min_samples="$LESSON_EFFECT_MIN_SAMPLES" \
         -v useful_min="$LESSON_EFFECT_USEFUL_MIN" \
         -v mature_file="$mature_file" '
@@ -405,6 +436,11 @@ check_lesson_effectiveness() {
                 if (parts[1] != "" && parts[2] != "") active[parts[1] SUBSEP parts[2]] = 1
             }
             close(active_file)
+            while ((getline line < presence_file) > 0) {
+                split(line, parts, "\t")
+                if (parts[1] != "" && parts[2] != "") present[parts[1] SUBSEP parts[2]] = 1
+            }
+            close(presence_file)
             # Load mature lesson list (all-time feedback >= useful_min)
             while ((getline line < mature_file) > 0) {
                 gsub(/\r$/, "", line)
@@ -420,7 +456,10 @@ check_lesson_effectiveness() {
             if (cmd !~ /^cmd_/) next
             if (!(cmd in selected)) next
             if (project != "" && proj != project) next
-            if (!((proj SUBSEP lid) in active) && !(("infra" SUBSEP lid) in active)) next
+            lesson_key = ""
+            if ((proj SUBSEP lid) in active) lesson_key = proj SUBSEP lid
+            else if (!((proj SUBSEP lid) in present) && (("infra" SUBSEP lid) in active)) lesson_key = proj SUBSEP "infra:" lid
+            if (lesson_key == "") next
             if (result == "pending" || ref == "pending") next
             # hotfix feedback is dominated by self-healing tasks and is too bursty
             # for the long-window lesson usefulness health signal.
@@ -431,9 +470,9 @@ check_lesson_effectiveness() {
             } else if (action == "feedback") {
                 # Only count feedback for mature lessons (all-time feedback >= useful_min)
                 # to exclude Bootstrap noise (first-time NOT_USEFUL from untested lessons).
-                if (!(lid in mature)) next
-                lesson_total[lid]++
-                if (toupper(result) == "USEFUL") lesson_useful[lid]++
+                if (!(lesson_key in mature)) next
+                lesson_total[lesson_key]++
+                if (toupper(result) == "USEFUL") lesson_useful[lesson_key]++
             }
         }
         END {
@@ -445,7 +484,7 @@ check_lesson_effectiveness() {
         }
     ' "$LESSON_IMPACT_FILE")
     rm -f "$mature_file"
-    rm -f "$cmd_file" "$active_file"
+    rm -f "$cmd_file" "$active_file" "$presence_file"
 
     local referenced_count=0 injected_count=0 useful_count=0 total_feedback_count=0
     IFS=$'\t' read -r referenced_count injected_count useful_count total_feedback_count <<< "$metric"

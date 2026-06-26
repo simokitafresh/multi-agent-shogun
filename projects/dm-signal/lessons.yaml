@@ -1525,6 +1525,9 @@ lessons:
   - /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_2422_l2_champions_constrained.yaml
   - /mnt/c/Python_app/DM-signal/outputs/analysis/cmd_2422_l2_champion_report.md
   origin: '[[cmd_2422]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L686
   title: robustness実行前にSQLite月次保存形式を確認する
   summary: L2 SQLiteはmonthlyテーブルではなくmonthly_blob/monthly_meta形式だったため、既存gs_grid_robustness.p
@@ -2694,6 +2697,9 @@ lessons:
   - outputs/analysis/alm_research/cmd_1863_1795_kasoku_diff_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/cmd_1863_1795_kasoku_ratio_l1_wf_alm_returns.csv
   origin: '[[cmd_1863]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L609
   title: WF回帰テストは同一CSV2回実行での決定論確認
   summary: l1_alm_wf_engine.pyの回帰テストは同一CSVで2回実行→np.allclose=Trueで決定論を検証するもの。異なる世代のCSVや旧出力との
@@ -3056,6 +3062,9 @@ lessons:
   target_files:
   - tasks/lessons.md
   origin: '[[cmd_1796]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L583
   title: WSL2 /mnt/c 巨大CSV flush は p9_client_rpc stall を起こしうる — Linux側出力か分割書込前提で設計すべし
   summary: 119,493パターンの kasoku_ratio 実行で 1795_kasoku_ratio_grid_monthly_fast.csv が約347.6MBに
@@ -3514,6 +3523,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: '2026-04-04'
   origin: '[[cmd_karo_batch_R5]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L549
   title: ALM batch 統合では objective 単位 fallback で parity を守る
   summary: cmd_1736 の R7 では batch_rolling_metrics 導入後、1940 strategy 中 7 本だけ maximum_drawdow
@@ -4459,6 +4471,10 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-26'
+  deprecated: true
+  deprecated_at: '2026-06-26T17:40:05+09:00'
+  deprecated_reason: 'cmd_karo_hotfix_lesson_health_useful_20260626173325: 直近full cmdで3回連続NOT_USEFUL(0/3)。成熟低useful分母を押し下げるため淘汰'
+  deprecated_by: 'cmd_karo_hotfix_lesson_health_useful_20260626173325'
 - id: L479
   title: selection付きFoFのinit月はholding_signal=Noneで独立検証不可
   summary: selection blocks付きFoFの最初の月はmonthly_returns.holding_signal=Noneだがmonthly_returnは非
@@ -7383,6 +7399,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-12'
   origin: '[[cmd_819]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L255
   title: ticker precompute欠落時のfallbackはmonths windowをPrice queryへ必ず伝播させる
   summary: monthly-returns APIはticker_monthly_returnsが空になるとfallbackに落ちるが、fallbackがPrice全履歴を
@@ -7578,6 +7597,9 @@ lessons:
   when: Open/Closeのデフォルトを判断する時
   how: このシステムのデフォルトはOpen-to-Openであり、Close-to-Closeではないと扱え
   origin: '[[cmd_766]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L239
   title: '誤解13 IF-THEN: Open-to-Openは異なる日のOpen同士を結ぶ'
   summary: Open-to-Open計算を修正する時は、T日Open→T+N日Openという異なる日のOpen同士を結ぶ定義を守る。T日Open→T日CloseはOpen-
@@ -7632,6 +7654,9 @@ lessons:
   when: モメンタム/シグナル判定を修正する時
   how: シグナル判定は常にClose価格を使い、Open価格での判定を厳禁とする
   origin: '[[cmd_766]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L233
   title: 'RULE09 IF-THEN: Open/Closeは独立計算系列、混在禁止'
   summary: Open/Closeは独立計算系列として扱い、同一計算パス内でOpen価格とClose価格を混在させるな。混在させるとリターン計算が数学的に不正になる。
@@ -8175,6 +8200,9 @@ lessons:
   - frontend/components/__tests__/compare-summary-table.test.tsx
   - frontend/components/compare-summary-table.tsx
   origin: '[[cmd_613]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L190
   title: 集計要件でrole分離が必要ならイベント記録時点で識別子を保存しないと後段SQLでは復元不能
   summary: IF analytics tier集計でadminをtrack時にNULL化していたため、summary側でadmin/unauthenticatedを分離でき
@@ -9392,6 +9420,10 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-26'
+  deprecated: true
+  deprecated_at: '2026-06-26T17:40:05+09:00'
+  deprecated_reason: 'cmd_karo_hotfix_lesson_health_useful_20260626173325: 直近full cmdで3回連続NOT_USEFUL(0/3)。成熟低useful分母を押し下げるため淘汰'
+  deprecated_by: 'cmd_karo_hotfix_lesson_health_useful_20260626173325'
 - id: L082
   title: monthly_returns.portfolio_id(varchar)とportfolios.id(uuid)の型不整合
   summary: monthly_returns.portfolio_idはvarchar型、portfolios.idはuuid型。SQLでJOIN/IN比較する際にid::t

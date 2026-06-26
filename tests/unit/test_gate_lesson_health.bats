@@ -316,6 +316,55 @@ EOF
     [[ "$output" == *"METRIC: lesson_effectiveness_threshold status=OK rate=100.0% useful_rate=0.0% window_cmds=2 referenced=1 injected=1 useful=0 total_feedback=0 scope=infra"* ]]
 }
 
+@test "gate_lesson_health does not fallback to infra when project has deprecated same lesson id" {
+    mkdir -p "$TEST_TMPDIR/projects/dm-signal"
+    cat > "$TEST_TMPDIR/config/projects.yaml" <<'EOF'
+projects:
+  - id: infra
+    path: "/tmp/test-project"
+    context_file: "context/infrastructure.md"
+    status: active
+  - id: dm-signal
+    path: "/tmp/test-project"
+    context_file: "context/dm-signal.md"
+    status: active
+EOF
+
+    cat > "$TEST_TMPDIR/context/dm-signal.md" <<'EOF'
+<!-- last_synced_lesson: L002 -->
+EOF
+
+    cat > "$TEST_TMPDIR/projects/infra/lessons.yaml" <<EOF
+ssot_path: $TEST_TMPDIR/tasks/lessons.md
+lessons:
+- id: L002
+  title: infra active same id
+  summary: infra active same id
+EOF
+
+    cat > "$TEST_TMPDIR/projects/dm-signal/lessons.yaml" <<EOF
+ssot_path: $TEST_TMPDIR/tasks/lessons.md
+lessons:
+- id: L002
+  title: dm deprecated same id
+  summary: dm deprecated same id
+  deprecated: true
+EOF
+
+    cat > "$TEST_TMPDIR/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
+2026-05-28T00:00:00	cmd_900	saizo	L002	injected		no	dm-signal	full	routine	5	0
+2026-05-28T00:01:00	cmd_900	saizo	L002	feedback	NOT_USEFUL	no	dm-signal	full	routine	5	0
+2026-05-28T00:02:00	cmd_901	saizo	L002	injected		no	dm-signal	full	routine	5	0
+2026-05-28T00:03:00	cmd_901	saizo	L002	feedback	NOT_USEFUL	no	dm-signal	full	routine	5	0
+EOF
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: 教訓効果率(直近2cmd): 0/0 = 0.0%"* ]]
+    [[ "$output" == *"METRIC: lesson_effectiveness_threshold status=OK rate=0.0% useful_rate=0.0% window_cmds=2 referenced=0 injected=0 useful=0 total_feedback=0 scope=all"* ]]
+}
+
 @test "gate_lesson_health excludes bootstrap lessons from useful_rate (all-time feedback < useful_min)" {
     # L001: mature (all-time feedback=3 >= useful_min=2) → counted
     # L002: bootstrap (all-time feedback=1 < useful_min=2) → excluded from useful_rate
