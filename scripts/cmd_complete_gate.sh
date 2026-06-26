@@ -3485,6 +3485,130 @@ binary_checks_warn_reason() {
     return 1
 }
 
+report_has_commit_binary_check_yes() {
+    local report_file="$1"
+
+    REPORT_FILE="$report_file" python3 - <<'PY'
+import os
+import sys
+import yaml
+
+path = os.environ["REPORT_FILE"]
+try:
+    with open(path, encoding="utf-8") as f:
+        report = yaml.safe_load(f) or {}
+except Exception:
+    sys.exit(1)
+
+checks = (report.get("binary_checks") or {}).get("commit", [])
+if isinstance(checks, dict):
+    checks = [checks]
+if not isinstance(checks, list):
+    sys.exit(1)
+
+for item in checks:
+    if not isinstance(item, dict):
+        continue
+    result = item.get("result", "")
+    if result is True or str(result).strip().lower() == "yes":
+        sys.exit(0)
+sys.exit(1)
+PY
+}
+
+collect_report_files_modified() {
+    local report_file="$1"
+
+    REPORT_FILE="$report_file" python3 - <<'PY'
+import os
+import yaml
+
+path = os.environ["REPORT_FILE"]
+try:
+    with open(path, encoding="utf-8") as f:
+        report = yaml.safe_load(f) or {}
+except Exception:
+    raise SystemExit(0)
+
+files = report.get("files_modified") or []
+if isinstance(files, str):
+    files = [files]
+if not isinstance(files, list):
+    raise SystemExit(0)
+
+for item in files:
+    if isinstance(item, dict):
+        value = item.get("path") or item.get("file") or item.get("name")
+    else:
+        value = item
+    value = str(value or "").strip()
+    if value and value not in ("no-code-change", "no_code_change"):
+        print(value)
+PY
+}
+
+collect_git_show_w_files() {
+    local git_ref="${1:-HEAD}"
+
+    git -C "$SCRIPT_DIR" show -w --name-only --format= "$git_ref" 2>/dev/null \
+        | sed '/^[[:space:]]*$/d' \
+        | sort -u
+}
+
+check_self_grade_commit_file_coverage() {
+    local git_ref="${1:-HEAD}"
+    local checked=false
+    local warned=false
+    local task_file ninja_name report_file report_files commit_files missing
+
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        if [ ! -f "$task_file" ]; then
+            echo "  [WARN] matching task file disappeared, skipping: $task_file"
+            MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
+            continue
+        fi
+        MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
+
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name")
+        [ -f "$report_file" ] || continue
+        checked=true
+
+        if ! report_has_commit_binary_check_yes "$report_file"; then
+            echo "  ${ninja_name}: SKIP (binary_checks.commit is not yes)"
+            continue
+        fi
+
+        report_files=$(collect_report_files_modified "$report_file" | sort -u)
+        if [ -z "$report_files" ]; then
+            echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES files_modified empty while binary_checks.commit=yes"
+            warned=true
+            continue
+        fi
+
+        if ! commit_files=$(collect_git_show_w_files "$git_ref"); then
+            echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES git show -w failed (${git_ref})"
+            warned=true
+            continue
+        fi
+
+        missing=$(comm -23 <(printf '%s\n' "$report_files") <(printf '%s\n' "$commit_files"))
+        if [ -n "$missing" ]; then
+            echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES files_modified not in git show -w (${git_ref}):"
+            printf '%s\n' "$missing" | sed 's/^/    - /'
+            warned=true
+        else
+            echo "  ${ninja_name}: OK (files_modified covered by git show -w ${git_ref})"
+        fi
+    done
+
+    if [ "$checked" = false ]; then
+        echo "  (no reports found for this cmd)"
+    elif [ "$warned" = false ]; then
+        echo "  OK (self-grade commit file coverage)"
+    fi
+}
+
 detect_task_role() {
     local task_file="$1"
 
@@ -6766,6 +6890,12 @@ check_scope_drift
 check_review_staleness
 check_partial_completion
 check_wtf_likelihood
+
+# ─── Loop Engineering Phase 2-2: self-grade commit/file verification（WARN only） ───
+# Agent self-grade can nod along even when the actual commit does not match the report.
+# Compare reported files against `git show -w --name-only` so formatting-only/no-op claims become visible.
+level_heading "[L2]" "Self-grade commit/files verification:"
+check_self_grade_commit_file_coverage "HEAD"
 
 # ─── 軍師verdict事前チェック（cmd_3248: GATE判定前にWARN表示） ───
 # GATE CLEAR後の記録処理(L6585/L6888)とは別。家老がGATE判断前に軍師指摘を把握するためのWARN。

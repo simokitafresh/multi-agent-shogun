@@ -34,6 +34,14 @@ setup_file() {
         printf '\n'
         sed -n '/^binary_checks_warn_reason()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^report_has_commit_binary_check_yes()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^collect_report_files_modified()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^collect_git_show_w_files()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^check_self_grade_commit_file_coverage()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^is_lessons_useful_empty_warn_task_type()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^handle_empty_lessons_useful_check()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -221,6 +229,12 @@ _run_command_files_modified_coverage_with_state() {
     echo "BLOCK_REASONS=${BLOCK_REASONS[*]}"
 }
 
+_run_self_grade_commit_file_coverage_with_state() {
+    check_self_grade_commit_file_coverage HEAD
+    echo "ALL_CLEAR=$ALL_CLEAR"
+    echo "BLOCK_REASONS=${BLOCK_REASONS[*]}"
+}
+
 _write_command_coverage_fixture() {
     local command_text="$1"
     local files_modified_block="$2"
@@ -250,6 +264,72 @@ parent_cmd: $TEST_CMD_ID
 files_modified:
 $files_modified_block
 EOF
+}
+
+_write_self_grade_fixture() {
+    local files_modified_block="$1"
+
+    export SCRIPT_DIR="$TEST_PROJECT"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    export MATCHING_TASK_FILES_PROCESSED_COUNT=0
+    export MATCHING_TASK_FILES_SKIPPED_COUNT=0
+    export ALL_CLEAR=true
+    BLOCK_REASONS=()
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+parent_cmd: $TEST_CMD_ID
+files_modified:
+$files_modified_block
+binary_checks:
+  commit:
+    - check: git commitが完了したか
+      result: yes
+EOF
+}
+
+_init_self_grade_git_repo() {
+    git -C "$TEST_PROJECT" init >/dev/null
+    git -C "$TEST_PROJECT" config user.email test@example.com
+    git -C "$TEST_PROJECT" config user.name Test
+    mkdir -p "$TEST_PROJECT/scripts"
+    printf 'before\n' > "$TEST_PROJECT/scripts/touched.sh"
+    git -C "$TEST_PROJECT" add scripts/touched.sh
+    git -C "$TEST_PROJECT" commit -m initial >/dev/null
+    printf 'after\n' > "$TEST_PROJECT/scripts/touched.sh"
+    git -C "$TEST_PROJECT" add scripts/touched.sh
+    git -C "$TEST_PROJECT" commit -m "touch script" >/dev/null
+}
+
+@test "self-grade commit/files verification warns when files_modified is absent from git show -w" {
+    _init_self_grade_git_repo
+    _write_self_grade_fixture "  - path: scripts/reported_only.sh
+    change: modified"
+
+    run _run_self_grade_commit_file_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SELF_GRADE_COMMIT_FILES files_modified not in git show -w"* ]]
+    [[ "$output" == *"scripts/reported_only.sh"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+    [[ "$output" == *"BLOCK_REASONS="* ]]
+}
+
+@test "self-grade commit/files verification accepts files_modified covered by git show -w" {
+    _init_self_grade_git_repo
+    _write_self_grade_fixture "  - path: scripts/touched.sh
+    change: modified"
+
+    run _run_self_grade_commit_file_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (files_modified covered by git show -w HEAD)"* ]]
+    [[ "$output" == *"OK (self-grade commit file coverage)"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+    [[ "$output" == *"BLOCK_REASONS="* ]]
 }
 
 @test "command/files_modified coverage blocks when command target is missing from report" {
