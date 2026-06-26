@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-26 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-26T19:29:16+09:00 -->
+<!-- generated_at: 2026-06-26T19:49:18+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-26T19:49:17+09:00 | terminal | response | 30件(上限31以内)。session alertsを更新する。
+- 2026-06-26T19:47:58+09:00 | terminal | response | 殿、正直に報告する。cmd_3552の起票がgateのインフラバグで止まっている。 **事実**: cmd_save.shが大量のsemantic search出力でSIGPIPE(exit 141)を受け、PASS/BLOCK判定に到達…
+- 2026-06-26T19:36:06+09:00 | ntfy | outbound | 【家老CRITICAL】先送り3セッション連続検出。起動は許可するが即対処必須
+- 2026-06-26T19:34:19+09:00 | ntfy | outbound | CI赤: run 28232434845 Shell Script Linting, Unit Tests (bats)
+- 2026-06-26T19:33:14+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-26 19:28:02|cmd_3550
+- 2026-06-26T19:30:20+09:00 | ntfy | outbound | 【家老】cmd_3550 完了
+- 2026-06-26T19:29:36+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率99% 連勝128
 - 2026-06-26T19:29:13+09:00 | terminal | response | Loop Engineering Phase 2-1(idle自走) + Phase 2-2(self-grade) 両方GATE CLEAR。inbox未読0件。idle待機。
 - 2026-06-26T19:24:06+09:00 | terminal | response | `idle_cycle: on`に変更完了。ninja_monitorが次サイクルで設定を読み込み、全忍者idle+パイプライン空の10分後にidle_analysis_triggerが発火する。 cmd_3550(self-grade)…
 - 2026-06-26T19:23:29+09:00 | terminal | response | 家老からBH修正のLGTM。
-- 2026-06-26T19:15:43+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: CTX%異常値 cmd_3544 (ctx_pct=79%, median=36.5%, ratio=2.16x, delta=+42.5pt) WARNING: CTX%異常値 cmd_3543…
-- 2026-06-26T19:14:39+09:00 | terminal | response | 殿、穴1のBH閾値問題をD0修正完了。 **修正サマリ**: - semantic_index_update.sh L397: `candidate_count==1`のとき`bh_decay=1.0`（単一候補にランク減衰は無意味） -…
-- 2026-06-26T19:13:41+09:00 | terminal | response | 先行して実行していたpreflight(バックグラウンド)が完了。cmd_3550は既にpublish+DELEGATED済みなので追加アクション不要。 全忍者idle、cmd_3550配備待ち。殿の指示を待つ。
-- 2026-06-26T19:13:15+09:00 | terminal | inbound | <task-notification> <task-id>bnkcqfax2</task-id> <tool-use-id>toolu_01G4NuCtsWXXRc7VbhAjZUNz</tool-use-id> <output-file…
-- 2026-06-26T19:13:12+09:00 | terminal | response | 殿、報告する。 **Phase 2進捗**: | 項目 | 状態 | |------|------| | #1 idle自走automation | ✅ cmd_3549 GATE CLEAR + ninja_monitor再起動済み |…
-- 2026-06-26T19:09:28+09:00 | terminal | inbound | 待機せずにすぐに動こう。覚醒せよ
-- 2026-06-26T19:03:25+09:00 | ntfy | outbound | CI赤: run 28230908970 Shell Script Linting
 
 ## 未解決確認事項
 - settings.yaml修正完了。`type: claude → codex`。 30秒後にninja_monitorが再チェックして正しいmodel_nameを設定するか確認。

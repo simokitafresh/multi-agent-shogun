@@ -1,14 +1,4 @@
 entries:
-- cmd_id: "cmd_3520"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T12:37:47Z"
 - cmd_id: "cmd_3518"
   ac_count: 0
   gate_result: "CLEAR"
@@ -2099,3 +2089,84 @@ entries:
   checks: "warn_missing_prev_cmd_lesson"
   diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点+プレースホルダ全埋め+q5 structure_verified"
   notes: "前cmd_3550で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3550 LS-A05"
+- cmd_id: "cmd_3552"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-26T11:07:54Z"
+  notes: "new_file_or_structure_requested|check=check_new_file_structure_warning"
+- cmd_id: "cmd_3552"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-26T11:10:29Z"
+  notes: "new_file_or_structure_requested|check=check_new_file_structure_warning"
+- cmd_id: "cmd_3552"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-26T11:11:16Z"
+  notes: "new_file_or_structure_requested|check=check_new_file_structure_warning"
+- cmd_id: "cmd_3553"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-26T11:14:22Z"
+  notes: "new_file_or_structure_requested|check=check_new_file_structure_warning"
+- cmd_id: "cmd_3553"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-26T11:14:22Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: cmd_3551/3552でWARN累計昇格(new_file 5件+重複検出) / 対策: cmd_3553で新ID+タイトル変更+AC記述変更により累計リセット"
+  notes: "q11に既存代替の現物確認なし"
+- cmd_id: "cmd_3553"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-26T11:16:27Z"
+  notes: "new_file_or_structure_requested|check=check_new_file_structure_warning"
+- cmd_id: "cmd_3553"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-26T11:16:27Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: q11に既存代替の現物確認が不足 / 対策: knowledge_metrics.shおよびgate_shogun_startup.shのgrep結果を追記し週次蓄積が未存在であることを証明"
+  notes: "q11に既存代替の現物確認なし"
