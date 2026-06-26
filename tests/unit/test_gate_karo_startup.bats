@@ -263,6 +263,31 @@ EOF
     [[ "$output" == *"未読: 3件"* ]]
 }
 
+@test "read actionable inbox still warns because read flag is not completion" {
+    cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'EOF'
+messages:
+- content: 'GATE CLEAR — cmd_999 完了。/cmd-complete スキルで完了処理を実行せよ。'
+  from: 'cmd_complete_gate'
+  id: 'msg_skill'
+  read: true
+  timestamp: '2026-06-26T07:47:04'
+  type: 'skill_hint'
+- content: 'future fixとして、変更対象: bulletin_confirm.sh のclose判定ロジックのみ。'
+  from: 'gunshi'
+  id: 'msg_review'
+  read: true
+  timestamp: '2026-06-26T07:48:53'
+  type: 'review_result'
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"既読actionable候補 2件"* ]]
+    [[ "$output" == *"read=trueを処理済みと見なすな"* ]]
+    [[ "$output" == *"msg_skill"* ]]
+    [[ "$output" == *"msg_review"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
 # === Test 4: PD未解決 → 未解決件数が表示される ===
 @test "2 pending decisions → displays 未解決: 2件" {
     cat > "$TEST_TMPDIR/queue/pending_decisions.yaml" <<'EOF'
@@ -624,6 +649,32 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK: 最新commit_missing WAはcommit実在確認済み (cmd_memory_health 4aec408c)"* ]]
     [[ "$output" != *"ALERT: WA復活 — 最新cmd cmd_memory_health"* ]]
+}
+
+@test "false commit_missing metadata issues are excluded from category aggregate WARN" {
+    cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_3515
+  ninja: hayate
+  workaround: true
+  category: commit_missing
+  detail: "final_summary報告にL0コード変更files_modifiedを統合追記(GATE command_files_modified_mismatch FP解消)"
+  root_cause: "report_field_set.shでL0報告のfiles_modified 5ファイルをfinal_summary報告に追加"
+- cmd_id: cmd_memory_health
+  ninja: hanzo
+  workaround: true
+  category: commit_missing
+  detail: "報告YAML commit_hash full値が実在commitと不一致"
+  root_cause: "report_field_set.shで commit_hash を補正"
+- cmd_id: cmd_ga126
+  ninja: tobisaru
+  workaround: true
+  category: commit_missing
+  detail: "report files_modifiedが説明文になり軍師precheck ERRORS=1。commit binary_check文言も偵察commit不要へ補正"
+  root_cause: "report_field_set.shでfiles_modifiedを5実パスに設定"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN: category集計(直近30件中3件以上) — commit_missing"* ]]
 }
 
 @test "WA data quality issues → startup gate shows False WA TOP3" {

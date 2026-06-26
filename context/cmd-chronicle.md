@@ -424,3 +424,4 @@
 | cmd_3546 | 殿指示(2026-06-26): ローカル検証だけでは不十分。本番環境でfullrecalculate実行前後で全PF全指標の数値が完全一致することを証明せよ | dm-signal | 06-26 | 本番Render環境fullrecalculate前後の全P |
 | cmd_3547 | 殿指示(2026-06-26): 速度バグ起票。cmd_3542/3543/3544でバルクパスのN+1は修正済みだが、monthly_returns_calculator.py:262とmonthly_trade_impl.py:419のMTDフォールバックパスがcalculate_monthly_returnにcache params(portfolio_cache/signal_cache)を渡していない。現物確認済み(2026-06-26 07:42) | dm-signal | 06-26 | MTDフォールバック2箇所にportfolio_cache/ |
 | cmd_3548 | 殿指示(2026-06-26): 設計書compare-summary-benchmark-row-period-instability-fix.mdに従い実装。SPY行がフォルダーフィルター連動で値が変動する不具合を、TQQQと同じstandalone経路に載せて修正する | dm-signal | 06-26 | Compare SummaryのSPY行期間依存バグ修正完了 |
+| cmd_3549 | Loop Engineering §VI-C Manual Loop防止。将軍のidle時自己分析(Step 1-7)が意志依存で先送りされる(3セッション連続startup BLOCK実績)。ninja_monitor.shに全忍者idle+パイプライン空を10分以上検知→将軍にidle_analysis_trigger nudge送信を追加し、Manual Loopを解消する | infra | 06-26 | ninja_monitorに将軍idle分析triggerを |

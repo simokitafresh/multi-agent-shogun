@@ -3,23 +3,53 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      binary_check: Q1への回答として、hook設定問題かコード/テスト品質問題かを根拠ファイル・行番号付きで分類している
-      description: artifact `logs/hook_artifacts/20260626T130150_pre-push_2563617.log` と失敗テスト `tests/unit/test_semantic_index_update.bats` line 160周辺を読み、失敗原因を一次情報で説明する
+      description: bash scripts/gates/gate_lesson_health.sh の現状を一次計測し、ALERT根因が直近10cmd useful_rate=14.3%(1/7)かつ cmd_3548 の L191/L234/L240 NOT_USEFUL 3件であることを証跡化する
     AC2:
-      binary_check: Q2への回答として、検索コマンド・対象件数・同種/別種の分類が報告に含まれている
-      description: 同種hook_failureが他agent/他artifactにもあるかを `logs/hook_artifacts/` と関連ログから調べ、件数・代表例・共通パターンを示す
+      description: L191/L234/L240について projects/dm-signal/lessons.yaml と projects/infra/lessons.yaml の同一ID重複を確認し、改善/淘汰/計測ロジック修正のうち根因に効く最小変更を実施する
     AC3:
-      binary_check: Q3への回答として、防御層案がL0-L7のどこに入るか、変更対象ファイル、検証コマンド、lesson_candidate.originを含む
-      description: 次回同種失敗を防ぐ防御層を、修正対象ファイル・追加/修正すべきテスト・lesson_candidateを含めて提案する
+      description: gate_lesson_health.sh の project+lesson_id / infra+lesson_id active判定が今回の低useful計測を誤って温存しないことを、変更前後の数値差分で示す
     AC4:
-      binary_check: git diffで意図しないコード変更がない、または変更した場合は家老指示外としてFAIL報告している
-      description: 今回の調査は偵察に限定し、コード変更が必要な場合は実装せず、最小修正案とリスクを報告する
+      description: bash scripts/gates/gate_lesson_health.sh を再実行し、statusがALERTでなくなる、または未解消なら残理由と次の具体修正対象IDを報告YAMLに記録する
+    AC5:
+      description: 変更がある場合は対象テストまたは最小再現スクリプトを実行し、git commitまで完了する
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  not_in_scope: 教訓全体の大規模棚卸し、将軍専用lesson-sortの代行、dm-signal機能コード変更
+  origin: '[[startup先送りBLOCK_教訓健全度ALERT_20260626]] -> [[cmd_3548_L191_L234_L240_NOT_USEFUL]] -> [[低useful教訓改善淘汰]]'
+  parallel_ok: []
+  parent_cmd: cmd_karo_hotfix_lesson_health_useful_20260626173325
+  project: infra
+  purpose: 教訓健全度ALERT解消 — 直近10cmd useful率14.3%(1/7)の低useful教訓を改善/淘汰し、startup先送りBLOCKを閉じる
+  status: idle
+  stop_for: []
+  target_path: scripts/gates/gate_lesson_health.sh
+  task_id: cmd_karo_hotfix_lesson_health_useful_20260626173325_normal
+  task_type: hotfix
+  related_lessons:
+  - id: 'L479'
+    summary: 'gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入'
+    detail: 'gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入'
+  - id: 'L429'
+    summary: 'gate_lesson_health.shで_active_lesson_ids()が定義済みなのに3箇所でインラインawk重複。関数定義時に呼出し側の置換を同'
+    detail: 'gate_lesson_health.shで_active_lesson_ids()が定義済みなのに3箇所でインラインawk重複。関数定義時に呼出し側の置換を同'
+  - id: 'L857'
+    summary: 'gate_lesson_health.shは未振り分け件数をALERTするが、該当ID一覧はcontextを別途抽出しないと分からない。ALERT出力に未振り分'
+    detail: 'gate_lesson_health.shは未振り分け件数をALERTするが、該当ID一覧はcontextを別途抽出しないと分からない。ALERT出力に未振り分'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -37,57 +67,22 @@ task:
   - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
   - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: "【3-strike rule】\n  - 初期仮説は最低3本。hypothesis_count に現在の本数を維持せよ\n  - 3回連続で仮説が外れたら、追加探索で粘らずエスカレーションせよ\n  ────────────────────────────────────────\n\n"
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  hypothesis_count: 3
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope:
-  - コード修正の実装
-  - push
-  - hookの無効化
-  parallel_ok: []
-  parent_cmd: cmd_karo_recon_hook_failure_ga138_202606261303
-  project: infra
-  purpose: hook_failure GA-138のpre-push失敗について、原因がコード品質かhook設定かを切り分け、防御層候補を具体化する
-  report_template:
-    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-    forbidden:
-    - 方針提案・設計判断は禁止。事実と分析のみ報告せよ
-    notes:
-    - 他の忍者の報告を参照するな（並行偵察の独立性）
-    required_fields:
-    - findings
-    - verdict
-    - confidence
-    - blind_spots
-  status: done
-  stop_for: []
-  target_path: logs/hook_artifacts/20260626T130150_pre-push_2563617.log
-  task_id: cmd_karo_recon_hook_failure_ga138_202606261303_normal
-  task_type: recon
-  three_strike_rule: 仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告
-  related_lessons: []
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L479: gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入
+      - L429: gate_lesson_health.shで_active_lesson_ids()が定義済みなのに3箇所でインラインawk重複。関数定義時に呼出し側の置換を同
+      - L857: gate_lesson_health.shは未振り分け件数をALERTするが、該当ID一覧はcontextを別途抽出しないと分からない。ALERT出力に未振り分
+    ────────────────────────────────────────
+
+
   memory_db_context:
-  - '2026-06-26T13:02:12+09:00 | 【改善トリガー】hook_failure ALERT (GA-138)'
-  - '2026-06-25T19:31:32+09:00 | 【改善トリガー】hook_failure ALERT (GA-133)'
-  - '2026-04-21T00:04:57+09:00 | 【改善トリガー】hook_failure ALERT (GA-138)'
+  - '2026-06-21T18:36:00+09:00 | 13/13 PASS。 殿、完了。`LESSON_EFFECT_WINDOW_CMDS=30→10`に変更。 - 修正前: useful率29.0%(直近30cmd、9/31)、status=ALER'
   ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_recon_hook_failure_ga138_202606261303_normal
+  _ac_task_id: cmd_karo_hotfix_lesson_health_useful_20260626173325_normal
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_recon_hook_failure_ga138_202606261303.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_recon_hook_failure_ga138_202606261303.yaml
+  report_filename: hayate_report_cmd_karo_hotfix_lesson_health_useful_20260626173325.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_hotfix_lesson_health_useful_20260626173325.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -110,4 +105,4 @@ task:
     - reason: 'binary_checks_fail'
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-06-26T13:05:28"
+  deployed_at: "2026-06-26T17:35:42"

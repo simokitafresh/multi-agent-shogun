@@ -8,9 +8,15 @@ SCRIPT_DIR="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../scripts" && pwd)"
 classify_category() {
     local issue="$1"
     local pattern_report="lessons_useful|binary_checks|dict|list|string|フォーマット|lesson_candidate"
+    local pattern_report_commit_meta="commit_hash|files_modified|command_files_modified_mismatch|偵察commit不要|commit不要|binary_checks\\.commit|報告YAML.*commit|report.*commit"
+    local pattern_commit_missing="commit.*漏れ|commit.*なし|commit.*missing|コミット.*漏れ|コミット.*なし|未commit|未コミット|untracked|modified"
     local pattern_disappear="消失|missing|not found"
     if [[ "$issue" =~ $pattern_report ]]; then
         echo "report_yaml_format"
+    elif [[ "$issue" =~ $pattern_report_commit_meta ]]; then
+        echo "report_yaml_format"
+    elif [[ "$issue" =~ $pattern_commit_missing ]]; then
+        echo "commit_missing"
     elif [[ "$issue" =~ $pattern_disappear ]]; then
         echo "file_disappearance"
     else
@@ -64,6 +70,21 @@ classify_category() {
 @test "classify: cmd_1205 lessons_useful dict→list → report_yaml_format" {
     result=$(classify_category "報告YAMLフォーマット修正: lessons_useful dict→list変換(0/1/2/3→id付きリスト)、binary_checks文字列→dict変換。report_field_set.sh stdin経由")
     [ "$result" = "report_yaml_format" ]
+}
+
+@test "classify: commit_hash mismatch in report metadata → report_yaml_format" {
+    result=$(classify_category "報告YAML commit_hash full値が実在commitと不一致")
+    [ "$result" = "report_yaml_format" ]
+}
+
+@test "classify: files_modified explanation text + recon commit wording → report_yaml_format" {
+    result=$(classify_category "report files_modifiedが説明文になり軍師precheck ERRORS=1。偵察対象/候補ファイルの実パス一覧へ補正し、commit binary_check文言も偵察commit不要へ補正")
+    [ "$result" = "report_yaml_format" ]
+}
+
+@test "classify: actual untracked change without commit → commit_missing" {
+    result=$(classify_category "untracked fileが残り未commitのためGATE BLOCK")
+    [ "$result" = "commit_missing" ]
 }
 
 # --- file_disappearance detection ---

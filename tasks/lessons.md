@@ -8733,3 +8733,68 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - obsidian-link-principles.mdのsource pathspecにdocs/semantic-indexを含むため、index.mdへのaliases/discussion追加(ルーティン成長)が毎回ALERTをトリガーする。L779(dm-signal-core.md pathspec過広)と同構造。修正はcontext_freshness_check.sh L440-445のpathspec精細化で対応可能。origin: [[GA-134_context_freshness_ALERT]] -> [[docs/semantic-index過広pathspec]] -> [[index.md成長更新が偽陽性発火]]
+
+### L857: lesson_health未振り分けALERTはID一覧まで出さないと次アクションが遅れる
+- **日付**: 2026-06-26
+- **出典**: cmd_karo_hotfix_ga135_lesson_health_dm_signal_unclassified_20260626
+- **記録者**: hanzo
+- **tags**: [infra,gate,bash,lesson]
+- **origin**: [[cmd_karo_hotfix_ga135_lesson_health_dm_signal_unclassified_20260626]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_lesson_health.shは未振り分け件数をALERTするが、該当ID一覧はcontextを別途抽出しないと分からない。ALERT出力に未振り分けIDとsource_cmdを含めると、家老がlesson-sortまたは修正cmdを即判断できる。
+
+### L858: gateキャッシュは人間可読状態行とexit_codeを構造検証してから再利用する
+- **日付**: 2026-06-26
+- **出典**: cmd_karo_recon_ga137_p_average_freshness_20260626
+- **記録者**: hayate
+- **tags**: [infra,api,testing,gate]
+- **target_files**: [偵察のみ（コード変更なし）]
+- **origin**: [[cmd_karo_recon_ga137_p_average_freshness_20260626]]
+- **when**: 未設定
+- **how**: 未設定
+- p_average_freshnessでキャッシュ1行目がexit_code=1だけでも6時間以内なら再利用され、exit=1だがALERT行なしとなり改善トリガーがdetail-not-capturedに落ちる。キャッシュ読み取り時はOK/WARN/ALERT接頭辞とexit_code範囲を検証し、不正ならAPI再実行するチェックを追加すべき。
+
+### L859: notify_targetsフィールドを読むスクリプトは書き戻し時にも保持せよ
+- **日付**: 2026-06-26
+- **出典**: cmd_karo_hotfix_bulletin_confirm_close_20260626081815
+- **記録者**: hanzo
+- **tags**: [infra,bulletin,yaml]
+- **target_files**: [scripts/bulletin_confirm.sh,scripts/bulletin_action.sh,tests/unit/test_bulletin_board.bats]
+- **origin**: [[cmd_karo_hotfix_bulletin_confirm_close_20260626081815]]
+- **when**: 未設定
+- **how**: 未設定
+- bulletin_confirm/actionのようなYAML再書込みスクリプトがnotify_targetsをparse/writeしないと、確認・action処理のたびに通知対象情報が失われ、close条件や後続監査が誤る。parse対象に追加したフィールドは同じスクリプトのwrite側にも保持テストを置くべき。 origin: [[bulletin_confirm_notify_targets]] -> [[read_write_field_loss]] -> [[open_close判定劣化]]
+
+### L860: useful_rate低下の主因はwhen未設定教訓のfullタスク広域誤注入
+- **日付**: 2026-06-26
+- **出典**: cmd_karo_recon_lesson_health_useful_20260626082714
+- **記録者**: saizo
+- **tags**: [infra,gate,lesson]
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_karo_recon_lesson_health_useful_20260626082714]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_lesson_healthのuseful_rate低下は教訓内容の問題ではなくwhen未設定による誤注入が主因。L779/L738/L849はcontext freshness専用教訓だがwhen未設定でdm-signal fullタスクに広域注入され全件NOT_USEFUL。when設定でfullタスクへの誤注入を防止できる
+
+### L861: semantic_index_updateの伝播テストは閾値式を数値で固定せよ
+- **日付**: 2026-06-26
+- **出典**: cmd_karo_recon_hook_failure_ga138_202606261303
+- **記録者**: hayate
+- **tags**: [infra]
+- **target_files**: [偵察のみ（コード変更なし。報告YAMLとtask statusのみ運用更新）]
+- **origin**: [[cmd_karo_recon_hook_failure_ga138_202606261303]]
+- **when**: 未設定
+- **how**: 未設定
+- MEMORY_TAG_PROPAGATIONを期待するfixtureでは、候補数・position・BH_Q・recency_weight・min_scoreの積が閾値以上になることをテスト内で明示する。今回のように単一候補でBH_Q=0.75、min_score=1.0だとinsertされず、hook failureが反復する。
+
+### L862: project内deprecated同IDはinfra fallbackで復活させるな
+- **日付**: 2026-06-26
+- **出典**: cmd_karo_hotfix_lesson_health_useful_20260626173325
+- **記録者**: hayate
+- **tags**: [infra,gate,lesson]
+- **target_files**: [scripts/gates/gate_lesson_health.sh,projects/dm-signal/lessons.yaml,tests/unit/test_gate_lesson_health.bats]
+- **origin**: [[cmd_karo_hotfix_lesson_health_useful_20260626173325]]
+- **when**: 未設定
+- **how**: 未設定
+- project固有lesson_idをdeprecated化しても、同じlesson_idのinfra教訓へfallbackすると履歴計測で低useful分母が復活する。fallbackは対象projectに同IDが存在しない場合だけ許可し、presence判定をactive判定と分けて持つ。origin: [[cmd_karo_hotfix_lesson_health_useful_20260626173325]] -> [[deprecated同IDinfra_fallback]] -> [[useful_rate_ALERT温存]]

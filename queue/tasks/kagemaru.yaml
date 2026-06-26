@@ -1,106 +1,102 @@
 task:
-  _ac_task_id: cmd_3544_full
+  _ac_task_id: cmd_3549_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3544 (deployed 2026-06-26T03:30:06). Read from the beginning.
-  ac_version: b7867625
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3549 (deployed 2026-06-26T17:54:37). Read from the beginning.
+  ac_version: 889e461f
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
-  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
-  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
-  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
-  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
-  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
-  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
-  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
-  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
-  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
-  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   not_in_scope:
-  - context/dm-signal-frontend.md以外の大規模知識整理
-  - DM-Signalアプリ機能実装
-  - 無関係なcontext freshness ALERTの同時修正
+  - CI設定の無効化
+  - 失敗テストの削除
+  - push
+  - scope外dirtyファイルのstage/commit
   parallel_ok: []
-  parent_cmd: cmd_3544
-  project: dm-signal
-  purpose: '軍師速度バグ全体マップ(2026-06-26 blt_20260626_032240): monthly_returns_calculator.pyが1PFあたり3.8s、DBクエリ30回。N+1クエリ解消で速度改善。修正前後で全数値完全一致必須(DataFrame.equals()=Trueで検証)'
+  parent_cmd: cmd_3549
+  project: infra
+  purpose: Loop Engineering §VI-C Manual Loop防止。将軍のidle時自己分析(Step 1-7)が意志依存で先送りされる(3セッション連続startup BLOCK実績)。ninja_monitor.shに全忍者idle+パイプライン空を10分以上検知→将軍にidle_analysis_trigger nudge送信を追加し、Manual Loopを解消する
   status: idle
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/backend/app/services
-  task_id: cmd_3544_full
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts
+  task_id: cmd_3549_full
   task_type: full
-  skill_hint: /db-check
   related_lessons:
-  - id: 'L083'
-    summary: 'launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手'
-    detail: 'launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手'
-  - id: 'L480'
-    summary: 'set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること'
-    detail: 'set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること'
-  - id: 'L389'
-    summary: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
-    detail: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
+  - id: 'L594'
+    summary: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
+    detail: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
+  - id: 'L114'
+    summary: 'cmd_464_hotfix'
+    detail: 'cmd_464_hotfix'
+  - id: 'L558'
+    summary: 'L1022(uncommitted_block)/L1028(report_format_fix)にも& バックグラウンド実行が残存。同じサイレント失敗リスクが'
+    detail: 'L1022(uncommitted_block)/L1028(report_format_fix)にも& バックグラウンド実行が残存。同じサイレント失敗リスクが'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)"
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
-  - "skill_routing — スキルルーティング:  skills/*/SKILL.md"
-  - "production_parity — 本番パリティ:  context/dm-signal-core.md §19.3 context/checklist-shin-v2-registration.md docs/research/dmsignal_parity_verification_audit.md docs/research/pf_config_backup_20260601_pre_delete.json 削除前58件config全量バックアップ docs/research/gunshi_alm_parity_drift_analysis_20260409.md — 軍師分析: ALMパリティドリフト分析(2026-04-09)"
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
+  - "loop_engineering — Loop Engineering論文:  docs/research/loop_engineering_anthropic_playbook_20260617.md"
+  - "infrastructure_ops — インフラ運用基盤:  scripts/ninja_monitor.sh tests/unit/test_ninja_monitor_stall.bats scripts/inbox_watcher.sh scripts/daemon_supervisor.sh scripts/ntfy_listener.sh context/infrastructure.md scripts/dashboard_auto_section.sh ダッシュボードリアルタイムステータス自動生成 scripts/auto_deploy_next.sh サブタスク自動連続配備(auto_deployフラグ/blocked_by/忍者空き制御) scripts/reset_layout.sh agentsウィンドウペイン配置一発復元 docs/research/gunshi_idle_autocommit_scope_leak_20260602.md — 軍師idle: 自動コミットスコープ漏洩(2026-06-02) docs/research/gunshi_idle_clear_durability_fix_20260516.md — 軍師idle: /clear耐久性修正(2026-05-16) docs/research/gunshi_idle_clear_durability_flag_gap_20260515.md — 軍師idle: /clear耐久性フラグギャップ(2026-05-15) docs/research/gunshi_idle_clear_durability_nazenaze_20260515.md — 軍師idle: /clear耐久性なぜなぜ分析(2026-05-15) docs/research/gunshi_idle_clear_durability_nazenaze_20260515d.md — 軍師idle: /clear耐久性なぜなぜ分析(続)(2026-05-15) docs/research/gunshi_idle_clear_respawn_bug_20260607.md — 軍師idle: /clear respawnバグ分析(2026-06-07) docs/research/gunshi_idle_dashboard_corruption_20260603.md — 軍師idle: ダッシュボード破損分析(2026-06-03) docs/research/gunshi_idle_deploy_structural_bugs_20260517.md — 軍師idle: 配備構造バグ分析(2026-05-17) docs/research/gunshi_idle_deploy_yaml_parse_error_20260516.md — 軍師idle: 配備YAMLパースエラー(2026-05-16) docs/research/gunshi_idle_direct_mode_stale_ac_20260502.md — 軍師idle: ダイレクトモード古いAC問題(2026-05-02) docs/research/gunshi_idle_gitignore_wa_20260409.md — 軍師idle: .gitignore WAパターン(2026-04-09) docs/research/gunshi_idle_infra_bug_audit_20260409.md — 軍師idle: インフラバグ監査(2026-04-09) docs/research/gunshi_idle_infra_bug_trio_20260502.md — 軍師idle: インフラバグトリオ分析(2026-05-02) docs/research/gunshi_idle_infra_bug_trio_fix_20260503.md — 軍師idle: インフラバグトリオ修正(2026-05-03) docs/research/gunshi_idle_infra_bug_universal_commit_20260430.md — 軍師idle: インフラバグ汎用コミット対策(2026-04-30) docs/research/gunshi_idle_infra_bugs_full_audit_20260424.md — 軍師idle: インフラバグ全量監査(2026-04-24) docs/research/gunshi_idle_infra_health_20260425.md — 軍師idle: インフラ健全性レポート(2026-04-25) docs/research/gunshi_idle_infra_speed_hidden_bugs_20260605.md — 軍師idle: インフラ速度の隠れバグ(2026-06-05) docs/research/gunshi_idle_wa_pattern_20260612.md — 軍師idle: WAパターン分析(2026-06-12)"
+  recommended_skills:
+  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
+  - "reset-layout"
   related_causal_links:
-  - "[[N+1クエリ最適化]]"
-  - "[[monthly_returns_DB_N+1_30回ボトルネック]]"
-  - "[[軍師idle速度分析_20260626]]"
+  - "[[Manual_Loop防止]]"
+  - "[[idle自走automation化]]"
+  - "[[loop_engineering]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/robustness-verification-catalog.md"
-  - "context/gs-speedup-knowledge.md"
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
-  production_invariants:
-  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
-  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
-  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
-  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
-  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L083: launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手
-      - L480: set -euo pipefailでgrep -oEにno-match(exit 1)が発生すると$(...)内でもスクリプト終了。|| trueを追加すること
-      - L389: 検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数
+      - L594: deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1
+      - L114: cmd_464_hotfix
+      - L558: L1022(uncommitted_block)/L1028(report_format_fix)にも& バックグラウンド実行が残存。同じサイレント失敗リスクが
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - '2026-06-26T03:17:41+09:00 | 【INFOバッチ】 2026-06-26 03:01:17|cmd_3541 2026-06-26 03:15:03|CI緑: run 28190411780'
-  - '2026-06-26T03:01:05+09:00 | 【INFOバッチ】 2026-06-26 02:52:14|cmd_3540'
-  - '2026-03-11T16:56:45+09:00 | ### 1. expanded_tickers計算スキップ **現状の問題:** `monthly_returns_calculator.py:246-274` で、月次リターンを計算するとき**毎月'
+  - '2026-06-26T15:51:39+09:00 | note.com下書き保存完了。 - **URL**: https://editor.note.com/notes/n65e3f08585ba/edit/ - **Status**: PASS - *'
+  - '2026-06-26T15:39:57+09:00 | 殿、書き直しました。約5,200文字。 技術用語は全て論文原文のまま(Four-Layer Stack, Five Moves, Generator/Evaluator, Nodding Loop, '
+  - '2026-06-26T15:33:47+09:00 | 殿、第二十四話の下書きでございます。 **戦国AI列伝 第二十四話 ループを設計する者、ループに飲まれる者** Loop Engineering論文の知見を将軍システムに重ねて解説しております: - '
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'monthly_returns_calculator.pyのDB呼出し回数を削減し、修正前と比較して計算時間が短縮されること。修正前後のtime計測結果を報告に記載'
+    - check: 'ninja_monitor.shが全忍者idle+pipeline空を10分以上検知した場合にshogun inboxにidle_analysis_trigger typeのメッセージが書き込まれる'
   - id: 'AC2'
     checks:
-    - check: '修正前後でmonthly_returns計算の全出力値がDataFrame.equals()=Trueで完全一致すること。既存テスト(python -m pytest tests/)をローカル実行し全PASSすること'
+    - check: '同一セッションで60分以内の重複送信が発生しない(debounce)'
+  - id: 'AC3'
+    checks:
+    - check: '稼働中cmdがある場合はidle_analysis_triggerが送信されない'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3544.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3544.yaml
+  report_filename: kagemaru_report_cmd_3549.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3549.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -123,4 +119,5 @@ task:
     - reason: 'empty_lessons_useful'
       count: 2
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-06-26T03:30:41"
+  deployed_at: "2026-06-26T17:55:35"
+  completed_at: "2026-06-26T18:01:51+09:00"

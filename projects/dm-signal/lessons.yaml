@@ -2926,6 +2926,9 @@ lessons:
   - tasks/lessons.md
   - scripts/analysis/grid_search/run_077_yotsume.py
   origin: '[[cmd_1835]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L593
   title: GSパターン数のC(n,k)スケーリング — universe体数変更で組合せ爆発
   summary: 12→20体でパターン数7.9倍(C(n,2)+C(n,3)+C(n,4))。CSV 5.5倍、PrefixMomentCache 6.9倍。体数変更時はパター
@@ -3412,6 +3415,9 @@ lessons:
   - tasks/lessons.md
   - docs/research/cmd_1750_alm_design.md
   origin: '[[cmd_1750]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L557
   title: WF-OOS負の劣化率は過適合否定の十分条件ではない
   summary: OOS Calmar>Full-sample Calmarは市場環境バイアス要因を含む。加速Rは全期Calmar=0.10→OOS=0.02で構造的過適合を確認
@@ -4473,8 +4479,9 @@ lessons:
   last_referenced: '2026-06-26'
   deprecated: true
   deprecated_at: '2026-06-26T17:40:05+09:00'
-  deprecated_reason: 'cmd_karo_hotfix_lesson_health_useful_20260626173325: 直近full cmdで3回連続NOT_USEFUL(0/3)。成熟低useful分母を押し下げるため淘汰'
-  deprecated_by: 'cmd_karo_hotfix_lesson_health_useful_20260626173325'
+  deprecated_reason: 'cmd_karo_hotfix_lesson_health_useful_20260626173325: 直近full
+    cmdで3回連続NOT_USEFUL(0/3)。成熟低useful分母を押し下げるため淘汰'
+  deprecated_by: cmd_karo_hotfix_lesson_health_useful_20260626173325
 - id: L479
   title: selection付きFoFのinit月はholding_signal=Noneで独立検証不可
   summary: selection blocks付きFoFの最初の月はmonthly_returns.holding_signal=Noneだがmonthly_returnは非
@@ -9063,6 +9070,9 @@ lessons:
   when: DM3などで複数の高相関モデル出力をスタッキングしてprecision改善を狙う時
   how: best base modelを基準にOOF確率の相関とメタ学習後precisionを比較し、改善しなければ単体モデルを採用する
   origin: '[[legacy_lesson_L114]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L113
   title: ターゲット再定義は予測タスクの性質を変えるがSNR限界は克服しない
   summary: IF C2-Bの22特徴量で予測対象を4種に変更時 THEN C2-Bの22特徴量で予測対象を4種に変更 C2-Bの22特徴量で予測対象を4種に変更。Drawd
@@ -9422,8 +9432,9 @@ lessons:
   last_referenced: '2026-06-26'
   deprecated: true
   deprecated_at: '2026-06-26T17:40:05+09:00'
-  deprecated_reason: 'cmd_karo_hotfix_lesson_health_useful_20260626173325: 直近full cmdで3回連続NOT_USEFUL(0/3)。成熟低useful分母を押し下げるため淘汰'
-  deprecated_by: 'cmd_karo_hotfix_lesson_health_useful_20260626173325'
+  deprecated_reason: 'cmd_karo_hotfix_lesson_health_useful_20260626173325: 直近full
+    cmdで3回連続NOT_USEFUL(0/3)。成熟低useful分母を押し下げるため淘汰'
+  deprecated_by: cmd_karo_hotfix_lesson_health_useful_20260626173325
 - id: L082
   title: monthly_returns.portfolio_id(varchar)とportfolios.id(uuid)の型不整合
   summary: monthly_returns.portfolio_idはvarchar型、portfolios.idはuuid型。SQLでJOIN/IN比較する際にid::t
