@@ -1068,6 +1068,7 @@ lessons:
   - id: L_SCORE
     title: deploy score metric tracer
     summary: deploy score metric tracer
+    when: deploy score metric
     status: confirmed
     helpful_count: 1
 EOF
@@ -1396,6 +1397,7 @@ lessons:
   - id: L_INFRA_PLATFORM
     title: deploy platform guard
     summary: deploy platform guard
+    when: deploy platform guard
     status: confirmed
     helpful_count: 10
 EOF

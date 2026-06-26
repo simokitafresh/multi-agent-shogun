@@ -180,6 +180,7 @@ lessons:
     title: deploy task lesson scoring
     summary: deploy_task related_lessons scoring must use keyword relevance
     content: lesson injection scoring target path behavior
+    when: deploy_task related_lessons keyword scoring
     tags: [deploy]
     helpful_count: 1
 EOF
