@@ -2809,6 +2809,33 @@ else
     echo "  SKIP: skill_recommend_metrics.sh 不在"
 fi
 
+# --- Gate 20.3: intent debt metrics (Loop Engineering Phase 3) ---
+echo "■ intent debt スキル計測"
+_skill_usage_metrics="$SCRIPT_DIR/scripts/skill_usage_metrics.sh"
+if [ -x "$_skill_usage_metrics" ] || [ -f "$_skill_usage_metrics" ]; then
+    set +e
+    _skill_usage_json="$(bash "$_skill_usage_metrics" 2>&1)"
+    _skill_usage_status=$?
+    set -e
+    if [ "$_skill_usage_status" -eq 0 ]; then
+        _skill_usage_tmp="$(mktemp)"
+        printf '%s\n' "$_skill_usage_json" > "$_skill_usage_tmp"
+        if ! python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print("  total={total} used={used} unused={unused} stale={stale} stale_rate={rate:.1%}".format(total=data.get("total_skills",0), used=data.get("used_skill_count",0), unused=data.get("unused_skill_count",0), stale=data.get("stale_skill_count",0), rate=data.get("stale_rate",0))); unused=[item["skill"] for item in data.get("skills",[]) if item.get("unused")]; stale=[item["skill"] for item in data.get("skills",[]) if item.get("stale")]; print("  unused top: "+", ".join(unused[:5])) if unused else None; print("  stale top: "+", ".join(stale[:5])) if stale else None' "$_skill_usage_tmp"; then
+            echo "  ALERT: skill_usage_metrics.sh JSON parse failed"
+            overall="ALERT"
+            alerts+=("intent debt スキル計測: JSON parse failed")
+        fi
+        rm -f "$_skill_usage_tmp"
+    else
+        echo "  ALERT: skill_usage_metrics.sh failed"
+        printf '%s\n' "$_skill_usage_json" | sed 's/^/  /'
+        overall="ALERT"
+        alerts+=("intent debt スキル計測: 集計失敗")
+    fi
+else
+    echo "  SKIP: skill_usage_metrics.sh 不在"
+fi
+
 # --- Gate 20.5: SKILL.md script参照鮮度 (cmd_2489) ---
 # 目的: SKILL.mdが参照する scripts/* の消滅・更新漏れを起動時に検出する。
 echo "■ SKILL.md script参照"

@@ -17,6 +17,8 @@ setup_file() {
     # Each test does: cp -a "$SHARED_BASE/." "$TEST_TMPDIR/" instead of recreating files
     export SHARED_BASE="$BATS_FILE_TMPDIR/base"
     mkdir -p "$SHARED_BASE/scripts/gates" \
+             "$SHARED_BASE/skills/report-write" \
+             "$SHARED_BASE/skills/ninja-commit" \
              "$SHARED_BASE/queue/inbox" \
              "$SHARED_BASE/queue/archive" \
              "$SHARED_BASE/queue/tasks" \
@@ -33,10 +35,12 @@ setup_file() {
     cp "$PROJECT_ROOT/scripts/gates/gate_fp_relaxation_proposal.py" "$SHARED_BASE/scripts/gates/"
     cp "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh" "$SHARED_BASE/scripts/gates/"
     cp "$PROJECT_ROOT/scripts/weekly_metrics_trend.sh" "$SHARED_BASE/scripts/"
+    cp "$PROJECT_ROOT/scripts/skill_usage_metrics.sh" "$SHARED_BASE/scripts/"
     cp "$PROJECT_ROOT/scripts/cleanup_three_layer_tmp.sh" "$SHARED_BASE/scripts/"
     cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$SHARED_BASE/scripts/"
     chmod +x "$SHARED_BASE/scripts/gates/gate_three_layer_health.sh" \
              "$SHARED_BASE/scripts/weekly_metrics_trend.sh" \
+             "$SHARED_BASE/scripts/skill_usage_metrics.sh" \
              "$SHARED_BASE/scripts/cleanup_three_layer_tmp.sh"
     cat > "$SHARED_BASE/scripts/gates/q6_target_fixture.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -115,6 +119,28 @@ lessons:
   title: test lesson
   origin: '[[cmd_001]]'
   detail: test detail for gate pass
+EOF
+
+    cat > "$SHARED_BASE/skills/report-write/SKILL.md" <<'EOF'
+---
+name: report-write
+---
+# report-write
+EOF
+    cat > "$SHARED_BASE/skills/ninja-commit/SKILL.md" <<'EOF'
+---
+name: ninja-commit
+---
+# ninja-commit
+EOF
+    touch -d '2099-01-01T00:00:00Z' "$SHARED_BASE/skills/report-write/SKILL.md" "$SHARED_BASE/skills/ninja-commit/SKILL.md"
+    cat > "$SHARED_BASE/logs/skill_recommend_log.yaml" <<'EOF'
+recommendations:
+- ts: "2099-01-01T00:00:00+09:00"
+  agent_id: "hanzo"
+  prompt_hash: "fixture"
+  recommended_skills:
+  - "report-write"
 EOF
 
     # Gate 4: inbox with no unread
