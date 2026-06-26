@@ -250,7 +250,57 @@ echo "STALE_UNREAD_FORCED_NUDGE=yes"
     [[ "$output" == *"STALE_UNREAD_FORCED_NUDGE=yes"* ]]
 }
 
-@test "T-IWD-006: inbox_watcher self-restart releases the actual singleton fd" {
+@test "T-IWD-006: same unread fingerprint does not retry before backoff" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/state"
+touch "$TMP_ROOT/tmux.log"
+
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+export NUDGE_COOLDOWN_SEC=1
+export BACKOFF_SEC=120
+export INBOX_WATCHER_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/inbox_watcher.sh" karo dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+
+get_effective_cli_type() { echo codex; }
+agent_has_self_watch() { return 1; }
+check_agent_busy() { return 0; }
+sleep() { :; }
+timeout() { shift; "$@"; }
+tmux() {
+    case "$1" in
+        display-message)
+            case "${*: -1}" in
+                *pane_in_mode*) echo 0 ;;
+                *) echo idle ;;
+            esac
+            ;;
+        set-buffer) echo "SET_BUFFER $*" >> "$TMP_ROOT/tmux.log" ;;
+        paste-buffer) echo "PASTE $*" >> "$TMP_ROOT/tmux.log" ;;
+        send-keys) echo "ENTER $*" >> "$TMP_ROOT/tmux.log" ;;
+        set-option) echo "SET_OPTION $*" >> "$TMP_ROOT/tmux.log" ;;
+        *) ;;
+    esac
+}
+
+fp="$(printf msg_same | sha256sum | cut -d " " -f1)"
+send_wakeup 1 false "$fp"
+printf "%s" "$(( $(date +%s) - 5 ))" > "$DEBOUNCE_FILE"
+send_wakeup 1 false "$fp"
+
+sent_count="$(grep -c "^PASTE " "$TMP_ROOT/tmux.log" || true)"
+[ "$sent_count" = "1" ]
+echo "SAME_FP_NO_IMMEDIATE_RETRY=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SAME_FP_NO_IMMEDIATE_RETRY=yes"* ]]
+}
+
+@test "T-IWD-007: inbox_watcher self-restart releases the actual singleton fd" {
     grep -q 'exec 209>"$SINGLETON_LOCK_FILE"' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
     grep -q 'SCRIPT_UPDATE_SINGLETON_FD=209' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
     grep -q 'SCRIPT_UPDATE_SINGLETON_FD' "$PROJECT_ROOT/scripts/lib/script_update.sh"

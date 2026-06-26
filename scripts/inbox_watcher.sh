@@ -79,8 +79,6 @@ fi
 DEBOUNCE_SEC="${NUDGE_COOLDOWN_SEC:-30}"
 DEBOUNCE_FILE="${STATE_DIR}/inbox_watcher_last_nudge_${AGENT_ID}"
 FINGERPRINT_FILE="${STATE_DIR}/inbox_watcher_fingerprint_${AGENT_ID}"
-RETRY_MAX=3      # immediate retries before falling back to BACKOFF interval
-RETRY_COUNT_FILE="${STATE_DIR}/inbox_watcher_retry_${AGENT_ID}"
 BACKOFF_SEC="${BACKOFF_SEC:-120}"  # 2 minutes — safety net re-notification for stale unread (was 600)
 STATE_LOCK_FILE="${STATE_DIR}/inbox_watcher_state_${AGENT_ID}.lock"
 SINGLETON_LOCK_FILE="${STATE_DIR}/inbox_watcher_singleton_${AGENT_ID}.lock"
@@ -722,22 +720,8 @@ send_wakeup() {
 
             if [ "$current_fp" != "$_prev_fp" ]; then
                 printf '%s' "$current_fp" > "$FINGERPRINT_FILE"
-                printf '0' > "$RETRY_COUNT_FILE"
                 printf '%s' "$_now" > "$DEBOUNCE_FILE"
                 printf 'send\t[FP-CHANGE] Unread set changed for %s (%s unread), sending nudge\n' "$AGENT_ID" "$unread_count" > "$atomic_result_file"
-                exit 0
-            fi
-
-            _retry_count=0
-            if [ -f "$RETRY_COUNT_FILE" ]; then
-                IFS= read -r _retry_count < "$RETRY_COUNT_FILE" 2>/dev/null || true
-            fi
-
-            if [ "$_retry_count" -lt "$RETRY_MAX" ] 2>/dev/null; then
-                _retry_count=$((_retry_count + 1))
-                printf '%s' "$_retry_count" > "$RETRY_COUNT_FILE"
-                printf '%s' "$_now" > "$DEBOUNCE_FILE"
-                printf 'send\t[RETRY] Nudge unacknowledged, retry %s/%s for %s\n' "$_retry_count" "$RETRY_MAX" "$AGENT_ID" > "$atomic_result_file"
                 exit 0
             fi
 
@@ -753,7 +737,7 @@ send_wakeup() {
                 exit 0
             fi
 
-            printf 'skip\t[FP-SAME] Same unread set (age %ss, retries exhausted), waiting for backoff for %s\n' "$_fp_age" "$AGENT_ID" > "$atomic_result_file"
+            printf 'skip\t[FP-SAME] Same unread set (age %ss), waiting for backoff for %s\n' "$_fp_age" "$AGENT_ID" > "$atomic_result_file"
         ) 201>"$STATE_LOCK_FILE"; then
             echo "[$(date)] WARNING: atomic wakeup state update failed for $AGENT_ID" >&2
             return 1
@@ -948,10 +932,9 @@ process_unread() {
             echo "[$(date)] [WAKE-DEFER] Deferred nudge for $AGENT_ID (busy gating)" >&2
         fi
     else
-        # No unread → clear fingerprint + retry counter
+        # No unread → clear fingerprint
         if [ -f "$FINGERPRINT_FILE" ]; then
             rm -f "$FINGERPRINT_FILE"
-            rm -f "$RETRY_COUNT_FILE"
             rm -f "${STATE_DIR}/inbox_watcher_sent_fingerprint_${AGENT_ID}"
             rm -f "${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_"*
             echo "[$(date)] [FP-RESET] No unread, cleared fingerprint for $AGENT_ID" >&2
