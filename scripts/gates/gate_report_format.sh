@@ -104,9 +104,11 @@ except Exception:
             _CC_UNCOMMITTED=$(cd "$REPO_ROOT" && git status --porcelain -- $_CC_CHECK 2>/dev/null || true)
             if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
                 echo ""
-                echo "★ WARN(cmd_3264-AC2): ${_CC_WORKER} target_path配下に未commit変更あり:"
+                echo "★ BLOCK(cmd_3264-AC2): ${_CC_WORKER} target_path配下に未commit変更あり:"
                 # 注: [ -n ]&&形式はループ末尾空行でset -e死亡する同型バグ族(2026-06-11 precheck 2件と同根)。防御的if/fi化
                 while IFS= read -r _ccl; do if [ -n "$_ccl" ]; then echo "  $_ccl"; fi; done <<< "$_CC_UNCOMMITTED"
+                # WARN→BLOCK昇格(2026-06-26): commit_missing workaround 3件再発。WARNでは止まらない
+                RESULT_IS_PASS=0
             fi
             # AC3: auto-commit contamination detection
             _CC_AUTO_FILES=$(cd "$REPO_ROOT" && git log --grep="auto-commit" -10 --format="" --name-only 2>/dev/null | sort -u || true)
