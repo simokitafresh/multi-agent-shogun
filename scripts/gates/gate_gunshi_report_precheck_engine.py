@@ -282,7 +282,7 @@ def main():
     elif has_lc:
         lu_msg = (
             '  INFO: lesson_candidate(found:true)+lessons_useful空'
-            ' → draft_lessons BLOCKリスクあり(gate_prediction: WARN必須)'
+            ' → draft_lessons実件数で判定(bash側PRE12b)'
         )
     else:
         lu_msg = '  PASS: lesson_candidate/lessons_useful共になし'
@@ -400,9 +400,9 @@ def main():
         gate_pred = 'BLOCK'
         gate_pred_reasons.append('binary_checks yes×task_clarity矛盾(LG043)')
     if has_lc:
-        if gate_pred != 'BLOCK':
-            gate_pred = 'WARN'
-        gate_pred_reasons.append('lesson_candidate有→draft_lessons BLOCKリスク')
+        # lesson_candidate有のみではWARNにしない(直近5/5件CLEAR=FP率高)
+        # draft_lessonsの実件数によるWARN判定はbash側L977-982で実施
+        gate_pred_reasons.append('lesson_candidate有(INFO:draft_lessons実件数はbash側で判定)')
     if 'WARN' in lu_msg or 'FAIL' in lu_msg:
         if gate_pred != 'BLOCK':
             gate_pred = 'WARN'

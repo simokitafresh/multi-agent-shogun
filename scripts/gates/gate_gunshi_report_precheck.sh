@@ -89,7 +89,7 @@ fi
 # ─── Batch git data (WSL2最適化: N*2 per-file git log → 2 batch calls) ───
 _PRE_CMD_FILES=""
 _PRE_RECENT_DATA=""
-_REPORT_HASHES=$(grep -oiP '(?:commit|commit_hash:)\s*\K[0-9a-f]{7,12}' "$REPORT_PATH" 2>/dev/null | sort -u || true)
+_REPORT_HASHES=$(grep -oiP '(?:commit|commit_hash:)\s*\K[0-9a-f]{7,40}' "$REPORT_PATH" 2>/dev/null | sort -u || true)
 if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
     if [ -n "$_REPORT_HASHES" ]; then
         # PRE3/PRE14: report記載hashがあれば広域git logを避ける(WSL2 NTFS対策)
@@ -299,15 +299,13 @@ else
     echo "${LESSONS_USEFUL_MSG:-  SKIP}"
 fi
 
-# ─── SG-PRE12: lesson_candidate有 → gate_prediction WARN必須 (GP-195) ───
+# ─── SG-PRE12: lesson_candidate有 → INFO通知 (GP-195改: FP率高のためWARN→INFO降格) ───
 echo ""
 echo "■ SG-PRE12: lesson_candidate存在チェック"
 if [ "${HAS_LESSON_CANDIDATE:-0}" = "1" ]; then
-    echo "  ★★★ WARN: lesson_candidate有。gate_prediction判断に反映せよ"
-    echo "  → draft_lessons BLOCKリスク(家老がlesson登録するまでGATE通過しない)"
-    echo "  → ただし家老が迅速処理する場合CLEARになる(直近5/5件CLEAR。FP率改善2026-06-16)"
-    echo "  → gate_prediction: PRE12b(draft_lessons実件数)を優先し、lesson_candidate有のみではWARN確定としない"
-    echo "  → 見落とし実績: cmd_1811, cmd_1814, cmd_1909, cmd_1911 (4回)"
+    echo "  INFO: lesson_candidate有。draft_lessons実件数(PRE12b)で判定"
+    echo "  → lesson_candidate有のみではWARN/BLOCKとしない(直近5/5件CLEAR=FP率高)"
+    echo "  → draft_lessonsが1件以上あればbash側でWARN昇格(L977-982)"
 else
     echo "  PASS: lesson_candidateなし"
 fi
