@@ -494,6 +494,7 @@ check_lesson_effectiveness() {
     IFS='|' read -r threshold_status rate useful_rate <<< "$(awk \
         -v ref="$referenced_count" -v inj="$injected_count" \
         -v uf="$useful_count" -v tf="$total_feedback_count" \
+        -v ms="$LESSON_EFFECT_MIN_SAMPLES" \
         -v wa="$LESSON_EFFECT_WARN_THRESHOLD" -v al="$LESSON_EFFECT_ALERT_THRESHOLD" '
     BEGIN {
         r  = (inj > 0) ? (ref / inj) * 100 : 0.0
@@ -501,8 +502,8 @@ check_lesson_effectiveness() {
         s  = "OK"
         if (inj > 0 && r < al)                   s = "ALERT"
         else if (inj > 0 && r < wa)               s = "WARN"
-        if (tf > 0 && ur < al)                    s = "ALERT"
-        else if (tf > 0 && s == "OK" && ur < wa)  s = "WARN"
+        if (tf >= ms && ur < al)                    s = "ALERT"
+        else if (tf >= ms && s == "OK" && ur < wa)  s = "WARN"
         printf "%s|%.1f|%.1f\n", s, r, ur
     }')"
 

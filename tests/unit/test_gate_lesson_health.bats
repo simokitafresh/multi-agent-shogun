@@ -406,3 +406,29 @@ EOF
     [[ "$output" == *"useful=1"* ]]
     [[ "$output" == *"total_feedback=3"* ]]
 }
+
+@test "gate_lesson_health does not alert on useful_rate below min total feedback samples" {
+    cat > "$TEST_TMPDIR/projects/infra/lessons.yaml" <<EOF
+ssot_path: $TEST_TMPDIR/tasks/lessons.md
+last_synced: '2026-04-24T00:00:00'
+archive_path: $TEST_TMPDIR/projects/infra/lessons_archive.yaml
+lesson_count: 1
+lessons:
+- id: L001
+  title: mature low sample lesson
+  summary: mature low sample lesson
+EOF
+
+    cat > "$TEST_TMPDIR/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
+2026-05-28T00:00:00	cmd_900	saizo	L001	injected		yes	infra	single_script	routine	5	0
+2026-05-28T00:01:00	cmd_900	saizo	L001	feedback	NOT_USEFUL	no	infra	single_script	routine	5	0
+2026-05-28T00:02:00	cmd_901	saizo	L001	injected		yes	infra	single_script	routine	5	0
+2026-05-28T00:03:00	cmd_901	saizo	L001	feedback	NOT_USEFUL	no	infra	single_script	routine	5	0
+EOF
+
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: useful率(直近2cmd): 0/2 = 0.0%"* ]]
+    [[ "$output" == *"METRIC: lesson_effectiveness_threshold status=OK rate=100.0% useful_rate=0.0% window_cmds=2 referenced=2 injected=2 useful=0 total_feedback=2 scope=infra"* ]]
+}
