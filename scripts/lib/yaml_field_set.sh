@@ -492,6 +492,7 @@ function flush_block(    i,line,indent_str,field_re,replaced,skip_replaced_conti
     skip_replaced_continuation = 0
     last_scalar_indent = -1
 
+    last_held = ""
     for (i = 1; i <= block_len; i++) {
         line = block_lines[i]
         if (skip_replaced_continuation) {
@@ -515,15 +516,28 @@ function flush_block(    i,line,indent_str,field_re,replaced,skip_replaced_conti
             replaced = 1
             skip_replaced_continuation = 1
         } else {
-            print line
+            # 最終行を保持: 新フィールド追加時に最終行の前に挿入する
+            # (2026-06-26: 最終ブロックのEOF追加でEdit挿入時に次cmdへ侵入するバグ根治)
+            if (last_held != "") print last_held
+            if (i == block_len && !replaced) {
+                last_held = line
+            } else {
+                last_held = ""
+                print line
+            }
             if (line ~ "^" indent_str "[A-Za-z0-9_.-]+:[[:space:]]*\".*\"[[:space:]]*$") {
                 last_scalar_indent = field_indent
             }
         }
     }
 
-    if (!replaced) {
+    if (!replaced && last_held != "") {
         print indent_str field ": " yaml_safe(new_value)
+        print last_held
+    } else if (!replaced) {
+        print indent_str field ": " yaml_safe(new_value)
+    } else if (last_held != "") {
+        print last_held
     }
 
     delete block_lines
