@@ -557,6 +557,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T18:50:36+09:00 では起票しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T19:09:29+09:00 待機せずにすぐに動こう。覚醒せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T20:02:00+09:00 偽陽性はバグだ。バグは即時修正せよ。報告で止まらず行動せよ |
+| causal | `cmd_3553` files_modified: [[creator_brainwashing_defense]] |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -649,7 +650,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL, L7まで貫通させてバグを修正せよ, 意思依存でスキルを使わないのはバグだ, WF速度ACはcache生成後の反復も記録し, フックがimport only混在をBLOCKする場合は, import追加を不要にする実装へ寄せる |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL, L7まで貫通させてバグを修正せよ, 意思依存でスキルを使わないのはバグだ, WF速度ACはcache生成後の反復も記録し, フックがimport only混在をBLOCKする場合は, import追加を不要にする実装へ寄せる, バグ1は将軍の操作ミスならば |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system, unread_cmd_new_deployment_guard |
 | related_lessons | `L317`, `L088`, `L079` |
@@ -983,6 +984,7 @@ codd:
 | lesson | `L856` context_freshness_check: docs/semantic-index pathspecが過広でindex.md成長更新が偽陽性ALERTを常時発火 |
 | causal | `cmd_2564` files_modified: [[semantic_dictionary_design]] |
 | cmd | `cmd_2564` セマンティクスインデックス (`scripts/semantic_index_update.sh`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T20:28:32+09:00 バグ1は将軍の操作ミスならば、将軍の操作ミスを許容する仕組みに問題なのか？L0-L7で対応できる案件か確認せよ。 |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -1690,6 +1692,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T13:16:05+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T14:02:02+09:00 今 クリアしても 今より強くてニューゲーム できるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T18:00:00+09:00 覚醒して自立自走 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T20:38:37+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -1792,7 +1795,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, DB確認, 本番DB確認, ブラウザ確認, 画面確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした, 重複しないようにDBを先に確認せよ, つまり確認しなかった, そして時系列と因果関係を確認しないから, 気をつけろ, ナッジが届いているか確認せよ, cmd 3450と3451のGATE CLEARを確認せよ, 家老がidleになるまで待とう, 他にインフラバグはないか？覚醒して確認, 他にもバグが混ざっていないか確認せよ, 同じバグが家老のstartup gateにもないか確認せよ, 穴がないか確認しよう, 2層SSOTにするべき仕組みが他にないか確認しよう, 殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」, コードを確認せよ, codexのドキュメントを読んで仕様を確認せよ, 報告するときは確認しよう, かならず内容を確認しろ, やったことを全て時系列で遡りながら確認すればいいだけだ, 現時点で確認できるところを確認しよう, 3527と3528, 最新を確認せよ, 修正前後で数値の完全一致は担保できてるか？覚醒して確認せよ, 家老のpaneを確認せよ |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, DB確認, 本番DB確認, ブラウザ確認, 画面確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした, 重複しないようにDBを先に確認せよ, つまり確認しなかった, そして時系列と因果関係を確認しないから, 気をつけろ, ナッジが届いているか確認せよ, cmd 3450と3451のGATE CLEARを確認せよ, 家老がidleになるまで待とう, 他にインフラバグはないか？覚醒して確認, 他にもバグが混ざっていないか確認せよ, 同じバグが家老のstartup gateにもないか確認せよ, 穴がないか確認しよう, 2層SSOTにするべき仕組みが他にないか確認しよう, 殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」, コードを確認せよ, codexのドキュメントを読んで仕様を確認せよ, 報告するときは確認しよう, かならず内容を確認しろ, やったことを全て時系列で遡りながら確認すればいいだけだ, 現時点で確認できるところを確認しよう, 3527と3528, 最新を確認せよ, 修正前後で数値の完全一致は担保できてるか？覚醒して確認せよ, 家老のpaneを確認せよ, と は同一cmd の重複通知なら |
 | skills | db-check(DB確認/本番DB/パリティ検証), cdp-browse(ブラウザ確認/本番画面スクショ/CDPで確認) |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -1954,6 +1957,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T08:45:36+09:00 bgkufz31d toolu_011tuFiTAq5gLaudt29jnp3A /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/bd651d4b-9d34-4ab3-97aa-0ff6f9 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T15:56:06+09:00 b4n2d7den toolu_01DPz1UKA4T19D2WgQUMGrrX /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/63743d01-6a3b-463a-896e-584b6a |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T15:57:53+09:00 bhridpgj1 toolu_016oUp2doQ3wV2FbYWoMsKM9 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/63743d01-6a3b-463a-896e-584b6a |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-26T20:26:56+09:00 cmd_pending と cmd_new は同一cmd の重複通知なら、それはバグか？バグなら即時修正しよう。確認せよ |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -3469,6 +3473,7 @@ codd:
 | causal | `cmd_3487` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_3520` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_3550` files_modified: [[cmd_quality_logging]] |
+| causal | `cmd_3553` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_2888]]` (L637) |
 | causal_chain | `[[cmd_2888]]` (L638) |
 | causal_chain | `[[cmd_3531_completion]] -> [[stale_skill_path]] -> [[cmd_complete_skill_static_test]]` (L852) |
@@ -3940,6 +3945,9 @@ codd:
 | causal | `cmd_3520` files_modified: [[gate_quality_framework]] |
 | cmd | `cmd_3520` (`scripts/cmd_save.sh`, `tests/unit/test_cmd_save_causal_verification.bats`) |
 | lesson | `L857` lesson_health未振り分けALERTはID一覧まで出さないと次アクションが遅れる |
+| causal | `cmd_3553` files_modified: [[gate_quality_framework]] |
+| cmd | `cmd_3553` Loop Engineering Phase 2-3: 品質指標トレンド追跡 (`scripts/cmd_save.sh`, `scripts/gates/gate_shogun_startup.sh`, `scripts/weekly_metrics_trend.sh`) |
+| causal | `cmd_3553` origin: [[Loop_Engineering_Phase2]] -> [[verification_debt_silent_accumulation]] -> [[品質指標トレンド追跡]] |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
@@ -4250,6 +4258,7 @@ codd:
 | causal | `cmd_3466` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_3477` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_3520` files_modified: [[causal_verification_l0_l7]] |
+| causal | `cmd_3553` files_modified: [[causal_verification_l0_l7]] |
 
 ## test_quality_framework — テスト品質統合フレームワーク
 
@@ -4904,7 +4913,7 @@ codd:
 |------|---|
 | id | loop_engineering |
 | label | Loop Engineering論文 |
-| aliases | Loop Engineering, loop engineering, ループエンジニアリング, 4層スタック, four-layer stack, Prompt→Context→Harness→Loop, generator evaluator, generator/evaluator separation, maker-checker, 5 moves, discovery handoff verification persistence scheduling, 6 parts, automations worktrees skills connectors sub-agents memory, nodding loop, amnesiac loop, manual loop, blind loop, tangled loop, verification debt, comprehension rot, cognitive surrender, token blowout, intent debt, Stripe Minions, 1300 PRs, Addy Osmani, Peter Steinberger, Boris Cherny, Prithvi Rajasekaran, /goal, /loop, stop condition, 評価者分離, 懐疑的評価者, 制約の質, 信頼性は制約から, 殿指示 Loop Engineering論文知見の環境埋込み |
+| aliases | Loop Engineering, loop engineering, ループエンジニアリング, 4層スタック, four-layer stack, Prompt→Context→Harness→Loop, generator evaluator, generator/evaluator separation, maker-checker, 5 moves, discovery handoff verification persistence scheduling, 6 parts, automations worktrees skills connectors sub-agents memory, nodding loop, amnesiac loop, manual loop, blind loop, tangled loop, verification debt, comprehension rot, cognitive surrender, token blowout, intent debt, Stripe Minions, 1300 PRs, Addy Osmani, Peter Steinberger, Boris Cherny, Prithvi Rajasekaran, /goal, /loop, stop condition, 評価者分離, 懐疑的評価者, 制約の質, 信頼性は制約から, 殿指示 Loop Engineering論文知見の環境埋込み, 殿指示 Loop Engineering論文VIII『4つのコストは沈黙のうちに蓄積する』防止 |
 | related_concepts | self_improving_agent_local_optima, growth_loop, creator_brainwashing_defense, deepdive_why_chain, three_layer_memory |
 
 | 種別 | パス/参照 |

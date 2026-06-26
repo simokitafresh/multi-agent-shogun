@@ -1,145 +1,4 @@
 entries:
-- cmd_id: "cmd_3518"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "yes"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T12:41:38Z"
-  notes: "split deploy required manual task YAML repair; final AC verified with alpha6_robustness_report.md"
-- cmd_id: "cmd_3520"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T12:41:38Z"
-- cmd_id: "cmd_karo_hotfix_shogun_startup_bulletin_skill_20260624"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T15:55:19Z"
-- cmd_id: "cmd_karo_hotfix_shogun_startup_q6_lesson_20260624"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T15:57:08Z"
-- cmd_id: "cmd_karo_hotfix_startup_uncommitted_script_20260624"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T15:57:34Z"
-- cmd_id: "cmd_karo_hotfix_q6_target_proof_20260624"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T15:57:57Z"
-- cmd_id: "cmd_karo_hotfix_startup_uncommitted_memory_db_health_20260624"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "FAIL"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T16:07:23Z"
-- cmd_id: "cmd_karo_recon_ga122_context_freshness_20260624"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "FAIL"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T16:14:43Z"
-- cmd_id: "cmd_karo_hotfix_ga123_context_freshness_root_fallback_20260624"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T16:31:52Z"
-- cmd_id: "cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-24T00:16:50Z"
-- cmd_id: "cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-24T00:18:10Z"
-- cmd_id: "cmd_karo_hotfix_semantic_map_generate_insight_20260624"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-24T00:19:59Z"
-- cmd_id: "cmd_karo_hotfix_semantic_map_generate_insight_20260624"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-24T00:20:31Z"
-- cmd_id: "cmd_karo_hotfix_shogun_startup_q6_lesson_20260624"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-24T00:36:03Z"
 - cmd_id: "cmd_karo_ci_fix_ga124_codex_hook_adapter_commit_20260624"
   ac_count: 0
   gate_result: "CLEAR"
@@ -2126,7 +1985,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -2137,7 +1996,7 @@ entries:
   ac_count: 0
   gate_result: "BLOCK"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -2150,7 +2009,7 @@ entries:
   ac_count: 0
   gate_result: "WARN"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -2161,7 +2020,7 @@ entries:
   ac_count: 0
   gate_result: "BLOCK"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "infra"
   supplementary_cmds: 0
@@ -2170,3 +2029,92 @@ entries:
   checks: "cmd_save_main"
   diagnosis: "BLOCK理由: q11に既存代替の現物確認が不足 / 対策: knowledge_metrics.shおよびgate_shogun_startup.shのgrep結果を追記し週次蓄積が未存在であることを証明"
   notes: "q11に既存代替の現物確認なし"
+- cmd_id: "cmd_3553"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-26T11:20:37Z"
+  notes: "new_file_or_structure_requested|check=check_new_file_structure_warning"
+- cmd_id: "cmd_3553"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-26T11:20:37Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: q11に既存代替の現物確認が不足 / 対策: knowledge_metrics.shおよびgate_shogun_startup.shのgrep結果を追記し週次蓄積が未存在であることを証明"
+  notes: "同一チェック(cmd_save_main)で3回目BLOCK。diagnosis.nazenaze_root_cause になぜなぜ7回の根因分析を記入せよ"
+- cmd_id: "cmd_3553"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-26T11:21:54Z"
+  notes: "new_file_or_structure_requested|check=check_new_file_structure_warning"
+- cmd_id: "cmd_3553"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-26T11:21:55Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: q11に既存代替の現物確認が不足 / 対策: knowledge_metrics.shおよびgate_shogun_startup.shのgrep結果を追記し週次蓄積が未存在であることを証明"
+  notes: "同一チェック(cmd_save_main)で3回目BLOCK。diagnosis.nazenaze_root_cause になぜなぜ7回の根因分析を記入せよ"
+- cmd_id: "cmd_3553"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-26T11:23:20Z"
+  block_duration_minutes: 9
+- cmd_id: "cmd_3553"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-26T11:23:34Z"
+- cmd_id: "cmd_3553"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-26T11:34:48Z"
+- cmd_id: "cmd_3553"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-26T11:35:57Z"

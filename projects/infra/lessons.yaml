@@ -7565,7 +7565,7 @@ lessons:
   origin: '[[lessons,deploy,injection,useful-rate]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-21'
+  last_referenced: '2026-06-26'
 - id: L316
   title: emit_deny後のexit 1欠落でDENYが無効化
   summary: pre-bash-report-deny.shでemit_deny(JSON出力)後にexit 1がなくexit 0に落ちていた。Claude
@@ -10066,6 +10066,9 @@ lessons:
   when: skill.md(小文字)でスキル配置時
   how: DM-signal側2スキルがskill.md小文字で配置
   origin: '[[draft]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L102
   title: lesson_tracking.tsvのデータソース相違 — タスク記述はqueue/gate_metrics.yamlだが実在はlogs/lesson_tracking.tsv
   summary: タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正

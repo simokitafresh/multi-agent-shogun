@@ -426,3 +426,4 @@
 | cmd_3548 | 殿指示(2026-06-26): 設計書compare-summary-benchmark-row-period-instability-fix.mdに従い実装。SPY行がフォルダーフィルター連動で値が変動する不具合を、TQQQと同じstandalone経路に載せて修正する | dm-signal | 06-26 | Compare SummaryのSPY行期間依存バグ修正完了 |
 | cmd_3549 | Loop Engineering §VI-C Manual Loop防止。将軍のidle時自己分析(Step 1-7)が意志依存で先送りされる(3セッション連続startup BLOCK実績)。ninja_monitor.shに全忍者idle+パイプライン空を10分以上検知→将軍にidle_analysis_trigger nudge送信を追加し、Manual Loopを解消する | infra | 06-26 | ninja_monitorに将軍idle分析triggerを |
 | cmd_3550 | 殿指示(2026-06-26): Loop Engineering論文知見の環境埋込み。Phase 2-1(idle自走)完了に続き、Phase 2-2として論文V-A『エージェントに自己採点させるとNodding Loopになる』を防止する。cmd_3298/3315で忍者のbinary_check yes虚偽報告が実証済み | infra | 06-26 | cmd_complete_gateにself-grade c |
+| cmd_3553 | 殿指示(2026-06-26): Loop Engineering論文VIII『4つのコストは沈黙のうちに蓄積する』防止。startup gateの既存計測値(useful率/rework率/BLOCK率)を週次でログに蓄積し、3週連続悪化をALERT強制表示する | infra | 06-26 | weekly_metrics_trend.shを追加し、st |

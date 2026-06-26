@@ -6642,7 +6642,7 @@ lessons:
   origin: '[[cmd_976]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-21'
+  last_referenced: '2026-06-26'
 - id: L316
   title: 'WSL→Windows venv Ruff hook: repo-relative pathを使え'
   summary: WSLから.venv/Scripts/ruff.exeを呼ぶ場合、/mnt/c/... absolute pathを渡すとC:\mnt\c\...と誤解釈されE
@@ -9216,7 +9216,7 @@ lessons:
   origin: '[[cmd_253]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-20'
+  last_referenced: '2026-06-26'
 - id: L102
   title: MultiViewの4視点skip_months=[0,1,2,3]はクラス変数固定でconfigで変更不可
   summary: SKIP_MONTHS_LIST=[0,1,2,3]はクラス変数として定義されており、pipeline_configのconfig辞書からは変更できない。パラメ
