@@ -17,6 +17,7 @@
 #   12. 内容重複チェック（キュー直近20件+archive直近20ファイルのtitle+purposeとの類似度比較）
 # ============================================================
 set -euo pipefail
+trap '' PIPE  # SIGPIPE無視: 大量INFO出力(semantic_search等)のパイプ破損でスクリプト死亡を防止(2026-06-26)
 
 # --- Usage ---
 if [[ $# -lt 1 ]]; then
@@ -4209,7 +4210,7 @@ show_three_layer_memory_ruling_info() {
         output="$(cat "$cache_file")"
         [[ -n "${output//[[:space:]]/}" ]] && {
             echo "INFO: [MEMORY_RULING] 三層記憶検索(title+purpose基準) [cached]:" >&2
-            printf '%s\n' "$output" | sed 's/^/  /' >&2
+            head -50 <<< "$output" | sed 's/^/  /' >&2
         }
         return 0
     fi
@@ -4247,7 +4248,7 @@ show_three_layer_memory_ruling_info() {
     [[ "$rc" -eq 0 && -n "${output//[[:space:]]/}" ]] || return 0
 
     echo "INFO: [MEMORY_RULING] 三層記憶検索(title+purpose基準):" >&2
-    printf '%s\n' "$output" | head -50 | sed 's/^/  /' >&2
+    head -50 <<< "$output" | sed 's/^/  /' >&2
 }
 
 # WSL2最適化: 非同期化（全出力>&2、判定に影響しない）
@@ -6003,7 +6004,7 @@ check_new_file_structure_warning() {
             local _stem="${_nf%.*}" _ext="${_nf##*.}"
             _stem=$(echo "$_stem" | tr '_-' '*')
             local _found
-            _found=$(find "$SCRIPT_DIR" -maxdepth 3 -name "*${_stem}*" -o -name "*${_ext}" 2>/dev/null | head -3)
+            _found=$(timeout 3 find "$SCRIPT_DIR" -maxdepth 3 \( -name "*${_stem}*" -o -name "*${_ext}" \) 2>/dev/null | head -3 || true)
             [[ -n "$_found" ]] && printf '  %s → 類似: %s\n' "$_nf" "$(echo "$_found" | xargs -I{} basename {} | tr '\n' ', ')" >&2
         done <<< "$_new_names"
         echo "  ─────────────────────────" >&2
