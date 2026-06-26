@@ -2382,6 +2382,22 @@ if [ -f "$_LS_FILE" ]; then
         else
             echo "  活用率: 計測データなし"
         fi
+        # lessons_useful記入率: useful評価あり(記入済み) vs 空リストのレポート比率 (cmd_3561)
+        # related_lessonsはタスクYAML側にあるため、レポートYAML内のlessons_usefulフィールドで直接判定
+        _lu_filled_reps=$(grep -rl "useful: true\|useful: false" "$_rep_dir" 2>/dev/null | wc -l || echo 0)
+        _lu_filled_reps="${_lu_filled_reps//[^0-9]/}"
+        _lu_filled_reps="${_lu_filled_reps:-0}"
+        _lu_empty_reps=$(grep -rl "^lessons_useful: \[\]" "$_rep_dir" 2>/dev/null | wc -l || echo 0)
+        _lu_empty_reps="${_lu_empty_reps//[^0-9]/}"
+        _lu_empty_reps="${_lu_empty_reps:-0}"
+        _lu_denominator=$(( _lu_filled_reps + _lu_empty_reps ))
+        if [ "$_lu_denominator" -gt 0 ]; then
+            _lu_fill_rate=$(( _lu_filled_reps * 100 / _lu_denominator ))
+            echo "  lessons_useful記入率: ${_lu_filled_reps}/${_lu_denominator} (${_lu_fill_rate}%)"
+            if [ "$_lu_empty_reps" -gt 0 ]; then
+                echo "  WARN: lessons_useful空リスト ${_lu_empty_reps}件（feedback未記入）"
+            fi
+        fi
     fi
 fi
 

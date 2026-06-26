@@ -1871,3 +1871,72 @@ EOF
     [[ "$output" == *"殿クエリNO_MATCHカウント: 2件 (scan_lines=20)"* ]]
     [[ "$output" != *"未知クエリ"* ]]
 }
+
+# === Gate 13.6: lessons_useful記入率テスト (cmd_3561 AC2) ===
+@test "Gate 13.6 lessons_useful記入率: filled vs empty reports are displayed" {
+    # Gate 13.6の_LS_FILE条件を満たす
+    mkdir -p "$TEST_TMPDIR/projects/infra" "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
+- id: L001
+  title: テスト教訓
+  when: full
+  how: テスト方法
+  status: active
+EOF
+
+    # lessons_useful記入済みレポート (useful: trueあり)
+    cat > "$TEST_TMPDIR/queue/reports/hayate_report_cmd_test1.yaml" <<'EOF'
+worker_id: hayate
+parent_cmd: cmd_test1
+lessons_useful:
+  - id: L001
+    useful: true
+    reason: 有用だった
+EOF
+    # lessons_useful空リストレポート
+    cat > "$TEST_TMPDIR/queue/reports/kagemaru_report_cmd_test2.yaml" <<'EOF'
+worker_id: kagemaru
+parent_cmd: cmd_test2
+lessons_useful: []
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    # 記入率表示: 1/(1+1) = 50%
+    [[ "$output" == *"lessons_useful記入率:"* ]]
+    [[ "$output" == *"1/2"* ]]
+    # 空リストWARN
+    [[ "$output" == *"WARN: lessons_useful空リスト 1件"* ]]
+}
+
+@test "Gate 13.6 lessons_useful記入率: all filled, no empty WARN" {
+    mkdir -p "$TEST_TMPDIR/projects/infra" "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
+- id: L001
+  title: テスト教訓
+  status: active
+EOF
+
+    cat > "$TEST_TMPDIR/queue/reports/hayate_report_cmd_test1.yaml" <<'EOF'
+worker_id: hayate
+lessons_useful:
+  - id: L001
+    useful: true
+    reason: 有用
+EOF
+    cat > "$TEST_TMPDIR/queue/reports/kagemaru_report_cmd_test2.yaml" <<'EOF'
+worker_id: kagemaru
+lessons_useful:
+  - id: L002
+    useful: false
+    reason: 無関係
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"lessons_useful記入率:"* ]]
+    # 2件記入済み
+    [[ "$output" == *"2/2"* ]]
+    # 空WARNなし
+    [[ "$output" != *"WARN: lessons_useful空リスト"* ]]
+}
