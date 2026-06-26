@@ -182,17 +182,30 @@ def main():
     all_reported_checks_yes = bool(bc_result_values) and all(
         res in ('yes', 'pass', 'true', 'ok') for res in bc_result_values
     )
-    clarity_text = ' '.join(
-        _flatten_text(report.get(key))
-        for key in (
-            'task_clarity',
-            'unclear_points',
-            'discretion_fills',
-            'assumption_check',
-            'purpose_validation',
-            'purpose_gap',
-        )
-    )
+    _clarity_parts = []
+    for key in (
+        'task_clarity',
+        'unclear_points',
+        'discretion_fills',
+        'assumption_check',
+        'purpose_validation',
+        'purpose_gap',
+    ):
+        raw = report.get(key)
+        # purpose_validation内のpurpose_gapが「なし」始まりなら除外(FP防止)
+        # 「CI設定無効化は未実施」等のnot_in_scope不実施報告は矛盾ではない
+        if key == 'purpose_validation' and isinstance(raw, dict):
+            pg = str(raw.get('purpose_gap', '') or '').strip()
+            if pg.startswith('なし'):
+                # purpose_gapを除外し、残りのフィールドだけフラット化
+                filtered = {k: v for k, v in raw.items() if k != 'purpose_gap'}
+                _clarity_parts.append(_flatten_text(filtered))
+                continue
+        val = _flatten_text(raw)
+        if key == 'purpose_gap' and val.strip().startswith('なし'):
+            continue
+        _clarity_parts.append(val)
+    clarity_text = ' '.join(_clarity_parts)
     contradiction_terms = (
         'デプロイ後',
         '家老実施',
