@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_3549_full
+  _ac_task_id: cmd_3554_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3549 (deployed 2026-06-26T17:54:37). Read from the beginning.
-  ac_version: 889e461f
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3554 (deployed 2026-06-26T20:41:51). Read from the beginning.
+  ac_version: f9b9a55c
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -22,44 +22,35 @@ task:
   - push
   - scope外dirtyファイルのstage/commit
   parallel_ok: []
-  parent_cmd: cmd_3549
+  parent_cmd: cmd_3554
   project: infra
-  purpose: Loop Engineering §VI-C Manual Loop防止。将軍のidle時自己分析(Step 1-7)が意志依存で先送りされる(3セッション連続startup BLOCK実績)。ninja_monitor.shに全忍者idle+パイプライン空を10分以上検知→将軍にidle_analysis_trigger nudge送信を追加し、Manual Loopを解消する
-  status: idle
+  purpose: '殿指示(2026-06-26): Loop Engineering Phase 3開始。論文VIII/XI-B『1つのバグが一晩空回りして請求を生む』防止。同一cmdで/clear 3回超を検知し、空回りループをidle強制で止める'
+  recommended_skills:
+  - shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)
+  - reset-layout
+  status: done
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/scripts
-  task_id: cmd_3549_full
+  task_id: cmd_3554_full
   task_type: full
   related_lessons:
-  - id: 'L594'
-    summary: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
-    detail: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
-  - id: 'L114'
-    summary: 'cmd_464_hotfix'
-    detail: 'cmd_464_hotfix'
   - id: 'L558'
     summary: 'L1022(uncommitted_block)/L1028(report_format_fix)にも& バックグラウンド実行が残存。同じサイレント失敗リスクが'
     detail: 'L1022(uncommitted_block)/L1028(report_format_fix)にも& バックグラウンド実行が残存。同じサイレント失敗リスクが'
+  - id: 'L114'
+    summary: 'cmd_464_hotfix'
+    detail: 'cmd_464_hotfix'
+  - id: 'L278'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
-  - "loop_engineering — Loop Engineering論文:  docs/research/loop_engineering_anthropic_playbook_20260617.md"
-  - "infrastructure_ops — インフラ運用基盤:  scripts/ninja_monitor.sh tests/unit/test_ninja_monitor_stall.bats scripts/inbox_watcher.sh scripts/daemon_supervisor.sh scripts/ntfy_listener.sh context/infrastructure.md scripts/dashboard_auto_section.sh ダッシュボードリアルタイムステータス自動生成 scripts/auto_deploy_next.sh サブタスク自動連続配備(auto_deployフラグ/blocked_by/忍者空き制御) scripts/reset_layout.sh agentsウィンドウペイン配置一発復元 docs/research/gunshi_idle_autocommit_scope_leak_20260602.md — 軍師idle: 自動コミットスコープ漏洩(2026-06-02) docs/research/gunshi_idle_clear_durability_fix_20260516.md — 軍師idle: /clear耐久性修正(2026-05-16) docs/research/gunshi_idle_clear_durability_flag_gap_20260515.md — 軍師idle: /clear耐久性フラグギャップ(2026-05-15) docs/research/gunshi_idle_clear_durability_nazenaze_20260515.md — 軍師idle: /clear耐久性なぜなぜ分析(2026-05-15) docs/research/gunshi_idle_clear_durability_nazenaze_20260515d.md — 軍師idle: /clear耐久性なぜなぜ分析(続)(2026-05-15) docs/research/gunshi_idle_clear_respawn_bug_20260607.md — 軍師idle: /clear respawnバグ分析(2026-06-07) docs/research/gunshi_idle_dashboard_corruption_20260603.md — 軍師idle: ダッシュボード破損分析(2026-06-03) docs/research/gunshi_idle_deploy_structural_bugs_20260517.md — 軍師idle: 配備構造バグ分析(2026-05-17) docs/research/gunshi_idle_deploy_yaml_parse_error_20260516.md — 軍師idle: 配備YAMLパースエラー(2026-05-16) docs/research/gunshi_idle_direct_mode_stale_ac_20260502.md — 軍師idle: ダイレクトモード古いAC問題(2026-05-02) docs/research/gunshi_idle_gitignore_wa_20260409.md — 軍師idle: .gitignore WAパターン(2026-04-09) docs/research/gunshi_idle_infra_bug_audit_20260409.md — 軍師idle: インフラバグ監査(2026-04-09) docs/research/gunshi_idle_infra_bug_trio_20260502.md — 軍師idle: インフラバグトリオ分析(2026-05-02) docs/research/gunshi_idle_infra_bug_trio_fix_20260503.md — 軍師idle: インフラバグトリオ修正(2026-05-03) docs/research/gunshi_idle_infra_bug_universal_commit_20260430.md — 軍師idle: インフラバグ汎用コミット対策(2026-04-30) docs/research/gunshi_idle_infra_bugs_full_audit_20260424.md — 軍師idle: インフラバグ全量監査(2026-04-24) docs/research/gunshi_idle_infra_health_20260425.md — 軍師idle: インフラ健全性レポート(2026-04-25) docs/research/gunshi_idle_infra_speed_hidden_bugs_20260605.md — 軍師idle: インフラ速度の隠れバグ(2026-06-05) docs/research/gunshi_idle_wa_pattern_20260612.md — 軍師idle: WAパターン分析(2026-06-12)"
-  recommended_skills:
-  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
-  - "reset-layout"
   related_causal_links:
-  - "[[Manual_Loop防止]]"
-  - "[[idle自走automation化]]"
-  - "[[loop_engineering]]"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  - "[[Loop_Engineering_Phase3]]"
+  - "[[clear回数proxy上限]]"
+  - "[[token_blowout_prevention]]"
   context_hints:
   - "context/training-cycle.md"
   growth_loop_defense:
@@ -74,29 +65,27 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L594: deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1
-      - L114: cmd_464_hotfix
       - L558: L1022(uncommitted_block)/L1028(report_format_fix)にも& バックグラウンド実行が残存。同じサイレント失敗リスクが
+      - L114: cmd_464_hotfix
+      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - '2026-06-26T15:51:39+09:00 | note.com下書き保存完了。 - **URL**: https://editor.note.com/notes/n65e3f08585ba/edit/ - **Status**: PASS - *'
-  - '2026-06-26T15:39:57+09:00 | 殿、書き直しました。約5,200文字。 技術用語は全て論文原文のまま(Four-Layer Stack, Five Moves, Generator/Evaluator, Nodding Loop, '
-  - '2026-06-26T15:33:47+09:00 | 殿、第二十四話の下書きでございます。 **戦国AI列伝 第二十四話 ループを設計する者、ループに飲まれる者** Loop Engineering論文の知見を将軍システムに重ねて解説しております: - '
+  - '2026-06-26T20:35:10+09:00 | 【INFOバッチ】 2026-06-26 20:34:46|cmd_3553'
+  - '2026-06-26T19:33:14+09:00 | 【INFOバッチ】 2026-06-26 19:28:02|cmd_3550'
+  - '2026-06-26T20:35:14+09:00 | Loop Engineering Phase 2全3件GATE CLEAR完了。inbox未読0件。idle待機。'
+  - '2026-06-26T20:34:43+09:00 | Loop Engineering Phase 2全3件完了: - Phase 2-1: idle自走automation(cmd_3549) CLEAR ✓ - Phase 2-2: self-gra'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'ninja_monitor.shが全忍者idle+pipeline空を10分以上検知した場合にshogun inboxにidle_analysis_trigger typeのメッセージが書き込まれる'
+    - check: 'ninja_monitor.shに同一cmdの/clear回数を追跡する機能を追加し、max_clear_per_cmd(settings.yaml設定値、既定3)超過時にidle強制+家老報告する。batsテストで超過検知を確認する'
   - id: 'AC2'
     checks:
-    - check: '同一セッションで60分以内の重複送信が発生しない(debounce)'
-  - id: 'AC3'
-    checks:
-    - check: '稼働中cmdがある場合はidle_analysis_triggerが送信されない'
+    - check: 'config/settings.yamlにtoken_budget.max_clear_per_cmdフィールドを追加し、既存batsテストが全件PASSすることを確認する'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3549.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3549.yaml
+  report_filename: kagemaru_report_cmd_3554.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3554.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -119,5 +108,4 @@ task:
     - reason: 'empty_lessons_useful'
       count: 2
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-06-26T17:55:35"
-  completed_at: "2026-06-26T18:01:51+09:00"
+  deployed_at: "2026-06-26T20:42:17"
