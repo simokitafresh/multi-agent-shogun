@@ -155,7 +155,7 @@ conn.execute("INSERT INTO events_fts(events_fts) VALUES ('rebuild')")
 conn.commit()
 PY
 
-    run env SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION=0 SEMANTIC_TAG_PROPAGATION_LIMIT=10 bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2564","title":"セマンティクスインデックス","purpose":"段階3","files":["scripts/semantic_index_update.sh"]}'
+    run env SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION=0 SEMANTIC_TAG_PROPAGATION_LIMIT=10 SEMANTIC_TAG_PROPAGATION_TTL=0 SEMANTIC_TAG_PROPAGATION_MIN_SCORE=0 SEMANTIC_MEMORY_DB_PATH="$SEMANTIC_MEMORY_DB_PATH" bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2564","title":"セマンティクスインデックス","purpose":"段階3","files":["scripts/semantic_index_update.sh"]}'
     [ "$status" -eq 0 ]
     [[ "$output" == *"MEMORY_TAG_PROPAGATION"* ]]
 
