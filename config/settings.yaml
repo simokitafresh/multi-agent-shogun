@@ -13,7 +13,7 @@ cli:
       launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
     karo:
       type: claude
-      model_name: claude-opus-4-6
+      model_name: gpt-5.5
       role: karo
       japanese_name: 家老
       launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
