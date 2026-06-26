@@ -61122,3 +61122,98 @@ entries:
   supplementary_cmds: 0
   source: "cmd_save"
   timestamp: "2026-06-23T11:42:27Z"
+- cmd_id: "cmd_3518"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-23T12:10:23Z"
+  notes: "report_format:kotaro_report_cmd_3518.yaml|report_format:tobisaru_report_cmd_3518.yaml"
+- cmd_id: "cmd_3518"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-23T12:19:26Z"
+  notes: "report_format:tobisaru_report_cmd_3518.yaml"
+- cmd_id: "cmd_3519"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-23T12:24:35Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: LS-A22(gate FPパターン)準拠"
+  notes: "cmd_3519 は既に委任済みです。"
+- cmd_id: "cmd_3519"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-23T12:25:47Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: LS-A22(gate FPパターン)準拠"
+  notes: "cmd_3519 は既に委任済みです。"
+- cmd_id: "cmd_3520"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-23T12:26:50Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: LS-A22(gate FPパターン)準拠"
+  notes: "cmd_3520 は既に委任済みです。"
+- cmd_id: "cmd_3520"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-23T12:27:58Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: LS-A22(gate FPパターン)準拠"
+  notes: "cmd_3520 は既に委任済みです。"
+- cmd_id: "cmd_3520"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-23T12:29:07Z"
+  block_duration_minutes: 2
+- cmd_id: "cmd_3520"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-23T12:29:21Z"

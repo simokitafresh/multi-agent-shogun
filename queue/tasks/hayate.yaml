@@ -1,17 +1,8 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  acceptance_criteria:
-    AC1:
-      description: bash scripts/gates/gate_lesson_health.sh の現状を一次計測し、ALERT根因が直近10cmd useful_rate=14.3%(1/7)かつ cmd_3548 の L191/L234/L240 NOT_USEFUL 3件であることを証跡化する
-    AC2:
-      description: L191/L234/L240について projects/dm-signal/lessons.yaml と projects/infra/lessons.yaml の同一ID重複を確認し、改善/淘汰/計測ロジック修正のうち根因に効く最小変更を実施する
-    AC3:
-      description: gate_lesson_health.sh の project+lesson_id / infra+lesson_id active判定が今回の低useful計測を誤って温存しないことを、変更前後の数値差分で示す
-    AC4:
-      description: bash scripts/gates/gate_lesson_health.sh を再実行し、statusがALERTでなくなる、または未解消なら残理由と次の具体修正対象IDを報告YAMLに記録する
-    AC5:
-      description: 変更がある場合は対象テストまたは最小再現スクリプトを実行し、git commitまで完了する
+  _ac_task_id: cmd_3550_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3550 (deployed 2026-06-26T19:18:38). Read from the beginning.
+  ac_version: 806c25bb
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -28,67 +19,66 @@ task:
   not_in_scope: 教訓全体の大規模棚卸し、将軍専用lesson-sortの代行、dm-signal機能コード変更
   origin: '[[startup先送りBLOCK_教訓健全度ALERT_20260626]] -> [[cmd_3548_L191_L234_L240_NOT_USEFUL]] -> [[低useful教訓改善淘汰]]'
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_lesson_health_useful_20260626173325
+  parent_cmd: cmd_3550
   project: infra
-  purpose: 教訓健全度ALERT解消 — 直近10cmd useful率14.3%(1/7)の低useful教訓を改善/淘汰し、startup先送りBLOCKを閉じる
+  purpose: '殿指示(2026-06-26): Loop Engineering論文知見の環境埋込み。Phase 2-1(idle自走)完了に続き、Phase 2-2として論文V-A『エージェントに自己採点させるとNodding Loopになる』を防止する。cmd_3298/3315で忍者のbinary_check yes虚偽報告が実証済み'
   status: idle
   stop_for: []
-  target_path: scripts/gates/gate_lesson_health.sh
-  task_id: cmd_karo_hotfix_lesson_health_useful_20260626173325_normal
-  task_type: hotfix
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts
+  task_id: cmd_3550_full
+  task_type: full
   related_lessons:
-  - id: 'L479'
-    summary: 'gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入'
-    detail: 'gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入'
-  - id: 'L429'
-    summary: 'gate_lesson_health.shで_active_lesson_ids()が定義済みなのに3箇所でインラインawk重複。関数定義時に呼出し側の置換を同'
-    detail: 'gate_lesson_health.shで_active_lesson_ids()が定義済みなのに3箇所でインラインawk重複。関数定義時に呼出し側の置換を同'
-  - id: 'L857'
-    summary: 'gate_lesson_health.shは未振り分け件数をALERTするが、該当ID一覧はcontextを別途抽出しないと分からない。ALERT出力に未振り分'
-    detail: 'gate_lesson_health.shは未振り分け件数をALERTするが、該当ID一覧はcontextを別途抽出しないと分からない。ALERT出力に未振り分'
+  - id: 'L354'
+    summary: 'inbox_archive.shとinbox_write.shが異なるロックパス(${INBOX}.lock vs /tmp/shogun_lock_<md5>'
+    detail: 'inbox_archive.shとinbox_write.shが異なるロックパス(${INBOX}.lock vs /tmp/shogun_lock_<md5>'
+  - id: 'L254'
+    summary: 'deploy_task.shは教訓を注入しているがcmd_id+注入lesson数+lesson_idsの構造化ログが未記録のため、教訓注入量とCLEAR率の相'
+    detail: 'deploy_task.shは教訓を注入しているがcmd_id+注入lesson数+lesson_idsの構造化ログが未記録のため、教訓注入量とCLEAR率の相'
+  - id: 'L114'
+    summary: 'cmd_464_hotfix'
+    detail: 'cmd_464_hotfix'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  related_causal_links:
+  - "[[Loop_Engineering_Phase2]]"
+  - "[[cmd_3298_虚偽報告]]"
+  - "[[self_grade_自動検証]]"
   context_hints:
   - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L479: gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入
-      - L429: gate_lesson_health.shで_active_lesson_ids()が定義済みなのに3箇所でインラインawk重複。関数定義時に呼出し側の置換を同
-      - L857: gate_lesson_health.shは未振り分け件数をALERTするが、該当ID一覧はcontextを別途抽出しないと分からない。ALERT出力に未振り分
+      - L354: inbox_archive.shとinbox_write.shが異なるロックパス(${INBOX}.lock vs /tmp/shogun_lock_<md5>
+      - L254: deploy_task.shは教訓を注入しているがcmd_id+注入lesson数+lesson_idsの構造化ログが未記録のため、教訓注入量とCLEAR率の相
+      - L114: cmd_464_hotfix
     ────────────────────────────────────────
 
 
   memory_db_context:
-  - '2026-06-21T18:36:00+09:00 | 13/13 PASS。 殿、完了。`LESSON_EFFECT_WINDOW_CMDS=30→10`に変更。 - 修正前: useful率29.0%(直近30cmd、9/31)、status=ALER'
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_lesson_health_useful_20260626173325_normal
-  _ac_worker_id: 
+  - '2026-06-26T18:45:03+09:00 | 【INFOバッチ】 2026-06-26 18:36:06|cmd_karo_hotfix_ga141_context_freshness_dm_signal_research_20260626'
+  - '2026-06-26T18:16:19+09:00 | 【INFOバッチ】 2026-06-26 18:05:07|cmd_3549'
+  - '2026-06-26T18:05:22+09:00 | 殿、/clear準備完了。 **本セッション実績**: - Loop Engineering論文全文投入(三層記憶貫通) + LayerX記事投入 - 設計書v3(16件/論文30章節カバー) + 軍'
+  - '2026-06-26T18:04:53+09:00 | 殿、/clear準備完了。 **本セッション実績**: - Loop Engineering論文全文投入(三層記憶貫通) + LayerX記事投入 - 設計書v3(16件/論文30章節カバー) + 軍'
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'cmd_complete_gate.shにself-grade検証関数を追加し、GATE CLEAR判定時にgit show -wで直近commitの整形混入を自動検出してWARN強制表示する。batsテストで整形混入ありケースがWARN出力されることを確認する'
+  - id: 'AC2'
+    checks:
+    - check: 'binary_checks.commitがyesかつfiles_modifiedに記載のファイルがgit show -wの差分に含まれない場合にWARN表示する。batsテストで乖離検出を確認する'
+  - id: 'AC3'
+    checks:
+    - check: '既存のcmd_complete_gate batsテストが全件PASSすることを確認する'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_hotfix_lesson_health_useful_20260626173325.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_hotfix_lesson_health_useful_20260626173325.yaml
+  report_filename: hayate_report_cmd_3550.yaml
+  report_path: queue/reports/hayate_report_cmd_3550.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 1
+    total_workarounds: 2
     top_pattern: 'commit_missing(1件)'
-    breakdown: 'commit_missing(1件)'
+    breakdown: 'commit_missing(1件), gate_logic_gap(1件)'
     warning: '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
@@ -105,4 +95,4 @@ task:
     - reason: 'binary_checks_fail'
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-06-26T17:35:42"
+  deployed_at: "2026-06-26T19:19:20"

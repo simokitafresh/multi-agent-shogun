@@ -1,101 +1,6 @@
 entries:
 - cmd_id: "cmd_3518"
   ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T12:10:23Z"
-  notes: "report_format:kotaro_report_cmd_3518.yaml|report_format:tobisaru_report_cmd_3518.yaml"
-- cmd_id: "cmd_3518"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T12:19:26Z"
-  notes: "report_format:tobisaru_report_cmd_3518.yaml"
-- cmd_id: "cmd_3519"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-23T12:24:35Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: LS-A22(gate FPパターン)準拠"
-  notes: "cmd_3519 は既に委任済みです。"
-- cmd_id: "cmd_3519"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-23T12:25:47Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: LS-A22(gate FPパターン)準拠"
-  notes: "cmd_3519 は既に委任済みです。"
-- cmd_id: "cmd_3520"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-23T12:26:50Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: LS-A22(gate FPパターン)準拠"
-  notes: "cmd_3520 は既に委任済みです。"
-- cmd_id: "cmd_3520"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-23T12:27:58Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: LS-A22(gate FPパターン)準拠"
-  notes: "cmd_3520 は既に委任済みです。"
-- cmd_id: "cmd_3520"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-23T12:29:07Z"
-  block_duration_minutes: 2
-- cmd_id: "cmd_3520"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-06-23T12:29:21Z"
-- cmd_id: "cmd_3518"
-  ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
   gunshi_verdict: "unknown"
@@ -2125,3 +2030,82 @@ entries:
   supplementary_cmds: 0
   source: "cmd_complete_gate"
   timestamp: "2026-06-26T09:36:39Z"
+- cmd_id: "cmd_3550"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-26T10:10:42Z"
+  notes: "gate/hook追加cmdに行動変換キーワードなし|check=gate_hook_action_conversion"
+- cmd_id: "cmd_3550"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-26T10:10:42Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: q5 code_reading不足+diagnosis内FILL_THIS残存 / 対策: q5をstructure_verifiedに昇格+diagnosis実内容記載"
+  notes: "雛形のFILL_THISが残存。全プレースホルダを実内容で埋めよ"
+- cmd_id: "cmd_3550"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-26T10:11:53Z"
+  notes: "gate/hook追加cmdに行動変換キーワードなし|check=gate_hook_action_conversion"
+- cmd_id: "cmd_3550"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-26T10:12:38Z"
+  block_duration_minutes: 2
+- cmd_id: "cmd_3550"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-26T10:12:52Z"
+- cmd_id: "cmd_3550"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-26T10:28:05Z"
+- cmd_id: "cmd_3551"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-26T10:31:22Z"
+  checks: "warn_missing_prev_cmd_lesson"
+  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点+プレースホルダ全埋め+q5 structure_verified"
+  notes: "前cmd_3550で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3550 LS-A05"

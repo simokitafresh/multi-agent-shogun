@@ -6174,6 +6174,9 @@ lessons:
   - scripts/analysis/cmd_1019_ac12_family_rolling.py
   - scripts/analysis/cmd_1019_ac3_dd_corr.py
   origin: '[[cmd_1019]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L353
   title: 共有出力ファイルにWriteツール上書きで他忍者の成果消失リスク
   summary: 複数忍者が同一ファイルに書き込むreconでWriteツール(全上書き)を使うと先行忍者のセクションが消失する。Edit(追記)を使うかセクション分離ファイルで
@@ -7437,6 +7440,9 @@ lessons:
   when: FoF展開共通関数を API/サービスの loop 内で呼ぶ時は
   how: '2026-03-11'
   origin: '[[cmd_806]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L253
   title: Next.js大バージョンアップ偵察では依存パッケージのpeer dep対応が最大リスク変数
   summary: フレームワーク自体の変更量は管理可能でも、サードパーティ(react-katex等)のReact新版対応不明が最大リスクになる。大バージョンアップ偵察では本体の

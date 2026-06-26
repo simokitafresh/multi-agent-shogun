@@ -12,7 +12,7 @@ cli:
       japanese_name: 将軍
       launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
     karo:
-      type: claude
+      type: codex
       model_name: gpt-5.5
       role: karo
       japanese_name: 家老
@@ -60,7 +60,7 @@ cli:
       role: ninja
       japanese_name: 飛猿
       launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
-idle_cycle: off
+idle_cycle: on
 effort: high
 ntfy_topic: shogun-simokitafresh
 gist_url: https://gist.github.com/simokitafresh/6eb495d917fb00ba4d4333c237a4ee0c

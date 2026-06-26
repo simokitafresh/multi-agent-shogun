@@ -7117,6 +7117,9 @@ lessons:
   - inbox_archive.sh
   - inbox_write.sh
   origin: '[[cmd_cycle_L4_023]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L353
   title: heredocによるYAML生成時のquote injection
   summary: bashのheredocでYAMLを生成する際、ユーザ入力をシングルクォートで囲んでも入力自体にシングルクォートが含まれるとYAML構文が壊れる。YAML仕様で
@@ -8328,6 +8331,9 @@ lessons:
   target_files:
   - deploy_task.sh
   origin: '[[cmd_1118]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L253
   title: ホワイトリスト.gitignoreで新ファイル追加時はファイル単位パス指定必須
   summary: projects/ディレクトリ全体のホワイトリスト化はシークレット含有リスクあり。ファイル単位指定が必須。新規ファイル作成cmdでは.gitignoreホワイト
