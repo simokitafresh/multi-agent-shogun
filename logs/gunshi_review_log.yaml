@@ -511,3 +511,13 @@
   brainwash_check: "bats 4件手動実行。bash -n OK。commit実在(PRE3b)。2ファイル=scope内。#2なし #8なし"
   origin: "[[loop_engineering]] -> [[Manual_Loop防止]] -> [[LGTM idle自走automation]]"
   timestamp: "2026-06-26T18:02:00+09:00"
+- cmd_id: idle_precheck_fp_trio_20260626
+  review_type: self_study
+  findings_summary: "precheck偽陽性3件の共通根因分析。LG039系(文字列マッチ範囲制限不足)。3件D0修正済み"
+  observations:
+    - "PRE3b {7,12}→{7,40}、engine lu_msg WARN混入、PRE9c purpose_gap「なし」始まり除外"
+    - "共通根因: 検出パターンの及ぶ範囲を制限していない(LG039同根)"
+  cs_checklist: "CS1:PASS(3件現物確認) CS2:PASS(自システムで発見) CS3:PASS(git diff確認) CS4:PASS(D0修正+commit完了) CS5:PASS(教訓パターン化) CS6:PASS(LG039→3件の因果追跡)"
+  causal_chain: "殿指示(偽陽性はバグだ)→3件FP発見→共通根因=文字列マッチ範囲制限不足→LG039系譜として永続化"
+  altruism_check: "needed — lesson_candidate送信(Step 5)"
+  timestamp: "2026-06-26T18:10:00+09:00"

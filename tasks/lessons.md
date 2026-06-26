@@ -8798,3 +8798,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - project固有lesson_idをdeprecated化しても、同じlesson_idのinfra教訓へfallbackすると履歴計測で低useful分母が復活する。fallbackは対象projectに同IDが存在しない場合だけ許可し、presence判定をactive判定と分けて持つ。origin: [[cmd_karo_hotfix_lesson_health_useful_20260626173325]] -> [[deprecated同IDinfra_fallback]] -> [[useful_rate_ALERT温存]]
+
+### L863: precheck文字列検出ロジックは陰性ケースでFPを固定せよ
+- **日付**: 2026-06-26
+- **出典**: gunshi_idle_precheck_fp_trio_20260626
+- **記録者**: gunshi
+- **tags**: [infra, precheck, test, fp]
+- **target_files**: [scripts/gates/gate_gunshi_report_precheck.sh]
+- **origin**: [[LG039]] -> [[precheck FP 3件]] -> [[陰性テスト必須化]]
+- **when**: precheck/gateに文字列検出・regex・in演算子・grepパターンを追加するとき
+- **how**: 陽性テストに加え、正当な文字列を含む陰性ケースを追加し、検査対象フィールドと範囲を固定する
+- precheckでregex量化子・in演算子・grep/terms検出を追加する時は、正当な使用が誤検出されない陰性テストを必ず追加する。判定キーワード(WARN/ERROR/未実施等)を説明メッセージやpurpose_gap等の非判定文脈に含める場合は、検査対象フィールド/範囲を限定する。
