@@ -14,7 +14,7 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-06-26T01:00:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-26T17:40:00+09:00 -->
 
 Script refs verified: 2026-06-20 782be65a6. `note_draft.sh` 直近変更はPJパス直書き除去でget_project_path経由へ置換した内部SSOT化。CDPブラウズ手順・preflight/navigate/screenshotの契約変更なし。
 
@@ -174,4 +174,4 @@ scripts/cdp/cdp_cli.sh screenshot "/tmp/dm-signal-admin.png"
 
 - → [[cdp-severity.md]] CDP計測・canary・ブラウザ実測の異常分類（操作失敗時の重大度判定基準）
 
-<!-- script_refs_checked_at: 2026-06-26T01:00:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-26T17:40:00+09:00 -->

@@ -25,7 +25,7 @@ allowed-tools:
   - Edit
 ---
 
-<!-- script_refs_checked_at: 2026-06-26T07:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-26T17:42:00+09:00 -->
 
 Script refs verified: 2026-06-20 2088b6421. `gate_lesson_health.sh` 直近変更はinfra教訓のcross-project注入をuseful率計測へ正しく反映する修正。棚卸し時のlesson health確認・ALERT時のlesson-sort連携判断への契約変更なし。
 
@@ -35,7 +35,7 @@ Script refs verified: 2026-06-21 a46df2367. `gate_lesson_health.sh` 直近変更
 
 Script refs verified: 2026-06-26 558ec6eae. `gate_lesson_health.sh` 直近変更は未振り分け教訓のID一覧をALERT出力に表示する改善。棚卸し時のlesson health確認への契約変更なし。
 
-<!-- script_refs_checked_at: 2026-06-21T20:50:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-26T17:42:00+09:00 -->
 
 # /shogun-teire — 知識基盤の定期棚卸し（8観点監査）
 
@@ -515,4 +515,4 @@ for lesson in data['lessons']:
 - **Curator** = lesson_write.sh等のスクリプト（自動整理・登録・context索引追記）
 - 監査時: 各役割が機能しているか（生成→査読→整理のサイクルが回っているか）を検査
 
-<!-- script_refs_checked_at: 2026-06-26T07:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-26T17:42:00+09:00 -->
