@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-06-25 cmd_karo_hotfix_ga132 -->
+<!-- last_updated: 2026-06-26 cmd_karo_hotfix_ga141_context_freshness_dm_signal_research_20260626 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -578,6 +578,12 @@ cmd_3524で堅牢性trial JSONへ5つの連続性リスク指標を追加し、c
 - 成果物: `/mnt/c/Python_app/DM-signal/outputs/analysis/grid_search_robustness/cmd_3525_continuity_metrics.md`
 - source_dir: `/mnt/c/Python_app/DM-signal/outputs/analysis/grid_search_robustness/cmd_3525`
 - 実装: `scripts/analysis/grid_search/cmd_3524_continuity_metrics_report.py`, `scripts/analysis/grid_search/robustness_common.py`
+
+## §44. fullrecalculate冪等性証明 (cmd_3546, 2026-06-26)
+
+本番fullrecalculate(portfolio)前後で signals 102PF / metrics 102PF / DB portfolio_metrics 204行が完全一致。差分0、run_id `20260625_194042`、elapsed 352.5s、verdict PASS。
+- 成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3546/diff_result_v4_20260625_194638.json`
+- 検証スクリプト: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3546/snapshot_and_verify_v4.py`
 
 ## 因果リンク
 
