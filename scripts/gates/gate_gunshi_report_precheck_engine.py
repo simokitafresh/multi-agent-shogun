@@ -183,11 +183,12 @@ def main():
         res in ('yes', 'pass', 'true', 'ok') for res in bc_result_values
     )
     _clarity_parts = []
+    # assumption_checkはAC前提の明瞭性確認であり、「scope外」等の境界言及は正当。
+    # 矛盾語検出対象から除外(FP防止: cmd_ga141で実証)
     for key in (
         'task_clarity',
         'unclear_points',
         'discretion_fills',
-        'assumption_check',
         'purpose_validation',
         'purpose_gap',
     ):
