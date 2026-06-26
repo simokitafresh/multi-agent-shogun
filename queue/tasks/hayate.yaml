@@ -3,16 +3,23 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: gate_alerts.yaml・gate_p_average_cache・gate実行結果・DM-Signalのcalculated_at等の一次情報から、なぜGA-137が発火したかを直接原因と根本原因に分けて報告する
+      binary_check: Q1への回答として、hook設定問題かコード/テスト品質問題かを根拠ファイル・行番号付きで分類している
+      description: artifact `logs/hook_artifacts/20260626T130150_pre-push_2563617.log` と失敗テスト `tests/unit/test_semantic_index_update.bats` line 160周辺を読み、失敗原因を一次情報で説明する
     AC2:
-      description: 同カテゴリの偽ALERT/一時API失敗/DNS失敗/バッチ未実行判定の穴が scripts/gate_p_average_freshness.sh・scripts/gate_improvement_trigger.sh・scripts/gate_auto_respond.sh・DM-Signal側運用経路に他にもあるか横展開し、件数と根拠を報告する
+      binary_check: Q2への回答として、検索コマンド・対象件数・同種/別種の分類が報告に含まれている
+      description: 同種hook_failureが他agent/他artifactにもあるかを `logs/hook_artifacts/` と関連ログから調べ、件数・代表例・共通パターンを示す
     AC3:
-      description: 次回同じALERTが無駄打ちしない防御層案をLevel 1-6で提示し、即修正候補ファイルと最小テスト案を明記する
-  credential_warning: ⚠ 認証が必要なタスクだがtarget_pathが未設定。認証情報(.env等)の場所を家老に確認せよ。見つからなければ即報告。
+      binary_check: Q3への回答として、防御層案がL0-L7のどこに入るか、変更対象ファイル、検証コマンド、lesson_candidate.originを含む
+      description: 次回同種失敗を防ぐ防御層を、修正対象ファイル・追加/修正すべきテスト・lesson_candidateを含めて提案する
+    AC4:
+      binary_check: git diffで意図しないコード変更がない、または変更した場合は家老指示外としてFAIL報告している
+      description: 今回の調査は偵察に限定し、コード変更が必要な場合は実装せず、最小修正案とリスクを報告する
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -30,38 +37,7 @@ task:
   - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
   - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L213: cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit
-    ────────────────────────────────────────
-    
-    【3-strike rule】
-      - 初期仮説は最低3本。hypothesis_count に現在の本数を維持せよ
-      - 3回連続で仮説が外れたら、追加探索で粘らずエスカレーションせよ
-      ────────────────────────────────────────
-    
-    ■ gate_alert受信内容
-    - alert_id: GA-137
-    - gate: p_average_freshness
-    - 補足: p̄計算が古い。なぜバッチが実行されていない？バッチ実行の仕組みに穴はないか？
-    
-    ■ 家老の一次確認済み事実
-    - 2026-06-26 07:38時点 `bash scripts/gates/gate_p_average_freshness.sh` は
-      `OK: p̄ calculated_at within 30 days (0d ago, 2026-06-25T06:58:10.526249+00:00)`
-    - `/tmp/gate_p_average_cache.txt` も exit_code=0
-    - 過去alertでは DNS解決失敗(API_BASE / curl_exit=6) が複数回記録されている
-    
-    ■ 調査で必ず見るもの
-    - `logs/gate_alerts.yaml`
-    - `scripts/gates/gate_p_average_freshness.sh`
-    - `scripts/gate_improvement_trigger.sh`
-    - `scripts/gate_auto_respond.sh`
-    - DM-Signal 側の p̄更新経路（batch / API / backend）
-    
-    ■ 報告で必須
-    - なぜ「今はOKなのに ALERT が飛んだ」のかを時系列で説明
-    - 真の stale と 一時API失敗/通信失敗/認証失敗/分類不良 を区別
-    - 家老が次に「即修正」「将軍cmd起票」「経過観察」のどれを取るべきか明記
+  description: "【3-strike rule】\n  - 初期仮説は最低3本。hypothesis_count に現在の本数を維持せよ\n  - 3回連続で仮説が外れたら、追加探索で粘らずエスカレーションせよ\n  ────────────────────────────────────────\n\n"
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -77,13 +53,13 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   not_in_scope:
-  - 調査根拠なしのコード修正
-  - 無関係なDM-Signal機能実装
-  - p_average以外のgate ALERT同時調査
+  - コード修正の実装
+  - push
+  - hookの無効化
   parallel_ok: []
-  parent_cmd: cmd_karo_recon_ga137_p_average_freshness_20260626
+  parent_cmd: cmd_karo_recon_hook_failure_ga138_202606261303
   project: infra
-  purpose: GA-137 p_average_freshness ALERT調査 — 現在gateはOKだが2026-06-26 07:36にALERTが発火した経路を一次情報で特定し、直接原因/根本原因/横展開/防御層を家老が即判断できる報告を作る
+  purpose: hook_failure GA-138のpre-push失敗について、原因がコード品質かhook設定かを切り分け、防御層候補を具体化する
   report_template:
     filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
     forbidden:
@@ -97,24 +73,21 @@ task:
     - blind_spots
   status: done
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_p_average_freshness.sh
-  task_id: cmd_karo_recon_ga137_p_average_freshness_20260626_normal
+  target_path: logs/hook_artifacts/20260626T130150_pre-push_2563617.log
+  task_id: cmd_karo_recon_hook_failure_ga138_202606261303_normal
   task_type: recon
   three_strike_rule: 仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告
-  related_lessons:
-  - id: 'L213'
-    summary: 'cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit'
-    detail: 'cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit'
+  related_lessons: []
   memory_db_context:
-  - '2026-06-26T07:36:33+09:00 | 【改善トリガー】p_average_freshness ALERT (GA-137)'
-  - '2026-04-21T00:04:56+09:00 | 【改善トリガー】context_freshness ALERT (GA-137)'
-  - '2026-06-25T18:59:29+09:00 | 設計書は存在する。**Status: 📋 設計（実装待ち）。実装cmdは未起票。** [MEM: memory_db ts=2026-06-22 "p_average_freshness ALERT '
+  - '2026-06-26T13:02:12+09:00 | 【改善トリガー】hook_failure ALERT (GA-138)'
+  - '2026-06-25T19:31:32+09:00 | 【改善トリガー】hook_failure ALERT (GA-133)'
+  - '2026-04-21T00:04:57+09:00 | 【改善トリガー】hook_failure ALERT (GA-138)'
   ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_recon_ga137_p_average_freshness_20260626_normal
+  _ac_task_id: cmd_karo_recon_hook_failure_ga138_202606261303_normal
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_recon_ga137_p_average_freshness_20260626.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_recon_ga137_p_average_freshness_20260626.yaml
+  report_filename: hayate_report_cmd_karo_recon_hook_failure_ga138_202606261303.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_recon_hook_failure_ga138_202606261303.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -137,4 +110,4 @@ task:
     - reason: 'binary_checks_fail'
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-06-26T07:40:21"
+  deployed_at: "2026-06-26T13:05:28"
