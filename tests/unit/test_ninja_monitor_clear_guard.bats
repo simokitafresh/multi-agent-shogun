@@ -1291,6 +1291,67 @@ echo "PASS: clear loop forced idle"
     [[ "$output" == *"PASS: clear loop forced idle"* ]]
 }
 
+@test "safe_send_clear does not count idle stale parent_cmd as clear loop" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/config" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/config/settings.yaml" <<YAML
+token_budget:
+  max_clear_per_cmd: 1
+YAML
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: idle
+  parent_cmd: cmd_completed
+YAML
+
+check_idle() { return 0; }
+can_send_clear_with_report_gate() { return 0; }
+auto_commit_before_clear() { return 0; }
+cli_type() { echo "codex"; }
+cli_profile_get() {
+    case "$2" in
+        clear_cmd) echo "/new" ;;
+        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        *) echo "" ;;
+    esac
+}
+send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TMP_ROOT/messages.log"; }
+tmux() {
+    if [ "$1" = "respawn-pane" ]; then
+        echo "RESPAWN:$*" >> "$LOG"
+        return 0
+    fi
+    return 0
+}
+export -f tmux
+
+safe_send_clear "shogun:2.3" "hayate" "AUTO-CLEAR"
+safe_send_clear "shogun:2.3" "hayate" "AUTO-CLEAR"
+
+test "$(grep -c "RESPAWN:respawn-pane" "$LOG")" -eq 2
+test ! -f "$TMP_ROOT/messages.log"
+test ! -f "$STATE_DIR/shogun_clear_count_hayate.tsv"
+grep -q "CLEAR-COUNT-SKIP: hayate task_status=idle is not active" "$LOG"
+
+echo "PASS: idle stale parent_cmd skipped"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: idle stale parent_cmd skipped"* ]]
+}
+
 # --- cmd_3264: auto-commit in_progress ninja exclusion tests ---
 
 @test "auto_commit: excludes in_progress ninja target_path files from other ninja clear" {

@@ -275,8 +275,19 @@ _task_parent_cmd_for_clear_count() {
     local agent_name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
     local parent_cmd=""
+    local task_status=""
 
     if [ -f "$task_file" ]; then
+        task_status=$(yaml_field_get "$task_file" "status" "")
+        case "$task_status" in
+            assigned|acknowledged|in_progress|pending)
+                ;;
+            *)
+                log "CLEAR-COUNT-SKIP: $agent_name task_status=${task_status:-empty} is not active"
+                printf '%s\n' "no_cmd"
+                return 0
+                ;;
+        esac
         parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "")
         [ -n "$parent_cmd" ] || parent_cmd=$(yaml_field_get "$task_file" "task_id" "")
         [ -n "$parent_cmd" ] || parent_cmd=$(yaml_field_get "$task_file" "_ac_task_id" "")
