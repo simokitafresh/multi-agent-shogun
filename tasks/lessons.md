@@ -8820,3 +8820,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: docs/research配下の成果物を追加・更新するcmdを完了するとき
 - **how**: 対応するcontext索引候補をreport/templateへ注入し、cmd完了前に反映要否を二値確認する
 - DM-Signal repoでdocs/research配下に研究成果物が追加・更新されたcmdでは、cmd完了前に対応context索引への1行反映要否を自動チェックし、必要ならreport/templateへcontext_update候補を注入する。cmd_3546の本番fullrecalculate冪等性証明成果物はdm-signal-research.mdへ紐づかず、翌日のGA-141 context_freshness ALERTで検出された。
+
+### L865: CLI切替時はsettings.yaml typeとtmux @real_modelを同時検証する
+- **日付**: 2026-06-26
+- **出典**: session_20260626_pane_status_mismatch
+- **記録者**: gunshi
+- **tags**: [cli, monitor, infra]
+- **target_files**: [scripts/switch_cli_mode.sh,scripts/lib/model_detect.sh,config/settings.yaml]
+- **origin**: [[殿指摘_paneステータスバー乖離_20260626]] -> [[settings.yaml type未更新]] -> [[detect_real_model分岐ミス]]
+- **when**: CLI切替・モデル編成変更・pane respawn後の表示検証時
+- **how**: settings.type、tmux @agent_cli、tmux @model_name/@real_model、capture-pane上の実CLIバナーを同時照合し、不一致ならswitch成功扱いにしない
+- CLI切替でsettings.yaml typeフィールド更新とtmux @real_modelキャッシュ更新がずれると、detect_real_modelが旧CLI分岐に入り古いモデル名を返し、paneステータスバー表示が実態と乖離する。shogun-cli-switch/switch_cli_mode系の変更では、settings.type・tmux @agent_cli・tmux @model_name/@real_model・capture-pane上の実バナーを同時に検証し、不一致なら成功扱いにしない。origin: [[殿指摘_paneステータスバー乖離_20260626]] -> [[settings.yaml type未更新]] -> [[detect_real_model分岐ミス]]

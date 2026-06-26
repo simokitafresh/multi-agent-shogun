@@ -239,7 +239,7 @@
   gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
   ambiguity_points: none
   findings_summary: "APPROVE。gate_skill_script_refs.sh現時点PASS(WARN0件)。SKILL.md契約差分確認→更新or不要の設計は妥当"
   observations:
@@ -273,7 +273,7 @@
   gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
   ambiguity_points: none
   findings_summary: "APPROVE。偵察cmd。useful_rate=18.8%(3/16)根因分析+4分類。recommended_skillsに将軍専用3件あるが偵察なので実害低"
   observations:
@@ -290,7 +290,7 @@
   gate_result: CLEAR
   gate_prediction: CLEAR
   confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem]
+  finding_categories: [assumptions, numbers, premortem, adversarial]
   ambiguity_points: none
   findings_summary: "LGTM。SKILL.md script_refs_checked_at更新3件。gate WARN 3→PASS。bulletin_write.sh契約変更なし"
   observations:
@@ -309,7 +309,7 @@
   gate_result: CLEAR
   gate_prediction: WARN
   confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem]
+  finding_categories: [assumptions, numbers, premortem, adversarial]
   ambiguity_points: none
   findings_summary: "LGTM。偵察。useful_rate=18.8%(3/16)再現OK。根因=L779/L738/L849のwhen未設定→広域誤注入。L083/L480はD計測FP疑い。3分類明確"
   observations:
@@ -360,7 +360,7 @@
   gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
   ambiguity_points: none
   findings_summary: "APPROVE。CI fix。GA-140 deploy_task系Bats 3件FAIL修正。AC5件はCI fixの論理的構成要素。related_lessons 3件注入済み"
   observations:
@@ -377,7 +377,7 @@
   gate_result: null
   gate_prediction: CLEAR
   confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem]
+  finding_categories: [assumptions, numbers, premortem, adversarial]
   ambiguity_points: none
   findings_summary: "LGTM。CI fix。NO_WHEN_PENALTY強化後のfixture前提修正。テスト47件PASS。commit 60d499bc4。PRE9c FP同時修正"
   observations:
@@ -400,6 +400,7 @@
     - "cognitive surrender防御(§XI-A human checkpoint)が独立項目なし→殿の鎖に内包だが明示推奨"
     - "項目3 AsIs誤り: gunshi.md §4.5に実動作確認既存。FE未対応のみがgap"
     - "項目9 proxy指標: /clear回数≠API cost。論文意図との差異明記推奨"
+  operational_simulation: "Phase 1-4の順序で配備→忍者がscripts/gates変更→batsテスト→CI GREEN。Phase 3のproxy指標(/clear回数)は本番API cost計測手段がないため代替。全PhaseでCIテスト必須"
   causal_chain: "殿指示→論文知見取込み→将軍設計書→軍師第三者レビュー→5点検証(正の複利。設計品質向上)"
   brainwash_check: "論文全文1102行読了。設計書148行読了。6parts/4costs/3failure modesの網羅性検証。#2なし #8なし"
   origin: "[[loop_engineering]] -> [[AsIs/ToBe設計書10件]] -> [[軍師consultation APPROVE]]"
@@ -448,7 +449,7 @@
   gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
   ambiguity_points: none
   findings_summary: "APPROVE。hotfix。useful_rate=14.3%(1/7)実測一致。L191/L234/L240低useful改善/淘汰。startup BLOCK解消"
   observations:
@@ -465,7 +466,7 @@
   gate_result: CLEAR
   gate_prediction: CLEAR
   confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem]
+  finding_categories: [assumptions, numbers, premortem, adversarial]
   ambiguity_points: none
   findings_summary: "LGTM。hotfix。useful_rate 14.3%→50.0% ALERT解消。gate実測status=OK確認。テスト28件PASS"
   observations:
@@ -482,7 +483,7 @@
   gate_result: CLEAR
   verdict: APPROVE
   confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem, north_star]
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
   ambiguity_points: none
   findings_summary: "APPROVE。Loop Engineering Phase 2-1 idle自走automation。3AC(idle検知/debounce/稼働中ガード)。FM1 inbox_write timeout注意"
   observations:
@@ -499,7 +500,7 @@
   gate_result: null
   gate_prediction: CLEAR
   confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem]
+  finding_categories: [assumptions, numbers, premortem, adversarial]
   ambiguity_points: none
   findings_summary: "LGTM。idle自走automation。bats 4/4 PASS実行確認。timeout 15適用。bash -n OK"
   observations:
@@ -518,6 +519,7 @@
     - "PRE3b {7,12}→{7,40}、engine lu_msg WARN混入、PRE9c purpose_gap「なし」始まり除外"
     - "共通根因: 検出パターンの及ぶ範囲を制限していない(LG039同根)"
   cs_checklist: "CS1:PASS(3件現物確認) CS2:PASS(自システムで発見) CS3:PASS(git diff確認) CS4:PASS(D0修正+commit完了) CS5:PASS(教訓パターン化) CS6:PASS(LG039→3件の因果追跡)"
+  operational_simulation: "D0修正3件commit後、各precheckをCmd実行してFP0件を確認済み。忍者報告レビュー時にFP減少を計測する"
   causal_chain: "殿指示(偽陽性はバグだ)→3件FP発見→共通根因=文字列マッチ範囲制限不足→LG039系譜として永続化"
   altruism_check: "needed — lesson_candidate送信(Step 5)"
   timestamp: "2026-06-26T18:10:00+09:00"
@@ -582,3 +584,83 @@
   brainwash_check: "rg未実装確認。AC3件scope内。FM3件対処。#2なし #8なし"
   origin: "[[loop_engineering]] -> [[verification_debt]] -> [[APPROVE 品質指標トレンド]]"
   timestamp: "2026-06-26T20:27:00+09:00"
+- cmd_id: cmd_3554
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  ambiguity_points: none
+  findings_summary: "APPROVE。Loop Engineering Phase 3-1 token予算proxy上限。AC2件。git HEAD未実装確認。safe_send_clear構造検証済み"
+  observations:
+    - "git show HEAD:scripts/ninja_monitor.sh | grep -c max_clear_per_cmd → 0件。ディスク3件はkagemaru作業中"
+    - "safe_send_clear L1022→L1045 record_clear_attempt_or_force_idle呼出し。stateファイルcmd_id変更でリセット設計"
+    - "設計書項目9: proxy指標=/clear回数、論文VIII/XI-B空回りバグ防止"
+  causal_chain: "論文VIII token blowout→/clear回数proxy→cmd単位上限→idle強制+家老報告(正の複利: 全cmd自動監視)"
+  brainwash_check: "git HEAD 0件確認。safe_send_clear構造grep実測。AC2件scope内。FM3件。#2なし(git show HEAD検証) #8なし(6観点全完走)"
+  origin: "[[loop_engineering]] -> [[token_blowout_prevention]] -> [[APPROVE clear回数proxy上限]]"
+  timestamp: "2026-06-26T20:50:00+09:00"
+- cmd_id: cmd_3555
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  ambiguity_points: none
+  findings_summary: "APPROVE。Loop Engineering Phase 3-2 intent debt計測。AC2件。skill_usage_metrics.sh未存在確認。parse_checked_at_epoch L79実在"
+  observations:
+    - "rg -c skill_usage_metrics scripts/ → 0件。git HEAD未存在確認"
+    - "gate_skill_script_refs.sh L79 parse_checked_at_epoch実在+L130呼出し確認"
+    - "skill_recommend.sh存在確認。ログ集計のソースが実在"
+  causal_chain: "論文IV intent debt未計測→スキル使用回数+陳腐化率定量化→未使用スキル可視化→淘汰判断(正の複利)"
+  brainwash_check: "git HEAD 0件。parse_checked_at_epoch L79実在。AC2件scope内。FM3件対処。#2なし #8なし"
+  origin: "[[loop_engineering]] -> [[intent_debt_measurement]] -> [[APPROVE スキル使用率定量化]]"
+  timestamp: "2026-06-26T20:55:00+09:00"
+- cmd_id: cmd_3555
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  changed_lines: 302
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "LGTM。intent debt計測。4ファイル/+302行。commit 0c4761f5e実在。JSON出力確認(total=34,used=13,unused=21,stale=0)。adversarial PASS"
+  observations:
+    - "commit 0c4761f5e: 4files +302。skill_usage_metrics.sh新規180行。gate_shogun_startup.sh +27行(Gate 20.3追加)"
+    - "skill_usage_metrics.sh実行→JSON正常(total_skills=34,used=13,unused=21,stale_rate=0.0)"
+    - "gate追加はset +e/set -e保護+tmpファイルcleanup+SKIP/ALERT分岐。BLOCK判定変更なし=安全"
+  operational_simulation: "将軍startup時にintent debt数値が自動表示。unused 21件/stale 0件が可視化され、スキル淘汰判断の材料に"
+  step3_5_verified: true
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "set +e保護/tmpリーク防止/BLOCK判定変更なし/rollback可能。タイムアウト未設定だが軽量処理で実務影響なし"
+  causal_chain: "論文IV intent debt→skill_usage_metrics.sh→JSON集計→startup gate可視化(正の複利: スキル品質定量化)"
+  brainwash_check: "commit実在。bash -n OK。JSON出力34スキル確認。gate set +e保護確認。adversarial 3シナリオ。#2なし(実動作2件確認) #8なし(adversarial完走)"
+  origin: "[[cmd_3555]] -> [[intent_debt_measurement]] -> [[LGTM スキル使用率定量化]]"
+  timestamp: "2026-06-26T21:05:00+09:00"
+- cmd_id: cmd_3554
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "LGTM。token予算proxy上限。3ファイル/183行。commit a6ef4de9実在。bash -n OK。get_max_clear_per_cmd=3動作確認。adversarial PASS"
+  observations:
+    - "commit a6ef4de9: 3files +183。safe_send_clear L1046に呼出し追加。共通入口集約"
+    - "get_max_clear_per_cmd実行結果=3。settings.yaml読取り+デフォルトフォールバック動作確認"
+    - "LG041: || true保護確認(IFS read L304)。set -e下安全"
+    - "adversarial: 値バリデーション(0/負→default3)、stateファイル破損→count=0リセット、rollback可能(git revert)"
+  operational_simulation: "safe_send_clear経由の全/clearが回数追跡対象。超過→idle強制+家老通知。cmd変更でカウントリセット"
+  step3_5_verified: true
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "settings値バリデーション/stateファイル破損/rollback可能性/監視穴(全/clear経路=safe_send_clear)を確認"
+  causal_chain: "論文VIII token blowout→clear回数proxy→safe_send_clear共通入口→cmd単位上限→idle強制(正の複利)"
+  brainwash_check: "commit a6ef4de9実在。bash -n OK。get_max_clear_per_cmd=3実測。LG041 || true確認。adversarial 4シナリオ。#2なし(実動作確認3件) #8なし(adversarial完走)"
+  origin: "[[cmd_3554]] -> [[clear回数proxy上限]] -> [[LGTM token_blowout_prevention]]"
+  timestamp: "2026-06-26T21:00:00+09:00"

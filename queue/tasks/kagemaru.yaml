@@ -28,7 +28,7 @@ task:
   recommended_skills:
   - shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)
   - reset-layout
-  status: done
+  status: idle
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/scripts
   task_id: cmd_3554_full

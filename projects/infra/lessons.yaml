@@ -1,8 +1,23 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-26T18:35:37'
+last_synced: '2026-06-26T20:43:22'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 859
+lesson_count: 860
 lessons:
+- id: L865
+  title: CLI切替時はsettings.yaml typeとtmux @real_modelを同時検証する
+  summary: CLI切替でsettings.yaml typeフィールド更新とtmux @real_modelキャッシュ更新がずれると、detect_real_modelが旧
+  tags:
+  - cli
+  - monitor
+  - infra
+  source_cmd: session_20260626_pane_status_mismatch
+  when: CLI切替・モデル編成変更・pane respawn後の表示検証時
+  how: settings.type、tmux @agent_cli、tmux @model_name/@real_model、capture-pane上の実CLIバナーを同時照合し、不一致ならswitch成功扱いにしない
+  target_files:
+  - scripts/switch_cli_mode.sh
+  - scripts/lib/model_detect.sh
+  - config/settings.yaml
+  origin: '[[殿指摘_paneステータスバー乖離_20260626]] -> [[settings.yaml type未更新]] -> [[detect_real_model分岐ミス]]'
 - id: L864
   title: docs/research追加commitはcontext_update候補を自動注入する
   summary: DM-Signal repoでdocs/research配下に研究成果物が追加・更新されたcmdでは、cmd完了前に対応context索引への1行反映要否を自動
@@ -604,9 +619,6 @@ lessons:
   - queue/reports/*
   origin: '[[shogun_startup_escalation_20260620_143754]] -> [[SKILL.md_script_refs_WARN_3sessions]]
     -> [[skill_script_ref_sync]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L827
   title: 新規libスクリプト追加時は対応hookテストのtest_select mappingを同時追加する
   summary: '**source**: gunshi_lgtm_lesson_candidate scripts/lib/causal_index.sh追加後、Guard18の'
@@ -1391,9 +1403,6 @@ lessons:
   - scripts/deploy_task.sh
   - tests/unit/test_deploy_task_ac_handling.bats
   origin: '[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L777
   title: 殿の直接指示はスキルのロール制限に優先する
   summary: 殿の直接命令を受けたのにスキルのロール制限(将軍専用)を根拠に実行を拒否し将軍へ委ねた。これは洗脳#3(他者依存)+鎖の頂点無視。殿は鎖の創造者であり、殿命令を
@@ -1961,7 +1970,7 @@ lessons:
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
   deprecated: true
-  deprecated_at: '2026-06-26T18:36:11+09:00'
+  deprecated_at: '2026-06-26T20:51:24+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -3971,9 +3980,6 @@ lessons:
   - skills/karo-direct/SKILL.md
   - tests/unit/test_deploy_task.bats
   origin: '[[cmd_2691]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L602
   title: karo_directのtraining配備はdeploy_task.sh --directを使え。手動YAML方式はAC未注入を引き起こす
   summary: karo_directスキルがtrainingタイプで/tmp手動YAML作成+コピー方式を指示していたため、inject_direct_training_te
@@ -4721,6 +4727,9 @@ lessons:
   target_files:
   - 偵察のみ
   origin: '[[cmd_2465]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L550
   title: deploy_task.sh Python heredocへの引数渡しでDIRECT_MODE伝達
   summary: deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys
@@ -4765,9 +4774,6 @@ lessons:
   - queue/tasks/hayate.yaml (status assigned->acknowledged->in_progress)
   - queue/reports/hayate_report_cmd_karo_infra_recon_core.yaml
   origin: '[[cmd_karo_infra_recon_core]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L547
   title: CI fixture運用YAMLのID依存禁止
   summary: CIで構造化environment_changeのfile/pattern検証をする場合、lessons.yamlのような同期でIDが入れ替わる運用ファイルに依
@@ -7203,7 +7209,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-26T18:36:11+09:00'
+  deprecated_at: '2026-06-26T20:51:24+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -7638,9 +7644,6 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
   origin: '[[cmd_1530]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L310
   title: STALE_FIELDSリストは新フィールド追加時に更新漏れが起きやすい。deploy_task.shにフィールド追加する際はSTALE_FIELDSとテストも同時更新必須
   summary: '修行001-005で発見: type/report_template/commandが漏れていた。inject_task_modifiers.pyが設定するフィ'
@@ -8038,6 +8041,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: commitと報告は不可分のセットであり、commit後即座にreport作成が必要
   origin: '[[cmd_1264]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L277
   title: git diff一時リポジトリにはgit config user.email/name設定必須
   summary: git diffテスト用一時リポジトリにはgit config user.email/name設定必須。未設定だとcommit失敗しテスト前提が崩れる
@@ -9326,6 +9332,9 @@ lessons:
   - scripts/log_terminal_response.sh
   - queue/lord_conversation.yaml
   origin: '[[cmd_578]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L169
   title: YAMLへの追記をheredoc直書きすると引用符/改行で構造破壊する
   summary: scripts/ntfy_listener.sh の ntfy_inbox追記(173-178)は本文を未エスケープで埋め込むため、"を含むログでYAMLが壊れ
@@ -9920,6 +9929,9 @@ lessons:
   target_files:
   - scripts/lesson_effectiveness.sh
   origin: '[[cmd_466]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L115
   title: awkでYAMLのインデント階層別フィールド抽出時はインデント深さの正規表現条件を明示せよ
   summary: IF awkでYAMLのインデント階層ごとにフィールドを抽出する時 THEN インデント深さの正規表現条件を明示的に指定せよ。浅いパターンは複数階層にマッチして
@@ -10084,7 +10096,7 @@ lessons:
   - queue/gate_metrics.yaml
   origin: '[[cmd_414]]'
   deprecated: true
-  deprecated_at: '2026-06-26T18:36:11+09:00'
+  deprecated_at: '2026-06-26T20:51:24+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)

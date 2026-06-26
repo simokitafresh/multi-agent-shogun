@@ -3519,6 +3519,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: objective単位でlegacy fallbackに切替えることでparity 0 mismatchを達成
   origin: '[[cmd_karo_batch_R7]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L550
   title: 実データbatch parityではbenchmark共通を仮定するな
   summary: 65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとの
@@ -7161,6 +7164,9 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-12'
   origin: '[[cmd_859]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L277
   title: 履歴グラフUIは時系列snapshot蓄積と取得窓の両方が揃わないと単月表示へ退化する
   summary: Deterioration Monitorのhistory UIは、batchがcurrent monthしかUPSERTしない状態ではhistory
@@ -8467,6 +8473,9 @@ lessons:
   target_files:
   - docs/future-01/001.md
   origin: '[[cmd_549]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L169
   title: 設計書補完はMECE表+仕様章リンクの二層化で抜け漏れを抑制できる
   summary: IF A/B/C/Dを先に固定し、各行に仕様書の章参照を付与すると、追記の網羅性確認と矛盾検出が高速化する時 THEN A/B/C/Dを先に固定し、各行に仕様書
@@ -9061,6 +9070,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: PF間のローリング相関/リード・ラグ/同時崩壊カウントを20特徴量追加しても改善なし
   origin: '[[legacy_lesson_L116]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-26'
 - id: L115
   title: 回帰→分類パイプラインは月次リターンSNR限界を克服しない
   summary: IF Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換時 THEN Ridge/Lasso/Elastic
