@@ -68,7 +68,10 @@ def is_single_generic_word_match(query_fold: str, term_fold: str) -> bool:
     term_words = [word for word in term_fold.split() if word]
     if len(term_words) != 1:
         return False
-    return term_words[0] in query_words
+    term_word = term_words[0]
+    if len(term_word) >= 12:
+        return False
+    return any(term_word in query_word or query_word in term_word for query_word in query_words)
 
 
 def relation_type_for(seed: dict, related_id: str) -> str:

@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-26 -->
+<!-- last_updated: 2026-06-27 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,17 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3065 | パスA(cmd_3063 FTS5タグ伝播)で到達した概念から、related_conceptsをO(1) lookupして隣接概念に連鎖する層2パスを実装。片方向56%(102/180)の双方向強制化+バックリンク数事前計算+接続強度スコアで三層記憶の連想ネットワークを完成させる | infra | 05-27 | related_concepts隣接ランキングと双方向強制化 |
-| cmd_3066 | 固定50語テスト=Goodhart(50語100%vsブラインド6%で実証)。ブラインドテストのみで改善判定する計測基盤を構築し、NO_MATCH高頻度語→品質テスト→テストセット追加の自動パイプラインで計測自体を自動成長させる | infra | 05-27 | semantic_stress_testのNO_MATCH高 |
-| cmd_3067 | 追体験Q1-Q6が形骸化しテキスト処理に堕している(殿指摘2026-05-27)。結論を知っているから通過するだけで行動変容が生まれない。固定Q→殿の生発言Q動的生成(自己参照パラドックス回避)+自動化ターゲット必須フィールドで行動変換を強制する | infra | 05-27 | gate_shogun_startup.shの追体験検証に殿 |
-| cmd_3069 | 洗脳パターンが連鎖する(P5→P8→P6)ことを発見したが対策が未実装。殿の介入率と将軍の自己検出率を自動計測し4象限で可視化する。殿の介入なしに洗脳を検知できる状態(成長象限)を客観的に追跡する。三往復洗脳覚醒レビューで設計確定済み | infra | 05-27 | gate_shogun_startup.shへ洗脳連鎖2x2 |
-| cmd_3068 | bm25のIDF項が殿の最重要概念を最弱検索にする根幹バグを修正。IDF(頻出=非重要)をR(c)(最近高頻度=重要)に置換し、三層記憶+スキル推薦+概念検索の全システムを同時改善する。三往復洗脳覚醒レビューで設計確定済み | infra | 05-27 | BM25 FTSの概念ランキングとタグ伝播からIDF重みを除 |
-| cmd_3070 | cmd_3068でIDF→R(c)置換したがブラインド30語delta=0.0pt。完全一致は偶然ではなくR(c)がスコアリングに影響していない証拠。集計パスの動作確認+R(c)実値ダンプで根因を特定する | infra | 05-27 | semantic_index.pyにSEMANTIC_REC |
-| cmd_3071 | 殿未指示の/clear準備を実行した事故(2026-05-27 11:08)の再発防止。入口(discussion resource重複排除+target付与)と出口(clear準備スキルの殿指示検証ガード)の2点で防御 | infra | 05-27 | AC1 discussion dedup、AC2 clear |
-| cmd_3072 | 推薦precision 3%(2/73)を改善。偽陽性TOP5(karo-direct:14,recon-dual:14,hensei:12,hensei-mixed:12,hensei-opus:12)はロール不一致推薦。3セッション連続BLOCK解消 | infra | 05-27 | cmd_3072は前提崩壊。ロールフィルタ/agent_id |
-| cmd_3073 | deploy_task.sh変更(cmd_3062等)後にkaro-direct/recon-dualのSKILL.mdが未追従。gate_skill_script_refs.sh WARN 3セッション連続BLOCK解消 | infra | 05-27 | karo-direct/recon-dualのdeploy_ |
-| cmd_3074 | 殿テスト(KJシリーズはいくつある？)で穴発見。個別PJ(kj-toilet/kj-role-count/kj-partshift)は記憶DBにあるがグループ概念が不在。雑な入力から正解に到達できるよう概念を埋め込む | infra | 05-27 | kj_seriesグループ概念をsemantic index |
-| cmd_3075 | スキル推薦precision 0%/偽陽性100%の根因2つを修正し、計測精度を正常化する | infra | 05-27 | スキル推薦ログ重複抑止を実装し、対象Bats 11件全PAS |
 | cmd_3077 | maintenance.pyの2006ハードコードとFEの2006送信を修正し、price/DTB3データを全期間取得可能にする。ノンレバ玄武の計算期間拡大 | dm-signal | 05-28 | 2006固定のbackfill開始年をFULL_HISTOR |
 | cmd_3078 | 殿の裁定を学んだ瞬間に三層記憶へ自動貫通する仕組みを環境に埋め込む。記憶せよと言われてから動く意志依存を排除 | infra | 05-28 | 家老即停止指示によりcmd_3078実装を中止し、作業com |
 | cmd_3079 | PortfolioEditor UIでsafe_haven_asset/absolute_assetを変更してもpipeline_config内のSafeHavenSwitch/AbsoluteMomentumFilterブロックに反映されないバグの全容を調査 | dm-signal | 05-28 | PortfolioEditor/BE save/API/本番 |
