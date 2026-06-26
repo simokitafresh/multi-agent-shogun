@@ -210,6 +210,26 @@ def main() -> int:
     elif isinstance(fm, list) and len(fm) == 0 and data.get("status") == "completed":
         hints.append('GP-127 WARN: files_modified: [] (空リスト) — 変更ファイルを記入せよ。偵察のみの場合は文字列で "偵察のみ" と記入')
 
+    # GP-286: files_modified path format validation (commit_missing WA根因: 説明文混入防止)
+    if isinstance(fm, list) and len(fm) > 0 and data.get("status") == "completed":
+        _fm_non_path_count = 0
+        for item in fm:
+            _p = str(item.get("path", "") if isinstance(item, dict) else item).strip()
+            if _p and "/" not in _p and not _p.startswith("偵察"):
+                _fm_non_path_count += 1
+        if _fm_non_path_count > 0:
+            errors.append(f"files_modified: {_fm_non_path_count}件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ")
+            hints.append("FIX (files_modified): 各エントリは scripts/foo.sh や config/settings.yaml のようなファイルパスであること")
+
+    # GP-287: commit_hash full hash validation (commit_missing WA根因: 短縮hash→gate素通り防止)
+    _ch = data.get("commit_hash")
+    if _ch is not None:
+        _ch_str = str(_ch).strip()
+        if _ch_str and _ch_str.lower() not in ("", "none", "null"):
+            if not re.fullmatch(r'[0-9a-f]{40}', _ch_str):
+                errors.append(f"commit_hash: '{_ch_str}' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ")
+                hints.append("FIX COMMAND (commit_hash): " + _rfs_cmd(report_path, "commit_hash", "$(git rev-parse HEAD)"))
+
     # GP-285: files_modified entries with parentheses/comments (cmd_3381 incident)
     if isinstance(fm, list):
         _paren_re = re.compile(r'\(.*\)')

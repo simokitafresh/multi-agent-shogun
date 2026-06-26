@@ -1192,6 +1192,9 @@ hint_paths = {
     "コミット前": ["scripts/hooks/git-pre-commit.sh"],
     "掲示板": ["scripts/gates/gate_shogun_startup.sh", "scripts/bulletin_write.sh"],
     "action_required": ["scripts/gates/gate_shogun_startup.sh", "scripts/bulletin_write.sh"],
+    "backlinks": ["scripts/causal_backlink_counts.sh", "context/semantic-map.md"],
+    "backlinks=0": ["scripts/causal_backlink_counts.sh", "context/semantic-map.md"],
+    "因果リンク": ["scripts/causal_backlink_counts.sh", "context/semantic-map.md"],
 }
 hint_tokens = {
     "commit前": ["pre-commit"],
@@ -1199,6 +1202,9 @@ hint_tokens = {
     "コミット前": ["pre-commit"],
     "掲示板": ["action_required"],
     "action_required": ["action_required"],
+    "backlinks": ["backlink"],
+    "backlinks=0": ["backlink"],
+    "因果リンク": ["因果リンク"],
 }
 for hint, rels in hint_paths.items():
     if hint in target:
