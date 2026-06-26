@@ -13,6 +13,7 @@ setup() {
     TEST_ROOT="$(mktemp -d "$BATS_TMPDIR/git_pre_commit.XXXXXX")"
     mkdir -p "$TEST_ROOT/scripts/hooks" "$TEST_ROOT/scripts/lib" "$TEST_ROOT/scripts" \
         "$TEST_ROOT/instructions/generated" "$TEST_ROOT/tests/unit" \
+        "$TEST_ROOT/context" "$TEST_ROOT/projects/infra" \
         "$TEST_ROOT/queue/tasks" "$TEST_ROOT/queue/reports" "$TEST_ROOT/logs"
 
     cp "$SOURCE_HOOK" "$TEST_ROOT/scripts/hooks/git-pre-commit.sh"
@@ -23,6 +24,16 @@ setup() {
 exit 0
 EOF
     chmod +x "$TEST_ROOT/scripts/build_instructions.sh"
+    cat > "$TEST_ROOT/scripts/semantic_index_update.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\t%s\n' "$1" "$2" >> logs/semantic_index_update.calls
+EOF
+    chmod +x "$TEST_ROOT/scripts/semantic_index_update.sh"
+    cat > "$TEST_ROOT/scripts/semantic_map_generate.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'semantic_map_generate\n' >> logs/semantic_map_generate.calls
+EOF
+    chmod +x "$TEST_ROOT/scripts/semantic_map_generate.sh"
 
     cat > "$TEST_ROOT/tool.py" <<'EOF'
 print("ok")
@@ -32,6 +43,16 @@ EOF
 EOF
     cat > "$TEST_ROOT/instructions/generated/base.md" <<'EOF'
 # generated
+EOF
+    cat > "$TEST_ROOT/context/infrastructure.md" <<'EOF'
+# infra context
+EOF
+    cat > "$TEST_ROOT/projects/infra.yaml" <<'EOF'
+project:
+  id: infra
+EOF
+    cat > "$TEST_ROOT/projects/infra/lessons.yaml" <<'EOF'
+lessons: []
 EOF
     cat > "$TEST_ROOT/tests/unit/test_cmd_save.bats" <<'EOF'
 #!/usr/bin/env bats
@@ -55,8 +76,10 @@ EOF
         git init -q
         git config user.email test@example.com
         git config user.name "Test User"
-        git add scripts/hooks/git-pre-commit.sh scripts/build_instructions.sh tool.py \
+        git add scripts/hooks/git-pre-commit.sh scripts/build_instructions.sh \
+            scripts/semantic_index_update.sh scripts/semantic_map_generate.sh tool.py \
             instructions/base.md instructions/generated/base.md tests/unit/test_cmd_save.bats \
+            context/infrastructure.md projects/infra.yaml projects/infra/lessons.yaml \
             queue/tasks/kagemaru.yaml queue/reports/kagemaru_report.yaml logs/hook_failures.yaml
         git commit -qm "init"
     )
@@ -67,7 +90,7 @@ teardown() {
 }
 
 run_hook() {
-    run bash -c 'cd "$1" && bash scripts/hooks/git-pre-commit.sh' -- "$TEST_ROOT"
+    run bash -c 'cd "$1" && SEMANTIC_HOOK_SYNC=1 bash scripts/hooks/git-pre-commit.sh' -- "$TEST_ROOT"
 }
 
 @test "blocks yaml dump in staged python additions and records hook failure" {
@@ -264,4 +287,38 @@ EOF
     [[ "$output" == *"WARN: new test_*.bats file may duplicate existing script-level tests."* ]]
     [[ "$output" == *"added: tests/unit/test_cmd_save_new_rule.bats"* ]]
     [[ "$output" == *"candidate: tests/unit/test_cmd_save.bats"* ]]
+}
+
+@test "runs semantic propagation when context files are staged" {
+    cat >> "$TEST_ROOT/context/infrastructure.md" <<'EOF'
+new context line
+EOF
+    (
+        cd "$TEST_ROOT"
+        git add context/infrastructure.md
+    )
+
+    run_hook
+
+    [ "$status" -eq 0 ]
+    grep -q '^discussion' "$TEST_ROOT/logs/semantic_index_update.calls"
+    grep -q 'context/infrastructure.md' "$TEST_ROOT/logs/semantic_index_update.calls"
+    grep -q '^semantic_map_generate$' "$TEST_ROOT/logs/semantic_map_generate.calls"
+}
+
+@test "runs semantic propagation when project yaml files are staged" {
+    cat >> "$TEST_ROOT/projects/infra.yaml" <<'EOF'
+description: updated
+EOF
+    (
+        cd "$TEST_ROOT"
+        git add projects/infra.yaml
+    )
+
+    run_hook
+
+    [ "$status" -eq 0 ]
+    grep -q '^discussion' "$TEST_ROOT/logs/semantic_index_update.calls"
+    grep -q 'projects/infra.yaml' "$TEST_ROOT/logs/semantic_index_update.calls"
+    grep -q '^semantic_map_generate$' "$TEST_ROOT/logs/semantic_map_generate.calls"
 }

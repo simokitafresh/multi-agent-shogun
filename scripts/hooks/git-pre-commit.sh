@@ -42,6 +42,71 @@ list_added_test_files() {
     printf '%s\n' "${_ADDED_TEST_FILES[@]}"
 }
 
+is_semantic_propagation_file() {
+    local file="${1:-}"
+    [[ -n "$file" ]] || return 1
+    case "$file" in
+        context/*) return 0 ;;
+        projects/*.yaml|projects/*.yml|projects/*/*.yaml|projects/*/*.yml) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+collect_semantic_propagation_files() {
+    local file
+    while IFS= read -r file; do
+        [[ -n "$file" ]] || continue
+        if is_semantic_propagation_file "$file"; then
+            printf '%s\n' "$file"
+        fi
+    done < <(list_staged_files)
+}
+
+build_semantic_propagation_payload() {
+    python3 - "$@" <<'PY'
+import json
+import sys
+from datetime import datetime, timezone
+
+files = [item for item in sys.argv[1:] if item]
+payload = {
+    "timestamp": datetime.now(timezone.utc).isoformat(),
+    "summary": "git pre-commit semantic propagation for context/projects changes",
+    "files": files,
+}
+print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+PY
+}
+
+run_semantic_propagation_for_staged_files() {
+    local files payload update_cmd map_cmd log_path
+    files="$(collect_semantic_propagation_files)"
+    [[ -n "$files" ]] || return 0
+
+    update_cmd="$REPO_ROOT/scripts/semantic_index_update.sh"
+    map_cmd="$REPO_ROOT/scripts/semantic_map_generate.sh"
+    [[ -f "$update_cmd" || -f "$map_cmd" ]] || return 0
+
+    # Keep commit latency low in normal use; tests can force sync with SEMANTIC_HOOK_SYNC=1.
+    mapfile -t _semantic_files <<< "$files"
+    payload="$(build_semantic_propagation_payload "${_semantic_files[@]}")"
+    log_path="${SEMANTIC_HOOK_LOG:-$REPO_ROOT/logs/semantic_hook.log}"
+
+    if [[ "${SEMANTIC_HOOK_SYNC:-0}" == "1" ]]; then
+        [[ -f "$update_cmd" ]] && bash "$update_cmd" discussion "$payload"
+        [[ -f "$map_cmd" ]] && bash "$map_cmd"
+        return 0
+    fi
+
+    (
+        mkdir -p "$(dirname "$log_path")"
+        {
+            [[ -f "$update_cmd" ]] && bash "$update_cmd" discussion "$payload"
+            [[ -f "$map_cmd" ]] && bash "$map_cmd"
+        } >>"$log_path" 2>&1 || true
+    ) &
+}
+
 infer_test_group_prefix() {
     local base="${1:-}"
     case "$base" in
@@ -232,6 +297,8 @@ main() {
         fi
         echo "  OK: generated instructions in sync."
     fi
+
+    run_semantic_propagation_for_staged_files
 }
 
 # --- Failure recording trap (cmd_1117) ---
