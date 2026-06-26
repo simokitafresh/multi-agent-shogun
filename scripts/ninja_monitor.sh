@@ -5205,9 +5205,21 @@ done
 cycle=0
 prev_idle=""
 prev_gate_sig=""
+_NM_SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
+_NM_START_MTIME="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
 
 while true; do
     cycle=$((cycle + 1))
+
+    # ─── hot-reload: スクリプト更新検知で自動再起動 (2026-06-26) ───
+    # commit後も旧コードで稼働し続けるバグの根治。10分ごとにmtimeチェック
+    if [ $((cycle % REDISCOVER_EVERY)) -eq 0 ]; then
+        _nm_cur_mtime="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
+        if [ "$_nm_cur_mtime" != "$_NM_START_MTIME" ]; then
+            log "HOT-RELOAD: ninja_monitor.sh updated (mtime ${_NM_START_MTIME} → ${_nm_cur_mtime}). Restarting..."
+            exec bash "$_NM_SCRIPT_PATH"
+        fi
+    fi
 
     # 定期的にペイン再探索（ペイン構成変更に対応）
     if [ $((cycle % REDISCOVER_EVERY)) -eq 0 ]; then
