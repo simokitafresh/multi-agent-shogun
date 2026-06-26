@@ -174,9 +174,24 @@ PY
 CACHE_TTL_SECONDS="${SKILL_REF_CACHE_TTL_SECONDS:-30}"
 RAW_ROOTS="${SKILL_REF_DIRS:-skills:.claude/skills:.codex/skills}"
 SCRIPT_MTIME="$(stat -c %Y "$0" 2>/dev/null || printf '0')"
+SKILL_MTIME="0"
+IFS=':' read -r -a SKILL_REF_ROOT_ARRAY <<< "$RAW_ROOTS"
+for raw_root in "${SKILL_REF_ROOT_ARRAY[@]}"; do
+    [ -n "$raw_root" ] || continue
+    expanded_root="${raw_root/#\~/$HOME}"
+    case "$expanded_root" in
+        /*) skill_root="$expanded_root" ;;
+        *) skill_root="$REPO_ROOT/$expanded_root" ;;
+    esac
+    [ -d "$skill_root" ] || continue
+    root_mtime="$(find "$skill_root" -name SKILL.md -printf '%T@\n' 2>/dev/null | sort -nr | head -1 | cut -d. -f1)"
+    if [ -n "${root_mtime:-}" ] && [ "$root_mtime" -gt "$SKILL_MTIME" ] 2>/dev/null; then
+        SKILL_MTIME="$root_mtime"
+    fi
+done
 
 if [ "${SKILL_REF_DISABLE_CACHE:-0}" != "1" ] && [ "$CACHE_TTL_SECONDS" -gt 0 ] 2>/dev/null; then
-    CACHE_KEY="${REPO_ROOT//[^A-Za-z0-9._-]/_}_${RAW_ROOTS//[^A-Za-z0-9._-]/_}_${SCRIPT_MTIME}"
+    CACHE_KEY="${REPO_ROOT//[^A-Za-z0-9._-]/_}_${RAW_ROOTS//[^A-Za-z0-9._-]/_}_${SCRIPT_MTIME}_${SKILL_MTIME}"
     CACHE_BASE="/tmp/shogun_gate_skill_script_refs_${CACHE_KEY}"
     # Single cache file: first line = exit code, remaining lines = output.
     # Eliminates the race window between writing CACHE_OUT and CACHE_CODE separately.

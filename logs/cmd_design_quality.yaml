@@ -1,14 +1,4 @@
 entries:
-- cmd_id: "cmd_3518"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-06-23T12:36:08Z"
 - cmd_id: "cmd_3520"
   ac_count: 0
   gate_result: "CLEAR"
