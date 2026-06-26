@@ -59,6 +59,7 @@ declare -gA _CTX_PROFILE_PATTERN_CACHE _CTX_PROFILE_MODE_CACHE 2>/dev/null || \
 
 # --- Variables needed by lib functions (outside guard for lib-only mode) ---
 STALL_THRESHOLD_MIN=${STALL_THRESHOLD_MIN:-10} # 停滞検知しきい値（分）— assigned+idle状態がこの時間継続で通知 (cmd_1105: 15→10分に短縮)
+KARO_PENDING_CMD_GRACE_SEC=${KARO_PENDING_CMD_GRACE_SEC:-30} # cmd_save→cmd_delegate正規フローの短いpending窓をcmd_pending重複通知しない猶予
 
 # --- lib-only mode: skip daemon initialization (tmux/settings依存) ---
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]; then
@@ -3118,6 +3119,9 @@ check_undeployed_cmds() {
 # 新規pending cmd出現時のみ家老に1回通知。同一cmdの繰り返し送信を廃止。
 # 長時間未処理のエスカレーションは check_stale_cmds() が担当。
 check_karo_pending_cmd() {
+    local now
+    now=$EPOCHSECONDS
+
     # 家老がbusyならスキップ（作業中は割り込み不要）
     if ! check_idle "$KARO_PANE" "karo"; then
         return
@@ -3128,6 +3132,20 @@ check_karo_pending_cmd() {
 
     while IFS='|' read -r cmd_id cmd_timestamp _cmd_delegated_at; do
         [ -z "$cmd_id" ] && continue
+
+        if [ -n "$cmd_timestamp" ] && [ "${KARO_PENDING_CMD_GRACE_SEC:-0}" -gt 0 ]; then
+            local cmd_epoch
+            cmd_epoch=$(date -d "$cmd_timestamp" +%s 2>/dev/null || echo "0")
+            if [[ "$cmd_epoch" =~ ^[0-9]+$ ]] && [ "$cmd_epoch" -gt 0 ]; then
+                local pending_age
+                pending_age=$((now - cmd_epoch))
+                if [ "$pending_age" -ge 0 ] && [ "$pending_age" -lt "$KARO_PENDING_CMD_GRACE_SEC" ]; then
+                    log "PENDING-CMD-GRACE: ${cmd_id} age=${pending_age}s < ${KARO_PENDING_CMD_GRACE_SEC}s; waiting for cmd_delegate/cmd_new"
+                    continue
+                fi
+            fi
+        fi
+
         current_ids+=("$cmd_id")
 
         # 既知のpending → スキップ（遷移なし。stale_cmdsがエスカレーション担当）

@@ -130,6 +130,94 @@ cat "$TEST_LOG"
     [[ "$output" == *"NTFY_COUNT=0"* ]]
 }
 
+@test "check_karo_pending_cmd: 新規pendingが猶予内ならcmd_pending通知しない" {
+    RECENT_TS=$(date -d "10 seconds ago" "+%Y-%m-%dT%H:%M:%S")
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+RECENT_TS="'"$RECENT_TS"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+KARO_PENDING_CMD_GRACE_SEC=30
+KARO_PANE="karo-pane"
+export SCRIPT_DIR
+mkdir -p "$SCRIPT_DIR/queue" "$SCRIPT_DIR/scripts"
+
+cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<EOF
+commands:
+  cmd_recent:
+    status: pending
+    timestamp: "$RECENT_TS"
+EOF
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$SCRIPT_DIR/inbox.log"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+log() { echo "$1" >> "$LOG"; }
+check_idle() { return 0; }
+declare -A PREV_PENDING_SET STALE_CMD_NOTIFIED
+
+check_karo_pending_cmd
+
+test ! -f "$SCRIPT_DIR/inbox.log"
+grep -q "PENDING-CMD-GRACE: cmd_recent" "$LOG"
+'
+    [ "$status" -eq 0 ]
+}
+
+@test "check_karo_pending_cmd: 猶予後もpendingならcmd_pending通知する" {
+    OLD_TS=$(date -d "45 seconds ago" "+%Y-%m-%dT%H:%M:%S")
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+OLD_TS="'"$OLD_TS"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+KARO_PENDING_CMD_GRACE_SEC=30
+KARO_PANE="karo-pane"
+export SCRIPT_DIR
+mkdir -p "$SCRIPT_DIR/queue" "$SCRIPT_DIR/scripts"
+
+cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<EOF
+commands:
+  cmd_old:
+    status: pending
+    timestamp: "$OLD_TS"
+EOF
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$SCRIPT_DIR/inbox.log"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+log() { echo "$1" >> "$LOG"; }
+check_idle() { return 0; }
+declare -A PREV_PENDING_SET STALE_CMD_NOTIFIED
+
+check_karo_pending_cmd
+
+grep -q "karo|cmd_pending|cmd_pending cmd_old" "$SCRIPT_DIR/inbox.log"
+grep -q "PENDING-CMD-NEW: cmd_old" "$LOG"
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "speed training auto-pause when retrospective recurrence rate exceeds 10 percent" {
     run bash -lc '
 set -euo pipefail
