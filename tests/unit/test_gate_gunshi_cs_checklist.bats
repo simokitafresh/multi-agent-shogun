@@ -1353,3 +1353,45 @@ YAML
     run bash "$TEST_GATE"
     [[ "$output" != *"BLOCK(AC2-利他理由なし)"* ]]
 }
+
+@test "APPROVE with verified_files file line evidence passes cmd_3573 check" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_3573_ok
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  verified_files:
+    - "scripts/gates/gate_gunshi_cs_checklist.sh:213"
+  finding_categories: [adversarial]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+  timestamp: "2026-06-28T00:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN(cmd_3573-verified_files)"* ]]
+}
+
+@test "APPROVE without verified_files warns cmd_3573" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_3573_missing
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+  timestamp: "2026-06-28T00:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"WARN(cmd_3573-verified_files)"* ]]
+    [[ "$output" == *"cmd_3573_missing"* ]]
+}

@@ -604,6 +604,8 @@ inbox_writeで家老に返す（type: review_result）。
 フォーマット:
 ```
 verdict: APPROVE / REQUEST_CHANGES / REJECT
+verified_files:
+  - "path/to/file:line"  # APPROVE/LGTM時必須。grep/read/git show等で実際に照合した対象を最低1件記録
 findings:
   validate_assumptions: OK/NG + 1行理由
   recalculate_numbers: OK/NG + 1行理由
@@ -625,6 +627,14 @@ verdictの判断基準:
 - **APPROVE**: 6観点で重大問題なし。confidence HIGH/MEDIUM。即配備可能。**draftレビューではLGTM相当であり、ambiguity_points は 0件（`none`）が条件**
 - **REQUEST_CHANGES**: 1つ以上NGだが修正可能。suggested_changesに具体的修正を記載。**severity必須**。**ambiguity_points が 1件以上ある場合も REQUEST_CHANGES とし、曖昧箇所の解消を要求する**
 - **REJECT**: 根本的な前提崩壊 or confidence LOW。再偵察または再設計が必要
+
+### APPROVE前の現物照合義務（cmd_3573 — 忖度防止）
+
+APPROVE/LGTM判定前に、対象ファイルを最低1箇所 `grep -n` / `rg -n` / `sed -n` / `git show` / `Read` で現物確認せよ。確認した対象を `verified_files` に `file:line` 形式で記録する。
+
+- OK: `verified_files: ["scripts/gates/gate_report_format_main.py:213"]`
+- NG: `verified_files: []` / 未記入 / 「確認済み」だけ
+- 理由: 軍師APPROVE率62%/RC率5.2%に対して家老BLOCK率91%。テキストレビューだけのAPPROVEを構造的に不可能にし、家老→軍師方向の穴を塞ぐ。
 
 ### REQUEST_CHANGES時の還流（2種）
 
@@ -813,6 +823,8 @@ bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: 
 - cmd_id: cmd_XXXX
   review_type: report       # draft / report
   verdict: LGTM             # LGTM / FAIL (report) / APPROVE / REQUEST_CHANGES / REJECT (draft)
+  verified_files:           # APPROVE/LGTM時必須。file:line形式で現物照合証跡を最低1件
+    - "queue/reports/ninja_report_cmd_XXXX.yaml:42"
   gate_result: null          # GATE結果判明後に更新
   confidence: HIGH           # HIGH/MEDIUM/LOW (draftのみ必須)
   changed_lines: 248         # draftのみ任意。200超ならadversarial_review必須

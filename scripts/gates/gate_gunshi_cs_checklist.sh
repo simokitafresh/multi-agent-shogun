@@ -274,6 +274,7 @@ adversarial_streak_error=""
 bw_no_number_block=""
 skill_usage_missing=""
 ops_sim_missing=""
+verified_files_missing=""
 all_pass=0
 fm_pass=0
 while IFS= read -r line; do
@@ -639,6 +640,72 @@ _bw_no_qc=$(tail -400 "$LOG_FILE" 2>/dev/null | awk '
     END { if (total >= 12 && no_qc > total*0.5) print no_qc "/" total }
 ' 2>/dev/null || true)
 
+# --- cmd_3573: APPROVE/LGTM時の現物照合証跡必須 ---
+# 軍師のAPPROVE/LGTMは「コード現物を照合した」宣言でなければならない。
+# verified_filesはfile:line形式を最低1件要求し、テキストレビューだけのAPPROVEをWARNにする。
+verified_files_missing=$(awk '
+    function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+    function is_empty(v) {
+        v = trim(v)
+        return (v == "" || v == "[]" || v == "{}" || tolower(v) == "null" || v == "~" || v == "0")
+    }
+    function flush(    approved) {
+        if (!current_id) return
+        approved = (verdict == "APPROVE" || verdict == "LGTM")
+        if (!approved) return
+        if (timestamp < "2026-06-28") return
+        if (!has_verified || verified_count == 0) print current_id
+    }
+    /^- (cmd_id|id):/ {
+        flush()
+        line = $0
+        sub(/^- (cmd_id|id):[[:space:]]*/, "", line)
+        gsub(/"/, "", line)
+        current_id = trim(line)
+        verdict = ""; timestamp = ""; has_verified = 0; verified_count = 0; in_verified = 0
+        next
+    }
+    /^[[:space:]]*verdict:[[:space:]]*/ {
+        v = $0
+        sub(/^[[:space:]]*verdict:[[:space:]]*/, "", v)
+        gsub(/["'\''"]/, "", v)
+        verdict = trim(v)
+    }
+    /^[[:space:]]*timestamp:[[:space:]]*/ {
+        t = $0
+        sub(/^[[:space:]]*timestamp:[[:space:]]*/, "", t)
+        gsub(/["'\''"]/, "", t)
+        timestamp = trim(t)
+    }
+    /^[[:space:]]*verified_files:[[:space:]]*/ {
+        has_verified = 1
+        v = $0
+        sub(/^[[:space:]]*verified_files:[[:space:]]*/, "", v)
+        gsub(/["'\''"]/, "", v)
+        v = trim(v)
+        if (v ~ /^\[/) {
+            if (!is_empty(v) && v ~ /:[0-9]+/) verified_count++
+            in_verified = 0
+        } else if (!is_empty(v)) {
+            if (v ~ /:[0-9]+/) verified_count++
+            in_verified = 0
+        } else {
+            in_verified = 1
+        }
+        next
+    }
+    in_verified && /^[[:space:]]{4,}-[[:space:]]*/ {
+        item = $0
+        sub(/^[[:space:]]{4,}-[[:space:]]*/, "", item)
+        gsub(/["'\''"]/, "", item)
+        item = trim(item)
+        if (item ~ /:[0-9]+/) verified_count++
+        next
+    }
+    in_verified && !/^[[:space:]]{4,}/ { in_verified = 0 }
+    END { flush() }
+' "$LOG_FILE" 2>/dev/null | tail -20 || true)
+
 if (( all_pass > 0 )); then
     echo "PASS: 直近self_study/consultationエントリ全てにcs_checklist+causal_chain確認"
 fi
@@ -754,6 +821,14 @@ fi
 if [ -n "$_bw_no_qc" ]; then
     echo "BLOCK(AC2-品質三問): brainwash_checkの${_bw_no_qc}件でQuality Check三問(Q1:品質向上か/Q2:学習機会か/Q3:次品質向上か)未記録。brainwash_checkに三問の回答を統合せよ"
     bw_quality_block=1
+    warn=1
+fi
+if [ -n "$verified_files_missing" ]; then
+    verified_files_count=$(printf '%s\n' "$verified_files_missing" | awk 'NF{c++} END{print c+0}')
+    echo "WARN(cmd_3573-verified_files): ${verified_files_count}件のAPPROVE/LGTMにverified_files証跡なし:"
+    printf '%s\n' "$verified_files_missing" | while IFS= read -r _id; do
+        [ -n "$_id" ] && echo "  - $_id: verified_filesにfile:line形式で最低1件の現物照合証跡を記録せよ"
+    done
     warn=1
 fi
 if [ -n "$cold_category_missing" ]; then
