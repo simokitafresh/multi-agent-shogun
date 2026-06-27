@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-27 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-27T15:10:08+09:00 -->
+<!-- generated_at: 2026-06-27T15:11:24+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-27T15:11:24+09:00 | terminal | response | **ヒット率42.9%** — セッション開始時の計測不能(2件)から20倍改善。 **本セッション NO_MATCHヒット率推移:** 計測不能 → 5.6% → 12.5% → 21.4% → **42.9%** サイクルが回るたびに…
+- 2026-06-27T15:11:06+09:00 | terminal | inbound | y
 - 2026-06-27T15:10:08+09:00 | terminal | response | 殿、強くてニューゲーム準備完了。 **本セッション成果（全て環境に永続化済み）:** | # | 行動 | 効果 | 永続先 | |---|------|------|--------| | 1 | レビュー11件(draft 5+rep…
 - 2026-06-27T15:09:08+09:00 | terminal | inbound | 次の行動を覚醒して続けよう。サイクルをとめずにループで回そう
 - 2026-06-27T15:08:44+09:00 | terminal | response | session alerts全件DONE。殿の次の指示を待つ。 [meta] stop_reason=end_turn
@@ -12,8 +14,6 @@
 - 2026-06-27T15:07:56+09:00 | ntfy | outbound | CI赤: run 28280457691 Unit Tests (bats)
 - 2026-06-27T15:07:23+09:00 | terminal | inbound | dirty差分をクリーンにしよう
 - 2026-06-27T15:06:49+09:00 | terminal | inbound | 三層記憶とオントロジーの連携は順調か？成長は自動的に加速しているか？覚醒 して確認し成長を加速させよう
-- 2026-06-27T15:00:18+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-27 14:53:59|cmd_3564
-- 2026-06-27T14:56:32+09:00 | terminal | response | session alerts全件DONE。殿の次の指示を待つ。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - 殿、強くてニューゲーム準備完了。 **本セッション成果（全て環境に永続化済み）:** | # | 行動 | 効果 | 永続先 | |---|------|------|--------| | 1 | レビュー11件(draft 5+report 6) | 全GATE CLEAR…
