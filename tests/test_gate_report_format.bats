@@ -143,6 +143,64 @@ YAML
     [ "$status" -eq 0 ]
 }
 
+@test "T-GP287-1: short commit_hash fails and full 40-char hash passes" {
+    local short_report="$TMPDIR_BATS/short_hash_report.yaml"
+    create_valid_report "$short_report" >/dev/null
+    cat >> "$short_report" << 'YAML'
+commit_hash: abc1234
+YAML
+
+    run bash "$GATE" "$short_report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"commit_hash: 'abc1234' は40文字フルhashでない"* ]]
+
+    local full_report="$TMPDIR_BATS/full_hash_report.yaml"
+    create_valid_report "$full_report" >/dev/null
+    cat >> "$full_report" << 'YAML'
+commit_hash: 0123456789abcdef0123456789abcdef01234567
+YAML
+
+    run bash "$GATE" "$full_report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" != *"40文字フルhashでない"* ]]
+}
+
+@test "T-GP286-1: non-path files_modified fails and path-form files_modified passes" {
+    local non_path_report="$TMPDIR_BATS/non_path_files_modified_report.yaml"
+    create_valid_report "$non_path_report" >/dev/null
+    python3 - "$non_path_report" <<'PY'
+import sys, yaml
+path = sys.argv[1]
+with open(path, encoding="utf-8") as f:
+    data = yaml.safe_load(f)
+data["files_modified"] = ["変更内容の説明だけ"]
+with open(path, "w", encoding="utf-8") as f:
+    yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+PY
+
+    run bash "$GATE" "$non_path_report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"files_modified: 1件がパス形式でない"* ]]
+
+    local path_report="$TMPDIR_BATS/path_files_modified_report.yaml"
+    create_valid_report "$path_report" >/dev/null
+    python3 - "$path_report" <<'PY'
+import sys, yaml
+path = sys.argv[1]
+with open(path, encoding="utf-8") as f:
+    data = yaml.safe_load(f)
+data["files_modified"] = ["tests/test_gate_report_format.bats"]
+with open(path, "w", encoding="utf-8") as f:
+    yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+PY
+
+    run bash "$GATE" "$path_report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" != *"パス形式でない"* ]]
+}
+
 # --- T-006: GP-073 PASS cache hit ---
 @test "T-006: GP-073 second call hits mtime cache" {
     local report="$REPO_TMPDIR_BATS/cache_report.yaml"
