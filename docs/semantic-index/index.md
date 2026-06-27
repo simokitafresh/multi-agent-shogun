@@ -1830,7 +1830,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, DB確認, 本番DB確認, ブラウザ確認, 画面確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした, 重複しないようにDBを先に確認せよ, つまり確認しなかった, そして時系列と因果関係を確認しないから, 気をつけろ, ナッジが届いているか確認せよ, cmd 3450と3451のGATE CLEARを確認せよ, 家老がidleになるまで待とう, 他にインフラバグはないか？覚醒して確認, 他にもバグが混ざっていないか確認せよ, 同じバグが家老のstartup gateにもないか確認せよ, 穴がないか確認しよう, 2層SSOTにするべき仕組みが他にないか確認しよう, 殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」, コードを確認せよ, codexのドキュメントを読んで仕様を確認せよ, 報告するときは確認しよう, かならず内容を確認しろ, やったことを全て時系列で遡りながら確認すればいいだけだ, 現時点で確認できるところを確認しよう, 3527と3528, 最新を確認せよ, 修正前後で数値の完全一致は担保できてるか？覚醒して確認せよ, 家老のpaneを確認せよ, と は同一cmd の重複通知なら, 検証してみて |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, DB確認, 本番DB確認, ブラウザ確認, 画面確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした, 重複しないようにDBを先に確認せよ, つまり確認しなかった, そして時系列と因果関係を確認しないから, 気をつけろ, ナッジが届いているか確認せよ, cmd 3450と3451のGATE CLEARを確認せよ, 家老がidleになるまで待とう, 他にインフラバグはないか？覚醒して確認, 他にもバグが混ざっていないか確認せよ, 同じバグが家老のstartup gateにもないか確認せよ, 穴がないか確認しよう, 2層SSOTにするべき仕組みが他にないか確認しよう, 殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」, コードを確認せよ, codexのドキュメントを読んで仕様を確認せよ, 報告するときは確認しよう, かならず内容を確認しろ, やったことを全て時系列で遡りながら確認すればいいだけだ, 現時点で確認できるところを確認しよう, 3527と3528, 最新を確認せよ, 修正前後で数値の完全一致は担保できてるか？覚醒して確認せよ, 家老のpaneを確認せよ, と は同一cmd の重複通知なら, 検証してみて, 家老は明示的に指示しないと自分自身で読まないから気をつけろ |
 | skills | db-check(DB確認/本番DB/パリティ検証), cdp-browse(ブラウザ確認/本番画面スクショ/CDPで確認) |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -1993,6 +1993,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T15:56:06+09:00 b4n2d7den toolu_01DPz1UKA4T19D2WgQUMGrrX /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/63743d01-6a3b-463a-896e-584b6a |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T15:57:53+09:00 bhridpgj1 toolu_016oUp2doQ3wV2FbYWoMsKM9 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/63743d01-6a3b-463a-896e-584b6a |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T20:26:56+09:00 cmd_pending と cmd_new は同一cmd の重複通知なら、それはバグか？バグなら即時修正しよう。確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-27T23:34:04+09:00 設計書を書いて、家老自身にレビューしてもらおう。家老は明示的に指示しないと自分自身で読まないから気をつけろ |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -4771,7 +4772,7 @@ codd:
 |------|---|
 | id | project_clinic_expense_tracker |
 | label | Clinic Expense Tracker |
-| aliases | clinic-expense-tracker, Clinic Expense Tracker, clinic-expense-tracker project, Clinic Expense Tracker PJ, cliniq-expander, クリニック経費, 経費証票管理, 若友会経費, 佐瀬会計提出, マネーフォワード, MoneyForward, みずほ明細, 証憑, 証票, Gmail証票, 領収書, 領収書整理, 確定申告, 経費SQLite, 経費データ投入, クリニック経営, clinic expens, clinic expense, 経費元マスタ, monthly_status, 現況マトリクス, 経費・領収書ステータス管理, SSOT, Render DB, 設定画面, settings画面, expense_sources CRUD, download-db, upload-db, 取得済み, 未取得, 自動取得, 手動取得, collection_method, 4色分類, 取得ルート, 殿裁定 取得済み 該当証票PDFがDriveに保存されていること, 殿裁定, 殿裁定 CDPは全員が使えるべき, 殿承認の2層SSOT設計 実装, SSOTの二層構造はわかっているか？デフォルトと動的の二層だ |
+| aliases | clinic-expense-tracker, Clinic Expense Tracker, clinic-expense-tracker project, Clinic Expense Tracker PJ, cliniq-expander, クリニック経費, 経費証票管理, 若友会経費, 佐瀬会計提出, マネーフォワード, MoneyForward, みずほ明細, 証憑, 証票, Gmail証票, 領収書, 領収書整理, 確定申告, 経費SQLite, 経費データ投入, クリニック経営, clinic expens, clinic expense, 経費元マスタ, monthly_status, 現況マトリクス, 経費・領収書ステータス管理, SSOT, Render DB, 設定画面, settings画面, expense_sources CRUD, download-db, upload-db, 取得済み, 未取得, 自動取得, 手動取得, collection_method, 4色分類, 取得ルート, 殿裁定 取得済み 該当証票PDFがDriveに保存されていること, 殿裁定, 殿裁定 CDPは全員が使えるべき, 殿承認の2層SSOT設計 実装, SSOTの二層構造はわかっているか？デフォルトと動的の二層だ, render |
 | related_concepts | external_project_registry |
 
 | 種別 | パス/参照 |
