@@ -9,7 +9,9 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-23T00:30:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-28T01:36:00+09:00 -->
+
+Script refs verified: 2026-06-28 cmd_karo_hotfix_skill_script_refs_202606280133. `cmd_complete_gate.sh` 直近変更(8c53fdf4d/cmd_3566)はself-grade commit/files coverageで同一parent_cmd配下の全報告YAMLの`files_modified`を集約してgit show -wと照合する内部検査強化。`bash scripts/cmd_complete_gate.sh <cmd_id>` と `bash scripts/test_select.sh <changed-file>` の呼び出し契約は変更なし。codd-fix手順は現行と矛盾なし。
 
 Script refs verified: 2026-06-26 cmd_3550. `cmd_complete_gate.sh` 直近変更はself-grade commit/files coverageのWARN表示追加。`bash scripts/cmd_complete_gate.sh <cmd_id>` と `bash scripts/test_select.sh <changed-file>` の呼び出し契約は変更なし。
 
@@ -111,6 +113,6 @@ Script refs verified: 2026-06-21 615d1c2d7 cmd_3476. `cmd_complete_gate.sh` 直�
 
 Script refs verified: 2026-06-26 e658e3c37. `cmd_complete_gate.sh` 直近変更はgate design-doc command scope偽陽性修正。codd-fixの呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-26T01:00:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-28T01:36:00+09:00 -->
 
-<!-- script_refs_checked_at: 2026-06-26T19:39:30+09:00 -->
+<!-- script_refs_checked_at: 2026-06-28T01:36:00+09:00 -->
