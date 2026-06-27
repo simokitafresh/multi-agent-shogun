@@ -1,8 +1,26 @@
 ssot_path: /mnt/c/Python_app/DM-signal/tasks/lessons.md
-last_synced: '2026-06-27T18:58:25'
+last_synced: '2026-06-27T20:49:53'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons_archive.yaml
-lesson_count: 786
+lesson_count: 787
 lessons:
+- id: L790
+  title: Compare ReturnsのMTD高速化はpreliminary FoF展開も同じcacheに載せる
+  summary: MTD本体をbatch化しても、preliminary OPEN値だけ旧helperを呼ぶとFoF再帰展開でN+1 SQLが残り実DBで30秒超になる。batc
+  tags:
+  - dm-signal
+  - testing
+  - db
+  - fof
+  - cache
+  source_cmd: cmd_3570
+  when: 未設定
+  how: 未設定
+  target_files:
+  - backend/app/api/compare_returns.py
+  - backend/app/services/mtd_returns.py
+  - backend/app/api/performance.py
+  - backend/tests/test_compare_returns_api.py
+  origin: '[[cmd_3570]]'
 - id: L789
   title: check_mixed_format_commit.pyはimport行のみhunkを検出してblock→多行import形式で回避可能
   summary: pre-commitフックがimport-only hunk+functional hunk混在をblockする。ruffが未使用importを削除するため、分
@@ -605,7 +623,7 @@ lessons:
   origin: '[[cmd_3384]] -> [[BB分類context更新未強制]] -> [[GA-102 dm-signal-core freshness
     ALERT]]'
   deprecated: true
-  deprecated_at: '2026-06-27T18:58:57+09:00'
+  deprecated_at: '2026-06-27T20:50:40+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): context/dm-signal-core.m参照（ファイル消滅）'
 - id: L753
   title: 'DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用'
@@ -2120,7 +2138,7 @@ lessons:
   - tasks/lessons.md
   origin: '[[cmd_2311]]'
   deprecated: true
-  deprecated_at: '2026-06-27T18:58:57+09:00'
+  deprecated_at: '2026-06-27T20:50:41+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/kotaro.yaml参照（ファイル消滅）'
 - id: L656
   title: 計測スクリプトの固定待機排除はDOMポーリングで行う
@@ -4604,9 +4622,6 @@ lessons:
   when: タスク配備やデプロイ手順を変更・実行する時
   how: 設計定義の吸収後ユニーク数とDB実態の物理登録数を混同するな
   origin: '[[cmd_1259]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L477
   title: FoF recalculate時のPYTHONPATH問題とselection_pipeline動作乖離
   summary: (1) recalculate_fast.pyをCLIから実行する場合、backend/app/services/pipeline/base.py:121のfr
@@ -5080,6 +5095,9 @@ lessons:
   when: タスク配備やデプロイ手順を変更・実行する時
   how: pipeline_config必須化+データソース統一が最大効果の修正
   origin: '[[cmd_1194]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L443
   title: GS 3パス分岐がPI-009違反リスク
   summary: GS simulate_strategy_vectorizedは3パス(PipelineEngine/NumPy/Dict)分岐で複雑度が高い。Pipeline
@@ -10144,7 +10162,7 @@ lessons:
   - scripts/analysis/data_sync/download_all_prices.py
   origin: '[[legacy_lesson_L025]]'
   deprecated: true
-  deprecated_at: '2026-06-27T18:58:57+09:00'
+  deprecated_at: '2026-06-27T20:50:41+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
 - id: L024
   title: signal_historyのキーはPhase 2のmonth_last_trading_daysと同型でなければならない（2026-02-15）

@@ -1,25 +1,79 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4 > AC5
-  acceptance_criteria:
-  - 'AC1: GA-144発火時のdm-signal-ops.md ALERT根拠(source commit/last_updated/実行時刻)を一次情報で特定し、Q1に答えた'
-  - 'AC2: last_updated以後のDM-Signal source commitがops文脈へ反映必要かを全件分類し、更新要否を判断した'
-  - 'AC3: 真の鮮度不足ならcontext/dm-signal-ops.mdを更新し、不要なら理由と防御層不足を明記した'
-  - 'AC4: 横展開候補と今回の対象外を明記し、既存GA-129/GA-141との重複を確認した'
-  - 'AC5: gate_context_freshnessをcache無効で再実行し、結果を報告YAMLへ記録した'
+  _ac_task_id: cmd_3570_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3570 (deployed 2026-06-27T20:18:20). Read from the beginning.
+  ac_version: c59b9935
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
+  engineering_preferences:
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
+  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
+  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
+  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
+  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
+  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
+  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
+  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
+  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
+  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
+  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  not_in_scope:
+  - DM-Signal実装コード変更
+  - cmd_3569作業への介入
+  - context/dm-signal-core.md, frontend.md, research.mdの更新(必要性が見つかればcandidate報告のみ)
+  parallel_ok: []
+  parent_cmd: cmd_3570
+  project: dm-signal
+  purpose: '殿指摘(2026-06-27): Compare Returnsのloading時間がストレスフル。本番実測cold 4.96秒/warm 5.46秒(connect 0.16秒)。102PF×MTD日次ライブ計算(calculate_daily_cumulative_returns_segmented 102回呼び出し)がボトルネック。設計書§12に5000ms超過時の最適化を別タスクで設計と明記済み'
+  scout_exempt: true
+  status: idle
+  stop_for: []
+  target_path: /mnt/c/Python_app/DM-signal/backend
+  task_id: cmd_3570_full
+  task_type: full
+  skill_hint: /db-check
+  related_lessons:
+  - id: 'L256'
+    summary: 'dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil'
+    detail: 'dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil'
+  - id: 'L444'
+    summary: 'gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正: co'
+    detail: 'gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正: co'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/auto_draft_lesson.sh scripts/sync_lessons.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml docs/research/gunshi_idle_insights_consumption_bottleneck_20260515.md — 軍師idle: インサイト消費ボトルネック分析(2026-05-15) docs/research/gunshi_idle_knowledge_burial_audit_20260505.md — 軍師idle: 知識埋没監査(2026-05-05) docs/research/gunshi_idle_lesson_dedup_20260413.md — 軍師idle: 教訓重複排除分析(2026-04-13) docs/research/gunshi_idle_lesson_effectiveness_20260413.md — 軍師idle: 教訓有効性測定(2026-04-13) docs/research/gunshi_idle_lesson_impact_20260412.md — 軍師idle: 教訓インパクト分析(2026-04-12) docs/research/gunshi_idle_lesson_injection_dual_track_20260428.md — 軍師idle: 教訓注入デュアルトラック設計(2026-04-28) docs/research/gunshi_idle_lesson_injection_quality_20260605.md — 軍師idle: 教訓注入品質監査(2026-06-05) docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md — 軍師idle: 教訓注入汎用バイパス問題(2026-06-02) docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md — 軍師idle: 教訓参照率分析(2026-04-30) docs/research/gunshi_idle_lesson_tag_mismatch_20260507.md — 軍師idle: 教訓タグ不一致分析(2026-05-07) docs/research/gunshi_idle_lesson_useful_rate_20260422.md — 軍師idle: 教訓有用率計測(2026-04-22) docs/research/gunshi_idle_lesson_useful_rate_20260503.md — 軍師idle: 教訓有用率計測v2(2026-05-03) docs/research/gunshi_idle_lesson_useful_rate_20260608.md — 軍師idle: 教訓有用率計測v3(2026-06-08) docs/research/gunshi_idle_lesson_waste_analysis_20260516.md — 軍師idle: 教訓無駄分析(2026-05-16) docs/research/gunshi_idle_lesson_useful_rate_improvement_20260620.md — 軍師idle: 教訓有用率改善分析(2026-06-20) docs/research/gunshi_idle_session_lessons_20260617.md — 軍師idle: セッション教訓分析(2026-06-17) docs/research/gunshi_idle_session_lessons_20260618.md — 軍師idle: セッション教訓分析(2026-06-18) docs/research/gunshi_idle_self_run_20260624.md — 軍師idle: idle自走Step1-8完了分析(2026-06-24) docs/research/gunshi_idle_useful_rate_bootstrap_analysis_20260618.md — 軍師idle: 有用率ブートストラップ分析(2026-06-18) docs/research/lessons_karo_v3_archive.md — 家老教訓v3アーカイブ(統合前全文保存)"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
+  related_causal_links:
+  - "[[MTD_102PF日次計算_N+1問題]]"
+  - "[[バッチ化+TTLCache高速化]]"
+  - "[[殿指摘_loading遅延_20260627]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/training-cycle.md"
+  - "context/robustness-verification-catalog.md"
+  - "context/gs-speedup-knowledge.md"
+  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
+  production_invariants:
+  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
+  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
+  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
+  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
+  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
   - "Level1(事後検出): 間違えた後にgateが検出"
@@ -32,97 +86,29 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L213: cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit
-      - L219: cmd_887_B の分析対象に archive/completed_changelog.yaml とあったが、現行実体は queue/completed_ch
+      - L256: dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil
+      - L444: gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正: co
     ────────────────────────────────────────
     
-    【3-strike rule】
-      - 初期仮説は最低3本。hypothesis_count に現在の本数を維持せよ
-      - 3回連続で仮説が外れたら、追加探索で粘らずエスカレーションせよ
-      ────────────────────────────────────────
     
-    【GA-144 context_freshness ALERT対応】
-    検知内容: ALERT: dm-signal-ops.md (source commits since last_updated=2026-06-26)
-    対象: context/dm-signal-ops.md
-    先例: queue/reports/hanzo_report_cmd_karo_hotfix_ga129_context_freshness_dm_signal_ops_20260625.yaml
-    
-    やること:
-    1. queue/inbox/karo.yaml / logs/gate_improvement* / scripts/gates/gate_context_freshness.sh / scripts/context_freshness_check.sh を一次情報として、GA-144の直接原因と根本原因仮説を特定。
-    2. DM-Signal repoで last_updated=2026-06-26 以後の source commit を確認し、dm-signal-ops.mdへ反映すべき内容か、docs/specのみでops更新不要かを判定。
-    3. 真の鮮度不足なら context/dm-signal-ops.md をVercelスタイルで最小更新し、last_updatedを cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627 に更新。
-    4. 同じカテゴリの穴が他にないか横展開候補を洗い出す。既存GA-129/GA-141との重複、cache/遅延通知/通知payload不足も確認。
-    5. 次にこのgateが鳴らない防御層を提案または実装。今回は過剰実装禁止。既存gateの穴が再現できる場合のみ scripts/tests を修正。
-    6. 検証: CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 bash scripts/gates/gate_context_freshness.sh を実行し、GA-144対象が解消したか確認。変更した場合は関連テストも実行。
-    7. report YAMLにQ1/Q2/Q3、origin、binary_checks、lesson_candidateを記録し、commitまで完了。
-    
-    禁止:
-    - /mnt/c/Python_app/DM-signal の実装コードを変更しない。cmd_3569はtobisaruが作業中。
-    - cmd_3569の変更・commitに触れない。
-    - context更新不要なのにlast_updatedだけ更新して隠さない。
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  hypothesis_count: 3
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope:
-  - DM-Signal実装コード変更
-  - cmd_3569作業への介入
-  - context/dm-signal-core.md, frontend.md, research.mdの更新(必要性が見つかればcandidate報告のみ)
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  - AC4
-  - AC5
-  parent_cmd: cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627
-  project: infra
-  purpose: GA-144 context_freshness ALERT(dm-signal-ops.md)の発火根拠を一次情報で検証し、真の鮮度不足ならcontext更新、防御層の穴なら再発防止を実装する
-  report_path: queue/reports/kagemaru_report_cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627.yaml
-  report_template:
-    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-    forbidden:
-    - 方針提案・設計判断は禁止。事実と分析のみ報告せよ
-    notes:
-    - 他の忍者の報告を参照するな（並行偵察の独立性）
-    required_fields:
-    - findings
-    - verdict
-    - confidence
-    - blind_spots
-  scout_exempt: true
-  status: idle
-  stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun
-  task_id: cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627_normal
-  task_type: recon
-  three_strike_rule: 仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告
-  related_lessons:
-  - id: 'L213'
-    summary: 'cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit'
-    detail: 'cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit'
-  - id: 'L219'
-    summary: 'cmd_887_B の分析対象に archive/completed_changelog.yaml とあったが、現行実体は queue/completed_ch'
-    detail: 'cmd_887_B の分析対象に archive/completed_changelog.yaml とあったが、現行実体は queue/completed_ch'
   memory_db_context:
-  - '2026-04-21T16:40:54+09:00 | 【改善トリガー】ci_red ALERT (GA-144)'
-  - '2026-06-27T03:14:48+09:00 | GATE CLEAR: cmd_karo_recon_ga142(context_freshness infrastructure偵察)完了。家老の自走偵察。 陣形図: kagemaru=in_pro'
-  - '2026-06-26T18:45:03+09:00 | 【INFOバッチ】 2026-06-26 18:36:06|cmd_karo_hotfix_ga141_context_freshness_dm_signal_research_20260626'
-  - '2026-06-27T16:06:00+09:00 | 【三層ループALERT】WARNING: CTX%異常値 cmd_3561 (ctx_pct=66%, median=30.0%, ratio=2.20x, delta=+36.0pt) WARNIN'
-  - '2026-06-27T15:08:44+09:00 | session alerts全件DONE。殿の次の指示を待つ。 [meta] stop_reason=end_turn'
-  ac_version: 59d7d64d
-  _ac_task_id: cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627_normal
-  _ac_worker_id: 
+  - '2026-06-27T19:44:27+09:00 | 【INFOバッチ】 2026-06-27 19:31:46|cmd_karo_hotfix_ga145 2026-06-27 19:32:29|cmd_karo_hotfix_ga145_contex'
+  - '2026-06-27T17:22:31+09:00 | 【INFOバッチ】 2026-06-27 17:06:56|cmd_3566 2026-06-27 17:13:49|cmd_3567'
+  - '2026-06-27T20:10:50+09:00 | push完了 `816edfb2`。Render FE自動デプロイがトリガーされる。 殿、Portfolio列の幅制限(`max-w-[160px] md:max-w-[200px]` + ellip'
+  - '2026-06-27T19:32:50+09:00 | **FE `3d51a1e4` live。** BE・FE両方デプロイ完了。 殿、Compare Returnsページ(`/compare-returns`)が本番稼働中。 - **BE**: `89'
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'MTD計算をバッチ化し、102PF分のDB読込を1-2クエリに集約する。warm応答時間を実測し修正前5.46秒から計測する'
+  - id: 'AC2'
+    checks:
+    - check: 'サーバ内TTLCache(300秒)を/api/compare-returnsに導入し、2回目以降のリクエストがキャッシュヒットする。pytestでキャッシュ動作を検証する'
+  - id: 'AC3'
+    checks:
+    - check: '既存pytestが全PASSし、MTDパリティ(service helper経由で/api/mtdと同一値)が維持される'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627.yaml
+  report_filename: kagemaru_report_cmd_3570.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3570.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -145,4 +131,4 @@ task:
     - reason: 'empty_lessons_useful'
       count: 2
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-06-27T18:55:45"
+  deployed_at: "2026-06-27T20:19:17"

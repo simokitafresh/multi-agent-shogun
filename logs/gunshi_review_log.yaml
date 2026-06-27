@@ -1,3 +1,88 @@
+- cmd_id: cmd_karo_hotfix_ga147_context_freshness_dm_signal_research_20260627
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "LGTM。source commit分類→研究正本追記不要(既反映)。§45追記+gate再実行ALERT消滅"
+  observations:
+    - "cmd_3546研究成果は§44に既反映。Compare Returns系はresearch追記不要と正しく分類"
+    - "残存ALERT=obsidian-link-principles.md(スコープ外)のみ。dm-signal-research ALERT消滅"
+  causal_chain: "GA-147→source commit増加→分類→研究正本は既反映→last_updated+§45追記→ALERT消滅"
+  step3_5_verified: true
+  brainwash_check: "AC3件全yes。gate再実行ALERT消滅。files_modified 1件=context最小更新"
+  origin: "[[GA-147]] -> [[source_commit分類]] -> [[dm-signal-research §45更新]]"
+  timestamp: "2026-06-27T21:10:00"
+- cmd_id: cmd_karo_hotfix_ga147_context_freshness_dm_signal_research_20260627
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "APPROVE。GA-147 research版。GA-144/145/146同構造。パターン確立済み"
+  observations:
+    - "GA-144(ops)/GA-145(frontend)/GA-146(core)と同系統の4番目"
+  causal_chain: "GA-147→dm-signal-research.md source commit増加→context反映要否判定→最小更新"
+  brainwash_check: "GA-144/145/146同構造確認。recon型パターン確立済み"
+  origin: "[[GA-147_context_freshness]] -> [[dm-signal-research.md鮮度不足疑い]] -> [[偵察+最小更新]]"
+  timestamp: "2026-06-27T21:07:00"
+- cmd_id: cmd_3570
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "LGTM。warm 5.46s→0.734s(86.6%短縮)。MTDバッチ化+TTLCache300秒。pytest 1435 passed"
+  observations:
+    - "warm 5.46s→0.734s。実DB 102PF+2BM。cold 12.267sはdecision_candidateに記録"
+    - "performance.pyに互換wrapper追加で既存テスト保護。pytest 22件+全1435件PASS"
+  causal_chain: "MTD N+1(102回DB)→バッチ化(1-2クエリ)+TTLCache→warm 86.6%短縮=全ユーザー複利"
+  step3_5_verified: true
+  brainwash_check: "warm実測値5.46→0.734確認。pytest 1435 passed。cold残存をdecision_candidate記録"
+  origin: "[[cmd_3570]] -> [[MTDバッチ化+TTLCache]] -> [[warm86.6%短縮]]"
+  timestamp: "2026-06-27T20:52:00"
+- cmd_id: cmd_karo_hotfix_ga146_context_freshness_dm_signal_core_20260627
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "LGTM。dm-signal-core.md §8.6索引追記。gate再実行OK。DM-Signal変更なし"
+  observations:
+    - "source commit分類→Compare Returns API/MTD SSOT/page_visibility unionをcore索引に追記"
+    - "gate_context_freshness再実行で総合OK確認"
+  causal_chain: "GA-146→source commit未反映→§8.6索引追記→gate OK"
+  step3_5_verified: true
+  brainwash_check: "AC3件全yes。gate再実行OK。files_modified 1件=context最小更新のみ"
+  origin: "[[GA-146]] -> [[source_commit分類]] -> [[dm-signal-core索引更新]]"
+  timestamp: "2026-06-27T20:54:00"
+- cmd_id: cmd_karo_hotfix_ga146_context_freshness_dm_signal_core_20260627
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "APPROVE。GA-146 core版。GA-144/GA-145同構造パターン確立済み。AC3件recon型"
+  observations:
+    - "GA-144(ops)/GA-145(frontend)と同系統のcontext_freshness ALERT偵察hotfix"
+  causal_chain: "GA-146→dm-signal-core.md source commit増加→context反映要否判定→最小更新"
+  brainwash_check: "GA-144/GA-145同構造確認。AC3件recon型。パターン確立済み"
+  origin: "[[GA-146_context_freshness]] -> [[dm-signal-core.md鮮度不足疑い]] -> [[偵察+最小更新]]"
+  timestamp: "2026-06-27T20:48:00"
+- cmd_id: cmd_3570
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "APPROVE。MTD N+1バッチ化+TTLCache導入。TTLCache 0件+batch 0件=未実装確認。warm 5.46秒verified"
+  observations:
+    - "rg TTLCache compare_returns.py→0件、rg batch mtd_returns.py→0件。未実装確認"
+    - "殿指摘のloading遅延(warm 5.46秒)をN+1→バッチ化で構造的解消"
+  causal_chain: "MTD 102PF日次計算N+1→5.3秒サーバ処理→バッチ化+TTLCache→応答時間短縮=全ユーザー複利"
+  brainwash_check: "前提2件grep実測(TTLCache=0,batch=0)。warm 5.46秒q5 verified。FM2件mitigation確認"
+  origin: "[[cmd_3570]] -> [[MTD_N+1問題]] -> [[バッチ化+TTLCache高速化]]"
+  timestamp: "2026-06-27T20:22:00"
 - cmd_id: cmd_karo_hotfix_ga145_context_freshness_dm_signal_frontend_20260627
   review_type: report
   verdict: LGTM

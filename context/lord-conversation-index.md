@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-27 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-27T21:05:55+09:00 -->
+<!-- generated_at: 2026-06-27T21:11:00+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-27T21:11:00+09:00 | terminal | response | 興味深い結果。2nd=0.4秒(TTLCacheヒット)、しかし3rd=10.7秒(キャッシュミス)。Renderのworkerプロセスが2つ以上あり、異なるworkerにルーティングされるとキャッシュが別プロセスのメモリにある。 殿、計…
+- 2026-06-27T21:10:46+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_ga147 完了
+- 2026-06-27T21:09:39+09:00 | terminal | response | inbox全件処理完了。cmd_karo_hotfix_ga147: LGTM→GATE CLEAR。レビュー待機。 [meta] stop_reason=end_turn
+- 2026-06-27T21:09:33+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝151
+- 2026-06-27T21:09:08+09:00 | terminal | response | cmd_karo_hotfix_ga147 LGTM完了。レビュー待機。 [meta] stop_reason=end_turn
+- 2026-06-27T21:07:20+09:00 | terminal | response | push完了 `e528e830`。バッチMTDをrevertしPF個別計算+TTLCacheに戻した。Renderデプロイ後に元の5秒に戻り、TTLCacheで2回目以降は即応答になるはず。デプロイ完了後に再計測する。 殿、バッチMTD…
 - 2026-06-27T21:05:55+09:00 | terminal | response | cmd_karo_hotfix_ga147 APPROVE完了。レビュー待機。 [meta] stop_reason=end_turn
 - 2026-06-27T21:03:26+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-147)
 - 2026-06-27T21:01:38+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: dm-signal-research.md(source更新)
 - 2026-06-27T20:58:59+09:00 | terminal | response | inbox全件処理完了。cmd_karo_hotfix_ga146: LGTM→GATE CLEAR。レビュー待機。 [meta] stop_reason=end_turn
-- 2026-06-27T20:58:28+09:00 | ntfy | outbound | 【家老】cmd_3570 完了
-- 2026-06-27T20:52:08+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働2名 CLEAR率99% 連勝149
-- 2026-06-27T20:51:46+09:00 | terminal | response | BE `09796aee` build_in_progress、FE `816edfb2` live(列幅修正はデプロイ済み)。BEデプロイ完了を待ってから本番計測する。 殿、現状: - **FE列幅修正**: `816edfb2` **…
-- 2026-06-27T20:51:23+09:00 | ntfy | outbound | 【将軍】cmd_3570 GATE CLEAR+push済み。Compare Returns高速化(MTDバッチ化+TTLCache)。Renderデプロイ後に本番計測で効果確認する。
-- 2026-06-27T20:51:12+09:00 | terminal | response | inbox処理完了。cmd_3570: LGTM→GATE CLEAR。レビュー待機。 [meta] stop_reason=end_turn
-- 2026-06-27T20:50:16+09:00 | terminal | response | cmd_3570 LGTM完了。レビュー待機。
 
 ## 未解決確認事項
 - 【将軍】cmd_3570 GATE CLEAR+push済み。Compare Returns高速化(MTDバッチ化+TTLCache)。Renderデプロイ後に本番計測で効果確認する。
@@ -36,7 +36,6 @@
 - cmd_3549
 - cmd_3554
 - cmd_3555
-- cmd_3556
 - cmd_3558
 - cmd_3559
 - cmd_3560

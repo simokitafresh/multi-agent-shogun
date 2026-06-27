@@ -8886,3 +8886,25 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - GA-145ではdm-signal-frontend.mdのlast_updated以後に7件のFE source commitがあり、単にlast_updatedだけを進めると鮮度穴を隠す。git log/showでsource commitを分類し、ページ一覧・直近FE変更索引へ最小反映してからgateを再実行する必要がある。
+
+### L871: context freshness hotfixでは外部repo API/service差分をsplit context別に分類する
+- **日付**: 2026-06-27
+- **出典**: cmd_karo_hotfix_ga146_context_freshness_dm_signal_core_20260627
+- **記録者**: hanzo
+- **tags**: [infra,context,api,frontend,process]
+- **target_files**: [context/dm-signal-core.md]
+- **origin**: [[cmd_karo_hotfix_ga146_context_freshness_dm_signal_core_20260627]]
+- **when**: 未設定
+- **how**: 未設定
+- source commitsにfrontendとbackendが混在する場合、表示追加だけでなくAPI/service/page_visibilityの恒久契約をcoreへ、URL/運用確認をopsへ、UI構成をfrontendへ分けて記録しないと、どれか1文書だけ更新しても同カテゴリALERTが連鎖する。
+
+### L872: context_freshness hotfixはsource差分分類欄を自動注入する
+- **日付**: 2026-06-27
+- **出典**: cmd_karo_hotfix_ga147_context_freshness_dm_signal_research_20260627
+- **記録者**: hanzo
+- **tags**: [infra,context,api,frontend,git]
+- **target_files**: [context/dm-signal-research.md]
+- **origin**: [[cmd_karo_hotfix_ga147_context_freshness_dm_signal_research_20260627]]
+- **when**: 未設定
+- **how**: 未設定
+- dm-signal-research.mdのALERTはsource commit増加が直接原因だったが、研究正本へ追記すべき差分は既反映のcmd_3546のみで、他はAPI/frontend/性能/docs/lessonだった。hotfixタスクにcontext別pathspec hit件数と研究正本/実装/補助docs/lesson分類欄を自動注入すれば、忍者がALERT件数を追記対象と誤認しにくくなる。

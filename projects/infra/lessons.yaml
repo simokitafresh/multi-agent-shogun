@@ -1,8 +1,38 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-27T19:31:25'
+last_synced: '2026-06-27T21:08:42'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 865
+lesson_count: 867
 lessons:
+- id: L872
+  title: context_freshness hotfixはsource差分分類欄を自動注入する
+  summary: dm-signal-research.mdのALERTはsource commit増加が直接原因だったが、研究正本へ追記すべき差分は既反映のcmd_3546のみ
+  tags:
+  - infra
+  - context
+  - api
+  - frontend
+  - git
+  source_cmd: cmd_karo_hotfix_ga147_context_freshness_dm_signal_research_20260627
+  when: 未設定
+  how: 未設定
+  target_files:
+  - context/dm-signal-research.md
+  origin: '[[cmd_karo_hotfix_ga147_context_freshness_dm_signal_research_20260627]]'
+- id: L871
+  title: context freshness hotfixでは外部repo API/service差分をsplit context別に分類する
+  summary: source commitsにfrontendとbackendが混在する場合、表示追加だけでなくAPI/service/page_visibilityの恒久契約
+  tags:
+  - infra
+  - context
+  - api
+  - frontend
+  - process
+  source_cmd: cmd_karo_hotfix_ga146_context_freshness_dm_signal_core_20260627
+  when: 未設定
+  how: 未設定
+  target_files:
+  - context/dm-signal-core.md
+  origin: '[[cmd_karo_hotfix_ga146_context_freshness_dm_signal_core_20260627]]'
 - id: L870
   title: context_freshnessの真陽性はsource commit分類を索引カテゴリへ圧縮してからlast_updatedを更新する
   summary: GA-145ではdm-signal-frontend.mdのlast_updated以後に7件のFE source commitがあり、単にlast_updat
@@ -2047,7 +2077,7 @@ lessons:
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
   deprecated: true
-  deprecated_at: '2026-06-27T19:31:54+09:00'
+  deprecated_at: '2026-06-27T21:09:00+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -2284,9 +2314,6 @@ lessons:
   - docs/semantic-index/index.md
   - context/semantic-map.md
   origin: '[[cmd_3088]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L721
   title: 'Bats並列隔離: cacheパスをenv変数化+TEST_TMPDIR export'
   summary: 本体gateのcacheパスをenv変数化(デフォルト維持)+Bats setupでTEST_TMPDIR配下をexport。CI --jobs並列時の/tmp
@@ -2349,9 +2376,6 @@ lessons:
   - docs/semantic-index/index.md
   - tests/unit/test_semantic_index_update.bats
   origin: '[[cmd_3063]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L717
   title: metricsの時刻形式混在と観測不能推薦を分母に入れると品質指標が歪む
   summary: skill_recommend_metrics.shは+09:00と+0900を文字列比較しており、推薦後の実行ログ抽出が不安定だった。また実行ログに現れないス
@@ -3781,9 +3805,6 @@ lessons:
   target_files:
   - scripts/ninja_monitor.sh
   origin: '[[cmd_training_L4_auto_202605181241_kotaro]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L619
   title: draft_lessonsは自動生成元と検査元の閉ループで判定せよ
   summary: draft_lessons BLOCKを調査する時はauto_draft_lesson.sh単体ではなく、cmd_complete_gate.shのBLOCK時
@@ -3922,9 +3943,6 @@ lessons:
   target_files:
   - scripts/record_lesson_feedback.sh
   origin: '[[cmd_2788]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L610
   title: SKILL.mdにallowed_projectsフィールドを追加することでPreToolUseフックがproject制約を機械的に照合できる
   summary: 'SKILL.mdのフロントマター(---..---)にallowed_projects: [dm-signal]を追加するだけで、既存のhookインフラがpro'
@@ -5780,9 +5798,6 @@ lessons:
   how: QUEUE_FILE/gate_pass_cache/gate_fire_log等のテスト用共有ファイルをsetup_file()で1回のみ生成すると、--jobs
     8並列実行時に複数テストが同時書き込み→後発の書き込みが前の内容を上書き→grep検索失敗→if ブロックスキップ
   origin: '[[cmd_karo_ci_fix_ga056]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L477
   title: bats並列実行(--jobs N)の共有ファイル競合 — per-testパス化が必須
   summary: bats --jobs 8で並列実行時、テスト間で同一パスのファイル(/tmp/test_*.yaml等)を読み書きすると競合しランダムFAIL。CI環境(Gi
@@ -6169,6 +6184,9 @@ lessons:
   target_files:
   - config/projects.yaml
   origin: '[[cmd_vercel_false_positive]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L443
   title: awk EXIT後もEND блок実行される。found変数でEND処理の冪等性を保証せよ
   summary: 'awk内でexit 0を呼んでもEND{if(p)exit 1}が実行され上書きされる。対策: found変数(found=1;exit)+END{if(!fo'
@@ -7289,7 +7307,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-27T19:31:55+09:00'
+  deprecated_at: '2026-06-27T21:09:01+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -8380,6 +8398,9 @@ lessons:
   target_files:
   - deploy_task.sh
   origin: '[[cmd_1127]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L255
   title: lessons.yamlが最大の肥大化源(dm-signal:99k+infra:54k=153k tok)。定期アーカイブ機構が必要
   summary: '定期読込ファイルの計測で判明: lessons.yaml2本が家老CTXの34%を占める。cmd-chronicle.md(50k)+shogun_to_kar'
@@ -9531,9 +9552,6 @@ lessons:
   when: ローテーション機能をレビューする時
   how: 境界値テストに加え、200超の初期データ(例:250件)を用いた追記検証を実施せよ
   origin: '[[cmd_547]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L157
   title: 追記型YAMLの上限制御はappend直後に同一トランザクションで実施すべき
   summary: IF 追記型YAMLの上限制御時 THEN append処理とローテーションを分離すると肥大化区間が残る
@@ -10170,7 +10188,7 @@ lessons:
   - queue/gate_metrics.yaml
   origin: '[[cmd_414]]'
   deprecated: true
-  deprecated_at: '2026-06-27T19:31:56+09:00'
+  deprecated_at: '2026-06-27T21:09:01+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)
