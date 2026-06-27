@@ -26,6 +26,8 @@ allowed-tools:
 
 <!-- script_refs_checked_at: 2026-06-27T13:21:21+0900 -->
 
+Script refs verified: 2026-06-27 cmd_3563/537008b08 + 4ca3c9de. `semantic_search.sh` 直近変更は(1) memory DB FTS fallback timeout既定値15s→5s、(2)既存cacheあり時の非同期refresh subshell stdout/stderrを/dev/nullへ切断しコマンド置換のpipe EOF待ちを解消。/dreamのPhase 2b/semantic search利用契約、引数、出力形式、memory DB検索の意味は変更なし。速度改善のみで手順変更不要。
+
 Script refs verified: 2026-06-20 2088b6421+3867e2be2. `gate_lesson_health.sh` 直近変更はinfra教訓のcross-project注入をuseful率計測へ正しく反映する修正、`memory_db_query.sh` 直近変更はmodel_detect/SSOT検出/skill_routing三層貫通等の内部改善。dreamの読取・棚卸し・MCP操作手順への契約変更なし。
 
 Script refs verified: 2026-06-21 0bb457ecf+7b329e854. `gate_lesson_health.sh` 直近変更はactive lesson抽出高速化、`memory_db_query.sh` 直近変更は運用auto-commit由来のmtime更新。/dreamの読取・棚卸し・MCP操作手順への契約変更なし。
