@@ -220,7 +220,7 @@ def main():
         '未解決',
         'スコープ外',
         'scope外',
-        'pending',
+        # 'pending' removed: task/ACの状態記述(pending件数等)で偽陽性。委譲は「保留」「未完了」でカバー
         'todo',
         'fill_this',
     )
