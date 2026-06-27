@@ -24,7 +24,7 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-06-26T18:18:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-27T13:21:21+0900 -->
 
 Script refs verified: 2026-06-20 2088b6421+3867e2be2. `gate_lesson_health.sh` 直近変更はinfra教訓のcross-project注入をuseful率計測へ正しく反映する修正、`memory_db_query.sh` 直近変更はmodel_detect/SSOT検出/skill_routing三層貫通等の内部改善。dreamの読取・棚卸し・MCP操作手順への契約変更なし。
 
@@ -36,7 +36,7 @@ Script refs verified: 2026-06-26 558ec6eae. `gate_lesson_health.sh` 直近変更
 
 Script refs verified: 2026-06-26 364744210+955c2e756. `gate_lesson_health.sh` 直近変更はuseful率計測のpresence_file追加(active lesson抽出高速化)+min sample threshold調整。引数なし全project走査/METRIC行/WARN・ALERT出力契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-26T18:18:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-27T13:21:21+0900 -->
 
 # /dream — Memory Consolidation (5 Phase)
 
@@ -400,4 +400,4 @@ Script refs verified: 2026-06-03 cmd_3144. `insight_write.sh` 直近変更(4dacb
 Script refs verified: 2026-06-10 karo. `semantic_search.sh` 直近変更(ffd1305de)はcache refresh内部実装のみ(cp生コピー→SQLite Backup API置換、malformed根治)。呼び出し契約(引数/`--stats`/出力形式)は変更なし。SKILL.md記載の使用方法は現行と一致。
 - → [[gunshi_idle_dream_gate_analysis_20260507]] dreamゲート分析: Phase設計の品質検証
 
-<!-- script_refs_checked_at: 2026-06-26T18:18:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-27T13:21:21+0900 -->
