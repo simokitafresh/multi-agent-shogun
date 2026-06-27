@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-27 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-27T19:41:44+09:00 -->
+<!-- generated_at: 2026-06-27T19:59:30+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-27T19:59:29+09:00 | terminal | response | ビルド完了を待つ。殿の2つ目の指示「loadingが長くストレスフル」についても対処計画を立てる。 設計書§9で性能ゲートcold≤5000msと定義。サーバ内TTLCacheは初期実装に含めない方針だったが、殿が実環境で遅いと判断した。…
+- 2026-06-27T19:44:27+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-27 19:31:46|cmd_karo_hotfix_ga145 2026-06-27 19:32:29|cmd_karo_hotfix_ga145_context_freshness_dm_sign…
+- 2026-06-27T19:43:23+09:00 | terminal | inbound | 【殿ntfy】PF名の横幅が長すぎてバランスが悪いな
 - 2026-06-27T19:41:44+09:00 | terminal | response | push完了。エスカレーション無限ループの根因(gate_karo_startup.shがresolved_by_cmdを見ていなかった)を修正。家老の次回startup以降、解消済みWAのALERT再発は停止する。 殿の次の指示を待つ。
 - 2026-06-27T19:40:01+09:00 | ntfy | outbound | CI赤: run 28286671041 Unit Tests (bats)
 - 2026-06-27T19:39:20+09:00 | ntfy | outbound | 【家老CRITICAL】先送り3セッション連続検出。起動は許可するが即対処必須
@@ -11,9 +14,6 @@
 - 2026-06-27T19:37:43+09:00 | ntfy | outbound | 【家老CRITICAL】先送り3セッション連続検出。起動は許可するが即対処必須
 - 2026-06-27T19:37:42+09:00 | terminal | response | 家老エスカレーション全件対処完了。 - WA(gate_logic_gap): `resolved_by_cmd`設定済み → エスカレーション解消 - 品質記録漏れ16件: 家老にinbox指示済み 全inbox処理完了。殿の次の指示を…
 - 2026-06-27T19:34:51+09:00 | ntfy | outbound | 【家老CRITICAL】先送り3セッション連続検出。起動は許可するが即対処必須
-- 2026-06-27T19:32:50+09:00 | terminal | response | **FE `3d51a1e4` live。** BE・FE両方デプロイ完了。 殿、Compare Returnsページ(`/compare-returns`)が本番稼働中。 - **BE**: `896a20b2` → live - **…
-- 2026-06-27T19:32:49+09:00 | terminal | response | inbox全件処理完了。レビュー待機。 [meta] stop_reason=end_turn
-- 2026-06-27T19:32:29+09:00 | terminal | response | inbox全件処理完了。cmd_karo_hotfix_ga145: LGTM→GATE CLEAR。レビュー待機。
 
 ## 未解決確認事項
 - push完了 `3d51a1e4`。Renderの自動デプロイが開始される。 殿、FEビルド修正をpush済み。`admin/visibility/page.tsx`のMessageBanner型エラー(`type`と`message`にundefined到達可能)を`?? "…
