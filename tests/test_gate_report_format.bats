@@ -143,7 +143,7 @@ YAML
     [ "$status" -eq 0 ]
 }
 
-@test "T-GP287-1: short commit_hash fails and full 40-char hash passes" {
+@test "T-GP287-1: short commit_hash fails" {
     local short_report="$TMPDIR_BATS/short_hash_report.yaml"
     create_valid_report "$short_report" >/dev/null
     cat >> "$short_report" << 'YAML'
@@ -153,7 +153,9 @@ YAML
     run bash "$GATE" "$short_report"
     [ "$status" -eq 1 ]
     [[ "$output" == *"commit_hash: 'abc1234' は40文字フルhashでない"* ]]
+}
 
+@test "T-GP287-2: full 40-char commit_hash passes" {
     local full_report="$TMPDIR_BATS/full_hash_report.yaml"
     create_valid_report "$full_report" >/dev/null
     cat >> "$full_report" << 'YAML'
@@ -166,7 +168,7 @@ YAML
     [[ "$output" != *"40文字フルhashでない"* ]]
 }
 
-@test "T-GP286-1: non-path files_modified fails and path-form files_modified passes" {
+@test "T-GP286-1: non-path files_modified fails" {
     local non_path_report="$TMPDIR_BATS/non_path_files_modified_report.yaml"
     create_valid_report "$non_path_report" >/dev/null
     python3 - "$non_path_report" <<'PY'
@@ -182,7 +184,9 @@ PY
     run bash "$GATE" "$non_path_report"
     [ "$status" -eq 1 ]
     [[ "$output" == *"files_modified: 1件がパス形式でない"* ]]
+}
 
+@test "T-GP286-2: path-form files_modified passes" {
     local path_report="$TMPDIR_BATS/path_files_modified_report.yaml"
     create_valid_report "$path_report" >/dev/null
     python3 - "$path_report" <<'PY'
