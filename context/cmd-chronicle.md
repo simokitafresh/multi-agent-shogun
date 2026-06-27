@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-27 cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627 -->
+<!-- last_updated: 2026-06-27 cmd_karo_hotfix_ga146 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -426,3 +426,4 @@
 | cmd_3566 | 軍師idle自走分析(blt_20260627_142919, 2026-06-27): マルチフェーズcmd(L0→final_summary)でfinal_summary報告のfiles_modifiedにL0フェーズの変更ファイルが統合されない。grep files_modified.*merge cmd_complete_gate.sh → 0件。マージロジックを追加しcommit_missing WAを構造的に排除 | infra | 06-27 | cmd_complete_gate.shのself-grad |
 | cmd_3567 | 軍師idle分析(blt_20260627_142919, 2026-06-27)+cmd_3558 cancel後残課題: GP-286(files_modifiedパス形式検証L213)+GP-287(commit_hash 40文字検証L224)がgate_report_format_main.pyに実装済み(commit 1a6e89252)だが回帰テストが不在(grep GP-286/GP-287 tests/ → 0件)。batsテスト追加でCI回帰防護を確立 | infra | 06-27 | GP-286/GP-287の回帰batsを4独立ケースへ分割 |
 | cmd_3569 | 殿指示(2026-06-27): docs/spec/compare-returns-page.md設計書に基づき/compare-returnsページを実装。全PF+standaloneベンチマーク×8期間(MTD/1M/3M/6M/1Y/3Y/5Y/ALL)のトレーリングリターンをソート可能テーブルで提示。レビュー3回完了・sign-off済み | dm-signal | 06-27 | cmd_3569 /compare-returns ページを |
+| cmd_3570 | 殿指摘(2026-06-27): Compare Returnsのloading時間がストレスフル。本番実測cold 4.96秒/warm 5.46秒(connect 0.16秒)。102PF×MTD日次ライブ計算(calculate_daily_cumulative_returns_segmented 102回呼び出し)がボトルネック。設計書§12に5000ms超過時の最適化を別タスクで設計と明記済み | dm-signal | 06-27 | Compare ReturnsのMTDをバッチ化し、/api |
