@@ -1,3 +1,73 @@
+- cmd_id: cmd_3577
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "LGTM。action_required自動昇格+startup WARN検出。bats 21/21+38/38 PASS"
+  observations:
+    - "bulletin_write.sh軍師穴発見投稿AND条件で自動昇格+gate_karo_startup.sh未対応WARN追加"
+  causal_chain: "軍師穴発見→info投稿→22時間放置→action_required自動化→対応強制"
+  step3_5_verified: true
+  brainwash_check: "bats 59/59 PASS(21+38)。precheck ERRORS=0"
+  origin: "[[cmd_3577]] -> [[軍師提案放置構造]] -> [[家老対応追跡強制]]"
+  timestamp: "2026-06-28T01:16:00"
+- cmd_id: cmd_3573
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem]
+  findings_summary: "LGTM(再レビュー)。追いコミット29cf297aでgenerated貫通済み。verified_files grep→1件確認"
+  observations:
+    - "generated/codex-gunshi.mdにverified_files 1件grep確認。追いコミットで貫通完了"
+  causal_chain: "前回FAIL(generated未貫通)→追いコミット→貫通→LGTM"
+  step3_5_verified: true
+  brainwash_check: "verified_files generated grep→1件実測"
+  origin: "[[cmd_3573]] -> [[generated未貫通修正]] -> [[LGTM]]"
+  timestamp: "2026-06-28T01:13:00"
+- cmd_id: cmd_3577
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, premortem, north_star]
+  findings_summary: "APPROVE。軍師提案 grep gate_karo_startup.sh→0件。AC3件shallow。22時間放置実証根拠"
+  observations:
+    - "gate_karo_startup.shに軍師提案未対応チェック0件。構造的穴"
+    - "blt_20260627_142919がaction_type=infoで22時間放置=実証済み"
+  causal_chain: "軍師穴発見→info投稿→家老放置→action_required自動化+startup WARN→対応強制"
+  brainwash_check: "軍師提案 0件grep実測。22時間放置=数値事実"
+  origin: "[[cmd_3577]] -> [[軍師提案放置構造]] -> [[家老対応追跡強制]]"
+  timestamp: "2026-06-28T01:11:00"
+- cmd_id: cmd_3573
+  review_type: report
+  verdict: FAIL
+  report_ninja: hanzo
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem]
+  findings_summary: "FAIL。SG-PRE24 BLOCK: instructions/gunshi.md変更→generated/未貫通。build_instructions.sh再実行必要"
+  observations:
+    - "SG-PRE24: verified_filesマーカーがgenerated/に不在。instructions正本変更時はbuild_instructions.sh再実行必須"
+  causal_chain: "instructions/gunshi.md変更→generated/未反映→Codex忍者が旧instructionsで動作→穴残存"
+  step3_5_verified: true
+  brainwash_check: "precheck ERRORS=1(SG-PRE24 BLOCK)。LGTM出さず即FAIL判定"
+  origin: "[[cmd_3573]] -> [[instructions変更generated未貫通]] -> [[FAIL]]"
+  timestamp: "2026-06-28T01:08:00"
+- cmd_id: cmd_3573
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, north_star]
+  findings_summary: "APPROVE。verified_files grep→0件。APPROVE率62%/RC率5.2%数値根拠。WARNから開始。殿指示ペア成長"
+  observations:
+    - "gate_gunshi_cs_checklist.shにverified_files 0件。テキストだけのAPPROVEが構造的に可能な穴"
+    - "殿指示: ペアの成長=忖度しない。軍師APPROVE率62%は家老91%BLOCKとの乖離が顕著"
+  causal_chain: "テキストAPPROVE可能→忖度構造→verified_files必須化→現物照合強制=ペア品質複利"
+  brainwash_check: "verified_files 0件grep実測。APPROVE率62%/RC率5.2%数値事実。自己参照バイアス確認→殿指示+数値根拠で妥当"
+  origin: "[[cmd_3573]] -> [[軍師APPROVE忖度構造]] -> [[現物照合強制化]]"
+  timestamp: "2026-06-28T01:01:00"
 - cmd_id: cmd_3572
   review_type: report
   verdict: LGTM

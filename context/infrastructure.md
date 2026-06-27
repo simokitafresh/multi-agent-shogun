@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-06-27 cmd_karo_hotfix_ga147 -->
+<!-- last_updated: 2026-06-28 cmd_3577 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -151,6 +151,7 @@ CLEAR率62.7%→84.6%(+21.9pt)。gate品質BLOCK3大原因の構造的解消+新
 | GP-199 退化計測 | GP/改善cmdの報告に `before_metrics` / `after_metrics` / `regression` をWARNで強制し、速度改善が退化を隠さない形に変更 | `scripts/gates/gate_report_format.sh`, `context/cmd-chronicle.md` `cmd_1941` |
 | GP-202 成果物プレフィックス検査 | `files_modified` に `parent_cmd` プレフィックスが無い場合WARN。cmd_1948事故系の「別cmd成果物上書き」をゲートで検知 | `scripts/gates/gate_report_format.sh`, `tests/unit/test_report_template_gate_compat.bats` |
 | GP-204/208 運用耐障害 | `daemon_watchdog.sh` は `set -e` / 二重flockを外して部分失敗で全体停止しない形に修正。`bulletin_write.sh` は掲示板通知を80文字要約でなく全文inbox配信へ変更 | `scripts/daemon_watchdog.sh`, `scripts/bulletin_write.sh` |
+| cmd_3577 掲示板action_required追跡 | 軍師の穴発見/改善提案投稿を`action_required`へ自動昇格し、`gate_karo_startup.sh`が`actioned_by`空の未対応掲示板をWARN表示する | `scripts/bulletin_write.sh`, `scripts/gates/gate_karo_startup.sh`, `tests/unit/test_bulletin_board.bats`, `tests/unit/test_gate_karo_startup.bats` |
 | f171a817 | `ninja_monitor.sh` のtask `completed_at` 更新をPython全体再出力から `yaml_field_set.sh` へ置換し、運用YAML破壊リスクを除去 | `scripts/ninja_monitor.sh` |
 | 1603b5d2 | `inbox_write.sh` のinbox初期化をflock内へ移動し、同時配信時の初期化競合を防止 | `scripts/inbox_write.sh` |
 | b7cf7fba | gate群のtask status検出をflat/nested両YAML形式対応へ拡張 | `scripts/gates/*` |

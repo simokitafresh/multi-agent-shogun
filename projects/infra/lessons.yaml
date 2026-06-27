@@ -7079,6 +7079,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: ShellCheck SC2154対策として事前変数宣言が必要
   origin: '[[cmd_cycle_L4_039]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-28'
 - id: L365
   title: lock_path()未適用スクリプトがまだ残存する(NTFS flock不安定パターン)
   summary: decision_write.shをlock_path()修正した際、同パターンのlesson_merge.shは未修正のまま残った。flock+NTFSの既知
@@ -7369,6 +7372,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要
   origin: '[[cmd_cycle_L4_016]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-28'
 - id: L341
   title: heredoc一括書込みでファイル中間状態を排除
   summary: echoを2回連結してYAMLを書くと、1行目書込み後2行目書込み前にクラッシュした場合にtimestampだけの不完全ファイルが残る。cat
@@ -9284,6 +9290,9 @@ lessons:
   how: 環境変数追加レビューで `bash -lc 'source ~/.bashrc'` だけを見ると false negative になるため、行番号確認か
     `bash -ic` での実測を併用すべき
   origin: '[[cmd_664]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-28'
 - id: L182
   title: 設定UIで保存した値が実行経路で読まれているか別経路まで確認せよ
   summary: '今回のAndroidアプリは SettingsViewModel/NtfySettingsSection で ntfy topic を保存できる一方、実処理の '
@@ -9917,6 +9926,9 @@ lessons:
   when: paste-bufferで特定ペインにデータを注入する時
   how: 注入先の@agent_idを検証してから実行せよ(defense-in-depth)
   origin: '[[cmd_494]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-28'
 - id: L124
   title: paste-bufferの-dフラグはタイムアウト時に発動しない — 明示的delete-buffer必須
   summary: IF paste-bufferの-dフラグはタイムアウト時 THEN timeout N tmux paste-buffer -b name
@@ -9967,6 +9979,9 @@ lessons:
   when: report gateで報告ファイルの存在判定を行う時
   how: prefix検索+archive探索を併用せよ
   origin: '[[cmd_482]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-28'
 - id: L119
   title: deploy_task.shのpostcondファイル経由でbash→Pythonのデータ受け渡しパターンが確立
   summary: inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat

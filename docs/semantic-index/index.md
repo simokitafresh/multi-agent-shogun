@@ -52,6 +52,7 @@ codd:
 | causal | L0-L7 penetration: L0=`context/karo-operations.md`, L1=`gate_karo_startup.sh` ALERT/WARN, L2-L3=`stop_check_inbox.sh`補助, L4=semantic concept injection, L5=`prompt_state_inject.sh`追加文脈, L6=Bats regression, L7=lesson/memory write |
 | cmd | `cmd_3349` backfill — | cmd_3349 | 将軍調査(2026-06-13 01:30台)で特定した設計ネックの修正。pre-write-edit-combined.shのGuard 0d(L242-250)は未読メッ |
 | causal | `cmd_3487` files_modified: [[unread_cmd_new_deployment_guard]] |
+| causal | `cmd_3577` files_modified: [[unread_cmd_new_deployment_guard]] |
 
 ## local_memory_db — ローカル記憶DB
 
@@ -575,6 +576,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T00:44:08+09:00 やろう |
 | cmd | `cmd_3572` Compare Returns MTD事前計算バッチ実装 |
 | causal | `cmd_3572` origin: [[殿指示_初回表示高速化_20260627]] -> [[compare-returns_MTD_5秒ボトルネック]] -> [[MTD事前計算バッチ設計R11_PASS]] |
+| cmd | `cmd_3573` 軍師APPROVE時の現物照合証拠を強制化 (`instructions/generated/codex-gunshi.md`, `instructions/generated/copilot-gunshi.md`, `instructions/generated/gunshi.md`) |
+| causal | `cmd_3573` origin: [[殿指示_ペア成長忖度防止_20260628]] -> [[軍師APPROVE率62%RC率5.2%]] -> [[門番方向現物照合強制]] |
+| cmd | `cmd_3577` 軍師提案の家老対応追跡を強制化 (`scripts/bulletin_write.sh`, `scripts/gates/gate_karo_startup.sh`, `tests/unit/test_bulletin_board.bats`) |
+| causal | `cmd_3577` origin: [[殿指示_ペア成長忖度防止_20260628]] -> [[軍師提案22時間放置]] -> [[助言者方向対応追跡強制]] |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -2313,6 +2318,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga131` files_modified: [[silent_fallback_quality]] |
 | causal | `cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627` files_modified: [[silent_fallback_quality]] |
 | causal | `cmd_karo_hotfix_ga146` files_modified: [[silent_fallback_quality]] |
+| causal | `cmd_3573` files_modified: [[silent_fallback_quality]] |
 
 ## skill_design_rules — Skill設計ルール
 
@@ -3249,6 +3255,7 @@ codd:
 | cmd | `cmd_3543` 修正 — monthly_trade_impl.py DB N+1クエリ最適化(1PF=69s致命的ボトルネック) |
 | causal | `cmd_3543` origin: [[軍師idle速度分析_20260626]] -> [[monthly_trade_DB_N+1_1023回ボトルネック]] -> [[N+1クエリ最適化]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T12:36:48+09:00 FTS5フォールバックの速度改善も重要だな |
+| causal | `cmd_3573` files_modified: [[defense_hierarchy]] |
 
 ## tier_plan_mapping — Tier-プラン対応
 
@@ -4021,6 +4028,7 @@ codd:
 | causal | `cmd_3553` origin: [[Loop_Engineering_Phase2]] -> [[verification_debt_silent_accumulation]] -> [[品質指標トレンド追跡]] |
 | causal | `cmd_3555` files_modified: [[gate_quality_framework]] |
 | causal | `cmd_3561` files_modified: [[gate_quality_framework]] |
+| causal | `cmd_3577` files_modified: [[gate_quality_framework]] |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
@@ -4183,6 +4191,7 @@ codd:
 | file | `docs/research/gunshi_idle_bulletin_nazenaze_7_20260515.md` — 軍師idle: 掲示板なぜなぜ#7分析(2026-05-15) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-13T17:36:03+09:00 yaml_field_set.shが掲示板YAMLのblock_id構造 に対応していないのはインフラバグだな。バグは修正しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T22:34:21+09:00 記憶DB自動insertが掲示板経由なこと自体が本質からずれていないか？ |
+| causal | `cmd_3577` files_modified: [[bulletin_communication]] |
 
 ## hook_automation_framework — Hook自動化フレームワーク
 
@@ -4769,6 +4778,7 @@ codd:
 | causal | `cmd_karo_hotfix_gunshi_cold_gate_20260620` files_modified: [[command_files_modified_verification]] |
 | cmd | `cmd_3476` command_files_modified_mismatch偽陽性修正 — 変更不要判断ファイルのBLOCK排除 (`docs/research/kagemaru_cmd_3476_command_files_modified_fp_20260621.md`, `scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 | causal | `cmd_3476` origin: [[idle_自走分析_20260621]] -> [[command_files_modified_mismatch_20件_FP]] -> [[gate_FP根絶]] |
+| causal | `cmd_3573` files_modified: [[command_files_modified_verification]] |
 | causal_chain | `[[cmd_3295]]` (L782) |
 
 ## project_clinic_expense_tracker — Clinic Expense Tracker

@@ -418,3 +418,5 @@
 | cmd_3569 | 殿指示(2026-06-27): docs/spec/compare-returns-page.md設計書に基づき/compare-returnsページを実装。全PF+standaloneベンチマーク×8期間(MTD/1M/3M/6M/1Y/3Y/5Y/ALL)のトレーリングリターンをソート可能テーブルで提示。レビュー3回完了・sign-off済み | dm-signal | 06-27 | cmd_3569 /compare-returns ページを |
 | cmd_3570 | 殿指摘(2026-06-27): Compare Returnsのloading時間がストレスフル。本番実測cold 4.96秒/warm 5.46秒(connect 0.16秒)。102PF×MTD日次ライブ計算(calculate_daily_cumulative_returns_segmented 102回呼び出し)がボトルネック。設計書§12に5000ms超過時の最適化を別タスクで設計と明記済み | dm-signal | 06-27 | Compare ReturnsのMTDをバッチ化し、/api |
 | cmd_3572 | 殿指示(2026-06-27): 初回表示を限界まで早くすることはできるか。/api/compare-returnsの初回応答5秒→0.3秒以下に短縮する。設計書R11 PASS(docs/spec/compare-returns-mtd-precompute.md)に基づき実装 | dm-signal | 06-28 | Compare Returns MTD事前計算テーブル/バッ |
+| cmd_3573 | 殿指示(2026-06-28): ペアの成長=忖度をしないことが大事。軍師APPROVE率62%/RC率5.2%に対し家老は91%BLOCK。軍師がAPPROVE判定時にコード現物を照合した証拠を強制し、テキストレビューだけのAPPROVEを構造的に不可能にする(家老→軍師方向の穴) | infra | 06-28 | cmd_3573: 軍師APPROVE/LGTM時のveri |
+| cmd_3577 | 殿指示(2026-06-28): 軍師→家老方向の穴。軍師が構造的穴を発見し掲示板で提案しても家老が行動しない(22時間放置実証済み)。軍師穴発見投稿の自動化+家老startup gateでの強制検出で助言が無視される構造を封じる | infra | 06-28 | 軍師の穴発見掲示板投稿をaction_requiredへ自動 |

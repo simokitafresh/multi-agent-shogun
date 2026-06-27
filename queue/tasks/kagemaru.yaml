@@ -1,52 +1,16 @@
 task:
-  readonly_ref:
-  - path: 'docs/spec/compare-returns-mtd-precompute.md'
-    reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3572_full
+  _ac_task_id: cmd_3577_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3572 (deployed 2026-06-28T00:36:10). Read from the beginning.
-  ac_version: 0b92478a
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'PrecomputedMtdモデルをmodels.pyに追加し、backend/migrations/配下にマイグレーション追加。calculation_date・current_ym・price_latest_dateカラムを含む'
-  - id: 'AC2'
-    checks:
-    - check: 'precompute_mtd(db, portfolio_ids=None)バッチ関数をbackend/app/jobs/precompute_mtd.pyに実装。active PF全件+ベンチマーク全件のMTDを計算しget_insert_dialectでUPSERT保存する関数が存在する'
-  - id: 'AC3'
-    checks:
-    - check: 'bm_mtd_fieldsをcompare_returns.pyからservices/mtd_returns.pyへ移設。COMPARE_RETURNS_ADDITIONAL_BENCHMARKSをconstants.pyへ移設'
-  - id: 'AC4'
-    checks:
-    - check: 'recalculate_fast.py正常完了時(nightly full/partial)の末尾にprecompute_mtd呼び出しを追加。nightly=全PF、partial=target_portfolios。TICKER・cancel・exception・no portfolios時は除外'
-  - id: 'AC5'
-    checks:
-    - check: '/api/compare-returnsがprecomputed_mtdからPF+BM全件をSELECT。鮮度判定はprice_latest_date一致かつcurrent_ym==request_ym。欠損・stale PF・ベンチマークのみfallback。pf_fallback_count・bm_fallback_countをログ出力'
-  - id: 'AC6'
-    checks:
-    - check: '全visible PFでprecomputed値とbuild_pf_mtd_data経由値のclose・open・as_of・preliminaryが一致するパリティテスト'
-  - id: 'AC7'
-    checks:
-    - check: 'pytest: precomputed読取・PF単位fallback・BM単位fallback・UPSERT冪等性・SPY空時全fallback・PFとBM両方のDATE保存→ISO文字列返却型境界テスト'
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3577 (deployed 2026-06-28T01:08:51). Read from the beginning.
+  ac_version: 58e872d4
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
-  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
-  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
-  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
-  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
-  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
-  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
-  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
-  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
-  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
-  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -57,106 +21,16 @@ task:
   - cmd_3569作業への介入
   - context/dm-signal-core.md, frontend.md, research.mdの更新(必要性が見つかればcandidate報告のみ)
   parallel_ok: []
-  parent_cmd: cmd_3572
-  project: dm-signal
-  purpose: '殿指示(2026-06-27): 初回表示を限界まで早くすることはできるか。/api/compare-returnsの初回応答5秒→0.3秒以下に短縮する。設計書R11 PASS(docs/spec/compare-returns-mtd-precompute.md)に基づき実装'
+  parent_cmd: cmd_3577
+  project: infra
+  purpose: '殿指示(2026-06-28): 軍師→家老方向の穴。軍師が構造的穴を発見し掲示板で提案しても家老が行動しない(22時間放置実証済み)。軍師穴発見投稿の自動化+家老startup gateでの強制検出で助言が無視される構造を封じる'
   scout_exempt: true
   status: idle
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/backend
-  task_id: cmd_3572_full
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts
+  task_id: cmd_3577_full
   task_type: full
-  skill_hint: /db-check
-  related_lessons: []
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  semantic_concepts:
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
-  memory_db_context:
-  - '2026-06-27T21:11:16+09:00 | 【INFOバッチ】 2026-06-27 21:08:57|cmd_karo_hotfix_ga147'
-  - '2026-06-27T19:44:27+09:00 | 【INFOバッチ】 2026-06-27 19:31:46|cmd_karo_hotfix_ga145 2026-06-27 19:32:29|cmd_karo_hotfix_ga145_contex'
-  - '2026-06-28T00:07:57+09:00 | 家老R5レビュー待ち（CTX:11%、/clear直後で新鮮）。 本番API確認の中間結果: - **cold start確認**: TTFB 5.5秒（殿の「renderはcold startしない'
-  - '2026-06-27T23:59:54+09:00 | 家老R3レビュー待ち。その間に本番API確認を再実行（前回HTTP 000=接続失敗。殿の「cold startしないだろ？」への一次確認）。'
-  related_causal_links:
-  - "[[MTD事前計算バッチ設計R11_PASS]]"
-  - "[[compare-returns_MTD_5秒ボトルネック]]"
-  - "[[殿指示_初回表示高速化_20260627]]"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/robustness-verification-catalog.md"
-  - "context/gs-speedup-knowledge.md"
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
-  production_invariants:
-  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
-  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
-  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
-  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
-  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
-  role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3572.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3572.yaml
-  bloom_level: 
-  ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 1
-    top_pattern: 'commit_missing(1件)'
-    breakdown: 'commit_missing(1件)'
-    warning: '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁'
-    gate_fail_top3:
-    - pattern: 'bc_result_empty'
-      count: 120
-    - pattern: 'lu_structure_error'
-      count: 45
-    - pattern: 'field_missing'
-      count: 40
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
-    gate_blocks:
-    - reason: 'report_format'
-      count: 9
-      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
-    - reason: 'empty_lessons_useful'
-      count: 2
-      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  related_lessons:
-  - id: 'L118'
-    summary: 'IF hayate(cmd_282,subtask_282_integ)時 THEN hayate(cmd_282,subtask_282_integ)'
-    detail: 'IF hayate(cmd_282,subtask_282_integ)時 THEN hayate(cmd_282,subtask_282_integ)'
-  - id: 'L117'
-    summary: 'saizo(cmd_277,subtask_277_nukimi)'
-    detail: 'saizo(cmd_277,subtask_277_nukimi)'
-  - id: 'L116'
-    summary: 'PF間のローリング相関/リード・ラグ/同時崩壊カウントを20特徴量追加しても改善なし。single_pf(0.111)≈single_pf+crossPF(0.114)≈MTL(0.114)。C3-H(佐助53.3%)と合わせ、月次粒度ではPF間情報は予測情報源にならない。Transfer'
-    detail: 'PF間のローリング相関/リード・ラグ/同時崩壊カウントを20特徴量追加しても改善なし。single_pf(0.111)≈single_pf+crossPF(0.114)≈MTL(0.114)。C3-H(佐助53.3%)と合わせ、月次粒度ではPF間情報は予測情報源にならない。Transfer'
-  - id: 'L115'
-    summary: 'IF Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換時 THEN Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換'
-    detail: 'IF Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換時 THEN Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換'
-  - id: 'L114'
-    summary: 'IF C1-3由来8モデルでメタ学習(LogReg/Ridge)を実施したが、best base(c2_logreg22, 59.7%)を超えられず(meta最大57.1%)時'
-    detail: 'IF C1-3由来8モデルでメタ学習(LogReg/Ridge)を実施したが、best base(c2_logreg22, 59.7%)を超えられず(meta最大57.1%)時'
-  - id: 'L113'
-    summary: 'IF C2-Bの22特徴量で予測対象を4種に変更時 THEN C2-Bの22特徴量で予測対象を4種に変更 C2-Bの22特徴量で予測対象を4種に変更。Drawdown(月内DD>10%)でprec=88.9%だがbase_rate=55.7%(3xレバETFの通常変動)。Bottom-20%ile/Consecutiveは稀少事象すぎてシグナル0。ターゲット定義を厳しくすると正例が減りモデルが学習'
-    detail: 'IF C2-Bの22特徴量で予測対象を4種に変更時 THEN C2-Bの22特徴量で予測対象を4種に変更 C2-Bの22特徴量で予測対象を4種に変更。Drawdown(月内DD>10%)でprec=88.9%だがbase_rate=55.7%(3xレバETFの通常変動)。Bottom-20%ile/Consecutiveは稀少事象すぎてシグナル0。ターゲット定義を厳しくすると正例が減りモデルが学習'
-  - id: 'L111'
-    summary: 'IF 7アプローチ(AND/MAJORITY/CUSUM/Sharpe/VolWeighted/Idiosyncratic/LogisticCV)全て80%未達時'
-    detail: 'IF 7アプローチ(AND/MAJORITY/CUSUM/Sharpe/VolWeighted/Idiosyncratic/LogisticCV)全て80%未達時'
-  - id: 'L110'
-    summary: 'IF 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%時 THEN 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%'
-    detail: 'IF 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%時 THEN 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%'
-  - id: 'L108'
-    summary: 'エッジ残存率の急落(MoM大幅低下/0%クロス)は将来リターン低下の予測器としてprecision 18-34%、recall 4-20%。イベント後の平均超過リターンは正(平均回帰傾向)。崩壊検知より一時的ノイズフィルタとしての活用が適切。単独指標での予測精度限定的だがcmd_270/271の傾き指標との複合判定で改善余地あり'
-    detail: 'エッジ残存率の急落(MoM大幅低下/0%クロス)は将来リターン低下の予測器としてprecision 18-34%、recall 4-20%。イベント後の平均超過リターンは正(平均回帰傾向)。崩壊検知より一時的ノイズフィルタとしての活用が適切。単独指標での予測精度限定的だがcmd_270/271の傾き指標との複合判定で改善余地あり'
-  - id: 'L098'
-    summary: 'IF SVMF fallbackパスはprice_data_cache全期間データに対してtarget_date未フィルタリング時 THEN'
-    detail: 'IF SVMF fallbackパスはprice_data_cache全期間データに対してtarget_date未フィルタリング時 THEN'
-  deployed_at: "2026-06-28T00:36:24"
-
-  session_state:
+  previous_failures:
     attempt: 2
     last_block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
     tried_approaches:
@@ -171,3 +45,92 @@ task:
       block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
       diagnose_reason: 'report_field_set.shへ改行入り文字列を通常引数で渡し、cause_checkedの2行目以降がYAMLの裸テキストとして書かれたためparse不能になった。複数行値は1行化またはstdin YAMLで渡すべきだった。'
       approach_summary: 'Compare Returns MTD事前計算テーブル/バッチ/API読取/fallback/テストを実装し、commit 9b3618aef96220d3e5af49615371e95ed5a52ad5 に保存。'
+  related_lessons:
+  - id: 'L342'
+    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+    detail: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+  - id: 'L125'
+    summary: 'IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)'
+    detail: 'IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)'
+  - id: 'L120'
+    summary: 'IF report gateで報告ファイルの存在判定を行う時 THEN prefix検索+archive探索を併用せよ'
+    detail: 'IF report gateで報告ファイルの存在判定を行う時 THEN prefix検索+archive探索を併用せよ'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  semantic_concepts:
+  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/gates/gate_gunshi_accuracy.sh gate予測精度の公正計算(FAIL→BLOCK→修正CLEAR=正解) scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh scripts/cmd_skeleton.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比) docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md — 軍師idle: コミットチェックWAパターン(2026-04-10) docs/research/gunshi_idle_cross_contamination_20260503.md — 軍師idle: クロスプロジェクト汚染分析(2026-05-03) docs/research/gunshi_idle_cross_project_fp_20260426.md — 軍師idle: クロスプロジェクトFP分析(2026-04-26) docs/research/gunshi_idle_gate_fail_rate_anatomy_20260502.md — 軍師idle: ゲート失敗率解剖(2026-05-02) docs/research/gunshi_idle_gate_fail_trend_20260430.md — 軍師idle: ゲート失敗トレンド分析(2026-04-30) docs/research/gunshi_idle_gate_fire_traceback_20260510.md — 軍師idle: ゲート発火トレースバック(2026-05-10) docs/research/gunshi_idle_gate_fp_analysis_20260527.md — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27) docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md — 軍師idle: LG003ゲートWA分析(2026-05-19) docs/research/gunshi_idle_lu_dict_pattern_20260415.md — 軍師idle: LU辞書パターン分析(2026-04-15)"
+  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh docs/research/gunshi_idle_brainwash_audit_20260624.md docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)"
+  - "defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)"
+  - "cmd_quality_logging — cmd設計品質ログ:  scripts/cmd_quality_log.sh scripts/archive_completed.sh scripts/cmd_publish.sh skills/cmd-complete/SKILL.md scripts/cmd_complete_gate.sh scripts/gates/gate_yaml_status.sh tests/unit/test_cmd_complete_skill.bats logs/cmd_design_quality.yaml logs/archive/cmd_design_quality.yaml scripts/gates/gate_shogun_startup.sh docs/research/gunshi_idle_cmd_quality_block_analysis_20260425.md — 軍師idle: cmd品質BLOCK分析(2026-04-25)"
+  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json scripts/gates/gate_hooks_no_runtime_incident_ids.sh tests/unit/test_gate_hooks_no_runtime_incident_ids.bats"
+  related_causal_links:
+  - "[[助言者方向対応追跡強制]]"
+  - "[[殿指示_ペア成長忖度防止_20260628]]"
+  - "[[軍師提案22時間放置]]"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
+      - L125: IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)
+      - L120: IF report gateで報告ファイルの存在判定を行う時 THEN prefix検索+archive探索を併用せよ
+    ────────────────────────────────────────
+    
+    
+  memory_db_context:
+  - '2026-06-28T00:48:31+09:00 | 【INFOバッチ】 2026-06-28 00:46:29|cmd_3572'
+  - '2026-06-28T00:46:50+09:00 | cmd_3572 LGTM→GATE CLEAR完了。レビュー待機。 [meta] stop_reason=end_turn'
+  - '2026-06-28T00:40:43+09:00 | 殿。一次データで検証した結果、**免疫は獲得しているが成長速度の計測ができていない**。正直に報告する。 **動いている層（免疫獲得の証拠）:** | 指標 | 値 | 根拠 | |------|--'
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: '軍師のidle分析結果で穴発見の掲示板投稿にaction_type=action_requiredを強制付与するロジックを自動化で追加'
+  - id: 'AC2'
+    checks:
+    - check: 'gate_karo_startup.shに軍師提案のaction_required未対応件数チェックを追加。未対応>0でWARN出力し家老の行動変換を強制'
+  - id: 'AC3'
+    checks:
+    - check: 'batsテスト: 軍師投稿のaction_required自動付与、家老startup gateの未対応検出の2パターン'
+  role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kagemaru_report_cmd_3577.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3577.yaml
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 1
+    top_pattern: 'commit_missing(1件)'
+    breakdown: 'commit_missing(1件)'
+    warning: '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁'
+    gate_fail_top3:
+    - pattern: 'bc_result_empty'
+      count: 120
+    - pattern: 'lu_structure_error'
+      count: 46
+    - pattern: 'field_missing'
+      count: 40
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
+    gate_blocks:
+    - reason: 'report_format'
+      count: 9
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'empty_lessons_useful'
+      count: 2
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+  deployed_at: "2026-06-28T01:09:17"
