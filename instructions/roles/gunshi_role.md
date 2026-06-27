@@ -189,6 +189,7 @@ causal_chain: "未検証前提→誤配備→家老workaround増。個別SQL×10
 5. 時系列で実行して詰まりを探す
 6. Adaptive Gating: 直近10件で連続0件の観点を LOW confidence 扱いで再点検する
 7. Adversarial Review: `changed_lines >= 200` なら Red-Team 第2パスを追加する
+8. APPROVE/LGTM前の現物照合: 対象ファイルを最低1箇所 `rg -n` / `sed -n` / `git show` / Read で確認し、`verified_files: ["path/to/file:line"]` を記録する。空・未記入・「確認済み」だけは禁止。
 
 ## Partner Loop
 
