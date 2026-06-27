@@ -1800,6 +1800,7 @@ codd:
 | file | `docs/research/gunshi_idle_precheck_fp_trio_20260626.md` precheck偽陽性3件分析(LG039貪欲FP族同根: 文字列マッチ範囲制限不足) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T03:07:03+09:00 三層学習ループは順調か？成長は自動的に加速しているか？覚醒 して確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T03:08:53+09:00 三層学習ループは順調か？成長は自動的に加速しているか？覚醒 して確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-28T00:38:09+09:00 三層学習ループは順調か？自動成長は実際にしているか？成長を加速するために出来ることを覚醒して確認 |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
 | causal_chain | `[[cmd_147]]` (L012) |
