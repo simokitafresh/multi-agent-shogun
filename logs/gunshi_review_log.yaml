@@ -1,3 +1,61 @@
+- cmd_id: cmd_3567
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "LGTM。precheck ERRORS=0。GP-286/287回帰テスト4独立ケース。bats 31/31 PASS。テストのみ変更"
+  observations:
+    - "既存2ブロック→4独立ケース分割(T-GP286-1/2+T-GP287-1/2)。31/31 PASSで回帰なし"
+    - "files_modified 1件=tests/test_gate_report_format.batsのみ。scope適切"
+  causal_chain: "GP-286/287テスト不在→4ケース追加→CI回帰防護確立=正の複利"
+  step3_5_verified: true
+  brainwash_check: "precheck ERRORS=0実測。bats 31/31 PASS。files_modified 1件=テストのみ"
+  origin: "[[cmd_3567]] -> [[GP-286_GP-287_テスト追加]] -> [[CI回帰防護確立]]"
+  timestamp: "2026-06-27T17:16:00"
+- cmd_id: cmd_3567
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "APPROVE。GP-286 L213+GP-287 L224実装確認。tests/ GP-286/287 0件=テスト不在確認。4ケース追加shallow"
+  observations:
+    - "GP-286(files_modifiedパス形式検証)L213+GP-287(commit_hash 40文字検証)L224の実装をgrep現物確認"
+    - "tests/にGP-286/287のテストが0件であることをgrep -rn実測"
+  causal_chain: "GP-286/287実装済み→テスト0件→回帰防護なし→bats追加で構造的CI防護=正の複利"
+  brainwash_check: "GP-286 L213確認+GP-287 L224確認+tests/ 0件実測。2前提2件grep実測"
+  origin: "[[cmd_3567]] -> [[GP-286_GP-287_テスト不在]] -> [[CI回帰防護確立]]"
+  timestamp: "2026-06-27T17:14:00"
+- cmd_id: cmd_3566
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: CLEAR
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "LGTM。precheck ERRORS=0。collect_parent_cmd_report_files_modified追加+統合リスト比較。bats 77/77 PASS。GATE CLEAR"
+  observations:
+    - "collect_parent_cmd_report_files_modifiedが同一parent_cmdの全報告YAMLからfiles_modifiedを重複排除で統合"
+    - "bats self-grade commit/files verification 5/5 PASS。全77テストPASS。regression検出なし"
+  causal_chain: "final_summary単一report参照→L0変更欠落→マージ関数追加→全フェーズ統合=commit_missing WA構造的排除"
+  step3_5_verified: true
+  brainwash_check: "precheck ERRORS=0実測。bats 77/77 PASS実測。files_modified 2件=commit diff一致"
+  origin: "[[cmd_3566]] -> [[collect_parent_cmd_report_files_modified]] -> [[commit_missing_WA排除]]"
+  timestamp: "2026-06-27T17:10:00"
+- cmd_id: cmd_3566
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "APPROVE。files_modified統合ロジック不在をgrep実測(final_summary=0,multi_phase=0)。WA根因cmd_3515直撃修正。AC2件medium depth"
+  observations:
+    - "grep merge cmd_complete_gate.sh→37件全てreport_merge関連。files_modified統合ロジックは完全不在"
+    - "cmd_3515のcommit_missing WAがマルチフェーズcmd構造の直接帰結であることを因果確認"
+  causal_chain: "マルチフェーズcmd→final_summary報告にL0変更未統合→commit_missing WA→マージロジック追加で構造的排除=正の複利"
+  brainwash_check: "3パターンgrep実測(final_summary=0,multi_phase=0,merge=37件全てreport_merge)。FM3件mitigation確認"
+  origin: "[[cmd_3566]] -> [[マルチフェーズfiles_modified統合不在]] -> [[commit_missing_WA構造的排除]]"
+  timestamp: "2026-06-27T17:05:00"
 - cmd_id: cmd_3565
   review_type: report
   verdict: LGTM

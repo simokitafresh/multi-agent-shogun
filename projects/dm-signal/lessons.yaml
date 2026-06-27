@@ -3434,6 +3434,9 @@ lessons:
   - docs/research/cmd_1753_fe_save_analysis.md
   - docs/research/cmd_1753_mtd_analysis.md
   origin: '[[cmd_1753]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L559
   title: Pass2シグナルflush後のsignal_cache_opt6陳腐化リスク
   summary: 2パス実装でPass2シグナルをDB UPSERTした後、Phase4.5が使うsignal_cache_opt6(L1752-1756)はPass1データのま
@@ -4323,6 +4326,9 @@ lessons:
   - outputs/analysis/nested_fof/r2_4cl_allew_returns.csv
   - outputs/analysis/nested_fof/r2_cluster_ew_performance.yaml
   origin: '[[cmd_1411]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L493
   title: 四つ目(MultiView)忍法のnumpy再実装で4窓union+タイミングオフセットに不一致リスク
   summary: 四つ目-激攻のGS記録CAGR=0.714 vs numpy快速パス計算CAGR=0.488(差0.226)。他20体は整合。MultiView4窓moment
@@ -7632,6 +7638,9 @@ lessons:
   when: Open-to-Open計算を修正する時
   how: T日Open→T+N日Open（異なる日のOpen同士）として扱い、T日Open→T日Closeと混同するな
   origin: '[[cmd_766]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L238
   title: '誤解7 IF-THEN: FoFのシグナル参照日は当月初営業日のholding_signal'
   summary: FoF展開のシグナル参照日を修正する時は、当月初営業日(position_start_date)のholding_signalを参照する。前月末日のholdin
@@ -7942,7 +7951,7 @@ lessons:
   origin: '[[cmd_686]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-06-27'
 - id: L212
   title: CDP性能計測ではtiming計測前に正常画面かを先に検査すべき。障害画面(城の修繕中等)が表示されていればtimingは無意味
   summary: 'IF: CDP性能計測を実施する時 THEN: wall-clock計測前にbody text/ready state/auth modalの3点を確認し、正常'

@@ -4650,6 +4650,9 @@ lessons:
   - scripts/archive_completed.sh
   - tests/unit/test_archive_completed.bats
   origin: '[[cmd_2549]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L559
   title: 修正cmd副作用5パターンチェック — premortem時必須
   summary: '修正副作用率42パーセント(12件中5件)。修正cmdのpremortem時に5パターン副作用チェック: (1)return 1波及(set
@@ -5550,6 +5553,9 @@ lessons:
   target_files:
   - gate_silent_fallback.sh
   origin: '[[cmd_2055]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L493
   title: gate_yaml_status.shのawkはlist形式のみ対応で、map key形式のcmdを常にERRORで返していた
   summary: 'gate_yaml_status.shのawk(-v cmd_id)は''- id: cmd_xxx''形式のみ検索していた。実際のshogun_to_karo.y'
@@ -8562,6 +8568,9 @@ lessons:
   when: 並列impl(複数忍者)の成果物をレビューする時
   how: git show --name-only HEADで全impl差分がcommitに閉じているかを先に確認。コード品質レビューはその後
   origin: '[[cmd_1031]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L238
   title: L238
   summary: usage_status.shのキャッシュ破損は全CLI(Claude含む)の使用量表示を停止させる
@@ -8873,7 +8882,7 @@ lessons:
   origin: '[[cmd_873]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-06-27'
 - id: L212
   title: '一次データ不可侵原則: 外部知識(論文/API仕様/書籍等)は原典のまま保存し、自軍の解釈・適用は別セクション/別ファイルに分離する。改変は捏造。全PJ共通適用'
   summary: 'IF: 外部知識を記録・引用する時 THEN: 一次データ層と解釈・適用層を分離せよ BECAUSE: 一次データの改変は捏造であり、知識の信頼性が失われる'

@@ -20,7 +20,7 @@ task:
   parent_cmd: cmd_3566
   project: infra
   purpose: '軍師idle自走分析(blt_20260627_142919, 2026-06-27): マルチフェーズcmd(L0→final_summary)でfinal_summary報告のfiles_modifiedにL0フェーズの変更ファイルが統合されない。grep files_modified.*merge cmd_complete_gate.sh → 0件。マージロジックを追加しcommit_missing WAを構造的に排除'
-  status: in_progress
+  status: idle
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/scripts
   task_id: cmd_3566_full
