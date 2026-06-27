@@ -148,7 +148,7 @@ codd:
 |------|---|
 | id | three_layer_memory_system |
 | label | 三層記憶システム |
-| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ, 三層記憶にも貫通させておいて, symlinkが必然である知識を三層記憶に貫通佐瀬よ, 三層記憶を勘違いしていないか？, 貫通=3層全てに書き込んで各層から独立に検索到達可能にすること, 掲示板投稿だけでは1層のみ=未貫通, 三層記憶を確認しろ, スキルの理解が極めて低いな, 顛末を三層記憶に貫通させて, 三層記憶と一緒だ, 三層記憶は正しく理解しているか？, 今回の知見を三層記憶に貫通させて, 今回得た知見を三層記憶に貫通させてアップデートせよ, この知見とルールを三層記憶に貫通させて, 今回の知見を三層記憶に貫通させよ, 家老によりスムーズな goalのやり方を確認させて, 今回は最速最適に実行できたか？厳しく確認しより良いやり方や, だから三層記憶なんだ, 今回の試行錯誤を経て, オントロジーと三層記憶の連携は順調か？ |
+| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ, 三層記憶にも貫通させておいて, symlinkが必然である知識を三層記憶に貫通佐瀬よ, 三層記憶を勘違いしていないか？, 貫通=3層全てに書き込んで各層から独立に検索到達可能にすること, 掲示板投稿だけでは1層のみ=未貫通, 三層記憶を確認しろ, スキルの理解が極めて低いな, 顛末を三層記憶に貫通させて, 三層記憶と一緒だ, 三層記憶は正しく理解しているか？, 今回の知見を三層記憶に貫通させて, 今回得た知見を三層記憶に貫通させてアップデートせよ, この知見とルールを三層記憶に貫通させて, 今回の知見を三層記憶に貫通させよ, 家老によりスムーズな goalのやり方を確認させて, 今回は最速最適に実行できたか？厳しく確認しより良いやり方や, だから三層記憶なんだ, 今回の試行錯誤を経て, オントロジーと三層記憶の連携は順調か？, この知見は三層記憶に貫通させておいて |
 | related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop, operational_ontology, unread_cmd_new_deployment_guard, codex_goal_mode |
 
 | 種別 | パス/参照 |
@@ -240,6 +240,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T08:54:50+09:00 三層記憶とオントロジーの連携は順調か？成長は自動的に加速しているか？覚醒 して確認し成長を加速させよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T09:05:43+09:00 三層記憶とオントロジーの連携は順調か？成長は自動的に加速しているか？覚醒 して確認し成長を加速させよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T15:06:49+09:00 三層記憶とオントロジーの連携は順調か？成長は自動的に加速しているか？覚醒 して確認し成長を加速させよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-27T16:56:14+09:00 なるほど。この知見は三層記憶に貫通させておいて。もうなんどもなんども二重起動と勘違いしては同じ結論にたどり着いてる。 |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -3783,7 +3784,7 @@ codd:
 |------|---|
 | id | infrastructure_ops |
 | label | インフラ運用基盤 |
-| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ, lock cleanup, stale lock削除, karo snapshot生成, bulletin自動アーカイブ, CDP cleanup, paste buffer nudge, atomic wakeup state, dependency gated deployment, auto deploy blocked_by control, report-before-clear guard, 忍者完了通知, report-summary-guard, done-and-notify, CIredはかいしょうしているはずだ, CI redは解消したか, 全員止まっていないか, どうなった？全員止まっていないか？, インフラバグは修正しよう, 家老が自分でも対策をしているので協調せよ, デーモンは全て順調に動作しているか？, デーモンの再起動をスクリプトでせよ, ゲートやデーモンのバグや品質問題がないか調査しよう, snapshot古い, dashboard古い表示残り, snapshot更新遅延, snapshot監視詰まり, karo_snapshot stale, snapshot fast path, atomic snapshot publish, early snapshot refresh, write_karo_snapshot atomic, デーモンは万全か？スクリプトで全デーモンを再起動させよ, ほかにインフラバグはないか |
+| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ, lock cleanup, stale lock削除, karo snapshot生成, bulletin自動アーカイブ, CDP cleanup, paste buffer nudge, atomic wakeup state, dependency gated deployment, auto deploy blocked_by control, report-before-clear guard, 忍者完了通知, report-summary-guard, done-and-notify, CIredはかいしょうしているはずだ, CI redは解消したか, 全員止まっていないか, どうなった？全員止まっていないか？, インフラバグは修正しよう, 家老が自分でも対策をしているので協調せよ, デーモンは全て順調に動作しているか？, デーモンの再起動をスクリプトでせよ, ゲートやデーモンのバグや品質問題がないか調査しよう, snapshot古い, dashboard古い表示残り, snapshot更新遅延, snapshot監視詰まり, karo_snapshot stale, snapshot fast path, atomic snapshot publish, early snapshot refresh, write_karo_snapshot atomic, デーモンは万全か？スクリプトで全デーモンを再起動させよ, ほかにインフラバグはないか, デーモンはすべて順調か？スクリプトで再起動せよ |
 | skills | reset-layout |
 | related_concepts | daemon_supervision, agent_formation_management, yaml_safe_write, verify_dont_imagine, shogun_android_app, infra_design_intent |
 
@@ -3850,6 +3851,7 @@ codd:
 | cmd | `cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624` (`scripts/inbox_watcher.sh`, `scripts/lib/script_update.sh`, `tests/unit/test_inbox_watcher_dedup.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T07:23:47+09:00 デーモンは万全か？スクリプトで全デーモンを再起動させよ |
 | causal | `cmd_3554` files_modified: [[infrastructure_ops]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-27T16:44:46+09:00 デーモンはすべて順調か？スクリプトで再起動せよ |
 | causal_chain | `[[snapshot_staleness]] -> [[slow_monitor_checks]] -> [[early_atomic_snapshot]]` (L851) |
 | causal_chain | `[[cmd_2935]]` (L651) |
 | causal_chain | `[[cmd_karo_ci_fix_2tests]]` (L652) |
@@ -4496,7 +4498,7 @@ codd:
 |------|---|
 | id | inbox_watcher_process_model |
 | label | inbox_watcherプロセスモデル |
-| aliases | watcher重複, watcher 2プロセス, pgrep 2件, 親子関係, restart_watchers, kill全滅, script change detection, PPID確認, watcher singleton lock, fingerprint debounce, special CLI command, send dedupe token |
+| aliases | watcher重複, watcher 2プロセス, pgrep 2件, 親子関係, restart_watchers, kill全滅, script change detection, PPID確認, watcher singleton lock, fingerprint debounce, special CLI command, send dedupe token, 二重起動誤検知, 18本正常, 9agent×2プロセス=正常, inotifywait子プロセス, MTIMEポーラー子プロセス, inbox_watcher二重起動ではない, デーモン二重起動, watcher二重, inbox_watcher重複 |
 | related_concepts | inbox_processing_discipline, daemon_supervision, agent_formation_management |
 
 | 種別 | パス/参照 |
@@ -4504,7 +4506,7 @@ codd:
 | file | `scripts/inbox_watcher.sh` |
 | file | `scripts/restart_watchers.sh` |
 | cmd | `cmd_2924` watcher親子関係誤判断→kill全滅事故 |
-| note | プロセス構造: 親=本体(inotifywait+メインループL945)、子=MTIME_POLLサブシェル(L960)。psで2プロセス見えるのは正常(親子関係)。子プロセスはWSL2 DrvFs inotifywait hang対策(stat mtime 10秒ポーリング→mtime変化でhung inotifywaitをkill) |
+| note | プロセス構造: 親=本体(inotifywait+メインループL996)、子=inotifywait(L1003)+MTIME_POLLサブシェル(L1011-1020)。pgrepで18本(9agent×2)見えるのは正常(親子関係)。★二重起動ではない★。殿裁定2026-06-27: 3回以上同じ誤検知を繰り返した(2026-06-07,06-24,06-27)→三層貫通で再発防止。子プロセスはWSL2 DrvFs inotifywait hang対策(stat mtime 10秒ポーリング→mtime変化でhung inotifywaitをkill) |
 | causal | `cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624` files_modified: [[inbox_watcher_process_model]] |
 
 ## saxo_openapi_excel — Saxo Bank OpenAPI for Excel
@@ -4870,6 +4872,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T03:36:15+09:00 pre-commitはstaged以外の未コミットファイルも検査し て失敗するため、このままではscope内commitが作れま せん。となるのはインフラバグでは？どう対処する？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T03:39:02+09:00 そもそも アンステージとやみコミット ミ プッシュが残っているのが問題では |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T02:59:05+09:00 覚醒して自走せよ。commit_missing WAの穴を今ふさげ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-27T16:48:46+09:00 hanzoをrespawnせよ |
 | causal_chain | `[[cmd_karo_recon_ga125_context_freshness_20260624]]` (L846) |
 
 ## commander_role_ssot_analysis — Commanderロール SSOT分析
