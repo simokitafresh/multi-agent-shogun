@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-27 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-27T19:32:51+09:00 -->
+<!-- generated_at: 2026-06-27T19:41:44+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-27T19:41:44+09:00 | terminal | response | push完了。エスカレーション無限ループの根因(gate_karo_startup.shがresolved_by_cmdを見ていなかった)を修正。家老の次回startup以降、解消済みWAのALERT再発は停止する。 殿の次の指示を待つ。
+- 2026-06-27T19:40:01+09:00 | ntfy | outbound | CI赤: run 28286671041 Unit Tests (bats)
+- 2026-06-27T19:39:20+09:00 | ntfy | outbound | 【家老CRITICAL】先送り3セッション連続検出。起動は許可するが即対処必須
+- 2026-06-27T19:38:17+09:00 | terminal | response | 既読化完了。家老の次回/clear後にresolved_by_cmdが読み込まれエスカレーションは停止する。殿の次の指示を待つ。 [meta] stop_reason=end_turn
+- 2026-06-27T19:37:43+09:00 | ntfy | outbound | 【家老CRITICAL】先送り3セッション連続検出。起動は許可するが即対処必須
+- 2026-06-27T19:37:42+09:00 | terminal | response | 家老エスカレーション全件対処完了。 - WA(gate_logic_gap): `resolved_by_cmd`設定済み → エスカレーション解消 - 品質記録漏れ16件: 家老にinbox指示済み 全inbox処理完了。殿の次の指示を…
+- 2026-06-27T19:34:51+09:00 | ntfy | outbound | 【家老CRITICAL】先送り3セッション連続検出。起動は許可するが即対処必須
 - 2026-06-27T19:32:50+09:00 | terminal | response | **FE `3d51a1e4` live。** BE・FE両方デプロイ完了。 殿、Compare Returnsページ(`/compare-returns`)が本番稼働中。 - **BE**: `896a20b2` → live - **…
 - 2026-06-27T19:32:49+09:00 | terminal | response | inbox全件処理完了。レビュー待機。 [meta] stop_reason=end_turn
 - 2026-06-27T19:32:29+09:00 | terminal | response | inbox全件処理完了。cmd_karo_hotfix_ga145: LGTM→GATE CLEAR。レビュー待機。
-- 2026-06-27T19:32:23+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝147
-- 2026-06-27T19:32:22+09:00 | terminal | response | **FE `3d51a1e4` live。** BE・FE両方デプロイ完了。 殿、Compare Returnsページ(`/compare-returns`)が本番稼働中。 - **BE**: `896a20b2` → live - **…
-- 2026-06-27T19:31:55+09:00 | terminal | response | cmd_karo_hotfix_ga145 LGTM完了。レビュー待機。 [meta] stop_reason=end_turn
-- 2026-06-27T19:26:49+09:00 | terminal | response | push完了 `3d51a1e4`。Renderの自動デプロイが開始される。 殿、FEビルド修正をpush済み。`admin/visibility/page.tsx`のMessageBanner型エラー(`type`と`message`に…
-- 2026-06-27T19:24:21+09:00 | terminal | inbound | <task-notification> <task-id>bdpk8pkeu</task-id> <tool-use-id>toolu_01NwLGHdsYN8CNxhee6oGtuZ</tool-use-id> <output-file…
-- 2026-06-27T19:22:37+09:00 | terminal | response | ビルド実行中。完了通知を待つ。 [meta] stop_reason=end_turn
-- 2026-06-27T19:21:28+09:00 | terminal | response | cmd_karo_hotfix_ga145 APPROVE完了。レビュー待機。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - push完了 `3d51a1e4`。Renderの自動デプロイが開始される。 殿、FEビルド修正をpush済み。`admin/visibility/page.tsx`のMessageBanner型エラー(`type`と`message`にundefined到達可能)を`?? "…

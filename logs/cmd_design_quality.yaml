@@ -79,3 +79,168 @@ entries:
   supplementary_cmds: 0
   source: "cmd_complete_gate"
   timestamp: "2026-06-27T10:32:43Z"
+- cmd_id: "cmd_3553"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:00Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"
+- cmd_id: "cmd_3554"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:01Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"
+- cmd_id: "cmd_3555"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:01Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"
+- cmd_id: "cmd_3559"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:01Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"
+- cmd_id: "cmd_3560"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:01Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"
+- cmd_id: "cmd_3561"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:01Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"
+- cmd_id: "cmd_3562"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:02Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"
+- cmd_id: "cmd_3563"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:02Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"
+- cmd_id: "cmd_3564"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:02Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"
+- cmd_id: "cmd_3565"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:02Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"
+- cmd_id: "cmd_3566"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:02Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"
+- cmd_id: "cmd_3567"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:02Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"
+- cmd_id: "cmd_karo_ci_fix_ga143"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:03Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"
+- cmd_id: "cmd_karo_hotfix_semantic_stress_pending_202606270905"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:03Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"
+- cmd_id: "cmd_karo_recon_ga142"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "backfill_startup_alert_20260627"
+  timestamp: "2026-06-27T10:39:03Z"
+  notes: "backfill: startup gate cmd品質記録漏れ解消"

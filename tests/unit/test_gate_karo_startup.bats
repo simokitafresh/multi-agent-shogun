@@ -625,6 +625,24 @@ EOF
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
+@test "latest workaround true with resolved_by_cmd → no WA regression ALERT" {
+    cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_200
+  workaround: false
+  category: clean
+  root_cause: ""
+- cmd_id: cmd_202
+  workaround: true
+  category: gate_logic_gap
+  root_cause: "gate threshold fixed"
+  resolved_by_cmd: "commit_364744210_min_sample_threshold"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"連続clean: 2件 (総記録2件)"* ]]
+    [[ "$output" != *"ALERT: WA復活 — 最新cmd cmd_202"* ]]
+}
+
 @test "latest commit_missing workaround with existing commit → no WA regression ALERT" {
     cat > "$TEST_TMPDIR/bin/git" <<'MOCK'
 #!/usr/bin/env bash
