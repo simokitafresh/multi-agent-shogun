@@ -838,6 +838,7 @@ GA-102原因: `dm-signal-ops.md`のlast_updatedは2026-06-13で、2026-06-14以�
 | commit | ops更新判断 | 根拠 |
 |------|------|------|
 | 896a20b2/46e1b48c cmd_3569 Compare Returns page | 運用影響あり。`/compare-returns` API/router/page_visibilityが追加され、Admin visibility対象ページが増えた。運用上は既存CDP/Admin確認手順で対象URLを`/compare-returns`へ切替えて確認する | `backend/app/api/compare_returns.py`, `backend/app/main.py`, `backend/app/services/page_visibility.py`, `backend/tests/test_compare_returns_api.py` |
+| 9b3618ae cmd_3572 Compare Returns MTD事前計算 | 運用影響あり。`precomputed_mtd`テーブル作成後、通常は`recalculate_fast.py`正常完了末尾でMTD事前計算が更新される。欠損/stale時はAPIがPF/BM単位fallbackするため表示正確性は維持、速度のみ劣化 | `backend/migrations/add_precomputed_mtd.py`, `backend/app/jobs/precompute_mtd.py`, `backend/app/api/compare_returns.py` |
 | baf7db97/fb40fc2c/1368f895 compare系spec索引更新 | 本文追加不要 | `docs/spec/*`/`docs/_INDEX.md`/`tasks/lessons.md`中心。運用手順の新規差分はCompare Returns行で吸収 |
 | afe98d64 cmd_3548 Compare Summary SPY standalone | 本文追加不要 | `backend/app/api/metrics.py`と追加テストの修正。既存Compare Summary運用手順に変更なし |
 | a02b623b/9fe4704b/26711bc2/8640c347/176eb00b/9912027f/ec65decb/63a04c2b monthly/annual/price/return/recalculate高速化 | 本文追加不要 | backend services/jobsの性能改善。fullrecalculate/Render実行・排他・完了確認の運用手順は§6-7の既存ルールを維持 |

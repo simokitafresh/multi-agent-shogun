@@ -61,7 +61,7 @@ task:
   project: dm-signal
   purpose: '殿指示(2026-06-27): 初回表示を限界まで早くすることはできるか。/api/compare-returnsの初回応答5秒→0.3秒以下に短縮する。設計書R11 PASS(docs/spec/compare-returns-mtd-precompute.md)に基づき実装'
   scout_exempt: true
-  status: in_progress
+  status: idle
   stop_for: []
   target_path: /mnt/c/Python_app/DM-signal/backend
   task_id: cmd_3572_full
@@ -155,3 +155,19 @@ task:
     summary: 'IF SVMF fallbackパスはprice_data_cache全期間データに対してtarget_date未フィルタリング時 THEN'
     detail: 'IF SVMF fallbackパスはprice_data_cache全期間データに対してtarget_date未フィルタリング時 THEN'
   deployed_at: "2026-06-28T00:36:24"
+
+  session_state:
+    attempt: 2
+    last_block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
+    tried_approaches:
+    - 'YAML parse error: while scanning a simple key'
+    - 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
+    diagnose_reason: 'report_field_set.shへ改行入り文字列を通常引数で渡し、cause_checkedの2行目以降がYAMLの裸テキストとして書かれたためparse不能になった。複数行値は1行化またはstdin YAMLで渡すべきだった。'
+    approach_summary: 'Compare Returns MTD事前計算テーブル/バッチ/API読取/fallback/テストを実装し、commit 9b3618aef96220d3e5af49615371e95ed5a52ad5 に保存。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'YAML parse error: while scanning a simple key'
+    - attempt: 2
+      block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
+      diagnose_reason: 'report_field_set.shへ改行入り文字列を通常引数で渡し、cause_checkedの2行目以降がYAMLの裸テキストとして書かれたためparse不能になった。複数行値は1行化またはstdin YAMLで渡すべきだった。'
+      approach_summary: 'Compare Returns MTD事前計算テーブル/バッチ/API読取/fallback/テストを実装し、commit 9b3618aef96220d3e5af49615371e95ed5a52ad5 に保存。'

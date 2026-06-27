@@ -355,6 +355,8 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 
 `/api/compare-returns` は全visible PF + standalone benchmark(SPY/TQQQ等)のMTD/1M/3M/6M/1Y/3Y/5Y/ALLをclose/open両系列で返す。PF MTDは`backend/app/services/mtd_returns.py`が`/api/mtd`とCompare Returnsの共通SSOTで、Compare Returnsは`build_compare_mtd_values_batch()`でN+1を避ける。page visibilityは`backend/app/services/page_visibility.py`が`settings.hidden_pages`と`global_visibility_settings.hidden_pages`のunionを正とする。根拠: commits `46e1b48c`, `646216d5`, `09796aee`, specs `docs/spec/compare-returns-page.md`。
 
+cmd_3572でMTD事前計算テーブル`precomputed_mtd`、`backend/app/jobs/precompute_mtd.py`、`recalculate_fast.py`末尾連携、API側fresh判定+PF/BM単位fallbackを実装済み。DB DATE→API ISO境界とprecomputed/fallbackパリティは`backend/tests/test_compare_returns_api.py`で検証。根拠: commit `9b3618ae`, spec `docs/spec/compare-returns-mtd-precompute.md`。
+
 ## 10. ディレクトリ構成
 
 詳細ツリー → `docs/research/core-directory-structure.md`

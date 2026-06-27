@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-27 cmd_karo_hotfix_ga146 -->
+<!-- last_updated: 2026-06-28 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,16 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3077 | maintenance.pyの2006ハードコードとFEの2006送信を修正し、price/DTB3データを全期間取得可能にする。ノンレバ玄武の計算期間拡大 | dm-signal | 05-28 | 2006固定のbackfill開始年をFULL_HISTOR |
-| cmd_3078 | 殿の裁定を学んだ瞬間に三層記憶へ自動貫通する仕組みを環境に埋め込む。記憶せよと言われてから動く意志依存を排除 | infra | 05-28 | 家老即停止指示によりcmd_3078実装を中止し、作業com |
-| cmd_3079 | PortfolioEditor UIでsafe_haven_asset/absolute_assetを変更してもpipeline_config内のSafeHavenSwitch/AbsoluteMomentumFilterブロックに反映されないバグの全容を調査 | dm-signal | 05-28 | PortfolioEditor/BE save/API/本番 |
-| cmd_3080 | skill_recommend_log.yamlのデダップ窓が10件と狭く、同一(agent_id, prompt_hash)ペアが数百回重複記録され、precision=0%/偽陽性100%の計測障害が3セッション連続でstartup BLOCKを発生させている。根因はprompt_state_inject.sh L226のrecommendations[-10:]。修正して正確な計測を復元する | infra | 05-28 | skill推薦ログの重複記録窓を200件へ拡張し、metri |
-| cmd_3081 | cmd_3076(年制限全量特定)+cmd_3077(maintenance.py 2006→定数統一+backfill)+cmd_3079(UI-pipeline_config同期バグ)の成果がcontext/dm-signal-core.md・dm-signal-ops.mdに未反映(28日前更新)。/clear後の将軍が最新状態で起動できるよう還流する | dm-signal | 05-28 | context/dm-signal-ops.md §37に本 |
-| cmd_3082 | cmd_3077でFE文言変更のみなのにCDPチェック(cdp_measure.sh→powershell.exe)が必須実行され、WSL2ハング→GATE 30分停止→殿手動kill 2回発生。run_cdp_production_check()にCDP_SKIP環境変数チェックを追加し、CDPチェック不要時にスキップ可能にする | infra | 05-28 | run_cdp_production_checkにCDP_S |
-| cmd_3083 | 殿裁定「三層自動貫通」(2026-05-27)。現状lib/lord_conversation.sh L230でconcepts='[]'固定挿入しており、殿の発言が記憶DBに入っても概念紐付け(event_concepts)されない。memory_db_import.pyのconcepts_for_text(L357)と同等のロジックをappend_memory_db_entry内に追加し、リアルタイムで概念紐付けINSERTする | infra | 05-28 | live lord_conversation DB追記でセマ |
-| cmd_3084 | CLAUDE.md/instructions内のorigin説明文に[[リンク]][[発端]][[原因]][[結果]]がそのまま記載されており、memory_db_import.pyのOBSIDIAN_LINK_REが実データと区別できずevent_linksに149件のノイズを生成している(全2,310件中6.5%)。テンプレート/説明文の[[...]]をバッククォート囲みに変更し、regexにマッチしないようにする | infra | 05-28 | CLAUDE.md/instructionsのorigin説 |
-| cmd_3086 | cmd_publish.shのStep 2(pending昇格)→Step 3(cmd_delegate.sh委任)の間にauto-commitが走りq11のgrep根拠が陳腐化する構造的穴を修正する。cmd_3081で起票時に確認したq11根拠が配備時には崩壊していた事故の再発防止 | infra | 05-28 | cmd_publish.shの委任直前にq11 grep根拠 |
-| cmd_3088 | semantic_stress_testが蓄積したNO_MATCH候補40件のうち構造的NO_MATCH(コマンド系5件+短文3件)を除外し、残り32件からaliases拡充可能な概念を抽出してsemantic-map.mdに追加する。NO_MATCH率60%を40%以下に改善する | infra | 05-28 | NO_MATCH29件分類(構造的15件+aliases拡充 |
 | cmd_3089 | gate_context_freshness.shがlast_updatedコメントからの経過日数だけで鮮度を判定しており、ソースPJに変更がなくても時間経過でALERTが出る偽陽性バグを修正する。将軍×軍師3往復で収束した設計(ソースPJ commit比較+auto-commitフィルタ+ファイル名PJマッピング+ベースライン自動更新)を実装する | infra | 05-29 | context鮮度判定を日数ベースからソースrepo com |
 | cmd_3090 | DM-Signalリポジトリにlast_updated(2026-04-30)以降60件の新commitがあり、context/dm-signal系5ファイルが追随していない。git log --oneline --since=2026-04-30の差分を確認し、contextの索引層を最新化してlast_updatedを更新する | dm-signal | 05-29 | DM-Signal 2026-04-30以降の43commi |
 | cmd_3091 | deploy_task.shのメインフロー完走率が0.5%(208回中1回のみdeployment complete到達)。set -euo pipefail(L18)が7300行スクリプト全体に適用され、中間コマンドの非0 returnで早期exit、EXIT trapフォールバック。品質監視機能群(ntfy、deployed_at、preflight_gate、draft_review、post_deploy_verify)が99.5%到達不能。家老発見+軍師独立検証済み | infra | 05-29 | deploy_task.shのbinary_checks件数 |
@@ -427,3 +417,4 @@
 | cmd_3567 | 軍師idle分析(blt_20260627_142919, 2026-06-27)+cmd_3558 cancel後残課題: GP-286(files_modifiedパス形式検証L213)+GP-287(commit_hash 40文字検証L224)がgate_report_format_main.pyに実装済み(commit 1a6e89252)だが回帰テストが不在(grep GP-286/GP-287 tests/ → 0件)。batsテスト追加でCI回帰防護を確立 | infra | 06-27 | GP-286/GP-287の回帰batsを4独立ケースへ分割 |
 | cmd_3569 | 殿指示(2026-06-27): docs/spec/compare-returns-page.md設計書に基づき/compare-returnsページを実装。全PF+standaloneベンチマーク×8期間(MTD/1M/3M/6M/1Y/3Y/5Y/ALL)のトレーリングリターンをソート可能テーブルで提示。レビュー3回完了・sign-off済み | dm-signal | 06-27 | cmd_3569 /compare-returns ページを |
 | cmd_3570 | 殿指摘(2026-06-27): Compare Returnsのloading時間がストレスフル。本番実測cold 4.96秒/warm 5.46秒(connect 0.16秒)。102PF×MTD日次ライブ計算(calculate_daily_cumulative_returns_segmented 102回呼び出し)がボトルネック。設計書§12に5000ms超過時の最適化を別タスクで設計と明記済み | dm-signal | 06-27 | Compare ReturnsのMTDをバッチ化し、/api |
+| cmd_3572 | 殿指示(2026-06-27): 初回表示を限界まで早くすることはできるか。/api/compare-returnsの初回応答5秒→0.3秒以下に短縮する。設計書R11 PASS(docs/spec/compare-returns-mtd-precompute.md)に基づき実装 | dm-signal | 06-28 | Compare Returns MTD事前計算テーブル/バッ |
