@@ -995,6 +995,7 @@ codd:
 | causal | `cmd_2564` files_modified: [[semantic_dictionary_design]] |
 | cmd | `cmd_2564` セマンティクスインデックス (`scripts/semantic_index_update.sh`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T20:28:32+09:00 バグ1は将軍の操作ミスならば、将軍の操作ミスを許容する仕組みに問題なのか？L0-L7で対応できる案件か確認せよ。 |
+| lesson | `L867` semantic_stress_testのAC母数は実データで再集計してから判定する |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -1094,6 +1095,7 @@ codd:
 | causal_chain | `[[殿指示編成変更]] -> [[軍師がロール制限で拒否]] -> [[殿裁定: 殿命令>全ロール制限]]` (L777) |
 | causal_chain | `[[cmd_karo_hotfix_cdp_gate_stability_202606111540]]` (L780) |
 | causal_chain | `[[cmd_karo_recon_ga134_obsidian_link_principles_20260626]]` (L856) |
+| causal_chain | `[[cmd_karo_hotfix_semantic_stress_pending_202606270905]]` (L867) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -3566,7 +3568,7 @@ codd:
 |------|---|
 | id | report_quality_protocol |
 | label | 忍者報告品質プロトコル |
-| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？, 報告して返答をもらえ, Phase1 FE削除, 家老と軍師のペアは順調か？, では軍師にも穴がないかチェックしてもらおう, 自分で解決困難であれば分析して掲示板に投稿し, 問題は軍師が将軍と俺の会話を自分ごととしてとらえた点だ, ちょっとまて, 軍師のことは軍師に任せろ, では軍師の掲示板に対応せよ, あわてずに軍師のpaneを読め, これが必要なのは将軍, 軍師にもアドバイスをもらえ, 作業開始時点のgateは既にOKだった, 設計書を家老にレビューしてもらおう, 軍師と協議せよ, どうなった？ |
+| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, GP-286, GP-287, files_modifiedパス形式, commit_hash 40文字hex, short commit_hash, full hash, 40文字フルhash, batsテスト, CI回帰防護, gate report format regression, 軍師提案 GP-286 GP-287, 軍師提案 GP-286 GP-287 files_modified commit_hash batsテスト CI回帰防護, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？, 報告して返答をもらえ, Phase1 FE削除, 家老と軍師のペアは順調か？, では軍師にも穴がないかチェックしてもらおう, 自分で解決困難であれば分析して掲示板に投稿し, 問題は軍師が将軍と俺の会話を自分ごととしてとらえた点だ, ちょっとまて, 軍師のことは軍師に任せろ, では軍師の掲示板に対応せよ, あわてずに軍師のpaneを読め, これが必要なのは将軍, 軍師にもアドバイスをもらえ, 作業開始時点のgateは既にOKだった, 設計書を家老にレビューしてもらおう, 軍師と協議せよ, どうなった？ |
 | skills | report-write, verdict-check |
 | related_concepts | lesson_lifecycle, training_cycle_quality, yaml_safe_write, gunshi_review_lifecycle |
 | related_lessons | `L625`, `L633`, `L643` |
@@ -3991,7 +3993,7 @@ codd:
 |------|---|
 | id | lesson_lifecycle |
 | label | 教訓ライフサイクル管理 |
-| aliases | lesson_write, lesson登録, 教訓登録, 教訓退役, lesson_deprecate, lesson_harvest, lesson_effectiveness, 教訓効果, useful率, 教訓注入, related_lessons, lesson_candidate, 因果ネットワーク, origin, Obsidianリンク, 因果辺, origin_aliases_gap, lessons_karo_limit, LK-A01_v8_absorption, lesson_cycle_unblock, sync_lessons, auto_draft_lesson, draft教訓自動登録, lesson_candidate自動draft, lesson_impact更新, lesson effectiveness scan, auto lesson registration, 教訓自動注入, related_lessonsスコアリング, useful率フィルタ, cross-project教訓opt-in, 教訓deprecated自動化, 教訓ID採番, 教訓メタデータ登録, 教訓タグ更新, 教訓文脈同期, 教訓排他登録, 教訓索引同期, 教訓退役処理, 教訓タグ再設定, 還流漏れ検査, 家老教訓書込み, 教訓追記, karo教訓登録, 教訓効果集計, lesson-metrics-collector, inject-useful-rate-reporter, 教訓ROI計算機, draft **APPROVE** |
+| aliases | lesson_write, lesson登録, 教訓登録, 教訓退役, lesson_deprecate, lesson_harvest, lesson_effectiveness, 教訓効果, useful率, useful_rate, 教訓活用率, 教訓186件中useful3件, 活用率1.6%, lessons_useful記入強制, lessons_useful記入率計測, useful_rate計測精度, 教訓活用率改善, 忍者がlessons_usefulに活用結果を記入していない, 教訓注入, related_lessons, lesson_candidate, 因果ネットワーク, origin, Obsidianリンク, 因果辺, origin_aliases_gap, lessons_karo_limit, LK-A01_v8_absorption, lesson_cycle_unblock, sync_lessons, auto_draft_lesson, draft教訓自動登録, lesson_candidate自動draft, lesson_impact更新, lesson effectiveness scan, auto lesson registration, 教訓自動注入, related_lessonsスコアリング, useful率フィルタ, cross-project教訓opt-in, 教訓deprecated自動化, 教訓ID採番, 教訓メタデータ登録, 教訓タグ更新, 教訓文脈同期, 教訓排他登録, 教訓索引同期, 教訓退役処理, 教訓タグ再設定, 還流漏れ検査, 家老教訓書込み, 教訓追記, karo教訓登録, 教訓効果集計, lesson-metrics-collector, inject-useful-rate-reporter, 教訓ROI計算機, draft **APPROVE** |
 | skills | lesson-sort |
 | related_concepts | growth_loop, semantic_causal_automation, report_quality_protocol, cmd_chronicle, causal_traversal_pipeline, gunshi_review_lifecycle |
 | related_lessons | `L317`, `L088`, `L079`, `L548` |

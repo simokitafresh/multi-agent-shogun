@@ -418,6 +418,9 @@ show_active_cmd_semantic_context() {
 show_semantic_no_match_metrics() {
     local deploy_log="${KARO_STARTUP_DEPLOY_LOG:-$SCRIPT_DIR/logs/deploy_task.log}"
     local scan_lines="${KARO_STARTUP_NO_MATCH_SCAN_LINES:-500}"
+    local semantic_index="${KARO_STARTUP_SEMANTIC_INDEX:-$SCRIPT_DIR/docs/semantic-index/index.md}"
+    local semantic_index_py="${KARO_STARTUP_SEMANTIC_INDEX_PY:-$SCRIPT_DIR/scripts/semantic_index.py}"
+    local recheck_timeout="${KARO_STARTUP_NO_MATCH_RECHECK_TIMEOUT:-3}"
 
     echo "■ セマンティックNO_MATCH計測"
     if [ ! -f "$deploy_log" ]; then
@@ -426,53 +429,86 @@ show_semantic_no_match_metrics() {
         return 0
     fi
 
-    tail -n "$scan_lines" "$deploy_log" 2>/dev/null | awk '
-        /inject_semantic_concepts:/ {
-            attempts++
-            if (/NO_MATCH/) {
-                no_match++
-                purpose = $0
-                sub(/^.*NO_MATCH purpose=/, "", purpose)
-                sub(/[[:space:]]target_path=.*/, "", purpose)
-                gsub(/[[:space:]]+/, " ", purpose)
-                gsub(/^[[:space:]]+|[[:space:]]+$/, "", purpose)
-                if (purpose == "") purpose = "(purposeなし)"
-                miss[purpose]++
-            }
-        }
-        END {
-            if (attempts == 0) {
-                print "  semantic注入試行: 0件"
-                exit
-            }
-            rate = int((no_match * 1000 / attempts) + 0.5) / 10
-            hit_rate = int(((attempts - no_match) * 1000 / attempts) + 0.5) / 10
-            printf "  NO_MATCH率: %.1f%% (%d/%d, scan_lines=%d)\n", rate, no_match, attempts, scan_lines
-            printf "  ヒット率: %.1f%% (%d/%d)\n", hit_rate, attempts - no_match, attempts
-            if (no_match == 0) {
-                print "  TOP3 miss purpose: none"
-                exit
-            }
-            print "  TOP3 miss purpose:"
-            for (purpose in miss) {
-                order[++n] = purpose
-            }
-            for (i = 1; i <= n; i++) {
-                for (j = i + 1; j <= n; j++) {
-                    if (miss[order[j]] > miss[order[i]]) {
-                        tmp = order[i]; order[i] = order[j]; order[j] = tmp
-                    }
-                }
-            }
-            limit = (n < 3) ? n : 3
-            for (i = 1; i <= limit; i++) {
-                p = order[i]
-                shown = p
-                if (length(shown) > 100) shown = substr(shown, 1, 97) "..."
-                printf "    %d. %s (%d件)\n", i, shown, miss[p]
-            }
-        }
-    ' scan_lines="$scan_lines"
+    python3 - "$SCRIPT_DIR" "$deploy_log" "$semantic_index" "$semantic_index_py" "$scan_lines" "$recheck_timeout" <<'PY'
+import re
+import subprocess
+import sys
+from collections import Counter
+from pathlib import Path
+
+script_dir, deploy_log, semantic_index, semantic_index_py, scan_lines, timeout_s = sys.argv[1:7]
+try:
+    scan_lines_i = max(1, int(scan_lines))
+except ValueError:
+    scan_lines_i = 500
+try:
+    timeout_s = max(1, int(timeout_s))
+except ValueError:
+    timeout_s = 3
+
+attempts = 0
+historical_no_match = 0
+current_no_match = 0
+resolved = 0
+miss = Counter()
+
+try:
+    lines = Path(deploy_log).read_text(encoding="utf-8", errors="replace").splitlines()[-scan_lines_i:]
+except OSError:
+    lines = []
+
+for raw in lines:
+    raw = raw.rstrip("\n")
+    if "inject_semantic_concepts:" not in raw:
+        continue
+    attempts += 1
+    if "NO_MATCH" not in raw:
+        continue
+    historical_no_match += 1
+    purpose = re.sub(r"^.*NO_MATCH purpose=", "", raw)
+    purpose = re.sub(r"\s+target_path=.*", "", purpose)
+    purpose = re.sub(r"\s+", " ", purpose).strip() or "(purposeなし)"
+    try:
+        rc = subprocess.run(
+            [
+                "python3",
+                semantic_index_py,
+                semantic_index,
+                purpose,
+                "first-layer",
+                "silent",
+            ],
+            cwd=script_dir,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=timeout_s,
+            check=False,
+        ).returncode
+    except Exception:
+        rc = 1
+    if rc == 0:
+        resolved += 1
+    else:
+        current_no_match += 1
+        miss[purpose] += 1
+
+if attempts == 0:
+    print("  semantic注入試行: 0件")
+    sys.exit(0)
+
+rate = round(current_no_match * 100 / attempts, 1)
+hit_rate = round((attempts - current_no_match) * 100 / attempts, 1)
+print(f"  NO_MATCH率: {rate:.1f}% ({current_no_match}/{attempts}, scan_lines={scan_lines_i})")
+print(f"  ヒット率: {hit_rate:.1f}% ({attempts - current_no_match}/{attempts})")
+print(f"  履歴NO_MATCH解消: {resolved}/{historical_no_match}")
+if current_no_match == 0:
+    print("  TOP3 miss purpose: none")
+else:
+    print("  TOP3 miss purpose:")
+    for idx, (purpose, count) in enumerate(miss.most_common(3), 1):
+        shown = purpose if len(purpose) <= 100 else purpose[:97] + "..."
+        print(f"    {idx}. {shown} ({count}件)")
+PY
     echo ""
 }
 
