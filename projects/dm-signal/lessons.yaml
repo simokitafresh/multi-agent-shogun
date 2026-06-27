@@ -2516,6 +2516,9 @@ lessons:
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.csv
   - outputs/grid_search/okugi_alm_alm/cmd_1877_alm_alm_kawarimi_results_fast.meta.yaml
   origin: '[[cmd_1899]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-28'
 - id: L629
   title: 'golden data有効性: 生成時のコード状態を確認せよ'
   summary: バグ状態で生成されたgolden dataは検証基準にならない。生成日+対応commitを記録すべき。TRFバグ下で生成→全コンポーネント選択=バグ値だった実例
@@ -4684,6 +4687,9 @@ lessons:
   when: タスク配備やデプロイ手順を変更・実行する時
   how: GS側も同一パスを使用すべき
   origin: '[[cmd_1243]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-28'
 - id: L472
   title: GS DTB3計算は本番と日付インデックスおよび境界条件を完全一致させよ
   summary: GS calculate_dtb3_monthly_returnはclose_prices.index(株式取引日)を使用していたが本番はpd.date_ran
@@ -5403,6 +5409,9 @@ lessons:
   target_files:
   - backend/app/jobs/recalculate_fof.py
   origin: '[[cmd_1101]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-28'
 - id: L420
   title: 本番リターン列のopen/close区別必須
   summary: monthly_returnsテーブルにはmonthly_return(Close)とmonthly_return_open(Open)の2列。GSはOpen-

@@ -1,3 +1,30 @@
+- cmd_id: cmd_karo_hotfix_skill_script_refs_202606280133
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem]
+  findings_summary: "LGTM。codd-fix SKILL.md追従。gate_skill_script_refs WARN→PASS"
+  observations:
+    - "files_modified 1件(codd-fix/SKILL.md)。cmd_complete_gate.sh追従注記更新"
+  causal_chain: "startup WARN→SKILL.md追従→WARN解消"
+  step3_5_verified: true
+  brainwash_check: "precheck ERRORS=0。gate PASS確認"
+  origin: "[[startup先送りBLOCK]] -> [[script_refs追従]] -> [[WARN解消]]"
+  timestamp: "2026-06-28T01:40:00"
+- cmd_id: cmd_karo_hotfix_skill_script_refs_202606280133
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, premortem]
+  findings_summary: "APPROVE。SKILL.md script refs追従hotfix。gate_skill_script_refs 3セッション連続WARN解消"
+  observations:
+    - "AC4件: codd-fix/gate-sync/idle-persist/review-bundle SKILL.mdの直近script変更追従"
+  causal_chain: "startup WARN 3セッション連続→先送りBLOCK→SKILL.md追従→WARN解消"
+  brainwash_check: "定型hotfix。scope=SKILL.md追従のみ"
+  origin: "[[startup先送りBLOCK]] -> [[script_refs_3セッション連続WARN]] -> [[SKILL.md追従]]"
+  timestamp: "2026-06-28T01:37:00"
 - cmd_id: cmd_3577
   review_type: report
   verdict: LGTM

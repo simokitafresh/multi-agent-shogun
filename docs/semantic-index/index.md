@@ -1244,6 +1244,7 @@ codd:
 | cmd | `cmd_3478` context鮮度更新 — codd・memory-db-queries・obsidian-link-principlesの3件をsource commit反映 (`context/codd.md`, `context/memory-db-queries.md`, `context/obsidian-link-principles.md`) |
 | causal | `cmd_3478` origin: [[GA-111_context_freshness_ALERT]] -> [[source_commit未反映3件]] -> [[context鮮度回復]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T02:51:43+09:00 これを読んでくれClaude Codeでの推論が90%遅くなる問題を修正する Claude Codeは最近、Claude Code Attributionヘッダーを先頭に付与するようになりました。これは KVキャッシュを無効化し、ローカルモ |
+| cmd | `cmd_karo_hotfix_skill_script_refs_202606280133` (`skills/codd-fix/SKILL.md`) |
 | causal_chain | `[[cmd_3246]]` (L761) |
 
 ## codd_methodology — CoDD整合性駆動開発
@@ -2407,6 +2408,7 @@ codd:
 | causal | `cmd_3478` files_modified: [[skill_design_rules]] |
 | cmd | `cmd_karo_hotfix_shogun_startup_bulletin_skill_20260624` (`skills/shogun-cli-switch/SKILL.md`) |
 | cmd | `cmd_karo_hotfix_skill_refs_20260626082009` (`skills/gate-sync/SKILL.md`, `skills/idle-persist/SKILL.md`, `skills/review-bundle/SKILL.md`) |
+| causal | `cmd_karo_hotfix_skill_script_refs_202606280133` files_modified: [[skill_design_rules]] |
 | causal_chain | `[[cmd_2929]]` (L647) |
 | causal_chain | `[[cmd_2929]]` (L649) |
 | causal_chain | `[[cmd_training_L7_v3_hanzo_5_20260521202900]]` (L660) |
