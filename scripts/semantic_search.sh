@@ -34,7 +34,7 @@ Environment:
   SEMANTIC_MEMORY_DB_LIMIT
                        Maximum memory DB fallback rows (default: 10)
   SEMANTIC_MEMORY_DB_TIMEOUT
-                       Maximum seconds for memory DB FTS fallback (default: 15)
+                       Maximum seconds for memory DB FTS fallback (default: 5)
   SEMANTIC_MEMORY_DB_TARGET
                        Override memory DB target filter (default: current agent_id)
   SEMANTIC_CONCEPT_EXPANSION_LIMIT
@@ -294,7 +294,7 @@ first_layer_search() {
 memory_db_search() {
     [ "${SEMANTIC_DISABLE_MEMORY_DB:-0}" != "1" ] || return 1
 
-    local search_timeout="${SEMANTIC_MEMORY_DB_TIMEOUT:-15}"
+    local search_timeout="${SEMANTIC_MEMORY_DB_TIMEOUT:-5}"
     local target="${SEMANTIC_MEMORY_DB_TARGET:-${AGENT_ID:-}}"
     local db_path="$memory_db_path"
     [ -f "$db_path" ] || return 1
