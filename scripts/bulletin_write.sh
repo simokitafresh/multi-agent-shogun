@@ -111,6 +111,16 @@ normalize_action_type() {
     esac
 }
 
+gunshi_action_required_content() {
+    local poster="$1"
+    local content="$2"
+
+    [[ "$poster" == "gunshi" ]] || return 1
+    [[ "$content" =~ (穴発見|構造的穴|未自動化|自動化ターゲット|改善提案|GP提案|future[[:space:]]+fix|対応必要|要対応) ]] || return 1
+    [[ "$content" =~ (gate|ゲート|自動化|cmd|CMD|修正|対応|起票|実装|追加) ]] || return 1
+    return 0
+}
+
 compute_notify_targets() {
     local posted_by="$1"
     local raw_targets=""
@@ -205,6 +215,9 @@ fi
 
 REQUIRES_CONFIRMATION="$(normalize_confirmation_arg "$REQUIRES_CONFIRMATION")"
 ACTION_TYPE="$(normalize_action_type "$ACTION_TYPE")"
+if [[ "$ACTION_TYPE" == "info" ]] && gunshi_action_required_content "$POSTED_BY" "$CONTENT"; then
+    ACTION_TYPE="action_required"
+fi
 
 if [[ -n "${BULLETIN_NOTIFY:-}" ]]; then
     BULLETIN_NOTIFY="$(normalize_csv_agents "$BULLETIN_NOTIFY" "BULLETIN_NOTIFY")"

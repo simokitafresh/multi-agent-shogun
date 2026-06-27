@@ -288,6 +288,30 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
+@test "gunshi action_required bulletin without actioned_by warns at karo startup" {
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: 'blt_gunshi_action'
+  content: |-
+    軍師idle分析: 構造的穴発見。gate追加の改善提案として対応必要
+  posted_by: 'gunshi'
+  posted_at: '2026-06-28T01:00:00'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"掲示板action_required未対応"* ]]
+    [[ "$output" == *"WARN: 未対応action_required掲示板 1件"* ]]
+    [[ "$output" == *"blt_gunshi_action by gunshi"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
 # === Test 4: PD未解決 → 未解決件数が表示される ===
 @test "2 pending decisions → displays 未解決: 2件" {
     cat > "$TEST_TMPDIR/queue/pending_decisions.yaml" <<'EOF'

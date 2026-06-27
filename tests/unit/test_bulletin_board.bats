@@ -122,6 +122,16 @@ teardown() {
     [[ "$output" == *"actioned_by: ''"* ]]
 }
 
+@test "bulletin_write auto marks gunshi hole discovery as action_required" {
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=gunshi TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" gunshi "idle分析: 構造的穴発見。gate追加の改善提案として対応必要"
+    [ "$status" -eq 0 ]
+    run cat "$TEST_TMPDIR/queue/bulletin_board.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"posted_by: 'gunshi'"* ]]
+    [[ "$output" == *"action_type: 'action_required'"* ]]
+    [[ "$output" == *"actioned_by: ''"* ]]
+}
+
 @test "bulletin_write inserts bulletin event into memory DB after YAML write" {
     local memory_db="$TEST_TMPDIR/data/memory.db"
     create_memory_db_fixture "$memory_db"

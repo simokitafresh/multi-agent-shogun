@@ -880,6 +880,8 @@ fi
 # bulletin 未確認件数とアイテム（awk YAML近似解析）
 _bulletin_count=0
 _bulletin_items=""
+_bulletin_action_count=0
+_bulletin_action_items=""
 if [ -f "$SCRIPT_DIR/queue/bulletin_board.yaml" ]; then
     (
         awk '
@@ -888,11 +890,27 @@ if [ -f "$SCRIPT_DIR/queue/bulletin_board.yaml" ]; then
                     count++
                     if (count <= 3) printf "ITEM: %s by %s\n", eid, epby
                 }
-                in_entry=1; rc=0; closed=0; karo_c=0; eid=""; epby=""
+                if (in_entry && ar && !closed && actioned_by == "") {
+                    action_count++
+                    if (action_count <= 5) printf "ACTION_ITEM: %s by %s\n", eid, epby
+                }
+                eid=$0
+                sub(/^- id:[[:space:]]*/, "", eid)
+                gsub(/['"'"'"]/, "", eid)
+                gsub(/[[:space:]]+$/, "", eid)
+                in_entry=1; rc=0; closed=0; karo_c=0; epby=""
+                ar=0; actioned_by=""
             }
             in_entry && /^  id:/ { v=$2; gsub(/['"'"'"]/, "", v); eid=v }
             in_entry && /^  posted_by:/ { v=$2; gsub(/['"'"'"]/, "", v); epby=v }
             in_entry && /requires_confirmation: true/ { rc=1 }
+            in_entry && /action_type:.*action_required/ { ar=1 }
+            in_entry && /^  actioned_by:/ {
+                actioned_by=$0
+                sub(/^  actioned_by:[[:space:]]*/, "", actioned_by)
+                gsub(/['"'"'"]/, "", actioned_by)
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", actioned_by)
+            }
             in_entry && /status:.*closed/ { closed=1 }
             in_entry && /- .karo./ { karo_c=1 }
             END {
@@ -900,7 +918,12 @@ if [ -f "$SCRIPT_DIR/queue/bulletin_board.yaml" ]; then
                     count++
                     if (count <= 3) printf "ITEM: %s by %s\n", eid, epby
                 }
+                if (in_entry && ar && !closed && actioned_by == "") {
+                    action_count++
+                    if (action_count <= 5) printf "ACTION_ITEM: %s by %s\n", eid, epby
+                }
                 print "COUNT: " count+0
+                print "ACTION_COUNT: " action_count+0
             }
         ' "$SCRIPT_DIR/queue/bulletin_board.yaml" 2>/dev/null || echo "COUNT: 0"
     ) > "$_bulletin_tmp" &
@@ -1332,10 +1355,13 @@ if [[ -f "$_bulletin_tmp" ]]; then
         case "$_blt_line" in
             COUNT:\ *) _bulletin_count=${_blt_line#COUNT: } ;;
             ITEM:\ *) _bulletin_items="${_bulletin_items}    ${_blt_line#ITEM: }"$'\n' ;;
+            ACTION_COUNT:\ *) _bulletin_action_count=${_blt_line#ACTION_COUNT: } ;;
+            ACTION_ITEM:\ *) _bulletin_action_items="${_bulletin_action_items}    ${_blt_line#ACTION_ITEM: }"$'\n' ;;
         esac
     done < "$_bulletin_tmp"
 fi
 _bulletin_count=${_bulletin_count:-0}
+_bulletin_action_count=${_bulletin_action_count:-0}
 rm -f "$_phase_guide_1_tmp" "$_phase_guide_2_tmp" "$_session_summary_tmp" "$_bulletin_tmp"
 
 echo "=== 家老起動チェック $(date '+%H:%M:%S') ==="
@@ -1519,6 +1545,20 @@ if [ "${_bulletin_count:-0}" -gt 0 ]; then
     fi
 else
     echo "  未確認: 0件"
+fi
+
+# --- Check 3.6: 掲示板action_required未対応 ---
+echo "■ 掲示板action_required未対応"
+if [ "${_bulletin_action_count:-0}" -gt 0 ]; then
+    echo "  WARN: 未対応action_required掲示板 ${_bulletin_action_count}件"
+    [ -n "$_bulletin_action_items" ] && echo "$_bulletin_action_items"
+    echo "  → 対応cmdを起票/実行し、actioned_byを埋めよ"
+    if [ "$overall" != "ALERT" ]; then
+        overall="WARN"
+        alerts+=("掲示板action_required未対応: ${_bulletin_action_count}件")
+    fi
+else
+    echo "  未対応: 0件"
 fi
 
 # --- Check 3.7: 軍師GP pending検出 ---
