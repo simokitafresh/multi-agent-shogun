@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-28 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-28T00:20:32+09:00 -->
+<!-- generated_at: 2026-06-28T00:23:25+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-28T00:23:25+09:00 | terminal | response | 家老R10レビュー依頼送信（CTX:89%、次回/clear見込み）。殿の次の入力を待つ。
 - 2026-06-28T00:20:32+09:00 | terminal | response | R9トレース追加+レビュー依頼。
 - 2026-06-28T00:18:16+09:00 | terminal | response | 家老R8レビュー依頼送信（CTX:65%）。殿の次の入力を待つ。 設計書は8ラウンドのレビューを経て、穴の粒度が設計根本→現物不一致→エッジケース→型境界と収束している。R8で実装cmd水準に到達する見込み。 [meta] stop_re…
 - 2026-06-28T00:16:09+09:00 | ntfy | outbound | CI赤: run 28293068172 Unit Tests (bats)
@@ -13,7 +14,6 @@
 - 2026-06-28T00:07:57+09:00 | terminal | response | 家老R5レビュー待ち（CTX:11%、/clear直後で新鮮）。 本番API確認の中間結果: - **cold start確認**: TTFB 5.5秒（殿の「renderはcold startしないだろ？」への回答 = **する**） …
 - 2026-06-28T00:07:54+09:00 | ntfy | outbound | 【家老CRITICAL】先送り3セッション連続検出。起動は許可するが即対処必須
 - 2026-06-28T00:02:33+09:00 | ntfy | outbound | CI赤: run 28292731199 Unit Tests (bats)
-- 2026-06-27T23:59:54+09:00 | terminal | response | 家老R3レビュー待ち。その間に本番API確認を再実行（前回HTTP 000=接続失敗。殿の「cold startしないだろ？」への一次確認）。
 
 ## 未解決確認事項
 - 家老R5レビュー待ち（CTX:11%、/clear直後で新鮮）。 本番API確認の中間結果: - **cold start確認**: TTFB 5.5秒（殿の「renderはcold startしないだろ？」への回答 = **する**） - HTTP 401 = 認証方式の確認…
