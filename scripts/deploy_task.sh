@@ -5566,6 +5566,256 @@ PY
     fi
 }
 
+# ─── WA頻発パターン教訓注入（cmd_3582: workaround TOP3 → related_lessons） ───
+inject_workaround_pattern_lessons() {
+    local task_file="$1"
+    local ninja_name="$2"
+    if [ ! -f "$task_file" ]; then
+        log "inject_workaround_pattern_lessons: task file not found: $task_file"
+        return 0
+    fi
+
+    local workarounds_file="$SCRIPT_DIR/logs/karo_workarounds.yaml"
+    if [ ! -f "$workarounds_file" ]; then
+        log "inject_workaround_pattern_lessons: karo_workarounds.yaml not found, skipping"
+        return 0
+    fi
+
+    local py_output
+    py_output=$(mktemp)
+    local ninja_jp_name
+    ninja_jp_name="$(get_japanese_name "$ninja_name" 2>/dev/null || echo "$ninja_name")"
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" WORKAROUNDS_FILE_ENV="$workarounds_file" NINJA_NAME_ENV="$ninja_name" NINJA_JP_ENV="$ninja_jp_name" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY'; then
+import os, re, sys, tempfile, yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+workarounds_file = os.environ['WORKAROUNDS_FILE_ENV']
+ninja_name = os.environ['NINJA_NAME_ENV']
+script_dir = os.environ['SCRIPT_DIR_ENV']
+ninja_jp_name = os.environ.get('NINJA_JP_ENV', ninja_name)
+
+CATEGORY_LESSON_IDS = {
+    'commit_missing': ['L278', 'L342'],
+    'report_yaml_format': ['L311'],
+    'report_missing': ['L278'],
+    'yaml_dump': ['L295'],
+    'yaml_dump_policy': ['L295'],
+    'scope_contamination': ['L589'],
+    'scope_leak': ['L589'],
+}
+
+def match_ninja(entry):
+    field = str(entry.get('ninja', '') or '')
+    if field and field.lower() == ninja_name.lower():
+        return True
+    return bool(ninja_jp_name) and any(ninja_jp_name in str(entry.get(k, '') or '') for k in ('root_cause', 'detail', 'issue', 'workaround_detail'))
+
+def is_workaround(entry):
+    wa = entry.get('workaround')
+    if wa is True:
+        return True
+    if wa is False:
+        return False
+    return str(entry.get('karo_workaround', '') or '').lower() == 'yes'
+
+def parse_workarounds():
+    text = open(workarounds_file, encoding='utf-8').read()
+    try:
+        loaded = yaml.load(text, Loader=yaml.SafeLoader)
+        if isinstance(loaded, dict):
+            items = loaded.get('workarounds') or []
+        elif isinstance(loaded, list):
+            items = loaded
+        else:
+            items = []
+        return [item for item in items if isinstance(item, dict)]
+    except yaml.YAMLError:
+        pass
+    entries = []
+    body = re.sub(r'^workarounds:\s*\n', '', text)
+    for block in re.split(r'\n(?=- )', body):
+        block = block.strip()
+        if not block:
+            continue
+        try:
+            parsed = yaml.load(block, Loader=yaml.SafeLoader)
+        except yaml.YAMLError:
+            continue
+        if isinstance(parsed, list) and parsed and isinstance(parsed[0], dict):
+            entries.append(parsed[0])
+        elif isinstance(parsed, dict):
+            entries.append(parsed)
+    return entries
+
+def recent_top_categories(limit=3, window=30):
+    matched = [e for e in parse_workarounds() if match_ninja(e) and is_workaround(e)][-window:]
+    counts, first_pos = {}, {}
+    for idx, entry in enumerate(matched):
+        cat = str(entry.get('category') or 'uncategorized').strip() or 'uncategorized'
+        counts[cat] = counts.get(cat, 0) + 1
+        first_pos.setdefault(cat, idx)
+    return sorted(counts.items(), key=lambda kv: (-kv[1], first_pos[kv[0]], kv[0]))[:limit]
+
+def load_lessons():
+    lessons = {}
+    for rel in ('projects/infra/lessons.yaml', 'projects/infra/lessons_archive.yaml'):
+        path = os.path.join(script_dir, rel)
+        if not os.path.exists(path):
+            continue
+        try:
+            data = yaml.load(open(path, encoding='utf-8'), Loader=yaml.SafeLoader) or {}
+        except Exception:
+            continue
+        for lesson in data.get('lessons') or []:
+            if isinstance(lesson, dict):
+                lid = str(lesson.get('id') or '').strip()
+                if lid and lid not in lessons:
+                    lessons[lid] = lesson
+    return lessons
+
+def lesson_entry(lesson, category, count):
+    summary = str(lesson.get('summary') or lesson.get('title') or '')[:200]
+    detail = str(lesson.get('detail') or lesson.get('content') or lesson.get('how') or summary)[:200]
+    entry = {'id': str(lesson.get('id')), 'summary': summary, 'wa_category': category, 'wa_count': count}
+    if detail:
+        entry['detail'] = detail
+    return entry
+
+def sv(value, indent=2):
+    if value is None:
+        return 'null'
+    if isinstance(value, bool):
+        return str(value).lower()
+    if isinstance(value, (int, float)):
+        return str(value)
+    text = str(value)
+    if '\n' in text:
+        return '|-\n' + '\n'.join(' ' * indent + line for line in text.split('\n'))
+    sq = chr(39)
+    return sq + text.replace(sq, sq + sq) + sq
+
+def yaml_lines(key, value, indent=0):
+    p = ' ' * indent
+    if not isinstance(value, (dict, list)):
+        return [p + key + ': ' + sv(value, indent + 2)]
+    if not value:
+        return [p + key + ': ' + ('[]' if isinstance(value, list) else '{}')]
+    rows = [p + key + ':']
+    if isinstance(value, dict):
+        for k, v in value.items():
+            rows.extend(yaml_lines(k, v, indent + 2))
+    else:
+        for item in value:
+            rows.extend(list_item(item, indent))
+    return rows
+
+def list_item(item, indent):
+    p = ' ' * indent
+    if not isinstance(item, dict):
+        return [p + '- ' + sv(item, indent + 2)]
+    rows, first = [], True
+    for k, v in item.items():
+        tag = '- ' if first else '  '
+        first = False
+        if isinstance(v, (dict, list)) and v:
+            rows.append(p + tag + k + ':')
+            if isinstance(v, list):
+                for sub in v:
+                    rows.extend(list_item(sub, indent + 2))
+            else:
+                for dk, dv in v.items():
+                    rows.extend(yaml_lines(dk, dv, indent + 4))
+        else:
+            rows.append(p + tag + k + ': ' + (sv(v, indent + 4) if not isinstance(v, (dict, list)) else ('[]' if isinstance(v, list) else '{}')))
+    return rows
+
+def safe_section_replace(text, section_name, value):
+    fragment = '\n'.join(yaml_lines(section_name, value))
+    indented = '\n'.join('  ' + line for line in fragment.split('\n'))
+    out, skip, inserted = [], False, False
+    for line in text.split('\n'):
+        stripped = line.lstrip(' ')
+        indent = len(line) - len(stripped)
+        if skip:
+            if stripped == '' or indent > 2 or (indent == 2 and stripped.startswith('- ')):
+                continue
+            skip = False
+        if indent == 2 and stripped.startswith(section_name + ':'):
+            out.append(indented)
+            skip, inserted = True, True
+            continue
+        out.append(line)
+    text = '\n'.join(out)
+    if not inserted:
+        pos = text.index('task:') + 5
+        text = text[:pos] + '\n' + indented + text[pos:]
+    return text
+
+def sync_description(description, related):
+    marker = '【注入教訓】'
+    lines = [marker + ' 必ず確認してから作業開始せよ']
+    for item in related:
+        if isinstance(item, dict) and item.get('id'):
+            lines.append(f"  - {item.get('id')}: {str(item.get('summary') or '')[:80]}")
+    lines.append('─' * 40)
+    block = '\n'.join(lines)
+    desc = str(description or '')
+    if marker in desc:
+        return re.sub(r'【注入教訓】.*?─{10,}', block, desc, count=1, flags=re.DOTALL)
+    return block + '\n\n' + desc
+
+try:
+    data = yaml.load(open(task_file, encoding='utf-8'), Loader=yaml.SafeLoader) or {}
+    task = data.get('task') or {}
+    if not task:
+        print('[WA_LESSON] No task section, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    top = recent_top_categories()
+    if not top:
+        print(f'[WA_LESSON] {ninja_name}: no workaround categories, skipping', file=sys.stderr)
+        sys.exit(0)
+
+    lesson_map = load_lessons()
+    related = task.get('related_lessons') or []
+    if not isinstance(related, list):
+        related = []
+    seen = {str(item.get('id')) for item in related if isinstance(item, dict)}
+    added = []
+    for category, count in top:
+        for lid in CATEGORY_LESSON_IDS.get(category, []):
+            if lid in seen or lid not in lesson_map:
+                continue
+            related.append(lesson_entry(lesson_map[lid], category, count))
+            seen.add(lid)
+            added.append(lid)
+
+    if not added:
+        print(f'[WA_LESSON] {ninja_name}: no mapped lessons for top categories {top}', file=sys.stderr)
+        sys.exit(0)
+
+    task['description'] = sync_description(task.get('description', ''), related)
+    raw = open(task_file, encoding='utf-8').read()
+    raw = safe_section_replace(raw, 'related_lessons', related)
+    raw = safe_section_replace(raw, 'description', task['description'])
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(task_file), suffix='.tmp')
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            f.write(raw)
+        os.replace(tmp, task_file)
+    except Exception:
+        os.unlink(tmp)
+        raise
+    print(f'[WA_LESSON] {ninja_name}: injected {added} from top categories {top}', file=sys.stderr)
+except Exception as exc:
+    print(f'[WA_LESSON] ERROR: {exc}', file=sys.stderr)
+    sys.exit(1)
+PY
+        return 1
+    fi
+    rm -f "$py_output"
+}
+
 # ─── Engineering Preferences自動注入 ───
 # cmd_1393: inject_task_modifiers.py に統合済み（stub）
 inject_engineering_preferences() { log "inject_engineering_preferences: merged into inject_task_modifiers (no-op)"; }
@@ -5858,7 +6108,9 @@ inject_ninja_weak_points() {
 
     local py_output
     py_output=$(mktemp)
-    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" WORKAROUNDS_FILE_ENV="$workarounds_file" NINJA_NAME_ENV="$ninja_name" python3 - <<'PY'; then
+    local ninja_jp_name
+    ninja_jp_name="$(get_japanese_name "$ninja_name" 2>/dev/null || echo "$ninja_name")"
+    if ! run_python_logged "$py_output" env TASK_FILE_ENV="$task_file" WORKAROUNDS_FILE_ENV="$workarounds_file" NINJA_NAME_ENV="$ninja_name" NINJA_JP_ENV="$ninja_jp_name" python3 - <<'PY'; then
 import os
 import re
 import sys
@@ -5869,23 +6121,14 @@ import yaml
 task_file = os.environ['TASK_FILE_ENV']
 workarounds_file = os.environ['WORKAROUNDS_FILE_ENV']
 ninja_name = os.environ['NINJA_NAME_ENV']
-
-# 忍者名の日本語↔ローマ字マッピング
-NINJA_JP_MAP = {
-    'hayate': '疾風',
-    'kagemaru': '影丸',
-    'hanzo': '半蔵',
-    'saizo': '才蔵',
-    'tobisaru': '飛猿',
-    'kotaro': '小太郎',
-}
+ninja_jp_name = os.environ.get('NINJA_JP_ENV', ninja_name)
 
 def match_ninja(entry, target_name):
     """エントリが対象忍者に属するか判定"""
     ninja_field = str(entry.get('ninja', '') or '')
     if ninja_field and ninja_field.lower() == target_name.lower():
         return True
-    jp_name = NINJA_JP_MAP.get(target_name.lower(), '')
+    jp_name = ninja_jp_name if target_name.lower() == ninja_name.lower() else ''
     if not jp_name:
         return False
     for field in ('root_cause', 'detail', 'issue', 'workaround_detail'):
@@ -7722,6 +7965,7 @@ deploy_task_apply_task_mutations() {
     # related_lessons+description注入はinject_task_modifiers(yaml.dump使用)の後に実行する。
     # yaml.dumpが_sv(シングルクォート)書式を破壊するため。inject_ac_versionと同じ理由。
     inject_related_lessons "$task_file" || handle_yaml_injection_failure "inject_related_lessons" "$task_file" "$ninja_name"
+    inject_workaround_pattern_lessons "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_workaround_pattern_lessons" "$task_file" "$ninja_name"
     inject_standard_skills "$task_file" || true  # Level5: 全taskに常時使用スキルを明示(cmd_2737)
     inject_semantic_concepts "$task_file" || true  # Level5: 全忍者にセマンティクス概念+ファイル自動提供
     inject_memory_db_context "$task_file" || true  # Level5: 三層記憶先行知識注入(殿厳命2026-06-10)

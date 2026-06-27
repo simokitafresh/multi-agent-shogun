@@ -332,6 +332,7 @@ deploy_task_lessons_only() {
 
         maybe_normalize_task_yaml "$task_file"
         inject_related_lessons "$task_file" || true
+        inject_workaround_pattern_lessons "$task_file" "$ninja_name" || true
     )
 }
 

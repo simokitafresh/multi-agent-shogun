@@ -938,6 +938,179 @@ print(len(related))
     [ "$output" = "3" ]
 }
 
+@test "deploy_task injects workaround TOP3 lessons into related_lessons" {
+    mkdir -p "$TEST_PROJECT/projects/infra"
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L278
+    title: commit and report are inseparable
+    summary: commit後即座にreport作成が必要
+    status: confirmed
+  - id: L342
+    title: git add force for whitelisted scripts
+    summary: ホワイトリスト方式では新規scriptsもgit add -fが必要
+    status: confirmed
+  - id: L311
+    title: workaround report yaml format pattern
+    summary: report_yaml_format WAはreport_field_set使用で防ぐ
+    status: confirmed
+  - id: L295
+    title: yaml dump data loss
+    summary: yaml.dumpで運用YAMLを上書きするとデータ消失する
+    status: confirmed
+EOF
+    cat > "$TEST_PROJECT/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_1
+  ninja: sasuke
+  workaround: true
+  category: commit_missing
+- cmd_id: cmd_2
+  ninja: sasuke
+  workaround: true
+  category: report_yaml_format
+- cmd_id: cmd_3
+  ninja: sasuke
+  workaround: true
+  category: yaml_dump
+- cmd_id: cmd_4
+  ninja: hanzo
+  workaround: true
+  category: commit_missing
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "deploy workaround lesson injection"
+  description: "WA頻発パターンを事前注入する"
+  task_type: impl
+  project: infra
+  target_path: "scripts/deploy_task.sh"
+  acceptance_criteria:
+    - id: AC1
+      checks:
+        - check: "related lessons include WA lessons"
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1]))["task"]
+related = task.get("related_lessons") or []
+ids = [item.get("id") for item in related]
+print(",".join(ids))
+for item in related:
+    if item.get("id") in {"L278", "L311", "L295"}:
+        print(f"{item.get('id')}:{item.get('wa_category')}:{item.get('wa_count')}")
+print(task.get("description", ""))
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"L278"* ]]
+    [[ "$output" == *"L311:report_yaml_format:1"* ]]
+    [[ "$output" == *"L295:yaml_dump:1"* ]]
+    [[ "$output" == *"【注入教訓】"* ]]
+}
+
+@test "deploy_task auto-inserts commit_missing lessons from workaround history" {
+    mkdir -p "$TEST_PROJECT/projects/infra"
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L278
+    title: commit and report are inseparable
+    summary: commit後即座にreport作成が必要
+    status: confirmed
+  - id: L342
+    title: git add force for whitelisted scripts
+    summary: ホワイトリスト方式では新規scriptsもgit add -fが必要
+    status: confirmed
+EOF
+    cat > "$TEST_PROJECT/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_a
+  ninja: sasuke
+  workaround: true
+  category: commit_missing
+- cmd_id: cmd_b
+  ninja: sasuke
+  workaround: true
+  category: commit_missing
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "commit missing prevention"
+  description: "commit漏れ予防"
+  task_type: impl
+  project: infra
+  target_path: "scripts/new_tool.sh"
+  acceptance_criteria:
+    - id: AC1
+      checks:
+        - check: "commit_missing lessons injected"
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1]))["task"]
+related = task.get("related_lessons") or []
+for item in related:
+    print(f"{item.get('id')}:{item.get('wa_category')}:{item.get('wa_count')}")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"L278:commit_missing:2"* ]]
+    [[ "$output" == *"L342:commit_missing:2"* ]]
+}
+
+@test "deploy_task does not duplicate existing related_lessons when adding WA lessons" {
+    mkdir -p "$TEST_PROJECT/projects/infra"
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L278
+    title: commit and report are inseparable
+    summary: commit後即座にreport作成が必要
+    status: confirmed
+  - id: L342
+    title: git add force for whitelisted scripts
+    summary: ホワイトリスト方式では新規scriptsもgit add -fが必要
+    status: confirmed
+EOF
+    cat > "$TEST_PROJECT/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_a
+  ninja: sasuke
+  workaround: true
+  category: commit_missing
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "dedupe workaround lessons"
+  description: "既存related_lessonsを保持"
+  task_type: impl
+  project: infra
+  target_path: "scripts/new_tool.sh"
+  related_lessons:
+    - id: L278
+      summary: already present
+  acceptance_criteria:
+    - id: AC1
+      checks:
+        - check: "dedupe"
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys, yaml
+ids = [item.get("id") for item in (yaml.safe_load(open(sys.argv[1]))["task"].get("related_lessons") or [])]
+print(ids.count("L278"))
+print(",".join(ids))
+PY
+    [ "$status" -eq 0 ]
+    [ "${lines[0]}" = "1" ]
+    [[ "$output" == *"L342"* ]]
+}
+
 @test "deploy_task does not mark MIN_SAMPLES-below lessons as withheld" {
     mkdir -p "$TEST_PROJECT/projects/testproj"
     cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
