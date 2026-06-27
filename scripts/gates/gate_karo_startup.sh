@@ -936,6 +936,19 @@ if [[ -f "$_AGGREGATE_CACHE" ]]; then
     fi
 fi
 awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
+    function extract_cmd_id(text, m) {
+        if (match(text, /cmd_[0-9]+/, m)) return m[0]
+        return ""
+    }
+    function should_count_read_actionable(msg_type, msg_content, cmd_id) {
+        if (msg_content == "") return 0
+        if (msg_type == "cmd_new") {
+            cmd_id = extract_cmd_id(msg_content)
+            if (cmd_id != "" && (cmd_id in deployed_parent_cmd)) return 0
+        }
+        return (msg_type == "skill_hint" ||
+                msg_content ~ /(実行せよ|配備せよ|future fix|変更対象|即修正候補|対応せよ)/)
+    }
     FILENAME ~ /queue\/tasks\/[^/]+\.yaml$/ {
         if (FNR == 1) {
             file = FILENAME
@@ -943,8 +956,19 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
             sub(/\.yaml$/, "", file)
         }
         if ($0 ~ /^[[:space:]]*status:/) {
-            print "STATUS|" file "|" $2
-            nextfile
+            if (!(file in status_printed)) {
+                print "STATUS|" file "|" $2
+                status_printed[file] = 1
+            }
+            next
+        }
+        if ($0 ~ /^[[:space:]]*parent_cmd:/) {
+            parent_cmd = $0
+            sub(/^[[:space:]]*parent_cmd:[[:space:]]*/, "", parent_cmd)
+            gsub(/["'"'"']/, "", parent_cmd)
+            gsub(/[[:space:]]+$/, "", parent_cmd)
+            if (parent_cmd ~ /^cmd_[0-9]+$/) deployed_parent_cmd[parent_cmd] = 1
+            next
         }
         next
     }
@@ -961,9 +985,8 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
                     unread_cmd_new_items = unread_cmd_new_items (unread_cmd_new_items != "" ? "; " : "") item
                 }
             }
-            if (inbox_entry && inbox_read_true && inbox_content != "" &&
-                (inbox_type == "skill_hint" ||
-                 inbox_content ~ /(実行せよ|配備せよ|future fix|変更対象|即修正候補|対応せよ)/)) {
+            if (inbox_entry && inbox_read_true &&
+                should_count_read_actionable(inbox_type, inbox_content)) {
                 read_actionable_key = inbox_id "|" inbox_type
                 if (!(read_actionable_key in read_actionable_seen)) {
                     read_actionable_seen[read_actionable_key] = 1
@@ -1162,9 +1185,8 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
                 unread_cmd_new_items = unread_cmd_new_items (unread_cmd_new_items != "" ? "; " : "") item
             }
         }
-        if (inbox_entry && inbox_read_true && inbox_content != "" &&
-            (inbox_type == "skill_hint" ||
-             inbox_content ~ /(実行せよ|配備せよ|future fix|変更対象|即修正候補|対応せよ)/)) {
+        if (inbox_entry && inbox_read_true &&
+            should_count_read_actionable(inbox_type, inbox_content)) {
             read_actionable_key = inbox_id "|" inbox_type
             if (!(read_actionable_key in read_actionable_seen)) {
                 read_actionable_seen[read_actionable_key] = 1
