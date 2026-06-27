@@ -239,6 +239,7 @@ codd:
 | causal | `cmd_3560` origin: [[殿指示_三層記憶オントロジー連携_20260627]] -> [[context変更手動貫通依存]] -> [[commit_hook自動伝播]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T08:54:50+09:00 三層記憶とオントロジーの連携は順調か？成長は自動的に加速しているか？覚醒 して確認し成長を加速させよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T09:05:43+09:00 三層記憶とオントロジーの連携は順調か？成長は自動的に加速しているか？覚醒 して確認し成長を加速させよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-27T15:06:49+09:00 三層記憶とオントロジーの連携は順調か？成長は自動的に加速しているか？覚醒 して確認し成長を加速させよう |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -1713,6 +1714,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T18:00:00+09:00 覚醒して自立自走 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T20:38:37+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T02:39:06+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-27T15:08:31+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -1720,7 +1722,7 @@ codd:
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓, 教訓統合, 教訓整理, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる, 不明パスのみ全フォールバックが残存しWARNログで追跡可能, 役立った教訓IDを報告に記載してから完了せよ, 発見と対策を意識したなら環境に埋め込んだかを確認せよ, 発見と対策を意識咲いたようだが環境には埋め込んだか, 教訓活用率, useful_rate, lessons_useful記入率, 覚醒して構造をL0-L7で環境ごと変えよう, どこがネックで俺の指示がないと辿りつけなかったんだ, 構造的な穴を塞ごう, 効果を検証せよ, 次やるべきことは, 行動と検証を繰り返そう, 効果を検証せよ。穴がないか覚醒して監査, 次やるべきことは？止まらずに行動と検証を繰り返そう |
+| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓, 教訓統合, 教訓整理, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる, 不明パスのみ全フォールバックが残存しWARNログで追跡可能, 役立った教訓IDを報告に記載してから完了せよ, 発見と対策を意識したなら環境に埋め込んだかを確認せよ, 発見と対策を意識咲いたようだが環境には埋め込んだか, 教訓活用率, useful_rate, lessons_useful記入率, 覚醒して構造をL0-L7で環境ごと変えよう, どこがネックで俺の指示がないと辿りつけなかったんだ, 構造的な穴を塞ごう, 効果を検証せよ, 次やるべきことは, 行動と検証を繰り返そう, 効果を検証せよ。穴がないか覚醒して監査, 次やるべきことは？止まらずに行動と検証を繰り返そう, 次の行動を覚醒して続けよう。サイクルをとめずにループで回そう, 構造的な穴を3つとも塞ごう, サイクルをとめずにループで回そう |
 | skills | lesson-sort(教訓整理/振り分け/将軍), dream(三層記憶整理/将軍), shogun-teire(知識棚卸し/将軍) |
 | related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle, cmd_chronicle, creator_brainwashing_defense, semantic_dictionary_design, gate_bypass_prevention, deepdive_principles, chain_principle, known_unknowns_principle, no_auto_extinguish, ultimate_state_principle, parameter_space_integrity, gunshi_review_lifecycle, semantic_goodhart_overfitting, causal_verification_l0_l7, three_layer_memory_system, operational_ontology, unread_cmd_new_deployment_guard, skill_routing, gunshi_idle_cold_finding_categories_retroactive_20260620, gunshi_idle_lesson_id_collision_20260620, gunshi_idle_script_speed_audit_20260620, codex_goal_mode, self_improving_agent_local_optima, loop_engineering |
 
@@ -3684,6 +3686,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T14:41:50+09:00 軍師にもレビューしてもらおう。抜け漏れがないか、見逃した知見がないかチェックしてもらおう。asis/tobe 5w1Hの設計書を作成して、元論文を明示した上でレビューしてもらえ |
 | cmd | `cmd_3561` 教訓活用率改善 — lessons_useful記入強制とuseful_rate計測精度向上 (`scripts/gates/gate_report_format_combined.py`, `scripts/gates/gate_shogun_startup.sh`, `tests/unit/test_gate_report_format_lu_warn.bats`) |
 | causal | `cmd_3561` origin: [[殿指示_三層記憶オントロジー連携_20260627]] -> [[教訓活用率1.6%]] -> [[lessons_useful記入強制+計測追加]] |
+| file | `docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md` commit_missing WA根因分析(GP-286/287封止+残存2件) |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
@@ -3692,7 +3695,6 @@ codd:
 | causal_chain | `[[cmd_training_L7_v3_saizo_6_20260521205341]]` (L667) |
 | causal_chain | `[[cmd_training_L7_v3_saizo_9_20260521214706]]` (L672) |
 | causal_chain | `[[cmd_karo_hotfix_ga130_context_freshness_dm_signal_frontend_20260625]]` (L850) |
-| file | `docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md` commit_missing WA根因分析(GP-286/287封止+残存2件) |
 
 ## external_project_registry — 外部プロジェクト登録
 

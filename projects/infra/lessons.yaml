@@ -1,8 +1,51 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-26T20:43:22'
+last_synced: '2026-06-27T12:56:05'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 860
+lesson_count: 863
 lessons:
+- id: L868
+  title: コマンド置換内のバックグラウンド処理はstdout継承で待たれる
+  summary: bashのコマンド置換内で起動したバックグラウンドsubshellがstdout pipeを継承すると、親は見かけ上非同期でもpipe EOF待ちになり得る。既
+  tags:
+  - infra
+  - semantic
+  - bash
+  - cache
+  source_cmd: cmd_3563
+  when: 未設定
+  how: 未設定
+  target_files:
+  - scripts/semantic_search.sh
+  origin: '[[cmd_3563]]'
+- id: L867
+  title: semantic_stress_testのAC母数は実データで再集計してから判定する
+  summary: タスクACがpending 36件を前提にしていたが、queue/insights.yamlの一次データでは13件だった。stress_testキューは短時間で
+  tags:
+  - infra
+  - context
+  - testing
+  - yaml
+  - reporting
+  source_cmd: cmd_karo_hotfix_semantic_stress_pending_202606270905
+  when: 未設定
+  how: 未設定
+  target_files:
+  - docs/semantic-index/index.md
+  - context/semantic-map.md
+  origin: '[[cmd_karo_hotfix_semantic_stress_pending_202606270905]]'
+- id: L866
+  title: infra主contextはroot_fallbackのままにせず明示pathspecかcommit details注入で判定させる
+  summary: context/infrastructure.mdはinfraの主contextだがINFRA_CONTEXT_PATHSに登録されていないためroot_fal
+  tags:
+  - infra
+  - recon
+  - git
+  source_cmd: cmd_karo_recon_ga142_context_freshness_infrastructure_202606270309
+  when: 未設定
+  how: 未設定
+  target_files:
+  - 偵察のみ
+  origin: '[[cmd_karo_recon_ga142_context_freshness_infrastructure_202606270309]]'
 - id: L865
   title: CLI切替時はsettings.yaml typeとtmux @real_modelを同時検証する
   summary: CLI切替でsettings.yaml typeフィールド更新とtmux @real_modelキャッシュ更新がずれると、detect_real_modelが旧
@@ -174,7 +217,7 @@ lessons:
   origin: '[[cmd_karo_hotfix_ga132_context_freshness_dm_signal_research_20260625]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-06-27'
 - id: L853
   title: 'GATE CLEAR済みWAの永続ALERT防止: cmd_design_quality品質ログを解決判定に活用'
   summary: workaround=trueでもcmd_design_qualityにgate_result=CLEARが記録されていれば処理済みとみなす。commit_mi
@@ -209,6 +252,9 @@ lessons:
   - scripts/gates/gate_yaml_status.sh
   - tests/unit/test_cmd_complete_skill.bats
   origin: '[[cmd_3531_completion]] -> [[stale_skill_path]] -> [[cmd_complete_skill_static_test]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L851
   title: karo_snapshotは重い監視処理より前に早期発行しatomic publishする
   summary: snapshot遅延バグでは、ninja_monitor.shが重いmaintenance/gate処理の後でsnapshotを書いていたため、処理が詰まるとd
@@ -260,7 +306,7 @@ lessons:
   origin: '[[cmd_karo_hotfix_ga129_context_freshness_dm_signal_ops_20260625]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-06-27'
 - id: L848
   title: context_freshness ALERTにはsource commit要約を同梱せよ
   summary: source commits N件だけのALERTでは、担当者が毎回git logから再調査する。ALERT行に非auto commitのhash/subjec
@@ -311,6 +357,9 @@ lessons:
   target_files:
   - queue/reports/hanzo_report_cmd_karo_recon_ga125_context_freshness_20260624.yaml
   origin: '[[cmd_karo_recon_ga125_context_freshness_20260624]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L845
   title: context_freshness偵察は実gateと低レベルcheckのtimeout差分を分けて報告する
   summary: GA-125では低レベルcheck(CFC_GIT_TIMEOUT=10)は対象2件50件ALERT、実gateはGIT_TIMEOUT=1でOKだった。con
@@ -489,9 +538,6 @@ lessons:
   target_files:
   - scripts/switch_cli_mode.sh
   origin: '[[cmd_karo_hotfix_model_family_ssot_20260620]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L835
   title: switch_cli_mode.sh @agent_state=active残留バグ
   summary: 'Claude recovery後に@agent_state=activeに遷移→task=none/idleでもrespawnスキップ(2/3名)。修正案:
@@ -550,9 +596,6 @@ lessons:
   target_files:
   - scripts/ralph_loop_metrics.sh
   origin: '[[cmd_3472]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L831
   title: 'Commanderロールは忍者名SSOT確立時に意図的でなく後回しにされた: is_core_agentの二重実装が証拠'
   summary: Guard16(cmd_3463)で忍者名SSOT確立時、Commanderロール(shogun/karo/gunshi)はsettings.yaml由来でない
@@ -619,6 +662,9 @@ lessons:
   - queue/reports/*
   origin: '[[shogun_startup_escalation_20260620_143754]] -> [[SKILL.md_script_refs_WARN_3sessions]]
     -> [[skill_script_ref_sync]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L827
   title: 新規libスクリプト追加時は対応hookテストのtest_select mappingを同時追加する
   summary: '**source**: gunshi_lgtm_lesson_candidate scripts/lib/causal_index.sh追加後、Guard18の'
@@ -653,9 +699,6 @@ lessons:
   - scripts/lib/yaml_atomic.py
   - tests/unit/test_git_pre_commit.bats
   origin: '[[GA-101]] -> [[yaml_atomic.py集中管理]] -> [[pre-commit偽陽性BLOCK]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L825
   title: context_freshnessは検出だけでなくcmd完了フローの必須入力へ接続せよ
   summary: GA-099の4対象はlast_updated後のsource commit増加をgateが検出したが、cmd完了時にどのcontextを更新すべきかを必須化す
@@ -1094,6 +1137,9 @@ lessons:
   - docs/semantic-index/index.md
   - context/semantic-map.md
   origin: '[[cmd_karo_hotfix_insight_repeat_backlog_20260612]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L796
   title: script_refs_checked_atはファイル内最後の値を更新する
   summary: gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し最後の値をfreshness基準
@@ -1257,9 +1303,6 @@ lessons:
   target_files:
   - context/dm-signal-research.md
   origin: '[[cmd_karo_hotfix_ga047_context_freshness_202606112306]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L786
   title: 検知チャネル間の除外基準はtask YAMLなど同一ソースへ源流注入する
   summary: cmd_complete_gateとSG-PRE25のように同じ事象を判定する複数チャネルで、片側だけが報告YAMLの任意記録に依存すると記録漏れで偽陽性が再発
@@ -1319,6 +1362,9 @@ lessons:
   target_files:
   - scripts/gates/gate_gunshi_startup.sh
   origin: '[[cmd_karo_hotfix_gunshi_cs_cold_alert_202606111956]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L782
   title: 検知チャネルの判定基準は同一ソースで共有する
   summary: SG-PRE25相当ではreadonly/既存依存として扱える参照でも、cmd_complete_gate側が別経路でcommand欄を再抽出すると5連続で偽陽
@@ -1348,6 +1394,9 @@ lessons:
   - scripts/cmd_complete_gate.sh
   - scripts/gates/gate_gunshi_report_precheck.sh
   origin: '[[cmd_3289-3293 5連続BLOCK]] -> [[readonly_ref判定乖離]] -> [[改善提案]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L780
   title: CDP preflightの実portと要求portがズレる時はcleanup権限を絞る
   summary: CDP_PORT=9333で最小再現してもpreflightが既存9222を検出して実portを9222へ寄せた。要求portのlockだけを持つプロセスが実p
@@ -1970,7 +2019,7 @@ lessons:
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
   deprecated: true
-  deprecated_at: '2026-06-26T20:51:24+09:00'
+  deprecated_at: '2026-06-27T12:56:38+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -3046,6 +3095,9 @@ lessons:
   - docs/semantic-index/index.md
   - context/semantic-map.md
   origin: '[[cmd_training_L7_v3_hayate_6_20260521205341]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L664
   title: 報告存在ゲートは完了判定フィールドまで確認する
   summary: report YAMLの存在だけをclear許可条件にすると、verdict空や未完成報告でもauto-clearが進み、忍者の報告作業コンテキストを消す。報告
@@ -3121,9 +3173,6 @@ lessons:
   - skills/report-write/SKILL.md
   - skills/verdict-check/SKILL.md
   origin: '[[cmd_training_L7_v3_hanzo_5_20260521202900]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L659
   title: YAML形状互換のfixtureは出力までassertせよ
   summary: '既存fixtureはcommands: {cmd_id: ...}のmapping型を使っていたが、dashboard_update.shのtitle抽出結果を'
@@ -3639,7 +3688,7 @@ lessons:
   origin: '[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-06-27'
 - id: L624
   title: yaml_field_setのnested指定は構文破壊リスク→dot notation専用ツール要
   summary: yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用
@@ -4008,6 +4057,9 @@ lessons:
   - docs/semantic-index/index.md
   - context/semantic-map.md
   origin: '[[cmd_2690]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L600
   title: 外部パスdrift修正cmdは検出根拠の個別パスをタスクYAMLへ注入せよ
   summary: 今回のcmd_2690は『12件MISSING』とファイル名だけが渡され、個別の旧パス/期待新パスがタスクYAMLに無かった。現行indexではmissing=
@@ -4258,7 +4310,7 @@ lessons:
   origin: '[[cmd_2644]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-06-27'
 - id: L583
   title: startup子gateの終了コードを || true で潰すと強制化が無効化される
   summary: gate_gunshi_startup.shの cs_result=$(bash gate || true); cs_exit=$? は常に0になり、子gate
@@ -4744,7 +4796,7 @@ lessons:
   origin: '[[cmd_karo_fix_direct_ac_loss]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-06-27'
 - id: L549
   title: gate/hookはflat/nested両task YAML形式をfixtureで検証
   summary: queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形
@@ -4888,9 +4940,6 @@ lessons:
   - scripts/deploy_task.sh
   - tests/unit/test_deploy_task_template_generation.bats
   origin: '[[cmd_2404]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L539
   title: 'inject_parity_target_date_acのFP: commandフィールド説明文の過去形パリティ語がマッチし誤注入'
   summary: cmd_2387のcommandに説明文としてパリティ修正後等の語句がありPARITY_REがマッチしてtarget_date ACが誤注入された。comman
@@ -5750,6 +5799,9 @@ lessons:
   - inject_task_modifiers.py
   - field_get.sh
   origin: '[[cmd_1909]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L473
   title: gate_shogun_startup.shのゲートセクション間で変数スコープ確認必須
   summary: 9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数で
@@ -5837,9 +5889,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: cmd_karo_mismatch_fixで修正
   origin: '[[cmd_karo_mismatch_fix]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L466
   title: CLI死活判定はpane_current_commandで全CLI種別をカバー可能。codex死亡時もbash/zshに戻る
   summary: CLI死亡検知時にpane_current_commandを取得し、bash/zsh/shであればCLI死亡と判定できる。codex型(hayate/saizo
@@ -6070,6 +6119,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-07'
   origin: '[[cmd_deploy_yaml_speedup]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L444
   title: 外部リポ参照は動的パス読込+環境依存スキップで偽陽性防止
   summary: 'gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正:
@@ -6345,9 +6397,6 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: Bash sedを使えば両方回避できる
   origin: '[[cmd_1621]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L420
   title: Edit toolとClaude Codeスキルスキャンの競合によるSKILL.mdファイル破損
   summary: 'Edit toolでSKILL.mdのname:フィールドを更新しようとしたところ、2ファイルとも0バイトに破損。推定原因: Edit toolのtruncat'
@@ -6689,9 +6738,6 @@ lessons:
   target_files:
   - review_gate.sh
   origin: '[[cmd_cycle_L4_064]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L390
   title: embedded PythonのベアexceptはKeyboardInterrupt/SystemExitを隠す
   summary: bash埋込みPythonのtmpファイルcleanupでexcept:を使うとKeyboardInterrupt時にも不要なunlink処理が走る。excep
@@ -7209,7 +7255,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-26T20:51:24+09:00'
+  deprecated_at: '2026-06-27T12:56:39+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -7519,9 +7565,6 @@ lessons:
   when: 報告YAMLやレビュー結果を作成・検証する時
   how: INBOX_WRITE_TEST=1設定下ではNINJA_NAMESが空→is_ninja_reporter=0→report_received処理全体がスキップされる
   origin: '[[cmd_1565]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L320
   title: infraテストは全件必要と判定（後半27テスト）
   summary: test_k*-test_y*全27テストの対象スクリプト21種は全て90日以内に3-115回変更かつ全て本番フロー関与。テスト削減ROIが低い領域。テスト時間
@@ -8610,6 +8653,9 @@ lessons:
   when: Stop Hookでruff出力を判定する時
   how: ruff check --quietを使うか終了コードで判定せよ
   origin: '[[cmd_979]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L230
   title: deploy_task.shのlessons_by_id dict構築でplatform教訓がproject教訓を上書きする
   summary: lessons.extend()でplatform教訓を後方追加→dict comprehensionで同一IDの場合にplatform版が残る。ID重複227
@@ -8801,9 +8847,6 @@ lessons:
   target_files:
   - settings.yaml
   origin: '[[cmd_875]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L214
   title: ローカルIDを複数PJで再利用する系ではメトリクスキーを(project,id)にせよ
   summary: 教訓IDをproject非考慮で集計すると注入回数・有効率・退役判定が別PJ間で相互污染する。cmd_874で検出:同一IDの20組が両PJで同一退役理由。fi
@@ -8929,6 +8972,9 @@ lessons:
   target_files:
   - ninja_monitor.sh
   origin: '[[cmd_777]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L204
   title: STALL誤判定の実態は「idle+status未更新」が主因。pstree方式で予防的防御層追加が有効
   summary: 30日分134件のSTALL-DETECTEDログを分析した結果、ほぼ全件が「ペインが確実にidle状態なのにtask YAML statusが未更新」パターン
@@ -9108,9 +9154,6 @@ lessons:
   when: 並列impl配備時は
   how: review配備前に家老がgit statusで未コミット差分確認するか完了ゲートにcommit検証追加すべき
   origin: '[[cmd_707]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L188
   title: impl忍者のcommit未実施(L179再発)
   summary: 影丸がstatus:doneの報告を提出したがgit commitが未実施。レビュー担当(半蔵)がcommit+pushを代行した。
@@ -9931,7 +9974,7 @@ lessons:
   origin: '[[cmd_466]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-06-27'
 - id: L115
   title: awkでYAMLのインデント階層別フィールド抽出時はインデント深さの正規表現条件を明示せよ
   summary: IF awkでYAMLのインデント階層ごとにフィールドを抽出する時 THEN インデント深さの正規表現条件を明示的に指定せよ。浅いパターンは複数階層にマッチして
@@ -10096,7 +10139,7 @@ lessons:
   - queue/gate_metrics.yaml
   origin: '[[cmd_414]]'
   deprecated: true
-  deprecated_at: '2026-06-26T20:51:24+09:00'
+  deprecated_at: '2026-06-27T12:56:40+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)

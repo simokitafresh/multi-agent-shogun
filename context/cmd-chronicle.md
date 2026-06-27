@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-27 cmd_3562 -->
+<!-- last_updated: 2026-06-27 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -420,3 +420,5 @@
 | cmd_3555 | 殿指示(2026-06-26): Loop Engineering Phase 3並列起票。論文IV Skills『intent debtとは毎回説明し直すコスト。スキルはこれを返済する』。スキル未使用率と陳腐化率を定期計測し、debt未返済のスキルを可視化する | infra | 06-26 | skill_usage_metrics.shで全SKILL. |
 | cmd_3560 | 殿指示(2026-06-27): 穴2=context変更やprojects変更が三層記憶に自動伝播しない。lesson_write.shにはsemantic連携あり(L1118)だがcontext変更時は手動貫通に依存=意志依存=Phase4 | infra | 06-27 | git pre-commit hookにcontext/pr |
 | cmd_3561 | 殿指示(2026-06-27): 穴3=教訓186件中useful3件=活用率1.6%。忍者がlessons_usefulに活用結果を記入していない。記入を構造的に強制し計測精度を上げる | infra | 06-27 | AC1: gate_report_format_combin |
+| cmd_3563 | 殿指示(2026-06-27): FTS5フォールバックの速度改善。計測でPython単体0.27秒だがbash全体42-83秒。WSL2上のflock/subshell/source等のbashオーバーヘッドが真因。alias HITケースでも42秒かかっておりセマンティック検索が実質機能不全 | infra | 06-27 | semantic_search.shのmemory DB c |
+| cmd_3564 | 殿指示(2026-06-27): NO_MATCH率98.9%の根因はaliases品質。semantic_stress_testがcandidate_aliasesを生成しinsights.yamlに蓄積するがindex.mdへの自動反映がない。計測→改善サイクルを自動接続する | infra | 06-27 | candidate_aliases蓄積分を既存概念alias |

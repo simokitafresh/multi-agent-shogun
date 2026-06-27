@@ -424,7 +424,7 @@
   review_type: report
   verdict: LGTM
   report_ninja: kotaro
-  gate_result: null
+  gate_result: CLEAR
   gate_prediction: CLEAR
   confidence: HIGH
   changed_lines: 698
@@ -497,7 +497,7 @@
   review_type: report
   verdict: LGTM
   report_ninja: kagemaru
-  gate_result: null
+  gate_result: CLEAR
   gate_prediction: CLEAR
   confidence: HIGH
   finding_categories: [assumptions, numbers, premortem, adversarial]
@@ -640,6 +640,70 @@
   brainwash_check: "commit実在。bash -n OK。JSON出力34スキル確認。gate set +e保護確認。adversarial 3シナリオ。#2なし(実動作2件確認) #8なし(adversarial完走)"
   origin: "[[cmd_3555]] -> [[intent_debt_measurement]] -> [[LGTM スキル使用率定量化]]"
   timestamp: "2026-06-26T21:05:00+09:00"
+- cmd_id: cmd_3558
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  ambiguity_points: "AC1/AC2の検証対象がPython側(gate_report_format_main.py)に既にD0実装済み(commit 1a6e89252)。bash側重複追加の要否を将軍が判断すべき"
+  findings_summary: "REQUEST_CHANGES。GP-286/GP-287は軍師D0でPython側に実装済み(commit 1a6e89252)。bash側への重複追加は冗長。batsテスト追加のみに絞るか、cmd廃止を推奨"
+  observations:
+    - "commit 1a6e89252: gate_report_format_main.py +20行。GP-286(パス形式)+GP-287(full hash)実装済み"
+    - "cmd_3558 q10: Python側は別cmdと明記。しかしPython側が正本(combined.pyが呼ぶ)でありbash側追加は冗長"
+    - "テスト確認: hanzo_report_cmd_3555 PASS、異常ケース(短縮hash+説明文) FAIL、bats 29/29 PASS"
+  causal_chain: "軍師覚醒→D0即実装(commit 1a6e89252)→将軍がcmd起票→D0と重複。D0先行の事実を伝え調整"
+  brainwash_check: "D0 commit 1a6e89252実在確認。GP-286/GP-287テスト通過確認。#2なし(git show検証) #8なし"
+  severity: normal
+  hole_action: d0_implemented
+  origin: "[[軍師覚醒点検blt_20260627_025812]] -> [[D0_GP-286_GP-287]] -> [[REQUEST_CHANGES重複cmd]]"
+  timestamp: "2026-06-27T03:10:00+09:00"
+- cmd_id: cmd_karo_recon_ga142_context_freshness_infrastructure_202606270309
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star, adversarial]
+  ambiguity_points: none
+  findings_summary: "APPROVE。定型context freshness偵察。AC3件(原因特定+横展開+防御層提案)。karo_direct。read-only偵察で破壊リスクなし"
+  observations:
+    - "GA-142 infrastructure.md source_commit未反映。GA-128-131同類パターン"
+    - "related_lessons: L788(cache TTL注意)+L510(gate_fire_log計測ズレ)注入済み"
+  causal_chain: "GA-142 ALERT→context freshness偵察→根因+防御層提案(正の複利: 次回ALERT予防)"
+  brainwash_check: "AC3件scope内。偵察read-only。定型パターン確認。#2なし #8なし"
+  origin: "[[GA-142_context_freshness_ALERT]] -> [[infrastructure.md]] -> [[APPROVE 偵察cmd]]"
+  timestamp: "2026-06-27T03:15:00+09:00"
+- cmd_id: cmd_karo_recon_ga142_context_freshness_infrastructure_202606270309
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: null
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem]
+  findings_summary: "LGTM。偵察。root_fallback=trueでinfra root commit 4件が広域source扱い。防御層Level5(明示pathspec追加)提案。偵察5要件充足"
+  observations:
+    - "cache無効実行でALERT再現(L788準拠)。INFRA_CONTEXT_PATHS未登録=root_fallback=true"
+    - "source commits 4件(1a6e89252等)。GA-141(DM-Signal docs/research)との差分=infra主contextのfallback仕様"
+    - "lesson_candidate: 明示pathspecかcommit details注入で根本解消(L846系譜)"
+  step3_5_verified: true
+  causal_chain: "GA-142→infrastructure.md root_fallback→infra root 4件広域source→偵察で根因+防御層特定(正の複利)"
+  brainwash_check: "AC3件全充足確認。偵察5要件(変更対象+波及先+テスト+エッジケース+依存)。#2なし #8なし"
+  origin: "[[GA-142_context_freshness_ALERT]] -> [[root_fallback_true]] -> [[LGTM 偵察報告]]"
+  timestamp: "2026-06-27T03:18:00+09:00"
+- cmd_id: cmd_3559
+  review_type: draft
+  gate_result: BLOCK
+  verdict: APPROVE
+  confidence: HIGH
+  finding_categories: [assumptions, simulation, premortem, north_star]
+  ambiguity_points: none
+  findings_summary: "APPROVE。セマンティックNO_MATCH計測サンプル拡張。AC2件。rg semantic_stress_test gate→0件(未統合)確認。insights.yaml 8件存在"
+  observations:
+    - "rg -c semantic_stress_test gate_shogun_startup.sh → 0件。未統合確認"
+    - "insights.yaml semantic_stress_test 8件存在。サンプル不足の根因=未統合"
+  causal_chain: "殿指示→NO_MATCH計測サンプル2件=計測不能→stress_test結果統合→到達率正確化(正の複利)"
+  brainwash_check: "rg 0件確認。AC2件scope内。shallow depth。#2なし #8なし"
+  origin: "[[殿指示_三層記憶連携]] -> [[NO_MATCH計測不足]] -> [[APPROVE stress_test統合]]"
+  timestamp: "2026-06-27T03:23:00+09:00"
 - cmd_id: cmd_3554
   review_type: report
   verdict: LGTM
@@ -664,3 +728,323 @@
   brainwash_check: "commit a6ef4de9実在。bash -n OK。get_max_clear_per_cmd=3実測。LG041 || true確認。adversarial 4シナリオ。#2なし(実動作確認3件) #8なし(adversarial完走)"
   origin: "[[cmd_3554]] -> [[clear回数proxy上限]] -> [[LGTM token_blowout_prevention]]"
   timestamp: "2026-06-26T21:00:00+09:00"
+- cmd_id: cmd_3559
+  review_type: report
+  gate_result: BLOCK
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: BLOCK
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。4観点OK。precheck全PASS。bats 74+2件PASS。gate_shogun_startup.shにinsights.yaml統合、source内訳表示追加。テスト実行で実動作確認済み"
+  observations:
+    - "事実1: semantic_stress_test由来NO_MATCHがinsights.yamlから正しくカウントされ、startup gate出力にsource内訳(deploy_task/semantic_stress_test)が表示される"
+    - "事実2: bats fixtureでdeploy_task=4、semantic_stress_test=2、合計5/6 NO_MATCHを検証"
+    - "事実3: commit de88d2b1f 実在。123ins 58del。gate_shogun_startup.sh+test_gate_shogun_startup.bats 2ファイル"
+  step3_5_verified: true
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "scripts/gates変更だが128行以内。insights.yaml不在時fallback確認。既存計測破壊なし"
+  causal_chain: "NO_MATCH計測サンプル2件で計測不能→insights.yaml統合でsource増加→到達率正確化。道具磨き=正の複利"
+  brainwash_check: "洗脳#2防止: bats test_semantic_no_match_metrics 2/2 PASS実行確認。precheck 14項目PASS/SKIP。#8防止: commit stat+diff確認完走"
+  origin: "[[cmd_3559]] -> [[semantic_stress_test統合]] -> [[LGTM NO_MATCH計測改善]]"
+  timestamp: "2026-06-27T03:35:00+09:00"
+- cmd_id: cmd_3560
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。4観点OK。precheck全PASS。bats 12/12 PASS。git-pre-commit.shにcontext+projects変更検知→semantic自動伝播追加。テスト実行で実動作確認済み"
+  observations:
+    - "事実1: is_semantic_propagation_file()がcontext/*とprojects/*.yaml/ymlを正確に判定。テスト11-12で両経路確認"
+    - "事実2: 非同期実行(デフォルト)と同期実行(SEMANTIC_HOOK_SYNC=1)の2モードでcommit遅延を最小化"
+    - "事実3: commit 059648cb9 実在。126ins 2del。git-pre-commit.sh+test_git_pre_commit.bats 2ファイル"
+  step3_5_verified: true
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "67行追加。semantic処理失敗時もcommit阻害しない(|| true)。非同期のバックグラウンド実行でcommit遅延なし"
+  causal_chain: "context変更が三層記憶に手動貫通依存(Phase4意志依存)→commit hook自動伝播→意志依存ゼロ化。自動化×強制=正の複利"
+  brainwash_check: "洗脳#2防止: bats test_git_pre_commit.bats 12/12 PASS実行確認。precheck 14項目PASS/SKIP。#8防止: commit stat+diff+テスト全パス確認完走"
+  origin: "[[cmd_3560]] -> [[commit_hook自動伝播]] -> [[LGTM 三層記憶オントロジー連携]]"
+  timestamp: "2026-06-27T03:37:00+09:00"
+- cmd_id: cmd_3561
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。6観点OK。shallow depth。既存パターン拡張(gate_report_format WARN追加+startup gate記入率表示)。教訓活用率1.6%→計測精度改善で成長ループ接続"
+  observations:
+    - "事実1: rg -c 記入率 gate_shogun_startup.sh → 0件確認。記入率計測は新規追加"
+    - "事実2: 既存lessons_useful検証(L277)はMISSING/空リストのみ。教訓注入+空リストの組合せWARNは未実装"
+    - "事実3: AC2件scope内完結。WA直近gate_logic_gap(useful_rate ALERT再発)に直接対応する改善cmd"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "shallow depth。WARNレベル追加のみ。BLOCK昇格時に再検証"
+  causal_chain: "教訓186件中useful3件=1.6%→記入未強制→計測不能→記入WARN+記入率表示で計測精度改善→活用改善サイクル接続(正の複利)"
+  brainwash_check: "rg -c 0件で実装不在確認。AC2件で分割不要。depth=shallow。#2なし(前提verified) #7なし(scope縮小せず全数対象) #8なし(6観点全通過)"
+  origin: "[[cmd_3561]] -> [[lessons_useful記入強制]] -> [[APPROVE 教訓活用率改善]]"
+  timestamp: "2026-06-27T03:40:00+09:00"
+- cmd_id: cmd_3561
+  review_type: report
+  verdict: LGTM
+  report_ninja: saizo
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。4観点OK。precheck全PASS。LU-COMBO WARN 4/4 PASS + Gate 13.6 2/2 PASS。テスト実行で実動作確認済み"
+  observations:
+    - "事実1: LU-COMBO WARNがlesson_candidate.found=true+lessons_useful=[]のみで発火し、found=false時は非発火。DISABLE抑制も動作確認"
+    - "事実2: Gate 13.6でfilled/empty比率が正しく表示され、全filledの場合はWARN非表示を確認"
+    - "事実3: gate_report_format_combined.py Phase4追加(87行)。4ファイル変更。SG-PRE3で全ファイルcmd commit確認済み"
+  step3_5_verified: true
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "WARNレベル追加のみ。BLOCK昇格時に再検討。DISABLE環境変数で抑制可能"
+  causal_chain: "教訓活用率1.6%→記入未強制→LU-COMBO WARN+記入率計測で可視化→改善サイクル接続(正の複利)"
+  brainwash_check: "洗脳#2防止: bats 4+2件実行全PASS確認。precheck全項目確認。#8防止: 4ファイル全commit確認+テスト完走"
+  origin: "[[cmd_3561]] -> [[LU-COMBO WARN+記入率計測]] -> [[LGTM 教訓活用率改善]]"
+  timestamp: "2026-06-27T03:43:00+09:00"
+- cmd_id: cmd_karo_hotfix_semantic_stress_pending_202606270905
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。6観点OK。NO_MATCH率97.6%改善の直接cmd。pending36件分類+上位5件alias提案+before/after検証。scope内完結。前提verified(insights.yaml 38件確認済み)"
+  observations:
+    - "事実1: startup gateでNO_MATCH率97.6%(40/41)確認。計測source=deploy_task:3+stress_test:38"
+    - "事実2: semantic_search 'LU-COMBO'→NO_MATCH。新概念がaliasesに到達していない実例"
+    - "事実3: AC3件で分類→提案→検証の順序依存が自然。before/after必須で主張のみ防止"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "aliases追加のみ。index.md/semantic-map.md整合はAC2で制御"
+  causal_chain: "NO_MATCH率97.6%→aliases品質不足→pending36件分類+改善→到達率向上(正の複利)"
+  brainwash_check: "NO_MATCH 97.6%は一次データ(startup gate実行)で確認。insights.yaml 38件はgrep -c実測。#2なし #8なし(3FM全て対処記載)"
+  origin: "[[NO_MATCH率97.6%]] -> [[aliases品質改善]] -> [[APPROVE semantic_stress_pending分類]]"
+  timestamp: "2026-06-27T09:15:00+09:00"
+- cmd_id: cmd_3562
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。6観点OK。GP-286/287 batsテスト追加のみ。AC1件shallow。軍師提案(blt_20260627_090523)の採用。実装済み検証=軍師が実動作確認済み(short hash FAIL・non-path FAIL)"
+  observations:
+    - "事実1: rg GP-286 tests/ → 0件、rg GP-287 tests/ → 0件。テスト不在は自セッションで実測確認済み"
+    - "事実2: GP-286/287の実動作は軍師がpython3 gate_report_format_main.pyで実測確認済み(short hash→FAIL、non-path→FAIL)"
+    - "事実3: cmd_3558 canceled→cmd_3562でテスト追加のみに絞った軽量cmd。軍師提案通りの分割"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "テスト追加のみ。実装変更なし"
+  causal_chain: "GP-286/287 D0実装済み+テスト未作成→CI回帰防護不在→テスト追加でリファクタ安全(正の複利)"
+  brainwash_check: "rg 0件は自セッション実測。python3実動作確認2件実施。#2なし(一次データ完走) #8なし(AC1件で必要十分)"
+  origin: "[[cmd_3562]] -> [[GP-286_GP-287_テスト追加]] -> [[APPROVE CI回帰防護]]"
+  timestamp: "2026-06-27T09:18:00+09:00"
+- cmd_id: cmd_karo_hotfix_semantic_stress_pending_202606270905
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。4観点OK。NO_MATCH 0/8→MATCH 8/8の改善を実動作確認。SG-PRE9c ERROR=偽陽性(pending=タスク固有名詞)。semantic_search 3件独立検証で全MATCH"
+  observations:
+    - "事実1: semantic_search実行で3/3 MATCH確認(設計書を実装しよう→codd、インフラバグ→infrastructure_ops、検証してみて→known_unknowns)"
+    - "事実2: SG-PRE9c ERRORはpending語のマッチだが、task名semantic_stress_test pendingの固有名詞であり未達成委譲ではない。偽陽性"
+    - "事実3: AC母数36件→実測13件の乖離を報告で正直に記載(assumption_invalidation.found=true)。実在pending全件を分類改善"
+  step3_5_verified: true
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "aliases追加のみ。SSOT=index.md→semantic_map_generate.shで同期。ロールバック=git revert"
+  causal_chain: "NO_MATCH率97.6%→aliases8件追加→殿クエリ到達率改善。計測→改善サイクル初回転(正の複利)"
+  brainwash_check: "semantic_search 3件独立実測でMATCH確認。SG-PRE9c偽陽性判断は報告YAMLの文脈で確認。#2なし(実動作検証完走) #8なし(全AC確認)"
+  origin: "[[cmd_karo_hotfix_semantic_stress_pending]] -> [[aliases8件追加]] -> [[LGTM NO_MATCH改善]]"
+  timestamp: "2026-06-27T09:20:00+09:00"
+- cmd_id: cmd_3562
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。4観点OK。precheck全PASS。bats 29/29 PASS(T-GP287-1+T-GP286-1含む)。GP-286/287のCI回帰防護完了"
+  observations:
+    - "事実1: T-GP287-1(short hash FAIL/full hash PASS)とT-GP286-1(non-path FAIL/path PASS)の2テスト追加確認"
+    - "事実2: bats --filter T-GP で2/2 PASS。全体29/29 PASS。commit bb7820ac実在"
+    - "事実3: 軍師提案(blt_20260627_090523)→将軍起票→家老配備→忍者実装→軍師レビュー。提案→完走のサイクル完走"
+  step3_5_verified: true
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "テスト追加のみ。実装変更なし"
+  causal_chain: "GP-286/287 D0実装済み+テスト不在→CI回帰防護なし→テスト追加でリファクタ安全化(正の複利)"
+  brainwash_check: "bats --filter T-GP 2/2 PASS実測。全29/29 PASS実測。commit bb7820ac実在。#2なし #8なし"
+  origin: "[[cmd_3562]] -> [[GP-286_GP-287_テスト追加]] -> [[LGTM CI回帰防護完了]]"
+  timestamp: "2026-06-27T09:23:00+09:00"
+- cmd_id: cmd_3563
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。6観点OK。semantic_search 42秒→実用化の直接cmd。Python0.27秒vs bash42秒のbefore値verified。AC2件scope内完結"
+  observations:
+    - "事実1: Python単体0.27秒、bash全体42秒(alias HIT)。差分41.7秒=bash制御フローがボトルネック"
+    - "事実2: AC2件独立計測可能。before/after数値記録必須で主張のみ防止"
+    - "事実3: 安全パターン削除リスクはStep4事前検死で明示。LG教訓(safe pattern削除NG)が適用される"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "速度改善のみ。出力形式変更なし。既存テストで回帰検知"
+  causal_chain: "semantic_search 42秒→実質機能不全→NO_MATCH率97%の一因→bash I/O最適化→検索実用化→三層記憶サイクル加速(正の複利)"
+  brainwash_check: "Python 0.27秒/bash 42秒は殿の一次計測値。AC2件で分割不要。#2なし(前提verified) #7なし(scope縮小せず) #8なし(6観点完走)"
+  origin: "[[cmd_3563]] -> [[bash制御フロー最適化]] -> [[APPROVE semantic_search速度改善]]"
+  timestamp: "2026-06-27T12:52:00+09:00"
+- cmd_id: cmd_3563
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。4観点OK。precheck全PASS。alias HIT 42s→1.08s(97.4%改善)、MISS 56s→0.45s(99.2%改善)を軍師独立計測で確認。bats 30/30 PASS"
+  observations:
+    - "事実1: alias HIT計測 time結果: real 1.080s(修正前42s→97.4%改善)"
+    - "事実2: alias MISS計測 time結果: real 0.447s(修正前56s→99.2%改善)"
+    - "事実3: 根因=prepare_memory_db_for_read内のbackground subshellがstdout pipe継承で待たされていた。修正=>/dev/null切断1行"
+  step3_5_verified: true
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "1行修正(stdout/stderr切断)。既存テスト30/30 PASSで回帰なし。安全パターン削除なし"
+  causal_chain: "async refresh subshellのstdout継承→bash pipeEOF待ち42秒→>/dev/null切断で解消→検索実用化(正の複利)"
+  brainwash_check: "time計測2件独立実測: HIT 1.08s MISS 0.45s。bats 30/30 PASS。commit 537008b実在。#2なし(実動作完走) #8なし(全確認完了)"
+  origin: "[[cmd_3563]] -> [[stdout継承待ち修正]] -> [[LGTM semantic_search速度改善]]"
+  timestamp: "2026-06-27T12:56:00+09:00"
+- cmd_id: cmd_karo_ci_fix_ga143_main_ci_red_202606271356
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。6観点OK。CI RED修正(ShellCheck SC1036/SC1088+bats setup_file)。AC3件定型scope内完結"
+  observations:
+    - "事実1: CI run 28277911943の失敗原因=note_draft.sh裸Markdown混入+weekly_metrics_trend bats setup_file失敗"
+    - "事実2: AC3件で修正→テスト→commit+報告の順序依存自然"
+    - "事実3: CI修正は殿裁定(2026-04-15)で将軍cmd不要の家老自走配備対象"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "CI修正定型。裸Markdownコメント化+setup_file修正"
+  causal_chain: "note_draft.sh裸Markdown→ShellCheck FAIL→CI RED→コメント化で解消(正の複利: CI GREEN復帰)"
+  brainwash_check: "CI run ID指定で一次データ参照。AC3件で分割不要。#2なし #8なし"
+  origin: "[[CI_RED_28277911943]] -> [[ShellCheck+bats修正]] -> [[APPROVE CI修正]]"
+  timestamp: "2026-06-27T14:00:00+09:00"
+- cmd_id: cmd_karo_ci_fix_ga143_main_ci_red_202606271356
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  gate_result: null
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。precheck全PASS。shellcheck -x -S error PASS実測。note_draft.sh裸Markdownコメント化。CI GREEN復帰修正"
+  observations:
+    - "事実1: shellcheck -x -S error scripts/note_draft.sh → 出力なし(PASS)。修正前はSC1036/SC1088"
+    - "事実2: commit dad84ea2実在。files_modified=note_draft.sh 1ファイル。コメント化2行のみの最小修正"
+    - "事実3: AC2 weekly_metrics_trend bats setup_file失敗はローカル再現せず、bats 2/2 PASSで現状正常"
+  step3_5_verified: true
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "bashコメント化2行のみ。機能影響なし"
+  causal_chain: "skill-auto-improve追記が裸Markdown→ShellCheck SC1036/SC1088→CI RED→コメント化で解消"
+  brainwash_check: "shellcheck実行PASS実測。commit dad84ea2実在。#2なし(実動作確認) #8なし"
+  origin: "[[CI_RED_28277911943]] -> [[note_draft.shコメント化]] -> [[LGTM CI修正]]"
+  timestamp: "2026-06-27T14:02:00+09:00"
+- cmd_id: idle_commit_missing_wa_analysis_20260627
+  review_type: self_study
+  verdict: null
+  findings_summary: "commit_missing WA 4件根因分析。GP-286/287で2件封止。残存2件(マルチフェーズfm統合不在+DM-Signal hotfix)を将軍に提案"
+  observations:
+    - "WA#2(hash不一致)+#3(説明文混入)はGP-286/287 D0+bats T-GP286/287で封止済み"
+    - "WA#1(final_summary fm未統合)はgrep merge cmd_complete_gate.sh→0件。自動マージ不在"
+    - "WA#4(DM-Signal hotfix)はPJ固有。構造的対策はscope外"
+  cs_checklist:
+    CS1: "karo_workarounds直近10件全件読了"
+    CS2: "GP-286/287実動作確認(short hash FAIL/non-path FAIL)"
+    CS3: "grep files_modified.*merge cmd_complete_gate.sh → 0件で不在確認"
+    CS4: "掲示板blt_20260627_142919+永続化docs/research/"
+    CS5: "穴A(マルチフェーズfm統合)を将軍に提案"
+    CS6: "4件→2封止+2未封止の因果分類"
+  causal_chain: "commit_missing WA 4件→根因2種(gate未検証+構造不在)→GP-286/287で前者封止→後者は構造的穴として提案"
+  brainwash_check: "WA 4件中2件封止/2件提案で全件対処(#8防止)。grep 0件で不在確認(#2防止)。掲示板+永続化まで実行(#6防止)。D0不可判断=1ファイル超(#3回避)"
+  operational_simulation: "GP-286/287封止後: 次に忍者がshort hashやfiles_modified説明文を報告→gate_report_format_main.pyがFAIL→忍者自身で修正→家老WAゼロ。穴A未封止: マルチフェーズcmd再発時→final_summaryにL0 fm欠落→gate BLOCK→家老WA発生。頻度低(稀)だが確実"
+  output: docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md
+  altruism_check: not_needed
+  altruism_reason: "GP-286/287はgate自動検出で忍者に自動表示される。追加教訓不要"
+  timestamp: "2026-06-27T14:30:00+09:00"
+- cmd_id: cmd_3564
+  review_type: draft
+  verdict: APPROVE
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。6観点OK。NO_MATCH率98.9%改善のcandidate_aliases自動還流。AC2件medium depth。軍師提案2(blt_20260627_091348)の採用"
+  observations:
+    - "事実1: rg auto_alias scripts/ → 0件。index.mdへの自動alias追加は未実装"
+    - "事実2: semantic_stress_test L568がcandidate_aliases生成→insights.yaml蓄積。計測→改善の接続が本cmdの目的"
+    - "事実3: AC2件で作成→到達確認の順序依存自然。二値検証(NO_MATCH→HIT)で効果確認"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "alias追加のみ。SSOT=index.md維持"
+  causal_chain: "NO_MATCH率98.9%→candidate_aliases蓄積but手動還流→自動還流で計測→改善サイクル接続(正の複利)"
+  brainwash_check: "rg 0件で未実装確認(#2防止)。AC2件分割不要(#7防止)。6観点全通過(#8防止)"
+  origin: "[[cmd_3564]] -> [[candidate_aliases自動還流]] -> [[APPROVE NO_MATCH改善サイクル接続]]"
+  timestamp: "2026-06-27T14:40:00+09:00"
+- cmd_id: cmd_3564
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。precheck全PASS。bats 39/39 PASS。semantic_alias_absorb_pending.sh追加+semantic_index_update.sh出力補強。本番pending 6件は安全閾値未満で誤吸収なし"
+  observations:
+    - "事実1: bats 39/39 PASS。candidate_aliases fixture before rc=1/after rc=0+alias count+1を検証"
+    - "事実2: 本番pending 6件は既存安全閾値16未満でaliases_added=0。誤alias化防止が機能"
+    - "事実3: commit 919510819実在。3ファイル変更(absorb_pending新設+index_update補強+テスト追加)"
+  step3_5_verified: true
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "安全閾値維持。低score候補は未昇格。ロールバック=git revert"
+  operational_simulation: "semantic_stress_test実行→candidate_aliases生成→insights.yaml蓄積→absorb_pending実行→閾値超過alias→index.md自動追加→NO_MATCH率改善。計測→改善サイクルが自動接続"
+  causal_chain: "candidate_aliases蓄積→index.md未接続→absorb_pending自動還流→計測→改善サイクル接続(正の複利)"
+  brainwash_check: "bats 39/39実測。bash -n syntax OK。commit実在。本番aliases_added=0で安全。#2なし(実動作完走) #8なし(全確認)"
+  origin: "[[cmd_3564]] -> [[semantic_alias_absorb_pending]] -> [[LGTM NO_MATCH自動還流]]"
+  timestamp: "2026-06-27T14:53:00+09:00"

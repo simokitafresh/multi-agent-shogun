@@ -8831,3 +8831,36 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: CLI切替・モデル編成変更・pane respawn後の表示検証時
 - **how**: settings.type、tmux @agent_cli、tmux @model_name/@real_model、capture-pane上の実CLIバナーを同時照合し、不一致ならswitch成功扱いにしない
 - CLI切替でsettings.yaml typeフィールド更新とtmux @real_modelキャッシュ更新がずれると、detect_real_modelが旧CLI分岐に入り古いモデル名を返し、paneステータスバー表示が実態と乖離する。shogun-cli-switch/switch_cli_mode系の変更では、settings.type・tmux @agent_cli・tmux @model_name/@real_model・capture-pane上の実バナーを同時に検証し、不一致なら成功扱いにしない。origin: [[殿指摘_paneステータスバー乖離_20260626]] -> [[settings.yaml type未更新]] -> [[detect_real_model分岐ミス]]
+
+### L866: infra主contextはroot_fallbackのままにせず明示pathspecかcommit details注入で判定させる
+- **日付**: 2026-06-27
+- **出典**: cmd_karo_recon_ga142_context_freshness_infrastructure_202606270309
+- **記録者**: kagemaru
+- **tags**: [infra,recon,git]
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_karo_recon_ga142_context_freshness_infrastructure_202606270309]]
+- **when**: 未設定
+- **how**: 未設定
+- context/infrastructure.mdはinfraの主contextだがINFRA_CONTEXT_PATHSに登録されていないためroot_fallback=trueとなり、root repoの非context変更4件がすべてsource commits扱いになった。context_freshness偵察ではL846通りroot_fallbackを数値化し、次の防御層は明示pathspecまたはcommit details自動注入で更新要否判断に直行させるべき。origin: [[GA-142_context_freshness_ALERT]] -> [[infrastructure.md_root_fallback_true]] -> [[広域source_commit_ALERT]]
+
+### L867: semantic_stress_testのAC母数は実データで再集計してから判定する
+- **日付**: 2026-06-27
+- **出典**: cmd_karo_hotfix_semantic_stress_pending_202606270905
+- **記録者**: kagemaru
+- **tags**: [infra,context,testing,yaml,reporting]
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_karo_hotfix_semantic_stress_pending_202606270905]]
+- **when**: 未設定
+- **how**: 未設定
+- タスクACがpending 36件を前提にしていたが、queue/insights.yamlの一次データでは13件だった。stress_testキューは短時間で変動するため、報告ではAC文面の固定件数ではなく実測母数・抽出条件・時刻を必ず記録する。
+
+### L868: コマンド置換内のバックグラウンド処理はstdout継承で待たれる
+- **日付**: 2026-06-27
+- **出典**: cmd_3563
+- **記録者**: kagemaru
+- **tags**: [infra,semantic,bash,cache]
+- **target_files**: [scripts/semantic_search.sh]
+- **origin**: [[cmd_3563]]
+- **when**: 未設定
+- **how**: 未設定
+- bashのコマンド置換内で起動したバックグラウンドsubshellがstdout pipeを継承すると、親は見かけ上非同期でもpipe EOF待ちになり得る。既存cache即返し設計では、background refreshは >/dev/null 2>&1 で標準出力を切断すること。origin: [[殿指示_FTS5速度改善_20260627]] -> [[コマンド置換stdout継承]] -> [[semantic_search_42秒待ち]]
