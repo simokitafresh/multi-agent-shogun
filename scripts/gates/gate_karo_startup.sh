@@ -1141,6 +1141,7 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
             has_brainwash_field[n]=0
             cat[n]="uncategorized"
             rc[n]=""
+            resolved[n]=0
             wa_cmd[n]=""
             if (/^- (cmd_id|cmd):/) {
                 wa_cmd[n]=$0
@@ -1161,6 +1162,14 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         if (/^  brainwash_check:/) { brainwash[n]=1; has_brainwash_field[n]=1; next }
         if (/^  category:/) { sub(/^  category: */, ""); gsub(/["'"'"']/, ""); cat[n]=$0; next }
         if (/^  root_cause:/) { sub(/^  root_cause: */, ""); gsub(/["'"'"']/, ""); rc[n]=substr($0,1,60); next }
+        if (/^  resolved_by_cmd:/) {
+            val=$0
+            sub(/^  resolved_by_cmd:[[:space:]]*/, "", val)
+            gsub(/["'"'"']/, "", val)
+            gsub(/[[:space:]]+$/, "", val)
+            if (val != "") resolved[n]=1
+            next
+        }
         next
     }
     FILENAME ~ /queue\/shogun_to_karo\.yaml$/ {
@@ -1260,10 +1269,10 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         print "WA|" wc "|" total "|" cat_str "|" cause_str "|" max_cat "|" max_count+0
         clean_streak = 0
         for (i=n; i>=1; i--) {
-            if (wa[i]) break
+            if (wa[i] && !resolved[i]) break
             clean_streak++
         }
-        latest_regression = (n > 0 && wa[n]) ? 1 : 0
+        latest_regression = (n > 0 && wa[n] && !resolved[n]) ? 1 : 0
         latest_cmd = (n > 0 && wa_cmd[n] != "") ? wa_cmd[n] : "unknown"
         latest_cat = (n > 0 && cat[n] != "") ? cat[n] : "uncategorized"
         print "WACLEAN|" clean_streak "|" n+0 "|" latest_regression "|" latest_cmd "|" latest_cat
@@ -1598,6 +1607,23 @@ if [ -f "$wa_file" ]; then
     echo "  連続clean: ${WA_CLEAN_STREAK}件 (総記録${WA_ENTRY_TOTAL}件)"
     if [ "${WA_REGRESSION:-0}" -eq 1 ]; then
         _wa_latest_resolved=0
+        # resolved_by_cmd check: karo_workarounds.yamlのresolved_by_cmdが非空なら解消済み
+        if [ -n "${WA_LATEST_CMD:-}" ]; then
+            _wa_rbc="$(awk -v target="$WA_LATEST_CMD" '
+                /^[[:space:]]*-[[:space:]]*cmd_id:/ {
+                    c=$0; sub(/^.*cmd_id:[[:space:]]*/, "", c); gsub(/["'"'"']/, "", c); gsub(/[[:space:]]+$/, "", c)
+                    active=(c == target); next
+                }
+                active && /^[[:space:]]*resolved_by_cmd:/ {
+                    v=$0; sub(/^.*resolved_by_cmd:[[:space:]]*/, "", v); gsub(/["'"'"']/, "", v); gsub(/[[:space:]]+$/, "", v)
+                    if (v != "") { print v; exit }
+                }
+            ' "$wa_file")"
+            if [ -n "$_wa_rbc" ]; then
+                _wa_latest_resolved=1
+                echo "  OK: 最新WA resolved_by_cmd確認済み (${WA_LATEST_CMD} → ${_wa_rbc})"
+            fi
+        fi
         if [ "${WA_LATEST_CAT:-}" = "commit_missing" ]; then
             _wa_latest_commit="$(
                 awk -v target="$WA_LATEST_CMD" '
