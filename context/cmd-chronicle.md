@@ -422,3 +422,4 @@
 | cmd_3561 | 殿指示(2026-06-27): 穴3=教訓186件中useful3件=活用率1.6%。忍者がlessons_usefulに活用結果を記入していない。記入を構造的に強制し計測精度を上げる | infra | 06-27 | AC1: gate_report_format_combin |
 | cmd_3563 | 殿指示(2026-06-27): FTS5フォールバックの速度改善。計測でPython単体0.27秒だがbash全体42-83秒。WSL2上のflock/subshell/source等のbashオーバーヘッドが真因。alias HITケースでも42秒かかっておりセマンティック検索が実質機能不全 | infra | 06-27 | semantic_search.shのmemory DB c |
 | cmd_3564 | 殿指示(2026-06-27): NO_MATCH率98.9%の根因はaliases品質。semantic_stress_testがcandidate_aliasesを生成しinsights.yamlに蓄積するがindex.mdへの自動反映がない。計測→改善サイクルを自動接続する | infra | 06-27 | candidate_aliases蓄積分を既存概念alias |
+| cmd_3565 | 殿指示(2026-06-27): compare-chart-yaxis-label-clipping-fix.md設計書に基づきCompare ChartのY軸2欠陥を修正。D1=LIN高リターンで先頭桁クリップ、D2=LOG目盛が固定配列500で頭打ち。レンジ非依存+コンパクト表記で構造的に解消 | dm-signal | 06-27 | comparison-chart.tsxにbuildLogT |

@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-26 cmd_3547 -->
-<!-- last_synced_lesson: L783 -->
+<!-- last_updated: 2026-06-27 cmd_3565 -->
+<!-- last_synced_lesson: L786 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -255,6 +255,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L737-L749は振り分け済 → ops索引(L737/L738統合:奥義BB命名正常挙動/L740:check_pf_config/L743:PF構成確認/L745:import分割/L747:UUID GS source_type), core§19.2(L739:pipeline_config構造/L741:BB忍法対応表/L742:パラメータ確認/L748:FoF components件数差), core§5(L744:API境界4層管理), ops§6-7(L749:models+migrations同期)。L746は自動生成→削除）
 - （L750-L765は振り分け済 → research§27(L750/L751/L752/L753:シン四神相関分析), gs-speedup§3(L756/L758/L759/L760/L761:trial高速化手法), gs-speedup§4(L762:cache設計), ops索引(L763/L764:速度AC方法論)。L757/L765は自動生成→削除）
 - （L766-L783は振り分け済 → ops§9(L766/L768:速度計測方法論), ops§12(L767:成果物パス命名), core§8(L769:α6キー名SSOT), infra教訓索引(L772:tracked限定集計盲点), ops§38(L773/L777/L780:CI import分割), core§5(L775/L781:分析関数性能), core§21(L782:FoFネストN+1), ops§6-7(L783:fullrecalculate確認手段[PI])）
+- L786: ComparisonChart Y軸: 固定配列目盛は純粋関数抽出+動的生成で構造的解消（cmd_3565）
 
 ## 因果リンク
 

@@ -1,8 +1,62 @@
 ssot_path: /mnt/c/Python_app/DM-signal/tasks/lessons.md
-last_synced: '2026-06-26T05:03:15'
+last_synced: '2026-06-27T15:43:45'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons_archive.yaml
-lesson_count: 780
+lesson_count: 783
 lessons:
+- id: L786
+  title: 'ComparisonChart Y軸: 固定配列目盛は純粋関数抽出+動的生成で構造的解消'
+  summary: 'LOG目盛固定配列(niceValues 500頭打ち)とLIN整形桁欠けは同根: ハードコードによるレンジ非追従。純粋関数4本をmoduleスコープにexpo'
+  tags:
+  - dm-signal
+  - testing
+  - review
+  source_cmd: cmd_3565
+  when: 未設定
+  how: 未設定
+  target_files:
+  - frontend/components/comparison-chart.tsx
+  - frontend/components/__tests__/comparison-chart-yaxis.test.tsx
+  origin: '[[cmd_3565]]'
+- id: L785
+  title: Compare ChartのY軸表示修正はJest実態・無制限ラベル幅・描画配線テストを同時に固定する
+  summary: 仕様書で `Vitest` と書いても実プロジェクトがJestならテストは実行不能になる。軸修正では `buildLogTicks()` /
+    formatter
+  tags:
+  - dm-signal
+  - compare-chart
+  - frontend
+  - chart
+  - testing
+  source_cmd: compare-chart-yaxis-label-clipping-fix-review-1
+  when: Compare Chartの軸目盛・ラベル整形を変更するとき
+  how: フロントの実テストランナーを `package.json` / `jest.config.ts` で確認し、純粋関数テストだけでなく `ComparisonChart`
+    描画配線テストを追加する。レンジ無制限をうたう場合は10万倍級以上も `k`/`M` 等の確定フォーマットでラベル幅を閉じる
+  target_files:
+  - frontend/components/comparison-chart.tsx
+  - frontend/components/__tests__/comparison-chart-yaxis.test.tsx
+  - frontend/package.json
+  - frontend/jest.config.ts
+  - docs/spec/compare-chart-yaxis-label-clipping-fix.md
+  origin: '[[Compare Chart Y軸ラベル不具合修正レビュー1回目]]'
+- id: L784
+  title: Compare Summaryの独立ベンチ行はrawBenchmarks契約で固定しPF benchmarkへフォールバックしない
+  summary: PF行の `benchmark` 列はそのPF期間に切り詰めた値であり、独立BM行へ流用するとフォルダーフィルターやアンカーPFでSPY行が変動する。独立BM行
+  tags:
+  - dm-signal
+  - compare-summary
+  - benchmark
+  - frontend
+  - api-contract
+  - cache
+  source_cmd: compare-summary-benchmark-row-period-instability-fix-review-1
+  when: Compare SummaryでSPY/TQQQなどを独立ベンチマーク行として表示するとき
+  how: '`/api/metrics/summary` の `benchmarks[]` にstandalone値を必ず返し、FEは `rawBenchmarks`
+    のみからBM行を作る。欠損時にPF由来 `benchmark` 列へフォールバックせず、API契約テストとフロントキャッシュ削除手順で固定する'
+  target_files:
+  - backend/app/api/metrics.py
+  - frontend/app/compare-summary/summary-data.ts
+  - frontend/app/compare-summary/summary-data.test.ts
+  origin: '[[Compare Summaryベンチマーク行期間不安定性修正レビュー1回目]]'
 - id: L783
   title: Render本番fullrecalculate完了確認はtiming-historyが唯一信頼できる手段
   summary: recalculate-statusはロードバランサー問題で別インスタンスに当たりrunning=Falseを返す。timing-historyのDBエントリが
@@ -120,9 +174,6 @@ lessons:
   - frontend/app/compare-summary/summary-data.test.ts
   - backend/app/api/metrics.py
   origin: '[[Compare Summary表示指標再選別レビュー2回目]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L777
   title: pre-commit import-only分割は未使用importを自動除去する
   summary: 機能差分からimport-only hunkだけを先行commitしようとしても、未使用importはpre-commitで自動除去され空commit化する。フ
@@ -495,7 +546,7 @@ lessons:
   origin: '[[cmd_3384]] -> [[BB分類context更新未強制]] -> [[GA-102 dm-signal-core freshness
     ALERT]]'
   deprecated: true
-  deprecated_at: '2026-06-26T05:03:33+09:00'
+  deprecated_at: '2026-06-27T15:43:59+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): context/dm-signal-core.m参照（ファイル消滅）'
 - id: L753
   title: 'DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用'
@@ -574,7 +625,7 @@ lessons:
   - frontend
   - fof
   source_cmd: cmd_3393
-  when: FoFのcomponent_portfoliosまたはfof_component_weightsを変更する時
+  when: 未設定
   how: 未設定
   target_files:
   - docs/research/cmd_3393_fof_neighbor_alpha6_comparison_20260616.md
@@ -853,9 +904,6 @@ lessons:
   - frontend/components/__tests__/monthly_trade_table_fof_uuid.test.tsx
   - frontend/lib/__tests__/monthly-trade-display.test.ts
   origin: '[[cmd_3293]] -> [[WP-2のresolveDisplayText変更棄却]] -> [[cmd_3294コード復元+テスト固定]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L730
   title: 削除済みBlockTypeはruntime全経路で残参照検査する
   summary: Kalman/selection block削除後、静的な主要箇所の削除は完了していたが、初回本番mode=portfolio再計算でrecalculate_f
@@ -972,9 +1020,6 @@ lessons:
   target_files:
   - 偵察のみ（コード変更なし。運用YAML task/reportのみ更新）
   origin: '[[cmd_karo_recon_p_average_freshness_api_failure_202606041948]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-22'
 - id: L722
   title: pipeline_config同期偵察はトップレベル差分とブロック差分を別々に検証する
   summary: PortfolioEditorはトップレベルPortfolioフィールドだけを更新し、BE saveはmodel_dumpをそのままconfig保存する。pip
@@ -1965,9 +2010,6 @@ lessons:
   - outputs/grid_search/20260427/L0/shin/gs_kawarimi_DM7P.db
   - scripts/analysis/cmd_2325_kawarimi_csv_to_db.py
   origin: '[[cmd_2325]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L659
   title: source_type=csvのGS runnerでもDB前提をpreflightで切り分ける
   summary: run_077_oikaze.pyはsource_type=csvでもALM青龍-常勝 portfolioをDB参照し、現DBに存在せず停止した。一方pipel
@@ -2019,7 +2061,7 @@ lessons:
   - tasks/lessons.md
   origin: '[[cmd_2311]]'
   deprecated: true
-  deprecated_at: '2026-06-26T05:03:34+09:00'
+  deprecated_at: '2026-06-27T15:43:59+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/kotaro.yaml参照（ファイル消滅）'
 - id: L656
   title: 計測スクリプトの固定待機排除はDOMポーリングで行う
@@ -2264,9 +2306,6 @@ lessons:
   - scripts/analysis/cmd_2142_bunshin_profile_harness.py
   - scripts/analysis/grid_search/run_077_bunshin.py
   origin: '[[cmd_2142]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L638
   title: upfront cleanup後の長時間再計算はworker restartで本番データを空にしうる
   summary: MonthlyReturnをPhase 0で先消しすると、FoF再生成前にRender workerが再起動した場合monthly_returns
@@ -2330,9 +2369,6 @@ lessons:
   target_files:
   - docs/research/codd_phase4_schema_drift_analysis.md
   origin: '[[cmd_2016]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L633
   title: monthly専用GS serial pathはprecomputed union maskを再利用せよ
   summary: 四つ目(yotsume)のように monthly-only かつ precomputed union mask が既にあるGSでは、serial
@@ -2728,7 +2764,7 @@ lessons:
   origin: '[[cmd_1856]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-06-27'
 - id: L608
   title: 進行中月パリティ差異は構造的問題
   summary: GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致
@@ -2814,9 +2850,6 @@ lessons:
   - outputs/analysis/cmd_1845_three_layer_comparison.md
   - scripts/oneshot/cmd_1845_three_layer_metrics.py
   origin: '[[cmd_1845]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L602
   title: 'cmd_1844 oikaze MaxDD champion ID誤記: N2→N4(20体GSで subset=2の誤記)'
   summary: 'cmd_1844が報告したoikaze鉄壁チャンピオンID oikaze_N2_2661_10M_N2_R1 はokugi_shin_ninpo_20body '
@@ -2923,6 +2956,9 @@ lessons:
   - tasks/lessons.md
   - scripts/analysis/grid_search/run_077_yotsume.py
   origin: '[[cmd_1835]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L594
   title: PythonのsetはPYTHONHASHSEEDに依存する非決定論的な順序を持つ。GS sequential検証でlist(set())を使う場合はsorted()に置換せよ
   summary: TrendReversalFilterBlock.execute() L78でtickers = list(context.current_tickers)がs
@@ -3063,9 +3099,6 @@ lessons:
   target_files:
   - tasks/lessons.md
   origin: '[[cmd_1796]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L584
   title: '[自動生成] draft教訓の査読を怠った: cmd_1796'
   summary: draft教訓1件が未査読のままGATE到達
@@ -3572,9 +3605,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: bulk metrics用prepared frameのRFは各PFの実date軸に対して個別解決せよ
   origin: '[[cmd_karo_batch_R6]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L547
   title: パラメータ空間をサイレント縮小するな(殿厳命2026-04-04)
   summary: '計算量を理由にパラメータ空間を縮小すると殿の時間を奪う。4回連続事故: top_n=5決め打ち/lookback6個/PBO5組合せ/MaxDD1点。対処:
@@ -3650,9 +3680,6 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: '2026-04-03'
   origin: '[[cmd_training_L4_R39_hayate]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L541
   title: 'depth_summaryパターン: 研究スクリプトに知見検証セクションを標準追加せよ'
   summary: L538のような深度依存効果の発見後、研究スクリプトのYAML出力にdepth_summaryを追加することで次回実行時に知見を自動検証できる。group_su
@@ -3676,9 +3703,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-03'
   origin: '[[cmd_training_L4_R38_kagemaru]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L539
   title: FoF悪化の主因は尖り削減ではなくネスト深度増幅 — r=-0.199で仮説棄却
   summary: 65PFのEMA前後シグナル相関行列+尖り削減量とFoF Δcagr相関分析。r=-0.199(弱い負の相関)。尖り削減量はFoF悪化の主因ではない。cmd_1
@@ -3895,9 +3919,6 @@ lessons:
   - outputs/analysis/nested_fof/r28_k_beta_decomposition.yaml
   - scripts/analysis/nested_fof/r28_k_beta_decomposition.py
   origin: '[[cmd_1597]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L523
   title: overlapping-window mechanical correlation trap
   summary: トレーリングLBヶ月momentum同士の残留確率テストは、LB>1でoverlapping windowにより機械的相関が発生しt統計量が桁違いに膨れる(LB
@@ -4461,9 +4482,6 @@ lessons:
   target_files:
   - scripts/analysis/grid_search/verify_fof_parity.py
   origin: '[[cmd_1269]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-22'
 - id: L481
   title: standard PF登録時のmomentum_methodデフォルト
   summary: Portfolio schemaのmomentum_methodデフォルトはprice_ratio。standard PFでは明示的にprice_ratioを設
@@ -4492,11 +4510,6 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-26'
-  deprecated: true
-  deprecated_at: '2026-06-26T17:40:05+09:00'
-  deprecated_reason: 'cmd_karo_hotfix_lesson_health_useful_20260626173325: 直近full
-    cmdで3回連続NOT_USEFUL(0/3)。成熟低useful分母を押し下げるため淘汰'
-  deprecated_by: cmd_karo_hotfix_lesson_health_useful_20260626173325
 - id: L479
   title: selection付きFoFのinit月はholding_signal=Noneで独立検証不可
   summary: selection blocks付きFoFの最初の月はmonthly_returns.holding_signal=Noneだがmonthly_returnは非
@@ -4656,9 +4669,6 @@ lessons:
   when: パリティ検証ツールを新規作成する
   how: 既存ツール(15+)とのtolerance差異を確認せよ
   origin: '[[cmd_1235]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L466
   title: FoF component_portfoliosはUUID格納。旧四神=fof型、シン四神=standard型の構造差
   summary: component_portfoliosはportfolios.idのUUIDリストで格納。名前解決にはportfoliosテーブルとのJOINが必須。また、旧
@@ -4668,9 +4678,6 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-22'
   origin: '[[cmd_1234]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L465
   title: 'SelectionBlock set→list非決定性: タイ存在時にPYTHONHASHSEED依存で結果変動'
   summary: 全SelectionBlockでtickers=list(context.current_tickers)を使用。setの反復順序はPYTHONHASHSEED
@@ -5310,9 +5317,6 @@ lessons:
   target_files:
   - backend/app/jobs/recalculate_fof.py
   origin: '[[cmd_1101]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L420
   title: 本番リターン列のopen/close区別必須
   summary: monthly_returnsテーブルにはmonthly_return(Close)とmonthly_return_open(Open)の2列。GSはOpen-
@@ -5431,9 +5435,6 @@ lessons:
   target_files:
   - frontend/lib/constants.ts
   origin: '[[cmd_1079]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L411
   title: GS並列実行時のメモリ競合によるBus error
   summary: '初回DM2実行時にBus error(core dump)。原因: 他GSプロセス(kasoku_diff等)並走でfree memory
@@ -5694,9 +5695,6 @@ lessons:
   - docs/research/core-local-analysis.md
   - docs/research/ops-procedures.md
   origin: '[[cmd_1035]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L390
   title: yotsume batch sim(3D mask)はregression。4視点union+forward-fill構造にはboolean mask不適合
   summary: yotsumeは4視点和集合+forward-fill構造。boolean mask化の恩恵を受けない。元々0.31ms/pat(PPE6)で十分高速(248K
@@ -6333,9 +6331,6 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: ただしDM2+とDM7+はXLU+TQQQを共通に持つため、XLUの出現頻度30%閾値で区別する必要がある
   origin: '[[cmd_1014]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-22'
 - id: L342
   title: 2段重ねBTのStage1変更はnominal_output変動を伴い大幅Sharpe変動の主因
   summary: IF 2段重ねBTの過適合検証で近傍パラメータを変動させる THEN Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_
@@ -6614,9 +6609,6 @@ lessons:
   target_files:
   - tests/test_admin_tiers.py
   origin: '[[cmd_987]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L320
   title: p̄検定は朱雀(DM3)のDNA「債券方向スイッチ」と構造的に不適合
   summary: p̄検定は月次リターンの一貫した正のリターンを検定する。 朱雀のDNAはTMF/TMV切替で「大きな方向転換で稼ぐ」設計であり、
@@ -6733,9 +6725,6 @@ lessons:
   target_files:
   - frontend/lib/api-client.ts
   origin: '[[cmd_962]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L310
   title: 'apiCache.clear()はETag IDB(dm-signal-etag-store)を削除しない。clear直後のAPI呼出でETag送信→304→キャッシュなしエラーが発生しうる。clearSignalsCache()は独自対策済みだが汎用clear()にはない。修正対象:
     frontend/lib/api-cache.ts:204-212, frontend/lib/api-client.ts:254-259'
@@ -7253,9 +7242,6 @@ lessons:
   - frontend/lib/__tests__/api-client-etag.test.ts
   - frontend/lib/api-client.ts
   origin: '[[cmd_847]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L271
   title: years付きmonthly fast pathは境界月だけdaily fallbackを残すと完全一致と高速化を両立できる
   summary: 日次→月次precompute置換ではyears>0のcutoffが月途中になるとpartial month parityが崩れる。境界月のみdaily
@@ -7275,9 +7261,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: output:exportとSW bypassが揃っていてもportal配下のnavがclick同期でsetIsOpen(false)を打つとLink/router遷移は消される
   origin: '[[cmd_832]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L269
   title: FoF request-scope cache の key は auth ではなく portfolio_id+signal_date に寄せ、masking
     は route 後段に隔離せよ
@@ -7923,9 +7906,6 @@ lessons:
   how: CDP自動認証でlocal fileを先に試すと401を重ねてrate limitに達しうるため、process envが無い場合はRender env
     APIを優先し、local fileは最後のfallbackにすべき
   origin: '[[cmd_695]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L214
   title: CDP性能計測の前提確認では timing より先に『正常画面か』を検査すべき
   summary: '`localhost:3000` や static export 配信先で CDP 計測を始めても、実 DOM が 「只今、城の修繕中にございます」の障害画面な'
@@ -8273,9 +8253,6 @@ lessons:
   - frontend/app/dashboard/page.tsx
   - frontend/app/summary/page.tsx
   origin: '[[cmd_564]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L188
   title: window.location遷移を採用する構成ではContext単独の状態共有は永続化要件を満たさない
   summary: IF ページ間遷移がwindow.location.hrefだとSPA状態が毎回破棄されるため、永続化要件にはlocalStorageまたはURLパラメータを併
@@ -8618,9 +8595,6 @@ lessons:
   when: layout最上位でProviderが全ページをラップしている構造では、ページ個別実装よりProviderでの条件分岐が最小差分で安全時
   how: layout最上位でProviderが全ページをラップしている構造では、ページ個別実装よりProviderでの条件分岐が最小差分で安全
   origin: '[[cmd_526]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L158
   title: WSL上のWindows venvでは .venv/Scripts/python.exe 経由でpytestを実行できる
   summary: python3環境にpytestが無くても、Windows形式venvがある場合は .venv/Scripts/python.exe -m pytest
@@ -9259,9 +9233,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: パラメータ化するにはコード変更が必要
   origin: '[[kotaro]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L101
   title: MultiViewのPhase3 momentum_cache事前計算はFoF専用のためskipされる
   summary: recalculate_fast.py Phase3(OPT-A)ではMultiView/SingleView/TrendReversalはFoF専用としてmo
@@ -9389,6 +9360,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: confirmed
   origin: '[[cmd_225]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L089
   title: GS-本番パリティはデータソース一致が前提条件
   summary: IF GS内部の初期化処理ロジックが全4スクリプトで同一でも、データソース(CSV vs DB)が異なればパリティは保証されない時 THEN
@@ -9472,11 +9446,6 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-26'
-  deprecated: true
-  deprecated_at: '2026-06-26T17:40:05+09:00'
-  deprecated_reason: 'cmd_karo_hotfix_lesson_health_useful_20260626173325: 直近full
-    cmdで3回連続NOT_USEFUL(0/3)。成熟低useful分母を押し下げるため淘汰'
-  deprecated_by: cmd_karo_hotfix_lesson_health_useful_20260626173325
 - id: L082
   title: monthly_returns.portfolio_id(varchar)とportfolios.id(uuid)の型不整合
   summary: monthly_returns.portfolio_idはvarchar型、portfolios.idはuuid型。SQLでJOIN/IN比較する際にid::t
@@ -9753,9 +9722,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 新忍法追加時にも適用
   origin: '[[saizo]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L057
   title: 168バッチGS結果は忍法ごとにCSV有無が異なる
   summary: IF 変わり身(kawarimi)は168バッチにresults CSVのみで月次リターンCSVが未生成時 THEN 変わり身(kawarimi)は168バッチ
@@ -9833,9 +9799,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: confirmed
   origin: '[[cmd_165]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-22'
 - id: L049
   title: 'bunshin R3: 純Pythonインナーループは逆効果。fixed-arity vectorizationが有効'
   summary: bunshin(均等配分)は選出ロジックを持たないため、他忍法R3で効いた純Pythonインナーループは0.029sで悪化した(baseline
@@ -9857,9 +9820,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: confirmed
   origin: '[[subtask_165_nukimi_r3]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-22'
 - id: L047
   title: 'kawarimi R3: NumPy呼出し排除で5.5倍(0.037秒)'
   summary: NumPyベクトル化済みコードの次段階はNumPy呼び出し排除。小サブセット2-4要素ではnumpy関数オーバーヘッド1-5μs/callが実計算コスト10ns
@@ -9932,9 +9892,6 @@ lessons:
   when: bunshin GS(781通り)をNumPyベクトル化+前処理キャッシュ化で高速化時
   how: bunshin GS(781通り)をNumPyベクトル化+前処理キャッシュ化で高速化
   origin: '[[cmd_161]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L040
   title: nukimi C2候補はgekkou列のみ使用、close/openは同一CSVデータで暫定統一
   summary: IF 064_champion CSVは単一系列のため、load_monthly_returns_dual_from_csvのclose_fallback=op
@@ -9987,9 +9944,6 @@ lessons:
   when: POST /admin/recalculate-syncにstart_dateを指定しても実際はstart_date=2000-01-01で全期間実行される時
   how: POST /admin/recalculate-syncにstart_dateを指定しても実際はstart_date=2000-01-01で全期間実行される
   origin: '[[cmd_128]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-20'
 - id: L035
   title: FoF参照L0 PFはDELETE不可→UPDATE方式が安全
   summary: L0 PFがFoFコンポーネントとして参照されている場合、DELETE APIは400を返す。UPDATE方式(既存PFにpipeline_config付与+/
@@ -10122,7 +10076,7 @@ lessons:
   - scripts/analysis/data_sync/download_all_prices.py
   origin: '[[legacy_lesson_L025]]'
   deprecated: true
-  deprecated_at: '2026-06-26T05:03:34+09:00'
+  deprecated_at: '2026-06-27T15:43:59+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
 - id: L024
   title: signal_historyのキーはPhase 2のmonth_last_trading_daysと同型でなければならない（2026-02-15）
