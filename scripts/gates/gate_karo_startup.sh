@@ -940,11 +940,24 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         if (match(text, /cmd_[0-9]+/, m)) return m[0]
         return ""
     }
+    function extract_cmd_token(text, m) {
+        if (match(text, /cmd_[A-Za-z0-9_]+/, m)) return m[0]
+        return ""
+    }
+    function gate_archive_done(cmd_id, path) {
+        if (cmd_id == "") return 0
+        path = root "/queue/gates/" cmd_id "/archive.done"
+        return system("test -f " path) == 0
+    }
     function should_count_read_actionable(msg_type, msg_content, cmd_id) {
         if (msg_content == "") return 0
         if (msg_type == "cmd_new") {
             cmd_id = extract_cmd_id(msg_content)
             if (cmd_id != "" && (cmd_id in deployed_parent_cmd)) return 0
+        }
+        if (msg_type == "skill_hint" && msg_content ~ /GATE CLEAR/) {
+            cmd_id = extract_cmd_token(msg_content)
+            if (gate_archive_done(cmd_id)) return 0
         }
         return (msg_type == "skill_hint" ||
                 msg_content ~ /(実行せよ|配備せよ|future fix|変更対象|即修正候補|対応せよ)/)

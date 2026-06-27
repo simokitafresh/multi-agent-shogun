@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-27 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-27T19:06:26+09:00 -->
+<!-- generated_at: 2026-06-27T19:09:15+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-27T19:09:14+09:00 | terminal | response | ビルドがまだ進行中。完了通知を待つ。 殿、状況報告: - **BE**: `896a20b2` **live** (デプロイ済み) - **FE**: `896a20b2` **build_failed** — 現行FEは`b061d87…
 - 2026-06-27T19:06:26+09:00 | terminal | response | inbox全件処理完了。レビュー待機。 [meta] stop_reason=end_turn
 - 2026-06-27T19:06:22+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627 完了
 - 2026-06-27T19:05:19+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝146
@@ -13,7 +14,6 @@
 - 2026-06-27T19:03:01+09:00 | terminal | response | 既読化完了。全inbox処理済み。殿の次の指示を待つ。 [meta] stop_reason=end_turn
 - 2026-06-27T19:01:11+09:00 | ntfy | outbound | 【家老】cmd_3569 完了
 - 2026-06-27T18:59:41+09:00 | terminal | response | **cmd_3569 push完了。** `896a20b2` DM-Signal main反映済み。 殿、Compare Returnsページ(`/compare-returns`)の実装が完了した。全PF+ベンチマーク×8期間(MTD…
-- 2026-06-27T18:57:05+09:00 | terminal | response | cmd_karo_hotfix_ga144 APPROVE完了。レビュー待機。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - 三層貫通完了: - **Layer 1 記憶DB**: knowledge書き込み済み（ec76ecadb3d009c1） - **Layer 2 セマンティック**: semantic-map.md + index.md に「二重起動誤検知」「18本正常」alias追加 - …
