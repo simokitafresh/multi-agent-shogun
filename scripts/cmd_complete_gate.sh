@@ -3547,6 +3547,50 @@ for item in files:
 PY
 }
 
+collect_parent_cmd_report_files_modified() {
+    local cmd_id="${1:-$CMD_ID}"
+    local reports_dir="$SCRIPT_DIR/queue/reports"
+
+    REPORTS_DIR="$reports_dir" CMD_ID="$cmd_id" python3 - <<'PY'
+import glob
+import os
+import yaml
+
+reports_dir = os.environ["REPORTS_DIR"]
+cmd_id = os.environ["CMD_ID"]
+seen = set()
+
+def emit(value):
+    value = str(value or "").strip()
+    if not value or value in ("no-code-change", "no_code_change") or value in seen:
+        return
+    seen.add(value)
+    print(value)
+
+for path in sorted(glob.glob(os.path.join(reports_dir, "*.yaml"))):
+    try:
+        with open(path, encoding="utf-8") as f:
+            report = yaml.safe_load(f) or {}
+    except Exception:
+        continue
+    if not isinstance(report, dict):
+        continue
+    if str(report.get("parent_cmd") or "").strip() != cmd_id:
+        continue
+
+    files = report.get("files_modified") or []
+    if isinstance(files, str):
+        files = [files]
+    if not isinstance(files, list):
+        continue
+    for item in files:
+        if isinstance(item, dict):
+            emit(item.get("path") or item.get("file") or item.get("name"))
+        else:
+            emit(item)
+PY
+}
+
 collect_git_show_w_files() {
     local git_ref="${1:-HEAD}"
 
@@ -3579,9 +3623,9 @@ check_self_grade_commit_file_coverage() {
             continue
         fi
 
-        report_files=$(collect_report_files_modified "$report_file" | sort -u)
+        report_files=$(collect_parent_cmd_report_files_modified "$CMD_ID" | sort -u)
         if [ -z "$report_files" ]; then
-            echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES files_modified empty while binary_checks.commit=yes"
+            echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES parent_cmd files_modified empty while binary_checks.commit=yes"
             warned=true
             continue
         fi

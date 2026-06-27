@@ -38,6 +38,8 @@ setup_file() {
         printf '\n'
         sed -n '/^collect_report_files_modified()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^collect_parent_cmd_report_files_modified()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^collect_git_show_w_files()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^check_self_grade_commit_file_coverage()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -330,6 +332,58 @@ _init_self_grade_git_repo() {
     [[ "$output" == *"OK (self-grade commit file coverage)"* ]]
     [[ "$output" == *"ALL_CLEAR=true"* ]]
     [[ "$output" == *"BLOCK_REASONS="* ]]
+}
+
+@test "self-grade commit/files verification merges files_modified from same parent_cmd phase reports" {
+    _init_self_grade_git_repo
+    printf 'phase1\n' > "$TEST_PROJECT/scripts/phase1.sh"
+    printf 'phase2\n' > "$TEST_PROJECT/scripts/phase2.sh"
+    git -C "$TEST_PROJECT" add scripts/phase1.sh scripts/phase2.sh
+    git -C "$TEST_PROJECT" commit -m "multi phase files" >/dev/null
+
+    _write_self_grade_fixture "  - path: scripts/phase2.sh
+    change: modified"
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}_l0.yaml" <<EOF
+worker_id: sasuke
+parent_cmd: $TEST_CMD_ID
+files_modified:
+  - path: scripts/phase1.sh
+    change: modified
+EOF
+
+    run _run_self_grade_commit_file_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (files_modified covered by git show -w HEAD)"* ]]
+    [[ "$output" == *"OK (self-grade commit file coverage)"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
+@test "self-grade commit/files verification keeps single phase behavior" {
+    _init_self_grade_git_repo
+    _write_self_grade_fixture "  - path: scripts/touched.sh
+    change: modified"
+
+    run _run_self_grade_commit_file_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (files_modified covered by git show -w HEAD)"* ]]
+    [[ "$output" == *"OK (self-grade commit file coverage)"* ]]
+}
+
+@test "self-grade commit/files verification deduplicates files_modified across phase reports" {
+    _init_self_grade_git_repo
+    _write_self_grade_fixture "  - path: scripts/touched.sh
+    change: modified"
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}_l0.yaml" <<EOF
+worker_id: sasuke
+parent_cmd: $TEST_CMD_ID
+files_modified:
+  - path: scripts/touched.sh
+    change: modified
+EOF
+
+    run collect_parent_cmd_report_files_modified "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | grep -c '^scripts/touched.sh$')" -eq 1 ]
 }
 
 @test "command/files_modified coverage blocks when command target is missing from report" {
