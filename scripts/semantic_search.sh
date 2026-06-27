@@ -195,7 +195,7 @@ prepare_memory_db_for_read() {
             mv "$tmp_path" "$cache_path" 2>/dev/null || rm -f "$tmp_path"
             # Backup APIはWALを本体に統合済み。古いサイドカーが残ると不整合になるため削除
             rm -f "${cache_path}-wal" "${cache_path}-shm" 2>/dev/null || true
-        ) 9>"$lock_path" &
+        ) 9>"$lock_path" >/dev/null 2>&1 &
         printf '%s\n' "$cache_path"
         return 0
     fi
