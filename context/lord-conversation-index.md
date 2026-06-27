@@ -1,9 +1,10 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-28 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-28T00:08:52+09:00 -->
+<!-- generated_at: 2026-06-28T00:11:41+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-28T00:11:40+09:00 | terminal | response | 家老R6レビュー依頼送信（CTX:38%）。殿の次の入力を待つ。 **設計書レビューサイクル経過:** | Round | 穴の性質 | 件数 | |-------|---------|------| | R1→R2 | 設計の根本穴（鮮…
 - 2026-06-28T00:08:52+09:00 | terminal | response | 家老のinbox未読1件 = 直前に送ったR5レビュー依頼(00:07:42)。家老のstartup gateがレビュー依頼受信直後(00:07:48)に未読検知→エスカレーション。タイミングの問題であり、家老はR5レビューを処理中のはず…
 - 2026-06-28T00:07:57+09:00 | terminal | response | 家老R5レビュー待ち（CTX:11%、/clear直後で新鮮）。 本番API確認の中間結果: - **cold start確認**: TTFB 5.5秒（殿の「renderはcold startしないだろ？」への回答 = **する**） …
 - 2026-06-28T00:07:54+09:00 | ntfy | outbound | 【家老CRITICAL】先送り3セッション連続検出。起動は許可するが即対処必須
@@ -13,7 +14,6 @@
 - 2026-06-27T23:55:09+09:00 | ntfy | outbound | 【将軍】復帰済み。MTD設計書R2修正完了(BLOCK6点全対処)→家老R2レビュー依頼送信。本番確認中。
 - 2026-06-27T23:49:52+09:00 | terminal | response | 掲示板3件確認済み。confirm処理とaction_required対処を進める。
 - 2026-06-27T23:49:09+09:00 | ntfy | outbound | CI赤: run 28292382026 Unit Tests (bats)
-- 2026-06-27T23:49:05+09:00 | terminal | response | inbox処理完了。レビュー待機。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - 家老R5レビュー待ち（CTX:11%、/clear直後で新鮮）。 本番API確認の中間結果: - **cold start確認**: TTFB 5.5秒（殿の「renderはcold startしないだろ？」への回答 = **する**） - HTTP 401 = 認証方式の確認…
