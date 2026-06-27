@@ -450,6 +450,67 @@ EOF
     [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
 }
 
+@test "candidate_aliases蓄積分を既存概念aliasesへ自動追加しalias数差分を表示する" {
+    export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
+    export SEMANTIC_PENDING_ALIAS_THRESHOLD=8
+    export SEMANTIC_INDEX_CACHE_DIR="$TEST_TMPDIR/semantic_index_cache"
+    cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'
+insights:
+- id: INS-STRESS-AUTO
+  ts: "2026-06-27T14:00:00+09:00"
+  insight: "[[セマンティックインデックス改善]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=セマンティックインデックス改善"
+  priority: "low"
+  source: "semantic_stress_test"
+  status: pending
+EOF
+
+    before_count="$(python3 - "$SEMANTIC_INDEX_PATH" <<'PY'
+import re
+import sys
+text = open(sys.argv[1], encoding="utf-8").read()
+block = re.search(r"(?ms)^## semantic_dictionary_design\b.*?(?=^## |\Z)", text).group(0)
+row = re.search(r"(?m)^\|\s*aliases\s*\|\s*(.*?)\s*\|$", block).group(1)
+print(len([a for a in row.split(",") if a.strip()]))
+PY
+)"
+
+    run env SEMANTIC_DISABLE_MEMORY_DB=1 SEMANTIC_DISABLE_LLM=1 SEMANTIC_DISABLE_SEARCH_LOG=1 \
+        bash "$PROJECT_ROOT/scripts/semantic_search.sh" "セマンティックインデックス改善"
+    [ "$status" -eq 1 ]
+
+    run bash "$PROJECT_ROOT/scripts/semantic_alias_absorb_pending.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PENDING_ALIAS_SCORE: セマンティックインデックス改善 -> semantic_dictionary_design"* ]]
+    [[ "$output" == *"pending_before=1"* ]]
+    [[ "$output" == *"aliases_added=1"* ]]
+    [[ "$output" == *"pending_after=0"* ]]
+    rm -rf "$SEMANTIC_INDEX_CACHE_DIR"
+
+    after_count="$(python3 - "$SEMANTIC_INDEX_PATH" <<'PY'
+import re
+import sys
+text = open(sys.argv[1], encoding="utf-8").read()
+block = re.search(r"(?ms)^## semantic_dictionary_design\b.*?(?=^## |\Z)", text).group(0)
+row = re.search(r"(?m)^\|\s*aliases\s*\|\s*(.*?)\s*\|$", block).group(1)
+print(len([a for a in row.split(",") if a.strip()]))
+PY
+)"
+    [ "$after_count" -eq "$((before_count + 1))" ]
+    grep -q '| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, セマンティックインデックス改善 |' "$SEMANTIC_INDEX_PATH"
+
+    run env SEMANTIC_DISABLE_MEMORY_DB=1 SEMANTIC_DISABLE_LLM=1 SEMANTIC_DISABLE_SEARCH_LOG=1 \
+        bash "$PROJECT_ROOT/scripts/semantic_search.sh" "セマンティックインデックス改善"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"semantic_dictionary_design"* ]]
+
+    python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
+rows = {e["id"]: e for e in data["insights"]}
+assert rows["INS-STRESS-AUTO"]["status"] == "done"
+PY
+}
+
 @test "pending semantic insights: concept-named AC5 alias lines auto-promote without similarity score" {
     export SEMANTIC_INSIGHTS_PATH="$TEST_TMPDIR/queue/insights.yaml"
     cat > "$SEMANTIC_INSIGHTS_PATH" <<'EOF'

@@ -1521,6 +1521,9 @@ def absorb_pending_semantic_insights(text, concepts):
         if alias_n not in {norm(v) for v in additions[concept_id]}:
             additions[concept_id].append(alias)
             known.add(alias_n)
+            messages.append(f"PENDING_ALIAS: {alias} -> {concept_id} aliases_added={alias}")
+        else:
+            messages.append(f"PENDING_ALIAS: {alias} -> {concept_id} aliases_added=none")
         resolved_ids.add(item["id"])
 
     if not additions and not resolved_ids:
