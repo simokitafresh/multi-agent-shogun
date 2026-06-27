@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-06-26 cmd_3547 -->
+<!-- last_updated: 2026-06-27 cmd_3569 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -832,6 +832,18 @@ import metrics_research_engine as MRE
 | 4b88dfdc/fb6f0c97/86cf2c29/273ba153 cmd_3461 SSOT audit shards | 本文追加不要 | `docs/research/ssot-audit-parts/*.md`追加・復旧。棚卸し証跡であり、DM-Signal運用手順の変更なし |
 
 GA-102原因: `dm-signal-ops.md`のlast_updatedは2026-06-13で、2026-06-14以後にops pathspec対象commitが増加したため`gate_context_freshness.sh`がsource commits ALERTを出した。GA-099/L825と同じく、context更新トリガーがcmd完了フローに強制接続されていない後追い検出である。防御層案: DM-Signal外部repoで`backend/app/jobs|services|api|docs/rule`を含むcmd完了時、cmd_complete_gateのcontext_update必須入力に該当split contextを自動候補注入する。
+
+## §45 2026-06-27 source freshness照合
+
+| commit | ops更新判断 | 根拠 |
+|------|------|------|
+| 896a20b2/46e1b48c cmd_3569 Compare Returns page | 運用影響あり。`/compare-returns` API/router/page_visibilityが追加され、Admin visibility対象ページが増えた。運用上は既存CDP/Admin確認手順で対象URLを`/compare-returns`へ切替えて確認する | `backend/app/api/compare_returns.py`, `backend/app/main.py`, `backend/app/services/page_visibility.py`, `backend/tests/test_compare_returns_api.py` |
+| baf7db97/fb40fc2c/1368f895 compare系spec索引更新 | 本文追加不要 | `docs/spec/*`/`docs/_INDEX.md`/`tasks/lessons.md`中心。運用手順の新規差分はCompare Returns行で吸収 |
+| afe98d64 cmd_3548 Compare Summary SPY standalone | 本文追加不要 | `backend/app/api/metrics.py`と追加テストの修正。既存Compare Summary運用手順に変更なし |
+| a02b623b/9fe4704b/26711bc2/8640c347/176eb00b/9912027f/ec65decb/63a04c2b monthly/annual/price/return/recalculate高速化 | 本文追加不要 | backend services/jobsの性能改善。fullrecalculate/Render実行・排他・完了確認の運用手順は§6-7の既存ルールを維持 |
+| f625dc2b cmd_3546 fullrecalculate idempotency proof | §6-7の完了確認ルールと整合。本文追加不要 | `docs/research/cmd_3546/*`に検証証跡を追加済み。ops本文にはL783 timing-history一次証跡を既に反映済み |
+
+GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以後にops pathspec対象commitが16件増加したため`gate_context_freshness.sh`がsource commits ALERTを出した。直接のALERT対象は最新3件(896a20b2/46e1b48c/baf7db97)で、真にopsへ反映が必要だった差分はCompare Returnsの運用確認対象URL/API/router追加。根本原因はGA-129/GA-141と同系統で、外部repoのbackend/api/services/jobs/docs/research変更がsplit context更新候補へ自動接続されず、gateが事後検出していること。横展開候補: `dm-signal-core.md`/`dm-signal-frontend.md`/`dm-signal-research.md`も同時にsource commits ALERT対象だが、今回の更新対象外。
 
 ## 因果リンク
 
