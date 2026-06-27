@@ -1,8 +1,33 @@
 task:
-  _ac_task_id: cmd_3570_full
+  readonly_ref:
+  - path: 'docs/spec/compare-returns-mtd-precompute.md'
+    reason: command欄の必読/参照専用ファイル
+  _ac_task_id: cmd_3572_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3570 (deployed 2026-06-27T20:18:20). Read from the beginning.
-  ac_version: c59b9935
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3572 (deployed 2026-06-28T00:36:10). Read from the beginning.
+  ac_version: 0b92478a
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'PrecomputedMtdモデルをmodels.pyに追加し、backend/migrations/配下にマイグレーション追加。calculation_date・current_ym・price_latest_dateカラムを含む'
+  - id: 'AC2'
+    checks:
+    - check: 'precompute_mtd(db, portfolio_ids=None)バッチ関数をbackend/app/jobs/precompute_mtd.pyに実装。active PF全件+ベンチマーク全件のMTDを計算しget_insert_dialectでUPSERT保存する関数が存在する'
+  - id: 'AC3'
+    checks:
+    - check: 'bm_mtd_fieldsをcompare_returns.pyからservices/mtd_returns.pyへ移設。COMPARE_RETURNS_ADDITIONAL_BENCHMARKSをconstants.pyへ移設'
+  - id: 'AC4'
+    checks:
+    - check: 'recalculate_fast.py正常完了時(nightly full/partial)の末尾にprecompute_mtd呼び出しを追加。nightly=全PF、partial=target_portfolios。TICKER・cancel・exception・no portfolios時は除外'
+  - id: 'AC5'
+    checks:
+    - check: '/api/compare-returnsがprecomputed_mtdからPF+BM全件をSELECT。鮮度判定はprice_latest_date一致かつcurrent_ym==request_ym。欠損・stale PF・ベンチマークのみfallback。pf_fallback_count・bm_fallback_countをログ出力'
+  - id: 'AC6'
+    checks:
+    - check: '全visible PFでprecomputed値とbuild_pf_mtd_data経由値のclose・open・as_of・preliminaryが一致するパリティテスト'
+  - id: 'AC7'
+    checks:
+    - check: 'pytest: precomputed読取・PF単位fallback・BM単位fallback・UPSERT冪等性・SPY空時全fallback・PFとBM両方のDATE保存→ISO文字列返却型境界テスト'
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -32,33 +57,32 @@ task:
   - cmd_3569作業への介入
   - context/dm-signal-core.md, frontend.md, research.mdの更新(必要性が見つかればcandidate報告のみ)
   parallel_ok: []
-  parent_cmd: cmd_3570
+  parent_cmd: cmd_3572
   project: dm-signal
-  purpose: '殿指摘(2026-06-27): Compare Returnsのloading時間がストレスフル。本番実測cold 4.96秒/warm 5.46秒(connect 0.16秒)。102PF×MTD日次ライブ計算(calculate_daily_cumulative_returns_segmented 102回呼び出し)がボトルネック。設計書§12に5000ms超過時の最適化を別タスクで設計と明記済み'
+  purpose: '殿指示(2026-06-27): 初回表示を限界まで早くすることはできるか。/api/compare-returnsの初回応答5秒→0.3秒以下に短縮する。設計書R11 PASS(docs/spec/compare-returns-mtd-precompute.md)に基づき実装'
   scout_exempt: true
-  status: idle
+  status: in_progress
   stop_for: []
   target_path: /mnt/c/Python_app/DM-signal/backend
-  task_id: cmd_3570_full
+  task_id: cmd_3572_full
   task_type: full
   skill_hint: /db-check
-  related_lessons:
-  - id: 'L256'
-    summary: 'dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil'
-    detail: 'dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil'
-  - id: 'L444'
-    summary: 'gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正: co'
-    detail: 'gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正: co'
+  related_lessons: []
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
   - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
+  memory_db_context:
+  - '2026-06-27T21:11:16+09:00 | 【INFOバッチ】 2026-06-27 21:08:57|cmd_karo_hotfix_ga147'
+  - '2026-06-27T19:44:27+09:00 | 【INFOバッチ】 2026-06-27 19:31:46|cmd_karo_hotfix_ga145 2026-06-27 19:32:29|cmd_karo_hotfix_ga145_contex'
+  - '2026-06-28T00:07:57+09:00 | 家老R5レビュー待ち（CTX:11%、/clear直後で新鮮）。 本番API確認の中間結果: - **cold start確認**: TTFB 5.5秒（殿の「renderはcold startしない'
+  - '2026-06-27T23:59:54+09:00 | 家老R3レビュー待ち。その間に本番API確認を再実行（前回HTTP 000=接続失敗。殿の「cold startしないだろ？」への一次確認）。'
   related_causal_links:
-  - "[[MTD_102PF日次計算_N+1問題]]"
-  - "[[バッチ化+TTLCache高速化]]"
-  - "[[殿指摘_loading遅延_20260627]]"
+  - "[[MTD事前計算バッチ設計R11_PASS]]"
+  - "[[compare-returns_MTD_5秒ボトルネック]]"
+  - "[[殿指示_初回表示高速化_20260627]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -74,41 +98,9 @@ task:
   - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
   - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
   - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L256: dm-signal+infra教訓を単一dictに格納する際、254件のID衝突でinfra版がdm-signal版を上書き。greedy_dedup/buil
-      - L444: gate_vercel_phase.shでDM_SIGNAL_DIRをハードコードしていたため、外部リポが存在しない環境でFAIL(偽陽性13回)。修正: co
-    ────────────────────────────────────────
-    
-    
-  memory_db_context:
-  - '2026-06-27T19:44:27+09:00 | 【INFOバッチ】 2026-06-27 19:31:46|cmd_karo_hotfix_ga145 2026-06-27 19:32:29|cmd_karo_hotfix_ga145_contex'
-  - '2026-06-27T17:22:31+09:00 | 【INFOバッチ】 2026-06-27 17:06:56|cmd_3566 2026-06-27 17:13:49|cmd_3567'
-  - '2026-06-27T20:10:50+09:00 | push完了 `816edfb2`。Render FE自動デプロイがトリガーされる。 殿、Portfolio列の幅制限(`max-w-[160px] md:max-w-[200px]` + ellip'
-  - '2026-06-27T19:32:50+09:00 | **FE `3d51a1e4` live。** BE・FE両方デプロイ完了。 殿、Compare Returnsページ(`/compare-returns`)が本番稼働中。 - **BE**: `89'
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'MTD計算をバッチ化し、102PF分のDB読込を1-2クエリに集約する。warm応答時間を実測し修正前5.46秒から計測する'
-  - id: 'AC2'
-    checks:
-    - check: 'サーバ内TTLCache(300秒)を/api/compare-returnsに導入し、2回目以降のリクエストがキャッシュヒットする。pytestでキャッシュ動作を検証する'
-  - id: 'AC3'
-    checks:
-    - check: '既存pytestが全PASSし、MTDパリティ(service helper経由で/api/mtdと同一値)が維持される'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3570.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3570.yaml
+  report_filename: kagemaru_report_cmd_3572.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3572.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -131,4 +123,35 @@ task:
     - reason: 'empty_lessons_useful'
       count: 2
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-06-27T20:19:17"
+  related_lessons:
+  - id: 'L118'
+    summary: 'IF hayate(cmd_282,subtask_282_integ)時 THEN hayate(cmd_282,subtask_282_integ)'
+    detail: 'IF hayate(cmd_282,subtask_282_integ)時 THEN hayate(cmd_282,subtask_282_integ)'
+  - id: 'L117'
+    summary: 'saizo(cmd_277,subtask_277_nukimi)'
+    detail: 'saizo(cmd_277,subtask_277_nukimi)'
+  - id: 'L116'
+    summary: 'PF間のローリング相関/リード・ラグ/同時崩壊カウントを20特徴量追加しても改善なし。single_pf(0.111)≈single_pf+crossPF(0.114)≈MTL(0.114)。C3-H(佐助53.3%)と合わせ、月次粒度ではPF間情報は予測情報源にならない。Transfer'
+    detail: 'PF間のローリング相関/リード・ラグ/同時崩壊カウントを20特徴量追加しても改善なし。single_pf(0.111)≈single_pf+crossPF(0.114)≈MTL(0.114)。C3-H(佐助53.3%)と合わせ、月次粒度ではPF間情報は予測情報源にならない。Transfer'
+  - id: 'L115'
+    summary: 'IF Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換時 THEN Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換'
+    detail: 'IF Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換時 THEN Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換'
+  - id: 'L114'
+    summary: 'IF C1-3由来8モデルでメタ学習(LogReg/Ridge)を実施したが、best base(c2_logreg22, 59.7%)を超えられず(meta最大57.1%)時'
+    detail: 'IF C1-3由来8モデルでメタ学習(LogReg/Ridge)を実施したが、best base(c2_logreg22, 59.7%)を超えられず(meta最大57.1%)時'
+  - id: 'L113'
+    summary: 'IF C2-Bの22特徴量で予測対象を4種に変更時 THEN C2-Bの22特徴量で予測対象を4種に変更 C2-Bの22特徴量で予測対象を4種に変更。Drawdown(月内DD>10%)でprec=88.9%だがbase_rate=55.7%(3xレバETFの通常変動)。Bottom-20%ile/Consecutiveは稀少事象すぎてシグナル0。ターゲット定義を厳しくすると正例が減りモデルが学習'
+    detail: 'IF C2-Bの22特徴量で予測対象を4種に変更時 THEN C2-Bの22特徴量で予測対象を4種に変更 C2-Bの22特徴量で予測対象を4種に変更。Drawdown(月内DD>10%)でprec=88.9%だがbase_rate=55.7%(3xレバETFの通常変動)。Bottom-20%ile/Consecutiveは稀少事象すぎてシグナル0。ターゲット定義を厳しくすると正例が減りモデルが学習'
+  - id: 'L111'
+    summary: 'IF 7アプローチ(AND/MAJORITY/CUSUM/Sharpe/VolWeighted/Idiosyncratic/LogisticCV)全て80%未達時'
+    detail: 'IF 7アプローチ(AND/MAJORITY/CUSUM/Sharpe/VolWeighted/Idiosyncratic/LogisticCV)全て80%未達時'
+  - id: 'L110'
+    summary: 'IF 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%時 THEN 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%'
+    detail: 'IF 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%時 THEN 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%'
+  - id: 'L108'
+    summary: 'エッジ残存率の急落(MoM大幅低下/0%クロス)は将来リターン低下の予測器としてprecision 18-34%、recall 4-20%。イベント後の平均超過リターンは正(平均回帰傾向)。崩壊検知より一時的ノイズフィルタとしての活用が適切。単独指標での予測精度限定的だがcmd_270/271の傾き指標との複合判定で改善余地あり'
+    detail: 'エッジ残存率の急落(MoM大幅低下/0%クロス)は将来リターン低下の予測器としてprecision 18-34%、recall 4-20%。イベント後の平均超過リターンは正(平均回帰傾向)。崩壊検知より一時的ノイズフィルタとしての活用が適切。単独指標での予測精度限定的だがcmd_270/271の傾き指標との複合判定で改善余地あり'
+  - id: 'L098'
+    summary: 'IF SVMF fallbackパスはprice_data_cache全期間データに対してtarget_date未フィルタリング時 THEN'
+    detail: 'IF SVMF fallbackパスはprice_data_cache全期間データに対してtarget_date未フィルタリング時 THEN'
+  deployed_at: "2026-06-28T00:36:24"

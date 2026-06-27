@@ -1,3 +1,17 @@
+- cmd_id: cmd_3572
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star]
+  findings_summary: "APPROVE。MTD事前計算バッチ。precompute_mtd 0件=未実装。設計書R11 PASS。AC7件deep分割非推奨"
+  observations:
+    - "rg precompute_mtd backend/→0件。未実装確認。設計書11ラウンドレビューPASS"
+    - "AC7件だがBE直列依存(model→batch→移設→統合→API→パリティ→テスト)。分割はコンテキスト喪失リスク"
+  causal_chain: "初回応答5秒→MTD計算をリクエスト時→バッチ時に移動→DB SELECTのみ→0.3秒以下=全ユーザー複利"
+  brainwash_check: "precompute_mtd 0件grep実測。設計書R11 PASS。FM3件mitigation確認"
+  origin: "[[cmd_3572]] -> [[MTD事前計算バッチ]] -> [[初回応答0.3秒以下]]"
+  timestamp: "2026-06-28T00:38:00"
 - cmd_id: cmd_karo_hotfix_ga147_context_freshness_dm_signal_research_20260627
   review_type: report
   verdict: LGTM
