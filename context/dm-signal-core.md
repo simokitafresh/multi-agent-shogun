@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-06-26 cmd_3547 -->
+<!-- last_updated: 2026-06-27 cmd_3570 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -350,6 +350,10 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 ### §8.5 Deterioration Benchmark Layer (2026-06-25)
 
 `/api/deterioration` はSPY/TQQQ benchmark return、P(det) benchmark表示、page visibility enforcementを追加済み。DB正本は `backend/app/db/models.py` / `backend/app/db/migrations.py`、計算正本は `backend/app/services/benchmark_returns.py` と `backend/app/services/deterioration_benchmarks.py`、batch連携は `backend/app/jobs/deterioration_batch.py`。根拠: commit `59146c43`、spec `docs/spec/deterioration-benchmark-extension.md`。
+
+### §8.6 Compare Returns / MTD SSOT (2026-06-27)
+
+`/api/compare-returns` は全visible PF + standalone benchmark(SPY/TQQQ等)のMTD/1M/3M/6M/1Y/3Y/5Y/ALLをclose/open両系列で返す。PF MTDは`backend/app/services/mtd_returns.py`が`/api/mtd`とCompare Returnsの共通SSOTで、Compare Returnsは`build_compare_mtd_values_batch()`でN+1を避ける。page visibilityは`backend/app/services/page_visibility.py`が`settings.hidden_pages`と`global_visibility_settings.hidden_pages`のunionを正とする。根拠: commits `46e1b48c`, `646216d5`, `09796aee`, specs `docs/spec/compare-returns-page.md`。
 
 ## 10. ディレクトリ構成
 
