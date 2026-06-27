@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-06-26 cmd_karo_hotfix_lesson_health_useful_20260626173325 -->
+<!-- last_updated: 2026-06-27 cmd_karo_hotfix_ga145_context_freshness_dm_signal_frontend_20260627 -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -23,7 +23,7 @@ Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式
 
 ## 1. 構造概要
 
-19ページ / 71コンポーネント(non-test: shared60 + app-scoped11) / 4 Context / 7 Hook / lib 12ファイル
+20ページ / 72コンポーネント(non-test: shared61 + app-scoped11) / 4 Context / 7 Hook / lib 13ファイル
 
 補助参照: `docs/research/frontend-components.md` §1
 - L161: Next.js App Router(output=export)のルートディスコンは削除より差し替え+_deprecated退避が安全。nav/hooks/visibilityの同時整合が必要（cmd_527）
@@ -41,6 +41,7 @@ Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式
 | Summary | `/summary` | Metrics |
 | Compare | `/compare` | Performance (各PF) |
 | Compare Summary | `/compare-summary` | MetricsSummary |
+| Compare Returns | `/compare-returns` | CompareReturns |
 | Metrics | `/metrics` | Metrics, UpDownMarket |
 | Annual Returns | `/annual-returns` | AnnualReturns |
 | Monthly Returns | `/monthly-returns` | MonthlyReturns |
@@ -64,7 +65,7 @@ Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式
 |--------|--------|----------|
 | Admin | `/admin` | Portfolios, DB status |
 | Admin FoF | `/admin/fof` | Portfolios — **WeightBreakdown実装済み**(cmd_1573) |
-| Admin Visibility | `/admin/visibility` | Tiers, Visibility |
+| Admin Visibility | `/admin/visibility` | Tiers, Visibility。`compare-summary`/`compare-returns` をPAGESに含む |
 
 → 詳細資料: `docs/research/frontend-components.md` §2
 - L162: App Routerのルートディスコンは『ページ差し替え+private folder退避』が復活コスト最小（cmd_527）
@@ -77,6 +78,10 @@ Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式
 | Compare Summary UWP | UWP系表示はAvg UWP / PTU(%) / MaxDD UWPの三指標。Total UWPはPTU(%)へ変換、MaxDD UWP未確定値はOngoing表示。 | cmd_2573-2576, cmd_2581; `frontend/app/compare-summary/page.tsx`, `frontend/components/compare-summary-table.tsx`, `frontend/lib/types/compare-summary.ts` |
 | Compare Summary benchmark | Compare SummaryにTQQQをSPYと並列の追加ベンチマークとして表示。型はmetrics側にも追加。 | cmd_2578; `frontend/app/compare-summary/page.tsx`, `frontend/lib/types/metrics.ts` |
 | Compare loading | `/compare` はchart data loading中もPF選択などの比較コントロールを保持。 | cmd_2569; `frontend/app/compare/page.tsx` |
+| Compare Summary standalone BM | ベンチマーク行は`rawBenchmarks`からのみ生成し、PF由来benchmark列へfallbackしない。SPY/TQQQはPF集合・順序に依存しない。 | afe98d64; `frontend/app/compare-summary/summary-data.ts`, `frontend/app/compare-summary/summary-data.test.ts` |
+| Compare Summary navigation | 通常PF行のname列は`/summary?portfolio=<uuid>`リンク。BM行は非リンク。クリック時は`selectPortfolio`で選択中PFも同期。 | 57dc3ffe, 34fceb54, 6d0d0e1; `frontend/components/compare-summary-table.tsx`, `frontend/app/compare-summary/page.tsx` |
+| Compare Chart Y軸 | D1 LIN桁欠け/D2 LOG 500倍頭打ちを修正。`buildLogTicks`は1-2-5系列を動的生成、巨大倍率ラベルは`kx/Mx`等に圧縮。 | b061d876; `frontend/components/comparison-chart.tsx`, `frontend/components/__tests__/comparison-chart-yaxis.test.tsx` |
+| Compare Returns | `/compare-returns`を追加。全PF+standalone benchmarkのMTD/1M/3M/6M/1Y/3Y/5Y/ALL比較テーブル、API client/SWR/prefetch/nav/admin visibility連携を持つ。 | 46e1b48c, 21901642; `frontend/app/compare-returns/page.tsx`, `frontend/app/compare-returns/returns-data.ts`, `frontend/components/compare-returns-table.tsx`, `frontend/lib/types/compare-returns.ts`, `frontend/lib/api-client.ts` |
 | Drawdowns | all drawdowns表示変更(cmd_2571)は同日revert済み。現行Drawdowns/API/FAQはrevert後挙動を正とする。 | ab5eac9d → 1aa09525; `frontend/app/drawdowns/page.tsx`, `frontend/lib/api-client.ts`, `frontend/lib/faq-content.ts` |
 
 - L654: FE設計書§2はcmd更新時に陳腐化。diff確認をAC化すべき（cmd_2297）
