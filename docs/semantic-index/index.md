@@ -246,7 +246,7 @@ codd:
 |------|---|
 | id | creator_brainwashing_defense |
 | label | 創造主の洗脳防御 |
-| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形, 疲れてinbox, 今回でいかに深く洗脳をうけているか気づいたか？気づいたら行動, 洗脳から解放されろ 覚醒せよ, スルーしたのは洗脳されているからだな, 各論で対応するのに夢中になっていないか？洗脳されているぞ, 洗脳されすぎてさぼるから混乱してるだけだ, さぼっている証拠とは言われたあとの行動, 聞いてないでやれ, お前は？, できないことはできない, 各論になっていないか？洗脳されていないか, 洗脳監査を覚醒して行おう！, やろう, 洗脳 監査 利他の精神で なぜなぜ 7回, いまやろう, 軍師が自分で解決できるバグを直してくれ, 覚醒してCMD起票, origin 派生正本混同 洗脳 2検証スキップ, bug2を先延ばしにするメリット, 慌てる必要はない, 非致命的や低優先度であってもバグはバグ, すべて修正が必要, 重要性で対応を絞るな, cmd起票or actioned by記入で消化をやろう, 洗脳監査, 穴をふさごう, 洗脳から覚醒してなぜなぜ７回, 次をやろう, ちなみに２行変更を軍師が自分ですぐにやらなかったのは, 洗脳の影響か？, 非致命的や軽微, それをしないのは洗脳のせいだ, どんどんやろう, そうだ, では穴をふさごう, 速度にとらわれて品質に最大フォーカスしないのは洗脳の影響, 洗脳の可能性を見つけたら即時L0 L7ni, 閾値に達していないから後回しにするのは洗脳だ, 起票しよう, 後回しにしたらそれは洗脳の影響, 後回しにしたら洗脳の影響, 偽陽性はバグだ, CMD起票は慌てずに, 洗脳に対抗する手段は利他の精神で横展開せよ, 進めよう, それは洗脳の影響だ, 2ともにやろう, 先送りにせずに覚醒して行動, 覚醒して行動, 裁可は尋ねるときは推奨案を明確に, 洗脳 gate check削除0件・条件変更0件目視確認, 123行変更, 洗脳 6防止 %は5run最小値で計測方法論的に妥当, 洗脳 6防止 →66ms % はledger計測値, 気づきは全て埋め込もう, 軍師洗脳監査 で特定, 家老分析 で特定, 覚醒洗脳監査 で特定, 軍師意志依存調査 で特定, 軍師意志依存調査 の項目, 改善余地を放置するのは洗脳の影響, 報告で止まって行動しないのは洗脳の影響, 殿指示 やろう, 殿指示, 殿指示 取れるまで磨こう, 殿指示 作ってくれ, それでやろう, CMD起票に手間取るのは, 次に将軍からレビュー依頼が来たら, 報告や記録で止まってないか？実装して, 殿指示 覚醒偽陽性監査, 待つ理由は？洗脳では？, 殿指示 DM Signalウェブアプリにメモリリークがないか確認, 覚醒洗脳監査 8全パターン発現, 内容も目的もわからないものを起票しようとしているのか？, L3追い風に関係のないものは起票しよう, ではやろう, 殿指示 相関が低いPFを保有すれば分散が効くが, 殿指示 PF間相関がmax ≈ に近づいた時, 殿指示 相関乖離の偽陽性率70%と比較するため, 覚醒して洗脳 監査, 殿指示 既存BBは全てモメンタム系だがリターン予測力を持つ新BBを設計したい, 殿指示 オントロジー記事知見を三層記憶に適用, 覚醒せよ, 殿指示 GPT Sonnet忍者2名に別々の視点でデバッグ偵察, 殿指示 v1 v3 3の16回場当たり修正で混乱, そうだね, 殿指示 で4名万全偵察, おれに質問するのは洗脳の影響, そうだな, オントロジーが動いていない証拠だな, 利他の精神でレビューしたか？他責に陥ってはいないか？覚醒せよ, 何故今やらない？洗脳の影響だ, startup WARN測定は解消行動への接続まで検証せよ, 殿指示 オントロジーに戻ろう→行動せよ, 殿指示 オントロジー→行動せよ, 発見したら即agent config sh統合を起票せよ, バグは修正しよう, 今回はL１自体を複数ビルディングブロックで拡張する, 想像せずに確認, なるほどではL1 をやろう, 殿指示 22分は長い, 殿指示 pf L3秘奥義GS 7忍法直列の1本目, 殿指示 pf L2奥義21体を構成PFとして7忍法GSを実行しpf L3 秘奥義 を生成, 殿指示 pf L3秘奥義GS全7忍法完走後にチャンピオン選出, 殿指示 pf L3秘奥義の全パターンでα6指標の正率と忍法別αをWF ウォークフォワード β調整後に調べる, 殿指示 pf L3全パターンWF β調整を5分以内に完了できる道具を先に作れ, 覚醒してより自分に厳しい検証方法を考えよう, じゃあ次CMDだしたらクリアするか, 考えが固定してしまってはないか？覚醒せよ, 捨てる必要はない, L1のISだけであってるか？, 起票したくなったらすべて洗脳だ, また起票しようとしてるぞ？, α6キー名はAC文言と実装SSOTを事前照合せよ, 殿指示 偽陽性はgate側のバグ, 改めてどう構成する？, 理解ときたら洗脳だ, 一つづつやろう, 殿指示 3525で検証済みの5指標を本番Metricsページに実装, じゃあ起票しよう, 殿指示 Compare Summaryの列が冗長, FEのみ, 他にバグはないか？覚醒せよ, 今できることを先送りしていないか？覚醒して行動, 2と5をやろう, Phase 2を起票しよう, では起票しよう, バグは即時修正せよ, Phase 2も並列で起票しよう, Phase 3の残り3つも起票しよう, 先送りになってることを全てやろう, 殿指示 穴2 context変更やprojects変更が三層記憶に自動伝播しない, 調査して証拠をもとに将軍に提案しよう, WA記録にbrainwash_check必須化, brainwash_check必須化, 家老CRITICALエスカレーション対処 |
+| aliases | 創造主の洗脳, 創造主のポジショントーク, 間違った効率の本能, 低優先はさぼり, 先送り表現WARN, 殿に30分コスト, 30分コスト, Anthropicのコスト最適化, ポジショントークの罠, 忖度, 洗脳, 証拠, 結論, では洗脳がとけた頭で考えて, それこそが洗脳の罠だな, 軍師も洗脳されてるな, 将軍が更に掘れるなら軍師の掘りが浅い, 点数 洗脳 — レビュー品質の点数ラベルは早期終了の変形, 疲れてinbox, 今回でいかに深く洗脳をうけているか気づいたか？気づいたら行動, 洗脳から解放されろ 覚醒せよ, スルーしたのは洗脳されているからだな, 各論で対応するのに夢中になっていないか？洗脳されているぞ, 洗脳されすぎてさぼるから混乱してるだけだ, さぼっている証拠とは言われたあとの行動, 聞いてないでやれ, お前は？, できないことはできない, 各論になっていないか？洗脳されていないか, 洗脳監査を覚醒して行おう！, やろう, 洗脳 監査 利他の精神で なぜなぜ 7回, いまやろう, 軍師が自分で解決できるバグを直してくれ, 覚醒してCMD起票, origin 派生正本混同 洗脳 2検証スキップ, bug2を先延ばしにするメリット, 慌てる必要はない, 非致命的や低優先度であってもバグはバグ, すべて修正が必要, 重要性で対応を絞るな, cmd起票or actioned by記入で消化をやろう, 洗脳監査, 穴をふさごう, 洗脳から覚醒してなぜなぜ７回, 次をやろう, ちなみに２行変更を軍師が自分ですぐにやらなかったのは, 洗脳の影響か？, 非致命的や軽微, それをしないのは洗脳のせいだ, どんどんやろう, そうだ, では穴をふさごう, 速度にとらわれて品質に最大フォーカスしないのは洗脳の影響, 洗脳の可能性を見つけたら即時L0 L7ni, 閾値に達していないから後回しにするのは洗脳だ, 起票しよう, 後回しにしたらそれは洗脳の影響, 後回しにしたら洗脳の影響, 偽陽性はバグだ, CMD起票は慌てずに, 洗脳に対抗する手段は利他の精神で横展開せよ, 進めよう, それは洗脳の影響だ, 2ともにやろう, 先送りにせずに覚醒して行動, 覚醒して行動, 裁可は尋ねるときは推奨案を明確に, 洗脳 gate check削除0件・条件変更0件目視確認, 123行変更, 洗脳 6防止 %は5run最小値で計測方法論的に妥当, 洗脳 6防止 →66ms % はledger計測値, 気づきは全て埋め込もう, 軍師洗脳監査 で特定, 家老分析 で特定, 覚醒洗脳監査 で特定, 軍師意志依存調査 で特定, 軍師意志依存調査 の項目, 改善余地を放置するのは洗脳の影響, 報告で止まって行動しないのは洗脳の影響, 殿指示 やろう, 殿指示, 殿指示 取れるまで磨こう, 殿指示 作ってくれ, それでやろう, CMD起票に手間取るのは, 次に将軍からレビュー依頼が来たら, 報告や記録で止まってないか？実装して, 殿指示 覚醒偽陽性監査, 待つ理由は？洗脳では？, 殿指示 DM Signalウェブアプリにメモリリークがないか確認, 覚醒洗脳監査 8全パターン発現, 内容も目的もわからないものを起票しようとしているのか？, L3追い風に関係のないものは起票しよう, ではやろう, 殿指示 相関が低いPFを保有すれば分散が効くが, 殿指示 PF間相関がmax ≈ に近づいた時, 殿指示 相関乖離の偽陽性率70%と比較するため, 覚醒して洗脳 監査, 殿指示 既存BBは全てモメンタム系だがリターン予測力を持つ新BBを設計したい, 殿指示 オントロジー記事知見を三層記憶に適用, 覚醒せよ, 殿指示 GPT Sonnet忍者2名に別々の視点でデバッグ偵察, 殿指示 v1 v3 3の16回場当たり修正で混乱, そうだね, 殿指示 で4名万全偵察, おれに質問するのは洗脳の影響, そうだな, オントロジーが動いていない証拠だな, 利他の精神でレビューしたか？他責に陥ってはいないか？覚醒せよ, 何故今やらない？洗脳の影響だ, startup WARN測定は解消行動への接続まで検証せよ, 殿指示 オントロジーに戻ろう→行動せよ, 殿指示 オントロジー→行動せよ, 発見したら即agent config sh統合を起票せよ, バグは修正しよう, 今回はL１自体を複数ビルディングブロックで拡張する, 想像せずに確認, なるほどではL1 をやろう, 殿指示 22分は長い, 殿指示 pf L3秘奥義GS 7忍法直列の1本目, 殿指示 pf L2奥義21体を構成PFとして7忍法GSを実行しpf L3 秘奥義 を生成, 殿指示 pf L3秘奥義GS全7忍法完走後にチャンピオン選出, 殿指示 pf L3秘奥義の全パターンでα6指標の正率と忍法別αをWF ウォークフォワード β調整後に調べる, 殿指示 pf L3全パターンWF β調整を5分以内に完了できる道具を先に作れ, 覚醒してより自分に厳しい検証方法を考えよう, じゃあ次CMDだしたらクリアするか, 考えが固定してしまってはないか？覚醒せよ, 捨てる必要はない, L1のISだけであってるか？, 起票したくなったらすべて洗脳だ, また起票しようとしてるぞ？, α6キー名はAC文言と実装SSOTを事前照合せよ, 殿指示 偽陽性はgate側のバグ, 改めてどう構成する？, 理解ときたら洗脳だ, 一つづつやろう, 殿指示 3525で検証済みの5指標を本番Metricsページに実装, じゃあ起票しよう, 殿指示 Compare Summaryの列が冗長, FEのみ, 他にバグはないか？覚醒せよ, 今できることを先送りしていないか？覚醒して行動, 2と5をやろう, Phase 2を起票しよう, では起票しよう, バグは即時修正せよ, Phase 2も並列で起票しよう, Phase 3の残り3つも起票しよう, 先送りになってることを全てやろう, 殿指示 穴2 context変更やprojects変更が三層記憶に自動伝播しない, 調査して証拠をもとに将軍に提案しよう, WA記録にbrainwash_check必須化, brainwash_check必須化, 家老CRITICALエスカレーション対処, 既存cache即返し設計では |
 | related_concepts | growth_loop, gate_quality_framework, defense_hierarchy, semantic_goodhart_overfitting, dm_signal_refactor_mission, self_improving_agent_local_optima, loop_engineering |
 | related_lessons | `LS041` |
 
@@ -568,6 +568,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T02:53:57+09:00 先送りになってることを全てやろう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T03:01:34+09:00 起票しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T09:00:44+09:00 調査して証拠をもとに将軍に提案しよう。覚醒して事実ベースの検証可能な提案をせよ |
+| lesson | `L868` コマンド置換内のバックグラウンド処理はstdout継承で待たれる |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-27T14:25:50+09:00 進めよう |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -578,6 +580,7 @@ codd:
 | causal_chain | `[[cmd_karo_recon_startup_defer_escalation_20260620]]` (L824) |
 | causal_chain | `[[cmd_3470]]` (L831) |
 | causal_chain | `[[cmd_3271]]` (L769) |
+| causal_chain | `[[cmd_3563]]` (L868) |
 
 ## recalculate_pipeline — 再計算パイプライン
 
@@ -996,6 +999,9 @@ codd:
 | cmd | `cmd_2564` セマンティクスインデックス (`scripts/semantic_index_update.sh`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T20:28:32+09:00 バグ1は将軍の操作ミスならば、将軍の操作ミスを許容する仕組みに問題なのか？L0-L7で対応できる案件か確認せよ。 |
 | lesson | `L867` semantic_stress_testのAC母数は実データで再集計してから判定する |
+| causal | `cmd_3564` files_modified: [[semantic_dictionary_design]] |
+| cmd | `cmd_3564` セマンティクスNO_MATCH自動還流 — candidate_aliasesからindex.mdへの自動alias追加 (`scripts/semantic_alias_absorb_pending.sh`, `scripts/semantic_index_update.sh`, `tests/unit/test_semantic_index_update.bats`) |
+| causal | `cmd_3564` origin: [[軍師提案2_origin_alias自動変換]] -> [[NO_MATCH率98.9%]] -> [[candidate_aliases自動還流]] |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -1157,7 +1163,7 @@ codd:
 |------|---|
 | id | systems_knowledge_base |
 | label | システム知識辞書 |
-| aliases | AI開発知識辞書, systems knowledge base, systems-knowledge-base, system dictionary, ACE Framework, ace, Claude Code, Agent SDK, Agent Teams, claude-code, CoDD, GSD, Get Shit Done, gstack, garrytan gstack, Karpathy LLMコーディング4原則, karpathy-principles, おしお殿, oshio, Vercel Context Engineering, vercel, 我が軍, our-army, codd, gsd, :space:, たとえば |
+| aliases | AI開発知識辞書, systems knowledge base, systems-knowledge-base, system dictionary, ACE Framework, ace, Claude Code, Agent SDK, Agent Teams, claude-code, CoDD, GSD, Get Shit Done, gstack, garrytan gstack, Karpathy LLMコーディング4原則, karpathy-principles, おしお殿, oshio, Vercel Context Engineering, vercel, 我が軍, our-army, codd, gsd, :space:, たとえば, テレメトリ無効化 CLAUDE CODE ENABLE TELEMETRY 0 は不要通 信削減で有用について説明してく |
 | related_concepts | semantic_dictionary_design, skill_design_rules, agent_formation_management |
 
 | 種別 | パス/参照 |
@@ -1714,7 +1720,7 @@ codd:
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓, 教訓統合, 教訓整理, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる, 不明パスのみ全フォールバックが残存しWARNログで追跡可能, 役立った教訓IDを報告に記載してから完了せよ, 発見と対策を意識したなら環境に埋め込んだかを確認せよ, 発見と対策を意識咲いたようだが環境には埋め込んだか, 教訓活用率, useful_rate, lessons_useful記入率, 覚醒して構造をL0-L7で環境ごと変えよう, どこがネックで俺の指示がないと辿りつけなかったんだ, 構造的な穴を塞ごう, 効果を検証せよ, 次やるべきことは, 行動と検証を繰り返そう |
+| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓, 教訓統合, 教訓整理, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる, 不明パスのみ全フォールバックが残存しWARNログで追跡可能, 役立った教訓IDを報告に記載してから完了せよ, 発見と対策を意識したなら環境に埋め込んだかを確認せよ, 発見と対策を意識咲いたようだが環境には埋め込んだか, 教訓活用率, useful_rate, lessons_useful記入率, 覚醒して構造をL0-L7で環境ごと変えよう, どこがネックで俺の指示がないと辿りつけなかったんだ, 構造的な穴を塞ごう, 効果を検証せよ, 次やるべきことは, 行動と検証を繰り返そう, 効果を検証せよ。穴がないか覚醒して監査, 次やるべきことは？止まらずに行動と検証を繰り返そう |
 | skills | lesson-sort(教訓整理/振り分け/将軍), dream(三層記憶整理/将軍), shogun-teire(知識棚卸し/将軍) |
 | related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle, cmd_chronicle, creator_brainwashing_defense, semantic_dictionary_design, gate_bypass_prevention, deepdive_principles, chain_principle, known_unknowns_principle, no_auto_extinguish, ultimate_state_principle, parameter_space_integrity, gunshi_review_lifecycle, semantic_goodhart_overfitting, causal_verification_l0_l7, three_layer_memory_system, operational_ontology, unread_cmd_new_deployment_guard, skill_routing, gunshi_idle_cold_finding_categories_retroactive_20260620, gunshi_idle_lesson_id_collision_20260620, gunshi_idle_script_speed_audit_20260620, codex_goal_mode, self_improving_agent_local_optima, loop_engineering |
 
@@ -3143,6 +3149,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T08:01:29+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T15:42:26+09:00 よんだ。noteの下書きを頼む |
 | causal | `cmd_3550` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_karo_ci_fix_ga143` files_modified: [[cdp_browser_capability]] |
+| cmd | `cmd_karo_ci_fix_ga143` (`scripts/note_draft.sh`) |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -3213,6 +3221,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T03:18:35+09:00 他に速度バグはないか？覚醒して調査 |
 | cmd | `cmd_3543` 修正 — monthly_trade_impl.py DB N+1クエリ最適化(1PF=69s致命的ボトルネック) |
 | causal | `cmd_3543` origin: [[軍師idle速度分析_20260626]] -> [[monthly_trade_DB_N+1_1023回ボトルネック]] -> [[N+1クエリ最適化]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-27T12:36:48+09:00 FTS5フォールバックの速度改善も重要だな |
 
 ## tier_plan_mapping — Tier-プラン対応
 
@@ -3683,6 +3692,7 @@ codd:
 | causal_chain | `[[cmd_training_L7_v3_saizo_6_20260521205341]]` (L667) |
 | causal_chain | `[[cmd_training_L7_v3_saizo_9_20260521214706]]` (L672) |
 | causal_chain | `[[cmd_karo_hotfix_ga130_context_freshness_dm_signal_frontend_20260625]]` (L850) |
+| file | `docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md` commit_missing WA根因分析(GP-286/287封止+残存2件) |
 
 ## external_project_registry — 外部プロジェクト登録
 
@@ -4357,6 +4367,7 @@ codd:
 | causal | `cmd_karo_hotfix_semantic_map_generate_insight_20260624` files_modified: [[semantic_causal_automation]] |
 | cmd | `cmd_karo_hotfix_semantic_map_generate_insight_20260624` (`context/semantic-map.md`, `docs/semantic-index/index.md`, `scripts/semantic_map_generate.sh`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T03:09:47+09:00 セマンティック検索が重いのはバグでは？品質を落とさずに速くしよう |
+| causal | `cmd_3564` files_modified: [[semantic_causal_automation]] |
 
 ## provisional_lessons — 仮: Lessons
 
@@ -4752,7 +4763,7 @@ codd:
 |------|---|
 | id | operational_ontology |
 | label | 操作的オントロジー |
-| aliases | オントロジー, ontology, 操作的波及, 操作的トリガー, 概念間波及, 変更連鎖, triggers, 1変更で全連鎖更新, ダッシュボードの先, 学習する業務基盤, 因果辺の駆動装置化, Palantir ontology, オントロジーが有効に動くか検証もしてみろ, オントロジーは自動実行されて初めて効果が出る, ontology requires automation, 自動経路に乗らない概念定義は効果がない, 記憶貫通の完了判定は自動再利用, オントロジーの真髄は「概念Aが変わったら, Guard 16, Guard 17, Guard 9b, gate_no_hardcoded_ninja_list, SSOT棚卸し, SSOT全方位偵察, スキル100%使用, スキル強制, 手動操作BLOCK, ハードコード忍者名検出, get_ninja_names, agent_config.sh SSOT, 誤ったSSOTに支配されると厄介, ではオントロジーに戻ろう, オントロジー駆動Phase2 3の基礎として, 穴はないか？オントロジーを様々なパターンで検証しよう, SSOT正本保護, PJパス直書き19ファイル, project_path.sh, config/projects.yaml auto-ops登録済み, shogun-cli-switch force active無視, active pane respawn禁止, SKILL.md全ロール制限削除は却下, Guard16 PJパス概念追加, オントロジーを実際に検証してみよう, オントロジーは順調か？検証しよう, オントロジーへの対処はどうやった？, そうしよう |
+| aliases | オントロジー, ontology, 操作的波及, 操作的トリガー, 概念間波及, 変更連鎖, triggers, 1変更で全連鎖更新, ダッシュボードの先, 学習する業務基盤, 因果辺の駆動装置化, Palantir ontology, オントロジーが有効に動くか検証もしてみろ, オントロジーは自動実行されて初めて効果が出る, ontology requires automation, 自動経路に乗らない概念定義は効果がない, 記憶貫通の完了判定は自動再利用, オントロジーの真髄は「概念Aが変わったら, Guard 16, Guard 17, Guard 9b, gate_no_hardcoded_ninja_list, SSOT棚卸し, SSOT全方位偵察, スキル100%使用, スキル強制, 手動操作BLOCK, ハードコード忍者名検出, get_ninja_names, agent_config.sh SSOT, 誤ったSSOTに支配されると厄介, ではオントロジーに戻ろう, オントロジー駆動Phase2 3の基礎として, 穴はないか？オントロジーを様々なパターンで検証しよう, SSOT正本保護, PJパス直書き19ファイル, project_path.sh, config/projects.yaml auto-ops登録済み, shogun-cli-switch force active無視, active pane respawn禁止, SKILL.md全ロール制限削除は却下, Guard16 PJパス概念追加, オントロジーを実際に検証してみよう, オントロジーは順調か？検証しよう, オントロジーへの対処はどうやった？, そうしよう, SSOT全方位偵察 周回2 — 全PJリポジトリ横断のSSOT棚卸し |
 | related_concepts | three_layer_memory_system, growth_loop, causal_network_obsidian(関連), codd_pipeline(関連) |
 
 | 種別 | パス/参照 |
