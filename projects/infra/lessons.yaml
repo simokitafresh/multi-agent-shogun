@@ -1,8 +1,23 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-27T19:02:14'
+last_synced: '2026-06-27T19:31:25'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 864
+lesson_count: 865
 lessons:
+- id: L870
+  title: context_freshnessの真陽性はsource commit分類を索引カテゴリへ圧縮してからlast_updatedを更新する
+  summary: GA-145ではdm-signal-frontend.mdのlast_updated以後に7件のFE source commitがあり、単にlast_updat
+  tags:
+  - infra
+  - context
+  - frontend
+  - gate
+  - git
+  source_cmd: cmd_karo_hotfix_ga145_context_freshness_dm_signal_frontend_20260627
+  when: 未設定
+  how: 未設定
+  target_files:
+  - context/dm-signal-frontend.md
+  origin: '[[cmd_karo_hotfix_ga145_context_freshness_dm_signal_frontend_20260627]]'
 - id: L869
   title: context_freshness ALERTはsource差分件数と真のops反映差分を分けて報告する
   summary: GA-144ではops pathspec対象commit 16件のうち、本文追記が必要だったのはCompare Returns API/router/page_
@@ -2032,7 +2047,7 @@ lessons:
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
   deprecated: true
-  deprecated_at: '2026-06-27T19:02:41+09:00'
+  deprecated_at: '2026-06-27T19:31:54+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -7274,7 +7289,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-27T19:02:41+09:00'
+  deprecated_at: '2026-06-27T19:31:55+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -10155,7 +10170,7 @@ lessons:
   - queue/gate_metrics.yaml
   origin: '[[cmd_414]]'
   deprecated: true
-  deprecated_at: '2026-06-27T19:02:42+09:00'
+  deprecated_at: '2026-06-27T19:31:56+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)

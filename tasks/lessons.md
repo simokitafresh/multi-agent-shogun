@@ -8875,3 +8875,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - GA-144ではops pathspec対象commit 16件のうち、本文追記が必要だったのはCompare Returns API/router/page_visibility追加のみ。他commitは性能改善・docs/spec・既存手順維持として分類した。次回はALERT行だけでなくsource commit総数、latest表示件数、真に反映した件数を分けて報告する。
+
+### L870: context_freshnessの真陽性はsource commit分類を索引カテゴリへ圧縮してからlast_updatedを更新する
+- **日付**: 2026-06-27
+- **出典**: cmd_karo_hotfix_ga145_context_freshness_dm_signal_frontend_20260627
+- **記録者**: hanzo
+- **tags**: [infra,context,frontend,gate,git]
+- **target_files**: [context/dm-signal-frontend.md]
+- **origin**: [[cmd_karo_hotfix_ga145_context_freshness_dm_signal_frontend_20260627]]
+- **when**: 未設定
+- **how**: 未設定
+- GA-145ではdm-signal-frontend.mdのlast_updated以後に7件のFE source commitがあり、単にlast_updatedだけを進めると鮮度穴を隠す。git log/showでsource commitを分類し、ページ一覧・直近FE変更索引へ最小反映してからgateを再実行する必要がある。

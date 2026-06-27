@@ -1798,7 +1798,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T03:08:53+09:00 三層学習ループは順調か？成長は自動的に加速しているか？覚醒 して確認せよ |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
-| causal_chain | `[[legacy_lesson_L012]]` (L012) |
+| causal_chain | `[[cmd_147]]` (L012) |
 | causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L833) |
 | causal_chain | `[[cmd_3227]]` (L757) |
 
@@ -1989,8 +1989,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T20:26:56+09:00 cmd_pending と cmd_new は同一cmd の重複通知なら、それはバグか？バグなら即時修正しよう。確認せよ |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
-| causal_chain | `[[006.md検証]]` (L004) |
-| causal_chain | `[[006.md検証]]` (L005) |
+| causal_chain | `[[cmd_092]]` (L004) |
+| causal_chain | `[[cmd_134]]` (L005) |
 | causal_chain | `[[cmd_3354]]` (L804) |
 | causal_chain | `[[cmd_3432]]` (L817) |
 | causal_chain | `[[cmd_3523]]` (L844) |
@@ -2180,14 +2180,14 @@ codd:
 | cmd | `cmd_3524` α6検証に5追加指標(VDrag・Skew・Kurt・MinMo・MaxConsecLoss)を追加 — シン四神・シン忍法・奥義全量 |
 | causal | `cmd_3524` origin: [[殿指示_α6追加指標_20260625]] -> [[ぷろっぷDailyProp102_期待値プラスでも資産増えない]] -> [[robustness_common_5指標追加]] |
 | causal | `cmd_karo_hotfix_ga131` files_modified: [[shin_shijin_design]] |
-| causal_chain | `[[cmd_1055]]` (L001) |
-| causal_chain | `[[cmd_1055]]` (L002) |
-| causal_chain | `[[006.md検証]]` (L003) |
+| causal_chain | `[[cmd_125]]` (L001) |
+| causal_chain | `[[cmd_125]]` (L002) |
+| causal_chain | `[[cmd_125]]` (L003) |
 | causal_chain | `[[cmd_training_speed_decision_write_20260607000310]]` (L750) |
 | causal_chain | `[[cmd_training_speed_deploy_task_20260607000353]]` (L751) |
 | causal_chain | `[[cmd_3211]]` (L753) |
-| causal_chain | `[[cmd_3445_saizo]]` (L013) |
-| causal_chain | `[[cmd_3445]]` (L014) |
+| causal_chain | `[[cmd_150]]` (L013) |
+| causal_chain | `[[cmd_151]]` (L014) |
 
 ## gs_ninpo_research — GS忍法研究
 
@@ -4882,7 +4882,7 @@ codd:
 |------|---|
 | id | skill_routing |
 | label | スキルルーティング |
-| aliases | スキル使い分け, どのスキルを使う, 適切なスキル, スキル選択, skill routing, ペイン死亡, pane dead, panedead, pane is dead, ペインがdead, 忍者が死んでいる, 家老が死んでいる, CLI死亡, CLI-DEAD, status 126, respawn, respawnせよ, respwanせよ, CLI切替, Claude⇔Codex切替, モデル切替, version切替, 2.1.87固定, pinned/latest, auto-update再許可, 家老をCodexに, 軍師をOpusに, ペイン復元, レイアウトリセット, ペイン消失, レイアウト崩壊, 全ペイン復元, 編成切替, 忍者モデル編成, 一括モデル切替, 混成編成, Opus全戻し, 決戦モード, 全員Codex, 平時復旧, clear前, セッション終了前, メモリ整理, 三層記憶整理, 知識統合, 棚卸し, 7層監査, 教訓整理, 教訓振り分け, lesson_health ALERT, PJ切替, プロジェクト変更, 裁定反映, context反映確認, GATE CLEAR後処理, cmd完了処理, ダッシュボード更新, レビュー完了後処理, SG7バンドル, gate結果同期, accuracy計算, bc判定, binary_checks確認, idle分析永続化, 分析結果保存, コミット, commit, 作業完了コミット, 報告YAML作成, 報告フィールド記入, FILL_THIS修正, 本番登録, PF登録, GSベンチマーク, パフォーマンス回帰, 家老自立配備, karo_direct, CI修正配備, 偵察2名配備, 設計書生成, CoDDパイプライン, リファクタリング設計, 速度改善, 事象修正, 現象修正, DB確認, 本番DB, パリティ検証, ブラウザ確認, 本番画面スクショ, CDPで確認, ファイル名整理, Driveリネーム, 週報, ウィークリーレポート, 月報, マンスリーレポート, note記事, ユーザー向け記事, 開発裏話, 戦国AI列伝, X検索, Xリサーチ, トレンド調査, スキル作成, スキル化, リポジトリ掃除, 未コミット確認, チャンピオン近傍分析, 過適合判定, 隣接パラメータ, 本文更新要否とgate設計問題を分ける, commit missing WAの穴を今ふさげ |
+| aliases | スキル使い分け, どのスキルを使う, 適切なスキル, スキル選択, skill routing, ペイン死亡, pane dead, panedead, pane is dead, ペインがdead, 忍者が死んでいる, 家老が死んでいる, CLI死亡, CLI-DEAD, status 126, respawn, respawnせよ, respwanせよ, CLI切替, Claude⇔Codex切替, モデル切替, version切替, 2.1.87固定, pinned/latest, auto-update再許可, 家老をCodexに, 軍師をOpusに, ペイン復元, レイアウトリセット, ペイン消失, レイアウト崩壊, 全ペイン復元, 編成切替, 忍者モデル編成, 一括モデル切替, 混成編成, Opus全戻し, 決戦モード, 全員Codex, 平時復旧, clear前, セッション終了前, メモリ整理, 三層記憶整理, 知識統合, 棚卸し, 7層監査, 教訓整理, 教訓振り分け, lesson_health ALERT, PJ切替, プロジェクト変更, 裁定反映, context反映確認, GATE CLEAR後処理, cmd完了処理, ダッシュボード更新, レビュー完了後処理, SG7バンドル, gate結果同期, accuracy計算, bc判定, binary_checks確認, idle分析永続化, 分析結果保存, コミット, commit, 作業完了コミット, 報告YAML作成, 報告フィールド記入, FILL_THIS修正, 本番登録, PF登録, GSベンチマーク, パフォーマンス回帰, 家老自立配備, karo_direct, CI修正配備, 偵察2名配備, 設計書生成, CoDDパイプライン, リファクタリング設計, 速度改善, 事象修正, 現象修正, DB確認, 本番DB, パリティ検証, ブラウザ確認, 本番画面スクショ, CDPで確認, ファイル名整理, Driveリネーム, 週報, ウィークリーレポート, 月報, マンスリーレポート, note記事, ユーザー向け記事, 開発裏話, 戦国AI列伝, X検索, Xリサーチ, トレンド調査, スキル作成, スキル化, リポジトリ掃除, 未コミット確認, チャンピオン近傍分析, 過適合判定, 隣接パラメータ, 本文更新要否とgate設計問題を分ける, commit missing WAの穴を今ふさげ, git log showでsource commitを分類し |
 | skills | shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み), reset-layout(全ペイン配置復元), shogun-clear-prep(clear前), dream(三層記憶整理), shogun-teire(棚卸し), lesson-sort(教訓整理), switch-project(PJ切替), shogun-pd-sync(裁定反映), cmd-complete(GATE CLEAR後/家老), dashboard-update(ダッシュボード/家老), review-bundle(レビュー完了/軍師), gate-sync(gate同期/軍師), verdict-check(bc判定/忍者), idle-persist(分析永続化/軍師), ninja-commit(commit/忍者), report-write(報告YAML/忍者), pf-registration(本番登録/忍者), gs-bench-gate(GSベンチ/忍者), karo-direct(家老自立配備/家老), recon-dual(偵察2名/家老), codd(設計書), codd-refactor(リファクタ), codd-fix(事象修正), db-check(DB確認), cdp-browse(ブラウザ確認), file-rename(ファイルリネーム), weekly-report-writer(週報), monthly-report-writer(月報), note-writer(note記事), sengoku-writer(戦国記事), x-research(X検索), skill-creator(スキル作成), repo-clean(リポ掃除), shogun-param-neighbor-check(パラメータ近傍) |
 | related_concepts | agent_formation_management, growth_loop, skill_design_rules, content_artifacts |
 
@@ -4908,7 +4908,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T03:39:02+09:00 そもそも アンステージとやみコミット ミ プッシュが残っているのが問題では |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T02:59:05+09:00 覚醒して自走せよ。commit_missing WAの穴を今ふさげ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T16:48:46+09:00 hanzoをrespawnせよ |
+| lesson | `L870` context_freshnessの真陽性はsource commit分類を索引カテゴリへ圧縮してからlast_updatedを更新する |
 | causal_chain | `[[cmd_karo_recon_ga125_context_freshness_20260624]]` (L846) |
+| causal_chain | `[[cmd_karo_hotfix_ga145_context_freshness_dm_signal_frontend_20260627]]` (L870) |
 
 ## commander_role_ssot_analysis — Commanderロール SSOT分析
 
