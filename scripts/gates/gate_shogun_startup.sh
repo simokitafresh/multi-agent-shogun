@@ -1875,7 +1875,7 @@ fi
 echo "■ 週次品質指標トレンド"
 _WEEKLY_METRICS_SCRIPT="$SCRIPT_DIR/scripts/weekly_metrics_trend.sh"
 if [ -x "$_WEEKLY_METRICS_SCRIPT" ]; then
-    _weekly_metrics_output="$(bash "$_WEEKLY_METRICS_SCRIPT" 2>&1)" || _weekly_metrics_rc=$?
+    _weekly_metrics_output="$(WEEKLY_METRICS_CHECK_CRON=1 bash "$_WEEKLY_METRICS_SCRIPT" 2>&1)" || _weekly_metrics_rc=$?
     _weekly_metrics_rc="${_weekly_metrics_rc:-0}"
     if [ -n "$_weekly_metrics_output" ]; then
         while IFS= read -r _weekly_metrics_line; do
@@ -1885,7 +1885,11 @@ if [ -x "$_WEEKLY_METRICS_SCRIPT" ]; then
     fi
     if [ "$_weekly_metrics_rc" -ne 0 ]; then
         overall="ALERT"
-        alerts+=("週次品質指標トレンド: 3週連続悪化")
+        if grep -q 'cron missing' <<< "$_weekly_metrics_output"; then
+            alerts+=("週次品質指標トレンド: cron未登録")
+        else
+            alerts+=("週次品質指標トレンド: 3週連続悪化")
+        fi
     fi
     unset _weekly_metrics_rc
 else

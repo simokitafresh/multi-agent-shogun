@@ -54,6 +54,47 @@ EOF
     grep -q 'block_rate: 50.0' "$TEST_TMPDIR/logs/weekly_metrics_trend.yaml"
 }
 
+@test "weekly_metrics_trend emits previous-week deltas when prior snapshot exists" {
+    cat > "$TEST_TMPDIR/logs/weekly_metrics_trend.yaml" <<'EOF'
+snapshots:
+- week_start: "2026-06-12T00:00:00Z"
+  week_end: "2026-06-19T00:00:00Z"
+  useful_rate: 75.0
+  useful: 3
+  feedback_total: 4
+  rework_rate: 25.0
+  rework: 1
+  cmd_quality_total: 4
+  block_rate: 25.0
+  blocks: 1
+  source: "weekly_metrics_trend.sh"
+alerts: []
+EOF
+    cat > "$TEST_TMPDIR/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
+2026-06-25T00:00:00Z	cmd_1	hayate	L001	feedback	USEFUL	yes	infra	full	unknown	0	0
+2026-06-25T01:00:00Z	cmd_2	hayate	L002	feedback	NOT_USEFUL	no	infra	full	unknown	0	0
+EOF
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_1"
+  gate_result: "BLOCK"
+  karo_rework: "yes"
+  timestamp: "2026-06-25T00:00:00Z"
+- cmd_id: "cmd_2"
+  gate_result: "PASS"
+  karo_rework: "no"
+  timestamp: "2026-06-25T01:00:00Z"
+EOF
+
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DELTA: weekly_metrics_trend useful_rate=-25.0pp rework_rate=+25.0pp block_rate=+25.0pp"* ]]
+    grep -q 'delta:' "$TEST_TMPDIR/logs/weekly_metrics_trend.yaml"
+    grep -q 'useful_rate: -25.0' "$TEST_TMPDIR/logs/weekly_metrics_trend.yaml"
+    grep -q 'block_rate: +25.0' "$TEST_TMPDIR/logs/weekly_metrics_trend.yaml"
+}
+
 @test "weekly_metrics_trend alerts on three-week worsening" {
     cat > "$TEST_TMPDIR/logs/weekly_metrics_trend.yaml" <<'EOF'
 snapshots:
@@ -106,4 +147,44 @@ EOF
     [[ "$output" == *"ALERT: block_rate 3週連続悪化: 10.0% -> 20.0% -> 50.0%"* ]]
     grep -q 'alerts:' "$TEST_TMPDIR/logs/weekly_metrics_trend.yaml"
     grep -q 'useful_rate 3週連続悪化' "$TEST_TMPDIR/logs/weekly_metrics_trend.yaml"
+}
+
+@test "weekly_metrics_trend installs and checks cron registration" {
+    cat > "$TEST_TMPDIR/crontab" <<'EOF'
+EOF
+    cat > "$TEST_TMPDIR/crontab_cmd" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+file="$TEST_TMPDIR/crontab"
+if [ "${1:-}" = "-l" ]; then
+    cat "$file"
+elif [ "${1:-}" = "-" ]; then
+    cat > "$file"
+else
+    exit 2
+fi
+EOF
+    chmod +x "$TEST_TMPDIR/crontab_cmd"
+    mkdir -p "$TEST_TMPDIR/bin"
+    ln -s "$TEST_TMPDIR/crontab_cmd" "$TEST_TMPDIR/bin/crontab"
+    export TEST_TMPDIR
+    PATH="$TEST_TMPDIR/bin:$PATH" run bash "$SRC_SCRIPT" --install-cron
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: weekly_metrics_trend cron installed"* ]]
+    grep -q 'shogun-weekly-metrics-trend' "$TEST_TMPDIR/crontab"
+
+    cat > "$TEST_TMPDIR/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
+2026-06-25T00:00:00Z	cmd_1	hayate	L001	feedback	USEFUL	yes	infra	full	unknown	0	0
+EOF
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_1"
+  gate_result: "PASS"
+  karo_rework: "no"
+  timestamp: "2026-06-25T00:00:00Z"
+EOF
+    PATH="$TEST_TMPDIR/bin:$PATH" WEEKLY_METRICS_CHECK_CRON=1 run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: weekly_metrics_trend cron registered"* ]]
 }

@@ -288,6 +288,16 @@ exit 1
 MOCK
     chmod +x "$SHARED_BASE/bin/gh"
 
+    cat > "$SHARED_BASE/bin/crontab" <<'MOCK'
+#!/usr/bin/env bash
+if [ "${1:-}" = "-l" ]; then
+    cat "${SHOGUN_STARTUP_ROOT}/crontab" 2>/dev/null || true
+    exit 0
+fi
+exit 2
+MOCK
+    chmod +x "$SHARED_BASE/bin/crontab"
+
     cat > "$SHARED_BASE/scripts/inbox_write.sh" <<'MOCK'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "${SHOGUN_STARTUP_ROOT}/logs/inbox_write_calls.log"
@@ -309,6 +319,9 @@ setup() {
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/data/three_layer_health.db"
     export SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=999999999
     export WEEKLY_METRICS_NOW="2099-01-01T00:00:00Z"
+    cat > "$TEST_TMPDIR/crontab" <<EOF
+17 0 * * 1 cd "$TEST_TMPDIR" && "$TEST_TMPDIR/scripts/weekly_metrics_trend.sh" >/dev/null 2>&1 # shogun-weekly-metrics-trend
+EOF
 }
 
 teardown() {
@@ -330,6 +343,7 @@ teardown() {
     [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
     [[ "$output" == *"■ 週次品質指標トレンド"* ]]
     [[ "$output" == *"OK: weekly metrics trend"* ]]
+    [[ "$output" == *"OK: weekly_metrics_trend cron registered"* ]]
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
@@ -382,6 +396,53 @@ EOF
     [[ "$output" == *"ALERT: useful_rate 3週連続悪化"* ]]
     [[ "$output" == *"ALERT: rework_rate 3週連続悪化"* ]]
     [[ "$output" == *"ALERT: block_rate 3週連続悪化"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
+@test "weekly metrics previous-week delta is surfaced in startup output" {
+    cat > "$TEST_TMPDIR/logs/weekly_metrics_trend.yaml" <<'EOF'
+snapshots:
+- week_start: "2098-12-18T00:00:00Z"
+  week_end: "2098-12-25T00:00:00Z"
+  useful_rate: 75.0
+  useful: 3
+  feedback_total: 4
+  rework_rate: 25.0
+  rework: 1
+  cmd_quality_total: 4
+  block_rate: 25.0
+  blocks: 1
+  source: "weekly_metrics_trend.sh"
+alerts: []
+EOF
+    cat > "$TEST_TMPDIR/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
+2098-12-31T00:00:00Z	cmd_1	hayate	L001	feedback	USEFUL	yes	infra	full	unknown	0	0
+2098-12-31T01:00:00Z	cmd_2	hayate	L002	feedback	NOT_USEFUL	no	infra	full	unknown	0	0
+EOF
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_1"
+  gate_result: "BLOCK"
+  karo_rework: "yes"
+  timestamp: "2098-12-31T00:00:00Z"
+- cmd_id: "cmd_2"
+  gate_result: "PASS"
+  karo_rework: "no"
+  timestamp: "2098-12-31T01:00:00Z"
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DELTA: weekly_metrics_trend useful_rate=-25.0pp rework_rate=+25.0pp block_rate=+25.0pp"* ]]
+}
+
+@test "weekly metrics missing cron is surfaced as startup ALERT" {
+    : > "$TEST_TMPDIR/crontab"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: weekly_metrics_trend cron missing"* ]]
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
