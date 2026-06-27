@@ -1,8 +1,8 @@
 task:
-  _ac_task_id: cmd_3565_full
+  _ac_task_id: cmd_3569_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3565 (deployed 2026-06-27T15:18:47). Read from the beginning.
-  ac_version: 7d7cc871
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3569 (deployed 2026-06-27T17:36:03). Read from the beginning.
+  ac_version: c28a7a1b
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -32,36 +32,35 @@ task:
   - gate実装の変更
   - dashboard.md手動編集
   parallel_ok: []
-  parent_cmd: cmd_3565
+  parent_cmd: cmd_3569
   project: dm-signal
-  purpose: '殿指示(2026-06-27): compare-chart-yaxis-label-clipping-fix.md設計書に基づきCompare ChartのY軸2欠陥を修正。D1=LIN高リターンで先頭桁クリップ、D2=LOG目盛が固定配列500で頭打ち。レンジ非依存+コンパクト表記で構造的に解消'
+  purpose: '殿指示(2026-06-27): docs/spec/compare-returns-page.md設計書に基づき/compare-returnsページを実装。全PF+standaloneベンチマーク×8期間(MTD/1M/3M/6M/1Y/3Y/5Y/ALL)のトレーリングリターンをソート可能テーブルで提示。レビュー3回完了・sign-off済み'
   status: idle
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/frontend/components
-  task_id: cmd_3565_full
+  target_path: /mnt/c/Python_app/DM-signal
+  task_id: cmd_3569_full
   task_type: full
+  skill_hint: /db-check
   related_lessons:
-  - id: 'L090'
-    summary: 'copilot-instructions.mdとsystem.mdはgitignoreで管理外。CLAUDE.md修正→commitしても派生ファイルは自動再生'
-    detail: 'copilot-instructions.mdとsystem.mdはgitignoreで管理外。CLAUDE.md修正→commitしても派生ファイルは自動再生'
-  - id: 'L609'
-    summary: 'ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp'
-    detail: 'ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp'
-  - id: 'L595'
-    summary: 'pre-pushのtest_select.shでテスト対象外ドキュメントを未知ファイル扱いにすると、意図的にテスト不要な変更までWARN化する。skills/*'
-    detail: 'pre-pushのtest_select.shでテスト対象外ドキュメントを未知ファイル扱いにすると、意図的にテスト不要な変更までWARN化する。skills/*'
+  - id: 'L568'
+    summary: '忍者にpush_allowed=falseの場合、パリティ検証ACはbc:noになるが忍者作業範囲は完了。家老が別忍者でparity配備→GATE CLEAR。'
+    detail: '忍者にpush_allowed=falseの場合、パリティ検証ACはbc:noになるが忍者作業範囲は完了。家老が別忍者でparity配備→GATE CLEAR。'
+  - id: 'L601'
+    summary: 'semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690'
+    detail: 'semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690'
+  - id: 'L239'
+    summary: 'cmd_1031ではGrid dedup/PPE/parityのコード品質は全てINFORMATIONALだったが、impl_aが未commitのままHEADに'
+    detail: 'cmd_1031ではGrid dedup/PPE/parityのコード品質は全てINFORMATIONALだったが、impl_aが未commitのままHEADに'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
-  recommended_skills:
-  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
   related_causal_links:
-  - "[[D1_LIN桁欠け+D2_LOG頭打ち]]"
-  - "[[レンジ非依存設計]]"
-  - "[[殿指示_compare_chart_yaxis_fix_20260627]]"
+  - "[[Compare_Returnsページ実装]]"
+  - "[[PF横断リターン比較不在]]"
+  - "[[殿指示_compare-returns-page_20260627]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -77,32 +76,48 @@ task:
   - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
   - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
   - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L090: copilot-instructions.mdとsystem.mdはgitignoreで管理外。CLAUDE.md修正→commitしても派生ファイルは自動再生
-      - L609: ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp
-      - L595: pre-pushのtest_select.shでテスト対象外ドキュメントを未知ファイル扱いにすると、意図的にテスト不要な変更までWARN化する。skills/*
+      - L568: 忍者にpush_allowed=falseの場合、パリティ検証ACはbc:noになるが忍者作業範囲は完了。家老が別忍者でparity配備→GATE CLEAR。
+      - L601: semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690
+      - L239: cmd_1031ではGrid dedup/PPE/parityのコード品質は全てINFORMATIONALだったが、impl_aが未commitのままHEADに
     ────────────────────────────────────────
     
     
   memory_db_context:
-  - '2026-06-27T15:13:31 | 2026-06-27T15:13 karo strong-new-game checkpoint: cmd_3563/cmd_3564 completed; dirty synced commit 7'
-  - '2026-06-27T15:00:18+09:00 | 【INFOバッチ】 2026-06-27 14:53:59|cmd_3564'
+  - '2026-06-27T17:22:31+09:00 | 【INFOバッチ】 2026-06-27 17:06:56|cmd_3566 2026-06-27 17:13:49|cmd_3567'
+  - '2026-06-27T15:46:26+09:00 | 【INFOバッチ】 2026-06-27 15:43:57|cmd_3565'
+  - '2026-06-27T17:12:40+09:00 | C:Python_appDM-signaldocsspeccompare-returns-page.mdを読み込み実装せよ'
   - '2026-06-27T15:11:47+09:00 | C:Python_appDM-signaldocsspeccompare-chart-yaxis-label-clipping-fix.mdを読み込み実装しよう'
-  - '2026-06-25T16:44:13 | 軍師セッション最終(2026-06-25T16:43): draft17(APPROVE16+RC1)+report16(全LGTM→全CLEAR)+D0_3。accuracy100%(59/59)。'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'comparison-chart.tsxにbuildLogTicks、formatMultiplierLabel、formatLinearYLabel、formatLogYLabelの4関数をexport追加し、logYTicksとformatYLabelに接続する。npm run buildが成功することで確認する'
+    - check: 'BE: page_visibility.pyのget_global_hidden_pages()をSettings ∪ GlobalVisibilitySettingsのmergeに修正し、既存ページIDでの回帰テストを含めpytestでPASSする(設計書§5.1)'
   - id: 'AC2'
     checks:
-    - check: 'comparison-chart-yaxis.test.tsxを作成し、純粋関数テスト+描画配線テストがnpm testで全PASSすることを確認する'
+    - check: 'BE: mtd_returns.py service実装+extract_compare_mtd_values。performance.pyの該当ロジックをservice呼び出しへrefactor(数式不変)し、pytestでPASSする(設計書§5.3)'
   - id: 'AC3'
     checks:
-    - check: 'ChartAxes.tsx、total-return-chart.tsx、backend配下に差分がないことをgit diffで確認する'
+    - check: 'BE: /api/compare-returnsエンドポイント実装(完了月フィルタ+複利積+BM ticker collector+MTD service呼び出し+ETag)。test_compare_returns_api.pyの§10.1全ケースがPASSする'
+  - id: 'AC4'
+    checks:
+    - check: 'FE: /compare-returnsページ+専用テーブル+型定義+ビルダ+配線(api-client/usePrefetch/sidebar/mobile-menu/admin visibility)を実装。npm test compare-returns全PASSかつFEビルド成功する(設計書§6-7)'
+  - id: 'AC5'
+    checks:
+    - check: '設計書§8の非変更ファイル(数式関数群・DBスキーマ・page-navigation.tsx型)に変更がないことを差分確認する'
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3565.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3565.yaml
+  report_filename: tobisaru_report_cmd_3569.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3569.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -134,4 +149,4 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-06-27T15:19:07"
+  deployed_at: "2026-06-27T17:36:30"

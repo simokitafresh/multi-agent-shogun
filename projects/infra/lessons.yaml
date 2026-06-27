@@ -1,8 +1,24 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-27T12:56:05'
+last_synced: '2026-06-27T19:02:14'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 863
+lesson_count: 864
 lessons:
+- id: L869
+  title: context_freshness ALERTはsource差分件数と真のops反映差分を分けて報告する
+  summary: GA-144ではops pathspec対象commit 16件のうち、本文追記が必要だったのはCompare Returns API/router/page_
+  tags:
+  - infra
+  - context
+  - api
+  - process
+  - git
+  source_cmd: cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627
+  when: 未設定
+  how: 未設定
+  target_files:
+  - context/dm-signal-ops.md
+  - queue/reports/kagemaru_report_cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627.yaml
+  origin: '[[cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627]]'
 - id: L868
   title: コマンド置換内のバックグラウンド処理はstdout継承で待たれる
   summary: bashのコマンド置換内で起動したバックグラウンドsubshellがstdout pipeを継承すると、親は見かけ上非同期でもpipe EOF待ちになり得る。既
@@ -552,9 +568,6 @@ lessons:
   target_files:
   - scripts/switch_cli_mode.sh
   origin: '[[cmd_karo_hotfix_model_family_ssot_20260620]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L834
   title: switch_cli_mode.sh @agent_state=active残留バグ — recovery後にactive化→task=none/idleでもrespawnスキップ
   summary: Claude recovery後に@agent_state=activeに遷移するが、task statusがidle/none/doneの場合にidleに補正
@@ -2019,7 +2032,7 @@ lessons:
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
   deprecated: true
-  deprecated_at: '2026-06-27T12:56:38+09:00'
+  deprecated_at: '2026-06-27T19:02:41+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -2242,9 +2255,6 @@ lessons:
   target_files:
   - tests/unit/test_learning_ops_small_consolidated.bats
   origin: '[[cmd_karo_ci_fix_freshness_test_20260529]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-22'
 - id: L722
   title: Edit toolでのindex.md変更がauto_intake_semantic_indexに上書きされるリスク
   summary: semantic_map_generate.shのauto_intake_semantic_index()がindex.mdを読み書きする。Edit
@@ -4535,6 +4545,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: 忍者にpush_allowed=falseの場合、パリティ検証ACはbc:noになるが忍者作業範囲は完了
   origin: '[[cmd_2573]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L567
   title: batsテストのPANEはTMP_DIR派生ユニーク値を使え
   summary: CIランナーで/tmp固定PANEのキャッシュファイルが残存し、テスト間で干渉する。sticky bitでrm -f失敗→exit 0→MSG空→テストFAIL
@@ -5700,9 +5713,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-04-16'
   origin: '[[cmd_1963]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-22'
 - id: L481
   title: pipefail下でgrepのno-matchはexit 1 — ||trueで保護必須
   summary: set -o pipefailが有効なbashスクリプトでgrepがマッチ0件だとexit 1でスクリプト全体が異常終了する。grep pattern
@@ -7264,7 +7274,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-27T12:56:39+09:00'
+  deprecated_at: '2026-06-27T19:02:41+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -7316,9 +7326,6 @@ lessons:
   target_files:
   - lesson_effectiveness.sh
   origin: '[[cmd_cycle_L4_012]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-22'
 - id: L342
   title: ホワイトリスト.gitignoreではscriptsディレクトリ内の新規ファイルもgit add -f必須
   summary: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
@@ -9499,9 +9506,6 @@ lessons:
   when: 5軸以上の独立した偵察を実施する時
   how: '並列Agent(例: 4並列)で各軸を分担して同時実行せよ'
   origin: '[[cmd_548]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-21'
 - id: L158
   title: ローテーション機能レビューでは境界値テストに加えて過剰初期データの実地検証が有効
   summary: IF ローテーション機能をレビューする時 THEN 境界値テストに加え、200超の初期データ(例:250件)を用いた追記検証を実施せよ
@@ -10151,7 +10155,7 @@ lessons:
   - queue/gate_metrics.yaml
   origin: '[[cmd_414]]'
   deprecated: true
-  deprecated_at: '2026-06-27T12:56:40+09:00'
+  deprecated_at: '2026-06-27T19:02:42+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)
@@ -10756,9 +10760,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: ただしTask3ではタイミング交絡あり(修正前コードレビュー→修正後コード検証)
   origin: '[[cmd_317v2]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-22'
 - id: L049
   title: コードレビューで既存対策を見落とす共通パターン — 全文精読とコメント確認の重要性
   summary: inbox_write.shの3件の独立レビューが全て同じ偽陽性(環境変数渡し済み+ホワイトリスト実装済み)を 報告した。コード中にHIGH-1/HIGH-2の
@@ -10780,9 +10781,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: task_id一致チェックをL311後に追加して修正済み
   origin: '[[cmd_317v2]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-22'
 - id: L047
   title: 'deploy_task.sh: Python -c文字列にシェル変数直接埋込はインジェクション危険'
   summary: python3 -c内で$name等を直接補間すると、シングルクォートを含む入力でコード実行可能。環境変数経由(os.environ)か外部.pyファイル+引数
@@ -10816,9 +10814,6 @@ lessons:
   when: 報告YAMLからAC達成状況を自動パースする時
   how: acceptance_criteria/ac_status/ac_checklistの3パターン全てに対応せよ
   origin: '[[cmd_317]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L044
   title: reports/*.yamlに扁平/ネスト2構造が混在
   summary: 忍者名_report.yaml(ルートレベルフィールド)とsubtask_*.yaml(report:キー配下)で構造が異なる。スキーマ検証やパーサーは両方に対

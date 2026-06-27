@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-27 -->
+<!-- last_updated: 2026-06-27 cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -425,3 +425,4 @@
 | cmd_3565 | 殿指示(2026-06-27): compare-chart-yaxis-label-clipping-fix.md設計書に基づきCompare ChartのY軸2欠陥を修正。D1=LIN高リターンで先頭桁クリップ、D2=LOG目盛が固定配列500で頭打ち。レンジ非依存+コンパクト表記で構造的に解消 | dm-signal | 06-27 | comparison-chart.tsxにbuildLogT |
 | cmd_3566 | 軍師idle自走分析(blt_20260627_142919, 2026-06-27): マルチフェーズcmd(L0→final_summary)でfinal_summary報告のfiles_modifiedにL0フェーズの変更ファイルが統合されない。grep files_modified.*merge cmd_complete_gate.sh → 0件。マージロジックを追加しcommit_missing WAを構造的に排除 | infra | 06-27 | cmd_complete_gate.shのself-grad |
 | cmd_3567 | 軍師idle分析(blt_20260627_142919, 2026-06-27)+cmd_3558 cancel後残課題: GP-286(files_modifiedパス形式検証L213)+GP-287(commit_hash 40文字検証L224)がgate_report_format_main.pyに実装済み(commit 1a6e89252)だが回帰テストが不在(grep GP-286/GP-287 tests/ → 0件)。batsテスト追加でCI回帰防護を確立 | infra | 06-27 | GP-286/GP-287の回帰batsを4独立ケースへ分割 |
+| cmd_3569 | 殿指示(2026-06-27): docs/spec/compare-returns-page.md設計書に基づき/compare-returnsページを実装。全PF+standaloneベンチマーク×8期間(MTD/1M/3M/6M/1Y/3Y/5Y/ALL)のトレーリングリターンをソート可能テーブルで提示。レビュー3回完了・sign-off済み | dm-signal | 06-27 | cmd_3569 /compare-returns ページを |

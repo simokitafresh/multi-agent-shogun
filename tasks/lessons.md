@@ -8864,3 +8864,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - bashのコマンド置換内で起動したバックグラウンドsubshellがstdout pipeを継承すると、親は見かけ上非同期でもpipe EOF待ちになり得る。既存cache即返し設計では、background refreshは >/dev/null 2>&1 で標準出力を切断すること。origin: [[殿指示_FTS5速度改善_20260627]] -> [[コマンド置換stdout継承]] -> [[semantic_search_42秒待ち]]
+
+### L869: context_freshness ALERTはsource差分件数と真のops反映差分を分けて報告する
+- **日付**: 2026-06-27
+- **出典**: cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627
+- **記録者**: kagemaru
+- **tags**: [infra,context,api,process,git]
+- **target_files**: [context/dm-signal-ops.md,queue/reports/kagemaru_report_cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627.yaml]
+- **origin**: [[cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627]]
+- **when**: 未設定
+- **how**: 未設定
+- GA-144ではops pathspec対象commit 16件のうち、本文追記が必要だったのはCompare Returns API/router/page_visibility追加のみ。他commitは性能改善・docs/spec・既存手順維持として分類した。次回はALERT行だけでなくsource commit総数、latest表示件数、真に反映した件数を分けて報告する。

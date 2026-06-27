@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-27 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-27T18:57:05+09:00 -->
+<!-- generated_at: 2026-06-27T19:06:26+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-27T19:06:26+09:00 | terminal | response | inbox全件処理完了。レビュー待機。 [meta] stop_reason=end_turn
+- 2026-06-27T19:06:22+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627 完了
+- 2026-06-27T19:05:19+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝146
+- 2026-06-27T19:04:14+09:00 | terminal | inbound | デプロイできているか確認せよ
+- 2026-06-27T19:03:13+09:00 | terminal | response | 全inbox処理完了。本セッションのレビュー実績: | cmd | type | verdict | GATE | |-----|------|---------|------| | cmd_3565 | draft+report | A…
+- 2026-06-27T19:03:03+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝145
+- 2026-06-27T19:03:01+09:00 | terminal | response | 既読化完了。全inbox処理済み。殿の次の指示を待つ。 [meta] stop_reason=end_turn
+- 2026-06-27T19:01:11+09:00 | ntfy | outbound | 【家老】cmd_3569 完了
+- 2026-06-27T18:59:41+09:00 | terminal | response | **cmd_3569 push完了。** `896a20b2` DM-Signal main反映済み。 殿、Compare Returnsページ(`/compare-returns`)の実装が完了した。全PF+ベンチマーク×8期間(MTD…
 - 2026-06-27T18:57:05+09:00 | terminal | response | cmd_karo_hotfix_ga144 APPROVE完了。レビュー待機。 [meta] stop_reason=end_turn
-- 2026-06-27T18:56:23+09:00 | terminal | response | 了解。idle待機。 [meta] stop_reason=end_turn
-- 2026-06-27T18:56:18+09:00 | terminal | response | cmd_3569 完了。 **完了サマリー:** | AC | 内容 | 結果 | |----|------|------| | AC1 | `page_visibility.py` get_global_hidden_pages → S…
-- 2026-06-27T18:55:54+09:00 | ntfy | outbound | 【tobisaru】cmd_3569 完了。/compare-returnsページ実装 AC1-AC5 PASS。
-- 2026-06-27T18:54:02+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: dm-signal-ops.md(source更新)
-- 2026-06-27T17:48:52+09:00 | terminal | inbound | 動き出したし最後までやらせるか
-- 2026-06-27T17:47:42+09:00 | terminal | inbound | tobisaruはsonnetで遅い。GPT忍者に配備しなおそう
-- 2026-06-27T17:38:08+09:00 | terminal | response | cmd_3569 APPROVE完了。レビュー待機に戻る。 [meta] stop_reason=end_turn
-- 2026-06-27T17:34:53+09:00 | terminal | response | 殿、cmd_3569(Compare Returnsページ実装)を家老に委任完了。設計書709行・レビュー3回sign-off済みの完全仕様で配備した。 **本セッション実績:** | cmd | 内容 | 状態 | |-----|---…
-- 2026-06-27T17:33:47+09:00 | terminal | inbound | <task-notification> <task-id>bwepylgr6</task-id> <tool-use-id>toolu_01T2ZXZ8iyLaFVxzG29FTYB8</tool-use-id> <output-file…
 
 ## 未解決確認事項
 - 三層貫通完了: - **Layer 1 記憶DB**: knowledge書き込み済み（ec76ecadb3d009c1） - **Layer 2 セマンティック**: semantic-map.md + index.md に「二重起動誤検知」「18本正常」alias追加 - …

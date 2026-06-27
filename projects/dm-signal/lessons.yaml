@@ -1,8 +1,67 @@
 ssot_path: /mnt/c/Python_app/DM-signal/tasks/lessons.md
-last_synced: '2026-06-27T15:43:45'
+last_synced: '2026-06-27T18:58:25'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons_archive.yaml
-lesson_count: 783
+lesson_count: 786
 lessons:
+- id: L789
+  title: check_mixed_format_commit.pyはimport行のみhunkを検出してblock→多行import形式で回避可能
+  summary: pre-commitフックがimport-only hunk+functional hunk混在をblockする。ruffが未使用importを削除するため、分
+  tags:
+  - dm-signal
+  - gate
+  - git
+  source_cmd: cmd_3569
+  when: 未設定
+  how: 未設定
+  target_files:
+  - backend/app/api/compare_returns.py
+  - backend/app/services/mtd_returns.py
+  - backend/app/api/performance.py
+  - backend/app/services/page_visibility.py
+  - backend/app/main.py
+  origin: '[[cmd_3569]]'
+- id: L788
+  title: 新規ページ可視性はAdmin保存先とAPI enforcement保存先を同時に確認する
+  summary: Admin Visibility は `GlobalVisibilitySettings.hidden_pages` を保存し、viewer-permissio
+  tags:
+  - dm-signal
+  - visibility
+  - api-contract
+  - frontend
+  - security
+  source_cmd: compare-returns-page-review-2
+  when: 新規ページIDをsidebar/mobile/admin visibility/API enforcementへ追加するとき
+  how: '`enforce_page_visible(db, page_id, is_admin, tier_id)` の実シグネチャと403契約を使い、global
+    hidden pages は `Settings.hidden_pages` と `GlobalVisibilitySettings.hidden_pages`
+    の読み書き先差分をテストで固定する'
+  target_files:
+  - backend/app/services/page_visibility.py
+  - backend/app/api/viewer_tiers.py
+  - backend/app/api/viewer_permissions.py
+  - frontend/app/admin/visibility/page.tsx
+  - docs/spec/compare-returns-page.md
+  origin: '[[Compare Returnsページ新設レビュー2回目]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-25'
+- id: L787
+  title: Compare Returnsの完了月判定は current_ym 除外で固定する
+  summary: '`MonthlyReturn` と `TickerMonthlyReturn` は現行ETLで当月MTD行を保持し得る。テーブル末尾を完了月とみなすとMTDが1'
+  tags:
+  - dm-signal
+  - compare-returns
+  - monthly-returns
+  - mtd
+  - api-contract
+  source_cmd: compare-returns-page-review-1
+  when: completed monthを`monthly_returns` / `ticker_monthly_returns`から取得してトレーリング窓を作るとき
+  how: '`year_month < date.today().strftime("%Y-%m")` で当月MTD行を除外し、1Mは最新完了月の`monthly_return`、Nヶ月は最新N個の`monthly_return`複利積で計算する'
+  target_files:
+  - backend/app/jobs/generators/monthly_returns.py
+  - backend/app/jobs/ticker_returns.py
+  - backend/app/services/monthly_returns_calculator.py
+  - docs/spec/compare-returns-page.md
+  origin: '[[Compare Returnsページ新設レビュー1回目]]'
 - id: L786
   title: 'ComparisonChart Y軸: 固定配列目盛は純粋関数抽出+動的生成で構造的解消'
   summary: 'LOG目盛固定配列(niceValues 500頭打ち)とLIN整形桁欠けは同根: ハードコードによるレンジ非追従。純粋関数4本をmoduleスコープにexpo'
@@ -546,7 +605,7 @@ lessons:
   origin: '[[cmd_3384]] -> [[BB分類context更新未強制]] -> [[GA-102 dm-signal-core freshness
     ALERT]]'
   deprecated: true
-  deprecated_at: '2026-06-27T15:43:59+09:00'
+  deprecated_at: '2026-06-27T18:58:57+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): context/dm-signal-core.m参照（ファイル消滅）'
 - id: L753
   title: 'DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用'
@@ -2061,7 +2120,7 @@ lessons:
   - tasks/lessons.md
   origin: '[[cmd_2311]]'
   deprecated: true
-  deprecated_at: '2026-06-27T15:43:59+09:00'
+  deprecated_at: '2026-06-27T18:58:57+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/kotaro.yaml参照（ファイル消滅）'
 - id: L656
   title: 計測スクリプトの固定待機排除はDOMポーリングで行う
@@ -3308,6 +3367,9 @@ lessons:
   - outputs/analysis/alm_research/cmd_1764_objective_ranking.csv
   - outputs/analysis/alm_research/cmd_1764_objective_ranking.yaml
   origin: '[[cmd_1764]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-27'
 - id: L567
   title: tail_contributionは多様性低下要因。nhfとcagrは多様性貢献度最高
   summary: C(6,3)=20通り多様性分析でtail_contributionを含む10コンボは全て下位11-20位(スコア2.9-3.0台)。逆にnhfとcagrを含む
@@ -9858,9 +9920,6 @@ lessons:
   when: 'nukimi_c高速化: nukimiとnukimi_cの計算ロジックは完全同一時'
   how: 'nukimi_c高速化: nukimiとnukimi_cの計算ロジックは完全同一'
   origin: '[[cmd_161]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L044
   title: L055
   summary: 'IF nukimi高速化: skip_months処理はnukimi固有時 THEN nukimi高速化: skip_months処理はnukimi固有
@@ -10085,7 +10144,7 @@ lessons:
   - scripts/analysis/data_sync/download_all_prices.py
   origin: '[[legacy_lesson_L025]]'
   deprecated: true
-  deprecated_at: '2026-06-27T15:43:59+09:00'
+  deprecated_at: '2026-06-27T18:58:57+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
 - id: L024
   title: signal_historyのキーはPhase 2のmonth_last_trading_daysと同型でなければならない（2026-02-15）

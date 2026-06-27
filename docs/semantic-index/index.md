@@ -1005,11 +1005,11 @@ codd:
 | cmd | `cmd_3564` セマンティクスNO_MATCH自動還流 — candidate_aliasesからindex.mdへの自動alias追加 (`scripts/semantic_alias_absorb_pending.sh`, `scripts/semantic_index_update.sh`, `tests/unit/test_semantic_index_update.bats`) |
 | causal | `cmd_3564` origin: [[軍師提案2_origin_alias自動変換]] -> [[NO_MATCH率98.9%]] -> [[candidate_aliases自動還流]] |
 | causal | `cmd_3566` files_modified: [[semantic_dictionary_design]] |
-| causal_chain | `[[cmd_2291]]` (L653) |
-| causal_chain | `[[cmd_2323]]` (L659) |
-| causal_chain | `[[cmd_2326]]` (L661) |
-| causal_chain | `[[cmd_2332]]` (L663) |
-| causal_chain | `[[cmd_2346]]` (L665) |
+| causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
+| causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
+| causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
+| causal_chain | `[[cmd_2946]]` (L663) |
+| causal_chain | `[[cmd_training_L7_v3_hayate_6_20260521205341]]` (L665) |
 | causal_chain | `[[cmd_training_L7_v3_hanzo_6_20260521205341]]` (L668) |
 | causal_chain | `[[cmd_training_L7_v3_kotaro_6_20260521205341]]` (L669) |
 | causal_chain | `[[cmd_training_L7_v3_kotaro_7_20260521213836]]` (L670) |
@@ -1796,7 +1796,7 @@ codd:
 | file | `docs/research/gunshi_idle_precheck_fp_trio_20260626.md` precheck偽陽性3件分析(LG039貪欲FP族同根: 文字列マッチ範囲制限不足) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T03:07:03+09:00 三層学習ループは順調か？成長は自動的に加速しているか？覚醒 して確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T03:08:53+09:00 三層学習ループは順調か？成長は自動的に加速しているか？覚醒 して確認せよ |
-| causal_chain | `[[cmd_1832]]` (L597) |
+| causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
 | causal_chain | `[[legacy_lesson_L012]]` (L012) |
 | causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L833) |
@@ -2114,7 +2114,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T12:58:16+09:00 simokitafresh@2025LG17:~$ rm -rf /mnt/c/Python_app/DM-signal/outputs/analysis/alm_res earch/cmd_3507_pf_l3_wf_alpha/ -ba |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T13:27:05+09:00 bjts40eye toolu_01EBa45UwJTR6oUdaWFoyJoQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3762abf2-7213-42c3-9ecf-0cdd87 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T08:43:38+09:00 be4d1reh3 toolu_01Fm52R71Sw1TZgYP4R9XewF /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8299ef20-d547-4a06-bf54-eec6c8 |
-| causal_chain | `[[cmd_1762]]` (L566) |
+| causal_chain | `[[gunshi_idle_semantic_audit_20260505]]` (L566) |
 
 ## shin_shijin_design — 四神設計
 
@@ -2298,6 +2298,7 @@ codd:
 | causal | `cmd_3463` files_modified: [[silent_fallback_quality]] |
 | causal | `cmd_karo_hotfix_gunshi_cold_gate_20260620` files_modified: [[silent_fallback_quality]] |
 | causal | `cmd_karo_hotfix_ga131` files_modified: [[silent_fallback_quality]] |
+| causal | `cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627` files_modified: [[silent_fallback_quality]] |
 
 ## skill_design_rules — Skill設計ルール
 
@@ -2386,11 +2387,11 @@ codd:
 | causal | `cmd_3478` files_modified: [[skill_design_rules]] |
 | cmd | `cmd_karo_hotfix_shogun_startup_bulletin_skill_20260624` (`skills/shogun-cli-switch/SKILL.md`) |
 | cmd | `cmd_karo_hotfix_skill_refs_20260626082009` (`skills/gate-sync/SKILL.md`, `skills/idle-persist/SKILL.md`, `skills/review-bundle/SKILL.md`) |
-| causal_chain | `[[cmd_2257]]` (L647) |
-| causal_chain | `[[cmd_2268]]` (L649) |
-| causal_chain | `[[cmd_2325]]` (L660) |
-| causal_chain | `[[cmd_2330]]` (L662) |
-| causal_chain | `[[cmd_2346]]` (L666) |
+| causal_chain | `[[cmd_2929]]` (L647) |
+| causal_chain | `[[cmd_2929]]` (L649) |
+| causal_chain | `[[cmd_training_L7_v3_hanzo_5_20260521202900]]` (L660) |
+| causal_chain | `[[cmd_training_L7_v3_kotaro_5_20260521202900]]` (L662) |
+| causal_chain | `[[cmd_training_L7_v3_tobisaru_6_20260521205341]]` (L666) |
 | causal_chain | `[[cmd_2995]]` (L687) |
 | causal_chain | `[[gate_skill_script_refs.sh_WARN]] -> [[checked_at_re_matches_last]] ->` (L770) |
 
@@ -2512,6 +2513,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-22T12:20:16+09:00 FoFの理解が怪しい。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-22T15:30:37+09:00 22分は長いな。もっと道具を磨こう。パリティの基準は全期間の保有シグナル（ticker×weight）の一致と、monthly returnの一致だ。 |
 | causal | `cmd_karo_hotfix_ga131` files_modified: [[dmsignal_operations]] |
+| causal | `cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627` files_modified: [[dmsignal_operations]] |
 
 ## google_classroom — Google Classroom Dashboard
 
@@ -2567,7 +2569,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが, 結果 respawn対象なのにスキップ 3名スキップ実証, どちらがいいと思う？, 起動後はsettings yamlに従うなどの, 2層SSOT, デフォルト復帰, cli_profiles defaults, codex --full-auto exit 2, settings.yaml type未更新, switch_cli_mode settings未反映, respawn-pane -k codex単体起動, 未配備のCMDへの対策は将軍にせよ, shogun-cli-switch後にshutsujin_departureを呼ぶな, runtime CLI switchでデフォルト復元禁止, 固定行sedでsettings確認禁止, YAMLパースで対象agent確認, settings tmux 実pane 三点照合, CLI切替後post-switch verification, 調査してバグを修正しよう, 報告では対象contextの解消証跡と, 既存の広いdirty差分inbox1 — CMD受領済み |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが, 結果 respawn対象なのにスキップ 3名スキップ実証, どちらがいいと思う？, 起動後はsettings yamlに従うなどの, 2層SSOT, デフォルト復帰, cli_profiles defaults, codex --full-auto exit 2, settings.yaml type未更新, switch_cli_mode settings未反映, respawn-pane -k codex単体起動, 未配備のCMDへの対策は将軍にせよ, shogun-cli-switch後にshutsujin_departureを呼ぶな, runtime CLI switchでデフォルト復元禁止, 固定行sedでsettings確認禁止, YAMLパースで対象agent確認, settings tmux 実pane 三点照合, CLI切替後post-switch verification, 調査してバグを修正しよう, 報告では対象contextの解消証跡と, 既存の広いdirty差分inbox1 — CMD受領済み, GPT忍者に配備しなおそう |
 | skills | shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み), karo-direct, recon-dual |
 | related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework, systems_knowledge_base, skill_design_rules, shogun_android_app, task_modifier_injection, infrastructure_ops, bulletin_communication, inbox_processing_discipline, multi_cli_event_commonization, skill_routing, commander_role_ssot_analysis, codex_goal_mode |
 | related_lessons | `L594`, `L603`, `L550`, `L310` |
@@ -2872,17 +2874,18 @@ codd:
 | cmd | `cmd_3554` Loop Engineering Phase 3-1: token予算proxy上限 (`queue/tasks/kagemaru.yaml`, `config/settings.yaml`, `scripts/ninja_monitor.sh`) |
 | causal | `cmd_3554` origin: [[Loop_Engineering_Phase3]] -> [[token_blowout_prevention]] -> [[clear回数proxy上限]] |
 | lesson | `L866` infra主contextはroot_fallbackのままにせず明示pathspecかcommit details注入で判定させる |
-| causal_chain | `[[cmd_1819]]` (L587) |
-| causal_chain | `[[cmd_1835]]` (L594) |
-| causal_chain | `[[cmd_1845]]` (L602) |
-| causal_chain | `[[cmd_1845]]` (L603) |
-| causal_chain | `[[cmd_1866]]` (L613) |
-| causal_chain | `[[cmd_1878]]` (L620) |
-| causal_chain | `[[cmd_1881]]` (L622) |
-| causal_chain | `[[cmd_1877]]` (L625) |
-| causal_chain | `[[cmd_2261]]` (L648) |
-| causal_chain | `[[cmd_2322]]` (L658) |
-| causal_chain | `[[cmd_2343]]` (L664) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-27T17:47:43+09:00 tobisaruはsonnetで遅い。GPT忍者に配備しなおそう |
+| causal_chain | `[[gunshi_session_20260510]]` (L587) |
+| causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
+| causal_chain | `[[cmd_2691]]` (L602) |
+| causal_chain | `[[cmd_2691]]` (L603) |
+| causal_chain | `[[cmd_2790]]` (L613) |
+| causal_chain | `[[cmd_training_L4_auto_202605181241_kotaro]]` (L620) |
+| causal_chain | `[[cmd_training_L4_auto_202605181242_tobisaru]]` (L622) |
+| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
+| causal_chain | `[[cmd_2930]]` (L648) |
+| causal_chain | `[[cmd_training_L7_v3_hayate_5_20260521202900]]` (L658) |
+| causal_chain | `[[cmd_training_L7_v3_kagemaru_6_20260521205341]]` (L664) |
 | causal_chain | `[[cmd_training_L7_v3_hayate_9_20260521214706]]` (L671) |
 | causal_chain | `[[cmd_2950]]` (L676) |
 | causal_chain | `[[cmd_2953]]` (L684) |
@@ -2944,7 +2947,9 @@ codd:
 | cmd | `cmd_3378` PF構成一括確認スクリプト作成。名前指定でportfolios+tier_visibility+pipeline_config+componentsを一発表示 |
 | causal | `cmd_3378` origin: [[殿指摘_PF構成確認不能_20260614]] -> [[部分確認で誤報告]] -> [[一括確認スクリプト構築]] |
 | lesson | `L749` models.pyとmigrations.pyのデフォルト値は必ず同期させよ |
+| lesson | `L869` context_freshness ALERTはsource差分件数と真のops反映差分を分けて報告する |
 | causal_chain | `[[cmd_training_speed_clipboard_watcher_20260606231433]]` (L749) |
+| causal_chain | `[[cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627]]` (L869) |
 
 ## shogun_android_app — 将軍Androidアプリ
 
@@ -3157,6 +3162,7 @@ codd:
 | causal | `cmd_karo_ci_fix_ga143` files_modified: [[cdp_browser_capability]] |
 | cmd | `cmd_karo_ci_fix_ga143` (`scripts/note_draft.sh`) |
 | causal | `cmd_3566` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627` files_modified: [[cdp_browser_capability]] |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -3515,8 +3521,8 @@ codd:
 | causal | `cmd_3555` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_3561` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_3566` files_modified: [[cmd_quality_logging]] |
-| causal_chain | `[[cmd_2131]]` (L637) |
-| causal_chain | `[[cmd_2131]]` (L638) |
+| causal_chain | `[[cmd_2888]]` (L637) |
+| causal_chain | `[[cmd_2888]]` (L638) |
 | causal_chain | `[[cmd_3531_completion]] -> [[stale_skill_path]] -> [[cmd_complete_skill_static_test]]` (L852) |
 
 ## task_modifier_injection — タスク修飾子注入
@@ -3694,11 +3700,11 @@ codd:
 | file | `docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md` commit_missing WA根因分析(GP-286/287封止+残存2件) |
 | cmd | `cmd_3567` GP-286/287 batsテスト追加 — commit_hash長+files_modified形式の回帰防護 (`tests/test_gate_report_format.bats`) |
 | causal | `cmd_3567` origin: [[cmd_3558_cancel残課題]] -> [[GP-286_GP-287_batsテスト不在]] -> [[CI回帰防護確立]] |
-| causal_chain | `[[cmd_1877]]` (L625) |
-| causal_chain | `[[cmd_1988]]` (L633) |
-| causal_chain | `[[cmd_2218]]` (L643) |
-| causal_chain | `[[cmd_2297]]` (L654) |
-| causal_chain | `[[cmd_2300]]` (L655) |
+| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
+| causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
+| causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
+| causal_chain | `[[cmd_training_L7_v3_kagemaru_4_20260521192452]]` (L654) |
+| causal_chain | `[[cmd_2941]]` (L655) |
 | causal_chain | `[[cmd_training_L7_v3_saizo_6_20260521205341]]` (L667) |
 | causal_chain | `[[cmd_training_L7_v3_saizo_9_20260521214706]]` (L672) |
 | causal_chain | `[[cmd_karo_hotfix_ga130_context_freshness_dm_signal_frontend_20260625]]` (L850) |
@@ -3858,8 +3864,8 @@ codd:
 | causal | `cmd_3554` files_modified: [[infrastructure_ops]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T16:44:46+09:00 デーモンはすべて順調か？スクリプトで再起動せよ |
 | causal_chain | `[[snapshot_staleness]] -> [[slow_monitor_checks]] -> [[early_atomic_snapshot]]` (L851) |
-| causal_chain | `[[cmd_2288]]` (L651) |
-| causal_chain | `[[cmd_2292]]` (L652) |
+| causal_chain | `[[cmd_2935]]` (L651) |
+| causal_chain | `[[cmd_karo_ci_fix_2tests]]` (L652) |
 | causal_chain | `[[cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624]]` (L841) |
 
 ## gate_quality_framework — ゲート品質統合フレームワーク
@@ -4499,8 +4505,8 @@ codd:
 | lesson | `L548` 運用YAMLのyaml.dump禁止 |
 | lesson | `L351` insight_write.shのyaml.dump事故 |
 | lesson | `LK013` inbox_mark_read hook誤判定時もEditで既読化せず正規scriptを変数経由で使う |
-| causal_chain | `[[cmd_karo_batch_R6]]` (L548) |
-| causal_chain | `[[cmd_1020]]` (L351) |
+| causal_chain | `[[cmd_karo_infra_recon_core]]` (L548) |
+| causal_chain | `[[cmd_cycle_L4_025]]` (L351) |
 
 ## inbox_processing_discipline — inbox処理規律
 
