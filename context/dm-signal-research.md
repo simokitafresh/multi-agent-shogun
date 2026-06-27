@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-06-26 cmd_karo_hotfix_ga141_context_freshness_dm_signal_research_20260626 -->
+<!-- last_updated: 2026-06-27 cmd_karo_hotfix_ga147_context_freshness_dm_signal_research_20260627 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -584,6 +584,11 @@ cmd_3524で堅牢性trial JSONへ5つの連続性リスク指標を追加し、c
 本番fullrecalculate(portfolio)前後で signals 102PF / metrics 102PF / DB portfolio_metrics 204行が完全一致。差分0、run_id `20260625_194042`、elapsed 352.5s、verdict PASS。
 - 成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3546/diff_result_v4_20260625_194638.json`
 - 検証スクリプト: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3546/snapshot_and_verify_v4.py`
+
+## §45. 2026-06-27 source freshness照合
+
+GA-147原因: `dm-signal-research.md`のlast_updatedは2026-06-26で、2026-06-26以後にresearch pathspec対象commitが増加したため`gate_context_freshness.sh`がsource commits ALERTを出した。一次情報分類では、研究正本に反映すべき差分はcmd_3546 fullrecalculate冪等性証明で、§44に反映済み。他の差分はCompare Returns API/frontend/MTD性能・表示修正・docs spec/lessonで、研究索引への恒久知識追記は不要。
+横展開候補: 同gateで`obsidian-link-principles.md`もsource commits ALERT継続。防御層候補: context_freshness hotfixタスクへsource commit要約だけでなく、context別pathspec hit件数と「研究正本/実装/補助docs/lesson」の分類欄を自動注入する。
 
 ## 因果リンク
 
