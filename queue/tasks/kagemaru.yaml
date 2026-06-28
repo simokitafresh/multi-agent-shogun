@@ -1,8 +1,9 @@
 task:
-  _ac_task_id: cmd_3577_full
+  _ac_task_id: cmd_3588_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3577 (deployed 2026-06-28T01:08:51). Read from the beginning.
-  ac_version: 58e872d4
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3588 (deployed 2026-06-28T21:12:21). Read from the beginning.
+  ac_version: 142831be
+  additional_instructions: '追加注意(2026-06-28T20:51JST): Google OAuthログイン後にリバランサーURLへリダイレクトされるバグあり。根因=Supabaseプロジェクト共有でリダイレクトURL許可リストにFusion本番URL https://dm-fusion.onrender.com が未登録。コード側はsignInWithOAuth redirectTo をFusion本番/現在originへ明示設定し、Supabase側設定としてAuthentication→URL ConfigurationにFusion本番URL追加が必要なことを報告YAMLに明記。可能なコード修正を実施し、外部ダッシュボード設定はpost_deploy_evidence/decision_candidate等で明記せよ。'
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -21,54 +22,45 @@ task:
   - cmd_3569作業への介入
   - context/dm-signal-core.md, frontend.md, research.mdの更新(必要性が見つかればcandidate報告のみ)
   parallel_ok: []
-  parent_cmd: cmd_3577
+  parent_cmd: cmd_3588
   project: infra
-  purpose: '殿指示(2026-06-28): 軍師→家老方向の穴。軍師が構造的穴を発見し掲示板で提案しても家老が行動しない(22時間放置実証済み)。軍師穴発見投稿の自動化+家老startup gateでの強制検出で助言が無視される構造を封じる'
+  purpose: '殿指示(2026-06-28): cmd_3586でCDPスワイプ検証に躓いた。ReactアプリのCDPスワイプ方法を調査・実証し、cdp-browseスキルに知見を追記し、三層記憶に貫通させる'
   scout_exempt: true
   status: idle
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts
-  task_id: cmd_3577_full
+  target_path: /mnt/c/tools/multi-agent-shogun/skills/cdp-browse
+  task_id: cmd_3588_full
   task_type: full
-  previous_failures:
-    attempt: 2
-    last_block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-    tried_approaches:
-    - 'YAML parse error: while scanning a simple key'
-    - 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-    diagnose_reason: 'report_field_set.shへ改行入り文字列を通常引数で渡し、cause_checkedの2行目以降がYAMLの裸テキストとして書かれたためparse不能になった。複数行値は1行化またはstdin YAMLで渡すべきだった。'
-    approach_summary: 'Compare Returns MTD事前計算テーブル/バッチ/API読取/fallback/テストを実装し、commit 9b3618aef96220d3e5af49615371e95ed5a52ad5 に保存。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'YAML parse error: while scanning a simple key'
-    - attempt: 2
-      block_reason: 'lessons_useful: empty list (テンプレートには教訓が注入済み。空リストで上書きするな)'
-      diagnose_reason: 'report_field_set.shへ改行入り文字列を通常引数で渡し、cause_checkedの2行目以降がYAMLの裸テキストとして書かれたためparse不能になった。複数行値は1行化またはstdin YAMLで渡すべきだった。'
-      approach_summary: 'Compare Returns MTD事前計算テーブル/バッチ/API読取/fallback/テストを実装し、commit 9b3618aef96220d3e5af49615371e95ed5a52ad5 に保存。'
   related_lessons:
+  - id: 'L601'
+    summary: 'semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690'
+    detail: 'semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690'
+  - id: 'L173'
+    summary: 'instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github'
+    detail: 'instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github'
+  - id: 'L159'
+    summary: 'IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore'
+    detail: 'IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore'
+  - id: 'L278'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
   - id: 'L342'
     summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
-    detail: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
-  - id: 'L125'
-    summary: 'IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)'
-    detail: 'IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)'
-  - id: 'L120'
-    summary: 'IF report gateで報告ファイルの存在判定を行う時 THEN prefix検索+archive探索を併用せよ'
-    detail: 'IF report gateで報告ファイルの存在判定を行う時 THEN prefix検索+archive探索を併用せよ'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/gates/gate_gunshi_accuracy.sh gate予測精度の公正計算(FAIL→BLOCK→修正CLEAR=正解) scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh scripts/cmd_skeleton.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比) docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md — 軍師idle: コミットチェックWAパターン(2026-04-10) docs/research/gunshi_idle_cross_contamination_20260503.md — 軍師idle: クロスプロジェクト汚染分析(2026-05-03) docs/research/gunshi_idle_cross_project_fp_20260426.md — 軍師idle: クロスプロジェクトFP分析(2026-04-26) docs/research/gunshi_idle_gate_fail_rate_anatomy_20260502.md — 軍師idle: ゲート失敗率解剖(2026-05-02) docs/research/gunshi_idle_gate_fail_trend_20260430.md — 軍師idle: ゲート失敗トレンド分析(2026-04-30) docs/research/gunshi_idle_gate_fire_traceback_20260510.md — 軍師idle: ゲート発火トレースバック(2026-05-10) docs/research/gunshi_idle_gate_fp_analysis_20260527.md — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27) docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md — 軍師idle: LG003ゲートWA分析(2026-05-19) docs/research/gunshi_idle_lu_dict_pattern_20260415.md — 軍師idle: LU辞書パターン分析(2026-04-15)"
-  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh docs/research/gunshi_idle_brainwash_audit_20260624.md docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)"
-  - "defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)"
-  - "cmd_quality_logging — cmd設計品質ログ:  scripts/cmd_quality_log.sh scripts/archive_completed.sh scripts/cmd_publish.sh skills/cmd-complete/SKILL.md scripts/cmd_complete_gate.sh scripts/gates/gate_yaml_status.sh tests/unit/test_cmd_complete_skill.bats logs/cmd_design_quality.yaml logs/archive/cmd_design_quality.yaml scripts/gates/gate_shogun_startup.sh docs/research/gunshi_idle_cmd_quality_block_analysis_20260425.md — 軍師idle: cmd品質BLOCK分析(2026-04-25)"
-  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json scripts/gates/gate_hooks_no_runtime_incident_ids.sh tests/unit/test_gate_hooks_no_runtime_incident_ids.bats"
+  - "semantic_dictionary_design — セマンティック辞書構想:  docs/research/semantic_index_design.md context/lord-conversation-index.md scripts/semantic_map_generate.sh scripts/insight_write.sh scripts/semantic_index_update.sh"
   related_causal_links:
-  - "[[助言者方向対応追跡強制]]"
-  - "[[殿指示_ペア成長忖度防止_20260628]]"
-  - "[[軍師提案22時間放置]]"
+  - "[[cdp-browseスキル穴]]"
+  - "[[cmd_3586スワイプ検証躓き]]"
+  - "[[殿指示_CDPスワイプ知見_20260628]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -76,41 +68,28 @@ task:
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
+      - L601: semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690
+      - L173: instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github
+      - L159: IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore
+      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
-      - L125: IF paste-bufferで特定ペインにデータを注入する時 THEN 注入先の@agent_idを検証してから実行せよ(defense-in-depth)
-      - L120: IF report gateで報告ファイルの存在判定を行う時 THEN prefix検索+archive探索を併用せよ
     ────────────────────────────────────────
-    
-    
   memory_db_context:
-  - '2026-06-28T00:48:31+09:00 | 【INFOバッチ】 2026-06-28 00:46:29|cmd_3572'
-  - '2026-06-28T00:46:50+09:00 | cmd_3572 LGTM→GATE CLEAR完了。レビュー待機。 [meta] stop_reason=end_turn'
-  - '2026-06-28T00:40:43+09:00 | 殿。一次データで検証した結果、**免疫は獲得しているが成長速度の計測ができていない**。正直に報告する。 **動いている層（免疫獲得の証拠）:** | 指標 | 値 | 根拠 | |------|--'
+  - '2026-06-28T21:09:56+09:00 | 【INFOバッチ】 2026-06-28 20:59:18|cmd_3587'
+  - '2026-06-28T20:54:26+09:00 | 【INFOバッチ】 2026-06-28 20:44:32|cmd_3586'
+  - '2026-06-28T20:43:12+09:00 | cmd_3586 LGTM送信完了。cmd_complete_gateがバックグラウンドで自動起動。idle待機。 [meta] stop_reason=end_turn'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: '軍師のidle分析結果で穴発見の掲示板投稿にaction_type=action_requiredを強制付与するロジックを自動化で追加'
+    - check: 'CDPのInput.dispatchTouchEventでReactアプリのスワイプを実現する方法を調査・実証し、DM-Fusion(localhost:3001)のPage1→Page2スワイプをCDP経由で成功させる'
   - id: 'AC2'
     checks:
-    - check: 'gate_karo_startup.shに軍師提案のaction_required未対応件数チェックを追加。未対応>0でWARN出力し家老の行動変換を強制'
-  - id: 'AC3'
-    checks:
-    - check: 'batsテスト: 軍師投稿のaction_required自動付与、家老startup gateの未対応検出の2パターン'
+    - check: 'cdp-browseスキル(skills/cdp-browse/SKILL.md)にスワイプ操作セクションを追記し、三層記憶(記憶DB+セマンティック+Obsidianリンク)に知見を貫通させる'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3577.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3577.yaml
+  report_filename: kagemaru_report_cmd_3588.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3588.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -133,4 +112,4 @@ task:
     - reason: 'empty_lessons_useful'
       count: 2
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-06-28T01:09:17"
+  deployed_at: "2026-06-28T21:12:43"

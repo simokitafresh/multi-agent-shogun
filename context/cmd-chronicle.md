@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-28 cmd_3586 -->
+<!-- last_updated: 2026-06-28 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -424,3 +424,6 @@
 | cmd_3582 | 殿指示(2026-06-28): 第一層(個)で忍者commit_missing WA 5件/2週が再発。deploy_task.shの事前コンテキスト注入でWA頻発パターンを忍者に自動提示し検出→予防に転換 | infra | 06-28 | deploy_task.shにWA頻発カテゴリTOP3からr |
 | cmd_3583 | 殿指示(2026-06-28): 外部アプリFusion向けに、DM-Signal APIからPF名+monthly_returnsを取得する軽量エンドポイントを追加。設計書: docs/spec/fusion-api-endpoint.md。家老条件付きAPPROVE済み(blt_20260628_173441) | dm-signal | 06-28 | Fusion向けGET /api/fusion/portfo |
 | cmd_3585 | 殿指示(2026-06-28): DM-Fusionアプリ実装開始。設計書 docs/spec/fusion-app.md に基づき、空リポジトリ(/mnt/c/Python_app/DM-Fusion/)にNext.jsプロジェクトを構築し、メイン画面を実装する | dm-signal | 06-28 | DM-FusionのNext.js App Router + |
+| cmd_3586 | 殿指示(2026-06-28): DM-Fusion MVPのCDP検証で発見した問題点を全て修正する。(1)PFリストをfolder別グルーピング (2)PF1選択済みPFをPF2から除外 (3)初期状態で未選択→数値非表示 (4)詳細ボタンSPY/TQQQ比較表動作確認 (5)Shareボタン動作実装 (6)スライダー追随速度検証 (7)Page2チャートスワイプ動作確認 (8)デザインルール準拠(tighter tracking/dark gray/タッチターゲット) (9)スマホタッチ対策(フローティングバルーン) (10)共通期間ゼロ時のUI表示 (11)CAGR値の本番突合 | dm-signal | 06-28 | DM-Fusionの初期未選択、PF重複防止、詳細/Shar |
+| cmd_3587 | 殿指示(2026-06-28): DM-Fusionに(1)/admin設定画面(Basic Auth+PF表示トグル)と(2)XシェアボタンをX intent URLで実装。設計書 docs/spec/fusion-app.md §Admin設定画面を参照 | dm-signal | 06-28 | DM-Fusionに/adminのPF表示トグル設定とX i |
+| cmd_3588 | 殿指示(2026-06-28): cmd_3586でCDPスワイプ検証に躓いた。ReactアプリのCDPスワイプ方法を調査・実証し、cdp-browseスキルに知見を追記し、三層記憶に貫通させる | infra | 06-28 | CDP touch streamでDM-FusionのPag |

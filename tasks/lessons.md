@@ -8908,3 +8908,36 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - dm-signal-research.mdのALERTはsource commit増加が直接原因だったが、研究正本へ追記すべき差分は既反映のcmd_3546のみで、他はAPI/frontend/性能/docs/lessonだった。hotfixタスクにcontext別pathspec hit件数と研究正本/実装/補助docs/lesson分類欄を自動注入すれば、忍者がALERT件数を追記対象と誤認しにくくなる。
+
+### L873: NO_MATCH率報告は抽出元sourceを必ず併記する
+- **日付**: 2026-06-28
+- **出典**: cmd_3580
+- **記録者**: hanzo
+- **tags**: [infra,deploy,testing,yaml]
+- **target_files**: [偵察のみ。正本コード/semantic indexは未変更。報告YAMLのみ更新。]
+- **origin**: [[cmd_3580]]
+- **when**: 未設定
+- **how**: 未設定
+- 同じNO_MATCHでもdeploy_task.log first-layer再照合、semantic_stress_test、search_logs、insights pendingで母集団と率が異なる。率だけをACにすると再現時に別母集団を見て混乱するため、次回からsource/log path/scan windowをtask YAMLへ注入する。origin: [[NO_MATCH率96.7%]] -> [[母集団source未明記]] -> [[再現差分]]
+
+### L874: CDP touch stream成功とReact state更新成功を分離して判定せよ
+- **日付**: 2026-06-28
+- **出典**: cmd_3588
+- **記録者**: hanzo
+- **tags**: [infra,skill,frontend,testing,cdp]
+- **target_files**: [skills/cdp-browse/SKILL.md,docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_3588]]
+- **when**: 未設定
+- **how**: 未設定
+- Input.dispatchTouchEventはtrusted touch/pointerイベントをDOMへ届けても、React onPointerDown/onPointerUpのstate更新や画面遷移が成功するとは限らない。response errorなしを成功扱いせず、native listenerログ、DOM状態、スクリーンショットの前後比較で判定する。origin: [[cmd_3586スワイプ検証躓き]] -> [[CDP成功応答と画面成功の混同]] -> [[cmd_3588_AC1未達]]
+
+### L875: CDP検証用localhostポートがstale serverで占有されている場合は停止せず修正後bundleを別ポートで実証し制約を報告せよ
+- **日付**: 2026-06-28
+- **出典**: cmd_3588
+- **記録者**: kagemaru
+- **tags**: [infra,skill,testing,gate,reporting]
+- **target_files**: [skills/cdp-browse/SKILL.md,context/semantic-map.md,docs/semantic-index/index.md,/mnt/c/Python_app/DM-Fusion/app/page.tsx]
+- **origin**: [[cmd_3588]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3588 BLOCK修正でlocalhost:3001が既存next-serverに占有され修正前bundleを保持していた。安全規則D006により他プロセスをkillせず、修正後production buildを3002で起動して同一CDP touch streamを実証し、3001制約を報告へ明記した。

@@ -160,6 +160,9 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-06-28: gate=gate_report_format result=FAIL executor=kagemaru reason=files_modified: 2件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ
+
+- 2026-06-28: gate=gate_report_format result=FAIL executor=kagemaru reason=files_modified: 9件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ
 - 2026-06-24: gate=gate_report_format result=FAIL executor=hanzo reason=binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks: AC self-verification missing (0/3 ACs). 全ACの二値チェックを記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"compl...
 
 - 2026-06-24: gate=gate_report_format result=FAIL executor=kagemaru reason=lessons_useful[0]: id=\"L_SCOPE\" is invalid (must match L+number, e.g. L074)

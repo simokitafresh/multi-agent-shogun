@@ -1838,7 +1838,7 @@ codd:
 | causal | `cmd_3579` origin: [[殿指示_三層学習ループ診断_20260628]] -> [[計測基盤1スナップショット]] -> [[成長速度計測自動蓄積]] |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
-| causal_chain | `[[cmd_147]]` (L012) |
+| causal_chain | `[[legacy_lesson_L012]]` (L012) |
 | causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L833) |
 | causal_chain | `[[cmd_3227]]` (L757) |
 
@@ -2036,8 +2036,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T20:44:09+09:00 ？確認していないのか？ |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
-| causal_chain | `[[cmd_092]]` (L004) |
-| causal_chain | `[[cmd_134]]` (L005) |
+| causal_chain | `[[006.md検証]]` (L004) |
+| causal_chain | `[[006.md検証]]` (L005) |
 | causal_chain | `[[cmd_3354]]` (L804) |
 | causal_chain | `[[cmd_3432]]` (L817) |
 | causal_chain | `[[cmd_3523]]` (L844) |
@@ -2230,14 +2230,14 @@ codd:
 | causal | `cmd_3524` origin: [[殿指示_α6追加指標_20260625]] -> [[ぷろっぷDailyProp102_期待値プラスでも資産増えない]] -> [[robustness_common_5指標追加]] |
 | causal | `cmd_karo_hotfix_ga131` files_modified: [[shin_shijin_design]] |
 | causal | `cmd_karo_hotfix_ga146` files_modified: [[shin_shijin_design]] |
-| causal_chain | `[[cmd_125]]` (L001) |
-| causal_chain | `[[cmd_125]]` (L002) |
-| causal_chain | `[[cmd_125]]` (L003) |
+| causal_chain | `[[cmd_1055]]` (L001) |
+| causal_chain | `[[cmd_1055]]` (L002) |
+| causal_chain | `[[006.md検証]]` (L003) |
 | causal_chain | `[[cmd_training_speed_decision_write_20260607000310]]` (L750) |
 | causal_chain | `[[cmd_training_speed_deploy_task_20260607000353]]` (L751) |
 | causal_chain | `[[cmd_3211]]` (L753) |
-| causal_chain | `[[cmd_150]]` (L013) |
-| causal_chain | `[[cmd_151]]` (L014) |
+| causal_chain | `[[cmd_3445_saizo]]` (L013) |
+| causal_chain | `[[cmd_3445]]` (L014) |
 
 ## gs_ninpo_research — GS忍法研究
 
@@ -2547,7 +2547,7 @@ codd:
 |------|---|
 | id | dm_fusion_app |
 | label | DM-Fusionアプリ |
-| aliases | DM-Fusion, Fusionアプリ, PF配合シミュレーター, Fusion MVP, スマホファーストFusion, `/mnt/c/Python_app/DM-Fusion`, DM-Fusionローカル保存先, GitHub DM-Fusion, Next.js App Router Fusion, TypeScript Tailwind Fusion, Node.js runtime Fusion, static export不可, Render Node service, app/api/portfolios/route.ts, DMSIGNAL_API_URL, DMSIGNAL_ADMIN_USER, DMSIGNAL_ADMIN_PASS, 上部2/3表示, 下部1/3操作, CAGR超大文字, fast.comスタイル, PFドロップダウン二つ, 配分スライダー, スライダーでCAGR即時更新, Page 1数値, Page 2チャート, SPYとTQQQはDM-Signal monthly_returns, 設計書最新確認, Fusion設計書, フュージョン設計書, フュージョン側仕様, Fusion実装レビュー, fusion-app.md, Fusion保存ログイン, Supabase保存復元, saved_fusions, 保存済み配合, ログインは配合保存だけ, Fusion速度品質, 滑らかさと追随速度, リアルタイム数値更新, Float64Array事前確保, requestAnimationFrameチャート, requestIdleCallbackサブ数値, フローティングバルーン, detached thumb, スマホタッチ対策, folder変更対応, Render cold start本番フォーカス, Playwrightスマホ確認 |
+| aliases | DM-Fusion, Fusionアプリ, PF配合シミュレーター, Fusion MVP, スマホファーストFusion, `/mnt/c/Python_app/DM-Fusion`, DM-Fusionローカル保存先, GitHub DM-Fusion, Next.js App Router Fusion, TypeScript Tailwind Fusion, Node.js runtime Fusion, static export不可, Render Node service, app/api/portfolios/route.ts, DMSIGNAL_API_URL, DMSIGNAL_ADMIN_USER, DMSIGNAL_ADMIN_PASS, 上部2/3表示, 下部1/3操作, CAGR超大文字, fast.comスタイル, PFドロップダウン二つ, 配分スライダー, スライダーでCAGR即時更新, Page 1数値, Page 2チャート, SPYとTQQQはDM-Signal monthly_returns, 設計書最新確認, Fusion設計書, フュージョン設計書, フュージョン側仕様, Fusion実装レビュー, fusion-app.md, Fusion保存ログイン, Supabase保存復元, saved_fusions, 保存済み配合, ログインは配合保存だけ, Fusion速度品質, 滑らかさと追随速度, リアルタイム数値更新, Float64Array事前確保, requestAnimationFrameチャート, requestIdleCallbackサブ数値, フローティングバルーン, detached thumb, スマホタッチ対策, folder変更対応, Render cold start本番フォーカス, Playwrightスマホ確認, 殿指示_admin設定+Xシェア_20260628, cmd_3586スコープ分離, admin+Xシェア別cmd |
 | skills |  |
 | related_concepts | fusion_api_endpoint, modern_web_guidance, dmsignal_operations |
 
@@ -3272,6 +3272,8 @@ codd:
 | causal | `cmd_3566` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627` files_modified: [[cdp_browser_capability]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T19:50:05+09:00 確認しよう。CDPで確認してくれ |
+| lesson | `L875` CDP検証用localhostポートがstale serverで占有されている場合は停止せず修正後bundleを別ポートで実証し制約を報告せよ |
+| causal_chain | `[[cmd_3588]]` (L875) |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -4626,7 +4628,7 @@ codd:
 | lesson | `L351` insight_write.shのyaml.dump事故 |
 | lesson | `LK013` inbox_mark_read hook誤判定時もEditで既読化せず正規scriptを変数経由で使う |
 | causal_chain | `[[cmd_karo_infra_recon_core]]` (L548) |
-| causal_chain | `[[cmd_cycle_L4_025]]` (L351) |
+| causal_chain | `[[cmd_1020]]` (L351) |
 
 ## inbox_processing_discipline — inbox処理規律
 

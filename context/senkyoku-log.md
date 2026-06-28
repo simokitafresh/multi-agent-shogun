@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-28 cmd_3586 -->
+<!-- last_updated: 2026-06-28 cmd_3588 -->
 
 ## 2026-06-26
 
@@ -1264,3 +1264,5 @@
 - 2026-06-27 cmd_3565: Compare Chart Y軸ラベルクリップ修正。殿指示により設計書(compare-chart-yaxis-label-clipping-fix.md)に基づきtobisaruへ配備。D1=LIN高リターン先頭桁クリップ、D2=LOG目盛固定配列500頭打ち。
 - 2026-06-28 cmd_3583: Fusion外部アプリ向けadmin API `/api/fusion/portfolios` を追加。PF名+monthly_returnsのみ返し、禁止キー不在・10/min rate limit・11回目429までテスト、context/semantic/記憶DBへ貫通。
 - 2026-06-28 cmd_3585: DM-Fusion MVPを `/mnt/c/Python_app/DM-Fusion` にNext.js App Router+API Routeで初期実装。家老レビューでSPY/TQQQ比較期間ズレを差し戻し、追加commit `79efa2c` でFusionと同じ月集合計算へ修正してGATE CLEAR。
+- 2026-06-28 cmd_3586: DM-Fusion品質修正をcommit `ab11cb3` で完了。初期未選択、folder別PF、重複防止、詳細/Share、Google OAuth+saved_fusions保存、共通期間ゼロ、タッチUIを実装し、admin/X追加指示は取消に従い除去してGATE CLEAR。
+- 2026-06-28 cmd_3587: DM-Fusion admin設定画面+Xシェアをcommit `ab3ec8c` で完了。/admin Basic Auth、PF表示トグル、X intent Share、OAuth redirectTo明示を実装し、Supabase URL許可設定は外部作業としてdecision_candidateに残してGATE CLEAR。
