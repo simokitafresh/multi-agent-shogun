@@ -525,6 +525,18 @@ PROJ
     [[ "$output" != *"dm-signal.md"* ]]
 }
 
+@test "infra root fallback ignores operational sync records" {
+    _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_source_commit "logs/cmd_design_quality.yaml" "chore: sync cmd3592 quality log"
+    _create_source_commit "queue/tasks/kagemaru.yaml" "chore: sync cmd3591 deployment records"
+    _create_source_commit "docs/semantic-index/index.md" "chore: complete cmd3590 records"
+    _create_shogun_to_karo "cmd_935" "infra"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_935
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"context/infrastructure.md source commits"* ]]
+}
+
 @test "infra scoped contexts do not share root fallback counts" {
     _create_context "context/codd.md" "$STALE_DATE"
     _create_context "context/obsidian-link-principles.md" "$STALE_DATE"

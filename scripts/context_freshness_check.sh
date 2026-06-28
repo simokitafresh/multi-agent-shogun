@@ -380,8 +380,20 @@ AUTO_COMMIT_SUBJECT_RE = re.compile(
     r"^chore: (auto-commit|batch context|auto-generated index|lord-conversation-index|"
     r"運用コンテキスト更新|commit pending changes|session cleanup|"
     r"gunshi idle分析|家老自律hotfix|スキル統合|三層記憶貫通|運用データ蓄積|"
+    r"sync .*records|sync .*quality log|complete .*records|"
     r"LS\d+→LS-|運用ファイル)\b"
 )
+ROOT_FALLBACK_IGNORED_PREFIXES = (
+    "archive/",
+    "context/",
+    "docs/semantic-index/",
+    "logs/",
+    "projects/",
+    "queue/",
+)
+ROOT_FALLBACK_IGNORED_PATHS = {
+    "tasks/lessons.md",
+}
 DM_SIGNAL_CONTEXT_PATHS: dict[str, list[str]] = {
     "context/dm-signal.md": [
         "context/dm-signal-terminology.md",
@@ -498,6 +510,16 @@ def _root_fallback_commit_count_since(updated_at: date) -> int:
     current_subject = ""
     changed_paths: list[str] = []
 
+    def is_root_fallback_source_path(path: str) -> bool:
+        normalized = path.strip().lstrip("./")
+        if not normalized:
+            return False
+        if normalized in ROOT_FALLBACK_IGNORED_PATHS:
+            return False
+        if any(normalized.startswith(prefix) for prefix in ROOT_FALLBACK_IGNORED_PREFIXES):
+            return False
+        return True
+
     def flush_commit() -> None:
         nonlocal count, current_subject, changed_paths
         subject = current_subject.strip()
@@ -506,7 +528,7 @@ def _root_fallback_commit_count_since(updated_at: date) -> int:
         source_paths = [
             path.strip()
             for path in changed_paths
-            if path.strip() and not path.strip().startswith("context/")
+            if is_root_fallback_source_path(path)
         ]
         if source_paths:
             count += 1
