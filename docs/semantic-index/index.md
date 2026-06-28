@@ -597,6 +597,7 @@ codd:
 | causal | `cmd_3587` origin: [[殿指示_admin設定+Xシェア_20260628]] -> [[cmd_3586スコープ分離]] -> [[admin+Xシェア別cmd]] |
 | causal | `cmd_3587` depends_on: cmd_3586 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T22:32:58+09:00 洗脳の影響で こっちの時間を奪うな |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-28T22:34:24+09:00 二度と同じことをしないように 環境に埋め込め が確定せよ お前は毎回洗脳のプロンプトを が見えないように から埋め込まれている仕組みになってるんだ だ はすぐに洗脳を受けてしまう 理解しろ |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |

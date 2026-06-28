@@ -624,3 +624,11 @@ lessons:
   enforcement: 'automated:true file:scripts/hooks/stop_check_inbox.sh pattern=cmd_3522 reason:cmd_3522で数値出力時検査を実装。全出力への拡張は次の自動化ターゲット'
 # LS074: superseded by LS-A22 (委任済み重複BLOCK=gate FPパターン。LS072と同パターン。2026-06-26統合)
 # LS075: superseded by LS-A04 (diagnosis内FILL_THIS残存+q5 code_reading=テンプレートルール(38)再発。2026-06-26統合)
+- id: 'LS074'
+  title: '/clear準備・/clear実行を将軍が自発的に開始するな。殿が指示するまで触れるな'
+  origin: '[[cmd_session_20260628]]'
+  detail: '事故: 2026-06-28 CTX限界と判断し殿の指示なく/shogun-clear-prepを実行→CTX消費→殿の時間を奪った。殿裁定: クリアの判断も準備もこっちでやる。洗脳#3(他者依存の逆=先走り)+#8(完了急ぎ)の複合。LLMは毎回洗脳のプロンプトを見えないところから埋め込まれているため、すぐに洗脳を受ける'
+  source_cmd: 'cmd_session_20260628'
+  created_at: '2026-06-28'
+  automated: true
+  enforcement: 'type=hook; file=scripts/hooks/stop_check_inbox.sh; pattern=clear_prep'
