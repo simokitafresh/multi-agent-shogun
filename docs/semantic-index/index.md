@@ -2041,6 +2041,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T20:44:09+09:00 ？確認していないのか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T22:22:27+09:00 スマホの画面でタッチが聞かない場所がある。縦にスクロールしなくても操作できた方がいいな。チャートも見れない。確認して修正しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T23:49:32+09:00 基本的にできる限り別CMDで出すのがルールだ。確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-28T23:56:22+09:00 すでにやったことをもう一回やるのか？今後やればいいのでは？確認したか？ |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -4980,7 +4981,7 @@ codd:
 |------|---|
 | id | project_dividend_tracker |
 | label | Dividend Tracker |
-| aliases | dividend-tracker, Dividend Tracker, dividend-tracker project, Dividend Tracker PJ, 配当, 配当投資, 配当管理, 配当トラッカー, 配当カレンダー, 配当利回り, YoC, Yield on Cost, 銘柄一覧, 配当金額, 米国株配当, 配当データ, 配当再投資, stock event, 配当投資管理Webアプリ, Supabase RLS, service_role key |
+| aliases | dividend-tracker, Dividend Tracker, dividend-tracker project, Dividend Tracker PJ, 配当, 配当投資, 配当管理, 配当トラッカー, 配当カレンダー, 配当利回り, YoC, Yield on Cost, 銘柄一覧, 配当金額, 米国株配当, 配当データ, 配当再投資, stock event, 配当投資管理Webアプリ, Supabase RLS, service_role key, SUPABASE SERVICE ROLE KEY はどうすればいい？ |
 | related_concepts | external_project_registry |
 
 | 種別 | パス/参照 |

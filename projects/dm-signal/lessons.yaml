@@ -8516,6 +8516,9 @@ lessons:
   when: FastAPI系の404では本番/openapi.jsonに当該pathが存在するか先に見ると、コード不具合ではなくデプロイドリフトを短時間で確定できる時
   how: FastAPI系の404では本番/openapi.jsonに当該pathが存在するか先に見ると、コード不具合ではなくデプロイドリフトを短時間で確定できる
   origin: '[[cmd_553]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-28'
 - id: L176
   title: 一覧トレンド判定は前月ラベルだけでなく前月p12をAPIで同時返却しないとB4を満たせない
   summary: IF Trendの同一ラベル分岐(±0.05)はcurrent p12だけでは判定不能時 THEN Trendの同一ラベル分岐(±0.05)はcurrent
@@ -8908,6 +8911,9 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-03'
   origin: '[[cmd_495]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-28'
 - id: L144
   title: docs/research/参照先消失はcontext圧縮時のリンク先存在確認不足が根因
   summary: Vercel構造(索引→詳細)のcontext/*.mdで参照するdocs/research/ファイル16件が消失。CLAUDE.md禁則(リンク先なき圧縮=禁

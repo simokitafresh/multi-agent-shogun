@@ -9427,6 +9427,9 @@ lessons:
   when: 追跡TSVやqueueの識別子をparent_cmdからtask_id/subtask_idへ変更する時
   how: 書き込み側だけでなく集計・更新・分析のconsumer全部で同じキー体系へ同期せよ
   origin: '[[cmd_611]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-28'
 - id: L176
   title: watchdogの活動時刻は『read成功』ではなく『意味のあるイベント処理成功』で更新すべし
   summary: ストリーム購読デーモンで keepalive/open/outbound を同じ activity と見なすと、watchdog が『接続生存』しか測れず『実メ
@@ -9774,6 +9777,9 @@ lessons:
   target_files:
   - build_instructions.sh
   origin: '[[cmd_533]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-28'
 - id: L144
   title: git add失敗の頻度分析にはgate_metricsではなく専用guardログが必要
   summary: IF git add/gitignore失敗の頻度を分析する時 THEN gate_metricsではなく専用guardログから集計せよ 発生頻度を継続観測する

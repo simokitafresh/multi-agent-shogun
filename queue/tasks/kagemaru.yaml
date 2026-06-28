@@ -43,7 +43,7 @@ task:
   project: dm-signal
   purpose: '殿指示(2026-06-28): DM-FusionでPCチャートが表示されない、Googleログインボタンがわかりづらい、シェアの#DM-signalハッシュタグ不成立、ヘッダーがFusionのまま、詳細のSPY/TQQQが表示されない。スマホファーストはPC無視ではない'
   scout_exempt: true
-  status: in_progress
+  status: idle
   stop_for: []
   target_path: /mnt/c/Python_app/DM-Fusion
   task_id: cmd_3590_full

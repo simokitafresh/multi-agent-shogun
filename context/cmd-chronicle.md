@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-28 -->
+<!-- last_updated: 2026-06-29 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,28 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-
-## 2026-05
-
-| cmd | title | project | date | key_result |
-|-----|-------|---------|------|------------|
-| cmd_3089 | gate_context_freshness.shがlast_updatedコメントからの経過日数だけで鮮度を判定しており、ソースPJに変更がなくても時間経過でALERTが出る偽陽性バグを修正する。将軍×軍師3往復で収束した設計(ソースPJ commit比較+auto-commitフィルタ+ファイル名PJマッピング+ベースライン自動更新)を実装する | infra | 05-29 | context鮮度判定を日数ベースからソースrepo com |
-| cmd_3090 | DM-Signalリポジトリにlast_updated(2026-04-30)以降60件の新commitがあり、context/dm-signal系5ファイルが追随していない。git log --oneline --since=2026-04-30の差分を確認し、contextの索引層を最新化してlast_updatedを更新する | dm-signal | 05-29 | DM-Signal 2026-04-30以降の43commi |
-| cmd_3091 | deploy_task.shのメインフロー完走率が0.5%(208回中1回のみdeployment complete到達)。set -euo pipefail(L18)が7300行スクリプト全体に適用され、中間コマンドの非0 returnで早期exit、EXIT trapフォールバック。品質監視機能群(ntfy、deployed_at、preflight_gate、draft_review、post_deploy_verify)が99.5%到達不能。家老発見+軍師独立検証済み | infra | 05-29 | deploy_task.shのbinary_checks件数 |
-| cmd_3092 | startup gateのgate_skill_script_refs.shが検出した5件のSKILL.md-script乖離を解消する。dream, idle-persist, karo-direct, recon-dual, shogun-teireの各SKILL.mdが参照scriptの変更に追随していない(3セッション連続startup BLOCK) | infra | 05-29 | 5件のSKILL.mdを参照script最新仕様に追随させ、 |
-| cmd_3093 | gate_lesson_health.shのuseful_rate=25.7%がALERT(3セッション連続startup BLOCK)。低useful教訓を特定しwhen/how品質向上または淘汰でuseful_rateを改善する。軍師分析(gunshi_idle_useful_rate_alert_nazenaze_20260519.md等)を参照し根因に基づく改善を行う | infra | 05-29 | 低useful教訓TOP10をlesson_impact.t |
-| cmd_3094 | 軍師計測(blt_20260529_124846)でcmd_complete_gate.sh(fresh)=220秒が全スクリプト最大ボトルネックと判明。毎cmd完了時に3分40秒消費。殿指示「スクリプト速度ボトルネック洗脳監査」への対応 | infra | 05-29 | cmd_complete_gate.shのGATE CLEA |
-| cmd_3095 | context_freshness ALERT残存(saxo-trade-engine.md ソースPJ commit未反映 + 記憶DB定義ファイル last_updated未記載)を解消し、進化検知のmemory-db-queries.mdをCLAUDE.md知識マップに接続する | infra | 05-29 | context_freshness ALERTを解消し、Sa |
-| cmd_3096 | 軍師計測(blt_20260529_124540)でgate_gunshi_report_precheck.sh=76.6秒が速度TOP2。毎レビュー時に76秒消費(1日10レビュー=12.7分/日損失)。22項目直列+WSL2 I/O律速が根因 | infra | 05-29 | gate_gunshi_report_precheck.sh |
-| cmd_3097 | 軍師計測でgate_gunshi_startup.sh=23.4秒が速度TOP3。軍師起動時に23秒消費。gate_sync 3068件走査+統計集計が根因 | infra | 05-29 | gate_gunshi_startup.sh fresh実行 |
-| cmd_9997 | cmd_save.sh速度計測のための新規PASSシナリオ。全必須フィールドを充足しPASSを取る | — | 05-29 | — |
-| cmd_3099 | 軍師報告(blt_20260529_190957)で修行分27件中26件がCoDD台帳(codd_refactor_registry.md)未記載(96.3%漏れ)と判明。根因仮説: 修行cmdはcmd_complete_gateの自動台帳記載が発火しないフローで処理されている。一括台帳記載+自動記載フロー修正の2層対処 | infra | 05-29 | AC1: 修行分27件中26件(FAIL除く)の速度改善結果 |
-| cmd_3100 | gate_skill_script_refs.shが18 WARN(12ファイル)を検出。参照scriptが更新されたがSKILL.md内容が未同期。3セッション連続startup BLOCKの解消 | infra | 05-29 | gate_skill_script_refs.shの参照sc |
-| cmd_3103 | テスト2008件/12分超でpre-push hook BLOCK=日常回帰テスト不能。重複テスト名4件+1テストファイル2件+consolidated3.7%。テスト品質の自動管理基盤を構築し肥大化を構造的に防止 | infra | 05-29 | gate_test_health.sh新規作成(AC1: テ |
-| cmd_3104 | 1031リンクが44ファイルに集中。context/skills/docsからのリンクがほぼゼロ。リンク密度を計測し、context更新時の因果リンク付与をgate WARNで強制し、backlinks=0ファイルを修行対象に自動組込み | infra | 05-29 | backlink密度計測スクリプト、context更新時の因 |
-| cmd_3106 | cmd_3103で検出された統合候補52ファイル(テスト数5件以下)を統合し、テストファイル数を削減。test_cmd_save系3ファイルはcmd_3105で速度改善中のため除外し競合回避 | infra | 05-29 | watcher/起動系の小テスト2ファイルをtest_inf |
-| cmd_3105 | cmd_3103で判明したSLOW 3件(test_cmd_save 88s+test_cmd_save_block_aggregation 51s+test_cmd_save_command_steps_vs_ac 44s=合計183秒)を最適化。テスト速度改善→全量計測も高速化する複利効果 | infra | 05-29 | test_cmd_save_command_steps_vs |
-| cmd_3107 | 3セッション連続startup BLOCK 2件解消: scripts/未コミット変更3件のcommit + SKILL.md script参照4件の追随更新 | infra | 05-29 | 対象4件のSKILL.mdを現行script実装へ追随更新し |
 
 ## 2026-06
 
@@ -427,3 +405,4 @@
 | cmd_3586 | 殿指示(2026-06-28): DM-Fusion MVPのCDP検証で発見した問題点を全て修正する。(1)PFリストをfolder別グルーピング (2)PF1選択済みPFをPF2から除外 (3)初期状態で未選択→数値非表示 (4)詳細ボタンSPY/TQQQ比較表動作確認 (5)Shareボタン動作実装 (6)スライダー追随速度検証 (7)Page2チャートスワイプ動作確認 (8)デザインルール準拠(tighter tracking/dark gray/タッチターゲット) (9)スマホタッチ対策(フローティングバルーン) (10)共通期間ゼロ時のUI表示 (11)CAGR値の本番突合 | dm-signal | 06-28 | DM-Fusionの初期未選択、PF重複防止、詳細/Shar |
 | cmd_3587 | 殿指示(2026-06-28): DM-Fusionに(1)/admin設定画面(Basic Auth+PF表示トグル)と(2)XシェアボタンをX intent URLで実装。設計書 docs/spec/fusion-app.md §Admin設定画面を参照 | dm-signal | 06-28 | DM-Fusionに/adminのPF表示トグル設定とX i |
 | cmd_3588 | 殿指示(2026-06-28): cmd_3586でCDPスワイプ検証に躓いた。ReactアプリのCDPスワイプ方法を調査・実証し、cdp-browseスキルに知見を追記し、三層記憶に貫通させる | infra | 06-28 | CDP touch streamでDM-FusionのPag |
+| cmd_3590 | 殿指示(2026-06-28): DM-FusionでPCチャートが表示されない、Googleログインボタンがわかりづらい、シェアの#DM-signalハッシュタグ不成立、ヘッダーがFusionのまま、詳細のSPY/TQQQが表示されない。スマホファーストはPC無視ではない | dm-signal | 06-29 | DM-FusionのPCチャート再描画、Googleログイン |
