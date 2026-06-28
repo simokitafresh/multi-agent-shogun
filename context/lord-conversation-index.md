@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-29T00:11:14+09:00 -->
+<!-- generated_at: 2026-06-29T00:35:30+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-29T00:35:29+09:00 | terminal | response | cmd_3591 draft APPROVE完了。idle待機。 [meta] stop_reason=end_turn
+- 2026-06-29T00:23:10+09:00 | ntfy | outbound | CI赤: run 28326708077 Unit Tests (bats)
+- 2026-06-29T00:23:07+09:00 | terminal | inbound | スワイプが片方にしか効かない。レスポンシブになっていない。チャート画面を表示しているとエラーになる
+- 2026-06-29T00:22:37+09:00 | terminal | response | 殿の指摘を受け止めた。cmd_3590の品質が不十分。現時点で5件の問題を把握: 1. **デザインが全体的にダサい** 2. **ドロップダウンがDM-Signal不参照**（ネイティブselect） 3. **上下空白過大**（詳細開…
+- 2026-06-29T00:21:50+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-29 00:10:17|cmd_3590
+- 2026-06-29T00:18:25+09:00 | terminal | inbound | デザインが極端にダサいな
+- 2026-06-29T00:13:52+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝165
 - 2026-06-29T00:11:14+09:00 | terminal | response | push完了。Renderデプロイが開始される。 殿、cmd_3590 GATE CLEAR → push済み。DM-Fusion PC対応+UI品質修正7件(`193069a`)がmainに入った。Renderデプロイ後に本番で確認でき…
 - 2026-06-29T00:10:58+09:00 | terminal | response | cmd_3590 GATE CLEAR確認。全未読処理完了。idle待機。
 - 2026-06-29T00:10:40+09:00 | terminal | response | cmd_3590 LGTM送信完了。idle待機。 [meta] stop_reason=end_turn
-- 2026-06-29T00:00:01+09:00 | terminal | response | kagemaru稼働中。CTX:49%、SPY/TQQQ取得をFusion routeに追加しlint/build実行中。7AC全件を進行中。 教訓: 次回から1修正1cmdで分割起票する。cmd_3590はこのまま完了を待つ。殿の指示を…
-- 2026-06-28T23:56:21+09:00 | terminal | inbound | すでにやったことをもう一回やるのか？今後やればいいのでは？確認したか？
-- 2026-06-28T23:51:06+09:00 | terminal | response | 確認した。 [MEM: memory_db ts=2026-04-25 "LS-A04(14): 1道具1CMD(殿裁定cmd_2316)。複数道具バンドル→other_draft_exists BLOCK"] cmd_3590は7ACを…
-- 2026-06-28T23:49:31+09:00 | terminal | inbound | 基本的にできる限り別CMDで出すのがルールだ。確認せよ
-- 2026-06-28T23:49:10+09:00 | terminal | response | AC7含めた全7件がkagemaruのタスクに入っている。 殿、cmd_3590をkagemaruに配備済み。殿の全指示7件を反映: 1. **PCチャート表示修正** — Canvas描画のPC対応 2. **#DM-signal削除*…
-- 2026-06-28T23:48:08+09:00 | terminal | inbound | <task-notification> <task-id>b421b0a9d</task-id> <tool-use-id>toolu_01Ed1C5SWDMFoCvcU2U939Vi</tool-use-id> <output-file…
-- 2026-06-28T23:46:48+09:00 | terminal | response | cmd_3590 draft APPROVE完了。idle待機。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - push完了。Renderデプロイが開始される。 殿、cmd_3590 GATE CLEAR → push済み。DM-Fusion PC対応+UI品質修正7件(`193069a`)がmainに入った。Renderデプロイ後に本番で確認できる。 [meta] stop_reaso…
