@@ -621,4 +621,15 @@ else
   fi
 fi
 
+# === /clear自発禁止 (殿裁定2026-06-28 LS074) ===
+# 将軍が/clearについて考える・判断する・行動する全て禁止。
+# autocompact=90%が自動管理する。殿の明示的指示があった時だけ検討。
+if [[ "${AGENT_ID:-}" == "shogun" ]]; then
+  _stop_text=$(cat 2>/dev/null || true)
+  if echo "$_stop_text" | grep -qiE 'clear.prep|shogun-clear-prep|/clear準備|クリア.*準備|CTX.*限界|コンテキスト.*限界'; then
+    echo "BLOCK: /clear自発禁止(殿裁定2026-06-28 LS074)。/clearは殿の専権事項。autocompact=90%が自動管理。殿の明示的指示なしに/clearについて考えるな・判断するな・行動するな。" >&2
+    exit 2
+  fi
+fi
+
 exit 0
