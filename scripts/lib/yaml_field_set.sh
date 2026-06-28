@@ -519,7 +519,7 @@ function flush_block(    i,line,indent_str,field_re,replaced,skip_replaced_conti
             # 最終行を保持: 新フィールド追加時に最終行の前に挿入する
             # (2026-06-26: 最終ブロックのEOF追加でEdit挿入時に次cmdへ侵入するバグ根治)
             if (last_held != "") print last_held
-            if (i == block_len && !replaced) {
+            if (i == block_len && !replaced && leading_spaces(line) <= field_indent) {
                 last_held = line
             } else {
                 last_held = ""

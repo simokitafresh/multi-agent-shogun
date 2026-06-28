@@ -479,3 +479,30 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"SINGLE_QUOTE_OK"* ]]
 }
+
+@test "mapping block: ネスト末尾を持つblockへ新規field追加しても子要素を親field配下へ移動しない" {
+    local yaml="$TEST_TMPDIR/nested_tail_insert.yaml"
+    cat > "$yaml" <<'YAML'
+commands:
+  cmd_curr:
+    id: cmd_curr
+    status: draft
+    quality_gate:
+      q11_not_already_done: "rg -nF 'q11' scripts/cmd_publish.sh -> 0"
+YAML
+
+    run bash "$YFS" "$yaml" cmd_curr depends_on none
+    [ "$status" -eq 0 ]
+
+    run python3 - <<PY
+import yaml
+from pathlib import Path
+data = yaml.safe_load(Path("$yaml").read_text())
+cmd = data["commands"]["cmd_curr"]
+assert cmd["depends_on"] == "none"
+assert cmd["quality_gate"]["q11_not_already_done"].startswith("rg -nF")
+print("NESTED_TAIL_OK")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NESTED_TAIL_OK"* ]]
+}
