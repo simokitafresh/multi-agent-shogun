@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-27 cmd_karo_hotfix_ga146 -->
-<!-- last_synced_lesson: L790 -->
+<!-- last_updated: 2026-06-28 cmd_3586 -->
+<!-- last_synced_lesson: L791 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -258,6 +258,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L786: ComparisonChart Y軸: 固定配列目盛は純粋関数抽出+動的生成で構造的解消（cmd_3565）
 - L789: check_mixed_format_commit.pyはimport行のみhunkを検出してblock→多行import形式で回避可能（cmd_3569）
 - L790: Compare ReturnsのMTD高速化はpreliminary FoF展開も同じcacheに載せる（cmd_3570）
+- L791: 追加指示の取消は未commit差分からscope別に除去する（cmd_3586）
 
 ## 因果リンク
 

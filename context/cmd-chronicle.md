@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-28 -->
+<!-- last_updated: 2026-06-28 cmd_3586 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -423,3 +423,4 @@
 | cmd_3579 | 殿指示(2026-06-28): 三層学習ループは順調か？weekly_metrics_trendが1スナップショットしかなく成長速度を計測不能。cron蓄積+前週比差分+startup gate表示で成長を数値化する | infra | 06-28 | weekly_metrics_trendに前週比deltaと |
 | cmd_3582 | 殿指示(2026-06-28): 第一層(個)で忍者commit_missing WA 5件/2週が再発。deploy_task.shの事前コンテキスト注入でWA頻発パターンを忍者に自動提示し検出→予防に転換 | infra | 06-28 | deploy_task.shにWA頻発カテゴリTOP3からr |
 | cmd_3583 | 殿指示(2026-06-28): 外部アプリFusion向けに、DM-Signal APIからPF名+monthly_returnsを取得する軽量エンドポイントを追加。設計書: docs/spec/fusion-api-endpoint.md。家老条件付きAPPROVE済み(blt_20260628_173441) | dm-signal | 06-28 | Fusion向けGET /api/fusion/portfo |
+| cmd_3585 | 殿指示(2026-06-28): DM-Fusionアプリ実装開始。設計書 docs/spec/fusion-app.md に基づき、空リポジトリ(/mnt/c/Python_app/DM-Fusion/)にNext.jsプロジェクトを構築し、メイン画面を実装する | dm-signal | 06-28 | DM-FusionのNext.js App Router + |

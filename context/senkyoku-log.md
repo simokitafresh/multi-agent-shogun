@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-26 cmd_karo_hotfix_lesson_health_useful_20260626173325 -->
+<!-- last_updated: 2026-06-28 cmd_3586 -->
 
 ## 2026-06-26
 
@@ -1263,3 +1263,4 @@
 
 - 2026-06-27 cmd_3565: Compare Chart Y軸ラベルクリップ修正。殿指示により設計書(compare-chart-yaxis-label-clipping-fix.md)に基づきtobisaruへ配備。D1=LIN高リターン先頭桁クリップ、D2=LOG目盛固定配列500頭打ち。
 - 2026-06-28 cmd_3583: Fusion外部アプリ向けadmin API `/api/fusion/portfolios` を追加。PF名+monthly_returnsのみ返し、禁止キー不在・10/min rate limit・11回目429までテスト、context/semantic/記憶DBへ貫通。
+- 2026-06-28 cmd_3585: DM-Fusion MVPを `/mnt/c/Python_app/DM-Fusion` にNext.js App Router+API Routeで初期実装。家老レビューでSPY/TQQQ比較期間ズレを差し戻し、追加commit `79efa2c` でFusionと同じ月集合計算へ修正してGATE CLEAR。
