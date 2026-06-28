@@ -4021,7 +4021,7 @@ lessons:
   origin: '[[cmd_2719]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-28'
+  last_referenced: '2026-06-29'
 - id: L608
   title: npm audit fix --omit=devはdevDependencies削除する
   summary: npm audit fix --omit=devを実行するとdevDependencies(@tailwindcss/postcss等)がnode_module

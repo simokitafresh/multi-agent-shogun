@@ -1,8 +1,25 @@
 ssot_path: /mnt/c/Python_app/DM-signal/tasks/lessons.md
-last_synced: '2026-06-28T20:43:17'
+last_synced: '2026-06-29T01:13:03'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons_archive.yaml
-lesson_count: 788
+lesson_count: 789
 lessons:
+- id: L792
+  title: スワイプ除外対象にbutton全体を含めると有効領域が狭まり片方向不具合に見える
+  summary: 横スワイプUIではクリック誤爆は移動量しきい値で防ぎ、button全体をスワイプ開始除外にしない。除外はinput/select/dropdown/listbo
+  tags:
+  - frontend
+  - gesture
+  - ui
+  subdomain: fe
+  source_cmd: cmd_3592
+  when: 横スワイプUIでボタンやカード内からのドラッグを扱う時
+  how: クリック誤爆は距離しきい値で防ぎ、input/select/listbox等だけを除外する
+  target_files:
+  - app/page.tsx
+  origin: '[[スワイプ片方向+チャートエラー]] -> [[button全除外+canvas自身ResizeObserver監視]] -> [[cmd_3592_入力経路とチャート監視分離]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-25'
 - id: L791
   title: 追加指示の取消は未commit差分からscope別に除去する
   summary: admin設定画面とX intentの追加指示後に緊急取消が来た。未commitだったため自分の追加ファイルと差分だけを除去し、Supabase保存などcmd本
@@ -462,9 +479,6 @@ lessons:
   target_files:
   - /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search
   origin: '[[cmd_3514]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L766
   title: WF trial速度改善は選抜cacheのwarm/coldを分けて3回測る
   summary: trial_wfは選抜cache有無で56.87s→12.74s→7.85sと大きく変わる。WF速度ACはcache生成後の反復も記録し、diff
@@ -621,9 +635,6 @@ lessons:
   target_files:
   - /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/cmd_2369_l1_wf_alpha_select.py
   origin: '[[cmd_3508]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L754
   title: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象
   summary: 新規BBが blocks/__init__.py と schemas/pipeline.py に登録された場合、context/dm-signal-core.m
@@ -643,7 +654,7 @@ lessons:
   origin: '[[cmd_3384]] -> [[BB分類context更新未強制]] -> [[GA-102 dm-signal-core freshness
     ALERT]]'
   deprecated: true
-  deprecated_at: '2026-06-28T20:44:36+09:00'
+  deprecated_at: '2026-06-29T01:13:48+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): context/dm-signal-core.m参照（ファイル消滅）'
 - id: L753
   title: 'DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用'
@@ -660,9 +671,6 @@ lessons:
   - docs/research/tobisaru_cmd_3431_momentum_turning_points_20260617.md
   - scripts/research/cmd_3431_momentum_turning_points.py
   origin: '[[cmd_3431]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L752
   title: '相関乖離分析の閾値設計: σベース閾値は同一母集団(層別)でのみ有効。混成母集団では分散拡大でシグナル消失'
   summary: 54体全量(四神+忍法+奥義混成)で相関乖離の標準偏差がstd=0.25〜0.39(層別の約2倍)に拡大。μ+2σ閾値が最大値に近接しシグナルが1件以下。母集団
@@ -1363,9 +1371,6 @@ lessons:
   - backend/tests/test_monthly_trade_calculator.py
   - backend/tests/test_signals_fof_precomputed_display.py
   origin: '[[cmd_2453]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L705
   title: Monthly Trade FoF表示はsignal_dateだけでなくyear_month月初Signalを優先確認する
   summary: FoFのMonthly Trade 5月行はsignal_dateが4月末になることがあり、display_ticker_weightsをsignal_date
@@ -1916,9 +1921,6 @@ lessons:
   - scripts/oneshot/cmd_2382_yotsume_parity_verify.py
   - outputs/analysis/cmd_2382_yotsume_open_parity/sqlite_monthly_return_open_parity.csv
   origin: '[[cmd_2382]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L670
   title: Oikaze NumPy GSはproduction first_signal_monthまで初期EqualWeightを再現する
   summary: 本番fullrecalculateはMomentumFilterの初回signal月まではFoF初期配分(EqualWeight)のmonthly_return
@@ -2029,9 +2031,6 @@ lessons:
   - queue/tasks/saizo.yaml
   - queue/reports/saizo_report_cmd_2343.yaml
   origin: '[[cmd_2343]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L663
   title: WSL2 NTFSディレクトリsymlinkは使うな
   summary: os.symlink成功→is_dir=False→listdir/read全ENOENT。ファイルsymlinkは正常。WSL2 NTFS(/mnt/c/)で
@@ -2146,7 +2145,7 @@ lessons:
   - tasks/lessons.md
   origin: '[[cmd_2311]]'
   deprecated: true
-  deprecated_at: '2026-06-28T20:44:36+09:00'
+  deprecated_at: '2026-06-29T01:13:49+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/kotaro.yaml参照（ファイル消滅）'
 - id: L656
   title: 計測スクリプトの固定待機排除はDOMポーリングで行う
@@ -2333,9 +2332,6 @@ lessons:
   - outputs/analysis/alm_l1_ninpo/cmd_2218_alm_body_summary.csv
   - outputs/analysis/alm_l1_ninpo/cmd_2218_alm_top_stability_detail.csv
   origin: '[[cmd_2218]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L642
   title: champion_selectorはcmd_id直後にninjutsu名が来る現行GS成果物命名もglob対象に含めよ
   summary: cmd_2177で champion_selector.py が cmd_2175_bunshin_wf_alm12_monthly_fast.cache.ar
@@ -2846,7 +2842,7 @@ lessons:
   origin: '[[cmd_1856]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-28'
+  last_referenced: '2026-06-29'
 - id: L608
   title: 進行中月パリティ差異は構造的問題
   summary: GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致
@@ -6079,9 +6075,6 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-17'
   origin: '[[cmd_1030]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L371
   title: 'GS月次解像度の重複パターン: 10D/15D/20D/1M同一問題'
   summary: '月次解像度GS: 10D/15D/20D/1Mは全てmonths=1に丸められ同一結果を生む。 momentum_cube/picksの計算は既にdedup済み'
@@ -7327,9 +7320,6 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: '2026-03-12'
   origin: '[[cmd_853]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L274
   title: CDP reload 計測の ready 条件は static selector 固定ではなく viewer 実DOM に合わせて見直せ
   summary: IF production viewer pages を CDP reload 計測する THEN `h1` 固定の待機条件に依存せず、認証壁・封鎖ページ・ペー
@@ -8019,9 +8009,6 @@ lessons:
   target_files:
   - app/DM-signal/frontend/next.config.js
   origin: '[[cmd_719]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L215
   title: 本番viewer認証の自動化ではrepo内.envよりRender live envを優先せよ
   summary: DM-signalのviewer passwordはRender側で月次更新され、repo内backend/.envはstaleになり得る。CDP自動認証でlo
@@ -9299,9 +9286,6 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: '2026-02-23'
   origin: '[[cmd_273]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L107
   title: 生成物調査ではDATA_CATALOG掲載有無とmeta.output.file実在の二軸照合が有効
   summary: meta.yamlの価値判断はDATA_CATALOG掲載+output.file実在+命名(backup/pre/old)の三点セットで分類すると誤判定が減る
@@ -10227,7 +10211,7 @@ lessons:
   - scripts/analysis/data_sync/download_all_prices.py
   origin: '[[legacy_lesson_L025]]'
   deprecated: true
-  deprecated_at: '2026-06-28T20:44:37+09:00'
+  deprecated_at: '2026-06-29T01:13:49+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
 - id: L024
   title: signal_historyのキーはPhase 2のmonth_last_trading_daysと同型でなければならない（2026-02-15）

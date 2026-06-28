@@ -41,7 +41,7 @@ task:
   project: dm-signal
   purpose: '殿指示(2026-06-29): DM-Fusionでスワイプが片方にしか効かない、チャート画面を表示しているとエラーになる。機能バグ2件の修正'
   scout_exempt: true
-  status: in_progress
+  status: idle
   stop_for: []
   target_path: /mnt/c/Python_app/DM-Fusion
   task_id: cmd_3592_full

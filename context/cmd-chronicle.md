@@ -406,3 +406,4 @@
 | cmd_3587 | 殿指示(2026-06-28): DM-Fusionに(1)/admin設定画面(Basic Auth+PF表示トグル)と(2)XシェアボタンをX intent URLで実装。設計書 docs/spec/fusion-app.md §Admin設定画面を参照 | dm-signal | 06-28 | DM-Fusionに/adminのPF表示トグル設定とX i |
 | cmd_3588 | 殿指示(2026-06-28): cmd_3586でCDPスワイプ検証に躓いた。ReactアプリのCDPスワイプ方法を調査・実証し、cdp-browseスキルに知見を追記し、三層記憶に貫通させる | infra | 06-28 | CDP touch streamでDM-FusionのPag |
 | cmd_3590 | 殿指示(2026-06-28): DM-FusionでPCチャートが表示されない、Googleログインボタンがわかりづらい、シェアの#DM-signalハッシュタグ不成立、ヘッダーがFusionのまま、詳細のSPY/TQQQが表示されない。スマホファーストはPC無視ではない | dm-signal | 06-29 | DM-FusionのPCチャート再描画、Googleログイン |
+| cmd_3592 | 殿指示(2026-06-29): DM-Fusionでスワイプが片方にしか効かない、チャート画面を表示しているとエラーになる。機能バグ2件の修正 | dm-signal | 06-29 | DM-Fusionのスワイプ双方向入力とPage1チャート表 |
