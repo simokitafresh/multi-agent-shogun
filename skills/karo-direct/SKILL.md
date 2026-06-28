@@ -10,8 +10,9 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-16T20:02:35+0900 -->
+<!-- script_refs_checked_at: 2026-06-28T12:18:00+09:00 -->
 
+Script refs verified: 2026-06-28 cmd_3582/e13c60e60. `deploy_task.sh` 直近変更は `get_japanese_name` 経由で忍者名の日本語対応をSSOT化し、`inject_workaround_pattern_lessons` で `logs/karo_workarounds.yaml` の頻発WAカテゴリから関連教訓を `related_lessons`/descriptionへ注入する内部コンテキスト提供追加。`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_training_...>` の引数契約、通知、report template生成、stale field resetは変更なし。
 Script refs verified: 2026-06-16 cmd_3413. `deploy_task.sh` 直近変更(9fe724dda)はtask_tags空+target_pathあり時のpath-dirタグ推定追加。lesson注入タグ生成の内部ロジックであり、`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_training_...>` の引数・通知契約、report template生成、safe_inbox_write経路は変更なし。
 Script refs verified: 2026-06-16 cmd_3405. `deploy_task.sh` 直近変更(1ef582caf)はMAX_INJECT 10→3に縮小。useful_rate=16.7%(<30%)の根因=過剰注入の修正。`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_training_...>` の引数・通知契約、report template生成、safe_inbox_write経路は変更なし。
 Script refs verified: 2026-06-12 cmd_karo_hotfix_skill_refs_202606121132. `deploy_task.sh` 直近変更(d808770fc)はreadonly refsをtaskへ自動注入する内部コンテキスト提供追加。`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_training_...>` の引数・通知契約、report template生成、safe_inbox_write経路は変更なし。
@@ -143,4 +144,4 @@ Script refs verified: 2026-06-21 d81b77654. `deploy_task.sh` 直近変更はtag 
 
 Script refs verified: 2026-06-23 1586d6f48. `deploy_task.sh` 直近変更はGS/DB検出時execution_env自動注入(L5防御、cmd_3496事故恒久対策)。配備契約(`--yaml`/`--direct`)・通知・report template生成は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-26T17:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-28T12:18:00+09:00 -->
