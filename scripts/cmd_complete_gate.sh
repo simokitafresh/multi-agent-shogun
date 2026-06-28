@@ -5290,7 +5290,9 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
     else
         # GP-026 B案(cmd_1332): done以外の全状態(assigned/acknowledged/in_progress)でWAIT
         ninja_status=$(grep -E '^\s+status:' "$task_file" | head -1 | sed 's/.*status:[[:space:]]*//' | tr -d "'" | tr -d '"')
-        if [ "$ninja_status" != "done" ] && [ "$ninja_status" != "complete" ]; then
+        if [[ "$ninja_status" =~ ^(failed|canceled|cancelled|superseded|skipped)$ ]]; then
+            echo "  [SKIP] ${ninja_name}: 報告YAML未着（status=${ninja_status}、再配備/失敗済みタスクのため待機対象外）"
+        elif [ "$ninja_status" != "done" ] && [ "$ninja_status" != "complete" ]; then
             REPORT_WAIT_NINJAS+=("$ninja_name")
             echo "  [WAIT] ${ninja_name}: 報告YAML未着（status=${ninja_status}、リトライ待ち）"
         else
@@ -5358,10 +5360,10 @@ declare -A REPORT_FORMAT_SEEN=()
 validate_report_format_file() {
     local report_file="$1"
 
-    [ -n "$report_file" ] || return
-    [ -f "$report_file" ] || return
+    [ -n "$report_file" ] || return 0
+    [ -f "$report_file" ] || return 0
     if [ -n "${REPORT_FORMAT_SEEN["$report_file"]+x}" ]; then
-        return
+        return 0
     fi
 
     REPORT_FORMAT_SEEN["$report_file"]=1
