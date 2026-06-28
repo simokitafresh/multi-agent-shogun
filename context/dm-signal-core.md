@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-06-27 cmd_karo_hotfix_ga146 -->
+<!-- last_updated: 2026-06-28 cmd_3583 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -356,6 +356,10 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 `/api/compare-returns` は全visible PF + standalone benchmark(SPY/TQQQ等)のMTD/1M/3M/6M/1Y/3Y/5Y/ALLをclose/open両系列で返す。PF MTDは`backend/app/services/mtd_returns.py`が`/api/mtd`とCompare Returnsの共通SSOTで、Compare Returnsは`build_compare_mtd_values_batch()`でN+1を避ける。page visibilityは`backend/app/services/page_visibility.py`が`settings.hidden_pages`と`global_visibility_settings.hidden_pages`のunionを正とする。根拠: commits `46e1b48c`, `646216d5`, `09796aee`, specs `docs/spec/compare-returns-page.md`。
 
 cmd_3572でMTD事前計算テーブル`precomputed_mtd`、`backend/app/jobs/precompute_mtd.py`、`recalculate_fast.py`末尾連携、API側fresh判定+PF/BM単位fallbackを実装済み。DB DATE→API ISO境界とprecomputed/fallbackパリティは`backend/tests/test_compare_returns_api.py`で検証。根拠: commit `9b3618ae`, spec `docs/spec/compare-returns-mtd-precompute.md`。
+
+### §8.7 Fusion API (2026-06-28)
+
+`/api/fusion/portfolios` は外部Fusionアプリ向けのadmin認証専用エンドポイント。全active PFの`id/name/type/folder`と確定済み`monthly_returns[{year_month, return}]`のみを返し、当月・null monthly_return・config/holding_signal/ticker/weights/cumulative系は禁止。10/min rate limitと11回目429テストあり。根拠: commits `288f0e36`, `314b596a`, spec `docs/spec/fusion-api-endpoint.md`, test `backend/tests/test_fusion_api.py`。
 
 ## 10. ディレクトリ構成
 

@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-06-27 cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627 -->
+<!-- last_updated: 2026-06-28 cmd_3583 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -837,6 +837,7 @@ GA-102原因: `dm-signal-ops.md`のlast_updatedは2026-06-13で、2026-06-14以�
 
 | commit | ops更新判断 | 根拠 |
 |------|------|------|
+| 288f0e36/314b596a cmd_3583 Fusion API | 運用影響あり。`/api/fusion/portfolios`はFusion別アプリがDM-SignalからPF名+monthly_returnsのみを取得するadmin専用API。CORSは開発用`http://localhost:3001`追加済み、本番Fusion URLは確定時にコメント解除。10/min rate limit、11回目429テストあり | `backend/app/api/fusion.py`, `backend/app/main.py`, `backend/tests/test_fusion_api.py`, `docs/spec/fusion-api-endpoint.md` |
 | 896a20b2/46e1b48c cmd_3569 Compare Returns page | 運用影響あり。`/compare-returns` API/router/page_visibilityが追加され、Admin visibility対象ページが増えた。運用上は既存CDP/Admin確認手順で対象URLを`/compare-returns`へ切替えて確認する | `backend/app/api/compare_returns.py`, `backend/app/main.py`, `backend/app/services/page_visibility.py`, `backend/tests/test_compare_returns_api.py` |
 | 9b3618ae cmd_3572 Compare Returns MTD事前計算 | 運用影響あり。`precomputed_mtd`テーブル作成後、通常は`recalculate_fast.py`正常完了末尾でMTD事前計算が更新される。欠損/stale時はAPIがPF/BM単位fallbackするため表示正確性は維持、速度のみ劣化 | `backend/migrations/add_precomputed_mtd.py`, `backend/app/jobs/precompute_mtd.py`, `backend/app/api/compare_returns.py` |
 | baf7db97/fb40fc2c/1368f895 compare系spec索引更新 | 本文追加不要 | `docs/spec/*`/`docs/_INDEX.md`/`tasks/lessons.md`中心。運用手順の新規差分はCompare Returns行で吸収 |

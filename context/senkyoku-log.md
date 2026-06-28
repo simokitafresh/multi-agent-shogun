@@ -1262,3 +1262,4 @@
 - 2026-06-27 殿裁定: Loop Engineering Phase 3残り3件(#3 FE検証/#13 maker-checker/#16 MCP Connector)は実装停止。Phase 1全4件D0完了、Phase 2全4件GATE CLEAR(cmd_3548-3553)、Phase 3は2件GATE CLEAR(cmd_3554-3555)+3件停止で区切り。
 
 - 2026-06-27 cmd_3565: Compare Chart Y軸ラベルクリップ修正。殿指示により設計書(compare-chart-yaxis-label-clipping-fix.md)に基づきtobisaruへ配備。D1=LIN高リターン先頭桁クリップ、D2=LOG目盛固定配列500頭打ち。
+- 2026-06-28 cmd_3583: Fusion外部アプリ向けadmin API `/api/fusion/portfolios` を追加。PF名+monthly_returnsのみ返し、禁止キー不在・10/min rate limit・11回目429までテスト、context/semantic/記憶DBへ貫通。
