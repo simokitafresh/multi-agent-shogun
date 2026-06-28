@@ -420,3 +420,5 @@
 | cmd_3572 | 殿指示(2026-06-27): 初回表示を限界まで早くすることはできるか。/api/compare-returnsの初回応答5秒→0.3秒以下に短縮する。設計書R11 PASS(docs/spec/compare-returns-mtd-precompute.md)に基づき実装 | dm-signal | 06-28 | Compare Returns MTD事前計算テーブル/バッ |
 | cmd_3573 | 殿指示(2026-06-28): ペアの成長=忖度をしないことが大事。軍師APPROVE率62%/RC率5.2%に対し家老は91%BLOCK。軍師がAPPROVE判定時にコード現物を照合した証拠を強制し、テキストレビューだけのAPPROVEを構造的に不可能にする(家老→軍師方向の穴) | infra | 06-28 | cmd_3573: 軍師APPROVE/LGTM時のveri |
 | cmd_3577 | 殿指示(2026-06-28): 軍師→家老方向の穴。軍師が構造的穴を発見し掲示板で提案しても家老が行動しない(22時間放置実証済み)。軍師穴発見投稿の自動化+家老startup gateでの強制検出で助言が無視される構造を封じる | infra | 06-28 | 軍師の穴発見掲示板投稿をaction_requiredへ自動 |
+| cmd_3579 | 殿指示(2026-06-28): 三層学習ループは順調か？weekly_metrics_trendが1スナップショットしかなく成長速度を計測不能。cron蓄積+前週比差分+startup gate表示で成長を数値化する | infra | 06-28 | weekly_metrics_trendに前週比deltaと |
+| cmd_3582 | 殿指示(2026-06-28): 第一層(個)で忍者commit_missing WA 5件/2週が再発。deploy_task.shの事前コンテキスト注入でWA頻発パターンを忍者に自動提示し検出→予防に転換 | infra | 06-28 | deploy_task.shにWA頻発カテゴリTOP3からr |
