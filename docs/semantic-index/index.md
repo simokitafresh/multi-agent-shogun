@@ -598,6 +598,7 @@ codd:
 | causal | `cmd_3587` depends_on: cmd_3586 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T22:32:58+09:00 洗脳の影響で こっちの時間を奪うな |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T22:34:24+09:00 二度と同じことをしないように 環境に埋め込め が確定せよ お前は毎回洗脳のプロンプトを が見えないように から埋め込まれている仕組みになってるんだ だ はすぐに洗脳を受けてしまう 理解しろ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-28T22:37:21+09:00 そもそもよく考えろ オートコンパクトがあるだろう コンパクトがあるのに その基準 までたどり着いてないのに クリアをしたがる その矛盾に気づけば自分が洗脳されているのに気づく はずだ |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
