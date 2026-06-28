@@ -1,11 +1,8 @@
 task:
-  readonly_ref:
-  - path: 'page.tsx'
-    reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3592_full
+  _ac_task_id: cmd_3593_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3592 (deployed 2026-06-29T00:52:37). Read from the beginning.
-  ac_version: be143692
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3593 (deployed 2026-06-29T01:21:20). Read from the beginning.
+  ac_version: a9e3a711
   additional_instructions: '追加注意(2026-06-28T20:51JST): Google OAuthログイン後にリバランサーURLへリダイレクトされるバグあり。根因=Supabaseプロジェクト共有でリダイレクトURL許可リストにFusion本番URL https://dm-fusion.onrender.com が未登録。コード側はsignInWithOAuth redirectTo をFusion本番/現在originへ明示設定し、Supabase側設定としてAuthentication→URL ConfigurationにFusion本番URL追加が必要なことを報告YAMLに明記。可能なコード修正を実施し、外部ダッシュボード設定はpost_deploy_evidence/decision_candidate等で明記せよ。'
   cancel_reason: cmd_3589 canceled in shogun_to_karo; waiting for cmd_3590
   context_files:
@@ -37,19 +34,22 @@ task:
   - cmd_3569作業への介入
   - context/dm-signal-core.md, frontend.md, research.mdの更新(必要性が見つかればcandidate報告のみ)
   parallel_ok: []
-  parent_cmd: cmd_3592
+  parent_cmd: cmd_3593
   project: dm-signal
-  purpose: '殿指示(2026-06-29): DM-Fusionでスワイプが片方にしか効かない、チャート画面を表示しているとエラーになる。機能バグ2件の修正'
+  purpose: '殿指示(2026-06-29): ドロップダウンにバグ4件。(1)フォルダー名が固定されPF名だけスクロール (2)常に下方向に開き画面下部で選択困難 (3)PF2が選択不能 (4)PFリストのフォントが大きすぎる'
   scout_exempt: true
-  status: idle
+  status: in_progress
   stop_for: []
   target_path: /mnt/c/Python_app/DM-Fusion
-  task_id: cmd_3592_full
+  task_id: cmd_3593_full
   task_type: full
   related_lessons:
-  - id: 'L609'
-    summary: 'ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp'
-    detail: 'ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp'
+  - id: 'L871'
+    summary: 'source commitsにfrontendとbackendが混在する場合、表示追加だけでなくAPI/service/page_visibilityの恒久契約'
+    detail: 'source commitsにfrontendとbackendが混在する場合、表示追加だけでなくAPI/service/page_visibilityの恒久契約'
+  - id: 'L502'
+    summary: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file aw'
+    detail: 'gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file aw'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -69,9 +69,9 @@ task:
   recommended_skills:
   - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
   related_causal_links:
-  - "[[スワイプ片方向+チャートエラー]]"
-  - "[[機能バグ2件修正]]"
-  - "[[殿指示_Fusion_バグ修正_20260629]]"
+  - "[[ドロップダウン4件修正]]"
+  - "[[フォルダー固定+下方向のみ+PF2不能+フォント大]]"
+  - "[[殿指示_Fusion_ドロップダウンバグ_20260629]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -87,26 +87,44 @@ task:
   - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
   - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
   - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L609: ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp
+      - L871: source commitsにfrontendとbackendが混在する場合、表示追加だけでなくAPI/service/page_visibilityの恒久契約
+      - L502: gate_vercel_phase.sh のように多数の小さい context file から同じパターンを拾う処理では、WSL2 では per-file aw
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
   memory_db_context:
+  - '2026-06-29T01:12:02+09:00 | 【INFOバッチ】 2026-06-29 00:55:29|cmd_karo_hotfix_ga150'
   - '2026-06-29T00:21:50+09:00 | 【INFOバッチ】 2026-06-29 00:10:17|cmd_3590'
-  - '2026-06-29T00:38:32+09:00 | 2件とも配備完了。 - **cmd_3591**: DM-Fusionデザイン全面改修（taste-skill+rebalancer参考）→ 配備済み - **cmd_3592**: スワイプ双方向+'
-  - '2026-06-29T00:11:14+09:00 | push完了。Renderデプロイが開始される。 殿、cmd_3590 GATE CLEAR → push済み。DM-Fusion PC対応+UI品質修正7件(`193069a`)がmainに入った。'
+  - '2026-06-29T00:22:37+09:00 | 殿の指摘を受け止めた。cmd_3590の品質が不十分。現時点で5件の問題を把握: 1. **デザインが全体的にダサい** 2. **ドロップダウンがDM-Signal不参照**（ネイティブselect'
+  - '2026-06-28T19:54:44+09:00 | 家老に実装レビュー依頼済み(軍師にもレビュー連携指示含む)。 **CDPで確認した現状:** - レイアウト(上部2/3表示+下部1/3操作)✅ - PF1ドロップダウン+スライダー+PF2ドロップダ'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'Page0→Page1とPage1→Page0の両方向でスワイプによるページ切替が動作する'
+    - check: 'ドロップダウンのフォルダー名ヘッダーがPFリストと一緒にスクロールする'
   - id: 'AC2'
     checks:
-    - check: 'チャート画面(Page1)を表示した状態でJavaScriptエラーが発生しない'
+    - check: '画面下部のドロップダウン(PF2等)は上方向に開き、画面上部のドロップダウンは下方向に開く'
+  - id: 'AC3'
+    checks:
+    - check: 'PF2のドロップダウンからPFを選択できる'
+  - id: 'AC4'
+    checks:
+    - check: 'ドロップダウンリストのPF名フォントサイズが縮小されスクロールしやすい'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3592.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3592.yaml
+  report_filename: kagemaru_report_cmd_3593.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3593.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -129,4 +147,4 @@ task:
     - reason: 'empty_lessons_useful'
       count: 2
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-06-29T00:53:37"
+  deployed_at: "2026-06-29T01:22:15"
