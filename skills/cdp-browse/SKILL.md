@@ -143,6 +143,55 @@ shot = send_cmd("Page.captureScreenshot", {"format": "png", "fromSurface": True}
 open("/tmp/cdp-direct.png", "wb").write(base64.b64decode(shot["result"]["data"]))
 ```
 
+## Reactアプリのスワイプ操作
+
+Reactアプリのスワイプ検証では、まず実装が `onTouch*` / `onPointer*` / `onMouse*` のどれで判定しているかを確認する。CDPの `Input.dispatchTouchEvent` はtrustedな `touch*` と `pointer*` をDOMへ届けられるが、ブラウザの既定ジェスチャ処理やReact側のhandler種別でstate更新まで届かない場合がある。推測で成功扱いせず、操作前後のDOM状態とスクリーンショットを比較する。
+
+事前にモバイルviewportとtouch emulationを有効化する。
+
+```python
+cdp_helper.cdp_send_batch(tab_id, [
+    ("Page.enable", {}),
+    ("Runtime.enable", {}),
+    ("Emulation.setDeviceMetricsOverride", {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2,
+        "mobile": True,
+    }),
+    ("Emulation.setTouchEmulationEnabled", {
+        "enabled": True,
+        "maxTouchPoints": 1,
+    }),
+], port=port, timeout=30)
+```
+
+横スワイプは `touchStart` → 複数回の `touchMove` → `touchEnd` の順で送る。`touchEnd` 自体は座標を持たないため、終点座標の `touchMove` を必ず直前に送る。ReactがPointerEventで判定する実装では、`pointerup.clientX` が終点になっているかをnative listenerで確認する。
+
+```python
+commands = [
+    ("Input.dispatchTouchEvent", {
+        "type": "touchStart",
+        "touchPoints": [{"x": start_x, "y": y, "radiusX": 4, "radiusY": 4, "force": 1, "id": 1}],
+    }),
+]
+for i in range(1, 11):
+    x = start_x + (end_x - start_x) * i / 10
+    commands.append(("Input.dispatchTouchEvent", {
+        "type": "touchMove",
+        "touchPoints": [{"x": x, "y": y, "radiusX": 4, "radiusY": 4, "force": 1, "id": 1}],
+    }))
+commands.append(("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []}))
+cdp_helper.cdp_send_batch(tab_id, commands, port=port, timeout=30)
+```
+
+DM-Fusion(localhost:3001)での実証(2026-06-28, cmd_3588): `Input.dispatchTouchEvent` は `pointerdown`、`pointermove`、`pointerup`、`touchstart`、`touchmove`、`touchend` をtrustedイベントとしてDOMへ届けた。`touch-action: none` を検証タブに注入すると `pointerup.clientX` も終点座標になった。一方、現行DM-Fusionの `app/page.tsx` は `onPointerDown` / `onPointerUp` のReact stateでPage1/Page2を切り替える実装で、CDP touch stream到達後もページドットはPage1のままだった。この場合はCDPコマンド成功を画面操作成功と扱わず、次を報告する。
+
+- `Input.dispatchTouchEvent` のresponse error有無
+- native listenerで観測した `pointer*` / `touch*` のtrustedイベント列
+- 操作前後のページ状態(DOMまたはAX snapshot)とスクリーンショット
+- 実装側handlerが `onTouch*` ではなく `onPointer*` の場合、その差分
+
 ## DM-Signal 本番FE
 
 DM-Signalの認証情報はPJ contextを参照し、値をレポートやログに書かない。標準手順は `auto-ops` の認証 helper でCookieをブラウザに注入してから確認する。
