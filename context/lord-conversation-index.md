@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-28 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-28T21:34:14+09:00 -->
+<!-- generated_at: 2026-06-28T21:38:17+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-28T21:38:17+09:00 | terminal | response | 掲示板全件closed。家老エスカレーション解消。 全cmd完了、inbox未読なし、掲示板openなし。殿の指示を待つ。 [meta] stop_reason=end_turn
+- 2026-06-28T21:37:42+09:00 | ntfy | outbound | 【家老CRITICAL】先送り3セッション連続検出。起動は許可するが即対処必須
+- 2026-06-28T21:34:19+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝164
 - 2026-06-28T21:34:14+09:00 | terminal | response | 本セッション全cmd完了。 **完了cmd(6本):** - cmd_3583: Fusion API エンドポイント — GATE CLEAR + 本番稼働 - cmd_3585: DM-Fusion MVP — GATE CLEAR …
 - 2026-06-28T21:34:12+09:00 | terminal | response | 全未読処理完了。cmd_3588 GATE CLEAR確認。idle待機。 [meta] stop_reason=end_turn
 - 2026-06-28T21:25:37+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-28 21:12:41|CI緑: run 28321146093
@@ -11,9 +14,6 @@
 - 2026-06-28T21:17:42+09:00 | ntfy | outbound | 【monitor】将軍CTX:62%。/compactをご検討ください
 - 2026-06-28T21:17:12+09:00 | terminal | response | 古いバックグラウンドタスクの完了通知。CDPスクショは既に取得済みなので影響なし。 陣形を見ると、cmd_3588がhanzo(failed)+kagemaru(in_progress CTX:35%)。hanzoが失敗して影丸に再配備さ…
 - 2026-06-28T21:16:05+09:00 | terminal | inbound | <task-notification> <task-id>b7maj5auv</task-id> <tool-use-id>toolu_01XUpDH3r3DvbxBYJTta66dp</tool-use-id> <output-file…
-- 2026-06-28T21:11:18+09:00 | terminal | response | 未読なし。inbox1はgate_blockのタイミング遅延。idle待機。 [meta] stop_reason=end_turn
-- 2026-06-28T21:10:40+09:00 | terminal | response | cmd_3588 FAIL送信完了。AC1未達(CDPスワイプPage2遷移失敗)。AC2達成(知見永続化)。idle待機。 [meta] stop_reason=end_turn
-- 2026-06-28T21:09:56+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-28 20:59:18|cmd_3587
 
 ## 未解決確認事項
 - 全未読処理完了。cmd_3588 GATE CLEAR確認。idle待機。 [meta] stop_reason=end_turn
