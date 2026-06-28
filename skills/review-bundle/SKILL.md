@@ -187,4 +187,6 @@ Script refs verified: 2026-06-21 1e7a7cc4b. `inbox_write.sh` 直近変更はcomm
 
 Script refs verified: 2026-06-26 cmd_karo_hotfix_skill_refs_20260626082009. `bulletin_write.sh` の現物未commit差分は `compute_notify_targets` 追加と `notify_targets` 記録追加。投稿者を通知先から除外する既存挙動、`BULLETIN_NOTIFY=shogun,karo`、`requires_confirmation=false`、`action_type=action_required`、`bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]` の呼び出し契約は変更なし。FAIL時掲示板投稿手順は現行と一致。
 
-<!-- script_refs_checked_at: 2026-06-27T02:57:33+0900 -->
+Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は既存ブロック内の新規field挿入位置を修正した内部バグ修正。review_logへのverdict/gate_prediction/reviewed_at記録契約は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-28T23:18:00+09:00 -->

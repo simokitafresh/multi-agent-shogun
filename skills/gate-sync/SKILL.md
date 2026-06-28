@@ -74,4 +74,6 @@ Script refs verified: 2026-06-20 48204a464. `bulletin_write.sh` 直近変更は�
 
 Script refs verified: 2026-06-26 cmd_karo_hotfix_skill_refs_20260626082009. `bulletin_write.sh` の現物未commit差分は `compute_notify_targets` 追加と `notify_targets` 記録追加。投稿者を通知先から除外する既存挙動、`BULLETIN_NOTIFY` CSV、`requires_confirmation`、`action_type=info|action_required`、`bash scripts/bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]` の呼び出し契約は変更なし。本スキルの掲示板投稿手順変更は不要。
 
-<!-- script_refs_checked_at: 2026-06-27T02:57:33+0900 -->
+Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は既存ブロックへ新規fieldを挿入する際、ブロック末尾の最終行より前に差し込む内部バグ修正。flock+root fallback+readback検証の契約は維持。
+
+<!-- script_refs_checked_at: 2026-06-28T23:18:00+09:00 -->

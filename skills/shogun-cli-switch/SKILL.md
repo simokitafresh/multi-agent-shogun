@@ -212,4 +212,6 @@ sleep 8 && for p in 1 3 4 5 6 7 8; do echo "pane $p: $(tmux capture-pane -t shog
 - [[shogun-all-codex-switch]] — 全忍者をCodex CLIに一括切替（モデル系ではなくCLI種別の切替）
 - [[shogun-peacetime-rollback]] — CodexからClaude（平時編成）への一括ロールバック
 - [[hensei]] — 忍者モデル編成切替
-<!-- script_refs_checked_at: 2026-06-27T02:57:33+0900 -->
+Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は既存ブロックへ新規fieldを追加する際の挿入位置修正。settings.yaml更新・tmux変数同期・respawn手順の契約は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-28T23:18:00+09:00 -->

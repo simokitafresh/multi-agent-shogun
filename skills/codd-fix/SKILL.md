@@ -113,6 +113,6 @@ Script refs verified: 2026-06-21 615d1c2d7 cmd_3476. `cmd_complete_gate.sh` 直�
 
 Script refs verified: 2026-06-26 e658e3c37. `cmd_complete_gate.sh` 直近変更はgate design-doc command scope偽陽性修正。codd-fixの呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-28T01:36:00+09:00 -->
+Script refs verified: 2026-06-28 8c53fdf4d. `cmd_complete_gate.sh` 直近変更は分割/phase reportを完了ゲートで統合参照する内部集約追加。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-28T01:36:00+09:00 -->
+<!-- script_refs_checked_at: 2026-06-28T23:18:00+09:00 -->

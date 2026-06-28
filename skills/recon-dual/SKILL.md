@@ -74,4 +74,6 @@ Script refs verified: 2026-06-21 d81b77654. `deploy_task.sh` 直近変更はtag 
 Script refs verified: 2026-06-23 1586d6f48. `deploy_task.sh` 直近変更はGS/DB検出時execution_env自動注入(L5防御)。1人目正規配備+2人目`--yaml`の配備契約は変更なし。
 Script refs verified: 2026-06-26 12c935c10. `deploy_task.sh` 直近変更はNO_WHEN_PENALTY 3→10(教訓注入スコアリング内部調整)。配備契約・引数・worktree・task YAML生成は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-28T12:18:00+09:00 -->
+Script refs verified: 2026-06-28 b1922e36b+0226e0db5+75aac6a10. `deploy_task.sh` 直近変更はfailed redeploy時のgate扱い修正とcanceled cmd配備BLOCK。`yaml_field_set.sh` 直近変更は新規field挿入位置の内部修正。1人目正規配備 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `--yaml <file> <ninja2>` の契約は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-28T23:18:00+09:00 -->

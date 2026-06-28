@@ -144,4 +144,6 @@ Script refs verified: 2026-06-21 d81b77654. `deploy_task.sh` 直近変更はtag 
 
 Script refs verified: 2026-06-23 1586d6f48. `deploy_task.sh` 直近変更はGS/DB検出時execution_env自動注入(L5防御、cmd_3496事故恒久対策)。配備契約(`--yaml`/`--direct`)・通知・report template生成は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-28T12:18:00+09:00 -->
+Script refs verified: 2026-06-28 b1922e36b+0226e0db5. `deploy_task.sh` 直近変更はfailed redeploy時のgate扱い修正と、`shogun_to_karo.yaml`でstatus=canceledのcmd配備をBLOCKする安全強化。`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>` の引数契約、通知、report template生成は変更なし。
+
+<!-- script_refs_checked_at: 2026-06-28T23:18:00+09:00 -->
