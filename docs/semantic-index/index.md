@@ -3405,7 +3405,7 @@ codd:
 |------|---|
 | id | alpha_6_metrics |
 | label | α6指標 |
-| aliases | α6指標, alpha 6, 6指標α, alpha metrics, α6相関係数, アルファ6相関, alpha6 correlation, α6項目の相関係数, CAGR, NHF, MaxDD, MRU, Calmar, Avg UWP, ソルティノ, Sortino, 6項目でチェック, トータルリターン, 記事の実運用CAGRなどの文言の実運用とはどういう意味だ？, VDrag, ボラティリティドラッグ, volatility drag, Skewness, 歪度, Kurtosis, 尖度, excess kurtosis, raw kurtosis, MinMo, 最低継続期間, 最低継続月数, MaxConsecLoss, 最大連敗期間, 5追加指標, 継続性指標, continuity risk, maxDDが %と現実と極端に乖離している |
+| aliases | α6指標, alpha 6, 6指標α, alpha metrics, α6相関係数, アルファ6相関, alpha6 correlation, α6項目の相関係数, CAGR, NHF, MaxDD, MRU, Calmar, Avg UWP, ソルティノ, Sortino, 6項目でチェック, トータルリターン, 記事の実運用CAGRなどの文言の実運用とはどういう意味だ？, VDrag, ボラティリティドラッグ, volatility drag, Skewness, 歪度, Kurtosis, 尖度, excess kurtosis, raw kurtosis, MinMo, 最低継続期間, 最低継続月数, MaxConsecLoss, 最大連敗期間, 5追加指標, 継続性指標, continuity risk, maxDDが %と現実と極端に乖離している, cagrは %などになる可能性もある |
 | skills | なし |
 | related_concepts | dmsignal_operations, production_parity, db_price_data_range |
 
@@ -3439,6 +3439,7 @@ codd:
 | causal | `cmd_3532` origin: [[殿指摘_TQQQ_MaxDD乖離_20260625]] -> [[metrics_impl_DrawdownPeriod_anchor汚染]] -> [[ベンチマークモードMaxDD計算パス修正]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T18:44:57+09:00 この画像を参考にしろ。メインは大きくCAGRの数値、ここは出来るだけ早く表示するといい、そのしたにトータルリターンとマックスドローダウンなどここは微妙に遅れて表示してもいいな。よいパフォーマンスがでたときにシェアボタンがあるといい |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T18:49:28+09:00 計測期間の表示は必須だな。YYYY-MM ~ YYYY-MM。ここも薄く表示で遅延許容。詳細ボタンでSPYとTQQQのCAGRとMaxDDも表示、表示するときはメインのフュージョンと同じ期間で |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T01:57:42+09:00 cagrは+135.7%などになる可能性もある。横幅が破綻しなければ採用したい |
 | causal_chain | `[[cmd_karo_hotfix_semantic_search_timeout_20260602]]` (L726) |
 
 ## rebalancer_app — Rebalancerアプリ

@@ -2856,6 +2856,9 @@ lessons:
   target_files:
   - scripts/oneshot/cmd_1855_register_bunshin_gekko.py
   origin: '[[cmd_1855]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L607
   title: 進行中月(当月)monthly_returnはGS作成日依存のため差異が生じる
   summary: GS CSV monthly_fast.csvの当月(2026-04)エントリはCSV作成日(2026-04-09)時点の暫定値。本番recalculateを後

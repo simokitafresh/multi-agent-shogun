@@ -4040,6 +4040,9 @@ lessons:
   - frontend/package-lock.json
   - frontend/public/sw.js
   origin: '[[cmd_2707]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L607
   title: auto lesson_writeパターン(register_recommended→自動登録)
   summary: cmd_complete_gate CLEAR時にregister_recommended:trueを検知→lesson_write.sh自動実行。教訓登録の手
