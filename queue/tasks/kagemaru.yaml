@@ -1,14 +1,32 @@
 task:
+  readonly_ref:
+  - path: 'app/page.tsx'
+    reason: command欄の必読/参照専用ファイル
+  _ac_task_id: cmd_3595_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3595 (deployed 2026-06-29T02:28:36). Read from the beginning.
+  ac_version: f37d9ddf
+  additional_instructions: '追加注意(2026-06-28T20:51JST): Google OAuthログイン後にリバランサーURLへリダイレクトされるバグあり。根因=Supabaseプロジェクト共有でリダイレクトURL許可リストにFusion本番URL https://dm-fusion.onrender.com が未登録。コード側はsignInWithOAuth redirectTo をFusion本番/現在originへ明示設定し、Supabase側設定としてAuthentication→URL ConfigurationにFusion本番URL追加が必要なことを報告YAMLに明記。可能なコード修正を実施し、外部ダッシュボード設定はpost_deploy_evidence/decision_candidate等で明記せよ。'
+  cancel_reason: cmd_3589 canceled in shogun_to_karo; waiting for cmd_3590
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "alpha_6_metrics — α6指標:  projects/dm-signal.yaml alpha_6_metrics context/l3-robustness.md L299 context/robustness-verification-catalog.md docs/obsidian-promoted/alpha6_article_correlation_memory_loop_20260624.md — α6記事Gist修正・α6相関係数・三層記憶確認漏れの復帰用要点 docs/research/statistics-convention-kurtosis-skewness.md — Kurtosis raw vs excess整合性知見。本番pandas=excess、robustness_common=raw→修正方針"
+  - "dm_fusion_app — DM-Fusionアプリ:  /mnt/c/Python_app/DM-signal/docs/spec/fusion-app.md /mnt/c/Python_app/DM-Fusion context/dm-signal-core.md §8.7 context/dm-signal-ops.md §45"
+  - "dmsignal_operations — DM-Signal運用:  context/dm-signal.md context/dm-signal-ops.md context/dm-signal-core.md context/dm-signal-frontend.md context/dm-signal-research.md context/checklist-shin-v2-registration.md context/checklist-alm-registration.md docs/research/ops-procedures.md docs/research/ops-db-rules.md docs/operations/daemon_runbook.md docs/operations/profiling_runbook.md /mnt/c/Python_app/DM-signal/scripts/check_pf_config.py — PF構成一括確認(cmd_3378)"
+  - "fusion_api_endpoint — Fusion API:  context/dm-signal-core.md §8.7 context/dm-signal-ops.md §45 /mnt/c/Python_app/DM-signal/docs/spec/fusion-api-endpoint.md /mnt/c/Python_app/DM-signal/backend/app/api/fusion.py /mnt/c/Python_app/DM-signal/backend/tests/test_fusion_api.py"
+  - "modern_web_guidance — Modern Web Guidance:  skills/modern-web-guidance/SKILL.md context/dm-signal-frontend.md"
   related_causal_links:
-  - "[[Page0レイアウト再構成5件]]"
-  - "[[殿指示_Fusion_レイアウト再構成_20260629]]"
-  - "[[詳細ボタン崩れ+保存ドロップダウン不動]]"
+  - "[[saved_fusionsテーブル未作成+レイアウト破綻]]"
+  - "[[テーブル作成+エラー表示保護]]"
+  - "[[殿指示_Fusion_Saveエラー_20260629]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -24,25 +42,27 @@ task:
   - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
   - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
   - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L267: 殿への質問・提案は推薦先行+WHY必須。MCP教訓→lessons.yaml同期CMD起票義務。gstack知見3+L-teire提案フォーマットを将軍ルールと
+      - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
     
-    
-  _ac_task_id: cmd_3596_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3596 (deployed 2026-06-29T02:05:37). Read from the beginning.
-  ac_version: 3a5e8ee1
-  additional_instructions: '追加注意(2026-06-28T20:51JST): Google OAuthログイン後にリバランサーURLへリダイレクトされるバグあり。根因=Supabaseプロジェクト共有でリダイレクトURL許可リストにFusion本番URL https://dm-fusion.onrender.com が未登録。コード側はsignInWithOAuth redirectTo をFusion本番/現在originへ明示設定し、Supabase側設定としてAuthentication→URL ConfigurationにFusion本番URL追加が必要なことを報告YAMLに明記。可能なコード修正を実施し、外部ダッシュボード設定はpost_deploy_evidence/decision_candidate等で明記せよ。'
-  cancel_reason: cmd_3589 canceled in shogun_to_karo; waiting for cmd_3590
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
+    【DB変更前バックアップ必須】DB操作cmd。変更前に対象DB/テーブルのバックアップを取得し、取得コマンド・保存先・復元手順をprogressまたは報告YAMLに記録せよ。
+      ────────────────────────────────────────
   engineering_preferences:
   - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
   - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
@@ -66,16 +86,39 @@ task:
   - cmd_3569作業への介入
   - context/dm-signal-core.md, frontend.md, research.mdの更新(必要性が見つかればcandidate報告のみ)
   parallel_ok: []
-  parent_cmd: cmd_3596
+  parent_cmd: cmd_3595
   project: dm-signal
-  purpose: '殿指示(2026-06-29): 詳細ボタン廃止→Fusion/SPY/TQQQ常時表示。Total Return右にPeriod配置。MaxDD横にシェアアイコン配置。保存済み配合→保存済みFusionにテキスト変更。保存済みFusionドロップダウンが機能していないバグ修正'
+  purpose: '殿指示(2026-06-29): Saveボタン押下でsaved_fusionsテーブル不在エラーが画面に表示され全体レイアウトが破綻する。Supabaseテーブル作成+エラー表示のレイアウト保護'
   scout_exempt: true
-  status: idle
-  stop_for: []
+  status: failed
+  stop_for:
+  - バックアップなしのDB変更
   target_path: /mnt/c/Python_app/DM-Fusion
-  task_id: cmd_3596_full
+  task_id: cmd_3595_full
   task_type: full
+  previous_failures:
+    attempt: 2
+    last_block_reason: 'binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
+    - 'binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'DM-Fusion Page0を詳細ボタンなしの常時5列比較表へ再構成し、保存済みFusion選択UIと読込防御を修正した'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
+    - attempt: 2
+      block_reason: 'binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'DM-Fusion Page0を詳細ボタンなしの常時5列比較表へ再構成し、保存済みFusion選択UIと読込防御を修正した'
   related_lessons:
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L267'
+    summary: '殿への質問・提案は推薦先行+WHY必須。MCP教訓→lessons.yaml同期CMD起票義務。gstack知見3+L-teire提案フォーマットを将軍ルールと'
+    detail: '殿への質問・提案は推薦先行+WHY必須。MCP教訓→lessons.yaml同期CMD起票義務。gstack知見3+L-teire提案フォーマットを将軍ルールと'
+  - id: 'L643'
+    summary: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
+    detail: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -87,29 +130,23 @@ task:
     wa_count: 1
     detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
   memory_db_context:
+  - '2026-06-29T02:16:25+09:00 | 【INFOバッチ】 2026-06-29 02:01:57|cmd_3594'
   - '2026-06-29T01:59:59+09:00 | 【INFOバッチ】 2026-06-29 01:45:04|cmd_3593'
-  - '2026-06-29T01:27:48+09:00 | 【INFOバッチ】 2026-06-29 01:13:43|cmd_3592'
-  - '2026-06-29T01:57:40+09:00 | スマホ幅(390px前後)で計算すると: - padding除外: 390px - 40px = 350px - 5列: 350px / 5 = **70px/列** - 「+12980.4%」等の長'
-  - '2026-06-29T01:55:21+09:00 | [MEM: memory_db ts=2026-06-23 "ベンチマークはSPY。TQQQのアルファは出せるはずだ"] **As-Is（現状）:** ``` ┌───────────────────'
+  - '2026-06-29T02:18:38+09:00 | cmd_3596 push済み(家老が先行push)。Renderデプロイ後に本番で殿承認のワイヤーフレーム(CAGR→MaxDD→TR+Period→5列比較表)が確認できる。 cmd_3595(S'
+  - '2026-06-29T02:02:36+09:00 | cmd_3594 push済み(家老が先にpush)。cmd_3595(Saveエラー)/cmd_3596(レイアウト再構成+5列比較)が次の忍者に順次配備される。殿の指示を待つ。 [meta] st'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: '詳細ボタンが廃止されFusion/SPY/TQQQ比較表が常時表示される'
+    - check: 'Saveボタン押下時にsaved_fusionsテーブルへの保存が正常に動作しエラーが表示されない'
   - id: 'AC2'
     checks:
-    - check: 'Total Returnの右にPeriodが同一行に配置される'
+    - check: '仮にエラーが発生してもエラーメッセージが固定領域内に収まり全体レイアウトが破綻しない'
   - id: 'AC3'
     checks:
-    - check: 'MaxDrawdownの横にシェアアイコンが配置される'
-  - id: 'AC4'
-    checks:
-    - check: '保存済み配合のテキストが保存済みFusionに変更されている'
-  - id: 'AC5'
-    checks:
-    - check: '保存済みFusionドロップダウンから保存済みの配合を選択して読込できる'
+    - check: 'テーブル作成前にSupabaseの既存スキーマ状態をバックアップとして記録済みであること(新規テーブルのためデータバックアップは不要だがスキーマ状態を記録)'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3596.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3596.yaml
+  report_filename: kagemaru_report_cmd_3595.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3595.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -119,11 +156,11 @@ task:
     warning: '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 120
+      count: 127
     - pattern: 'lu_structure_error'
       count: 46
     - pattern: 'field_missing'
-      count: 40
+      count: 41
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
     gate_blocks:
     - reason: 'report_format'
@@ -132,18 +169,4 @@ task:
     - reason: 'empty_lessons_useful'
       count: 2
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-06-29T02:06:34"
-
-  session_state:
-    attempt: 2
-    last_block_reason: 'binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    - 'binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    approach_summary: 'DM-Fusion Page0を詳細ボタンなしの常時5列比較表へ再構成し、保存済みFusion選択UIと読込防御を修正した'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    - attempt: 2
-      block_reason: 'binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'DM-Fusion Page0を詳細ボタンなしの常時5列比較表へ再構成し、保存済みFusion選択UIと読込防御を修正した'
+  deployed_at: "2026-06-29T02:29:42"
