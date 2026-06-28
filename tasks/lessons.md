@@ -8941,3 +8941,14 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - cmd_3588 BLOCK修正でlocalhost:3001が既存next-serverに占有され修正前bundleを保持していた。安全規則D006により他プロセスをkillせず、修正後production buildを3002で起動して同一CDP touch streamを実証し、3001制約を報告へ明記した。
+
+### L876: context_freshness root fallbackは運用同期commitをsource扱いしない
+- **日付**: 2026-06-29
+- **出典**: cmd_karo_hotfix_ga150_context_freshness_infra_20260629
+- **記録者**: hanzo
+- **tags**: [infra,testing,process,git,grid_search]
+- **target_files**: [scripts/context_freshness_check.sh,tests/unit/test_context_freshness_check.bats]
+- **origin**: [[cmd_karo_hotfix_ga150_context_freshness_infra_20260629]]
+- **when**: 未設定
+- **how**: 未設定
+- IF context_freshnessのroot fallbackで同一repo全体をsource判定する時 THEN logs/queue/projects/docs/semantic-index等の運用データとsync/complete records系commitを除外せよ。運用記録commitをsource扱いするとlast_updated直後でもfalse positiveが再発する。 origin: [[GA-150]] -> [[root fallback source分類過大]] -> [[context_freshness false positive]]

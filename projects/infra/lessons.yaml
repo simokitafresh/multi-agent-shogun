@@ -1,8 +1,24 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-06-28T21:24:52'
+last_synced: '2026-06-29T00:54:42'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 870
+lesson_count: 871
 lessons:
+- id: L876
+  title: context_freshness root fallbackは運用同期commitをsource扱いしない
+  summary: IF context_freshnessのroot fallbackで同一repo全体をsource判定する時 THEN logs/queue/projects
+  tags:
+  - infra
+  - testing
+  - process
+  - git
+  - grid_search
+  source_cmd: cmd_karo_hotfix_ga150_context_freshness_infra_20260629
+  when: 未設定
+  how: 未設定
+  target_files:
+  - scripts/context_freshness_check.sh
+  - tests/unit/test_context_freshness_check.bats
+  origin: '[[cmd_karo_hotfix_ga150_context_freshness_infra_20260629]]'
 - id: L875
   title: CDP検証用localhostポートがstale serverで占有されている場合は停止せず修正後bundleを別ポートで実証し制約を報告せよ
   summary: cmd_3588 BLOCK修正でlocalhost:3001が既存next-serverに占有され修正前bundleを保持していた。安全規則D006により他プ
@@ -1887,9 +1903,6 @@ lessons:
   target_files:
   - scripts/semantic_index_update.sh
   origin: '[[cmd_karo_ci_fix_semantic_test125_20260607]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L754
   title: 'bash_speed_training.sh update_entry_field_unlocked: 引用符なしscript_pathにマッチしないバグ+インデント4スペース固定バグ'
   summary: ledgerはinit_ledger_unlocked(yaml_quote経由)では引用符付きで生成されるが、別プロセスが引用符除去したため現行ledgerは
@@ -1917,9 +1930,6 @@ lessons:
   target_files:
   - ninja_monitor.sh
   origin: '[[cmd_3211]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L752
   title: 'bash ${var: -N} のN文字未満時の空文字挙動'
   summary: 'bashの${variable: -N}はvariableがN文字未満の場合に空文字を返す(エラーなし)。cache_scopeが短いパスで全テストが同一キャッ'
@@ -2123,7 +2133,7 @@ lessons:
   - queue/reports/kagemaru_report_cmd_karo_hotfix_ga408_hook_failure_20260603.yaml
   origin: '[[cmd_karo_hotfix_ga408_hook_failure_20260603]]'
   deprecated: true
-  deprecated_at: '2026-06-28T21:33:42+09:00'
+  deprecated_at: '2026-06-29T00:55:43+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/hayate.yaml参照（ファイル消滅）'
 - id: L738
   title: 分割context freshnessは外部repo全体でなく領域pathspecを使う
@@ -2583,9 +2593,6 @@ lessons:
   - tests/unit/test_memory_db.bats
   - tests/unit/test_session_state_hooks.bats
   origin: '[[cmd_3049]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L705
   title: HEAD確認時はcommit statだけで対象実装有無を判断しない
   summary: 今回、git commit出力が1 file changedだったためhook未commitに見えたが、git show HEAD:scripts/hooks/
@@ -3100,9 +3107,6 @@ lessons:
   - queue/tasks/hayate.yaml
   - queue/reports/hayate_report_cmd_training_L7_v3_hayate_9_20260521214706.yaml
   origin: '[[cmd_training_L7_v3_hayate_9_20260521214706]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L670
   title: 同一ファイルへの複数yaml_field_get呼出しはawk単一パスで置換せよ
   summary: notify_idle_batchがtask_id取得に yaml_field_get×2を呼び出していた(task_id空なら_ac_task_idも呼出し)
@@ -3201,9 +3205,6 @@ lessons:
   target_files:
   - scripts/ninja_monitor.sh
   origin: '[[cmd_training_L7_v3_kagemaru_6_20260521205341]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L663
   title: 修行sourceの実値をテストfixtureへ入れよ
   summary: テストがsource=trainingだけを使うと本番のhanzo-L7R5/hayate-L7R5形式を漏らす。DIRECT昇格のような本番データ依存処理はq
@@ -3494,9 +3495,6 @@ lessons:
   target_files:
   - scripts/gates/gate_report_format.sh
   origin: '[[cmd_training_speed_hanzo_3]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L642
   title: Batsのloadでは@test定義を集約できない。統合ファイル生成か明示移植が必要
   summary: 'load helper.bashは関数共有のみ。@testブロック自体はload先から呼べない。テスト統合は明示的にコピー移植する。origin:
@@ -7064,9 +7062,6 @@ lessons:
   target_files:
   - agent_status.sh
   origin: '[[cmd_cycle_L4_046]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L371
   title: Python内シェル変数展開は環境変数経由に統一せよ
   summary: auto_deploy_next.shの第2Pythonブロックでドル記号VAR形式のシェル変数展開を使用していた。同スクリプト内の第1ブロックはos.envi
@@ -7371,7 +7366,7 @@ lessons:
   - scripts/xxx.sh
   origin: '[[cmd_cycle_L4_019]]'
   deprecated: true
-  deprecated_at: '2026-06-28T21:33:42+09:00'
+  deprecated_at: '2026-06-29T00:55:43+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/xxx.sh参照（ファイル消滅）'
 - id: L346
   title: stderr/stdout混合キャプチャは値汚染バグの温床
@@ -8243,9 +8238,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 全量読みを前提とした作業設計は避けよ
   origin: '[[cmd_1261]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L274
   title: Gate拡張時はalerts配列+overall更新パターンを踏襲
   summary: 新Gate追加時は出力だけでなくalerts配列への追加+overall状態更新を既存パターンに合わせること。Gate11で漏れが発生した
@@ -8965,9 +8957,6 @@ lessons:
   target_files:
   - settings.yaml
   origin: '[[cmd_875]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L215
   title: IF gate_metricsテストを書く THEN tmuxモックを配置してライブ環境からの干渉を防げ BECAUSE resolve_agent_model_labelはtmux変数を優先し、settings.yamlのフォールバックがテストされない
   summary: gate_metricsテストがtmux環境依存
@@ -10209,9 +10198,6 @@ lessons:
   when: compact_stateにタスク状態を記録する時
   how: '長さ制限(例: 500文字)の追加を検討せよ'
   origin: '[[cmd_452]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-23'
 - id: L107
   title: dedupログ仕様は文言と0件時出力条件をAC文字列と厳密一致させる
   summary: IF dedupログ仕様時 THEN ACにログ文言が含まれる場合、語順・語彙・プレフィックス空白も含めて一致確認が必要
@@ -10285,7 +10271,7 @@ lessons:
   - queue/gate_metrics.yaml
   origin: '[[cmd_414]]'
   deprecated: true
-  deprecated_at: '2026-06-28T21:33:42+09:00'
+  deprecated_at: '2026-06-29T00:55:44+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): queue/gate_metrics.yaml参照（ファイル消滅）'
 - id: L101
   title: gate_metrics.logはTSV形式(YAMLではない)

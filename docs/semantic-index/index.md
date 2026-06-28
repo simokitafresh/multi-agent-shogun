@@ -1269,6 +1269,7 @@ codd:
 | causal | `cmd_3478` origin: [[GA-111_context_freshness_ALERT]] -> [[source_commit未反映3件]] -> [[context鮮度回復]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T02:51:43+09:00 これを読んでくれClaude Codeでの推論が90%遅くなる問題を修正する Claude Codeは最近、Claude Code Attributionヘッダーを先頭に付与するようになりました。これは KVキャッシュを無効化し、ローカルモ |
 | cmd | `cmd_karo_hotfix_skill_script_refs_202606280133` (`skills/codd-fix/SKILL.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T00:40:08+09:00 b8zx64mqm toolu_019Ve6erkrCJnzcgXAcejx2s /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | causal_chain | `[[cmd_3246]]` (L761) |
 
 ## codd_methodology — CoDD整合性駆動開発
@@ -4215,6 +4216,7 @@ codd:
 | file | `docs/research/gunshi_idle_useful_rate_bootstrap_analysis_20260618.md` — 軍師idle: 有用率ブートストラップ分析(2026-06-18) |
 | file | `docs/research/lessons_karo_v3_archive.md` — 家老教訓v3アーカイブ(統合前全文保存) |
 | lesson | `L836` @model_name tmux変数同期漏れ — to-claude後に旧Codex値のまま |
+| lesson | `L876` context_freshness root fallbackは運用同期commitをsource扱いしない |
 | causal_chain | `[[cmd_2955]]` (L685) |
 | causal_chain | `[[cmd_3012]]` (L693) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]` (L778) |
@@ -4225,6 +4227,7 @@ codd:
 | causal_chain | `[[cmd_3433]]` (L818) |
 | causal_chain | `[[cmd_3435]]` (L819) |
 | causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L836) |
+| causal_chain | `[[cmd_karo_hotfix_ga150_context_freshness_infra_20260629]]` (L876) |
 
 ## gunshi_review_lifecycle — 軍師レビューライフサイクル
 
