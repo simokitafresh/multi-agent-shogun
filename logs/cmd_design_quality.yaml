@@ -1365,7 +1365,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -1375,7 +1375,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -1401,3 +1401,65 @@ entries:
   supplementary_cmds: 0
   source: "cmd_save"
   timestamp: "2026-06-28T16:23:17Z"
+- cmd_id: "cmd_3595"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-28T16:28:41Z"
+  notes: "変更前バックアップ実行済みであること|check=db_backup_required"
+- cmd_id: "cmd_3595"
+  ac_count: 0
+  gate_result: "WARN"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save_warn"
+  timestamp: "2026-06-28T16:30:20Z"
+  notes: "変更前バックアップ実行済みであること|check=db_backup_required"
+- cmd_id: "cmd_3595"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-28T16:32:08Z"
+- cmd_id: "cmd_3595"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-28T16:33:45Z"
+- cmd_id: "cmd_3593"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-28T16:45:06Z"
+- cmd_id: "cmd_3593"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-06-28T16:45:54Z"

@@ -38,7 +38,7 @@ task:
   project: dm-signal
   purpose: '殿指示(2026-06-29): ドロップダウンにバグ4件。(1)フォルダー名が固定されPF名だけスクロール (2)常に下方向に開き画面下部で選択困難 (3)PF2が選択不能 (4)PFリストのフォントが大きすぎる'
   scout_exempt: true
-  status: in_progress
+  status: idle
   stop_for: []
   target_path: /mnt/c/Python_app/DM-Fusion
   task_id: cmd_3593_full

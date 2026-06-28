@@ -4286,6 +4286,9 @@ lessons:
   target_files:
   - queue/reports/kotaro_report_cmd_1447.yaml
   origin: '[[cmd_1447]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L501
   title: is_custom_weightガード除去時の暗黙的副作用
   summary: 'commit d49a9174がis_kalman_metaガードを除去した際、prev_ward_weightsが全FoFで更新される副作用が発生。Ward '

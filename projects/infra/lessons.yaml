@@ -98,6 +98,9 @@ lessons:
   target_files:
   - context/dm-signal-core.md
   origin: '[[cmd_karo_hotfix_ga146_context_freshness_dm_signal_core_20260627]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L870
   title: context_freshnessの真陽性はsource commit分類を索引カテゴリへ圧縮してからlast_updatedを更新する
   summary: GA-145ではdm-signal-frontend.mdのlast_updated以後に7件のFE source commitがあり、単にlast_updat
@@ -5532,6 +5535,9 @@ lessons:
   target_files:
   - gate_vercel_phase.sh
   origin: '[[cmd_2090]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L501
   title: 'gate_karo_startup.sh: 並列ボトルネック誤特定によるキャッシュ効果なし'
   summary: WA rateスクリプト(57ms)が並列ボトルネックと分析→TTL300sキャッシュ実装。しかし_META_PIDS awk(deepdive大ファイル
