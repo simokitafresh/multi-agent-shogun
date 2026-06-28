@@ -107,6 +107,8 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 - **verdict を Edit toolで直接書くな** — 独立フィールドとして扱うほど矛盾の温床になる
 
 ## 注意ポイント
+
+- 2026-06-29: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")
 - 2026-06-26: gate=gate_report_format result=FAIL executor=saizo reason=binary_checks: AC self-verification missing (0/4 ACs). 全ACの二値チェックを記入せよ
 
 - 2026-06-19: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks: null (must be dict with AC entries); verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); knowledge_candidate: found=true but item...

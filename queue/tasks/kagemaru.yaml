@@ -1,8 +1,40 @@
 task:
-  _ac_task_id: cmd_3594_full
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  semantic_concepts:
+  - "alpha_6_metrics — α6指標:  projects/dm-signal.yaml alpha_6_metrics context/l3-robustness.md L299 context/robustness-verification-catalog.md docs/obsidian-promoted/alpha6_article_correlation_memory_loop_20260624.md — α6記事Gist修正・α6相関係数・三層記憶確認漏れの復帰用要点 docs/research/statistics-convention-kurtosis-skewness.md — Kurtosis raw vs excess整合性知見。本番pandas=excess、robustness_common=raw→修正方針"
+  related_causal_links:
+  - "[[Page0レイアウト再構成5件]]"
+  - "[[殿指示_Fusion_レイアウト再構成_20260629]]"
+  - "[[詳細ボタン崩れ+保存ドロップダウン不動]]"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/robustness-verification-catalog.md"
+  - "context/gs-speedup-knowledge.md"
+  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
+  production_invariants:
+  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
+  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
+  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
+  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
+  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
+      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
+    ────────────────────────────────────────
+    
+    
+  _ac_task_id: cmd_3596_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3594 (deployed 2026-06-29T01:48:17). Read from the beginning.
-  ac_version: cf708368
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3596 (deployed 2026-06-29T02:05:37). Read from the beginning.
+  ac_version: 3a5e8ee1
   additional_instructions: '追加注意(2026-06-28T20:51JST): Google OAuthログイン後にリバランサーURLへリダイレクトされるバグあり。根因=Supabaseプロジェクト共有でリダイレクトURL許可リストにFusion本番URL https://dm-fusion.onrender.com が未登録。コード側はsignInWithOAuth redirectTo をFusion本番/現在originへ明示設定し、Supabase側設定としてAuthentication→URL ConfigurationにFusion本番URL追加が必要なことを報告YAMLに明記。可能なコード修正を実施し、外部ダッシュボード設定はpost_deploy_evidence/decision_candidate等で明記せよ。'
   cancel_reason: cmd_3589 canceled in shogun_to_karo; waiting for cmd_3590
   context_files:
@@ -34,19 +66,16 @@ task:
   - cmd_3569作業への介入
   - context/dm-signal-core.md, frontend.md, research.mdの更新(必要性が見つかればcandidate報告のみ)
   parallel_ok: []
-  parent_cmd: cmd_3594
+  parent_cmd: cmd_3596
   project: dm-signal
-  purpose: '殿指示(2026-06-29): Googleでログインボタンが大きすぎる→DM-Fusionタイトルと同じ高さに縮小。CAGRと数字を入替→CAGRラベルが上、パーセント数値が下'
+  purpose: '殿指示(2026-06-29): 詳細ボタン廃止→Fusion/SPY/TQQQ常時表示。Total Return右にPeriod配置。MaxDD横にシェアアイコン配置。保存済み配合→保存済みFusionにテキスト変更。保存済みFusionドロップダウンが機能していないバグ修正'
   scout_exempt: true
   status: idle
   stop_for: []
   target_path: /mnt/c/Python_app/DM-Fusion
-  task_id: cmd_3594_full
+  task_id: cmd_3596_full
   task_type: full
   related_lessons:
-  - id: 'L608'
-    summary: 'npm audit fix --omit=devを実行するとdevDependencies(@tailwindcss/postcss等)がnode_module'
-    detail: 'npm audit fix --omit=devを実行するとdevDependencies(@tailwindcss/postcss等)がnode_module'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -57,54 +86,30 @@ task:
     wa_category: 'commit_missing'
     wa_count: 1
     detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
-  recommended_skills:
-  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
-  related_causal_links:
-  - "[[CSS微調整2件]]"
-  - "[[ログインボタン過大+CAGRラベル位置]]"
-  - "[[殿指示_Fusion_微調整_20260629]]"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/robustness-verification-catalog.md"
-  - "context/gs-speedup-knowledge.md"
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
-  production_invariants:
-  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
-  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
-  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
-  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
-  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L608: npm audit fix --omit=devを実行するとdevDependencies(@tailwindcss/postcss等)がnode_module
-      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
-      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
-    ────────────────────────────────────────
   memory_db_context:
+  - '2026-06-29T01:59:59+09:00 | 【INFOバッチ】 2026-06-29 01:45:04|cmd_3593'
   - '2026-06-29T01:27:48+09:00 | 【INFOバッチ】 2026-06-29 01:13:43|cmd_3592'
-  - '2026-06-29T01:12:02+09:00 | 【INFOバッチ】 2026-06-29 00:55:29|cmd_karo_hotfix_ga150'
-  - '2026-06-28T23:20:04+09:00 | **結論: 今のままではGoogle OAuthは正しく動かない。** [MEM: memory_db ts=2026-06-28 "Google OAuthログイン後にリバランサーURLにリダイレク'
-  - '2026-06-28T23:16:51+09:00 | google oauthは正しく動くか？'
+  - '2026-06-29T01:57:40+09:00 | スマホ幅(390px前後)で計算すると: - padding除外: 390px - 40px = 350px - 5列: 350px / 5 = **70px/列** - 「+12980.4%」等の長'
+  - '2026-06-29T01:55:21+09:00 | [MEM: memory_db ts=2026-06-23 "ベンチマークはSPY。TQQQのアルファは出せるはずだ"] **As-Is（現状）:** ``` ┌───────────────────'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'Googleでログインボタンの高さがDM-Fusionタイトルのフォント高さと同程度に縮小されている'
+    - check: '詳細ボタンが廃止されFusion/SPY/TQQQ比較表が常時表示される'
   - id: 'AC2'
     checks:
-    - check: 'CAGRラベルが数字の上に配置されパーセント数値がその下に表示される'
+    - check: 'Total Returnの右にPeriodが同一行に配置される'
+  - id: 'AC3'
+    checks:
+    - check: 'MaxDrawdownの横にシェアアイコンが配置される'
+  - id: 'AC4'
+    checks:
+    - check: '保存済み配合のテキストが保存済みFusionに変更されている'
+  - id: 'AC5'
+    checks:
+    - check: '保存済みFusionドロップダウンから保存済みの配合を選択して読込できる'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3594.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3594.yaml
+  report_filename: kagemaru_report_cmd_3596.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3596.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -127,4 +132,18 @@ task:
     - reason: 'empty_lessons_useful'
       count: 2
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-06-29T01:49:05"
+  deployed_at: "2026-06-29T02:06:34"
+
+  session_state:
+    attempt: 2
+    last_block_reason: 'binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - 'binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'DM-Fusion Page0を詳細ボタンなしの常時5列比較表へ再構成し、保存済みFusion選択UIと読込防御を修正した'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - attempt: 2
+      block_reason: 'binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'DM-Fusion Page0を詳細ボタンなしの常時5列比較表へ再構成し、保存済みFusion選択UIと読込防御を修正した'
