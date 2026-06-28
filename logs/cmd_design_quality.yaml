@@ -1196,3 +1196,50 @@ entries:
   checks: "warn_missing_prev_cmd_lesson"
   diagnosis: "BLOCK理由: 該当なし / 対策: 本番CDP検証で発見した問題の修正"
   notes: "前cmd_3588で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3588 LS-A05"
+- cmd_id: "cmd_3590"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-28T14:40:38Z"
+  checks: "cmd_save_main|warn_missing_prev_cmd_lesson"
+  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 殿指示5件を1cmdに集約。cmd_3589(canceled)の知見を活用"
+  notes: "必須項目 1件 未記入。全て記入してからcmd_save.shを再実行せよ"
+- cmd_id: "cmd_3590"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-28T14:43:07Z"
+  block_duration_minutes: 3
+- cmd_id: "cmd_3590"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-28T14:44:21Z"
+- cmd_id: "cmd_3590"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-28T14:45:31Z"
+  checks: "cmd_save_main"
+  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 殿指示5件を1cmdに集約。cmd_3589(canceled)の知見を活用"
+  notes: "cmd_3590 は既に委任済みです。"

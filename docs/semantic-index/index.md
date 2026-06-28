@@ -2553,7 +2553,7 @@ codd:
 |------|---|
 | id | dm_fusion_app |
 | label | DM-Fusionアプリ |
-| aliases | DM-Fusion, Fusionアプリ, PF配合シミュレーター, Fusion MVP, スマホファーストFusion, `/mnt/c/Python_app/DM-Fusion`, DM-Fusionローカル保存先, GitHub DM-Fusion, Next.js App Router Fusion, TypeScript Tailwind Fusion, Node.js runtime Fusion, static export不可, Render Node service, app/api/portfolios/route.ts, DMSIGNAL_API_URL, DMSIGNAL_ADMIN_USER, DMSIGNAL_ADMIN_PASS, 上部2/3表示, 下部1/3操作, CAGR超大文字, fast.comスタイル, PFドロップダウン二つ, 配分スライダー, スライダーでCAGR即時更新, Page 1数値, Page 2チャート, SPYとTQQQはDM-Signal monthly_returns, 設計書最新確認, Fusion設計書, フュージョン設計書, フュージョン側仕様, Fusion実装レビュー, fusion-app.md, Fusion保存ログイン, Supabase保存復元, saved_fusions, 保存済み配合, ログインは配合保存だけ, Fusion速度品質, 滑らかさと追随速度, リアルタイム数値更新, Float64Array事前確保, requestAnimationFrameチャート, requestIdleCallbackサブ数値, フローティングバルーン, detached thumb, スマホタッチ対策, folder変更対応, Render cold start本番フォーカス, Playwrightスマホ確認, 殿指示_admin設定+Xシェア_20260628, cmd_3586スコープ分離, admin+Xシェア別cmd |
+| aliases | DM-Fusion, Fusionアプリ, PF配合シミュレーター, Fusion MVP, スマホファーストFusion, `/mnt/c/Python_app/DM-Fusion`, DM-Fusionローカル保存先, GitHub DM-Fusion, Next.js App Router Fusion, TypeScript Tailwind Fusion, Node.js runtime Fusion, static export不可, Render Node service, app/api/portfolios/route.ts, DMSIGNAL_API_URL, DMSIGNAL_ADMIN_USER, DMSIGNAL_ADMIN_PASS, 上部2/3表示, 下部1/3操作, CAGR超大文字, fast.comスタイル, PFドロップダウン二つ, 配分スライダー, スライダーでCAGR即時更新, Page 1数値, Page 2チャート, SPYとTQQQはDM-Signal monthly_returns, 設計書最新確認, Fusion設計書, フュージョン設計書, フュージョン側仕様, Fusion実装レビュー, fusion-app.md, Fusion保存ログイン, Supabase保存復元, saved_fusions, 保存済み配合, ログインは配合保存だけ, Fusion速度品質, 滑らかさと追随速度, リアルタイム数値更新, Float64Array事前確保, requestAnimationFrameチャート, requestIdleCallbackサブ数値, フローティングバルーン, detached thumb, スマホタッチ対策, folder変更対応, Render cold start本番フォーカス, Playwrightスマホ確認, 殿指示_admin設定+Xシェア_20260628, cmd_3586スコープ分離, admin+Xシェア別cmd, DM Fusionのバグを直そう |
 | skills |  |
 | related_concepts | fusion_api_endpoint, modern_web_guidance, dmsignal_operations |
 
@@ -2568,6 +2568,7 @@ codd:
 | cmd | `cmd_3585` DM-Fusion MVP — Next.js初期構築+メイン画面(PF選択+スライダー+CAGR即時表示) |
 | causal | `cmd_3585` origin: [[殿指示_Fusion構想_20260628]] -> [[cmd_3583_Fusion_API_GATE_CLEAR]] -> [[DM-Fusion_MVP実装]] |
 | causal | `cmd_3585` depends_on: cmd_3583 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-28T23:27:00+09:00 DM-Fusionのバグを直そう。今のシステムだとPCでチャートを出せない。スマホファーストとはPC虫ではない |
 
 ## dmsignal_operations — DM-Signal運用
 

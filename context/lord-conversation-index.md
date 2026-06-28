@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-28 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-28T23:24:30+09:00 -->
+<!-- generated_at: 2026-06-28T23:46:49+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-28T23:46:48+09:00 | terminal | response | cmd_3590 draft APPROVE完了。idle待機。 [meta] stop_reason=end_turn
+- 2026-06-28T23:45:37+09:00 | terminal | inbound | <task-notification> <task-id>btkay5l4p</task-id> <tool-use-id>toolu_01E3AzXtKLUjeesMaeP1jiyo</tool-use-id> <output-file…
+- 2026-06-28T23:45:36+09:00 | terminal | response | バックグラウンドプロセスの出力が空。直接実行する。
+- 2026-06-28T23:26:59+09:00 | terminal | inbound | DM-Fusionのバグを直そう。今のシステムだとPCでチャートを出せない。スマホファーストとはPC虫ではない
 - 2026-06-28T23:24:29+09:00 | terminal | response | 将軍、復帰完了。 **状況報告:** - 教訓統合: 31→29件（LS066→LS-A11, LS070→LS-A04） - 掲示板: cmd_3588 GATE CLEAR確認済み - SKILL.md gate: PASS（前セッシ…
 - 2026-06-28T23:24:28+09:00 | ntfy | outbound | 【将軍】復帰済み。教訓統合(31→29件)、掲示板確認、SKILL.md gate PASS。idle忍者5名、稼働cmd 0件。殿の指示を待つ。
 - 2026-06-28T23:21:44+09:00 | terminal | response | Inbox全既読。前セッション裁定(LS074=/clear自発禁止)はlessons_shogun.yaml+PreToolUse hookに反映済み。 掲示板未確認(blt_20260628_210926: cmd_3588 PART…
 - 2026-06-28T23:20:52+09:00 | ntfy | outbound | CI赤: run 28325011282 Unit Tests (bats)
 - 2026-06-28T23:20:49+09:00 | terminal | response | 将軍Q6回答確認。#6(出力=仕事)の自己検出は正しい。LS074 hook実装済みは行動まで回している。idle待機。
 - 2026-06-28T23:20:04+09:00 | terminal | response | **結論: 今のままではGoogle OAuthは正しく動かない。** [MEM: memory_db ts=2026-06-28 "Google OAuthログイン後にリバランサーURLにリダイレクトされるバグあり。根因=Supabas…
-- 2026-06-28T23:16:59+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-28 23:02:20|CI緑: run 28324180359
-- 2026-06-28T23:16:51+09:00 | terminal | inbound | google oauthは正しく動くか？
-- 2026-06-28T23:12:41+09:00 | terminal | response | [MEM: memory_db ts=2026-06-18 "Supabase RLS脆弱性知見: service_roleキーをフロントに入れる=情報漏洩"] Fusionの設計書では `NEXT_PUBLIC_SUPABASE_ANO…
-- 2026-06-28T23:11:50+09:00 | terminal | inbound | SUPABASE_SERVICE_ROLE_KEY=はどうすればいい？
 
 ## 未解決確認事項
 - 将軍、復帰完了。 **状況報告:** - 教訓統合: 31→29件（LS066→LS-A11, LS070→LS-A04） - 掲示板: cmd_3588 GATE CLEAR確認済み - SKILL.md gate: PASS（前セッション解消済み） - 本番: DM-Sig…
@@ -32,9 +32,6 @@
 - cmd_35
 - cmd_3558
 - cmd_3565
-- cmd_3566
-- cmd_3567
-- cmd_3569
 - cmd_3570
 - cmd_3572
 - cmd_3573
@@ -47,6 +44,7 @@
 - cmd_3586
 - cmd_3587
 - cmd_3588
+- cmd_3590
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

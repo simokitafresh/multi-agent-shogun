@@ -102,7 +102,8 @@ lessons:
     (40)外部指示書(directive等)由来のcmd起票時、外部語彙をそのまま転記するとcmd_saveトリガー語と衝突しBLOCK。起票前に内部語彙へ翻訳: 登録→記入/記録、push→commitまで、パリティ→数値一致検証(LS059吸収2026-06-15。cmd_3294で4回BLOCK実証)
     (41)cmd追記のEditアンカーは前cmdブロックの最終行(delegated_at)にせよ。origin行アンカーだとdelegated_atが新cmdブロック末尾に取り残され「委任済み」誤判定BLOCK(LS060吸収2026-06-15。cmd_3303で実証)
     (42)quality_gateフィールドにバックスラッシュ+パイプを書くな(LS071吸収2026-06-20)。grep ERE構文をq11等に転記するとPyYAMLが不正エスケープで正本YAML破壊。Guard 0eでBLOCK済み。grep OR条件は自然言語で記述(cmd_3467事故)
-  source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036, LS034, LS062]
+    (43)1CMD1起票(LS070吸収2026-06-28): 5忍法cmdを一括書込み→other_draft_exists事後BLOCK(cmd_3496)。Guard 0f(pre-write-edit-combined.sh)で複数同時書込みL1 BLOCK。cmd_skeleton.shにexecution_envフィールド追加+deploy_task.shのinject_execution_controlsでGS/DB系タスクにexecution_env自動注入
+  source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036, LS034, LS062, LS070]
   source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394, cmd_2395]
   created_at: '2026-04-25'
   automated: true
@@ -219,7 +220,8 @@ lessons:
     watcher 2プロセス/agentは正常(親子関係)。pgrep -cfで重複と誤判断→kill→全滅。restart_watchers.shの親子構造を確認せよ(cmd_2924)
     $(</dev/stdin)はWSL2で/dev/stdin不在時crash→全hookでcat 2>/dev/null使用(cmd_3207)。関数追加時はテストのmock/export -fリスト確認必須(cmd_3207→CI RED)
     model_detect.sh tail -1バグ(LS070吸収2026-06-20): ログ内他CLIバナー誤検出→head -1修正。試行錯誤=確認不足のバグ(殿指摘)
-  source_ids: [LS033, LS037, LS074, LS084, LS086, LS087, LS051]
+    symlink設計意図(LS066吸収2026-06-28): queue/inbox symlink先=~/.claude/projects/{path}/inbox。設計意図=CLI再起動永続+パス自動解決。実体ディレクトリ化→inotify死亡+watcher停止。変更前にreadlink+設計意図カタログ照合必須
+  source_ids: [LS033, LS037, LS074, LS084, LS086, LS087, LS051, LS066]
   created_at: '2026-04-24'
   automated: true
   enforcement: '各enforcement箇所(settings.json hook, bulletin_write.sh, gate_shogun_startup.sh)で個別に自動強制済み'
@@ -583,14 +585,7 @@ lessons:
 # LS065: superseded by LS048 detail(4) (Q6洗脳検出→一気通貫=洗脳サイクル。2026-06-21統合)
 # LS066: 物理削除(2026-06-17)。superseded by LS048 detail(3)。startup BLOCK表面対処パターン
 # LS067: 物理削除(2026-06-17)。superseded by LS-A09(26)。計測データイベント前後混同→LS-A09に吸収
-- id: 'LS066'
-  title: 'queue/inbox symlinkは設計上の必然。実体ディレクトリ化禁止'
-  origin: '[[cmd_karo_hotfix_cmd3453_symlink_ops]] -> [[symlink設計意図未確認]] -> [[inotify死亡+watcher停止]]'
-  detail: 'symlink先=~/.claude/projects/{path}/inbox(Claude Code auto-memory)。設計意図: CLI再起動永続+パス自動解決+Mac移植対応。家老がCodex sandbox制限で実体ディレクトリ化→inotify死亡+watcher停止+ナッジ滞留8件。将軍が設計意図未確認で承認(LS-A09違反)。変更前にreadlink+設計意図カタログ照合必須'
-  source_cmd: 'session_20260619_symlink'
-  created_at: '2026-06-19'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=symlink'
+# LS066: superseded by LS-A11 (symlink設計意図=infra修正実績。2026-06-28統合)
 # LS067: superseded by LS-A23(6) (三層貫通定義。2026-06-19統合)
 # LS068: superseded by shogun.md F001(改訂済み。positive_rule/reasonに全文反映。独立教訓としての追加価値なし。2026-06-20統合)
 - id: 'LS069'
@@ -604,14 +599,7 @@ lessons:
 # LS070: superseded by LS-A11 (model_detect tail→head = infra修正実績。2026-06-20統合)
 # LS071: superseded by LS-A04(42) (YAML危険文字=cmdテンプレートルール。Guard 0eで自動BLOCK。2026-06-20統合)
 # LS070: superseded by LS-A08 detail(6) (並列可能cmd先送り=洗脳#5。2026-06-21統合)
-- id: 'LS070'
-  title: '1CMD1起票ルールのL1貫通(Guard 0f)'
-  origin: '[[cmd_3496]]'
-  detail: '5忍法cmdを一括書込み→other_draft_exists事後BLOCK(cmd_3496事故2026-06-23)。書いた後のBLOCKでは書く時間が無駄(殿指摘)。Guard 0f追加(L1): pre-write-edit-combined.shで複数同時書込みBLOCK。L5貫通(2026-06-23): cmd_skeleton.shにexecution_envフィールド追加+deploy_task.shのinject_execution_controlsでGS/DB系タスクにexecution_env自動注入。kagemaru PowerShell事故の三層防御(L1書込み防止+L5事前コンテキスト+cmdテンプレート)'
-  source_cmd: 'cmd_3496'
-  created_at: '2026-06-23'
-  automated: true
-  enforcement: 'type=hook+inject; file=.claude/hooks/pre-write-edit-combined.sh Guard 0f + scripts/cmd_skeleton.sh execution_env + scripts/deploy_task.sh inject_execution_controls; pattern=Guard 0f|execution_env'
+# LS070: superseded by LS-A04(43) (1CMD1起票Guard 0f=cmdテンプレートルール。2026-06-28統合)
 # LS071: 物理削除(2026-06-26)。superseded by LS073(確認の拒否=共通構造)
 # LS072: 物理削除(2026-06-26)。superseded by LS-A22(gate FPパターンに委任済み重複BLOCKを包含)
 - id: 'LS073'

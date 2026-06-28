@@ -1,9 +1,15 @@
 task:
-  _ac_task_id: cmd_3589_full
+  readonly_ref:
+  - path: 'FusionChart.tsx'
+    reason: command欄の必読/参照専用ファイル
+  - path: 'page.tsx'
+    reason: command欄の必読/参照専用ファイル
+  _ac_task_id: cmd_3590_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3589 (deployed 2026-06-28T22:26:42). Read from the beginning.
-  ac_version: 78b0ec2d
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3590 (deployed 2026-06-28T23:44:39). Read from the beginning.
+  ac_version: 3dce7ae1
   additional_instructions: '追加注意(2026-06-28T20:51JST): Google OAuthログイン後にリバランサーURLへリダイレクトされるバグあり。根因=Supabaseプロジェクト共有でリダイレクトURL許可リストにFusion本番URL https://dm-fusion.onrender.com が未登録。コード側はsignInWithOAuth redirectTo をFusion本番/現在originへ明示設定し、Supabase側設定としてAuthentication→URL ConfigurationにFusion本番URL追加が必要なことを報告YAMLに明記。可能なコード修正を実施し、外部ダッシュボード設定はpost_deploy_evidence/decision_candidate等で明記せよ。'
+  cancel_reason: cmd_3589 canceled in shogun_to_karo; waiting for cmd_3590
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -33,25 +39,25 @@ task:
   - cmd_3569作業への介入
   - context/dm-signal-core.md, frontend.md, research.mdの更新(必要性が見つかればcandidate報告のみ)
   parallel_ok: []
-  parent_cmd: cmd_3589
+  parent_cmd: cmd_3590
   project: dm-signal
-  purpose: '殿指示(2026-06-28): 本番CDP確認で発見した問題修正。(1)初期状態でAve-X選択済み (2)スクロール不要で全操作要素が画面内 (3)チャートPage2動作修正 (4)スマホタッチ効かない箇所修正'
+  purpose: '殿指示(2026-06-28): DM-FusionでPCチャートが表示されない、Googleログインボタンがわかりづらい、シェアの#DM-signalハッシュタグ不成立、ヘッダーがFusionのまま、詳細のSPY/TQQQが表示されない。スマホファーストはPC無視ではない'
   scout_exempt: true
-  status: canceled
+  status: in_progress
   stop_for: []
   target_path: /mnt/c/Python_app/DM-Fusion
-  task_id: cmd_3589_full
+  task_id: cmd_3590_full
   task_type: full
   related_lessons:
   - id: 'L177'
     summary: 'IF 追跡TSVやqueueの識別子をparent_cmdからtask_id/subtask_idへ変更する時 THEN 書き込み側だけでなく集計・更新・分析の'
     detail: 'IF 追跡TSVやqueueの識別子をparent_cmdからtask_id/subtask_idへ変更する時 THEN 書き込み側だけでなく集計・更新・分析の'
-  - id: 'L533'
-    summary: 'cdp_helper.preflight_cdp_flowはPowerShell/Windows側でChrome CDP疎通OKを確認したが、WSL側curl '
-    detail: 'cdp_helper.preflight_cdp_flowはPowerShell/Windows側でChrome CDP疎通OKを確認したが、WSL側curl '
-  - id: 'L526'
-    summary: 'validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配'
-    detail: 'validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配'
+  - id: 'L609'
+    summary: 'ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp'
+    detail: 'ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp'
+  - id: 'L145'
+    summary: 'IF ashigaru.mdの内容を修正する時 THEN build_instructions.shのソースファイル(roles/,templates/等)を修'
+    detail: 'IF ashigaru.mdの内容を修正する時 THEN build_instructions.shのソースファイル(roles/,templates/等)を修'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -71,9 +77,9 @@ task:
   recommended_skills:
   - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
   related_causal_links:
-  - "[[初期選択+レイアウト+タッチ修正]]"
-  - "[[本番CDP検証問題発見]]"
-  - "[[殿指示_Fusion_UX修正_20260628]]"
+  - "[[5件UI品質修正]]"
+  - "[[PCチャート不表示+ログインUX+ハッシュタグ+ベンチマーク]]"
+  - "[[殿指示_Fusion_PC対応_20260628]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -92,24 +98,41 @@ task:
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L177: IF 追跡TSVやqueueの識別子をparent_cmdからtask_id/subtask_idへ変更する時 THEN 書き込み側だけでなく集計・更新・分析の
-      - L533: cdp_helper.preflight_cdp_flowはPowerShell/Windows側でChrome CDP疎通OKを確認したが、WSL側curl
-      - L526: validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配
+      - L609: ACがfrontend/src配下を前提にしていてもsrcディレクトリが存在しない場合がある。find/rgで実体を確認しApp Routerのapp/comp
+      - L145: IF ashigaru.mdの内容を修正する時 THEN build_instructions.shのソースファイル(roles/,templates/等)を修
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
   memory_db_context:
-  - '2026-06-28T21:56:51+09:00 | 【INFOバッチ】 2026-06-28 21:48:39|CI緑: run 28322536171'
-  - '2026-06-28T21:41:19+09:00 | 【INFOバッチ】 2026-06-28 21:33:40|cmd_3588'
+  - '2026-06-28T23:20:04+09:00 | **結論: 今のままではGoogle OAuthは正しく動かない。** [MEM: memory_db ts=2026-06-28 "Google OAuthログイン後にリバランサーURLにリダイレク'
+  - '2026-06-28T23:16:59+09:00 | 【INFOバッチ】 2026-06-28 23:02:20|CI緑: run 28324180359'
+  - '2026-06-28T23:26:59+09:00 | DM-Fusionのバグを直そう。今のシステムだとPCでチャートを出せない。スマホファーストとはPC虫ではない'
+  - '2026-06-28T22:28:36+09:00 | /clear準備完了。殿に報告。 **本セッション実績(6cmd GATE CLEAR):** - cmd_3583: Fusion API エンドポイント(DM-Signal BE) - cmd_3'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: '初期状態でAve-Xが選択済みでCAGR数値が表示される。上部空白を削減しPF1+スライダー+PF2が縦スクロールなしで画面内に収まる'
+    - check: 'PCブラウザでPage2(●●ドットの2番目クリック)のチャート(累積リターン曲線Canvas)が正常に描画される'
   - id: 'AC2'
     checks:
-    - check: 'Page2(累積リターンチャート)がスワイプまたはページインジケータクリックで表示される。スマホでタッチが効かない箇所がない'
+    - check: 'Shareボタンのツイートテキストから#DM-signalハッシュタグが除去され、#デュアルモメンタムのみ残る'
+  - id: 'AC3'
+    checks:
+    - check: 'ログインボタンがDM-Signalリバランサーと同様に『Googleでログイン』と表示される緑ボタンになり、ログイン後はユーザーアバター+ログアウトボタンが表示される'
+  - id: 'AC4'
+    checks:
+    - check: 'ヘッダー左上のタイトルがFusionからDM-Fusionに変更されている'
+  - id: 'AC5'
+    checks:
+    - check: '詳細ボタン押下時にSPY・TQQQの列にCAGR・MaxDrawdownの数値が表示される(ダッシュ-ではない)'
+  - id: 'AC6'
+    checks:
+    - check: 'Page0のレイアウト改善: シェアボタンはアイコンのみ(テキストShareを削除)、Total ReturnはCAGR数字の直下に薄く小さな文字で表示、MaxDrawdownと期間はさらに小さなフォントで表示'
+  - id: 'AC7'
+    checks:
+    - check: 'PFドロップダウン改善: PF1ラベルの横にドロップダウンを配置して縦を圧縮、ドロップダウンのPFリストのフォントサイズを縮小してスクロールしやすくする。DM-Signalリバランサーのdropdown UIを参考にする'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3589.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3589.yaml
+  report_filename: kagemaru_report_cmd_3590.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3590.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -132,5 +155,4 @@ task:
     - reason: 'empty_lessons_useful'
       count: 2
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-06-28T22:27:22"
-  cancel_reason: cmd_3589 canceled in shogun_to_karo; waiting for cmd_3590
+  deployed_at: "2026-06-28T23:45:26"
