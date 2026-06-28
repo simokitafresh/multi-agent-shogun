@@ -839,10 +839,10 @@ deploy_task_cleanup_canceled_cmd() {
     [ -n "$ninja_name" ] || return 1
     [ -n "$cmd_id" ] || return 1
     deploy_task_cmd_status_is_canceled "$cmd_id" || return 1
-    [ -f "$task_file" ] || return 0
+    [ -f "$task_file" ] || return 1
 
     task_parent=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
-    [ "$task_parent" = "$cmd_id" ] || return 0
+    [ "$task_parent" = "$cmd_id" ] || return 1
 
     report_path=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "report_path" "" 2>/dev/null || true)
     report_filename=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "report_filename" "" 2>/dev/null || true)
@@ -8083,6 +8083,13 @@ deploy_task_main() {
     if [ -n "$CMD_ID" ] && deploy_task_cleanup_canceled_cmd "$NINJA_NAME" "$CMD_ID"; then
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 0
+    fi
+
+    if [ -n "$CMD_ID" ] && deploy_task_cmd_status_is_canceled "$CMD_ID"; then
+        log "BLOCK: ${CMD_ID} is canceled in shogun_to_karo.yaml. Deployment aborted."
+        echo "BLOCK: ${CMD_ID} は canceled。再起票cmdを待て。" >&2
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        return 1
     fi
 
     pre_resolve_status=$(field_get "$task_yaml" "status" "unknown")
