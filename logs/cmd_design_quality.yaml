@@ -1183,3 +1183,16 @@ entries:
   source: "cmd_complete_gate"
   timestamp: "2026-06-28T12:34:47Z"
   notes: "initial hanzo BLOCK; kagemaru redeploy CLEAR; gate hotfix for failed-task wait/no-report return"
+- cmd_id: "cmd_3589"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "dm-signal"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-06-28T13:27:12Z"
+  checks: "warn_missing_prev_cmd_lesson"
+  diagnosis: "BLOCK理由: 該当なし / 対策: 本番CDP検証で発見した問題の修正"
+  notes: "前cmd_3588で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3588 LS-A05"

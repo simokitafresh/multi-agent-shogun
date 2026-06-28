@@ -1,17 +1,28 @@
 task:
-  _ac_task_id: cmd_3588_full
+  _ac_task_id: cmd_3589_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3588 (deployed 2026-06-28T21:12:21). Read from the beginning.
-  ac_version: 142831be
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3589 (deployed 2026-06-28T22:26:42). Read from the beginning.
+  ac_version: 78b0ec2d
   additional_instructions: '追加注意(2026-06-28T20:51JST): Google OAuthログイン後にリバランサーURLへリダイレクトされるバグあり。根因=Supabaseプロジェクト共有でリダイレクトURL許可リストにFusion本番URL https://dm-fusion.onrender.com が未登録。コード側はsignInWithOAuth redirectTo をFusion本番/現在originへ明示設定し、Supabase側設定としてAuthentication→URL ConfigurationにFusion本番URL追加が必要なことを報告YAMLに明記。可能なコード修正を実施し、外部ダッシュボード設定はpost_deploy_evidence/decision_candidate等で明記せよ。'
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
+  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
+  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
+  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
+  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
+  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
+  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
+  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
+  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
+  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
+  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -22,25 +33,25 @@ task:
   - cmd_3569作業への介入
   - context/dm-signal-core.md, frontend.md, research.mdの更新(必要性が見つかればcandidate報告のみ)
   parallel_ok: []
-  parent_cmd: cmd_3588
-  project: infra
-  purpose: '殿指示(2026-06-28): cmd_3586でCDPスワイプ検証に躓いた。ReactアプリのCDPスワイプ方法を調査・実証し、cdp-browseスキルに知見を追記し、三層記憶に貫通させる'
+  parent_cmd: cmd_3589
+  project: dm-signal
+  purpose: '殿指示(2026-06-28): 本番CDP確認で発見した問題修正。(1)初期状態でAve-X選択済み (2)スクロール不要で全操作要素が画面内 (3)チャートPage2動作修正 (4)スマホタッチ効かない箇所修正'
   scout_exempt: true
-  status: idle
+  status: canceled
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/skills/cdp-browse
-  task_id: cmd_3588_full
+  target_path: /mnt/c/Python_app/DM-Fusion
+  task_id: cmd_3589_full
   task_type: full
   related_lessons:
-  - id: 'L601'
-    summary: 'semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690'
-    detail: 'semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690'
-  - id: 'L173'
-    summary: 'instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github'
-    detail: 'instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github'
-  - id: 'L159'
-    summary: 'IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore'
-    detail: 'IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore'
+  - id: 'L177'
+    summary: 'IF 追跡TSVやqueueの識別子をparent_cmdからtask_id/subtask_idへ変更する時 THEN 書き込み側だけでなく集計・更新・分析の'
+    detail: 'IF 追跡TSVやqueueの識別子をparent_cmdからtask_id/subtask_idへ変更する時 THEN 書き込み側だけでなく集計・更新・分析の'
+  - id: 'L533'
+    summary: 'cdp_helper.preflight_cdp_flowはPowerShell/Windows側でChrome CDP疎通OKを確認したが、WSL側curl '
+    detail: 'cdp_helper.preflight_cdp_flowはPowerShell/Windows側でChrome CDP疎通OKを確認したが、WSL側curl '
+  - id: 'L526'
+    summary: 'validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配'
+    detail: 'validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -56,40 +67,49 @@ task:
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "semantic_dictionary_design — セマンティック辞書構想:  docs/research/semantic_index_design.md context/lord-conversation-index.md scripts/semantic_map_generate.sh scripts/insight_write.sh scripts/semantic_index_update.sh"
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
+  recommended_skills:
+  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
   related_causal_links:
-  - "[[cdp-browseスキル穴]]"
-  - "[[cmd_3586スワイプ検証躓き]]"
-  - "[[殿指示_CDPスワイプ知見_20260628]]"
+  - "[[初期選択+レイアウト+タッチ修正]]"
+  - "[[本番CDP検証問題発見]]"
+  - "[[殿指示_Fusion_UX修正_20260628]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/training-cycle.md"
+  - "context/robustness-verification-catalog.md"
+  - "context/gs-speedup-knowledge.md"
+  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
+  production_invariants:
+  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
+  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
+  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
+  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
+  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L601: semantic-index drift修正cmdで12件MISSINGを調査→全件実在(偽陽性)。忍者がDM-Signal外部リポで個別確認。cmd_2690
-      - L173: instructions/common/roles を修正して build_instructions.sh を実行しても、AGENTS.md / .github
-      - L159: IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore
+      - L177: IF 追跡TSVやqueueの識別子をparent_cmdからtask_id/subtask_idへ変更する時 THEN 書き込み側だけでなく集計・更新・分析の
+      - L533: cdp_helper.preflight_cdp_flowはPowerShell/Windows側でChrome CDP疎通OKを確認したが、WSL側curl
+      - L526: validate_dashboard内でcheck_patterns[]を1パターンずつgrep -qFとawkで確認する設計はWSL2プロセス起動コストが支配
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
   memory_db_context:
-  - '2026-06-28T21:09:56+09:00 | 【INFOバッチ】 2026-06-28 20:59:18|cmd_3587'
-  - '2026-06-28T20:54:26+09:00 | 【INFOバッチ】 2026-06-28 20:44:32|cmd_3586'
-  - '2026-06-28T20:43:12+09:00 | cmd_3586 LGTM送信完了。cmd_complete_gateがバックグラウンドで自動起動。idle待機。 [meta] stop_reason=end_turn'
+  - '2026-06-28T21:56:51+09:00 | 【INFOバッチ】 2026-06-28 21:48:39|CI緑: run 28322536171'
+  - '2026-06-28T21:41:19+09:00 | 【INFOバッチ】 2026-06-28 21:33:40|cmd_3588'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'CDPのInput.dispatchTouchEventでReactアプリのスワイプを実現する方法を調査・実証し、DM-Fusion(localhost:3001)のPage1→Page2スワイプをCDP経由で成功させる'
+    - check: '初期状態でAve-Xが選択済みでCAGR数値が表示される。上部空白を削減しPF1+スライダー+PF2が縦スクロールなしで画面内に収まる'
   - id: 'AC2'
     checks:
-    - check: 'cdp-browseスキル(skills/cdp-browse/SKILL.md)にスワイプ操作セクションを追記し、三層記憶(記憶DB+セマンティック+Obsidianリンク)に知見を貫通させる'
+    - check: 'Page2(累積リターンチャート)がスワイプまたはページインジケータクリックで表示される。スマホでタッチが効かない箇所がない'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3588.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3588.yaml
+  report_filename: kagemaru_report_cmd_3589.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3589.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -112,4 +132,5 @@ task:
     - reason: 'empty_lessons_useful'
       count: 2
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-06-28T21:12:43"
+  deployed_at: "2026-06-28T22:27:22"
+  cancel_reason: cmd_3589 canceled in shogun_to_karo; waiting for cmd_3590
