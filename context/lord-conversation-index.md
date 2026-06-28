@@ -1,29 +1,29 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-06-28 auto-generated -->
+<!-- last_updated: 2026-06-28 cmd_3583 -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-28T03:12:14+09:00 -->
+<!-- generated_at: 2026-06-28T18:27:13+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-06-28T03:12:14+09:00 | terminal | response | **precomputed_mtd: 104行投入完了。** current_ym=2026-06、price_latest_date=2026-06-26。本番APIで効果を実測する。
-- 2026-06-28T03:10:38+09:00 | terminal | inbound | <task-notification> <task-id>blw6xmbvg</task-id> <tool-use-id>toolu_01RH1k4FT9sVWsVdZxsZEcZW</tool-use-id> <output-file…
-- 2026-06-28T03:05:36+09:00 | terminal | response | まだ実行中（270秒経過、L3 FoF計算中）。precompute_mtdはfullrecalculate末尾で呼ばれるため、全Layer完了まで待つ必要がある。
-- 2026-06-28T03:04:19+09:00 | terminal | inbound | <task-notification> <task-id>b5rmkankv</task-id> <tool-use-id>toolu_01PvMF3ZjZfeqqC9dmvzscmr</tool-use-id> <output-file…
-- 2026-06-28T03:02:17+09:00 | terminal | response | 2分後にprecomputed_mtd行数を自動確認する。完了通知を待つ。 [meta] stop_reason=end_turn
-- 2026-06-28T03:01:54+09:00 | ntfy | outbound | 【monitor】将軍CTX:51%。/compactをご検討ください
-- 2026-06-28T03:00:49+09:00 | terminal | inbound | <task-notification> <task-id>bkf7jirer</task-id> <tool-use-id>toolu_018MePK5Z2gkNT1DBG76X5ZJ</tool-use-id> <output-file…
-- 2026-06-28T03:00:40+09:00 | terminal | response | ローカル.envのADMIN_PASSが本番Render環境と異なる可能性。Render APIで確認。
-- 2026-06-28T02:59:08+09:00 | terminal | response | recalculate-sync実行中（fullrecalculate + precompute_mtd。数分かかる）。完了通知を待つ。殿の次の入力を待つ。
-- 2026-06-28T02:59:08+09:00 | terminal | inbound | <task-notification> <task-id>b9t1ee3ht</task-id> <tool-use-id>toolu_019wj3cWi5TQt3FEmiq99D8G</tool-use-id> <output-file…
+- 2026-06-28T18:27:10+09:00 | terminal | response | LGTM送信完了。cmd_complete_gate.shがバックグラウンドで自動起動。idle待機。 [meta] stop_reason=end_turn
+- 2026-06-28T18:24:04+09:00 | terminal | response | Fusion側の仕様は設計書の末尾に参考として記載したが、まだ「まとまった」とは言えない。殿との会話から確定している内容を整理する。 **Fusion側 — 確定済み:** | 項目 | 殿の構想 | |------|---------|…
+- 2026-06-28T18:22:59+09:00 | terminal | response | inbox配信確認済み。cmd_3583 draft APPROVE完了。家老が忍者(kagemaru)に配備する流れ。 idle待機。 [meta] stop_reason=end_turn
+- 2026-06-28T18:22:40+09:00 | terminal | inbound | では フュージョン 側の 使用をさらに検討しよう まとまっていたっけ
+- 2026-06-28T18:20:19+09:00 | terminal | response | cmd_3583 **PASS + 家老委任完了**。 - gate検証PASS(WARN 0件) - draft → pending昇格 - 家老へ委任済み(DELEGATED: 18:19:22) - 家老CTX:79%で受信 idl…
+- 2026-06-28T18:19:23+09:00 | terminal | inbound | <task-notification> <task-id>b2p2msnn1</task-id> <tool-use-id>toolu_01TFfWsGZvqhJvDMetjDrM7f</tool-use-id> <output-file…
+- 2026-06-28T18:19:15+09:00 | terminal | response | バックグラウンドで実行中。完了通知を待つ。 殿、cmd_3583(Fusion APIエンドポイント追加)をcmd_publish.shで実行中。gate検証+pending昇格+家老委任が完了したら報告する。 [meta] stop_r…
+- 2026-06-28T18:10:32+09:00 | terminal | inbound | 起票しよう
+- 2026-06-28T18:09:50+09:00 | terminal | response | その通りでござる。現物確認済み。 `backend/app/auth.py` L27-28: ```python username: str | None = os.getenv("ADMIN_USER") password: str |…
+- 2026-06-28T18:09:33+09:00 | terminal | inbound | 認証はrender側のenvironmentで決定する仕組みか？
 
 ## 未解決確認事項
+- Fusion側の仕様は設計書の末尾に参考として記載したが、まだ「まとまった」とは言えない。殿との会話から確定している内容を整理する。 **Fusion側 — 確定済み:** | 項目 | 殿の構想 | |------|---------| | 形態 | 別Webアプリ。DM-S…
+- inbox配信確認済み。cmd_3583 draft APPROVE完了。家老が忍者(kagemaru)に配備する流れ。 idle待機。 [meta] stop_reason=end_turn
+- その通りでござる。現物確認済み。 `backend/app/auth.py` L27-28: ```python username: str | None = os.getenv("ADMIN_USER") password: str | None = os.getenv("A…
+- 家老レビュー結果: **条件付きAPPROVE**。 **実測データ（家老が本番DB確認済み）:** - active PF: 102件(全件active) - monthly_returns: 16,338行、2003-08〜2026-06 - 確定済みデータ: 16,236…
+- 現物を確認した結果、DM-Signal側の現状と穴でござる。 **現状（問題なし）:** - monthly-returns-rawエンドポイントは`require_admin`で保護済み → フュージョン用には使えないが、漏洩リスクもない - compare-returnsエ…
+- 復帰完了。 **状態報告:** - startup BLOCK 4件 → 全解消 - SKILL.md script参照: 家老hotfix自走修正(28976b850, 12:11) - 掲示板未確認10件: acknowledged (全件saizo INSIGHT_REP…
 - 2分後にprecomputed_mtd行数を自動確認する。完了通知を待つ。 [meta] stop_reason=end_turn
 - ローカル.envのADMIN_PASSが本番Render環境と異なる可能性。Render APIで確認。
-- 実装はある。検証grepのキーワードが間違っていた（`軍師提案`で探したが実装は`action_required`+`actioned_by`で検出）。実際にgateを実行して効果を確認する。
-- 殿。6cmd全件の効果検証結果: | cmd | 検証方法 | before | after | 判定 | |-----|---------|--------|-------|------| | **cmd_3572** MTD事前計算 | 本番API実測 | TTFB 5.5…
-- cmd_3582のバックグラウンド実行完了を確認。既に結果は確認済み（DELEGATED: 2026-06-28T01:58:33）。 現在の稼働状況: - kagemaru: cmd_3579(計測基盤) CTX:47% in_progress - hanzo: cmd_35…
-- 殿の指摘で気づいた。二方向の意味合いは根本的に異なる。 **家老→軍師（レビュー依頼方向）:** - 軍師は**門番**。APPROVE/BLOCKの権限がある - 忖度リスク = 通すべきでないものを通す（APPROVE率62%） - 今起票しようとしたcmd_3573はこの…
-- precompute_mtd: 0件。未実装確認。 AC7件はLG021(AC>4→WARN)。ただし設計書R11(11ラウンドレビュー)PASS済み。新テーブル+バッチ+API変更+移設+テストの複合変更で、BE内の直列依存(AC1→AC2→AC3→AC4→AC5→AC6→A…
-- 殿、本セッションの実績を報告する。 **完了:** - MTD事前計算設計書: R1→R11の11ラウンドレビューサイクルでPASS到達 - 設計根本穴→現物不一致→エッジケース→型境界→import/SSOTと収束 - cmd_3572(MTD事前計算バッチ実装)起票→家老委…
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
@@ -31,12 +31,7 @@
 ## 参照cmd
 - cmd_35
 - cmd_3558
-- cmd_3559
-- cmd_3560
 - cmd_3561
-- cmd_3562
-- cmd_3563
-- cmd_3564
 - cmd_3565
 - cmd_3566
 - cmd_3567
@@ -48,6 +43,7 @@
 - cmd_3579
 - cmd_3580
 - cmd_3582
+- cmd_3583
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

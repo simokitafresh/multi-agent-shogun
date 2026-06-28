@@ -422,3 +422,4 @@
 | cmd_3577 | 殿指示(2026-06-28): 軍師→家老方向の穴。軍師が構造的穴を発見し掲示板で提案しても家老が行動しない(22時間放置実証済み)。軍師穴発見投稿の自動化+家老startup gateでの強制検出で助言が無視される構造を封じる | infra | 06-28 | 軍師の穴発見掲示板投稿をaction_requiredへ自動 |
 | cmd_3579 | 殿指示(2026-06-28): 三層学習ループは順調か？weekly_metrics_trendが1スナップショットしかなく成長速度を計測不能。cron蓄積+前週比差分+startup gate表示で成長を数値化する | infra | 06-28 | weekly_metrics_trendに前週比deltaと |
 | cmd_3582 | 殿指示(2026-06-28): 第一層(個)で忍者commit_missing WA 5件/2週が再発。deploy_task.shの事前コンテキスト注入でWA頻発パターンを忍者に自動提示し検出→予防に転換 | infra | 06-28 | deploy_task.shにWA頻発カテゴリTOP3からr |
+| cmd_3583 | 殿指示(2026-06-28): 外部アプリFusion向けに、DM-Signal APIからPF名+monthly_returnsを取得する軽量エンドポイントを追加。設計書: docs/spec/fusion-api-endpoint.md。家老条件付きAPPROVE済み(blt_20260628_173441) | dm-signal | 06-28 | Fusion向けGET /api/fusion/portfo |
