@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-29 cmd_karo_hotfix_insight_dedupe_20260629104723 -->
+<!-- last_updated: 2026-06-29 cmd_3604 -->
 
 ## 2026-06-29
 
@@ -1286,3 +1286,5 @@
 - 2026-06-29 将軍D0: DM-Fusion Save機能をupsertからupdate/insert分岐に修正(`ff9aa46`)。WSL2からSupabase DB直接接続不能(IPv6)でunique制約適用不可→upsert不要なロジックに変更。saved_fusionsテーブルはローカルpgで作成済み、Render live確認済み。セッション全体でcmd_3590-3602の13cmdをDM-Fusion UI改善に投入。
 - 2026-06-29 強ニュー化: 軍師lesson_candidate 2件処理。外部リポcmdのSG-PRE3b commit hash偽陽性をL877登録。command欄readonly_ref偽陽性は既存L760/L781/LK008同根として重複登録せず、cmd_3585/3586再発事実をここに固定。
 - 2026-06-29 cmd_karo_hotfix_insight_dedupe_20260629104723: INSIGHT_REPEAT乱発の根を上流で断つため、半蔵が`insight_write.sh`に同一source内pending query/direct alias dedupeを追加。重複投入は既存ID `SKIP:` 返却・pending件数不増・掲示板行0を実測し、bats 19/19 PASSでGATE CLEAR。
+- 2026-06-29 cmd_3603: DM-Fusion PC版でチャートがpage切替の裏に隠れるUX問題を半蔵が修正。`app/page.tsx`でmd以上は指標+チャート縦並び常時表示、md未満は既存スワイプ/ドット切替維持。lint/build PASS、Playwright desktop/mobile実測、commit `b7afb46f`、軍師LGTMでGATE CLEAR。
+- 2026-06-29 cmd_3604: DM-Fusion chartへSPY/TQQQ比較線を追加。半蔵commit `e53448f3` で既存`comparisonSeries` propsにSPY/TQQQ累積系列を配線し、薄青/薄赤破線+右上凡例+黒実線Fusionを維持。軍師LGTM、GATE CLEAR。別件Total Return倍率表示差分は未commitで温存。
