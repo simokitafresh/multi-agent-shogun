@@ -1272,3 +1272,5 @@
 - 2026-06-29 cmd_3601: DM-Signal Fusion APIに`hide_portfolio == False`フィルタを追加し、非表示PF除外テストを追加。commit `a3a854b` push済み、才蔵報告PASS、GATE CLEAR。
 - 2026-06-29 cmd_3600: DM-Fusion chartにTotal Return倍率軸・年軸・LIN/LOGトグルを追加し、requestAnimationFrame描画へ更新。commit `1f0bad1` push済み、半蔵報告PASS、軍師LGTM、GATE CLEAR。
 - 2026-06-29 cmd_3602: DM-Fusion保存済みFusionドロップダウンを復元し、user_id upsert上限1件と最下部toast表示へ修正。commit `84a2a02`+`3ccfb22` push済み、半蔵報告PASS、軍師LGTM、GATE CLEAR。
+- 2026-06-29 将軍D0: DM-Fusion Save機能をupsertからupdate/insert分岐に修正(`ff9aa46`)。WSL2からSupabase DB直接接続不能(IPv6)でunique制約適用不可→upsert不要なロジックに変更。saved_fusionsテーブルはローカルpgで作成済み、Render live確認済み。セッション全体でcmd_3590-3602の13cmdをDM-Fusion UI改善に投入。
+- 2026-06-29 強ニュー化: 軍師lesson_candidate 2件処理。外部リポcmdのSG-PRE3b commit hash偽陽性をL877登録。command欄readonly_ref偽陽性は既存L760/L781/LK008同根として重複登録せず、cmd_3585/3586再発事実をここに固定。

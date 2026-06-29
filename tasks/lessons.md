@@ -8952,3 +8952,15 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 未設定
 - **how**: 未設定
 - IF context_freshnessのroot fallbackで同一repo全体をsource判定する時 THEN logs/queue/projects/docs/semantic-index等の運用データとsync/complete records系commitを除外せよ。運用記録commitをsource扱いするとlast_updated直後でもfalse positiveが再発する。 origin: [[GA-150]] -> [[root fallback source分類過大]] -> [[context_freshness false positive]]
+
+### L877: 外部リポcmdのcommit hash検証はtarget repoで行う
+- **日付**: 2026-06-29
+- **出典**: cmd_3602
+- **記録者**: gunshi
+- **tags**: [gate, precheck, external-repo]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_gunshi_report_precheck.sh]
+- **origin**: [[cmd_3585-3602外部リポ]] -> [[SG-PRE3b外部リポ偽陽性]] -> [[target_repo_commit検証]]
+- **when**: 軍師precheckでcommit hash不在WARNが外部リポcmdに発火した時
+- **how**: report/taskのtarget_pathまたはproject pathから対象git repoを解決し、multi-agent repoではなくtarget repoでcommit hashの実在を検証する
+- 軍師precheck SG-PRE3bがmulti-agent repoだけでcommit hashを検証すると、DM-Fusion等の外部リポcmdで実在commitを不在WARN扱いする偽陽性が発生する。target_path/project repoが外部リポの場合は、そのリポジトリでgit cat-file -t等の実在確認を行う。origin: [[cmd_3585-3602外部リポ]] -> [[SG-PRE3b外部リポ偽陽性]] -> [[target_repo_commit検証]]

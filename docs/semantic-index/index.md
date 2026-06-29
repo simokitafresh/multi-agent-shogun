@@ -1764,6 +1764,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T15:20:03+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T11:13:59+09:00 今 クリアされても 今より強くてニューゲーム せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T22:32:03+09:00 クリアの判断はこっちでやる クリアの準備もこっちで指示する クリアする よしようとするせいで CT X を無駄に消費した |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T10:32:19+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 
 ## growth_loop — 学習ループ
 
@@ -4901,6 +4902,7 @@ codd:
 | cmd | `cmd_3476` command_files_modified_mismatch偽陽性修正 — 変更不要判断ファイルのBLOCK排除 (`docs/research/kagemaru_cmd_3476_command_files_modified_fp_20260621.md`, `scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 | causal | `cmd_3476` origin: [[idle_自走分析_20260621]] -> [[command_files_modified_mismatch_20件_FP]] -> [[gate_FP根絶]] |
 | causal | `cmd_3573` files_modified: [[command_files_modified_verification]] |
+| lesson | `L877` 外部リポcmdのcommit hash検証はtarget repoで行う |
 | causal_chain | `[[cmd_3295]]` (L782) |
 
 ## project_clinic_expense_tracker — Clinic Expense Tracker
