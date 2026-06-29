@@ -414,3 +414,4 @@
 | cmd_3598 | 殿指示(2026-06-29): Save機能を1件上書きシステムに変更し保存済みFusionドロップダウンを廃止。シェアボタンをSaveボタンの横に配置。PF1ドロップダウンを上方向に開く | dm-signal | 06-29 | DM-Fusionの保存をuser_id単位の1件上書きup |
 | cmd_3601 | 殿指示(2026-06-29): DM-Signalのadmin画面でPFを非表示にしてもFusion APIレスポンスに反映されない | dm-signal | 06-29 | fusion.pyにhide_portfolio==Fals |
 | cmd_3600 | 殿指示(2026-06-29): チャートに縦軸(Total Return)と横軸(年)がなく直感的でない。LIN/LOGグラフをトグルで切替可能に。すべての機能は高速に反応しリアルタイムの追従性が重要 | dm-signal | 06-29 | DM-FusionチャートへTotal Return倍率の縦 |
+| cmd_3602 | 殿指示(2026-06-29): cmd_3598で保存済みFusionドロップダウンを誤廃止。殿の意図は上限1件上書き。ドロップダウン復元+upsert+保存エラー修正 | dm-signal | 06-29 | DM-Fusionの保存済みFusionドロップダウンを復元 |

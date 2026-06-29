@@ -4868,6 +4868,9 @@ lessons:
   - scripts/analysis/grid_search/cmd_1200_kasoku_diff_runner.py
   - scripts/analysis/grid_search/run_077_kasoku.py
   origin: '[[cmd_1200]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L459
   title: yotsume mp(ProcessPoolExecutor)でserial vs batch md5不一致が発生する
   summary: yotsume GS実行時、6workers mp版ではserial(PE) vs batch(numpy) md5不一致で中止。単一プロセスではdiff=0.
@@ -4930,6 +4933,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_monban.py
   - scripts/analysis/grid_search/run_077_nukimi.py
   origin: '[[cmd_1199]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L455
   title: PeriodIndex.to_timestamp(how=E)初月マッチ失敗
   summary: 'months.to_timestamp(how=E)は23:59:59.999999付与。.date()変換後bisect_right初月idx=0失敗。対策:'
@@ -5272,6 +5278,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_kasoku_ratio.py
   - scripts/analysis/grid_search/run_077_kawarimi.py
   origin: '[[cmd_1186]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L431
   title: 既存PF更新時はUUID維持でFoF参照を保護
   summary: v1→v2チャンピオン入替時、既存10体のUUIDを維持して更新することでFoF(忍法)のcomponent_portfolios参照が壊れない。POST

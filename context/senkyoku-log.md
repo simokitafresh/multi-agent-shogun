@@ -1271,3 +1271,4 @@
 - 2026-06-29 cmd_3598: DM-Fusion Saveをuser_id単位の1件upsertへ変更し、保存済みFusionドロップダウン撤去、ShareをSave横、PF1上開きへ変更。commit `0177d94` push済み、半蔵報告PASS、軍師LGTM、GATE CLEAR。
 - 2026-06-29 cmd_3601: DM-Signal Fusion APIに`hide_portfolio == False`フィルタを追加し、非表示PF除外テストを追加。commit `a3a854b` push済み、才蔵報告PASS、GATE CLEAR。
 - 2026-06-29 cmd_3600: DM-Fusion chartにTotal Return倍率軸・年軸・LIN/LOGトグルを追加し、requestAnimationFrame描画へ更新。commit `1f0bad1` push済み、半蔵報告PASS、軍師LGTM、GATE CLEAR。
+- 2026-06-29 cmd_3602: DM-Fusion保存済みFusionドロップダウンを復元し、user_id upsert上限1件と最下部toast表示へ修正。commit `84a2a02`+`3ccfb22` push済み、半蔵報告PASS、軍師LGTM、GATE CLEAR。

@@ -6066,6 +6066,9 @@ lessons:
   when: ShogunScreen.ktはgitignore whitelist未登録だった — 新規UIファイル追加時は
   how: android/ui/配下の新規Kotlinファイル追加時は.gitignoreに!パスエントリを追加することが実装の一部として必要
   origin: '[[cmd_1814]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L459
   title: 新規ファイル追加時は.gitignoreへのwhitelistエントリも同時に追加必須
   summary: .gitignoreがwhitelist型の場合、data/ディレクトリを!で許可していても個別ファイルを追加しないとgit addで拒否される。L457と同じ
@@ -6108,6 +6111,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: git log使用可能
   origin: '[[cmd_ga017_freshness]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L455
   title: ignore対象dashboard修正タスクはcommit gateと衝突する
   summary: dashboard.md は AUTO域マーカー欠落の修正対象だったが、.gitignore:7 の * により未追跡/ignore対象だった。local修正と
@@ -6375,6 +6381,9 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: cli_adapter.sh build_cli_command()でopus時は--modelスキップに修正(ci_fix_200k)
   origin: '[[legacy_lesson_L432]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L431
   title: hensei_apply.shテスト時にinbox_write model_switchが本番忍者に送信され実際にモデル切替が発生する副作用あり
   summary: テスト環境でinbox_write model_switchを実行すると本番忍者のCLI状態が変わる。hensei_apply.shにdry-runモード追加推
