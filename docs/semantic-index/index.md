@@ -149,7 +149,7 @@ codd:
 |------|---|
 | id | three_layer_memory_system |
 | label | 三層記憶システム |
-| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ, 三層記憶にも貫通させておいて, symlinkが必然である知識を三層記憶に貫通佐瀬よ, 三層記憶を勘違いしていないか？, 貫通=3層全てに書き込んで各層から独立に検索到達可能にすること, 掲示板投稿だけでは1層のみ=未貫通, 三層記憶を確認しろ, スキルの理解が極めて低いな, 顛末を三層記憶に貫通させて, 三層記憶と一緒だ, 三層記憶は正しく理解しているか？, 今回の知見を三層記憶に貫通させて, 今回得た知見を三層記憶に貫通させてアップデートせよ, この知見とルールを三層記憶に貫通させて, 今回の知見を三層記憶に貫通させよ, 家老によりスムーズな goalのやり方を確認させて, 今回は最速最適に実行できたか？厳しく確認しより良いやり方や, だから三層記憶なんだ, 今回の試行錯誤を経て, オントロジーと三層記憶の連携は順調か？, この知見は三層記憶に貫通させておいて |
+| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ, 三層記憶にも貫通させておいて, symlinkが必然である知識を三層記憶に貫通佐瀬よ, 三層記憶を勘違いしていないか？, 貫通=3層全てに書き込んで各層から独立に検索到達可能にすること, 掲示板投稿だけでは1層のみ=未貫通, 三層記憶を確認しろ, スキルの理解が極めて低いな, 顛末を三層記憶に貫通させて, 三層記憶と一緒だ, 三層記憶は正しく理解しているか？, 今回の知見を三層記憶に貫通させて, 今回得た知見を三層記憶に貫通させてアップデートせよ, この知見とルールを三層記憶に貫通させて, 今回の知見を三層記憶に貫通させよ, 家老によりスムーズな goalのやり方を確認させて, 今回は最速最適に実行できたか？厳しく確認しより良いやり方や, だから三層記憶なんだ, 今回の試行錯誤を経て, オントロジーと三層記憶の連携は順調か？, この知見は三層記憶に貫通させておいて, 今回の知見を三層記憶とスキルにアップデートせよ |
 | related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop, operational_ontology, unread_cmd_new_deployment_guard, codex_goal_mode |
 
 | 種別 | パス/参照 |
@@ -243,6 +243,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T15:06:49+09:00 三層記憶とオントロジーの連携は順調か？成長は自動的に加速しているか？覚醒 して確認し成長を加速させよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T16:56:14+09:00 なるほど。この知見は三層記憶に貫通させておいて。もうなんどもなんども二重起動と勘違いしては同じ結論にたどり着いてる。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T20:41:43+09:00 別CMDでニンジャにスワイプ検証のやり方を学んでCDPスキルのアップデートとスワイプ検証の知見の三層記憶貫通をやらせよう。仕事は別に分けて並列で行いあとで統合すればいい |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T19:22:43+09:00 今回の知見を三層記憶とスキルにアップデートせよ。いつでもだれでも同じミスを繰り返さないようにしよう |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -612,6 +613,7 @@ codd:
 | causal | `cmd_3606` origin: [[殿指示_Fusion_モーダルPF選択_20260629]] -> [[ドロップダウン上下はみ出し]] -> [[画面中央モーダル化]] |
 | cmd | `cmd_3607` DM-Fusion admin画面 速度改善+フォルダ一括トグル |
 | causal | `cmd_3607` origin: [[殿指示_Fusion_admin速度改善_20260629]] -> [[location.reload()による全ページリロード遅延]] -> [[optimistic update+フォルダ一括トグル]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T18:46:45+09:00 https://note.com/tokyojibika/n/nb56839c60686が最近書いた記事だな。続ければ大きく勝つチャンスがあるのに目先の凸凹で良い投資スタイルは投げ出してしまうのはもったいない。そういう勝てるはずなのに自滅し |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -1205,6 +1207,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T07:49:56+09:00 bo1plmvkb toolu_01DZLp7LF5srApTKZcCS5e7S /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T20:55:59+09:00 bh6zvb0ne toolu_01SWUyk5yWhJsiSwgNnmGDHN /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | lesson | `L878` hook非コメント行にincident ID/日付を書くとgate_hooks_no_runtime_incident_idがBLOCKする |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T18:59:24+09:00 reCAPTCHAの外部チャレンジは繰り返せば解決できる画像が出る。そのタイミングをまってゼロからやり直すとうまくいくことが多いぞ。あと右下にrecaptureの画像が出ているだけの時もある。もう一回やってみろ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T19:14:55+09:00 recaptureに保護されていますに過剰反応して、ログインボタンをただ押せばいいのを、押さないで試行錯誤していないか？ |
 | causal_chain | `[[cmd_3142]]` (L735) |
 | causal_chain | `[[cmd_3207]]` (L752) |
 | causal_chain | `[[cmd_karo_ci_fix_ga124_codex_hook_adapter_commit_20260624]]` (L842) |
@@ -3156,7 +3160,7 @@ codd:
 |------|---|
 | id | cdp_browser_capability |
 | label | CDP(ブラウザ操作能力) |
-| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, note_draft, no_prosemirror, noteエディタ変更, HeadlessChrome不可, GUI Chrome必須, ProseMirrorスピナー, ダイレクトURL遷移でスピナー永続, ダッシュボードからクリック遷移, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう, CDPで確認して, 効果が出ているか確認しよう, これ毎回俺がやるのはおかしいな, 起票する前に確認しよう, 陳腐化しているものがないか確認しよう, CDPがあるだろ？少なくとも記事は全部取得できるよな, ちなみに話をすり替えてるぞ, どこかに甘さや洗脳が残っていないか厳しく確認しよう, respwanしないで大丈夫なのか？確認しよう, Phase 4以降の計画を確認しよう, CDPでお前が試してくれ, いつものCDPで何をどうやってきた？, 修正 CDP SKIP環境変数対応 WSL2ハング防止, ログイン自動化, 二度とログインする必要, ログイン不要, CLIなのにブラウザーをきどうする, ブラウザ起動CLI, auto_login CDP, ログインしたら二度とログインする必要がなくなる, 今回ログインしたら二度とログインする必要がなくなるのか？, CLIなのにブラウザーをきどうする？, 隠れたインフラバグや, 止まらず続けて, Phase 1から実装しよう, Phase 3も実装しよう, Phase 2も実装しよう, macでもCDPは使えるのか？, マネーフォワードのCSVはそっちでCDPで取得せよ, CDPでMF自動取得実証, CDP production gateの長時間化・WebSocket接続失敗を再現最小化し, CDP production checkでいつも進まなくなる, CDP適用条件は本番反映証跡ありcmdに限定, cmd_requires_cdp_production_check, 本番未反映cmdは理由付きSKIP, CDP長時間化の根因はwarm-up+viewer auth+3ページ計測の積み上げ約5分, CDPはスキルを使ったか？, CDPは全員が使えるものだよな, インフラバグ修正cmdを起票して, スキルを使ったか？, note下書き保存, noteの下書き, note draft保存, note下書き手順=Chrome全終了→launch_browser(9234)→login画面でフォーム入力+ログインクリック→ログイン成功確認→note_draft.sh実行, reCAPTCHA画像チャレンジはスクショ撮って解析, 記事がノートの独自md方式になっていないな, よんだ, Reactスワイプ, dispatchTouchEvent, Input.dispatchTouchEvent, touch emulation, touch-action none, pointerup clientX, DM-Fusionスワイプ検証 |
+| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, note_draft, no_prosemirror, noteエディタ変更, HeadlessChrome不可, GUI Chrome必須, ProseMirrorスピナー, ダイレクトURL遷移でスピナー永続, ダッシュボードからクリック遷移, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう, CDPで確認して, 効果が出ているか確認しよう, これ毎回俺がやるのはおかしいな, 起票する前に確認しよう, 陳腐化しているものがないか確認しよう, CDPがあるだろ？少なくとも記事は全部取得できるよな, ちなみに話をすり替えてるぞ, どこかに甘さや洗脳が残っていないか厳しく確認しよう, respwanしないで大丈夫なのか？確認しよう, Phase 4以降の計画を確認しよう, CDPでお前が試してくれ, いつものCDPで何をどうやってきた？, 修正 CDP SKIP環境変数対応 WSL2ハング防止, ログイン自動化, 二度とログインする必要, ログイン不要, CLIなのにブラウザーをきどうする, ブラウザ起動CLI, auto_login CDP, ログインしたら二度とログインする必要がなくなる, 今回ログインしたら二度とログインする必要がなくなるのか？, CLIなのにブラウザーをきどうする？, 隠れたインフラバグや, 止まらず続けて, Phase 1から実装しよう, Phase 3も実装しよう, Phase 2も実装しよう, macでもCDPは使えるのか？, マネーフォワードのCSVはそっちでCDPで取得せよ, CDPでMF自動取得実証, CDP production gateの長時間化・WebSocket接続失敗を再現最小化し, CDP production checkでいつも進まなくなる, CDP適用条件は本番反映証跡ありcmdに限定, cmd_requires_cdp_production_check, 本番未反映cmdは理由付きSKIP, CDP長時間化の根因はwarm-up+viewer auth+3ページ計測の積み上げ約5分, CDPはスキルを使ったか？, CDPは全員が使えるものだよな, インフラバグ修正cmdを起票して, スキルを使ったか？, note下書き保存, noteの下書き, note draft保存, note下書き手順=Chrome全終了→launch_browser(9234)→login画面でフォーム入力+ログインクリック→ログイン成功確認→note_draft.sh実行, reCAPTCHA画像チャレンジはスクショ撮って解析, 記事がノートの独自md方式になっていないな, よんだ, Reactスワイプ, dispatchTouchEvent, Input.dispatchTouchEvent, touch emulation, touch-action none, pointerup clientX, DM-Fusionスワイプ検証, invisible reCAPTCHA, reCAPTCHA size=invisible, ログインボタンを押せばよい, reCAPTCHAに過剰反応するな, note_draft SKIP=洗脳#1, Input.dispatchMouseEvent座標クリック, Runtime.evaluate JS click reCAPTCHA阻止, --remote-allow-origins=*, Chrome WebSocket 403, nativeInputValueSetter React state不更新 |
 | skills | cdp-browse |
 | related_concepts | dmsignal_operations, google_classroom, external_project_registry, rebalancer_app, simple_ocr, openpbx_reference |
 
@@ -3175,6 +3179,8 @@ codd:
 | file | `skills/cdp-browse/SKILL.md` §Reactアプリのスワイプ操作 |
 | knowledge | `cmd_3588` DM-Fusion(localhost:3001)実証: `Input.dispatchTouchEvent` はtrusted `touch*` / `pointer*` をDOMへ届ける。`touch-action:none` と終点`touchMove`で `pointerup.clientX` は終点になる。ただし現行DM-FusionのReact `onPointerDown/onPointerUp` stateはPage2へ遷移せず、CDP成功応答だけで画面操作成功と判定してはならない。 |
 | causal | `cmd_3588` origin: [[cmd_3586スワイプ検証躓き]] -> [[CDP touch streamとReact PointerEvent更新の差分]] -> [[cdp-browseスキル追記+三層貫通]] |
+| knowledge | `session_20260629` invisible reCAPTCHA突破: note.comのreCAPTCHAはsize=invisibleの場合がある。ログインボタンをInput.dispatchMouseEvent座標クリックすれば通過する。Runtime.evaluate JS clickはreCAPTCHAに阻止される。note_draft.shのSKIPは洗脳#1(早期終了)の可能性が高い。パスワード入力はInput.dispatchKeyEvent(1文字ずつ)が確実 |
+| causal | `session_20260629` origin: [[note_draft_reCAPTCHA_SKIP]] -> [[洗脳#1早期終了+#3他者依存]] -> [[invisible_reCAPTCHA_dispatchMouseEvent突破+reference_cdp_note_com §3.1追記]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-05T21:25 CDPの本質=LLMが人間同様にWebブラウザを使える能力 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-06T00:10 CDPスキル磨き指示(前セッション対話全文読め) |
 | cmd | `cmd_2583` CDPスキルSKILL.mdに6つの罠(remote-allow-origins/nativeInputValueSetter/port9234等)追記 |
