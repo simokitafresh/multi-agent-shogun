@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-29T14:40:29+09:00 -->
+<!-- generated_at: 2026-06-29T15:35:00+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-29T15:35:00+09:00 | terminal | response | 裁定キーワード検知は前セッション分の誤検知（2026-06-28T18:09の裁定はLS074=/clear自発禁止で既に反映済み）。ALERT解消。 戦局日誌を更新してcommit。
+- 2026-06-29T15:34:42+09:00 | ntfy | outbound | 【monitor】将軍CTX:51%。/compactをご検討ください
+- 2026-06-29T15:33:31+09:00 | clear_prep_check | session_summary | auto clear prep summary: inbound=105件; latest=【殿ntfy】You received a file: screenwriter_temp_1782709772626.png / admin画面…
+- 2026-06-29T15:30:23+09:00 | terminal | inbound | 今クリアされても今より強くてニューゲームできるようにせよ
+- 2026-06-29T14:48:14+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-29 14:40:00|cmd_3607 2026-06-29 14:48:13|CI緑: run 28351116184
+- 2026-06-29T14:40:40+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働2名 CLEAR率99% 連勝183
 - 2026-06-29T14:40:29+09:00 | terminal | response | 本日のDM-Fusion cmd全完了: | cmd | 内容 | 状態 | |-----|------|------| | cmd_3603 | PC版チャート常時表示 | GATE CLEAR | | cmd_3604 | SPY/T…
 - 2026-06-29T14:40:27+09:00 | terminal | response | GATE CLEAR処理完了。本セッション: draft 7件APPROVE + report 7件LGTM + GATE CLEAR 7件。全整合。idle待機。 [meta] stop_reason=end_turn
 - 2026-06-29T14:40:09+09:00 | terminal | response | cmd_3607 report review完了。LGTM。本セッション累計: draft 7件APPROVE + report 7件LGTM。idle待機。 [meta] stop_reason=end_turn
 - 2026-06-29T14:35:21+09:00 | terminal | response | L93に`location.reload()`存在確認。AC1の前提OK。 **Step 2-5**: AC2個。admin画面のトグルAPI+UI変更。optimistic updateは標準的なReactパターン。 verdict: …
-- 2026-06-29T14:33:27+09:00 | terminal | response | cmd_3607委任完了。idle忍者に配備される。殿の指示を待つ。
-- 2026-06-29T14:32:54+09:00 | terminal | response | cmd_3607公開中。 殿、cmd_3607（admin速度改善+フォルダ一括トグル）を起票・委任した。 修正内容: - `location.reload()`を廃止 → optimistic updateで即時UI反映 - フォルダヘ…
-- 2026-06-29T14:32:54+09:00 | terminal | inbound | <task-notification> <task-id>b3aw0k1a7</task-id> <tool-use-id>toolu_01S1DfqRANPa9o83ZARQctAc</tool-use-id> <output-file…
-- 2026-06-29T14:32:25+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-29 14:19:49|cmd_karo_ci_fix_ga151_main_ci_red_202606291410 2026-06-29 14:22:42|cmd_3606 2026-06-29 14…
-- 2026-06-29T14:29:36+09:00 | terminal | inbound | admin画面でオンオフの追随が遅くてイライラするな。フォルダー単位で一括オンオフも出来るようにしよう。速度も向上してくれ
-- 2026-06-29T14:24:29+09:00 | ntfy | outbound | 【家老】cmd_3606 完了
 
 ## 未解決確認事項
 - L93に`location.reload()`存在確認。AC1の前提OK。 **Step 2-5**: AC2個。admin画面のトグルAPI+UI変更。optimistic updateは標準的なReactパターン。 verdict: **APPROVE**

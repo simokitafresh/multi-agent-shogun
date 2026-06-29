@@ -11,6 +11,13 @@
 | cmd_3602 | 保存済みFusionドロップダウン復元+toast最下部移動+空白除去 | GATE CLEAR。84a2a02+3ccfb22 push済み | 殿「無駄なスペース」指摘→UI改善 |
 | D0 ff9aa46 | Save機能upsert→update/insert分岐修正 | push済み。WSL2→Supabase IPv6接続不能でunique制約適用不可→upsert不要ロジックに変更 | 殿「保存できませんでした」報告→D0即修正。検証スキップ(#2洗脳)の教訓 |
 | 強ニュー化 | 教訓統合(LS066→A11,LS070→A04)、三層記憶5件貫通、LS074実装 | 29件active。/clear自発禁止hook実装 | 殿「強くてニューゲームできるようにせよ」 |
+| cmd_3603 | PC版チャート常時表示 | GATE CLEAR | 殿「PCでチャートをどう見る」 |
+| cmd_3604 | SPY/TQQQ比較破線 | GATE CLEAR | 殿「比較として薄い破線で」 |
+| cmd_3605 | フォルダフィルタタブ | GATE CLEAR | DM-Signal参考にドロップダウン改善 |
+| cmd_3606 | PF選択モーダル化 | GATE CLEAR | ドロップダウン画面外はみ出し根本解決 |
+| cmd_3607 | admin速度改善+フォルダ一括トグル | GATE CLEAR | location.reload()→optimistic update |
+| D0 14commit | チャート軸改善(横6分割/縦基準線/LIN nice-number/LOGマイルストーン)+Total Return倍率表示統一(126.2x)+凡例修正+背景統一+ドロップダウンコンパクト化+APIキャッシュ無効化+hide_portfolioフィルタ削除 | 全push済み | 殿の即時フィードバック→D0即修正の高速サイクル。CDP未確認が課題(洗脳#2) |
+| taste-skill参考 | UIデザイン参考OSSリンク三層貫通 | 記憶DB登録済み | https://github.com/Leonxlnx/taste-skill |
 
 ## 2026-06-26
 
