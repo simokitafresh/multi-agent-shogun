@@ -24,7 +24,7 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-06-27T13:21:21+0900 -->
+<!-- script_refs_checked_at: 2026-06-29T18:05:00+0900 -->
 
 Script refs verified: 2026-06-27 cmd_3563/537008b08 + 4ca3c9de. `semantic_search.sh` 直近変更は(1) memory DB FTS fallback timeout既定値15s→5s、(2)既存cacheあり時の非同期refresh subshell stdout/stderrを/dev/nullへ切断しコマンド置換のpipe EOF待ちを解消。/dreamのPhase 2b/semantic search利用契約、引数、出力形式、memory DB検索の意味は変更なし。速度改善のみで手順変更不要。
 
@@ -38,14 +38,14 @@ Script refs verified: 2026-06-26 558ec6eae. `gate_lesson_health.sh` 直近変更
 
 Script refs verified: 2026-06-26 364744210+955c2e756. `gate_lesson_health.sh` 直近変更はuseful率計測のpresence_file追加(active lesson抽出高速化)+min sample threshold調整。引数なし全project走査/METRIC行/WARN・ALERT出力契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-27T13:21:21+0900 -->
+<!-- script_refs_checked_at: 2026-06-29T18:05:00+0900 -->
 
 # /dream — Memory Consolidation (5 Phase)
 
 **三層記憶(記憶DB+セマンティック+Obsidian) + MEMORY.md + memory/*.md** の統合・整理を行う。REM睡眠に倣い、知識基盤を強化する。
 
 Script refs verified: 2026-06-10. `memory_db_query.sh` の契約は変更なし。449dd3029でext4キャッシュ初期化タイムアウトを10s→30s(DB 198MB成長対応)に変更したが、クエリ引数・SQL実行・出力形式の契約は維持。
-Script refs verified: 2026-06-12 cmd_karo_hotfix_skill_script_refs_20260612. `insight_write.sh` は保存I/F `bash scripts/insight_write.sh "message" [priority] [source]` と resolve I/F `--resolve <id>` を維持。直近変更(e59594dc8)は破損tail隔離、raw YAML appendのatomic replace、DB live insert非同期化、source repeat集計の単一pass化で、/dream側の呼び出し手順変更は不要。
+Script refs verified: 2026-06-29 bae4b3551+f61de640. `insight_write.sh` は保存I/F `bash scripts/insight_write.sh "message" [priority] [source]` と resolve I/F `--resolve <id>` を維持。直近変更はINSIGHT_REPEATデバウンス10分→24時間(bae4b3551)+同一source/query pending重複dedupe追加(f61de640)。/dream側の呼び出し手順変更は不要。
 Script refs verified: 2026-06-13 cmd_karo_hotfix_skill_refs_stale_20260613. `gate_lesson_health.sh` 直近変更(90c32efdd)は`check_role_lesson_origins_batch()`をPython3 heredocからbash for loopに変換（高速化）。引数なし全project走査/`<project_id>`単体走査、METRIC行、WARN/ALERT出力契約は維持。
 Script refs verified: 2026-06-12. `gate_lesson_health.sh` はhotfix feedbackを長期useful率健康指標から除外する。自己修復hotfixの短期バーストで通常/full作業向けの教訓有用性をWARN化しないため。引数なし全project走査/`<project_id>`単体走査、METRIC行、WARN/ALERT出力契約は維持。
 Script refs verified: 2026-06-16 cmd_karo_skill_refs_update_20260616. `gate_lesson_health.sh` 直近変更(fcec9b309)はmin_samples内部分離(health計測用LESSON_EFFECT_USEFUL_MIN=2新設、退役判定min_samples=5維持)。引数なし全project走査/`<project_id>`単体走査、METRIC行、WARN/ALERT出力契約は変更なし。
@@ -402,4 +402,4 @@ Script refs verified: 2026-06-03 cmd_3144. `insight_write.sh` 直近変更(4dacb
 Script refs verified: 2026-06-10 karo. `semantic_search.sh` 直近変更(ffd1305de)はcache refresh内部実装のみ(cp生コピー→SQLite Backup API置換、malformed根治)。呼び出し契約(引数/`--stats`/出力形式)は変更なし。SKILL.md記載の使用方法は現行と一致。
 - → [[gunshi_idle_dream_gate_analysis_20260507]] dreamゲート分析: Phase設計の品質検証
 
-<!-- script_refs_checked_at: 2026-06-27T13:21:21+0900 -->
+<!-- script_refs_checked_at: 2026-06-29T18:05:00+0900 -->
