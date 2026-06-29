@@ -9024,6 +9024,9 @@ lessons:
   when: L010を実装・検証する時
   how: deprecated
   origin: '[[参照先scripts消滅(大掃除で削除済み)]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L134
   title: L025
   summary: IF L025を実装・検証する時 THEN deprecated deprecated
@@ -9579,6 +9582,9 @@ lessons:
   when: is_running=Noneは状態不明であり完了(False)と誤判定してはならない時
   how: is_running=Noneは状態不明であり完了(False)と誤判定してはならない
   origin: '[[cmd_215]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L083
   title: close_fallback=openは部分欠損closeを補完しない
   summary: IF dual DB読込でclose_fallback='open'を指定しても、補完されるのはclose系列が完全に空の場合のみ時 THEN

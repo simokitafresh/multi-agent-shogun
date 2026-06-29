@@ -9905,6 +9905,9 @@ lessons:
   target_files:
   - build_instructions.sh
   origin: '[[cmd_523]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L134
   title: NINJA_MONITOR_LIB_ONLYガードでbashスクリプトの関数テストが可能に
   summary: 'IF bashスクリプトの関数をbatsでユニットテストする時 THEN LIB_ONLYガード(例: NINJA_MONITOR_LIB_ONLY)を使ってメ'
@@ -10508,6 +10511,9 @@ lessons:
   target_files:
   - build_instructions.sh
   origin: '[[cmd_392]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L083
   title: bypass-approvals-and-sandboxフラグ漏れで全操作が権限確認停止
   summary: launch_cmdのSSOT管理(cli_profiles.yaml)が再発防止の要。CLI_ADAPTER_LOADED=falseのフォールバックパスや手

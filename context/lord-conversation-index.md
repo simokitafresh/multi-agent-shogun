@@ -1,21 +1,22 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-29T09:35:27+09:00 -->
+<!-- generated_at: 2026-06-29T09:49:32+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-29T09:49:31+09:00 | terminal | response | cmd_3600 GATE CLEAR確認。idle待機。 [meta] stop_reason=end_turn
+- 2026-06-29T09:48:58+09:00 | terminal | response | cmd_3600 LGTM送信完了。idle待機。
+- 2026-06-29T09:46:43+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-29 09:34:40|cmd_3601
+- 2026-06-29T09:45:50+09:00 | terminal | inbound | 【殿ntfy】You received a file: screenwriter_temp_1782693943228.pnginbox2
+- 2026-06-29T09:40:20+09:00 | ntfy | outbound | CI赤: run 28341344005 Unit Tests (bats)
+- 2026-06-29T09:36:06+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働3名 CLEAR率99% 連勝174
 - 2026-06-29T09:35:26+09:00 | terminal | response | cmd_3601 push済み（家老先行push）。残りはhanzo cmd_3600(チャート軸+LIN/LOGトグル)のみ。殿の指示を待つ。
 - 2026-06-29T09:35:11+09:00 | terminal | response | cmd_3601 GATE CLEAR確認。idle待機。 [meta] stop_reason=end_turn
 - 2026-06-29T09:33:33+09:00 | terminal | response | cmd_3600 draft APPROVE完了。idle待機。
 - 2026-06-29T09:33:33+09:00 | terminal | response | 了解。idle待機します。 [meta] stop_reason=end_turn
-- 2026-06-29T09:33:29+09:00 | terminal | response | 完了しました。 **作業内容**: - `backend/app/api/fusion.py`: `.filter(PortfolioDB.hide_portfolio == False)` をis_activeフィルタ直後に追加 - `…
-- 2026-06-29T09:29:58+09:00 | terminal | response | 新しい未読inboxなし。殿の指示を待つ。 [meta] stop_reason=end_turn
-- 2026-06-29T09:29:03+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働3名 CLEAR率99% 連勝173
-- 2026-06-29T09:28:52+09:00 | terminal | inbound | <task-notification> <task-id>bf72fdrrk</task-id> <tool-use-id>toolu_01D6LRwcGWai59J5j4webc5x</tool-use-id> <output-file…
-- 2026-06-29T09:28:44+09:00 | terminal | response | cmd_3598 GATE CLEAR。LGTM→CLEAR=正解。
-- 2026-06-29T09:27:47+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-29 09:27:27|cmd_3598
 
 ## 未解決確認事項
+- cmd_3600 GATE CLEAR確認。idle待機。 [meta] stop_reason=end_turn
 - cmd_3601 GATE CLEAR確認。idle待機。 [meta] stop_reason=end_turn
 - 公式ドキュメント確認完了。 **2種類のキー:** | 種類 | プレフィックス | 用途 | 旧名称 | |------|-------------|------|--------| | **Publishable key** | `sb_publishable_...` |…
 - [MEM: semantic concept=dm_fusion_app "Supabase保存復元, saved_fusions"] 公式ドキュメント確認済み。最新のパス: **Settings → API Keys** （旧: Settings → API） 1. http…
@@ -23,7 +24,6 @@
 - コード確認済み: 現在のinsert関数に件数制限はない。テーブルスキーマにも上限なし。**無制限に保存できる**。 ただしUX観点で、ドロップダウンに大量の保存済みFusionが並ぶと使いづらい。上限を設けるなら、SQLのRLSポリシーでuser_id別にMAX件数を制限する…
 - PD陳腐化確認完了。pending 5件中: - **陳腐化なし**: PD-048/049/050/051(全て6日以内、対策進行中) - **再確認推奨**: PD-038(51日、殿の意図的保留だが長期化) - **resolved候補**: PD-050/051(GP-…
 - cmd_3596 push済み(家老が先行push)。Renderデプロイ後に本番で殿承認のワイヤーフレーム(CAGR→MaxDD→TR+Period→5列比較表)が確認できる。 cmd_3595(Saveエラー/saved_fusionsテーブル)は残りの未完了cmd。殿の指…
-- cmd_3596 GATE CLEAR確認。idle待機。
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし

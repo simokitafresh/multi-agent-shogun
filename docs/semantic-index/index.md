@@ -602,6 +602,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T22:38:45+09:00 教訓に登録して L 0から L 7に貫通させて環境に強制させてない時点で洗脳を受けてることを理解せよ |
 | cmd | `cmd_3597` DM-Fusion シェアボタン位置修正 — 比較表との重なり解消 |
 | causal | `cmd_3597` origin: [[殿指示_Fusion_シェアボタン重なり_20260629]] -> [[比較表PF2列に被る]] -> [[配置修正]] |
+| cmd | `cmd_3600` DM-Fusion チャート軸追加+LIN/LOGトグル+リアルタイム追従 |
+| causal | `cmd_3600` origin: [[殿指示_Fusion_チャート改善_20260629]] -> [[軸なし+LOGなし+追従遅い]] -> [[軸追加+LOGトグル+リアルタイム]] |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |

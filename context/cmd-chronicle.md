@@ -413,3 +413,4 @@
 | cmd_3597 | 殿指示(2026-06-29): シェアボタンの位置が悪く比較表のPF2列にボタンが被っている。シェアボタンを比較表と重ならない位置に移動 | dm-signal | 06-29 | DM-FusionのShareボタンを比較表直下の独立した罫 |
 | cmd_3598 | 殿指示(2026-06-29): Save機能を1件上書きシステムに変更し保存済みFusionドロップダウンを廃止。シェアボタンをSaveボタンの横に配置。PF1ドロップダウンを上方向に開く | dm-signal | 06-29 | DM-Fusionの保存をuser_id単位の1件上書きup |
 | cmd_3601 | 殿指示(2026-06-29): DM-Signalのadmin画面でPFを非表示にしてもFusion APIレスポンスに反映されない | dm-signal | 06-29 | fusion.pyにhide_portfolio==Fals |
+| cmd_3600 | 殿指示(2026-06-29): チャートに縦軸(Total Return)と横軸(年)がなく直感的でない。LIN/LOGグラフをトグルで切替可能に。すべての機能は高速に反応しリアルタイムの追従性が重要 | dm-signal | 06-29 | DM-FusionチャートへTotal Return倍率の縦 |
