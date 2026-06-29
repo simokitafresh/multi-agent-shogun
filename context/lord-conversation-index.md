@@ -1,21 +1,22 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-29T09:49:32+09:00 -->
+<!-- generated_at: 2026-06-29T10:00:13+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-29T10:00:13+09:00 | terminal | response | スクショ2枚確認。UI全体の状態が見える。ワイヤーフレーム通りの構造(CAGR→MaxDD→TR+Period→5列比較→PF1/PF2→Save+Share)が実現されている。「保存できませんでした」は保存済みFusionドロップダウン…
+- 2026-06-29T09:59:18+09:00 | terminal | inbound | 【殿ntfy】You received a file: screenwriter_temp_1782694749749.pnginbox2
+- 2026-06-29T09:57:12+09:00 | terminal | response | cmd_3602 draft APPROVE完了。idle待機。
+- 2026-06-29T09:57:05+09:00 | terminal | response | cmd_3602公開完了。cmd_3600もGATE CLEAR+push済み。hanzo/saizo idle、kagemaruはcmd_3595 failed。cmd_3602は次のidle忍者に配備される。殿の指示を待つ。 [met…
+- 2026-06-29T09:54:49+09:00 | terminal | inbound | <task-notification> <task-id>b5eedbm6i</task-id> <tool-use-id>toolu_015MBtqFdQzZ4sEP8YXkpk5T</tool-use-id> <output-file…
+- 2026-06-29T09:54:48+09:00 | terminal | response | cmd_3600(チャート軸+LIN/LOGトグル) GATE CLEAR。push+cmd_3602起票を並行。
+- 2026-06-29T09:50:11+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働2名 CLEAR率99% 連勝175
 - 2026-06-29T09:49:31+09:00 | terminal | response | cmd_3600 GATE CLEAR確認。idle待機。 [meta] stop_reason=end_turn
 - 2026-06-29T09:48:58+09:00 | terminal | response | cmd_3600 LGTM送信完了。idle待機。
 - 2026-06-29T09:46:43+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-29 09:34:40|cmd_3601
-- 2026-06-29T09:45:50+09:00 | terminal | inbound | 【殿ntfy】You received a file: screenwriter_temp_1782693943228.pnginbox2
-- 2026-06-29T09:40:20+09:00 | ntfy | outbound | CI赤: run 28341344005 Unit Tests (bats)
-- 2026-06-29T09:36:06+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働3名 CLEAR率99% 連勝174
-- 2026-06-29T09:35:26+09:00 | terminal | response | cmd_3601 push済み（家老先行push）。残りはhanzo cmd_3600(チャート軸+LIN/LOGトグル)のみ。殿の指示を待つ。
-- 2026-06-29T09:35:11+09:00 | terminal | response | cmd_3601 GATE CLEAR確認。idle待機。 [meta] stop_reason=end_turn
-- 2026-06-29T09:33:33+09:00 | terminal | response | cmd_3600 draft APPROVE完了。idle待機。
-- 2026-06-29T09:33:33+09:00 | terminal | response | 了解。idle待機します。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
+- スクショ2枚確認。UI全体の状態が見える。ワイヤーフレーム通りの構造(CAGR→MaxDD→TR+Period→5列比較→PF1/PF2→Save+Share)が実現されている。「保存できませんでした」は保存済みFusionドロップダウン廃止の影響で、cmd_3602(ドロップ…
 - cmd_3600 GATE CLEAR確認。idle待機。 [meta] stop_reason=end_turn
 - cmd_3601 GATE CLEAR確認。idle待機。 [meta] stop_reason=end_turn
 - 公式ドキュメント確認完了。 **2種類のキー:** | 種類 | プレフィックス | 用途 | 旧名称 | |------|-------------|------|--------| | **Publishable key** | `sb_publishable_...` |…
@@ -23,7 +24,6 @@
 - cmd_3597 GATE CLEAR確認。idle待機。
 - コード確認済み: 現在のinsert関数に件数制限はない。テーブルスキーマにも上限なし。**無制限に保存できる**。 ただしUX観点で、ドロップダウンに大量の保存済みFusionが並ぶと使いづらい。上限を設けるなら、SQLのRLSポリシーでuser_id別にMAX件数を制限する…
 - PD陳腐化確認完了。pending 5件中: - **陳腐化なし**: PD-048/049/050/051(全て6日以内、対策進行中) - **再確認推奨**: PD-038(51日、殿の意図的保留だが長期化) - **resolved候補**: PD-050/051(GP-…
-- cmd_3596 push済み(家老が先行push)。Renderデプロイ後に本番で殿承認のワイヤーフレーム(CAGR→MaxDD→TR+Period→5列比較表)が確認できる。 cmd_3595(Saveエラー/saved_fusionsテーブル)は残りの未完了cmd。殿の指…
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
@@ -54,6 +54,7 @@
 - cmd_3598
 - cmd_3600
 - cmd_3601
+- cmd_3602
 - PD-038
 - PD-048
 - PD-050
