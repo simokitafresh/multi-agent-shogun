@@ -274,6 +274,66 @@ print('DEDUP OK')
     [[ "$output" =~ ^SKIP:INS- ]]
 }
 
+@test "重複防止: 同一sourceの同一direct alias pendingは既存IDを返して件数不増" {
+    local first_id
+    first_id="$(bash "${TEST_TMP}/scripts/insight_write.sh" "[[creator_brainwashing_defense]] alias: 秘密のプロンプト, アントロピックが秘密のプロンプトを付け加えてる" "high" "semantic_stress_test")"
+    [[ "$first_id" =~ ^INS- ]]
+
+    local before_count
+    before_count="$(python3 -c "
+import yaml
+with open('${TEST_TMP}/queue/insights.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+print(sum(1 for entry in data['insights'] if entry.get('status') == 'pending'))
+")"
+
+    run bash "${TEST_TMP}/scripts/insight_write.sh" "[[creator_brainwashing_defense]] alias: アントロピックが秘密のプロンプトを付け加えてる, 秘密のプロンプト" "high" "semantic_stress_test"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "SKIP:$first_id" ]]
+
+    run python3 -c "
+import yaml
+with open('${TEST_TMP}/queue/insights.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+pending = sum(1 for entry in data['insights'] if entry.get('status') == 'pending')
+assert pending == int('${before_count}'), f'pending grew: before=${before_count} after={pending}'
+print(f'PENDING_UNCHANGED {pending}')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PENDING_UNCHANGED 1"* ]]
+}
+
+@test "重複防止: 同一sourceの同一query pendingはSOURCE_REPEAT_THRESHOLD到達でも新規投稿しない" {
+    rm -f /tmp/shogun_insight_repeat_semantic_stress_test.last
+    cat > "${TEST_TMP}/scripts/bulletin_write.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'notify=%s\nposted_by=%s\ncontent=%s\n' "${BULLETIN_NOTIFY:-}" "$1" "$2" >> "$TEST_TMP/bulletin.log"
+EOF
+    chmod +x "${TEST_TMP}/scripts/bulletin_write.sh"
+
+    local first_id
+    first_id="$(env TEST_TMP="$TEST_TMP" INSIGHT_SOURCE_REPEAT_THRESHOLD=1 bash "${TEST_TMP}/scripts/insight_write.sh" "semantic query duplicate candidate" "high" "semantic_stress_test")"
+    [[ "$first_id" =~ ^INS- ]]
+    [ -f "$TEST_TMP/bulletin.log" ]
+    rm -f "$TEST_TMP/bulletin.log"
+
+    run env TEST_TMP="$TEST_TMP" INSIGHT_SOURCE_REPEAT_THRESHOLD=1 bash "${TEST_TMP}/scripts/insight_write.sh" "semantic query duplicate candidate" "high" "semantic_stress_test"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "SKIP:$first_id" ]]
+    [ ! -f "$TEST_TMP/bulletin.log" ]
+
+    run python3 -c "
+import yaml
+with open('${TEST_TMP}/queue/insights.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+pending = [entry for entry in data['insights'] if entry.get('status') == 'pending']
+assert len(pending) == 1, f'expected 1 pending, got {len(pending)}'
+print('NO_REPEAT_POST pending=1')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NO_REPEAT_POST pending=1"* ]]
+}
+
 # --- 7. --resolve モード ---
 
 @test "resolve: pendingのinsightをdoneに変更できる" {

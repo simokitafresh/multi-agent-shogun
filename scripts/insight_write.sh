@@ -149,6 +149,7 @@ fi
                python3 - <<'PYEOF'
 import json
 import os
+import re
 import sys
 import tempfile
 import time
@@ -230,11 +231,36 @@ def parse_scalar(raw):
         return value[1:-1].replace("''", "'")
     return value
 
+def normalize_text(value):
+    return re.sub(r'\s+', ' ', value).strip().lower()
+
+def direct_alias_key(value):
+    match = re.search(r'\[\[[^\]]+\]\]\s*alias:\s*(.+)', value, flags=re.IGNORECASE)
+    if not match:
+        return None
+    aliases = [normalize_text(part) for part in match.group(1).split(',')]
+    aliases = [part for part in aliases if part]
+    if not aliases:
+        return None
+    return 'direct_alias:' + '|'.join(sorted(aliases))
+
+def semantic_query_key(value):
+    direct = direct_alias_key(value)
+    if direct:
+        return direct
+    normalized = normalize_text(value)
+    if not normalized:
+        return None
+    return 'query:' + normalized
+
+new_semantic_key = semantic_query_key(msg)
+
 # Single-pass: dedup check + source repeat count
 current_id = None
 current_insight = None
 current_status = None
 current_source = None
+current_semantic_key = None
 source_pending_count = 0
 
 with open(insights_file, 'r', encoding='utf-8') as f:
@@ -245,17 +271,30 @@ with open(insights_file, 'r', encoding='utf-8') as f:
                     if current_insight == msg or (msg and current_insight[:50] == msg[:50]):
                         print('SKIP:' + current_id)
                         sys.exit(0)
+                    if (
+                        current_source == source_info
+                        and new_semantic_key is not None
+                        and current_semantic_key is not None
+                        and (
+                            current_semantic_key == new_semantic_key
+                            or current_insight[:50] == msg[:50]
+                        )
+                    ):
+                        print('SKIP:' + current_id)
+                        sys.exit(0)
                 if current_source == source_info:
                     source_pending_count += 1
             current_id = line[len('- id: '):].strip()
             current_insight = None
             current_status = None
             current_source = None
+            current_semantic_key = None
             continue
         if current_id is None:
             continue
         if line.startswith('  insight:'):
             current_insight = parse_scalar(line.split(':', 1)[1])
+            current_semantic_key = semantic_query_key(current_insight)
         elif line.startswith('  status:'):
             current_status = parse_scalar(line.split(':', 1)[1])
         elif line.startswith('  source:'):
@@ -265,6 +304,17 @@ with open(insights_file, 'r', encoding='utf-8') as f:
 if current_status == 'pending':
     if current_insight is not None:
         if current_insight == msg or (msg and current_insight[:50] == msg[:50]):
+            print('SKIP:' + current_id)
+            sys.exit(0)
+        if (
+            current_source == source_info
+            and new_semantic_key is not None
+            and current_semantic_key is not None
+            and (
+                current_semantic_key == new_semantic_key
+                or current_insight[:50] == msg[:50]
+            )
+        ):
             print('SKIP:' + current_id)
             sys.exit(0)
     if current_source == source_info:
