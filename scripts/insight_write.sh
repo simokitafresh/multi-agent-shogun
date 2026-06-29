@@ -343,12 +343,12 @@ PYEOF
   if [[ "$result" == INS-* && "$SOURCE_REPEAT_THRESHOLD" -gt 0 ]]; then
     repeat_count="${raw_result##*$'\n'}"
     if [[ "$repeat_count" -ge "$SOURCE_REPEAT_THRESHOLD" && -f "$BULLETIN_SCRIPT" ]]; then
-      # デバウンス: 同一sourceのINSIGHT_REPEATを10分以内に重複投稿しない
+      # デバウンス: 同一sourceのINSIGHT_REPEATを24時間以内に重複投稿しない (10分→24h: 2026-06-29 INSIGHT_REPEAT 17件蓄積→確認負荷→先送り誘発の対策)
       _repeat_debounce_file="/tmp/shogun_insight_repeat_${source_info//[^a-zA-Z0-9_]/_}.last"
       _repeat_now=$(date +%s)
       _repeat_last=0
       [[ -f "$_repeat_debounce_file" ]] && _repeat_last=$(cat "$_repeat_debounce_file" 2>/dev/null || echo 0)
-      if (( _repeat_now - _repeat_last > 600 )); then
+      if (( _repeat_now - _repeat_last > 86400 )); then
         printf '%s' "$_repeat_now" > "$_repeat_debounce_file"
         BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" saizo \
           "INSIGHT_REPEAT: source=${source_info} pending_count=${repeat_count} threshold=${SOURCE_REPEAT_THRESHOLD} latest=${result} priority=${priority}" \
