@@ -2339,7 +2339,7 @@
   verdict: APPROVE
   verified_files:
     - "/mnt/c/Python_app/DM-signal/backend/app/api/fusion.py:33"
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   changed_lines: null
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
@@ -2357,3 +2357,51 @@
   ambiguity_points: none
   discretion_fills: none
   timestamp: "2026-06-29T09:28:00"
+- cmd_id: cmd_3600
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "/mnt/c/Python_app/DM-Fusion/app/components/FusionChart.tsx:1"
+  gate_result: null
+  confidence: HIGH
+  changed_lines: null
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "6観点OK。チャート軸+LIN/LOGトグル+リアルタイム追従。AC3件。LOG時0以下ハンドリングは忍者scope内"
+  observations:
+    - "事実1: AC3件(縦軸Total Return+横軸年+LIN/LOGトグル+rAF最適化)"
+    - "事実2: LOG時0以下のエッジケース。累積リターンは通常1.0×(1+r)で正だが-100%超下落で0以下理論可能"
+  origin: "[[殿チャート改善指示]] -> [[cmd_3600 APPROVE]]"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "Canvas描画拡張"
+  causal_chain: "MVP軸なし→殿指摘→軸+LOGトグル+追従追加→チャート情報量向上"
+  brainwash_check: "AC3件確認。LOG 0以下エッジケース認識済み"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-06-29T09:33:00"
+- cmd_id: cmd_3601
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  verified_files:
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/fusion.py:34"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  changed_lines: 24
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。fusion.pyにhide_portfolio==Falseフィルタ1行追加+テスト22行追加。5/5 PASS。a3a854ba実在確認"
+  observations:
+    - "事実1: git show a3a854ba fusion.py L34 .filter(hide_portfolio==False)追加。is_activeと同列配置"
+    - "事実2: テスト5/5 PASS。hide_portfolio=True PFの除外テスト追加済み"
+  origin: "[[cmd_3601]] -> [[saizo報告]] -> [[LGTM hide_portfolioフィルタ]]"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "クエリ条件1行+テスト22行"
+  causal_chain: "hide_portfolioフィルタ欠落→admin非表示PF露出→1行フィルタ追加→テストPASS"
+  brainwash_check: "a3a854ba git show確認。fusion.py 1行+テスト22行。5/5 PASS"
+  step3_5_verified: true
+  lesson_quality: OK
+  timestamp: "2026-06-29T09:34:00"

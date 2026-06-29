@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-06-28 cmd_3583 -->
+<!-- last_updated: 2026-06-29 cmd_3601 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -359,7 +359,7 @@ cmd_3572でMTD事前計算テーブル`precomputed_mtd`、`backend/app/jobs/prec
 
 ### §8.7 Fusion API (2026-06-28)
 
-`/api/fusion/portfolios` は外部Fusionアプリ向けのadmin認証専用エンドポイント。全active PFの`id/name/type/folder`と確定済み`monthly_returns[{year_month, return}]`のみを返し、当月・null monthly_return・config/holding_signal/ticker/weights/cumulative系は禁止。10/min rate limitと11回目429テストあり。根拠: commits `288f0e36`, `314b596a`, spec `docs/spec/fusion-api-endpoint.md`, test `backend/tests/test_fusion_api.py`。
+`/api/fusion/portfolios` は外部Fusionアプリ向けのadmin認証専用エンドポイント。全activeかつ`hide_portfolio=false`のPFの`id/name/type/folder`と確定済み`monthly_returns[{year_month, return}]`のみを返し、当月・null monthly_return・config/holding_signal/ticker/weights/cumulative系は禁止。10/min rate limitと11回目429テストあり。根拠: commits `288f0e36`, `314b596a`, `a3a854ba`, spec `docs/spec/fusion-api-endpoint.md`, test `backend/tests/test_fusion_api.py`。
 
 ## 10. ディレクトリ構成
 

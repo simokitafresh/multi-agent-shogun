@@ -412,3 +412,4 @@
 | cmd_3596 | 殿指示(2026-06-29): 詳細ボタン廃止→Fusion/SPY/TQQQ常時表示。Total Return右にPeriod配置。MaxDD横にシェアアイコン配置。保存済み配合→保存済みFusionにテキスト変更。保存済みFusionドロップダウンが機能していないバグ修正 | dm-signal | 06-29 | DM-Fusion Page0を詳細ボタンなしの常時5列比較 |
 | cmd_3597 | 殿指示(2026-06-29): シェアボタンの位置が悪く比較表のPF2列にボタンが被っている。シェアボタンを比較表と重ならない位置に移動 | dm-signal | 06-29 | DM-FusionのShareボタンを比較表直下の独立した罫 |
 | cmd_3598 | 殿指示(2026-06-29): Save機能を1件上書きシステムに変更し保存済みFusionドロップダウンを廃止。シェアボタンをSaveボタンの横に配置。PF1ドロップダウンを上方向に開く | dm-signal | 06-29 | DM-Fusionの保存をuser_id単位の1件上書きup |
+| cmd_3601 | 殿指示(2026-06-29): DM-Signalのadmin画面でPFを非表示にしてもFusion APIレスポンスに反映されない | dm-signal | 06-29 | fusion.pyにhide_portfolio==Fals |

@@ -3640,6 +3640,9 @@ lessons:
   - frontend/app/dashboard/page.tsx
   - frontend/lib/api.ts
   origin: '[[cmd_karo_kj_role_filter]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L633
   title: verdict自動導出は免除文脈(waive_reason)をgate検出へ残す
   summary: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
@@ -9012,6 +9015,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: 'IF: 外部知識を記録・引用する時 THEN: 一次データ層と解釈・適用層を分離せよ BECAUSE: 一次データの改変は捏造であり、知識の信頼性が失われる'
   origin: '[[legacy_lesson_L212]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L211
   title: 大規模偵察(8名以上)には統合専任担当(水平H)をcmd設計段階で組み込むべき
   summary: A-G各忍者は自担当範囲の辞書を高品質に作れるが、エントリ間の重複・矛盾・gap検出は不可能。統合専任が全報告を横断的に読み完全知識マップを作成して初めて実装可

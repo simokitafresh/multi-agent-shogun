@@ -2450,6 +2450,9 @@ lessons:
   target_files:
   - docs/research/codd_phase4_schema_drift_analysis.md
   origin: '[[cmd_2016]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L633
   title: monthly専用GS serial pathはprecomputed union maskを再利用せよ
   summary: 四つ目(yotsume)のように monthly-only かつ precomputed union mask が既にあるGSでは、serial
@@ -8084,6 +8087,9 @@ lessons:
   - frontend/lib/__tests__/api-client-auth.test.ts
   - frontend/lib/api-client.ts
   origin: '[[cmd_686]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L211
   title: 本番CDP検証ではviewer認証を先に確立してから計測せよ。未認証状態ではDashboard shellだけ描画されAPI未実行で性能/回帰を誤判定する
   summary: 'IF: DM-signal本番でCDP性能計測する時 THEN: 先に/api/auth/verify-viewerでviewer session+dm_vie'
