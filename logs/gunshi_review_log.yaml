@@ -2288,3 +2288,72 @@
   step3_5_verified: true
   lesson_quality: OK
   timestamp: "2026-06-29T07:51:00"
+- cmd_id: cmd_3598
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:441"
+  gate_result: CLEAR
+  confidence: HIGH
+  changed_lines: null
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "6観点OK。Save1件上書き(upsert)+シェア配置+PF1上方向。AC3件。殿指示"
+  observations:
+    - "事実1: AC3件(upsert化+シェア横並び+PF1上方向)。page.tsx L441 insert→upsert"
+  origin: "[[殿指示_Save簡素化]] -> [[cmd_3598 APPROVE]]"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "外部PJ UI+DB操作修正"
+  causal_chain: "insert複数保存→削除不能→upsert1件上書きに簡素化"
+  brainwash_check: "AC3件確認。assumptions verified(L441 insert確認)"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-06-29T09:20:00"
+- cmd_id: cmd_3598
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  verified_files:
+    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:441"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  confidence: HIGH
+  changed_lines: null
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。Save upsert+シェア配置+PF1上方向。AC3件全yes。precheck ERRORS=0"
+  observations:
+    - "事実1: AC1-3+commit全yes。precheck ERRORS=0, GATE_PREDICTION=CLEAR"
+  origin: "[[cmd_3598]] -> [[hanzo報告]] -> [[LGTM]]"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "UI+DB upsert修正"
+  causal_chain: "insert複数保存→upsert1件上書き+UI簡素化"
+  brainwash_check: "AC3件+commit確認。ERRORS=0"
+  step3_5_verified: true
+  lesson_quality: OK
+  timestamp: "2026-06-29T09:27:00"
+- cmd_id: cmd_3601
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/fusion.py:33"
+  gate_result: null
+  confidence: HIGH
+  changed_lines: null
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "6観点OK。Fusion APIにhide_portfolioフィルタ追加。AC1件。設計書にhide_portfolioフィルタ記載なしだが殿意図明確"
+  observations:
+    - "事実1: fusion.py L33 .filter(Portfolio.is_active == True)にhide_portfolio==Falseフィルタ追加"
+    - "事実2: 設計書fusion-api-endpoint.md L81にはis_activeのみ。hide_portfolioは設計書更新候補"
+  origin: "[[cmd_3583_Fusion_API]] -> [[hide_portfolioフィルタ欠落]] -> [[cmd_3601 APPROVE]]"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "クエリ条件1行追加"
+  causal_chain: "cmd_3583でhide_portfolio未フィルタ→admin非表示PFがFusionに露出→cmd_3601でフィルタ追加"
+  brainwash_check: "AC1件確認。fusion.py+models.py現物確認済み(本セッション)"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-06-29T09:28:00"

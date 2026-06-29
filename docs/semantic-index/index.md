@@ -2046,6 +2046,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T23:49:32+09:00 基本的にできる限り別CMDで出すのがルールだ。確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T23:56:22+09:00 すでにやったことをもう一回やるのか？今後やればいいのでは？確認したか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-29T02:31:53+09:00 陳腐化しているPDはないか？確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T08:37:04+09:00 確認して |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -2175,6 +2176,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T12:58:16+09:00 simokitafresh@2025LG17:~$ rm -rf /mnt/c/Python_app/DM-signal/outputs/analysis/alm_res earch/cmd_3507_pf_l3_wf_alpha/ -ba |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T13:27:05+09:00 bjts40eye toolu_01EBa45UwJTR6oUdaWFoyJoQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/3762abf2-7213-42c3-9ecf-0cdd87 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T08:43:38+09:00 be4d1reh3 toolu_01Fm52R71Sw1TZgYP4R9XewF /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8299ef20-d547-4a06-bf54-eec6c8 |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T09:25:26+09:00 botntx5of toolu_01Htx5gdFMB7wFqnWNYmrEeb /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | causal_chain | `[[gunshi_idle_semantic_audit_20260505]]` (L566) |
 
 ## shin_shijin_design — 四神設計
@@ -3453,7 +3455,7 @@ codd:
 |------|---|
 | id | rebalancer_app |
 | label | Rebalancerアプリ |
-| aliases | rebalancer, リバランス, リバランサー, Portfolio Rebalance App, dm-rebalancer, ポートフォリオリバランス, なるほど, リバランサーのスマホ画面だが, リバランサーのGoogleOauthはもう誰でも利用できる？, なるほど精度はどうやって計測し, なるほどね, よかった, つまり母集団が大きい方が感度も精度もよかった, oauthでログインしたらリバランサーにとばされた |
+| aliases | rebalancer, リバランス, リバランサー, Portfolio Rebalance App, dm-rebalancer, ポートフォリオリバランス, なるほど, リバランサーのスマホ画面だが, リバランサーのGoogleOauthはもう誰でも利用できる？, なるほど精度はどうやって計測し, なるほどね, よかった, つまり母集団が大きい方が感度も精度もよかった, oauthでログインしたらリバランサーにとばされた, rebalancerにはないのか？自力で探してくれ |
 | skills | なし |
 | related_concepts | external_project_registry, cdp_browser_capability |
 
@@ -3490,6 +3492,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-17T19:22:43+09:00 つまり母集団が大きい方が感度も精度もよかった。合ってるか？2σ、3σで検出はどうかな |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T13:09:55+09:00 なるほどL3のチャンピオン21体のみのアルファを出そう |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T20:49:54+09:00 oauthでログインしたらリバランサーにとばされた |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T08:04:27+09:00 rebalancerにはないのか？自力で探してくれ |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -4904,7 +4907,7 @@ codd:
 |------|---|
 | id | project_clinic_expense_tracker |
 | label | Clinic Expense Tracker |
-| aliases | clinic-expense-tracker, Clinic Expense Tracker, clinic-expense-tracker project, Clinic Expense Tracker PJ, cliniq-expander, クリニック経費, 経費証票管理, 若友会経費, 佐瀬会計提出, マネーフォワード, MoneyForward, みずほ明細, 証憑, 証票, Gmail証票, 領収書, 領収書整理, 確定申告, 経費SQLite, 経費データ投入, クリニック経営, clinic expens, clinic expense, 経費元マスタ, monthly_status, 現況マトリクス, 経費・領収書ステータス管理, SSOT, Render DB, 設定画面, settings画面, expense_sources CRUD, download-db, upload-db, 取得済み, 未取得, 自動取得, 手動取得, collection_method, 4色分類, 取得ルート, 殿裁定 取得済み 該当証票PDFがDriveに保存されていること, 殿裁定, 殿裁定 CDPは全員が使えるべき, 殿承認の2層SSOT設計 実装, SSOTの二層構造はわかっているか？デフォルトと動的の二層だ, render, render yamlはどういう風にする予定だ, render yamlがめちゃくちゃでは？ |
+| aliases | clinic-expense-tracker, Clinic Expense Tracker, clinic-expense-tracker project, Clinic Expense Tracker PJ, cliniq-expander, クリニック経費, 経費証票管理, 若友会経費, 佐瀬会計提出, マネーフォワード, MoneyForward, みずほ明細, 証憑, 証票, Gmail証票, 領収書, 領収書整理, 確定申告, 経費SQLite, 経費データ投入, クリニック経営, clinic expens, clinic expense, 経費元マスタ, monthly_status, 現況マトリクス, 経費・領収書ステータス管理, SSOT, Render DB, 設定画面, settings画面, expense_sources CRUD, download-db, upload-db, 取得済み, 未取得, 自動取得, 手動取得, collection_method, 4色分類, 取得ルート, 殿裁定 取得済み 該当証票PDFがDriveに保存されていること, 殿裁定, 殿裁定 CDPは全員が使えるべき, 殿承認の2層SSOT設計 実装, SSOTの二層構造はわかっているか？デフォルトと動的の二層だ, render, render yamlはどういう風にする予定だ, render yamlがめちゃくちゃでは？, render経由でデプロイしてできるだろ |
 | related_concepts | external_project_registry |
 
 | 種別 | パス/参照 |
@@ -4941,6 +4944,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T18:09:33+09:00 認証はrender側のenvironmentで決定する仕組みか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T19:10:23+09:00 render.yamlはどういう風にする予定だ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T20:13:40+09:00 regionがオレゴンになってるぞ。render.yamlがめちゃくちゃでは？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T08:24:08+09:00 render経由でデプロイしてできるだろ |
 
 ## operational_ontology — 操作的オントロジー
 
@@ -4991,7 +4995,7 @@ codd:
 |------|---|
 | id | project_dividend_tracker |
 | label | Dividend Tracker |
-| aliases | dividend-tracker, Dividend Tracker, dividend-tracker project, Dividend Tracker PJ, 配当, 配当投資, 配当管理, 配当トラッカー, 配当カレンダー, 配当利回り, YoC, Yield on Cost, 銘柄一覧, 配当金額, 米国株配当, 配当データ, 配当再投資, stock event, 配当投資管理Webアプリ, Supabase RLS, service_role key, SUPABASE SERVICE ROLE KEY はどうすればいい？ |
+| aliases | dividend-tracker, Dividend Tracker, dividend-tracker project, Dividend Tracker PJ, 配当, 配当投資, 配当管理, 配当トラッカー, 配当カレンダー, 配当利回り, YoC, Yield on Cost, 銘柄一覧, 配当金額, 米国株配当, 配当データ, 配当再投資, stock event, 配当投資管理Webアプリ, Supabase RLS, service_role key, SUPABASE SERVICE ROLE KEY はどうすればいい？, service role keyの設定方法は？, service role keyを設定するなら協力するぞ |
 | related_concepts | external_project_registry |
 
 | 種別 | パス/参照 |

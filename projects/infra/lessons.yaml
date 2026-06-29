@@ -5450,7 +5450,7 @@ lessons:
   origin: '[[cmd_2086]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-06-29'
 - id: L507
   title: gate_statusキャッシュはreportファイル数が安定している場合のみ有効
   summary: archive_completed.shのgate_scanキャッシュ(report_cacheサイズキー)を実装したが、本番フローではarchive_repo

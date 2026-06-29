@@ -1268,3 +1268,4 @@
 - 2026-06-28 cmd_3587: DM-Fusion admin設定画面+Xシェアをcommit `ab3ec8c` で完了。/admin Basic Auth、PF表示トグル、X intent Share、OAuth redirectTo明示を実装し、Supabase URL許可設定は外部作業としてdecision_candidateに残してGATE CLEAR。
 - 2026-06-29 cmd_3595: DM-Fusion Saveエラーはコード側表示保護+`saved_fusions` SQL正本をcommit `04a2172` でpush済み。Supabase本番DDL未適用(PGRST205)のためcmdはFAIL、cmd_3597を半蔵へ配備して作業開始確認。
 - 2026-06-29 cmd_3597: DM-Fusion Shareボタンを比較表外の独立行へ移動し、MaxDD拡大・Total Return/Period縮小をcommit `433709f` でpush。半蔵報告PASS、軍師LGTM、GATE CLEAR。
+- 2026-06-29 cmd_3598: DM-Fusion Saveをuser_id単位の1件upsertへ変更し、保存済みFusionドロップダウン撤去、ShareをSave横、PF1上開きへ変更。commit `0177d94` push済み、半蔵報告PASS、軍師LGTM、GATE CLEAR。

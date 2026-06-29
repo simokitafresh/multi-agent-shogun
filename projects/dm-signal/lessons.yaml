@@ -4214,7 +4214,7 @@ lessons:
   origin: '[[cmd_1483]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-06-29'
 - id: L507
   title: lazy-loaded cache forward-fillは危険
   summary: signal_cache forward-fillがlazy-loadedキャッシュで古いシグナル(Cash含む)を全後続月に伝播。exact-match+qu
@@ -6454,6 +6454,9 @@ lessons:
   helpful_count: 0
   harmful_count: 0
   last_referenced: '2026-06-28'
+  deprecated: true
+  deprecated_at: '2026-06-29T09:27:31+09:00'
+  deprecated_reason: 'AUTO-DEPRECATE(low_effectiveness): rate=9% injected=11 helpful=1'
 - id: L341
   title: 既存GSチャンピオン流用時はdeployed portfolio configを正本にする
   summary: IF 既存GSチャンピオンパラメータ固定で分析やBTを組む THEN outputs/grid_search/*.meta.yamlのglobal
