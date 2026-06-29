@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-29 cmd_3606 -->
+<!-- last_updated: 2026-06-29 cmd_3607 -->
 
 ## 2026-06-29
 
@@ -1290,3 +1290,5 @@
 - 2026-06-29 cmd_3604: DM-Fusion chartへSPY/TQQQ比較線を追加。半蔵commit `e53448f3` で既存`comparisonSeries` propsにSPY/TQQQ累積系列を配線し、薄青/薄赤破線+右上凡例+黒実線Fusionを維持。軍師LGTM、GATE CLEAR。別件Total Return倍率表示差分は未commitで温存。
 - 2026-06-29 cmd_3605: DM-Fusionの`PortfolioSelect`にAll/フォルダ別タブを追加し、一覧高さを220px→340pxへ拡大。`selectedFolder`/`filteredGroups`/`flatFilteredPortfolios`で既存groups構造を活用し、DM-Signal同等のPF探索UXへ改善。軍師LGTM、GATE CLEAR。
 - 2026-06-29 cmd_karo_ci_fix_ga151_main_ci_red_202606291410: CI RED(run 28348631439)を鳶猿へkaro_direct配備し、`.claude/hooks/pretool-dispatch.sh`のruntime echoから日付/LS-IDを除去。`gate_hooks_no_runtime_incident_ids`と関連bats確認、GATE CLEAR。
+- 2026-06-29 cmd_3606: DM-FusionのPF選択をabsolute dropdownから画面中央fixed overlay modalへ変更。PC/mobile Playwrightで画面内表示・外側クリック・選択クローズを実測し、lint/build PASS、軍師LGTMでGATE CLEAR。
+- 2026-06-29 cmd_3607: DM-Fusion admin画面をserver loader + Client Componentへ分割し、`location.reload()`を廃止。PF単体はoptimistic update、フォルダヘッダーはON/OFF一括POSTに対応し、lint/build PASS、軍師LGTMでGATE CLEAR。
