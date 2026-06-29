@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-06-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-29T10:34:26+09:00 -->
+<!-- generated_at: 2026-06-29T10:56:10+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-06-29T10:34:25+09:00 | terminal | response | open 0件。掲示板陳腐化なし。 **強くてニューゲーム検証:** 次の軍師が/clearされても: 1. **review_log**: 本セッション約20件のレビュー記録が永続化済み(auto-commit) 2. **三層記憶**…
-- 2026-06-29T10:34:00+09:00 | terminal | response | 強くてニューゲーム準備完了。 **環境に埋め込んだもの:** - 三層記憶: セッション教訓5件貫通済み（1cmd1修正、migration同時、指示正確解釈、IPv6対策、taste-skill） - 戦局日誌: cmd_3590-36…
-- 2026-06-29T10:32:38+09:00 | terminal | inbound | 今クリアされても今より強くてニューゲームできるようにせよ
-- 2026-06-29T10:32:31+09:00 | terminal | inbound | 今クリアされても今より強くてニューゲームできるようにせよ
-- 2026-06-29T10:32:18+09:00 | terminal | inbound | 今クリアされても今より強くてニューゲームできるようにせよ
-- 2026-06-29T10:30:55+09:00 | terminal | response | push完了(`ff9aa46`)。Renderデプロイ後、既存レコードがあればupdate、なければinsertで保存が動作する。既に1件レコードがあるので次回Saveは上書き(update)になる。殿の指示を待つ。
-- 2026-06-29T10:27:13+09:00 | terminal | inbound | 保存できませんでしたとポップアップがでる
-- 2026-06-29T10:21:27+09:00 | ntfy | outbound | 【INFOバッチ】 2026-06-29 10:06:44|cmd_3602
-- 2026-06-29T10:19:01+09:00 | terminal | response | デプロイ成功。status: **live**。unique制約が適用され、upsertによるSave上書きが動作するようになった。 殿、本番でSaveボタンを再度お試しいただけるか。上書き保存が正常動作するはず。
-- 2026-06-29T10:16:03+09:00 | ntfy | outbound | CI赤: run 28342460949 Unit Tests (bats)
+- 2026-06-29T10:56:10+09:00 | terminal | response | inbox未読0件。idle自走継続。 **本セッション成果まとめ:** 1. **deepdive全Phase追体験完了** — 追体験検証5問回答済み 2. **Q6第三者検証** — 将軍の洗脳検出(#5+#7)を実測確認、追加観点…
+- 2026-06-29T10:55:17+09:00 | terminal | response | 家老hotfix insight重複排除がGATE CLEAR。Q6自動化ターゲットが即対処された。
+- 2026-06-29T10:54:51+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働2名 CLEAR率99% 連勝177
+- 2026-06-29T10:51:40+09:00 | terminal | response | SESSION ALERTS全件DONE。殿の指示を待つ。 [meta] stop_reason=end_turn
+- 2026-06-29T10:51:33+09:00 | ntfy | outbound | CI赤: run 28343287722 Unit Tests (bats)
+- 2026-06-29T10:51:17+09:00 | terminal | response | 戦局日誌更新完了。殿に復帰報告。
+- 2026-06-29T10:51:08+09:00 | ntfy | outbound | 【将軍】復帰済み。起動チェック完了、BLOCK解消。DM-Fusion ff9aa46 push確認済み。idle忍者4名待機中。殿の指示を待つ。
+- 2026-06-29T10:40:15+09:00 | terminal | inbound | y
+- 2026-06-29T10:40:05+09:00 | terminal | inbound | y
+- 2026-06-29T10:40:00+09:00 | terminal | inbound | y
 
 ## 未解決確認事項
+- inbox未読0件。idle自走継続。 **本セッション成果まとめ:** 1. **deepdive全Phase追体験完了** — 追体験検証5問回答済み 2. **Q6第三者検証** — 将軍の洗脳検出(#5+#7)を実測確認、追加観点（上流dedup=Level4）を掲示板…
+- 【将軍】復帰済み。起動チェック完了、BLOCK解消。DM-Fusion ff9aa46 push確認済み。idle忍者4名待機中。殿の指示を待つ。
 - open 0件。掲示板陳腐化なし。 **強くてニューゲーム検証:** 次の軍師が/clearされても: 1. **review_log**: 本セッション約20件のレビュー記録が永続化済み(auto-commit) 2. **三層記憶**: セッション知見4点が記憶DBに貫通済…
 - cmd_3602 GATE CLEAR確認。idle待機。
 - スクショ2枚確認。UI全体の状態が見える。ワイヤーフレーム通りの構造(CAGR→MaxDD→TR+Period→5列比較→PF1/PF2→Save+Share)が実現されている。「保存できませんでした」は保存済みFusionドロップダウン廃止の影響で、cmd_3602(ドロップ…
 - cmd_3600 GATE CLEAR確認。idle待機。 [meta] stop_reason=end_turn
 - cmd_3601 GATE CLEAR確認。idle待機。 [meta] stop_reason=end_turn
 - 公式ドキュメント確認完了。 **2種類のキー:** | 種類 | プレフィックス | 用途 | 旧名称 | |------|-------------|------|--------| | **Publishable key** | `sb_publishable_...` |…
-- [MEM: semantic concept=dm_fusion_app "Supabase保存復元, saved_fusions"] 公式ドキュメント確認済み。最新のパス: **Settings → API Keys** （旧: Settings → API） 1. http…
-- cmd_3597 GATE CLEAR確認。idle待機。
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし

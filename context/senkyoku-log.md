@@ -1,5 +1,16 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-28 cmd_3588 -->
+<!-- last_updated: 2026-06-29 cmd_karo_hotfix_insight_dedupe_20260629104723 -->
+
+## 2026-06-29
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_3590-3598 | DM-Fusion UI改善(レスポンシブ/スワイプ/ドロップダウン/保存/共有/レイアウト) | 全GATE CLEAR。8cmd連続push | 殿UIスクショフィードバック→迅速対応 |
+| cmd_3600 | DM-Fusion chartにTR倍率軸・年軸・LIN/LOGトグル追加 | GATE CLEAR。1f0bad1 push済み | 比較チャートの視認性向上 |
+| cmd_3601 | Fusion APIにhide_portfolio==Falseフィルタ追加 | GATE CLEAR。a3a854ba push済み | 非表示PF除外 |
+| cmd_3602 | 保存済みFusionドロップダウン復元+toast最下部移動+空白除去 | GATE CLEAR。84a2a02+3ccfb22 push済み | 殿「無駄なスペース」指摘→UI改善 |
+| D0 ff9aa46 | Save機能upsert→update/insert分岐修正 | push済み。WSL2→Supabase IPv6接続不能でunique制約適用不可→upsert不要ロジックに変更 | 殿「保存できませんでした」報告→D0即修正。検証スキップ(#2洗脳)の教訓 |
+| 強ニュー化 | 教訓統合(LS066→A11,LS070→A04)、三層記憶5件貫通、LS074実装 | 29件active。/clear自発禁止hook実装 | 殿「強くてニューゲームできるようにせよ」 |
 
 ## 2026-06-26
 
@@ -1274,3 +1285,4 @@
 - 2026-06-29 cmd_3602: DM-Fusion保存済みFusionドロップダウンを復元し、user_id upsert上限1件と最下部toast表示へ修正。commit `84a2a02`+`3ccfb22` push済み、半蔵報告PASS、軍師LGTM、GATE CLEAR。
 - 2026-06-29 将軍D0: DM-Fusion Save機能をupsertからupdate/insert分岐に修正(`ff9aa46`)。WSL2からSupabase DB直接接続不能(IPv6)でunique制約適用不可→upsert不要なロジックに変更。saved_fusionsテーブルはローカルpgで作成済み、Render live確認済み。セッション全体でcmd_3590-3602の13cmdをDM-Fusion UI改善に投入。
 - 2026-06-29 強ニュー化: 軍師lesson_candidate 2件処理。外部リポcmdのSG-PRE3b commit hash偽陽性をL877登録。command欄readonly_ref偽陽性は既存L760/L781/LK008同根として重複登録せず、cmd_3585/3586再発事実をここに固定。
+- 2026-06-29 cmd_karo_hotfix_insight_dedupe_20260629104723: INSIGHT_REPEAT乱発の根を上流で断つため、半蔵が`insight_write.sh`に同一source内pending query/direct alias dedupeを追加。重複投入は既存ID `SKIP:` 返却・pending件数不増・掲示板行0を実測し、bats 19/19 PASSでGATE CLEAR。
