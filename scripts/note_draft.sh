@@ -202,12 +202,20 @@ def login_if_needed():
       const buttons = Array.from(document.querySelectorAll('button, input[type="submit"]'));
       const login = buttons.find(b => /ログイン|login/i.test((b.innerText || b.value || '').trim())) || buttons[0];
       if (!login) return {ok: false, reason: 'missing_button'};
-      login.click();
-      return {ok: true};
+      const rect = login.getBoundingClientRect();
+      return {ok: true, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2};
     })()""")
     if not result or not result.get("ok"):
         raise RuntimeError(f"Login form automation failed: {result}")
+    # invisible reCAPTCHAはJS click()を阻止するが、座標ベースのマウスクリックは通る
+    dispatch_click(float(result["x"]), float(result["y"]))
     time.sleep(3)
+    # invisible reCAPTCHAはログインボタンクリック時にバックグラウンド検証される。
+    # まず短いタイムアウトでログイン完了を待つ。通らなければreCAPTCHA処理へ。
+    quick_url = wait_until_not_login(timeout=8)
+    if quick_url:
+        print(f"[note_draft] Login succeeded without reCAPTCHA interaction: {quick_url}")
+        return
     handle_recaptcha_if_present()
     final_url = wait_until_not_login(timeout=30)
     if not final_url:
