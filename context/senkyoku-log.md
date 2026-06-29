@@ -1,7 +1,11 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-29 cmd_3607 -->
+<!-- last_updated: 2026-06-29 強ニュー化 -->
 
 ## 2026-06-29
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| 強ニュー化(session2) | insightキュー8件消化+DM-Fusion alias拡充+semantic-map再生成+先送り穴解消 | insight 8件resolved、SKILL.md WARN→軍師D0解消中 | 殿「強くてニューゲームできるようにせよ」→Phase7自走で環境埋込み |
 
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
