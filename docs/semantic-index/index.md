@@ -149,7 +149,7 @@ codd:
 |------|---|
 | id | three_layer_memory_system |
 | label | 三層記憶システム |
-| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ, 三層記憶にも貫通させておいて, symlinkが必然である知識を三層記憶に貫通佐瀬よ, 三層記憶を勘違いしていないか？, 貫通=3層全てに書き込んで各層から独立に検索到達可能にすること, 掲示板投稿だけでは1層のみ=未貫通, 三層記憶を確認しろ, スキルの理解が極めて低いな, 顛末を三層記憶に貫通させて, 三層記憶と一緒だ, 三層記憶は正しく理解しているか？, 今回の知見を三層記憶に貫通させて, 今回得た知見を三層記憶に貫通させてアップデートせよ, この知見とルールを三層記憶に貫通させて, 今回の知見を三層記憶に貫通させよ, 家老によりスムーズな goalのやり方を確認させて, 今回は最速最適に実行できたか？厳しく確認しより良いやり方や, だから三層記憶なんだ, 今回の試行錯誤を経て, オントロジーと三層記憶の連携は順調か？, この知見は三層記憶に貫通させておいて, 今回の知見を三層記憶とスキルにアップデートせよ |
+| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ, 三層記憶にも貫通させておいて, symlinkが必然である知識を三層記憶に貫通佐瀬よ, 三層記憶を勘違いしていないか？, 貫通=3層全てに書き込んで各層から独立に検索到達可能にすること, 掲示板投稿だけでは1層のみ=未貫通, 三層記憶を確認しろ, スキルの理解が極めて低いな, 顛末を三層記憶に貫通させて, 三層記憶と一緒だ, 三層記憶は正しく理解しているか？, 今回の知見を三層記憶に貫通させて, 今回得た知見を三層記憶に貫通させてアップデートせよ, この知見とルールを三層記憶に貫通させて, 今回の知見を三層記憶に貫通させよ, 家老によりスムーズな goalのやり方を確認させて, 今回は最速最適に実行できたか？厳しく確認しより良いやり方や, だから三層記憶なんだ, 今回の試行錯誤を経て, オントロジーと三層記憶の連携は順調か？, この知見は三層記憶に貫通させておいて, 今回の知見を三層記憶とスキルにアップデートせよ, 三層記憶に貫通させて |
 | related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop, operational_ontology, unread_cmd_new_deployment_guard, codex_goal_mode |
 
 | 種別 | パス/参照 |
@@ -244,6 +244,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-27T16:56:14+09:00 なるほど。この知見は三層記憶に貫通させておいて。もうなんどもなんども二重起動と勘違いしては同じ結論にたどり着いてる。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T20:41:43+09:00 別CMDでニンジャにスワイプ検証のやり方を学んでCDPスキルのアップデートとスワイプ検証の知見の三層記憶貫通をやらせよう。仕事は別に分けて並列で行いあとで統合すればいい |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-29T19:22:43+09:00 今回の知見を三層記憶とスキルにアップデートせよ。いつでもだれでも同じミスを繰り返さないようにしよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T20:30:47+09:00 三層記憶に貫通させて、スキルもアップデート、スクリプトも改善せよ |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -1209,6 +1210,7 @@ codd:
 | lesson | `L878` hook非コメント行にincident ID/日付を書くとgate_hooks_no_runtime_incident_idがBLOCKする |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-29T18:59:24+09:00 reCAPTCHAの外部チャレンジは繰り返せば解決できる画像が出る。そのタイミングをまってゼロからやり直すとうまくいくことが多いぞ。あと右下にrecaptureの画像が出ているだけの時もある。もう一回やってみろ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-29T19:14:55+09:00 recaptureに保護されていますに過剰反応して、ログインボタンをただ押せばいいのを、押さないで試行錯誤していないか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T20:23:02+09:00 b1im5zduy toolu_01UUTG7LT38jj67m2MJRuoWi /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | causal_chain | `[[cmd_3142]]` (L735) |
 | causal_chain | `[[cmd_3207]]` (L752) |
 | causal_chain | `[[cmd_karo_ci_fix_ga124_codex_hook_adapter_commit_20260624]]` (L842) |
@@ -3323,6 +3325,9 @@ codd:
 | causal | `cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627` files_modified: [[cdp_browser_capability]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T19:50:05+09:00 確認しよう。CDPで確認してくれ |
 | lesson | `L875` CDP検証用localhostポートがstale serverで占有されている場合は停止せず修正後bundleを別ポートで実証し制約を報告せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T20:06:59+09:00 bfv0a5ss5 toolu_01D3Q57SeZLNBjDKQMGrgBYk /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T20:09:43+09:00 badwmiwr7 toolu_01NEv7ZxZPDe9ix4Gyi9jJBW /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
+| discussion | `queue/lord_conversation.jsonl` 2026-06-29T20:25:16+09:00 b0p8gv0hc toolu_01MjEXpBrEspPC4kTvg8zeYQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | causal_chain | `[[cmd_3588]]` (L875) |
 
 ## defense_hierarchy — 防御階層原則
@@ -5045,7 +5050,7 @@ codd:
 |------|---|
 | id | content_artifacts |
 | label | 記事・成果物索引 |
-| aliases | 記事一覧, 書いた記事, note記事, gist一覧, 成果物, 今までやったCMD, CMD履歴, 戦局日誌, senkyoku-log, 将軍記事, 戦国AI列伝, weekly report, 週報一覧, 月報, marketing content, マーケティング記事, 下書き一覧, 過去の記事, 記事を書いた, 記事やドキュメント, もっとテックブログ風に英単語やロジックは元論文のままで使おう |
+| aliases | 記事一覧, 書いた記事, note記事, gist一覧, 成果物, 今までやったCMD, CMD履歴, 戦局日誌, senkyoku-log, 将軍記事, 戦国AI列伝, weekly report, 週報一覧, 月報, marketing content, マーケティング記事, 下書き一覧, 過去の記事, 記事を書いた, 記事やドキュメント, もっとテックブログ風に英単語やロジックは元論文のままで使おう, compare-returns API週報, 8期間トレーリングリターン週報, MTD週報, 週報のcompare-returns移行, note下書き品質確認必須, 週報note下書き保存手順 |
 | related_concepts | dmsignal_operations, cmd_chronicle, skill_routing |
 
 | 種別 | パス/参照 |
