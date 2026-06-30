@@ -17,13 +17,12 @@ setup_file() {
     eval "$(sed -n '/^warn_note_key()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^warn_note_message()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_ac_structure_quality()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     export -f trim_inline_yaml_scalar load_cmd_block_cache cmd_block_has_field cmd_block_get_field \
-        build_warn_note warn_note_key warn_note_message record_warn_reason
-
-    # Check 19インラインセクションを関数化
-    eval "check_19_parity_ac() {
-$(sed -n '/^# --- Check 19:/,/^# --- Check 20:/{/^# --- Check 20:/d;p}' "$SRC_SAVE_SCRIPT")
-}"
+        build_warn_note warn_note_key warn_note_message record_warn_reason check_ac_structure_quality
+    check_19_parity_ac() {
+        check_ac_structure_quality
+    }
     export -f check_19_parity_ac
 }
 

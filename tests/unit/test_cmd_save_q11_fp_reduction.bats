@@ -7,6 +7,7 @@ setup_file() {
     export SRC_SAVE_SCRIPT="$PROJECT_ROOT/scripts/cmd_save.sh"
     [ -f "$SRC_SAVE_SCRIPT" ] || return 1
 
+    eval "$(sed -n '/^cmd_text_matches_pattern()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^trim_inline_yaml_scalar()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^load_cmd_block_cache()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^cmd_block_has_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -18,7 +19,7 @@ setup_file() {
     eval "$(sed -n '/^q11_has_guard_duplicate_check()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_q11_guard_list()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_gate_hook_action_conversion()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f trim_inline_yaml_scalar load_cmd_block_cache cmd_block_has_field cmd_block_get_field \
+    export -f cmd_text_matches_pattern trim_inline_yaml_scalar load_cmd_block_cache cmd_block_has_field cmd_block_get_field \
         is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification \
         collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check \
         collect_q11_guard_list check_gate_hook_action_conversion

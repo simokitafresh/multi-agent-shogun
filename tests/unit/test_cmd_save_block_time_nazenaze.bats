@@ -237,7 +237,7 @@ entries:
   supplementary_cmds: 0
   source: "cmd_save"
   timestamp: "2026-06-08T10:00:00Z"
-  checks: "cmd_save_main"
+  checks: "check_required_quality_gate_keys_block"
   notes: "必須項目 1件 未記入"
 - cmd_id: "cmd_btn_test"
   ac_count: 0
@@ -249,7 +249,7 @@ entries:
   supplementary_cmds: 0
   source: "cmd_save"
   timestamp: "2026-06-08T10:05:00Z"
-  checks: "cmd_save_main"
+  checks: "check_required_quality_gate_keys_block"
   notes: "必須項目 1件 未記入"
 YAML
 
