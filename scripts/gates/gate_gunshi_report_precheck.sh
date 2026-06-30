@@ -990,11 +990,15 @@ if [ -n "$_mem_query" ]; then
         _mem_result=""
         _mem_tmpdir=$(mktemp -d /tmp/gunshi_pre26_XXXXXX)
         _mem_i=0
+        _mem_pids=()
         for _kw in $_mem_keywords; do
             _mem_i=$((_mem_i + 1))
             bash "$_mem_db_script" "SELECT ts, substr(summary,1,80) FROM events WHERE summary LIKE '%${_kw}%' ORDER BY ts DESC LIMIT 2" > "$_mem_tmpdir/$_mem_i" 2>/dev/null &
+            _mem_pids+=("$!")
         done
-        wait
+        for _pid in "${_mem_pids[@]}"; do
+            wait "$_pid" || true
+        done
         for _f in "$_mem_tmpdir"/*; do
             [ -f "$_f" ] || continue
             _hit=$(head -4 "$_f")
