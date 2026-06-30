@@ -3167,13 +3167,6 @@ check_environment_change_after_prior_block() {
     fi
 }
 
-check_quality_gate_presence_block() {
-    check_quality_gate_presence_block
-}
-
-check_quality_gate_invalid_fields_block() {
-    check_quality_gate_invalid_fields_block
-}
 
 check_required_quality_gate_keys_block() {
     MISSING_KEYS=()

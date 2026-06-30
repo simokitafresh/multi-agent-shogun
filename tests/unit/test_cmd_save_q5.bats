@@ -24,6 +24,7 @@ setup_file() {
     eval "$(sed -n '/^load_cmd_block_cache()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^cmd_block_has_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^cmd_text_matches_pattern()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^is_gate_or_hook_addition_cmd()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^q11_has_existing_alternative_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^is_gate_or_script_modification_cmd()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -37,11 +38,39 @@ setup_file() {
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_q5_code_reading_only_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    check_required_quality_gate_keys_block() { :; }
+    check_depends_on_field() { :; }
+    check_origin_field() { :; }
+    check_q4_depth_warn() { :; }
+    check_research_baseline_warn() { :; }
+    check_q6_not_hiding_warn() { :; }
+    check_q7_definition_verified_warn() { :; }
+    check_q10_knowledge_boundary_warn() { :; }
+    check_q8_scope_expression_warn() { :; }
+    check_q8_compound_question_warn() { :; }
+    check_q8_when_how_warn() { :; }
+    check_q8_where_who_warn() { :; }
+    check_q9_firefighting_root_cause_block() { :; }
+    extract_acceptance_criteria_block() { :; }
+    check_lord_instruction_ac_alignment_info() { :; }
+    check_lord_30min_cost_question() { :; }
+    check_deferral_language_warn() { :; }
+    check_self_reread_red_flag() { :; }
+    check_bundle_red_flag() { :; }
+    show_q11_semantic_search_matches() { :; }
     export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field \
-        is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification \
+        cmd_text_matches_pattern is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification \
         is_gate_or_script_modification_cmd q5_has_execution_evidence check_gate_script_execution_evidence \
         collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check \
-        collect_q11_guard_list check_gate_hook_action_conversion record_block_reason record_warn_reason abort_if_block_immediate
+        collect_q11_guard_list check_gate_hook_action_conversion record_block_reason record_warn_reason abort_if_block_immediate \
+        check_q5_code_reading_only_block check_required_quality_gate_keys_block check_depends_on_field \
+        check_origin_field check_q4_depth_warn check_research_baseline_warn check_q6_not_hiding_warn \
+        check_q7_definition_verified_warn check_q10_knowledge_boundary_warn check_q8_scope_expression_warn \
+        check_q8_compound_question_warn check_q8_when_how_warn check_q8_where_who_warn \
+        check_q9_firefighting_root_cause_block extract_acceptance_criteria_block \
+        check_lord_instruction_ac_alignment_info check_lord_30min_cost_question check_deferral_language_warn \
+        check_self_reread_red_flag check_bundle_red_flag show_q11_semantic_search_matches
 
     eval "check_quality_gate() {
 local WARN_COUNT=0
