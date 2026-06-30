@@ -1318,3 +1318,4 @@
 - 2026-06-30 cmd_3612: 設計思想カタログPhase2分類を半蔵が完遂。`docs/research/cmd_save_gate_catalog.md`に82件処置判定を追加し、分布は抽象化16/保護27/関数化33/名称修正6/統合0、軍師LGTM・GATE CLEAR。
 - 2026-06-30 cmd_karo_ci_fix_ga153: CI RED(run 28420924004)を才蔵へkaro_direct配備。`scripts/memory_recall_control.sh`のSQLite `date()` TZ変換境界バグを`substr(...,1,10)`で修正し、focused bats 1/1 PASS、L882重複教訓としてlesson.done生成、GATE CLEAR。
 - 2026-06-30 cmd_3614: 設計思想カタログPhase3を半蔵が直列実装。`scripts/cmd_save.sh`のインライン検査を関数化・共通helper化し、カタログ実施状態は82/82 done・pending 0、関連bats 136/136 PASS、L883登録、GATE CLEAR。
+- 2026-06-30 cmd_3615: 設計思想カタログPhase4として中間レイヤーを`cmd_skeleton`/semantic/infrastructure/growth-loopへ貫通。小太郎commit `5e323c7e5` + 鮮度補助commit `8967eee57`、軍師LGTM、GATE CLEAR。
