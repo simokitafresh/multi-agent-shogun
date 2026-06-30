@@ -153,9 +153,44 @@ PY
 
 注意: 本任務は偵察のため、実cmd保存を伴うpreflight実行はログ汚染リスクがある。実行時間は副作用の小さい未知オプション即時終了パスのみ測った。通常保存パスの中央値は後続統合時に専用fixture cmdで測るべき。
 
-## 5. 後半担当への統合メモ
+## 2.後半8関数カタログ（saizo担当）
 
-- 後半担当は同じ16列で #30-37 を追記すれば本表にそのまま合流できる。
-- 設計書の58本と現物37本の差分は、後半担当または家老が「インラインCheck」「補助関数」「全bash関数」のどれを58に含めたか再定義する必要がある。
-- 関数別FP率は現行ログだけでは算出できない。今後は `record_warn_reason` / `record_block_reason` に `check=<function>` と `fp_label` またはレビュー結果を結合する列が必要。
-- 並列衝突回避: 半蔵は骨格と前半29件のみを作成。後半担当は同ファイル追記前に最新版を読み、#30以降の行だけを更新する。衝突が出る場合は `docs/research/cmd_save_gate_catalog_back_half.md` に後半を作り、家老が最終マージする。
+> recon2_back_half_29_functions / 作成者: saizo / 作成日: 2026-06-30
+> 対象: check/gate系定義順の後半8件（#30-37）
+
+| # | function | origin | 防御対象 | L0-L7 | 時点 | severity | 副作用 | 正例fixture | 負例fixture | 対応テスト | cmd_skeleton同期 | 性能コスト | FP率 | 教訓逆引き | 最終修正日 | hook参照パターン | origin因果リンク |
+|---:|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 30 | `check_research_tool_explicit` | cmd_1822（ACに研究スクリプトパスが未記載） | GS/WF研究cmdでACに研究スクリプトパスが未記載 | L4/L5 | save | WARN | stderr, record_warn_reason | ACにrun_077*.pyまたはl1_alm_wf_engine.pyのパス明記 | GS/WFキーワードありだがACにスクリプトパスなし | `tests/test_cmd_save_check17_18_20_exit_gate.bats`, `tests/unit/test_cmd_save_research_tool_explicit.bats` | indirect | O(text grep + AC/command解析) 中程度 | FP実績2件: cmd_2227(GS CSV除外), cmd_2172(WF四神/選別除外) | cmd_1822, dm-signal-ops.md §18 | 2026-06-16（cmd_3402 Check18出口判定化） | なし | `[[cmd_1822]] -> [[研究cmd道具未記載]] -> [[research_tool_explicit WARN]]` |
+| 31 | `check_timebox_minutes_required` | LG019（計測研究cmdに実行時間上限未設定） | 計測/研究/見積cmdでtimeout_minutes未記入 | L4 | save | WARN | stderr, record_warn_reason | timeout_minutesフィールドあり | benchmark/計測/研究キーワードありだがtimeout_minutes未設定 | 明示テスト未検出 | indirect | O(text grep) | 未算出（ログに関数別FPラベルなし） | LG019 | 2026-06-26 | なし | `[[LG019]] -> [[計測cmd実行時間未記載]] -> [[timebox_minutes WARN]]` |
+| 32 | `check_ac_absolute_literals` | cmd_1910事故（ACに固定値記載→並行cmdで陳腐化） | ACの数値絶対値パターン（並行配備時陳腐化リスク） | L4 | save | WARN(informational, WARN_COUNT非加算) | stderr only（record_warn_reasonなし） | ACに「減少しないこと」等の相対条件 | ACに「テスト数=118」等の絶対値 | 明示テスト未検出 | indirect | O(text grep) | 未算出 | cmd_1910 | 2026-06-26 | なし | `[[cmd_1910]] -> [[AC絶対値陳腐化]] -> [[ac_absolute_literals WARN]]` |
+| 33 | `check_db_backup_ac_warn` | 殿厳命（コードは書き直せる、データは書き直せない） | DB操作cmdでACにバックアップなし | L4 | save | WARN | stderr, record_warn_reason | commandにDB操作(migrate/ALTER等)あり+ACにバックアップ確認あり | commandにmigrate/ALTER TABLEありだがACにバックアップなし | `tests/unit/test_cmd_save.bats` | indirect | O(text grep + AC scan) | FP除外あり: GS出力SQLite読取のみ(is_db_operation_command_text) | feedback_backup_first.md, CLAUDE.md | 2026-06-26 | なし | `[[殿厳命_バックアップファースト]] -> [[DB操作cmdバックアップ未確認]] -> [[db_backup_ac_warn]]` |
+| 34 | `check_numeric_literal_derivation_source_info` | LG020（数値の算出元未確認で誤認） | AC/commandの3桁以上数値リテラルに算出元コマンド+結果未記載 | L5 | save | INFO（record_warn_reasonなし） | stderr only | q5_verified_sourceやassumptionsにgrep/rg等の算出コマンド+結果あり | ACに「123件」等があるがq5_verified_source/assumptions欠落 | `tests/unit/test_cmd_save.bats` | indirect | O(text grep + AC/command解析) | 未算出 | LG020 | 2026-06-26 | なし | `[[LG020]] -> [[数値の算出元未確認]] -> [[numeric_literal_derivation INFO]]` |
+| 35 | `check_ac_phase_mixing` | cmd_2300事故（実装ACとCDP計測ACが1cmdに同居し計測不能でFAIL） | 同一AC内に実装と計測/deployが共起 | L4（分割案テンプレート提示でL5） | save | WARN | stderr, record_warn_reason | AC-impl/AC-verifyで別AC設計 | 同一AC内に実装+計測/push | `tests/unit/test_cmd_save_ac_phase_mixing.bats`, `tests/unit/test_gate_shogun_startup.bats` | indirect | O(AC text awk解析) 中程度 | FP修正実績3件: cmd_3533(snake_case除外2026-06-26), cmd_3406(bats除外2026-06-16), FP削除パターン多数 | cmd_2300 | 2026-06-26 | なし | `[[cmd_2300]] -> [[実装+計測同居]] -> [[ac_phase_mixing WARN]]` |
+| 36 | `check_ac_test_scope` | cmd_2342（全テストPASS条件でpre-existing failure抱込みAC達成不能） | スコープ未指定のテスト全件条件（「全テストPASS」「0 failures」等） | L4 | save | WARN | stderr, record_warn_reason | AC内テスト条件が「変更対象の関連テストPASS」等のスコープ指定あり | 「全テストPASS」「0 failures」等のスコープ未指定 | `tests/unit/test_cmd_save_ac_test_scope.bats` | indirect | O(text grep) | 未算出（FP除外フィルタ多数: 変更対象/関連テスト/.bats等） | cmd_2342 | 2026-06-26 | なし | `[[cmd_2342]] -> [[全件テスト条件]] -> [[pre-existing failure抱込み]]` |
+| 37 | `check_new_file_structure_warning` | 簡略版コード禁止/既存活用原則（CLAUDE.md） | AC/commandに新規ファイル/新規構造作成要求 | L4（既存類似ファイル候補自動提案でL5） | save | WARN | stderr, record_warn_reason | 既存ファイル活用の代替案あり、理由と現物確認明記 | 「新規ファイル作成」「新規構造」等の記載 | 明示テスト未検出 | indirect | O(text grep + find timeout=3s) | FP除外フィルタあり: quality_gate/diagnosis等除外 | 簡略版コード禁止原則(CLAUDE.md) | 2026-06-26 | なし | `[[簡略版コード禁止]] -> [[新規ファイル乱立]] -> [[new_file_structure WARN]]` |
+
+### check関数→bats対応表（全37件）
+
+| coverage | functions（後半8件） |
+|---|---|
+| 明示テストあり | `check_research_tool_explicit`, `check_db_backup_ac_warn`, `check_numeric_literal_derivation_source_info`, `check_ac_phase_mixing`, `check_ac_test_scope` |
+| 明示テスト未検出 | `check_timebox_minutes_required`, `check_ac_absolute_literals`, `check_new_file_structure_warning` |
+
+根拠コマンド: `rg -l "<function_name>" tests/ tests/unit/`
+
+### FP率（後半8件追記）
+
+| function | FP率 | 根拠 |
+|---|---|---|
+| `check_research_tool_explicit` | 未算出（FP実績あり） | cmd_2227(GS CSV除外), cmd_2172(WF四神/選別除外) コミット履歴より |
+| `check_ac_phase_mixing` | 未算出（FP実績あり） | cmd_3533(2026-06-26), cmd_3406(2026-06-16) 複数FP修正コミットあり |
+| `check_db_backup_ac_warn` | 未算出 | is_db_operation_command_text内でGS SQLite読取を除外 |
+| `check_timebox_minutes_required`, `check_ac_absolute_literals`, `check_numeric_literal_derivation_source_info`, `check_ac_test_scope`, `check_new_file_structure_warning` | 未算出 | ログに関数別FPラベルなし |
+
+## 5. 統合完了メモ（saizo追記）
+
+- 後半8件（#30-37）を「## 2.後半8関数カタログ」として追記。合計37件でカタログ完成。
+- 設計書58本と現物37本の差分: 半蔵の抽出根拠メモ通り（`check_`/`gate`名称含む関数=37件が実数。`qN`補助含めて40件、全bash関数113件）。
+- 関数別FP率は現行ログ（logs/gate_fire_log.yaml, logs/cmd_design_quality.yaml）に関数別FPラベルなし。FP修正コミット履歴からのみ推定可能。今後 `record_warn_reason` に `fp_label` カラム追加が必要（半蔵統合メモ踏襲）。
+- `check_ac_absolute_literals` はWARN_COUNTに加算しない（informational）= record_warn_reasonなし。他のWARN系関数と副作用が異なる点に注意。
+- 後半8件で明示テストがない関数: `check_timebox_minutes_required`, `check_ac_absolute_literals`, `check_new_file_structure_warning`（3件）。テストカバレッジの穴として残存。
