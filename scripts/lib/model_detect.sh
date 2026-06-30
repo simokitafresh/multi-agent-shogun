@@ -53,7 +53,7 @@ detect_real_model() {
                     model=$(echo "$banner" | sed -E \
                         -e 's/.*(▐▛███▜▌|▝▜█████▛▘)[[:space:]]*//' \
                         -e 's/[[:space:]]*\(.*\)//' \
-                        -e 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+effort/ \1/' \
+                        -e 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+eff.*/ \1/' \
                         -e 's/[[:space:]]*·.*//' \
                         -e 's/[[:space:]]*$//')
                 fi
@@ -68,7 +68,7 @@ detect_real_model() {
                         model=$(echo "$model_line" | sed -E \
                             -e 's/^[[:space:]]*//' \
                             -e 's/[[:space:]]*\(.*$//' \
-                            -e 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+effort/ \1/' \
+                            -e 's/[[:space:]]+with[[:space:]]+([a-z]+)[[:space:]]+eff.*/ \1/' \
                             -e 's/[[:space:]]*$//')
                     fi
                 fi
