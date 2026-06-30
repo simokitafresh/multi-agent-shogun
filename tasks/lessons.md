@@ -9094,3 +9094,49 @@ origin: [[cmd_3614]] -> [[bash_function_definition_order]] -> [[cmd_save_preflig
 - **then**: 同一hotfixの完了条件に混ぜず、scope外横展開候補または別配備として扱う
 - **because**: 補助計測の目的は穴の発見であり、scope外修正を同一任務に混ぜると完了条件が膨張するため
 - GA-155では通常gateはfrontend更新後OKになったが、cache無効+timeout10ではdm-signal.mdの別ALERTが残った。assigned_scope外の別context ALERTを同一完了条件に混ぜるとscope driftするため、通常gateの対象解消と長timeout横展開候補を報告上で分離する。
+
+### L889: 再配備時のtask YAML assigned_scope残留が誤作業を誘発(cmd_3620)
+- **日付**: 2026-07-01
+- **出典**: cmd_3620
+- **記録者**: tobisaru
+- **tags**: [infra,deploy,testing,recon]
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_3620]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3620(Sonnet A/B評価)の初回配備(04:17:18)時、task YAMLのassigned_scopeフィールドに旧cmd(cmd_karo_hotfix_ga152)の文面がそのまま残留しており、previous_failuresにもGA-152調査の試行錯誤が混入していた。ninja(tobisaru)はこれを信頼しGA-152実態調査に着手したが、家老が04:20:23/04:21:11の2通の緊急inbox補正で訂正するまで本来のスコープに気づけなかった。origin: "[[deploy_task.sh再配備]] -> [[assigned_scopeフィールド未クリア]] -> [[ninja誤作業→家老緊急補正2回]]". 再配備/karo_direct配備時にassigned_scope/previous_failures等の旧cmd由来フィールドを新規cmd用に確実にクリア/上書きする検証ステップ(deploy_task.sh側のgate化)があれば、今回の緊急補正2回・ninja側の手戻りを防げた
+
+### L890: Batsのsed抽出ハーネスは削除済み関数名exportを残すとsetup_fileで全体停止する
+- **日付**: 2026-07-01
+- **出典**: cmd_karo_hotfix_ga156_hook_failure_prepush_cmd_save_202607010443
+- **記録者**: hanzo
+- **tags**: [infra,cmd-quality,testing,bash]
+- **target_files**: [scripts/cmd_save.sh,tests/unit/test_cmd_save.bats,tests/unit/test_cmd_save_q5.bats]
+- **origin**: [[cmd_karo_hotfix_ga156_hook_failure_prepush_cmd_save_202607010443]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_save.shからwrapper/関数を削除・統合した場合、対象Batsのeval抽出リストとexport -fリストを同時に更新する。特にsetup_fileのexport -fは未定義名が1つでもあるとファイル全体をnot ok 1で止め、後続の本体テスト結果を隠す。
+
+### L891: cmd_design_quality.yamlへの複数writerが異なるロックファイルを使い排他制御が機能していない(cmd品質記録漏れALERT根因)
+- **日付**: 2026-07-01
+- **出典**: cmd_3621
+- **記録者**: tobisaru
+- **tags**: [cmd-quality, locking, race, infra]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_quality_log.sh,scripts/cmd_complete_gate.sh,scripts/lib/lock_path.sh,logs/cmd_design_quality.yaml]
+- **origin**: [[cmd_3620_第1ラウンド完了]] -> [[staleコンテキスト混入教訓]] -> [[cmd_3621_クリーン第2ラウンド]] -> [[cmd品質記録漏れALERT18件]] -> [[cmd_design_quality_yaml_dual_lock_race]]
+- **when**: 同一YAMLへ複数writerがappend/全文置換を行い、片方だけ別ロックまたは独自LOCK_FILEを使っている
+- **how**: 全writerのロック取得箇所をrgし、lock_path.sh等の単一ヘルパーに統一し、並列append+全文置換の競合再現テストを追加する
+- scripts/cmd_quality_log.shは静的LOCK_FILE=/tmp/cmd_design_quality.lockでflockするappend専用スクリプトだが、scripts/cmd_complete_gate.shのGunshi verdict update処理(同じlogs/cmd_design_quality.yamlを全文readlines()+os.replace()で書換え)はscripts/lib/lock_path.sh由来の別の動的ハッシュロックファイルを使う。両者が共有ロックを持たないため、cmd_quality_log.shの非同期append(CLEAR時は(...) &でfire-and-forget、完了確認・disownなし)とGunshi verdict updateの全文書換えがタイミング次第で衝突し、appendされたエントリが消失しうる。
+
+### L892: cmd_quality_log.sh非同期呼び出しの無音失敗パターン
+- **日付**: 2026-07-01
+- **出典**: cmd_3621_kotaro_ab
+- **記録者**: kotaro
+- **tags**: [cmd-quality, async, logging, infra]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,scripts/cmd_quality_log.sh,logs/cmd_design_quality.yaml]
+- **origin**: [[cmd_3621_kotaro_ab]] -> [[disown漏れSIGHUP強制終了]] -> [[cmd_design_quality.yaml 18件漏れ]]
+- **when**: 完了処理で重要な品質記録をfire-and-forget実行し、stdout/stderrを捨てている
+- **how**: 非同期呼び出し箇所に完了確認または専用ログを追加し、失敗時にstartup gateが原因ログへ到達できることをテストする
+- cmd_complete_gate.shのcmd_quality_log.sh呼び出しは非同期(>/dev/null 2>&1 &)+|| trueで全エラーが隠れる。flock timeoutやSIGHUP等で品質記録が落ちても完了処理はCLEARに見える。修正時は非同期ジョブの成否を専用ログへ残すか、重要記録だけ同期実行にする。
