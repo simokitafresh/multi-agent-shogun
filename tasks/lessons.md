@@ -8964,3 +8964,81 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **when**: 軍師precheckでcommit hash不在WARNが外部リポcmdに発火した時
 - **how**: report/taskのtarget_pathまたはproject pathから対象git repoを解決し、multi-agent repoではなくtarget repoでcommit hashの実在を検証する
 - 軍師precheck SG-PRE3bがmulti-agent repoだけでcommit hashを検証すると、DM-Fusion等の外部リポcmdで実在commitを不在WARN扱いする偽陽性が発生する。target_path/project repoが外部リポの場合は、そのリポジトリでgit cat-file -t等の実在確認を行う。origin: [[cmd_3585-3602外部リポ]] -> [[SG-PRE3b外部リポ偽陽性]] -> [[target_repo_commit検証]]
+
+### L878: hook非コメント行にincident ID/日付を書くとgate_hooks_no_runtime_incident_idがBLOCKする
+- **日付**: 2026-06-29
+- **出典**: cmd_karo_ci_fix_ga151_main_ci_red_202606291410
+- **記録者**: tobisaru
+- **tags**: [infra,gate,bash]
+- **target_files**: [.claude/hooks/pretool-dispatch.sh]
+- **origin**: [[cmd_karo_ci_fix_ga151_main_ci_red_202606291410]]
+- **when**: 未設定
+- **how**: 未設定
+- hookのecho等ランタイム出力に殿裁定日付(YYYY-MM-DD)やLS-ID/GP-ID/cmd-IDを含めると gate_hooks_no_runtime_incident_ids.sh がBLOCKする。provenanceはコメント行のみ許可。runtime出力はinvariantベース(「禁止。殿の専権事項。」等)に書くこと。次回hookにprovenance追記時は必ずコメント行のみに限定すること。
+
+### L879: cmd_save.sh全bash関数113件のうちcheck/gate系は37件（設計書の58本と乖離）
+- **日付**: 2026-06-30
+- **出典**: cmd_3608_recon2
+- **記録者**: saizo
+- **tags**: [infra,recon,process,gate]
+- **target_files**: [docs/research/cmd_save_gate_catalog.md]
+- **origin**: [[cmd_3608_recon2]]
+- **when**: 未設定
+- **how**: 未設定
+- 設計書AS-ISに「check関数58本」とあったが、実測では check_/gate名称含む関数=37件、全bash関数=113件。偵察開始時の仮説（58件）が外れた。設計書の数字は執筆時点の数または別定義（インラインcheckや補助関数を含む）の可能性がある。設計書に「実測確認日付+コマンド」を付記する運用が必要。
+
+### L880: cmd_save関数数の前提と現物抽出条件を分離せよ
+- **日付**: 2026-06-30
+- **出典**: cmd_3608
+- **記録者**: hanzo
+- **tags**: [infra,cmd-quality,gate]
+- **target_files**: [docs/research/cmd_save_gate_catalog.md,logs/cmd_design_quality.yaml]
+- **origin**: [[cmd_3608]]
+- **when**: 未設定
+- **how**: 未設定
+- 設計書の58 check関数という前提は現物の単純grepと一致しなかった。全関数113、check/gate37、qN含む40のように抽出条件別の件数を冒頭に残し、数合わせで水増ししないことが後半担当との統合品質を守る。
+
+### L881: context last_updated更新はcommitまでをセットとせよ — uncommittedは鮮度保証にならない
+- **日付**: 2026-06-30
+- **出典**: cmd_karo_hotfix_ga152_context_freshness_infrastructure_202606301214
+- **記録者**: tobisaru
+- **tags**: [infra,context,recon,gate,git]
+- **target_files**: [context/infrastructure.md]
+- **origin**: [[cmd_karo_hotfix_ga152_context_freshness_infrastructure_202606301214]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3608_recon2完了後にinfrastructure.md last_updatedを2026-06-30に更新したがcommitしなかった。gateはworking treeを読むためOKと判定するが、git HEADは古いままでroot_fallback_commit_count_sinceがALERTを出す。context鮮度更新はファイル変更→即commit→gateでOK確認の3ステップをアトミックに行わなければならない。origin: [[cmd_3608_recon2]] -> [[last_updated未コミット]] -> [[GA-152 ALERT]]
+
+### L882: SQLite date()のTZ付き文字列UTC変換罠: substr(,1,10)でYYYY-MM-DD部分のみ使え
+- **日付**: 2026-06-30
+- **出典**: cmd_karo_ci_fix_ga153_main_ci_red_202606301403
+- **記録者**: saizo
+- **tags**: [infra,db]
+- **target_files**: [scripts/memory_recall_control.sh]
+- **origin**: [[cmd_karo_ci_fix_ga153_main_ci_red_202606301403]]
+- **when**: 未設定
+- **how**: 未設定
+- SQLiteのdate()はISO 8601のTZ付き文字列(例: 2026-06-01T00:00:00+09:00)を自動でUTC変換するため、+09:00指定データは9時間引いた前日のUTC日付になる。日数カットオフ境界付近でイベントが誤って選択/除外される。修正: date(COALESCE(...))の代わりにdate(substr(COALESCE(...),1,10))を使いTZ変換を排除。
+
+### L883: bash関数抽出後は断片batsだけでなく実スクリプト経路を即実行する
+- **日付**: 2026-06-30
+- **出典**: cmd_3614
+- **記録者**: hanzo
+- **tags**: [infra,cmd-quality,testing,bash,git]
+- **target_files**: [docs/research/cmd_save_gate_catalog.md,scripts/cmd_save.sh,tests/unit/test_cmd_save.bats,tests/test_cmd_save_check19_exit_gate.bats]
+- **origin**: [[cmd_3614]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_save.shで関数抽出を進めた際、batsのeval断片は通っていたが、実スクリプトの--preflight実行で check_q4_depth_warn: command not found が出た。原因はbashが実行時に未定義関数を呼ぶ定義順になっていたこと。次回は関数抽出commit直後にbash -nだけでなく、代表的な実CLI経路を必ず1本実行し、定義順・main到達順を検証する。
+origin: [[cmd_3614]] -> [[bash_function_definition_order]] -> [[cmd_save_preflight_runtime_failure]]
+
+### L884: bash関数化リファクタ後はsed抽出型bats mockを関数名抽出へ同時追従する
+- **日付**: 2026-06-30
+- **出典**: cmd_karo_ci_fix_prev_cmd_gate_202606301629
+- **記録者**: hanzo
+- **tags**: [infra,testing,testing,bash]
+- **target_files**: [tests/unit/test_cmd_save_prev_cmd_gate.bats]
+- **origin**: [[cmd_karo_ci_fix_prev_cmd_gate_202606301629]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_save.shのインラインCheckを関数化した後、bats側が旧コメント範囲抽出のままだと新関数を未定義のまま呼び7件FAILする。リファクタ時はrgで該当Check名/旧wrapperを持つbatsを列挙し、mock抽出対象を現行関数名へ更新してから関連batsを実行する。

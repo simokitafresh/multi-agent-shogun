@@ -1320,3 +1320,4 @@
 - 2026-06-30 cmd_3614: 設計思想カタログPhase3を半蔵が直列実装。`scripts/cmd_save.sh`のインライン検査を関数化・共通helper化し、カタログ実施状態は82/82 done・pending 0、関連bats 136/136 PASS、L883登録、GATE CLEAR。
 - 2026-06-30 cmd_3615: 設計思想カタログPhase4として中間レイヤーを`cmd_skeleton`/semantic/infrastructure/growth-loopへ貫通。小太郎commit `5e323c7e5` + 鮮度補助commit `8967eee57`、軍師LGTM、GATE CLEAR。
 - 2026-06-30 cmd_3616: 設計思想カタログPhase5として`cmd_save.sh` WARN/BLOCKのcheck名ログとGuard 12bカタログ同期WARNを実装。半蔵commit `75cef2ccb`、bats 59/59 PASS、軍師LGTM、GATE CLEAR。
+- 2026-06-30 cmd_karo_ci_fix_prev_cmd_gate_202606301629: cmd_3614関数化後の`test_cmd_save_prev_cmd_gate.bats`旧mock追従漏れを半蔵が修正。commit `94dfef65e`、対象bats 7/7 PASS、L884登録、GATE CLEAR。
