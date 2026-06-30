@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-06-29 -->
+<!-- last_updated: 2026-06-30 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -420,3 +420,5 @@
 | cmd_3605 | 殿指示(2026-06-29 13:12): DM-Signalのドロップダウンにはフォルダ選択タブ(All/メンバーシップ/オリジナル等)があり絞り込みできる。DM-Fusionも同様にフォルダフィルタタブを追加し、表示数を増やす | dm-signal | 06-29 | DM-FusionのPortfolioSelectにAll/ |
 | cmd_3606 | 殿指示(2026-06-29 14:01): ドロップダウンが上下どちらに開いても画面外にはみ出す。画面中央にモーダル/ポップアップで表示すれば根本解決。フォルダタブ+PF一覧を画面中央オーバーレイに配置 | dm-signal | 06-29 | PF選択をabsolute dropdownから画面中央fi |
 | cmd_3607 | 殿指示(2026-06-29 14:29): admin画面のオンオフ追随が遅い。フォルダ単位の一括オンオフも必要。現状はトグルの度にlocation.reload()で全ページ再読込+Fusion API再取得。クライアントサイドで即時反映し、フォルダヘッダーに一括トグルボタンを追加する | dm-signal | 06-29 | DM-Fusion admin visibility tog |
+| cmd_3609 | 殿指摘(2026-06-30 12:27): check_/gate名称含む関数だけでは品質チェック機能の全量を捕捉できない。Phase 1a(cmd_3608)で37件カタログ済みだが、家老精査(blt_122938)でinline checks 33件+名称乖離6件+学習補助3件=42件が漏れと判明。record_reason呼出し箇所ベース(機能フィルタ)で追加カタログを作成する | infra | 06-30 | cmd_save.sh record_reason呼出し箇所 |
+| cmd_3612 | 殿指示(2026-06-30): Phase 1完了後Phase 2へ。カタログの各項目に処置(統合・抽象化・関数化・名称修正・保護)を割り当てる。自明層(B層→関数化、C-1→名称修正)は構造から確定。判断層(A層+C-2)はペアごと判定 | infra | 06-30 | cmd_save_gate_catalog.mdにPhase |

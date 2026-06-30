@@ -1315,3 +1315,4 @@
 - 2026-06-29 cmd_3606: DM-FusionのPF選択をabsolute dropdownから画面中央fixed overlay modalへ変更。PC/mobile Playwrightで画面内表示・外側クリック・選択クローズを実測し、lint/build PASS、軍師LGTMでGATE CLEAR。
 - 2026-06-29 cmd_3607: DM-Fusion admin画面をserver loader + Client Componentへ分割し、`location.reload()`を廃止。PF単体はoptimistic update、フォルダヘッダーはON/OFF一括POSTに対応し、lint/build PASS、軍師LGTMでGATE CLEAR。
 - 2026-06-30 家老強ニュー化: `queue/compact_state/karo.yaml`を最新化し、cmd品質記録漏れをcmd_quality_logで補完。`gate_karo_startup.sh`再実行で総合OK、memory DBへcheckpoint 2件を登録。
+- 2026-06-30 cmd_3612: 設計思想カタログPhase2分類を半蔵が完遂。`docs/research/cmd_save_gate_catalog.md`に82件処置判定を追加し、分布は抽象化16/保護27/関数化33/名称修正6/統合0、軍師LGTM・GATE CLEAR。
