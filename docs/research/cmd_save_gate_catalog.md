@@ -8,6 +8,10 @@
 > 更新者: hanzo / 更新日: 2026-06-30  
 > 対象: Phase 1aの名称フィルタで漏れた inline checks + 名称乖離 + 学習補助
 
+> cmd_3616 Phase 5 / 運用基盤  
+> 更新者: hanzo / 更新日: 2026-06-30  
+> 対象: check名ログ記録 + カタログ同期hook
+
 ## 0.0 Phase 1b 統合サマリー
 
 | 母集団層 | 件数 | 範囲 | 根拠 |
@@ -18,6 +22,14 @@
 | 合計 | 82 | A+B+C | 40+33+9=82 |
 
 抽出実測: `record_block_reason` / `record_warn_reason` の定義本体を除く呼出しは83件。ログ基盤内部の caller 推定処理など非チェック行を除外し、重複呼出しは同一概念へ統合した。Phase 1aの37件は「check/gate名称関数」として正しいが、品質チェック機能の全量ではない。
+
+## 0.0.1 Phase 5 運用基盤サマリー（cmd_3616）
+
+Phase 5完了: `record_warn_reason` はWARNごとの `check=` メタデータを `logs/cmd_design_quality.yaml` の `checks` フィールドへ出力する。`record_block_reason` は既存のcaller推定で `BLOCK_CHECKS` にcheck名を蓄積し、BLOCK品質ログへ出力する。これによりcmd_save由来のWARN/BLOCKはcheck関数別の発火頻度を直接集計できる。
+
+FP率計測方法: `logs/cmd_design_quality.yaml` の `source in (cmd_save, cmd_save_warn)` かつ `checks` がある行を母集団にし、`checks`×`gate_result`×`resolved_by`/後続CLEARレビュー結果を結合して算出する。例: `python3 - <<'PY'` でYAMLを読み、`entry["checks"].split("|")` を展開してcheck別のWARN/BLOCK件数を集計する。直接FP率はTP/FPラベルが付いたレビュー結果との結合後にのみ算出し、ラベル不在の行は「発火頻度」として扱う。
+
+カタログ同期: `.claude/hooks/pre-write-edit-combined.sh` Guard 12b が `scripts/cmd_save.sh` への `check_*` / `qN_*` / `*gate*` 関数追加Editを検知し、`docs/research/cmd_save_gate_catalog.md` に同名バッククォート項目がない場合にWARNを出す。新規check関数追加時は本カタログへ同時追記する。
 
 ## 0.1 Phase 2 処置サマリー（cmd_3612）
 

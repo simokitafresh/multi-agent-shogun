@@ -216,6 +216,14 @@ _mark_read_for_current_agent() {
     [[ "$output" != *'cmd_save.sh関連チェック名を確認したか'* ]]
 }
 
+@test "Guard 12b warns when cmd_save check function is added without catalog entry" {
+    _mark_read_for_current_agent "$PROJECT_ROOT/scripts/cmd_save.sh"
+    _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$PROJECT_ROOT"'/scripts/cmd_save.sh","new_string":"check_new_catalog_gap_for_test() {\n    return 0\n}\n"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'cmd_save_catalog_sync'* ]]
+    [[ "$output" == *'カタログ追記が未確認'* ]]
+}
+
 @test "post combined hook exits cleanly for unrelated payload" {
     _run_post '{"tool_name":"Write","tool_input":{"file_path":"/tmp/combined_new_file.txt"}}'
     [ "$status" -eq 0 ]

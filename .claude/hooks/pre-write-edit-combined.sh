@@ -578,6 +578,26 @@ if [[ "$tool_name" == "Write" && "$file_path" =~ (scripts/gates/|scripts/hooks/|
     fi
 fi
 
+# === Guard 12b: cmd_save.sh check関数追加時のカタログ同期WARN (cmd_3616) ===
+if [[ "$file_path" == *'scripts/cmd_save.sh' ]]; then
+    _g12b_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | [(.new_string // empty), (.content // empty), ((.edits // [])[]?.new_string // empty)] | join("\n")' 2>/dev/null)" || true
+    if printf '%s\n' "$_g12b_content" | grep -qE '^(check_[A-Za-z0-9_]+|q[0-9]+_[A-Za-z0-9_]+|[A-Za-z0-9_]*gate[A-Za-z0-9_]*)\(\)[[:space:]]*\{'; then
+        _g12b_catalog="$SCRIPT_DIR/docs/research/cmd_save_gate_catalog.md"
+        _g12b_missing=""
+        while IFS= read -r _g12b_fn; do
+            [[ -n "$_g12b_fn" ]] || continue
+            if [[ ! -f "$_g12b_catalog" ]] || ! grep -qF "\`$_g12b_fn\`" "$_g12b_catalog"; then
+                _g12b_missing="${_g12b_missing}${_g12b_missing:+, }${_g12b_fn}"
+            fi
+        done < <(printf '%s\n' "$_g12b_content" | sed -nE 's/^(check_[A-Za-z0-9_]+|q[0-9]+_[A-Za-z0-9_]+|[A-Za-z0-9_]*gate[A-Za-z0-9_]*)\(\)[[:space:]]*\{.*/\1/p')
+        if [[ -n "$_g12b_missing" ]]; then
+            echo "WARN: cmd_save.sh check関数追加検出。docs/research/cmd_save_gate_catalog.md に同時追記せよ: $_g12b_missing" >&2
+            echo "WARN(cmd_save_catalog_sync): check関数追加に対するカタログ追記が未確認です" >&2
+        fi
+    fi
+fi
+unset _g12b_content _g12b_catalog _g12b_missing _g12b_fn
+
 # Guard 15: 削除(2026-06-20)。各論パッチ(5フレーズのみ検出)はバグ。
 # 原理的解決=SessionContext(Step 1.7)がlord_conversation実際発言を自動表示。
 

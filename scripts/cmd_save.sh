@@ -62,6 +62,7 @@ QUEUE_FILE="${CMD_SAVE_QUEUE_FILE:-$PROJECT_DIR/queue/shogun_to_karo.yaml}"
 ARCHIVE_CMD_DIR="${CMD_SAVE_ARCHIVE_CMD_DIR:-$PROJECT_DIR/queue/archive/cmds}"
 QUALITY_LOG_FILE="${CMD_QUALITY_LOG_FILE:-$PROJECT_DIR/logs/cmd_design_quality.yaml}"
 QUALITY_LOG_SCAN_LINES="${CMD_QUALITY_LOG_SCAN_LINES:-5000}"
+GATE_FIRE_LOG_FILE="${GATE_FIRE_LOG_FILE:-$PROJECT_DIR/logs/gate_fire_log.yaml}"
 LOCK_FILE="${CMD_SAVE_LOCK_FILE:-/tmp/shogun_to_karo.lock}"
 CMD_SAVE_LAST_CMD_FILE="${CMD_SAVE_LAST_CMD_FILE:-$PROJECT_DIR/logs/cmd_save_last_cmd.txt}"
 CMD_SAVE_SHOGUN_LESSONS_FILE="${CMD_SAVE_SHOGUN_LESSONS_FILE:-$PROJECT_DIR/projects/infra/lessons_shogun.yaml}"
@@ -2237,6 +2238,7 @@ log_cmd_save_block() {
     [[ "${CMD_SAVE_PREFLIGHT_ONLY:-0}" != "1" ]] || return 0
     [[ "${CMD_SAVE_DISABLE_QUALITY_LOG:-0}" != "1" ]] || return 0
     [[ -n "$block_reason" && -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
+    log_cmd_save_fire_event "BLOCK" "$block_reason" "$check_names"
     if [[ "${CMD_SAVE_SYNC_QUALITY_LOG:-0}" == "1" ]]; then
         CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
         CMD_QUALITY_SOURCE="cmd_save" \
@@ -2257,19 +2259,45 @@ log_cmd_save_block() {
     fi
 }
 
+log_cmd_save_fire_event() {
+    local result="${1:-}"
+    local reason="${2:-}"
+    local check_names="${3:-}"
+    [[ "${CMD_SAVE_PREFLIGHT_ONLY:-0}" != "1" ]] || return 0
+    [[ "${CMD_SAVE_DISABLE_FIRE_LOG:-0}" != "1" ]] || return 0
+    [[ -n "$result" && -n "$CMD_ID" ]] || return 0
+
+    local ts log_dir escaped_reason escaped_checks
+    ts="$(date '+%Y-%m-%dT%H:%M:%S')"
+    log_dir="$(dirname "$GATE_FIRE_LOG_FILE")"
+    mkdir -p "$log_dir" 2>/dev/null || return 0
+    escaped_reason="${reason//\\/\\\\}"
+    escaped_reason="${escaped_reason//\"/\\\"}"
+    escaped_checks="${check_names//\\/\\\\}"
+    escaped_checks="${escaped_checks//\"/\\\"}"
+    (
+        flock -w 5 200 2>/dev/null || exit 0
+        printf -- '- ts: "%s", file: "%s", gate: "cmd_save", result: %s, checks: "%s", reasons: "%s"\n' \
+            "$ts" "$CMD_ID" "$result" "$escaped_checks" "$escaped_reason" >> "$GATE_FIRE_LOG_FILE"
+    ) 200>"$GATE_FIRE_LOG_FILE.lock" 2>/dev/null || true
+}
+
 log_cmd_save_warns() {
     [[ "${CMD_SAVE_PREFLIGHT_ONLY:-0}" != "1" ]] || return 0
     [[ "${CMD_SAVE_DISABLE_QUALITY_LOG:-0}" != "1" ]] || return 0
     [[ ${#WARN_REASONS[@]} -gt 0 && -f "$SCRIPT_DIR/cmd_quality_log.sh" ]] || return 0
     local warn_note
+    local warn_check_name
     local _project
     _project="$(cmd_block_get_field "project" 2>/dev/null || true)"
     for warn_note in "${WARN_REASONS[@]}"; do
+        warn_check_name="$(warn_note_check_name "$warn_note")"
         if [[ "${CMD_SAVE_SYNC_QUALITY_LOG:-0}" == "1" ]]; then
             CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
             CMD_QUALITY_SOURCE="cmd_save_warn" \
             CMD_QUALITY_DIAGNOSIS="" \
             CMD_QUALITY_PROJECT="$_project" \
+            CMD_QUALITY_CHECK_NAMES="$warn_check_name" \
             CMD_QUALITY_FAST_METADATA=1 \
             bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "WARN" "no" "0" "$warn_note" >/dev/null 2>&1
         else
@@ -2278,9 +2306,11 @@ log_cmd_save_warns() {
             CMD_QUALITY_SOURCE="cmd_save_warn" \
             CMD_QUALITY_DIAGNOSIS="" \
             CMD_QUALITY_PROJECT="$_project" \
+            CMD_QUALITY_CHECK_NAMES="$warn_check_name" \
             CMD_QUALITY_FAST_METADATA=1 \
             bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "WARN" "no" "0" "$warn_note" >/dev/null 2>&1 &
         fi
+        log_cmd_save_fire_event "WARN" "$warn_note" "$warn_check_name"
     done
 }
 

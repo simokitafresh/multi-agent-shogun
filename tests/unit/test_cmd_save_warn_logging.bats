@@ -23,6 +23,9 @@ setup_file() {
     eval "$(sed -n '/^warn_note_key()/,/^}/p' "$SAVE_SCRIPT")"
     eval "$(sed -n '/^warn_note_message()/,/^}/p' "$SAVE_SCRIPT")"
     eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SAVE_SCRIPT")"
+    eval "$(sed -n '/^warn_note_check_name()/,/^}/p' "$SAVE_SCRIPT")"
+    eval "$(sed -n '/^log_cmd_save_fire_event()/,/^}/p' "$SAVE_SCRIPT")"
+    eval "$(sed -n '/^log_cmd_save_warns()/,/^}/p' "$SAVE_SCRIPT")"
     eval "$(sed -n '/^check_ac_param_sufficiency()/,/^}/p' "$SAVE_SCRIPT")"
 
     cmd_block_get_field() {
@@ -70,6 +73,7 @@ PY
 
     export -f extract_acceptance_criteria_block emit_ac_param_candidate_hints
     export -f build_warn_note warn_note_key warn_note_message record_warn_reason
+    export -f warn_note_check_name log_cmd_save_fire_event log_cmd_save_warns
     run_ac_param_check_body() {
         check_ac_param_sufficiency
         if [ "${WARN_COUNT:-0}" -gt 0 ]; then
@@ -97,6 +101,7 @@ setup() {
     export TEST_QUEUE="$TEST_TMPDIR/shogun_to_karo.yaml"
     export TEST_ARCHIVE_DIR="$TEST_TMPDIR/archive"
     export TEST_QUALITY_LOG="$TEST_TMPDIR/cmd_design_quality.yaml"
+    export TEST_FIRE_LOG="$TEST_TMPDIR/gate_fire_log.yaml"
     export TEST_LAST_CMD="$TEST_TMPDIR/cmd_save_last_cmd.txt"
     export TEST_LESSONS="$TEST_TMPDIR/lessons_shogun.yaml"
     mkdir -p "$TEST_ARCHIVE_DIR"
@@ -185,7 +190,9 @@ run_ac_param_check() {
     CMD_BLOCK="$CMD_BLOCK_NC"
     CMD_ID="cmd_warn"
     PROJECT_DIR="$PROJECT_ROOT"
+    SCRIPT_DIR="$PROJECT_ROOT/scripts"
     QUALITY_LOG_FILE="$TEST_QUALITY_LOG"
+    GATE_FIRE_LOG_FILE="$TEST_FIRE_LOG"
     QUEUE_FILE="$TEST_QUEUE"
     ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR"
     CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_LESSONS"
@@ -266,6 +273,35 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" != *"このWARN(ac_param_sufficiency)は過去1回出現"* ]]
     [[ "$output" != *"BLOCK: WARN累計昇格"* ]]
+}
+
+@test "AC5: WARN品質ログにcheck名が記録される" {
+    write_warn_cmd_queue
+
+    CMD_BLOCK_NC="$(sed -n '/^  cmd_warn:/,$p' "$TEST_QUEUE")"
+    CMD_BLOCK="$CMD_BLOCK_NC"
+    CMD_ID="cmd_warn"
+    PROJECT_DIR="$PROJECT_ROOT"
+    SCRIPT_DIR="$PROJECT_ROOT/scripts"
+    QUALITY_LOG_FILE="$TEST_QUALITY_LOG"
+    GATE_FIRE_LOG_FILE="$TEST_FIRE_LOG"
+    QUEUE_FILE="$TEST_QUEUE"
+    ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR"
+    CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_LESSONS"
+    CMD_SAVE_SYNC_QUALITY_LOG=1
+    CMD_SAVE_PREFLIGHT_ONLY=0
+    CMD_SAVE_DISABLE_QUALITY_LOG=0
+    WARN_COUNT=0
+    WARN_REASONS=()
+
+    check_ac_param_sufficiency
+    log_cmd_save_warns
+
+    run grep -n 'checks: "check_ac_param_sufficiency"' "$TEST_QUALITY_LOG"
+    [ "$status" -eq 0 ]
+
+    run grep -n 'gate: "cmd_save".*result: WARN.*checks: "check_ac_param_sufficiency"' "$TEST_FIRE_LOG"
+    [ "$status" -eq 0 ]
 }
 
 @test "AC4: AC数量指定WARN時に関連contextから候補値が表示される" {
