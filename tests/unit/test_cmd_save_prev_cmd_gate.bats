@@ -10,14 +10,16 @@ setup_file() {
     [ -f "$SRC_SAVE_SCRIPT" ] || return 1
 
     # helper関数を抽出
+    eval "$(sed -n '/^cmd_save_caller_check_name()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f record_block_reason abort_if_block_immediate
+    eval "$(sed -n '/^check_previous_pass_pending_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    export -f cmd_save_caller_check_name record_block_reason abort_if_block_immediate check_previous_pass_pending_block
 
-    # check_prev_cmd_pending: Check 1.6インラインセクションを関数化
-    eval "check_prev_cmd_pending() {
-$(sed -n '/^# --- Check 1.6:/,/^# --- Check 2:/{/^# --- Check 2:/d;p}' "$SRC_SAVE_SCRIPT")
-}"
+    # Keep the test-local command name while exercising the current cmd_save function.
+    check_prev_cmd_pending() {
+        check_previous_pass_pending_block
+    }
     export -f check_prev_cmd_pending
 }
 
