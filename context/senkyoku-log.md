@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-30 weekly-report+note_draft fix -->
+<!-- last_updated: 2026-06-30 cmd_3614 -->
 
 ## 2026-06-30
 
@@ -1316,3 +1316,5 @@
 - 2026-06-29 cmd_3607: DM-Fusion admin画面をserver loader + Client Componentへ分割し、`location.reload()`を廃止。PF単体はoptimistic update、フォルダヘッダーはON/OFF一括POSTに対応し、lint/build PASS、軍師LGTMでGATE CLEAR。
 - 2026-06-30 家老強ニュー化: `queue/compact_state/karo.yaml`を最新化し、cmd品質記録漏れをcmd_quality_logで補完。`gate_karo_startup.sh`再実行で総合OK、memory DBへcheckpoint 2件を登録。
 - 2026-06-30 cmd_3612: 設計思想カタログPhase2分類を半蔵が完遂。`docs/research/cmd_save_gate_catalog.md`に82件処置判定を追加し、分布は抽象化16/保護27/関数化33/名称修正6/統合0、軍師LGTM・GATE CLEAR。
+- 2026-06-30 cmd_karo_ci_fix_ga153: CI RED(run 28420924004)を才蔵へkaro_direct配備。`scripts/memory_recall_control.sh`のSQLite `date()` TZ変換境界バグを`substr(...,1,10)`で修正し、focused bats 1/1 PASS、L882重複教訓としてlesson.done生成、GATE CLEAR。
+- 2026-06-30 cmd_3614: 設計思想カタログPhase3を半蔵が直列実装。`scripts/cmd_save.sh`のインライン検査を関数化・共通helper化し、カタログ実施状態は82/82 done・pending 0、関連bats 136/136 PASS、L883登録、GATE CLEAR。
