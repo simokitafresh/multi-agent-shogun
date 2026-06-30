@@ -4,6 +4,21 @@
 > 作成者: hanzo / 作成日: 2026-06-30  
 > 対象: `scripts/cmd_save.sh` check/gate系定義順の前半29件
 
+> cmd_3609 Phase 1b / record_reason呼出し箇所ベース追加  
+> 更新者: hanzo / 更新日: 2026-06-30  
+> 対象: Phase 1aの名称フィルタで漏れた inline checks + 名称乖離 + 学習補助
+
+## 0.0 Phase 1b 統合サマリー
+
+| 母集団層 | 件数 | 範囲 | 根拠 |
+|---|---:|---|---|
+| A named funcs | 40 | Phase 1a 37件 + q helper 3件 | `rg -n "^(q[0-9]+_|check_|.*gate.*)\\(\\) \\{" scripts/cmd_save.sh` |
+| B inline checks | 33 | `handle_cmd_save_exit` 内の概念チェック33件 | `record_*_reason` 35呼出しから `queue_file_missing` / `cmd_block_missing` 重複2組を概念統合 |
+| C 名称乖離+学習補助 | 9 | `show_gunshi_pane_status` 6件 + exit/learning補助3件 | caller名が品質チェック名でないが `record_*_reason` を発火 |
+| 合計 | 82 | A+B+C | 40+33+9=82 |
+
+抽出実測: `record_block_reason` / `record_warn_reason` の定義本体を除く呼出しは83件。ログ基盤内部の caller 推定処理など非チェック行を除外し、重複呼出しは同一概念へ統合した。Phase 1aの37件は「check/gate名称関数」として正しいが、品質チェック機能の全量ではない。
+
 ## 0. 抽出根拠
 
 | 項目 | 実測値 | 根拠コマンド |
@@ -66,7 +81,7 @@ AC4制約: 軍師レビューと家老追認により、現行 `logs/gate_fire_l
 |---:|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | `is_gate_or_hook_addition_cmd` | LS-A22(1), cmd_2279 | gate/hook追加cmdの分類 | L4 | preflight | classifier | stdoutなし | scout除外・対象外cmd | gate/hook追加語を含むcmd | `tests/unit/test_cmd_save_q5.bats`, `tests/unit/test_cmd_save_q11_fp_reduction.bats` | indirect | O(text grep) | 個別FP率未記録、LS-A22でFP既知 | LS-A22 | 2026-06-26 | なし | `[[cmd_2279]] -> [[SCOUT偽陽性]] -> [[gate追加分類]]` |
 | 2 | `is_gate_or_script_modification_cmd` | cmd_3360 | script/gate修正cmdの分類 | L4 | preflight | classifier | stdoutなし | script/gate修正cmd | 実行証拠なしの修正cmd | `tests/unit/test_cmd_save_q5.bats` | indirect | O(text grep) | 個別FP率未記録 | LS063系 | 2026-06-26 | なし | `[[cmd_3360]] -> [[実行証拠不足]] -> [[gate_script分類]]` |
-| 3 | `check_gate_script_execution_evidence` | cmd_3360 | grepだけでgate/script未実行判断する事故 | L4 | preflight | BLOCK | `record_block_reason`, stderr/stdout | q5に実行コマンド・exit code・出力要点あり | q5がgrep/コード断片のみ | `tests/unit/test_cmd_save_q5.bats` | `scripts/cmd_skeleton.sh:110` | O(text grep) | 個別FP率未記録 | LS063/LS-A22 | 2026-06-26 | なし | `[[cmd_3360]] -> [[実行せず起票]] -> [[q5実行証拠BLOCK]]` |
+| 3 | `check_gate_script_execution_evidence` | cmd_3360 | grepだけでgate/script未実行判断する事故 | L4 | preflight | WARN | `record_warn_reason`, stderr/stdout | q5に実行コマンド・exit code・出力要点あり | q5がgrep/コード断片のみ | `tests/unit/test_cmd_save_q5.bats` | `scripts/cmd_skeleton.sh:110` | O(text grep) | 個別FP率未記録 | LS063/LS-A22 | 2026-06-30 | なし | `[[cmd_3360]] -> [[実行せず起票]] -> [[q5実行証拠WARN]]` |
 | 4 | `check_gate_hook_action_conversion` | LS-A22(9) | gate/hook修正cmdで行動変換なし | L4 | preflight | BLOCK/WARN | `record_block_reason`, warn/log | guard重複確認・action変換あり | トリガー語引用だけのAC | `tests/unit/test_cmd_save.bats`, `tests/unit/test_cmd_save_qg_field_validation.bats`, `tests/unit/test_cmd_save_q11_fp_reduction.bats` | indirect | O(text grep + guard list) | 個別FP率未記録、LS-A22(9)既知 | LS-A22 | 2026-06-26 | なし | `[[gate_hook修正cmd]] -> [[行動変換不足]] -> [[guard重複確認]]` |
 | 5 | `check_lord_30min_cost_question` | 殿裁定: 時間コスト確認 | 殿の30分消費を見積もらない起票 | L4 | preflight | WARN | `record_warn_reason`, stderr | 時間影響・短縮根拠あり | 30分以上相当の作業で未記載 | `tests/unit/test_cmd_save.bats` | indirect | O(text grep) | 個別FP率未記録 | growth-loop | 2026-06-26 | なし | `[[殿時間コスト]] -> [[見積不足]] -> [[30分問い]]` |
 | 6 | `check_deferral_language_warn` | LS-A22(10), cmd_3381 | 先送り表現・段階的逃げ | L4 | preflight | WARN | `record_warn_reason` | 即時検証・完了条件明記 | 「後で」「段階的」等のみ | `tests/unit/test_cmd_save.bats` | indirect | O(text grep) | LS-A22(10)でFP既知、2026-06-14除外修正 | LS-A22/LS062 | 2026-06-26 | なし | `[[先送り表現]] -> [[洗脳#5]] -> [[deferral WARN]]` |
@@ -81,7 +96,7 @@ AC4制約: 軍師レビューと家老追認により、現行 `logs/gate_fire_l
 | 15 | `check_gunshi_analysis_overlap` | 軍師分析重複防止 | 同一分析の重複起票 | L5 | preflight | WARN | stdout/stderr | 既存軍師分析を参照 | 同テーマ再分析 | 明示単体テスト未検出 | indirect | O(rg/cache) | 個別FP率未記録 | gunshi分析運用 | 2026-06-26 | なし | `[[軍師分析]] -> [[重複起票]] -> [[overlap WARN]]` |
 | 16 | `check_pi_number_collision` | Production Invariant管理 | PI番号衝突 | L4 | preflight | WARN/BLOCK | stdout/stderr | 未使用PI番号 | 既存PI番号再利用 | 明示単体テスト未検出 | indirect | O(rg) | 個別FP率未記録 | PI-INFRA | 2026-06-26 | なし | `[[Production Invariant]] -> [[番号衝突]] -> [[PI collision]]` |
 | 17 | `check_ac_file_paths` | AC現物パス確認 | ACに存在しないファイルパス | L4 | save | WARN | stdout/stderr | AC内パスが存在 | 存在しないパス | `tests/test_cmd_save_ac_paths.bats` | indirect | O(path checks) | 個別FP率未記録 | File Reading Rule | 2026-06-26 | なし | `[[ACファイルパス]] -> [[存在未確認]] -> [[path WARN]]` |
-| 18 | `check_cmd_text_pipe_danger` | D008 pipe-to-shell防御 | `curl|bash`等の危険操作 | L4 | save | BLOCK/WARN | block/warn | 危険パターンなし | pipe-to-shell記載 | `tests/unit/test_cmd_save.bats` | indirect | O(text grep) | 個別FP率未記録 | Destructive D008 | 2026-06-26 | なし | `[[remote code execution]] -> [[pipe_to_shell]] -> [[D008防御]]` |
+| 18 | `check_cmd_text_pipe_danger` | D008 pipe-to-shell防御 | `curl&#124;bash`等の危険操作 | L4 | save | BLOCK/WARN | block/warn | 危険パターンなし | pipe-to-shell記載 | `tests/unit/test_cmd_save.bats` | indirect | O(text grep) | 個別FP率未記録 | Destructive D008 | 2026-06-30 | なし | `[[remote code execution]] -> [[pipe_to_shell]] -> [[D008防御]]` |
 | 19 | `check_impl_push_ac` | push禁止/commitまで | 忍者・cmdのpush要求混入 | L4 | save | WARN/BLOCK | stdout/stderr | commitまで明記 | push ACあり | `tests/unit/test_cmd_save.bats` | indirect | O(text grep) | 個別FP率未記録 | Deployment Rules | 2026-06-26 | なし | `[[push禁止]] -> [[push AC混入]] -> [[commitまで]]` |
 | 20 | `check_dm_signal_bare_layer_reference` | DM-Signal用語明確化 | bare layer等の曖昧語 | L4 | save | WARN | stdout/stderr | 用語辞書参照あり | bare layer単独 | `tests/unit/test_cmd_save_dm_signal_bare_layer_reference.bats` | indirect | O(text grep) | 個別FP率未記録 | dm-signal terminology | 2026-06-26 | なし | `[[曖昧語]] -> [[誤実装]] -> [[用語辞書参照]]` |
 | 21 | `check_ac_must_should_mix` | AC二値性 | must/should混在による曖昧AC | L4 | save | WARN | stdout/stderr | must/二値表現に統一 | should混在 | `tests/unit/test_cmd_save.bats` | indirect | O(text grep) | 個別FP率未記録 | cmd_format AC | 2026-06-26 | なし | `[[曖昧AC]] -> [[完了判定不能]] -> [[must_should_mix]]` |
@@ -194,3 +209,76 @@ PY
 - 関数別FP率は現行ログ（logs/gate_fire_log.yaml, logs/cmd_design_quality.yaml）に関数別FPラベルなし。FP修正コミット履歴からのみ推定可能。今後 `record_warn_reason` に `fp_label` カラム追加が必要（半蔵統合メモ踏襲）。
 - `check_ac_absolute_literals` はWARN_COUNTに加算しない（informational）= record_warn_reasonなし。他のWARN系関数と副作用が異なる点に注意。
 - 後半8件で明示テストがない関数: `check_timebox_minutes_required`, `check_ac_absolute_literals`, `check_new_file_structure_warning`（3件）。テストカバレッジの穴として残存。
+
+## 6. Phase 1b 追加カタログ（cmd_3609）
+
+| # | function | origin | 防御対象 | L0-L7 | 時点 | severity | 副作用 | 正例fixture | 負例fixture | 対応テスト | cmd_skeleton同期 | 性能コスト | FP率 | 教訓逆引き | 最終修正日 | hook参照パターン | origin因果リンク |
+|---:|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 38 | `q11_has_existing_alternative_verification` | LS-A22 / q11既存代替確認 | 既存仕組み確認なしの新規gate/hook追加 | L5 | preflight | helper | stdoutなし | q11に既存代替の現物確認あり | q11が空または抽象論のみ | `tests/unit/test_cmd_save_q11_fp_reduction.bats` | `scripts/cmd_skeleton.sh:111` | O(text grep) | 直接算出不可 | LS-A22 | 2026-06-30 | なし | `[[既存代替未確認]] -> [[重複gate追加]] -> [[q11 helper]]` |
+| 39 | `q5_has_execution_evidence` | cmd_3360 | q5の実行証拠判定 | L5 | preflight | helper | stdoutなし | q5にexit code/実行結果あり | code_readingのみ | `tests/unit/test_cmd_save_q5.bats` | `scripts/cmd_skeleton.sh:110` | O(text grep) | 直接算出不可 | LS063 | 2026-06-30 | なし | `[[q5未実行]] -> [[前提未検証]] -> [[execution evidence helper]]` |
+| 40 | `q11_has_guard_duplicate_check` | LS-A22(9) | guard重複確認なし | L5 | preflight | helper | stdoutなし | q11にguard一覧照合あり | guard重複未確認 | `tests/unit/test_cmd_save_q11_fp_reduction.bats` | indirect | O(text grep) | 直接算出不可 | LS-A22 | 2026-06-30 | なし | `[[guard重複]] -> [[各論patch乱立]] -> [[duplicate helper]]` |
+| 41 | `inline_fill_this_placeholder_block` | template hygiene | 雛形FILL_THIS残存 | L4 | save | BLOCK | `record_block_reason` | FILL_THIS 0件 | FILL_THIS残存 | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | report/gate頻出FAIL | 2026-06-30 | なし | `[[テンプレ未記入]] -> [[空成果物]] -> [[FILL_THIS BLOCK]]` |
+| 42 | `inline_delegated_duplicate_block` | cmd委任状態管理 | 委任済みcmdの再保存 | L4 | save | BLOCK | `record_block_reason` | 未委任draftのみ保存 | delegated cmd再保存 | 明示単体テスト未検出 | indirect | O(YAML cache) | 直接算出不可 | cmd state | 2026-06-30 | なし | `[[delegated cmd]] -> [[再保存]] -> [[state BLOCK]]` |
+| 43 | `inline_previous_pass_pending_block` | cmd状態遷移 | 前回PASS済みpending放置で次cmd保存 | L4 | save | BLOCK | `record_block_reason` | 前回cmdがdelegated以降 | PASS済みpendingのまま次cmd | 明示単体テスト未検出 | indirect | O(YAML scan) | 直接算出不可 | cmd state | 2026-06-30 | なし | `[[PASS pending]] -> [[委任漏れ]] -> [[next cmd BLOCK]]` |
+| 44 | `inline_archive_duplicate_warn` | archive重複防止 | archive済みcmdとの重複 | L4 | save | WARN | `record_warn_reason` | 新規cmd id | archive duplicate | 明示単体テスト未検出 | indirect | O(archive scan) | 直接算出不可 | cmd archive | 2026-06-30 | なし | `[[archive]] -> [[重複保存]] -> [[duplicate WARN]]` |
+| 45 | `inline_other_draft_exists_block` | draft単一性 | 他draft存在中の新規保存 | L4 | save | BLOCK | `record_block_reason` | draft 0件 | other_draft_exists | 明示単体テスト未検出 | indirect | O(queue scan) | 直接算出不可 | cmd state | 2026-06-30 | なし | `[[複数draft]] -> [[指揮混線]] -> [[draft BLOCK]]` |
+| 46 | `inline_diagnosis_format_block` | BLOCK学習ループ | diagnosis形式不正 | L4 | save | BLOCK | `record_block_reason` | `BLOCK理由/対策` 2部構成 | diagnosis欠落/形式不正 | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[BLOCK]] -> [[真因未記録]] -> [[diagnosis BLOCK]]` |
+| 47 | `inline_environment_change_missing_block` | BLOCK後環境変化強制 | environment_change未記入 | L4 | save | BLOCK | `record_block_reason` | type/file/patternあり | BLOCK後に環境変化なし | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[BLOCK]] -> [[修正だけで停止]] -> [[environment_change BLOCK]]` |
+| 48 | `inline_environment_change_quality_block` | 環境変化品質 | environment_changeが抽象的 | L4 | save | BLOCK | `record_block_reason` | 具体diff/grep可能pattern | 低品質な説明のみ | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[環境変化]] -> [[口約束]] -> [[quality BLOCK]]` |
+| 49 | `inline_environment_change_implemented_block` | 環境変化実装確認 | file/patternが現物にない | L4 | save | BLOCK | `record_block_reason` | 指定patternが実在 | 実装されていないpattern | 明示単体テスト未検出 | indirect | O(grep file) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[environment_change]] -> [[未実装]] -> [[grep BLOCK]]` |
+| 50 | `inline_environment_change_structured_block` | 構造化記録 | environment_change非構造化 | L4 | save | BLOCK | `record_block_reason` | `type=...; file=...; pattern=...` | 散文のみ | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[環境変化]] -> [[検索不能]] -> [[structured BLOCK]]` |
+| 51 | `inline_quality_gate_missing_block` | cmd_save quality gate | quality_gate未記入 | L4 | save | BLOCK | `record_block_reason` | q1-qN記入済み | quality_gate空 | `tests/unit/test_cmd_save_quality_gate*.bats` | `scripts/cmd_skeleton.sh` | O(YAML cache) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[cmd_save]] -> [[問い未回答]] -> [[quality_gate BLOCK]]` |
+| 52 | `inline_quality_gate_invalid_fields_block` | q field schema | quality_gate不正フィールド | L4 | save | BLOCK | `record_block_reason` | 許可フィールドのみ | typo/旧field混入 | `tests/unit/test_cmd_save_quality_gate*.bats` | `scripts/cmd_skeleton.sh` | O(field loop) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[quality_gate]] -> [[schema drift]] -> [[invalid field BLOCK]]` |
+| 53 | `inline_required_keys_missing_block` | cmd必須項目 | required fields未記入 | L4 | save | BLOCK | `record_block_reason` | 全必須keyあり | required欠落 | `tests/unit/test_cmd_save*.bats` | `scripts/cmd_skeleton.sh` | O(key loop) | 直接算出不可 | cmd_format | 2026-06-30 | なし | `[[cmd_format]] -> [[必須欠落]] -> [[required BLOCK]]` |
+| 54 | `inline_q4_depth_missing_warn` | 深堀り度記録 | q4_depth未記入 | L4 | save | WARN | `record_warn_reason` | shallow/medium/deep明記 | q4_depth空 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[深堀り]] -> [[密度不明]] -> [[q4 WARN]]` |
+| 55 | `inline_research_baseline_warn` | 研究cmd baseline | 研究cmdにbaselineなし | L4 | save | WARN | `record_warn_reason` | baseline/比較対象あり | 研究cmdでbaseline空 | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | LG022 | 2026-06-30 | なし | `[[研究cmd]] -> [[比較不能]] -> [[baseline WARN]]` |
+| 56 | `inline_q5_code_reading_only_block` | q5現物確認 | code_readingのみで前提未検証 | L4 | save | BLOCK | `record_block_reason` | isolated/structure/production verified | code_readingのみ | `tests/unit/test_cmd_save_q5.bats` | `scripts/cmd_skeleton.sh:110` | O(text grep) | 直接算出不可 | LS063 | 2026-06-30 | なし | `[[コード読みのみ]] -> [[前提未検証]] -> [[q5 BLOCK]]` |
+| 57 | `inline_q6_not_hiding_missing_warn` | 自動消火防止 | q6_not_hiding未記入 | L4 | save | WARN | `record_warn_reason` | 隠すもの/隠さない理由あり | q6空 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | 自動消火禁止 | 2026-06-30 | なし | `[[消火]] -> [[根因隠蔽]] -> [[q6 WARN]]` |
+| 58 | `inline_q7_definition_verified_warn` | 定義確認 | q7_definition_verified未記入 | L4 | save | WARN | `record_warn_reason` | 用語/定義確認あり | q7空 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | 定義確認 | 2026-06-30 | なし | `[[定義未確認]] -> [[誤実装]] -> [[q7 WARN]]` |
+| 59 | `inline_q8_scope_expression_warn` | パラメータ空間防御 | q8に縮小表現 | L4 | save | WARN | `record_warn_reason` | 全量/並列/チャンク化 | 代表N点/絞る | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | パラメータ空間縮小禁止 | 2026-06-30 | なし | `[[縮小表現]] -> [[探索漏れ]] -> [[q8 WARN]]` |
+| 60 | `inline_q8_compound_question_warn` | 複利問い | q8複利観点不足 | L4 | save | WARN | `record_warn_reason` | 複利影響あり | 影響記述なし | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[単発作業]] -> [[複利不明]] -> [[q8 compound WARN]]` |
+| 61 | `inline_q8_when_how_warn` | 5W1H | q8 WHEN/HOW不足 | L4 | save | WARN | `record_warn_reason` | WHEN/HOWあり | 時期/方法不明 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | cmd quality | 2026-06-30 | なし | `[[設計不足]] -> [[実行不能]] -> [[when_how WARN]]` |
+| 62 | `inline_q8_where_who_warn` | 5W1H | q8 WHERE/WHO不足 | L4 | save | WARN | `record_warn_reason` | WHERE/WHOあり | 対象/担当不明 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | cmd quality | 2026-06-30 | なし | `[[設計不足]] -> [[配備不能]] -> [[where_who WARN]]` |
+| 63 | `inline_q9_firefighting_missing_block` | 消火cmd真因 | q9_firefighting_root_cause未記入 | L4 | save | BLOCK | `record_block_reason` | root_cause/preventionあり | 消火cmdでq9空 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | 自動消火禁止 | 2026-06-30 | なし | `[[消火cmd]] -> [[真因なし]] -> [[q9 BLOCK]]` |
+| 64 | `inline_q9_root_cause_label_block` | q9構造 | q9にroot_causeなし | L4 | save | BLOCK | `record_block_reason` | root_cause labelあり | preventionのみ | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[q9]] -> [[原因未分離]] -> [[root_cause BLOCK]]` |
+| 65 | `inline_q9_prevention_label_block` | q9構造 | q9にpreventionなし | L4 | save | BLOCK | `record_block_reason` | prevention labelあり | root_causeのみ | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[q9]] -> [[再発防止なし]] -> [[prevention BLOCK]]` |
+| 66 | `inline_q9_root_cause_length_block` | 真因品質 | root_cause短すぎ | L4 | save | BLOCK | `record_block_reason` | 10文字以上の具体原因 | 短文/空 | 明示単体テスト未検出 | indirect | O(text length) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[真因]] -> [[抽象語]] -> [[length BLOCK]]` |
+| 67 | `inline_q9_prevention_length_block` | 予防品質 | prevention短すぎ | L4 | save | BLOCK | `record_block_reason` | 10文字以上の仕組み | 短文/空 | 明示単体テスト未検出 | indirect | O(text length) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[予防]] -> [[口約束]] -> [[length BLOCK]]` |
+| 68 | `inline_q10_knowledge_boundary_warn` | 知識境界 | q10_knowledge_boundary未記入 | L4 | save | WARN | `record_warn_reason` | verified/unknown境界あり | 境界不明 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | 三層記憶 | 2026-06-30 | なし | `[[知識境界]] -> [[推測混入]] -> [[q10 WARN]]` |
+| 69 | `inline_q11_guard_duplicate_block` | guard重複確認 | q11にGuard一覧との重複確認なし | L4 | save | BLOCK | `record_block_reason` | guard一覧確認あり | 新guard案のみ | `tests/unit/test_cmd_save_q11_fp_reduction.bats` | `scripts/cmd_skeleton.sh:111` | O(text grep) | 直接算出不可 | LS-A22 | 2026-06-30 | なし | `[[guard]] -> [[重複]] -> [[q11 BLOCK]]` |
+| 70 | `inline_q11_existing_alternative_block` | 既存代替確認 | q11に既存代替の現物確認なし | L4 | save | BLOCK | `record_block_reason` | 既存代替現物確認あり | 抽象的に「なし」 | `tests/unit/test_cmd_save_q11_fp_reduction.bats` | `scripts/cmd_skeleton.sh:111` | O(text grep) | 直接算出不可 | LS-A22 | 2026-06-30 | なし | `[[既存代替]] -> [[未確認]] -> [[q11 BLOCK]]` |
+| 71 | `inline_lock_contention_warn` | flock競合可視化 | cmd_save lock contention | L4 | save | WARN | `record_warn_reason` | lock取得成功 | lock競合 | 明示単体テスト未検出 | indirect | O(lock wait) | 直接算出不可 | infra concurrency | 2026-06-30 | なし | `[[flock]] -> [[競合]] -> [[lock WARN]]` |
+| 72 | `warn_q5_pair_missing_session_state` | session_state整合 | q5_verified_source必須フィールド対の欠落 | L4 | save | WARN | `record_warn_reason` | session_state対フィールドあり | q5片側欠落 | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | q5 integrity | 2026-06-30 | なし | `[[q5_verified_source]] -> [[片側欠落]] -> [[session_state WARN]]` |
+| 73 | `warn_missing_prev_cmd_lesson` | 前cmd学習継承 | 前cmd教訓未反映 | L4 | save | BLOCK | `record_block_reason` | 前cmd lesson参照あり | lesson欠落 | 明示単体テスト未検出 | indirect | O(cmd scan) | 直接算出不可 | 学習ループ | 2026-06-30 | なし | `[[前cmd]] -> [[教訓未継承]] -> [[lesson BLOCK]]` |
+| 74 | `show_three_layer_memory_ruling_info` | 殿裁定2026-06-10 | 三層記憶裁定の表示補助 | L5 | preflight | INFO | stderr only | 裁定を起票者へ表示 | 表示なし | 明示単体テスト未検出 | indirect | O(text output) | 直接算出不可 | 三層記憶 | 2026-06-30 | なし | `[[三層記憶裁定]] -> [[忘却]] -> [[ruling info]]` |
+| 75 | `show_gunshi_pane_status.ac_structure_incomplete` | 軍師レビュー前提検証 | AC構造不完全 | L4 | save | WARN | `record_warn_reason` | AC構造が完全 | AC構造不足 | 明示単体テスト未検出 | indirect | O(YAML/text parse) | 直接算出不可 | AC二値性 | 2026-06-30 | なし | `[[AC構造]] -> [[検証不能]] -> [[structure WARN]]` |
+| 76 | `show_gunshi_pane_status.unverified_assumption_block` | Karpathy原則 | 未検証前提あり | L4 | save | BLOCK | `record_block_reason` | trust:verified | trust未検証 | 明示単体テスト未検出 | indirect | O(assumption scan) | 直接算出不可 | assumption discipline | 2026-06-30 | なし | `[[未検証前提]] -> [[推測]] -> [[assumption BLOCK]]` |
+| 77 | `show_gunshi_pane_status.assumption_source_path_block` | source実在確認 | assumptions source path不存在 | L4 | save | BLOCK | `record_block_reason` | source file exists | 存在しないsource | 明示単体テスト未検出 | indirect | O(path check) | 直接算出不可 | File Reading Rule | 2026-06-30 | なし | `[[source path]] -> [[不存在]] -> [[path BLOCK]]` |
+| 78 | `show_gunshi_pane_status.claim_date_warn` | claim鮮度 | assumptions claimに日付なし | L4 | save | WARN | `record_warn_reason` | claimに日付あり | 日付なしclaim | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | temporal accuracy | 2026-06-30 | なし | `[[claim]] -> [[鮮度不明]] -> [[date WARN]]` |
+| 79 | `show_gunshi_pane_status.negative_claim_grep_warn` | 反証確認 | 否定的claimにgrep反証結果なし | L4 | save | WARN | `record_warn_reason` | grep反証結果あり | 否定claimのみ | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | 確認してから行動 | 2026-06-30 | なし | `[[否定claim]] -> [[反証なし]] -> [[grep WARN]]` |
+| 80 | `show_gunshi_pane_status.bulletin_count_grep_warn` | 件数claim検証 | bulletin由来件数claimにgrep検証なし | L4 | save | WARN | `record_warn_reason` | grep件数証跡あり | 件数claimのみ | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | 数値計測 | 2026-06-30 | なし | `[[bulletin件数]] -> [[数値未検証]] -> [[count WARN]]` |
+| 81 | `inline_session_state_queue_presence_warn` | session_state鮮度 | queue file missing | L4 | save | WARN | `record_warn_reason` | queue file exists | queue file missing | 明示単体テスト未検出 | indirect | O(path check) | 直接算出不可 | session_state | 2026-06-30 | なし | `[[queue_file]] -> [[欠落]] -> [[session_state WARN]]` |
+| 82 | `inline_session_state_cmd_block_presence_warn` | session_state鮮度 | cmd block missing | L4 | save | WARN | `record_warn_reason` | cmd block exists | cmd block missing | 明示単体テスト未検出 | indirect | O(YAML scan) | 直接算出不可 | session_state | 2026-06-30 | なし | `[[cmd_block]] -> [[欠落]] -> [[session_state WARN]]` |
+
+Phase 1b根拠コマンド:
+
+```bash
+python3 - <<'PY'
+import re
+from pathlib import Path
+lines=Path('scripts/cmd_save.sh').read_text().splitlines()
+func=None
+calls=[]
+for i,l in enumerate(lines,1):
+    m=re.match(r'^([A-Za-z_][A-Za-z0-9_]*)\(\) \{',l)
+    if m:
+        func=m.group(1)
+    if 'record_block_reason' in l or 'record_warn_reason' in l:
+        if re.match(r'^(record_block_reason|record_warn_reason)\(\)', l):
+            continue
+        calls.append((i,func,l.strip()))
+print(len(calls))
+for row in calls:
+    print(row)
+PY
+```
