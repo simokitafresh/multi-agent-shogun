@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-01 -->
+<!-- last_updated: 2026-07-01 cmd_karo_hotfix_deploy_task_postcondition_order_202607010627 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -435,3 +435,4 @@
 | cmd_3558 | 軍師覚醒点検(2026-06-27 blt_20260627_025812): commit_missing BLOCK 2件の共通根因=gate_report_format.shがcommit_hash長とfiles_modified形式を未検証。PRE3bにfull hash(40文字)強制、PRE25にfiles_modified文字列形式検証を追加し、根因を構造的に封じる | infra | 07-01 | GP-288(空pathWARN)をgate_report_ |
 | cmd_3620 | 軍師提案(blt_20260701_040406)+殿承認(2026-07-01): Sonnet 5(tobisaru)とSonnet 4.6(kotaro)に同一cmdを並列配備し、既存インフラの計測値で定量比較する。評価対象はinfra gate修正・hook改善・DM-Signal BE・FE・偵察の全カテゴリ | infra | 07-01 | cmd_3620(Sonnet5 vs Sonnet4.6 |
 | cmd_3621 | 殿指示(2026-07-01): 第1ラウンド(cmd_3620)はstaleコンテキスト混入でクリーンベンチマークにならなかった。クリーンなタスクYAMLで別カテゴリcmdを両モデルに配備し再比較する | infra | 07-01 | cmd_3621(Sonnet5 vs Sonnet4.6 |
+| cmd_3623 | 殿指示(2026-07-01): 第3ラウンド(infra改善設計)に続き、バグ調査cmdで三者(S5, S4.6, Opus 4.8)の診断品質を比較する。偵察→設計→バグ調査とカテゴリを変えて累積データを蓄積 | infra | 07-01 | deploy_task.shの教訓注入postconditi |
