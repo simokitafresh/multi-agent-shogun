@@ -313,9 +313,17 @@ if [[ "$WA_MODE" = true ]]; then
     verify_environment_change "$ENVIRONMENT_CHANGE"
 fi
 
-# AC2(cmd_3474): brainwash_check未記入WARN (--waモード)
-if [[ "$WA_MODE" = true && -z "$BRAINWASH_CHECK" ]]; then
-    echo "[karo_workaround_log] WARN: brainwash_check未記入。KARO_WA_BRAINWASH_CHECK='洗脳#X確認内容'で渡せ: $CMD_ID/$NINJA_NAME" >&2
+# AC2(cmd_3474) + idle hardening(2026-06-30): --wa brainwash_check is mandatory and numeric.
+if [[ "$WA_MODE" = true ]]; then
+    if [[ -z "$BRAINWASH_CHECK" ]]; then
+        echo "[karo_workaround_log] BLOCK: brainwash_check未記入。KARO_WA_BRAINWASH_CHECK='洗脳#X + 修正前→後の数値'で渡せ: $CMD_ID/$NINJA_NAME" >&2
+        echo "  例: KARO_WA_BRAINWASH_CHECK='洗脳#2検証スキップ防止: gate再実行 0→1件 PASS'" >&2
+        exit 1
+    fi
+    if [[ ! "$BRAINWASH_CHECK" =~ [0-9] ]]; then
+        echo "[karo_workaround_log] BLOCK: brainwash_checkに数値なし。修正前→後の数値、またはN件中N件確認を記録せよ: $CMD_ID/$NINJA_NAME" >&2
+        exit 1
+    fi
 fi
 
 # --- Count category entries excluding resolved (AC1+AC3: cmd_1211, GP-084: Python→awk) ---

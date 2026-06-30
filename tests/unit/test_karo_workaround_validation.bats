@@ -181,6 +181,37 @@ teardown() {
     [[ "$output" != *"root_causeが無効値"* ]]
 }
 
+@test "--wa without brainwash_check blocks before recording" {
+    run bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test root cause" report_yaml_format "" \
+        "type=gate; file=scripts/sample_gate.sh; pattern=ENV_CHANGE_MARKER"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: brainwash_check未記入"* ]]
+
+    run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -ne 0 ]
+}
+
+@test "--wa brainwash_check without numbers blocks before recording" {
+    run env KARO_WA_BRAINWASH_CHECK="洗脳確認済み" \
+        bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test root cause" report_yaml_format "" \
+        "type=gate; file=scripts/sample_gate.sh; pattern=ENV_CHANGE_MARKER"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: brainwash_checkに数値なし"* ]]
+
+    run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -ne 0 ]
+}
+
+@test "--wa brainwash_check with numbers records the check" {
+    run env KARO_WA_BRAINWASH_CHECK="洗脳#2検証スキップ防止: gate再実行 0→1件 PASS" \
+        bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test root cause" report_yaml_format "" \
+        "type=gate; file=scripts/sample_gate.sh; pattern=ENV_CHANGE_MARKER"
+    [ "$status" -eq 0 ]
+
+    run grep -n "brainwash_check: '洗脳#2検証スキップ防止: gate再実行 0→1件 PASS'" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+}
+
 # =============================================
 # Clean mode should skip validation
 # =============================================
@@ -235,7 +266,8 @@ teardown() {
 }
 
 @test "AC4: --wa modeでstructured environment_changeを検証してYAML記録" {
-    run bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test fix description" report_yaml_format SG4 \
+    run env KARO_WA_BRAINWASH_CHECK="洗脳#2検証スキップ防止: environment_change検証 1/1 PASS" \
+        bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test fix description" report_yaml_format SG4 \
         "type=gate; file=scripts/sample_gate.sh; pattern=ENV_CHANGE_MARKER"
     [ "$status" -eq 0 ]
     [[ "$output" == *"environment_change検証OK"* ]]
