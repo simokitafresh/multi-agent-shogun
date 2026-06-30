@@ -245,11 +245,11 @@ PY
 | 51 | `inline_quality_gate_missing_block` | cmd_save quality gate | quality_gate未記入 | L4 | save | BLOCK | `record_block_reason` | q1-qN記入済み | quality_gate空 | `tests/unit/test_cmd_save_quality_gate*.bats` | `scripts/cmd_skeleton.sh` | O(YAML cache) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[cmd_save]] -> [[問い未回答]] -> [[quality_gate BLOCK]]` |
 | 52 | `inline_quality_gate_invalid_fields_block` | q field schema | quality_gate不正フィールド | L4 | save | BLOCK | `record_block_reason` | 許可フィールドのみ | typo/旧field混入 | `tests/unit/test_cmd_save_quality_gate*.bats` | `scripts/cmd_skeleton.sh` | O(field loop) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[quality_gate]] -> [[schema drift]] -> [[invalid field BLOCK]]` |
 | 53 | `inline_required_keys_missing_block` | cmd必須項目 | required fields未記入 | L4 | save | BLOCK | `record_block_reason` | 全必須keyあり | required欠落 | `tests/unit/test_cmd_save*.bats` | `scripts/cmd_skeleton.sh` | O(key loop) | 直接算出不可 | cmd_format | 2026-06-30 | なし | `[[cmd_format]] -> [[必須欠落]] -> [[required BLOCK]]` |
-| 54 | `inline_q4_depth_missing_warn` | 深堀り度記録 | q4_depth未記入 | L4 | save | WARN | `record_warn_reason` | shallow/medium/deep明記 | q4_depth空 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[深堀り]] -> [[密度不明]] -> [[q4 WARN]]` |
-| 55 | `inline_research_baseline_warn` | 研究cmd baseline | 研究cmdにbaselineなし | L4 | save | WARN | `record_warn_reason` | baseline/比較対象あり | 研究cmdでbaseline空 | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | LG022 | 2026-06-30 | なし | `[[研究cmd]] -> [[比較不能]] -> [[baseline WARN]]` |
+| 54 | `inline_q4_depth_missing_warn` | 深堀り度記録 | q4_depth未記入 | L4 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 135/135 PASS | `record_warn_reason` | shallow/medium/deep明記 | q4_depth空 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[深堀り]] -> [[密度不明]] -> [[q4 WARN]]` |
+| 55 | `inline_research_baseline_warn` | 研究cmd baseline | 研究cmdにbaselineなし | L4 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 135/135 PASS | `record_warn_reason` | baseline/比較対象あり | 研究cmdでbaseline空 | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | LG022 | 2026-06-30 | なし | `[[研究cmd]] -> [[比較不能]] -> [[baseline WARN]]` |
 | 56 | `inline_q5_code_reading_only_block` | q5現物確認 | code_readingのみで前提未検証 | L4 | save | BLOCK | `record_block_reason` | isolated/structure/production verified | code_readingのみ | `tests/unit/test_cmd_save_q5.bats` | `scripts/cmd_skeleton.sh:110` | O(text grep) | 直接算出不可 | LS063 | 2026-06-30 | なし | `[[コード読みのみ]] -> [[前提未検証]] -> [[q5 BLOCK]]` |
-| 57 | `inline_q6_not_hiding_missing_warn` | 自動消火防止 | q6_not_hiding未記入 | L4 | save | WARN | `record_warn_reason` | 隠すもの/隠さない理由あり | q6空 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | 自動消火禁止 | 2026-06-30 | なし | `[[消火]] -> [[根因隠蔽]] -> [[q6 WARN]]` |
-| 58 | `inline_q7_definition_verified_warn` | 定義確認 | q7_definition_verified未記入 | L4 | save | WARN | `record_warn_reason` | 用語/定義確認あり | q7空 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | 定義確認 | 2026-06-30 | なし | `[[定義未確認]] -> [[誤実装]] -> [[q7 WARN]]` |
+| 57 | `inline_q6_not_hiding_missing_warn` | 自動消火防止 | q6_not_hiding未記入 | L4 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 135/135 PASS | `record_warn_reason` | 隠すもの/隠さない理由あり | q6空 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | 自動消火禁止 | 2026-06-30 | なし | `[[消火]] -> [[根因隠蔽]] -> [[q6 WARN]]` |
+| 58 | `inline_q7_definition_verified_warn` | 定義確認 | q7_definition_verified未記入 | L4 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 135/135 PASS | `record_warn_reason` | 用語/定義確認あり | q7空 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | 定義確認 | 2026-06-30 | なし | `[[定義未確認]] -> [[誤実装]] -> [[q7 WARN]]` |
 | 59 | `inline_q8_scope_expression_warn` | パラメータ空間防御 | q8に縮小表現 | L4 | save | WARN | `record_warn_reason` | 全量/並列/チャンク化 | 代表N点/絞る | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | パラメータ空間縮小禁止 | 2026-06-30 | なし | `[[縮小表現]] -> [[探索漏れ]] -> [[q8 WARN]]` |
 | 60 | `inline_q8_compound_question_warn` | 複利問い | q8複利観点不足 | L4 | save | WARN | `record_warn_reason` | 複利影響あり | 影響記述なし | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[単発作業]] -> [[複利不明]] -> [[q8 compound WARN]]` |
 | 61 | `inline_q8_when_how_warn` | 5W1H | q8 WHEN/HOW不足 | L4 | save | WARN | `record_warn_reason` | WHEN/HOWあり | 時期/方法不明 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | cmd quality | 2026-06-30 | なし | `[[設計不足]] -> [[実行不能]] -> [[when_how WARN]]` |
@@ -259,7 +259,7 @@ PY
 | 65 | `inline_q9_prevention_label_block` | q9構造 | q9にpreventionなし | L4 | save | BLOCK | `record_block_reason` | prevention labelあり | root_causeのみ | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[q9]] -> [[再発防止なし]] -> [[prevention BLOCK]]` |
 | 66 | `inline_q9_root_cause_length_block` | 真因品質 | root_cause短すぎ | L4 | save | BLOCK | `record_block_reason` | 10文字以上の具体原因 | 短文/空 | 明示単体テスト未検出 | indirect | O(text length) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[真因]] -> [[抽象語]] -> [[length BLOCK]]` |
 | 67 | `inline_q9_prevention_length_block` | 予防品質 | prevention短すぎ | L4 | save | BLOCK | `record_block_reason` | 10文字以上の仕組み | 短文/空 | 明示単体テスト未検出 | indirect | O(text length) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[予防]] -> [[口約束]] -> [[length BLOCK]]` |
-| 68 | `inline_q10_knowledge_boundary_warn` | 知識境界 | q10_knowledge_boundary未記入 | L4 | save | WARN | `record_warn_reason` | verified/unknown境界あり | 境界不明 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | 三層記憶 | 2026-06-30 | なし | `[[知識境界]] -> [[推測混入]] -> [[q10 WARN]]` |
+| 68 | `inline_q10_knowledge_boundary_warn` | 知識境界 | q10_knowledge_boundary未記入 | L4 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 135/135 PASS | `record_warn_reason` | verified/unknown境界あり | 境界不明 | 明示単体テスト未検出 | `scripts/cmd_skeleton.sh` | O(text grep) | 直接算出不可 | 三層記憶 | 2026-06-30 | なし | `[[知識境界]] -> [[推測混入]] -> [[q10 WARN]]` |
 | 69 | `inline_q11_guard_duplicate_block` | guard重複確認 | q11にGuard一覧との重複確認なし | L4 | save | BLOCK | `record_block_reason` | guard一覧確認あり | 新guard案のみ | `tests/unit/test_cmd_save_q11_fp_reduction.bats` | `scripts/cmd_skeleton.sh:111` | O(text grep) | 直接算出不可 | LS-A22 | 2026-06-30 | なし | `[[guard]] -> [[重複]] -> [[q11 BLOCK]]` |
 | 70 | `inline_q11_existing_alternative_block` | 既存代替確認 | q11に既存代替の現物確認なし | L4 | save | BLOCK | `record_block_reason` | 既存代替現物確認あり | 抽象的に「なし」 | `tests/unit/test_cmd_save_q11_fp_reduction.bats` | `scripts/cmd_skeleton.sh:111` | O(text grep) | 直接算出不可 | LS-A22 | 2026-06-30 | なし | `[[既存代替]] -> [[未確認]] -> [[q11 BLOCK]]` |
 | 71 | `inline_lock_contention_warn` | flock競合可視化 | cmd_save lock contention | L4 | save | WARN | `record_warn_reason` | lock取得成功 | lock競合 | 明示単体テスト未検出 | indirect | O(lock wait) | 直接算出不可 | infra concurrency | 2026-06-30 | なし | `[[flock]] -> [[競合]] -> [[lock WARN]]` |
@@ -355,11 +355,11 @@ PY
 | 51 | `inline_quality_gate_missing_block` | B | 関数化 | quality_gate存在チェックを関数化し入口BLOCKを単体化 | pending | 未実施 |
 | 52 | `inline_quality_gate_invalid_fields_block` | B | 関数化 | QG schema validationを関数化しfield typoをfixture化 | pending | 未実施 |
 | 53 | `inline_required_keys_missing_block` | B | 関数化 | 必須項目一括チェックを関数化し欠落リストをテスト可能にする | pending | 未実施 |
-| 54 | `inline_q4_depth_missing_warn` | B | 関数化 | q4_depth WARNを関数化しWARN_COUNT対象を明示 | pending | 未実施 |
-| 55 | `inline_research_baseline_warn` | B | 関数化 | research baseline WARNを関数化しtype=research fixtureを追加 | pending | 未実施 |
+| 54 | `inline_q4_depth_missing_warn` | B | 関数化 | q4_depth WARNを関数化しWARN_COUNT対象を明示 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 135/135 PASS |
+| 55 | `inline_research_baseline_warn` | B | 関数化 | research baseline WARNを関数化しtype=research fixtureを追加 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 135/135 PASS |
 | 56 | `inline_q5_code_reading_only_block` | B | 関数化 | q5 code_reading BLOCKを関数化しscout/shallow例外をfixture化 | pending | 未実施 |
-| 57 | `inline_q6_not_hiding_missing_warn` | B | 関数化 | q6_not_hiding WARNを関数化し自動消火防止を単体化 | pending | 未実施 |
-| 58 | `inline_q7_definition_verified_warn` | B | 関数化 | q7_definition WARNを関数化し定義確認fixtureを追加 | pending | 未実施 |
+| 57 | `inline_q6_not_hiding_missing_warn` | B | 関数化 | q6_not_hiding WARNを関数化し自動消火防止を単体化 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 135/135 PASS |
+| 58 | `inline_q7_definition_verified_warn` | B | 関数化 | q7_definition WARNを関数化し定義確認fixtureを追加 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 135/135 PASS |
 | 59 | `inline_q8_scope_expression_warn` | B | 関数化 | q8縮小表現WARNを関数化し禁止語fixtureを追加 | pending | 未実施 |
 | 60 | `inline_q8_compound_question_warn` | B | 関数化 | q8複利問いWARNを関数化し複利語fixtureを追加 | pending | 未実施 |
 | 61 | `inline_q8_when_how_warn` | B | 関数化 | q8 WHEN/HOW WARNを関数化し5W1H欠落fixtureを追加 | pending | 未実施 |
@@ -369,7 +369,7 @@ PY
 | 65 | `inline_q9_prevention_label_block` | B | 関数化 | q9 prevention label判定を関数化し構造fixtureを追加 | pending | 未実施 |
 | 66 | `inline_q9_root_cause_length_block` | B | 関数化 | root_cause長さ判定を関数化し短文fixtureを追加 | pending | 未実施 |
 | 67 | `inline_q9_prevention_length_block` | B | 関数化 | prevention長さ判定を関数化し意志依存fixtureを追加 | pending | 未実施 |
-| 68 | `inline_q10_knowledge_boundary_warn` | B | 関数化 | q10知識境界WARNを関数化し境界未記入fixtureを追加 | pending | 未実施 |
+| 68 | `inline_q10_knowledge_boundary_warn` | B | 関数化 | q10知識境界WARNを関数化し境界未記入fixtureを追加 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 135/135 PASS |
 | 69 | `inline_q11_guard_duplicate_block` | B | 関数化 | q11 guard重複BLOCKを関数化しGuard一覧fixtureを追加 | pending | 未実施 |
 | 70 | `inline_q11_existing_alternative_block` | B | 関数化 | q11既存代替BLOCKを関数化し既存確認fixtureを追加 | pending | 未実施 |
 | 71 | `inline_lock_contention_warn` | B | 関数化 | flock競合WARNを関数化しlock wait副作用を明示 | pending | 未実施 |
