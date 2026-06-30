@@ -56,10 +56,10 @@ cli:
       launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
     tobisaru:
       type: claude
-      model_name: claude-sonnet-4-6
+      model_name: claude-sonnet-5-20250514
       role: ninja
       japanese_name: 飛猿
-      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions
 idle_cycle: on
 effort: high
 token_budget:

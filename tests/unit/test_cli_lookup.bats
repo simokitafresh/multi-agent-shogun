@@ -14,6 +14,10 @@ cli:
     gunshi:
       type: claude
       model_name: claude-opus-4-6
+    tobisaru:
+      type: claude
+      model_name: claude-sonnet-4-6
+      launch_cmd: "/tmp/claude-local"
     saizo:
       type: invalid_cli
 YAML
@@ -91,6 +95,13 @@ teardown_file() {
         bash -lc "source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'; cli_model_display gunshi"
     [ "$status" -eq 0 ]
     [ "$output" = "Opus 4.6" ]
+}
+
+@test "cli_launch_cmd: settings.yaml launch_cmd overrides profile default" {
+    run env CLI_ADAPTER_SETTINGS="${TEST_TMPDIR_CLI}/settings.yaml" CLI_LOOKUP_PROFILES="${TEST_TMPDIR_CLI}/cli_profiles.yaml" \
+        bash -lc "source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'; cli_launch_cmd tobisaru"
+    [ "$status" -eq 0 ]
+    [ "$output" = "/tmp/claude-local --model sonnet" ]
 }
 
 @test "model_colors: GPT-5.5表示名をCodex色へ正規化できる" {
