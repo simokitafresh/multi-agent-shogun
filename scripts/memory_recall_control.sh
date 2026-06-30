@@ -130,8 +130,8 @@ def main() -> int:
             SELECT id, summary
             FROM events
             WHERE state = 'verified'
-              AND date(COALESCE(NULLIF(updated_at, ''), ts, '1970-01-01')) <= date('now', ?)
-            ORDER BY COALESCE(NULLIF(updated_at, ''), ts, '1970-01-01'), id
+              AND date(substr(COALESCE(NULLIF(updated_at, ''), ts, '1970-01-01'), 1, 10)) <= date('now', ?)
+            ORDER BY substr(COALESCE(NULLIF(updated_at, ''), ts, '1970-01-01'), 1, 10), id
             LIMIT ?
             """,
             (cutoff_expr, limit),
