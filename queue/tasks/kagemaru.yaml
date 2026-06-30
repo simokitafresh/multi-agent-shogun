@@ -1,124 +1,81 @@
 task:
-  readonly_ref:
-  - path: 'app/page.tsx'
-    reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3595_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3595 (deployed 2026-06-29T02:28:36). Read from the beginning.
-  ac_version: f37d9ddf
-  additional_instructions: '追加注意(2026-06-28T20:51JST): Google OAuthログイン後にリバランサーURLへリダイレクトされるバグあり。根因=Supabaseプロジェクト共有でリダイレクトURL許可リストにFusion本番URL https://dm-fusion.onrender.com が未登録。コード側はsignInWithOAuth redirectTo をFusion本番/現在originへ明示設定し、Supabase側設定としてAuthentication→URL ConfigurationにFusion本番URL追加が必要なことを報告YAMLに明記。可能なコード修正を実施し、外部ダッシュボード設定はpost_deploy_evidence/decision_candidate等で明記せよ。'
-  cancel_reason: cmd_3589 canceled in shogun_to_karo; waiting for cmd_3590
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      binary_check: 対象commit差分と現行ファイルを確認し、残存バグあり/なしを根拠付きで報告しているか
+      description: befd7ca46, c9ba1ff9a, b421a7ee6 の差分を読み、Opus 4.8表示/family分類/CLI種別変更時launch_cmdクリアに残存バグがあるか一次情報で判定する
+    AC2:
+      binary_check: 既存テストファイルと実行可能な最小テスト結果を報告しているか
+      description: 関連するshell/Python/Batsテストの不足を調べ、追加すべきテストまたは不要理由を報告する
+    AC3:
+      binary_check: 自分のモデル/CLI環境で観測した差分または差分なしを報告しているか
+      description: GPT/Claude CLI差による挙動差(hook, model label, launch_cmd override)を自分の実行環境観点で記録する
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "dm_fusion_app — DM-Fusionアプリ:  /mnt/c/Python_app/DM-signal/docs/spec/fusion-app.md /mnt/c/Python_app/DM-Fusion context/dm-signal-core.md §8.7 context/dm-signal-ops.md §45"
-  - "dmsignal_operations — DM-Signal運用:  context/dm-signal.md context/dm-signal-ops.md context/dm-signal-core.md context/dm-signal-frontend.md context/dm-signal-research.md context/checklist-shin-v2-registration.md context/checklist-alm-registration.md docs/research/ops-procedures.md docs/research/ops-db-rules.md docs/operations/daemon_runbook.md docs/operations/profiling_runbook.md /mnt/c/Python_app/DM-signal/scripts/check_pf_config.py — PF構成一括確認(cmd_3378)"
-  - "fusion_api_endpoint — Fusion API:  context/dm-signal-core.md §8.7 context/dm-signal-ops.md §45 /mnt/c/Python_app/DM-signal/docs/spec/fusion-api-endpoint.md /mnt/c/Python_app/DM-signal/backend/app/api/fusion.py /mnt/c/Python_app/DM-signal/backend/tests/test_fusion_api.py"
-  - "modern_web_guidance — Modern Web Guidance:  skills/modern-web-guidance/SKILL.md context/dm-signal-frontend.md"
-  related_causal_links:
-  - "[[saved_fusionsテーブル未作成+レイアウト破綻]]"
-  - "[[テーブル作成+エラー表示保護]]"
-  - "[[殿指示_Fusion_Saveエラー_20260629]]"
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
+  recommended_skills:
+  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/robustness-verification-catalog.md"
-  - "context/gs-speedup-knowledge.md"
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
-  production_invariants:
-  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
-  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
-  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
-  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
-  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  - "context/training-cycle.md"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L267: 殿への質問・提案は推薦先行+WHY必須。MCP教訓→lessons.yaml同期CMD起票義務。gstack知見3+L-teire提案フォーマットを将軍ルールと
-      - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
     
-    【DB変更前バックアップ必須】DB操作cmd。変更前に対象DB/テーブルのバックアップを取得し、取得コマンド・保存先・復元手順をprogressまたは報告YAMLに記録せよ。
+    【3-strike rule】
+      - 初期仮説は最低3本。hypothesis_count に現在の本数を維持せよ
+      - 3回連続で仮説が外れたら、追加探索で粘らずエスカレーションせよ
       ────────────────────────────────────────
+    
+    
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
-  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
-  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
-  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
-  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
-  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
-  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
-  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
-  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
-  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
-  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  hypothesis_count: 3
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope:
-  - DM-Signal実装コード変更
-  - cmd_3569作業への介入
-  - context/dm-signal-core.md, frontend.md, research.mdの更新(必要性が見つかればcandidate報告のみ)
+  not_in_scope: 実装変更は原則禁止。重大な即時バグを見つけた場合のみ最小修正案を提示し、勝手に広範囲改修しない。
   parallel_ok: []
-  parent_cmd: cmd_3595
-  project: dm-signal
-  purpose: '殿指示(2026-06-29): Saveボタン押下でsaved_fusionsテーブル不在エラーが画面に表示され全体レイアウトが破綻する。Supabaseテーブル作成+エラー表示のレイアウト保護'
-  scout_exempt: true
-  status: failed
-  stop_for:
-  - バックアップなしのDB変更
-  target_path: /mnt/c/Python_app/DM-Fusion
-  task_id: cmd_3595_full
-  task_type: full
-  previous_failures:
-    attempt: 2
-    last_block_reason: 'binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-    - 'binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    approach_summary: 'DM-Fusion Page0を詳細ボタンなしの常時5列比較表へ再構成し、保存済みFusion選択UIと読込防御を修正した'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-    - attempt: 2
-      block_reason: 'binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'DM-Fusion Page0を詳細ボタンなしの常時5列比較表へ再構成し、保存済みFusion選択UIと読込防御を修正した'
+  parent_cmd: cmd_3624_kagemaru
+  project: infra
+  purpose: 'cmd_3624四者比較のkagemaru(GPT 5.5 medium)担当: CLIモデル表示・model_family分類・launch_cmdクリア修正群の残存バグを監査する'
+  report_template:
+    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+    forbidden:
+    - 方針提案・設計判断は禁止。事実と分析のみ報告せよ
+    notes:
+    - 他の忍者の報告を参照するな（並行偵察の独立性）
+    required_fields:
+    - findings
+    - verdict
+    - confidence
+    - blind_spots
+  scope_mode: FULL
+  status: done
+  stop_for: []
+  target_path: scripts/lib/cli_lookup.sh
+  task_id: cmd_3624_kagemaru_normal
+  task_type: recon
+  three_strike_rule: 仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告
   related_lessons:
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L267'
-    summary: '殿への質問・提案は推薦先行+WHY必須。MCP教訓→lessons.yaml同期CMD起票義務。gstack知見3+L-teire提案フォーマットを将軍ルールと'
-    detail: '殿への質問・提案は推薦先行+WHY必須。MCP教訓→lessons.yaml同期CMD起票義務。gstack知見3+L-teire提案フォーマットを将軍ルールと'
-  - id: 'L643'
-    summary: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
-    detail: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -130,23 +87,14 @@ task:
     wa_count: 1
     detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
   memory_db_context:
-  - '2026-06-29T02:16:25+09:00 | 【INFOバッチ】 2026-06-29 02:01:57|cmd_3594'
-  - '2026-06-29T01:59:59+09:00 | 【INFOバッチ】 2026-06-29 01:45:04|cmd_3593'
-  - '2026-06-29T02:18:38+09:00 | cmd_3596 push済み(家老が先行push)。Renderデプロイ後に本番で殿承認のワイヤーフレーム(CAGR→MaxDD→TR+Period→5列比較表)が確認できる。 cmd_3595(S'
-  - '2026-06-29T02:02:36+09:00 | cmd_3594 push済み(家老が先にpush)。cmd_3595(Saveエラー)/cmd_3596(レイアウト再構成+5列比較)が次の忍者に順次配備される。殿の指示を待つ。 [meta] st'
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'Saveボタン押下時にsaved_fusionsテーブルへの保存が正常に動作しエラーが表示されない'
-  - id: 'AC2'
-    checks:
-    - check: '仮にエラーが発生してもエラーメッセージが固定領域内に収まり全体レイアウトが破綻しない'
-  - id: 'AC3'
-    checks:
-    - check: 'テーブル作成前にSupabaseの既存スキーマ状態をバックアップとして記録済みであること(新規テーブルのためデータバックアップは不要だがスキーマ状態を記録)'
+  - '2026-07-01T07:18:16+09:00 | 軍師提案: GPT 5.5 low / GPT 5.5 medium / Sonnet 4.6 / Sonnet 5 の四者比較。hayate(GPT low), kagemaru(GPT mediu'
+  - '2026-07-01T07:15:15+09:00 | 軍師提案: GPT 5.5 low / GPT 5.5 medium / Sonnet 4.6 / Sonnet 5 の四者比較。hayate(GPT low), kagemaru(GPT mediu'
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_3624_kagemaru_normal
+  _ac_worker_id: 
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3595.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3595.yaml
+  report_filename: kagemaru_report_cmd_3624_kagemaru.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3624_kagemaru.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -169,4 +117,4 @@ task:
     - reason: 'empty_lessons_useful'
       count: 2
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-06-29T02:29:42"
+  deployed_at: "2026-07-01T07:23:34"
