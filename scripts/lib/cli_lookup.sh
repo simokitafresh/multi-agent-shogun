@@ -320,6 +320,7 @@ cli_model_display() {
         return 1
     fi
     case "$model_name" in
+        claude-opus-4-8*)    echo "Opus 4.8" ;;
         claude-opus-4-6*)    echo "Opus 4.6" ;;
         claude-opus-4*)      echo "Opus 4" ;;
         claude-sonnet-5*)    echo "Sonnet 5" ;;

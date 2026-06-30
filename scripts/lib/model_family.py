@@ -3,6 +3,7 @@
 import re
 
 FAMILY_OPUS_46 = "opus_4_6"
+FAMILY_OPUS_48 = "opus_4_8"
 FAMILY_GPT_5 = "gpt_5"
 FAMILY_CODEX = "codex"
 FAMILY_HAIKU = "haiku"
@@ -18,6 +19,8 @@ def model_slug(model_label: str) -> str:
 
 def extract_model_family(label: str) -> str:
     low = str(label).lower().replace("-", " ").replace("_", " ")
+    if "opus" in low and ("4.8" in low or "4 8" in low):
+        return FAMILY_OPUS_48
     if "opus" in low and ("4.6" in low or "4 6" in low):
         return FAMILY_OPUS_46
     if ("gpt" in low or "codex" in low) and (
