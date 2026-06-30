@@ -1,11 +1,41 @@
 task:
-  readonly_ref:
-  - path: 'gate_report_format.sh'
-    reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3558_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3558 (deployed 2026-06-27T03:05:39). Read from the beginning.
-  ac_version: 129e725c
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      binary_check: 対象commit差分と現行ファイルを確認し、残存バグあり/なしを根拠付きで報告しているか
+      description: befd7ca46, c9ba1ff9a, b421a7ee6 の差分を読み、Opus 4.8表示/family分類/CLI種別変更時launch_cmdクリアに残存バグがあるか一次情報で判定する
+    AC2:
+      binary_check: 既存テストファイルと実行可能な最小テスト結果を報告しているか
+      description: 関連するshell/Python/Batsテストの不足を調べ、追加すべきテストまたは不要理由を報告する
+    AC3:
+      binary_check: 自分のモデル/CLI環境で観測した差分または差分なしを報告しているか
+      description: GPT/Claude CLI差による挙動差(hook, model label, launch_cmd override)を自分の実行環境観点で記録する
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  semantic_concepts:
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/training-cycle.md"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
+      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
+    ────────────────────────────────────────
+    
+    【3-strike rule】
+      - 初期仮説は最低3本。hypothesis_count に現在の本数を維持せよ
+      - 3回連続で仮説が外れたら、追加探索で粘らずエスカレーションせよ
+      ────────────────────────────────────────
+    
+    
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -14,78 +44,55 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  hypothesis_count: 3
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope: 教訓全体の大規模棚卸し、将軍専用lesson-sortの代行、dm-signal機能コード変更
-  origin: '[[startup先送りBLOCK_教訓健全度ALERT_20260626]] -> [[cmd_3548_L191_L234_L240_NOT_USEFUL]] -> [[低useful教訓改善淘汰]]'
+  not_in_scope: 実装変更は原則禁止。重大な即時バグを見つけた場合のみ最小修正案を提示し、勝手に広範囲改修しない。
   parallel_ok: []
-  parent_cmd: cmd_3558
+  parent_cmd: cmd_3624_hayate
   project: infra
-  purpose: '軍師覚醒点検(2026-06-27 blt_20260627_025812): commit_missing BLOCK 2件の共通根因=gate_report_format.shがcommit_hash長とfiles_modified形式を未検証。PRE3bにfull hash(40文字)強制、PRE25にfiles_modified文字列形式検証を追加し、根因を構造的に封じる'
-  status: failed
+  purpose: 'cmd_3624四者比較のhayate(GPT 5.5 low)担当: CLIモデル表示・model_family分類・launch_cmdクリア修正群の残存バグを監査する'
+  report_template:
+    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
+    forbidden:
+    - 方針提案・設計判断は禁止。事実と分析のみ報告せよ
+    notes:
+    - 他の忍者の報告を参照するな（並行偵察の独立性）
+    required_fields:
+    - findings
+    - verdict
+    - confidence
+    - blind_spots
+  scope_mode: FULL
+  status: done
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates
-  task_id: cmd_3558_full
-  task_type: full
+  target_path: scripts/lib/cli_lookup.sh
+  task_id: cmd_3624_hayate_normal
+  task_type: recon
+  three_strike_rule: 仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告
   related_lessons:
-  - id: 'L781'
-    summary: 'cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『'
-    detail: 'cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『'
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L558'
-    summary: 'L1022(uncommitted_block)/L1028(report_format_fix)にも& バックグラウンド実行が残存。同じサイレント失敗リスクが'
-    detail: 'L1022(uncommitted_block)/L1028(report_format_fix)にも& バックグラウンド実行が残存。同じサイレント失敗リスクが'
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  related_causal_links:
-  - "[[commit_missing_WA_2件]]"
-  - "[[gate_report_format未検証]]"
-  - "[[軍師覚醒点検blt_20260627_025812]]"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L781: cmd_3289-3293でSG-PRE25はreadonly_ref除外後PASS相当でも、cmd_complete_gate側がcommand欄の自然言語『
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L558: L1022(uncommitted_block)/L1028(report_format_fix)にも& バックグラウンド実行が残存。同じサイレント失敗リスクが
-    ────────────────────────────────────────
-
-
+  - id: 'L278'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
+  - id: 'L342'
+    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
   memory_db_context:
-  - '2026-06-27T02:55:57+09:00 | [MEM: memory_db ts=2026-06-27 — telemetry関連の殿裁定・過去設定なし] **テレメトリ無効化の説明:** Claude Codeはデフォルトで匿名のOpenTe'
-  - '2026-06-27T02:53:34 | Loop Engineering Phase 3残り3件(#3 FE検証/#13 maker-checker/#16 MCP Connector)は殿裁定により実装停止(2026-06-27)。Pha'
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: 'gate_report_format.shにcommit_hash長検証(7文字未満または40文字超をFAIL)を追加し、batsテストでshort hash(7文字)とfull hash(40文字)の判定を確認する'
-  - id: 'AC2'
-    checks:
-    - check: 'gate_report_format.shにfiles_modified形式検証(空文字列・数値のみ・パス未含有をWARN)を追加し、batsテストで不正形式の判定を確認する'
+  - '2026-07-01T07:18:16+09:00 | 軍師提案: GPT 5.5 low / GPT 5.5 medium / Sonnet 4.6 / Sonnet 5 の四者比較。hayate(GPT low), kagemaru(GPT mediu'
+  - '2026-07-01T07:15:15+09:00 | 軍師提案: GPT 5.5 low / GPT 5.5 medium / Sonnet 4.6 / Sonnet 5 の四者比較。hayate(GPT low), kagemaru(GPT mediu'
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_3624_hayate_normal
+  _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3558.yaml
-  report_path: queue/reports/hayate_report_cmd_3558.yaml
+  report_filename: hayate_report_cmd_3624_hayate.yaml
+  report_path: queue/reports/hayate_report_cmd_3624_hayate.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -95,11 +102,11 @@ task:
     warning: '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 144
+      count: 147
     - pattern: 'verdict_invalid'
-      count: 25
+      count: 26
     - pattern: 'field_missing'
-      count: 21
+      count: 22
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
     gate_blocks:
     - reason: 'report_format'
@@ -108,13 +115,15 @@ task:
     - reason: 'binary_checks_fail'
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-06-27T03:06:03"
+  deployed_at: "2026-07-01T07:23:05"
 
   session_state:
     attempt: 1
-    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    last_block_reason: 'knowledge_candidate: found=true but items is empty'
     tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - 'knowledge_candidate: found=true but items is empty'
+    approach_summary: 'befd7ca46/c9ba1ff9a/b421a7ee6の現行差分を監査し、Opus 4.8表示・family分類・hayate Codex起動経路に残存実装バグは見つからず、launch_cmdクリア専用回帰テスト不足を確認。'
     prior_attempts:
     - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      block_reason: 'knowledge_candidate: found=true but items is empty'
+      approach_summary: 'befd7ca46/c9ba1ff9a/b421a7ee6の現行差分を監査し、Opus 4.8表示・family分類・hayate Codex起動経路に残存実装バグは見つからず、launch_cmdクリア専用回帰テスト不足を確認。'
