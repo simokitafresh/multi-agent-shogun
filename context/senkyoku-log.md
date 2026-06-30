@@ -1321,3 +1321,4 @@
 - 2026-06-30 cmd_3615: 設計思想カタログPhase4として中間レイヤーを`cmd_skeleton`/semantic/infrastructure/growth-loopへ貫通。小太郎commit `5e323c7e5` + 鮮度補助commit `8967eee57`、軍師LGTM、GATE CLEAR。
 - 2026-06-30 cmd_3616: 設計思想カタログPhase5として`cmd_save.sh` WARN/BLOCKのcheck名ログとGuard 12bカタログ同期WARNを実装。半蔵commit `75cef2ccb`、bats 59/59 PASS、軍師LGTM、GATE CLEAR。
 - 2026-06-30 cmd_karo_ci_fix_prev_cmd_gate_202606301629: cmd_3614関数化後の`test_cmd_save_prev_cmd_gate.bats`旧mock追従漏れを半蔵が修正。commit `94dfef65e`、対象bats 7/7 PASS、L884登録、GATE CLEAR。
+- 2026-06-30 cmd_karo_ci_fix_diagnosis_trigger_map_202606301658: cmd_3614関数化後の`test_cmd_save_diagnosis_quality.bats`旧check名期待値を才蔵が修正。commit `c360719b3`、全13テストPASS、GATE CLEAR。
