@@ -3198,6 +3198,49 @@ check_required_quality_gate_keys_block() {
     fi
 }
 
+check_q11_guard_duplicate_block() {
+    _Q11_VAL="$(cmd_block_get_field "quality_gate.q11_not_already_done")"
+    _Q11_GUARD_LIST="$(collect_q11_guard_list "$CMD_BLOCK_NC" || true)"
+    if [[ -n "${_Q11_GUARD_LIST//[[:space:]]/}" ]]; then
+        echo "INFO: assumptions source Guard一覧(# === Guard):" >&2
+        printf '%s\n' "$_Q11_GUARD_LIST" >&2
+        if ! q11_has_guard_duplicate_check "$_Q11_VAL"; then
+            echo "BLOCK: q11_guard_duplicate_verification — Guard一覧が検出されました。q11_not_already_done に既存Guard一覧との重複確認を記載してください" >&2
+            echo "  推奨アクション: 表示された Guard 一覧を確認し、重複有無と差分理由を q11_not_already_done に書け" >&2
+            record_block_reason "q11にGuard一覧との重複確認なし"
+        fi
+    fi
+}
+
+check_q11_existing_alternative_block() {
+    _Q11_VAL="$(cmd_block_get_field "quality_gate.q11_not_already_done")"
+    _Q11_SUPPLEMENTAL_CONTEXT="$(
+        printf '%s\n' "$(cmd_block_get_field "quality_gate.q5_verified_source")"
+        printf '%s\n' "$CMD_BLOCK_NC" | awk '
+            /^[[:space:]]*assumptions:[[:space:]]*$/ { in_assumptions=1; next }
+            in_assumptions && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_assumptions=0; next }
+            in_assumptions && /^[[:space:]]{6,}/ { print; next }
+            /^[[:space:]]*command:[[:space:]]*\|/ { in_command=1; next }
+            /^[[:space:]]*command:[[:space:]]*[^|]/ { sub(/^[[:space:]]*command:[[:space:]]*/, ""); print; next }
+            in_command && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_command=0; next }
+            in_command && /^[[:space:]]{4,}/ { print; next }
+        '
+    )"
+    if is_gate_or_hook_addition_cmd "$CMD_BLOCK_NC" && ! q11_has_existing_alternative_verification "${_Q11_VAL}
+${_Q11_SUPPLEMENTAL_CONTEXT}"; then
+        echo "BLOCK: q11_existing_alternative_verification — gate/hook追加cmdです。q11_not_already_done に既存代替の現物確認を記載してください" >&2
+        echo "  推奨アクション: 既存/代替の仕組みを grep/rg 等で確認し、その確認方法と差分理由を q11_not_already_done に書け" >&2
+        record_block_reason "q11に既存代替の現物確認なし"
+    fi
+}
+
+check_lock_contention_warn() {
+    if ! (flock -n 200) 200>"$LOCK_FILE" 2>/dev/null; then
+        echo "WARN: $LOCK_FILE がロック中です（家老が書き込み中の可能性）" >&2
+        record_warn_reason "flock_lock_contention" "check=check_lock_contention"
+    fi
+}
+
 trap 'handle_cmd_save_exit' EXIT
 
 # --- cmd_id正規化（cmd_プレフィックスを付与） ---
@@ -3571,35 +3614,8 @@ QG_TEMPLATE
         fi
     fi
 
-    _Q11_VAL="$(cmd_block_get_field "quality_gate.q11_not_already_done")"
-    _Q11_GUARD_LIST="$(collect_q11_guard_list "$CMD_BLOCK_NC" || true)"
-    if [[ -n "${_Q11_GUARD_LIST//[[:space:]]/}" ]]; then
-        echo "INFO: assumptions source Guard一覧(# === Guard):" >&2
-        printf '%s\n' "$_Q11_GUARD_LIST" >&2
-        if ! q11_has_guard_duplicate_check "$_Q11_VAL"; then
-            echo "BLOCK: q11_guard_duplicate_verification — Guard一覧が検出されました。q11_not_already_done に既存Guard一覧との重複確認を記載してください" >&2
-            echo "  推奨アクション: 表示された Guard 一覧を確認し、重複有無と差分理由を q11_not_already_done に書け" >&2
-            record_block_reason "q11にGuard一覧との重複確認なし"
-        fi
-    fi
-    _Q11_SUPPLEMENTAL_CONTEXT="$(
-        printf '%s\n' "$(cmd_block_get_field "quality_gate.q5_verified_source")"
-        printf '%s\n' "$CMD_BLOCK_NC" | awk '
-            /^[[:space:]]*assumptions:[[:space:]]*$/ { in_assumptions=1; next }
-            in_assumptions && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_assumptions=0; next }
-            in_assumptions && /^[[:space:]]{6,}/ { print; next }
-            /^[[:space:]]*command:[[:space:]]*\|/ { in_command=1; next }
-            /^[[:space:]]*command:[[:space:]]*[^|]/ { sub(/^[[:space:]]*command:[[:space:]]*/, ""); print; next }
-            in_command && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_command=0; next }
-            in_command && /^[[:space:]]{4,}/ { print; next }
-        '
-    )"
-    if is_gate_or_hook_addition_cmd "$CMD_BLOCK_NC" && ! q11_has_existing_alternative_verification "${_Q11_VAL}
-${_Q11_SUPPLEMENTAL_CONTEXT}"; then
-        echo "BLOCK: q11_existing_alternative_verification — gate/hook追加cmdです。q11_not_already_done に既存代替の現物確認を記載してください" >&2
-        echo "  推奨アクション: 既存/代替の仕組みを grep/rg 等で確認し、その確認方法と差分理由を q11_not_already_done に書け" >&2
-        record_block_reason "q11に既存代替の現物確認なし"
-    fi
+    check_q11_guard_duplicate_block
+    check_q11_existing_alternative_block
     check_gate_hook_action_conversion "$CMD_BLOCK_NC"
 
     # q8_branch_coverage: 条件分岐変更cmdの本番データ分岐確認AC提案（段階的導入 — WARNING）
@@ -3626,10 +3642,7 @@ fi
 
 # --- Check 4: flock競合検出 ---
 # flock -n: ノンブロッキング。取得成功=競合なし、取得失敗=家老が書き込み中
-if ! (flock -n 200) 200>"$LOCK_FILE" 2>/dev/null; then
-    echo "WARN: $LOCK_FILE がロック中です（家老が書き込み中の可能性）" >&2
-    record_warn_reason "flock_lock_contention" "check=check_lock_contention"
-fi
+check_lock_contention_warn
 
 show_recent_completed_ninjas() {
     local snapshot_file="$PROJECT_DIR/queue/karo_snapshot.txt"
