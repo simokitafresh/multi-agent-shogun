@@ -256,6 +256,9 @@ update_agent_type() {
         fi
     fi
 
+    # CLI種別変更時にlaunch_cmdのオーバーライドをクリア（2層SSOTバグ防止: 2026-07-01 hayate事故）
+    # type=codexなのにlaunch_cmd=claude が残ると ninja_monitor がClaude CLIでrespawnする
+    bash "${SCRIPT_DIR}/scripts/lib/yaml_field_set.sh" "$SETTINGS_FILE" "$agent" "launch_cmd" "" >/dev/null 2>&1 || true
     # CLI種別変更時にmodel_nameのファミリー不整合を解消（殿指摘2026-06-21）
     # Claude CLIにGPTモデル / Codex CLIにClaudeモデルが残るとbuild_cli_commandが壊れる
     # 不整合時はmodel_nameを空にリセット→各CLIのデフォルト動作に委ねる
