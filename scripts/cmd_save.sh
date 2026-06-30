@@ -2987,6 +2987,94 @@ check_q9_prevention_length_block() {
     fi
 }
 
+check_cmd_block_presence_warn() {
+    if [[ ! -f "$QUEUE_FILE" ]]; then
+        echo "WARN: $QUEUE_FILE が存在しません" >&2
+        record_warn_reason "queue_file_missing" "check=session_state_queue_file_presence"
+    elif ! load_cmd_block; then
+        echo "WARN: ${CMD_ID} のブロックが $QUEUE_FILE に見つかりません" >&2
+        record_warn_reason "cmd_block_missing" "check=session_state_cmd_block_presence"
+    fi
+}
+
+check_fill_this_placeholder_block() {
+    if load_cmd_block && printf '%s\n' "$CMD_BLOCK_NC" | grep -q 'FILL_THIS'; then
+        record_block_reason "雛形のFILL_THISが残存。全プレースホルダを実内容で埋めよ"
+        printf '%s\n' "$CMD_BLOCK_NC" | grep -n 'FILL_THIS' | head -5 >&2
+    fi
+}
+
+check_delegated_duplicate_block() {
+    [[ "$CMD_SAVE_PREFLIGHT_ONLY" != "1" ]] || return 0
+    load_cmd_block || return 0
+
+    _DELEGATED_AT="$(cmd_block_get_field "delegated_at")"
+    if [[ -n "$_DELEGATED_AT" ]]; then
+        record_block_reason "${CMD_ID} は既に委任済みです。"
+        echo "  delegated_at: $_DELEGATED_AT" >&2
+        echo "  途中修正の二択: (1)別CMD_IDで発令 (2)忍者を神速停止→回復後に新CMD" >&2
+        echo "  同一cmd_idの上書きは忍者のフリーズ・成果物無効化を引き起こします(cmd_1688実証済み)" >&2
+        abort_if_block_immediate || exit 1
+    fi
+}
+
+check_previous_pass_pending_block() {
+    [[ -f "$CMD_SAVE_LAST_CMD_FILE" ]] || return 0
+
+    _PREV_CMD_ID=$(cat "$CMD_SAVE_LAST_CMD_FILE" 2>/dev/null || true)
+    if [[ -z "$_PREV_CMD_ID" || "$_PREV_CMD_ID" == "$CMD_ID" ]]; then
+        return 0
+    fi
+
+    _PREV_STATUS=$(awk -v cmd_id="$_PREV_CMD_ID" '
+        $0 == "  " cmd_id ":" { found=1; next }
+        found && /^  cmd_[^:]+:/ { exit }
+        found && /^[[:space:]]+status:[[:space:]]/ {
+            gsub(/^[[:space:]]+status:[[:space:]]*/, "")
+            gsub(/"/, "")
+            print; exit
+        }
+    ' "$QUEUE_FILE" 2>/dev/null || true)
+    if [[ "$_PREV_STATUS" == "pending" ]]; then
+        record_block_reason "前回PASS済み ${_PREV_CMD_ID} がまだ pending のまま。家老に委任(delegated昇格)されてから次のcmdを保存せよ"
+        abort_if_block_immediate || exit 1
+    fi
+}
+
+check_archive_duplicate_warn() {
+    [[ -d "$ARCHIVE_CMD_DIR" ]] || return 0
+
+    if ls "$ARCHIVE_CMD_DIR"/"${CMD_ID}"_completed_*.yaml 1>/dev/null 2>&1; then
+        echo "WARN: ${CMD_ID} は既にアーカイブ済みです（重複の可能性）" >&2
+        record_warn_reason "archive_duplicate" "check=check_archive_duplicate"
+    fi
+}
+
+check_other_draft_exists_block() {
+    OTHER_DRAFTS=$(awk -v current="$CMD_ID" '
+        /^  cmd_[^:]+:/ { id = $1; sub(/:$/, "", id); sub(/^  /, "", id); next }
+        id && id != current && /status:.*draft/ { print id }
+    ' "$QUEUE_FILE" 2>/dev/null)
+    [[ -n "$OTHER_DRAFTS" ]] || return 0
+
+    _independent_drafts=""
+    while IFS= read -r _other_id; do
+        [[ -z "$_other_id" ]] && continue
+        _dep="$(awk -v id="$_other_id" '
+            $0 ~ "^  "id":" { found=1; next }
+            found && /^  cmd_/ { exit }
+            found && /depends_on:/ { sub(/.*depends_on:[[:space:]]*/, ""); gsub(/["'"'"']/, ""); print; exit }
+        ' "$QUEUE_FILE" 2>/dev/null)"
+        if [[ -z "$_dep" || "$_dep" == "none" ]]; then
+            _independent_drafts+="$_other_id"$'\n'
+        fi
+    done <<< "$OTHER_DRAFTS"
+    if [[ -n "${_independent_drafts//[[:space:]]/}" ]]; then
+        printf 'BLOCK\tother_draft_exists: %s もdraft状態でdepends_onなし。1本ずつゲートを通せ(LS088)\n' "$(echo "$_independent_drafts" | tr '\n' ',')" >&2
+        record_block_reason "other_draft_exists"
+    fi
+}
+
 trap 'handle_cmd_save_exit' EXIT
 
 # --- cmd_id正規化（cmd_プレフィックスを付与） ---
@@ -3049,21 +3137,12 @@ if [[ -f "$QUEUE_FILE" ]] && ! python3 -c "import yaml,sys; yaml.safe_load(open(
 fi
 
 # --- Check 1: cmdブロック存在確認 ---
-if [[ ! -f "$QUEUE_FILE" ]]; then
-    echo "WARN: $QUEUE_FILE が存在しません" >&2
-    record_warn_reason "queue_file_missing" "check=session_state_queue_file_presence"
-elif ! load_cmd_block; then
-    echo "WARN: ${CMD_ID} のブロックが $QUEUE_FILE に見つかりません" >&2
-    record_warn_reason "cmd_block_missing" "check=session_state_cmd_block_presence"
-fi
+check_cmd_block_presence_warn
 
 # --- Check 1.05: 雛形FILL_THIS残存BLOCK ---
 # 起源: cmd_skeleton.sh導入(2026-06-10殿指示「劣化LLMでもスムーズ起票」)。
 # 雛形の穴埋め漏れを構造的に防ぐ。FILL_THIS残存=未記入フィールド。
-if load_cmd_block && printf '%s\n' "$CMD_BLOCK_NC" | grep -q 'FILL_THIS'; then
-    record_block_reason "雛形のFILL_THISが残存。全プレースホルダを実内容で埋めよ"
-    printf '%s\n' "$CMD_BLOCK_NC" | grep -n 'FILL_THIS' | head -5 >&2
-fi
+check_fill_this_placeholder_block
 
 # --- Check 1.1: 定型フィールド自動補完 ---
 # cmd_publish/pre-bash経路に依存せず、cmd_save単体実行でも暗黙の空欄を潰す。
@@ -3073,73 +3152,19 @@ auto_insert_cmd_default_fields
 # cmd_1688事故: 将軍が委任済みcmdを3回上書き→忍者フリーズ→殿指摘
 # delegated_at存在 = 既に家老に委任済み。再保存は設計変更を意味する。
 # CLAUDE.mdルール: 途中修正の二択(別CMD or 神速停止→再CMD)。inbox_writeで途中修正するな
-if [[ "$CMD_SAVE_PREFLIGHT_ONLY" != "1" ]] && load_cmd_block; then
-    _DELEGATED_AT="$(cmd_block_get_field "delegated_at")"
-    if [[ -n "$_DELEGATED_AT" ]]; then
-        record_block_reason "${CMD_ID} は既に委任済みです。"
-        echo "  delegated_at: $_DELEGATED_AT" >&2
-        echo "  途中修正の二択: (1)別CMD_IDで発令 (2)忍者を神速停止→回復後に新CMD" >&2
-        echo "  同一cmd_idの上書きは忍者のフリーズ・成果物無効化を引き起こします(cmd_1688実証済み)" >&2
-        abort_if_block_immediate || exit 1
-    fi
-fi
+check_delegated_duplicate_block
 
 # --- Check 1.6: 前回PASS済みcmd pending昇格チェック ---
 # 原理: 将軍が一括起票すると前回cmdが家老に委任されないまま次のcmdを保存できてしまう
 # 1cmd毎ゲート強制=呼出し方100億パターンに対応する原理的解決(cmd_2158)
-if [[ -f "$CMD_SAVE_LAST_CMD_FILE" ]]; then
-    _PREV_CMD_ID=$(cat "$CMD_SAVE_LAST_CMD_FILE" 2>/dev/null || true)
-    if [[ -n "$_PREV_CMD_ID" && "$_PREV_CMD_ID" != "$CMD_ID" ]]; then
-        _PREV_STATUS=$(awk -v cmd_id="$_PREV_CMD_ID" '
-            $0 == "  " cmd_id ":" { found=1; next }
-            found && /^  cmd_[^:]+:/ { exit }
-            found && /^[[:space:]]+status:[[:space:]]/ {
-                gsub(/^[[:space:]]+status:[[:space:]]*/, "")
-                gsub(/"/, "")
-                print; exit
-            }
-        ' "$QUEUE_FILE" 2>/dev/null || true)
-        if [[ "$_PREV_STATUS" == "pending" ]]; then
-            record_block_reason "前回PASS済み ${_PREV_CMD_ID} がまだ pending のまま。家老に委任(delegated昇格)されてから次のcmdを保存せよ"
-            abort_if_block_immediate || exit 1
-        fi
-    fi
-fi
+check_previous_pass_pending_block
 
 # --- Check 2: 重複チェック（アーカイブ済みcmd_idとの衝突） ---
-if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
-    # パターン: cmd_XXXX_completed_YYYYMMDD.yaml
-    if ls "$ARCHIVE_CMD_DIR"/"${CMD_ID}"_completed_*.yaml 1>/dev/null 2>&1; then
-        echo "WARN: ${CMD_ID} は既にアーカイブ済みです（重複の可能性）" >&2
-        record_warn_reason "archive_duplicate" "check=check_archive_duplicate"
-    fi
-fi
+check_archive_duplicate_warn
 
 # --- Check 2.5: 同時draft複数BLOCK（LS088: 1CMD1ゲート） ---
 # depends_onで直列依存が明示されているdraft群は共存可能（先に書いておくパターン）
-OTHER_DRAFTS=$(awk -v current="$CMD_ID" '
-    /^  cmd_[^:]+:/ { id = $1; sub(/:$/, "", id); sub(/^  /, "", id); next }
-    id && id != current && /status:.*draft/ { print id }
-' "$QUEUE_FILE" 2>/dev/null)
-if [[ -n "$OTHER_DRAFTS" ]]; then
-    # depends_onで鎖になっているdraftは許容（並列ではなく直列待ち）
-    _independent_drafts=""
-    while IFS= read -r _other_id; do
-        [[ -z "$_other_id" ]] && continue
-        _dep="$(awk -v id="$_other_id" '
-            $0 ~ "^  "id":" { found=1; next }
-            found && /^  cmd_/ { exit }
-            found && /depends_on:/ { sub(/.*depends_on:[[:space:]]*/, ""); gsub(/["'"'"']/, ""); print; exit }
-        ' "$QUEUE_FILE" 2>/dev/null)"
-        if [[ -z "$_dep" || "$_dep" == "none" ]]; then
-            _independent_drafts+="$_other_id"$'\n'
-        fi
-    done <<< "$OTHER_DRAFTS"
-    if [[ -n "${_independent_drafts//[[:space:]]/}" ]]; then
-        printf 'BLOCK\tother_draft_exists: %s もdraft状態でdepends_onなし。1本ずつゲートを通せ(LS088)\n' "$(echo "$_independent_drafts" | tr '\n' ',')" >&2
-        record_block_reason "other_draft_exists"
-    fi
-fi
+check_other_draft_exists_block
 
 # --- Session State: 同一cmdの過去BLOCK履歴を表示 ---
 if load_cmd_block; then

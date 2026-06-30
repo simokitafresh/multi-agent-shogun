@@ -232,11 +232,11 @@ PY
 | 38 | `q11_has_existing_alternative_verification` | LS-A22 / q11既存代替確認 | 既存仕組み確認なしの新規gate/hook追加 | L5 | preflight | helper | stdoutなし | q11に既存代替の現物確認あり | q11が空または抽象論のみ | `tests/unit/test_cmd_save_q11_fp_reduction.bats` | `scripts/cmd_skeleton.sh:111` | O(text grep) | 直接算出不可 | LS-A22 | 2026-06-30 | なし | `[[既存代替未確認]] -> [[重複gate追加]] -> [[q11 helper]]` |
 | 39 | `q5_has_execution_evidence` | cmd_3360 | q5の実行証拠判定 | L5 | preflight | helper | stdoutなし | q5にexit code/実行結果あり | code_readingのみ | `tests/unit/test_cmd_save_q5.bats` | `scripts/cmd_skeleton.sh:110` | O(text grep) | 直接算出不可 | LS063 | 2026-06-30 | なし | `[[q5未実行]] -> [[前提未検証]] -> [[execution evidence helper]]` |
 | 40 | `q11_has_guard_duplicate_check` | LS-A22(9) | guard重複確認なし | L5 | preflight | helper | stdoutなし | q11にguard一覧照合あり | guard重複未確認 | `tests/unit/test_cmd_save_q11_fp_reduction.bats` | indirect | O(text grep) | 直接算出不可 | LS-A22 | 2026-06-30 | なし | `[[guard重複]] -> [[各論patch乱立]] -> [[duplicate helper]]` |
-| 41 | `inline_fill_this_placeholder_block` | template hygiene | 雛形FILL_THIS残存 | L4 | save | BLOCK | `record_block_reason` | FILL_THIS 0件 | FILL_THIS残存 | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | report/gate頻出FAIL | 2026-06-30 | なし | `[[テンプレ未記入]] -> [[空成果物]] -> [[FILL_THIS BLOCK]]` |
-| 42 | `inline_delegated_duplicate_block` | cmd委任状態管理 | 委任済みcmdの再保存 | L4 | save | BLOCK | `record_block_reason` | 未委任draftのみ保存 | delegated cmd再保存 | 明示単体テスト未検出 | indirect | O(YAML cache) | 直接算出不可 | cmd state | 2026-06-30 | なし | `[[delegated cmd]] -> [[再保存]] -> [[state BLOCK]]` |
-| 43 | `inline_previous_pass_pending_block` | cmd状態遷移 | 前回PASS済みpending放置で次cmd保存 | L4 | save | BLOCK | `record_block_reason` | 前回cmdがdelegated以降 | PASS済みpendingのまま次cmd | 明示単体テスト未検出 | indirect | O(YAML scan) | 直接算出不可 | cmd state | 2026-06-30 | なし | `[[PASS pending]] -> [[委任漏れ]] -> [[next cmd BLOCK]]` |
-| 44 | `inline_archive_duplicate_warn` | archive重複防止 | archive済みcmdとの重複 | L4 | save | WARN | `record_warn_reason` | 新規cmd id | archive duplicate | 明示単体テスト未検出 | indirect | O(archive scan) | 直接算出不可 | cmd archive | 2026-06-30 | なし | `[[archive]] -> [[重複保存]] -> [[duplicate WARN]]` |
-| 45 | `inline_other_draft_exists_block` | draft単一性 | 他draft存在中の新規保存 | L4 | save | BLOCK | `record_block_reason` | draft 0件 | other_draft_exists | 明示単体テスト未検出 | indirect | O(queue scan) | 直接算出不可 | cmd state | 2026-06-30 | なし | `[[複数draft]] -> [[指揮混線]] -> [[draft BLOCK]]` |
+| 41 | `inline_fill_this_placeholder_block` | template hygiene | 雛形FILL_THIS残存 | L4 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 136/136 PASS | `record_block_reason` | FILL_THIS 0件 | FILL_THIS残存 | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | report/gate頻出FAIL | 2026-06-30 | なし | `[[テンプレ未記入]] -> [[空成果物]] -> [[FILL_THIS BLOCK]]` |
+| 42 | `inline_delegated_duplicate_block` | cmd委任状態管理 | 委任済みcmdの再保存 | L4 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 136/136 PASS | `record_block_reason` | 未委任draftのみ保存 | delegated cmd再保存 | 明示単体テスト未検出 | indirect | O(YAML cache) | 直接算出不可 | cmd state | 2026-06-30 | なし | `[[delegated cmd]] -> [[再保存]] -> [[state BLOCK]]` |
+| 43 | `inline_previous_pass_pending_block` | cmd状態遷移 | 前回PASS済みpending放置で次cmd保存 | L4 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 136/136 PASS | `record_block_reason` | 前回cmdがdelegated以降 | PASS済みpendingのまま次cmd | 明示単体テスト未検出 | indirect | O(YAML scan) | 直接算出不可 | cmd state | 2026-06-30 | なし | `[[PASS pending]] -> [[委任漏れ]] -> [[next cmd BLOCK]]` |
+| 44 | `inline_archive_duplicate_warn` | archive重複防止 | archive済みcmdとの重複 | L4 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 136/136 PASS | `record_warn_reason` | 新規cmd id | archive duplicate | 明示単体テスト未検出 | indirect | O(archive scan) | 直接算出不可 | cmd archive | 2026-06-30 | なし | `[[archive]] -> [[重複保存]] -> [[duplicate WARN]]` |
+| 45 | `inline_other_draft_exists_block` | draft単一性 | 他draft存在中の新規保存 | L4 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 136/136 PASS | `record_block_reason` | draft 0件 | other_draft_exists | 明示単体テスト未検出 | indirect | O(queue scan) | 直接算出不可 | cmd state | 2026-06-30 | なし | `[[複数draft]] -> [[指揮混線]] -> [[draft BLOCK]]` |
 | 46 | `inline_diagnosis_format_block` | BLOCK学習ループ | diagnosis形式不正 | L4 | save | BLOCK | `record_block_reason` | `BLOCK理由/対策` 2部構成 | diagnosis欠落/形式不正 | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[BLOCK]] -> [[真因未記録]] -> [[diagnosis BLOCK]]` |
 | 47 | `inline_environment_change_missing_block` | BLOCK後環境変化強制 | environment_change未記入 | L4 | save | BLOCK | `record_block_reason` | type/file/patternあり | BLOCK後に環境変化なし | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[BLOCK]] -> [[修正だけで停止]] -> [[environment_change BLOCK]]` |
 | 48 | `inline_environment_change_quality_block` | 環境変化品質 | environment_changeが抽象的 | L4 | save | BLOCK | `record_block_reason` | 具体diff/grep可能pattern | 低品質な説明のみ | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | growth-loop | 2026-06-30 | なし | `[[環境変化]] -> [[口約束]] -> [[quality BLOCK]]` |
@@ -272,8 +272,8 @@ PY
 | 78 | `show_gunshi_pane_status.claim_date_warn` | claim鮮度 | assumptions claimに日付なし | L4 | save | WARN | `record_warn_reason` | claimに日付あり | 日付なしclaim | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | temporal accuracy | 2026-06-30 | なし | `[[claim]] -> [[鮮度不明]] -> [[date WARN]]` |
 | 79 | `show_gunshi_pane_status.negative_claim_grep_warn` | 反証確認 | 否定的claimにgrep反証結果なし | L4 | save | WARN | `record_warn_reason` | grep反証結果あり | 否定claimのみ | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | 確認してから行動 | 2026-06-30 | なし | `[[否定claim]] -> [[反証なし]] -> [[grep WARN]]` |
 | 80 | `show_gunshi_pane_status.bulletin_count_grep_warn` | 件数claim検証 | bulletin由来件数claimにgrep検証なし | L4 | save | WARN | `record_warn_reason` | grep件数証跡あり | 件数claimのみ | 明示単体テスト未検出 | indirect | O(text grep) | 直接算出不可 | 数値計測 | 2026-06-30 | なし | `[[bulletin件数]] -> [[数値未検証]] -> [[count WARN]]` |
-| 81 | `inline_session_state_queue_presence_warn` | session_state鮮度 | queue file missing | L4 | save | WARN | `record_warn_reason` | queue file exists | queue file missing | 明示単体テスト未検出 | indirect | O(path check) | 直接算出不可 | session_state | 2026-06-30 | なし | `[[queue_file]] -> [[欠落]] -> [[session_state WARN]]` |
-| 82 | `inline_session_state_cmd_block_presence_warn` | session_state鮮度 | cmd block missing | L4 | save | WARN | `record_warn_reason` | cmd block exists | cmd block missing | 明示単体テスト未検出 | indirect | O(YAML scan) | 直接算出不可 | session_state | 2026-06-30 | なし | `[[cmd_block]] -> [[欠落]] -> [[session_state WARN]]` |
+| 81 | `inline_session_state_queue_presence_warn` | session_state鮮度 | queue file missing | L4 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 136/136 PASS | `record_warn_reason` | queue file exists | queue file missing | 明示単体テスト未検出 | indirect | O(path check) | 直接算出不可 | session_state | 2026-06-30 | なし | `[[queue_file]] -> [[欠落]] -> [[session_state WARN]]` |
+| 82 | `inline_session_state_cmd_block_presence_warn` | session_state鮮度 | cmd block missing | L4 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 136/136 PASS | `record_warn_reason` | cmd block exists | cmd block missing | 明示単体テスト未検出 | indirect | O(YAML scan) | 直接算出不可 | session_state | 2026-06-30 | なし | `[[cmd_block]] -> [[欠落]] -> [[session_state WARN]]` |
 
 Phase 1b根拠コマンド:
 
@@ -342,11 +342,11 @@ PY
 | 38 | `q11_has_existing_alternative_verification` | A | 抽象化 | q11 helper群の語彙判定を共通化可能、戻り値helperとして維持 | pending | 未実施 |
 | 39 | `q5_has_execution_evidence` | A | 抽象化 | q5証跡語彙は#3と共通化可能、helper単体は維持 | pending | 未実施 |
 | 40 | `q11_has_guard_duplicate_check` | A | 抽象化 | q11 helper群#38/#4と語彙処理を共通化可能、guard専用戻り値は維持 | pending | 未実施 |
-| 41 | `inline_fill_this_placeholder_block` | B | 関数化 | inline BLOCKで独立fixtureを持つため関数抽出+単体テスト追加 | pending | 未実施 |
-| 42 | `inline_delegated_duplicate_block` | B | 関数化 | delegated_at状態判定を関数化しcmd stateテストを追加 | pending | 未実施 |
-| 43 | `inline_previous_pass_pending_block` | B | 関数化 | 前回pending判定を関数化しqueue fixtureで検証可能にする | pending | 未実施 |
-| 44 | `inline_archive_duplicate_warn` | B | 関数化 | archive存在scanを関数化しWARN副作用を明示化 | pending | 未実施 |
-| 45 | `inline_other_draft_exists_block` | B | 関数化 | draft単一性判定を関数化しdepends_on例外fixtureを追加 | pending | 未実施 |
+| 41 | `inline_fill_this_placeholder_block` | B | 関数化 | inline BLOCKで独立fixtureを持つため関数抽出+単体テスト追加 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 136/136 PASS |
+| 42 | `inline_delegated_duplicate_block` | B | 関数化 | delegated_at状態判定を関数化しcmd stateテストを追加 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 136/136 PASS |
+| 43 | `inline_previous_pass_pending_block` | B | 関数化 | 前回pending判定を関数化しqueue fixtureで検証可能にする | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 136/136 PASS |
+| 44 | `inline_archive_duplicate_warn` | B | 関数化 | archive存在scanを関数化しWARN副作用を明示化 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 136/136 PASS |
+| 45 | `inline_other_draft_exists_block` | B | 関数化 | draft単一性判定を関数化しdepends_on例外fixtureを追加 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 136/136 PASS |
 | 46 | `inline_diagnosis_format_block` | B | 関数化 | diagnosis形式チェックを関数化し2部構成fixtureを固定 | pending | 未実施 |
 | 47 | `inline_environment_change_missing_block` | B | 関数化 | environment_change存在チェックを関数化しBLOCK履歴fixtureを追加 | pending | 未実施 |
 | 48 | `inline_environment_change_quality_block` | B | 関数化 | 低品質値チェックを関数化し禁止値fixtureを追加 | pending | 未実施 |
@@ -382,8 +382,8 @@ PY
 | 78 | `show_gunshi_pane_status.claim_date_warn` | C-1 | 名称修正 | 実態はclaim日付WARNであり名称を鮮度検査へ合わせる | done | `scripts/cmd_save.sh`で実態名の独立関数へ抽出済み; 関連bats 135/135 PASS |
 | 79 | `show_gunshi_pane_status.negative_claim_grep_warn` | C-1 | 名称修正 | 実態は否定claim反証WARNであり名称をgrep evidence検査へ合わせる | done | `scripts/cmd_save.sh`で実態名の独立関数へ抽出済み; 関連bats 135/135 PASS |
 | 80 | `show_gunshi_pane_status.bulletin_count_grep_warn` | C-1 | 名称修正 | 実態はbulletin件数grep証跡WARNであり名称を件数検証へ合わせる | done | `scripts/cmd_save.sh`で実態名の独立関数へ抽出済み; 関連bats 135/135 PASS |
-| 81 | `inline_session_state_queue_presence_warn` | B | 関数化 | session_state queue file存在WARNを関数化し重複呼出しを明示 | pending | 未実施 |
-| 82 | `inline_session_state_cmd_block_presence_warn` | B | 関数化 | session_state cmd block存在WARNを関数化し重複呼出しを明示 | pending | 未実施 |
+| 81 | `inline_session_state_queue_presence_warn` | B | 関数化 | session_state queue file存在WARNを関数化し重複呼出しを明示 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 136/136 PASS |
+| 82 | `inline_session_state_cmd_block_presence_warn` | B | 関数化 | session_state cmd block存在WARNを関数化し重複呼出しを明示 | done | `scripts/cmd_save.sh`で独立関数へ抽出済み; 関連bats 136/136 PASS |
 
 Phase 2件数検証:
 
