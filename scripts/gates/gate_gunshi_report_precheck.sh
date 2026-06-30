@@ -988,10 +988,19 @@ if [ -n "$_mem_query" ]; then
     if [ -f "$_mem_db_script" ]; then
         _mem_keywords=$(echo "$_mem_query" | tr ' 　/\n' '\n' | grep -E '.{2,}' | head -3 | tr '\n' ' ')
         _mem_result=""
+        _mem_tmpdir=$(mktemp -d /tmp/gunshi_pre26_XXXXXX)
+        _mem_i=0
         for _kw in $_mem_keywords; do
-            _hit=$(bash "$_mem_db_script" "SELECT ts, substr(summary,1,80) FROM events WHERE summary LIKE '%${_kw}%' ORDER BY ts DESC LIMIT 2" 2>/dev/null | head -4)
+            _mem_i=$((_mem_i + 1))
+            bash "$_mem_db_script" "SELECT ts, substr(summary,1,80) FROM events WHERE summary LIKE '%${_kw}%' ORDER BY ts DESC LIMIT 2" > "$_mem_tmpdir/$_mem_i" 2>/dev/null &
+        done
+        wait
+        for _f in "$_mem_tmpdir"/*; do
+            [ -f "$_f" ] || continue
+            _hit=$(head -4 "$_f")
             [ -n "$_hit" ] && _mem_result="${_mem_result}${_hit}"$'\n'
         done
+        rm -rf "$_mem_tmpdir"
         if [ -n "$_mem_result" ]; then
             echo "  記憶DB関連エントリ:"
             # 注: ループ本体最後の[ -n ]がfalseだとset -e+pipefailで全体死亡するためelse分岐必須(2026-06-11発見の既存バグ)

@@ -364,9 +364,14 @@ if [[ -z "$_target_path" ]]; then
         }
     done
 fi
-if [[ -n "$_target_path" ]]; then
+if [[ -n "$_target_path" ]] && [[ "$_target_path" == *.sh ]]; then
     _script_name=$(basename "$_target_path" .sh)
-    _affected=$(grep -rl "$_script_name" "$REPO_ROOT/tests/unit/"*.bats 2>/dev/null | xargs -r -I{} basename {} 2>/dev/null | sort -u || true)
+    # Skip overly generic names that would match too many files (WSL2 I/O perf)
+    if [[ ${#_script_name} -le 3 ]]; then
+        _affected=""
+    else
+        _affected=$(grep -rl "$_script_name" "$REPO_ROOT/tests/unit/"*.bats 2>/dev/null | xargs -r -I{} basename {} 2>/dev/null | sort -u || true)
+    fi
     if [[ -n "$_affected" ]]; then
         echo ""
         echo "--- 関連テスト一覧(target: $_target_path) ---"
