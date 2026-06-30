@@ -5390,6 +5390,170 @@ show_gunshi_recent_issues() {
 
 show_gunshi_recent_issues
 
+check_ac_structure_quality() {
+    _CHECK19_ISSUES=()
+
+    if [[ -n "${AC_TEXT:-}" ]]; then
+        if printf '%s\n' "$AC_TEXT" | grep -q 'FILL_THIS'; then
+            _FILL_COUNT=$(printf '%s\n' "$AC_TEXT" | grep -c 'FILL_THIS' || true)
+            _CHECK19_ISSUES+=("FILL_THISマーカー残存: ${_FILL_COUNT}件")
+            printf '%s\n' "$AC_TEXT" | grep -n 'FILL_THIS' | head -3 >&2
+        fi
+
+        _DESC_EMPTY_COUNT=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*description:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+        if [[ "${_DESC_EMPTY_COUNT:-0}" -gt 0 ]]; then
+            _CHECK19_ISSUES+=("description空値: ${_DESC_EMPTY_COUNT}件")
+        fi
+
+        _AC_ENTRY_COUNT=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' || true)
+        _BC_TOTAL=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*binary_check:' || true)
+        _BC_EMPTY=$(printf '%s\n' "$AC_TEXT" | grep -E '^[[:space:]]*binary_check:' | grep -cE 'binary_check:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+        if [[ "${_AC_ENTRY_COUNT:-0}" -gt 0 && "${_BC_TOTAL:-0}" -eq 0 ]]; then
+            _CHECK19_ISSUES+=("binary_checkフィールド不在(AC${_AC_ENTRY_COUNT}件全て)")
+        elif [[ "${_BC_EMPTY:-0}" -gt 0 ]]; then
+            _CHECK19_ISSUES+=("binary_check空値: ${_BC_EMPTY}件")
+        fi
+    fi
+
+    if [[ ${#_CHECK19_ISSUES[@]} -gt 0 ]]; then
+        echo "WARNING: AC YAML構造判定(Check19)で不備を検出" >&2
+        for _issue in "${_CHECK19_ISSUES[@]}"; do
+            echo "  ✗ $_issue" >&2
+        done
+        printf '  修正: 各ACにdescription+binary_checkを記入し、FILL_THISを実内容で埋めよ\n' >&2
+        printf '  例:\n  acceptance_criteria:\n    AC1:\n      description: "具体的な達成条件"\n      binary_check: "確認方法を1行で"\n' >&2
+        record_warn_reason "ac_structure_incomplete" "check=check_ac_structure_quality"
+    fi
+}
+
+check_unverified_assumptions_block() {
+    if echo "$CMD_BLOCK_NC" | grep -A5 "assumptions:" | grep -q "trust:.*unverified\|trust: unverified"; then
+        record_block_reason "未検証前提あり。現物確認してtrust:verifiedに変更せよ"
+        abort_if_block_immediate || exit 1
+    fi
+}
+
+check_assumption_source_paths_block() {
+    _ASSUMP_PROJECT_ID="$(cmd_block_get_field "project")"
+    [[ -z "${_ASSUMP_PROJECT_ID:-}" ]] && _ASSUMP_PROJECT_ID=$(awk '/^current_project:/{print $2}' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null || true)
+    if [[ -n "${_ASSUMP_PROJECT_ID:-}" ]]; then
+        _ASSUMP_PROJECT_WD=$(awk -v id="$_ASSUMP_PROJECT_ID" '
+            /^  - id:/ { current_id = $3; gsub(/"/, "", current_id) }
+            /^    path:/ && current_id == id { gsub(/.*path: *"?/, ""); gsub(/"$/, ""); print; exit }
+        ' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null || true)
+    fi
+    if [[ -z "${_ASSUMP_PROJECT_WD:-}" ]]; then
+        return 0
+    fi
+
+    _ASSUMP_VERIFIED_PATHS=$(echo "$CMD_BLOCK_NC" | python3 -c "
+import sys, re
+content = sys.stdin.buffer.read().decode('utf-8', errors='replace')
+lines = content.split('\n')
+in_assumptions = False
+assumptions_indent = -1
+current = {}
+entries = []
+for line in lines:
+    m_aline = re.match(r'^(\s*)assumptions\s*:', line)
+    if m_aline and not in_assumptions:
+        in_assumptions = True
+        assumptions_indent = len(m_aline.group(1))
+        continue
+    if in_assumptions:
+        if line.strip():
+            cur_indent = len(line) - len(line.lstrip())
+            if cur_indent <= assumptions_indent:
+                in_assumptions = False
+                if current: entries.append(dict(current))
+                current = {}
+                continue
+        if re.match(r'\s*-\s', line):
+            if current:
+                entries.append(dict(current))
+            current = {}
+        m = re.search(r'^\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+)', line)
+        if m:
+            current[m.group(1)] = m.group(2).strip().strip('\"').strip(\"'\")
+if current: entries.append(current)
+pat = re.compile(r'/?[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)(?![a-zA-Z])')
+for e in entries:
+    trust = e.get('trust', '')
+    if 'verified' in trust and 'unverified' not in trust:
+        skip_keys = {'trust', 'claim', 'assumption'}
+        for key, val in e.items():
+            if key in skip_keys:
+                continue
+            for m in pat.finditer(val):
+                print(m.group(0))
+" 2>/dev/null || true)
+    if [[ -z "${_ASSUMP_VERIFIED_PATHS:-}" ]]; then
+        return 0
+    fi
+
+    _ASSUMP_HAS_MISSING=false
+    while IFS= read -r fpath; do
+        [[ -z "$fpath" ]] && continue
+        if ! path_exists_for_cmd_source "$_ASSUMP_PROJECT_WD" "$fpath"; then
+            if [[ "$_ASSUMP_HAS_MISSING" == false ]]; then
+                record_block_reason "assumptions sourceのファイルパスが存在しません:"
+                _ASSUMP_HAS_MISSING=true
+            fi
+            if [[ "$fpath" = /* ]]; then
+                echo "  ✗ $fpath" >&2
+            else
+                echo "  ✗ $fpath (in $_ASSUMP_PROJECT_WD)" >&2
+            fi
+        fi
+    done <<< "$_ASSUMP_VERIFIED_PATHS"
+    if [[ "$_ASSUMP_HAS_MISSING" == true ]]; then
+        echo "  現物確認してからcmd_save.shを再実行せよ" >&2
+        abort_if_block_immediate || exit 1
+    fi
+}
+
+check_assumption_claim_dates_warn() {
+    _ASSUMP_CLAIMS_MISSING_DATES="$(collect_assumption_claims_missing_dates "$CMD_BLOCK_NC")"
+    if [[ -z "${_ASSUMP_CLAIMS_MISSING_DATES//[[:space:]]/}" ]]; then
+        return 0
+    fi
+    echo "WARNING: assumptions claimに日付がありません。claimへ YYYY-MM-DD を含めて時系列を固定してください" >&2
+    while IFS= read -r _assump_claim; do
+        [[ -z "$_assump_claim" ]] && continue
+        echo "  - $_assump_claim" >&2
+    done <<< "$_ASSUMP_CLAIMS_MISSING_DATES"
+    record_warn_reason "assumptions claimに日付なし" "check=assumptions_claim_date"
+}
+
+check_negative_claim_grep_evidence_warn() {
+    _ASSUMP_NEGATIVE_CLAIMS_MISSING_GREP="$(collect_negative_claims_missing_grep_evidence "$CMD_BLOCK_NC")"
+    if [[ -z "${_ASSUMP_NEGATIVE_CLAIMS_MISSING_GREP//[[:space:]]/}" ]]; then
+        return 0
+    fi
+    echo "WARNING: 否定的前提キーワードを検出しました。assumptions claimにgrep/rg反証結果を記載してください" >&2
+    echo "  対象キーワード: 未実装 / 存在しない / 仕組みがない / 未対応" >&2
+    echo "  例: claim: \"2026-05-10時点で grep -rn 'pattern' scripts/ → 0件\"" >&2
+    while IFS= read -r _assump_claim; do
+        [[ -z "$_assump_claim" ]] && continue
+        echo "  - $_assump_claim" >&2
+    done <<< "$_ASSUMP_NEGATIVE_CLAIMS_MISSING_GREP"
+    record_warn_reason "否定的前提claimにgrep反証結果なし" "check=assumptions_negative_claim_grep_evidence"
+}
+
+check_bulletin_count_grep_evidence_warn() {
+    _ASSUMP_BULLETIN_COUNT_CLAIMS_MISSING_GREP="$(collect_bulletin_count_claims_missing_grep_evidence "$CMD_BLOCK_NC")"
+    if [[ -z "${_ASSUMP_BULLETIN_COUNT_CLAIMS_MISSING_GREP//[[:space:]]/}" ]]; then
+        return 0
+    fi
+    echo "WARNING: bulletin由来の件数claimを検出しました。assumptions claimにgrep/rg検証結果を記載してください" >&2
+    echo "  例: claim: \"2026-05-15時点で grep -n 'blt_...' queue/bulletin_board.yaml → 1件\"" >&2
+    while IFS= read -r _assump_claim; do
+        [[ -z "$_assump_claim" ]] && continue
+        echo "  - $_assump_claim" >&2
+    done <<< "$_ASSUMP_BULLETIN_COUNT_CLAIMS_MISSING_GREP"
+    record_warn_reason "bulletin由来件数claimにgrep検証結果なし" "check=assumptions_bulletin_count_grep_evidence"
+}
+
 # --- 軍師ペイン活動状況表示（informational — WARN_COUNTに加算しない） ---
 show_gunshi_pane_status() {
     local PANE_TARGET=""
@@ -5428,45 +5592,7 @@ AC_TEXT=$(echo "$CMD_BLOCK" | awk '
 ' || true)
 
 # --- Check 19: AC YAML構造判定（description非空+binary_check非空+未記入マーカー不在） ---
-# 起源: 覚醒設計書v3(軍師3往復レビュー確定済み 2026-06-16)
-# 設計: 入口方式(parity文字列トリガー) → 出口判定(AC YAML構造)に変更(cmd_3401)
-# 目的: description/binary_checkが実際に埋まっているかを構造で検証。文字列マッチ依存=偽陽性根因を廃止
-_CHECK19_ISSUES=()
-
-if [[ -n "${AC_TEXT:-}" ]]; then
-    # (1) FILL_THISマーカー残存チェック（ACセクション内限定）
-    if printf '%s\n' "$AC_TEXT" | grep -q 'FILL_THIS'; then
-        _FILL_COUNT=$(printf '%s\n' "$AC_TEXT" | grep -c 'FILL_THIS' || true)
-        _CHECK19_ISSUES+=("FILL_THISマーカー残存: ${_FILL_COUNT}件")
-        printf '%s\n' "$AC_TEXT" | grep -n 'FILL_THIS' | head -3 >&2
-    fi
-
-    # (2) description: の値が空の行を検出
-    _DESC_EMPTY_COUNT=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*description:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
-    if [[ "${_DESC_EMPTY_COUNT:-0}" -gt 0 ]]; then
-        _CHECK19_ISSUES+=("description空値: ${_DESC_EMPTY_COUNT}件")
-    fi
-
-    # (3) binary_check: フィールドが不在 または 空値チェック
-    _AC_ENTRY_COUNT=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' || true)
-    _BC_TOTAL=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*binary_check:' || true)
-    _BC_EMPTY=$(printf '%s\n' "$AC_TEXT" | grep -E '^[[:space:]]*binary_check:' | grep -cE 'binary_check:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
-    if [[ "${_AC_ENTRY_COUNT:-0}" -gt 0 && "${_BC_TOTAL:-0}" -eq 0 ]]; then
-        _CHECK19_ISSUES+=("binary_checkフィールド不在(AC${_AC_ENTRY_COUNT}件全て)")
-    elif [[ "${_BC_EMPTY:-0}" -gt 0 ]]; then
-        _CHECK19_ISSUES+=("binary_check空値: ${_BC_EMPTY}件")
-    fi
-fi
-
-if [[ ${#_CHECK19_ISSUES[@]} -gt 0 ]]; then
-    echo "WARNING: AC YAML構造判定(Check19)で不備を検出" >&2
-    for _issue in "${_CHECK19_ISSUES[@]}"; do
-        echo "  ✗ $_issue" >&2
-    done
-    printf '  修正: 各ACにdescription+binary_checkを記入し、FILL_THISを実内容で埋めよ\n' >&2
-    printf '  例:\n  acceptance_criteria:\n    AC1:\n      description: "具体的な達成条件"\n      binary_check: "確認方法を1行で"\n' >&2
-    record_warn_reason "ac_structure_incomplete" "check=check_ac_structure_quality"
-fi
+check_ac_structure_quality
 
 # --- Check 20: assumptionsフィールド検査（BLOCK昇格 cmd_1906） ---
 # 起源: cmd_1905 — 暗黙前提を構造的に可視化し、未検証前提がcmdに混入するのを防ぐ
@@ -5490,118 +5616,11 @@ if true; then
     fi
     # assumptions存在チェックはpreflight(Check 3)済み。以下は内容検証のみ
     if [[ "$_c20_ac_ok" == false ]] && echo "$CMD_BLOCK_NC" | grep -q "assumptions:"; then
-        # AC1: trust: unverified が含まれる場合BLOCK(exit 1)
-        if echo "$CMD_BLOCK_NC" | grep -A5 "assumptions:" | grep -q "trust:.*unverified\|trust: unverified"; then
-            record_block_reason "未検証前提あり。現物確認してtrust:verifiedに変更せよ"
-            abort_if_block_immediate || exit 1
-        fi
-        # AC2: trust:verified + sourceにファイルパスがある場合、プロジェクトWD内の実在確認
-        _ASSUMP_PROJECT_ID="$(cmd_block_get_field "project")"
-        [[ -z "${_ASSUMP_PROJECT_ID:-}" ]] && _ASSUMP_PROJECT_ID=$(awk '/^current_project:/{print $2}' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null || true)
-        if [[ -n "${_ASSUMP_PROJECT_ID:-}" ]]; then
-            _ASSUMP_PROJECT_WD=$(awk -v id="$_ASSUMP_PROJECT_ID" '
-                /^  - id:/ { current_id = $3; gsub(/"/, "", current_id) }
-                /^    path:/ && current_id == id { gsub(/.*path: *"?/, ""); gsub(/"$/, ""); print; exit }
-            ' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null || true)
-        fi
-        if [[ -n "${_ASSUMP_PROJECT_WD:-}" ]]; then
-            _ASSUMP_VERIFIED_PATHS=$(echo "$CMD_BLOCK_NC" | python3 -c "
-import sys, re
-content = sys.stdin.buffer.read().decode('utf-8', errors='replace')
-lines = content.split('\n')
-in_assumptions = False
-assumptions_indent = -1
-current = {}
-entries = []
-for line in lines:
-    m_aline = re.match(r'^(\s*)assumptions\s*:', line)
-    if m_aline and not in_assumptions:
-        in_assumptions = True
-        assumptions_indent = len(m_aline.group(1))
-        continue
-    if in_assumptions:
-        # Exit if line is non-empty and at same/lower indentation as assumptions: (peer/parent key)
-        if line.strip():
-            cur_indent = len(line) - len(line.lstrip())
-            if cur_indent <= assumptions_indent:
-                in_assumptions = False
-                if current: entries.append(dict(current))
-                current = {}
-                continue
-        if re.match(r'\s*-\s', line):
-            if current:
-                entries.append(dict(current))
-            current = {}
-        # GP-216: source/trust以外の任意フィールド(tool_verified/csv_paths等)もキャプチャ
-        m = re.search(r'^\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+)', line)
-        if m:
-            current[m.group(1)] = m.group(2).strip().strip('\"').strip(\"'\")
-if current: entries.append(current)
-pat = re.compile(r'/?[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)(?![a-zA-Z])')
-for e in entries:
-    trust = e.get('trust', '')
-    if 'verified' in trust and 'unverified' not in trust:
-        # GP-216: source/tool_verified/csv_paths等の明示的パスフィールドからパス抽出
-        # claim はフリーテキストのため除外（LS033: ファイル名パターン誤検出防止）
-        skip_keys = {'trust', 'claim', 'assumption'}
-        for key, val in e.items():
-            if key in skip_keys:
-                continue
-            for m in pat.finditer(val):
-                print(m.group(0))
-" 2>/dev/null || true)
-            if [[ -n "${_ASSUMP_VERIFIED_PATHS:-}" ]]; then
-                _ASSUMP_HAS_MISSING=false
-                while IFS= read -r fpath; do
-                    [[ -z "$fpath" ]] && continue
-                    if ! path_exists_for_cmd_source "$_ASSUMP_PROJECT_WD" "$fpath"; then
-                        if [[ "$_ASSUMP_HAS_MISSING" == false ]]; then
-                            record_block_reason "assumptions sourceのファイルパスが存在しません:"
-                            _ASSUMP_HAS_MISSING=true
-                        fi
-                        if [[ "$fpath" = /* ]]; then
-                            echo "  ✗ $fpath" >&2
-                        else
-                            echo "  ✗ $fpath (in $_ASSUMP_PROJECT_WD)" >&2
-                        fi
-                    fi
-                done <<< "$_ASSUMP_VERIFIED_PATHS"
-                if [[ "$_ASSUMP_HAS_MISSING" == true ]]; then
-                    echo "  現物確認してからcmd_save.shを再実行せよ" >&2
-                    abort_if_block_immediate || exit 1
-                fi
-            fi
-        fi
-        _ASSUMP_CLAIMS_MISSING_DATES="$(collect_assumption_claims_missing_dates "$CMD_BLOCK_NC")"
-        if [[ -n "${_ASSUMP_CLAIMS_MISSING_DATES//[[:space:]]/}" ]]; then
-            echo "WARNING: assumptions claimに日付がありません。claimへ YYYY-MM-DD を含めて時系列を固定してください" >&2
-            while IFS= read -r _assump_claim; do
-                [[ -z "$_assump_claim" ]] && continue
-                echo "  - $_assump_claim" >&2
-            done <<< "$_ASSUMP_CLAIMS_MISSING_DATES"
-            record_warn_reason "assumptions claimに日付なし" "check=assumptions_claim_date"
-        fi
-        _ASSUMP_NEGATIVE_CLAIMS_MISSING_GREP="$(collect_negative_claims_missing_grep_evidence "$CMD_BLOCK_NC")"
-        if [[ -n "${_ASSUMP_NEGATIVE_CLAIMS_MISSING_GREP//[[:space:]]/}" ]]; then
-            echo "WARNING: 否定的前提キーワードを検出しました。assumptions claimにgrep/rg反証結果を記載してください" >&2
-            echo "  対象キーワード: 未実装 / 存在しない / 仕組みがない / 未対応" >&2
-            echo "  例: claim: \"2026-05-10時点で grep -rn 'pattern' scripts/ → 0件\"" >&2
-            while IFS= read -r _assump_claim; do
-                [[ -z "$_assump_claim" ]] && continue
-                echo "  - $_assump_claim" >&2
-            done <<< "$_ASSUMP_NEGATIVE_CLAIMS_MISSING_GREP"
-            record_warn_reason "否定的前提claimにgrep反証結果なし" "check=assumptions_negative_claim_grep_evidence"
-        fi
-        _ASSUMP_BULLETIN_COUNT_CLAIMS_MISSING_GREP="$(collect_bulletin_count_claims_missing_grep_evidence "$CMD_BLOCK_NC")"
-        if [[ -n "${_ASSUMP_BULLETIN_COUNT_CLAIMS_MISSING_GREP//[[:space:]]/}" ]]; then
-            echo "WARNING: bulletin由来の件数claimを検出しました。assumptions claimにgrep/rg検証結果を記載してください" >&2
-            echo "  例: claim: \"2026-05-15時点で grep -n 'blt_...' queue/bulletin_board.yaml → 1件\"" >&2
-            while IFS= read -r _assump_claim; do
-                [[ -z "$_assump_claim" ]] && continue
-                echo "  - $_assump_claim" >&2
-            done <<< "$_ASSUMP_BULLETIN_COUNT_CLAIMS_MISSING_GREP"
-            record_warn_reason "bulletin由来件数claimにgrep検証結果なし" "check=assumptions_bulletin_count_grep_evidence"
-        fi
+        check_unverified_assumptions_block
+        check_assumption_source_paths_block
+        check_assumption_claim_dates_warn
+        check_negative_claim_grep_evidence_warn
+        check_bulletin_count_grep_evidence_warn
         check_measurement_env_info
     fi
 fi

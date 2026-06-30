@@ -49,6 +49,9 @@ AC_TEXT=$(printf '%s\n' "$CMD_BLOCK" | awk '
 
 WRAPPER
 
+    sed -n '/^check_ac_structure_quality()/,/^}/p' \
+        "$PROJECT_ROOT/scripts/cmd_save.sh" >> "$TEST_TMPDIR/run_check19.sh"
+
     # Check19ロジックをcmd_save.shから抽出
     sed -n '/^# --- Check 19: AC YAML構造判定/,/^# --- Check 20:/p' \
         "$PROJECT_ROOT/scripts/cmd_save.sh" \
