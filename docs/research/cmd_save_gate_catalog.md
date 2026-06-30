@@ -19,6 +19,21 @@
 
 抽出実測: `record_block_reason` / `record_warn_reason` の定義本体を除く呼出しは83件。ログ基盤内部の caller 推定処理など非チェック行を除外し、重複呼出しは同一概念へ統合した。Phase 1aの37件は「check/gate名称関数」として正しいが、品質チェック機能の全量ではない。
 
+## 0.1 Phase 2 処置サマリー（cmd_3612）
+
+判定基準: `failure semantics` / `temporal position` / `side effect` / `fixture同一性` の4条件でA層とC-2を判定した。B層は構造上inlineのため関数化、C-1は関数名が実態と乖離しているため名称修正を処置とする。
+
+| 処置 | 件数 | 対象 |
+|---|---:|---|
+| 統合 | 0 | 4条件が全一致し、originと診断粒度を失わず1関数化できるペアなし |
+| 抽象化 | 16 | A層のうち判定ロジック・入力取得・正規表現だけを共通helper化できる項目 |
+| 関数化 | 33 | B層inline checks全件 |
+| 名称修正 | 6 | C-1 `show_gunshi_pane_status.*` の実態名化 |
+| 保護 | 27 | A層+C-2のうちorigin/副作用/診断粒度を守るため触らない項目 |
+| 合計 | 82 | カタログ総件数と一致 |
+
+直接FP率制約: 現行 `logs/gate_fire_log.yaml` / `logs/cmd_design_quality.yaml` はcheck関数名単位のTP/FPラベルを保持しないため、Phase 2ではFP率を捏造しない。処置根拠は現物の副作用・時点・fixture差分と、既存のWARN/BLOCK理由文字列マッピングに限定する。
+
 ## 0. 抽出根拠
 
 | 項目 | 実測値 | 根拠コマンド |
@@ -280,5 +295,108 @@ for i,l in enumerate(lines,1):
 print(len(calls))
 for row in calls:
     print(row)
+PY
+```
+
+## 7. Phase 2 処置判定表（cmd_3612）
+
+| # | item | 層 | 処置 | 判定根拠 |
+|---:|---|---|---|---|
+| 1 | `is_gate_or_hook_addition_cmd` | A | 抽象化 | classifier系で#2と入力・時点・副作用が同じだが検出語彙が異なるためhelper共通化のみ |
+| 2 | `is_gate_or_script_modification_cmd` | A | 抽象化 | classifier系で#1と共通骨格を持つがscript修正語彙は別fixtureのため統合不可 |
+| 3 | `check_gate_script_execution_evidence` | A | 抽象化 | q5証跡判定は#39と共通化可能だがWARN副作用を持つため本体保護 |
+| 4 | `check_gate_hook_action_conversion` | A | 抽象化 | q11/guard判定helper(#40)と重複する正規表現を抽出可能、BLOCK/WARN診断は維持 |
+| 5 | `check_lord_30min_cost_question` | A | 保護 | 殿時間コスト専用の問いでfailure semanticsが単独 |
+| 6 | `check_deferral_language_warn` | A | 保護 | 先送り表現のFP履歴があり、統合すると除外条件の因果が薄れる |
+| 7 | `check_lord_instruction_ac_alignment_info` | A | 抽象化 | q8/ACテキスト抽出は#8と共通化可能、INFO診断は個別維持 |
+| 8 | `check_measurement_env_info` | A | 抽象化 | q8/AC/計測語抽出は#7と共通化可能、計測環境INFOの意味は個別維持 |
+| 9 | `check_depends_on_field` | A | 抽象化 | YAML field presence系で#10と入力取得を共通化可能、field名とWARN文は個別 |
+| 10 | `check_origin_field` | A | 抽象化 | YAML field presence系で#9と共通helper化可能、因果ネットワーク診断は個別 |
+| 11 | `check_causal_verification_requirement` | A | 保護 | git log/blame/semantic確認の複合判定で副作用とテンプレ表示が大きい |
+| 12 | `check_three_layer_penetration` | A | 保護 | 三層記憶ルール専用で不足要素列挙の診断粒度を守る必要あり |
+| 13 | `check_self_reread_red_flag` | A | 抽象化 | red flag語彙検出は#14と共通化可能、警告名は分離 |
+| 14 | `check_bundle_red_flag` | A | 抽象化 | red flag語彙検出は#13と同型、bundle専用fixtureは分離 |
+| 15 | `check_gunshi_analysis_overlap` | A | 保護 | 既存軍師分析検索の副作用と対象ディレクトリが単独 |
+| 16 | `check_pi_number_collision` | A | 保護 | Production Invariant番号衝突のドメイン固有判定で統合不可 |
+| 17 | `check_ac_file_paths` | A | 保護 | path存在確認とstderr診断が独立し、他text grep系とfixtureが異なる |
+| 18 | `check_cmd_text_pipe_danger` | A | 保護 | destructive safetyのBLOCK/WARN境界で、抽象化によるFN増加リスクが高い |
+| 19 | `check_impl_push_ac` | A | 保護 | push禁止ルール専用で、禁止語検出の例外が独自 |
+| 20 | `check_dm_signal_bare_layer_reference` | A | 保護 | dm-signal用語辞書依存でinfra汎用helperへ混ぜない |
+| 21 | `check_ac_must_should_mix` | A | 保護 | AC二値性専用で、must/should語彙の意味が単独 |
+| 22 | `check_research_tool_growth_ac` | A | 保護 | 研究cmdの道具磨き原則専用で、対象cmd分類が独自 |
+| 23 | `check_projects_yaml_forbidden_topics` | A | 保護 | projects正本保護で情報層混入という専用failure semantics |
+| 24 | `check_content_duplicate` | A | 保護 | 直近cmd scanと非同期実行を含み副作用が大きい |
+| 25 | `check_ac_param_sufficiency` | A | 抽象化 | パラメータ空間系#26/#27と語彙抽出を共通化可能、判定本体は分離 |
+| 26 | `check_param_space_against_results` | A | 抽象化 | パラメータ空間系#25/#27と共通helper化可能、前段結果比較は個別 |
+| 27 | `check_param_space_shrink` | A | 抽象化 | パラメータ空間系#25/#26と縮小語彙helperを共有可能、BLOCK/WARNは個別 |
+| 28 | `check_gunshi_design_num_relax` | A | 保護 | 軍師設計書参照と数値緩和の専用比較でFP履歴あり |
+| 29 | `check_action_immediate_verification` | A | 保護 | 行動即確認の広域ルールで、他系統への統合は診断を曖昧化する |
+| 30 | `check_research_tool_explicit` | A | 保護 | GS/WF研究スクリプトpath要求の専用除外が多い |
+| 31 | `check_timebox_minutes_required` | A | 保護 | timeout_minutes field要求で対象cmd分類が独立 |
+| 32 | `check_ac_absolute_literals` | A | 保護 | WARN_COUNT非加算のinformationalで副作用が他WARNと違う |
+| 33 | `check_db_backup_ac_warn` | A | 保護 | DB破壊防止の安全系で誤抽象化によるFNを避ける |
+| 34 | `check_numeric_literal_derivation_source_info` | A | 保護 | INFOのみでrecord_reasonなし、数値由来表示の副作用が特殊 |
+| 35 | `check_ac_phase_mixing` | A | 保護 | AC単位awk解析と分割案診断が独立し、FP修正履歴も多い |
+| 36 | `check_ac_test_scope` | A | 保護 | test scope除外フィルタが多く、統合でpre-existing failure抱込みを隠す |
+| 37 | `check_new_file_structure_warning` | A | 保護 | find timeoutと既存類似候補提示を含み副作用が独自 |
+| 38 | `q11_has_existing_alternative_verification` | A | 抽象化 | q11 helper群の語彙判定を共通化可能、戻り値helperとして維持 |
+| 39 | `q5_has_execution_evidence` | A | 抽象化 | q5証跡語彙は#3と共通化可能、helper単体は維持 |
+| 40 | `q11_has_guard_duplicate_check` | A | 抽象化 | q11 helper群#38/#4と語彙処理を共通化可能、guard専用戻り値は維持 |
+| 41 | `inline_fill_this_placeholder_block` | B | 関数化 | inline BLOCKで独立fixtureを持つため関数抽出+単体テスト追加 |
+| 42 | `inline_delegated_duplicate_block` | B | 関数化 | delegated_at状態判定を関数化しcmd stateテストを追加 |
+| 43 | `inline_previous_pass_pending_block` | B | 関数化 | 前回pending判定を関数化しqueue fixtureで検証可能にする |
+| 44 | `inline_archive_duplicate_warn` | B | 関数化 | archive存在scanを関数化しWARN副作用を明示化 |
+| 45 | `inline_other_draft_exists_block` | B | 関数化 | draft単一性判定を関数化しdepends_on例外fixtureを追加 |
+| 46 | `inline_diagnosis_format_block` | B | 関数化 | diagnosis形式チェックを関数化し2部構成fixtureを固定 |
+| 47 | `inline_environment_change_missing_block` | B | 関数化 | environment_change存在チェックを関数化しBLOCK履歴fixtureを追加 |
+| 48 | `inline_environment_change_quality_block` | B | 関数化 | 低品質値チェックを関数化し禁止値fixtureを追加 |
+| 49 | `inline_environment_change_implemented_block` | B | 関数化 | file/pattern実在grepを関数化し実装確認fixtureを追加 |
+| 50 | `inline_environment_change_structured_block` | B | 関数化 | 構造化parse失敗判定を関数化し散文fixtureを追加 |
+| 51 | `inline_quality_gate_missing_block` | B | 関数化 | quality_gate存在チェックを関数化し入口BLOCKを単体化 |
+| 52 | `inline_quality_gate_invalid_fields_block` | B | 関数化 | QG schema validationを関数化しfield typoをfixture化 |
+| 53 | `inline_required_keys_missing_block` | B | 関数化 | 必須項目一括チェックを関数化し欠落リストをテスト可能にする |
+| 54 | `inline_q4_depth_missing_warn` | B | 関数化 | q4_depth WARNを関数化しWARN_COUNT対象を明示 |
+| 55 | `inline_research_baseline_warn` | B | 関数化 | research baseline WARNを関数化しtype=research fixtureを追加 |
+| 56 | `inline_q5_code_reading_only_block` | B | 関数化 | q5 code_reading BLOCKを関数化しscout/shallow例外をfixture化 |
+| 57 | `inline_q6_not_hiding_missing_warn` | B | 関数化 | q6_not_hiding WARNを関数化し自動消火防止を単体化 |
+| 58 | `inline_q7_definition_verified_warn` | B | 関数化 | q7_definition WARNを関数化し定義確認fixtureを追加 |
+| 59 | `inline_q8_scope_expression_warn` | B | 関数化 | q8縮小表現WARNを関数化し禁止語fixtureを追加 |
+| 60 | `inline_q8_compound_question_warn` | B | 関数化 | q8複利問いWARNを関数化し複利語fixtureを追加 |
+| 61 | `inline_q8_when_how_warn` | B | 関数化 | q8 WHEN/HOW WARNを関数化し5W1H欠落fixtureを追加 |
+| 62 | `inline_q8_where_who_warn` | B | 関数化 | q8 WHERE/WHO WARNを関数化し5W1H欠落fixtureを追加 |
+| 63 | `inline_q9_firefighting_missing_block` | B | 関数化 | q9存在チェックを関数化し消火cmd fixtureを追加 |
+| 64 | `inline_q9_root_cause_label_block` | B | 関数化 | q9 root_cause label判定を関数化し構造fixtureを追加 |
+| 65 | `inline_q9_prevention_label_block` | B | 関数化 | q9 prevention label判定を関数化し構造fixtureを追加 |
+| 66 | `inline_q9_root_cause_length_block` | B | 関数化 | root_cause長さ判定を関数化し短文fixtureを追加 |
+| 67 | `inline_q9_prevention_length_block` | B | 関数化 | prevention長さ判定を関数化し意志依存fixtureを追加 |
+| 68 | `inline_q10_knowledge_boundary_warn` | B | 関数化 | q10知識境界WARNを関数化し境界未記入fixtureを追加 |
+| 69 | `inline_q11_guard_duplicate_block` | B | 関数化 | q11 guard重複BLOCKを関数化しGuard一覧fixtureを追加 |
+| 70 | `inline_q11_existing_alternative_block` | B | 関数化 | q11既存代替BLOCKを関数化し既存確認fixtureを追加 |
+| 71 | `inline_lock_contention_warn` | B | 関数化 | flock競合WARNを関数化しlock wait副作用を明示 |
+| 72 | `warn_q5_pair_missing_session_state` | C-2 | 保護 | 既に独立関数でrecord_warn_reasonを持ち、関数化済みのため名称・本体を保護 |
+| 73 | `warn_missing_prev_cmd_lesson` | C-2 | 保護 | 前cmd学習継承BLOCKの診断文が専用で、統合すると学習因果が切れる |
+| 74 | `show_three_layer_memory_ruling_info` | C-2 | 保護 | 表示補助のみでrecord_reasonなし、三層記憶裁定の露出粒度を守る |
+| 75 | `show_gunshi_pane_status.ac_structure_incomplete` | C-1 | 名称修正 | 実態はAC構造WARNでありpane status名では検索できないためリネーム |
+| 76 | `show_gunshi_pane_status.unverified_assumption_block` | C-1 | 名称修正 | 実態は未検証前提BLOCKであり関数名をassumption検証へ合わせる |
+| 77 | `show_gunshi_pane_status.assumption_source_path_block` | C-1 | 名称修正 | 実態はsource path存在確認BLOCKであり名称乖離を解消 |
+| 78 | `show_gunshi_pane_status.claim_date_warn` | C-1 | 名称修正 | 実態はclaim日付WARNであり名称を鮮度検査へ合わせる |
+| 79 | `show_gunshi_pane_status.negative_claim_grep_warn` | C-1 | 名称修正 | 実態は否定claim反証WARNであり名称をgrep evidence検査へ合わせる |
+| 80 | `show_gunshi_pane_status.bulletin_count_grep_warn` | C-1 | 名称修正 | 実態はbulletin件数grep証跡WARNであり名称を件数検証へ合わせる |
+| 81 | `inline_session_state_queue_presence_warn` | B | 関数化 | session_state queue file存在WARNを関数化し重複呼出しを明示 |
+| 82 | `inline_session_state_cmd_block_presence_warn` | B | 関数化 | session_state cmd block存在WARNを関数化し重複呼出しを明示 |
+
+Phase 2件数検証:
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+import re, collections
+text=Path('docs/research/cmd_save_gate_catalog.md').read_text()
+section=text.split('## 7. Phase 2 処置判定表',1)[1]
+rows=[l for l in section.splitlines() if re.match(r'\| [0-9]+ \|', l)]
+counts=collections.Counter(r.split('|')[4].strip() for r in rows)
+print('rows', len(rows))
+print(dict(counts))
+print('total', sum(counts.values()))
 PY
 ```
