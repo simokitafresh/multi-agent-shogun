@@ -2993,26 +2993,7 @@ QG_TEMPLATE
     # cmd_1692: code_readingのみでは前提未検証のためBLOCK。追加検証(isolated_test等)があれば通過
     # 除外条件: scope_mode=SCOUT OR scout_exempt=true（偵察cmdは実行前確認が目的のためcode_readingでも可）
     # infraの道具磨き(cmd_1891): q4_depth=shallow は軽微変更のためINFOに留める
-    _q5_scope_mode="$(cmd_block_get_field "scope_mode")"
-    _q5_scout_exempt="$(cmd_block_get_field "scout_exempt")"
-    _q5_project="$(cmd_block_get_field "project")"
-    _q5_depth="$(cmd_block_get_field "quality_gate.q4_depth")"
-    q5_val="$(cmd_block_get_field "quality_gate.q5_verified_source")"
-    if [[ -n "$q5_val" ]] && echo "$q5_val" | grep -qiE "code_reading|コード読み|読んだだけ"; then
-        if [[ "${_q5_scope_mode:-}" == "SCOUT" || "${_q5_scout_exempt:-}" == "true" ]]; then
-            echo "INFO: q5=code_reading。scope_mode=SCOUTまたはscout_exempt=trueのため除外。OK" >&2
-        elif [[ "${_q5_project:-}" == "infra" && "${_q5_depth:-}" == "shallow" ]]; then
-            echo "INFO: q5=code_reading。project=infra かつ q4_depth=shallow のためINFO扱い。OK" >&2
-        elif ! echo "$q5_val" | grep -qiE "isolated_test|structure_verified|production_verified|pipeline_test|実行|execute|本番|production|API応答|DB確認|テスト実行"; then
-            record_block_reason "q5=code_readingのみ。コード読みだけでは前提未検証。isolated_test/structure_verified/production_verifiedのいずれかで実確認せよ"
-            echo '  例: q5_verified_source: "engine.py L107 code_reading + isolated_test(スクリプト実行確認)"' >&2
-            abort_if_block_immediate || exit 1
-        else
-            echo "INFO: q5にcode_readingを含むが追加検証あり。OK" >&2
-        fi
-    elif [[ -n "$q5_val" ]] && ! echo "$q5_val" | grep -qiE "実行|execute|pipeline|本番|production|API応答|DB確認|テスト実行|structure_verified|isolated_test|production_verified|pipeline_test"; then
-        echo "WARNING: q5に検証方法が不明確。レベル明記推奨: code_reading(コード読み) / isolated_test(単体実行) / pipeline_test(結合実行) / production_verified(本番確認)" >&2
-    fi
+    check_q5_code_reading_only_block
     check_gate_script_execution_evidence "$CMD_BLOCK_NC"
 
     # q6_not_hiding: SG8自動消火チェック（WARN_COUNTに加算 2026-04-21殿裁定）
@@ -3036,41 +3017,15 @@ QG_TEMPLATE
         _Q8_WHAT_PART="${_Q8_WHAT_PART%%WHERE:*}"
         _Q8_WHAT_PART="${_Q8_WHAT_PART%%WHO:*}"
         _Q8_WHAT_PART="${_Q8_WHAT_PART%%HOW:*}"
-        _Q8_SCOPE_MODE="$(cmd_block_get_field "scope_mode")"
-        _Q8_SCOPE_EXEMPT=false
-        # scope_mode=focused/exact は限定表現が正当なので _Q8_SCOPE_EXEMPT 扱いにする。
-        # exact: 「IDF項のみR(c)に置換」等の正当な範囲限定(Gate FP 36件の根因)
-        if [[ "${_Q8_SCOPE_MODE,,}" == "focused" || "${_Q8_SCOPE_MODE,,}" == "exact" ]]; then
-            _Q8_SCOPE_EXEMPT=true
-        fi
-        if echo "$_Q8_WHAT_PART" | grep -qE '偵察のみ|分析のみ|調査のみ|確認のみ|コード変更なし|非破壊|対象外|not[- ]in[- ]scope|スコープ限定|範囲限定'; then
-            _Q8_SCOPE_EXEMPT=true
-        fi
-        if echo "$_Q8_WHAT_PART" | grep -qE '(のみ|だけ|一部|代表).{0,24}(対象|範囲|探索|パラメータ|件数|サンプル)|(対象|範囲|探索|パラメータ|件数|サンプル).{0,24}(のみ|だけ|一部|代表)' && [[ "$_Q8_SCOPE_EXEMPT" != true ]]; then
-            echo "WARN: q8_why_whatのWHATに縮小表現を検出。全量やることを確認せよ" >&2
-            echo "  → のみ/だけ/一部/代表 は範囲縮小のシグナル(殿厳命 2026-04-04)" >&2
-            record_warn_reason "q8_縮小表現" "check=quality_gate_q8_scope_expression"
-        fi
+        check_q8_scope_expression_warn
         # COMPOUND(複利の問い)検査（WARN — 2026-04-15 殿指摘「将軍に因果をたどる仕組みを」）
         # 起源: 軍師のcausal_chain+複利の問いが因果思考を強制。将軍にはなかった
         # 方法: q8に「正の複利」or「負の複利」or「複利」が含まれるか検査
-        if ! echo "$_Q8_WW_VAL" | grep -qE '複利|compound'; then
-            echo "WARN: q8に複利の問いがありません。「この実装選択を10回繰り返したら正の複利か負の複利か」を追記せよ" >&2
-            echo '  例: q8_why_what: "WHY: 殿指摘「浅い」 WHAT: lessons_shogun.yaml作成=正の複利(毎セッション具体化)"' >&2
-            record_warn_reason "q8_複利の問い" "check=quality_gate_q8_compound_question"
-        fi
+        check_q8_compound_question_warn
         # WHY/WHATだけではループが回らない。WHEN(いつ発動)とHOW(どう機能)も明示させる。
-        if ! echo "$_Q8_WW_VAL" | grep -qiE '(^|[^A-Za-z])WHEN[[:space:]]*[：:]' || ! echo "$_Q8_WW_VAL" | grep -qiE '(^|[^A-Za-z])HOW[[:space:]]*[：:]'; then
-            echo "WARN: q8_why_whatにWHEN/HOWが不足しています。WHY/WHAT/WHEN/HOWを最低限そろえよ" >&2
-            echo '  例: q8_why_what: "WHY: 殿原則「...」 → WHAT: ... → WHEN: ... → HOW: ...。複利: 正の複利"' >&2
-            record_warn_reason "q8_WHEN/HOW不足" "check=quality_gate_q8_when_how"
-        fi
+        check_q8_when_how_warn
         # 5W1H: WHERE(どこで)とWHO(誰が/誰に)も明示させる（殿指摘2026-05-10）
-        if ! echo "$_Q8_WW_VAL" | grep -qiE '(^|[^A-Za-z])WHERE[[:space:]]*[：:]' || ! echo "$_Q8_WW_VAL" | grep -qiE '(^|[^A-Za-z])WHO[[:space:]]*[：:]'; then
-            echo "WARN: q8_why_whatにWHERE/WHOが不足しています。5W1H(WHY/WHAT/WHEN/WHERE/WHO/HOW)をそろえよ" >&2
-            echo '  例: q8_why_what: "WHY: ... WHAT: ... WHEN: ... WHERE: scripts/cmd_save.sh WHO: 将軍 HOW: ..."' >&2
-            record_warn_reason "q8_WHERE/WHO不足" "check=quality_gate_q8_where_who"
-        fi
+        check_q8_where_who_warn
         check_lord_instruction_ac_alignment_info "$_Q8_WW_VAL" "$(extract_acceptance_criteria_block)"
         # q8 WHY引用検査はcmd_2248で廃止。
         # 理由: WHYが明示されていても引用記号や特定語彙を持たないだけでWARNになる偽陽性が多かった。
@@ -3079,50 +3034,7 @@ QG_TEMPLATE
     # q9_firefighting_root_cause: 消火cmdでは真因+再発防止を必須化（BLOCK — cmd_1801）
     # 起源: 消火禁止原則が理解止まりで、症状修正cmdが真因未記載のまま繰り返された
     # 対象: titleに消火キーワードが含まれるcmd（command本文は対象外 — cmd_1803）
-    _Q9_SIGNAL_TEXT=$(echo "$CMD_BLOCK_NC" | awk '
-        /^[[:space:]]*title:/ {
-            sub(/^[[:space:]]*title:[[:space:]]*/, "")
-            print
-            next
-        }
-    ')
-    # q1が「品質向上」なら消火ではない（gate修正/CoDD改善等はtitleに「修正」を含むがFP）
-    _Q1_VAL="$(cmd_block_get_field "quality_gate.q1_firefighting")"
-    if echo "$_Q9_SIGNAL_TEXT" | grep -qiE "$FIREFIGHTING_PATTERN" && ! echo "$_Q1_VAL" | grep -q "品質向上"; then
-        if ! cmd_block_has_field "quality_gate.q9_firefighting_root_cause"; then
-            record_block_reason "消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ"
-            echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
-            abort_if_block_immediate || exit 1
-        fi
-        # q9の中身検証: root_cause: と prevention: の両方が含まれ非空であること（GP-176）
-        # 存在チェックのみでは "q9: TBD" で通過する = 形式的コンプライアンス = 消火
-        _Q9_VAL="$(cmd_block_get_field "quality_gate.q9_firefighting_root_cause")"
-        if [[ -n "$_Q9_VAL" ]] && ! echo "$_Q9_VAL" | grep -q "root_cause:"; then
-            record_block_reason "q9にroot_cause:が含まれていない。真因を具体的に記載せよ"
-            echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
-            abort_if_block_immediate || exit 1
-        fi
-        if [[ -n "$_Q9_VAL" ]] && ! echo "$_Q9_VAL" | grep -q "prevention:"; then
-            record_block_reason "q9にprevention:が含まれていない。二度と起きない仕組みを記載せよ"
-            echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
-            abort_if_block_immediate || exit 1
-        fi
-        _Q9_ROOT=$(echo "$_Q9_VAL" | sed -E 's/.*root_cause:[[:space:]]*([^|]*).*/\1/' | sed 's/[[:space:]]*$//')
-        _Q9_PREVENTION=$(echo "$_Q9_VAL" | sed -E 's/.*prevention:[[:space:]]*(.*)/\1/' | sed 's/[[:space:]]*$//')
-        if [[ -n "$_Q9_VAL" && ${#_Q9_ROOT} -lt 10 ]]; then
-            record_block_reason "q9のroot_causeが短すぎる。10文字以上で具体的に記載せよ"
-            echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
-            abort_if_block_immediate || exit 1
-        fi
-        if [[ -n "$_Q9_VAL" && ${#_Q9_PREVENTION} -lt 10 ]]; then
-            record_block_reason "q9のpreventionが短すぎる。10文字以上で具体的に記載せよ"
-            echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
-            abort_if_block_immediate || exit 1
-        fi
-        if echo "$_Q9_PREVENTION" | grep -qiE '気をつけ|注意し|徹底|意識し|漏れないよう|覚えておく|次は.*ようにする'; then
-            echo "WARNING: q9のpreventionが意志依存です。『気をつける/徹底する』ではなく、gate追加・自動化・チェック強制など仕組みに置き換えてください" >&2
-        fi
-    fi
+    check_q9_firefighting_root_cause_block
 
     # (causal_chain各論パッチは削除。q5_verified_sourceに複利の問いを統合 — 2026-04-05)
 
@@ -5571,6 +5483,130 @@ check_q10_knowledge_boundary_warn() {
         echo "WARNING: q10_knowledge_boundary未記入。cmdの前提は検証済み空間内か？前Phase/前cmdの到達点を使っているか？" >&2
         echo '  形式例: q10_knowledge_boundary: "空間内。根拠: Phase30 β調整確立 + cmd_1896結果確認済み"' >&2
         record_warn_reason "q10_knowledge_boundary未記入" "check=quality_gate_q10_knowledge_boundary"
+    fi
+}
+
+check_q5_code_reading_only_block() {
+    _q5_scope_mode="$(cmd_block_get_field "scope_mode")"
+    _q5_scout_exempt="$(cmd_block_get_field "scout_exempt")"
+    _q5_project="$(cmd_block_get_field "project")"
+    _q5_depth="$(cmd_block_get_field "quality_gate.q4_depth")"
+    q5_val="$(cmd_block_get_field "quality_gate.q5_verified_source")"
+    if [[ -n "$q5_val" ]] && echo "$q5_val" | grep -qiE "code_reading|コード読み|読んだだけ"; then
+        if [[ "${_q5_scope_mode:-}" == "SCOUT" || "${_q5_scout_exempt:-}" == "true" ]]; then
+            echo "INFO: q5=code_reading。scope_mode=SCOUTまたはscout_exempt=trueのため除外。OK" >&2
+        elif [[ "${_q5_project:-}" == "infra" && "${_q5_depth:-}" == "shallow" ]]; then
+            echo "INFO: q5=code_reading。project=infra かつ q4_depth=shallow のためINFO扱い。OK" >&2
+        elif ! echo "$q5_val" | grep -qiE "isolated_test|structure_verified|production_verified|pipeline_test|実行|execute|本番|production|API応答|DB確認|テスト実行"; then
+            record_block_reason "q5=code_readingのみ。コード読みだけでは前提未検証。isolated_test/structure_verified/production_verifiedのいずれかで実確認せよ"
+            echo '  例: q5_verified_source: "engine.py L107 code_reading + isolated_test(スクリプト実行確認)"' >&2
+            abort_if_block_immediate || exit 1
+        else
+            echo "INFO: q5にcode_readingを含むが追加検証あり。OK" >&2
+        fi
+    elif [[ -n "$q5_val" ]] && ! echo "$q5_val" | grep -qiE "実行|execute|pipeline|本番|production|API応答|DB確認|テスト実行|structure_verified|isolated_test|production_verified|pipeline_test"; then
+        echo "WARNING: q5に検証方法が不明確。レベル明記推奨: code_reading(コード読み) / isolated_test(単体実行) / pipeline_test(結合実行) / production_verified(本番確認)" >&2
+    fi
+}
+
+check_q8_scope_expression_warn() {
+    [[ -n "${_Q8_WHAT_PART:-}" ]] || return 0
+    _Q8_SCOPE_MODE="$(cmd_block_get_field "scope_mode")"
+    _Q8_SCOPE_EXEMPT=false
+    if [[ "${_Q8_SCOPE_MODE,,}" == "focused" || "${_Q8_SCOPE_MODE,,}" == "exact" ]]; then
+        _Q8_SCOPE_EXEMPT=true
+    fi
+    if echo "$_Q8_WHAT_PART" | grep -qE '偵察のみ|分析のみ|調査のみ|確認のみ|コード変更なし|非破壊|対象外|not[- ]in[- ]scope|スコープ限定|範囲限定'; then
+        _Q8_SCOPE_EXEMPT=true
+    fi
+    if echo "$_Q8_WHAT_PART" | grep -qE '(のみ|だけ|一部|代表).{0,24}(対象|範囲|探索|パラメータ|件数|サンプル)|(対象|範囲|探索|パラメータ|件数|サンプル).{0,24}(のみ|だけ|一部|代表)' && [[ "$_Q8_SCOPE_EXEMPT" != true ]]; then
+        echo "WARN: q8_why_whatのWHATに縮小表現を検出。全量やることを確認せよ" >&2
+        echo "  → のみ/だけ/一部/代表 は範囲縮小のシグナル(殿厳命 2026-04-04)" >&2
+        record_warn_reason "q8_縮小表現" "check=quality_gate_q8_scope_expression"
+    fi
+}
+
+check_q8_compound_question_warn() {
+    if ! echo "$_Q8_WW_VAL" | grep -qE '複利|compound'; then
+        echo "WARN: q8に複利の問いがありません。「この実装選択を10回繰り返したら正の複利か負の複利か」を追記せよ" >&2
+        echo '  例: q8_why_what: "WHY: 殿指摘「浅い」 WHAT: lessons_shogun.yaml作成=正の複利(毎セッション具体化)"' >&2
+        record_warn_reason "q8_複利の問い" "check=quality_gate_q8_compound_question"
+    fi
+}
+
+check_q8_when_how_warn() {
+    if ! echo "$_Q8_WW_VAL" | grep -qiE '(^|[^A-Za-z])WHEN[[:space:]]*[：:]' || ! echo "$_Q8_WW_VAL" | grep -qiE '(^|[^A-Za-z])HOW[[:space:]]*[：:]'; then
+        echo "WARN: q8_why_whatにWHEN/HOWが不足しています。WHY/WHAT/WHEN/HOWを最低限そろえよ" >&2
+        echo '  例: q8_why_what: "WHY: 殿原則「...」 → WHAT: ... → WHEN: ... → HOW: ...。複利: 正の複利"' >&2
+        record_warn_reason "q8_WHEN/HOW不足" "check=quality_gate_q8_when_how"
+    fi
+}
+
+check_q8_where_who_warn() {
+    if ! echo "$_Q8_WW_VAL" | grep -qiE '(^|[^A-Za-z])WHERE[[:space:]]*[：:]' || ! echo "$_Q8_WW_VAL" | grep -qiE '(^|[^A-Za-z])WHO[[:space:]]*[：:]'; then
+        echo "WARN: q8_why_whatにWHERE/WHOが不足しています。5W1H(WHY/WHAT/WHEN/WHERE/WHO/HOW)をそろえよ" >&2
+        echo '  例: q8_why_what: "WHY: ... WHAT: ... WHEN: ... WHERE: scripts/cmd_save.sh WHO: 将軍 HOW: ..."' >&2
+        record_warn_reason "q8_WHERE/WHO不足" "check=quality_gate_q8_where_who"
+    fi
+}
+
+check_q9_firefighting_root_cause_block() {
+    _Q9_SIGNAL_TEXT=$(echo "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*title:/ {
+            sub(/^[[:space:]]*title:[[:space:]]*/, "")
+            print
+            next
+        }
+    ')
+    _Q1_VAL="$(cmd_block_get_field "quality_gate.q1_firefighting")"
+    if echo "$_Q9_SIGNAL_TEXT" | grep -qiE "$FIREFIGHTING_PATTERN" && ! echo "$_Q1_VAL" | grep -q "品質向上"; then
+        if ! cmd_block_has_field "quality_gate.q9_firefighting_root_cause"; then
+            record_block_reason "消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ"
+            echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
+            abort_if_block_immediate || exit 1
+        fi
+        _Q9_VAL="$(cmd_block_get_field "quality_gate.q9_firefighting_root_cause")"
+        check_q9_root_cause_label_block
+        check_q9_prevention_label_block
+        check_q9_root_cause_length_block
+        check_q9_prevention_length_block
+        if echo "$_Q9_PREVENTION" | grep -qiE '気をつけ|注意し|徹底|意識し|漏れないよう|覚えておく|次は.*ようにする'; then
+            echo "WARNING: q9のpreventionが意志依存です。『気をつける/徹底する』ではなく、gate追加・自動化・チェック強制など仕組みに置き換えてください" >&2
+        fi
+    fi
+}
+
+check_q9_root_cause_label_block() {
+    if [[ -n "$_Q9_VAL" ]] && ! echo "$_Q9_VAL" | grep -q "root_cause:"; then
+        record_block_reason "q9にroot_cause:が含まれていない。真因を具体的に記載せよ"
+        echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
+        abort_if_block_immediate || exit 1
+    fi
+}
+
+check_q9_prevention_label_block() {
+    if [[ -n "$_Q9_VAL" ]] && ! echo "$_Q9_VAL" | grep -q "prevention:"; then
+        record_block_reason "q9にprevention:が含まれていない。二度と起きない仕組みを記載せよ"
+        echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
+        abort_if_block_immediate || exit 1
+    fi
+}
+
+check_q9_root_cause_length_block() {
+    _Q9_ROOT=$(echo "$_Q9_VAL" | sed -E 's/.*root_cause:[[:space:]]*([^|]*).*/\1/' | sed 's/[[:space:]]*$//')
+    if [[ -n "$_Q9_VAL" && ${#_Q9_ROOT} -lt 10 ]]; then
+        record_block_reason "q9のroot_causeが短すぎる。10文字以上で具体的に記載せよ"
+        echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
+        abort_if_block_immediate || exit 1
+    fi
+}
+
+check_q9_prevention_length_block() {
+    _Q9_PREVENTION=$(echo "$_Q9_VAL" | sed -E 's/.*prevention:[[:space:]]*(.*)/\1/' | sed 's/[[:space:]]*$//')
+    if [[ -n "$_Q9_VAL" && ${#_Q9_PREVENTION} -lt 10 ]]; then
+        record_block_reason "q9のpreventionが短すぎる。10文字以上で具体的に記載せよ"
+        echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
+        abort_if_block_immediate || exit 1
     fi
 }
 
