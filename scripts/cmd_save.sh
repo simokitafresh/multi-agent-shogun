@@ -3075,6 +3075,63 @@ check_other_draft_exists_block() {
     fi
 }
 
+check_diagnosis_format_block() {
+    [[ -n "${CMD_DIAGNOSIS:-}" ]] || return 0
+
+    _DIAG_HAS_BLOCK_REASON=0
+    _DIAG_HAS_TAISAKU=0
+    if echo "$CMD_DIAGNOSIS" | grep -q "BLOCK理由:"; then _DIAG_HAS_BLOCK_REASON=1; fi
+    if echo "$CMD_DIAGNOSIS" | grep -q "対策:"; then _DIAG_HAS_TAISAKU=1; fi
+    if [[ "$_DIAG_HAS_BLOCK_REASON" -eq 0 || "$_DIAG_HAS_TAISAKU" -eq 0 ]]; then
+        record_block_reason "diagnosisの形式不正。「BLOCK理由: ... 対策: ...」の2部構成で記載せよ"
+        echo '  例: diagnosis: "BLOCK理由: q8にWHYが未記入 対策: q8に殿の指示引用を追加"' >&2
+        abort_if_block_immediate || exit 1
+    fi
+}
+
+check_environment_change_after_prior_block() {
+    (( PRIOR_ATTEMPT_COUNT > 0 )) || return 0
+
+    _ENV_STRUCTURED=""
+    _ENV_TYPE=""
+    _ENV_FILE=""
+    _ENV_PATTERN=""
+    _ENV_FILE_RESOLVED=""
+    _ENV_CHANGE="$(echo "$CMD_BLOCK_NC" | awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*"?/,""); sub(/"?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}')"
+    if [[ -z "$_ENV_CHANGE" ]]; then
+        record_block_reason "environment_change未記入。BLOCKから何を環境に埋め込んだかを記載せよ(gate/lesson/hook/PI等)"
+        echo '  例: environment_change: "gate_X追加(scripts/cmd_save.sh L576)+lesson_Y追加(lessons_karo.yaml)"' >&2
+        abort_if_block_immediate || exit 1
+    fi
+    _ENV_VAGUE_PATTERN="^(修正した|対策済み|対応済み|対策した|直した|変更した|更新した|改善した|実施した|対処した|完了|なし|none|N/A|初回起票|初回|該当なし|なし.*初回|対策:.*初回)$"
+    if echo "$_ENV_CHANGE" | grep -qE "$_ENV_VAGUE_PATTERN"; then
+        record_block_reason "environment_changeが低品質。環境変化の具体的diffを記載せよ(gate追加/lesson登録/hook変更等)"
+        echo '  禁止値: 修正した/対策済み/対策した/直した/変更した/更新した/改善した/実施した/対処した/完了/なし' >&2
+        abort_if_block_immediate || exit 1
+    fi
+
+    if _ENV_STRUCTURED="$(parse_structured_environment_change "$_ENV_CHANGE" 2>/dev/null)"; then
+        IFS=$'\t' read -r _ENV_TYPE _ENV_FILE _ENV_PATTERN <<< "$_ENV_STRUCTURED"
+        _ENV_FILE_RESOLVED="$_ENV_FILE"
+        if [[ "$_ENV_FILE_RESOLVED" != /* ]]; then
+            _ENV_FILE_RESOLVED="$PROJECT_DIR/$_ENV_FILE_RESOLVED"
+        fi
+
+        if ! grep -qE -- "$_ENV_PATTERN" "$_ENV_FILE_RESOLVED"; then
+            record_block_reason "environment_change未実装。file=${_ENV_FILE} に pattern=${_ENV_PATTERN} が見つからない"
+            echo "  structured environment_change: type=${_ENV_TYPE} file=${_ENV_FILE} pattern=${_ENV_PATTERN}" >&2
+            echo "  実装してからcmd_save.shを再実行せよ" >&2
+            abort_if_block_immediate || exit 1
+        fi
+    else
+        record_block_reason "environment_changeが非構造化。構造化形式で記載せよ: type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な文字列"
+        echo '  例: environment_change: "type=gate; file=scripts/cmd_save.sh; pattern=WARN_COUNT"' >&2
+        echo '  注意: YAML list形式(- type: ...)は非対応。必ず1行テキストで書け' >&2
+        echo '  理由: 自由テキストは実装を検証できない。構造化形式なら自動grepで実在を証明する' >&2
+        abort_if_block_immediate || exit 1
+    fi
+}
+
 trap 'handle_cmd_save_exit' EXIT
 
 # --- cmd_id正規化（cmd_プレフィックスを付与） ---
@@ -3176,17 +3233,7 @@ fi
 # --- Check 3.5: diagnosis質検査（cmd_2159） ---
 # 目的: diagnosisが記入されている場合、「BLOCK理由:」「対策:」の2部構成を強制
 # 低品質diagnosisを再BLOCKすることで診断内容の質を担保する
-if [[ -n "$CMD_DIAGNOSIS" ]]; then
-    _DIAG_HAS_BLOCK_REASON=0
-    _DIAG_HAS_TAISAKU=0
-    if echo "$CMD_DIAGNOSIS" | grep -q "BLOCK理由:"; then _DIAG_HAS_BLOCK_REASON=1; fi
-    if echo "$CMD_DIAGNOSIS" | grep -q "対策:"; then _DIAG_HAS_TAISAKU=1; fi
-    if [[ "$_DIAG_HAS_BLOCK_REASON" -eq 0 || "$_DIAG_HAS_TAISAKU" -eq 0 ]]; then
-        record_block_reason "diagnosisの形式不正。「BLOCK理由: ... 対策: ...」の2部構成で記載せよ"
-        echo '  例: diagnosis: "BLOCK理由: q8にWHYが未記入 対策: q8に殿の指示引用を追加"' >&2
-        abort_if_block_immediate || exit 1
-    fi
-fi
+check_diagnosis_format_block
 
 # --- Check 3.6: environment_change強制（cmd_2160, 殿指摘2026-04-20拡張） ---
 # 目的: BLOCK/WARN後に「環境に何を埋め込んだか」を強制。免疫系の抗体生成フェーズ。
@@ -3194,49 +3241,7 @@ fi
 # 殿指摘: WARNもスルーするな。WARNされたら次のCMDでBLOCKされないように成長せよ。
 # 条件: PRIOR_ATTEMPT_COUNT > 0 = 過去にBLOCKされた実績がある
 # ★ WARN_COUNT > 0 のケースは全チェック完了後(L2594付近)で処理(WARNは後段で蓄積されるため)
-if (( PRIOR_ATTEMPT_COUNT > 0 )); then
-    _ENV_STRUCTURED=""
-    _ENV_TYPE=""
-    _ENV_FILE=""
-    _ENV_PATTERN=""
-    _ENV_FILE_RESOLVED=""
-    _ENV_CHANGE="$(echo "$CMD_BLOCK_NC" | awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*"?/,""); sub(/"?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}')"
-    if [[ -z "$_ENV_CHANGE" ]]; then
-        record_block_reason "environment_change未記入。BLOCKから何を環境に埋め込んだかを記載せよ(gate/lesson/hook/PI等)"
-        echo '  例: environment_change: "gate_X追加(scripts/cmd_save.sh L576)+lesson_Y追加(lessons_karo.yaml)"' >&2
-        abort_if_block_immediate || exit 1
-    fi
-    # 禁止値チェック: 意志依存の低品質回答をBLOCK（AC2: cmd_2160）
-    _ENV_VAGUE_PATTERN="^(修正した|対策済み|対応済み|対策した|直した|変更した|更新した|改善した|実施した|対処した|完了|なし|none|N/A|初回起票|初回|該当なし|なし.*初回|対策:.*初回)$"
-    if echo "$_ENV_CHANGE" | grep -qE "$_ENV_VAGUE_PATTERN"; then
-        record_block_reason "environment_changeが低品質。環境変化の具体的diffを記載せよ(gate追加/lesson登録/hook変更等)"
-        echo '  禁止値: 修正した/対策済み/対策した/直した/変更した/更新した/改善した/実施した/対処した/完了/なし' >&2
-        abort_if_block_immediate || exit 1
-    fi
-
-    if _ENV_STRUCTURED="$(parse_structured_environment_change "$_ENV_CHANGE" 2>/dev/null)"; then
-        IFS=$'\t' read -r _ENV_TYPE _ENV_FILE _ENV_PATTERN <<< "$_ENV_STRUCTURED"
-        _ENV_FILE_RESOLVED="$_ENV_FILE"
-        if [[ "$_ENV_FILE_RESOLVED" != /* ]]; then
-            _ENV_FILE_RESOLVED="$PROJECT_DIR/$_ENV_FILE_RESOLVED"
-        fi
-
-        if ! grep -qE -- "$_ENV_PATTERN" "$_ENV_FILE_RESOLVED"; then
-            record_block_reason "environment_change未実装。file=${_ENV_FILE} に pattern=${_ENV_PATTERN} が見つからない"
-            echo "  structured environment_change: type=${_ENV_TYPE} file=${_ENV_FILE} pattern=${_ENV_PATTERN}" >&2
-            echo "  実装してからcmd_save.shを再実行せよ" >&2
-            abort_if_block_immediate || exit 1
-        fi
-    else
-        # 非構造化テキスト = 実装検証不能 = 意志依存 = 成長しない(deepdive Phase 5)
-        # 構造化形式を強制: type=xxx; file=xxx; pattern=xxx
-        record_block_reason "environment_changeが非構造化。構造化形式で記載せよ: type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な文字列"
-        echo '  例: environment_change: "type=gate; file=scripts/cmd_save.sh; pattern=WARN_COUNT"' >&2
-        echo '  注意: YAML list形式(- type: ...)は非対応。必ず1行テキストで書け' >&2
-        echo '  理由: 自由テキストは実装を検証できない。構造化形式なら自動grepで実在を証明する' >&2
-        abort_if_block_immediate || exit 1
-    fi
-fi
+check_environment_change_after_prior_block
 
 # --- Check 3: quality_gateフィールド検査 ---
 # cmdブロック内にquality_gate（q1_firefighting, q2_learning, q3_next_quality）があるか検査
