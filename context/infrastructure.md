@@ -415,6 +415,9 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 | 学習ループ | `parse_structured_environment_change` | environment_changeを構造化して読み取り、BLOCK後の環境改善を検証する。 |
 | red flag | `check_bundle_red_flag` | SG7 bundle等の赤旗条件を検出し、cmd保存前に警告/BLOCKする。 |
 
+**Phase 3リファクタ完了(cmd_3608〜3614)**: 113関数中82check関数を設計思想カタログ化済み。A層(40named funcs: うち27保護+13抽象化helper化)、B層(33inline checks→関数化)、C層(9名称乖離→名称修正済み)。全関数のorigin・防御対象・severity・教訓逆引きを一覧化。
+**設計思想カタログ**: `docs/research/cmd_save_gate_catalog.md` — check関数のoriginと防御対象を逆引きできる中間レイヤー。教訓→カタログ→個別check関数の3段構造により、起票時にcheck関数の設計意図を確認可能。セマンティクス概念: `cmd_save_gate_catalog`
+
 ## ninja_monitor.sh
 
 idle検知+コンテキストリセット送信（Codex=/new, Claude=/clear）、is_task_deployed二重チェック、STALE-TASK検出、CLEAR_DEBOUNCE=300s、karo_snapshot自動生成、状態遷移検知(cmd_255)。

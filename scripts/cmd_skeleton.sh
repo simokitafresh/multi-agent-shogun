@@ -112,4 +112,5 @@ cat >&2 <<'GUIDE'
 12. 同一BLOCKが3回以上続いたら: quality_gate.nazenaze_root_cause になぜなぜ7回分析を記載せよ(VALID_QG_FIELDSに登録済み)
 13. ACフェーズ混在禁止(ac_phase_mixing): 同一AC内に実装キーワード(実装/追加/修正/fix等)と計測/deploy(計測/benchmark/push/deploy等)を共起させるな。分割せよ: AC-impl=「実装+テストPASS+commit」、AC-verify=「計測/CDP確認/deploy」。snake_case変数名・ファイルパスは自動除外されるがAC本文の自然言語キーワードは発火する。他責(FP扱い)で放置するな=洗脳(殿指摘2026-06-26)
 14. AC4本以上のcmdはBLOCK率75%(score_matrix実測2026-06-26)。AC4+は分割を最初に検討せよ。1CMD1道具(殿裁定cmd_2316)×AC2-3本が最適帯
+15. check関数のoriginと防御対象を逆引きするには: docs/research/cmd_save_gate_catalog.md を参照せよ(82check関数の発火origin・防御対象・severity・教訓逆引き一覧。中間レイヤー: 教訓→設計思想カタログ→個別check関数)
 GUIDE

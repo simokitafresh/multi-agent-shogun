@@ -1,5 +1,5 @@
 # 成長ループ設計 — 全ロール共通
-<!-- last_updated: 2026-06-13 cmd_3363 -->
+<!-- last_updated: 2026-06-30 cmd_3615 -->
 <!-- origin: 殿指摘2026-04-20「BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉」 -->
 
 ## §1 核心原則
@@ -177,6 +177,22 @@ multi-CLI前提: Claude/Codexのhook差に依存させず、正本はCLI非依�
 → 実装: `deploy_task.sh` がtask/reportへ `causal_verification` を注入し、`gate_report_format_main.py` が空欄WARN、`cmd_save.sh` がL5表示+WARNを行う(Codex/Claude共通、cmd_karo_impl_causal_verification_l0_l7_20260602)
 → 概念: `causal_verification_l0_l7`
 → 因果: [[semantic_search_timeout_infra_bug]] -> [[past_design_intent_unchecked_risk]] -> [[causal_verification_l0_l7_required]]
+
+**設計思想カタログ=中間レイヤー(2026-06-30 cmd_3615で実現)** — 教訓→check関数の直結から3段構造へ:
+
+教訓はcheck関数の「なぜ作ったか」を記録するが、82件のcheck関数を教訓IDから逆引きする手段がなかった。設計思想カタログ(`docs/research/cmd_save_gate_catalog.md`)が中間レイヤーとして機能し、**教訓→設計思想カタログ→個別check関数**の3段構造(TO-BE)が実現された。
+
+| 層 | 役割 | 場所 |
+|----|------|------|
+| 教訓 | 失敗から何を学んだか | `projects/infra/lessons_*.yaml` |
+| **設計思想カタログ(中間)** | check関数ごとのorigin・防御対象・severity・教訓逆引き | `docs/research/cmd_save_gate_catalog.md` |
+| 個別check関数 | 実際のBLOCK/WARN判定 | `scripts/cmd_save.sh` |
+
+全エージェントへの貫通経路:
+- 将軍(起票時): `cmd_skeleton.sh` のGUIDEに逆引き先を明記
+- 全員(概念検索): `bash scripts/semantic_search.sh "設計思想カタログ"` → `cmd_save_gate_catalog` 概念到達
+- 家老(インフラ理解): `context/infrastructure.md` のcmd_save.shセクションに構造を記載
+→ セマンティクス概念: `cmd_save_gate_catalog` | 因果: [[教訓蓄積]] -> [[check関数逆引き不在]] -> [[中間レイヤー設計思想カタログ]]
 
 **L6未化仕組み(2026-05-11時点・0件 ★全L5到達)**:
 
