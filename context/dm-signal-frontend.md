@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-06-27 cmd_karo_hotfix_ga145_context_freshness_dm_signal_frontend_20260627 -->
+<!-- last_updated: 2026-07-01 cmd_karo_hotfix_ga155_context_freshness_dm_signal_frontend_202607010312 -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -118,6 +118,15 @@ Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式
 | Compare Summary / Deterioration benchmark | SPY/TQQQのP_det benchmark表示とpage_visibility enforcementを追加。Compare Summary/Deteriorationの型とsummary dataにbenchmark行前提あり | 59146c43; `frontend/app/compare-summary/page.tsx`, `frontend/app/compare-summary/summary-data.ts`, `frontend/app/deterioration/page.tsx`, `frontend/components/compare-summary-table.tsx`, `frontend/lib/types/compare-summary.ts`, `frontend/lib/types/deterioration.ts` |
 | Compare Summary benchmark standalone | Compare SummaryのSPY/TQQQ benchmark行は`rawBenchmarks`のみから生成する。PF側`metricsMap.*.benchmark`列へのfallbackは禁止で、folder/PF順序変更によりbenchmark-SPY行が変動してはならない | cmd_3548 / afe98d64; `frontend/app/compare-summary/summary-data.ts`, `frontend/app/compare-summary/summary-data.test.ts`, `docs/spec/compare-summary-benchmark-row-period-instability-fix.md` |
 | Metrics continuity risk | Metrics/Summary tableにcontinuity risk系指標を追加。Docs termsも対応済み | eaf2741d; `frontend/components/metrics-table.tsx`, `frontend/components/summary-table.tsx`, `frontend/lib/types/metrics.ts`, `frontend/components/docs/terms-content.tsx` |
+
+## 2.10 直近FE変更索引（2026-06-27〜07-01）
+
+| 対象 | 結論 | 参照 |
+|------|------|------|
+| PWA SWR cache | Service Worker cacheは`dm-signal-v10`。SWR API cacheはTTL 1時間で、`/api/compare-returns`/`/api/metrics/summary`から全12系統のSWR対象APIへ拡張済み。TTL内はcache即返却+background revalidate、TTL切れはnetwork first+cache fallback | 5713ec7d, 70332d29, 8911448e; `frontend/public/sw.js` |
+| Compare table layout | Compare Summary / Compare ReturnsのPortfolio列はmobile 160px / desktop 200pxに固定し、tableをshrink-to-fitへ変更。行高は`py-3`で統一 | bab41462; `frontend/components/compare-summary-table.tsx`, `frontend/components/compare-returns-table.tsx` |
+| Page header help UI | Dashboard / Compare Summary / Compare Returns / Deteriorationのheader内HelpLinkは削除済み。Sidebar/mobile-menuのDocs/FAQ navは維持 | fad5887b; `frontend/app/dashboard/page.tsx`, `frontend/app/compare-summary/page.tsx`, `frontend/app/compare-returns/page.tsx`, `frontend/app/deterioration/page.tsx`, `frontend/components/help-link.tsx` |
+| Rolling Returns table periods | Rolling Returns summary tableは`3_months`/`6_months`/`1_year`/`2_years`/`3_years`/`5_years`/`7_years`/`10_years`順。chart側ではなくtable表示期間の拡張 | 86348160; `frontend/components/rolling-returns-summary-table.tsx`, `frontend/components/__tests__/rolling_returns_summary_open_toggle.test.tsx` |
 | Compare Summary table header | Compare Summary table headerをtable内sticky化。横スクロール中の列ラベル視認性を改善 | eafa53df; `frontend/components/compare-summary-table.tsx` |
 | Compare Chart benchmark dropdown | Compare Chartのbenchmark selectorにPFのbenchmark_tickerに依らない追加候補TQQQを常時合流。defaultはSPY優先を維持 | 099ccf20; `frontend/app/compare/page.tsx`, `frontend/app/compare/__tests__/benchmark-options.test.tsx` |
 
