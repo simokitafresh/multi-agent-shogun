@@ -32,9 +32,11 @@ detect_real_model() {
     case "$cli_t" in
         claude)
             # Claude Code: バナー検出（幅差分を吸収）
+            #   狭幅(200K): ▐▛███▜▌   Sonnet 5 with high effort
             #   狭幅(200K): ▐▛███▜▌   Sonnet 4.6 with high effort
             #   狭幅(1M):   ▐▛███▜▌\n           Opus 4.6 (1M contex…\n▝▜█████▛▘  （モデル名が別行）
             #   標準幅(1M): ▐▛███▜▌   Opus 4.6 (1M context) with high effort
+            #   標準幅(200K): ▝▜█████▛▘  Sonnet 5 with high effort · path
             #   標準幅(200K): ▝▜█████▛▘  Sonnet 4.6 with high effort · path
             local output
             output=$(tmux capture-pane -t "$pane_target" -p -J -S -1000 2>/dev/null)
@@ -45,7 +47,7 @@ detect_real_model() {
                 # Pattern 1: アート行と同じ行にモデル名（幅共通）
                 # (1M context)等の括弧部分も許容
                 # head -1: 最初のバナー=自分のCLI起動バナー。tail -1だとログ内の他CLIバナーを誤検出(2026-06-20バグ)
-                banner=$(echo "$output" | grep -E '(▐▛███▜▌|▝▜█████▛▘)[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+\.[0-9]+' | head -1)
+                banner=$(echo "$output" | grep -E '(▐▛███▜▌|▝▜█████▛▘)[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+(\.[0-9]+)?' | head -1)
                 if [ -n "$banner" ]; then
                     # 5 sed→1 sed: subprocess削減
                     model=$(echo "$banner" | sed -E \
@@ -60,7 +62,7 @@ detect_real_model() {
                 #   行頭空白 + Opus/Sonnet/Haiku + バージョン
                 if [ -z "$model" ]; then
                     local model_line
-                    model_line=$(echo "$output" | grep -E '^[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+\.[0-9]+' | head -1)
+                    model_line=$(echo "$output" | grep -E '^[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+(\.[0-9]+)?' | head -1)
                     if [ -n "$model_line" ]; then
                         # 4 sed→1 sed: subprocess削減
                         model=$(echo "$model_line" | sed -E \

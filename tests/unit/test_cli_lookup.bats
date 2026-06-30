@@ -16,7 +16,7 @@ cli:
       model_name: claude-opus-4-6
     tobisaru:
       type: claude
-      model_name: claude-sonnet-4-6
+      model_name: claude-sonnet-5-20250514
       launch_cmd: "/tmp/claude-local"
     saizo:
       type: invalid_cli
@@ -102,6 +102,13 @@ teardown_file() {
         bash -lc "source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'; cli_launch_cmd tobisaru"
     [ "$status" -eq 0 ]
     [ "$output" = "/tmp/claude-local --model sonnet" ]
+}
+
+@test "cli_model_display: Claude Sonnet 5を表示名へ変換できる" {
+    run env CLI_ADAPTER_SETTINGS="${TEST_TMPDIR_CLI}/settings.yaml" CLI_LOOKUP_PROFILES="${TEST_TMPDIR_CLI}/cli_profiles.yaml" \
+        bash -lc "source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'; cli_model_display tobisaru"
+    [ "$status" -eq 0 ]
+    [ "$output" = "Sonnet 5" ]
 }
 
 @test "model_colors: GPT-5.5表示名をCodex色へ正規化できる" {

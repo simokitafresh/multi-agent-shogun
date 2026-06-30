@@ -322,6 +322,7 @@ cli_model_display() {
     case "$model_name" in
         claude-opus-4-6*)    echo "Opus 4.6" ;;
         claude-opus-4*)      echo "Opus 4" ;;
+        claude-sonnet-5*)    echo "Sonnet 5" ;;
         claude-sonnet-4-6*)  echo "Sonnet 4.6" ;;
         claude-sonnet-4*)    echo "Sonnet 4" ;;
         claude-haiku-4-5*)   echo "Haiku 4.5" ;;
