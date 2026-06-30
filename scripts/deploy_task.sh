@@ -7960,7 +7960,6 @@ deploy_task_apply_task_mutations() {
     inject_codd_failure_history "$task_file" || true  # GP-201
     inject_engineering_preferences "$task_file" || true
     inject_skill_hint "$task_file" || true
-    postcondition_lesson_inject "$task_file" || true
 
     # related_lessons+description注入はinject_task_modifiers(yaml.dump使用)の後に実行する。
     # yaml.dumpが_sv(シングルクォート)書式を破壊するため。inject_ac_versionと同じ理由。
@@ -7996,6 +7995,7 @@ deploy_task_apply_task_mutations() {
             log "injection_count: incremented for ${inj_ids}"
         fi
     fi
+    postcondition_lesson_inject "$task_file" || true
 
     inject_reports_to_read "$task_file" || true
     inject_context_files "$task_file" || true

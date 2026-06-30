@@ -57,6 +57,22 @@ PY
     grep -q 'inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points"' "$PROJECT_ROOT/scripts/deploy_task.sh"
 }
 
+@test "postcondition_lesson_inject consumes current deploy postcondition after lesson injection and score update" {
+    python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import sys
+
+script = open(sys.argv[1], encoding="utf-8").read()
+main_start = script.index("deploy_task_apply_task_mutations() {")
+main = script[main_start:]
+
+inject_idx = main.index('inject_related_lessons "$task_file"')
+score_idx = main.index('bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" "$inj_project" "$lid" inject')
+post_idx = main.index('postcondition_lesson_inject "$task_file"')
+
+assert inject_idx < score_idx < post_idx, (inject_idx, score_idx, post_idx)
+PY
+}
+
 @test "cmd_3368: reset_stale_fields clears auto-injected scalar/list metadata before YAML injection" {
     python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
 import ast
