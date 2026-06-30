@@ -1,19 +1,19 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-06-29 auto-generated -->
+<!-- last_updated: 2026-06-30 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-06-29T20:36:51+09:00 -->
+<!-- generated_at: 2026-06-30T09:36:37+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-06-30T09:36:37+09:00 | terminal | response | **PASS**。修正が正しく動作した。 ``` Login succeeded without reCAPTCHA interaction ← quick_url待ち(8s)で即通過 ProseMirror ready (attempt…
+- 2026-06-30T09:32:56+09:00 | terminal | inbound | 検証してみたか？試しに何かの記事をnoteの下書きに保存してみて
+- 2026-06-30T09:15:59+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: CTX%異常値 cmd_3590 (ctx_pct=58%, median=0.0%, ratio=infx, delta=+58.0pt) WARNING: CTX%異常値 cmd_karo_h…
+- 2026-06-30T09:15:26+09:00 | ntfy | outbound | 【watchdog/WARN】inbox_watcher(karo)がhang検知。未読0 0件。強制再起動
 - 2026-06-29T20:36:50+09:00 | terminal | response | 三層記憶貫通+スキル+スクリプト改善、全て完了。 **貫通サマリ**: | 層 | 更新 | |---|------| | 層1: 記憶DB | 5件INSERT(reCAPTCHA突破/compare-returns API/API a…
 - 2026-06-29T20:30:47+09:00 | terminal | inbound | 三層記憶に貫通させて、スキルもアップデート、スクリプトも改善せよ
 - 2026-06-29T20:27:14+09:00 | terminal | response | 「下書きを保存しました」バナーが表示されている。3,435文字。タイトル正常、見出し(マーケット/要人発言)あり、■箇条書きが段落としてまとまっている。空行なし、---なし。前回の品質問題は解消されている。 殿、note.com下書き保存…
 - 2026-06-29T20:25:15+09:00 | terminal | inbound | <task-notification> <task-id>b0p8gv0hc</task-id> <tool-use-id>toolu_01MjEXpBrEspPC4kTvg8zeYQ</tool-use-id> <output-file…
 - 2026-06-29T20:23:02+09:00 | terminal | inbound | <task-notification> <task-id>b1im5zduy</task-id> <tool-use-id>toolu_01UUTG7LT38jj67m2MJRuoWi</tool-use-id> <output-file…
 - 2026-06-29T20:23:00+09:00 | terminal | response | 殿、事実を報告する。 note.comログインで「メールアドレスおよびパスワードをご確認ください」エラーが出ている。メールアドレスとパスワード(15文字)は`.env.note`から正しく入力されているが、認証が拒否される。 考えられる原…
-- 2026-06-29T20:16:41+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: CTX%異常値 cmd_3590 (ctx_pct=58%, median=0.0%, ratio=infx, delta=+58.0pt) WARNING: CTX%異常値 cmd_karo_h…
-- 2026-06-29T20:09:43+09:00 | terminal | inbound | <task-notification> <task-id>badwmiwr7</task-id> <tool-use-id>toolu_01NEv7ZxZPDe9ix4Gyi9jJBW</tool-use-id> <output-file…
-- 2026-06-29T20:09:36+09:00 | terminal | inbound | <task-notification> <task-id>bljwpdp4m</task-id> <tool-use-id>toolu_01NrLf8UzsiUkvHG7Y5QSj6J</tool-use-id> <output-file…
-- 2026-06-29T20:09:31+09:00 | terminal | inbound | <task-notification> <task-id>bue3mh303</task-id> <tool-use-id>toolu_01KABVBQ6uAw7ejRYRsUMuvv</tool-use-id> <output-file…
 
 ## 未解決確認事項
 - 「下書きを保存しました」バナーが表示されている。3,435文字。タイトル正常、見出し(マーケット/要人発言)あり、■箇条書きが段落としてまとまっている。空行なし、---なし。前回の品質問題は解消されている。 殿、note.com下書き保存完了。 - URL: `https://…
@@ -30,22 +30,9 @@
 
 ## 参照cmd
 - cmd_36
-- cmd_3570
-- cmd_3572
 - cmd_3583
-- cmd_3585
 - cmd_3586
-- cmd_3587
-- cmd_3588
 - cmd_3590
-- cmd_3591
-- cmd_3592
-- cmd_3593
-- cmd_3594
-- cmd_3595
-- cmd_3596
-- cmd_3597
-- cmd_3598
 - cmd_3600
 - cmd_3601
 - cmd_3602
@@ -56,7 +43,6 @@
 - cmd_3607
 - PD-038
 - PD-048
-- PD-050
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
