@@ -341,7 +341,7 @@ _cli_launch_read_settings() {
     local cli_default="claude"
     local line=""
 
-    _CLI_LAUNCH_TYPE="" _CLI_LAUNCH_MODEL="" _CLI_LAUNCH_SERVICE_TIER=""
+    _CLI_LAUNCH_TYPE="" _CLI_LAUNCH_MODEL="" _CLI_LAUNCH_SERVICE_TIER="" _CLI_LAUNCH_CMD_OVERRIDE=""
 
     [[ -f "$settings_path" ]] || { _CLI_LAUNCH_TYPE="$cli_default"; return 0; }
 
@@ -385,6 +385,9 @@ _cli_launch_read_settings() {
         elif [[ "$line" == "      service_tier: "* ]]; then
             _cli_lookup_normalize_scalar "${line#*"service_tier": }"
             _CLI_LAUNCH_SERVICE_TIER="$REPLY"
+        elif [[ "$line" == "      launch_cmd: "* ]]; then
+            _cli_lookup_normalize_scalar "${line#*"launch_cmd": }"
+            _CLI_LAUNCH_CMD_OVERRIDE="$REPLY"
         elif [[ "$line" =~ ^"    "[^[:space:]] || ! "$line" =~ ^[[:space:]] ]]; then
             break
         fi
@@ -491,6 +494,11 @@ cli_launch_cmd() {
     _cli_launch_read_profile "$_CLI_LAUNCH_TYPE"
     local base_cmd="$_CLI_LAUNCH_CMD"
     local static_args="$_CLI_LAUNCH_ARGS"
+
+    # settings.yaml per-agent launch_cmd override (2層SSOT: profile=デフォルト, settings=個別)
+    if [[ -n "${_CLI_LAUNCH_CMD_OVERRIDE:-}" ]]; then
+        base_cmd="$_CLI_LAUNCH_CMD_OVERRIDE"
+    fi
 
     # model_nameからCLI引数を自動生成
     local extra_args=""
