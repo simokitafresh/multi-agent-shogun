@@ -20,10 +20,9 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-<!-- script_refs_checked_at: 2026-06-27T14:55:14+0900 -->
+<!-- script_refs_checked_at: 2026-06-30T12:12:00+0900 -->
 
-Script refs verified: 2026-06-12. `note_draft.sh` の契約は `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"` のまま。932936059は外部reCAPTCHA画像チャレンジ未解決を運用FAILではなくSKIPとして`skill_execution_log.yaml`へ記録し、exit 0で返す変更。Gate20も同じ外部reCAPTCHAチャレンジ由来の`note-draft`結果をFAIL率分母から除外する。戦国記事Markdown生成後のnote下書き保存呼び出し・通常PASS/FAILログの契約変更なし。
-Script refs verified: 2026-06-16 cmd_karo_skill_refs_update_20260616. `note_draft.sh` 直近変更(6ac00607e)はshellcheckコメント形式修正(markdown list→shell comment)のみ。引数・CDP_PORT・通常PASS/FAILログの契約変更なし。
+Script refs verified: 2026-06-30 a519e6365+dad84ea2c. `note_draft.sh` 直近変更はinvisible reCAPTCHA対応(dispatch_click+quick_url待ち)とコメント形式修正。戦国記事Markdown生成後のnote下書き保存呼び出し・引数・CDP_PORT・PASS/FAIL/SKIPログの契約変更なし。
 
 # 戦国ライター — 将軍の書簡スキル
 

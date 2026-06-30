@@ -14,14 +14,9 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-06-27T14:55:14+0900 -->
+<!-- script_refs_checked_at: 2026-06-30T12:12:00+0900 -->
 
-Script refs verified: 2026-06-20 782be65a6. `note_draft.sh` 直近変更はPJパス直書き除去でget_project_path経由へ置換した内部SSOT化。CDPブラウズ手順・preflight/navigate/screenshotの契約変更なし。
-
-<!-- script_refs_checked_at: 2026-06-27T14:55:14+0900 -->
-
-Script refs verified: 2026-06-12. `note_draft.sh` の契約は `<markdown_file>` 1件を受け取りCDP経由でnote下書きを作る形式のまま。932936059は外部reCAPTCHA画像チャレンジ未解決を運用FAILではなくSKIPとして`skill_execution_log.yaml`へ記録し、exit 0で返す変更。Gate20も同じ外部reCAPTCHAチャレンジ由来の`note-draft`結果をFAIL率分母から除外する。引数・CDP_PORT・通常PASS/FAILログの契約変更なし。
-Script refs verified: 2026-06-16 cmd_karo_skill_refs_update_20260616. `note_draft.sh` 直近変更(6ac00607e)はshellcheckコメント形式修正(markdown list→shell comment)のみ。引数・CDP_PORT・通常PASS/FAILログの契約変更なし。
+Script refs verified: 2026-06-30 a519e6365+dad84ea2c. `note_draft.sh` 直近変更はinvisible reCAPTCHA対応(dispatch_click+quick_url待ち)とコメント形式修正。引数・CDP_PORT・PASS/FAIL/SKIPログの契約変更なし。CDPブラウズ手順・preflight/navigate/screenshotの契約変更なし。
 
 # /cdp-browse
 

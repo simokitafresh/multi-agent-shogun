@@ -18,8 +18,10 @@ _gate_wa_self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${_gate_wa_self%/scripts/gates/gate_ninja_workaround_rate.sh}"
 unset _gate_wa_self
 WA_FILE="$SCRIPT_DIR/logs/karo_workarounds.yaml"
+GATE_LOG="$SCRIPT_DIR/logs/gate_metrics.log"
 
 LAST_N=30
+RECENT_N="${NINJA_WA_RECENT_N:-10}"
 QUIET=false
 NINJA_FILTER=""
 
@@ -42,10 +44,11 @@ if [ ! -f "$WA_FILE" ]; then
 fi
 
 # WSL2 NTFS最適化: python3起動(150ms)をmtimeキャッシュで回避
-_WA_CACHE="/tmp/shogun_wa_rate_cache_${NINJA_FILTER:-all}_${LAST_N}.txt"
+_WA_CACHE="/tmp/shogun_wa_rate_cache_${NINJA_FILTER:-all}_${LAST_N}_${RECENT_N}.txt"
 _WA_MTIME=$(stat -c%Y "$WA_FILE" 2>/dev/null || echo 0)
+_GATE_MTIME=$(stat -c%Y "$GATE_LOG" 2>/dev/null || echo 0)
 _WA_SELF_MTIME=$(stat -c%Y "${BASH_SOURCE[0]}" 2>/dev/null || echo 0)
-_WA_CACHE_SIG="${_WA_MTIME}:${_WA_SELF_MTIME}"
+_WA_CACHE_SIG="${_WA_MTIME}:${_GATE_MTIME}:${_WA_SELF_MTIME}"
 _WA_CACHED_SIG=""
 if [ -f "$_WA_CACHE" ]; then
     IFS= read -r _WA_CACHED_SIG < "$_WA_CACHE" || _WA_CACHED_SIG=""
@@ -57,7 +60,7 @@ fi
 
 # 高速化: mktemp(13ms)をPID固定パスに変更
 _WA_TMP="/tmp/shogun_wa_wrk_$$"
-awk -v quiet="$QUIET" -v last_n="$LAST_N" -v ninja_filter="$NINJA_FILTER" -v ninja_list="$_NINJA_LIST" '
+awk -v quiet="$QUIET" -v last_n="$LAST_N" -v recent_n="$RECENT_N" -v ninja_filter="$NINJA_FILTER" -v ninja_list="$_NINJA_LIST" -v gate_log="$GATE_LOG" '
 function trim(s) {
     sub(/^[ \t\r\n]+/, "", s)
     sub(/[ \t\r\n]+$/, "", s)
@@ -167,6 +170,21 @@ function sort_names(arr, n,    i, j, tmp) {
 }
 BEGIN {
     quiet_flag = (quiet == "true")
+    has_gate = 0
+    if (gate_log != "") {
+        cmd = "test -f \"" gate_log "\" && tac \"" gate_log "\""
+        while ((cmd | getline line) > 0) {
+            n = split(line, f, "\t")
+            if (f[3] == "CLEAR" && !seen_clear[f[2]]++) {
+                clear_set[f[2]] = 1
+                clear_order[++clear_count] = f[2]
+                if (clear_count <= recent_n) recent_clear_set[f[2]] = 1
+                if (clear_count >= last_n) break
+            }
+        }
+        close(cmd)
+        has_gate = (clear_count > 0) ? 1 : 0
+    }
     reset_current()
 }
 /^workarounds:[[:space:]]*$/ { next }
@@ -202,10 +220,12 @@ END {
         exit 0
     }
 
-    start = (entry_count > last_n) ? entry_count - last_n + 1 : 1
-    total = entry_count - start + 1
+    start = (has_gate ? 1 : ((entry_count > last_n) ? entry_count - last_n + 1 : 1))
+    total = has_gate ? clear_count : entry_count - start + 1
+    recent_start = (entry_count > recent_n) ? entry_count - recent_n + 1 : 1
 
     for (i = start; i <= entry_count; i++) {
+        if (has_gate && !(entry_cmd[i] in clear_set)) continue
         ninja = entry_ninja[i]
         if (!(ninja in stats_seen)) {
             stats_seen[ninja] = 1
@@ -215,6 +235,9 @@ END {
         if (entry_wa[i]) {
             stats_wa[ninja]++
             total_wa++
+            if ((has_gate && (entry_cmd[i] in recent_clear_set)) || (!has_gate && i >= recent_start)) {
+                stats_recent_wa[ninja]++
+            }
             if (ninja_filter != "" && ninja == ninja_filter) {
                 filter_wa_count++
                 filter_cmd[filter_wa_count] = entry_cmd[i]
@@ -225,6 +248,7 @@ END {
 
     # ─── category別集計（直近last_n件、WA=true のみ）───
     for (i = start; i <= entry_count; i++) {
+        if (has_gate && !(entry_cmd[i] in clear_set)) continue
         if (entry_wa[i] && entry_cat[i] != "" && entry_cat[i] != "clean") {
             wa_cat[entry_cat[i]]++
         }
@@ -267,7 +291,11 @@ END {
         name = ordered_names[i]
         if (name != "unknown" && stats_total[name] >= 2) {
             rate = stats_wa[name] / stats_total[name] * 100
-            if (rate > 50) {
+            if (stats_recent_wa[name] == 0) {
+                if (stats_wa[name] > 0) {
+                    stale[++stale_count] = sprintf("%s(%d/%d)", name, stats_wa[name], stats_total[name])
+                }
+            } else if (rate > 50) {
                 alert[++alert_count] = sprintf("%s(%.0f%%)", name, rate)
                 alert_detail[++alert_detail_count] = sprintf("%s — WA率%.0f%% (%d/%d件) [閾値50%%超]", name, rate, stats_wa[name], stats_total[name])
             } else if (rate > 30) {
@@ -290,9 +318,17 @@ END {
                 if (line != "") line = line ", "
                 line = line sprintf("%s:%d/%d", name, stats_wa[name], stats_total[name])
             }
-            printf "  忍者別workaround(直近%d件): %s\n", total, line
+            if (has_gate) {
+                printf "  忍者別workaround(直近%d CLEAR cmd): %s\n", total, line
+            } else {
+                printf "  忍者別workaround(直近%d件): %s\n", total, line
+            }
         } else {
-            printf "  忍者別workaround(直近%d件): 全員clean\n", total
+            if (has_gate) {
+                printf "  忍者別workaround(直近%d CLEAR cmd): 全員clean\n", total
+            } else {
+                printf "  忍者別workaround(直近%d件): 全員clean\n", total
+            }
         }
         if (alert_count > 0) {
             line = ""
@@ -312,10 +348,22 @@ END {
         if (cat_warn_line != "") {
             print "  WARN: category集計(直近" last_n "件中3件以上) — " cat_warn_line
         }
+        if (stale_count > 0) {
+            line = ""
+            for (i = 1; i <= stale_count; i++) {
+                if (line != "") line = line ", "
+                line = line stale[i]
+            }
+            print "  OK: stale WA履歴は閾値判定外(直近" recent_n "件clean) — " line
+        }
         exit 0
     }
 
-    printf "=== 忍者別workaround率 (直近%d件) ===\n\n", total
+    if (has_gate) {
+        printf "=== 忍者別workaround率 (直近%d CLEAR cmd) ===\n\n", total
+    } else {
+        printf "=== 忍者別workaround率 (直近%d件) ===\n\n", total
+    }
     printf "%-12s %7s %8s %7s\n", "忍者", "WA件数", "担当件数", "WA率"
     print "--------------------------------------"
     for (i = 1; i <= ordered_count; i++) {
@@ -334,6 +382,14 @@ END {
     }
     if (alert_detail_count == 0 && warn_detail_count == 0) {
         print "  全員clean: 閾値超過なし (サンプル2件未満の忍者は除外)"
+    }
+    if (stale_count > 0) {
+        printf "  OK: stale WA履歴は閾値判定外(直近%d件clean): ", recent_n
+        for (i = 1; i <= stale_count; i++) {
+            if (i > 1) printf ", "
+            printf "%s", stale[i]
+        }
+        printf "\n"
     }
     if (cat_warn_line != "") {
         printf "\nWARN: category集計(直近%d件中3件以上): %s\n", total, cat_warn_line
