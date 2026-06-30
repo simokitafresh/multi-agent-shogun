@@ -434,3 +434,4 @@
 | cmd_3619 | 殿指示(2026-07-01): Rolling Returnsページのサマリーテーブルに短期・中期期間を追加する。チャートは変更しない。設計書(docs/spec/rolling-returns-period-extension.md)で家老APPROVE済み(commit 3c4254a6) | dm-signal | 07-01 | Rolling Returns summary tableに |
 | cmd_3558 | 軍師覚醒点検(2026-06-27 blt_20260627_025812): commit_missing BLOCK 2件の共通根因=gate_report_format.shがcommit_hash長とfiles_modified形式を未検証。PRE3bにfull hash(40文字)強制、PRE25にfiles_modified文字列形式検証を追加し、根因を構造的に封じる | infra | 07-01 | GP-288(空pathWARN)をgate_report_ |
 | cmd_3620 | 軍師提案(blt_20260701_040406)+殿承認(2026-07-01): Sonnet 5(tobisaru)とSonnet 4.6(kotaro)に同一cmdを並列配備し、既存インフラの計測値で定量比較する。評価対象はinfra gate修正・hook改善・DM-Signal BE・FE・偵察の全カテゴリ | infra | 07-01 | cmd_3620(Sonnet5 vs Sonnet4.6 |
+| cmd_3621 | 殿指示(2026-07-01): 第1ラウンド(cmd_3620)はstaleコンテキスト混入でクリーンベンチマークにならなかった。クリーンなタスクYAMLで別カテゴリcmdを両モデルに配備し再比較する | infra | 07-01 | cmd_3621(Sonnet5 vs Sonnet4.6 |
