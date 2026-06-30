@@ -425,3 +425,4 @@
 | cmd_3614 | 殿承認(2026-06-30): Phase 2完了、Phase 3実装へ。殿指示「抜け漏れがない仕組みが必要」。カタログの処置列(抽象化・関数化・名称修正・保護)に基づきリファクタを実施する。各commitでカタログの実施状態列を更新し、未実施が残らないことをgrep確認で担保する | infra | 06-30 | cmd_save Phase3としてカタログ全pending |
 | cmd_3615 | 殿指示(2026-06-30): Phase 3リファクタ完了(pending=0)。Phase 4はcmd_skeleton・semantic-map・context・infrastructureへ設計思想カタログの中間レイヤーを貫通させ、全エージェントからアクセス可能にする | infra | 06-30 | cmd_3615 Phase4完了: 設計思想カタログを中間 |
 | cmd_3616 | 殿指示(2026-06-30): Phase 4完了。Phase 5はカタログの運用基盤を構築する。(A)record_warn_reasonにcheck名カラムを追加しcheck関数別FP率を直接算出可能にする。(B)cmd_save.shにcheck関数を追加した時にカタログへの同時追記を強制するhookを追加し、カタログの陳腐化を構造的に防止する | infra | 06-30 | cmd_save WARN/BLOCKにcheck名を記録し |
+| cmd_3618 | 殿指示(2026-06-30): DM-Fusionに3ページ目を追加し、配合比較に必要なメトリクスを表示する。現在はCAGRとMaxDDのみ。設計書(docs/metrics-page-design.md)で家老APPROVE済み | dm-fusion | 06-30 | DM-Fusionに追加メトリクス計算とモバイル3ページ目/ |
