@@ -9042,3 +9042,40 @@ origin: [[cmd_3614]] -> [[bash_function_definition_order]] -> [[cmd_save_preflig
 - **when**: 未設定
 - **how**: 未設定
 - cmd_save.shのインラインCheckを関数化した後、bats側が旧コメント範囲抽出のままだと新関数を未定義のまま呼び7件FAILする。リファクタ時はrgで該当Check名/旧wrapperを持つbatsを列挙し、mock抽出対象を現行関数名へ更新してから関連batsを実行する。
+
+### L885: Phase3関数化時はテストfixtureの抽出前提とseed check名を同時追従する
+- **日付**: 2026-06-30
+- **出典**: cmd_karo_ci_fix_cmd_save_phase3_ci_202606301937
+- **記録者**: hanzo
+- **tags**: [infra,testing,testing,bash,git]
+- **target_files**: [tests/unit/test_cmd_save_check19_fp.bats,tests/unit/test_cmd_save_block_time_nazenaze.bats,tests/unit/test_cmd_save_q11_fp_reduction.bats]
+- **origin**: [[cmd_karo_ci_fix_cmd_save_phase3_ci_202606301937]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_save.sh本体を関数化しても、Batsがsedで旧インライン範囲を切り出していたり、品質ログseedが旧checks名を使っているとCIでCommand not foundや期待文字列不一致が起きる。リファクタcommitでは関連Batsのeval対象関数とseed check名をgrepで列挙して同時更新する。
+
+### L886: context_freshnessはcache無効・timeout延長の再計測で見かけWARNと実ALERTを分離する
+- **日付**: 2026-07-01
+- **出典**: cmd_karo_hotfix_ga154_context_freshness_202607010005
+- **記録者**: hanzo
+- **tags**: [infra,context,gate,git,cache]
+- **target_files**: [context/obsidian-link-principles.md]
+- **origin**: [[cmd_karo_hotfix_ga154_context_freshness_202607010005]]
+- **when**: 未設定
+- **how**: 未設定
+- 初回gateの8日前WARNだけで対象3件すべてを更新すると過剰修正になる。CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 と CONTEXT_FRESHNESS_GATE_GIT_TIMEOUT=10で再計測し、日数WARN・timeout・source commit差分を分けてから最小更新するべき。origin: [[GA-154]] -> [[timeout/cache混在]] -> [[過剰context更新防止]]
+
+### L887: context_freshness完了条件は通常gateで元対象WARNが0件
+- **日付**: 2026-07-01
+- **出典**: cmd_karo_hotfix_ga154_context_freshness_202607010005
+- **記録者**: karo
+- **tags**: [gate, context, verification]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_context_freshness.sh,context/codd.md,context/memory-db-queries.md,context/obsidian-link-principles.md]
+- **origin**: [[GA-154]] -> [[通常gate残存WARN]] -> [[通常gate総合OK確認]]
+- **when**: context_freshness ALERTを解消したと報告する時
+- **how**: 補助計測で原因を切り分けた後、通常 bash scripts/gates/gate_context_freshness.sh を再実行し、元対象ファイルのWARNが0件であることを確認してから完了報告する
+- **if**: 補助計測ではOKだが通常gateでWARNが残る
+- **then**: 完了扱いにせず、通常gateで元対象WARN 0件になるまでcontext更新またはgate判定の真因を修正する
+- **because**: 補助計測は診断手段であり、運用上の完了条件ではないため
+- 初回gateの8日前WARNだけで対象を一部だけ更新すると、通常gate cache/日数判定に残り家老再計測でREQUEST_CHANGESになる。CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1等の補助計測は診断には有用だが、完了条件は通常 bash scripts/gates/gate_context_freshness.sh の元対象WARN 0件で確認する。
