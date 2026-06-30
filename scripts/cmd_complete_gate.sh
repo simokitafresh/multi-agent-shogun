@@ -2061,6 +2061,42 @@ check_project_code_stubs() {
         return 0
     fi
 
+    # External app cmds can keep the parent project id (e.g. dm-signal) while
+    # target_path points at a separate git repo (e.g. DM-Fusion). In that case,
+    # inspect the target repo, not the parent repo's unrelated dirty tree.
+    local task_dir_for_target="${TASKS_DIR:-$SCRIPT_DIR/queue/tasks}"
+    local target_path_raw target_repo_probe target_repo_root current_repo_root
+    if [[ -d "$task_dir_for_target" ]]; then
+        target_path_raw=$(awk -v cmd="$cmd_id" '
+            /^[[:space:]]*parent_cmd:[[:space:]]*/ {
+                val = $0
+                sub(/.*parent_cmd:[[:space:]]*/, "", val)
+                gsub(/^["'"'"']+|["'"'"']+$/, "", val)
+                in_target_cmd = (val == cmd)
+            }
+            in_target_cmd && /^[[:space:]]*target_path:[[:space:]]*/ {
+                val = $0
+                sub(/.*target_path:[[:space:]]*/, "", val)
+                gsub(/^["'"'"']+|["'"'"']+$/, "", val)
+                print val
+                exit
+            }
+        ' "$task_dir_for_target"/*.yaml 2>/dev/null | head -1)
+    fi
+    if [[ "$target_path_raw" == /* ]]; then
+        target_repo_probe="$target_path_raw"
+        if [[ -f "$target_repo_probe" ]]; then
+            target_repo_probe="${target_repo_probe%/*}"
+        fi
+        if [[ -d "$target_repo_probe" ]]; then
+            target_repo_root=$(git -C "$target_repo_probe" rev-parse --show-toplevel 2>/dev/null || true)
+            current_repo_root=$(git -C "$project_path" rev-parse --show-toplevel 2>/dev/null || true)
+            if [[ -n "$target_repo_root" && "$target_repo_root" != "$current_repo_root" ]]; then
+                project_path="$target_repo_root"
+            fi
+        fi
+    fi
+
     # --- cmd_1244+cmd_1293: uncommitted変更検出 — commit漏れをBLOCKで構造的に防止 ---
     # cmd_1293修正: 運用ファイル(queue/logs/dashboard等)を除外し誤爆BLOCK防止
     local uncommitted uncommitted_filtered

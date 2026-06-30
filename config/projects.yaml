@@ -14,6 +14,13 @@ projects:
         tags: [frontend]
     priority: high
     status: active
+  - id: dm-fusion
+    name: "DM-Fusion"
+    path: "/mnt/c/Python_app/DM-Fusion"
+    context_file: "context/dm-signal.md"
+    priority: high
+    status: active
+    note: "DM-Signal Fusion APIを利用する外部Next.jsアプリ。cmd完了GATEではDM-Signal親repoではなくこのrepoを検証する。"
   - id: infra
     type: platform
     name: "Multi-Agent Infrastructure"

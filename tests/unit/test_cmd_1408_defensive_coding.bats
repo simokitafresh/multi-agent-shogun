@@ -49,6 +49,52 @@ teardown() {
     [ "$status" -eq 0 ]
 }
 
+@test "check_project_code_stubs uses absolute target_path git repo before parent project dirty tree" {
+    local gate_script="$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    local fake_root="$TEST_TMPDIR/root"
+    local parent_repo="$TEST_TMPDIR/DM-signal"
+    local external_repo="$TEST_TMPDIR/DM-Fusion"
+    local cmd_id="cmd_extstub"
+    mkdir -p "$fake_root/config" "$fake_root/queue/tasks" "$parent_repo" "$external_repo/app"
+
+    git -C "$parent_repo" init -q
+    git -C "$parent_repo" config user.email test@example.com
+    git -C "$parent_repo" config user.name Test
+    printf 'base\n' > "$parent_repo/README.md"
+    git -C "$parent_repo" add README.md
+    git -C "$parent_repo" commit -q -m "base"
+    printf 'dirty\n' > "$parent_repo/dirty.py"
+
+    git -C "$external_repo" init -q
+    git -C "$external_repo" config user.email test@example.com
+    git -C "$external_repo" config user.name Test
+    printf 'export function Page() { return <div />; }\n' > "$external_repo/app/page.tsx"
+    git -C "$external_repo" add app/page.tsx
+    git -C "$external_repo" commit -q -m "base"
+    printf 'export function Page() {\n  return null;\n}\n' > "$external_repo/app/page.tsx"
+    git -C "$external_repo" add app/page.tsx
+    git -C "$external_repo" commit -q -m "$cmd_id add page stub"
+
+    cat > "$fake_root/config/projects.yaml" <<EOF
+projects:
+  - id: dm-signal
+    path: "$parent_repo"
+EOF
+    cat > "$fake_root/queue/tasks/hanzo.yaml" <<EOF
+task:
+  parent_cmd: $cmd_id
+  target_path: "$external_repo/app"
+EOF
+    sed -n '/^check_project_code_stubs()/,/^}/p' "$gate_script" > "$TEST_TMPDIR/stub_check.sh"
+
+    run bash -c "export SCRIPT_DIR='$fake_root'; source '$TEST_TMPDIR/stub_check.sh'; check_project_code_stubs '$cmd_id' dm-signal"
+    [ "$status" -eq 0 ]
+    [[ "$output" == WARN$'\t'* ]]
+    [[ "$output" == *"app/page.tsx"* ]]
+    [[ "$output" != *"commit_missing"* ]]
+    [[ "$output" != *"$parent_repo"* ]]
+}
+
 # ─── AC2: ntfy.sh validate_topic + ntfy_listener.sh grep anchor ───
 
 @test "T-1408-003: ntfy.sh calls ntfy_validate_topic after TOPIC resolution" {
