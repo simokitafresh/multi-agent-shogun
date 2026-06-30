@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-23 cmd_3494 -->
+<!-- last_updated: 2026-07-01 cmd_karo_hotfix_ga154_context_freshness_202607010005 -->
 # Obsidianリンク×セマンティクスインデックス 分離原則
 
 <!-- created: 2026-05-22 | origin: 殿×将軍×軍師 対話で確立 -->
@@ -55,6 +55,11 @@ SQLiteは記憶台帳、Obsidianは人間の認知編集層、セマンティッ
 - `cmd_complete_gate.sh` はGATE CLEAR時に因果トラバースを実行し、起点conceptと影響ノード数を出力し、影響があれば家老・軍師向け掲示板投稿を非同期で行う。
 - これはObsidianリンクの自動生成ではない。セマンティック索引を操作的波及の入口として使い、直接リンクの品質原則（人が読んで張る、ハブ化禁止、リンク先引用で検証）は維持する。
 - Source: commit `6fa0e374f` (`scripts/semantic_causal_traverse.sh`, `scripts/cmd_complete_gate.sh`)。
+
+### 2026-07-01 鮮度確認
+
+- 2026-06-23以降に`docs/semantic-index/`、`scripts/semantic_*`、`scripts/causal_*`関連commitが多数あるが、内容はalias追加・semantic index同期・因果トラバース運用・完了記録の追記であり、本ファイルの分離原則（セマンティクスインデックス=検索入口、Obsidianリンク=人が読んで張る直接関係、自動ハブ化禁止）は維持。
+- `cmd_3615`の設計思想カタログ中間レイヤー貫通も、概念到達/配備文脈の改善であり、Obsidian直接リンクを自動生成する設計ではないため、本原則との矛盾なし。
 
 ## Why（なぜこの結論か）
 
