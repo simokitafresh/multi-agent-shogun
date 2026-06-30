@@ -3132,6 +3132,72 @@ check_environment_change_after_prior_block() {
     fi
 }
 
+check_quality_gate_presence_block() {
+    check_quality_gate_presence_block
+}
+
+check_quality_gate_invalid_fields_block() {
+    check_quality_gate_invalid_fields_block
+}
+
+check_required_quality_gate_keys_block() {
+    MISSING_KEYS=()
+    MISSING_HINTS=()
+
+    warn_q5_pair_missing_session_state
+
+    for _QG_KEY in q1_firefighting q2_learning q3_next_quality; do
+        if ! cmd_block_has_field "quality_gate.${_QG_KEY}"; then
+            MISSING_KEYS+=("$_QG_KEY")
+            case "$_QG_KEY" in
+                q1_firefighting)  MISSING_HINTS+=('  q1_firefighting: "no/yes — 理由"') ;;
+                q2_learning)      MISSING_HINTS+=('  q2_learning: "奪わない/奪う — 学習機会への影響"') ;;
+                q3_next_quality)  MISSING_HINTS+=('  q3_next_quality: "上がる/下がる — 品質への影響"') ;;
+            esac
+        fi
+    done
+
+    if ! cmd_block_has_field "quality_gate.q5_verified_source"; then
+        MISSING_KEYS+=("q5_verified_source")
+        MISSING_HINTS+=('  q5_verified_source: "structure_verified — 確認方法と対象を記載"')
+    fi
+
+    if ! cmd_block_has_field "quality_gate.q8_why_what"; then
+        MISSING_KEYS+=("q8_why_what")
+        MISSING_HINTS+=('  q8_why_what: "WHY: 殿指示「...」 → WHAT: ...=正の複利(...)"')
+    fi
+
+    if ! cmd_block_has_field "quality_gate.q11_not_already_done"; then
+        MISSING_KEYS+=("q11_not_already_done")
+        MISSING_HINTS+=('  q11_not_already_done: "未達成。確認方法と結果を記載"')
+    fi
+
+    _PF_PROJECT="$(cmd_block_get_field "project")"
+    _PF_TASK_TYPE="$(cmd_block_get_field "task_type")"
+    if [[ "${_PF_PROJECT:-}" == "dm-signal" && "${_PF_TASK_TYPE:-}" == "impl" ]]; then
+        if ! cmd_block_has_field "quality_gate.q7_definition_verified"; then
+            MISSING_KEYS+=("q7_definition_verified")
+            MISSING_HINTS+=('  q7_definition_verified: "yes — 定義を一次情報で照合した事実"')
+        fi
+    fi
+
+    if ! cmd_block_has_field "assumptions" && ! cmd_block_has_field "quality_gate.assumptions"; then
+        MISSING_KEYS+=("assumptions")
+        MISSING_HINTS+=('  assumptions: [{claim: "...", source: "...", trust: "verified"}]')
+    fi
+
+    if [[ ${#MISSING_KEYS[@]} -gt 0 ]]; then
+        record_block_reason "必須項目 ${#MISSING_KEYS[@]}件 未記入。全て記入してからcmd_save.shを再実行せよ"
+        echo "  未記入: ${MISSING_KEYS[*]}" >&2
+        echo "  ---" >&2
+        for _hint in "${MISSING_HINTS[@]}"; do
+            echo "$_hint" >&2
+        done
+        echo "  ---" >&2
+        abort_if_block_immediate || exit 1
+    fi
+}
+
 trap 'handle_cmd_save_exit' EXIT
 
 # --- cmd_id正規化（cmd_プレフィックスを付与） ---
@@ -3291,63 +3357,7 @@ QG_TEMPLATE
     # --- Preflight: 全必須項目の存在を一括チェック（逐次BLOCK防止） ---
     # 起源: cmd_1951で7回連続BLOCK。1項目ずつexit 1するため全項目埋めるのに7往復
     # 修正: 全必須項目を一括チェックし、全ての不足を1回で表示してexit 1
-    MISSING_KEYS=()
-    MISSING_HINTS=()
-
-    warn_q5_pair_missing_session_state
-
-    for _QG_KEY in q1_firefighting q2_learning q3_next_quality; do
-        if ! cmd_block_has_field "quality_gate.${_QG_KEY}"; then
-            MISSING_KEYS+=("$_QG_KEY")
-            case "$_QG_KEY" in
-                q1_firefighting)  MISSING_HINTS+=('  q1_firefighting: "no/yes — 理由"') ;;
-                q2_learning)      MISSING_HINTS+=('  q2_learning: "奪わない/奪う — 学習機会への影響"') ;;
-                q3_next_quality)  MISSING_HINTS+=('  q3_next_quality: "上がる/下がる — 品質への影響"') ;;
-            esac
-        fi
-    done
-
-    if ! cmd_block_has_field "quality_gate.q5_verified_source"; then
-        MISSING_KEYS+=("q5_verified_source")
-        MISSING_HINTS+=('  q5_verified_source: "structure_verified — 確認方法と対象を記載"')
-    fi
-
-    if ! cmd_block_has_field "quality_gate.q8_why_what"; then
-        MISSING_KEYS+=("q8_why_what")
-        MISSING_HINTS+=('  q8_why_what: "WHY: 殿指示「...」 → WHAT: ...=正の複利(...)"')
-    fi
-
-    if ! cmd_block_has_field "quality_gate.q11_not_already_done"; then
-        MISSING_KEYS+=("q11_not_already_done")
-        MISSING_HINTS+=('  q11_not_already_done: "未達成。確認方法と結果を記載"')
-    fi
-
-    # q7: dm-signal impl のみBLOCK
-    _PF_PROJECT="$(cmd_block_get_field "project")"
-    _PF_TASK_TYPE="$(cmd_block_get_field "task_type")"
-    if [[ "${_PF_PROJECT:-}" == "dm-signal" && "${_PF_TASK_TYPE:-}" == "impl" ]]; then
-        if ! cmd_block_has_field "quality_gate.q7_definition_verified"; then
-            MISSING_KEYS+=("q7_definition_verified")
-            MISSING_HINTS+=('  q7_definition_verified: "yes — 定義を一次情報で照合した事実"')
-        fi
-    fi
-
-    # assumptions: 全cmdで必須（cmd_2157: AC≥3→全cmdに拡大）
-    if ! cmd_block_has_field "assumptions" && ! cmd_block_has_field "quality_gate.assumptions"; then
-        MISSING_KEYS+=("assumptions")
-        MISSING_HINTS+=('  assumptions: [{claim: "...", source: "...", trust: "verified"}]')
-    fi
-
-    if [[ ${#MISSING_KEYS[@]} -gt 0 ]]; then
-        record_block_reason "必須項目 ${#MISSING_KEYS[@]}件 未記入。全て記入してからcmd_save.shを再実行せよ"
-        echo "  未記入: ${MISSING_KEYS[*]}" >&2
-        echo "  ---" >&2
-        for _hint in "${MISSING_HINTS[@]}"; do
-            echo "$_hint" >&2
-        done
-        echo "  ---" >&2
-        abort_if_block_immediate || exit 1
-    fi
+    check_required_quality_gate_keys_block
 
     # depends_on: cmd間依存の暗黙化を入口で可視化（WARN導入 cmd_2627）
     check_depends_on_field
