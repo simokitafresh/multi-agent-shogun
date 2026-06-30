@@ -1,11 +1,20 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-06-29 強ニュー化 -->
+<!-- last_updated: 2026-06-30 weekly-report+note_draft fix -->
+
+## 2026-06-30
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| note_draft.sh検証 | 修正版(dispatch_click+quick_url)の動作確認 | PASS。Login 1秒→Editor→Body inserted 25→Draft saved。SKIP→PASS改善 | 殿「検証してみたか？」→一次データで確認 |
 
 ## 2026-06-29
 
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
-| 強ニュー化(session2) | insightキュー8件消化+DM-Fusion alias拡充+semantic-map再生成+先送り穴解消 | insight 8件resolved、SKILL.md WARN→軍師D0解消中 | 殿「強くてニューゲームできるようにせよ」→Phase7自走で環境埋込み |
+| 強ニュー化(session2) | insightキュー8件消化+DM-Fusion alias拡充+semantic-map再生成+先送り穴解消 | insight 8件resolved、SKILL.md WARN→軍師D0解消 | 殿「強くてニューゲームできるようにせよ」→Phase7自走で環境埋込み |
+| weekly-report | compare-returns API採用+8期間リターン+Deterioration Monitor+将軍短観(負けを正直に) | note.com下書き保存完了(n256c7b0a9587) | 殿「compare returnやminimonthに基づき内容アップデート」+「負けを隠すな」 |
+| note_draft.sh修正 | invisible reCAPTCHA対応(dispatch_click+quick_url待ち) | commit a519e6365。SKIP→PASSに改善 | 殿「ログインボタンを押せばいい」「120秒待ちは何だ」→根因=JS click reCAPTCHA阻止+invisible未対応 |
+| 三層記憶貫通 | reCAPTCHA知見+compare-returns+API auth空白+パスワード二重入力 | 記憶DB 5件+semantic alias追加+reference_cdp §3.1+SKILL.mdトラブルシュート7項目 | 殿「三層記憶とスキルにアップデートせよ」 |
 
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
@@ -1303,3 +1312,4 @@
 - 2026-06-29 cmd_karo_ci_fix_ga151_main_ci_red_202606291410: CI RED(run 28348631439)を鳶猿へkaro_direct配備し、`.claude/hooks/pretool-dispatch.sh`のruntime echoから日付/LS-IDを除去。`gate_hooks_no_runtime_incident_ids`と関連bats確認、GATE CLEAR。
 - 2026-06-29 cmd_3606: DM-FusionのPF選択をabsolute dropdownから画面中央fixed overlay modalへ変更。PC/mobile Playwrightで画面内表示・外側クリック・選択クローズを実測し、lint/build PASS、軍師LGTMでGATE CLEAR。
 - 2026-06-29 cmd_3607: DM-Fusion admin画面をserver loader + Client Componentへ分割し、`location.reload()`を廃止。PF単体はoptimistic update、フォルダヘッダーはON/OFF一括POSTに対応し、lint/build PASS、軍師LGTMでGATE CLEAR。
+- 2026-06-30 家老強ニュー化: `queue/compact_state/karo.yaml`を最新化し、cmd品質記録漏れをcmd_quality_logで補完。`gate_karo_startup.sh`再実行で総合OK、memory DBへcheckpoint 2件を登録。
