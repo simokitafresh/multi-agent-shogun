@@ -34,7 +34,8 @@ _self="${BASH_SOURCE[0]}"
 [[ "$_self" != /* ]] && _self="$PWD/$_self"
 SCRIPT_DIR="${_self%/scripts/switch_cli_mode.sh}"
 unset _self
-SETTINGS_FILE="${SCRIPT_DIR}/config/settings.yaml"
+SETTINGS_FILE="${SWITCH_CLI_SETTINGS_FILE:-${SCRIPT_DIR}/config/settings.yaml}"
+export CLI_ADAPTER_SETTINGS="$SETTINGS_FILE"
 
 source "${SCRIPT_DIR}/lib/cli_adapter.sh"
 # cli_lookup.shはcli_adapter.sh内でsource済みのため省略 (WSL2 ~30ms節約)
@@ -234,7 +235,7 @@ wait_for_codex_boot() {
 update_agent_type() {
     local agent="$1"
     local current
-    current=$(cli_type "$agent")
+    current=$(_cli_lookup_settings_get "$agent" "type" "claude")
 
     if [[ "$current" == "$TARGET_CLI" ]]; then
         echo "  [settings] ${agent}: already ${TARGET_CLI} (skip)"
