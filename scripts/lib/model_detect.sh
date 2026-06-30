@@ -46,8 +46,8 @@ detect_real_model() {
 
                 # Pattern 1: アート行と同じ行にモデル名（幅共通）
                 # (1M context)等の括弧部分も許容
-                # head -1: 最初のバナー=自分のCLI起動バナー。tail -1だとログ内の他CLIバナーを誤検出(2026-06-20バグ)
-                banner=$(echo "$output" | grep -E '(▐▛███▜▌|▝▜█████▛▘)[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+(\.[0-9]+)?' | head -1)
+                # tail -1: 同一pane内でrespawn後の最新Claude起動バナーを優先する。
+                banner=$(echo "$output" | grep -E '(▐▛███▜▌|▝▜█████▛▘)[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+(\.[0-9]+)?' | tail -1)
                 if [ -n "$banner" ]; then
                     # 5 sed→1 sed: subprocess削減
                     model=$(echo "$banner" | sed -E \
@@ -62,7 +62,7 @@ detect_real_model() {
                 #   行頭空白 + Opus/Sonnet/Haiku + バージョン
                 if [ -z "$model" ]; then
                     local model_line
-                    model_line=$(echo "$output" | grep -E '^[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+(\.[0-9]+)?' | head -1)
+                    model_line=$(echo "$output" | grep -E '^[[:space:]]+(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+(\.[0-9]+)?' | tail -1)
                     if [ -n "$model_line" ]; then
                         # 4 sed→1 sed: subprocess削減
                         model=$(echo "$model_line" | sed -E \
