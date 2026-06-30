@@ -588,6 +588,88 @@ YAML
     grep -q 'cmd_save.sh --preflight <id>' "$PROJECT_ROOT/.claude/hooks/pre-write-edit-combined.sh"
 }
 
+@test "cmd_save --preflight allows delegated cmd validation without save-time blocks" {
+    local tmpdir
+    tmpdir="$(mktemp -d "$BATS_TMPDIR/cmd_save_delegated_preflight.XXXXXX")"
+    mkdir -p "$tmpdir/archive" "$tmpdir/docs/research"
+    printf 'entries:\n' > "$tmpdir/cmd_design_quality.yaml"
+    printf 'lessons:\n' > "$tmpdir/lessons_shogun.yaml"
+    cat > "$tmpdir/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_delegated_preflight:
+    id: cmd_delegated_preflight
+    title: "infra delegated preflight validation"
+    purpose: "委任済みcmdでもpreflight検証は保存副作用なしで実行できる"
+    project: infra
+    depends_on: none
+    task_type: impl
+    origin: "[[cmd_save]] -> [[delegated_at]] -> [[preflight_validation]]"
+    target_path: scripts/cmd_save.sh
+    command: "cmd_save.sh --preflight の委任済みcmd検証を確認する"
+    acceptance_criteria:
+      - "AC1: delegated_at付きcmdのpreflightがPASSする"
+    delegated_at: "2026-06-30T14:05:06"
+    status: delegated
+    quality_gate:
+      q1_firefighting: "no — preflightの保存副作用分離"
+      q2_learning: "奪わない — 既存cmd検証で再保存防御を誤発火させない"
+      q3_next_quality: "上がる — 既存cmdのFP非悪化検証が可能になる"
+      q4_depth: "shallow"
+      q5_verified_source: "structure_verified — git log確認: scripts/cmd_save.sh preflight履歴; git blame確認: delegated_at BLOCK位置; semantic/causal確認: [[cmd_save]] -> [[delegated_at]] -> [[preflight_validation]]; 関連教訓: cmd_1688"
+      q6_not_hiding: "no — 保存時のdelegated_at BLOCKは維持"
+      q7_definition_verified: "yes — preflightは書込みなし検証"
+      q8_why_what: "WHY: 既存cmdでFP非悪化検証するため / WHAT: delegated_at保存BLOCKをpreflightだけ除外 / WHEN: 既存cmd検証時 / WHERE: scripts/cmd_save.sh / WHO: 将軍 / HOW: git log/blameとsemantic/causalで保存時防御の設計意図を確認し、preflightのみ通す。複利: 正の複利"
+      q9_firefighting_root_cause: "no — 検証経路の分離"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats fixture範囲"
+      q11_not_already_done: "既存preflightはあるがdelegated_at付き既存cmd検証の回帰テストは未整備"
+      q_ambiguity: "none"
+      q12_lord_30min_cost: "no — 既存cmd検証の手戻りを減らす"
+    assumptions:
+      - claim: "2026-06-30時点でdelegated_atは保存時の再保存防御である"
+        source: "scripts/cmd_save.sh"
+        trust: "verified"
+YAML
+
+    run env \
+        CMD_SAVE_QUEUE_FILE="$tmpdir/shogun_to_karo.yaml" \
+        CMD_SAVE_ARCHIVE_CMD_DIR="$tmpdir/archive" \
+        CMD_QUALITY_LOG_FILE="$tmpdir/cmd_design_quality.yaml" \
+        CMD_SAVE_LOCK_FILE="$tmpdir/shogun_to_karo.lock" \
+        CMD_SAVE_LAST_CMD_FILE="$tmpdir/cmd_save_last_cmd.txt" \
+        CMD_SAVE_SHOGUN_LESSONS_FILE="$tmpdir/lessons_shogun.yaml" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$tmpdir/preflight_autolearn.txt" \
+        CMD_SAVE_LORD_CONVERSATION_FILE="$tmpdir/lord_conversation.jsonl" \
+        CMD_SAVE_CMD_CHRONICLE_FILE="$tmpdir/cmd-chronicle.md" \
+        CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$tmpdir/no_semantic_search.sh" \
+        CMD_SAVE_Q11_RESEARCH_DIR="$tmpdir/docs/research" \
+        CMD_QUALITY_FAST_METADATA=1 \
+        bash "$SRC_SAVE_SCRIPT" --preflight cmd_delegated_preflight
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"事前検証OK: cmd_delegated_preflight"* ]]
+    [[ "$output" != *"既に委任済み"* ]]
+
+    run env \
+        CMD_SAVE_QUEUE_FILE="$tmpdir/shogun_to_karo.yaml" \
+        CMD_SAVE_ARCHIVE_CMD_DIR="$tmpdir/archive" \
+        CMD_QUALITY_LOG_FILE="$tmpdir/cmd_design_quality.yaml" \
+        CMD_SAVE_LOCK_FILE="$tmpdir/shogun_to_karo.lock" \
+        CMD_SAVE_LAST_CMD_FILE="$tmpdir/cmd_save_last_cmd.txt" \
+        CMD_SAVE_SHOGUN_LESSONS_FILE="$tmpdir/lessons_shogun.yaml" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$tmpdir/preflight_autolearn.txt" \
+        CMD_SAVE_LORD_CONVERSATION_FILE="$tmpdir/lord_conversation.jsonl" \
+        CMD_SAVE_CMD_CHRONICLE_FILE="$tmpdir/cmd-chronicle.md" \
+        CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$tmpdir/no_semantic_search.sh" \
+        CMD_SAVE_Q11_RESEARCH_DIR="$tmpdir/docs/research" \
+        CMD_QUALITY_FAST_METADATA=1 \
+        bash "$SRC_SAVE_SCRIPT" cmd_delegated_preflight
+    echo "$output" >&2
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"既に委任済み"* ]]
+
+    rm -rf "$tmpdir"
+}
+
 @test "cmd_skeleton q5 hint mentions gate/script execution evidence requirement (LS063)" {
     grep -q 'gate/hook/script修正cmd' "$PROJECT_ROOT/scripts/cmd_skeleton.sh"
     grep -q 'LS063' "$PROJECT_ROOT/scripts/cmd_skeleton.sh"
