@@ -335,6 +335,13 @@ PY
     return "$rc"
 }
 
+cmd_text_matches_pattern() {
+    local text="${1:-}"
+    local pattern="${2:-}"
+    [[ -n "$text" && -n "$pattern" ]] || return 1
+    printf '%s\n' "$text" | grep -qiE "$pattern"
+}
+
 is_gate_or_hook_addition_cmd() {
     local block_text="${1:-${CMD_BLOCK_NC:-}}"
     # Treat underscores as identifier characters so gate_fire_log/gate_result
@@ -376,29 +383,29 @@ is_gate_or_hook_addition_cmd() {
     ')
 
     [[ -n "${q11_context:-}" ]] || return 1
-    if printf '%s\n' "$q11_context" | grep -qiE '偵察|分析|レビュー|調査|修正方針|結果確認|ログ確認'; then
-        if ! printf '%s\n' "$q11_context" | grep -qiE "(新規|新設).*(${gate_hook_pattern})|(${gate_hook_pattern}).*(新規|新設)"; then
+    if cmd_text_matches_pattern "$q11_context" '偵察|分析|レビュー|調査|修正方針|結果確認|ログ確認'; then
+        if ! cmd_text_matches_pattern "$q11_context" "(新規|新設).*(${gate_hook_pattern})|(${gate_hook_pattern}).*(新規|新設)"; then
             return 1
         fi
     fi
-    if printf '%s\n' "$q11_context" | grep -qiE '偽陽性|誤判定|精度改善|精度向上|改善|修正|緩和|追従|更新|拡張'; then
-        if ! printf '%s\n' "$q11_context" | grep -qiE "(新規|新設).*(${gate_hook_pattern})|(${gate_hook_pattern}).*(新規|新設)"; then
+    if cmd_text_matches_pattern "$q11_context" '偽陽性|誤判定|精度改善|精度向上|改善|修正|緩和|追従|更新|拡張'; then
+        if ! cmd_text_matches_pattern "$q11_context" "(新規|新設).*(${gate_hook_pattern})|(${gate_hook_pattern}).*(新規|新設)"; then
             return 1
         fi
     fi
 
     q11_value="$(cmd_block_get_field "quality_gate.q11_not_already_done")"
     if q11_has_existing_alternative_verification "$q11_value" && \
-       printf '%s\n' "$q11_value" | grep -qiE '既存道具|既存.*接続|既存.*統合|既存.*組込|既存.*組み込|既存.*改善|既存.*修正|既存.*精度|既存.*(gate|hook|チェック|ゲート|フック).*(条件追加|修正|改善|精度)|既存.*判定ロジック'; then
+       cmd_text_matches_pattern "$q11_value" '既存道具|既存.*接続|既存.*統合|既存.*組込|既存.*組み込|既存.*改善|既存.*修正|既存.*精度|既存.*(gate|hook|チェック|ゲート|フック).*(条件追加|修正|改善|精度)|既存.*判定ロジック'; then
         return 1
     fi
 
-    printf '%s\n' "$q11_context" | grep -qiE "$gate_hook_pattern" || return 1
+    cmd_text_matches_pattern "$q11_context" "$gate_hook_pattern" || return 1
     # Filter out past-tense/passive forms (追加された/追加済み etc.) before checking
     # to avoid FP on cmds that describe past changes, not current additions (cmd_2786)
     local active_context
     active_context="$(printf '%s\n' "$q11_context" | sed -E 's/(追加|新設|導入|実装|作成)(された|済み|されている|されていた|した)[^ ]*/___/g')"
-    printf '%s\n' "$active_context" | grep -qiE '追加|新設|導入|実装|作成|append|add|new|create|introduce' || return 1
+    cmd_text_matches_pattern "$active_context" '追加|新設|導入|実装|作成|append|add|new|create|introduce' || return 1
     return 0
 }
 
@@ -406,15 +413,15 @@ q11_has_existing_alternative_verification() {
     local q11_value="${1:-}"
 
     [[ -n "$q11_value" ]] || return 1
-    printf '%s\n' "$q11_value" | grep -qiE 'grep|rg|sed|cat|read|確認|照合|現物|実測|docs/research|一次情報|verified|0件|該当なし' || return 1
-    if printf '%s\n' "$q11_value" | grep -qiE '既存|代替|現行|既設'; then
+    cmd_text_matches_pattern "$q11_value" 'grep|rg|sed|cat|read|確認|照合|現物|実測|docs/research|一次情報|verified|0件|該当なし' || return 1
+    if cmd_text_matches_pattern "$q11_value" '既存|代替|現行|既設'; then
         return 0
     fi
-    if printf '%s\n' "$q11_value" | grep -qiE '0件|該当なし' && \
-       printf '%s\n' "$q11_value" | grep -qiE '初回|偽陽性修正|精度改善|誤判定'; then
+    if cmd_text_matches_pattern "$q11_value" '0件|該当なし' && \
+       cmd_text_matches_pattern "$q11_value" '初回|偽陽性修正|精度改善|誤判定'; then
         return 0
     fi
-    printf '%s\n' "$q11_value" | grep -qiE '(^|[^A-Za-z_])(existing|already|current)([^A-Za-z_]|$)' || return 1
+    cmd_text_matches_pattern "$q11_value" '(^|[^A-Za-z_])(existing|already|current)([^A-Za-z_]|$)' || return 1
     return 0
 }
 
@@ -432,9 +439,9 @@ is_gate_or_script_modification_cmd() {
     ')"
 
     # 偵察/棚卸し/研究/バックテストcmdはscriptsディレクトリを走査対象にするだけでgate修正ではない
-    printf '%s\n' "$search_text" | grep -qiE '偵察|棚卸し|audit|recon|調査|研究|backtest|道具磨き|道具作り|grid_search|run_077|run_l1plus' && return 1
-    printf '%s\n' "$search_text" | grep -qiE 'gate|hook|script|\.sh|ゲート|フック|スクリプト' || return 1
-    printf '%s\n' "$search_text" | grep -qiE '修正|改善|追加|変更|更新|精度|誤判定|偽陽性|fix|modify|update|improve|add' || return 1
+    cmd_text_matches_pattern "$search_text" '偵察|棚卸し|audit|recon|調査|研究|backtest|道具磨き|道具作り|grid_search|run_077|run_l1plus' && return 1
+    cmd_text_matches_pattern "$search_text" 'gate|hook|script|\.sh|ゲート|フック|スクリプト' || return 1
+    cmd_text_matches_pattern "$search_text" '修正|改善|追加|変更|更新|精度|誤判定|偽陽性|fix|modify|update|improve|add' || return 1
     return 0
 }
 
@@ -442,7 +449,7 @@ q5_has_execution_evidence() {
     local q5_value="${1:-}"
 
     [[ -n "$q5_value" ]] || return 1
-    printf '%s\n' "$q5_value" | grep -qiE '実行結果|実行確認|実行済|コマンド実行|hook出力|gate出力|出力|stdout|stderr|exit[ _-]?code|exit[ =:]?[0-9]|PASS|FAIL|WARN|CLEAR|BLOCK|bats|テスト実行|\.sh[[:space:]]|bash[[:space:]]|sh[[:space:]]' || return 1
+    cmd_text_matches_pattern "$q5_value" '実行結果|実行確認|実行済|コマンド実行|hook出力|gate出力|出力|stdout|stderr|exit[ _-]?code|exit[ =:]?[0-9]|PASS|FAIL|WARN|CLEAR|BLOCK|bats|テスト実行|\.sh[[:space:]]|bash[[:space:]]|sh[[:space:]]' || return 1
     return 0
 }
 
@@ -649,9 +656,7 @@ q11_has_guard_duplicate_check() {
     local q11_value="${1:-}"
 
     [[ -n "$q11_value" ]] || return 1
-    printf '%s\n' "$q11_value" \
-        | grep -qE 'Guard一覧|既存Guard|Guard[^[:space:]]*(一覧|重複|既存|既設|照合|確認)|ガード[^[:space:]]*(一覧|重複|既存|既設|照合|確認)' \
-        || return 1
+    cmd_text_matches_pattern "$q11_value" 'Guard一覧|既存Guard|Guard[^[:space:]]*(一覧|重複|既存|既設|照合|確認)|ガード[^[:space:]]*(一覧|重複|既存|既設|照合|確認)' || return 1
     return 0
 }
 
