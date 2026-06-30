@@ -218,8 +218,9 @@ def main():
         '未完了',
         '保留',
         '未解決',
-        'スコープ外',
-        'scope外',
+        'スコープ外で家老',
+        'scope外で家老',
+        # 'scope外'単体はnot_in_scopeとの整合的記述(GA-154 FP実証)。委譲語(家老実施等)と結合時のみ検出
         # 'pending' removed: task/ACの状態記述(pending件数等)で偽陽性。委譲は「保留」「未完了」でカバー
         'todo',
         'fill_this',
