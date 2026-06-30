@@ -183,7 +183,10 @@ PY
     run grep -F '200>"$(lock_path "$_GV_DQ_FILE")"' "$SRC_GATE_SCRIPT"
     [ "$status" -eq 0 ]
 
-    run grep -F '200>"$(lock_path "$_DQ_FILE")"' "$SRC_GATE_SCRIPT"
+    run grep -F 'END_VERDICT_PY' "$SRC_GATE_SCRIPT"
+    [ "$status" -ne 0 ]
+
+    run grep -F 'handled by Gunshi verdict update to cmd_design_quality' "$SRC_GATE_SCRIPT"
     [ "$status" -eq 0 ]
 }
 
