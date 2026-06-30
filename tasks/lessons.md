@@ -9079,3 +9079,18 @@ origin: [[cmd_3614]] -> [[bash_function_definition_order]] -> [[cmd_save_preflig
 - **then**: 完了扱いにせず、通常gateで元対象WARN 0件になるまでcontext更新またはgate判定の真因を修正する
 - **because**: 補助計測は診断手段であり、運用上の完了条件ではないため
 - 初回gateの8日前WARNだけで対象を一部だけ更新すると、通常gate cache/日数判定に残り家老再計測でREQUEST_CHANGESになる。CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1等の補助計測は診断には有用だが、完了条件は通常 bash scripts/gates/gate_context_freshness.sh の元対象WARN 0件で確認する。
+
+### L888: context_freshness hotfixは通常gate完了条件と長timeout横展開を分離する
+- **日付**: 2026-07-01
+- **出典**: cmd_karo_hotfix_ga155_context_freshness_dm_signal_frontend_202607010312
+- **記録者**: karo
+- **tags**: [gate, context, verification, scope]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_context_freshness.sh,context/dm-signal-frontend.md,context/dm-signal.md]
+- **origin**: [[GA-155_context_freshness_ALERT]] -> [[通常gateと長timeout直接checkの差分]] -> [[scope外横展開候補の分離報告]]
+- **when**: context_freshness hotfixで通常gateとcache無効/長timeout直接checkの結果が異なる時
+- **how**: 完了条件は通常gateで対象ALERTが0件になることとし、長timeout直接checkで見つかった別context ALERTは横展開候補として報告する
+- **if**: 長timeout直接checkがassigned_scope外の別context ALERTを検出する
+- **then**: 同一hotfixの完了条件に混ぜず、scope外横展開候補または別配備として扱う
+- **because**: 補助計測の目的は穴の発見であり、scope外修正を同一任務に混ぜると完了条件が膨張するため
+- GA-155では通常gateはfrontend更新後OKになったが、cache無効+timeout10ではdm-signal.mdの別ALERTが残った。assigned_scope外の別context ALERTを同一完了条件に混ぜるとscope driftするため、通常gateの対象解消と長timeout横展開候補を報告上で分離する。
