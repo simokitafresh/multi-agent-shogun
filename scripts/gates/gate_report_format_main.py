@@ -221,6 +221,18 @@ def main() -> int:
             errors.append(f"files_modified: {_fm_non_path_count}件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ")
             hints.append("FIX (files_modified): 各エントリは scripts/foo.sh や config/settings.yaml のようなファイルパスであること")
 
+    # GP-288: files_modified empty path detection (cmd_3558 AC2: 空文字列path → WARN)
+    if isinstance(fm, list) and data.get("status") == "completed":
+        _fm_empty_path_count = sum(
+            1 for item in fm
+            if isinstance(item, dict) and str(item.get("path", "") or "").strip() == ""
+        )
+        if _fm_empty_path_count > 0:
+            hints.append(
+                f"GP-288 WARN: files_modified: {_fm_empty_path_count}件のpathが空文字列。"
+                "ファイルパス (scripts/foo.sh 等) を記入せよ"
+            )
+
     # GP-287: commit_hash full hash validation (commit_missing WA根因: 短縮hash→gate素通り防止)
     _ch = data.get("commit_hash")
     if _ch is not None:
