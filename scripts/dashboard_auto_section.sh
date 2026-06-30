@@ -32,7 +32,10 @@ if [ -f "$PROJECT_DIR/scripts/lib/model_family.sh" ]; then
     source "$PROJECT_DIR/scripts/lib/model_family.sh"
 else
     MODEL_FAMILY_OPUS_46="${MODEL_FAMILY_OPUS_46:-opus-4.6}"
+    MODEL_FAMILY_OPUS_48="${MODEL_FAMILY_OPUS_48:-opus-4.8}"
     MODEL_FAMILY_GPT_5="${MODEL_FAMILY_GPT_5:-gpt-5}"
+    MODEL_FAMILY_VERSION_48_DOT="${MODEL_FAMILY_VERSION_48_DOT:-4.8}"
+    MODEL_FAMILY_VERSION_48_SPACE="${MODEL_FAMILY_VERSION_48_SPACE:-4 8}"
 fi
 unset _dashboard_script
 
@@ -799,12 +802,15 @@ if [[ -f "$LESSON_IMPACT_FILE" ]] && [[ -s "$LESSON_IMPACT_FILE" ]]; then
     # cmd_1392: Python→gawk化 (TSV集計: Recent 30 cmd metrics)
     gawk -v gate_path="$GATE_LOG" \
         -v mf_opus46="$MODEL_FAMILY_OPUS_46" \
+        -v mf_opus48="$MODEL_FAMILY_OPUS_48" \
         -v mf_gpt5="$MODEL_FAMILY_GPT_5" \
         -v mf_opus_token="$MODEL_FAMILY_TOKEN_OPUS" \
         -v mf_gpt_token="$MODEL_FAMILY_TOKEN_GPT" \
         -v mf_codex_token="$MODEL_FAMILY_TOKEN_CODEX" \
         -v mf_v46_dot="$MODEL_FAMILY_VERSION_46_DOT" \
         -v mf_v46_space="$MODEL_FAMILY_VERSION_46_SPACE" \
+        -v mf_v48_dot="$MODEL_FAMILY_VERSION_48_DOT" \
+        -v mf_v48_space="$MODEL_FAMILY_VERSION_48_SPACE" \
         -v mf_v54_dot="$MODEL_FAMILY_VERSION_54_DOT" \
         -v mf_v54_space="$MODEL_FAMILY_VERSION_54_SPACE" \
         -v mf_v55_dot="$MODEL_FAMILY_VERSION_55_DOT" \
@@ -839,7 +845,8 @@ END {
         for (mi = 1; mi <= mn; mi++) {
             m = mdl_arr[mi]; gsub(/^[ \t]+|[ \t]+$/, "", m); if (m == "") continue
             low = tolower(m); gsub(/[-_]/, " ", low); fam = "unknown"
-            if (index(low, mf_opus_token) && (index(low, mf_v46_dot) || index(low, mf_v46_space))) fam = mf_opus46
+            if (index(low, mf_opus_token) && (index(low, mf_v48_dot) || index(low, mf_v48_space))) fam = mf_opus48
+            else if (index(low, mf_opus_token) && (index(low, mf_v46_dot) || index(low, mf_v46_space))) fam = mf_opus46
             else if ((index(low, mf_gpt_token) || index(low, mf_codex_token)) && (index(low, mf_v54_dot) || index(low, mf_v54_space) || index(low, mf_v55_dot) || index(low, mf_v55_space))) fam = mf_gpt5
             else { fam = low; gsub(/[^a-z0-9]+/, "_", fam); gsub(/^_|_$/, "", fam); if (fam == "") fam = "unknown" }
             if (row_action[i] == "injected") {

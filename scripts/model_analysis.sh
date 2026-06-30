@@ -38,12 +38,15 @@ if [ -f "$SCRIPT_DIR/scripts/lib/model_family.sh" ]; then
     source "$SCRIPT_DIR/scripts/lib/model_family.sh"
 else
     MODEL_FAMILY_OPUS_46="${MODEL_FAMILY_OPUS_46:-opus-4.6}"
+    MODEL_FAMILY_OPUS_48="${MODEL_FAMILY_OPUS_48:-opus-4.8}"
     MODEL_FAMILY_GPT_5="${MODEL_FAMILY_GPT_5:-gpt-5}"
     MODEL_FAMILY_TOKEN_OPUS="${MODEL_FAMILY_TOKEN_OPUS:-opus}"
     MODEL_FAMILY_TOKEN_GPT="${MODEL_FAMILY_TOKEN_GPT:-gpt}"
     MODEL_FAMILY_TOKEN_CODEX="${MODEL_FAMILY_TOKEN_CODEX:-codex}"
     MODEL_FAMILY_VERSION_46_DOT="${MODEL_FAMILY_VERSION_46_DOT:-4.6}"
     MODEL_FAMILY_VERSION_46_SPACE="${MODEL_FAMILY_VERSION_46_SPACE:-4 6}"
+    MODEL_FAMILY_VERSION_48_DOT="${MODEL_FAMILY_VERSION_48_DOT:-4.8}"
+    MODEL_FAMILY_VERSION_48_SPACE="${MODEL_FAMILY_VERSION_48_SPACE:-4 8}"
     MODEL_FAMILY_VERSION_54_DOT="${MODEL_FAMILY_VERSION_54_DOT:-5.4}"
     MODEL_FAMILY_VERSION_54_SPACE="${MODEL_FAMILY_VERSION_54_SPACE:-5 4}"
     MODEL_FAMILY_VERSION_55_DOT="${MODEL_FAMILY_VERSION_55_DOT:-5.5}"
@@ -53,7 +56,9 @@ else
         low="${label,,}"
         low="${low//-/ }"
         low="${low//_/ }"
-        if [[ "$low" == *"$MODEL_FAMILY_TOKEN_OPUS"* && ( "$low" == *"$MODEL_FAMILY_VERSION_46_DOT"* || "$low" == *"$MODEL_FAMILY_VERSION_46_SPACE"* ) ]]; then
+        if [[ "$low" == *"$MODEL_FAMILY_TOKEN_OPUS"* && ( "$low" == *"$MODEL_FAMILY_VERSION_48_DOT"* || "$low" == *"$MODEL_FAMILY_VERSION_48_SPACE"* ) ]]; then
+            printf '%s\n' "$MODEL_FAMILY_OPUS_48"
+        elif [[ "$low" == *"$MODEL_FAMILY_TOKEN_OPUS"* && ( "$low" == *"$MODEL_FAMILY_VERSION_46_DOT"* || "$low" == *"$MODEL_FAMILY_VERSION_46_SPACE"* ) ]]; then
             printf '%s\n' "$MODEL_FAMILY_OPUS_46"
         elif [[ ( "$low" == *"$MODEL_FAMILY_TOKEN_GPT"* || "$low" == *"$MODEL_FAMILY_TOKEN_CODEX"* ) && ( "$low" == *"$MODEL_FAMILY_VERSION_54_DOT"* || "$low" == *"$MODEL_FAMILY_VERSION_54_SPACE"* || "$low" == *"$MODEL_FAMILY_VERSION_55_DOT"* || "$low" == *"$MODEL_FAMILY_VERSION_55_SPACE"* ) ]]; then
             printf '%s\n' "$MODEL_FAMILY_GPT_5"
@@ -144,12 +149,15 @@ if [[ "$MODE" == "summary" ]]; then
     # Step 2: Process gate_metrics.log with awk (column 6 models only, matching Python behavior)
     awk -F'\t' -v active_fams="$ACTIVE_FAMILIES" \
         -v mf_opus46="$MODEL_FAMILY_OPUS_46" \
+        -v mf_opus48="$MODEL_FAMILY_OPUS_48" \
         -v mf_gpt5="$MODEL_FAMILY_GPT_5" \
         -v mf_opus_token="$MODEL_FAMILY_TOKEN_OPUS" \
         -v mf_gpt_token="$MODEL_FAMILY_TOKEN_GPT" \
         -v mf_codex_token="$MODEL_FAMILY_TOKEN_CODEX" \
         -v mf_v46_dot="$MODEL_FAMILY_VERSION_46_DOT" \
         -v mf_v46_space="$MODEL_FAMILY_VERSION_46_SPACE" \
+        -v mf_v48_dot="$MODEL_FAMILY_VERSION_48_DOT" \
+        -v mf_v48_space="$MODEL_FAMILY_VERSION_48_SPACE" \
         -v mf_v54_dot="$MODEL_FAMILY_VERSION_54_DOT" \
         -v mf_v54_space="$MODEL_FAMILY_VERSION_54_SPACE" \
         -v mf_v55_dot="$MODEL_FAMILY_VERSION_55_DOT" \
@@ -160,6 +168,7 @@ if [[ "$MODE" == "summary" ]]; then
     }
     function get_family(label,   low) {
         low = tolower(label); gsub(/-/, " ", low); gsub(/_/, " ", low)
+        if (index(low, mf_opus_token) && (index(low, mf_v48_dot) || index(low, mf_v48_space))) return mf_opus48
         if (index(low, mf_opus_token) && (index(low, mf_v46_dot) || index(low, mf_v46_space))) return mf_opus46
         if ((index(low, mf_gpt_token) || index(low, mf_codex_token)) && (index(low, mf_v54_dot) || index(low, mf_v54_space) || index(low, mf_v55_dot) || index(low, mf_v55_space))) return mf_gpt5
         low = tolower(normalize(label)); gsub(/[^a-z0-9]+/, "_", low); gsub(/^_+|_+$/, "", low)

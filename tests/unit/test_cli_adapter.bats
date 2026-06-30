@@ -52,6 +52,7 @@ _fixture_yaml_val() {
         settings_with_models.yaml:cli.agents.sasuke.model) echo "haiku" ;;
         settings_with_models.yaml:cli.agents.hanzo.model) echo "gpt-5" ;;
         settings_with_models.yaml:cli.agents.shogun.model_name) echo "claude-opus-4-6" ;;
+        settings_with_models.yaml:cli.agents.saizo.model_name) echo "claude-opus-4-8" ;;
         settings_with_models.yaml:cli.agents.kagemaru.model_name) echo "gpt-5.5-low" ;;
         settings_with_models.yaml:cli.agents.kotaro.model_name) echo "claude-sonnet-4-6" ;;
         settings_with_models.yaml:models.karo) echo "opus" ;;
@@ -206,6 +207,7 @@ load_adapter_with() {
 @test "get_model_display_name: model_name variants" {
     load_adapter_with "${TEST_TMP}/settings_with_models.yaml"
     [ "$(get_model_display_name shogun)" = "Opus 4.6" ]
+    [ "$(get_model_display_name saizo)" = "Opus 4.8" ]
     [ "$(get_model_display_name kagemaru)" = "gpt-5.5-low" ]
     [ "$(get_model_display_name kotaro)" = "Sonnet 4.6" ]
 }
