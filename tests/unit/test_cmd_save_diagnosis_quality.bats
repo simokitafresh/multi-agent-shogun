@@ -268,7 +268,7 @@ run_q5_pair_save() {
 
     [ "$status" -ne 0 ]
     [[ "$output" == *"━━━ BLOCKトリガーマップ ━━━"* ]]
-    [[ "$output" == *"check=cmd_save_main"* ]]
+    [[ "$output" == *"check=check_diagnosis_format_block"* ]]
     [[ "$output" == *"line="* ]]
     [[ "$output" == *"keyword=diagnosis"* ]]
 }
