@@ -7,7 +7,14 @@
 |-----|------|------|------|
 | note_draft.sh検証 | 修正版(dispatch_click+quick_url)の動作確認 | PASS。Login 1秒→Editor→Body inserted 25→Draft saved。SKIP→PASS改善 | 殿「検証してみたか？」→一次データで確認 |
 | LOOPS.md比較分析 | 殿指示でLOOPS.md(9ルール)と将軍システムを批判的比較 | われら8/9上回り。殿教示: 各論〜総論を同密度でレイヤーを密に。100億年でマシンも環境も成長。管理は機械的に | 殿「抽象と具象は同じ概念。レンジを広くすることが重要」 |
-| cmd_3608 | gate設計思想カタログ Phase 1(58関数×16列因果分類+baseline) | delegated→hanzo配備。設計書+家老軍師覚醒レビュー反映済み | 殿「中間レイヤーを独立させよ」→設計書→レビュー→起票 |
+| cmd_3608 | gate設計思想カタログ Phase 1a(named funcs 37件カタログ) | GATE CLEAR。殿指摘「check名だけでいいのか？」で母集団不足判明→Phase 1b追加 | 殿「中間レイヤーを独立させよ」→設計書→レビュー→起票 |
+| cmd_3609 | Phase 1b(inline+名称乖離42件追加→合計82件) | GATE CLEAR。record_reason呼出し箇所ベースで機能フィルタ抽出 | 殿「grepで見落とすことはよくある」→家老精査→母集団再定義 |
+| cmd_3612 | Phase 2(5処置分類: 統合0/抽象化16/関数化33/名称修正6/保護27) | GATE CLEAR。殿「3分類で本当にいいのか？」→家老軍師レビュー→5処置2層構造確定 | 殿「将軍自身も考えておくべきだ」→自明39件+判断43件の2層構造 |
+| cmd_3614 | Phase 3(55件リファクタ実装。pending=0確認) | GATE CLEAR。殿「抜け漏れがない仕組みが必要」→カタログ実施状態列追跡 | 10 commits。check関数116→153(+37関数化) |
+| cmd_3615 | Phase 4(思想レイヤー貫通: growth-loop/infrastructure/semantic) | GATE CLEAR | 中間レイヤーが全エージェントからアクセス可能 |
+| cmd_3616 | Phase 5(FP率計測基盤+カタログ同期hook) | GATE CLEAR。gate_fire_logにcheck名カラム記録確認済み | FP率定量計測が可能に。カタログ陳腐化防止hook稼働 |
+| 回帰修正 | Phase 3リファクタによるテスト回帰2件(prev_cmd_gate+diagnosis_trigger_map) | 181/181 PASS。殿「検証せよ」「もう一度検証してみよう」で発見→修正 | 洗脳#8(完了急ぎ)を殿の検証指示で防止 |
+| LS075 | 裸数量語は累計昇格で4回cancel→新ID切替コスト30分 | 教訓登録。相対表現に統一+具体数値はassumptions claimのみ | cmd_3610-3613の4連続cancel実証 |
 
 ## 2026-06-29
 
