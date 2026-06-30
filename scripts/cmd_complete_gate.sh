@@ -7430,8 +7430,11 @@ print('\n'.join(scripts))
     echo ""
     echo "Cmd quality log (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/cmd_quality_log.sh" ]; then
-        (bash "$SCRIPT_DIR/scripts/cmd_quality_log.sh" "$CMD_ID" "CLEAR" "no" "0" >/dev/null 2>&1 || true) &
-        echo "  cmd_quality_log: queued (async)"
+        if bash "$SCRIPT_DIR/scripts/cmd_quality_log.sh" "$CMD_ID" "CLEAR" "no" "0" 2>&1; then
+            echo "  cmd_quality_log: OK"
+        else
+            echo "  [INFO] cmd_quality_log: WARN (logging failed, non-blocking)"
+        fi
     else
         echo "  SKIP (cmd_quality_log.sh not found)"
     fi

@@ -634,6 +634,26 @@ EOF
     [ "$output" -eq 2 ]
 }
 
+@test "GATE CLEAR cmd_quality_log runs synchronously and surfaces WARN" {
+    run python3 - "$SRC_GATE_SCRIPT" <<'PY'
+import sys
+
+path = sys.argv[1]
+text = open(path, encoding="utf-8").read()
+start = text.index("Cmd quality log (GATE CLEAR):")
+end = text.index("Gunshi verdict update to cmd_design_quality", start)
+section = text[start:end]
+
+assert "bash \"$SCRIPT_DIR/scripts/cmd_quality_log.sh\" \"$CMD_ID\" \"CLEAR\" \"no\" \"0\" 2>&1" in section
+assert "cmd_quality_log: OK" in section
+assert "[INFO] cmd_quality_log: WARN (logging failed, non-blocking)" in section
+assert "queued (async)" not in section
+assert ">/dev/null 2>&1" not in section
+assert "|| true) &" not in section
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "log_skill_execution_pass writes PASS to skill_execution_log" {
     mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/skills/cmd-complete"
     cat > "$SCRIPT_DIR/scripts/skill_execution_log.sh" <<'EOF'
