@@ -1,10 +1,12 @@
-<!-- last_updated: 2026-06-23 cmd_3494 -->
+<!-- last_updated: 2026-07-01 cmd_karo_hotfix_ga154_context_freshness_202607010005 -->
 # Memory DB Query Templates
 
 DB: `data/multi_agent_shogun_memory.db`
 Runner: `bash scripts/memory_db_query.sh '<SQL>'`
 Schema reference: `context/memory-db-schema.md`
 Freshness source: `context/memory-db-schema.md` generated 2026-06-06 by cmd_karo_hotfix_context_freshness_ga005_20260606, plus `scripts/memory_db_query.sh`.
+
+Freshness check 2026-07-01: `bash scripts/memory_db_query.sh 'SELECT event_type, COUNT(*) FROM events GROUP BY event_type ORDER BY COUNT(*) DESC LIMIT 3;'` returned `conversation|44336`, `inbox|11633`, `report|11316`. The runner contract and read-only SELECT templates below remain valid; post-2026-06-23 memory-related commits were operational/session commits and did not change these query examples.
 
 All templates below are read-only `SELECT` / `WITH` queries that work with
 `scripts/memory_db_query.sh`. Output is pipe-separated, without headers. The runner uses the ext4 cache path by default for the live DB and falls back to the source DB when cache creation is disabled, unavailable, or non-default DB caching is not requested.

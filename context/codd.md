@@ -1,6 +1,6 @@
 # CoDD (Coherence-Driven Development) 索引
 
-<!-- last_updated: 2026-06-23 cmd_3494 -->
+<!-- last_updated: 2026-07-01 cmd_karo_hotfix_ga154_context_freshness_202607010005 -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
 
@@ -62,6 +62,14 @@
 | `codd implement run --help` | `--language`, `--enable-typecheck-loop`, `--chunk-size`, `--timeout-per-chunk`, `--use-derived-steps`あり | v1.10の「bash implement非対応」は履歴扱い。v2.19では試行して、失敗時のみ手動へfallback |
 | `codd dag verify --help` | `--auto-repair` + `--apply`あり | dry-run提案と実書込を分ける。運用YAMLには適用しない |
 | `codd fix --help` | `[PHENOMENON]` positionalあり | 自然言語の事象から設計書・実装・テストを更新する入口として使用可能 |
+
+### 2026-07-01 鮮度確認
+
+| 確認 | 結果 | 判断 |
+|------|------|------|
+| `/home/simokitafresh/.codd-venv/bin/codd --version` | `codd, version 2.19.0` | §2/§5のv2.19.0前提は維持 |
+| `git log --since=2026-06-23 -- scripts/codd scripts/codd_ skills/codd skills/codd-refactor` | 対象差分なし | CoDDコマンド体系・スキル参照の更新不要 |
+| 通常`gate_context_freshness.sh` | 日数WARNのみ | 内容更新ではなく鮮度確認としてlast_updatedを更新 |
 
 ## §3 核心原理 (記事#1-#5)
 
