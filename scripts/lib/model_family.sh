@@ -3,6 +3,7 @@
 
 MODEL_FAMILY_HELPER_VERSION="2"
 MODEL_FAMILY_OPUS_46="opus_4_6"
+MODEL_FAMILY_OPUS_48="opus_4_8"
 MODEL_FAMILY_GPT_5="gpt_5"
 MODEL_FAMILY_CODEX="codex"
 MODEL_FAMILY_HAIKU="haiku"
@@ -15,6 +16,8 @@ MODEL_FAMILY_TOKEN_CODEX="codex"
 MODEL_FAMILY_TOKEN_SONNET="sonnet"
 MODEL_FAMILY_VERSION_46_DOT="4.6"
 MODEL_FAMILY_VERSION_46_SPACE="4 6"
+MODEL_FAMILY_VERSION_48_DOT="4.8"
+MODEL_FAMILY_VERSION_48_SPACE="4 8"
 MODEL_FAMILY_VERSION_54_DOT="5.4"
 MODEL_FAMILY_VERSION_54_SPACE="5 4"
 MODEL_FAMILY_VERSION_55_DOT="5.5"
@@ -28,6 +31,10 @@ model_family_from_label() {
     low="${label,,}"
     low="${low//-/ }"
     low="${low//_/ }"
+    if [[ "$low" == *opus* && ( "$low" == *4.8* || "$low" == *4\ 8* ) ]]; then
+        printf '%s\n' "$MODEL_FAMILY_OPUS_48"
+        return 0
+    fi
     if [[ "$low" == *opus* && ( "$low" == *4.6* || "$low" == *4\ 6* ) ]]; then
         printf '%s\n' "$MODEL_FAMILY_OPUS_46"
         return 0
@@ -59,7 +66,7 @@ model_family_display_group() {
         "$MODEL_FAMILY_GPT_5"|"$MODEL_FAMILY_CODEX"|gpt*) printf '%s\n' "Codex" ;;
         "$MODEL_FAMILY_HAIKU") printf '%s\n' "Haiku" ;;
         "$MODEL_FAMILY_SONNET") printf '%s\n' "Sonnet" ;;
-        "$MODEL_FAMILY_OPUS"|"$MODEL_FAMILY_OPUS_46") printf '%s\n' "Opus" ;;
+        "$MODEL_FAMILY_OPUS"|"$MODEL_FAMILY_OPUS_46"|"$MODEL_FAMILY_OPUS_48") printf '%s\n' "Opus" ;;
         *) printf '%s\n' "Claude" ;;
     esac
 }

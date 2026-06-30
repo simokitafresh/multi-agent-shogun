@@ -44,6 +44,6 @@ def model_display_group(label: str) -> str:
         return "Haiku"
     if family == FAMILY_SONNET:
         return "Sonnet"
-    if family in (FAMILY_OPUS, FAMILY_OPUS_46):
+    if family in (FAMILY_OPUS, FAMILY_OPUS_46, FAMILY_OPUS_48):
         return "Opus"
     return "Claude"

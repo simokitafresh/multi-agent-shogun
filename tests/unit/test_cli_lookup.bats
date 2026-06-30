@@ -111,6 +111,22 @@ teardown_file() {
     [ "$output" = "Sonnet 5" ]
 }
 
+@test "model_family: Opus 4.8をOpus系へ分類できる" {
+    run bash -lc "source '$PROJECT_ROOT/scripts/lib/model_family.sh'; model_family_from_label 'claude-opus-4-8'; model_family_display_group 'claude-opus-4-8'; model_family_reset_group 'claude-opus-4-8'"
+    [ "$status" -eq 0 ]
+    [ "$output" = $'opus_4_8\nOpus\nopus' ]
+
+    run python3 - <<PY
+import sys
+sys.path.insert(0, '$PROJECT_ROOT/scripts/lib')
+from model_family import extract_model_family, model_display_group
+print(extract_model_family('claude-opus-4-8'))
+print(model_display_group('claude-opus-4-8'))
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = $'opus_4_8\nOpus' ]
+}
+
 @test "model_colors: GPT-5.5表示名をCodex色へ正規化できる" {
     run bash -lc "source '$PROJECT_ROOT/scripts/lib/model_colors.sh'; resolve_border_fg_color 'GPT-5.5 high'"
     [ "$status" -eq 0 ]
