@@ -326,8 +326,8 @@ if recommended_total:
     print(f"precision率: {precision}% ({hit_total}/{recommended_total})")
     print(f"偽陽性率: {false_positive_rate}% ({false_positive_candidate_count}/{recommended_total})")
 else:
-    print("precision率: 0% (0/0; 比較対象推薦ログなし)")
-    print("偽陽性率: 0% (0/0; 比較対象推薦ログなし)")
+    print("precision率: N/A (0/0; 比較対象推薦ログなし)")
+    print("偽陽性率: N/A (0/0; 比較対象推薦ログなし)")
 if dropped_non_instrumented:
     print(f"比較対象外: 実行ログ未観測agentの推薦{dropped_non_instrumented}件を除外")
 if dropped_role_mismatch:

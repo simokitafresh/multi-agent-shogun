@@ -42,6 +42,31 @@ EOF
   [[ "$output" != *"ALERT: Phase 3"* ]]
 }
 
+@test "zero comparable recommendations display N/A instead of 0 percent" {
+  cat > "$SKILL_RECOMMEND_LOG_FILE" <<'EOF'
+recommendations:
+- ts: "2026-05-24T15:10:27+09:00"
+  agent_id: "ghost"
+  prompt_hash: "abc"
+  recommended_skills:
+  - "report-write"
+EOF
+  cat > "$SKILL_EXECUTION_LOG_FILE" <<'EOF'
+executions:
+- ts: "2026-05-24T18:00:00+0900"
+  executor: "hayate"
+  skill: "report-write"
+  used: "true"
+EOF
+
+  run bash "$PROJECT_ROOT/scripts/skill_recommend_metrics.sh" 30
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"precision率: N/A (0/0; 比較対象推薦ログなし)"* ]]
+  [[ "$output" == *"偽陽性率: N/A (0/0; 比較対象推薦ログなし)"* ]]
+  [[ "$output" != *"precision率: 0% (0/0"* ]]
+}
+
 @test "recall miss is calculated after recommendation log reaches threshold" {
   {
     printf 'recommendations:\n'
