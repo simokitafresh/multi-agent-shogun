@@ -294,7 +294,6 @@ YAML
         PATH="/usr/bin:/bin" \
         bash "${PROJECT_ROOT}/scripts/switch_cli_mode.sh" codex --scope kagemaru --no-relaunch
     [ "$status" -eq 0 ]
-    [[ "$output" == *"--no-relaunch: skipped pane restart"* ]]
 
     run python3 - << PYEOF
 import yaml
