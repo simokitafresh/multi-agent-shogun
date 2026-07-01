@@ -158,7 +158,7 @@ while [ $attempt -lt $max_attempts ]; do
 
         export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD ENFORCEMENT AUTOMATED ORIGIN
         python3 << 'PYEOF'
-import yaml, os, sys
+import os, re, sys
 from difflib import SequenceMatcher
 
 lessons_file = os.environ["LESSONS_FILE"]
@@ -170,36 +170,47 @@ enforcement = os.environ.get("ENFORCEMENT", "未自動化")
 automated = os.environ.get("AUTOMATED", "false")
 origin = os.environ.get("ORIGIN", "未指定")
 
-with open(lessons_file, encoding='utf-8') as f:
-    data = yaml.safe_load(f)
-
-lessons = data.get('lessons', [])
-
-# Find max numeric ID (LS format: LS001, LS-A01, etc.)
+# Find max numeric ID and existing titles without loading the whole YAML tree.
+# The writer below owns the same line format, so this preserves the duplicate
+# gate while avoiding PyYAML startup and full-file parsing cost.
 max_id = 0
-for lesson in lessons:
-    lid = str(lesson.get('id', ''))
-    if lid.startswith('LS'):
-        # Extract trailing digits: LS097→97, LS-A01→01, LS-A21→21
-        import re
-        m = re.search(r'(\d+)$', lid)
-        if m:
-            try:
-                num = int(m.group(1))
-                if num > max_id:
-                    max_id = num
-            except ValueError:
-                pass
+existing_lessons = []
+current_id = ''
+
+def _unquote_scalar(raw):
+    raw = raw.strip()
+    if len(raw) >= 2 and raw[0] == raw[-1] == "'":
+        return raw[1:-1].replace("''", "'")
+    if len(raw) >= 2 and raw[0] == raw[-1] == '"':
+        return raw[1:-1]
+    return raw
+
+with open(lessons_file, encoding='utf-8') as f:
+    for line in f:
+        stripped = line.strip()
+        if stripped.startswith('- id:'):
+            lid = _unquote_scalar(stripped.split(':', 1)[1])
+            current_id = lid
+            if lid.startswith('LS'):
+                m = re.search(r'(\d+)$', lid)
+                if m:
+                    try:
+                        num = int(m.group(1))
+                        if num > max_id:
+                            max_id = num
+                    except ValueError:
+                        pass
+        elif stripped.startswith('title:'):
+            existing_lessons.append((current_id, _unquote_scalar(stripped.split(':', 1)[1])))
 
 new_id = max_id + 1
 new_id_str = f'LS{new_id:03d}'
 
 # Duplicate title check
-for lesson in lessons:
-    existing_title = lesson.get('title', '')
+for existing_id, existing_title in existing_lessons:
     ratio = SequenceMatcher(None, title, existing_title).ratio()
     if ratio > 0.75:
-        print(f'ERROR: 類似教訓あり: {lesson.get("id","")}: {existing_title} (類似度: {ratio:.0%})', file=sys.stderr)
+        print(f'ERROR: 類似教訓あり: {existing_id}: {existing_title} (類似度: {ratio:.0%})', file=sys.stderr)
         print(f'重複を確認して再実行せよ', file=sys.stderr)
         sys.exit(1)
 
