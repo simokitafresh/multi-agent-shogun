@@ -2759,8 +2759,8 @@ lessons:
   - db
   - bash
   source_cmd: cmd_3139
-  when: 未設定
-  how: 未設定
+  when: flock内でbackground子プロセス(&)を起動する時。子プロセスがflock FDを継承しlock保持が残留する
+  how: background起動前にFDを閉じる(200>&-)。flock(1)のサブシェル記法ではなくexec方式でFDを明示制御する
   target_files:
   - scripts/hooks/stop_check_inbox.sh
   - tests/unit/test_stop_check_inbox.bats
