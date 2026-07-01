@@ -263,6 +263,27 @@ EOF
     [[ "$output" == *"未読: 3件"* ]]
 }
 
+@test "karo_idle_cycle unread only is not promoted to 3-session CRITICAL" {
+    cat > "$TEST_TMPDIR/logs/karo_startup_alert_history.tsv" <<'EOF'
+run1	inbox未読: 1件
+run2	inbox未読: 1件
+EOF
+    cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'EOF'
+messages:
+- id: msg_idle
+  timestamp: '2026-07-01T09:47:22'
+  type: karo_idle_cycle
+  from: ninja_monitor
+  content: 全忍者idle+パイプライン空。改善サイクルを回せ。
+  read: false
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"未読: 1件"* ]]
+    [[ "$output" == *"未読はkaro_idle_cycleのみ"* ]]
+    [[ "$output" != *"先送りCRITICAL: inbox未読: 1件"* ]]
+}
+
 @test "read actionable inbox still warns because read flag is not completion" {
     cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'EOF'
 messages:

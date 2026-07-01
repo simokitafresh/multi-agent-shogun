@@ -1021,6 +1021,9 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
                     unread_cmd_new_items = unread_cmd_new_items (unread_cmd_new_items != "" ? "; " : "") item
                 }
             }
+            if (inbox_entry && inbox_read_false && inbox_type == "karo_idle_cycle") {
+                unread_idle_cycle++
+            }
             if (inbox_entry && inbox_read_true &&
                 should_count_read_actionable(inbox_type, inbox_content)) {
                 read_actionable_key = inbox_id "|" inbox_type
@@ -1230,6 +1233,9 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
                 unread_cmd_new_items = unread_cmd_new_items (unread_cmd_new_items != "" ? "; " : "") item
             }
         }
+        if (inbox_entry && inbox_read_false && inbox_type == "karo_idle_cycle") {
+            unread_idle_cycle++
+        }
         if (inbox_entry && inbox_read_true &&
             should_count_read_actionable(inbox_type, inbox_content)) {
             read_actionable_key = inbox_id "|" inbox_type
@@ -1259,6 +1265,7 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         }
         print "UNREAD|" unread+0
         print "UNREAD_CMD_NEW|" unread_cmd_new+0 "|" unread_cmd_new_items
+        print "UNREAD_IDLE_CYCLE|" unread_idle_cycle+0
         print "READ_ACTIONABLE|" read_actionable+0 "|" read_actionable_items
         print "INSIGHTS|" pending_insights+0
         insight_start = pending_insights - 2
@@ -1334,6 +1341,7 @@ while IFS='|' read -r _agg_key _agg_a _agg_b _agg_c _agg_d _agg_e _agg_f; do
         STATUS) _NINJA_STATUS_CACHE[$_agg_a]=$_agg_b ;;
         UNREAD) unread=${_agg_a:-0} ;;
         UNREAD_CMD_NEW) unread_cmd_new=${_agg_a:-0}; unread_cmd_new_items=${_agg_b:-} ;;
+        UNREAD_IDLE_CYCLE) unread_idle_cycle=${_agg_a:-0} ;;
         READ_ACTIONABLE) read_actionable=${_agg_a:-0}; read_actionable_items=${_agg_b:-} ;;
         INSIGHTS) _insight_pending_count=${_agg_a:-0} ;;
         INSIGHT_ITEM) _insight_recent_items="${_insight_recent_items}    ${_agg_a} [${_agg_b:-medium}] ${_agg_c}"$'\n' ;;
@@ -1516,7 +1524,9 @@ if [ -f "$SCRIPT_DIR/queue/inbox/karo.yaml" ]; then
         alerts+=("未処理cmd_new: ${unread_cmd_new}件")
     elif [ "$unread" -gt 0 ]; then
         echo "  WARN: inbox未読あり。nudge/Stop hookに依存せず通常作業前に処理せよ"
-        if [ "$overall" != "ALERT" ]; then
+        if [ "${unread_idle_cycle:-0}" -eq "$unread" ]; then
+            echo "  INFO: 未読はkaro_idle_cycleのみ。通常処理対象だが先送りCRITICAL streak対象外"
+        elif [ "$overall" != "ALERT" ]; then
             overall="WARN"
             alerts+=("inbox未読: ${unread}件")
         fi
