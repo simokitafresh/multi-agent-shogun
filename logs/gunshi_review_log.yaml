@@ -1868,7 +1868,7 @@
     - "config/settings.yaml:kagemaru"
     - "config/settings.yaml:tobisaru"
     - "config/settings.yaml:kotaro"
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
   findings_summary: "APPROVE。全未調査model×effort一括比較cmd。assumptions=settings.yaml6忍者分現物確認OK。pane確認AC1で巻戻しリスク対処。研究cmdとしてNorthStar整合"
@@ -1924,7 +1924,7 @@
   verdict: LGTM
   verified_files:
     - "queue/reports/hayate_report_cmd_3628.yaml:9"
-  gate_result: null
+  gate_result: CLEAR
   finding_categories: [assumptions, numbers, premortem]
   findings_summary: "LGTM。6忍者pane証跡+累積レポート確認。precheck ERRORS=0。WA率0%"
   observations:
