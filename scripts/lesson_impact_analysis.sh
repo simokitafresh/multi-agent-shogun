@@ -8,9 +8,10 @@ _scripts_dir="${_self%/*}"
 SCRIPT_DIR="${_scripts_dir%/*}"
 unset _self _scripts_dir
 DATA_FILE="$SCRIPT_DIR/logs/lesson_impact.tsv"
+CANDIDATE_MIN_SAMPLES="${LESSON_IMPACT_CANDIDATE_MIN_SAMPLES:-3}"
 
 if [ "$#" -eq 0 ]; then
-    awk -F '\t' '
+    awk -F '\t' -v candidate_min_samples="$CANDIDATE_MIN_SAMPLES" '
 function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
 function upper(s) { return toupper(s) }
 function lower(s) { return tolower(s) }
@@ -62,6 +63,7 @@ function print_top10(kind,    printed, pass, i, id, best) {
         for (i = 1; i <= key_count; i++) {
             id = keys[i]
             if (used[id] || injected[id] <= 0) continue
+            if ((kind == "low" || kind == "high") && injected[id] < candidate_min_samples) continue
             if (kind == "low" && pct(referenced_count[id], injected[id]) > 0) continue
             if (kind == "high" && pct(inj_block[id], injected[id]) <= 0) continue
             if (kind == "top" && better_top(id, best)) best = id
@@ -125,10 +127,12 @@ END {
     print ""
 
     print "Low Reference Rate (noise candidates):"
+    print "  min_samples: " candidate_min_samples
     if (print_top10("low") == 0) print "  none"
     print ""
 
     print "High BLOCK Rate (harm candidates):"
+    print "  min_samples: " candidate_min_samples
     if (print_top10("high") == 0) print "  none"
     print ""
 
@@ -368,6 +372,7 @@ def joined_counter(counter: Counter) -> str:
 
 
 def print_summary(rows, stats):
+    candidate_min_samples = int(os.environ.get("LESSON_IMPACT_CANDIDATE_MIN_SAMPLES", "3") or "3")
     print("=== Lesson Impact Analysis ===")
     if rows:
         dates = sorted(safe_date(r["timestamp"]) for r in rows)
@@ -391,9 +396,13 @@ def print_summary(rows, stats):
     print()
 
     print("Low Reference Rate (noise candidates):")
+    print(f"  min_samples: {candidate_min_samples}")
     low_ref = [
         kv for kv in stats.items()
-        if kv[1]["injected"] > 0 and pct(kv[1]["referenced_count"], kv[1]["injected"]) == 0
+        if (
+            kv[1]["injected"] >= candidate_min_samples
+            and pct(kv[1]["referenced_count"], kv[1]["injected"]) == 0
+        )
     ]
     low_ref.sort(key=lambda kv: (pct(kv[1]["referenced_count"], kv[1]["injected"]), -kv[1]["injected"], kv[0]))
     if low_ref:
@@ -404,9 +413,13 @@ def print_summary(rows, stats):
     print()
 
     print("High BLOCK Rate (harm candidates):")
+    print(f"  min_samples: {candidate_min_samples}")
     high_block = [
         kv for kv in stats.items()
-        if kv[1]["injected"] > 0 and pct(kv[1]["inj_block"], kv[1]["injected"]) > 0
+        if (
+            kv[1]["injected"] >= candidate_min_samples
+            and pct(kv[1]["inj_block"], kv[1]["injected"]) > 0
+        )
     ]
     high_block.sort(key=lambda kv: (-pct(kv[1]["inj_block"], kv[1]["injected"]), -kv[1]["injected"], kv[0]))
     if high_block:

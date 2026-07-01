@@ -71,7 +71,10 @@ timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloo
 2026-07-01T00:00:02	cmd_2	saizo	L001	injected	CLEAR	yes	infra	exact	routine
 2026-07-01T00:00:03	cmd_3	saizo	L002	injected	CLEAR	no	infra	exact	routine
 2026-07-01T00:00:04	cmd_4	saizo	L002	injected	CLEAR	no	infra	exact	routine
-2026-07-01T00:00:05	cmd_5	saizo	L003	injected	BLOCK	no	infra	exact	routine
+2026-07-01T00:00:05	cmd_5	saizo	L002	injected	CLEAR	no	infra	exact	routine
+2026-07-01T00:00:06	cmd_6	saizo	L003	injected	BLOCK	no	infra	exact	routine
+2026-07-01T00:00:07	cmd_7	saizo	L003	injected	CLEAR	no	infra	exact	routine
+2026-07-01T00:00:08	cmd_8	saizo	L003	injected	CLEAR	no	infra	exact	routine
 EOF
 
     run bash "$TEST_PROJECT/scripts/lesson_impact_analysis.sh"
