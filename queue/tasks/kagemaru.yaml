@@ -52,3 +52,14 @@ training_proposal:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    tried_approaches:
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    approach_summary: 'report-write L1修行としてverdict missing/非二値FAILを再現確認し、binary_checks yes/no記入とgate_report_format自動導出でPASSへ戻した。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: 'report-write L1修行としてverdict missing/非二値FAILを再現確認し、binary_checks yes/no記入とgate_report_format自動導出でPASSへ戻した。'

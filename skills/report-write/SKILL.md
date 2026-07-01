@@ -163,6 +163,12 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 
 ## 注意ポイント
 
+- 2026-07-02: gate=gate_report_format result=FAIL executor=saizo reason=stale_report: filename has cmd_bench_test2 but parent_cmd=cmd_bench_test (cmd_id mismatch)
+- 2026-07-02: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:kotaro_report_cmd_training_speed_gate_shogun_startup_202607020211_kotaro.yaml|kotaro:binary_checks_fail
+
+- 2026-07-02: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:kotaro_report_cmd_3634_recon3.yaml
+- 2026-07-02: gate=gate_report_format result=FAIL executor=kotaro reason=binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ;...
+
 - 2026-07-01: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:kotaro_report_cmd_3629_kotaro.yaml
 - 2026-07-01: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:hanzo_report_cmd_3629_hanzo.yaml|report_format:kagemaru_report_cmd_3629.yaml|report_format:kotaro_report_cmd_3629_kotaro.yaml|report_format:saizo_report_cmd_3629_s...
 
