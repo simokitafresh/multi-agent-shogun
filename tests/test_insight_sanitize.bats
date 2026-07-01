@@ -153,3 +153,43 @@ assert data['insights'][0]['status'] == 'done'
 assert 'resolved_at' in data['insights'][0]
 "
 }
+
+@test "T-009: INSIGHT_REPEAT bulletin includes insight body summary" {
+    local test_source="rpt_src_$$"
+    local captured_file="$TEST_TMPDIR/bulletin_captured.txt"
+    local debounce_key="${test_source//[^a-zA-Z0-9_]/_}"
+    local debounce_file="/tmp/shogun_insight_repeat_${debounce_key}.last"
+
+    # Mock bulletin_write.sh to capture args to file (stdout is /dev/null in caller)
+    cat > "$TEST_TMPDIR/scripts/bulletin_write.sh" << 'MOCK'
+#!/bin/bash
+echo "$@" >> "$CAPTURED_FILE"
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/bulletin_write.sh"
+
+    # Clear debounce to ensure bulletin fires during this test
+    rm -f "$debounce_file"
+
+    # First insight (source_pending_count=1, below threshold=2, no bulletin)
+    run env INSIGHT_SOURCE_REPEAT_THRESHOLD=2 CAPTURED_FILE="$captured_file" \
+        bash "$TEST_TMPDIR/scripts/insight_write.sh" \
+        "Alpha unique insight first entry" medium "$test_source"
+    [ "$status" -eq 0 ]
+    [[ "$output" == INS-* ]]
+
+    # Second insight (source_pending_count=2 >= threshold=2, triggers INSIGHT_REPEAT)
+    run env INSIGHT_SOURCE_REPEAT_THRESHOLD=2 CAPTURED_FILE="$captured_file" \
+        bash "$TEST_TMPDIR/scripts/insight_write.sh" \
+        "Beta unique insight second entry" medium "$test_source"
+    [ "$status" -eq 0 ]
+    [[ "$output" == INS-* ]]
+
+    # Assert: bulletin was called and message contains insight body summary
+    [ -f "$captured_file" ]
+    grep -q "INSIGHT_REPEAT" "$captured_file"
+    grep -q "insight_summary=" "$captured_file"
+    grep -q "Beta unique insight" "$captured_file"
+
+    # Cleanup debounce file
+    rm -f "$debounce_file"
+}
