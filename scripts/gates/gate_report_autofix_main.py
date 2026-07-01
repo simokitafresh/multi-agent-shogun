@@ -21,7 +21,6 @@ def main() -> int:
         with open(report_path, encoding="utf-8") as f:
             raw = f.read()
         data = yaml.load(raw, Loader=SafeLoader)
-        base_data = yaml.load(raw, Loader=yaml.BaseLoader) or {}
     except Exception as exc:
         print(f"UNFIXABLE: YAML parse error: {exc}")
         return 1
@@ -368,6 +367,7 @@ def main() -> int:
     # self_gate_check値正規化(ok→PASS等)は消火→撤去。gate_report_format.shがBLOCK
 
     if fixes:
+        base_data = yaml.load(raw, Loader=yaml.BaseLoader) or {}
         base_bc = base_data.get("binary_checks") if isinstance(base_data, dict) else {}
         data_bc = data.get("binary_checks")
         if isinstance(base_bc, dict) and isinstance(data_bc, dict):
