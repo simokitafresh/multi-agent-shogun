@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-02 cmd_3635 -->
+<!-- last_updated: 2026-07-02 cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -853,6 +853,12 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - `dm-signal-password-rotation` cron `0 16 1 * *` はUTC+9でJST 2日目01:00になり、意図した「毎月1日01:00 JST」より丸1日遅い。前月末expires_at後から実ローテーションまで約25hの全tier失効窓が毎月発生しうる。
 - `monthly_password_rotation()`はtier単位try/exceptなし。途中tierでRender env更新が失敗すると、先行tierのRender env更新+token revoke済みに対してDB更新がrollbackされる部分失敗リスクがある。
 - tier数分(現行5件)の個別Render env更新はbackend再デプロイを連鎖させる可能性があり、7/1 OOM/health timeoutとの相関はRender deploy履歴と突合して確認する。
+
+## §47 Phase1 stability fix (cmd_3635)
+
+- Migration deadlock対策: `render.yaml` backend startCommandから`python -m app.db.init_db`を削除し、FastAPI lifespan側の`init_db()`をPostgreSQL advisory lockで直列化。workers=2時もmigration初期化は二重実行しない。
+- Password rotation cron: `dm-signal-password-rotation`はRender env `RENDER_API_KEY`/`RENDER_SERVICE_ID`をcron側にも持つ前提。scheduleコメントはJST 2日01:00相当として扱う。
+- Partial failure対策: Render API成功後にのみ`os.environ`を更新し、tier別失敗時は成功tierのみDB commit+token revoke、失敗tierはログ出力して処理継続。検証は関連既存テスト24件PASS、full pytestは201.73秒無出力中断のWITH_CONCERNS。
 
 ## 因果リンク
 
