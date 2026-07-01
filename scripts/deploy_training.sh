@@ -15,6 +15,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 STK="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+. "$SCRIPT_DIR/scripts/lib/field_get.sh"
 SUCCESS=0
 TOTAL=0
 
@@ -39,6 +40,7 @@ for pair in "$@"; do
       - ac: "AC1: 計測+ボトルネック特定"
       - ac: "AC2: 改善+commit"
       - ac: "AC3: 全テストPASS(SKIP=0)+LC+BC+verdict"
+    target_path: "${target}"
     status: delegated
     scout_exempt: true
     created_at: "$(date -Is)"
@@ -50,6 +52,11 @@ YAML_EOF
     # deploy_task.sh --cmdで配備
     result=$(bash "$SCRIPT_DIR/scripts/deploy_task.sh" "$ninja" --cmd "$cmd_id" 2>&1)
     if echo "$result" | grep -q "deployment complete"; then
+        actual_target=$(FIELD_GET_NO_LOG=1 field_get "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" target_path "" 2>/dev/null || true)
+        if [ "$actual_target" != "$target" ]; then
+            bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" task target_path "$target"
+            echo "WARN: $ninja target_path corrected after deploy (${actual_target:-empty} -> $target)"
+        fi
         echo "OK: $ninja → $basename_target (template generated)"
         SUCCESS=$((SUCCESS + 1))
     else
