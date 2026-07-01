@@ -33,13 +33,18 @@ PROJECT="${2:-FILL_THIS_project}"
 # last_cmdはcmd_save PASS毎に更新される=連番の正本。queueは保存前の手動採番をカバー。
 max_id=0
 if [[ -f "$QUEUE_FILE" ]]; then
-    while read -r n; do
+    while IFS= read -r line; do
+        [[ "$line" =~ ^[[:space:]]{2}cmd_([0-9]+): ]] || continue
+        n="${BASH_REMATCH[1]}"
         (( n > max_id )) && max_id=$n
-    done < <(grep -oE '^  cmd_[0-9]+:' "$QUEUE_FILE" 2>/dev/null | grep -oE '[0-9]+' || true)
+    done < "$QUEUE_FILE"
 fi
 if [[ -f "$LAST_CMD_FILE" ]]; then
-    n="$(grep -oE '[0-9]+' "$LAST_CMD_FILE" 2>/dev/null | head -1 || true)"
-    [[ -n "$n" ]] && (( n > max_id )) && max_id=$n
+    IFS= read -r line < "$LAST_CMD_FILE" || line=""
+    if [[ "$line" =~ ([0-9]+) ]]; then
+        n="${BASH_REMATCH[1]}"
+        (( n > max_id )) && max_id=$n
+    fi
 fi
 # フォールバック: queue/last_cmdが共に空の環境のみarchiveを参照
 if (( max_id == 0 )) && [[ -d "$ARCHIVE_CMD_DIR" ]]; then
