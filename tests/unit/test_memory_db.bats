@@ -1435,16 +1435,23 @@ PY
 
 @test "memory_recall_control backs up DB and archives old verified events" {
     python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+from datetime import datetime, timedelta, timezone
 import sqlite3
 import sys
+
+jst = timezone(timedelta(hours=9))
+now = datetime.now(jst)
+old_ts = (now - timedelta(days=60)).replace(microsecond=0).isoformat()
+new_ts = (now - timedelta(days=10)).replace(microsecond=0).isoformat()
+
 conn = sqlite3.connect(sys.argv[1])
 conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, ts TEXT, summary TEXT, state TEXT DEFAULT 'raw', updated_at TEXT)")
 conn.executemany(
     "INSERT INTO events VALUES (?, ?, ?, ?, ?)",
     [
-        ("event:old", "2026-01-01T00:00:00+09:00", "古いverified", "verified", "2026-01-01T00:00:00+09:00"),
-        ("event:new", "2026-06-01T00:00:00+09:00", "新しいverified", "verified", "2026-06-01T00:00:00+09:00"),
-        ("event:raw", "2026-01-01T00:00:00+09:00", "rawは対象外", "raw", "2026-01-01T00:00:00+09:00"),
+        ("event:old", old_ts, "古いverified", "verified", old_ts),
+        ("event:new", new_ts, "新しいverified", "verified", new_ts),
+        ("event:raw", old_ts, "rawは対象外", "raw", old_ts),
     ],
 )
 conn.commit()
