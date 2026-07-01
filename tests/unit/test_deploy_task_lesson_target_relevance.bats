@@ -204,6 +204,49 @@ EOF
     [[ "$output" == *"L_KEYWORD_RELEVANT"* ]]
 }
 
+@test "cmd_karo_hotfix_l828: queue/reports target_files match does not receive target boost" {
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L828_LIKE
+    title: SKILL script reference evidence
+    summary: record report counts
+    content: skill script refs
+    when: gate_skill_script_refs.shのWARNを解消する時
+    tags: [reporting]
+    target_files:
+      - skills/*/SKILL.md
+      - scripts/gates/gate_skill_script_refs.sh
+      - queue/reports/*
+    helpful_count: 999
+  - id: L_REPORT_RELEVANT
+    title: model comparison banner report
+    summary: model comparison banner report evidence for runtime verification
+    content: model comparison banner report evidence
+    when: model comparison banner reportを作成する時
+    tags: [reporting]
+    helpful_count: 1
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  project: infra
+  task_id: cmd_l828_report_artifact
+  parent_cmd: cmd_l828
+  task_type: impl
+  tags: [reporting]
+  title: "model comparison report"
+  description: "Write model comparison banner report evidence"
+  target_path: queue/reports/sasuke_report_cmd_l828.yaml
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run related_lesson_ids
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"L828_LIKE"* ]]
+    [[ "$output" == *"L_REPORT_RELEVANT"* ]]
+}
+
 @test "cmd_3466: tag fallback excludes tag-only helpful_count lessons without target_path match" {
     cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
 lessons:

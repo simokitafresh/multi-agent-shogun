@@ -5215,6 +5215,33 @@ try:
                     return True
         return False
 
+    def _is_report_artifact_path(path):
+        """Return True for generated report YAML paths, which are evidence sinks not task causes."""
+        norm = str(path or '').replace('\\', '/').lstrip('./').lower()
+        return norm.startswith('queue/reports/') or '/queue/reports/' in norm
+
+    def _target_match_is_report_artifact_only(lesson_target_files, task_files):
+        """Detect matches caused only by queue/reports/* so report output does not create false relevance."""
+        report_match = False
+        non_report_match = False
+        for pattern in lesson_target_files:
+            pattern = str(pattern).strip()
+            if not pattern:
+                continue
+            for tf in task_files:
+                matched = (
+                    fnmatch.fnmatch(tf, pattern)
+                    or fnmatch.fnmatch(os.path.basename(tf), pattern)
+                    or fnmatch.fnmatch(os.path.basename(tf), os.path.basename(pattern))
+                )
+                if not matched:
+                    continue
+                if _is_report_artifact_path(pattern) or _is_report_artifact_path(tf):
+                    report_match = True
+                else:
+                    non_report_match = True
+        return report_match and not non_report_match
+
     def _lesson_matches_task_target_path(lesson):
         """target_path/files_modifiedに一致するtarget_files教訓を順位付けで強く優先する。"""
         lesson_target_files = lesson.get('target_files', [])
@@ -5394,7 +5421,16 @@ try:
         # cmd_3466: target_path boost is a ranking boost, not a relevance bypass.
         # keyword_score=0 + target_files basename match was injecting low-useful lessons
         # whose only relation was "this file changed before".
-        if keyword_score > 0 and _lesson_matches_task_target_path(lesson):
+        lesson_target_files = lesson.get('target_files', [])
+        if isinstance(lesson_target_files, str):
+            lesson_target_files = [lesson_target_files]
+        # cmd_karo_hotfix_l828: queue/reports/* is a generated evidence sink.
+        # Do not let a report_path match turn one generic "report" keyword into a +50 relevance signal.
+        if (
+            keyword_score > 0
+            and _lesson_matches_task_target_path(lesson)
+            and not _target_match_is_report_artifact_only(lesson_target_files, _all_task_files)
+        ):
             score += TARGET_PATH_MATCH_BOOST
 
         if score <= 0:
