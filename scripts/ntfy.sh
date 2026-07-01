@@ -16,41 +16,49 @@ if [ "${1-}" = "" ]; then
 fi
 
 # Validate caller agent_id (warn-only; do not block send)
+# Deferred to background dispatch below (async default path) since the tmux
+# subprocess fork it needs is otherwise wasted foreground latency on every
+# call — the check never gates the send either way (cmd_training_speed_ntfy).
 AGENT_ID=""
-TMUX_AGENT_ERROR=""
-if [ -n "${TMUX_PANE:-}" ]; then
-  _tmux_agent_output="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>&1)"
-  _tmux_agent_status=$?
-  if [ "$_tmux_agent_status" -eq 0 ]; then
-    AGENT_ID="$_tmux_agent_output"
-  else
-    TMUX_AGENT_ERROR="$_tmux_agent_output"
+_ntfy_detect_agent_id() {
+  TMUX_AGENT_ERROR=""
+  if [ -n "${TMUX_PANE:-}" ]; then
+    _tmux_agent_output="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>&1)"
+    _tmux_agent_status=$?
+    if [ "$_tmux_agent_status" -eq 0 ]; then
+      AGENT_ID="$_tmux_agent_output"
+    else
+      TMUX_AGENT_ERROR="$_tmux_agent_output"
+    fi
   fi
+  if [ -z "$AGENT_ID" ]; then
+    _tmux_agent_output="$(tmux display-message -p '#{@agent_id}' 2>&1)"
+    _tmux_agent_status=$?
+    if [ "$_tmux_agent_status" -eq 0 ]; then
+      AGENT_ID="$_tmux_agent_output"
+    elif [ -z "$TMUX_AGENT_ERROR" ]; then
+      TMUX_AGENT_ERROR="$_tmux_agent_output"
+    fi
+  fi
+  if [ -z "$AGENT_ID" ]; then
+    if { [ -n "${TMUX:-}" ] || [ -n "${TMUX_PANE:-}" ]; } \
+      && printf '%s\n' "$TMUX_AGENT_ERROR" | grep -Eqi 'operation not permitted|permission denied'; then
+      echo "WARNING: ntfy called with unavailable agent_id (tmux permission denied)" >&2
+    else
+      echo "WARNING: ntfy called with unavailable agent_id (outside tmux?)" >&2
+    fi
+  elif [ "$AGENT_ID" != "shogun" ] && [ "$AGENT_ID" != "karo" ]; then
+    # ninja_monitor daemon inherits TMUX_PANE from launch context — suppress warning
+    CALLER="${BASH_SOURCE[1]:-}"; CALLER="${CALLER##*/}"  # pure bash basename
+    if [ "$CALLER" != "ninja_monitor.sh" ]; then
+      echo "WARNING: ntfy called by non-authorized agent: ${AGENT_ID}" >&2
+    fi
+  fi
+  unset _tmux_agent_output _tmux_agent_status
+}
+if [ "${NTFY_SYNC:-0}" = "1" ]; then
+  _ntfy_detect_agent_id
 fi
-if [ -z "$AGENT_ID" ]; then
-  _tmux_agent_output="$(tmux display-message -p '#{@agent_id}' 2>&1)"
-  _tmux_agent_status=$?
-  if [ "$_tmux_agent_status" -eq 0 ]; then
-    AGENT_ID="$_tmux_agent_output"
-  elif [ -z "$TMUX_AGENT_ERROR" ]; then
-    TMUX_AGENT_ERROR="$_tmux_agent_output"
-  fi
-fi
-if [ -z "$AGENT_ID" ]; then
-  if { [ -n "${TMUX:-}" ] || [ -n "${TMUX_PANE:-}" ]; } \
-    && printf '%s\n' "$TMUX_AGENT_ERROR" | grep -Eqi 'operation not permitted|permission denied'; then
-    echo "WARNING: ntfy called with unavailable agent_id (tmux permission denied)" >&2
-  else
-    echo "WARNING: ntfy called with unavailable agent_id (outside tmux?)" >&2
-  fi
-elif [ "$AGENT_ID" != "shogun" ] && [ "$AGENT_ID" != "karo" ]; then
-  # ninja_monitor daemon inherits TMUX_PANE from launch context — suppress warning
-  CALLER="${BASH_SOURCE[1]:-}"; CALLER="${CALLER##*/}"  # pure bash basename
-  if [ "$CALLER" != "ninja_monitor.sh" ]; then
-    echo "WARNING: ntfy called by non-authorized agent: ${AGENT_ID}" >&2
-  fi
-fi
-unset _tmux_agent_output _tmux_agent_status
 
 # Pure bash: avoid cd+pwd subshell (saves ~5ms)
 _ntfy_script="${BASH_SOURCE[0]}"
@@ -110,7 +118,7 @@ NTFY_429_COOLDOWN_SECONDS="${NTFY_429_COOLDOWN_SECONDS:-60}"
 NTFY_STATE_DIR="${NTFY_STATE_DIR:-/tmp/multi_agent_shogun_ntfy}"
 [[ "$NTFY_429_COOLDOWN_SECONDS" =~ ^[0-9]+$ ]] || NTFY_429_COOLDOWN_SECONDS=60
 
-mkdir -p "$NTFY_STATE_DIR" 2>/dev/null || true
+[ -d "$NTFY_STATE_DIR" ] || mkdir -p "$NTFY_STATE_DIR" 2>/dev/null || true
 _ntfy_state_key="${NTFY_ENDPOINT//[^[:alnum:]._-]/_}"
 [ -n "$_ntfy_state_key" ] || _ntfy_state_key="default"
 NTFY_STATE_FILE="$NTFY_STATE_DIR/${_ntfy_state_key}.state"
@@ -249,6 +257,7 @@ fi
 # Default mode: fire-and-forget
 (
   flock -w 30 200 || { echo "ERROR: ntfy throttle lock timeout" >&2; exit 1; }
+  _ntfy_detect_agent_id
   send_with_retry "$MSG"
 ) 200>"$NTFY_LOCK_FILE" &
 exit 0
