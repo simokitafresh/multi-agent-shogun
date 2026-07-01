@@ -48,7 +48,11 @@ teardown() {
 
 @test "gate_gunshi_startup writes auto_idle_actions for WARN recommendation" {
     run bash -c "cd '$TEST_TMPDIR' && scripts/gates/gate_gunshi_startup.sh"
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 0 ] || {
+        echo "status=$status"
+        echo "$output"
+        return 1
+    }
     [[ "$output" == *"■ 推薦行動（WARN/ALERTから自動導出）"* ]]
     [[ "$output" == *"idle Step 3: 未自動化教訓のgate化を実施"* ]]
     [[ "$output" == *"auto_idle_actions.txt: $TEST_TMPDIR/queue/auto_idle_actions.txt"* ]]

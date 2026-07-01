@@ -1163,3 +1163,7 @@ PY
         unset _deferred_message _deferred_dup_status _deferred_lock
     fi
 fi
+
+# Startup gate is diagnostic: ALERT/WARN is reported in output and side-effect
+# files, but must not prevent the agent from recovering.
+exit 0
