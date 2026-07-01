@@ -37,30 +37,37 @@ if [ "$SOURCE_ID_1" == "$SOURCE_ID_2" ]; then
     exit 1
 fi
 
-# Get a field value from config/projects.yaml for a given project id — awk, no Python subprocess
-get_project_field() {
-    local proj_id="$1" field_name="$2"
-    awk -v proj="$proj_id" -v field="$field_name" '
+# Get path + context_file from config/projects.yaml for a given project id in
+# one awk pass — avoids a second awk fork+file-read for context_file later
+# (cmd_training_speed_lesson_merge: path and context_file were previously two
+# separate get_project_field() calls, each re-scanning projects.yaml).
+get_project_fields() {
+    local proj_id="$1"
+    awk -v proj="$proj_id" '
         /^  - id:/ {
             line = $0
             sub(/^[[:space:]]*-[[:space:]]*id:[[:space:]]*/, "", line)
             gsub(/"/, "", line); gsub(/[[:space:]]*$/, "", line)
             cur = line
         }
-        cur == proj {
-            pattern = "^    " field ":"
-            if ($0 ~ pattern) {
-                line = $0
-                sub(/^[[:space:]]*[^:]+:[[:space:]]*/, "", line)
-                gsub(/"/, "", line); gsub(/[[:space:]]*$/, "", line)
-                print line; exit
-            }
+        cur == proj && path_val == "" && /^    path:/ {
+            line = $0
+            sub(/^[[:space:]]*path:[[:space:]]*/, "", line)
+            gsub(/"/, "", line); gsub(/[[:space:]]*$/, "", line)
+            path_val = line
         }
+        cur == proj && ctx_val == "" && /^    context_file:/ {
+            line = $0
+            sub(/^[[:space:]]*context_file:[[:space:]]*/, "", line)
+            gsub(/"/, "", line); gsub(/[[:space:]]*$/, "", line)
+            ctx_val = line
+        }
+        END { print path_val; print ctx_val }
     ' "$SCRIPT_DIR/config/projects.yaml"
 }
 
-# Get project path from config/projects.yaml
-PROJECT_PATH=$(get_project_field "$PROJECT_ID" "path")
+# Get project path + context_file from config/projects.yaml
+{ read -r PROJECT_PATH; read -r CONTEXT_FILE; } < <(get_project_fields "$PROJECT_ID")
 
 if [ -z "$PROJECT_PATH" ]; then
     echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
@@ -75,10 +82,12 @@ if [ ! -f "$LESSONS_FILE" ]; then
     exit 1
 fi
 
-TIMESTAMP=$(date "+%Y-%m-%d")
+printf -v TIMESTAMP '%(%Y-%m-%d)T' -1
 
-# Temp file for passing new lesson ID out of flock subshell
-NEW_ID_FILE=$(mktemp)
+# Temp file for passing new lesson ID out of flock subshell — PID+RANDOM
+# avoids an mktemp fork; uniqueness still holds across concurrent projects.
+NEW_ID_FILE="${TMPDIR:-/tmp}/lesson_merge_newid_$$_${RANDOM}"
+: > "$NEW_ID_FILE"
 trap 'rm -f "$NEW_ID_FILE"' EXIT
 
 # Atomic merge with flock (3 retries)
@@ -231,7 +240,6 @@ PYEOF
 
         # Context索引更新: 旧エントリに[統合→新ID]注釈 + 新エントリ追記
         if [ -n "$NEW_LESSON_ID" ]; then
-            CONTEXT_FILE=$(get_project_field "$PROJECT_ID" "context_file")
             if [ -n "$CONTEXT_FILE" ]; then
                 CONTEXT_FULL_PATH="$SCRIPT_DIR/$CONTEXT_FILE"
                 if [ -f "$CONTEXT_FULL_PATH" ]; then
