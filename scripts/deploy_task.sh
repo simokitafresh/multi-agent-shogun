@@ -734,6 +734,9 @@ STALE_FIELDS = [
     'growth_loop_defense', 'semantic_concepts', 'standard_skills',
     'memory_db_context', 'related_causal_links', 'production_invariants',
     'hypothesis_count', 'three_strike_rule',
+    # 第15層: cmd固有メタ(karo_direct手動注入/resolve_cmd_to_task転写。前cmdの値が次cmdに残留する)
+    'expected_model_effort', 'pre_deploy_banner_evidence',
+    'not_in_scope', 'scout_exempt', 'recommended_skills',
 ]
 # parent_cmdが変わる場合だけacceptance_criteriaをクリアする。
 # 同一cmd再配備では、cmdソース不在時にテンプレートACをfallbackとして保持する。
