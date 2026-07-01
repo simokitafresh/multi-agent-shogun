@@ -122,22 +122,24 @@ task:
   deployed_at: "2026-07-01T17:18:09"
 
   session_state:
-    attempt: 5
-    last_block_reason: 'files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ'
+    attempt: 6
+    last_block_reason: 'commit_hash: ''dfcbb1806'' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ'
     tried_approaches:
     - 'binary_checks: AC self-verification missing (0/2 ACs). 全ACの二値チェックを記入せよ; result.summary: MISSING or empty'
     - 'binary_checks: AC self-verification missing (0/2 ACs). 全ACの二値チェックを記入せよ'
     - 'files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ'
+    - 'commit_hash: ''dfcbb1806'' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ'
     diagnose_reason: 'files_modifiedにパス形式でなく説明文を記入した。gateはファイルパス(/)を含む文字列のみ受け付ける。説明文混入禁止ルール(GP-285)を見落とした。'
     approach_summary: 'cmd_3628 Sonnet 4.6 high pinned v2.1.87 比較タスク完了。バナー証跡確認済み(pane7 shogun:2.7: Claude Code v2.1.87 / Sonnet 4.6 with high effort)。軍師レビュー補足APPROVE(assigned_scope記載)。累積比較レポート更新材料として動作特性所見を記載。'
     prior_attempts:
-    - attempt: 3
-      block_reason: 'binary_checks: AC self-verification missing (0/2 ACs). 全ACの二値チェックを記入せよ'
-      approach_summary: 'cmd_3628 Sonnet 4.6 high pinned v2.1.87 比較タスク完了。バナー証跡確認済み(pane7 shogun:2.7: Claude Code v2.1.87 / Sonnet 4.6 with high effort)。軍師レビュー補足APPROVE(assigned_scope記載)。累積比較レポート更新材料として動作特性所見を記載。'
     - attempt: 4
       block_reason: 'files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ'
       approach_summary: 'cmd_3628 Sonnet 4.6 high pinned v2.1.87 比較タスク完了。バナー証跡確認済み(pane7 shogun:2.7: Claude Code v2.1.87 / Sonnet 4.6 with high effort)。軍師レビュー補足APPROVE(assigned_scope記載)。累積比較レポート更新材料として動作特性所見を記載。'
     - attempt: 5
       block_reason: 'files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ'
+      diagnose_reason: 'files_modifiedにパス形式でなく説明文を記入した。gateはファイルパス(/)を含む文字列のみ受け付ける。説明文混入禁止ルール(GP-285)を見落とした。'
+      approach_summary: 'cmd_3628 Sonnet 4.6 high pinned v2.1.87 比較タスク完了。バナー証跡確認済み(pane7 shogun:2.7: Claude Code v2.1.87 / Sonnet 4.6 with high effort)。軍師レビュー補足APPROVE(assigned_scope記載)。累積比較レポート更新材料として動作特性所見を記載。'
+    - attempt: 6
+      block_reason: 'commit_hash: ''dfcbb1806'' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ'
       diagnose_reason: 'files_modifiedにパス形式でなく説明文を記入した。gateはファイルパス(/)を含む文字列のみ受け付ける。説明文混入禁止ルール(GP-285)を見落とした。'
       approach_summary: 'cmd_3628 Sonnet 4.6 high pinned v2.1.87 比較タスク完了。バナー証跡確認済み(pane7 shogun:2.7: Claude Code v2.1.87 / Sonnet 4.6 with high effort)。軍師レビュー補足APPROVE(assigned_scope記載)。累積比較レポート更新材料として動作特性所見を記載。'
