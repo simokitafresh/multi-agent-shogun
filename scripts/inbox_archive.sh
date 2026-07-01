@@ -30,7 +30,7 @@ fi
 ARCHIVE_DIR="$SCRIPT_DIR/archive/inbox"
 mkdir -p "$ARCHIVE_DIR"
 
-DATE_STAMP=$(date +%Y%m%d)
+printf -v DATE_STAMP '%(%Y%m%d)T' -1
 ARCHIVE_FILE="$ARCHIVE_DIR/${AGENT}_${DATE_STAMP}.yaml"
 
 inbox_archive_fast_path() {
