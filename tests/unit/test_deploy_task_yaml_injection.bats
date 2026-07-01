@@ -73,6 +73,53 @@ assert inject_idx < score_idx < post_idx, (inject_idx, score_idx, post_idx)
 PY
 }
 
+@test "direct --yaml repairs unquoted multiline notes before task mutations" {
+    tmpdir="$(mktemp -d)"
+    task_file="$tmpdir/task.yaml"
+    cat > "$task_file" <<'YAML'
+task:
+  parent_cmd: cmd_multiline_notes
+  status: assigned
+  notes: 家老一次確認:
+    phase 1: copy yaml
+    phase 2: mutate fields
+  target_path: scripts/deploy_task.sh
+YAML
+
+    run bash -lc "
+        set -e
+        SCRIPT_DIR='$PROJECT_ROOT'
+        LOG='$tmpdir/deploy.log'
+        source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        deploy_task_validate_or_repair_direct_yaml '$task_file' '$task_file'
+        yaml_field_set '$task_file' task status assigned
+        python3 -c 'import yaml,sys; yaml.safe_load(open(sys.argv[1], encoding=\"utf-8\"))' '$task_file'
+    "
+    [ "$status" -eq 0 ]
+
+    python3 - "$task_file" <<'PY'
+import sys
+import yaml
+
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+assert "phase 1: copy yaml" in task["notes"], task
+assert task["status"] == "assigned", task
+PY
+}
+
+@test "direct --yaml keeps source ACs without cmd-source overwrite" {
+    python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import sys
+
+script = open(sys.argv[1], encoding="utf-8").read()
+needle = 'if [ "${DIRECT_MODE:-false}" = true ] && [ -n "${YAML_FILE:-}" ]; then'
+idx = script.index(needle)
+window = script[idx:idx + 1200]
+assert "keeping source YAML ACs without cmd-source overwrite" in window, window
+assert "_overwrite_ac_from_cmd" in window, "non-direct fallback must still overwrite from cmd source"
+PY
+}
+
 @test "cmd_3368: reset_stale_fields clears auto-injected scalar/list metadata before YAML injection" {
     python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
 import ast

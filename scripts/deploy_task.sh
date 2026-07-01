@@ -903,6 +903,82 @@ check_yaml_freshness() {
     done <<< "$script_paths"
 }
 
+deploy_task_validate_or_repair_direct_yaml() {
+    local task_file="$1"
+    local source_yaml="$2"
+    local tmp_file
+
+    if python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1], encoding='utf-8'))" "$task_file" 2>/dev/null; then
+        log "direct_mode: source YAML syntax PASS (${source_yaml})"
+        return 0
+    fi
+
+    tmp_file="$(mktemp "${task_file}.repair.XXXXXX")" || return 1
+    if python3 - "$task_file" "$tmp_file" <<'DIRECT_YAML_REPAIR_PY'; then
+import re
+import sys
+import yaml
+from pathlib import Path
+
+src = Path(sys.argv[1])
+dst = Path(sys.argv[2])
+lines = src.read_text(encoding="utf-8").splitlines()
+out = []
+i = 0
+key_re = re.compile(r"^(\s{2,})([A-Za-z0-9_.-]+):[ \t]+(.+)$")
+next_key_re = re.compile(r"^\s{2,}[A-Za-z0-9_.-]+:")
+
+while i < len(lines):
+    line = lines[i]
+    match = key_re.match(line)
+    if not match:
+        out.append(line)
+        i += 1
+        continue
+
+    indent, key, value = match.groups()
+    continuations = []
+    j = i + 1
+    while j < len(lines):
+        nxt = lines[j]
+        stripped = nxt.strip()
+        if not stripped:
+            continuations.append("")
+            j += 1
+            continue
+        if next_key_re.match(nxt) or re.match(r"^\s*-\s+", nxt):
+            break
+        if len(nxt) - len(nxt.lstrip(" ")) > len(indent):
+            continuations.append(nxt.strip())
+            j += 1
+            continue
+        break
+
+    if continuations:
+        out.append(f"{indent}{key}: |-")
+        out.append(f"{indent}  {value.rstrip()}")
+        out.extend(f"{indent}  {part}" if part else "" for part in continuations)
+        i = j
+    else:
+        out.append(line)
+        i += 1
+
+text = "\n".join(out) + "\n"
+yaml.safe_load(text)
+dst.write_text(text, encoding="utf-8")
+DIRECT_YAML_REPAIR_PY
+        cp "$tmp_file" "$task_file"
+        rm -f "$tmp_file"
+        log "direct_mode: repaired invalid multiline scalar YAML from ${source_yaml}"
+        return 0
+    fi
+
+    rm -f "$tmp_file"
+    log "FATAL: direct_mode source YAML invalid and repair failed: ${source_yaml}"
+    echo "FATAL: --yaml input is invalid and could not be repaired: ${source_yaml}" >&2
+    return 1
+}
+
 # ─── cmd_id→task YAML自動解決（なぜなぜL5根因対策: 家老の手動ステップ排除） ───
 # cmd_id指定時、shogun_to_karo.yamlからメタデータを取得しtask YAMLの中核フィールドを自動設定。
 # これにより「task YAML更新 → deploy_task.sh」の2ステップが原子的操作になる。
@@ -1790,12 +1866,16 @@ inject_ac_version() {
     prev_ac_worker_id="$_ac_worker_id"
 
     if [ "$curr_task_id" != "$prev_ac_task_id" ] || [ "$curr_worker_id" != "${prev_ac_worker_id:-}" ]; then
-        log "[AC_VERSION] deploy detected (task_id: ${prev_ac_task_id:-empty}→${curr_task_id}, worker: ${prev_ac_worker_id:-empty}→${curr_worker_id}). Overwriting ACs from cmd source."
-        if _overwrite_ac_from_cmd "$task_file"; then
-            ac_version=$(_compute_ac_hash "$task_file")
-            log "[AC_VERSION] recomputed after AC overwrite: $ac_version"
+        if [ "${DIRECT_MODE:-false}" = true ] && [ -n "${YAML_FILE:-}" ]; then
+            log "[AC_VERSION] direct --yaml deploy detected; keeping source YAML ACs without cmd-source overwrite"
         else
-            log "[AC_VERSION] WARN: AC overwrite failed, keeping existing ACs"
+            log "[AC_VERSION] deploy detected (task_id: ${prev_ac_task_id:-empty}→${curr_task_id}, worker: ${prev_ac_worker_id:-empty}→${curr_worker_id}). Overwriting ACs from cmd source."
+            if _overwrite_ac_from_cmd "$task_file"; then
+                ac_version=$(_compute_ac_hash "$task_file")
+                log "[AC_VERSION] recomputed after AC overwrite: $ac_version"
+            else
+                log "[AC_VERSION] WARN: AC overwrite failed, keeping existing ACs"
+            fi
         fi
     fi
 
@@ -8193,6 +8273,10 @@ except Exception:
                 fi
                 cp "$YAML_FILE" "$task_yaml"
                 log "direct_mode: task YAML overwritten from $YAML_FILE"
+                deploy_task_validate_or_repair_direct_yaml "$task_yaml" "$YAML_FILE" || {
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                    return 1
+                }
                 check_yaml_freshness "$YAML_FILE" "$SCRIPT_DIR"
             fi
             log "direct_mode: skipping resolve_cmd_to_task for ${CMD_ID} (shogun_to_karo.yaml not required)"
