@@ -27,10 +27,18 @@ SCRIPT_DIR="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${SCRIPT_DIR%/*}"
 PROJECT_DIR="${SCRIPT_DIR%/scripts}"
 
-# 家老にhalt通知を送信
-bash "$PROJECT_DIR/scripts/inbox_write.sh" karo "$CMD_ID HALT" halt shogun
+# 家老へのhalt通知と殿へのntfy通知を並列送信する。
+# 両方の完了を待ち、どちらか失敗したら失敗として扱う。
+bash "$PROJECT_DIR/scripts/inbox_write.sh" karo "$CMD_ID HALT" halt shogun &
+inbox_pid=$!
+bash "$PROJECT_DIR/scripts/ntfy.sh" "【HALT】$CMD_ID 緊急停止発令" &
+ntfy_pid=$!
 
-# 殿にntfy通知（緊急停止はリアルタイム認知が必須）
-bash "$PROJECT_DIR/scripts/ntfy.sh" "【HALT】$CMD_ID 緊急停止発令"
+status=0
+wait "$inbox_pid" || status=$?
+wait "$ntfy_pid" || status=$?
+if [ "$status" -ne 0 ]; then
+    exit "$status"
+fi
 
 echo "[cmd_halt] $CMD_ID HALT sent to karo inbox + ntfy."
