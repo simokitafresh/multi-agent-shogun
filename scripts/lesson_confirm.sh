@@ -19,20 +19,24 @@ fi
 # Normalize lesson ID (accept L23 or L023) — pure bash, no subprocess
 _lc_n="${LESSON_ID#L}"; LESSON_ID="L$(( 10#$_lc_n ))"
 
-# Get project path from config/projects.yaml
-export SCRIPT_DIR PROJECT_ID
-PROJECT_PATH=$(python3 << 'PYEOF'
-import yaml, os
-script_dir = os.environ["SCRIPT_DIR"]
-project_id = os.environ["PROJECT_ID"]
-with open(f'{script_dir}/config/projects.yaml', encoding='utf-8') as f:
-    cfg = yaml.load(f, Loader=getattr(yaml, 'CSafeLoader', yaml.SafeLoader))
-for p in cfg.get('projects', []):
-    if p['id'] == project_id:
-        print(p['path'])
-        break
-PYEOF
-)
+# Get project path from config/projects.yaml. The project list is a simple
+# top-level sequence; awk avoids PyYAML startup on this hot path.
+PROJECT_PATH=$(awk -v target_id="$PROJECT_ID" '
+function clean(v) {
+    sub(/^[[:space:]]*/, "", v)
+    sub(/[[:space:]]*$/, "", v)
+    gsub(/^["'\''"]|["'\''"]$/, "", v)
+    return v
+}
+/^[[:space:]]*-[[:space:]]*id:[[:space:]]*/ {
+    current_id = clean(substr($0, index($0, ":") + 1))
+    next
+}
+current_id == target_id && /^[[:space:]]*path:[[:space:]]*/ {
+    print clean(substr($0, index($0, ":") + 1))
+    exit
+}
+' "$SCRIPT_DIR/config/projects.yaml")
 
 if [ -z "$PROJECT_PATH" ]; then
     echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
