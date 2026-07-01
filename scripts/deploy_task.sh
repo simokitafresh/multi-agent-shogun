@@ -333,37 +333,62 @@ deploy_task_direct_yaml_is_preinjected() {
     [ "$DIRECT_MODE" = true ] || return 1
     [ -f "$task_file" ] || return 1
 
-    python3 - "$task_file" <<'PY'
-import sys
-import yaml
+    local in_task=0 current="" line key value
+    local related=0 semantic=0 skills=0 memory=0 hints=0 report=0
 
-path = sys.argv[1]
-required = (
-    "related_lessons",
-    "semantic_concepts",
-    "standard_skills",
-    "memory_db_context",
-    "context_hints",
-    "report_filename",
-)
+    while IFS= read -r line || [ -n "$line" ]; do
+        if [ "$in_task" = "0" ]; then
+            [[ "$line" =~ ^task:[[:space:]]*$ ]] && in_task=1
+            continue
+        fi
 
-try:
-    with open(path, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-except Exception:
-    raise SystemExit(1)
+        if [[ "$line" =~ ^[^[:space:]][A-Za-z0-9_.-]+: ]]; then
+            break
+        fi
 
-task = data.get("task") if isinstance(data, dict) else {}
-if not isinstance(task, dict):
-    raise SystemExit(1)
+        if [[ "$line" =~ ^[[:space:]]{2}report_filename:[[:space:]]*([^[:space:]#]+) ]]; then
+            report=1
+            current=""
+            continue
+        fi
 
-for key in required:
-    value = task.get(key)
-    if value in (None, "", [], {}):
-        raise SystemExit(1)
+        if [[ "$line" =~ ^[[:space:]]{2}(related_lessons|semantic_concepts|standard_skills|memory_db_context|context_hints):[[:space:]]*(.*)$ ]]; then
+            key="${BASH_REMATCH[1]}"
+            value="${BASH_REMATCH[2]}"
+            if [[ "$value" =~ ^\[[^]] ]]; then
+                case "$key" in
+                    related_lessons) related=1 ;;
+                    semantic_concepts) semantic=1 ;;
+                    standard_skills) skills=1 ;;
+                    memory_db_context) memory=1 ;;
+                    context_hints) hints=1 ;;
+                esac
+                current=""
+            else
+                current="$key"
+            fi
+            continue
+        fi
 
-raise SystemExit(0)
-PY
+        if [[ "$line" =~ ^[[:space:]]{2}[A-Za-z0-9_.-]+: ]]; then
+            current=""
+            continue
+        fi
+
+        if [ -n "$current" ] && [[ "$line" =~ ^[[:space:]]{2}-[[:space:]]+[^[:space:]#] ]]; then
+            case "$current" in
+                related_lessons) related=1 ;;
+                semantic_concepts) semantic=1 ;;
+                standard_skills) skills=1 ;;
+                memory_db_context) memory=1 ;;
+                context_hints) hints=1 ;;
+            esac
+            current=""
+        fi
+    done < "$task_file"
+
+    [ "$related" = "1" ] && [ "$semantic" = "1" ] && [ "$skills" = "1" ] && \
+        [ "$memory" = "1" ] && [ "$hints" = "1" ] && [ "$report" = "1" ]
 }
 
 deploy_task_allows_parallel_peer_task() {
@@ -8634,7 +8659,7 @@ except Exception:
             "$NINJA_NAME" "${deploy_parent_cmd:-unknown}" "${ctx_pct:-unknown}" \
             "$(date '+%Y-%m-%dT%H:%M:%S')" \
             >> "$SCRIPT_DIR/logs/codex_delivery_log.yaml" 2>/dev/null || true
-        local _renudge_name="$NINJA_NAME"
+        _renudge_name="$NINJA_NAME"
         (
             sleep 5
             deploy_task_send_direct_renudge "$_renudge_name"
