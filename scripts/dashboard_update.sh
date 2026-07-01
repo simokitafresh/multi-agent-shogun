@@ -175,6 +175,67 @@ def iter_commands(commands):
                 yield cmd
 
 
+def _strip_yaml_scalar(value):
+    value = value.strip()
+    if not value:
+        return ''
+    if value[0:1] in ('"', "'") and value[-1:] == value[0]:
+        return value[1:-1]
+    return value
+
+
+def find_command_title(stk_file, cmd_id):
+    """Read only the target command block from shogun_to_karo.yaml."""
+    if not os.path.exists(stk_file):
+        return ''
+
+    cmd_key_re = re.compile(r'^\s{2}' + re.escape(cmd_id) + r':\s*(?:#.*)?$')
+    list_id_re = re.compile(r'^\s*-\s+id:\s*[\'"]?' + re.escape(cmd_id) + r'[\'"]?\s*(?:#.*)?$')
+    any_cmd_key_re = re.compile(r'^\s{2}[A-Za-z0-9_]+:\s*(?:#.*)?$')
+    field_re = re.compile(r'^\s+(title|purpose):\s*(.*)$')
+
+    in_target = False
+    target_indent = None
+    pending_multiline = None
+    pending_indent = None
+
+    try:
+        with open(stk_file, encoding='utf-8', errors='replace') as f:
+            for raw_line in f:
+                line = raw_line.rstrip('\n')
+                stripped = line.strip()
+                indent = len(line) - len(line.lstrip(' '))
+
+                if pending_multiline:
+                    if stripped and indent > pending_indent:
+                        return stripped
+                    if stripped and indent <= pending_indent:
+                        pending_multiline = None
+
+                if in_target:
+                    if target_indent is not None and indent <= target_indent and stripped:
+                        if any_cmd_key_re.match(line) or line.lstrip().startswith('- id:'):
+                            return ''
+                    m = field_re.match(line)
+                    if m:
+                        value = _strip_yaml_scalar(m.group(2).split(' #', 1)[0])
+                        if value in ('|', '>', '|-', '>-', '|+', '>+'):
+                            pending_multiline = m.group(1)
+                            pending_indent = indent
+                            continue
+                        if value:
+                            return value
+                    continue
+
+                if cmd_key_re.match(line) or list_id_re.match(line):
+                    in_target = True
+                    target_indent = indent
+    except Exception:
+        return ''
+
+    return ''
+
+
 def summarize_ac(ac_val):
     """AC情報を短縮文字列に変換。"""
     if isinstance(ac_val, dict):
@@ -334,17 +395,7 @@ for m in matches:
             break
 
 # ─── Step 3: Get cmd title from shogun_to_karo.yaml ───
-title = ''
-try:
-    with open(STK_FILE) as f:
-        stk = yaml.safe_load(f)
-    if stk and 'commands' in stk:
-        for cmd in iter_commands(stk['commands']):
-            if cmd.get('id') == CMD_ID:
-                title = cmd.get('title', cmd.get('purpose', ''))
-                break
-except Exception:
-    pass
+title = find_command_title(STK_FILE, CMD_ID)
 
 # ─── Step 4: Generate dashboard line ───
 parts = [f'- **{CMD_ID}**: ']
