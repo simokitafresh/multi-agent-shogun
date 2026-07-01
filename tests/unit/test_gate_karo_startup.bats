@@ -587,6 +587,23 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
+@test "workaround true with empty brainwash_check scalar → WARN" {
+    cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_3037
+  workaround: true
+  brainwash_check: ''
+  category: report_yaml_format
+  detail: "brainwash_check key exists but value is empty"
+  root_cause: "empty scalar should not count as filled"
+  resolved_by_cmd: "test_resolution"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: workaround brainwash_check未記入 1件: cmd_3037"* ]]
+    [[ "$output" == *"WARN: brainwash_check未記入のworkaround 1件: cmd_3037"* ]]
+    [[ "$output" == *"総合判定: WARN"* ]]
+}
+
 @test "workaround true with brainwash_check → no brainwash WARN" {
     cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
 - cmd_id: cmd_3035

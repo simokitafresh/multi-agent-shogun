@@ -989,6 +989,16 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         return (msg_type == "skill_hint" ||
                 msg_content ~ /(実行せよ|配備せよ|future fix|変更対象|即修正候補|対応せよ)/)
     }
+    function trim_brainwash_value(v) {
+        sub(/^.*brainwash_check:[[:space:]]*/, "", v)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", v)
+        gsub(/^["\047]+|["\047]+$/, "", v)
+        return v
+    }
+    function has_real_brainwash_value(v) {
+        v = trim_brainwash_value(v)
+        return (v != "" && v != "null" && v != "{}" && v != "[]")
+    }
     FILENAME ~ /queue\/tasks\/[^/]+\.yaml$/ {
         if (FNR == 1) {
             file = FILENAME
@@ -1169,6 +1179,7 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
             wa[n]=0
             brainwash[n]=0
             has_brainwash_field[n]=0
+            in_brainwash_block=0
             cat[n]="uncategorized"
             rc[n]=""
             resolved[n]=0
@@ -1182,6 +1193,9 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
             next
         }
         if (/^  workaround:/) { v=$2; if (v ~ /true|yes/) wa[n]=1; next }
+        if (in_brainwash_block && /^  [^ ]/ && $0 !~ /^  brainwash_check:/) {
+            in_brainwash_block=0
+        }
         if (/^  (cmd_id|cmd):/) {
             wa_cmd[n]=$0
             sub(/^  (cmd_id|cmd):[[:space:]]*/, "", wa_cmd[n])
@@ -1189,7 +1203,19 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
             gsub(/[[:space:]]+$/, "", wa_cmd[n])
             next
         }
-        if (/^  brainwash_check:/) { brainwash[n]=1; has_brainwash_field[n]=1; next }
+        if (/^  brainwash_check:/) {
+            has_brainwash_field[n]=1
+            in_brainwash_block=1
+            if (has_real_brainwash_value($0)) brainwash[n]=1
+            next
+        }
+        if (in_brainwash_block && /^    /) {
+            child=$0
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", child)
+            gsub(/^["\047]+|["\047]+$/, "", child)
+            if (child != "" && child !~ /^#/) brainwash[n]=1
+            next
+        }
         if (/^  category:/) { sub(/^  category: */, ""); gsub(/["'"'"']/, ""); cat[n]=$0; next }
         if (/^  root_cause:/) { sub(/^  root_cause: */, ""); gsub(/["'"'"']/, ""); rc[n]=substr($0,1,60); next }
         if (/^  resolved_by_cmd:/) {
@@ -2085,10 +2111,32 @@ _wa_file="$SCRIPT_DIR/logs/karo_workarounds.yaml"
 if [ -f "$_wa_file" ]; then
     # 直近20件のworkaround=trueエントリでbrainwash_check有無を計測
     _bw_audit=$(awk '
+    function trim_brainwash_value(v) {
+        sub(/^.*brainwash_check:[[:space:]]*/, "", v)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", v)
+        gsub(/^["\047]+|["\047]+$/, "", v)
+        return v
+    }
+    function has_real_brainwash_value(v) {
+        v = trim_brainwash_value(v)
+        return (v != "" && v != "null" && v != "{}" && v != "[]")
+    }
     BEGIN { total=0; has_bc=0; no_bc=0; no_bc_cmds="" }
-    /^- (cmd_id|cmd|timestamp):/ { flush(); in_entry=1; wa=0; bc=0; cmd_label="" }
+    /^- (cmd_id|cmd|timestamp):/ { flush(); in_entry=1; wa=0; bc=0; in_bc_block=0; cmd_label="" }
     in_entry && /workaround: true/ { wa=1 }
-    in_entry && /brainwash_check:/ { bc=1 }
+    in_entry && /^  brainwash_check:/ {
+        in_bc_block=1
+        if (has_real_brainwash_value($0)) bc=1
+        next
+    }
+    in_entry && in_bc_block && /^    / {
+        child=$0
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", child)
+        gsub(/^["\047]+|["\047]+$/, "", child)
+        if (child != "" && child !~ /^#/) bc=1
+        next
+    }
+    in_entry && /^  [^ ]/ { in_bc_block=0 }
     in_entry && /cmd_id:/ { sub(/.*cmd_id: */, ""); gsub(/["'"'"']/, ""); cmd_label=$0 }
     function flush() {
         if (in_entry && wa) {
