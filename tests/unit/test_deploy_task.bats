@@ -391,7 +391,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"binary_checks template: 4 ACs + commit check injected"* ]]
     [[ "$output" == *"report_template: generated"* ]]
-    grep -q "^  'AC1':" "$TEST_PROJECT/queue/reports/sasuke_report_cmd_3091.yaml"
+    grep -Eq "^  '?AC1'?:$" "$TEST_PROJECT/queue/reports/sasuke_report_cmd_3091.yaml"
     grep -q "report_path: queue/reports/sasuke_report_cmd_3091.yaml" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 }
 
@@ -653,6 +653,43 @@ assert "lesson_candidate found=true" in acs["AC3"]["description"]
 assert "注入教訓から1件以上" in acs["AC4"]["description"]
 assert "incoming backlink数" in acs["AC5"]["description"]
 assert "causal_backlink_counts.sh --zero --limit 20" in "\n".join(acs["AC5"]["binary_checks"])
+PY
+}
+
+@test "deploy_task --direct cmd_training preserves skill_training custom ACs" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  task_type: skill_training
+  project: infra
+  purpose: "L1 report-write 修行: verdict missingを防ぐ"
+  acceptance_criteria:
+    AC1:
+      description: "verdict missingの原因を説明する"
+      binary_checks:
+        - "verdict自動導出を確認したか: yes/no"
+EOF
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        inject_direct_training_template "$TEST_PROJECT/queue/tasks/sasuke.yaml" "cmd_training_L1_report-write_20260701194745"
+    )
+
+    TASK_FILE="$TEST_PROJECT/queue/tasks/sasuke.yaml" python3 - <<'PY'
+import os
+import yaml
+
+with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
+    task = (yaml.safe_load(f) or {}).get("task") or {}
+
+assert task["task_type"] == "skill_training"
+assert "L1 report-write" in task["purpose"], task["purpose"]
+acs = task["acceptance_criteria"]
+assert list(acs.keys()) == ["AC1"], acs
+assert "verdict missing" in acs["AC1"]["description"]
+assert "改善点を3つ" not in acs["AC1"]["description"]
 PY
 }
 

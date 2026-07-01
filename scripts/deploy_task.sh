@@ -1523,10 +1523,12 @@ inject_direct_training_template() {
     fi
     local task_type
     task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
-    if [ "$task_type" = "speed_training" ]; then
-        log "direct_mode: skip L4 training template for ${cmd_id} (task_type=${task_type:-unset}, speed_training excluded)"
-        return 0
-    fi
+    case "$task_type" in
+        speed_training|skill_training)
+            log "direct_mode: skip L4 training template for ${cmd_id} (task_type=${task_type:-unset}, custom training ACs preserved)"
+            return 0
+            ;;
+    esac
 
     TASK_FILE_ENV="$task_file" python3 - <<'TRAINING_TEMPLATE_PY'
 import os

@@ -76,25 +76,76 @@ fi
 # --- Generate training task YAML skeleton ---
 mkdir -p "$TRAINING_DIR"
 timestamp=$(date "+%Y%m%d%H%M%S")
-task_file="${TRAINING_DIR}/training_L${level}_${skill}_${timestamp}.yaml"
+skill_slug=$(printf '%s' "$skill" | tr -c '[:alnum:]_-' '_' | sed -E 's/_+/_/g; s/^_//; s/_$//')
+[ -n "$skill_slug" ] || skill_slug="skill"
+task_file="${TRAINING_DIR}/training_L${level}_${skill_slug}_${timestamp}.yaml"
+
+yaml_dq_escape() {
+    local value="${1:-}"
+    value="${value//\\/\\\\}"
+    value="${value//\"/\\\"}"
+    printf '%s' "$value"
+}
+
 # Truncate reason for YAML safety (max 300 chars)
-safe_reason=$(echo "$reason" | head -c 300 | tr '"' "'")
+safe_skill=$(yaml_dq_escape "$skill")
+safe_gate=$(yaml_dq_escape "${gate:-unknown}")
+safe_reason=$(yaml_dq_escape "$(printf '%s' "$reason" | head -c 300)")
+safe_block_patterns=$(yaml_dq_escape "$block_patterns")
+parent_cmd="cmd_training_L${level}_${skill_slug}_${timestamp}"
+target_path="skills/${skill}/SKILL.md"
+if [ ! -f "${REPO_ROOT}/${target_path}" ]; then
+    target_path="skills/${skill_slug}/SKILL.md"
+fi
+if [ ! -f "${REPO_ROOT}/${target_path}" ]; then
+    target_path="context/training-cycle.md"
+fi
+safe_target_path=$(yaml_dq_escape "$target_path")
+generated_at=$(date "+%Y-%m-%dT%H:%M:%S")
 
 cat > "$task_file" <<YAML
 # Auto-generated training task skeleton
 # Source: skill_auto_improve.sh escalation (unchanged_streak=${streak})
-# Review and deploy: bash scripts/deploy_task.sh --direct
+# Review and deploy: bash scripts/deploy_task.sh --direct --yaml ${task_file} <ninja>
 # !! 家老は内容を確認し配備判断せよ。自動配備ではない !!
+task:
+  parent_cmd: "${parent_cmd}"
+  task_id: "${parent_cmd}_training"
+  task_type: skill_training
+  project: infra
+  target_path: "${safe_target_path}"
+  scout_exempt: true
+  status: assigned
+  purpose: "skill=${safe_skill} のgate FAIL(${safe_block_patterns})に対するL${level}修行。BLOCKパターンを実戦前に学習し一発PASS率を向上させる"
+  command: "training_proposal.fail_reason を再現し、${safe_skill} の手順で ${safe_gate} をPASSへ戻す。report_field_set.sh/verdict自動導出/binary_checksのどこで同種FAILを防ぐかを報告する。"
+  acceptance_criteria:
+    AC1:
+      description: "gate FAIL原因(${safe_block_patterns})を対象スキル手順と照合し、どの記入・検証手順で防ぐかを説明する"
+      binary_checks:
+        - "training_proposal.fail_reasonを読み、該当するBLOCKパターンを特定したか: yes/no"
+        - "対象スキル手順のどのステップで同種FAILを防ぐかを報告したか: yes/no"
+    AC2:
+      description: "報告YAMLテンプレートをreport_field_set.sh経由で完成させ、${safe_gate}を実行してPASS/FAILを数値で確認する"
+      binary_checks:
+        - "report_field_set.sh経由で必須フィールドを記入したか: yes/no"
+        - "全binary_checksのresultをyes/noで記入したか: yes/no"
+        - "${safe_gate}を実行し結果を報告したか: yes/no"
+    AC3:
+      description: "同じFAILを次回防ぐlesson_candidateをorigin付きで記録し、verdictとbinary_checksの整合を確認する"
+      binary_checks:
+        - "lesson_candidateに次回追加すべきチェックをorigin付きで記入したか: yes/no"
+        - "verdictがgateまたはbinary_checksと矛盾していないことを確認したか: yes/no"
+
 training_proposal:
-  skill: "${skill}"
-  gate: "${gate}"
+  skill: "${safe_skill}"
+  gate: "${safe_gate}"
   fail_reason: "${safe_reason}"
   training_level: "L${level}"
-  block_patterns: "${block_patterns}"
-  suggested_parent_cmd: "cmd_training_L${level}_$(date +%Y%m%d)"
-  suggested_purpose: "skill=${skill} のgate FAIL(${block_patterns})に対する修行。BLOCKパターンを実戦前に学習し一発PASS率を向上させる"
+  block_patterns: "${safe_block_patterns}"
+  suggested_parent_cmd: "${parent_cmd}"
+  suggested_purpose: "skill=${safe_skill} のgate FAIL(${safe_block_patterns})に対する修行。BLOCKパターンを実戦前に学習し一発PASS率を向上させる"
   unchanged_streak: ${streak}
-  generated_at: "$(date "+%Y-%m-%dT%H:%M:%S")"
+  generated_at: "${generated_at}"
   status: pending_karo_review
 YAML
 
