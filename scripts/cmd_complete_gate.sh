@@ -82,6 +82,21 @@ queue_lesson_impact_followup() {
     echo "  lesson_impact follow-up: queued (async)"
 }
 
+lesson_done_satisfies_lesson_candidate_registration() {
+    local done_file="$1"
+    local done_source=""
+    local done_note=""
+
+    [ -f "$done_file" ] || return 1
+
+    done_source=$(awk -F: '/^[[:space:]]*source:/{sub(/^[[:space:]]*/, "", $2); print $2; exit}' "$done_file" 2>/dev/null)
+    done_note=$(awk -F: '/^[[:space:]]*note:/{sub(/^[[:space:]]*/, "", $2); print $2; exit}' "$done_file" 2>/dev/null)
+
+    [ "$done_source" = "lesson_write" ] && return 0
+    printf '%s\n' "$done_note" | grep -Fq "duplicate_existing" && return 0
+    return 1
+}
+
 GATES_DIR="$SCRIPT_DIR/queue/gates/${CMD_ID}"
 YAML_FILE="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 TASKS_DIR="$SCRIPT_DIR/queue/tasks"
@@ -7675,7 +7690,9 @@ PYEOF
         fi
 
         if [ "$_lc_action" = "check" ]; then
-            if [ "$_lc_reg" = "true" ] && [ -n "$_lc_project" ] && [ -n "$_lc_source" ]; then
+            if lesson_done_satisfies_lesson_candidate_registration "$GATES_DIR/lesson.done"; then
+                echo "  OK: lesson_candidate already registered (${ninja_name}, lesson.done)"
+            elif [ "$_lc_reg" = "true" ] && [ -n "$_lc_project" ] && [ -n "$_lc_source" ]; then
                 # register_recommended:true → auto lesson_write (cmd_2697)
                 echo "  AUTO-REGISTER: ${ninja_name}: ${_lc_title} (register_recommended:true)"
                 if bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$_lc_project" "$_lc_title" "$_lc_detail" "$_lc_source" "$_lc_author" "$_lc_source" 2>&1; then

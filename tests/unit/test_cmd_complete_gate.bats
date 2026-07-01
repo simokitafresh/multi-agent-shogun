@@ -18,6 +18,8 @@ setup_file() {
         printf '\n'
         sed -n '/^log_gate_stderr_file()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^lesson_done_satisfies_lesson_candidate_registration()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^cmd_status_is_canceled()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^level_heading()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -1036,6 +1038,45 @@ assert 'inbox_write.sh" karo' in func, func
 assert "lesson_registration_reminder" in func, func
 assert "lesson.done未生成" in func, func
 assert "dedup" in func, func
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "lesson.done source=lesson_write satisfies GATE CLEAR lesson_candidate registration" {
+    local done_file="$TEST_TMPDIR/lesson.done"
+    cat > "$done_file" <<'EOF'
+timestamp: 2026-07-02T04:55:00
+source: lesson_write
+EOF
+
+    run lesson_done_satisfies_lesson_candidate_registration "$done_file"
+    [ "$status" -eq 0 ]
+}
+
+@test "lesson.done note=duplicate_existing satisfies GATE CLEAR lesson_candidate registration" {
+    local done_file="$TEST_TMPDIR/lesson.done"
+    cat > "$done_file" <<'EOF'
+timestamp: 2026-07-02T04:55:00
+source: auto_draft
+note: duplicate_existing (L922)
+EOF
+
+    run lesson_done_satisfies_lesson_candidate_registration "$done_file"
+    [ "$status" -eq 0 ]
+}
+
+@test "GATE CLEAR lesson_candidate WARN branch checks lesson.done before warning" {
+    run python3 - "$SRC_GATE_SCRIPT" <<'PY'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+start = text.index("Lesson candidate registration check (GATE CLEAR):")
+end = text.index("Workaround rate (GATE CLEAR):", start)
+branch = text[start:end]
+
+assert "lesson_done_satisfies_lesson_candidate_registration" in branch, branch
+assert branch.index("lesson_done_satisfies_lesson_candidate_registration") < branch.index("WARN: lesson_candidate未登録"), branch
 PY
     [ "$status" -eq 0 ]
 }
