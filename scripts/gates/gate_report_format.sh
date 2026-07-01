@@ -179,6 +179,9 @@ if [[ "${GATE_FAST_EXIT:-0}" = "1" ]]; then
 fi
 
 # --- GATE_NO_LOG guard: skip fire_log writing ---
+# cmd_complete_gate.sh等gate呼び出し元スクリプトをベンチマーク/速度計測で反復実行する時はこれを1にせよ。
+# 判定(PASS/FAIL)自体は変わらない。付けないと未完成レポートの空欄FAILがgate_fire_log/insightを汚染する
+# (cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526で確認: kagemaru 3連続実行×6項目=18件)。
 if [[ "${GATE_NO_LOG:-}" = "1" ]]; then
     [ "$RESULT_IS_PASS" -eq 1 ] && exit 0 || exit 1
 fi
