@@ -1,16 +1,59 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
   acceptance_criteria:
     AC1:
-      binary_check: 対象commit差分と現行ファイルを確認し、残存バグあり/なしを根拠付きで報告しているか
-      description: befd7ca46, c9ba1ff9a, b421a7ee6 の差分を読み、Opus 4.8表示/family分類/CLI種別変更時launch_cmdクリアに残存バグがあるか一次情報で判定する
+      binary_check: 報告YAMLにbanner証跡があり、期待model×effortと一致しているか
+      description: 配備直前バナー確認記録(capture-pane出力)を報告YAMLに含め、期待model×effort=GPT 5.5 xhighと一致していることを示す
     AC2:
-      binary_check: 既存テストファイルと実行可能な最小テスト結果を報告しているか
-      description: 関連するshell/Python/Batsテストの不足を調べ、追加すべきテストまたは不要理由を報告する
-    AC3:
-      binary_check: 自分のモデル/CLI環境で観測した差分または差分なしを報告しているか
-      description: GPT/Claude CLI差による挙動差(hook, model label, launch_cmd override)を自分の実行環境観点で記録する
+      binary_check: gate_report_format PASSかつ比較レポート更新に必要な所見が記載されているか
+      description: 元cmd_3628の同一cmd比較タスクを完了し、GATE CLEAR可能な報告YAMLを作成する。軍師が累積比較レポートと5w1h文書更新に使える所見を含める
+  assigned_scope: '元cmd_3628と同一内容。重複ガード回避のためparent_cmdのみcmd_3628_kagemaru。source_cmd=cmd_3628。期待モデル=GPT 5.5 xhigh。配備直前banner証跡=kagemaru pane4: gpt-5.5 xhigh; model: gpt-5.5 xhigh /model to change (capture-pane 2026-07-01T17:10 JST)。報告YAMLにはこのbanner証跡と自分の実行結果を必ず記載する。'
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  expected_model_effort: GPT 5.5 xhigh
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  origin: '[[殿指示_pane確認必須_20260701]] -> [[cmd_3628]] -> [[kagemaru_GPT 5.5 xhigh]]'
+  parallel_ok: []
+  parent_cmd: cmd_3628_kagemaru
+  pre_deploy_banner_evidence: 'kagemaru pane4: gpt-5.5 xhigh; model: gpt-5.5 xhigh /model to change (capture-pane 2026-07-01T17:10 JST)'
+  project: infra
+  purpose: 'cmd_3628全未調査model×effort一括比較: kagemaru=GPT 5.5 xhighで同一cmdを実行し、配備直前banner証跡・GATE CLEAR報告・累積比較更新材料を報告する'
+  scope_mode: FULL
+  source_cmd: cmd_3628
+  status: done
+  stop_for: []
+  target_path: /mnt/c/tools/multi-agent-shogun/docs/research
+  task_id: cmd_3628_kagemaru_normal
+  task_type: full
+  related_lessons:
+  - id: 'L828'
+    summary: 'gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr'
+    detail: 'gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr'
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L633'
+    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+  - id: 'L278'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
+  - id: 'L342'
+    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
   standard_skills:
   - "report-write"
   - "verdict-check"
@@ -26,75 +69,35 @@ task:
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
+      - L828: gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
-    
-    【3-strike rule】
-      - 初期仮説は最低3本。hypothesis_count に現在の本数を維持せよ
-      - 3回連続で仮説が外れたら、追加探索で粘らずエスカレーションせよ
-      ────────────────────────────────────────
-    
-    
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  hypothesis_count: 3
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope: 実装変更は原則禁止。重大な即時バグを見つけた場合のみ最小修正案を提示し、勝手に広範囲改修しない。
-  parallel_ok: []
-  parent_cmd: cmd_3624_kagemaru
-  project: infra
-  purpose: 'cmd_3624四者比較のkagemaru(GPT 5.5 medium)担当: CLIモデル表示・model_family分類・launch_cmdクリア修正群の残存バグを監査する'
-  report_template:
-    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-    forbidden:
-    - 方針提案・設計判断は禁止。事実と分析のみ報告せよ
-    notes:
-    - 他の忍者の報告を参照するな（並行偵察の独立性）
-    required_fields:
-    - findings
-    - verdict
-    - confidence
-    - blind_spots
-  scope_mode: FULL
-  status: done
-  stop_for: []
-  target_path: scripts/lib/cli_lookup.sh
-  task_id: cmd_3624_kagemaru_normal
-  task_type: recon
-  three_strike_rule: 仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告
-  related_lessons:
-  - id: 'L278'
-    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-    wa_category: 'commit_missing'
-    wa_count: 1
-    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
-  - id: 'L342'
-    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
-    wa_category: 'commit_missing'
-    wa_count: 1
-    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
   memory_db_context:
-  - '2026-07-01T07:18:16+09:00 | 軍師提案: GPT 5.5 low / GPT 5.5 medium / Sonnet 4.6 / Sonnet 5 の四者比較。hayate(GPT low), kagemaru(GPT mediu'
-  - '2026-07-01T07:15:15+09:00 | 軍師提案: GPT 5.5 low / GPT 5.5 medium / Sonnet 4.6 / Sonnet 5 の四者比較。hayate(GPT low), kagemaru(GPT mediu'
+  - '2026-07-01T08:50:25+09:00 | https://gist.github.com/simokitafresh/060b919188d40136acda6ddb83612933#file-model-comparison-5w1h-20'
+  - '2026-07-01T07:56:07+09:00 | gist更新完了。 - **ドキュメント**: `docs/research/model-comparison-5w1h-20260701.md` — GPT 5.5含む全4モデルの5W1H比較 - '
+  - '2026-07-01T08:52:59+09:00 | 既にClaude系もeffort明記済み（Sonnet 4.6 **high**, Sonnet 5 **xhigh**, Opus 4.8 **xhigh**）。ただし殿の指摘はClaude系でもe'
+  - '2026-07-01T07:08:40+09:00 | saizoのpaneの枠のステータスがsonnetのままだ。中身はopu4.8 xhighだ。これもバグだな。すべてのバグを修正し、今後起きないようにしよう'
   ac_version: d41d8cd9
-  _ac_task_id: cmd_3624_kagemaru_normal
+  _ac_task_id: cmd_3628_kagemaru_normal
   _ac_worker_id: 
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3624_kagemaru.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3624_kagemaru.yaml
+  report_filename: kagemaru_report_cmd_3628_kagemaru.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3628_kagemaru.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -117,4 +120,4 @@ task:
     - reason: 'empty_lessons_useful'
       count: 2
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-07-01T07:23:34"
+  deployed_at: "2026-07-01T17:13:23"
