@@ -8116,6 +8116,11 @@ deploy_task_apply_task_mutations() {
     local ninja_name="${1:-$NINJA_NAME}"
     local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
     local task_status
+    local direct_yaml_source=0
+
+    if [ "${DIRECT_MODE:-false}" = true ] && [ -n "${YAML_FILE:-}" ]; then
+        direct_yaml_source=1
+    fi
 
     task_status=$(field_get "$task_file" "status" "unknown")
 
@@ -8170,6 +8175,12 @@ deploy_task_apply_task_mutations() {
 
     if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" = "1" ]; then
         log "direct_mode: preinjected task YAML detected; skipping heavy context/lesson/semantic reinjection"
+    elif [ "$direct_yaml_source" = "1" ]; then
+        log "direct_mode: source task YAML detected; skipping cmd-source heavy context/lesson/semantic reinjection"
+        inject_standard_skills "$task_file" || true
+        inject_role_reminder "$task_file" "$ninja_name" || true
+        inject_ac_version "$task_file" || true
+        verify_ac_consistency "$task_file" || true
     else
         inject_task_modifiers "$task_file" || true
         inject_session_state_hints "$task_file" || true  # GP-198
@@ -8195,7 +8206,7 @@ deploy_task_apply_task_mutations() {
         verify_ac_consistency "$task_file" || true
     fi
 
-    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
+    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ] && [ "$direct_yaml_source" != "1" ]; then
         local pc_file inj_project inj_ids lid
         pc_file="$SCRIPT_DIR/queue/tasks/.postcond_lesson_inject"
         if [ -f "$pc_file" ]; then
@@ -8216,7 +8227,7 @@ deploy_task_apply_task_mutations() {
         postcondition_lesson_inject "$task_file" || true
     fi
 
-    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
+    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ] && [ "$direct_yaml_source" != "1" ]; then
         inject_reports_to_read "$task_file" || true
         inject_context_files "$task_file" || true
         inject_credential_files "$task_file" || true
@@ -8235,10 +8246,14 @@ deploy_task_apply_task_mutations() {
 
     if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
         inject_report_filename "$task_file" || true
-        inject_bloom_level "$task_file" || true
-        inject_execution_controls "$task_file" || true
-        inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points" "$task_file" "$ninja_name"
-        check_context_freshness "$task_file" || true
+        if [ "$direct_yaml_source" = "1" ]; then
+            log "direct_mode: preserving source task YAML core fields after report filename injection"
+        else
+            inject_bloom_level "$task_file" || true
+            inject_execution_controls "$task_file" || true
+            inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points" "$task_file" "$ninja_name"
+            check_context_freshness "$task_file" || true
+        fi
     fi
 
     local task_id parent_cmd project _ac_task_id
@@ -8391,8 +8406,12 @@ except Exception:
             yaml_field_set "$task_yaml" "task" "parent_cmd" "$CMD_ID" 2>/dev/null || true
             yaml_field_set "$task_yaml" "task" "status" "assigned" 2>/dev/null || true
             yaml_field_set "$task_yaml" "task" "task_id" "${CMD_ID}_${direct_task_id_suffix}" 2>/dev/null || true
-            inject_training_target_path_from_alias_quality "$task_yaml" "$CMD_ID" || true
-            inject_direct_training_template "$task_yaml" "$CMD_ID" || true
+            if [ -n "$YAML_FILE" ]; then
+                log "direct_mode: preserving --yaml source task body; skipping direct training template injection"
+            else
+                inject_training_target_path_from_alias_quality "$task_yaml" "$CMD_ID" || true
+                inject_direct_training_template "$task_yaml" "$CMD_ID" || true
+            fi
             deploy_task_resolved_mutated=1
             log "direct_mode: parent_cmd=${CMD_ID}, task_id=${CMD_ID}_${direct_task_id_suffix}, status=assigned set"
             elif [ -n "$CMD_FORCED" ]; then

@@ -67,6 +67,7 @@ echo "$RESULT"
 
 # --- cmd_3264: auto-commit contamination check (AC2/AC3) ---
 # bc:commit=yes時にtarget_path配下の未commit変更・auto-commit巻込みを検出
+CONTAMINATION_BLOCK=0
 if [[ "$REPORT_PATH" != /tmp/* ]] && [[ "$REPORT_PATH" != *"/tmp/"* ]]; then
     _CC_WORKER="$_REPORT_EXECUTOR"
     _CC_TASK_FILE="$REPO_ROOT/queue/tasks/${_CC_WORKER}.yaml"
@@ -79,7 +80,7 @@ try:
     commit = bc.get('commit') or []
     if not (isinstance(commit, list) and commit):
         sys.exit(0)
-    if str(commit[0].get('result', '') or '').strip() != 'yes':
+    if str(commit[0].get('result', '') or '').strip().lower() not in ('yes', 'true'):
         sys.exit(0)
     tdata = yaml.safe_load(open(sys.argv[2], encoding='utf-8')) or {}
     task = tdata.get('task') or tdata
@@ -108,7 +109,8 @@ except Exception:
                 # 注: [ -n ]&&形式はループ末尾空行でset -e死亡する同型バグ族(2026-06-11 precheck 2件と同根)。防御的if/fi化
                 while IFS= read -r _ccl; do if [ -n "$_ccl" ]; then echo "  $_ccl"; fi; done <<< "$_CC_UNCOMMITTED"
                 # WARN→BLOCK昇格(2026-06-26): commit_missing workaround 3件再発。WARNでは止まらない
-                RESULT_IS_PASS=0
+                CONTAMINATION_BLOCK=1
+                RESULT="${RESULT}"$'\n'"FAIL: cmd_3264-AC2 target_path配下に未commit変更あり"
             fi
             # AC3: auto-commit contamination detection
             _CC_AUTO_FILES=$(cd "$REPO_ROOT" && git log --grep="auto-commit" -10 --format="" --name-only 2>/dev/null | sort -u || true)
@@ -144,6 +146,9 @@ while IFS= read -r _result_line; do
             ;;
     esac
 done <<< "$RESULT"
+if [ "$CONTAMINATION_BLOCK" -eq 1 ]; then
+    RESULT_IS_PASS=0
+fi
 
 # Test/unit fast path: callers that only need stdout + exit code can bypass cache/log/session-state work.
 if [[ "${GATE_FAST_EXIT:-0}" = "1" ]]; then

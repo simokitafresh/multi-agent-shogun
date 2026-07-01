@@ -141,8 +141,92 @@ EOF
       result: yes"
 
     run bash "$TEST_GATE" "$rpath"
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 1 ] || {
+        echo "Expected exit 1 but got $status"
+        echo "$output"
+        return 1
+    }
     [[ "$output" == *"binary_checks: item count 1/4 (<50% of task template)"* ]]
+}
+
+@test "cmd_3264 AC2 target_path uncommitted BLOCK overrides combined PASS" {
+    local worker="cmd3264test"
+    local workdir="$PROJECT_ROOT/.codex_tmp/gate_report_format_cmd3264_test_$$"
+    local task_path="$workdir/queue/tasks/${worker}.yaml"
+    local rpath="$workdir/queue/reports/${worker}_report_cmd_3264.yaml"
+    local gate="$workdir/scripts/gates/gate_report_format.sh"
+    rm -rf "$workdir"
+    mkdir -p "$workdir/scripts/gates" "$workdir/queue/reports" "$workdir/queue/tasks" "$workdir/logs" "$workdir/target"
+    cp "$GATE_SCRIPT" "$gate"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_main.py" "$workdir/scripts/gates/"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$workdir/scripts/gates/"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$workdir/scripts/gates/"
+    chmod +x "$gate"
+    git -C "$workdir" init -q
+    cat > "$task_path" <<EOF
+task:
+  target_path: target
+EOF
+    echo "dirty" > "$workdir/target/dirty.txt"
+    cat > "$rpath" <<EOF
+worker_id: ${worker}
+parent_cmd: cmd_3264
+ac_version_read: test_hash_abc
+status: completed
+result:
+  summary: "テスト用報告"
+  details: "詳細"
+purpose_validation:
+  cmd_purpose: "テスト"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - path: scripts/gates/gate_report_format.sh
+    change: modified
+lesson_candidate:
+  found: false
+  no_lesson_reason: "テスト用の報告であるため新規教訓なし"
+  title: ""
+  detail: ""
+lessons_useful:
+  - id: L001
+    useful: true
+    reason: helpful
+binary_checks:
+  AC1:
+    - check: テスト完了
+      result: yes
+  commit:
+    - check: git commitが完了したか
+      result: yes
+verdict: PASS
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+EOF
+
+    run env GATE_NO_LOG=1 SKILL_EXECUTION_PASS_LOG_DISABLE=1 GATE_PASS_CACHE_FILE="$workdir/pass_cache" bash "$gate" "$rpath"
+
+    [ "$status" -eq 1 ] || {
+        echo "Expected exit 1 but got $status"
+        echo "$output"
+        echo "git status target:"
+        git -C "$workdir" status --porcelain -- target || true
+        echo "task:"
+        cat "$task_path" || true
+        echo "report commit check:"
+        python3 - "$rpath" <<'PY' || true
+import yaml, sys
+d = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+print(d.get('worker_id'))
+print((d.get('binary_checks') or {}).get('commit'))
+PY
+        rm -rf "$workdir"
+        return 1
+    }
+    [[ "$output" == *"BLOCK(cmd_3264-AC2)"* ]]
+    rm -rf "$workdir"
 }
 
 # === Test 4: PASS_NO_IMPROVEMENT はゲートとしてexit 0 (PASSと同等) ===
