@@ -603,10 +603,6 @@ for _pid in "${_target_pids[@]}"; do
         continue
     fi
 
-    if ! check_ssot_conflict_markers "$_pid" "$_lessons_file"; then
-        EXIT_CODE=1
-    fi
-
     # context_file パスを取得 (awk1回のキャッシュから)
     _cf="${_context_map[$_pid]:-}"
     [ -z "$_cf" ] && _cf="context/${_pid}.md"
@@ -653,6 +649,10 @@ for _pid in "${_target_pids[@]}"; do
             echo "OK: ${_pid} lesson 0件"
         fi
         continue
+    fi
+
+    if ! check_ssot_conflict_markers "$_pid" "$_lessons_file"; then
+        EXIT_CODE=1
     fi
 
     [ "${_deprecated_count:-0}" -gt 0 ] && echo "INFO: ${_pid} deprecated除外: ${_deprecated_count}件"

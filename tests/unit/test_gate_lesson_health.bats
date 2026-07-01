@@ -77,6 +77,24 @@ teardown() {
     [[ "$output" == *"OK: infraのlesson統合状況は健全"* ]]
 }
 
+@test "gate_lesson_health ignores missing ssot_path when lessons cache has zero lessons" {
+    : > "$TEST_TMPDIR/projects/infra/lessons.yaml"
+
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: infra lesson 0件"* ]]
+    [[ "$output" != *"ssot_path未設定"* ]]
+
+    cat > "$TEST_TMPDIR/projects/infra/lessons.yaml" <<'EOF'
+lessons: []
+EOF
+
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: infra lesson 0件"* ]]
+    [[ "$output" != *"ssot_path未設定"* ]]
+}
+
 @test "gate_lesson_health warns and reports fill rate when lessons miss when/how" {
     run bash "$TEST_GATE" infra
     [ "$status" -eq 0 ]
