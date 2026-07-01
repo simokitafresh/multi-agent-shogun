@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-06-29 cmd_3601 -->
+<!-- last_updated: 2026-07-02 cmd_3635 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -847,6 +847,12 @@ GA-102原因: `dm-signal-ops.md`のlast_updatedは2026-06-13で、2026-06-14以�
 | f625dc2b cmd_3546 fullrecalculate idempotency proof | §6-7の完了確認ルールと整合。本文追加不要 | `docs/research/cmd_3546/*`に検証証跡を追加済み。ops本文にはL783 timing-history一次証跡を既に反映済み |
 
 GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以後にops pathspec対象commitが16件増加したため`gate_context_freshness.sh`がsource commits ALERTを出した。直接のALERT対象は最新3件(896a20b2/46e1b48c/baf7db97)で、真にopsへ反映が必要だった差分はCompare Returnsの運用確認対象URL/API/router追加。根本原因はGA-129/GA-141と同系統で、外部repoのbackend/api/services/jobs/docs/research変更がsplit context更新候補へ自動接続されず、gateが事後検出していること。横展開候補: `dm-signal-core.md`/`dm-signal-frontend.md`/`dm-signal-research.md`も同時にsource commits ALERT対象だが、今回の更新対象外。
+
+## §46 password rotation運用リスク (cmd_3634_recon3)
+
+- `dm-signal-password-rotation` cron `0 16 1 * *` はUTC+9でJST 2日目01:00になり、意図した「毎月1日01:00 JST」より丸1日遅い。前月末expires_at後から実ローテーションまで約25hの全tier失効窓が毎月発生しうる。
+- `monthly_password_rotation()`はtier単位try/exceptなし。途中tierでRender env更新が失敗すると、先行tierのRender env更新+token revoke済みに対してDB更新がrollbackされる部分失敗リスクがある。
+- tier数分(現行5件)の個別Render env更新はbackend再デプロイを連鎖させる可能性があり、7/1 OOM/health timeoutとの相関はRender deploy履歴と突合して確認する。
 
 ## 因果リンク
 
