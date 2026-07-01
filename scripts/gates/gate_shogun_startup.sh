@@ -1356,14 +1356,14 @@ PY
         if [ "$overall" = "OK" ]; then
             overall="WARN"
         fi
-        alerts+=("追体験自動化ターゲット: WARN")
+                alerts+=("追体験自動化ターゲット: WARN (自動化ターゲット未記入)")
         ;;
     *)
         echo "  WARN: Q6(創造主の洗脳チェック)回答未検出 — LS041自己監査を省略するな"
         if [ "$overall" = "OK" ]; then
             overall="WARN"
         fi
-        alerts+=("追体験自動化ターゲット: WARN")
+        alerts+=("追体験自動化ターゲット: WARN (Q6回答未検出)")
         ;;
 esac
 fi
@@ -2370,14 +2370,21 @@ if [ -f "$_LS_FILE" ]; then
     _rep_dir="$SCRIPT_DIR/queue/reports"
     if [ -d "$_rep_dir" ]; then
         if command -v rg >/dev/null 2>&1; then
-            IFS=$'\t' read -r _useful_true _useful_false <<< "$(rg -uuu -n "useful: (true|false)" "$_rep_dir" 2>/dev/null | awk '
-                /useful: true/ { t++ }
-                /useful: false/ { f++ }
-                END { printf "%d\t%d\n", t+0, f+0 }
+            IFS=$'\t' read -r _useful_true _useful_false _lu_filled_reps _lu_empty_reps <<< "$(rg -uuu -n "useful: (true|false)|^lessons_useful: \\[\\]" "$_rep_dir" 2>/dev/null | awk -F: '
+                /useful: true/ { t++; filled[$1]=1 }
+                /useful: false/ { f++; filled[$1]=1 }
+                /lessons_useful: \[\]/ { empty[$1]=1 }
+                END {
+                    for (p in filled) fc++
+                    for (p in empty) ec++
+                    printf "%d\t%d\t%d\t%d\n", t+0, f+0, fc+0, ec+0
+                }
             ')"
         else
             _useful_true=$(grep -rc "useful: true" "$_rep_dir/" 2>/dev/null | awk -F: '{s+=$NF}END{print s+0}')
             _useful_false=$(grep -rc "useful: false" "$_rep_dir/" 2>/dev/null | awk -F: '{s+=$NF}END{print s+0}')
+            _lu_filled_reps=$(grep -rl "useful: true\|useful: false" "$_rep_dir" 2>/dev/null | wc -l || echo 0)
+            _lu_empty_reps=$(grep -rl "^lessons_useful: \[\]" "$_rep_dir" 2>/dev/null | wc -l || echo 0)
         fi
         _useful_total=$(( _useful_true + _useful_false ))
         if [ "$_useful_total" -gt 0 ]; then
@@ -2388,10 +2395,8 @@ if [ -f "$_LS_FILE" ]; then
         fi
         # lessons_useful記入率: useful評価あり(記入済み) vs 空リストのレポート比率 (cmd_3561)
         # related_lessonsはタスクYAML側にあるため、レポートYAML内のlessons_usefulフィールドで直接判定
-        _lu_filled_reps=$(grep -rl "useful: true\|useful: false" "$_rep_dir" 2>/dev/null | wc -l || echo 0)
         _lu_filled_reps="${_lu_filled_reps//[^0-9]/}"
         _lu_filled_reps="${_lu_filled_reps:-0}"
-        _lu_empty_reps=$(grep -rl "^lessons_useful: \[\]" "$_rep_dir" 2>/dev/null | wc -l || echo 0)
         _lu_empty_reps="${_lu_empty_reps//[^0-9]/}"
         _lu_empty_reps="${_lu_empty_reps:-0}"
         _lu_denominator=$(( _lu_filled_reps + _lu_empty_reps ))
@@ -2916,8 +2921,9 @@ if [ -n "${_PID_SKILL_REFS:-}" ]; then
         _skill_ref_out=$(cat "$_TMP_SKILL_REFS")
         printf '%s\n' "$_skill_ref_out" | grep -E '^(走査:|=== 要更新|=== 参照先|  WARN:|--- 総合判定)' | head -20 | sed 's/^/  /'
         if [ "$_skill_ref_status" -eq 2 ] && [ "$overall" != "ALERT" ]; then
+            _skill_ref_sig=$(printf '%s\n' "$_skill_ref_out" | awk '/^  WARN:/ { print }' | cksum | awk '{print $1 ":" $2}')
             overall="WARN"
-            alerts+=("SKILL.md script参照: 要確認あり — bash scripts/gates/gate_skill_script_refs.sh")
+            alerts+=("SKILL.md script参照: 要確認あり (${_skill_ref_sig:-unknown}) — bash scripts/gates/gate_skill_script_refs.sh")
         else
             overall="ALERT"
             alerts+=("SKILL.md script参照: gate実行失敗 — bash scripts/gates/gate_skill_script_refs.sh")
