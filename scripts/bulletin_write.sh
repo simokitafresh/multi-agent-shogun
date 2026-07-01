@@ -236,7 +236,13 @@ WRITE_RESULT="$({
     flock -x 200
 
     # ── GP-210: Dedup check (Python3-lite: sys/os only, no yaml import) ─────────
+    _bw_need_dedup_check=0
     if [[ -f "$BULLETIN_FILE" && -s "$BULLETIN_FILE" ]]; then
+        if [[ "$CONTENT" == *$'\n'* ]] || grep -Fq -- "$CONTENT" "$BULLETIN_FILE"; then
+            _bw_need_dedup_check=1
+        fi
+    fi
+    if [[ "$_bw_need_dedup_check" == "1" ]]; then
         _bw_dedup_result="$(python3 - "$BULLETIN_FILE" "$POSTED_BY" "$CONTENT" <<'PY'
 import sys, os
 bf, poster, content_target = sys.argv[1], sys.argv[2], sys.argv[3].strip()
@@ -370,7 +376,14 @@ if [[ -f "$BULLETIN_FILE" && -x "$SCRIPT_DIR/scripts/bulletin_archive.sh" ]]; th
     fi
 fi
 
-SHOGUN_ROOT="$SCRIPT_DIR" bash "$SCRIPT_DIR/scripts/yaml_auto_archive.sh" >/dev/null 2>&1 || true
+if [[ -x "$SCRIPT_DIR/scripts/yaml_auto_archive.sh" ]]; then
+    if [[ "${BULLETIN_AUTO_ARCHIVE_SYNC:-0}" == "1" ]]; then
+        SHOGUN_ROOT="$SCRIPT_DIR" bash "$SCRIPT_DIR/scripts/yaml_auto_archive.sh" >/dev/null 2>&1 || true
+    else
+        (SHOGUN_ROOT="$SCRIPT_DIR" bash "$SCRIPT_DIR/scripts/yaml_auto_archive.sh" >/dev/null 2>&1 || true) &
+        disown 2>/dev/null || true
+    fi
+fi
 
 # --- 投稿者以外に自動通知 ---
 INBOX_WRITE="$SCRIPT_DIR/scripts/inbox_write.sh"
