@@ -57,6 +57,8 @@ def _load_scan_cache():
             entry = pickle.load(f)
         if entry.get("key") != _scan_cache_key():
             return None
+        if entry.get("version") != 2:
+            return None
         return entry
     except Exception:
         return None
@@ -67,14 +69,31 @@ def _save_scan_cache(rows, fallback_paths, fallback_results):
     if key is None:
         return
     try:
+        compact_rows = [
+            (
+                str(path),
+                row["worker"],
+                row["task"],
+                row["parent"],
+                row["lesson_found"],
+                row["lesson_title"],
+                row["lesson_detail"],
+                path in fallback_paths,
+            )
+            for path in sorted(rows)
+            for row in (rows[path],)
+        ]
+        compact_fallback_results = {
+            str(path): result for path, result in fallback_results.items()
+        }
         p = _scan_cache_path()
         with p.open("wb") as f:
             pickle.dump(
                 {
+                    "version": 2,
                     "key": key,
-                    "rows": rows,
-                    "fallback_paths": fallback_paths,
-                    "fallback_results": fallback_results,
+                    "rows": compact_rows,
+                    "fallback_results": compact_fallback_results,
                 },
                 f,
                 protocol=pickle.HIGHEST_PROTOCOL,
@@ -307,8 +326,28 @@ def fast_scan_candidates(registered_titles):
     cached = _load_scan_cache()
     if cached is not None:
         rows = cached["rows"]
-        fallback_paths = cached["fallback_paths"]
         fallback_results = cached["fallback_results"]
+        candidates = []
+        for path_str, worker, task, parent, lesson_found, lesson_title, lesson_detail, needs_fallback in rows:
+            if not lesson_found:
+                continue
+            if needs_fallback or not lesson_title or not lesson_detail:
+                fallback = fallback_results.get(path_str)
+                if fallback is None:
+                    continue
+                if fallback[2] in registered_titles:
+                    continue
+                candidates.append(fallback)
+                continue
+
+            title = lesson_title.strip()
+            if title in registered_titles:
+                continue
+
+            detail = lesson_detail.replace("\n", " ")[:60]
+            cmd_id = parent or task or ""
+            candidates.append((str(cmd_id), str(worker), title, detail))
+        return candidates
     else:
         rows, fallback_paths, fallback_results = _build_scan_data()
         _save_scan_cache(rows, fallback_paths, fallback_results)
