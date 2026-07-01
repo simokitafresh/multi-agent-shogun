@@ -31,16 +31,21 @@ if [[ "$LESSON_ID" =~ ^L([0-9]+)$ ]]; then
     LESSON_ID="L$((10#${BASH_REMATCH[1]}))"
 fi
 
-# Get project path from config/projects.yaml
-PROJECT_PATH=$(python3 -c "
-import yaml
-with open('$SCRIPT_DIR/config/projects.yaml', encoding='utf-8') as f:
-    cfg = yaml.safe_load(f)
-for p in cfg.get('projects', []):
-    if p['id'] == '$PROJECT_ID':
-        print(p['path'])
-        break
-")
+# Get project path from config/projects.yaml. Keep this in shell to avoid an
+# extra Python startup before the edit/sync Python phases.
+PROJECT_PATH=$(awk -v id="$PROJECT_ID" '
+    /^[[:space:]]*- id:/ {
+        val = $NF
+        gsub(/"/, "", val)
+        found = (val == id)
+    }
+    found && /^[[:space:]]*path:/ {
+        sub(/^[[:space:]]*[^:]+:[[:space:]]*/, "")
+        gsub(/"/, "")
+        print
+        exit
+    }
+' "$SCRIPT_DIR/config/projects.yaml")
 
 if [ -z "$PROJECT_PATH" ]; then
     echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
