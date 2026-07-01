@@ -352,7 +352,7 @@ if missing > 0:
 else:
     print(f'\nRESULT: ALL PATHS VERIFIED')
     sys.exit(0)
-" <<< "$CMD_TEXT"
+"
 
 if [[ "$CMD_ID" == "-" ]]; then
     exit 0

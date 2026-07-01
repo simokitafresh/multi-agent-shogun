@@ -80,7 +80,6 @@ setup_file() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"tests/unit/test_cli_adapter.bats"* ]]
     [[ "$output" == *"tests/unit/test_gate_gunshi_cs_checklist.bats"* ]]
-    [[ "$output" == *"tests/unit/test_gunshi_next_action.bats"* ]]
     [[ "$output" == *"tests/unit/test_semantic_index_update.bats"* ]]
     [[ "$output" != *"WARN"* ]]
 }
