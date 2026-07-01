@@ -84,50 +84,35 @@ n = len(active)
 counters = [Counter(t) for t in texts]
 lens = [len(t) for t in texts]
 
-# Worker function: compare a row range [i_start, i_end)
+# Worker function: compare one row i against all j > i
 # Uses Counter-based quick_ratio pre-filter (same formula as SM.quick_ratio)
 # then falls back to SM.ratio() only for candidates
-def _compare_rows(args):
-    i_start, i_end = args
+def _compare_row(i):
     sm = SequenceMatcher()
     results = []
     thr = threshold
-    n_local = n
-    for i in range(i_start, i_end):
-        ca, la = counters[i], lens[i]
-        sm.set_seq1(texts[i])
-        for j in range(i + 1, n_local):
-            cb, lb = counters[j], lens[j]
-            # Counter-based quick_ratio: same formula as SM, skips set_seq2 overhead
-            common = sum(min(v, cb.get(k, 0)) for k, v in ca.items())
-            if 2.0 * common / (la + lb) >= thr:
-                sm.set_seq2(texts[j])
-                ratio = sm.ratio()
-                if ratio >= thr:
-                    results.append((ratio, ids[i], titles[i], ids[j], titles[j]))
+    ca, la = counters[i], lens[i]
+    sm.set_seq1(texts[i])
+    for j in range(i + 1, n):
+        cb, lb = counters[j], lens[j]
+        # Counter-based quick_ratio: same formula as SM, skips set_seq2 overhead
+        common = sum(min(v, cb.get(k, 0)) for k, v in ca.items())
+        if 2.0 * common / (la + lb) >= thr:
+            sm.set_seq2(texts[j])
+            ratio = sm.ratio()
+            if ratio >= thr:
+                results.append((ratio, ids[i], titles[i], ids[j], titles[j]))
     return results
 
-# Load-balanced distribution: each process handles equal number of pairs
+# perf: candidate density (quick_ratio hits) varies a lot by row range, so a static
+# equal-pair-count split starves fast workers while one worker lags (measured 2.3-3.9s
+# spread across 8 equal-pair-count chunks on infra/914 lessons). Submitting one row per
+# task lets the pool's task queue rebalance dynamically as workers free up.
 num_procs = min(multiprocessing.cpu_count(), 8)
-total_pairs = n * (n - 1) // 2
-target_per_proc = total_pairs / num_procs
-
-ranges = []
-i_start = 0
-cumulative = 0
-for p in range(num_procs - 1):
-    target = (p + 1) * target_per_proc
-    i_end = i_start
-    while i_end < n and cumulative < target:
-        cumulative += (n - 1 - i_end)
-        i_end += 1
-    ranges.append((i_start, i_end))
-    i_start = i_end
-ranges.append((i_start, n))
 
 # Parallel execution via fork (globals shared copy-on-write)
 with multiprocessing.Pool(processes=num_procs) as pool:
-    results_list = pool.map(_compare_rows, ranges)
+    results_list = pool.map(_compare_row, range(n), chunksize=4)
 
 pairs = [r for sub in results_list for r in sub]
 
