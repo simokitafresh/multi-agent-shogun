@@ -25,41 +25,41 @@ cli:
       launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
     hayate:
       type: codex
-      model_name: gpt-5.5-low
+      model_name: gpt-5.5-high
       role: ninja
       japanese_name: 疾風
       service_tier: 
-      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
+      launch_cmd: /home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen -c model_reasoning_effort=high
     kagemaru:
       type: codex
-      model_name: gpt-5.5-low
+      model_name: gpt-5.5-xhigh
       role: ninja
       japanese_name: 影丸
-      launch_cmd: /home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen
+      launch_cmd: /home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen -c model_reasoning_effort=xhigh
     hanzo:
-      type: codex
-      model_name: gpt-5.5-low
+      type: claude
+      model_name: opus-4-6-high
       role: ninja
       japanese_name: 半蔵
-      launch_cmd: /home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen
+      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions --model opus --effort high
     saizo:
       type: claude
-      model_name: claude-sonnet-4-6
+      model_name: opus-4-8-high
       role: ninja
       japanese_name: 才蔵
-      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model opus --effort high
     kotaro:
       type: claude
-      model_name: claude-sonnet-4-6
+      model_name: sonnet-4-6-high
       role: ninja
       japanese_name: 小太郎
-      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
+      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions --model sonnet --effort high
     tobisaru:
       type: claude
-      model_name: claude-sonnet-5-20250514
+      model_name: sonnet-5-high
       role: ninja
       japanese_name: 飛猿
-      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort high
 idle_cycle: on
 effort: high
 token_budget:

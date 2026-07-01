@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-01 cmd_3624 -->
+<!-- last_updated: 2026-07-01 cmd_training_L1_report_write_202607011655_saizo -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -673,7 +673,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L902 -->
+<!-- last_synced_lesson: L906 -->
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
@@ -1292,6 +1292,10 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L900: CLI種別変更時のlaunch_cmdクリアには専用回帰テストが必要（cmd_3624_kagemaru）
 - L901: detect_real_model head-1はrespawn後に旧バナーが混在すると誤検出する（cmd_3624_kotaro）
 - L902: model_family/model_display分類ロジックの複製先がSSOT変更(新モデルfamily追加)に追従しない（cmd_3624_tobisaru）
+- L903: 研究Markdownは要約表の近くに詳細データ直接リンクを置く（cmd_training_L1_report_write_202607011522_hayate）
+- L904: Markdown改善修行では対象内リンク数を個別計測する（cmd_training_L1_report_write_202607011554_kagemaru）
+- L905: 対象ファイルがTop20計測に出なくても対象内リンク数を直接数えて改善を証明する（cmd_training_L1_report_write_202607011624_hanzo）
+- L906: 参照docのインフラ挙動主張は正本を[[link]]で根拠付けよ（cmd_training_L1_report_write_202607011655_saizo）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

@@ -500,8 +500,8 @@ check_lesson_effectiveness() {
         r  = (inj > 0) ? (ref / inj) * 100 : 0.0
         ur = (tf  > 0) ? (uf  / tf)  * 100 : 0.0
         s  = "OK"
-        if (inj > 0 && r < al)                   s = "ALERT"
-        else if (inj > 0 && r < wa)               s = "WARN"
+        if (inj >= ms && r < al)                  s = "ALERT"
+        else if (inj >= ms && r < wa)              s = "WARN"
         if (tf >= ms && ur < al)                    s = "ALERT"
         else if (tf >= ms && s == "OK" && ur < wa)  s = "WARN"
         printf "%s|%.1f|%.1f\n", s, r, ur
