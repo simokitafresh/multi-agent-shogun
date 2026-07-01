@@ -102,19 +102,37 @@ fi
 # Extract lesson_candidate fields from report YAML
 export REPORT_PATH
 extract_result=$(python3 << 'PYEOF'
-import yaml, os, sys, json
+import yaml, os, sys, shlex
+
+def emit(data):
+    fields = [
+        ("action", "action", "skip"),
+        ("reason", "reason", ""),
+        ("PROJECT", "project", "unknown"),
+        ("TITLE", "title", "unknown"),
+        ("DETAIL", "detail", ""),
+        ("SOURCE_CMD", "source_cmd", "unknown"),
+        ("AUTHOR", "author", "unknown"),
+        ("TAGS", "tags", ""),
+        ("IF_COND", "if_cond", ""),
+        ("THEN_ACTION", "then_action", ""),
+        ("BECAUSE_REASON", "because_reason", ""),
+        ("TARGET_FILES", "target_files", ""),
+    ]
+    for shell_name, key, default in fields:
+        print(f"{shell_name}={shlex.quote(str(data.get(key, default)))}")
 
 report_path = os.environ["REPORT_PATH"]
 with open(report_path, encoding='utf-8') as f:
     data = yaml.safe_load(f)
 
 if not data:
-    print(json.dumps({"action": "skip", "reason": "no_data"}))
+    emit({"action": "skip", "reason": "no_data"})
     sys.exit(0)
 
 lc = data.get("lesson_candidate", {})
 if not isinstance(lc, dict) or not lc.get("found"):
-    print(json.dumps({"action": "skip", "reason": "not_found"}))
+    emit({"action": "skip", "reason": "not_found"})
     sys.exit(0)
 
 title = lc.get("title", "").strip()
@@ -122,11 +140,11 @@ detail = lc.get("detail", "").strip()
 project = lc.get("project", "").strip()
 
 if not title or not detail:
-    print(json.dumps({"action": "skip", "reason": "no_title_or_detail"}))
+    emit({"action": "skip", "reason": "no_title_or_detail"})
     sys.exit(0)
 
 if not project:
-    print(json.dumps({"action": "skip", "reason": "no_project"}))
+    emit({"action": "skip", "reason": "no_project"})
     sys.exit(0)
 
 # Get source cmd from report
@@ -143,7 +161,31 @@ if_then = lc.get("if_then", {})
 if not isinstance(if_then, dict):
     if_then = {}
 
-print(json.dumps({
+files = data.get("files_modified") or []
+paths = []
+if isinstance(files, str):
+    paths = [files]
+elif isinstance(files, list):
+    for item in files:
+        if isinstance(item, dict):
+            path = item.get("path") or item.get("file") or item.get("name")
+        else:
+            path = item
+        if path:
+            paths.append(str(path))
+
+seen = set()
+target_files = []
+for path in paths:
+    path = path.strip()
+    if not path or path in seen:
+        continue
+    seen.add(path)
+    target_files.append(path)
+    if len(target_files) >= 5:
+        break
+
+emit({
     "action": "register",
     "project": project,
     "title": title,
@@ -153,31 +195,14 @@ print(json.dumps({
     "tags": tags,
     "if_cond": if_then.get("if", ""),
     "then_action": if_then.get("then", ""),
-    "because_reason": if_then.get("because", "")
-}))
+    "because_reason": if_then.get("because", ""),
+    "target_files": ",".join(target_files),
+})
 PYEOF
 )
 
-# Parse action/reason + all fields in one python3 spawn (-1 spawn vs prior 2-spawn approach)
 action=skip reason=
-eval "$(echo "$extract_result" | python3 -c "
-import json, sys, shlex
-d = json.load(sys.stdin)
-print(f'action={shlex.quote(d.get(\"action\", \"skip\"))}')
-print(f'reason={shlex.quote(d.get(\"reason\", \"\"))}')
-for name, key, default in [
-    ('PROJECT', 'project', 'unknown'),
-    ('TITLE', 'title', 'unknown'),
-    ('DETAIL', 'detail', ''),
-    ('SOURCE_CMD', 'source_cmd', 'unknown'),
-    ('AUTHOR', 'author', 'unknown'),
-    ('TAGS', 'tags', ''),
-    ('IF_COND', 'if_cond', ''),
-    ('THEN_ACTION', 'then_action', ''),
-    ('BECAUSE_REASON', 'because_reason', ''),
-]:
-    print(f'{name}={shlex.quote(str(d.get(key, default)))}')
-")"
+eval "$extract_result"
 
 if [ "$action" = "skip" ]; then
     write_skip_lesson_done "$reason"
@@ -268,45 +293,6 @@ fi
 if [ -n "$BECAUSE_REASON" ]; then
     EXTRA_FLAGS+=(--because "$BECAUSE_REASON")
 fi
-TARGET_FILES=$(
-    python3 - "$REPORT_PATH" <<'PY'
-import sys
-import yaml
-
-report_path = sys.argv[1]
-try:
-    with open(report_path, encoding='utf-8') as f:
-        report = yaml.safe_load(f) or {}
-except Exception:
-    print("")
-    raise SystemExit(0)
-
-files = report.get("files_modified") or []
-paths = []
-if isinstance(files, str):
-    paths = [files]
-elif isinstance(files, list):
-    for item in files:
-        if isinstance(item, dict):
-            path = item.get("path") or item.get("file") or item.get("name")
-        else:
-            path = item
-        if path:
-            paths.append(str(path))
-
-seen = set()
-out = []
-for path in paths:
-    path = path.strip()
-    if not path or path in seen:
-        continue
-    seen.add(path)
-    out.append(path)
-    if len(out) >= 5:
-        break
-print(",".join(out))
-PY
-)
 if [ -n "$TARGET_FILES" ]; then
     EXTRA_FLAGS+=(--target-files "$TARGET_FILES")
 fi
