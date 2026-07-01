@@ -474,4 +474,6 @@ EOF
     [ "$status" -eq 0 ]
     run grep -F "source=repeat_source pending_count=2 threshold=2" "$TEST_TMP/bulletin.log"
     [ "$status" -eq 0 ]
+    run grep -F "insight_summary=同一source二件目" "$TEST_TMP/bulletin.log"
+    [ "$status" -eq 0 ]
 }

@@ -415,8 +415,14 @@ PYEOF
       [[ -f "$_repeat_debounce_file" ]] && _repeat_last=$(cat "$_repeat_debounce_file" 2>/dev/null || echo 0)
       if (( _repeat_now - _repeat_last > 86400 )); then
         printf '%s' "$_repeat_now" > "$_repeat_debounce_file"
+        _repeat_summary="${msg//$'\n'/ }"
+        _repeat_summary="${_repeat_summary//$'\r'/ }"
+        _repeat_summary="${_repeat_summary//$'\t'/ }"
+        if (( ${#_repeat_summary} > 200 )); then
+          _repeat_summary="${_repeat_summary:0:200}..."
+        fi
         BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" saizo \
-          "INSIGHT_REPEAT: source=${source_info} pending_count=${repeat_count} threshold=${SOURCE_REPEAT_THRESHOLD} latest=${result} priority=${priority}" \
+          "INSIGHT_REPEAT: source=${source_info} pending_count=${repeat_count} threshold=${SOURCE_REPEAT_THRESHOLD} latest=${result} priority=${priority} insight_summary=${_repeat_summary}" \
           false action_required \
           >/dev/null || echo "WARN: insight repeat bulletin failed for source=$source_info" >&2
       fi
