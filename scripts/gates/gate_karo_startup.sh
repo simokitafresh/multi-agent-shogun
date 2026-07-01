@@ -750,8 +750,12 @@ _WA_RATE_CACHE="${KARO_WA_RATE_CACHE:-/tmp/karo_wa_rate_cache}"
 _NINJA_WA_CACHE="${KARO_NINJA_WA_CACHE:-/tmp/karo_ninja_wa_cache}"
 _SKILL_SUMMARY_CACHE="${KARO_SKILL_SUMMARY_CACHE:-/tmp/karo_skill_summary_cache}"
 _AGGREGATE_CACHE="${KARO_AGGREGATE_CACHE:-/tmp/karo_startup_aggregate_cache}"
+_THREE_LAYER_HEALTH_CACHE="${KARO_THREE_LAYER_HEALTH_CACHE:-/tmp/karo_three_layer_health_cache}"
+_SKILL_RECOMMEND_CACHE="${KARO_SKILL_RECOMMEND_CACHE:-/tmp/karo_skill_recommend_cache}"
 _WA_CACHE_TTL=300
 _SKILL_SUMMARY_CACHE_TTL=300
+_THREE_LAYER_HEALTH_CACHE_TTL=300
+_SKILL_RECOMMEND_CACHE_TTL=300
 
 _now_epoch=$(date +%s)
 
@@ -1887,12 +1891,33 @@ rm -f "$_WA_RATE_TMP" "$_WA_RATE_ERR_TMP" "$_NINJA_WA_TMP" "$_WA_DQ_TMP" \
 echo "■ 三層記憶DB健全性"
 three_layer_health_script="$SCRIPT_DIR/scripts/gates/gate_three_layer_health.sh"
 if [ -x "$three_layer_health_script" ]; then
-    if ! three_layer_health_output="$(bash "$three_layer_health_script" 2>&1)"; then
-        printf '%s\n' "$three_layer_health_output" | sed 's/^/  /'
+    _tlh_cache_sig=""
+    _tlh_current_sig="$(stat -c '%n:%y:%s' "$three_layer_health_script" 2>/dev/null || echo '')"
+    if [[ -f "$_THREE_LAYER_HEALTH_CACHE" ]]; then
+        IFS= read -r _tlh_cache_sig < "$_THREE_LAYER_HEALTH_CACHE" || _tlh_cache_sig=""
+    fi
+    if [[ -f "$_THREE_LAYER_HEALTH_CACHE" ]] \
+        && [[ "$_tlh_cache_sig" == "$_tlh_current_sig" ]] \
+        && (( _now_epoch - $(stat -c %Y "$_THREE_LAYER_HEALTH_CACHE" 2>/dev/null || echo 0) < _THREE_LAYER_HEALTH_CACHE_TTL )); then
+        _tlh_rc="$(sed -n '2p' "$_THREE_LAYER_HEALTH_CACHE")"
+        [ -n "$_tlh_rc" ] || _tlh_rc=1
+        three_layer_health_output="$(tail -n +3 "$_THREE_LAYER_HEALTH_CACHE")"
+    else
+        if three_layer_health_output="$(bash "$three_layer_health_script" 2>&1)"; then
+            _tlh_rc=0
+        else
+            _tlh_rc=$?
+        fi
+        {
+            printf '%s\n' "$_tlh_current_sig"
+            printf '%s\n' "$_tlh_rc"
+            printf '%s\n' "$three_layer_health_output"
+        } > "$_THREE_LAYER_HEALTH_CACHE"
+    fi
+    printf '%s\n' "$three_layer_health_output" | sed 's/^/  /'
+    if [ "$_tlh_rc" -ne 0 ]; then
         if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
         alerts+=("三層記憶DB健全性: WARN")
-    else
-        printf '%s\n' "$three_layer_health_output" | sed 's/^/  /'
     fi
 else
     echo "  WARN: gate_three_layer_health.sh不在"
@@ -1954,10 +1979,30 @@ fi
 echo "  スキル推薦 precision/recall:"
 skill_recommend_metrics_script="$SCRIPT_DIR/scripts/skill_recommend_metrics.sh"
 if [ -x "$skill_recommend_metrics_script" ] || [ -f "$skill_recommend_metrics_script" ]; then
-    set +e
-    _skill_rec_out="$(bash "$skill_recommend_metrics_script" 30 2>&1)"
-    _skill_rec_status=$?
-    set -e
+    _skill_rec_cache_sig=""
+    _skill_rec_current_sig="$(stat -c '%n:%y:%s' "$skill_recommend_metrics_script" 2>/dev/null || echo '')"
+    _skill_rec_current_sig="${_skill_rec_current_sig}|$(stat -c '%n:%y:%s' "$SCRIPT_DIR/logs/skill_recommend_log.yaml" 2>/dev/null || echo '')"
+    _skill_rec_current_sig="${_skill_rec_current_sig}|$(stat -c '%n:%y:%s' "$SCRIPT_DIR/logs/skill_execution_log.yaml" 2>/dev/null || echo '')"
+    if [[ -f "$_SKILL_RECOMMEND_CACHE" ]]; then
+        IFS= read -r _skill_rec_cache_sig < "$_SKILL_RECOMMEND_CACHE" || _skill_rec_cache_sig=""
+    fi
+    if [[ -f "$_SKILL_RECOMMEND_CACHE" ]] \
+        && [[ "$_skill_rec_cache_sig" == "$_skill_rec_current_sig" ]] \
+        && (( _now_epoch - $(stat -c %Y "$_SKILL_RECOMMEND_CACHE" 2>/dev/null || echo 0) < _SKILL_RECOMMEND_CACHE_TTL )); then
+        _skill_rec_status="$(sed -n '2p' "$_SKILL_RECOMMEND_CACHE")"
+        [ -n "$_skill_rec_status" ] || _skill_rec_status=1
+        _skill_rec_out="$(tail -n +3 "$_SKILL_RECOMMEND_CACHE")"
+    else
+        set +e
+        _skill_rec_out="$(bash "$skill_recommend_metrics_script" 30 2>&1)"
+        _skill_rec_status=$?
+        set -e
+        {
+            printf '%s\n' "$_skill_rec_current_sig"
+            printf '%s\n' "$_skill_rec_status"
+            printf '%s\n' "$_skill_rec_out"
+        } > "$_SKILL_RECOMMEND_CACHE"
+    fi
     printf '%s\n' "$_skill_rec_out" | sed 's/^/    /'
     if [ "$_skill_rec_status" -eq 2 ] && [ "$overall" != "ALERT" ]; then
         overall="WARN"

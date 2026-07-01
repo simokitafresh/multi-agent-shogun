@@ -718,7 +718,7 @@ STALE_FIELDS = [
     # 第6層: ネスト残留+旧メタデータ(cmd_1527発見: 前cmdの全task:ブロックが残留)
     'task', 'worker_id', 'timestamp',
     # 第7層: GP-198 session state (新cmd配備時に前cmdの失敗履歴をクリア)
-    'session_state', 'previous_failures',
+    'session_state', 'previous_failures', 'started_at',
     # 第8層: GP-201 CoDD failure history (CoDD改善cmd配備時にregistryから再注入するため毎回クリア)
     'codd_failure_history',
     # 第10層: inject_related_lessons/inject_task_modifiersで毎回再注入されるが、

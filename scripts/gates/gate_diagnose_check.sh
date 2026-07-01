@@ -60,7 +60,8 @@ in_result && /^[^[:space:]]/ { in_result=0 }
 # --- 3. DIVERGENT: 同一忍者×同一理由の連続回数を計数 (GP-197) ---
 CONSECUTIVE=0
 if [ -f "$LOG_FILE" ] && [ -n "$BLOCK_REASONS" ] && [ "$NINJA_NAME" != "unknown" ]; then
-    CONSECUTIVE=$(awk -v ninja="$NINJA_NAME" -v current="$BLOCK_REASONS" '
+    # perf: tail -n 100 で末尾のみ読む。CONSECUTIVEは連続FAIL数なので末尾100行で十分
+    CONSECUTIVE=$(tail -n 100 "$LOG_FILE" | awk -v ninja="$NINJA_NAME" -v current="$BLOCK_REASONS" '
     { lines[NR] = $0 }
     END {
         # main reason: before first ";"
@@ -83,7 +84,7 @@ if [ -f "$LOG_FILE" ] && [ -n "$BLOCK_REASONS" ] && [ "$NINJA_NAME" != "unknown"
         }
         print count
     }
-    ' "$LOG_FILE" 2>/dev/null)
+    ' 2>/dev/null)
 fi
 
 # --- 3.5 prior_attempts similarity (GP-2070 DIVERGENT v2) ---
