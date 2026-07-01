@@ -1,15 +1,15 @@
 task:
-  parent_cmd: cmd_training_speed_lesson_check_202607020319_kagemaru
-  task_id: cmd_training_speed_lesson_check_202607020319_kagemaru_normal
+  parent_cmd: cmd_training_speed_lesson_auto_tag_202607020323_kagemaru
+  task_id: cmd_training_speed_lesson_auto_tag_202607020323_kagemaru_normal
   status: done
   assigned_to: kagemaru
   task_type: training
   project: infra
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/lesson_check.sh
-  title: lesson_check.sh速度改善修行
-  purpose: lesson_check.shを教訓確認の正確性維持のまま実運用累積影響ベースで高速化する
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/lesson_auto_tag.sh
+  title: lesson_auto_tag.sh速度改善修行
+  purpose: lesson_auto_tag.shを教訓タグ付けの正確性維持のまま実運用累積影響ベースで高速化する
   command: |
-    scripts/lesson_check.sh の実行速度を改善せよ。教訓確認の結果、YAML安全性、
+    scripts/lesson_auto_tag.sh の実行速度を改善せよ。タグ付け結果、YAML安全性、
     既存CLI互換を削るな。
     まずbaselineを実測し、最大遅延フェーズを数値で特定すること。改善候補は3ターンまで試し、
     各ターンで before/after と改善率を記録せよ。5%以上改善できない場合は差分0へ戻し、
@@ -18,7 +18,7 @@ task:
   - id: AC1
     description: baseline実測値、測定コマンド、実運用累積影響、最大遅延フェーズを報告する
   - id: AC2
-    description: 教訓確認の意味論と互換性を維持した改善候補1を実装し、before/afterと改善率を報告する
+    description: 教訓タグ付けの意味論と互換性を維持した改善候補1を実装し、before/afterと改善率を報告する
   - id: AC3
     description: 必要なら改善候補2-3を試し、採用/不採用を数値で判断する
   - id: AC4
@@ -26,21 +26,21 @@ task:
   - id: AC5
     description: 改善採用時はscope内のみcommitし、未達時は差分0でFAIL報告し、次候補をdecision_candidateへ残す
   constraints:
-  - 教訓確認結果を削らない
+  - タグ付け結果を削らない
   - 運用YAMLを全体再生成しない
   - 他忍者の作業ファイルを変更しない
   - 計測なしの採用を禁止する
   not_in_scope:
-  - 教訓スキーマ変更
-  - lesson_check.sh以外の速度改善
-  report_path: queue/reports/kagemaru_report_cmd_training_speed_lesson_check_202607020319_kagemaru.yaml
+  - 教訓タグ体系変更
+  - lesson_auto_tag.sh以外の速度改善
+  report_path: queue/reports/kagemaru_report_cmd_training_speed_lesson_auto_tag_202607020323_kagemaru.yaml
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  ac_version: f6062931
-  _ac_task_id: cmd_training_speed_lesson_check_202607020319_kagemaru_normal
+  ac_version: f3d09f8e
+  _ac_task_id: cmd_training_speed_lesson_auto_tag_202607020323_kagemaru_normal
   _ac_worker_id: 
-  report_filename: kagemaru_report_cmd_training_speed_lesson_check_202607020319_kagemaru.yaml
-  deployed_at: "2026-07-02T03:19:45"
+  report_filename: kagemaru_report_cmd_training_speed_lesson_auto_tag_202607020323_kagemaru.yaml
+  deployed_at: "2026-07-02T03:24:02"
