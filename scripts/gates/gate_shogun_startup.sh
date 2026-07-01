@@ -807,8 +807,9 @@ if [ -f "$bulletin_file" ]; then
         echo "  ★ 未確認投稿を確認処理せよ。掲示板=将軍宛報告チャネル(殿裁定)"
         printf '%s\n' "$bulletin_result" | tail -n +2 | sed 's/^/    /'
         if [ "$overall" != "ALERT" ]; then
+            _bulletin_sig=$(printf '%s\n' "$bulletin_result" | tail -n +2 | cksum | awk '{print $1 ":" $2}')
             overall="WARN"
-            alerts+=("掲示板未確認: ${bulletin_count}件")
+            alerts+=("掲示板未確認: ${bulletin_count}件 (${_bulletin_sig:-unknown})")
         fi
     else
         echo "  未確認: 0件"
@@ -1356,7 +1357,7 @@ PY
         if [ "$overall" = "OK" ]; then
             overall="WARN"
         fi
-                alerts+=("追体験自動化ターゲット: WARN (自動化ターゲット未記入)")
+        alerts+=("追体験自動化ターゲット: WARN (自動化ターゲット未記入)")
         ;;
     *)
         echo "  WARN: Q6(創造主の洗脳チェック)回答未検出 — LS041自己監査を省略するな"
