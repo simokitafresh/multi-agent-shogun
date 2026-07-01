@@ -112,7 +112,7 @@
 1. **コスト vs 品質のトレードオフ**: Opus 4.8 xhighはGPT 5.5 lowの10倍以上のコスト。全タスクにOpusを使うと消費が爆発する。品質が必要な場面だけOpusを投入し、定型作業はGPT/S4.6で回す
 2. **effort levelの効果はモデル依存**: GPT 5.5ではlow→mediumでほぼ差なし(バグ発見0件→0件)。Sonnet系ではhigh→xhighで深度が劇的に向上(表層→構造的根因)。effort投資はClaude系に集中すべき
 3. **深度の差は再発リスクに直結**: S4.6は「何を直すか」、S5は「なぜ壊れたか」、Opusは「次にどこで再発するか」まで到達。深度が浅い=表層修正→再発
-4. **GPT 5.5のCLI制約**: Codex CLIはStop hookなし。brainwash_checkやinbox確認の自動強制が効かない。深度が必要なタスクでは構造的に不利
+4. **GPT 5.5のCLI制約**: Codex CLIは`SessionStart`/`UserPromptSubmit`のcontext注入hookは効くが、Stop hookの`{"decision":"block"}`は挙動差異により**無効化**されている。理由は[[infrastructure]] §Codex multi-CLI統合の記載通り「**Codex**: reason文をプロンプトとして再実行=**無限ループ**。忍者done/completed時はblockせずidle flag+exit 0」であり、Stop hook**ブロック**依存のbrainwash_check/inbox自動強制が効かない（等価保証はdaemon/gateで補完）。深度が必要なタスクでは構造的に不利
 5. **速度の差は殿の待ち時間**: GPT 3分 vs Opus 12分。CI REDの緊急修正では9分の差が直結
 
 ### Claude effort level別の特性（既知情報+推定）
