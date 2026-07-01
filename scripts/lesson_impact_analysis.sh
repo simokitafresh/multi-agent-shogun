@@ -168,6 +168,7 @@ fi
 python3 - "$DATA_FILE" "$@" <<'PY'
 import csv
 import os
+import re
 import sys
 from collections import Counter, defaultdict
 
@@ -284,6 +285,82 @@ def load_lesson_summaries(root: str):
             if lesson_id and lesson_id not in summaries:
                 summaries[lesson_id] = str(lesson.get("summary", "")).strip()
     return summaries
+
+
+def unquote_scalar(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] == "'":
+        return value[1:-1].replace("''", "'")
+    if len(value) >= 2 and value[0] == value[-1] == '"':
+        return value[1:-1]
+    return value
+
+
+def extract_flow_summary(line: str) -> str:
+    match = re.search(r"[,{]\s*summary:", line)
+    if not match:
+        return ""
+    value = line[match.end():].strip()
+    in_quote = ""
+    out = []
+    i = 0
+    while i < len(value):
+        ch = value[i]
+        if in_quote:
+            out.append(ch)
+            if ch == in_quote:
+                if in_quote == "'" and i + 1 < len(value) and value[i + 1] == "'":
+                    out.append(value[i + 1])
+                    i += 1
+                else:
+                    in_quote = ""
+        elif ch in ("'", '"'):
+            in_quote = ch
+            out.append(ch)
+        elif ch in (",", "}"):
+            break
+        else:
+            out.append(ch)
+        i += 1
+    return unquote_scalar("".join(out))
+
+
+def load_lesson_summary_fast(root: str, lesson_id: str) -> str:
+    import glob
+
+    inline_pattern = re.compile(r"^-\s*\{id:\s*" + re.escape(lesson_id) + r"\s*[,}]")
+    block_pattern = re.compile(r"^-\s*id:\s*" + re.escape(lesson_id) + r"\s*$")
+    for lesson_file in glob.glob(os.path.join(root, "projects", "*", "lessons.yaml")):
+        try:
+            with open(lesson_file, "r", encoding="utf-8") as f:
+                in_target = False
+                for raw in f:
+                    line = raw.rstrip("\n")
+                    stripped = line.strip()
+                    if inline_pattern.match(stripped):
+                        return extract_flow_summary(stripped)
+                    if block_pattern.match(stripped):
+                        in_target = True
+                        continue
+                    if in_target:
+                        if stripped.startswith("- id:") or stripped.startswith("- {id:"):
+                            break
+                        if stripped.startswith("summary:"):
+                            return unquote_scalar(stripped.split(":", 1)[1])
+        except OSError:
+            continue
+    return ""
+
+
+def iter_lesson_ids_fast(lesson_file: str):
+    inline_pattern = re.compile(r"^-\s*\{id:\s*([^,\s}]+)")
+    block_pattern = re.compile(r"^-\s*id:\s*(\S+)\s*$")
+    with open(lesson_file, "r", encoding="utf-8") as f:
+        for raw in f:
+            stripped = raw.strip()
+            match = inline_pattern.match(stripped) or block_pattern.match(stripped)
+            if match:
+                yield unquote_scalar(match.group(1))
 
 
 def build_stats(rows):
@@ -455,7 +532,7 @@ def print_summary(rows, stats):
         print("  insufficient data for A/B comparison")
 
 
-def print_detail(lesson_id: str, stats: dict, summaries: dict):
+def print_detail(lesson_id: str, stats: dict, summary: str):
     st = stats.get(
         lesson_id,
         {
@@ -474,8 +551,7 @@ def print_detail(lesson_id: str, stats: dict, summaries: dict):
     )
 
     print(f"=== {lesson_id} Detail ===")
-    summary = summaries.get(lesson_id, "summary not found")
-    print(f"Summary: {summary}")
+    print(f"Summary: {summary or 'summary not found'}")
     inj = st["injected"]
     print(f"Injected: {inj} times")
     print(f"Referenced: {st['referenced_count']} times ({pct(st['referenced_count'], inj)}%)")
@@ -528,6 +604,31 @@ def sync_counters(rows, root, dry_run=False):
         return
 
     project_updates = []
+    if dry_run:
+        import glob
+
+        for lesson_file in sorted(glob.glob(os.path.join(root, "projects", "*", "lessons.yaml"))):
+            project = os.path.basename(os.path.dirname(lesson_file))
+            updated = 0
+            try:
+                lesson_ids = iter_lesson_ids_fast(lesson_file)
+                for lid in lesson_ids:
+                    if lid in counts:
+                        c = counts[lid]
+                        updated = updated + 1
+                        print(
+                            f"SYNC: {project} {lid} helpful={c['helpful']} "
+                            f"harmful={c['harmful']} last_referenced={c['last_ts']}"
+                        )
+            except OSError:
+                continue
+            if updated > 0:
+                project_updates.append(f"{project} {updated} lessons")
+
+        summary_line = ", ".join(project_updates) if project_updates else "0 lessons"
+        print(f"\n[DRY RUN] Would update: {summary_line}")
+        return
+
     for lesson_file in sorted(glob.glob(os.path.join(root, "projects", "*", "lessons.yaml"))):
         project = os.path.basename(os.path.dirname(lesson_file))
 
@@ -586,8 +687,11 @@ def main():
         sync_counters(rows, root, opts["dry_run"])
     elif opts["mode"] == "detail":
         stats = build_stats(rows)
-        summaries = load_lesson_summaries(os.path.dirname(os.path.dirname(data_file)))
-        print_detail(opts["detail_id"], stats, summaries)
+        root = os.path.dirname(os.path.dirname(data_file))
+        summary = load_lesson_summary_fast(root, opts["detail_id"])
+        if not summary:
+            summary = load_lesson_summaries(root).get(opts["detail_id"], "")
+        print_detail(opts["detail_id"], stats, summary)
     else:
         stats = build_stats(rows)
         print_summary(rows, stats)
