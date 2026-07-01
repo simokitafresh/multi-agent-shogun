@@ -10,13 +10,46 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# String ops instead of $(cd ... && pwd) subshell: avoids a subprocess fork
+# on every call (same pattern as scripts/report_field_set.sh SCRIPT_DIR).
+_afl_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_afl_self" != /* ]] && _afl_self="$PWD/$_afl_self"
+SCRIPT_DIR="${_afl_self%/scripts/auto_failure_lesson.sh}"
 REPORT_PATH="${1:-}"
 BULLETIN_SCRIPT="${AUTO_FAILURE_BULLETIN_SCRIPT:-$SCRIPT_DIR/scripts/bulletin_write.sh}"
 
 if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
     echo "[auto_failure] Usage: auto_failure_lesson.sh <report_yaml_path>" >&2
     exit 1
+fi
+
+# Fast pre-check: the dominant real caller (cmd_complete_gate.sh) invokes this
+# once per task file in a BLOCKED cmd, and most of those task files did not
+# themselves fail -- those calls only ever need the top-level `status` scalar
+# to conclude "skip", yet previously paid a full python3 + PyYAML startup
+# (~90ms, ~35ms of which is `import yaml` alone) just to read one field.
+# report_field_set.sh's fast_scalar path always writes `status` as a plain,
+# unindented, single-line root scalar near the top of the file, so a bash-only
+# line scan (no grep subprocess fork) can answer the same question. Any
+# ambiguity (no match, multi-line/quoted edge cases) falls through unchanged
+# to the full Python parse below -- this only short-circuits the unambiguous,
+# overwhelmingly common "not failed" case.
+_afl_status_line=""
+while IFS= read -r _afl_line || [ -n "$_afl_line" ]; do
+    case "$_afl_line" in
+        status:*) _afl_status_line="$_afl_line"; break ;;
+    esac
+done < "$REPORT_PATH"
+_afl_status_val="${_afl_status_line#status:}"
+# Trim whitespace and an optional matching quote pair via pure bash parameter
+# expansion (no sed subprocess).
+_afl_status_val="${_afl_status_val#"${_afl_status_val%%[![:space:]]*}"}"
+_afl_status_val="${_afl_status_val%"${_afl_status_val##*[![:space:]]}"}"
+_afl_status_val="${_afl_status_val#[\"\']}"
+_afl_status_val="${_afl_status_val%[\"\']}"
+if [ "$_afl_status_val" != "failed" ]; then
+    echo "[auto_failure] Skipped: status_not_failed (${_afl_status_val}) (${REPORT_PATH})"
+    exit 0
 fi
 
 # Extract failure info from report YAML
