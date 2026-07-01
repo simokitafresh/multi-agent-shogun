@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-06-29 cmd_3601 -->
+<!-- last_updated: 2026-07-02 cmd_karo_hotfix_context_freshness_ga160_202607020443 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -35,6 +35,7 @@
 
 本番: Render.com — PostgreSQL + FastAPI + Next.js。StockData API毎日01:00 UTC自動同期。viewer/admin認証は in-memory dict ではなく DB-backed token (`viewer_tokens`/`admin_tokens`) + HttpOnly Cookie (`viewer_session`/`admin_session`) が正で、Cookie期限は JST 期限日 23:59:59 を UTC に変換して設定する。参照: `/mnt/c/Python_app/DM-signal/backend/app/auth.py`, `/mnt/c/Python_app/DM-signal/backend/app/api/auth.py`, `/mnt/c/Python_app/DM-signal/backend/app/db/models.py`
 2026-05-07: auth token cleanupのcount-based evictionは削除済み。期限切れtokenのみ削除する設計を正とする(cmd_2599, commit 86661769)。
+2026-07-02: backend起動時migrationはFastAPI lifespan側の`init_db()`+PostgreSQL advisory lockが正。`render.yaml` startCommandから`python -m app.db.init_db`は削除済み。password rotationはRender env成功tierだけDB commit+token revokeし、tier別失敗で全体rollbackしない。参照: commit `9cc10f27`, `/mnt/c/Python_app/DM-signal/backend/app/main.py`, `/mnt/c/Python_app/DM-signal/backend/app/jobs/password_rotation.py`, `context/dm-signal-ops.md` §46。
 ローカル: WSL2 — dm_signal.db(本番ミラー) + experiments.db(分析用ground truth)。
 - L500: ガード条件(is_kalman_meta等)除去時は保護していた全変数のスコープと副作用を確認（cmd_1445）
 - L501: is_custom_weightガード除去でEqualWeight PFにカスタムweight計算パスが発動する副作用（cmd_1445）
@@ -359,7 +360,11 @@ cmd_3572でMTD事前計算テーブル`precomputed_mtd`、`backend/app/jobs/prec
 
 ### §8.7 Fusion API (2026-06-28)
 
-`/api/fusion/portfolios` は外部Fusionアプリ向けのadmin認証専用エンドポイント。全activeかつ`hide_portfolio=false`のPFの`id/name/type/folder`と確定済み`monthly_returns[{year_month, return}]`のみを返し、当月・null monthly_return・config/holding_signal/ticker/weights/cumulative系は禁止。10/min rate limitと11回目429テストあり。根拠: commits `288f0e36`, `314b596a`, `a3a854ba`, spec `docs/spec/fusion-api-endpoint.md`, test `backend/tests/test_fusion_api.py`。
+`/api/fusion/portfolios` は外部Fusionアプリ向けのadmin認証専用エンドポイント。全active PFの`id/name/type/folder`と確定済み`monthly_returns[{year_month, return}]`のみを返し、当月・null monthly_return・config/holding_signal/ticker/weights/cumulative系は禁止。`hide_portfolio=false`フィルタは2026-06-29に追加後、同日`7abaec5c`で削除済み。10/min rate limitと11回目429テストあり。根拠: commits `288f0e36`, `314b596a`, `a3a854ba`→`7abaec5c`, spec `docs/spec/fusion-api-endpoint.md`, test `backend/tests/test_fusion_api.py`。
+
+### §8.8 Rolling Returns API/Table (2026-07-01)
+
+Rolling Returns summary tableは`3_months`/`6_months`/`1_year`/`2_years`/`3_years`/`5_years`/`7_years`/`10_years`を返す。3M/6Mは年率換算せず、期間内のraw compound returnを表示する。根拠: commits `86348160`, `5883fb01`, `/mnt/c/Python_app/DM-signal/backend/app/jobs/generators/rolling_returns.py`, `/mnt/c/Python_app/DM-signal/backend/app/services/rolling_returns_calculator.py`, `/mnt/c/Python_app/DM-signal/frontend/components/rolling-returns-summary-table.tsx`。
 
 ## 10. ディレクトリ構成
 
