@@ -17,12 +17,8 @@ export SCRIPT_DIR PROJECTS_YAML GATE_METRICS_LOG LESSON_TRACKING_TSV BASELINE_FI
 
 python3 << 'PYEOF'
 import os
-import sys
-from datetime import datetime
-from pathlib import Path
 
 import yaml
-from scripts.lib.yaml_atomic import atomic_yaml_write
 
 _CLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
@@ -171,7 +167,8 @@ def load_baseline():
 
 
 def save_baseline(data):
-    """baselineファイルを保存"""
+    """baselineファイルを保存(初回のみ呼ばれる低頻度パスなのでここで遅延import)"""
+    from scripts.lib.yaml_atomic import atomic_yaml_write
     atomic_yaml_write(BASELINE_FILE, data, sort_keys=False)
 
 
@@ -223,7 +220,8 @@ def main():
     baseline = load_baseline()
 
     if baseline is None:
-        # baseline未作成 → 現在の状態で自動作成
+        # baseline未作成 → 現在の状態で自動作成(低頻度パスなのでここで遅延import)
+        from datetime import datetime
         baseline_data = {
             "timestamp": datetime.now().replace(microsecond=0).isoformat(),
             "total_lessons": total,
