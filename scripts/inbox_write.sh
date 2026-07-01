@@ -49,7 +49,10 @@ EOF
 }
 
 is_core_agent() {
-    if type is_commander_role >/dev/null 2>&1; then
+    # AGENT_CONFIG_LOADED gate: agent_config.sh未ロード時に type コマンドを呼ばない。
+    # WSL2 DrvFs上で type は PATH全走査に ~300ms かかり、2回で ~600ms の主要ボトルネック。
+    # is_commander_role は agent_config.sh 内で定義されるため、未ロード時は存在し得ない。
+    if [ "$AGENT_CONFIG_LOADED" = "1" ] && type is_commander_role >/dev/null 2>&1; then
         is_commander_role "$1"
         return $?
     fi
