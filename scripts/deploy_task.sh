@@ -725,7 +725,7 @@ STALE_FIELDS = [
     # 配備前に旧値が残るとCodex忍者がSTALLする(LK092: cmd_2250 hayate STALL実証)
     'related_lessons', 'ninja_weak_points', 'role_reminder', 'bloom_level',
     # 第11層: cmd固有scope/context(LK-A02 v7: 2件連続FAIL cmd_2875+cmd_2880。前taskのscope/contextが残存し忍者が旧scopeで作業)
-    'scope', 'context_hints', 'context',
+    'scope', 'context_hints', 'context', 'assigned_scope',
     # 第12層: 因果確認L0-L7テンプレート。scopeごとに再判定して注入する
     'causal_verification',
     # 第13層: command欄の必読/参照専用ファイル。cmdごとに再抽出する
