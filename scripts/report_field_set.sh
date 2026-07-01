@@ -878,6 +878,10 @@ fi
 # Parse dot notation
 IFS='.' read -ra KEYS <<< "$DOT_KEY"
 NUM_KEYS=${#KEYS[@]}
+RFS_BINARY_CHECK_RESULT_WRITE=0
+if [[ "$DOT_KEY" =~ ^binary_checks\.[^.]+\.[0-9]+\.result$ ]]; then
+    RFS_BINARY_CHECK_RESULT_WRITE=1
+fi
 AUTO_COMPLETE_STATUS=0
 if [[ "$DOT_KEY" == "verdict" ]] && [[ "$VALUE" == "PASS" || "$VALUE" == "FAIL" || "$VALUE" == "PASS_NO_IMPROVEMENT" ]]; then
     AUTO_COMPLETE_STATUS=1
@@ -1523,7 +1527,7 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
         # awk yaml_safe escapes '"' but not '\', so values with '\' can produce
         # invalid YAML escape sequences (e.g. \q). Values without '\' are always safe.
         # Python fallback paths validate unconditionally (yaml.dump round-trip risk).
-        if [[ "$VALUE" == *'\\'* ]]; then
+        if [[ "$VALUE" == *\\* ]]; then
             _report_field_set_validate_or_restore
         fi
 
@@ -1538,7 +1542,8 @@ done
 
 # --- GP-072c2: Post-write dict→list auto-conversion ---
 # per-item書込み(lessons_useful.0.id等)後に数値キーdictをリストに変換
-if [[ "$DOT_KEY" == lessons_useful.* ]] || [[ "$DOT_KEY" == binary_checks.*.* ]]; then
+# binary_checks.*.*.result は既存list内のresultだけを置換するhot pathなので変換不要。
+if [[ "$DOT_KEY" == lessons_useful.* ]] || { [[ "$DOT_KEY" == binary_checks.*.* ]] && [ "$RFS_BINARY_CHECK_RESULT_WRITE" -ne 1 ]; }; then
     PYTHONPATH="$SCRIPT_DIR" python3 -c "
 import yaml, sys, os
 from scripts.lib.yaml_atomic import atomic_yaml_write
@@ -1581,7 +1586,7 @@ fi
 if [[ "$DOT_KEY" == binary_checks* ]]; then
     # Per-AC result-only writes: awk auto-verdict (avoid Python startup ~80ms)
     # Template check values are preserved by awk fast path; result is validated (yes/no only)
-    if [[ "$DOT_KEY" == binary_checks.AC* ]] && [[ "$DOT_KEY" != *.*.* ]]; then
+    if { [[ "$DOT_KEY" == binary_checks.AC* ]] && [[ "$DOT_KEY" != *.*.* ]]; } || [ "$RFS_BINARY_CHECK_RESULT_WRITE" -eq 1 ]; then
         _cur_verdict=$(awk '
 BEGIN { total=0; yes_c=0; no_c=0; empty_c=0; in_bc=0; cv="" }
 /^verdict:[[:space:]]/ { v=$0; sub(/^verdict:[[:space:]]*/, "", v); gsub(/["'"'"'[:space:]]/, "", v); cv=v }
