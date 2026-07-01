@@ -71,6 +71,7 @@ task:
   context_hints:
   - 'context/old-task.md'
   - 'docs/research/old-task.md'
+  assigned_scope: '前cmdの古いassigned_scope'
   stop_for:
   - 'old stop condition 1'
   - 'old stop condition 2'
@@ -1024,7 +1025,7 @@ EOF
     assert_missing_fields \
         "$file" \
         target_path progress description deployed_at \
-        constraints engineering_preferences context_files scope context context_hints stop_for never_stop_for parallel_ok \
+        constraints engineering_preferences context_files scope context context_hints assigned_scope stop_for never_stop_for parallel_ok \
         AC1 AC2 AC3 acceptance_criteria ac_priority ac_checkpoint \
         command reports_to_read credential_warning context_update type report_template \
         worker_id timestamp
@@ -1071,7 +1072,7 @@ PY
     [[ "$output" == *"DEPLOY_PIPE_OK"* ]]
 }
 
-@test "reset_stale_fields clears stale scope context and context_hints" {
+@test "reset_stale_fields clears stale scope context context_hints and assigned_scope" {
     local direct_root
     direct_root="$(mktemp -d "$BATS_TMPDIR/stale_reset_scope_context.XXXXXX")"
     prepare_source_fixture "$direct_root"
@@ -1081,16 +1082,18 @@ PY
     grep -q "^  scope:" "$file"
     grep -q "^  context:" "$file"
     grep -q "^  context_hints:" "$file"
+    grep -q "^  assigned_scope:" "$file"
 
     SCRIPT_DIR="$direct_root"
     log() { :; }
     eval "$(extract_function reset_stale_fields)"
     reset_stale_fields "tobisaru"
 
-    assert_missing_fields "$file" scope context context_hints
+    assert_missing_fields "$file" scope context context_hints assigned_scope
     ! grep -q "frontend/src/app/old/page.tsx" "$file"
     ! grep -q "context/old-task.md" "$file"
     ! grep -q "docs/research/old-task.md" "$file"
+    ! grep -q "前cmdの古いassigned_scope" "$file"
     grep -q "scout_exempt: true" "$file"
 
     rm -rf "$direct_root"
