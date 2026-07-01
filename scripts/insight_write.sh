@@ -22,6 +22,21 @@ if [[ ! -f "$MEMORY_DB_LIVE_INSERT" ]]; then
 fi
 SOURCE_REPEAT_THRESHOLD="${INSIGHT_SOURCE_REPEAT_THRESHOLD:-3}"
 
+usage() {
+  cat <<'EOF'
+Usage: bash scripts/insight_write.sh "気づきの内容" [priority] [source]
+       bash scripts/insight_write.sh --resolve <id>
+
+priority: high/medium/low (default: medium)
+source: 気づきの出所 (default: manual)
+EOF
+}
+
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+  usage
+  exit 0
+fi
+
 # --resolve mode: mark insight as done
 if [ "${1:-}" = "--resolve" ]; then
   resolve_id="${2:?Usage: insight_write.sh --resolve <id>}"

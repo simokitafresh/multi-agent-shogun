@@ -239,6 +239,13 @@ print('CORRUPT RECOVERED')
     [ "$status" -ne 0 ]
 }
 
+@test "--help: usage表示のみでinsightを作らない" {
+    run bash "${TEST_TMP}/scripts/insight_write.sh" --help
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Usage: bash scripts/insight_write.sh"* ]]
+    [ ! -f "${TEST_TMP}/queue/insights.yaml" ]
+}
+
 # --- 5. 複数回実行で重複しないこと(完全一致dedup) ---
 
 @test "重複防止: 同一メッセージのpending insightは二重登録されない" {
