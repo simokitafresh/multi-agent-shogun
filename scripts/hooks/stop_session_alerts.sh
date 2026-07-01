@@ -53,21 +53,30 @@ fi
 ALERT_CONTENT=""
 ALERT_CONTENT=$(grep '^\[TODO\]' "$ALERTS_FILE" | head -20 || true)
 
-# --- ループ防止: 同一ハッシュが繰り返される場合は通過（修正不能と判断） ---
+# --- ループ防止: 同一ハッシュがBLOCK_BYPASS_THRESHOLD回繰り返されたら通過（修正不能と判断） ---
+# Level4強化(blt_20260701_235735+blt_20260702_002604): 旧ロジックは1回で通過(トグル)→3セッション積残の原因
+BLOCK_BYPASS_THRESHOLD=5
 
 FAIL_HASH_FILE="/tmp/stop_session_alerts_${AGENT_ID}_fail_hash"
 CURRENT_HASH="$(printf '%s' "$ALERT_CONTENT" | md5sum | cut -d' ' -f1)"
 
 if [[ -f "$FAIL_HASH_FILE" ]]; then
-    PREV_HASH="$(< "$FAIL_HASH_FILE")"
+    PREV_HASH="$(head -1 "$FAIL_HASH_FILE")"
+    PREV_COUNT="$(sed -n '2p' "$FAIL_HASH_FILE" 2>/dev/null || echo 0)"
+    PREV_COUNT="${PREV_COUNT:-0}"
     if [[ "$CURRENT_HASH" = "$PREV_HASH" ]]; then
-        # 同一ALERTが繰り返し発生 → 通過（エージェントが解消不能なALERTに無限ループしないよう）
-        rm -f "$FAIL_HASH_FILE" 2>/dev/null || true
-        exit 0
+        PREV_COUNT=$((PREV_COUNT + 1))
+        if [[ "$PREV_COUNT" -ge "$BLOCK_BYPASS_THRESHOLD" ]]; then
+            rm -f "$FAIL_HASH_FILE" 2>/dev/null || true
+            exit 0
+        fi
+        printf '%s\n%s\n' "$CURRENT_HASH" "$PREV_COUNT" > "$FAIL_HASH_FILE"
+    else
+        printf '%s\n1\n' "$CURRENT_HASH" > "$FAIL_HASH_FILE"
     fi
+else
+    printf '%s\n1\n' "$CURRENT_HASH" > "$FAIL_HASH_FILE"
 fi
-
-printf '%s' "$CURRENT_HASH" > "$FAIL_HASH_FILE"
 
 # --- BLOCKとして未完了ALERTを表示 ---
 ESCAPED="$(printf '%s' "$ALERT_CONTENT" | head -20 | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g' | tr '\n' '|' | sed 's/|/\\n/g')"
