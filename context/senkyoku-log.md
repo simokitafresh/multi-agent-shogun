@@ -1333,3 +1333,4 @@
 - 2026-07-01 cmd_3632: gate速度残存悪化3件を半蔵が高速化。commit `a3a6f8c53`、ac_physical_verify 2.8s→1.8s、gate_gunshi_startup 3.8s→2.0s、gate_lesson_health 2.4s→0.7s。軍師LGTM、GATE CLEAR、研究ログ還流・dashboard/ntfy完了。
 - 2026-07-02 cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526: bc_result_empty高頻度18件はkagemaruのcmd_complete_gate速度計測3回×未完成report6項目の単一ノイズと特定。auto-fixはGP-107で却下し、`GATE_NO_LOG=1`用途コメントのみ追加、insight resolved、GATE CLEAR。
 - 2026-07-02 cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530: deploy_task.shのreport template生成で`awk -v`がAC本文のエスケープ済み引用符を壊す根因を小太郎が修正。ENVIRON経由値渡し+再現bats追加、182/182 PASS、GATE CLEAR。
+- 2026-07-02 家老強ニュー化: `queue/compact_state/karo.yaml` + `queue/compact_state_karo.yaml` を07:46時点へ更新。goal complete、全忍者idle、pending insights 3件、L828誤注入防御(commit `744758feb`)とinsight解決16→3を復帰要点化。
