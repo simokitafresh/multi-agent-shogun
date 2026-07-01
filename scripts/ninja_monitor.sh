@@ -3298,6 +3298,9 @@ check_destructive_commands() {
     local -a patterns=()
     local detected
     detected=$(printf '%s\n' "$output" | awk '
+        /^[[:space:]]*[●•]?[[:space:]]*Bash\(/ { in_cmd=1 }
+        in_cmd && /⎿/ { in_cmd=0; next }
+        !in_cmd { next }
         /rm[[:space:]]+-rf[[:space:]]+(\/mnt\/c\/(Windows|Users|Program)|\/home|\/[[:space:]]|\/\.|~)/ { print "rm-rf-outside-project" }
         /git[[:space:]]+push.*--force/ && !/force-with-lease/ { print "git-push-force" }
         /(^|[[:space:]])sudo[[:space:]]/ { print "sudo" }
