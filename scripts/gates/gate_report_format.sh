@@ -113,7 +113,30 @@ except Exception:
                 RESULT="${RESULT}"$'\n'"FAIL: cmd_3264-AC2 target_path配下に未commit変更あり"
             fi
             # AC3: auto-commit contamination detection
-            _CC_AUTO_FILES=$(cd "$REPO_ROOT" && git log --grep="auto-commit" -10 --format="" --name-only 2>/dev/null | sort -u || true)
+            # perf: git log --grep --name-only は7800+コミット履歴走査でNTFS上~500ms(cmd_training実測)。
+            # 結果はHEAD不変なら同一のため、HEAD SHAキーでmemo化(GP-073 PASS cacheと同型パターン)。
+            _CC_AC_CACHE="${GATE_AUTOCOMMIT_CACHE_FILE:-$REPO_ROOT/logs/.gate_autocommit_files_cache}"
+            _CC_CUR_HEAD=$(cd "$REPO_ROOT" && git rev-parse HEAD 2>/dev/null) || _CC_CUR_HEAD=""
+            _CC_AUTO_FILES=""
+            _CC_AC_HIT=0
+            if [ -n "$_CC_CUR_HEAD" ] && [ -f "$_CC_AC_CACHE" ]; then
+                _CC_AC_CACHED_HEAD=$(head -n 1 "$_CC_AC_CACHE" 2>/dev/null)
+                if [ "$_CC_AC_CACHED_HEAD" = "$_CC_CUR_HEAD" ]; then
+                    _CC_AUTO_FILES=$(tail -n +2 "$_CC_AC_CACHE" 2>/dev/null)
+                    _CC_AC_HIT=1
+                fi
+            fi
+            if [ "$_CC_AC_HIT" -eq 0 ]; then
+                _CC_AUTO_FILES=$(cd "$REPO_ROOT" && git log --grep="auto-commit" -10 --format="" --name-only 2>/dev/null | sort -u || true)
+                if [ -n "$_CC_CUR_HEAD" ]; then
+                    _CC_AC_TMP=$(mktemp "${_CC_AC_CACHE}.XXXXXX" 2>/dev/null) || _CC_AC_TMP=""
+                    if [ -n "$_CC_AC_TMP" ]; then
+                        { printf '%s\n' "$_CC_CUR_HEAD"; printf '%s\n' "$_CC_AUTO_FILES"; } > "$_CC_AC_TMP" 2>/dev/null \
+                            && mv -f "$_CC_AC_TMP" "$_CC_AC_CACHE" 2>/dev/null \
+                            || rm -f "$_CC_AC_TMP" 2>/dev/null
+                    fi
+                fi
+            fi
             if [ -n "$_CC_AUTO_FILES" ]; then
                 _CC_HITS=""
                 while IFS= read -r _tp; do
