@@ -435,9 +435,9 @@ try:
 except (ValueError, TypeError):
     MIN_INSIGHT_QUERY_CHARS = 12
 try:
-    HIGH_FREQUENCY_NO_MATCH_MIN_COUNT = int(__import__("os").environ.get("SEMANTIC_STRESS_HIGH_FREQUENCY_MIN_COUNT", "1"))
+    HIGH_FREQUENCY_NO_MATCH_MIN_COUNT = int(__import__("os").environ.get("SEMANTIC_STRESS_HIGH_FREQUENCY_MIN_COUNT", "2"))
 except (ValueError, TypeError):
-    HIGH_FREQUENCY_NO_MATCH_MIN_COUNT = 1
+    HIGH_FREQUENCY_NO_MATCH_MIN_COUNT = 2
 
 def semantic_query_length(text):
     return len(re.sub(r"\s+", "", str(text)))

@@ -226,7 +226,7 @@ EOF
 cmds: []
 EOF
 
-    run bash "$PROJECT_ROOT/scripts/semantic_stress_test.sh" \
+    run env SEMANTIC_STRESS_HIGH_FREQUENCY_MIN_COUNT=1 bash "$PROJECT_ROOT/scripts/semantic_stress_test.sh" \
         --source lord \
         --limit 5 \
         --baseline "$TEST_TMPDIR/logs/auto-baseline.json" \
@@ -244,6 +244,28 @@ EOF
     grep -q 'blind_hit_rate_non_regression' "$TEST_TMPDIR/quality_fixture.json"
     grep -q 'regression_detection_only' "$TEST_TMPDIR/quality_fixture.json"
     grep -q 'セマンティック辞書の新しい穴をテストセットに入れる' "$TEST_TMPDIR/quality_fixture.json"
+}
+
+@test "single NO_MATCH is not high-frequency by default" {
+    cat > "$SEMANTIC_STRESS_LORD_LOG" <<'EOF'
+{"content":"セマンティック辞書の単発未登録フレーズ","direction":"inbound"}
+EOF
+    cat > "$SEMANTIC_STRESS_CMD_QUEUE" <<'EOF'
+cmds: []
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_stress_test.sh" \
+        --source lord \
+        --limit 5 \
+        --baseline "$TEST_TMPDIR/logs/single-baseline.json" \
+        --log "$TEST_TMPDIR/logs/single-stress.log" \
+        --insights "$TEST_TMPDIR/queue/insights.yaml"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"candidate_aliases=1"* ]]
+    [[ "$output" == *"high_frequency_NO_MATCH=0"* ]]
+    grep -q 'semantic_stress_test candidate_aliases' "$TEST_TMPDIR/queue/insights.yaml"
+    ! grep -q 'test_set_candidate: high_frequency_NO_MATCH' "$TEST_TMPDIR/queue/insights.yaml"
 }
 
 @test "dirty hit candidates: generic hits are surfaced without converting them to NO_MATCH aliases" {
