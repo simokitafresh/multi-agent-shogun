@@ -15,38 +15,50 @@ if [ -z "$PROJECT_ID" ]; then
     exit 0
 fi
 
-# Resolve project path and parse draft lessons in one Python process.
-export PROJECT_ID
-export SCRIPT_DIR
+# Resolve project path in pure bash — avoids importing the yaml package just
+# for this single "- id: / path:" lookup (import yaml alone costs ~35-55ms,
+# dominated by yaml/__init__.py pulling in loader+dumper+cyaml submodules
+# regardless of which Loader is used; cmd_training_speed_lesson_review).
+resolve_project_path() {
+    local project_id="$1" file="$2"
+    local line current_id="" path_value="" matched=0
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            "  - id: "*)
+                [ "$matched" -eq 1 ] && break
+                current_id="${line#*id: }"
+                current_id="${current_id//[[:space:]]/}"
+                [ "$current_id" = "$project_id" ] && matched=1
+                ;;
+            "    path: "*)
+                if [ "$matched" -eq 1 ] && [ -z "$path_value" ]; then
+                    path_value="${line#*path: }"
+                    path_value="${path_value//[[:space:]\"]/}"
+                fi
+                ;;
+        esac
+    done < "$file"
+    printf '%s\n' "$path_value"
+}
+
+PROJECT_PATH="$(resolve_project_path "$PROJECT_ID" "$SCRIPT_DIR/config/projects.yaml")"
+if [ -z "$PROJECT_PATH" ]; then
+    echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
+    exit 0
+fi
+
+LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
+if [ ! -f "$LESSONS_FILE" ]; then
+    echo "ERROR: $LESSONS_FILE not found." >&2
+    exit 0
+fi
+
+export LESSONS_FILE
 python3 << 'PYEOF'
 import os
 import re
-import sys
 
-import yaml
-
-_CLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
-
-script_dir = os.environ["SCRIPT_DIR"]
-project_id = os.environ["PROJECT_ID"]
-
-with open(os.path.join(script_dir, "config/projects.yaml"), encoding="utf-8") as f:
-    cfg = yaml.load(f, Loader=_CLoader) or {}
-
-project_path = ""
-for p in cfg.get("projects", []):
-    if p.get("id") == project_id:
-        project_path = p.get("path", "")
-        break
-
-if not project_path:
-    print(f"ERROR: Project '{project_id}' not found in config/projects.yaml", file=sys.stderr)
-    raise SystemExit(0)
-
-lessons_file = os.path.join(project_path, "tasks", "lessons.md")
-if not os.path.isfile(lessons_file):
-    print(f"ERROR: {lessons_file} not found.", file=sys.stderr)
-    raise SystemExit(0)
+lessons_file = os.environ["LESSONS_FILE"]
 
 with open(lessons_file, encoding='utf-8') as f:
     content = f.read()
