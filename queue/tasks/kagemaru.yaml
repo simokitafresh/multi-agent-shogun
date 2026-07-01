@@ -1,103 +1,45 @@
 task:
-  readonly_ref:
-  - path: 'scripts/gates/gate_lesson_health.sh'
-    reason: command欄の必読/参照専用ファイル
+  parent_cmd: cmd_training_speed_decision_write_202607020244_kagemaru
+  task_id: cmd_training_speed_decision_write_202607020244_kagemaru_normal
+  status: done
+  assigned_to: kagemaru
+  task_type: training
+  project: infra
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/decision_write.sh
+  title: decision_write.sh速度改善修行
+  purpose: decision_write.shを実運用累積影響ベースで品質維持高速化する
+  command: |
+    scripts/decision_write.sh の実行速度を改善せよ。既存のYAML安全性、flock、互換性、防御を削るな。
+    まずbaselineを実測し、最大遅延フェーズを数値で特定すること。改善候補は3ターンまで試し、
+    各ターンで before/after と改善率を記録せよ。5%以上改善できない場合は差分0へ戻し、
+    未達理由を数値付きでFAIL報告せよ。
+  acceptance_criteria:
+  - id: AC1
+    description: baseline実測値、測定コマンド、実運用累積影響、最大遅延フェーズを報告する
+  - id: AC2
+    description: 互換性とYAML安全性を維持した改善候補1を実装し、before/afterと改善率を報告する
+  - id: AC3
+    description: 必要なら改善候補2-3を試し、採用/不採用を数値で判断する
+  - id: AC4
+    description: bash -nと関連テストを実行し、SKIP=0または専用テスト不在を明記する
+  - id: AC5
+    description: 改善採用時はscope内のみcommitし、未達時は差分0でFAIL報告し、次候補をdecision_candidateへ残す
+  constraints:
+  - yaml.dump/yaml.safe_dumpで運用YAMLを書き換えない
+  - flock/atomic write/Lost Update防止を削らない
+  - 他忍者の作業ファイルを変更しない
+  - 計測なしの採用を禁止する
+  not_in_scope:
+  - 常駐デーモン化/API化など設計変更
+  - decision_write.sh以外の速度改善
+  report_path: queue/reports/kagemaru_report_cmd_training_speed_decision_write_202607020244_kagemaru.yaml
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "skill_routing — スキルルーティング:  skills/*/SKILL.md"
-  - "provisional_lessons — 仮: Lessons:  projects/infra/lessons.yaml"
-  recommended_skills:
-  - "shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み)"
-  - "reset-layout(全ペイン配置復元)"
-  - "shogun-clear-prep(clear前)"
-  - "dream(三層記憶整理)"
-  - "shogun-teire(棚卸し)"
-  - "lesson-sort(教訓整理)"
-  - "switch-project(PJ切替)"
-  - "shogun-pd-sync(裁定反映)"
-  - "cmd-complete(GATE CLEAR後/家老)"
-  - "dashboard-update(ダッシュボード/家老)"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
-      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
-    ────────────────────────────────────────
-
-
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  acceptance_criteria:
-    AC1:
-      description: bash scripts/gates/gate_lesson_health.sh のexit 1直接原因を一次実行ログで特定し、Q1-Q3(直接原因/横展開/防御層)を報告する
-    AC2:
-      description: 空またはlesson 0件のprojects/infra/lessons.yamlでssot_path未設定がlesson_health全体をALERTにしない最小修正を実装する（必要ならテスト追加）
-    AC3:
-      description: bash scripts/gates/gate_lesson_health.sh がEXIT 0になること、関連テストがPASSすることを確認する
-  command: 1. bash scripts/gates/gate_lesson_health.sh を実行し、GA-159の直接原因を再現する。2. projects/infra/lessons.yaml が空またはlesson 0件でssot_path未設定でもlesson_health全体をALERTにしない最小修正を実装する。3. gate_lesson_health.sh EXIT 0と関連テストPASSを確認する。
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_ga159_lesson_health_infra_ssot_202607012058
-  project: infra
-  purpose: GA-159 lesson_health ALERTの根因を特定し、空のprojects/infra/lessons.yamlでssot_path未設定WARNがexit 1化する問題を再発防止する
-  status: idle
-  stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_lesson_health.sh
-  task_id: cmd_karo_hotfix_ga159_lesson_health_infra_ssot_202607012058_normal
-  task_type: hotfix
-  related_lessons:
-  - id: 'L278'
-    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitorのAUTO-DONEでstatus=doneになったがreport作成前。commitと報告は不可分のセットであり、commit後即座にreport作成が必要。現行のcommit→report→inbox_writeの順序で、commit直'
-    wa_category: 'commit_missing'
-    wa_count: 1
-    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
-  - id: 'L342'
-    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要。コミット漏れの根因になりうる'
-    wa_category: 'commit_missing'
-    wa_count: 1
-    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
-  memory_db_context:
-  - '2026-07-01T20:53:48+09:00 | 【改善トリガー】lesson_health ALERT (GA-159)'
-  - '2026-04-22T19:52:38+09:00 | 【改善トリガー】ci_red ALERT (GA-159)'
-  - '2026-07-01T17:29:57+09:00 | saizo/tobisaru再提出待ち。inbox監視しつつidle待機。 本セッション実績: - **D0実装**: gate_lesson_health.sh MIN_SAMPLES適用修正(偽A'
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_ga159_lesson_health_infra_ssot_202607012058_normal
-  _ac_worker_id: 
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_karo_hotfix_ga159_lesson_health_infra_ssot_202607012058.yaml
-  report_path: queue/reports/kagemaru_report_cmd_karo_hotfix_ga159_lesson_health_infra_ssot_202607012058.yaml
-  bloom_level: 
-  deployed_at: "2026-07-01T20:58:54"
-  progress: "AC1再現済み(before RC=1)。AC2実装+commit済み(49d5f9c6cf205b0a80537c94d6c2e6ec3c0b2abc)。AC3 post-commit検証: gate_lesson_health RC=0、Bats 16/16 PASS。報告YAML記入中。"
-  completed_at: "2026-07-01T21:06:33+09:00"
+  ac_version: 3faca962
+  _ac_task_id: cmd_training_speed_decision_write_202607020244_kagemaru_normal
+  _ac_worker_id: 
+  report_filename: kagemaru_report_cmd_training_speed_decision_write_202607020244_kagemaru.yaml
+  deployed_at: "2026-07-02T02:45:48"

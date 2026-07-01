@@ -1,5 +1,6 @@
 #!/bin/bash
 # decision_write.sh — SSOT (DM-signal/tasks/decisions.md) への意思決定記録追記（排他ロック付き）
+# semantic-links: [[lock_path.sh]], [[config/projects.yaml]], [[decisions.md]]
 # Usage: bash scripts/decision_write.sh <project_id> "<cmd_id>" "<title>" "<decision>" "<rationale>" "<alternatives>"
 # Example: bash scripts/decision_write.sh dm-signal "cmd_083" "MC廃止" "per-ticker統一" "バグ発見" "案D,E,F"
 
@@ -14,10 +15,27 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     esac
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \
-    || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
+_dw_self="${BASH_SOURCE[0]}"
+[[ "$_dw_self" != /* ]] && _dw_self="$PWD/$_dw_self"
+SCRIPT_DIR="${_dw_self%/scripts/decision_write.sh}"
+unset _dw_self
+
+lock_path() {
+    local file_path="$1"
+    case "$file_path" in
+        /mnt/c/*|/mnt/d/*)
+            local hash=5381 i c
+            for (( i=0; i<${#file_path}; i++ )); do
+                printf -v c '%d' "'${file_path:$i:1}"
+                (( hash = hash * 33 + c ))
+            done
+            printf '/tmp/shogun_lock_%016x.lock' "$hash"
+            ;;
+        *)
+            printf '%s.lock' "$file_path"
+            ;;
+    esac
+}
 PROJECT_ID="$1"
 CMD_ID="$2"
 TITLE="$3"
@@ -31,22 +49,15 @@ if [ -z "$PROJECT_ID" ] || [ -z "$TITLE" ] || [ -z "$DECISION" ]; then
     exit 1
 fi
 
-# Get project path from config/projects.yaml using awk (no Python startup)
-PROJECT_PATH=$(awk -v pid="$PROJECT_ID" '
-  /^  - id:/ {
-    val = $0
-    sub(/^[[:space:]]*-[[:space:]]*id:[[:space:]]*["'"'"']?/, "", val)
-    sub(/["'"'"']?[[:space:]]*$/, "", val)
-    in_proj = (val == pid)
-  }
-  /^  - / && !/id:/ { in_proj = 0 }
-  in_proj && /^[[:space:]]*path:/ {
-    val = $0
-    sub(/^[[:space:]]*path:[[:space:]]*["'"'"']?/, "", val)
-    sub(/["'"'"']?[[:space:]]*$/, "", val)
-    print val; exit
-  }
-' "$SCRIPT_DIR/config/projects.yaml")
+# Get project path from config/projects.yaml without Python startup.
+PROJECT_PATH=$(sed -nE "/^[[:space:]]*-[[:space:]]*id:[[:space:]]*['\\\"]?${PROJECT_ID}['\\\"]?[[:space:]]*$/,/^[[:space:]]*-[[:space:]]*id:/ {
+    /^[[:space:]]*path:/ {
+        s/^[[:space:]]*path:[[:space:]]*['\\\"]?//
+        s/['\\\"]?[[:space:]]*$//
+        p
+        q
+    }
+}" "$SCRIPT_DIR/config/projects.yaml")
 
 if [ -z "$PROJECT_PATH" ]; then
     echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2
