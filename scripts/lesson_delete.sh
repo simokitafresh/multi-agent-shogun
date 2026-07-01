@@ -45,11 +45,84 @@ fi
 
 LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
 LOCKFILE="${LESSONS_FILE}.lock"
+CACHE_FILE="$SCRIPT_DIR/projects/${PROJECT_ID}/lessons.yaml"
+ARCHIVE_FILE="$SCRIPT_DIR/projects/${PROJECT_ID}/lessons_archive.yaml"
 
 if [ ! -f "$LESSONS_FILE" ]; then
     echo "ERROR: $LESSONS_FILE not found." >&2
     exit 1
 fi
+
+delete_lesson_from_cache_file() {
+    local cache_file="$1"
+    local lesson_id="$2"
+
+    if [ ! -f "$cache_file" ]; then
+        return 0
+    fi
+
+    local tmp_file
+    tmp_file="$(mktemp "${cache_file}.XXXXXX.tmp")"
+    local now
+    now="$(date '+%Y-%m-%dT%H:%M:%S')"
+
+    if awk -v lesson_id="$lesson_id" -v now="$now" '
+BEGIN {
+    target_num = lesson_id
+    sub(/^L0*/, "", target_num)
+    if (target_num == "") target_num = "0"
+}
+function is_target_id(line,    id,num) {
+    if (line !~ /^- id: L[0-9]+[[:space:]]*$/) return 0
+    id = line
+    sub(/^- id: L0*/, "", id)
+    sub(/[[:space:]]*$/, "", id)
+    num = id == "" ? "0" : id
+    return num == target_num
+}
+{
+    if (skip) {
+        if ($0 ~ /^- id: /) {
+            skip = 0
+        } else {
+            next
+        }
+    }
+
+    if (is_target_id($0)) {
+        removed = 1
+        skip = 1
+        next
+    }
+
+    if ($0 ~ /^last_synced:/) {
+        print "last_synced: " q now q
+        next
+    }
+
+    if ($0 ~ /^lesson_count:[[:space:]]*[0-9]+/) {
+        count = $0
+        sub(/^lesson_count:[[:space:]]*/, "", count)
+        if (count > 0) {
+            print "lesson_count: " count - 1
+            next
+        }
+    }
+
+    print
+}
+END {
+    if (!removed) exit 2
+}
+' q="'" "$cache_file" > "$tmp_file"; then
+        mv "$tmp_file" "$cache_file"
+        return 0
+    else
+        local rc=$?
+        rm -f "$tmp_file"
+        return "$rc"
+    fi
+}
 
 # Temp file for python exit code (L022)
 PY_EXIT_FILE="/tmp/.lesson_delete_py_$$"
@@ -145,7 +218,16 @@ PYEOF
         if [ "$PY_EXIT" != "0" ]; then
             exit 1
         fi
-        bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID"
+        cache_update_failed=0
+        delete_lesson_from_cache_file "$CACHE_FILE" "$LESSON_ID" || cache_update_failed=1
+        delete_lesson_from_cache_file "$ARCHIVE_FILE" "$LESSON_ID" || cache_update_failed=1
+        if [ "$cache_update_failed" != "0" ]; then
+            echo "[lesson_delete] Cache fast delete failed; running full sync fallback" >&2
+            bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID"
+        else
+            echo "[lesson_delete] cache updated: $CACHE_FILE"
+            echo "[lesson_delete] cache updated: $ARCHIVE_FILE"
+        fi
         exit 0
     else
         attempt=$((attempt + 1))
