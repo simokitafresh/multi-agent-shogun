@@ -495,7 +495,10 @@ echo ""
 echo "■ SG-PRE19: total changed_lines(adversarial review必要性判定)"
 TOTAL_ADDED=0
 TOTAL_DELETED=0
-if [ -n "${PARENT_CMD:-}" ]; then
+_files_modified_trimmed=$(printf '%s\n' "${FILES_MODIFIED:-}" | sed '/^[[:space:]]*$/d' | head -1)
+if [ -z "$_files_modified_trimmed" ]; then
+    echo "  SKIP: files_modified empty"
+elif [ -n "${PARENT_CMD:-}" ]; then
     if [ -n "$_REPORT_HASHES" ]; then
         _changed_counts=$(
             REPORT_HASHES="$_REPORT_HASHES" \
@@ -548,14 +551,14 @@ PY
             [[ "$added" == "-" ]] && continue
             TOTAL_ADDED=$((TOTAL_ADDED + added))
             TOTAL_DELETED=$((TOTAL_DELETED + deleted))
-        done < <(git -C "$REPO_ROOT" log --no-merges --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
+        done < <(timeout 2 git -C "$REPO_ROOT" log --no-merges --fixed-strings --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
         # DM-Signalリポジトリ（プロジェクトがDM-Signalの場合）
         if [ "${IS_DM_SIGNAL:-0}" = "1" ] && [ -d "${DM_SIGNAL_PATH}/.git" ]; then
             while IFS=$'\t' read -r added deleted _; do
                 [[ "$added" == "-" ]] && continue
                 TOTAL_ADDED=$((TOTAL_ADDED + added))
                 TOTAL_DELETED=$((TOTAL_DELETED + deleted))
-            done < <(git -C "${DM_SIGNAL_PATH}" log --no-merges --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
+            done < <(timeout 2 git -C "${DM_SIGNAL_PATH}" log --no-merges --fixed-strings --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
         fi
     fi
     TOTAL_CHANGED=$((TOTAL_ADDED + TOTAL_DELETED))
@@ -709,16 +712,16 @@ if [ "${#_instr_files[@]}" -gt 0 ] && [ -d "$REPO_ROOT/instructions/generated" ]
         fi
         # Check 2: commit/mtime — generatedのcommitが正本と同一以降か
         if [ "$_file_pass" = false ]; then
-            _src_hash=$(git log --format=%H -1 -- "$REPO_ROOT/$_ifile" 2>/dev/null || true)
-            _gen_hash=$(echo "$_gen_first" | xargs git log --format=%H -1 -- 2>/dev/null || true)
+            _src_hash=$(timeout 2 git log --format=%H -1 -- "$REPO_ROOT/$_ifile" 2>/dev/null || true)
+            _gen_hash=$(echo "$_gen_first" | xargs timeout 2 git log --format=%H -1 -- 2>/dev/null || true)
             if [ -n "$_src_hash" ] && [ -n "$_gen_hash" ]; then
                 if [ "$_src_hash" = "$_gen_hash" ]; then
                     # 同一commitで両方更新 → 貫通済み
                     echo "  PASS: ${_ifile} → generated/が同一commitで更新済み"
                     _file_pass=true
                 else
-                    _src_ts=$(git log --format=%ct -1 -- "$REPO_ROOT/$_ifile" 2>/dev/null || echo 0)
-                    _gen_ts=$(echo "$_gen_first" | xargs git log --format=%ct -1 -- 2>/dev/null || echo 0)
+                    _src_ts=$(timeout 2 git log --format=%ct -1 -- "$REPO_ROOT/$_ifile" 2>/dev/null || echo 0)
+                    _gen_ts=$(echo "$_gen_first" | xargs timeout 2 git log --format=%ct -1 -- 2>/dev/null || echo 0)
                     if [ "$_gen_ts" -ge "$_src_ts" ]; then
                         echo "  PASS: ${_ifile} → generated/が正本以降のcommitで更新済み"
                         _file_pass=true
