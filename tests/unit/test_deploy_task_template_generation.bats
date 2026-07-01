@@ -705,6 +705,47 @@ YAML
     _fixture_project_end
 }
 
+@test "AC description with escaped double quotes generates yaml.safe_load-able binary_checks (cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530)" {
+    _fixture_project_start
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  assigned_to: sasuke
+  parent_cmd: cmd_quote_escape_fixture
+  task_id: cmd_quote_escape_fixture_exact
+  project: infra
+  ac_version: c0ffee01
+  report_filename: sasuke_report_cmd_quote_escape_fixture.yaml
+  acceptance_criteria:
+    - id: AC1
+      description: "INS-1 をresolved化できる場合は `bash scripts/insight_resolve.sh INS-1 \"<根拠>\"` のみで閉じ、未解決なら次actionをdecision_candidateへ書く"
+YAML
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        generate_report_template sasuke cmd_quote_escape_fixture_exact cmd_quote_escape_fixture infra
+    )
+
+    local report_path="$TEST_PROJECT/queue/reports/sasuke_report_cmd_quote_escape_fixture.yaml"
+    run python3 - <<EOF
+import yaml
+from pathlib import Path
+
+data = yaml.safe_load(Path("$report_path").read_text(encoding="utf-8"))
+bc = data["binary_checks"]
+check_text = bc["AC1"][0]["check"]
+assert 'bash scripts/insight_resolve.sh INS-1 "<根拠>"' in check_text, check_text
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+
+    _fixture_project_end
+}
+
 # ═══════════════════════════════════════════════════════════
 # recon report template tests (from test_deploy_task_recon_template.bats)
 # ═══════════════════════════════════════════════════════════

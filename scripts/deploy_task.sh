@@ -2939,8 +2939,12 @@ ${_commit_bc}"
     _bc_full=$(_apply_binary_check_waivers "$task_file" "$_bc_full")
 
     if grep -qF "$_bc_placeholder" "$report_file" 2>/dev/null; then
-        awk -v repl="$_bc_full" -v placeholder="$_bc_placeholder" '
-            index($0, placeholder) { print repl; next }
+        # cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530:
+        # awk -v はCスタイルのバックスラッシュエスケープを解釈し、AC description中の
+        # \" (YAML二重引用符スカラーの内部エスケープ) を " に破壊してYAMLを壊す。
+        # ENVIRON経由ならエスケープ処理されず原文のまま渡せる。
+        _bc_full="$_bc_full" awk -v placeholder="$_bc_placeholder" '
+            index($0, placeholder) { print ENVIRON["_bc_full"]; next }
             { print }
         ' "$report_file" > "${report_file}.tmp" && mv "${report_file}.tmp" "$report_file"
         if [ -n "$_bc_block" ]; then
