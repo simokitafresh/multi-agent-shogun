@@ -34,75 +34,115 @@ if [[ -z "$CMD_ID" ]]; then
 fi
 
 # Get cmd text
+# §3.3: python3+yaml.safe_load回避。awk抽出→python3 -S(cmd_3632)
+_PROJECT_DIR=""
 if [[ "$CMD_ID" == "-" ]]; then
     CMD_TEXT="$(cat)"
+else
+    # awk抽出: shogun_to_karo.yamlからcmd blockのcommand/projectフィールドを取得
+    _stk="$REPO_ROOT/queue/shogun_to_karo.yaml"
+    CMD_TEXT=""
+    _PROJECT=""
+    if [[ -f "$_stk" ]]; then
+        CMD_TEXT=$(awk -v target="$CMD_ID" '
+        /^  [A-Za-z_]/ {
+            id = $0; sub(/:.*/, "", id); gsub(/^[[:space:]]+/, "", id)
+            in_target = (id == target)
+            in_command = 0
+            next
+        }
+        in_target && /^    command:[[:space:]]*\|/ { in_command = 1; next }
+        in_target && /^    command:[[:space:]]*>/ { in_command = 1; next }
+        in_target && /^    command:[[:space:]]*[^|>[:space:]]/ {
+            v = $0; sub(/^    command:[[:space:]]*/, "", v)
+            gsub(/^["'"'"']|["'"'"']$/, "", v)
+            print v; next
+        }
+        in_target && in_command {
+            if (/^      / || /^$/) { sub(/^      /, ""); print }
+            else in_command = 0
+        }
+        ' "$_stk")
+        _PROJECT=$(awk -v target="$CMD_ID" '
+        /^  [A-Za-z_]/ {
+            id = $0; sub(/:.*/, "", id); gsub(/^[[:space:]]+/, "", id)
+            in_target = (id == target); next
+        }
+        in_target && /^    project:[[:space:]]/ {
+            v = $0; sub(/^    project:[[:space:]]*/, "", v); gsub(/["'"'"']/, "", v)
+            print v; exit
+        }
+        ' "$_stk")
+        # AC count check
+        _AC_COUNT=$(awk -v target="$CMD_ID" '
+        /^  [A-Za-z_]/ {
+            id = $0; sub(/:.*/, "", id); gsub(/^[[:space:]]+/, "", id)
+            in_target = (id == target); in_ac = 0; next
+        }
+        in_target && /^    acceptance_criteria:/ { in_ac = 1; next }
+        in_target && in_ac && /^      AC[0-9]+:/ { count++ }
+        in_target && in_ac && /^    [^ ]/ { in_ac = 0 }
+        END { print count+0 }
+        ' "$_stk")
+        [[ "$_AC_COUNT" -gt 4 ]] && echo "★ WARN(LG021): AC数=${_AC_COUNT} > 4。cmd分割を検討せよ(REQUEST_CHANGES候補)"
+    fi
+    # archiveフォールバック(awk抽出失敗時。archive=commands:ラッパー+同じインデント構造)
+    if [[ -z "$CMD_TEXT" ]]; then
+        for _af in "$REPO_ROOT"/queue/archive/cmds/"${CMD_ID}"_*.yaml; do
+            [[ -f "$_af" ]] || continue
+            CMD_TEXT=$(awk -v target="$CMD_ID" '
+            /^  [A-Za-z_]/ {
+                id = $0; sub(/:.*/, "", id); gsub(/^[[:space:]]+/, "", id)
+                in_target = (id == target); in_command = 0; next
+            }
+            in_target && /^    command:[[:space:]]*\|/ { in_command = 1; next }
+            in_target && /^    command:[[:space:]]*>/ { in_command = 1; next }
+            in_target && /^    command:[[:space:]]*[^|>[:space:]]/ {
+                v = $0; sub(/^    command:[[:space:]]*/, "", v)
+                gsub(/^["'"'"']|["'"'"']$/, "", v)
+                print v; next
+            }
+            in_target && in_command {
+                if (/^      / || /^$/) { sub(/^      /, ""); print }
+                else in_command = 0
+            }
+            ' "$_af")
+            if [[ -n "$CMD_TEXT" ]]; then
+                _PROJECT=$(awk -v target="$CMD_ID" '
+                /^  [A-Za-z_]/ {
+                    id = $0; sub(/:.*/, "", id); gsub(/^[[:space:]]+/, "", id)
+                    in_target = (id == target); next
+                }
+                in_target && /^    project:[[:space:]]/ {
+                    v = $0; sub(/^    project:[[:space:]]*/, "", v); gsub(/["'"'"']/, "", v)
+                    print v; exit
+                }
+                ' "$_af")
+                break
+            fi
+        done
+    fi
+    if [[ -z "$CMD_TEXT" ]]; then
+        echo "FAIL: cmd_id '${CMD_ID}' not found in active/archive cmd YAML" >&2
+        exit 1
+    fi
+    # project → project_dir 解決
+    if [[ -n "$_PROJECT" ]] && [[ -f "$REPO_ROOT/config/projects.yaml" ]]; then
+        _PROJECT_DIR=$(awk -v pid="$_PROJECT" '
+        /- id:/ { cur = $3 }
+        cur == pid && /path:/ { v = $2; gsub(/["'"'"']/, "", v); print v; exit }
+        ' "$REPO_ROOT/config/projects.yaml")
+    fi
 fi
 
-PYTHON_CMD=(python3)
-if [[ "$CMD_ID" == "-" ]]; then
-    PYTHON_CMD=(python3 -S)
-fi
-
-# Run verification
-REPO_ROOT="$REPO_ROOT" CMD_ID="$CMD_ID" "${PYTHON_CMD[@]}" -c "
+# Run verification (always python3 -S — no yaml import needed)
+echo "$CMD_TEXT" | REPO_ROOT="$REPO_ROOT" CMD_ID="$CMD_ID" _PROJECT_DIR="${_PROJECT_DIR:-}" python3 -S -c "
 import re, os, sys
 
 repo_root = os.environ['REPO_ROOT']
 cmd_id = os.environ.get('CMD_ID', '')
-project_dir = ''
-
-if cmd_id == '-':
-    cmd_text = sys.stdin.read()
-else:
-    try:
-        import glob
-        import yaml
-
-        cmd = {}
-        candidate_files = [os.path.join(repo_root, 'queue', 'shogun_to_karo.yaml')]
-        candidate_files.extend(
-            sorted(glob.glob(os.path.join(repo_root, 'queue', 'archive', 'cmds', f'{cmd_id}_*.yaml')), reverse=True)
-        )
-        for candidate in candidate_files:
-            if not os.path.exists(candidate):
-                continue
-            with open(candidate) as f:
-                data = yaml.safe_load(f) or {}
-            cmds = data.get('commands', data)
-            if isinstance(cmds, dict) and isinstance(cmds.get(cmd_id), dict):
-                cmd = cmds[cmd_id]
-                break
-            if isinstance(cmds, list):
-                for entry in cmds:
-                    if isinstance(entry, dict) and entry.get('id') == cmd_id:
-                        cmd = entry
-                        break
-            if cmd:
-                break
-        cmd_text = cmd.get('command', '')
-        if not cmd_text:
-            print(f\"FAIL: cmd_id '{cmd_id}' not found in active/archive cmd YAML\", file=sys.stderr)
-            sys.exit(1)
-
-        project = cmd.get('project', '')
-        def _get_pj_path(pj_id, _root):
-            import re as _re
-            _yaml = os.path.join(_root, 'config', 'projects.yaml')
-            try:
-                _content = open(_yaml).read()
-                _m = _re.search(r'- id: ' + _re.escape(pj_id) + r'.*?path:\s+\"([^\"]+)\"', _content, _re.DOTALL)
-                return _m.group(1) if _m else ''
-            except Exception:
-                return ''
-        project_dir = _get_pj_path(project, repo_root) if project else ''
-
-        acs = cmd.get('acceptance_criteria', [])
-        ac_count = len(acs) if isinstance(acs, list) else 0
-        if ac_count > 4:
-            print(f'★ WARN(LG021): AC数={ac_count} > 4。cmd分割を検討せよ(REQUEST_CHANGES候補)')
-    except Exception as exc:
-        print(f\"FAIL: cmd_id '{cmd_id}' could not be loaded: {exc}\", file=sys.stderr)
-        sys.exit(1)
+project_dir = os.environ.get('_PROJECT_DIR', '')
+cmd_text = sys.stdin.read()
 
 # Extract file paths
 path_patterns = [

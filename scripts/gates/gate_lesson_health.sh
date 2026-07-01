@@ -175,63 +175,73 @@ _compute_lesson_stats() {
     ' "$file"
 }
 
+# §3.3: 3ファイル×awk 3回→1回のawk+BEGINFILE/ENDFILE統合(cmd_3632)
 check_role_lesson_origins_batch() {
-    local _role_spec _label _path
-    for _role_spec in \
-        "lessons_shogun.yaml=$SCRIPT_DIR/projects/infra/lessons_shogun.yaml" \
-        "lessons_gunshi.yaml=$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml" \
-        "lessons_karo.yaml=$SCRIPT_DIR/projects/infra/lessons_karo.yaml"; do
-        _label="${_role_spec%%=*}"
-        _path="${_role_spec#*=}"
-        [ -f "$_path" ] || continue
-        awk -v label="$_label" '
-            function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
-            function first5(list,    i,out) {
-                out = ""
-                for (i = 1; i <= list[0] && i <= 5; i++) out = out (out ? "," : "") list[i]
-                return out
-            }
-            function flush_current(    origin_text) {
-                if (id == "") return
-                total++
-                if (!origin_seen) {
-                    missing[++missing[0]] = id
-                } else {
-                    origin_text = trim(origin_value)
-                    gsub(/^["'\''"]|["'\''"]$/, "", origin_text)
-                    if (origin_text == "") empty[++empty[0]] = id
-                    else if (origin_text !~ /\[\[[^]\n]+\]\]/) no_links[++no_links[0]] = id
-                }
-            }
-            /^- id:[[:space:]]*/ {
-                flush_current()
-                id = $0
-                sub(/^- id:[[:space:]]*["'\''"]?/, "", id)
-                sub(/["'\''"]?[[:space:]]*$/, "", id)
-                origin_seen = 0
-                origin_value = ""
-                next
-            }
-            /^[[:space:]]+origin:[[:space:]]*/ {
-                origin_seen = 1
-                origin_value = $0
-                sub(/^[[:space:]]+origin:[[:space:]]*/, "", origin_value)
-                next
-            }
-            END {
-                flush_current()
-                bad = missing[0] + empty[0] + no_links[0]
-                if (bad) {
-                    printf "WARN: %s origin因果リンク不備 %d/%d件\n", label, bad, total
-                    if (missing[0]) printf "  origin欠落: %s\n", first5(missing)
-                    if (empty[0]) printf "  origin空: %s\n", first5(empty)
-                    if (no_links[0]) printf "  リンク0件: %s\n", first5(no_links)
-                } else {
-                    printf "OK: %s origin因果リンク (%d件)\n", label, total
-                }
-            }
-        ' "$_path" || echo "WARN: ${_label} origin検査に失敗。YAML構文または形式を確認せよ"
+    local _origin_files=()
+    for _lf in "$SCRIPT_DIR"/projects/infra/lessons_shogun.yaml \
+               "$SCRIPT_DIR"/projects/infra/lessons_gunshi.yaml \
+               "$SCRIPT_DIR"/projects/infra/lessons_karo.yaml; do
+        [ -f "$_lf" ] && _origin_files+=("$_lf")
     done
+    [ ${#_origin_files[@]} -eq 0 ] && return 0
+    awk '
+        function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+        function first5(arr,    i,out) {
+            out = ""
+            for (i = 1; i <= arr[0] && i <= 5; i++) out = out (out ? "," : "") arr[i]
+            return out
+        }
+        function flush_current(    origin_text) {
+            if (id == "") return
+            ftotal++
+            if (!origin_seen) {
+                fmissing[++fmissing[0]] = id
+            } else {
+                origin_text = trim(origin_value)
+                gsub(/^["'\''"]|["'\''"]$/, "", origin_text)
+                if (origin_text == "") fempty[++fempty[0]] = id
+                else if (origin_text !~ /\[\[[^]\n]+\]\]/) fno_links[++fno_links[0]] = id
+            }
+        }
+        function emit_file_result() {
+            bad = fmissing[0] + fempty[0] + fno_links[0]
+            if (bad) {
+                printf "WARN: %s origin因果リンク不備 %d/%d件\n", flabel, bad, ftotal
+                if (fmissing[0]) printf "  origin欠落: %s\n", first5(fmissing)
+                if (fempty[0]) printf "  origin空: %s\n", first5(fempty)
+                if (fno_links[0]) printf "  リンク0件: %s\n", first5(fno_links)
+            } else {
+                printf "OK: %s origin因果リンク (%d件)\n", flabel, ftotal
+            }
+        }
+        BEGINFILE {
+            if (id != "") flush_current()
+            if (ftotal > 0) emit_file_result()
+            flabel = FILENAME; sub(/.*\//, "", flabel)
+            ftotal = 0; id = ""; delete fmissing; delete fempty; delete fno_links
+            fmissing[0] = 0; fempty[0] = 0; fno_links[0] = 0
+        }
+        /^- id:[[:space:]]*/ {
+            flush_current()
+            id = $0
+            sub(/^- id:[[:space:]]*["'\''"]?/, "", id)
+            sub(/["'\''"]?[[:space:]]*$/, "", id)
+            origin_seen = 0; origin_value = ""
+            next
+        }
+        /^[[:space:]]+origin:[[:space:]]*/ {
+            origin_seen = 1
+            origin_value = $0
+            sub(/^[[:space:]]+origin:[[:space:]]*/, "", origin_value)
+            next
+        }
+        ENDFILE {
+            flush_current()
+            emit_file_result()
+            id = ""; ftotal = 0; delete fmissing; delete fempty; delete fno_links
+            fmissing[0] = 0; fempty[0] = 0; fno_links[0] = 0
+        }
+    ' "${_origin_files[@]}" 2>/dev/null || echo "WARN: origin検査に失敗。YAML構文または形式を確認せよ"
 }
 
 write_lesson_effect_status() {
@@ -729,50 +739,40 @@ if [ "$_global_max_id" -gt 0 ]; then
 fi
 
 # ─── enforcement phantom検出 (deepdive 2026-05-16: 自己申告vs他覚的検証) ───
+# §3.3: bash while+grep per entryをawk一括処理に統合(cmd_3632)
 _phantom_count=0
-_phantom_tmp="/tmp/_glh_phantom_$$"
+_find_scripts=$(find "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/.claude/hooks" -name "*.sh" -printf '%f\n' 2>/dev/null || true)
 
-# 高速化: scripts/.claude/hooks の .sh ファイル一覧を事前に1回収集 (find N回→1回)
-declare -A _script_exists
-while IFS= read -r _s; do
-    _script_exists["$_s"]="1"
-done < <(find "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/.claude/hooks" -name "*.sh" -printf '%f\n' 2>/dev/null)
-
+_phantom_output=""
+_phantom_files=()
 for _lf in "$SCRIPT_DIR"/projects/infra/lessons_gunshi.yaml "$SCRIPT_DIR"/projects/infra/lessons_karo.yaml; do
-    [ -f "$_lf" ] || continue
-    awk '
-        /^- id:/ {
-            id = $3
-            automated = 0
-            next
-        }
-        /^  automated:[[:space:]]*true[[:space:]]*$/ {
-            automated = 1
-            next
-        }
-        /^  enforcement:[[:space:]]*/ {
-            if (automated == 1) {
-                sub(/^  enforcement:[[:space:]]*/, "", $0)
-                print id "|" $0
-            }
-        }
-    ' "$_lf" > "$_phantom_tmp" 2>/dev/null || true
-    while IFS='|' read -r _lid _enf; do
-        _scripts=$(echo "$_enf" | grep -oE '[A-Za-z0-9_-]+\.sh' | sort -u) || true
-        [ -z "$_scripts" ] && continue
-        _all_found=true
-        for _s in $_scripts; do
-            if [ -z "${_script_exists[$_s]+x}" ]; then
-                _all_found=false
-            fi
-        done
-        if ! $_all_found; then
-            echo "WARN: PHANTOM教訓 $_lid — enforcement参照スクリプト不在: $_scripts"
-            _phantom_count=$((_phantom_count + 1))
-        fi
-    done < "$_phantom_tmp"
+    [ -f "$_lf" ] && _phantom_files+=("$_lf")
 done
-rm -f "$_phantom_tmp"
+if [ ${#_phantom_files[@]} -gt 0 ]; then
+    _phantom_output=$(awk -v scripts="$_find_scripts" '
+        BEGIN {
+            n = split(scripts, arr, "\n")
+            for (i = 1; i <= n; i++) if (arr[i] != "") exists[arr[i]] = 1
+        }
+        /^- id:/ { id = $3; automated = 0; next }
+        /^  automated:[[:space:]]*true/ { automated = 1; next }
+        /^  enforcement:[[:space:]]*/ {
+            if (!automated) next
+            enf = $0; sub(/^  enforcement:[[:space:]]*/, "", enf)
+            missing = ""
+            while (match(enf, /[A-Za-z0-9_-]+\.sh/)) {
+                s = substr(enf, RSTART, RLENGTH)
+                if (!(s in exists)) missing = missing (missing ? " " : "") s
+                enf = substr(enf, RSTART + RLENGTH)
+            }
+            if (missing != "") print "WARN: PHANTOM教訓 " id " — enforcement参照スクリプト不在: " missing
+        }
+    ' "${_phantom_files[@]}" 2>/dev/null) || true
+fi
+if [ -n "$_phantom_output" ]; then
+    echo "$_phantom_output"
+    _phantom_count=$(printf '%s\n' "$_phantom_output" | wc -l)
+fi
 if [ "$_phantom_count" -gt 0 ]; then
     echo "WARN: PHANTOM教訓${_phantom_count}件。enforcement参照スクリプトが存在しない。enforcementフィールドを更新せよ"
     EXIT_CODE=1

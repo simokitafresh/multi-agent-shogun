@@ -84,6 +84,14 @@ find "$SCRIPT_DIR/docs/research" -maxdepth 1 -name "gunshi_*" -mmin -1440 -type 
 _PID_FIND_D=$!
 find "$SCRIPT_DIR/docs/research" -maxdepth 1 -name "*.md" -mtime -7 -type f > "$_TMP_D/find_research" 2>/dev/null &
 _PID_FIND_R=$!
+# §3.3: sqlite3 lord_rulings クエリを並列化(NTFS上371MB DB=2-5秒ボトルネック。cmd_3632)
+{ sqlite3 "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" \
+  "SELECT ts || ' | ' || substr(summary, 1, 120) FROM events WHERE agent = 'lord' AND direction = 'inbound' AND target = 'gunshi' AND ts >= datetime('now', '-6 hours') ORDER BY ts DESC LIMIT 5;" > "$_TMP_D/lord_rulings" 2>/dev/null; } &
+_PID_LORD_RULINGS=$!
+# §3.3: gate_immunity_depth.sh を並列化(~150ms削減。cmd_3632)
+_DEPTH_SH="$SCRIPT_DIR/scripts/gates/gate_immunity_depth.sh"
+{ set +e; if [ -f "$_DEPTH_SH" ]; then bash "$_DEPTH_SH" 2>/dev/null | grep -E '種類|FAIL→LGTM回復|RC解決率|RC発行|月別|未回復|^[[:space:]]+[0-9]{4}-[0-9]{2}:' | head -10 > "$_TMP_D/depth" 2>/dev/null; echo $? > "$_TMP_D/depth_exit"; else echo 127 > "$_TMP_D/depth_exit"; fi; } &
+_PID_DEPTH=$!
 # §3.2: lord_conversation解析を並列化(python3起動~650ms削減)
 { python3 - "$SCRIPT_DIR/queue/lord_conversation.jsonl" <<'PY_LC' > "$_TMP_D/prev_session" 2>/dev/null
 import sys, json
@@ -192,8 +200,9 @@ echo ""
 # 真因: /clear後に三層記憶で前セッションの因果文脈を確認しなかった(2026-06-07事故)
 # 根源: Codex rate limit→CLI切替→settings.yaml未更新→GPTに戻った因果を見逃した
 echo "■ 前セッション殿裁定（三層記憶）"
-_lord_rulings=$(sqlite3 "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" \
-  "SELECT ts || ' | ' || substr(summary, 1, 120) FROM events WHERE agent = 'lord' AND direction = 'inbound' AND target = 'gunshi' AND ts >= datetime('now', '-6 hours') ORDER BY ts DESC LIMIT 5;" 2>/dev/null) || _lord_rulings=""
+# §3.3: sqlite3並列化済み。結果をtmpから読出し(cmd_3632)
+wait "$_PID_LORD_RULINGS" 2>/dev/null || true
+_lord_rulings="$(cat "$_TMP_D/lord_rulings" 2>/dev/null)" || _lord_rulings=""
 if [ -n "$_lord_rulings" ]; then
     echo "  直近6h殿→軍師（時系列で因果をたどれ）:"
     echo "$_lord_rulings" | while IFS= read -r line; do
@@ -1079,15 +1088,18 @@ fi
 # --- Check 12: 免疫深度サマリ (gate_immunity_depth.sh 2026-06-23) ---
 echo ""
 echo "■ 免疫深度サマリ"
-if [ -f "$SCRIPT_DIR/scripts/gates/gate_immunity_depth.sh" ]; then
-    _depth_out=$(bash "$SCRIPT_DIR/scripts/gates/gate_immunity_depth.sh" 2>/dev/null | grep -E '種類|FAIL→LGTM回復|RC解決率|RC発行|月別|未回復|^[[:space:]]+[0-9]{4}-[0-9]{2}:' | head -10)
+# §3.3: 並列化済み。結果をtmpから読出し(cmd_3632)
+wait "$_PID_DEPTH" 2>/dev/null || true
+_depth_exit=$(cat "$_TMP_D/depth_exit" 2>/dev/null || echo 127)
+if [ "$_depth_exit" -eq 127 ]; then
+    echo "  SKIP: gate_immunity_depth.sh不在"
+else
+    _depth_out="$(cat "$_TMP_D/depth" 2>/dev/null)"
     if [ -n "$_depth_out" ]; then
         printf '%s\n' "$_depth_out" | sed 's/^/  /'
     else
         echo "  INFO: gate_immunity_depth.sh出力なし"
     fi
-else
-    echo "  SKIP: gate_immunity_depth.sh不在"
 fi
 
 # --- Alert history記録 (gate_shogun_startup.sh準拠) ---
