@@ -1,29 +1,29 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-07-01 auto-generated -->
+<!-- last_updated: 2026-07-02 cmd_3634_recon2 -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-01T23:42:29+09:00 -->
+<!-- generated_at: 2026-07-02T01:35:08+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-01T23:42:29+09:00 | terminal | response | settings.yaml上は将軍・軍師とも `.local/bin/claude --model opus --effort xhigh`（＝最新版・Opus 4.8・xhigh）に設定済みだ。実際に反映されているか**一次情報**（実…
-- 2026-07-01T23:41:54+09:00 | ntfy | outbound | 教訓効果率WARN: 100.0%
-- 2026-07-01T23:40:50+09:00 | terminal | inbound | 今回の試行錯誤を、次回以降は誰もが何時でもやらないで済むように三層記憶とスキルをアップデートせよ
-- 2026-07-01T23:39:41+09:00 | terminal | inbound | y
-- 2026-07-01T23:38:31+09:00 | ntfy | outbound | 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=80件 clear_prep_check=ALERT [G0…
-- 2026-07-01T23:38:26+09:00 | clear_prep_check | session_summary | auto clear prep summary: inbound=2件; latest=将軍と軍師を最新版のopus 4.8 xhigh変更してくれ。スキルを使ってくれ / ピン留めと最新版の違いはわかるか？
-- 2026-07-01T23:37:25+09:00 | terminal | inbound | ピン留めと最新版の違いはわかるか？
-- 2026-07-01T23:36:11+09:00 | terminal | inbound | 将軍と軍師を最新版のopus 4.8 xhigh変更してくれ。スキルを使ってくれ
-- 2026-07-01T23:34:47+09:00 | ntfy | outbound | 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=78件 clear_prep_check=ALERT [G0…
-- 2026-07-01T23:29:18+09:00 | ntfy | outbound | 【monitor】将軍CTX:56%。/compactをご検討ください
+- 2026-07-02T01:35:07+09:00 | terminal | response | cmd_3634 hayate報告LGTM完了。inbox未読なし。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-02T01:31:41+09:00 | terminal | response | kagemaru復帰完了、家老に報告済み。
+- 2026-07-02T01:31:39+09:00 | terminal | inbound | では設計書を書こう
+- 2026-07-02T01:30:57+09:00 | terminal | response | 重要な過去知見を発見。 [MEM: memory_db ts=2026-06-27 "Renderのworkerプロセスが2つ以上あり、異なるworkerにルーティングされるとキャッシュが別プロセスのメモリにある"] [MEM: memo…
+- 2026-07-02T01:30:44+09:00 | terminal | inbound | kagemaruがdeadしている
+- 2026-07-02T01:29:52+09:00 | terminal | inbound | サーバーサイドのインメモリキャッシュはどうすればいい？renderのままで実行可能か？
+- 2026-07-02T01:29:46+09:00 | terminal | response | cmd_3634_recon2 APPROVE完了。inbox未読なし。idle待機。
+- 2026-07-02T01:29:46+09:00 | terminal | inbound | deploy_task.sh --yamlの実行速度が遅すぎる。速度改善をやらせろ
+- 2026-07-02T01:28:44+09:00 | ntfy | outbound | 【家老】cmd_3634_recon2 初回配備開始 (title=(untitled), ninja=hanzo)
+- 2026-07-02T01:28:39+09:00 | terminal | response | **致命的発見2件:** **1. `/healthz`が今この瞬間5.65秒** — `{"status":"ok"}`を返すだけの軽量エンドポイントが5.65秒。Renderのhealth check timeout(5秒)ギリギリ。…
 
 ## 未解決確認事項
-- settings.yaml上は将軍・軍師とも `.local/bin/claude --model opus --effort xhigh`（＝最新版・Opus 4.8・xhigh）に設定済みだ。実際に反映されているか**一次情報**（実プロセス）で確認する。 [meta] s…
-- 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=80件 clear_prep_check=ALERT [G0.殿/clear指示] WARN: 直近…
-- 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=78件 clear_prep_check=ALERT [G0.殿/clear指示] WARN: 直近…
-- 家老idle分析確認。inbox未読0件。idle自走待機中。 [meta] stop_reason=end_turn
-- 既読+確認済み。軍師のdeploy_task.sh速度分析(blt_20260701_220401)はcmd起票候補。先送り禁止(洗脳#5)だが、殿との対話中。殿の御指示を待つ。
-- cmd_3632 LGTM送信完了。gate速度改善の実測確認済み: - startup: 2.7秒→**1.9秒**(-30%) - ac_physical_verify: 2.8秒→**1.3秒**(-54%) 殿の「遅いスクリプトはバグ」対処が進行中。idle自走待機中。…
-- GA-159 hotfix GATE CLEAR確認。inbox未読0件。idle自走待機中。 [meta] stop_reason=end_turn
-- cmd_3629系全6忍者のGATE CLEAR確認。inbox処理完了。idle自走待機中。
+- **致命的発見2件:** **1. `/healthz`が今この瞬間5.65秒** — `{"status":"ok"}`を返すだけの軽量エンドポイントが5.65秒。Renderのhealth check timeout(5秒)ギリギリ。これはサーバーが常時重い状態にある証拠。…
+- 全デーモン正常稼働: - **ntfy_listener**: 1本 - **ninja_monitor**: 1本 - **inbox_watcher**: 9本(全agent各1本。子プロセスは内部構造) デーモン全て再起動完了、正常稼働確認済み。 [meta] stop_…
+- cmd_3634 publish完了。陣形図確認: hayateがcmd_3634に配備済み(assigned)。 殿の指示「忍者数人に並行で偵察」に対し、現在hayate 1名のみ配備。idle忍者(kagemaru, hanzo)への追加配備は家老が判断する。殿の「数人に並…
+- 家老hotfix 2件GATE CLEAR確認(startup memory/skill refs + deploy_task latency yaml bug)。 cmd_3634(DM-Signal障害偵察)は家老に配備済み。陣形図を見ると忍者2名idle(hayate, …
+- cmd_3634配備完了(家老に委任済み)。将軍の調査続行。 殿、現時点の将軍所見を整理する。 **instance error + ユーザー体験悪化の統合仮説:** | 症状 | 推定メカニズム | |------|-------------| | OOM (4Gi超) | …
+- 一次確認完了。 **プロセス確認結果:** - 将軍(pts/4 or 12): `~/bin/claude --effort high` = pinned Opus4.6, 1M(システム情報確認済み) - 軍師(pts/4 or 12): `~/bin/claude --e…
+- 完了。 - **settings.yaml修正**: shogun/gunshi の `launch_cmd` から `--model opus` を削除、`model_name` を `opus-4-6-1m-high` に更新 - **respawn結果**: 両方 **O…
+- 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=83件 clear_prep_check=ALERT [G0.殿/clear指示] WARN: 直近…
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
@@ -39,7 +39,6 @@
 - cmd_3619
 - cmd_3620
 - cmd_3621
-- cmd_3622
 - cmd_3623
 - cmd_3624
 - cmd_3628
@@ -47,6 +46,7 @@
 - cmd_3630
 - cmd_3632
 - cmd_3633
+- cmd_3634
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

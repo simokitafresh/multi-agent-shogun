@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-06-28 cmd_3586 -->
-<!-- last_synced_lesson: L791 -->
+<!-- last_updated: 2026-07-02 cmd_3634_recon2 -->
+<!-- last_synced_lesson: L793 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -259,6 +259,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L789: check_mixed_format_commit.pyはimport行のみhunkを検出してblock→多行import形式で回避可能（cmd_3569）
 - L790: Compare ReturnsのMTD高速化はpreliminary FoF展開も同じcacheに載せる（cmd_3570）
 - L791: 追加指示の取消は未commit差分からscope別に除去する（cmd_3586）
+- L793: Render cron envVarsはAPI現物で検証せよ（cmd_3634）
 
 ## 因果リンク
 
