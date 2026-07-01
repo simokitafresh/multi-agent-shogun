@@ -4,7 +4,7 @@ argument-hint: "[week:YYYY-Www]"
 quality_metric: "将軍系: 週報生成cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
 description: |
   【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。
-  What: DM-Signal Weekly Report を再現生成するスキル。DM-Signal API から signals / monthly-returns / deterioration を取得し、xAI Grok x_search でXの最新情報を補完して週報Markdownを書く。
+  What: DM-Signal Weekly Report を再現生成するスキル。DM-Signal API から compare-returns(8期間トレーリングリターン一括) / signals / deterioration を取得し、xAI Grok x_search でXの最新情報を補完して週報Markdownを書く。
   TRIGGER: /weekly-report、週報 project:dm-signal、ウィークリーレポート project:dm-signal、DM-Signal週報 project:dm-signal
   When: `/mnt/c/Python_app/DM-signal/marketing-director/content/weekly_report/YYYY-MM-DD_weekly.md` に週報Markdownを生成する時に使う。
   NOT When: 月報、note記事、X単体調査、またはDM-Signal以外のレポート生成では使わない。
@@ -474,21 +474,29 @@ CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 ## トラブル時
 
 - `401 Invalid authentication credentials`
-  - `backend/.env` の `ADMIN_USER` `ADMIN_PASS` を確認する
+  - `backend/.env` の `ADMIN_USER` `ADMIN_PASS` を確認する。`grep + cut -d= -f2-` で取得する際は `tr -d '[:space:]'` で末尾空白を除去必須（空白混入で401になる）
   - 月次パスワードローテ後に stale なことがある。資格情報が古いままなら続行しない
 - `jq: Cannot iterate over null`
   - API が失敗して HTML/401 を返していることが多い。先に `curl -i` でヘッダを見る
 - X検索が空
   - `config/xai_api.env` の `XAI_API_KEY` を確認する
   - `model` は `grok-4-1-fast`、`tools` は `[{\"type\":\"x_search\"}]` を維持する
+- note.com SKIP: `reCAPTCHA state unclear; waiting 120s`
+  - note_draft.shが120秒待ちに入る場合、invisible reCAPTCHAでログインボタンクリック後にバックグラウンド検証が通っていない
+  - 2026-06-29修正済み: dispatch_click座標クリック + quick_url待ち(8s)でスキップ
+  - PowerShell WebSocketがWSL2でハングする場合: Python websocketモジュール(`pip install websocket-client`)で直接CDP操作が確実
+- note.com「メールアドレスおよびパスワードをご確認ください」
+  - パスワード二重入力の可能性。note_draft.shが先にsetValue+click→手動で追加入力すると二重になる。フィールドをselectAll+Backspaceで一度クリアしてから入力せよ
+  - emailフィールドはtype="text" id="email"。`input[type="email"]`セレクタでは見つからない
+- Chrome起動時は `--remote-allow-origins=*` 必須（WebSocket 403回避）
 
 ## 完了条件
 
 - `OUT_FILE` が生成されている
 - 9セクション構成（マーケット/要人発言/米国/日本/メンバーシップPF/シン四神/GSシン忍法/Deterioration Monitor/将軍の短観）+免責
-- 全14体に3期間リターン（今月/先月/1年累積）が記載されている
+- 全14体にMTD+複数期間リターン（MTD/1M/3M/6M/1Y/ALLの中から適切に選択）が記載されている
 - 全セクション■箇条書き（表組なし）
-- signals / monthly-returns / deterioration / x_search を全て使用している
+- compare-returns（8期間トレーリングリターン一括） / signals / deterioration / x_search を全て使用している
 - 構成ティッカーが本文に出ていない
 - リンクが本文に出ていない
 - 指数が週間変動になっている

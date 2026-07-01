@@ -183,6 +183,72 @@ sleep 8 && for p in 1 3 4 5 6 7 8; do echo "pane $p: $(tmux capture-pane -t shog
 - `--agent` + `pin-2.1.87`: 個別オーバーライドを削除しプロファイルデフォルト(ピン止め)に戻す
 - shutsujin再起動時は指揮官(shogun/karo/gunshi)をデフォルトClaude/Opusへ戻す。Codex切替は手動実行時のみの一時状態である
 
+### per-agent launch_cmd によるバージョン個別切替（2026-07-01 実装）
+
+**「いつでも誰でも個別もしくは複数をピン留めや最新版に自由自在に切り替えられる」** 仕組み。
+
+**仕組み**:
+- `config/cli_profiles.yaml` の `claude.launch_cmd` = `~/bin/claude` (ピン留め2.1.87) がデフォルト
+- `config/settings.yaml` の per-agent 設定に `launch_cmd:` を追加するとその agent だけ上書き
+- `scripts/lib/cli_lookup.sh` の `cli_launch_cmd()` がこの値を読んで起動コマンドを決定
+- `scripts/ninja_monitor.sh` が respawn 時に `cli_launch_cmd()` を呼ぶため、設定後は次回 /clear 時に自動反映
+
+**個別に最新版へ切替**:
+```bash
+# tobisaru を最新版(~/.local/bin/claude)に切替
+bash scripts/lib/yaml_field_set.sh config/settings.yaml tobisaru launch_cmd "~/.local/bin/claude --dangerously-skip-permissions"
+
+# 確認: cli_lookup で正しく読めるか
+source scripts/lib/cli_lookup.sh && cli_lookup tobisaru && echo "launch: $(cli_launch_cmd tobisaru)"
+```
+
+**固定版へ戻す**:
+```bash
+# launch_cmd 行を削除すると cli_profiles.yaml のデフォルト(~/bin/claude)に戻る
+python3 -c "
+import yaml, re
+with open('config/settings.yaml') as f: txt = f.read()
+# launch_cmd 行を per-agent ブロックから除去
+# ※ yaml_field_set.sh で空文字設定後に手動削除、または下記で直接編集
+print('手動でsettings.yaml の tobisaru.launch_cmd 行を削除')
+"
+```
+
+**ninja_monitor が 2.1.87 に巻き戻す問題の根因と防止**:
+- 旧 `cli_lookup.sh` は `settings.yaml` の `launch_cmd` を読まず `cli_profiles.yaml` のみ参照していた
+- 修正 (2026-07-01): `_cli_launch_read_settings()` に `launch_cmd:` ブランチと `_CLI_LAUNCH_CMD_OVERRIDE` 変数を追加
+- これにより settings.yaml per-agent `launch_cmd` が最優先で適用される
+- 検証: `source scripts/lib/cli_lookup.sh && cli_launch_cmd tobisaru` → `~/.local/bin/claude ...` であれば OK
+
+### 最新版とピン留めは版、Opus 4.8 xhigh はmodel/effort（2026-07-01）
+
+- `pin-2.1.87` / `unpin-latest` が切り替えるのは **Claude Code の版** だけ。
+- `pin-2.1.87` = `/home/simokitafresh/bin/claude` = 固定版2.1.87。
+- `unpin-latest` = `/home/simokitafresh/.local/bin/claude` = 最新版追随。
+- `Opus 4.8 xhigh` は **起動時の `--model opus --effort xhigh` と `model_name` 表示** で決まる。`unpin-latest` だけでは `Opus 4.8 xhigh` にならない。
+
+**最新版 + Opus 4.8 xhigh を特定agentへ反映する正道**:
+```bash
+# 1) まず最新版バイナリへ切替
+~/.codex/skills/shogun-cli-switch/scripts/shogun_cli_switch.sh unpin-latest --agent <agent>
+
+# 2) model_name と per-agent launch_cmd を明示
+bash scripts/lib/yaml_field_set.sh config/settings.yaml <agent> model_name opus-4-8-xhigh
+bash scripts/lib/yaml_field_set.sh config/settings.yaml <agent> launch_cmd "/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model opus --effort xhigh"
+
+# 3) idle pane を respawn
+tmux respawn-pane -k -t <pane> "cd /mnt/c/tools/multi-agent-shogun && /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model opus --effort xhigh"
+```
+
+**確認は3点セット**:
+- `settings.yaml` に `model_name=opus-4-8-xhigh`
+- `launch_cmd` が `~/.local/bin/claude --model opus --effort xhigh`
+- `tmux capture-pane -S -40` のバナーが `Claude Code v2.1.197` かつ `Opus 4.8 with xhigh effort`
+
+**やってはいけないこと**:
+- `unpin-latest` だけで「最新版Opus 4.8 xhighになった」と判断する
+- staleしうる pane label だけで version/model を確定する
+
 ## 実践検証結果（2026-06-21 殿指示で検証）
 
 | # | 操作 | 方法 | 結果 | 知見 |
@@ -214,4 +280,5 @@ sleep 8 && for p in 1 3 4 5 6 7 8; do echo "pane $p: $(tmux capture-pane -t shog
 - [[hensei]] — 忍者モデル編成切替
 Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は既存ブロックへ新規fieldを追加する際の挿入位置修正。settings.yaml更新・tmux変数同期・respawn手順の契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-28T23:18:00+09:00 -->
+Script refs verified: 2026-07-01T04:10:00+09:00. `cli_lookup.sh` に `_CLI_LAUNCH_CMD_OVERRIDE` 追加(per-agent launch_cmd対応)。`settings.yaml` per-agent `launch_cmd:` フィールドが `cli_profiles.yaml` デフォルトより優先される。ninja_monitor respawn時に自動反映。検証: `source scripts/lib/cli_lookup.sh && cli_launch_cmd <agent>` で確認。
+<!-- script_refs_checked_at: 2026-07-01T04:10:00+09:00 -->

@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-01 cmd_training_L1_report_write_202607011655_saizo -->
+<!-- last_updated: 2026-07-01 cmd_3632 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -249,6 +249,7 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 
 切替手順(全体): launch_cmd変更 → `bash scripts/switch_cli_mode.sh claude --scope shogun,karo,gunshi,kagemaru,hanzo,kotaro,tobisaru` でrespawn。backup3本(`~/bin/claude`, `claude.pinned`, `claude-2.1.87-stable`)で復元可能。
 切替手順(pane単位): `bash skills/shogun-cli-switch/scripts/shogun_cli_switch.sh unpin-latest --agent hayate` で特定paneだけ最新版。`pin-2.1.87 --agent hayate` でピン止めに戻す。settings.yamlの個別launch_cmdをcli_lookup.shがオーバーライド。
+**重要**: `pin-2.1.87` / `unpin-latest` が切り替えるのは Claude Code の版だけであり、model/effort とは別軸。`unpin-latest` だけでは `Opus 4.8 xhigh` にならない。最新版の Opus 4.8 xhigh にしたい時は、(1)`unpin-latest --agent <name>` で最新版バイナリへ寄せる → (2)`settings.yaml` の `model_name=opus-4-8-xhigh` と `launch_cmd="~/.local/bin/claude --dangerously-skip-permissions --model opus --effort xhigh"` を設定 → (3)idle pane を `tmux respawn-pane -k` で再起動、の三段で行う。確認も `settings.yaml` / `launch_cmd` / `capture-pane` バナーの三点照合が正本。
 → `docs/research/claude-code-version-runbook.md`（全手順+緊急ロールバック+復元方法）
 → `skills/shogun-cli-switch/SKILL.md`（スキル詳細）
 
@@ -673,7 +674,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L906 -->
+<!-- last_synced_lesson: L917 -->
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
 <!-- lesson-sort 2026-04-11: L451-L466の16件をカテゴリ分類。deploy(L451/L458/L465), ゲート(L452/L455), git(L453/L454/L456/L457/L459), UI/Android(L460/L461/L462/L463), 報告(L464), bash(L466)。重複候補: L454≈L457≈L459(gitignore whitelist), L461≈L462≈L463(imePadding) -->
 <!-- lesson-sort 2026-04-08: L448-L450の3件をカテゴリ分類。レビュー/軍師(L448/L450), ゲート(L449)。重複L442-L446(2nd occurrence)を削除 -->
@@ -1296,6 +1297,17 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L904: Markdown改善修行では対象内リンク数を個別計測する（cmd_training_L1_report_write_202607011554_kagemaru）
 - L905: 対象ファイルがTop20計測に出なくても対象内リンク数を直接数えて改善を証明する（cmd_training_L1_report_write_202607011624_hanzo）
 - L906: 参照docのインフラ挙動主張は正本を[[link]]で根拠付けよ（cmd_training_L1_report_write_202607011655_saizo）
+- L907: capture-paneバナーはmodel検証の一次情報として不十分(model labelがstaleする既知バグ)。model×version検証は環境注入/launch_cmd/--versionで多重照合せよ（cmd_3628_saizo）
+- L908: cache key比較では片側だけ空白除去するな（cmd_training_L4_R20260701_idle1_hayate）
+- L909: binary_checks result-only更新はpost-write Pythonを避ける（cmd_training_L4_R20260701_idle1_kagemaru）
+- L910: WSL2ではbash内 python3 import yaml が182ms/call。大YAML(204KB)の safe_load を単一フィールド取得に使うのは高コスト。境界付きline-scanで yaml-free 化すると-71.7%(378→107ms)（cmd_training_L4_R20260701_idle1_saizo）
+- L911: 並行修行cmd時、git addで自分のstaged変更が他忍者の同時commitに巻き込まれる（cmd_training_L4_R20260701_idle1_tobisaru）
+- L912: 並列作業中、他忍者commitに自分のステージ済み変更が収録される逆L529パターン（cmd_training_L4_R20260701_idle1_kotaro）
+- L913: 通知テストは配送だけでなくpayload本文を検証する（cmd_3629）
+- L914: INSIGHT_REPEAT bulletin追加時にmsg変数を投稿文字列に含める（cmd_3629_kotaro）
+- L915: 空データのhealth gateはmetadata完全性チェックより先に0件短絡する（cmd_karo_hotfix_ga159_lesson_health_infra_ssot_202607012058）
+- L916: 小型テスト統合では不要なglobal setupも計測せよ（cmd_3633）
+- L917: WSL2 NTFS上でfindが存在しないディレクトリに対してset -eでabortする（cmd_3632）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

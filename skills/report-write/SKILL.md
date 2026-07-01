@@ -161,6 +161,9 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 
 ## 注意ポイント
 
+- 2026-07-01: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:kotaro_report_cmd_3629_kotaro.yaml
+- 2026-07-01: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:hanzo_report_cmd_3629_hanzo.yaml|report_format:kagemaru_report_cmd_3629.yaml|report_format:kotaro_report_cmd_3629_kotaro.yaml|report_format:saizo_report_cmd_3629_s...
+
 - 2026-07-01: gate=gate_report_format result=FAIL executor=kotaro reason=test
 - 2026-07-01: gate=gate_report_format result=FAIL executor=kotaro reason=binary_checks: AC self-verification missing (0/3 ACs). 全ACの二値チェックを記入せよ; result.summary: MISSING or empty
 

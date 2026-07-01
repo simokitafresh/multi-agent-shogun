@@ -5093,7 +5093,8 @@ try:
         lesson_terms = set(extract_keywords(lesson_text, min_len=3))
         return bool(task_file_terms & lesson_terms)
 
-    # target_filesフィルタ: タグマッチした教訓は除外しない(忍者成長速度改善: タグ優先)
+    # target_filesフィルタ: 明示target_filesはタグより強い制約として扱う。
+    # narrow lessonがタグ一致だけで別ファイルtaskへ漏れると useful率を悪化させる。
     _tf_excluded_ids = set()  # target_files不一致で除外候補のID
     if _all_task_files:
         for _l in confirmed_lessons:
@@ -5176,14 +5177,8 @@ try:
     elif not task_tags:
         print(f'[INJECT] no target_path + no task_tags: skipping full-lesson fallback ({len(confirmed_lessons)} lessons withheld)', file=sys.stderr)
 
-    # target_filesフィルタ適用: タグマッチしなかった教訓のみ除外(タグ優先原則)
-    if _tf_excluded_ids and task_tags:
-        _pre_tf_count = len(tag_candidates)
-        tag_candidates = [l for l in tag_candidates if l.get('id','') not in _tf_excluded_ids or (set(task_tags) & set(str(t).lower() for t in (l.get('tags',[]) if isinstance(l.get('tags',[]), list) else [l.get('tags','')])))]
-        _tf_actually_removed = _pre_tf_count - len(tag_candidates)
-        if _tf_actually_removed > 0:
-            print(f'[INJECT] target_files post-filter: removed {_tf_actually_removed} (tag-matched preserved)', file=sys.stderr)
-    elif _tf_excluded_ids:
+    # target_filesフィルタ適用: target_files不一致はタグ一致でも除外する。
+    if _tf_excluded_ids:
         _pre_tf_count = len(tag_candidates)
         tag_candidates = [l for l in tag_candidates if l.get('id','') not in _tf_excluded_ids]
         _tf_actually_removed = _pre_tf_count - len(tag_candidates)

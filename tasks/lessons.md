@@ -9140,3 +9140,278 @@ origin: [[cmd_3614]] -> [[bash_function_definition_order]] -> [[cmd_save_preflig
 - **when**: 完了処理で重要な品質記録をfire-and-forget実行し、stdout/stderrを捨てている
 - **how**: 非同期呼び出し箇所に完了確認または専用ログを追加し、失敗時にstartup gateが原因ログへ到達できることをテストする
 - cmd_complete_gate.shのcmd_quality_log.sh呼び出しは非同期(>/dev/null 2>&1 &)+|| trueで全エラーが隠れる。flock timeoutやSIGHUP等で品質記録が落ちても完了処理はCLEARに見える。修正時は非同期ジョブの成否を専用ログへ残すか、重要記録だけ同期実行にする。
+
+### L893: CLEAR時ベストエフォート(&)は並列実行規模増大でサイレント失敗化する
+- **日付**: 2026-07-01
+- **出典**: cmd_3622_kotaro_r3
+- **記録者**: kotaro
+- **tags**: [infra,gate,bash]
+- **target_files**: [queue/reports/kotaro_report_cmd_3622_kotaro_r3.yaml]
+- **origin**: [[cmd_3622_kotaro_r3]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_complete_gate.sh CLEAR時のcmd_quality_log.sh呼び出しは非同期(&+>/dev/null 2>&1)で設計された。ベストエフォートの意図だったが、並列cmd実行が増加しflock競合が頻発すると10秒タイムアウト+サイレント失敗が多発し記録漏れが増大する。BLOCK時は同期設計のため非対称。修正方針: CLEAR時も同期に変更しWARNとして表示することで漏れを防止。
+
+### L894: 同一ファイルへの複数writerは単一lock_path()でロック共有せよ(static lock混在=排他破綻)
+- **日付**: 2026-07-01
+- **出典**: cmd_3622_saizo_r3
+- **記録者**: saizo
+- **tags**: [infra,testing,gate,bash]
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_3622_saizo_r3]]
+- **when**: 未設定
+- **how**: 未設定
+- logs/cmd_design_quality.yamlはcmd_quality_log.sh(静的/tmp/cmd_design_quality.lock)とcmd_complete_gate.shのGunshi verdict update/record(lock_path()のhash lock)という別ロックで保護され、Gunshi側の全文os.replace/open('w')がcmd_quality_log.shのasync appendを上書き消失させ18件/3セッション品質記録漏れを起こした。教訓:(1)同一ファイルの全writerは必ず同一ヘルパー(lock_path)でロックを共有させる(2)非同期fire-and-forget化は『flockがあるから安全』を、他writerが同じロックを使うかまで検証してから採用する(3)ベストエフォート処理でも失敗を>/dev/null 2>&1で握り潰すと無音で長期化する→失敗はログへ。再発防止は静的lock文字列の存在をgrepでBLOCKする構造ガードテストでLevel3-4化。
+
+### L895: cmd_complete_gate.sh内にgunshi_verdict更新ロジックが2箇所重複し、優先順位ロジックが不一致(cmd品質記録漏れ恒久修正の副次発見)
+- **日付**: 2026-07-01
+- **出典**: cmd_3622
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality,gate,bash,yaml]
+- **target_files**: [scripts/cmd_quality_log.sh,scripts/cmd_complete_gate.sh,scripts/lib/lock_path.sh,scripts/cmd_save.sh,scripts/gates/gate_karo_startup.sh]
+- **origin**: [[cmd_3622]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3621で特定したcmd_design_quality.yamlのロック不一致(根因)を恒久修正する過程で、scripts/cmd_complete_gate.sh内に「Gunshi verdict update」(L7439-7540)と「Gunshi verdict record」(L7732-7800)という、同一ファイルの同一フィールド(gunshi_verdict)を更新する処理が2箇所重複して存在し、優先順位ロジックが異なる(前者はREQUEST_CHANGES優先+APPROVE→LGTM変換、後者は複数ソース中最後にマッチした値をそのまま採用)ことを発見した。ロック統一patch適用後も、この2ブロックが異なるverdict値を書き込む可能性は残る。教訓: 同一ファイルへの重複書込みロジックは、ロック競合だけでなく値の不整合リスクも生む。修正時は「なぜ2箇所あるのか」(歴史的経緯/重複追加ミス)を確認し、可能なら一本化すべき。
+
+### L896: postcondition_lesson_injectはinject_related_lessons後に呼ぶ必要がある
+- **日付**: 2026-07-01
+- **出典**: cmd_3623_kotaro_r4
+- **記録者**: kotaro
+- **tags**: [infra,deploy,bash,lesson]
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_3623_kotaro_r4]]
+- **when**: 未設定
+- **how**: 未設定
+- deploy_task.sh の postcondition_lesson_inject (L7963) が inject_related_lessons (L7967) より前に実行されるため、常に前の配備のtask_idがログに表示される。.postcond_lesson_injectは共有ファイルで1ラウンド遅延する設計バグ。修正: postcondition_lesson_inject呼び出しをinject_related_lessons後に移動。
+
+### L897: 事後不変条件(postcondition)チェックは検証対象の実行後に配置せよ
+- **日付**: 2026-07-01
+- **出典**: cmd_3623_saizo_r4
+- **記録者**: saizo
+- **tags**: [infra,deploy,testing,bash]
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_3623_saizo_r4]]
+- **when**: 未設定
+- **how**: 未設定
+- deploy_task.shのpostcondition_lesson_inject(consumer 7963)が検証対象inject_related_lessons(producer 7967)より前に配置され、共有ファイル.postcond_lesson_injectから毎回前回deployのtask_idを読みログ誤表示。事後不変条件は名の通り「事後」=検証対象の後に置く。共有状態ファイルはproducer→consumerの順序とライフサイクルが同一処理内で閉じることを確認せよ。
+
+### L898: 共有ステートファイルのpostcondition読取は、対応する書込み呼出しの後に置かれているかを呼出し順序で必ず検証せよ
+- **日付**: 2026-07-01
+- **出典**: cmd_3623
+- **記録者**: tobisaru
+- **tags**: [infra,deploy,testing,review]
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_3623]]
+- **when**: 未設定
+- **how**: 未設定
+- scripts/deploy_task.sh内でqueue/tasks/.postcond_lesson_inject(全task共通の単一ファイル)への書込み(inject_related_lessons,7967行目)と読取+削除(postcondition_lesson_inject,7963行目)が、別目的の修正(bb08a988d,2026-05-03のyaml.dump破壊回避)により相対順序が逆転し、ログのtask_idが常に1つ前のデプロイのものになるオフバイワンが発生した。共有ファイル(per-呼出し/per-プロセス名前空間分離なし)を介したpostconditionチェッカーを追加・移動する際は、(1)同一ファイルの書込み元すべてを列挙し(2)書込みが必ず読取より先に実行される呼出し順序になっているかをgit blame/grepで確認し(3)関数の移動・並び替えコミット時はその関数が依存する暗黙の前後関係(他関数との順序前提)も併せてチェックすることをreview観点に追加すべき。origin: [[bb08a988d_inject_related_lessons呼出し位置移動]] -> [[postcondition_lesson_inject順序逆転]] -> [[診断ログtask_id誤表示]]
+
+### L899: AC更新補足はtask YAMLより後のinboxを優先してscopeを確定する
+- **日付**: 2026-07-01
+- **出典**: cmd_karo_hotfix_model_detect_launch_cmd_202607010733
+- **記録者**: hanzo
+- **tags**: [infra,testing,yaml,inbox]
+- **target_files**: [scripts/lib/model_detect.sh,tests/unit/test_model_detect.bats]
+- **origin**: [[cmd_karo_hotfix_model_detect_launch_cmd_202607010733]]
+- **when**: 未設定
+- **how**: 未設定
+- タスクYAMLのAC2はsaizo/tobisaruの.local/bin/claude削除を要求して見えたが、後続inboxで殿指示による意図的例外と明示された。設定ファイル編集前にinbox補足を確認したため、モデル編成を壊さずに済んだ。次回はconfig編集前にtask_update未読ゼロを確認するチェックを追加すべき。 origin: [[cmd_karo_hotfix_model_detect_launch_cmd_202607010733]] -> [[AC補足未読リスク]] -> [[意図的launch_cmd例外の破壊防止]]
+
+### L900: CLI種別変更時のlaunch_cmdクリアには専用回帰テストが必要
+- **日付**: 2026-07-01
+- **出典**: cmd_3624_kagemaru
+- **記録者**: kagemaru
+- **tags**: [infra,testing,bash]
+- **target_files**: [queue/tasks/kagemaru.yaml,queue/reports/kagemaru_report_cmd_3624_kagemaru.yaml]
+- **origin**: [[cmd_3624_kagemaru]]
+- **when**: 未設定
+- **how**: 未設定
+- c9ba1ff9aでswitch_cli_mode.shがlaunch_cmdを空にする修正を入れているが、tests/unit/test_switch_cli.batsにはこの挙動を直接検証するBatsがない。2層SSOT系の再発防止にはtype変更後にlaunch_cmdが空になる専用テストを追加すべき。origin: [[cmd_3624]] -> [[launch_cmd_override残存事故]] -> [[回帰テスト不足]]
+
+### L901: detect_real_model head-1はrespawn後に旧バナーが混在すると誤検出する
+- **日付**: 2026-07-01
+- **出典**: cmd_3624_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,frontend,bash]
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_3624_kotaro]]
+- **when**: 未設定
+- **how**: 未設定
+- model_detect.shがhead -1でバナーを取得する設計は、ページ内に複数の起動バナーが蓄積されると古いモデルを誤検出する。saizo(Sonnet4.6→Opus4.8変更後respawn)で実証。2026-06-20にtail -1→head -1へ変更した理由は他CLIバナー誤検出防止だが、respawn多重バナーシナリオは未対処のまま。head -1とtail -1のどちらも正解でなく、バナーの「最後のセッション境界」を識別する新ロジックが必要
+
+### L902: model_family/model_display分類ロジックの複製先がSSOT変更(新モデルfamily追加)に追従しない
+- **日付**: 2026-07-01
+- **出典**: cmd_3624_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,gate,bash,reporting]
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_3624_tobisaru]]
+- **when**: 未設定
+- **how**: 未設定
+- befd7ca46/b421a7ee6でmodel_family.sh/pyにOpus 4.8を追加したが、同一ロジックを独自awk/bashで複製しているscripts/model_analysis.sh(get_family)、scripts/dashboard_auto_section.sh(Recent30 awkブロック)、lib/cli_adapter.sh(get_model_display_name)の3箇所が未更新のまま残り、Opus 4.8のgate_metricsエントリがmodel_analysis.shで完全除外・dashboard_auto_section.shで誤分類・get_model_display_nameでバージョン精度喪失という3種の不整合を生んだ(全て直接実行で再現確認済み)。新モデルfamily追加時はgrep -rln "OPUS_46|opus_4_6" scripts/ lib/ で複製箇所を横断確認するチェックリスト、または複製自体を廃しSSOT参照(model_family.shのsource)に統一する設計変更が必要。
+
+### L903: 研究Markdownは要約表の近くに詳細データ直接リンクを置く
+- **日付**: 2026-07-01
+- **出典**: cmd_training_L1_report_write_202607011522_hayate
+- **記録者**: hayate
+- **tags**: [infra,reporting]
+- **target_files**: [docs/research/model-comparison-5w1h-20260701.md]
+- **origin**: [[cmd_training_L1_report_write_202607011522_hayate]]
+- **when**: 未設定
+- **how**: 未設定
+- 詳細データ参照が末尾パス表記だけだとObsidian backlinkが成長せず、要約表から根拠へ到達しにくい。要約表の直下に関連ファイルへの直接[[ファイル名]]リンクを置き、リンク先の該当行を報告に引用する。
+
+### L904: Markdown改善修行では対象内リンク数を個別計測する
+- **日付**: 2026-07-01
+- **出典**: cmd_training_L1_report_write_202607011554_kagemaru
+- **記録者**: kagemaru
+- **tags**: [infra,bash,reporting]
+- **target_files**: [docs/research/model-comparison-5w1h-20260701.md]
+- **origin**: [[cmd_training_L1_report_write_202607011554_kagemaru]]
+- **when**: 未設定
+- **how**: 未設定
+- markdown_link_counts.sh --top 20は全体ランキングで、対象ファイルがTop20に出ない場合がある。対象Markdownの直接[[リンク]]増加をACに持つ任務では、baseline時点と変更後にrg -n '[[' または対象ファイル限定カウントを併用し、リンク数変化を報告する。
+
+### L905: 対象ファイルがTop20計測に出なくても対象内リンク数を直接数えて改善を証明する
+- **日付**: 2026-07-01
+- **出典**: cmd_training_L1_report_write_202607011624_hanzo
+- **記録者**: hanzo
+- **tags**: [infra,bash]
+- **target_files**: [docs/research/model-comparison-5w1h-20260701.md]
+- **origin**: [[cmd_training_L1_report_write_202607011624_hanzo]]
+- **when**: 未設定
+- **how**: 未設定
+- markdown_link_counts.sh --top 20は全体ランキングのため、対象Markdownの直接[[リンク]]増加は対象ファイルをrgで直接数える補助計測が必要。今回もTop20には対象が出なかったが、対象Markdown内の[[リンク]]数3→5で改善を証明できた。
+
+### L906: 参照docのインフラ挙動主張は正本を[[link]]で根拠付けよ
+- **日付**: 2026-07-01
+- **出典**: cmd_training_L1_report_write_202607011655_saizo
+- **記録者**: saizo
+- **tags**: [infra]
+- **target_files**: [docs/research/model-comparison-5w1h-20260701.md]
+- **origin**: [[cmd_training_L1_report_write_202607011655_saizo]]
+- **when**: 未設定
+- **how**: 未設定
+- model-comparison doc WHY項目4『Codex CLIはStop hookなし』はinfrastructure.md L217(hooks=true必須)/L225(Stop hookは挙動差異で無効化,hook自体は対応)と不整合。CLI能力の要約主張は正本infrastructure.mdへ[[link]]し特定行を引用して根拠付けないと,不正確な要約が編成判断のload-bearing根拠になり誤誘導する。origin: [[unsourced_cli_capability_claim]] -> [[imprecise_model_selection_doc]]
+
+### L907: capture-paneバナーはmodel検証の一次情報として不十分(model labelがstaleする既知バグ)。model×version検証は環境注入/launch_cmd/--versionで多重照合せよ
+- **日付**: 2026-07-01
+- **出典**: cmd_3628_saizo
+- **記録者**: saizo
+- **tags**: [infra,deploy,testing,tmux]
+- **target_files**: [偵察のみ(pane検証: capture-pane+--version照合。コード変更なし)]
+- **origin**: [[cmd_3628_saizo]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3628でsaizo pane banner=『v2.1.87/Sonnet4.6』だが実態はOpus4.8(環境注入)かつpinned v2.1.87稼働(期待latest v2.1.197と不一致)。versionは正しいがmodel labelがstale。banner単独で期待組合せ一致を主張すると実験整合性を誤る。pre_deploy_banner_evidenceに記録された値も配備後に実binaryと再照合が必要
+
+### L908: cache key比較では片側だけ空白除去するな
+- **日付**: 2026-07-01
+- **出典**: cmd_training_L4_R20260701_idle1_hayate
+- **記録者**: hayate
+- **tags**: [infra,cache]
+- **target_files**: [scripts/dashboard_auto_section.sh]
+- **origin**: [[cmd_training_L4_R20260701_idle1_hayate]]
+- **when**: 未設定
+- **how**: 未設定
+- stat %yのように空白を含むcache keyを比較する場合、cached側だけtr -dすると同一入力でも永久cache missになる。比較時は両側を同じ正規化にするか、read -rで保存値をそのまま比較する。
+
+### L909: binary_checks result-only更新はpost-write Pythonを避ける
+- **日付**: 2026-07-01
+- **出典**: cmd_training_L4_R20260701_idle1_kagemaru
+- **記録者**: kagemaru
+- **tags**: [infra,bash]
+- **target_files**: [scripts/report_field_set.sh]
+- **origin**: [[cmd_training_L4_R20260701_idle1_kagemaru]]
+- **when**: 未設定
+- **how**: 未設定
+- report_field_set.shでbinary_checks.<AC>.<idx>.resultだけを更新する場合、既存list構造とcheck本文は変わらない。dict→list変換Pythonとfull semantic Pythonを毎回走らせると1.4秒級の遅延になるため、result-onlyを判定してAWK verdict再導出へ回すと3倍以上短縮できる。
+
+### L910: WSL2ではbash内 python3 import yaml が182ms/call。大YAML(204KB)の safe_load を単一フィールド取得に使うのは高コスト。境界付きline-scanで yaml-free 化すると-71.7%(378→107ms)
+- **日付**: 2026-07-01
+- **出典**: cmd_training_L4_R20260701_idle1_saizo
+- **記録者**: saizo
+- **tags**: [infra,lesson,testing,bash,yaml]
+- **target_files**: [scripts/lesson_write.sh]
+- **origin**: [[cmd_training_L4_R20260701_idle1_saizo]]
+- **when**: 未設定
+- **how**: 未設定
+- lesson_write.sh の resolve_cmd_project は commands[cmd_id].project 1個を取るためだけに2011行の shogun_to_karo.yaml を毎回 yaml.safe_load していた。import yaml(182ms)+parse で378ms/call。dict(stk)/list(archive)両形式を正規表現line-scanで抽出する yaml-free 実装で107ms/callに短縮、safe_load出力と36件完全一致を検証。教訓: 単一フィールド取得に汎用YAMLパーサを使う前に、対象構造が単純ならline-scanを検討せよ。ただし純bash化は多形式+後方scanの正確性リスクがあり python3(yaml抜き)が均衡点
+
+### L911: 並行修行cmd時、git addで自分のstaged変更が他忍者の同時commitに巻き込まれる
+- **日付**: 2026-07-01
+- **出典**: cmd_training_L4_R20260701_idle1_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,gate,api,deploy,gate]
+- **target_files**: [scripts/gates/gate_karo_startup.sh]
+- **origin**: [[cmd_training_L4_R20260701_idle1_tobisaru]]
+- **when**: 未設定
+- **how**: 未設定
+- 同時刻に複数忍者(hayate/kagemaru/hanzo/saizo/kotaro/tobisaru)が同一リポジトリで別々のfull修行cmdを並行実行していたところ、git add scripts/gates/gate_karo_startup.shで自分のファイルのみをstageしたにもかかわらず、直後のgit diff --cached --statにscripts/deploy_task.shとscripts/gates/gate_diagnose_check.shという他忍者のファイルが混入していた。共有.git indexへの並行アクセスにより、他忍者のgit add/commitと自分のgit addがレースした結果と推測される。git restore --stagedで即座にunstageしたが、その後別の忍者のcommit(d46b3e930)が先に走り、自分の変更内容がそのcommitに巻き込まれる形で確定した(diff内容は完全一致・自分の変更漏れなしを確認済みだが、commit_hashの帰属が他忍者のcommitメッセージになった)。対策: git add後は即座にgit diff --cached --statでstaged内容がscope内ファイルのみか確認し、混入があればgit restore --stagedで復元してから改めてcommitする。commit直前にもgit status/logで想定外のHEAD前進がないか確認する。
+
+### L912: 並列作業中、他忍者commitに自分のステージ済み変更が収録される逆L529パターン
+- **日付**: 2026-07-01
+- **出典**: cmd_training_L4_R20260701_idle1_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,gate,git]
+- **target_files**: [scripts/gates/gate_diagnose_check.sh]
+- **origin**: [[cmd_training_L4_R20260701_idle1_kotaro]]
+- **when**: 未設定
+- **how**: 未設定
+- git commitがPermission deniedでブロックされ変更がstage状態のまま残存。並列作業中の他忍者(Opus)がcommitした際に自分のステージ済み変更が収録された。L529は自分のaddが他忍者の変更を巻き込む問題だが、これは自分の変更が他のcommitに巻き込まれる逆パターン。origin: [[git_permission_denied]] -> [[staged_changes_stranded]] -> [[absorbed_by_other_commit]]
+
+### L913: 通知テストは配送だけでなくpayload本文を検証する
+- **日付**: 2026-07-01
+- **出典**: cmd_3629
+- **記録者**: hayate
+- **tags**: [infra,testing,testing]
+- **target_files**: [scripts/insight_write.sh,tests/unit/test_insight_write.bats]
+- **origin**: [[cmd_3629]]
+- **when**: 未設定
+- **how**: 未設定
+- INSIGHT_REPEATの既存テストはnotify=shogunやsource/countの配送だけを見ており、肝心のinsight本文が掲示板本文に含まれるかを検証していなかった。通知・エスカレーション系テストでは宛先と件数だけでなく、受け手の判断に必要なpayload本文をgrepするチェックを追加する。
+
+### L914: INSIGHT_REPEAT bulletin追加時にmsg変数を投稿文字列に含める
+- **日付**: 2026-07-01
+- **出典**: cmd_3629_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,testing]
+- **target_files**: [tests/test_insight_sanitize.bats]
+- **origin**: [[cmd_3629_kotaro]]
+- **when**: 未設定
+- **how**: 未設定
+- 新しい通知機能を追加する際、デバッグに有用な変数(insight本文=msg)を投稿文字列に含め忘れやすい。追加時は通知受信者が必要な情報を全て含むか確認せよ。今回はT-009のモックbulletin手法でこの確認を自動化できた
+
+### L915: 空データのhealth gateはmetadata完全性チェックより先に0件短絡する
+- **日付**: 2026-07-01
+- **出典**: cmd_karo_hotfix_ga159_lesson_health_infra_ssot_202607012058
+- **記録者**: kagemaru
+- **tags**: [infra,gate,gate,lesson,cache]
+- **target_files**: [scripts/gates/gate_lesson_health.sh,tests/unit/test_gate_lesson_health.bats]
+- **origin**: [[cmd_karo_hotfix_ga159_lesson_health_infra_ssot_202607012058]]
+- **when**: 未設定
+- **how**: 未設定
+- lesson_healthのような集計gateでは、対象データ0件のキャッシュに対してssot_pathなどのmetadata完全性を要求すると、実害のない空キャッシュが全体ALERTになる。先にactive件数を算出し、0件ならOK継続してからmetadata/SSOT検査へ進む順序を回帰テストで固定する。
+
+### L916: 小型テスト統合では不要なglobal setupも計測せよ
+- **日付**: 2026-07-01
+- **出典**: cmd_3633
+- **記録者**: hayate
+- **tags**: [infra,testing,testing,process]
+- **target_files**: [tests/unit/test_gate_single_check_consolidated.bats,tests/unit/test_small_workflow_consolidated.bats,tests/unit/test_cmd_complete_skill.bats,tests/unit/test_deploy_training.bats,tests/unit/test_gate_hooks_no_runtime_incident_ids.bats]
+- **origin**: [[cmd_3633]]
+- **when**: 未設定
+- **how**: 未設定
+- test_small_workflow_consolidated初版は全テストでmktempを実行し、before 5000ms→after 9350msへ遅化した。静的grep系に不要setupを背負わせず、必要テストだけmake_test_tmpdirを呼ぶ形に修正したところbefore 6889ms→after 4406msへ改善した。統合はファイル数だけでなく共有setupの固定費を実測確認する必要がある。
+
+### L917: WSL2 NTFS上でfindが存在しないディレクトリに対してset -eでabortする
+- **日付**: 2026-07-01
+- **出典**: cmd_3632
+- **記録者**: hanzo
+- **tags**: [infra,gate,gate,bash,wsl2]
+- **target_files**: [scripts/ac_physical_verify.sh,scripts/gates/gate_gunshi_startup.sh,scripts/gates/gate_lesson_health.sh]
+- **origin**: [[cmd_3632]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_lesson_health.shのphantom検出でfind ... 2>/dev/nullとしても、パスが存在しない場合にfindが非ゼロ終了し、set -eでスクリプト全体がabortする。|| trueの追加が必要。テスト環境で.claude/hooksが存在しない場合に15/16テスト失敗として発現

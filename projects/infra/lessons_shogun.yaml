@@ -620,3 +620,19 @@ lessons:
   created_at: '2026-06-28'
   automated: true
   enforcement: 'type=hook; file=scripts/hooks/stop_check_inbox.sh; pattern=clear_prep'
+- id: 'LS075'
+  title: '裸数量語はcmd全体をcancel→新IDに追い込む累計コスト'
+  origin: '[[cmd_3612]]'
+  detail: 'cmd_3610-3613で4回連続cancel。purpose/AC内の絶対数値(N件)がac_param_sufficiencyを繰返し発火し累計昇格でBLOCK。新IDに切替えるたびにlesson_ack+diagnosis書直し+gate再実行で合計30分以上消費。根因: 裸数量語の検出がcmd全文grepで行われるためpurpose/command/q8等の自然文中の数値も発火する。対処: 数値は全て相対表現(「カタログの処置列に基づき」)に置換し、具体数値はassumptionsのclaim内のみに記載する'
+  source_cmd: 'cmd_3612'
+  created_at: '2026-06-30'
+  automated: true
+  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=ac_param_sufficiency'
+- id: 'LS076'
+  title: 'CLI pinned/latestでopus解決先が違う(pinned=Opus4.6/latest=Opus4.8)。xhighはlatestのみ'
+  origin: '[[殿指示_最新版opus48xhigh]] -> [[pinned_latest混同リスク]] -> [[実プロセス一次確認]]'
+  detail: '殿「最新版のopus 4.8 xhigh」指示時、pinned(~/bin/claude,2.1.87固定)では--model opusがOpus4.6止まりでxhigh非対応。latest(~/.local/bin/claude,auto-update)でのみOpus4.8+xhigh実現。settings.yaml launch_cmdのパス(bin=pinned/.local/bin=latest)で判別し、一次確認はscripts経由ではなくps -efで実プロセスの--effortを見る。二次情報のsettings.yamlだけで判断するな(2026-06-07全員Opus事故と同型)'
+  source_cmd: 'cmd_shogun_cli_version_model_20260701'
+  created_at: '2026-07-01'
+  automated: true
+  enforcement: '起動時ロードのprojects/infra/lessons_shogun.yamlに記録。CLI切替指示受領時はps -efで実プロセス確認を必須化'

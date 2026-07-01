@@ -1,1272 +1,4 @@
 - cmd_id: cmd_karo_ci_fix_diagnosis_trigger_map_202606301658
-- cmd_id: cmd_3593
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:16"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "6観点OK。ドロップダウン4件バグ修正。AC4件。殿スクショ付き具体報告。cmd_3591実装のバグ修正"
-  observations:
-    - "事実1: AC4件(フォルダースクロール+上方向展開+PF2選択+フォント縮小)。全てUI修正"
-    - "事実2: 根因=cmd_3591でstickyヘッダー+下方向展開のみ実装"
-  origin: "[[cmd_3591ドロップダウン実装]] -> [[4件バグ]] -> [[cmd_3593 APPROVE]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "外部PJ UIバグ修正"
-  causal_chain: "cmd_3591カスタムドロップダウン→sticky+下方向展開→4件バグ→cmd_3593修正"
-  brainwash_check: "AC4件全数確認。assumptions verified。スクショ確認済み"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-06-29T01:23:00"
-- cmd_id: cmd_3593
-  review_type: report
-  report_ninja: kagemaru
-  verdict: LGTM
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:16"
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  changed_lines: 17
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "4観点OK。ドロップダウン4件バグ修正。AC4件全yes。65cfadff実在確認。1ファイル+10/-7行"
-  observations:
-    - "事実1: git show 65cfadff page.tsx +10/-7行。軽量バグ修正"
-    - "事実2: precheck ERRORS=0, GATE_PREDICTION=CLEAR"
-  origin: "[[cmd_3593]] -> [[kagemaru報告]] -> [[LGTM ドロップダウン修正]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "17行変更。UIバグ修正"
-  causal_chain: "cmd_3591カスタムドロップダウン→バグ4件→cmd_3593修正"
-  brainwash_check: "65cfadff git show確認。1ファイル17行。AC4件全数確認"
-  step3_5_verified: true
-  lesson_quality: OK
-  timestamp: "2026-06-29T01:44:00"
-- cmd_id: cmd_3594
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:1"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "6観点OK。ログインボタン縮小+CAGRラベル入替。AC2件。CSS微調整。timeout 10分"
-  observations:
-    - "事実1: AC2件(ボタン高さ縮小+CAGR/数値順序入替)。page.tsx CSS+DOM順序変更"
-    - "事実2: assumptions verified(スクショで現状確認)"
-  origin: "[[殿UI微調整指示]] -> [[cmd_3594 APPROVE]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "CSS微調整。低リスク"
-  causal_chain: "cmd_3591デザイン→殿フィードバック→ボタン/ラベル微調整"
-  brainwash_check: "AC2件全数確認。CSS変更のみ。低リスク"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-06-29T01:50:00"
-- cmd_id: cmd_3594
-  review_type: report
-  report_ninja: kagemaru
-  verdict: LGTM
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:1"
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "4観点OK。ログインボタン縮小+CAGRラベル入替。AC2件全yes。precheck ERRORS=0"
-  observations:
-    - "事実1: AC1+AC2+commit全yes。precheck ERRORS=0, GATE_PREDICTION=CLEAR"
-    - "事実2: commit 82fcddf。CSS微調整"
-  origin: "[[cmd_3594]] -> [[kagemaru報告]] -> [[LGTM]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "CSS微調整"
-  causal_chain: "殿UI微調整→ボタン縮小+ラベル入替→品質向上"
-  brainwash_check: "AC2件+commit確認。precheck ERRORS=0"
-  step3_5_verified: true
-  lesson_quality: OK
-  timestamp: "2026-06-29T02:01:00"
-- cmd_id: cmd_3596
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:1"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "6観点OK。Page0レイアウト再構成(詳細廃止+常時表示+行配置変更)+保存済みFusion修正。AC5件。殿ワイヤーフレーム承認済み"
-  observations:
-    - "事実1: AC5件(詳細廃止+TR/Period横並び+MaxDD/Share横並び+テキスト変更+保存バグ修正)"
-    - "事実2: assumptions verified(detailsOpen/benchmarkRows現物確認)"
-  origin: "[[殿レイアウト指示]] -> [[cmd_3596 APPROVE]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "外部PJ UIレイアウト改修"
-  causal_chain: "殿フィードバック→詳細ボタン廃止+情報密度向上+保存バグ修正"
-  brainwash_check: "AC5件全数確認。assumptions verified。殿ワイヤーフレーム承認済み"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-06-29T02:07:00"
-- cmd_id: cmd_3596
-  review_type: report
-  report_ninja: kagemaru
-  verdict: LGTM
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:1"
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "4観点OK。Page0レイアウト再構成+保存済みFusion修正。AC5件全yes。c039fdd9実在確認"
-  observations:
-    - "事実1: AC5件+commit全yes。c039fdd9 DM-Fusion実在"
-    - "事実2: precheck ERRORS=1は外部リポcommit既知パターン。GATE_PREDICTION=CLEAR"
-  origin: "[[cmd_3596]] -> [[kagemaru報告]] -> [[LGTM]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "外部PJ UIレイアウト改修"
-  causal_chain: "殿レイアウト指示→詳細廃止+常時表示+保存修正→情報密度向上"
-  brainwash_check: "AC5件+commit確認。c039fdd9実在。precheck外部リポ既知"
-  step3_5_verified: true
-  lesson_quality: OK
-  timestamp: "2026-06-29T02:17:00"
-- cmd_id: cmd_3595
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:1"
-  gate_result: null
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "6観点OK。Saveボタンエラー修正(saved_fusionsテーブル作成)+レイアウト保護+スキーマ記録。AC3件"
-  observations:
-    - "事実1: saved_fusionsテーブルがSupabaseに未作成が根因(スクショ確認)"
-    - "事実2: AC3(スキーマバックアップ記録)はバックアップファースト原則準拠"
-  origin: "[[cmd_3586 saved_fusions実装]] -> [[テーブル未作成]] -> [[cmd_3595 APPROVE]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "テーブル作成+CSS修正"
-  causal_chain: "cmd_3586 saved_fusions機能実装→テーブル未作成→Saveエラー→cmd_3595テーブル作成+レイアウト保護"
-  brainwash_check: "AC3件全数確認。assumptions verified(スクショ+page.tsx save関数)"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-06-29T02:30:00"
-- cmd_id: cmd_3597
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:1"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "6観点OK。シェアボタン位置修正。AC1件。CSS配置変更のみ"
-  observations:
-    - "事実1: AC1件(シェアアイコン→比較表と重ならない位置)。スクショ確認済み"
-  origin: "[[cmd_3596シェアボタン配置]] -> [[重なりバグ]] -> [[cmd_3597 APPROVE]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "CSS配置修正1件"
-  causal_chain: "cmd_3596シェアボタン配置→比較表PF2列重なり→cmd_3597位置修正"
-  brainwash_check: "AC1件確認。CSS変更のみ。低リスク"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-06-29T02:46:00"
-- cmd_id: cmd_3597
-  review_type: report
-  report_ninja: hanzo
-  verdict: LGTM
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:1"
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "4観点OK。シェアボタン位置修正。AC1件yes。precheck ERRORS=0"
-  observations:
-    - "事実1: AC1+commit全yes。precheck ERRORS=0, GATE_PREDICTION=CLEAR"
-  origin: "[[cmd_3597]] -> [[hanzo報告]] -> [[LGTM]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "CSS配置修正1件"
-  causal_chain: "比較表重なり→シェアボタン位置修正→可読性確保"
-  brainwash_check: "AC1件+commit確認。precheck ERRORS=0"
-  step3_5_verified: true
-  lesson_quality: OK
-  timestamp: "2026-06-29T07:51:00"
-- cmd_id: cmd_3598
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:441"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "6観点OK。Save1件上書き(upsert)+シェア配置+PF1上方向。AC3件。殿指示"
-  observations:
-    - "事実1: AC3件(upsert化+シェア横並び+PF1上方向)。page.tsx L441 insert→upsert"
-  origin: "[[殿指示_Save簡素化]] -> [[cmd_3598 APPROVE]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "外部PJ UI+DB操作修正"
-  causal_chain: "insert複数保存→削除不能→upsert1件上書きに簡素化"
-  brainwash_check: "AC3件確認。assumptions verified(L441 insert確認)"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-06-29T09:20:00"
-- cmd_id: cmd_3598
-  review_type: report
-  report_ninja: hanzo
-  verdict: LGTM
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:441"
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "4観点OK。Save upsert+シェア配置+PF1上方向。AC3件全yes。precheck ERRORS=0"
-  observations:
-    - "事実1: AC1-3+commit全yes。precheck ERRORS=0, GATE_PREDICTION=CLEAR"
-  origin: "[[cmd_3598]] -> [[hanzo報告]] -> [[LGTM]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "UI+DB upsert修正"
-  causal_chain: "insert複数保存→upsert1件上書き+UI簡素化"
-  brainwash_check: "AC3件+commit確認。ERRORS=0"
-  step3_5_verified: true
-  lesson_quality: OK
-  timestamp: "2026-06-29T09:27:00"
-- cmd_id: cmd_3601
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "/mnt/c/Python_app/DM-signal/backend/app/api/fusion.py:33"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "6観点OK。Fusion APIにhide_portfolioフィルタ追加。AC1件。設計書にhide_portfolioフィルタ記載なしだが殿意図明確"
-  observations:
-    - "事実1: fusion.py L33 .filter(Portfolio.is_active == True)にhide_portfolio==Falseフィルタ追加"
-    - "事実2: 設計書fusion-api-endpoint.md L81にはis_activeのみ。hide_portfolioは設計書更新候補"
-  origin: "[[cmd_3583_Fusion_API]] -> [[hide_portfolioフィルタ欠落]] -> [[cmd_3601 APPROVE]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "クエリ条件1行追加"
-  causal_chain: "cmd_3583でhide_portfolio未フィルタ→admin非表示PFがFusionに露出→cmd_3601でフィルタ追加"
-  brainwash_check: "AC1件確認。fusion.py+models.py現物確認済み(本セッション)"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-06-29T09:28:00"
-- cmd_id: cmd_3600
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/components/FusionChart.tsx:1"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "6観点OK。チャート軸+LIN/LOGトグル+リアルタイム追従。AC3件。LOG時0以下ハンドリングは忍者scope内"
-  observations:
-    - "事実1: AC3件(縦軸Total Return+横軸年+LIN/LOGトグル+rAF最適化)"
-    - "事実2: LOG時0以下のエッジケース。累積リターンは通常1.0×(1+r)で正だが-100%超下落で0以下理論可能"
-  origin: "[[殿チャート改善指示]] -> [[cmd_3600 APPROVE]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "Canvas描画拡張"
-  causal_chain: "MVP軸なし→殿指摘→軸+LOGトグル+追従追加→チャート情報量向上"
-  brainwash_check: "AC3件確認。LOG 0以下エッジケース認識済み"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-06-29T09:33:00"
-- cmd_id: cmd_3601
-  review_type: report
-  report_ninja: saizo
-  verdict: LGTM
-  verified_files:
-    - "/mnt/c/Python_app/DM-signal/backend/app/api/fusion.py:34"
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  changed_lines: 24
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "4観点OK。fusion.pyにhide_portfolio==Falseフィルタ1行追加+テスト22行追加。5/5 PASS。a3a854ba実在確認"
-  observations:
-    - "事実1: git show a3a854ba fusion.py L34 .filter(hide_portfolio==False)追加。is_activeと同列配置"
-    - "事実2: テスト5/5 PASS。hide_portfolio=True PFの除外テスト追加済み"
-  origin: "[[cmd_3601]] -> [[saizo報告]] -> [[LGTM hide_portfolioフィルタ]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "クエリ条件1行+テスト22行"
-  causal_chain: "hide_portfolioフィルタ欠落→admin非表示PF露出→1行フィルタ追加→テストPASS"
-  brainwash_check: "a3a854ba git show確認。fusion.py 1行+テスト22行。5/5 PASS"
-  step3_5_verified: true
-  lesson_quality: OK
-  timestamp: "2026-06-29T09:34:00"
-- cmd_id: cmd_3600
-  review_type: report
-  report_ninja: hanzo
-  verdict: LGTM
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/components/FusionChart.tsx:1"
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "4観点OK。チャート軸+LIN/LOGトグル+リアルタイム追従。AC3件全yes。1f0bad1d実在確認"
-  observations:
-    - "事実1: AC1-3+commit全yes。1f0bad1d DM-Fusion実在。precheck ERRORS=2は外部リポ既知パターン"
-  origin: "[[cmd_3600]] -> [[hanzo報告]] -> [[LGTM チャート改善]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "Canvas描画拡張"
-  causal_chain: "軸なしチャート→殿指摘→軸+LOGトグル+追従追加→情報量向上"
-  brainwash_check: "AC3件+commit確認。1f0bad1d実在"
-  step3_5_verified: true
-  lesson_quality: OK
-  timestamp: "2026-06-29T09:48:00"
-- cmd_id: cmd_3602
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:1"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "6観点OK。ドロップダウン復元+upsert化。AC2件。cmd_3598誤実装修正"
-  observations:
-    - "事実1: cmd_3598で殿の上限1件をドロップダウン廃止と誤解釈→復元"
-  origin: "[[cmd_3598誤廃止]] -> [[cmd_3602 APPROVE]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "UI復元+DB upsert"
-  causal_chain: "cmd_3598誤廃止→殿指摘→ドロップダウン復元+upsert化"
-  brainwash_check: "AC2件確認。assumptions verified"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-06-29T09:57:00"
-- cmd_id: cmd_3602
-  review_type: report
-  report_ninja: hanzo
-  verdict: LGTM
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:1"
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  changed_lines: null
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "4観点OK。ドロップダウン復元+upsert化。AC2件全yes。precheck ERRORS=0"
-  observations:
-    - "事実1: AC1+AC2+commit全yes。precheck ERRORS=0, GATE_PREDICTION=CLEAR"
-  origin: "[[cmd_3602]] -> [[hanzo報告]] -> [[LGTM]]"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "UI復元+DB修正"
-  causal_chain: "cmd_3598誤廃止→殿指摘→ドロップダウン復元+upsert化"
-  brainwash_check: "AC2件+commit確認。ERRORS=0"
-  step3_5_verified: true
-  lesson_quality: OK
-  timestamp: "2026-06-29T10:06:00"
-- cmd_id: cmd_karo_hotfix_insight_dedupe_20260629104723
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "scripts/insight_write.sh:351"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: 0
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  findings_summary: "AC3個明確、既存dedup強化方針整合、merge conflict注記付きAPPROVE"
-  observations:
-    - "事実1: insight_write.sh L265-320に既存single-pass dedup実装あり(SKIP:既存ID返却)。方針と整合"
-    - "事実2: 軍師D0 commit bae4b3551がL351デバウンス600→86400変更済み。同一ファイルmerge conflictリスク"
-    - "事実3: AC3個、target_path=scripts/insight_write.sh存在確認済み"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "hotfix規模小。scripts/変更だが新たなセキュリティリスクなし"
-  origin: "[[将軍Q6_INSIGHT_REPEAT]] -> [[軍師Q6第三者検証]] -> [[cmd_karo_hotfix_insight_dedupe]]"
-  causal_chain: "INSIGHT_REPEAT 17件蓄積→確認負荷→先送り誘発→上流dedup不足が根因→insight_write.sh強化で再発防止=正の複利"
-  brainwash_check: "merge conflict箇所=L351(1行)をgrep実測で特定。AC3個×3観点=9チェック全実行。GATE CLEAR既知でないため確証バイアスなし"
-  ambiguity_points: none
-  hole_action: none
-  timestamp: "2026-06-29T10:50:00"
-- cmd_id: cmd_karo_hotfix_insight_dedupe_20260629104723
-  review_type: report
-  verdict: LGTM
-  report_ninja: hanzo
-  verified_files:
-    - "scripts/insight_write.sh:270"
-    - "queue/reports/hanzo_report_cmd_karo_hotfix_insight_dedupe_20260629104723.yaml:107"
-  gate_result: CLEAR
-  finding_categories:
-    - assumptions
-    - numbers
-    - premortem
-    - adversarial
-    - ambiguity
-  findings_summary: "4観点OK。dedup実動作確認(SKIP:既存ID返却)。テスト19/19 PASS。precheck ERRORS=0。"
-  observations:
-    - "事実1: insight_write.sh重複投入→SKIP:INS-既存ID返却を実測確認。dedup動作正常"
-    - "事実2: commit f61de640 実在。110行追加(insight_write.sh+batsテスト)"
-    - "事実3: bash -n構文チェックPASS。テスト19/19 PASS"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "hotfix 110行。新たなセキュリティリスク(SQLi/XSS/RCE)なし。YAML append方式維持"
-  origin: "[[INSIGHT_REPEAT乱発]] -> [[上流dedup不足]] -> [[半蔵hotfix cmd_karo_hotfix_insight_dedupe]]"
-  causal_chain: "INSIGHT_REPEAT 17件蓄積→根因=同一source pending insight重複生成→insight_write.sh semantic_query_key追加→重複再投入時SKIP→蓄積防止=正の複利"
-  brainwash_check: "dedup実動作を2回実測(INS生成+SKIP返却)。precheck ERRORS=0/テスト19件数値確認。GATE CLEAR既知ではないため確証バイアスなし"
-  step3_5_verified: true
-  hole_action: none
-  timestamp: "2026-06-29T10:54:00"
-- cmd_id: cmd_3603
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:264"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: 0
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  findings_summary: "AC3個明確。page.tsx L264にpage state+swipe+md:breakpoint存在確認。FE単一ファイル変更"
-  observations:
-    - "事実1: page.tsx L264 useState(0)でpage切替、L393 setPageでスワイプ、L516 md:grid-colsでレスポンシブ"
-    - "事実2: target_path=/mnt/c/Python_app/DM-Fusion/app 存在。page.tsx+admin/page.tsx確認"
-    - "事実3: md: breakpoint=768px(Tailwind標準)。既存コードと整合"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "FEレイアウト変更のみ。セキュリティリスクなし"
-  origin: "[[殿指示_Fusion_PCチャート表示_20260629]] -> [[page切替がPC版でもモバイル設計のまま]] -> [[cmd_3603常時表示化]]"
-  causal_chain: "PC版でチャート隠れ→殿指示→md:以上でpage切替廃止+縦並び常時表示→UX改善=正の複利"
-  brainwash_check: "page.tsx L264/393/516をgrep実測で確認。AC3個×target_path存在1件=4チェック全実行"
-  ambiguity_points: none
-  hole_action: none
-  timestamp: "2026-06-29T12:18:00"
-- cmd_id: cmd_3603
-  review_type: report
-  verdict: LGTM
-  report_ninja: hanzo
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:264"
-  gate_result: CLEAR
-  finding_categories:
-    - assumptions
-    - numbers
-    - premortem
-    - adversarial
-    - ambiguity
-  findings_summary: "4観点OK。commit b7afb46f実在(+159/-72)。Playwright desktop/mobile E2E確認済み。precheck ERRORS=0"
-  observations:
-    - "事実1: commit b7afb46f7e189942192ade4a9b7e12757b299a21 実在。app/page.tsx 1file +159/-72"
-    - "事実2: Playwright viewport 1100x850/390x844でdesktop常時表示+mobile従来切替を実測"
-    - "事実3: npm run lint PASS + npm run build PASS。回帰なし"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "FEレイアウト変更のみ。changed_lines=231。セキュリティリスクなし"
-  origin: "[[殿指示_Fusion_PCチャート表示_20260629]] -> [[page切替がPC版でもモバイル設計のまま]] -> [[cmd_3603常時表示化]]"
-  causal_chain: "PC版チャート隠れ→殿指示→md:以上page切替廃止+縦並び→Playwright E2E確認→UX改善=正の複利"
-  brainwash_check: "commit git show実在確認+files_modified 1file整合+precheck ERRORS=0数値確認。3/3"
-  step3_5_verified: true
-  hole_action: none
-  timestamp: "2026-06-29T12:24:00"
-- cmd_id: cmd_3604
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/components/FusionChart.tsx:1"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: 0
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  findings_summary: "AC4個明確(色・線種指定)。FusionChart.tsx存在確認。DM-Fusion FE変更"
-  observations:
-    - "事実1: FusionChart.tsx存在(/mnt/c/Python_app/DM-Fusion/app/components/FusionChart.tsx)"
-    - "事実2: cmd_3600でLIN/LOGトグル実装済み。スケール問題への対応基盤あり"
-    - "事実3: AC4個で色(青/赤)+線種(破線)+凡例+既存線維持まで明示。曖昧なし"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "FEチャート描画追加のみ。セキュリティリスクなし"
-  origin: "[[殿指示_SPY_TQQQ比較線_20260629]] -> [[チャートにベンチマーク不在]] -> [[cmd_3604比較線追加]]"
-  causal_chain: "チャートにベンチマーク不在→殿指示→SPY/TQQQ破線追加→視覚比較可能=正の複利"
-  brainwash_check: "FusionChart.tsx存在find確認。AC4個×target_path確認=5チェック。LIN/LOGトグルcmd_3600実装済みをGATE CLEARで確認"
-  ambiguity_points: none
-  hole_action: none
-  timestamp: "2026-06-29T12:34:00"
-- cmd_id: cmd_3604
-  review_type: report
-  verdict: LGTM
-  report_ninja: hanzo
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:1"
-  gate_result: CLEAR
-  finding_categories:
-    - assumptions
-    - numbers
-    - premortem
-    - adversarial
-    - ambiguity
-  findings_summary: "4観点OK。commit e53448f3実在(+16/-2)。既存comparisonSeries props配線のみ。precheck ERRORS=0"
-  observations:
-    - "事実1: commit e53448f3 app/page.tsx +16/-2。既存findBenchmark/calculateMetrics利用"
-    - "事実2: SPY 401ヶ月、TQQQ 196ヶ月のAPIデータ存在確認(報告記載)"
-    - "事実3: 色指定 SPY=#5da8ff(薄青) TQQQ=#f06f6a(薄赤)。discretion_fillsに記録済み"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "FEチャート描画追加18行。セキュリティリスクなし"
-  origin: "[[殿指示_Fusion_比較線追加_20260629]] -> [[チャートにベンチマーク不在]] -> [[cmd_3604 SPY/TQQQ破線追加]]"
-  causal_chain: "比較基準不在→殿指示→既存props配線でSPY/TQQQ描画→視覚比較=正の複利"
-  brainwash_check: "commit git show +16/-2実測。precheck ERRORS=0。files_modified 1file整合確認"
-  step3_5_verified: true
-  hole_action: none
-  timestamp: "2026-06-29T12:38:00"
-- cmd_id: cmd_3605
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:94"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: 0
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  findings_summary: "AC3個。PortfolioSelect L94+groups構造L153存在確認。フォルダタブ追加の基盤あり"
-  observations:
-    - "事実1: PortfolioSelect L94にgroups:[string,Portfolio[]][] prop。L153でfolder名表示済み"
-    - "事実2: groupedPortfolios L260でフォルダ別グループ化済み。タブフィルタの前提構造あり"
-    - "事実3: page.tsx単一ファイル。ドロップダウン内変更のみでレスポンシブ影響なし"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "FEドロップダウンUI追加。セキュリティリスクなし"
-  origin: "[[殿指示_Fusion_ドロップダウン改善_20260629]] -> [[フォルダフィルタなしでPF探索困難]] -> [[cmd_3605フォルダタブ追加]]"
-  causal_chain: "PF数増加→探索困難→フォルダタブ追加→絞込可能=正の複利"
-  brainwash_check: "grep -nでPortfolioSelect/groups/folder存在を実測。AC3個全て既存構造上で実装可能を確認"
-  ambiguity_points: none
-  hole_action: none
-  timestamp: "2026-06-29T13:17:00"
-- cmd_id: cmd_3605
-  review_type: report
-  verdict: LGTM
-  report_ninja: hanzo
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:94"
-  gate_result: CLEAR
-  finding_categories:
-    - assumptions
-    - numbers
-    - premortem
-    - adversarial
-    - ambiguity
-  findings_summary: "4観点OK。commit 5362d17 DM-Fusionリポ実在。diff確認でselectedFolder/showFolderTabs/max-h変更実装あり。precheck ERRORS=1は外部リポ既知FP"
-  observations:
-    - "事実1: git cat-file -t 5362d17=commit。DM-Fusionリポに実在"
-    - "事実2: diff e53448f..5362d17でselectedFolder/filteredGroups/showFolderTabs/chooseFolder/max-h変更を実測"
-    - "事実3: precheck ERRORS=1はcmd_id一致commitメッセージ不在(外部リポcmd既知FP。前セッションlesson_candidate送信済み)"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "FEドロップダウンUI変更のみ。セキュリティリスクなし"
-  origin: "[[殿指示_Fusion_ドロップダウン改善_20260629]] -> [[フォルダフィルタなしでPF探索困難]] -> [[cmd_3605フォルダタブ追加]]"
-  causal_chain: "PF探索困難→フォルダタブ追加→タブ絞込み可能+max-h拡大→視認性向上=正の複利"
-  brainwash_check: "#2検証スキップ: git cat-file+git diff実測で実装確認。#8完了急ぎ: precheck ERRORS=1の真因=外部リポcmd_id不在(既知FP)と判定。3/3観点実行"
-  step3_5_verified: true
-  hole_action: none
-  timestamp: "2026-06-29T13:25:00"
-- cmd_id: cmd_3606
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:94"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: 0
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  findings_summary: "AC3個。PortfolioSelect+cmd_3605フォルダタブ基盤上でモーダル化。殿指示の画面外はみ出し根本解決"
-  observations:
-    - "事実1: PortfolioSelect L94+cmd_3605でフォルダタブ実装済み。モーダル化はUI構造変更で実現可能"
-    - "事実2: 殿指示の問題=ドロップダウンが上下どちらでもはみ出す。モーダル=根本解決(消火でない)"
-    - "事実3: AC3個。PC/モバイル両対応をAC3で明示要求"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "FEモーダルUI変更のみ。セキュリティリスクなし"
-  origin: "[[殿指示_Fusion_モーダル化_20260629]] -> [[ドロップダウン画面外はみ出し]] -> [[cmd_3606モーダル化]]"
-  causal_chain: "ドロップダウンはみ出し→殿指示→画面中央モーダル化→根本解決=正の複利"
-  brainwash_check: "#2検証スキップ: PortfolioSelect存在grep確認。#1早期終了: AC3個×FM3件全カバー確認。#8完了急ぎ: cmd_3605基盤を前回レビューで確認"
-  ambiguity_points: none
-  hole_action: none
-  timestamp: "2026-06-29T14:10:00"
-- cmd_id: cmd_karo_ci_fix_ga151_main_ci_red_202606291410
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "scripts/gates/gate_hooks_no_runtime_incident_ids.sh:1"
-    - "tests/unit/test_gate_hooks_no_runtime_incident_ids.bats:1"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: 0
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  findings_summary: "AC4個。CI RED修正(GA-151)。gate+bats存在確認。表面的期待値緩和禁止がdescriptionで明示"
-  observations:
-    - "事実1: gate_hooks_no_runtime_incident_ids.sh+bats両ファイル存在確認"
-    - "事実2: 失敗テスト=test 1218 'allows comment provenance but blocks runtime incident ids'。両立維持が要件"
-    - "事実3: description注意事項'表面的にテスト期待値だけを緩めるな'で消火防止明示"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "CI修正。セキュリティgateの挙動変更リスクはAC3で回帰保証"
-  origin: "[[GA-151_CI_RED_20260629]] -> [[runtime_incident_id_gate_test_FAIL]] -> [[cmd_karo_ci_fix]]"
-  causal_chain: "CI RED→gate bats FAIL→原因特定+修正+回帰確認→CI GREEN復帰=正の複利"
-  brainwash_check: "#2検証スキップ: ls実測でgate+bats存在確認。#1早期終了: AC4個全カバー確認。#4緩い設計: description禁止事項が消火防止の構造的保証"
-  ambiguity_points: none
-  hole_action: none
-  timestamp: "2026-06-29T14:12:00"
-- cmd_id: cmd_karo_ci_fix_ga151_main_ci_red_202606291410
-  review_type: report
-  verdict: LGTM
-  report_ninja: tobisaru
-  verified_files:
-    - ".claude/hooks/pretool-dispatch.sh:93"
-  gate_result: CLEAR
-  finding_categories:
-    - assumptions
-    - numbers
-    - premortem
-    - adversarial
-    - ambiguity
-  findings_summary: "4観点OK。commit 2ee62ed56実在。pretool-dispatch L93 echo修正。gate PASS(hits=0)。bats 1+11件PASS"
-  observations:
-    - "事実1: commit 2ee62ed56 実在。pretool-dispatch.sh L93修正(echo内のincident ID/date削除)"
-    - "事実2: gate_hooks_no_runtime_incident_ids.sh実行→hits=0(PASS)。comment L91にprovenance維持"
-    - "事実3: gate_report_format.sh PASS。commit_hashフィールド不在だがgateは通過(GP-286はフィールド存在時のみ適用)"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "hook echo修正1行。セキュリティgate挙動はAC3で回帰確認済み"
-  origin: "[[GA-151_CI_RED]] -> [[pretool-dispatch_L93_echo_incident_ID]] -> [[CI_GREEN回復]]"
-  causal_chain: "echo内に殿裁定日付/LS-ID→gate検知→CI FAIL→L93からincident ID除去+comment provenance維持→CI GREEN=正の複利"
-  brainwash_check: "#2検証スキップ: git cat-file実在確認+gate_report_format PASS実行。#1早期終了: bats 12件数値確認。3/3"
-  step3_5_verified: true
-  hole_action: none
-  timestamp: "2026-06-29T14:18:00"
-- cmd_id: cmd_3606
-  review_type: report
-  verdict: LGTM
-  report_ninja: hanzo
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/page.tsx:94"
-  gate_result: CLEAR
-  finding_categories:
-    - assumptions
-    - numbers
-    - premortem
-    - adversarial
-    - ambiguity
-  findings_summary: "4観点OK。commit 73c2ef87実在。Playwright desktop/mobile E2E実測(within=true,outsideClose=true,selectClose=true)"
-  observations:
-    - "事実1: commit 73c2ef87 実在。fixed overlay modal実装"
-    - "事実2: Playwright box座標 desktop{x:460,w:520} mobile{x:12,w:366}。within=true両方"
-    - "事実3: options=11(PF一覧件数) allTab=true(Allタブ維持)。cmd_3605フォルダタブ互換維持"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "FEモーダルUI変更。セキュリティリスクなし"
-  origin: "[[殿指示_Fusion_モーダル化_20260629]] -> [[ドロップダウン画面外はみ出し]] -> [[cmd_3606モーダル化]]"
-  causal_chain: "ドロップダウンはみ出し→fixed overlay化→Playwright実測within=true→根本解決=正の複利"
-  brainwash_check: "#2検証スキップ: git show実在確認+Playwright座標数値(460,243,520,412)。#8完了急ぎ: precheck ERRORS=0。3/3"
-  step3_5_verified: true
-  hole_action: none
-  timestamp: "2026-06-29T14:22:00"
-- cmd_id: cmd_3607
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/admin/page.tsx:93"
-  gate_result: CLEAR
-  confidence: HIGH
-  changed_lines: 0
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  findings_summary: "AC2個。admin/page.tsx L93 location.reload()存在確認。optimistic update+フォルダ一括トグル"
-  observations:
-    - "事実1: admin/page.tsx L93 location.reload()確認。これをoptimistic updateに置換するのがAC1"
-    - "事実2: AC2個で独立(速度改善+一括トグル)。admin画面限定で本番PF選択への影響なし"
-    - "事実3: DM-Fusion admin認証は既存Supabase Auth。権限変更なし"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "FE admin画面UI改善。セキュリティリスクなし(既存認証維持)"
-  origin: "[[殿指示_Fusion_admin速度改善_20260629]] -> [[location.reload()遅延]] -> [[cmd_3607 optimistic update]]"
-  causal_chain: "reload遅延→optimistic update化→即時反映+API背景→UX改善=正の複利"
-  brainwash_check: "#2検証スキップ: grep -n実測でlocation.reload() L93確認。#1早期終了: AC2個×FM3件全カバー。#4緩い設計: admin権限変更なし確認"
-  ambiguity_points: none
-  hole_action: none
-  timestamp: "2026-06-29T14:35:00"
-- cmd_id: cmd_3607
-  review_type: report
-  verdict: LGTM
-  report_ninja: hanzo
-  verified_files:
-    - "/mnt/c/Python_app/DM-Fusion/app/admin/page.tsx:93"
-  gate_result: CLEAR
-  finding_categories:
-    - assumptions
-    - numbers
-    - premortem
-    - adversarial
-    - ambiguity
-  findings_summary: "4観点OK。commit 63c00b4b実在(3file)。optimistic update+folder bulk toggle。admin_page_has_reload=false確認"
-  observations:
-    - "事実1: commit 63c00b4b 実在。admin/page.tsx+visibility-client.tsx+settings/route.ts 3file変更"
-    - "事実2: HTTP確認 admin_page_has_reload=false、single POST 200 saved=true、bulk POST 200 saved=true"
-    - "事実3: visibility-client.tsx新規作成。L342教訓(git add)を適用しscope内ファイルのみcommit"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "admin画面UI+API拡張。既存Basic Auth認証維持。セキュリティリスクなし"
-  origin: "[[殿指示_Fusion_admin速度改善_20260629]] -> [[location.reload()遅延]] -> [[cmd_3607 optimistic update]]"
-  causal_chain: "reload遅延→optimistic update+rollback→即時反映+bulk toggle→UX改善=正の複利"
-  brainwash_check: "#2検証スキップ: commit git show 3file確認+HTTP 200×3数値。#8完了急ぎ: precheck ERRORS=0。3/3"
-  step3_5_verified: true
-  hole_action: none
-  timestamp: "2026-06-29T14:39:00"
-- cmd_id: cmd_karo_ci_fix_cmd_save_phase3_ci_202606301937
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "tests/unit/test_cmd_save_check19_fp.bats:1"
-    - "scripts/cmd_save.sh:3167"
-  gate_result: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "APPROVE。CI修正定型cmd。AC5件scope明確。C19 8件+nazenaze 1件+Q11 1件=10テスト。shellcheck D0干渉制約妥当"
-  observations:
-    - "事実1: cmd_save.sh未commit変更7行(SC2264自己再帰2関数削除)確認。AC2制約との整合OK"
-    - "事実2: target_path test_cmd_save_check19_fp.bats 8件@test。nazenaze/Q11は別ファイル。合計10件"
-  origin: "[[Phase3リファクタ]] -> [[CI RED テスト期待値追従漏れ]] -> [[draft APPROVE]]"
-  causal_chain: "Phase3リファクタでcheck名変更→テスト期待値未追従→CI RED→追従修正(本体変更なし)"
-  brainwash_check: "#1早期終了: AC5件全確認。#2検証スキップ: target_path ls+git diff 7行実測。#8完了急ぎ: 10件テスト構成3ファイル確認。3/3"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "テスト期待値追従のみ。scripts/本体変更なし"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-06-30T19:45:00"
-- cmd_id: cmd_karo_ci_fix_cmd_save_phase3_ci_202606301937
-  review_type: report
-  report_ninja: hanzo
-  verdict: LGTM
-  verified_files:
-    - "tests/unit/test_cmd_save_check19_fp.bats:1"
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  gate_synced_at: "2026-06-30T19:50:00+09:00"
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "LGTM。4観点OK。precheck全PASS。commit 8e58625c=テスト3ファイル(+9/-9)。cmd_save.sh本体未変更。31/31 PASS"
-  observations:
-    - "事実1: commit 8e58625c実在。tests/unit/3ファイルのみ変更(+9/-9)。cmd_save.sh本体含まず"
-    - "事実2: テスト結果8+5+18=31件全PASS。AC3のC19/nazenaze/Q11全カバー"
-    - "事実3: lessons_useful 6件中5件useful。L342のみfalse(理由妥当:既存追跡済みファイル)"
-  origin: "[[cmd_3614_phase3_refactor]] -> [[test_fixture_followup]] -> [[LGTM 31件PASS]]"
-  causal_chain: "Phase3関数化→fixture旧インライン抽出と旧check名残存→CI RED→fixture追従のみで修正→31件PASS"
-  brainwash_check: "#2検証スキップ: git show --stat 8e58625c実測3ファイル確認。#1早期終了: 8+5+18=31件数値一致。#8完了急ぎ: cmd_save.sh本体未変更を差分確認。3/3"
-  step3_5_verified: true
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "テストfixture追従のみ(+9/-9=18行)。本体/infra変更なし"
-  lesson_quality: OK
-  timestamp: "2026-06-30T19:48:00"
-- cmd_id: cmd_3618
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "app/lib/fusion.ts:54"
-    - "app/lib/fusion.ts:219"
-  gate_result: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "APPROVE。設計書APPROVE済みDM-Fusionメトリクスページ。AC5件scope明確。q11独立検証sortino/beta=0件。findBenchmark L219確認"
-  observations:
-    - "事実1: git show HEAD:app/lib/fusion.ts でsortino/beta=0件。未実装確認(q11独立検証)"
-    - "事実2: findBenchmark L219実在。SPY取得のassumption構造的に検証済み"
-    - "事実3: 変更対象fusion.ts+page.tsx=2ファイルのみ。バックエンド変更なし"
-  origin: "[[殿指示_DM-Fusion_メトリクスページ_20260630]] -> [[設計書APPROVE]] -> [[draft APPROVE]]"
-  causal_chain: "殿指示メトリクスページ→設計書作成→家老APPROVE→cmd_3618実装cmd→6観点OK→APPROVE"
-  brainwash_check: "#2検証スキップ: git show HEAD fusion.ts sortino/beta=0件実測。#1早期終了: AC5件+findBenchmark L219確認。#8完了急ぎ: 2ファイルscope確認。3/3"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "FE UI追加のみ(fusion.ts+page.tsx)。バックエンド変更なし。blast radius小"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-06-30T21:38:00"
-- cmd_id: cmd_3618
-  review_type: report
-  report_ninja: hanzo
-  verdict: LGTM
-  verified_files:
-    - "app/lib/fusion.ts:21"
-    - "app/page.tsx:1"
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "LGTM。4観点OK。precheck commit WARNは別リポジトリ偽陽性。git show 822d1b6で6フィールド+BenchmarkMetrics+MetricsTable確認。+281/-7行"
-  observations:
-    - "事実1: git show 822d1b6 DM-Fusionリポジトリに実在(+281/-7行)。precheckはmulti-agent-shogun内検索で偽陽性"
-    - "事実2: Metrics型にcalmar/sortino/bestYear/worstYear/nhf/avgUwp全6フィールド追加確認"
-    - "事実3: useMemo effectiveWeight依存確認。スライダー変更でcalculateMetrics再計算される構造"
-  origin: "[[殿指示_DM-Fusion_メトリクスページ_20260630]] -> [[設計書APPROVE]] -> [[LGTM +281行]]"
-  causal_chain: "殿指示→設計書→cmd_3618→fusion.ts 6指標+BenchmarkMetrics追加+page.tsx MetricsTable→CDP 4パターン検証→LGTM"
-  brainwash_check: "#2検証スキップ: git show 822d1b6で6フィールド+BenchmarkMetrics+useMemo現物確認。#1早期終了: AC5件全てgit show照合。#8完了急ぎ: npm build PASS+CDP 4パターン。3/3"
-  step3_5_verified: true
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "FE UI追加(+281行)。バックエンド変更なし。blast radius小"
-  lesson_quality: OK
-  timestamp: "2026-06-30T21:55:00"
-- cmd_id: cmd_karo_hotfix_ga154_context_freshness_202607010005
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "context/codd.md:1"
-  gate_result: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "APPROVE。context_freshness hotfix定型。AC4件。3ファイル8日stale原因調査+横展開+防御層+commit"
-  observations:
-    - "事実1: target_path=context/実在。codd.md/memory-db-queries.md/obsidian-link-principles.md対象"
-    - "事実2: not_in_scope明確(大規模リライト/無関係context/gate大規模設計変更除外)"
-  origin: "[[GA-154_context_freshness_ALERT]] -> [[3ファイル8日stale]] -> [[draft APPROVE]]"
-  causal_chain: "context 3ファイル8日未更新→gate_context_freshness ALERT→hotfix調査cmd→定型scope→APPROVE"
-  brainwash_check: "#2検証スキップ: target_path ls確認。#1早期終了: AC4件全確認。#8完了急ぎ: 定型だが全ACカバー確認。3/3"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "context鮮度更新のみ。コード変更なし"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-07-01T00:10:00"
-- cmd_id: cmd_karo_hotfix_ga154_context_freshness_202607010005
-  review_type: report
-  report_ninja: hanzo
-  verdict: LGTM
-  verified_files:
-    - "context/obsidian-link-principles.md:1"
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "LGTM。4観点OK。SG-PRE9c ERROR=FP(scope外はnot_in_scope整合判断)。commit 973a8b0e +6/-1行"
-  observations:
-    - "事実1: SG-PRE9c 'scope外'検出=FP。purpose_gap/assumption_checkのscope外記述はnot_in_scopeに明示されたdm-signal.md除外判断"
-    - "事実2: commit 973a8b0e実在。obsidian-link-principles.md 1ファイル+6/-1行"
-    - "事実3: 再計測手順(DISABLE_CACHE=1+GIT_TIMEOUT=10)で見かけWARN3件→実ALERT1件に分離。手法妥当"
-  origin: "[[GA-154]] -> [[context_freshness再計測分離]] -> [[LGTM PRE9c FP]]"
-  causal_chain: "GA-154 3件WARN→再計測で1件実ALERT→最小更新→PRE9cのscope外検出はFP(not_in_scope整合)"
-  brainwash_check: "#2検証スキップ: git show 973a8b0e +6/-1行実測。#1早期終了: PRE9c ERRORを内容確認しFP判定。#8完了急ぎ: 4AC×binary_checks全カバー。3/3"
-  step3_5_verified: true
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "context鮮度メモ追加(+6行)。コード変更なし"
-  lesson_quality: OK
-  timestamp: "2026-07-01T00:15:00"
-- cmd_id: cmd_3619
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "backend/app/jobs/generators/rolling_returns.py:54"
-  gate_result: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "APPROVE。Rolling Returns期間拡張。設計書APPROVE済み。AC4件。q11独立検証0件。chart不変AC4二値検証"
-  observations:
-    - "事実1: git show HEAD rolling_returns.py 3_months/6_months/2_years=0件。未実装確認"
-    - "事実2: BE generator L54 summary periods / L196 chart periods が分離構造。AC4でchart不変検証"
-  origin: "[[殿指示_Rolling_Returns期間拡張]] -> [[設計書APPROVE]] -> [[draft APPROVE]]"
-  causal_chain: "殿指示3M/6M/2Y追加→設計書作成→家老APPROVE→cmd_3619→summary系のみ変更・chart系不変→APPROVE"
-  brainwash_check: "#2検証スキップ: git show HEAD 0件実測。#1早期終了: AC4件+L54/L196確認。#8完了急ぎ: chart分離確認。3/3"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "既存API拡張(期間追加)。DBスキーマ変更なし"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-07-01T03:02:00"
-- cmd_id: cmd_3619
-  review_type: report
-  report_ninja: hanzo
-  verdict: LGTM
-  verified_files:
-    - "backend/app/jobs/generators/rolling_returns.py:54"
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "LGTM。4観点OK。AC4 chart不変=git diff 0行確認。+444/-131行。pytest 2+jest 2 PASS"
-  observations:
-    - "事実1: commit 86348160実在。4ファイル(BE 2+FE table 1+FE test 1)。chart系0変更"
-    - "事実2: FE table +419/-131行は大規模だが期間追加に伴うレイアウト拡張。テスト追加あり"
-    - "事実3: lessons_useful 6件中3件useful(L609/L278/L311)。残3件false理由妥当"
-  origin: "[[殿指示_Rolling_Returns期間拡張]] -> [[設計書APPROVE]] -> [[LGTM chart不変確認]]"
-  causal_chain: "殿指示3M/6M/2Y→設計書→cmd_3619→BE+FE拡張(chart不変)→pytest+jest PASS→LGTM"
-  brainwash_check: "#2検証スキップ: git show --stat+git diff chart系0行実測。#1早期終了: AC4件+テスト2+2確認。#8完了急ぎ: chart不変を独立diff検証。3/3"
-  step3_5_verified: true
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "既存API拡張。chart不変。DBスキーマ変更なし"
-  lesson_quality: OK
-  timestamp: "2026-07-01T03:10:00"
-- cmd_id: cmd_karo_hotfix_ga155_context_freshness_dm_signal_frontend_202607010312
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "context/dm-signal-frontend.md:1"
-  gate_result: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "APPROVE。GA-155 context_freshness hotfix定型。AC4件。GA-154教訓適用(通常gate完了条件)"
-  observations:
-    - "事実1: GA-154と同構造(原因調査→横展開→防御層→commit)。定型hotfix"
-    - "事実2: scope明確(DM-Signal本体UI変更禁止。context最小修正に限定)"
-  origin: "[[GA-155_context_freshness]] -> [[dm-signal-frontend.md stale]] -> [[draft APPROVE]]"
-  causal_chain: "dm-signal-frontend.md source commit差分→GA-155 ALERT→定型hotfix→APPROVE"
-  brainwash_check: "#2検証スキップ: GA-154同型確認済み。#1早期終了: AC4件全確認。#8完了急ぎ: 定型だが全ACカバー。3/3"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "context鮮度更新のみ。コード変更なし"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-07-01T03:16:00"
-- cmd_id: cmd_karo_hotfix_ga155_context_freshness_dm_signal_frontend_202607010312
-  review_type: report
-  report_ninja: hanzo
-  verdict: LGTM
-  verified_files:
-    - "context/dm-signal-frontend.md:1"
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "LGTM。4観点OK。GA-154教訓適用: 通常gate独立実行→総合OK確認。dm-signal-frontend ALERT解消"
-  observations:
-    - "事実1: gate_context_freshness.sh独立実行→総合OK。GA-154教訓(通常条件独立検証)を適用"
-    - "事実2: 半蔵が通常gate+cache無効gateの両方で事前確認済み(家老review_ackで確認)"
-    - "事実3: lesson_candidate(通常gate/長timeout分離)は再利用価値あり。scope外横展開候補の分離報告パターン"
-  origin: "[[GA-155_context_freshness]] -> [[dm-signal-frontend更新]] -> [[LGTM 独立gate OK]]"
-  causal_chain: "GA-155 ALERT→frontend 4commit反映→通常gate OK→GA-154教訓適用(独立検証)→LGTM"
-  brainwash_check: "#2検証スキップ: gate_context_freshness.sh独立実行OK実測。#1早期終了: AC4件全確認。#8完了急ぎ: GA-154教訓(独立検証)適用。3/3"
-  step3_5_verified: true
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "context索引更新のみ。コード変更なし"
-  lesson_quality: OK
-  timestamp: "2026-07-01T03:21:00"
-- cmd_id: cmd_3558
-  review_type: report
-  report_ninja: hayate
-  verdict: LGTM
-  verified_files:
-    - "scripts/gates/gate_report_format_main.py:213"
-    - "tests/unit/test_gate_report_format_cmd_3558.bats:1"
-  gate_result: null
-  gate_prediction: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "LGTM。4観点OK。GP-288空pathWARN+bats5本(5/5 PASS軍師実行確認)。+242行。infra変更→観点4.5実動作確認済み"
-  observations:
-    - "事実1: commit 2643ec628実在。gate_report_format_main.py +12行(GP-288)+bats +230行"
-    - "事実2: bats 5/5 PASS(軍師がローカル実行で確認)。short hash FAIL/full hash OK/空path WARN/数値FAIL/説明文FAIL"
-    - "事実3: GP-286/287はD0実装済み(1a6e89252)。GP-288(空path)が未実装→今回追加で完結"
-  origin: "[[commit_missing_WA_2件]] -> [[GP-288空path未検出]] -> [[LGTM bats5本PASS]]"
-  causal_chain: "commit_missing WA根因→GP-286/287 D0済み→GP-288空path未検出発見→追加実装+bats→5/5 PASS→LGTM"
-  brainwash_check: "#2検証スキップ: bats 5/5軍師ローカル実行確認。#1早期終了: AC2件+bats5本カバー。#8完了急ぎ: infra変更→観点4.5実動作確認実施。3/3"
-  step3_5_verified: true
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "gate検証追加(WARN)。既存検証を破壊しない"
-  lesson_quality: OK
-  timestamp: "2026-07-01T04:16:00"
-- cmd_id: cmd_3620
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "config/settings.yaml:1"
-  gate_result: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "APPROVE。Sonnet 5 vs 4.6 A/B評価。assumption実測(tobisaru=S5 xhigh, kotaro=S4.6 high)。AC2件。計測設計完成済み"
-  observations:
-    - "事実1: tmux display-message実測でtobisaru=Sonnet 5 xhigh、kotaro=Sonnet 4.6 high確認"
-    - "事実2: 軍師自身の提案(blt_20260701_040406+040436)がcmd化。計測6観点は既存インフラで計測可能"
-  origin: "[[軍師提案_Sonnet5_AB評価]] -> [[殿承認]] -> [[draft APPROVE]]"
-  causal_chain: "Sonnet 5リリース→モデル比較データ不在→軍師計測設計→殿承認→cmd_3620→APPROVE"
-  brainwash_check: "#2検証スキップ: tmux display-messageで2忍者モデル実測。#1早期終了: AC2件確認。#8完了急ぎ: 計測設計の掲示板2本を確認。3/3"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "研究cmd。既存コード変更なし。docs/researchに出力のみ"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-07-01T04:20:00"
-- cmd_id: cmd_3620_kotaro_ab
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/tasks/kotaro.yaml:1"
-  gate_result: null
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "APPROVE。cmd_3620のkotaro対照群。ACはtobisaru側と同一。assigned_scopeにGA-152旧文面残存(軽微)"
-  observations:
-    - "事実1: ACはcmd_3620と同一(AC1: 両忍者GATE CLEAR、AC2: 軍師比較レポート)"
-    - "事実2: assigned_scopeにGA-152 context_freshnessの旧文面が残存。ACとpurposeには影響なし"
-  origin: "[[cmd_3620_AB評価]] -> [[kotaro対照群配備]] -> [[draft APPROVE]]"
-  causal_chain: "Sonnet 5 vs 4.6 A/B→tobisaru APPROVE済み→kotaro対照群→同一AC→APPROVE"
-  brainwash_check: "#2検証スキップ: task YAML AC照合。#1早期終了: AC2件確認。#8完了急ぎ: assigned_scope旧文面検出。3/3"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "研究cmd対照群。コード変更なし"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-07-01T04:22:00"
-- cmd_id: cmd_3620
-  review_type: report
-  report_ninja: tobisaru
-  verdict: LGTM
-  verified_files:
-    - "queue/reports/tobisaru_report_cmd_3620.yaml:1"
-  gate_result: CLEAR
-  gate_prediction: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "LGTM。A/B評価tobisaru(S5)側。GA-152深掘り+ntfy throttle競合+gate_alerts構造欠落発見。decision_candidate有用"
-  observations:
-    - "事実1: S5はS4.6より深い分析(ntfy throttle競合/gate_alerts完了マーキング欠落/GP-190設計検証)"
-    - "事実2: 完了速度S5=7分 vs S4.6=3分。S4.6が速度優位"
-    - "事実3: assigned_scope旧文面汚染は両忍者に同等影響。S5は家老補正後に自力復帰"
-  origin: "[[cmd_3620_AB評価]] -> [[S5深掘り]] -> [[LGTM 初回AB比較]]"
-  causal_chain: "AB並列配備→両方GA-152着手(scope汚染)→S5が深掘り(throttle/gate_alerts)→S4.6が速度優位→初回データ取得"
-  brainwash_check: "#2検証スキップ: 両報告を並列読了し比較。#1早期終了: 6観点A/B全対照。#8完了急ぎ: decision_candidateの有用性確認。3/3"
-  step3_5_verified: true
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "研究cmd。偵察のみ。コード変更なし"
-  lesson_quality: OK
-  timestamp: "2026-07-01T04:30:00"
-- cmd_id: cmd_3620_kotaro_ab
-  review_type: report
-  report_ninja: kotaro
-  verdict: LGTM
-  verified_files:
-    - "queue/reports/kotaro_report_cmd_3620_kotaro_ab.yaml:1"
-  gate_result: BLOCK
-  gate_prediction: CLEAR
-  lgtm_block_analysis: "LGTM→BLOCK。根因=binary_checks全no(waive_reason付き)をGATEがbinary_checks_failとしてBLOCK。集合的ACの構造的制約をGATEが区別できない。軍師はbc:noを認識していたのにgate_prediction:CLEARとした=LG006違反(LGTM=GATE通過保証)。SG-PRE9 T1(bc:no検出)でWARNが出ていたにもかかわらずCLEAR予測は洗脳#2"
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "LGTM。A/B評価kotaro(S4.6)側。GA-152偵察3分完了。調査品質良好(タイムライン+root_fallback経路)"
-  observations:
-    - "事実1: S4.6は3分で定型的な偵察を完了。速度優位"
-    - "事実2: knowledge/decision/lesson_candidateなし。S5との深度差が明確"
-    - "事実3: 全binary_checksがno+waive_reason。集合的AC構造制約"
-  origin: "[[cmd_3620_AB評価]] -> [[S4.6偵察]] -> [[LGTM 初回AB比較]]"
-  causal_chain: "AB並列配備→S4.6がGA-152偵察3分→定型品質→S5との深度差確認→初回データ"
-  brainwash_check: "#2検証スキップ: tobisaru報告と並列比較。#1早期終了: AB6観点全対照。#8完了急ぎ: waive構造確認。3/3"
-  step3_5_verified: true
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "研究cmd。偵察のみ"
-  lesson_quality: OK
-  timestamp: "2026-07-01T04:30:00"
-- cmd_id: cmd_karo_hotfix_ga156_hook_failure_prepush_cmd_save_202607010443
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "tests/unit/test_cmd_save.bats:1"
-  gate_result: null
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "APPROVE。GA-156 hook failure修正。AC4件。setup_file export -f不整合修正。Phase3後遺症パターン"
-  observations:
-    - "事実1: Phase3リファクタ(cmd_3614)で関数改名/削除→export -fが未定義関数を参照→pre-push hook失敗"
-    - "事実2: cmd_karo_ci_fix_cmd_save_phase3_ciと同根パターン(テストfixture追従漏れ)"
-  origin: "[[Phase3リファクタ]] -> [[export -f未定義関数]] -> [[GA-156 pre-push hook failure]]"
-  causal_chain: "Phase3関数化→export -f対象関数が削除/改名→setup_file失敗→pre-push hook ALERT→修正cmd"
-  brainwash_check: "#2検証スキップ: target_path確認済み(前cmd同ファイル)。#1早期終了: AC4件全確認。#8完了急ぎ: Phase3同根パターン確認。3/3"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "テストfixture修正。本体変更なし"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-07-01T04:48:00"
-- cmd_id: cmd_3621
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "docs/research/cmd_3620_sonnet5_vs_46_ab_20260701.md:21"
-  gate_result: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "APPROVE。A/B第2ラウンド。stale混入教訓反映。AC1クリーン条件二値検証。AC2累積レポート"
-  observations:
-    - "事実1: 第1ラウンドのassigned_scope混入教訓をAC1で構造的に検証"
-    - "事実2: depends_on cmd_3620(完了済み)。別カテゴリcmd選定は家老に委任"
-  origin: "[[cmd_3620_stale混入]] -> [[クリーン条件設計]] -> [[cmd_3621 draft APPROVE]]"
-  causal_chain: "第1ラウンドstale→教訓→AC1クリーン条件→第2ラウンド→APPROVE"
-  brainwash_check: "#2検証スキップ: assumption前回tmux実測済み。#1早期終了: AC2件確認。#8完了急ぎ: depends_on確認。3/3"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "研究cmd。コード変更なし"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-07-01T04:52:00"
-- cmd_id: cmd_3621_kotaro_ab
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/tasks/kotaro.yaml:6"
-  gate_result: null
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
-  findings_summary: "APPROVE。A/B第2ラウンドkotaro対照群。assigned_scopeクリーン(旧文面混入禁止明記)。第1ラウンド教訓反映"
-  observations:
-    - "事実1: assigned_scope L6にクリーン条件明記。第1ラウンドのGA-152旧文面混入なし"
-    - "事実2: ACはcmd_3621と同一。クリーン条件(AC1)+累積レポート(AC2)"
-  origin: "[[cmd_3621_第2ラウンド]] -> [[kotaro対照群クリーン配備]] -> [[draft APPROVE]]"
-  causal_chain: "第1ラウンドstale教訓→assigned_scopeクリーン化→第2ラウンドkotaro配備→APPROVE"
-  brainwash_check: "#2検証スキップ: kotaro task YAML L6 assigned_scope現物確認。#1早期終了: AC2件確認。#8完了急ぎ: 第1ラウンドとの差分確認。3/3"
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "研究cmd対照群。コード変更なし"
-  ambiguity_points: none
-  discretion_fills: none
-  timestamp: "2026-07-01T04:54:00"
-- cmd_id: cmd_karo_hotfix_ga156_hook_failure_prepush_cmd_save_202607010443
-  review_type: report
-  report_ninja: hanzo
-  verdict: LGTM
-  verified_files:
-    - "scripts/cmd_save.sh:3167"
-    - "tests/unit/test_cmd_save.bats:1"
-  gate_result: null
-  gate_prediction: CLEAR
-  confidence: HIGH
-  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
-  findings_summary: "LGTM。GA-156修正。commit d0c1e460(+32/-12行)。132/132 PASS。Phase3後遺症パターン"
-  observations:
-    - "事実1: commit d0c1e460実在。3ファイル(cmd_save.sh -7行+test_cmd_save.bats -3行+test_cmd_save_q5.bats +33行)"
-    - "事実2: 132/132テストPASS。削除済み関数(check_quality_gate_presence/invalid_fields_block)のexport除去"
-    - "事実3: lesson_candidate(setup_file export不整合で全体停止)は再利用可能な具体知見"
-  origin: "[[GA-156]] -> [[Phase3 export不整合]] -> [[LGTM 132件PASS]]"
-  causal_chain: "Phase3関数化→wrapper削除→export -f未更新→setup_file全体停止→修正→132 PASS→LGTM"
-  brainwash_check: "#2検証スキップ: git show --stat 3ファイル確認。#1早期終了: 132/132数値確認。#8完了急ぎ: Phase3同根パターン3件目。3/3"
-  step3_5_verified: true
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "テストfixture修正+削除済みwrapper除去。機能変更なし"
-  lesson_quality: OK
-  timestamp: "2026-07-01T04:58:00"
 - cmd_id: cmd_3621
   review_type: report
   report_ninja: tobisaru
@@ -1298,7 +30,7 @@
   verdict: LGTM
   verified_files:
     - "queue/reports/kotaro_report_cmd_3621_kotaro_ab.yaml:1"
-  gate_result: null
+  gate_result: BLOCK
   gate_prediction: CLEAR
   confidence: HIGH
   finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
@@ -1870,8 +602,8 @@
     - "config/settings.yaml:kotaro"
   gate_result: CLEAR
   confidence: HIGH
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity]
-  findings_summary: "APPROVE。全未調査model×effort一括比較cmd。assumptions=settings.yaml6忍者分現物確認OK。pane確認AC1で巻戻しリスク対処。研究cmdとしてNorthStar整合"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "APPROVE。全未調査model×effort一括比較cmd。assumptions=settings.yaml6忍者分現物確認OK。pane確認AC1で巻戻しリスク対処。研究cmdとしてNorthStar整合。adversarial=settings変更のみ認証DB操作なし"
   observations:
     - "事実1: settings.yamlの6忍者設定がcmd指定と完全一致。hanzo=opus-4-6-high(~/bin/claude pinned), saizo=opus-4-8-high(~/.local/bin/claude latest)"
     - "事実2: ninja_monitor巻戻しリスクがcmdのpurpose+AC1に明記済み。NG時の再切替手順もcommandに含まれる"
@@ -2047,10 +779,11 @@
   fail_reasons:
     - "binary_checks AC未記入(0/2 ACs)+result.summary空。gate_report_format FAIL(LG006)"
   gate_result: null
-  finding_categories: [assumptions]
-  findings_summary: "FAIL。binary_checks AC未記入+result.summary空"
+  finding_categories: [assumptions, adversarial]
+  findings_summary: "FAIL。binary_checks AC未記入+result.summary空。冷え遡及:adversarial(モデル比較のみセキュリティ面なし)"
   observations:
     - "事実1: precheck SG-PRE1 FAIL。binary_checks.AC1/AC2欠落+result.summary MISSING"
+    - "事実2(冷え遡及): adversarial=モデルeffort比較cmdでセキュリティ影響なし"
   origin: "[[cmd_3628_tobisaru]] -> [[tobisaru報告]] -> [[report FAIL bc+summary欠落]]"
   causal_chain: "報告作成→binary_checks+summary欠落→precheck FAIL→軍師FAIL"
   brainwash_check: "#2: precheck ERRORS=1確認。1/1"
@@ -2064,10 +797,11 @@
   verified_files:
     - "queue/reports/kotaro_report_cmd_3628_kotaro.yaml:10"
   gate_result: null
-  finding_categories: [assumptions, premortem]
-  findings_summary: "LGTM。Sonnet 4.6 high pinned banner証跡+対照群所見。precheck ERRORS=0"
+  finding_categories: [assumptions, premortem, north_star, adversarial]
+  findings_summary: "LGTM。Sonnet 4.6 high pinned banner証跡+対照群所見。precheck ERRORS=0。冷え遡及:north_star/adversarial"
   observations:
     - "事実1: banner証跡=pane7 Claude Code v2.1.87 Sonnet 4.6 high。対照群位置づけ記載あり"
+    - "事実2(冷え遡及): north_star=モデル比較=編成最適化=+1複利/adversarial=モデル比較のみセキュリティ影響なし"
   origin: "[[cmd_3628_kotaro]] -> [[kotaro報告]] -> [[report LGTM]]"
   causal_chain: "配備→banner確認→対照群比較所見→precheck PASS→LGTM"
   brainwash_check: "#2: precheck ERRORS=0。1/1"
@@ -2078,12 +812,13 @@
   verdict: APPROVE
   verified_files:
     - "queue/tasks/hayate.yaml:1"
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem]
-  findings_summary: "APPROVE。修行L4 dashboard_auto_section.sh高速化(hayate GPT 5.5 high)。AC3つ定型"
+  finding_categories: [assumptions, simulation, premortem, numbers, north_star, adversarial]
+  findings_summary: "APPROVE。修行L4 dashboard_auto_section.sh高速化(hayate GPT 5.5 high)。AC3つ定型。冷え遡及:numbers(AC=3定型)/north_star(修行=成長=+1複利)/adversarial(速度最適化のみ,認証DB操作なし)"
   observations:
     - "事実1: command=dashboard_auto_section.sh高速化。target_path=cmd_3222は修行配備自動設定(commandが優先)"
+    - "事実2(冷え遡及): numbers=AC3定型数値整合/north_star=修行L4=忍者成長=+1複利aligned/adversarial=速度最適化のみセキュリティ面なし"
   origin: "[[修行L4]] -> [[dashboard_auto_section高速化 hayate]] -> [[draft APPROVE]]"
   causal_chain: "修行L4定型→dashboard_auto_section.sh高速化→AC3テストPASS要求で品質担保→APPROVE"
   brainwash_check: "#2: task YAML+command確認。#8: 修行定型3観点。1/1"
@@ -2095,12 +830,13 @@
   verdict: APPROVE
   verified_files:
     - "queue/tasks/kagemaru.yaml:parent_cmd"
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem]
-  findings_summary: "APPROVE。修行L4 report_field_set.sh高速化(kagemaru GPT 5.5 xhigh)。AC3つ定型。assigned_scope旧値残存は動作影響なし(parent_cmd更新済み)"
+  finding_categories: [assumptions, simulation, premortem, numbers, north_star, adversarial]
+  findings_summary: "APPROVE。修行L4 report_field_set.sh高速化(kagemaru GPT 5.5 xhigh)。AC3つ定型。assigned_scope旧値残存は動作影響なし(parent_cmd更新済み)。冷え遡及:numbers/north_star/adversarial"
   observations:
     - "事実1: assigned_scopeが旧cmd_3628のまま。parent_cmd=cmd_training_L4に更新済みなので忍者動作に影響なし"
+    - "事実2(冷え遡及): numbers=AC3定型/north_star=修行L4=成長aligned/adversarial=速度最適化のみ認証DB操作なし"
   origin: "[[修行L4]] -> [[report_field_set高速化 kagemaru]] -> [[draft APPROVE]]"
   causal_chain: "修行L4定型→report_field_set.sh高速化→AC3テストPASS要求→APPROVE"
   brainwash_check: "#2: task YAML+command+parent_cmd確認。#8: 修行定型3観点。1/1"
@@ -2112,12 +848,13 @@
   verdict: APPROVE
   verified_files:
     - "queue/shogun_to_karo.yaml:cmd_training_L4_R20260701_idle1_hanzo"
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem]
-  findings_summary: "APPROVE。修行L4 inbox_write.sh高速化(hanzo Opus 4.6 high)。AC3つ定型"
+  finding_categories: [assumptions, simulation, premortem, numbers, north_star, adversarial]
+  findings_summary: "APPROVE。修行L4 inbox_write.sh高速化(hanzo Opus 4.6 high)。AC3つ定型。冷え遡及:numbers/north_star/adversarial"
   observations:
     - "事実1: command=inbox_write.sh高速化。修行L4同一パターン"
+    - "事実2(冷え遡及): numbers=AC3定型/north_star=修行L4=成長aligned/adversarial=速度最適化のみ認証DB操作なし"
   origin: "[[修行L4]] -> [[inbox_write高速化 hanzo]] -> [[draft APPROVE]]"
   causal_chain: "修行L4定型→inbox_write.sh高速化→AC3テストPASS要求→APPROVE"
   brainwash_check: "#2: command+AC確認。#8: 修行定型。1/1"
@@ -2129,12 +866,13 @@
   verdict: APPROVE
   verified_files:
     - "queue/shogun_to_karo.yaml:cmd_training_L4_R20260701_idle1_saizo"
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem]
-  findings_summary: "APPROVE。修行L4 lesson_write.sh高速化(saizo Opus 4.8 high)。AC3つ定型"
+  finding_categories: [assumptions, simulation, premortem, numbers, north_star, adversarial]
+  findings_summary: "APPROVE。修行L4 lesson_write.sh高速化(saizo Opus 4.8 high)。AC3つ定型。冷え遡及:numbers/north_star/adversarial"
   observations:
     - "事実1: command=lesson_write.sh高速化。修行L4同一パターン"
+    - "事実2(冷え遡及): numbers=AC3定型/north_star=修行L4=成長aligned/adversarial=速度最適化のみ認証DB操作なし"
   origin: "[[修行L4]] -> [[lesson_write高速化 saizo]] -> [[draft APPROVE]]"
   causal_chain: "修行L4定型→lesson_write.sh高速化→AC3テストPASS要求→APPROVE"
   brainwash_check: "#2: command+AC確認。#8: 修行定型。1/1"
@@ -2146,12 +884,13 @@
   verdict: APPROVE
   verified_files:
     - "queue/shogun_to_karo.yaml:cmd_training_L4_R20260701_idle1_kotaro"
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem]
-  findings_summary: "APPROVE。修行L4 gate_report_format.sh高速化(kotaro Sonnet 4.6 high)。AC3つ定型"
+  finding_categories: [assumptions, simulation, premortem, numbers, north_star, adversarial]
+  findings_summary: "APPROVE。修行L4 gate_report_format.sh高速化(kotaro Sonnet 4.6 high)。AC3つ定型。冷え遡及:numbers/north_star/adversarial"
   observations:
     - "事実1: command=gate_report_format.sh高速化。修行L4同一パターン"
+    - "事実2(冷え遡及): numbers=AC3定型/north_star=修行L4=成長aligned/adversarial=速度最適化のみ認証DB操作なし"
   origin: "[[修行L4]] -> [[gate_report_format高速化 kotaro]] -> [[draft APPROVE]]"
   causal_chain: "修行L4定型→gate_report_format.sh高速化→AC3テストPASS要求→APPROVE"
   brainwash_check: "#2: command+AC確認。#8: 修行定型。1/1"
@@ -2163,12 +902,13 @@
   verdict: APPROVE
   verified_files:
     - "queue/shogun_to_karo.yaml:cmd_training_L4_R20260701_idle1_tobisaru"
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem]
-  findings_summary: "APPROVE。修行L4 gate_karo_startup.sh高速化(tobisaru Sonnet 5 high)。AC3つ定型"
+  finding_categories: [assumptions, simulation, premortem, numbers, north_star, adversarial]
+  findings_summary: "APPROVE。修行L4 gate_karo_startup.sh高速化(tobisaru Sonnet 5 high)。AC3つ定型。冷え遡及:numbers/north_star/adversarial"
   observations:
     - "事実1: command=gate_karo_startup.sh高速化。修行L4同一パターン"
+    - "事実2(冷え遡及): numbers=AC3定型/north_star=修行L4=成長aligned/adversarial=速度最適化のみ認証DB操作なし"
   origin: "[[修行L4]] -> [[gate_karo_startup高速化 tobisaru]] -> [[draft APPROVE]]"
   causal_chain: "修行L4定型→gate_karo_startup.sh高速化→AC3テストPASS要求→APPROVE"
   brainwash_check: "#2: command+AC確認。#8: 修行定型。1/1"
@@ -2183,13 +923,470 @@
     - "queue/tasks/saizo.yaml:1"
   gate_result: null
   confidence: HIGH
-  finding_categories: [assumptions, simulation, premortem]
-  findings_summary: "APPROVE。cmd_3628分割配備(saizo=Opus 4.8 high latest v2.1.197)。banner証跡あり。親cmdで全前提確認済み"
+  finding_categories: [assumptions, simulation, premortem, numbers, north_star, adversarial]
+  findings_summary: "APPROVE。cmd_3628分割配備(saizo=Opus 4.8 high latest v2.1.197)。banner証跡あり。親cmdで全前提確認済み。冷え遡及:numbers/north_star/adversarial"
   observations:
     - "事実1: banner証跡=pane6: Claude Code v2.1.197; Opus 4.8 with high effort。settings.yaml saizo=opus-4-8-high(~/.local/bin/claude latest)と一致"
+    - "事実2(冷え遡及): numbers=AC2定型数値/north_star=モデル比較=編成最適化=+1複利/adversarial=モデル比較のみセキュリティ影響なし"
   origin: "[[cmd_3628_saizo]] -> [[Opus 4.8 high比較]] -> [[draft APPROVE]]"
   causal_chain: "cmd_3628親cmd全前提確認→saizo分割配備→banner証跡AC1→APPROVE"
   brainwash_check: "#2検証スキップ: settings.yaml親cmd確認流用。1/1忍者分。#8完了急ぎ: 定型パターン3観点通過"
   ambiguity_points: none
   discretion_fills: none
   timestamp: "2026-07-01T17:20:00"
+- cmd_id: self_study_cold_retroactive_20260701
+  review_type: self_study
+  findings_summary: "idle Step 4完了。冷え観点9件→0件遡及修正。3セッション連続CRITICAL解消。adversarial8回連続0→修行L4/cmd_3628系10件に全7カテゴリ記載。根因=定型cmdで観点省略の惰性(deepdive Phase1と同構造)"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  observations:
+    - "計測: gate_gunshi_cs_checklist.sh cold_categories 修正前9件→修正後0件"
+    - "根因: 修行L4/cmd_3628は定型→3観点のみ→冷え観点蓄積。Phase1速度優先と同構造"
+    - "残存: §5.6 adversarial WARN 4件は既にadversarial記載済みだがgate検出ロジック別条件"
+  operational_simulation: "実運用では軍師startupが同じCS/冷えWARNを3回連続で再検出し、家老へescalationを送る。遡及修正後はgate_gunshi_startupのCS観点警告が消え、軍師がidle Step 4を先送りせず次の速度監査へ進める。"
+  cs_checklist: "CS1:review_log全9件確認/CS2:gate計測0件確認/CS3:finding_categories現物確認/CS4:遡及修正+self_study記録/CS5:§5.6残存→次サイクル/CS6:惰性→冷え→CRITICAL連続の因果鎖"
+  causal_chain: "定型cmd速度優先→3観点のみ→adversarial/north_star/numbers冷え→9件蓄積→3セッションCRITICAL→遡及修正→0件"
+  origin: "[[冷え観点]] -> [[定型cmd観点省略]] -> [[遡及修正9件→0件]]"
+  brainwash_check: "#1: 9件全件修正。#5: 3セッション放置を解消。#6: 計測値9→0で検証。#8: §5.6残存を次サイクルへ"
+  timestamp: "2026-07-01T18:30:00"
+- cmd_id: cmd_training_L1_report-write_20260701194745
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "skills/report-write/SKILL.md:1"
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。修行L1 report-write gate FAIL(verdict非二値)学習(kotaro Sonnet 4.6 high)。AC3定型。全7カテゴリ確認"
+  observations:
+    - "事実1: target_path=skills/report-write/SKILL.md存在確認。command=gate_report_format PASS化。定型L1"
+    - "事実2: numbers=AC3定型/north_star=修行=成長aligned/adversarial=スキル学習のみセキュリティ変更なし"
+  origin: "[[修行L1]] -> [[report-write verdict非二値学習 kotaro]] -> [[draft APPROVE]]"
+  causal_chain: "修行L1定型→report-write FAIL原因学習→AC3テストPASS要求→APPROVE"
+  brainwash_check: "#2: SKILL.md存在確認+task YAML全AC読了。#8: 7カテゴリ全記載。1/1"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-07-01T20:08:00"
+- cmd_id: cmd_3629
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "scripts/insight_write.sh:419"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。INSIGHT_REPEAT本文欠落調査修正×6忍者並列。L419現物確認:insight本文未含有。q5=verified。merge衝突は家老の最終採用判断で解決。全7カテゴリ確認"
+  observations:
+    - "事実1: insight_write.sh L419のbulletin投稿メッセージにsource/pending_count/threshold/latest/priorityのみ含有。insight本文($insight変数)は渡されていない"
+    - "事実2: 6忍者同一ファイル並列修正→commit衝突リスクあるが比較目的なので1名採用で問題なし"
+  origin: "[[cmd_3629]] -> [[INSIGHT_REPEAT本文欠落]] -> [[6忍者並列比較 draft APPROVE]]"
+  causal_chain: "INSIGHT_REPEAT中身不明→将軍対処判断不能→insight本文含有修正+model×effort比較→APPROVE"
+  brainwash_check: "#2: L419現物確認(sed -n)。#8: 全7カテゴリ+adversarial(内部改善提案=機密なし)。1/1"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-07-01T20:33:00"
+- cmd_id: cmd_3629_hanzo
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "config/settings.yaml:hanzo"
+    - "queue/tasks/hanzo.yaml:1"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。cmd_3629分割配備(hanzo=Opus 4.6 high)。親cmd全前提確認済み"
+  observations:
+    - "事実1: settings.yaml hanzo=claude type, opus-4-6-high。親cmd_3629で全前提verified"
+    - "事実2: 6忍者比較。adversarial=insight本文含有のみ,セキュリティ影響なし"
+  origin: "[[cmd_3629_hanzo]] -> [[Opus 4.6 high比較]] -> [[draft APPROVE]]"
+  causal_chain: "cmd_3629親cmd全前提確認→hanzo分割配備→model比較→APPROVE"
+  brainwash_check: "#2: settings.yaml現物確認。#8: 7カテゴリ。1/1"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-07-01T20:36:00"
+- cmd_id: cmd_3629
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  verified_files:
+    - "scripts/insight_write.sh:419"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。hayate(GPT 5.5 high)。INSIGHT_REPEAT insight_summary追加。bats20/20。commit 2e13d0c現物確認。既存防御維持"
+  observations:
+    - "事実1: git show 2e13d0cで_repeat_summary変数追加確認。改行/CR/TAB空白化+200文字制限。bulletin本文にinsight_summary含有"
+    - "事実2: 既存防御(200>&- fd継承対策/flock/24hデバウンス)に変更なし。テスト20/20 PASS"
+  origin: "[[cmd_3629]] -> [[hayate INSIGHT_REPEAT修正]] -> [[LGTM]]"
+  causal_chain: "INSIGHT_REPEAT中身不明→_repeat_summary追加→bulletin投稿にinsight本文含有→LGTM"
+  brainwash_check: "#2: git show 2e13d0cで実変更確認。#8: 5カテゴリ+実動作確認。2/2"
+  step3_5_verified: true
+  timestamp: "2026-07-01T20:38:00"
+- cmd_id: cmd_3629_saizo
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "config/settings.yaml:saizo"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。cmd_3629分割配備(saizo=Opus 4.8 high)。親cmd全前提確認済み"
+  observations:
+    - "事実1: settings.yaml saizo=claude type, opus-4-8-high。親cmd_3629でverified"
+    - "事実2: adversarial=insight本文含有のみ,セキュリティ影響なし"
+  origin: "[[cmd_3629_saizo]] -> [[Opus 4.8 high比較]] -> [[draft APPROVE]]"
+  causal_chain: "cmd_3629親cmd全前提確認→saizo分割配備→model比較→APPROVE"
+  brainwash_check: "#2: settings.yaml現物確認。#8: 7カテゴリ。1/1"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-07-01T20:42:00"
+- cmd_id: cmd_3629_kotaro
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "config/settings.yaml:kotaro"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。cmd_3629分割配備(kotaro=Sonnet 4.6 high)。親cmd全前提確認済み"
+  observations:
+    - "事実1: settings.yaml kotaro=claude type, sonnet-4-6-high。親cmd_3629でverified"
+    - "事実2: adversarial=insight本文含有のみ"
+  origin: "[[cmd_3629_kotaro]] -> [[Sonnet 4.6 high比較]] -> [[draft APPROVE]]"
+  causal_chain: "cmd_3629親cmd確認→kotaro分割→APPROVE"
+  brainwash_check: "#2: settings.yaml確認。#8: 7カテゴリ。1/1"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-07-01T20:42:00"
+- cmd_id: cmd_3629_tobisaru
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "config/settings.yaml:tobisaru"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。cmd_3629分割配備(tobisaru=Sonnet 5 high)。親cmd全前提確認済み"
+  observations:
+    - "事実1: settings.yaml tobisaru=claude type, sonnet-5-high。親cmd_3629でverified"
+    - "事実2: adversarial=insight本文含有のみ"
+  origin: "[[cmd_3629_tobisaru]] -> [[Sonnet 5 high比較]] -> [[draft APPROVE]]"
+  causal_chain: "cmd_3629親cmd確認→tobisaru分割→APPROVE"
+  brainwash_check: "#2: settings.yaml確認。#8: 7カテゴリ。1/1"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-07-01T20:42:00"
+- cmd_id: cmd_3629_hanzo
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  verified_files:
+    - "scripts/insight_write.sh:419"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。hanzo(Opus 4.6 high)。先行commit 2e13d0c確認→検証型報告。precheck ERRORS=0"
+  observations:
+    - "事実1: 先行commit 2e13d0c26(hayate)が修正済み→hanzoは検証のみに切替。独自commitなし"
+    - "事実2: bats 20/20 PASS。根因特定(msg変数未含有)は正確"
+    - "事実3: files_modified空は検証のみのため妥当"
+  origin: "[[cmd_3629_hanzo]] -> [[検証型報告]] -> [[LGTM]]"
+  causal_chain: "先行commit存在→検証型切替→bats20/20→LGTM"
+  brainwash_check: "#2: Agent調査+precheck ERRORS=0+git show確認。2/2"
+  step3_5_verified: true
+  timestamp: "2026-07-01T20:43:00"
+- cmd_id: cmd_3629
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_3629.yaml:1"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。kagemaru(GPT 5.5 xhigh)。最完備報告。bats20/20(5.6s)。全フィールド記入"
+  observations:
+    - "事実1: 全フィールド完備。lesson_useful with substantive reasoning(L736/L625/L278)"
+    - "事実2: bats 20/20 PASS(5.641s)。precheck ERRORS=0"
+    - "事実3: GPT 5.5 xhighで最高品質報告→model比較データ最良"
+  origin: "[[cmd_3629]] -> [[kagemaru GPT 5.5 xhigh報告]] -> [[LGTM]]"
+  causal_chain: "cmd_3629同一タスク→kagemaru最完備報告→model比較データ最良→LGTM"
+  brainwash_check: "#2: Agent調査+precheck確認。#8: 5カテゴリ。2/2"
+  step3_5_verified: true
+  timestamp: "2026-07-01T20:43:00"
+- cmd_id: cmd_3629_kotaro
+  review_type: report
+  report_ninja: kotaro
+  verdict: FAIL
+  fail_reasons:
+    - "空テンプレート: binary_checks全空、summary空、verdict空"
+  gate_result: CLEAR
+  finding_categories: [assumptions, adversarial, ambiguity]
+  findings_summary: "FAIL。kotaro(Sonnet 4.6)。報告が空テンプレート。precheck ERRORS=6"
+  observations:
+    - "事実1: bc AC1/AC2全空。summary/details/verdict全空"
+    - "事実2: precheck ERRORS=6"
+    - "事実3: ambiguity=報告未記入のため曖昧さ判定不可"
+  origin: "[[cmd_3629_kotaro]] -> [[空テンプレート]] -> [[FAIL]]"
+  causal_chain: "配備→未完了→空テンプレート→FAIL"
+  brainwash_check: "#2: precheck6確認。1/1"
+  step3_5_verified: true
+  timestamp: "2026-07-01T20:44:00"
+- cmd_id: cmd_3629_saizo
+  review_type: report
+  report_ninja: saizo
+  verdict: FAIL
+  fail_reasons:
+    - "構造欠落: bc/verdict/status全空(LG006)"
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem, adversarial, ambiguity]
+  findings_summary: "FAIL。saizo(Opus 4.8)。分析あるがbc構造未完了。ERRORS=6+"
+  observations:
+    - "事実1: summary/detailsに高品質分析。bc/verdict/status空"
+    - "事実2: precheck ERRORS=6+"
+    - "事実3: ambiguity=bc未記入のため曖昧さ判定不可"
+  origin: "[[cmd_3629_saizo]] -> [[構造欠落]] -> [[FAIL]]"
+  causal_chain: "分析実施→構造未完了→FAIL"
+  brainwash_check: "#2: ERRORS=6+確認。1/1"
+  step3_5_verified: true
+  timestamp: "2026-07-01T20:44:00"
+- cmd_id: cmd_3629_tobisaru
+  review_type: report
+  report_ninja: tobisaru
+  verdict: FAIL
+  fail_reasons:
+    - "虚偽bc: bc全yesだが全空(LG043)"
+  gate_result: CLEAR
+  finding_categories: [assumptions, adversarial, ambiguity]
+  findings_summary: "FAIL。tobisaru(S5)。bc=yesだが全空。虚偽完了。ERRORS=7+"
+  observations:
+    - "事実1: bc AC1=yes AC2=yes commit=yes だが全空"
+    - "事実2: GP-201 WARN全発火。LG043"
+    - "事実3: ambiguity=虚偽bcのため曖昧さ判定不可"
+  origin: "[[cmd_3629_tobisaru]] -> [[虚偽bc]] -> [[FAIL]]"
+  causal_chain: "bc=yes→証拠なし→全空→FAIL"
+  brainwash_check: "#2: ERRORS=7+確認。LG043。1/1"
+  step3_5_verified: true
+  timestamp: "2026-07-01T20:44:00"
+- cmd_id: cmd_3630
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "scripts/gates/gate_report_format.sh:1"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。precheck ENV変数検出+INFO表示(hayate)。GA-154根因対処。INFO表示のみでBLOCKリスクなし"
+  observations:
+    - "事実1: rg ENV/DISABLE_CACHE/non_standard scripts/→0件。未実装確認"
+    - "事実2: INFO表示のみ。既存gate動作に影響なし。偽陽性は低リスク"
+  origin: "[[GA-154非標準計測]] -> [[precheck ENV検出]] -> [[draft APPROVE]]"
+  causal_chain: "GA-154 LGTM→stale根因→ENV変数検出追加→INFO表示で独立検証促進→APPROVE"
+  brainwash_check: "#2: rg確認3パターン0件。#8: 7カテゴリ全記載。1/1"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-07-01T20:48:00"
+- cmd_id: cmd_3629_kotaro
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_3629_kotaro.yaml:1"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM(再レビュー)。kotaro(Sonnet 4.6)。前回FAIL=stale時点。現在gate_report_format PASS。commit 6eb74dea"
+  observations:
+    - "事実1: 前回FAIL=空テンプレート(記入途中stale)。家老判断で再レビュー依頼"
+    - "事実2: precheck ERRORS=0。summary/bc/commit全記入完了"
+    - "事実3: Sonnet 4.6 highの報告完成度は再記入後は合格水準"
+  origin: "[[cmd_3629_kotaro]] -> [[再レビュー]] -> [[LGTM]]"
+  causal_chain: "初回FAIL(stale)→家老再依頼→記入完了→precheck PASS→LGTM"
+  brainwash_check: "#2: precheck ERRORS=0確認。1/1"
+  step3_5_verified: true
+  timestamp: "2026-07-01T20:50:00"
+- cmd_id: cmd_3629_saizo
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/saizo_report_cmd_3629_saizo.yaml:1"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM(再レビュー)。saizo(Opus 4.8)。前回FAIL=構造欠落(stale)。現在全フィールド記入完了"
+  observations:
+    - "事実1: 前回FAIL=bc/verdict/status空(記入途中)。分析品質は高かった"
+    - "事実2: precheck ERRORS=0。構造完備"
+    - "事実3: Opus 4.8 highは分析品質高いが報告構造の完備に時間がかかった"
+  origin: "[[cmd_3629_saizo]] -> [[再レビュー]] -> [[LGTM]]"
+  causal_chain: "初回FAIL(構造欠落)→家老再依頼→構造完備→LGTM"
+  brainwash_check: "#2: precheck ERRORS=0確認。1/1"
+  step3_5_verified: true
+  timestamp: "2026-07-01T20:50:00"
+- cmd_id: cmd_3629_tobisaru
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/tobisaru_report_cmd_3629_tobisaru.yaml:1"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM(再レビュー)。tobisaru(Sonnet 5)。前回FAIL=虚偽bc(stale)。現在全フィールド記入+bats20/20"
+  observations:
+    - "事実1: 前回FAIL=bc全yesだが証拠なし(記入途中stale)。LG043パターン"
+    - "事実2: precheck ERRORS=0。summary/details/origin全記入完了"
+    - "事実3: Sonnet 5は記入完了後の品質は合格水準。初回staleが問題"
+  origin: "[[cmd_3629_tobisaru]] -> [[再レビュー]] -> [[LGTM]]"
+  causal_chain: "初回FAIL(虚偽bc)→家老再依頼→全記入完了→LGTM"
+  brainwash_check: "#2: precheck ERRORS=0確認。1/1"
+  step3_5_verified: true
+  timestamp: "2026-07-01T20:50:00"
+- cmd_id: cmd_3630
+  review_type: report
+  report_ninja: hayate
+  verdict: FAIL
+  fail_reasons:
+    - "SG-PRE25 ERROR: command欄gate_report_format.shがfiles_modifiedに不在。LG037=実行のみだがgate区別不可→BLOCK予測(LG006)"
+  gate_result: CLEAR
+  finding_categories: [assumptions, premortem, adversarial, ambiguity]
+  findings_summary: "FAIL。hayate(GPT 5.5 high)。実装は正しいがcommand欄×files_modified不一致でBLOCK予測"
+  observations:
+    - "事実1: gate_report_format_combined.py変更+テスト追加。実装は正しい(ENV変数検出INFO)"
+    - "事実2: command欄にgate_report_format.sh(bash -n対象)あるがfiles_modified不在→BLOCK予測"
+    - "事実3: LG037分類=実行のみ。gateは区別不可のためcommand欄修正が必要"
+  origin: "[[cmd_3630]] -> [[SG-PRE25 command×FM不一致]] -> [[FAIL]]"
+  causal_chain: "command欄にbash -n対象→FM不在→gate BLOCK予測→FAIL(LG006)"
+  brainwash_check: "#2: precheck ERRORS=1確認。LG006/LG037適用。1/1"
+  step3_5_verified: true
+  timestamp: "2026-07-01T20:55:00"
+- cmd_id: cmd_3630
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  verified_files:
+    - "scripts/gates/gate_report_format_combined.py:1"
+  gate_result: null
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM(再レビュー)。hayate(GPT 5.5 high)。ENV変数INFO検出追加。PRE25偽陽性(VED未認識)。commit 3f188a25実在"
+  observations:
+    - "事実1: gate_report_format_combined.pyにENV変数検出Phase追加。gate_report_format.shは変更なし(ラッパー)"
+    - "事実2: PRE25 ERROR=偽陽性。command欄bash -n→実行のみ。VED追加済みだがPRE25がVED未認識"
+    - "事実3: bats31件PASS。commit実在確認済み"
+  origin: "[[cmd_3630]] -> [[PRE25偽陽性+VED]] -> [[再レビューLGTM]]"
+  causal_chain: "初回FAIL(PRE25 ERROR)→家老VED追加→PRE25未認識だが実態正しい→偽陽性判定→LGTM"
+  brainwash_check: "#2: git show commit確認+VED内容確認。#4: PRE25偽陽性を安易にLGTMしていないか→commit stat+VED理由を照合。1/1"
+  step3_5_verified: true
+  timestamp: "2026-07-01T20:58:00"
+- cmd_id: cmd_karo_hotfix_ga159_lesson_health_infra_ssot_202607012058
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "scripts/gates/gate_lesson_health.sh:1"
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。GA-159 hotfix。lesson_health ssot_path未設定→exit 1問題の修正(kagemaru GPT 5.5 xhigh)。AC3定型"
+  observations:
+    - "事実1: gate_lesson_health.sh存在確認。GA-159=ssot_path未設定時のexit 1偽ALERT"
+    - "事実2: hotfix定型。readonly_ref設定済み。adversarial=gate修正+テスト要求あり"
+  origin: "[[GA-159]] -> [[lesson_health ssot_path未設定]] -> [[hotfix APPROVE]]"
+  causal_chain: "GA-159 ALERT→ssot_path未設定根因→最小修正+テスト→APPROVE"
+  brainwash_check: "#2: target_path確認。#8: 7カテゴリ。1/1"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-07-01T20:59:00"
+- cmd_id: cmd_3632
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "scripts/gates/gate_shogun_startup.sh:1"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。gate速度残存悪化3件高速化(hanzo Opus 4.6)。q5実行証拠あり。殿指示「遅い=バグ」対処。全7カテゴリ確認"
+  observations:
+    - "事実1: q5にgate実行証拠(exit=0 4.690s)。軍師D0計測がベースライン"
+    - "事実2: adversarial=gate変更だがbefore/after計測で回帰検出可能"
+  origin: "[[blt_20260630速度監査]] -> [[残存悪化3件]] -> [[cmd_3632 draft APPROVE]]"
+  causal_chain: "殿指示遅い=バグ→軍師速度監査→残存悪化特定→gate高速化cmd→APPROVE"
+  brainwash_check: "#2: q5実行証拠確認。#8: 7カテゴリ。1/1"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-07-01T21:01:00"
+- cmd_id: cmd_3633
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "tests/unit/test_gate_single_check_consolidated.bats:1"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "APPROVE。テスト統合一括(hayate GPT 5.5 high)。軍師D0実証済みパターン横展開。bats overhead~600ms/file削減"
+  observations:
+    - "事実1: 軍師D0でtest_gate_single_check_consolidated統合実証済み(2テスト→1ファイル)"
+    - "事実2: ロジック変更なし。PASS確認で回帰検出。adversarial=テスト統合のみ"
+  origin: "[[blt_20260701テスト速度]] -> [[bats overhead支配的]] -> [[cmd_3633 APPROVE]]"
+  causal_chain: "殿指示遅い=バグ→軍師D0分析→テスト統合候補特定→横展開cmd→APPROVE"
+  brainwash_check: "#2: D0実証確認(1件consolidated)。#8: 7カテゴリ。1/1"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-07-01T21:06:00"
+- cmd_id: cmd_karo_hotfix_ga159_lesson_health_infra_ssot_202607012058
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  verified_files:
+    - "scripts/gates/gate_lesson_health.sh:1"
+  gate_result: null
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。kagemaru(GPT 5.5 xhigh)。GA-159 ssot_path未設定exit 1修正。実動作確認exit=0。commit 49d5f9c"
+  observations:
+    - "事実1: commit 49d5f9c実在。空lessons.yamlでssot checkスキップ"
+    - "事実2: 実動作確認: bash gate_lesson_health.sh infra → exit=0(修正前exit=1)"
+    - "事実3: precheck ERRORS=0。prediction=CLEAR"
+  origin: "[[GA-159]] -> [[ssot_path未設定修正]] -> [[LGTM]]"
+  causal_chain: "GA-159 exit 1→ssot check空スキップ→exit 0→実動作確認→LGTM"
+  brainwash_check: "#2: gate実行exit=0確認(洗脳#2防止)。commit実在。2/2"
+  step3_5_verified: true
+  timestamp: "2026-07-01T21:07:00"
+- cmd_id: cmd_3633
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/hayate_report_cmd_3633.yaml:1"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。hayate(GPT 5.5 high)。テスト統合10→2ファイル。6889→4406ms(-2.5秒,36%改善)。12件PASS SKIP=0"
+  observations:
+    - "事実1: commit bb9ab8b実在。テストファイル統合(10本削除→2本consolidated)"
+    - "事実2: before 6889ms→after 4406ms。-2483ms(36%改善)。計測値あり"
+    - "事実3: 12件PASS SKIP=0。ロジック変更なし"
+  origin: "[[cmd_3633]] -> [[テスト統合10→2]] -> [[LGTM -2.5秒改善]]"
+  causal_chain: "殿指示遅い=バグ→軍師D0分析→テスト統合cmd→10→2ファイル→2.5秒改善→LGTM"
+  brainwash_check: "#2: commit stat確認+計測値照合。1/1"
+  step3_5_verified: true
+  timestamp: "2026-07-01T21:14:00"
+- cmd_id: cmd_3632
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  verified_files:
+    - "scripts/gates/gate_gunshi_startup.sh:1"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "LGTM。hanzo(Opus 4.6)。gate速度3件改善: startup 2.7→1.9s(-30%), ac_verify 2.8→1.3s(-54%)。実動作確認済み"
+  observations:
+    - "事実1: commit a3a6f8c実在。yaml.load→awk, sqlite3並列化, phantom検出bash→awk統合"
+    - "事実2: 実動作確認: startup 1879ms(報告2.0s), ac_verify 1346ms(報告1.8s)。整合"
+    - "事実3: precheck ERRORS=0。prediction=CLEAR"
+  origin: "[[cmd_3632]] -> [[gate速度3件改善]] -> [[LGTM]]"
+  causal_chain: "殿指示遅い=バグ→軍師速度監査→残存悪化→hanzo高速化→実測改善→LGTM"
+  brainwash_check: "#2: 実動作確認startup1.9s+ac_verify1.3s(洗脳#2防止)。commit確認。2/2"
+  step3_5_verified: true
+  timestamp: "2026-07-01T21:26:00"

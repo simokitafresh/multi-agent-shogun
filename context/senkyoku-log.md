@@ -1329,3 +1329,5 @@
 - 2026-06-30 cmd_3616: 設計思想カタログPhase5として`cmd_save.sh` WARN/BLOCKのcheck名ログとGuard 12bカタログ同期WARNを実装。半蔵commit `75cef2ccb`、bats 59/59 PASS、軍師LGTM、GATE CLEAR。
 - 2026-06-30 cmd_karo_ci_fix_prev_cmd_gate_202606301629: cmd_3614関数化後の`test_cmd_save_prev_cmd_gate.bats`旧mock追従漏れを半蔵が修正。commit `94dfef65e`、対象bats 7/7 PASS、L884登録、GATE CLEAR。
 - 2026-06-30 cmd_karo_ci_fix_diagnosis_trigger_map_202606301658: cmd_3614関数化後の`test_cmd_save_diagnosis_quality.bats`旧check名期待値を才蔵が修正。commit `c360719b3`、全13テストPASS、GATE CLEAR。
+- 2026-07-01 cmd_3633: テスト小型ファイル10本を2本へ統合。疾風commit `bb9ab8b35`、対象12件PASS/SKIP=0、6889ms→4406ms(-2483ms)。軍師LGTM、GATE CLEAR、dashboard/ntfy完了。
+- 2026-07-01 cmd_3632: gate速度残存悪化3件を半蔵が高速化。commit `a3a6f8c53`、ac_physical_verify 2.8s→1.8s、gate_gunshi_startup 3.8s→2.0s、gate_lesson_health 2.4s→0.7s。軍師LGTM、GATE CLEAR、研究ログ還流・dashboard/ntfy完了。

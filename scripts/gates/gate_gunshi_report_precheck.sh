@@ -332,13 +332,17 @@ echo ""
 echo "■ SG-PRE13: hook/gate大規模削減検出"
 if [ -n "${FILES_MODIFIED:-}" ]; then
     HOOK_GATE_WARN=0
+    # §speed最適化(2026-07-01 gunshi-D0): git log --grep をper-fileループ外で1回だけ実行。
+    # 従来はhook/gateファイルごとにgit log(全履歴grep走査~2s/回)を呼びN倍遅延(cmd_3632で2gate×2s=4s実測)。
+    # 全ファイル分のnumstatを1回取得→ループ内はawkでfpath該当行を抽出集計(挙動同一・等価性検証済み)。
+    _pre13_numstat=$( { timeout 3 git -C "$REPO_ROOT" log --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true; } )
     while IFS= read -r fpath; do
         case "$fpath" in
             *.claude/hooks/*|*scripts/hooks/*|*scripts/gates/*)
-                # git diff --statで変更規模を確認 (1回のgit log で added+deleted を同時取得)
+                # ループ外取得済みのnumstatからfpath該当分を抽出(per-file git log廃止)
                 read -r added deleted < <(
-                    { timeout 2 git -C "$REPO_ROOT" log --grep="${PARENT_CMD}" --format="" --numstat -- "$fpath" 2>/dev/null || true; } | \
-                    awk '{a+=$1; d+=$2} END{print a+0, d+0}'
+                    printf '%s\n' "$_pre13_numstat" | \
+                    awk -v f="$fpath" '$3==f {a+=$1; d+=$2} END{print a+0, d+0}'
                 )
                 if [ "$deleted" -gt 0 ]; then
                     total_before=$((added + deleted))  # 近似: 追加+削除≈変更前行数

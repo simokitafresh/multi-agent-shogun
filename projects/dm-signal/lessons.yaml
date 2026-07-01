@@ -39,7 +39,7 @@ lessons:
   origin: '[[cmd_3586]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-07-01'
 - id: L790
   title: Compare ReturnsのMTD高速化はpreliminary FoF展開も同じcacheに載せる
   summary: MTD本体をbatch化しても、preliminary OPEN値だけ旧helperを呼ぶとFoF再帰展開でN+1 SQLが残り実DBで30秒超になる。batc
@@ -98,7 +98,7 @@ lessons:
   origin: '[[Compare Returnsページ新設レビュー2回目]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-06-30'
 - id: L787
   title: Compare Returnsの完了月判定は current_ym 除外で固定する
   summary: '`MonthlyReturn` と `TickerMonthlyReturn` は現行ETLで当月MTD行を保持し得る。テーブル末尾を完了月とみなすとMTDが1'
@@ -926,7 +926,7 @@ lessons:
   origin: '[[cmd_3346]] -> [[deep_diff数値乖離(JSON total=60 vs 報告0)]] -> [[AC1誤判定FAIL→修正後PASS]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-24'
+  last_referenced: '2026-07-01'
 - id: L735
   title: 履歴分割任務はdirty本線で直接rewriteせず隔離worktree成果branchを明示する
   summary: 共有workspaceがdirtyな状態で対象コミットを分割再コミットする場合、本線branchの強制差し替えは他者変更破壊リスクがある。隔離worktreeで
@@ -1413,6 +1413,9 @@ lessons:
   target_files:
   - backend/app/jobs/
   origin: '[[cmd_2452]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-30'
 - id: L702
   title: FoF表示UUID漏れはFEキャッシュだけでなくAPI display fallbackも検証する
   summary: Monthly TradeのFoF pending行はexpanded_tickersが空だとSignal.signalの構成PF UUIDをそのまま返していた
@@ -2264,6 +2267,9 @@ lessons:
   target_files:
   - 偵察のみ
   origin: '[[cmd_2261]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-30'
 - id: L647
   title: monthly_returns_genがFoF数増加に対し非線形増大する
   summary: FoF数が59→109体に増加(+85%)すると、monthly_returns_genが49.02s→240.6s(+391%)と非線形に増大し、全体比率も2
@@ -2332,6 +2338,9 @@ lessons:
   - outputs/analysis/alm_l1_ninpo/cmd_2218_alm_body_summary.csv
   - outputs/analysis/alm_l1_ninpo/cmd_2218_alm_top_stability_detail.csv
   origin: '[[cmd_2218]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-30'
 - id: L642
   title: champion_selectorはcmd_id直後にninjutsu名が来る現行GS成果物命名もglob対象に含めよ
   summary: cmd_2177で champion_selector.py が cmd_2175_bunshin_wf_alm12_monthly_fast.cache.ar
@@ -2452,7 +2461,7 @@ lessons:
   origin: '[[cmd_2016]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-29'
+  last_referenced: '2026-07-01'
 - id: L633
   title: monthly専用GS serial pathはprecomputed union maskを再利用せよ
   summary: 四つ目(yotsume)のように monthly-only かつ precomputed union mask が既にあるGSでは、serial
@@ -2471,7 +2480,7 @@ lessons:
   origin: '[[cmd_1988]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-07-01'
 - id: L632
   title: snapshot比較器は保存していない字段を比較対象に含めるな
   summary: snapshot_recalc_results.py が monthly_returns.holding_signal を保存していないのに
@@ -2606,7 +2615,7 @@ lessons:
   origin: '[[cmd_1877]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-28'
+  last_referenced: '2026-07-01'
 - id: L624
   title: 道具の全引数(--output-prefix等)をcmdに明記せよ — デフォルト依存はprefix不統一の原因
   summary: GS実行cmdで--output-prefixを省略するとデフォルト命名が使われ、cmd間でprefix不統一が発生する。全引数を明示的にcmdに記載してデフォ
@@ -2845,7 +2854,7 @@ lessons:
   origin: '[[cmd_1856]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-29'
+  last_referenced: '2026-07-01'
 - id: L608
   title: 進行中月パリティ差異は構造的問題
   summary: GS作成日と本番recalculate日の差によりmonthly_returnが当月のみ不一致。cmd_1855実証diff=0.0172。完了月150は全一致
@@ -2891,6 +2900,9 @@ lessons:
   - outputs/analysis/alm_research/cmd_1856_regression_l1_wf_selection_timeline.csv
   - outputs/analysis/alm_research/cmd_1856_regression_l1_wf_validation.yaml
   origin: '[[cmd_1856]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L605
   title: 'CAGRチャンピオン系は構造的に過適合リスクが高い: 全忍法でMEDIUM以上、NHF/MaxDD系は全てLOW'
   summary: '近傍分析結果: CAGRチャンピオン(激攻)は7忍法中5体がMEDIUM以上(oikaze15.3pp/kawarimi15.7pp/nukimi18.7pp/'
@@ -3106,6 +3118,9 @@ lessons:
   target_files:
   - outputs/scripts/l1_alm_wf_engine.py
   origin: '[[cmd_1827]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-30'
 - id: L590
   title: tracemalloc≠RSS — メモリ目標はRSS(/usr/bin/time -v)で設定せよ
   summary: tracemallocはPythonヒープのみ。RSS差=850MB(Pythonランタイム+.so+GC)。cmd_1828でAC3 FAIL(1.394GB
@@ -3662,7 +3677,7 @@ lessons:
   origin: '[[cmd_karo_batch_R7]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-07-01'
 - id: L550
   title: 実データbatch parityではbenchmark共通を仮定するな
   summary: 65PF batch rolling計算で全PFに同一benchmarkを仮定→14 PFグループで異なるbenchmark→parity FAIL。PFごとの
@@ -3689,7 +3704,7 @@ lessons:
   retired: true
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-24'
+  last_referenced: '2026-06-29'
 - id: L548
   title: bulk metrics RFはPFごとの月次軸で解決せよ
   summary: DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。
@@ -3848,6 +3863,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '対策: commit確認はgit status(未commit変更なし)に加えてgit log直近commitのハッシュ+内容確認をセットで行う'
   origin: '[[cmd_1693]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-30'
 - id: L535
   title: 補完cmd対の前処理条件不一致 — 先行cmdの独自置換が後続cmdに波及
   summary: cmd_1681(才蔵)がEMA_span21→Kalman(auto)に独自置換。cmd_1684(小太郎)はcmd仕様通りEMA_span21を使用。結果テ
@@ -3949,7 +3967,7 @@ lessons:
   origin: '[[cmd_1608]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-07-01'
 - id: L528
   title: Windows環境YAMLファイル読み書きにはencoding=utf-8が必須
   summary: r29b_is_sensitivity.pyのYAML読み込みでcp932デコードエラー発生。Windows環境ではopen()にencoding=utf-8を
@@ -4015,6 +4033,9 @@ lessons:
   - outputs/analysis/nested_fof/r28_k_beta_decomposition.yaml
   - scripts/analysis/nested_fof/r28_k_beta_decomposition.py
   origin: '[[cmd_1597]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L523
   title: overlapping-window mechanical correlation trap
   summary: トレーリングLBヶ月momentum同士の残留確率テストは、LB>1でoverlapping windowにより機械的相関が発生しt統計量が桁違いに膨れる(LB
@@ -4024,6 +4045,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 初版スクリプトでこの罠にハマり修正した
   origin: '[[cmd_1594]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L522
   title: Sortino選出はlow-β PFを選びα成分が2.4倍。選出指標がβプロファイルを構造的に決定する
   summary: momentum選出はIS期間の累積リターンが高いPF=高βPFを選びやすい(avg β=1.11,76.3%がβ>1)。結果α share=4.2%。Sort
@@ -4118,6 +4142,9 @@ lessons:
   - outputs/analysis/nested_fof/r29b_shin_wf_oos_results.yaml
   - scripts/analysis/nested_fof/r29b_shin_walk_forward_oos.py
   origin: '[[cmd_1585]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-30'
 - id: L515
   title: download_prod_data.pyのAPIフィールド名とコードの不整合
   summary: download_prices()がrelative_momentum_tickers/absolute_momentum_ticker等の存在しないフィールド
@@ -4532,7 +4559,7 @@ lessons:
   origin: '[[cmd_1345]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-07-01'
 - id: L485
   title: FoF初月hs_cross不一致は全FoF共通パターン
   summary: verify_fof_parity_batch.pyのhs_cross_checkで全FoFの最初月がFAILする。monthly_returns.holdin
@@ -4780,6 +4807,9 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-22'
   origin: '[[cmd_1234]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L465
   title: 'SelectionBlock set→list非決定性: タイ存在時にPYTHONHASHSEED依存で結果変動'
   summary: 全SelectionBlockでtickers=list(context.current_tickers)を使用。setの反復順序はPYTHONHASHSEED
@@ -4902,6 +4932,9 @@ lessons:
   - scripts/analysis/grid_search/cmd_1200_kasoku_diff_runner.py
   - scripts/analysis/grid_search/run_077_kasoku.py
   origin: '[[cmd_1200]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L457
   title: oikaze serial/batch md5不一致(PE移行時fill_value差異)
   summary: simulate_patternのみPE化後simulate_batchとのfill_value=0.0差異でmd5不一致→CSV中止。全7本PE移行完了後にs
@@ -5052,6 +5085,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_monban.py
   - scripts/analysis/grid_search/run_077_nukimi.py
   origin: '[[cmd_1199]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-30'
 - id: L448
   title: run_077各本が独自simulate_patternを使いPI-009チェックを迂回
   summary: run_077各本は独自simulate_patternを持ちgrid_search_metrics_v2のsimulate_strategy_vectoriz
@@ -5155,6 +5191,9 @@ lessons:
   when: 報告YAMLやレビュー結果を作成・検証する時
   how: 偵察・検証cmdでは許容誤差(tolerance)を明示的にAC定義すべき
   origin: '[[cmd_1194]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-30'
 - id: L440
   title: GS 3パス分岐はPI-009違反リスク — pipeline_config必須化が根本解
   summary: GS simulate_strategy_vectorizedは3パス(PipelineEngine/NumPy/Dict)分岐で複雑度が高い。万全偵察6名全員
@@ -5245,7 +5284,7 @@ lessons:
   origin: '[[cmd_1186]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-07-01'
 - id: L433
   title: yotsume GS出力先がshin_ninpo_v2_12body/サブディレクトリに自動振り分け
   summary: cmd指示ではoutputs/grid_search/直下にCSV生成とあったが、実際はshin_ninpo_v2_12body/配下に出力された。スクリプトが
@@ -5298,6 +5337,9 @@ lessons:
   - outputs/analysis/cmd_1126_performance.csv
   - outputs/analysis/cmd_1126_register.py
   origin: '[[cmd_1126]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L430
   title: valid_start_date修正1ヶ月差がチャンピオン選出を大幅変更する
   summary: GS共通コードの修正(valid_start_date計算の全シンボル考慮)によりcommon periodが1ヶ月短縮(167→166ヶ月)。この1ヶ月差がメ
@@ -5473,6 +5515,9 @@ lessons:
   - .gitignore
   - outputs/analysis/cmd_1094_runbook_audit.csv
   origin: '[[cmd_1094]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L417
   title: 全PF健全性スイープは定期実行候補
   summary: 今回は事故契機の一括チェックだが、pipeline_config欠落のような設定不備は保存時に混入しうる。月次or四半期で自動実行し、早期検出するのが望ましい。
@@ -5565,6 +5610,9 @@ lessons:
   target_files:
   - scripts/analysis/grid_search/run_077_kasoku_ratio.py
   origin: '[[cmd_1075]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L410
   title: gs_benchmark.pyアダプタはrun_077_*.pyのAPI変更に追従が必要
   summary: run_077_*.pyのデータローダAPIがload_monthly_returns_dual_from_db→ load_monthly_returns_d
@@ -5647,6 +5695,9 @@ lessons:
   - scripts/analysis/grid_search/cmd_1050_parity_test.py
   - scripts/analysis/grid_search/run_077_nukimi.py
   origin: '[[cmd_1050]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-30'
 - id: L404
   title: 'batch化の費用対効果: picks > forward-fill > pack'
   summary: picks構築のバッチ化が最大効果(argsort→nanmax+関数呼出し削減)。forward-fillバッチ化は中程度(関数呼出し削減のみ)。pack_p
@@ -6269,6 +6320,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: 本番DB確認はPostgreSQL必須
   origin: '[[cmd_1025]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L356
   title: 32体ユニバースのパターン爆発はsize4が86.8%支配。加速が全体の66.1%
   summary: C(32,4)=35,960がC(32,2)+C(32,3)=5,456の6.6倍。サイズ上限k=3で全忍法一律86.8%削減。加速のC(18,2)×2=306
@@ -6355,7 +6409,7 @@ lessons:
   origin: '[[cmd_1020]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-28'
+  last_referenced: '2026-06-30'
 - id: L350
   title: サブディレクトリCSVはgitignoreの*.csvでは除外されない
   summary: outputs/grid_search/*.csvは直下のみマッチし、shin_shijin_l1/等のサブディレクトリCSVには効かない。サブディレクトリ含む
@@ -6760,7 +6814,7 @@ lessons:
   origin: '[[cmd_981]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-06-30'
 - id: L318
   title: p̄(richmanbtc式)は安定型(青龍)を構造的に優遇し、方向スイッチ型(朱雀/TMF-TMV)を排除する
   summary: p̄検定は月次リターンの一貫した正のリターンを測定するため、退避が少ない安定型DM PFを優遇し、50%程度で方向を外す朱雀のDNA(債券方向スイッチ)と構造的
@@ -6784,7 +6838,7 @@ lessons:
   origin: '[[cmd_976]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-07-01'
 - id: L316
   title: 'WSL→Windows venv Ruff hook: repo-relative pathを使え'
   summary: WSLから.venv/Scripts/ruff.exeを呼ぶ場合、/mnt/c/... absolute pathを渡すとC:\mnt\c\...と誤解釈されE
@@ -7384,6 +7438,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: cmd_833で確認
   origin: '[[cmd_833]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L270
   title: Portal内 shared nav の client-side routing は遷移開始より先に閉じるなを絶対条件にせよ
   summary: output:exportとSW bypassが揃っていてもportal配下のnavがclick同期でsetIsOpen(false)を打つとLink/rout
@@ -7455,6 +7512,9 @@ lessons:
   when: precomputedテーブル存在時は
   how: '2026-03-12'
   origin: '[[cmd_830]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-30'
 - id: L263
   title: persistent data cacheにvalidatorを永続化しないとwarm reloadはfull refetchに崩れる
   summary: SWRのstale cacheをIndexedDB永続化しても、ETag/If-None-Matchのvalidatorがメモリにしか無ければhard
@@ -7482,7 +7542,7 @@ lessons:
   origin: '[[cmd_830]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-07-01'
 - id: L261
   title: キャッシュ系 precompute テーブル欠落は health endpoint で degraded に昇格させる
   summary: 事前計算テーブル欠落は性能劣化だけでなく fallback 経路の常時発火を招く。prices>0 && precompute=0 のような矛盾条件は
@@ -7567,7 +7627,7 @@ lessons:
   origin: '[[cmd_805]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-06-30'
 - id: L254
   title: FoF展開共通関数を API/サービスの loop 内で呼ぶ時は signal_cache/portfolio_cache 未注入だと query
     storm 化する
@@ -7979,7 +8039,7 @@ lessons:
   origin: '[[cmd_725]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-24'
+  last_referenced: '2026-06-30'
 - id: L219
   title: 静的ホスト切替だけでは本番UXの主因は消えず、heavy APIが残る限り backend 待ちが支配する
   summary: Render Static -> Vercel/Cloudflare/Netlify への frontend-only 移行は、deploy体験・preview
@@ -7992,6 +8052,9 @@ lessons:
   when: タスク配備やデプロイ手順を変更・実行する時
   how: '2026-03-10'
   origin: '[[cmd_728]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L218
   title: SPA遷移化の完了宣言とコード実態の乖離
   summary: 'context/dm-signal-frontend.md §8では「SPA遷移化完了(cmd_647/650)」と記載されているが、 sidebar.tsx '
@@ -8005,7 +8068,7 @@ lessons:
   origin: '[[cmd_728]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-06-30'
 - id: L217
   title: 全PF全API prefetchは selected PF 表示経路と同じ転送路を塞ぎ、軽量入口APIの直後に性能を崩す
   summary: '`SignalsContext.loadSignals()` 成功直後に `prefetchAll()` を無条件起動すると、 入口の `/api/signal'
@@ -8044,6 +8107,9 @@ lessons:
   how: CDP自動認証でlocal fileを先に試すと401を重ねてrate limitに達しうるため、process envが無い場合はRender env
     APIを優先し、local fileは最後のfallbackにすべき
   origin: '[[cmd_695]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L214
   title: CDP性能計測の前提確認では timing より先に『正常画面か』を検査すべき
   summary: '`localhost:3000` や static export 配信先で CDP 計測を始めても、実 DOM が 「只今、城の修繕中にございます」の障害画面な'
@@ -8080,7 +8146,7 @@ lessons:
   origin: '[[cmd_686]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-28'
+  last_referenced: '2026-06-30'
 - id: L212
   title: CDP性能計測ではtiming計測前に正常画面かを先に検査すべき。障害画面(城の修繕中等)が表示されていればtimingは無意味
   summary: 'IF: CDP性能計測を実施する時 THEN: wall-clock計測前にbody text/ready state/auth modalの3点を確認し、正常'
@@ -8185,7 +8251,7 @@ lessons:
   origin: '[[cmd_646]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-27'
+  last_referenced: '2026-07-01'
 - id: L204
   title: API永続キャッシュはUI state用localStorageと分離し、auth-scope付き IndexedDB を主格にすべき
   summary: selected PF や folder filter のような小さなUI stateは localStorage で十分だが、 multi-year
@@ -8366,7 +8432,7 @@ lessons:
   origin: '[[cmd_613]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-07-01'
 - id: L190
   title: 集計要件でrole分離が必要ならイベント記録時点で識別子を保存しないと後段SQLでは復元不能
   summary: IF analytics tier集計でadminをtrack時にNULL化していたため、summary側でadmin/unauthenticatedを分離でき
@@ -8378,7 +8444,7 @@ lessons:
   origin: '[[cmd_574]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-25'
+  last_referenced: '2026-07-01'
 - id: L189
   title: ページ順序定義をsidebar/mobile-menu/page-navigationに重複保持すると導線不整合が発生しやすい
   summary: IF ナビ順序や表示対象を複数ファイルで個別定義すると、1箇所更新時に他所が追従せず差分ドリフトが起きる時 THEN ナビ順序や表示対象を複数ファイルで個別定義
@@ -8471,6 +8537,9 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-05'
   origin: '[[cmd_555]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L181
   title: DeteriorationページのAPIレスポンスにはfolder_idが含まれないためuseSignalsのportfoliosから別途マップ構築が必要
   summary: IF api.getDeteriorationList()のレスポンスにfolder_idが含まれない時 THEN api.getDeteriorationLi
@@ -8863,7 +8932,7 @@ lessons:
   origin: '[[cmd_493]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-26'
+  last_referenced: '2026-07-01'
 - id: L149
   title: key_filesの成果物パターンは実在ファイル名規約と定期照合しないと再汚染する
   summary: IF 今回、outputs/grid_search/*_champion_monthly_returns.csv が実在せず、現行は *_grid_monthl
@@ -9057,6 +9126,9 @@ lessons:
   when: flowchart や非ASCIIラベル直書きは環境によってコードブロック表示にフォールバックする場合がある時
   how: '`flowchart` や非ASCIIラベル直書きは環境によってコードブロック表示にフォールバックする場合がある'
   origin: '[[noteコピペ検証]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L132
   title: 外部サービス仕様は公式ヘルプの更新日つき一次情報で確認する
   summary: noteのMarkdown/図表制限は古い二次情報と齟齬が起きやすい。テンプレート更新時は公式ヘルプ記事の最終更新日を確認し、断定は「公式記載」と「推論」を分け
@@ -9196,6 +9268,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: '2026-02-23'
   origin: '[[cmd_282]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L118
   title: DTB3はeconomic_indicatorsではなくdaily_pricesテーブルにticker='DTB3'として格納。close_priceカラムに利回りデータ。economic_indicatorsテーブルは空。
   summary: IF hayate(cmd_282,subtask_282_integ)時 THEN hayate(cmd_282,subtask_282_integ)
@@ -9521,7 +9596,7 @@ lessons:
   origin: '[[cmd_225]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-27'
+  last_referenced: '2026-06-29'
 - id: L089
   title: GS-本番パリティはデータソース一致が前提条件
   summary: IF GS内部の初期化処理ロジックが全4スクリプトで同一でも、データソース(CSV vs DB)が異なればパリティは保証されない時 THEN
@@ -9547,6 +9622,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: L1 FoF検証(cmd_205)はcomponent平均突合が中心
   origin: '[[cmd_218]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-29'
 - id: L087
   title: kasoku長lookback(12M/24M)でGS-本番初期化期間差異が発生する
   summary: IF 本番は504日分の日次データが揃うまでCash(≈0%リターン)時 THEN 本番は504日分の日次データが揃うまでCash(≈0%リターン)
@@ -9582,6 +9660,9 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: drawdown_periods/portfolio_metrics等16テーブル全てをFK依存順に削除する必要がある
   origin: '[[cmd_215]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L084
   title: recalculate-statusのis_running=Noneは完了ではない
   summary: IF is_running=Noneは状態不明であり完了(False)と誤判定してはならない時 THEN is_running=Noneは状態不明であり完了(F
@@ -10120,6 +10201,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: UPDATE方式(既存PFにpipeline_config付与+/api/portfolios/saveで一括保存)でUUID維持しつつ設定変更が安全かつ確実
   origin: '[[cmd_128]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-01'
 - id: L034
   title: Claude CodeはRead未実施のファイルへのWrite/Editを拒否する
   summary: タスクYAML(queue/tasks/)・inbox(queue/inbox/)・報告YAML(queue/reports/)等を書く前に必ず対象ファイルをR
@@ -10370,6 +10454,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: パリティ検証スクリプトで experiments.db のUUIDを本番APIのholding_signalと比較したら全不一致
   origin: '[[legacy_lesson_L014]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-06-30'
 - id: L013
   title: GS の align_months 交差集合は lookback warm-up を失う（2026-02-14）
   summary: 'IF 原因2: align_months() が全PFの交差集合（最短PFの開始月）に切り詰め → 先頭14ヶ月はlookback不足で None

@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-06-27 cmd_karo_hotfix_ga147 -->
+<!-- last_updated: 2026-07-01 cmd_3632 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -589,6 +589,30 @@ cmd_3524で堅牢性trial JSONへ5つの連続性リスク指標を追加し、c
 
 GA-147原因: `dm-signal-research.md`のlast_updatedは2026-06-26で、2026-06-26以後にresearch pathspec対象commitが増加したため`gate_context_freshness.sh`がsource commits ALERTを出した。一次情報分類では、研究正本に反映すべき差分はcmd_3546 fullrecalculate冪等性証明で、§44に反映済み。他の差分はCompare Returns API/frontend/MTD性能・表示修正・docs spec/lessonで、研究索引への恒久知識追記は不要。
 横展開候補: 同gateで`obsidian-link-principles.md`もsource commits ALERT継続。防御層候補: context_freshness hotfixタスクへsource commit要約だけでなく、context別pathspec hit件数と「研究正本/実装/補助docs/lesson」の分類欄を自動注入する。
+
+## §46. L1+ BB直列拡張実験 (cmd_3490/3493, 2026-06-22)
+
+殿構想(2026-06-22): L1のselection blockを複数BB直列に拡張(L1+)。**実験完了済み。**
+
+| 項目 | 結果 |
+|------|------|
+| 道具 | `scripts/analysis/grid_search/run_l1plus_backtest.py` (cmd_3490) |
+| 全量実験 | 441パターン一括実行完了。343秒、192MB RSS (cmd_3493) |
+| 結果CSV | `outputs/analysis/cmd_3493_l1plus_backtest/cmd_3493_l1plus_batch_results.csv` |
+| 月次CSV | `outputs/analysis/cmd_3493_l1plus_backtest/cmd_3493_l1plus_batch_monthly_returns.csv` |
+| 計測レポート | `docs/research/cmd_3493_l1plus_batch_all_measurement.md` |
+
+**TOP3(α6指標):**
+
+| rank | BB1 × BB2 | CAGR | MaxDD | Calmar | NHF |
+|---:|---|---:|---:|---:|---:|
+| 1 | 追い風-鉄壁 × 抜き身-激攻 | 74.9% | -31.9% | 2.34 | 0.553 |
+| 2 | 追い風-激攻 × 抜き身-常勝 | 74.7% | -51.0% | 1.46 | 0.537 |
+| 3 | 変わり身-鉄壁 × 追い風-激攻 | 73.6% | -26.1% | 2.82 | 0.608 |
+
+→ 詳細: `docs/research/cmd_3490_l1plus_backtest_measurement.md`, `docs/research/cmd_3493_l1plus_batch_all_measurement.md`
+
+---
 
 ## 因果リンク
 

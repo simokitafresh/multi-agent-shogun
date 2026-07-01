@@ -17,7 +17,29 @@ allowed_projects: [dm-signal]
 
 ---
 
-## 接続方法（唯一の正解）
+## 接続方法（2方式。環境に応じて選択）
+
+### 方式A: psycopg2直接接続（推奨。WSL python3で即実行可能）
+
+```python
+import psycopg2
+conn = psycopg2.connect(
+    host='dpg-d542chchg0os73979vg0-a.singapore-postgres.render.com',
+    port=5432,
+    dbname='dm_signal',
+    user='dm_signal_user',
+    password='dWrxHnOl78RmGpuK9Y5r8gXIaRo4L9qS',
+    sslmode='require'
+)
+cur = conn.cursor()
+cur.execute("SELECT ...")
+rows = cur.fetchall()
+conn.close()
+```
+
+**重要**: DATABASE_URLをそのままpsycopg2.connect()に渡すとunix socket fallbackでエラーになる。必ず上記のように個別パラメータで接続せよ。
+
+### 方式B: SQLAlchemy経由（Windows python.exe使用時）
 
 ```python
 import sys
@@ -30,19 +52,30 @@ with engine.connect() as conn:
     rows = conn.execute(text("SELECT ..."), {'param': value}).fetchall()
 ```
 
-**禁止**: psycopg2直接接続（DATABASE_URLのパースでDB名不一致エラー）、psqlコマンド（未インストール）
+**注意**: WSL側python3ではsqlalchemy circular importが発生する。方式Bは`.venv/Scripts/python.exe`（Windows Python）専用。
 
-**理由**: `create_db_engine()`が`.env`読込+URL変換+接続プール設定を全て内包。
+### 方式選択ガイド
+
+| 条件 | 方式 |
+|------|------|
+| WSL python3で即実行したい | **方式A**（psycopg2直接） |
+| SQLAlchemy ORMが必要 | 方式B（Windows python.exe） |
+| psqlコマンド | **使用禁止**（未インストール） |
 
 ### 実行場所と文字コード
 
+方式A:
+```bash
+python3 -c "import psycopg2; ..."  # WSL python3で直接実行
+```
+
+方式B:
 ```bash
 cd /mnt/c/Python_app/DM-signal/backend
 PYTHONIOENCODING=utf-8 /mnt/c/Python_app/DM-signal/.venv/Scripts/python.exe your_check.py
 ```
 
-- cwdは`/mnt/c/Python_app/DM-signal/backend`にする。`.env`相対読込の失敗を避ける。
-- WSL側`python3`に依存しない。`sqlalchemy`等が無い場合はプロジェクトの`.venv/Scripts/python.exe`を使う。
+- 方式Bのcwdは`/mnt/c/Python_app/DM-signal/backend`にする。`.env`相対読込の失敗を避ける。
 - 日本語PF名を出す確認では`PYTHONIOENCODING=utf-8`を付ける。
 - **UTF-8出力強制（必須）**: `PYTHONIOENCODING=utf-8`だけでは日本語PF名が文字化けする場合がある(2026-06-14実証)。Pythonスクリプトのimport直後に以下を追加:
   ```python
@@ -288,14 +321,14 @@ rows = conn.execute(text("""
 ### 認証
 | API種別 | 認証方式 | 取得元 |
 |---------|---------|--------|
-| admin系 | Basic Auth | backend/.env ADMIN_USERNAME/ADMIN_PASSWORD |
+| admin系 | Basic Auth | backend/.env ADMIN_USER/ADMIN_PASS |
 | viewer系 | Bearer Token | /api/viewer-auth で取得 |
 
 ### よく使うエンドポイント
 ```bash
 # admin認証取得
-ADMIN_USER=$(grep ADMIN_USERNAME backend/.env | cut -d= -f2)
-ADMIN_PASS=$(grep ADMIN_PASSWORD backend/.env | cut -d= -f2)
+ADMIN_USER=$(grep -m1 '^ADMIN_USER=' backend/.env | cut -d= -f2- | tr -d '\r\n')
+ADMIN_PASS=$(grep -m1 '^ADMIN_PASS=' backend/.env | cut -d= -f2- | tr -d '\r\n')
 BASE="https://dm-signal-backend.onrender.com"
 
 # PF一覧

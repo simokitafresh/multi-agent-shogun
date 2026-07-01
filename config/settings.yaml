@@ -7,22 +7,22 @@ cli:
   agents:
     shogun:
       type: claude
-      model_name: claude-opus-4-6
+      model_name: opus-4-8-xhigh
       role: shogun
       japanese_name: 将軍
-      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model opus --effort xhigh
     karo:
       type: codex
-      model_name: gpt-5.5
+      model_name: gpt-5.5-high
       role: karo
       japanese_name: 家老
       launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
     gunshi:
       type: claude
-      model_name: claude-opus-4-6
+      model_name: opus-4-8-xhigh
       role: gunshi
       japanese_name: 軍師
-      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model opus --effort xhigh
     hayate:
       type: codex
       model_name: gpt-5.5-high

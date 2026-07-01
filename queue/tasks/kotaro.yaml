@@ -1,12 +1,22 @@
 task:
+  readonly_ref:
+  - path: 'scripts/insight_write.sh'
+    reason: command欄の必読/参照専用ファイル
   acceptance_criteria:
     AC1:
-      binary_check: 報告YAMLにbanner証跡があり、期待model×effortと一致しているか
-      description: 配備直前バナー確認記録(capture-pane出力)を報告YAMLに含め、期待model×effort=Sonnet 4.6 high pinned v2.1.87と一致していることを示す
+      binary_checks:
+      - '根因が特定され、insight本文が利用可能なコードパス上の変数名が報告されているか: yes/no'
+      description: scripts/insight_write.sh L411-420のINSIGHT_REPEAT掲示板投稿部分を調査し、insight本文がbulletin投稿メッセージに含まれない根因を特定する
     AC2:
-      binary_check: gate_report_format PASSかつ比較レポート更新に必要な所見が記載されているか
-      description: 元cmd_3628の同一cmd比較タスクを完了し、GATE CLEAR可能な報告YAMLを作成する。軍師が累積比較レポートと5w1h文書更新に使える所見を含める
-  assigned_scope: '元cmd_3628と同一内容。重複ガード回避のためparent_cmdのみcmd_3628_kotaro。source_cmd=cmd_3628。期待モデル=Sonnet 4.6 high pinned v2.1.87。配備直前banner証跡=kotaro pane7: Claude Code v2.1.87; Sonnet 4.6 with high effort (capture-pane 2026-07-01T17:10 JST)。報告YAMLにはこのbanner証跡と自分の実行結果を必ず記載する。'
+      binary_checks:
+      - '修正後のbulletin投稿メッセージにinsight本文の先頭N文字が含まれることをテストまたは実行ログで確認したか: yes/no'
+      description: INSIGHT_REPEAT掲示板投稿メッセージにinsight本文サマリーを含める修正を実装し、テストで動作確認する
+  assigned_scope: source_cmd=cmd_3629 parallel comparison; worker=kotaro; expected_model=Sonnet 4.6 high / Claude. parent_cmd is worker-specific to bypass duplicate guard while preserving source_cmd.
+  assumptions:
+    claim: insight_write.sh L419にINSIGHT_REPEAT投稿がありsource+pending_countのみ含有、insight本文は含まれていない(2026-07-01 grep確認)
+    source: scripts/insight_write.sh L411-420
+    trust: verified
+  command: scripts/insight_write.sh L400-430を読み、INSIGHT_REPEAT掲示板投稿にinsight本文サマリーが含まれない根因を特定し、本文先頭N文字をbulletin投稿メッセージへ含める修正とテストを実施せよ。報告YAMLにはmodel×effort、速度、深度、品質所見を記録せよ。
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -15,35 +25,33 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  expected_model_effort: Sonnet 4.6 high pinned v2.1.87
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  origin: '[[殿指示_pane確認必須_20260701]] -> [[cmd_3628]] -> [[kotaro_Sonnet 4.6 high pinned v2.1.87]]'
   parallel_ok: []
-  parent_cmd: cmd_3628_kotaro
-  pre_deploy_banner_evidence: 'kotaro pane7: Claude Code v2.1.87; Sonnet 4.6 with high effort (capture-pane 2026-07-01T17:10 JST)'
+  parent_cmd: cmd_3629_kotaro
   project: infra
-  purpose: 'cmd_3628全未調査model×effort一括比較: kotaro=Sonnet 4.6 high pinned v2.1.87で同一cmdを実行し、配備直前banner証跡・GATE CLEAR報告・累積比較更新材料を報告する'
+  purpose: '殿指示(2026-07-01): 未検証のCLI×model×effort組合せを検証せよ。現設定(GPT high/xhigh, Opus 4.6 high, Opus 4.8 high, S4.6 high, S5 high)の6忍者に同一タスク(INSIGHT_REPEAT掲示板投稿にinsight本文サマリーが欠落している問題の調査+修正)を並列配備し、深度/速度/品質を比較。R1-5/cmd_3628の既存データと合わせて全マトリクスを埋める'
   scope_mode: FULL
-  source_cmd: cmd_3628
-  status: done
+  scout_exempt: true
+  source_cmd: cmd_3629
+  status: idle
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/docs/research
-  task_id: cmd_3628_kotaro_normal
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/insight_write.sh
+  task_id: cmd_3629_kotaro_normal
   task_type: full
   related_lessons:
-  - id: 'L828'
-    summary: 'gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr'
-    detail: 'gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr'
+  - id: 'L736'
+    summary: 'flock内でbackground起動したmemory DB insertがfd 200を継承し、親が終わった後もlockを保持して2回目のinsight_wr'
+    detail: 'flock内でbackground起動したmemory DB insertがfd 200を継承し、親が終わった後もlockを保持して2回目のinsight_wr'
   - id: 'L625'
     summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
     detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L633'
-    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
-    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+  - id: 'L133'
+    summary: 'IF lessons.yamlのinjection_countを参照する時 THEN 全件0の可能性を考慮し、sync_lessons.shの同期状態を確認せよ'
+    detail: 'IF lessons.yamlのinjection_countを参照する時 THEN 全件0の可能性を考慮し、sync_lessons.shの同期状態を確認せよ'
   - id: 'L311'
     summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
     wa_category: 'report_yaml_format'
@@ -74,23 +82,21 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L828: gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr
+      - L736: flock内でbackground起動したmemory DB insertがfd 200を継承し、親が終わった後もlockを保持して2回目のinsight_wr
       - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
+      - L133: IF lessons.yamlのinjection_countを参照する時 THEN 全件0の可能性を考慮し、sync_lessons.shの同期状態を確認せよ
       - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
     ────────────────────────────────────────
   memory_db_context:
-  - '2026-04-02T02:27:58+09:00 | 【将軍】編成切替完了: mixed（GPT2+Sonnet2+Opus2）hayate/saizo=GPT5.4, kagemaru/kotaro=Sonnet, hanzo/tobisaru=Opu'
-  - '2026-07-01T17:10:41+09:00 | 【将軍】/clear準備完了。PD:0 cmd:0 🚨:0。今セッション成果: DM-Fusionメトリクスページ(cmd_3618)+循環スワイプ+UI修正。Rolling Returns 3M/6'
-  - '2026-07-01T16:57:42+09:00 | 殿の指摘通り。まず全model×CLI×effortの組み合わせマトリクスを明確にする。起票は後。 **利用可能なCLI:** - Claude Code pinned (2.1.87): Opus '
-  - '2026-07-01T08:52:59+09:00 | 既にClaude系もeffort明記済み（Sonnet 4.6 **high**, Sonnet 5 **xhigh**, Opus 4.8 **xhigh**）。ただし殿の指摘はClaude系でもe'
-  - '2026-07-01T07:08:40+09:00 | saizoのpaneの枠のステータスがsonnetのままだ。中身はopu4.8 xhighだ。これもバグだな。すべてのバグを修正し、今後起きないようにしよう'
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_3628_kotaro_normal
+  - '2026-07-01T20:31:05+09:00 | **cmd_3629 publish+委任完了。** `DELEGATED: cmd_3629 at 2026-07-01T20:30:41` 6忍者(GPT high/xhigh, Opus 4.6'
+  - '2026-07-01T20:19:13+09:00 | 【INFOバッチ】 2026-07-01 20:18:14|CI緑: run 28512782781'
+  - '2026-07-01T20:35:23+09:00 | 軍師idle分析: テスト速度改善D0実行(テスト統合で625ms削減+残30ファイル統合候補)。確認+既読済み。 cmd_3629進行中: hayate(GPT high) CTX:34% in_p'
+  ac_version: a7f33c02
+  _ac_task_id: cmd_3629_kotaro_normal
   _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_3628_kotaro.yaml
-  report_path: queue/reports/kotaro_report_cmd_3628_kotaro.yaml
+  report_filename: kotaro_report_cmd_3629_kotaro.yaml
+  report_path: queue/reports/kotaro_report_cmd_3629_kotaro.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -102,16 +108,16 @@ task:
     - pattern: 'bc_result_empty'
       count: 59
     - pattern: 'field_missing'
-      count: 29
+      count: 44
     - pattern: 'verdict_invalid'
       count: 19
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
-      count: 8
+      count: 9
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'binary_checks_fail'
-      count: 7
+      count: 8
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'empty_lessons_useful'
       count: 1
@@ -119,27 +125,23 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-07-01T17:18:09"
+  deployed_at: "2026-07-01T20:38:01"
 
   session_state:
-    attempt: 6
-    last_block_reason: 'commit_hash: ''dfcbb1806'' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ'
+    attempt: 5
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
     tried_approaches:
-    - 'binary_checks: AC self-verification missing (0/2 ACs). 全ACの二値チェックを記入せよ; result.summary: MISSING or empty'
-    - 'binary_checks: AC self-verification missing (0/2 ACs). 全ACの二値チェックを記入せよ'
-    - 'files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ'
-    - 'commit_hash: ''dfcbb1806'' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ'
-    diagnose_reason: 'files_modifiedにパス形式でなく説明文を記入した。gateはファイルパス(/)を含む文字列のみ受け付ける。説明文混入禁止ルール(GP-285)を見落とした。'
-    approach_summary: 'cmd_3628 Sonnet 4.6 high pinned v2.1.87 比較タスク完了。バナー証跡確認済み(pane7 shogun:2.7: Claude Code v2.1.87 / Sonnet 4.6 with high effort)。軍師レビュー補足APPROVE(assigned_scope記載)。累積比較レポート更新材料として動作特性所見を記載。'
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'INSIGHT_REPEAT bulletin投稿にinsight本文が欠落していた根因を特定し、テストT-009を追加して修正済みコードの動作確認完了'
     prior_attempts:
+    - attempt: 3
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'INSIGHT_REPEAT bulletin投稿にinsight本文が欠落していた根因を特定し、テストT-009を追加して修正済みコードの動作確認完了'
     - attempt: 4
-      block_reason: 'files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ'
-      approach_summary: 'cmd_3628 Sonnet 4.6 high pinned v2.1.87 比較タスク完了。バナー証跡確認済み(pane7 shogun:2.7: Claude Code v2.1.87 / Sonnet 4.6 with high effort)。軍師レビュー補足APPROVE(assigned_scope記載)。累積比較レポート更新材料として動作特性所見を記載。'
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'INSIGHT_REPEAT bulletin投稿にinsight本文が欠落していた根因を特定し、テストT-009を追加して修正済みコードの動作確認完了'
     - attempt: 5
-      block_reason: 'files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ'
-      diagnose_reason: 'files_modifiedにパス形式でなく説明文を記入した。gateはファイルパス(/)を含む文字列のみ受け付ける。説明文混入禁止ルール(GP-285)を見落とした。'
-      approach_summary: 'cmd_3628 Sonnet 4.6 high pinned v2.1.87 比較タスク完了。バナー証跡確認済み(pane7 shogun:2.7: Claude Code v2.1.87 / Sonnet 4.6 with high effort)。軍師レビュー補足APPROVE(assigned_scope記載)。累積比較レポート更新材料として動作特性所見を記載。'
-    - attempt: 6
-      block_reason: 'commit_hash: ''dfcbb1806'' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ'
-      diagnose_reason: 'files_modifiedにパス形式でなく説明文を記入した。gateはファイルパス(/)を含む文字列のみ受け付ける。説明文混入禁止ルール(GP-285)を見落とした。'
-      approach_summary: 'cmd_3628 Sonnet 4.6 high pinned v2.1.87 比較タスク完了。バナー証跡確認済み(pane7 shogun:2.7: Claude Code v2.1.87 / Sonnet 4.6 with high effort)。軍師レビュー補足APPROVE(assigned_scope記載)。累積比較レポート更新材料として動作特性所見を記載。'
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'INSIGHT_REPEAT bulletin投稿にinsight本文が欠落していた根因を特定し、テストT-009を追加して修正済みコードの動作確認完了'

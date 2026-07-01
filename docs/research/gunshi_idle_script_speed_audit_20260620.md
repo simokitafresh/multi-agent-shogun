@@ -129,3 +129,49 @@ pre-write-edit-combined.shは初回2.5秒→ウォーム36-63ms。WSL2 9pキャ�
 2. **startup_gate**: 7回のpython3→2プロセスに統合。推定 7秒→2秒
 3. **sync_lessons**: 821件YAML→JSONキャッシュ化(既にdeploy_task.shで実装済み)
 4. **ralph_loop_metrics**: git log多重呼出しの最適化
+
+## 第4回計測（2026-07-01 殿指示: 遅いスクリプト/gate/hook/test=バグ）
+
+### hook速度
+全<30ms。問題なし。
+
+### gate速度（改善後）
+| gate | 時間(ms) | 前回比 |
+|------|---------|--------|
+| gate_gunshi_startup.sh | 2,724 | 3,828→2,724(29%改善) |
+| ralph_loop_metrics.sh | 1,652 | 20,288→1,652(12x改善) |
+| gate_context_freshness.sh | 1,574 | 1,630→1,574(微改善) |
+| gate_karo_startup.sh | 1,332 | 3,315→1,332(2.5x改善) |
+| gate_lesson_health.sh | 1,135 | 1,543→1,135(26%改善) |
+| gate_gunshi_cs_checklist.sh | 588 | 785→588(25%改善) |
+
+残余はWSL2 NTFS I/O律速。コード最適化の効果は限定的。
+
+### cmd_3632追撃改善（2026-07-01）
+
+軍師実動作確認: startup 2.7秒→1.9秒(-30%)、ac_physical_verify 2.8秒→1.3秒(-54%)。半蔵報告値: ac_physical_verify 2.8秒→1.8秒(-36%)、gate_gunshi_startup 3.8秒→2.0秒(-47%)、gate_lesson_health 2.4秒→0.7秒(-71%)。
+
+変更: `ac_physical_verify.sh` はpython3+yaml.safe_loadをawk抽出へ置換、`gate_gunshi_startup.sh` は371MB DB sqlite3照会とgate_immunity_depthを並列化、`gate_lesson_health.sh` はphantom検出bash loopをawk一括処理へ統合。
+
+### テスト速度（全204ファイル）
+全体: 125秒(serial)。上位7ファイル=209秒(逐次支配的)。
+
+| テストファイル | 時間(ms) | テスト数 |
+|--------------|----------|---------|
+| test_write_edit_combined_hooks | 32,939 | - |
+| test_gate_shogun_startup | 32,393 | 76 |
+| test_bash_speed_training | 31,784 | - |
+| test_cmd_save | 30,204 | 117 |
+| test_cmd_complete_gate | 29,442 | 77 |
+| test_gate_karo_startup | 28,236 | - |
+| test_semantic_index_update | 24,692 | - |
+
+根因: 各テストケースがgate/スクリプトを実行(~400ms/回)。WSL2 NTFS上のawk/grep/gitが律速。
+検証済み無効策:
+- bats --jobs 4: 691秒(5.5倍悪化。WSL2プロセス生成コスト)
+- TMPDIR=/dev/shm: 151秒(悪化。ボトルネックはfixture I/Oではなくスクリプト実行)
+
+有効な改善策:
+1. テスト統合(類似@testマージで総数削減)
+2. スクリプト本体高速化(テスト対象のgate/script自体を速くする)
+3. lightweight test modeの導入(テスト時にheavy ops=git/large YAML parseをスキップ)

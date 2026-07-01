@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-01 cmd_karo_hotfix_deploy_task_postcondition_order_202607010627 -->
+<!-- last_updated: 2026-07-01 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -436,3 +436,5 @@
 | cmd_3620 | 軍師提案(blt_20260701_040406)+殿承認(2026-07-01): Sonnet 5(tobisaru)とSonnet 4.6(kotaro)に同一cmdを並列配備し、既存インフラの計測値で定量比較する。評価対象はinfra gate修正・hook改善・DM-Signal BE・FE・偵察の全カテゴリ | infra | 07-01 | cmd_3620(Sonnet5 vs Sonnet4.6 |
 | cmd_3621 | 殿指示(2026-07-01): 第1ラウンド(cmd_3620)はstaleコンテキスト混入でクリーンベンチマークにならなかった。クリーンなタスクYAMLで別カテゴリcmdを両モデルに配備し再比較する | infra | 07-01 | cmd_3621(Sonnet5 vs Sonnet4.6 |
 | cmd_3623 | 殿指示(2026-07-01): 第3ラウンド(infra改善設計)に続き、バグ調査cmdで三者(S5, S4.6, Opus 4.8)の診断品質を比較する。偵察→設計→バグ調査とカテゴリを変えて累積データを蓄積 | infra | 07-01 | deploy_task.shの教訓注入postconditi |
+| cmd_3633 | 軍師テスト速度分析(blt_20260701_203455): bats per-file overhead(起動1回あたり約600ms)が支配的。テストケース数が少ないファイルを統合し、bats起動回数を削減して総実行時間を短縮する | infra | 07-01 | テスト小型ファイル10本を2本へ統合し、対象12件PASS・ |
+| cmd_3632 | 軍師速度監査(blt_20260630_221002): D0で改善したが残存悪化3件。共通根因=YAML肥大化とpython3 yaml.load逐次実行。cmd_3631累計昇格cancelにつき新IDで再起票 | infra | 07-01 | gate速度高速化3件: ac_physical_verif |

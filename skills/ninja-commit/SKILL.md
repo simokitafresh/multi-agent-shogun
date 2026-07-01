@@ -83,6 +83,12 @@ Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*�
 - **scope外ファイルのcommit** — .env、credentials.json、他の忍者のファイルに触れるな
 
 ## 注意ポイント
+- 2026-07-01: gate=gate_report_format result=FAIL executor=kotaro reason=commit_hash: 'dfcbb1806' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ
+
+- 2026-07-01: gate=gate_report_format result=FAIL executor=kotaro reason=commit_hash: 'd439cace6' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ
+- 2026-06-30: gate=gate_report_format result=FAIL executor=saizo reason=commit_hash: 'c360719b3' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ
+
+- 2026-06-30: gate=gate_report_format result=FAIL executor=saizo reason=commit_hash: '928a3f3e6' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ
 - 2026-06-27: gate=gate_report_format result=FAIL executor=saizo reason=commit_hash: 'b59cb8963b7f2617bfcb0f5d6a5b397ce63c41ebf' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_field_set.sh` の現行契約を再確認。binary_checks.resultはyes/noのみ、verdictはgate_report_format.sh自動導出、報告追記はhelper経由に限定する。

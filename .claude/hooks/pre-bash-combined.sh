@@ -602,9 +602,12 @@ fi
 # Guard 13: 削除(2026-06-20)。各論パッチ(respawn-paneのみBLOCK)はバグ。
 # 原理的解決=三層記憶skill_routing概念。検索すれば正しいスキルに到達する。
 
-# === Guard 14: DB direct connection skill recommendation (LS064: /db-check skill不使用防止) ===
+# === Guard 14: DB direct connection BLOCK (LS064+LS-A17: /db-check skill強制) ===
+# WARN→BLOCK升格(2026-07-01): WARNでは試行錯誤を防げない実証(将軍がpsycopg2で6回試行錯誤)
+# /db-checkスキルにスキーマ・接続方式・クエリテンプレート完備。直接接続は不要
 if [[ "$command" == *psycopg2* || "$command" == *"DATABASE_URL"* || "$command" == *create_db_engine* ]] && [[ "$command" != *"db-check"* && "$command" != *"check_pf_config"* ]]; then
-    echo "★ [Guard14] WARN: DB直接接続を検出。/db-checkスキルの使用を検討せよ。DB確認手順の分散を防ぐため。" >&2
+    echo "BLOCK [Guard14]: DB直接接続禁止。/db-checkスキルを使え(skills/db-check/SKILL.md)。スキーマ・接続方式・クエリテンプレート全て完備。試行錯誤ゼロで到達できる。" >&2
+    exit 2
 fi
 
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===

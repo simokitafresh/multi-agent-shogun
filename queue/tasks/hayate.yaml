@@ -1,8 +1,32 @@
 task:
-  _ac_task_id: cmd_3628_full
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  semantic_concepts:
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
+  related_causal_links:
+  - "[[bats_overhead支配的]]"
+  - "[[blt_20260701_203455_テスト速度]]"
+  - "[[cmd_3633_テスト統合]]"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/training-cycle.md"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
+      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
+    ────────────────────────────────────────
+
+
+  _ac_task_id: cmd_3633_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3628 (deployed 2026-07-01T17:08:46). Read from the beginning.
-  ac_version: 8649f7a0
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3633 (deployed 2026-07-01T21:04:52). Read from the beginning.
+  ac_version: cb4a89f4
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -16,89 +40,40 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope: 実装変更は原則禁止。重大な即時バグを見つけた場合のみ最小修正案を提示し、勝手に広範囲改修しない。
   parallel_ok: []
-  parent_cmd: cmd_3628
+  parent_cmd: cmd_3633
   project: infra
-  purpose: '殿指示(2026-07-01): 全未調査組み合わせを同一cmdで比較。pane実物を配備直前にバナー確認し、ninja_monitorによる巻戻しに注意して実施する'
+  purpose: '軍師テスト速度分析(blt_20260701_203455): bats per-file overhead(起動1回あたり約600ms)が支配的。テストケース数が少ないファイルを統合し、bats起動回数を削減して総実行時間を短縮する'
   scope_mode: FULL
-  status: done
+  status: idle
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/docs/research
-  task_id: cmd_3628_full
+  target_path: /mnt/c/tools/multi-agent-shogun/tests
+  task_id: cmd_3633_full
   task_type: full
   related_lessons:
-  - id: 'L205'
-    summary: '2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.'
-    detail: '2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.'
-  - id: 'L865'
-    summary: 'CLI切替でsettings.yaml typeフィールド更新とtmux @real_modelキャッシュ更新がずれると、detect_real_modelが旧'
-    detail: 'CLI切替でsettings.yaml typeフィールド更新とtmux @real_modelキャッシュ更新がずれると、detect_real_modelが旧'
-  - id: 'L486'
-    summary: 'gate_karo_startup.shでcapture-pane x6を並列化(subshell+tmpfile)したが37ms→35msのみ(-2ms)。W'
-    detail: 'gate_karo_startup.shでcapture-pane x6を並列化(subshell+tmpfile)したが37ms→35msのみ(-2ms)。W'
   - id: 'L278'
-    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitorのAUTO-DONEでstatus=doneになったがreport作成前。commitと報告は不可分のセットであり、commit後即座にreport作成が必要。現行のcommit→report→inbox_writeの順序で、commit直'
     wa_category: 'commit_missing'
     wa_count: 1
     detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
   - id: 'L342'
-    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要。コミット漏れの根因になりうる'
     wa_category: 'commit_missing'
     wa_count: 1
     detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
-  - "infrastructure_ops — インフラ運用基盤:  scripts/ninja_monitor.sh tests/unit/test_ninja_monitor_stall.bats scripts/inbox_watcher.sh scripts/daemon_supervisor.sh scripts/ntfy_listener.sh context/infrastructure.md scripts/dashboard_auto_section.sh ダッシュボードリアルタイムステータス自動生成 scripts/auto_deploy_next.sh サブタスク自動連続配備(auto_deployフラグ/blocked_by/忍者空き制御) scripts/reset_layout.sh agentsウィンドウペイン配置一発復元 docs/research/gunshi_idle_autocommit_scope_leak_20260602.md — 軍師idle: 自動コミットスコープ漏洩(2026-06-02) docs/research/gunshi_idle_clear_durability_fix_20260516.md — 軍師idle: /clear耐久性修正(2026-05-16) docs/research/gunshi_idle_clear_durability_flag_gap_20260515.md — 軍師idle: /clear耐久性フラグギャップ(2026-05-15) docs/research/gunshi_idle_clear_durability_nazenaze_20260515.md — 軍師idle: /clear耐久性なぜなぜ分析(2026-05-15) docs/research/gunshi_idle_clear_durability_nazenaze_20260515d.md — 軍師idle: /clear耐久性なぜなぜ分析(続)(2026-05-15) docs/research/gunshi_idle_clear_respawn_bug_20260607.md — 軍師idle: /clear respawnバグ分析(2026-06-07) docs/research/gunshi_idle_dashboard_corruption_20260603.md — 軍師idle: ダッシュボード破損分析(2026-06-03) docs/research/gunshi_idle_deploy_structural_bugs_20260517.md — 軍師idle: 配備構造バグ分析(2026-05-17) docs/research/gunshi_idle_deploy_yaml_parse_error_20260516.md — 軍師idle: 配備YAMLパースエラー(2026-05-16) docs/research/gunshi_idle_direct_mode_stale_ac_20260502.md — 軍師idle: ダイレクトモード古いAC問題(2026-05-02) docs/research/gunshi_idle_gitignore_wa_20260409.md — 軍師idle: .gitignore WAパターン(2026-04-09) docs/research/gunshi_idle_infra_bug_audit_20260409.md — 軍師idle: インフラバグ監査(2026-04-09) docs/research/gunshi_idle_infra_bug_trio_20260502.md — 軍師idle: インフラバグトリオ分析(2026-05-02) docs/research/gunshi_idle_infra_bug_trio_fix_20260503.md — 軍師idle: インフラバグトリオ修正(2026-05-03) docs/research/gunshi_idle_infra_bug_universal_commit_20260430.md — 軍師idle: インフラバグ汎用コミット対策(2026-04-30) docs/research/gunshi_idle_infra_bugs_full_audit_20260424.md — 軍師idle: インフラバグ全量監査(2026-04-24) docs/research/gunshi_idle_infra_health_20260425.md — 軍師idle: インフラ健全性レポート(2026-04-25) docs/research/gunshi_idle_infra_speed_hidden_bugs_20260605.md — 軍師idle: インフラ速度の隠れバグ(2026-06-05) docs/research/gunshi_idle_wa_pattern_20260612.md — 軍師idle: WAパターン分析(2026-06-12)"
-  recommended_skills:
-  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
-  - "reset-layout"
-  related_causal_links:
-  - "[[cmd_3628_pane確認付き全マトリクス比較]]"
-  - "[[ninja_monitor巻戻しリスク]]"
-  - "[[殿指示_pane確認必須_20260701]]"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L205: 2026-03-11 14:32 JST 実測で `kirimaru` pane は `@agent_state=idle` のまま `• Working (.
-      - L865: CLI切替でsettings.yaml typeフィールド更新とtmux @real_modelキャッシュ更新がずれると、detect_real_modelが旧
-      - L486: gate_karo_startup.shでcapture-pane x6を並列化(subshell+tmpfile)したが37ms→35msのみ(-2ms)。W
-      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
-      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
-    ────────────────────────────────────────
   memory_db_context:
-  - '2026-07-01T17:00:42 | 軍師セッション2026-07-01知見: (1)CLI 2層SSOT化=settings.yaml launch_cmdがcli_profiles.yamlデフォルトを上書き(commit 8e263'
-  - '2026-07-01T16:33:46+09:00 | 【INFOバッチ】 2026-07-01 16:30:48|cmd_training_L1_report_write_202607011624_hanzo'
+  - '2026-07-01T19:33:00+09:00 | CI赤: run 28510911353 Unit Tests (bats)'
+  - '2026-07-01T19:18:04+09:00 | CI赤: run 28509707238 Unit Tests (bats)'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: '全忍者の配備直前バナー確認記録(capture-pane出力)が報告YAMLに含まれ、意図したmodel×effortと一致している'
+    - check: '軍師D0で特定された統合候補ファイル群を統合し、bats起動回数を削減する'
   - id: 'AC2'
     checks:
-    - check: '全忍者のGATE CLEAR報告が完了し、軍師が累積比較レポートと5w1h文書を更新している'
+    - check: '統合対象テストがPASS(SKIP=0)し、統合前後の実行時間差分を報告に記録する'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3628.yaml
-  report_path: queue/reports/hayate_report_cmd_3628.yaml
+  report_filename: hayate_report_cmd_3633.yaml
+  report_path: queue/reports/hayate_report_cmd_3633.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -121,5 +96,4 @@ task:
     - reason: 'binary_checks_fail'
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-01T17:10:11"
-  pre_deploy_banner_evidence: "hayate pane3: gpt-5.5 high · Context 14% used (capture-pane 2026-07-01T17:10 JST)"
+  deployed_at: "2026-07-01T21:05:08"

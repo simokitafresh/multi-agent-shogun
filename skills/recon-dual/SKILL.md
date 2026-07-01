@@ -9,7 +9,9 @@ description: |
 quality_metric: "当該スキルで配備した偵察2名タスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-28T12:18:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-01T23:35:00+09:00 -->
+
+Script refs verified: 2026-07-01 idle useful-rate analysis follow-up. `deploy_task.sh` 直近変更は `target_files` を明示した教訓をタグ一致より強い制約として扱い、不一致なら `related_lessons` から除外する修正。狭義教訓が別ファイルtaskへ漏れて useful率を汚す経路を遮断した内部注入精度改善であり、1人目正規配備 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の引数契約、通知、report template生成、stale field resetは変更なし。
 
 Script refs verified: 2026-06-28 cmd_3582/e13c60e60. `deploy_task.sh` 直近変更は `get_japanese_name` 経由で忍者名の日本語対応をSSOT化し、`inject_workaround_pattern_lessons` で `logs/karo_workarounds.yaml` の頻発WAカテゴリから関連教訓を `related_lessons`/descriptionへ注入する内部コンテキスト提供追加。1人目正規配備 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の引数契約、通知、report template生成、stale field resetは変更なし。
 Script refs verified: 2026-06-16 cmd_3413. `deploy_task.sh` 直近変更(9fe724dda)はtask_tags空+target_pathあり時のpath-dirタグ推定追加。lesson注入タグ生成の内部ロジックであり、1人目 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の引数・通知契約、stale field reset、report template生成は変更なし。

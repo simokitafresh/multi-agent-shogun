@@ -1665,6 +1665,54 @@ print('|'.join(ids))
     [ "$output" = "L921|L922|L923" ]
 }
 
+@test "deploy_task excludes target_files mismatch even when task tags overlap" {
+    mkdir -p "$TEST_PROJECT/projects/testproj"
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+lessons:
+  - id: L_MATCH
+    title: insight write lock discipline
+    summary: insight_write target match
+    status: confirmed
+    helpful_count: 20
+    tags: [yaml, lesson, security]
+    target_files: [scripts/insight_write.sh]
+  - id: L_MISMATCH
+    title: sync lessons count caveat
+    summary: sync_lessons target mismatch
+    status: confirmed
+    helpful_count: 20
+    tags: [yaml, lesson, security]
+    target_files: [sync_lessons.sh]
+EOF
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "insight write fix"
+  description: "target_files mismatch must not leak through tag overlap"
+  task_type: impl
+  project: testproj
+  target_path: "scripts/insight_write.sh"
+  tags: [yaml]
+  acceptance_criteria:
+    - AC1
+EOF
+
+    run deploy_task_lessons_only sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/tasks/sasuke.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+related = (data.get('task') or {}).get('related_lessons') or []
+ids = [entry.get('id') for entry in related]
+assert 'L_MATCH' in ids, ids
+assert 'L_MISMATCH' not in ids, ids
+print('|'.join(ids))
+"
+    [ "$status" -eq 0 ]
+}
+
 @test "deploy_task does not inject non-platform cross-project lessons when command keywords match" {
     mkdir -p "$TEST_PROJECT/projects/mainproj" "$TEST_PROJECT/projects/otherproj"
     cat > "$TEST_PROJECT/config/projects.yaml" <<'EOF'
