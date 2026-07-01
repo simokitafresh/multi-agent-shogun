@@ -347,6 +347,7 @@ warn_if_q11_evidence_paths_changed() {
         [[ -n "${path//[[:space:]]/}" ]] || continue
         [[ -e "$CMD_PUBLISH_GIT_ROOT/$path" ]] || continue
 
+        git -C "$CMD_PUBLISH_GIT_ROOT" diff --quiet HEAD -- "$path" 2>/dev/null && continue
         diff_stat="$(git -C "$CMD_PUBLISH_GIT_ROOT" diff --stat HEAD -- "$path" 2>/dev/null || true)"
         [[ -n "${diff_stat//[[:space:]]/}" ]] || continue
 
