@@ -576,6 +576,51 @@ YAML
     _fixture_project_end
 }
 
+@test "acceptance_criteria ac field generates per-AC binary_checks in report template" {
+    _fixture_project_start
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  assigned_to: sasuke
+  parent_cmd: cmd_ac_field_fixture
+  task_id: cmd_ac_field_fixture_impl
+  project: infra
+  task_type: impl
+  ac_version: abcdef12
+  report_filename: sasuke_report_cmd_ac_field_fixture.yaml
+  acceptance_criteria:
+    - ac: "AC1: 計測+ボトルネック特定"
+    - ac: "AC2: 改善+commit"
+    - ac: "AC3: 全テストPASS(SKIP=0)+LC+BC+verdict"
+YAML
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        generate_report_template sasuke cmd_ac_field_fixture_impl cmd_ac_field_fixture infra
+    )
+
+    local report_path="$TEST_PROJECT/queue/reports/sasuke_report_cmd_ac_field_fixture.yaml"
+    run python3 - <<EOF
+import yaml
+from pathlib import Path
+
+data = yaml.safe_load(Path("$report_path").read_text(encoding="utf-8"))
+bc = data["binary_checks"]
+assert list(bc.keys()) == ["AC1", "AC2", "AC3", "commit"], bc.keys()
+assert bc["AC1"][0]["check"] == "計測+ボトルネック特定"
+assert bc["AC2"][0]["check"] == "改善+commit"
+assert bc["AC3"][0]["check"] == "全テストPASS(SKIP=0)+LC+BC+verdict"
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+
+    _fixture_project_end
+}
+
 @test "cmd_2665 lesson defaults are gate-compatible without manual lesson edits" {
     _fixture_project_start
 

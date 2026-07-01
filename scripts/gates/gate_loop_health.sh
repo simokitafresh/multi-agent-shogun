@@ -146,7 +146,7 @@ for pattern, count in reason_counter.most_common():
         if 'is dict (must be list)' in pattern:
             recommendations.append(f'UPGRADE: "{pattern}" ({count}回) → gate_report_autofix.shにdict→list変換追加')
         elif 'MISSING' in pattern and count >= 10:
-            recommendations.append(f'INVESTIGATE: "{pattern}" ({count}回) → テンプレートにデフォルト値追加を検討')
+            recommendations.append(f'INVESTIGATE: "{pattern}" ({count}回) → テンプレート導線/事前警告を強化。空欄を有効値で隠す補完は禁止')
 
 if recommendations:
     for r in recommendations:
@@ -247,8 +247,10 @@ for pattern, count in reason_counter.most_common():
     # Build insight message
     if 'is dict (must be list)' in pattern:
         msg = f'GATE成熟: {pattern} ({count}回発火) → gate_report_autofix.shにdict-list変換追加せよ'
+    elif pattern.startswith('binary_checks: AC self-verification missing'):
+        msg = f'報告テンプレートAC展開漏れ: {pattern} ({count}回発火) → acceptance_criteria形式をparseし、AC binary_checks自動生成を修正せよ'
     elif 'MISSING' in pattern and count >= 10:
-        msg = f'テンプレート強化: {pattern} ({count}回発火) → report templateにデフォルト値追加せよ'
+        msg = f'テンプレート導線強化: {pattern} ({count}回発火) → report templateの警告/入力導線を強化せよ。有効値の自動補完は禁止'
     elif count >= 10:
         msg = f'高頻度FAIL: {pattern} ({count}回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり'
     else:

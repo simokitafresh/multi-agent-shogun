@@ -80,6 +80,33 @@ EOF
     [[ "$output" == *"現時点で成熟提案なし"* ]]
 }
 
+@test "gate_loop_health missing-field recommendations do not suggest valid default values" {
+    {
+        for i in $(seq 1 10); do
+            printf -- '- ts: "2026-04-19T14:%02d:00" file: "queue/reports/recent_fail_%02d.yaml" result: FAIL reasons: "result.summary: MISSING or empty" fixes: ""\n' "$i" "$i"
+        done
+    } > "$TEST_TMPDIR/logs/gate_fire_log.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'テンプレート導線/事前警告を強化。空欄を有効値で隠す補完は禁止'* ]]
+    [[ "$output" == *'テンプレート導線強化: result.summary: MISSING or empty'* ]]
+    [[ "$output" != *'デフォルト値追加'* ]]
+}
+
+@test "gate_loop_health AC self-verification missing points to AC parser fix" {
+    {
+        for i in $(seq 1 10); do
+            printf -- '- ts: "2026-04-19T14:%02d:00" file: "queue/reports/recent_fail_%02d.yaml" result: FAIL reasons: "binary_checks: AC self-verification missing (0/3 ACs). 全ACの二値チェックを記入せよ" fixes: ""\n' "$i" "$i"
+        done
+    } > "$TEST_TMPDIR/logs/gate_fire_log.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'報告テンプレートAC展開漏れ: binary_checks: AC self-verification missing'* ]]
+    [[ "$output" != *'高頻度FAIL: binary_checks: AC self-verification missing'* ]]
+}
+
 @test "gate_loop_health autofix蓄積があっても自己修正率判定が実行される" {
     {
         # 10 self-corrected files (FAIL→PASS)

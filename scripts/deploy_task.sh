@@ -2513,6 +2513,25 @@ EOF
             for (i = 1; i <= n; i++) if (arr[i] == id) return 1
             return 0
         }
+        function clean_scalar(s) {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+            while (s ~ /^["'"'"']/) sub(/^["'"'"']/, "", s)
+            while (s ~ /["'"'"']$/) sub(/["'"'"']$/, "", s)
+            return s
+        }
+        function set_ac_value(raw,    s) {
+            s = clean_scalar(raw)
+            if (s == "") return
+            if (s ~ /^AC[[:alnum:]_-]+[[:space:]]*:/) {
+                cur_id = s
+                sub(/[[:space:]]*:.*/, "", cur_id)
+                cur_desc = s
+                sub(/^[^:]*:[[:space:]]*/, "", cur_desc)
+                cur_desc = clean_scalar(cur_desc)
+            } else if (cur_desc == "") {
+                cur_desc = s
+            }
+        }
         function emit_cur(    id, i) {
             if (cc <= 0) return
             id = cur_id
@@ -2535,7 +2554,7 @@ EOF
         }
         /^  acceptance_criteria:/ { in_ac=1; next }
         in_ac && /^  [a-z]/ { exit }
-        in_ac && /^  - / {
+        in_ac && /^[[:space:]]+- / {
             emit_cur()
             cur_id=""; cur_desc=""; cc=0
             if (/id:/) { s=$0; sub(/.*id:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); cur_id=s }
@@ -2545,16 +2564,22 @@ EOF
                 while (s ~ /["'"'"']$/) sub(/["'"'"']$/, "", s)
                 cur_desc=s
             }
+            if (/ac:/) { s=$0; sub(/.*ac:[[:space:]]*/, "", s); set_ac_value(s) }
         }
-        in_ac && /    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cur_id=$0 }
-        in_ac && /    description:/ {
+        in_ac && /^[[:space:]]+id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cur_id=$0 }
+        in_ac && /^[[:space:]]+ac:/ {
+            s=$0
+            sub(/.*ac:[[:space:]]*/, "", s)
+            set_ac_value(s)
+        }
+        in_ac && /^[[:space:]]+description:/ {
             sub(/.*description:[[:space:]]*/, "")
             sub(/[[:space:]]*$/, "")
             while ($0 ~ /^["'"'"']/) sub(/^["'"'"']/, "")
             while ($0 ~ /["'"'"']$/) sub(/["'"'"']$/, "")
             cur_desc=$0
         }
-        in_ac && /    - check:/ {
+        in_ac && /^[[:space:]]+- check:/ {
             sub(/.*- check:[[:space:]]*/, "")
             sub(/[[:space:]]*$/, "")
             while ($0 ~ /^["'"'"']/) sub(/^["'"'"']/, "")
@@ -2654,12 +2679,31 @@ ${_commit_bc}"
         # GP-133 enhanced: AC descriptionから。分割でcheck項目を自動生成（description空→FILLフォールバック）
         local _ac_stubs
         _ac_stubs=$(awk -v ac_filter="$_ac_assigned_filter" '
-            function in_filter(id,    n, arr, i) {
-                if (ac_filter == "") return 1
-                n = split(ac_filter, arr, "|")
-                for (i = 1; i <= n; i++) if (arr[i] == id) return 1
-                return 0
+        function in_filter(id,    n, arr, i) {
+            if (ac_filter == "") return 1
+            n = split(ac_filter, arr, "|")
+            for (i = 1; i <= n; i++) if (arr[i] == id) return 1
+            return 0
+        }
+        function clean_scalar(s) {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+            while (s ~ /^["'"'"']/) sub(/^["'"'"']/, "", s)
+            while (s ~ /["'"'"']$/) sub(/["'"'"']$/, "", s)
+            return s
+        }
+        function set_ac_value(raw,    s) {
+            s = clean_scalar(raw)
+            if (s == "") return
+            if (s ~ /^AC[[:alnum:]_-]+[[:space:]]*:/) {
+                cur_id = s
+                sub(/[[:space:]]*:.*/, "", cur_id)
+                desc = s
+                sub(/^[^:]*:[[:space:]]*/, "", desc)
+                desc = clean_scalar(desc)
+            } else if (desc == "") {
+                desc = s
             }
+        }
             function emit_cur(    id, n, i) {
                 if (cur_id == "" && desc == "") return
                 id = cur_id
@@ -2689,10 +2733,11 @@ ${_commit_bc}"
             }
             /^  acceptance_criteria:/ { in_ac=1; next }
             in_ac && /^  [a-z]/ { exit }
-            in_ac && /^  - / {
+            in_ac && /^[[:space:]]+- / {
                 emit_cur()
                 cur_id=""; desc=""
                 if (/id:/) { s=$0; sub(/.*id:[[:space:]]*/, "", s); sub(/[[:space:]]*$/, "", s); cur_id=s }
+                if (/ac:/) { s=$0; sub(/.*ac:[[:space:]]*/, "", s); set_ac_value(s) }
                 if (/description:/) {
                     s=$0
                     sub(/.*description:[[:space:]]*/, "", s)
@@ -2703,8 +2748,14 @@ ${_commit_bc}"
                 }
                 next
             }
-            in_ac && /^    id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cur_id=$0; next }
-            in_ac && /^    description:/ {
+            in_ac && /^[[:space:]]+id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); cur_id=$0; next }
+            in_ac && /^[[:space:]]+ac:/ {
+                s=$0
+                sub(/.*ac:[[:space:]]*/, "", s)
+                set_ac_value(s)
+                next
+            }
+            in_ac && /^[[:space:]]+description:/ {
                 sub(/.*description:[[:space:]]*/, ""); sub(/[[:space:]]*$/, "")
                 while ($0 ~ /^["'"'"']/) sub(/^["'"'"']/, "")
                 while ($0 ~ /["'"'"']$/) sub(/["'"'"']$/, "")
