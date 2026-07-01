@@ -31,7 +31,7 @@ fi
         exit 0
     }
 
-    total_lines=$(wc -l < "$TSV_FILE" | tr -d ' ')
+    total_lines=$(wc -l < "$TSV_FILE")
 
     # ヘッダー(1行) + データ行で KEEP_LINES+1 以下なら何もしない
     if [ "$total_lines" -le $((KEEP_LINES + 1)) ]; then
@@ -39,7 +39,8 @@ fi
     fi
 
     # アーカイブディレクトリ確保
-    mkdir -p "$(dirname "$ARCHIVE_FILE")"
+    archive_dir="${ARCHIVE_FILE%/*}"
+    [ -d "$archive_dir" ] || mkdir -p "$archive_dir"
 
     # アーカイブファイルにヘッダーがなければ追加
     if [ ! -f "$ARCHIVE_FILE" ] || [ ! -s "$ARCHIVE_FILE" ]; then
@@ -51,7 +52,7 @@ fi
     sed -n "2,${archive_end}p" "$TSV_FILE" >> "$ARCHIVE_FILE"
 
     # 保持: ヘッダー + 末尾KEEP_LINES行
-    tsv_dir="$(dirname "$TSV_FILE")"
+    tsv_dir="${TSV_FILE%/*}"
     tmpfile=$(mktemp "$tsv_dir/.lesson_impact.XXXXXX.tmp")
     trap 'rm -f "$tmpfile"' EXIT
     head -1 "$TSV_FILE" > "$tmpfile"
