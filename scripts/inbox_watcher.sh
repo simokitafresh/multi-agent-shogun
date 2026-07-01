@@ -375,7 +375,7 @@ touch_state_file() {
 }
 
 refresh_debounce_file() {
-    if ! write_state_file "$DEBOUNCE_FILE" "$(date +%s)" "debounce"; then
+    if ! write_state_file "$DEBOUNCE_FILE" "$EPOCHSECONDS" "debounce"; then
         echo "[$(date)] WARNING: failed to refresh debounce file: $DEBOUNCE_FILE" >&2
         return 1
     fi
@@ -386,7 +386,7 @@ get_first_unread_age() {
         local first_seen
         IFS= read -r first_seen < "$FIRST_UNREAD_SEEN" 2>/dev/null || true
         if [[ "$first_seen" =~ ^[0-9]+$ ]]; then
-            echo $(( $(date +%s) - first_seen ))
+            echo $(( EPOCHSECONDS - first_seen ))
             return
         fi
     fi
@@ -395,7 +395,7 @@ get_first_unread_age() {
 
 mark_first_unread_seen() {
     if [ ! -f "$FIRST_UNREAD_SEEN" ]; then
-        write_state_file "$FIRST_UNREAD_SEEN" "$(date +%s)" "first_unread_seen" || true
+        write_state_file "$FIRST_UNREAD_SEEN" "$EPOCHSECONDS" "first_unread_seen" || true
     fi
 }
 
@@ -421,7 +421,7 @@ maybe_force_idle_flag() {
     last_active=$(tmux display-message -t "$PANE_TARGET" -p '#{@last_active}' 2>/dev/null || echo "")
     if [[ "$last_active" =~ ^[0-9]+$ ]] && [ "$last_active" -gt 0 ]; then
         local now elapsed
-        now=$(date +%s)
+        now=$EPOCHSECONDS
         elapsed=$((now - last_active))
         if [ "$elapsed" -ge "$BUSY_TIMEOUT_SEC" ]; then
             echo "[$(date)] [RECOVERY] forcing idle flag for $AGENT_ID: @last_active ${elapsed}s ago (>= ${BUSY_TIMEOUT_SEC}s)" >&2
@@ -448,7 +448,7 @@ get_fp_age() {
         local fp_mtime
         fp_mtime=$(stat -c %Y "$FINGERPRINT_FILE" 2>/dev/null || echo 0)
         if [[ "$fp_mtime" =~ ^[0-9]+$ ]] && [ "$fp_mtime" -gt 0 ]; then
-            echo $(( $(date +%s) - fp_mtime ))
+            echo $(( EPOCHSECONDS - fp_mtime ))
             return
         fi
     fi
@@ -699,7 +699,7 @@ send_wakeup() {
         if ! (
             flock -w 5 201 || { echo "error	STATE_LOCK_TIMEOUT"; exit 1; }
 
-            _now="$(date +%s)"
+            _now="$EPOCHSECONDS"
 
             if [ -f "$DEBOUNCE_FILE" ]; then
                 _last=""
@@ -753,7 +753,7 @@ send_wakeup() {
             last=""
             IFS= read -r last < "$DEBOUNCE_FILE" 2>/dev/null || true
             if [[ "$last" =~ ^[0-9]+$ ]]; then
-                now="$(date +%s)"
+                now="$EPOCHSECONDS"
                 elapsed=$((now - last))
                 if [ "$elapsed" -lt "$DEBOUNCE_SEC" ]; then
                     echo "[$(date)] [DEBOUNCE] Skipping nudge (${elapsed}s < ${DEBOUNCE_SEC}s) for $AGENT_ID" >&2
@@ -787,7 +787,7 @@ send_wakeup() {
             sent_token="${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_${safe_fp}"
             if ! ( set -C; : > "$sent_token" ) 2>/dev/null; then
                 sent_mtime=$(stat -c %Y "$sent_token" 2>/dev/null || echo 0)
-                sent_elapsed=$(( $(date +%s) - sent_mtime ))
+                sent_elapsed=$(( EPOCHSECONDS - sent_mtime ))
                 if [ "$sent_elapsed" -lt "$DEBOUNCE_SEC" ]; then
                     echo "[$(date)] [SEND-DEDUPE] Skipping duplicate send for $AGENT_ID fingerprint $current_fp" >&2
                     exit 0
@@ -844,9 +844,9 @@ process_unread() {
 
     if [ "$normal_count" -gt 0 ] 2>/dev/null || [ "$has_specials" = "true" ]; then
         mark_first_unread_seen
-    else
-        clear_first_unread_seen
     fi
+    # NOTE: clear_first_unread_seen() for the normal_count==0 case is handled
+    # below in the "No unread" branch (same condition), avoiding a duplicate call.
 
     # Handle special CLI commands first (/clear, /model)
     local specials=""
@@ -1041,5 +1041,6 @@ while true; do
     check_script_update "$AGENT_ID" "$PANE_TARGET"
 
     # Heartbeat: daemon_watchdog.sh がhang検知に使う
-    date +%s > "$LOOP_HEARTBEAT_FILE"
+    # $EPOCHSECONDS: bash 5+組込み変数。date +%sと同一形式でsubprocess forkを回避
+    printf '%s\n' "$EPOCHSECONDS" > "$LOOP_HEARTBEAT_FILE"
 done
