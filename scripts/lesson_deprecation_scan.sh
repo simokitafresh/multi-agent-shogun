@@ -328,6 +328,9 @@ confirmed = []  # (project_id, lesson_id, reason)
 review = []     # (project_id, lesson_id, title_snip, related, last_ref)
 eff_confirmed = []  # (project_id, lesson_id, title_snip, inj_count, hlp_count)
 eff_review = []     # (project_id, lesson_id, title_snip, inj_count, hlp_count, rate)
+total_lessons = 0
+active_lessons = 0
+deprecated_lessons = 0
 
 for project in projects:
     project_id = project["id"]
@@ -349,8 +352,11 @@ for project in projects:
     for lesson in lessons:
         if not isinstance(lesson, dict):
             continue
+        total_lessons += 1
         if is_deprecated(lesson):
+            deprecated_lessons += 1
             continue  # already deprecated: skip
+        active_lessons += 1
 
         lesson_id = lesson.get("id", "?")
         m_id = re.match(r'^L(\d+)$', lesson_id)
@@ -409,31 +415,6 @@ for project in projects:
                 eff_review.append((project_id, lesson_id, title_snip, inj_count, hlp_count, rate))
 
 # --- Output ---
-total_lessons = 0
-active_lessons = 0
-deprecated_lessons = 0
-
-for project in projects:
-    project_id = project["id"]
-    lessons_file = SCRIPT_DIR / "projects" / project_id / "lessons.yaml"
-    if not lessons_file.exists():
-        continue
-    with open(lessons_file, encoding="utf-8") as f:
-        data = yaml.load(f, Loader=_CLoader)
-    if not isinstance(data, dict):
-        continue
-    lessons = data.get("lessons", [])
-    if not isinstance(lessons, list):
-        continue
-    for lesson in lessons:
-        if not isinstance(lesson, dict):
-            continue
-        total_lessons += 1
-        if is_deprecated(lesson):
-            deprecated_lessons += 1
-        else:
-            active_lessons += 1
-
 print(f"METRICS: total_lessons={total_lessons} active_lessons={active_lessons} deprecated_lessons={deprecated_lessons}")
 print()
 print("=== 確定candidate（自動） ===")
