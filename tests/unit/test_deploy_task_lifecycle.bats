@@ -55,6 +55,7 @@ task:
   progress: 'AC1-3全完了。PASS'
   description: '前cmdの説明'
   deployed_at: '2026-03-29T10:00:00'
+  started_at: '2026-03-29T10:00:01'
   worker_id: tobisaru
   timestamp: '2026-03-29T10:00:00'
   engineering_preferences:
@@ -1024,7 +1025,7 @@ EOF
 
     assert_missing_fields \
         "$file" \
-        target_path progress description deployed_at \
+        target_path progress description deployed_at started_at \
         constraints engineering_preferences context_files scope context context_hints assigned_scope stop_for never_stop_for parallel_ok \
         AC1 AC2 AC3 acceptance_criteria ac_priority ac_checkpoint \
         command reports_to_read credential_warning context_update type report_template \
