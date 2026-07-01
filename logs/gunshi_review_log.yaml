@@ -1390,3 +1390,228 @@
   brainwash_check: "#2: 実動作確認startup1.9s+ac_verify1.3s(洗脳#2防止)。commit確認。2/2"
   step3_5_verified: true
   timestamp: "2026-07-01T21:26:00"
+- cmd_id: cmd_training_speed_inbox_write_202607020227_hayate
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "scripts/inbox_write.sh(93ms実測確認)"
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "速度修行draft。inbox_write 93ms×毎通信。全スクリプト速度修行サイクル継続"
+  observations:
+    - "事実1: inbox_write.sh実測93ms。全エージェントが毎通信で使用"
+  origin: "[[速度修行]] -> [[inbox_write累積影響]] -> [[APPROVE]]"
+  causal_chain: "殿覚醒→全スクリプト速度修行→inbox_write毎通信→品質維持高速化"
+  brainwash_check: "#7防止: 全スクリプト対象。制限せず継続"
+  ambiguity_points: none
+  hole_action: none
+  timestamp: "2026-07-02T02:29:00"
+- cmd_id: cmd_training_speed_lesson_write_202607020245_hanzo
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "scripts/lesson_write.sh(対象確認)"
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "速度修行draft。lesson_write.sh。全スクリプト速度修行サイクル継続"
+  observations:
+    - "事実1: lesson_write.sh速度修行。家老が教訓登録時に使用"
+  origin: "[[速度修行]] -> [[lesson_write]] -> [[APPROVE]]"
+  causal_chain: "殿覚醒→全スクリプト速度修行→lesson_write→品質維持高速化"
+  brainwash_check: "#7防止: 全スクリプト対象継続"
+  ambiguity_points: none
+  hole_action: none
+  timestamp: "2026-07-02T02:46:00"
+- cmd_id: cmd_training_speed_decision_write_202607020244_kagemaru
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "scripts/decision_write.sh(対象確認)"
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "速度修行draft。decision_write.sh。全スクリプト速度修行サイクル継続"
+  observations:
+    - "事実1: decision_write.sh速度修行。裁定記録時に使用"
+  origin: "[[速度修行]] -> [[decision_write]] -> [[APPROVE]]"
+  causal_chain: "殿覚醒→全スクリプト速度修行→decision_write→品質維持高速化"
+  brainwash_check: "#7防止: 全スクリプト対象継続"
+  ambiguity_points: none
+  hole_action: none
+  timestamp: "2026-07-02T02:47:00"
+- cmd_id: cmd_training_speed_insight_write_202607020248_hayate
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "scripts/insight_write.sh(対象確認)"
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "速度修行draft。insight_write.sh。陣形図M:Op表示バグ検出(実態gpt-5.5 low)"
+  observations:
+    - "事実1: insight_write.sh速度修行。気づきキュー書込時に使用"
+    - "事実2: 陣形図でhayate=M:Op表示だが実態はgpt-5.5 low(capture-pane確認)。ninja_monitor表示バグ"
+  origin: "[[速度修行]] -> [[insight_write]] -> [[APPROVE]]"
+  causal_chain: "殿覚醒→全スクリプト速度修行→insight_write→品質維持高速化"
+  brainwash_check: "#2防止: 陣形図M:Op表示→capture-pane一次確認でgpt-5.5 low確認"
+  ambiguity_points: none
+  hole_action: none
+  timestamp: "2026-07-02T02:49:00"
+- cmd_id: cmd_3635
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "render.yaml:10(startCommand init_db現物確認)"
+    - "main.py(advisory_lock 0件=未実装確認)"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - adversarial
+    - ambiguity
+  findings_summary: "6観点OK。DM-Signal Phase1。設計書v7(6往復39所見)。deadlock修正(advisory lock)+cron env修正+partial failure対処。3前提全verified"
+  observations:
+    - "事実1: render.yaml L10にstartCommand: python -m app.db.init_db && uvicorn現物確認。二重init_db=deadlock根因"
+    - "事実2: main.py advisory_lock 0件=未実装確認。q11一次検証済み"
+    - "事実3: 偵察3名(hayate AC1/AC3, hanzo AC2/AC4, kotaro AC3)の結果に基づく設計。6往復レビュー済み"
+  origin: "[[cmd_3635]] -> [[DM_Signal_Phase1_deadlock+cron修正]] -> [[APPROVE]]"
+  causal_chain: "7/1障害3件→偵察3名→設計書v7(6往復)→Phase1実装cmd→deadlock排除+cron env修正+partial failure対処"
+  brainwash_check: "#2防止: render.yaml L10+advisory_lock 0件を一次確認(2/2)。#1防止: 6観点全実施+設計書6往復の深度を確認"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "本番修正だが変更行数はAC実装時に判明。report reviewでadversarial実施予定"
+  ambiguity_points: none
+  hole_action: none
+  timestamp: "2026-07-02T04:26:00"
+- cmd_id: cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  verified_files:
+    - "scripts/gates/gate_shogun_startup.sh(alert key fingerprint追加確認)"
+  gate_result: CLEAR
+  gate_prediction: BLOCK
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "4観点OK。gate_prediction=BLOCK(SG-PRE9c偽陽性:「掲示板未確認」→task_clarity「未確認」誤検出)。startup alert key粗粒度修正+bats 124/124 PASS"
+  observations:
+    - "事実1: SG-PRE9cが「掲示板未確認」という業務用語を「未確認=作業未達」と誤検出→BLOCK偽陽性"
+    - "事実2: bats 76/76+48/48=124件全PASS SKIP=0。startup再実行でBLOCK消失→WARN"
+    - "事実3: 既存3連続BLOCK安全チェックは削除せず、key粒度向上のみの最小修正"
+  origin: "[[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[alert_key粒度修正]] -> [[LGTM+BLOCK偽陽性]]"
+  causal_chain: "粗粒度key(件数のみ)→別原因で同件数→3連続誤判定→BLOCK。fingerprint追加で根因区別→誤BLOCK排除"
+  brainwash_check: "#2防止: bats 124件+startup再実行+SG-PRE9c偽陽性を「掲示板未確認」語で確認。GATE BLOCK予測だがFP判定で#1に乗っていない"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "gate_shogun_startup.sh変更だが最小修正(key文字列fingerprint追加のみ)"
+  step3_5_verified: true
+  timestamp: "2026-07-02T04:40:00"
+- cmd_id: cmd_3635
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  verified_files:
+    - "render.yaml:10(startCommand init_db削除確認)"
+    - "backend/app/main.py(advisory lock pg_advisory_lock 3635001追加確認)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "4観点OK。DM-Signal Phase1。startCommand二重init_db削除+advisory lock+cron scheduleコメント訂正+partial failure対処。4ファイル+94/-21。関連24件PASS"
+  observations:
+    - "事実1: render.yaml L10からpython -m app.db.init_db &&削除→uvicorn直接起動を現物確認"
+    - "事実2: main.py _run_init_db_with_advisory_lock関数追加。pg_advisory_lock(3635001)で排他制御"
+    - "事実3: full pytest 201.73s中断(WITH_CONCERNS)。関連テスト24件+py_compile 3件はPASS"
+  origin: "[[cmd_3635]] -> [[Phase1_deadlock+cron修正]] -> [[LGTM]]"
+  causal_chain: "二重init_db→migration deadlock→advisory lock排他制御。cron env欠落→コメント訂正+partial failure処理追加"
+  brainwash_check: "#2防止: git show 9cc10f2差分+render.yaml+main.py現物確認(3/3)。#1防止: WITH_CONCERNSをスキップせず明記"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "本番修正だが+94/-21<200行。設計書6往復済み"
+  step3_5_verified: true
+  timestamp: "2026-07-02T04:43:00"
+- cmd_id: cmd_karo_hotfix_context_freshness_ga160_202607020443
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  verified_files:
+    - "context/dm-signal-core.md(freshness更新確認)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。GA-160 context_freshness更新。dm-signal-core.md 3件反映。定型作業"
+  observations:
+    - "事実1: dm-signal-core.md更新。source commits 9件照合→core反映3件"
+  origin: "[[GA-160]] -> [[context_freshness更新]] -> [[LGTM]]"
+  causal_chain: "context_freshness ALERT→source commits照合→core.md更新→ALERT解消"
+  brainwash_check: "#2防止: precheck ERRORS=0+commit実在確認"
+  step3_5_verified: true
+  timestamp: "2026-07-02T04:49:00"
+- cmd_id: cmd_karo_hotfix_cmd_complete_lesson_candidate_done_warn_202607020455
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  verified_files:
+    - "scripts/cmd_complete_gate.sh(偽陽性修正確認)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。cmd_complete_gate lesson_candidate登録済みWARN偽陽性修正。bats PASS"
+  observations:
+    - "事実1: lesson.done登録済み候補でWARN発火→修正で偽陽性排除"
+  origin: "[[cmd_complete_gate偽陽性]] -> [[lesson.done判定修正]] -> [[LGTM]]"
+  causal_chain: "lesson_candidate登録後もdone状態を見ずWARN→done判定追加→偽陽性排除"
+  brainwash_check: "#2防止: precheck ERRORS=0+commit確認"
+  step3_5_verified: true
+  timestamp: "2026-07-02T05:00:00"
+- cmd_id: cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  verified_files:
+    - "scripts/gates/gate_report_format.sh(GATE_NO_LOG=1コメント追加確認)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。高頻度FAIL根因=kagemaru速度計測re-run。GATE_NO_LOG=1コメント追加。最小変更"
+  observations:
+    - "事実1: bc_result_empty 18回FAILの根因=kagemaru報告1件への3連続re-run(速度計測ベンチマーク中)"
+  origin: "[[bc_result_empty高頻度FAIL]] -> [[速度計測re-run根因]] -> [[LGTM]]"
+  causal_chain: "cmd_complete_gate速度計測中→report未完成でre-run→bc_result_empty 18回FAIL→根因特定+コメント追加"
+  brainwash_check: "#2防止: precheck ERRORS=0+commit確認"
+  step3_5_verified: true
+  timestamp: "2026-07-02T05:39:00"
+- cmd_id: cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  verified_files:
+    - "scripts/deploy_task.sh(awk ENVIRON修正確認)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。awk -v Cエスケープ→ENVIRON値渡し修正。deploy_task.sh report template安全化"
+  observations:
+    - "事実1: awk -vがバックスラッシュ+ダブルクォートをCスタイル解釈→YAML破損。ENVIRON経由で安全化"
+  origin: "[[deploy_report_template_quote_escape]] -> [[awk_ENVIRON修正]] -> [[LGTM]]"
+  causal_chain: "AC description内エスケープ済み引用符→awk -v Cスタイル解釈→バックスラッシュ消失→YAML破損→ENVIRON経由で安全化"
+  brainwash_check: "#2防止: precheck ERRORS=0+commit確認"
+  step3_5_verified: true
+  timestamp: "2026-07-02T05:43:00"

@@ -527,14 +527,17 @@ lessons:
     共通構造=「N箇所確認すべき所を1箇所実測+推論で代用」。
     防御: 否定的存在主張(〜はどこにも存在しない/〜が発生源だ)をする前に、探索範囲を列挙し各範囲を自分の実測で埋めよ。
     道具の出力(gate/grep)は候補絞込みであり存在判定の代用ではない。LG001/LG003/LK-A01の系譜。
+    再発(2026-07-02): MEMORY.mdの `memory/xxx.md` 幻ポインタ誤診。軍師・家老がproject `/mnt/c/.../memory/` 一箇所のみ実測しNOT_FOUND→「壊れている」と誤断定したが、
+    実際はauto-memory dir(`~/.claude/projects/-mnt-c-tools-multi-agent-shogun/memory/`=MEMORY.md本体と同階層)に実在。二規約混在(MEMORY.mdポインタ=auto-dir / CLAUDE.md参照のdeepdive系=project dir)が探索範囲の見落としを生んだ。
+    既知の探索範囲: MEMORY.md(=shogun専用auto-load。軍師・家老は非ロード)由来の `memory/*.md` ポインタはauto-dirを必ず含めよ。
   source_cmd: cmd_3282
-  origin: '[[cmd_3282 RC誤断定+cmd_3281残件誤判定]] -> [[1箇所実測+推論の代用]] -> [[全範囲実測原則]]'
+  origin: '[[cmd_3282 RC誤断定+cmd_3281残件誤判定]] -> [[1箇所実測+推論の代用]] -> [[全範囲実測原則]] -> [[2026-07-02 幻ポインタ二規約混在]]'
   created_at: '2026-06-11'
   automated: true
   enforcement_level: 2
-  enforcement: 'review_logヘッダ追記候補+本教訓のstartup自動ロード。2件とも軍師自己検出→自己訂正済み(第二層ループ機能の実証)'
-  when: レビュー・分析で「存在しない」「〜が発生源」等の存在/否定主張を書く時
-  how: 探索範囲(repo/ディレクトリ/コード経路)を列挙→各範囲を自分のls/grep/git showで実測→全範囲埋まってから主張する
+  enforcement: 'review_logヘッダ追記候補+本教訓のstartup自動ロード。2件とも軍師自己検出→自己訂正済み(第二層ループ機能の実証)。2026-07-02再発分はMEMORY.md L5に参照規約明記+本教訓に既知探索範囲(auto-dir)を追記'
+  when: レビュー・分析で「存在しない」「〜が発生源」等の存在/否定主張を書く時。特にMEMORY.md/context由来の `memory/*.md` パスの存否を判定する時
+  how: 探索範囲(repo/ディレクトリ/コード経路)を列挙→各範囲を自分のls/grep/git showで実測→全範囲埋まってから主張する。`memory/*.md` はauto-dir(`~/.claude/projects/.../memory/`)とproject dir(`/mnt/c/.../memory/`)の両方をlsで確認せよ
 - id: LG043
   title: binary_checks yes と task_clarity 矛盾を照合せよ — unclear/discretion に未達成委譲があれば虚偽yes
   detail: |
