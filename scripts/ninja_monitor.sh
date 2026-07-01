@@ -4022,7 +4022,7 @@ write_karo_snapshot() {
                         _model_name=$(tmux capture-pane -t "$_pane_target" -p 2>/dev/null | tail -20 | grep -m1 -oiE 'gpt-[0-9.]+[a-z ]*' || echo "")
                         # 2nd: Claude起動バナー(▝▜█████▛▘。末尾にモデル名なし→全スクロールバック必須)
                         if [ -z "$_model_name" ]; then
-                            _model_name=$(tmux capture-pane -t "$_pane_target" -p -S - 2>/dev/null | grep '▝▜█████▛▘' | head -1 | grep -oiE '(Opus|Sonnet|Haiku) [0-9]+\.[0-9]+' || echo "")
+                            _model_name=$(tmux capture-pane -t "$_pane_target" -p -S - 2>/dev/null | grep '▝▜█████▛▘' | tail -1 | grep -oiE '(Opus|Sonnet|Haiku) [0-9]+\.[0-9]+' || echo "")
                         fi
                     fi
                     if [ -z "$_model_name" ]; then
