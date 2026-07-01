@@ -160,6 +160,20 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-07-01: gate=gate_report_format result=FAIL executor=kotaro reason=test
+- 2026-07-01: gate=gate_report_format result=FAIL executor=kotaro reason=binary_checks: AC self-verification missing (0/3 ACs). 全ACの二値チェックを記入せよ; result.summary: MISSING or empty
+
+- 2026-07-01: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:kotaro_report_cmd_3628_kotaro.yaml|report_format:saizo_report_cmd_3628_saizo.yaml|report_format:tobisaru_report_cmd_3628_tobisaru.yaml|hanzo:binary_checks_fail|kot...
+- 2026-07-01: gate=gate_report_format result=FAIL executor=kotaro reason=binary_checks: AC self-verification missing (0/2 ACs). 全ACの二値チェックを記入せよ; result.summary: MISSING or empty
+
+- 2026-07-01: gate=gate_report_format result=FAIL executor=kotaro reason=files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ
+- 2026-07-01: gate=cmd_complete_gate result=FAIL executor=kotaro reason=report_format:kotaro_report_cmd_3621_kotaro_ab.yaml|report_format:tobisaru_report_cmd_3621.yaml
+
+- 2026-06-30: gate=cmd_complete_gate result=FAIL executor=saizo reason=report_format:saizo_report_cmd_karo_ci_fix_diagnosis_trigger_map_202606301658.yaml
+- 2026-06-30: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:saizo_report_cmd_3609_recon2.yaml|saizo:binary_checks_fail
+
+- 2026-06-30: gate=gate_report_format result=FAIL executor=saizo reason=binary_checks: AC self-verification missing (0/4 ACs). 全ACの二値チェックを記入せよ; result.summary: MISSING or empty
 - 2026-06-28: gate=gate_report_format result=FAIL executor=kagemaru reason=files_modified: 2件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ
 
 - 2026-06-28: gate=gate_report_format result=FAIL executor=kagemaru reason=files_modified: 9件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ
