@@ -617,8 +617,13 @@ if [ -f "$REVIEW_LOG" ]; then
                 /type:[[:space:]]*["'\'' ]*(gate_result|gate_clear|review_feedback)/ { has_gate=1 }
                 END { flush(); print found ? 1 : 0 }
                 ' "$inbox_file" 2>/dev/null || echo 0)
+                has_new_gate_result=$(printf '%s\n' "$has_new_gate_result" | tail -1)
+                case "$has_new_gate_result" in
+                    1) has_new_gate_result=1 ;;
+                    *) has_new_gate_result=0 ;;
+                esac
             fi
-            if [ "${GUNSHI_STARTUP_FORCE_GATE_SYNC:-0}" = "1" ] || [ "$has_new_gate_result" -eq 1 ]; then
+            if [ "${GUNSHI_STARTUP_FORCE_GATE_SYNC:-0}" = "1" ] || [ "$has_new_gate_result" = "1" ]; then
                 sync_out=$(bash "$GATE_SYNC" 2>&1) || true
                 echo "  自動sync実行: $sync_out"
                 # sync後に再計測
