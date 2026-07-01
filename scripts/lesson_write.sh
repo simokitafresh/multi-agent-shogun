@@ -1037,7 +1037,16 @@ PYCOMBINED
     ) 200>"$LOCKFILE"; then
         # AC3: Auto-call sync_lessons.sh after write (non-blocking: 失敗しても後続処理を続行)
         if [ "${LESSON_WRITE_SKIP_SYNC:-0}" != "1" ]; then
-            bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID" || echo "WARN: sync_lessons.sh failed (non-blocking — lesson is written)" >&2
+            if [ "${LESSON_WRITE_SYNC_MODE:-async}" = "sync" ]; then
+                bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID" || echo "WARN: sync_lessons.sh failed (non-blocking — lesson is written)" >&2
+            else
+                mkdir -p "$SCRIPT_DIR/logs"
+                (
+                    bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID" \
+                        || echo "WARN: sync_lessons.sh failed (non-blocking — lesson is written)" >&2
+                ) >> "$SCRIPT_DIR/logs/lesson_write_sync_async.log" 2>&1 &
+                disown 2>/dev/null || true
+            fi
         fi
         # Read lesson ID once — reuse for context/strategic/reflux (was: 3x cat fork)
         NEW_LESSON_ID=""
