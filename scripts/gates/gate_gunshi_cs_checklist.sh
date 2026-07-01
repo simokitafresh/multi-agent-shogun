@@ -890,16 +890,20 @@ fi
 # 同一cmd_idの任意エントリ(draft/report/self_study)にadversarialがあれば除外(2026-06-10)
 # reason: draftにadversarial検討済みならreportで再検討不要。self_study遡及も有効
 _adv_covered_ids=$(awk '
-    /^- (cmd_id|id):/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); fc="" }
-    /^  finding_categories:.*\[/ { fc=$0 }
-    /^  timestamp:/ && fc ~ /adversarial/ && id != "" { print id }
+    /^- (cmd_id|id):/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); adv=0; in_fc=0 }
+    /^  finding_categories:/ { in_fc=1; if ($0 ~ /adversarial/) adv=1 }
+    in_fc && /- adversarial/ { adv=1 }
+    /^  [a-z_]*:/ && !/finding_categories/ && !/^    / { in_fc=0 }
+    /^  timestamp:/ && adv && id != "" { print id; adv=0; in_fc=0 }
 ' "$LOG_FILE" 2>/dev/null | sort -u)
 _automation_no_adv=$(awk '
-    /^- (cmd_id|id):/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); fc=""; obs=""; rt="" }
+    /^- (cmd_id|id):/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); adv=0; in_fc=0; obs=""; rt="" }
     /^  review_type:/ { rt=substr($0,index($0,":")+2); gsub(/[" \t]/,"",rt) }
-    /^  finding_categories:.*\[/ { fc=$0 }
+    /^  finding_categories:/ { in_fc=1; if ($0 ~ /adversarial/) adv=1 }
+    in_fc && /- adversarial/ { adv=1 }
+    /^  [a-z_]*:/ && !/finding_categories/ && !/^    / { in_fc=0 }
     /^    - .*/ { obs=obs " " $0 }
-    /^  timestamp:/ && rt ~ /draft|report/ && fc !~ /adversarial/ && id != "" {
+    /^  timestamp:/ && rt ~ /draft|report/ && !adv && id != "" {
         if (id ~ /^cmd_training_speed_/) next  # 速度修行cmd=コード変更なし理解テスト。adversarial不要(GP-263)
         if (obs ~ /scripts\/|\.sh|gate_|hook_|monitor|deploy_task|cron|cleanup|trigger/) {
             print id

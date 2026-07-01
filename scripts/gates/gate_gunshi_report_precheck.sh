@@ -918,9 +918,17 @@ try:
                     task_readonly.add(os.path.basename(p.strip()))
         except Exception:
             pass
-    unmatched = sorted(set(write_refs) - fm_bases - task_readonly)
+    # 報告YAMLのverified_existing_dependencyも除外 (VED=実行のみ確認対象。変更対象外)
+    ved_bases = set()
+    for ved in (report_data.get('verified_existing_dependency') or []):
+        p = ved.get('path', ved) if isinstance(ved, dict) else str(ved)
+        if p:
+            ved_bases.add(os.path.basename(p.strip()))
+    unmatched = sorted(set(write_refs) - fm_bases - task_readonly - ved_bases)
 
     lines = []
+    if ved_bases:
+        lines.append('VED_EXCLUDED: ' + ' '.join(sorted(ved_bases)))
     if readonly_refs:
         lines.append('READONLY_EXCLUDED: ' + ' '.join(sorted(set(readonly_refs))))
     if unmatched:
