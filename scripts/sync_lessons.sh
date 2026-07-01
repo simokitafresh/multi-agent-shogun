@@ -71,6 +71,10 @@ mkdir -p "$(dirname "$CACHE_FILE")"
     PYTHONPATH="$SCRIPT_DIR" python3 << 'PYEOF'
 import csv
 import re, yaml, os, sys, subprocess
+try:
+    YAML_SAFE_LOADER = yaml.CSafeLoader
+except AttributeError:
+    YAML_SAFE_LOADER = yaml.SafeLoader
 from datetime import datetime
 from collections import defaultdict
 from scripts.lib.yaml_atomic import atomic_yaml_write
@@ -463,7 +467,7 @@ old_data = None
 for _score_src in [archive_file, index_file]:
     try:
         with open(_score_src, encoding='utf-8') as cf:
-            src_data = yaml.safe_load(cf)
+            src_data = yaml.load(cf, Loader=YAML_SAFE_LOADER)
         if old_data is None:
             old_data = src_data
         for old_lesson in (src_data or {}).get('lessons', []):
