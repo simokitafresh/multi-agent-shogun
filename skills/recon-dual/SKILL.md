@@ -9,7 +9,9 @@ description: |
 quality_metric: "当該スキルで配備した偵察2名タスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-01T23:35:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->
+
+Script refs verified: 2026-07-02 cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546. `deploy_task.sh` 直近変更(a9a3bb08/42d661ef/a4297c73/d46b3e93/4e8e692/07f264d5)はAC parse、stale reset対象追加、lesson postcondition順序の内部修正で、1人目 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の契約は変更なし。
 
 Script refs verified: 2026-07-01 idle useful-rate analysis follow-up. `deploy_task.sh` 直近変更は `target_files` を明示した教訓をタグ一致より強い制約として扱い、不一致なら `related_lessons` から除外する修正。狭義教訓が別ファイルtaskへ漏れて useful率を汚す経路を遮断した内部注入精度改善であり、1人目正規配備 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の引数契約、通知、report template生成、stale field resetは変更なし。
 
@@ -78,4 +80,4 @@ Script refs verified: 2026-06-26 12c935c10. `deploy_task.sh` 直近変更はNO_W
 
 Script refs verified: 2026-06-28 b1922e36b+0226e0db5+75aac6a10. `deploy_task.sh` 直近変更はfailed redeploy時のgate扱い修正とcanceled cmd配備BLOCK。`yaml_field_set.sh` 直近変更は新規field挿入位置の内部修正。1人目正規配備 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `--yaml <file> <ninja2>` の契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-28T23:18:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->

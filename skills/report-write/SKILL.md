@@ -10,7 +10,9 @@ description: |
   DO NOT TRIGGER: 報告YAMLの読み取り（→Read tool直接）、verdict判定（→/verdict-check）、commit（→/ninja-commit）
 ---
 
-<!-- script_refs_checked_at: 2026-06-09T09:25:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->
+
+Script refs verified: 2026-07-02 cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546. `report_field_set.sh` 直近変更(281349be)はresult系書込み高速化で、`bash scripts/report_field_set.sh "$REPORT" <field> <value>`、stdin YAML、verdict自動導出前提の契約は変更なし。報告YAML記入手順は現行と矛盾なし。
 
 # /report-write — 報告YAML作成スキル
 
@@ -398,10 +400,10 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_field_set.sh` の現行契約を再確認。lessons_useful空リスト、binary_checks空欄、status pending、summary空欄はgate_report_format.shでBLOCKされるため提出前に必ずgateを通す。
 Script refs verified: 2026-06-08 9a1c5df09. `report_field_set.sh` のfiles_modified autofixがスペース区切り複数パス（拡張子or/を含む2+トークン）を検出し個別dict変換する。files_modifiedをスペース区切り文字列で渡しても正しくlist of dict化される。推奨形式（YAML list）への影響なし。
 Script refs verified: 2026-06-09 06f5a0856. `report_field_set.sh` にlessons_useful全体上書きBLOCKガード追加。テンプレート注入済み件数より少ないリストで全体上書きすると拒否される。個別per-item書込み(`lessons_useful.0.useful true`等)を推奨。Step 2のコメントに制約注記済み。
-<!-- script_refs_checked_at: 2026-06-18T23:50:10+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->
 
 Script refs verified: 2026-06-20 efb4b9c02. `report_field_set.sh` 直近変更はSC2221/SC2222/SC2154 shellcheck警告のdisableコメント追加のみ。report YAML各フィールド設定、stdin YAML、lessons_useful保護、binary_checks yes/no契約は変更なし。
 
 Script refs verified: 2026-06-26 b12637002. `report_field_set.sh` 直近変更はstatus=completed済み報告へのcommit前フィールド書込みをBLOCKするガード追加。report-writeはstatus completedにする前に全フィールドを記入するため、通常フローでは影響なし。completedマーク後に修正が必要な場合はstatusをin_progressに戻してから再記入する。
 
-<!-- script_refs_checked_at: 2026-06-26T07:25:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->

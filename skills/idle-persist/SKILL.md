@@ -10,7 +10,9 @@ description: |
 quality_metric: "当該スキル利用後の軍師review精度（logs/gunshi_review_log.yamlで当該分析由来レビューのgate_prediction==gate_resultとなった割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-27T02:57:33+0900 -->
+<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->
+
+Script refs verified: 2026-07-02 cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546. `inbox_write.sh` 直近変更(832a032d4)はAGENT_CONFIG_LOADED gateによるtypeコマンドskip高速化で、`bash scripts/inbox_write.sh <target> "<message>" <type> <from>` の呼び出し契約、idle分析保存→掲示板→review_log→家老通知手順は変更なし。
 
 # /idle-persist — idle分析永続化スキル
 
@@ -99,4 +101,4 @@ Script refs verified: 2026-06-26 cmd_karo_hotfix_skill_refs_20260626082009. `bul
 
 Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は既存ブロックへの新規field挿入位置を末尾行手前へ修正する内部バグ修正。idle分析のreview_log記録手順とhelper呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-28T23:18:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->

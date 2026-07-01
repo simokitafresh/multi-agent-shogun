@@ -24,7 +24,7 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-06-29T18:05:00+0900 -->
+<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->
 
 Script refs verified: 2026-06-27 cmd_3563/537008b08 + 4ca3c9de. `semantic_search.sh` 直近変更は(1) memory DB FTS fallback timeout既定値15s→5s、(2)既存cacheあり時の非同期refresh subshell stdout/stderrを/dev/nullへ切断しコマンド置換のpipe EOF待ちを解消。/dreamのPhase 2b/semantic search利用契約、引数、出力形式、memory DB検索の意味は変更なし。速度改善のみで手順変更不要。
 
@@ -38,7 +38,9 @@ Script refs verified: 2026-06-26 558ec6eae. `gate_lesson_health.sh` 直近変更
 
 Script refs verified: 2026-06-26 364744210+955c2e756. `gate_lesson_health.sh` 直近変更はuseful率計測のpresence_file追加(active lesson抽出高速化)+min sample threshold調整。引数なし全project走査/METRIC行/WARN・ALERT出力契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-29T18:05:00+0900 -->
+<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->
+
+Script refs verified: 2026-07-02 cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546. `gate_lesson_health.sh` 直近変更(a3a6f8c53/49d5f9c6c)はactive抽出高速化と空lessons時のSSOT検査skipで、`bash scripts/gates/gate_lesson_health.sh` の呼び出し契約は変更なし。`insight_write.sh` 直近変更(2e13d0c26/f61de640a/bae4b3551/15a02d2a8)はINSIGHT_REPEAT本文追加、pending重複dedupe、debounce拡張、help非mutating化で、`bash scripts/insight_write.sh "message" [priority] [source]` と `--resolve <id>` は変更なし。/dream手順は現行と矛盾なし。
 
 # /dream — Memory Consolidation (5 Phase)
 
@@ -402,4 +404,4 @@ Script refs verified: 2026-06-03 cmd_3144. `insight_write.sh` 直近変更(4dacb
 Script refs verified: 2026-06-10 karo. `semantic_search.sh` 直近変更(ffd1305de)はcache refresh内部実装のみ(cp生コピー→SQLite Backup API置換、malformed根治)。呼び出し契約(引数/`--stats`/出力形式)は変更なし。SKILL.md記載の使用方法は現行と一致。
 - → [[gunshi_idle_dream_gate_analysis_20260507]] dreamゲート分析: Phase設計の品質検証
 
-<!-- script_refs_checked_at: 2026-06-29T18:05:00+0900 -->
+<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->
