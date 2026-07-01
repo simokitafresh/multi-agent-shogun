@@ -6,7 +6,16 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="${LESSON_DEPRECATE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+if [ -n "${LESSON_DEPRECATE_ROOT:-}" ]; then
+    SCRIPT_DIR="$LESSON_DEPRECATE_ROOT"
+else
+    _SCRIPT_PATH="${BASH_SOURCE[0]}"
+    if [[ "$_SCRIPT_PATH" != /* ]]; then
+        _SCRIPT_PATH="$PWD/$_SCRIPT_PATH"
+    fi
+    SCRIPT_DIR="${_SCRIPT_PATH%/scripts/lesson_deprecate.sh}"
+    unset _SCRIPT_PATH
+fi
 PROJECT="${1:-}"
 LESSON_ID="${2:-}"
 REASON="${3:-}"
