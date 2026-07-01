@@ -1194,21 +1194,52 @@ PY
         esac
     }
     if [ -f "$_REPORT_CACHE" ]; then
+        # GP-OPT-kotaro: report件数分のgrepプロセスforkを1回のバルクgrepへ集約。
+        # TOCTOU対応は維持: grep実行時点でファイルが消えていればstderrに
+        # "No such file or directory"が出るためmissing判定できる(個別grep版と同じ意味論)。
+        declare -A _seen_gate=()
+        local -a _gate_paths=() _gate_parents=()
         while IFS='|' read -r _rc_fname _rc_status _rc_parent; do
             [ -z "$_rc_parent" ] && continue
-            [ "${_gate_status[$_rc_parent]+x}" = "x" ] && continue  # 重複スキップ
-            local _gc_g="$PROJECT_DIR/queue/gates/${_rc_parent}/review_gate.done"
-            # GP-OPT1: $()サブシェル排除。grep終了コードで直接判定（TOCTOU対応維持）
-            # exit 0=placeholder, exit 1=readable but not placeholder→ok, exit 2+=missing/unreadable
-            # ||でset -euo pipefailのearly exit回避
-            local _opt1_rc=0
-            grep -q "source: deploy_preflight" "$_gc_g" 2>/dev/null || _opt1_rc=$?
-            case "$_opt1_rc" in
-                0) _gate_status["$_rc_parent"]="placeholder" ;;
-                1) _gate_status["$_rc_parent"]="ok" ;;
-                *) _gate_status["$_rc_parent"]="missing" ;;
-            esac
+            [ -n "${_seen_gate[$_rc_parent]:-}" ] && continue
+            _seen_gate["$_rc_parent"]=1
+            _gate_parents+=("$_rc_parent")
+            _gate_paths+=("$PROJECT_DIR/queue/gates/${_rc_parent}/review_gate.done")
         done < "$_REPORT_CACHE"
+
+        if [ ${#_gate_paths[@]} -gt 0 ]; then
+            local _gs_out="$TMP/gate_status_bulk_out.log"
+            local _gs_err="$TMP/gate_status_bulk_err.log"
+            LC_ALL=C grep -l -- "source: deploy_preflight" "${_gate_paths[@]}" >"$_gs_out" 2>"$_gs_err" || true
+
+            declare -A _placeholder_paths=()
+            while IFS= read -r _pf; do
+                [ -n "$_pf" ] && _placeholder_paths["$_pf"]=1
+            done < "$_gs_out"
+
+            declare -A _missing_paths=()
+            while IFS= read -r _errline; do
+                case "$_errline" in
+                    *": No such file or directory")
+                        local _mf="${_errline#*: }"
+                        _mf="${_mf%: No such file or directory}"
+                        _missing_paths["$_mf"]=1
+                        ;;
+                esac
+            done < "$_gs_err"
+
+            local _gi
+            for _gi in "${!_gate_paths[@]}"; do
+                local _gp="${_gate_paths[$_gi]}" _gparent="${_gate_parents[$_gi]}"
+                if [ -n "${_placeholder_paths[$_gp]:-}" ]; then
+                    _gate_status["$_gparent"]="placeholder"
+                elif [ -n "${_missing_paths[$_gp]:-}" ]; then
+                    _gate_status["$_gparent"]="missing"
+                else
+                    _gate_status["$_gparent"]="ok"
+                fi
+            done
+        fi
     fi
     # CMD_ID指定時: _gate_statusに追加(REPORT_CACHEにない場合あり)
     if [ -n "$CMD_ID" ] && [ "${_gate_status[$CMD_ID]+x}" != "x" ]; then
