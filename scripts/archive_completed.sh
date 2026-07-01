@@ -1505,12 +1505,19 @@ trim_cmd_chronicle() {
     local cutoff_date
     cutoff_date=$(date -d '30 days ago' '+%Y-%m-%d')
 
-    # 早期リターン: 30日超エントリが存在しない場合はPython起動をスキップ (~20ms削減)
+    # 早期リターン: 30日超エントリが存在しない場合はPython起動をスキップ
     if ! gawk -v co="$cutoff_date" '
+        /^## [0-9]{4}-[0-9]{2}$/ {
+            section_year = substr($0, 4, 4)
+            next
+        }
         /^\| cmd_/ {
             n = split($0, p, "|")
             d = p[5]; gsub(/^[[:space:]]+|[[:space:]]+$/, "", d)
-            if (d != "" && d < co) { found = 1; exit }
+            if (d ~ /^[0-9]{2}-[0-9]{2}$/ && section_year != "") {
+                d = section_year "-" d
+            }
+            if (d ~ /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/ && d < co) { found = 1; exit }
         }
         END { exit !found }
     ' "$CHRONICLE_FILE" 2>/dev/null; then
