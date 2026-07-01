@@ -29,11 +29,7 @@ fi
 gates_dir="$SCRIPT_DIR/queue/gates/${CMD_ID}"
 mkdir -p "$gates_dir"
 printf -v _ts '%(%Y-%m-%dT%H:%M:%S)T' -1
-cat > "$gates_dir/lesson.done" <<EOF
-timestamp: $_ts
-source: lesson_check
-reason: "$REASON"
-EOF
+printf 'timestamp: %s\nsource: lesson_check\nreason: "%s"\n' "$_ts" "$REASON" > "$gates_dir/lesson.done"
 unset _ts
 
 echo "LESSON CHECK: ${CMD_ID} — ${REASON}"
