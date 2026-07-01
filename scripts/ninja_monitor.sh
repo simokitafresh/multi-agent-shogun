@@ -4018,9 +4018,13 @@ write_karo_snapshot() {
                     # 2026-06-20: -S -200では起動バナーに届かない+ログ内モデル名誤検出バグ修正
                     local _model_name="" _model_short="?"
                     if [ -n "$_pane_target" ]; then
-                        # 1st: Codex末尾ステータスバー(SSOT常時表示。軽い)
-                        _model_name=$(tmux capture-pane -t "$_pane_target" -p 2>/dev/null | tail -20 | grep -m1 -oiE 'gpt-[0-9.]+[a-z ]*' || echo "")
-                        # 2nd: Claude起動バナー(▝▜█████▛▘。末尾にモデル名なし→全スクロールバック必須)
+                        # 1st: @model_name cache maintained by check_model_names.
+                        _model_name=$(tmux show-options -p -t "$_pane_target" -v @model_name 2>/dev/null || echo "")
+                        # 2nd: Codex末尾ステータスバー(SSOT常時表示。軽い)
+                        if [ -z "$_model_name" ]; then
+                            _model_name=$(tmux capture-pane -t "$_pane_target" -p 2>/dev/null | tail -20 | grep -m1 -oiE 'gpt-[0-9.]+[a-z ]*' || echo "")
+                        fi
+                        # 3rd: Claude起動バナー(▝▜█████▛▘。末尾にモデル名なし→全スクロールバック必須)
                         if [ -z "$_model_name" ]; then
                             _model_name=$(tmux capture-pane -t "$_pane_target" -p -S - 2>/dev/null | grep '▝▜█████▛▘' | tail -1 | grep -oiE '(Opus|Sonnet|Haiku) [0-9]+\.[0-9]+' || echo "")
                         fi
@@ -4149,7 +4153,12 @@ write_karo_snapshot() {
 refresh_karo_snapshot_fast_path() {
     # 陣形図は復帰用の生存情報。重い監視チェックより前に必ず一度発行する。
     write_state_file
-    check_model_names
+    # Model/banner consistency is documented as a REDISCOVER_EVERY check.
+    # Keep snapshot fresh every call, but avoid the multi-pane model scan on
+    # every fast-path refresh.
+    if [ -z "${cycle:-}" ] || [ $((cycle % REDISCOVER_EVERY)) -eq 0 ]; then
+        check_model_names
+    fi
     write_karo_snapshot
 }
 
