@@ -1,47 +1,54 @@
+# Auto-generated training task skeleton
+# Source: skill_auto_improve.sh escalation (unchanged_streak=2)
+# Review and deploy: bash scripts/deploy_task.sh --direct --yaml /mnt/c/tools/multi-agent-shogun/queue/training/training_L1_report-write_20260702031050.yaml <ninja>
+# !! 家老は内容を確認し配備判断せよ。自動配備ではない !!
 task:
-  parent_cmd: cmd_training_speed_cmd_save_202607020253_kagemaru
-  task_id: cmd_training_speed_cmd_save_202607020253_kagemaru_normal
-  status: done
-  assigned_to: kagemaru
-  task_type: training
+  parent_cmd: cmd_training_L1_report-write_20260702031050
+  task_id: cmd_training_L1_report-write_20260702031050_normal
+  task_type: skill_training
   project: infra
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh
-  title: cmd_save.sh速度改善修行
-  purpose: cmd_save.shを品質ゲート維持のまま実運用累積影響ベースで高速化する
-  command: |
-    scripts/cmd_save.sh の実行速度を改善せよ。cmd保存品質ゲート、environment_change検査、
-    YAML安全性、既存CLI互換を削るな。
-    まずbaselineを実測し、最大遅延フェーズを数値で特定すること。改善候補は3ターンまで試し、
-    各ターンで before/after と改善率を記録せよ。5%以上改善できない場合は差分0へ戻し、
-    未達理由を数値付きでFAIL報告せよ。
+  target_path: "skills/report-write/SKILL.md"
+  scout_exempt: true
+  status: done
+  purpose: "skill=report-write のgate FAIL(#1: verdict非二値)に対するL1修行。BLOCKパターンを実戦前に学習し一発PASS率を向上させる"
+  command: "training_proposal.fail_reason を再現し、report-write の手順で gate_report_format をPASSへ戻す。report_field_set.sh/verdict自動導出/binary_checksのどこで同種FAILを防ぐかを報告する。"
   acceptance_criteria:
-  - id: AC1
-    description: baseline実測値、測定コマンド、実運用累積影響、最大遅延フェーズを報告する
-  - id: AC2
-    description: cmd保存品質ゲートを維持した改善候補1を実装し、before/afterと改善率を報告する
-  - id: AC3
-    description: 必要なら改善候補2-3を試し、採用/不採用を数値で判断する
-  - id: AC4
-    description: bash -nと関連テストを実行し、SKIP=0または専用テスト不在を明記する
-  - id: AC5
-    description: 改善採用時はscope内のみcommitし、未達時は差分0でFAIL報告し、次候補をdecision_candidateへ残す
-  constraints:
-  - yaml.dump/yaml.safe_dumpで運用YAMLを書き換えない
-  - cmd品質ゲートやenvironment_change強制を削らない
-  - 他忍者の作業ファイルを変更しない
-  - 計測なしの採用を禁止する
-  not_in_scope:
-  - cmd品質基準の緩和
-  - 常駐デーモン化/API化など設計変更
-  - cmd_save.sh以外の速度改善
-  report_path: queue/reports/kagemaru_report_cmd_training_speed_cmd_save_202607020253_kagemaru.yaml
+    AC1:
+      description: "gate FAIL原因(#1: verdict非二値)を対象スキル手順と照合し、どの記入・検証手順で防ぐかを説明する"
+      binary_checks:
+        - "training_proposal.fail_reasonを読み、該当するBLOCKパターンを特定したか: yes/no"
+        - "対象スキル手順のどのステップで同種FAILを防ぐかを報告したか: yes/no"
+    AC2:
+      description: "報告YAMLテンプレートをreport_field_set.sh経由で完成させ、gate_report_formatを実行してPASS/FAILを数値で確認する"
+      binary_checks:
+        - "report_field_set.sh経由で必須フィールドを記入したか: yes/no"
+        - "全binary_checksのresultをyes/noで記入したか: yes/no"
+        - "gate_report_formatを実行し結果を報告したか: yes/no"
+    AC3:
+      description: "同じFAILを次回防ぐlesson_candidateをorigin付きで記録し、verdictとbinary_checksの整合を確認する"
+      binary_checks:
+        - "lesson_candidateに次回追加すべきチェックをorigin付きで記入したか: yes/no"
+        - "verdictがgateまたはbinary_checksと矛盾していないことを確認したか: yes/no"
+  assigned_to: kagemaru
+  role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  ac_version: 72c44b25
+  _ac_task_id: cmd_training_L1_report-write_20260702031050_normal
+  _ac_worker_id: 
+  report_filename: kagemaru_report_cmd_training_L1_report-write_20260702031050.yaml
+  report_path: queue/reports/kagemaru_report_cmd_training_L1_report-write_20260702031050.yaml
+  deployed_at: "2026-07-02T03:14:09"
+training_proposal:
+  skill: "report-write"
+  gate: "gate_report_format"
+  fail_reason: "verdict missing"
+  training_level: "L1"
+  block_patterns: "#1: verdict非二値"
+  suggested_parent_cmd: "cmd_training_L1_report-write_20260702031050"
+  suggested_purpose: "skill=report-write のgate FAIL(#1: verdict非二値)に対する修行。BLOCKパターンを実戦前に学習し一発PASS率を向上させる"
+  unchanged_streak: 2
+  generated_at: "2026-07-02T03:10:50"
+  status: deploying_kagemaru
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  ac_version: 9cebe5ee
-  _ac_task_id: cmd_training_speed_cmd_save_202607020253_kagemaru_normal
-  _ac_worker_id: 
-  report_filename: kagemaru_report_cmd_training_speed_cmd_save_202607020253_kagemaru.yaml
-  deployed_at: "2026-07-02T02:53:19"
