@@ -29,13 +29,23 @@ _dashboard_script="${BASH_SOURCE[0]:-$0}"
 SCRIPT_DIR="${_dashboard_script%/*}"
 PROJECT_DIR="${SCRIPT_DIR%/*}"
 if [ -f "$PROJECT_DIR/scripts/lib/model_family.sh" ]; then
+    # shellcheck source=/dev/null
     source "$PROJECT_DIR/scripts/lib/model_family.sh"
 else
     MODEL_FAMILY_OPUS_46="${MODEL_FAMILY_OPUS_46:-opus-4.6}"
     MODEL_FAMILY_OPUS_48="${MODEL_FAMILY_OPUS_48:-opus-4.8}"
     MODEL_FAMILY_GPT_5="${MODEL_FAMILY_GPT_5:-gpt-5}"
+    MODEL_FAMILY_TOKEN_OPUS="${MODEL_FAMILY_TOKEN_OPUS:-opus}"
+    MODEL_FAMILY_TOKEN_GPT="${MODEL_FAMILY_TOKEN_GPT:-gpt}"
+    MODEL_FAMILY_TOKEN_CODEX="${MODEL_FAMILY_TOKEN_CODEX:-codex}"
+    MODEL_FAMILY_VERSION_46_DOT="${MODEL_FAMILY_VERSION_46_DOT:-4.6}"
+    MODEL_FAMILY_VERSION_46_SPACE="${MODEL_FAMILY_VERSION_46_SPACE:-4 6}"
     MODEL_FAMILY_VERSION_48_DOT="${MODEL_FAMILY_VERSION_48_DOT:-4.8}"
     MODEL_FAMILY_VERSION_48_SPACE="${MODEL_FAMILY_VERSION_48_SPACE:-4 8}"
+    MODEL_FAMILY_VERSION_54_DOT="${MODEL_FAMILY_VERSION_54_DOT:-5.4}"
+    MODEL_FAMILY_VERSION_54_SPACE="${MODEL_FAMILY_VERSION_54_SPACE:-5 4}"
+    MODEL_FAMILY_VERSION_55_DOT="${MODEL_FAMILY_VERSION_55_DOT:-5.5}"
+    MODEL_FAMILY_VERSION_55_SPACE="${MODEL_FAMILY_VERSION_55_SPACE:-5 5}"
 fi
 unset _dashboard_script
 
@@ -54,8 +64,6 @@ LESSON_EFFECT_STATUS_FILE="$PROJECT_DIR/queue/lesson_effectiveness_status.txt"
 GATE_FIRE_LOG="$PROJECT_DIR/logs/gate_fire_log.yaml"
 LESSON_IMPACT_FILE="$PROJECT_DIR/logs/lesson_impact.tsv"
 SKILL_METRICS_SCRIPT="$PROJECT_DIR/scripts/skill_metrics.sh"
-# shellcheck source=/dev/null
-[ ! -f "$PROJECT_DIR/scripts/lib/model_family.sh" ] || source "$PROJECT_DIR/scripts/lib/model_family.sh"
 
 # ─── 初回CLEAR率 (gate_fire_logから計算。累積CLEAR率の隣に表示) ───
 compute_first_fire_rate() {
@@ -118,7 +126,7 @@ fi
 
 # first_fire_rate: heavy cacheから取得 or 計算
 if [[ "$_HEAVY_HIT" == true ]]; then
-    FIRST_FIRE_RATE=$(cat "$_HEAVY_CACHE_DIR/ffr.txt" 2>/dev/null || echo "—")
+    FIRST_FIRE_RATE=$(< "$_HEAVY_CACHE_DIR/ffr.txt")
 else
     FIRST_FIRE_RATE=$(compute_first_fire_rate)
     echo "$FIRST_FIRE_RATE" > "$_HEAVY_CACHE_DIR/ffr.txt" 2>/dev/null || true
@@ -588,7 +596,7 @@ if [[ -f "$GATE_LOG" ]]; then
     _gate_signature=$(stat -c '%n:%y:%s' "$GATE_LOG" 2>/dev/null || echo "missing")
 fi
 _cached_signature=""
-[[ -f "$KM_CACHE_LINES" ]] && _cached_signature=$(tr -d '[:space:]' < "$KM_CACHE_LINES" 2>/dev/null)
+[[ -f "$KM_CACHE_LINES" ]] && IFS= read -r _cached_signature < "$KM_CACHE_LINES"
 
 # L4-R?: knowledge_metrics専用キャッシュキー（lesson系ファイルmtimeベース）
 # 変更前: gate_log mtime変化(毎cycle)→毎回knowledge_metrics.sh実行(1537ms/回)
