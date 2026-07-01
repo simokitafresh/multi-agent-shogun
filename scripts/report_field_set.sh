@@ -879,8 +879,31 @@ fi
 IFS='.' read -ra KEYS <<< "$DOT_KEY"
 NUM_KEYS=${#KEYS[@]}
 RFS_BINARY_CHECK_RESULT_WRITE=0
-if [[ "$DOT_KEY" =~ ^binary_checks\.[^.]+\.[0-9]+\.result$ ]]; then
+RFS_BC_AC_KEY=""
+RFS_BC_ITEM_IDX=""
+# Two report-write call conventions reach the same leaf: dot-numeric
+# ("binary_checks.AC1.0.result", legacy) and bracket-index
+# ("binary_checks.AC1[0].result", the documented skills/report-write form).
+# Detect both so the hot-path writer below and the downstream semantic-check
+# skip (GP-053) cover the call pattern operators actually use.
+if [[ "$DOT_KEY" =~ ^binary_checks\.([A-Za-z0-9_]+)\.([0-9]+)\.result$ ]]; then
     RFS_BINARY_CHECK_RESULT_WRITE=1
+    RFS_BC_AC_KEY="${BASH_REMATCH[1]}"
+    RFS_BC_ITEM_IDX="${BASH_REMATCH[2]}"
+elif [[ "$DOT_KEY" =~ ^binary_checks\.([A-Za-z0-9_]+)\[([0-9]+)\]\.result$ ]]; then
+    RFS_BINARY_CHECK_RESULT_WRITE=1
+    RFS_BC_AC_KEY="${BASH_REMATCH[1]}"
+    RFS_BC_ITEM_IDX="${BASH_REMATCH[2]}"
+fi
+# lessons_useful.<idx>.reason: second most frequent write (~4/report, one per
+# injected lesson). Same shape of waste as binary_checks had: falls through to
+# the Python leaf-write AND unconditionally re-parses the whole file in the
+# GP-072c2 dict->list post-write step even though the list is already a list.
+RFS_LU_REASON_WRITE=0
+RFS_LU_ITEM_IDX=""
+if [[ "$DOT_KEY" =~ ^lessons_useful\.([0-9]+)\.reason$ ]]; then
+    RFS_LU_REASON_WRITE=1
+    RFS_LU_ITEM_IDX="${BASH_REMATCH[1]}"
 fi
 AUTO_COMPLETE_STATUS=0
 if [[ "$DOT_KEY" == "verdict" ]] && [[ "$VALUE" == "PASS" || "$VALUE" == "FAIL" || "$VALUE" == "PASS_NO_IMPROVEMENT" ]]; then
@@ -1198,6 +1221,218 @@ END {
 ' "$report_path" > "$tmp_file"
 }
 
+# Indexed leaf write for "binary_checks.<AC>.<idx>.result" / "binary_checks.<AC>[<idx>].result".
+# This is the single most frequent report write (one call per AC check item, ~15-20/report)
+# and previously always fell through to the ~110ms Python fallback because
+# _report_field_set_fast_scalar only handles <=2 dot-levels and the bracket-notation
+# form was caught by the unconditional "contains '[' -> Python" guard. Restricted to
+# result_value in {yes,no}: anything else (rare) still falls through to Python unchanged.
+_report_field_set_fast_indexed_binary_result() {
+    local report_path="$1"
+    local tmp_file="$2"
+    local ac_key="$3"
+    local target_idx="$4"
+    local result_value="$5"
+
+    if [[ "$result_value" != "yes" && "$result_value" != "no" ]]; then
+        return 2
+    fi
+
+    awk \
+        -v ac_key="$ac_key" \
+        -v target_idx="$target_idx" \
+        -v result_value="$result_value" '
+function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+function leading_spaces(line,    i,cnt,c) {
+    cnt = 0
+    for (i = 1; i <= length(line); i++) {
+        c = substr(line, i, 1)
+        if (c == " ") cnt++
+        else break
+    }
+    return cnt
+}
+function make_indent(n,    s,i) { s = ""; for (i = 0; i < n; i++) s = s " "; return s }
+function yaml_quote(v,    out,i,c) {
+    out = ""
+    for (i = 1; i <= length(v); i++) {
+        c = substr(v, i, 1)
+        if (c == "'\''") out = out "'\'''\''"
+        else out = out c
+    }
+    return "'\''" out "'\''"
+}
+BEGIN {
+    in_bc = 0
+    in_ac = 0
+    bc_indent = -1
+    ac_indent = -1
+    item_no = -1
+    replaced = 0
+}
+{
+    line = $0
+    trimmed = trim(line)
+    indent = leading_spaces(line)
+
+    if (!in_bc && line ~ /^binary_checks:[[:space:]]*$/) {
+        in_bc = 1
+        bc_indent = indent
+        print line
+        next
+    }
+
+    if (in_bc && trimmed != "" && trimmed !~ /^#/ && indent <= bc_indent && line !~ /^binary_checks:[[:space:]]*$/) {
+        in_bc = 0
+        in_ac = 0
+        print line
+        next
+    }
+
+    if (in_bc && !in_ac) {
+        ac_re = "^" make_indent(bc_indent + 2) ac_key ":[[:space:]]*$"
+        if (line ~ ac_re) {
+            in_ac = 1
+            ac_indent = indent
+            item_no = -1
+        }
+        print line
+        next
+    }
+
+    if (in_ac) {
+        # AC block ends at a line back to (or above) ac_indent that is not a list item.
+        if (trimmed != "" && trimmed !~ /^#/ && indent <= ac_indent && trimmed !~ /^-/) {
+            in_ac = 0
+            print line
+            next
+        }
+        # Each list item starts with "-" at ac_indent (compact YAML block-sequence style).
+        if (indent == ac_indent && trimmed ~ /^-/) {
+            item_no++
+        }
+        if (!replaced && item_no == target_idx && indent > ac_indent && trimmed ~ /^result:[[:space:]]*/) {
+            print make_indent(indent) "result: " yaml_quote(result_value)
+            replaced = 1
+            next
+        }
+    }
+
+    print line
+}
+END {
+    if (!replaced) exit 2
+}
+' "$report_path" > "$tmp_file"
+}
+
+# Indexed leaf write for "lessons_useful.<idx>.reason" — the second most frequent
+# report write. Restricted to single-line values (caller already routes
+# multi-line values to USE_PYTHON before reaching here) and to the top-level
+# list-of-dicts shape the template always injects, so a failed match (e.g. the
+# item doesn't exist yet) safely falls through to the Python fallback below.
+_report_field_set_fast_indexed_list_reason() {
+    local report_path="$1"
+    local tmp_file="$2"
+    local list_key="$3"
+    local target_idx="$4"
+    local new_value="$5"
+
+    awk \
+        -v list_key="$list_key" \
+        -v target_idx="$target_idx" \
+        -v new_value="$new_value" '
+function leading_spaces(line,    i,cnt,c) {
+    cnt = 0
+    for (i = 1; i <= length(line); i++) {
+        c = substr(line, i, 1)
+        if (c == " ") cnt++
+        else break
+    }
+    return cnt
+}
+function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
+function make_indent(n,    s,i) { s = ""; for (i = 0; i < n; i++) s = s " "; return s }
+function yaml_safe(v,    out,i,c,needs_quote) {
+    needs_quote = 0
+    if (index(v, ":") > 0) needs_quote = 1
+    if (index(v, "#") > 0) needs_quote = 1
+    if (index(v, "[") > 0) needs_quote = 1
+    if (index(v, "]") > 0) needs_quote = 1
+    if (index(v, "{") > 0) needs_quote = 1
+    if (index(v, "}") > 0) needs_quote = 1
+    if (needs_quote) {
+        out = ""
+        for (i = 1; i <= length(v); i++) {
+            c = substr(v, i, 1)
+            if (c == "\"") out = out "\\" c
+            else out = out c
+        }
+        return "\"" out "\""
+    }
+    return v
+}
+BEGIN {
+    in_list = 0
+    in_item = 0
+    list_indent = -1
+    item_indent = -1
+    item_no = -1
+    replaced = 0
+    skip_continuation = 0
+}
+{
+    line = $0
+    trimmed = trim(line)
+    indent = leading_spaces(line)
+
+    if (!in_list && line ~ ("^" list_key ":")) {
+        in_list = 1
+        list_indent = indent
+        print line
+        next
+    }
+
+    if (in_list && trimmed != "" && trimmed !~ /^#/ && indent <= list_indent) {
+        in_list = 0
+        in_item = 0
+        print line
+        next
+    }
+
+    if (in_list) {
+        # Each item is a standard (non-compact) block-sequence entry: "- " at
+        # list_indent+2, fields one level deeper at list_indent+4.
+        if (indent == list_indent + 2 && trimmed ~ /^-/) {
+            item_no++
+            in_item = (item_no == target_idx)
+            item_indent = indent
+            skip_continuation = 0
+        }
+
+        if (in_item) {
+            field_re = "^" make_indent(item_indent + 2) "reason:[[:space:]]*"
+            if (!replaced && line ~ field_re) {
+                print make_indent(item_indent + 2) "reason: " yaml_safe(new_value)
+                replaced = 1
+                skip_continuation = 1
+                next
+            }
+            if (skip_continuation) {
+                if (trimmed == "" || indent > item_indent + 2) { next }
+                skip_continuation = 0
+            }
+        }
+    }
+
+    print line
+}
+END {
+    if (!replaced) exit 2
+}
+' "$report_path" > "$tmp_file"
+}
+
 # --- Python fallback (multi-line text, new block creation) ---
 _report_field_set_python() {
     local rp="$1" dk="$2" val="$3" sv="$4"
@@ -1361,7 +1596,14 @@ MAX_RETRIES=3
 for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
     (
         flock -w 5 200 || { echo "[report_field_set] flock failed (attempt $attempt)" >&2; exit 1; }
-        _report_field_set_prepare_backup
+        # Backup (.bak) is only ever read by _report_field_set_validate_or_restore,
+        # which is reachable from the Python-fallback/fast_scalar paths further
+        # below — never from the three fast paths in this block (they atomically
+        # mv a freshly-built tmp_file and exit 0 without touching .bak). Creating
+        # it unconditionally here cost every single call a full-file cp for no
+        # reason on the hot path. Deferred to just before the paths that can
+        # actually use it (see below), so it's still in place before any code
+        # that might need it, just skipped when nothing downstream will read it.
 
         # binary_checks.AC*: common report path is a single result update.  The
         # Python fallback preserves arbitrary structures, but this hot path can
@@ -1406,6 +1648,54 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
                 rm -f "$tmp_file"
             fi
         fi
+
+        # Indexed binary_checks result write ("AC1.0.result" or "AC1[0].result" form):
+        # single most frequent report write. Only fires for result_value in {yes,no}
+        # (see _report_field_set_fast_indexed_binary_result); anything else falls
+        # through unchanged to the existing Python-fallback paths below.
+        if [ -n "$RFS_BC_AC_KEY" ] && [ "$USE_PYTHON" -eq 0 ]; then
+            tmp_file="${REPORT_PATH}.tmp.$$.$attempt"
+            rm -f "$tmp_file"
+            if _report_field_set_fast_indexed_binary_result "$REPORT_PATH" "$tmp_file" "$RFS_BC_AC_KEY" "$RFS_BC_ITEM_IDX" "$VALUE"; then
+                if ! mv "$tmp_file" "$REPORT_PATH"; then
+                    rm -f "$tmp_file"
+                    echo "FATAL: report_field_set: atomic replace failed" >&2
+                    exit 1
+                fi
+                echo "[report_field_set] $DOT_KEY = ${VALUE:0:80}"
+                exit 0
+            fi
+            rm -f "$tmp_file"
+        fi
+
+        # Indexed lessons_useful.<idx>.reason write: second most frequent report
+        # write. USE_PYTHON=0 here already means the value is single-line.
+        # Backslash-containing values are excluded (fall through to Python):
+        # the awk yaml_safe() quoting here (like the pre-existing fast_scalar
+        # path) escapes '"' but not '\', so a literal backslash inside a
+        # double-quoted scalar can be read back as a YAML escape sequence
+        # (e.g. "\f" -> form-feed) and corrupt the file. Confirmed via
+        # reproduction during this optimization; Python's yaml.dump handles
+        # backslashes correctly, so falling through there is safe.
+        if [ "$RFS_LU_REASON_WRITE" -eq 1 ] && [ "$USE_PYTHON" -eq 0 ] && [[ "$VALUE" != *'\'* ]]; then
+            tmp_file="${REPORT_PATH}.tmp.$$.$attempt"
+            rm -f "$tmp_file"
+            if _report_field_set_fast_indexed_list_reason "$REPORT_PATH" "$tmp_file" "lessons_useful" "$RFS_LU_ITEM_IDX" "$VALUE"; then
+                if ! mv "$tmp_file" "$REPORT_PATH"; then
+                    rm -f "$tmp_file"
+                    echo "FATAL: report_field_set: atomic replace failed" >&2
+                    exit 1
+                fi
+                echo "[report_field_set] $DOT_KEY = ${VALUE:0:80}"
+                exit 0
+            fi
+            rm -f "$tmp_file"
+        fi
+
+        # None of the fast paths above applied (or none matched this write) —
+        # from here on, paths can fall back to Python or hit the backslash
+        # validate-or-restore check, both of which read .bak. Create it now.
+        _report_field_set_prepare_backup
 
         # Multi-line stdin text → Python fallback
         # Python path validates round-trip internally (yaml.safe_load reload)
@@ -1542,8 +1832,9 @@ done
 
 # --- GP-072c2: Post-write dict→list auto-conversion ---
 # per-item書込み(lessons_useful.0.id等)後に数値キーdictをリストに変換
-# binary_checks.*.*.result は既存list内のresultだけを置換するhot pathなので変換不要。
-if [[ "$DOT_KEY" == lessons_useful.* ]] || { [[ "$DOT_KEY" == binary_checks.*.* ]] && [ "$RFS_BINARY_CHECK_RESULT_WRITE" -ne 1 ]; }; then
+# binary_checks.*.*.result / lessons_useful.*.reason は既存list内の値だけを
+# 置換するhot pathなので変換不要(常にlistのまま。dict化する余地がない)。
+if { [[ "$DOT_KEY" == lessons_useful.* ]] && [ "$RFS_LU_REASON_WRITE" -ne 1 ]; } || { [[ "$DOT_KEY" == binary_checks.*.* ]] && [ "$RFS_BINARY_CHECK_RESULT_WRITE" -ne 1 ]; }; then
     PYTHONPATH="$SCRIPT_DIR" python3 -c "
 import yaml, sys, os
 from scripts.lib.yaml_atomic import atomic_yaml_write
