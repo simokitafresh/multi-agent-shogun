@@ -120,6 +120,92 @@ assert "_overwrite_ac_from_cmd" in window, "non-direct fallback must still overw
 PY
 }
 
+@test "direct --yaml detects preinjected task YAML only when all safety fields exist" {
+    tmpdir="$(mktemp -d)"
+    task_file="$tmpdir/task.yaml"
+    cat > "$task_file" <<'YAML'
+task:
+  parent_cmd: cmd_preinjected
+  status: assigned
+  report_filename: sasuke_report_cmd_preinjected.yaml
+  related_lessons:
+  - id: L001
+    summary: injected
+  semantic_concepts:
+  - agent_formation_management
+  standard_skills:
+  - report-write
+  memory_db_context:
+  - "2026-07-02 | context"
+  context_hints:
+  - context/infrastructure.md
+YAML
+
+    run bash -lc "
+        set -e
+        export DEPLOY_TASK_LIB_ONLY=1
+        source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        DIRECT_MODE=true
+        deploy_task_direct_yaml_is_preinjected '$task_file'
+    "
+    [ "$status" -eq 0 ]
+
+    python3 - "$task_file" <<'PY'
+import sys
+from pathlib import Path
+path = Path(sys.argv[1])
+text = path.read_text()
+text = text.replace('  memory_db_context:\n  - "2026-07-02 | context"\n', '')
+path.write_text(text)
+PY
+
+    run bash -lc "
+        set -e
+        export DEPLOY_TASK_LIB_ONLY=1
+        source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        DIRECT_MODE=true
+        deploy_task_direct_yaml_is_preinjected '$task_file'
+    "
+    [ "$status" -ne 0 ]
+}
+
+@test "direct --yaml preinjected fast path preserves injected metadata and skips heavy reinjection block" {
+    python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import sys
+
+script = open(sys.argv[1], encoding="utf-8").read()
+main_start = script.index("deploy_task_apply_task_mutations() {")
+main = script[main_start:]
+
+preserve_idx = main.index('direct_mode: preserving preinjected task metadata')
+skip_idx = main.index('direct_mode: preinjected task YAML detected; skipping heavy context/lesson/semantic reinjection')
+heavy_idx = main.index('inject_memory_db_context "$task_file"')
+report_idx = main.index('generate_report_template "$ninja_name"')
+
+assert preserve_idx < skip_idx < heavy_idx < report_idx, (preserve_idx, skip_idx, heavy_idx, report_idx)
+assert 'postcondition_lesson_inject "$task_file" || true\n    fi\n\n    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then' in main
+PY
+}
+
+@test "parallel recon duplicate guard allows different peer task_id before active duplicate BLOCK" {
+    python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import sys
+
+script = open(sys.argv[1], encoding="utf-8").read()
+needle = 'for dd_task in "$SCRIPT_DIR/queue/tasks/"*.yaml; do'
+start = script.index(needle)
+window = script[start:start + 2600]
+
+parallel_idx = window.index('parallel_recon: ${deploy_parent_cmd} peer ${dd_ninja}')
+block_idx = window.index('BLOCK: ${deploy_parent_cmd} is already assigned to ${dd_ninja}')
+same_id_idx = window.index('if [ -n "$deploy_task_id" ] && [ "$deploy_scope_mode" != "exact" ]; then')
+
+assert parallel_idx < same_id_idx < block_idx, (parallel_idx, same_id_idx, block_idx)
+assert '[[ "$deploy_scope_mode" =~ ^(recon|scout)$ ]]' in window, window
+assert '[ "$deploy_task_id" != "$dd_tid" ]' in window, window
+PY
+}
+
 @test "cmd_3368: reset_stale_fields clears auto-injected scalar/list metadata before YAML injection" {
     python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
 import ast

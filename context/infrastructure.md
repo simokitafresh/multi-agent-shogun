@@ -6,6 +6,7 @@
 > CoDDリファクタリング台帳: `docs/research/codd_refactor_registry.md`
 > report_field_set as-is: `docs/research/report_field_set_after_20260416.md`
 > inbox_write高速化(as-is): `docs/research/inbox_write_after_20260416.md`
+> deploy_task --yaml高速化 + recon guard: `docs/research/deploy_task_yaml_speed_recon_guard_spec_20260702.md`
 
 ## コンテキスト管理
 

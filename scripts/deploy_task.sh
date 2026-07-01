@@ -95,6 +95,7 @@ DEPLOY_TASK_DRAFT_REVIEW_TASK_FILE=""
 DEPLOY_TASK_DRAFT_REVIEW_CMD_ID=""
 DEPLOY_TASK_DRAFT_REVIEW_NINJA=""
 DEPLOY_TASK_DRAFT_REVIEW_TYPE=""
+DEPLOY_TASK_DIRECT_YAML_PREINJECTED=0
 
 mkdir -p "$SCRIPT_DIR/logs"
 
@@ -325,6 +326,44 @@ deploy_task_has_pending_own_report() {
     done
 
     return 1
+}
+
+deploy_task_direct_yaml_is_preinjected() {
+    local task_file="$1"
+    [ "$DIRECT_MODE" = true ] || return 1
+    [ -f "$task_file" ] || return 1
+
+    python3 - "$task_file" <<'PY'
+import sys
+import yaml
+
+path = sys.argv[1]
+required = (
+    "related_lessons",
+    "semantic_concepts",
+    "standard_skills",
+    "memory_db_context",
+    "context_hints",
+    "report_filename",
+)
+
+try:
+    with open(path, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    raise SystemExit(1)
+
+task = data.get("task") if isinstance(data, dict) else {}
+if not isinstance(task, dict):
+    raise SystemExit(1)
+
+for key in required:
+    value = task.get(key)
+    if value in (None, "", [], {}):
+        raise SystemExit(1)
+
+raise SystemExit(0)
+PY
 }
 
 log_output_file() {
@@ -8057,9 +8096,10 @@ deploy_task_apply_task_mutations() {
     # yaml.dumpがrelated_lessons+descriptionの_sv書式を破壊するため(inject_ac_versionと同じ理由)。
 
     local clear_fields clear_tmp
-    clear_fields="engineering_preferences|skill_hint|reports_to_read|context_files|context_hints|role_reminder|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points|type"
-    clear_tmp=$(mktemp)
-    if awk -v fields="$clear_fields" '
+    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
+        clear_fields="engineering_preferences|skill_hint|reports_to_read|context_files|context_hints|role_reminder|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points|type"
+        clear_tmp=$(mktemp)
+        if awk -v fields="$clear_fields" '
         BEGIN { n=split(fields,arr,"|"); for(i=1;i<=n;i++) fset[arr[i]]=1; skip=0; cleared=0 }
         {
             if (match($0, /[^ ]/)) indent = RSTART - 1; else indent = 999
@@ -8081,71 +8121,86 @@ deploy_task_apply_task_mutations() {
         else
             rm -f "$clear_tmp"
         fi
-    else
-        log "WARN: auto-inject field clear failed (non-fatal)"
-        rm -f "$clear_tmp"
-    fi
-
-    inject_task_modifiers "$task_file" || true
-    inject_session_state_hints "$task_file" || true  # GP-198
-    inject_codd_failure_history "$task_file" || true  # GP-201
-    inject_engineering_preferences "$task_file" || true
-    inject_skill_hint "$task_file" || true
-
-    # related_lessons+description注入はinject_task_modifiers(yaml.dump使用)の後に実行する。
-    # yaml.dumpが_sv(シングルクォート)書式を破壊するため。inject_ac_versionと同じ理由。
-    inject_related_lessons "$task_file" || handle_yaml_injection_failure "inject_related_lessons" "$task_file" "$ninja_name"
-    inject_workaround_pattern_lessons "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_workaround_pattern_lessons" "$task_file" "$ninja_name"
-    inject_standard_skills "$task_file" || true  # Level5: 全taskに常時使用スキルを明示(cmd_2737)
-    inject_semantic_concepts "$task_file" || true  # Level5: 全忍者にセマンティクス概念+ファイル自動提供
-    inject_memory_db_context "$task_file" || true  # Level5: 三層記憶先行知識注入(殿厳命2026-06-10)
-    inject_causal_links "$task_file" || true      # Level5: 全忍者にcmd origin因果リンクを自動提供(cmd_2822)
-    inject_causal_verification_template "$task_file" || true  # Level5: infra変更前の因果確認をCLI非依存で注入
-    inject_context_hints "$task_file" || true  # Level5: purpose/project/task_typeから必読contextを強制提供
-    inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供
-    inject_checklist_constraints "$task_file" || true  # Level5: checklist隣接Step制約強制注入(cmd_2644)
-    inject_growth_loop_defense "$task_file" || true    # Level5: gate/hook関連cmdに防御階層§11を強制注入(cmd_2649)
-    inject_readonly_refs "$task_file" || true           # Level5: command必読/参照専用ファイルをreadonly_refへ源流注入
-    inject_ac_version "$task_file" || true
-    verify_ac_consistency "$task_file" || true
-
-    local pc_file inj_project inj_ids lid
-    pc_file="$SCRIPT_DIR/queue/tasks/.postcond_lesson_inject"
-    if [ -f "$pc_file" ]; then
-        inj_project=$(grep '^project=' "$pc_file" | cut -d= -f2)
-        inj_ids=$(grep '^injected_ids=' "$pc_file" | cut -d= -f2)
-        if [ -n "$inj_ids" ] && [ -n "$inj_project" ]; then
-            for lid in $inj_ids; do
-                bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" "$inj_project" "$lid" inject 2>/dev/null || true
-            done
-            if [ "$inj_project" != "infra" ]; then
-                for lid in $inj_ids; do
-                    bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" infra "$lid" inject 2>/dev/null || true
-                done
-            fi
-            log "injection_count: incremented for ${inj_ids}"
+        else
+            log "WARN: auto-inject field clear failed (non-fatal)"
+            rm -f "$clear_tmp"
         fi
+    else
+        log "direct_mode: preserving preinjected task metadata"
     fi
-    postcondition_lesson_inject "$task_file" || true
 
-    inject_reports_to_read "$task_file" || true
-    inject_context_files "$task_file" || true
-    inject_credential_files "$task_file" || true
-    inject_target_path_check "$task_file" || true
-    inject_context_update "$task_file" || true
-    inject_role_reminder "$task_file" "$ninja_name" || true
-    inject_report_template "$task_file" || true
+    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" = "1" ]; then
+        log "direct_mode: preinjected task YAML detected; skipping heavy context/lesson/semantic reinjection"
+    else
+        inject_task_modifiers "$task_file" || true
+        inject_session_state_hints "$task_file" || true  # GP-198
+        inject_codd_failure_history "$task_file" || true  # GP-201
+        inject_engineering_preferences "$task_file" || true
+        inject_skill_hint "$task_file" || true
 
-    yaml_field_set "$task_file" "task" "report_filename" "" \
-        || { log "FATAL: yaml_field_set failed for report_filename"; return 1; }
-    yaml_field_set "$task_file" "task" "report_path" "" \
-        || { log "FATAL: yaml_field_set failed for report_path"; return 1; }
+        # related_lessons+description注入はinject_task_modifiers(yaml.dump使用)の後に実行する。
+        # yaml.dumpが_sv(シングルクォート)書式を破壊するため。inject_ac_versionと同じ理由。
+        inject_related_lessons "$task_file" || handle_yaml_injection_failure "inject_related_lessons" "$task_file" "$ninja_name"
+        inject_workaround_pattern_lessons "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_workaround_pattern_lessons" "$task_file" "$ninja_name"
+        inject_standard_skills "$task_file" || true  # Level5: 全taskに常時使用スキルを明示(cmd_2737)
+        inject_semantic_concepts "$task_file" || true  # Level5: 全忍者にセマンティクス概念+ファイル自動提供
+        inject_memory_db_context "$task_file" || true  # Level5: 三層記憶先行知識注入(殿厳命2026-06-10)
+        inject_causal_links "$task_file" || true      # Level5: 全忍者にcmd origin因果リンクを自動提供(cmd_2822)
+        inject_causal_verification_template "$task_file" || true  # Level5: infra変更前の因果確認をCLI非依存で注入
+        inject_context_hints "$task_file" || true  # Level5: purpose/project/task_typeから必読contextを強制提供
+        inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供
+        inject_checklist_constraints "$task_file" || true  # Level5: checklist隣接Step制約強制注入(cmd_2644)
+        inject_growth_loop_defense "$task_file" || true    # Level5: gate/hook関連cmdに防御階層§11を強制注入(cmd_2649)
+        inject_readonly_refs "$task_file" || true           # Level5: command必読/参照専用ファイルをreadonly_refへ源流注入
+        inject_ac_version "$task_file" || true
+        verify_ac_consistency "$task_file" || true
+    fi
 
-    inject_report_filename "$task_file" || true
-    inject_bloom_level "$task_file" || true
-    inject_execution_controls "$task_file" || true
-    inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points" "$task_file" "$ninja_name"
-    check_context_freshness "$task_file" || true
+    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
+        local pc_file inj_project inj_ids lid
+        pc_file="$SCRIPT_DIR/queue/tasks/.postcond_lesson_inject"
+        if [ -f "$pc_file" ]; then
+            inj_project=$(grep '^project=' "$pc_file" | cut -d= -f2)
+            inj_ids=$(grep '^injected_ids=' "$pc_file" | cut -d= -f2)
+            if [ -n "$inj_ids" ] && [ -n "$inj_project" ]; then
+                for lid in $inj_ids; do
+                    bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" "$inj_project" "$lid" inject 2>/dev/null || true
+                done
+                if [ "$inj_project" != "infra" ]; then
+                    for lid in $inj_ids; do
+                        bash "$SCRIPT_DIR/scripts/lesson_update_score.sh" infra "$lid" inject 2>/dev/null || true
+                    done
+                fi
+                log "injection_count: incremented for ${inj_ids}"
+            fi
+        fi
+        postcondition_lesson_inject "$task_file" || true
+    fi
+
+    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
+        inject_reports_to_read "$task_file" || true
+        inject_context_files "$task_file" || true
+        inject_credential_files "$task_file" || true
+        inject_target_path_check "$task_file" || true
+        inject_context_update "$task_file" || true
+        inject_role_reminder "$task_file" "$ninja_name" || true
+        inject_report_template "$task_file" || true
+    fi
+
+    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
+        yaml_field_set "$task_file" "task" "report_filename" "" \
+            || { log "FATAL: yaml_field_set failed for report_filename"; return 1; }
+        yaml_field_set "$task_file" "task" "report_path" "" \
+            || { log "FATAL: yaml_field_set failed for report_path"; return 1; }
+    fi
+
+    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
+        inject_report_filename "$task_file" || true
+        inject_bloom_level "$task_file" || true
+        inject_execution_controls "$task_file" || true
+        inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points" "$task_file" "$ninja_name"
+        check_context_freshness "$task_file" || true
+    fi
 
     local task_id parent_cmd project _ac_task_id
     eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" task_id _ac_task_id parent_cmd project 2>/dev/null)" || true
@@ -8277,6 +8332,11 @@ except Exception:
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
                 }
+                if deploy_task_direct_yaml_is_preinjected "$task_yaml"; then
+                    DEPLOY_TASK_DIRECT_YAML_PREINJECTED=1
+                else
+                    DEPLOY_TASK_DIRECT_YAML_PREINJECTED=0
+                fi
                 check_yaml_freshness "$YAML_FILE" "$SCRIPT_DIR"
             fi
             log "direct_mode: skipping resolve_cmd_to_task for ${CMD_ID} (shogun_to_karo.yaml not required)"
@@ -8447,6 +8507,10 @@ except Exception:
             # 二重配備判定: deploy_task_idが空(reset_stale_fields後)の場合は
             # parent_cmd一致+相手がactive=二重配備とみなす。
             # deploy_task_idが存在する場合は task_id同一チェックで分割配備を許可。
+            if [[ "$deploy_scope_mode" =~ ^(recon|scout)$ ]] && [ -n "$dd_tid" ] && [ "$deploy_task_id" != "$dd_tid" ]; then
+                log "parallel_recon: ${deploy_parent_cmd} peer ${dd_ninja} (task_id: ${dd_tid:-empty}) — allowing"
+                continue
+            fi
             if [ -n "$deploy_task_id" ] && [ "$deploy_scope_mode" != "exact" ]; then
                 # 両方にtask_idがある場合: 同一task_idのみBLOCK(分割配備はtask_id異なるため許可)
                 if [ -z "$dd_tid" ] || [ "$deploy_task_id" != "$dd_tid" ]; then
