@@ -1,15 +1,16 @@
 task:
-  parent_cmd: cmd_training_speed_decision_write_202607020244_kagemaru
-  task_id: cmd_training_speed_decision_write_202607020244_kagemaru_normal
+  parent_cmd: cmd_training_speed_cmd_save_202607020253_kagemaru
+  task_id: cmd_training_speed_cmd_save_202607020253_kagemaru_normal
   status: done
   assigned_to: kagemaru
   task_type: training
   project: infra
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/decision_write.sh
-  title: decision_write.sh速度改善修行
-  purpose: decision_write.shを実運用累積影響ベースで品質維持高速化する
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh
+  title: cmd_save.sh速度改善修行
+  purpose: cmd_save.shを品質ゲート維持のまま実運用累積影響ベースで高速化する
   command: |
-    scripts/decision_write.sh の実行速度を改善せよ。既存のYAML安全性、flock、互換性、防御を削るな。
+    scripts/cmd_save.sh の実行速度を改善せよ。cmd保存品質ゲート、environment_change検査、
+    YAML安全性、既存CLI互換を削るな。
     まずbaselineを実測し、最大遅延フェーズを数値で特定すること。改善候補は3ターンまで試し、
     各ターンで before/after と改善率を記録せよ。5%以上改善できない場合は差分0へ戻し、
     未達理由を数値付きでFAIL報告せよ。
@@ -17,7 +18,7 @@ task:
   - id: AC1
     description: baseline実測値、測定コマンド、実運用累積影響、最大遅延フェーズを報告する
   - id: AC2
-    description: 互換性とYAML安全性を維持した改善候補1を実装し、before/afterと改善率を報告する
+    description: cmd保存品質ゲートを維持した改善候補1を実装し、before/afterと改善率を報告する
   - id: AC3
     description: 必要なら改善候補2-3を試し、採用/不採用を数値で判断する
   - id: AC4
@@ -26,20 +27,21 @@ task:
     description: 改善採用時はscope内のみcommitし、未達時は差分0でFAIL報告し、次候補をdecision_candidateへ残す
   constraints:
   - yaml.dump/yaml.safe_dumpで運用YAMLを書き換えない
-  - flock/atomic write/Lost Update防止を削らない
+  - cmd品質ゲートやenvironment_change強制を削らない
   - 他忍者の作業ファイルを変更しない
   - 計測なしの採用を禁止する
   not_in_scope:
+  - cmd品質基準の緩和
   - 常駐デーモン化/API化など設計変更
-  - decision_write.sh以外の速度改善
-  report_path: queue/reports/kagemaru_report_cmd_training_speed_decision_write_202607020244_kagemaru.yaml
+  - cmd_save.sh以外の速度改善
+  report_path: queue/reports/kagemaru_report_cmd_training_speed_cmd_save_202607020253_kagemaru.yaml
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  ac_version: 3faca962
-  _ac_task_id: cmd_training_speed_decision_write_202607020244_kagemaru_normal
+  ac_version: 9cebe5ee
+  _ac_task_id: cmd_training_speed_cmd_save_202607020253_kagemaru_normal
   _ac_worker_id: 
-  report_filename: kagemaru_report_cmd_training_speed_decision_write_202607020244_kagemaru.yaml
-  deployed_at: "2026-07-02T02:45:48"
+  report_filename: kagemaru_report_cmd_training_speed_cmd_save_202607020253_kagemaru.yaml
+  deployed_at: "2026-07-02T02:53:19"

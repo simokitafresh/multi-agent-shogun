@@ -55,8 +55,15 @@ if [[ $# -lt 1 ]]; then
     exit 1
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
+case "$SCRIPT_PATH" in
+    */*) SCRIPT_DIR="${SCRIPT_PATH%/*}" ;;
+    *) SCRIPT_DIR="." ;;
+esac
+if [[ "$SCRIPT_DIR" != /* ]]; then
+    SCRIPT_DIR="$PWD/$SCRIPT_DIR"
+fi
+PROJECT_DIR="${SCRIPT_DIR%/*}"
 
 QUEUE_FILE="${CMD_SAVE_QUEUE_FILE:-$PROJECT_DIR/queue/shogun_to_karo.yaml}"
 ARCHIVE_CMD_DIR="${CMD_SAVE_ARCHIVE_CMD_DIR:-$PROJECT_DIR/queue/archive/cmds}"
@@ -84,7 +91,7 @@ source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
 
 CMD_DIAGNOSIS=""
 PRIOR_ATTEMPT_COUNT=0
-CMD_SAVE_STDERR_LOG="$(mktemp)"
+CMD_SAVE_STDERR_LOG="/dev/null"
 CMD_SAVE_PERSISTENT_STDERR_LOG="${CMD_SAVE_PERSISTENT_STDERR_LOG:-$PROJECT_DIR/logs/cmd_save_stderr.log}"
 # スキャンファイルキャッシュ: PID固定パスを使いサブシェル経由でも確実にキャッシュが効く
 # .tmp=YAML版(awk処理用) .json=JSON版(Python高速パース用, yaml.safe_load→json.loadで7x高速化)
@@ -96,7 +103,7 @@ CMD_SAVE_SCAN_JSON_CACHE="/tmp/cmd_save_scan_$$.json"
 _SEMANTIC_SESSION_CACHE_KEY="${TMUX_PANE:-${PPID}}"
 _SEMANTIC_SESSION_CACHE_KEY="${_SEMANTIC_SESSION_CACHE_KEY//%/pane}"  # %8 → pane8
 _SEMANTIC_SESSION_CACHE_DIR="${TMPDIR:-/tmp}/cmd_save_semantic_${_SEMANTIC_SESSION_CACHE_KEY}"
-mkdir -p "$_SEMANTIC_SESSION_CACHE_DIR" 2>/dev/null || true
+CMD_SAVE_SEMANTIC_CACHE_READY=0
 CMD_SAVE_ACCUMULATE_BLOCKS="${CMD_SAVE_ACCUMULATE_BLOCKS:-1}"
 BLOCK_DURATION_MINUTES=0
 BLOCK_RETRY_NUDGE="止まるな、修正して再実行せよ"
@@ -109,8 +116,6 @@ declare -a BLOCK_REASONS=()
 declare -a WARN_REASONS=()
 declare -a BLOCK_CHECKS=()
 declare -A CMD_BLOCK_CACHE=()
-exec 3>&2
-exec 2> >(tee -a "$CMD_SAVE_STDERR_LOG" >&3)
 
 extract_cmd_diagnosis() {
     local block_text="${1:-}"
@@ -2232,6 +2237,11 @@ else:
 PY
 }
 
+cleanup_cmd_save_stderr_log() {
+    [[ -n "${CMD_SAVE_STDERR_LOG:-}" && "$CMD_SAVE_STDERR_LOG" != "/dev/null" ]] || return 0
+    rm -f "$CMD_SAVE_STDERR_LOG"
+}
+
 log_cmd_save_block() {
     local block_reason="${1:-}"
     local check_names="${2:-}"
@@ -2630,7 +2640,11 @@ handle_cmd_save_exit() {
 
     if [[ "$status" -ne 0 ]]; then
         local block_reason same_reason_count
-        block_reason="$(extract_last_block_reason)"
+        if [[ ${#BLOCK_REASONS[@]} -gt 0 ]]; then
+            block_reason="${BLOCK_REASONS[-1]}"
+        else
+            block_reason="$(extract_last_block_reason)"
+        fi
 
         if [[ -n "$block_reason" ]]; then
             if [[ -n "$CMD_DIAGNOSIS" ]]; then
@@ -2672,7 +2686,7 @@ handle_cmd_save_exit() {
         fi
     fi
 
-    rm -f "$CMD_SAVE_STDERR_LOG"
+    cleanup_cmd_save_stderr_log
     rm -f "${CMD_SAVE_SCAN_FILE_CACHE:-}"
     rm -f "${CMD_SAVE_SCAN_JSON_CACHE:-}"
     exit "$status"
@@ -3307,7 +3321,7 @@ if [[ "${CMD_SAVE_PREV_LESSON_FAST:-0}" = "1" ]]; then
             echo "$CMD_ID" > "$CMD_SAVE_LAST_CMD_FILE"
             remind_missing_current_cmd_lesson_after_clear
         fi
-        rm -f "$CMD_SAVE_STDERR_LOG"
+        cleanup_cmd_save_stderr_log
         trap - EXIT
         exit 0
     fi
@@ -3319,7 +3333,7 @@ if [[ "${CMD_SAVE_PREV_LESSON_FAST:-0}" = "1" ]]; then
     fi
     echo "保存確認NG: ${CMD_ID} (${BLOCK_COUNT}件のBLOCK, ${WARN_COUNT}件のWARN)" >&2
     emit_block_warn_trigger_summary
-    rm -f "$CMD_SAVE_STDERR_LOG"
+    cleanup_cmd_save_stderr_log
     trap - EXIT
     exit 1
 fi
@@ -4515,6 +4529,10 @@ show_three_layer_memory_ruling_info() {
 
     # セッション内キャッシュ確認（PPIDベース tmpファイル）
     local cache_key cache_file output rc
+    if [[ "${CMD_SAVE_SEMANTIC_CACHE_READY:-0}" != "1" ]]; then
+        mkdir -p "$_SEMANTIC_SESSION_CACHE_DIR" 2>/dev/null || true
+        CMD_SAVE_SEMANTIC_CACHE_READY=1
+    fi
     cache_key="$(printf '%s' "1_1_${query}" | sha256sum 2>/dev/null | cut -d' ' -f1 || printf '%s' "1_1_${query}" | cksum | cut -d' ' -f1)"
     cache_file="${_SEMANTIC_SESSION_CACHE_DIR}/${cache_key}.cache"
     if [[ -f "$cache_file" ]]; then
@@ -6306,15 +6324,22 @@ if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
             }
         ')"
         [[ -n "$_CMD_SAVE_MEMORY_SUMMARY" ]] || _CMD_SAVE_MEMORY_SUMMARY="$CMD_ID saved"
-        # WSL2最適化: memory_db_live_insert を非同期化（DB書込みは判定に影響しない）
-        python3 "$MEMORY_DB_LIVE_INSERT" cmd_save \
-            --cmd-id "$CMD_ID" \
-            --ts "$_CMD_SAVE_MEMORY_TS" \
-            --summary "$_CMD_SAVE_MEMORY_SUMMARY" \
-            --detail "$CMD_BLOCK_NC" \
-            --source-file "${QUEUE_FILE#"$PROJECT_DIR"/}" \
-            >/dev/null 2>&1 &
-        disown 2>/dev/null || true
+        _CMD_SAVE_MEMORY_INSERT_ARGS=(
+            "$MEMORY_DB_LIVE_INSERT" cmd_save
+            --cmd-id "$CMD_ID"
+            --ts "$_CMD_SAVE_MEMORY_TS"
+            --summary "$_CMD_SAVE_MEMORY_SUMMARY"
+            --detail "$CMD_BLOCK_NC"
+            --source-file "${QUEUE_FILE#"$PROJECT_DIR"/}"
+        )
+        if [[ "$MEMORY_DB_LIVE_INSERT" == *"_async.py" ]]; then
+            # WSL2最適化: async wrapperは判定に影響しないためバックグラウンド化。
+            python3 "${_CMD_SAVE_MEMORY_INSERT_ARGS[@]}" >/dev/null 2>&1 &
+            disown 2>/dev/null || true
+        else
+            python3 "${_CMD_SAVE_MEMORY_INSERT_ARGS[@]}" >/dev/null 2>&1 || true
+        fi
+        unset _CMD_SAVE_MEMORY_INSERT_ARGS
     fi
     _BULLETIN_ACTIONED_UPDATED=""
     if [[ "$CMD_SAVE_PREFLIGHT_ONLY" != "1" ]]; then
