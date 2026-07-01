@@ -74,6 +74,14 @@ log_gate_stderr_file() {
     done < "$stderr_file"
 }
 
+queue_lesson_impact_followup() {
+    (
+        bash "$SCRIPT_DIR/scripts/lesson_impact_rotate.sh" 2>/dev/null || true
+        bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || true
+    ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
+    echo "  lesson_impact follow-up: queued (async)"
+}
+
 GATES_DIR="$SCRIPT_DIR/queue/gates/${CMD_ID}"
 YAML_FILE="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 TASKS_DIR="$SCRIPT_DIR/queue/tasks"
@@ -5203,7 +5211,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     echo "Lesson feedback recording (pre-impact scan - emergency override):"
     record_lesson_feedback_for_cmd
     update_lesson_impact_tsv "$CMD_ID" "CLEAR" 2>&1 || echo "  [INFO] update_lesson_impact_tsv failed (non-blocking)"
-    bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || echo "  [INFO] sync-counters failed (non-blocking)"
+    queue_lesson_impact_followup
 
     # cmd_531: AC6 — GATE CLEAR時に教訓有効率スキャン+自動退役（緊急override時も実行）
     echo ""
@@ -7094,11 +7102,7 @@ if [ "$ALL_CLEAR" = true ]; then
     else
         echo "  [INFO] update_lesson_impact_tsv failed (non-blocking)"
     fi
-    (
-        bash "$SCRIPT_DIR/scripts/lesson_impact_rotate.sh" 2>/dev/null || true
-        bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || true
-    ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
-    echo "  lesson_impact follow-up: queued (async)"
+    queue_lesson_impact_followup
 
     echo ""
     echo "Semantic index update (GATE CLEAR):"
@@ -7827,7 +7831,7 @@ else
     else
         echo "  [INFO] update_lesson_impact_tsv failed (non-blocking)"
     fi
-    bash "$SCRIPT_DIR/scripts/lesson_impact_analysis.sh" --sync-counters 2>&1 || echo "  [INFO] sync-counters failed (non-blocking)"
+    queue_lesson_impact_followup
 
     # ─── gunshi review_feedback自動送信（GATE BLOCK） ───
     # GP-209: dedup — 同一cmd+同一resultが既にinboxにあればスキップ
