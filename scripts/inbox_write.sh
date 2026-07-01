@@ -151,6 +151,13 @@ lock_path() {
 resolve_inbox_file_path() {
     local inbox_file="$1"
     local resolved=""
+    local inbox_dir=""
+
+    inbox_dir="${inbox_file%/*}"
+    if [[ ! -L "$inbox_file" && ! -L "$inbox_dir" ]]; then
+        printf '%s\n' "$inbox_file"
+        return 0
+    fi
 
     resolved=$(readlink -f "$inbox_file" 2>/dev/null || true)
     if [ -n "$resolved" ]; then
@@ -160,8 +167,7 @@ resolve_inbox_file_path() {
 
     # File may not exist yet. Resolve the parent directory so queue/inbox
     # symlinks still write to the real mailbox location on first delivery.
-    local inbox_dir inbox_base resolved_dir
-    inbox_dir="${inbox_file%/*}"
+    local inbox_base resolved_dir
     inbox_base="${inbox_file##*/}"
     resolved_dir=$(readlink -f "$inbox_dir" 2>/dev/null || true)
     if [ -n "$resolved_dir" ]; then
