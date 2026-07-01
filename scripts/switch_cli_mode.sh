@@ -113,7 +113,7 @@ if [[ ! -f "$SETTINGS_FILE" ]]; then
     exit 1
 fi
 
-if [[ "$DRY_RUN" != true ]]; then
+if [[ "$DRY_RUN" != true && "$NO_RELAUNCH" != true ]]; then
     validate_cli_availability "$TARGET_CLI" >/dev/null
 fi
 

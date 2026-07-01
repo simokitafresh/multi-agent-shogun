@@ -279,6 +279,35 @@ PYEOF
     [ "$output" = $'codex\nNone' ]
 }
 
+@test "switch_cli_mode: --no-relaunch does not require target CLI binary" {
+    cat > "${TEST_TMP}/settings_no_binary.yaml" << 'YAML'
+cli:
+  default: claude
+  agents:
+    kagemaru:
+      type: claude
+      model_name: claude-opus-4-6
+      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions
+YAML
+
+    run env SWITCH_CLI_SETTINGS_FILE="${TEST_TMP}/settings_no_binary.yaml" \
+        PATH="/usr/bin:/bin" \
+        bash "${PROJECT_ROOT}/scripts/switch_cli_mode.sh" codex --scope kagemaru --no-relaunch
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"--no-relaunch: skipped pane restart"* ]]
+
+    run python3 - << PYEOF
+import yaml
+with open("${TEST_TMP}/settings_no_binary.yaml", "r") as f:
+    data = yaml.safe_load(f) or {}
+agent = data["cli"]["agents"]["kagemaru"]
+print(agent.get("type"))
+print(repr(agent.get("launch_cmd")))
+PYEOF
+    [ "$status" -eq 0 ]
+    [ "$output" = $'codex\nNone' ]
+}
+
 @test "update_settings: model変更後にbuild_cli_commandが反映" {
     cp "${TEST_TMP}/settings.yaml" "${TEST_TMP}/settings_update2.yaml"
 
