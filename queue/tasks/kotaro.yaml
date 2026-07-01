@@ -1,16 +1,54 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
   acceptance_criteria:
     AC1:
-      binary_check: 対象commit差分と現行ファイルを確認し、残存バグあり/なしを根拠付きで報告しているか
-      description: befd7ca46, c9ba1ff9a, b421a7ee6 の差分を読み、Opus 4.8表示/family分類/CLI種別変更時launch_cmdクリアに残存バグがあるか一次情報で判定する
+      binary_check: 報告YAMLにbanner証跡があり、期待model×effortと一致しているか
+      description: 配備直前バナー確認記録(capture-pane出力)を報告YAMLに含め、期待model×effort=Sonnet 4.6 high pinned v2.1.87と一致していることを示す
     AC2:
-      binary_check: 既存テストファイルと実行可能な最小テスト結果を報告しているか
-      description: 関連するshell/Python/Batsテストの不足を調べ、追加すべきテストまたは不要理由を報告する
-    AC3:
-      binary_check: 自分のモデル/CLI環境で観測した差分または差分なしを報告しているか
-      description: GPT/Claude CLI差による挙動差(hook, model label, launch_cmd override)を自分の実行環境観点で記録する
+      binary_check: gate_report_format PASSかつ比較レポート更新に必要な所見が記載されているか
+      description: 元cmd_3628の同一cmd比較タスクを完了し、GATE CLEAR可能な報告YAMLを作成する。軍師が累積比較レポートと5w1h文書更新に使える所見を含める
+  assigned_scope: '元cmd_3628と同一内容。重複ガード回避のためparent_cmdのみcmd_3628_kotaro。source_cmd=cmd_3628。期待モデル=Sonnet 4.6 high pinned v2.1.87。配備直前banner証跡=kotaro pane7: Claude Code v2.1.87; Sonnet 4.6 with high effort (capture-pane 2026-07-01T17:10 JST)。報告YAMLにはこのbanner証跡と自分の実行結果を必ず記載する。'
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  expected_model_effort: Sonnet 4.6 high pinned v2.1.87
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  origin: '[[殿指示_pane確認必須_20260701]] -> [[cmd_3628]] -> [[kotaro_Sonnet 4.6 high pinned v2.1.87]]'
+  parallel_ok: []
+  parent_cmd: cmd_3628_kotaro
+  pre_deploy_banner_evidence: 'kotaro pane7: Claude Code v2.1.87; Sonnet 4.6 with high effort (capture-pane 2026-07-01T17:10 JST)'
+  project: infra
+  purpose: 'cmd_3628全未調査model×effort一括比較: kotaro=Sonnet 4.6 high pinned v2.1.87で同一cmdを実行し、配備直前banner証跡・GATE CLEAR報告・累積比較更新材料を報告する'
+  scope_mode: FULL
+  source_cmd: cmd_3628
+  status: done
+  stop_for: []
+  target_path: /mnt/c/tools/multi-agent-shogun/docs/research
+  task_id: cmd_3628_kotaro_normal
+  task_type: full
+  related_lessons:
+  - id: 'L828'
+    summary: 'gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr'
+    detail: 'gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr'
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L633'
+    summary: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+    detail: 'autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ'
+  - id: 'L311'
+    summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
+    wa_category: 'report_yaml_format'
+    wa_count: 3
+    detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
   standard_skills:
   - "report-write"
   - "verdict-check"
@@ -24,83 +62,35 @@ task:
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
+      - L828: gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L633: autofix_main.pyのverdict導出時にwaive_reasonありのbc:noを除外しなければGP-190のwaive_reason検出がバイパ
       - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
     ────────────────────────────────────────
-    
-    【3-strike rule】
-      - 初期仮説は最低3本。hypothesis_count に現在の本数を維持せよ
-      - 3回連続で仮説が外れたら、追加探索で粘らずエスカレーションせよ
-      ────────────────────────────────────────
-    
-    
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  hypothesis_count: 3
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope: 実装変更は原則禁止。重大な即時バグを見つけた場合のみ最小修正案を提示し、勝手に広範囲改修しない。
-  parallel_ok: []
-  parent_cmd: cmd_3624_kotaro
-  project: infra
-  purpose: 'cmd_3624四者比較のkotaro(Sonnet 4.6 high)担当: CLIモデル表示・model_family分類・launch_cmdクリア修正群の残存バグを監査する'
-  report_template:
-    filename_pattern: queue/reports/{ninja_name}_report_{cmd}.yaml
-    forbidden:
-    - 方針提案・設計判断は禁止。事実と分析のみ報告せよ
-    notes:
-    - 他の忍者の報告を参照するな（並行偵察の独立性）
-    required_fields:
-    - findings
-    - verdict
-    - confidence
-    - blind_spots
-  scope_mode: FULL
-  status: done
-  stop_for: []
-  target_path: scripts/lib/cli_lookup.sh
-  task_id: cmd_3624_kotaro_normal
-  task_type: recon
-  three_strike_rule: 仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告
-  previous_failures:
-    attempt: 2
-    last_block_reason: 'knowledge_candidate: found=true but items is empty'
-    tried_approaches:
-    - 'knowledge_candidate: found=true but items is empty'
-    approach_summary: 'deploy_task.sh の postcondition_lesson_inject (L7963) が inject_related_lessons (L7967) より前に実行されるため、ログに常に1配備ラウンド古いtask_idが表示される。一次証拠: 半蔵hotfix配備(05:55:56開始)のログに才蔵R3のtask_id(cmd_3622…'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'knowledge_candidate: found=true but items is empty'
-      approach_summary: 'deploy_task.sh の postcondition_lesson_inject (L7963) が inject_related_lessons (L7967) より前に実行されるため、ログに常に1配備ラウンド古いtask_idが表示される。一次証拠: 半蔵hotfix配備(05:55:56開始)のログに才蔵R3のtask_id(cmd_3622…'
-    - attempt: 2
-      block_reason: 'knowledge_candidate: found=true but items is empty'
-      approach_summary: 'deploy_task.sh の postcondition_lesson_inject (L7963) が inject_related_lessons (L7967) より前に実行されるため、ログに常に1配備ラウンド古いtask_idが表示される。一次証拠: 半蔵hotfix配備(05:55:56開始)のログに才蔵R3のtask_id(cmd_3622…'
-  related_lessons:
-  - id: 'L311'
-    summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
-    wa_category: 'report_yaml_format'
-    wa_count: 3
-    detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
   memory_db_context:
-  - '2026-07-01T07:18:16+09:00 | 軍師提案: GPT 5.5 low / GPT 5.5 medium / Sonnet 4.6 / Sonnet 5 の四者比較。hayate(GPT low), kagemaru(GPT mediu'
-  - '2026-07-01T07:15:15+09:00 | 軍師提案: GPT 5.5 low / GPT 5.5 medium / Sonnet 4.6 / Sonnet 5 の四者比較。hayate(GPT low), kagemaru(GPT mediu'
+  - '2026-04-02T02:27:58+09:00 | 【将軍】編成切替完了: mixed（GPT2+Sonnet2+Opus2）hayate/saizo=GPT5.4, kagemaru/kotaro=Sonnet, hanzo/tobisaru=Opu'
+  - '2026-07-01T17:10:41+09:00 | 【将軍】/clear準備完了。PD:0 cmd:0 🚨:0。今セッション成果: DM-Fusionメトリクスページ(cmd_3618)+循環スワイプ+UI修正。Rolling Returns 3M/6'
+  - '2026-07-01T16:57:42+09:00 | 殿の指摘通り。まず全model×CLI×effortの組み合わせマトリクスを明確にする。起票は後。 **利用可能なCLI:** - Claude Code pinned (2.1.87): Opus '
+  - '2026-07-01T08:52:59+09:00 | 既にClaude系もeffort明記済み（Sonnet 4.6 **high**, Sonnet 5 **xhigh**, Opus 4.8 **xhigh**）。ただし殿の指摘はClaude系でもe'
   - '2026-07-01T07:08:40+09:00 | saizoのpaneの枠のステータスがsonnetのままだ。中身はopu4.8 xhighだ。これもバグだな。すべてのバグを修正し、今後起きないようにしよう'
   ac_version: d41d8cd9
-  _ac_task_id: cmd_3624_kotaro_normal
+  _ac_task_id: cmd_3628_kotaro_normal
   _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_3624_kotaro.yaml
-  report_path: queue/reports/kotaro_report_cmd_3624_kotaro.yaml
+  report_filename: kotaro_report_cmd_3628_kotaro.yaml
+  report_path: queue/reports/kotaro_report_cmd_3628_kotaro.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -129,4 +119,25 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-07-01T07:24:04"
+  deployed_at: "2026-07-01T17:18:09"
+
+  session_state:
+    attempt: 5
+    last_block_reason: 'files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ'
+    tried_approaches:
+    - 'binary_checks: AC self-verification missing (0/2 ACs). 全ACの二値チェックを記入せよ; result.summary: MISSING or empty'
+    - 'binary_checks: AC self-verification missing (0/2 ACs). 全ACの二値チェックを記入せよ'
+    - 'files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ'
+    diagnose_reason: 'files_modifiedにパス形式でなく説明文を記入した。gateはファイルパス(/)を含む文字列のみ受け付ける。説明文混入禁止ルール(GP-285)を見落とした。'
+    approach_summary: 'cmd_3628 Sonnet 4.6 high pinned v2.1.87 比較タスク完了。バナー証跡確認済み(pane7 shogun:2.7: Claude Code v2.1.87 / Sonnet 4.6 with high effort)。軍師レビュー補足APPROVE(assigned_scope記載)。累積比較レポート更新材料として動作特性所見を記載。'
+    prior_attempts:
+    - attempt: 3
+      block_reason: 'binary_checks: AC self-verification missing (0/2 ACs). 全ACの二値チェックを記入せよ'
+      approach_summary: 'cmd_3628 Sonnet 4.6 high pinned v2.1.87 比較タスク完了。バナー証跡確認済み(pane7 shogun:2.7: Claude Code v2.1.87 / Sonnet 4.6 with high effort)。軍師レビュー補足APPROVE(assigned_scope記載)。累積比較レポート更新材料として動作特性所見を記載。'
+    - attempt: 4
+      block_reason: 'files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ'
+      approach_summary: 'cmd_3628 Sonnet 4.6 high pinned v2.1.87 比較タスク完了。バナー証跡確認済み(pane7 shogun:2.7: Claude Code v2.1.87 / Sonnet 4.6 with high effort)。軍師レビュー補足APPROVE(assigned_scope記載)。累積比較レポート更新材料として動作特性所見を記載。'
+    - attempt: 5
+      block_reason: 'files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ'
+      diagnose_reason: 'files_modifiedにパス形式でなく説明文を記入した。gateはファイルパス(/)を含む文字列のみ受け付ける。説明文混入禁止ルール(GP-285)を見落とした。'
+      approach_summary: 'cmd_3628 Sonnet 4.6 high pinned v2.1.87 比較タスク完了。バナー証跡確認済み(pane7 shogun:2.7: Claude Code v2.1.87 / Sonnet 4.6 with high effort)。軍師レビュー補足APPROVE(assigned_scope記載)。累積比較レポート更新材料として動作特性所見を記載。'
