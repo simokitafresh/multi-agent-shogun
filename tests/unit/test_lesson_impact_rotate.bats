@@ -63,3 +63,26 @@ PY
     [[ "$output" == *"=== Lesson Impact Analysis ==="* ]]
     [[ "$output" == *"Total injections: 2000"* ]]
 }
+
+@test "lesson_impact_analysis filters candidate sections to actual low-ref and block cases" {
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level
+2026-07-01T00:00:01	cmd_1	saizo	L001	injected	CLEAR	yes	infra	exact	routine
+2026-07-01T00:00:02	cmd_2	saizo	L001	injected	CLEAR	yes	infra	exact	routine
+2026-07-01T00:00:03	cmd_3	saizo	L002	injected	CLEAR	no	infra	exact	routine
+2026-07-01T00:00:04	cmd_4	saizo	L002	injected	CLEAR	no	infra	exact	routine
+2026-07-01T00:00:05	cmd_5	saizo	L003	injected	BLOCK	no	infra	exact	routine
+EOF
+
+    run bash "$TEST_PROJECT/scripts/lesson_impact_analysis.sh"
+    [ "$status" -eq 0 ]
+    low_section="$(printf '%s\n' "$output" | awk '/^Low Reference Rate/,/^$/')"
+    high_section="$(printf '%s\n' "$output" | awk '/^High BLOCK Rate/,/^$/')"
+
+    [[ "$low_section" == *"L002"* ]]
+    [[ "$low_section" == *"L003"* ]]
+    [[ "$low_section" != *"L001"* ]]
+    [[ "$high_section" == *"L003"* ]]
+    [[ "$high_section" != *"L001"* ]]
+    [[ "$high_section" != *"L002"* ]]
+}

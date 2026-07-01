@@ -62,6 +62,8 @@ function print_top10(kind,    printed, pass, i, id, best) {
         for (i = 1; i <= key_count; i++) {
             id = keys[i]
             if (used[id] || injected[id] <= 0) continue
+            if (kind == "low" && pct(referenced_count[id], injected[id]) > 0) continue
+            if (kind == "high" && pct(inj_block[id], injected[id]) <= 0) continue
             if (kind == "top" && better_top(id, best)) best = id
             else if (kind == "low" && better_low_ref(id, best)) best = id
             else if (kind == "high" && better_high_block(id, best)) best = id
@@ -389,7 +391,10 @@ def print_summary(rows, stats):
     print()
 
     print("Low Reference Rate (noise candidates):")
-    low_ref = [kv for kv in stats.items() if kv[1]["injected"] > 0]
+    low_ref = [
+        kv for kv in stats.items()
+        if kv[1]["injected"] > 0 and pct(kv[1]["referenced_count"], kv[1]["injected"]) == 0
+    ]
     low_ref.sort(key=lambda kv: (pct(kv[1]["referenced_count"], kv[1]["injected"]), -kv[1]["injected"], kv[0]))
     if low_ref:
         for lesson_id, st in low_ref[:10]:
@@ -399,7 +404,10 @@ def print_summary(rows, stats):
     print()
 
     print("High BLOCK Rate (harm candidates):")
-    high_block = [kv for kv in stats.items() if kv[1]["injected"] > 0]
+    high_block = [
+        kv for kv in stats.items()
+        if kv[1]["injected"] > 0 and pct(kv[1]["inj_block"], kv[1]["injected"]) > 0
+    ]
     high_block.sort(key=lambda kv: (-pct(kv[1]["inj_block"], kv[1]["injected"]), -kv[1]["injected"], kv[0]))
     if high_block:
         for lesson_id, st in high_block[:10]:
