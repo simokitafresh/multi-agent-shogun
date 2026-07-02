@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-02 cmd_3641 -->
-<!-- last_synced_lesson: L796 -->
+<!-- last_updated: 2026-07-02 cmd_karo_hotfix_insight_corruption_202607021437 -->
+<!-- last_synced_lesson: L797 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -263,6 +263,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L794: 月次cronのUTC day-of-month指定はJSTタイムゾーンオフセット越境で1日ずれる（cmd_3634_recon3）
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L796: 同一タブlocalStorage認証変更はstorage eventで検知できない（cmd_3641）
+- L797: CDP cookie注入成功だけではFE admin状態成立を保証しない（cmd_3645）
 
 ## 因果リンク
 
