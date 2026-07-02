@@ -13,7 +13,7 @@ allowed-tools:
   - Bash
 ---
 
-<!-- script_refs_checked_at: 2026-06-26T01:00:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
 
 Script refs verified: 2026-06-26 a7ba82b4a. `clear_prep_check.sh` 直近変更はL804整数比較バグ修正+batch context auto-commit。引数なし実行で/clear前チェックを出力し、終了コードはissues>0で1/なしで0の契約を維持。/shogun-clear-prepの実行手順(Step 1-3)は変更なし。
 Script refs verified: 2026-06-11. `clear_prep_check.sh` の契約は引数なし実行で/clear前チェックを出力する形式のまま。a7ba82b4aは知識埋込みチェック内の整数比較修正で、/shogun-clear-prepの実行手順・入力・完了報告契約変更なし。

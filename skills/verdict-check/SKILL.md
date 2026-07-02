@@ -10,13 +10,13 @@ description: |
   DO NOT TRIGGER: 報告YAML全体作成（→/report-write）、commit（→/ninja-commit）
 ---
 
-<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 
 Script refs verified: 2026-06-26 cmd_3550. `gate_report_format.sh` 直近変更後も `bash scripts/gates/gate_report_format.sh <report_yaml_path>` の呼び出し契約、binary_checksからのverdict自動導出、未記入/FILL_THIS/不正値BLOCKの契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
 
 Script refs verified: 2026-06-11. `gate_report_format.sh` の契約は `bash scripts/gates/gate_report_format.sh <report_yaml_path>` のまま。binary_checksが全てyes/noならverdictをPASS/FAILへ自動導出し、空/FILL_THIS/不正値はBLOCKする仕様に変更なし。
 
@@ -170,6 +170,6 @@ Script refs verified: 2026-06-10 6bf403d2c. `gate_report_format.sh` はauto-comm
 
 Script refs verified: 2026-06-20 48204a464. `gate_report_format.sh` 直近変更は操作的オントロジー/targetフィルタ/スキル強制の内部検査強化。binary_checksからverdictを自動導出する契約と、未記入/FILL_THIS/不正値BLOCKは変更なし。
 
-<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
 
-<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->

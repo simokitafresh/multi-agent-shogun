@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 
@@ -152,4 +152,4 @@ Script refs verified: 2026-06-23 1586d6f48. `deploy_task.sh` 直近変更はGS/D
 
 Script refs verified: 2026-06-28 b1922e36b+0226e0db5. `deploy_task.sh` 直近変更はfailed redeploy時のgate扱い修正と、`shogun_to_karo.yaml`でstatus=canceledのcmd配備をBLOCKする安全強化。`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>` の引数契約、通知、report template生成は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
