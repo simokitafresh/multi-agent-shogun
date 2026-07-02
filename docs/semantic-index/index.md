@@ -5407,7 +5407,6 @@ codd:
 | lesson | `L881` context last_updated更新はcommitまでをセットとせよ — uncommittedは鮮度保証にならない |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-01T02:32:48+09:00 本番DBに次から試行錯誤なしでアクセスできるようにinbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:13:22+09:00 bkwdte7bz toolu_01R6z3kYwyXveuVXJBQm3aBY /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b3d71be7-30d8-46e9-a136-b54c7a |
-| discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:19:26+09:00 bkwn4x16o toolu_01FyouTnX7y9jKgG1TseVKDR /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b3d71be7-30d8-46e9-a136-b54c7a |
 | causal_chain | `[[cmd_karo_recon_ga125_context_freshness_20260624]]` (L846) |
 | causal_chain | `[[cmd_karo_hotfix_ga145_context_freshness_dm_signal_frontend_20260627]]` (L870) |
 | causal_chain | `[[cmd_karo_hotfix_ga147_context_freshness_dm_signal_research_20260627]]` (L872) |
