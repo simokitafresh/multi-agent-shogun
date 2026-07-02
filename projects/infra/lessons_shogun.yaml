@@ -625,6 +625,7 @@ lessons:
     (1)条件の代表性(LS074吸収): FE体感計測はmobileエミュレーション+CPUスロットリング+実運用相当URL(PF指定クエリ)をデフォルトにせよ。desktop preset平均98.5がmobile実測60/TBT 7274msだった(cmd_3647→殿実測)。desktop計測はモバイルCPUメインスレッド実行時間(チャンク7023 scripting 131s)を全く捕捉しない。desktop高スコアを実運用達成と報告するな
     (2)条件の有効性証拠(LS076吸収): 計測系cmdのACには条件が機能した証拠の確認を含めよ。cmd_3653はURLにportfolio_id=を付けたがFE現物はportfolioのみ解釈しPF未指定数値が原票化。忍者bc yesも家老GATEも「URLにクエリが付いている」しか見ていなかった。network-requestsに指定PFのAPI呼び出しがあることまで確認(cmd_3654 AC2で是正)。URLに付けた=有効ではない(LS-A09(17)と同根)
     (3)環境の分離(LS077吸収): FE変更cmdはlocal build計測(忍者のAC)と本番デプロイ後計測(家老/次cmdの後続ステップ)を分離せよ。忍者はpush禁止のため本番計測は未デプロイの旧状態を測り構造的に達成不能(cmd_3655 verdict FAIL)。色是正はCSS変数と直接utility class(text-red-400等)の両経路をスコープに含めよ
+    (4)データ到達の証拠(cmd_3670/3671検分 2026-07-03): 「APIが呼ばれた」≠「データが計測ウィンドウ内に到達し描画された」。隔離プロファイル計測では初回API 401→リトライ200だが、200応答のresourceSize=0/transferSize=0=実データ未受信のまま好数値が原票化された。認証済みデータ描画ありの殿実測との比較は条件不一致で改善幅が過大評価される。有効性証拠は(a)200応答のresourceSize>0 (b)データ描画完了のDOM証拠まで要求せよ。(2)の「network-requestsにAPI呼び出し」だけでは1階層足りない
   source_ids: [LS074, LS076, LS077]
   created_at: '2026-07-03'
   automated: true
