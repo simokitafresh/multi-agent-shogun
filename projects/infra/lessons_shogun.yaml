@@ -606,14 +606,7 @@ lessons:
 # LS074: superseded by LS-A08(7) (/clear自発禁止=殿の指示範囲厳守。2026-07-02統合)
 # LS075: superseded by LS-A04(44) (裸数量語cancel累計コスト=cmdテンプレートルール。2026-07-02統合)
 # LS076: superseded by LS-A09(29) (CLI pinned/latest=一次確認パターン。2026-07-02統合)
-- id: 'LS074'
-  title: '計測条件が実運用を代表するか先に確認せよ — desktop Lighthouseの99点がmobile実測60点だった'
-  origin: '[[cmd_3650]]'
-  detail: '事故: cmd_3647でdesktop preset計測を行いPerformance平均98.5と報告→殿がDevToolsでmobile 4x slowdown+PF指定URLを実測しPerformance 60/TBT 7274ms/SI 11447msの実態が判明。desktop計測は転送量とAPI応答の確認には有効だが、モバイルCPUのメインスレッド実行時間(チャンク7023のscripting 131秒)を全く捕捉しない。LS-A10(計測環境明記)の再発形。対策: FE体感計測はmobileエミュレーション+CPUスロットリング+実運用相当URL(PF指定クエリ)をデフォルト条件にせよ。desktop計測で高スコアでも実運用達成と報告するな'
-  source_cmd: 'cmd_3650'
-  created_at: '2026-07-02'
-  automated: true
-  enforcement: 'type=lesson; file=projects/dm-signal/lessons.yaml; pattern=frontend'
+# LS074: superseded by LS-A24(1) (desktop/mobile計測条件乖離=計測の実運用代表性。2026-07-03統合)
 - id: 'LS075'
   title: 'self_reread複合トリガー: 自己申告×曖昧の同時出現でWARN'
   origin: '[[cmd_3652]]'
@@ -622,22 +615,20 @@ lessons:
   created_at: '2026-07-02'
   automated: true
   enforcement: 'cmd_save.sh check_self_reread_red_flag(L1655-1669)が自動検出済み。本教訓は語彙回避の起票知識'
-- id: 'LS076'
-  title: '計測系GATE CLEAR検分: 計測条件が実際に機能した証拠まで確認せよ'
-  origin: '[[将軍検分_cmd3653原票_20260702]] -> [[PFクエリ名不一致でPF指定無効]] -> [[LS_計測条件有効性証拠]]'
-  detail: 'cmd_3653の本番Lighthouse round計測はURLにportfolio_id=を付けたが、FE現物(usePortfolioParam.ts)はportfolioのみ解釈するためPF指定が無効のまま計測され、PF未指定条件の数値(Perf 0.99)が原票化された。忍者のbinary_check yesも家老GATEも「URL形式にクエリが付いている」ことしか見ておらず、クエリが機能した証拠(network-requestsに指定PFのAPI呼び出し)は未確認だった。将軍のGATE CLEAR後検分でFEのクエリ解釈コードと原票manifestを突き合わせて発見(cmd_3654で是正)。計測系cmdのACには条件が機能した証拠の確認を必ず含めよ。LS-A09(17)の検証手段適合性と同根: URLに付けた=有効ではない'
-  source_cmd: 'cmd_3654'
-  created_at: '2026-07-02'
+# LS076: superseded by LS-A24(2) (計測条件が機能した証拠のAC化。2026-07-03統合)
+# LS077: superseded by LS-A24(3) (local計測と本番計測の分離。2026-07-03統合)
+- id: LS-A24
+  title: 計測の実運用代表性 — 条件・有効性証拠・環境分離
+  origin: '[[cmd_3650]] + [[cmd_3654]] + [[cmd_3655]] + LS-A10(計測環境明記)の発展形'
+  detail: |
+    計測値は「計測条件が実運用を代表し、条件が実際に機能した証拠がある」ときだけ意味を持つ。
+    (1)条件の代表性(LS074吸収): FE体感計測はmobileエミュレーション+CPUスロットリング+実運用相当URL(PF指定クエリ)をデフォルトにせよ。desktop preset平均98.5がmobile実測60/TBT 7274msだった(cmd_3647→殿実測)。desktop計測はモバイルCPUメインスレッド実行時間(チャンク7023 scripting 131s)を全く捕捉しない。desktop高スコアを実運用達成と報告するな
+    (2)条件の有効性証拠(LS076吸収): 計測系cmdのACには条件が機能した証拠の確認を含めよ。cmd_3653はURLにportfolio_id=を付けたがFE現物はportfolioのみ解釈しPF未指定数値が原票化。忍者bc yesも家老GATEも「URLにクエリが付いている」しか見ていなかった。network-requestsに指定PFのAPI呼び出しがあることまで確認(cmd_3654 AC2で是正)。URLに付けた=有効ではない(LS-A09(17)と同根)
+    (3)環境の分離(LS077吸収): FE変更cmdはlocal build計測(忍者のAC)と本番デプロイ後計測(家老/次cmdの後続ステップ)を分離せよ。忍者はpush禁止のため本番計測は未デプロイの旧状態を測り構造的に達成不能(cmd_3655 verdict FAIL)。色是正はCSS変数と直接utility class(text-red-400等)の両経路をスコープに含めよ
+  source_ids: [LS074, LS076, LS077]
+  created_at: '2026-07-03'
   automated: true
-  enforcement: 'cmd_3654 AC2でnetwork-requests証拠確認をAC化済み。将来の計測系cmd起票時のAC設計知識'
-- id: 'LS077'
-  title: 'FE変更cmdの計測実証AC: local計測と本番反映後計測を分離せよ'
-  origin: '[[cmd_3655]] -> [[production固定計測で未deploy差分検証不能]] -> [[LS_FE計測AC分離]]'
-  detail: 'cmd_3655でAC3に『周回計測でcolor-contrast audit違反ゼロ』を要求したが、忍者はpush禁止(commitまで)のため本番計測は未デプロイの旧色を測り構造的に達成不能だった。kagemaruはlocal static build計測(違反ゼロ)とproduction計測(旧色FAIL)を分けて記録する裁量で対応したがverdict FAIL。正しいAC設計: (1)忍者のACはlocal build計測での実証まで (2)本番周回計測はデプロイ後の後続ステップ(家老/次cmd)として分離。cmd_3650でhayateがlocal static exportで計測したのも同じ理由だった(先例を見落とした)。またCSS変数の是正だけでは直接utility class経路(text-red-400等)の違反が残る — 色是正cmdは変数とclass直書きの両経路をスコープに含めよ'
-  source_cmd: 'cmd_3655'
-  created_at: '2026-07-02'
-  automated: true
-  enforcement: 'kagemaru lesson_candidate(production固定計測)と対。次回FE計測実証cmdのAC設計知識'
+  enforcement: 'cmd_3654 AC2(network-requests証拠AC化)+projects/dm-signal/lessons.yaml frontend教訓+計測系cmd起票時のAC設計知識(mobile条件/有効性証拠/local本番分離の3点をACに含める)'
 - id: 'LS078'
   title: '真実の在処不一致クラス — 書き手と読み手が別ストアを見る構造は恒常誤判定を生む'
   origin: '[[LS-A11]] -> [[gate_skill_script_refs_matches末尾採用]] -> [[先送りBLOCK注入stale化]]'
