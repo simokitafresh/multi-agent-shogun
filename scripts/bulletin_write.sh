@@ -207,6 +207,12 @@ else
     ACTION_TYPE="info"
 fi
 
+# 引数順序ミス検出: contentがエージェント名そのもの=引数の置き間違い(blt_20260416_230053事故: content='karo')
+if is_known_agent "$CONTENT"; then
+    echo "ERROR: content is an agent name ('$CONTENT') — argument order mistake. Usage: bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]" >&2
+    exit 1
+fi
+
 # GP-207: contentがエージェント名のみの場合はBLOCK(引数順序ミス検出)
 if is_known_agent "$CONTENT"; then
     echo "BLOCK: contentがエージェント名のみ。引数順序ミスの可能性。Usage: bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]" >&2

@@ -113,6 +113,12 @@ teardown() {
     [[ "$output" == *"confirmed_by: []"* ]]
 }
 
+@test "bulletin_write rejects agent-name content (argument order mistake)" {
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" gunshi karo
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"argument order mistake"* ]]
+}
+
 @test "bulletin_write records action_required with empty actioned_by" {
     run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" saizo "対応要請" false action_required
     [ "$status" -eq 0 ]
