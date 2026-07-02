@@ -10,7 +10,9 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcommit漏れ・scope外混入・未commit残存起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+
+Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 
 # /ninja-commit — 忍者commit手順スキル
 
@@ -97,8 +99,8 @@ Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_fi
 Script refs verified: 2026-06-08 9a1c5df09. `report_field_set.sh` のfiles_modified autofixがスペース区切り複数パスを検出し、個別dict変換する。ninja-commitのcommit_hash記録手順への影響なし。
 Script refs verified: 2026-06-09 06f5a0856. `report_field_set.sh` にlessons_useful全体上書きBLOCKガード追加(既存件数>新件数で拒否)。ninja-commitはcommit_hash記録のみで影響なし。
 
-<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->
-<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546. `report_field_set.sh` 直近変更(281349be)はresult系書込み高速化で、`bash scripts/report_field_set.sh "$REPORT" <field> <value>` の呼び出し契約と報告YAML構造検証は変更なし。
 
@@ -106,4 +108,4 @@ Script refs verified: 2026-06-20 efb4b9c02. `report_field_set.sh` 直近変更�
 
 Script refs verified: 2026-06-26 b12637002. `report_field_set.sh` 直近変更はstatus=completed済み報告へのcommit前フィールド書込みをBLOCKするガード追加。ninja-commitはcommit後にcommit_hashを記録するため、commit前にstatus completedになることはなく影響なし。
 
-<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->

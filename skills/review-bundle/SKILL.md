@@ -10,7 +10,9 @@ description: |
   DO NOT TRIGGER: レビュー判定そのもの（→手動）、gate_sync（→/gate-sync）、idle分析永続化（→/idle-persist）
 ---
 
-<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+
+Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546. `inbox_write.sh` 直近変更(832a032d4)はAGENT_CONFIG_LOADED gateによるtypeコマンドskip高速化で、Step 3の `bash scripts/inbox_write.sh karo "$MESSAGE" review_feedback gunshi` 契約、永続化確認、retry手順は変更なし。
 
@@ -191,4 +193,4 @@ Script refs verified: 2026-06-26 cmd_karo_hotfix_skill_refs_20260626082009. `bul
 
 Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は既存ブロック内の新規field挿入位置を修正した内部バグ修正。review_logへのverdict/gate_prediction/reviewed_at記録契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->

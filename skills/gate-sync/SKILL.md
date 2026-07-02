@@ -10,7 +10,9 @@ description: |
 quality_metric: "当該スキル同期後の軍師review精度（logs/gunshi_review_log.yamlでgate_prediction==gate_resultとなった割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-06-27T02:57:33+0900 -->
+<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+
+Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 
 # /gate-sync — gate結果同期スキル
 
@@ -76,4 +78,4 @@ Script refs verified: 2026-06-26 cmd_karo_hotfix_skill_refs_20260626082009. `bul
 
 Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は既存ブロックへ新規fieldを挿入する際、ブロック末尾の最終行より前に差し込む内部バグ修正。flock+root fallback+readback検証の契約は維持。
 
-<!-- script_refs_checked_at: 2026-06-28T23:18:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->

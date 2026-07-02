@@ -10,7 +10,9 @@ description: |
   DO NOT TRIGGER: 同一CLI内の /model 操作（Claude系内でOpus↔Sonnet等）、レイアウト全崩壊（→/reset-layout）
 ---
 
-<!-- script_refs_checked_at: 2026-06-27T02:57:33+0900 -->
+<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+
+Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 
 Script refs verified: 2026-06-20. `shogun_cli_switch.sh` は `status/pin-2.1.87/unpin-latest/to-claude/to-codex/--agent/--scope/--dry-run/--settings-only` を契約にする。CLI切替は `scripts/switch_cli_mode.sh`、Claude version切替は `config/cli_profiles.yaml` の `profiles.claude.launch_cmd` と個別 `settings.yaml launch_cmd` を正本にする。
 Script refs verified: 2026-06-20 L821. `switch_cli_mode.sh` にstale active補正追加(@agent_state=active+task空→idle強制)。I/F変更なし。Codex sandbox環境でStop hookブロック→active残留→respawnスキップのインフラバグ修正。
@@ -281,6 +283,6 @@ tmux respawn-pane -k -t <pane> "cd /mnt/c/tools/multi-agent-shogun && /home/simo
 Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は既存ブロックへ新規fieldを追加する際の挿入位置修正。settings.yaml更新・tmux変数同期・respawn手順の契約は変更なし。
 
 Script refs verified: 2026-07-01T04:10:00+09:00. `cli_lookup.sh` に `_CLI_LAUNCH_CMD_OVERRIDE` 追加(per-agent launch_cmd対応)。`settings.yaml` per-agent `launch_cmd:` フィールドが `cli_profiles.yaml` デフォルトより優先される。ninja_monitor respawn時に自動反映。検証: `source scripts/lib/cli_lookup.sh && cli_launch_cmd <agent>` で確認。
-<!-- script_refs_checked_at: 2026-07-02T01:12:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546. `cli_lookup.sh`/`switch_cli_mode.sh`/`ninja_monitor.sh` 直近変更(58c729dc/23b16810/c9ba1ff9/befd7ca4/9fa6e089/8e26308/7f3b9ca/897470d/6c6bd607)はsettings-only許可、launch_cmd overrideの追加/解除、runtime model検出、monitor hot-reloadとclear loop抑制の内部制御で、`shogun_cli_switch.sh status|pin-2.1.87|unpin-latest|to-claude|to-codex`、`--agent`、`--scope`、`--dry-run`、`--settings-only` の契約は変更なし。
