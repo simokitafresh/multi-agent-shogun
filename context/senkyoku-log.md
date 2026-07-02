@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-07-02 cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530 -->
+<!-- last_updated: 2026-07-02 cmd_3639 -->
 
 ## 2026-06-30
 
@@ -1334,3 +1334,6 @@
 - 2026-07-02 cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526: bc_result_empty高頻度18件はkagemaruのcmd_complete_gate速度計測3回×未完成report6項目の単一ノイズと特定。auto-fixはGP-107で却下し、`GATE_NO_LOG=1`用途コメントのみ追加、insight resolved、GATE CLEAR。
 - 2026-07-02 cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530: deploy_task.shのreport template生成で`awk -v`がAC本文のエスケープ済み引用符を壊す根因を小太郎が修正。ENVIRON経由値渡し+再現bats追加、182/182 PASS、GATE CLEAR。
 - 2026-07-02 家老強ニュー化: `queue/compact_state/karo.yaml` + `queue/compact_state_karo.yaml` を07:46時点へ更新。goal complete、全忍者idle、pending insights 3件、L828誤注入防御(commit `744758feb`)とinsight解決16→3を復帰要点化。
+- 2026-07-02 cmd_3637: DM-Signal Phase3 P1の5EP raw lookup+invalidateを疾風が完遂。軍師FAIL2点(compare-returns raw hit時TTLCache bypass、metadata-only save同一session invalidate)を追加commit `dbb3276f` で修正し、context/dm-signal-ops.md §49へ還流、GATE CLEAR。
+- 2026-07-02 cmd_3638: cmd_save品質+速度+自動成長改善を疾風が完遂。commit `baef88ad1` でBLOCK SUMMARYパターン集計、SG-PRE25抽出器共通化、D0 FP修正追認、速度計測を実装し、軍師LGTM・GATE CLEAR。
+- 2026-07-02 cmd_karo_hotfix_report_field_files_modified_path_guard: report_field_set.shのfiles_modified散文通過を影丸が修正。commit `b53e60d72` で非パス値を記入時点BLOCKし、関連bats 28/28・bc validation 15/15・gate_report_format 31/31 PASS、GATE CLEAR。

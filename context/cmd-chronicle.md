@@ -438,3 +438,5 @@
 | cmd_3632 | 軍師速度監査(blt_20260630_221002): D0で改善したが残存悪化3件。共通根因=YAML肥大化とpython3 yaml.load逐次実行。cmd_3631累計昇格cancelにつき新IDで再起票 | infra | 07-01 | gate速度高速化3件: ac_physical_verif |
 | cmd_3636 | 殿指示(2026-07-02): DM-Signal性能改善Phase2。設計書v7(6往復レビュー済み)に基づき、PrecomputedRawテーブル新設+Layer5事前計算バッチ+/admin/precompute-raw endpoint+recalculate_fast hookを実装し、API応答の事前計算基盤を構築する | dm-signal | 07-02 | Phase2 raw precompute foundati |
 | cmd_3637 | 殿指示(2026-07-02): DM-Signal性能改善Phase3。Phase2でPrecomputedRaw基盤完成(3f920b94)。P1の5EPにraw lookup+masking分離を適用し、API応答を数秒→200ms以下に短縮する | dm-signal | 07-02 | 軍師レビューFAILを修正。compare-returnsは |
+| cmd_3638 | 殿厳命(2026-07-02): 将軍の起票能力は根幹。品質+速度+自動成長の3軸同時改善。設計書v3(家老3往復APPROVE_WITH_CONDITIONS)に基づき、(1)D0実施済みFP修正のcommit+bats回帰 (2)BLOCK SUMMARYにパターン別集計追加 (3)ファイル抽出器を共通関数化 (4)速度プロファイル計測+ボトルネック関数の高速化 | infra | 07-02 | cmd_saveのBLOCK SUMMARY集計追加、SG- |
+| cmd_3639 | 殿指示(2026-07-02): 全ページ瞬時表示がゴール。PF別EPは0.2-0.5sに改善済み。compare-returns(初期表示)が4.3-4.7s残存。根因=PF別rawのSELECT+fallback計算が102PF分積み上がる。一括事前計算で即応答に変更 | dm-signal | 07-02 | compare-returnsのPF行をcompare_re |

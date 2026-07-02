@@ -872,6 +872,12 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - `compare_returns.py`はPrecomputedRaw hit時にTTLCache return/setをバイパスする。raw未hit時のみ既存TTLCacheを使う。
 - metadata/visibility/folder変更時は`invalidate_precomputed_raw`で該当rawを削除する。portfolio metadata-only saveは保存とinvalidateを同一DB session/commit内で実行する。
 
+## §50 compare-returns bulk precompute (cmd_3639)
+
+- `compare_returns_bulk`は`PrecomputedRaw(endpoint="compare_returns_bulk", portfolio_id=NULL, params_hash=make_params_hash({}))`の1行に全active PFのtrailing+MTD rawを保持する。保存前に同endpointを削除し、PostgreSQLのNULL unique差分による複数行化を避ける。
+- `/api/compare-returns`はbulk raw fresh hit時、1行lookup後に`visible_ids`でPFを絞って返す。bulk miss/stale時は既存のPF別`compare_returns_trailing` raw lookup/fallback経路を維持する。
+- metadata/folder/visibility変更時は`compare_returns_trailing`に加えて`compare_returns_bulk`もinvalidateする。これにより可視性変更後のbulk行による非表示PF混入を防ぐ。
+
 ## 因果リンク
 
 - ← [[dm-signal]] 運用層
