@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-02 cmd_3667 -->
-<!-- last_synced_lesson: L802 -->
+<!-- last_updated: 2026-07-03 cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051 -->
+<!-- last_synced_lesson: L803 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -259,6 +259,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L786-L801は振り分け済 2026-07-02 → frontend§12(L786:ComparisonChart Y軸/L796:localStorage storage event/L798:PAGE_APIS prefetch空/L801:Next共通chunk分割不能), ops§38(L789:mixed_format_commit回避), ops§49(L790:MTD cache), ops教訓索引(L791:scope別除去), ops§37(L793:cron envVars API検証/L794:cron UTC越境), ops§18(L799:計測クエリ入口BLOCK/L800:production Lighthouse証明限界), ops§19(L797:CDP cookie注入≠admin成立), infra教訓索引(L795:外部repo commit分類)。不変量候補なし）
 - PD-054裁定(2026-07-02): 7023=Next App Router runtime不可避。App Router runtime削減設計には進まず、次方向は初期レンダー計算量削減(テーブル仮想化・チャート遅延・hydration削減)=fd9d/app chunks側。cmd_3660本番metrics計測はPerf 46→95/TBT 1724→55ms/CLS 0.743→0を確認。→ `/mnt/c/Python_app/DM-signal/docs/research/lighthouse_rounds/round_20260702_cmd3660_production_metrics_cls_close/manifest.json`
 - L802: precompute paramsはFE PAGE_APISから機械抽出して照合する（cmd_3667）
+- L803: FE要求params整合テストはpage.tsxではなく別module定数をSSOTにする（cmd_3668）
 
 ## 因果リンク
 
