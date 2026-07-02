@@ -869,13 +869,21 @@ executions:
   gate: "dashboard_update"
   source: "scripts/dashboard_update.sh "
   skill_path: "/mnt/c/tools/multi-agent-shogun/skills/dashboard-update/SKILL.md"
+- ts: "2099-01-01T00:05:00+0900"
+  skill: "dashboard-update"
+  executor: "simokitafresh"
+  result: "FAIL"
+  stumbling_points: "dashboard_update.sh exit=1 cmd=cmd_karo_hotfix_model_detect_hook dry_run=false"
+  gate: "dashboard_update"
+  source: "cmd_karo_hotfix_model_detect_hook"
+  skill_path: "/mnt/c/tools/multi-agent-shogun/skills/dashboard-update/SKILL.md"
 EOF
 
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"■ スキル別FAIL率"* ]]
     [[ "$output" == *"dashboard-update: 直近50件FAIL率=50% (1/2) last=2099-01-01T00:01:00+0900"* ]]
-    [[ "$output" != *"80% (4/5)"* ]]
+    [[ "$output" != *"83% (5/6)"* ]]
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 

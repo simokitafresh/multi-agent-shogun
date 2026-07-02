@@ -2759,6 +2759,16 @@ def _exclude_from_fail_denominator(entry):
         return True
     if skill == "dashboard-update" and cmd_id.startswith("-"):
         return True
+    if skill == "dashboard-update" and cmd_id.startswith("cmd_"):
+        # dashboard_update.sh can be invoked by health checks or stale shortened
+        # cmd labels. Those failures mean "no report found for this label", not
+        # an operational dashboard refresh failure.
+        is_full_cmd_id = (
+            re.match(r"^cmd_\d+$", cmd_id)
+            or re.search(r"_\d{8,}(?:_|$)", cmd_id)
+        )
+        if not is_full_cmd_id and not cmd_id.startswith(("cmd_test_", "cmd_training_speed_")):
+            return True
     stumbling = str(entry.get("stumbling_points") or "")
     if skill == "note-draft" and re.search(r"reCAPTCHA challenge was not so|reCAPTCHA challenge was not solved|External reCAPTCHA challenge", stumbling, re.IGNORECASE):
         return True
