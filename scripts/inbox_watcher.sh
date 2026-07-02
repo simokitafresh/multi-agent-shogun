@@ -87,6 +87,7 @@ FORCE_IDLE_AFTER_SEC="${FORCE_IDLE_AFTER_SEC:-60}"
 BUSY_TIMEOUT_SEC="${BUSY_TIMEOUT_SEC:-30}"  # @last_active based timeout (AC1: idle_flag force-creation)
 HANG_DETECT_SEC="${HANG_DETECT_SEC:-300}"  # seconds before daemon_watchdog.sh considers this watcher hung
 LOOP_HEARTBEAT_FILE="${STATE_DIR}/inbox_watcher_loop_hb_${AGENT_ID}"
+DELIVERY_LATENCY_WARN_SEC="${DELIVERY_LATENCY_WARN_SEC:-60}"  # cmd_3646: 殿指摘の長い尾(上位1割>60s)を可視化するしきい値
 
 # Self-restart on script change (cmd_100)
 SCRIPT_PATH="$_iw_self"  # reuse already-resolved path (avoids realpath subprocess)
@@ -815,6 +816,15 @@ send_wakeup() {
         fi
     ) 200>"$lock"; then
         return 1
+    fi
+
+    # AC1(cmd_3646): busy gatingで保留された場合の「保留開始(first-unread)→実配達完了」レイテンシを記録。
+    # first_unread_seenはfingerprint再作成に影響されない一次時刻(L841)なので、複数回deferしても保留開始時刻を維持する。
+    local _delivery_latency_sec
+    _delivery_latency_sec=$(get_first_unread_age)
+    echo "[$(date)] [DELIVERY-LATENCY] $AGENT_ID: ${_delivery_latency_sec}s from first-unread to delivery (${unread_count} unread)" >&2
+    if [ "$_delivery_latency_sec" -ge "$DELIVERY_LATENCY_WARN_SEC" ]; then
+        echo "[$(date)] [DELIVERY-LATENCY-WARN] $AGENT_ID: held ${_delivery_latency_sec}s >= ${DELIVERY_LATENCY_WARN_SEC}s threshold (busy gating tail latency)" >&2
     fi
 
     # After successful nudge: consume idle flag (Stop hook recreates on idle)
