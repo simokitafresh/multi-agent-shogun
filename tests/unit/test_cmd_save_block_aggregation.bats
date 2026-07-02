@@ -203,6 +203,64 @@ YAML
     [[ "$output" != *"止まるな、修正して再実行せよ"* ]]
 }
 
+@test "AC2c: BLOCK SUMMARY shows recent pattern unique cmd counts" {
+    cat > "$TEST_QUALITY_LOG" <<'YAML'
+entries:
+  - cmd_id: cmd_a
+    gate_result: BLOCK
+    source: cmd_save
+    notes: command_files_modified_mismatch|detail=a
+  - cmd_id: cmd_a
+    gate_result: BLOCK
+    source: cmd_save
+    notes: command_files_modified_mismatch|detail=retry
+  - cmd_id: cmd_b
+    gate_result: BLOCK
+    source: cmd_save
+    notes: missing_q11
+YAML
+    cat > "$TEST_QUEUE" <<'YAML'
+commands:
+  cmd_multi_block:
+    id: cmd_multi_block
+    title: "fix — cmd_save集約テスト"
+    project: infra
+    command: "複数BLOCK理由を1回で露出させる"
+    status: pending
+    acceptance_criteria:
+      - id: AC1
+        description: "集約表示を確認"
+    quality_gate:
+      q1_firefighting: "yes"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "medium"
+      q5_verified_source: "code_reading"
+      q8_why_what: "WHY: BLOCK集計を固定する → WHAT: 意図的にBLOCKさせる → WHEN: cmd_saveのBLOCK集計回帰を検証する時 → WHERE: tests/unit/test_cmd_save_block_aggregation.bats → WHO: 将軍cmd保存ゲートを使う将軍 → HOW: 直近10件のnotes先頭を分類し、unique cmd数を表示する。複利: 正の複利"
+      q_ambiguity: "none"
+YAML
+
+    run_cmd_save
+    echo "$output" >&2
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"★ BLOCK SUMMARY: recent 10 pattern unique cmd counts"* ]]
+    [[ "$output" == *"command_files_modified_mismatch: unique_cmds=1 cmd_ids=cmd_a"* ]]
+    [[ "$output" == *"missing_q11: unique_cmds=1 cmd_ids=cmd_b"* ]]
+}
+
+@test "AC3: extract_command_files keeps SG-PRE25 readonly heuristics" {
+    run bash "$PROJECT_ROOT/scripts/lib/extract_command_files.sh" \
+        --repo "$PROJECT_ROOT" \
+        --command-text "scripts/semantic_search.shを呼び出し、チェックを追加。scripts/cmd_save.shを修正する"
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cmd_save.sh"* ]]
+    [[ "$output" == *"READONLY_EXCLUDED: semantic_search.sh"* ]]
+    [[ "$output" != *"WARN: semantic_search.sh"* ]]
+}
+
 @test "AC2b: 殿発言検索はtarget=karoのinboundを除外する" {
     create_memory_db_fixture
     cat > "$TEST_LORD_CONVERSATION" <<'JSONL'

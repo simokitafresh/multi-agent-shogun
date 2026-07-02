@@ -89,6 +89,8 @@ fi
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
 
+EXTRACT_COMMAND_FILES_SCRIPT="${CMD_SAVE_EXTRACT_COMMAND_FILES_SCRIPT:-$SCRIPT_DIR/lib/extract_command_files.sh}"
+
 CMD_DIAGNOSIS=""
 PRIOR_ATTEMPT_COUNT=0
 CMD_SAVE_STDERR_LOG="/dev/null"
@@ -353,6 +355,11 @@ is_gate_or_hook_addition_cmd() {
     # Treat underscores as identifier characters so gate_fire_log/gate_result
     # remain data names, not gate/hook addition keywords.
     local gate_hook_pattern='(^|[^A-Za-z0-9_])(gate|hook)([^A-Za-z0-9_]|$)|ゲート|フック'
+
+    # FP防止: 外部PJ(dm-signal等)のPython hook/gateはinfra gate/hookではない
+    local project_field
+    project_field="$(cmd_block_get_field "project")"
+    [[ "${project_field:-}" == "dm-signal" || "${project_field:-}" == "google-classroom" || "${project_field:-}" == "clinic-expense-tracker" || "${project_field:-}" == "dividend-tracker" ]] && return 1
     local q11_context=""
     local q11_value=""
     local scope_mode=""
@@ -436,6 +443,11 @@ is_gate_or_script_modification_cmd() {
     local search_text
 
     [[ -n "$block_text" ]] || return 1
+
+    # FP防止: 外部PJ(dm-signal等)のPythonコードはinfra gate/scriptではない
+    local _gsm_project
+    _gsm_project="$(cmd_block_get_field "project")"
+    [[ "${_gsm_project:-}" == "dm-signal" || "${_gsm_project:-}" == "google-classroom" || "${_gsm_project:-}" == "clinic-expense-tracker" || "${_gsm_project:-}" == "dividend-tracker" ]] && return 1
     search_text="$(printf '%s\n' "$block_text" | awk '
         /^[[:space:]]*(title|purpose|target_path):/ { print; next }
         /^[[:space:]]*command:[[:space:]]*\|/ { in_command=1; next }
@@ -2156,6 +2168,60 @@ print(count)
 PY
 }
 
+print_recent_block_pattern_summary() {
+    [[ -f "$QUALITY_LOG_FILE" ]] || return 0
+
+    local scan_file
+    scan_file="$(make_quality_log_scan_file)" || return 0
+
+    CMD_SAVE_QUALITY_LOG="$scan_file" python3 - <<'PY'
+import json
+import os
+import re
+import yaml
+from collections import OrderedDict
+
+log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
+if not log_path or not os.path.exists(log_path):
+    raise SystemExit(0)
+
+json_path = log_path[:-4] + ".json" if log_path.endswith(".tmp") else ""
+try:
+    if json_path and os.path.exists(json_path):
+        with open(json_path, encoding="utf-8") as fh:
+            data = json.load(fh) or {}
+    else:
+        with open(log_path, encoding="utf-8") as fh:
+            data = yaml.safe_load(fh) or {}
+except Exception:
+    raise SystemExit(0)
+
+entries = (data.get("entries") or []) if isinstance(data, dict) else []
+blocks = [
+    entry for entry in entries
+    if isinstance(entry, dict) and str(entry.get("gate_result", "")).strip() == "BLOCK"
+]
+recent = blocks[-10:]
+if not recent:
+    raise SystemExit(0)
+
+patterns = OrderedDict()
+for entry in recent:
+    note = str(entry.get("notes", "") or "").strip()
+    pattern = note.split("|", 1)[0].strip() or "unknown"
+    pattern = re.sub(r"\s+", " ", pattern)
+    cmd = str(entry.get("cmd_id", "") or "").strip() or "unknown"
+    bucket = patterns.setdefault(pattern, set())
+    bucket.add(cmd)
+
+print("★ BLOCK SUMMARY: recent 10 pattern unique cmd counts")
+for pattern, cmd_ids in patterns.items():
+    shown = ",".join(sorted(cmd_ids)[:5])
+    suffix = "" if len(cmd_ids) <= 5 else ",..."
+    print(f"  - {pattern}: unique_cmds={len(cmd_ids)} cmd_ids={shown}{suffix}")
+PY
+}
+
 count_same_check_prior_blocks() {
     local check_name="${1:-}"
     [[ -n "$check_name" && -f "$QUALITY_LOG_FILE" ]] || {
@@ -2679,6 +2745,7 @@ handle_cmd_save_exit() {
                 echo "★ DIVERGENT: 同じチェック($block_reason)で2回連続BLOCK。" >&2
                 echo "  根本的に異なるアプローチを検討せよ。" >&2
             fi
+            print_recent_block_pattern_summary >&2 || true
 
             local _exit_checks_str
             _exit_checks_str="$(build_unique_block_checks_str 2>/dev/null || true)"
@@ -3561,10 +3628,13 @@ QG_TEMPLATE
                 _Q11_ALLOW_RESEARCH_SCAN=1
             fi
             if [[ "$_Q11_ALLOW_RESEARCH_SCAN" == "1" ]]; then
-            _Q11_TARGETS=$(
-                printf '%s\n' "$_Q11_COMMAND_SECTION" \
-                    | grep -oE 'scripts/[A-Za-z0-9_./-]+\.(sh|py)|[A-Za-z0-9_./-]+\.(sh|py)' \
-                    | awk '
+            if [[ -f "$EXTRACT_COMMAND_FILES_SCRIPT" ]]; then
+                _Q11_TARGETS="$(bash "$EXTRACT_COMMAND_FILES_SCRIPT" --command-text "$_Q11_COMMAND_SECTION" --repo "$PROJECT_DIR" 2>/dev/null | grep -E '\.(sh|py)$' || true)"
+            else
+                _Q11_TARGETS=$(
+                    printf '%s\n' "$_Q11_COMMAND_SECTION" \
+                        | grep -oE 'scripts/[A-Za-z0-9_./-]+\.(sh|py)|[A-Za-z0-9_./-]+\.(sh|py)' \
+                        | awk '
                         function basename_of(path, parts, n) {
                             n = split(path, parts, "/")
                             return parts[n]
@@ -3589,9 +3659,10 @@ QG_TEMPLATE
                                 }
                             }
                         }
-                    ' \
-                    || true
-            )
+                        ' \
+                        || true
+                )
+            fi
             if [[ -n "${_Q11_TARGETS:-}" ]]; then
                 read -r _Q11_CACHE_KEY _ < <(printf '%s\n%s\n' "$_Q11_RESEARCH_DIR" "$_Q11_TARGETS" | cksum)
                 _Q11_CACHE_FILE="/tmp/cmd_save_q11_${_Q11_CACHE_KEY}.cache"
@@ -4114,6 +4185,8 @@ check_dm_signal_bare_layer_reference() {
         [[ "$trimmed" =~ (正則化|ノルム|norm|regularization|regression|loss|lambda|λ|距離|行列|ベクトル|vector|matrix) ]] && continue
         # DM-Signal固有名詞と同一行のL表記は正当(例: "L2 GS実績", "L3用universe", "秘奥義GS")
         [[ "$trimmed" =~ (GS|奥義|秘奥義|忍法|四神|universe|smoke|RSS|チャンピオン|構成PF|cmd_[0-9]) ]] && continue
+        # ETL層名称(Layer0-5, LayerLock, sync-fof等)はinfra用語でありDM-Signal PF層と無関係
+        [[ "$trimmed" =~ (Layer[0-5]|LayerLock|LAYER_DEPENDENCIES|sync-fof|sync-standard|precompute|ETL|cron|endpoint|admin) ]] && continue
 
         if [[ "$trimmed" =~ (^|[^A-Za-z0-9_])L[0-4]([^A-Za-z0-9_]|$) ]]; then
             raw_hits+="${trimmed}"$'\n'

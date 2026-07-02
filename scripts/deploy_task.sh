@@ -4015,6 +4015,12 @@ elif isinstance(ac, list):
 
 full_text = ' '.join(texts)
 
+# FP防止: 外部PJ(dm-signal等)のPythonコードのhook/gateはinfra gate/hookではない
+EXTERNAL_PROJECTS = {'dm-signal', 'google-classroom', 'clinic-expense-tracker', 'dividend-tracker'}
+task_project = task.get('project', '')
+if task_project in EXTERNAL_PROJECTS:
+    sys.exit(0)
+
 # gate/hook関連キーワード検出
 GATE_KEYWORDS = [
     'gate', 'hook', 'BLOCK', 'growth.loop', 'growth-loop',
