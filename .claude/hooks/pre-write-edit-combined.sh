@@ -701,6 +701,10 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
         }
         _g16_count_model_name_literal() {
             local _c _code
+            # 検出器実体はモデル名パターンを保持するのが本務(SSOT実装側)。行単位除外では新規パターン行が漏れるためfile_path単位で除外 (blt_20260702_124855)
+            case "$file_path" in
+                */scripts/lib/model_detect.sh|*/scripts/lib/model_resolve.sh|*/scripts/lib/model_family.py|*/scripts/lib/model_colors.sh) printf '0'; return;;
+            esac
             _code="$(_g16_strip_comments "$1" | grep -vE 'model_resolve|resolve_model_display|cli_lookup|cli_model_display|cli_launch_cmd|model_detect|detect_real_model|model_colors|model_family|@model_name|model_name:' 2>/dev/null || true)"
             _c="$(printf '%s' "$_code" | grep -ciE '\b(opus|sonnet|haiku|claude-opus|claude-sonnet|claude-haiku|gpt-5(\.[0-9])?)\b' 2>/dev/null)" || _c=0
             printf '%s' "${_c##*$'\n'}"

@@ -20,6 +20,21 @@
 #   検出成功時に tmux @real_model ペイン変数に保存。
 #   次回検出失敗時はキャッシュ値を返す（バナーがスクロールオフした場合の安全網）。
 
+_model_detect_latest_claude_session() {
+    awk '
+        /Claude Code/ {
+            delete lines
+            n = 0
+        }
+        { lines[++n] = $0 }
+        END {
+            for (i = 1; i <= n; i++) {
+                print lines[i]
+            }
+        }
+    '
+}
+
 # detect_real_model <agent_name> <pane_target>
 # CLI種別に応じた方式でペインから実行中のモデル名を検出
 detect_real_model() {
@@ -40,6 +55,7 @@ detect_real_model() {
             #   標準幅(200K): ▝▜█████▛▘  Sonnet 4.6 with high effort · path
             local output
             output=$(tmux capture-pane -t "$pane_target" -p -J -S -1000 2>/dev/null)
+            output=$(printf '%s\n' "$output" | _model_detect_latest_claude_session)
 
             if [ -n "$output" ]; then
                 local banner model

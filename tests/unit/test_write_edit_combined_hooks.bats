@@ -378,6 +378,14 @@ _mark_read_for_current_agent() {
     [[ "$output" == *'repoルートパス'* ]]
 }
 
+@test "Guard 16: model_detect.sh本体のモデル名リテラルはBLOCKしない" {
+    local model_detect_file="$PROJECT_ROOT/scripts/lib/model_detect.sh"
+    _mark_read_for_current_agent "$model_detect_file"
+    _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$model_detect_file"'","new_string":"grep -E '\''(Opus|Sonnet|Haiku)[[:space:]]+[0-9]+'\''\n"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'BLOCK: 操作的オントロジー違反'* ]]
+}
+
 @test "Guard 17: config/projects.yaml projects path manual WriteをBLOCKする" {
     local projects_file="$TMP_DIR/config/projects.yaml"
     mkdir -p "$TMP_DIR/config"
