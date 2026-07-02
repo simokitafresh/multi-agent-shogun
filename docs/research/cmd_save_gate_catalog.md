@@ -412,3 +412,7 @@ print(dict(counts))
 print('total', sum(counts.values()))
 PY
 ```
+
+## 8. 関連分析
+
+- [[gunshi_idle_cmd_save_block_pattern_analysis_20260702]] — cmd_save BLOCK根因パターン分析v3(cmd_3638設計書。品質+速度+自動成長3軸。BLOCK SUMMARYパターン集計+SG-PRE25共通化+速度計測の設計根拠) → `docs/research/gunshi_idle_cmd_save_block_pattern_analysis_20260702.md`
