@@ -183,87 +183,7 @@ heavy_idx = main.index('inject_memory_db_context "$task_file"')
 report_idx = main.index('generate_report_template "$ninja_name"')
 
 assert preserve_idx < skip_idx < heavy_idx < report_idx, (preserve_idx, skip_idx, heavy_idx, report_idx)
-assert 'postcondition_lesson_inject "$task_file" || true\n    fi\n\n    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ] && [ "$direct_yaml_source" != "1" ]; then' in main
-PY
-}
-
-@test "direct --yaml non-preinjected task keeps source core fields through mutations" {
-    tmpdir="$(mktemp -d)"
-    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue/reports" "$tmpdir/logs"
-    ln -s "$PROJECT_ROOT/scripts" "$tmpdir/scripts"
-    ln -s "$PROJECT_ROOT/templates" "$tmpdir/templates"
-
-    cat > "$tmpdir/source.yaml" <<'YAML'
-task:
-  parent_cmd: cmd_direct_yaml_regression
-  task_id: cmd_direct_yaml_regression_normal
-  status: assigned
-  assigned_to: sasuke
-  task_type: training
-  project: infra
-  target_path: scripts/inbox_write.sh
-  title: direct yaml regression
-  purpose: direct yaml core fields survive task mutation
-  acceptance_criteria:
-  - id: AC1
-    description: parent_cmd remains the direct yaml cmd
-  - id: AC2
-    description: task_id remains the direct yaml task
-  - id: AC3
-    description: target_path remains the direct yaml target
-  - id: AC4
-    description: all source ACs remain present
-  - id: AC5
-    description: report template uses direct yaml cmd
-YAML
-    cp "$tmpdir/source.yaml" "$tmpdir/queue/tasks/sasuke.yaml"
-
-    run bash -lc "
-        set -e
-        export DEPLOY_TASK_LIB_ONLY=1
-        source '$PROJECT_ROOT/scripts/deploy_task.sh'
-        SCRIPT_DIR='$tmpdir'
-        LOG='$tmpdir/logs/deploy.log'
-        DIRECT_MODE=true
-        YAML_FILE='$tmpdir/source.yaml'
-        NINJA_NAME=sasuke
-        DEPLOY_TASK_DIRECT_YAML_PREINJECTED=0
-        deploy_task_apply_task_mutations sasuke
-    "
-    [ "$status" -eq 0 ]
-
-    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
-import sys
-import yaml
-
-task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
-assert task["parent_cmd"] == "cmd_direct_yaml_regression", task
-assert task["task_id"] == "cmd_direct_yaml_regression_normal", task
-assert task["status"] == "assigned", task
-assert task["target_path"] == "scripts/inbox_write.sh", task
-assert len(task["acceptance_criteria"]) == 5, task
-assert task["acceptance_criteria"][4]["id"] == "AC5", task
-assert task["report_filename"] == "sasuke_report_cmd_direct_yaml_regression.yaml", task
-assert task["report_path"] == "queue/reports/sasuke_report_cmd_direct_yaml_regression.yaml", task
-assert task["standard_skills"] == ["report-write", "verdict-check", "ninja-commit"], task
-assert "role_reminder" in task, task
-PY
-
-    grep -q "direct_mode: source task YAML detected; skipping cmd-source heavy context/lesson/semantic reinjection" "$tmpdir/logs/deploy.log"
-}
-
-@test "direct --yaml skips direct training template injection to preserve source task body" {
-    python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
-import sys
-
-script = open(sys.argv[1], encoding="utf-8").read()
-needle = 'direct_mode: preserving --yaml source task body; skipping direct training template injection'
-idx = script.index(needle)
-window = script[idx - 350:idx + 450]
-
-assert 'if [ -n "$YAML_FILE" ]; then' in window, window
-assert 'inject_direct_training_template "$task_yaml" "$CMD_ID" || true' in window, window
-assert window.index('if [ -n "$YAML_FILE" ]; then') < window.index(needle) < window.index('inject_direct_training_template "$task_yaml" "$CMD_ID" || true'), window
+assert 'postcondition_lesson_inject "$task_file" || true\n    fi\n\n    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then' in main
 PY
 }
 
@@ -281,22 +201,9 @@ block_idx = window.index('BLOCK: ${deploy_parent_cmd} is already assigned to ${d
 same_id_idx = window.index('if [ -n "$deploy_task_id" ] && [ "$deploy_scope_mode" != "exact" ]; then')
 
 assert parallel_idx < same_id_idx < block_idx, (parallel_idx, same_id_idx, block_idx)
-assert 'deploy_task_allows_parallel_peer_task "$deploy_scope_mode" "$deploy_task_id" "$dd_tid"' in window, window
+assert '[[ "$deploy_scope_mode" =~ ^(recon|scout)$ ]]' in window, window
+assert '[ "$deploy_task_id" != "$dd_tid" ]' in window, window
 PY
-}
-
-@test "parallel recon duplicate guard executable predicate allows different task_id and blocks same task_id" {
-    run bash -lc "
-        set -e
-        export DEPLOY_TASK_LIB_ONLY=1
-        source '$PROJECT_ROOT/scripts/deploy_task.sh'
-        deploy_task_allows_parallel_peer_task recon cmd_3634_recon2 cmd_3634_full
-        deploy_task_allows_parallel_peer_task scout cmd_3634_recon3 cmd_3634_full
-        ! deploy_task_allows_parallel_peer_task recon cmd_3634_full cmd_3634_full
-        ! deploy_task_allows_parallel_peer_task normal cmd_3634_normal cmd_3634_full
-        ! deploy_task_allows_parallel_peer_task recon '' cmd_3634_full
-    "
-    [ "$status" -eq 0 ]
 }
 
 @test "cmd_3368: reset_stale_fields clears auto-injected scalar/list metadata before YAML injection" {

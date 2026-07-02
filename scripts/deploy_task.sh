@@ -333,74 +333,37 @@ deploy_task_direct_yaml_is_preinjected() {
     [ "$DIRECT_MODE" = true ] || return 1
     [ -f "$task_file" ] || return 1
 
-    local in_task=0 current="" line key value
-    local related=0 semantic=0 skills=0 memory=0 hints=0 report=0
+    python3 - "$task_file" <<'PY'
+import sys
+import yaml
 
-    while IFS= read -r line || [ -n "$line" ]; do
-        if [ "$in_task" = "0" ]; then
-            [[ "$line" =~ ^task:[[:space:]]*$ ]] && in_task=1
-            continue
-        fi
+path = sys.argv[1]
+required = (
+    "related_lessons",
+    "semantic_concepts",
+    "standard_skills",
+    "memory_db_context",
+    "context_hints",
+    "report_filename",
+)
 
-        if [[ "$line" =~ ^[^[:space:]][A-Za-z0-9_.-]+: ]]; then
-            break
-        fi
+try:
+    with open(path, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    raise SystemExit(1)
 
-        if [[ "$line" =~ ^[[:space:]]{2}report_filename:[[:space:]]*([^[:space:]#]+) ]]; then
-            report=1
-            current=""
-            continue
-        fi
+task = data.get("task") if isinstance(data, dict) else {}
+if not isinstance(task, dict):
+    raise SystemExit(1)
 
-        if [[ "$line" =~ ^[[:space:]]{2}(related_lessons|semantic_concepts|standard_skills|memory_db_context|context_hints):[[:space:]]*(.*)$ ]]; then
-            key="${BASH_REMATCH[1]}"
-            value="${BASH_REMATCH[2]}"
-            if [[ "$value" =~ ^\[[^]] ]]; then
-                case "$key" in
-                    related_lessons) related=1 ;;
-                    semantic_concepts) semantic=1 ;;
-                    standard_skills) skills=1 ;;
-                    memory_db_context) memory=1 ;;
-                    context_hints) hints=1 ;;
-                esac
-                current=""
-            else
-                current="$key"
-            fi
-            continue
-        fi
+for key in required:
+    value = task.get(key)
+    if value in (None, "", [], {}):
+        raise SystemExit(1)
 
-        if [[ "$line" =~ ^[[:space:]]{2}[A-Za-z0-9_.-]+: ]]; then
-            current=""
-            continue
-        fi
-
-        if [ -n "$current" ] && [[ "$line" =~ ^[[:space:]]{2}-[[:space:]]+[^[:space:]#] ]]; then
-            case "$current" in
-                related_lessons) related=1 ;;
-                semantic_concepts) semantic=1 ;;
-                standard_skills) skills=1 ;;
-                memory_db_context) memory=1 ;;
-                context_hints) hints=1 ;;
-            esac
-            current=""
-        fi
-    done < "$task_file"
-
-    [ "$related" = "1" ] && [ "$semantic" = "1" ] && [ "$skills" = "1" ] && \
-        [ "$memory" = "1" ] && [ "$hints" = "1" ] && [ "$report" = "1" ]
-}
-
-deploy_task_allows_parallel_peer_task() {
-    local deploy_scope_mode="$1"
-    local deploy_task_id="$2"
-    local peer_task_id="$3"
-
-    [[ "$deploy_scope_mode" =~ ^(recon|scout)$ ]] || return 1
-    [ -n "$deploy_task_id" ] || return 1
-    [ -n "$peer_task_id" ] || return 1
-    [ "$deploy_task_id" != "$peer_task_id" ] || return 1
-    return 0
+raise SystemExit(0)
+PY
 }
 
 log_output_file() {
@@ -960,25 +923,23 @@ check_yaml_freshness() {
     local yaml_mtime
     yaml_mtime=$(stat -c %Y "$yaml_file" 2>/dev/null || echo 0)
 
-    local paths=()
     while IFS= read -r script_path; do
         [ -z "$script_path" ] && continue
-        paths+=("$script_path")
+
+        # git log で最新commit時刻とhashを取得
+        local commit_iso commit_hash commit_epoch
+        commit_iso=$(git -C "$git_root" log -1 --format="%aI" -- "$script_path" 2>/dev/null || true)
+        [ -z "$commit_iso" ] && continue
+
+        commit_epoch=$(date -d "$commit_iso" +%s 2>/dev/null || true)
+        [ -z "$commit_epoch" ] && continue
+
+        commit_hash=$(git -C "$git_root" log -1 --format="%h" -- "$script_path" 2>/dev/null || true)
+
+        if [ "$commit_epoch" -gt "$yaml_mtime" ]; then
+            echo "[DEPLOY] WARN: ${script_path} はYAML作成後に更新されている(commit: ${commit_hash})。task YAMLを再作成せよ" >&2
+        fi
     done <<< "$script_paths"
-    [ "${#paths[@]}" -gt 0 ] || return 0
-
-    # WSL2 /mnt/c では git log が1回数秒かかることがあるため、pathごとの逐次呼出しを避ける。
-    # 警告は対象script群の最新commitに対して保守的に出す。
-    local commit_info commit_epoch commit_hash
-    commit_info=$(git -C "$git_root" log -1 --format="%ct%x09%h" -- "${paths[@]}" 2>/dev/null || true)
-    [ -n "$commit_info" ] || return 0
-    commit_epoch="${commit_info%%$'\t'*}"
-    commit_hash="${commit_info#*$'\t'}"
-    [ -n "$commit_epoch" ] || return 0
-
-    if [ "$commit_epoch" -gt "$yaml_mtime" ]; then
-        echo "[DEPLOY] WARN: task YAML内のscript参照はYAML作成後に更新されている可能性あり(commit: ${commit_hash}, scripts: ${paths[*]})。task YAMLを再作成せよ" >&2
-    fi
 }
 
 deploy_task_validate_or_repair_direct_yaml() {
@@ -2939,12 +2900,8 @@ ${_commit_bc}"
     _bc_full=$(_apply_binary_check_waivers "$task_file" "$_bc_full")
 
     if grep -qF "$_bc_placeholder" "$report_file" 2>/dev/null; then
-        # cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530:
-        # awk -v はCスタイルのバックスラッシュエスケープを解釈し、AC description中の
-        # \" (YAML二重引用符スカラーの内部エスケープ) を " に破壊してYAMLを壊す。
-        # ENVIRON経由ならエスケープ処理されず原文のまま渡せる。
-        _bc_full="$_bc_full" awk -v placeholder="$_bc_placeholder" '
-            index($0, placeholder) { print ENVIRON["_bc_full"]; next }
+        awk -v repl="$_bc_full" -v placeholder="$_bc_placeholder" '
+            index($0, placeholder) { print repl; next }
             { print }
         ' "$report_file" > "${report_file}.tmp" && mv "${report_file}.tmp" "$report_file"
         if [ -n "$_bc_block" ]; then
@@ -5221,33 +5178,6 @@ try:
                     return True
         return False
 
-    def _is_report_artifact_path(path):
-        """Return True for generated report YAML paths, which are evidence sinks not task causes."""
-        norm = str(path or '').replace('\\', '/').lstrip('./').lower()
-        return norm.startswith('queue/reports/') or '/queue/reports/' in norm
-
-    def _target_match_is_report_artifact_only(lesson_target_files, task_files):
-        """Detect matches caused only by queue/reports/* so report output does not create false relevance."""
-        report_match = False
-        non_report_match = False
-        for pattern in lesson_target_files:
-            pattern = str(pattern).strip()
-            if not pattern:
-                continue
-            for tf in task_files:
-                matched = (
-                    fnmatch.fnmatch(tf, pattern)
-                    or fnmatch.fnmatch(os.path.basename(tf), pattern)
-                    or fnmatch.fnmatch(os.path.basename(tf), os.path.basename(pattern))
-                )
-                if not matched:
-                    continue
-                if _is_report_artifact_path(pattern) or _is_report_artifact_path(tf):
-                    report_match = True
-                else:
-                    non_report_match = True
-        return report_match and not non_report_match
-
     def _lesson_matches_task_target_path(lesson):
         """target_path/files_modifiedに一致するtarget_files教訓を順位付けで強く優先する。"""
         lesson_target_files = lesson.get('target_files', [])
@@ -5427,16 +5357,7 @@ try:
         # cmd_3466: target_path boost is a ranking boost, not a relevance bypass.
         # keyword_score=0 + target_files basename match was injecting low-useful lessons
         # whose only relation was "this file changed before".
-        lesson_target_files = lesson.get('target_files', [])
-        if isinstance(lesson_target_files, str):
-            lesson_target_files = [lesson_target_files]
-        # cmd_karo_hotfix_l828: queue/reports/* is a generated evidence sink.
-        # Do not let a report_path match turn one generic "report" keyword into a +50 relevance signal.
-        if (
-            keyword_score > 0
-            and _lesson_matches_task_target_path(lesson)
-            and not _target_match_is_report_artifact_only(lesson_target_files, _all_task_files)
-        ):
+        if keyword_score > 0 and _lesson_matches_task_target_path(lesson):
             score += TARGET_PATH_MATCH_BOOST
 
         if score <= 0:
@@ -8162,11 +8083,6 @@ deploy_task_apply_task_mutations() {
     local ninja_name="${1:-$NINJA_NAME}"
     local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
     local task_status
-    local direct_yaml_source=0
-
-    if [ "${DIRECT_MODE:-false}" = true ] && [ -n "${YAML_FILE:-}" ]; then
-        direct_yaml_source=1
-    fi
 
     task_status=$(field_get "$task_file" "status" "unknown")
 
@@ -8221,12 +8137,6 @@ deploy_task_apply_task_mutations() {
 
     if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" = "1" ]; then
         log "direct_mode: preinjected task YAML detected; skipping heavy context/lesson/semantic reinjection"
-    elif [ "$direct_yaml_source" = "1" ]; then
-        log "direct_mode: source task YAML detected; skipping cmd-source heavy context/lesson/semantic reinjection"
-        inject_standard_skills "$task_file" || true
-        inject_role_reminder "$task_file" "$ninja_name" || true
-        inject_ac_version "$task_file" || true
-        verify_ac_consistency "$task_file" || true
     else
         inject_task_modifiers "$task_file" || true
         inject_session_state_hints "$task_file" || true  # GP-198
@@ -8252,7 +8162,7 @@ deploy_task_apply_task_mutations() {
         verify_ac_consistency "$task_file" || true
     fi
 
-    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ] && [ "$direct_yaml_source" != "1" ]; then
+    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
         local pc_file inj_project inj_ids lid
         pc_file="$SCRIPT_DIR/queue/tasks/.postcond_lesson_inject"
         if [ -f "$pc_file" ]; then
@@ -8273,7 +8183,7 @@ deploy_task_apply_task_mutations() {
         postcondition_lesson_inject "$task_file" || true
     fi
 
-    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ] && [ "$direct_yaml_source" != "1" ]; then
+    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
         inject_reports_to_read "$task_file" || true
         inject_context_files "$task_file" || true
         inject_credential_files "$task_file" || true
@@ -8292,14 +8202,10 @@ deploy_task_apply_task_mutations() {
 
     if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
         inject_report_filename "$task_file" || true
-        if [ "$direct_yaml_source" = "1" ]; then
-            log "direct_mode: preserving source task YAML core fields after report filename injection"
-        else
-            inject_bloom_level "$task_file" || true
-            inject_execution_controls "$task_file" || true
-            inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points" "$task_file" "$ninja_name"
-            check_context_freshness "$task_file" || true
-        fi
+        inject_bloom_level "$task_file" || true
+        inject_execution_controls "$task_file" || true
+        inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points" "$task_file" "$ninja_name"
+        check_context_freshness "$task_file" || true
     fi
 
     local task_id parent_cmd project _ac_task_id
@@ -8452,12 +8358,8 @@ except Exception:
             yaml_field_set "$task_yaml" "task" "parent_cmd" "$CMD_ID" 2>/dev/null || true
             yaml_field_set "$task_yaml" "task" "status" "assigned" 2>/dev/null || true
             yaml_field_set "$task_yaml" "task" "task_id" "${CMD_ID}_${direct_task_id_suffix}" 2>/dev/null || true
-            if [ -n "$YAML_FILE" ]; then
-                log "direct_mode: preserving --yaml source task body; skipping direct training template injection"
-            else
-                inject_training_target_path_from_alias_quality "$task_yaml" "$CMD_ID" || true
-                inject_direct_training_template "$task_yaml" "$CMD_ID" || true
-            fi
+            inject_training_target_path_from_alias_quality "$task_yaml" "$CMD_ID" || true
+            inject_direct_training_template "$task_yaml" "$CMD_ID" || true
             deploy_task_resolved_mutated=1
             log "direct_mode: parent_cmd=${CMD_ID}, task_id=${CMD_ID}_${direct_task_id_suffix}, status=assigned set"
             elif [ -n "$CMD_FORCED" ]; then
@@ -8611,7 +8513,7 @@ except Exception:
             # 二重配備判定: deploy_task_idが空(reset_stale_fields後)の場合は
             # parent_cmd一致+相手がactive=二重配備とみなす。
             # deploy_task_idが存在する場合は task_id同一チェックで分割配備を許可。
-            if deploy_task_allows_parallel_peer_task "$deploy_scope_mode" "$deploy_task_id" "$dd_tid"; then
+            if [[ "$deploy_scope_mode" =~ ^(recon|scout)$ ]] && [ -n "$dd_tid" ] && [ "$deploy_task_id" != "$dd_tid" ]; then
                 log "parallel_recon: ${deploy_parent_cmd} peer ${dd_ninja} (task_id: ${dd_tid:-empty}) — allowing"
                 continue
             fi
@@ -8724,7 +8626,7 @@ except Exception:
             "$NINJA_NAME" "${deploy_parent_cmd:-unknown}" "${ctx_pct:-unknown}" \
             "$(date '+%Y-%m-%dT%H:%M:%S')" \
             >> "$SCRIPT_DIR/logs/codex_delivery_log.yaml" 2>/dev/null || true
-        _renudge_name="$NINJA_NAME"
+        local _renudge_name="$NINJA_NAME"
         (
             sleep 5
             deploy_task_send_direct_renudge "$_renudge_name"
