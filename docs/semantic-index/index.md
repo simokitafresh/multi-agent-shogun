@@ -1351,6 +1351,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-01T19:42:04+09:00 GPTのClaude Code版は存在しない。別会社の別CLIだ。二度と勘違いしないように環境に埋め込め。この誤解が残ってるとCLIやmodelの切り替えでエラーを起こすぞ |
 | cmd | `cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546` (`skills/codd-fix/SKILL.md`, `skills/dream/SKILL.md`, `skills/idle-persist/SKILL.md`) |
 | cmd | `cmd_karo_hotfix_skill_script_refs_202607021234` (`skills/codd-fix/SKILL.md`, `skills/dashboard-update/SKILL.md`, `skills/dream/SKILL.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:45:20+09:00 Claude Code v2.1.198 ▐▛███▜▌ Sonnet 5 with xhigh effort ▝▜█████▛▘ Claude Max ▘▘ ▝▝ /mnt/c/tools/multi-agent-shogun ⚠ 3 M |
 | causal_chain | `[[cmd_3246]]` (L761) |
 
 ## codd_methodology — CoDD整合性駆動開発

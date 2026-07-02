@@ -1,44 +1,8 @@
 task:
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  semantic_concepts:
-  - "production_parity — 本番パリティ:  context/dm-signal-core.md §19.3 context/checklist-shin-v2-registration.md docs/research/dmsignal_parity_verification_audit.md docs/research/pf_config_backup_20260601_pre_delete.json 削除前58件config全量バックアップ docs/research/gunshi_alm_parity_drift_analysis_20260409.md — 軍師分析: ALMパリティドリフト分析(2026-04-09)"
-  - "recalculate_pipeline — 再計算パイプライン:  /mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fast.py context/dm-signal-core.md §19.2 docs/research/fullrecalculate-architecture-2026-03-28.md /mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fof.py /mnt/c/Python_app/DM-signal/backend/app/jobs/shared.py preload_fof_signals_for_portfolios"
-  - "dmsignal_operations — DM-Signal運用:  context/dm-signal.md context/dm-signal-ops.md context/dm-signal-core.md context/dm-signal-frontend.md context/dm-signal-research.md context/checklist-shin-v2-registration.md context/checklist-alm-registration.md docs/research/ops-procedures.md docs/research/ops-db-rules.md docs/operations/daemon_runbook.md docs/operations/profiling_runbook.md /mnt/c/Python_app/DM-signal/scripts/check_pf_config.py — PF構成一括確認(cmd_3378)"
-  - "shin_shijin_design — 四神設計:  context/dm-signal-core.md §PFレイヤー context/checklist-shin-v2-registration.md context/l3-robustness.md §WF四神"
-  - "silent_fallback_quality — Silent Fallback品質:  context/gunshi-silent-fallback-analysis.md scripts/gates/gate_silent_fallback.sh scripts/gates/gate_gunshi_cs_checklist.sh scripts/gates/gate_gunshi_report_precheck.sh scripts/gates/gate_gunshi_report_precheck_engine.py context/dm-signal-core.md context/dm-signal-ops.md"
-  related_causal_links:
-  - "[[MECE計測monthly_trade_75PF遅延]]"
-  - "[[Phase3実装漏れ]]"
-  - "[[殿指示_全ページ瞬時表示_20260702]]"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/robustness-verification-catalog.md"
-  - "context/gs-speedup-knowledge.md"
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
-  production_invariants:
-  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
-  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
-  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
-  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
-  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
-      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
-    ────────────────────────────────────────
-    
-    
-  _ac_task_id: cmd_3640_full
+  _ac_task_id: cmd_3641_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3640 (deployed 2026-07-02T11:02:59). Read from the beginning.
-  ac_version: 0b724b28
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3641 (deployed 2026-07-02T12:46:53). Read from the beginning.
+  ac_version: ab80ecdb
   assigned_to: hayate
   context_files:
   - context/dm-signal.md
@@ -65,15 +29,31 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3640
+  parent_cmd: cmd_3641
   project: dm-signal
-  purpose: '殿指示(2026-07-02): MECE全EP×全PF計測でmonthly-tradeが75/102PF遅延(最遅7.63s)と判明。precompute_raw.pyにraw生成は実装済みだがmonthly_trade.pyにlookup未追加(Phase3漏れ)。annual_returnsも2PF遅延。lookup追加で全PF瞬時化'
-  status: idle
+  purpose: '殿ゴール(設計書v10条件: リロード不要=login後最初のページ遷移でリロードなしにデータ表示)の最重要未解消問題P1を解消する。admin login成功後の自動遷移でDashboardチャートがLoading表示のまま描画されず、リロードで初めて解消する'
+  status: acknowledged
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/backend
-  task_id: cmd_3640_full
+  target_path: /mnt/c/Python_app/DM-signal/frontend/app
+  task_id: cmd_3641_full
   task_type: full
+  previous_failures:
+    attempt: 1
+    last_block_reason: 'knowledge_candidate: found=true but items is empty'
+    tried_approaches:
+    - 'knowledge_candidate: found=true but items is empty'
+    approach_summary: 'monthly_trade.py と annual_returns.py に PrecomputedRaw lookup を追加し、raw hit時は計算器を呼ばず request-time masking 後に返すよう修正'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'knowledge_candidate: found=true but items is empty'
+      approach_summary: 'monthly_trade.py と annual_returns.py に PrecomputedRaw lookup を追加し、raw hit時は計算器を呼ばず request-time masking 後に返すよう修正'
   related_lessons:
+  - id: 'L095'
+    summary: 'IF archive_dashboard()のgrep戦果行パターン不一致 — AUTO移行後時 THEN archive_dashboard()のgrep '''
+    detail: 'IF archive_dashboard()のgrep戦果行パターン不一致 — AUTO移行後時 THEN archive_dashboard()のgrep '''
+  - id: 'L432'
+    summary: 'Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff'
+    detail: 'Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -84,22 +64,44 @@ task:
     wa_category: 'commit_missing'
     wa_count: 1
     detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
-  memory_db_context:
-  - '2026-07-02T10:31:52+09:00 | 【INFOバッチ】 2026-07-02 10:17:01|cmd_3638 2026-07-02 10:28:38|cmd_karo_hotfix_report_field_files_modifi'
-  - '2026-07-02T10:01:26+09:00 | 【INFOバッチ】 2026-07-02 09:49:36|cmd_3637'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  related_causal_links:
+  - "[[cmd_3640]]"
+  - "[[cmd_3641]]"
+  - "[[設計書v10_P1_login遷移Loading永続]]"
+  context_hints:
+  - "context/robustness-verification-catalog.md"
+  - "context/gs-speedup-knowledge.md"
+  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
+  production_invariants:
+  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
+  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
+  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
+  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
+  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L095: IF archive_dashboard()のgrep戦果行パターン不一致 — AUTO移行後時 THEN archive_dashboard()のgrep '
+      - L432: Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff
+      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
+      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
+    ────────────────────────────────────────
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'monthly_trade.pyにget_precomputed_raw lookupを追加する。rawヒット時はmasking適用後に応答。miss時は従来計算fallback'
+    - check: 'login成功後の自動遷移でデータ取得が開始されない根因を特定し、トリガーから未取得に至る因果連鎖を報告に記載する'
   - id: 'AC2'
     checks:
-    - check: 'annual_returns.pyにget_precomputed_raw lookupを追加する'
+    - check: '根因を修正し、リロードなしでDashboardのチャート・シグナル・MTDが描画されることをローカルビルドで確認する'
   - id: 'AC3'
     checks:
-    - check: 'performance.pyの遅延PF(1PF)の根因を特定し報告に含める'
+    - check: 'lintとbuildと関連する既存FEテストがPASSすることを確認する'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3640.yaml
-  report_path: queue/reports/hayate_report_cmd_3640.yaml
+  report_filename: hayate_report_cmd_3641.yaml
+  report_path: queue/reports/hayate_report_cmd_3641.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -122,15 +124,4 @@ task:
     - reason: 'binary_checks_fail'
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-02T11:04:11"
-  progress: "rework tests passed: annual_returns params_hash normalized to PRECOMPUTE_PARAMS"
-  session_state:
-    attempt: 1
-    last_block_reason: 'knowledge_candidate: found=true but items is empty'
-    tried_approaches:
-    - 'knowledge_candidate: found=true but items is empty'
-    approach_summary: 'monthly_trade.py と annual_returns.py に PrecomputedRaw lookup を追加し、raw hit時は計算器を呼ばず request-time masking 後に返すよう修正'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'knowledge_candidate: found=true but items is empty'
-      approach_summary: 'monthly_trade.py と annual_returns.py に PrecomputedRaw lookup を追加し、raw hit時は計算器を呼ばず request-time masking 後に返すよう修正'
+  deployed_at: "2026-07-02T12:47:25"
