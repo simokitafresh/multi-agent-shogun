@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234 -->
+<!-- last_updated: 2026-07-02 cmd_3659 -->
 
 ## 2026-06-30
 
@@ -1343,3 +1343,8 @@
 - 2026-07-02 殿発案Lighthouseサイクル始動: cmd_3647(desktop計測11ページ Perf98-99)→殿mobile実測でPerf60/TBT7.3s/SI11.4s判明(desktop計測は実運用を代表しない=LS074)→cmd_3650(チャンク7023メインスレッド131s+monthly-returns直列先読みfetchの根因対策、mobile条件再計測付き)配備。乖離分析=DM-signal/docs/research/cmd_3647_lighthouse/lord_mobile_measurement_20260702.md
 - 2026-07-02 殿指示の隠れインフラバグ監査: 実測でsession_alerts DONE消失(cmd_3643根治)+gate速度12.8s→5.3s(cmd_3644)+inbox busy gating遅延計測(cmd_3646)+insights.yaml非atomic書込み破損62件(cmd_3649根治)+cmd_save 74.8s(cmd_3648高速化)を全て特定・cmd化、全GATE CLEAR
 - 2026-07-02 家老強ニュー化(cmd_3659進行中): `queue/compact_state/karo.yaml` と `queue/compact_state_karo.yaml` を19:24時点へ更新。cmd_3659は影丸in_progress、scope差分はDM-Signal `frontend/app/layout.tsx` + `frontend/components/app-providers.tsx`、build PASS、local LighthouseはWSL Chrome接続失敗後にWindows隔離Chrome CDP(9222)へ切替中。復帰後は影丸pane `capture-pane -S -80` と `queue/reports/kagemaru_report_cmd_3659.yaml` を最優先確認。
+- 2026-07-02 cmd_3660配備+強ニュー更新: metrics固有CLS 0.743対策を半蔵へ配備し、paneでnudge到達・task読込・作業開始を確認。軍師レビューAPPROVE、軍師セッション知見はLayer1記憶DB+L937/L938へ還流。compact_state 2本を19:29時点へ更新。
+- 2026-07-02 cmd_3660 CLEAR / cmd_3659差戻し: cmd_3660は半蔵commit d5e1030fでCLS 0.743→0、GATE CLEAR・dashboard/ntfy完了。cmd_3659は影丸PASS報告後、bootup 470.6→549.8ms・7023 attribution 325.5→500.7ms悪化とAC1 module breakdown不足により家老差戻し、in_progressへ戻した。DM-Signal pushはcmd_3659未完了commit同梱のため保留。
+- 2026-07-02 cmd_3659 stale CLEAR訂正: 自動cmd_complete_gateが旧報告で19:42にcmd_3659 CLEAR通知/dashboard反映を出したが、家老はpane一次情報を優先しstale扱い。影丸はANALYZE_STATS=1 webpack stats取得中、taskをin_progressへ戻し掲示板 `blt_20260702_194344_0a6b01` で訂正。
+- 2026-07-02 強ニュー更新(19:52): cmd_3659は7023=Next runtime 110 modules/app固有0で削減不能、dynamic import悪化実装を分割revert中(080eebe6/6a837525/c48e1113、next.config.mjs stats設定未commit)でFAIL報告方向。GA-168 lesson_health未振り分け13件は才蔵へ/karo-direct配備済み、調査in_progress。
+- 2026-07-02 将軍(19:55): 殿実測10ページ統合分析の正本を`DM-signal/docs/research/cmd_3647_lighthouse/lord_mobile_10pages_20260702.md`へ恒久保存(Downloads揮発対策)。7023=初期レンダーattribution先との解釈により、P1の次方向は「チャンク削減」でなく「初期レンダー計算量削減(テーブル仮想化・チャート遅延・hydration削減)」。cmd_3659 FAIL確定後にこの方向で再起票する。P2/P3/P4本番クローズ+CLS local実証0+教訓LS075-077登録+インフラ根治2件(二重通知cmd_3657/先送り誤検知cmd_3658)が本日の環境資産。

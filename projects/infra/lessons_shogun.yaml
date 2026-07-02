@@ -614,3 +614,27 @@ lessons:
   created_at: '2026-07-02'
   automated: true
   enforcement: 'type=lesson; file=projects/dm-signal/lessons.yaml; pattern=frontend'
+- id: 'LS075'
+  title: 'self_reread複合トリガー: 自己申告×曖昧の同時出現でWARN'
+  origin: '[[cmd_3652]]'
+  detail: 'cmd_3652でcheck_self_reread_red_flagが発火し保存NG。検出条件は2段複合: (1)自己再読/自己申告/読み直し/セルフレビュー系語 (2)曖昧/不明瞭/明瞭系語 の両方がtitle+purpose+cmd全文に同時出現でWARN。q8に『自己申告』+q_ambiguityに『曖昧さなし』の定型句の組合せで発火した。対処: 『自己申告』→『反映作業者と同一者の宣言』等の客観表現に置換。q_ambiguityの『曖昧さなし』は必須定型句のため、他フィールドの自己再読系語を避けるのが正解。LS-A04(15)cmd全文grepの変種'
+  source_cmd: 'cmd_3652'
+  created_at: '2026-07-02'
+  automated: true
+  enforcement: 'cmd_save.sh check_self_reread_red_flag(L1655-1669)が自動検出済み。本教訓は語彙回避の起票知識'
+- id: 'LS076'
+  title: '計測系GATE CLEAR検分: 計測条件が実際に機能した証拠まで確認せよ'
+  origin: '[[将軍検分_cmd3653原票_20260702]] -> [[PFクエリ名不一致でPF指定無効]] -> [[LS_計測条件有効性証拠]]'
+  detail: 'cmd_3653の本番Lighthouse round計測はURLにportfolio_id=を付けたが、FE現物(usePortfolioParam.ts)はportfolioのみ解釈するためPF指定が無効のまま計測され、PF未指定条件の数値(Perf 0.99)が原票化された。忍者のbinary_check yesも家老GATEも「URL形式にクエリが付いている」ことしか見ておらず、クエリが機能した証拠(network-requestsに指定PFのAPI呼び出し)は未確認だった。将軍のGATE CLEAR後検分でFEのクエリ解釈コードと原票manifestを突き合わせて発見(cmd_3654で是正)。計測系cmdのACには条件が機能した証拠の確認を必ず含めよ。LS-A09(17)の検証手段適合性と同根: URLに付けた=有効ではない'
+  source_cmd: 'cmd_3654'
+  created_at: '2026-07-02'
+  automated: true
+  enforcement: 'cmd_3654 AC2でnetwork-requests証拠確認をAC化済み。将来の計測系cmd起票時のAC設計知識'
+- id: 'LS077'
+  title: 'FE変更cmdの計測実証AC: local計測と本番反映後計測を分離せよ'
+  origin: '[[cmd_3655]] -> [[production固定計測で未deploy差分検証不能]] -> [[LS_FE計測AC分離]]'
+  detail: 'cmd_3655でAC3に『周回計測でcolor-contrast audit違反ゼロ』を要求したが、忍者はpush禁止(commitまで)のため本番計測は未デプロイの旧色を測り構造的に達成不能だった。kagemaruはlocal static build計測(違反ゼロ)とproduction計測(旧色FAIL)を分けて記録する裁量で対応したがverdict FAIL。正しいAC設計: (1)忍者のACはlocal build計測での実証まで (2)本番周回計測はデプロイ後の後続ステップ(家老/次cmd)として分離。cmd_3650でhayateがlocal static exportで計測したのも同じ理由だった(先例を見落とした)。またCSS変数の是正だけでは直接utility class経路(text-red-400等)の違反が残る — 色是正cmdは変数とclass直書きの両経路をスコープに含めよ'
+  source_cmd: 'cmd_3655'
+  created_at: '2026-07-02'
+  automated: true
+  enforcement: 'kagemaru lesson_candidate(production固定計測)と対。次回FE計測実証cmdのAC設計知識'
