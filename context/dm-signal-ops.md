@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-02 cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530 -->
+<!-- last_updated: 2026-07-02 cmd_3637 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -859,6 +859,18 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - Migration deadlock対策: `render.yaml` backend startCommandから`python -m app.db.init_db`を削除し、FastAPI lifespan側の`init_db()`をPostgreSQL advisory lockで直列化。workers=2時もmigration初期化は二重実行しない。
 - Password rotation cron: `dm-signal-password-rotation`はRender env `RENDER_API_KEY`/`RENDER_SERVICE_ID`をcron側にも持つ前提。scheduleコメントはJST 2日01:00相当として扱う。
 - Partial failure対策: Render API成功後にのみ`os.environ`を更新し、tier別失敗時は成功tierのみDB commit+token revoke、失敗tierはログ出力して処理継続。検証は関連既存テスト24件PASS、full pytestは201.73秒無出力中断のWITH_CONCERNS。
+
+## §48 Phase2 PrecomputedRaw基盤 (cmd_3636)
+
+- Phase2で`PrecomputedRaw`基盤、L5 raw precompute batch、`/admin/precompute-raw`、sync-status L5表示を追加。rawは24h TTLのtimezone-aware判定で取得し、欠損/stale時は`None`返却で既存fallbackを維持する。
+- `recalculate_fast.py`はPrecomputedMtd更新後にraw precomputeをbest-effort実行する。失敗時はraw未更新のみで、既存recalculate結果と表示fallbackは維持される。
+- `render.yaml`に`dm-signal-precompute-raw` cronを追加。idempotencyと進捗確認はsync-statusの`L5_precompute_raw`/`L5`を一次確認口にする。
+
+## §49 Phase3 P1 raw lookup + invalidate (cmd_3637)
+
+- P1 5EPでPrecomputedRaw lookupを導入。raw hit時は毎リクエストvisibility/maskingを適用し、miss/stale時は既存計算fallbackを維持する。
+- `compare_returns.py`はPrecomputedRaw hit時にTTLCache return/setをバイパスする。raw未hit時のみ既存TTLCacheを使う。
+- metadata/visibility/folder変更時は`invalidate_precomputed_raw`で該当rawを削除する。portfolio metadata-only saveは保存とinvalidateを同一DB session/commit内で実行する。
 
 ## 因果リンク
 
