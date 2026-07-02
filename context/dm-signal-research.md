@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-01 cmd_3632 -->
+<!-- last_updated: 2026-07-02 cmd_3653 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -611,6 +611,13 @@ GA-147原因: `dm-signal-research.md`のlast_updatedは2026-06-26で、2026-06-2
 | 3 | 変わり身-鉄壁 × 追い風-激攻 | 73.6% | -26.1% | 2.82 | 0.608 |
 
 → 詳細: `docs/research/cmd_3490_l1plus_backtest_measurement.md`, `docs/research/cmd_3493_l1plus_batch_all_measurement.md`
+
+## §47. Lighthouse mobile周回計測原票 (cmd_3653, 2026-07-02)
+
+DM-Signal本番FEのmobile実運用条件計測は、`scripts/mobile_lighthouse_round.py`でCDP 9222隔離プロファイル起動・admin_session注入・Lighthouse mobile条件固定・manifest付き原票保存を単一コマンド化済み。周回原票は `docs/research/lighthouse_rounds/round_YYYYMMDD_{label}/` に保存し、manifestに計測時刻/Chrome起動条件/throttling/target_urls/deploy_commit_hash/executorを残す。
+- 初回原票: `docs/research/lighthouse_rounds/round_20260702_cmd3653_mobile_pf/manifest.json`
+- 初回JSON: `docs/research/lighthouse_rounds/round_20260702_cmd3653_mobile_pf/monthly-returns_cG9ydGZvbG.json`
+- 設計正本: `docs/design/dm-signal-lighthouse-improvement-design.md` §5.2/§5.3
 
 ---
 
