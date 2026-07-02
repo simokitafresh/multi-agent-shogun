@@ -9,7 +9,9 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T20:45:00+09:00 -->
+
+Script refs verified: 2026-07-02T20:45 将軍検証. `cmd_complete_gate.sh` 直近変更(5c3b58b0f/5b555e616/1d363aa7b)はhotfix完全名・短縮名の二重GATE CLEAR通知dedup、登録済みlesson_candidateのWARN抑制、lesson impact追随の非同期化で、いずれも内部処理。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。本日cmd_3661完了時に単発GATE CLEAR通知の実動作を確認済み。codd-fix手順は現行と矛盾なし。
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 
@@ -19,13 +21,13 @@ Script refs verified: 2026-06-28 cmd_karo_hotfix_skill_script_refs_202606280133.
 
 Script refs verified: 2026-06-26 cmd_3550. `cmd_complete_gate.sh` 直近変更はself-grade commit/files coverageのWARN表示追加。`bash scripts/cmd_complete_gate.sh <cmd_id>` と `bash scripts/test_select.sh <changed-file>` の呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T20:45:00+09:00 -->
 
 Script refs verified: 2026-06-20 677d0c7f9+26f565ebc. `cmd_complete_gate.sh` 直近変更はCodd/nodeのhome直書き除去、`test_select.sh` 直近変更はcausal index系テスト対応。`bash scripts/cmd_complete_gate.sh <cmd_id>` と `bash scripts/test_select.sh <changed-file>` の呼び出し契約は変更なし。
 
 Script refs verified: 2026-06-21 0f202bd9c. `cmd_complete_gate.sh` 直近変更は`related_lessons: []`のempty_lessons_useful偽陽性修正。`bash scripts/cmd_complete_gate.sh <cmd_id>` と `bash scripts/test_select.sh <changed-file>` の呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T20:45:00+09:00 -->
 
 Script refs verified: 2026-06-16 cmd_3408. `cmd_complete_gate.sh` 直近変更(6eb86ef61)はcommand_files_modified_mismatch FP解消。(1)`read_markers`に11語追加("同構造","と同一","と同じ","同等","踏襲","に基づ","を参考","突合","比較","一覧","解析","分析","取得","検索","出力","表示","呼び出","呼出")。(2)`exec_prefix`検出: bash/python3等がパス直前の場合は実行のみ参照として除外。(3)`clause_boundary`検出: 読点「、」区切りでread_markerとwrite_markerが別節の場合は除外。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
 Script refs verified: 2026-06-14 cmd_3379. `cmd_complete_gate.sh` 直近変更(23edb564f)はGATE CLEAR後にgunshi_gate_reflux.shを2回実行する修正（通常パス+emergency overrideパス両方）。1回目はGATE CLEAR通知前、2回目はGATE CLEAR通知後の軍師report追記分のgate_result null残存を防止（cmd_3370）。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
@@ -119,4 +121,4 @@ Script refs verified: 2026-06-26 e658e3c37. `cmd_complete_gate.sh` 直近変更�
 
 Script refs verified: 2026-06-28 8c53fdf4d. `cmd_complete_gate.sh` 直近変更は分割/phase reportを完了ゲートで統合参照する内部集約追加。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-02T20:45:00+09:00 -->
