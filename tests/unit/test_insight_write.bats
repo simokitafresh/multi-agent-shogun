@@ -222,6 +222,37 @@ print('CORRUPT RECOVERED')
     [[ "$output" == *"CORRUPT RECOVERED"* ]]
 }
 
+@test "repair: resolved_reason付きresolved entryを正常フィールドとして保持する" {
+    cat > "${TEST_TMP}/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-20260702-151336042-7e9f
+  ts: "2026-07-02T15:13:36+09:00"
+  insight: "commit_missing insight"
+  priority: "high"
+  source: "unit"
+  resolved_reason: "classified as existing coverage"
+  status: resolved
+EOF
+
+    run bash "${TEST_TMP}/scripts/insight_write.sh" "resolved_reason後の追記" "low" "unit_test"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ ^INS- ]]
+
+    run python3 -c "
+import glob
+import yaml
+with open('${TEST_TMP}/queue/insights.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+entries = data['insights']
+assert entries[0]['resolved_reason'] == 'classified as existing coverage'
+assert [e['insight'] for e in entries] == ['commit_missing insight', 'resolved_reason後の追記']
+assert not glob.glob('${TEST_TMP}/queue/insights.yaml.corrupt.*'), 'resolved_reason should not be quarantined'
+print('RESOLVED_REASON PRESERVED')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"RESOLVED_REASON PRESERVED"* ]]
+}
+
 # --- 3. ID自動生成の形式確認 ---
 
 @test "ID形式: INS-YYYYMMDD-HHMMSSmmm-{4hex}に一致する" {

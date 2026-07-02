@@ -206,7 +206,7 @@ def repair_trailing_partial_entry(path):
     truncate_at = None
     current_start = None
     current_has_status = False
-    known_fields = ('  ts:', '  insight:', '  priority:', '  source:', '  status:', '  resolved_at:')
+    known_fields = ('  ts:', '  insight:', '  priority:', '  source:', '  status:', '  resolved_at:', '  resolved_reason:')
 
     for idx, line in enumerate(lines):
         stripped = line.strip()
