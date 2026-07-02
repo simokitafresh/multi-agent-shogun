@@ -85,6 +85,7 @@ Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*�
 - **scope外ファイルのcommit** — .env、credentials.json、他の忍者のファイルに触れるな
 
 ## 注意ポイント
+- 2026-07-02: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_hash: 'c1890e0bd49ab676aee78fef4ef2ef31b6d3a90e8' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ
 
 - 2026-07-02: gate=gate_report_format result=FAIL executor=tobisaru reason=cmd_3264-AC2 target_path配下に未commit変更あり
 - 2026-07-01: gate=gate_report_format result=FAIL executor=kotaro reason=commit_hash: 'dfcbb1806' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ

@@ -109,6 +109,7 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 - **verdict を Edit toolで直接書くな** — 独立フィールドとして扱うほど矛盾の温床になる
 
 ## 注意ポイント
+- 2026-07-02: gate=cmd_complete_gate result=FAIL executor=kagemaru reason=kagemaru:purpose_validation_fit_false
 
 - 2026-07-02: gate=gate_report_format result=FAIL executor=saizo reason=binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")
 - 2026-07-01: gate=gate_report_format result=FAIL executor=hanzo reason=binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せ...
