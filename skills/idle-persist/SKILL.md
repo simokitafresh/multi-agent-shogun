@@ -103,4 +103,6 @@ Script refs verified: 2026-06-26 cmd_karo_hotfix_skill_refs_20260626082009. `bul
 
 Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は既存ブロックへの新規field挿入位置を末尾行手前へ修正する内部バグ修正。idle分析のreview_log記録手順とhelper呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+Script refs verified: 2026-07-02 a2e4e93cc. `bulletin_write.sh` 直近変更は引数順序ミス検出ガード追加(contentがagent名ならERROR)。本SKILL.mdの掲示板投稿手順は正しい引数順のため契約に変更なし。
+
+<!-- script_refs_checked_at: 2026-07-02T13:47:00+09:00 -->
