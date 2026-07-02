@@ -1956,3 +1956,36 @@
   brainwash_check: "#2防止: _annual_returns_raw_params L28の型変換ロジックを行番号で確認。前回見落とし反省"
   step3_5_verified: true
   timestamp: "2026-07-02T11:23:00"
+- cmd_id: cmd_karo_hotfix_shogun_startup_q6_chain_202607021230
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "/mnt/c/tools/multi-agent-shogun/queue/tasks/kagemaru.yaml(AC1-5+not_in_scope確認)"
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "6観点OK。偵察+D0 hotfix。将軍専管除外+startup安全確認削除禁止"
+  observations:
+    - "事実1: 5AC偵察型。Q6回答未検出+洗脳連鎖2x2の真偽判定が主目的"
+    - "事実2: not_in_scopeに将軍専管(Q6代筆/startup安全確認削除)を明示"
+  ambiguity_points: none
+  origin: "[[将軍startup先送りBLOCK]] -> [[Q6+2x2真偽判定]] -> [[APPROVE]]"
+  causal_chain: "将軍startup BLOCK→家老hotfix配備→偵察+D0修正→真偽確定"
+  brainwash_check: "#2防止: task YAML AC/not_in_scope確認"
+  timestamp: "2026-07-02T12:33:00"
+- cmd_id: cmd_karo_hotfix_skill_script_refs_202607021234
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  verified_files:
+    - "/mnt/c/tools/multi-agent-shogun/queue/tasks/hanzo.yaml(AC1-5+not_in_scope確認)"
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "6観点OK。SKILL.md参照鮮度WARN 20件→PASS化。startup BLOCK解消の定型作業"
+  observations:
+    - "事実1: gate_skill_script_refs.sh rc=2でWARN 20件。参照先不存在0件(パス切れなし)"
+    - "事実2: 将軍Q6回答でSKILL.md鮮度WARN=#5先送りと自己認識→本cmdで即行動変換"
+  ambiguity_points: none
+  origin: "[[将軍startup BLOCK]] -> [[SKILL.md鮮度WARN 20件]] -> [[APPROVE]]"
+  causal_chain: "startup BLOCK→SKILL.md鮮度WARN 20件→script_refs_checked_at更新→PASS化→BLOCK解消"
+  brainwash_check: "#2防止: task YAML AC/context確認"
+  timestamp: "2026-07-02T12:36:00"

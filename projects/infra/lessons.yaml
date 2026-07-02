@@ -8071,6 +8071,9 @@ lessons:
   target_files:
   - lesson_effectiveness.sh
   origin: '[[cmd_cycle_L4_012]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L342
   title: ホワイトリスト.gitignoreではscriptsディレクトリ内の新規ファイルもgit add -f必須
   summary: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
@@ -8170,6 +8173,9 @@ lessons:
   target_files:
   - shout.sh
   origin: '[[cmd_cycle_L4_007]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L333
   title: grep -qのパイプはstdout抑制でデッドコードになる
   summary: grep -qE pattern | grep -qvE patternのパイプは、-qがstdoutを完全抑制するため後段grepが常に空入力を受け取りデッド

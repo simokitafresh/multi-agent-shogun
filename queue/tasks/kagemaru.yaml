@@ -1,44 +1,137 @@
 task:
-  parent_cmd: cmd_karo_hotfix_report_field_files_modified_path_guard_202607021021
-  task_type: hotfix
-  project: infra
-  purpose: "report_field_set.shでfiles_modifiedの散文/非パス記入を記入時点でBLOCKし、gate_report_format後追いFAILを減らす"
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/report_field_set.sh
-  command: |
-    idle改善サイクルのWA分析で、直近20件WA中 report_yaml_format が3件、gate_report_format FAIL直近20件中 files_modified: パス形式でない が3件残っている。
-    2026-07-02 05:41以後にも cmd_3636 report で files_modified: 1件がパス形式でない FAIL が1件発生した。
-    現状は gate_report_format が後追いで検出するが、report_field_set.sh の files_modified 書込み時点で防げていない可能性がある。
-    scripts/report_field_set.sh を調査し、files_modified に path: 形式でない説明文や / を含まない値が入る操作を可能な限り記入時点でBLOCKせよ。
-    ただし既存の正しいlist形式、reference_only形式、report template互換性を壊すな。
-    関連テストを追加/更新し、gate_report_formatの既存検出は弱めないこと。
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
   acceptance_criteria:
-  - id: AC1
-    description: "report_field_set.shのfiles_modified設定経路を特定し、現状で散文/非パス値が通るかを再現テストで確認する"
-  - id: AC2
-    description: "files_modified記入時にpath形式でない項目または/を含まない散文値をBLOCKする最小修正を実装する。reference_onlyや既存正規list形式はPASS維持"
-  - id: AC3
-    description: "bash -n scripts/report_field_set.sh と関連batsを実行し、SKIP=0または専用テスト不在を明記する"
-  - id: AC4
-    description: "scope内のみcommitし、report YAML形式検出を弱めていないことを報告する"
-  constraints:
-  - "gate_report_format.shのfiles_modified検出を弱めない"
-  - "運用YAMLをyaml.dump/yaml.safe_dumpで全体再生成しない"
-  - "既存report YAMLを一括修正しない"
-  - "scope外の大規模リファクタ禁止"
+    AC1:
+      description: logs/shogun_startup_alert_history.tsv の最新run(2026-07-02T12:25/12:27)と gate_shogun_startup.sh 現物から、Q6回答未検出と洗脳連鎖2x2危険象限の発火経路を一次情報で特定する
+    AC2:
+      description: 過去対応 cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421 と 2026-07-02掲示板の偽陽性判定を読み、今回が同一既解決問題・新規偽陽性・真陽性のどれかを分類する
+    AC3:
+      description: D0で修正可能なインフラバグなら安全確認を削らず最小hotfixを実装する。真陽性または将軍専管なら差分0で、必要な将軍actionと家老が代行できない理由を報告する
+    AC4:
+      description: 修正ありの場合は bash -n と関連batsまたは軽量再現を実行し、SKIP=0または専用テスト不在を明記する。修正なしの場合も再現/分類根拠のコマンド結果を残す
+    AC5:
+      description: 修正採用時はscope内のみcommitする。修正なし/未達なら未コミット差分0を確認し、次actionを報告YAMLへ記録する
+  context:
+  - '家老一次確認: logs/shogun_startup_alert_history.tsv 最新run 12:25/12:27で『追体験自動化ターゲット: WARN (Q6回答未検出)』と『洗脳連鎖2x2: 危険象限』が発火'
+  - '過去対応: queue/archive/reports/hanzo_report_cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421_20260702.yaml'
+  - '本日未明掲示板: queue/archive/bulletin_20260702.yaml 先頭付近に洗脳連鎖2x2偽陽性/保留判断あり'
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   not_in_scope:
-  - "report YAMLスキーマ全体の再設計"
-  - "過去reportの一括補正"
-  - "binary_checksやlesson_candidateの別FAIL種別対応"
+  - 将軍専管のMEMORY.md/将軍Q6回答そのものの代筆
+  - startup安全確認や先送りBLOCKの削除・弱体化
+  - 今回対象外のSKILL.md script参照WARNや掲示板未確認の修正
+  parallel_ok: []
+  parent_cmd: cmd_karo_hotfix_shogun_startup_q6_chain_202607021230
+  project: infra
+  purpose: 将軍startup先送りBLOCK再発 — Q6回答未検出+洗脳連鎖2x2危険象限の真偽を一次情報で判定し、D0可能な最小hotfixまたは将軍専管actionを確定する
   status: idle
-  task_id: cmd_karo_hotfix_report_field_files_modified_path_guard_202607021021_normal
+  stop_for: []
+  target_path: scripts/gates/gate_shogun_startup.sh
+  task_id: cmd_karo_hotfix_shogun_startup_q6_chain_202607021230_normal
+  task_type: hotfix
+  related_lessons:
+  - id: 'L473'
+    summary: '9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数で'
+    detail: '9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数で'
+  - id: 'L830'
+    summary: 'gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo'
+    detail: 'gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo'
+  - id: 'L696'
+    summary: 'startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs'
+    detail: 'startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs'
+  - id: 'L278'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
+  - id: 'L342'
+    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  ac_version: 11a3c2fb
-  _ac_task_id: cmd_karo_hotfix_report_field_files_modified_path_guard_202607021021_normal
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L473: 9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数で
+      - L830: gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo
+      - L696: startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs
+      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
+      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
+    ────────────────────────────────────────
+  memory_db_context:
+  - '2026-07-02T00:45:08+09:00 | 再発防止まで完了した。殿に事実を報告する。 --- ## 殿、起動時確認と積み残しの処理を完了いたしました inbox・掲示板を確認し、一次情報で検証した結果を報告します。 ### 1. 殿の00:1'
+  - '2026-07-01T23:42:29+09:00 | settings.yaml上は将軍・軍師とも `.local/bin/claude --model opus --effort xhigh`（＝最新版・Opus 4.8・xhigh）に設定済みだ。実際'
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_hotfix_shogun_startup_q6_chain_202607021230_normal
   _ac_worker_id: 
-  report_filename: kagemaru_report_cmd_karo_hotfix_report_field_files_modified_path_guard_202607021021.yaml
-  report_path: queue/reports/kagemaru_report_cmd_karo_hotfix_report_field_files_modified_path_guard_202607021021.yaml
-  deployed_at: "2026-07-02T10:22:26"
+  role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kagemaru_report_cmd_karo_hotfix_shogun_startup_q6_chain_202607021230.yaml
+  report_path: queue/reports/kagemaru_report_cmd_karo_hotfix_shogun_startup_q6_chain_202607021230.yaml
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 1
+    top_pattern: 'commit_missing(1件)'
+    breakdown: 'commit_missing(1件)'
+    warning: '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁'
+    gate_fail_top3:
+    - pattern: 'bc_result_empty'
+      count: 154
+    - pattern: 'lu_structure_error'
+      count: 47
+    - pattern: 'field_missing'
+      count: 46
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
+    gate_blocks:
+    - reason: 'report_format'
+      count: 12
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'empty_lessons_useful'
+      count: 2
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+    - reason: 'binary_checks_fail'
+      count: 2
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+  deployed_at: "2026-07-02T12:31:06"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'YAML parse error: while parsing a block mapping'
+    tried_approaches:
+    - 'YAML parse error: while parsing a block mapping'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'YAML parse error: while parsing a block mapping'

@@ -1,10 +1,12 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-07-02 cmd_3640 -->
+<!-- last_updated: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234 -->
 
 ## 2026-06-30
 
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
+| cmd_karo_hotfix_skill_script_refs_202607021234 | SKILL.md script参照WARN 20件の鮮度回復 | GATE CLEAR。13 SKILL.md更新、gate_skill_script_refs rc=2→0、commit 9c16569ff push済み | script側mtime進行でskill契約確認が陳腐化。gate弱体化せず確認記録で防御維持 |
+| cmd_karo_hotfix_shogun_startup_q6_chain | 将軍startup Q6未検出+洗脳連鎖2x2危険象限の真偽判定 | GATE CLEAR。分類=真陽性、D0修正なし。将軍Q6掲示板投稿が必要と掲示板action_required化 | 現行bulletinに将軍Q6不在→gate設計通り発火。archive過去Q6を現在回答扱いにしない |
 | note_draft.sh検証 | 修正版(dispatch_click+quick_url)の動作確認 | PASS。Login 1秒→Editor→Body inserted 25→Draft saved。SKIP→PASS改善 | 殿「検証してみたか？」→一次データで確認 |
 | LOOPS.md比較分析 | 殿指示でLOOPS.md(9ルール)と将軍システムを批判的比較 | われら8/9上回り。殿教示: 各論〜総論を同密度でレイヤーを密に。100億年でマシンも環境も成長。管理は機械的に | 殿「抽象と具象は同じ概念。レンジを広くすることが重要」 |
 | cmd_3608 | gate設計思想カタログ Phase 1a(named funcs 37件カタログ) | GATE CLEAR。殿指摘「check名だけでいいのか？」で母集団不足判明→Phase 1b追加 | 殿「中間レイヤーを独立させよ」→設計書→レビュー→起票 |

@@ -1103,6 +1103,7 @@ codd:
 | lesson | `L795` 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T11:54:39+09:00 本番環境の11ページ全部をストレステストしたのか？今やらなくていいTodoとproblemlistを設計書にアップデートしよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T11:58:09+09:00 ちがう。今ストレステストをやらなくていい。次にやるべきことを完璧に設計書に記載せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:37:37+09:00 ちがう。正しいmodlが表示されるべきだ。paneにあるfable 5の文字を誤inbox2検知している |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -1349,6 +1350,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-29T00:40:08+09:00 b8zx64mqm toolu_019Ve6erkrCJnzcgXAcejx2s /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-01T19:42:04+09:00 GPTのClaude Code版は存在しない。別会社の別CLIだ。二度と勘違いしないように環境に埋め込め。この誤解が残ってるとCLIやmodelの切り替えでエラーを起こすぞ |
 | cmd | `cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546` (`skills/codd-fix/SKILL.md`, `skills/dream/SKILL.md`, `skills/idle-persist/SKILL.md`) |
+| cmd | `cmd_karo_hotfix_skill_script_refs_202607021234` (`skills/codd-fix/SKILL.md`, `skills/dashboard-update/SKILL.md`, `skills/dream/SKILL.md`) |
 | causal_chain | `[[cmd_3246]]` (L761) |
 
 ## codd_methodology — CoDD整合性駆動開発
@@ -2168,6 +2170,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-01T21:55:20+09:00 ドキュメントは全文読んだか整合性はとれているか？覚醒して確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T01:52:35+09:00 単体は速くても全体として実行速度が遅いスクリプトはないか？覚醒して確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T11:27:37+09:00 dashboard,summary,Compare chart,Metrics,Compare summary,Compare returns,Annual returns,Monthly returns,rolling returns,D |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:39:29+09:00 cliバナーにはsonnet５と明確に表示されている。確認していないだろ。確認せずに判断するな。覚醒せよ。バグを修正しろ |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -2586,6 +2589,7 @@ codd:
 | cmd | `cmd_karo_hotfix_skill_refs_20260626082009` (`skills/gate-sync/SKILL.md`, `skills/idle-persist/SKILL.md`, `skills/review-bundle/SKILL.md`) |
 | causal | `cmd_karo_hotfix_skill_script_refs_202606280133` files_modified: [[skill_design_rules]] |
 | causal | `cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546` files_modified: [[skill_design_rules]] |
+| causal | `cmd_karo_hotfix_skill_script_refs_202607021234` files_modified: [[skill_design_rules]] |
 | causal_chain | `[[cmd_2929]]` (L647) |
 | causal_chain | `[[cmd_2929]]` (L649) |
 | causal_chain | `[[cmd_training_L7_v3_hanzo_5_20260521202900]]` (L660) |
@@ -3169,6 +3173,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T02:26:32+09:00 忍者は終わり次第、次のスクリプトを配備しよう。4人全員が終わるのを待つ意味がない |
 | causal | `cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_template_generation.bats`) |
+| causal | `cmd_karo_hotfix_skill_script_refs_202607021234` files_modified: [[agent_formation_management]] |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -4542,6 +4547,7 @@ codd:
 | causal | `cmd_karo_hotfix_skill_refs_20260626082009` files_modified: [[gunshi_review_lifecycle]] |
 | causal | `cmd_3628` files_modified: [[gunshi_review_lifecycle]] |
 | causal | `cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546` files_modified: [[gunshi_review_lifecycle]] |
+| causal | `cmd_karo_hotfix_skill_script_refs_202607021234` files_modified: [[gunshi_review_lifecycle]] |
 
 ## bulletin_communication — 掲示板通信基盤
 
@@ -4860,6 +4866,7 @@ codd:
 | cmd | `cmd_3628_kotaro` (`queue/tasks/kotaro.yaml`) |
 | causal | `cmd_3628` files_modified: [[provisional_kotaro]] |
 | cmd | `cmd_3629_kotaro` (`tests/test_insight_sanitize.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:30:05+09:00 status barが実際と乖離している。これはバグだ。saizo,kotaro,tobisaruはsonnet5 xhighだ。自動でリニアに実際のCLIとmodelとeffortに連動されなくてはいけない |
 
 ## provisional_kagemaru — 仮: Kagemaru
 
@@ -5375,7 +5382,7 @@ codd:
 |------|---|
 | id | skill_routing |
 | label | スキルルーティング |
-| aliases | スキル使い分け, どのスキルを使う, 適切なスキル, スキル選択, skill routing, ペイン死亡, pane dead, panedead, pane is dead, ペインがdead, 忍者が死んでいる, 家老が死んでいる, CLI死亡, CLI-DEAD, status 126, respawn, respawnせよ, respwanせよ, CLI切替, Claude⇔Codex切替, モデル切替, version切替, 2.1.87固定, pinned/latest, auto-update再許可, 家老をCodexに, 軍師をOpusに, ペイン復元, レイアウトリセット, ペイン消失, レイアウト崩壊, 全ペイン復元, 編成切替, 忍者モデル編成, 一括モデル切替, 混成編成, Opus全戻し, 決戦モード, 全員Codex, 平時復旧, clear前, セッション終了前, メモリ整理, 三層記憶整理, 知識統合, 棚卸し, 7層監査, 教訓整理, 教訓振り分け, lesson_health ALERT, PJ切替, プロジェクト変更, 裁定反映, context反映確認, GATE CLEAR後処理, cmd完了処理, ダッシュボード更新, レビュー完了後処理, SG7バンドル, gate結果同期, accuracy計算, bc判定, binary_checks確認, idle分析永続化, 分析結果保存, コミット, commit, 作業完了コミット, 報告YAML作成, 報告フィールド記入, FILL_THIS修正, 本番登録, PF登録, GSベンチマーク, パフォーマンス回帰, 家老自立配備, karo_direct, CI修正配備, 偵察2名配備, 設計書生成, CoDDパイプライン, リファクタリング設計, 速度改善, 事象修正, 現象修正, DB確認, 本番DB, パリティ検証, ブラウザ確認, 本番画面スクショ, CDPで確認, ファイル名整理, Driveリネーム, 週報, ウィークリーレポート, 月報, マンスリーレポート, note記事, ユーザー向け記事, 開発裏話, 戦国AI列伝, X検索, Xリサーチ, トレンド調査, スキル作成, スキル化, リポジトリ掃除, 未コミット確認, チャンピオン近傍分析, 過適合判定, 隣接パラメータ, 本文更新要否とgate設計問題を分ける, commit missing WAの穴を今ふさげ, git log showでsource commitを分類し, 研究正本へ追記すべき差分は既反映のcmd 3546のみで |
+| aliases | スキル使い分け, どのスキルを使う, 適切なスキル, スキル選択, skill routing, ペイン死亡, pane dead, panedead, pane is dead, ペインがdead, 忍者が死んでいる, 家老が死んでいる, CLI死亡, CLI-DEAD, status 126, respawn, respawnせよ, respwanせよ, CLI切替, Claude⇔Codex切替, モデル切替, version切替, 2.1.87固定, pinned/latest, auto-update再許可, 家老をCodexに, 軍師をOpusに, ペイン復元, レイアウトリセット, ペイン消失, レイアウト崩壊, 全ペイン復元, 編成切替, 忍者モデル編成, 一括モデル切替, 混成編成, Opus全戻し, 決戦モード, 全員Codex, 平時復旧, clear前, セッション終了前, メモリ整理, 三層記憶整理, 知識統合, 棚卸し, 7層監査, 教訓整理, 教訓振り分け, lesson_health ALERT, PJ切替, プロジェクト変更, 裁定反映, context反映確認, GATE CLEAR後処理, cmd完了処理, ダッシュボード更新, レビュー完了後処理, SG7バンドル, gate結果同期, accuracy計算, bc判定, binary_checks確認, idle分析永続化, 分析結果保存, コミット, commit, 作業完了コミット, 報告YAML作成, 報告フィールド記入, FILL_THIS修正, 本番登録, PF登録, GSベンチマーク, パフォーマンス回帰, 家老自立配備, karo_direct, CI修正配備, 偵察2名配備, 設計書生成, CoDDパイプライン, リファクタリング設計, 速度改善, 事象修正, 現象修正, DB確認, 本番DB, パリティ検証, ブラウザ確認, 本番画面スクショ, CDPで確認, ファイル名整理, Driveリネーム, 週報, ウィークリーレポート, 月報, マンスリーレポート, note記事, ユーザー向け記事, 開発裏話, 戦国AI列伝, X検索, Xリサーチ, トレンド調査, スキル作成, スキル化, リポジトリ掃除, 未コミット確認, チャンピオン近傍分析, 過適合判定, 隣接パラメータ, 本文更新要否とgate設計問題を分ける, commit missing WAの穴を今ふさげ, git log showでsource commitを分類し, 研究正本へ追記すべき差分は既反映のcmd 3546のみで, 将軍を最新版のclaude CLIにrespwanせよ |
 | skills | shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み), reset-layout(全ペイン配置復元), shogun-clear-prep(clear前), dream(三層記憶整理), shogun-teire(棚卸し), lesson-sort(教訓整理), switch-project(PJ切替), shogun-pd-sync(裁定反映), cmd-complete(GATE CLEAR後/家老), dashboard-update(ダッシュボード/家老), review-bundle(レビュー完了/軍師), gate-sync(gate同期/軍師), verdict-check(bc判定/忍者), idle-persist(分析永続化/軍師), ninja-commit(commit/忍者), report-write(報告YAML/忍者), pf-registration(本番登録/忍者), gs-bench-gate(GSベンチ/忍者), karo-direct(家老自立配備/家老), recon-dual(偵察2名/家老), codd(設計書), codd-refactor(リファクタ), codd-fix(事象修正), db-check(DB確認), cdp-browse(ブラウザ確認), file-rename(ファイルリネーム), weekly-report-writer(週報), monthly-report-writer(月報), note-writer(note記事), sengoku-writer(戦国記事), x-research(X検索), skill-creator(スキル作成), repo-clean(リポ掃除), shogun-param-neighbor-check(パラメータ近傍) |
 | related_concepts | agent_formation_management, growth_loop, skill_design_rules, content_artifacts |
 
@@ -5407,6 +5414,7 @@ codd:
 | lesson | `L881` context last_updated更新はcommitまでをセットとせよ — uncommittedは鮮度保証にならない |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-01T02:32:48+09:00 本番DBに次から試行錯誤なしでアクセスできるようにinbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:13:22+09:00 bkwdte7bz toolu_01R6z3kYwyXveuVXJBQm3aBY /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b3d71be7-30d8-46e9-a136-b54c7a |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:25:38+09:00 将軍を最新版のclaude CLIにrespwanせよ。スキルを使え |
 | causal_chain | `[[cmd_karo_recon_ga125_context_freshness_20260624]]` (L846) |
 | causal_chain | `[[cmd_karo_hotfix_ga145_context_freshness_dm_signal_frontend_20260627]]` (L870) |
 | causal_chain | `[[cmd_karo_hotfix_ga147_context_freshness_dm_signal_research_20260627]]` (L872) |

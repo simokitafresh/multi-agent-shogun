@@ -6425,6 +6425,9 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: ただしDM2+とDM7+はXLU+TQQQを共通に持つため、XLUの出現頻度30%閾値で区別する必要がある
   origin: '[[cmd_1014]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L342
   title: 2段重ねBTのStage1変更はnominal_output変動を伴い大幅Sharpe変動の主因
   summary: IF 2段重ねBTの過適合検証で近傍パラメータを変動させる THEN Stage1のtop_n/select_n変更はStage2の有効候補数(nominal_
@@ -6532,6 +6535,9 @@ lessons:
   when: p̄ top_n=1 の switching BT を評価する
   how: EW-12 に加えて単体12体の同期間比較テーブルを必ず併記せよ
   origin: '[[hayate]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L333
   title: FoF UUID 生値を含む /api/signals cache は壊れた payload とみなし fresh 再取得へ倒す
   summary: 多段 FoF では DB signal/holding_signal が portfolio UUID を保持するのが正常で、表示時だけ ticker
