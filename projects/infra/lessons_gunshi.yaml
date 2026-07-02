@@ -567,3 +567,17 @@ lessons:
   enforcement: gate_gunshi_report_precheck SG-PRE28でassumption_invalidation/decision_candidate/WITH_CONCERNS検出時にINFOリマインダーを表示し、AC本文の要求語がresult/details/evidenceに実体として出ているか1対1照合を強制想起する
   when: report reviewでassumption_invalidation/decision_candidate/status WITH_CONCERNS 等の正直な懸念報告を見た時
   how: 正直報告の有無とAC本旨充足を別軸に分け、AC本文の要求語を報告details/evidenceへ1対1で対応付ける。対応付かない要求語が残るならLGTMせず差し戻す
+- id: LG045
+  title: FE変更レビューはNext buildを確認せよ — pytest/JestだけではApp Router page export制約を検出できない
+  detail: |
+    cmd_3666で軍師がpytest5+Jest1 PASSを根拠にLGTMしたが、家老追加検証の `npm run build` でNext.js App Routerの型検査が失敗した。
+    原因は `frontend/app/monthly-returns/page.tsx` に契約テスト用の任意named export `QUICK_MONTHLY_MONTHS` / `DEFAULT_MONTHLY_MONTHS` を追加したこと。App Routerのpage.tsxはPageとして許可されたexport以外を受け付けない。
+    component/Jest単位では検出できないNext build固有制約があるため、files_modifiedにfrontend配下、特にapp/page系が含まれるレビューではbuild PASSを確認条件に含める。
+  source_cmd: cmd_3666
+  origin: '[[cmd_3666_LGTM撤回]] -> [[page_tsx_named_export制約見落とし]] -> [[Next_build必須化]]'
+  created_at: '2026-07-02'
+  automated: true
+  enforcement_level: 3
+  enforcement: 'SG-PRE29(gate_gunshi_report_precheck.sh)がfiles_modifiedにfrontend/tsx/ts含む場合にnpm run build/next build確認WARN表示。D0実装(軍師commit)'
+  when: report reviewでfiles_modifiedにfrontend配下、特に `frontend/app/**/page.tsx` が含まれる時
+  how: pytest/JestのPASSだけでLGTMしない。`npm run build` または同等のNext build/type validationがPASSしていることをtest_resultsで確認する。page.tsxに定数を置く必要がある場合は別moduleへ分離されているか確認する
