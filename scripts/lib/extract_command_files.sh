@@ -170,10 +170,14 @@ def ref_matches_target(ref, target):
 
 def is_design_spec_instruction_ref(ref, local_text, sentence_tail, match_start):
     clean_ref = ref.strip().strip("./")
-    if not (clean_ref.startswith("docs/spec/") and clean_ref.endswith(".md")):
+    if not ((clean_ref.startswith("docs/spec/") or clean_ref.startswith("docs/research/")) and clean_ref.endswith(".md")):
         return False
     if target_paths and any(ref_matches_target(ref, target) for target in target_paths):
         return False
+    # docs/research/ is always a readonly reference (recon reports, analysis results)
+    # unless target_path points there (already excluded above)
+    if clean_ref.startswith("docs/research/"):
+        return True
     tail = (local_text + " " + sentence_tail)[:160]
     prefix = cmd_text[max(0, match_start - 40):match_start]
     section_ref = re.search(r"^\s*の?(?:§|第?\d+章|変更\d|変更[0-9０-９一二三四五六七八九十]+|実装順序)", local_text) is not None

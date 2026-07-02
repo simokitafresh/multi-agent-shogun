@@ -4595,8 +4595,12 @@ def is_design_spec_instruction_ref(ref, local_text, sentence_tail, match_start):
     # If docs/spec is the target_path, ref_matches_target() below still keeps it
     # as an actual target before this readonly rule is applied.
     clean_ref = ref.strip().strip("./")
-    if not (clean_ref.startswith("docs/spec/") and clean_ref.endswith(".md")):
+    if not ((clean_ref.startswith("docs/spec/") or clean_ref.startswith("docs/research/")) and clean_ref.endswith(".md")):
         return False
+    # docs/research/ is always a readonly reference (recon reports, analysis results)
+    # target_path check is done by the caller before invoking this function
+    if clean_ref.startswith("docs/research/"):
+        return True
     tail = (local_text + " " + sentence_tail)[:160]
     section_ref = (
         re.search(r"^\s*の?(?:§|第?\d+章|変更\d|変更[0-9０-９一二三四五六七八九十]+|実装順序)", local_text)
