@@ -860,6 +860,22 @@ else
     echo "  OK: verify系関数evidenceなし(対象外確認済み)"
 fi
 
+# ─── SG-PRE28: 正直報告×AC本旨照合リマインダー(LG044: 正直報告はAC未達の免罪符ではない) ───
+echo ""
+echo "■ SG-PRE28: 正直報告×AC本旨照合(LG044)"
+_has_assumption_inv=$(grep -c 'assumption_invalidation:' "$REPORT_PATH" 2>/dev/null || true)
+_assumption_found=$(grep -A1 'assumption_invalidation:' "$REPORT_PATH" 2>/dev/null | grep -c 'found: true' || true)
+_has_decision_cand=$(grep -c 'decision_candidate:' "$REPORT_PATH" 2>/dev/null || true)
+_decision_found=$(grep -A1 'decision_candidate:' "$REPORT_PATH" 2>/dev/null | grep -c 'found: true' || true)
+_has_with_concerns=$(grep -ci 'WITH_CONCERNS\|status_detail.*PARTIAL\|status_detail.*INCOMPLETE' "$REPORT_PATH" 2>/dev/null || true)
+if [ "${_assumption_found:-0}" -gt 0 ] || [ "${_decision_found:-0}" -gt 0 ] || [ "${_has_with_concerns:-0}" -gt 0 ]; then
+    echo "  INFO: 正直報告フラグ検出(assumption_invalidation/decision_candidate/WITH_CONCERNS)"
+    echo "  ★ LG044: AC本文の要求語(名詞句)がresult/detailsに実体として出ているか1対1照合せよ"
+    echo "  ★ 正直な懸念報告は評価材料であって免罪符ではない。AC未達ならFAIL/REQUEST_CHANGES"
+else
+    echo "  PASS: 正直報告フラグなし(通常レビュー)"
+fi
+
 echo ""
 echo "■ GATE_PREDICTION (自動計算 — SG7 gate_predictionに転記せよ)"
 echo "  prediction: ${GATE_PREDICTION:-UNKNOWN}"

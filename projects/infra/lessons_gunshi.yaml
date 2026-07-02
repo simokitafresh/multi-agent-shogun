@@ -553,3 +553,17 @@ lessons:
   enforcement: 'gate_gunshi_report_precheck SG-PRE9cでbinary_checks全yes×task_clarity/assumption/purpose_gap未達成語をERROR化し、gate_prediction BLOCKへ落とす'
   when: report reviewでbinary_checksが全yes、またはLGTMを出す直前
   how: binary_checks yesを読むだけで止めず、unclear_points/discretion_fills/assumption_check/purpose_gapをgrepし、未達成委譲語があればFAIL/REQUEST_CHANGES
+- id: LG044
+  title: 正直報告はAC未達の免罪符ではない — 前提崩壊報告とAC本旨を分けて判定せよ
+  detail: |
+    cmd_3659で軍師が忍者のassumption_invalidation/decision_candidate(7023はNext共通runtimeでhash不変、bootup悪化も正直に報告)に安心し、AC1本旨「重量チャンクに含まれるモジュール内訳とサイズ構成比を特定」の実質未達をLGTMで通した。
+    家老一次レビューでAC1のmodule-level breakdown不足を差戻し、自動cmd_complete_gateの旧報告GATE CLEARはstaleとして訂正された。
+    正直な懸念報告は評価材料であって免罪符ではない。レビュー時は「前提崩壊を正直に書いたか」と「AC文言の本旨を満たしたか」を別軸で突合し、前者が良くても後者が未達ならFAIL/REQUEST_CHANGESにする。
+  source_cmd: cmd_3659
+  origin: '[[cmd_3659_LGTM撤回]] -> [[正直報告への安心]] -> [[AC1本旨未達見逃し]]'
+  created_at: '2026-07-02'
+  automated: true
+  enforcement_level: 2
+  enforcement: gate_gunshi_report_precheck SG-PRE28でassumption_invalidation/decision_candidate/WITH_CONCERNS検出時にINFOリマインダーを表示し、AC本文の要求語がresult/details/evidenceに実体として出ているか1対1照合を強制想起する
+  when: report reviewでassumption_invalidation/decision_candidate/status WITH_CONCERNS 等の正直な懸念報告を見た時
+  how: 正直報告の有無とAC本旨充足を別軸に分け、AC本文の要求語を報告details/evidenceへ1対1で対応付ける。対応付かない要求語が残るならLGTMせず差し戻す
