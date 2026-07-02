@@ -388,6 +388,89 @@ print('CUSTOM RESOLVE OK')
     [[ "$output" == *"CUSTOM RESOLVE OK"* ]]
 }
 
+@test "resolve: replace直前に中断されてもinsights本体は欠損しない" {
+    local ins_id
+    ins_id="$(bash "${TEST_TMP}/scripts/insight_write.sh" "atomic resolve target")"
+    cp "${TEST_TMP}/queue/insights.yaml" "${TEST_TMP}/queue/insights.before.yaml"
+
+    TEST_TMP_ENV="$TEST_TMP" INS_ID_ENV="$ins_id" python3 - <<'PY'
+import os
+import subprocess
+import time
+
+tmp = os.environ["TEST_TMP_ENV"]
+ins_id = os.environ["INS_ID_ENV"]
+env = os.environ.copy()
+env["INSIGHT_TEST_SLEEP_BEFORE_REPLACE"] = "5"
+proc = subprocess.Popen(["bash", f"{tmp}/scripts/insight_write.sh", "--resolve", ins_id], env=env)
+time.sleep(1)
+proc.terminate()
+try:
+    proc.wait(timeout=3)
+except subprocess.TimeoutExpired:
+    proc.terminate()
+    proc.wait(timeout=3)
+PY
+
+    cmp "${TEST_TMP}/queue/insights.before.yaml" "${TEST_TMP}/queue/insights.yaml"
+
+    run python3 -c "
+import yaml
+with open('${TEST_TMP}/queue/insights.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+entry = data['insights'][0]
+assert entry['status'] == 'pending', entry
+print('INTERRUPT PRESERVED')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INTERRUPT PRESERVED"* ]]
+}
+
+@test "tail repair: replace直前に中断されてもinsights本体は欠損しない" {
+    cat > "${TEST_TMP}/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-KEEP
+  ts: "2026-01-01T00:00:00+09:00"
+  insight: "keep me"
+  priority: "medium"
+  source: "unit_test"
+  status: pending
+- id: INS-PARTIAL
+  ts: "2026-01-01T00:00:01+09:00"
+EOF
+    cp "${TEST_TMP}/queue/insights.yaml" "${TEST_TMP}/queue/insights.before.yaml"
+
+    TEST_TMP_ENV="$TEST_TMP" python3 - <<'PY'
+import os
+import subprocess
+import time
+
+tmp = os.environ["TEST_TMP_ENV"]
+env = os.environ.copy()
+env["INSIGHT_TEST_SLEEP_BEFORE_REPLACE"] = "5"
+proc = subprocess.Popen(["bash", f"{tmp}/scripts/insight_write.sh", "after interrupt", "high", "unit_test"], env=env)
+time.sleep(1)
+proc.terminate()
+try:
+    proc.wait(timeout=3)
+except subprocess.TimeoutExpired:
+    proc.terminate()
+    proc.wait(timeout=3)
+PY
+
+    cmp "${TEST_TMP}/queue/insights.before.yaml" "${TEST_TMP}/queue/insights.yaml"
+
+    run python3 -c "
+from pathlib import Path
+text = Path('${TEST_TMP}/queue/insights.yaml').read_text(encoding='utf-8')
+assert 'INS-KEEP' in text
+assert 'INS-PARTIAL' in text
+print('REPAIR INTERRUPT PRESERVED')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REPAIR INTERRUPT PRESERVED"* ]]
+}
+
 # --- 8. --resolve 存在しないID ---
 
 @test "resolve: 存在しないIDでエラー終了する" {

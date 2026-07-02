@@ -55,10 +55,28 @@ if [ "${1:-}" = "--resolve" ]; then
     python3 - <<'PYEOF'
 import os
 import sys
+import tempfile
+import time
 
 insights_file = os.environ['INSIGHTS_FILE_ENV']
 resolve_id = os.environ['RESOLVE_ID_ENV']
 ts = os.environ['TS_ENV']
+
+def atomic_replace_lines(path, lines):
+    directory = os.path.dirname(os.path.abspath(path)) or '.'
+    fd, tmp_path = tempfile.mkstemp(prefix='.insights.', suffix='.tmp', dir=directory)
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            f.writelines(lines)
+            f.flush()
+            os.fsync(f.fileno())
+        sleep_sec = float(os.environ.get('INSIGHT_TEST_SLEEP_BEFORE_REPLACE', '0') or '0')
+        if sleep_sec > 0:
+            time.sleep(sleep_sec)
+        os.replace(tmp_path, path)
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
 
 with open(insights_file, 'r', encoding='utf-8') as f:
     lines = f.readlines()
@@ -101,8 +119,7 @@ if not found:
     print(f'ERROR: id not found: {resolve_id}', file=sys.stderr)
     sys.exit(1)
 
-with open(insights_file, 'w', encoding='utf-8') as f:
-    f.writelines(modified)
+atomic_replace_lines(insights_file, modified)
 print(f'RESOLVED: {resolve_id}')
 PYEOF
   ) 200>"$INSIGHTS_FILE.lock"
@@ -231,10 +248,20 @@ def repair_trailing_partial_entry(path):
     corrupt_path = f"{path}.corrupt.{int(time.time() * 1000)}"
     with open(corrupt_path, 'w', encoding='utf-8') as f:
         f.writelines(corrupt)
-    with open(path, 'w', encoding='utf-8') as f:
-        f.writelines(keep)
-        f.flush()
-        os.fsync(f.fileno())
+    directory = os.path.dirname(os.path.abspath(path)) or '.'
+    fd, tmp_path = tempfile.mkstemp(prefix='.insights.', suffix='.tmp', dir=directory)
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            f.writelines(keep)
+            f.flush()
+            os.fsync(f.fileno())
+        sleep_sec = float(os.environ.get('INSIGHT_TEST_SLEEP_BEFORE_REPLACE', '0') or '0')
+        if sleep_sec > 0:
+            time.sleep(sleep_sec)
+        os.replace(tmp_path, path)
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
 
 repair_trailing_partial_entry(insights_file)
 
