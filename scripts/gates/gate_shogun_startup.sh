@@ -371,8 +371,8 @@ _TMP_SCRIPTS_STATUS=$(mktemp) _TMP_GUNSHI_INFO=$(mktemp) _TMP_EVO_SCAN=$(mktemp)
 _TMP_DEFERRED_HOLES=$(mktemp) _TMP_BACKLINK_ZERO=$(mktemp)
 _TMP_THREE_LAYER=$(mktemp) _TMP_THREE_LAYER_STATUS=$(mktemp)
 _TMP_GATE4_YAML=$(mktemp) _TMP_SEMANTIC_NO_MATCH=$(mktemp)
-	_TMP_SCRIPT_INDEX=$(mktemp)
-	trap 'rm -f "$_TMP_CI_RED" "$_TMP_G1" "$_TMP_G2" "$_TMP_G3" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_GATE4_YAML" "$_TMP_SEMANTIC_NO_MATCH" "$_TMP_SCRIPT_INDEX"' EXIT
+	_TMP_SKILL_REC=$(mktemp) _TMP_SKILL_USAGE=$(mktemp) _TMP_WEEKLY_METRICS=$(mktemp)
+	trap 'rm -f "$_TMP_CI_RED" "$_TMP_G1" "$_TMP_G2" "$_TMP_G3" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_GATE4_YAML" "$_TMP_SEMANTIC_NO_MATCH" "$_TMP_SKILL_REC" "$_TMP_SKILL_USAGE" "$_TMP_WEEKLY_METRICS"' EXIT
 	STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
 	"$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
 	_PID_G1=$!
@@ -409,6 +409,27 @@ EOF
 	_PID_GATE4_YAML=$!
 	show_semantic_no_match_metrics > "$_TMP_SEMANTIC_NO_MATCH" 2>&1 &
 	_PID_SEMANTIC_NO_MATCH=$!
+	_skill_recommend_metrics="$SCRIPT_DIR/scripts/skill_recommend_metrics.sh"
+	if [ -x "$_skill_recommend_metrics" ] || [ -f "$_skill_recommend_metrics" ]; then
+	    bash "$_skill_recommend_metrics" 30 > "$_TMP_SKILL_REC" 2>&1 &
+	    _PID_SKILL_REC=$!
+	else
+	    _PID_SKILL_REC=""
+	fi
+	_skill_usage_metrics="$SCRIPT_DIR/scripts/skill_usage_metrics.sh"
+	if [ -x "$_skill_usage_metrics" ] || [ -f "$_skill_usage_metrics" ]; then
+	    bash "$_skill_usage_metrics" > "$_TMP_SKILL_USAGE" 2>&1 &
+	    _PID_SKILL_USAGE=$!
+	else
+	    _PID_SKILL_USAGE=""
+	fi
+	_WEEKLY_METRICS_SCRIPT="$SCRIPT_DIR/scripts/weekly_metrics_trend.sh"
+	if [ -x "$_WEEKLY_METRICS_SCRIPT" ]; then
+	    WEEKLY_METRICS_CHECK_CRON=1 bash "$_WEEKLY_METRICS_SCRIPT" > "$_TMP_WEEKLY_METRICS" 2>&1 &
+	    _PID_WEEKLY_METRICS=$!
+	else
+	    _PID_WEEKLY_METRICS=""
+	fi
 	awk '
 function flush_run() {
     if (current_run != "") {
@@ -536,23 +557,6 @@ if [ -f "$SCRIPT_DIR/logs/skill_execution_log.yaml" ]; then
             | awk 'BEGIN{in_entry=0} /^executions:[[:space:]]*$/{next} /^[[:space:]]*-[[:space:]]+ts:/{in_entry=1} in_entry{print}'
     } > "$_TMP_SKILL_EXEC_RECENT"
 fi
-if [ -d "$SCRIPT_DIR/scripts" ] || [ -d "$SCRIPT_DIR/.claude/hooks" ]; then
-    find "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/.claude/hooks" -type f -name '*.sh' -printf '%f\t%p\n' 2>/dev/null > "$_TMP_SCRIPT_INDEX" || true
-fi
-export SHOGUN_STARTUP_SCRIPT_INDEX="$_TMP_SCRIPT_INDEX"
-find() {
-    if [ -n "${SHOGUN_STARTUP_SCRIPT_INDEX:-}" ] \
-        && [ -f "$SHOGUN_STARTUP_SCRIPT_INDEX" ] \
-        && [ "$#" -eq 6 ] \
-        && [ "$3" = "-name" ] \
-        && [ "$5" = "-print" ] \
-        && [ "$6" = "-quit" ]; then
-        awk -F '\t' -v name="$4" '$1 == name { print $2; exit }' "$SHOGUN_STARTUP_SCRIPT_INDEX"
-        return 0
-    fi
-    command find "$@"
-}
-export -f find
 	(cd "$SCRIPT_DIR" && git rev-list origin/main..HEAD --count 2>/dev/null || echo "?") > "$_TMP_UNPUSHED" &
 _PID_UNPUSHED=$!
 (cd "$SCRIPT_DIR" && git ls-files -m -o --exclude-standard -- scripts/ 2>/dev/null | sed 's/^/ M /') > "$_TMP_SCRIPTS_STATUS" &
@@ -1875,10 +1879,13 @@ fi
 
 # --- Gate 10.2: 週次品質指標トレンド ---
 echo "■ 週次品質指標トレンド"
-_WEEKLY_METRICS_SCRIPT="$SCRIPT_DIR/scripts/weekly_metrics_trend.sh"
-if [ -x "$_WEEKLY_METRICS_SCRIPT" ]; then
-    _weekly_metrics_output="$(WEEKLY_METRICS_CHECK_CRON=1 bash "$_WEEKLY_METRICS_SCRIPT" 2>&1)" || _weekly_metrics_rc=$?
-    _weekly_metrics_rc="${_weekly_metrics_rc:-0}"
+if [ -n "${_PID_WEEKLY_METRICS:-}" ]; then
+    if wait "$_PID_WEEKLY_METRICS"; then
+        _weekly_metrics_rc=0
+    else
+        _weekly_metrics_rc=$?
+    fi
+    _weekly_metrics_output="$(cat "$_TMP_WEEKLY_METRICS" 2>/dev/null)"
     if [ -n "$_weekly_metrics_output" ]; then
         while IFS= read -r _weekly_metrics_line; do
             [ -n "$_weekly_metrics_line" ] || continue
@@ -2876,12 +2883,13 @@ fi
 
 # --- Gate 20.2: スキル推薦 precision/recall (cmd_3027 Phase2) ---
 echo "■ スキル推薦 precision/recall"
-_skill_recommend_metrics="$SCRIPT_DIR/scripts/skill_recommend_metrics.sh"
-if [ -x "$_skill_recommend_metrics" ] || [ -f "$_skill_recommend_metrics" ]; then
-    set +e
-    _skill_rec_out="$(bash "$_skill_recommend_metrics" 30 2>&1)"
-    _skill_rec_status=$?
-    set -e
+if [ -n "${_PID_SKILL_REC:-}" ]; then
+    if wait "$_PID_SKILL_REC"; then
+        _skill_rec_status=0
+    else
+        _skill_rec_status=$?
+    fi
+    _skill_rec_out="$(cat "$_TMP_SKILL_REC" 2>/dev/null)"
     printf '%s\n' "$_skill_rec_out" | sed 's/^/  /'
     if [ "$_skill_rec_status" -eq 2 ] && [ "$overall" != "ALERT" ]; then
         overall="WARN"
@@ -2896,12 +2904,13 @@ fi
 
 # --- Gate 20.3: intent debt metrics (Loop Engineering Phase 3) ---
 echo "■ intent debt スキル計測"
-_skill_usage_metrics="$SCRIPT_DIR/scripts/skill_usage_metrics.sh"
-if [ -x "$_skill_usage_metrics" ] || [ -f "$_skill_usage_metrics" ]; then
-    set +e
-    _skill_usage_json="$(bash "$_skill_usage_metrics" 2>&1)"
-    _skill_usage_status=$?
-    set -e
+if [ -n "${_PID_SKILL_USAGE:-}" ]; then
+    if wait "$_PID_SKILL_USAGE"; then
+        _skill_usage_status=0
+    else
+        _skill_usage_status=$?
+    fi
+    _skill_usage_json="$(cat "$_TMP_SKILL_USAGE" 2>/dev/null)"
     if [ "$_skill_usage_status" -eq 0 ]; then
         _skill_usage_tmp="$(mktemp)"
         printf '%s\n' "$_skill_usage_json" > "$_skill_usage_tmp"
