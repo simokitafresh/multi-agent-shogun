@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-02 cmd_3654 -->
-<!-- last_synced_lesson: L799 -->
+<!-- last_updated: 2026-07-02 cmd_karo_hotfix_ga167 -->
+<!-- last_synced_lesson: L800 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -266,6 +266,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L797: CDP cookie注入成功だけではFE admin状態成立を保証しない（cmd_3645）
 - L798: 重いページはPAGE_APIS prefetchを空にしてページ本体fetchをSSOTにする（cmd_3650）
 - L799: FEが解釈しないクエリ名を計測スクリプト入口でBLOCKする（cmd_3654）
+- L800: production固定Lighthouseは未deployローカル差分のPASS証明に使えない（cmd_3655）
 
 ## 因果リンク
 
