@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-07-01 cmd_karo_hotfix_ga155_context_freshness_dm_signal_frontend_202607010312 -->
+<!-- last_updated: 2026-07-02 cmd_3647 -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -208,6 +208,7 @@ PF切替計測実績(CDP): 547.2ms中央値(cmd_2312, 2026-04-26)。旧1008ms(cm
 **signals handoff/cache実装(cmd_2283)**: SignalsContextにhandoff cacheを追加。PF切替/ページ遷移時の初期表示データ引き継ぎを担う。→ `frontend/contexts/signals-context.tsx`, `frontend/lib/__tests__/constants.test.ts`
 **next-portfolio predictive prefetch(cmd_2300)**: usePrefetchで次PF予測prefetchを計測・実装。SignalsContext/usePrefetchのテストを拡張。→ `frontend/hooks/usePrefetch.ts`, `frontend/contexts/signals-context.tsx`
 **idle fetch defer(cmd_2308)**: dashboard/monthly-returns/annual-returnsのfull fetchをidle schedulerへ遅延。初期表示優先のため`frontend/lib/idle-scheduler.ts`を追加。→ `frontend/app/dashboard/page.tsx`, `frontend/app/monthly-returns/page.tsx`, `frontend/app/annual-returns/page.tsx`
+**Lighthouse全ページ計測(cmd_3647)**: 本番FE 11ページをLighthouse 12.8.2 desktopで計測。平均Performance 98.5、最頻出対策は unused-javascript 11/11ページ 推定約8.3MB、legacy-javascript 11/11ページ 推定約122KB、TBT/Speed Index 11/11ページ。次cmd入力は影響度順対策候補として `docs/research/cmd_3647_lighthouse/report.md`、機械集計は `docs/research/cmd_3647_lighthouse/summary.json`。
 - L650: perf_measure.pyはviewer認証専用。admin計測にはCDPプリフライト手順か別スクリプトが必要（cmd_2271）
 - L656: 固定待機排除はDOMポーリングで行う（cmd_2310）
 
