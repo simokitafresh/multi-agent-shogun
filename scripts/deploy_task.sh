@@ -2662,6 +2662,11 @@ EOF
                 for (i=1; i<=cc; i++) { printf "  - check: \"%s\"\n    result: \"\"  # yes or no\n", normalize_check_text(chk[i], cur_desc) }
             }
         }
+        function yaml_dq_escape(s) {
+            gsub(/\\/, "\\\\", s)
+            gsub(/"/, "\\\"", s)
+            return s
+        }
         function normalize_check_text(text, ac_desc, out) {
             out = text
             gsub(/FILL_THIS/, "FILL-THIS", out)
@@ -2671,7 +2676,7 @@ EOF
             if (out ~ /全テストPASS\(bats --jobs 4 tests\/unit\)/) {
                 out = "bash scripts/affected_tests.sh で列挙されたテストを実行し、空リスト時は bats --jobs 4 tests/unit にフォールバックしてPASS確認"
             }
-            return out
+            return yaml_dq_escape(out)
         }
         /^  acceptance_criteria:/ { in_ac=1; next }
         in_ac && /^  [a-z]/ { exit }
@@ -2841,6 +2846,11 @@ ${_commit_bc}"
                     printf "  - check: \"FILL: %sの確認項目を記入\"\n    result: \"\"  # yes or no\n", id
                 }
             }
+            function yaml_dq_escape(s) {
+                gsub(/\\/, "\\\\", s)
+                gsub(/"/, "\\\"", s)
+                return s
+            }
             function normalize_check_text(text, ac_desc, out) {
                 out = text
                 gsub(/FILL_THIS/, "FILL-THIS", out)
@@ -2850,7 +2860,7 @@ ${_commit_bc}"
                 if (out ~ /全テストPASS\(bats --jobs 4 tests\/unit\)/) {
                     out = "bash scripts/affected_tests.sh で列挙されたテストを実行し、空リスト時は bats --jobs 4 tests/unit にフォールバックしてPASS確認"
                 }
-                return out
+                return yaml_dq_escape(out)
             }
             /^  acceptance_criteria:/ { in_ac=1; next }
             in_ac && /^  [a-z]/ { exit }
