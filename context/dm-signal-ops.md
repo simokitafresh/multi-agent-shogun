@@ -920,3 +920,12 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - → [[sengoku-writer]] 戦国将軍書簡スキル（マルチエージェント開発裏話）
 - → [[x-research]] X/Twitter検索調査スキル（xAI Grok x_search）
 - → [[shogun-param-neighbor-check]] パラメータ近傍チェックスキル（GS最適値の堅牢性確認）
+
+## §51 precomputed_raw鍵整合 (cmd_3666-3669, 2026-07-03)
+
+- **原則**: precomputeの書く鍵(PRECOMPUTE_PARAMS)とEP lookupの引く鍵(生クエリ値のparams_hash)とFE実要求の三者は一致必須。乖離=キャッシュ無効化(LS078「真実の在処不一致」のDM-Signal実例)
+- 三者突合の判定表+hash証跡 → `docs/research/cmd_3667_precomputed_raw_key_triple_diff.md`(DM-signalリポジトリ側)
+- FE定数×生成表の整合テスト導入済み(片側変更でテストFAIL)。FEの要求params変更時はPRECOMPUTE_PARAMSも更新せよ
+- precompute再実行: `POST /admin/precompute-raw`(admin Basic)。生成完了判定は固定行数でなく**対象PF数と一致**で行え(途中値76/102の誤報実例)
+- metrics summaryはbulk raw(1行)方式=compare_returns_bulkの2例目(cmd_3669: ttfb 1.75-2.13s→0.47s)。可視性/maskingは毎リクエスト適用を維持
+- 残: rolling_returnsは生成だけされAPI未参照の逆パターン(未修正)
