@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-02 cmd_3663 -->
+<!-- last_updated: 2026-07-02 cmd_3665 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -675,7 +675,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L941 -->
+<!-- last_synced_lesson: L942 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
@@ -1335,6 +1335,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L939: 外部SSOT直接編集の教訓はlesson_write.shの自動追記を通らずcontext不可視化する(orphaned lesson blind spot)（cmd_karo_hotfix_ga168_lesson_health_202607021948）
 - L940: L770更新要: matches[-1]根本原因はgate自体のコード修正(commit 07a0cfd83, max(epochs)採用)で解消済み（cmd_karo_hotfix_skill_script_refs_202607022043）
 - L941: モデルファミリー追加時、cli_lookup.shへの表示整形追加はGuard16(操作的オントロジー)がBLOCKする（cmd_3664）
+- L942: logs/cmd_design_quality.yamlのcmd_idはリスト項目内で先頭フィールドとは限らない（cmd_3665）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
