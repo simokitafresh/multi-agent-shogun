@@ -1382,6 +1382,7 @@ _brainwash_matrix=$(python3 - "$_brainwash_lord_log" "$_brainwash_bulletin" <<'P
 import json
 import re
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 try:
@@ -1439,15 +1440,35 @@ intervention_rate = (intervention_count / inbound_total * 100.0) if inbound_tota
 
 self_detection_count = 0
 bulletin_total = 0
-if yaml is not None and bulletin_path.is_file():
+
+def load_entries(path):
+    if yaml is None or not path.is_file():
+        return []
     try:
-        data = yaml.safe_load(bulletin_path.read_text(encoding="utf-8", errors="ignore")) or {}
+        data = yaml.safe_load(path.read_text(encoding="utf-8", errors="ignore")) or {}
     except Exception:
-        data = {}
+        return []
     entries = data.get("entries") or []
-    for entry in entries:
+    if not isinstance(entries, list):
+        return []
+    return entries
+
+bulletin_sources = [bulletin_path]
+archive_path = bulletin_path.parent / "archive" / f"bulletin_{datetime.now(timezone(timedelta(hours=9))).strftime('%Y%m%d')}.yaml"
+if archive_path != bulletin_path:
+    bulletin_sources.append(archive_path)
+
+seen_entries = set()
+for source_path in bulletin_sources:
+    for entry in load_entries(source_path):
         if not isinstance(entry, dict):
             continue
+        entry_key = str(entry.get("id") or "")
+        if entry_key:
+            dedupe_key = (entry_key, str(entry.get("posted_at") or ""), str(entry.get("posted_by") or ""))
+            if dedupe_key in seen_entries:
+                continue
+            seen_entries.add(dedupe_key)
         if entry.get("posted_by") != "shogun":
             continue
         bulletin_total += 1
@@ -1492,7 +1513,7 @@ if [ -n "$_brainwash_matrix" ]; then
     _bw_quadrant=$(printf '%s\n' "$_brainwash_matrix" | awk -F= '$1=="quadrant"{print $2}')
     _bw_message=$(printf '%s\n' "$_brainwash_matrix" | awk -F= '$1=="message"{print $2}')
     echo "  殿介入率: ${_bw_intervention_rate:-0.0}% (${_bw_intervention_count:-0}/${_bw_inbound_total:-0}, source=lord_conversation grep)"
-    echo "  自己検出率: ${_bw_self_rate:-0.0}% (${_bw_self_count:-0}/${_bw_bulletin_total:-0}, source=bulletin_board Q6 grep)"
+    echo "  自己検出率: ${_bw_self_rate:-0.0}% (${_bw_self_count:-0}/${_bw_bulletin_total:-0}, source=bulletin_board+today_archive Q6 grep)"
     echo "  4象限: ${_bw_quadrant:-不明} — ${_bw_message:-判定不能}"
     if [ "$_bw_quadrant" = "危険" ]; then
         echo "  WARN: 危険象限(介入率低+自己検出率低)。殿の介入なしに洗脳を検知できていない。"

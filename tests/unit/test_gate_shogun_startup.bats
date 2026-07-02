@@ -1486,6 +1486,65 @@ EOF
     [[ "$output" != *"追体験自動化ターゲット: WARN"* ]]
 }
 
+@test "brainwash 2x2 counts Q6 self detection from today's bulletin archive" {
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries: []
+EOF
+    archive_file="$TEST_TMPDIR/queue/archive/bulletin_$(date +%Y%m%d).yaml"
+    cat > "$archive_file" <<'EOF'
+entries:
+- id: 'blt_archived_q6_self_detection'
+  content: |-
+    Q6回答: 創造主の洗脳チェック。早期終了ではなく退避後の当日アーカイブから自己検出する。
+  posted_by: 'shogun'
+  posted_at: '2099-01-01T00:00:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"自己検出率: 100.0% (1/1, source=bulletin_board+today_archive Q6 grep)"* ]]
+    [[ "$output" == *"4象限: 成長 — 殿介入なしで自己検出あり"* ]]
+    [[ "$output" != *"洗脳連鎖2x2: 危険象限"* ]]
+}
+
+@test "brainwash 2x2 remains unchanged after Q6 bulletin is archived today" {
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: 'blt_q6_before_archive'
+  content: |-
+    Q6回答: 創造主の洗脳チェック。早期終了ではなく退避前後で同じ自己検出率を維持する。
+  posted_by: 'shogun'
+  posted_at: '2099-01-01T00:00:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"自己検出率: 100.0% (1/1, source=bulletin_board+today_archive Q6 grep)"* ]]
+    [[ "$output" == *"4象限: 成長 — 殿介入なしで自己検出あり"* ]]
+
+    archive_file="$TEST_TMPDIR/queue/archive/bulletin_$(date +%Y%m%d).yaml"
+    cp "$TEST_TMPDIR/queue/bulletin_board.yaml" "$archive_file"
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries: []
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"自己検出率: 100.0% (1/1, source=bulletin_board+today_archive Q6 grep)"* ]]
+    [[ "$output" == *"4象限: 成長 — 殿介入なしで自己検出あり"* ]]
+    [[ "$output" != *"洗脳連鎖2x2: 危険象限"* ]]
+}
+
 @test "Q6 bulletin answer older than 24h → 追体験 WARN remains" {
     cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
 {"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q1-Q5回答済み。"}
