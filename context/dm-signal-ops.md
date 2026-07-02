@@ -518,6 +518,13 @@ import metrics_research_engine as MRE
 
 **注意**: `dm-signal.onrender.com` は404(L002)。必ず`dm-signal-frontend`を使え。
 
+### §19.1 体感主導デプロイ後のFE正しさ検分 (2026-07-02殿裁定)
+
+- 速度改善cmdは、正しさ検証済みなら数値周回のクローズを待たず即push/Renderデプロイへ進める。速度の最終判定は殿の体感、システム側の責務は本番FEでの正しい表示・操作・masking・PF切替をCDPで検分すること。
+- post-deploy検分はRender APIで対象commitが`live`であることを確認してから実施する。cmd_3663実例: FE deploy `dep-d936kabtqb8s73dav190`, commit `173a8a7b3`, status `live`, finishedAt `2026-07-02T13:41:40Z`。
+- CDP検分項目: 対象ページready、表表示、Loading/Auth/Unauthorizedなし、OPEN/CLOSE切替後も表維持、Show All/Allまたはスクロールで全件閲覧導線あり、PF切替後も表維持、UUID露出なし。
+- cmd_3663 live検分結果: `/tmp/dm_signal_cmd3663_live_verify/result.json`。`monthly-returns`は248 total、Show All後仮想化表示、スクロールで2005 DecPartialへ到達、PF切替DM-safe→DM-safe-2正常。`monthly-trade`は229 months、Show All後230行、末尾2007/07/16へ到達、PF切替DM-safe-2→Ave-X正常。両ページともOPEN/CLOSE切替・masking・UUID非露出PASS。
+
 ## §17 現在の全体ステータス（2026-03-11）
 
 | 項目 | 状態 |
