@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-07-02 cmd_3659 -->
+<!-- last_updated: 2026-07-03 cmd_3673 -->
 
 ## 2026-06-30
 
@@ -1351,3 +1351,6 @@
 - 2026-07-03 家老強ニュー化(01:32): `queue/compact_state/karo.yaml` と `queue/compact_state_karo.yaml` を最新化。inbox0、active cmdなし、kagemaru cmd_3659 failed履歴、cmd_3667/3668/3669+GA170/171/172完了、DM-Signal HEAD `755a50d9` clean、L5 rawはDB rows confirmed/API sync-status stale lock unresolved、context_freshness残ALERT4件を復帰要点化。
 - 2026-07-03 家老強ニュー化(01:35): 軍師指摘の docs/research readonly_ref バグ修正をcommit `671f4a50c` で永続化。`docs/research/*.md` はcommand欄参照ならreadonly除外、target_pathなら対象維持。LG044は既にautomated:true、未自動化はLG045のため誤更新禁止。
 - 2026-07-03 将軍(01:30): 殿裁定「体感主導デプロイ」(22:38)で役割分担確立=速度体感は殿・正しさ保証はシステム。殿体感「PFにより5秒loading」→raw鍵不一致(precomputeの書く鍵≠EP lookupの引く鍵=LS078同型)を将軍が本番DB+hash再計算で実証→cmd_3666(monthly-returns、殿体感クローズ)→cmd_3667横断偵察(同型miss3件+逆パターン1件確定)→cmd_3668(3EP修正、4鍵×102PF)→cmd_3669(compare-summary bulk raw化、ttfb 1.75-2.13s→0.47s)。約2時間で体感ループ4周、全て本番live。残弾=rolling-returns逆パターンのみ。デプロイ一気通貫の型(live監視→precompute→PF数一致確認→実測→ntfy)を確立。
+- 2026-07-03 将軍復帰(02:10): saizoエスカレーション(clear_prep NO_MATCH候補3件)を因果でたどり、実態は前セッションalias追加済み(23581c1b0)のstale pending=LS078真実の在処不一致4例目と特定。自己治癒(pending再検索→auto-resolve)+メタテキストノイズ除外をD0実装(e86fb29c1、E2E検証済)。教訓LS074/076/077→LS-A24計測クラスタ統合(31→29件)。cmd_3659 failed確定を受け、Lighthouseサイクル再計測cmd_3670(mobile実運用条件+有効性証拠AC=LS-A24準拠)を起票・委任。
+- 2026-07-03 将軍検分(02:50): cmd_3670/3671の好数値(monthly両ページPerf 96)を原票深掘りで検分し、PF指定API 200応答のresourceSize=0=実データ未受信の疑いを発見。殿実測(認証済み・データ描画あり)との比較は条件不一致。LS-A24(4)『APIが呼ばれた≠データが到達し描画された』を教訓化し、計測道具の認証経路適合+到達証拠取得のcmd_3672を配備。計測有効性の階層(条件→クエリ解釈→API呼出し→データ到達→描画完了)が2日で2階層深まった(LS076→LS-A24(4))。
+- 2026-07-03 将軍検分(03:25): cmd_3673正式round確定。両ページ真値=Perf 74/80、TBT 167/62ms(殿正本比-2063/-1551ms)。支配項=チャンク7023 Script Evaluation 9.2s(Parse 44ms=実行量が本体でcmd_3659サイズ削減が効かなかった理由と整合)。long-tasks細切れ430ms=非ブロッキング。API待ち(raw鍵)+描画ブロック(仮想化)解消済み、loading体感の残源泉が累積実行かは殿の現体感で判定する段階(体感主導デプロイ)。

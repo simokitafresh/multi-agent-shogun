@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-02 cmd_3653 -->
+<!-- last_updated: 2026-07-03 cmd_3673 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -618,6 +618,10 @@ DM-Signal本番FEのmobile実運用条件計測は、`scripts/mobile_lighthouse_
 - 初回原票: `docs/research/lighthouse_rounds/round_20260702_cmd3653_mobile_pf/manifest.json`
 - 初回JSON: `docs/research/lighthouse_rounds/round_20260702_cmd3653_mobile_pf/monthly-returns_cG9ydGZvbG.json`
 - 設計正本: `docs/design/dm-signal-lighthouse-improvement-design.md` §5.2/§5.3
+- cmd_3670再計測: `docs/research/lighthouse_rounds/round_20260703_cmd3670_monthly_returns_virtual_after/`。monthly-returns PF指定でPerformance 68→96、TBT 2230→90ms、Bootup 23859→436ms。PF UUID入りbackend requestは記録済みだがHTTP 401のため、実データ表示完了の絶対証明ではなくPF propagation証拠として扱う。
+- cmd_3671再計測: `docs/research/lighthouse_rounds/round_20260703_cmd3671_monthly_trade/`。monthly-trade PF指定でPerformance 73→96、TBT 1613→68ms、Main-thread 10393→1415ms。PF UUID入りbackend requestは記録済みだがHTTP 401のため、実データ表示完了の絶対証明ではなくPF propagation証拠として扱う。
+- cmd_3672道具改修: `scripts/mobile_lighthouse_round.py` がbackend originにもadmin_session cookieを注入し、manifest `pages[].api_data_evidence` と `pages[].dom_evidence` にデータ到達+描画完了証拠を保存する。試走原票 `docs/research/lighthouse_rounds/round_20260703_cmd3672_auth_data_proof_monthly_returns/` ではPF指定API Fetch 200・transfer_size 3091・resource_size 9335、DOM table 12行、No data/Loadingなしを確認済み。
+- cmd_3673正式round: `docs/research/lighthouse_rounds/round_20260703_cmd3673_monthly_data_proof/` と補完 `round_20260703_cmd3673_monthly_trade_data_proof_single/`。実データ描画条件でmonthly-returns Performance 74/TBT 167ms/Bootup 9249ms/Main-thread 11031ms、monthly-trade Performance 80/TBT 62ms/Bootup 9407ms/Main-thread 11018ms。monthly-tradeのformal roundはselected PF transfer 0のため、fresh profile単独roundでFetch 200・transfer_size 3948・resource_size 21433を補完確認。
 
 ---
 
