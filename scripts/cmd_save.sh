@@ -591,34 +591,46 @@ show_q11_causal_backlinks() {
     [[ -n "${links//[[:space:]]/}" ]] || return 0
 
     echo "INFO: q11 causal_backlinks 因果辺候補:" >&2
-    while IFS= read -r _q11_link_id; do
-        [[ -n "$_q11_link_id" ]] || continue
+
+    # 並列化: 全causal_backlinksをバックグラウンド起動→wait→順序通り出力（N×T→max(T)）
+    # semantic_search.sh append_causal_expansion(2026-06-07 hanzo修行)と同一パターンをここにも適用
+    local _q11_has_timeout=0
+    command -v timeout >/dev/null 2>&1 && _q11_has_timeout=1
+
+    mapfile -t _q11_link_ids <<< "$links"
+    local _q11_tmpdir
+    _q11_tmpdir="$(mktemp -d)"
+    local _q11_idx=0
+    for _q11_link_id in "${_q11_link_ids[@]}"; do
+        [[ -n "$_q11_link_id" ]] || { ((_q11_idx++)) || true; continue; }
+        (
+            if cd "${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" 2>/dev/null; then
+                if [[ "$_q11_has_timeout" == "1" ]]; then
+                    timeout 2 bash "$causal_script" "$_q11_link_id" 2>/dev/null | head -8 || true
+                else
+                    bash "$causal_script" "$_q11_link_id" 2>/dev/null | head -8 || true
+                fi
+            fi
+        ) > "$_q11_tmpdir/$_q11_idx" 2>/dev/null &
+        ((_q11_idx++)) || true
+    done
+    wait
+
+    _q11_idx=0
+    for _q11_link_id in "${_q11_link_ids[@]}"; do
+        [[ -n "$_q11_link_id" ]] || { ((_q11_idx++)) || true; continue; }
         echo "  - link: [[${_q11_link_id}]]" >&2
-
-        local backlink_output
-        if command -v timeout >/dev/null 2>&1; then
-            backlink_output="$(
-                cd "${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
-                    && { timeout 2 bash "$causal_script" "$_q11_link_id" 2>/dev/null || true; } \
-                    | head -8
-            )"
-        else
-            backlink_output="$(
-                cd "${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
-                    && { bash "$causal_script" "$_q11_link_id" 2>/dev/null || true; } \
-                    | head -8
-            )"
-        fi
-
-        if [[ -n "${backlink_output//[[:space:]]/}" ]]; then
+        if [[ -s "$_q11_tmpdir/$_q11_idx" ]]; then
             while IFS= read -r _q11_resource; do
                 [[ -n "$_q11_resource" ]] || continue
                 echo "    - resource: ${_q11_resource}" >&2
-            done <<< "$backlink_output"
+            done < "$_q11_tmpdir/$_q11_idx"
         else
             echo "    - resource: none" >&2
         fi
-    done <<< "$links"
+        ((_q11_idx++)) || true
+    done
+    rm -rf "$_q11_tmpdir"
 }
 
 collect_assumption_source_files() {

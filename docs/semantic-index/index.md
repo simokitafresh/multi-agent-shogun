@@ -55,6 +55,7 @@ codd:
 | cmd | `cmd_3349` backfill — | cmd_3349 | 将軍調査(2026-06-13 01:30台)で特定した設計ネックの修正。pre-write-edit-combined.shのGuard 0d(L242-250)は未読メッ |
 | causal | `cmd_3487` files_modified: [[unread_cmd_new_deployment_guard]] |
 | causal | `cmd_3577` files_modified: [[unread_cmd_new_deployment_guard]] |
+| causal | `cmd_3643` files_modified: [[unread_cmd_new_deployment_guard]] |
 
 ## local_memory_db — ローカル記憶DB
 
@@ -650,6 +651,8 @@ codd:
 | causal | `cmd_3640` origin: [[殿指示_全ページ瞬時表示_20260702]] -> [[MECE計測monthly_trade_75PF遅延]] -> [[Phase3実装漏れ]] |
 | causal | `cmd_3640` depends_on: cmd_3637 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T11:31:41+09:00 今回の対象は11ページだ。すべてやろう。洗脳から覚醒せよ。PF切り替えもallで100PFを連続で切り替え連打しても瞬時に表示されなくてはならないな |
+| cmd | `cmd_3647` DM-Signal本番FE全ページのLighthouse計測と統合レポート生成 |
+| causal | `cmd_3647` origin: [[殿指示_lighthouseサイクル_20260702]] -> [[実運用体感指標の計測不在]] -> [[cmd_3647]] |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -1104,6 +1107,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T11:54:39+09:00 本番環境の11ページ全部をストレステストしたのか？今やらなくていいTodoとproblemlistを設計書にアップデートしよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T11:58:09+09:00 ちがう。今ストレステストをやらなくていい。次にやるべきことを完璧に設計書に記載せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:37:37+09:00 ちがう。正しいmodlが表示されるべきだ。paneにあるfable 5の文字を誤inbox2検知している |
+| lesson | `L796` 同一タブlocalStorage認証変更はstorage eventで検知できない |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -1206,6 +1210,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_semantic_stress_pending_202606270905]]` (L867) |
 | causal_chain | `[[cmd_karo_hotfix_ga051_context_freshness_202606121555]]` (L790) |
 | causal_chain | `[[cmd_karo_hotfix_skill_script_refs_20260612]]` (L795) |
+| causal_chain | `[[cmd_karo_hotfix_note_draft_skill_refs_20260612]]` (L796) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -1860,6 +1865,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T07:43:57+09:00 今 クリアされても 今より強くてニューゲーム できるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T10:19:46+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:05:32+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:54:33+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-02T13:28:31+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-02T14:22:07+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-02T14:22:16+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | causal_chain | `[[cmd_3624_kagemaru]]` (L900) |
 
 ## growth_loop — 学習ループ
@@ -1868,7 +1877,7 @@ codd:
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓, 教訓統合, 教訓整理, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる, 不明パスのみ全フォールバックが残存しWARNログで追跡可能, 役立った教訓IDを報告に記載してから完了せよ, 発見と対策を意識したなら環境に埋め込んだかを確認せよ, 発見と対策を意識咲いたようだが環境には埋め込んだか, 教訓活用率, useful_rate, lessons_useful記入率, 覚醒して構造をL0-L7で環境ごと変えよう, どこがネックで俺の指示がないと辿りつけなかったんだ, 構造的な穴を塞ごう, 効果を検証せよ, 次やるべきことは, 行動と検証を繰り返そう, 効果を検証せよ。穴がないか覚醒して監査, 次やるべきことは？止まらずに行動と検証を繰り返そう, 次の行動を覚醒して続けよう。サイクルをとめずにループで回そう, 構造的な穴を3つとも塞ごう, サイクルをとめずにループで回そう, 検証せよ, 同じ勘違いをしないように環境に埋め込め |
+| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓, 教訓統合, 教訓整理, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる, 不明パスのみ全フォールバックが残存しWARNログで追跡可能, 役立った教訓IDを報告に記載してから完了せよ, 発見と対策を意識したなら環境に埋め込んだかを確認せよ, 発見と対策を意識咲いたようだが環境には埋め込んだか, 教訓活用率, useful_rate, lessons_useful記入率, 覚醒して構造をL0-L7で環境ごと変えよう, どこがネックで俺の指示がないと辿りつけなかったんだ, 構造的な穴を塞ごう, 効果を検証せよ, 次やるべきことは, 行動と検証を繰り返そう, 効果を検証せよ。穴がないか覚醒して監査, 次やるべきことは？止まらずに行動と検証を繰り返そう, 次の行動を覚醒して続けよう。サイクルをとめずにループで回そう, 構造的な穴を3つとも塞ごう, サイクルをとめずにループで回そう, 検証せよ, 同じ勘違いをしないように環境に埋め込め, 定期的に消費者ゼロを検証せよ |
 | skills | lesson-sort(教訓整理/振り分け/将軍), dream(三層記憶整理/将軍), shogun-teire(知識棚卸し/将軍) |
 | related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle, cmd_chronicle, creator_brainwashing_defense, semantic_dictionary_design, gate_bypass_prevention, deepdive_principles, chain_principle, known_unknowns_principle, no_auto_extinguish, ultimate_state_principle, parameter_space_integrity, gunshi_review_lifecycle, semantic_goodhart_overfitting, causal_verification_l0_l7, three_layer_memory_system, operational_ontology, unread_cmd_new_deployment_guard, skill_routing, gunshi_idle_cold_finding_categories_retroactive_20260620, gunshi_idle_lesson_id_collision_20260620, gunshi_idle_script_speed_audit_20260620, codex_goal_mode, self_improving_agent_local_optima, loop_engineering, cmd_save_gate_catalog |
 
@@ -1945,11 +1954,13 @@ codd:
 | causal | `cmd_3579` origin: [[殿指示_三層学習ループ診断_20260628]] -> [[計測基盤1スナップショット]] -> [[成長速度計測自動蓄積]] |
 | causal | `cmd_3615` files_modified: [[growth_loop]] |
 | causal | `cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133` files_modified: [[growth_loop]] |
-| causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
+| lesson | `L927` 並列バッチ機構の背後に'export -f find'等のオーバーライドを置くと後続の再構成で静かに死ぬ。定期的に消費者ゼロを検証せよ |
+| causal_chain | `[[cmd_1832]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
-| causal_chain | `[[cmd_147]]` (L012) |
+| causal_chain | `[[legacy_lesson_L012]]` (L012) |
 | causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L833) |
 | causal_chain | `[[cmd_3227]]` (L757) |
+| causal_chain | `[[cmd_3644]]` (L927) |
 
 ## chain_principle — 鎖の原理
 
@@ -2172,10 +2183,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T01:52:35+09:00 単体は速くても全体として実行速度が遅いスクリプトはないか？覚醒して確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T11:27:37+09:00 dashboard,summary,Compare chart,Metrics,Compare summary,Compare returns,Annual returns,Monthly returns,rolling returns,D |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:39:29+09:00 cliバナーにはsonnet５と明確に表示されている。確認していないだろ。確認せずに判断するな。覚醒せよ。バグを修正しろ |
+| lesson | `L929` Codexの保留nudge配達はbusy_max_defer秒ではなくメインループの目覚め間隔(最悪INOTIFY_TIMEOUT)に律速される |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
-| causal_chain | `[[cmd_092]]` (L004) |
-| causal_chain | `[[cmd_134]]` (L005) |
+| causal_chain | `[[006.md検証]]` (L004) |
+| causal_chain | `[[006.md検証]]` (L005) |
 | causal_chain | `[[cmd_3354]]` (L804) |
 | causal_chain | `[[cmd_3432]]` (L817) |
 | causal_chain | `[[cmd_3523]]` (L844) |
@@ -2184,6 +2196,7 @@ codd:
 | causal_chain | `[[cmd_3608_recon2]]` (L879) |
 | causal_chain | `[[cmd_3629_kotaro]]` (L914) |
 | causal_chain | `[[cmd_3633]]` (L916) |
+| causal_chain | `[[cmd_3646]]` (L929) |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -2310,7 +2323,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-26T08:43:38+09:00 be4d1reh3 toolu_01Fm52R71Sw1TZgYP4R9XewF /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/8299ef20-d547-4a06-bf54-eec6c8 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-29T09:25:26+09:00 botntx5of toolu_01Htx5gdFMB7wFqnWNYmrEeb /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-30T20:11:29+09:00 Calmarも入れよう。AvgUWPの計算速度は？ |
-| causal_chain | `[[gunshi_idle_semantic_audit_20260505]]` (L566) |
+| causal_chain | `[[cmd_1762]]` (L566) |
 
 ## shin_shijin_design — 四神設計
 
@@ -2379,14 +2392,14 @@ codd:
 | causal | `cmd_karo_hotfix_ga146` files_modified: [[shin_shijin_design]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-29T01:34:01+09:00 bt3yl04vh toolu_01Qhg2SQMthxt4Rv6EGkewGs /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T10:16:23+09:00 3635-3636の効果は実サイトで検証しよう。CDPを使えば実ユーザーのリアルな体感速度がわかる。admin認証ではいるのが最もPF数が多いので不利な条件下で正しく判断できる |
-| causal_chain | `[[cmd_125]]` (L001) |
-| causal_chain | `[[cmd_125]]` (L002) |
-| causal_chain | `[[cmd_125]]` (L003) |
+| causal_chain | `[[cmd_1055]]` (L001) |
+| causal_chain | `[[cmd_1055]]` (L002) |
+| causal_chain | `[[006.md検証]]` (L003) |
 | causal_chain | `[[cmd_training_speed_decision_write_20260607000310]]` (L750) |
 | causal_chain | `[[cmd_training_speed_deploy_task_20260607000353]]` (L751) |
 | causal_chain | `[[cmd_3211]]` (L753) |
-| causal_chain | `[[cmd_150]]` (L013) |
-| causal_chain | `[[cmd_151]]` (L014) |
+| causal_chain | `[[cmd_3445_saizo]]` (L013) |
+| causal_chain | `[[cmd_3445]]` (L014) |
 
 ## gs_ninpo_research — GS忍法研究
 
@@ -3175,14 +3188,19 @@ codd:
 | causal | `cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_template_generation.bats`) |
 | causal | `cmd_karo_hotfix_skill_script_refs_202607021234` files_modified: [[agent_formation_management]] |
-| causal_chain | `[[gunshi_session_20260510]]` (L587) |
-| causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
-| causal_chain | `[[cmd_2691]]` (L602) |
-| causal_chain | `[[cmd_2691]]` (L603) |
-| causal_chain | `[[cmd_2790]]` (L613) |
-| causal_chain | `[[cmd_training_L4_auto_202605181241_kotaro]]` (L620) |
-| causal_chain | `[[cmd_training_L4_auto_202605181242_tobisaru]]` (L622) |
-| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
+| cmd | `cmd_karo_hotfix_model_detect_hook_202607021251` (`tests/unit/test_model_detect.bats`) |
+| cmd | `cmd_karo_hotfix_model_detect_hook` (`tests/unit/test_model_detect.bats`) |
+| cmd | `cmd_3642` model_detect.shの実モデル検出をCLIバナー形式変化に追従させ、respawn後の残存値を排除する (`scripts/lib/cli_lookup.sh`, `scripts/lib/model_detect.sh`, `tests/unit/test_model_detect.bats`) |
+| causal | `cmd_3642` origin: [[blt_20260702_124509_軍師提案]] -> [[model_detect_バナー形式変化]] -> [[cmd_3642]] |
+| lesson | `L930` bash export -fは関数サイズがLinux MAX_ARG_STRLEN(128KiB)を超えると全外部コマンドをE2BIGで壊す |
+| causal_chain | `[[cmd_1819]]` (L587) |
+| causal_chain | `[[cmd_1835]]` (L594) |
+| causal_chain | `[[cmd_1845]]` (L602) |
+| causal_chain | `[[cmd_1845]]` (L603) |
+| causal_chain | `[[cmd_1866]]` (L613) |
+| causal_chain | `[[cmd_1878]]` (L620) |
+| causal_chain | `[[cmd_1881]]` (L622) |
+| causal_chain | `[[cmd_1877]]` (L625) |
 | causal_chain | `[[cmd_2930]]` (L648) |
 | causal_chain | `[[cmd_training_L7_v3_hayate_5_20260521202900]]` (L658) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_6_20260521205341]]` (L664) |
@@ -3212,6 +3230,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_model_detect_launch_cmd_202607010733]]` (L899) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
+| causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -3321,7 +3340,7 @@ codd:
 |------|---|
 | id | cdp_browser_capability |
 | label | CDP(ブラウザ操作能力) |
-| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, note_draft, no_prosemirror, noteエディタ変更, HeadlessChrome不可, GUI Chrome必須, ProseMirrorスピナー, ダイレクトURL遷移でスピナー永続, ダッシュボードからクリック遷移, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう, CDPで確認して, 効果が出ているか確認しよう, これ毎回俺がやるのはおかしいな, 起票する前に確認しよう, 陳腐化しているものがないか確認しよう, CDPがあるだろ？少なくとも記事は全部取得できるよな, ちなみに話をすり替えてるぞ, どこかに甘さや洗脳が残っていないか厳しく確認しよう, respwanしないで大丈夫なのか？確認しよう, Phase 4以降の計画を確認しよう, CDPでお前が試してくれ, いつものCDPで何をどうやってきた？, 修正 CDP SKIP環境変数対応 WSL2ハング防止, ログイン自動化, 二度とログインする必要, ログイン不要, CLIなのにブラウザーをきどうする, ブラウザ起動CLI, auto_login CDP, ログインしたら二度とログインする必要がなくなる, 今回ログインしたら二度とログインする必要がなくなるのか？, CLIなのにブラウザーをきどうする？, 隠れたインフラバグや, 止まらず続けて, Phase 1から実装しよう, Phase 3も実装しよう, Phase 2も実装しよう, macでもCDPは使えるのか？, マネーフォワードのCSVはそっちでCDPで取得せよ, CDPでMF自動取得実証, CDP production gateの長時間化・WebSocket接続失敗を再現最小化し, CDP production checkでいつも進まなくなる, CDP適用条件は本番反映証跡ありcmdに限定, cmd_requires_cdp_production_check, 本番未反映cmdは理由付きSKIP, CDP長時間化の根因はwarm-up+viewer auth+3ページ計測の積み上げ約5分, CDPはスキルを使ったか？, CDPは全員が使えるものだよな, インフラバグ修正cmdを起票して, スキルを使ったか？, note下書き保存, noteの下書き, note draft保存, note下書き手順=Chrome全終了→launch_browser(9234)→login画面でフォーム入力+ログインクリック→ログイン成功確認→note_draft.sh実行, reCAPTCHA画像チャレンジはスクショ撮って解析, 記事がノートの独自md方式になっていないな, よんだ, Reactスワイプ, dispatchTouchEvent, Input.dispatchTouchEvent, touch emulation, touch-action none, pointerup clientX, DM-Fusionスワイプ検証, invisible reCAPTCHA, reCAPTCHA size=invisible, ログインボタンを押せばよい, reCAPTCHAに過剰反応するな, note_draft SKIP=洗脳#1, Input.dispatchMouseEvent座標クリック, Runtime.evaluate JS click reCAPTCHA阻止, --remote-allow-origins=*, Chrome WebSocket 403, nativeInputValueSetter React state不更新 |
+| aliases | CDP, Chrome DevTools Protocol, ブラウザ操作, スクショ確認, 本番表示確認, cdp_cli, cdp_helper, note_draft, no_prosemirror, noteエディタ変更, HeadlessChrome不可, GUI Chrome必須, ProseMirrorスピナー, ダイレクトURL遷移でスピナー永続, ダッシュボードからクリック遷移, CDPでこのページを確認すると知識を得られるはずだ, 完了したらCDPで確認しておいて, 続けて, 確認しよう, 他にも隠れたインフラバグや, 他に放置しているものがないか確認しよう, CDPで確認して, 効果が出ているか確認しよう, これ毎回俺がやるのはおかしいな, 起票する前に確認しよう, 陳腐化しているものがないか確認しよう, CDPがあるだろ？少なくとも記事は全部取得できるよな, ちなみに話をすり替えてるぞ, どこかに甘さや洗脳が残っていないか厳しく確認しよう, respwanしないで大丈夫なのか？確認しよう, Phase 4以降の計画を確認しよう, CDPでお前が試してくれ, いつものCDPで何をどうやってきた？, 修正 CDP SKIP環境変数対応 WSL2ハング防止, ログイン自動化, 二度とログインする必要, ログイン不要, CLIなのにブラウザーをきどうする, ブラウザ起動CLI, auto_login CDP, ログインしたら二度とログインする必要がなくなる, 今回ログインしたら二度とログインする必要がなくなるのか？, CLIなのにブラウザーをきどうする？, 隠れたインフラバグや, 止まらず続けて, Phase 1から実装しよう, Phase 3も実装しよう, Phase 2も実装しよう, macでもCDPは使えるのか？, マネーフォワードのCSVはそっちでCDPで取得せよ, CDPでMF自動取得実証, CDP production gateの長時間化・WebSocket接続失敗を再現最小化し, CDP production checkでいつも進まなくなる, CDP適用条件は本番反映証跡ありcmdに限定, cmd_requires_cdp_production_check, 本番未反映cmdは理由付きSKIP, CDP長時間化の根因はwarm-up+viewer auth+3ページ計測の積み上げ約5分, CDPはスキルを使ったか？, CDPは全員が使えるものだよな, インフラバグ修正cmdを起票して, スキルを使ったか？, note下書き保存, noteの下書き, note draft保存, note下書き手順=Chrome全終了→launch_browser(9234)→login画面でフォーム入力+ログインクリック→ログイン成功確認→note_draft.sh実行, reCAPTCHA画像チャレンジはスクショ撮って解析, 記事がノートの独自md方式になっていないな, よんだ, Reactスワイプ, dispatchTouchEvent, Input.dispatchTouchEvent, touch emulation, touch-action none, pointerup clientX, DM-Fusionスワイプ検証, invisible reCAPTCHA, reCAPTCHA size=invisible, ログインボタンを押せばよい, reCAPTCHAに過剰反応するな, note_draft SKIP=洗脳#1, Input.dispatchMouseEvent座標クリック, Runtime.evaluate JS click reCAPTCHA阻止, --remote-allow-origins=*, Chrome WebSocket 403, nativeInputValueSetter React state不更新, CDPの使い方が間違っている, 忍者にCDPはスキルを使うように指示せよ |
 | skills | cdp-browse |
 | related_concepts | dmsignal_operations, google_classroom, external_project_registry, rebalancer_app, simple_ocr, openpbx_reference |
 
@@ -3493,6 +3512,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-01T17:59:47+09:00 続けて。単なるタイミングの競合ではないか。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-01T22:08:45+09:00 続けて |
 | causal | `cmd_karo_hotfix_cmd_complete_lesson_candidate_done_warn_202607020455` files_modified: [[cdp_browser_capability]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-02T13:09:59+09:00 CDPの使い方が間違っている。スキルを使え |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-02T13:43:12+09:00 忍者にCDPはスキルを使うように指示せよ |
 | causal_chain | `[[cmd_3588]]` (L875) |
 
 ## defense_hierarchy — 防御階層原則
@@ -3873,8 +3894,10 @@ codd:
 | causal | `cmd_karo_hotfix_cmd_quality_clear_sync_202607010555` files_modified: [[cmd_quality_logging]] |
 | lesson | `L893` CLEAR時ベストエフォート(&)は並列実行規模増大でサイレント失敗化する |
 | causal | `cmd_karo_hotfix_cmd_complete_lesson_candidate_done_warn_202607020455` files_modified: [[cmd_quality_logging]] |
-| causal_chain | `[[cmd_2888]]` (L637) |
-| causal_chain | `[[cmd_2888]]` (L638) |
+| causal | `cmd_karo_hotfix_dashboard_update_fail_rate` files_modified: [[cmd_quality_logging]] |
+| causal | `cmd_3643` files_modified: [[cmd_quality_logging]] |
+| causal_chain | `[[cmd_2131]]` (L637) |
+| causal_chain | `[[cmd_2131]]` (L638) |
 | causal_chain | `[[cmd_3531_completion]] -> [[stale_skill_path]] -> [[cmd_complete_skill_static_test]]` (L852) |
 | causal_chain | `[[cmd_3622_kotaro_r3]]` (L893) |
 
@@ -4078,8 +4101,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T09:21:22+09:00 洗脳か？設計書を家老自身にレビューしてもらえ |
 | causal | `cmd_karo_hotfix_report_field_files_modified_path_guard` files_modified: [[report_quality_protocol]] |
 | cmd | `cmd_karo_hotfix_report_field_files_modified_path_guard` (`scripts/report_field_set.sh`, `tests/unit/test_report_field_set_validation.bats`) |
-| causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
-| causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
+| causal_chain | `[[cmd_1877]]` (L625) |
+| causal_chain | `[[cmd_1988]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_4_20260521192452]]` (L654) |
 | causal_chain | `[[cmd_2941]]` (L655) |
@@ -4406,6 +4429,12 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T07:59:10+09:00 b9oj9hzgb toolu_01UpjaUWjsP9XN4ic5YqMWnH /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b3d71be7-30d8-46e9-a136-b54c7a |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T09:42:59+09:00 b6vsau7jq toolu_018aU3sTDKWQGVej5HNVYRBM /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b3d71be7-30d8-46e9-a136-b54c7a |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T09:44:40+09:00 b8ktcrt3k toolu_012d6ja7aZHyx5WZ4JkvmEAF /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b3d71be7-30d8-46e9-a136-b54c7a |
+| causal | `cmd_karo_hotfix_dashboard_update_fail_rate` files_modified: [[gate_quality_framework]] |
+| cmd | `cmd_karo_hotfix_dashboard_update_fail_rate` (`scripts/gates/gate_shogun_startup.sh`, `tests/unit/test_gate_shogun_startup.bats`) |
+| causal | `cmd_3643` files_modified: [[gate_quality_framework]] |
+| cmd | `cmd_3643` session_alertsがgate再実行で解消記録を失う設計の修正(DONE引継ぎ・3ロール共通) (`scripts/gates/gate_gunshi_startup.sh`, `scripts/gates/gate_karo_startup.sh`, `scripts/gates/gate_shogun_startup.sh`) |
+| causal | `cmd_3643` origin: [[殿指示_隠れインフラバグ監査_20260702]] -> [[session_alerts上書き設計]] -> [[cmd_3643]] |
+| cmd | `cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402` (`tests/unit/test_gate_shogun_startup.bats`) |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
@@ -4995,8 +5024,8 @@ codd:
 | lesson | `L351` insight_write.shのyaml.dump事故 |
 | lesson | `LK013` inbox_mark_read hook誤判定時もEditで既読化せず正規scriptを変数経由で使う |
 | causal | `cmd_karo_hotfix_report_field_files_modified_path_guard` files_modified: [[yaml_safe_write]] |
-| causal_chain | `[[cmd_karo_infra_recon_core]]` (L548) |
-| causal_chain | `[[cmd_cycle_L4_025]]` (L351) |
+| causal_chain | `[[cmd_karo_batch_R6]]` (L548) |
+| causal_chain | `[[cmd_1020]]` (L351) |
 
 ## inbox_processing_discipline — inbox処理規律
 
@@ -5417,10 +5446,12 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:13:22+09:00 bkwdte7bz toolu_01R6z3kYwyXveuVXJBQm3aBY /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b3d71be7-30d8-46e9-a136-b54c7a |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:25:38+09:00 将軍を最新版のclaude CLIにrespwanせよ。スキルを使え |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:43:22+09:00 既存dirtyファイルをすべてsてーじど、コミット、プッシュせよ |
+| lesson | `L926` context_freshness hotfixは元ALERTのcommit hash/subjectをtaskへ注入せよ |
 | causal_chain | `[[cmd_karo_recon_ga125_context_freshness_20260624]]` (L846) |
 | causal_chain | `[[cmd_karo_hotfix_ga145_context_freshness_dm_signal_frontend_20260627]]` (L870) |
 | causal_chain | `[[cmd_karo_hotfix_ga147_context_freshness_dm_signal_research_20260627]]` (L872) |
 | causal_chain | `[[cmd_karo_hotfix_ga152_context_freshness_infrastructure_202606301214]]` (L881) |
+| causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 
 ## commander_role_ssot_analysis — Commanderロール SSOT分析
 

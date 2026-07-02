@@ -1,8 +1,42 @@
 ssot_path: /mnt/c/Python_app/DM-signal/tasks/lessons.md
-last_synced: '2026-07-02T04:48:42'
+last_synced: '2026-07-02T13:57:59'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons_archive.yaml
-lesson_count: 792
+lesson_count: 794
 lessons:
+- id: L797
+  title: CDP cookie注入成功だけではFE admin状態成立を保証しない
+  summary: auto-ops cdp_cli.sh authはadmin_session cookie注入に成功したが、FE側ではSummary以降にViewer認証モーダ
+  tags:
+  - dm-signal
+  - deploy
+  - testing
+  - bash
+  source_cmd: cmd_3645
+  when: 未設定
+  how: 未設定
+  target_files:
+  - docs/design/dm-signal-stability-performance-design.md
+  origin: '[[cmd_3645]]'
+- id: L796
+  title: 同一タブlocalStorage認証変更はstorage eventで検知できない
+  summary: Admin loginのように同一タブでlocalStorage/cookie状態が変わる場合、storage eventは発火しないためProviderは再取
+  tags:
+  - dm-signal
+  - frontend
+  - oauth
+  source_cmd: cmd_3641
+  when: 未設定
+  how: 未設定
+  target_files:
+  - frontend/lib/api-client.ts
+  - frontend/contexts/signals-context.tsx
+  - frontend/contexts/viewer-permissions-context.tsx
+  - frontend/components/viewer-auth-modal.tsx
+  - frontend/contexts/__tests__/signals-context.test.tsx
+  origin: '[[cmd_3641]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L795
   title: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす
   summary: context_freshness ALERTはlast_updated以後のsource commit増加を検出できるが、どの分割contextへ反映すべきか
@@ -136,9 +170,6 @@ lessons:
   - frontend/app/admin/visibility/page.tsx
   - docs/spec/compare-returns-page.md
   origin: '[[Compare Returnsページ新設レビュー2回目]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-30'
 - id: L787
   title: Compare Returnsの完了月判定は current_ym 除外で固定する
   summary: '`MonthlyReturn` と `TickerMonthlyReturn` は現行ETLで当月MTD行を保持し得る。テーブル末尾を完了月とみなすとMTDが1'
@@ -682,7 +713,7 @@ lessons:
   origin: '[[cmd_3384]] -> [[BB分類context更新未強制]] -> [[GA-102 dm-signal-core freshness
     ALERT]]'
   deprecated: true
-  deprecated_at: '2026-07-02T04:48:52+09:00'
+  deprecated_at: '2026-07-02T13:58:16+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): context/dm-signal-core.m参照（ファイル消滅）'
 - id: L753
   title: 'DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用'
@@ -858,6 +889,9 @@ lessons:
   target_files:
   - backend/app/schemas/pipeline.py
   origin: '[[cmd_3377]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L741
   title: BB↔忍法完全対応表
   summary: 分身=EqualWeight/追い風=MomentumFilter/抜き身=SingleViewMomentumFilter/変わり身=TrendReversa
@@ -1892,6 +1926,9 @@ lessons:
   - scripts/oneshot/cmd_2391_l1_robustness_run.py
   - outputs/robustness/20260429/L1/
   origin: '[[cmd_2391]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L673
   title: cmd_2366 selector再実行時はchampion_list自動追記を制御せよ
   summary: cmd_2366_l1_champion_select.pyはデフォルトでoutputs/robustness/champion_list.yamlへappen
@@ -1943,6 +1980,9 @@ lessons:
   - scripts/oneshot/cmd_2382_yotsume_parity_verify.py
   - outputs/analysis/cmd_2382_yotsume_open_parity/sqlite_monthly_return_open_parity.csv
   origin: '[[cmd_2382]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L670
   title: Oikaze NumPy GSはproduction first_signal_monthまで初期EqualWeightを再現する
   summary: 本番fullrecalculateはMomentumFilterの初回signal月まではFoF初期配分(EqualWeight)のmonthly_return
@@ -2164,7 +2204,7 @@ lessons:
   - tasks/lessons.md
   origin: '[[cmd_2311]]'
   deprecated: true
-  deprecated_at: '2026-07-02T04:48:52+09:00'
+  deprecated_at: '2026-07-02T13:58:17+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): tasks/kotaro.yaml参照（ファイル消滅）'
 - id: L656
   title: 計測スクリプトの固定待機排除はDOMポーリングで行う
@@ -2356,7 +2396,7 @@ lessons:
   origin: '[[cmd_2218]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-30'
+  last_referenced: '2026-07-02'
 - id: L642
   title: champion_selectorはcmd_id直後にninjutsu名が来る現行GS成果物命名もglob対象に含めよ
   summary: cmd_2177で champion_selector.py が cmd_2175_bunshin_wf_alm12_monthly_fast.cache.ar
@@ -2784,6 +2824,9 @@ lessons:
   - scripts/oneshot/cmd_1850_cpcv_three_layer.py
   - scripts/oneshot/cmd_1865_alm_cpcv.py
   origin: '[[cmd_1865]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L613
   title: 'ALM忍法WF検証: 超越条件C(UWP<5M)は132ヶ月OOS期間には非現実的閾値。IS最適化チャンピオンはランダム選択と統計的有意差なし(SPA
     p>0.4)'
@@ -2966,6 +3009,9 @@ lessons:
   - outputs/analysis/cmd_1845_three_layer_comparison.md
   - scripts/oneshot/cmd_1845_three_layer_metrics.py
   origin: '[[cmd_1845]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L601
   title: cmd_1840 maximum_drawdown目的は最悪値選出(方向反転バグ疑い)
   summary: cmd_1840 validation.yaml fixed_champions.maximum_drawdownのscoreが全忍法で-0.57〜-0.66と
@@ -3687,7 +3733,7 @@ lessons:
   retired: true
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-29'
+  last_referenced: '2026-07-02'
 - id: L548
   title: bulk metrics RFはPFごとの月次軸で解決せよ
   summary: DTB3を全PF union月次軸で先にffillすると、欠損月を持つPFだけ production MetricsCalculator と別のRF系列になる。
@@ -4022,9 +4068,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 初版スクリプトでこの罠にハマり修正した
   origin: '[[cmd_1594]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-29'
 - id: L522
   title: Sortino選出はlow-β PFを選びα成分が2.4倍。選出指標がβプロファイルを構造的に決定する
   summary: momentum選出はIS期間の累積リターンが高いPF=高βPFを選びやすい(avg β=1.11,76.3%がβ>1)。結果α share=4.2%。Sort
@@ -4216,6 +4259,9 @@ lessons:
   target_files:
   - tasks/lessons.md
   origin: '[[cmd_1483]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L507
   title: lazy-loaded cache forward-fillは危険
   summary: signal_cache forward-fillがlazy-loadedキャッシュで古いシグナル(Cash含む)を全後続月に伝播。exact-match+qu
@@ -4745,6 +4791,9 @@ lessons:
   when: パリティ検証ツールを新規作成する
   how: 既存ツール(15+)とのtolerance差異を確認せよ
   origin: '[[cmd_1235]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L466
   title: FoF component_portfoliosはUUID格納。旧四神=fof型、シン四神=standard型の構造差
   summary: component_portfoliosはportfolios.idのUUIDリストで格納。名前解決にはportfoliosテーブルとのJOINが必須。また、旧
@@ -5258,6 +5307,9 @@ lessons:
   - scripts/analysis/grid_search/run_077_kasoku_ratio.py
   - scripts/analysis/grid_search/run_077_kawarimi.py
   origin: '[[cmd_1186]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L431
   title: 既存PF更新時はUUID維持でFoF参照を保護
   summary: v1→v2チャンピオン入替時、既存10体のUUIDを維持して更新することでFoF(忍法)のcomponent_portfolios参照が壊れない。POST
@@ -5615,6 +5667,9 @@ lessons:
   - scripts/analysis/grid_search/cmd_1052_parity_test.py
   - scripts/analysis/grid_search/run_077_oikaze.py
   origin: '[[cmd_1052]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L405
   title: nukimi momentum_cubeは既に3D(n_combos,n_months,n_comp)。kasokuのようにnp.stackで3D化する手順が不要。忍法固有のデータ構造に合わせた直接nanmax適用が最簡潔
   summary: nukimi momentum_cubeは最初から3D配列のため、kasokuのようにscore_cacheをnp.stackで3D化する手順が不要。忍法ごとに
@@ -6257,6 +6312,9 @@ lessons:
   - outputs/analysis/shin_shijin_design.md
   - scripts/analysis/grid_search/run_077_yotsume.py
   origin: '[[cmd_1026]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L355
   title: DM7+ファミリーPASS候補全4体がGLD系でXLU系全滅
   summary: lookback4点制約でsafe_haven以外のパラメータ多様性が極端に制限されK体脱相関効果が限定的
@@ -6326,7 +6384,7 @@ lessons:
   origin: '[[cmd_1020]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-30'
+  last_referenced: '2026-07-02'
 - id: L350
   title: サブディレクトリCSVはgitignoreの*.csvでは除外されない
   summary: outputs/grid_search/*.csvは直下のみマッチし、shin_shijin_l1/等のサブディレクトリCSVには効かない。サブディレクトリ含む
@@ -6978,6 +7036,9 @@ lessons:
   - docs/research/knowledge-base/preprocessing/financial-data-analysis.md
   - docs/research/knowledge-base/preprocessing/fractional-differentiation.md
   origin: '[[cmd_861]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L300
   title: バッチ手法追加は新バッチ並走が安全
   summary: 既存安定稼働バッチに手法を追加するより新バッチとして並走させる方が安全。deterioration_batch(244行)は触らずpersistence_bat
@@ -7209,6 +7270,9 @@ lessons:
   - backend/blocks/
   - backend/jobs/
   origin: '[[cmd_860]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L282
   title: 91PFの実効独立数は20-30。cross-sectional分析では独立PFサブセット選定が必須
   summary: 'pairwise相関mean 0.610/median 0.623/p90 0.814。3層依存構造: (1)同一ファミリーρ≈0.85-0.99
@@ -7259,6 +7323,9 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-12'
   origin: '[[cmd_859]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L277
   title: 履歴グラフUIは時系列snapshot蓄積と取得窓の両方が揃わないと単月表示へ退化する
   summary: Deterioration Monitorのhistory UIは、batchがcurrent monthしかUPSERTしない状態ではhistory
@@ -7301,6 +7368,9 @@ lessons:
   when: CDPでproduction viewer pagesのreload時間やready状態を計測する時
   how: '`h1`など固定selectorではなく、認証壁・封鎖ページ・ページ固有DOMを確認してviewer実DOMに対応したready判定を設定する'
   origin: '[[cmd_852]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L273
   title: live API完全一致監査はcurrent partial monthを凍結or除外しないと日次更新ノイズで誤FAIL化する
   summary: cmd_856で/api/signalsは91PF全件一致だが、/api/monthly-returnsと/api/performanceは15/15PFで不一
@@ -7408,9 +7478,6 @@ lessons:
   when: precomputedテーブル存在時は
   how: '2026-03-12'
   origin: '[[cmd_830]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-30'
 - id: L263
   title: persistent data cacheにvalidatorを永続化しないとwarm reloadはfull refetchに崩れる
   summary: SWRのstale cacheをIndexedDB永続化しても、ETag/If-None-Matchのvalidatorがメモリにしか無ければhard
@@ -7517,7 +7584,7 @@ lessons:
   origin: '[[cmd_805]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-30'
+  last_referenced: '2026-07-02'
 - id: L254
   title: FoF展開共通関数を API/サービスの loop 内で呼ぶ時は signal_cache/portfolio_cache 未注入だと query
     storm 化する
@@ -7699,6 +7766,9 @@ lessons:
   when: Open/Closeのデフォルトを判断する時
   how: このシステムのデフォルトはOpen-to-Openであり、Close-to-Closeではないと扱え
   origin: '[[cmd_766]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L239
   title: '誤解13 IF-THEN: Open-to-Openは異なる日のOpen同士を結ぶ'
   summary: Open-to-Open計算を修正する時は、T日Open→T+N日Openという異なる日のOpen同士を結ぶ定義を守る。T日Open→T日CloseはOpen-
@@ -8016,9 +8086,6 @@ lessons:
   - frontend/lib/__tests__/api-client-auth.test.ts
   - frontend/lib/api-client.ts
   origin: '[[cmd_686]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-30'
 - id: L212
   title: CDP性能計測ではtiming計測前に正常画面かを先に検査すべき。障害画面(城の修繕中等)が表示されていればtimingは無意味
   summary: 'IF: CDP性能計測を実施する時 THEN: wall-clock計測前にbody text/ready state/auth modalの3点を確認し、正常'
@@ -8397,9 +8464,6 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-05'
   origin: '[[cmd_555]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-29'
 - id: L181
   title: DeteriorationページのAPIレスポンスにはfolder_idが含まれないためuseSignalsのportfoliosから別途マップ構築が必要
   summary: IF api.getDeteriorationList()のレスポンスにfolder_idが含まれない時 THEN api.getDeteriorationLi
@@ -8555,6 +8619,9 @@ lessons:
   target_files:
   - docs/future-01/001.md
   origin: '[[cmd_549]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L168
   title: 未使用判定は import探索と呼び出し探索を分離すると誤検知が減る
   summary: 今回、module参照の有無（importベース）とメソッド呼び出し有無（api.<method>ベース）を分けて集計したことで、 `testAuth`
@@ -9357,6 +9424,9 @@ lessons:
   when: cmd_222でget_kasoku_contextにcumulative_return計算パスを追加したが、main()でload_cumulative_returns_from_dbを呼ばず、simulate_patternへのパススルーもない時
   how: cmd_222でget_kasoku_contextにcumulative_return計算パスを追加したが、main()でload_cumulative_returns_from_dbを呼ばず、simulate_patternへのパススルーもない
   origin: '[[cmd_227]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L094
   title: oikaze cutoff_score epsilon tolerance(1e-12)が必要
   summary: 本番MonthlyReturnMomentumFilterBlock._cumretはprod(1+monthly_return)-1、GS側cumulativ
@@ -9412,9 +9482,6 @@ lessons:
   when: DB・データ取得・永続化に関わる作業を行う時
   how: confirmed
   origin: '[[cmd_225]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-06-29'
 - id: L089
   title: GS-本番パリティはデータソース一致が前提条件
   summary: IF GS内部の初期化処理ロジックが全4スクリプトで同一でも、データソース(CSV vs DB)が異なればパリティは保証されない時 THEN
@@ -10098,6 +10165,9 @@ lessons:
   when: C抜き身のCANDIDATE_SET不一致 — CS4 [歴史的記述](4体)→C11_CCNh(11体)を実装・検証する時
   how: C抜き身のCANDIDATE_SET不一致 — CS4 [歴史的記述](4体)→C11_CCNh(11体)を実装・検証する時
   origin: '[[legacy_lesson_L027]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L026
   title: 本番FoFコンポーネント取得は `/api/portfolios/get` のみ（2026-02-15）
   summary: FoFのcomponent_portfoliosを取得するため `/api/admin/fof-portfolios` を呼んだら `404
@@ -10125,7 +10195,7 @@ lessons:
   - scripts/analysis/data_sync/download_all_prices.py
   origin: '[[legacy_lesson_L025]]'
   deprecated: true
-  deprecated_at: '2026-07-02T04:48:53+09:00'
+  deprecated_at: '2026-07-02T13:58:17+09:00'
   deprecated_reason: 'AUTO-DEPRECATE(file_missing): scripts/download_all_prices.py参照（ファイル消滅）'
 - id: L024
   title: signal_historyのキーはPhase 2のmonth_last_trading_daysと同型でなければならない（2026-02-15）

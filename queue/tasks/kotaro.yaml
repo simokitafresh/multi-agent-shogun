@@ -30,7 +30,7 @@ task:
   - '将軍要請: insight_write.shはflock保護済みのため破損源は別経路(消費/resolve側)の疑い'
   - '実害疑い: INSIGHT_REPEAT対象 INS-20260702-140132605 等がキューから消失'
   - '家老一次確認: corrupt_count=62、現行queue/insights.yamlはparse可能でinsights_current_count=12'
-  status: acknowledged
+  status: idle
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/queue/insights.yaml
   task_id: cmd_karo_hotfix_insight_corruption_202607021437_normal

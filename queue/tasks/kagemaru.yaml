@@ -3,19 +3,11 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: logs/shogun_startup_alert_history.tsv の最新run(2026-07-02T12:25/12:27)と gate_shogun_startup.sh 現物から、Q6回答未検出と洗脳連鎖2x2危険象限の発火経路を一次情報で特定する
+      description: context_freshness ALERT GA-161 が鳴った直接原因と根本原因仮説を、source commits since last_updated の一次情報に基づき報告する
     AC2:
-      description: 過去対応 cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421 と 2026-07-02掲示板の偽陽性判定を読み、今回が同一既解決問題・新規偽陽性・真陽性のどれかを分類する
+      description: 同カテゴリの横展開候補を確認し、他context/knowledgeファイルにも同じ更新トリガー穴がないか調査結果を報告する
     AC3:
-      description: D0で修正可能なインフラバグなら安全確認を削らず最小hotfixを実装する。真陽性または将軍専管なら差分0で、必要な将軍actionと家老が代行できない理由を報告する
-    AC4:
-      description: 修正ありの場合は bash -n と関連batsまたは軽量再現を実行し、SKIP=0または専用テスト不在を明記する。修正なしの場合も再現/分類根拠のコマンド結果を残す
-    AC5:
-      description: 修正採用時はscope内のみcommitする。修正なし/未達なら未コミット差分0を確認し、次actionを報告YAMLへ記録する
-  context:
-  - '家老一次確認: logs/shogun_startup_alert_history.tsv 最新run 12:25/12:27で『追体験自動化ターゲット: WARN (Q6回答未検出)』と『洗脳連鎖2x2: 危険象限』が発火'
-  - '過去対応: queue/archive/reports/hanzo_report_cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421_20260702.yaml'
-  - '本日未明掲示板: queue/archive/bulletin_20260702.yaml 先頭付近に洗脳連鎖2x2偽陽性/保留判断あり'
+      description: context/obsidian-link-principles.md を更新すべき場合は索引層スタイルで更新し、次に同じALERTが鳴らない防御層/lesson_candidateを報告YAMLに記録する
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -29,29 +21,25 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope:
-  - 将軍専管のMEMORY.md/将軍Q6回答そのものの代筆
-  - startup安全確認や先送りBLOCKの削除・弱体化
-  - 今回対象外のSKILL.md script参照WARNや掲示板未確認の修正
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_shogun_startup_q6_chain_202607021230
+  parent_cmd: cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348
   project: infra
-  purpose: 将軍startup先送りBLOCK再発 — Q6回答未検出+洗脳連鎖2x2危険象限の真偽を一次情報で判定し、D0可能な最小hotfixまたは将軍専管actionを確定する
+  purpose: GA-161 context_freshness ALERT — context/obsidian-link-principles.md の鮮度ALERT根因を調査し、必要な更新・防御層・lesson候補を報告する
   status: idle
   stop_for: []
-  target_path: scripts/gates/gate_shogun_startup.sh
-  task_id: cmd_karo_hotfix_shogun_startup_q6_chain_202607021230_normal
+  target_path: /mnt/c/tools/multi-agent-shogun/context/obsidian-link-principles.md
+  task_id: cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348_normal
   task_type: hotfix
   related_lessons:
-  - id: 'L473'
-    summary: '9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数で'
-    detail: '9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数で'
-  - id: 'L830'
-    summary: 'gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo'
-    detail: 'gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo'
-  - id: 'L696'
-    summary: 'startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs'
-    detail: 'startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs'
+  - id: 'L847'
+    summary: 'source commits N件だけでは忍者が再調査から始める。context_freshness_check.shが検知時にcommit hash/subj'
+    detail: 'source commits N件だけでは忍者が再調査から始める。context_freshness_check.shが検知時にcommit hash/subj'
+  - id: 'L548'
+    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
+    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
+  - id: 'L088'
+    summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
+    detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -66,6 +54,8 @@ task:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "semantic_dictionary_design — セマンティック辞書構想:  docs/research/semantic_index_design.md context/lord-conversation-index.md scripts/semantic_map_generate.sh scripts/insight_write.sh scripts/semantic_index_update.sh"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -73,33 +63,26 @@ task:
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L473: 9cセクションでREVIEW_LOGを使用していたが、変数はgate11(より後方)で定義されており、9c実行時は未定義(空文字)だった。bashは未定義変数で
-      - L830: gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo
-      - L696: startup gateはset -eで動くため、Phase3候補をexit 2で返す集計scriptを単純なcommand substitutionで呼ぶとs
+      - L847: source commits N件だけでは忍者が再調査から始める。context_freshness_check.shが検知時にcommit hash/subj
+      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
+      - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
   memory_db_context:
-  - '2026-07-02T00:45:08+09:00 | 再発防止まで完了した。殿に事実を報告する。 --- ## 殿、起動時確認と積み残しの処理を完了いたしました inbox・掲示板を確認し、一次情報で検証した結果を報告します。 ### 1. 殿の00:1'
-  - '2026-07-01T23:42:29+09:00 | settings.yaml上は将軍・軍師とも `.local/bin/claude --model opus --effort xhigh`（＝最新版・Opus 4.8・xhigh）に設定済みだ。実際'
+  - '2026-04-22T22:58:01+09:00 | 【改善トリガー】hook_failure ALERT (GA-161)'
+  - '2026-07-01T03:38:41+09:00 | 【INFOバッチ】 2026-07-01 03:20:47|cmd_karo_hotfix_ga155_context_freshness_dm_signal_frontend_20260701031'
+  - '2026-07-01T03:15:04+09:00 | 家老がcontext_freshness hotfix (GA-155) を自走で半蔵に配備。定型インフラ自走。 殿の指示を待つ。fullrecalculate完了後（あと数分）、Rolling Re'
+  - '2026-07-02T13:09:18+09:00 | Stop hook指摘の全ALERTを処理完了した。 **処理結果(全て一次確認+根拠付き):** 1. **掲示板未確認・Q6実装証拠・backlinks=0(前回分3件)** — 掲示板confi'
+  - '2026-07-02T12:41:44+09:00 | 【三層ループALERT】WARNING: task duration異常値 cmd_3637 (duration=1741s, median=272.0s, ratio=6.40x, delta=+1'
   ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_shogun_startup_q6_chain_202607021230_normal
+  _ac_task_id: cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348_normal
   _ac_worker_id: 
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_karo_hotfix_shogun_startup_q6_chain_202607021230.yaml
-  report_path: queue/reports/kagemaru_report_cmd_karo_hotfix_shogun_startup_q6_chain_202607021230.yaml
+  report_filename: kagemaru_report_cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348.yaml
+  report_path: queue/reports/kagemaru_report_cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -109,11 +92,11 @@ task:
     warning: '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 154
+      count: 158
     - pattern: 'lu_structure_error'
       count: 47
     - pattern: 'field_missing'
-      count: 46
+      count: 47
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
     gate_blocks:
     - reason: 'report_format'
@@ -125,13 +108,4 @@ task:
     - reason: 'binary_checks_fail'
       count: 2
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-02T12:31:06"
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'YAML parse error: while parsing a block mapping'
-    tried_approaches:
-    - 'YAML parse error: while parsing a block mapping'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'YAML parse error: while parsing a block mapping'
+  deployed_at: "2026-07-02T13:49:48"

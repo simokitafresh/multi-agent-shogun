@@ -9497,3 +9497,91 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - awk -v var=value はvalueをCスタイル文字列リテラルと同様にエスケープ解釈する(バックスラッシュ+ダブルクォート → 単なるダブルクォート、バックスラッシュ2連 → バックスラッシュ1個、等)。task YAML中のAC descriptionはYAML二重引用符スカラーとして「バックスラッシュ+ダブルクォート」で正しくエスケープされているが、これをbash変数経由でawk -vに渡すとバックスラッシュが消費されて単なるダブルクォートに壊れ、生成report YAMLのyaml.safe_loadがParserErrorになる(cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526のsaizo report AC5で実際に発生)。対策: バックスラッシュを含みうる可変長文字列をawkへ渡す時は -v ではなく環境変数+ENVIRON[]経由にする(環境変数はエスケープ解釈されない)。他のawk -v repl=/-v content=等の類似箇所も同じリスクを持つため、今後の同種修正時に横展開確認すべき。
+
+### L925: tmux paneの実プロセス検出はpane_pid子孫だけでなくpane_ttyも確認する
+- **日付**: 2026-07-02
+- **出典**: cmd_3642
+- **記録者**: kagemaru
+- **tags**: [infra,testing,tmux]
+- **target_files**: [scripts/lib/cli_lookup.sh,scripts/lib/model_detect.sh,tests/unit/test_model_detect.bats]
+- **origin**: [[cmd_3642]]
+- **when**: 未設定
+- **how**: 未設定
+- Claude/Codex本体はpane_pidの子孫として見えない場合があり、ps -t #{pane_tty} では正しいCLI起動引数が確認できた。pane実体確認ではpane_pid子孫探索だけを一次情報とみなさず、TTY上のプロセスも照合する。origin: [[cmd_3642]] -> [[pane_pid子孫不足]] -> [[model_detect実プロセス誤検出]]
+
+### L926: context_freshness hotfixは元ALERTのcommit hash/subjectをtaskへ注入せよ
+- **日付**: 2026-07-02
+- **出典**: cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348
+- **記録者**: kagemaru
+- **tags**: [infra,context,recon,bash,git]
+- **target_files**: [context/obsidian-link-principles.md]
+- **origin**: [[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]
+- **when**: 未設定
+- **how**: 未設定
+- GA-161ではsource commits since last_updatedがtask目的に書かれたが、hash/subjectが未注入だったため、忍者がgit logから再調査する必要があった。context_freshness_check.shまたはkaro_direct配備テンプレートはALERT時のsource commit hash/subject最大3件をtask contextへ渡すべき。origin: [[GA-161]] -> [[L847]] -> [[再調査コスト再発]]
+
+### L927: 並列バッチ機構の背後に'export -f find'等のオーバーライドを置くと後続の再構成で静かに死ぬ。定期的に消費者ゼロを検証せよ
+- **日付**: 2026-07-02
+- **出典**: cmd_3644
+- **記録者**: saizo
+- **tags**: [infra,gate,testing,recon,gate]
+- **target_files**: [scripts/gates/gate_shogun_startup.sh]
+- **origin**: [[cmd_3644]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_shogun_startup.shにfind()関数オーバーライド+インデックス構築ブロック(0.628秒)が2026-05-29から存在したが、その後の並列バッチ再構成でオーバーライドの効果範囲(export以降に起動するサブプロセスのみ)から実際の消費者が外れ、grep全域調査で消費者ゼロと判明。高速化目的の最適化コードは、対象コードベースが頻繁に再構成される環境では『導入時に効いていたか』ではなく『現在も消費者が存在するか』を都度grepで再検証すべき。区間プロファイル(bash -x + $EPOCHREALTIME、タイムスタンプ単調性フィルタで埋込トレース除去)は、set -e下のバックグラウンド関数トレースが変数展開経由で混入する罠があるため、生タイムスタンプの単調増加を前提にフィルタする手法が有効だった
+
+### L928: startup WARN streakは実行回数ではなく実質セッションで集計する
+- **日付**: 2026-07-02
+- **出典**: cmd_karo_hotfix_shogun_startup_defer_escalation_202607021349
+- **記録者**: hanzo
+- **tags**: [infra,gate,gate]
+- **target_files**: [scripts/gates/gate_shogun_startup.sh]
+- **origin**: [[cmd_karo_hotfix_shogun_startup_defer_escalation_202607021349]]
+- **when**: 未設定
+- **how**: 未設定
+- startup gateを短時間に複数回実行すると、同一alertが履歴に秒単位で追記され、3セッション連続BLOCKが偽陽性化する。履歴集計と追記には短時間重複抑制を入れ、Q6検出はラベル形式だけでなく実装証拠付き自由文も対象にする。
+
+### L929: Codexの保留nudge配達はbusy_max_defer秒ではなくメインループの目覚め間隔(最悪INOTIFY_TIMEOUT)に律速される
+- **日付**: 2026-07-02
+- **出典**: cmd_3646
+- **記録者**: kotaro
+- **tags**: [infra,inbox,gate,bash,inbox]
+- **target_files**: [scripts/inbox_watcher.sh,tests/unit/test_inbox_watcher_delivery_latency.bats]
+- **origin**: [[cmd_3646]]
+- **when**: 未設定
+- **how**: 未設定
+- inbox_watcher.shのbusy-gate defer(profiles.codex.inbox_busy_max_defer_sec、既定30秒)はnudgeを送るか保留するかの判定閾値に過ぎず、保留解除の再評価は新規inbox書込み(inotify)/INOTIFY_TIMEOUT=60秒安全網/MTIME_POLL(書込み検知時のみ)でメインループが目覚めた時にしか起きない。固定周期のリトライは存在しないため、実際の配達レイテンシは30秒ではなくメインループの目覚め間隔(最悪60秒)に律速される。実測: logs/inbox_watcher_hayate.log 2026-07-02 13:43:33保留→13:44:29配達=56秒。今後busy defer関連の閾値を変更する際は、閾値そのものだけでなく「その閾値がいつ再評価されるか」を必ず確認せよ
+
+### L930: bash export -fは関数サイズがLinux MAX_ARG_STRLEN(128KiB)を超えると全外部コマンドをE2BIGで壊す
+- **日付**: 2026-07-02
+- **出典**: cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402
+- **記録者**: tobisaru
+- **tags**: [infra,testing,deploy,testing,gate]
+- **target_files**: [tests/unit/test_gate_shogun_startup.bats]
+- **origin**: [[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]
+- **when**: 未設定
+- **how**: 未設定
+- batsテストでsetup_file()から巨大関数(146,969B)をexport -fして各@testプロセスへ引き継ごうとしたところ、export後の同一環境内の全execve呼出し(mkdir等)がArgument list too longで失敗した(GA-162/163/164/165, cmd_karo_hotfix_ga162)。原因はLinuxカーネルのMAX_ARG_STRLEN=131072バイトという単一argv/envp文字列の上限(全体のARG_MAX=2MBとは別枠)。bashのexport -fは関数本体全体を1つの環境変数(BASH_FUNC_<name>%%)にシリアライズするため、関数が127KB付近まで肥大化すると即座にこの罠に落ちる。対処: export -fに頼らず、各テストプロセス内で対象scriptを毎回source(非export)する方式に変更(setup()で再source)。これで環境変数を経由せず同じ関数が使えて症状が消える。今後、gate_*.shやdeploy_task.sh等の巨大単一関数(cmd_complete_gate.sh validate_report_format_file=1518行、deploy_task.sh inject_related_lessons=1483行等)にexport -fを追加する変更は同じ罠を踏む危険がある。関数を分割し1関数あたりのバイトサイズを128KiB未満に保つか、export -fを使わない設計を優先すべき。
+
+### L931: 書込みフィールドallowlist(known_fields等)は全書込み元を棚卸ししてから定義せよ。新規追加のみで検証するな
+- **日付**: 2026-07-02
+- **出典**: cmd_karo_hotfix_insight_corruption_202607021437
+- **記録者**: kotaro
+- **tags**: [infra,testing,bash,yaml]
+- **target_files**: [queue/tasks/kotaro.yaml]
+- **origin**: [[cmd_karo_hotfix_insight_corruption_202607021437]]
+- **when**: 未設定
+- **how**: 未設定
+- insight_write.shのrepair_trailing_partial_entry()(cmd_3317, 2026-06-12導入)は「既知フィールド」のallowlist(known_fields)で末尾不完全entryを検出する設計だが、定義時にinsight_write.sh自身の6フィールドしか列挙せず、2.5ヶ月前からinsight_resolve.shが書いていたresolved_reasonフィールドを見落とした。結果、resolved insightに遭遇するたびファイル末尾までを丸ごと誤って隔離し、62回の破損・589件のinsight実質消失(現行queue/insights.yamlにもarchiveにも復元されず)が半月以上気づかれず蓄積した。origin: [[cmd_3317_harden_insight_writes]] -> [[known_fields_allowlist_incomplete]] -> [[insight_corruption_62files]]。同種の『特定フィールド以外は異常とみなして隔離/エラーにする』allowlist方式を新規実装する際は、対象ファイルへの全書込み経路(grep -rn '<file>' scripts/)を先に洗い出し、各経路が書く全フィールド名を列挙してからallowlistを定義せよ。新規実装直後に『既存の正常データに対して誤検知しないか』を実データで再生させて検証するテストがあれば同種のレグレッションは初回コミットの時点で検出できた
+
+### L932: atomic化済みappendの隣に未atomic repair/resolveが残る
+- **日付**: 2026-07-02
+- **出典**: cmd_3649
+- **記録者**: hanzo
+- **tags**: [infra,testing]
+- **target_files**: [scripts/insight_write.sh,tests/unit/test_insight_write.bats]
+- **origin**: [[cmd_3649]]
+- **when**: 未設定
+- **how**: 未設定
+- 同一ファイル内でappend側だけatomic rename化されていても、resolveやrepairなど別モードの全体書換えが残ると同じ破損根因が継続する。修正時は同一スクリプト内の全write pathをrgで列挙し、mode別にatomic性を確認する。

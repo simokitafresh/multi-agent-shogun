@@ -606,3 +606,11 @@ lessons:
 # LS074: superseded by LS-A08(7) (/clear自発禁止=殿の指示範囲厳守。2026-07-02統合)
 # LS075: superseded by LS-A04(44) (裸数量語cancel累計コスト=cmdテンプレートルール。2026-07-02統合)
 # LS076: superseded by LS-A09(29) (CLI pinned/latest=一次確認パターン。2026-07-02統合)
+- id: 'LS074'
+  title: '計測条件が実運用を代表するか先に確認せよ — desktop Lighthouseの99点がmobile実測60点だった'
+  origin: '[[cmd_3650]]'
+  detail: '事故: cmd_3647でdesktop preset計測を行いPerformance平均98.5と報告→殿がDevToolsでmobile 4x slowdown+PF指定URLを実測しPerformance 60/TBT 7274ms/SI 11447msの実態が判明。desktop計測は転送量とAPI応答の確認には有効だが、モバイルCPUのメインスレッド実行時間(チャンク7023のscripting 131秒)を全く捕捉しない。LS-A10(計測環境明記)の再発形。対策: FE体感計測はmobileエミュレーション+CPUスロットリング+実運用相当URL(PF指定クエリ)をデフォルト条件にせよ。desktop計測で高スコアでも実運用達成と報告するな'
+  source_cmd: 'cmd_3650'
+  created_at: '2026-07-02'
+  automated: true
+  enforcement: 'type=lesson; file=projects/dm-signal/lessons.yaml; pattern=frontend'

@@ -1,8 +1,11 @@
 task:
-  _ac_task_id: cmd_3641_full
+  readonly_ref:
+  - path: 'docs/research/cmd_3647_lighthouse/lord_mobile_measurement_20260702.md'
+    reason: command欄の必読/参照専用ファイル
+  _ac_task_id: cmd_3650_full
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3641 (deployed 2026-07-02T12:46:53). Read from the beginning.
-  ac_version: ab80ecdb
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3650 (deployed 2026-07-02T15:03:31). Read from the beginning.
+  ac_version: 0499e025
   assigned_to: hayate
   context_files:
   - context/dm-signal.md
@@ -29,31 +32,18 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3641
+  parent_cmd: cmd_3650
   project: dm-signal
-  purpose: '殿ゴール(設計書v10条件: リロード不要=login後最初のページ遷移でリロードなしにデータ表示)の最重要未解消問題P1を解消する。admin login成功後の自動遷移でDashboardチャートがLoading表示のまま描画されず、リロードで初めて解消する'
-  status: acknowledged
+  purpose: 殿の実測Lighthouse(2026-07-02 mobile条件+PF指定URL)でPerformance 60・Speed Index 11.4秒・TBT 7.3秒を確認。cmd_3647のdesktop計測(スコア99)では見えなかった実運用の本丸。根因は(1)チャンク7023-9055c9ab14b0369a.jsのモバイルCPU実行131秒 (2)monthly-returnsの他PF直列先読みfetchが画面変化を12秒まで引き延ばす構造。詳細分析はdocs/research/cmd_3647_lighthouse/lord_mobile_measurement_20260702.md。根因を特定して対策し、同条件再計測で差分を実証する
+  status: assigned
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/frontend/app
-  task_id: cmd_3641_full
+  target_path: /mnt/c/Python_app/DM-signal/frontend
+  task_id: cmd_3650_full
   task_type: full
-  previous_failures:
-    attempt: 1
-    last_block_reason: 'knowledge_candidate: found=true but items is empty'
-    tried_approaches:
-    - 'knowledge_candidate: found=true but items is empty'
-    approach_summary: 'monthly_trade.py と annual_returns.py に PrecomputedRaw lookup を追加し、raw hit時は計算器を呼ばず request-time masking 後に返すよう修正'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'knowledge_candidate: found=true but items is empty'
-      approach_summary: 'monthly_trade.py と annual_returns.py に PrecomputedRaw lookup を追加し、raw hit時は計算器を呼ばず request-time masking 後に返すよう修正'
   related_lessons:
-  - id: 'L095'
-    summary: 'IF archive_dashboard()のgrep戦果行パターン不一致 — AUTO移行後時 THEN archive_dashboard()のgrep '''
-    detail: 'IF archive_dashboard()のgrep戦果行パターン不一致 — AUTO移行後時 THEN archive_dashboard()のgrep '''
-  - id: 'L432'
-    summary: 'Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff'
-    detail: 'Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff'
+  - id: 'L120'
+    summary: 'IF report gateで報告ファイルの存在判定を行う時 THEN prefix検索+archive探索を併用せよ'
+    detail: 'IF report gateで報告ファイルの存在判定を行う時 THEN prefix検索+archive探索を併用せよ'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -68,10 +58,28 @@ task:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "skill_routing — スキルルーティング:  skills/*/SKILL.md"
+  recommended_skills:
+  - "shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み)"
+  - "reset-layout(全ペイン配置復元)"
+  - "shogun-clear-prep(clear前)"
+  - "dream(三層記憶整理)"
+  - "shogun-teire(棚卸し)"
+  - "lesson-sort(教訓整理)"
+  - "switch-project(PJ切替)"
+  - "shogun-pd-sync(裁定反映)"
+  - "cmd-complete(GATE CLEAR後/家老)"
+  - "dashboard-update(ダッシュボード/家老)"
   related_causal_links:
-  - "[[cmd_3640]]"
-  - "[[cmd_3641]]"
-  - "[[設計書v10_P1_login遷移Loading永続]]"
+  - "[[cmd_3650]]"
+  - "[[チャンク7023メインスレッド131秒+直列先読み]]"
+  - "[[殿実測mobile_Lighthouse_20260702]]"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/robustness-verification-catalog.md"
   - "context/gs-speedup-knowledge.md"
@@ -84,24 +92,28 @@ task:
   - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L095: IF archive_dashboard()のgrep戦果行パターン不一致 — AUTO移行後時 THEN archive_dashboard()のgrep '
-      - L432: Claude CLI起動時、--model opusは200Kコンテキスト+High effort制限。--modelなしのデフォルト起動が1M+Max eff
+      - L120: IF report gateで報告ファイルの存在判定を行う時 THEN prefix検索+archive探索を併用せよ
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
+  memory_db_context:
+  - '2026-07-02T14:56:55+09:00 | 【INFOバッチ】 2026-07-02 14:50:51|cmd_3647 2026-07-02 14:55:38|cmd_karo_hotfix_insight_corruption_202607'
+  - '2026-07-02T14:37:17+09:00 | 【INFOバッチ】 2026-07-02 14:24:45|cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402'
+  - '2026-07-01T22:02:18+09:00 | gist index更新完了。 殿の御指示を待つ。 [meta] stop_reason=end_turn'
+  - '2026-07-01T22:01:23+09:00 | gist indexも更新しろ'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: 'login成功後の自動遷移でデータ取得が開始されない根因を特定し、トリガーから未取得に至る因果連鎖を報告に記載する'
+    - check: '重量チャンクに含まれるモジュールの内訳と、モバイルCPU実行時間の支配的要因(再レンダリング・重計算・チャート描画等)を特定し、因果連鎖を報告に記載する'
   - id: 'AC2'
     checks:
-    - check: '根因を修正し、リロードなしでDashboardのチャート・シグナル・MTDが描画されることをローカルビルドで確認する'
+    - check: '特定した根因への対策(メモ化・計算の遅延化・先読みfetchの抑制や並列化等)を実装し、lintとbuildと関連する既存FEテストがPASSすることを確認する'
   - id: 'AC3'
     checks:
-    - check: 'lintとbuildと関連する既存FEテストがPASSすることを確認する'
+    - check: '殿実測と同条件(mobileエミュレーション+CPUスロットリング+PF指定URL)のLighthouse再計測で、TBTとSpeed Indexの変更前後差分を報告に記載する'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3641.yaml
-  report_path: queue/reports/hayate_report_cmd_3641.yaml
+  report_filename: hayate_report_cmd_3650.yaml
+  report_path: queue/reports/hayate_report_cmd_3650.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -124,4 +136,4 @@ task:
     - reason: 'binary_checks_fail'
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-02T12:47:25"
+  deployed_at: "2026-07-02T15:04:21"

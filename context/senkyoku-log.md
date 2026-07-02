@@ -1340,3 +1340,5 @@
 - 2026-07-02 cmd_3638: cmd_save品質+速度+自動成長改善を疾風が完遂。commit `baef88ad1` でBLOCK SUMMARYパターン集計、SG-PRE25抽出器共通化、D0 FP修正追認、速度計測を実装し、軍師LGTM・GATE CLEAR。
 - 2026-07-02 cmd_karo_hotfix_report_field_files_modified_path_guard: report_field_set.shのfiles_modified散文通過を影丸が修正。commit `b53e60d72` で非パス値を記入時点BLOCKし、関連bats 28/28・bc validation 15/15・gate_report_format 31/31 PASS、GATE CLEAR。
 - 2026-07-02 cmd_3639: compare-returns初期表示4.3-4.7s残存を半蔵が`compare_returns_bulk` 1行raw lookupへ変更。commit `a87809e2`、visible_ids絞り+fallback維持+bulk invalidateを確認し、context/dm-signal-ops.md §50へ還流、GATE CLEAR。
+- 2026-07-02 殿発案Lighthouseサイクル始動: cmd_3647(desktop計測11ページ Perf98-99)→殿mobile実測でPerf60/TBT7.3s/SI11.4s判明(desktop計測は実運用を代表しない=LS074)→cmd_3650(チャンク7023メインスレッド131s+monthly-returns直列先読みfetchの根因対策、mobile条件再計測付き)配備。乖離分析=DM-signal/docs/research/cmd_3647_lighthouse/lord_mobile_measurement_20260702.md
+- 2026-07-02 殿指示の隠れインフラバグ監査: 実測でsession_alerts DONE消失(cmd_3643根治)+gate速度12.8s→5.3s(cmd_3644)+inbox busy gating遅延計測(cmd_3646)+insights.yaml非atomic書込み破損62件(cmd_3649根治)+cmd_save 74.8s(cmd_3648高速化)を全て特定・cmd化、全GATE CLEAR
