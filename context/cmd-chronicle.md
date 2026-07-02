@@ -440,3 +440,4 @@
 | cmd_3637 | 殿指示(2026-07-02): DM-Signal性能改善Phase3。Phase2でPrecomputedRaw基盤完成(3f920b94)。P1の5EPにraw lookup+masking分離を適用し、API応答を数秒→200ms以下に短縮する | dm-signal | 07-02 | 軍師レビューFAILを修正。compare-returnsは |
 | cmd_3638 | 殿厳命(2026-07-02): 将軍の起票能力は根幹。品質+速度+自動成長の3軸同時改善。設計書v3(家老3往復APPROVE_WITH_CONDITIONS)に基づき、(1)D0実施済みFP修正のcommit+bats回帰 (2)BLOCK SUMMARYにパターン別集計追加 (3)ファイル抽出器を共通関数化 (4)速度プロファイル計測+ボトルネック関数の高速化 | infra | 07-02 | cmd_saveのBLOCK SUMMARY集計追加、SG- |
 | cmd_3639 | 殿指示(2026-07-02): 全ページ瞬時表示がゴール。PF別EPは0.2-0.5sに改善済み。compare-returns(初期表示)が4.3-4.7s残存。根因=PF別rawのSELECT+fallback計算が102PF分積み上がる。一括事前計算で即応答に変更 | dm-signal | 07-02 | compare-returnsのPF行をcompare_re |
+| cmd_3640 | 殿指示(2026-07-02): MECE全EP×全PF計測でmonthly-tradeが75/102PF遅延(最遅7.63s)と判明。precompute_raw.pyにraw生成は実装済みだがmonthly_trade.pyにlookup未追加(Phase3漏れ)。annual_returnsも2PF遅延。lookup追加で全PF瞬時化 | dm-signal | 07-02 | monthly_trade.py と annual_retu |

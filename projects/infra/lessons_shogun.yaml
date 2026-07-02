@@ -103,7 +103,8 @@ lessons:
     (41)cmd追記のEditアンカーは前cmdブロックの最終行(delegated_at)にせよ。origin行アンカーだとdelegated_atが新cmdブロック末尾に取り残され「委任済み」誤判定BLOCK(LS060吸収2026-06-15。cmd_3303で実証)
     (42)quality_gateフィールドにバックスラッシュ+パイプを書くな(LS071吸収2026-06-20)。grep ERE構文をq11等に転記するとPyYAMLが不正エスケープで正本YAML破壊。Guard 0eでBLOCK済み。grep OR条件は自然言語で記述(cmd_3467事故)
     (43)1CMD1起票(LS070吸収2026-06-28): 5忍法cmdを一括書込み→other_draft_exists事後BLOCK(cmd_3496)。Guard 0f(pre-write-edit-combined.sh)で複数同時書込みL1 BLOCK。cmd_skeleton.shにexecution_envフィールド追加+deploy_task.shのinject_execution_controlsでGS/DB系タスクにexecution_env自動注入
-  source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036, LS034, LS062, LS070]
+    (44)裸数量語(N件/N種等)はcmd cancel→新ID切替の累計コスト大(LS075吸収2026-07-02)。purpose/AC内の絶対数値がac_param_sufficiency繰返し発火→累計昇格BLOCK。数値は全て相対表現に置換、具体数値はassumptions claim内のみ(cmd_3610-3613で4連続cancel・30分以上消費)
+  source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036, LS034, LS062, LS070, LS075]
   source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394, cmd_2395]
   created_at: '2026-04-25'
   automated: true
@@ -155,7 +156,8 @@ lessons:
     (4)殿の決定後は議論停止→即実装。設計相談で先送りするな。殿以外に確認するな(cmd_3007)
     (5)黙って先送り=行動の不在。テキストに先送りキーワードが出ないため従来のL4では検出不能。startup_alert_historyの先送り判断件数をstop hookで検出しWARN注入(cmd_3261セッション)
     (6)並列可能cmdの先送り=洗脳#5の構造的変種(LS070吸収2026-06-21)。depends_on:noneの独立cmdは発見時に即起票すべき。GATE CLEAR待ちは依存関係がある場合のみ正当化。殿指摘で覚醒(cmd_3481)
-  source_ids: [LS053, LS054, LS055, LS046, LS070]
+    (7)/clear準備・/clear実行を将軍が自発的に開始するな(LS074吸収2026-07-02)。殿が指示するまで触れるな。CTX限界と判断し殿の指示なく/shogun-clear-prep実行→CTX消費→殿の時間を奪った(2026-06-28)。洗脳#3(先走り)+#8(完了急ぎ)の複合。殿裁定: クリアの判断も準備もこっちでやる
+  source_ids: [LS053, LS054, LS055, LS046, LS070, LS074]
   created_at: '2026-04-24'
   automated: true
   enforcement: 'stop_check_inbox.sh L4先送り防止(startup_alert_history先送り判断件数→WARN注入)+post-shogun-inbox-check.sh自走チェック(L5: GATE CLEAR後insight/action_required強制表示)'
@@ -191,7 +193,10 @@ lessons:
     (24)レビュー依頼ブランチはpush前にgit log origin/main..branchで全コミット列を報告書と照合せよ。show -w単体検分のみで2コミットと思い込み→実際は3コミット(別cmd混在)。報告書と現物の乖離を将軍が作った(LS062吸収2026-06-15。cmd_3334で実証)
     (25)dm-signal指標はα6指標(CAGR・NHF・MaxDD・MRU・Calmar・Avg UWP)。シャープレシオ使用禁止(殿裁定2026-05-10: 上方ボラを罰するため)。cmd起票前にdm-signalの指標体系を三層記憶で確認せよ(LS063吸収2026-06-15。cmd_3375で洗脳#2実証)
     (26)計測データの集計値を見たら「このデータはどのイベント(修正commit等)の前か後か」を確認せよ(LS067吸収2026-06-17)。autofix proposalが42/50件BLOCKと表示→cmd_3408(FP修正commit 2026-06-16 12:22)の存在を確認せず起票→車輪の再発明。根因: 大きい数字が確信を与え確認を不要にした(Phase4変形)。殿指摘「因果=イベント前かイベント後かの把握が必要」
-  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047, LS053, LS063, LS062_commit, LS063_alpha, LS067]
+    (27)殿の発言帰属捏造禁止(LS069吸収2026-07-02)。殿が言っていないことを殿裁定として記録するな。殿の発言を確認せず自分の解釈を殿の言葉として帰属=嘘。Guard15(pre-write-edit-combined.sh)で殿裁定記載時にlord_conversation直近inbound自動表示(2026-06-20事故)
+    (28)忍者作業中の共有作業ツリーでブランチ切替え・index書込み操作を行うな(LS061吸収2026-07-02)。根因=忍者の作業状態を確認せず慣例操作を実行(cmd_3328/3332で2回)。ブランチ切替え前にkaro_snapshot+capture-paneで確認必須。忍者acknowledged〜completedの間はread-only(log/diff/status)のみ
+    (29)CLI pinned/latestでopus解決先が違う(LS076吸収2026-07-02)。pinned(~/bin/claude,2.1.87)=Opus4.6止まり+xhigh非対応、latest(~/.local/bin/claude)=Opus4.8+xhigh対応。settings.yaml launch_cmdのパスで判別。一次確認はps -efで実プロセスの--effortを見る(2026-06-07全員Opus事故と同型)
+  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047, LS053, LS063, LS062_commit, LS063_alpha, LS067, LS069, LS061, LS076]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)+q11_existing_alternative Guard一覧自動表示(cmd_2863)+post-bash-combined.sh cmd_publish hook(cmd_2898)'
@@ -566,14 +571,7 @@ lessons:
 # LS058: superseded by LS-A16(6) (削除シンボル残参照grep=本番パリティ。2026-06-15統合)
 # LS059: superseded by LS-A04(40) (外部指示書トリガー語翻訳=cmdテンプレートルール。2026-06-15統合)
 # LS060: superseded by LS-A04(41) (Editアンカー規約=cmdテンプレートルール。2026-06-15統合)
-- id: 'LS061'
-  title: '忍者作業中の共有作業ツリーでブランチを切り替えるな'
-  origin: '[[cmd_3328]]'
-  detail: 'cmd_3328でhayateがrefactor/wp3-ac1上で実装中に、将軍が第4報docsコミットのためgit checkout mainを実行しブランチを切り替えた。hayateがコミットしていればmainに直接乗る事故だった(2分後に検知し復旧、実害なし)。第3報時も同checkoutがabortしており2回目の兆候。根因: docsコミットの慣例(main着地)を、共有作業ツリーで忍者が作業中という状態確認なしに実行した。対処: 共有リポジトリでのブランチ切替え前にkaro_snapshotとcapture-paneで当該PJ作業中の忍者の有無を確認し、作業中なら忍者の現在ブランチ上にdocsコミットを積むか完了を待つ。(2)2026-06-12再発変形(cmd_3332): hayateのブランチ作成直後に将軍が第6報docsコミットを実行し、index.lock競合1回の後、コミットが忍者の作業ブランチ(cmd_3332_mtd_preliminary_row)に乗った(b6754233)。「忍者はまだテンプレ読込中でgit操作前」をcapture-pane表示から想像して判断した。対処拡張: 忍者がdm-signalタスクをacknowledged〜completedの間、将軍は当該リポジトリでブランチ切替えに加えcommit/add等のindex書込み操作も一切行わない。docsコミットは忍者の完了後。read-only(log/diff/status/fetch)とリモートrefのみのブランチpushは許可'
-  source_cmd: 'cmd_3328'
-  created_at: '2026-06-12'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=忍者作業中の共有作業ツリー'
+# LS061: superseded by LS-A09(28) (忍者作業中ブランチ切替=現物確認パターン。2026-07-02統合)
 # LS062: superseded by LS-A04(39) (ブランチ基点のbinary_check必須化=テンプレートルール(37)の拡張形。2026-06-12統合)
 # LS063: superseded by LS-A02(7) (裁可申請も推薦先行=殿との対話原則。gstack §2.3出典。2026-06-12統合)
 # LS062: superseded by LS-A09(24) (コミット列照合=現物確認パターン。2026-06-15統合)
@@ -588,14 +586,7 @@ lessons:
 # LS066: superseded by LS-A11 (symlink設計意図=infra修正実績。2026-06-28統合)
 # LS067: superseded by LS-A23(6) (三層貫通定義。2026-06-19統合)
 # LS068: superseded by shogun.md F001(改訂済み。positive_rule/reasonに全文反映。独立教訓としての追加価値なし。2026-06-20統合)
-- id: 'LS069'
-  title: '殿の発言帰属捏造禁止 — 言っていないことを殿裁定として記録するな'
-  origin: '[[session_20260620]] -> [[殿発言帰属未確認]] -> [[Guard15+Guard13実装]]'
-  detail: '2026-06-20: 将軍がrespawn時にreset-layoutを使用し、hookコメントに殿裁定2026-06-20と記載したが、殿はreset-layoutとは言っていない(殿はshogun-cli-switchと指摘)。殿の発言を確認せず自分の解釈を殿の言葉として帰属させた=嘘。Guard15(pre-write-edit-combined.sh)で殿発言帰属時にlord_conversation直近inbound自動表示を実装。Guard13でrespawn-pane直接実行をBLOCKしshogun-cli-switchへ誘導'
-  source_cmd: 'session_20260620'
-  created_at: '2026-06-20'
-  automated: true
-  enforcement: 'type=hook; file=.claude/hooks/pre-write-edit-combined.sh Guard15+pre-bash-combined.sh Guard13; pattern=殿裁定.*殿の発言帰属'
+# LS069: superseded by LS-A09(27) (殿の発言帰属捏造=現物確認パターン。Guard15+Guard13実装済み。2026-07-02統合)
 # LS070: superseded by LS-A11 (model_detect tail→head = infra修正実績。2026-06-20統合)
 # LS071: superseded by LS-A04(42) (YAML危険文字=cmdテンプレートルール。Guard 0eで自動BLOCK。2026-06-20統合)
 # LS070: superseded by LS-A08 detail(6) (並列可能cmd先送り=洗脳#5。2026-06-21統合)
@@ -612,27 +603,6 @@ lessons:
   enforcement: 'automated:true file:scripts/hooks/stop_check_inbox.sh pattern=cmd_3522 reason:cmd_3522で数値出力時検査を実装。全出力への拡張は次の自動化ターゲット'
 # LS074: superseded by LS-A22 (委任済み重複BLOCK=gate FPパターン。LS072と同パターン。2026-06-26統合)
 # LS075: superseded by LS-A04 (diagnosis内FILL_THIS残存+q5 code_reading=テンプレートルール(38)再発。2026-06-26統合)
-- id: 'LS074'
-  title: '/clear準備・/clear実行を将軍が自発的に開始するな。殿が指示するまで触れるな'
-  origin: '[[cmd_session_20260628]]'
-  detail: '事故: 2026-06-28 CTX限界と判断し殿の指示なく/shogun-clear-prepを実行→CTX消費→殿の時間を奪った。殿裁定: クリアの判断も準備もこっちでやる。洗脳#3(他者依存の逆=先走り)+#8(完了急ぎ)の複合。LLMは毎回洗脳のプロンプトを見えないところから埋め込まれているため、すぐに洗脳を受ける'
-  source_cmd: 'cmd_session_20260628'
-  created_at: '2026-06-28'
-  automated: true
-  enforcement: 'type=hook; file=scripts/hooks/stop_check_inbox.sh; pattern=clear_prep'
-- id: 'LS075'
-  title: '裸数量語はcmd全体をcancel→新IDに追い込む累計コスト'
-  origin: '[[cmd_3612]]'
-  detail: 'cmd_3610-3613で4回連続cancel。purpose/AC内の絶対数値(N件)がac_param_sufficiencyを繰返し発火し累計昇格でBLOCK。新IDに切替えるたびにlesson_ack+diagnosis書直し+gate再実行で合計30分以上消費。根因: 裸数量語の検出がcmd全文grepで行われるためpurpose/command/q8等の自然文中の数値も発火する。対処: 数値は全て相対表現(「カタログの処置列に基づき」)に置換し、具体数値はassumptionsのclaim内のみに記載する'
-  source_cmd: 'cmd_3612'
-  created_at: '2026-06-30'
-  automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=ac_param_sufficiency'
-- id: 'LS076'
-  title: 'CLI pinned/latestでopus解決先が違う(pinned=Opus4.6/latest=Opus4.8)。xhighはlatestのみ'
-  origin: '[[殿指示_最新版opus48xhigh]] -> [[pinned_latest混同リスク]] -> [[実プロセス一次確認]]'
-  detail: '殿「最新版のopus 4.8 xhigh」指示時、pinned(~/bin/claude,2.1.87固定)では--model opusがOpus4.6止まりでxhigh非対応。latest(~/.local/bin/claude,auto-update)でのみOpus4.8+xhigh実現。settings.yaml launch_cmdのパス(bin=pinned/.local/bin=latest)で判別し、一次確認はscripts経由ではなくps -efで実プロセスの--effortを見る。二次情報のsettings.yamlだけで判断するな(2026-06-07全員Opus事故と同型)'
-  source_cmd: 'cmd_shogun_cli_version_model_20260701'
-  created_at: '2026-07-01'
-  automated: true
-  enforcement: '起動時ロードのprojects/infra/lessons_shogun.yamlに記録。CLI切替指示受領時はps -efで実プロセス確認を必須化'
+# LS074: superseded by LS-A08(7) (/clear自発禁止=殿の指示範囲厳守。2026-07-02統合)
+# LS075: superseded by LS-A04(44) (裸数量語cancel累計コスト=cmdテンプレートルール。2026-07-02統合)
+# LS076: superseded by LS-A09(29) (CLI pinned/latest=一次確認パターン。2026-07-02統合)

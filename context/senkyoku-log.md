@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-07-02 cmd_3639 -->
+<!-- last_updated: 2026-07-02 cmd_3640 -->
 
 ## 2026-06-30
 
@@ -1337,3 +1337,4 @@
 - 2026-07-02 cmd_3637: DM-Signal Phase3 P1の5EP raw lookup+invalidateを疾風が完遂。軍師FAIL2点(compare-returns raw hit時TTLCache bypass、metadata-only save同一session invalidate)を追加commit `dbb3276f` で修正し、context/dm-signal-ops.md §49へ還流、GATE CLEAR。
 - 2026-07-02 cmd_3638: cmd_save品質+速度+自動成長改善を疾風が完遂。commit `baef88ad1` でBLOCK SUMMARYパターン集計、SG-PRE25抽出器共通化、D0 FP修正追認、速度計測を実装し、軍師LGTM・GATE CLEAR。
 - 2026-07-02 cmd_karo_hotfix_report_field_files_modified_path_guard: report_field_set.shのfiles_modified散文通過を影丸が修正。commit `b53e60d72` で非パス値を記入時点BLOCKし、関連bats 28/28・bc validation 15/15・gate_report_format 31/31 PASS、GATE CLEAR。
+- 2026-07-02 cmd_3639: compare-returns初期表示4.3-4.7s残存を半蔵が`compare_returns_bulk` 1行raw lookupへ変更。commit `a87809e2`、visible_ids絞り+fallback維持+bulk invalidateを確認し、context/dm-signal-ops.md §50へ還流、GATE CLEAR。
