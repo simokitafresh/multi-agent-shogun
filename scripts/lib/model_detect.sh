@@ -35,6 +35,139 @@ _model_detect_latest_claude_session() {
     '
 }
 
+_model_detect_settings_effort() {
+    local agent="$1"
+    local model_name
+    model_name=$(_cli_lookup_settings_get "$agent" "model_name" "" 2>/dev/null || true)
+    case "$model_name" in
+        *-xhigh)  echo "xhigh" ;;
+        *-high)   echo "high" ;;
+        *-medium) echo "medium" ;;
+        *-low)    echo "low" ;;
+    esac
+}
+
+_model_detect_claude_family_display() {
+    local agent="$1"
+    local family="$2"
+    local effort="$3"
+    local settings_display=""
+
+    settings_display=$(cli_model_display "$agent" 2>/dev/null || true)
+    case "$family" in
+        opus)
+            if [[ "$settings_display" == Opus* ]]; then
+                printf '%s\n' "${settings_display% $effort}"
+            else
+                printf '%s\n' "Opus"
+            fi
+            ;;
+        sonnet)
+            if [[ "$settings_display" == Sonnet* ]]; then
+                printf '%s\n' "${settings_display% $effort}"
+            else
+                printf '%s\n' "Sonnet"
+            fi
+            ;;
+        haiku)
+            if [[ "$settings_display" == Haiku* ]]; then
+                printf '%s\n' "${settings_display% $effort}"
+            else
+                printf '%s\n' "Haiku"
+            fi
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+_model_detect_process_args() {
+    local agent="$1"
+    local pane_target="$2"
+    local cli_t="$3"
+    local pane_pid
+
+    pane_pid=$(tmux display-message -p -t "$pane_target" '#{pane_pid}' 2>/dev/null || true)
+    [[ "$pane_pid" =~ ^[0-9]+$ ]] || return 1
+
+    local proc_rows
+    proc_rows=$(ps -eo pid=,ppid=,args= 2>/dev/null || true)
+    [ -n "$proc_rows" ] || return 1
+
+    local args
+    args=$(printf '%s\n' "$proc_rows" | awk -v root="$pane_pid" -v cli="$cli_t" '
+        {
+            pid=$1
+            ppid=$2
+            $1=""; $2=""
+            sub(/^[[:space:]]+/, "")
+            parent[pid]=ppid
+            cmd[pid]=$0
+        }
+        END {
+            changed=1
+            while (changed) {
+                changed=0
+                for (pid in parent) {
+                    if (parent[pid] == root || ((parent[pid] in desc) && desc[parent[pid]])) {
+                        if (!desc[pid]) {
+                            desc[pid]=1
+                            changed=1
+                        }
+                    }
+                }
+            }
+            for (pid in desc) {
+                if (cli == "claude" && cmd[pid] ~ /(^|[\/[:space:]])claude([[:space:]]|$)/) {
+                    print cmd[pid]
+                } else if (cli == "codex" && cmd[pid] ~ /(^|[\/[:space:]])codex([[:space:]]|$)/) {
+                    print cmd[pid]
+                }
+            }
+        }
+    ' | tail -1)
+
+    if [ -z "$args" ]; then
+        local pane_tty tty_name
+        pane_tty=$(tmux display-message -p -t "$pane_target" '#{pane_tty}' 2>/dev/null || true)
+        tty_name="${pane_tty#/dev/}"
+        if [ -n "$tty_name" ] && [ "$tty_name" != "$pane_tty" ]; then
+            args=$(ps -t "$tty_name" -o args= 2>/dev/null | awk -v cli="$cli_t" '
+                cli == "claude" && /(^|[\/[:space:]])claude([[:space:]]|$)/ { print }
+                cli == "codex" && /(^|[\/[:space:]])codex([[:space:]]|$)/ { print }
+            ' | tail -1)
+        fi
+    fi
+    [ -n "$args" ] || return 1
+
+    case "$cli_t" in
+        claude)
+            local family effort base
+            family=$(printf '%s\n' "$args" | sed -nE 's/.*(^|[[:space:]])--model[=[:space:]]+([A-Za-z0-9._-]+).*/\2/p' | tail -1)
+            effort=$(printf '%s\n' "$args" | sed -nE 's/.*(^|[[:space:]])--effort[=[:space:]]+([A-Za-z0-9._-]+).*/\2/p' | tail -1)
+            effort="${effort:-$(_model_detect_settings_effort "$agent")}"
+            family="${family,,}"
+            [ -n "$family" ] || return 1
+            base=$(_model_detect_claude_family_display "$agent" "$family" "$effort") || return 1
+            if [ -n "$effort" ]; then
+                printf '%s %s\n' "$base" "$effort"
+            else
+                printf '%s\n' "$base"
+            fi
+            ;;
+        codex)
+            local display
+            display=$(cli_model_display "$agent" 2>/dev/null || true)
+            [ -n "$display" ] || return 1
+            printf '%s\n' "$display"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
 # detect_real_model <agent_name> <pane_target>
 # CLI種別に応じた方式でペインから実行中のモデル名を検出
 detect_real_model() {
@@ -46,6 +179,14 @@ detect_real_model() {
 
     case "$cli_t" in
         claude)
+            local process_model
+            process_model=$(_model_detect_process_args "$agent" "$pane_target" "$cli_t" 2>/dev/null || true)
+            if [ -n "$process_model" ]; then
+                tmux set-option -p -t "$pane_target" @real_model "$process_model" 2>/dev/null
+                echo "$process_model"
+                return 0
+            fi
+
             # Claude Code: バナー検出（幅差分を吸収）
             #   狭幅(200K): ▐▛███▜▌   Sonnet 5 with high effort
             #   狭幅(200K): ▐▛███▜▌   Sonnet 4.6 with high effort
@@ -101,17 +242,19 @@ detect_real_model() {
                 fi
             fi
 
-            # バナー未検出 → キャッシュ(@real_model)にフォールバック
-            local cached
-            cached=$(tmux show-options -p -t "$pane_target" -v @real_model 2>/dev/null)
-            if [ -n "$cached" ]; then
-                echo "$cached"
-                return 0
-            fi
+            tmux set-option -pu -t "$pane_target" @real_model 2>/dev/null || true
 
             return 1
             ;;
         codex)
+            local process_model
+            process_model=$(_model_detect_process_args "$agent" "$pane_target" "$cli_t" 2>/dev/null || true)
+            if [ -n "$process_model" ]; then
+                tmux set-option -p -t "$pane_target" @real_model "$process_model" 2>/dev/null
+                echo "$process_model"
+                return 0
+            fi
+
             # Codex CLI: │ model: {model_name} /model to change │
             local output
             output=$(tmux capture-pane -t "$pane_target" -p -J -S -1000 2>/dev/null)
@@ -151,13 +294,7 @@ detect_real_model() {
                 fi
             fi
 
-            # キャッシュにフォールバック
-            local cached
-            cached=$(tmux show-options -p -t "$pane_target" -v @real_model 2>/dev/null)
-            if [ -n "$cached" ]; then
-                echo "$cached"
-                return 0
-            fi
+            tmux set-option -pu -t "$pane_target" @real_model 2>/dev/null || true
 
             return 1
             ;;

@@ -128,3 +128,135 @@ setup_file() {
     [ "$status" -eq 0 ]
     [ "$output" = "Opus 4.8" ]
 }
+
+@test "detect_real_model: Claude process args beat stale real_model cache when banner has no model" {
+    run bash -lc "
+        source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'
+        source '$PROJECT_ROOT/scripts/lib/model_detect.sh'
+        cli_type() { echo claude; }
+        _cli_lookup_settings_get() {
+            if [ \"\$2\" = model_name ]; then
+                echo claude-sonnet-5-xhigh
+                return 0
+            fi
+            return 1
+        }
+        tmux() {
+            if [ \"\$1\" = capture-pane ]; then
+                printf '%s\n' 'Claude Code' 'current session has no model banner yet'
+                return 0
+            fi
+            if [ \"\$1\" = display-message ]; then
+                printf '%s\n' '100'
+                return 0
+            fi
+            if [ \"\$1\" = show-options ]; then
+                printf '%s\n' 'Opus 4.8 high'
+                return 0
+            fi
+            if [ \"\$1\" = set-option ]; then
+                return 0
+            fi
+            return 1
+        }
+        ps() {
+            printf '%s\n' \
+                '100 1 bash' \
+                '201 999 /home/simokitafresh/.local/bin/claude --model opus --effort high' \
+                '200 100 /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort xhigh'
+        }
+        detect_real_model saizo shogun:agents.6
+    "
+    [ "$status" -eq 0 ]
+    [ "$output" = "Sonnet 5 xhigh" ]
+}
+
+@test "resolve_model_display: stale real_model cache is cleared and settings model is fallback" {
+    run bash -lc "
+        source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'
+        source '$PROJECT_ROOT/scripts/lib/model_detect.sh'
+        source '$PROJECT_ROOT/scripts/lib/model_resolve.sh'
+        cli_type() { echo claude; }
+        _cli_lookup_settings_get() {
+            if [ \"\$2\" = model_name ]; then
+                echo claude-sonnet-5-xhigh
+                return 0
+            fi
+            return 1
+        }
+        cli_profile_get() { return 1; }
+        tmux() {
+            if [ \"\$1\" = capture-pane ]; then
+                printf '%s\n' 'Claude Code' 'current session has no model banner yet'
+                return 0
+            fi
+            if [ \"\$1\" = display-message ]; then
+                printf '%s\n' '100'
+                return 0
+            fi
+            if [ \"\$1\" = show-options ]; then
+                printf '%s\n' 'Opus 4.8 high'
+                return 0
+            fi
+            if [ \"\$1\" = set-option ]; then
+                return 0
+            fi
+            return 1
+        }
+        ps() {
+            printf '%s\n' '100 1 bash'
+        }
+        resolve_model_display saizo shogun:agents.6
+    "
+    [ "$status" -eq 0 ]
+    [ "$output" = "Sonnet 5 xhigh" ]
+}
+
+@test "detect_real_model: Claude process args can be read from pane tty" {
+    run bash -lc "
+        source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'
+        source '$PROJECT_ROOT/scripts/lib/model_detect.sh'
+        cli_type() { echo claude; }
+        _cli_lookup_settings_get() {
+            if [ \"\$2\" = model_name ]; then
+                echo sonnet-5-xhigh
+                return 0
+            fi
+            return 1
+        }
+        tmux() {
+            if [ \"\$1\" = capture-pane ]; then
+                printf '%s\n' 'Claude Code' 'current session has no model banner yet'
+                return 0
+            fi
+            if [ \"\$1\" = display-message ] && [ \"\$5\" = '#{pane_pid}' ]; then
+                printf '%s\n' '100'
+                return 0
+            fi
+            if [ \"\$1\" = display-message ] && [ \"\$5\" = '#{pane_tty}' ]; then
+                printf '%s\n' '/dev/pts/9'
+                return 0
+            fi
+            if [ \"\$1\" = set-option ]; then
+                return 0
+            fi
+            return 1
+        }
+        ps() {
+            if [ \"\$1\" = -eo ]; then
+                printf '%s\n' '100 1 bash'
+                return 0
+            fi
+            if [ \"\$1\" = -t ]; then
+                printf '%s\n' \
+                    '/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort xhigh' \
+                    'npm exec @modelcontextprotocol/server-memory'
+                return 0
+            fi
+            return 1
+        }
+        detect_real_model saizo shogun:agents.6
+    "
+    [ "$status" -eq 0 ]
+    [ "$output" = "Sonnet 5 xhigh" ]
+}

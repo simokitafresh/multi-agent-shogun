@@ -321,15 +321,36 @@ cli_model_display() {
     fi
     case "$model_name" in
         claude-opus-4-8*)    echo "Opus 4.8" ;;
+        opus-4-8*)           echo "Opus 4.8" ;;
         claude-opus-4-6*)    echo "Opus 4.6" ;;
+        opus-4-6*)           echo "Opus 4.6" ;;
         claude-opus-4*)      echo "Opus 4" ;;
+        opus-4*)             echo "Opus 4" ;;
         claude-sonnet-5*)    echo "Sonnet 5" ;;
+        sonnet-5*)           echo "Sonnet 5" ;;
         claude-sonnet-4-6*)  echo "Sonnet 4.6" ;;
+        sonnet-4-6*)         echo "Sonnet 4.6" ;;
         claude-sonnet-4*)    echo "Sonnet 4" ;;
+        sonnet-4*)           echo "Sonnet 4" ;;
         claude-haiku-4-5*)   echo "Haiku 4.5" ;;
+        haiku-4-5*)          echo "Haiku 4.5" ;;
         claude-haiku-4*)     echo "Haiku 4" ;;
+        haiku-4*)            echo "Haiku 4" ;;
         *)                   echo "$model_name" ;;
-    esac
+    esac | awk -v raw="$model_name" '
+        {
+            effort = ""
+            if (raw ~ /-(xhigh|high|medium|low)$/) {
+                effort = raw
+                sub(/^.*-/, "", effort)
+            }
+            if (effort != "" && $0 != raw && $0 !~ (" " effort "$")) {
+                print $0 " " effort
+            } else {
+                print
+            }
+        }
+    '
 }
 
 # _cli_launch_read_settings <agent_name>
