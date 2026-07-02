@@ -73,6 +73,7 @@ if [[ "$REPORT_PATH" != /tmp/* ]] && [[ "$REPORT_PATH" != *"/tmp/"* ]]; then
     _CC_TASK_FILE="$REPO_ROOT/queue/tasks/${_CC_WORKER}.yaml"
     if [ -f "$_CC_TASK_FILE" ]; then
         _CC_CHECK=$(python3 -c "
+import os
 import yaml, sys
 try:
     rdata = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
@@ -84,22 +85,44 @@ try:
         sys.exit(0)
     tdata = yaml.safe_load(open(sys.argv[2], encoding='utf-8')) or {}
     task = tdata.get('task') or tdata
+    repo_root = os.path.realpath(sys.argv[3])
+
+    def add_path(paths, value):
+        s = str(value or '').strip().lstrip('- ').strip()
+        s = s.strip(chr(96)).strip('\"').strip(\"'\")
+        if s and s not in ('', 'none', 'null', 'FILL_THIS'):
+            paths.append(s)
+
+    report_paths = []
+    fm = rdata.get('files_modified') or []
+    if isinstance(fm, list):
+        for item in fm:
+            if isinstance(item, dict):
+                add_path(report_paths, item.get('path') or item.get('file') or item.get('name'))
+            else:
+                add_path(report_paths, item)
+    elif isinstance(fm, str):
+        add_path(report_paths, fm)
+
     tp = task.get('target_path') or ''
     paths = []
     if isinstance(tp, list):
         for p in tp:
-            s = str(p).strip().lstrip('- ')
-            if s and s not in ('', 'none', 'null', 'FILL_THIS'):
-                paths.append(s)
+            add_path(paths, p)
     elif tp:
-        s = str(tp).strip()
-        if s and s not in ('none', 'null', 'FILL_THIS'):
-            paths.append(s)
+        add_path(paths, tp)
+
+    # Repo-root target_path is common for infra tasks. Checking the whole repo
+    # picks up unrelated parallel-agent work and false-BLOCKs completed reports.
+    # In that case, limit AC2 to the files the report claims it modified.
+    if report_paths and any(os.path.realpath(os.path.join(repo_root, p)) == repo_root for p in paths):
+        paths = report_paths
+
     for p in paths:
         print(p)
 except Exception:
     pass
-" "$REPORT_PATH" "$_CC_TASK_FILE" 2>/dev/null || true)
+" "$REPORT_PATH" "$_CC_TASK_FILE" "$REPO_ROOT" 2>/dev/null || true)
         if [ -n "${_CC_CHECK//[[:space:]]/}" ]; then
             # AC2: git status check for uncommitted target_path changes
             _CC_UNCOMMITTED=$(cd "$REPO_ROOT" && git status --porcelain -- $_CC_CHECK 2>/dev/null || true)
