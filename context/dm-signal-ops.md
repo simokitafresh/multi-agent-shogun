@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-02 cmd_3637 -->
+<!-- last_updated: 2026-07-03 cmd_karo_hotfix_ga171_dm_signal_ops_context_freshness_202607030033 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -86,9 +86,11 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - viewer系API: Bearer Token(`VIEWER_TOKEN`)
 - FE Admin認証とBE admin系API認証は区別する。画面ログインは`ADMIN_USER`/`ADMIN_PASS`、APIはBasic Auth。
 - データ確認はAPI経由よりDB直接クエリが確実。
+- cmd_3669: `/api/metrics/summary` は `metrics_summary_bulk` precomputed rawを読む。raw生成は `backend/app/jobs/precompute_raw.py` の `METRICS_SUMMARY_BULK_PARAMS=[{years:0},{years:10}]`、無効化はmetrics cache更新・portfolio保存・portfolio_metrics生成時に走る。関連commit: DM-Signal `755a50d9`。
 
 ## §37 ETL
 
+- cmd_3668/3669: FE実要求paramsとprecompute raw paramsの同期防御。dashboard performance yearsは `frontend/app/dashboard/page.tsx` の共有定数経由で呼び、`backend/tests/test_precompute_raw.py` がPAGE_APIS内の直書き `api.getPerformance(portfolioId, 3/0)` 不在を検査する。FE params lessonは `tasks/lessons.md` L803。関連commit: DM-Signal `49e9d8f6`, `3730537c`。
 - L793: Render cron envVarsはAPI現物で検証せよ（cmd_3634）
 - L794: 月次cronのUTC day-of-month指定はJSTタイムゾーンオフセット越境で1日ずれる（cmd_3634_recon3）
 - ETL cronはL0-L3の4本体制。L0/L1/L2/L3の各レイヤーを独立cronで同期し、上位レイヤーは下位レイヤー完了後の本番DBを読む。
