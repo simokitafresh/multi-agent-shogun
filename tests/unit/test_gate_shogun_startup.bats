@@ -9,9 +9,15 @@ setup_file() {
     export REAL_GIT_BIN
     REAL_GIT_BIN="$(command -v git)"
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
-    # Source once per file (function-only load) and export for run subshell
-    SHOGUN_STARTUP_LIB_ONLY=1 source "$SRC_GATE_SCRIPT"
-    export -f run_gate_shogun_startup
+    # NOTE: run_gate_shogun_startup is NOT sourced/exported here. Each @test
+    # runs in its own forked process, so `export -f` would be required for
+    # `run run_gate_shogun_startup` to find it — but the function body is
+    # ~147KB, which exceeds Linux's per-string execve() limit (MAX_ARG_STRLEN,
+    # 128KB) once serialized into the BASH_FUNC_*%% env var, causing every
+    # subsequent external command (mkdir, rm, ...) in that process to fail
+    # with "Argument list too long" (GA-162/GA-163, cmd_karo_hotfix_ga162).
+    # Instead, setup() below re-sources $SRC_GATE_SCRIPT fresh in each test's
+    # own process — same function, zero environment-size cost.
 
     # Build shared base directory once — all default-pass fixtures
     # Each test does: cp -a "$SHARED_BASE/." "$TEST_TMPDIR/" instead of recreating files
@@ -308,6 +314,9 @@ MOCK
 }
 
 setup() {
+    # Fresh per-test process: re-source for a local (non-exported) function def.
+    SHOGUN_STARTUP_LIB_ONLY=1 source "$SRC_GATE_SCRIPT"
+
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/shogun_startup.XXXXXX")"
     cp -a "$SHARED_BASE/." "$TEST_TMPDIR/"
 
