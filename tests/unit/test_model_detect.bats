@@ -49,6 +49,33 @@ setup_file() {
     [ "$output" = "Opus 4.8 high" ]
 }
 
+@test "detect_real_model: ignores stale Claude banners before latest launch marker" {
+    run bash -lc "
+        source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'
+        source '$PROJECT_ROOT/scripts/lib/model_detect.sh'
+        cli_type() { echo claude; }
+        tmux() {
+            if [ \"\$1\" = capture-pane ]; then
+                printf '%s\n' \
+                    'Claude Code' \
+                    ' ▝▜█████▛▘  Opus 4.8 (1M context) with high effort · /mnt/c/tools/multi-agent-shogun' \
+                    'old pane output after previous launch' \
+                    'Claude Code' \
+                    'initializing current session' \
+                    ' ▝▜█████▛▘  Sonnet 5 with high effort · /mnt/c/tools/multi-agent-shogun'
+                return 0
+            fi
+            if [ \"\$1\" = set-option ]; then
+                return 0
+            fi
+            return 1
+        }
+        detect_real_model saizo shogun:agents.6
+    "
+    [ "$status" -eq 0 ]
+    [ "$output" = "Sonnet 5 high" ]
+}
+
 @test "detect_real_model: truncated Claude effort suffix is normalized before validation" {
     run bash -lc "
         source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'
