@@ -225,6 +225,29 @@ except Exception as e:
   else
     echo "  OK: ${memory_db#"$ROOT_DIR"/} age=${db_age_sec}s events=${event_count}"
   fi
+
+  # GA-170: context/memory-db-schema.mdの唯一の更新トリガーだったフルリビルド呼び出しを
+  # 2026-06-25(殿指摘・上記フルリビルド廃止)で削除して以来、他に定期呼び出し元がなく
+  # last_updatedが固定化しgate_context_freshness.shが恒久WARN化していた。
+  # --schemaは既存DBへの読取専用クエリのみ(フルリビルドの load_rows/build_db を含まない)で
+  # 実測16秒程度のため、非同期(バックグラウンド)実行でclear_prep本体の速度を犠牲にしない。
+  # このブロックを削除する場合はGA-170と同じ再発を防ぐため代替トリガーを用意すること。
+  local schema_doc="$ROOT_DIR/context/memory-db-schema.md"
+  local schema_days_ago=999
+  if [ -f "$schema_doc" ]; then
+    local schema_last_updated schema_epoch
+    schema_last_updated="$(grep -m1 -oE 'last_updated: [0-9]{4}-[0-9]{2}-[0-9]{2}' "$schema_doc" | awk '{print $2}')"
+    if [ -n "$schema_last_updated" ]; then
+      schema_epoch="$(date -d "$schema_last_updated" +%s 2>/dev/null || echo 0)"
+      if [ "$schema_epoch" -gt 0 ]; then
+        schema_days_ago=$(( (now_epoch - schema_epoch) / 86400 ))
+      fi
+    fi
+  fi
+  if [ "$schema_days_ago" -ge 5 ] && [ -f "$ROOT_DIR/scripts/memory_db_import.py" ]; then
+    echo "  [schema regen] memory-db-schema.md ${schema_days_ago}日前 → --schemaで非同期リフレッシュ(fire-and-forget)"
+    (python3 "$ROOT_DIR/scripts/memory_db_import.py" --schema --db "$memory_db" >/dev/null 2>&1 || true) &
+  fi
   return 0
 }
 
