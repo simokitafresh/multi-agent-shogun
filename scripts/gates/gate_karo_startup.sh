@@ -1940,6 +1940,59 @@ else
 fi
 echo ""
 
+# --- Check 9.2: karo hotfix反復検知(同一対象反復→根因調査要求, cmd_3665) ---
+echo "■ karo hotfix反復検知"
+_HOTFIX_DQ_FILE="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
+_HOTFIX_RECUR_THRESHOLD="${KARO_HOTFIX_RECUR_THRESHOLD:-2}"
+_HOTFIX_RECUR_WINDOW="${KARO_HOTFIX_RECUR_WINDOW:-50}"
+if [ -f "$_HOTFIX_DQ_FILE" ]; then
+    hotfix_recur_result="$(awk -v window="$_HOTFIX_RECUR_WINDOW" -v threshold="$_HOTFIX_RECUR_THRESHOLD" '
+        /^(-[[:space:]]*cmd_id:|[[:space:]][[:space:]]cmd_id:)/ {
+            s = $0
+            sub(/^.*cmd_id:[[:space:]]*/, "", s)
+            gsub(/["'"'"']/, "", s)
+            gsub(/[[:space:]]+$/, "", s)
+            if (s ~ /^cmd_karo_hotfix_/ && !(s in seen)) {
+                seen[s] = 1
+                order_n++
+                order[order_n] = s
+            }
+        }
+        END {
+            start = order_n - window + 1
+            if (start < 1) start = 1
+            for (i = start; i <= order_n; i++) {
+                cmd_id = order[i]
+                target = cmd_id
+                sub(/_[0-9]{12,14}$/, "", target)
+                cnt[target]++
+                if (list[target] == "") { list[target] = cmd_id } else { list[target] = list[target] ";" cmd_id }
+                last[target] = cmd_id
+            }
+            for (t in cnt) {
+                if (cnt[t] + 0 >= threshold + 0) {
+                    printf "%s|%d|%s|%s\n", t, cnt[t], last[t], list[t]
+                }
+            }
+        }
+    ' "$_HOTFIX_DQ_FILE" | sort -t'|' -k2 -rn)"
+
+    if [ -n "$hotfix_recur_result" ]; then
+        while IFS='|' read -r _hf_target _hf_count _hf_last _hf_list; do
+            [ -z "$_hf_target" ] && continue
+            echo "  ALERT: hotfix反復検知 — 対象=${_hf_target} 反復${_hf_count}回 直近該当cmd=${_hf_last} 該当cmd一覧=[${_hf_list}]"
+            echo "  → 同一対象への反復hotfixは表面対処のサイン。根因調査タスクへ切替えよ(自動消火禁止原則)"
+            overall="ALERT"
+            alerts+=("karo hotfix反復: ${_hf_target}=${_hf_count}回(直近該当=${_hf_last})→根因調査タスクへ切替要求")
+        done <<< "$hotfix_recur_result"
+    else
+        echo "  OK: 同一対象hotfixの反復なし(閾値${_HOTFIX_RECUR_THRESHOLD}回未満、窓${_HOTFIX_RECUR_WINDOW}件)"
+    fi
+else
+    echo "  SKIP: ${_HOTFIX_DQ_FILE}不在"
+fi
+echo ""
+
 # tmpファイル削除
 rm -f "$_WA_RATE_TMP" "$_WA_RATE_ERR_TMP" "$_NINJA_WA_TMP" "$_WA_DQ_TMP" \
     "$_aggregate_tmp"

@@ -909,6 +909,69 @@ EOF
     [[ "$output" == *"OK: GATE CLEAR済みcmdはcmd_design_quality記録済み"* ]]
 }
 
+# === Check 9.2: karo hotfix反復検知 (cmd_3665 AC1/AC2) ===
+@test "hotfix repeated 2x (same target, different timestamp) → ALERT with 対象/反復回数/該当cmd/根因調査要求" {
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_karo_hotfix_skill_script_refs_202607021234"
+  gate_result: "CLEAR"
+- cmd_id: "cmd_karo_hotfix_skill_script_refs_202607022043"
+  gate_result: "CLEAR"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ karo hotfix反復検知"* ]]
+    [[ "$output" == *"ALERT: hotfix反復検知"* ]]
+    [[ "$output" == *"対象=cmd_karo_hotfix_skill_script_refs"* ]]
+    [[ "$output" == *"反復2回"* ]]
+    [[ "$output" == *"cmd_karo_hotfix_skill_script_refs_202607021234"* ]]
+    [[ "$output" == *"cmd_karo_hotfix_skill_script_refs_202607022043"* ]]
+    [[ "$output" == *"根因調査タスクへ切替えよ"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
+@test "hotfix appears once only (no repeat) → OK 反復なし" {
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_karo_hotfix_ga161_obsidian_link_context_freshness"
+  gate_result: "CLEAR"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ karo hotfix反復検知"* ]]
+    [[ "$output" == *"OK: 同一対象hotfixの反復なし"* ]]
+}
+
+@test "hotfix cmd_id as non-first field (2-space indent, no dash) is still counted toward repeat" {
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_karo_hotfix_model_detect_hook_202607021251"
+  ac_count: 0
+  gate_result: "CLEAR"
+- ac_count: 0
+  cmd_id: cmd_karo_hotfix_model_detect_hook
+  gate_result: CLEAR
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"対象=cmd_karo_hotfix_model_detect_hook"* ]]
+    [[ "$output" == *"反復2回"* ]]
+}
+
+@test "non-hotfix cmd_id entries are not counted as hotfix repeats" {
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_3663"
+  gate_result: "CLEAR"
+- cmd_id: "cmd_3663"
+  gate_result: "CLEAR"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ karo hotfix反復検知"* ]]
+    [[ "$output" == *"OK: 同一対象hotfixの反復なし"* ]]
+}
+
 # === Test 14: GP pending 2件 → WARN表示 (AC1) ===
 @test "gunshi GP 2 pending → WARN表示" {
     cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'EOF'
