@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-02 cmd_karo_hotfix_ga167 -->
-<!-- last_synced_lesson: L800 -->
+<!-- last_updated: 2026-07-02 cmd_3661 -->
+<!-- last_synced_lesson: L801 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -98,6 +98,7 @@ note.comメンバーシップの料金プランとDB viewer_tiersの対応。詳
 - Sortino Ratio推奨(Sharpeは上方ボラを罰するため好まない)
 - α6指標: CAGR / NHF / MaxDD / MRU / Calmar / Avg UWP
 - ALMはディスコン。殿が明示的に言わない限り話題禁止
+- note記事の数値開示方針(PD-045): バレてよい詳細(α6指標名など既公開情報)はリアル数字を出し、核心(戦略パラメータ)は隠し、曖昧インパクト(数万パターン等)で印象形成する
 
 ## 弱体化確率推定(P_det)
 
@@ -267,6 +268,8 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L798: 重いページはPAGE_APIS prefetchを空にしてページ本体fetchをSSOTにする（cmd_3650）
 - L799: FEが解釈しないクエリ名を計測スクリプト入口でBLOCKする（cmd_3654）
 - L800: production固定Lighthouseは未deployローカル差分のPASS証明に使えない（cmd_3655）
+- L801: Next App Router共通chunkはapp module分割だけではhash/サイズが変わらない（cmd_3659）
+- PD-054裁定(2026-07-02): 7023=Next App Router runtime不可避。App Router runtime削減設計には進まず、次方向は初期レンダー計算量削減(テーブル仮想化・チャート遅延・hydration削減)=fd9d/app chunks側。cmd_3660本番metrics計測はPerf 46→95/TBT 1724→55ms/CLS 0.743→0を確認。→ `/mnt/c/Python_app/DM-signal/docs/research/lighthouse_rounds/round_20260702_cmd3660_production_metrics_cls_close/manifest.json`
 
 ## 因果リンク
 
