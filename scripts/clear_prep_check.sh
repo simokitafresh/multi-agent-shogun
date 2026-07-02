@@ -270,7 +270,7 @@ import sys
 
 path = sys.argv[1]
 session_start = sys.argv[2]
-noise = re.compile(r"(inbox\d+|復帰済み|GATE CLEAR|CI緑|ntfy|task_assigned|cmd_\d+配備済み)")
+noise = re.compile(r"(inbox\d+|復帰済み|GATE CLEAR|CI緑|ntfy|task_assigned|cmd_\d+配備済み|auto clear prep summary|task-notification)")
 queries = []
 
 with open(path, encoding="utf-8") as f:
@@ -300,6 +300,37 @@ for query in queries:
     print(query)
 PY
 
+  # 自己治癒: 過去のNO_MATCH候補がalias昇格済み(現在MATCH)ならpendingを自動resolve。
+  # 書き手(semantic index更新)と読み手(INSIGHT_REPEAT検出=insights.yaml pending)の
+  # ストア不一致で解消済み候補がエスカレーションされる恒常誤判定を防ぐ(LS078対処(3))
+  local resolved=0
+  local insights_file="$ROOT_DIR/queue/insights.yaml"
+  if [ -f "$insights_file" ]; then
+    local tmp_pending
+    tmp_pending="$(mktemp)"
+    python3 - "$insights_file" > "$tmp_pending" <<'PY'
+import re
+import sys
+
+txt = open(sys.argv[1], encoding="utf-8").read()
+pattern = re.compile(
+    r'- id: (INS-\S+)\n  ts: "[^"]*"\n  insight: "clear_prep NO_MATCH aliases候補: ([^"]*)"\n'
+    r'  priority: "\w+"\n  source: "clear_prep_check:memory_phase"\n  status: pending'
+)
+for m in pattern.finditer(txt):
+    print(f"{m.group(1)}\t{m.group(2)}")
+PY
+    while IFS=$'\t' read -r pending_id pending_query; do
+      [ -n "$pending_id" ] && [ -n "$pending_query" ] || continue
+      if SEMANTIC_DISABLE_LLM=1 SEMANTIC_DISABLE_CAUSAL=1 "$semantic_search" "$pending_query" >/dev/null 2>&1; then
+        if "$insight_write" --resolve "$pending_id" >/dev/null 2>&1; then
+          resolved=$((resolved + 1))
+        fi
+      fi
+    done < "$tmp_pending"
+    rm -f "$tmp_pending"
+  fi
+
   local total=0 matched=0 queued=0 failed=0
   while IFS= read -r query; do
     [ -n "$query" ] || continue
@@ -321,7 +352,7 @@ PY
   done < "$tmp_queries"
   rm -f "$tmp_queries"
 
-  echo "  checked=${total} matched=${matched} no_match_queued=${queued} failed=${failed}"
+  echo "  checked=${total} matched=${matched} no_match_queued=${queued} failed=${failed} pending_auto_resolved=${resolved}"
   return 0
 }
 
