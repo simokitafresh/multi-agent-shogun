@@ -11,6 +11,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # L821: ハードコード忍者名を排除。get_ninja_namesで動的取得
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh" 2>/dev/null || true
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/gates/session_alerts_render.sh"
 _KARO_NINJA_NAMES="$(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo saizo kotaro tobisaru')"
 
 overall="OK"
@@ -2253,14 +2255,7 @@ fi
 
 # --- session_alerts_karo.txt: 起動時初期生成（stop hookのロール分離対応 cmd_3487） ---
 _session_alerts_file="$SCRIPT_DIR/queue/session_alerts_karo.txt"
-{
-    printf '# session_alerts_karo — generated: %s\n' "$_startup_run_id"
-    if [ ${#alerts[@]} -gt 0 ]; then
-        for a in "${alerts[@]}"; do
-            printf '[TODO] %s\n' "$a"
-        done
-    fi
-} > "$_session_alerts_file"
+render_session_alerts_file "$_session_alerts_file" "session_alerts_karo" "$_startup_run_id" "${alerts[@]}"
 
 # --- L1先送り自動エスカレーション: 先送りCRITICAL検出→将軍にinbox送信 ---
 if [ ${#alerts[@]} -gt 0 ]; then

@@ -34,11 +34,13 @@ setup_file() {
 
     cp "$PROJECT_ROOT/scripts/gates/gate_fp_relaxation_proposal.py" "$SHARED_BASE/scripts/gates/"
     cp "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh" "$SHARED_BASE/scripts/gates/"
+    cp "$PROJECT_ROOT/scripts/gates/session_alerts_render.sh" "$SHARED_BASE/scripts/gates/"
     cp "$PROJECT_ROOT/scripts/weekly_metrics_trend.sh" "$SHARED_BASE/scripts/"
     cp "$PROJECT_ROOT/scripts/skill_usage_metrics.sh" "$SHARED_BASE/scripts/"
     cp "$PROJECT_ROOT/scripts/cleanup_three_layer_tmp.sh" "$SHARED_BASE/scripts/"
     cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$SHARED_BASE/scripts/"
     chmod +x "$SHARED_BASE/scripts/gates/gate_three_layer_health.sh" \
+             "$SHARED_BASE/scripts/gates/session_alerts_render.sh" \
              "$SHARED_BASE/scripts/weekly_metrics_trend.sh" \
              "$SHARED_BASE/scripts/skill_usage_metrics.sh" \
              "$SHARED_BASE/scripts/cleanup_three_layer_tmp.sh"

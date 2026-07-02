@@ -9,6 +9,8 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 AUTO_IDLE_ACTIONS_FILE="$SCRIPT_DIR/queue/auto_idle_actions.txt"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/gates/session_alerts_render.sh"
 
 overall="OK"
 alerts=()
@@ -1115,14 +1117,7 @@ fi
 
 # --- session_alerts_gunshi.txt: 起動時初期生成（stop hookのロール分離対応 cmd_3487） ---
 _session_alerts_file="$SCRIPT_DIR/queue/session_alerts_gunshi.txt"
-{
-    printf '# session_alerts_gunshi — generated: %s\n' "$_startup_run_id"
-    if [ ${#alerts[@]} -gt 0 ]; then
-        for a in "${alerts[@]}"; do
-            printf '[TODO] %s\n' "$a"
-        done
-    fi
-} > "$_session_alerts_file"
+render_session_alerts_file "$_session_alerts_file" "session_alerts_gunshi" "$_startup_run_id" "${alerts[@]}"
 
 # --- L1先送り自動エスカレーション: 先送りCRITICAL検出→家老にinbox送信 ---
 if [ ${#alerts[@]} -gt 0 ]; then

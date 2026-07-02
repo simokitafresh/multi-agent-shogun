@@ -25,6 +25,8 @@ setup() {
     # Copy the gate script
     cp "$SRC_GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
+    cp "$PROJECT_ROOT/scripts/gates/session_alerts_render.sh" "$TEST_TMPDIR/scripts/gates/session_alerts_render.sh"
+    chmod +x "$TEST_TMPDIR/scripts/gates/session_alerts_render.sh"
     cp "$PROJECT_ROOT/scripts/gates/gate_wa_data_quality.sh" "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh"
     cp "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh" "$TEST_TMPDIR/scripts/gates/gate_three_layer_health.sh"

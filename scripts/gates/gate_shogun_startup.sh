@@ -3558,14 +3558,11 @@ fi
 # 目的: stop hookで毎応答リアルタイム表示するためのALERT台帳を初期化する
 # 形式: [TODO] アラート内容 (stop hookが [TODO]/[DONE] で管理)
 _session_alerts_file="$SCRIPT_DIR/queue/session_alerts_shogun.txt"
-{
-    printf '# session_alerts — generated: %s\n' "$_startup_run_id"
-    if [ ${#alerts[@]} -gt 0 ]; then
-        for a in "${alerts[@]}"; do
-            printf '[TODO] %s\n' "$a"
-        done
-    fi
-} > "$_session_alerts_file"
+if [ -f "$GATE_DIR/session_alerts_render.sh" ]; then
+    # shellcheck source=/dev/null
+    source "$GATE_DIR/session_alerts_render.sh"
+    render_session_alerts_file "$_session_alerts_file" "session_alerts" "$_startup_run_id" "${alerts[@]}"
+fi
 
 # Step 6: ALERT項目をinsightsに自動保存（将軍の「後でやる」放置防止）
 if { [ "$overall" = "ALERT" ] || [ "$overall" = "BLOCK" ]; } && [ ${#alerts[@]} -gt 0 ]; then

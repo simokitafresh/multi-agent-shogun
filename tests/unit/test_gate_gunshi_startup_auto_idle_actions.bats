@@ -20,6 +20,8 @@ setup() {
 
     cp "$SRC_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_gunshi_startup.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_gunshi_startup.sh"
+    cp "$PROJECT_ROOT/scripts/gates/session_alerts_render.sh" "$TEST_TMPDIR/scripts/gates/session_alerts_render.sh"
+    chmod +x "$TEST_TMPDIR/scripts/gates/session_alerts_render.sh"
 
     cat > "$TEST_TMPDIR/memory/deepdive_why_chain_20260321.md" <<'EOF'
 前文
