@@ -656,6 +656,8 @@ codd:
 | causal | `cmd_3647` origin: [[殿指示_lighthouseサイクル_20260702]] -> [[実運用体感指標の計測不在]] -> [[cmd_3647]] |
 | cmd | `cmd_3648` cmd_save実行時間の根因特定と高速化 — 検査品質を維持したままfork過多を削減 |
 | causal | `cmd_3648` origin: [[殿指示_cmd_publish速度_20260702]] -> [[cmd_save_fork過多74秒実測]] -> [[cmd_3648]] |
+| cmd | `cmd_3672` DM-Signal mobile Lighthouse計測道具の実データ描画対応 — 認証経路適合と到達証拠 |
+| causal | `cmd_3672` origin: [[将軍検分_cmd3670_3671原票_20260703]] -> [[実データ未受信のまま好数値原票化]] -> [[cmd_3672]] |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -1590,7 +1592,7 @@ codd:
 |------|---|
 | id | production_parity |
 | label | 本番パリティ |
-| aliases | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data, 月次リターン, MTD, 月次部分月, MTD判定, Month-to-Date, 部分月, partial_month, monthly_common, チェックリスト, monthly trade画面には現時点で全PFの６月の保有ポジションがpendingに表示される必要がある, signal_pending, pending 3条件, monthly_trade.py, signals.py pending, is_pending, is_mtd, build_pending_map, 3レイヤー貫通確認, DB→API→FE, PF物理削除, PF論理削除, is_active, portfolio_config_snapshots, FK制約, CASCADE, NO ACTION, 逆依存順削除, PF設定バックアップ, PF削除手順, 旧式PF削除, チェックリストを家老にれびゅーしてもらおう, is active削除WP Phase 前提ゲート実測, is active機能のFE BE docs削除実装, is active削除ブランチの指示書準拠再構成, monthly productのBEスキーマ削除実装, MTDテーブルDaily列の実装 設計書PR2, MTD速報行の実装 設計書PR3 Feature C, MTD速報ラベル仮置き, MTD速報行の日付は仮置き, 06/19速報ラベル, 06/19 ⚡は市場営業日SSOTではない, Juneteenth MTD速報ラベル修正不要, 市場カレンダーなし MTD速報ラベル, 秘奥義-激攻 06/19検算, MTD preliminary label placeholder, Juneteenth preliminary MTD label no fix, MTD preliminary row market calendar not SSOT, source_type_local_sqlite鵜呑み, GS universe DB昇格, local_sqlite vs PostgreSQL入力差, weighted_yotsume 0不一致, UUID完備universe DB source昇格, GS月次突合解像度差, デプロイまで終わってるか？, デプロイ完了確認, DM-signalのはなしをしよう相変わらずmonthly returnやmonthly tradeページでloadingが発生する, ローカルで検査すると、本番のネットワーク負荷などが見えないのでは？問題はないのか？ |
+| aliases | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data, 月次リターン, MTD, 月次部分月, MTD判定, Month-to-Date, 部分月, partial_month, monthly_common, チェックリスト, monthly trade画面には現時点で全PFの６月の保有ポジションがpendingに表示される必要がある, signal_pending, pending 3条件, monthly_trade.py, signals.py pending, is_pending, is_mtd, build_pending_map, 3レイヤー貫通確認, DB→API→FE, PF物理削除, PF論理削除, is_active, portfolio_config_snapshots, FK制約, CASCADE, NO ACTION, 逆依存順削除, PF設定バックアップ, PF削除手順, 旧式PF削除, チェックリストを家老にれびゅーしてもらおう, is active削除WP Phase 前提ゲート実測, is active機能のFE BE docs削除実装, is active削除ブランチの指示書準拠再構成, monthly productのBEスキーマ削除実装, MTDテーブルDaily列の実装 設計書PR2, MTD速報行の実装 設計書PR3 Feature C, MTD速報ラベル仮置き, MTD速報行の日付は仮置き, 06/19速報ラベル, 06/19 ⚡は市場営業日SSOTではない, Juneteenth MTD速報ラベル修正不要, 市場カレンダーなし MTD速報ラベル, 秘奥義-激攻 06/19検算, MTD preliminary label placeholder, Juneteenth preliminary MTD label no fix, MTD preliminary row market calendar not SSOT, source_type_local_sqlite鵜呑み, GS universe DB昇格, local_sqlite vs PostgreSQL入力差, weighted_yotsume 0不一致, UUID完備universe DB source昇格, GS月次突合解像度差, デプロイまで終わってるか？, デプロイ完了確認, DM-signalのはなしをしよう相変わらずmonthly returnやmonthly tradeページでloadingが発生する, ローカルで検査すると、本番のネットワーク負荷などが見えないのでは？問題はないのか？, monthly-trade側の対策後計測不在 |
 | skills | db-check, pf-registration |
 | related_concepts | recalculate_pipeline, dmsignal_operations, silent_fallback_quality, terminology_dictionary, shin_shijin_design, alpha_6_metrics, db_price_data_range, dm_signal_refactor_mission, fusion_api_endpoint, dmsignal_fe_experience_deploy |
 
@@ -1967,6 +1969,8 @@ codd:
 | causal | `cmd_3615` files_modified: [[growth_loop]] |
 | causal | `cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133` files_modified: [[growth_loop]] |
 | lesson | `L927` 並列バッチ機構の背後に'export -f find'等のオーバーライドを置くと後続の再構成で静かに死ぬ。定期的に消費者ゼロを検証せよ |
+| cmd | `cmd_3670` DM-Signal本番mobile Lighthouse再計測 — テーブル表示ウィンドウ描画化の効果測定 |
+| causal | `cmd_3670` origin: [[cmd_3663]] -> [[Lighthouseサイクル再計測フェーズ]] -> [[cmd_3670]] |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
 | causal_chain | `[[cmd_147]]` (L012) |
@@ -2767,14 +2771,16 @@ codd:
 |------|---|
 | id | dmsignal_fe_experience_deploy |
 | label | DM-Signal体感主導デプロイ |
-| aliases | 体感主導デプロイ, 速度の体感判定は殿, システム側は正しさ保証, 高速化は正しさ検証済みなら即push, 周回計測の数値クローズを待ってデプロイを遅らせるな, monthly-returns仮想化live検分, post-deploy FE正しさ検分, monthly-returns monthly-trade CDP検分, Render live後CDP検分 |
+| aliases | 体感主導デプロイ, 速度の体感判定は殿, システム側は正しさ保証, 高速化は正しさ検証済みなら即push, 周回計測の数値クローズを待ってデプロイを遅らせるな, monthly-returns仮想化live検分, post-deploy FE正しさ検分, monthly-returns monthly-trade CDP検分, Render live後CDP検分, 体感的には十分速くなった, 体感クローズ, loading体感解消, Lighthouse体感サイクル クローズ, 実データ描画条件の真値, チャンク7023はScript Evaluation 9.2秒が本体, 体感OKなら残存数値対策は起票しない |
 | related_concepts | dmsignal_operations, production_parity, cdp_browser_capability, creator_brainwashing_defense |
 
 | 種別 | パス/参照 |
 |------|----------|
 | file | `context/dm-signal-ops.md` §19.1 |
 | evidence | `/tmp/dm_signal_cmd3663_live_verify/result.json` — cmd_3663 Render live後CDP検分結果(overall_pass=true) |
+| evidence | `docs/research/lighthouse_rounds/round_20260703_cmd3673_monthly_data_proof/cmd3673_lord_mobile_diff.md` — 実データ描画条件の真値差分表(returns 74/TBT 167ms, trade 80/TBT 62ms) |
 | causal | `[[殿裁定_20260702_体感主導デプロイ]] -> [[cmd_3663_monthly_returns仮想化]] -> [[post_deploy_CDP正しさ検分]]` |
+| causal | `[[cmd_3672_計測道具実データ対応]] -> [[cmd_3673_真値差分表]] -> [[殿裁定_20260703_体感クローズ]]` |
 | cmd | `cmd_3330` backfill — | session_20260612_shogun_ac2_cycles_mtdux_complete | AC2第1-2サイクル本番着地+第二サイクルレビュー通過+mtd-ux全PR完遂+裁可型是正 |
 
 ## dmsignal_operations — DM-Signal運用
@@ -2829,6 +2835,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T17:21:07+09:00 別アプリで作って ですね Web でまあリアルリアルタイムで色々いじれるのが面白いですよね ビジュアリゼーション化をして DM シグナルで登録済みの全銘柄 豊山 L 1から L 3 の 新 4芯から新年俸 信仰木 新容器 この4つですよね  |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T17:22:37+09:00 なので DM シグナルの API としては では マンスリー リターンとポートフォリオ名 これだけでいいんじゃないですかね |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T17:24:24+09:00 現時点で DM シグナル側で埋めておくべき 穴はありますか 本当 セキュリティは非常に重要なんですけれどもそもそもまあポプトフォリオ名と リターンだけだったら 流出 しても ですね 大きな問題にはならないですね |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T02:43:55+09:00 相談なんだが DM シグナルでベータを検索してると思うんだが データの逆数を保有した時のトータルリターン っていうのを出すことってできるのかな ベータは厳密にと毎月少しずつ変わると思うんだけど 今日はベータの客数をかけて ベーター リスクを |
 
 ## google_classroom — Google Classroom Dashboard
 
@@ -4928,6 +4935,7 @@ codd:
 | causal | `cmd_3564` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_3566` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_3615` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_karo_hotfix_clear_prep_semantic_nomatch_20260703014831` files_modified: [[semantic_causal_automation]] |
 
 ## provisional_hayate — 仮: Hayate
 
