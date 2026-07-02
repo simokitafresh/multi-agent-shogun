@@ -301,11 +301,71 @@ send_info_cmd_notification() {
     fi
 }
 
+gate_clear_notify_dedup_key() {
+    local cmd_id="$1"
+    if [[ "$cmd_id" =~ ^(cmd_karo_hotfix_ga[0-9]+)(_.+)?$ ]]; then
+        printf '%s\n' "${BASH_REMATCH[1]}"
+        return 0
+    fi
+    if [[ "$cmd_id" =~ ^(.+)_[0-9]{12,14}$ ]]; then
+        printf '%s\n' "${BASH_REMATCH[1]}"
+        return 0
+    fi
+    printf '%s\n' "$cmd_id"
+}
+
+shogun_gate_clear_already_notified() {
+    local cmd_id="$1"
+    local key
+    local inbox_file="$SCRIPT_DIR/queue/inbox/shogun.yaml"
+    key="$(gate_clear_notify_dedup_key "$cmd_id")"
+    [ -f "$inbox_file" ] || return 1
+
+    python3 - "$inbox_file" "$key" <<'PY'
+import re
+import sys
+import yaml
+
+path, key = sys.argv[1], sys.argv[2]
+
+def dedup_key(cmd_id: str) -> str:
+    m = re.match(r"^(cmd_karo_hotfix_ga[0-9]+)(_.+)?$", cmd_id)
+    if m:
+        return m.group(1)
+    m = re.match(r"^(.+)_[0-9]{12,14}$", cmd_id)
+    if m:
+        return m.group(1)
+    return cmd_id
+
+try:
+    data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except Exception:
+    sys.exit(1)
+
+for msg in data.get("messages") or []:
+    if not isinstance(msg, dict):
+        continue
+    if msg.get("type") != "gate_clear":
+        continue
+    content = str(msg.get("content") or "")
+    match = re.search(r"GATE CLEAR\s+—\s+(\S+)\s+完了", content)
+    if match and dedup_key(match.group(1)) == key:
+        sys.exit(0)
+sys.exit(1)
+PY
+}
+
 notify_shogun_gate_clear() {
     local cmd_id="$1"
     local message="${2:-GATE CLEAR — ${cmd_id} 完了}"
     local stderr_tmp
     stderr_tmp="$(mktemp)"
+
+    if shogun_gate_clear_already_notified "$cmd_id"; then
+        echo "  shogun inbox: SKIP (gate clear notify dedup)"
+        rm -f "$stderr_tmp"
+        return 0
+    fi
 
     if timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun "$message" gate_clear cmd_complete_gate 2>"$stderr_tmp"; then
         echo "  shogun inbox: OK (gate clear notify)"

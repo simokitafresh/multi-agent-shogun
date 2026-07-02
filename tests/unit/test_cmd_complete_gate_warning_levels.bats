@@ -14,6 +14,8 @@ setup_file() {
 
     {
         sed -n '/^send_info_cmd_notification()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^gate_clear_notify_dedup_key()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^shogun_gate_clear_already_notified()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_shogun_gate_clear()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_karo_cmd_complete_skill_hint()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_karo_gate_block()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -61,6 +63,16 @@ EOF
     cat > "$TEST_PROJECT/scripts/inbox_write.sh" <<'EOF'
 #!/usr/bin/env bash
 printf '%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" >> "${INBOX_WRITE_LOG}"
+mkdir -p "${SCRIPT_DIR}/queue/inbox"
+if [ "$1" = "shogun" ]; then
+  {
+    [ -s "${SCRIPT_DIR}/queue/inbox/shogun.yaml" ] || printf 'messages:\n'
+    content=${2//\'/\'\'}
+    from=${4//\'/\'\'}
+    type=${3//\'/\'\'}
+    printf -- "- content: '%s'\n  from: '%s'\n  id: 'msg_test'\n  read: false\n  timestamp: '2099-01-01T00:00:00'\n  type: '%s'\n" "$content" "$from" "$type"
+  } >> "${SCRIPT_DIR}/queue/inbox/shogun.yaml"
+fi
 EOF
     chmod +x "$TEST_PROJECT/scripts/inbox_write.sh"
 
@@ -587,6 +599,28 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"shogun inbox: OK (gate clear notify)"* ]]
     grep -q "^shogun|GATE CLEAR — $TEST_CMD_ID 完了|gate_clear|cmd_complete_gate$" "$INBOX_WRITE_LOG"
+}
+
+@test "notify_shogun_gate_clear dedups hotfix full id followed by short id" {
+    run notify_shogun_gate_clear "cmd_karo_hotfix_ga167_lesson_health_unclassified_202607021805" "GATE CLEAR — cmd_karo_hotfix_ga167_lesson_health_unclassified_202607021805 完了"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shogun inbox: OK (gate clear notify)"* ]]
+
+    run notify_shogun_gate_clear "cmd_karo_hotfix_ga167" "GATE CLEAR — cmd_karo_hotfix_ga167 完了"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shogun inbox: SKIP (gate clear notify dedup)"* ]]
+    [ "$(grep -c '^shogun|GATE CLEAR' "$INBOX_WRITE_LOG")" -eq 1 ]
+}
+
+@test "notify_shogun_gate_clear dedups timestamped hotfix id after short id" {
+    run notify_shogun_gate_clear "cmd_karo_hotfix_cmd3655_unauthorized_contrast" "GATE CLEAR — cmd_karo_hotfix_cmd3655_unauthorized_contrast 完了"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shogun inbox: OK (gate clear notify)"* ]]
+
+    run notify_shogun_gate_clear "cmd_karo_hotfix_cmd3655_unauthorized_contrast_202607021724" "GATE CLEAR — cmd_karo_hotfix_cmd3655_unauthorized_contrast_202607021724 完了"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shogun inbox: SKIP (gate clear notify dedup)"* ]]
+    [ "$(grep -c '^shogun|GATE CLEAR' "$INBOX_WRITE_LOG")" -eq 1 ]
 }
 
 @test "notify_karo_cmd_complete_skill_hint writes cmd-complete prompt to karo inbox" {
