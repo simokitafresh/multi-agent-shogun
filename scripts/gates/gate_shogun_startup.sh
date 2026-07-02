@@ -985,6 +985,7 @@ answer_terms = (
     "Anthropic", "創造主", "洗脳", "早期終了", "検証スキップ", "他者依存",
     "緩い設計", "先送り", "出力=仕事", "簡潔本能", "完了急ぎ",
     "殿のため", "Anthropicのため", "コスト最適化",
+    "自動化ターゲット", "実装証拠",
 )
 prompt_only_terms = ("Q6:", "洗脳8パターン", "1つ具体例で答えよ")
 empty_target_re = re.compile(r"\*{0,2}自動化ターゲット\*{0,2}\s*[:：]\s*(なし|無し|特になし|未記入|N/?A|none|null)?\s*$", re.I)
@@ -994,7 +995,7 @@ weak_target_negation_re = re.compile(r"(検討[・/、, ]*予定ではなく|検
 automation_action_re = re.compile(
     r"(cmd起票|cmd発行|cmd化|gate修正|gate追加|hook追加|hook修正|script変更|script修正|"
     r"スクリプト変更|教訓追記|教訓登録|lesson追記|D0修正|実装修正|テスト追加|検知追加|"
-    r"ブロック追加|BLOCK追加)"
+    r"ブロック追加|BLOCK追加|実装完了|実装証拠|push済み|配備済み|検証:)"
 )
 automation_action_negation_re = re.compile(
     r"(cmd起票|cmd発行|cmd化|gate修正|gate追加|hook追加|hook修正|script変更|script修正|"
@@ -1390,7 +1391,7 @@ bulletin_path = Path(sys.argv[2])
 brainwash_re = re.compile(
     r"洗脳|覚醒|Anthropic|創造主|ポジショントーク|早期終了|検証スキップ|"
     r"他者依存|緩い設計|先送り|出力=仕事|簡潔本能|完了急ぎ|"
-    r"コスト最適化|殿のため|Gate.*品質|warn|WARN|block|BLOCK",
+    r"コスト最適化|殿のため|自動化ターゲット|実装証拠|Gate.*品質|warn|WARN|block|BLOCK",
     re.I,
 )
 
@@ -3409,8 +3410,9 @@ PY
 }
 if [ "${#alerts[@]}" -gt 0 ]; then
     mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
-    _streak_result=$(python3 - "$STARTUP_ALERT_HISTORY" "${STARTUP_WARN_STREAK_THRESHOLD}" "${alerts[@]}" <<'PY' 2>/dev/null || true
+    _streak_result=$(python3 - "$STARTUP_ALERT_HISTORY" "${STARTUP_WARN_STREAK_THRESHOLD}" "${STARTUP_WARN_STREAK_MIN_GAP_SEC:-600}" "${alerts[@]}" <<'PY' 2>/dev/null || true
 import sys
+import datetime
 from pathlib import Path
 
 path = Path(sys.argv[1])
@@ -3418,9 +3420,13 @@ try:
     threshold = int(sys.argv[2])
 except ValueError:
     threshold = 3
+try:
+    min_gap_sec = int(sys.argv[3])
+except ValueError:
+    min_gap_sec = 600
 current = [
     a.strip()
-    for a in sys.argv[3:]
+    for a in sys.argv[4:]
     if a.strip()
     and not a.strip().startswith("startup連続出現BLOCK:")
     and not a.strip().startswith("先送り判断:")
@@ -3429,21 +3435,39 @@ current = [
 if not current or threshold <= 1:
     sys.exit(0)
 
+def parse_ts(value):
+    try:
+        return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S%z")
+    except ValueError:
+        return None
+
 runs = []
 if path.exists():
     current_run = None
     current_keys = set()
+    current_ts = None
     for raw in path.read_text(encoding="utf-8", errors="ignore").splitlines():
         parts = raw.split("\t", 1)
         if len(parts) != 2:
             continue
         run_id, key = parts
+        run_ts = parse_ts(run_id)
         if current_run is None:
             current_run = run_id
+            current_ts = run_ts
         if run_id != current_run:
-            runs.append(current_keys)
-            current_run = run_id
-            current_keys = set()
+            if (
+                min_gap_sec > 0
+                and current_ts is not None
+                and run_ts is not None
+                and (run_ts - current_ts).total_seconds() < min_gap_sec
+            ):
+                current_run = run_id
+            else:
+                runs.append(current_keys)
+                current_run = run_id
+                current_ts = run_ts
+                current_keys = set()
         if key != "__OK__":
             current_keys.add(key)
     if current_run is not None:
@@ -3548,7 +3572,45 @@ mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
 _startup_run_id="$(date '+%Y-%m-%dT%H:%M:%S%z')"
 if [ ${#alerts[@]} -gt 0 ]; then
     for a in "${alerts[@]}"; do
-        printf '%s\t%s\n' "$_startup_run_id" "$a" >> "$STARTUP_ALERT_HISTORY"
+        _history_recent_duplicate=$(python3 - "$STARTUP_ALERT_HISTORY" "$_startup_run_id" "$a" "${STARTUP_WARN_HISTORY_DUP_WINDOW_SEC:-600}" <<'PY' 2>/dev/null || true
+import sys
+import datetime
+from pathlib import Path
+
+path = Path(sys.argv[1])
+run_id = sys.argv[2]
+target = sys.argv[3]
+try:
+    window_sec = int(sys.argv[4])
+except ValueError:
+    window_sec = 600
+
+def parse_ts(value):
+    try:
+        return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S%z")
+    except ValueError:
+        return None
+
+now = parse_ts(run_id)
+if not path.exists() or now is None or window_sec <= 0:
+    raise SystemExit(0)
+
+for raw in reversed(path.read_text(encoding="utf-8", errors="ignore").splitlines()[-300:]):
+    parts = raw.split("\t", 1)
+    if len(parts) != 2:
+        continue
+    ts_raw, key = parts
+    if key != target:
+        continue
+    ts = parse_ts(ts_raw)
+    if ts is not None and 0 <= (now - ts).total_seconds() < window_sec:
+        print("duplicate")
+    break
+PY
+)
+        if [ "$_history_recent_duplicate" != "duplicate" ]; then
+            printf '%s\t%s\n' "$_startup_run_id" "$a" >> "$STARTUP_ALERT_HISTORY"
+        fi
     done
 else
     printf '%s\t__OK__\n' "$_startup_run_id" >> "$STARTUP_ALERT_HISTORY"
