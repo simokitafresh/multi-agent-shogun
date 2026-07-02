@@ -638,3 +638,11 @@ lessons:
   created_at: '2026-07-02'
   automated: true
   enforcement: 'kagemaru lesson_candidate(production固定計測)と対。次回FE計測実証cmdのAC設計知識'
+- id: 'LS078'
+  title: '真実の在処不一致クラス — 書き手と読み手が別ストアを見る構造は恒常誤判定を生む'
+  origin: '[[LS-A11]] -> [[gate_skill_script_refs_matches末尾採用]] -> [[先送りBLOCK注入stale化]]'
+  detail: '同構造3例で上位構造を教訓化(LS-A02(4))。インスタンス1=model_detect tail -1バグ(LS-A11, 2026-06-20)、インスタンス2=gate_skill_script_refs parse_checked_at_epochのmatches[-1]採用(2026-07-02: 更新慣行は先頭追記なのに末尾コメントを基準採用→更新が効かず3セッション先送り)、インスタンス3=先送りBLOCK注入のstale化(2026-07-02: 解消はsession_alerts側[DONE]に書かれるが読み手prompt_state_injectは追記専用の履歴TSVだけを読む→実解消後も毎プロンプト「未解消1件」注入が3ターン継続)。上位構造: 同一事実について書き手が更新するストアと読み手が参照するストア(または履歴内の位置)が一致しないと、どちらも正しく動いているのに恒常誤判定が生まれる。対処: (1)履歴から代表値を選ぶときはfirst/lastでなくmax/min等の順序不変な集約を使え (2)判定gate/検出器は採用した基準値と出典を出力せよ(件数だけの注入は中身を調べない限りノイズ化し素通りされる) (3)二重ストアの読み手は現在状態の正と突合せよ(履歴は追記専用で解消が伝播しない) (4)WARN解消系hotfixは対象gate再実行PASSをbinary_check必須'
+  source_cmd: 'session_20260702'
+  created_at: '2026-07-02'
+  automated: true
+  enforcement: 'gate_skill_script_refs.sh max採用+判定根拠出力(commit 07a0cfd83/68c5f0cf7)+再現bats test_gate_skill_script_refs_marker.bats(3テスト)+prompt_state_inject.sh session_alerts突合+キー本文表示(commit 1ac6eb794)+test_prompt_state_defer_reconcile.bats(3テスト)'
