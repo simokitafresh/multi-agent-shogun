@@ -155,7 +155,16 @@ _model_detect_process_args() {
             effort=$(printf '%s\n' "$args" | sed -nE 's/.*(^|[[:space:]])--effort[=[:space:]]+([A-Za-z0-9._-]+).*/\2/p' | tail -1)
             effort="${effort:-$(_model_detect_settings_effort "$agent")}"
             family="${family,,}"
-            [ -n "$family" ] || return 1
+            if [ -z "$family" ]; then
+                # --modelフラグなし起動(CLIデフォルトモデル)はプロセス引数から判別不能。
+                # codex分岐と対称にsettings.yaml宣言(cli_model_display)へフォールバック。
+                # これがないとバナースクロールオフ+キャッシュ空のpaneで3経路全滅する(INS-131610第2原因)
+                local display
+                display=$(cli_model_display "$agent" 2>/dev/null || true)
+                [ -n "$display" ] || return 1
+                printf '%s\n' "$display"
+                return 0
+            fi
             base=$(_model_detect_claude_family_display "$agent" "$family" "$effort") || return 1
             if [ -n "$effort" ]; then
                 printf '%s %s\n' "$base" "$effort"

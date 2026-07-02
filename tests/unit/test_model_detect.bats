@@ -270,6 +270,43 @@ setup_file() {
     [ "$output" = "Fable high" ]
 }
 
+@test "detect_real_model: Claude process args without --model fall back to settings model_name" {
+    run bash -lc "
+        source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'
+        source '$PROJECT_ROOT/scripts/lib/model_detect.sh'
+        cli_type() { echo claude; }
+        _cli_lookup_settings_get() {
+            if [ \"\$2\" = model_name ]; then
+                echo fable-5-high
+                return 0
+            fi
+            return 1
+        }
+        tmux() {
+            if [ \"\$1\" = capture-pane ]; then
+                printf '%s\n' 'Claude Code' 'current session has no model banner yet'
+                return 0
+            fi
+            if [ \"\$1\" = display-message ]; then
+                printf '%s\n' '100'
+                return 0
+            fi
+            if [ \"\$1\" = set-option ]; then
+                return 0
+            fi
+            return 1
+        }
+        ps() {
+            printf '%s\n' \
+                '100 1 bash' \
+                '200 100 /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --effort high'
+        }
+        detect_real_model shogun shogun:main
+    "
+    [ "$status" -eq 0 ]
+    [ "$output" = "fable-5-high" ]
+}
+
 @test "resolve_model_display: Fable settings model_name is the fallback when banner detection fails" {
     run bash -lc "
         source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'
