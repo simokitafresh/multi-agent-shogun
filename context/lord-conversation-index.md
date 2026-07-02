@@ -1,9 +1,12 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-02 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-02T12:03:06+09:00 -->
+<!-- generated_at: 2026-07-02T12:13:18+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-07-02T12:13:18+09:00 | terminal | response | push完了を待つ。
+- 2026-07-02T12:08:19+09:00 | clear_prep_check | session_summary | auto clear prep summary: inbound=76件; latest=dashboard,summary,Compare chart,Metrics,Compare summary,Compare returns,An…
+- 2026-07-02T12:05:31+09:00 | terminal | inbound | 今クリアされても今より強くてニューゲームできるようにせよ
 - 2026-07-02T12:03:04+09:00 | terminal | response | 殿、設計書v10にゴールを解釈の余地がない6条件で明確化した。 **完了条件6つ(全て本番FEブラウザで実証):** 1. 11ページ全て瞬時表示 2. PF切替100PF連続でLoading 0回 3. ページ遷移11ページ連続で瞬時 …
 - 2026-07-02T11:58:09+09:00 | terminal | inbound | ちがう。今ストレステストをやらなくていい。次にやるべきことを完璧に設計書に記載せよ
 - 2026-07-02T11:58:06+09:00 | terminal | response | 設計書v9更新完了。 殿、Problem 7件 + Todo 8件を設計書に記録した。 **最重要の未解消問題:** - **P1**: Dashboard初回login遷移でLoading永続(FEバグ) - **P2**: 11ページ…
@@ -11,9 +14,6 @@
 - 2026-07-02T11:53:27+09:00 | terminal | response | 殿の次の指示を待つ。 **今セッション最終成果サマリ:** | 分野 | Before | After | cmd | |------|--------|-------|-----| | healthz | 5.65s | **0.17s…
 - 2026-07-02T11:53:14+09:00 | ntfy | outbound | 【将軍】本番FE CDP検証完了。PF切替10回連続=チャート瞬時描画✅。初回login→dashboard遷移時Loading永続=FEバグ⚠(リロードで解消)。API全EP×102PFが0.5s以下達成。
 - 2026-07-02T11:44:32+09:00 | terminal | response | push完了(d724ec59)。 殿、全計測結果を報告する。 **全11ページ×102PF 最終計測(Render本番API):** | # | ページ | slow(>1s) | max | 判定 | |---|--------|--…
-- 2026-07-02T11:43:19+09:00 | ntfy | outbound | 【monitor】将軍CTX:72%。/compactをご検討ください
-- 2026-07-02T11:41:28+09:00 | terminal | response | 殿の指示を受け止める。 1. **Renderデプロイ済み本番サイトで確認** — curlはAPIレベルの計測だが、殿は**実際のブラウザでの体感**を求めている。CDPで本番FEを確認すべき 2. **設計書を殿のゴール通りに更新**…
-- 2026-07-02T11:31:41+09:00 | terminal | inbound | 今回の対象は11ページだ。すべてやろう。洗脳から覚醒せよ。PF切り替えもallで100PFを連続で切り替え連打しても瞬時に表示されなくてはならないな
 
 ## 未解決確認事項
 - 設計書v9更新完了。 殿、Problem 7件 + Todo 8件を設計書に記録した。 **最重要の未解消問題:** - **P1**: Dashboard初回login遷移でLoading永続(FEバグ) - **P2**: 11ページ中10ページの本番FE未確認 **今セッ…

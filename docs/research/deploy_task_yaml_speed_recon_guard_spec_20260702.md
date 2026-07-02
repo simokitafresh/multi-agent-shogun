@@ -47,7 +47,6 @@ R3: recon/scout の別忍者並列配備を許可する。
 - `deploy_task_apply_task_mutations`: 既注入済み direct YAML では metadata clear と heavy injection を短絡し、既存注入内容を保持する。
 - 維持される処理: stale reset、YAML syntax repair、parent_cmd/status/task_id 設定、report template生成、inbox通知、deployed_at、preflight gate、draft review。
 - duplicate guard: `task_type`/`scope_mode` が `recon` または `scout` で peer task_id が異なる場合、active peer を許可する。同一 task_id、同一忍者、pending own report、completed peer report は従来通り BLOCK。
-- `check_yaml_freshness`: script pathごとの逐次 `git log` 2回呼出しを廃止し、対象script群に対する1回のbatch `git log` で保守的WARNを出す。
 
 After計測:
 
@@ -55,12 +54,10 @@ After計測:
 |---|---|---:|
 | Before | kagemaru direct `--yaml` 実ログ | 70s |
 | Before | hanzo/kotaro direct `--yaml` 実ログ | 192s / 179s |
-| Before | `check_yaml_freshness` 単体 | 59.76s |
-| After | `check_yaml_freshness` 単体 | 1s |
-| After | preinjected同等fixture全体 | 0.63s |
+| After | preinjected fixture短絡経路 | 0.16s |
 
 関連テスト:
 
 - `bash -n scripts/deploy_task.sh`
-- `bats tests/unit/test_deploy_task_yaml_injection.bats` → 15/15 PASS, SKIP=0
+- `bats tests/unit/test_deploy_task_yaml_injection.bats` → 14/14 PASS, SKIP=0
 - `bats tests/unit/test_deploy_task_ac_version.bats tests/unit/test_deploy_task_template_generation.bats` → 65/65 PASS, SKIP=0
