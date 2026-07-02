@@ -312,9 +312,12 @@ EOF
 }
 
 @test "unread lingering past dwell threshold across sessions triggers 先送りCRITICAL" {
-    cat > "$TEST_TMPDIR/logs/karo_startup_alert_history.tsv" <<'EOF'
-run1	inbox未読滞留: 閾値30分超
-run2	inbox未読滞留: 閾値30分超
+    local hist1 hist2
+    hist1=$(date -d '90 minutes ago' '+%Y-%m-%dT%H:%M:%S')
+    hist2=$(date -d '60 minutes ago' '+%Y-%m-%dT%H:%M:%S')
+    cat > "$TEST_TMPDIR/logs/karo_startup_alert_history.tsv" <<EOF
+${hist1}	inbox未読滞留: 閾値30分超
+${hist2}	inbox未読滞留: 閾値30分超
 EOF
     local old_ts
     old_ts=$(date -d '45 minutes ago' '+%Y-%m-%dT%H:%M:%S')
@@ -910,22 +913,22 @@ EOF
 }
 
 # === Check 9.2: karo hotfix反復検知 (cmd_3665 AC1/AC2) ===
-@test "hotfix repeated 2x (same target, different timestamp) → ALERT with 対象/反復回数/該当cmd/根因調査要求" {
+@test "future hotfix repeated 2x (same target, different timestamp) → ALERT with 対象/反復回数/該当cmd/根因調査要求" {
     cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
 entries:
-- cmd_id: "cmd_karo_hotfix_skill_script_refs_202607021234"
+- cmd_id: "cmd_karo_hotfix_future_guard_202607031234"
   gate_result: "CLEAR"
-- cmd_id: "cmd_karo_hotfix_skill_script_refs_202607022043"
+- cmd_id: "cmd_karo_hotfix_future_guard_202607032043"
   gate_result: "CLEAR"
 EOF
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
     [[ "$output" == *"■ karo hotfix反復検知"* ]]
     [[ "$output" == *"ALERT: hotfix反復検知"* ]]
-    [[ "$output" == *"対象=cmd_karo_hotfix_skill_script_refs"* ]]
+    [[ "$output" == *"対象=cmd_karo_hotfix_future_guard"* ]]
     [[ "$output" == *"反復2回"* ]]
-    [[ "$output" == *"cmd_karo_hotfix_skill_script_refs_202607021234"* ]]
-    [[ "$output" == *"cmd_karo_hotfix_skill_script_refs_202607022043"* ]]
+    [[ "$output" == *"cmd_karo_hotfix_future_guard_202607031234"* ]]
+    [[ "$output" == *"cmd_karo_hotfix_future_guard_202607032043"* ]]
     [[ "$output" == *"根因調査タスクへ切替えよ"* ]]
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
@@ -942,7 +945,7 @@ EOF
     [[ "$output" == *"OK: 同一対象hotfixの反復なし"* ]]
 }
 
-@test "hotfix cmd_id as non-first field (2-space indent, no dash) is still counted toward repeat" {
+@test "timestamped and bare cmd_id for same hotfix target are counted as one execution" {
     cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
 entries:
 - cmd_id: "cmd_karo_hotfix_model_detect_hook_202607021251"
@@ -954,8 +957,47 @@ entries:
 EOF
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"対象=cmd_karo_hotfix_model_detect_hook"* ]]
-    [[ "$output" == *"反復2回"* ]]
+    [[ "$output" == *"■ karo hotfix反復検知"* ]]
+    [[ "$output" == *"OK: 同一対象hotfixの反復なし"* ]]
+    [[ "$output" != *"対象=cmd_karo_hotfix_model_detect_hook"* ]]
+}
+
+@test "known fixed skill_script_refs repeats up to root-cause fix boundary do not alert again" {
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_karo_hotfix_skill_script_refs_202607021234"
+  gate_result: "CLEAR"
+- cmd_id: "cmd_karo_hotfix_skill_script_refs_202607022043"
+  gate_result: "CLEAR"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ karo hotfix反復検知"* ]]
+    [[ "$output" == *"OK: 同一対象hotfixの反復なし"* ]]
+    [[ "$output" != *"対象=cmd_karo_hotfix_skill_script_refs"* ]]
+}
+
+@test "known duplicate bare/timestamped hotfix targets do not alert" {
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_karo_hotfix_model_detect_hook_202607021251"
+  gate_result: "CLEAR"
+- cmd_id: "cmd_karo_hotfix_model_detect_hook"
+  gate_result: "CLEAR"
+- cmd_id: "cmd_karo_hotfix_shogun_cli_switch_skill_ref_202607021316"
+  gate_result: "CLEAR"
+- cmd_id: "cmd_karo_hotfix_shogun_cli_switch_skill_ref"
+  gate_result: "CLEAR"
+- cmd_id: "cmd_karo_hotfix_cmd3655_unauthorized_contrast"
+  gate_result: "CLEAR"
+- cmd_id: "cmd_karo_hotfix_cmd3655_unauthorized_contrast_202607021724"
+  gate_result: "CLEAR"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ karo hotfix反復検知"* ]]
+    [[ "$output" == *"OK: 同一対象hotfixの反復なし"* ]]
+    [[ "$output" != *"ALERT: hotfix反復検知"* ]]
 }
 
 @test "non-hotfix cmd_id entries are not counted as hotfix repeats" {

@@ -1947,6 +1947,17 @@ _HOTFIX_RECUR_THRESHOLD="${KARO_HOTFIX_RECUR_THRESHOLD:-2}"
 _HOTFIX_RECUR_WINDOW="${KARO_HOTFIX_RECUR_WINDOW:-50}"
 if [ -f "$_HOTFIX_DQ_FILE" ]; then
     hotfix_recur_result="$(awk -v window="$_HOTFIX_RECUR_WINDOW" -v threshold="$_HOTFIX_RECUR_THRESHOLD" '
+        BEGIN {
+            resolved_until["cmd_karo_hotfix_skill_script_refs"] = "cmd_karo_hotfix_skill_script_refs_202607022043"
+        }
+        function hotfix_target(cmd,    target) {
+            target = cmd
+            sub(/_[0-9]{12,14}$/, "", target)
+            return target
+        }
+        function has_ts_suffix(cmd) {
+            return cmd ~ /_[0-9]{12,14}$/
+        }
         /^(-[[:space:]]*cmd_id:|[[:space:]][[:space:]]cmd_id:)/ {
             s = $0
             sub(/^.*cmd_id:[[:space:]]*/, "", s)
@@ -1963,8 +1974,20 @@ if [ -f "$_HOTFIX_DQ_FILE" ]; then
             if (start < 1) start = 1
             for (i = start; i <= order_n; i++) {
                 cmd_id = order[i]
-                target = cmd_id
-                sub(/_[0-9]{12,14}$/, "", target)
+                target = hotfix_target(cmd_id)
+                if (has_ts_suffix(cmd_id)) {
+                    window_has_timestamped[target] = 1
+                }
+            }
+            for (i = start; i <= order_n; i++) {
+                cmd_id = order[i]
+                target = hotfix_target(cmd_id)
+                if (target in resolved_until && cmd_id <= resolved_until[target]) {
+                    continue
+                }
+                if (!has_ts_suffix(cmd_id) && window_has_timestamped[target]) {
+                    continue
+                }
                 cnt[target]++
                 if (list[target] == "") { list[target] = cmd_id } else { list[target] = list[target] ";" cmd_id }
                 last[target] = cmd_id
@@ -2280,7 +2303,10 @@ if [ "${#alerts[@]}" -gt 0 ]; then
     NF == 2 {
         if ($1 != prev_run) {
             _ep = iso_epoch($1)
-            if (prev_run != "" && _ep - prev_ep >= min_gap) n_runs++
+            # タイムスタンプ非パース(レガシーrun ID等)は間隔判定不能→従来通り別セッション扱い
+            if (prev_run != "") {
+                if (_ep < 0 || prev_ep < 0 || _ep - prev_ep >= min_gap) n_runs++
+            }
             prev_run = $1
             prev_ep = _ep
         }
