@@ -286,6 +286,53 @@ EOF
     [[ "$output" != *"先送りCRITICAL: inbox未読: 1件"* ]]
 }
 
+# === cmd_3658: 先送りCRITICAL誤検知根治 — 滞留時間ゲートの再現テスト ===
+# 到着直後の未読は先送りCRITICAL streakに混入してはならない(誤検知の根因)。
+# 滞留時間が閾値(KARO_INBOX_UNREAD_DWELL_MIN, デフォルト30分)を超えた未読のみstreak対象。
+@test "freshly arrived unread does not trigger 先送りCRITICAL streak even with prior matching history" {
+    cat > "$TEST_TMPDIR/logs/karo_startup_alert_history.tsv" <<'EOF'
+run1	inbox未読滞留: 閾値30分超
+run2	inbox未読滞留: 閾値30分超
+EOF
+    local now_ts
+    now_ts=$(date '+%Y-%m-%dT%H:%M:%S')
+    cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<EOF
+messages:
+- id: msg_fresh
+  timestamp: '${now_ts}'
+  type: review_result
+  from: gunshi
+  content: '到着直後のメッセージ'
+  read: false
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"到着直後のため先送りCRITICAL streak対象外"* ]]
+    [[ "$output" != *"先送りCRITICAL: inbox未読滞留"* ]]
+}
+
+@test "unread lingering past dwell threshold across sessions triggers 先送りCRITICAL" {
+    cat > "$TEST_TMPDIR/logs/karo_startup_alert_history.tsv" <<'EOF'
+run1	inbox未読滞留: 閾値30分超
+run2	inbox未読滞留: 閾値30分超
+EOF
+    local old_ts
+    old_ts=$(date -d '45 minutes ago' '+%Y-%m-%dT%H:%M:%S')
+    cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<EOF
+messages:
+- id: msg_stale
+  timestamp: '${old_ts}'
+  type: review_result
+  from: gunshi
+  content: '滞留しているメッセージ'
+  read: false
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"先送りCRITICAL streak対象"* ]]
+    [[ "$output" == *"先送りCRITICAL: inbox未読滞留: 閾値30分超 が3セッション連続"* ]]
+}
+
 @test "read actionable inbox still warns because read flag is not completion" {
     cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'EOF'
 messages:

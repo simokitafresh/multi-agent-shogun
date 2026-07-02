@@ -20,6 +20,9 @@ alerts=()
 STARTUP_STDERR_LOG="$SCRIPT_DIR/logs/gate_karo_startup_stderr.log"
 STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/karo_startup_alert_history.tsv"
 STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-3}"
+# cmd_3658: 到着直後の未読が先送りCRITICAL streakに混入する誤検知の根治。
+# 最古未読メッセージがこの分数以上滞留していない限り、streak判定対象のalertを積まない。
+KARO_INBOX_UNREAD_DWELL_MIN="${KARO_INBOX_UNREAD_DWELL_MIN:-30}"
 
 log_startup_stderr_file() {
     local label="$1"
@@ -1040,6 +1043,9 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
             if (inbox_entry && inbox_read_false && inbox_type == "karo_idle_cycle") {
                 unread_idle_cycle++
             }
+            if (inbox_entry && inbox_read_false && inbox_type != "karo_idle_cycle" && inbox_ts != "") {
+                if (oldest_unread_actionable_ts == "" || inbox_ts < oldest_unread_actionable_ts) oldest_unread_actionable_ts = inbox_ts
+            }
             if (inbox_entry && inbox_read_true &&
                 should_count_read_actionable(inbox_type, inbox_content)) {
                 read_actionable_key = inbox_id "|" inbox_type
@@ -1268,6 +1274,9 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         if (inbox_entry && inbox_read_false && inbox_type == "karo_idle_cycle") {
             unread_idle_cycle++
         }
+        if (inbox_entry && inbox_read_false && inbox_type != "karo_idle_cycle" && inbox_ts != "") {
+            if (oldest_unread_actionable_ts == "" || inbox_ts < oldest_unread_actionable_ts) oldest_unread_actionable_ts = inbox_ts
+        }
         if (inbox_entry && inbox_read_true &&
             should_count_read_actionable(inbox_type, inbox_content)) {
             read_actionable_key = inbox_id "|" inbox_type
@@ -1298,6 +1307,7 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         print "UNREAD|" unread+0
         print "UNREAD_CMD_NEW|" unread_cmd_new+0 "|" unread_cmd_new_items
         print "UNREAD_IDLE_CYCLE|" unread_idle_cycle+0
+        print "UNREAD_OLDEST_ACTIONABLE_TS|" oldest_unread_actionable_ts
         print "READ_ACTIONABLE|" read_actionable+0 "|" read_actionable_items
         print "INSIGHTS|" pending_insights+0
         insight_start = pending_insights - 2
@@ -1374,6 +1384,7 @@ while IFS='|' read -r _agg_key _agg_a _agg_b _agg_c _agg_d _agg_e _agg_f; do
         UNREAD) unread=${_agg_a:-0} ;;
         UNREAD_CMD_NEW) unread_cmd_new=${_agg_a:-0}; unread_cmd_new_items=${_agg_b:-} ;;
         UNREAD_IDLE_CYCLE) unread_idle_cycle=${_agg_a:-0} ;;
+        UNREAD_OLDEST_ACTIONABLE_TS) unread_oldest_actionable_ts=${_agg_a:-} ;;
         READ_ACTIONABLE) read_actionable=${_agg_a:-0}; read_actionable_items=${_agg_b:-} ;;
         INSIGHTS) _insight_pending_count=${_agg_a:-0} ;;
         INSIGHT_ITEM) _insight_recent_items="${_insight_recent_items}    ${_agg_a} [${_agg_b:-medium}] ${_agg_c}"$'\n' ;;
@@ -1560,7 +1571,25 @@ if [ -f "$SCRIPT_DIR/queue/inbox/karo.yaml" ]; then
             echo "  INFO: 未読はkaro_idle_cycleのみ。通常処理対象だが先送りCRITICAL streak対象外"
         elif [ "$overall" != "ALERT" ]; then
             overall="WARN"
-            alerts+=("inbox未読: ${unread}件")
+            # cmd_3658: 先送りCRITICAL streakは「到着直後の未読」を「先送り」と誤分類していた
+            # (到着直後→次startup gateで未読カウント→3セッション連続と誤認)。
+            # 最古actionable未読の滞留時間を計測し、閾値未満なら固定文字列alertを積まない
+            # (=streak対象外)。閾値以上の滞留のみ、固定文字列(分数を含めない)でstreakに乗せる。
+            # 分数を含めない理由: streakは前回runと同一文字列一致で判定するため、分数入りだと
+            # 実際に滞留していてもrun毎に文字列が変わりstreakが繋がらなくなる。
+            _unread_dwell_min=""
+            if [ -n "${unread_oldest_actionable_ts:-}" ]; then
+                _unread_oldest_epoch=$(date -d "$unread_oldest_actionable_ts" +%s 2>/dev/null || echo "0")
+                if [ "$_unread_oldest_epoch" -gt 0 ]; then
+                    _unread_dwell_min=$(( ($(date +%s) - _unread_oldest_epoch) / 60 ))
+                fi
+            fi
+            if [ -n "$_unread_dwell_min" ] && [ "$_unread_dwell_min" -ge "$KARO_INBOX_UNREAD_DWELL_MIN" ]; then
+                echo "  WARN: 最古未読が${_unread_dwell_min}分滞留(閾値${KARO_INBOX_UNREAD_DWELL_MIN}分) — 先送りCRITICAL streak対象"
+                alerts+=("inbox未読滞留: 閾値${KARO_INBOX_UNREAD_DWELL_MIN}分超")
+            else
+                echo "  INFO: 最古未読は${_unread_dwell_min:-不明}分前(閾値${KARO_INBOX_UNREAD_DWELL_MIN}分未満) — 到着直後のため先送りCRITICAL streak対象外"
+            fi
         fi
     fi
     if [ "${read_actionable:-0}" -gt 0 ]; then
