@@ -1,147 +1,52 @@
 task:
-  readonly_ref:
-  - path: 'scripts/insight_write.sh'
-    reason: command欄の必読/参照専用ファイル
-  acceptance_criteria:
-    AC1:
-      binary_checks:
-      - '根因が特定され、insight本文が利用可能なコードパス上の変数名が報告されているか: yes/no'
-      description: scripts/insight_write.sh L411-420のINSIGHT_REPEAT掲示板投稿部分を調査し、insight本文がbulletin投稿メッセージに含まれない根因を特定する
-    AC2:
-      binary_checks:
-      - '修正後のbulletin投稿メッセージにinsight本文の先頭N文字が含まれることをテストまたは実行ログで確認したか: yes/no'
-      description: INSIGHT_REPEAT掲示板投稿メッセージにinsight本文サマリーを含める修正を実装し、テストで動作確認する
-  assigned_scope: source_cmd=cmd_3629 parallel comparison; worker=kotaro; expected_model=Sonnet 4.6 high / Claude. parent_cmd is worker-specific to bypass duplicate guard while preserving source_cmd.
-  assumptions:
-    claim: insight_write.sh L419にINSIGHT_REPEAT投稿がありsource+pending_countのみ含有、insight本文は含まれていない(2026-07-01 grep確認)
-    source: scripts/insight_write.sh L411-420
-    trust: verified
-  command: scripts/insight_write.sh L400-430を読み、INSIGHT_REPEAT掲示板投稿にinsight本文サマリーが含まれない根因を特定し、本文先頭N文字をbulletin投稿メッセージへ含める修正とテストを実施せよ。報告YAMLにはmodel×effort、速度、深度、品質所見を記録せよ。
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok: []
-  parent_cmd: cmd_3629_kotaro
-  project: infra
-  purpose: '殿指示(2026-07-01): 未検証のCLI×model×effort組合せを検証せよ。現設定(GPT high/xhigh, Opus 4.6 high, Opus 4.8 high, S4.6 high, S5 high)の6忍者に同一タスク(INSIGHT_REPEAT掲示板投稿にinsight本文サマリーが欠落している問題の調査+修正)を並列配備し、深度/速度/品質を比較。R1-5/cmd_3628の既存データと合わせて全マトリクスを埋める'
-  scope_mode: FULL
-  scout_exempt: true
-  source_cmd: cmd_3629
+  parent_cmd: cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530
+  task_id: cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530_normal
   status: idle
-  stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/insight_write.sh
-  task_id: cmd_3629_kotaro_normal
-  task_type: full
-  related_lessons:
-  - id: 'L736'
-    summary: 'flock内でbackground起動したmemory DB insertがfd 200を継承し、親が終わった後もlockを保持して2回目のinsight_wr'
-    detail: 'flock内でbackground起動したmemory DB insertがfd 200を継承し、親が終わった後もlockを保持して2回目のinsight_wr'
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L133'
-    summary: 'IF lessons.yamlのinjection_countを参照する時 THEN 全件0の可能性を考慮し、sync_lessons.shの同期状態を確認せよ'
-    detail: 'IF lessons.yamlのinjection_countを参照する時 THEN 全件0の可能性を考慮し、sync_lessons.shの同期状態を確認せよ'
-  - id: 'L311'
-    summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
-    wa_category: 'report_yaml_format'
-    wa_count: 3
-    detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
+  assigned_to: kotaro
+  task_type: hotfix
+  project: infra
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/deploy_task.sh
+  title: deploy_task report template AC引用符エスケープhotfix
+  purpose: "deploy_task.shの報告テンプレート生成がAC本文中の二重引用符でYAMLを壊さないようにする"
+  command: |
+    家老自立配備 cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526 で、
+    acceptance_criteria AC5にバッククォート付きコマンドと二重引用符を含む文言があり、
+    deploy_task.sh が生成した queue/reports/saizo_report_cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526.yaml の
+    binary_checks.AC5[0].check 行がYAML構文エラーになった。
+    具体的には check 行の二重引用符内に未エスケープの二重引用符が残り、
+    python3 yaml.safe_load が line 115 で ParserError を出した。
+    家老側で当該reportは応急復旧済みだが、根因はreport template生成時のYAML scalar escaping不足である。
+    scripts/deploy_task.sh の report template生成を調査し、
+    ACのcheck文字列に二重引用符、バッククォート、山括弧、コロン等が含まれても
+    生成reportがyaml.safe_load可能になるよう最小修正せよ。
+  acceptance_criteria:
+  - id: AC1
+    description: "deploy_task.shのreport template生成でAC check文字列を出力する箇所を特定し、未エスケープ二重引用符でYAMLが壊れる再現をテストに追加する"
+  - id: AC2
+    description: "AC check文字列に二重引用符とバッククォートが含まれても生成reportがyaml.safe_load可能になるよう最小修正する"
+  - id: AC3
+    description: "既存のbinary_checks template形式とreport_field_set.shによるresult更新互換性を壊していないことを関連batsで確認する"
+  - id: AC4
+    description: "bash -n scripts/deploy_task.sh と該当batsを実行し、SKIPがある場合は未完了扱いで理由を書く"
+  - id: AC5
+    description: "scope内のみcommitし、今回の壊れたSaizo reportは家老応急復旧済みであることを報告に明記する"
+  constraints:
+  - "report templateのbinary_checks検出やAC数生成を弱めない"
+  - "既存report YAMLを一括再生成しない"
+  - "運用YAMLをyaml.dump/yaml.safe_dumpで全体再生成しない"
+  - "scope外の大規模リファクタは禁止"
+  not_in_scope:
+  - "report YAML全体フォーマットの再設計"
+  - "Saizoタスクの内容変更"
+  - "binary_checks result空欄FAILの高頻度insight処理"
+  report_path: queue/reports/kotaro_report_cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530.yaml
+  report_filename: kotaro_report_cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530.yaml
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L736: flock内でbackground起動したmemory DB insertがfd 200を継承し、親が終わった後もlockを保持して2回目のinsight_wr
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L133: IF lessons.yamlのinjection_countを参照する時 THEN 全件0の可能性を考慮し、sync_lessons.shの同期状態を確認せよ
-      - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
-    ────────────────────────────────────────
-  memory_db_context:
-  - '2026-07-01T20:31:05+09:00 | **cmd_3629 publish+委任完了。** `DELEGATED: cmd_3629 at 2026-07-01T20:30:41` 6忍者(GPT high/xhigh, Opus 4.6'
-  - '2026-07-01T20:19:13+09:00 | 【INFOバッチ】 2026-07-01 20:18:14|CI緑: run 28512782781'
-  - '2026-07-01T20:35:23+09:00 | 軍師idle分析: テスト速度改善D0実行(テスト統合で625ms削減+残30ファイル統合候補)。確認+既読済み。 cmd_3629進行中: hayate(GPT high) CTX:34% in_p'
-  ac_version: a7f33c02
-  _ac_task_id: cmd_3629_kotaro_normal
-  _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_3629_kotaro.yaml
-  report_path: queue/reports/kotaro_report_cmd_3629_kotaro.yaml
-  bloom_level: 
-  ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 4
-    top_pattern: 'report_yaml_format(3件)'
-    breakdown: 'report_yaml_format(3件), uncategorized(1件)'
-    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
-    gate_fail_top3:
-    - pattern: 'bc_result_empty'
-      count: 59
-    - pattern: 'field_missing'
-      count: 44
-    - pattern: 'verdict_invalid'
-      count: 19
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
-    gate_blocks:
-    - reason: 'report_format'
-      count: 9
-      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
-    - reason: 'binary_checks_fail'
-      count: 8
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-    - reason: 'empty_lessons_useful'
-      count: 1
-      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-    - reason: 'lesson_candidate_missing'
-      count: 1
-      hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-07-01T20:38:01"
-
-  session_state:
-    attempt: 5
-    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    approach_summary: 'INSIGHT_REPEAT bulletin投稿にinsight本文が欠落していた根因を特定し、テストT-009を追加して修正済みコードの動作確認完了'
-    prior_attempts:
-    - attempt: 3
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'INSIGHT_REPEAT bulletin投稿にinsight本文が欠落していた根因を特定し、テストT-009を追加して修正済みコードの動作確認完了'
-    - attempt: 4
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'INSIGHT_REPEAT bulletin投稿にinsight本文が欠落していた根因を特定し、テストT-009を追加して修正済みコードの動作確認完了'
-    - attempt: 5
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'INSIGHT_REPEAT bulletin投稿にinsight本文が欠落していた根因を特定し、テストT-009を追加して修正済みコードの動作確認完了'
+  ac_version: 4b08ed71
+  _ac_task_id: cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530_normal
+  _ac_worker_id: 
+  deployed_at: "2026-07-02T05:30:38"

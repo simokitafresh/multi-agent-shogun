@@ -3321,7 +3321,7 @@ lessons:
   origin: '[[cmd_3045]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-06-30'
+  last_referenced: '2026-07-02'
 - id: L702
   title: bash if条件失敗後のrcはelse内で捕捉せよ
   summary: if parsed=$(cmd); then ... fi; rc=$? だとrc=0(if文全体の成功)。失敗rcは else rc=$?
@@ -4470,7 +4470,7 @@ lessons:
   origin: '[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-07-01'
+  last_referenced: '2026-07-02'
 - id: L624
   title: yaml_field_setのnested指定は構文破壊リスク→dot notation専用ツール要
   summary: yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用
@@ -5228,6 +5228,9 @@ lessons:
   - scripts/clear_prep_check.sh
   - skills/shogun-clear-prep/SKILL.md
   origin: '[[cmd_2603]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L572
   title: 低ROI/対応不要はスコープ縮小の隠語 — パラメータ空間縮小禁止と同根
   summary: 「低ROI」「対応不要」は作業量を理由にスコープを縮小する隠語。パラメータ空間縮小禁止(CLAUDE.md)と同根。優先順位=実行順であり全部やる。一部対処は穴
@@ -5482,6 +5485,9 @@ lessons:
   - scripts/cmd_save.sh
   - docs/research/codd_refactor_registry.md
   origin: '[[cmd_2482]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L554
   title: 重複Batsは片側を高速化するより専用ファイルへcoverageを集約する
   summary: test_deploy_task_ac_handlingにtest_deploy_task_ac_versionと重複するac_version/resolve/
@@ -9117,6 +9123,9 @@ lessons:
   target_files:
   - deploy_task.sh
   origin: '[[cmd_1118]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L253
   title: ホワイトリスト.gitignoreで新ファイル追加時はファイル単位パス指定必須
   summary: projects/ディレクトリ全体のホワイトリスト化はシークレット含有リスクあり。ファイル単位指定が必須。新規ファイル作成cmdでは.gitignoreホワイト
@@ -9139,6 +9148,9 @@ lessons:
   target_files:
   - ninja_monitor.sh
   origin: '[[cmd_1108]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L251
   title: no_lesson_reasonフィールド追加時は報告テンプレート+instructions+レビュー条件の3層を同時修正せよ
   summary: 教訓還流の仕組み変更は、テンプレート(deploy_task.sh)・忍者ルール(ashigaru.md)・家老レビュー条件(karo.md)の3層を同時に修正
@@ -9407,6 +9419,9 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-16'
   origin: '[[cmd_973]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L227
   title: WSL2のWrite toolはCRLF改行を生成する
   summary: Write toolで作成した.shファイルがCRLF改行になり、bash実行時にset -euが失敗する。WSL2(/mnt/c/)でスクリプト作成後はsed
@@ -9696,7 +9711,7 @@ lessons:
   origin: '[[cmd_777]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-07-01'
+  last_referenced: '2026-07-02'
 - id: L204
   title: STALL誤判定の実態は「idle+status未更新」が主因。pstree方式で予防的防御層追加が有効
   summary: 30日分134件のSTALL-DETECTEDログを分析した結果、ほぼ全件が「ペインが確実にidle状態なのにtask YAML statusが未更新」パターン
@@ -9882,6 +9897,9 @@ lessons:
   when: 報告YAMLやレビュー結果を作成・検証する時
   how: '2026-03-09'
   origin: '[[cmd_702]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L187
   title: Compose の zoom 下限は viewport 配下の onTextLayout 幅から計算するな
   summary: IF Compose で terminal の pinch-zoom `minScale` を `contentWidth` から算出する時
@@ -10816,6 +10834,9 @@ lessons:
   when: skill.md(小文字)でスキル配置時
   how: DM-signal側2スキルがskill.md小文字で配置
   origin: '[[draft]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-02'
 - id: L102
   title: lesson_tracking.tsvのデータソース相違 — タスク記述はqueue/gate_metrics.yamlだが実在はlogs/lesson_tracking.tsv
   summary: タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正

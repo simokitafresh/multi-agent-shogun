@@ -1446,7 +1446,7 @@
   verdict: APPROVE
   verified_files:
     - "scripts/insight_write.sh(対象確認)"
-  gate_result: null
+  gate_result: CLEAR
   confidence: HIGH
   finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
   findings_summary: "速度修行draft。insight_write.sh。陣形図M:Op表示バグ検出(実態gpt-5.5 low)"
@@ -1615,3 +1615,344 @@
   brainwash_check: "#2防止: precheck ERRORS=0+commit確認"
   step3_5_verified: true
   timestamp: "2026-07-02T05:43:00"
+- cmd_id: gunshi_d0_ci_red_fix_20260702
+  review_type: self_study
+  verdict: D0_IMPLEMENTED
+  findings_summary: "CI RED修正2件: (1)ac_physical_verify.sh SC2259 pipe+heredoc競合→<<<削除 (2)test_select.sh stale mapping(test_gunshi_next_action.bats cmd_3633で統合削除済み)→マッピング+テスト期待値削除"
+  observations:
+    - "事実1: shellcheck SC2259 error 1件→0件。L139 pipeとL355 heredocの二重入力がSC2259の根因"
+    - "事実2: bats FAIL 1件→10/10 PASS。test_gunshi_next_action.bats cmd_3633でconsolidate済みだがマッピング/テスト未更新が根因"
+  operational_simulation: "修正後: shellcheck 0件+bats 10/10。次回push時にCI GREEN復帰。ac_physical_verify.shのpipe入力は変更なし(L139 echo|python3)。test_selectはgunshi.md変更時に3テストファイルを正しく選択"
+  origin: "[[CI_RED_3連続failure]] -> [[SC2259_pipe_heredoc競合+stale_mapping]] -> [[D0修正dc24f94fc]]"
+  causal_chain: "cmd_3633 test統合→test_gunshi_next_action.bats削除→test_select.shマッピング残存→WARN→bats FAIL。ac_physical_verify速度改善→pipe+heredoc共存→SC2259"
+  brainwash_check: "#2防止: shellcheck 0件+bats 10/10実測確認。#6防止: commit後にshellcheck+bats再実行で数値差分記録"
+  cs_checklist: "CS1:ソース全量(git log+CI log)確認 CS2:ローカルshellcheck+bats実行で検証 CS3:実コード3ファイル変更 CS4:D0実装+commit完了 CS5:副作用(pipe動作)確認済み CS6:cmd_3633→mapping残存→CI RED因果鎖"
+  finding_categories: [assumptions, premortem, adversarial]
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "3行変更、blast radius小"
+  timestamp: "2026-07-02T07:55:00"
+- cmd_id: cmd_3636
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  verified_files:
+    - "/mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fast.py:2839(PrecomputedMtd hook確認)"
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/etl_trigger.py:317(LAYER_DEPENDENCIES確認)"
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "6観点OK。assumptions 3件verified(PrecomputedMtd hook L2839、LayerLock L317/356、PrecomputedRaw 0件)。LG021 AC6>4だが単一機能の層別分解で分割不要。設計書v7準拠"
+  observations:
+    - "事実1: PrecomputedMtd hook recalculate_fast.py L2839-2842に実在。AC4のhookパターン参照先が正しい"
+    - "事実2: rg PrecomputedRaw/precompute_raw 0件。q11の未実装主張が正しい"
+    - "事実3: AC6件だが単一機能(事前計算基盤)の層別分解で密結合。分割すると中間状態が本番混入リスク"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "DM-Signal backend Python実装。infra gate/hook変更なし"
+  origin: "[[殿指示_DM_Signal性能改善]] -> [[設計書v7_6往復レビュー]] -> [[cmd_3636_draft_APPROVE]]"
+  causal_chain: "Phase1(health check改善)完了→API応答は依然数秒→事前計算基盤がないとEP改修不可→PrecomputedRawテーブル+バッチ+endpoint+hookで基盤構築"
+  brainwash_check: "#1防止: 6AC全検証。#2防止: assumptions 3件一次情報grep確認+q11 rg実行。#8防止: LG021 AC6判定で分割可否を検討の上不要と判断"
+  timestamp: "2026-07-02T08:10:00"
+- cmd_id: cmd_3636
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  verified_files:
+    - "/mnt/c/Python_app/DM-signal/backend/app/jobs/precompute_raw.py:28(PRECOMPUTE_PARAMS 5EP確認)"
+    - "/mnt/c/Python_app/DM-signal/backend/app/jobs/precompute_raw.py:64(TTL timezone-aware確認)"
+    - "/mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fast.py:2850(try/except fallback確認)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  changed_lines: 515
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。PRECOMPUTE_PARAMS 5EP、TTL 24h timezone-aware、recalculate_fast try/except fallback。adversarial PASS(漏洩経路Phase2未接続)"
+  observations:
+    - "事実1: PRECOMPUTE_PARAMS=5EP(monthly_returns/annual_returns/rolling_returns/drawdowns/monthly_trade)。signals/compare-returns除外=Phase3差替え待ち"
+    - "事実2: get_precomputed_raw L64-68 timezone-aware(naive→UTC変換)+STALE_TTL_SECONDS=86400(24h)"
+    - "事実3: recalculate_fast L2850-2860 try/except+logger.warning。失敗時rawは残存しfallback計算で継続"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "515行変更。データ漏洩(Phase2未接続)、rollback(alembic可)、監視(sync-status L5)、認証(Basic Auth)全確認"
+  origin: "[[cmd_3636_Phase2_raw_precompute]] -> [[全AC実装+テスト7件]] -> [[LGTM]]"
+  causal_chain: "設計書v7→6ファイル実装→PrecomputedRaw基盤構築→Phase3 EP改修の前提完了"
+  brainwash_check: "#2防止: PRECOMPUTE_PARAMS/TTL/fallback実コード確認。#1防止: adversarial 515行で全観点チェック"
+  step3_5_verified: true
+  timestamp: "2026-07-02T08:50:00"
+- cmd_id: idle_cmd_save_block_pattern_analysis_20260702
+  review_type: self_study
+  verdict: ANALYSIS_COMPLETE
+  findings_summary: "cmd_save BLOCK率13.4%(28/209)。根因5パターン: mismatch(5)+bc_fail(8)+report_format(6)+FP(5)+origin不足(4)。最大ROI=command欄ファイルパス自動分類Level5化"
+  observations:
+    - "事実1: BLOCK28件中mismatch5件(18%)が起票時点のLevel5支援で防止可能"
+    - "事実2: FP5件は各check関数regex精度問題。Phase3統合リファクタで解消予定"
+    - "事実3: BLOCK→学習還流は意志依存。cmd_save起動時にBLOCKパターン自動表示(Level5)で自動化提案"
+  operational_simulation: "mismatch Level5化後: 将軍がcommand欄にファイルパスを書くと自動抽出→分類提示→files_modifiedとの照合を起票時点で完了。完了gate BLOCKゼロ化"
+  origin: "[[殿指示_起票品質改善_20260702]] -> [[BLOCK率13.4%計測]] -> [[根因5パターン特定]]"
+  causal_chain: "殿指示→cmd_design_quality.yaml全件分析→BLOCK28件根因分類→mismatch Level5化が最大ROI→設計案永続化"
+  brainwash_check: "#6防止: 分析報告だけでなくStep6で行動(cmd起票提案)まで実行。#2防止: BLOCK28件全件を分類(grep -c実測)"
+  cs_checklist: "CS1:cmd_design_quality.yaml全209件確認 CS2:自システムBLOCK28件で問題検証 CS3:cmd_save.sh現物6200行確認 CS4:設計案永続化+掲示板投稿+cmd起票提案 CS5:Phase3統合リファクタとの関連確認 CS6:殿指示→計測→パターン→設計→提案の因果鎖"
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "分析のみ。コード変更なし"
+  timestamp: "2026-07-02T09:12:00"
+- cmd_id: cmd_3637
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  verified_files:
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/performance.py:16(MaskingService import確認)"
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/performance.py:98(masking 2層構造確認)"
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "6観点OK。q11=get_precomputed_raw 0件。MaskingService 2層構造確認。AC6同一パターン横展開で分割不要。masking前raw漏洩→AC設計で分離明示"
+  observations:
+    - "事実1: rg get_precomputed_raw backend/app/api/ → 0件。EPへのlookup統合は未実装"
+    - "事実2: performance.py L16/98/165/219/279にMaskingService。raw lookup後にmasking適用の2層構造が前提として正しい"
+    - "事実3: AC1-5は同一パターン(lookup+masking+fallback)の横展開。AC6(invalidate)は3箇所commit前削除"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "DM-Signal EP改修。Red-Team最大リスク=masking前raw漏洩→AC設計でmasking分離明示"
+  origin: "[[cmd_3636_Phase2完了]] -> [[Phase3_P1_5EP改修]] -> [[cmd_3637_draft_APPROVE]]"
+  causal_chain: "Phase2基盤(PrecomputedRaw)完成→5EPにlookup未統合→Phase3でlookup+masking分離+invalidate適用→API応答数秒→200ms以下"
+  brainwash_check: "#2防止: q11 rg実行+MaskingService行番号確認。#8防止: AC6分割可否検討の上不要判断"
+  timestamp: "2026-07-02T09:16:00"
+- cmd_id: cmd_3637
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hayate
+  verdict: FAIL
+  fail_reasons:
+    - "AC4: compare_returns.pyにget_precomputed_raw 0件(rg実測)。bc=yesだが実装なし"
+    - "AC6: portfolios/viewer_tiers/folders.pyにPrecomputedRaw 0件(rg実測)。bc=yesだが実装なし"
+  verified_files:
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/compare_returns.py(rg get_precomputed_raw → 0件)"
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/portfolios.py(rg PrecomputedRaw → 0件)"
+  gate_prediction: BLOCK
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "AC4+AC6未実装。5EP中4EPはlookup確認。compare_returns+invalidate 3ファイルは0件"
+  observations:
+    - "事実1: rg get_precomputed_raw compare_returns.py → 0件。performance/monthly_returns/signals/drawdowns各2件"
+    - "事実2: rg PrecomputedRaw portfolios.py viewer_tiers.py folders.py → 全0件"
+    - "事実3: binary_checks AC4=yes AC6=yesだが実コードに該当実装なし。虚偽yes"
+  origin: "[[cmd_3637_Phase3_P1]] -> [[AC4+AC6未実装]] -> [[FAIL]]"
+  causal_chain: "hayateがbc=yesで報告→軍師rg実測でcompare_returns 0件+invalidate 3ファイル0件→虚偽yes→FAIL"
+  brainwash_check: "#2防止: rg実測で5EP+3ファイル全件確認。#1防止: 4EP OKでも2AC未実装はFAIL"
+  step3_5_verified: true
+  timestamp: "2026-07-02T09:35:00"
+- cmd_id: cmd_3637
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  verified_files:
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/compare_returns.py:250(PrecomputedRaw lookup確認)"
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/portfolios.py:336(invalidate_precomputed_raw確認)"
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/viewer_tiers.py:37(invalidate確認)"
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/folders.py:27(invalidate 5箇所確認)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "FAIL指摘2AC修正確認。AC4=compare_returns L250-258。AC6=portfolios+viewer_tiers+folders全3ファイルinvalidate実装。rg一次確認"
+  observations:
+    - "事実1: compare_returns.py L250-258にPrecomputedRaw SELECTとmake_params_hash。raw hitでTTLCacheバイパス"
+    - "事実2: invalidate_precomputed_raw呼出し: portfolios L342(metadata-only save), viewer_tiers L254/441, folders L168/211/253/268/289"
+    - "事実3: 初回FAIL(AC4+AC6 0件)→修正後rg全件確認で虚偽yesが解消"
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "Phase3 EP改修。masking前raw漏洩リスク→compare_returns visible_ids IN句でSELECT+masking適用確認"
+  origin: "[[cmd_3637_FAIL]] -> [[AC4+AC6修正]] -> [[LGTM]]"
+  causal_chain: "初回FAIL(AC4 compare_returns 0件+AC6 invalidate 0件)→hayate修正→rg全件確認→LGTM"
+  brainwash_check: "#2防止: rg -nで行番号含め全件実測。前回FAIL箇所を重点確認"
+  step3_5_verified: true
+  timestamp: "2026-07-02T09:50:00"
+- cmd_id: cmd_3638
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  verified_files:
+    - "/mnt/c/tools/multi-agent-shogun/scripts/lib/(rg extract_command_files → 0件=未実装確認)"
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "6観点OK。q11確認。設計書v3準拠。殿厳命(品質+速度+自動成長)対応。FP修正+L5集計+共通化+速度計測"
+  observations:
+    - "事実1: extract_command_files 0件=共通関数未実装。AC3の新規作成が正当"
+    - "事実2: 設計書v3は軍師分析(BLOCK率13.4%→正規化10.5%)→家老3往復APPROVEで確定"
+    - "事実3: AC4速度計測はdate +%s%N方式で恒常gateに入れない(一時計測)明記"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "infra scripts改善。fixture回帰テスト明記"
+  origin: "[[殿厳命_起票品質改善]] -> [[設計書v3_3往復APPROVE]] -> [[cmd_3638_APPROVE]]"
+  causal_chain: "殿厳命→軍師BLOCK分析→設計書v3→家老APPROVE→cmd起票→軍師APPROVE"
+  brainwash_check: "#2防止: q11 rg実測。#6防止: 軍師分析が元→cmdとして行動に変換された"
+  timestamp: "2026-07-02T09:55:00"
+- cmd_id: cmd_3638
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  verified_files:
+    - "/mnt/c/tools/multi-agent-shogun/scripts/lib/extract_command_files.sh(存在+10KB確認)"
+    - "/mnt/c/tools/multi-agent-shogun/scripts/cmd_save.sh:2171(print_recent_block_pattern_summary確認)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。AC3共通関数+AC2パターン集計の一次確認。SG-PRE25 ERROR→reference_only追加で解消"
+  observations:
+    - "事実1: extract_command_files.sh 10KB存在。cmd_save.sh+precheck両方がsource(rg -c各1件)"
+    - "事実2: print_recent_block_pattern_summary L2171実装+L2748呼出し"
+    - "事実3: SG-PRE25 ERROR=設計書参照がfiles_modified不在→reference_only追加で解消(cmd_3636と同根パターン)"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "infra scripts改善。bats回帰テスト含む"
+  origin: "[[殿厳命_起票品質改善]] -> [[cmd_3638_品質+速度+自動成長]] -> [[LGTM]]"
+  causal_chain: "殿厳命→軍師分析→設計書v3→cmd_3638実装→AC2パターン集計+AC3共通化確認→LGTM"
+  brainwash_check: "#2防止: extract_command_files.sh存在+rg source確認。print_recent_block_pattern_summary行番号確認"
+  step3_5_verified: true
+  timestamp: "2026-07-02T10:17:00"
+- cmd_id: cmd_karo_hotfix_report_field_files_modified_path_guard_202607021021
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "/mnt/c/tools/multi-agent-shogun/scripts/report_field_set.sh:674(files_modified処理確認)"
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "6観点OK。WA根因(files_modified散文)のL4 BLOCK化。scope明確、constraints明記"
+  observations:
+    - "事実1: report_field_set.sh L674にfiles_modifiedケース分岐。autofix(string→dict変換)はあるが非パスBLOCKなし"
+    - "事実2: WA直近20件中report_yaml_format 3件+gate_report_format FAIL files_modified非パス3件が根拠"
+  ambiguity_points: none
+  origin: "[[WA分析_files_modified散文]] -> [[hotfix_path_guard]] -> [[APPROVE]]"
+  causal_chain: "WA 3件+gate FAIL 3件→report_field_set記入時点でバリデーションなし→L4 BLOCK追加"
+  brainwash_check: "#2防止: report_field_set.sh L674 grep確認"
+  timestamp: "2026-07-02T10:24:00"
+- cmd_id: cmd_karo_hotfix_report_field_files_modified_path_guard_202607021021
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  verified_files:
+    - "/mnt/c/tools/multi-agent-shogun/scripts/report_field_set.sh:334(files_modified非パスBLOCK確認)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。L334にfiles_modified非パスBLOCK。WA根因(散文通過)のL4封止"
+  observations:
+    - "事実1: report_field_set.sh L334 'BLOCK: files_modified はファイルパス形式のみ記入可' 実装確認"
+    - "事実2: L302 YAML parse error BLOCK も併設。二重防御"
+  origin: "[[WA_files_modified散文]] -> [[path_guard_BLOCK]] -> [[LGTM]]"
+  causal_chain: "WA 3件+gate FAIL 3件→記入時点バリデーションなし→L334非パスBLOCK追加→免疫獲得"
+  brainwash_check: "#2防止: L334 grep実測確認"
+  step3_5_verified: true
+  timestamp: "2026-07-02T10:29:00"
+- cmd_id: cmd_3639
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  verified_files:
+    - "/mnt/c/Python_app/DM-signal/backend/app/(rg compare_returns_bulk → 0件=未実装確認)"
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "6観点OK。q11確認。3AC Phase3延長(bulk raw)。compare-returns 4.7s→1行SELECT即応答"
+  observations:
+    - "事実1: rg compare_returns_bulk 0件。未実装確認"
+    - "事実2: compare-returns 4.3-4.7s。根因=102PF×PF別SELECT+fallback積上げ"
+  ambiguity_points: none
+  origin: "[[compare_returns_4.7s残存]] -> [[bulk事前計算設計]] -> [[cmd_3639_APPROVE]]"
+  causal_chain: "Phase3でPF別EP改善→compare-returns 4.7s残存→102PF積上げ根因→bulk 1行化で構造解決"
+  brainwash_check: "#2防止: q11 rg実測"
+  timestamp: "2026-07-02T10:51:00"
+- cmd_id: cmd_3639
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  verified_files:
+    - "/mnt/c/Python_app/DM-signal/backend/app/jobs/precompute_raw.py:177(bulk生成確認)"
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/compare_returns.py:110(bulk lookup確認)"
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/portfolios.py:343(bulk invalidate確認)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。3AC全rg確認。bulk事前計算+lookup+invalidate"
+  observations:
+    - "事実1: precompute_raw.py L177 build_compare_returns_bulk_raw呼出し"
+    - "事実2: compare_returns.py L331 bulk_raw=_fresh_compare_returns_bulk_raw(db)でlookup"
+    - "事実3: invalidate: viewer_tiers L40にcompare_returns_bulk追加、portfolios L343にcompare_returns_bulk追加"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "Phase3延長パターン。bulk rawはNULL portfolio_id+visible_idsフィルタで漏洩防止"
+  origin: "[[compare_returns_4.7s]] -> [[bulk事前計算]] -> [[LGTM]]"
+  causal_chain: "102PF×SELECT積上げ4.7s→bulk 1行事前計算→SELECT 1行+visible_idsフィルタ→即応答"
+  brainwash_check: "#2防止: 3ファイル全rg -n実測"
+  step3_5_verified: true
+  timestamp: "2026-07-02T11:01:00"
+- cmd_id: cmd_3640
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  verified_files:
+    - "/mnt/c/Python_app/DM-signal/backend/app/jobs/precompute_raw.py:31(annual_returns定義)"
+    - "/mnt/c/Python_app/DM-signal/backend/app/jobs/precompute_raw.py:34(monthly_trade定義)"
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "6観点OK。q11両EP 0件。PRECOMPUTE_PARAMS L31/34定義済み。Phase3漏れ補完"
+  observations:
+    - "事実1: rg get_precomputed_raw monthly_trade.py/annual_returns.py → 0件"
+    - "事実2: precompute_raw.py L31 annual_returns, L34 monthly_trade定義済み"
+  ambiguity_points: none
+  origin: "[[MECE計測_monthly_trade_75PF遅延]] -> [[Phase3漏れ補完]] -> [[APPROVE]]"
+  causal_chain: "Phase3でmonthly_trade/annual_returns lookup漏れ→MECE計測で75PF遅延発覚→drawdowns.pyパターン転記"
+  brainwash_check: "#2防止: q11両ファイルrg実測+PRECOMPUTE_PARAMS行番号確認"
+  timestamp: "2026-07-02T11:06:00"
+- cmd_id: cmd_3640
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  verified_files:
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/monthly_trade.py:210(get_precomputed_raw lookup確認)"
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/annual_returns.py:67(get_precomputed_raw lookup確認)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。AC1 monthly_trade L210/213、AC2 annual_returns L67/70。drawdowns.py reference_only追加"
+  observations:
+    - "事実1: monthly_trade.py L213 get_precomputed_raw(db, 'monthly_trade', portfolio_id, {'limit': limit})"
+    - "事実2: annual_returns.py L70 get_precomputed_raw(db, 'annual_returns', portfolio_id, params)"
+    - "事実3: SG-PRE25 mismatch再発(3回目)→reference_only追加で解消。command欄参照パターンの常習化"
+  origin: "[[Phase3漏れ_monthly_trade_annual_returns]] -> [[lookup追加]] -> [[LGTM]]"
+  causal_chain: "Phase3でlookup漏れ→MECE計測で75PF遅延→drawdowns.pyパターン転記→全EP瞬時化完成"
+  brainwash_check: "#2防止: rg -n両ファイル行番号確認"
+  step3_5_verified: true
+  timestamp: "2026-07-02T11:18:00"
+- cmd_id: cmd_3640
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  verified_files:
+    - "/mnt/c/Python_app/DM-signal/backend/app/api/annual_returns.py:25-28(_annual_returns_raw_params float→int正規化確認)"
+  gate_result: null
+  gate_prediction: CLEAR
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "修正再レビュー。_annual_returns_raw_params L28 is_integer()でfloat→int正規化。PRECOMPUTE_PARAMS L31と型一致確認"
+  observations:
+    - "事実1: L28 normalized_balance = int(initial_balance) if float(initial_balance).is_integer()。100000.0→100000(int)"
+    - "事実2: PRECOMPUTE_PARAMS L31 initial_balance=100000(int)。hash一致"
+    - "事実3: 前回LGTM→家老BLOCKは軍師の型突合未検証(洗脳#2)。今回は型変換コードの行番号まで確認"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "Phase3漏れ補完+型修正"
+  origin: "[[cmd_3640_params_hash_mismatch]] -> [[float→int正規化修正]] -> [[再LGTM]]"
+  causal_chain: "PRECOMPUTE int 100000→API float 100000.0→hash不一致→hit不可→_raw_params正規化で解消"
+  brainwash_check: "#2防止: _annual_returns_raw_params L28の型変換ロジックを行番号で確認。前回見落とし反省"
+  step3_5_verified: true
+  timestamp: "2026-07-02T11:23:00"

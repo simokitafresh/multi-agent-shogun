@@ -162,6 +162,7 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-07-02: gate=cmd_complete_gate result=FAIL executor=kagemaru reason=report_format:kagemaru_report_cmd_training_speed_cmd_complete_gate_202607020409_kagemaru.yaml|kagemaru:binary_checks_fail
 
 - 2026-07-02: gate=gate_report_format result=FAIL executor=saizo reason=stale_report: filename has cmd_bench_test2 but parent_cmd=cmd_bench_test (cmd_id mismatch)
 - 2026-07-02: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:kotaro_report_cmd_training_speed_gate_shogun_startup_202607020211_kotaro.yaml|kotaro:binary_checks_fail

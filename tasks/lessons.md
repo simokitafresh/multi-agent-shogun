@@ -9415,3 +9415,85 @@ origin: [[cmd_3614]] -> [[bash_function_definition_order]] -> [[cmd_save_preflig
 - **when**: 未設定
 - **how**: 未設定
 - gate_lesson_health.shのphantom検出でfind ... 2>/dev/nullとしても、パスが存在しない場合にfindが非ゼロ終了し、set -eでスクリプト全体がabortする。|| trueの追加が必要。テスト環境で.claude/hooksが存在しない場合に15/16テスト失敗として発現
+
+### L918: direct --yamlは入力YAMLのACを正本としてcmd source overwriteをスキップせよ
+- **日付**: 2026-07-02
+- **出典**: cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845
+- **記録者**: kagemaru
+- **tags**: [infra,deploy-task,deploy,yaml]
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_yaml_injection.bats]
+- **origin**: [[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]
+- **when**: 未設定
+- **how**: 未設定
+- shogun_to_karoに存在しない家老hotfixを--yamlで配備する場合、ACは入力YAMLが正本。cmd source探索は失敗して約4秒を消費するだけなので、direct --yamlでは既存ACを保持し探索をスキップする。origin: [[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]] -> [[cmd_source不在探索]] -> [[配備遅延]]
+
+### L919: リスト型YAMLの存在判定はfield_get_multiではなく構造パースで行う
+- **日付**: 2026-07-02
+- **出典**: cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133
+- **記録者**: kagemaru
+- **tags**: [infra,deploy-task,yaml]
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_yaml_injection.bats,docs/research/deploy_task_yaml_speed_recon_guard_spec_20260702.md,context/infrastructure.md]
+- **origin**: [[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]
+- **when**: 未設定
+- **how**: 未設定
+- preinjected判定をfield_get_multiで実装した初回テストがFAILした。related_lessons等のリスト型はfield_get_multiのスカラー取得に向かないため、存在判定はyaml.safe_loadによる構造パースで行うべき。
+
+### L920: 常駐daemonは起動時間ではなくmainループ反復コストを優先計測せよ
+- **日付**: 2026-07-02
+- **出典**: cmd_training_speed_inbox_watcher_202607020409_saizo
+- **記録者**: saizo
+- **tags**: [daemon, performance, inbox]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_watcher.sh]
+- **origin**: [[cmd_training_speed_inbox_watcher_202607020409_saizo]] -> [[process_unread_duplicate_clear_call_and_date_subprocess]] -> [[40.9pct_hotpath_latency_reduction]]
+- **when**: 常駐daemonやwatcherの速度改善を行う時
+- **how**: 起動フェーズとmainループフェーズを分けて測定し、頻度×1回コストで優先順位を決める
+- **if**: 常駐daemonの速度改善対象を選ぶ
+- **then**: source時間だけでなくmainループ1周コストと日次周回数を測定して支配的な反復処理を優先する
+- **because**: 起動時1回の高速化より、60秒毎+イベント毎に発生する処理の削減の方が実運用累積影響が大きい
+- inbox_watcher.shのようなinotifywait常駐daemonでは、起動(source)コストは低頻度だが、mainループ本体(process_unread/heartbeat等)は60秒毎+イベント毎×複数daemonで常時発生する。速度改善時はsource時間だけでなくループ1周コスト×日次周回数を計測し、daemon固有コードの重複呼出し削減やEPOCHSECONDSによるsubprocess fork回避を優先せよ。
+
+### L921: startup連続BLOCKのkeyは根因を識別できる粒度にする
+- **日付**: 2026-07-02
+- **出典**: cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421
+- **記録者**: hanzo
+- **tags**: [infra,gate,gate]
+- **target_files**: [scripts/gates/gate_shogun_startup.sh,tests/unit/test_gate_shogun_startup.bats]
+- **origin**: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]]
+- **when**: 未設定
+- **how**: 未設定
+- 件数や大分類だけのalert keyをhistoryに積むと、別原因・別対象が同一の3連続先送りとして扱われる。startup streak用keyには原因ラベルや対象リストfingerprintを含め、同一根因だけがBLOCK化するようにする。
+origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[粗粒度startup alert key]] -> [[先送りBLOCK誤累積]]
+
+### L922: 高負荷な共有マルチエージェント環境でのマイクロベンチマークはpaired計測と統計的有意性チェックが必須
+- **日付**: 2026-07-02
+- **出典**: cmd_training_speed_gate_karo_startup_202607020409_tobisaru
+- **記録者**: tobisaru
+- **tags**: [speed, benchmark, gate, infra]
+- **origin**: [[cmd_training_speed_gate_karo_startup_202607020409_tobisaru]] -> [[show_active_cmd_semantic_context per-linkフォーク過多]] -> [[外部負荷ノイズが改善シグナルを上回りFAIL]]
+- **when**: 共有マルチエージェント環境でスクリプト速度改善を評価する時
+- **how**: interleaved paired計測を15-20組以上実行し、mean/medianだけでなく勝率とpaired t統計量を確認する
+- **because**: 高負荷環境では単発計測のノイズが改善シグナルを上回り、採用判断を誤るため
+- gate_karo_startup.shのshow_active_cmd_semantic_context最適化で、並列度capはuncapped→cap2で約45%、cap1で約125%悪化し、直感的な並列度制限が逆効果になった。理論的に正しいfork削減候補でも、19組の交互計測でmean改善3.6%、median改善7.1%、勝率10/19、paired t=1.32となり、外部競合由来のノイズが改善シグナルを上回った。同種の速度修行では単発before/afterではなく、baseline/candidate交互実行、最低15-20組のpaired計測、paired t統計量確認を標準手順にする。
+
+### L923: cmd_training_speed_*でgate呼出しスクリプトをベンチマークする時はGATE_NO_LOG=1を付けよ
+- **日付**: 2026-07-02
+- **出典**: cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526
+- **記録者**: saizo
+- **tags**: [infra,gate,gate,bash,yaml]
+- **target_files**: [scripts/gates/gate_report_format.sh]
+- **origin**: [[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_training_speed_cmd_complete_gate_202607020409_kagemaruで、cmd_complete_gate.sh(内部でgate_report_format.shを呼ぶ)を報告未完成のまま/usr/bin/timeで3回連続ベンチマークし、その都度binary_checks空欄FAILがgate_fire_log.yamlに記録され(3回x6項目=18件)、gate_loop_health.shの高頻度FAIL insight(INS-20260702-041924503-4625)を誤発火させた。gate_report_format.shにはGATE_NO_LOG=1(fire_log書込みのみ抑止、PASS/FAIL判定不変)という既存の安全な回避策があり、saizoが過去cmd_training_speed_gate_report_format_202607020216_saizoで実際に使用しているが、周知先(training-cycle.md/skill/lesson)が一切なく個人の再発見任せだった。cmd_training_speed_*タスクでgate_report_format.sh/cmd_complete_gate.sh等gate呼出し系スクリプトをベンチマークする時は、計測コマンドにGATE_NO_LOG=1を付与しfire_logノイズを防ぐこと。
+
+### L924: deploy_task.shのawk -vはCスタイルバックスラッシュエスケープを解釈しYAML文字列を破壊する
+- **日付**: 2026-07-02
+- **出典**: cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530
+- **記録者**: kotaro
+- **tags**: [infra,deploy-task,deploy,bash,yaml]
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_template_generation.bats]
+- **origin**: [[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]
+- **when**: 未設定
+- **how**: 未設定
+- awk -v var=value はvalueをCスタイル文字列リテラルと同様にエスケープ解釈する(バックスラッシュ+ダブルクォート → 単なるダブルクォート、バックスラッシュ2連 → バックスラッシュ1個、等)。task YAML中のAC descriptionはYAML二重引用符スカラーとして「バックスラッシュ+ダブルクォート」で正しくエスケープされているが、これをbash変数経由でawk -vに渡すとバックスラッシュが消費されて単なるダブルクォートに壊れ、生成report YAMLのyaml.safe_loadがParserErrorになる(cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526のsaizo report AC5で実際に発生)。対策: バックスラッシュを含みうる可変長文字列をawkへ渡す時は -v ではなく環境変数+ENVIRON[]経由にする(環境変数はエスケープ解釈されない)。他のawk -v repl=/-v content=等の類似箇所も同じリスクを持つため、今後の同種修正時に横展開確認すべき。
