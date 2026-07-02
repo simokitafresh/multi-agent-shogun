@@ -2261,15 +2261,30 @@ if [ "${#alerts[@]}" -gt 0 ]; then
     # §3.2: python3→awk置換(~650ms削減)。alert文字列は空白を含むためtmp経由で1行1alertにする。
     _current_alerts_file="$(mktemp)"
     printf '%s\n' "${alerts[@]}" > "$_current_alerts_file"
-    _streak_result=$(awk -F'\t' -v threshold="$STARTUP_WARN_STREAK_THRESHOLD" '
+    # run間隔がgap秒未満のrunは同一セッションに統合する。
+    # gateは検分/ninja_monitor/完了フロー等から数分間に複数回実行されるため、
+    # run=セッションの代理計測は「2分半で3セッション連続」の誤CRITICALを生む(2026-07-02実証)。
+    # __OK__行はクリーンセッションとしてバケットを立てstreakを切る(解消信号の無視はLS078変種)
+    _streak_session_gap="${KARO_STREAK_SESSION_GAP_SEC:-1800}"
+    _streak_result=$(awk -F'\t' -v threshold="$STARTUP_WARN_STREAK_THRESHOLD" -v min_gap="$_streak_session_gap" '
+    function iso_epoch(ts,    d) {
+        d = substr(ts, 1, 19)
+        gsub(/[-T:]/, " ", d)
+        return mktime(d)
+    }
     BEGIN { n_runs = 0 }
     NR == FNR {
         if ($0 != "") current[$0] = 1
         next
     }
-    NF == 2 && $2 != "__OK__" {
-        if ($1 != prev_run) { if (prev_run != "") n_runs++; prev_run = $1 }
-        run_keys[n_runs, $2] = 1
+    NF == 2 {
+        if ($1 != prev_run) {
+            _ep = iso_epoch($1)
+            if (prev_run != "" && _ep - prev_ep >= min_gap) n_runs++
+            prev_run = $1
+            prev_ep = _ep
+        }
+        if ($2 != "__OK__") run_keys[n_runs, $2] = 1
     }
     END {
         if (prev_run != "") n_runs++
