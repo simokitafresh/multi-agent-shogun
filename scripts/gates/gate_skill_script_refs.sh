@@ -142,7 +142,12 @@ for skill_file in skill_files:
             missing.append((display_skill, ref, str(resolved)))
             continue
         if resolved.is_file() and resolved.stat().st_mtime > skill_freshness_time + 1:
-            stale.append((display_skill, ref, str(resolved.relative_to(repo_root)) if resolved.is_relative_to(repo_root) else str(resolved)))
+            # 判定根拠を明示: 採用基準(checked_atコメント最新値かmtimeか)が見えないと
+            # 「更新したのに直らない」の原因調査が毎回ゼロからになる(2026-07-02 3セッション先送りの教訓)
+            baseline_src = "checked_at" if checked_at_epoch is not None else "SKILL.md mtime"
+            baseline_iso = datetime.fromtimestamp(skill_freshness_time, tz=timezone.utc).astimezone().isoformat(timespec="seconds")
+            script_iso = datetime.fromtimestamp(resolved.stat().st_mtime, tz=timezone.utc).astimezone().isoformat(timespec="seconds")
+            stale.append((display_skill, ref, str(resolved.relative_to(repo_root)) if resolved.is_relative_to(repo_root) else str(resolved), baseline_src, baseline_iso, script_iso))
 
 print("=== SKILL.md script reference check ===")
 print(
@@ -161,8 +166,9 @@ else:
 
 if stale:
     print("=== 要更新スキル一覧 (script newer than SKILL.md) ===")
-    for skill, ref, resolved in stale[:30]:
+    for skill, ref, resolved, baseline_src, baseline_iso, script_iso in stale[:30]:
         print(f"  WARN: {skill} <- {ref} (newer: {resolved})")
+        print(f"        基準={baseline_src} {baseline_iso} < script {script_iso}")
     if len(stale) > 30:
         print(f"  ... {len(stale) - 30} more")
 else:
