@@ -256,19 +256,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - （L737-L749は振り分け済 → ops索引(L737/L738統合:奥義BB命名正常挙動/L740:check_pf_config/L743:PF構成確認/L745:import分割/L747:UUID GS source_type), core§19.2(L739:pipeline_config構造/L741:BB忍法対応表/L742:パラメータ確認/L748:FoF components件数差), core§5(L744:API境界4層管理), ops§6-7(L749:models+migrations同期)。L746は自動生成→削除）
 - （L750-L765は振り分け済 → research§27(L750/L751/L752/L753:シン四神相関分析), gs-speedup§3(L756/L758/L759/L760/L761:trial高速化手法), gs-speedup§4(L762:cache設計), ops索引(L763/L764:速度AC方法論)。L757/L765は自動生成→削除）
 - （L766-L783は振り分け済 → ops§9(L766/L768:速度計測方法論), ops§12(L767:成果物パス命名), core§8(L769:α6キー名SSOT), infra教訓索引(L772:tracked限定集計盲点), ops§38(L773/L777/L780:CI import分割), core§5(L775/L781:分析関数性能), core§21(L782:FoFネストN+1), ops§6-7(L783:fullrecalculate確認手段[PI])）
-- L786: ComparisonChart Y軸: 固定配列目盛は純粋関数抽出+動的生成で構造的解消（cmd_3565）
-- L789: check_mixed_format_commit.pyはimport行のみhunkを検出してblock→多行import形式で回避可能（cmd_3569）
-- L790: Compare ReturnsのMTD高速化はpreliminary FoF展開も同じcacheに載せる（cmd_3570）
-- L791: 追加指示の取消は未commit差分からscope別に除去する（cmd_3586）
-- L793: Render cron envVarsはAPI現物で検証せよ（cmd_3634）
-- L794: 月次cronのUTC day-of-month指定はJSTタイムゾーンオフセット越境で1日ずれる（cmd_3634_recon3）
-- L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
-- L796: 同一タブlocalStorage認証変更はstorage eventで検知できない（cmd_3641）
-- L797: CDP cookie注入成功だけではFE admin状態成立を保証しない（cmd_3645）
-- L798: 重いページはPAGE_APIS prefetchを空にしてページ本体fetchをSSOTにする（cmd_3650）
-- L799: FEが解釈しないクエリ名を計測スクリプト入口でBLOCKする（cmd_3654）
-- L800: production固定Lighthouseは未deployローカル差分のPASS証明に使えない（cmd_3655）
-- L801: Next App Router共通chunkはapp module分割だけではhash/サイズが変わらない（cmd_3659）
+- （L786-L801は振り分け済 2026-07-02 → frontend§12(L786:ComparisonChart Y軸/L796:localStorage storage event/L798:PAGE_APIS prefetch空/L801:Next共通chunk分割不能), ops§38(L789:mixed_format_commit回避), ops§49(L790:MTD cache), ops教訓索引(L791:scope別除去), ops§37(L793:cron envVars API検証/L794:cron UTC越境), ops§18(L799:計測クエリ入口BLOCK/L800:production Lighthouse証明限界), ops§19(L797:CDP cookie注入≠admin成立), infra教訓索引(L795:外部repo commit分類)。不変量候補なし）
 - PD-054裁定(2026-07-02): 7023=Next App Router runtime不可避。App Router runtime削減設計には進まず、次方向は初期レンダー計算量削減(テーブル仮想化・チャート遅延・hydration削減)=fd9d/app chunks側。cmd_3660本番metrics計測はPerf 46→95/TBT 1724→55ms/CLS 0.743→0を確認。→ `/mnt/c/Python_app/DM-signal/docs/research/lighthouse_rounds/round_20260702_cmd3660_production_metrics_cls_close/manifest.json`
 
 ## 因果リンク

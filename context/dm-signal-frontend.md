@@ -312,6 +312,10 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 - （L340は§4 APIクライアントへ振り分け済）
 - （L650/L651/L653/L656→§8性能最適化、L654/L655→§2.5、L702/L704/L705→§11.5、L719→§5に振り分け済み 2026-06-16）
 - L792: スワイプ除外対象にbutton全体を含めると有効領域が狭まり片方向不具合に見える（cmd_3592）
+- L786: ComparisonChart Y軸: 固定配列目盛は純粋関数抽出+動的生成で構造的解消（cmd_3565）
+- L796: 同一タブlocalStorage認証変更はstorage eventで検知できない（cmd_3641）
+- L798: 重いページはPAGE_APIS prefetchを空にしてページ本体fetchをSSOTにする（cmd_3650）
+- L801: Next App Router共通chunkはapp module分割だけではhash/サイズが変わらない — 初期レンダー計算量削減が正道（cmd_3659）
 <!-- last_synced_lesson: L792 -->
 
 ## 13. 2026-03 holding表示バグ (cmd_499)

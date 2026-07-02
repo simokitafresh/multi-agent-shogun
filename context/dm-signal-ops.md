@@ -89,6 +89,8 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 
 ## §37 ETL
 
+- L793: Render cron envVarsはAPI現物で検証せよ（cmd_3634）
+- L794: 月次cronのUTC day-of-month指定はJSTタイムゾーンオフセット越境で1日ずれる（cmd_3634_recon3）
 - ETL cronはL0-L3の4本体制。L0/L1/L2/L3の各レイヤーを独立cronで同期し、上位レイヤーは下位レイヤー完了後の本番DBを読む。
 - L0-L3各sync cronで全期間再計算が完結する。途中レイヤーだけの手動補正で完了扱いにしない。
 - L0: base/standard系、L1: 忍法・四神派生、L2: 奥義・合成standard、L3: FoF/入れ子FoFの同期境界として扱う。
@@ -285,6 +287,8 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 ## Ops教訓索引
 <!-- lesson_sync: 2026-03-03 lesson-sortでL129-L146を反映 -->
 
+- L791: 追加指示の取消は未commit差分からscope別に除去する（cmd_3586）
+
 <!-- lesson-sort 2026-04-27: 40件振り分け(30件移動+5件削除+2件重複除去+3件既存確認)
   §6-7: L634,L636,L357,L261 (L645既存,L637≈L638重複削除)
   §9: L136,L137,L138,L545,L589,L649
@@ -397,6 +401,9 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 
 研究cmdを書く前に必ずここを確認し、ACに使用スクリプトのパスと主要引数を明記せよ。
 
+- L799: FEが解釈しないクエリ名を計測スクリプト入口でBLOCKする — mobile Lighthouse計測のPFクエリは`portfolio=`のみ有効（cmd_3654）
+- L800: production固定Lighthouseは未deployローカル差分のPASS証明に使えない — local変更はlocal計測、本番証明はデプロイ後周回計測（cmd_3655）
+
 ### GS（グリッドサーチ）
 
 **スクリプト**: `scripts/analysis/grid_search/run_077_{忍法}.py`
@@ -506,6 +513,8 @@ import metrics_research_engine as MRE
 | Backend API | `https://dm-signal-backend.onrender.com` | API_KEY: backend/.env |
 | Stock API | `https://stockdata-api-6xok.onrender.com` | 株価データ |
 | Render Dashboard | Render API v1 | srv-d4ja8pp5pdvs739a5fsg(FE), srv-d4ja7q15pdvs739a4q1g(BE) |
+
+- L797: CDP cookie注入成功だけではFE admin状態成立を保証しない — 画面要素で成立確認せよ（cmd_3645）
 
 **注意**: `dm-signal.onrender.com` は404(L002)。必ず`dm-signal-frontend`を使え。
 
@@ -758,6 +767,8 @@ import metrics_research_engine as MRE
 
 ## §38 2026-05 運用・CI・知識基盤更新
 
+- L789: check_mixed_format_commit.pyはimport行のみhunkを検出してblock→多行import形式で回避可能（cmd_3569）
+
 | 領域 | 結論 | 参照 |
 |------|------|------|
 | CI pytest | GitHub Actions pytest workflow追加。PyYAML/pytest依存、PostgreSQL service導入済み。DB接続前提テストはCI service前提で確認する | commits 2e9e1b7d, 0771ba29, 5b93ae17, a99a8623 |
@@ -871,6 +882,8 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - P1 5EPでPrecomputedRaw lookupを導入。raw hit時は毎リクエストvisibility/maskingを適用し、miss/stale時は既存計算fallbackを維持する。
 - `compare_returns.py`はPrecomputedRaw hit時にTTLCache return/setをバイパスする。raw未hit時のみ既存TTLCacheを使う。
 - metadata/visibility/folder変更時は`invalidate_precomputed_raw`で該当rawを削除する。portfolio metadata-only saveは保存とinvalidateを同一DB session/commit内で実行する。
+
+- L790: Compare ReturnsのMTD高速化はpreliminary FoF展開も同じcacheに載せる（cmd_3570）
 
 ## §50 compare-returns bulk precompute (cmd_3639)
 
