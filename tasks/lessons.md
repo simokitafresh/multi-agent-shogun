@@ -9585,3 +9585,25 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - 同一ファイル内でappend側だけatomic rename化されていても、resolveやrepairなど別モードの全体書換えが残ると同じ破損根因が継続する。修正時は同一スクリプト内の全write pathをrgで列挙し、mode別にatomic性を確認する。
+
+### L933: 並行セッションの広範囲git addが他エージェントの未commit編集を無関係commitへ巻き込む
+- **日付**: 2026-07-02
+- **出典**: cmd_3648
+- **記録者**: saizo
+- **tags**: [infra,cmd-quality,process,gate,bash]
+- **target_files**: [scripts/cmd_save.sh]
+- **origin**: [[cmd_3648]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3648作業中、scripts/cmd_save.shへの編集(show_q11_causal_backlinks並列化)をEditツールで適用した直後、別セッション(Claude Fable 5)が実行した無関係commit(9a42e58ac 'chore: 強くてニューゲーム化 — Lighthouseサイクル永続化+LS074教訓+戦局日誌', context/lessons/queue系ファイルの一括更新)に、自分の未commit editが巻き込まれて一緒にcommitされた。git show HEAD -- scripts/cmd_save.shで差分の完全性は確認できたためコード喪失はなかったが、commit粒度が意図と異なり、コミットメッセージが変更内容を反映しない状態になった。L589(単一エージェントの生成元修正commitでのscope外stage混入)と同じ根因パターン(広範囲git add)だが、今回は単一エージェント内ではなく複数エージェントが同一working directoryを共有することで発生した点が新規。同一リポジトリを複数セッションが並行編集する運用では、shogunの/dream・/shogun-clear-prep等の一括commit系スキルが実行するgit add範囲が、他エージェントの作業中ファイルまで無差別に含めてしまうリスクがある。対策候補: (1)一括commit系スキルはgit add -Aではなくタスクスコープのpathspecを明示指定する (2)commit前にgit diff --cached --name-statusで自分のtarget_path外が含まれていないかチェックするgateを一括commit系スキルにも追加する
+
+### L934: lesson_health未振り分けALERTは閾値到達前の早期導線を作る
+- **日付**: 2026-07-02
+- **出典**: cmd_karo_hotfix_ga166_lesson_health_unclassified_202607021655
+- **記録者**: hanzo
+- **tags**: [infra,gate,lesson]
+- **target_files**: [queue/tasks/hanzo.yaml,queue/reports/hanzo_report_cmd_karo_hotfix_ga166_lesson_health_unclassified_202607021655.yaml]
+- **origin**: [[cmd_karo_hotfix_ga166_lesson_health_unclassified_202607021655]]
+- **when**: 未設定
+- **how**: 未設定
+- 未振り分け自動追記はL786から6日残り、L799追加で11件となって初めてALERT化した。分類実行は将軍専用のため、閾値超過後のLevel4 BLOCKだけでなく、8件到達時点でsource_cmd付きの将軍action_requiredを掲示板/起動文脈へ注入するLevel5導線が必要。
