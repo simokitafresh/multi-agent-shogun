@@ -77,23 +77,28 @@ def extract_refs(text: str) -> list[str]:
 
 
 def parse_checked_at_epoch(text: str) -> float | None:
+    # SKILL.mdの更新慣行は先頭への新コメント追記で、古い履歴コメントが下部に残る。
+    # 最新(max)を採用しないと末尾の古いコメントで恒常WARN化する(INS-20260702-204807)。
     matches = checked_at_re.findall(text)
     if not matches:
         return None
 
-    raw = matches[-1].strip()
-    normalized = raw.replace("Z", "+00:00")
-    if " " in normalized and "T" not in normalized:
-        normalized = normalized.replace(" ", "T", 1)
+    epochs: list[float] = []
+    for raw in matches:
+        normalized = raw.strip().replace("Z", "+00:00")
+        if " " in normalized and "T" not in normalized:
+            normalized = normalized.replace(" ", "T", 1)
 
-    try:
-        parsed = datetime.fromisoformat(normalized)
-    except ValueError:
-        return None
+        try:
+            parsed = datetime.fromisoformat(normalized)
+        except ValueError:
+            continue
 
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed.timestamp()
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        epochs.append(parsed.timestamp())
+
+    return max(epochs) if epochs else None
 
 
 raw_roots = os.environ.get("SKILL_REF_DIRS", "skills:.claude/skills:.codex/skills")

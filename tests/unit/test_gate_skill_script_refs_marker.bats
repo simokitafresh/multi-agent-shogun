@@ -43,6 +43,31 @@ EOF
     [[ "$output" == *"総合判定: PASS"* ]]
 }
 
+@test "newest of multiple script_refs_checked_at markers wins (prepend convention leaves old markers at bottom)" {
+    cat > "$TEST_TMPDIR/scripts/tools/run_demo.sh" <<'EOF'
+#!/usr/bin/env bash
+echo changed
+EOF
+    cat > "$TEST_TMPDIR/skills/demo-skill/SKILL.md" <<'EOF'
+---
+description: "Demo skill"
+---
+<!-- script_refs_checked_at: 2026-01-01T00:00:10+00:00 -->
+
+# Demo
+
+Run `bash scripts/tools/run_demo.sh`.
+
+<!-- script_refs_checked_at: 2026-01-01T00:00:01+00:00 -->
+EOF
+    touch -d '2026-01-01 00:00:00 UTC' "$TEST_TMPDIR/skills/demo-skill/SKILL.md"
+    touch -d '2026-01-01 00:00:03 UTC' "$TEST_TMPDIR/scripts/tools/run_demo.sh"
+
+    run env SKILL_REF_DISABLE_CACHE=1 bash "$TEST_GATE" "$TEST_TMPDIR"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"総合判定: PASS"* ]]
+}
+
 @test "missing script_refs_checked_at marker keeps legacy SKILL.md mtime comparison" {
     cat > "$TEST_TMPDIR/scripts/tools/run_demo.sh" <<'EOF'
 #!/usr/bin/env bash
