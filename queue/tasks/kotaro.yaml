@@ -1,52 +1,95 @@
 task:
-  parent_cmd: cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530
-  task_id: cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530_normal
-  status: idle
-  assigned_to: kotaro
-  task_type: hotfix
-  project: infra
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/deploy_task.sh
-  title: deploy_task report template AC引用符エスケープhotfix
-  purpose: "deploy_task.shの報告テンプレート生成がAC本文中の二重引用符でYAMLを壊さないようにする"
-  command: |
-    家老自立配備 cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526 で、
-    acceptance_criteria AC5にバッククォート付きコマンドと二重引用符を含む文言があり、
-    deploy_task.sh が生成した queue/reports/saizo_report_cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526.yaml の
-    binary_checks.AC5[0].check 行がYAML構文エラーになった。
-    具体的には check 行の二重引用符内に未エスケープの二重引用符が残り、
-    python3 yaml.safe_load が line 115 で ParserError を出した。
-    家老側で当該reportは応急復旧済みだが、根因はreport template生成時のYAML scalar escaping不足である。
-    scripts/deploy_task.sh の report template生成を調査し、
-    ACのcheck文字列に二重引用符、バッククォート、山括弧、コロン等が含まれても
-    生成reportがyaml.safe_load可能になるよう最小修正せよ。
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
   acceptance_criteria:
-  - id: AC1
-    description: "deploy_task.shのreport template生成でAC check文字列を出力する箇所を特定し、未エスケープ二重引用符でYAMLが壊れる再現をテストに追加する"
-  - id: AC2
-    description: "AC check文字列に二重引用符とバッククォートが含まれても生成reportがyaml.safe_load可能になるよう最小修正する"
-  - id: AC3
-    description: "既存のbinary_checks template形式とreport_field_set.shによるresult更新互換性を壊していないことを関連batsで確認する"
-  - id: AC4
-    description: "bash -n scripts/deploy_task.sh と該当batsを実行し、SKIPがある場合は未完了扱いで理由を書く"
-  - id: AC5
-    description: "scope内のみcommitし、今回の壊れたSaizo reportは家老応急復旧済みであることを報告に明記する"
-  constraints:
-  - "report templateのbinary_checks検出やAC数生成を弱めない"
-  - "既存report YAMLを一括再生成しない"
-  - "運用YAMLをyaml.dump/yaml.safe_dumpで全体再生成しない"
-  - "scope外の大規模リファクタは禁止"
-  not_in_scope:
-  - "report YAML全体フォーマットの再設計"
-  - "Saizoタスクの内容変更"
-  - "binary_checks result空欄FAILの高頻度insight処理"
-  report_path: queue/reports/kotaro_report_cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530.yaml
-  report_filename: kotaro_report_cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530.yaml
+    AC1:
+      description: queue/insights.yaml.corrupt.* 62件と現行queue/insights.yamlを一次情報で調べ、破損パターン・最終発生時刻・失われた可能性のあるINSIGHT IDを報告する
+    AC2:
+      description: insight_write.sh以外の消費/resolve/merge/archive経路をgrep・git log・実行経路で確認し、破損源候補をファイル行番号つきで特定する
+    AC3:
+      description: corrupt残骸から救済すべきinsightがあるかを判定し、救済が安全なら最小修正または復元案を提示し、危険なら理由つきで停止報告する
+  command: "insightキュー破損調査。対象はqueue/insights.yaml、queue/insights.yaml.corrupt.*、insight関連script全般。現行キューを破壊せず、corrupt残骸は削除しない。読み取り専用コピーで比較し、破損源候補・消失疑いID・救済要否・次回防止防御層を報告する。"
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok: []
+  parent_cmd: cmd_karo_hotfix_insight_corruption_202607021437
+  project: infra
+  purpose: insightキュー破損の根因調査とcorrupt残骸の救済要否判定 — queue/insights.yaml.corrupt.* 62件堆積、INSIGHT_REPEAT対象insight消失疑いを一次情報で検証する
+  related_context:
+  - '将軍要請: insight_write.shはflock保護済みのため破損源は別経路(消費/resolve側)の疑い'
+  - '実害疑い: INSIGHT_REPEAT対象 INS-20260702-140132605 等がキューから消失'
+  - '家老一次確認: corrupt_count=62、現行queue/insights.yamlはparse可能でinsights_current_count=12'
+  status: acknowledged
+  stop_for: []
+  target_path: /mnt/c/tools/multi-agent-shogun/queue/insights.yaml
+  task_id: cmd_karo_hotfix_insight_corruption_202607021437_normal
+  task_type: hotfix
+  related_lessons:
+  - id: 'L351'
+    summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
+    detail: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
+  - id: 'L671'
+    summary: 'gate_fire_logには同一報告YAMLの複数gate実行が残るため、gate行数をそのままFAIL率にすると修行自動配備の判断が歪む。修行品質や一発PA'
+    detail: 'gate_fire_logには同一報告YAMLの複数gate実行が残るため、gate行数をそのままFAIL率にすると修行自動配備の判断が歪む。修行品質や一発PA'
+  - id: 'L467'
+    summary: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ'
+    detail: '新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ'
+  - id: 'L311'
+    summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
+    wa_category: 'report_yaml_format'
+    wa_count: 3
+    detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  ac_version: 4b08ed71
-  _ac_task_id: cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530_normal
+  semantic_concepts:
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L351: insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL
+      - L671: gate_fire_logには同一報告YAMLの複数gate実行が残るため、gate行数をそのままFAIL率にすると修行自動配備の判断が歪む。修行品質や一発PA
+      - L467: 新task配備後に旧reportのstatus=doneと新taskのstatus=assignedの不一致でMISMATCHが5分毎に繰り返し発生。1セッショ
+      - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
+    ────────────────────────────────────────
+  memory_db_context:
+  - '2026-07-02T07:46:31 | 2026-07-02 家老強ニュー化訂正: gate_karo_startup.sh再実行後、pending insightsは4件ではなく3件。compact_state時刻は07:46、snaps'
+  - '2026-07-02T07:45:53 | 2026-07-02 家老強ニュー化: compact_stateを07:47時点へ更新。goal complete、全忍者idle、pending insights 4件、L828誤注入防御(com'
+  - '2026-07-02T01:25:52+09:00 | 複数偵察配備の際に重複ガードが働くのはインフラバグだな。バグはinbox6 — CMD受領済み。queue/shogun_to_karo.yaml を読みレビュー+忍者配備を開始せよ修正しよう'
+  - '2026-07-01T07:32:34+09:00 | 報告YAMLは.gitignore対象。`queue/tasks/kotaro.yaml`のみcommitする。'
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_hotfix_insight_corruption_202607021437_normal
   _ac_worker_id: 
-  deployed_at: "2026-07-02T05:30:38"
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_karo_hotfix_insight_corruption_202607021437.yaml
+  report_path: queue/reports/kotaro_report_cmd_karo_hotfix_insight_corruption_202607021437.yaml
+  bloom_level: 
+  deployed_at: "2026-07-02T14:37:43"
