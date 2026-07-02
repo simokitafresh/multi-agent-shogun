@@ -53,6 +53,42 @@ teardown() {
     [ "$status" -eq 0 ]
 }
 
+@test "files_modified: 散文入力はautofix後にexit 1" {
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' files_modified '変更なし。調査のみ' 2>&1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: files_modified はファイルパス形式のみ記入可"* ]]
+    ! grep -Fq "変更なし。調査のみ" "$TEST_REPORT"
+}
+
+@test "files_modified: slashなし文字列リストはexit 1" {
+    run bash -c "echo '[説明文, scripts/report_field_set.sh]' | bash '$SCRIPT' '$TEST_REPORT' files_modified - 2>&1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"不正値: 0: 説明文"* ]]
+}
+
+@test "files_modified: 正しいパス文字列はexit 0" {
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' files_modified scripts/report_field_set.sh 2>&1"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+assert data["files_modified"][0]["path"] == "scripts/report_field_set.sh", data
+PY
+}
+
+@test "files_modified: reference_only dictはslashなしでもexit 0" {
+    run bash -c "echo '[{path: report_notes, change: reference_only}]' | bash '$SCRIPT' '$TEST_REPORT' files_modified - 2>&1"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+assert data["files_modified"][0]["path"] == "report_notes", data
+assert data["files_modified"][0]["change"] == "reference_only", data
+PY
+}
+
 @test "self_gate_check: トップレベルscalar書込みはexit 1" {
     run bash -c "bash '$SCRIPT' '$TEST_REPORT' self_gate_check PASS 2>&1"
     [ "$status" -eq 1 ]

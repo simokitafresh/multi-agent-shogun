@@ -290,6 +290,55 @@ _validate_field_value() {
     local field="${dot_key%%.*}"
 
     case "$field" in
+        files_modified)
+            if [[ "$dot_key" == "files_modified" ]]; then
+                python3 -c "
+import yaml, sys
+
+raw = sys.stdin.read()
+try:
+    data = yaml.safe_load(raw)
+except yaml.YAMLError as e:
+    print(f'BLOCK: files_modified YAML parse error: {e}', file=sys.stderr)
+    sys.exit(1)
+
+def path_from(item):
+    if isinstance(item, dict):
+        return str(item.get('path', '') or '').strip()
+    return str(item or '').strip()
+
+def reference_only(item):
+    if isinstance(item, dict):
+        if item.get('reference_only') is True:
+            return True
+        change = str(item.get('change', '') or '').strip().lower()
+        return change in ('reference_only', 'reference-only')
+    text = str(item or '').strip().lower()
+    return text in ('reference_only', 'reference-only')
+
+items = data if isinstance(data, list) else [data]
+bad = []
+for idx, item in enumerate(items):
+    path = path_from(item)
+    if not path or path == 'FILL_THIS':
+        bad.append(f'{idx}: empty/path placeholder')
+        continue
+    if reference_only(item):
+        continue
+    if path.startswith('偵察'):
+        continue
+    if '/' not in path:
+        bad.append(f'{idx}: {path}')
+
+if bad:
+    print('BLOCK: files_modified はファイルパス形式のみ記入可。説明文・非パス値は禁止。', file=sys.stderr)
+    print('  正: scripts/report_field_set.sh / context/foo.md', file=sys.stderr)
+    print('  偵察のみの場合は \"偵察のみ\"、参照のみの場合は reference_only を使え', file=sys.stderr)
+    print('  不正値: ' + '; '.join(bad), file=sys.stderr)
+    sys.exit(1)
+" <<< "$val" || return 1
+            fi
+            ;;
         lessons_useful)
             # Full field write: must be YAML list, not dict/string/empty
             if [[ "$dot_key" == "lessons_useful" ]]; then
