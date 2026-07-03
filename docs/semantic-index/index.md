@@ -1650,6 +1650,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T02:52:44+09:00 Read-only review task in /mnt/c/tools/multi-agent-shogun. Review /mnt/c/Python_app/DM-signal/docs/design/dm-signal-stabi |
 | cmd | `cmd_3666` DM-Signal monthly-returns rawキャッシュのキー整合 — FE実要求paramsの事前生成追加 |
 | causal | `cmd_3666` origin: [[殿体感_20260702_monthly_returns_loading]] -> [[precompute鍵とlookup鍵の不一致]] -> [[FE実要求paramsの事前生成追加]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T15:05:44+09:00 byzwzlkbb toolu_01WtpnSMtdEqQX8r6yDDWqe4 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b4761f6c-ddd2-41aa-8e4b-ef824f |
 | causal_chain | `[[cmd_3061]]` (L717) |
 
 ## deepdive_principles — deepdive原理
@@ -1893,6 +1894,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T01:26:26+09:00 今 クリアされても 今より強くてニューゲーム できるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T01:26:36+09:00 今 クリアされても 今より強くてニューゲーム できるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T10:27:53+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T14:47:01+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | causal_chain | `[[cmd_3624_kagemaru]]` (L900) |
 
 ## growth_loop — 学習ループ
@@ -2221,6 +2223,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T13:04:19+09:00 CI redがないか確認して |
 | lesson | `L945` pre-push hookの実行者向け出力はstderr捕捉後もstdoutへ要点を出す |
 | lesson | `L806` updated_atを初回到着時刻として扱うな |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T16:13:38+09:00 残り2エージェント(Polygon/Alpaca/Nasdaq Data Link、EODHD/FMP/Alpha Vantage)の完了確認。完了していれば報告書統合へ進む。未完了ならさらに待機。 |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -3688,7 +3691,7 @@ codd:
 |------|---|
 | id | tier_plan_mapping |
 | label | Tier-プラン対応 |
-| aliases | tier, 料金プラン, プラン, plan, subscription, メンバーシップ, membership, viewer_tiers, Basic, Standard, NewStandard, AddOn, premium, ベーシック, スタンダード, アドオン, プレミアム, 古参スペシャル, 劇薬DM, ドクタープレミアム, 特にビジネスプランの話を今後するときにスムーズにやりたいな, starterplanにcold startあったっけ？, Tier, スタンダードは新スタンダードと旧スタンダードの２種類ある, planモードが諸悪の根源では？, まずはプランを深掘ろう, プランを明確にせよ |
+| aliases | tier, 料金プラン, プラン, plan, subscription, メンバーシップ, membership, viewer_tiers, Basic, Standard, NewStandard, AddOn, premium, ベーシック, スタンダード, アドオン, プレミアム, 古参スペシャル, 劇薬DM, ドクタープレミアム, 特にビジネスプランの話を今後するときにスムーズにやりたいな, starterplanにcold startあったっけ？, Tier, スタンダードは新スタンダードと旧スタンダードの２種類ある, planモードが諸悪の根源では？, まずはプランを深掘ろう, プランを明確にせよ, asis tobe 5W1Hでプランを作成 |
 | skills | note-writer |
 | related_concepts | visibility_tier_masking, dmsignal_operations |
 
@@ -3723,6 +3726,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T20:24:15+09:00 設定画面は別ページにできるか？リンクボタンはつけずに/adminでページを作ればいい。ベーシック認証でログイン、表示するPFを設定するだけ。basic認証はenvironmentで設定。設定画面用のIDとパスワードを別で設定する |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T01:11:08+09:00 DM-signalのハナシをしよう。昨日数回のinstance errorがおきている。内容を確認し原因を精査、対策をしよう。その際にtier別のパスワードが無効になるトラブルもあった。確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T13:01:48+09:00 ユーザー向けの簡潔な報告書も書いて。tier別に影響を受けたPF数とそのPFの名称が必要。詳しい内容は必要ない。シン青龍-鉄壁のみがバグ。ほぼすべてのユーザーは影響を受けなかった。これが伝わればいい。言い訳は不要。淡々と事実報告のみしよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T16:43:19+09:00 asis/tobe 5W1Hでプランを作成。gistとgistindexで共有。database側のリポジトリに.envを作ってくれればAPIのkeyなどは俺が書き込む。API取得のための詳細なステップバイステップガイドもつけてくれ |
 | causal_chain | `[[cmd_karo_ci_red_fix_26821340025]]` (L734) |
 
 ## alpha_6_metrics — α6指標
@@ -3814,6 +3818,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T20:49:54+09:00 oauthでログインしたらリバランサーにとばされた |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-29T08:04:27+09:00 rebalancerにはないのか？自力で探してくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-29T13:46:03+09:00 左寄せはやめろ。一個前の一がよかった |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T15:15:49+09:00 tiingoとStooq以外の選択肢は？より精度が高く信頼がおけるなら月100ドル程度の課金は可能だ。無料/有料にとらわれず探そう。最も重要なリバランス日、つまり月末のopen/closeのタイミングで正確ならばモメンタム計算はずれないよな |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -3892,6 +3897,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T00:30:35+09:00 bzkj20tun toolu_01JQKVqCWnRipndLdigXqR7G /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2e3a5e4a-230e-4f17-8287-8650db |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T09:34:54+09:00 boj1drc82 toolu_01KjhDTbw67giH4pbbVhdv6c /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/40641b21-4288-4eae-a118-76c114 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T14:13:59+09:00 b2yrna70g toolu_01KJa68b6RXtwWvKKDWDFUaQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/40641b21-4288-4eae-a118-76c114 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T15:22:29+09:00 bscgbtgi2 toolu_01CrtqwdJoQdj8gKkjdzoYDL /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b4761f6c-ddd2-41aa-8e4b-ef824f |
 
 ## kj_partshift — KJ Partshift Checker（シフト見える化MVP）
 
@@ -4062,7 +4068,7 @@ codd:
 |------|---|
 | id | report_quality_protocol |
 | label | 忍者報告品質プロトコル |
-| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, GP-286, GP-287, files_modifiedパス形式, commit_hash 40文字hex, short commit_hash, full hash, 40文字フルhash, batsテスト, CI回帰防護, gate report format regression, 軍師提案 GP-286 GP-287, 軍師提案 GP-286 GP-287 files_modified commit_hash batsテスト CI回帰防護, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？, 報告して返答をもらえ, Phase1 FE削除, 家老と軍師のペアは順調か？, では軍師にも穴がないかチェックしてもらおう, 自分で解決困難であれば分析して掲示板に投稿し, 問題は軍師が将軍と俺の会話を自分ごととしてとらえた点だ, ちょっとまて, 軍師のことは軍師に任せろ, では軍師の掲示板に対応せよ, あわてずに軍師のpaneを読め, これが必要なのは将軍, 軍師にもアドバイスをもらえ, 作業開始時点のgateは既にOKだった, 設計書を家老にレビューしてもらおう, 軍師と協議せよ, どうなった？, Ⅴに関しては家老と軍師による再戻しがあるのでは？, 設計書を作成, 軍師から掲示板は来ていないか？, 3621はどうなった？, 軍師はopus4 highだ, 軍師はopus4 6 highだ, 家老と軍師をぴん留めopus highにしてくれ, 家老と軍師をぴん留めopus 4 6 highにしてくれ, 将軍と軍師をinbox3, 将軍のレビューをせよ, P4はどうなった？, 軍師も覚醒して独自に調査せよ |
+| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, GP-286, GP-287, files_modifiedパス形式, commit_hash 40文字hex, short commit_hash, full hash, 40文字フルhash, batsテスト, CI回帰防護, gate report format regression, 軍師提案 GP-286 GP-287, 軍師提案 GP-286 GP-287 files_modified commit_hash batsテスト CI回帰防護, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？, 報告して返答をもらえ, Phase1 FE削除, 家老と軍師のペアは順調か？, では軍師にも穴がないかチェックしてもらおう, 自分で解決困難であれば分析して掲示板に投稿し, 問題は軍師が将軍と俺の会話を自分ごととしてとらえた点だ, ちょっとまて, 軍師のことは軍師に任せろ, では軍師の掲示板に対応せよ, あわてずに軍師のpaneを読め, これが必要なのは将軍, 軍師にもアドバイスをもらえ, 作業開始時点のgateは既にOKだった, 設計書を家老にレビューしてもらおう, 軍師と協議せよ, どうなった？, Ⅴに関しては家老と軍師による再戻しがあるのでは？, 設計書を作成, 軍師から掲示板は来ていないか？, 3621はどうなった？, 軍師はopus4 highだ, 軍師はopus4 6 highだ, 家老と軍師をぴん留めopus highにしてくれ, 家老と軍師をぴん留めopus 4 6 highにしてくれ, 将軍と軍師をinbox3, 将軍のレビューをせよ, P4はどうなった？, 軍師も覚醒して独自に調査せよ, 忍者や家老 |
 | skills | report-write, verdict-check |
 | related_concepts | lesson_lifecycle, training_cycle_quality, yaml_safe_write, gunshi_review_lifecycle, ac_merit_review_integrity |
 | related_lessons | `L625`, `L633`, `L643` |
@@ -4198,6 +4204,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T19:01:24+09:00 P4はどうなった？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T23:24:37+09:00 どうなった？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T12:11:55+09:00 軍師も覚醒して独自に調査せよ |
+| lesson | `L947` report_field_set.shで既存フィールドが無警告で消失する再現バグ(worker_id/task_id/parent_cmd/ac_version_read書込み後) |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T16:55:19+09:00 忍者や家老、軍師はどうなっている？隊列が崩れているな |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
@@ -4208,6 +4216,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_ga130_context_freshness_dm_signal_frontend_20260625]]` (L850) |
 | causal_chain | `[[cmd_training_L4_R20260701_idle1_kagemaru]]` (L909) |
 | causal_chain | `[[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]` (L923) |
+| causal_chain | `[[cmd_3683]]` (L947) |
 
 ## ac_merit_review_integrity — AC本旨レビュー整合性
 
@@ -4384,11 +4393,13 @@ codd:
 | causal | `cmd_3615` files_modified: [[infrastructure_ops]] |
 | lesson | `L917` WSL2 NTFS上でfindが存在しないディレクトリに対してset -eでabortする |
 | causal | `cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133` files_modified: [[infrastructure_ops]] |
+| lesson | `L949` tmuxペイン新規作成スクリプトはflock排他必須 |
 | causal_chain | `[[snapshot_staleness]] -> [[slow_monitor_checks]] -> [[early_atomic_snapshot]]` (L851) |
 | causal_chain | `[[cmd_2935]]` (L651) |
 | causal_chain | `[[cmd_karo_ci_fix_2tests]]` (L652) |
 | causal_chain | `[[cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624]]` (L841) |
 | causal_chain | `[[cmd_3632]]` (L917) |
+| causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 
 ## gate_quality_framework — ゲート品質統合フレームワーク
 
@@ -4558,6 +4569,7 @@ codd:
 | cmd | `cmd_karo_hotfix_check92_unique_execution_202607022128` (`scripts/gates/gate_karo_startup.sh`, `tests/unit/test_gate_karo_startup.bats`) |
 | causal | `cmd_3674` files_modified: [[gate_quality_framework]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T13:21:00+09:00 bpemcsq1c toolu_01Erxvp9N9Ui2r97XMg7s6Da /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b4761f6c-ddd2-41aa-8e4b-ef824f |
+| causal | `cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607031906` files_modified: [[gate_quality_framework]] |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
@@ -5245,6 +5257,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T00:32:07+09:00 bu1rjms3a toolu_01C61SmqZPkRKHeuHkbiBbTN /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2e3a5e4a-230e-4f17-8287-8650db |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T00:34:50+09:00 現在DM-signalでdatabaseAPIを使っているはずだ。問題が起きないように両方のプロジェクトの影響も把握しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T14:41:06+09:00 database側にログはないのか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T15:07:52+09:00 根源はデータベース側の価格の信頼性の気がしてきた。つまりstockdata-apiの元データがyfinance onlyなのが危険なのではないか？ |
 
 ## project_milk — M!LK
 
@@ -5514,6 +5527,7 @@ codd:
 | 種別 | パス/参照 |
 |------|----------|
 | cmd | `cmd_3056` auto project registry intake |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T15:08:58+09:00 Stock Events Stock Events 新規登録 なぜ日々のパーセンテージ変化が、あなたのブローカーや他のアプリと異なる場合があるのか アプリでの株のデイリーのパーセンテージ変化が、Yahoo FinanceやGoogle Fi |
 
 ## content_artifacts — 記事・成果物索引
 
