@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-02 cmd_karo_hotfix_context_freshness_ga160_202607020443 -->
+<!-- last_updated: 2026-07-03 cmd_3677_recon2 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -360,7 +360,7 @@ cmd_3572でMTD事前計算テーブル`precomputed_mtd`、`backend/app/jobs/prec
 
 ### §8.7 Fusion API (2026-06-28)
 
-`/api/fusion/portfolios` は外部Fusionアプリ向けのadmin認証専用エンドポイント。全active PFの`id/name/type/folder`と確定済み`monthly_returns[{year_month, return}]`のみを返し、当月・null monthly_return・config/holding_signal/ticker/weights/cumulative系は禁止。`hide_portfolio=false`フィルタは2026-06-29に追加後、同日`7abaec5c`で削除済み。10/min rate limitと11回目429テストあり。根拠: commits `288f0e36`, `314b596a`, `a3a854ba`→`7abaec5c`, spec `docs/spec/fusion-api-endpoint.md`, test `backend/tests/test_fusion_api.py`。
+`/api/fusion/portfolios` は外部Fusionアプリ向けのadmin認証専用エンドポイント。`is_active=true`かつ`hide_portfolio=false`のPFだけを対象に、`id/name/type/folder`と確定済み`monthly_returns[{year_month, return}]`のみを返す。当月・null monthly_return・config/holding_signal/ticker/weights/cumulative系は禁止。2026-07-03 `cmd_karo_ci_fix_dm_signal_20260703`で、`hide_portfolio=true`のPFが混入する回帰を修正し、この除外条件を再確定。10/min rate limitと11回目429テストあり。根拠: commits `288f0e36`, `314b596a`, `a3a854ba`, `b73e5656`, spec `docs/spec/fusion-api-endpoint.md`, test `backend/tests/test_fusion_api.py`。
 
 ### §8.8 Rolling Returns API/Table (2026-07-01)
 

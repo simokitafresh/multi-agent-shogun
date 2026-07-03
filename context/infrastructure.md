@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-03 cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051 -->
+<!-- last_updated: 2026-07-03 cmd_3677_recon2 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -675,7 +675,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L944 -->
+<!-- last_synced_lesson: L945 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
@@ -1338,6 +1338,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L942: logs/cmd_design_quality.yamlのcmd_idはリスト項目内で先頭フィールドとは限らない（cmd_3665）
 - L943: 性能最適化で処理呼び出しを削る際は副作用(生成物の更新)も棚卸しせよ（cmd_karo_hotfix_ga170_context_freshness_202607030012）
 - L944: 生成YAMLへ任意テキストをdouble-quoted出力する時はbackslashとdouble quoteをescapeする（cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051）
+- L945: pre-push hookの実行者向け出力はstderr捕捉後もstdoutへ要点を出す（cmd_karo_ci_fix_shogun_20260703）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
