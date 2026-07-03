@@ -57,6 +57,7 @@ codd:
 | causal | `cmd_3577` files_modified: [[unread_cmd_new_deployment_guard]] |
 | causal | `cmd_3643` files_modified: [[unread_cmd_new_deployment_guard]] |
 | causal | `cmd_karo_hotfix_check92_unique_execution_202607022128` files_modified: [[unread_cmd_new_deployment_guard]] |
+| causal | `cmd_3674` files_modified: [[unread_cmd_new_deployment_guard]] |
 
 ## local_memory_db — ローカル記憶DB
 
@@ -676,7 +677,7 @@ codd:
 |------|---|
 | id | recalculate_pipeline |
 | label | 再計算パイプライン |
-| aliases | fullrecalculate, recalc, 再計算フロー, recalculate_fast, ネストFoF, nested FoF, FoF of FoF, トポロジカルソート, signal_cache, holding_signal_raw, deferred flush, recalculate_fof, FoF再計算, 2段目FoF, 奥義GS, 秘奥義, つまり秘奥義もnew FoFもL3だな, 呼出し元でFoF構成PF 1段目・2段目 を事前一括取得, recalculation_status, recalculate速度, psycopg2直接接続, WSL DB接続方式A |
+| aliases | fullrecalculate, recalc, 再計算フロー, recalculate_fast, ネストFoF, nested FoF, FoF of FoF, トポロジカルソート, signal_cache, holding_signal_raw, deferred flush, recalculate_fof, FoF再計算, 2段目FoF, 奥義GS, 秘奥義, つまり秘奥義もnew FoFもL3だな, 呼出し元でFoF構成PF 1段目・2段目 を事前一括取得, recalculation_status, recalculate速度, psycopg2直接接続, WSL DB接続方式A, 本番のFoFの設定はこうなっている |
 | skills | db-check |
 | related_concepts | production_parity, dmsignal_operations, alm_research, gs_ninpo_research |
 
@@ -750,6 +751,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-01T03:54:36+09:00 bhv85pxon toolu_018kC5TMiUNrUgCL3f3niCPm /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-01T03:59:52+09:00 b1wha6ez4 toolu_017i5M9vXZSNxdQ3aWEbDueP /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-01T04:06:28+09:00 be2sdi29h toolu_01Tqhx6W5jkC4Ukscd8E8qnE /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T12:03:23+09:00 New Fund of Funds_copy_copy Components (2): 秘奥義-抜き身-激攻, 秘奥義-追い風-激攻 Allocation: All 2 → 50.0% each Edit Weight Breakdown  |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T12:05:58+09:00 前提を確認しよう。本番のFoFの設定はこうなっている。New Fund of Funds_copy_copy Components (2): 秘奥義-抜き身-激攻, 秘奥義-追い風-激攻 Allocation: All 2 → 50.0%  |
 | causal_chain | `[[cmd_3053]]` (L714) |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3153]]` (L744) |
@@ -1592,7 +1595,7 @@ codd:
 |------|---|
 | id | production_parity |
 | label | 本番パリティ |
-| aliases | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data, 月次リターン, MTD, 月次部分月, MTD判定, Month-to-Date, 部分月, partial_month, monthly_common, チェックリスト, monthly trade画面には現時点で全PFの６月の保有ポジションがpendingに表示される必要がある, signal_pending, pending 3条件, monthly_trade.py, signals.py pending, is_pending, is_mtd, build_pending_map, 3レイヤー貫通確認, DB→API→FE, PF物理削除, PF論理削除, is_active, portfolio_config_snapshots, FK制約, CASCADE, NO ACTION, 逆依存順削除, PF設定バックアップ, PF削除手順, 旧式PF削除, チェックリストを家老にれびゅーしてもらおう, is active削除WP Phase 前提ゲート実測, is active機能のFE BE docs削除実装, is active削除ブランチの指示書準拠再構成, monthly productのBEスキーマ削除実装, MTDテーブルDaily列の実装 設計書PR2, MTD速報行の実装 設計書PR3 Feature C, MTD速報ラベル仮置き, MTD速報行の日付は仮置き, 06/19速報ラベル, 06/19 ⚡は市場営業日SSOTではない, Juneteenth MTD速報ラベル修正不要, 市場カレンダーなし MTD速報ラベル, 秘奥義-激攻 06/19検算, MTD preliminary label placeholder, Juneteenth preliminary MTD label no fix, MTD preliminary row market calendar not SSOT, source_type_local_sqlite鵜呑み, GS universe DB昇格, local_sqlite vs PostgreSQL入力差, weighted_yotsume 0不一致, UUID完備universe DB source昇格, GS月次突合解像度差, デプロイまで終わってるか？, デプロイ完了確認, DM-signalのはなしをしよう相変わらずmonthly returnやmonthly tradeページでloadingが発生する, ローカルで検査すると、本番のネットワーク負荷などが見えないのでは？問題はないのか？, monthly-trade側の対策後計測不在, 76PF分で十分なのか？ |
+| aliases | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data, 月次リターン, MTD, 月次部分月, MTD判定, Month-to-Date, 部分月, partial_month, monthly_common, チェックリスト, monthly trade画面には現時点で全PFの６月の保有ポジションがpendingに表示される必要がある, signal_pending, pending 3条件, monthly_trade.py, signals.py pending, is_pending, is_mtd, build_pending_map, 3レイヤー貫通確認, DB→API→FE, PF物理削除, PF論理削除, is_active, portfolio_config_snapshots, FK制約, CASCADE, NO ACTION, 逆依存順削除, PF設定バックアップ, PF削除手順, 旧式PF削除, チェックリストを家老にれびゅーしてもらおう, is active削除WP Phase 前提ゲート実測, is active機能のFE BE docs削除実装, is active削除ブランチの指示書準拠再構成, monthly productのBEスキーマ削除実装, MTDテーブルDaily列の実装 設計書PR2, MTD速報行の実装 設計書PR3 Feature C, MTD速報ラベル仮置き, MTD速報行の日付は仮置き, 06/19速報ラベル, 06/19 ⚡は市場営業日SSOTではない, Juneteenth MTD速報ラベル修正不要, 市場カレンダーなし MTD速報ラベル, 秘奥義-激攻 06/19検算, MTD preliminary label placeholder, Juneteenth preliminary MTD label no fix, MTD preliminary row market calendar not SSOT, source_type_local_sqlite鵜呑み, GS universe DB昇格, local_sqlite vs PostgreSQL入力差, weighted_yotsume 0不一致, UUID完備universe DB source昇格, GS月次突合解像度差, デプロイまで終わってるか？, デプロイ完了確認, DM-signalのはなしをしよう相変わらずmonthly returnやmonthly tradeページでloadingが発生する, ローカルで検査すると、本番のネットワーク負荷などが見えないのでは？問題はないのか？, monthly-trade側の対策後計測不在, 76PF分で十分なのか？, 常に本番が正だ。ローカルを信用するな, 本番が正, 7月確定ポジション書換え, 保有ポジションが昨日と本日で異なる, component_portfoliosは構成定義でなく当月選択結果, TECL→XLU書換え疑い |
 | skills | db-check, pf-registration |
 | related_concepts | recalculate_pipeline, dmsignal_operations, silent_fallback_quality, terminology_dictionary, shin_shijin_design, alpha_6_metrics, db_price_data_range, dm_signal_refactor_mission, fusion_api_endpoint, dmsignal_fe_experience_deploy |
 
@@ -2207,6 +2210,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T00:24:40+09:00 b63ow7qf9 toolu_01XUFYtKaiPEAakWkJPfN62a /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b4761f6c-ddd2-41aa-8e4b-ef824f |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T00:33:49+09:00 b7qs0qs8w toolu_01Q4UbZ7VAVgSfAeUMWSRwrv /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b4761f6c-ddd2-41aa-8e4b-ef824f |
 | lesson | `L943` 性能最適化で処理呼び出しを削る際は副作用(生成物の更新)も棚卸しせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T11:37:07+09:00 DBを見ればBEの内部のシグナルが変更されていないことはわかるはずでは？三層記憶を確認して。保有ポジションとシグナルの関係も先に理解しておこう |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -2837,6 +2841,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T17:22:37+09:00 なので DM シグナルの API としては では マンスリー リターンとポートフォリオ名 これだけでいいんじゃないですかね |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T17:24:24+09:00 現時点で DM シグナル側で埋めておくべき 穴はありますか 本当 セキュリティは非常に重要なんですけれどもそもそもまあポプトフォリオ名と リターンだけだったら 流出 しても ですね 大きな問題にはならないですね |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T02:43:55+09:00 相談なんだが DM シグナルでベータを検索してると思うんだが データの逆数を保有した時のトータルリターン っていうのを出すことってできるのかな ベータは厳密にと毎月少しずつ変わると思うんだけど 今日はベータの客数をかけて ベーター リスクを |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T12:01:22+09:00 このような意見がある。将軍の一次確認結果（本番GET、read-onlyのみ） FoF連鎖: New Fund of Funds_copy_copy → (2つの中間FoF) → 奥義-GS-加速D-激攻 → GSシン加速R-激攻(51e9 |
 
 ## google_classroom — Google Classroom Dashboard
 
@@ -3248,6 +3253,11 @@ codd:
 | lesson | `L941` モデルファミリー追加時、cli_lookup.shへの表示整形追加はGuard16(操作的オントロジー)がBLOCKする |
 | cmd | `cmd_3664` (`scripts/lib/model_detect.sh`, `tests/unit/test_model_detect.bats`) |
 | lesson | `L944` 生成YAMLへ任意テキストをdouble-quoted出力する時はbackslashとdouble quoteをescapeする |
+| causal | `cmd_3674` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_3674` 将軍復帰完了マーカーの揮発性パス脱却 — logs配下への恒久移行 (`.claude/hooks/post-shogun-inbox-check.sh`, `scripts/clear_prep_check.sh`, `scripts/gates/gate_shogun_startup.sh`) |
+| causal | `cmd_3674` origin: [[INS-20260703-003302527_誤警告5連続]] -> [[揮発性パスに永続状態]] -> [[cmd_3674]] |
+| cmd | `cmd_3675` 本番保有ポジション表示の昨日今日差分偵察 — raw経路変更とprecompute窓の因果特定 |
+| causal | `cmd_3675` origin: [[殿観測_20260703_保有ポジション表示差分]] -> [[rawキー整合修正とprecompute窓]] -> [[cmd_3675]] |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -3960,6 +3970,7 @@ codd:
 | causal | `cmd_3643` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_3657` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_3662` files_modified: [[cmd_quality_logging]] |
+| causal | `cmd_3674` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_2888]]` (L637) |
 | causal_chain | `[[cmd_2888]]` (L638) |
 | causal_chain | `[[cmd_3531_completion]] -> [[stale_skill_path]] -> [[cmd_complete_skill_static_test]]` (L852) |
@@ -4526,6 +4537,7 @@ codd:
 | causal | `cmd_3662` origin: [[INS-20260702-134235732-a849]] -> [[アーカイブ退避で自己検出0化]] -> [[当日アーカイブ含む集計修正]] |
 | causal | `cmd_karo_hotfix_check92_unique_execution_202607022128` files_modified: [[gate_quality_framework]] |
 | cmd | `cmd_karo_hotfix_check92_unique_execution_202607022128` (`scripts/gates/gate_karo_startup.sh`, `tests/unit/test_gate_karo_startup.bats`) |
+| causal | `cmd_3674` files_modified: [[gate_quality_framework]] |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
@@ -4757,6 +4769,7 @@ codd:
 | lesson | `L843` Stop hook単独でtool payload内容を前提にしない |
 | causal | `cmd_3560` files_modified: [[hook_automation_framework]] |
 | causal | `cmd_3616` files_modified: [[hook_automation_framework]] |
+| causal | `cmd_3674` files_modified: [[hook_automation_framework]] |
 | causal_chain | `[[cmd_3401]]` (L811) |
 | causal_chain | `[[cmd_3522]]` (L843) |
 
