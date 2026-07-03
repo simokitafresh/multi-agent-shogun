@@ -21,6 +21,20 @@ if [[ "${1:-}" == "--dry-run" ]]; then
 fi
 
 # ═══════════════════════════════════════════════════════════════
+# 並行実行ガード（flock排他）
+# split-window/swap-pane/CLI起動は非原子的な複数tmux操作の連鎖であり、
+# 2重起動されるとメガバッチで取得したペイン索引が互いに古くなり、
+# 想定外のペインにCLI起動コマンドが送られて@agent_id未設定の
+# 無主ペインが生じ得る（2026-07-03 cmd_karo_hotfix_auto_update_pane_spawn調査）。
+# restart_watchers.sh(FD200)と衝突しないようFD201を使用。
+LOCK_FILE="/tmp/shogun_reset_layout.lock"
+exec 201>"$LOCK_FILE"
+if ! flock -n 201; then
+    echo "[reset_layout] SKIP: another reset_layout.sh instance is already running (lock: $LOCK_FILE)"
+    exit 0
+fi
+
+# ═══════════════════════════════════════════════════════════════
 # 定数: lib キャッシュ source
 # 7 NTFS ファイル個別source (~167ms) → tmpfs 1ファイルsource (~9ms)
 # キャッシュは /tmp (WSL2 ext4) に保存。/tmp のみ削除で再生成。
