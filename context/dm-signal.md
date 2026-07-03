@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-03 cmd_3677 -->
-<!-- last_synced_lesson: L808 -->
+<!-- last_updated: 2026-07-03 cmd_training_L4_auto_202607031741_kotaro -->
+<!-- last_synced_lesson: L809 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -265,6 +265,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L806: updated_atを初回到着時刻として扱うな（cmd_3677_recon2）
 - L807: 価格値履歴なしでは月初シグナル分岐の旧入力値を復元できない（cmd_3680）
 - L808: reference_assetモード判定の反証にはコード差だけでなくprices/economic_indicatorsの値履歴不在を先に確認せよ（cmd_3680_recon2）
+- L809: 無音書換え警報のpending/確定境界は日付ではなく出自(marker)で判定する（cmd_3679）
 
 ## 因果リンク
 
