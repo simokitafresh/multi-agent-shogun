@@ -929,3 +929,4 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - precompute再実行: `POST /admin/precompute-raw`(admin Basic)。生成完了判定は固定行数でなく**対象PF数と一致**で行え(途中値76/102の誤報実例)
 - metrics summaryはbulk raw(1行)方式=compare_returns_bulkの2例目(cmd_3669: ttfb 1.75-2.13s→0.47s)。可視性/maskingは毎リクエスト適用を維持
 - 残: rolling_returnsは生成だけされAPI未参照の逆パターン(未修正)
+- cmd_3675偵察: 本番102PFの`/api/debug/signal-raw`+`/api/history`で2026-07-01→2026-07-02 holding差分0件。殿観測の保有ポジション差分はDB破壊ではなくMonthly Tradeの翌月pending行先頭表示(表示層)が主因。詳細 → `docs/research/cmd_3675_holding_position_display_diff_recon.md`
