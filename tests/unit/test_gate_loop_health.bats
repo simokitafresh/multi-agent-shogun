@@ -94,6 +94,23 @@ EOF
     [[ "$output" != *'デフォルト値追加'* ]]
 }
 
+@test "gate_loop_health bc result empty recommends non-autofix quality defenses" {
+    {
+        for i in $(seq 1 7); do
+            printf -- '- ts: "2026-04-19T14:%02d:00" file: "queue/reports/recent_fail_%02d.yaml" result: FAIL reasons: "binary_checks.AC1[0].result: 空文字。\\\"yes\\\" または \\\"no\\\" を記入せよ" fixes: ""\n' "$i" "$i"
+        done
+        for i in $(seq 1 13); do
+            printf -- '- ts: "2026-04-19T15:%02d:00" file: "queue/reports/recent_pass_%02d.yaml" result: PASS reasons: "" fixes: ""\n' "$i" "$i"
+        done
+    } > "$TEST_TMPDIR/logs/gate_fire_log.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'QUALITY: "binary_checks.ACx[0].result: 空文字。'* ]]
+    [[ "$output" == *'(7回) → 値の推定auto-fix禁止。deploy_taskテンプレート警告・report_field_set導線・L1修行サイクルでresult記入を強制せよ'* ]]
+    [[ "$output" != *'gate_report_autofix.sh'* ]]
+}
+
 @test "gate_loop_health AC self-verification missing points to AC parser fix" {
     {
         for i in $(seq 1 10); do

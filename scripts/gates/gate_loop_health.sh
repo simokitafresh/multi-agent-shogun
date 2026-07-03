@@ -145,6 +145,8 @@ for pattern, count in reason_counter.most_common():
     if count >= 5:
         if 'is dict (must be list)' in pattern:
             recommendations.append(f'UPGRADE: "{pattern}" ({count}回) → gate_report_autofix.shにdict→list変換追加')
+        elif pattern.startswith('binary_checks.ACx') and '.result: 空文字' in pattern:
+            recommendations.append(f'QUALITY: "{pattern}" ({count}回) → 値の推定auto-fix禁止。deploy_taskテンプレート警告・report_field_set導線・L1修行サイクルでresult記入を強制せよ')
         elif 'MISSING' in pattern and count >= 10:
             recommendations.append(f'INVESTIGATE: "{pattern}" ({count}回) → テンプレート導線/事前警告を強化。空欄を有効値で隠す補完は禁止')
 
