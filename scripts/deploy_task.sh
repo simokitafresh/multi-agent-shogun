@@ -462,6 +462,30 @@ handle_yaml_injection_failure() {
     return 0
 }
 
+deploy_task_guard_task_yaml_syntax() {
+    local stage="$1"
+    local task_file="$2"
+    local ninja_name="${3:-${NINJA_NAME:-unknown}}"
+    local py_output message
+
+    py_output="$(mktemp)" || return 1
+    if python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1], encoding='utf-8'))" "$task_file" >"$py_output" 2>&1; then
+        rm -f "$py_output"
+        log "task_yaml_syntax: PASS (${stage})"
+        return 0
+    fi
+
+    message="YAML構文検証FAIL: stage=${stage} task_file=${task_file} ninja=${ninja_name}。task_assigned送信・report template生成・draft review送信を停止。deploy_task.logを確認されたし。"
+    log "FATAL: task YAML syntax invalid after ${stage}: ${task_file} (ninja=${ninja_name})"
+    while IFS= read -r line; do
+        [ -n "$line" ] && log "YAML_PARSE: $line"
+    done < "$py_output"
+    rm -f "$py_output"
+    safe_inbox_write "karo" "$message" "deploy_error" "deploy_task" || \
+        log "ERROR: task YAML syntax failure notification to karo failed"
+    return 1
+}
+
 deploy_task_send_direct_renudge() {
     local agent_name="$1"
     local pane_target unread_count
@@ -8236,6 +8260,8 @@ deploy_task_apply_task_mutations() {
     fi
 
     local task_id parent_cmd project _ac_task_id
+    deploy_task_guard_task_yaml_syntax "post_injection_pre_report_template" "$task_file" "$ninja_name" || return 1
+
     eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" task_id _ac_task_id parent_cmd project 2>/dev/null)" || true
     # task_id空なら_ac_task_idをfallback(家老が_ac_task_idを直接設定するケース)
     if [ -z "${task_id:-}" ]; then
@@ -8599,7 +8625,12 @@ except Exception:
     fi
 
     DEPLOY_TASK_EXIT_NUDGE_ARMED=1
-    deploy_task_apply_task_mutations "$NINJA_NAME"
+    deploy_task_apply_task_mutations "$NINJA_NAME" || {
+        DEPLOY_TASK_EXIT_NUDGE_ARMED=0
+        DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        return 1
+    }
     deploy_task_check_deadline "after_task_mutations" || return $?
 
     if [ -n "$deploy_lock_fd" ]; then

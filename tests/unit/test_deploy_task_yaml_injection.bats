@@ -57,6 +57,46 @@ PY
     grep -q 'inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points"' "$PROJECT_ROOT/scripts/deploy_task.sh"
 }
 
+@test "task YAML syntax guard stops before report template and task_assigned nudge" {
+    tmpdir="$(mktemp -d)"
+    task_file="$tmpdir/task.yaml"
+    cat > "$task_file" <<'YAML'
+task:
+  parent_cmd: cmd_bad_yaml
+  status: assigned
+  notes: 家老一次確認:
+    phase 1: copy yaml
+    phase 2: mutate fields
+YAML
+
+    run bash -lc "
+        set -e
+        export DEPLOY_TASK_LIB_ONLY=1
+        source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        log() { printf '%s\n' \"LOG:\$*\"; }
+        safe_inbox_write() { printf 'INBOX target=%s type=%s from=%s msg=%s\n' \"\$1\" \"\$3\" \"\$4\" \"\$2\"; }
+        deploy_task_guard_task_yaml_syntax post_injection_pre_report_template '$task_file' sasuke
+    "
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"INBOX target=karo type=deploy_error from=deploy_task"* ]]
+    [[ "$output" == *"task_assigned送信・report template生成・draft review送信を停止"* ]]
+}
+
+@test "task YAML syntax guard is ordered before report template generation" {
+    python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import sys
+
+script = open(sys.argv[1], encoding="utf-8").read()
+main_start = script.index("deploy_task_apply_task_mutations() {")
+main = script[main_start:]
+
+guard_idx = main.index('deploy_task_guard_task_yaml_syntax "post_injection_pre_report_template"')
+report_idx = main.index('generate_report_template "$ninja_name"')
+
+assert guard_idx < report_idx, (guard_idx, report_idx)
+PY
+}
+
 @test "postcondition_lesson_inject consumes current deploy postcondition after lesson injection and score update" {
     python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
 import sys
