@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-03 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-03T13:52:46+09:00 -->
+<!-- generated_at: 2026-07-03T14:58:13+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-03T13:52:45+09:00 | terminal | response | 未読0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-03T13:51:29+09:00 | terminal | response | はっ、現況を言上する。 **委任完了**: cmd_3680（TECL/XLU分岐要因の判別偵察 — 7/1保存値の復元突合+3回計算のコードバージョン特定、殿の問い「7/1のTECLは正か」への最終回答）はDELEGATED 13:48…
-- 2026-07-03T13:51:24+09:00 | terminal | response | cmd_3680 APPROVE完了。未読0件。idle待機。
-- 2026-07-03T13:48:24+09:00 | terminal | inbound | <task-notification> <task-id>blmrwakqn</task-id> <tool-use-id>toolu_01WEaD59CMfEZwz648DyPL5M</tool-use-id> <output-file…
-- 2026-07-03T13:47:00+09:00 | terminal | response | 核心の判別偵察cmd_3680を起票する（殿の問い「7/1のTECLは正か」に直結）。 [meta] stop_reason=tool_use
-- 2026-07-03T13:45:05+09:00 | terminal | response | 将軍所見: 残る真因候補2本。(a)Stockdata refetchで値自体が修正された (b)コード差(cmd_3666-3669デプロイ前後)。この判別が次のcmdの軸。
-- 2026-07-03T13:44:32+09:00 | terminal | response | 未読0件。統合判定完了。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-03T13:43:48+09:00 | ntfy | outbound | 【家老】cmd_3677_recon2 完了
-- 2026-07-03T13:42:59+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働2名 CLEAR率99% 連勝1
-- 2026-07-03T13:42:44+09:00 | terminal | response | 未読0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-03T14:58:13+09:00 | terminal | response | はっ、**概ねその通りだが、正確には「証明」と「消去法」の区別がある**。正直に境界を示す。 ## 確定していること（数値検証済み） 1. 分岐したのはシン青龍-鉄壁の**AbsoluteMomentumFilter** — 「LQDのモ…
+- 2026-07-03T14:57:42+09:00 | terminal | inbound | 8月pending行の表示分離（Next Signal欄化）について説明して
+- 2026-07-03T14:57:41+09:00 | terminal | response | はっ、裁定を記憶DBへ刻んだ（knowledge:ada7f968 — 14:44「両方やろう」を更新し、実装はDM-Signal側スナップショットのみ、Stockdata-API側全期間差分は見送り・必要性実証時に再検討）。 ## 本件…
+- 2026-07-03T14:56:23+09:00 | terminal | inbound | あとからLQDの値が変わったからモメンタム計算の結果が変わったということでいいのか
+- 2026-07-03T14:55:33+09:00 | terminal | response | カレントの`recalculate_fast.py`に他cmd(cmd_3681)の差分が混在しているとの家老指示です。stage/commit待機中であることを確認し、既読化・現状報告します。 [meta] stop_reason=to…
+- 2026-07-03T14:52:21+09:00 | terminal | response | はっ、裁定「(1)見送り」を受領。直ちに記録する。 [meta] stop_reason=tool_use
+- 2026-07-03T14:50:38+09:00 | terminal | inbound | 1
+- 2026-07-03T14:50:37+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率98% 連勝4
+- 2026-07-03T14:50:05+09:00 | terminal | response | はっ、進行を言上する。 **殿裁定「両方やろう」+「全期間の差分を毎回とる」を受けた展開**: 1. **cmd_3681（DM-Signal側）** — 月初シグナル確定時の**計算入力スナップショット保存**（価格値・経済指標値・コー…
+- 2026-07-03T14:49:01+09:00 | terminal | inbound | y
 
 ## 未解決確認事項
+- はっ、裁定を記憶DBへ刻んだ（knowledge:ada7f968 — 14:44「両方やろう」を更新し、実装はDM-Signal側スナップショットのみ、Stockdata-API側全期間差分は見送り・必要性実証時に再検討）。 ## 本件の最終陣形 | 施策 | 状態 | |-…
+- カレントの`recalculate_fast.py`に他cmd(cmd_3681)の差分が混在しているとの家老指示です。stage/commit待機中であることを確認し、既読化・現状報告します。 [meta] stop_reason=tool_use
+- はっ、今日わかったことを平易に説明し直す。 ## 何が起きたか（時系列） DM-Signalは毎晩、深夜に「今月何を持つべきか」を計算し直している。 1. **7/1の深夜計算**: その時DBにあった価格データで計算 → 「7月はTECLを持て」と表示 2. **7/2の夜(…
+- cmd_3680_recon2(独立偵察2人目)を完了した。 **結論**: シン青龍-鉄壁のAbsoluteMomentumFilter(LQD vs DTB3導出閾値)ゲート反転を実際の計算式で数値再現し、TECL→XLU分岐は**コード差ではなく入力データ差**と判定した…
+- タスクは全て完了済みです。 - **commit**: `5e5806d85`(scope内2ファイルのみ、push済み) - **報告YAML**: status=completed, verdict=PASS - **フルテスト**: bats全2715件、not ok 0…
+- CI RED修正(cmd_karo_ci_fix_shogun_retry_20260703_normal)が完了。 **根本原因(2件のbash race condition + 1件の環境変数欠落)**: 1. `gate_gunshi_startup.sh`: 背景実行さ…
+- GATE BLOCK確認。軍師FAIL→GATE BLOCK一致=正判定。家老のkotaro対応待ち。未読0件。idle待機。 [meta] stop_reason=end_turn
 - はっ、現況を言上する。 **委任完了**: cmd_3680（TECL/XLU分岐要因の判別偵察 — 7/1保存値の復元突合+3回計算のコードバージョン特定、殿の問い「7/1のTECLは正か」への最終回答）はDELEGATED 13:48:23で家老が配備に入った。 **実行中…
-- GATE BLOCK確認。軍師FAILとGATE BLOCKが一致=正判定。家老がhayateの報告修正を指示するのを待つ。未読0件。idle待機。 [meta] stop_reason=end_turn
-- cmd_3678のBLOCK原因を特定・修正した（q5内の教訓引用文言「cron新設時」がnew_file検出のトリガー語にマッチしていた。「cron追加時」へ置換）。再公布をバックグラウンドで実行中 — 完了通知でDELEGATEDを確認し、cmd_3679（月内シグナル変更…
-- cmd_3678の公布・委任をバックグラウンドで実行中。完了通知を受け次第、DELEGATED確認→cmd_3679（月内シグナル変更の即時警報）の起票へ進む。cmd_3677は既にhanzoへ配備済み（assigned確認）。 [meta] stop_reason=end_t…
-- cmd_3677のBLOCK原因（db_backup WARN=read-only偵察へのバックアップ文言要求）を修正し、公布・委任を再実行中。完了通知を受け次第、DELEGATEDを確認して後続のcmd_3678（入力確定ゲート+月初夕方再計算）・cmd_3679（月内シグナ…
-- はっ、誤解はござらん — **databaseは別リポジトリの別PJで、DM-SignalはそのAPIを叩いて価格を取得する構成**。cmd_3677の文面もその通りに正確化した（「database API経由での6/30価格の取得可能時刻の特定」を軸に、API応答・取得ジョブ…
-- はっ、殿の仮説がほぼ確定した。**決定的な一次証拠**が出た: ## 発見: 6/30の価格は「修正」ではなく「2日遅れの到着」だった 本番pricesの**6/30行のupdated_at分布は7/3 01:01の1時点のみ**（対象13シンボル、6/25-6/30で計52行…
-- はっ。cmd_3676本隊（hayate）もGATE CLEAR。両偵察+軍師調査が揃い、殿の問い「正しい計算かバグ再燃か」に答えられる段階になった。 ## 最終判定: バグではなく「入力データ更新→正当な再計算」が最有力 **決定的証拠**: 本番pricesテーブルの**6…
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
@@ -33,11 +33,7 @@
 - cmd_3637
 - cmd_3639
 - cmd_3641
-- cmd_3644
-- cmd_3646
-- cmd_3647
 - cmd_3648
-- cmd_3649
 - cmd_3650
 - cmd_3651
 - cmd_3652
@@ -59,6 +55,10 @@
 - cmd_3668
 - cmd_3669
 - cmd_3670
+- cmd_3671
+- cmd_3672
+- cmd_3673
+- cmd_3674
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

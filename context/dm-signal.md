@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-03 cmd_3677_recon2 -->
-<!-- last_synced_lesson: L806 -->
+<!-- last_updated: 2026-07-03 cmd_3677 -->
+<!-- last_synced_lesson: L808 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -263,6 +263,8 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - L804: FoF構成定義と当月選択結果を分けて証拠化する（cmd_3676_recon2）
 - L805: 月初シグナル前に前月最終営業日価格の上流可用性をゲートせよ（cmd_3677）
 - L806: updated_atを初回到着時刻として扱うな（cmd_3677_recon2）
+- L807: 価格値履歴なしでは月初シグナル分岐の旧入力値を復元できない（cmd_3680）
+- L808: reference_assetモード判定の反証にはコード差だけでなくprices/economic_indicatorsの値履歴不在を先に確認せよ（cmd_3680_recon2）
 
 ## 因果リンク
 

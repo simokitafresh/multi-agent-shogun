@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-07-03 cmd_3676 -->
+<!-- last_updated: 2026-07-03 cmd_3677 -->
 
 ## 2026-06-30
 
@@ -1359,3 +1359,6 @@
 - 2026-07-03 cmd_3674完了: 将軍復帰完了マーカーの既定値を `/tmp/shogun_recovery_complete` から `logs/shogun_recovery_complete` へ移行。4参照統一、旧/tmp参照0件、bats 5/5 PASSでRECOVERY INCOMPLETE誤警告の揮発性根因を封じた。
 - 2026-07-03 cmd_3675完了: 本番保有ポジション差分偵察。102PFのraw/historyで2026-07-01→2026-07-02 holding差分0件、precomputeは成功済み・locked=false。殿観測の主因はMonthly Tradeの翌月pending行が先頭表示される表示層問題と特定。
 - 2026-07-03 cmd_3676_recon2完了: 半蔵独立検算。7月正ポジションはXLU、根は`シン青龍-鉄壁`TECL→XLU(7/3 01:11)がFoF連鎖へ伝播したもの。FoF構成定義は秘奥義-抜き身/追い風50%固定で、影響signalsは204行。
+- 2026-07-03 cmd_karo_ci_fix_shogun_retry_20260703完了: 才蔵がCI run 28638118798のnot ok 628/1247を背景サブシェルEXIT trap継承race、heredoc PID捕捉誤配置、cmd_save診断テストの非同期log raceとして根因修正。commit `5e5806d85`、ローカル2715件0 not ok、GATE CLEAR。
+- 2026-07-03 cmd_karo_ci_fix_28639741545_preflight_quality_log完了: 疾風がCI run 28639741545のnot ok 438をcmd_save save側quality log非同期raceと特定し、既存の`CMD_SAVE_SYNC_QUALITY_LOG=1`を該当Batsに追加。commit `e352fe272` push後、GitHub run 28640155515はUnit/Integration/E2E含め全job success。
+- 2026-07-03 cmd_3680_recon2完了: 小太郎が`シン青龍-鉄壁`のAbsoluteMomentumFilter(LQD vs DTB3)を独立再現し、7/1 TECL→7/3 XLU分岐はコード差ではなく入力データ差と判定。DTB3遅延単独は反証、LQD近傍終値refetchが有力、旧値履歴不在はL808へ還流。
