@@ -117,6 +117,12 @@ try:
     # In that case, limit AC2 to the files the report claims it modified.
     if report_paths and any(os.path.realpath(os.path.join(repo_root, p)) == repo_root for p in paths):
         paths = report_paths
+    else:
+        # target_path is the assignment scope; files_modified is the reporter's
+        # own claim of touched files. Check both so a reported file cannot stay
+        # uncommitted just because it sits outside target_path.
+        for p in report_paths:
+            add_path(paths, p)
 
     for p in paths:
         print(p)
