@@ -93,30 +93,30 @@ _CS_SH="$SCRIPT_DIR/scripts/gates/gate_gunshi_cs_checklist.sh"
 _OBS_SH="$SCRIPT_DIR/scripts/gates/gate_gunshi_observations.sh"
 _THREE_SH="$SCRIPT_DIR/scripts/gates/gate_three_layer_health.sh"
 
-{ set +e; if [ -f "$_SKILL_REC_SH" ]; then bash "$_SKILL_REC_SH" 30 > "$_TMP_D/skill_rec" 2>&1; echo $? > "$_TMP_D/skill_exit"; else printf '' > "$_TMP_D/skill_rec"; echo 127 > "$_TMP_D/skill_exit"; fi; } &
+{ trap - EXIT; set +e; if [ -f "$_SKILL_REC_SH" ]; then bash "$_SKILL_REC_SH" 30 > "$_TMP_D/skill_rec" 2>&1; echo $? > "$_TMP_D/skill_exit"; else printf '' > "$_TMP_D/skill_rec"; echo 127 > "$_TMP_D/skill_exit"; fi; } &
 _PID_SKILL=$!
-{ set +e; LESSON_EFFECT_NTFY_ENABLED=0 bash "$_LESSON_SH" infra > "$_TMP_D/lesson" 2>&1; echo $? > "$_TMP_D/lesson_exit"; } &
+{ trap - EXIT; set +e; LESSON_EFFECT_NTFY_ENABLED=0 bash "$_LESSON_SH" infra > "$_TMP_D/lesson" 2>&1; echo $? > "$_TMP_D/lesson_exit"; } &
 _PID_LESSON=$!
-{ set +e; if [ -f "$_CS_SH" ]; then bash "$_CS_SH" > "$_TMP_D/cs" 2>&1; echo $? > "$_TMP_D/cs_exit"; else printf '' > "$_TMP_D/cs"; echo 127 > "$_TMP_D/cs_exit"; fi; } &
+{ trap - EXIT; set +e; if [ -f "$_CS_SH" ]; then bash "$_CS_SH" > "$_TMP_D/cs" 2>&1; echo $? > "$_TMP_D/cs_exit"; else printf '' > "$_TMP_D/cs"; echo 127 > "$_TMP_D/cs_exit"; fi; } &
 _PID_CS=$!
-{ set +e; if [ -f "$_OBS_SH" ]; then bash "$_OBS_SH" > "$_TMP_D/obs" 2>&1; echo $? > "$_TMP_D/obs_exit"; else printf '' > "$_TMP_D/obs"; echo 127 > "$_TMP_D/obs_exit"; fi; } &
+{ trap - EXIT; set +e; if [ -f "$_OBS_SH" ]; then bash "$_OBS_SH" > "$_TMP_D/obs" 2>&1; echo $? > "$_TMP_D/obs_exit"; else printf '' > "$_TMP_D/obs"; echo 127 > "$_TMP_D/obs_exit"; fi; } &
 _PID_OBS=$!
-{ set +e; if [ -x "$_THREE_SH" ]; then bash "$_THREE_SH" > "$_TMP_D/three" 2>&1; echo $? > "$_TMP_D/three_exit"; else printf '  WARN: gate_three_layer_health.sh不在\n' > "$_TMP_D/three"; echo 127 > "$_TMP_D/three_exit"; fi; } &
+{ trap - EXIT; set +e; if [ -x "$_THREE_SH" ]; then bash "$_THREE_SH" > "$_TMP_D/three" 2>&1; echo $? > "$_TMP_D/three_exit"; else printf '  WARN: gate_three_layer_health.sh不在\n' > "$_TMP_D/three"; echo 127 > "$_TMP_D/three_exit"; fi; } &
 _PID_THREE=$!
 find "$SCRIPT_DIR/docs/research" -maxdepth 1 -name "gunshi_*" -mmin -1440 -type f > "$_TMP_D/find_designs" 2>/dev/null &
 _PID_FIND_D=$!
 find "$SCRIPT_DIR/docs/research" -maxdepth 1 -name "*.md" -mtime -7 -type f > "$_TMP_D/find_research" 2>/dev/null &
 _PID_FIND_R=$!
 # §3.3: sqlite3 lord_rulings クエリを並列化(NTFS上371MB DB=2-5秒ボトルネック。cmd_3632)
-{ sqlite3 "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" \
+{ trap - EXIT; sqlite3 "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" \
   "SELECT ts || ' | ' || substr(summary, 1, 120) FROM events WHERE agent = 'lord' AND direction = 'inbound' AND target = 'gunshi' AND ts >= datetime('now', '-6 hours') ORDER BY ts DESC LIMIT 5;" > "$_TMP_D/lord_rulings" 2>/dev/null; } &
 _PID_LORD_RULINGS=$!
 # §3.3: gate_immunity_depth.sh を並列化(~150ms削減。cmd_3632)
 _DEPTH_SH="$SCRIPT_DIR/scripts/gates/gate_immunity_depth.sh"
-{ set +e; if [ -f "$_DEPTH_SH" ]; then bash "$_DEPTH_SH" 2>/dev/null | grep -E '種類|FAIL→LGTM回復|RC解決率|RC発行|月別|未回復|^[[:space:]]+[0-9]{4}-[0-9]{2}:' | head -10 > "$_TMP_D/depth" 2>/dev/null; echo $? > "$_TMP_D/depth_exit"; else echo 127 > "$_TMP_D/depth_exit"; fi; } &
+{ trap - EXIT; set +e; if [ -f "$_DEPTH_SH" ]; then bash "$_DEPTH_SH" 2>/dev/null | grep -E '種類|FAIL→LGTM回復|RC解決率|RC発行|月別|未回復|^[[:space:]]+[0-9]{4}-[0-9]{2}:' | head -10 > "$_TMP_D/depth" 2>/dev/null; echo $? > "$_TMP_D/depth_exit"; else echo 127 > "$_TMP_D/depth_exit"; fi; } &
 _PID_DEPTH=$!
 # §3.2: lord_conversation解析を並列化(python3起動~650ms削減)
-{ python3 - "$SCRIPT_DIR/queue/lord_conversation.jsonl" <<'PY_LC' > "$_TMP_D/prev_session" 2>/dev/null
+{ trap - EXIT; python3 - "$SCRIPT_DIR/queue/lord_conversation.jsonl" <<'PY_LC' > "$_TMP_D/prev_session" 2>/dev/null
 import sys, json
 log_file = sys.argv[1]
 summary = "(前セッション要約なし)"
@@ -141,7 +141,7 @@ PY_LC
 } &
 _PID_PREV_SESSION=$!
 # §3.2: 掲示板チェックも並列化(python3+yaml.safe_load ~650ms)
-{ python3 - "$SCRIPT_DIR/queue/bulletin_board.yaml" gunshi <<'PY_BLT' > "$_TMP_D/bulletin" 2>/dev/null
+{ trap - EXIT; python3 - "$SCRIPT_DIR/queue/bulletin_board.yaml" gunshi <<'PY_BLT' > "$_TMP_D/bulletin" 2>/dev/null
 import sys, yaml
 path, agent = sys.argv[1:3]
 try:
@@ -320,7 +320,6 @@ echo "■ 観点別集計（Adaptive gating）"
 if [ -f "$REVIEW_LOG" ]; then
     # §3.2: category_stats python3を並列化(~650ms削減)
     python3 - "$REVIEW_LOG" <<'PY' > "$_TMP_D/category_stats" 2>/dev/null &
-    _PID_CAT_STATS=$!
 import re
 import sys
 
@@ -420,6 +419,7 @@ for name, threshold, patterns in catalog:
             hits += 1
     print(f"ALL_{name}|{hits}|{len(all_window)}")
 PY
+    _PID_CAT_STATS=$!
     wait "$_PID_CAT_STATS" 2>/dev/null || true
     category_stats="$(cat "$_TMP_D/category_stats" 2>/dev/null)"
     while IFS='|' read -r cat_name cat_hits cat_total cat_zero cat_threshold; do
