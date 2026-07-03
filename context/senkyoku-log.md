@@ -1362,3 +1362,4 @@
 - 2026-07-03 cmd_karo_ci_fix_shogun_retry_20260703完了: 才蔵がCI run 28638118798のnot ok 628/1247を背景サブシェルEXIT trap継承race、heredoc PID捕捉誤配置、cmd_save診断テストの非同期log raceとして根因修正。commit `5e5806d85`、ローカル2715件0 not ok、GATE CLEAR。
 - 2026-07-03 cmd_karo_ci_fix_28639741545_preflight_quality_log完了: 疾風がCI run 28639741545のnot ok 438をcmd_save save側quality log非同期raceと特定し、既存の`CMD_SAVE_SYNC_QUALITY_LOG=1`を該当Batsに追加。commit `e352fe272` push後、GitHub run 28640155515はUnit/Integration/E2E含め全job success。
 - 2026-07-03 cmd_3680_recon2完了: 小太郎が`シン青龍-鉄壁`のAbsoluteMomentumFilter(LQD vs DTB3)を独立再現し、7/1 TECL→7/3 XLU分岐はコード差ではなく入力データ差と判定。DTB3遅延単独は反証、LQD近傍終値refetchが有力、旧値履歴不在はL808へ還流。
+- 2026-07-03 cmd_3683完了: 株価データソース11社を一次情報比較し、CBOE公式VIX 6/30値と本番値一致を実測。最終成果物 `docs/research/cmd_3683_price_data_vendor_evaluation.md` は `0f50b1d3` 初回追加→`92334177` 半蔵検証込み更新。推奨=Alpaca+CBOEをプライマリ、EODHD/Tiingo多数決、長期は生値+自前調整。無料APIキー登録は外部状態変更のためdecision_candidate化。
