@@ -5197,6 +5197,20 @@ try:
             return False
         return _target_files_match(lesson_target_files, _all_task_files)
 
+    def _lesson_has_only_report_artifact_target_match(lesson):
+        """報告YAML artifact全般への一致を、対象コードの関連性として扱わない。"""
+        lesson_target_files = lesson.get('target_files', [])
+        if isinstance(lesson_target_files, str):
+            lesson_target_files = [lesson_target_files]
+        patterns = [str(p).strip() for p in lesson_target_files if str(p).strip()]
+        if not patterns:
+            return False
+        task_files = [str(p).strip() for p in _all_task_files if str(p).strip()]
+        if not task_files or not all(p.startswith('queue/reports/') for p in task_files):
+            return False
+        non_report_patterns = [p for p in patterns if not p.startswith('queue/reports/')]
+        return bool(non_report_patterns)
+
     def _path_relevance_terms(task_files):
         terms = set()
         for path in task_files:
@@ -5242,6 +5256,9 @@ try:
                 continue
             if isinstance(_ltf, str):
                 _ltf = [_ltf]
+            if _lesson_has_only_report_artifact_target_match(_l):
+                _tf_excluded_ids.add(_l.get('id', ''))
+                continue
             if not _target_files_match(_ltf, _all_task_files):
                 _tf_excluded_ids.add(_l.get('id', ''))
         if _tf_excluded_ids:

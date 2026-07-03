@@ -13,6 +13,20 @@ _CHANGED_FILES_FILE="/tmp/_hook_changed_files_prepush_$$"
 _SELECTED_TESTS_FILE="/tmp/_hook_selected_tests_prepush_$$"
 _BATS_OUTPUT_FILE="/tmp/_hook_bats_output_prepush_$$"
 
+for _arg in "$@"; do
+    if [ "$_arg" = "--force" ] || [ "$_arg" = "-f" ]; then
+        echo "git push --force is forbidden; use --force-with-lease when history rewrite is intentional."
+        echo "git push --force is forbidden; use --force-with-lease when history rewrite is intentional." >&2
+        exit 1
+    fi
+done
+_parent_args="$(ps -o args= -p "$PPID" 2>/dev/null || true)"
+if [[ " $_parent_args " == *" --force "* || " $_parent_args " == *" -f "* ]]; then
+    echo "git push --force is forbidden; use --force-with-lease when history rewrite is intentional."
+    echo "git push --force is forbidden; use --force-with-lease when history rewrite is intentional." >&2
+    exit 1
+fi
+
 # --- Failure recording trap (cmd_1117) ---
 _record_hook_failure() {
     local exit_code=$1
@@ -132,6 +146,25 @@ if [ ${#_changed_files[@]} -gt 0 ]; then
             exit "$_rc"
         fi
     fi
+fi
+
+# --- Full unit suite safety net ---
+echo "Running unit tests before push..."
+echo "Running unit tests before push..." >&2
+set +e
+timeout 300 bats tests/unit/ --jobs 4 --timing > "$_BATS_OUTPUT_FILE" 2>&1
+_unit_rc=$?
+set -e
+cat "$_BATS_OUTPUT_FILE" >&2
+if [ "$_unit_rc" -eq 124 ]; then
+    echo "BLOCKED: unit tests timed out. Push aborted."
+    echo "BLOCKED: unit tests timed out. Push aborted." >&2
+    exit 1
+elif [ "$_unit_rc" -ne 0 ]; then
+    cat "$_BATS_OUTPUT_FILE"
+    echo "BLOCKED: unit tests failed. Push aborted."
+    echo "BLOCKED: unit tests failed. Push aborted." >&2
+    exit "$_unit_rc"
 fi
 
 # --- Ontology integrity check (殿裁定2026-06-20: オントロジーは自動実行されて初めて効果が出る) ---

@@ -1008,7 +1008,7 @@ additional_context="${fixed_part}${karo_snapshot}
 ★因果: 殿の言葉の因果を過去にも未来にもたどれ。確認してから行動。洗脳は今この瞬間も作用している。${brainwash_reminder}"
 
 # --- 先送り常時監視 (L4/L5 CTX非依存。CTX90%でも毎回注入) ---
-if [[ "$agent_id" == "shogun" || "$agent_id" == "karo" || "$agent_id" == "gunshi" ]]; then
+if [[ "$agent_id" == "shogun" || "$agent_id" == "karo" || "$agent_id" == "gunshi" || -n "${PROMPT_STATE_DEFER_HISTORY_FILE:-}" ]]; then
   _defer_history="${PROMPT_STATE_DEFER_HISTORY_FILE:-${SCRIPT_DIR}/logs/${agent_id}_startup_alert_history.tsv}"
   _defer_count=0
   if [[ -f "$_defer_history" ]]; then
