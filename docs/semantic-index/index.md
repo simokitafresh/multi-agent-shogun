@@ -659,6 +659,8 @@ codd:
 | causal | `cmd_3648` origin: [[殿指示_cmd_publish速度_20260702]] -> [[cmd_save_fork過多74秒実測]] -> [[cmd_3648]] |
 | cmd | `cmd_3672` DM-Signal mobile Lighthouse計測道具の実データ描画対応 — 認証経路適合と到達証拠 |
 | causal | `cmd_3672` origin: [[将軍検分_cmd3670_3671原票_20260703]] -> [[実データ未受信のまま好数値原票化]] -> [[cmd_3672]] |
+| lesson | `L804` FoF構成定義と当月選択結果を分けて証拠化する |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T12:41:34+09:00 入力とは6/30のopen/closeのことか？確定値の再取得が必要だな。つまり月初は特別に午前のみではなく確実にデータが取得できる夕方にも再計算が必要とすればシンプルに解決しそうだ。またtickerのopen/closeは別プロジェクトの |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -670,6 +672,7 @@ codd:
 | causal_chain | `[[cmd_3470]]` (L831) |
 | causal_chain | `[[cmd_3271]]` (L769) |
 | causal_chain | `[[cmd_3563]]` (L868) |
+| causal_chain | `[[cmd_3354]]` (L804) |
 
 ## recalculate_pipeline — 再計算パイプライン
 
@@ -753,6 +756,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-01T04:06:28+09:00 be2sdi29h toolu_01Tqhx6W5jkC4Ukscd8E8qnE /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T12:03:23+09:00 New Fund of Funds_copy_copy Components (2): 秘奥義-抜き身-激攻, 秘奥義-追い風-激攻 Allocation: All 2 → 50.0% each Edit Weight Breakdown  |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T12:05:58+09:00 前提を確認しよう。本番のFoFの設定はこうなっている。New Fund of Funds_copy_copy Components (2): 秘奥義-抜き身-激攻, 秘奥義-追い風-激攻 Allocation: All 2 → 50.0%  |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T12:34:01+09:00 書き換えガードの前段階で正しく計算、表示されたかのチェックの自動化だな。保有シグナルの表示は月末最終日の市場終了後にopenとcloseが確定した時点で計算可能になるはずだ。それを月初の午前中にfullrecalculateし、月初の市場開 |
 | causal_chain | `[[cmd_3053]]` (L714) |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3153]]` (L744) |
@@ -1367,7 +1371,9 @@ codd:
 | cmd | `cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546` (`skills/codd-fix/SKILL.md`, `skills/dream/SKILL.md`, `skills/idle-persist/SKILL.md`) |
 | cmd | `cmd_karo_hotfix_skill_script_refs_202607021234` (`skills/codd-fix/SKILL.md`, `skills/dashboard-update/SKILL.md`, `skills/dream/SKILL.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:45:20+09:00 Claude Code v2.1.198 ▐▛███▜▌ Sonnet 5 with xhigh effort ▝▜█████▛▘ Claude Max ▘▘ ▝▝ /mnt/c/tools/multi-agent-shogun ⚠ 3 M |
+| lesson | `L946` backgroundサブシェル{ ...; } &はtrap EXITを継承し自身の終了時に再発火する |
 | causal_chain | `[[cmd_3246]]` (L761) |
+| causal_chain | `[[cmd_karo_ci_fix_shogun_retry_20260703]]` (L946) |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -1595,7 +1601,7 @@ codd:
 |------|---|
 | id | production_parity |
 | label | 本番パリティ |
-| aliases | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data, 月次リターン, MTD, 月次部分月, MTD判定, Month-to-Date, 部分月, partial_month, monthly_common, チェックリスト, monthly trade画面には現時点で全PFの６月の保有ポジションがpendingに表示される必要がある, signal_pending, pending 3条件, monthly_trade.py, signals.py pending, is_pending, is_mtd, build_pending_map, 3レイヤー貫通確認, DB→API→FE, PF物理削除, PF論理削除, is_active, portfolio_config_snapshots, FK制約, CASCADE, NO ACTION, 逆依存順削除, PF設定バックアップ, PF削除手順, 旧式PF削除, チェックリストを家老にれびゅーしてもらおう, is active削除WP Phase 前提ゲート実測, is active機能のFE BE docs削除実装, is active削除ブランチの指示書準拠再構成, monthly productのBEスキーマ削除実装, MTDテーブルDaily列の実装 設計書PR2, MTD速報行の実装 設計書PR3 Feature C, MTD速報ラベル仮置き, MTD速報行の日付は仮置き, 06/19速報ラベル, 06/19 ⚡は市場営業日SSOTではない, Juneteenth MTD速報ラベル修正不要, 市場カレンダーなし MTD速報ラベル, 秘奥義-激攻 06/19検算, MTD preliminary label placeholder, Juneteenth preliminary MTD label no fix, MTD preliminary row market calendar not SSOT, source_type_local_sqlite鵜呑み, GS universe DB昇格, local_sqlite vs PostgreSQL入力差, weighted_yotsume 0不一致, UUID完備universe DB source昇格, GS月次突合解像度差, デプロイまで終わってるか？, デプロイ完了確認, DM-signalのはなしをしよう相変わらずmonthly returnやmonthly tradeページでloadingが発生する, ローカルで検査すると、本番のネットワーク負荷などが見えないのでは？問題はないのか？, monthly-trade側の対策後計測不在, 76PF分で十分なのか？, 常に本番が正だ。ローカルを信用するな, 本番が正, 7月確定ポジション書換え, 保有ポジションが昨日と本日で異なる, component_portfoliosは構成定義でなく当月選択結果, TECL→XLU書換え疑い |
+| aliases | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data, 月次リターン, MTD, 月次部分月, MTD判定, Month-to-Date, 部分月, partial_month, monthly_common, チェックリスト, monthly trade画面には現時点で全PFの６月の保有ポジションがpendingに表示される必要がある, signal_pending, pending 3条件, monthly_trade.py, signals.py pending, is_pending, is_mtd, build_pending_map, 3レイヤー貫通確認, DB→API→FE, PF物理削除, PF論理削除, is_active, portfolio_config_snapshots, FK制約, CASCADE, NO ACTION, 逆依存順削除, PF設定バックアップ, PF削除手順, 旧式PF削除, チェックリストを家老にれびゅーしてもらおう, is active削除WP Phase 前提ゲート実測, is active機能のFE BE docs削除実装, is active削除ブランチの指示書準拠再構成, monthly productのBEスキーマ削除実装, MTDテーブルDaily列の実装 設計書PR2, MTD速報行の実装 設計書PR3 Feature C, MTD速報ラベル仮置き, MTD速報行の日付は仮置き, 06/19速報ラベル, 06/19 ⚡は市場営業日SSOTではない, Juneteenth MTD速報ラベル修正不要, 市場カレンダーなし MTD速報ラベル, 秘奥義-激攻 06/19検算, MTD preliminary label placeholder, Juneteenth preliminary MTD label no fix, MTD preliminary row market calendar not SSOT, source_type_local_sqlite鵜呑み, GS universe DB昇格, local_sqlite vs PostgreSQL入力差, weighted_yotsume 0不一致, UUID完備universe DB source昇格, GS月次突合解像度差, デプロイまで終わってるか？, デプロイ完了確認, DM-signalのはなしをしよう相変わらずmonthly returnやmonthly tradeページでloadingが発生する, ローカルで検査すると、本番のネットワーク負荷などが見えないのでは？問題はないのか？, monthly-trade側の対策後計測不在, 76PF分で十分なのか？ |
 | skills | db-check, pf-registration |
 | related_concepts | recalculate_pipeline, dmsignal_operations, silent_fallback_quality, terminology_dictionary, shin_shijin_design, alpha_6_metrics, db_price_data_range, dm_signal_refactor_mission, fusion_api_endpoint, dmsignal_fe_experience_deploy |
 
@@ -2007,7 +2013,7 @@ codd:
 |------|---|
 | id | known_unknowns_principle |
 | label | 無知の知 |
-| aliases | 無知の知, 知らないと知る, 確認, 前提確認, DB確認, 本番DB確認, ブラウザ確認, 画面確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした, 重複しないようにDBを先に確認せよ, つまり確認しなかった, そして時系列と因果関係を確認しないから, 気をつけろ, ナッジが届いているか確認せよ, cmd 3450と3451のGATE CLEARを確認せよ, 家老がidleになるまで待とう, 他にインフラバグはないか？覚醒して確認, 他にもバグが混ざっていないか確認せよ, 同じバグが家老のstartup gateにもないか確認せよ, 穴がないか確認しよう, 2層SSOTにするべき仕組みが他にないか確認しよう, 殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」, コードを確認せよ, codexのドキュメントを読んで仕様を確認せよ, 報告するときは確認しよう, かならず内容を確認しろ, やったことを全て時系列で遡りながら確認すればいいだけだ, 現時点で確認できるところを確認しよう, 3527と3528, 最新を確認せよ, 修正前後で数値の完全一致は担保できてるか？覚醒して確認せよ, 家老のpaneを確認せよ, と は同一cmd の重複通知なら, 検証してみて, 家老は明示的に指示しないと自分自身で読まないから気をつけろ, スキルを使ってCDPで確認せよ, ニンジャが確認で躓いている, 基本的にできる限り別CMDで出すのがルールだ, 陳腐化しているPDはないか？確認せよ, やり方があるはずだ, 将軍が出来るはず, admin画面での設定にバがあるのでは？覚醒して確認せよ, 実測では check gate名称含む関数 37件, 家老に確認を取れ, 隠れたインフラバグはないか？覚醒して確認, 追加時は通知受信者が必要な情報を全て含むか確認せよ, mode別にatomic性を確認する |
+| aliases | 無知の知, 知らないと知る, 確認, 前提確認, DB確認, 本番DB確認, ブラウザ確認, 画面確認, 不明点可視化, 推測禁止, 軍師に確認せよ, じゃあ確認して報告しよう, 内容を確認して, 提出物の確認もちゃんとできていない, フルパスを明記すれば別プロジェクトも確認してくれるよ, notebook CLIが実際に使えるか確認しないとな, 確認して, なんで自分で確認しないの？, 実際に効果が出ているか？実戦的に確認しよう, CDPで確認したほうがいいぞ, FoFやネステッドFoFも正常か？確認せよ, なぜなぜ7回, 想像せずに確認せよ, 先に確認しなかっただろ？, 確認すればすべて解決していたはずだ, 掲示板は確認した？, 家老に確認をとれ, 3211が修正されているか確認せよ, やってみよう バックテストで効果を確認しよう, 最新のスキルは確認したのか？, 結局うまくいかないからCDPスタイルにした記憶があったけど, 銘柄や枚数などの詳細はタップで確認, 同じやり方が使えると思う, 通帳スキャン みずほ のPDFも中身を確認しよう, Jinja2のsumフィルタはdunder属性を解決できない, 確認した, 明朝のcron確認を待つのは先過ぎるな, 進捗を確認しよう, テスト数差 報告 vs 実測 差3, 気づきを得たら行動して修正, 確認すべきはリスクリターンやmaxddなどのリスク指標だ, 四つ目について詳しく確認しよう, 現時点で未調査や未確定な点があれば先に確認するべきだ, いま自分で全部hideにした, 重複しないようにDBを先に確認せよ, つまり確認しなかった, そして時系列と因果関係を確認しないから, 気をつけろ, ナッジが届いているか確認せよ, cmd 3450と3451のGATE CLEARを確認せよ, 家老がidleになるまで待とう, 他にインフラバグはないか？覚醒して確認, 他にもバグが混ざっていないか確認せよ, 同じバグが家老のstartup gateにもないか確認せよ, 穴がないか確認しよう, 2層SSOTにするべき仕組みが他にないか確認しよう, 殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」, コードを確認せよ, codexのドキュメントを読んで仕様を確認せよ, 報告するときは確認しよう, かならず内容を確認しろ, やったことを全て時系列で遡りながら確認すればいいだけだ, 現時点で確認できるところを確認しよう, 3527と3528, 最新を確認せよ, 修正前後で数値の完全一致は担保できてるか？覚醒して確認せよ, 家老のpaneを確認せよ, と は同一cmd の重複通知なら, 検証してみて, 家老は明示的に指示しないと自分自身で読まないから気をつけろ, スキルを使ってCDPで確認せよ, ニンジャが確認で躓いている, 基本的にできる限り別CMDで出すのがルールだ, 陳腐化しているPDはないか？確認せよ, やり方があるはずだ, 将軍が出来るはず, admin画面での設定にバがあるのでは？覚醒して確認せよ, 実測では check gate名称含む関数 37件, 家老に確認を取れ, 隠れたインフラバグはないか？覚醒して確認, 追加時は通知受信者が必要な情報を全て含むか確認せよ, mode別にatomic性を確認する, バグの再燃だったのかだな |
 | skills | db-check(DB確認/本番DB/パリティ検証), cdp-browse(ブラウザ確認/本番画面スクショ/CDPで確認) |
 | related_concepts | deepdive_principles, growth_loop, semantic_causal_automation |
 
@@ -2211,6 +2217,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T00:33:49+09:00 b7qs0qs8w toolu_01Q4UbZ7VAVgSfAeUMWSRwrv /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b4761f6c-ddd2-41aa-8e4b-ef824f |
 | lesson | `L943` 性能最適化で処理呼び出しを削る際は副作用(生成物の更新)も棚卸しせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T11:37:07+09:00 DBを見ればBEの内部のシグナルが変更されていないことはわかるはずでは？三層記憶を確認して。保有ポジションとシグナルの関係も先に理解しておこう |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T12:14:46+09:00 重要なことは7/1時点で表示されていたシグナルが正しく計 算されたものだったのか、バグの再燃だったのかだな。DBには保有ポジションのデータがあるはずだ。同じようなトラブルは過去にも起きている。確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T13:04:19+09:00 CI redがないか確認して |
+| lesson | `L945` pre-push hookの実行者向け出力はstderr捕捉後もstdoutへ要点を出す |
+| lesson | `L806` updated_atを初回到着時刻として扱うな |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -2226,6 +2236,8 @@ codd:
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
 | causal_chain | `[[cmd_karo_hotfix_ga170_context_freshness_202607030012]]` (L943) |
+| causal_chain | `[[cmd_karo_ci_fix_shogun_20260703]]` (L945) |
+| causal_chain | `[[cmd_3369]]` (L806) |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -2421,6 +2433,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga146` files_modified: [[shin_shijin_design]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-29T01:34:01+09:00 bt3yl04vh toolu_01Qhg2SQMthxt4Rv6EGkewGs /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ee093914-dbb3-40c9-8e5c-671bff |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T10:16:23+09:00 3635-3636の効果は実サイトで検証しよう。CDPを使えば実ユーザーのリアルな体感速度がわかる。admin認証ではいるのが最もPF数が多いので不利な条件下で正しく判断できる |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T13:23:57+09:00 bm1l0zsxv toolu_01XrgvVWvy2j2wV65xDsCVNQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b4761f6c-ddd2-41aa-8e4b-ef824f |
 | causal_chain | `[[cmd_125]]` (L001) |
 | causal_chain | `[[cmd_125]]` (L002) |
 | causal_chain | `[[cmd_125]]` (L003) |
@@ -2842,6 +2855,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T17:24:24+09:00 現時点で DM シグナル側で埋めておくべき 穴はありますか 本当 セキュリティは非常に重要なんですけれどもそもそもまあポプトフォリオ名と リターンだけだったら 流出 しても ですね 大きな問題にはならないですね |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T02:43:55+09:00 相談なんだが DM シグナルでベータを検索してると思うんだが データの逆数を保有した時のトータルリターン っていうのを出すことってできるのかな ベータは厳密にと毎月少しずつ変わると思うんだけど 今日はベータの客数をかけて ベーター リスクを |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T12:01:22+09:00 このような意見がある。将軍の一次確認結果（本番GET、read-onlyのみ） FoF連鎖: New Fund of Funds_copy_copy → (2つの中間FoF) → 奥義-GS-加速D-激攻 → GSシン加速R-激攻(51e9 |
+| lesson | `L805` 月初シグナル前に前月最終営業日価格の上流可用性をゲートせよ |
+| lesson | `L807` 価格値履歴なしでは月初シグナル分岐の旧入力値を復元できない |
+| causal_chain | `[[cmd_3368]]` (L805) |
+| causal_chain | `[[cmd_3380]]` (L807) |
 
 ## google_classroom — Google Classroom Dashboard
 
@@ -3705,6 +3722,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T19:29:08+09:00 プランを明確にせよ。プランはドキュメントにせよ。忘れたやうっかりや第三者の検証不可能がなくなる。それが一番の近道だ。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-28T20:24:15+09:00 設定画面は別ページにできるか？リンクボタンはつけずに/adminでページを作ればいい。ベーシック認証でログイン、表示するPFを設定するだけ。basic認証はenvironmentで設定。設定画面用のIDとパスワードを別で設定する |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T01:11:08+09:00 DM-signalのハナシをしよう。昨日数回のinstance errorがおきている。内容を確認し原因を精査、対策をしよう。その際にtier別のパスワードが無効になるトラブルもあった。確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T13:01:48+09:00 ユーザー向けの簡潔な報告書も書いて。tier別に影響を受けたPF数とそのPFの名称が必要。詳しい内容は必要ない。シン青龍-鉄壁のみがバグ。ほぼすべてのユーザーは影響を受けなかった。これが伝わればいい。言い訳は不要。淡々と事実報告のみしよう |
 | causal_chain | `[[cmd_karo_ci_red_fix_26821340025]]` (L734) |
 
 ## alpha_6_metrics — α6指標
@@ -4044,7 +4062,7 @@ codd:
 |------|---|
 | id | report_quality_protocol |
 | label | 忍者報告品質プロトコル |
-| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, GP-286, GP-287, files_modifiedパス形式, commit_hash 40文字hex, short commit_hash, full hash, 40文字フルhash, batsテスト, CI回帰防護, gate report format regression, 軍師提案 GP-286 GP-287, 軍師提案 GP-286 GP-287 files_modified commit_hash batsテスト CI回帰防護, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？, 報告して返答をもらえ, Phase1 FE削除, 家老と軍師のペアは順調か？, では軍師にも穴がないかチェックしてもらおう, 自分で解決困難であれば分析して掲示板に投稿し, 問題は軍師が将軍と俺の会話を自分ごととしてとらえた点だ, ちょっとまて, 軍師のことは軍師に任せろ, では軍師の掲示板に対応せよ, あわてずに軍師のpaneを読め, これが必要なのは将軍, 軍師にもアドバイスをもらえ, 作業開始時点のgateは既にOKだった, 設計書を家老にレビューしてもらおう, 軍師と協議せよ, どうなった？, Ⅴに関しては家老と軍師による再戻しがあるのでは？, 設計書を作成, 軍師から掲示板は来ていないか？, 3621はどうなった？, 軍師はopus4 highだ, 軍師はopus4 6 highだ, 家老と軍師をぴん留めopus highにしてくれ, 家老と軍師をぴん留めopus 4 6 highにしてくれ, 将軍と軍師をinbox3, 将軍のレビューをせよ, P4はどうなった？ |
+| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, GP-286, GP-287, files_modifiedパス形式, commit_hash 40文字hex, short commit_hash, full hash, 40文字フルhash, batsテスト, CI回帰防護, gate report format regression, 軍師提案 GP-286 GP-287, 軍師提案 GP-286 GP-287 files_modified commit_hash batsテスト CI回帰防護, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？, 報告して返答をもらえ, Phase1 FE削除, 家老と軍師のペアは順調か？, では軍師にも穴がないかチェックしてもらおう, 自分で解決困難であれば分析して掲示板に投稿し, 問題は軍師が将軍と俺の会話を自分ごととしてとらえた点だ, ちょっとまて, 軍師のことは軍師に任せろ, では軍師の掲示板に対応せよ, あわてずに軍師のpaneを読め, これが必要なのは将軍, 軍師にもアドバイスをもらえ, 作業開始時点のgateは既にOKだった, 設計書を家老にレビューしてもらおう, 軍師と協議せよ, どうなった？, Ⅴに関しては家老と軍師による再戻しがあるのでは？, 設計書を作成, 軍師から掲示板は来ていないか？, 3621はどうなった？, 軍師はopus4 highだ, 軍師はopus4 6 highだ, 家老と軍師をぴん留めopus highにしてくれ, 家老と軍師をぴん留めopus 4 6 highにしてくれ, 将軍と軍師をinbox3, 将軍のレビューをせよ, P4はどうなった？, 軍師も覚醒して独自に調査せよ |
 | skills | report-write, verdict-check |
 | related_concepts | lesson_lifecycle, training_cycle_quality, yaml_safe_write, gunshi_review_lifecycle, ac_merit_review_integrity |
 | related_lessons | `L625`, `L633`, `L643` |
@@ -4179,6 +4197,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T17:23:32+09:00 どうなった？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T19:01:24+09:00 P4はどうなった？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T23:24:37+09:00 どうなった？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T12:11:55+09:00 軍師も覚醒して独自に調査せよ |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
@@ -4294,7 +4313,7 @@ codd:
 |------|---|
 | id | infrastructure_ops |
 | label | インフラ運用基盤 |
-| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ, lock cleanup, stale lock削除, karo snapshot生成, bulletin自動アーカイブ, CDP cleanup, paste buffer nudge, atomic wakeup state, dependency gated deployment, auto deploy blocked_by control, report-before-clear guard, 忍者完了通知, report-summary-guard, done-and-notify, CIredはかいしょうしているはずだ, CI redは解消したか, 全員止まっていないか, どうなった？全員止まっていないか？, インフラバグは修正しよう, 家老が自分でも対策をしているので協調せよ, デーモンは全て順調に動作しているか？, デーモンの再起動をスクリプトでせよ, ゲートやデーモンのバグや品質問題がないか調査しよう, snapshot古い, dashboard古い表示残り, snapshot更新遅延, snapshot監視詰まり, karo_snapshot stale, snapshot fast path, atomic snapshot publish, early snapshot refresh, write_karo_snapshot atomic, デーモンは万全か？スクリプトで全デーモンを再起動させよ, ほかにインフラバグはないか, デーモンはすべて順調か？スクリプトで再起動せよ |
+| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ, lock cleanup, stale lock削除, karo snapshot生成, bulletin自動アーカイブ, CDP cleanup, paste buffer nudge, atomic wakeup state, dependency gated deployment, auto deploy blocked_by control, report-before-clear guard, 忍者完了通知, report-summary-guard, done-and-notify, CIredはかいしょうしているはずだ, CI redは解消したか, 全員止まっていないか, どうなった？全員止まっていないか？, インフラバグは修正しよう, 家老が自分でも対策をしているので協調せよ, デーモンは全て順調に動作しているか？, デーモンの再起動をスクリプトでせよ, ゲートやデーモンのバグや品質問題がないか調査しよう, snapshot古い, dashboard古い表示残り, snapshot更新遅延, snapshot監視詰まり, karo_snapshot stale, snapshot fast path, atomic snapshot publish, early snapshot refresh, write_karo_snapshot atomic, デーモンは万全か？スクリプトで全デーモンを再起動させよ, ほかにインフラバグはないか, デーモンはすべて順調か？スクリプトで再起動せよ, CI redがないか確認して |
 | skills | reset-layout |
 | related_concepts | daemon_supervision, agent_formation_management, yaml_safe_write, verify_dont_imagine, shogun_android_app, infra_design_intent |
 
@@ -4538,6 +4557,7 @@ codd:
 | causal | `cmd_karo_hotfix_check92_unique_execution_202607022128` files_modified: [[gate_quality_framework]] |
 | cmd | `cmd_karo_hotfix_check92_unique_execution_202607022128` (`scripts/gates/gate_karo_startup.sh`, `tests/unit/test_gate_karo_startup.bats`) |
 | causal | `cmd_3674` files_modified: [[gate_quality_framework]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T13:21:00+09:00 bpemcsq1c toolu_01Erxvp9N9Ui2r97XMg7s6Da /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b4761f6c-ddd2-41aa-8e4b-ef824f |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
@@ -5212,7 +5232,7 @@ codd:
 |------|---|
 | id | project_database |
 | label | Stock Database |
-| aliases | database, Stock Database, database project, Stock Database PJ, yfinanceはdatabase側が使うだけで |
+| aliases | database, Stock Database, database project, Stock Database PJ, yfinanceはdatabase側が使うだけで, database側にログはないのか？, Stockdata-API, Stockdata, fetch_jobs, fetch job実行記録, 価格値履歴なし上書き型, DM-Signal価格取得元API |
 | related_concepts | external_project_registry |
 
 | 種別 | パス/参照 |
@@ -5224,6 +5244,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-27T22:05:58+09:00 yfinanceはdatabase側が使うだけで、DM-signalはAPIでデータを取得するだけだ。日々のcronで全期間取得し直す仕組みだったよな？なぜわざわざ差分ではなく全期間を取得するかは因果を理解しているか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T00:32:07+09:00 bu1rjms3a toolu_01C61SmqZPkRKHeuHkbiBbTN /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2e3a5e4a-230e-4f17-8287-8650db |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-19T00:34:50+09:00 現在DM-signalでdatabaseAPIを使っているはずだ。問題が起きないように両方のプロジェクトの影響も把握しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-03T14:41:06+09:00 database側にログはないのか？ |
 
 ## project_milk — M!LK
 
@@ -5330,7 +5351,9 @@ codd:
 | discussion | MEMORY.md: DB価格データ範囲+DTB3: QQQ/SPY/XLU=2006~, SPXL=2008~, TQQQ=2010~。DTB3はpricesではなくeconomic_indicatorsテーブル。504日=24M×21営業日 |
 | cmd | `cmd_3088` aliases拡充 — DTB3/XLU/QQQデータ期間をセマンティック辞書に登録 |
 | lesson | `L781` pd.to_datetime はリスト内包表記内で個別呼出しせず、リスト一括でベクトル化呼出しせよ |
+| lesson | `L808` reference_assetモード判定の反証にはコード差だけでなくprices/economic_indicatorsの値履歴不在を先に確認せよ |
 | causal_chain | `[[cmd_3289-3293 5連続BLOCK]] -> [[readonly_ref判定乖離]] -> [[改善提案]]` (L781) |
+| causal_chain | `[[cmd_3382]]` (L808) |
 
 ## multi_cli_event_commonization — Multi-CLI Event共通化
 
