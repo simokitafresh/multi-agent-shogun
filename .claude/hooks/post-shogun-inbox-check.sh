@@ -54,7 +54,7 @@ INBOX="${SHOGUN_INBOX_PATH:-${SCRIPT_DIR}/queue/inbox/shogun.yaml}"
 # 復帰完了チェック: マーカーが存在しない or 480分超過(前セッション残骸)→警告(LS084)
 # TTL 90分は長時間セッション(101分実測 2026-06-12)で現役マーカーを誤検知した。
 # 残骸の主検知はclear_prep_check.shのマーカー削除側に移し、TTLは終日セッション安全網として480分
-RECOVERY_MARKER="${SHOGUN_RECOVERY_MARKER:-/tmp/shogun_recovery_complete}"
+RECOVERY_MARKER="${SHOGUN_RECOVERY_MARKER:-${SCRIPT_DIR}/logs/shogun_recovery_complete}"
 RECOVERY_STALE=""
 if [ ! -f "$RECOVERY_MARKER" ]; then
     RECOVERY_STALE=1

@@ -3730,5 +3730,8 @@ fi
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${SHOGUN_STARTUP_LIB_ONLY:-0}" != "1" ]]; then
     run_gate_shogun_startup "$@"
     # 復帰完了マーカー: PostToolUse hookが未完了を警告する仕組み(LS084)
-    touch /tmp/shogun_recovery_complete
+    _shogun_root="${SHOGUN_STARTUP_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+    _shogun_recovery_marker="${SHOGUN_RECOVERY_MARKER:-${_shogun_root}/logs/shogun_recovery_complete}"
+    mkdir -p "$(dirname "$_shogun_recovery_marker")"
+    touch "$_shogun_recovery_marker"
 fi

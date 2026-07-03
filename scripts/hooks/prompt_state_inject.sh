@@ -206,7 +206,7 @@ if [[ -z "$agent_id" ]]; then
 fi
 
 refresh_shogun_recovery_marker() {
-  local marker="${PROMPT_STATE_RECOVERY_MARKER:-/tmp/shogun_recovery_complete}"
+  local marker="${PROMPT_STATE_RECOVERY_MARKER:-${SHOGUN_ROOT:-$SCRIPT_DIR}/logs/shogun_recovery_complete}"
 
   [[ "$agent_id" == "shogun" ]] || return 0
   [[ -f "$marker" ]] || return 0
