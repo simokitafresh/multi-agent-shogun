@@ -486,6 +486,7 @@ YAML
         CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$q8_autolearn" \
         CMD_SAVE_LORD_CONVERSATION_FILE="$q8_lord" \
         CMD_SAVE_CMD_CHRONICLE_FILE="$q8_chronicle" \
+        MEMORY_DB_LIVE_INSERT="$q8_tmpdir/no_memory_db_live_insert.py" \
         CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$q8_tmpdir/no_semantic_search.sh" \
         CMD_SAVE_Q11_RESEARCH_DIR="$q8_tmpdir/docs/research" \
         CMD_QUALITY_FAST_METADATA=1 \

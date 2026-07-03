@@ -23,6 +23,7 @@ setup() {
     export TEST_LORD_CONVERSATION="$TEST_TMPDIR/lord_conversation.jsonl"
     export TEST_CMD_CHRONICLE="$TEST_TMPDIR/cmd-chronicle.md"
     export TEST_INSIGHTS="$TEST_TMPDIR/insights.yaml"
+    export MEMORY_DB_LIVE_INSERT="$TEST_TMPDIR/no_memory_db_live_insert.py"
     mkdir -p "$TEST_ARCHIVE_DIR"
     printf '%s\n' '[]' > "$TEST_INSIGHTS"
 }
