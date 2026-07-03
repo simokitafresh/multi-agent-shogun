@@ -13,7 +13,7 @@ allowed-tools:
   - Bash
 ---
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-03T11:15:00+09:00 -->
 
 Script refs verified: 2026-06-26 a7ba82b4a. `clear_prep_check.sh` 直近変更はL804整数比較バグ修正+batch context auto-commit。引数なし実行で/clear前チェックを出力し、終了コードはissues>0で1/なしで0の契約を維持。/shogun-clear-prepの実行手順(Step 1-3)は変更なし。
 Script refs verified: 2026-06-11. `clear_prep_check.sh` の契約は引数なし実行で/clear前チェックを出力する形式のまま。a7ba82b4aは知識埋込みチェック内の整数比較修正で、/shogun-clear-prepの実行手順・入力・完了報告契約変更なし。
@@ -99,7 +99,7 @@ bash scripts/ntfy.sh "【将軍】/clear準備完了。PD:{件数} cmd:{件数} 
 - **裁定はその場で記録** — /clear前にまとめてMCPに書くな。殿の裁定があった時点で即add_observations + pending_decision_write.sh resolve を実行する（shogun.md裁定同時記録ルール）。この原則が守られていれば/clear前に退避する情報はない
 - **MEMORY.mdは/clear前に触らない** — 更新が必要なら別途/dreamで棚卸しする。/clear準備とは混ぜない
 - **手動追記しない** — `session_summary` は `clear_prep_check.sh` がflock付きで自動追記する
-- **復帰完了マーカーを手動維持しない** — `clear_prep_check.sh` は完了時に `SHOGUN_RECOVERY_MARKER`（未指定時 `/tmp/shogun_recovery_complete`）を削除し、次セッションがstartup recoveryを踏むまでRECOVERY INCOMPLETE警告を有効化する
+- **復帰完了マーカーを手動維持しない** — `clear_prep_check.sh` は完了時に `SHOGUN_RECOVERY_MARKER`（未指定時 `logs/shogun_recovery_complete`。cmd_3674で/tmpから恒久パスへ移行）を削除し、次セッションがstartup recoveryを踏むまでRECOVERY INCOMPLETE警告を有効化する
 - **所要時間: 30秒以内** — スクリプト実行+出力確認+ntfyだけ。ファイル読みやEdit不要
 
 Script refs verified: 2026-06-04 cmd_karo_hotfix_shogun_clear_prep_skill_sync_20260604. `clear_prep_check.sh` 現行のG0/会話退避/記憶整理/session_summary/掲示板未対応チェックまで反映済み。
