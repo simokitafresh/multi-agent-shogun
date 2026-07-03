@@ -1,5 +1,5 @@
 # Stock Database Context
-<!-- last_updated: 2026-04-09 cmd_ga016_db_style freshness review -->
+<!-- last_updated: 2026-07-03 cmd_3685 full-period refetch freshness update -->
 
 > cmd_865初回偵察完了(2026-03-12)。水平4名+垂直1名(2AC)で全容把握。
 
@@ -37,6 +37,8 @@ Yahoo Finance(yfinance) + FRED API → 正規化 → PostgreSQL(Supabase) UPSERT
 - **保存**: Supabase PostgreSQL(asyncpg) + Redis/メモリキャッシュ(TTL 4h)
 - **Cron**: 平日23:00 JST — 全履歴再取得+FRED更新+価格調整チェック
 - **API**: 21エンドポイント（9ルータ）。Cronのみ`X-Cron-Secret`認証、他は公開
+- **価格再取得（cmd_3685）**: `GET /v1/prices` / `ensure_coverage` / `ensure_coverage_parallel` はrefresh due時にsymbol既知期間の全期間を再取得する。`YF_REFETCH_DAYS`はcoverage refetch範囲を制限しない（呼び出し互換用に設定値は残置）。source: database commit `8802106322defebcb024dc900a95df16602216bf`
+- **Cron補足（cmd_3685）**: `daily_update_service.refresh_full_history()` は既に全履歴更新だが、Render cron manifestは引き続き`Dockerfile.cron`不在問題あり。本番cron実経路はRender dashboard一次確認が必要。
 - → 詳細: `queue/reports/kotaro_report_cmd_865.yaml`
 
 ## §4 Render構成
@@ -55,6 +57,8 @@ Yahoo Finance(yfinance) + FRED API → 正規化 → PostgreSQL(Supabase) UPSERT
 - **データソース差異**: database=yfinance(adjusted) vs DM-Signal=StockData API
 - **補完可能**: DTB3(1954年〜)がDM-Signalリスクフリーレート補完に有用
 - **推奨**: OPT-C(独立維持+DTB3共有のみ)が安全。統合にはclose価格差異検証が前提
+- **cmd_3685横断修正**: DM-Signal `sync-prices` はstock symbolsを毎回`FULL_HISTORY_START`から全期間取得する。DTB3は調整係数を持たないためrecent window維持。source: DM-Signal commit `75c4444df6082da72fcb90212678d0b6e2359d3d`
+- **未決候補**: database `/v1/fetch` の10年capはcold-start batch経路に残る。調整済み価格の完全再構築要件ではdecision_candidate扱い。
 - L002: databaseプロジェクトはDM-Signalと銘柄大幅重複だがデータソース異なる（cmd_865）
 - → 詳細: `queue/reports/tobisaru_report_cmd_865.yaml`
 
@@ -80,7 +84,8 @@ Yahoo Finance(yfinance) + FRED API → 正規化 → PostgreSQL(Supabase) UPSERT
 ## 教訓索引（自動追記）
 
 - （L001-L002は振り分け済 → §4 Render構成(L001), §5 DM-Signalとの関係(L002)）
-<!-- last_synced_lesson: L002 -->
+- L003: 調整済み時系列は全期間再取得必須、複数repo横断で同ロジック全箇所修正（cmd_3685）
+<!-- last_synced_lesson: L003 -->
 
 ---
 

@@ -49,6 +49,40 @@ fi
 
 LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
 if [ ! -f "$LESSONS_FILE" ]; then
+    PROJECT_LESSONS_YAML="$SCRIPT_DIR/projects/${PROJECT_ID}/lessons.yaml"
+    if [ -f "$PROJECT_LESSONS_YAML" ]; then
+        export PROJECT_LESSONS_YAML
+        python3 << 'PYEOF'
+import os
+import yaml
+
+lessons_file = os.environ["PROJECT_LESSONS_YAML"]
+
+with open(lessons_file, encoding="utf-8") as f:
+    data = yaml.safe_load(f) or {}
+
+drafts = []
+for lesson in data.get("lessons", []) or []:
+    if str(lesson.get("status", "")).strip() == "draft":
+        drafts.append({
+            "id": lesson.get("id", ""),
+            "title": lesson.get("title", ""),
+            "source": lesson.get("source", ""),
+            "date": lesson.get("date", ""),
+        })
+
+if not drafts:
+    print(f"[lesson_review] No draft lessons found in {lessons_file}")
+else:
+    print(f"[lesson_review] {len(drafts)} draft lesson(s) found:\n")
+    print(f'{"ID":<8} {"Date":<12} {"Source":<16} Title')
+    print(f'{"-"*8} {"-"*12} {"-"*16} {"-"*40}')
+    for d in drafts:
+        print(f'{d["id"]:<8} {d["date"]:<12} {d["source"]:<16} {d["title"]}')
+    print(f"\nTotal: {len(drafts)} draft(s)")
+PYEOF
+        exit 0
+    fi
     echo "ERROR: $LESSONS_FILE not found." >&2
     exit 0
 fi

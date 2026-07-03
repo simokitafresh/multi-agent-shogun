@@ -280,51 +280,36 @@ for _tnn in $ALL_NINJAS; do
 done
 if [[ ${#_task_files_arr[@]} -gt 0 ]]; then
     _TASK_MAP_CACHE="/tmp/das_task_map_${_proj_hash}.txt"
-    _TASK_MAP_KEY="/tmp/das_task_map_${_proj_hash}.key"
-    _task_cache_hit=true
-    if [[ ! -s "$_TASK_MAP_CACHE" ]] || [[ ! -f "$_TASK_MAP_KEY" ]]; then
-        _task_cache_hit=false
-    else
-        for _nt_tf in "${_task_files_arr[@]}"; do
-            if [[ "$_nt_tf" -nt "$_TASK_MAP_KEY" ]]; then
-                _task_cache_hit=false
-                break
-            fi
-        done
-    fi
-    if [[ "$_task_cache_hit" == true ]]; then
-        _task_map_src="$_TASK_MAP_CACHE"
-    else
-        awk '
-            function emit() {
-                if (ninja != "") print ninja "|" parent "|" status
-            }
-            FNR == 1 {
-                emit()
-                fname = FILENAME
-                sub(/.*\//, "", fname)
-                sub(/\.yaml$/, "", fname)
-                ninja = fname
-                parent = ""
-                status = ""
-            }
-            /^[[:space:]]*parent_cmd:/ {
-                v = $0
-                sub(/.*parent_cmd:[[:space:]]*/, "", v)
-                gsub(/["'"'"'[:space:]]/, "", v)
-                if (v != "" && parent == "") parent = v
-            }
-            /^[[:space:]]*status:/ {
-                v = $0
-                sub(/.*status:[[:space:]]*/, "", v)
-                gsub(/["'"'"'[:space:]]/, "", v)
-                if (v != "" && status == "") status = v
-            }
-            END { emit() }
-        ' "${_task_files_arr[@]}" > "$_TASK_MAP_CACHE" 2>/dev/null || true
-        touch "$_TASK_MAP_KEY" 2>/dev/null || true
-        _task_map_src="$_TASK_MAP_CACHE"
-    fi
+    # This feeds the realtime dashboard. A stale /tmp cache here shows idle
+    # agents as active, so prefer a cheap direct read over mtime caching.
+    awk '
+        function emit() {
+            if (ninja != "") print ninja "|" parent "|" status
+        }
+        FNR == 1 {
+            emit()
+            fname = FILENAME
+            sub(/.*\//, "", fname)
+            sub(/\.yaml$/, "", fname)
+            ninja = fname
+            parent = ""
+            status = ""
+        }
+        /^[[:space:]]*parent_cmd:/ {
+            v = $0
+            sub(/.*parent_cmd:[[:space:]]*/, "", v)
+            gsub(/["'"'"'[:space:]]/, "", v)
+            if (v != "" && parent == "") parent = v
+        }
+        /^[[:space:]]*status:/ {
+            v = $0
+            sub(/.*status:[[:space:]]*/, "", v)
+            gsub(/["'"'"'[:space:]]/, "", v)
+            if (v != "" && status == "") status = v
+        }
+        END { emit() }
+    ' "${_task_files_arr[@]}" > "$_TASK_MAP_CACHE" 2>/dev/null || true
+    _task_map_src="$_TASK_MAP_CACHE"
     while IFS='|' read -r _n _pcmd _tstatus; do
         [[ -n "$_tstatus" ]] && NINJA_STATUS[$_n]="$_tstatus"
         [[ -z "$_pcmd" ]] && continue

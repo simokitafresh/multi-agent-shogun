@@ -547,6 +547,119 @@ require_origin_value() {
     printf '%s\n' "$resolved_origin"
 }
 
+write_project_yaml_lesson() {
+    local lessons_yaml="$SCRIPT_DIR/projects/${PROJECT_ID}/lessons.yaml"
+    local lockfile="${lessons_yaml}.lock"
+    local timestamp
+
+    if [ ! -f "$lessons_yaml" ]; then
+        return 1
+    fi
+
+    timestamp=$(date "+%Y-%m-%d")
+    RESOLVED_ORIGIN="$(require_origin_value)"
+
+    (
+        flock -w 10 200 || { echo "ERROR: Could not acquire lock" >&2; exit 1; }
+
+        LESSONS_YAML_ENV="$lessons_yaml" \
+        TITLE_ENV="$TITLE" \
+        DETAIL_ENV="$DETAIL" \
+        SOURCE_CMD_ENV="$SOURCE_CMD" \
+        AUTHOR_ENV="${AUTHOR:-karo}" \
+        TAGS_ENV="${TAGS:-$PROJECT_ID}" \
+        TARGET_FILES_ENV="${TARGET_FILES:-}" \
+        ORIGIN_ENV="$RESOLVED_ORIGIN" \
+        TIMESTAMP_ENV="$timestamp" \
+        FORCE_ENV="${FORCE:-0}" \
+        python3 <<'PY'
+import os
+import re
+import sys
+
+path = os.environ["LESSONS_YAML_ENV"]
+title = os.environ["TITLE_ENV"]
+detail = os.environ["DETAIL_ENV"]
+source_cmd = os.environ.get("SOURCE_CMD_ENV", "")
+origin = os.environ.get("ORIGIN_ENV", "")
+timestamp = os.environ["TIMESTAMP_ENV"]
+force = os.environ.get("FORCE_ENV", "0") == "1"
+tags = [t.strip() for t in os.environ.get("TAGS_ENV", "").split(",") if t.strip()]
+target_files = [p.strip() for p in os.environ.get("TARGET_FILES_ENV", "").split(",") if p.strip()]
+
+with open(path, encoding="utf-8") as fh:
+    content = fh.read()
+
+if not force:
+    for m in re.finditer(r"^[ \t]+title:[ \t]*(.+)$", content, re.MULTILINE):
+        existing = m.group(1).strip().strip("'\"")
+        if existing == title:
+            print(f"ERROR: 類似教訓あり: {existing} (類似度: 100%)", file=sys.stderr)
+            print("強制登録: --force フラグを追加", file=sys.stderr)
+            sys.exit(1)
+
+max_id = 0
+for m in re.finditer(r"^- id:[ \t]*L(\d+)[ \t]*$", content, re.MULTILINE):
+    max_id = max(max_id, int(m.group(1)))
+new_id = f"L{max_id + 1:03d}"
+
+def sq(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+def block_scalar(prefix: str, value: str) -> list[str]:
+    text = value.rstrip("\n") or "未設定"
+    leading = len(prefix) - len(prefix.lstrip(" "))
+    content_indent = " " * (leading + 2)
+    lines = [f"{prefix}: >-"]
+    for line in text.splitlines():
+        lines.append(f"{content_indent}{line}")
+    return lines
+
+entry = []
+if content and not content.endswith("\n"):
+    entry.append("")
+entry.append(f"- id: {new_id}")
+entry.append(f"  title: {sq(title)}")
+entry.extend(block_scalar("  summary", detail))
+entry.extend(block_scalar("  when", title + " の状況で判断・実装・検証する時"))
+entry.extend(block_scalar("  how", detail + " を根拠に、実体確認と再発防止の手順を先に通す"))
+entry.append("  category: 未分類")
+if source_cmd:
+    entry.append(f"  source: {sq(source_cmd)}")
+if origin:
+    entry.append(f"  origin: {sq(origin)}")
+entry.append(f"  date: {sq(timestamp)}")
+entry.append("  tags:")
+for tag in tags or ["universal"]:
+    entry.append(f"  - {tag}")
+if target_files:
+    entry.append("  target_files:")
+    for target_file in target_files[:5]:
+        entry.append(f"  - {sq(target_file)}")
+entry.append("  helpful_count: 0")
+entry.append("  harmful_count: 0")
+entry.append("  injection_count: 0")
+entry.append(f"  last_referenced: {sq(timestamp)}")
+
+with open(path, "a", encoding="utf-8") as fh:
+    fh.write("\n".join(entry) + "\n")
+
+print(f"{new_id} added to {path}")
+PY
+    ) 200>"$lockfile"
+
+    # cmd_108: Write .done flag for cmd_complete_gate
+    if [ -n "$CMD_ID" ]; then
+        gates_dir="$SCRIPT_DIR/queue/gates/${CMD_ID}"
+        mkdir -p "$gates_dir"
+        echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)" > "$gates_dir/lesson.done"
+        echo "source: lesson_write" >> "$gates_dir/lesson.done"
+    fi
+
+    echo "REFLUX_CHECK: (1)PI=SKIPPED (2)RUNBOOK=SKIPPED (3)INSTRUCTIONS=SKIPPED"
+    return 0
+}
+
 # ─── Retag mode: change tags of existing lesson (both lessons.md + sync) ───
 if [ -n "$RETAG_ID" ]; then
     if [ -z "$PROJECT_ID" ] || [ -z "$RETAG_TAGS" ]; then
@@ -774,6 +887,9 @@ LOCKFILE="${LESSONS_FILE}.lock"
 
 # Verify lessons file exists
 if [ ! -f "$LESSONS_FILE" ]; then
+    if write_project_yaml_lesson; then
+        exit 0
+    fi
     echo "ERROR: $LESSONS_FILE not found." >&2
     exit 1
 fi
