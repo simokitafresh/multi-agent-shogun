@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-03 cmd_karo_hotfix_auto_update_pane_spawn_202607031806 -->
+<!-- last_updated: 2026-07-03 cmd_karo_hotfix_shogun_startup_defer_bulletin_q6_202607032315 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -455,6 +455,7 @@ inotifywait検知→`inboxN`短ナッジ送信。symlink注意。fingerprint ded
 ## ntfy.sh
 
 `bash scripts/ntfy.sh "msg"` のみ。引数追加厳禁。topic=shogun-simokitafresh。
+殿への直接依頼で「通知が届くこと」自体が成果物の時は、引数は増やさず `NTFY_SYNC=1 NTFY_MIN_INTERVAL_SECONDS=0 bash scripts/ntfy.sh "msg"` で送信し、`logs/ntfy.log` の `http=200` を確認してから完了報告する。通常の fire-and-forget は exit 0 でも配送完了の証明ではない。
 - L160: ntfy添付DLはAUTH_ARGS再利用でprivate topicでも同一認証経路を維持できる（cmd_551）
 - L161: 画像添付MIME整合改善の必要性（cmd_551）
 - L166: ストリーミング受信デーモンは起動側pkillに依存せず受信側でも単一起動ロックを持つべし（cmd_571）
@@ -675,7 +676,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L949 -->
+<!-- last_synced_lesson: L950 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
@@ -1343,6 +1344,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L947: report_field_set.shで既存フィールドが無警告で消失する再現バグ(worker_id/task_id/parent_cmd/ac_version_read書込み後)（cmd_3683）
 - L948: 5000行超のインフラdaemonでも死コードは repo全体grepで確定検証してから安全削除できる（cmd_training_L4_auto_202607031741_kotaro）
 - L949: tmuxペイン新規作成スクリプトはflock排他必須（cmd_karo_hotfix_auto_update_pane_spawn_202607031806）
+- L950: files_modifiedはcommit済み主張としてgateで常時検査する（cmd_karo_hotfix_commit_missing_structural_202607032250）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
