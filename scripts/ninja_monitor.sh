@@ -3400,20 +3400,6 @@ get_unread_fingerprint() {
 # ─── 未読放置検知+再nudge (cmd_188→cmd_255状態遷移化) ───
 # 状態遷移ベース: fingerprint変化時のみ即送信、同一fingerprint時はバックオフ安全網
 # inbox_watcherとの二重経路増幅(L029)を抑止する
-count_unread_messages() {
-    local inbox_file="$1"
-    local raw_count
-    local count
-
-    raw_count=$(awk '/read:[[:space:]]*false/{c++} END{print c+0}' "$inbox_file" 2>/dev/null || echo "0")
-    count=$(printf '%s' "$raw_count" | tr -d '\r\n[:space:]')
-
-    if [[ ! "$count" =~ ^[0-9]+$ ]]; then
-        count=0
-    fi
-
-    echo "$count"
-}
 
 # ─── count_unread_messages サイクル内キャッシュ ───
 # check_inbox_renudge/update_inbox_counts が同一サイクル内で

@@ -24,6 +24,7 @@ The daemon loads shared libraries, acquires a singleton pid file, discovers pane
 - [[ninja_monitor_requirements]] defines the supervision, idle detection, reset safety, snapshot, and health-monitoring requirements satisfied by this design.
 - [[ninja_monitor.sh]] is the implementation source for `check_idle`, `safe_send_clear`, `check_stall`, and `write_karo_snapshot`.
 - [[ninja_monitor_brownfield]] records the brownfield findings and current implementation evidence for unresolved or downgraded design risks.
+- [[test_ninja_monitor_stall.bats]] covers `count_unread_messages_cached`'s per-cycle cache/refresh contract (`tests/unit/test_ninja_monitor_stall.bats:484` `@test "count_unread_messages_cached: same cycle reuses count and next cycle refreshes"`); the unused non-cached duplicate `count_unread_messages` was removed as dead code (cmd_training_L4_auto_202607031741_kotaro).
 
 ## Core Components
 
