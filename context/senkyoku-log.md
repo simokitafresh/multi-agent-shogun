@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-07-03 cmd_3675 -->
+<!-- last_updated: 2026-07-03 cmd_3676 -->
 
 ## 2026-06-30
 
@@ -1358,3 +1358,4 @@
 - 2026-07-03 将軍強ニュー化(10:45): 殿指示「今クリアされても今より強くてニューゲーム」受け実行。(1)殿クエリ6件semantic alias化(到達6/6検証) (2)pre-push正本/実体分岐を実体版で同期(LS078同族、commit) (3)復帰マーカー揮発誤警告の根治cmd_3674起票・委任 (4)掲示板action_required 4件+insights 9件消化(残1=道具DOM判定の意図的キュー) (5)遡及学習ack 4件+push完了。
 - 2026-07-03 cmd_3674完了: 将軍復帰完了マーカーの既定値を `/tmp/shogun_recovery_complete` から `logs/shogun_recovery_complete` へ移行。4参照統一、旧/tmp参照0件、bats 5/5 PASSでRECOVERY INCOMPLETE誤警告の揮発性根因を封じた。
 - 2026-07-03 cmd_3675完了: 本番保有ポジション差分偵察。102PFのraw/historyで2026-07-01→2026-07-02 holding差分0件、precomputeは成功済み・locked=false。殿観測の主因はMonthly Tradeの翌月pending行が先頭表示される表示層問題と特定。
+- 2026-07-03 cmd_3676_recon2完了: 半蔵独立検算。7月正ポジションはXLU、根は`シン青龍-鉄壁`TECL→XLU(7/3 01:11)がFoF連鎖へ伝播したもの。FoF構成定義は秘奥義-抜き身/追い風50%固定で、影響signalsは204行。

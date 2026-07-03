@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-03 cmd_karo_hotfix_ga171_dm_signal_ops_context_freshness_202607030033 -->
+<!-- last_updated: 2026-07-03 cmd_3676 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -930,3 +930,5 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - metrics summaryはbulk raw(1行)方式=compare_returns_bulkの2例目(cmd_3669: ttfb 1.75-2.13s→0.47s)。可視性/maskingは毎リクエスト適用を維持
 - 残: rolling_returnsは生成だけされAPI未参照の逆パターン(未修正)
 - cmd_3675偵察: 本番102PFの`/api/debug/signal-raw`+`/api/history`で2026-07-01→2026-07-02 holding差分0件。殿観測の保有ポジション差分はDB破壊ではなくMonthly Tradeの翌月pending行先頭表示(表示層)が主因。詳細 → `docs/research/cmd_3675_holding_position_display_diff_recon.md`
+- cmd_3676_recon2偵察: 7月正ポジションは本番read-only証拠上XLU。起点は`シン青龍-鉄壁`のTECL→XLU変更(2026-07-03 01:11)で、FoF定義変更ではなくFoF連鎖へ01:43-01:44に伝播。影響は7月signals更新204行。詳細 → `docs/research/cmd_3676_hanzo_recon2.md`
+- cmd_3676確定: 疾風本調査も半蔵独立検算と一致。`calculation_version=755a50d`のfull recalculateが2026-07-01/02のconfirmed rowsを再生成・上書きし、現在の正はXLU。未決裁定: ユーザーに表示済みのcurrent-month confirmed rowsを後続full recalculateが無音で上書きしてよいか、また許可する場合のaudit/snapshot要件。

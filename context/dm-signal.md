@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-03 cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051 -->
-<!-- last_synced_lesson: L803 -->
+<!-- last_updated: 2026-07-03 cmd_3676 -->
+<!-- last_synced_lesson: L804 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -260,6 +260,7 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 - PD-054裁定(2026-07-02): 7023=Next App Router runtime不可避。App Router runtime削減設計には進まず、次方向は初期レンダー計算量削減(テーブル仮想化・チャート遅延・hydration削減)=fd9d/app chunks側。cmd_3660本番metrics計測はPerf 46→95/TBT 1724→55ms/CLS 0.743→0を確認。→ `/mnt/c/Python_app/DM-signal/docs/research/lighthouse_rounds/round_20260702_cmd3660_production_metrics_cls_close/manifest.json`
 - L802: precompute paramsはFE PAGE_APISから機械抽出して照合する（cmd_3667）
 - L803: FE要求params整合テストはpage.tsxではなく別module定数をSSOTにする（cmd_3668）
+- L804: FoF構成定義と当月選択結果を分けて証拠化する（cmd_3676_recon2）
 
 ## 因果リンク
 
