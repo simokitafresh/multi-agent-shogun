@@ -1028,6 +1028,7 @@ CLI_DEAD_LOOP_THRESHOLD=2
 
 check_ninja_cli_dead
 sleep 1
+wait
 
 cat "$TMUX_LOG"
 cat "$LOG"
