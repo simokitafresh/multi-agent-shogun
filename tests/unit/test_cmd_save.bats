@@ -579,6 +579,7 @@ YAML
         CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$save_tmpdir/no_semantic_search.sh" \
         CMD_SAVE_Q11_RESEARCH_DIR="$save_tmpdir/docs/research" \
         CMD_QUALITY_FAST_METADATA=1 \
+        CMD_SAVE_SYNC_QUALITY_LOG=1 \
         bash "$SRC_SAVE_SCRIPT" cmd_preflight
     echo "$output" >&2
     [ "$status" -eq 0 ]
