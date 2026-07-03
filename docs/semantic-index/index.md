@@ -39,7 +39,7 @@ codd:
 |------|---|
 | id | unread_cmd_new_deployment_guard |
 | label | 未読cmd_new配備漏れ防止 |
-| aliases | 未読cmd_new, cmd_new未処理, inbox未読処理, 未読を処理しない, 配備漏れ真因, nudge依存, Stop hook依存, tmux通知依存, 家老inbox未読, 通常作業前に未読処理, cmd_3457配備漏れ, cmd 3475で実証されたバグの構造的防止 |
+| aliases | 未読cmd_new, cmd_new未処理, inbox未読処理, 未読を処理しない, 配備漏れ真因, nudge依存, Stop hook依存, tmux通知依存, 家老inbox未読, 通常作業前に未読処理, cmd_3457配備漏れ, cmd 3475で実証されたバグの構造的防止, 影響を受けてinbox1 |
 | related_concepts | delegation_flow, growth_loop, three_layer_memory_system, semantic_dictionary_design |
 
 | 種別 | パス/参照 |
@@ -2807,7 +2807,7 @@ codd:
 |------|---|
 | id | dmsignal_operations |
 | label | DM-Signal運用 |
-| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する, FoF複製2件はおれの操作だ, PF構成確認はcheck_pf_config.py一発, hide判定はtier_visibility_settings全Tier確認必須(portfolios.hide_portfolioだけでは不十分), pipeline_configがBBの実体(selection_pipeline+terminal_block), TrendReversalFilter, DM signalのハナシをしよう, FoFの理解が怪しい, 22分は長いな, DM signalは順調か？, DM-signalは順調か？, L1+, L1+実験, BB直列, ビルディングブロック直列, BB直列拡張, run_l1plus_backtest, 441パターン, L1ビルディングブロック直列接続 |
+| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する, FoF複製2件はおれの操作だ, PF構成確認はcheck_pf_config.py一発, hide判定はtier_visibility_settings全Tier確認必須(portfolios.hide_portfolioだけでは不十分), pipeline_configがBBの実体(selection_pipeline+terminal_block), TrendReversalFilter, DM signalのハナシをしよう, FoFの理解が怪しい, 22分は長いな, DM signalは順調か？, DM-signalは順調か？, L1+, L1+実験, BB直列, ビルディングブロック直列, BB直列拡張, run_l1plus_backtest, 441パターン, L1ビルディングブロック直列接続, 現在本番には全部で102PFある, バグの影響を受けたPFをフォルダーグループ単位で報告 |
 | skills | db-check, pf-registration |
 | related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking, investment_knowledge_base, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, modern_web_guidance, cdp_browser_capability, tier_plan_mapping, alpha_6_metrics, saxo_openapi_excel, saxo_trade_engine, db_price_data_range, content_artifacts, fusion_api_endpoint, dm_fusion_app, dmsignal_fe_experience_deploy |
 
@@ -5342,7 +5342,7 @@ codd:
 |------|---|
 | id | db_price_data_range |
 | label | DB価格データ範囲 |
-| aliases | DB価格データ範囲, DTB3, DTB3データ, DTB3の扱い, DTB3はもっと古い, DTB3制限, DTB3期間, XLUとDTB3による制限, XLU制限, XLU 2006年, QQQ 1999年, TQQQ 2010年, 2010年以前が0%, データ開始時期, 価格データ期間, 全期間データ取得, economic_indicators, 504日, 価格データ不足, QQQデータ範囲, economic_indicatorsテーブル, DTBスリー, DTB3の扱いも知らないのか？あるよ, DTB3はもっと古いものからあるのでは？, XLUとDTB3による制限は？ |
+| aliases | DB価格データ範囲, DTB3, DTB3データ, DTB3の扱い, DTB3はもっと古い, DTB3制限, DTB3期間, XLUとDTB3による制限, XLU制限, XLU 2006年, QQQ 1999年, TQQQ 2010年, 2010年以前が0%, データ開始時期, 価格データ期間, 全期間データ取得, economic_indicators, 504日, 価格データ不足, QQQデータ範囲, economic_indicatorsテーブル, DTBスリー, DTB3の扱いも知らないのか？あるよ, DTB3はもっと古いものからあるのでは？, XLUとDTB3による制限は？, あとからLQDの値が変わったからモメンタム計算の結果が変わった, LQDの値が変わった, モメンタム計算の結果が変わった |
 | related_concepts | dmsignal_operations, alpha_6_metrics, production_parity |
 
 | 種別 | パス/参照 |
