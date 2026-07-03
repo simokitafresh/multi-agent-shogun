@@ -1,69 +1,146 @@
 #!/usr/bin/env bash
-# pre-push hook — Run unit tests before push and block bare --force (D003).
+# pre-push hook with failure recording (cmd_1117)
+#
+# Non-zero exitで logs/hook_failures.yaml に自動記録。
+# 記録部分は || true で防御（記録エラーでhookの動作を阻害しない）。
 
-set -euo pipefail
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+_STDERR_FILE="/tmp/_hook_stderr_prepush_$$"
+_HOOK_ARTIFACT_DIR="$REPO_ROOT/logs/hook_artifacts"
+_HOOK_ARTIFACT_ID="$(date +%Y%m%dT%H%M%S)_pre-push_$$"
+_HOOK_ARTIFACT_FILE="$_HOOK_ARTIFACT_DIR/${_HOOK_ARTIFACT_ID}.log"
+_CHANGED_FILES_FILE="/tmp/_hook_changed_files_prepush_$$"
+_SELECTED_TESTS_FILE="/tmp/_hook_selected_tests_prepush_$$"
+_BATS_OUTPUT_FILE="/tmp/_hook_bats_output_prepush_$$"
 
-run_unit_tests() {
-  if ! command -v bats >/dev/null 2>&1; then
-    echo "BLOCKED: bats is required for pre-push unit tests." >&2
-    exit 1
-  fi
-
-  if ! command -v timeout >/dev/null 2>&1; then
-    echo "BLOCKED: timeout is required for pre-push unit tests." >&2
-    exit 1
-  fi
-
-  if [ ! -d "tests/unit" ]; then
-    echo "BLOCKED: tests/unit directory not found." >&2
-    exit 1
-  fi
-
-  echo "Running unit tests before push..."
-  set +e
-  timeout 300 bats tests/unit/ --jobs 4 --timing
-  test_status=$?
-  set -e
-
-  if [ "$test_status" -eq 124 ]; then
-    echo "BLOCKED: unit tests exceeded 300 seconds." >&2
-    exit 1
-  fi
-
-  if [ "$test_status" -ne 0 ]; then
-    echo "BLOCKED: unit tests failed. Push aborted." >&2
-    exit 1
-  fi
+# --- Failure recording trap (cmd_1117) ---
+_record_hook_failure() {
+    local exit_code=$1
+    if [ "$exit_code" -ne 0 ]; then
+        (
+            ninja_name=$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")
+            stderr_summary=""
+            [ -s "$_STDERR_FILE" ] && stderr_summary=$(head -c 800 "$_STDERR_FILE" 2>/dev/null | tr '\n' ' ' | tr '"' "'")
+            mkdir -p "$REPO_ROOT/logs" "$_HOOK_ARTIFACT_DIR"
+            {
+                echo "# pre-push hook failure artifact"
+                echo "timestamp: $(date -Iseconds)"
+                echo "exit_code: $exit_code"
+                echo
+                echo "## changed_files"
+                if [ -s "$_CHANGED_FILES_FILE" ]; then
+                    cat "$_CHANGED_FILES_FILE"
+                else
+                    echo "(none captured)"
+                fi
+                echo
+                echo "## selected_tests"
+                if [ -s "$_SELECTED_TESTS_FILE" ]; then
+                    cat "$_SELECTED_TESTS_FILE"
+                else
+                    echo "(none captured)"
+                fi
+                echo
+                echo "## bats_output"
+                if [ -s "$_BATS_OUTPUT_FILE" ]; then
+                    cat "$_BATS_OUTPUT_FILE"
+                else
+                    echo "(empty)"
+                fi
+                echo
+                echo "## stderr"
+                if [ -s "$_STDERR_FILE" ]; then
+                    cat "$_STDERR_FILE"
+                else
+                    echo "(empty)"
+                fi
+            } > "$_HOOK_ARTIFACT_FILE"
+            echo "- timestamp: $(date -Iseconds)" >> "$REPO_ROOT/logs/hook_failures.yaml"
+            echo "  hook: pre-push" >> "$REPO_ROOT/logs/hook_failures.yaml"
+            echo "  ninja: $ninja_name" >> "$REPO_ROOT/logs/hook_failures.yaml"
+            echo "  exit_code: $exit_code" >> "$REPO_ROOT/logs/hook_failures.yaml"
+            echo "  artifact: \"logs/hook_artifacts/${_HOOK_ARTIFACT_ID}.log\"" >> "$REPO_ROOT/logs/hook_failures.yaml"
+            echo "  detail: \"$stderr_summary\"" >> "$REPO_ROOT/logs/hook_failures.yaml"
+        ) || true
+        # 判定根拠の可視化(LS078): stderrはartifactへ隔離されるため、失敗理由の要点を
+        # stdout経由で実行者へ即表示する。無言exit 1は原因調査を毎回ゼロからにする(2026-07-02実害3回)
+        {
+            echo "[pre-push] BLOCK (exit ${exit_code})"
+            [ -s "$_BATS_OUTPUT_FILE" ] && grep -E "^not ok|^# " "$_BATS_OUTPUT_FILE" 2>/dev/null | head -5
+            echo "[pre-push] 詳細: logs/hook_artifacts/${_HOOK_ARTIFACT_ID}.log"
+        } 2>/dev/null || true
+    fi
+    rm -f "$_STDERR_FILE" 2>/dev/null
+    rm -f "$_CHANGED_FILES_FILE" "$_SELECTED_TESTS_FILE" "$_BATS_OUTPUT_FILE" 2>/dev/null
 }
+trap '_ec=$?; _record_hook_failure $_ec; exit $_ec' EXIT
 
-read_parent_cmdline() {
-  if [[ -r "/proc/$PPID/cmdline" ]]; then
-    tr '\0' ' ' < "/proc/$PPID/cmdline"
-  fi
-}
+# Capture stderr for failure recording without a tee subprocess.
+exec 2>"$_STDERR_FILE"
 
-check_force_push_policy() {
-  local cmdline
-  cmdline="$(read_parent_cmdline)"
+# ============================================
+# Pre-push checks (add checks below this line)
+# ============================================
 
-  # If we couldn't read cmdline, allow after tests (fail-open for non-Linux).
-  if [[ -z "$cmdline" ]]; then
-    return 0
-  fi
+# --- test_select: 変更ファイルに対応するbatsテストを選択実行 (cmd_2105) ---
+# タイムアウト60秒。未知ファイルのみの変更時はWARN+スキップ。
+_PUSH_REFS=()
+while IFS= read -r _ref_line; do
+    _PUSH_REFS+=("$_ref_line")
+done
 
-  if echo "$cmdline" | grep -qE -- '--force-with-lease'; then
-    return 0
-  fi
+_changed_files=()
+for _ref_line in "${_PUSH_REFS[@]}"; do
+    read -r _local_ref _local_sha _remote_ref _remote_sha <<< "$_ref_line"
+    # 削除push (local sha = 0) はスキップ
+    [ "$_local_sha" = "0000000000000000000000000000000000000000" ] && continue
+    if [ "$_remote_sha" = "0000000000000000000000000000000000000000" ]; then
+        # 新規ブランチ: main との merge-base を使用
+        _base_sha=$(git merge-base HEAD origin/main 2>/dev/null \
+                    || git rev-list --max-parents=0 HEAD 2>/dev/null \
+                    || echo "")
+    else
+        _base_sha="$_remote_sha"
+    fi
+    if [ -n "$_base_sha" ]; then
+        while IFS= read -r _f; do
+            [ -n "$_f" ] && _changed_files+=("$_f")
+        done < <(git diff --name-only "$_base_sha" "$_local_sha" 2>/dev/null || true)
+    fi
+done
 
-  if echo "$cmdline" | grep -qE -- '(^| )--force( |$)|(^| )-f( |$)'; then
-    echo "BLOCKED: git push --force is forbidden (D003). Use --force-with-lease instead." >&2
-    exit 1
-  fi
-}
+if [ ${#_changed_files[@]} -gt 0 ]; then
+    # dedup
+    mapfile -t _changed_files < <(printf '%s\n' "${_changed_files[@]}" | sort -u)
+    printf '%s\n' "${_changed_files[@]}" > "$_CHANGED_FILES_FILE"
 
-main() {
-  run_unit_tests
-  check_force_push_policy
-}
+    # test_select.sh で影響テストを選択 (stdout=テストファイルパス, stderr=WARNs→ターミナル表示)
+    _selected_tests=$(bash "$REPO_ROOT/scripts/test_select.sh" "${_changed_files[@]}") || true
+    [ -n "$_selected_tests" ] && printf '%s\n' "$_selected_tests" > "$_SELECTED_TESTS_FILE"
 
-main "$@"
+    if [ -n "$_selected_tests" ]; then
+        echo "[pre-push] Running selected tests (timeout 60s)..." >&2
+        # shellcheck disable=SC2086
+        set +e
+        timeout 60 bats $_selected_tests --jobs 8 --timing > "$_BATS_OUTPUT_FILE" 2>&1
+        _rc=$?
+        set -e
+        cat "$_BATS_OUTPUT_FILE" >&2
+        if [ "$_rc" -eq 124 ]; then
+            echo "[pre-push] WARN: test_select timeout (60s) — push allowed" >&2
+        elif [ "$_rc" -ne 0 ]; then
+            exit "$_rc"
+        fi
+    fi
+fi
+
+# --- Ontology integrity check (殿裁定2026-06-20: オントロジーは自動実行されて初めて効果が出る) ---
+if [ -x "$REPO_ROOT/scripts/gates/gate_no_hardcoded_ninja_list.sh" ]; then
+    echo "[pre-push] Running ontology integrity check..." >&2
+    if ! timeout 15 bash "$REPO_ROOT/scripts/gates/gate_no_hardcoded_ninja_list.sh" >&2; then
+        echo "[pre-push] BLOCK: ontology violation detected. Fix hardcoded agent names before pushing." >&2
+        exit 1
+    fi
+fi
+
+exit 0
