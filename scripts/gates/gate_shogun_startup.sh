@@ -3519,6 +3519,14 @@ PY
             echo "  ⚠ 根因確認(L0-L7貫通必須): 上記類似cmdの対処履歴を参照し回答せよ"
             echo "    Q: このBLOCKの根因は何か。表面的対処(WARN消し・先送り)ではないか？"
             echo "    → 根因到達後のみ先へ進め。根因が異なる場合は別cmdを起票。同一根因なら今すぐ根本修正せよ"
+            if [[ "$_streak_key" == "追体験自動化ターゲット: WARN (Q6回答未検出)"* ]]; then
+                echo "  ACTION: Q6回答未検出の3連続をaction_required掲示板へ自動接続"
+                echo "  ★ 将軍はQ6回答を掲示板へ投稿するか、Q6検出ロジックの偽陰性修正cmdを起票せよ。"
+                if [ -x "$SCRIPT_DIR/scripts/bulletin_write.sh" ]; then
+                    _q6_streak_bulletin="startup gate Q6回答未検出が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続。将軍はQ6回答を掲示板へ投稿するか、Q6検出ロジックの偽陰性修正cmdを起票せよ。key=${_streak_key}"
+                    BULLETIN_NOTIFY=shogun timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" shogun "$_q6_streak_bulletin" shogun action_required >/dev/null 2>&1 || true
+                fi
+            fi
             alerts+=("startup連続出現BLOCK: ${_streak_key}")
             alerts+=("先送り判断: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続")
         done <<< "$_streak_result"

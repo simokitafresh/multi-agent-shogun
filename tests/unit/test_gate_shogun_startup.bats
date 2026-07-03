@@ -1858,6 +1858,34 @@ EOF
     [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
+@test "Q6 missing for 3 consecutive sessions requests action_required bulletin" {
+    export STARTUP_WARN_STREAK_THRESHOLD=3
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"startup fixture without q6 answer"}
+EOF
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries: []
+EOF
+    cat > "$TEST_TMPDIR/logs/shogun_startup_alert_history.tsv" <<'EOF'
+2098-12-31T23:00:00+0900	追体験自動化ターゲット: WARN (Q6回答未検出)
+2098-12-31T23:30:00+0900	追体験自動化ターゲット: WARN (Q6回答未検出)
+EOF
+    cat > "$TEST_TMPDIR/scripts/bulletin_write.sh" <<'MOCK'
+#!/usr/bin/env bash
+printf 'notify=%s args=%s\n' "${BULLETIN_NOTIFY:-}" "$*" >> "$SHOGUN_STARTUP_ROOT/logs/bulletin_calls.log"
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/bulletin_write.sh"
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK: 追体験自動化ターゲット: WARN (Q6回答未検出) が3セッション連続"* ]]
+    [[ "$output" == *"ACTION: Q6回答未検出の3連続をaction_required掲示板へ自動接続"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
+    grep -q "notify=shogun" "$TEST_TMPDIR/logs/bulletin_calls.log"
+    grep -q "startup gate Q6回答未検出が3セッション連続" "$TEST_TMPDIR/logs/bulletin_calls.log"
+    grep -q "action_required" "$TEST_TMPDIR/logs/bulletin_calls.log"
+}
+
 # Test 15 (--brief + ALERT) は 2026-04-12 殿裁定で削除。Test 11と同じ理由。
 
 # === Test 16: AC注入一致 → WARNING無し (cmd_1668) ===
