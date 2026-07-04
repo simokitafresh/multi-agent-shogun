@@ -29,7 +29,7 @@ setup() {
 }
 
 teardown() {
-    rm -rf "$TEST_TMPDIR"
+    [ -n "${TEST_TMPDIR:-}" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR" || true
 }
 
 # --- ヘルパー ---
