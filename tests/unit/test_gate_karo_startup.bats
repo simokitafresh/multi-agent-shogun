@@ -862,6 +862,41 @@ EOF
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
+@test "3 resolved same workaround categories in recent 5 → no category aggregate ALERT" {
+    cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_300
+  workaround: true
+  category: report_yaml_format
+  root_cause: "field missing"
+  brainwash_check: "修正前 1件→修正後 0件"
+  resolved_by_cmd: "cmd_310"
+- cmd_id: cmd_301
+  workaround: true
+  category: report_yaml_format
+  root_cause: "wrong format"
+  brainwash_check: "修正前 1件→修正後 0件"
+  resolved_by_cmd: "cmd_311"
+- cmd_id: cmd_302
+  workaround: true
+  category: report_yaml_format
+  root_cause: "schema drift"
+  brainwash_check: "修正前 1件→修正後 0件"
+  resolved_by_cmd: "cmd_312"
+- cmd_id: cmd_303
+  workaround: false
+  category: none
+  root_cause: ""
+- cmd_id: cmd_304
+  workaround: false
+  category: none
+  root_cause: ""
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: 同カテゴリ report_yaml_format 累積=3件 (CLEAR済み除外後実=0件、ALERT閾値3件未満)"* ]]
+    [[ "$output" != *"ALERT: 同カテゴリ report_yaml_format"* ]]
+}
+
 # === Test 11: cmd配備漏れ(pending+delegated_at残存) → ALERT ===
 @test "pending cmd with delegated_at → ALERT cmd配備漏れ" {
     cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'EOF'

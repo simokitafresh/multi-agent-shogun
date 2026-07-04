@@ -1799,7 +1799,7 @@ if [ -f "$wa_file" ]; then
         echo "  カテゴリ: ${WA_CATS}"
         echo "  原因: ${WA_CAUSES}"
         if [ "${WA_MAX_COUNT:-0}" -ge 3 ]; then
-            # CLEAR済みcmdを除いた実カウントで判定(誤分類・処理済みWAの永続ALERT防止)
+            # CLEAR済み/resolved_by_cmd付きcmdを除いた実カウントで判定(誤分類・処理済みWAの永続ALERT防止)
             _dq_file="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
             _effective_cat_count="$WA_MAX_COUNT"
             if [ -f "$_dq_file" ] && [ -n "${WA_MAX_CAT:-}" ]; then
@@ -1819,6 +1819,13 @@ if [ -f "$wa_file" ]; then
                             gsub(/[[:space:]]+$/, "", val)
                             cat_map[cur_cmd]=val
                         }
+                        if (/^[[:space:]]*resolved_by_cmd:/) {
+                            val=$0
+                            sub(/.*resolved_by_cmd:[[:space:]]*/, "", val)
+                            gsub(/["'"'"']/, "", val)
+                            gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
+                            if (val != "") resolved[cur_cmd]=1
+                        }
                         next
                     }
                     FILENAME == ARGV[2] {
@@ -1835,7 +1842,7 @@ if [ -f "$wa_file" ]; then
                     END {
                         effective=0
                         for (cmd in wa_cmds) {
-                            if (cat_map[cmd] == cat_name && !cleared[cmd]) effective++
+                            if (cat_map[cmd] == cat_name && !cleared[cmd] && !resolved[cmd]) effective++
                         }
                         print effective+0
                     }
