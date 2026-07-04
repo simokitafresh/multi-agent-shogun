@@ -3692,19 +3692,24 @@ write_state_file() {
             log "ERROR: write_state_file flock failed"
         else
             # YAML生成: 単一ブロックリダイレクトでI/O削減（複数echo >> から変更）
+            local karo_pane="${KARO_PANE:-}"
+            if [ -z "$karo_pane" ]; then
+                karo_pane=$(pane_lookup karo 2>/dev/null || true)
+                karo_pane="${karo_pane:-${TMUX_WINDOW:-shogun:agents}.1}"
+            fi
             local karo_status="unknown"
-            check_idle "$KARO_PANE" "karo" && karo_status="idle" || karo_status="busy"
+            check_idle "$karo_pane" "karo" && karo_status="idle" || karo_status="busy"
             local karo_ctx
-            karo_ctx=$(get_context_pct "$KARO_PANE" "karo")
+            karo_ctx=$(get_context_pct "$karo_pane" "karo")
 
             {
                 printf 'updated_at: "%s"\nagents:\n' "$timestamp"
                 printf '  karo:\n    pane: "%s"\n    status: %s\n    ctx_pct: %s\n    last_task: ""\n' \
-                    "$KARO_PANE" "$karo_status" "$karo_ctx"
+                    "$karo_pane" "$karo_status" "$karo_ctx"
 
                 # 忍者
                 for name in "${NINJA_NAMES[@]}"; do
-                    local target="${PANE_TARGETS[$name]}"
+                    local target="${PANE_TARGETS[$name]:-}"
                     if [ -z "$target" ]; then continue; fi
 
                     local status="${PREV_STATE[$name]:-unknown}"
@@ -4388,11 +4393,15 @@ check_model_names() {
     for name in "${all_agents[@]}"; do
         local target
         if [ "$name" = "karo" ]; then
-            target="$KARO_PANE"
+            target="${KARO_PANE:-}"
+            if [ -z "$target" ]; then
+                target=$(pane_lookup karo 2>/dev/null || true)
+                target="${target:-${TMUX_WINDOW:-shogun:agents}.1}"
+            fi
         elif [ "$name" = "gunshi" ]; then
-            target="$GUNSHI_PANE"
+            target="${GUNSHI_PANE:-}"
         else
-            target="${PANE_TARGETS[$name]}"
+            target="${PANE_TARGETS[$name]:-}"
         fi
         [ -z "$target" ] && continue
 
