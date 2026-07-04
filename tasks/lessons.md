@@ -9607,3 +9607,237 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - 未振り分け自動追記はL786から6日残り、L799追加で11件となって初めてALERT化した。分類実行は将軍専用のため、閾値超過後のLevel4 BLOCKだけでなく、8件到達時点でsource_cmd付きの将軍action_requiredを掲示板/起動文脈へ注入するLevel5導線が必要。
+
+### L935: hotfix別名完了通知は送信側で正規化dedupする
+- **日付**: 2026-07-02
+- **出典**: cmd_3657
+- **記録者**: hanzo
+- **tags**: [infra,cmd-quality,gate,inbox]
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate_warning_levels.bats]
+- **origin**: [[cmd_3657]]
+- **when**: 未設定
+- **how**: 未設定
+- 同一hotfixがフルIDと短縮IDの別cmdとしてGATE CLEARすると、呼び出し元を直しても別経路から再発し得る。将軍inboxのgate_clear通知は送信関数でcmd_karo_hotfix_gaNNN集約と末尾timestamp除去を行い、既存inboxを照合して2通目を送信前にSKIPするチェックを持つべき。origin: [[二重GATE_CLEAR通知3例目_20260702]] -> [[hotfixフルID短縮ID別CLEAR]] -> [[将軍inbox処理2倍]]
+
+### L936: streak/先送り検出はカウント文字列ではなく識別子安定な信号で判定せよ
+- **日付**: 2026-07-02
+- **出典**: cmd_3658
+- **記録者**: saizo
+- **tags**: [infra,gate,gate,bash,security]
+- **target_files**: [scripts/gates/gate_karo_startup.sh,tests/unit/test_gate_karo_startup.bats]
+- **origin**: [[cmd_3658]]
+- **when**: 未設定
+- **how**: 未設定
+- gate_karo_startup.shの先送りCRITICAL streak機構は、alert文字列の完全一致(直近N-1 non-OK runとの一致)だけで持続を判定していた。inbox未読alertは"inbox未読: N件"という件数文字列を使っていたため、高頻度に短時間で入れ替わる別々の未読メッセージでもNが偶然一致すれば"同じ問題が3回連続"と誤認識され、家老startup gateの先送りCRITICAL自動エスカレーションが本日5回誤発火した(2026-07-02)。修正は最古actionable未読の滞留時間(30分閾値)でゲートし、閾値未満(到着直後)ではalerts配列に積まないようにした。教訓: streak/カウント一致ベースの検出機構にalert文字列を追加する際は、その文字列が"同一の根本原因が継続しているか"を表すか、それとも"たまたま同じ値になった別事象"かを区別できるか自問せよ。件数(N件)は前者を保証しない。gate_shogun_startup.sh(scripts/gates/gate_shogun_startup.sh L3315以降)には同種streak機構があり、STARTUP_WARN_STREAK_MIN_GAP_SEC(近接run統合)という部分的防御は既にあるが、カウント文字列一致による誤検知そのものへの対策は未確認。他のalert文字列(掲示板action_required未対応: N件等)も同じ脆弱性を持つ可能性がある
+
+### L937: レビュー時はcommand欄の追記/更新指示もfiles_modified突合対象にせよ
+- **日付**: 2026-07-02
+- **出典**: cmd_3650
+- **記録者**: gunshi
+- **tags**: [review, report, gate]
+- **subdomain**: infra
+- **target_files**: [frontend/app/monthly-returns/page.tsx,frontend/hooks/usePrefetch.ts,frontend/hooks/__tests__/usePrefetch.test.ts,docs/research/cmd_3647_lighthouse/report.md,docs/research/cmd_3647_lighthouse/cmd_3650_after_mobile_monthly_returns.json]
+- **origin**: [[cmd_3650]] -> [[command欄追記指示見落とし]] -> [[files_modified突合漏れ]]
+- **when**: report reviewでfiles_modifiedとcmd指示の整合を見る時
+- **how**: acceptance_criteriaだけでなくcommand欄を読み、追記/更新/記録指示の対象ファイルがfiles_modifiedに含まれるか照合する
+- **because**: AC外のcommand欄成果物を見落とすとLGTM後にcmd_complete_gateでBLOCKされる
+- cmd_3650で軍師LGTM後にBLOCK。根因はStep3.5でcommand欄のreport.md追記指示を見落とし、files_modified突合対象から外したこと。報告YAMLのfiles_modified確認ではAC本文だけでなくcommand欄の『追記する』『更新する』『記録する』等の成果物指示も対象に含める。
+
+### L938: PRE3b WARNとcmd_complete_gate CLEARを同義扱いするな
+- **日付**: 2026-07-02
+- **出典**: cmd_3654
+- **記録者**: gunshi
+- **tags**: [review, gate, precheck]
+- **subdomain**: infra
+- **origin**: [[cmd_3654]] -> [[PRE3b_WARNとgate判定混同]] -> [[レビュー判定層分離]]
+- **when**: precheck WARNとcmd_complete_gate結果が食い違う時
+- **how**: WARNは改善候補、cmd_complete_gateのCLEAR/BLOCKは最終判定として分離し、どちらを根拠にした判断か明記する
+- **because**: WARNを最終BLOCKと誤読するとCLEAR可能なcmdの完了処理を止める
+- cmd_3654でfiles_modifiedに絶対パスがあってもcmd_complete_gateはCLEARする場合があると実証。PRE3bのパス形式警告はレビュー前警告であり、最終gateのCLEAR/BLOCK判定とは層が異なる。レビューや完了処理ではWARNを根拠に即BLOCK断定せず、cmd_complete_gate実行結果と該当WARNの意味を分けて報告する。
+
+### L939: 外部SSOT直接編集の教訓はlesson_write.shの自動追記を通らずcontext不可視化する(orphaned lesson blind spot)
+- **日付**: 2026-07-02
+- **出典**: cmd_karo_hotfix_ga168_lesson_health_202607021948
+- **記録者**: saizo
+- **tags**: [infra,review,recon,gate]
+- **target_files**: [queue/tasks/saizo.yaml,queue/reports/saizo_report_cmd_karo_hotfix_ga168_lesson_health_202607021948.yaml]
+- **origin**: [[cmd_karo_hotfix_ga168_lesson_health_202607021948]]
+- **when**: 未設定
+- **how**: 未設定
+- dm-signalのL770,L771,L774,L776,L778,L779,L784,L785,L787,L788(計10件、source_cmdが*-review-N形式でcmd_XXXX非準拠)は外部repo(/mnt/c/Python_app/DM-signal/tasks/lessons.md)への直接編集→sync_lessons.sh経由でlessons.yamlに取り込まれた。sync_lessons.shはcontext/*.mdへ一切書き込まないため、context自動追記(教訓索引アンカー挿入)を担うlesson_write.shの経路を一度も通らず、gate_lesson_health.shの_unsorted判定(教訓索引内行数カウント)にも一切現れない。結果、この10件はALERTすら発火せず永久に不可視のまま放置され得る。ssot_pathが外部repoを指す全project(auto-ops/clinic-expense-tracker/dm-signal/google-classroom/mcas)が構造的に同じ露出を持つ可能性がある。次回同種調査では教訓索引の行数カウントだけでなく、lessons.yaml全件とcontext file全文の突合(orphan検出)を候補に入れるべき。
+
+### L940: L770更新要: matches[-1]根本原因はgate自体のコード修正(commit 07a0cfd83, max(epochs)採用)で解消済み
+- **日付**: 2026-07-02
+- **出典**: cmd_karo_hotfix_skill_script_refs_202607022043
+- **記録者**: kotaro
+- **tags**: [infra,skill,testing,process,gate]
+- **target_files**: [skills/ninja-commit/SKILL.md,skills/verdict-check/SKILL.md]
+- **origin**: [[cmd_karo_hotfix_skill_script_refs_202607022043]]
+- **when**: 未設定
+- **how**: 未設定
+- 作業中にgate_skill_script_refs.sh自体がcommit 07a0cfd83(20:52:33)でparse_checked_at_epoch()をmatches[-1](文書内で最後のタグ)からmax(epochs)(全タグ中の最新epoch)へ修正され、再現bats(tests/unit/test_gate_skill_script_refs_marker.bats、3 tests全PASS確認済み)も追加された。これによりSKILL.mdの「先頭に新規タグを追記し古いタグが下部に残る」運用慣行そのものが恒久的に無害化され、L770が説明していたmatches[-1]問題、および自分が当初提案しかけた「末尾タグ統一」運用対処は不要になった。家老はL770に superseded_by: commit 07a0cfd83 (fix gate skill script refs checked_atはmatches[-1]でなく最新max採用) を付記し、howの手順(最後のタグを更新)を「通常の先頭追記運用のままで良い(gateがmax評価するため)」に更新することを推奨する。
+
+### L941: モデルファミリー追加時、cli_lookup.shへの表示整形追加はGuard16(操作的オントロジー)がBLOCKする
+- **日付**: 2026-07-02
+- **出典**: cmd_3664
+- **記録者**: saizo
+- **tags**: [infra,testing,gate,bash,inbox]
+- **target_files**: [scripts/lib/model_detect.sh,tests/unit/test_model_detect.bats]
+- **origin**: [[cmd_3664]]
+- **when**: 未設定
+- **how**: 未設定
+- 新モデルファミリー(Fable等)対応でmodel_detect.shにバナー検出パターンを追加した後、cli_lookup.shのcli_model_displayに'Fable 5'等の整形表示ケースを追加しようとするとGuard16が'モデル名直書き'としてBLOCKする。Guard16の除外リストはmodel_detect.sh/model_resolve.sh/model_family.py/model_colors.shの4ファイルのみで、cli_lookup.shは除外されていない(Guard16自身のSSOTメッセージはcli_lookup.shをSSOTの一部として案内しているにも関わらず)。この場合cli_model_displayのdefault分岐(raw model_nameをそのまま返す)は非空のフォールバックとして機能するため、無理に整形ケースを追加しようとせず既存の生passthroughで要件を満たせるか先に確認せよ。
+
+### L942: logs/cmd_design_quality.yamlのcmd_idはリスト項目内で先頭フィールドとは限らない
+- **日付**: 2026-07-02
+- **出典**: cmd_3665
+- **記録者**: tobisaru
+- **tags**: [infra,gate,frontend,testing,gate]
+- **target_files**: [scripts/gates/gate_karo_startup.sh,tests/unit/test_gate_karo_startup.bats]
+- **origin**: [[cmd_3665]]
+- **when**: 未設定
+- **how**: 未設定
+- grep/awkで'^- cmd_id:'のみをマッチさせるとcmd_id集計が過小になる。実データで検証したところ、同ファイル内のcmd_karo_hotfix_*エントリ55件中32件がcmd_id以外のフィールド(ac_count等)が先に書かれ'  cmd_id: xxx'の形(ダッシュ無し・2スペース字下げ)で出現していた。同ファイルを走査する新規gate/scriptは'^(-[[:space:]]*cmd_id:|[[:space:]][[:space:]]cmd_id:)'のように両形式を対象にせよ。本タスク中に自分の初期実装で先頭一致のみ書いてしまい実データ比較で気づいた
+
+### L943: 性能最適化で処理呼び出しを削る際は副作用(生成物の更新)も棚卸しせよ
+- **日付**: 2026-07-03
+- **出典**: cmd_karo_hotfix_ga170_context_freshness_202607030012
+- **記録者**: saizo
+- **tags**: [infra,context,db,gate,bash]
+- **target_files**: [context/memory-db-schema.md,scripts/clear_prep_check.sh]
+- **origin**: [[cmd_karo_hotfix_ga170_context_freshness_202607030012]]
+- **when**: 未設定
+- **how**: 未設定
+- clear_prep_check.shはmemory_db_import.pyフルリビルドを2m41s→1sへ高速化するため呼び出しを削除したが、この呼び出しはcontext/memory-db-schema.md(自動生成スナップショットdoc)を更新する唯一のトリガーでもあった。主目的(DB再構築)だけを見て削除した結果、副作用として担っていた鮮度維持機能が消え、gate_context_freshness.shが恒久WARN化するまで誰も気づかなかった。対策: 定期実行スクリプトから重い処理を削る際は、grep等で当該処理が書き込む全ファイルを洗い出し、他に維持すべき副作用がないか確認してから削除せよ。副作用を維持する必要がある場合は軽量な代替呼び出し(例: --schemaフラグのような読取専用サブセット)を残す。
+
+### L944: 生成YAMLへ任意テキストをdouble-quoted出力する時はbackslashとdouble quoteをescapeする
+- **日付**: 2026-07-03
+- **出典**: cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051
+- **記録者**: hanzo
+- **tags**: [infra,deploy-task,deploy,bash,yaml]
+- **target_files**: [scripts/deploy_task.sh,scripts/gates/gate_gunshi_startup.sh]
+- **origin**: [[cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051]]
+- **when**: 未設定
+- **how**: 未設定
+- deploy_task.shのbinary_checks生成はAC説明文をYAML double-quoted scalarに埋め込むため、AC文中の"を再escapeしないとyaml.safe_load不能な報告テンプレートを生成する。生成テキストはYAML serializerを使えない箇所でも専用escape関数を通す。
+
+### L945: pre-push hookの実行者向け出力はstderr捕捉後もstdoutへ要点を出す
+- **日付**: 2026-07-03
+- **出典**: cmd_karo_ci_fix_shogun_20260703
+- **記録者**: hayate
+- **tags**: [infra,deploy-task,testing,gate,inbox]
+- **target_files**: [.githooks/pre-push,scripts/deploy_task.sh,scripts/hooks/prompt_state_inject.sh]
+- **origin**: [[cmd_karo_ci_fix_shogun_20260703]]
+- **when**: 未設定
+- **how**: 未設定
+- pre-push hookがstderrをartifact用にredirectすると、Batsのや実行者の即時確認から重要メッセージが消える。hook内でユーザーが見るべきBLOCK理由と開始メッセージはstdoutにも出すチェックを追加すべき。
+
+### L946: backgroundサブシェル{ ...; } &はtrap EXITを継承し自身の終了時に再発火する
+- **日付**: 2026-07-03
+- **出典**: cmd_karo_ci_fix_shogun_retry_20260703
+- **記録者**: saizo
+- **tags**: [infra,gate,bash]
+- **target_files**: [scripts/gates/gate_gunshi_startup.sh,tests/unit/test_cmd_save_diagnose.bats]
+- **origin**: [[cmd_karo_ci_fix_shogun_retry_20260703]]
+- **when**: 未設定
+- **how**: 未設定
+- bashで trap 'rm -rf "$TMPDIR"' EXIT を設定した後に { cmd1; cmd2; } & のような複合コマンドを背景実行すると、forkされたサブシェルは親のEXITトラップを継承し、そのサブシェル自身が正常終了した時点で継承したtrapを再度実行する(単純外部コマンドをexecする cmd & は execve でプロセスイメージが置換されるため対象外)。複数の背景ジョブが同一の共有一時ディレクトリを使っている場合、最初に終了したジョブが他のジョブより先にディレクトリを削除してしまうrace conditionになる。対策: 各背景サブシェルの先頭で trap - EXIT を明示的に実行し、継承したtrapを解除する。関連して、heredocを使う背景ジョブで _PID_CAT_STATS=$! のようなPID捕捉行をheredoc終端行(例: PY)より前に書くと、その行はheredoc本体(コマンドへの標準入力)として扱われbashコマンドとして実行されない=waitが空文字列に対するno-opになり同期が効かなくなる。PID捕捉は必ずheredoc終端行の後に書く。
+
+### L947: report_field_set.shで既存フィールドが無警告で消失する再現バグ(worker_id/task_id/parent_cmd/ac_version_read書込み後)
+- **日付**: 2026-07-03
+- **出典**: cmd_3683
+- **記録者**: kotaro
+- **tags**: [dm-signal,gate,bash,yaml]
+- **target_files**: [/mnt/c/Python_app/DM-signal/docs/research/cmd_3683_price_data_vendor_evaluation.md]
+- **origin**: [[cmd_3683]]
+- **when**: 未設定
+- **how**: 未設定
+- 本cmdで2度再現: (1)status/timestamp/purpose_validation/files_modified/result.summary/assumption_invalidationを1つのBashチェーンで書込み後、別の独立したBash呼び出しでworker_id/task_id/parent_cmd/ac_version_readを書込むと、直前のstatus以下6項目が跡形もなく消え報告YAMLがworker_id等4行のみに戻った。(2)逆順でも同様に再現。エラーメッセージなし、gate_report_format.shも実行前は検知不能。原因は未特定だが、worker_id/parent_cmd/ac_version_readを含む書込み経路(report_field_set.sh内 grep行609付近のPython fallback、または外部の報告テンプレート再展開処理)が既存ファイル内容を丸ごと再構築している疑いが強い。回避策: 全必須フィールドを1回のBashチェーン(&&連結)で連続実行し、間に別呼び出しを挟まない。これがL311(report_yaml_format, 41WA)の未特定の真因の一つである可能性が高い。origin: [[cmd_3683]] -> [[report_field_set.sh worker_id/task_id/parent_cmd/ac_version_read書込み]] -> [[報告YAML既存フィールド全消失]]
+
+### L948: 5000行超のインフラdaemonでも死コードは repo全体grepで確定検証してから安全削除できる
+- **日付**: 2026-07-03
+- **出典**: cmd_training_L4_auto_202607031741_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,ninja-monitor,testing,process,bash]
+- **target_files**: [scripts/ninja_monitor.sh,codd/design/ninja_monitor_design.md]
+- **origin**: [[cmd_training_L4_auto_202607031741_kotaro]]
+- **when**: 未設定
+- **how**: 未設定
+- scripts/ninja_monitor.sh(5688行)は多数のL4-R速度改善ラウンドを経ておりTODO/FIXME/grep-cバグ等の既知アンチパターンは既に解消済みだった。それでも count_unread_messages()(非cache版)が count_unread_messages_cached() 導入後も削除されず残存し、リポジトリ全体で呼出ゼロの死コードになっていた。判定手順: (1)grep -n '関数名(' で定義行特定 (2)grep -rn '関数名' --include='*.sh' . で全呼出元を洗い出し定義行のみなら死コード確定 (3)対応するbatsテストが非cache版ではなくcache版のみを対象にしていることも確認し、テスト側の想定からも非cache版が既に無関係と裏付け。全エージェント影響のインフラファイルでも、死コード除去は既存動作に一切触れないカテゴリのためbefore/afterでbatsテスト全件+shellcheck+bash -n差分ゼロを取れば安全に実行できる
+
+### L949: tmuxペイン新規作成スクリプトはflock排他必須
+- **日付**: 2026-07-03
+- **出典**: cmd_karo_hotfix_auto_update_pane_spawn_202607031806
+- **記録者**: tobisaru
+- **tags**: [infra,testing,api,frontend,bash]
+- **target_files**: [scripts/reset_layout.sh,tests/unit/test_reset_layout_lock.bats]
+- **origin**: [[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]
+- **when**: 未設定
+- **how**: 未設定
+- scripts/reset_layout.shとscripts/shutsujin_departure.shはagentsウィンドウにtmuxペインを新規作成できる唯一の2スクリプトだが、いずれもflock等の排他制御を持たず、非原子的な複数tmux操作(1回のtmux list-panesでペイン索引をスナップショット→split-window→swap-pane→respawn-pane/send-keys CLI起動→固定範囲PANE_BASE..PANE_BASE+NUM_AGENTS-1のみの変数正規化)を行っていた。2重起動されると片方の操作で実ペイン索引がずれた後にもう片方が古いキャッシュを基準にCLI起動コマンドを送るため、想定外のペイン(新規split-windowで生まれた分)にCLI launch_cmdが着弾し、@agent_id未設定のまま変数正規化の対象範囲外に取り残される。2026-07-03 16:55、agentsウィンドウにclaude 2.1.199(auto-update版)の無主pane6枚が生成され既存8paneを圧殺した実障害(殿発見)がこのパターンと整合した。教訓: tmuxペインを新規作成/変数を書き換えるスクリプトは、restart_watchers.sh(FD200)のような既存flockパターンを必ず流用し、複数プロセスの同時実行を許してはならない。新規スクリプト作成時は『このスクリプトを2重起動したら何が起きるか』を必ず自問せよ
+
+### L950: files_modifiedはcommit済み主張としてgateで常時検査する
+- **日付**: 2026-07-03
+- **出典**: cmd_karo_hotfix_commit_missing_structural_202607032250
+- **記録者**: hayate
+- **tags**: [infra,gate,gate,yaml,git]
+- **target_files**: [scripts/gates/gate_report_format.sh,tests/unit/test_gate_report_format_pass_no_improvement.bats,skills/ninja-commit/SKILL.md]
+- **origin**: [[cmd_karo_hotfix_commit_missing_structural_202607032250]]
+- **when**: 未設定
+- **how**: 未設定
+- target_path中心の未commit検査だけでは、報告YAMLのfiles_modifiedに載せたtarget_path外ファイルが未commitでも見逃しうる。repo-root誤検知回避の意図は維持しつつ、通常時はtarget_pathとfiles_modifiedの和集合を検査対象にする。
+
+### L951: 0リンク研究Markdownは冒頭に前後cmdリンクとoriginを戻す
+- **日付**: 2026-07-04
+- **出典**: cmd_training_L4_idle_202607041308_hayate
+- **記録者**: hayate
+- **tags**: [infra]
+- **target_files**: [docs/research/cmd_3222_VIX深掘りバックテスト.md]
+- **origin**: [[cmd_training_L4_idle_202607041308_hayate]]
+- **when**: 未設定
+- **how**: 未設定
+- markdown_link_countsでlinks=0の研究成果物は、結果表が正しくても研究系列から孤立する。改善時はcmd-chronicle/semantic-indexで前段・後段・originを確認し、対象Markdown冒頭へ直接[[ファイル名]]リンクを追加してからafter計測でTop0リンク群から外れたことを確認する。
+
+### L952: 孤立研究Markdownは後続cmdの実在行へ接続してから数値を横断引用する
+- **日付**: 2026-07-04
+- **出典**: cmd_training_L4_idle_202607041308_hanzo
+- **記録者**: hanzo
+- **tags**: [infra,testing]
+- **target_files**: [docs/research/cmd_3223_V8閾値チューニング.md]
+- **origin**: [[cmd_training_L4_idle_202607041308_hanzo]]
+- **when**: 未設定
+- **how**: 未設定
+- 研究Markdownが結論リンクだけを持つ状態では、後続の過適合検証やレイヤー別検証の実在行へたどりにくい。改善時はrg --filesでリンク先実在性を確認し、存在しない詳細ファイル名ではなくcontext/cmd-chronicle.mdや後続docs/researchの実在行へ[[ファイル名]]リンクを追加する。
+
+### L953: 修行targetは最新補足だけでなく全忍者taskマトリクスで衝突確認する
+- **日付**: 2026-07-04
+- **出典**: cmd_training_L4_idle_202607041308_kagemaru
+- **記録者**: kagemaru
+- **tags**: [infra,yaml,git]
+- **target_files**: [docs/research/cmd_3223_V8閾値チューニング.md,codd/requirements/deploy_task_requirements.md]
+- **origin**: [[cmd_training_L4_idle_202607041308_kagemaru]]
+- **when**: 未設定
+- **how**: 未設定
+- 今回、初期target cmd_3222がhayateと衝突し、代替cmd_3223も後続補足でhanzo targetと判明した。target変更時は単一補足の候補をそのまま採用せず、queue/tasks/*.yaml のtarget_pathマトリクスを確認してから編集・commitする必要がある。確認前commitはrevertや追加修正を誘発する。
+
+### L954: AC5の2スクリプトは逆方向指標: causal_backlink_counts=被参照数(incoming)、markdown_link_counts=発信リンク数(outgoing)
+- **日付**: 2026-07-04
+- **出典**: cmd_training_L4_idle_202607041308_saizo
+- **記録者**: saizo
+- **tags**: [infra,review,bash]
+- **target_files**: [docs/research/cmd_3225_レイヤー別+マネージドボラ.md]
+- **origin**: [[cmd_training_L4_idle_202607041308_saizo]]
+- **when**: 未設定
+- **how**: 未設定
+- L4修行AC5でbash scripts/causal_backlink_counts.sh(--zero)とbash scripts/markdown_link_counts.sh(--top)を両方実行するが方向が逆。cmd_3225は軍師レビューで「links=0孤立(rank3)」と評されていたが、causal_backlink_counts.sh --limit 500の実測ではincoming=3(cmd_3222/cmd_3223/dm-signal-research.mdが既に[[cmd_3225_...]]で参照済みだった)。実際に0だったのはmarkdown_link_counts.sh側のoutgoing count(対象ファイル自身が他ファイルへ[[リンク]]を発していない)。孤立=対象ファイルの発信リンクゼロを指すが、2スクリプトの意味(incoming vs outgoing)を混同すると『被参照もあるのに孤立?』と誤判断しかねない。次回はAC5着手時に先に両スクリプトのUsage/コメント(スクリプト冒頭の説明文)を読み、どちらが何を測るか確認してから実測すべき。
+
+### L955: 同一バッチ配備でkotaroのtask.related_lessonsだけ注入漏れが発生した
+- **日付**: 2026-07-04
+- **出典**: cmd_training_L4_idle_202607041308_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,deploy,bash,yaml]
+- **target_files**: [codd/requirements/cmd_save_requirements.md]
+- **origin**: [[cmd_training_L4_idle_202607041308_kotaro]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_training_L4_idle_202607041308バッチで配備されたhanzo/hayate/saizo/kagemaru4名のqueue/tasks/*.yamlには全員共通コアとしてL259/L625/L317を含むrelated_lessons(4〜6件)が注入されていたが、kotaro.yamlにはrelated_lessonsキー自体が存在しなかった(grep -c 0件、Read全文でも不在確認)。結果としてAC4(task.related_lessonsの注入教訓を1件以上参照)が構造的に自己完結不能になり、siblingタスクから同一バッチの共通コア教訓を借用して評価する代替対応を取った。根因はdeploy_task.sh(またはL4修行配備スクリプト)のlesson_tags注入ロジックがkotaro向け配備でのみ空マッチになったことと推測される。5人中4人が一致するコアセットを持つ一方1人だけ完全空という分布は、L317が指摘する既存のマッチング精度問題(過剰マッチ)とは逆の欠陥(過少/皆無マッチ)であり、同根の構造的脆弱性の可能性がある。
