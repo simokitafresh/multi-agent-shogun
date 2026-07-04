@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-07-04 cmd_karo_idle_semantic_insights_triage_202607042029 -->
+<!-- last_updated: 2026-07-05 cmd_karo_hotfix_dirty_diff_triage_2026070505 -->
 
 ## 2026-06-30
 
@@ -1373,3 +1373,4 @@
 - 2026-07-04 idle自走: `lesson_deprecation_scan.sh`/`cmd_complete_gate.sh`の自動退役実行経路が旧`lesson_deprecate.sh`でindexのみ編集していたため、SSOT更新の`lesson_write.sh --retire`へ統一。ファイル消滅候補L754/L657/L025を退役し、dm-signal scan候補3→0、active 799→796、対象bats 51/51 PASS。
 - 2026-07-04 idle自走: retired/deprecated除外を全projectへ横展開。auto-ops indexは57→55 active、mcasはproject status=archivedをactive判定へ追加して9→0 active。全project lesson_deprecation_scan候補0、対象bats 52/52 PASS。
 - 2026-07-04 idle自走: 旧`lesson_deprecate.sh`を通常運用では`lesson_write.sh --retire`へ委譲する互換ラッパー化。手動実行でもindex-only編集でSSOT不達にならない防御を追加し、関連bats 67/67 PASS。
+- 2026-07-05 GA-178完了: `context/dm-signal-ops.md` のsource commit鮮度ALERTを疾風が処理。DM-Signal 7/4以後のops系commitを最小索引化し、`gate_context_freshness.sh` は総合OKへ復帰。教訓L963登録、GATE CLEAR。
