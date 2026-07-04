@@ -122,6 +122,36 @@ EOF
     [ "$output" = "shogun:agents.2|inbox2|0.3" ]
 }
 
+@test "Codex delayed re-nudge ignores read false text inside message content" {
+    mkdir -p "$TEST_PROJECT/queue/inbox"
+    cat > "$TEST_PROJECT/queue/inbox/sasuke.yaml" <<'EOF'
+messages:
+- id: msg_1
+  content: |
+    literal payload:
+    read: false
+  read: true
+- id: msg_2
+  content: normal unread
+  read: false
+EOF
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        pane_lookup() { echo "shogun:agents.2"; }
+        safe_send_keys_atomic() {
+            printf '%s|%s|%s\n' "$1" "$2" "$3" > "$TEST_PROJECT/logs/direct_renudge_literal.log"
+        }
+        deploy_task_send_direct_renudge sasuke
+    )
+
+    run cat "$TEST_PROJECT/logs/direct_renudge_literal.log"
+    [ "$status" -eq 0 ]
+    [ "$output" = "shogun:agents.2|inbox1|0.3" ]
+}
+
 @test "safe_inbox_write continues when message persisted before delivery failure" {
     mkdir -p "$TEST_PROJECT/queue/inbox" "$TEST_PROJECT/logs"
     use_private_scripts_fixture

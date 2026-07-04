@@ -66,7 +66,8 @@ fi
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 source "$SCRIPT_DIR/scripts/lib/project_path.sh"
-export DEPLOY_NINJA_NAMES="$(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo saizo kotaro tobisaru')"
+DEPLOY_NINJA_NAMES="$(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo saizo kotaro tobisaru')"
+export DEPLOY_NINJA_NAMES
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/ctx_utils.sh"
@@ -387,8 +388,19 @@ deploy_task_unread_count() {
     fi
 
     count=$(awk '
-        /^[[:space:]]*read:[[:space:]]*false[[:space:]]*$/ { count++ }
-        END { print count + 0 }
+        BEGIN { c = 0 }
+        /^- / { in_msg = 1; read_state = "false"; next }
+        in_msg && /^  read:[[:space:]]*/ {
+            line = $0
+            sub(/^  read:[[:space:]]*/, "", line)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+            if (tolower(line) != "true") c++
+            in_msg = 0
+        }
+        END {
+            if (in_msg) c++
+            print c
+        }
     ' "$inbox_file" 2>/dev/null || echo 0)
     case "$count" in
         ''|*[!0-9]*) count=0 ;;

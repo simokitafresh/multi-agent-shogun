@@ -223,6 +223,30 @@ check_ntfy_listener() {
 INBOX_WATCHER_HANG_SEC="${INBOX_WATCHER_HANG_SEC:-300}"
 STATE_DIR="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}"
 
+inbox_unread_count_file() {
+    local inbox_file="$1"
+    [[ -f "$inbox_file" ]] || {
+        echo 0
+        return 0
+    }
+
+    awk '
+        BEGIN { c = 0 }
+        /^- / { in_msg = 1; read_state = "false"; next }
+        in_msg && /^  read:[[:space:]]*/ {
+            line = $0
+            sub(/^  read:[[:space:]]*/, "", line)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+            if (tolower(line) != "true") c++
+            in_msg = 0
+        }
+        END {
+            if (in_msg) c++
+            print c
+        }
+    ' "$inbox_file" 2>/dev/null || echo 0
+}
+
 _check_inbox_watcher_hang() {
     local agent="$1"
     local hb_file="${STATE_DIR}/inbox_watcher_loop_hb_${agent}"
@@ -244,9 +268,7 @@ _check_inbox_watcher_hang() {
 
     # heartbeatが古い — 未読があるか確認
     local has_unread=0
-    if [[ -f "$inbox_file" ]]; then
-        has_unread=$(grep -c 'read:[[:space:]]*false' "$inbox_file" 2>/dev/null || echo 0)
-    fi
+    has_unread=$(inbox_unread_count_file "$inbox_file")
 
     if (( has_unread == 0 )); then
         return 0  # 未読なし — hangではなくidle(変更なし)の可能性
@@ -308,7 +330,6 @@ check_inbox_watchers() {
         if [[ "$agent" == "shogun" ]]; then
             pane_target="shogun:main"
         else
-            local pane_index
             if [[ -f "$SCRIPT_DIR/scripts/lib/pane_lookup.sh" ]]; then
                 # shellcheck source=/dev/null
                 source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"

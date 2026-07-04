@@ -362,3 +362,32 @@ echo "RESTART_WATCHERS_UNSET=yes"
     [ "$status" -eq 0 ]
     [[ "$output" == *"RESTART_WATCHERS_UNSET=yes"* ]]
 }
+
+@test "daemon_watchdog unread count ignores read false text inside message content" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+
+cat > "$TMP_ROOT/inbox.yaml" <<'"'"'YAML'"'"'
+messages:
+- id: msg_1
+  content: |
+    literal payload:
+    read: false
+  read: true
+- id: msg_2
+  content: normal unread
+  read: false
+YAML
+
+export DAEMON_WATCHDOG_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/daemon_watchdog.sh"
+count="$(inbox_unread_count_file "$TMP_ROOT/inbox.yaml")"
+[ "$count" = "1" ]
+echo "WATCHDOG_UNREAD_COUNT_OK=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WATCHDOG_UNREAD_COUNT_OK=yes"* ]]
+}
