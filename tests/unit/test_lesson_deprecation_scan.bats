@@ -34,6 +34,13 @@ exit 0
 EOF
     chmod +x "$TEST_PROJECT/scripts/lesson_deprecate.sh"
 
+    cat > "$TEST_PROJECT/scripts/lesson_write.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "$*" >> "$(cd "$(dirname "$0")/.." && pwd)/retire_calls.log"
+exit 0
+EOF
+    chmod +x "$TEST_PROJECT/scripts/lesson_write.sh"
+
     cat > "$TEST_PROJECT/config/projects.yaml" <<EOF
 projects:
   - id: infra
@@ -236,7 +243,46 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"METRICS: total_lessons=1 active_lessons=1 deprecated_lessons=0"* ]]
     [[ "$output" == *"[infra] L001"* ]]
-    [[ "$output" == *"SKIP: candidates-only mode"* ]]
+    [[ "$output" == *"DRY-RUN: candidates-only mode"* ]]
     [[ "$output" == *"合計: 0件 自動退役"* ]]
+    [ ! -f "$TEST_PROJECT/deprecate_calls.log" ]
+}
+
+@test "lesson_deprecation_scan skips retired lessons" {
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L006
+    title: retired script lesson
+    summary: inbox_write.sh is already handled
+    retired: true
+    helpful_count: 0
+    harmful_count: 0
+    injection_count: 10
+EOF
+
+    run bash "$TEST_PROJECT/scripts/lesson_deprecation_scan.sh" --project infra --candidates-only
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"METRICS: total_lessons=1 active_lessons=0 deprecated_lessons=1"* ]]
+    [[ "$output" != *"[infra] L006"* ]]
+    [[ "$output" == *"合計: 0件 自動退役"* ]]
+    [ ! -f "$TEST_PROJECT/deprecate_calls.log" ]
+}
+
+@test "lesson_deprecation_scan auto retire uses lesson_write SSOT path" {
+    cat > "$TEST_PROJECT/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+  - id: L007
+    title: missing file lesson
+    summary: scripts/missing_tool.py を参照
+    helpful_count: 0
+    harmful_count: 0
+    injection_count: 0
+EOF
+
+    run bash "$TEST_PROJECT/scripts/lesson_deprecation_scan.sh" --project infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[AUTO] RETIRED: [infra] L007"* ]]
+    [[ "$output" == *"合計: 1件 自動退役"* ]]
+    grep -q "^infra --retire L007$" "$TEST_PROJECT/retire_calls.log"
     [ ! -f "$TEST_PROJECT/deprecate_calls.log" ]
 }

@@ -338,3 +338,69 @@ print('ok')
     [ "$status" -eq 0 ]
     [ "$output" = "ok" ]
 }
+
+@test "sync_lessons excludes retired lessons from index while keeping archive" {
+    cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
+### L001: active lesson
+- active summary
+
+### L002: retired flag lesson
+- **retired**: true
+- retired summary
+
+### L003: retired status lesson
+- **status**: retired
+- status retired summary
+EOF
+
+    run bash "$TEST_PROJECT/scripts/sync_lessons.sh" testproj
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/projects/testproj/lessons.yaml', encoding='utf-8') as f:
+    index = yaml.safe_load(f) or {}
+with open('$TEST_PROJECT/projects/testproj/lessons_archive.yaml', encoding='utf-8') as f:
+    archive = yaml.safe_load(f) or {}
+index_ids = [lesson['id'] for lesson in index.get('lessons', [])]
+archive_ids = [lesson['id'] for lesson in archive.get('lessons', [])]
+assert index.get('lesson_count') == 1, index
+assert index_ids == ['L001'], index_ids
+assert len(archive_ids) == 3, archive_ids
+assert set(archive_ids) == {'L001', 'L002', 'L003'}, archive_ids
+print('ok')
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "ok" ]
+}
+
+@test "sync_lessons excludes archived project lessons from index while keeping archive" {
+    cat > "$TEST_PROJECT/config/projects.yaml" <<EOF
+projects:
+  - id: testproj
+    path: $EXT_PROJECT
+    status: archived
+EOF
+
+    cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
+### L001: archived project lesson
+- archived summary
+EOF
+
+    run bash "$TEST_PROJECT/scripts/sync_lessons.sh" testproj
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/projects/testproj/lessons.yaml', encoding='utf-8') as f:
+    index = yaml.safe_load(f) or {}
+with open('$TEST_PROJECT/projects/testproj/lessons_archive.yaml', encoding='utf-8') as f:
+    archive = yaml.safe_load(f) or {}
+assert index.get('lesson_count') == 0, index
+assert index.get('lessons') == [], index
+assert [lesson['id'] for lesson in archive.get('lessons', [])] == ['L001'], archive
+print('ok')
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "ok" ]
+}

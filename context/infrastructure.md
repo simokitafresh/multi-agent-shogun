@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-04 cmd_training_L1_report-write_20260704141831 -->
+<!-- last_updated: 2026-07-04 cmd_karo_pd048_pd049_recheck_20260704 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -284,7 +284,7 @@ cmd_1173偵察で特定した高優先gate未実装項目の構造的実装。
 |--------|--------|---------|------|
 | MAX_INJECT=5 | deploy_task.sh | cmd_531 | タスクあたり注入上限5件。helpful_count降順で優先。超過分はwithheldとしてlesson_impact.tsvに記録 |
 | タグベース注入 | deploy_task.sh | cmd_349 | タスクtags[]と教訓tags[]をマッチングし関連教訓を自動注入 |
-| 自動退役 | lesson_deprecation_scan.sh | cmd_531 | 有効率10%未満×注入10回以上→自動deprecated。ファイル消滅教訓も自動退役。GATE CLEAR時に自動実行 |
+| 自動退役 | lesson_deprecation_scan.sh + lesson_write.sh --retire | cmd_531 | 有効率10%未満×注入10回以上→SSOTへretired記録。ファイル消滅教訓も自動退役。GATE CLEAR時に自動実行 |
 | 効果率監視 | gate_lesson_health.sh | cmd_531 | 直近30cmdの効果率計算。50%未満→WARN(ntfy)、30%未満→ALERT(ntfy+ダッシュボード) |
 | lesson_candidate検証 | cmd_complete_gate.sh | cmd_528 | 報告YAMLのlesson_candidateフォーマットをゲートで検証。旧形式(リスト)→BLOCK |
 | lesson_tracking.tsv | cmd_complete_gate.sh | cmd_348 | 教訓注入・参照の追跡ログをTSV永続化 |
@@ -1236,6 +1236,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L837: 2層SSOT設計(殿承認) — デフォルト層(cli_profiles.yaml)+動的層(settings.yaml)でCLI/model編成管理（cmd_karo_hotfix_model_family_ssot_20260620）
 - L838: Codex CLIのper-agent effortはmodel_name接尾辞(gpt-X.X-{effort})でsettings.yaml上に記録する（cmd_3481）。ただしCodex CLIの実effortはconfig.toml(全Codex共有)が決定。per-agent effort共存(家老medium+忍者low)はconfig.toml変更→対象respawn→config.toml復元の回避策で実現(2026-06-23殿指示で実証。揮発的=再respawnで戻る)
 - L839: root fallback対象contextはpathspec有無と同一countを偵察報告に必ず記録する（cmd_karo_recon_ga122_context_freshness_20260624）
+- PD-048解決: `context_freshness_check.sh` は `projects/{id}.yaml` 不在時も `config/projects.yaml` のactive `path` をsource repoとして使う。一次証跡: `tests/unit/test_context_freshness_check.bats` の config fallback test + 29/29 PASS（cmd_karo_pd048_pd049_recheck_20260704）
+- PD-049解決: 専用source repoがない概念contextへinfra root commitをそのまま本文更新要求にしない。unmapped infra fallback contextはroot source alertを継承せず、infra scoped contextも同一root fallback countを共有しない。一次証跡: root fallback tests + `gate_context_freshness.sh` OK（cmd_karo_pd048_pd049_recheck_20260704）
 - L841: busy deferの経過時間はfingerprint作成前でも進む一次時刻を使う（cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624）
 - L842: CI赤のadapter仕様追従漏れは旧期待値テスト名まで一次情報で数える（cmd_karo_ci_fix_ga124_codex_hook_adapter_commit_20260624）
 - L843: Stop hook単独でtool payload内容を前提にしない（cmd_3522）

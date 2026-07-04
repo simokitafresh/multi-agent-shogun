@@ -279,7 +279,11 @@ def last_ref_text(project_id, lesson_id):
 
 def is_deprecated(lesson):
     """Check if lesson is already deprecated (skip these)."""
-    return bool(lesson.get("deprecated", False)) or lesson.get("status") == "deprecated"
+    return (
+        bool(lesson.get("deprecated", False))
+        or bool(lesson.get("retired", False))
+        or lesson.get("status") == "deprecated"
+    )
 
 
 def find_file_refs(text):
@@ -305,21 +309,6 @@ def ref_exists(project_root, relative_path):
 def script_exists(project_root, script_name):
     candidate_paths = [project_root / "scripts" / script_name, SCRIPT_DIR / "scripts" / script_name]
     return any(path.exists() for path in candidate_paths)
-
-
-def sanitize_reason(reason):
-    """Collapse control chars so deprecation reason stays single-line and log-safe."""
-    if not isinstance(reason, str):
-        raise ValueError("reason must be a string")
-
-    sanitized = reason.replace("\r", " ").replace("\n", " ").replace("\t", " ")
-    sanitized = re.sub(r"[\x00-\x1f\x7f]", "", sanitized)
-    sanitized = " ".join(sanitized.split())
-    if not sanitized:
-        raise ValueError("reason is empty after sanitization")
-    if len(sanitized) > 240:
-        sanitized = sanitized[:237] + "..."
-    return sanitized
 
 
 # --- Main scan ---
@@ -452,60 +441,53 @@ else:
     print("  (なし)")
 
 # cmd_531: 自動退役実行
-deprecate_script = str(SCRIPT_DIR / "scripts" / "lesson_deprecate.sh")
+retire_script = str(SCRIPT_DIR / "scripts" / "lesson_write.sh")
 auto_deprecated_count = 0
 
 print()
 print("=== 自動退役実行 ===")
 
 if CANDIDATES_ONLY:
-    print("  SKIP: candidates-only mode (approval required before lesson_write.sh --retire)")
+    print("  DRY-RUN: candidates-only mode (approval required before lesson_write.sh --retire)")
     auto_deprecated_count = 0
 else:
 
     # AC5: ファイル消滅教訓の自動退役
     for proj, lid, reason in confirmed:
         if "ファイル消滅" in reason:
-            safe_reason = sanitize_reason(f"AUTO-DEPRECATE(file_missing): {reason}")
             result = subprocess.run(
-                ["bash", deprecate_script, proj, lid, safe_reason],
+                ["bash", retire_script, proj, "--retire", lid],
                 capture_output=True, text=True
             )
             if result.returncode == 0:
-                print(f"  [AUTO] DEPRECATED: [{proj}] {lid} ({reason})")
+                print(f"  [AUTO] RETIRED: [{proj}] {lid} ({reason})")
                 auto_deprecated_count += 1
             else:
-                print(f"  [AUTO] WARN: {lid} deprecation failed: {result.stderr.strip()}", file=sys.stderr)
+                print(f"  [AUTO] WARN: {lid} retire failed: {result.stderr.strip()}", file=sys.stderr)
 
     # AC4: 有効率10%未満 × 注入10回以上の自動退役
     for proj, lid, title_snip, inj, hlp in eff_confirmed:
         if inj >= 10:
-            safe_reason = sanitize_reason(
-                f"AUTO-DEPRECATE(low_effectiveness): rate=0% injected={inj} helpful=0"
-            )
             result = subprocess.run(
-                ["bash", deprecate_script, proj, lid, safe_reason],
+                ["bash", retire_script, proj, "--retire", lid],
                 capture_output=True, text=True
             )
             if result.returncode == 0:
-                print(f"  [AUTO] DEPRECATED: [{proj}] {lid} (rate=0%, injected={inj})")
+                print(f"  [AUTO] RETIRED: [{proj}] {lid} (rate=0%, injected={inj})")
                 auto_deprecated_count += 1
             else:
-                print(f"  [AUTO] WARN: {lid} deprecation failed: {result.stderr.strip()}", file=sys.stderr)
+                print(f"  [AUTO] WARN: {lid} retire failed: {result.stderr.strip()}", file=sys.stderr)
 
     for proj, lid, title_snip, inj, hlp, rate in eff_review:
-        safe_reason = sanitize_reason(
-            f"AUTO-DEPRECATE(low_effectiveness): rate={rate:.0f}% injected={inj} helpful={hlp}"
-        )
         result = subprocess.run(
-            ["bash", deprecate_script, proj, lid, safe_reason],
+            ["bash", retire_script, proj, "--retire", lid],
             capture_output=True, text=True
         )
         if result.returncode == 0:
-            print(f"  [AUTO] DEPRECATED: [{proj}] {lid} (rate={rate:.0f}%, injected={inj})")
+            print(f"  [AUTO] RETIRED: [{proj}] {lid} (rate={rate:.0f}%, injected={inj})")
             auto_deprecated_count += 1
         else:
-            print(f"  [AUTO] WARN: {lid} deprecation failed: {result.stderr.strip()}", file=sys.stderr)
+            print(f"  [AUTO] WARN: {lid} retire failed: {result.stderr.strip()}", file=sys.stderr)
 
 print(f"  合計: {auto_deprecated_count}件 自動退役")
 

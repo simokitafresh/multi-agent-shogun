@@ -541,7 +541,7 @@ printf "METRICS: total_lessons=12 active_lessons=9 deprecated_lessons=3\n\n"
 printf "=== 有効率0%% 確定candidate (注入N≥5) ===\n"
 printf "  [infra] L001: stale lesson (injected=10, helpful=0)\n"
 printf "\n=== 自動退役実行 ===\n"
-printf "  SKIP: candidates-only mode (approval required before lesson_write.sh --retire)\n"
+printf "  DRY-RUN: candidates-only mode (approval required before lesson_write.sh --retire)\n"
 printf "  合計: 0件 自動退役\n"
 EOF
 chmod +x "$SCRIPT_DIR/scripts/lesson_deprecation_scan.sh"

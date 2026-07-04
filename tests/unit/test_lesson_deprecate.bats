@@ -66,6 +66,21 @@ run_script() {
     grep -q "deprecated_by: 'cmd_test'" "$SANDBOX/projects/infra/lessons.yaml"
 }
 
+@test "normal operation delegates to lesson_write retire path" {
+    cat > "$SANDBOX/scripts/lesson_write.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "$*" > "$(cd "$(dirname "$0")/.." && pwd)/lesson_write_called.log"
+exit 0
+EOF
+    chmod +x "$SANDBOX/scripts/lesson_write.sh"
+
+    run bash "$SANDBOX/scripts/lesson_deprecate.sh" infra L001 "legacy reason" cmd_test
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"delegating to lesson_write.sh --retire"* ]]
+    [ "$(cat "$SANDBOX/lesson_write_called.log")" = "infra --retire L001" ]
+    ! grep -q "L001.*deprecated: true" "$SANDBOX/projects/infra/lessons.yaml"
+}
+
 @test "inline: deprecate without cmd_id succeeds" {
     run run_script infra L001 "no cmd reason"
     [ "$status" -eq 0 ]

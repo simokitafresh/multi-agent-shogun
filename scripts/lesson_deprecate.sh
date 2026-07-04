@@ -1,6 +1,8 @@
 #!/bin/bash
 # semantic-links: [[教訓ライフサイクル管理]]
-# lesson_deprecate.sh - Mark a lesson as deprecated in projects/<project>/lessons.yaml
+# lesson_deprecate.sh - Legacy compatibility wrapper for lesson retirement.
+# In normal operation this delegates to lesson_write.sh --retire so the SSOT is updated.
+# The direct projects/<project>/lessons.yaml edit path remains only for isolated legacy tests.
 # Usage: bash scripts/lesson_deprecate.sh <project> <lesson_id> "<reason>" [cmd_id]
 # Example: bash scripts/lesson_deprecate.sh infra L044 "Injected 12x, referenced 0x" cmd_414
 
@@ -24,6 +26,11 @@ CMD_ID="${4:-}"
 if [ -z "$PROJECT" ] || [ -z "$LESSON_ID" ] || [ -z "$REASON" ]; then
     echo "Usage: bash scripts/lesson_deprecate.sh <project> <lesson_id> \"<reason>\" [cmd_id]" >&2
     exit 1
+fi
+
+if [ -z "${LESSON_DEPRECATE_ROOT:-}" ] && [ -x "$SCRIPT_DIR/scripts/lesson_write.sh" ]; then
+    echo "[lesson_deprecate] delegating to lesson_write.sh --retire for SSOT update" >&2
+    exec bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" --retire "$LESSON_ID"
 fi
 
 LESSONS_FILE="$SCRIPT_DIR/projects/${PROJECT}/lessons.yaml"

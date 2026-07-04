@@ -7576,7 +7576,7 @@ print('\n'.join(scripts))
     # ─── GATE CLEAR時 淘汰候補自動deprecate（ベストエフォート） ───
     echo ""
     echo "Auto-deprecate check (unused - GATE CLEAR):"
-    if [ -f "$SCRIPT_DIR/scripts/knowledge_metrics.sh" ] && [ -f "$SCRIPT_DIR/scripts/lesson_deprecate.sh" ]; then
+    if [ -f "$SCRIPT_DIR/scripts/knowledge_metrics.sh" ] && [ -f "$SCRIPT_DIR/scripts/lesson_write.sh" ]; then
         (
             UNUSED_DEPRECATE_COUNT=0
             if metrics_json=$(bash "$SCRIPT_DIR/scripts/knowledge_metrics.sh" --json 2>/dev/null); then
@@ -7584,18 +7584,18 @@ print('\n'.join(scripts))
                 if [ -n "$elimination_ids" ]; then
                     while IFS=$'\t' read -r lid project injected; do
                         [ -z "$lid" ] && continue
-                        bash "$SCRIPT_DIR/scripts/lesson_deprecate.sh" "$project" "$lid" "AUTO-DEPRECATE(unused): injected=${injected} referenced=0" >/dev/null 2>&1 || true
+                        bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$project" --retire "$lid" >/dev/null 2>&1 || true
                         UNUSED_DEPRECATE_COUNT=$((UNUSED_DEPRECATE_COUNT + 1))
                     done <<< "$elimination_ids"
                 fi
-                echo "[async][deprecate] Auto-deprecated (unused): ${UNUSED_DEPRECATE_COUNT} lesson(s)"
+                echo "[async][deprecate] Auto-retired (unused): ${UNUSED_DEPRECATE_COUNT} lesson(s)"
             else
                 echo "[async][deprecate] SKIP (knowledge_metrics.sh failed)"
             fi
         ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
-        echo "  auto-deprecate: queued (async)"
+        echo "  auto-retire: queued (async)"
     else
-        echo "  SKIP (knowledge_metrics.sh or lesson_deprecate.sh not found)"
+        echo "  SKIP (knowledge_metrics.sh or lesson_write.sh not found)"
     fi
 
     # cmd_531: AC6 — GATE CLEAR時に教訓有効率スキャン+自動退役
@@ -8191,7 +8191,7 @@ else
     # ─── GATE BLOCK時 harmful閾値による教訓自動deprecate ───
     echo ""
     echo "Auto-deprecate check (harmful threshold):"
-    if [ -n "$CMD_PROJECT" ] && [ -f "$SCRIPT_DIR/scripts/lesson_deprecate.sh" ]; then
+    if [ -n "$CMD_PROJECT" ] && [ -f "$SCRIPT_DIR/scripts/lesson_write.sh" ]; then
         DEPRECATE_COUNT=0
         DEPRECATE_LESSONS_FILE="$SCRIPT_DIR/projects/${CMD_PROJECT}/lessons.yaml"
         if [ -f "$DEPRECATE_LESSONS_FILE" ]; then
@@ -8207,7 +8207,9 @@ else
                 /^[[:space:]]+harmful_count:/ { v=$0; sub(/.*harmful_count:[[:space:]]*/, "", v); gsub(/[" \t]/, "", v); harmful = v + 0 }
                 /^[[:space:]]+helpful_count:/ { v=$0; sub(/.*helpful_count:[[:space:]]*/, "", v); gsub(/[" \t]/, "", v); helpful = v + 0 }
                 /^[[:space:]]+deprecated: true/ { deprecated = 1 }
+                /^[[:space:]]+retired: true/ { deprecated = 1 }
                 /^[[:space:]]+status:[[:space:]]*deprecated/ { deprecated = 1 }
+                /^[[:space:]]+status:[[:space:]]*retired/ { deprecated = 1 }
                 /^[[:space:]]+deprecated_by:/ { v=$0; sub(/.*deprecated_by:[[:space:]]*/, "", v); gsub(/[" \t]/, "", v); if (v != "") deprecated = 1 }
                 END {
                     if (lid != "" && !deprecated && harmful >= 5 && harmful > helpful)
@@ -8218,7 +8220,7 @@ else
             if [ -n "$deprecate_targets" ]; then
                 while IFS=$'\t' read -r lid harmful helpful; do
                     [ -z "$lid" ] && continue
-                    if bash "$SCRIPT_DIR/scripts/lesson_deprecate.sh" "$CMD_PROJECT" "$lid" "AUTO-DEPRECATE: harmful=${harmful} > helpful=${helpful}" 2>&1; then
+                    if bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$CMD_PROJECT" --retire "$lid" 2>&1; then
                         echo "  [gate] AUTO-DEPRECATE: ${lid} (harmful=${harmful} > helpful=${helpful})"
                         DEPRECATE_COUNT=$((DEPRECATE_COUNT + 1))
                     else
@@ -8231,13 +8233,13 @@ else
             echo "  SKIP (lessons file not found: ${DEPRECATE_LESSONS_FILE})"
         fi
     else
-        echo "  SKIP (project not found or lesson_deprecate.sh missing)"
+        echo "  SKIP (project not found or lesson_write.sh missing)"
     fi
 
     # ─── GATE BLOCK時 useful率低下による教訓自動deprecate ───
     echo ""
     echo "Auto-deprecate check (useful rate threshold):"
-    if [ -n "$CMD_PROJECT" ] && [ -f "$SCRIPT_DIR/scripts/lesson_deprecate.sh" ]; then
+    if [ -n "$CMD_PROJECT" ] && [ -f "$SCRIPT_DIR/scripts/lesson_write.sh" ]; then
         USEFUL_DEPRECATE_COUNT=0
         USEFUL_DEPRECATE_LESSONS_FILE="$SCRIPT_DIR/projects/${CMD_PROJECT}/lessons.yaml"
         if [ -f "$USEFUL_DEPRECATE_LESSONS_FILE" ]; then
@@ -8258,7 +8260,9 @@ else
                 /^[[:space:]]+harmful_count:/ { v=$0; sub(/.*harmful_count:[[:space:]]*/, "", v); gsub(/[" \t]/, "", v); harmful = v + 0 }
                 /^[[:space:]]+helpful_count:/ { v=$0; sub(/.*helpful_count:[[:space:]]*/, "", v); gsub(/[" \t]/, "", v); helpful = v + 0 }
                 /^[[:space:]]+deprecated: true/ { deprecated = 1 }
+                /^[[:space:]]+retired: true/ { deprecated = 1 }
                 /^[[:space:]]+status:[[:space:]]*deprecated/ { deprecated = 1 }
+                /^[[:space:]]+status:[[:space:]]*retired/ { deprecated = 1 }
                 /^[[:space:]]+deprecated_by:/ { v=$0; sub(/.*deprecated_by:[[:space:]]*/, "", v); gsub(/[" \t]/, "", v); if (v != "") deprecated = 1 }
                 END { emit_if_target() }
             ' "$USEFUL_DEPRECATE_LESSONS_FILE" 2>/dev/null)
@@ -8267,7 +8271,7 @@ else
                 while IFS=$'\t' read -r lid helpful harmful total; do
                     [ -z "$lid" ] && continue
                     useful_pct=$(( helpful * 100 / total ))
-                    if bash "$SCRIPT_DIR/scripts/lesson_deprecate.sh" "$CMD_PROJECT" "$lid" "AUTO-DEPRECATE(useful-rate): helpful=${helpful}/total=${total} (${useful_pct}%) <= 20%" 2>&1; then
+                    if bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$CMD_PROJECT" --retire "$lid" 2>&1; then
                         echo "  [gate] AUTO-DEPRECATE(useful-rate): ${lid} (helpful=${helpful}/total=${total}, harmful=${harmful}, useful_rate=${useful_pct}%)"
                         USEFUL_DEPRECATE_COUNT=$((USEFUL_DEPRECATE_COUNT + 1))
                     else
@@ -8280,7 +8284,7 @@ else
             echo "  SKIP (lessons file not found: ${USEFUL_DEPRECATE_LESSONS_FILE})"
         fi
     else
-        echo "  SKIP (project not found or lesson_deprecate.sh missing)"
+        echo "  SKIP (project not found or lesson_write.sh missing)"
     fi
 
     print_matching_task_files_summary

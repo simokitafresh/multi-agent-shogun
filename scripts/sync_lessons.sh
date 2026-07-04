@@ -82,8 +82,20 @@ from scripts.lib.yaml_atomic import atomic_yaml_write
 ssot_file = os.environ["SSOT_FILE"]
 index_file = os.environ["INDEX_FILE"]
 archive_file = os.environ["ARCHIVE_FILE"]
+script_dir = os.environ["SCRIPT_DIR"]
 project_id = os.environ["PROJECT_ID"]
-impact_file = os.path.join(os.environ["SCRIPT_DIR"], "logs", "lesson_impact.tsv")
+impact_file = os.path.join(script_dir, "logs", "lesson_impact.tsv")
+
+project_status = "active"
+try:
+    with open(os.path.join(script_dir, "config", "projects.yaml"), encoding="utf-8") as _pf:
+        _config = yaml.load(_pf, Loader=YAML_SAFE_LOADER) or {}
+    for _project in _config.get("projects", []):
+        if str(_project.get("id", "")).strip() == project_id:
+            project_status = str(_project.get("status", "active")).strip() or "active"
+            break
+except Exception:
+    project_status = "active"
 
 
 def to_int(value):
@@ -555,9 +567,17 @@ if old_data is not None:
 atomic_yaml_write(archive_file, data, header=header, indent=2, sort_keys=False)
 
 # Write INDEX (active lessons only, compact Vercel-style, ≤500 lines)
-active_lessons = [l for l in lessons
-                  if str(l.get('status', 'confirmed')).lower() != 'deprecated'
-                  and not l.get('deprecated')]
+def is_inactive_lesson(lesson):
+    status = str(lesson.get('status', 'confirmed')).lower()
+    return (
+        status in ('deprecated', 'retired')
+        or bool(lesson.get('deprecated'))
+        or bool(lesson.get('retired'))
+    )
+
+active_lessons = [l for l in lessons if not is_inactive_lesson(l)]
+if project_status == 'archived':
+    active_lessons = []
 
 # Build index entries using yaml.dump for proper escaping
 class FlowDict(dict): pass
@@ -589,8 +609,6 @@ for l in active_lessons:
         entry['target_files'] = FlowList(l['target_files'])
     if l.get('origin'):
         entry['origin'] = l['origin']
-    if l.get('retired'):
-        entry['retired'] = True
     index_entries.append(entry)
 
 index_data = {
@@ -615,7 +633,9 @@ for lesson in lessons:
     cat = lesson.get('category', '未分類')
     cat_stats[cat]['total'] += 1
     st = lesson.get('status', 'confirmed')
-    if st in ('confirmed', 'deprecated', 'draft'):
+    if is_inactive_lesson(lesson):
+        cat_stats[cat]['deprecated'] += 1
+    elif st in ('confirmed', 'draft'):
         cat_stats[cat][st] += 1
     else:
         cat_stats[cat]['confirmed'] += 1

@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-07-04 cmd_training_L1_report-write_20260704141831 -->
+<!-- last_updated: 2026-07-04 cmd_karo_idle_semantic_insights_triage_202607042029 -->
 
 ## 2026-06-30
 
@@ -1365,3 +1365,11 @@
 - 2026-07-03 cmd_3683完了: 株価データソース11社を一次情報比較し、CBOE公式VIX 6/30値と本番値一致を実測。最終成果物 `docs/research/cmd_3683_price_data_vendor_evaluation.md` は `0f50b1d3` 初回追加→`92334177` 半蔵検証込み更新。推奨=Alpaca+CBOEをプライマリ、EODHD/Tiingo多数決、長期は生値+自前調整。無料APIキー登録は外部状態変更のためdecision_candidate化。
 - 2026-07-03 本番反映完了(殿裁可22:21): cmd_3684(ntfyプッシュ)+cmd_3685(全期間再取得化)。DM-Signal backend=75c4444d live(13:18 UTC)、Stockdata-API=88021063 live(13:17 UTC)、NTFY_ALERT_TOPIC/BASE_URL本番設定確認済み、月初夕方再計算cron(dm-signal-month-start-evening-recalculate)もRender上に作成済みを確認。7月TECL/XLU事件対策5本(3679/3681/3682/3684/3685)全て本番稼働。今晩01:00 JST cronで全期間再取得の初回実運用観測。
 - 2026-07-04 cmd_karo_hotfix_cycle_health_insight_churn_202607041407完了: 小太郎が軍師調査(gate_cycle_health.shは受信側でinsight生成元ではない)を受け実target=scripts/semantic_stress_test.shへ切替。alias重複ガードがlive queue/insights.yamlのみ確認しgate_shogun_startup.shの自動archive後は同一低価値NO_MATCH単発文を「未出現」と誤判定し再pending化する経路を実測(archive中NO_MATCH計5908件中semantic_stress_test由来3191件=54%)。archive確認を追加するガード拡張+回帰テスト+実データ再現で修正。commit `1850b8cd5`。同型3経路(semantic_index_update.sh/clear_prep_check.sh/cmd_complete_gate.sh、計1034件)の横展開要否はdecision_candidate化。
+- 2026-07-04 cmd_karo_hotfix_ga177_p_average_freshness_202607041938完了: GA-177 p_average_freshnessはp_averageバッチ未実行ではなくAPI_BASE/DNS断続失敗と切り分け。疾風commit `c4946c3a6` でDNS失敗時DB鮮度fallbackを追加し、API失敗とデータ未実行を分離。
+- 2026-07-04 cmd_karo_hotfix_ga177_p_average_stale_fallback_fix_202607041954完了: 家老レビューで前commitのfallbackが184日前DB値もfresh扱いする自動消火を検出。疾風commit `63dfabe9` で30/35日閾値分類を追加し、stale隠蔽を回帰テスト込みで封止。
+- 2026-07-04 idle自走: PD-048/PD-049を後続実装で解決済みと一次確認。`context_freshness_check.sh`のconfig/projects.yaml source repo fallbackとroot fallback偽ALERT抑制を`bats tests/unit/test_context_freshness_check.bats` 29/29 PASS + `gate_context_freshness.sh` OKで検証し、pending_decisionsは53件中resolved 52/pending 1(PD-038のみ)へ更新。
+- 2026-07-04 idle自走: L510(`inbox_write.sh report_received auto-done` deadlock)を現行実装+`test_inbox_write.bats`45/45 PASSで構造防止済みと判定し退役。`lesson_deprecation_scan.sh`が`retired: true`を退役扱いせず再掲する語彙差を修正し、対象bats 7/7 PASS、dm-signal scanはL510再掲0件へ改善。
+- 2026-07-04 idle自走: `sync_lessons.sh`も同じ語彙差でretired教訓10件をactive indexへ混入させていたため、active判定を`deprecated/status=deprecated/retired/status=retired`へ統一。dm-signal indexは809→799 active、retired混入10→0、対象bats 16/16 PASS。
+- 2026-07-04 idle自走: `lesson_deprecation_scan.sh`/`cmd_complete_gate.sh`の自動退役実行経路が旧`lesson_deprecate.sh`でindexのみ編集していたため、SSOT更新の`lesson_write.sh --retire`へ統一。ファイル消滅候補L754/L657/L025を退役し、dm-signal scan候補3→0、active 799→796、対象bats 51/51 PASS。
+- 2026-07-04 idle自走: retired/deprecated除外を全projectへ横展開。auto-ops indexは57→55 active、mcasはproject status=archivedをactive判定へ追加して9→0 active。全project lesson_deprecation_scan候補0、対象bats 52/52 PASS。
+- 2026-07-04 idle自走: 旧`lesson_deprecate.sh`を通常運用では`lesson_write.sh --retire`へ委譲する互換ラッパー化。手動実行でもindex-only編集でSSOT不達にならない防御を追加し、関連bats 67/67 PASS。
