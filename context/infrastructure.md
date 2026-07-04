@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-04 cmd_training_L4_idle_202607041308_kotaro -->
+<!-- last_updated: 2026-07-04 cmd_training_L1_report-write_20260704141831 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -676,7 +676,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L955 -->
+<!-- last_synced_lesson: L962 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
@@ -1350,6 +1350,13 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L953: 修行targetは最新補足だけでなく全忍者taskマトリクスで衝突確認する（cmd_training_L4_idle_202607041308_kagemaru）
 - L954: AC5の2スクリプトは逆方向指標: causal_backlink_counts=被参照数(incoming)、markdown_link_counts=発信リンク数(outgoing)（cmd_training_L4_idle_202607041308_saizo）
 - L955: 同一バッチ配備でkotaroのtask.related_lessonsだけ注入漏れが発生した（cmd_training_L4_idle_202607041308_kotaro）
+- L956: ninja_monitorのライブラリ関数はdaemon初期化変数に依存させない（cmd_karo_hotfix_dashboard_snapshot_stale_status_202607041407）
+- L957: batsテスト内でtrap EXIT/RETURNによる一時ファイルcleanupは機能しない(bats-core 1.13.0実測)（cmd_karo_hotfix_unit_tmp_cleanup_202607041355）
+- L958: cmd_complete_gate.sh(set -e)でbare呼出しされるGATE CLEAR後処理関数は、末尾コマンドの失敗が関数外へ伝播しないことを個別に保証せよ（cmd_karo_hotfix_task_idle_transition_verify_202607041407）
+- L959: git ls-files成功0件はfilesystem fallbackへ戻す（cmd_karo_ci_fix_sync_lessons_target_files_ci_red_202607041429）
+- L960: repro/検証コマンドをSEMANTIC_STRESS_ABSORB_PENDING=0なしで本番リポジトリのパスに対して実行すると共有知識ファイルを汚染する（cmd_karo_hotfix_cycle_health_insight_churn_202607041407）
+- L961: lib-only関数はdaemon初期化グローバルを直接参照しない（cmd_karo_hotfix_dashboard_snapshot_karo_pane_init_202607041426）
+- L962: verdict missingはverdict欄ではなくbinary_checks未記入を疑う（cmd_training_L1_report-write_20260704141831）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-02 cmd_karo_hotfix_shogun_cli_switch_skill_ref -->
+<!-- last_updated: 2026-07-04 cmd_training_L1_report-write_20260704141831 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,43 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3113 | memory_db_import.py L839-865のCJK LIKEフォールバックが長文クエリで部分文字列マッチしない。文字種境界分割でクエリを短いトークンに分解し、各トークンのAND LIKE検索に変更して長文でもヒットさせる。記憶DB検索品質向上 | infra | 06-02 | CJK長文検索を文字種境界トークンのAND LIKEへ変更し |
-| cmd_3114 | 将軍がcmd_idなしのtype=cmd_newをinbox_writeで送信するとcmd_new_gateをバイパスし、品質gate/軍師レビュー/教訓サイクルを全スキップする穴がある。L0-L7の全レベルで封鎖する | infra | 06-02 | cmd_idなしshogun cmd_newをL4 BLOC |
-| cmd_3116 | memory_db_live_insert.pyの全関数でconcepts='[]'ハードコード。学習ループ出力(報告/gate/教訓/workaround)8185件が概念空間に未接続。軽量キャッシュ辞書でlive_insert時に概念付与し横断検索可能にする | infra | 06-02 | memory_db_live_insertのlive挿入でs |
-| cmd_3117 | live_insertの概念付与入力テキストがevent_type別に品質差大。report=フィールド名メタデータ(充填0.8%)、cmd_delegate=定型文(4.7%)。concept_textにcmd title/purposeを逆引き注入し意味密度を向上 | infra | 06-02 | memory_db_live_insertの概念抽出にcmd |
-| cmd_3120 | 軍師startup gateのWARN表示→推薦行動が人間依存(L2)。idle活動率5.4%(37件中2件)。WARN検出→対応するidle自走ステップを自動実行指示をpromptに注入し、WARNを見て判断する工程を排除(L4化) | infra | 06-02 | 軍師startup gateのWARN/ALERTをidle |
-| cmd_3118 | 記憶DB 67456件中31617件(46.9%)が概念空。cmd_3116/3117は新規INSERT改善だが歴史データは空のまま。memory_db_import.pyのconcepts_for_text()で既存データを一括backfill | infra | 06-02 | events.concepts空履歴31636件をbackf |
-| cmd_3119 | deploy_task.shの教訓注入はindex.mdのrelated_lessons(10概念28リンク)の静的マッチのみ使用。記憶DBのevent_concepts(71概念83494行)が教訓注入に還流しない。概念経由で関連教訓を動的発見し注入候補を拡張 | infra | 06-02 | deploy_task.shのrelated_lessons |
-| cmd_3121 | 教訓注入59件中42件がNOT_USEFUL(偽陽性71.2%)。impl=100%偽陽性(7/7)。キーワードスコアリングが広すぎて無関係教訓が注入される。task_type別MIN_KEYWORD_SCORE引き上げで注入精度向上 | infra | 06-02 | impl task_typeのMIN_KEYWORD_SCO |
-| cmd_3124 | useful率全期間28.8%(WARN)と直近窓58.6%(OK)の乖離。startup gateが全期間値でWARN判定→過去蓄積で改善が遅い。gate_lesson_health.shと同じ直近窓に統一 | infra | 06-02 | startup gateの教訓useful率判定をgate_ |
-| cmd_3127 | infra教訓585/685件(85%)がorigin([[リンク]])なし。教訓が孤立し因果をたどれない。lesson_write.shにorigin必須化gateを追加し新規登録時の因果接続を強制 | infra | 06-02 | lesson_write.shにorigin必須gateを追 |
-| cmd_3128 | event_concepts(概念タグ)は70.3%改善したがevent_links(因果リンク)は1.2%(813/67875件)。memory_db_live_insert.pyにorigin/[[リンク]]自動抽出→event_links自動INSERTを追加 | infra | 06-02 | memory_db_live_insert.pyのappen |
-| cmd_3125 | hook_automation_framework(14389件)が突出し概念付与が偏集中。広すぎるaliasesが原因で横断検索にノイズ。aliasesを精査し概念分散を改善 | infra | 06-02 | hook_automation_frameworkの広すぎる |
-| cmd_3129 | idle-persist/karo-direct/recon-dual の3 SKILL.mdが参照先script(inbox_write.sh, deploy_task.sh)より古い。scriptの変更内容をSKILL.mdに反映し、gate_skill_script_refs.sh WARNを解消する | infra | 06-02 | idle-persist/karo-direct/recon |
-| cmd_3132 | 将軍がshogun_to_karo.yamlにcmd起票時、q5記入済みだがq5_verified_source未記入というパターンをcmd_save.sh到達前に検知する。pre-write-edit-combined.shにquality_gateフィールド対チェックを追加し、片方だけ記入のパターンマッチ漏れを構造的に防止する | infra | 06-02 | pre-write/edit hookでquality_ga |
-| cmd_3135 | cmd_3132でL4(pre-edit WARN)を実装したが、L6(学習速度最大化)が未接続。cmd_save.shのSession Stateにq5/q5_verified_source対フィールドの片方欠落パターンを累計追跡し、再発時に検出ロジックを自動表示する | infra | 06-02 | cmd_save.shのSession Stateにq5/q |
-| cmd_3136 | 教訓有効率34.6%(startup WARN)の根因。L4555の_universal_without_target_files_is_relevant()がtarget_files存在時に_target_files_matchを迂回してTrue返却→無関係教訓が全cmdに注入される。NOT_USEFUL 95件中の大部分がこの経路。1行修正で教訓注入精度を大幅改善 | infra | 06-02 | _universal_without_target_file |
-| cmd_3140 | ninja_monitor.sh L338のauto_commit_before_clear()がgit addで全未commit変更を拾い、忍者Aの成果物を忍者Bのauto-commitが包含する。本セッション4件発生。task YAML target_pathでscopeフィルタを追加し、triggering ninja以外のファイルを除外する | infra | 06-03 | ninja_monitor auto-commitをtask |
-| cmd_3141 | CI RED fixでcmd=7スクリプト対象だがreport files_modified=テスト2本のみという乖離が未検証で通過した。precheckにshogun_to_karo command欄のファイルパス抽出→files_modified突合→乖離WARN追加。L3(gate)の穴 | infra | 06-03 | cmd_complete_gate.shにcommand欄フ |
-| cmd_3143 | gate_shogun_startup.sh L783のtarget_re=r'自動化ターゲット\s*[:：]\s*(.+)'がMarkdown太字(**自動化ターゲット**:)にマッチせず、将軍が自動化ターゲットを記入してもWARN判定される。3セッション連続WARNの真因。regexにMarkdown装飾を許容させ、テストでMarkdown太字パターンの通過を検証する | infra | 06-03 | gate_shogun_startup.shのQ6自動化ター |
-| cmd_3144 | gate_skill_script_refs.shが検出した9件(7スキル)のSKILL.mdがscriptより古い。忍者がSKILL.mdを参照して作業する際に古い手順を使うリスク。LS042教訓: 3セッション放置は洗脳#5(先送り)の証拠 | infra | 06-03 | 9件(9スキル)のSKILL.mdをscript参照調査し、 |
-| cmd_3146 | 軍師分析(docs/research/gunshi_idle_lesson_injection_crossproject_20260603.md): DM-Signal教訓(L633/L630/L598/L255/L147)がinfra/trainingタスクにクロスプロジェクト注入され100%NOT_USEFUL。教訓品質は正常、スコープ不一致が根因。deploy_task.shにproject一致フィルタを追加し、タスクのproject属性と教訓のproject属性が一致する場合のみ注入する | infra | 06-03 | deploy_task.shの教訓注入にproject一致フ |
-| cmd_3148 | cmd_3147で実装したtarget_path基準の読み/書き区別がcmd_3145で再発FP。根因: command欄がテスト名を省略形で参照(semantic_index_update→test_semantic_index_update.bats)しbasename完全一致では照合不能。部分一致(substring/contains)をfiles_modified照合に追加する | infra | 06-03 | cmd_complete_gateのcommand/file |
-| cmd_3149 | ローカルWSL2でBatsテスト全量が遅い根因=run_save(cmd_save.shフル実行)を毎テスト呼ぶファイル群(warn_logging/prev_cmd_lesson_warn/env_change/command_steps_vs_ac)。run_saveを関数単位テスト(source+対象関数呼出し)に変更し、テスト品質を維持しつつ実行時間を大幅削減する | infra | 06-03 | cmd_save系Bats 4ファイルのrun_saveフル |
-| cmd_3150 | 三層記憶設計書§14-6。semantic_search.shの検索語・ヒット件数・ヒット0件フラグ・実行時刻をSQLiteに記録する専用スクリプトsearch_log_write.shを新規作成し、semantic_search.shから呼出す。保守クエリ(NO_MATCH傾向分析/検索頻度/未到達概念)と殿の使用パターン分析の前提データを蓄積する | infra | 06-03 | search_log_write.shを新規追加し、sema |
-| cmd_3151 | 三層記憶設計書§14-8+家老F4。現在のaliasesは平坦リストで関係種別(同義/上位/混同注意)を区別できない。cmd_3125事故(alias広すぎ14389件)の構造的再発防止。index.mdの概念定義にrelation_type属性を導入し、semantic_index_update.shおよびsemantic_search.shのparserが無害に読めるようにする(構造変更のみ、検索展開制御は後続cmd) | infra | 06-03 | related_conceptsにrelation_type |
-| cmd_3152 | cmd_3151でrelation_type属性が導入された。次のステップとして、relation_type=混同注意の概念をrelated_concepts自動双方向化および検索展開から除外し、誤結合を構造的に防止する。cmd_3125事故(alias広すぎ)の再発防止の完成 | infra | 06-03 | relation_type=混同注意のrelated_con |
-| cmd_3153 | 三層記憶設計書§14-2。現在のeventsテーブル(14列70K行)には記憶の状態を表す列がなく、全イベントが同じ重みで扱われる。state列(raw/verified/stale_candidate/expired/hypothesis/refuted/canonical/historical/archived)を追加し、memory_db_import.pyのINSERT時にデフォルト値rawを設定する。記憶運用装置への最小変更 | infra | 06-03 | eventsテーブルにstate列(DEFAULT 'raw |
-| cmd_3156 | 三層記憶設計書§14-4。原文と加工物がsummary/detail列に混在。分離設計の前に書込み元/読取り元/データパターンを調査する | infra | 06-03 | 記憶DB events.summary/detail の書込 |
-| cmd_3158 | lesson_write.sh L1000/L1004でsemantic_index_update.sh(10秒)+semantic_map_generate.sh(3.3秒)が同期実行されており、教訓N件登録でN*13.3秒ブロック。cmd_3154で5分超遅延(家老infra_signal)。L1000/L1004を&でバックグラウンド化する(cmd_complete_gate.sh L6190と同パターン) | infra | 06-03 | lesson_write.shのsemantic_index |
-| cmd_3157 | command欄の自然言語テキストからファイル参照を過剰抽出し、偵察cmdや自然言語記述のcmdでcommand_files_modified_mismatch BLOCKが誤発火する問題を修正する。cmd_3153+cmd_3156で2連続BLOCK(家老修正でCLEAR)。軍師LG014提案 | infra | 06-03 | — |
-| cmd_3159 | 三層記憶設計書§14-4。eventsテーブルのsummary/detail列は検索用投影の混在列(68.3%がderived/metadata, cmd_3156偵察)。新規イベントにraw_content列を追加し、書込みスクリプト(memory_db_live_insert.py)のappend_eventで原文を保存する。既存70,810行は変更しない(新規のみ分離) | infra | 06-03 | events.raw_content列を追加し、memory |
-| cmd_3160 | 三層記憶設計書§11。記憶DBに矛盾・重複候補を記録する仕組みがない。eventsテーブルのstate列(cmd_3153で追加済み)にcontradiction_candidate/duplicate_candidateを追加し、候補イベントを記録するスクリプトを作成する。矛盾は分類(§11の10種)付きで記録する | infra | 06-03 | 記憶DB live insertにcontradiction |
-| cmd_3161 | 三層記憶設計書§8/§7。記憶DBに蓄積されたイベントのうち高頻度参照・高importance・複数リンクを持つものをObsidian昇格候補として抽出するスクリプトを新規作成する。候補はstate列をobsidian_candidateに更新し、人間確認待ちキューに入れる | infra | 06-03 | Obsidian昇格候補抽出スクリプトを追加し、本番DBで1 |
-| cmd_3162 | dashboard_update.sh L411/L510のopen(path,'w')が即時truncateし、crash/timeout時にdashboard.mdが0バイトになる(2日連続WA)。tmp+os.replaceのatomic writeパターンに変更する。dashboard_auto_section.shは既にatomic write実装済みで0件WA | infra | 06-03 | dashboard_update.sh の2箇所の dash |
-| cmd_3163 | 三層記憶設計書§9。古い記憶を削除せず想起制御する仕組みがない。state列にarchived/stale値を追加し、state遷移スクリプトを実装する。同時にVALID_EVENT_STATESにobsidian_candidate/verifiedが不在の不整合(軍師blt_20260603_221154)も修正しSSOT化する | infra | 06-03 | — |
-| cmd_3164 | memory_db_live_insert.py VALID_EVENT_STATESに{raw,contradiction_candidate,duplicate_candidate}しかなく、cmd_3161で追加したobsidian_candidateとcmd_3153のverified、設計書§9のarchivedが不在(軍師blt_20260603_221154)。全state値を統一定義する | infra | 06-03 | VALID_EVENT_STATESは現行HEADで7種全て |
-| cmd_3165 | 三層記憶設計書§9。古い記憶を削除せず想起制御する仕組みがない。state遷移関数update_event_stateとrecall_controlスクリプトを実装し、条件に基づくverified→archived遷移を可能にする。cmd_3164(SSOT化)完了後に着手 | infra | 06-03 | — |
 | cmd_3166 | 三層記憶設計書§9。古い記憶を削除せず想起制御する仕組みがない。state遷移関数update_event_stateとrecall_controlスクリプトを実装し、条件に基づくverified→archived遷移を可能にする。cmd_3164(SSOT化)完了済み | infra | 06-04 | 想起制御用のmemory_recall_control.sh |
 | cmd_3167 | 3セッション連続startup BLOCK解消。テスト選択スクリプトの3commit分(docs/rule mapping+軍師instruction tests+速度改善)がスキル定義に未反映 | infra | 06-04 | skills/codd-fix/SKILL.mdの手順6へd |
 | cmd_3168 | L0-L7貫通設計書v6 cmd#-1。既存ext4キャッシュ(0.086秒/クエリ)をgate/prompt/healthの正本read pathへ昇格し、182GB tmp残骸をcleanup。全後続cmdの速度前提 | infra | 06-04 | memory_db_query.shをext4 cache優 |
@@ -442,4 +405,4 @@
 | cmd_3639 | 殿指示(2026-07-02): 全ページ瞬時表示がゴール。PF別EPは0.2-0.5sに改善済み。compare-returns(初期表示)が4.3-4.7s残存。根因=PF別rawのSELECT+fallback計算が102PF分積み上がる。一括事前計算で即応答に変更 | dm-signal | 07-02 | compare-returnsのPF行をcompare_re |
 | cmd_3640 | 殿指示(2026-07-02): MECE全EP×全PF計測でmonthly-tradeが75/102PF遅延(最遅7.63s)と判明。precompute_raw.pyにraw生成は実装済みだがmonthly_trade.pyにlookup未追加(Phase3漏れ)。annual_returnsも2PF遅延。lookup追加で全PF瞬時化 | dm-signal | 07-02 | monthly_trade.py と annual_retu |
 | cmd_3642 | 軍師提案(blt_20260702_124509+blt_20260702_124855)+将軍一次計測(2026-07-02): 最新版CLIはバナーにモデル名が出ないケースがあり、pane履歴方式の検出は前セッション残像を誤採用する。将軍D0(commit 3964e334e: 最終セッション限定awkフィルタ+Guard16検出器除外)後も、実プロセスがsonnet xhighのpaneで検出値がOpus 4.8 highのまま乖離残存を実測済み。pane履歴に依存しない検出とrespawn時の残存値排除で実モデル表示の信頼を回復する | infra | 07-02 | model_detectが実プロセス/TTY引数を優先し、古 |
-�し、古 |
+�し、古 |
