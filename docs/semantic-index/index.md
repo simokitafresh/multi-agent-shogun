@@ -5535,7 +5535,7 @@ codd:
 |------|---|
 | id | content_artifacts |
 | label | 記事・成果物索引 |
-| aliases | 記事一覧, 書いた記事, note記事, gist一覧, 成果物, 今までやったCMD, CMD履歴, 戦局日誌, senkyoku-log, 将軍記事, 戦国AI列伝, weekly report, 週報一覧, 月報, marketing content, マーケティング記事, 下書き一覧, 過去の記事, 記事を書いた, 記事やドキュメント, もっとテックブログ風に英単語やロジックは元論文のままで使おう, compare-returns API週報, 8期間トレーリングリターン週報, MTD週報, 週報のcompare-returns移行, note下書き品質確認必須, 週報note下書き保存手順, gistをアップデート, gist更新, gist index更新, gistは更新したか, gist indexも更新した |
+| aliases | 記事一覧, 書いた記事, note記事, gist一覧, 成果物, 今までやったCMD, CMD履歴, 戦局日誌, senkyoku-log, 将軍記事, 戦国AI列伝, weekly report, 週報一覧, 月報, marketing content, マーケティング記事, 下書き一覧, 過去の記事, 記事を書いた, 記事やドキュメント, もっとテックブログ風に英単語やロジックは元論文のままで使おう, compare-returns API週報, 8期間トレーリングリターン週報, MTD週報, 週報のcompare-returns移行, note下書き品質確認必須, 週報note下書き保存手順, gistをアップデート, gist更新, gist index更新, gistは更新したか, gist indexも更新した, skfolio論文, skfolio 論文, skfolioの論文, skyfolio論文, skyfolio 論文, skyfolioの論文, skyfolioの論文はわかるか, Skyfolio, skfolio, skyfolio, Stanford convex optimization research, stanford_convex_optimization_research, 外部論文調査, 参考論文解説 |
 | related_concepts | dmsignal_operations, cmd_chronicle, skill_routing |
 
 | 種別 | パス/参照 |
