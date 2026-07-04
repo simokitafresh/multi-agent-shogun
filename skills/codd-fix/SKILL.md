@@ -9,7 +9,9 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-04T20:15:00+09:00 -->
+
+Script refs verified: 2026-07-04 cmd_training_skill_refs_codd_fix_202607042005. `cmd_complete_gate.sh` checked_at以降の変更(997178ac8/b77e5546a)をgit log/showで確認。997178ac8はno-task fast pathにparent report検証を追加し、既存reportがあるcmdを測定用fast pathで誤CLEARしない内部gate強化。b77e5546aはCoDD registry append失敗をWARN化し、set -e cascadeでidle-transition等の完了後処理が止まる問題を防ぐ非BLOCK化。どちらも`bash scripts/cmd_complete_gate.sh <cmd_id>`の呼び出し契約、GATE CLEAR/BLOCKの基本出口、codd-fix本文の実行手順には変更なし。
 
 Script refs verified: 2026-07-02T20:45 将軍検証. `cmd_complete_gate.sh` 直近変更(5c3b58b0f/5b555e616/1d363aa7b)はhotfix完全名・短縮名の二重GATE CLEAR通知dedup、登録済みlesson_candidateのWARN抑制、lesson impact追随の非同期化で、いずれも内部処理。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。本日cmd_3661完了時に単発GATE CLEAR通知の実動作を確認済み。codd-fix手順は現行と矛盾なし。
 
