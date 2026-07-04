@@ -174,7 +174,7 @@ result:
 
 ## Stop Hook BLOCK Escape Rule
 
-**Stop hook BLOCKでファイル操作ツールが使えない場合、設計書・報告YAML・作業成果物に `/clear` 依頼やエラー文を書き込むな。**
+**Stop hook BLOCKでファイル操作ツールが使えない場合、設計書・報告YAML・作業成果物にセッションリセット依頼やエラー文を書き込むな。**
 
 - 可能なら `bash scripts/inbox_write.sh karo "stop hook BLOCKでtool unavailable: {状況}" blocked {ninja_name}` で家老へ報告して停止せよ
 - Bash/Edit/Write等のツール自体が無い場合は、最後の応答に `tool unavailable: session_alerts未処理` と事実だけを1行残して終了せよ
