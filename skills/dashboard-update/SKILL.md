@@ -19,7 +19,11 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-04T20:20:00+09:00 -->
+
+Script refs verified: 2026-07-04 cmd_training_skill_refs_dashboard_update_202607042005. checked_at 2026-07-03T02:15:00+09:00 以降の `dashboard_update.sh` 差分は bb140170d (`cmd_karo_hotfix_dashboard_snapshot_stale_status_202607041407`) のみ。AUTO域再生成直前に `ninja_monitor.sh` の `refresh_karo_snapshot_fast_path` をtimeout 20で呼び、snapshot stale status/model/idleを減らす内部更新で、呼び出し契約 `bash scripts/dashboard_update.sh <cmd_id> [--dry-run]` とpre-flightのcmd_id必須契約は変更なし。
+
+Script refs verified: 2026-07-04 cmd_training_skill_refs_dashboard_update_202607042005. checked_at 2026-07-03T02:15:00+09:00 以降の `gate_report_format.sh` 差分は 83fc58fd (`cmd_karo_hotfix_commit_missing_structural_202607032250`) のみ。bc:commit=yes時の未commit検査が `target_path` に加えて報告YAMLの `files_modified` 申告ファイルも対象にする強化で、dashboard更新前に `bash scripts/gates/gate_report_format.sh <report_yaml_path>` を実行して報告YAMLをPASSさせる期待値は維持。binary_checks由来verdict自動導出、未記入/FILL_THIS BLOCK、PASS cache契約も変更なし。
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 
