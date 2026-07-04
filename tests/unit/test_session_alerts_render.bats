@@ -55,3 +55,36 @@ teardown() {
     [[ "$output" == *'"decision": "block"'* ]]
     [[ "$output" == *"[TODO] new alert"* ]]
 }
+
+@test "stop_session_alerts gives tool-less escape guidance without asking lord for operations" {
+    local alerts_file="$TEST_TMPDIR/queue/session_alerts_karo.txt"
+    printf '[TODO] report_yaml_format cumulative failure\n' > "$alerts_file"
+
+    rm -f /tmp/stop_session_alerts_karo_toolless_escape_fail_hash 2>/dev/null || true
+    TMUX_PANE="" MOCK_AGENT_ID="karo_toolless_escape" run bash "$TEST_TMPDIR/scripts/hooks/stop_session_alerts.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"decision": "block"'* ]]
+    [[ "$output" == *"通常経路:"* ]]
+    [[ "$output" == *"ファイル操作ツールが無い場合:"* ]]
+    [[ "$output" == *"成果物本文へ依頼文や /clear 依頼を書かず"* ]]
+    [[ "$output" == *"tool unavailable: session_alerts未処理"* ]]
+    [[ "$output" == *"現在1/5"* ]]
+    [[ "$output" == *"殿へCLI操作を依頼するな"* ]]
+}
+
+@test "stop_session_alerts auto-passes repeated identical block at threshold" {
+    local alerts_file="$TEST_TMPDIR/queue/session_alerts_karo.txt"
+    printf '[TODO] report_yaml_format cumulative failure\n' > "$alerts_file"
+
+    rm -f /tmp/stop_session_alerts_karo_toolless_threshold_fail_hash 2>/dev/null || true
+    for i in 1 2 3 4; do
+        TMUX_PANE="" MOCK_AGENT_ID="karo_toolless_threshold" run bash "$TEST_TMPDIR/scripts/hooks/stop_session_alerts.sh"
+        [ "$status" -eq 0 ]
+        [[ "$output" == *'"decision": "block"'* ]]
+        [[ "$output" == *"現在${i}/5"* ]]
+    done
+
+    TMUX_PANE="" MOCK_AGENT_ID="karo_toolless_threshold" run bash "$TEST_TMPDIR/scripts/hooks/stop_session_alerts.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'"decision": "block"'* ]]
+}

@@ -55,10 +55,13 @@ ALERT_CONTENT=$(grep '^\[TODO\]' "$ALERTS_FILE" | head -20 || true)
 
 # --- ループ防止: 同一ハッシュがBLOCK_BYPASS_THRESHOLD回繰り返されたら通過（修正不能と判断） ---
 # Level4強化(blt_20260701_235735+blt_20260702_002604): 旧ロジックは1回で通過(トグル)→3セッション積残の原因
+# Tool-less escape(cmd_karo_hotfix_stop_hook_toolless_escape_2026070506):
+# ファイル操作不可セッションでは成果物へ依頼文を書かず、事実だけ残して閾値後に自動通過する。
 BLOCK_BYPASS_THRESHOLD=5
 
 FAIL_HASH_FILE="/tmp/stop_session_alerts_${AGENT_ID}_fail_hash"
 CURRENT_HASH="$(printf '%s' "$ALERT_CONTENT" | md5sum | cut -d' ' -f1)"
+CURRENT_COUNT=1
 
 if [[ -f "$FAIL_HASH_FILE" ]]; then
     PREV_HASH="$(head -1 "$FAIL_HASH_FILE")"
@@ -66,6 +69,7 @@ if [[ -f "$FAIL_HASH_FILE" ]]; then
     PREV_COUNT="${PREV_COUNT:-0}"
     if [[ "$CURRENT_HASH" = "$PREV_HASH" ]]; then
         PREV_COUNT=$((PREV_COUNT + 1))
+        CURRENT_COUNT="$PREV_COUNT"
         if [[ "$PREV_COUNT" -ge "$BLOCK_BYPASS_THRESHOLD" ]]; then
             rm -f "$FAIL_HASH_FILE" 2>/dev/null || true
             exit 0
@@ -80,11 +84,15 @@ fi
 
 # --- BLOCKとして未完了ALERTを表示 ---
 ESCAPED="$(printf '%s' "$ALERT_CONTENT" | head -20 | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g' | tr '\n' '|' | sed 's/|/\\n/g')"
+REMAINING_BLOCKS=$((BLOCK_BYPASS_THRESHOLD - CURRENT_COUNT))
+if [[ "$REMAINING_BLOCKS" -lt 1 ]]; then
+    REMAINING_BLOCKS=1
+fi
 
 cat <<HOOK_JSON
 {
   "decision": "block",
-  "reason": "⚠ SESSION ALERTS 未完了あり(${TODO_COUNT}件)。対応してから完了せよ。\nqueue/session_alerts_${AGENT_ROLE}.txt の [TODO] を [DONE] に更新したら通過する。\n\n${ESCAPED}"
+  "reason": "⚠ SESSION ALERTS 未完了あり(${TODO_COUNT}件)。対応してから完了せよ。\n通常経路: queue/session_alerts_${AGENT_ROLE}.txt の [TODO] を [DONE] に更新したら通過する。\nファイル操作ツールが無い場合: 成果物本文へ依頼文や /clear 依頼を書かず、最後の応答に「tool unavailable: session_alerts未処理」と事実だけ記録して終了せよ。同一BLOCKは閾値到達後に自動通過する(現在${CURRENT_COUNT}/${BLOCK_BYPASS_THRESHOLD}, 残り${REMAINING_BLOCKS}回)。殿へCLI操作を依頼するな。\n\n${ESCAPED}"
 }
 HOOK_JSON
 exit 0
