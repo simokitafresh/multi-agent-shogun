@@ -10,7 +10,9 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-04T14:15:00+09:00 -->
+
+Script refs verified: 2026-07-04 cmd_karo_hotfix_skill_refs_after_deploy_task_202607041407. `deploy_task.sh` 直近変更(fc056d4b2+da70ad039)をgit log/showで確認。fc056d4b2はreport templateの`files_modified`雛形とbinary_checks生成の内部強化、da70ad039は`deploy_task_guard_target_path_collision`追加による活動中taskとの同一file `target_path` 衝突の配備前BLOCK(directory重複はINFO)で、いずれも安全強化。`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>` の呼び出し契約、通知、report template生成、stale field resetは変更なし。karo-direct手順は現行仕様と一致し、同一file target衝突時はdeploy_task.shのBLOCKに従い別忍者/別target選定または先行task完了待ちとする。
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 
@@ -152,4 +154,4 @@ Script refs verified: 2026-06-23 1586d6f48. `deploy_task.sh` 直近変更はGS/D
 
 Script refs verified: 2026-06-28 b1922e36b+0226e0db5. `deploy_task.sh` 直近変更はfailed redeploy時のgate扱い修正と、`shogun_to_karo.yaml`でstatus=canceledのcmd配備をBLOCKする安全強化。`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>` の引数契約、通知、report template生成は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-04T14:15:00+09:00 -->
