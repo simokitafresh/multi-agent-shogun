@@ -42,7 +42,7 @@ task:
   parent_cmd: cmd_karo_hotfix_stop_hook_toolless_escape_2026070506
   project: infra
   purpose: tool権限制限下でstop_session_alertsが成果物汚染を誘発しない脱出経路を実装する
-  status: in_progress
+  status: done
   stop_for: []
   target_path: scripts/hooks/stop_session_alerts.sh
   task_id: cmd_karo_hotfix_stop_hook_toolless_escape_2026070506_normal
@@ -145,3 +145,5 @@ task:
       count: 1
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
   deployed_at: "2026-07-05T06:04:10"
+  completed_at: "2026-07-05T06:08:10+09:00"
+  progress: "AC1-AC4完了。memory_db根因確認、stop_session_alerts.sh:56-88修正、bats 4/4 PASS SKIP 0、docs/design/cmd_2762_cmd_save_design.md diff 0行確認。code commit=2fe2830133452eda1f6dee9c1da176ef07ec714d。"
