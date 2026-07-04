@@ -99,6 +99,41 @@ EOF
     [[ "$output" == *"classification: API_BASE/DNS到達性の問題。p̄バッチ未実行/staleではない"* ]]
 }
 
+@test "DNS failure does not hide stale DB fallback as fresh" {
+    write_fake_curl 6 000 0.001 '' 'curl: (6) Could not resolve host: example.test'
+    export P_AVERAGE_DB_FALLBACK_RESULT=$'OK\t2026-01-01T00:00:00+00:00\t184\tportfolio_count=408, benchmark_count=8'
+
+    run bash "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"API_BASE DNS解決失敗 (HTTP 000, curl_exit=6, elapsed=0.001s)"* ]]
+    [[ "$output" == *"db_fallback: p̄ DB stale (184d ago, 2026-01-01T00:00:00+00:00; portfolio_count=408, benchmark_count=8)"* ]]
+    [[ "$output" == *"classification: API_BASE/DNS到達性問題に加え、p̄ DB calculated_at が stale"* ]]
+    [[ "$output" != *"p̄バッチ未実行/staleではない"* ]]
+}
+
+@test "DNS failure with DB fallback WARN range returns WARN classification" {
+    write_fake_curl 6 000 0.001 '' 'curl: (6) Could not resolve host: example.test'
+    export P_AVERAGE_DB_FALLBACK_RESULT=$'OK\t2026-06-02T00:00:00+00:00\t32\tportfolio_count=408, benchmark_count=8'
+
+    run bash "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh"
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"db_fallback: p̄ DB freshness WARN (32d ago, 2026-06-02T00:00:00+00:00; portfolio_count=408, benchmark_count=8)"* ]]
+    [[ "$output" == *"classification: API_BASE/DNS到達性問題。p̄ DB calculated_at はWARN域"* ]]
+}
+
+@test "DNS failure with DB fallback stale range returns ALERT classification" {
+    write_fake_curl 6 000 0.001 '' 'curl: (6) Could not resolve host: example.test'
+    export P_AVERAGE_DB_FALLBACK_RESULT=$'OK\t2026-05-29T00:00:00+00:00\t36\tportfolio_count=408, benchmark_count=8'
+
+    run bash "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"db_fallback: p̄ DB stale (36d ago, 2026-05-29T00:00:00+00:00; portfolio_count=408, benchmark_count=8)"* ]]
+    [[ "$output" == *"classification: API_BASE/DNS到達性問題に加え、p̄ DB calculated_at が stale"* ]]
+}
+
 @test "fresh p-average returns OK and writes cache" {
     local now_iso
     now_iso="$(date -u +%Y-%m-%dT%H:%M:%S+00:00)"

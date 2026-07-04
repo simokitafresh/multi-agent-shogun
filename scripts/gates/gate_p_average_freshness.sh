@@ -139,6 +139,44 @@ print(f"OK\t{calculated_at.isoformat()}\t{days_ago}\tportfolio_count={portfolio_
 PY
 }
 
+classify_db_fallback_on_dns_failure() {
+    local db_status="$1"
+    local db_calculated_at="$2"
+    local db_days_ago="$3"
+    local db_counts="$4"
+
+    if [ "$db_status" != "OK" ] || [ -z "${db_calculated_at:-}" ] || [ -z "${db_days_ago:-}" ]; then
+        echo "  db_fallback: unavailable_or_empty"
+        return 1
+    fi
+
+    case "$db_days_ago" in
+        ''|*[!0-9]*)
+            echo "  db_fallback: p̄ DB freshness unknown (${db_days_ago:-empty}d ago, ${db_calculated_at}; ${db_counts})"
+            echo "  classification: API_BASE/DNS到達性問題に加え、DB fallback鮮度を数値判定できない"
+            bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄ API_BASE DNS解決失敗。DB鮮度判定不能"
+            return 1
+            ;;
+    esac
+
+    if [ "$db_days_ago" -gt 35 ]; then
+        echo "  db_fallback: p̄ DB stale (${db_days_ago}d ago, ${db_calculated_at}; ${db_counts})"
+        echo "  classification: API_BASE/DNS到達性問題に加え、p̄ DB calculated_at が stale"
+        bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄ API_BASE DNS解決失敗。DB鮮度stale ${db_days_ago}日前"
+        return 1
+    elif [ "$db_days_ago" -gt 30 ]; then
+        echo "  db_fallback: p̄ DB freshness WARN (${db_days_ago}d ago, ${db_calculated_at}; ${db_counts})"
+        echo "  classification: API_BASE/DNS到達性問題。p̄ DB calculated_at はWARN域"
+        bash "$SCRIPT_DIR/scripts/ntfy.sh" "WARN: p̄ API_BASE DNS解決失敗。DB鮮度WARN ${db_days_ago}日前"
+        return 2
+    fi
+
+    echo "  db_fallback: p̄ DB freshness OK (${db_days_ago}d ago, ${db_calculated_at}; ${db_counts})"
+    echo "  classification: API_BASE/DNS到達性の問題。p̄バッチ未実行/staleではない"
+    bash "$SCRIPT_DIR/scripts/ntfy.sh" "WARN: p̄ API_BASE DNS解決失敗。ただしDB鮮度OK ${db_days_ago}日前"
+    return 2
+}
+
 # API呼出し
 response_file="$(mktemp)"
 curl_meta_file="$(mktemp)"
@@ -172,13 +210,11 @@ if [ "$curl_exit" -ne 0 ]; then
             fi
             db_fallback_result="$(db_freshness_fallback || true)"
             IFS=$'\t' read -r db_status db_calculated_at db_days_ago db_counts <<< "$db_fallback_result"
-            if [ "$db_status" = "OK" ] && [ -n "${db_calculated_at:-}" ]; then
-                echo "  db_fallback: p̄ DB freshness OK (${db_days_ago}d ago, ${db_calculated_at}; ${db_counts})"
-                echo "  classification: API_BASE/DNS到達性の問題。p̄バッチ未実行/staleではない"
-                bash "$SCRIPT_DIR/scripts/ntfy.sh" "WARN: p̄ API_BASE DNS解決失敗。ただしDB鮮度OK ${db_days_ago}日前"
+            classify_db_fallback_on_dns_failure "$db_status" "$db_calculated_at" "$db_days_ago" "$db_counts"
+            fallback_exit=$?
+            if [ "$fallback_exit" -eq 2 ]; then
                 exit 2
             fi
-            echo "  db_fallback: unavailable_or_empty"
             bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — API_BASE DNS解決失敗 HTTP ${http_code} curl ${curl_exit}"
             ;;
         22:401|22:403)
