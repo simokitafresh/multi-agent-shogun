@@ -3942,6 +3942,9 @@ write_karo_snapshot() {
     local lock_file="/tmp/karo_snapshot.lock"
     local timestamp
     printf -v timestamp '%(%Y-%m-%dT%H:%M:%S)T' -1
+    if ! declare -p NINJA_NAMES >/dev/null 2>&1 || [ "${#NINJA_NAMES[@]}" -eq 0 ]; then
+        read -ra NINJA_NAMES <<< "$(get_ninja_names)"
+    fi
 
     # S04修正: サブシェル→ブレースグループ（fd継承によるロック漏洩を回避）
     {
@@ -4111,7 +4114,8 @@ write_karo_snapshot() {
 
                 local idle_list=""
                 for name in "${rotated_names[@]}"; do
-                    if [ "${PREV_STATE[$name]}" = "idle" ] || [ "${PREV_STATE[$name]}" = "done" ]; then
+                    local _prev_state="${PREV_STATE[$name]:-idle}"
+                    if [ "$_prev_state" = "idle" ] || [ "$_prev_state" = "done" ]; then
                         local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
                         # キャッシュから取得（ninja sectionで収集済み。yaml_field_get再読込排除 L4-R24）
                         local task_status="${_snapshot_status[$name]:-}"
@@ -4142,7 +4146,8 @@ refresh_karo_snapshot_fast_path() {
     # Model/banner consistency is documented as a REDISCOVER_EVERY check.
     # Keep snapshot fresh every call, but avoid the multi-pane model scan on
     # every fast-path refresh.
-    if [ -z "${cycle:-}" ] || [ $((cycle % REDISCOVER_EVERY)) -eq 0 ]; then
+    local _rediscover_every="${REDISCOVER_EVERY:-30}"
+    if [ -z "${cycle:-}" ] || [ $((cycle % _rediscover_every)) -eq 0 ]; then
         check_model_names
     fi
     write_karo_snapshot

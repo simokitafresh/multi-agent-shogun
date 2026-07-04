@@ -2302,6 +2302,45 @@ PY
     [ "$status" -eq 0 ]
 }
 
+@test "write_karo_snapshot initializes ninja names in lib-only mode" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/config" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+
+cat > "$SCRIPT_DIR/config/settings.yaml" <<'"'"'EOF'"'"'
+cli:
+  agents:
+    hanzo:
+      role: ninja
+      japanese_name: 半蔵
+EOF
+
+cat > "$SCRIPT_DIR/queue/tasks/hanzo.yaml" <<'"'"'EOF'"'"'
+task:
+  task_id: cmd_700
+  status: in_progress
+  project: infra
+EOF
+
+unset NINJA_NAMES
+get_latest_report_file() { return 1; }
+log() { :; }
+
+write_karo_snapshot
+grep "^ninja|hanzo|cmd_700|in_progress|infra|CTX:" "$SCRIPT_DIR/queue/karo_snapshot.txt"
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "check_and_update_done_task: flat task YAML uses yaml_field_set root fallback for completed_at" {
     run bash -c '
 set -euo pipefail

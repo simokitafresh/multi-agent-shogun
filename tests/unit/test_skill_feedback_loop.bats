@@ -698,6 +698,22 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "dashboard_update.sh refreshes karo_snapshot before dashboard auto section" {
+    run python3 - <<EOF
+from pathlib import Path
+text = Path("$DASHBOARD_UPDATE_SCRIPT").read_text()
+assert "refresh_snapshot_before_auto_section()" in text
+assert "NINJA_MONITOR_LIB_ONLY=1" in text
+assert "refresh_karo_snapshot_fast_path" in text
+auto_call = 'bash "\$SCRIPT_DIR/dashboard_auto_section.sh"'
+refresh_call = 'refresh_snapshot_before_auto_section ||'
+assert text.index(refresh_call) < text.index(auto_call)
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 @test "dashboard_update.sh restores empty dashboard from template when 最新更新 is missing" {
     TEST_REPO="$TEST_TMPDIR/repo"
     mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/config" \

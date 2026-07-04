@@ -89,6 +89,22 @@ if [[ ! -f "$DASHBOARD" ]]; then
     exit 1
 fi
 
+refresh_snapshot_before_auto_section() {
+    local monitor_script="$SCRIPT_DIR/ninja_monitor.sh"
+    [ -f "$monitor_script" ] || return 0
+    # dashboard_auto_section.sh consumes queue/karo_snapshot.txt for fallback
+    # status/model/idle data. Refresh it immediately before regenerating the
+    # AUTO section so a just-finished task does not leave stale snapshot state
+    # on dashboard.md until the next monitor cycle.
+    timeout 20 bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$1"
+        cycle=0
+        refresh_karo_snapshot_fast_path
+    ' _ "$monitor_script"
+}
+
 # ─── Export for Python ───
 TEMPLATE="$PROJECT_DIR/config/dashboard_template.md"
 export DASHBOARD REPORTS_DIR STK_FILE CMD_ID DRY_RUN TEMPLATE
@@ -513,6 +529,7 @@ PYEOF
     # dashboard_auto_section.shがAUTO域(忍者配備/パイプライン/メトリクス)を一括再生成する。
     # GP-078: SKIP_AUTO_SECTION=1の場合は省略（cmd_complete_gate.shがL4060で別途実行するため二重呼出防止）
     if [[ "$DRY_RUN" != true ]] && [[ "${SKIP_AUTO_SECTION:-}" != "1" ]]; then
+        refresh_snapshot_before_auto_section || echo "WARN: Step 6.5 snapshot refresh failed（AUTO域は既存snapshot/一次task YAMLで継続）" >&2
         bash "$SCRIPT_DIR/dashboard_auto_section.sh" || echo "WARN: Step 6.5 dashboard_auto_section.sh失敗（AUTO域は既存値を維持）" >&2
     fi
 
