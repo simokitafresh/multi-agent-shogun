@@ -268,6 +268,39 @@ EOF
     ! grep -q 'test_set_candidate: high_frequency_NO_MATCH' "$TEST_TMPDIR/queue/insights.yaml"
 }
 
+@test "candidate aliases: alias already present in archive is not re-queued as new pending insight" {
+    mkdir -p "$TEST_TMPDIR/queue/archive"
+    export SEMANTIC_STRESS_INSIGHTS_ARCHIVE="$TEST_TMPDIR/queue/archive/insights_archive.yaml"
+    cat > "$SEMANTIC_STRESS_INSIGHTS_ARCHIVE" <<'EOF'
+insights:
+- id: INS-OLD-0001
+  insight: "[[アーカイブ済み低価値単発文]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=アーカイブ済み低価値単発文"
+  priority: "low"
+  source: "semantic_stress_test"
+  status: done
+  resolved_at: "2026-07-01T00:00:00+00:00"
+EOF
+    cat > "$SEMANTIC_STRESS_LORD_LOG" <<'EOF'
+{"content":"アーカイブ済み低価値単発文","direction":"inbound"}
+EOF
+    cat > "$SEMANTIC_STRESS_CMD_QUEUE" <<'EOF'
+cmds: []
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_stress_test.sh" \
+        --source lord \
+        --limit 5 \
+        --baseline "$TEST_TMPDIR/logs/archive-baseline.json" \
+        --log "$TEST_TMPDIR/logs/archive-stress.log" \
+        --insights "$TEST_TMPDIR/queue/insights.yaml"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"candidate_aliases=1"* ]]
+    if [ -f "$TEST_TMPDIR/queue/insights.yaml" ]; then
+        ! grep -q 'アーカイブ済み低価値単発文' "$TEST_TMPDIR/queue/insights.yaml"
+    fi
+}
+
 @test "dirty hit candidates: generic hits are surfaced without converting them to NO_MATCH aliases" {
     cat > "$SEMANTIC_SEARCH_CMD" <<'EOF'
 #!/usr/bin/env bash

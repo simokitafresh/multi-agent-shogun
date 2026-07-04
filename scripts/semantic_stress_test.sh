@@ -37,6 +37,7 @@ limit=20
 baseline_path="${SEMANTIC_STRESS_BASELINE:-$script_dir/logs/semantic_stress_baseline.json}"
 log_path="${SEMANTIC_STRESS_LOG:-$script_dir/logs/semantic_stress_test.log}"
 insights_path="${INSIGHTS_FILE:-$script_dir/queue/insights.yaml}"
+insights_archive_path="${SEMANTIC_STRESS_INSIGHTS_ARCHIVE:-$script_dir/queue/archive/insights_archive.yaml}"
 quality_fixture="${SEMANTIC_QUALITY_FIXTURE:-$script_dir/tests/fixtures/semantic_quality_test_set.json}"
 auto_test_set_add="${SEMANTIC_STRESS_AUTO_TEST_SET_ADD:-false}"
 write_insights=true
@@ -606,7 +607,13 @@ PY
         # 重複発行ガード: 同一aliasのinsightが既に存在(pending/resolved問わず)するならスキップ。
         # resolved済みクエリの再発行が再蓄積の根因(2026-06-10実証: 18:13 resolve→21:06同一クエリ
         # 再発行→pending 51→0→28再蓄積。生成器が回る限り無限再生成される構造)
+        # アーカイブも確認: gate_shogun_startup.shがdone/resolved等をinsights_archive.yamlへ
+        # 退避するため、live insights.yamlのみの確認だとアーカイブ後に同一低価値単発文が
+        # 「未出現」に見えて再pending化する(cmd_karo_hotfix_cycle_health_insight_churn_202607041407実証)
         if [ -f "$insights_path" ] && grep -qF "[[$alias]]" "$insights_path"; then
+            continue
+        fi
+        if [ -f "$insights_archive_path" ] && grep -qF "[[$alias]]" "$insights_archive_path"; then
             continue
         fi
         if [ -x "$insight_write" ] || [ -f "$insight_write" ]; then
@@ -629,7 +636,11 @@ if [ "$write_insights" = true ] && [ -s "$tmp_dir/high_frequency_no_match_terms.
     while IFS=$'\t' read -r alias source_name original_query frequency_count; do
         [ -n "$alias" ] || continue
         # 重複発行ガード(candidate_aliasesと同様): test_set_candidate表記を含む既存があればスキップ
+        # (アーカイブも確認。理由は上のcandidate_aliasesガード参照)
         if [ -f "$insights_path" ] && grep -F "[[$alias]]" "$insights_path" | grep -q "test_set_candidate"; then
+            continue
+        fi
+        if [ -f "$insights_archive_path" ] && grep -F "[[$alias]]" "$insights_archive_path" | grep -q "test_set_candidate"; then
             continue
         fi
         if [ -x "$insight_write" ] || [ -f "$insight_write" ]; then
