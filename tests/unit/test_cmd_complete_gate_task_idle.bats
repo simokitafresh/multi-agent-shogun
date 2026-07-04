@@ -122,6 +122,42 @@ PY
     [ "$status" -eq 0 ]
 }
 
+# cmd_karo_hotfix_task_idle_transition_verify_202607041407: append_codd_registry_entry
+# is called bare (no "||" guard) between "GATE CLEAR: cmd完了許可" and
+# set_matching_tasks_idle. Under `set -e` (active at the top of cmd_complete_gate.sh),
+# an unguarded failing command anywhere in that call chain aborts the whole script
+# before set_matching_tasks_idle ever runs, leaving the ninja's task status stuck at
+# "done" instead of transitioning to "idle". This test proves the function itself
+# never propagates a non-zero exit even when its embedded python3 subprocess raises.
+@test "append_codd_registry_entry never propagates failure (would abort GATE CLEAR post-processing under set -e)" {
+    eval "$(sed -n '/^append_codd_registry_entry()/,/^}/p' "$SRC_GATE_SCRIPT")"
+
+    lock_path() { echo "$TEST_PROJECT/registry.lock.$$"; }
+    SCRIPT_DIR="$TEST_PROJECT"
+    CMD_ID="cmd_999"
+    YAML_FILE="$TEST_PROJECT/dummy.yaml"
+    MATCHING_TASK_FILES=()
+
+    mkdir -p "$TEST_PROJECT/docs/research"
+    printf '# registry\n|------|\n' > "$TEST_PROJECT/docs/research/codd_refactor_registry.md"
+
+    # Simulate ANY unhandled exception inside the embedded CoDD registry python
+    # body (malformed ledger YAML, unexpected data shape, etc.) by hijacking
+    # python3 on PATH to always fail — mirrors the real failure class without
+    # needing to reverse-engineer the exact python bug.
+    mkdir -p "$TEST_PROJECT/stub_bin"
+    cat > "$TEST_PROJECT/stub_bin/python3" <<'PYSTUB'
+#!/usr/bin/env bash
+echo "Traceback (most recent call last): simulated CoDD registry bug" >&2
+exit 1
+PYSTUB
+    chmod +x "$TEST_PROJECT/stub_bin/python3"
+    PATH="$TEST_PROJECT/stub_bin:$PATH" run append_codd_registry_entry "$CMD_ID"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[WARN] CoDD registry append failed (non-blocking)"* ]]
+}
+
 stub_cmd_complete_side_effects() {
     local stub
     for stub in \

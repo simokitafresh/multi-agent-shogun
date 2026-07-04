@@ -1057,7 +1057,10 @@ if is_training and ledger_target_script and ledger_path.exists():
     print(f"  ledger status -> completed ({ledger_target_script})")
 PY
         ) 200>"$registry_lock"
-    )
+    ) || {
+        echo "  [WARN] CoDD registry append failed (non-blocking)"
+        return 0
+    }
     echo "  ${result}"
 }
 
