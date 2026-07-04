@@ -23,7 +23,7 @@ EOF
 
 teardown() {
     rm -rf "$TEST_TMPDIR"
-    unset P_AVERAGE_ENV_FILE P_AVERAGE_CACHE_FILE P_AVERAGE_API_BASE P_AVERAGE_CURL_BIN
+    unset P_AVERAGE_ENV_FILE P_AVERAGE_CACHE_FILE P_AVERAGE_API_BASE P_AVERAGE_CURL_BIN P_AVERAGE_DB_FALLBACK_RESULT
 }
 
 write_fake_curl() {
@@ -85,6 +85,18 @@ EOF
     [[ "$output" == *"サーバ到達性・cold sleep・バッチ鮮度はAPI到達後"* ]]
     [[ "$output" == *"getent hosts example.test"* ]]
     [[ "$output" == *"curl_error: curl: (6) Could not resolve host: missing.example"* ]]
+}
+
+@test "DNS failure uses DB fallback to separate API reachability from stale p-average" {
+    write_fake_curl 6 000 0.001 '' 'curl: (6) Could not resolve host: example.test'
+    export P_AVERAGE_DB_FALLBACK_RESULT=$'OK\t2026-07-01T19:44:55+00:00\t2\tportfolio_count=408, benchmark_count=8'
+
+    run bash "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh"
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"API_BASE DNS解決失敗 (HTTP 000, curl_exit=6, elapsed=0.001s)"* ]]
+    [[ "$output" == *"db_fallback: p̄ DB freshness OK (2d ago, 2026-07-01T19:44:55+00:00; portfolio_count=408, benchmark_count=8)"* ]]
+    [[ "$output" == *"classification: API_BASE/DNS到達性の問題。p̄バッチ未実行/staleではない"* ]]
 }
 
 @test "fresh p-average returns OK and writes cache" {

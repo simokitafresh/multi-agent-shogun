@@ -69,6 +69,76 @@ if [ -z "$ADMIN_USER" ] || [ -z "$ADMIN_PASS" ]; then
     exit 1
 fi
 
+db_freshness_fallback() {
+    if [ -n "${P_AVERAGE_DB_FALLBACK_RESULT:-}" ]; then
+        printf '%s\n' "$P_AVERAGE_DB_FALLBACK_RESULT"
+        return 0
+    fi
+
+    python3 - "$ENV_FILE" <<'PY' 2>/dev/null
+import os
+import sys
+from datetime import datetime, timezone
+from urllib.parse import urlparse
+
+try:
+    import psycopg2
+except Exception:
+    raise SystemExit(1)
+
+env_file = sys.argv[1]
+database_url = ""
+with open(env_file, encoding="utf-8") as fh:
+    for line in fh:
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        if key == "DATABASE_URL":
+            database_url = value.strip().strip('"').strip("'")
+            break
+
+if not database_url:
+    database_url = os.environ.get("DATABASE_URL", "")
+if not database_url:
+    raise SystemExit(1)
+
+parsed = urlparse(database_url)
+conn = psycopg2.connect(
+    host=parsed.hostname,
+    port=parsed.port or 5432,
+    dbname=(parsed.path or "").lstrip("/"),
+    user=parsed.username,
+    password=parsed.password,
+    sslmode="require",
+    connect_timeout=8,
+)
+cur = conn.cursor()
+cur.execute(
+    """
+    SELECT
+        (SELECT COUNT(*) FROM p_average_results) AS portfolio_count,
+        (SELECT MAX(calculated_at) FROM p_average_results) AS portfolio_calculated_at,
+        (SELECT COUNT(*) FROM benchmark_p_average_results) AS benchmark_count,
+        (SELECT MAX(calculated_at) FROM benchmark_p_average_results) AS benchmark_calculated_at
+    """
+)
+portfolio_count, portfolio_calculated_at, benchmark_count, benchmark_calculated_at = cur.fetchone()
+cur.close()
+conn.close()
+
+values = [v for v in (portfolio_calculated_at, benchmark_calculated_at) if v is not None]
+if not values:
+    print("NULL\t\t\t")
+    raise SystemExit(0)
+calculated_at = max(values)
+if calculated_at.tzinfo is None:
+    calculated_at = calculated_at.replace(tzinfo=timezone.utc)
+days_ago = int((datetime.now(timezone.utc) - calculated_at).total_seconds() // 86400)
+print(f"OK\t{calculated_at.isoformat()}\t{days_ago}\tportfolio_count={portfolio_count}, benchmark_count={benchmark_count}")
+PY
+}
+
 # API呼出し
 response_file="$(mktemp)"
 curl_meta_file="$(mktemp)"
@@ -100,6 +170,15 @@ if [ "$curl_exit" -ne 0 ]; then
             if [ -n "$curl_err" ]; then
                 echo "  curl_error: ${curl_err}"
             fi
+            db_fallback_result="$(db_freshness_fallback || true)"
+            IFS=$'\t' read -r db_status db_calculated_at db_days_ago db_counts <<< "$db_fallback_result"
+            if [ "$db_status" = "OK" ] && [ -n "${db_calculated_at:-}" ]; then
+                echo "  db_fallback: p̄ DB freshness OK (${db_days_ago}d ago, ${db_calculated_at}; ${db_counts})"
+                echo "  classification: API_BASE/DNS到達性の問題。p̄バッチ未実行/staleではない"
+                bash "$SCRIPT_DIR/scripts/ntfy.sh" "WARN: p̄ API_BASE DNS解決失敗。ただしDB鮮度OK ${db_days_ago}日前"
+                exit 2
+            fi
+            echo "  db_fallback: unavailable_or_empty"
             bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — API_BASE DNS解決失敗 HTTP ${http_code} curl ${curl_exit}"
             ;;
         22:401|22:403)
