@@ -81,6 +81,21 @@ try:
     commit = bc.get('commit') or []
     if not (isinstance(commit, list) and commit):
         sys.exit(0)
+    commit_check_text = ' '.join(str(item.get('check', '') or '') for item in commit if isinstance(item, dict))
+    readonly_commit_markers = (
+        'read-only',
+        'readonly',
+        '読み取り専用',
+        'commit禁止',
+        'コミット禁止',
+        'stage/commitを実行していない',
+        'stage/commitを実行していないか',
+        'stage・commit',
+        'stage・commit・revert',
+        'stage・commit・revert・削除',
+    )
+    if any(marker in commit_check_text for marker in readonly_commit_markers):
+        sys.exit(0)
     if str(commit[0].get('result', '') or '').strip().lower() not in ('yes', 'true'):
         sys.exit(0)
     tdata = yaml.safe_load(open(sys.argv[2], encoding='utf-8')) or {}

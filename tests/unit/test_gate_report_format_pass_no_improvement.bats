@@ -229,6 +229,82 @@ PY
     rm -rf "$workdir"
 }
 
+@test "cmd_3264 AC2 read-only commit-prohibited report does not BLOCK on task YAML dirtiness" {
+    local worker="cmd3264readonly"
+    local workdir="$PROJECT_ROOT/.codex_tmp/gate_report_format_cmd3264_readonly_test_$$"
+    local task_path="$workdir/queue/tasks/${worker}.yaml"
+    local rpath="$workdir/queue/reports/${worker}_report_cmd_3264_readonly.yaml"
+    local gate="$workdir/scripts/gates/gate_report_format.sh"
+    rm -rf "$workdir"
+    mkdir -p "$workdir/scripts/gates" "$workdir/queue/reports" "$workdir/queue/tasks" "$workdir/logs" "$workdir/queue/tasks"
+    cp "$GATE_SCRIPT" "$gate"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_main.py" "$workdir/scripts/gates/"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$workdir/scripts/gates/"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$workdir/scripts/gates/"
+    chmod +x "$gate"
+    git -C "$workdir" init -q
+    mkdir -p "$workdir/queue/tasks"
+    cat > "$task_path" <<EOF
+task:
+  target_path: queue/tasks/${worker}.yaml
+EOF
+    git -C "$workdir" add "$task_path"
+    git -C "$workdir" -c user.email=test@example.com -c user.name=test commit -q -m init
+    cat >> "$task_path" <<EOF
+  status: done
+EOF
+    cat > "$rpath" <<EOF
+worker_id: ${worker}
+parent_cmd: cmd_3264_readonly
+ac_version_read: test_hash_abc
+status: completed
+result:
+  summary: "read-only triage"
+  details: "詳細"
+purpose_validation:
+  cmd_purpose: "read-only triage"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - path: queue/tasks/${worker}.yaml
+    change: task status updated by recovery
+lesson_candidate:
+  found: false
+  no_lesson_reason: "テスト用の報告であるため新規教訓なし"
+  title: ""
+  detail: ""
+lessons_useful:
+  - id: L001
+    useful: true
+    reason: helpful
+binary_checks:
+  AC1:
+    - check: テスト完了
+      result: yes
+  commit:
+    - check: read-only任務のためcommit禁止を守り、stage/commitを実行していないか
+      result: yes
+verdict: PASS
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+EOF
+
+    run env GATE_NO_LOG=1 SKILL_EXECUTION_PASS_LOG_DISABLE=1 GATE_PASS_CACHE_FILE="$workdir/pass_cache" bash "$gate" "$rpath"
+
+    [ "$status" -eq 0 ] || {
+        echo "Expected exit 0 but got $status"
+        echo "$output"
+        echo "git status task:"
+        git -C "$workdir" status --porcelain -- "queue/tasks/${worker}.yaml" || true
+        rm -rf "$workdir"
+        return 1
+    }
+    [[ "$output" != *"BLOCK(cmd_3264-AC2)"* ]]
+    rm -rf "$workdir"
+}
+
 @test "cmd_3264 AC2 repo-root target_path ignores unrelated dirty files when files_modified is clean" {
     local worker="cmd3264root"
     local workdir="$PROJECT_ROOT/.codex_tmp/gate_report_format_cmd3264_root_test_$$"
