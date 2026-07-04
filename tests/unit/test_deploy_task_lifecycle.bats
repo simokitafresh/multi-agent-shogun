@@ -2063,3 +2063,93 @@ GFEOF
     [ "$status" -eq 0 ]
     [[ "${output}" == *"FILTERED_COUNT=1"* ]]
 }
+
+@test "target_path collision guard blocks active peer file target" {
+    deploy_task_scaffold "target_collision_file"
+    mkdir -p "$TEST_PROJECT/scripts"
+    touch "$TEST_PROJECT/scripts/shared.sh"
+
+    cat > "$TEST_PROJECT/queue/tasks/kagemaru.yaml" <<'EOF'
+task:
+  status: assigned
+  parent_cmd: cmd_new
+  target_path: scripts/shared.sh
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  status: in_progress
+  parent_cmd: cmd_peer
+  target_path: scripts/shared.sh
+EOF
+
+    run bash -lc "
+        source '$TEST_PROJECT/scripts/deploy_task.sh'
+        log() { :; }
+        deploy_task_guard_target_path_collision '$TEST_PROJECT/queue/tasks/kagemaru.yaml' kagemaru
+    "
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: target_path collision with hayate"* ]]
+
+    deploy_task_teardown
+}
+
+@test "target_path collision guard keeps directory overlap informational" {
+    deploy_task_scaffold "target_collision_dir"
+    mkdir -p "$TEST_PROJECT/scripts"
+
+    cat > "$TEST_PROJECT/queue/tasks/kagemaru.yaml" <<'EOF'
+task:
+  status: assigned
+  parent_cmd: cmd_new
+  target_path: scripts
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  status: acknowledged
+  parent_cmd: cmd_peer
+  target_path: scripts
+EOF
+
+    run bash -lc "
+        source '$TEST_PROJECT/scripts/deploy_task.sh'
+        log() { :; }
+        deploy_task_guard_target_path_collision '$TEST_PROJECT/queue/tasks/kagemaru.yaml' kagemaru
+    "
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: target_path directory overlap with hayate"* ]]
+
+    deploy_task_teardown
+}
+
+@test "target_path collision guard handles empty multi and relative targets" {
+    deploy_task_scaffold "target_collision_multi"
+    mkdir -p "$TEST_PROJECT/scripts"
+    touch "$TEST_PROJECT/scripts/a.sh" "$TEST_PROJECT/scripts/b.sh"
+
+    cat > "$TEST_PROJECT/queue/tasks/kagemaru.yaml" <<'EOF'
+task:
+  status: assigned
+  parent_cmd: cmd_new
+  target_path:
+  - ""
+  - scripts/a.sh
+  - scripts/b.sh
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  status: assigned
+  parent_cmd: cmd_peer
+  target_path: scripts/b.sh
+EOF
+
+    run bash -lc "
+        source '$TEST_PROJECT/scripts/deploy_task.sh'
+        log() { :; }
+        deploy_task_guard_target_path_collision '$TEST_PROJECT/queue/tasks/kagemaru.yaml' kagemaru
+    "
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"scripts/b.sh"* ]]
+    [[ "$output" != *"scripts/a.sh"* ]]
+
+    deploy_task_teardown
+}

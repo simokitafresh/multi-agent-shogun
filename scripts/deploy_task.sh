@@ -6310,6 +6310,101 @@ inject_target_path_check() {
     disown 2>/dev/null || true
 }
 
+deploy_task_guard_target_path_collision() {
+    local task_file="$1"
+    local ninja_name="$2"
+    [ -f "$task_file" ] || return 0
+
+    python3 - "$SCRIPT_DIR" "$task_file" "$ninja_name" <<'TARGET_COLLISION_PY'
+import os
+import sys
+import yaml
+
+script_dir, task_file, current_ninja = sys.argv[1:4]
+active_statuses = {'active', 'assigned', 'acknowledged', 'in_progress'}
+
+def load_task(path):
+    try:
+        with open(path, encoding='utf-8') as f:
+            doc = yaml.safe_load(f) or {}
+    except Exception:
+        return {}
+    task = doc.get('task') if isinstance(doc.get('task'), dict) else doc
+    return task if isinstance(task, dict) else {}
+
+def paths_from(value):
+    if isinstance(value, str):
+        return [value.strip()] if value.strip() else []
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    return []
+
+def normalize(path):
+    path = path.replace('\\', '/').strip()
+    if not path:
+        return ''
+    if not os.path.isabs(path):
+        path = os.path.join(script_dir, path)
+    return os.path.normpath(path)
+
+def split_file_targets(paths):
+    file_targets = set()
+    dir_targets = set()
+    for path in paths:
+        norm = normalize(path)
+        if not norm:
+            continue
+        if os.path.isfile(norm):
+            file_targets.add(norm)
+        elif os.path.isdir(norm):
+            dir_targets.add(norm)
+    return file_targets, dir_targets
+
+current_task = load_task(task_file)
+current_files, current_dirs = split_file_targets(paths_from(current_task.get('target_path')))
+if not current_files and not current_dirs:
+    sys.exit(0)
+
+task_dir = os.path.join(script_dir, 'queue', 'tasks')
+collisions = []
+dir_infos = []
+for name in sorted(os.listdir(task_dir)) if os.path.isdir(task_dir) else []:
+    if not name.endswith('.yaml') or name.startswith('.'):
+        continue
+    peer_ninja = name[:-5]
+    if peer_ninja == current_ninja:
+        continue
+    peer_path = os.path.join(task_dir, name)
+    peer_task = load_task(peer_path)
+    status = str(peer_task.get('status') or '').strip()
+    if status not in active_statuses:
+        continue
+    peer_files, peer_dirs = split_file_targets(paths_from(peer_task.get('target_path')))
+    file_overlap = sorted(current_files & peer_files)
+    dir_overlap = sorted(current_dirs & peer_dirs)
+    if file_overlap:
+        collisions.append((peer_ninja, status, str(peer_task.get('parent_cmd') or ''), file_overlap))
+    if dir_overlap:
+        dir_infos.append((peer_ninja, status, str(peer_task.get('parent_cmd') or ''), dir_overlap))
+
+for peer_ninja, status, parent_cmd, overlap in dir_infos:
+    print(
+        f'INFO: target_path directory overlap with {peer_ninja} '
+        f'(status={status}, parent_cmd={parent_cmd or "unknown"}): {", ".join(overlap)}',
+        file=sys.stderr,
+    )
+
+if collisions:
+    for peer_ninja, status, parent_cmd, overlap in collisions:
+        print(
+            f'BLOCK: target_path collision with {peer_ninja} '
+            f'(status={status}, parent_cmd={parent_cmd or "unknown"}): {", ".join(overlap)}',
+            file=sys.stderr,
+        )
+    sys.exit(1)
+TARGET_COLLISION_PY
+}
+
 # ─── inject_task_modifiers: 7関数統合ラッパー（cmd_1393） ───
 # inject_engineering_preferences, inject_reports_to_read, inject_context_files,
 # inject_credential_files, inject_context_update, inject_report_template,
@@ -8573,6 +8668,11 @@ except Exception:
             fi
         fi
         deploy_task_check_deadline "after_cmd_resolution" || return $?
+    fi
+
+    if ! deploy_task_guard_target_path_collision "$task_yaml" "$NINJA_NAME"; then
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        return 1
     fi
 
     task_status=$(field_get "$task_yaml" "status" "unknown")
