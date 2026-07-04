@@ -164,6 +164,11 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-07-03: gate=gate_report_format result=FAIL executor=kotaro reason=binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; lessons_useful: MISSING; purpose_validation: MISSING; result.summary: MISSING or empty; verdict: \"No...
+- 2026-07-03: gate=cmd_complete_gate result=FAIL executor=hayate reason=report_format:kotaro_report_cmd_3680_recon2.yaml
+
+- 2026-07-03: gate=cmd_complete_gate result=FAIL executor=hanzo reason=report_format:hayate_report_cmd_3677_recon2.yaml
 - 2026-07-02: gate=cmd_complete_gate result=FAIL executor=kagemaru reason=report_format:kagemaru_report_cmd_training_speed_cmd_complete_gate_202607020409_kagemaru.yaml|kagemaru:binary_checks_fail
 
 - 2026-07-02: gate=gate_report_format result=FAIL executor=saizo reason=stale_report: filename has cmd_bench_test2 but parent_cmd=cmd_bench_test (cmd_id mismatch)
