@@ -3,11 +3,11 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: context_freshness ALERT GA-161 が鳴った直接原因と根本原因仮説を、source commits since last_updated の一次情報に基づき報告する
+      description: 才蔵へのstatus_requestがinbox未読のままpaneに届かなかった事象をinbox_watcher/manual_nudgeログとコードで特定する
     AC2:
-      description: 同カテゴリの横展開候補を確認し、他context/knowledgeファイルにも同じ更新トリガー穴がないか調査結果を報告する
+      description: busy/debounce設計上の正常挙動なら再発時の運用手順を報告し、バグならinbox_watcher.sh周辺で修正する
     AC3:
-      description: context/obsidian-link-principles.md を更新すべき場合は索引層スタイルで更新し、次に同じALERTが鳴らない防御層/lesson_candidateを報告YAMLに記録する
+      description: 修正時は構文確認と最小再現、調査のみなら根拠ファイル/行番号を報告する
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -22,24 +22,24 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348
+  parent_cmd: cmd_karo_hotfix_inbox_busy_nudge_visibility_202607041407
   project: infra
-  purpose: GA-161 context_freshness ALERT — context/obsidian-link-principles.md の鮮度ALERT根因を調査し、必要な更新・防御層・lesson候補を報告する
-  status: idle
+  purpose: busy中の忍者へstatus_request nudgeが見えず未読が残る経路を調査し、必要なら標準経路で改善する
+  status: done
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/context/obsidian-link-principles.md
-  task_id: cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348_normal
+  target_path: scripts/inbox_watcher.sh
+  task_id: cmd_karo_hotfix_inbox_busy_nudge_visibility_202607041407_normal
   task_type: hotfix
   related_lessons:
-  - id: 'L847'
-    summary: 'source commits N件だけでは忍者が再調査から始める。context_freshness_check.shが検知時にcommit hash/subj'
-    detail: 'source commits N件だけでは忍者が再調査から始める。context_freshness_check.shが検知時にcommit hash/subj'
-  - id: 'L548'
-    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-  - id: 'L088'
-    summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
-    detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
+  - id: 'L920'
+    summary: 'inbox_watcher.shのようなinotifywait常駐daemonでは、起動(source)コストは低頻度だが、mainループ本体(process_'
+    detail: 'inbox_watcher.shのようなinotifywait常駐daemonでは、起動(source)コストは低頻度だが、mainループ本体(process_'
+  - id: 'L929'
+    summary: 'inbox_watcher.shのbusy-gate defer(profiles.codex.inbox_busy_max_defer_sec、既定30秒)は'
+    detail: 'inbox_watcher.shのbusy-gate defer(profiles.codex.inbox_busy_max_defer_sec、既定30秒)は'
+  - id: 'L321'
+    summary: 'INBOX_WRITE_TEST=1設定下ではNINJA_NAMESが空→is_ninja_reporter=0→report_received処理全体がスキッ'
+    detail: 'INBOX_WRITE_TEST=1設定下ではNINJA_NAMESが空→is_ninja_reporter=0→report_received処理全体がスキッ'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -54,8 +54,6 @@ task:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  semantic_concepts:
-  - "semantic_dictionary_design — セマンティック辞書構想:  docs/research/semantic_index_design.md context/lord-conversation-index.md scripts/semantic_map_generate.sh scripts/insight_write.sh scripts/semantic_index_update.sh"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -63,26 +61,33 @@ task:
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L847: source commits N件だけでは忍者が再調査から始める。context_freshness_check.shが検知時にcommit hash/subj
-      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
-      - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
+      - L920: inbox_watcher.shのようなinotifywait常駐daemonでは、起動(source)コストは低頻度だが、mainループ本体(process_
+      - L929: inbox_watcher.shのbusy-gate defer(profiles.codex.inbox_busy_max_defer_sec、既定30秒)は
+      - L321: INBOX_WRITE_TEST=1設定下ではNINJA_NAMESが空→is_ninja_reporter=0→report_received処理全体がスキッ
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
   memory_db_context:
-  - '2026-04-22T22:58:01+09:00 | 【改善トリガー】hook_failure ALERT (GA-161)'
-  - '2026-07-01T03:38:41+09:00 | 【INFOバッチ】 2026-07-01 03:20:47|cmd_karo_hotfix_ga155_context_freshness_dm_signal_frontend_20260701031'
-  - '2026-07-01T03:15:04+09:00 | 家老がcontext_freshness hotfix (GA-155) を自走で半蔵に配備。定型インフラ自走。 殿の指示を待つ。fullrecalculate完了後（あと数分）、Rolling Re'
-  - '2026-07-02T13:09:18+09:00 | Stop hook指摘の全ALERTを処理完了した。 **処理結果(全て一次確認+根拠付き):** 1. **掲示板未確認・Q6実装証拠・backlinks=0(前回分3件)** — 掲示板confi'
-  - '2026-07-02T12:41:44+09:00 | 【三層ループALERT】WARNING: task duration異常値 cmd_3637 (duration=1741s, median=272.0s, ratio=6.40x, delta=+1'
+  - '2026-07-03T13:19:04+09:00 | 全て既読。inbox1のnudgeは処理済み。未読0件。idle待機。 [meta] stop_reason=end_turn'
+  - '2026-07-03T12:24:14+09:00 | 全て既読。inbox1のnudgeは処理済みのgate_clear。未読0件。idle待機。 [meta] stop_reason=end_turn'
   ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348_normal
+  _ac_task_id: cmd_karo_hotfix_inbox_busy_nudge_visibility_202607041407_normal
   _ac_worker_id: 
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348.yaml
-  report_path: queue/reports/kagemaru_report_cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348.yaml
+  report_filename: kagemaru_report_cmd_karo_hotfix_inbox_busy_nudge_visibility_202607041407.yaml
+  report_path: queue/reports/kagemaru_report_cmd_karo_hotfix_inbox_busy_nudge_visibility_202607041407.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -92,12 +97,12 @@ task:
     warning: '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 158
+      count: 161
+    - pattern: 'field_missing'
+      count: 48
     - pattern: 'lu_structure_error'
       count: 47
-    - pattern: 'field_missing'
-      count: 47
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
     gate_blocks:
     - reason: 'report_format'
       count: 12
@@ -108,4 +113,18 @@ task:
     - reason: 'binary_checks_fail'
       count: 2
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-02T13:49:48"
+    - reason: 'purpose_validation_fit_false'
+      count: 1
+      hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
+  deployed_at: "2026-07-04T14:09:48"
+  progress: "AC1-AC3完了: status_request未達はbusy gating保留後101秒でrecovery nudge配達済み。bash -n PASS、inbox_watcher関連bats 9件PASS。コード修正なし。"
+  session_state:
+    attempt: 1
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    tried_approaches:
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    approach_summary: '才蔵status_request未達はbusy gatingによる保留後、101秒でrecovery nudge配達済みの正常系と特定。コード修正なし。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: '才蔵status_request未達はbusy gatingによる保留後、101秒でrecovery nudge配達済みの正常系と特定。コード修正なし。'
