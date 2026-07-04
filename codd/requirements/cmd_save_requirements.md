@@ -33,3 +33,9 @@ codd:
 - SR-1: Do not delegate a cmd while its gate state remains pending or blocked.
 - SR-2: Treat delegated commands as immutable; further design changes require a new cmd or explicit stop/reissue flow.
 - SR-3: Use flock and structured checks around shared queue files.
+
+## Cross-References
+
+- [[cmd_save_design.md]] is the design counterpart that satisfies this requirement (its frontmatter declares `depends_on: req:script:cmd-save`); its Entry Flow section (line 20) documents that the script "normalizes the cmd id, loads the current cmd block, accumulates BLOCK/WARN reasons through ordered checks, writes outcome logs on exit, and exits nonzero when blocking conditions remain."
+- [[cmd_save_brownfield.md]] is the CoDD brownfield report for this target; its Cross-References (line 30) tie the implementation to the growth loop: "[[growth-loop.md]] defines cmd_save.sh as the Shogun growth-loop enforcement point: BLOCK/WARN requires structured `environment_change` plus grep verification."
+- [[cmd_save.sh]] is the sole implementation listed in this file's frontmatter; its header (line 5) states its purpose as "将軍がEdit toolでshogun_to_karo.yamlに書いたcmdブロックの保存前安全チェック", matching FR-1 through FR-6 above.
