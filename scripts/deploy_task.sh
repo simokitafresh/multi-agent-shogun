@@ -2513,7 +2513,9 @@ status_detail: ""  # DONE / WITH_CONCERNS / BLOCKED / NEEDS_CONTEXT
 test_triage: ""  # in_branch / pre_existing / unknown
 ${_before_after_block}
 ${_causal_verification_block}
-files_modified: []
+files_modified:
+  - path: ""  # 変更ファイルパスを記入。説明文ではなく repo-root 相対パス
+    change: ""  # 変更内容を1文で記入
 lesson_candidate:
   # found: true/false を書け。リスト形式[] 禁止
   # ── found:true の場合（title/detail/project 全て必須）──
@@ -2816,6 +2818,129 @@ EOF
         if echo "$_cmd_text" | grep -qiE 'commit.*禁止|commit一切禁止|コミット.*禁止|コミット一切禁止|将軍.*(commit|コミット|push|プッシュ)|登録.*のみ.*commit'; then
             _commit_bc=""
             log "binary_checks: commit check skipped (cmd constraint: commit禁止)"
+        fi
+    fi
+
+    local _bc_from_yaml
+    _bc_from_yaml=$(TASK_FILE_ENV="$task_file" AC_FILTER_ENV="$_ac_assigned_filter" python3 - <<'PY_BC_TEMPLATE'
+import os
+import re
+from pathlib import Path
+
+import yaml
+
+task_path = Path(os.environ["TASK_FILE_ENV"])
+ac_filter_raw = os.environ.get("AC_FILTER_ENV", "")
+ac_filter = {x for x in ac_filter_raw.split("|") if x}
+
+try:
+    raw = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+except Exception:
+    raise SystemExit(0)
+
+task = raw.get("task", raw)
+criteria = task.get("acceptance_criteria") or {}
+
+
+def clean(value):
+    return str(value or "").strip().strip('"').strip("'")
+
+
+def split_checks(text):
+    text = clean(text).replace("FILL_THIS", "FILL-THIS")
+    if not text:
+        return []
+    parts = [p.strip() for p in re.split(r"。+", text) if p.strip()]
+    return parts or [text]
+
+
+def split_ac_value(raw, fallback_id):
+    value = clean(raw)
+    if re.match(r"^AC[\w-]+\s*:", value):
+        ac_id, desc = value.split(":", 1)
+        return clean(ac_id), clean(desc)
+    return fallback_id, value
+
+
+def normalize_check(text, ac_desc=""):
+    out = clean(text).replace("FILL_THIS", "FILL-THIS")
+    if re.search(r"(monthly|月次)", ac_desc) and "進行中月除外" not in out:
+        out = f"{out} (進行中月除外)"
+    if "全テストPASS(bats --jobs 4 tests/unit)" in out:
+        out = "bash scripts/affected_tests.sh で列挙されたテストを実行し、空リスト時は bats --jobs 4 tests/unit にフォールバックしてPASS確認"
+    return out
+
+
+def emit(ac_id, checks):
+    if ac_filter and ac_id not in ac_filter:
+        return
+    checks = [clean(c).replace("'", "''") for c in checks if clean(c)]
+    if not checks:
+        checks = [f"FILL: {ac_id}の確認項目を記入"]
+    print(f"  {ac_id}:")
+    for check in checks:
+        print(f"  - check: '{check}'")
+        print('    result: ""  # yes or no')
+
+
+if isinstance(criteria, dict):
+    for idx, (key, value) in enumerate(criteria.items(), start=1):
+        ac_id = clean(key) or f"AC{idx}"
+        checks = []
+        desc = ""
+        if isinstance(value, dict):
+            raw_checks = value.get("binary_checks") or value.get("checks") or []
+            if isinstance(raw_checks, list):
+                for item in raw_checks:
+                    if isinstance(item, dict):
+                        checks.append(item.get("check") or item.get("description") or item.get("name"))
+                    else:
+                        checks.append(item)
+            desc = value.get("description") or value.get("ac")
+            if not checks:
+                checks = split_checks(desc)
+            else:
+                checks = [normalize_check(c, desc) for c in checks]
+        elif isinstance(value, list):
+            checks = [item.get("check") if isinstance(item, dict) else item for item in value]
+        else:
+            checks = split_checks(value)
+            desc = value
+        if desc:
+            checks = [normalize_check(c, desc) for c in checks]
+        emit(ac_id, checks)
+elif isinstance(criteria, list):
+    for idx, value in enumerate(criteria, start=1):
+        ac_id = f"AC{idx}"
+        checks = []
+        desc = ""
+        if isinstance(value, dict):
+            ac_id = clean(value.get("id") or ac_id)
+            ac_id, ac_desc = split_ac_value(value.get("ac"), ac_id)
+            desc = value.get("description") or ac_desc
+            raw_checks = value.get("binary_checks") or value.get("checks") or []
+            if isinstance(raw_checks, list):
+                for item in raw_checks:
+                    if isinstance(item, dict):
+                        checks.append(item.get("check") or item.get("description") or item.get("name"))
+                    else:
+                        checks.append(item)
+            if not checks:
+                checks = split_checks(desc)
+        else:
+            checks = split_checks(value)
+            desc = value
+        checks = [normalize_check(c, desc) for c in checks]
+        emit(ac_id, checks)
+PY_BC_TEMPLATE
+)
+    if [ -n "$_bc_from_yaml" ]; then
+        local _bc_block_count _bc_yaml_count
+        _bc_block_count=$(printf '%s\n' "$_bc_block" | awk '/^[[:space:]][[:space:]]AC[[:alnum:]_-]*:/ { count++ } END { print count + 0 }')
+        _bc_yaml_count=$(printf '%s\n' "$_bc_from_yaml" | awk '/^[[:space:]][[:space:]]AC[[:alnum:]_-]*:/ { count++ } END { print count + 0 }')
+        if [ "$_bc_yaml_count" -gt "$_bc_block_count" ]; then
+            _bc_block="$_bc_from_yaml"
+            log "binary_checks: YAML parser fallback expanded ${_bc_yaml_count} ACs"
         fi
     fi
 

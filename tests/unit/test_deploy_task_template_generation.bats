@@ -705,6 +705,59 @@ YAML
     _fixture_project_end
 }
 
+@test "dict acceptance_criteria generate all AC binary_checks and structured files_modified placeholder" {
+    _fixture_project_start
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  assigned_to: sasuke
+  parent_cmd: cmd_report_template_integrity_fixture
+  task_id: cmd_report_template_integrity_fixture_exact
+  project: infra
+  task_type: hotfix
+  ac_version: d41d8cd9
+  report_filename: sasuke_report_cmd_report_template_integrity_fixture.yaml
+  acceptance_criteria:
+    AC1:
+      description: report template生成時にbinary_checksが空/未展開/半端な状態で残らないことを確認する
+    AC2:
+      description: files_modifiedがgate_report_format互換の形式で提示されることを確認する
+    AC3:
+      description: commit未完了なのにverdict PASS相当になる経路を防ぐ
+    AC4:
+      description: 関連する既存テストを実行し、変更範囲をgit diffで確認する
+YAML
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        generate_report_template sasuke cmd_report_template_integrity_fixture_exact cmd_report_template_integrity_fixture infra
+    )
+
+    local report_path="$TEST_PROJECT/queue/reports/sasuke_report_cmd_report_template_integrity_fixture.yaml"
+    run python3 - <<EOF
+import yaml
+from pathlib import Path
+
+data = yaml.safe_load(Path("$report_path").read_text(encoding="utf-8"))
+bc = data["binary_checks"]
+assert list(bc.keys()) == ["AC1", "AC2", "AC3", "AC4", "commit"], bc.keys()
+for key in ["AC1", "AC2", "AC3", "AC4", "commit"]:
+    assert bc[key][0]["result"] == "", (key, bc[key])
+fm = data["files_modified"]
+assert isinstance(fm, list), fm
+assert fm[0]["path"] == "", fm
+assert fm[0]["change"] == "", fm
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+
+    _fixture_project_end
+}
+
 @test "AC description with escaped double quotes generates yaml.safe_load-able binary_checks (cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530)" {
     _fixture_project_start
 
