@@ -94,6 +94,7 @@ gstack Tier1-2取込(875/876): 忍者プロンプト強化+家老Two-pass Review
 
 CDP production checkはdeploy証跡が必要な場合だけ実行する。readonly ref回帰テストはself-contained化済み。context鮮度gateは10秒cacheを持つため、調査時は `CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1` で一次判定を取る。
 → `scripts/cmd_complete_gate.sh` / `scripts/gates/gate_gunshi_report_precheck.sh` / `tests/unit/test_cmd_complete_gate.bats` / `tests/unit/test_sg_pre25_readonly_ref.bats`
+→ SG-PRE30(LG046 lib-only関数参照グローバル機械列挙のgate化)実装記録: [[gunshi_idle_lg046_gate_20260704]]（教訓自動化率97%→100%達成）
 
 ## 軍師品質管理ユニット（cmd_1144〜cmd_1181）
 
@@ -928,7 +929,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L524: yaml_field_set.sh AWKはYAML double-quoted flow scalar継続行を誤スキップする（cmd_karo_ci_fix_ga159）
 - L525: 新gate追加時は既存テストフィクスチャのassumptionsにも日付を追加せよ（cmd_karo_ci_fix_2252）
 - L526: validate_dashboardのN回grep+N回awk→1回awk two-file統合でWSL2起動コスト削減（cmd_training_L4_R3_kotaro）
-- L527: 教訓注入スコアリングはpresenceではなく頻度カウント+プロジェクト一致ボーナスで有用率が上がる（cmd_2270）
+- L527: 教訓注入スコアリングはpresenceではなく頻度カウント+プロジェクト一致ボーナスで有用率が上がる（cmd_2270）→ クロスプロジェクト汚染の追加分析: [[gunshi_idle_lesson_injection_crossproject_20260603]]（DM-Signal教訓がinfra/trainingタスクへ誤注入されuseful率24%の主因に）
 - L646: IMPL/SCOUT矛盾時はkaro確認を優先せよ（cmd_2238）
 - L640: codd extract静的解析はPython大型ファイル(3048行)で関数検出が不十分（cmd_2245）
 - L530: 共有workspaceでのgit commitは--onlyオプションでpath固定する（cmd_2278）
