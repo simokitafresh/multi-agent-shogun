@@ -246,6 +246,56 @@ print('ok')
     [ "$output" = "ok" ]
 }
 
+@test "sync_lessons falls back to filesystem scan when git ls-files returns no files" {
+    local parent_repo="$TEST_TMPDIR/parent_repo"
+    local nested_project="$parent_repo/tmp/project"
+    local nested_ext="$parent_repo/tmp/extproj"
+
+    mkdir -p \
+        "$nested_project/scripts" \
+        "$nested_project/config" \
+        "$nested_project/logs" \
+        "$nested_project/projects/testproj" \
+        "$nested_ext/tasks"
+
+    git -C "$parent_repo" init >/dev/null 2>&1
+    cp "$SRC_SYNC_SCRIPT" "$nested_project/scripts/sync_lessons.sh"
+    chmod +x "$nested_project/scripts/sync_lessons.sh"
+
+    cat > "$nested_project/config/projects.yaml" <<EOF
+projects:
+  - id: testproj
+    path: $nested_ext
+EOF
+
+    cat > "$nested_ext/tasks/lessons.md" <<'EOF'
+### L001: run_077_kawarimi.pyのbatch vs sequential不一致
+- run_077_kawarimi.pyでbatch結果とsequential結果のMD5が不一致
+EOF
+
+    touch "$nested_project/scripts/run_077_kawarimi.py"
+
+    cat > "$nested_project/projects/testproj/lessons.yaml" <<'EOF'
+ssot_path: /tmp/dummy
+last_synced: '2026-04-20T00:00:00'
+lessons: []
+EOF
+
+    run bash "$nested_project/scripts/sync_lessons.sh" testproj
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$nested_project/projects/testproj/lessons.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+tf = data['lessons'][0].get('target_files', [])
+assert 'run_077_kawarimi.py' in tf, tf
+print('ok')
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "ok" ]
+}
+
 @test "sync_lessons writes back project-local injection_count from lesson_impact.tsv" {
     cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
 ### L001: sample lesson

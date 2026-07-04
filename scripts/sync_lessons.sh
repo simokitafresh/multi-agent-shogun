@@ -153,7 +153,10 @@ def _add_tracked_filenames_from_git(base):
     if proc.returncode != 0:
         print(f'[WARN] sync_lessons git ls-files rc={proc.returncode} for {base}', file=sys.stderr)
         return False
-    for rel in proc.stdout.splitlines():
+    tracked_files = proc.stdout.splitlines()
+    if not tracked_files:
+        return False
+    for rel in tracked_files:
         if rel:
             _tf_file_cache.add(os.path.basename(rel))
     return True
