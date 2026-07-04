@@ -25,7 +25,7 @@ task:
   parent_cmd: cmd_karo_hotfix_cycle_health_insight_churn_202607041407
   project: infra
   purpose: gate_cycle_health.shの低価値semantic insight churnを抑止し、idle改善サイクル時のノイズを減らす
-  status: acknowledged
+  status: done
   stop_for: []
   target_path: scripts/semantic_stress_test.sh
   task_id: cmd_karo_hotfix_cycle_health_insight_churn_202607041407_normal
