@@ -19,6 +19,12 @@ codd:
 
 `scripts/deploy_task.sh` must be the single supported helper for assigning a task YAML to a ninja and waking that ninja through the inbox path.
 
+## Related Documents
+
+- [[deploy_task_design.md]] — maps these FR/SR requirements to entry flow, components, data boundaries, and report template behavior.
+- [[deploy_task_brownfield.md]] — records the brownfield extraction run and resolved elicitation findings for this target.
+- [[deploy_task.sh]] — implementation source for the deployment helper described by this requirements baseline.
+
 ## Functional Requirements
 
 - FR-1: Parse normal, `--direct`, `--yaml`, and `--cmd` deployment modes while preserving the default message that invalidates stale previous task context.
@@ -34,4 +40,3 @@ codd:
 - SR-1: Use shared YAML helpers for queue/task mutation instead of free-form YAML dumping.
 - SR-2: Block duplicate active deployments for the same parent cmd when a completed peer report already exists.
 - SR-3: Keep task assignment communication on the inbox path; direct tmux nudges are limited to re-nudge fallback.
-
