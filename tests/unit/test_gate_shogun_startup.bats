@@ -1240,6 +1240,11 @@ messages:
 - content: msg3
   read: true
   id: msg_3
+- content: |
+    literal payload:
+    read: false
+  read: true
+  id: msg_4
 EOF
 
     run run_gate_shogun_startup

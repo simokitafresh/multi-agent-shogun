@@ -64,6 +64,24 @@ teardown() {
     [[ "$output" == *"idle Step 3: 未自動化教訓のgate化を実施"* ]]
 }
 
+@test "gate_gunshi_startup unread count ignores read false text inside message content" {
+    cat > "$TEST_TMPDIR/queue/inbox/gunshi.yaml" <<'EOF'
+messages:
+- id: msg_1
+  content: |
+    literal payload:
+    read: false
+  read: true
+- id: msg_2
+  content: normal unread
+  read: false
+EOF
+
+    run bash -c "cd '$TEST_TMPDIR' && scripts/gates/gate_gunshi_startup.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"未読: 1件"* ]]
+}
+
 @test "gate_gunshi_startup skips expensive gate sync when inbox has no new gate_result" {
     cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'EOF'
 - cmd_id: cmd_100

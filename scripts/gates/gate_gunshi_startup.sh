@@ -48,6 +48,47 @@ add_idle_action() {
     idle_actions+=("$action")
 }
 
+count_unread_inbox_messages() {
+    local inbox_file="$1"
+    [ -f "$inbox_file" ] || {
+        echo 0
+        return 0
+    }
+
+    awk '
+        function leading_spaces(line,    i, ch) {
+            for (i = 1; i <= length(line); i++) {
+                ch = substr(line, i, 1)
+                if (ch != " ") return i - 1
+            }
+            return length(line)
+        }
+        BEGIN { c = 0; in_msg = 0; saw_read = 0; item_indent = 0 }
+        /^[[:space:]]*-[[:space:]]/ {
+            if (in_msg && !saw_read) c++
+            in_msg = 1
+            saw_read = 0
+            item_indent = leading_spaces($0)
+            next
+        }
+        in_msg && /^[[:space:]]*read:[[:space:]]*/ {
+            indent = leading_spaces($0)
+            if (indent == item_indent + 2) {
+                line = $0
+                sub(/^[[:space:]]*read:[[:space:]]*/, "", line)
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+                if (tolower(line) != "true") c++
+                saw_read = 1
+                in_msg = 0
+            }
+        }
+        END {
+            if (in_msg && !saw_read) c++
+            print c
+        }
+    ' "$inbox_file" 2>/dev/null || echo 0
+}
+
 idle_action_for_alert() {
     local alert="$1"
     case "$alert" in
@@ -241,7 +282,7 @@ echo ""
 echo "■ inbox未読"
 inbox_file="$SCRIPT_DIR/queue/inbox/gunshi.yaml"
 if [ -f "$inbox_file" ]; then
-    unread=$(grep -c 'read: false' "$inbox_file" 2>/dev/null) || unread=0
+    unread=$(count_unread_inbox_messages "$inbox_file")
     echo "  未読: ${unread}件"
     if [ "$unread" -gt 0 ]; then
         echo "  → 未読メッセージあり。処理せよ"
