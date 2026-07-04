@@ -2341,6 +2341,43 @@ grep "^ninja|hanzo|cmd_700|in_progress|infra|CTX:" "$SCRIPT_DIR/queue/karo_snaps
     [ "$status" -eq 0 ]
 }
 
+@test "write_karo_snapshot uses task status before nested training status" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+
+NINJA_NAMES=(kagemaru)
+declare -A PREV_STATE
+PREV_STATE[kagemaru]="idle"
+
+get_latest_report_file() { return 1; }
+log() { :; }
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  task_id: cmd_training_fixture_normal
+  status: idle
+  project: infra
+training_proposal:
+  status: completed
+EOF
+
+write_karo_snapshot
+grep "^ninja|kagemaru|cmd_training_fixture_normal|idle|infra|CTX:" "$SCRIPT_DIR/queue/karo_snapshot.txt"
+! grep "^ninja|kagemaru|cmd_training_fixture_normal|completed|" "$SCRIPT_DIR/queue/karo_snapshot.txt"
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "check_and_update_done_task: flat task YAML uses yaml_field_set root fallback for completed_at" {
     run bash -c '
 set -euo pipefail
