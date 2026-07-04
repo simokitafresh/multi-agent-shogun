@@ -17,6 +17,21 @@ MAX_TEST_JOBS="${BATS_MAX_TEST_JOBS:-128}"
 BATS_CACHE="${BATS_CACHE:-1}"
 BATS_CACHE_DIR="${BATS_CACHE_DIR:-$REPO_ROOT/.cache/bats}"
 
+# run_embedded_test() (tests/unit/*_small_consolidated.bats) writes a throwaway
+# nested-bats file as tests/unit/_tmp_<N>_<name>.<rand>.bats and removes it after
+# the nested run finishes. If that nested run is killed (CI timeout/OOM/Ctrl-C)
+# before cleanup, the file is orphaned. A bats-side trap can't fix this: EXIT
+# traps set inside a @test are silently overridden by bats' own teardown trap,
+# and RETURN traps leak into every later function return in the same process
+# (both confirmed empirically, not just in bats docs). So orphans are swept here
+# by age instead, on every mandated test run, rather than at creation time.
+sweep_stale_embedded_test_tmp() {
+    local ttl_minutes="${BATS_EMBEDDED_TMP_TTL_MINUTES:-15}"
+    local dir="$REPO_ROOT/tests/unit"
+    [ -d "$dir" ] || return 0
+    find "$dir" -maxdepth 1 -type f -name '_tmp_*.bats' -mmin +"$ttl_minutes" -delete 2>/dev/null || true
+}
+
 bats_source_fingerprint() {
     if [ -n "${BATS_SOURCE_FINGERPRINT:-}" ]; then
         printf '%s\n' "$BATS_SOURCE_FINGERPRINT"
@@ -168,6 +183,8 @@ run_bats_files_parallel() {
 
     printf 'PASS: %s bats file(s) (%s run, %s cached)\n' "$total" "$launched_count" "$cached_count"
 }
+
+sweep_stale_embedded_test_tmp
 
 case "${1:-all}" in
     all)

@@ -228,6 +228,9 @@ queue/ntfy_batch_queue.txt
 !tests/*.bats
 !tests/unit/
 !tests/unit/*.bats
+# run_embedded_test() nested-test scratch files; must never be committed
+# (cmd_training_speed_hooks_pre_compact_save_20260607055904 accidentally committed one)
+tests/unit/_tmp_*.bats
 !tests/integration/
 !tests/integration/*.bats
 !tests/helpers/
