@@ -5267,6 +5267,7 @@ check_karo_idle_cycle() {
 # ═══ 将軍idle分析trigger (cmd_3549) ═══
 # 全忍者idle/completed/done + パイプライン空が10分以上継続 → 将軍にidle分析開始を通知
 check_shogun_idle_analysis_trigger() {
+    local trigger_state_file="${_SHOGUN_IDLE_TRIGGER_STATE:-/tmp/.shogun_idle_trigger_last}"
     local idle_cycle_flag
     idle_cycle_flag=$(get_idle_cycle_flag)
     if [ "$idle_cycle_flag" = "off" ]; then
@@ -5298,7 +5299,7 @@ check_shogun_idle_analysis_trigger() {
     log "SHOGUN-IDLE-ANALYSIS: All ${ninja_total} ninjas idle/completed/done + pipeline empty for ${idle_age}s → nudging shogun"
     if timeout 15 bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun "全忍者idle+パイプライン空が10分以上継続。idle時自己分析 Step 1-7 を開始せよ。" idle_analysis_trigger ninja_monitor >> "$LOG" 2>&1; then
         LAST_SHOGUN_IDLE_ANALYSIS_TRIGGER=$now
-        echo "$now" > "$_SHOGUN_IDLE_TRIGGER_STATE"
+        echo "$now" > "$trigger_state_file"
         log "SHOGUN-IDLE-ANALYSIS: Sent idle_analysis_trigger to shogun"
     else
         log "ERROR: SHOGUN-IDLE-ANALYSIS inbox_write failed"
