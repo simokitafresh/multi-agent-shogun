@@ -9,7 +9,9 @@ description: |
 quality_metric: "当該スキルで配備した偵察2名タスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-04T20:15:00+09:00 -->
+
+Script refs verified: 2026-07-04 cmd_training_skill_refs_recon_dual_202607042005. `deploy_task.sh` の checked_at(2026-07-03T02:15:00+09:00)以降変更をgit log/showで確認。781d3c456は報告YAMLartifact向け教訓target_files除外の内部注入精度改善、15ff192a9はtask YAML構文FAIL時にtask_assigned/report template/draft reviewを停止して家老へdeploy_error通知、fc056d4b2はreport templateのfiles_modified雛形とbinary_checks生成強化、da70ad039はactive peerとのtarget_pathファイル衝突をBLOCKしディレクトリ衝突はINFOにする安全ガード追加。1人目 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の呼び出し契約、safe_inbox_write通知、report template生成は維持。ただし2人目`--yaml`でも同一ファイルtarget_path衝突は新ガードでBLOCKされるため、これは重複ガード回避対象ではなく安全境界として扱い、配備済みにしない。
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 
@@ -57,6 +59,8 @@ bash scripts/lib/yaml_field_set.sh /tmp/recon2_<ninja2>.yaml "task" "cmd_id" "<c
 bash scripts/deploy_task.sh --yaml /tmp/recon2_<ninja2>.yaml <ninja2>
 ```
 `deploy_task.sh --yaml` が stale field reset、注入チェーン、report template生成、safe_inbox_write通知を実行する。手動 `cp` で `queue/tasks/<ninja2>.yaml` を上書きしたり、手動 `inbox_write` で通知したりしない。
+`deploy_task.sh --yaml` はtask YAML構文を検証し、構文FAIL時はtask_assigned/report template/draft reviewを停止して家老へdeploy_error通知する。/tmp YAML作成後は`yaml_field_set.sh`だけで編集し、構文FAILまたはtarget_pathファイル衝突BLOCKが出たら、2人目を配備済み扱いにしない。
+`deploy_task.sh` のtarget_path衝突ガードはparent_cmd重複ガードとは別系統である。同一ファイルtarget_pathを持つactive peerがいる場合は2人目`--yaml`でもBLOCKし、同一ディレクトリtarget_pathはINFOのみで継続する。2名偵察で同じファイルを意図する場合、このBLOCKを手動回避せず、cmd_complete_gate完了・別idle忍者選定・target_path粒度見直しのいずれかで処理する。
 `deploy_task.sh` が配備前にpending own report / completed peer reportを検出してBLOCKした場合、報告YAML消失防止が優先である。cmd_complete_gate完了または別idle忍者選定まで、2人目を配備済み扱いにしない。
 
 ### Step 4: 陣形図確認
