@@ -146,7 +146,8 @@ SPEED_TRAINING_LEDGER="${SPEED_TRAINING_LEDGER:-$SCRIPT_DIR/logs/script_speed_tr
 KARO_IDLE_COOLDOWN=1800   # 家老idle自走サイクルクールダウン（秒）— 30分
 LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epoch秒）
 SHOGUN_IDLE_ANALYSIS_COOLDOWN=3600  # 将軍idle分析triggerクールダウン（秒）— 60分
-LAST_SHOGUN_IDLE_ANALYSIS_TRIGGER=0 # 将軍idle分析trigger最終通知時刻（epoch秒）
+_SHOGUN_IDLE_TRIGGER_STATE="/tmp/.shogun_idle_trigger_last"
+LAST_SHOGUN_IDLE_ANALYSIS_TRIGGER=$(cat "$_SHOGUN_IDLE_TRIGGER_STATE" 2>/dev/null || echo 0) # 将軍idle分析trigger最終通知時刻（epoch秒）— ファイル永続化でrespawn跨ぎ
 SHOGUN_IDLE_ANALYSIS_ALL_IDLE_SINCE=0 # 全忍者idle+pipeline空の継続開始時刻（epoch秒）
 CI_STATUS_CACHE="UNKNOWN"       # CI statusキャッシュ値（L4-R24: GitHubAPI毎サイクル削減）
 CI_STATUS_CHECK_LAST=0          # CI statusキャッシュ最終更新時刻（epoch秒）
@@ -5297,6 +5298,7 @@ check_shogun_idle_analysis_trigger() {
     log "SHOGUN-IDLE-ANALYSIS: All ${ninja_total} ninjas idle/completed/done + pipeline empty for ${idle_age}s → nudging shogun"
     if timeout 15 bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun "全忍者idle+パイプライン空が10分以上継続。idle時自己分析 Step 1-7 を開始せよ。" idle_analysis_trigger ninja_monitor >> "$LOG" 2>&1; then
         LAST_SHOGUN_IDLE_ANALYSIS_TRIGGER=$now
+        echo "$now" > "$_SHOGUN_IDLE_TRIGGER_STATE"
         log "SHOGUN-IDLE-ANALYSIS: Sent idle_analysis_trigger to shogun"
     else
         log "ERROR: SHOGUN-IDLE-ANALYSIS inbox_write failed"
