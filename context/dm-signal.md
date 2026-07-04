@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-04 cmd_training_L1_report-write_20260704141831 -->
+<!-- last_updated: 2026-07-05 cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501 -->
 <!-- last_synced_lesson: L812 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -199,6 +199,11 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 | FE/指標 | Compare SummaryにAvg UWP/PTU/MaxDD UWP/TQQQ benchmark/right-tail metricsを追加。Drawdowns全件化はrevert済み。Monthly Trade masked表示修正 | `context/dm-signal-frontend.md` §2.6 |
 | 用語/知識 | DM-Signal用語disambiguation拡張、UWP/PTU区別追加、method全件へinvestment knowledge links接続 | `context/dm-signal-research.md` §37 |
 | 運用 | Homeに休日認識追加、価格backfill開始年を2000へ統一。fullrecalculateは別cmd必要 | `context/dm-signal-ops.md` §37-§38 |
+
+## §34 2026-07-04〜07-05 source freshness照合
+
+GA-179原因: `dm-signal.md`のlast_updatedは2026-07-04で、source監視対象に2026-07-04以後のDM-Signal commitが3件残っていた。恒久索引に反映すべき差分はcmd_3686の確定シグナル変更ntfy集約で、flush通知は個別POSTではなくバッチサマリー1通が正。詳細は `context/dm-signal-core.md` §21 FoF表示・監査系 / commit `0b034e3d`。
+`tasks/lessons.md`のみの2件(`894736d4`, `a3059891`)は教訓登録・stale lesson整理であり、総合索引本文への追記対象外。分割contextではcore/frontend/researchにもsource ALERTが残るため、横展開は各分割contextの鮮度cmdで扱う。
 
 ## 補助ポインタ
 
