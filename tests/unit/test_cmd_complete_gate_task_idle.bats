@@ -121,3 +121,49 @@ if not (archive_lines[-1] < call_line < git_push_lines[-1]):
 PY
     [ "$status" -eq 0 ]
 }
+
+stub_cmd_complete_side_effects() {
+    local stub
+    for stub in \
+        archive_completed dashboard_auto_section dashboard_update gist_sync ntfy_cmd ntfy \
+        gunshi_gate_reflux bulletin_write lesson_impact_rotate lesson_impact_analysis \
+        lesson_deprecation_scan rotate_gate_metrics auto_failure_lesson skill_gate_feedback
+    do
+        printf '#!/usr/bin/env bash\nexit 0\n' > "$TEST_PROJECT/scripts/${stub}.sh"
+        chmod +x "$TEST_PROJECT/scripts/${stub}.sh"
+    done
+}
+
+@test "no-task/no-report benchmark fast path still clears" {
+    stub_cmd_complete_side_effects
+    rm -f "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/"*.done
+    : > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"No-task benchmark fast path"* ]]
+    [[ "$output" == *"GATE CLEAR: cmd完了許可"* ]]
+}
+
+@test "no-task parent report with FAIL verdict blocks instead of benchmark fast path clear" {
+    stub_cmd_complete_side_effects
+    rm -f "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/"*.done
+    : > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    cat > "$TEST_PROJECT/queue/reports/hanzo_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: hanzo
+parent_cmd: $TEST_CMD_ID
+status: completed
+verdict: FAIL
+binary_checks:
+  commit:
+  - check: git commitが完了したか
+    result: no
+EOF
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [ "$status" -eq 1 ]
+    [[ "$output" != *"No-task benchmark fast path"* ]]
+    [[ "$output" == *"No-task parent report validation"* ]]
+    [[ "$output" == *"hanzo_report_${TEST_CMD_ID}.yaml: verdict=FAIL"* ]]
+    [[ "$output" == *"GATE BLOCK"* ]]
+}

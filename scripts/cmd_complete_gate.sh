@@ -3710,6 +3710,33 @@ for path in sorted(glob.glob(os.path.join(reports_dir, "*.yaml"))):
 PY
 }
 
+has_parent_cmd_report() {
+    local cmd_id="${1:-$CMD_ID}"
+    local reports_dir="$SCRIPT_DIR/queue/reports"
+
+    REPORTS_DIR="$reports_dir" CMD_ID="$cmd_id" python3 - <<'PY'
+import glob
+import os
+import yaml
+
+reports_dir = os.environ["REPORTS_DIR"]
+cmd_id = os.environ["CMD_ID"]
+
+for path in sorted(glob.glob(os.path.join(reports_dir, "*.yaml"))):
+    try:
+        with open(path, encoding="utf-8") as f:
+            report = yaml.safe_load(f) or {}
+    except Exception:
+        continue
+    if not isinstance(report, dict):
+        continue
+    if str(report.get("parent_cmd") or "").strip() == cmd_id:
+        raise SystemExit(0)
+
+raise SystemExit(1)
+PY
+}
+
 collect_git_show_w_files() {
     local git_ref="${1:-HEAD}"
 
@@ -5178,7 +5205,7 @@ preflight_gate_flags "$CMD_ID"
 
 # cmd_test_speed などの測定用IDはtask YAMLにもcmdキューにも存在しない。
 # その場合、報告YAML/通知/アーカイブ系の全走査は意味を持たず、測定値だけを汚す。
-if [ "${MATCHING_TASK_FILES_INITIAL_COUNT:-0}" -eq 0 ] && ! cmd_entry_exists "$CMD_ID"; then
+if [ "${MATCHING_TASK_FILES_INITIAL_COUNT:-0}" -eq 0 ] && ! cmd_entry_exists "$CMD_ID" && ! has_parent_cmd_report "$CMD_ID"; then
     echo "[L1] No-task benchmark fast path:"
     echo "  no task files and no cmd entry; report-dependent gates skipped"
     echo ""
@@ -5339,6 +5366,75 @@ fi
 MISSING_GATES=()
 BLOCK_REASONS=()
 ALL_CLEAR=true
+
+if [ "${MATCHING_TASK_FILES_INITIAL_COUNT:-0}" -eq 0 ] && ! cmd_entry_exists "$CMD_ID" && has_parent_cmd_report "$CMD_ID"; then
+    level_heading "[L1]" "No-task parent report validation:"
+    while IFS=$'\t' read -r report_file report_status report_detail; do
+        [ -n "$report_file" ] || continue
+        case "$report_status" in
+            OK)
+                echo "  $(basename "$report_file"): OK (${report_detail})"
+                ;;
+            *)
+                echo "  [CRITICAL] $(basename "$report_file"): ${report_detail}"
+                record_block_reason "no_task_parent_report:$(basename "$report_file"):${report_status}"
+                ALL_CLEAR=false
+                ;;
+        esac
+    done < <(REPORTS_DIR="$SCRIPT_DIR/queue/reports" CMD_ID="$CMD_ID" python3 - <<'PY'
+import glob
+import os
+import yaml
+
+reports_dir = os.environ["REPORTS_DIR"]
+cmd_id = os.environ["CMD_ID"]
+
+def iter_check_results(value):
+    if isinstance(value, dict):
+        for nested in value.values():
+            yield from iter_check_results(nested)
+        return
+    if isinstance(value, list):
+        for item in value:
+            if isinstance(item, dict):
+                yield str(item.get("result", "") or "").strip()
+            else:
+                yield ""
+        return
+    yield ""
+
+for path in sorted(glob.glob(os.path.join(reports_dir, "*.yaml"))):
+    try:
+        with open(path, encoding="utf-8") as f:
+            report = yaml.safe_load(f) or {}
+    except Exception:
+        continue
+    if not isinstance(report, dict):
+        continue
+    if str(report.get("parent_cmd") or "").strip() != cmd_id:
+        continue
+
+    verdict = str(report.get("verdict", "") or "").strip()
+    binary_checks = report.get("binary_checks")
+    results = list(iter_check_results(binary_checks)) if binary_checks is not None else []
+    bad_results = [
+        result for result in results
+        if result.lower() not in ("yes", "pass", "true")
+    ]
+    if verdict == "FAIL":
+        print(f"{path}\tFAIL_VERDICT\tverdict=FAIL")
+    elif verdict not in ("PASS", "PASS_NO_IMPROVEMENT"):
+        print(f"{path}\tBAD_VERDICT\tverdict={verdict or 'MISSING'}")
+    elif not results:
+        print(f"{path}\tBINARY_CHECKS_MISSING\tbinary_checks missing")
+    elif bad_results:
+        print(f"{path}\tBINARY_CHECKS_FAIL\tbinary_checks has non-PASS results")
+    else:
+        print(f"{path}\tOK\tparent report checks pass")
+PY
+)
+    echo ""
+fi
 
 level_heading "[L1]" "Gate check: ${CMD_ID}"
 echo "  Framework: [L1] Existence | [L2] Substantive | [L3] Integration"
