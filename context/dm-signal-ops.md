@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-03 cmd_3676 -->
+<!-- last_updated: 2026-07-05 cmd_karo_hotfix_ga178_dm_signal_ops_context_freshness_2026070500 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -91,6 +91,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 ## §37 ETL
 
 - cmd_3668/3669: FE実要求paramsとprecompute raw paramsの同期防御。dashboard performance yearsは `frontend/app/dashboard/page.tsx` の共有定数経由で呼び、`backend/tests/test_precompute_raw.py` がPAGE_APIS内の直書き `api.getPerformance(portfolioId, 3/0)` 不在を検査する。FE params lessonは `tasks/lessons.md` L803。関連commit: DM-Signal `49e9d8f6`, `3730537c`。
+- cmd_3685: `sync-prices` はREFETCH_DAYS窓ではなく全期間を要求する。対象は `backend/app/jobs/data_fetcher.py` / `backend/app/jobs/sync_layers.py` / `backend/app/api/etl_trigger.py`、回帰テストは `backend/tests/test_data_fetcher_full_period.py`。関連commit: DM-Signal `75c4444d`。
 - L793: Render cron envVarsはAPI現物で検証せよ（cmd_3634）
 - L794: 月次cronのUTC day-of-month指定はJSTタイムゾーンオフセット越境で1日ずれる（cmd_3634_recon3）
 - ETL cronはL0-L3の4本体制。L0/L1/L2/L3の各レイヤーを独立cronで同期し、上位レイヤーは下位レイヤー完了後の本番DBを読む。
@@ -133,6 +134,17 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 
 ★ cProfile等の計測はRender上で実行すべき。ローカル→Singapore RTT 80msがDB I/O比率を歪める(2026-04-17実証)。
 ★ cronジョブのregionがoregon(render.yamlではsingapore指定)。DB(singapore)とcron(oregon)間でRTTが発生している可能性。要確認。
+
+## §38 シグナル変更アラート
+
+- cmd_3684/3686: confirmed holding signal rewrite検知はntfy pushへ接続済み。個別POST連打ではなくbatch summary 1通に集約する。対象は `backend/app/jobs/flush/signal_flush.py`、回帰テストは `backend/tests/test_flush.py`。関連commit: DM-Signal `6b460ecf`, `0b034e3d`。
+- cmd_3684: `render.yaml` にシグナル変更アラート用envを追加。Render envはAPI現物で確認する。関連commit: DM-Signal `6b460ecf`。
+- cmd_3684直前: debug endpoint lint正規化は機能変更ではなく差分整理。関連commit: DM-Signal `67da37c4`。
+- cmd_3686直前: confirmed holding signal rewrite検知は `recalculate_fast.py` / `recalculate_fof.py` / debug endpointにも接続されている。関連commit: DM-Signal `ca170887`。
+
+## §39 月初signal input snapshot
+
+- cmd_3687相当: 月初signal input snapshotを追加。DB migration/model、`recalculate_fast.py`、Render設定、`backend/tests/test_month_start_input_snapshots.py` が対象。運用確認時はsnapshotテーブルの作成と月初入力保存の両方を見る。関連commit: DM-Signal `88c29a92`。
 
 ### パリティ全基準チェックリスト（殿定義集約 2026-04-11）
 
