@@ -10,7 +10,9 @@ description: |
   DO NOT TRIGGER: 報告YAML全体作成（→/report-write）、commit（→/ninja-commit）
 ---
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-04T20:13:35+09:00 -->
+
+Script refs verified: 2026-07-04 cmd_training_skill_refs_verdict_check_202607042005. checked_at 2026-07-03T02:15:00+09:00 以降の `gate_report_format.sh` 差分は 83fc58fd (`cmd_karo_hotfix_commit_missing_structural_202607032250`) のみ。bc:commit=yes時の未commit検査対象を`target_path`だけでなく報告YAMLの`files_modified`申告ファイルにも拡張する変更で、`binary_checks`からのverdict自動導出（全yes→PASS/1つでもno→FAIL/空・FILL_THIS→BLOCK）ロジックは`gate_report_format_combined.py`側にあり無変更。verdict-checkの手順・判定ルールへの影響なし。
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 
@@ -109,6 +111,9 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 - **verdict を Edit toolで直接書くな** — 独立フィールドとして扱うほど矛盾の温床になる
 
 ## 注意ポイント
+- 2026-07-04: gate=gate_report_format result=FAIL executor=tobisaru reason=binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ;...
+
+- 2026-07-03: gate=gate_report_format result=FAIL executor=kotaro reason=binary_checks: item count 6/14 (<50% of task template)
 - 2026-07-02: gate=cmd_complete_gate result=FAIL executor=kagemaru reason=kagemaru:purpose_validation_fit_false
 
 - 2026-07-02: gate=gate_report_format result=FAIL executor=saizo reason=binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")
