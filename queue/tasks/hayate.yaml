@@ -1,49 +1,49 @@
 task:
-  readonly_ref:
-  - path: 'docs/research/cmd_3647_lighthouse/lord_mobile_measurement_20260702.md'
-    reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3650_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3650 (deployed 2026-07-02T15:03:31). Read from the beginning.
-  ac_version: 0499e025
-  assigned_to: hayate
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      description: CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 bash scripts/gates/gate_context_freshness.shでGA-179 ALERTを再現し、dm-signal.md last_updated以後のDM-Signal source commitsを列挙して直接原因と根本原因仮説を報告する
+    AC2:
+      description: context/dm-signal.mdを一次情報と照合し、内容更新が必要なら索引層スタイルで最小更新とlast_updated更新を行い、不要なら根拠を報告する
+    AC3:
+      description: 同カテゴリの横展開候補（分割contextとの役割重複、TOP3テンプレート不一致、更新トリガー欠落）を確認し、防御層の必要有無を報告または最小修正する
+    AC4:
+      description: CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 bash scripts/gates/gate_context_freshness.shを再実行し、dm-signal.md ALERTが解消した、または残る理由が二値で説明されている
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
-  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
-  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
-  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
-  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
-  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
-  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
-  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
-  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
-  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
-  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  not_in_scope: DM-Signal本体機能修正、対象外contextの大規模棚卸し、無関係dirty差分のstage/commit
   parallel_ok: []
-  parent_cmd: cmd_3650
-  project: dm-signal
-  purpose: 殿の実測Lighthouse(2026-07-02 mobile条件+PF指定URL)でPerformance 60・Speed Index 11.4秒・TBT 7.3秒を確認。cmd_3647のdesktop計測(スコア99)では見えなかった実運用の本丸。根因は(1)チャンク7023-9055c9ab14b0369a.jsのモバイルCPU実行131秒 (2)monthly-returnsの他PF直列先読みfetchが画面変化を12秒まで引き延ばす構造。詳細分析はdocs/research/cmd_3647_lighthouse/lord_mobile_measurement_20260702.md。根因を特定して対策し、同条件再計測で差分を実証する
-  status: assigned
+  parent_cmd: cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501
+  project: infra
+  purpose: 'GA-179 context_freshness ALERT: dm-signal.mdの鮮度乖離を一次情報で調査し、必要なcontext更新またはgate防御層を実装する'
+  status: done
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/frontend
-  task_id: cmd_3650_full
-  task_type: full
+  target_path: context/dm-signal.md
+  task_id: cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501_normal
+  task_type: hotfix
+  unresolved_decisions: none
   related_lessons:
-  - id: 'L120'
-    summary: 'IF report gateで報告ファイルの存在判定を行う時 THEN prefix検索+archive探索を併用せよ'
-    detail: 'IF report gateで報告ファイルの存在判定を行う時 THEN prefix検索+archive探索を併用せよ'
+  - id: 'L888'
+    summary: 'GA-155では通常gateはfrontend更新後OKになったが、cache無効+timeout10ではdm-signal.mdの別ALERTが残った。ass'
+    detail: 'GA-155では通常gateはfrontend更新後OKになったが、cache無効+timeout10ではdm-signal.mdの別ALERTが残った。ass'
+  - id: 'L510'
+    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
+    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
+  - id: 'L314'
+    summary: 'cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf'
+    detail: 'cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -59,61 +59,43 @@ task:
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "skill_routing — スキルルーティング:  skills/*/SKILL.md"
-  recommended_skills:
-  - "shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み)"
-  - "reset-layout(全ペイン配置復元)"
-  - "shogun-clear-prep(clear前)"
-  - "dream(三層記憶整理)"
-  - "shogun-teire(棚卸し)"
-  - "lesson-sort(教訓整理)"
-  - "switch-project(PJ切替)"
-  - "shogun-pd-sync(裁定反映)"
-  - "cmd-complete(GATE CLEAR後/家老)"
-  - "dashboard-update(ダッシュボード/家老)"
-  related_causal_links:
-  - "[[cmd_3650]]"
-  - "[[チャンク7023メインスレッド131秒+直列先読み]]"
-  - "[[殿実測mobile_Lighthouse_20260702]]"
+  - "lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/auto_draft_lesson.sh scripts/sync_lessons.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml docs/research/gunshi_idle_insights_consumption_bottleneck_20260515.md — 軍師idle: インサイト消費ボトルネック分析(2026-05-15) docs/research/gunshi_idle_knowledge_burial_audit_20260505.md — 軍師idle: 知識埋没監査(2026-05-05) docs/research/gunshi_idle_lesson_dedup_20260413.md — 軍師idle: 教訓重複排除分析(2026-04-13) docs/research/gunshi_idle_lesson_effectiveness_20260413.md — 軍師idle: 教訓有効性測定(2026-04-13) docs/research/gunshi_idle_lesson_impact_20260412.md — 軍師idle: 教訓インパクト分析(2026-04-12) docs/research/gunshi_idle_lesson_injection_dual_track_20260428.md — 軍師idle: 教訓注入デュアルトラック設計(2026-04-28) docs/research/gunshi_idle_lesson_injection_quality_20260605.md — 軍師idle: 教訓注入品質監査(2026-06-05) docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md — 軍師idle: 教訓注入汎用バイパス問題(2026-06-02) docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md — 軍師idle: 教訓参照率分析(2026-04-30) docs/research/gunshi_idle_lesson_tag_mismatch_20260507.md — 軍師idle: 教訓タグ不一致分析(2026-05-07) docs/research/gunshi_idle_lesson_useful_rate_20260422.md — 軍師idle: 教訓有用率計測(2026-04-22) docs/research/gunshi_idle_lesson_useful_rate_20260503.md — 軍師idle: 教訓有用率計測v2(2026-05-03) docs/research/gunshi_idle_lesson_useful_rate_20260608.md — 軍師idle: 教訓有用率計測v3(2026-06-08) docs/research/gunshi_idle_lesson_waste_analysis_20260516.md — 軍師idle: 教訓無駄分析(2026-05-16) docs/research/gunshi_idle_lesson_useful_rate_improvement_20260620.md — 軍師idle: 教訓有用率改善分析(2026-06-20) docs/research/gunshi_idle_session_lessons_20260617.md — 軍師idle: セッション教訓分析(2026-06-17) docs/research/gunshi_idle_session_lessons_20260618.md — 軍師idle: セッション教訓分析(2026-06-18) docs/research/gunshi_idle_self_run_20260624.md — 軍師idle: idle自走Step1-8完了分析(2026-06-24) docs/research/gunshi_idle_useful_rate_bootstrap_analysis_20260618.md — 軍師idle: 有用率ブートストラップ分析(2026-06-18) docs/research/lessons_karo_v3_archive.md — 家老教訓v3アーカイブ(統合前全文保存)"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/robustness-verification-catalog.md"
-  - "context/gs-speedup-knowledge.md"
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
-  production_invariants:
-  - "PI-001: 日次解像度シグナル。月次dedupは日次差異を破壊する"
-  - "PI-002: SQLite=不完全ミラー。PostgreSQLが真実"
-  - "PI-003: standard PF config JSON に pipeline_config 必須。NoneでCashフォールバック"
-  - "PI-004: GSはPydanticスキーマ不通過。本番投入前にバリデーション必須"
-  - "PI-005: 新規PF登録後のrecalculateはfull(portfolio_id指定なし)一発が鉄則"
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L120: IF report gateで報告ファイルの存在判定を行う時 THEN prefix検索+archive探索を併用せよ
+      - L888: GA-155では通常gateはfrontend更新後OKになったが、cache無効+timeout10ではdm-signal.mdの別ALERTが残った。ass
+      - L510: gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check 
+      - L314: cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
   memory_db_context:
-  - '2026-07-02T14:56:55+09:00 | 【INFOバッチ】 2026-07-02 14:50:51|cmd_3647 2026-07-02 14:55:38|cmd_karo_hotfix_insight_corruption_202607'
-  - '2026-07-02T14:37:17+09:00 | 【INFOバッチ】 2026-07-02 14:24:45|cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402'
-  - '2026-07-01T22:02:18+09:00 | gist index更新完了。 殿の御指示を待つ。 [meta] stop_reason=end_turn'
-  - '2026-07-01T22:01:23+09:00 | gist indexも更新しろ'
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: '重量チャンクに含まれるモジュールの内訳と、モバイルCPU実行時間の支配的要因(再レンダリング・重計算・チャート描画等)を特定し、因果連鎖を報告に記載する'
-  - id: 'AC2'
-    checks:
-    - check: '特定した根因への対策(メモ化・計算の遅延化・先読みfetchの抑制や並列化等)を実装し、lintとbuildと関連する既存FEテストがPASSすることを確認する'
-  - id: 'AC3'
-    checks:
-    - check: '殿実測と同条件(mobileエミュレーション+CPUスロットリング+PF指定URL)のLighthouse再計測で、TBTとSpeed Indexの変更前後差分を報告に記載する'
+  - '2026-07-05T00:41:01+09:00 | 【INFOバッチ】 2026-07-05 00:36:59|cmd_karo_hotfix_ga178_dm_signal_ops_context_freshness_2026070500'
+  - '2026-07-04T20:58:27 | PD-048/PD-049 resolved: context_freshness_check.sh now uses config/projects.yaml active path as sour'
+  - '2026-07-05T01:03:51+09:00 | 【将軍】context鮮度ALERT: dm-signal.md(source更新)'
+  - '2026-07-05T00:30:03+09:00 | 【将軍】context鮮度ALERT: dm-signal-ops.md(source更新)'
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501_normal
+  _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3650.yaml
-  report_path: queue/reports/hayate_report_cmd_3650.yaml
+  report_filename: hayate_report_cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -123,17 +105,17 @@ task:
     warning: '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 147
+      count: 152
     - pattern: 'verdict_invalid'
-      count: 26
+      count: 29
     - pattern: 'field_missing'
-      count: 22
+      count: 24
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
     gate_blocks:
     - reason: 'report_format'
-      count: 2
+      count: 3
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'binary_checks_fail'
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-02T15:04:21"
+  deployed_at: "2026-07-05T01:08:36"
