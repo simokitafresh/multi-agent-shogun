@@ -1396,6 +1396,84 @@ PY
     [ "${result[1]}" = "0" ]
 }
 
+@test "obsidian_promote_finalize finalizes reviewed event-id-file in one backup" {
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.execute(
+    """
+    CREATE TABLE events (
+        id TEXT PRIMARY KEY,
+        ts TEXT,
+        event_type TEXT,
+        agent TEXT,
+        summary TEXT,
+        detail TEXT,
+        cmd_id TEXT,
+        concepts TEXT,
+        source_file TEXT,
+        importance TEXT,
+        state TEXT DEFAULT 'raw',
+        occurred_at TEXT,
+        raw_content TEXT,
+        updated_at TEXT
+    )
+    """
+)
+rows = [
+    ("event:a", "2026-07-04T10:00:00+09:00", "cmd_save", "shogun", "A候補", "A detail", "cmd_a", "[\"三層記憶\"]", "source_a", "high", "obsidian_candidate", "2026-07-04T10:00:00+09:00", "A raw", None),
+    ("event:b", "2026-07-04T10:01:00+09:00", "inbox", "kotaro", "B候補", "B detail", "cmd_b", "[\"教訓\"]", "source_b", "high", "obsidian_candidate", "2026-07-04T10:01:00+09:00", "B raw", None),
+    ("event:c", "2026-07-04T10:02:00+09:00", "inbox", "hanzo", "未選択候補", "C detail", "cmd_c", "[]", "source_c", "high", "obsidian_candidate", "2026-07-04T10:02:00+09:00", "C raw", None),
+]
+conn.executemany("INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", rows)
+conn.commit()
+PY
+    printf '%s\n' 'event:a' 'event:b' > "$TEST_TMPDIR/event_ids.txt"
+    mkdir -p "$TEST_TMPDIR/backups" "$TEST_TMPDIR/notes"
+
+    run bash "$PROJECT_ROOT/scripts/obsidian_promote_finalize.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --backup-dir "$TEST_TMPDIR/backups" \
+        --notes-dir "$TEST_TMPDIR/notes" \
+        --event-id-file "$TEST_TMPDIR/event_ids.txt" \
+        --reason "reviewed batch approve"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"backup=$TEST_TMPDIR/backups/memory.db.bak_obsidian_promote_finalize_"* ]]
+    [[ "$output" == *"updated=2"* ]]
+    [[ "$output" == *"event:a|note="* ]]
+    [[ "$output" == *"event:b|note="* ]]
+
+    readarray -t result < <(python3 - "$TEST_TMPDIR/data/memory.db" "$TEST_TMPDIR/backups" "$TEST_TMPDIR/notes" <<'PY'
+import sqlite3
+import sys
+from pathlib import Path
+
+conn = sqlite3.connect(sys.argv[1])
+backup_paths = sorted(Path(sys.argv[2]).glob("memory.db.bak_obsidian_promote_finalize_*"))
+note_paths = sorted(Path(sys.argv[3]).glob("*.md"))
+print(len(backup_paths))
+print(len(note_paths))
+print(conn.execute("SELECT state FROM events WHERE id='event:a'").fetchone()[0])
+print(conn.execute("SELECT state FROM events WHERE id='event:b'").fetchone()[0])
+print(conn.execute("SELECT state FROM events WHERE id='event:c'").fetchone()[0])
+print(conn.execute("SELECT COUNT(*) FROM event_links WHERE link_type='obsidian_promoted_note'").fetchone()[0])
+print(conn.execute("SELECT COUNT(*) FROM event_state_transitions WHERE to_state='obsidian_promoted' AND reason='reviewed batch approve'").fetchone()[0])
+backup_conn = sqlite3.connect(backup_paths[0])
+print(backup_conn.execute("SELECT state FROM events WHERE id='event:a'").fetchone()[0])
+PY
+)
+    [ "${result[0]}" = "1" ]
+    [ "${result[1]}" = "2" ]
+    [ "${result[2]}" = "obsidian_promoted" ]
+    [ "${result[3]}" = "obsidian_promoted" ]
+    [ "${result[4]}" = "obsidian_candidate" ]
+    [ "${result[5]}" = "2" ]
+    [ "${result[6]}" = "2" ]
+    [ "${result[7]}" = "obsidian_candidate" ]
+}
+
 @test "memory_db_live_insert defines the complete event state set" {
     readarray -t result < <(python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" <<'PY'
 import importlib.util

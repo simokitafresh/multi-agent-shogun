@@ -10,6 +10,7 @@ backup_dir=""
 notes_dir="$script_dir/docs/obsidian-promoted"
 limit=10
 event_id=""
+event_id_file=""
 reason=""
 dry_run=0
 force=0
@@ -17,13 +18,15 @@ force=0
 usage() {
     cat <<'EOF' >&2
 Usage: obsidian_promote_finalize.sh [--db PATH] [--backup-dir DIR] [--notes-dir DIR]
-                                    [--limit N] [--event-id ID] [--reason TEXT]
+                                    [--limit N] [--event-id ID] [--event-id-file PATH]
+                                    [--reason TEXT]
                                     [--dry-run] [--force]
 
 Creates Obsidian note drafts from events in state=obsidian_candidate, records the
 event_id -> note path relationship in event_links, and transitions finalized
 events to state=obsidian_promoted. State-changing runs always create a SQLite
-backup before UPDATE.
+backup before UPDATE. Use --event-id-file to finalize multiple reviewed IDs with
+one backup/cache-sync cycle.
 EOF
 }
 
@@ -54,6 +57,11 @@ while [ "$#" -gt 0 ]; do
             event_id="$2"
             shift 2
             ;;
+        --event-id-file)
+            [ "$#" -ge 2 ] || { usage; exit 2; }
+            event_id_file="$2"
+            shift 2
+            ;;
         --reason)
             [ "$#" -ge 2 ] || { usage; exit 2; }
             reason="$2"
@@ -78,7 +86,7 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 
-python3 - "$script_dir" "$db_path" "$backup_dir" "$notes_dir" "$limit" "$event_id" "$reason" "$dry_run" "$force" <<'PY'
+python3 - "$script_dir" "$db_path" "$backup_dir" "$notes_dir" "$limit" "$event_id" "$event_id_file" "$reason" "$dry_run" "$force" <<'PY'
 from __future__ import annotations
 
 import importlib.util
@@ -191,6 +199,23 @@ def relative_path(path: Path, repo_root: Path) -> str:
         return path.resolve().as_posix()
 
 
+def load_event_ids(path_text: str) -> list[str]:
+    if not path_text:
+        return []
+    path = Path(path_text)
+    if not path.exists():
+        raise SystemExit(f"obsidian_promote_finalize: event id file not found: {path}")
+    ids: list[str] = []
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        ids.append(line)
+    if not ids:
+        raise SystemExit(f"obsidian_promote_finalize: event id file contains no ids: {path}")
+    return ids
+
+
 def main() -> int:
     repo_root = Path(sys.argv[1])
     db_path = Path(sys.argv[2])
@@ -198,10 +223,15 @@ def main() -> int:
     notes_dir = Path(sys.argv[4])
     limit = parse_positive_int(sys.argv[5], "--limit")
     event_id = sys.argv[6].strip()
-    reason = sys.argv[7].strip() or "Obsidian note draft generated and linked"
-    dry_run = sys.argv[8] == "1"
-    force = sys.argv[9] == "1"
+    event_id_file = sys.argv[7].strip()
+    reason = sys.argv[8].strip() or "Obsidian note draft generated and linked"
+    dry_run = sys.argv[9] == "1"
+    force = sys.argv[10] == "1"
     state_module = None
+    event_ids = load_event_ids(event_id_file)
+
+    if event_id and event_ids:
+        raise SystemExit("obsidian_promote_finalize: --event-id and --event-id-file are mutually exclusive")
 
     def get_state_module():
         nonlocal state_module
@@ -243,6 +273,10 @@ def main() -> int:
         if event_id:
             where += " AND id = ?"
             params.append(event_id)
+        elif event_ids:
+            placeholders = ", ".join("?" for _ in event_ids)
+            where += f" AND id IN ({placeholders})"
+            params.extend(event_ids)
         params.append(limit)
         select_columns = "id, summary" if dry_run else (
             "id, ts, event_type, agent, summary, detail, cmd_id, concepts, "
