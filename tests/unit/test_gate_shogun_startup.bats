@@ -1490,7 +1490,7 @@ EOF
     cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
 entries: []
 EOF
-    archive_file="$TEST_TMPDIR/queue/archive/bulletin_$(date +%Y%m%d).yaml"
+    archive_file="$TEST_TMPDIR/queue/archive/bulletin_$(TZ=Asia/Tokyo date +%Y%m%d).yaml"
     cat > "$archive_file" <<'EOF'
 entries:
 - id: 'blt_archived_q6_self_detection'
@@ -1532,7 +1532,7 @@ EOF
     [[ "$output" == *"自己検出率: 100.0% (1/1, source=bulletin_board+today_archive Q6 grep)"* ]]
     [[ "$output" == *"4象限: 成長 — 殿介入なしで自己検出あり"* ]]
 
-    archive_file="$TEST_TMPDIR/queue/archive/bulletin_$(date +%Y%m%d).yaml"
+    archive_file="$TEST_TMPDIR/queue/archive/bulletin_$(TZ=Asia/Tokyo date +%Y%m%d).yaml"
     cp "$TEST_TMPDIR/queue/bulletin_board.yaml" "$archive_file"
     cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
 entries: []
