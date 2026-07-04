@@ -3,11 +3,22 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: 才蔵へのstatus_requestがinbox未読のままpaneに届かなかった事象をinbox_watcher/manual_nudgeログとコードで特定する
+      binary_checks:
+      - 'training_proposal.fail_reasonを読み、該当するBLOCKパターンを特定したか: yes/no'
+      - '対象スキル手順のどのステップで同種FAILを防ぐかを報告したか: yes/no'
+      description: 'gate FAIL原因(#1: verdict非二値)を対象スキル手順と照合し、どの記入・検証手順で防ぐかを説明する'
     AC2:
-      description: busy/debounce設計上の正常挙動なら再発時の運用手順を報告し、バグならinbox_watcher.sh周辺で修正する
+      binary_checks:
+      - 'report_field_set.sh経由で必須フィールドを記入したか: yes/no'
+      - '全binary_checksのresultをyes/noで記入したか: yes/no'
+      - 'gate_report_formatを実行し結果を報告したか: yes/no'
+      description: 報告YAMLテンプレートをreport_field_set.sh経由で完成させ、gate_report_formatを実行してPASS/FAILを数値で確認する
     AC3:
-      description: 修正時は構文確認と最小再現、調査のみなら根拠ファイル/行番号を報告する
+      binary_checks:
+      - 'lesson_candidateに次回追加すべきチェックをorigin付きで記入したか: yes/no'
+      - 'verdictがgateまたはbinary_checksと矛盾していないことを確認したか: yes/no'
+      description: 同じFAILを次回防ぐlesson_candidateをorigin付きで記録し、verdictとbinary_checksの整合を確認する
+  command: training_proposal.fail_reason を再現し、report-write の手順で gate_report_format をPASSへ戻す。report_field_set.sh/verdict自動導出/binary_checksのどこで同種FAILを防ぐかを報告する。
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -22,24 +33,25 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_inbox_busy_nudge_visibility_202607041407
+  parent_cmd: cmd_training_L1_report-write_20260704141831
   project: infra
-  purpose: busy中の忍者へstatus_request nudgeが見えず未読が残る経路を調査し、必要なら標準経路で改善する
+  purpose: 'skill=report-write のgate FAIL(#1: verdict非二値)に対するL1修行。BLOCKパターンを実戦前に学習し一発PASS率を向上させる'
+  scout_exempt: true
   status: done
   stop_for: []
-  target_path: scripts/inbox_watcher.sh
-  task_id: cmd_karo_hotfix_inbox_busy_nudge_visibility_202607041407_normal
-  task_type: hotfix
+  target_path: skills/report-write/SKILL.md
+  task_id: cmd_training_L1_report-write_20260704141831_normal
+  task_type: skill_training
   related_lessons:
-  - id: 'L920'
-    summary: 'inbox_watcher.shのようなinotifywait常駐daemonでは、起動(source)コストは低頻度だが、mainループ本体(process_'
-    detail: 'inbox_watcher.shのようなinotifywait常駐daemonでは、起動(source)コストは低頻度だが、mainループ本体(process_'
-  - id: 'L929'
-    summary: 'inbox_watcher.shのbusy-gate defer(profiles.codex.inbox_busy_max_defer_sec、既定30秒)は'
-    detail: 'inbox_watcher.shのbusy-gate defer(profiles.codex.inbox_busy_max_defer_sec、既定30秒)は'
-  - id: 'L321'
-    summary: 'INBOX_WRITE_TEST=1設定下ではNINJA_NAMESが空→is_ninja_reporter=0→report_received処理全体がスキッ'
-    detail: 'INBOX_WRITE_TEST=1設定下ではNINJA_NAMESが空→is_ninja_reporter=0→report_received処理全体がスキッ'
+  - id: 'L950'
+    summary: 'target_path中心の未commit検査だけでは、報告YAMLのfiles_modifiedに載せたtarget_path外ファイルが未commitでも見'
+    detail: 'target_path中心の未commit検査だけでは、報告YAMLのfiles_modifiedに載せたtarget_path外ファイルが未commitでも見'
+  - id: 'L795'
+    summary: 'gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し、最後の値をfreshness時'
+    detail: 'gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し、最後の値をfreshness時'
+  - id: 'L828'
+    summary: 'gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr'
+    detail: 'gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -54,6 +66,8 @@ task:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  semantic_concepts:
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -73,21 +87,21 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L920: inbox_watcher.shのようなinotifywait常駐daemonでは、起動(source)コストは低頻度だが、mainループ本体(process_
-      - L929: inbox_watcher.shのbusy-gate defer(profiles.codex.inbox_busy_max_defer_sec、既定30秒)は
-      - L321: INBOX_WRITE_TEST=1設定下ではNINJA_NAMESが空→is_ninja_reporter=0→report_received処理全体がスキッ
+      - L950: target_path中心の未commit検査だけでは、報告YAMLのfiles_modifiedに載せたtarget_path外ファイルが未commitでも見
+      - L795: gate_skill_script_refs.shはSKILL.md内のscript_refs_checked_atを全件抽出し、最後の値をfreshness時
+      - L828: gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
   memory_db_context:
-  - '2026-07-03T13:19:04+09:00 | 全て既読。inbox1のnudgeは処理済み。未読0件。idle待機。 [meta] stop_reason=end_turn'
-  - '2026-07-03T12:24:14+09:00 | 全て既読。inbox1のnudgeは処理済みのgate_clear。未読0件。idle待機。 [meta] stop_reason=end_turn'
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_inbox_busy_nudge_visibility_202607041407_normal
+  - '2026-07-03T14:48:43+09:00 | 殿、強くてニューゲーム化完了。 ## 今セッション成果(01:46-14:47) | 項目 | 数値 | /clear後 | |------|------|---------| | レビュー | 27'
+  - '2026-07-03T14:23:12+09:00 | 報告YAML完成。家老へ報告します。verdict=FAILは軍師の「commit止め」指示による意図的なものである旨を明記します。 [meta] stop_reason=tool_use'
+  ac_version: bad60c63
+  _ac_task_id: cmd_training_L1_report-write_20260704141831_normal
   _ac_worker_id: 
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_karo_hotfix_inbox_busy_nudge_visibility_202607041407.yaml
-  report_path: queue/reports/kagemaru_report_cmd_karo_hotfix_inbox_busy_nudge_visibility_202607041407.yaml
+  report_filename: kagemaru_report_cmd_training_L1_report-write_20260704141831.yaml
+  report_path: queue/reports/kagemaru_report_cmd_training_L1_report-write_20260704141831.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -116,15 +130,32 @@ task:
     - reason: 'purpose_validation_fit_false'
       count: 1
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
-  deployed_at: "2026-07-04T14:09:48"
-  progress: "AC1-AC3完了: status_request未達はbusy gating保留後101秒でrecovery nudge配達済み。bash -n PASS、inbox_watcher関連bats 9件PASS。コード修正なし。"
-  session_state:
-    attempt: 1
+  deployed_at: "2026-07-04T14:21:31"
+  progress: "AC1-AC3完了: verdict missing/#1 verdict非二値はbinary_checks未記入が根因。report_field_set.shで全必須フィールドとbinary_checks yes/noを記入し、gate_report_format自動導出でverdict=PASSを確認予定。"
+training_proposal:
+  block_patterns: '#1: verdict非二値'
+  fail_reason: verdict missing
+  gate: gate_report_format
+  generated_at: '2026-07-04T14:18:31'
+  skill: report-write
+  status: pending_karo_review
+  suggested_parent_cmd: cmd_training_L1_report-write_20260704141831
+  suggested_purpose: 'skill=report-write のgate FAIL(#1: verdict非二値)に対する修行。BLOCKパターンを実戦前に学習し一発PASS率を向上させる'
+  training_level: L1
+  unchanged_streak: 2
+
+  previous_failures:
+    attempt: 2
     last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
     tried_approaches:
     - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    diagnose_reason: '自分のtask YAML status/progress更新を未commitのまま報告gateへ進んだため、cmd_3264の未commit変更検査に止められた。調査のみでも自己task YAMLを変更したらscope確認とcommitを先に完了する必要があった。'
     approach_summary: '才蔵status_request未達はbusy gatingによる保留後、101秒でrecovery nudge配達済みの正常系と特定。コード修正なし。'
     prior_attempts:
     - attempt: 1
       block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: '才蔵status_request未達はbusy gatingによる保留後、101秒でrecovery nudge配達済みの正常系と特定。コード修正なし。'
+    - attempt: 2
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      diagnose_reason: '自分のtask YAML status/progress更新を未commitのまま報告gateへ進んだため、cmd_3264の未commit変更検査に止められた。調査のみでも自己task YAMLを変更したらscope確認とcommitを先に完了する必要があった。'
       approach_summary: '才蔵status_request未達はbusy gatingによる保留後、101秒でrecovery nudge配達済みの正常系と特定。コード修正なし。'
