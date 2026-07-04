@@ -353,6 +353,15 @@ result:
 2. 3回失敗 → 家老に報告(`inbox_write.sh karo "commit失敗: {エラー詳細}" blocked {ninja_name}`)して停止
 3. 復旧判断は家老に委ねよ。自力でlockを削除しようとするな
 
+## Stop Hook BLOCK Escape Rule
+
+**Stop hook BLOCKでファイル操作ツールが使えない場合、設計書・報告YAML・作業成果物に `/clear` 依頼やエラー文を書き込むな。**
+
+- 可能なら `bash scripts/inbox_write.sh karo "stop hook BLOCKでtool unavailable: {状況}" blocked {ninja_name}` で家老へ報告して停止せよ
+- Bash/Edit/Write等のツール自体が無い場合は、最後の応答に `tool unavailable: session_alerts未処理` と事実だけを1行残して終了せよ
+- 成果物本文を通信路にするな。通信はinbox、成果物は成果物として分離せよ
+- 理由: L965。tool権限制限下のstop hook通過不能は、脱出経路未定義だと設計書汚染に波及する
+
 ## Code Review Rule (恒久ルール・殿の厳命)
 
 **コード変更をgit pushする前に、別の忍者によるコードレビューが必須。**
