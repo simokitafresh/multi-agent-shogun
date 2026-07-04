@@ -530,14 +530,17 @@ lessons:
     再発(2026-07-02): MEMORY.mdの `memory/xxx.md` 幻ポインタ誤診。軍師・家老がproject `/mnt/c/.../memory/` 一箇所のみ実測しNOT_FOUND→「壊れている」と誤断定したが、
     実際はauto-memory dir(`~/.claude/projects/-mnt-c-tools-multi-agent-shogun/memory/`=MEMORY.md本体と同階層)に実在。二規約混在(MEMORY.mdポインタ=auto-dir / CLAUDE.md参照のdeepdive系=project dir)が探索範囲の見落としを生んだ。
     既知の探索範囲: MEMORY.md(=shogun専用auto-load。軍師・家老は非ロード)由来の `memory/*.md` ポインタはauto-dirを必ず含めよ。
+    再発(2026-07-04): kagemaru RCで代替target 2件を提示したが、配備中の全忍者target走査を省略し、hanzo/saizoとの新衝突候補を同一ターンで訂正した。
+    同日再発(2026-07-04): kotaro報告をFAIL判定する際、dirty差分断片を「忍者のrepro汚染」と断定したが、
+    由来3段追跡(出力文字列→記録先→書き手)を省略した。実際はlord_conversation殿発言+saizo lesson文の正規absorbであり、家老反証後に撤回した。
   source_cmd: cmd_3282
-  origin: '[[cmd_3282 RC誤断定+cmd_3281残件誤判定]] -> [[1箇所実測+推論の代用]] -> [[全範囲実測原則]] -> [[2026-07-02 幻ポインタ二規約混在]]'
+  origin: '[[cmd_3282 RC誤断定+cmd_3281残件誤判定]] -> [[1箇所実測+推論の代用]] -> [[全範囲実測原則]] -> [[2026-07-02 幻ポインタ二規約混在]] -> [[2026-07-04 代替案衝突見落とし+FAIL誤断定撤回]]'
   created_at: '2026-06-11'
   automated: true
   enforcement_level: 2
-  enforcement: 'review_logヘッダ追記候補+本教訓のstartup自動ロード。2件とも軍師自己検出→自己訂正済み(第二層ループ機能の実証)。2026-07-02再発分はMEMORY.md L5に参照規約明記+本教訓に既知探索範囲(auto-dir)を追記'
-  when: レビュー・分析で「存在しない」「〜が発生源」等の存在/否定主張を書く時。特にMEMORY.md/context由来の `memory/*.md` パスの存否を判定する時
-  how: 探索範囲(repo/ディレクトリ/コード経路)を列挙→各範囲を自分のls/grep/git showで実測→全範囲埋まってから主張する。`memory/*.md` はauto-dir(`~/.claude/projects/.../memory/`)とproject dir(`/mnt/c/.../memory/`)の両方をlsで確認せよ
+  enforcement: 'review_logヘッダ追記候補+本教訓のstartup自動ロード。2件とも軍師自己検出→自己訂正済み(第二層ループ機能の実証)。2026-07-02再発分はMEMORY.md L5に参照規約明記+本教訓に既知探索範囲(auto-dir)を追記。2026-07-04再発分は代替案提示/FAIL判定のwhenを追加'
+  when: レビュー・分析で「存在しない」「〜が発生源」等の存在/否定主張を書く時。代替リソース/targetを提案する時。他者の成果物をFAIL判定する時。特にMEMORY.md/context由来の `memory/*.md` パスの存否を判定する時
+  how: 探索範囲(repo/ディレクトリ/コード経路)を列挙→各範囲を自分のls/grep/git showで実測→全範囲埋まってから主張する。代替案提示時は配備中の全task YAML/target_pathをgrep走査する。FAIL判定時は「出力文字列→記録先→書き手」の由来3段を追跡する。`memory/*.md` はauto-dir(`~/.claude/projects/.../memory/`)とproject dir(`/mnt/c/.../memory/`)の両方をlsで確認せよ
 - id: LG043
   title: binary_checks yes と task_clarity 矛盾を照合せよ — unclear/discretion に未達成委譲があれば虚偽yes
   detail: |
@@ -581,3 +584,18 @@ lessons:
   enforcement: 'SG-PRE29(gate_gunshi_report_precheck.sh)がfiles_modifiedにfrontend/tsx/ts含む場合にnpm run build/next build確認WARN表示。D0実装(軍師commit)'
   when: report reviewでfiles_modifiedにfrontend配下、特に `frontend/app/**/page.tsx` が含まれる時
   how: pytest/JestのPASSだけでLGTMしない。`npm run build` または同等のNext build/type validationがPASSしていることをtest_resultsで確認する。page.tsxに定数を置く必要がある場合は別moduleへ分離されているか確認する
+- id: LG046
+  title: lib-only関数レビューは参照グローバルを機械列挙せよ — daemon初期化変数の部分列挙は漏れる
+  detail: |
+    bb140170dでdaemonスクリプト関数のlib-only再利用をレビューした際、3変数だけを防御したが、KARO_PANE/PANE_TARGETS/GUNSHI_PANEが漏れた。
+    その結果、追いhotfix 2本(842dd276cを含む)が必要になった。根因は関数が参照する全グローバル変数を機械列挙せず、目視の部分列挙で足りると判断したこと。
+    daemonスクリプトを `*_LIB_ONLY=1` でsource再利用する設計では、関数本体がdaemon初期化ブロック内の変数を直接参照し得る。
+    レビューでは `grep -oE '\$[A-Z_][A-Z0-9_]*|\$\{[A-Z_][A-Z0-9_]*'` 等で対象関数の参照グローバルを列挙し、初期化場所とlib-only時の値を突合する。
+  source_cmd: cmd_karo_hotfix_dashboard_snapshot_karo_pane_init_202607041426
+  origin: '[[cmd_karo_hotfix_dashboard_snapshot_karo_pane_init_202607041426]] -> [[daemon初期化グローバル漏れ]] -> [[lib-only関数レビューの機械列挙]]'
+  created_at: '2026-07-04'
+  automated: false
+  enforcement_level: 2
+  enforcement: '現時点はレビュー教訓。候補: gate_gunshi_report_precheckで *_LIB_ONLY / source 再利用 / daemon script 変更時に参照グローバル列挙チェックをWARN'
+  when: daemonスクリプトの関数をlib-only/source再利用するコード変更や報告をレビューする時
+  how: 対象関数内の `$VAR` / `${VAR}` / 連想配列参照を機械列挙し、daemon初期化ブロック外でも初期化されるか、`${VAR:-}` / fallback を持つか突合する。部分列挙や目視だけでLGTMしない
