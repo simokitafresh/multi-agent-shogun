@@ -4039,9 +4039,9 @@ write_karo_snapshot() {
                         # awk単一パス: yaml_field_get×3→awk×1（453ms→131ms/cycle削減 L4-R24）
                         IFS='|' read -r task_id status project < <(awk '
                             BEGIN { t=""; s=""; p="" }
-                            /^[ \t]*task_id:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
-                            /^[ \t]*status:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); s=v }
-                            /^[ \t]*project:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); p=v }
+                            /^[ \t]*task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+                            /^[ \t]*status:/ && s=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); s=v }
+                            /^[ \t]*project:/ && p=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); p=v }
                             END { print t "|" s "|" p }
                         ' "$task_file")
                         # CLI死亡判定: pane_current_commandがbash/zshならdead (cmd_1851)
