@@ -132,6 +132,7 @@ task:
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
   deployed_at: "2026-07-04T14:21:31"
   progress: "AC1-AC3完了: verdict missing/#1 verdict非二値はbinary_checks未記入が根因。report_field_set.shで全必須フィールドとbinary_checks yes/noを記入し、gate_report_format自動導出でverdict=PASSを確認予定。"
+  completed_at: "2026-07-04T14:24:07"
 training_proposal:
   block_patterns: '#1: verdict非二値'
   fail_reason: verdict missing
@@ -159,3 +160,14 @@ training_proposal:
       block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
       diagnose_reason: '自分のtask YAML status/progress更新を未commitのまま報告gateへ進んだため、cmd_3264の未commit変更検査に止められた。調査のみでも自己task YAMLを変更したらscope確認とcommitを先に完了する必要があった。'
       approach_summary: '才蔵status_request未達はbusy gatingによる保留後、101秒でrecovery nudge配達済みの正常系と特定。コード修正なし。'
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    tried_approaches:
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    approach_summary: 'report-write修行: verdict missingはverdict直書きではなくbinary_checks全result=yes/no記入後にgate_report_formatで自動導出させる手順で防ぐと確認。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: 'report-write修行: verdict missingはverdict直書きではなくbinary_checks全result=yes/no記入後にgate_report_formatで自動導出させる手順で防ぐと確認。'
