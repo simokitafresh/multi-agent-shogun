@@ -899,6 +899,30 @@ else
     echo "  PASS: frontend変更なし(対象外)"
 fi
 
+# ─── SG-PRE30: daemon lib-only再利用時グローバル変数列挙リマインド(LG046) ───
+# 関数化: テストから呼出し可能にする
+_sg_pre30_check() {
+    local report_path="$1"
+    # files_modifiedブロックのみ抽出(次のトップレベルキーで停止)
+    local _fm_block
+    _fm_block=$(awk '/^files_modified:/{found=1; next} found && /^[^ ]/{exit} found{print}' "$report_path" 2>/dev/null || true)
+    local _daemon_files
+    _daemon_files=$(echo "$_fm_block" | grep -iE 'ninja_monitor|ntfy_listener|inbox_watcher|dashboard_auto' | grep -v '#' || true)
+    local _lib_only_mention
+    _lib_only_mention=$(grep -ciE 'LIB_ONLY|source.*\.sh|lib.only' "$report_path" 2>/dev/null || true)
+    if [ -n "$_daemon_files" ] || [ "${_lib_only_mention:-0}" -gt 0 ]; then
+        echo "  INFO: daemonスクリプト変更またはlib-only/source再利用を検出"
+        echo "  ★ LG046: 対象関数のグローバル変数を grep -oE '\$[A-Z_][A-Z0-9_]*|\$\{[A-Z_][A-Z0-9_]*' で機械列挙し、"
+        echo "    daemon初期化ブロック外でも初期化されるか/\${VAR:-}を持つか突合せよ"
+        echo "    部分列挙や目視でLGTMしない(bb140170d hotfix 2本の再発防止)"
+    else
+        echo "  PASS: daemon/lib-only変更なし(対象外)"
+    fi
+}
+echo ""
+echo "■ SG-PRE30: daemon lib-only再利用(LG046)"
+_sg_pre30_check "$REPORT_PATH"
+
 echo ""
 echo "■ GATE_PREDICTION (自動計算 — SG7 gate_predictionに転記せよ)"
 echo "  prediction: ${GATE_PREDICTION:-UNKNOWN}"

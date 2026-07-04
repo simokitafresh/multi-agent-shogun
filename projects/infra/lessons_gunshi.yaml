@@ -594,8 +594,8 @@ lessons:
   source_cmd: cmd_karo_hotfix_dashboard_snapshot_karo_pane_init_202607041426
   origin: '[[cmd_karo_hotfix_dashboard_snapshot_karo_pane_init_202607041426]] -> [[daemon初期化グローバル漏れ]] -> [[lib-only関数レビューの機械列挙]]'
   created_at: '2026-07-04'
-  automated: false
-  enforcement_level: 2
-  enforcement: '現時点はレビュー教訓。候補: gate_gunshi_report_precheckで *_LIB_ONLY / source 再利用 / daemon script 変更時に参照グローバル列挙チェックをWARN'
+  automated: true
+  enforcement_level: 3
+  enforcement: 'SG-PRE30(gate_gunshi_report_precheck.sh)がfiles_modifiedにdaemonスクリプトまたはLIB_ONLY/source再利用言及を検出→INFOリマインド表示。軍師が手動でグローバル変数列挙を実行する'
   when: daemonスクリプトの関数をlib-only/source再利用するコード変更や報告をレビューする時
   how: 対象関数内の `$VAR` / `${VAR}` / 連想配列参照を機械列挙し、daemon初期化ブロック外でも初期化されるか、`${VAR:-}` / fallback を持つか突合する。部分列挙や目視だけでLGTMしない
