@@ -1568,8 +1568,20 @@ from datetime import datetime
 chronicle_path, archive_dir, cutoff_str = sys.argv[1:4]
 cutoff = datetime.strptime(cutoff_str, "%Y-%m-%d")
 
-with open(chronicle_path, encoding="utf-8") as f:
-    lines = f.read().splitlines()
+def read_text_lines(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read().splitlines()
+    except UnicodeDecodeError as exc:
+        print(
+            f"[chronicle-trim] WARN: non-utf8 input replaced: {path} "
+            f"byte={exc.start} reason={exc.reason}",
+            file=sys.stderr,
+        )
+        with open(path, encoding="utf-8", errors="replace") as f:
+            return f.read().splitlines()
+
+lines = read_text_lines(chronicle_path)
 
 # Phase 1: Parse into file_header + sections
 file_header = []
@@ -1636,8 +1648,7 @@ os.makedirs(archive_dir, exist_ok=True)
 for ym, rows in to_archive.items():
     archive_path = os.path.join(archive_dir, f"{ym}.md")
     if os.path.exists(archive_path):
-        with open(archive_path, encoding="utf-8") as f:
-            existing = f.read().splitlines()
+        existing = read_text_lines(archive_path)
         existing_ids = set()
         for el in existing:
             if el.startswith("| cmd_"):
