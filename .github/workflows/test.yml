@@ -224,19 +224,28 @@ jobs:
 
       - name: Run integration tests
         run: |
+          set -o pipefail
+          mkdir -p test-results
           if [ ! -d tests/integration ]; then
-            echo "::warning::tests/integration directory not found. Skipping integration tests."
-            exit 0
+            echo "::error::tests/integration directory not found. SKIP = FAIL policy."
+            exit 1
           fi
-          bats tests/integration/ --filter-tags '!copilot,!codex' --timing || {
+          bats tests/integration/ --filter-tags '!copilot,!codex' --formatter tap --timing | tee test-results/integration.tap || {
             echo "::error::Integration tests failed"
             exit 1
           }
+
+          SKIP_COUNT=$(bash scripts/count_bats_skips.sh test-results/integration.tap)
+          if [ "$SKIP_COUNT" -gt 0 ]; then
+            echo "::error::$SKIP_COUNT integration tests were SKIPPED. SKIP = FAIL policy."
+            exit 1
+          fi
+          echo "Integration tests executed (0 skips)"
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-results
-          path: tests/integration/*.tap
+          path: test-results/integration.tap
           if-no-files-found: ignore
