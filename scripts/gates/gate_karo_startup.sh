@@ -205,8 +205,7 @@ show_active_cmd_semantic_context_one() {
     local target_path="$3"
     local shown_file="$4"
     local semantic_output links link_id backlink_output rc
-    local link_tmp link_idx link_tmp_list
-    local semantic_cache_dir semantic_cache_key semantic_cache_file semantic_cache_sig semantic_current_sig
+    local semantic_cache_dir semantic_cache_key semantic_cache_file semantic_current_sig
     local backlink_cache_dir
 
     echo "  ${ninja}: ${cmd_id:-unknown} target_path=${target_path}"
@@ -968,6 +967,27 @@ if [[ -f "$_AGGREGATE_CACHE" ]]; then
     fi
 fi
 awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
+    function leading_spaces(line,    i, ch) {
+        for (i = 1; i <= length(line); i++) {
+            ch = substr(line, i, 1)
+            if (ch != " ") return i - 1
+        }
+        return length(line)
+    }
+    function message_read_field(line, item_indent,    indent) {
+        if (line ~ /^-[[:space:]]*read:[[:space:]]*/) return 1
+        if (line !~ /^[[:space:]]*read:[[:space:]]*/) return 0
+        indent = leading_spaces(line)
+        return (indent == item_indent + 2)
+    }
+    function read_field_value(line,    v) {
+        v = line
+        sub(/^-[[:space:]]*/, "", v)
+        sub(/^[[:space:]]*read:[[:space:]]*/, "", v)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", v)
+        gsub(/^["\047]+|["\047]+$/, "", v)
+        return tolower(v)
+    }
     function extract_cmd_id(text, m) {
         if (match(text, /cmd_[0-9]+/, m)) return m[0]
         return ""
@@ -1028,7 +1048,7 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         next
     }
     FILENAME ~ /queue\/inbox\/karo\.yaml$/ {
-        if (/^- /) {
+        if (/^[[:space:]]*-[[:space:]]/) {
             if (inbox_entry && inbox_read_false && inbox_type == "cmd_new") {
                 unread_cmd_new++
                 if (unread_cmd_new <= 3) {
@@ -1070,8 +1090,16 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
             inbox_id = ""
             inbox_ts = ""
             inbox_content = ""
+            inbox_item_indent = leading_spaces($0)
         }
-        if (/read: false/) unread++
+        if (inbox_entry && message_read_field($0, inbox_item_indent)) {
+            read_value = read_field_value($0)
+            if (read_value == "false") {
+                unread++
+                inbox_read_false = 1
+            }
+            if (read_value == "true") inbox_read_true = 1
+        }
         if (inbox_entry && (/^[[:space:]]*type:/ || /^-[[:space:]]*type:/)) {
             inbox_type = $0
             sub(/^-[[:space:]]*/, "", inbox_type)
@@ -1079,8 +1107,6 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
             gsub(/["'"'"']/, "", inbox_type)
             gsub(/[[:space:]]+$/, "", inbox_type)
         }
-        if (inbox_entry && (/^[[:space:]]*read:[[:space:]]*false/ || /^-[[:space:]]*read:[[:space:]]*false/)) inbox_read_false = 1
-        if (inbox_entry && (/^[[:space:]]*read:[[:space:]]*true/ || /^-[[:space:]]*read:[[:space:]]*true/)) inbox_read_true = 1
         if (inbox_entry && (/^[[:space:]]*id:/ || /^-[[:space:]]*id:/)) {
             inbox_id = $0
             sub(/^-[[:space:]]*/, "", inbox_id)
@@ -1891,7 +1917,7 @@ cat "$_NINJA_WA_TMP"
 echo ""
 echo "■ 自走チェック"
 # 全忍者がidle or completedか確認（Check 2.5のstatusキャッシュを再利用: R3）
-active_ninjas=0
+active_ninja_count=0
 for ninja in $_KARO_NINJA_NAMES; do
     ninja_status=${_NINJA_STATUS_CACHE[$ninja]:-""}
     if [ -z "$ninja_status" ]; then
@@ -1899,10 +1925,10 @@ for ninja in $_KARO_NINJA_NAMES; do
         [ -f "$task_file" ] && ninja_status=$(awk '/^[[:space:]]*status:/{print $2; exit}' "$task_file" 2>/dev/null)
     fi
     if [[ "$ninja_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
-        active_ninjas=$((active_ninjas + 1))
+        active_ninja_count=$((active_ninja_count + 1))
     fi
 done
-if [ "$active_ninjas" -eq 0 ] && [ "$unread" -eq 0 ]; then
+if [ "$active_ninja_count" -eq 0 ] && [ "$unread" -eq 0 ]; then
     echo "  全忍者idle + inbox未読=0。cmd待ち状態。"
     echo "  ★★★ idle時自走プロトコルを実行せよ（instructions/karo.md参照） ★★★"
     echo "  Step 1: workaroundパターン分析(直近10件)"
@@ -1912,7 +1938,7 @@ if [ "$active_ninjas" -eq 0 ] && [ "$unread" -eq 0 ]; then
     echo "  Step 5: パターン発見→なぜなぜ→行動"
     echo "  → 止まるな。1つ完了したら次へ"
 else
-    echo "  active忍者: ${active_ninjas}名 / inbox未読: ${unread}件"
+    echo "  active忍者: ${active_ninja_count}名 / inbox未読: ${unread}件"
 fi
 
 # --- Check 9: cmd配備漏れ検出(pending+delegated_at残存) ---

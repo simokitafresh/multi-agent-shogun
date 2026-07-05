@@ -265,6 +265,30 @@ EOF
     [[ "$output" == *"未読: 3件"* ]]
 }
 
+@test "inbox unread count ignores read false text inside message content" {
+    cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'EOF'
+messages:
+- id: msg_literal
+  timestamp: '2026-07-05T08:00:00'
+  type: report_review
+  from: gunshi
+  content: |-
+    レビュー本文内の診断文字列:
+    read: false
+  read: true
+- id: msg_real
+  timestamp: '2026-07-05T08:01:00'
+  type: report_review
+  from: gunshi
+  content: '実未読'
+  read: false
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"未読: 1件"* ]]
+    [[ "$output" != *"未読: 2件"* ]]
+}
+
 @test "karo_idle_cycle unread only is not promoted to 3-session CRITICAL" {
     cat > "$TEST_TMPDIR/logs/karo_startup_alert_history.tsv" <<'EOF'
 run1	inbox未読: 1件
