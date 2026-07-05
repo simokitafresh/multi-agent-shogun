@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-05 cmd_karo_hotfix_stop_hook_toolless_escape_2026070506 -->
+<!-- last_updated: 2026-07-05 cmd_karo_hotfix_ninja_wa_rate_zero_202607051012 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -677,7 +677,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L965 -->
+<!-- last_synced_lesson: L966 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
@@ -1363,6 +1363,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L963: context freshnessは発火ログとsource差分を分けて報告する（cmd_karo_hotfix_ga178_dm_signal_ops_context_freshness_2026070500）
 - L964: read-only dirty triageでは自己task/report更新をdirty総量から分離して報告する（cmd_karo_hotfix_dirty_diff_triage_2026070505）
 - L965: tool権限制限下のstop hook通過不能は成果物汚染に波及する（cmd_2762）
+- L966: WAログ品質ゲートをCLEAR cmd集合で再フィルタすると直近WAを隠す（cmd_karo_hotfix_ninja_wa_rate_zero_202607051012）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
