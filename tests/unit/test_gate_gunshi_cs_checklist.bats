@@ -1376,6 +1376,48 @@ YAML
     [[ "$output" != *"WARN(cmd_3573-verified_files)"* ]]
 }
 
+@test "APPROVE with verified_files commit hash evidence passes cmd_3573 check" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_3573_hash
+  review_type: report
+  verdict: LGTM
+  step3_5_verified: "PASS"
+  verified_files:
+    - "codd/extracted/system-context.md:f899470b"
+  finding_categories: [assumptions]
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+  timestamp: "2026-06-28T00:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN(cmd_3573-verified_files)"* ]]
+}
+
+@test "APPROVE with verified_files file symbol evidence passes cmd_3573 check" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_3573_symbol_ok
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  verified_files:
+    - "scripts/gates/gate_gunshi_cs_checklist.sh:verified_files_missing"
+  finding_categories: [adversarial]
+  ambiguity_points: none
+  brainwash_check: "#2防止: 1件確認"
+  observations:
+    - "事実1"
+    - "事実2"
+  timestamp: "2026-06-28T00:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN(cmd_3573-verified_files)"* ]]
+}
+
 @test "APPROVE without verified_files warns cmd_3573" {
     cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
 - cmd_id: cmd_3573_missing

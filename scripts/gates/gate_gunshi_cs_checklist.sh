@@ -642,7 +642,7 @@ _bw_no_qc=$(tail -400 "$LOG_FILE" 2>/dev/null | awk '
 
 # --- cmd_3573: APPROVE/LGTM時の現物照合証跡必須 ---
 # 軍師のAPPROVE/LGTMは「コード現物を照合した」宣言でなければならない。
-# verified_filesはfile:line形式を最低1件要求し、テキストレビューだけのAPPROVEをWARNにする。
+# verified_filesはfile:line/file:symbol形式を最低1件要求し、テキストレビューだけのAPPROVEをWARNにする。
 verified_files_missing=$(awk '
     function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
     function is_empty(v) {
@@ -684,10 +684,10 @@ verified_files_missing=$(awk '
         gsub(/["'\''"]/, "", v)
         v = trim(v)
         if (v ~ /^\[/) {
-            if (!is_empty(v) && v ~ /:[0-9]+/) verified_count++
+            if (!is_empty(v) && v ~ /:[a-zA-Z0-9_]+/) verified_count++
             in_verified = 0
         } else if (!is_empty(v)) {
-            if (v ~ /:[0-9]+/) verified_count++
+            if (v ~ /:[a-zA-Z0-9_]+/) verified_count++
             in_verified = 0
         } else {
             in_verified = 1
@@ -699,7 +699,7 @@ verified_files_missing=$(awk '
         sub(/^[[:space:]]{4,}-[[:space:]]*/, "", item)
         gsub(/["'\''"]/, "", item)
         item = trim(item)
-        if (item ~ /:[0-9]+/) verified_count++
+        if (item ~ /:[a-zA-Z0-9_]+/) verified_count++
         next
     }
     in_verified && !/^[[:space:]]{4,}/ { in_verified = 0 }
