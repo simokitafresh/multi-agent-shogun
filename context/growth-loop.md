@@ -236,6 +236,7 @@ cmd_2673-2676で4件全てL5化完了(2026-05-11):
 - → [[gunshi_idle_recommended_skills_role_filter_20260602]] 推奨スキルのロールフィルタ設計: 不要通知削減の実践
 - → [[gunshi_idle_s05_test_premise_check_20260521]] テスト前提チェックのなぜなぜ: S05実行可能前提の確認
 - → [[gunshi_idle_gate_prediction_accuracy_20260612]] gate予測精度分析: APPROVE→CLEAR/FAIL予測の精度計測
+- → [[gunshi_idle_gate_prediction_false_positive_analysis_20260706]] gate予測偽陽性分析: 直近MISS 4件がBLOCK→CLEAR方向であることを計測
 - → [[gunshi_idle_self_gate_check_str_bug_20260516]] self_gate_checkの文字列バグ: gate品質の問題
 - → [[gunshi_idle_silent_failure_audit_20260605]] サイレント失敗監査: 成長ループの穴の可視化
 - → [[gunshi_idle_skill_enforcement_5layer_20260515]] スキル強制5層設計: Level5到達の実装実例
@@ -277,6 +278,7 @@ cmd_2673-2676で4件全てL5化完了(2026-05-11):
 - [[gunshi_idle_gate_fail_rate_anatomy_20260502]] — 軍師idle: ゲート失敗率解剖(2026-05-02)
 - [[gunshi_idle_gate_fire_traceback_20260510]] — 軍師idle: ゲート発火トレースバック(2026-05-10)
 - [[gunshi_idle_gate_fp_analysis_20260527]] — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27)
+- [[gunshi_idle_gate_prediction_false_positive_analysis_20260706]] — 軍師idle: gate_prediction偽陽性分析(2026-07-06)
 - [[gunshi_idle_lg003_gate_wa_analysis_20260519]] — 軍師idle: LG003ゲートWA分析(2026-05-19)
 - [[gunshi_idle_lu_dict_pattern_20260415]] — 軍師idle: LU辞書パターン分析(2026-04-15)
 - [[gunshi_idle_commit_check_wa_pattern_20260410]] — 軍師idle: コミットチェックWAパターン(2026-04-10)
