@@ -2021,7 +2021,46 @@ run_report_format_validation() {
     git -C "$TEST_PROJECT" add context/infrastructure.md
     git -C "$TEST_PROJECT" commit -q -m "baseline"
     printf '\nnew context detail\n' >> "$TEST_PROJECT/context/infrastructure.md"
+    CMD_CHANGED_FILES="context/infrastructure.md"
+
+    run auto_update_context_last_updated_for_changes "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    grep -q "last_updated: .* ${TEST_CMD_ID}" "$TEST_PROJECT/context/infrastructure.md"
+}
+
+@test "context md dirty worktree alone is not auto-updated" {
+    write_cmd_yaml "with_context"
+    write_context_file "2025-01-01"
+    write_report
+    git -C "$TEST_PROJECT" init -q
+    git -C "$TEST_PROJECT" config user.email "test@example.invalid"
+    git -C "$TEST_PROJECT" config user.name "Test User"
+    git -C "$TEST_PROJECT" add context/infrastructure.md
+    git -C "$TEST_PROJECT" commit -q -m "baseline"
+    printf '\nother cmd context detail\n' >> "$TEST_PROJECT/context/infrastructure.md"
     CMD_CHANGED_FILES=""
+
+    run auto_update_context_last_updated_for_changes "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    ! grep -q "last_updated: .* ${TEST_CMD_ID}" "$TEST_PROJECT/context/infrastructure.md"
+    grep -q "last_updated: 2025-01-01 cmd_000 test" "$TEST_PROJECT/context/infrastructure.md"
+}
+
+@test "context md auto-update honors report files_modified" {
+    write_cmd_yaml "with_context"
+    write_context_file "2025-01-01"
+    write_report
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat >> "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
+files_modified:
+  - file: context/infrastructure.md
+EOF
+    CMD_CHANGED_FILES=""
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
 
     run auto_update_context_last_updated_for_changes "$TEST_CMD_ID"
     [ "$status" -eq 0 ]

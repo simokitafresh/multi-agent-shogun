@@ -4154,8 +4154,7 @@ auto_update_context_last_updated_for_changes() {
     changed_contexts=$(
         {
             printf '%s\n' "${CMD_CHANGED_FILES:-}"
-            git -C "$SCRIPT_DIR" diff --name-only HEAD -- 'context/*.md' 2>/dev/null || true
-            git -C "$SCRIPT_DIR" diff --cached --name-only -- 'context/*.md' 2>/dev/null || true
+            collect_report_modified_files 2>/dev/null || true
         } | awk '/^context\/.*\.md$/ && !seen[$0]++'
     )
 
