@@ -30,7 +30,11 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-echo "■ Workaround率 (直近${LAST_N}件)"
+if [ -f "$GATE_LOG" ]; then
+    echo "■ Workaround率 (GATE CLEAR直近${LAST_N}cmd)"
+else
+    echo "■ Workaround率 (WAログ直近${LAST_N}件)"
+fi
 
 if [ ! -f "$WA_FILE" ]; then
     echo "  SKIP: karo_workarounds.yaml不在"
