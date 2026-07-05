@@ -6,6 +6,7 @@
 #   --last N     : WAログ直近N件を対象 (default: 30)
 #   --quiet      : サマリ1行のみ出力 (gate_karo_startup.sh統合用)
 #   --ninja NAME : 指定忍者のみの履歴を表示 (SG9用)
+#   NINJA_WA_ACTIVE_DAYS: 未解消WAを現行警告に含める日数窓 (default: 7, 0=無効)
 
 set -e
 
@@ -22,6 +23,8 @@ GATE_LOG="$SCRIPT_DIR/logs/gate_metrics.log"
 
 LAST_N=30
 RECENT_N="${NINJA_WA_RECENT_N:-10}"
+ACTIVE_DAYS="${NINJA_WA_ACTIVE_DAYS:-7}"
+NOW_EPOCH="${NINJA_WA_NOW_EPOCH:-}"
 QUIET=false
 NINJA_FILTER=""
 
@@ -44,11 +47,11 @@ if [ ! -f "$WA_FILE" ]; then
 fi
 
 # WSL2 NTFS最適化: python3起動(150ms)をmtimeキャッシュで回避
-_WA_CACHE="/tmp/shogun_wa_rate_cache_${NINJA_FILTER:-all}_${LAST_N}_${RECENT_N}.txt"
+_WA_CACHE="/tmp/shogun_wa_rate_cache_${NINJA_FILTER:-all}_${LAST_N}_${RECENT_N}_${ACTIVE_DAYS}_${NOW_EPOCH:-now}.txt"
 _WA_MTIME=$(stat -c%Y "$WA_FILE" 2>/dev/null || echo 0)
 _GATE_MTIME=$(stat -c%Y "$GATE_LOG" 2>/dev/null || echo 0)
 _WA_SELF_MTIME=$(stat -c%Y "${BASH_SOURCE[0]}" 2>/dev/null || echo 0)
-_WA_CACHE_VERSION="2"
+_WA_CACHE_VERSION="4"
 _WA_CACHE_SIG="${_WA_CACHE_VERSION}:${_WA_MTIME}:${_GATE_MTIME}:${_WA_SELF_MTIME}"
 _WA_CACHED_SIG=""
 if [ -f "$_WA_CACHE" ]; then
@@ -61,7 +64,7 @@ fi
 
 # 高速化: mktemp(13ms)をPID固定パスに変更
 _WA_TMP="/tmp/shogun_wa_wrk_$$"
-awk -v quiet="$QUIET" -v last_n="$LAST_N" -v recent_n="$RECENT_N" -v ninja_filter="$NINJA_FILTER" -v ninja_list="$_NINJA_LIST" -v gate_log="$GATE_LOG" '
+awk -v quiet="$QUIET" -v last_n="$LAST_N" -v recent_n="$RECENT_N" -v active_days="$ACTIVE_DAYS" -v now_epoch="$NOW_EPOCH" -v ninja_filter="$NINJA_FILTER" -v ninja_list="$_NINJA_LIST" -v gate_log="$GATE_LOG" '
 function trim(s) {
     sub(/^[ \t\r\n]+/, "", s)
     sub(/[ \t\r\n]+$/, "", s)
@@ -82,6 +85,16 @@ function unquote(s) {
 function parse_bool(s, lower) {
     lower = tolower(unquote(s))
     return (lower == "true" || lower == "yes") ? 1 : 0
+}
+function timestamp_epoch(s, raw) {
+    raw = unquote(s)
+    if (raw !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/) return 0
+    return mktime(substr(raw, 1, 4) " " substr(raw, 6, 2) " " substr(raw, 9, 2) " " substr(raw, 12, 2) " " substr(raw, 15, 2) " " substr(raw, 18, 2))
+}
+function timestamp_is_active(ts) {
+    if (active_days + 0 <= 0) return 1
+    if (ts + 0 <= 0) return 1
+    return (ts >= active_cutoff) ? 1 : 0
 }
 function extract_ninja(explicit, detail, root_cause, issue, workaround_detail, text) {
     explicit = trim(explicit)
@@ -128,6 +141,8 @@ function reset_current() {
     current_wa = 0
     current_has_kwa = 0
     current_kwa = 0
+    current_resolved = 0
+    current_ts = 0
     current_started = 0
 }
 function assign_pair(key, value) {
@@ -135,6 +150,7 @@ function assign_pair(key, value) {
     if (key == "cmd_id" || key == "cmd") current_cmd = value
     else if (key == "ninja") current_ninja = value
     else if (key == "category") current_category = (value == "" ? "uncategorized" : value)
+    else if (key == "timestamp" || key == "created_at") current_ts = timestamp_epoch(value)
     else if (key == "detail") current_detail = value
     else if (key == "root_cause") current_root_cause = value
     else if (key == "issue") current_issue = value
@@ -145,6 +161,8 @@ function assign_pair(key, value) {
     } else if (key == "karo_workaround") {
         current_has_kwa = 1
         current_kwa = parse_bool(value)
+    } else if (key == "resolved_by_cmd") {
+        current_resolved = (value != "") ? 1 : 0
     }
 }
 function flush_current(    ninja, wa) {
@@ -154,6 +172,8 @@ function flush_current(    ninja, wa) {
     entry_count++
     entry_ninja[entry_count] = ninja
     entry_wa[entry_count] = wa
+    entry_active_wa[entry_count] = (wa && !current_resolved && timestamp_is_active(current_ts)) ? 1 : 0
+    entry_resolved[entry_count] = current_resolved
     entry_cat[entry_count] = effective_category(current_category, current_detail, current_root_cause, current_issue, current_workaround_detail)
     entry_cmd[entry_count] = (current_cmd == "" ? "?" : current_cmd)
     reset_current()
@@ -171,6 +191,8 @@ function sort_names(arr, n,    i, j, tmp) {
 }
 BEGIN {
     quiet_flag = (quiet == "true")
+    current_epoch = (now_epoch != "") ? now_epoch + 0 : systime()
+    active_cutoff = current_epoch - ((active_days + 0) * 86400)
     has_gate = 0
     if (gate_log != "") {
         cmd = "test -f \"" gate_log "\" && tac \"" gate_log "\""
@@ -235,7 +257,7 @@ END {
             ordered_names[++ordered_count] = ninja
         }
         stats_total[ninja]++
-        if (entry_wa[i]) {
+        if (entry_active_wa[i]) {
             stats_wa[ninja]++
             total_wa++
             if (i >= recent_start) {
@@ -251,7 +273,7 @@ END {
 
     # ─── category別集計（直近last_n件、WA=true のみ）───
     for (i = start; i <= entry_count; i++) {
-        if (entry_wa[i] && entry_cat[i] != "" && entry_cat[i] != "clean") {
+        if (entry_active_wa[i] && entry_cat[i] != "" && entry_cat[i] != "clean" && !clear_set[entry_cmd[i]]) {
             wa_cat[entry_cat[i]]++
         }
     }
