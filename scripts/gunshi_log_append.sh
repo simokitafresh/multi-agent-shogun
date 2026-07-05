@@ -81,6 +81,19 @@ if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study|consultation)
     fi
 fi
 
+# --- gate_prediction_reason必須チェック(report) --- GP-259: prediction偽陽性分析の材料を残す
+if [[ "$ENTRY" =~ review_type:[[:space:]]*report ]] && [[ "$ENTRY" =~ gate_prediction:[[:space:]]*(CLEAR|WARN|BLOCK) ]]; then
+    if [[ "$ENTRY" != *"gate_prediction_reason:"* ]]; then
+        echo "BLOCK: gate_prediction_reasonが未記入。precheckのreasonをreview_logへ転記せよ(GP-259)" >&2
+        exit 2
+    fi
+    GPR_LINE=$(echo "$ENTRY" | grep 'gate_prediction_reason:' | head -1)
+    if echo "$GPR_LINE" | grep -Eq 'gate_prediction_reason:[[:space:]]*($|null|N/A|none|engine未実行)'; then
+        echo "BLOCK: gate_prediction_reasonが実質空。precheckの具体reasonを記入せよ(GP-259)" >&2
+        exit 2
+    fi
+fi
+
 # --- operational_simulation必須(self_study/consultation) --- 先送りWARN 5件遡及: L4貫通
 if [[ "$ENTRY" =~ review_type:[[:space:]]*(self_study|consultation) ]]; then
     if [[ "$ENTRY" != *"operational_simulation:"* ]]; then

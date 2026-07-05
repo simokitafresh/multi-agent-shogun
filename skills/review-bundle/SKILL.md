@@ -38,6 +38,7 @@ bash scripts/gates/gate_gunshi_report_precheck.sh <report_path>
 ```
 - ERRORS>0 → FAIL理由にprecheck結果を含めよ
 - precheckのGATE_PREDICTION出力をStep 1のgate_predictionに転記せよ
+- precheckのGATE_PREDICTION reasonをStep 1のgate_prediction_reasonに転記せよ（GP-259）。CLEAR時は `all checks passed`、WARN/BLOCK時は具体reasonを記録する。
 - precheck未実行のままStep 1に進むな（33件のGATE_PREDICTION記載なし=precheck未実行が根因。accuracy Goodhart是正で発見）
 - **GATE_PREDICTION=WARN時はLGTMを出すな**。WARNの原因(lesson_candidate有/draft_lessons等)を確認し、BLOCK要因が家老処理待ちなら「verdict: LGTM, gate_prediction: WARN(理由)」と明記した上で家老に先行対処を依頼せよ。WARNを無視してLGTMを出すとBLOCK→再GATE無駄サイクルが発生する(cmd_karo_ci_fix_e2e_parallel事故)
 
@@ -60,6 +61,7 @@ review:
     SG7_gate_prediction: <PASS|FAIL>
   fail_reason: <該当時のみ>
   gate_prediction: <CLEAR|BLOCK>
+  gate_prediction_reason: <precheck reason。CLEAR時は all checks passed>
 ```
 
 ### Step 1.5: observations必須チェック（review_log追記前BLOCK）
@@ -89,6 +91,8 @@ review:
 **6観点全記録(冷え観点防止)**: draftレビューではfinding_categoriesに6観点カタログ全て(assumptions, numbers, simulation, premortem, north_star, adversarial)を記載せよ。reportレビューでも4観点(assumptions, numbers, premortem)+adversarialを記載。1観点のみの記載は冷え観点WARNの直接原因(2026-06-21: 11件冷え+3セッション連続ALERT事故)。観点を通したが所見なしの場合もfinding_categoriesに含めよ。
 
 **GATE結果確証バイアス防止**: report reviewでGATE CLEARを既に知っている場合、brainwash_checkに「GATE CLEAR既知で確証バイアスリスクあり」と明記し、成果物を`git show`で全行独立確認せよ。GATE結果を知った上で「問題ない」と感じるのはP1(早期終了)の典型(2026-05-24: cmd_3037でリスク顕在化、cmd_karo_ci_fix_cs_checklistでLGTM→BLOCK発生)。
+
+**gate_prediction_reason必須(GP-259)**: review_type=report で gate_prediction を記録する場合、`gate_prediction_reason` も必ず記録せよ。未記入/空/`engine未実行` は `gunshi_log_append.sh` がBLOCKする。理由: gate_prediction偽陽性分析で「BLOCK予測の理由」が残らず、後続の精度改善が推測依存になった。
 
 ### Step 2: review_log追記
 ```bash
