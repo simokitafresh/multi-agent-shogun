@@ -72,3 +72,50 @@ EOF
     [ "$status" -ne 0 ]
     [[ "$output" == *"function not found"* ]]
 }
+
+@test "update_consolidated_fixture --check passes when embedded fixture matches source" {
+    cat > "$TEST_TMP/source.bats" <<'EOF'
+#!/usr/bin/env bats
+
+@test "matched fixture" {
+    [ 2 -eq 2 ]
+}
+EOF
+    source_b64="$(base64 "$TEST_TMP/source.bats")"
+    cat > "$TEST_TMP/consolidated.bats" <<EOF_OUTER
+content_example() {
+    base64 -d <<'EOF'
+$source_b64
+EOF
+}
+EOF_OUTER
+
+    run python3 "$PROJECT_ROOT/scripts/update_consolidated_fixture.py" \
+        --consolidated "$TEST_TMP/consolidated.bats" \
+        --function content_example \
+        --source "$TEST_TMP/source.bats" \
+        --check
+    [ "$status" -eq 0 ]
+}
+
+@test "update_consolidated_fixture --check fails when embedded fixture differs from source" {
+    cat > "$TEST_TMP/source.bats" <<'EOF'
+#!/usr/bin/env bats
+EOF
+    old_b64="$(printf 'different fixture\n' | base64)"
+    cat > "$TEST_TMP/consolidated.bats" <<EOF_OUTER
+content_example() {
+    base64 -d <<'EOF'
+$old_b64
+EOF
+}
+EOF_OUTER
+
+    run python3 "$PROJECT_ROOT/scripts/update_consolidated_fixture.py" \
+        --consolidated "$TEST_TMP/consolidated.bats" \
+        --function content_example \
+        --source "$TEST_TMP/source.bats" \
+        --check
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"out of sync"* ]]
+}
