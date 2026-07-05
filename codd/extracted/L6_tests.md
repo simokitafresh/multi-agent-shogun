@@ -29,6 +29,12 @@ artifact_count: 0
 - **テストフレームワーク**: bats-core + bats-support + bats-assert
 - **E2E依存**: tmux, inotify-tools, python3-yaml
 - **統合テスト**: Claude専用（copilot/codexタグは除外）
+
+## 改善候補
+
+1. **L5との双方向リンク不足**: `[[L5_infrastructure]]` 5.1節がCI/CDジョブから本ファイルへリンクしている一方、本ファイルからCI/CD定義層への戻りリンクがなかった。テスト構成はCIジョブに従属するため、変更影響を追えるようCross-Referencesで明示する。
+2. **artifact_count=0の理由が弱い**: テストファイルがスキャン範囲外だったことは書かれているが、`.github/workflows/test.yml` が参照する実テストパスの存在有無までは整理していない。次回は `tests/*.bats` / `tests/unit/*.bats` / `tests/e2e/*.bats` / `tests/integration/*.bats` の実ファイル数を追記する。
+3. **SKIP=FAILの検証経路が抽象的**: `scripts/count_bats_skips.sh` の役割はあるが、CIの該当ステップやローカル検証コマンドへの参照が不足している。次回はCI行とローカル実行例を接続する。
 ```
 
 ---
@@ -46,3 +52,7 @@ artifact_count: 0
 | **合計** | | **481** |
 
 L1が圧倒的に多いのは、エージェント10体分の日次YAMLインボックスメッセージ（325件）がデータストアとして蓄積されているためです。L2とL6が0なのは、APIサーバー実装とテストファイルが提供されたスキャン範囲に含まれていないことによります。
+
+## Cross-References
+
+- [[L5_infrastructure]] — L5のCI/CDパイプラインが本L6のテストスイートを実行する。`L5_infrastructure.md` 5.1節では `unit-tests`、`e2e-tests`、`integration-tests` とSKIP=FAILポリシーがCIジョブとして整理されている。
