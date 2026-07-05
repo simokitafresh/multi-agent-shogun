@@ -344,3 +344,35 @@ lc = data.get("lesson_candidate")
 assert lc["origin"] == "", lc
 PY
 }
+
+# === GP-258: commit_hash 40文字フルhex Level 4 BLOCK ===
+
+@test "commit_hash: 40文字フルhex PASS" {
+    run bash "$SCRIPT" "$TEST_REPORT" commit_hash "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0"
+    [ "$status" -eq 0 ]
+}
+
+@test "commit_hash: 短縮hash(8文字) BLOCK" {
+    run bash "$SCRIPT" "$TEST_REPORT" commit_hash "a1b2c3d4" 2>&1
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK"* ]]
+    [[ "$output" == *"40文字フルhex"* ]]
+}
+
+@test "commit_hash: 大文字混在 BLOCK" {
+    run bash "$SCRIPT" "$TEST_REPORT" commit_hash "A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK"* ]]
+}
+
+@test "commit_hash: 付加文字列 BLOCK" {
+    run bash "$SCRIPT" "$TEST_REPORT" commit_hash "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0_additional"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK"* ]]
+}
+
+@test "commit_hash: 複数hash(カンマ区切り) BLOCK" {
+    run bash "$SCRIPT" "$TEST_REPORT" commit_hash "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0, b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK"* ]]
+}
