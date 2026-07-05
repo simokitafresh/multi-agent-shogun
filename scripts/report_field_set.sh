@@ -594,6 +594,20 @@ if missing:
                 fi
             fi
             ;;
+        commit_hash)
+            # GP-258: commit_hash 40文字フルhex検証 (Level 4 BLOCK)
+            # 根因: 忍者手動記入で短縮hash→gate_report_format FAIL 10件/324回(3.1%)
+            if [[ "$dot_key" == "commit_hash" ]]; then
+                local clean_val
+                clean_val="$(echo "$val" | xargs)"
+                if [[ ! "$clean_val" =~ ^[0-9a-f]{40}$ ]]; then
+                    echo "BLOCK: commit_hash は40文字フルhex必須。受信: '$clean_val'" >&2
+                    echo "  正: git rev-parse HEAD で取得した40文字 (例: a1b2c3d4...)" >&2
+                    echo "  誤: 短縮hash(8文字等)、付加文字列、複数hash" >&2
+                    return 1
+                fi
+            fi
+            ;;
         verdict)
             # GP-072c2+c3+c4: verdict書込み時に前提条件チェック
             if [[ "$dot_key" == "verdict" ]] && [[ "$val" == "PASS" || "$val" == "FAIL" || "$val" == "PASS_NO_IMPROVEMENT" ]]; then
