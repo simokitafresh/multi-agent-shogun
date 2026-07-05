@@ -109,6 +109,8 @@ note.comメンバーシップの料金プランとDB viewer_tiersの対応。詳
 
 道具磨き順序: いきなり全計測せず、1PF×1パターンで計算パスを最速化し、5分以内を確認してからパターン数を段階拡大する。全パターンでも5分以内を達成してからGS本番実行。
 
+入力方式統一(cmd_3693): 秘奥義L3 `okugi_l3_168.yaml` は旧CSV84体から奥義21体DB componentsへ変更済み。四神GS `shin_shijin_l1_gs.py` は価格読込入口を `gs_data_loader` 経由へ統一し、少数検証用 `--pattern-limit` を追加。source_type棚卸しは db=4 / local_sqlite=2 / csv=14 / total=20。
+
 根拠: `/mnt/c/Python_app/DM-signal/docs/design/gs-recalibration-plan.md`（commit `4828c134`, `78ed9bec`, `97e06904`）。
 
 ## 弱体化確率推定(P_det)
