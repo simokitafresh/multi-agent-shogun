@@ -1,5 +1,5 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-07-05 cmd_karo_hotfix_dirty_diff_triage_2026070505 -->
+<!-- last_updated: 2026-07-06 cmd_karo_hotfix_cmd_complete_context_marker_scope_202607060318 -->
 
 ## 2026-06-30
 
@@ -1375,3 +1375,6 @@
 - 2026-07-04 idle自走: 旧`lesson_deprecate.sh`を通常運用では`lesson_write.sh --retire`へ委譲する互換ラッパー化。手動実行でもindex-only編集でSSOT不達にならない防御を追加し、関連bats 67/67 PASS。
 - 2026-07-05 GA-178完了: `context/dm-signal-ops.md` のsource commit鮮度ALERTを疾風が処理。DM-Signal 7/4以後のops系commitを最小索引化し、`gate_context_freshness.sh` は総合OKへ復帰。教訓L963登録、GATE CLEAR。
 - 2026-07-05 cmd_karo_hotfix_three_layer_cache_health_202607051933完了: 半蔵が三層記憶DB cache sidecar(-journal/-wal/-shm)残存とstartup health cache stale再利用を修正。`gate_three_layer_health.sh`/`gate_karo_startup.sh`はWARN→PASS、選択範囲Bats 237/237 PASS、GATE CLEAR。
+- 2026-07-06 GA-182完了: 半蔵がdm-signal未振り分け教訓11件(L802-L810/L812/L813)を調査。真陽性で短期は将軍`/lesson-sort`、再発防止は閾値前にproject+ids+推奨bucketを渡すLevel5導線改善。L969登録、GATE CLEAR。
+- 2026-07-06 GA-181完了: 才蔵が`context/dm-signal-research.md`鮮度ALERTを処理。cmd_3694研究成果を§48へ索引化し、5分割context独立last_updated+閾値3跨ぎによる時間差ALERTと特定。L970登録、GATE CLEAR。pushはnon-fast-forwardでWARN。
+- 2026-07-06 cmd_karo_hotfix_cmd_complete_context_marker_scope完了: 半蔵が`cmd_complete_gate.sh`のcontext marker自動更新を`CMD_CHANGED_FILES`+報告YAML`files_modified`限定へ修正。dirtyな別cmd由来contextを短縮cmd_idで上書きする経路を封止し、`bats` 7/7・`bash -n`・context freshness OK、GATE CLEAR。

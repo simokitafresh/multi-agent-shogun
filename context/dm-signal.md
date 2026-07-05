@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-06 cmd_karo_hotfix_ga180_context_freshness_202607060126 -->
-<!-- last_synced_lesson: L812 -->
+<!-- last_updated: 2026-07-06 cmd_karo_hotfix_ga181 -->
+<!-- last_synced_lesson: L813 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -286,6 +286,7 @@ GA-179原因: `dm-signal.md`のlast_updatedは2026-07-04で、source監視対象
 - L809: 無音書換え警報のpending/確定境界は日付ではなく出自(marker)で判定する（cmd_3679）
 - L810: DM-Signal repo-checks: 新規importをトップレベルimportで追加すると同一関数を使う機能追加とmixed-commitでBLOCKされ、import-only先行commitもruff --fixに剥がされ空コミット化する（cmd_3684）
 - L812: DM-Signalリポジトリのgit commitはBash tool既定2分timeoutを超えることがある(lefthook pre-commit)。9pスタルではなくtimeout値を上げて再試行せよ（cmd_3686）
+- L813: run_077少数実行ACではCLI pattern-limit統一を先に検査する（cmd_3694）
 
 ## 因果リンク
 
