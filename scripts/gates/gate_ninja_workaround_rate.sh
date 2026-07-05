@@ -220,12 +220,14 @@ END {
         exit 0
     }
 
-    start = (has_gate ? 1 : ((entry_count > last_n) ? entry_count - last_n + 1 : 1))
-    total = has_gate ? clear_count : entry_count - start + 1
+    # This gate measures the workaround log itself.  Filtering by recent
+    # gate_metrics CLEAR commands hides fresh WA records whose parent cmd has
+    # not been CLEARed yet, which makes active ninja WA look like "all clean".
+    start = (entry_count > last_n) ? entry_count - last_n + 1 : 1
+    total = entry_count - start + 1
     recent_start = (entry_count > recent_n) ? entry_count - recent_n + 1 : 1
 
     for (i = start; i <= entry_count; i++) {
-        if (has_gate && !(entry_cmd[i] in clear_set)) continue
         ninja = entry_ninja[i]
         if (!(ninja in stats_seen)) {
             stats_seen[ninja] = 1
@@ -235,7 +237,7 @@ END {
         if (entry_wa[i]) {
             stats_wa[ninja]++
             total_wa++
-            if ((has_gate && (entry_cmd[i] in recent_clear_set)) || (!has_gate && i >= recent_start)) {
+            if (i >= recent_start) {
                 stats_recent_wa[ninja]++
             }
             if (ninja_filter != "" && ninja == ninja_filter) {
@@ -248,7 +250,6 @@ END {
 
     # ─── category別集計（直近last_n件、WA=true のみ）───
     for (i = start; i <= entry_count; i++) {
-        if (has_gate && !(entry_cmd[i] in clear_set)) continue
         if (entry_wa[i] && entry_cat[i] != "" && entry_cat[i] != "clean") {
             wa_cat[entry_cat[i]]++
         }
@@ -318,17 +319,9 @@ END {
                 if (line != "") line = line ", "
                 line = line sprintf("%s:%d/%d", name, stats_wa[name], stats_total[name])
             }
-            if (has_gate) {
-                printf "  忍者別workaround(直近%d CLEAR cmd): %s\n", total, line
-            } else {
-                printf "  忍者別workaround(直近%d件): %s\n", total, line
-            }
+            printf "  忍者別workaround(直近%d件): %s\n", total, line
         } else {
-            if (has_gate) {
-                printf "  忍者別workaround(直近%d CLEAR cmd): 全員clean\n", total
-            } else {
-                printf "  忍者別workaround(直近%d件): 全員clean\n", total
-            }
+            printf "  忍者別workaround(直近%d件): 全員clean\n", total
         }
         if (alert_count > 0) {
             line = ""
@@ -359,11 +352,7 @@ END {
         exit 0
     }
 
-    if (has_gate) {
-        printf "=== 忍者別workaround率 (直近%d CLEAR cmd) ===\n\n", total
-    } else {
-        printf "=== 忍者別workaround率 (直近%d件) ===\n\n", total
-    }
+    printf "=== 忍者別workaround率 (直近%d件) ===\n\n", total
     printf "%-12s %7s %8s %7s\n", "忍者", "WA件数", "担当件数", "WA率"
     print "--------------------------------------"
     for (i = 1; i <= ordered_count; i++) {

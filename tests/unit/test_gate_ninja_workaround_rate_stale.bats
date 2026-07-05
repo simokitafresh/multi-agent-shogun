@@ -123,7 +123,7 @@ YAML
     [[ "$output" != *"stale WA履歴"* ]]
 }
 
-@test "gate_ninja_workaround_rate: gate_metrics CLEAR window excludes old workaround log entries" {
+@test "gate_ninja_workaround_rate: gate_metrics CLEAR window does not hide recent workaround log entries" {
     cat > "$TEST_TMP/logs/karo_workarounds.yaml" <<'YAML'
 - cmd_id: cmd_old_1
   ninja: hanzo
@@ -137,6 +137,10 @@ YAML
   ninja: hanzo
   category: clean
   workaround: false
+- cmd_id: cmd_recent_wa
+  ninja: kagemaru
+  category: report_yaml_format
+  workaround: true
 YAML
     cat > "$TEST_TMP/logs/gate_metrics.log" <<'LOG'
 2026-06-30T09:00:00	cmd_old_1	CLEAR	all_gates_passed	full	unknown	unknown	none
@@ -148,6 +152,30 @@ LOG
     run bash "$TEST_TMP/scripts/gates/gate_ninja_workaround_rate.sh" --quiet --last 2
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"忍者別workaround(直近2 CLEAR cmd): 全員clean"* ]]
+    [[ "$output" == *"忍者別workaround(直近2件): kagemaru:1/1"* ]]
+    [[ "$output" != *"全員clean"* ]]
+}
+
+@test "gate_ninja_workaround_rate: --ninja reports direct ninja-field workaround even when cmd is not CLEARed" {
+    cat > "$TEST_TMP/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_clean
+  ninja: kagemaru
+  category: clean
+  workaround: false
+- cmd_id: cmd_open_wa
+  ninja: kagemaru
+  category: report_yaml_format
+  workaround: true
+YAML
+    cat > "$TEST_TMP/logs/gate_metrics.log" <<'LOG'
+2026-06-30T09:00:00	cmd_clean	CLEAR	all_gates_passed	full	unknown	unknown	none
+LOG
+
+    run bash "$TEST_TMP/scripts/gates/gate_ninja_workaround_rate.sh" --ninja kagemaru --last 2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"担当件数: 2  WA件数: 1  WA率: 50.0%"* ]]
+    [[ "$output" == *"- cmd_open_wa: report_yaml_format"* ]]
+    [[ "$output" != *"担当件数: 0"* ]]
     [[ "$output" != *"WARN: WA率30%超"* ]]
 }
