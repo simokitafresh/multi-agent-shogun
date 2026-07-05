@@ -10,7 +10,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="${GATE_FIRE_LOG_REPO_ROOT:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 FIRE_LOG="${GATE_FIRE_LOG_FILE:-$SCRIPT_DIR/../logs/gate_fire_log.yaml}"
+LIVE_REPORT_DIR="${GATE_FIRE_LOG_LIVE_REPORT_DIR:-$REPO_ROOT/queue/reports}"
 
 if [ ! -f "$FIRE_LOG" ]; then
     printf 'healed=0 fail_total=0 fail_live=0\n'
@@ -36,15 +38,19 @@ fi
 
 # --- awk 1パス: fail_total + healed + /mnt/c FAILパスを同時計算 ---
 # 出力形式: 1行目="<fail_total> <healed>", 残行=FAILファイルパス
-mapfile -t awk_lines < <(awk '
+mapfile -t awk_lines < <(awk -v repo_root="$REPO_ROOT" -v live_report_dir="$LIVE_REPORT_DIR" '
+function normalize_path(path) {
+    if (path ~ /^\//) return path
+    return repo_root "/" path
+}
 /result: FAIL/ { fail_total++ }
 match($0, /file: "([^"]*)"/, f) {
-    fname = f[1]
+    fname = normalize_path(f[1])
     if (match($0, /result: (FAIL|PASS)/, r)) {
         if (r[1] == "FAIL") {
             fails[fname] = 1
             pending_fail[fname] = 1
-            if (fname ~ /^\/mnt\/c/) { live_paths[fname] = 1 }
+            if (index(fname, live_report_dir "/") == 1) { live_paths[fname] = 1 }
         } else if (r[1] == "PASS" && fname in pending_fail) {
             healed++
             delete pending_fail[fname]

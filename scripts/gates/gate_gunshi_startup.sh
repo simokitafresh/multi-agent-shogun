@@ -1107,12 +1107,17 @@ _wa_log="$SCRIPT_DIR/logs/karo_workarounds.yaml"
 if [ -f "$_fire_log" ]; then
     # 免疫効果 = 同一ファイルでFAIL後にPASSした件数(gateが止めて忍者が自力修正)
     # §3.2: python3→awk置換(~650ms削減)
-    _healed=$(awk '
+    _healed=$(awk -v repo_root="$SCRIPT_DIR" '
+        function normalize_path(path) {
+            if (path ~ /^\//) return path
+            return repo_root "/" path
+        }
         match($0, /file: "([^"]+)".*result: (FAIL|PASS)/, m) {
-            if (m[2] == "FAIL") pending_fail[m[1]] = 1
-            else if (m[2] == "PASS" && m[1] in pending_fail) {
+            fname = normalize_path(m[1])
+            if (m[2] == "FAIL") pending_fail[fname] = 1
+            else if (m[2] == "PASS" && fname in pending_fail) {
                 healed++
-                delete pending_fail[m[1]]
+                delete pending_fail[fname]
             }
         }
         END { print healed+0 }
@@ -1122,7 +1127,21 @@ if [ -f "$_fire_log" ]; then
     _fail_live=0
     while IFS= read -r _fl; do
         if [ -f "$_fl" ]; then (( _fail_live++ )) || true; fi
-    done < <(grep 'result: FAIL' "$_fire_log" 2>/dev/null | grep -oP '/mnt/c[^"]+' | sort -u)
+    done < <(awk -v repo_root="$SCRIPT_DIR" -v live_report_dir="$SCRIPT_DIR/queue/reports" '
+        function normalize_path(path) {
+            if (path ~ /^\//) return path
+            return repo_root "/" path
+        }
+        /result: FAIL/ && match($0, /file: "([^"]+)"/, f) {
+            fname = normalize_path(f[1])
+            if (index(fname, live_report_dir "/") == 1) live[fname] = 1
+        }
+        /result: PASS/ && match($0, /file: "([^"]+)"/, f) {
+            fname = normalize_path(f[1])
+            delete live[fname]
+        }
+        END { for (p in live) print p }
+    ' "$_fire_log" 2>/dev/null)
     echo "  第三層(免疫効果): FAIL→PASS遷移=${_healed}件(gateが止め忍者が自力修正)"
     echo "  第三層(参考): 累積FAIL=${_fail_total}件(うち現存報告=${_fail_live}件。差分=archive済み旧報告ノイズ)"
 fi

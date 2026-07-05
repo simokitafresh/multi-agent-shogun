@@ -7,6 +7,8 @@ setup() {
     TMP_DIR="$(mktemp -d)"
     TMP_LOG="$TMP_DIR/gate_fire_log.yaml"
     export GATE_FIRE_LOG_CACHE_DIR="$TMP_DIR"
+    export GATE_FIRE_LOG_REPO_ROOT="$TMP_DIR"
+    export GATE_FIRE_LOG_LIVE_REPORT_DIR="$TMP_DIR/queue/reports"
 }
 
 teardown() {
@@ -94,4 +96,28 @@ EOF
     run env GATE_FIRE_LOG_FILE="$TMP_LOG" bash "$SCRIPT"
     [ "$status" -eq 0 ]
     [ "$output" = "healed=0 fail_total=0 fail_live=0" ]
+}
+
+@test "fail_live counts only existing queue reports" {
+    mkdir -p "$TMP_DIR/queue/reports" "$TMP_DIR/reports"
+    touch "$TMP_DIR/queue/reports/live.yaml" "$TMP_DIR/reports/legacy.yaml"
+    cat > "$TMP_LOG" << EOF
+- ts: "2026-01-01T00:00:01+09:00", file: "$TMP_DIR/queue/reports/live.yaml", gate: "g", result: FAIL, reasons: "x"
+- ts: "2026-01-01T00:00:02+09:00", file: "$TMP_DIR/reports/legacy.yaml", gate: "g", result: FAIL, reasons: "legacy"
+EOF
+    run env GATE_FIRE_LOG_FILE="$TMP_LOG" bash "$SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" = "healed=0 fail_total=2 fail_live=1" ]
+}
+
+@test "relative and absolute paths for same report are one transition" {
+    mkdir -p "$TMP_DIR/queue/reports"
+    touch "$TMP_DIR/queue/reports/a.yaml"
+    cat > "$TMP_LOG" << EOF
+- ts: "2026-01-01T00:00:01+09:00", file: "queue/reports/a.yaml", gate: "g", result: FAIL, reasons: "x"
+- ts: "2026-01-01T00:00:02+09:00", file: "$TMP_DIR/queue/reports/a.yaml", gate: "g", result: PASS
+EOF
+    run env GATE_FIRE_LOG_FILE="$TMP_LOG" bash "$SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" = "healed=1 fail_total=1 fail_live=0" ]
 }
