@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-05 cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501 -->
+<!-- last_updated: 2026-07-06 cmd_karo_hotfix_ga180_context_freshness_202607060126 -->
 <!-- last_synced_lesson: L812 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -62,6 +62,7 @@
 | 30 | 2026-04-20〜04-21 主要研究更新（GS memory最適化/L2 GS vs WF/vintage設計） | (本ファイル) |
 | 31 | 2026-04-28〜04-30 運用鮮度更新（L1/L2登録+knowledge-base methods） | (本ファイル) |
 | 32 | ビジネスプラン(Tier-プラン対応・推奨PF・記事) | (本ファイル) |
+| 33 | L0-L3 GS再キャリブレーション計画（EODHD生値移行後） | (本ファイル) |
 
 ## §32 ビジネスプラン (殿裁定2026-05-10)
 
@@ -99,6 +100,16 @@ note.comメンバーシップの料金プランとDB viewer_tiersの対応。詳
 - α6指標: CAGR / NHF / MaxDD / MRU / Calmar / Avg UWP
 - ALMはディスコン。殿が明示的に言わない限り話題禁止
 - note記事の数値開示方針(PD-045): バレてよい詳細(α6指標名など既公開情報)はリアル数字を出し、核心(戦略パラメータ)は隠し、曖昧インパクト(数万パターン等)で印象形成する
+
+## §33 L0-L3 GS再キャリブレーション計画 (2026-07-06)
+
+価格データソース多重化の本番適用により、GS入力はyfinance adjusted closeからEODHD生値+自前調整へ移行済み。既存本番PFのpipeline_configは旧入力価格で選出されたチャンピオンのため、L0→L1→L2→L3の依存順で全レイヤーを再GSし、新チャンピオン選出・本番config更新・パリティ検証が必要。
+
+判断済み事項: 入力価格はEODHD生値+自前調整、パリティは全期間holding_signal(ticker×weight)+monthly_return完全一致、GSスクリプトは入力prices変更のみで原則変更不要、パラメータ空間は前回同一で縮小禁止、チャンピオン選別はin-sample最適化、WFは選別に使わない。
+
+道具磨き順序: いきなり全計測せず、1PF×1パターンで計算パスを最速化し、5分以内を確認してからパターン数を段階拡大する。全パターンでも5分以内を達成してからGS本番実行。
+
+根拠: `/mnt/c/Python_app/DM-signal/docs/design/gs-recalibration-plan.md`（commit `4828c134`, `78ed9bec`, `97e06904`）。
 
 ## 弱体化確率推定(P_det)
 
