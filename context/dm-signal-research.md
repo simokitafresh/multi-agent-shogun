@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-03 cmd_3673 -->
+<!-- last_updated: 2026-07-06 cmd_karo_hotfix_ga181_context_freshness_202607060242 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -622,6 +622,13 @@ DM-Signal本番FEのmobile実運用条件計測は、`scripts/mobile_lighthouse_
 - cmd_3671再計測: `docs/research/lighthouse_rounds/round_20260703_cmd3671_monthly_trade/`。monthly-trade PF指定でPerformance 73→96、TBT 1613→68ms、Main-thread 10393→1415ms。PF UUID入りbackend requestは記録済みだがHTTP 401のため、実データ表示完了の絶対証明ではなくPF propagation証拠として扱う。
 - cmd_3672道具改修: `scripts/mobile_lighthouse_round.py` がbackend originにもadmin_session cookieを注入し、manifest `pages[].api_data_evidence` と `pages[].dom_evidence` にデータ到達+描画完了証拠を保存する。試走原票 `docs/research/lighthouse_rounds/round_20260703_cmd3672_auth_data_proof_monthly_returns/` ではPF指定API Fetch 200・transfer_size 3091・resource_size 9335、DOM table 12行、No data/Loadingなしを確認済み。
 - cmd_3673正式round: `docs/research/lighthouse_rounds/round_20260703_cmd3673_monthly_data_proof/` と補完 `round_20260703_cmd3673_monthly_trade_data_proof_single/`。実データ描画条件でmonthly-returns Performance 74/TBT 167ms/Bootup 9249ms/Main-thread 11031ms、monthly-trade Performance 80/TBT 62ms/Bootup 9407ms/Main-thread 11018ms。monthly-tradeのformal roundはselected PF transfer 0のため、fresh profile単独roundでFetch 200・transfer_size 3948・resource_size 21433を補完確認。
+
+## §48. 全忍法GS少数実行・既存SQLiteパリティ確認 (cmd_3694, 2026-07-06)
+
+`--pattern-limit`をGS runner 7本(bunshin/oikaze/nukimi/kawarimi/kasoku_diff/kasoku_ratio/weighted_yotsume)に追加し、少数実行(`--pattern-limit 3`)で全て exit 0を確認(AC1 PASS)。既存GS SQLiteとのpattern_idパリティ突合はAC2 FAIL: 最大差分0.0873〜0.319。原因は`--pattern-limit`実装不備ではなく、既存成果物のdata_period_end(〜2026-06)と今回`okugi_l3_168.yaml`入力のdata_period_end(2026-07)の系列差分。2026-07-05の価格データソース移行(yfinance adjusted→EODHD raw+自前調整、`docs/design/gs-recalibration-plan.md`)により全レイヤー再GSが必要と記録されており、本パリティFAILはその症状の一つ。
+→ 詳細: `docs/research/cmd_3694_ninpo_gs_small_run_parity.md`
+
+GA-181分類メモ(source commits since last_updated=2026-07-03の3件): 上記45f00c6bのみ研究正本反映対象。`a3059891`(tasks/lessons.md退役8行)・`894736d4`(tasks/lessons.md cmd_3686教訓登録26行)はlesson運用のみで研究索引への追記対象外(L787準拠)。
 
 ---
 
