@@ -762,9 +762,12 @@ _THREE_LAYER_HEALTH_CACHE_TTL=300
 _SKILL_RECOMMEND_CACHE_TTL=300
 
 _now_epoch=$(date +%s)
+_WA_RATE_SCRIPT_MTIME=$(stat -c %Y "$WA_RATE_SCRIPT" 2>/dev/null || echo 0)
+_NINJA_WA_SCRIPT_MTIME=$(stat -c %Y "$NINJA_WA_SCRIPT" 2>/dev/null || echo 0)
 
 # WA rate (cache hit or background refresh)
-if [[ -f "$_WA_RATE_CACHE" ]] && (( _now_epoch - $(stat -c %Y "$_WA_RATE_CACHE" 2>/dev/null || echo 0) < _WA_CACHE_TTL )); then
+_WA_RATE_CACHE_MTIME=$(stat -c %Y "$_WA_RATE_CACHE" 2>/dev/null || echo 0)
+if [[ -f "$_WA_RATE_CACHE" ]] && (( _now_epoch - _WA_RATE_CACHE_MTIME < _WA_CACHE_TTL )) && (( _WA_RATE_CACHE_MTIME >= _WA_RATE_SCRIPT_MTIME )); then
     cp "$_WA_RATE_CACHE" "$_WA_RATE_TMP"
     _WA_RATE_PID=""
 elif [ -x "$WA_RATE_SCRIPT" ]; then
@@ -788,7 +791,8 @@ else
 fi
 
 # ninja WA rate (cache hit or background refresh)
-if [[ -f "$_NINJA_WA_CACHE" ]] && (( _now_epoch - $(stat -c %Y "$_NINJA_WA_CACHE" 2>/dev/null || echo 0) < _WA_CACHE_TTL )); then
+_NINJA_WA_CACHE_MTIME=$(stat -c %Y "$_NINJA_WA_CACHE" 2>/dev/null || echo 0)
+if [[ -f "$_NINJA_WA_CACHE" ]] && (( _now_epoch - _NINJA_WA_CACHE_MTIME < _WA_CACHE_TTL )) && (( _NINJA_WA_CACHE_MTIME >= _NINJA_WA_SCRIPT_MTIME )); then
     cp "$_NINJA_WA_CACHE" "$_NINJA_WA_TMP"
     _NINJA_WA_PID=""
 elif [ -x "$NINJA_WA_SCRIPT" ]; then

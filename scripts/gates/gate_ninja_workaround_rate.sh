@@ -1,9 +1,9 @@
 #!/bin/bash
 # semantic-links: [[ゲート品質統合フレームワーク]]
 # gate_ninja_workaround_rate.sh — 忍者別workaround率を集計
-# 目的: karo_workarounds.yamlから直近N cmd分の忍者別workaround件数/率を出力
+# 目的: karo_workarounds.yamlのWAログ直近N件から忍者別workaround件数/率を出力
 # Usage: bash scripts/gates/gate_ninja_workaround_rate.sh [--last N] [--quiet] [--ninja NAME]
-#   --last N     : 直近N件を対象 (default: 30)
+#   --last N     : WAログ直近N件を対象 (default: 30)
 #   --quiet      : サマリ1行のみ出力 (gate_karo_startup.sh統合用)
 #   --ninja NAME : 指定忍者のみの履歴を表示 (SG9用)
 
@@ -48,7 +48,8 @@ _WA_CACHE="/tmp/shogun_wa_rate_cache_${NINJA_FILTER:-all}_${LAST_N}_${RECENT_N}.
 _WA_MTIME=$(stat -c%Y "$WA_FILE" 2>/dev/null || echo 0)
 _GATE_MTIME=$(stat -c%Y "$GATE_LOG" 2>/dev/null || echo 0)
 _WA_SELF_MTIME=$(stat -c%Y "${BASH_SOURCE[0]}" 2>/dev/null || echo 0)
-_WA_CACHE_SIG="${_WA_MTIME}:${_GATE_MTIME}:${_WA_SELF_MTIME}"
+_WA_CACHE_VERSION="2"
+_WA_CACHE_SIG="${_WA_CACHE_VERSION}:${_WA_MTIME}:${_GATE_MTIME}:${_WA_SELF_MTIME}"
 _WA_CACHED_SIG=""
 if [ -f "$_WA_CACHE" ]; then
     IFS= read -r _WA_CACHED_SIG < "$_WA_CACHE" || _WA_CACHED_SIG=""
@@ -265,7 +266,7 @@ END {
     if (ninja_filter != "") {
         ninja_total = stats_total[ninja_filter] + 0
         ninja_wa = stats_wa[ninja_filter] + 0
-        printf "=== %s workaround履歴 (直近%d件中) ===\n", ninja_filter, total
+        printf "=== %s workaround履歴 (WAログ直近%d件中) ===\n", ninja_filter, total
         if (ninja_total == 0) {
             print "  担当件数: 0 — 対象期間にエントリなし"
             exit 0
@@ -283,7 +284,7 @@ END {
             print "  workaroundなし: clean"
         }
         if (cat_warn_line != "") {
-            print "  ★ WARN: category集計(直近" last_n "件中3件以上) — " cat_warn_line
+            print "  ★ WARN: category集計(WAログ直近" last_n "件中3件以上) — " cat_warn_line
         }
         exit 0
     }
@@ -319,9 +320,9 @@ END {
                 if (line != "") line = line ", "
                 line = line sprintf("%s:%d/%d", name, stats_wa[name], stats_total[name])
             }
-            printf "  忍者別workaround(直近%d件): %s\n", total, line
+            printf "  忍者別workaround(WAログ直近%d件): %s\n", total, line
         } else {
-            printf "  忍者別workaround(直近%d件): 全員clean\n", total
+            printf "  忍者別workaround(WAログ直近%d件): 全員clean\n", total
         }
         if (alert_count > 0) {
             line = ""
@@ -339,7 +340,7 @@ END {
             print "  WARN: WA率30%超 — " line
         }
         if (cat_warn_line != "") {
-            print "  WARN: category集計(直近" last_n "件中3件以上) — " cat_warn_line
+            print "  WARN: category集計(WAログ直近" last_n "件中3件以上) — " cat_warn_line
         }
         if (stale_count > 0) {
             line = ""
@@ -347,12 +348,12 @@ END {
                 if (line != "") line = line ", "
                 line = line stale[i]
             }
-            print "  OK: stale WA履歴は閾値判定外(直近" recent_n "件clean) — " line
+            print "  OK: stale WA履歴は閾値判定外(WAログ直近" recent_n "件clean) — " line
         }
         exit 0
     }
 
-    printf "=== 忍者別workaround率 (直近%d件) ===\n\n", total
+    printf "=== 忍者別workaround率 (WAログ直近%d件) ===\n\n", total
     printf "%-12s %7s %8s %7s\n", "忍者", "WA件数", "担当件数", "WA率"
     print "--------------------------------------"
     for (i = 1; i <= ordered_count; i++) {
@@ -373,7 +374,7 @@ END {
         print "  全員clean: 閾値超過なし (サンプル2件未満の忍者は除外)"
     }
     if (stale_count > 0) {
-        printf "  OK: stale WA履歴は閾値判定外(直近%d件clean): ", recent_n
+        printf "  OK: stale WA履歴は閾値判定外(WAログ直近%d件clean): ", recent_n
         for (i = 1; i <= stale_count; i++) {
             if (i > 1) printf ", "
             printf "%s", stale[i]
@@ -381,7 +382,7 @@ END {
         printf "\n"
     }
     if (cat_warn_line != "") {
-        printf "\nWARN: category集計(直近%d件中3件以上): %s\n", total, cat_warn_line
+        printf "\nWARN: category集計(WAログ直近%d件中3件以上): %s\n", total, cat_warn_line
     }
 }
 ' "$WA_FILE" > "$_WA_TMP" 2>/dev/null || true

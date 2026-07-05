@@ -87,9 +87,9 @@ YAML
     run bash "$TEST_TMP/scripts/gates/gate_ninja_workaround_rate.sh" --quiet --last 16
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"忍者別workaround(直近16件): hanzo:2/6"* ]]
+    [[ "$output" == *"忍者別workaround(WAログ直近16件): hanzo:2/6"* ]]
     [[ "$output" != *"WARN: WA率30%超"* ]]
-    [[ "$output" == *"OK: stale WA履歴は閾値判定外(直近10件clean) — hanzo(2/6)"* ]]
+    [[ "$output" == *"OK: stale WA履歴は閾値判定外(WAログ直近10件clean) — hanzo(2/6)"* ]]
 }
 
 @test "gate_ninja_workaround_rate: recent ninja WA still warns" {
@@ -152,7 +152,7 @@ LOG
     run bash "$TEST_TMP/scripts/gates/gate_ninja_workaround_rate.sh" --quiet --last 2
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"忍者別workaround(直近2件): kagemaru:1/1"* ]]
+    [[ "$output" == *"忍者別workaround(WAログ直近2件): kagemaru:1/1"* ]]
     [[ "$output" != *"全員clean"* ]]
 }
 
