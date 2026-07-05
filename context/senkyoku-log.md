@@ -1374,3 +1374,4 @@
 - 2026-07-04 idle自走: retired/deprecated除外を全projectへ横展開。auto-ops indexは57→55 active、mcasはproject status=archivedをactive判定へ追加して9→0 active。全project lesson_deprecation_scan候補0、対象bats 52/52 PASS。
 - 2026-07-04 idle自走: 旧`lesson_deprecate.sh`を通常運用では`lesson_write.sh --retire`へ委譲する互換ラッパー化。手動実行でもindex-only編集でSSOT不達にならない防御を追加し、関連bats 67/67 PASS。
 - 2026-07-05 GA-178完了: `context/dm-signal-ops.md` のsource commit鮮度ALERTを疾風が処理。DM-Signal 7/4以後のops系commitを最小索引化し、`gate_context_freshness.sh` は総合OKへ復帰。教訓L963登録、GATE CLEAR。
+- 2026-07-05 cmd_karo_hotfix_three_layer_cache_health_202607051933完了: 半蔵が三層記憶DB cache sidecar(-journal/-wal/-shm)残存とstartup health cache stale再利用を修正。`gate_three_layer_health.sh`/`gate_karo_startup.sh`はWARN→PASS、選択範囲Bats 237/237 PASS、GATE CLEAR。
