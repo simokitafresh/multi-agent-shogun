@@ -78,7 +78,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L755 -->
+<!-- last_synced_lesson: L814 -->
 
 ## §36 API認証
 
@@ -760,6 +760,8 @@ import metrics_research_engine as MRE
 - L755: GS実行環境標準化: Linux venv必須+PowerShell禁止（cmd_3508）
 - L763: 5本一括速度ACは最終反復値だけでなく中央値/反復条件を固定する（cmd_3514）
 - L764: 速度改善ACは最終HEAD反復で判定する（cmd_3514）
+- L814: GS universe source_type=db→local_sqlite変更だけではDB接続は完全除去されない（cmd_goal_gs_phasec_l3_local_sqlite_202607060708）
+- PD-055裁定(2026-07-06): パリティ確認のための本番DB接続は許容。Phase Cは17.6s→12.6s(28.4%削減)の暫定成果で切り、完全ゼロ化は後続対処。止まらずPhase D全量ベンチマークへ進む。
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
