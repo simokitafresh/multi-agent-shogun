@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-05 cmd_karo_hotfix_dirty_diff_triage_2026070505 -->
+<!-- last_updated: 2026-07-05 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -393,3 +393,4 @@
 | cmd_3640 | 殿指示(2026-07-02): MECE全EP×全PF計測でmonthly-tradeが75/102PF遅延(最遅7.63s)と判明。precompute_raw.pyにraw生成は実装済みだがmonthly_trade.pyにlookup未追加(Phase3漏れ)。annual_returnsも2PF遅延。lookup追加で全PF瞬時化 | dm-signal | 07-02 | monthly_trade.py と annual_retu |
 | cmd_3642 | 軍師提案(blt_20260702_124509+blt_20260702_124855)+将軍一次計測(2026-07-02): 最新版CLIはバナーにモデル名が出ないケースがあり、pane履歴方式の検出は前セッション残像を誤採用する。将軍D0(commit 3964e334e: 最終セッション限定awkフィルタ+Guard16検出器除外)後も、実プロセスがsonnet xhighのpaneで検出値がOpus 4.8 highのまま乖離残存を実測済み。pane履歴に依存しない検出とrespawn時の残存値排除で実モデル表示の信頼を回復する | infra | 07-02 | model_detectが実プロセス/TTY引数を優先し、古 |
 �し、古 |
+| cmd_3687 | 殿指示(2026-07-05 20:58 やろう): 価格データソース多重化計画Phase 1。Alpaca/EODHD/Tiingo/Stockdata(yfinance)の4ソースで全コアシンボルの直近月末open/closeを突合し、乖離の全体像を定量化する。未解決2点(Alpaca IEXフィードのSIP適用範囲、EODHDの終値方式)を実測で決着させ、プライマリ選定の判断材料を殿に提供する。発端=シン青龍-鉄壁TECL/XLU再反転(cmd_3676-3685) | database | 07-05 | 4ソース×12シンボル×3月末=144ポイントを取得し、EO |
