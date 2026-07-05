@@ -42,6 +42,29 @@ EOF
     [ "$output" = "healed=1 fail_total=1 fail_live=0" ]
 }
 
+@test "duplicate pass after one fail counts as one healed transition" {
+    cat > "$TMP_LOG" << 'EOF'
+- ts: "2026-01-01T00:00:01+09:00", file: "queue/reports/a.yaml", gate: "g", result: FAIL, reasons: "x"
+- ts: "2026-01-01T00:00:02+09:00", file: "queue/reports/a.yaml", gate: "g", result: PASS
+- ts: "2026-01-01T00:00:03+09:00", file: "queue/reports/a.yaml", gate: "g", result: PASS
+EOF
+    run env GATE_FIRE_LOG_FILE="$TMP_LOG" bash "$SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" = "healed=1 fail_total=1 fail_live=0" ]
+}
+
+@test "repeated fail pass cycles count each recovered fail once" {
+    cat > "$TMP_LOG" << 'EOF'
+- ts: "2026-01-01T00:00:01+09:00", file: "queue/reports/a.yaml", gate: "g", result: FAIL, reasons: "x"
+- ts: "2026-01-01T00:00:02+09:00", file: "queue/reports/a.yaml", gate: "g", result: PASS
+- ts: "2026-01-01T00:00:03+09:00", file: "queue/reports/a.yaml", gate: "g", result: FAIL, reasons: "y"
+- ts: "2026-01-01T00:00:04+09:00", file: "queue/reports/a.yaml", gate: "g", result: PASS
+EOF
+    run env GATE_FIRE_LOG_FILE="$TMP_LOG" bash "$SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" = "healed=2 fail_total=2 fail_live=0" ]
+}
+
 # PASS のみ → healed=0 fail_total=0
 @test "pass only: all zeros" {
     cat > "$TMP_LOG" << 'EOF'

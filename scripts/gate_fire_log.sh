@@ -43,9 +43,11 @@ match($0, /file: "([^"]*)"/, f) {
     if (match($0, /result: (FAIL|PASS)/, r)) {
         if (r[1] == "FAIL") {
             fails[fname] = 1
+            pending_fail[fname] = 1
             if (fname ~ /^\/mnt\/c/) { live_paths[fname] = 1 }
-        } else if (r[1] == "PASS" && fname in fails) {
+        } else if (r[1] == "PASS" && fname in pending_fail) {
             healed++
+            delete pending_fail[fname]
             delete live_paths[fname]
         }
     }

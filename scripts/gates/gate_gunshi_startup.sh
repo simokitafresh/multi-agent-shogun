@@ -1109,8 +1109,11 @@ if [ -f "$_fire_log" ]; then
     # §3.2: python3→awk置換(~650ms削減)
     _healed=$(awk '
         match($0, /file: "([^"]+)".*result: (FAIL|PASS)/, m) {
-            if (m[2] == "FAIL") fails[m[1]] = 1
-            else if (m[2] == "PASS" && m[1] in fails) healed++
+            if (m[2] == "FAIL") pending_fail[m[1]] = 1
+            else if (m[2] == "PASS" && m[1] in pending_fail) {
+                healed++
+                delete pending_fail[m[1]]
+            }
         }
         END { print healed+0 }
     ' "$_fire_log" 2>/dev/null || echo 0)
