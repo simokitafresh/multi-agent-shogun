@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-05 -->
+<!-- last_updated: 2026-07-06 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,18 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3182 | recall_control/obsidian_promoteが本番DB(data/multi_agent_shogun_memory.db)にeventsテーブル不在で機能停止中(require_columns L97-103でexit)。三層記憶11cmd全GATE CLEARだが自動state遷移ゼロの直接原因。memory_db_import.pyの本番DB実行でeventsテーブルを作成し、ninja_monitorのdry-run→apply切替で三層記憶を実稼働させる | infra | 06-05 | 本番記憶DBにevents関連表とevent_state_t |
-| cmd_3186 | causal_verification WARNが7回累計昇格→BLOCKの繰り返し。根因=gate/infra対象cmdのq5にgit log/因果キーワードを毎回手動追記する必要がある意志依存構造。cmd_save.shのcausal_verification scope判定時にq5にプレースホルダ(git log確認:)を自動表示し、記入漏れを防止する | infra | 06-05 | cmd_save.sh causal_verificatio |
-| cmd_3184 | context_freshness gateがdm-signal-research.mdのbacklink追記(context自身のcommit)をsource更新として検出→偽陽性ALERT。根因=projects/dm-signal.yaml不在時にroot repoフォールバックし、context自身のcommitがsource commitsに数えられる。偵察(cmd_karo_recon_context_freshness)で特定した候補Bを実装: rootフォールバック時のcontext自身commitをsource更新から除外 | infra | 06-05 | context_freshness root fallbac |
-| cmd_3187 | cancelled — WARN累計蓄積によりcmd_3188に再起票 | infra | 06-05 | — |
-| cmd_3188 | cancelled — FP WARN累計蓄積によりcmd_3189に再起票 | infra | 06-05 | — |
-| cmd_3190 | 偵察cmd_3189計測: Pre 90.8ms(2 fork)+Post 76.8ms(3 fork)=167.6ms/Bash呼出し。fork 1回=10ms。5→2 forkで30ms削減。100回/セッション×30ms=3秒/セッション。品質不変(チェック項目削除なし、設定層fork統合のみ) | infra | 06-05 | Claude Code settingsのPre/Post |
-| cmd_3191 | cmd_3183(FAIL: 8.5→4.5s)の後続。残存python3呼び出し(L538/582/628/688/775/815)をbatch化し4s安定を達成する | infra | 06-05 | gate_shogun_startup.shのGate4 Y |
-| cmd_3194 | 3セッション連続startup BLOCK解消。37957イベント蓄積だがcandidate=0/state遷移=0。obsidian_promote+insight_resolveパイプラインが動作していない根因を特定し修正する | infra | 06-05 | obsidian_promote+insight_resol |
-| cmd_3195 | 殿指示: gate品質によるBlock/WARNはバグ。今セッションcmd_3191-3194起票で発見した3件を全て修正する | infra | 06-05 | cmd_save.sh gate品質バグ3件(q5抽出deb |
-| cmd_3196 | cmd_3194でcandidate生成(0→14)成功だがfinalize未実行。洗脳#8(完了急ぎ)検出。パイプライン最後まで回す | infra | 06-05 | obsidian_promote_finalize.sh - |
-| cmd_3197 | 軍師分析: 教訓注入useful率27.4%。根因=deprecated教訓が修行タスクYAML再利用で残存。inject_direct_training_templateでdeprecated教訓を除外しuseful率向上 | infra | 06-05 | deploy_task.shの教訓注入フィルタにsupers |
-| cmd_3198 | 覚醒監査で検出した2件の改良を環境に埋め込む。(1)GP-262: 定型cmdでも洗脳#1(早期終了)で1観測止まり防止 (2)殿の質問時にsemantic_knowledge結果を引用強制し概念混同を防止 | infra | 06-05 | GP-262の最低2観測明示と、殿の質問時のsemantic |
 | cmd_3199 | 将軍が三層記憶(記憶DB+Obsidian+セマンティック)を使わずMEMORY.mdで回答する根因を解消。L0-L7に三層記憶第一優先を貫通させる。軍師覚醒レビュー3往復完了の設計書v3に基づく | infra | 06-06 | 三層記憶第一優先化L0-L7貫通: instructions |
 | cmd_3200 | 三層記憶検索到達保証+自動成長ループの穴を塞ぐ。軍師3往復+家老3往復レビュー合意 | infra | 06-06 | three_layer_memory_system概念をse |
 | cmd_3206 | 速度修行でscript群が更新されたがSKILL.md内容が未追随。忍者が古い手順で作業するリスク解消。3セッション連続startup BLOCK | infra | 06-07 | 14件のSKILL.mdを参照scriptの現行動作へ追従し |
@@ -396,3 +384,5 @@
 | cmd_3687 | 殿指示(2026-07-05 20:58 やろう): 価格データソース多重化計画Phase 1。Alpaca/EODHD/Tiingo/Stockdata(yfinance)の4ソースで全コアシンボルの直近月末open/closeを突合し、乖離の全体像を定量化する。未解決2点(Alpaca IEXフィードのSIP適用範囲、EODHDの終値方式)を実測で決着させ、プライマリ選定の判断材料を殿に提供する。発端=シン青龍-鉄壁TECL/XLU再反転(cmd_3676-3685) | database | 07-05 | 4ソース×12シンボル×3月末=144ポイントを取得し、EO |
 | cmd_3688 | 殿指示(2026-07-05 21:42): 価格データソース多重化計画Phase 2。(a)EODHD/Tiingo 2ソース毎晩突合cronで不一致時警報 (b)月初入力確定検証(前月最終営業日の全コアシンボル行存在検証、不在ならpending+警報) (c)cron時刻をJST 08:00+17:00の2回に変更(殿案: 01:00 JSTは米国市場close前で構造的問題)。発端=シン青龍-鉄壁再反転+yfinance遡及修正 | database | 07-05 | EODHD/Tiingo close照合、月初入力確定ゲート |
 | cmd_3689 | 殿指示(2026-07-05 22:15): 価格データソース多重化計画Phase 3。pricesテーブルをyfinance調整済み値の直接保存から、生値正本(prices_raw)+確定イベント(corporate_events)による自前調整導出に移行する。生値は取得後不変、イベントはex_date通過後にのみ確定追加。同じ入力から常に同じ出力を保証し、シグナルの日次変動を原理的に消滅させる。DM-Signal側は変更ゼロ(API互換維持)。発端=yfinance遡及修正による毎日シグナル変動 | database | 07-05 | Phase3実装に加え、既存009 migrationの_s |
+| cmd_3690 | 殿裁可(2026-07-05 23:00): Phase 2(cmd_3688)+Phase 3(cmd_3689)の成果物を本番適用する。バックアップ→リモート送信→ビルド→マイグレーション→再計算→3レイヤー検証の順序。バックアップファースト。発端=yfinance遡及修正によるシグナル変動の根本解決 | database | 07-05 | 価格多重化本番適用を実施。Stockdata deploy |
+| cmd_3691 | 殿指示(2026-07-06 00:23): 浮動小数点ノイズがモメンタム判定に影響するか検証し精度を完璧に仕上げる。(1)全コアシンボル×全期間でprices(自前調整値)とEODHD adjusted_closeの差分を全件照合し、差分がモメンタムスコアの閾値判定を反転させるケースを特定する (2)設計書§7の月末月初エッジケース7件が全て対処されていることをテストで証明する。GS再キャリブレーション(Phase A)の前提条件 | database | 07-06 | 全コア11銘柄×2000-01-01〜2026-07-06で |

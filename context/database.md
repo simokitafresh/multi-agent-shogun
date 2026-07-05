@@ -1,5 +1,5 @@
 # Stock Database Context
-<!-- last_updated: 2026-07-05 cmd_3688 price source verification cron/input gate -->
+<!-- last_updated: 2026-07-06 cmd_3691 -->
 
 > cmd_865初回偵察完了(2026-03-12)。水平4名+垂直1名(2AC)で全容把握。
 
@@ -41,6 +41,8 @@ Yahoo Finance(yfinance) + FRED API → 正規化 → PostgreSQL(Supabase) UPSERT
 - **Cron補足（cmd_3685）**: `daily_update_service.refresh_full_history()` は既に全履歴更新だが、Render cron manifestは引き続き`Dockerfile.cron`不在問題あり。本番cron実経路はRender dashboard一次確認が必要。
 - **価格ソースPhase 1（cmd_3687）**: 4ソース×12シンボル×3月末=144ポイントを実測。EODHD/Tiingo raw closeはVIX除く33比較行で0.00差分、Alpaca IEXはraw median比0.01ドル以内6/33。推薦: EODHD primary候補、Tiingo独立検証、Alpaca IEX第三チェック。VIXはAlpaca非対応+Tiingo `^VIX` 404のためCBOE等公式ソース分岐要。source: database commits `7fdd64c08ea8286f16909f99686d771f3b5e23ac`, `ff919e4743720a60f8d3ed2d0a35c4a5d002ab71`
 - **価格ソースPhase 2（cmd_3688）**: EODHD/Tiingo close照合cronと月初入力確定ゲートを実装。Render cronはUTC 23:00(JST 08:00一次取得) + UTC 08:00(JST 17:00確定取得)の2回。`input_confirmation.status` で前月最終営業日prices存在を `pending/confirmed` として返し、欠損時はntfy警報。source: database commit `6739e754f39a3651e890718b0eaea6b48e4f8379`
+- **価格ソースPhase 3本番適用（cmd_3690）**: Phase 2-3成果物を本番適用。Render deploy `dep-d9564ot7vvec738mug0g` live、migration成功、`prices_raw` + `corporate_events` 稼働。DM-Signal full recalculate + FoF復旧後、完全性gateはsignals 102/102・monthly_returns 102/102・FoF component_weights 78/78 PASS。シン青龍-鉄壁は2026-07-02時点APIでTECL、pending=false、FE Summary表示正常。source: `queue/reports/hanzo_report_cmd_3690.yaml`
+- **自前調整値精度検証（cmd_3691）**: Stockdata API本番pricesとEODHD adjusted_closeを全コア11銘柄・2000-01-01以降で58,734行照合し、EODHD欠損0、差分max 97.89199697265622・median 0.0023404159545883374・p99 4.962432641601566、2004-12-31の1M月末モメンタムでEODHD top=SPY/API top=QQQの反転リスク1件を検出。原因は配当調整係数の分母が各過去日のcloseだったことと6桁丸め。修正commit `d7abccd` は配当分母をex-date前営業日close基準に変更し丸めを除去、§7エッジケース含む19 tests PASS。未デプロイのため、push/deploy後に再照合しdiff分布とreversal risk改善を確認するまでGS再キャリブレーション前提は未確定。source: `queue/reports/hanzo_report_cmd_3691.yaml`, `/mnt/c/Python_app/database/reports/adjusted_close_eodhd_compare_cmd_3691.json`
 - → 詳細: `queue/reports/kotaro_report_cmd_865.yaml`
 
 ## §4 Render構成
