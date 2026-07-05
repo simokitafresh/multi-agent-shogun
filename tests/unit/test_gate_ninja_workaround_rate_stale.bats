@@ -123,6 +123,63 @@ YAML
     [[ "$output" != *"stale WA履歴"* ]]
 }
 
+@test "gate_ninja_workaround_rate: resolved workaround is excluded from active ninja WA warning" {
+    cat > "$TEST_TMP/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_1
+  ninja: hanzo
+  category: report_yaml_format
+  workaround: true
+  resolved_by_cmd: cmd_fix_1
+- cmd_id: cmd_2
+  ninja: hanzo
+  category: report_yaml_format
+  workaround: true
+  resolved_by_cmd: cmd_fix_2
+- cmd_id: cmd_3
+  ninja: hanzo
+  category: clean
+  workaround: false
+- cmd_id: cmd_4
+  ninja: hanzo
+  category: clean
+  workaround: false
+YAML
+
+    run bash "$TEST_TMP/scripts/gates/gate_ninja_workaround_rate.sh" --quiet --last 4
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"忍者別workaround(WAログ直近4件): 全員clean"* ]]
+    [[ "$output" != *"WARN: WA率30%超"* ]]
+    [[ "$output" != *"WARN: category集計"* ]]
+}
+
+@test "gate_ninja_workaround_rate: aged unresolved workaround is excluded from current warning window" {
+    cat > "$TEST_TMP/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_old_1
+  timestamp: '2026-01-01T00:00:00Z'
+  ninja: hanzo
+  category: report_yaml_format
+  workaround: true
+- cmd_id: cmd_old_2
+  timestamp: '2026-01-02T00:00:00Z'
+  ninja: hanzo
+  category: report_yaml_format
+  workaround: true
+- cmd_id: cmd_recent_clean
+  timestamp: '2026-07-05T00:00:00Z'
+  ninja: hanzo
+  category: clean
+  workaround: false
+YAML
+
+    NINJA_WA_NOW_EPOCH=1783209600 run bash "$TEST_TMP/scripts/gates/gate_ninja_workaround_rate.sh" --quiet --last 3
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"忍者別workaround(WAログ直近3件): 全員clean"* ]]
+    [[ "$output" != *"WARN: WA率30%超"* ]]
+    [[ "$output" != *"WARN: category集計"* ]]
+}
+
 @test "gate_ninja_workaround_rate: gate_metrics CLEAR window does not hide recent workaround log entries" {
     cat > "$TEST_TMP/logs/karo_workarounds.yaml" <<'YAML'
 - cmd_id: cmd_old_1
