@@ -514,6 +514,38 @@ printf "%s,%s,%s\n" "$first" "$second" "$third"
     [ "$output" = "1,1,2" ]
 }
 
+@test "count_unread_messages_cached: ignores read false text inside content block" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+INBOX_FILE="$TMP_ROOT/hayate.yaml"
+cat > "$INBOX_FILE" <<EOF
+messages:
+- id: msg_literal
+  content: |-
+    診断ログ:
+    read: false
+  read: true
+- id: msg_real
+  content: 実未読
+  read: false
+EOF
+
+cycle=91
+count_unread_messages_cached "$INBOX_FILE" unread_count
+
+printf "%s\n" "$unread_count"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "1" ]
+}
+
 @test "check_lesson_deprecation_candidates posts shogun bulletin and logs metrics" {
     run bash -lc '
 set -euo pipefail

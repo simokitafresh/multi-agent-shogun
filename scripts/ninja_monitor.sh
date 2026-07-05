@@ -240,6 +240,7 @@ yaml_field_get() {
     FIELD_GET_NO_LOG=1 field_get "$file" "$field" "$default" 2>/dev/null
 }
 
+# shellcheck disable=SC2120  # Optional settings_file override is used by focused tests/manual probes.
 get_max_clear_per_cmd() {
     local settings_file="${1:-$SCRIPT_DIR/config/settings.yaml}"
     local value=""
@@ -2265,7 +2266,9 @@ _training_pipeline_has_work() {
 _retrospective_recurrence_rate() {
     local dq_file="${1:-$SCRIPT_DIR/logs/cmd_design_quality.yaml}"
     [ -f "$dq_file" ] || { printf '0 0 0\n'; return 0; }
-    local _ninja_rx_nm="^($(get_ninja_names 2>/dev/null | sed 's/ /|/g' || echo 'hayate|kagemaru|hanzo|saizo|kotaro|tobisaru'))$"
+    local _ninja_rx_names _ninja_rx_nm
+    _ninja_rx_names="$(get_ninja_names 2>/dev/null | sed 's/ /|/g' || echo 'hayate|kagemaru|hanzo|saizo|kotaro|tobisaru')"
+    _ninja_rx_nm="^(${_ninja_rx_names})$"
     grep -E '^[[:space:]]*-[[:space:]]*cmd_id:|^[[:space:]]*(gate_result|notes|timestamp):' "$dq_file" 2>/dev/null | awk -v ninja_rx="$_ninja_rx_nm" '
 function trim(s) { gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); gsub(/^["'\''"]|["'\''"]$/, "", s); return s }
 function skip_pattern(p) { return p ~ /^draft_lessons/ || p ~ /^ci_failure/ || p ~ /:binary_checks_fail/ }
@@ -3361,15 +3364,43 @@ _get_unread_summary_cached() {
     fi
 
     _ius_summary=$(awk '
-        /^[[:space:]]*id:/ {
-            current_id = $0
-            sub(/^[^:]*:[[:space:]]*/, "", current_id)
-            gsub(/["'\''[:space:]]/, "", current_id)
+        function leading_spaces(line,    i, ch) {
+            for (i = 1; i <= length(line); i++) {
+                ch = substr(line, i, 1)
+                if (ch != " ") return i - 1
+            }
+            return length(line)
+        }
+        function direct_field(line, key, item_indent,    indent, pattern) {
+            pattern = "^[[:space:]]*" key ":[[:space:]]*"
+            if (line ~ ("^-[[:space:]]*" key ":[[:space:]]*")) return 1
+            if (line !~ pattern) return 0
+            indent = leading_spaces(line)
+            return (indent == item_indent + 2)
+        }
+        function field_value(line, key,    v) {
+            v = line
+            sub(/^-[[:space:]]*/, "", v)
+            sub("^[[:space:]]*" key ":[[:space:]]*", "", v)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", v)
+            gsub(/^["\047]+|["\047]+$/, "", v)
+            return v
+        }
+        /^[[:space:]]*-[[:space:]]/ {
+            item_indent = leading_spaces($0)
+            current_id = ""
+        }
+        direct_field($0, "id", item_indent) {
+            current_id = field_value($0, "id")
+            gsub(/[[:space:]]/, "", current_id)
             next
         }
-        /read:[[:space:]]*false/ {
-            count++
-            if (current_id != "") ids = ids current_id "|"
+        direct_field($0, "read", item_indent) {
+            read_value = tolower(field_value($0, "read"))
+            if (read_value == "false") {
+                count++
+                if (current_id != "") ids = ids current_id "|"
+            }
         }
         END { printf "%d\t%s\n", count + 0, ids }
     ' "$inbox_file" 2>/dev/null || printf '0\t\n')
@@ -5458,8 +5489,13 @@ while true; do
             # ═══ Stage 1.5: レースコンディション防止ガード（OR条件） ═══
             # Guard 1: inbox未読チェック — 未処理メッセージがある = これから作業開始の可能性
             _s1_inbox_file="$SCRIPT_DIR/queue/inbox/${name}.yaml"
-            if [ -f "$_s1_inbox_file" ] && grep -q "read: false" "$_s1_inbox_file" 2>/dev/null; then
-                log "SKIP_CLEAR: $name has unread inbox"
+            _s1_unread_count=0
+            if [ -f "$_s1_inbox_file" ]; then
+                count_unread_messages_cached "$_s1_inbox_file" _s1_unread_count
+                [[ ! "$_s1_unread_count" =~ ^[0-9]+$ ]] && _s1_unread_count=0
+            fi
+            if [ "$_s1_unread_count" -gt 0 ]; then
+                log "SKIP_CLEAR: $name has unread inbox (${_s1_unread_count})"
                 PREV_STATE[$name]="busy"
                 continue
             fi
