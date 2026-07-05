@@ -49,7 +49,7 @@ def scalar(conn, query, params=()):
     value = conn.execute(query, params).fetchone()[0]
     return int(value or 0)
 
-conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+conn = sqlite3.connect(f"file:{db_path}?mode=ro&immutable=1", uri=True)
 try:
     has_events = has_table(conn, "events")
     if not has_events:

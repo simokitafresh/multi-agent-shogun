@@ -199,6 +199,34 @@ PY
     [[ "$output" != *"local_memory_db"* ]]
 }
 
+@test "semantic_search memory DB cache refresh removes rollback journal sidecar" {
+    export SEMANTIC_DISABLE_MEMORY_DB=0
+    export SEMANTIC_DISABLE_MEMORY_DB_CACHE=0
+    export SEMANTIC_MEMORY_DB_PATH="$TEST_TMPDIR/data/memory.db"
+    export SEMANTIC_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/memory_db_cache/cache.db"
+    export SEMANTIC_MEMORY_DB_TIMEOUT=2
+    mkdir -p "$TEST_TMPDIR/memory_db_cache"
+    python3 - "$SEMANTIC_MEMORY_DB_PATH" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, summary TEXT, detail TEXT)")
+conn.execute("CREATE VIRTUAL TABLE events_fts USING fts5(summary, detail, content='events', content_rowid='rowid')")
+conn.execute("INSERT INTO events (id, summary, detail) VALUES ('e1', 'cache journal keyword', '三層記憶')")
+conn.execute("INSERT INTO events_fts(rowid, summary, detail) VALUES (1, 'cache journal keyword', '三層記憶')")
+conn.commit()
+conn.close()
+PY
+    touch "$SEMANTIC_MEMORY_DB_CACHE_PATH-journal" "$SEMANTIC_MEMORY_DB_CACHE_PATH-wal" "$SEMANTIC_MEMORY_DB_CACHE_PATH-shm"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "cache journal keyword"
+
+    [ ! -e "$SEMANTIC_MEMORY_DB_CACHE_PATH-journal" ]
+    [ ! -e "$SEMANTIC_MEMORY_DB_CACHE_PATH-wal" ]
+    [ ! -e "$SEMANTIC_MEMORY_DB_CACHE_PATH-shm" ]
+}
+
 @test "three-layer learning loop remains routed to growth_loop" {
     export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
 

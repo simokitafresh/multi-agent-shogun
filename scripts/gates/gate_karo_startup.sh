@@ -2062,7 +2062,30 @@ echo "■ 三層記憶DB健全性"
 three_layer_health_script="$SCRIPT_DIR/scripts/gates/gate_three_layer_health.sh"
 if [ -x "$three_layer_health_script" ]; then
     _tlh_cache_sig=""
-    _tlh_current_sig="$(stat -c '%n:%y:%s' "$three_layer_health_script" 2>/dev/null || echo '')"
+    _tlh_current_sig="$(
+        {
+            stat -c 'script:%n:%y:%s' "$three_layer_health_script" 2>/dev/null || true
+            if [ -n "${SHOGUN_MEMORY_DB_CACHE_PATH:-}" ]; then
+                _tlh_cache_path="${SHOGUN_MEMORY_DB_CACHE_PATH}"
+                _tlh_cache_dir="${_tlh_cache_path%/*}"
+            else
+                _tlh_db_path="${SHOGUN_MEMORY_DB:-$SCRIPT_DIR/data/multi_agent_shogun_memory.db}"
+                _tlh_cache_dir="${SHOGUN_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}"
+                _tlh_repo_key="${SCRIPT_DIR//[^A-Za-z0-9_.-]/_}"
+                _tlh_cache_path="${_tlh_cache_dir}/${_tlh_repo_key}_${_tlh_db_path##*/}"
+            fi
+            stat -c 'cache:%n:%Y:%s' "$_tlh_cache_path" 2>/dev/null || printf 'cache:%s:missing\n' "$_tlh_cache_path"
+            for _tlh_suffix in -wal -shm -journal; do
+                stat -c "sidecar:${_tlh_suffix}:%n:%Y:%s" "${_tlh_cache_path}${_tlh_suffix}" 2>/dev/null \
+                    || printf 'sidecar:%s:%s:missing\n' "$_tlh_suffix" "${_tlh_cache_path}${_tlh_suffix}"
+            done
+            if [ -d "$_tlh_cache_dir" ]; then
+                stat -c 'cache_dir:%n:%Y:%s' "$_tlh_cache_dir" 2>/dev/null || true
+            else
+                printf 'cache_dir:%s:missing\n' "$_tlh_cache_dir"
+            fi
+        } | sha256sum | awk '{print $1}'
+    )"
     if [[ -f "$_THREE_LAYER_HEALTH_CACHE" ]]; then
         IFS= read -r _tlh_cache_sig < "$_THREE_LAYER_HEALTH_CACHE" || _tlh_cache_sig=""
     fi

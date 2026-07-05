@@ -160,6 +160,11 @@ finally:
 PY
 }
 
+remove_memory_db_cache_sidecars() {
+    local cache_path="$1"
+    rm -f "${cache_path}-wal" "${cache_path}-shm" "${cache_path}-journal" 2>/dev/null || true
+}
+
 prepare_memory_db_for_read() {
     local source_path="${SEMANTIC_MEMORY_DB_PATH:-$default_memory_db_path}"
     [ "${SEMANTIC_DISABLE_MEMORY_DB_CACHE:-0}" != "1" ] || {
@@ -194,7 +199,7 @@ prepare_memory_db_for_read() {
             _consistent_db_snapshot "$source_path" "$tmp_path" || { rm -f "$tmp_path"; exit 0; }
             mv "$tmp_path" "$cache_path" 2>/dev/null || rm -f "$tmp_path"
             # Backup APIはWALを本体に統合済み。古いサイドカーが残ると不整合になるため削除
-            rm -f "${cache_path}-wal" "${cache_path}-shm" 2>/dev/null || true
+            remove_memory_db_cache_sidecars "$cache_path"
         ) 9>"$lock_path" >/dev/null 2>&1 &
         printf '%s\n' "$cache_path"
         return 0
@@ -208,7 +213,7 @@ prepare_memory_db_for_read() {
             _consistent_db_snapshot "$source_path" "$tmp_path" || { rm -f "$tmp_path"; exit 0; }
             mv "$tmp_path" "$cache_path" 2>/dev/null || rm -f "$tmp_path"
             # Backup APIはWALを本体に統合済み。古いサイドカーが残ると不整合になるため削除
-            rm -f "${cache_path}-wal" "${cache_path}-shm" 2>/dev/null || true
+            remove_memory_db_cache_sidecars "$cache_path"
         fi
     ) 9>"$lock_path"
 

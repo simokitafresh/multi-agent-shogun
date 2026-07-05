@@ -62,6 +62,9 @@ run_gate() {
     [[ "$output" == *"candidate候補生成件数: 0"* ]]
     [[ "$output" == *"state遷移件数(state!=raw): 1"* ]]
     [[ "$output" == *"STATUS: PASS"* ]]
+    [ ! -e "$TEST_CACHE-journal" ]
+    [ ! -e "$TEST_CACHE-wal" ]
+    [ ! -e "$TEST_CACHE-shm" ]
 }
 
 @test "zero candidates and zero state transitions remains WARN" {

@@ -129,6 +129,29 @@ PY
     [ "${result[1]}" = "cmd_3159 原文をraw_contentへ保存する" ]
 }
 
+@test "memory_db_live_insert ext4 cache removes rollback journal sidecar" {
+    init_empty_memory_db
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
+    mkdir -p "$TEST_TMPDIR/cache"
+    touch "$SHOGUN_MEMORY_DB_CACHE_PATH-journal" "$SHOGUN_MEMORY_DB_CACHE_PATH-wal" "$SHOGUN_MEMORY_DB_CACHE_PATH-shm"
+
+    run python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/data/memory.db" <<'PY'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("memory_db_live_insert", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+print(module.create_memory_db_ext4_cache(sys.argv[2]))
+PY
+    [ "$status" -eq 0 ]
+    [ -s "$SHOGUN_MEMORY_DB_CACHE_PATH" ]
+    [ ! -e "$SHOGUN_MEMORY_DB_CACHE_PATH-journal" ]
+    [ ! -e "$SHOGUN_MEMORY_DB_CACHE_PATH-wal" ]
+    [ ! -e "$SHOGUN_MEMORY_DB_CACHE_PATH-shm" ]
+    unset SHOGUN_MEMORY_DB_CACHE_PATH
+}
+
 @test "memory_db_knowledge_write inserts knowledge directly without communication side effects" {
     init_memory_db
 

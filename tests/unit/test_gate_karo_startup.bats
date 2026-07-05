@@ -217,6 +217,23 @@ EOF
     [ ! -e "$TEST_TMPDIR/queue/gates/karo_alert_pending.txt" ]
 }
 
+@test "three-layer health cache invalidates when cache DB appears after stale WARN" {
+    export KARO_THREE_LAYER_HEALTH_CACHE="$TEST_TMPDIR/three_layer_health.cache"
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/data/missing_three_layer_health.db"
+    rm -f "$SHOGUN_MEMORY_DB_CACHE_PATH"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 三層記憶DBが存在しない"* ]]
+    [[ "$output" == *"三層記憶DB健全性: WARN"* ]]
+
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/data/three_layer_health.db"
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"STATUS: PASS"* ]]
+    [[ "$output" != *"WARN: 三層記憶DBが存在しない"* ]]
+}
+
 @test "skill FAIL summary is displayed at startup" {
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]

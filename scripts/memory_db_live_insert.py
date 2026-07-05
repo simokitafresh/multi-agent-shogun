@@ -195,6 +195,13 @@ def memory_db_cache_path(db_path: str) -> str:
     return os.path.join(cache_dir, f"{repo_key}_{os.path.basename(db_path)}")
 
 
+def remove_memory_db_cache_sidecars(cache_path: str) -> None:
+    for suffix in ("-wal", "-shm", "-journal"):
+        cache_sidecar = f"{cache_path}{suffix}"
+        if os.path.exists(cache_sidecar):
+            os.unlink(cache_sidecar)
+
+
 def create_memory_db_ext4_cache(db_path: str) -> str:
     if os.environ.get("SHOGUN_DISABLE_MEMORY_DB_CACHE", "0") == "1":
         return db_path
@@ -229,10 +236,7 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
         # DB (db_path) is never modified.  The next invocation recreates
         # cache_path cleanly under the exclusive lock.
         create_sqlite_backup(db_path, output_path=cache_path, suffix="ext4_cache")
-        for suffix in ("-wal", "-shm"):
-            cache_sidecar = f"{cache_path}{suffix}"
-            if os.path.exists(cache_sidecar):
-                os.unlink(cache_sidecar)
+        remove_memory_db_cache_sidecars(cache_path)
     return cache_path
 
 
