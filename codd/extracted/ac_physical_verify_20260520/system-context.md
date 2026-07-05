@@ -25,7 +25,11 @@ codd:
 (no inter-module dependencies detected)
 ```
 
+## Review Notes
 
+- This extraction result (`Total: 0 files, 0 lines, 0 modules`) is a known CoDD tooling gap for bash sources, not evidence that `scripts/ac_physical_verify.sh` has no structure. See [[hayate_codd_L4_ac_physical_verify_20260516]] GAP-9: "`codd extract` for bash produced 0 files/modules" (`extract --language bash --source-dirs scripts` emitted 0 modules from 0 files).
+- Cross-check [[architecture-overview]] before treating the empty module map as a real architecture conclusion — both files derive from the same failed extraction and reference each other.
+- A working speed-improvement round for the same target already exists: [[kagemaru_ac_physical_verify_codd_20260520]] (median cold run `250ms -> 200ms`). Do not promote this empty extraction to `docs/` or `codd/`; use the brownfield speed-round artifact as the confirmed reference instead.
 
 
 
