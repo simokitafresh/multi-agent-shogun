@@ -1047,6 +1047,7 @@ automation_action_negation_re = re.compile(
     r"スクリプト変更|教訓追記|教訓登録|lesson追記|D0修正|実装修正|テスト追加|検知追加|"
     r"ブロック追加|BLOCK追加)\s*(なし|無し|不要|しない|せず|未実施|未対応)"
 )
+q6_answer_re = re.compile(r"(Q6\s*(回答|[:：])|創造主の洗脳チェック)")
 found_answer = False
 found_automation_target = False
 automation_target = ""
@@ -1071,14 +1072,21 @@ def extract_automation_target(text: str) -> str:
         return text.strip()
     return ""
 
+def is_q6_answer_text(text: str) -> bool:
+    return bool(q6_answer_re.search(text))
+
 for entry in reversed(session_entries):
     if entry.get("direction") not in ("response", "outbound"):
+        continue
+    if entry.get("agent") not in ("shogun", None, ""):
         continue
     text = " ".join(
         str(entry.get(key, "") or "")
         for key in ("summary", "detail", "content", "message")
     )
     if not text:
+        continue
+    if not is_q6_answer_text(text):
         continue
     value = extract_automation_target(text)
     if value:
@@ -1141,6 +1149,8 @@ if not (found_answer and found_automation_target) and bulletin_path and bulletin
             continue
         text = " ".join(entry["content"])
         if not text:
+            continue
+        if not is_q6_answer_text(text):
             continue
         value = extract_automation_target(text)
         if value:

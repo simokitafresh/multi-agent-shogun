@@ -626,6 +626,36 @@ EOF
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
+@test "Q6 proof ignores non-shogun Q6 third-party status in lord conversation" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"gunshi","source":"terminal","target":"lord","summary":"GP-258: 家老APPROVE確認。D0実装完了。将軍Q6第三者検証 1件: 掲示板投稿済み。"}
+EOF
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: 'blt_q6_real_answer'
+  content: |-
+    Q6回答: 洗脳#6出力=仕事で止まらないよう、cmd起票して scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。殿のために行動まで進める。
+  posted_by: 'shogun'
+  posted_at: '2000-01-01T00:00:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+EOF
+
+    export SHOGUN_STARTUP_Q6_BULLETIN_HOURS=1000000
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    unset SHOGUN_STARTUP_Q6_BULLETIN_HOURS
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"* ]]
+    [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
+    [[ "$output" == *"scripts/gates/q6_target_fixture.sh: q6_target_probe"* ]]
+    [[ "$output" != *"GP-258"* ]]
+    [[ "$output" != *"WARN: 自動化ターゲット実装証拠 grep検証スキップ"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
+
 @test "Q6 without label or action words keeps missing automation warning" {
     cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
 {"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 洗脳#6出力=仕事を確認した。殿のために一次情報を見る。結論だけでは終わらない。"}
