@@ -75,7 +75,7 @@ task:
   parent_cmd: cmd_3697
   project: dm-signal
   purpose: '殿指示(2026-07-06 12:00「Phase Aから進めよう」): gs-recalibration-plan.md Phase A実行。EODHD生値+自前調整ベースで四神GS(shin_shijin_l1_gs.py)を全family全量実行し、DNA制約に基づくチャンピオン12体を選出する。道具磨き完了(246秒実測)により全量実行が現実的'
-  status: in_progress
+  status: failed
   stop_for:
   - バックアップなしのDB変更
   target_path: /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search
