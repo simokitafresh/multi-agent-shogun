@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-05 cmd_karo_hotfix_ga178_dm_signal_ops_context_freshness_2026070500 -->
+<!-- last_updated: 2026-07-06 cmd_karo_hotfix_ga186_dm_signal_ops_context_freshness_202607061707 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -958,3 +958,11 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - cmd_3675偵察: 本番102PFの`/api/debug/signal-raw`+`/api/history`で2026-07-01→2026-07-02 holding差分0件。殿観測の保有ポジション差分はDB破壊ではなくMonthly Tradeの翌月pending行先頭表示(表示層)が主因。詳細 → `docs/research/cmd_3675_holding_position_display_diff_recon.md`
 - cmd_3676_recon2偵察: 7月正ポジションは本番read-only証拠上XLU。起点は`シン青龍-鉄壁`のTECL→XLU変更(2026-07-03 01:11)で、FoF定義変更ではなくFoF連鎖へ01:43-01:44に伝播。影響は7月signals更新204行。詳細 → `docs/research/cmd_3676_hanzo_recon2.md`
 - cmd_3676確定: 疾風本調査も半蔵独立検算と一致。`calculation_version=755a50d`のfull recalculateが2026-07-01/02のconfirmed rowsを再生成・上書きし、現在の正はXLU。未決裁定: ユーザーに表示済みのcurrent-month confirmed rowsを後続full recalculateが無音で上書きしてよいか、また許可する場合のaudit/snapshot要件。
+
+## §52 signal decision ledger初期台帳 (cmd_3700/3702, 2026-07-06)
+
+- `signal_decision_ledger`はconfirmed rebalance decisionsのappend-only台帳。migrationは`signal_decision_ledger`テーブル、`ix_sdl_pf_effective`/`ix_sdl_pf_decision`、`ux_sdl_initial_decision(portfolio_id, rebalance_decision_date, event_type) WHERE event_type='initial'`を作成する。SQLAlchemy modelはbefore_update/before_deleteで変更・削除をBLOCKする。
+- 初期台帳作成は現時点dry-run foundationのみ。`backend/scripts/build_signal_decision_ledger_initial.py --json`は本番DBをread-onlyで読み、2026-05-01/06-01/07-01候補からPFごとの`rebalance_trigger`に一致する最新1決定日だけを計画する。修正前の306件(102PF x 3日)は誤りで、修正後は102 planned events / 0 unrecoverableが期待値。
+- provenance: 2026-05-01は`current_value_backfill`、6/1・7/1は`signal_change_log_old_chain`を優先し、履歴なしなら`signals_fallback`。7/1 sync-fof rewrite影響9PF/26行は`signals.holding_signal`の汚染現在値ではなく、`signal_change_log.old_holding_signal`連鎖で決定時点値へ戻す。
+- PF削除前運用: `signal_decision_ledger`は`portfolios(id) ON DELETE CASCADE`対象。削除前に対象PFの台帳行をJSON/CSVで退避する。未退避なら削除禁止。
+- 不要分類: cmd_3694 small-run GS pattern limitsはgrid_search実行制限と研究証跡であり、本ops手順の追記不要。`a3059891 retire stale lessons`は`tasks/lessons.md`整理で運用差分なし。
