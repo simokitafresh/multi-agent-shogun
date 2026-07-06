@@ -11,6 +11,7 @@ setup_file() {
     [ -f "$SAVE_SCRIPT" ] || return 1
 
     eval "$(sed -n '/^cmd_save_shogun_lesson_exists_for_cmd()/,/^}/p' "$SAVE_SCRIPT")"
+    eval "$(sed -n '/^cmd_save_default_ack_lesson_id()/,/^}/p' "$SAVE_SCRIPT")"
     eval "$(sed -n '/^warn_missing_prev_cmd_lesson()/,/^}/p' "$SAVE_SCRIPT")"
     eval "$(sed -n '/^remind_missing_current_cmd_lesson_after_clear()/,/^}/p' "$SAVE_SCRIPT")"
 
@@ -50,9 +51,20 @@ print(count)
 PY
     }
 
-    export -f cmd_save_shogun_lesson_exists_for_cmd warn_missing_prev_cmd_lesson
+    export -f cmd_save_shogun_lesson_exists_for_cmd cmd_save_default_ack_lesson_id warn_missing_prev_cmd_lesson
     export -f remind_missing_current_cmd_lesson_after_clear record_block_reason
     export -f count_cmd_save_blocks_for_cmd
+}
+
+write_superseded_lessons_file() {
+    cat > "$TEST_LESSONS" <<'YAML'
+lessons:
+# LS-A05: superseded by LS-A06 (遡及学習統合)
+- id: LS-A06
+  title: "retrospective learning"
+  detail: "dummy"
+  source_cmd: cmd_other
+YAML
 }
 
 setup() {
@@ -208,6 +220,19 @@ run_current_lesson_remind() {
 
     run grep -n 'notes: "前cmd_prevで2回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ' "$TEST_QUALITY_LOG"
     [ "$status" -eq 0 ]
+}
+
+@test "cmd_3701: superseded ack lesson hint resolves LS-A05 to LS-A06" {
+    write_cmd_queue
+    write_quality_log_with_prev_blocks 2
+    write_superseded_lessons_file
+
+    run_prev_lesson_check
+    echo "$output" >&2
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"bash scripts/shogun_lesson_ack.sh cmd_prev LS-A06"* ]]
+    [[ "$output" != *"bash scripts/shogun_lesson_ack.sh cmd_prev LS-A05"* ]]
 }
 
 @test "AC3-1: 前cmd BLOCKあり + 教訓記録済み → WARNなし" {

@@ -613,6 +613,11 @@ YAML
     grep -q 'if.*"\$BLOCK_COUNT".*-eq 0' "$PROJECT_ROOT/scripts/cmd_save.sh"
 }
 
+@test "cmd_3701: other_draft detection is structural status only" {
+    grep -Fq 'id && id != current && /^[[:space:]]+status:' "$PROJECT_ROOT/scripts/cmd_save.sh"
+    ! grep -q 'id && id != current && /status:.*draft/' "$PROJECT_ROOT/scripts/cmd_save.sh"
+}
+
 @test "cmd_save --preflight allows delegated cmd validation without save-time blocks" {
     local tmpdir
     tmpdir="$(mktemp -d "$BATS_TMPDIR/cmd_save_delegated_preflight.XXXXXX")"

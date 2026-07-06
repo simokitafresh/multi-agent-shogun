@@ -2682,10 +2682,41 @@ cmd_save_shogun_lesson_exists_for_cmd() {
     return 1
 }
 
+cmd_save_default_ack_lesson_id() {
+    local preferred="${1:-LS-A05}"
+    local resolved=""
+
+    [[ -f "$CMD_SAVE_SHOGUN_LESSONS_FILE" ]] || {
+        printf '%s\n' "$preferred"
+        return 0
+    }
+
+    if grep -qE "^[[:space:]]*-[[:space:]]+id:[[:space:]]*['\"]?${preferred}['\"]?([[:space:]]|$)" "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null; then
+        printf '%s\n' "$preferred"
+        return 0
+    fi
+
+    resolved="$(awk -v old="$preferred" '
+        $0 ~ "^# " old ": superseded by " {
+            value = $0
+            sub("^# " old ": superseded by ", "", value)
+            split(value, parts, /[[:space:]]+/)
+            print parts[1]
+            exit
+        }
+    ' "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null)"
+    if [[ -n "$resolved" ]] && grep -qE "^[[:space:]]*-[[:space:]]+id:[[:space:]]*['\"]?${resolved}['\"]?([[:space:]]|$)" "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null; then
+        printf '%s\n' "$resolved"
+        return 0
+    fi
+
+    printf '%s\n' "$preferred"
+}
+
 warn_missing_prev_cmd_lesson() {
     [[ -f "$CMD_SAVE_LAST_CMD_FILE" ]] || return 0
 
-    local prev_cmd_id prev_block_count warn_msg
+    local prev_cmd_id prev_block_count warn_msg ack_lesson_id
     prev_cmd_id="$(tr -d '[:space:]' < "$CMD_SAVE_LAST_CMD_FILE" 2>/dev/null || true)"
     [[ -n "$prev_cmd_id" && "$prev_cmd_id" != "$CMD_ID" ]] || return 0
 
@@ -2695,19 +2726,21 @@ warn_missing_prev_cmd_lesson() {
 
     cmd_save_shogun_lesson_exists_for_cmd "$prev_cmd_id" && return 0
 
-    warn_msg="前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh ${prev_cmd_id} LS-A05"
+    ack_lesson_id="$(cmd_save_default_ack_lesson_id LS-A05)"
+    warn_msg="前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh ${prev_cmd_id} ${ack_lesson_id}"
     record_block_reason "$warn_msg"
 }
 
 remind_missing_current_cmd_lesson_after_clear() {
-    local current_block_count remind_msg
+    local current_block_count remind_msg ack_lesson_id
     current_block_count="$(count_cmd_save_blocks_for_cmd "$CMD_ID")"
     [[ "$current_block_count" =~ ^[0-9]+$ ]] || current_block_count=0
     (( current_block_count > 0 )) || return 0
 
     cmd_save_shogun_lesson_exists_for_cmd "$CMD_ID" && return 0
 
-    remind_msg="${CMD_ID}で${current_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh ${CMD_ID} LS-A05"
+    ack_lesson_id="$(cmd_save_default_ack_lesson_id LS-A05)"
+    remind_msg="${CMD_ID}で${current_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh ${CMD_ID} ${ack_lesson_id}"
     echo "REMIND: ${remind_msg}" >&2
     echo "REMIND: 環境埋込み判定: 同じBLOCKを既存hookテンプレート注入で防止可能か、gate修正が必要かを判定せよ。" >&2
 }
@@ -3181,7 +3214,7 @@ check_archive_duplicate_warn() {
 check_other_draft_exists_block() {
     OTHER_DRAFTS=$(awk -v current="$CMD_ID" '
         /^  cmd_[^:]+:/ { id = $1; sub(/:$/, "", id); sub(/^  /, "", id); next }
-        id && id != current && /status:.*draft/ { print id }
+        id && id != current && /^[[:space:]]+status:[[:space:]]*["'\''"]?draft["'\''"]?([[:space:]]*(#.*)?)?$/ { print id }
     ' "$QUEUE_FILE" 2>/dev/null)
     [[ -n "$OTHER_DRAFTS" ]] || return 0
 

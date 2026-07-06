@@ -62,6 +62,23 @@ run_ack() {
     [ ! -f "$TEST_ACK" ]
 }
 
+@test "cmd_3701: superseded lesson_id is resolved before ack write" {
+    cat > "$TEST_LESSONS" <<'YAML'
+lessons:
+# LS-A05: superseded by LS-A06 (遡及学習統合)
+- id: LS-A06
+  title: "遡及学習対応"
+YAML
+
+    run_ack cmd_9999 LS-A05
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: recorded ack for cmd_9999 -> LS-A06"* ]]
+    grep -q 'lesson_id: "LS-A06"' "$TEST_ACK"
+    ! grep -q 'lesson_id: "LS-A05"' "$TEST_ACK"
+}
+
 @test "AC2b: cmd_save BLOCK実績がないcmd_idはBLOCKする" {
     run_ack cmd_8888 LS-A05
     echo "$output" >&2

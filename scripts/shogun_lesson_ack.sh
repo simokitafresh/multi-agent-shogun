@@ -37,7 +37,12 @@ lesson_id="${2:-}"
 [[ -f "$QUALITY_LOG_FILE" ]] || die "quality log not found: $QUALITY_LOG_FILE"
 
 lesson_exists() {
-    awk -v target="$lesson_id" '
+    lesson_exists_for_id "$lesson_id"
+}
+
+lesson_exists_for_id() {
+    local lesson_target="$1"
+    awk -v target="$lesson_target" '
         function strip(value) {
             sub(/^[[:space:]]+/, "", value)
             sub(/[[:space:]]+$/, "", value)
@@ -54,6 +59,32 @@ lesson_exists() {
         }
         END { exit(found ? 0 : 1) }
     ' "$SHOGUN_LESSONS_FILE"
+}
+
+resolve_lesson_id() {
+    local requested="$1"
+    local resolved=""
+
+    if lesson_exists_for_id "$requested"; then
+        printf '%s\n' "$requested"
+        return 0
+    fi
+
+    resolved="$(awk -v old="$requested" '
+        $0 ~ "^# " old ": superseded by " {
+            value = $0
+            sub("^# " old ": superseded by ", "", value)
+            split(value, parts, /[[:space:]]+/)
+            print parts[1]
+            exit
+        }
+    ' "$SHOGUN_LESSONS_FILE" 2>/dev/null)"
+    if [[ -n "$resolved" ]] && lesson_exists_for_id "$resolved"; then
+        printf '%s\n' "$resolved"
+        return 0
+    fi
+
+    printf '%s\n' "$requested"
 }
 
 cmd_save_block_count() {
@@ -144,6 +175,7 @@ ack_exists() {
     ' "$ACK_FILE"
 }
 
+lesson_id="$(resolve_lesson_id "$lesson_id")"
 lesson_exists || die "lesson_id not found in lessons_shogun.yaml: $lesson_id"
 
 block_count="$(cmd_save_block_count)"
