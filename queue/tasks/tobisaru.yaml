@@ -1,8 +1,9 @@
 task:
-  _ac_task_id: cmd_3698_recon2_full
+  _ac_task_id: cmd_3702_full
   _ac_worker_id: null
-  _deploy_notice: "STALE TASK INVALID. This YAML is the latest instruction for cmd_3698_recon2 (deployed 2026-07-06T15:18:20). Read from the beginning."
-  ac_version: cf8d44c7
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3702 (deployed 2026-07-06T16:52:42). Read from the beginning.
+  ac_version: 19180954
+  cmd_id: cmd_3698_recon2
   context_files:
   - context/dm-signal.md
   - context/dm-signal-core.md
@@ -31,29 +32,29 @@ task:
   - tobisaru報告はGATE CLEAR済みだが、直接gate_report_format.shではcmd_3264-AC2 false-BLOCKが再現する
   - inbox_write.shはfiles_modifiedがある時target_pathの広い指定を混ぜない実装済み
   parallel_ok: []
-  parent_cmd: cmd_3698_recon2
+  parent_cmd: cmd_3702
   project: dm-signal
-  purpose: '殿裁定(2026-07-06 15:07「よしやろう」): adj遡及改訂等で決定済み保有シグナルが月中に無音で変わる構造問題(今朝もsync-fof経由で2,232件/17PF書換え報告)の根絶策として、決定イベント(PF×リバランス日)単位の追記専用確定台帳を新設する。本cmdはその設計に必要な全経路・仕様・初期値ソースの偵察。凍結対象=保有の決定のみ(評価数値は対象外)。初期台帳=開始時点で有効な全決定(monthly/bimonthly_odd/quarterly_jan=7/1、bimonthly_even/quarterly_mar=6/1、quarterly_feb=5/1)'
-  status: idle
+  purpose: '将軍疑義2点(blt_20260706_164437)を軍師が両方正当と判定(blt_20260706_164522、自身のLGTM見落とし=洗脳#2として自己記録)。将軍がコード現物で裏付け済み: build_signal_decision_ledger_initial.pyはrebalance_triggerを参照しておらず(rg 0件)、全PFへ機械的に3決定日を計画していた(計画306=PF数×3)。またsignals_fallback分に今朝のsync-fof書換え後の汚染値が混入するリスクがある。第2弾(実挿入)の前提としてdry-runを是正し内訳を再提示する'
+  status: completed
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal
-  task_id: cmd_3698_recon2_normal
+  target_path: /mnt/c/Python_app/DM-signal/backend/scripts/build_signal_decision_ledger_initial.py
+  task_id: cmd_3702_full
   task_type: full
   skill_hint: /db-check
   related_lessons:
-  - id: 'L970'
-    summary: 'GA-180(context/dm-signal.md)をCLEARした67分後にGA-181(context/dm-signal-research.md)が独'
-    detail: 'GA-180(context/dm-signal.md)をCLEARした67分後にGA-181(context/dm-signal-research.md)が独'
-  - id: 'L963'
-    summary: 'gate出力はALERT対象名だけを出すため、報告ではgate再現文言とDM-Signal側git showで列挙したsource commitsを分けて記録す'
-    detail: 'gate出力はALERT対象名だけを出すため、報告ではgate再現文言とDM-Signal側git showで列挙したsource commitsを分けて記録す'
-  - id: 'L967'
-    summary: 'codd extractがbashソースで0 files/0 modulesを出力すると、system-context.mdとarchitecture-over'
-    detail: 'codd extractがbashソースで0 files/0 modulesを出力すると、system-context.mdとarchitecture-over'
+  - id: 'L286'
+    summary: 'context/dm-signal-core.mdがprojects/dm-signal.yaml内の詳細セクション(common_misconceptions'
+    detail: 'context/dm-signal-core.mdがprojects/dm-signal.yaml内の詳細セクション(common_misconceptions'
+  - id: 'L133'
+    summary: 'IF lessons.yamlのinjection_countを参照する時 THEN 全件0の可能性を考慮し、sync_lessons.shの同期状態を確認せよ'
+    detail: 'IF lessons.yamlのinjection_countを参照する時 THEN 全件0の可能性を考慮し、sync_lessons.shの同期状態を確認せよ'
+  - id: 'L643'
+    summary: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
+    detail: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
   - id: 'L311'
     summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
     wa_category: 'report_yaml_format'
-    wa_count: 2
+    wa_count: 1
     detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
@@ -70,22 +71,11 @@ task:
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "skill_routing — スキルルーティング:  skills/*/SKILL.md"
-  recommended_skills:
-  - "shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み)"
-  - "reset-layout(全ペイン配置復元)"
-  - "shogun-clear-prep(clear前)"
-  - "dream(三層記憶整理)"
-  - "shogun-teire(棚卸し)"
-  - "lesson-sort(教訓整理)"
-  - "switch-project(PJ切替)"
-  - "shogun-pd-sync(裁定反映)"
-  - "cmd-complete(GATE CLEAR後/家老)"
-  - "dashboard-update(ダッシュボード/家老)"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
   related_causal_links:
-  - "[[TECL_XLU無音反転_cmd_3676]]"
-  - "[[cmd_3698_確定台帳偵察]]"
-  - "[[殿指摘_adj保有シグナル反転_20260706]]"
+  - "[[cmd_3700_台帳実装第1弾]]"
+  - "[[cmd_3702_dry-run是正]]"
+  - "[[将軍疑義2点_dry-run内訳]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -103,57 +93,47 @@ task:
   - "PI-005: 全期間・全下流検証原理: 任意の新規PF登録後はportfolio_id指定なしfull recalculate一発で下流全体を再生成する"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L970: GA-180(context/dm-signal.md)をCLEARした67分後にGA-181(context/dm-signal-research.md)が独
-      - L963: gate出力はALERT対象名だけを出すため、報告ではgate再現文言とDM-Signal側git showで列挙したsource commitsを分けて記録す
-      - L967: codd extractがbashソースで0 files/0 modulesを出力すると、system-context.mdとarchitecture-over
+      - L286: context/dm-signal-core.mdがprojects/dm-signal.yaml内の詳細セクション(common_misconceptions
+      - L133: IF lessons.yamlのinjection_countを参照する時 THEN 全件0の可能性を考慮し、sync_lessons.shの同期状態を確認せよ
+      - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
       - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
-  memory_db_context:
-  - '2026-07-06T12:13:01+09:00 | 【INFOバッチ】 2026-07-06 12:12:08|cmd_karo_db_check_signal_change_alert_202607061149'
-  - '2026-07-06T11:58:35+09:00 | [MEM: memory_db ts=2026-07-06 "L0 246s/L3 diff 191s/L3 ratio 266-298s 全3対象5分目標実測達成"] [MEM: semantic '
-  - '2026-06-16T15:17:14+09:00 | 【INFOバッチ】 2026-06-16 15:03:31|cmd_3418 2026-06-16 15:07:46|cmd_3419 2026-06-16 15:12:20|cmd_3420 202'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: '保有シグナルの書込み経路の全数調査 — 保有シグナルがDBのどのテーブル・カラムに、どのコード経路(sync-standard/sync-fof/fullrecalculate/月初夕方再計算cron/recalculate API/その他)から書かれるかをファイル・関数・行番号付きで全数列挙する。網羅性は対象テーブル名でのrg全数ヒット数と照合して数値証明する'
+    - check: '決定日フィルタの是正 — build_signal_decision_ledger_initial.pyにrebalance_trigger参照(SSOT=services/rebalance.py REBALANCE_MONTHS)を実装し、PFごとに実リバランス決定日のみをevent計画対象とし、非リバランス月のevent計画を止める。修正後dry-runを再実行し、rebalance_trigger 6系統別の内訳(系統ごとのPF数・決定日・event数)と、是正前計画件数からの変化を数値で報告する'
   - id: 'AC2'
     checks:
-    - check: '保有シグナルの読み経路の全数調査 — signals API・フロントエンド表示・monthly returns計算・FoFの子PF参照・trade履歴生成が、それぞれどのテーブル・関数を読むかをファイル・行番号付きで列挙する'
+    - check: '汚染値巻き戻しの検証 — signals_fallbackで計画される値について、7月の決定済み期間への遡及書換え実測分(tobisaru報告cmd_3698_recon2の件数・PF)との突合表を作成し、書換え対象PFの初期台帳値がsignal_change_logのold値(書換え前=決定時点の値)へ巻き戻されることを検証する。汚染値(書換え後の現在値)の混入ゼロを数値で証明し、巻き戻し不能な件があれば理由付きで列挙する。本番DBはSELECTのみ(db-checkスキル・スクリプトファイル経由)'
   - id: 'AC3'
     checks:
-    - check: '決定イベント仕様の確定 — rebalance_trigger 6値(monthly/bimonthly_odd/bimonthly_even/quarterly_jan/quarterly_feb/quarterly_mar)それぞれの決定日導出規則・営業日調整・有効期間を表形式で確定する。component_signal_date経路(price_ratio_impl.py:1266周辺)とNext Signal欄(cmd_3682実装)の頻度対応の現状も確認する'
-  - id: 'AC4'
-    checks:
-    - check: '初期台帳ソースの検証 — cmd_3681スナップショットの保存内容・形式を確認し、各PFの直近決定時点(7/1・6/1・5/1)に実際に表示されていた保有シグナルの復元可能性を検証する。現DB値との乖離をPF別に実測し(今朝のsync-fof 2,232件/17PF書換えの対象月内訳=決定済み有効期間への遡及変更が何件かを含む)、初期台帳の推奨ソースを根拠付きで結論する。本番DBはSELECTのみ'
-  - id: 'AC5'
-    checks:
-    - check: '台帳実装の偵察5要件 — (1)変更対象: 台帳テーブルDDL案(新設の前に既存テーブル=portfolio_config_snapshots・cmd_3681スナップショット等で代替可能かを現物確認し、代替不可の場合のみ理由付きで新設案を報告)・書込みガード挿入点・読み経路切替点のファイル・行番号 (2)波及先ファイル (3)関連テスト有無・修正要否 (4)エッジケース(月初pending維持との整合、PF新規登録、hide、訂正追記、FoF子PF参照タイミング、cmd_1568型のweights消失) (5)依存関係・順序制約(L0-L3 cron連鎖・sync-fofとの順序・トランザクション境界)を特定する'
+    - check: 'テストを追加する — rebalance_trigger 6系統それぞれの決定日フィルタ選択のユニットテストと、汚染値巻き戻しロジックのテスト。スコープは追加・変更分に対応するテストのみに限定しPASSを確認'
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_3698_recon2.yaml
-  report_path: queue/reports/tobisaru_report_cmd_3698_recon2.yaml
+  report_filename: tobisaru_report_cmd_3702.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3702.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 3
-    top_pattern: 'report_yaml_format(2件)'
-    breakdown: 'report_yaml_format(2件), commit_missing(1件)'
+    total_workarounds: 2
+    top_pattern: 'report_yaml_format(1件)'
+    breakdown: 'report_yaml_format(1件), commit_missing(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 136
-    - pattern: 'lu_structure_error'
-      count: 63
+      count: 178
     - pattern: 'field_missing'
-      count: 55
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
+      count: 48
+    - pattern: 'verdict_invalid'
+      count: 42
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
-      count: 9
+      count: 10
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'binary_checks_fail'
-      count: 7
+      count: 6
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'empty_lessons_useful'
       count: 3
@@ -161,13 +141,4 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-    - reason: 'purpose_validation_fit_false'
-      count: 1
-      hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
-    - reason: 'no_task_parent_report'
-      count: 1
-      hint: 'gate BLOCK: no_task_parent_report'
-  deployed_at: "2026-07-06T15:18:39"
-  cmd_id: cmd_3698_recon2
-
-  completed_at: "2026-07-06T15:54:41"
+  deployed_at: "2026-07-06T16:54:12"
