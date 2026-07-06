@@ -6433,11 +6433,16 @@ if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
     if [[ -n "$_BULLETIN_ACTIONED_UPDATED" ]]; then
         echo "  bulletin actioned_by更新: ${_BULLETIN_ACTIONED_UPDATED} → ${CMD_ID}"
     fi
-    # status: pending 自動注入（未設定時のみ。cmdライフサイクル追跡の起点）
+    # status: pending 自動注入/昇格。draftのままなら家老監視が無視するため、
+    # cmd_save PASS後にだけpendingへ上げる（保存前配備レース防止）。
     _EXISTING_STATUS=$(echo "$CMD_BLOCK" | awk '/status:/{gsub(/.*status: */, ""); gsub(/"/, ""); print; exit}')
-    if [[ "$CMD_SAVE_PREFLIGHT_ONLY" != "1" && -z "$_EXISTING_STATUS" ]]; then
+    if [[ "$CMD_SAVE_PREFLIGHT_ONLY" != "1" && ( -z "$_EXISTING_STATUS" || "$_EXISTING_STATUS" == "draft" ) ]]; then
         if bash "$SCRIPT_DIR/lib/yaml_field_set.sh" "$QUEUE_FILE" "$CMD_ID" status pending 2>/dev/null; then
-            echo "  status: pending — 自動設定"
+            if [[ "$_EXISTING_STATUS" == "draft" ]]; then
+                echo "  status: draft→pending — 自動昇格"
+            else
+                echo "  status: pending — 自動設定"
+            fi
         fi
     fi
     # 前回cmd_id記録（次回呼出し時のpending昇格チェック用 — Check 1.6）
