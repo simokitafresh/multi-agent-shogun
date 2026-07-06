@@ -236,6 +236,7 @@ UUID・銘柄構成・リバランス設定 → `projects/dm-signal.yaml` (e) sh
 - L318: p̄(richmanbtc式)は安定型(青龍)を構造的に優遇し、スイッチ型(朱雀/TMF-TMV)を排除する（cmd_981）
 - L320: p̄検定は朱雀(DM3)のDNA「債券方向スイッチ」と構造的に不適合（cmd_981）
 - L599: TrendReversalFilterBlockのinsufficient_candidates early returnでcurrent_tickersが残りbatch不一致（cmd_1837）
+- 2026-07-06 cmd_3707: AbsoluteMomentumFilter reference_asset modeに`threshold_band`三状態(pass/band/fail)を追加。band内はSafeHavenSwitchで相対選択資産50%+safe_haven_asset50%の`context.final_weights`を設定し、`recalculate_fast.py` vectorized経路も`momentum_data.weights`へ同等payloadを保存。未指定PFは従来二値判定のまま不変。研究根拠: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3705_absolute_momentum_band_study.md`。
 
 ### tiebreakルール（cmd_217, L086/L092）
 
@@ -587,6 +588,7 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - 2026-07-06 cmd_3699: 保有シグナル確定台帳の設計書を作成済み。追記専用 `signal_decision_ledger`、書込みガード3経路(`signal_flush.py::_flush_batch`, `monthly_returns.py::_generate_monthly_returns`, `api/debug.py` fof-profiling)、読み経路4層(signals API/monthly returns/FoF child/trade生成)、初期構築、correction、同日朝夕再計算、UI表示方針を定義。RenderログでSIGNAL CHANGE ALERT発火を確認し、ntfy push成否に依存しない警報設計へ反映。詳細: `/mnt/c/Python_app/DM-signal/docs/design/signal-decision-ledger-design.md`。
 - 2026-07-06 cmd_3700: 確定台帳実装第1弾完了。`signal_decision_ledger` DDL/ORM/migration、append-only update/delete guard、partial unique index `ux_sdl_initial_decision`、初期構築dry-runスクリプト、台帳テストを追加。実挿入・書込みガード実装は後続cmd。対象commit: `/mnt/c/Python_app/DM-signal` `5e9ea355`。
 - 2026-07-06 cmd_3702: 初期構築dry-runの決定日フィルタを `rebalance_trigger` 対応へ是正。旧306件(102PF×3日)は非リバランス月混入で誤り、新計画は102件(1PF×1決定日)、復元不能0件、provenance内訳=signal_change_log_old_chain 9 + signals_fallback 93。本番trigger分布はmonthly 91 / quarterly_jan 5 / bimonthly_even 3 / bimonthly_odd 3 / quarterly_feb 0 / quarterly_mar 0。2026-07-01遡及書換え9PFは全てold_chainで決定時点値へ解決し、汚染混入0件(3PFは現在値と決定値が実際に異なる巻き戻り、6PFはnet-zero往復)。対象commit: `/mnt/c/Python_app/DM-signal` `e0734172`。
+- 2026-07-06 cmd_3704: 本番`signal_decision_ledger`初期構築を実行。バックアップ`signal_decision_ledger_backup_cmd3704_20260706T2018`作成後、102PF分102件を挿入し、sync-standard/sync-fof後もchecksum `36334bde8188c94e7295c69427768f15105522f35c70701babe970311432f241` 不変。CRITICAL drift 2件でガード発火を実証。台帳=決定済みholding_signalのSSOTとして本番稼働。
 
 ## §22 CI/テスト基盤 2026-05更新 (cmd_2652〜2660)
 
