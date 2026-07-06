@@ -415,6 +415,19 @@ function begin_target(line,    t,key) {
     }
 
     t = line
+    if (t ~ /^[[:space:]]*-[[:space:]]*cmd_id:[[:space:]]*/) {
+        sub(/^[[:space:]]*-[[:space:]]*cmd_id:[[:space:]]*/, "", t)
+        sub(/[[:space:]]+#.*$/, "", t)
+        t = trim(unquote(t))
+        if (t == block_id) {
+            block_kind = "id"
+            block_indent = leading_spaces(line)
+            field_indent = block_indent + 2
+            return 1
+        }
+    }
+
+    t = line
     if (t ~ /^[[:space:]]*-[[:space:]]*check:[[:space:]]*/) {
         sub(/^[[:space:]]*-[[:space:]]*check:[[:space:]]*/, "", t)
         sub(/[[:space:]]+#.*$/, "", t)
@@ -639,6 +652,19 @@ function begin_target(line,    t,key) {
     t = line
     if (t ~ /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/) {
         sub(/^[[:space:]]*-[[:space:]]*id:[[:space:]]*/, "", t)
+        sub(/[[:space:]]+#.*$/, "", t)
+        t = trim(unquote(t))
+        if (t == block_id) {
+            block_kind = "id"
+            block_indent = leading_spaces(line)
+            field_indent = block_indent + 2
+            return 1
+        }
+    }
+
+    t = line
+    if (t ~ /^[[:space:]]*-[[:space:]]*cmd_id:[[:space:]]*/) {
+        sub(/^[[:space:]]*-[[:space:]]*cmd_id:[[:space:]]*/, "", t)
         sub(/[[:space:]]+#.*$/, "", t)
         t = trim(unquote(t))
         if (t == block_id) {
@@ -980,6 +1006,13 @@ function begin_target(line,    t,key) {
     t = line
     if (t ~ /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/) {
         sub(/^[[:space:]]*-[[:space:]]*id:[[:space:]]*/, "", t)
+        sub(/[[:space:]]+#.*$/, "", t)
+        t = trim(unquote(t))
+        if (t == block_id) { block_kind = "id"; block_indent = leading_spaces(line); field_indent = block_indent + 2; return 1 }
+    }
+    t = line
+    if (t ~ /^[[:space:]]*-[[:space:]]*cmd_id:[[:space:]]*/) {
+        sub(/^[[:space:]]*-[[:space:]]*cmd_id:[[:space:]]*/, "", t)
         sub(/[[:space:]]+#.*$/, "", t)
         t = trim(unquote(t))
         if (t == block_id) { block_kind = "id"; block_indent = leading_spaces(line); field_indent = block_indent + 2; return 1 }
