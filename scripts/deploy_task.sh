@@ -908,6 +908,38 @@ raise SystemExit(0 if status in {"canceled", "cancelled"} else 1)
 PY
 }
 
+deploy_task_cmd_status_is_draft() {
+    local cmd_id="$1"
+    [ -n "$cmd_id" ] || return 1
+    python3 - "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$cmd_id" <<'PY'
+import sys
+import yaml
+
+path, cmd_id = sys.argv[1], sys.argv[2]
+try:
+    with open(path, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    raise SystemExit(1)
+
+entry = None
+commands = data.get("commands")
+if isinstance(commands, dict):
+    entry = commands.get(cmd_id)
+elif isinstance(commands, list):
+    for item in commands:
+        if isinstance(item, dict) and str(item.get("id", "")).strip() == cmd_id:
+            entry = item
+            break
+
+if not isinstance(entry, dict):
+    raise SystemExit(1)
+
+status = str(entry.get("status", "")).strip().lower()
+raise SystemExit(0 if status == "draft" else 1)
+PY
+}
+
 deploy_task_cleanup_canceled_cmd() {
     local ninja_name="$1"
     local cmd_id="$2"
@@ -8565,6 +8597,13 @@ deploy_task_main() {
     if [ -n "$CMD_ID" ] && deploy_task_cmd_status_is_canceled "$CMD_ID"; then
         log "BLOCK: ${CMD_ID} is canceled in shogun_to_karo.yaml. Deployment aborted."
         echo "BLOCK: ${CMD_ID} は canceled。再起票cmdを待て。" >&2
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        return 1
+    fi
+
+    if [ "$DIRECT_MODE" != true ] && [ -z "$CMD_FORCED" ] && [ -n "$CMD_ID" ] && deploy_task_cmd_status_is_draft "$CMD_ID"; then
+        log "BLOCK: ${CMD_ID} status=draft; skip deployment until cmd_save promotes it to pending."
+        echo "BLOCK: ${CMD_ID} は status=draft。cmd_save PASSでpendingへ昇格するまで配備をスキップ。" >&2
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     fi

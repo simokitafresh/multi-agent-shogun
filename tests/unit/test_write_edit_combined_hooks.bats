@@ -105,6 +105,8 @@ _mark_read_for_current_agent() {
     [[ "$output" == *'bash scripts/semantic_search.sh'* ]]
     [[ "$output" == *'既知キーワードgrepだけでは見落とす関連概念を確認せよ'* ]]
     [[ "$output" == *'rg -nF'*'対象ファイル'* ]]
+    [[ "$output" == *'status:draft'* ]]
+    [[ "$output" == *'draft→pending昇格'* ]]
 }
 
 @test "pre combined hook shows quality_gate template with q8 5W1H labels" {

@@ -597,6 +597,22 @@ YAML
     grep -q 'cmd_save.sh --preflight <id>' "$PROJECT_ROOT/.claude/hooks/pre-write-edit-combined.sh"
 }
 
+@test "cmd_skeleton emits draft and guides draft to pending promotion" {
+    run bash "$PROJECT_ROOT/scripts/cmd_skeleton.sh" "infra draft flow" infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"status: draft"* ]]
+    [[ "$output" != *"status: pending"* ]]
+    grep -q 'draft→pending' "$PROJECT_ROOT/scripts/cmd_skeleton.sh"
+    grep -q 'draft→pending' "$PROJECT_ROOT/.claude/hooks/pre-write-edit-combined.sh"
+}
+
+@test "cmd_save promotes draft to pending only after PASS path" {
+    grep -q '_EXISTING_STATUS.*== "draft"' "$PROJECT_ROOT/scripts/cmd_save.sh"
+    grep -q 'yaml_field_set.sh.*status pending' "$PROJECT_ROOT/scripts/cmd_save.sh"
+    grep -q 'status: draft→pending' "$PROJECT_ROOT/scripts/cmd_save.sh"
+    grep -q 'if.*"\$BLOCK_COUNT".*-eq 0' "$PROJECT_ROOT/scripts/cmd_save.sh"
+}
+
 @test "cmd_save --preflight allows delegated cmd validation without save-time blocks" {
     local tmpdir
     tmpdir="$(mktemp -d "$BATS_TMPDIR/cmd_save_delegated_preflight.XXXXXX")"

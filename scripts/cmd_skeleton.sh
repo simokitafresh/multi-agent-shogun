@@ -9,7 +9,7 @@
 # 起票フロー(3ステップ固定):
 #   1. bash scripts/cmd_skeleton.sh "タイトル" project   ← 雛形生成
 #   2. Edit toolで queue/shogun_to_karo.yaml の commands: 直下に貼り、FILL_THISを全て埋める
-#   3. bash scripts/cmd_save.sh --preflight <id> で保存前検証 → bash scripts/cmd_save.sh <id> → PASS後 bash scripts/cmd_delegate.sh cmd_<id> "<msg>"
+#   3. bash scripts/cmd_save.sh --preflight <id> で保存前検証 → bash scripts/cmd_save.sh <id> でdraft→pending昇格 → bash scripts/cmd_delegate.sh cmd_<id> "<msg>"
 #
 # 起源: 2026-06-10殿指示「性能の劣るLLMでもスムーズにCMD起票できる環境を整えよ」
 #   必須フィールド・形式規約を記憶からの作文に頼るとBLOCK往復が増える。
@@ -59,7 +59,7 @@ TODAY="$(date +%Y-%m-%d)"
 cat <<SKELETON
   cmd_${NEXT_ID}:
     title: "${TITLE}"
-    status: pending
+    status: draft
     project: ${PROJECT}
     purpose: "FILL_THIS: 殿指示/発端を日付付きで引用し、このcmdが何を達成するか1-3行"
     scope_mode: FULL
@@ -106,9 +106,9 @@ cat >&2 <<'GUIDE'
 2. FILL_THISを全て埋めよ。残存はcmd_save.shがBLOCKする
 3. 起票前に必ず: bash scripts/semantic_search.sh "<cmd主題>" (q11に結果を記載)
 4. 事前検証: bash scripts/cmd_save.sh --preflight <id> (累計記録/履歴/通知/自動補完の書込みなし)
-5. 保存: bash scripts/cmd_save.sh <id>
+5. 保存: bash scripts/cmd_save.sh <id> (PASS時にstatus:draft→pendingへ自動昇格)
 6. BLOCK/WARNが出たら: 根本原因をdiagnosisに書き、environment_change: "type=gate|lesson|hook; file=...; pattern=既存文字列" を追記(patternはrg -nFで存在確認)
-7. PASS後: bash scripts/cmd_delegate.sh cmd_<id> "<家老への配備メッセージ>" (inbox_write直接のcmd_newはgateがBLOCK)
+7. PASS後: bash scripts/cmd_delegate.sh cmd_<id> "<家老への配備メッセージ>" (draft起票→cmd_save PASS→pending昇格→delegate。inbox_write直接のcmd_newはgateがBLOCK)
 8. 新規ファイル/ディレクトリを伴うcmdは意図的新設である理由をdiagnosisに書け(new_file WARN対策。無自覚な新設=車輪の再発明検査)
 9. 性能ACに合格点(閾値)を書くな(LS053)。構造的二値(プロセス起動O(1)等)+実測値報告+理論限界比で書け。閾値はデータ量変化で無意味化し、到達で最適化が止まる
 10. execution_env: GS/DB/本番系cmdでは実行環境制約を明記(Linux venv/RSS計測方法等)。不要なcmdでは行ごと削除。origin: cmd_3496 kagemaru PowerShell経由Windows python事故

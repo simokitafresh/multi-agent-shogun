@@ -856,6 +856,52 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "cmd_3701: draft cmd is blocked before deployment" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  task_type: exact
+  status: idle
+EOF
+
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_3701_draft:
+    id: cmd_3701_draft
+    title: "draft deploy block"
+    project: infra
+    status: draft
+    purpose: "draft状態のcmdは配備されない"
+    acceptance_criteria:
+    - "AC1: draft配備がBLOCKする"
+EOF
+
+    run bash -c '
+        set -euo pipefail
+        project="$1"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$project/scripts/deploy_task.sh"
+        log() { echo "$*" >&2; }
+        resolve_pane() { echo "test-pane"; }
+        get_ctx_pct() { echo 0; }
+        cli_type() { echo codex; }
+        sleep() { :; }
+        check_idle() { return 0; }
+        deploy_task_validate_cli_target() { return 0; }
+        normalize_task_yaml() { :; }
+        cleanup_none_task_files() { :; }
+        repair_training_parent_cmd_from_cmd_id() { :; }
+        deploy_task_main sasuke cmd_3701_draft
+    ' _ "$TEST_PROJECT"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"status=draft"* ]]
+    [[ "$output" == *"配備をスキップ"* ]]
+
+    run field_get "$TEST_PROJECT/queue/tasks/sasuke.yaml" "status" ""
+    [ "$status" -eq 0 ]
+    [ "$output" = "idle" ]
+}
+
 @test "cmd_2681: completed peer report blocks new deployment for same parent_cmd" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
