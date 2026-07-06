@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-06 cmd_karo_hotfix_ga181 -->
-<!-- last_synced_lesson: L817 -->
+<!-- last_synced_lesson: L818 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -278,6 +278,7 @@ GA-179原因: `dm-signal.md`のlast_updatedは2026-07-04で、source監視対象
 - （L766-L783は振り分け済 → ops§9(L766/L768:速度計測方法論), ops§12(L767:成果物パス命名), core§8(L769:α6キー名SSOT), infra教訓索引(L772:tracked限定集計盲点), ops§38(L773/L777/L780:CI import分割), core§5(L775/L781:分析関数性能), core§21(L782:FoFネストN+1), ops§6-7(L783:fullrecalculate確認手段[PI])）
 - （L786-L801は振り分け済 2026-07-02 → frontend§12(L786:ComparisonChart Y軸/L796:localStorage storage event/L798:PAGE_APIS prefetch空/L801:Next共通chunk分割不能), ops§38(L789:mixed_format_commit回避), ops§49(L790:MTD cache), ops教訓索引(L791:scope別除去), ops§37(L793:cron envVars API検証/L794:cron UTC越境), ops§18(L799:計測クエリ入口BLOCK/L800:production Lighthouse証明限界), ops§19(L797:CDP cookie注入≠admin成立), infra教訓索引(L795:外部repo commit分類)。不変量候補なし）
 - PD-054裁定(2026-07-02): 7023=Next App Router runtime不可避。App Router runtime削減設計には進まず、次方向は初期レンダー計算量削減(テーブル仮想化・チャート遅延・hydration削減)=fd9d/app chunks側。cmd_3660本番metrics計測はPerf 46→95/TBT 1724→55ms/CLS 0.743→0を確認。→ `/mnt/c/Python_app/DM-signal/docs/research/lighthouse_rounds/round_20260702_cmd3660_production_metrics_cls_close/manifest.json`
+- L818: 本番DB read-only確認はpython3 -cのインライン実行ではなくスクリプトファイル経由で行え（cmd_3698_recon2）
 
 ## 因果リンク
 
