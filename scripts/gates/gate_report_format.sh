@@ -119,25 +119,19 @@ try:
     elif isinstance(fm, str):
         add_path(report_paths, fm)
 
-    tp = task.get('target_path') or ''
     paths = []
-    if isinstance(tp, list):
-        for p in tp:
-            add_path(paths, p)
-    elif tp:
-        add_path(paths, tp)
-
-    # Repo-root target_path is common for infra tasks. Checking the whole repo
-    # picks up unrelated parallel-agent work and false-BLOCKs completed reports.
-    # In that case, limit AC2 to the files the report claims it modified.
-    if report_paths and any(os.path.realpath(os.path.join(repo_root, p)) == repo_root for p in paths):
+    if report_paths:
+        # Report files_modified is the worker's concrete claim of touched files.
+        # Prefer it over task.target_path so broad/shared read scopes do not
+        # false-BLOCK on unrelated concurrent changes.
         paths = report_paths
     else:
-        # target_path is the assignment scope; files_modified is the reporter's
-        # own claim of touched files. Check both so a reported file cannot stay
-        # uncommitted just because it sits outside target_path.
-        for p in report_paths:
-            add_path(paths, p)
+        tp = task.get('target_path') or ''
+        if isinstance(tp, list):
+            for p in tp:
+                add_path(paths, p)
+        elif tp:
+            add_path(paths, tp)
 
     for p in paths:
         print(p)
