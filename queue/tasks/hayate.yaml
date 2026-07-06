@@ -37,7 +37,7 @@ task:
   project: infra
   purpose: 'skill=report-write のgate FAIL(#1: verdict非二値)に対するL1修行。BLOCKパターンを実戦前に学習し一発PASS率を向上させる'
   scout_exempt: true
-  status: done
+  status: idle
   stop_for: []
   target_path: skills/report-write/SKILL.md
   task_id: cmd_training_L1_report-write_20260706124108_normal
@@ -125,6 +125,7 @@ task:
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
   deployed_at: "2026-07-06T12:42:43"
+  completed_at: "2026-07-06T12:45:57"
 training_proposal:
   block_patterns: '#1: verdict非二値'
   fail_reason: verdict missing
