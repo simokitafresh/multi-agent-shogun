@@ -583,6 +583,7 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - signal change audit logging追加済み。`backend/app/db/models.py` / `backend/app/db/migrations.py` / flush処理で変更ログを扱う
 - L782: FoFネストN+1はportfolio_cache/signal_cacheを呼出し元から渡し構成PFを事前一括取得（cmd_3542）
 - 2026-05-05: `_collect_signal_change_logs`はbatch IN clauseでstack depth limit回避済み(commit 5c8a9cf2)
+- 2026-07-06 cmd_3698_recon2: 確定台帳偵察で `signal_change_log` はappend-only実績あり、`month_start_signal_input_snapshots` はUPSERTで過去値が消えるため台帳代替不可と確認。`portfolio_config_snapshots` はholding_signal非保持、`fof_rebalance_decisions` はMAX(date)=2026-02-03で停止。書込みガード候補は `backend/app/jobs/flush/signal_flush.py::_flush_batch()` と `backend/app/jobs/generators/monthly_returns.py::_generate_monthly_returns()` の二層。初期台帳は `signal_change_log` 主ソース、新設台帳が妥当。
 
 ## §22 CI/テスト基盤 2026-05更新 (cmd_2652〜2660)
 
