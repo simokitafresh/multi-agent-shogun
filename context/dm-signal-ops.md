@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-06 cmd_karo_hotfix_ga186_dm_signal_ops_context_freshness_202607061707 -->
+<!-- last_updated: 2026-07-07 cmd_3711 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -962,7 +962,10 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 ## §52 signal decision ledger初期台帳 (cmd_3700/3702, 2026-07-06)
 
 - `signal_decision_ledger`はconfirmed rebalance decisionsのappend-only台帳。migrationは`signal_decision_ledger`テーブル、`ix_sdl_pf_effective`/`ix_sdl_pf_decision`、`ux_sdl_initial_decision(portfolio_id, rebalance_decision_date, event_type) WHERE event_type='initial'`を作成する。SQLAlchemy modelはbefore_update/before_deleteで変更・削除をBLOCKする。
-- 初期台帳作成は現時点dry-run foundationのみ。`backend/scripts/build_signal_decision_ledger_initial.py --json`は本番DBをread-onlyで読み、2026-05-01/06-01/07-01候補からPFごとの`rebalance_trigger`に一致する最新1決定日だけを計画する。修正前の306件(102PF x 3日)は誤りで、修正後は102 planned events / 0 unrecoverableが期待値。
+- 初期台帳作成は`backend/scripts/build_signal_decision_ledger_initial.py`が2026-05-01/06-01/07-01候補からPFごとの`rebalance_trigger`に一致する最新1決定日だけを計画し、cmd_3704で102件を`event_type='initial'`として挿入済み。
+- cmd_3711: 全PF(102)×全確定月を`event_type='historical_backfill'`で15,058件遡及挿入済み。総行数は15,160件(102 initial + 15,058 historical_backfill)。バックアップ表は`signal_decision_ledger_backup_cmd3711_20260706T1454`。`ux_sdl_historical_backfill_decision(portfolio_id, rebalance_decision_date, event_type) WHERE event_type='historical_backfill'`で冪等性を担保。
+- cmd_3711後のMonthly Trade decision_sourceは原則`ledger`になる。cmd_3710の`historical`分岐は全履歴ledgerが存在しない期間の表示救済であり、backfill後はほぼ不到達になるのが正常。
+- ledger決定日は各PF固有の最古signals日ではなく、`prices(SPY)`基準の月初営業日(`get_month_first_business_day`)に一致させる。Monthly Trade読み出し側の`position_start_date`キーとズレるとledger行が参照されない。
 - provenance: 2026-05-01は`current_value_backfill`、6/1・7/1は`signal_change_log_old_chain`を優先し、履歴なしなら`signals_fallback`。7/1 sync-fof rewrite影響9PF/26行は`signals.holding_signal`の汚染現在値ではなく、`signal_change_log.old_holding_signal`連鎖で決定時点値へ戻す。
 - PF削除前運用: `signal_decision_ledger`は`portfolios(id) ON DELETE CASCADE`対象。削除前に対象PFの台帳行をJSON/CSVで退避する。未退避なら削除禁止。
 - 不要分類: cmd_3694 small-run GS pattern limitsはgrid_search実行制限と研究証跡であり、本ops手順の追記不要。`a3059891 retire stale lessons`は`tasks/lessons.md`整理で運用差分なし。

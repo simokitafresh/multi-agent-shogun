@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-06 -->
+<!-- last_updated: 2026-07-07 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,8 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3199 | 将軍が三層記憶(記憶DB+Obsidian+セマンティック)を使わずMEMORY.mdで回答する根因を解消。L0-L7に三層記憶第一優先を貫通させる。軍師覚醒レビュー3往復完了の設計書v3に基づく | infra | 06-06 | 三層記憶第一優先化L0-L7貫通: instructions |
-| cmd_3200 | 三層記憶検索到達保証+自動成長ループの穴を塞ぐ。軍師3往復+家老3往復レビュー合意 | infra | 06-06 | three_layer_memory_system概念をse |
 | cmd_3206 | 速度修行でscript群が更新されたがSKILL.md内容が未追随。忍者が古い手順で作業するリスク解消。3セッション連続startup BLOCK | infra | 06-07 | 14件のSKILL.mdを参照scriptの現行動作へ追従し |
 | cmd_3211 | 速度修行ledger auto-deployがCTX%を確認せず連続配備→コンパクション頻発→速度低下。_handle_speed_training_auto_deployにCTX閾値チェックを追加し、CTX高忍者への配備をauto-clear完了まで保留する | infra | 06-07 | ninja_monitor.sh _handle_speed |
 | cmd_3210 | report_received hookがテンプレート段階(bc空)で偽発火→FAIL記録し、dashboard-updateのFAIL率が実態と乖離している。bc空FAILを偽FAIL分類して計測精度を回復する | infra | 06-07 | gate_karo_startup.shのskill_exe |
@@ -397,3 +395,4 @@
 | cmd_3708 | 殿裁定(2026-07-06 20:32「1をまずやろう」= 台帳の表示反映を優先実施)。cmd_3706(ローカル実装完了・GATE CLEAR)のコミット99edb79bをorigin/mainへ反映する。将軍がgit log origin/main..HEADで確認した結果、ローカルmainにはcmd_3706(99edb79b)以外にcmd_3704の重複コミット(cdf66d06/ac452fdf、内容はorigin側のcffe48c6/ab786dcdとcherry-pick経由で同一だがハッシュ相違)とcmd_3707バンド実装(5a74c903、次弾までpush対象外)が混在しており、ローカルmainをそのままpushすることはできない(履歴分岐)。cmd_3704の先例(家老による一時worktree cherry-pick)に倣い、99edb79bのみを選択的に反映する。本cmdはpushまで。deploy確認+CDP確認は第3弾b-2(cmd_3709)へフェーズ分離 | dm-signal | 07-06 | cmd_3708 AC1完了。origin/main(cff |
 | cmd_3709 | cmd_3708(Monthly Trade表示コミットの選択的反映)のGATE CLEAR後に実施する検証フェーズ。反映されたコミットのRender自動デプロイが完了しliveであることを確認し、本番Monthly Tradeページで台帳バッジ表示が実際に機能していることをCDPで実機確認する | dm-signal | 07-06 | cmd_3706 Monthly Trade ledger |
 | cmd_3710 | 殿指摘(2026-07-06 21:41): Monthly Tradeページで全月がPendingバッジのみ表示される。根因: signal_decision_ledgerは最新確定月(102件, effective_start_date=2026-07-01が99件)のみ保持し、歴史月(2012-2026-06)にはledgerレコードが存在しない。FEバッジ判定(decision_source !== 'ledger' → Pending)がledgerシステム導入前の月にも適用され、運用上確定済みの歴史月が未確定表示になる。BE側でledger最古のeffective_start_dateを算出し、それより前の月のdecision_sourceを'historical'(暗黙的確定)に設定してFEに返す。FEはdecision_source='historical'を確定表示する | dm-signal | 07-06 | Monthly Trade歴史月(ledger導入前=202 |
+| cmd_3711 | 殿指摘(2026-07-06 23:12 23:18): 6月がPending表示。根因: cmd_3702の初期バックフィルが最新確定月のみ(102件)で、歴史的確定月のledger記録が不在。全PFの全確定月(signalsテーブルのholding_signalが存在する月×rebalance_trigger対象月)をsignal_decision_ledgerに遡及挿入し、Monthly Trade全期間でConfirmedバッジを表示可能にする。SIGNAL CHANGE ALERT(5987件/36PF/2012-03〜2026-07-02)が対象規模の参考値 | dm-signal | 07-07 | signal_decision_ledgerへ全PF(102 |
