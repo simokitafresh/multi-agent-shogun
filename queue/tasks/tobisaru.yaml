@@ -3,11 +3,13 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: pre-push hook失敗artifactを一次情報で読み、Argument list too longの直接原因と根本原因をコード品質問題かhook/test環境問題かで判定する
+      description: ALERT対象L802,L803,L804,L805,L806,L807,L808,L809,L810,L812,L813,L815の現物を読み、未振り分けの直接原因と根本原因仮説を3行以上で報告する
     AC2:
-      description: 同種のhook失敗が他忍者・他hook artifactにもあるかをlogs/hook_artifactsと関連ログから横展開確認し、パターン有無を報告する
+      description: 同カテゴリの穴が他project/role lessonにもないか、grepまたは既存gate出力で横展開候補を数値付きで確認する
     AC3:
-      description: 次回同じ失敗を防ぐ防御層を特定し、必要なら最小修正・テストまたはlesson_candidateとして報告YAMLに記録する
+      description: 次回同じgateが鳴らないための防御層案をLevel1-6で分類し、実装対象ファイル/既存script名まで特定する
+    AC4:
+      description: このタスクではlesson-sort実行や教訓移動はしない。将軍専用skill領域を侵さず、家老が配備できる調査報告に限定する
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -21,35 +23,32 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  not_in_scope:
+  - lesson-sortの実行
+  - projects/*/lessons.yamlの直接編集
+  - 将軍専用skillの実行
+  notes:
+  - 'gate_alert GA-183: dm-signal未振り分け教訓12件'
+  - 家老は通常作業へ入る前にALERTを行動へ変える。報告だけで止めない
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402
+  parent_cmd: cmd_karo_hotfix_lesson_health_ga183_202607060939
   project: infra
-  purpose: GA-162 hook_failure ALERT — pre-push hookでtest_gate_shogun_startup.bats setup_fileがArgument list too longになった根因を調査し、hook設定問題かコード品質問題かを判定して防御層を報告する
-  status: idle
+  purpose: lesson_health ALERT GA-183の未振り分け教訓12件について原因と防御層を調査し、次アクションを確定する
+  status: assigned
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/logs/hook_artifacts/20260702T135820_pre-push_2444250.log
-  task_id: cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402_normal
+  target_path: /mnt/c/tools/multi-agent-shogun/projects/dm-signal/lessons.yaml
+  task_id: cmd_karo_hotfix_lesson_health_ga183_202607060939_normal
   task_type: hotfix
-  previous_failures:
-    attempt: 1
-    last_block_reason: 'files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ'
-    tried_approaches:
-    - 'files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ'
-    approach_summary: 'gate_karo_startup.shの実運用ボトルネックはshow_active_cmd_semantic_context(因果概念表示)が総実行時間の75-95%を占めることを実測特定。候補2案を検証したが、いずれも5%改善の閾値を統計的信頼性を持って超えられずFAIL。実ファイルへの差分は0(revert済み、md5一致確認)。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'files_modified: 1件がパス形式でない(/ を含まない)。説明文ではなくファイルパスを記入せよ'
-      approach_summary: 'gate_karo_startup.shの実運用ボトルネックはshow_active_cmd_semantic_context(因果概念表示)が総実行時間の75-95%を占めることを実測特定。候補2案を検証したが、いずれも5%改善の閾値を統計的信頼性を持って超えられずFAIL。実ファイルへの差分は0(revert済み、md5一致確認)。'
   related_lessons:
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L643'
-    summary: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
-    detail: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
-  - id: 'L742'
-    summary: 'hookやgateはシステムルールであり、殿の直接指示ではない。hookに従ったことを『殿の指示に従った』と表現すると、殿の直接指示が相対化される。報告では『h'
-    detail: 'hookやgateはシステムルールであり、殿の直接指示ではない。hookに従ったことを『殿の指示に従った』と表現すると、殿の直接指示が相対化される。報告では『h'
+  - id: 'L585'
+    summary: 'sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの'
+    detail: 'sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの'
+  - id: 'L810'
+    summary: 'lesson_write.sh --retagでタグを変更しても、gate_lesson_health.shはlesson_impact.tsvの過去feedb'
+    detail: 'lesson_write.sh --retagでタグを変更しても、gate_lesson_health.shはlesson_impact.tsvの過去feedb'
+  - id: 'L764'
+    summary: 'flow-style教訓(- {id: L723, ...})にdeprecated:trueを書き込めず、auto-deprecationがログ上は実行済みだ'
+    detail: 'flow-style教訓(- {id: L723, ...})にdeprecated:trueを書き込めず、auto-deprecationがログ上は実行済みだ'
   - id: 'L311'
     summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
     wa_category: 'report_yaml_format'
@@ -70,11 +69,22 @@ task:
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/gates/gate_gunshi_accuracy.sh gate予測精度の公正計算(FAIL→BLOCK→修正CLEAR=正解) scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh scripts/cmd_skeleton.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比) docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md — 軍師idle: コミットチェックWAパターン(2026-04-10) docs/research/gunshi_idle_cross_contamination_20260503.md — 軍師idle: クロスプロジェクト汚染分析(2026-05-03) docs/research/gunshi_idle_cross_project_fp_20260426.md — 軍師idle: クロスプロジェクトFP分析(2026-04-26) docs/research/gunshi_idle_gate_fail_rate_anatomy_20260502.md — 軍師idle: ゲート失敗率解剖(2026-05-02) docs/research/gunshi_idle_gate_fail_trend_20260430.md — 軍師idle: ゲート失敗トレンド分析(2026-04-30) docs/research/gunshi_idle_gate_fire_traceback_20260510.md — 軍師idle: ゲート発火トレースバック(2026-05-10) docs/research/gunshi_idle_gate_fp_analysis_20260527.md — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27) docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md — 軍師idle: LG003ゲートWA分析(2026-05-19) docs/research/gunshi_idle_lu_dict_pattern_20260415.md — 軍師idle: LU辞書パターン分析(2026-04-15)"
-  - "creator_brainwashing_defense — 創造主の洗脳防御:  context/growth-loop.md scripts/cmd_save.sh docs/research/gunshi_idle_brainwash_audit_20260624.md docs/research/gunshi_idle_brainwash_audit_memory_loop_20260602.md — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)"
-  - "defense_hierarchy — 防御階層原則(Level 1-6):  context/growth-loop.md §11 projects/infra/lessons_gunshi.yaml LG010 instructions/gunshi.md §Review Criteria 5.5 scripts/gates/gate_context_freshness.sh L5到達(cmd_2673)"
-  - "cmd_quality_logging — cmd設計品質ログ:  scripts/cmd_quality_log.sh scripts/archive_completed.sh scripts/cmd_publish.sh skills/cmd-complete/SKILL.md scripts/cmd_complete_gate.sh scripts/gates/gate_yaml_status.sh tests/unit/test_cmd_complete_skill.bats logs/cmd_design_quality.yaml logs/archive/cmd_design_quality.yaml scripts/gates/gate_shogun_startup.sh docs/research/gunshi_idle_cmd_quality_block_analysis_20260425.md — 軍師idle: cmd品質BLOCK分析(2026-04-25)"
-  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json scripts/gates/gate_hooks_no_runtime_incident_ids.sh tests/unit/test_gate_hooks_no_runtime_incident_ids.bats"
+  - "skill_routing — スキルルーティング:  skills/*/SKILL.md"
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh tests/unit/test_deploy_training.bats scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md docs/research/model-comparison-5w1h-20260701.md 全モデル5W1H比較(GPT5.5/Sonnet4.6/Sonnet5/Opus4.8) docs/research/sonnet5_vs_46_ab_evaluation_20260701.md 5ラウンドA/B/C評価データ scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
+  - "growth_loop — 学習ループ:  AGENTS.md 学習ループ原則 context/growth-loop.md context/infrastructure.md 知識サイクル現状 scripts/gates/gate_cycle_health.sh 三層学習ループ健全性計測 scripts/karo_workaround_log.sh WA記録(成績表フィードバック) scripts/ci_status_check.sh CI状態チェック(品質フィードバック) scripts/lesson_impact_analysis.sh 教訓効果分析(注入率/参照率/CLEAR-BLOCK A/B) scripts/ralph_loop_metrics.sh ラルフループ定量計測(5指標: パターン再発/revert/完了速度/lesson-CLEAR相関/PI違反) scripts/knowledge_metrics.sh 教訓有効性+陳腐化検出(JSON/TSV出力対応) docs/research/gunshi_idle_growth_loop_nazenaze_20260515.md — 軍師idle: 成長ループなぜなぜ分析(2026-05-15) docs/research/gunshi_idle_immune_effectiveness_20260512.md — 軍師idle: 免疫システム有効性測定(2026-05-12) docs/research/gunshi_idle_immune_system_evidence_20260426.md — 軍師idle: 免疫システム証拠収集(2026-04-26) docs/research/gunshi_idle_immunity_measurement_20260510.md — 軍師idle: 免疫計測フレームワーク(2026-05-10) docs/research/gunshi_idle_precheck_fp_trio_20260626.md precheck偽陽性3件分析(LG039貪欲FP族同根: 文字列マッチ範囲制限不足)"
+  - "skill_design_rules — Skill設計ルール:  context/skill-design-rules.md docs/research/dream-skill-design.md scripts/skill_gate_feedback.sh scripts/skill_auto_improve.sh scripts/skill_execution_log.sh context/codd.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md skills/reset-layout/SKILL.md skills/pf-registration/SKILL.md docs/research/gstack-gbrain-skillify-2026-04.md docs/research/gunshi_idle_skill_precision_cycle2_20260609.md docs/research/gunshi_idle_adaptive_gating_bucket_split_20260521.md — 軍師idle: 適応型ゲートバケット分割設計(2026-05-21)"
+  - "content_artifacts — 記事・成果物索引:  context/senkyoku-log.md — CMD履歴(1,235行) /mnt/c/Python_app/DM-signal/marketing-director/content/ — note記事55本 /mnt/c/Python_app/DM-signal/marketing-director/content/articles/shogun/ — 将軍記事23話 docs/obsidian-promoted/alpha6_article_correlation_memory_loop_20260624.md — 記事更新履歴、%表記修正、Gist index反映、α6相関係数の復帰用ノート"
+  recommended_skills:
+  - "shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み)"
+  - "reset-layout(全ペイン配置復元)"
+  - "shogun-clear-prep(clear前)"
+  - "dream(三層記憶整理)"
+  - "shogun-teire(棚卸し)"
+  - "lesson-sort(教訓整理)"
+  - "switch-project(PJ切替)"
+  - "shogun-pd-sync(裁定反映)"
+  - "cmd-complete(GATE CLEAR後/家老)"
+  - "dashboard-update(ダッシュボード/家老)"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -94,23 +104,25 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
-      - L742: hookやgateはシステムルールであり、殿の直接指示ではない。hookに従ったことを『殿の指示に従った』と表現すると、殿の直接指示が相対化される。報告では『h
+      - L585: sync_lessons.shがprojects/*/lessons.yamlをflow-style indexとして出力している場合、block-styleの
+      - L810: lesson_write.sh --retagでタグを変更しても、gate_lesson_health.shはlesson_impact.tsvの過去feedb
+      - L764: flow-style教訓(- {id: L723, ...})にdeprecated:trueを書き込めず、auto-deprecationがログ上は実行済みだ
       - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
   memory_db_context:
-  - '2026-07-02T13:59:47+09:00 | 【改善トリガー】hook_failure ALERT (GA-162)'
-  - '2026-04-24T11:40:24+09:00 | 【改善トリガー】hook_failure ALERT (GA-162)'
-  - '2026-07-01T08:51:05+09:00 | 【改善トリガー】hook_failure ALERT (GA-157)'
+  - '2026-07-06T03:06:58+09:00 | 【INFOバッチ】 2026-07-06 02:55:56|cmd_karo_hotfix_ga182_lesson_health_202607060248'
+  - '2026-07-06T02:59:38+09:00 | 【家老】cmd_karo_hotfix_ga182_lesson_health_202607060248 完了'
+  - '2026-07-06T09:21:24+09:00 | 【教訓ALERT】ALERT: dm-signalの未振り分け教訓11件 → /lesson-sort推奨 (ids: L802,L803,L804,L805,L806,L807,L808,L809,'
+  - '2026-07-06T08:20:38+09:00 | 【三層ループALERT】WARNING: task duration異常値 cmd_3637 (duration=1741s, median=332.0s, ratio=5.24x, delta=+1'
+  - '2026-04-26T03:34:30+09:00 | 【改善トリガー】p_average_freshness ALERT (GA-183)'
   ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402_normal
+  _ac_task_id: cmd_karo_hotfix_lesson_health_ga183_202607060939_normal
   _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402.yaml
-  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402.yaml
+  report_filename: tobisaru_report_cmd_karo_hotfix_lesson_health_ga183_202607060939.yaml
+  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_lesson_health_ga183_202607060939.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -120,26 +132,23 @@ task:
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 171
+      count: 177
     - pattern: 'field_missing'
       count: 48
     - pattern: 'verdict_invalid'
-      count: 39
+      count: 41
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
       count: 10
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'binary_checks_fail'
-      count: 9
+      count: 6
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'empty_lessons_useful'
       count: 3
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-    - reason: 'lesson_candidate_fields_empty'
-      count: 1
-      hint: 'gate BLOCK: lesson_candidate_fields_empty'
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-07-02T14:03:17"
+  deployed_at: "2026-07-06T09:40:36"
