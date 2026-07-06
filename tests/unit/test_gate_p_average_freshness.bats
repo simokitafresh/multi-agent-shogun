@@ -175,3 +175,22 @@ EOF
     [[ "$output" == *"OK: p̄ calculated_at within 30 days"* ]]
     grep -q '^exit_code=0$' "$P_AVERAGE_CACHE_FILE"
 }
+
+@test "repository script resolves project path when launched from outside repo" {
+    local outside_cache="$TEST_TMPDIR/outside.cache"
+    local now_iso
+    now_iso="$(date -u +%Y-%m-%dT%H:%M:%S+00:00)"
+    write_fake_curl 0 200 0.050 "{\"data\":{\"calculated_at\":\"${now_iso}\"}}"
+
+    run env TZ=UTC \
+        P_AVERAGE_ENV_FILE="$P_AVERAGE_ENV_FILE" \
+        P_AVERAGE_CACHE_FILE="$outside_cache" \
+        P_AVERAGE_API_BASE="$P_AVERAGE_API_BASE" \
+        P_AVERAGE_CURL_BIN="$P_AVERAGE_CURL_BIN" \
+        bash -c "cd /tmp && '$PROJECT_ROOT/scripts/gates/gate_p_average_freshness.sh'"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: p̄ calculated_at within 30 days"* ]]
+    [[ "$output" != *"get_repo_root: git rev-parse"* ]]
+    grep -q '^exit_code=0$' "$outside_cache"
+}

@@ -20,6 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 # shellcheck source=scripts/lib/project_path.sh
 if [ -f "${SCRIPT_DIR}/scripts/lib/project_path.sh" ]; then
     source "${SCRIPT_DIR}/scripts/lib/project_path.sh"
+    _REPO_ROOT_CACHE="${SCRIPT_DIR}"
 else
     get_project_path() {
         case "$1" in
