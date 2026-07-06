@@ -426,6 +426,29 @@ EOF
     [[ "$output" == *"総合判定: WARN"* ]]
 }
 
+@test "shogun-only action_required bulletin does not warn at karo startup" {
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: 'blt_shogun_q6_action'
+  content: |-
+    startup gate Q6回答未検出が3セッション連続。将軍はQ6回答を掲示板へ投稿せよ。
+  posted_by: 'shogun'
+  posted_at: '2026-07-06T20:42:23'
+  requires_confirmation:
+    - 'shogun'
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"掲示板action_required未対応"* ]]
+    [[ "$output" == *"未対応: 0件"* ]]
+    [[ "$output" != *"blt_shogun_q6_action by shogun"* ]]
+}
+
 # === Test 4: PD未解決 → 未解決件数が表示される ===
 @test "2 pending decisions → displays 未解決: 2件" {
     cat > "$TEST_TMPDIR/queue/pending_decisions.yaml" <<'EOF'

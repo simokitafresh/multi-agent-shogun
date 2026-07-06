@@ -902,7 +902,7 @@ if [ -f "$SCRIPT_DIR/queue/bulletin_board.yaml" ]; then
                     count++
                     if (count <= 3) printf "ITEM: %s by %s\n", eid, epby
                 }
-                if (in_entry && ar && !closed && actioned_by == "") {
+                if (in_entry && ar && !closed && actioned_by == "" && (rc_true || rc_karo || notify_karo || (!rc_seen && !notify_seen))) {
                     action_count++
                     if (action_count <= 5) printf "ACTION_ITEM: %s by %s\n", eid, epby
                 }
@@ -911,11 +911,29 @@ if [ -f "$SCRIPT_DIR/queue/bulletin_board.yaml" ]; then
                 gsub(/['"'"'"]/, "", eid)
                 gsub(/[[:space:]]+$/, "", eid)
                 in_entry=1; rc=0; closed=0; karo_c=0; epby=""
-                ar=0; actioned_by=""
+                ar=0; actioned_by=""; list_key=""; rc_seen=0; rc_true=0; rc_karo=0; notify_seen=0; notify_karo=0
             }
             in_entry && /^  id:/ { v=$2; gsub(/['"'"'"]/, "", v); eid=v }
             in_entry && /^  posted_by:/ { v=$2; gsub(/['"'"'"]/, "", v); epby=v }
-            in_entry && /requires_confirmation: true/ { rc=1 }
+            in_entry && /^  requires_confirmation:/ {
+                rc_seen=1
+                list_key="requires_confirmation"
+                if ($0 ~ /true/) { rc=1; rc_true=1; list_key="" }
+                if ($0 ~ /false/) { list_key="" }
+            }
+            in_entry && /^  notify_targets:/ {
+                notify_seen=1
+                list_key="notify_targets"
+                if ($0 ~ /\[\]/) { list_key="" }
+            }
+            in_entry && list_key == "requires_confirmation" && /^[[:space:]]*-[[:space:]]*/ {
+                v=$0; sub(/^[[:space:]]*-[[:space:]]*/, "", v); gsub(/['"'"'"]/, "", v); gsub(/^[[:space:]]+|[[:space:]]+$/, "", v)
+                if (v == "karo") { rc=1; rc_karo=1 }
+            }
+            in_entry && list_key == "notify_targets" && /^[[:space:]]*-[[:space:]]*/ {
+                v=$0; sub(/^[[:space:]]*-[[:space:]]*/, "", v); gsub(/['"'"'"]/, "", v); gsub(/^[[:space:]]+|[[:space:]]+$/, "", v)
+                if (v == "karo") { notify_karo=1 }
+            }
             in_entry && /action_type:.*action_required/ { ar=1 }
             in_entry && /^  actioned_by:/ {
                 actioned_by=$0
@@ -930,7 +948,7 @@ if [ -f "$SCRIPT_DIR/queue/bulletin_board.yaml" ]; then
                     count++
                     if (count <= 3) printf "ITEM: %s by %s\n", eid, epby
                 }
-                if (in_entry && ar && !closed && actioned_by == "") {
+                if (in_entry && ar && !closed && actioned_by == "" && (rc_true || rc_karo || notify_karo || (!rc_seen && !notify_seen))) {
                     action_count++
                     if (action_count <= 5) printf "ACTION_ITEM: %s by %s\n", eid, epby
                 }
