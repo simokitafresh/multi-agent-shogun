@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-06 cmd_karo_hotfix_ga181 -->
-<!-- last_synced_lesson: L819 -->
+<!-- last_synced_lesson: L820 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -280,6 +280,7 @@ GA-179原因: `dm-signal.md`のlast_updatedは2026-07-04で、source監視対象
 - PD-054裁定(2026-07-02): 7023=Next App Router runtime不可避。App Router runtime削減設計には進まず、次方向は初期レンダー計算量削減(テーブル仮想化・チャート遅延・hydration削減)=fd9d/app chunks側。cmd_3660本番metrics計測はPerf 46→95/TBT 1724→55ms/CLS 0.743→0を確認。→ `/mnt/c/Python_app/DM-signal/docs/research/lighthouse_rounds/round_20260702_cmd3660_production_metrics_cls_close/manifest.json`
 - L818: 本番DB read-only確認はpython3 -cのインライン実行ではなくスクリプトファイル経由で行え（cmd_3698_recon2）
 - L819: PF単位の確定イベント実装は必ずrebalance_trigger等のPF別設定を参照せよ。全PF一律の固定日付/固定件数はハードコードの温床（cmd_3702）
+- L820: pre-commit hookのcheck_mixed_format_commit.pyは新規import追加を「並び替え」と誤検知しブロックすることがある。--no-verifyせず根本原因を修正せよ（cmd_3703）
 
 ## 因果リンク
 
