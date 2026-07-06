@@ -506,3 +506,65 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"NESTED_TAIL_OK"* ]]
 }
+
+# ── cmd_id list item support (yaml_field_set.sh begin_target + is_boundary) ──
+
+@test "cmd_id list: 対象エントリだけ更新し次エントリを汚染しない" {
+    yaml="$BATS_TMPDIR/cmdid_boundary.yaml"
+    cat > "$yaml" <<'EOF'
+- cmd_id: cmd_alpha
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+- cmd_id: cmd_beta
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+EOF
+    run bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$yaml" "cmd_alpha" gate_result "BLOCK"
+    [ "$status" -eq 0 ]
+    # cmd_alpha の gate_result が BLOCK に変わっている
+    run python3 -c "
+import yaml, pathlib
+docs = list(yaml.safe_load_all(pathlib.Path('$yaml').read_text()))
+data = docs[0]  # single doc list
+alpha = [d for d in data if d.get('cmd_id') == 'cmd_alpha'][0] if isinstance(data, list) else None
+if alpha is None:
+    data_list = data
+    alpha = data
+beta = [d for d in (data if isinstance(data,list) else [data]) if d.get('cmd_id') == 'cmd_beta'][0]
+print('alpha_gate=' + str(alpha.get('gate_result','')))
+print('beta_gate=' + str(beta.get('gate_result','')))
+assert alpha['gate_result'] == 'BLOCK', f'alpha expected BLOCK got {alpha[\"gate_result\"]}'
+assert beta['gate_result'] == 'CLEAR', f'beta expected CLEAR got {beta[\"gate_result\"]}'
+print('CMD_ID_BOUNDARY_OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CMD_ID_BOUNDARY_OK"* ]]
+}
+
+@test "cmd_id list: 対象にfieldが無い時は対象直下に追加する" {
+    yaml="$BATS_TMPDIR/cmdid_insert.yaml"
+    cat > "$yaml" <<'EOF'
+- cmd_id: cmd_first
+  review_type: draft
+  verdict: APPROVE
+- cmd_id: cmd_second
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+EOF
+    run bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$yaml" "cmd_first" gate_result "NEW_CLEAR"
+    [ "$status" -eq 0 ]
+    run python3 -c "
+import yaml, pathlib
+data = yaml.safe_load(pathlib.Path('$yaml').read_text())
+first = [d for d in data if d['cmd_id'] == 'cmd_first'][0]
+second = [d for d in data if d['cmd_id'] == 'cmd_second'][0]
+assert first['gate_result'] == 'NEW_CLEAR', f'first got {first[\"gate_result\"]}'
+assert second['gate_result'] == 'CLEAR', f'second got {second[\"gate_result\"]}'
+print('CMD_ID_INSERT_OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CMD_ID_INSERT_OK"* ]]
+}

@@ -465,7 +465,7 @@ function is_boundary(line,    indent,t) {
     }
 
     if (block_kind == "id") {
-        if (line ~ /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/) {
+        if (line ~ /^[[:space:]]*-[[:space:]]*(id|cmd_id):[[:space:]]*/) {
             indent = leading_spaces(line)
             if (indent <= block_indent) return 1
         }
@@ -713,7 +713,7 @@ function is_boundary(line,    indent,t) {
     }
 
     if (block_kind == "id") {
-        if (line ~ /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/) {
+        if (line ~ /^[[:space:]]*-[[:space:]]*(id|cmd_id):[[:space:]]*/) {
             indent = leading_spaces(line)
             if (indent <= block_indent) return 1
         }
@@ -1026,7 +1026,7 @@ function begin_target(line,    t,key) {
 }
 function is_boundary(line,    indent,t) {
     if (block_kind == "id") {
-        if (line ~ /^[[:space:]]*-[[:space:]]*id:[[:space:]]*/) { indent = leading_spaces(line); if (indent <= block_indent) return 1 }
+        if (line ~ /^[[:space:]]*-[[:space:]]*(id|cmd_id):[[:space:]]*/) { indent = leading_spaces(line); if (indent <= block_indent) return 1 }
         return 0
     }
     t = trim(line)
