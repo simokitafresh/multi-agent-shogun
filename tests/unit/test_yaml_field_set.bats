@@ -543,6 +543,30 @@ print('CMD_ID_BOUNDARY_OK')
     [[ "$output" == *"CMD_ID_BOUNDARY_OK"* ]]
 }
 
+@test "cmd_id list: 1行だけのブロックに新field追加してもYAML構造が壊れない" {
+    yaml="$BATS_TMPDIR/cmdid_single_line.yaml"
+    cat > "$yaml" <<'EOF'
+- cmd_id: cmd_solo
+- cmd_id: cmd_next
+  review_type: report
+  verdict: LGTM
+  gate_result: CLEAR
+EOF
+    run bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$yaml" "cmd_solo" gate_result "NEW_BLOCK"
+    [ "$status" -eq 0 ]
+    run python3 -c "
+import yaml, pathlib
+data = yaml.safe_load(pathlib.Path('$yaml').read_text())
+solo = [d for d in data if d['cmd_id'] == 'cmd_solo'][0]
+nxt = [d for d in data if d['cmd_id'] == 'cmd_next'][0]
+assert solo['gate_result'] == 'NEW_BLOCK', f'solo got {solo[\"gate_result\"]}'
+assert nxt['gate_result'] == 'CLEAR', f'next got {nxt[\"gate_result\"]}'
+print('CMD_ID_SINGLE_LINE_OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CMD_ID_SINGLE_LINE_OK"* ]]
+}
+
 @test "cmd_id list: 対象にfieldが無い時は対象直下に追加する" {
     yaml="$BATS_TMPDIR/cmdid_insert.yaml"
     cat > "$yaml" <<'EOF'
