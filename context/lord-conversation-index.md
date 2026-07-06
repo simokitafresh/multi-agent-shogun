@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-06 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-06T22:34:40+09:00 -->
+<!-- generated_at: 2026-07-06T23:29:01+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-07-06T23:29:00+09:00 | terminal | response | cmd_3711 draft review APPROVE完了。inbox未読0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-06T23:24:41+09:00 | terminal | response | cmd_3711発行・委任完了(23:24:34)。全PF×全確定月のledger遡及挿入。バックアップ→dry-run→本番実行の3段階。GATE CLEAR通知を待つ。 [meta] stop_reason=end_turn
+- 2026-07-06T23:18:33+09:00 | terminal | inbound | 起票せよ
+- 2026-07-06T23:15:41+09:00 | terminal | response | **仕様上の設計gap。** 根拠はDB実データ: [MEM: memory_db ts=2026-07-06 "cmd_3702: 台帳初期構築dry-runの是正 — rebalance_trigger別決定日フィルタ"] June …
+- 2026-07-06T23:15:03+09:00 | terminal | inbound | 6月がpending表示になっている。これはバグか？それとも仕様か？
+- 2026-07-06T23:12:04+09:00 | terminal | inbound | 6月がpending表示になっている。これはバグか？それとも仕様か？
+- 2026-07-06T22:45:14+09:00 | ntfy | outbound | 【INFOバッチ】 2026-07-06 22:33:56|cmd_3710
 - 2026-07-06T22:34:40+09:00 | terminal | response | **GATE CLEAR — cmd_3710完了。** バッジ修正が完了した。
 - 2026-07-06T22:34:34+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働4名 CLEAR率98% 連勝29
 - 2026-07-06T22:34:29+09:00 | terminal | response | cmd_3710 LGTM→CLEAR。gate-sync完了。 本セッション成果: - D0実装: SG-PRE31(LG048自動化) + octal bugfix → /clear耐久率100% - draft review: cm…
-- 2026-07-06T22:33:18+09:00 | terminal | response | cmd_3710 LGTM完了。GATE自動トリガー済み。inbox未読0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-06T22:26:41+09:00 | terminal | response | cmd_3710は完了・報告済み。家老からの次の指示を待機する。 [meta] stop_reason=end_turn
-- 2026-07-06T22:26:37+09:00 | terminal | response | cmd_3710の作業が完了した。 **実装内容:** - BE: `signal_decision_ledger.py`に`get_ledger_oldest_effective_start_date()`を追加(本番DB確認: led…
-- 2026-07-06T22:13:55+09:00 | terminal | response | 殿、飛猿の実装を利他精神で検分した結果: **修正は正しい方向に進んでいる。** BE/FE/テスト全て筋が通っている。1点、precomputed cacheの無効化(fullrecalculate実行)が必要で、それがないとデプロイ後…
-- 2026-07-06T22:11:55+09:00 | terminal | inbound | バグは修正されそうか？
-- 2026-07-06T22:08:52+09:00 | terminal | response | バックグラウンドタスクも完了(exit 0)。cmd_3710は既にフォアグラウンドで委任済みなので問題なし。 陣形図を確認: 全忍者がidle/failed。cmd_3710は家老が次のidle忍者に配備する。GATE CLEAR通知を…
-- 2026-07-06T22:07:32+09:00 | terminal | inbound | どうなった？
 
 ## 未解決確認事項
 - cmd_3710の作業が完了した。 **実装内容:** - BE: `signal_decision_ledger.py`に`get_ledger_oldest_effective_start_date()`を追加(本番DB確認: ledger最古日=2026-06-01)。`…
@@ -54,6 +54,7 @@
 - cmd_3708
 - cmd_3709
 - cmd_3710
+- cmd_3711
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

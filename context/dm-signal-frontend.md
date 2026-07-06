@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-07-06 cmd_3706 -->
+<!-- last_updated: 2026-07-06 cmd_3710 -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -135,6 +135,7 @@ Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式
 | 対象 | 結論 | 参照 |
 |------|------|------|
 | Monthly Trade ledger badge | Monthly TradeのPosition表示は`signal_decision_ledger`優先。`decision_source`/`decided_at`/`is_correction`をAPI型へ追加し、既存Positionセル内に確定/訂正/確定前バッジ(UI表示: Confirmed/Corrected/Pending)を1個表示。Next SignalはPreview表示を持ち、日々変動が正常な未確定値として扱う | cmd_3706 / 99edb79b; `backend/app/api/monthly_trade.py`, `backend/app/services/monthly_trade_impl.py`, `frontend/components/monthly-trade-table.tsx`, `frontend/lib/types/api.ts` |
+| Monthly Trade historical badge | `signal_decision_ledger`最古`effective_start_date`より前の月は`decision_source=historical`として暗黙確定表示(✓ Historical)。ledger開始後でledger行なしの月は従来通りPending。historical導入後は`precomputed_raw.endpoint='monthly_trade'`の無効化/再生成が必要 | cmd_3710 / f4f17af9; `backend/app/services/signal_decision_ledger.py`, `backend/app/services/monthly_trade_impl.py`, `frontend/components/monthly-trade-table.tsx` |
 
 ## 3. 状態管理
 
