@@ -1379,3 +1379,5 @@
 - 2026-07-06 GA-181完了: 才蔵が`context/dm-signal-research.md`鮮度ALERTを処理。cmd_3694研究成果を§48へ索引化し、5分割context独立last_updated+閾値3跨ぎによる時間差ALERTと特定。L970登録、GATE CLEAR。pushはnon-fast-forwardでWARN。
 - 2026-07-06 cmd_karo_hotfix_cmd_complete_context_marker_scope完了: 半蔵が`cmd_complete_gate.sh`のcontext marker自動更新を`CMD_CHANGED_FILES`+報告YAML`files_modified`限定へ修正。dirtyな別cmd由来contextを短縮cmd_idで上書きする経路を封止し、`bats` 7/7・`bash -n`・context freshness OK、GATE CLEAR。
 - 2026-07-06 cmd_3696完了: 疾風がGS道具磨きPhase Aを実測。L0 DM2はPhase1=77.6%支配で設計書v4基準「方針変更」、L3 kasoku_diffはDB connect/build/load支配。`compare_gs_sqlite_monthly.py`を追加し372+12400 cells完全一致PASS、設計書へ結果還流、GATE CLEAR。
+- 2026-07-06 cmd_3702完了: 飛猿が保有シグナル確定台帳dry-runをrebalance_trigger対応へ是正。計画306→102、汚染混入0件、テスト17/17 PASS、core contextへ新前提を還流。
+- 2026-07-06 GA-186完了: 疾風が`context/dm-signal-ops.md`鮮度ALERTを処理。signal_decision_ledger運用差分を§52へ反映し、`gate_context_freshness.sh`総合OKへ復帰。
