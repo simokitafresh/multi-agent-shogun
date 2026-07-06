@@ -1,80 +1,59 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  acceptance_criteria:
-    AC1:
-      description: GA-166/L934、GA-182、GA-183/L971、GA-184の因果を読み、13件(+L816)再発の直接原因と根本原因を数値付きで報告する
-    AC2:
-      description: 未振り分け教訓が5件以上10件以下の時点でWARNまたは明示的な早期導線を出す実装を追加し、project+ids+推奨アクションが出力されることを確認する
-    AC3:
-      description: 10件超の既存ALERT挙動とaction文は維持し、今回の実装でALERT隠蔽や自動消火を起こさない
-    AC4:
-      description: tests/unit/test_gate_lesson_health.bats等へ回帰テストを追加し、5件早期導線と11件ALERTの両方をPASSさせる
-    AC5:
-      description: lesson-sort実行やprojects/*/lessons.yaml直接編集はしない。防御層実装・テスト・報告に限定する
+  _ac_task_id: cmd_3698_recon2_full
+  _ac_worker_id: null
+  _deploy_notice: "STALE TASK INVALID. This YAML is the latest instruction for cmd_3698_recon2 (deployed 2026-07-06T15:18:20). Read from the beginning."
+  ac_version: cf8d44c7
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
+  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
+  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
+  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
+  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
+  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
+  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
+  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
+  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
+  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
+  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope:
-  - 将軍専用/lesson-sortの実行
-  - projects/*/lessons.yamlの直接編集
-  - dm-signal教訓の分類移動
   notes:
-  - 'GA-184: dm-signal未振り分け13件 ids=L802,L803,L804,L805,L806,L807,L808,L809,L810,L812,L813,L815,L816'
-  - 'L971: 同型ALERTのrecon再配備では根治しない。Level5早期導線を実装せよ'
+  - tobisaru報告はGATE CLEAR済みだが、直接gate_report_format.shではcmd_3264-AC2 false-BLOCKが再現する
+  - inbox_write.shはfiles_modifiedがある時target_pathの広い指定を混ぜない実装済み
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_ga184_lesson_health_early_route_202607061018
-  project: infra
-  purpose: GA-184 lesson_health同型再発を受け、未振り分け教訓が閾値超過まで溜まる前にLevel5早期導線を出す防御層を実装する
-  status: done
+  parent_cmd: cmd_3698_recon2
+  project: dm-signal
+  purpose: '殿裁定(2026-07-06 15:07「よしやろう」): adj遡及改訂等で決定済み保有シグナルが月中に無音で変わる構造問題(今朝もsync-fof経由で2,232件/17PF書換え報告)の根絶策として、決定イベント(PF×リバランス日)単位の追記専用確定台帳を新設する。本cmdはその設計に必要な全経路・仕様・初期値ソースの偵察。凍結対象=保有の決定のみ(評価数値は対象外)。初期台帳=開始時点で有効な全決定(monthly/bimonthly_odd/quarterly_jan=7/1、bimonthly_even/quarterly_mar=6/1、quarterly_feb=5/1)'
+  status: acknowledged
   stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_lesson_health.sh
-  task_id: cmd_karo_hotfix_ga184_lesson_health_early_route_202607061018_normal
-  task_type: hotfix
-  previous_failures:
-    attempt: 8
-    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    tried_approaches:
-    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    diagnose_reason: '原因は私の作業ではない。task.target_path=projects/dm-signal/lessons.yamlに、2026-07-05 00:29(前回commit)以降蓄積した未commit差分(flow-style 796件→block-style 799件、約1万行、L813/L814/L815追加分)が存在し、cmd_3264-AC2ガー…'
-    approach_summary: 'GA-183は真陽性の同型再発。dm-signal L802,L803,L804,L805,L806,L807,L808,L809,L810,L812,L813,L815の12件はwhen/how/origin充足済みだが/lesson-sort未実行のためcontext/dm-signal.mdの教訓索引(自動追記)に生bulletのまま残存。6.5時間…'
-    prior_attempts:
-    - attempt: 6
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      diagnose_reason: '原因は私の作業ではない。task.target_path=projects/dm-signal/lessons.yamlに、2026-07-05 00:29(前回commit)以降蓄積した未commit差分(flow-style 796件→block-style 799件、約1万行、L813/L814/L815追加分)が存在し、cmd_3264-AC2ガー…'
-      approach_summary: 'GA-183は真陽性の同型再発。dm-signal L802,L803,L804,L805,L806,L807,L808,L809,L810,L812,L813,L815の12件はwhen/how/origin充足済みだが/lesson-sort未実行のためcontext/dm-signal.mdの教訓索引(自動追記)に生bulletのまま残存。6.5時間…'
-    - attempt: 7
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      diagnose_reason: '原因は私の作業ではない。task.target_path=projects/dm-signal/lessons.yamlに、2026-07-05 00:29(前回commit)以降蓄積した未commit差分(flow-style 796件→block-style 799件、約1万行、L813/L814/L815追加分)が存在し、cmd_3264-AC2ガー…'
-      approach_summary: 'GA-183は真陽性の同型再発。dm-signal L802,L803,L804,L805,L806,L807,L808,L809,L810,L812,L813,L815の12件はwhen/how/origin充足済みだが/lesson-sort未実行のためcontext/dm-signal.mdの教訓索引(自動追記)に生bulletのまま残存。6.5時間…'
-    - attempt: 8
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      diagnose_reason: '原因は私の作業ではない。task.target_path=projects/dm-signal/lessons.yamlに、2026-07-05 00:29(前回commit)以降蓄積した未commit差分(flow-style 796件→block-style 799件、約1万行、L813/L814/L815追加分)が存在し、cmd_3264-AC2ガー…'
-      approach_summary: 'GA-183は真陽性の同型再発。dm-signal L802,L803,L804,L805,L806,L807,L808,L809,L810,L812,L813,L815の12件はwhen/how/origin充足済みだが/lesson-sort未実行のためcontext/dm-signal.mdの教訓索引(自動追記)に生bulletのまま残存。6.5時間…'
+  target_path: /mnt/c/Python_app/DM-signal
+  task_id: cmd_3698_recon2_normal
+  task_type: full
+  skill_hint: /db-check
   related_lessons:
-  - id: 'L857'
-    summary: 'gate_lesson_health.shは未振り分け件数をALERTするが、該当ID一覧はcontextを別途抽出しないと分からない。ALERT出力に未振り分'
-    detail: 'gate_lesson_health.shは未振り分け件数をALERTするが、該当ID一覧はcontextを別途抽出しないと分からない。ALERT出力に未振り分'
-  - id: 'L429'
-    summary: 'gate_lesson_health.shで_active_lesson_ids()が定義済みなのに3箇所でインラインawk重複。関数定義時に呼出し側の置換を同'
-    detail: 'gate_lesson_health.shで_active_lesson_ids()が定義済みなのに3箇所でインラインawk重複。関数定義時に呼出し側の置換を同'
-  - id: 'L479'
-    summary: 'gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入'
-    detail: 'gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入'
+  - id: 'L970'
+    summary: 'GA-180(context/dm-signal.md)をCLEARした67分後にGA-181(context/dm-signal-research.md)が独'
+    detail: 'GA-180(context/dm-signal.md)をCLEARした67分後にGA-181(context/dm-signal-research.md)が独'
+  - id: 'L963'
+    summary: 'gate出力はALERT対象名だけを出すため、報告ではgate再現文言とDM-Signal側git showで列挙したsource commitsを分けて記録す'
+    detail: 'gate出力はALERT対象名だけを出すため、報告ではgate再現文言とDM-Signal側git showで列挙したsource commitsを分けて記録す'
+  - id: 'L967'
+    summary: 'codd extractがbashソースで0 files/0 modulesを出力すると、system-context.mdとarchitecture-over'
+    detail: 'codd extractがbashソースで0 files/0 modulesを出力すると、system-context.mdとarchitecture-over'
   - id: 'L311'
     summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
     wa_category: 'report_yaml_format'
-    wa_count: 1
+    wa_count: 2
     detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
@@ -91,65 +70,90 @@ task:
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh tests/unit/test_deploy_training.bats scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md docs/research/model-comparison-5w1h-20260701.md 全モデル5W1H比較(GPT5.5/Sonnet4.6/Sonnet5/Opus4.8) docs/research/sonnet5_vs_46_ab_evaluation_20260701.md 5ラウンドA/B/C評価データ scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
+  - "skill_routing — スキルルーティング:  skills/*/SKILL.md"
   recommended_skills:
-  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
+  - "shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み)"
+  - "reset-layout(全ペイン配置復元)"
+  - "shogun-clear-prep(clear前)"
+  - "dream(三層記憶整理)"
+  - "shogun-teire(棚卸し)"
+  - "lesson-sort(教訓整理)"
+  - "switch-project(PJ切替)"
+  - "shogun-pd-sync(裁定反映)"
+  - "cmd-complete(GATE CLEAR後/家老)"
+  - "dashboard-update(ダッシュボード/家老)"
+  related_causal_links:
+  - "[[TECL_XLU無音反転_cmd_3676]]"
+  - "[[cmd_3698_確定台帳偵察]]"
+  - "[[殿指摘_adj保有シグナル反転_20260706]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  - "context/robustness-verification-catalog.md"
+  - "context/gs-speedup-knowledge.md"
+  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
+  production_invariants:
+  - "PI-001: 時間解像度原理: 全ての日次シグナル比較では日次差異を保持し、月次dedupで潰さない"
+  - "PI-002: 信頼境界原理: 全ての本番判断ではSQLiteを真実とせず、PostgreSQLをSSOTとして再検証する"
+  - "PI-003: 構成スキーマ完全性原理: 全てのstandard PF config JSONはpipeline_configを必須とし、NoneでCashフォールバックさせない"
+  - "PI-004: 信頼境界原理: 全てのGS成果物は本番投入前にPydanticスキーマで再検証する"
+  - "PI-005: 全期間・全下流検証原理: 任意の新規PF登録後はportfolio_id指定なしfull recalculate一発で下流全体を再生成する"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L857: gate_lesson_health.shは未振り分け件数をALERTするが、該当ID一覧はcontextを別途抽出しないと分からない。ALERT出力に未振り分
-      - L429: gate_lesson_health.shで_active_lesson_ids()が定義済みなのに3箇所でインラインawk重複。関数定義時に呼出し側の置換を同
-      - L479: gate_lesson_health.shはreferenced率76%でOK判定していたが、useful率26%は計測対象外。参照した≠役に立ったの混同。介入
+      - L970: GA-180(context/dm-signal.md)をCLEARした67分後にGA-181(context/dm-signal-research.md)が独
+      - L963: gate出力はALERT対象名だけを出すため、報告ではgate再現文言とDM-Signal側git showで列挙したsource commitsを分けて記録す
+      - L967: codd extractがbashソースで0 files/0 modulesを出力すると、system-context.mdとarchitecture-over
       - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
   memory_db_context:
-  - '2026-07-06T10:14:54+09:00 | 【改善トリガー】lesson_health ALERT (GA-184)'
-  - '2026-04-26T12:20:52+09:00 | 【改善トリガー】ci_red ALERT (GA-184)'
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_ga184_lesson_health_early_route_202607061018_normal
-  _ac_worker_id: 
+  - '2026-07-06T12:13:01+09:00 | 【INFOバッチ】 2026-07-06 12:12:08|cmd_karo_db_check_signal_change_alert_202607061149'
+  - '2026-07-06T11:58:35+09:00 | [MEM: memory_db ts=2026-07-06 "L0 246s/L3 diff 191s/L3 ratio 266-298s 全3対象5分目標実測達成"] [MEM: semantic '
+  - '2026-06-16T15:17:14+09:00 | 【INFOバッチ】 2026-06-16 15:03:31|cmd_3418 2026-06-16 15:07:46|cmd_3419 2026-06-16 15:12:20|cmd_3420 202'
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: '保有シグナルの書込み経路の全数調査 — 保有シグナルがDBのどのテーブル・カラムに、どのコード経路(sync-standard/sync-fof/fullrecalculate/月初夕方再計算cron/recalculate API/その他)から書かれるかをファイル・関数・行番号付きで全数列挙する。網羅性は対象テーブル名でのrg全数ヒット数と照合して数値証明する'
+  - id: 'AC2'
+    checks:
+    - check: '保有シグナルの読み経路の全数調査 — signals API・フロントエンド表示・monthly returns計算・FoFの子PF参照・trade履歴生成が、それぞれどのテーブル・関数を読むかをファイル・行番号付きで列挙する'
+  - id: 'AC3'
+    checks:
+    - check: '決定イベント仕様の確定 — rebalance_trigger 6値(monthly/bimonthly_odd/bimonthly_even/quarterly_jan/quarterly_feb/quarterly_mar)それぞれの決定日導出規則・営業日調整・有効期間を表形式で確定する。component_signal_date経路(price_ratio_impl.py:1266周辺)とNext Signal欄(cmd_3682実装)の頻度対応の現状も確認する'
+  - id: 'AC4'
+    checks:
+    - check: '初期台帳ソースの検証 — cmd_3681スナップショットの保存内容・形式を確認し、各PFの直近決定時点(7/1・6/1・5/1)に実際に表示されていた保有シグナルの復元可能性を検証する。現DB値との乖離をPF別に実測し(今朝のsync-fof 2,232件/17PF書換えの対象月内訳=決定済み有効期間への遡及変更が何件かを含む)、初期台帳の推奨ソースを根拠付きで結論する。本番DBはSELECTのみ'
+  - id: 'AC5'
+    checks:
+    - check: '台帳実装の偵察5要件 — (1)変更対象: 台帳テーブルDDL案(新設の前に既存テーブル=portfolio_config_snapshots・cmd_3681スナップショット等で代替可能かを現物確認し、代替不可の場合のみ理由付きで新設案を報告)・書込みガード挿入点・読み経路切替点のファイル・行番号 (2)波及先ファイル (3)関連テスト有無・修正要否 (4)エッジケース(月初pending維持との整合、PF新規登録、hide、訂正追記、FoF子PF参照タイミング、cmd_1568型のweights消失) (5)依存関係・順序制約(L0-L3 cron連鎖・sync-fofとの順序・トランザクション境界)を特定する'
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_karo_hotfix_ga184_lesson_health_early_route_202607061018.yaml
-  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_ga184_lesson_health_early_route_202607061018.yaml
+  report_filename: tobisaru_report_cmd_3698_recon2.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3698_recon2.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 2
-    top_pattern: 'report_yaml_format(1件)'
-    breakdown: 'report_yaml_format(1件), commit_missing(1件)'
+    total_workarounds: 3
+    top_pattern: 'report_yaml_format(2件)'
+    breakdown: 'report_yaml_format(2件), commit_missing(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 177
+      count: 136
+    - pattern: 'lu_structure_error'
+      count: 63
     - pattern: 'field_missing'
-      count: 48
-    - pattern: 'verdict_invalid'
-      count: 41
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
+      count: 55
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
     gate_blocks:
     - reason: 'report_format'
-      count: 10
+      count: 9
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'binary_checks_fail'
-      count: 6
+      count: 7
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'empty_lessons_useful'
       count: 3
@@ -157,15 +161,11 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-07-06T10:23:00"
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    tried_approaches:
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    approach_summary: 'GA-166(L934)→GA-182(11件)→GA-183(12件,L971)→GA-184(13件)→GA-185(14件,+L817)と閾値10超ALERTが12分〜7時間間隔で加速再発。gate_lesson_health.shにUNSORTED_WARN_THRESHOLD=5を追加し、5-10件でproject+ids+推奨アクション付きWARN(早期導線)を出すLevel5実装完了。10件超の既存ALERT文言・EXIT_CODE=1は無変更。回帰テスト4件追加(4件OK/5件WARN/10件WARN境界/11件ALERT)、既存16件含め計20件PASS。関連bats(shogun_startup/improvement_trigger/ninja_monitor_stall)も無退行確認。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'GA-166(L934)→GA-182(11件)→GA-183(12件,L971)→GA-184(13件)→GA-185(14件,+L817)と閾値10超ALERTが12分〜7時間間隔で加速再発。gate_lesson_health.shにUNSORTED_WARN_THRESHOLD=5を追加し、5-10件でproject+ids+推奨アクション付きWARN(早期導線)を出すLevel5実装完了。10件超の既存ALERT文言・EXIT_CODE=1は無変更。回帰テスト4件追加(4件OK/5件WARN/10件WARN境界/11件ALERT)、既存16件含め計20件PASS。関連bats(shogun_startup/improvement_trigger/ninja_monitor_stall)も無退行確認。'
+    - reason: 'purpose_validation_fit_false'
+      count: 1
+      hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
+    - reason: 'no_task_parent_report'
+      count: 1
+      hint: 'gate BLOCK: no_task_parent_report'
+  deployed_at: "2026-07-06T15:18:39"
+  cmd_id: cmd_3698_recon2
