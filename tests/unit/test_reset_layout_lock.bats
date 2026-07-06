@@ -62,3 +62,17 @@ setup() {
     # ロック取得に失敗して即終了したことを保証: Step以降のログが出ていないこと
     [[ "$output" != *"Step 1: 前提確認"* ]]
 }
+
+@test "reset_layout.sh: 期待数超過時に無主paneだけを自動回収するガードがある" {
+    run bash -c "grep -q 'exceeds the expected roster' '$PROJECT_ROOT/scripts/reset_layout.sh'"
+    [ "$status" -eq 0 ]
+
+    run bash -c "grep -q 'removed orphan unowned pane' '$PROJECT_ROOT/scripts/reset_layout.sh'"
+    [ "$status" -eq 0 ]
+
+    run bash -c "grep -q 'tmux kill-pane -t' '$PROJECT_ROOT/scripts/reset_layout.sh'"
+    [ "$status" -eq 0 ]
+
+    run bash -c "grep -Fq 'if [[ -z \"\$_aid\" ]]; then' '$PROJECT_ROOT/scripts/reset_layout.sh'"
+    [ "$status" -eq 0 ]
+}

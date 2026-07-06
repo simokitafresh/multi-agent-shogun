@@ -286,6 +286,57 @@ PANE_COUNT="$_MB_PANE_COUNT"
 for _pi in "${!_MB_AID[@]}"; do
     _STEP2_AID["$_pi"]="${_MB_AID[$_pi]}"
 done
+
+# Claude Agent Teams and stale split-window shells can leave child panes in the
+# agents window with no @agent_id. They are not part of the Shogun agent roster
+# and collapse the fixed 8-pane agents layout. When the pane count already
+# exceeds the expected roster, auto-remove only unowned panes before applying the
+# normal excess-pane guard.
+if [[ "$PANE_COUNT" -gt "$NUM_AGENTS" ]]; then
+    _orphan_panes=()
+    while IFS=$'\t' read -r _pi _aid _start_cmd; do
+        if [[ -z "$_aid" ]]; then
+            _orphan_panes+=("$_pi")
+        fi
+    done < <(tmux list-panes -t "$AGENTS_WINDOW_TARGET" -F '#{pane_index}	#{@agent_id}	#{pane_start_command}' 2>/dev/null || true)
+
+    if [[ ${#_orphan_panes[@]} -gt 0 ]]; then
+        for _pi in "${_orphan_panes[@]}"; do
+            if [[ "$DRY_RUN" == true ]]; then
+                log_dry "  remove orphan unowned pane: agents.${_pi}"
+            else
+                tmux kill-pane -t "${AGENTS_WINDOW_TARGET}.${_pi}" 2>/dev/null || true
+                log "  removed orphan unowned pane: agents.${_pi}"
+            fi
+        done
+
+        if [[ "$DRY_RUN" != true ]]; then
+            sleep 0.2
+            _MB_AID=()
+            _MB_DEAD=()
+            _MB_PID=()
+            _MB_MODEL=()
+            _MB_GROUP=()
+            _MB_CLI=()
+            _STEP2_AID=()
+            _MB_PANE_COUNT=0
+            while IFS=$'\t' read -r _pi _aid _dead _pid _mod _grp _cli; do
+                [[ -n "$_pi" ]] || continue
+                _MB_AID["$_pi"]="$_aid"
+                _MB_DEAD["$_pi"]="$_dead"
+                _MB_PID["$_pi"]="$_pid"
+                _MB_MODEL["$_pi"]="$_mod"
+                _MB_GROUP["$_pi"]="$_grp"
+                _MB_CLI["$_pi"]="$_cli"
+                _STEP2_AID["$_pi"]="$_aid"
+                _MB_PANE_COUNT=$((_MB_PANE_COUNT+1))
+            done < <(tmux list-panes -t "$AGENTS_WINDOW_TARGET" \
+                -F '#{pane_index}	#{@agent_id}	#{pane_dead}	#{pane_pid}	#{@model_name}	#{@agent_group}	#{@agent_cli}')
+            PANE_COUNT="$_MB_PANE_COUNT"
+        fi
+    fi
+fi
+
 if [[ "$PANE_COUNT" -gt "$NUM_AGENTS" ]]; then
     log_err "agentsウィンドウに${PANE_COUNT}ペイン（期待: ${NUM_AGENTS}）。余剰ペインの手動削除が必要"
     exit 1
