@@ -51,3 +51,21 @@ YAML
     [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
     [[ "$output" == *"scope外で家老"* ]]
 }
+
+@test "SG-PRE9c allows unmet wording when explicitly outside scope" {
+    _write_report "full 5分目標は未達(スコープ外)。今回ACは補完済み。"
+
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+    [[ "$output" == *"BC_YES_CLARITY_TERMS=''"* ]]
+}
+
+@test "SG-PRE9c still detects unmet wording when delegated later" {
+    _write_report "full 5分目標は未達。後で家老が実施する。"
+
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
+    [[ "$output" == *"未達"* ]]
+}

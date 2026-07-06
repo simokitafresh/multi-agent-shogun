@@ -225,9 +225,25 @@ def main():
         'todo',
         'fill_this',
     )
+    def _term_is_contextual_fp(term: str, text: str) -> bool:
+        lower_text = text.lower()
+        lower_term = term.lower()
+        if lower_term not in lower_text:
+            return True
+        if term == '未達':
+            # 「5分目標は未達(スコープ外)」「補完済み」「次改善」等は
+            # AC未達ではなく境界/補足説明。委譲・保留語が同居する場合は検出を維持する。
+            benign_markers = ('スコープ外', 'scope外', 'not_in_scope', '補完', '補完済み', '次改善', '次の改善', '対象外')
+            delegation_markers = ('家老実施', '家老が実施', '後で', '未実施', '未完了', '保留')
+            if any(marker.lower() in lower_text for marker in benign_markers) and not any(
+                marker.lower() in lower_text for marker in delegation_markers
+            ):
+                return True
+        return False
+
     matched_terms = [
         term for term in contradiction_terms
-        if term.lower() in clarity_text.lower()
+        if not _term_is_contextual_fp(term, clarity_text)
     ]
     if all_reported_checks_yes and matched_terms:
         result['BC_YES_CLARITY_CONTRADICTION'] = '1'

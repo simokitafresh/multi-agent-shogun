@@ -57,6 +57,17 @@ print_sg_pre9() {
     fi
 }
 
+is_generated_large_artifact() {
+    local path="$1"
+    case "$path" in
+        outputs/grid_search/*.db|outputs/grid_search/*.sqlite|outputs/grid_search/*.sqlite3|outputs/grid_search/*.duckdb|outputs/grid_search/*.db-shm|outputs/grid_search/*.db-wal|\
+        */outputs/grid_search/*.db|*/outputs/grid_search/*.sqlite|*/outputs/grid_search/*.sqlite3|*/outputs/grid_search/*.duckdb|*/outputs/grid_search/*.db-shm|*/outputs/grid_search/*.db-wal)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
 if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE9" ]; then
     print_sg_pre9
     exit 0
@@ -199,6 +210,10 @@ echo ""
 echo "■ SG-PRE6: files_modified行数"
 if [ -n "${PROJECT_DIR:-}" ] && [ -d "$PROJECT_DIR" ] && [ -n "${FILES_MODIFIED:-}" ]; then
     while IFS= read -r fpath; do
+        if is_generated_large_artifact "$fpath"; then
+            echo "  $fpath: SKIP generated large artifact(line-count capped)"
+            continue
+        fi
         FULL_PATH="$PROJECT_DIR/$fpath"
         if [ -f "$FULL_PATH" ]; then
             LINE_COUNT=$(wc -l < "$FULL_PATH")
@@ -606,6 +621,10 @@ if [ -n "${FILES_MODIFIED:-}" ]; then
         _causal_out=""
         _causal_timeout=0
         for fpath in $FILES_MODIFIED; do
+            if is_generated_large_artifact "$fpath"; then
+                _causal_out="${_causal_out}  ${fpath}→ SKIP: generated large artifact"$'\n'
+                continue
+            fi
             _stem=$(basename "$fpath" | sed 's/\.[^.]*$//')
             set +e
             _links=$(timeout 3 bash "$_causal_script" "$_stem" 2>/dev/null)
