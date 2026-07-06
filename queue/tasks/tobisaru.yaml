@@ -36,7 +36,7 @@ task:
   parent_cmd: cmd_karo_hotfix_ga184_lesson_health_early_route_202607061018
   project: infra
   purpose: GA-184 lesson_health同型再発を受け、未振り分け教訓が閾値超過まで溜まる前にLevel5早期導線を出す防御層を実装する
-  status: assigned
+  status: done
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/scripts/gates/gate_lesson_health.sh
   task_id: cmd_karo_hotfix_ga184_lesson_health_early_route_202607061018_normal
