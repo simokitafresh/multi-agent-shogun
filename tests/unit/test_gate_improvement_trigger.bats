@@ -109,3 +109,19 @@ inbox_call_count() {
     [[ "$output" == *"SENT: context_freshness"* ]]
     [ "$(inbox_call_count)" -eq 2 ]
 }
+
+@test "exit code alert without ALERT line includes output snippet instead of detail-not-captured" {
+    cat > "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh" <<'SH'
+#!/usr/bin/env bash
+echo "plain failure without alert prefix"
+exit 1
+SH
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh"
+
+    GATE_IMPROVEMENT_NOW=1770000000 run_trigger
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SENT: p_average_freshness"* ]]
+    [[ "$output" != *"ALERT detail not captured"* ]]
+    grep -q 'exit_code=1; output_snippet=plain failure without alert prefix' "$TEST_TMPDIR/logs/gate_alerts.yaml"
+}

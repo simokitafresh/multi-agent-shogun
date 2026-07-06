@@ -35,13 +35,32 @@ CACHE_FILE="${P_AVERAGE_CACHE_FILE:-/tmp/gate_p_average_cache.txt}"
 CURL_BIN="${P_AVERAGE_CURL_BIN:-curl}"
 CACHE_TTL_SECONDS=21600  # 6時間キャッシュ(p̄は月次更新のため十分)
 
+cache_exit_matches_status_line() {
+    local status_line="$1"
+    local cached_exit="$2"
+
+    case "$cached_exit" in
+        0) [[ "$status_line" == OK:* ]] ;;
+        1) [[ "$status_line" == ALERT:* ]] ;;
+        2) [[ "$status_line" == WARN:* ]] ;;
+        *) return 1 ;;
+    esac
+}
+
 # キャッシュチェック: 6時間以内ならAPI呼出しをスキップ
 if [ -f "$CACHE_FILE" ]; then
     cache_age=$(( $(date +%s) - $(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0) ))
     if [ "$cache_age" -lt "$CACHE_TTL_SECONDS" ]; then
-        head -1 "$CACHE_FILE"
+        cached_status_line="$(head -1 "$CACHE_FILE" 2>/dev/null || true)"
         cached_exit=$(awk -F= '/^exit_code=/{print $2; exit}' "$CACHE_FILE" 2>/dev/null)
-        exit "${cached_exit:-0}"
+        if cache_exit_matches_status_line "$cached_status_line" "${cached_exit:-}"; then
+            printf '%s\n' "$cached_status_line"
+            exit "$cached_exit"
+        fi
+        echo "WARN: p̄ cache invalid; ignoring stale/corrupt cache and rechecking API"
+        echo "  cache_file: ${CACHE_FILE}"
+        echo "  cache_status_line: ${cached_status_line:-empty}"
+        echo "  cache_exit_code: ${cached_exit:-missing}"
     fi
 fi
 

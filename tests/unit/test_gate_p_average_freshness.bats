@@ -145,3 +145,33 @@ EOF
     [[ "$output" == *"OK: p̄ calculated_at within 30 days"* ]]
     grep -q 'exit_code=0' "$P_AVERAGE_CACHE_FILE"
 }
+
+@test "fresh OK cache is reused without alerting" {
+    cat > "$P_AVERAGE_CACHE_FILE" <<'EOF'
+OK: p̄ calculated_at within 30 days (4d ago, 2026-07-01T19:44:55+00:00)
+exit_code=0
+EOF
+
+    run bash "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == "OK: p̄ calculated_at within 30 days (4d ago, 2026-07-01T19:44:55+00:00)" ]]
+}
+
+@test "corrupt cache with exit_code 1 but no ALERT line is ignored and rechecked" {
+    cat > "$P_AVERAGE_CACHE_FILE" <<'EOF'
+exit_code=1
+EOF
+    local now_iso
+    now_iso="$(date -u +%Y-%m-%dT%H:%M:%S+00:00)"
+    write_fake_curl 0 200 0.050 "{\"data\":{\"calculated_at\":\"${now_iso}\"}}"
+
+    run env TZ=UTC bash "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: p̄ cache invalid; ignoring stale/corrupt cache and rechecking API"* ]]
+    [[ "$output" == *"cache_status_line: exit_code=1"* ]]
+    [[ "$output" == *"cache_exit_code: 1"* ]]
+    [[ "$output" == *"OK: p̄ calculated_at within 30 days"* ]]
+    grep -q '^exit_code=0$' "$P_AVERAGE_CACHE_FILE"
+}

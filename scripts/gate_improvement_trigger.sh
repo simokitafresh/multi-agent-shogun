@@ -356,7 +356,9 @@ evaluate_gate_result() {
         local alert_lines
         alert_lines=$(extract_alert_lines "$output" "$extra_alert_pattern")
         if [ -z "$alert_lines" ]; then
-            alert_lines="exit_code=$exit_code (ALERT detail not captured)"
+            local output_snippet
+            output_snippet=$(printf '%s\n' "$output" | awk 'NF {print; exit}' | tr '\n' ' ' | cut -c 1-240)
+            alert_lines="exit_code=$exit_code; output_snippet=${output_snippet:-empty}"
         fi
 
         send_alert "$gate_name" "$alert_lines" || true
