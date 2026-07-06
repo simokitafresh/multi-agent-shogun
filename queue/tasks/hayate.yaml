@@ -3,13 +3,22 @@ task:
   ac_priority: ''
   acceptance_criteria:
     AC1:
-      description: CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 bash scripts/gates/gate_context_freshness.shでGA-179 ALERTを再現し、dm-signal.md last_updated以後のDM-Signal source commitsを列挙して直接原因と根本原因仮説を報告する
+      binary_checks:
+      - 'training_proposal.fail_reasonを読み、該当するBLOCKパターンを特定したか: yes/no'
+      - '対象スキル手順のどのステップで同種FAILを防ぐかを報告したか: yes/no'
+      description: 'gate FAIL原因(#1: verdict非二値)を対象スキル手順と照合し、どの記入・検証手順で防ぐかを説明する'
     AC2:
-      description: context/dm-signal.mdを一次情報と照合し、内容更新が必要なら索引層スタイルで最小更新とlast_updated更新を行い、不要なら根拠を報告する
+      binary_checks:
+      - 'report_field_set.sh経由で必須フィールドを記入したか: yes/no'
+      - '全binary_checksのresultをyes/noで記入したか: yes/no'
+      - 'gate_report_formatを実行し結果を報告したか: yes/no'
+      description: 報告YAMLテンプレートをreport_field_set.sh経由で完成させ、gate_report_formatを実行してPASS/FAILを数値で確認する
     AC3:
-      description: 同カテゴリの横展開候補（分割contextとの役割重複、TOP3テンプレート不一致、更新トリガー欠落）を確認し、防御層の必要有無を報告または最小修正する
-    AC4:
-      description: CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 bash scripts/gates/gate_context_freshness.shを再実行し、dm-signal.md ALERTが解消した、または残る理由が二値で説明されている
+      binary_checks:
+      - 'lesson_candidateに次回追加すべきチェックをorigin付きで記入したか: yes/no'
+      - 'verdictがgateまたはbinary_checksと矛盾していないことを確認したか: yes/no'
+      description: 同じFAILを次回防ぐlesson_candidateをorigin付きで記録し、verdictとbinary_checksの整合を確認する
+  command: training_proposal.fail_reason を再現し、report-write の手順で gate_report_format をPASSへ戻す。report_field_set.sh/verdict自動導出/binary_checksのどこで同種FAILを防ぐかを報告する。
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -23,27 +32,26 @@ task:
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  not_in_scope: DM-Signal本体機能修正、対象外contextの大規模棚卸し、無関係dirty差分のstage/commit
   parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501
+  parent_cmd: cmd_training_L1_report-write_20260706124108
   project: infra
-  purpose: 'GA-179 context_freshness ALERT: dm-signal.mdの鮮度乖離を一次情報で調査し、必要なcontext更新またはgate防御層を実装する'
+  purpose: 'skill=report-write のgate FAIL(#1: verdict非二値)に対するL1修行。BLOCKパターンを実戦前に学習し一発PASS率を向上させる'
+  scout_exempt: true
   status: done
   stop_for: []
-  target_path: context/dm-signal.md
-  task_id: cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501_normal
-  task_type: hotfix
-  unresolved_decisions: none
+  target_path: skills/report-write/SKILL.md
+  task_id: cmd_training_L1_report-write_20260706124108_normal
+  task_type: skill_training
   related_lessons:
-  - id: 'L888'
-    summary: 'GA-155では通常gateはfrontend更新後OKになったが、cache無効+timeout10ではdm-signal.mdの別ALERTが残った。ass'
-    detail: 'GA-155では通常gateはfrontend更新後OKになったが、cache無効+timeout10ではdm-signal.mdの別ALERTが残った。ass'
-  - id: 'L510'
-    summary: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
-    detail: 'gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check '
-  - id: 'L314'
-    summary: 'cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf'
-    detail: 'cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf'
+  - id: 'L573'
+    summary: 'clear_prep_check.shのCheck 7でgate_artifact_map.shがexit 1(BLOCK判定)を返す。set -euo pip'
+    detail: 'clear_prep_check.shのCheck 7でgate_artifact_map.shがexit 1(BLOCK判定)を返す。set -euo pip'
+  - id: 'L962'
+    summary: 'gate_report_formatのverdict missing/非二値FAILでは、verdictを手動で埋めるのではなく、binary_checks全r'
+    detail: 'gate_report_formatのverdict missing/非二値FAILでは、verdictを手動で埋めるのではなく、binary_checks全r'
+  - id: 'L687'
+    summary: 'script内部変更がSKILL.md記述へ影響しない場合、SKILL.md mtimeだけで追従要否を判定すると偽陽性が再発する。確認済みの事実は<!-- s'
+    detail: 'script内部変更がSKILL.md記述へ影響しない場合、SKILL.md mtimeだけで追従要否を判定すると偽陽性が再発する。確認済みの事実は<!-- s'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -59,7 +67,7 @@ task:
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/auto_draft_lesson.sh scripts/sync_lessons.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml docs/research/gunshi_idle_insights_consumption_bottleneck_20260515.md — 軍師idle: インサイト消費ボトルネック分析(2026-05-15) docs/research/gunshi_idle_knowledge_burial_audit_20260505.md — 軍師idle: 知識埋没監査(2026-05-05) docs/research/gunshi_idle_lesson_dedup_20260413.md — 軍師idle: 教訓重複排除分析(2026-04-13) docs/research/gunshi_idle_lesson_effectiveness_20260413.md — 軍師idle: 教訓有効性測定(2026-04-13) docs/research/gunshi_idle_lesson_impact_20260412.md — 軍師idle: 教訓インパクト分析(2026-04-12) docs/research/gunshi_idle_lesson_injection_dual_track_20260428.md — 軍師idle: 教訓注入デュアルトラック設計(2026-04-28) docs/research/gunshi_idle_lesson_injection_quality_20260605.md — 軍師idle: 教訓注入品質監査(2026-06-05) docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md — 軍師idle: 教訓注入汎用バイパス問題(2026-06-02) docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md — 軍師idle: 教訓参照率分析(2026-04-30) docs/research/gunshi_idle_lesson_tag_mismatch_20260507.md — 軍師idle: 教訓タグ不一致分析(2026-05-07) docs/research/gunshi_idle_lesson_useful_rate_20260422.md — 軍師idle: 教訓有用率計測(2026-04-22) docs/research/gunshi_idle_lesson_useful_rate_20260503.md — 軍師idle: 教訓有用率計測v2(2026-05-03) docs/research/gunshi_idle_lesson_useful_rate_20260608.md — 軍師idle: 教訓有用率計測v3(2026-06-08) docs/research/gunshi_idle_lesson_waste_analysis_20260516.md — 軍師idle: 教訓無駄分析(2026-05-16) docs/research/gunshi_idle_lesson_useful_rate_improvement_20260620.md — 軍師idle: 教訓有用率改善分析(2026-06-20) docs/research/gunshi_idle_session_lessons_20260617.md — 軍師idle: セッション教訓分析(2026-06-17) docs/research/gunshi_idle_session_lessons_20260618.md — 軍師idle: セッション教訓分析(2026-06-18) docs/research/gunshi_idle_self_run_20260624.md — 軍師idle: idle自走Step1-8完了分析(2026-06-24) docs/research/gunshi_idle_useful_rate_bootstrap_analysis_20260618.md — 軍師idle: 有用率ブートストラップ分析(2026-06-18) docs/research/lessons_karo_v3_archive.md — 家老教訓v3アーカイブ(統合前全文保存)"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -79,23 +87,21 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L888: GA-155では通常gateはfrontend更新後OKになったが、cache無効+timeout10ではdm-signal.mdの別ALERTが残った。ass
-      - L510: gate_fire_log FAIL 514件が第三層の閉鎖証拠。LG027(計測対象のズレ)の再発。gate_gunshi_startup.sh Check 
-      - L314: cmd_complete_gate.sh L3832のunknown_block_reasonはBLOCK_REASONSとMISSING_GATES両方空のf
+      - L573: clear_prep_check.shのCheck 7でgate_artifact_map.shがexit 1(BLOCK判定)を返す。set -euo pip
+      - L962: gate_report_formatのverdict missing/非二値FAILでは、verdictを手動で埋めるのではなく、binary_checks全r
+      - L687: script内部変更がSKILL.md記述へ影響しない場合、SKILL.md mtimeだけで追従要否を判定すると偽陽性が再発する。確認済みの事実は<!-- s
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
   memory_db_context:
-  - '2026-07-05T00:41:01+09:00 | 【INFOバッチ】 2026-07-05 00:36:59|cmd_karo_hotfix_ga178_dm_signal_ops_context_freshness_2026070500'
-  - '2026-07-04T20:58:27 | PD-048/PD-049 resolved: context_freshness_check.sh now uses config/projects.yaml active path as sour'
-  - '2026-07-05T01:03:51+09:00 | 【将軍】context鮮度ALERT: dm-signal.md(source更新)'
-  - '2026-07-05T00:30:03+09:00 | 【将軍】context鮮度ALERT: dm-signal-ops.md(source更新)'
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501_normal
+  - '2026-07-06T08:07:27+09:00 | 目標を達成するまで高速化を続けずにfailにするのはなぜだ？高速化トライは何回やったんだ？'
+  - '2026-07-06T02:44:37+09:00 | cmd_3694 GATE BLOCK。reason: `binary_checks_fail|purpose_validation_fit_false`。 自分の証拠と突合: - 自分のgate_p'
+  ac_version: bad60c63
+  _ac_task_id: cmd_training_L1_report-write_20260706124108_normal
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501.yaml
+  report_filename: hayate_report_cmd_training_L1_report-write_20260706124108.yaml
+  report_path: queue/reports/hayate_report_cmd_training_L1_report-write_20260706124108.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -118,4 +124,24 @@ task:
     - reason: 'binary_checks_fail'
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-05T01:08:36"
+  deployed_at: "2026-07-06T12:42:43"
+training_proposal:
+  block_patterns: '#1: verdict非二値'
+  fail_reason: verdict missing
+  gate: gate_report_format
+  generated_at: '2026-07-06T12:41:08'
+  skill: report-write
+  status: pending_karo_review
+  suggested_parent_cmd: cmd_training_L1_report-write_20260706124108
+  suggested_purpose: 'skill=report-write のgate FAIL(#1: verdict非二値)に対する修行。BLOCKパターンを実戦前に学習し一発PASS率を向上させる'
+  training_level: L1
+  unchanged_streak: 2
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[2].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[2].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[2].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
