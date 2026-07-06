@@ -953,8 +953,9 @@ _sg_pre31_check() {
         return
     fi
     # 3以上の整数を抽出（重複排除・ソート。1,2は偽陽性が多すぎるため除外）
+    # 先頭0の数字列を除外(bashが8進数として解釈しエラーになるため。commitハッシュ断片等)
     local _nums
-    _nums=$(echo "$_result_block" | grep -oE '[0-9]+' | awk '$1 >= 3' | sort -un || true)
+    _nums=$(echo "$_result_block" | grep -oE '[0-9]+' | grep -v '^0[0-9]' | awk '$1 >= 3' | sort -un || true)
     local _num_count
     _num_count=$(echo "$_nums" | grep -c '[0-9]' || true)
     if [ "${_num_count:-0}" -lt 3 ]; then
