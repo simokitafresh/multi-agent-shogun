@@ -90,6 +90,8 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 
 ## §37 ETL
 
+- L802: precompute paramsはFE PAGE_APISから機械抽出して実要求との差分を照合する（cmd_3667）
+- L803: FE要求params整合テストはpage.tsxではなく別module定数をSSOTにする（cmd_3668）
 - cmd_3668/3669: FE実要求paramsとprecompute raw paramsの同期防御。dashboard performance yearsは `frontend/app/dashboard/page.tsx` の共有定数経由で呼び、`backend/tests/test_precompute_raw.py` がPAGE_APIS内の直書き `api.getPerformance(portfolioId, 3/0)` 不在を検査する。FE params lessonは `tasks/lessons.md` L803。関連commit: DM-Signal `49e9d8f6`, `3730537c`。
 - cmd_3685: `sync-prices` はREFETCH_DAYS窓ではなく全期間を要求する。対象は `backend/app/jobs/data_fetcher.py` / `backend/app/jobs/sync_layers.py` / `backend/app/api/etl_trigger.py`、回帰テストは `backend/tests/test_data_fetcher_full_period.py`。関連commit: DM-Signal `75c4444d`。
 - L793: Render cron envVarsはAPI現物で検証せよ（cmd_3634）
@@ -141,10 +143,15 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - cmd_3684: `render.yaml` にシグナル変更アラート用envを追加。Render envはAPI現物で確認する。関連commit: DM-Signal `6b460ecf`。
 - cmd_3684直前: debug endpoint lint正規化は機能変更ではなく差分整理。関連commit: DM-Signal `67da37c4`。
 - cmd_3686直前: confirmed holding signal rewrite検知は `recalculate_fast.py` / `recalculate_fof.py` / debug endpointにも接続されている。関連commit: DM-Signal `ca170887`。
+- L809: 無音書換え警報のpending/確定境界は日付ではなく出自(marker)で判定する（cmd_3679）
 
 ## §39 月初signal input snapshot
 
 - cmd_3687相当: 月初signal input snapshotを追加。DB migration/model、`recalculate_fast.py`、Render設定、`backend/tests/test_month_start_input_snapshots.py` が対象。運用確認時はsnapshotテーブルの作成と月初入力保存の両方を見る。関連commit: DM-Signal `88c29a92`。
+- L805: 月初シグナル前に前月最終営業日価格の上流可用性をゲートする（cmd_3677）
+- L806: 価格調査でupdated_atを初回到着時刻として扱わず、fetch jobログ等の一次情報で確認する（cmd_3677_recon2）
+- L807: 価格値履歴なしでは月初シグナル分岐の旧入力値を復元できない（cmd_3680）
+- L808: reference_assetモード判定の反証はコード差だけでなくprices/economic_indicators値履歴不在を先に確認する（cmd_3680_recon2）
 
 ### パリティ全基準チェックリスト（殿定義集約 2026-04-11）
 
@@ -257,6 +264,7 @@ PD-028裁定: GS制約同期は仕組み化しない。BBカタログにPydantic
 - L585: AC output_pathはoutputs/grid_searchとoutputs/analysisを混同するな（cmd_1796）
 - L142: CSV記述は入力ソースと成果物を分離しないと知識汚染が再発（cmd_492）
 - L767: 成果物パスに忍法名を含めて混線を防ぐ（cmd_3514）
+- L815: GS全量速度計測では月次系列成果物とチャンピオン選出成果物を分離する（cmd_goal_gs_speed_e2_l3_kasoku_diff_202607060819）
 
 ## §14 ドキュメントインデックス
 
@@ -302,6 +310,8 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 <!-- lesson_sync: 2026-03-03 lesson-sortでL129-L146を反映 -->
 
 - L791: 追加指示の取消は未commit差分からscope別に除去する（cmd_3586）
+- L812: DM-Signalのgit commitがlefthook pre-commitでBash既定2分timeoutを超える場合、9pスタルと決めずtimeoutを上げて再試行する（cmd_3686）
+- L810: 新規importのトップレベル追加はmixed-commit BLOCKやruff空コミット化を招くため、repo-checksの分割境界を先に確認する（cmd_3684）
 
 <!-- lesson-sort 2026-04-27: 40件振り分け(30件移動+5件削除+2件重複除去+3件既存確認)
   §6-7: L634,L636,L357,L261 (L645既存,L637≈L638重複削除)
@@ -442,6 +452,7 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 - **🔴 パターン数はuniverse体数で組合せ爆発**: 12体→119,493パターン / 20体→**944,775パターン(7.9倍)**。CSVサイズ・メモリ・実行時間が全てP比例
 - L593: GSパターン数のC(n,k)スケーリング — universe体数変更で組合せ爆発（cmd_1826）
 - L594: PythonのsetはPYTHONHASHSEED依存。GS sequential検証ではsorted()に置換せよ（cmd_1835）
+- L813: run_077少数実行ACではCLI pattern-limit統一を先に検査する（cmd_3694）
 - **メタ改善設計**: → `docs/research/gunshi_research_pipeline_meta_20260410.md`（GS共通基盤+並列ランナー）
 
 ### WF（ウォークフォワード）
@@ -754,13 +765,14 @@ import metrics_research_engine as MRE
 ### PI候補
 
 - **PI-026(候補)**: GS入力ユニバースはsource_type:"db"(本番DB直読)をデフォルトとする。source_type:"csv"は腐りうる中間ファイルでありサイレント汚染の原因(2026-04-27実証)
+- L814: GS universe source_type=db→local_sqlite変更だけではDB接続は完全除去されない。cumulative_return/bootstrap取得のDB接続が残存する設計（cmd_goal_gs_phasec_l3_local_sqlite_202607060708）
 
 設計書: → https://gist.github.com/simokitafresh/14b6cf497b3abbefb85a2f3d102d778d
 - FE Admin UI: ALM config編集機能が先(殿指示)。設計確定済み(ALMトグルでLookback↔ALM設定切替)
 - L755: GS実行環境標準化: Linux venv必須+PowerShell禁止（cmd_3508）
 - L763: 5本一括速度ACは最終反復値だけでなく中央値/反復条件を固定する（cmd_3514）
 - L764: 速度改善ACは最終HEAD反復で判定する（cmd_3514）
-- L814: GS universe source_type=db→local_sqlite変更だけではDB接続は完全除去されない（cmd_goal_gs_phasec_l3_local_sqlite_202607060708）
+（L814: /lesson-sort 2026-07-06で§33 GS正規化セクションへ振り分け済み）
 - PD-055裁定(2026-07-06): パリティ確認のための本番DB接続は許容。Phase Cは17.6s→12.6s(28.4%削減)の暫定成果で切り、完全ゼロ化は後続対処。止まらずPhase D全量ベンチマークへ進む。
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)

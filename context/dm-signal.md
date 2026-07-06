@@ -109,6 +109,8 @@ note.comメンバーシップの料金プランとDB viewer_tiersの対応。詳
 
 道具磨き順序: いきなり全計測せず、1PF×1パターンで計算パスを最速化し、5分以内を確認してからパターン数を段階拡大する。全パターンでも5分以内を達成してからGS本番実行。
 
+E7速度確認(2026-07-06): L0四神GS full 191,796 patternsは `timeout 300` で246.09s完走し、5分目標は実測達成。ただし `--skip-parity` の速度確認であり、本番PF登録/fullrecalculate/PostgreSQL-Pipeline-Pydantic境界パリティは未実施。E7を本番適用完了として扱うな。
+
 入力方式統一(cmd_3693): 秘奥義L3 `okugi_l3_168.yaml` は旧CSV84体から奥義21体DB componentsへ変更済み。四神GS `shin_shijin_l1_gs.py` は価格読込入口を `gs_data_loader` 経由へ統一し、少数検証用 `--pattern-limit` を追加。source_type棚卸しは db=4 / local_sqlite=2 / csv=14 / total=20。
 
 根拠: `/mnt/c/Python_app/DM-signal/docs/design/gs-recalibration-plan.md`（commit `4828c134`, `78ed9bec`, `97e06904`）。
@@ -276,20 +278,6 @@ GA-179原因: `dm-signal.md`のlast_updatedは2026-07-04で、source監視対象
 - （L766-L783は振り分け済 → ops§9(L766/L768:速度計測方法論), ops§12(L767:成果物パス命名), core§8(L769:α6キー名SSOT), infra教訓索引(L772:tracked限定集計盲点), ops§38(L773/L777/L780:CI import分割), core§5(L775/L781:分析関数性能), core§21(L782:FoFネストN+1), ops§6-7(L783:fullrecalculate確認手段[PI])）
 - （L786-L801は振り分け済 2026-07-02 → frontend§12(L786:ComparisonChart Y軸/L796:localStorage storage event/L798:PAGE_APIS prefetch空/L801:Next共通chunk分割不能), ops§38(L789:mixed_format_commit回避), ops§49(L790:MTD cache), ops教訓索引(L791:scope別除去), ops§37(L793:cron envVars API検証/L794:cron UTC越境), ops§18(L799:計測クエリ入口BLOCK/L800:production Lighthouse証明限界), ops§19(L797:CDP cookie注入≠admin成立), infra教訓索引(L795:外部repo commit分類)。不変量候補なし）
 - PD-054裁定(2026-07-02): 7023=Next App Router runtime不可避。App Router runtime削減設計には進まず、次方向は初期レンダー計算量削減(テーブル仮想化・チャート遅延・hydration削減)=fd9d/app chunks側。cmd_3660本番metrics計測はPerf 46→95/TBT 1724→55ms/CLS 0.743→0を確認。→ `/mnt/c/Python_app/DM-signal/docs/research/lighthouse_rounds/round_20260702_cmd3660_production_metrics_cls_close/manifest.json`
-- L802: precompute paramsはFE PAGE_APISから機械抽出して照合する（cmd_3667）
-- L803: FE要求params整合テストはpage.tsxではなく別module定数をSSOTにする（cmd_3668）
-- L804: FoF構成定義と当月選択結果を分けて証拠化する（cmd_3676_recon2）
-- L805: 月初シグナル前に前月最終営業日価格の上流可用性をゲートせよ（cmd_3677）
-- L806: updated_atを初回到着時刻として扱うな（cmd_3677_recon2）
-- L807: 価格値履歴なしでは月初シグナル分岐の旧入力値を復元できない（cmd_3680）
-- L808: reference_assetモード判定の反証にはコード差だけでなくprices/economic_indicatorsの値履歴不在を先に確認せよ（cmd_3680_recon2）
-- L809: 無音書換え警報のpending/確定境界は日付ではなく出自(marker)で判定する（cmd_3679）
-- L810: DM-Signal repo-checks: 新規importをトップレベルimportで追加すると同一関数を使う機能追加とmixed-commitでBLOCKされ、import-only先行commitもruff --fixに剥がされ空コミット化する（cmd_3684）
-- L812: DM-Signalリポジトリのgit commitはBash tool既定2分timeoutを超えることがある(lefthook pre-commit)。9pスタルではなくtimeout値を上げて再試行せよ（cmd_3686）
-- L813: run_077少数実行ACではCLI pattern-limit統一を先に検査する（cmd_3694）
-- L815: GS全量速度計測では月次系列成果物とチャンピオン選出成果物を分離する（cmd_goal_gs_speed_e2_l3_kasoku_diff_202607060819）
-- L816: GS monthly長表writeはmelt前提を疑う（cmd_goal_gs_speed_e5_l0_compute_202607060958）
-- L817: OOM対応で下げたMP_WORKERS等の並列度制約は、後続のメモリ最適化cmd完了後に据え置かれがち。git blameで『いつ・なぜ』を確認し前提の陳腐化を疑え（cmd_goal_gs_speed_e3_l3_kasoku_ratio_mp_202607060958）
 
 ## 因果リンク
 

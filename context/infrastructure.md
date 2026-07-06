@@ -95,6 +95,12 @@ gstack Tier1-2取込(875/876): 忍者プロンプト強化+家老Two-pass Review
 CDP production checkはdeploy証跡が必要な場合だけ実行する。readonly ref回帰テストはself-contained化済み。context鮮度gateは10秒cacheを持つため、調査時は `CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1` で一次判定を取る。
 → `scripts/cmd_complete_gate.sh` / `scripts/gates/gate_gunshi_report_precheck.sh` / `tests/unit/test_cmd_complete_gate.bats` / `tests/unit/test_sg_pre25_readonly_ref.bats`
 → SG-PRE30(LG046 lib-only関数参照グローバル機械列挙のgate化)実装記録: [[gunshi_idle_lg046_gate_20260704]]（教訓自動化率97%→100%達成）
+- L957: batsテスト内でtrap EXIT/RETURNによる一時ファイルcleanupは機能しない(bats-core 1.13.0実測)（cmd_karo_hotfix_unit_tmp_cleanup_202607041355）
+- L959: git ls-files成功0件はfilesystem fallbackへ戻す（cmd_karo_ci_fix_sync_lessons_target_files_ci_red_202607041429）
+- L960: repro/検証コマンドをSEMANTIC_STRESS_ABSORB_PENDING=0なしで本番リポジトリに実行すると共有知識ファイルを汚染する（cmd_karo_hotfix_cycle_health_insight_churn_202607041407）
+- L964: read-only dirty triageでは自己task/report更新をdirty総量から分離して報告する（cmd_karo_hotfix_dirty_diff_triage_2026070505）
+- L965: tool権限制限下のstop hook通過不能は成果物汚染に波及する（cmd_2762）
+- L967: CoDD extractペア成果物は同一失敗抽出から生成されるが相互リンクを自動生成しない（cmd_training_L4_idle_202607060047_saizo）
 
 ## 軍師品質管理ユニット（cmd_1144〜cmd_1181）
 
@@ -272,6 +278,15 @@ cmd_1173偵察で特定した高優先gate未実装項目の構造的実装。
 
 - L299: git_uncommitted_gateはプロジェクトリポジトリを解決すべし。multi-agent-shogunとDM-signalで対象が異なる（cmd_1412）
 - L300: binary_checks GATE検証はACグループ化+yes/true値をサポートすべし（cmd_1412）
+- L958: cmd_complete_gate.sh(set -e)でbare呼出しされるGATE CLEAR後処理関数は末尾コマンドの失敗が関数外へ伝播しないことを保証せよ（cmd_karo_hotfix_task_idle_transition_verify_202607041407）
+- L962: verdict missingはverdict欄ではなくbinary_checks未記入を疑う（cmd_training_L1_report-write_20260704141831）
+- L963: context freshnessは発火ログとsource差分を分けて報告する（cmd_karo_hotfix_ga178_dm_signal_ops_context_freshness_2026070500）
+- L966: WAログ品質ゲートをCLEAR cmd集合で再フィルタすると直近WAを隠す（cmd_karo_hotfix_ninja_wa_rate_zero_202607051012）
+- L968: context freshness taskは外部commit path headingsを注入せよ（cmd_karo_hotfix_ga180_context_freshness_202607060126）
+- L969: lesson_health未振り分けは閾値前から将軍/lesson-sort入力を自動生成する（cmd_karo_hotfix_ga182_lesson_health_202607060248）
+- L970: dm-signal分割context5ファイルは独立last_updated+閾値3跨ぎで時間差連鎖ALERTする(バグではない)（cmd_karo_hotfix_ga181_context_freshness_202607060242）
+- L971: lesson_health同型ALERTの重複recon配備はGA-166(L934)の未実装で根治しない（cmd_karo_hotfix_lesson_health_ga183_202607060939）
+- L972: GA再発連鎖はLevel5実装で初めて閉じた（cmd_karo_hotfix_ga184_lesson_health_early_route_202607061018）
 → `scripts/cmd_complete_gate.sh` / `scripts/gates/gate_dc_duplicate.sh`
 
 ## 知識サイクル現状（cmd_531/533/541/1111/1113/1117 反映）
@@ -439,6 +454,8 @@ L112対応履歴: `task_id || subtask_id` フォールバック適用済み。�
 - L205: Codex paneの@agent_state=idleをbusy判定のtruth sourceにしてはならぬ（cmd_777）
 - L248: assigned→idle化は/clear後にtask YAMLを読まなかった可能性大。STALL検知(10分超)で自動捕捉+家老に再配備通知（cmd_1105）
 - L259: STALL偽陽性の38%はStale YAML Ghost(task_id空)が原因（cmd_1129）
+- L956: ninja_monitorライブラリ関数はdaemon初期化変数に依存させない（cmd_karo_hotfix_dashboard_snapshot_stale_status_202607041407）
+- L961: lib-only関数はdaemon初期化グローバルを直接参照しない（cmd_karo_hotfix_dashboard_snapshot_karo_pane_init_202607041426）
 → `docs/research/infra-details.md` §3
 
 ## inbox_watcher.sh
@@ -677,7 +694,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L971 -->
+<!-- last_synced_lesson: L972 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
@@ -1353,22 +1370,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L953: 修行targetは最新補足だけでなく全忍者taskマトリクスで衝突確認する（cmd_training_L4_idle_202607041308_kagemaru）
 - L954: AC5の2スクリプトは逆方向指標: causal_backlink_counts=被参照数(incoming)、markdown_link_counts=発信リンク数(outgoing)（cmd_training_L4_idle_202607041308_saizo）
 - L955: 同一バッチ配備でkotaroのtask.related_lessonsだけ注入漏れが発生した（cmd_training_L4_idle_202607041308_kotaro）
-- L956: ninja_monitorのライブラリ関数はdaemon初期化変数に依存させない（cmd_karo_hotfix_dashboard_snapshot_stale_status_202607041407）
-- L957: batsテスト内でtrap EXIT/RETURNによる一時ファイルcleanupは機能しない(bats-core 1.13.0実測)（cmd_karo_hotfix_unit_tmp_cleanup_202607041355）
-- L958: cmd_complete_gate.sh(set -e)でbare呼出しされるGATE CLEAR後処理関数は、末尾コマンドの失敗が関数外へ伝播しないことを個別に保証せよ（cmd_karo_hotfix_task_idle_transition_verify_202607041407）
-- L959: git ls-files成功0件はfilesystem fallbackへ戻す（cmd_karo_ci_fix_sync_lessons_target_files_ci_red_202607041429）
-- L960: repro/検証コマンドをSEMANTIC_STRESS_ABSORB_PENDING=0なしで本番リポジトリのパスに対して実行すると共有知識ファイルを汚染する（cmd_karo_hotfix_cycle_health_insight_churn_202607041407）
-- L961: lib-only関数はdaemon初期化グローバルを直接参照しない（cmd_karo_hotfix_dashboard_snapshot_karo_pane_init_202607041426）
-- L962: verdict missingはverdict欄ではなくbinary_checks未記入を疑う（cmd_training_L1_report-write_20260704141831）
-- L963: context freshnessは発火ログとsource差分を分けて報告する（cmd_karo_hotfix_ga178_dm_signal_ops_context_freshness_2026070500）
-- L964: read-only dirty triageでは自己task/report更新をdirty総量から分離して報告する（cmd_karo_hotfix_dirty_diff_triage_2026070505）
-- L965: tool権限制限下のstop hook通過不能は成果物汚染に波及する（cmd_2762）
-- L966: WAログ品質ゲートをCLEAR cmd集合で再フィルタすると直近WAを隠す（cmd_karo_hotfix_ninja_wa_rate_zero_202607051012）
-- L967: CoDD extractペア成果物(system-context.md/architecture-overview.md)は同一失敗抽出から生成されるが相互リンクを自動生成しない（cmd_training_L4_idle_202607060047_saizo）
-- L968: context freshness task should inject external commit path headings（cmd_karo_hotfix_ga180_context_freshness_202607060126）
-- L969: lesson_health未振り分けは閾値前から将軍/lesson-sort入力を自動生成する（cmd_karo_hotfix_ga182_lesson_health_202607060248）
-- L970: dm-signal分割context5ファイルは独立last_updated+閾値3跨ぎで時間差連鎖ALERTする(バグではない)（cmd_karo_hotfix_ga181_context_freshness_202607060242）
-- L971: lesson_health同型ALERTの重複recon配備はGA-166(L934)の未実装で根治しない（cmd_karo_hotfix_lesson_health_ga183_202607060939）
+（L956-L972: /lesson-sort 2026-07-06で各セクションへ振り分け済み）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

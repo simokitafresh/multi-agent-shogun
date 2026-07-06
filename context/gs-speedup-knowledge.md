@@ -83,6 +83,8 @@
 - L374: GS PPEはsubset_id単位chunkingを維持せよ。pattern単位分割だとcache localityを捨てる（cmd_1031）
 - L383: PPE result pickleがoverhead最大要因(50Kで877ms=51%)。metrics-only returnでndarray転送不要に（cmd_1034。L388統合）
 - L396: PPE result pickleの92.1%はndarray(168 float64)。shared_memoryで50Kスケール877ms→96ms削減見込。パリティ完全一致確認済み（cmd_1037）
+- L817: OOM対応で下げたMP_WORKERS等の並列度制約は後続メモリ最適化後に据え置かれがち。git blameで根拠の陳腐化を疑う（cmd_goal_gs_speed_e3_l3_kasoku_ratio_mp_202607060958）
+- L817追補: kasoku_ratioはmonthly_blob chunk 5000→20000 + MP_WORKERS 6→8でfull 298.09s→228.00sへ改善。workers増加はRSS実測(maxrss約4.2GB)とtimeout 300をセットにする（2026-07-06 hole3）
 
 ### (7) vectorized batch simulation（cmd_1034-1037）
 - L385: boolean mask方式でsim phase 3.36x高速化。ただしctx build支配(85ms vs sim30ms)でcombined 1.23x。mask構築65%がforward-fill依存でpure numpy不可→Cython/Numba候補（cmd_1034）
@@ -96,6 +98,7 @@
 - 値=月次リターン(float)、NaNなし
 - 逐次版・高速化版それぞれで出力し、md5比較
 - L416: numpy.where内除算のRuntimeWarning回避: np.maximum(b,1)でsafe denominator使用（cmd_1080）
+- L816: GS monthly長表writeはmelt前提を疑い、通常write経路を支配する場合は行列から直接長表化する（cmd_goal_gs_speed_e5_l0_compute_202607060958）
 - L756: robustness_common高速化はwfを別経路として分離計測する（cmd_3513）
 - L758: 薄いtrial wrapperでも同一arrに対するモード別再計算をwrapper内キャッシュで削れる（cmd_3513）
 - L759: WF trial高速化は選抜結果と月次リターン精度を分離して検証する（cmd_3513）
