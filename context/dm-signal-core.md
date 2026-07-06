@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-03 cmd_3677_recon2 -->
+<!-- last_updated: 2026-07-06 cmd_3699 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -584,6 +584,7 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - L782: FoFネストN+1はportfolio_cache/signal_cacheを呼出し元から渡し構成PFを事前一括取得（cmd_3542）
 - 2026-05-05: `_collect_signal_change_logs`はbatch IN clauseでstack depth limit回避済み(commit 5c8a9cf2)
 - 2026-07-06 cmd_3698_recon2: 確定台帳偵察で `signal_change_log` はappend-only実績あり、`month_start_signal_input_snapshots` はUPSERTで過去値が消えるため台帳代替不可と確認。`portfolio_config_snapshots` はholding_signal非保持、`fof_rebalance_decisions` はMAX(date)=2026-02-03で停止。書込みガード候補は `backend/app/jobs/flush/signal_flush.py::_flush_batch()` と `backend/app/jobs/generators/monthly_returns.py::_generate_monthly_returns()` の二層。初期台帳は `signal_change_log` 主ソース、新設台帳が妥当。
+- 2026-07-06 cmd_3699: 保有シグナル確定台帳の設計書を作成済み。追記専用 `signal_decision_ledger`、書込みガード3経路(`signal_flush.py::_flush_batch`, `monthly_returns.py::_generate_monthly_returns`, `api/debug.py` fof-profiling)、読み経路4層(signals API/monthly returns/FoF child/trade生成)、初期構築、correction、同日朝夕再計算、UI表示方針を定義。RenderログでSIGNAL CHANGE ALERT発火を確認し、ntfy push成否に依存しない警報設計へ反映。詳細: `/mnt/c/Python_app/DM-signal/docs/design/signal-decision-ledger-design.md`。
 
 ## §22 CI/テスト基盤 2026-05更新 (cmd_2652〜2660)
 
