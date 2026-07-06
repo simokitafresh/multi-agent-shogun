@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-06 cmd_karo_hotfix_ga181 -->
-<!-- last_synced_lesson: L813 -->
+<!-- last_synced_lesson: L817 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -287,6 +287,9 @@ GA-179原因: `dm-signal.md`のlast_updatedは2026-07-04で、source監視対象
 - L810: DM-Signal repo-checks: 新規importをトップレベルimportで追加すると同一関数を使う機能追加とmixed-commitでBLOCKされ、import-only先行commitもruff --fixに剥がされ空コミット化する（cmd_3684）
 - L812: DM-Signalリポジトリのgit commitはBash tool既定2分timeoutを超えることがある(lefthook pre-commit)。9pスタルではなくtimeout値を上げて再試行せよ（cmd_3686）
 - L813: run_077少数実行ACではCLI pattern-limit統一を先に検査する（cmd_3694）
+- L815: GS全量速度計測では月次系列成果物とチャンピオン選出成果物を分離する（cmd_goal_gs_speed_e2_l3_kasoku_diff_202607060819）
+- L816: GS monthly長表writeはmelt前提を疑う（cmd_goal_gs_speed_e5_l0_compute_202607060958）
+- L817: OOM対応で下げたMP_WORKERS等の並列度制約は、後続のメモリ最適化cmd完了後に据え置かれがち。git blameで『いつ・なぜ』を確認し前提の陳腐化を疑え（cmd_goal_gs_speed_e3_l3_kasoku_ratio_mp_202607060958）
 
 ## 因果リンク
 
