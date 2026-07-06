@@ -34,7 +34,7 @@ task:
   parent_cmd: cmd_3698_recon2
   project: dm-signal
   purpose: '殿裁定(2026-07-06 15:07「よしやろう」): adj遡及改訂等で決定済み保有シグナルが月中に無音で変わる構造問題(今朝もsync-fof経由で2,232件/17PF書換え報告)の根絶策として、決定イベント(PF×リバランス日)単位の追記専用確定台帳を新設する。本cmdはその設計に必要な全経路・仕様・初期値ソースの偵察。凍結対象=保有の決定のみ(評価数値は対象外)。初期台帳=開始時点で有効な全決定(monthly/bimonthly_odd/quarterly_jan=7/1、bimonthly_even/quarterly_mar=6/1、quarterly_feb=5/1)'
-  status: completed
+  status: idle
   stop_for: []
   target_path: /mnt/c/Python_app/DM-signal
   task_id: cmd_3698_recon2_normal
