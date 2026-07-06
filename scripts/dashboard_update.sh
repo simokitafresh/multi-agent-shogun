@@ -471,6 +471,14 @@ if not any(line.startswith(insert_target) for line in lines):
         reason = 'empty dashboard' if dashboard_is_empty else 'partial template dashboard'
         print(f'WARN: DATA_QUALITY dashboard.md missing {insert_target}; restored {reason} from template', file=sys.stderr)
         lines = template_content.split('\n')
+    elif '<!-- DASHBOARD_AUTO_END -->' in dashboard_text:
+        dashboard_text = dashboard_text.replace(
+            '<!-- DASHBOARD_AUTO_END -->',
+            f'<!-- DASHBOARD_AUTO_END -->\n<!-- KARO_SECTION_START -->\n{insert_target}',
+            1,
+        )
+        print(f'WARN: DATA_QUALITY dashboard.md missing {insert_target}; restored header after AUTO_END', file=sys.stderr)
+        lines = dashboard_text.split('\n')
     else:
         print(f"ERROR: DATA_QUALITY '{insert_target}' section not found in dashboard.md; dashboard_update cannot append latest update", file=sys.stderr)
         sys.exit(1)
