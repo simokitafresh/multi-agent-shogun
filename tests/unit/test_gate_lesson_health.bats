@@ -450,3 +450,88 @@ EOF
     [[ "$output" == *"INFO: useful率(直近2cmd): 0/2 = 0.0%"* ]]
     [[ "$output" == *"METRIC: lesson_effectiveness_threshold status=OK rate=100.0% useful_rate=0.0% window_cmds=2 referenced=2 injected=2 useful=0 total_feedback=2 scope=infra"* ]]
 }
+
+@test "gate_lesson_health stays OK just below the early-route warn threshold (4 unsorted)" {
+    cat > "$TEST_TMPDIR/context/infrastructure.md" <<'EOF'
+<!-- last_synced_lesson: L001 -->
+
+## 教訓索引（自動追記）
+- L010 sample
+- L011 sample
+- L012 sample
+- L013 sample
+EOF
+
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: infraの未振り分け教訓4件(閾値10以下, ids: L010,L011,L012,L013)"* ]]
+    [[ "$output" != *"WARN: infraの未振り分け教訓"* ]]
+    [[ "$output" != *"ALERT: infraの未振り分け教訓"* ]]
+}
+
+@test "gate_lesson_health warns with early route (project+ids+action) at 5 unsorted lessons" {
+    cat > "$TEST_TMPDIR/context/infrastructure.md" <<'EOF'
+<!-- last_synced_lesson: L001 -->
+
+## 教訓索引（自動追記）
+- L010 sample
+- L011 sample
+- L012 sample
+- L013 sample
+- L014 sample
+EOF
+
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: infraの未振り分け教訓5件(早期導線, ALERT閾値10未満, ids: L010,L011,L012,L013,L014)"* ]]
+    [[ "$output" == *"action: ALERT閾値(10件)に達する前に /lesson-sort を実行し、infraの未振り分け教訓の蓄積を防げ。"* ]]
+    [[ "$output" != *"ALERT: infraの未振り分け教訓"* ]]
+}
+
+@test "gate_lesson_health still warns (not silently OK) at the upper edge of the early-route band (10 unsorted)" {
+    cat > "$TEST_TMPDIR/context/infrastructure.md" <<'EOF'
+<!-- last_synced_lesson: L001 -->
+
+## 教訓索引（自動追記）
+- L010 sample
+- L011 sample
+- L012 sample
+- L013 sample
+- L014 sample
+- L015 sample
+- L016 sample
+- L017 sample
+- L018 sample
+- L019 sample
+EOF
+
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: infraの未振り分け教訓10件(早期導線, ALERT閾値10未満, ids: L010,L011,L012,L013,L014,L015,L016,L017,L018,L019)"* ]]
+    [[ "$output" != *"ALERT: infraの未振り分け教訓"* ]]
+}
+
+@test "gate_lesson_health still alerts unchanged (existing action text, exit 1) at 11 unsorted lessons" {
+    cat > "$TEST_TMPDIR/context/infrastructure.md" <<'EOF'
+<!-- last_synced_lesson: L001 -->
+
+## 教訓索引（自動追記）
+- L010 sample
+- L011 sample
+- L012 sample
+- L013 sample
+- L014 sample
+- L015 sample
+- L016 sample
+- L017 sample
+- L018 sample
+- L019 sample
+- L020 sample
+EOF
+
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"ALERT: infraの未振り分け教訓11件 → /lesson-sort推奨 (ids: L010,L011,L012,L013,L014,L015,L016,L017,L018,L019,L020)"* ]]
+    [[ "$output" == *"action: /lesson-sort を実行し、未振り分け教訓を適切なcontextセクションへ移動せよ。"* ]]
+    [[ "$output" != *"WARN: infraの未振り分け教訓"* ]]
+}

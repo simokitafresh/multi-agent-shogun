@@ -37,6 +37,7 @@ LESSON_EFFECT_USEFUL_MIN="${LESSON_EFFECT_USEFUL_MIN:-2}"   # health計測用の
 INJECTION_WARN_THRESHOLD=10
 ACCUMULATION_THRESHOLD=10
 UNSORTED_THRESHOLD=10
+UNSORTED_WARN_THRESHOLD=5
 CHECKPOINT_FILE="$SCRIPT_DIR/queue/lesson_deprecation_checkpoint.txt"
 
 emit_actionable() {
@@ -707,6 +708,12 @@ for _pid in "${_target_pids[@]}"; do
             "ALERT: ${_pid}の未振り分け教訓${_unsorted}件 → /lesson-sort推奨 (ids: ${_unsorted_ids:-unknown})" \
             "/lesson-sort を実行し、未振り分け教訓を適切なcontextセクションへ移動せよ。"
         EXIT_CODE=1
+    elif [ "${_unsorted:-0}" -ge "$UNSORTED_WARN_THRESHOLD" ]; then
+        # Level5早期導線(GA-166 L934 / GA-182 / GA-183 L971): ALERT閾値到達前に
+        # project+ids+推奨アクションを事前提示し、将軍/lesson-sortの早期着手を促す。
+        emit_actionable \
+            "WARN: ${_pid}の未振り分け教訓${_unsorted}件(早期導線, ALERT閾値${UNSORTED_THRESHOLD}未満, ids: ${_unsorted_ids:-unknown})" \
+            "ALERT閾値(${UNSORTED_THRESHOLD}件)に達する前に /lesson-sort を実行し、${_pid}の未振り分け教訓の蓄積を防げ。"
     elif [ "${_unsorted:-0}" -gt 0 ]; then
         echo "OK: ${_pid}の未振り分け教訓${_unsorted}件(閾値${UNSORTED_THRESHOLD}以下, ids: ${_unsorted_ids:-unknown})"
     fi
