@@ -942,6 +942,50 @@ echo ""
 echo "■ SG-PRE30: daemon lib-only再利用(LG046)"
 _sg_pre30_check "$REPORT_PATH"
 
+# ─── SG-PRE31: N×M一致パターン意味検算リマインド(LG048: きれいな数値一致は意味検算のサイン) ───
+_sg_pre31_check() {
+    local report_path="$1"
+    # resultブロックから数値を抽出（整数のみ、10以上の値）
+    local _result_block
+    _result_block=$(awk '/^result:/{found=1; next} found && /^[^ ]/{exit} found{print}' "$report_path" 2>/dev/null || true)
+    if [ -z "$_result_block" ]; then
+        echo "  SKIP: resultブロックなし"
+        return
+    fi
+    # 3以上の整数を抽出（重複排除・ソート。1,2は偽陽性が多すぎるため除外）
+    local _nums
+    _nums=$(echo "$_result_block" | grep -oE '[0-9]+' | awk '$1 >= 3' | sort -un || true)
+    local _num_count
+    _num_count=$(echo "$_nums" | grep -c '[0-9]' || true)
+    if [ "${_num_count:-0}" -lt 3 ]; then
+        echo "  PASS: 数値3個未満(N×M照合対象外)"
+        return
+    fi
+    # N×M=Cの関係を探索
+    local _found=0
+    local _a _b _c
+    while IFS= read -r _a; do
+        [ -z "$_a" ] && continue
+        while IFS= read -r _b; do
+            [ -z "$_b" ] && continue
+            [ "$_b" -le "$_a" ] && continue
+            _c=$(( _a * _b )) || true
+            if echo "$_nums" | grep -qx "$_c" 2>/dev/null; then
+                echo "  INFO(LG048): N×M一致検出: ${_a}×${_b}=${_c}"
+                echo "  ★ 意味検算せよ: この整数関係は仕様上の分類(PF種別/trigger別/月別等)と整合するか？"
+                echo "    全件一律の数値は過剰集約や分類漏れの兆候。内訳を再計算して確認せよ"
+                _found=1
+            fi
+        done <<< "$_nums"
+    done <<< "$_nums"
+    if [ "$_found" -eq 0 ]; then
+        echo "  PASS: N×M一致パターンなし"
+    fi
+}
+echo ""
+echo "■ SG-PRE31: N×M意味検算(LG048)"
+_sg_pre31_check "$REPORT_PATH"
+
 echo ""
 echo "■ GATE_PREDICTION (自動計算 — SG7 gate_predictionに転記せよ)"
 echo "  prediction: ${GATE_PREDICTION:-UNKNOWN}"

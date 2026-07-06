@@ -599,3 +599,30 @@ lessons:
   enforcement: 'SG-PRE30(gate_gunshi_report_precheck.sh)がfiles_modifiedにdaemonスクリプトまたはLIB_ONLY/source再利用言及を検出→INFOリマインド表示。軍師が手動でグローバル変数列挙を実行する'
   when: daemonスクリプトの関数をlib-only/source再利用するコード変更や報告をレビューする時
   how: 対象関数内の `$VAR` / `${VAR}` / 連想配列参照を機械列挙し、daemon初期化ブロック外でも初期化されるか、`${VAR:-}` / fallback を持つか突合する。部分列挙や目視だけでLGTMしない
+- id: LG047
+  title: yaml_field_set.shの新ブロックID追加はbegin/is_boundary/flushを三点同期せよ
+  detail: |
+    cmd_idパターン追加でbegin_targetのみ修正し、is_boundary未反映で家老RC、さらにflush_blockのblock_len=1ケース未反映でRC2となり、3commitを要した。
+    YAMLブロック認識の新IDパターンは開始判定だけでなく境界判定と1行ブロックflushにも同時に反映しないと、対象ブロック破壊や書込漏れが発生する。
+    テスト3件追加で29/29 PASSまで回帰防止済み。
+  source_cmd: cmd_3707
+  origin: '[[yaml_field_set_cmd_id_bug]] -> [[begin_target不足]] -> [[is_boundary+flush_block漏れ]]'
+  created_at: '2026-07-06'
+  automated: true
+  enforcement_level: 3
+  enforcement: yaml_field_set.shの該当変更時にbegin_target/is_boundary/flush_blockをgrepで三点照合し、block_len=1回帰テストを追加する
+  when: yaml_field_set.shで新しいブロックIDパターン、境界条件、flush条件を追加・変更する時
+  how: begin_target(3箇所)+is_boundary(3箇所)+flush_block(block_len=1ケース)を同時にgrep確認し、単一行ブロックを含む回帰テストを実行する
+- id: LG048
+  title: きれいな数値一致は意味検算のサイン — N×Mぴったりを通すな
+  detail: |
+    cmd_3700で306=102×3を数値一致だけで通したが、将軍が「102×3きっかりは全PF一律3日の疑い」を指摘し、非リバランス月event混入が判明した。
+    数値の桁・件数が合っていることは妥当性の証明ではない。特にN×Mぴったりのような整いすぎた数値は、仕様上の分類(rebalance_trigger別の決定日数など)と照らして意味を再計算する必要がある。
+  source_cmd: cmd_3700
+  origin: '[[cmd_3700_LGTM見落とし]] -> [[将軍疑義_306=102×3]] -> [[意味検算未実施]]'
+  created_at: '2026-07-06'
+  automated: true
+  enforcement_level: 3
+  enforcement: gate_gunshi_report_precheck.sh SG-PRE31がresultブロック内のN×M一致パターンを自動検出しINFOリマインド表示。5テストPASS(test_gate_gunshi_precheck_sg_pre31.bats)
+  when: report reviewのSG-PRE31自動実行時。resultブロック内の数値にN×M=C関係が検出された時
+  how: SG-PRE31がINFO表示→分類軸(rebalance_trigger、PF種別、日付、event_type等)ごとの内訳を再計算し、仕様上その分布になる理由を確認する
