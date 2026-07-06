@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-06 cmd_karo_hotfix_ga181 -->
-<!-- last_synced_lesson: L820 -->
+<!-- last_synced_lesson: L821 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -281,6 +281,7 @@ GA-179原因: `dm-signal.md`のlast_updatedは2026-07-04で、source監視対象
 - L818: 本番DB read-only確認はpython3 -cのインライン実行ではなくスクリプトファイル経由で行え（cmd_3698_recon2）
 - L819: PF単位の確定イベント実装は必ずrebalance_trigger等のPF別設定を参照せよ。全PF一律の固定日付/固定件数はハードコードの温床（cmd_3702）
 - L820: pre-commit hookのcheck_mixed_format_commit.pyは新規import追加を「並び替え」と誤検知しブロックすることがある。--no-verifyせず根本原因を修正せよ（cmd_3703）
+- L821: 本番適用cmd着手時は必ずgit log origin/main..HEADでpush状態を先に確認せよ。前段cmdのGATE CLEAR=push完了ではない（cmd_3704）
 
 ## 因果リンク
 

@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-07-02 cmd_3650 -->
+<!-- last_updated: 2026-07-06 cmd_3706 -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -129,6 +129,12 @@ Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式
 | Rolling Returns table periods | Rolling Returns summary tableは`3_months`/`6_months`/`1_year`/`2_years`/`3_years`/`5_years`/`7_years`/`10_years`順。chart側ではなくtable表示期間の拡張 | 86348160; `frontend/components/rolling-returns-summary-table.tsx`, `frontend/components/__tests__/rolling_returns_summary_open_toggle.test.tsx` |
 | Compare Summary table header | Compare Summary table headerをtable内sticky化。横スクロール中の列ラベル視認性を改善 | eafa53df; `frontend/components/compare-summary-table.tsx` |
 | Compare Chart benchmark dropdown | Compare Chartのbenchmark selectorにPFのbenchmark_tickerに依らない追加候補TQQQを常時合流。defaultはSPY優先を維持 | 099ccf20; `frontend/app/compare/page.tsx`, `frontend/app/compare/__tests__/benchmark-options.test.tsx` |
+
+## 2.11 直近FE変更索引（2026-07-06）
+
+| 対象 | 結論 | 参照 |
+|------|------|------|
+| Monthly Trade ledger badge | Monthly TradeのPosition表示は`signal_decision_ledger`優先。`decision_source`/`decided_at`/`is_correction`をAPI型へ追加し、既存Positionセル内に確定/訂正/確定前バッジ(UI表示: Confirmed/Corrected/Pending)を1個表示。Next SignalはPreview表示を持ち、日々変動が正常な未確定値として扱う | cmd_3706 / 99edb79b; `backend/app/api/monthly_trade.py`, `backend/app/services/monthly_trade_impl.py`, `frontend/components/monthly-trade-table.tsx`, `frontend/lib/types/api.ts` |
 
 ## 3. 状態管理
 
