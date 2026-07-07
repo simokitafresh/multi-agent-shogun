@@ -135,7 +135,7 @@ def normalize_scalar(value: str) -> str:
 
 def load_projects():
     active_ids: list[str] = []
-    explicit_context_map: dict[str, str] = {}
+    explicit_context_map: dict[str, list[str]] = {}
     current: dict[str, object] | None = None
     projects: list[dict[str, object]] = []
     in_context_files = False
@@ -200,13 +200,13 @@ def load_projects():
 
         context_file = str(project.get("context_file", "")).strip()
         if context_file:
-            explicit_context_map[context_file] = project_id
+            explicit_context_map.setdefault(context_file, []).append(project_id)
 
         context_files = project.get("context_files", [])
         if isinstance(context_files, list):
             for rel in context_files:
                 if rel:
-                    explicit_context_map[str(rel)] = project_id
+                    explicit_context_map.setdefault(str(rel), []).append(project_id)
 
     return active_ids, explicit_context_map
 
@@ -235,7 +235,12 @@ ARCHIVE_SCAN_MAX_LINES = 80
 
 def infer_project_id(rel_path: str) -> str | None:
     if rel_path in EXPLICIT_CONTEXT_MAP:
-        return EXPLICIT_CONTEXT_MAP[rel_path]
+        mapped_ids = EXPLICIT_CONTEXT_MAP[rel_path]
+        base = os.path.basename(rel_path)
+        for project_id in sorted(mapped_ids, key=len, reverse=True):
+            if base.startswith(f"{project_id}.") or base.startswith(f"{project_id}-"):
+                return project_id
+        return mapped_ids[0] if mapped_ids else None
 
     base = os.path.basename(rel_path)
     if base == "infrastructure.md":

@@ -453,6 +453,36 @@ EOF
     [[ "$output" != *"infrastructure.md"* ]]
 }
 
+@test "duplicate context_file mapping keeps dm-signal.md attached to dm-signal project" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$source_repo/docs/rule" "$TEST_TMPDIR/projects"
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
+    printf 'runbook\n' > "$source_repo/docs/rule/db-operations-runbook.md"
+    git -C "$source_repo" add docs/rule/db-operations-runbook.md
+    GIT_AUTHOR_DATE="2020-01-01T00:00:00+09:00" \
+    GIT_COMMITTER_DATE="2020-01-01T00:00:00+09:00" \
+        git -C "$source_repo" commit -q -m "initial dm-signal source"
+
+    cat >> "$TEST_TMPDIR/config/projects.yaml" <<'PROJ'
+  - id: dm-fusion
+    status: active
+    path: /tmp/nonexistent-dm-fusion
+    context_file: context/dm-signal.md
+PROJ
+
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_context "context/dm-signal-core.md" "$TODAY"
+    _create_source_commit "scripts/infra_change.sh" "infra: unrelated root source changed"
+    _create_shogun_to_karo "cmd_933" "dm-signal"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_933
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"context/dm-signal.md"* ]]
+}
+
 @test "project path falls back to config/projects.yaml when project yaml is absent" {
     local source_repo="$TEST_TMPDIR/source/google-classroom"
     mkdir -p "$source_repo"
