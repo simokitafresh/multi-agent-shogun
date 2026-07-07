@@ -5721,7 +5721,7 @@ codd:
 |------|---|
 | id | db_price_data_range |
 | label | DB価格データ範囲 |
-| aliases | DB価格データ範囲, DTB3, DTB3データ, DTB3の扱い, DTB3はもっと古い, DTB3制限, DTB3期間, XLUとDTB3による制限, XLU制限, XLU 2006年, QQQ 1999年, TQQQ 2010年, 2010年以前が0%, データ開始時期, 価格データ期間, 全期間データ取得, economic_indicators, 504日, 価格データ不足, QQQデータ範囲, economic_indicatorsテーブル, DTBスリー, DTB3の扱いも知らないのか？あるよ, DTB3はもっと古いものからあるのでは？, XLUとDTB3による制限は？, あとからLQDの値が変わったからモメンタム計算の結果が変わった, LQDの値が変わった, モメンタム計算の結果が変わった |
+| aliases | DB価格データ範囲, DTB3, DTB3データ, DTB3の扱い, DTB3はもっと古い, DTB3制限, DTB3期間, XLUとDTB3による制限, XLU制限, XLU 2006年, QQQ 1999年, TQQQ 2010年, 2010年以前が0%, データ開始時期, 価格データ期間, 全期間データ取得, economic_indicators, 504日, 価格データ不足, QQQデータ範囲, economic_indicatorsテーブル, DTBスリー, DTB3の扱いも知らないのか？あるよ, DTB3はもっと古いものからあるのでは？, XLUとDTB3による制限は？, あとからLQDの値が変わったからモメンタム計算の結果が変わった, LQDの値が変わった, モメンタム計算の結果が変わった, ということは生値のみでモメンタムを計算して, adjを使わなければ変更は起きない, 生値のみでモメンタムを計算, 生値のみでモメンタムを計算してadjを使わなければ変更は起きないか |
 | related_concepts | dmsignal_operations, alpha_6_metrics, production_parity |
 
 | 種別 | パス/参照 |
