@@ -31,7 +31,7 @@ task:
     total: 85
     zero_backlinks: 3
   scout_exempt: true
-  status: in_progress
+  status: done
   stop_for: []
   target_path: queue/insights.yaml
   task_id: cmd_reflux_insight_202607080431_hayate_exact
@@ -131,3 +131,4 @@ task:
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
   deployed_at: "2026-07-08T04:31:44"
+  completed_at: "2026-07-08T04:36:18+09:00"
