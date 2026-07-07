@@ -1388,3 +1388,6 @@
 - 2026-07-07 cmd_reflux_insight_202607071920_hanzo完了: 半蔵がINS-20260707-081530924-63efを一次会話とGS調査記録へ接続し、semantic alias/discussion追加でpending 12→11。commit `410d6f7d7` + provenance `c4c943b5`、GATE CLEAR。
 - 2026-07-07 cmd_reflux_insight_202607071926_tobisaru完了: 飛猿がINS-20260707-081531046-1ebeをalpha_6_metricsへalias統合し、指標自体の相関とPF間月次リターン相関の混同を検索到達化。pending 11→10、commit `2a432a4c`、GATE CLEAR。
 - 2026-07-07 cmd_reflux_insight_202607071943_kagemaru完了: 影丸がINS-20260707-081531178-279cをsemantic_dictionary_designへalias統合し、pending表示バグ発言のsemantic_search NO_MATCHをhit化。commit `e334d2f1`、GATE CLEAR。
+- 2026-07-08 cmd_reflux_insight_202607080521_hanzo完了: 半蔵がINS-b4e5をsemantic index登録済み偽陽性としてresolved化。別pending発生で在庫総数は1維持、report gate PASS、GATE CLEAR。
+- 2026-07-08 cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523完了: 影丸がDM-Signal cmd_3711 `signal_decision_ledger`全履歴バックフィルを`context/dm-signal-core.md` §21へ索引化。`gate_context_freshness.sh`総合OK、commit `9bb2ce80c`、GATE CLEAR。
+- 2026-07-08 家老D0強ニュー化: cmd_complete_gateとcmd-complete Step4の重複で`cmd_design_quality.yaml` CLEAR記録が二重化する穴を検出し、`cmd_quality_log.sh`をCLEAR idempotent化。`bats tests/unit/test_cmd_quality_log.bats` 2/2 PASS、commit `c9143edfb` push済み。
