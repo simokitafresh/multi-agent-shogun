@@ -22,6 +22,17 @@ run_streak() {
     awk -F'\t' -v threshold=3 -v min_gap=1800 -f "$AWK_PROG" "$TEST_TMPDIR/cur.txt" "$1"
 }
 
+run_streak_threshold_one() {
+    awk -F'\t' -v threshold=1 -v min_gap=1800 -f "$AWK_PROG" "$TEST_TMPDIR/cur.txt" "$1"
+}
+
+@test "threshold 1 emits current key without previous sessions" {
+    : > "$TEST_TMPDIR/hist.tsv"
+    run run_streak_threshold_one "$TEST_TMPDIR/hist.tsv"
+    [ "$status" -eq 0 ]
+    [ "$output" = "KEY_A" ]
+}
+
 @test "gap秒未満の連続runは同一セッションに統合され誤CRITICALを出さない" {
     printf '2026-07-02T21:24:05+0900\tKEY_A\n2026-07-02T21:25:24+0900\tKEY_A\n' > "$TEST_TMPDIR/hist.tsv"
     run run_streak "$TEST_TMPDIR/hist.tsv"

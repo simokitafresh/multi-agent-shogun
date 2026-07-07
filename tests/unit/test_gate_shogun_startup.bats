@@ -1960,6 +1960,28 @@ EOF
     [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
+@test "startup alert default threshold blocks on first session" {
+    cat > "$TEST_TMPDIR/queue/inbox/shogun.yaml" <<'EOF'
+messages:
+- content: msg1
+  read: false
+  id: msg_1
+EOF
+    cat > "$TEST_TMPDIR/logs/shogun_startup_alert_history.tsv" <<'EOF'
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ startup WARN/ALERT連続出現"* ]]
+    [[ "$output" == *"BLOCK: inbox未読: 1件 が1セッション連続"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
+}
+
+@test "waiting-permission labels are absent from shogun startup gate" {
+    run bash -c "rg -n 'idle時に確認推奨|低優先/後で扱い|低優先=|後で扱い' '$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh'"
+    [ "$status" -eq 1 ]
+}
+
 @test "Q6 missing for 3 consecutive sessions requests action_required bulletin" {
     export STARTUP_WARN_STREAK_THRESHOLD=3
     cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'

@@ -578,7 +578,7 @@ END {
         used[best_key] = 1
         print "  " rank ". " best_key
         print "     repeated_last20=" counts[best_key] " first_seen=" first_seen[best_key] " last_seen=" last_seen[best_key]
-        print "     action: 低優先/後で扱い禁止。未解消ならこのセッションでcmd化または既存cmdへ接続せよ"
+        print "     action: 今処理するか、external_input/evidence_gathering/dependency の wait_reason を宣言して既存cmdへ接続せよ"
     }
 }
 ' "$STARTUP_ALERT_HISTORY" > "$_TMP_DEFERRED_HOLES" 2>/dev/null || echo "  INFO: 解析失敗" > "$_TMP_DEFERRED_HOLES" &
@@ -1798,7 +1798,7 @@ if [ -f "$INSIGHTS_FILE" ]; then
     pending_count=$(grep -c "status: pending" "$INSIGHTS_FILE" 2>/dev/null) || pending_count=0
     _d_insights=$pending_count
     if [ "$pending_count" -gt 0 ]; then
-        echo "  未処理: ${pending_count}件（idle時に確認推奨）"
+        echo "  未処理: ${pending_count}件（今処理 or wait_reason宣言）"
     else
         echo "  未処理: 0件"
     fi
@@ -2171,7 +2171,7 @@ if [ "$proposal_total" -gt 0 ]; then
 fi
 
 # --- Gate 11.5: GP proposal滞留検出 (cmd_2621) ---
-# 目的: karo_sent のまま長期滞留するGPを起動時ALERT化し、「低優先=やらない」を防ぐ。
+# 目的: karo_sent のまま長期滞留するGPを起動時ALERT化し、後回しを防ぐ。
 gp_stale_days="${GP_STALE_DAYS:-14}"
 if [ -f "$REVIEW_LOG" ]; then
     _gp_cutoff_epoch=$(date -d "${gp_stale_days} days ago" +%s 2>/dev/null || echo 0)
@@ -3538,7 +3538,7 @@ if [ "${_DEFER_ENFORCE_LEVEL:-0}" = "1" ]; then
 fi
 
 	# --- 総合判定 ---
-STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-3}"
+STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-1}"
 show_startup_streak_cmd_proposals() {
     local streak_key="$1"
     [ -n "$streak_key" ] || return 0
@@ -3667,7 +3667,11 @@ current = [
     and not a.strip().startswith("先送り判断:")
     and "改善cmd接続済" not in a
 ]
-if not current or threshold <= 1:
+if not current:
+    sys.exit(0)
+if threshold <= 1:
+    for key in current:
+        print(key)
     sys.exit(0)
 
 def parse_ts(value):
@@ -3719,7 +3723,7 @@ PY
         while IFS= read -r _streak_key; do
             [ -n "$_streak_key" ] || continue
             echo "  BLOCK: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続"
-            echo "  先送り判断検出: ${STARTUP_WARN_STREAK_THRESHOLD}セッション連続で未解消。低優先/後で扱いにした穴の証拠として今ふさげ。"
+            echo "  先送り判断検出: ${STARTUP_WARN_STREAK_THRESHOLD}セッション連続で未解消。今処理するか、wait_reason(external_input/evidence_gathering/dependency)を宣言して既存cmdへ接続せよ。"
             show_startup_streak_cmd_proposals "$_streak_key" | sed 's/^/  /'
             echo "  ⚠ 根因確認(L0-L7貫通必須): 上記類似cmdの対処履歴を参照し回答せよ"
             echo "    Q: このBLOCKの根因は何か。表面的対処(WARN消し・先送り)ではないか？"

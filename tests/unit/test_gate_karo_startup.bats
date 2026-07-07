@@ -355,6 +355,7 @@ EOF
 }
 
 @test "unread lingering past dwell threshold across sessions triggers 先送りCRITICAL" {
+    export STARTUP_WARN_STREAK_THRESHOLD=3
     local hist1 hist2
     hist1=$(date -d '90 minutes ago' '+%Y-%m-%dT%H:%M:%S')
     hist2=$(date -d '60 minutes ago' '+%Y-%m-%dT%H:%M:%S')
@@ -377,6 +378,30 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"先送りCRITICAL streak対象"* ]]
     [[ "$output" == *"先送りCRITICAL: inbox未読滞留: 閾値30分超 が3セッション連続"* ]]
+}
+
+@test "unread lingering past dwell threshold triggers 先送りCRITICAL on first session by default" {
+    export STARTUP_WARN_STREAK_THRESHOLD=1
+    local old_ts
+    old_ts=$(date -d '45 minutes ago' '+%Y-%m-%dT%H:%M:%S')
+    cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<EOF
+messages:
+- id: msg_stale
+  timestamp: '${old_ts}'
+  type: review_result
+  from: gunshi
+  content: '滞留しているメッセージ'
+  read: false
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"先送りCRITICAL streak対象"* ]]
+    [[ "$output" == *"★★★ CRITICAL: inbox未読滞留: 閾値30分超 が1セッション連続"* ]]
+}
+
+@test "waiting-permission labels are absent from karo startup gate" {
+    run bash -c "rg -n 'idle時に確認推奨|低優先/後で扱い|低優先=|後で扱い' '$TEST_GATE'"
+    [ "$status" -eq 1 ]
 }
 
 @test "read actionable inbox still warns because read flag is not completion" {

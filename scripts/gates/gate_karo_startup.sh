@@ -19,7 +19,7 @@ overall="OK"
 alerts=()
 STARTUP_STDERR_LOG="$SCRIPT_DIR/logs/gate_karo_startup_stderr.log"
 STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/karo_startup_alert_history.tsv"
-STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-3}"
+STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-1}"
 # cmd_3658: 到着直後の未読が先送りCRITICAL streakに混入する誤検知の根治。
 # 最古未読メッセージがこの分数以上滞留していない限り、streak判定対象のalertを積まない。
 KARO_INBOX_UNREAD_DWELL_MIN="${KARO_INBOX_UNREAD_DWELL_MIN:-30}"
@@ -2411,6 +2411,7 @@ echo ""
 # --- ストリーク検出: 3セッション連続WARN/ALERT→BLOCK昇格 (L7横展開: gate_shogun_startup.sh準拠) ---
 if [ "${#alerts[@]}" -gt 0 ]; then
     mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
+    [ -f "$STARTUP_ALERT_HISTORY" ] || : > "$STARTUP_ALERT_HISTORY"
     # §3.2: python3→awk置換(~650ms削減)。alert文字列は空白を含むためtmp経由で1行1alertにする。
     _current_alerts_file="$(mktemp)"
     printf '%s\n' "${alerts[@]}" > "$_current_alerts_file"
@@ -2443,6 +2444,10 @@ if [ "${#alerts[@]}" -gt 0 ]; then
         if ($2 != "__OK__") run_keys[n_runs, $2] = 1
     }
     END {
+        if (threshold <= 1) {
+            for (k in current) print k
+            exit
+        }
         if (prev_run != "") n_runs++
         start = n_runs - (threshold - 1)
         if (start < 0) start = 0
@@ -2459,7 +2464,7 @@ if [ "${#alerts[@]}" -gt 0 ]; then
         while IFS= read -r _streak_key; do
             [ -n "$_streak_key" ] || continue
             echo "  ★★★ CRITICAL: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続"
-            echo "  先送り判断検出: ${STARTUP_WARN_STREAK_THRESHOLD}セッション連続で未解消。低優先/後で扱いにした穴の証拠として今ふさげ。"
+            echo "  先送り判断検出: ${STARTUP_WARN_STREAK_THRESHOLD}セッション連続で未解消。今処理するか、wait_reason(external_input/evidence_gathering/dependency)を宣言して既存cmdへ接続せよ。"
             alerts+=("先送りCRITICAL: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続")
         done <<< "$_streak_result"
         # 家老BLOCKは忍者配備全停止を招くため、BLOCK昇格せず起動は許可する
