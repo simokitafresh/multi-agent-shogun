@@ -1175,7 +1175,7 @@ resolve_cmd_to_task() {
     # R1: task YAMLの中核フィールドを一括設定（7回flock→1回batch。CoDD refactor_sequence準拠）
     local _deploy_ts
     _deploy_ts="$(date '+%Y-%m-%dT%H:%M:%S')"
-    local _batch_args=("parent_cmd=$cmd_id" "cmd_id=$cmd_id" "task_id=$task_id" "task_type=$task_type" "status=assigned" "deployed_at=$_deploy_ts" "_ac_task_id=" "_ac_worker_id=" "_deploy_notice=STALE TASK INVALID. This YAML is the latest instruction for ${cmd_id} (deployed ${_deploy_ts}). Read from the beginning.")
+    local _batch_args=("parent_cmd=$cmd_id" "cmd_id=$cmd_id" "task_id=$task_id" "task_type=$task_type" "status=assigned" "_ac_task_id=" "_ac_worker_id=" "_deploy_notice=STALE TASK INVALID. This YAML is the latest instruction for ${cmd_id} (deployed ${_deploy_ts}). Read from the beginning.")
     [ -n "$project" ] && _batch_args+=("project=$project")
     [ -n "$purpose" ] && _batch_args+=("purpose=$purpose")
     [ -n "$_target_path" ] && _batch_args+=("target_path=$_target_path")
@@ -2690,7 +2690,8 @@ def clean_text(value):
         return " ".join(clean_text(v) for v in value)
     if isinstance(value, dict):
         return " ".join(f"{k} {clean_text(v)}" for k, v in value.items())
-    return re.sub(r"\s+", " ", str(value)).strip()
+    text = str(value).replace("FILL_THIS", "FILL-THIS")
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def truncate(value, limit=220):
@@ -3962,7 +3963,7 @@ inject_model_injection_profile() {
     if [ "$intensity" = "max" ]; then
         inject_block="${inject_block}"$'\n'"${indent}  extra_scaffold:"
         inject_block="${inject_block}"$'\n'"${indent}  - \"ACごとに実テスト証跡をresult.detailsへ記録\""
-        inject_block="${inject_block}"$'\n'"${indent}  - \"報告前にrg -n FILL_THISとgate_report_formatを実行\""
+        inject_block="${inject_block}"$'\n'"${indent}  - \"報告前にplaceholder残存確認とgate_report_formatを実行\""
     fi
 
     tmp_file=$(mktemp)
@@ -8845,13 +8846,10 @@ except Exception:
             else
                 direct_task_id_suffix="normal"
             fi
-            local _direct_deploy_ts
-            _direct_deploy_ts="$(date '+%Y-%m-%dT%H:%M:%S')"
             yaml_field_set_batch "$task_yaml" "task" \
                 "parent_cmd=$CMD_ID" \
                 "status=assigned" \
-                "task_id=${CMD_ID}_${direct_task_id_suffix}" \
-                "deployed_at=$_direct_deploy_ts" 2>/dev/null || true
+                "task_id=${CMD_ID}_${direct_task_id_suffix}" 2>/dev/null || true
             inject_training_target_path_from_alias_quality "$task_yaml" "$CMD_ID" || true
             inject_direct_training_template "$task_yaml" "$CMD_ID" || true
             deploy_task_resolved_mutated=1
@@ -8870,8 +8868,6 @@ except Exception:
                 || { log "FATAL: yaml_field_set failed for task_id (cmd_forced)"; return 1; }
             yaml_field_set "$task_yaml" "task" "status" "assigned" \
                 || { log "FATAL: yaml_field_set failed for status (cmd_forced)"; return 1; }
-            yaml_field_set "$task_yaml" "task" "deployed_at" "$(date '+%Y-%m-%dT%H:%M:%S')" \
-                || { log "FATAL: yaml_field_set failed for deployed_at (cmd_forced)"; return 1; }
             yaml_field_set "$task_yaml" "task" "_ac_task_id" "" \
                 || { log "FATAL: yaml_field_set failed for _ac_task_id (cmd_forced)"; return 1; }
             yaml_field_set "$task_yaml" "task" "_ac_worker_id" "" \
