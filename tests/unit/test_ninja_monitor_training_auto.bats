@@ -550,3 +550,132 @@ echo "CLEANUP_OK"
     [ "$status" -eq 0 ]
     [[ "$output" == *"CLEANUP_OK"* ]]
 }
+
+@test "_cleanup_stale_keys coverage includes every persistent associative array or documented exclusion" {
+    run bash -c '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+python3 - "$PROJECT_ROOT/scripts/ninja_monitor.sh" <<'"'"'PY'"'"'
+import re
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+
+declared = set()
+for match in re.finditer(r"^\s*declare\s+(?:-[^\n]*?A[^\n]*?)\s+([A-Za-z_][A-Za-z0-9_]*(?:\s+[A-Za-z_][A-Za-z0-9_]*)*)", text, re.M):
+    line_no = text[:match.start()].count("\n") + 1
+    if not (650 <= line_no <= 692):
+        continue
+    declared.update(match.group(1).split())
+
+cleanup_match = re.search(
+    r"^_cleanup_stale_keys\(\) \{(?P<body>.*?)^\}",
+    text,
+    re.M | re.S,
+)
+if not cleanup_match:
+    print("MISSING_CLEANUP_FUNCTION")
+    sys.exit(1)
+cleanup_body = cleanup_match.group("body")
+pruned = set(re.findall(r"unset\s+\"([A-Za-z_][A-Za-z0-9_]*)\[", cleanup_body))
+
+# Reasoned exclusions: these arrays are bounded by configured agents, pruned in
+# domain-specific paths, or are one-cycle caches intentionally reset elsewhere.
+excluded = {
+    "LAST_NOTIFIED": "bounded agent-name keys; overwritten per cycle, not task/cmd unbounded",
+    "PREV_STATE": "bounded agent-name keys initialized from NINJA_NAMES",
+    "PANE_TARGETS": "bounded agent-name keys refreshed from tmux layout",
+    "LAST_CLEARED": "bounded agent-name keys; clear debounce state",
+    "STALE_CMD_NOTIFIED": "pruned in check_stale_cmds when cmd leaves pending set",
+    "UNDEPLOYED_CMD_NOTIFIED": "pruned in check_undeployed_cmds when cmd leaves pending set",
+    "PREV_PENDING_SET": "pruned in check_karo_pending_cmd for old pending ids",
+    "CLEAR_SKIP_COUNT": "bounded agent-name keys; clear-loop counter",
+    "RENUDGE_COUNT": "bounded agent-name keys; overwritten/reset with inbox fingerprint",
+    "RENUDGE_FINGERPRINT": "bounded agent-name keys; explicitly reset on busy",
+    "RENUDGE_LAST_SEND": "bounded agent-name keys; unread debounce state",
+    "IDLE_NOTIFY_SENT": "bounded agent-name keys; unset on busy state transition",
+    "POST_CLEAR_PENDING": "bounded agent-name keys; unset after post-clear command delivery",
+    "TRAINING_IDLE_FIRST_SEEN": "bounded agent-name keys; unset on busy/non-idle branches",
+    "REFLUX_IDLE_FIRST_SEEN": "bounded agent-name keys; unset on busy/non-idle branches",
+    "_INBOX_COUNT_CACHE": "one-cycle cache guarded by _INBOX_COUNT_CACHE_CYCLE",
+    "_INBOX_FP_CACHE": "one-cycle cache guarded by _INBOX_COUNT_CACHE_CYCLE",
+    "CLI_DEAD_RESTART_TIMES": "bounded agent-name keys with rolling timestamp list",
+    "CLI_DEAD_LOOP_LAST_NTFY": "bounded agent-name keys; alert debounce state",
+}
+
+covered = pruned | set(excluded)
+missing = sorted(declared - covered)
+stale_exclusions = sorted(set(excluded) - declared)
+if missing:
+    print("MISSING_PRUNE_COVERAGE:" + ",".join(missing))
+if stale_exclusions:
+    print("STALE_EXCLUSION:" + ",".join(stale_exclusions))
+if missing or stale_exclusions:
+    sys.exit(1)
+print(f"PRUNE_COVERAGE_OK declared={len(declared)} pruned={len(pruned)} excluded={len(excluded)}")
+PY
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PRUNE_COVERAGE_OK"* ]]
+}
+
+@test "_cleanup_stale_keys coverage fails when a persistent array is added without prune or exclusion" {
+    run bash -c '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+cp "$PROJECT_ROOT/scripts/ninja_monitor.sh" "$TMP_ROOT/ninja_monitor.sh"
+python3 - "$TMP_ROOT/ninja_monitor.sh" <<'"'"'PY'"'"'
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+needle = "declare -A TRAINING_COMPLETION_CHECKED"
+replacement = "declare -A UNREGISTERED_PRUNE_LEAK\n" + needle
+path.write_text(text.replace(needle, replacement, 1), encoding="utf-8")
+PY
+
+set +e
+python3 - "$TMP_ROOT/ninja_monitor.sh" <<'"'"'PY'"'"'
+import re
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+
+declared = set()
+for match in re.finditer(r"^\s*declare\s+(?:-[^\n]*?A[^\n]*?)\s+([A-Za-z_][A-Za-z0-9_]*(?:\s+[A-Za-z_][A-Za-z0-9_]*)*)", text, re.M):
+    line_no = text[:match.start()].count("\n") + 1
+    if not (650 <= line_no <= 693):
+        continue
+    declared.update(match.group(1).split())
+
+cleanup_body = re.search(r"^_cleanup_stale_keys\(\) \{(?P<body>.*?)^\}", text, re.M | re.S).group("body")
+pruned = set(re.findall(r"unset\s+\"([A-Za-z_][A-Za-z0-9_]*)\[", cleanup_body))
+excluded = {
+    "LAST_NOTIFIED", "PREV_STATE", "PANE_TARGETS", "LAST_CLEARED",
+    "STALE_CMD_NOTIFIED", "UNDEPLOYED_CMD_NOTIFIED", "PREV_PENDING_SET",
+    "CLEAR_SKIP_COUNT", "RENUDGE_COUNT", "RENUDGE_FINGERPRINT",
+    "RENUDGE_LAST_SEND", "IDLE_NOTIFY_SENT", "POST_CLEAR_PENDING", "TRAINING_IDLE_FIRST_SEEN",
+    "REFLUX_IDLE_FIRST_SEEN", "_INBOX_COUNT_CACHE", "_INBOX_FP_CACHE",
+    "CLI_DEAD_RESTART_TIMES", "CLI_DEAD_LOOP_LAST_NTFY",
+}
+missing = sorted(declared - pruned - excluded)
+if missing:
+    print("MISSING_PRUNE_COVERAGE:" + ",".join(missing))
+    sys.exit(1)
+print("UNEXPECTED_PASS")
+PY
+rc=$?
+set -e
+[ "$rc" -eq 1 ] || { echo "EXPECTED_EXIT_1_GOT_$rc"; exit 1; }
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MISSING_PRUNE_COVERAGE:"* ]]
+    [[ "$output" == *"UNREGISTERED_PRUNE_LEAK"* ]]
+}
