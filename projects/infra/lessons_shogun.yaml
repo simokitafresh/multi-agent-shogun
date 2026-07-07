@@ -367,7 +367,8 @@ lessons:
     (9)gate修正cmdのACではトリガーフレーズを直接引用せず抽象表現に変換する。cmd全文grepの既知FPパターン。
     (10)先送り表現チェック(cmd_text_deferral_language)も全文grep。q_ambiguityの「段階的」が先送り表現としてFP発火。LS-A04(15)と同構造(cmd_3388。LS062吸収2026-06-20)
     (11)累計昇格(WARN複数同時発火→累計一気上昇→BLOCK)はcmd cancel+新ID起票で累計リセット。本番登録cmdはトリガー語が多く発火しやすい(cmd_3390/3391。LS063吸収2026-06-25)
-  source_ids: [LS023, LS034, LS035, LS059, LS060, LS063]
+    (12)self_reread複合トリガー(LS075吸収2026-07-07): (a)自己再読/自己申告/読み直し/セルフレビュー系語 (b)曖昧/不明瞭系語 の両方がcmd全文に同時出現でWARN(check_self_reread_red_flag L1655-1669)。q_ambiguityの『曖昧さなし』は必須定型句のため、他フィールドで『自己申告』→『反映作業者と同一者の宣言』等の客観表現に置換して回避(cmd_3652実証)
+  source_ids: [LS023, LS034, LS035, LS059, LS060, LS063, LS075]
   source_cmds_v3: [cmd_2314, cmd_2315, cmd_2318, cmd_2319, cmd_2330, cmd_2331, cmd_2332, cmd_2343, cmd_2351, cmd_2355, cmd_2358, cmd_2366, cmd_2367, cmd_2368, cmd_2369, cmd_2374, cmd_2377, cmd_2379, cmd_2381, cmd_2382, cmd_2383, cmd_2384, cmd_2385, cmd_2392]
   created_at: '2026-04-25'
   automated: true
@@ -611,14 +612,7 @@ lessons:
 # LS075: superseded by LS-A04(44) (裸数量語cancel累計コスト=cmdテンプレートルール。2026-07-02統合)
 # LS076: superseded by LS-A09(29) (CLI pinned/latest=一次確認パターン。2026-07-02統合)
 # LS074: superseded by LS-A24(1) (desktop/mobile計測条件乖離=計測の実運用代表性。2026-07-03統合)
-- id: 'LS075'
-  title: 'self_reread複合トリガー: 自己申告×曖昧の同時出現でWARN'
-  origin: '[[cmd_3652]]'
-  detail: 'cmd_3652でcheck_self_reread_red_flagが発火し保存NG。検出条件は2段複合: (1)自己再読/自己申告/読み直し/セルフレビュー系語 (2)曖昧/不明瞭/明瞭系語 の両方がtitle+purpose+cmd全文に同時出現でWARN。q8に『自己申告』+q_ambiguityに『曖昧さなし』の定型句の組合せで発火した。対処: 『自己申告』→『反映作業者と同一者の宣言』等の客観表現に置換。q_ambiguityの『曖昧さなし』は必須定型句のため、他フィールドの自己再読系語を避けるのが正解。LS-A04(15)cmd全文grepの変種'
-  source_cmd: 'cmd_3652'
-  created_at: '2026-07-02'
-  automated: true
-  enforcement: 'cmd_save.sh check_self_reread_red_flag(L1655-1669)が自動検出済み。本教訓は語彙回避の起票知識'
+# LS075: superseded by LS-A22(12) (self_reread複合トリガー=cmd全文grep FPパターン。2026-07-07統合。上限31件解消)
 # LS076: superseded by LS-A24(2) (計測条件が機能した証拠のAC化。2026-07-03統合)
 # LS077: superseded by LS-A24(3) (local計測と本番計測の分離。2026-07-03統合)
 - id: LS-A24
