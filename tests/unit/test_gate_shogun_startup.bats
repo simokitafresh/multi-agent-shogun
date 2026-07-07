@@ -407,7 +407,7 @@ EOF
     [[ "$output" == *"ALERT: useful_rate 3週連続悪化"* ]]
     [[ "$output" == *"ALERT: rework_rate 3週連続悪化"* ]]
     [[ "$output" == *"ALERT: block_rate 3週連続悪化"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "weekly metrics previous-week delta is surfaced in startup output" {
@@ -454,7 +454,7 @@ EOF
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT: weekly_metrics_trend cron missing"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "CI RED failure sends ci_red_fix to karo and shows WARN" {
@@ -637,7 +637,7 @@ EOF
     [[ "$output" == *"WARN: Q6回答は検出したが自動化ターゲット未記入"* ]]
     [[ "$output" == *"action: Q6回答に「自動化ターゲット: scripts/... の具体ファイル + 実装済み/テスト追加済みの証拠」を1行で書け"* ]]
     [[ "$output" == *"追体験自動化ターゲット: WARN"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "Q6 weak automation target proposal is missing target, not proof skip" {
@@ -649,7 +649,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: Q6回答は検出したが自動化ターゲット未記入"* ]]
     [[ "$output" != *"WARN: 自動化ターゲット実装証拠 grep検証スキップ"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "Q6 automation target negated weak words are accepted" {
@@ -715,7 +715,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: Q6回答は検出したが自動化ターゲット未記入"* ]]
     [[ "$output" != *"OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "Q6 explicit no action word keeps missing automation warning" {
@@ -727,10 +727,10 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: Q6回答は検出したが自動化ターゲット未記入"* ]]
     [[ "$output" != *"OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
-@test "lessons_shogun origin missing or linkless → 総合判定: WARN" {
+@test "lessons_shogun origin missing or linkless → 総合判定: BLOCK" {
     cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
 lessons:
 - id: LS001
@@ -753,7 +753,7 @@ EOF
     [[ "$output" == *"origin欠落: LS001"* ]]
     [[ "$output" == *"origin空: LS002"* ]]
     [[ "$output" == *"リンク0件: LS003"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "lessons_shogun all origins with causal links → origin WARN is not shown" {
@@ -842,7 +842,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"■ スキル別FAIL率"* ]]
     [[ "$output" == *"report-bundle: 直近50件FAIL率=50% (1/2) last=2099-01-01T00:01:00+0900"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "skill fail rate marks recovered skill after 5 consecutive successes" {
@@ -975,7 +975,7 @@ EOF
     [[ "$output" == *"■ スキル別FAIL率"* ]]
     [[ "$output" == *"dashboard-update: 直近50件FAIL率=50% (1/2) last=2099-01-01T00:01:00+0900"* ]]
     [[ "$output" != *"83% (5/6)"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "skill fail rate excludes unused inferred failures" {
@@ -1095,7 +1095,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"■ スキル自動成長エスカレーション"* ]]
     [[ "$output" == *"ALERT: report-write"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "L6 learning speed shows per-gate FAIL to PASS transition rates" {
@@ -1173,7 +1173,7 @@ MOCK
     [[ "$output" == *"未回復FAIL ALERT(閾値30日):"* ]]
     [[ "$output" == *"ALERT: gate_report_format 未回復45日 FAIL=2件"* ]]
     [[ "$output" == *"L6学習速度: gate_report_format 未回復FAIL 45日 (2件)"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
     [[ "$output" != *"__L6_UNRECOVERED_ALERT__"* ]]
     grep -q "gate_report_format の未回復FAILが45日継続(FAIL=2件)" "$TEST_TMPDIR/logs/bulletin_calls.log"
 }
@@ -1239,7 +1239,7 @@ MOCK
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT: \"ac_phase_mixing|check=check_ac_phase_mixing\" FP率=100% (3/3)"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
     [[ "$output" != *"__FP_RELAXATION_REQUEST__"* ]]
     grep -q "notify=shogun" "$TEST_TMPDIR/logs/bulletin_calls.log"
     grep -q "Gate 13.8 高FP率検出" "$TEST_TMPDIR/logs/bulletin_calls.log"
@@ -1248,7 +1248,7 @@ MOCK
 }
 
 # === Test 2: Memory健全度 ALERT → 総合判定ALERT ===
-@test "Memory ALERT → 総合判定: ALERT" {
+@test "Memory ALERT → 総合判定: BLOCK" {
     cat > "$TEST_TMPDIR/scripts/gates/gate_shogun_memory.sh" <<'MOCK'
 #!/usr/bin/env bash
 echo "Memory健全度: ALERT — MCP obs超過"
@@ -1259,11 +1259,11 @@ MOCK
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT"* ]]
     [[ "$output" == *"Memory健全度"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 # === Test 3: p̄鮮度 ALERT → 総合判定ALERT ===
-@test "p̄鮮度 ALERT → 総合判定: ALERT" {
+@test "p̄鮮度 ALERT → 総合判定: BLOCK" {
     cat > "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh" <<'MOCK'
 #!/usr/bin/env bash
 echo "p̄鮮度: ALERT — 7日超過"
@@ -1273,11 +1273,11 @@ MOCK
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 # === Test 4: cmd委任状態 ALERT → 総合判定ALERT ===
-@test "cmd状態 ALERT → 総合判定: ALERT" {
+@test "cmd状態 ALERT → 総合判定: BLOCK" {
     cat > "$TEST_TMPDIR/scripts/gates/gate_cmd_state.sh" <<'MOCK'
 #!/usr/bin/env bash
 echo "cmd委任状態: ALERT — 長期滞留"
@@ -1288,11 +1288,11 @@ MOCK
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT"* ]]
     [[ "$output" == *"cmd委任状態"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 # === Test 5: 複合ALERT — Memory + 必読ファイル不在 ===
-@test "compound: Memory ALERT + deepdive missing → 総合判定: ALERT with multiple alerts" {
+@test "compound: Memory ALERT + deepdive missing → 総合判定: BLOCK with multiple alerts" {
     cat > "$TEST_TMPDIR/scripts/gates/gate_shogun_memory.sh" <<'MOCK'
 #!/usr/bin/env bash
 echo "Memory健全度: ALERT"
@@ -1304,11 +1304,11 @@ MOCK
     [ "$status" -eq 0 ]
     [[ "$output" == *"Memory健全度"* ]]
     [[ "$output" == *"必読ファイル不在"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 # === Test 6: inbox未読あり → WARN ===
-@test "inbox 2 unread → 総合判定: WARN" {
+@test "inbox 2 unread → 総合判定: BLOCK" {
     cat > "$TEST_TMPDIR/queue/inbox/shogun.yaml" <<'EOF'
 messages:
 - content: msg1
@@ -1330,7 +1330,7 @@ EOF
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"未読: 2件"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "shogun cmd_new without cmd_id history warns on startup" {
@@ -1354,10 +1354,10 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"shogun cmd_idなしcmd_new送信 1件"* ]]
     [[ "$output" == *"msg_bypass"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
-@test "bulletin pending for shogun → 総合判定: WARN" {
+@test "bulletin pending for shogun → 総合判定: BLOCK" {
     cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
 entries:
 - id: 'blt_test'
@@ -1375,7 +1375,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"掲示板未確認"* ]]
     [[ "$output" == *"WARN: 未確認掲示板 1件"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "bulletin action_required without actioned_by → 総合判定: BLOCK" {
@@ -1472,27 +1472,27 @@ EOF
 }
 
 # === Test 7: 陣形図不在 → WARN ===
-@test "snapshot missing → WARN 陣形図不在" {
+@test "snapshot missing → BLOCK 陣形図不在" {
     rm -f "$TEST_TMPDIR/queue/karo_snapshot.txt"
 
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARNING: karo_snapshot.txt不在"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 # === Test 8: 必読ファイル不在 → ALERT ===
-@test "deepdive missing → 総合判定: ALERT" {
+@test "deepdive missing → 総合判定: BLOCK" {
     rm -f "$TEST_TMPDIR/memory/deepdive_why_chain_20260321.md"
 
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT"* ]]
     [[ "$output" == *"必読ファイル不在"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
-@test "Q6 brainwashing answer missing → 総合判定: WARN" {
+@test "Q6 brainwashing answer missing → 総合判定: BLOCK" {
     cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
 {"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q1-Q5回答済み。"}
 EOF
@@ -1501,7 +1501,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: Q6(創造主の洗脳チェック)回答未検出"* ]]
     [[ "$output" == *"追体験自動化ターゲット: WARN"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "Q6 brainwashing answer without automation target → same alert key" {
@@ -1513,7 +1513,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: Q6回答は検出したが自動化ターゲット未記入"* ]]
     [[ "$output" == *"追体験自動化ターゲット: WARN"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "startup deferral escalation is not resent while identical unread message exists" {
@@ -1526,7 +1526,7 @@ run2	追体験自動化ターゲット: WARN (自動化ターゲット未記入)
 EOF
     cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'EOF'
 messages:
-- content: '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: 追体験自動化ターゲット: WARN (自動化ターゲット未記入) が3セッション連続。将軍がcmd起票しないため家老karo_directで対処を検討せよ'
+- content: '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: 追体験自動化ターゲット: WARN (自動化ターゲット未記入) が1セッション連続。将軍がcmd起票しないため家老karo_directで対処を検討せよ'
   from: 'shogun'
   id: 'msg_existing'
   read: false
@@ -1536,7 +1536,7 @@ EOF
 
     SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
-    [[ "$output" == *"BLOCK: 追体験自動化ターゲット: WARN (自動化ターゲット未記入) が3セッション連続"* ]]
+    [[ "$output" == *"BLOCK: 追体験自動化ターゲット: WARN (自動化ターゲット未記入) が1セッション連続"* ]]
     [[ "$output" == *"SKIP: 同一未読escalationが家老inboxに存在"* ]]
     [ ! -f "$TEST_TMPDIR/logs/inbox_write_calls.log" ]
 }
@@ -1701,7 +1701,7 @@ MOCK
 # 呼出元session_start_injectへの統合が21日間未実現のままdead code化したため撤去。
 
 # === Test 12: 教訓健全度 ALERT → 総合判定ALERT ===
-@test "lesson health ALERT → 総合判定: ALERT" {
+@test "lesson health ALERT → 総合判定: BLOCK" {
     cat > "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh" <<'MOCK'
 #!/usr/bin/env bash
 echo "教訓健全度: ALERT — 未振り分け10件"
@@ -1712,7 +1712,7 @@ MOCK
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT"* ]]
     [[ "$output" == *"教訓健全度"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "Gate 13 useful_rate ALERT recommends when/how quality improvement" {
@@ -1725,7 +1725,7 @@ MOCK
 
     SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
     [[ "$output" == *"低useful教訓の改善/淘汰を実行せよ"* ]]
     [[ "$output" != *"教訓健全度: ALERT → /lesson-sort実行せよ"* ]]
 }
@@ -1794,12 +1794,12 @@ MOCK
 
     SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
     [ "$status" -eq 0 ]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
     [[ "$output" == *"教訓健全度: ALERT → /lesson-sort実行せよ"* ]]
 }
 
 # === Test 13: p̄鮮度 WARN (ALERTではない) → 総合判定WARN ===
-@test "p̄鮮度 WARN → 総合判定: WARN" {
+@test "p̄鮮度 WARN → 総合判定: BLOCK" {
     cat > "$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh" <<'MOCK'
 #!/usr/bin/env bash
 echo "p̄鮮度: WARN — 3日超過"
@@ -1809,10 +1809,10 @@ MOCK
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
-@test "知識辞書鮮度 ALERT → 総合判定: ALERT" {
+@test "知識辞書鮮度 ALERT → 総合判定: BLOCK" {
     cat > "$TEST_TMPDIR/scripts/gates/gate_knowledge_freshness.sh" <<'MOCK'
 #!/usr/bin/env bash
 echo "知識鮮度: ALERT — fresh=7 stale=1 warn=0 total=8"
@@ -1830,10 +1830,10 @@ MOCK
     [[ "$output" == *"STALE更新候補 TOP3"* ]]
     [[ "$output" == *"docs/research/systems-knowledge-base/systems/ace.md (31 days old"* ]]
     [[ "$output" == *"python3 scripts/update_verified_at.py docs/research/systems-knowledge-base/systems/ace.md 2026-04-19"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
-@test "semantic index stale 14+ days → 総合判定: ALERT" {
+@test "semantic index stale 14+ days → 総合判定: BLOCK" {
     touch -d '15 days ago' "$TEST_TMPDIR/docs/semantic-index/index.md"
 
     run run_gate_shogun_startup
@@ -1841,7 +1841,7 @@ MOCK
     [[ "$output" == *"セマンティクスインデックス鮮度"* ]]
     [[ "$output" == *"ALERT: セマンティクスインデックスが"* ]]
     [[ "$output" == *"日間未更新"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 # === Test 14: 未処理PROPOSAL → WARN ===
@@ -1857,7 +1857,7 @@ EOF
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"未処理PROPOSAL"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "stale pending insights older than threshold → ALERT" {
@@ -1879,7 +1879,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT: 未消化insights 1件が7日超過"* ]]
     [[ "$output" == *"INS-OLD"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "insights corrupt TTL cleanup moves only expired root leftovers" {
@@ -1926,7 +1926,7 @@ EOF
     [[ "$output" == *"■ GP proposal滞留"* ]]
     [[ "$output" == *"ALERT: karo_sent GP 1件が14日超過"* ]]
     [[ "$output" == *"GP-OLD"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 @test "same startup alert for 3 consecutive sessions → BLOCK" {
@@ -2079,7 +2079,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARNING: AC不一致"* ]]
     [[ "$output" == *"hayate(cmd_100)"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
 # === Test 18: scout_exempt=true cmd → AC不一致でもWARNINGなし (AC2修正検証) ===

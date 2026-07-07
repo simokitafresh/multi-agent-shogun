@@ -244,11 +244,11 @@ EOF
     [[ "$output" == *"家老自立配備(CI修正/hotfix/recon2単独): /karo-direct"* ]]
     [[ "$output" == *"偵察2名配備: /recon-dual"* ]]
     [[ "$output" == *"スキル品質: dashboard-update FAIL:1"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
 # === Test 2: 陣形図が30分以上古い → WARN ===
-@test "snapshot older than 30 min → 総合判定: WARN" {
+@test "snapshot older than 30 min → 総合判定: ALERT" {
     local old_time
     old_time=$(date -d '45 minutes ago' '+%Y-%m-%dT%H:%M:%S')
     cat > "$TEST_TMPDIR/queue/karo_snapshot.txt" <<EOF
@@ -259,7 +259,7 @@ EOF
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: 陣形図が30分以上古い"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
 # === Test 3: inbox未読あり → 未読件数が表示される ===
@@ -426,7 +426,7 @@ EOF
     [[ "$output" == *"read=trueを処理済みと見なすな"* ]]
     [[ "$output" == *"msg_skill"* ]]
     [[ "$output" == *"msg_review"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
 @test "gunshi action_required bulletin without actioned_by warns at karo startup" {
@@ -450,7 +450,7 @@ EOF
     [[ "$output" == *"掲示板action_required未対応"* ]]
     [[ "$output" == *"WARN: 未対応action_required掲示板 1件"* ]]
     [[ "$output" == *"blt_gunshi_action by gunshi"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
 @test "shogun-only action_required bulletin does not warn at karo startup" {
@@ -558,12 +558,12 @@ EOF
 }
 
 # === Test 7: 陣形図不在 → WARN ===
-@test "snapshot missing → 総合判定: WARN" {
+@test "snapshot missing → 総合判定: ALERT" {
     rm -f "$TEST_TMPDIR/queue/karo_snapshot.txt"
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARNING: karo_snapshot.txt不在"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
 # === Test 8: 全忍者idle + inbox未読0 → 自走プロンプト表示 ===
@@ -754,7 +754,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: workaround brainwash_check未記入 1件: cmd_3035"* ]]
     [[ "$output" == *"創造主の洗脳/早期終了/低優先化"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
 @test "workaround true with empty brainwash_check scalar → WARN" {
@@ -771,7 +771,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: workaround brainwash_check未記入 1件: cmd_3037"* ]]
     [[ "$output" == *"WARN: brainwash_check未記入のworkaround 1件: cmd_3037"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
 @test "workaround true with brainwash_check → no brainwash WARN" {
@@ -1055,7 +1055,7 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"■ cmd品質記録漏れチェック"* ]]
     [[ "$output" == *"WARN: 1件のGATE CLEAR cmdがcmd_design_quality未記録: cmd_fixture_missing_quality"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
 @test "GATE CLEAR with cmd_design_quality record → OK 品質記録済み" {
@@ -1186,7 +1186,7 @@ EOF
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: pending GP 2件"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
 # === Test 15: GP pending 0件 → 出力なし (AC2) ===
@@ -1292,7 +1292,7 @@ EOF
     [[ "$output" == *"■ レビュー品質スケール"* ]]
     [[ "$output" == *"WARN率 35% (7/20, cmd_id単位最終verdict集計)"* ]]
     [[ "$output" == *"WARN: レビュー品質WARN率が30%超"* ]]
-    [[ "$output" == *"総合判定: WARN"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
 # === AC2: cmd_id dedup - 同一cmd_idの最終verdictのみカウント + FAIL→VERIFIEDクロスtype ===

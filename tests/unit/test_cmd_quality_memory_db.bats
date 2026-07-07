@@ -165,6 +165,31 @@ isolate_three_layer_chain() {
     export SEMANTIC_NEW_FILE_LIST="__three_layer_chain_test_no_new_files__"
     unset SEMANTIC_CMD_HISTORY_FILES SEMANTIC_INSIGHTS_PATH SEMANTIC_PROJECTS_CONFIG
 
+    # gate_three_layer_health.shはSHOGUN_MEMORY_DB_CACHE_PATH未指定だと本番キャッシュ
+    # (/tmp/shogun_memory_db_cache/...)を参照する。CI等キャッシュ未生成環境では
+    # "WARN: 三層記憶DBが存在しない"→STATUS: WARNになり、chain_log起因のPASS/WARN判定と
+    # 無関係にテストが環境依存で揺れる。健全な最小fixtureで隔離する。
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/data/three_layer_health_cache.db"
+    python3 - "$SHOGUN_MEMORY_DB_CACHE_PATH" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, state TEXT DEFAULT 'raw', raw_content TEXT)")
+conn.execute("CREATE TABLE search_logs (ts TEXT, created_at TEXT)")
+conn.executemany(
+    "INSERT INTO events (id, state, raw_content) VALUES (?, ?, ?)",
+    [
+        ("event:raw", "raw", "raw content"),
+        ("event:verified", "verified", "verified content"),
+        ("event:candidate", "obsidian_candidate", "candidate content"),
+    ],
+)
+conn.execute("INSERT INTO search_logs (ts, created_at) VALUES (datetime('now'), datetime('now'))")
+conn.commit()
+conn.close()
+PY
+
     cat > "$SEMANTIC_INSIGHT_WRITE" <<'EOF'
 #!/usr/bin/env bash
 exit 0
