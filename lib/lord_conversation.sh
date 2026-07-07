@@ -380,11 +380,10 @@ def queue_lesson_candidate(entry: dict) -> None:
         return
 
     detail = normalize_text(entry.get("detail", ""))
-    ts = normalize_text(entry.get("ts", ""))
     target = normalize_text(entry.get("target", ""))
     source_name = "lord_conversation:lesson_candidate"
     message = (
-        f"lord_conversation教訓候補: ts={ts} target={target or 'unknown'} "
+        f"lord_conversation教訓候補: target={target or 'unknown'} "
         f"trigger=inbound_lord detail={detail}"
     )
     result = subprocess.run(
