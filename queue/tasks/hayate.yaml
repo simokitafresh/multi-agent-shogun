@@ -168,3 +168,14 @@ task:
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
   deployed_at: "2026-07-08T03:38:51"
   completed_at: "2026-07-08T03:43:05+09:00"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'gate_lesson_health GA-193はlesson_deprecation_checkpointがL812で止まり新規教訓+167件となったことがexit=1の直接原因。lesson_deprecation_scan --candidates-onlyでL980へ更新し再実行EXIT_CODE=0を確認。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'gate_lesson_health GA-193はlesson_deprecation_checkpointがL812で止まり新規教訓+167件となったことがexit=1の直接原因。lesson_deprecation_scan --candidates-onlyでL980へ更新し再実行EXIT_CODE=0を確認。'
