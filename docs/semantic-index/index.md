@@ -1990,6 +1990,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T20:25:36+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T23:42:40+09:00 なぜtobizaruばかりに配備するんだ？忍者はクリアされて記憶は毎回なくなるよな？何か理由があるのか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T14:26:45+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-07T18:00:04+09:00 今クリアされてもinbox1 |
 | causal_chain | `[[cmd_3624_kagemaru]]` (L900) |
 
 ## growth_loop — 学習ループ
@@ -2715,6 +2716,7 @@ codd:
 | cmd | `cmd_goal_gs_speed_e7_l0_full_confirm_202607061018` |
 | lesson | `L817` OOM対応で下げた並列度制約は後続のメモリ最適化後に再確認せよ |
 | causal | `docs/research/gunshi_gs_speed_design_l0_l3_20260706.md:226` 殿厳命(2026-07-06 07:52) timeout 300s強制。5分超え放置は最悪の行為 (INS-20260706-092825089-42f7還流, cmd_reflux_insight_202607071651_kotaro) |
+| causal | `docs/research/gunshi_gs_speed_design_l0_l3_20260706.md:14-16` §0図の「L2秘奥義GS/L3加速D/R」は独立した2段パイプラインではない。cmd_3494-3506実績(context/cmd-chronicle.md L279-287)ではpf_L2奥義21体を同一universe(hiougi_ougi_21.yaml)としてbunshin/oikaze/nukimi/kawarimi/yotsume/kasoku_diff/kasoku_ratioの7忍法GSを直列実行しpf_L3秘奥義を構成する一つの工程であり、kasoku_diff/kasoku_ratio(図のL3表記)はその7忍法のうち2つに過ぎない。実測(cmd_3694, L46-54)ではbunshin 7,525patternsに対しkasoku_diff/ratioは1,151,325patterns(約153倍)であり、「同じ構造なのに時間が違う」のはL2/L3という層の違いではなくパターン数の違いが支配的(INS-20260706-095929677-b554還流, cmd_reflux_insight_202607071754_kotaro)。§0図のレイヤー番号表記はcmd-chronicle系(pf_L2=奥義/pf_L3=秘奥義)と1段ズレており紛らわしいため、doc正本側の表記統一はgunshi/karo判断のdecision_candidateとして別途起票 |
 | causal_chain | `[[cmd_3432]]` (L817) |
 
 ## silent_fallback_quality — Silent Fallback品質
@@ -4712,7 +4714,7 @@ codd:
 |------|---|
 | id | gate_quality_framework |
 | label | ゲート品質統合フレームワーク |
-| aliases | ゲート統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, ゲート偽陽性, gate_prediction, gate_prediction偽陽性, gate_prediction偽陽性分析, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, クオリティゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, ゲート偽陽性ALERTはバグだな, startup BLOCK 3セッション連続, cmd_skeleton, cmd起票雛形, 起票雛形ジェネレータ, FILL_THIS残存BLOCK, cmd起票フロー3ステップ, skeleton→save→delegate, cmd_delegate数字ID正規化, Check17日付リテラル除外, 性能の劣るLLMでもスムーズにCMD起票, GA context freshness ALERTを一次情報で調査し, GA context freshness ALERTの根因を調査し, GA dm signal frontend md context freshness ALERTの原因特定・横展開・防御, GA dm signal core md context freshness ALERTの原因特定・横展開・防御層反映, startup gateのSKILL md script参照WARNが3セッション連続BLOCK, startup gate教訓健全度がALERT useful rate % 3回連続BLOCK, review_quality_scale_summary, WARN率計算gate_result未考慮バグ, LESSON_EFFECT_USEFUL_MIN, useful_rate計測min_samples分離, gate_result=CLEARなのにFAIL永続カウント, cross-project教訓タグ同期, 二重登録教訓タグ不整合, count_same_warn_pattern cmd_id重複カウント偽陽性, Check19出口判定化, session_alerts リアルタイムhook, 覚醒設計書v3, 3セッション連続startup BLOCK 教訓健全度ALERT, cmd save品質ゲート, GA context freshness ALERTのdm signal ops mdを一次情報で照合し, 先送りBLOCK 教訓健全度ALERT, session alerts txtは将軍startup gateが生成する将軍固有ALERTだが, hookでsession alerts txtがでているが, GA context freshness ALERTの直接原因・根本原因・横展開候補・次回防止防御層を一次情報で特定し, GA context freshness ALERTの根因を, 該当ID一覧はcontextを別途抽出しないと分からない, なぜこのgateがあるかの因果を明記だな, 代表的な実CLI経路を必ず1本実行し, shのインラインCheckを関数化した後, WAログ品質ゲート, gate_ninja_workaround_rate, karo_workarounds.yaml, 直近WA, CLEAR cmd集合フィルタ, WA率偽陰性 |
+| aliases | ゲート統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, ゲート偽陽性, gate_prediction, gate_prediction偽陽性, gate_prediction偽陽性分析, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, クオリティゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, ゲート偽陽性ALERTはバグだな, startup BLOCK 3セッション連続, cmd_skeleton, cmd起票雛形, 起票雛形ジェネレータ, FILL_THIS残存BLOCK, cmd起票フロー3ステップ, skeleton→save→delegate, cmd_delegate数字ID正規化, Check17日付リテラル除外, 性能の劣るLLMでもスムーズにCMD起票, GA context freshness ALERTを一次情報で調査し, GA context freshness ALERTの根因を調査し, GA dm signal frontend md context freshness ALERTの原因特定・横展開・防御, GA dm signal core md context freshness ALERTの原因特定・横展開・防御層反映, startup gateのSKILL md script参照WARNが3セッション連続BLOCK, startup gate教訓健全度がALERT useful rate % 3回連続BLOCK, review_quality_scale_summary, WARN率計算gate_result未考慮バグ, LESSON_EFFECT_USEFUL_MIN, useful_rate計測min_samples分離, gate_result=CLEARなのにFAIL永続カウント, cross-project教訓タグ同期, 二重登録教訓タグ不整合, count_same_warn_pattern cmd_id重複カウント偽陽性, Check19出口判定化, session_alerts リアルタイムhook, 覚醒設計書v3, 3セッション連続startup BLOCK 教訓健全度ALERT, cmd save品質ゲート, GA context freshness ALERTのdm signal ops mdを一次情報で照合し, 先送りBLOCK 教訓健全度ALERT, session alerts txtは将軍startup gateが生成する将軍固有ALERTだが, hookでsession alerts txtがでているが, GA context freshness ALERTの直接原因・根本原因・横展開候補・次回防止防御層を一次情報で特定し, GA context freshness ALERTの根因を, 該当ID一覧はcontextを別途抽出しないと分からない, なぜこのgateがあるかの因果を明記だな, 代表的な実CLI経路を必ず1本実行し, shのインラインCheckを関数化した後, WAログ品質ゲート, gate_ninja_workaround_rate, karo_workarounds.yaml, 直近WA, CLEAR cmd集合フィルタ, WA率偽陰性, 本来検証したいWARN集約を覆って回帰テストが誤FAILする |
 | skills | |
 | related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework, creator_brainwashing_defense, chain_principle, no_auto_extinguish, multi_cli_event_commonization, command_files_modified_verification, cmd_save_gate_catalog |
 | related_lessons | `L512`, `L079`, `L633`, `L966` |
@@ -4878,6 +4880,7 @@ codd:
 | causal | `cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607031906` files_modified: [[gate_quality_framework]] |
 | causal | `cmd_karo_hotfix_ga177_p_average_freshness_202607041938` files_modified: [[gate_quality_framework]] |
 | causal | `cmd_karo_hotfix_ga177_p_average_stale_fallback_fix_202607041954` files_modified: [[gate_quality_framework]] |
+| lesson | `L963` startup gateの補助DB不在と読取失敗を同じALERTにしない |
 | causal_chain | `[[cmd_2443]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
@@ -4888,6 +4891,7 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_prev_cmd_gate_202606301629]]` (L884) |
 | causal_chain | `[[cmd_karo_hotfix_ga156_hook_failure_prepush_cmd_save_202607010443]]` (L890) |
 | causal_chain | `[[cmd_3658]]` (L936) |
+| causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 
 ## lesson_lifecycle — 教訓ライフサイクル管理
 
@@ -5298,6 +5302,7 @@ codd:
 | causal | `cmd_3615` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_karo_hotfix_clear_prep_semantic_nomatch_20260703014831` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_karo_hotfix_semantic_pending_lord_queries_202607031936` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_insight_202607071734_kagemaru` files_modified: [[semantic_causal_automation]] |
 
 ## provisional_tobisaru — 仮: Tobisaru
 
@@ -5412,6 +5417,8 @@ codd:
 | cmd | `cmd_karo_hotfix_stop_hook_toolless_escape_2026070506` (`queue/tasks/kagemaru.yaml`, `scripts/hooks/stop_session_alerts.sh`, `tests/unit/test_session_alerts_render.bats`) |
 | causal | `cmd_3723` files_modified: [[provisional_kagemaru]] |
 | cmd | `cmd_3723` (`queue/tasks/kagemaru.yaml`) |
+| causal | `cmd_reflux_insight_202607071734_kagemaru` files_modified: [[provisional_kagemaru]] |
+| cmd | `cmd_reflux_insight_202607071734_kagemaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`, `queue/tasks/kagemaru.yaml`) |
 
 ## provisional_lessons — 仮: Lessons
 
@@ -5961,6 +5968,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_ga152_context_freshness_infrastructure_202606301214]]` (L881) |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
+| causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_3458_tobisaru]]` (L821) |
 
 ## commander_role_ssot_analysis — Commanderロール SSOT分析
