@@ -1738,6 +1738,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-05T23:50:37+09:00 【殿ntfy】[SIGNAL CHANGE ALERT] confirmed-month holding_signal changes: count=9828 portfolios=47 dates=2006-04-03〜2026-07-0 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T11:03:46+09:00 【殿ntfy】[SIGNAL CHANGE ALERT] confirmed-month holding_signal changes: count=2232 portfolios=17 dates=2014-04-01〜2026-07-0 |
 | lesson | `L822` MonthlyTradeCalculatorのMockベースdbテストは新規DB問合せ関数追加のたびに複数クラスへ横展開して壊れる |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-08T03:35:18+09:00 GS-本番エンジン分離の因果(殿指摘2026-07-08 03:30で再確認): cmd_1199(a137593e)でPI-009準拠のためPipelineEngine経由化→import 4.5s+75.7MB/proc・6worker |
 | causal_chain | `[[cmd_3061]]` (L717) |
 | causal_chain | `[[cmd_karo_hotfix_GA097_hook_failure_20260620]]` (L822) |
 
@@ -3637,7 +3638,7 @@ codd:
 |------|---|
 | id | shogun_android_app |
 | label | 将軍Androidアプリ |
-| aliases | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ, モバイルレスポンシブ崩れ修正 ヘッダー テーブル 銘柄リスト, このアプリは原則的にお薬手帳用に開発した, だいぶまとまて来たなアイコンは使わない, androidでは無理か？, 俺が例に出したstockeventsアプリを調査しよう, UIはstock eventのアプリを参考にしてほしい, Stock Events準拠UI, 個人用のアプリなので公開は不要, アンドロイドアプリは将軍がビルドしてgithubリリースに乗せるルール, F001改訂=殿との会話をブロックしない操作は将軍直接実行, F001改訂 — 殿との会話ブロック基準で将軍直接実行とcmd委任を区別, apkの名前にverが入っていないぞ, アプリの同期ボタンはどこにあるんだ？, モバイルでテーブルの横方向も見切れている |
+| aliases | Android, アプリ, モバイル, Kotlin, APK, com.shogun.android, 将軍アプリ, モバイルレスポンシブ崩れ修正 ヘッダー テーブル 銘柄リスト, このアプリは原則的にお薬手帳用に開発した, だいぶまとまて来たなアイコンは使わない, androidでは無理か？, 俺が例に出したstockeventsアプリを調査しよう, UIはstock eventのアプリを参考にしてほしい, Stock Events準拠UI, 個人用のアプリなので公開は不要, アンドロイドアプリは将軍がビルドしてgithubリリースに乗せるルール, F001改訂=殿との会話をブロックしない操作は将軍直接実行, F001改訂 — 殿との会話ブロック基準で将軍直接実行とcmd委任を区別, apkの名前にverが入っていないぞ, アプリの同期ボタンはどこにあるんだ？, モバイルでテーブルの横方向も見切れている, 前セッションのキャッシュはなんの役に立ってたんだ？表示されなければいいだけだったのだが、副作用はないか？, scrollback残像, 前セッションキャッシュ問題, respawn-pane -k scrollback継承, clear-history追加 |
 | skills | なし |
 | related_concepts | agent_formation_management, infrastructure_ops |
 
@@ -3694,6 +3695,8 @@ codd:
 | causal | `cmd_training_backlinks_zero_gunshi_docs_202607042005` files_modified: [[shogun_android_app]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T23:59:09+09:00 multi agent shogunのAndroidアプリはわかるか？最新版のClaudeにするとpaneが遡れなくなり、極めて短い行しか表示されない。調査してくれ。ピン留めバージョンは問題なくpaneを遡れる。codex cliも表示に問 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T00:02:39 Claude CLI v2.1.201 alternate screen buffer問題: alternate_on=1でtmux scrollback消失、Androidアプリpane表示不可。pinned 2.1.87は正常。回避策: |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-08T01:30:17+09:00 前セッションのキャッシュはなんの役に立ってたんだ？表示されなければいいだけだったのだが、副作用はないか？ |
+| causal | `commit_8fdc4dada` origin: [[殿質問_前セッションキャッシュ何の役に立つ_20260708]] -> [[respawn-pane_-k_scrollback継承がAndroidアプリ前セッション表示の原因と特定]] -> [[ninja_monitor.sh/reset_layout.sh/switch_cli_mode.sh全respawn経路にclear-history追加(commit 8fdc4dada)]] |
 | causal_chain | `[[cmd_3347]] -> [[AUTO_DEPLOY_race_condition]] -> [[CODEX-RESPAWN_active_ninja]]` (L801) |
 
 ## cdp_browser_capability — CDP(ブラウザ操作能力)
