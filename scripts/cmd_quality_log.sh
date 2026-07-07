@@ -207,6 +207,7 @@ fi
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # --- Append entry with flock ---
+append_status=0
 (
     flock -w 10 200 || { echo "[cmd_quality_log] Error: Failed to acquire lock" >&2; exit 1; }
 
@@ -219,6 +220,44 @@ TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
         if [[ "$_first_line" == "entries: []" ]]; then
             sed -i '1s/^entries: \[\]$/entries:/' "$LOG_FILE"
         fi
+    fi
+
+    # cmd_complete_gate.sh already records CLEAR. Keep CLEAR logging idempotent so
+    # cmd-complete retry/step overlap does not inflate quality metrics.
+    if [[ "$GATE_RESULT" == "CLEAR" ]] && awk -v cid="$CMD_ID" -v gate="$GATE_RESULT" -v source="$SOURCE_STAGE" '
+        function strip_value(s) {
+            sub(/^[^:]+:[[:space:]]*/, "", s)
+            gsub(/["'\'']/, "", s)
+            sub(/[[:space:]]*$/, "", s)
+            return s
+        }
+        function flush_entry() {
+            if (entry_cmd == cid && entry_gate == gate && entry_source == source) {
+                found = 1
+            }
+        }
+        /^[[:space:]]*- cmd_id:/ {
+            flush_entry()
+            entry_cmd = strip_value($0)
+            entry_gate = ""
+            entry_source = ""
+            next
+        }
+        entry_cmd != "" && /^[[:space:]]+gate_result:/ {
+            entry_gate = strip_value($0)
+            next
+        }
+        entry_cmd != "" && /^[[:space:]]+source:/ {
+            entry_source = strip_value($0)
+            next
+        }
+        END {
+            flush_entry()
+            exit found ? 0 : 1
+        }
+    ' "$LOG_FILE"; then
+        echo "[cmd_quality_log] SKIP duplicate CLEAR: $CMD_ID | source:$SOURCE_STAGE"
+        exit 10
     fi
 
     entry_indent="$(awk '
@@ -270,7 +309,13 @@ EOF
 
     echo "[cmd_quality_log] Logged: $CMD_ID | AC:$AC_COUNT | gate:$GATE_RESULT | rework:$KARO_REWORK | gunshi:$GUNSHI_VERDICT | blockers:$NINJA_BLOCKERS | supp_cmds:$SUPPLEMENTARY_CMDS | source:$SOURCE_STAGE${DIAGNOSIS_TEXT:+ | diagnosis:$DIAGNOSIS_TEXT}${NOTES:+ | notes:$NOTES}"
 
-) 200>"$LOCK_FILE"
+) 200>"$LOCK_FILE" || append_status=$?
+
+if [[ "$append_status" -eq 10 ]]; then
+    exit 0
+elif [[ "$append_status" -ne 0 ]]; then
+    exit "$append_status"
+fi
 
 SOURCE_FILE="${LOG_FILE#$REPO_ROOT/}"
 if [[ "$SOURCE_FILE" == "$LOG_FILE" && "$LOG_FILE" = /* ]]; then
