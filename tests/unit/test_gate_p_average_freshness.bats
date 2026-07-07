@@ -176,7 +176,7 @@ EOF
     grep -q '^exit_code=0$' "$P_AVERAGE_CACHE_FILE"
 }
 
-@test "repository script resolves project path when launched from outside repo" {
+@test "script resolves own path when launched from outside repo" {
     local outside_cache="$TEST_TMPDIR/outside.cache"
     local now_iso
     now_iso="$(date -u +%Y-%m-%dT%H:%M:%S+00:00)"
@@ -187,8 +187,12 @@ EOF
         P_AVERAGE_CACHE_FILE="$outside_cache" \
         P_AVERAGE_API_BASE="$P_AVERAGE_API_BASE" \
         P_AVERAGE_CURL_BIN="$P_AVERAGE_CURL_BIN" \
-        bash -c "cd /tmp && '$PROJECT_ROOT/scripts/gates/gate_p_average_freshness.sh'"
+        bash -c "cd /tmp && '$TEST_TMPDIR/scripts/gates/gate_p_average_freshness.sh'"
 
+    if [ "$status" -ne 0 ]; then
+        echo "status=$status"
+        echo "$output"
+    fi
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK: p̄ calculated_at within 30 days"* ]]
     [[ "$output" != *"get_repo_root: git rev-parse"* ]]
