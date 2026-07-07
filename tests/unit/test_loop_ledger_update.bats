@@ -10,12 +10,14 @@ setup_file() {
 
 setup() {
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/loop_ledger.XXXXXX")"
-    mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/queue" "$TEST_TMPDIR/data"
+    mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/queue/archive/reports" "$TEST_TMPDIR/data"
     export LOOP_LEDGER_LESSON_IMPACT="$TEST_TMPDIR/logs/lesson_impact.tsv"
     export LOOP_LEDGER_INSIGHTS_FILE="$TEST_TMPDIR/queue/insights.yaml"
     export LOOP_LEDGER_DB="$TEST_TMPDIR/data/memory.db"
     export LOOP_LEDGER_SKILL_RECOMMEND_LOG="$TEST_TMPDIR/logs/skill_recommend_log.yaml"
     export LOOP_LEDGER_SKILL_EXECUTION_LOG="$TEST_TMPDIR/logs/skill_execution_log.yaml"
+    export LOOP_LEDGER_REPORT_DIRS="$TEST_TMPDIR/queue/reports:$TEST_TMPDIR/queue/archive/reports"
+    export LOOP_LEDGER_REPORT_MAX_FILES="500"
     export LOOP_LEDGER_OUT="$TEST_TMPDIR/logs/loop_ledger.yaml"
     export LOOP_LEDGER_NOW="2026-06-20T00:00:00Z"
     export LOOP_LEDGER_WINDOW_DAYS="14"
@@ -24,7 +26,7 @@ setup() {
 teardown() {
     unset LOOP_LEDGER_LESSON_IMPACT LOOP_LEDGER_INSIGHTS_FILE LOOP_LEDGER_DB \
         LOOP_LEDGER_SKILL_RECOMMEND_LOG LOOP_LEDGER_SKILL_EXECUTION_LOG \
-        LOOP_LEDGER_OUT LOOP_LEDGER_NOW LOOP_LEDGER_WINDOW_DAYS
+        LOOP_LEDGER_REPORT_DIRS LOOP_LEDGER_REPORT_MAX_FILES LOOP_LEDGER_OUT LOOP_LEDGER_NOW LOOP_LEDGER_WINDOW_DAYS
     [ -n "${TEST_TMPDIR:-}" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 
@@ -64,6 +66,32 @@ conn.execute("INSERT INTO events (id, ts, agent, summary, detail, state) VALUES 
 conn.commit()
 conn.close()
 PY
+}
+
+add_memory_reference_reports() {
+    cat > "$TEST_TMPDIR/queue/reports/kagemaru_report_cmd_memory.yaml" <<'EOF'
+worker_id: kagemaru
+parent_cmd: cmd_memory
+memory_references:
+- id: MEM001
+  source: semantic_search
+  query: useful query
+  used: true
+  useful: true
+  reason: 実装対象の接続点特定に使った
+- id: MEM002
+  source: semantic_search
+  query: unrelated semantic query
+  used: false
+  useful: false
+  reason: 対象cmdと無関係だった
+- id: MEM003
+  source: memory_db
+  query: unrelated db query
+  used: false
+  useful: false
+  reason: 古い別cmdの記録だった
+EOF
 }
 
 @test "loop_ledger_update computes produced/consumed/stock across all 6 loops and detects semantic stall" {
@@ -130,6 +158,7 @@ EOF
 
     make_obsidian_db
     add_memory_loop_data
+    add_memory_reference_reports
 
     run bash "$SRC_SCRIPT"
     [ "$status" -eq 1 ]
@@ -139,13 +168,33 @@ EOF
     [[ "$output" == *"semantic: produced=1 consumed=0 stock=1"* ]]
     [[ "$output" == *"obsidian: produced=2 consumed=1 stock=1"* ]]
     [[ "$output" == *"memory: produced=2 consumed=1 stock=1"* ]]
+    [[ "$output" == *"effectiveness: evaluated=3 useful=1 useful_rate_pct=33.3 reflux_targets=2"* ]]
     [[ "$output" == *"skill: produced=2 consumed=1 stock=2"* ]]
     [[ "$output" == *"ALERT: semantic: 空転(produced=1, consumed=0, window=14d)"* ]]
 
     grep -q 'generated_at: "2026-06-20T00:00:00Z"' "$LOOP_LEDGER_OUT"
     grep -q 'semantic:' "$LOOP_LEDGER_OUT"
     grep -q 'memory:' "$LOOP_LEDGER_OUT"
+    grep -q 'evaluated: 3' "$LOOP_LEDGER_OUT"
+    grep -q 'useful: 1' "$LOOP_LEDGER_OUT"
+    grep -q 'useful_rate_pct: 33.3' "$LOOP_LEDGER_OUT"
+    grep -q '"memory_db": 1' "$LOOP_LEDGER_OUT"
+    grep -q '"semantic_search": 1' "$LOOP_LEDGER_OUT"
+    grep -q 'reflux_targets:' "$LOOP_LEDGER_OUT"
     grep -q 'stalled: true' "$LOOP_LEDGER_OUT"
+}
+
+@test "loop_ledger_update reports memory reference effectiveness without requiring search logs" {
+    make_obsidian_db
+    add_memory_reference_reports
+
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"memory: produced=0 consumed=0 stock=0"* ]]
+    [[ "$output" == *"effectiveness: evaluated=3 useful=1 useful_rate_pct=33.3 reflux_targets=2"* ]]
+    grep -q 'report_count: 1' "$LOOP_LEDGER_OUT"
+    grep -q 'sample_query: "unrelated db query"' "$LOOP_LEDGER_OUT"
+    grep -q 'sample_reason: "古い別cmdの記録だった"' "$LOOP_LEDGER_OUT"
 }
 
 @test "loop_ledger_update alerts when memory searches continue without shogun citation tags" {

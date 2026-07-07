@@ -16,6 +16,8 @@ INSIGHTS_FILE="${LOOP_LEDGER_INSIGHTS_FILE:-$ROOT/queue/insights.yaml}"
 DB_PATH="${LOOP_LEDGER_DB:-$ROOT/data/multi_agent_shogun_memory.db}"
 SKILL_RECOMMEND_LOG="${LOOP_LEDGER_SKILL_RECOMMEND_LOG:-$ROOT/logs/skill_recommend_log.yaml}"
 SKILL_EXECUTION_LOG="${LOOP_LEDGER_SKILL_EXECUTION_LOG:-$ROOT/logs/skill_execution_log.yaml}"
+REPORT_DIRS="${LOOP_LEDGER_REPORT_DIRS:-$ROOT/queue/reports:$ROOT/queue/archive/reports}"
+REPORT_MAX_FILES="${LOOP_LEDGER_REPORT_MAX_FILES:-500}"
 OUT_FILE="${LOOP_LEDGER_OUT:-$ROOT/logs/loop_ledger.yaml}"
 NOW="${LOOP_LEDGER_NOW:-$(date -u '+%Y-%m-%dT%H:%M:%SZ')}"
 WINDOW_DAYS="${LOOP_LEDGER_WINDOW_DAYS:-14}"
@@ -36,7 +38,7 @@ else
 fi
 
 python3 - "$LESSON_IMPACT" "$INSIGHTS_FILE" "$DB_PATH" "$SKILL_RECOMMEND_LOG" "$SKILL_EXEC_CHUNK" \
-    "$OUT_FILE" "$NOW" "$WINDOW_DAYS" "$MAX_SNAPSHOTS" <<'PY'
+    "$REPORT_DIRS" "$REPORT_MAX_FILES" "$OUT_FILE" "$NOW" "$WINDOW_DAYS" "$MAX_SNAPSHOTS" <<'PY'
 import datetime as dt
 import re
 import sqlite3
@@ -49,11 +51,13 @@ except Exception:
     yaml = None
 
 (lesson_impact_path, insights_path, db_path, skill_recommend_path,
- skill_exec_chunk_path, out_path, now_raw, window_days_raw, max_snapshots_raw) = sys.argv[1:10]
+ skill_exec_chunk_path, report_dirs_raw, report_max_files_raw, out_path, now_raw,
+ window_days_raw, max_snapshots_raw) = sys.argv[1:12]
 
 out_path = Path(out_path)
 window_days = int(window_days_raw)
 max_snapshots = int(max_snapshots_raw)
+report_max_files = int(report_max_files_raw)
 
 
 def parse_ts(value):
@@ -314,7 +318,94 @@ def load_memory_loop(path):
         conn.close()
 
 
+def load_memory_reference_effectiveness(report_dirs_raw):
+    evaluated = 0
+    useful = 0
+    irrelevant_by_source = {}
+    latest_by_source = {}
+    report_count = 0
+    candidates = []
+    for raw_dir in str(report_dirs_raw or "").split(":"):
+        if not raw_dir:
+            continue
+        directory = Path(raw_dir)
+        if not directory.is_dir():
+            continue
+        candidates.extend(directory.glob("*.yaml"))
+    candidates = sorted(candidates, key=lambda path: str(path), reverse=True)
+    if report_max_files > 0:
+        candidates = candidates[:report_max_files]
+
+    def extract_memory_references(path):
+        block = []
+        in_block = False
+        try:
+            with path.open(encoding="utf-8", errors="replace") as fh:
+                for line in fh:
+                    if not in_block:
+                        if line.startswith("memory_references:"):
+                            in_block = True
+                            block.append(line)
+                        continue
+                    if line and not line.startswith((" ", "-", "\t")) and not line.lstrip().startswith("#"):
+                        break
+                    block.append(line)
+        except OSError:
+            return None
+        if not block:
+            return None
+        try:
+            parsed = yaml.safe_load("".join(block)) or {}
+        except Exception:
+            return None
+        if not isinstance(parsed, dict):
+            return None
+        return parsed.get("memory_references")
+
+    for report in candidates:
+        if yaml is None:
+            continue
+        refs = extract_memory_references(report)
+        if not isinstance(refs, list):
+            continue
+        report_count += 1
+        for item in refs:
+            if not isinstance(item, dict):
+                continue
+            if not isinstance(item.get("useful"), bool):
+                continue
+            source = str(item.get("source") or "unknown").strip() or "unknown"
+            query = str(item.get("query") or "").strip()
+            reason = str(item.get("reason") or "").strip()
+            evaluated += 1
+            if item.get("useful") is True:
+                useful += 1
+            else:
+                irrelevant_by_source[source] = irrelevant_by_source.get(source, 0) + 1
+                latest_by_source[source] = {
+                    "source": source,
+                    "count": irrelevant_by_source[source],
+                    "sample_query": query[:160],
+                    "sample_reason": reason[:160],
+                }
+    useful_rate = round((useful / evaluated) * 100, 1) if evaluated else 0.0
+    reflux_targets = [
+        latest_by_source[source]
+        for source, _ in sorted(irrelevant_by_source.items(), key=lambda kv: (-kv[1], kv[0]))
+    ]
+    return {
+        "evaluated": evaluated,
+        "useful": useful,
+        "useful_rate_pct": useful_rate,
+        "irrelevant_by_source": irrelevant_by_source,
+        "reflux_targets": reflux_targets,
+        "report_count": report_count,
+    }
+
+
 memory_loop = load_memory_loop(db_path)
+memory_effectiveness = load_memory_reference_effectiveness(report_dirs_raw)
+memory_loop.update(memory_effectiveness)
 
 
 # --- skill loop: logs/skill_recommend_log.yaml + logs/skill_execution_log.yaml ---
@@ -485,6 +576,28 @@ def emit_snapshot(generated_at, window_days, loops):
         lines.append(f"      stalled: {'true' if loop['stalled'] else 'false'}")
         if loop.get("note"):
             lines.append(f"      note: {q(loop['note'])}")
+        if name == "memory":
+            lines.append(f"      evaluated: {int(loop.get('evaluated', 0) or 0)}")
+            lines.append(f"      useful: {int(loop.get('useful', 0) or 0)}")
+            lines.append(f"      useful_rate_pct: {float(loop.get('useful_rate_pct', 0.0) or 0.0)}")
+            lines.append(f"      report_count: {int(loop.get('report_count', 0) or 0)}")
+            irrelevant = loop.get("irrelevant_by_source") or {}
+            if irrelevant:
+                lines.append("      irrelevant_by_source:")
+                for source, count in sorted(irrelevant.items()):
+                    lines.append(f"        {q(source)}: {int(count)}")
+            else:
+                lines.append("      irrelevant_by_source: {}")
+            targets = [target for target in (loop.get("reflux_targets") or []) if isinstance(target, dict)]
+            if targets:
+                lines.append("      reflux_targets:")
+                for target in targets:
+                    lines.append(f"        - source: {q(target.get('source'))}")
+                    lines.append(f"          count: {int(target.get('count', 0) or 0)}")
+                    lines.append(f"          sample_query: {q(target.get('sample_query'))}")
+                    lines.append(f"          sample_reason: {q(target.get('sample_reason'))}")
+            else:
+                lines.append("      reflux_targets: []")
     return "\n".join(lines)
 
 
@@ -528,6 +641,12 @@ for name in ("lesson", "insight", "semantic", "obsidian", "memory", "skill"):
         f"stock={loop['stock']} last_consumption={loop['last_consumption_ts']} "
         f"stalled={loop['stalled']}{note}"
     )
+    if name == "memory":
+        print(
+            f"    effectiveness: evaluated={loop.get('evaluated', 0)} "
+            f"useful={loop.get('useful', 0)} useful_rate_pct={loop.get('useful_rate_pct', 0.0)} "
+            f"reflux_targets={len(loop.get('reflux_targets') or [])}"
+        )
 if alerts:
     for a in alerts:
         print(f"ALERT: {a}")
