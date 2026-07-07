@@ -446,6 +446,8 @@ for ((i=0; i<=LAST_IDX; i++)); do
             log_dry "  respawn: agents.${p} (${agent_id}) — 死亡ペイン"
         else
             tmux respawn-pane -t "${AGENTS_WINDOW_TARGET}.${p}"
+            # respawn-paneはscrollback履歴を引き継ぐ(tmux仕様)。前セッション残像防止(殿実測2026-07-08)
+            tmux clear-history -t "${AGENTS_WINDOW_TARGET}.${p}" 2>/dev/null || true
             sleep 0.5
 
             # cd + PS1設定

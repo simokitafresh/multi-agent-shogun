@@ -1108,6 +1108,8 @@ safe_send_clear() {
             tmux respawn-pane -k -t "$pane" "export PATH=\"${_node_dir}:\$PATH\" && cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
                 log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed"
             }
+            # respawn-pane -kはscrollback履歴を引き継ぐ(tmux仕様)。Androidアプリが前セッション残像を表示するためクリア(殿実測2026-07-08)
+            tmux clear-history -t "$pane" 2>/dev/null || true
             tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
             log "CTX-RESET: $agent_name @context_pct → 0% after CODEX-RESPAWN"
             rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
@@ -1131,6 +1133,8 @@ safe_send_clear() {
         log "RESPAWN-FALLBACK: $agent_name respawn failed, trying /clear"
         safe_send_keys_atomic "$pane" "$clear_cmd" 0.3 || true
     }
+    # respawn-pane -kはscrollback履歴を引き継ぐ(tmux仕様)。Androidアプリが前セッション残像を表示するためクリア(殿実測2026-07-08)
+    tmux clear-history -t "$pane" 2>/dev/null || true
     tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
     log "CTX-RESET: $agent_name @context_pct → 0% after respawn-pane"
     rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
@@ -4770,6 +4774,8 @@ check_ninja_cli_dead() {
             # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
             local _node_path="${HOME}/.nvm/versions/node/v20.20.0/bin"
             tmux respawn-pane -k -t "$_pane_target_bg" "export PATH=\"${_node_path}:\$PATH\" && cd '${_script_dir_bg}' && ${_launch_bg}" 2>/dev/null || true
+            # respawn-pane -kはscrollback履歴を引き継ぐ(tmux仕様)。前セッション残像防止(殿実測2026-07-08)
+            tmux clear-history -t "$_pane_target_bg" 2>/dev/null || true
             sleep 30
             # LK009 enforcement: CLI再起動後に@agent_idを再設定（pane変数汚染防止）
             local _current_agent_id

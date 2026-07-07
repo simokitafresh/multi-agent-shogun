@@ -392,6 +392,8 @@ PY
     date +%s > "$last_respawn_file"
     # ターミナルリセット付きrespawn(根因対策2026-06-21: Claude CLIのターミナル設定残留→Codex exit 2)
     tmux respawn-pane -k -t "$target" "reset 2>/dev/null; cd \"${SCRIPT_DIR}\" && $launch"
+    # respawn-pane -kはscrollback履歴を引き継ぐ(tmux仕様)。前セッション残像防止(殿実測2026-07-08)
+    tmux clear-history -t "$target" 2>/dev/null || true
 
     if [[ "$TARGET_CLI" == "codex" ]]; then
         sleep 5  # boot待ち(wait_for_codex_boot廃止: pstreeポーリングがCodex exit 2の寄与因子)
