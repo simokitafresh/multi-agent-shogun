@@ -650,7 +650,7 @@ lessons:
   source_cmd: 'cmd_3700'
   created_at: '2026-07-06'
   automated: true
-  enforcement: '未自動化。構造対策はGP提案済み: キュー書込み時はdraft status、cmd_save PASSがpendingへ昇格させる二段階化(掲示板で軍師に提起)'
+  enforcement: "cmd_3701で実装完了(2026-07-07 completed確認): キュー書込みはstatus:draft、cmd_save.sh PASSがpendingへ自動昇格する二段階化が稼働中。cmd_3727-3730の起票4本で昇格動作を実測済み"
 # LS081: superseded by LS-A04(45) (q11語彙マッチ+行動変換語=cmdテンプレートルール。吸収コメント既存(2026-07-06)だが実体未削除だったため2026-07-07物理削除)
 # LS082: superseded by LS-A09(30) (UI現物確認=現物確認必須パターン。吸収コメント既存(2026-07-06)だが実体未削除だったため2026-07-07物理削除)
 # LS083: superseded by LS-A09(31) (ゲート資産混同=現物確認必須パターン。吸収コメント既存(2026-07-06)だが実体未削除だったため2026-07-07物理削除)
