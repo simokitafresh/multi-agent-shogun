@@ -291,11 +291,12 @@ main() {
             exit 1
         fi
         if ! git diff --exit-code instructions/generated/ > /dev/null 2>&1; then
-            echo "BLOCKED: Generated instructions out of sync." >&2
-            echo "Run: bash scripts/build_instructions.sh && git add instructions/generated/" >&2
-            exit 1
+            echo "AUTO-FIX: generated instructions were out of sync — re-synced and staged automatically (GA-190)." >&2
+            git add instructions/generated/
+            git diff --cached --name-only -- instructions/generated/ | sed 's/^/    staged: /' >&2
+        else
+            echo "  OK: generated instructions in sync."
         fi
-        echo "  OK: generated instructions in sync."
     fi
 
     run_semantic_propagation_for_staged_files

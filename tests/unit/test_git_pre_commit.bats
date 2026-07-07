@@ -173,7 +173,7 @@ EOF
     [[ "$output" == *"generated instructions in sync"* ]]
 }
 
-@test "blocks when build_instructions leaves generated files dirty" {
+@test "auto-fixes and stages generated files when build_instructions leaves them dirty (GA-190)" {
     cat > "$TEST_ROOT/scripts/build_instructions.sh" <<'EOF'
 #!/usr/bin/env bash
 printf '# regenerated\n' > "$(dirname "$0")/../instructions/generated/base.md"
@@ -189,8 +189,31 @@ EOF
 
     run_hook
 
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO-FIX: generated instructions were out of sync"* ]]
+    [[ "$output" == *"staged: instructions/generated/base.md"* ]]
+    run bash -c 'cd "$1" && git diff --cached --name-only' -- "$TEST_ROOT"
+    [[ "$output" == *"instructions/generated/base.md"* ]]
+}
+
+@test "still blocks when build_instructions.sh itself fails" {
+    cat > "$TEST_ROOT/scripts/build_instructions.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+    chmod +x "$TEST_ROOT/scripts/build_instructions.sh"
+    cat >> "$TEST_ROOT/instructions/base.md" <<'EOF'
+another line
+EOF
+    (
+        cd "$TEST_ROOT"
+        git add scripts/build_instructions.sh instructions/base.md
+    )
+
+    run_hook
+
     [ "$status" -eq 1 ]
-    [[ "$output" == *"BLOCKED: Generated instructions out of sync."* ]]
+    [[ "$output" == *"BLOCKED: build_instructions.sh failed"* ]]
 }
 
 @test "blocks queue task yaml mixed with implementation files" {
