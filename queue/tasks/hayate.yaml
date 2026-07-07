@@ -1,7 +1,7 @@
 task:
   acceptance_criteria:
   - checks:
-    - check: 対象insight INS-20260708-040752052-b0dc を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
+    - check: 対象insight INS-20260708-061421331-618c を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
     id: AC1
   - checks:
     - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
@@ -22,19 +22,19 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_reflux_insight_202607080507_hayate
+  parent_cmd: cmd_reflux_insight_202607080614_hayate
   project: infra
-  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-040752052-b0dc を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
+  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-061421331-618c を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
   reflux_inventory_before:
-    insights_pending: 1
+    insights_pending: 2
     promotions: 76
-    total: 77
+    total: 78
     zero_backlinks: 0
   scout_exempt: true
   status: done
   stop_for: []
   target_path: queue/insights.yaml
-  task_id: cmd_reflux_insight_202607080507_hayate_exact
+  task_id: cmd_reflux_insight_202607080614_hayate_exact
   task_type: exact
   related_lessons:
   - id: 'L351'
@@ -88,13 +88,13 @@ task:
   - '2026-07-08T00:45:01+09:00 | タスク完了です。前セッションで停止していた報告YAML未作成状態を検出し、`/report-write`スキルに沿って`queue/reports/kotaro_report_cmd_reflux_i'
   - '2026-06-20T02:15:43+09:00 | スコープ内の全ファイル（`queue/insights.yaml` / `queue/tasks/saizo.yaml` / 報告YAML）は全て `.gitignore` 管理外。 COMMIT M'
   - '2026-06-20T00:33:13+09:00 | parent_cmd=noneのhot fixタスク。ninja_done.shはcmd_XXX形式不要のため家老へのinbox_write完了報告で終了（既送信済み）。 **作業完了サマリ:** -'
-  - '2026-07-08T04:02:05+09:00 | 定型還流消化。INS-780d。pending=8。APPROVE。'
-  ac_version: 05889f4a
-  _ac_task_id: cmd_reflux_insight_202607080507_hayate_exact
+  - '2026-07-08T05:08:43+09:00 | hayate draft APPROVE完了。未読0件。 還流在庫pending 12→1。本セッションで11件純減。レビュー依頼を待つ。 [meta] stop_reason=end_turn'
+  ac_version: 7334cb0c
+  _ac_task_id: cmd_reflux_insight_202607080614_hayate_exact
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_reflux_insight_202607080507_hayate.yaml
-  report_path: queue/reports/hayate_report_cmd_reflux_insight_202607080507_hayate.yaml
+  report_filename: hayate_report_cmd_reflux_insight_202607080614_hayate.yaml
+  report_path: queue/reports/hayate_report_cmd_reflux_insight_202607080614_hayate.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -117,5 +117,5 @@ task:
     - reason: 'binary_checks_fail'
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-08T05:07:44"
-  completed_at: "2026-07-08T05:10:20+09:00"
+  deployed_at: "2026-07-08T06:15:12"
+  completed_at: "2026-07-08T06:18:12+09:00"
