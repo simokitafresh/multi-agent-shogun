@@ -3750,6 +3750,12 @@ if [ -z "${_d_unpushed:-}" ] || [ "${_d_unpushed:-?}" = "?" ]; then
     _d_unpushed=$(cat "$_TMP_UNPUSHED" 2>/dev/null)
     [ -n "$_d_unpushed" ] || _d_unpushed="?"
 fi
+# 未push滞留WARN(殿命2026-07-07「今より強くてニューゲーム」): unpushedは計測のみで行動変換がなく、
+# 98→129本の滞留一括pushでCI RED露出(個別cmdのレビューは変更の合成結果を見ない。CI全量実行だけが見る)。
+if [[ "$_d_unpushed" =~ ^[0-9]+$ ]] && [ "$_d_unpushed" -ge "${UNPUSHED_WARN_THRESHOLD:-30}" ]; then
+    echo "  WARN: 未push ${_d_unpushed}件滞留(閾値${UNPUSHED_WARN_THRESHOLD:-30}) — 滞留はCI REDの先送り。CI GREEN確認の上pushせよ(2026-07-07: 129本一括pushでRED露出の実測)"
+    alerts+=("未push滞留: ${_d_unpushed}件(RED先送り。CI GREEN確認後にpush)")
+fi
 echo "■ DIGEST: inbox=${_d_inbox} insights=${_d_insights} proposals=${_d_proposals} unpushed=${_d_unpushed} idle_trigger=${IDLE_TRIGGER} judge=${overall}"
 echo ""
 echo "■ 必読: projects/infra/lessons_shogun.yaml（将軍教訓。deepdive前に通読せよ=Step 2.45。superseded_by付きは参考扱い）"

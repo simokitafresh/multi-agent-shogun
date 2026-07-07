@@ -196,6 +196,7 @@ lessons:
     (27)殿の発言帰属捏造禁止(LS069吸収2026-07-02)。殿が言っていないことを殿裁定として記録するな。殿の発言を確認せず自分の解釈を殿の言葉として帰属=嘘。Guard15(pre-write-edit-combined.sh)で殿裁定記載時にlord_conversation直近inbound自動表示(2026-06-20事故)
     (28)忍者作業中の共有作業ツリーでブランチ切替え・index書込み操作を行うな(LS061吸収2026-07-02)。根因=忍者の作業状態を確認せず慣例操作を実行(cmd_3328/3332で2回)。ブランチ切替え前にkaro_snapshot+capture-paneで確認必須。忍者acknowledged〜completedの間はread-only(log/diff/status)のみ。★(28)拡張(2026-07-02): git commit --amendも禁止。共有ツリーではpush失敗をもたつく間に他エージェントがHEADへcommitを積むため、amendは他者のcommitを書き換える(hayate auto-commitを書き換えた実事故0c6b5878c。内容損失なしだが帰属破壊)。修正の追加はamendでなく常に新規commitで行え。HEADが自分のcommitである保証は共有ツリーには存在しない
     (29)CLI pinned/latestでopus解決先が違う(LS076吸収2026-07-02)。pinned(~/bin/claude,2.1.87)=Opus4.6止まり+xhigh非対応、latest(~/.local/bin/claude)=Opus4.8+xhigh対応。settings.yaml launch_cmdのパスで判別。一次確認はps -efで実プロセスの--effortを見る(2026-06-07全員Opus事故と同型)
+    (32)UPSERT運用テーブルのupdated_atは初回到着時刻ではない(LS079吸収2026-07-07)。sync系ジョブが直近N日を毎日再UPSERTする場合updated_atは最終上書き時刻。タイムスタンプで不在/到着を主張する前に書込みジョブのUPSERT範囲・頻度をコード現物で確認せよ。値の変化を追うには値履歴が必要(cmd_3678前提崩壊。(17)検証手段がその主張を証明できるかの再発形)
   source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047, LS053, LS063, LS062_commit, LS063_alpha, LS067, LS069, LS061, LS076]
   created_at: '2026-04-25'
   automated: true
@@ -260,7 +261,10 @@ lessons:
 - id: LS-A14
   title: 進行中計画は即永続化 — /clearは予告なく来る
   origin: '[[cmd_1947]]'
-  detail: 殿の裁定・cmd間の依存関係はその場でcontext/progress系に永続化。完了を待つな。
+  detail: |
+    殿の裁定・cmd間の依存関係はその場でcontext/progress系に永続化。完了を待つな。
+    (2)D0コード修正は即コミットせよ(2026-07-07実証): 将軍のninja_monitor.sh+memory_db_knowledge_write.shのD0修正(silent-zero根絶+連鎖OK記録)が未コミットのまま約2時間後に共有ツリーから消失した(cmd_3719-3720の忍者作業期間と重なる)。未コミットの共有ツリー編集は他エージェントのツリー操作・auto-commitで消える=存在しないのと同じ。D0修正→bash -n検証→即コミットを1セットで完結せよ。ただし忍者作業中(acknowledged〜completed)の対象ファイルは編集自体を待て(LS-A09(28))
+    (3)push滞留=CI REDの先送り(2026-07-07実証): 未push98→129本の滞留を一括pushしたらCI RED露出(Fableテスト整合+gate挙動変化の合成不整合)。個別cmdのレビュー・batsは変更の合成結果を見ない。CI全量実行だけが見る。コミットの滞留は「露出するはずのREDの先送り」。enforcement: gate_shogun_startup.sh DIGEST後のunpushed閾値WARN(UNPUSHED_WARN_THRESHOLD既定30)
   source_ids: [LS034]
   created_at: '2026-04-24'
   automated: true
@@ -638,14 +642,7 @@ lessons:
   created_at: '2026-07-02'
   automated: true
   enforcement: 'gate_skill_script_refs.sh max採用+判定根拠出力(commit 07a0cfd83/68c5f0cf7)+再現bats test_gate_skill_script_refs_marker.bats(3テスト)+prompt_state_inject.sh session_alerts突合+キー本文表示(commit 1ac6eb794)+test_prompt_state_defer_reconcile.bats(3テスト)'
-- id: 'LS079'
-  title: 'UPSERT運用テーブルのupdated_atは初回到着時刻ではない'
-  origin: '[[cmd_3678]]'
-  detail: 'cmd_3678前提崩壊(2026-07-03): 本番pricesの6月末行updated_at分布が7/3 01:01のみであることから『7/1-7/2に6/30価格不在』と断定したが、hayate一次証拠でsync-pricesは直近7日を毎日再UPSERTしており、updated_atは最終上書き時刻に過ぎないと判明(6/30価格はStockdata 6/30 23:31 UTC取得成功、DM-Signal 7/1 01:01 UTC取込済み)。LS-A09(17)の再発形: 検証手段(updated_at)がその主張(不在)を証明できるか、書込み側の動作(UPSERT頻度・範囲)を確認せずに結論した。修正: タイムスタンプで不在/到着を主張する前に、そのテーブルへの書込みジョブのUPSERT範囲と頻度をコード現物で確認せよ。値の変化を追うには値履歴が必要でupdated_atでは追えない'
-  source_cmd: 'cmd_3678'
-  created_at: '2026-07-03'
-  automated: true
-  enforcement: 'cmd_save.sh preflightの因果確認WARN(既存)+cmd_3677統合判定で検証'
+# LS079: superseded by LS-A09(32) (UPSERT updated_at≠初回到着=検証手段の証明力確認パターン。2026-07-07統合)
 - id: 'LS080'
   title: 'cmd_save PASS前のキューEditは家老の自動配備とレースする'
   origin: '[[cmd_3698_確定台帳偵察]] -> [[保存ゲートと自動配備のレース]] -> [[cmd_3700_WARN残存配備]]'
@@ -654,27 +651,6 @@ lessons:
   created_at: '2026-07-06'
   automated: true
   enforcement: '未自動化。構造対策はGP提案済み: キュー書込み時はdraft status、cmd_save PASSがpendingへ昇格させる二段階化(掲示板で軍師に提起)'
-- id: 'LS081'
-  title: 'cmd起票のq11は既存代替の現物確認+ACは行動変換語を明記'
-  origin: '[[cmd_3701_draft二段階化]] -> [[q11語彙マッチ判定]] -> [[起票形式知の教訓化]]'
-  detail: 'cmd_3701が2回BLOCK: (1)q11にrg 0件の記載だけでは不合格 — 既存/代替/現行キーワード+既存導線がなぜ不足かの現物確認が必須(q11判定は語彙マッチ) (2)gate/hook系cmdのAC/commandには行動変換語(BLOCK/遮断/停止/止める/強制/自動化等)が必須。検知で終わるgateはWARN対象'
-  source_cmd: 'cmd_3701'
-  created_at: '2026-07-06'
-  automated: true
-  enforcement: 'cmd_save.sh check_q11_existing_alternative_block+check_gate_hook_action_conversionが自動強制済み'
-- id: 'LS082'
-  title: 'UI設計は現物の画面・列構成を確認してから描け'
-  origin: '[[第3弾ワイヤーフレームv1]] -> [[実在しないページを想像で設計]] -> [[LS082_UI現物確認]]'
-  detail: '第3弾ワイヤーフレームv1で、context/dm-signal-frontend.mdに『Signals: /signals ルート不在』と明記されていたにも関わらず、実在しないシグナル一覧ページを想像で描き殿の指摘を受けた(2026-07-06 18:46)。過去の保有シグナル表示はMonthly Tradeページのみが実態。UI設計の前に(1)対象ページの実在確認 (2)実コンポーネントの列構成確認(grep th/header) (3)既存最小改修が原則。想像のUIは検証スキップ(洗脳#2)の変形'
-  source_cmd: 'cmd_3705'
-  created_at: '2026-07-06'
-  automated: true
-  enforcement: '未自動化。ワイヤーフレーム作成手順として次回起票時のcmd本文に現物確認ACを含める'
-- id: 'LS083'
-  title: 'ゲート資産と保有資産を混同するな — フィルタのセマンティクスは実装と実保有履歴で確認せよ'
-  origin: '[[殿質問_TMF_TMV逆対_20260706]] -> [[ゲート資産と保有資産の混同]] -> [[LS083_セマンティクス現物確認]]'
-  detail: 'TMF/TMV完全逆ポジション対の質問に対し、DM3のconfig構造(AbsoluteMomentumFilter→SafeHavenSwitch)から『合格=TMF保有』と実装セマンティクス未確認のまま推定し、殿に誤った回答(本番4PFでTMF50%+TMV50%の方向中立化が起きる)をした。実態: absolute_assetはgatekeeper sensorで保有対象外(実装docstring明記+DM3実保有履歴でTMF 0日)。合格=相対選択资产、失格=safe haven。構造推定を現物確認せずに断言した本日2件目(LS082=UI想像設計と同型)。戦略構造の回答前に(1)実装docstring (2)実保有履歴DISTINCT の2点確認を必須とする'
-  source_cmd: 'cmd_3705'
-  created_at: '2026-07-06'
-  automated: true
-  enforcement: '未自動化。context/dm-signal-core.mdの誤解を招くDM3行はD0修正済み'
+# LS081: superseded by LS-A04(45) (q11語彙マッチ+行動変換語=cmdテンプレートルール。吸収コメント既存(2026-07-06)だが実体未削除だったため2026-07-07物理削除)
+# LS082: superseded by LS-A09(30) (UI現物確認=現物確認必須パターン。吸収コメント既存(2026-07-06)だが実体未削除だったため2026-07-07物理削除)
+# LS083: superseded by LS-A09(31) (ゲート資産混同=現物確認必須パターン。吸収コメント既存(2026-07-06)だが実体未削除だったため2026-07-07物理削除)
