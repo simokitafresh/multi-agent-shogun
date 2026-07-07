@@ -24,8 +24,7 @@ lessons:
   source_ids: [LS001, LS002, LS003, LS004, LS017, LS018, LS048, LS047]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'memory/deepdive_why_chain_20260321.md + deepdive_causal_tracing_20260415.md 毎セッション必読(CLAUDE.md Step 7)。追体験検証5問で強制自問'
-
+  enforcement: "Level5: gate_shogun_startup.sh Gate 6/6.5 + session_start_inject startup_gate自動注入 + AGENTS.md /new Recovery Step 7/8 により、deepdive原本存在確認・Phase追体験・追体験検証Qを起動フローへ自動表示/強制。memory/deepdive_why_chain_20260321.md + deepdive_causal_tracing_20260415.md を毎セッション参照し、理解依存を環境強制へ外部化。"
 # === クラスタ2: 殿との対話パターン ===
 - id: LS-A02
   title: 殿との対話原則 — ヒントは方向指示、沈黙は承認ではない
