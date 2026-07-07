@@ -1034,13 +1034,24 @@ echo "■ 自走チェック"
 if [ "$unread" -eq 0 ]; then
     echo "  inbox未読=0。レビュー依頼なし。"
     echo "  ★★★ idle時自走プロトコルを実行せよ（instructions/gunshi.md参照） ★★★"
+    # idle自走サイクル進捗表示(殿裁定2026-07-07: 止まらずにサイクルを回し続ける仕組み)
+    _idle_state="$SCRIPT_DIR/logs/gunshi_idle_cycle_state.yaml"
+    if [ -f "$_idle_state" ]; then
+        _last_step=$(grep 'last_completed_step:' "$_idle_state" 2>/dev/null | head -1 | awk '{print $2}' || true)
+        _last_ts=$(grep 'completed_at:' "$_idle_state" 2>/dev/null | head -1 | awk '{print $2}' || true)
+        if [ -n "$_last_step" ] && [ "$_last_step" -gt 0 ] 2>/dev/null; then
+            _next=$(( _last_step + 1 ))
+            [ "$_next" -gt 8 ] && _next=1
+            echo "  前回Step ${_last_step}完了(${_last_ts:-不明})。★ Step ${_next}から再開せよ"
+        fi
+    fi
     echo "  Step 1: karo_workarounds直近10件分析"
     echo "  Step 2: gunshi_review_log傾向分析"
     echo "  Step 3: 未自動化教訓のgate化"
     echo "  Step 4: CS観点遡及適用"
     echo "  Step 5: パターン発見→因果推論→行動"
     echo "  Step 6: proposed GP即実行（提案は行動ではない。実装して初めて行動）"
-    echo "  → 止まるな。1つ完了したら次へ"
+    echo "  → 止まるな。1つ完了したら次へ。完了したらStep番号をlogs/gunshi_idle_cycle_state.yamlに記録せよ"
 fi
 
 # --- Check 9: proposed/pending GP件数（自力実行催促） ---
