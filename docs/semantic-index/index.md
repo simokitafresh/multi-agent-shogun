@@ -4007,7 +4007,7 @@ codd:
 |------|---|
 | id | alpha_6_metrics |
 | label | α6指標 |
-| aliases | α6指標, alpha 6, 6指標α, alpha metrics, α6相関係数, アルファ6相関, alpha6 correlation, α6項目の相関係数, CAGR, NHF, MaxDD, MRU, Calmar, Avg UWP, ソルティノ, Sortino, 6項目でチェック, トータルリターン, 記事の実運用CAGRなどの文言の実運用とはどういう意味だ？, VDrag, ボラティリティドラッグ, volatility drag, Skewness, 歪度, Kurtosis, 尖度, excess kurtosis, raw kurtosis, MinMo, 最低継続期間, 最低継続月数, MaxConsecLoss, 最大連敗期間, 5追加指標, 継続性指標, continuity risk, maxDDが %と現実と極端に乖離している, cagrは %などになる可能性もある, metrics_summaryのbulk_raw化, 違うよ, total returnに最も大きな相関があるのは？CAGR, CAGRが入った, 最終的最も重要なのはトータルリターン cagr だ |
+| aliases | α6指標, alpha 6, 6指標α, alpha metrics, α6相関係数, アルファ6相関, alpha6 correlation, α6項目の相関係数, CAGR, NHF, MaxDD, MRU, Calmar, Avg UWP, ソルティノ, Sortino, 6項目でチェック, トータルリターン, 記事の実運用CAGRなどの文言の実運用とはどういう意味だ？, VDrag, ボラティリティドラッグ, volatility drag, Skewness, 歪度, Kurtosis, 尖度, excess kurtosis, raw kurtosis, MinMo, 最低継続期間, 最低継続月数, MaxConsecLoss, 最大連敗期間, 5追加指標, 継続性指標, continuity risk, maxDDが %と現実と極端に乖離している, cagrは %などになる可能性もある, metrics_summaryのbulk_raw化, 違うよ, total returnに最も大きな相関があるのは？CAGR, CAGRが入った, 最終的最も重要なのはトータルリターン cagr だ, 指標自体を比較しているか？PFの比較をしているのか？, 指標自体の相関, PFの比較をしている, チャンピオンPF間の月次リターン相関, 指標選定で選ばれたPF同士の相関とパラメータ空間内の指標同士の相関は別物 |
 | skills | なし |
 | related_concepts | dmsignal_operations, production_parity, db_price_data_range |
 
