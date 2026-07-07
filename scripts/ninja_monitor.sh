@@ -142,6 +142,11 @@ TRAINING_AUTO_DEPLOY_MIN_GATES=${TRAINING_AUTO_DEPLOY_MIN_GATES:-5}             
 TRAINING_AUTO_DEPLOY_RECENT=${TRAINING_AUTO_DEPLOY_RECENT:-50}                   # 忍者別直近gate参照件数
 TRAINING_AUTO_DEPLOY_VARIANT=${TRAINING_AUTO_DEPLOY_VARIANT:-script}             # script / codd — L4修行テンプレート種別
 TRAINING_AUTO_DEPLOY_STATE_PREFIX="$STATE_DIR/shogun_training_auto_deploy"
+REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=${REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD:-600}       # 還流在庫自動配備: idle継続しきい値（秒）
+REFLUX_AUTO_DEPLOY_COOLDOWN=${REFLUX_AUTO_DEPLOY_COOLDOWN:-3600}                 # 還流在庫自動配備: 忍者別クールダウン（秒）
+REFLUX_AUTO_DEPLOY_STATE_PREFIX="$STATE_DIR/shogun_reflux_auto_deploy"
+REFLUX_BACKLINK_SCAN_LIMIT=${REFLUX_BACKLINK_SCAN_LIMIT:-50}                     # backlinksゼロ在庫の1回あたり確認上限
+REFLUX_BACKLINK_TIMEOUT=${REFLUX_BACKLINK_TIMEOUT:-20}                           # backlinksゼロ確認のtimeout秒
 SPEED_TRAINING_LEDGER="${SPEED_TRAINING_LEDGER:-$SCRIPT_DIR/logs/script_speed_training_ledger.yaml}"
 KARO_IDLE_COOLDOWN=1800   # 家老idle自走サイクルクールダウン（秒）— 30分
 LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epoch秒）
@@ -675,6 +680,7 @@ declare -A POST_CLEAR_PENDING     # /new後にpost_clear_cmd送信待ち — key
 declare -A REPORT_DONE_MISMATCH_NOTIFIED  # report done+status未idle通知時刻 — key: "ninja:cmd_id", value: epoch秒
 declare -A IDLE_NOTIFY_SENT              # idle通知送信済み時刻 — key: agent_name, value: epoch秒（状態変化ベース+モード切替）
 declare -A TRAINING_IDLE_FIRST_SEEN      # 修行自動配備: idle継続開始時刻 — key: agent_name, value: epoch秒
+declare -A REFLUX_IDLE_FIRST_SEEN        # 還流在庫自動配備: idle継続開始時刻 — key: agent_name, value: epoch秒
 declare -A TRAINING_EFFECT_RECORDED     # 修行効果記録済みフラグ — key: "ninja:task_id", value: "1" (cmd_2767)
 declare -A TRAINING_COMPLETION_CHECKED  # 修行完了判定済みフラグ — key: "ninja:task_id", value: "1" (cmd_3230)
 PREV_PANE_MISSING=""              # ペイン消失 — 前回の消失忍者リスト（重複送信防止）
@@ -2400,6 +2406,252 @@ _handle_speed_training_auto_deploy() {
     return 1
 }
 
+_reflux_auto_state_file() {
+    local name="$1"
+    printf '%s_%s.last\n' "${REFLUX_AUTO_DEPLOY_STATE_PREFIX:-$STATE_DIR/shogun_reflux_auto_deploy}" "$name"
+}
+
+_reflux_insight_pending_count() {
+    local insights_file="${1:-$SCRIPT_DIR/queue/insights.yaml}"
+    [ -f "$insights_file" ] || { printf '0\n'; return 0; }
+    awk '
+        /^[[:space:]]*status:[[:space:]]*["'\'']?pending["'\'']?[[:space:]]*$/ { n++ }
+        END { print n + 0 }
+    ' "$insights_file"
+}
+
+_reflux_first_pending_insight_id() {
+    local insights_file="${1:-$SCRIPT_DIR/queue/insights.yaml}"
+    [ -f "$insights_file" ] || return 1
+    awk '
+        function clean(s) { gsub(/^[[:space:]"'\''"]+|[[:space:]"'\''"]+$/, "", s); return s }
+        function flush() {
+            if (id != "" && status == "pending") {
+                print id
+                found = 1
+                exit
+            }
+        }
+        /^-[[:space:]]+id:[[:space:]]*/ {
+            flush()
+            id = $0
+            sub(/^-[[:space:]]+id:[[:space:]]*/, "", id)
+            id = clean(id)
+            status = ""
+            next
+        }
+        /^[[:space:]]+status:[[:space:]]*/ {
+            status = $0
+            sub(/^[[:space:]]+status:[[:space:]]*/, "", status)
+            status = clean(status)
+            next
+        }
+        END { if (!found) flush() }
+    ' "$insights_file"
+}
+
+_reflux_zero_backlink_inventory() {
+    local helper="$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
+    local limit="${REFLUX_BACKLINK_SCAN_LIMIT:-50}"
+    local timeout_sec="${REFLUX_BACKLINK_TIMEOUT:-20}"
+    local output status count first_path
+
+    [[ "$limit" =~ ^[0-9]+$ ]] || limit=50
+    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=20
+    [ "$limit" -gt 0 ] 2>/dev/null || limit=50
+    [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=20
+
+    if [ ! -r "$helper" ]; then
+        printf '0\t-\tmissing-helper\n'
+        return 0
+    fi
+
+    if command -v timeout >/dev/null 2>&1; then
+        output=$(CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" timeout "$timeout_sec" bash "$helper" --zero --limit "$limit" 2>/dev/null)
+        status=$?
+    else
+        output=$(CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" bash "$helper" --zero --limit "$limit" 2>/dev/null)
+        status=$?
+    fi
+
+    if [ "$status" -ne 0 ]; then
+        printf '0\t-\tstatus_%s\n' "$status"
+        return 0
+    fi
+
+    count=$(printf '%s\n' "$output" | awk 'NF >= 2 { n++ } END { print n + 0 }')
+    first_path=$(printf '%s\n' "$output" | awk 'NF >= 2 { print $2; exit }')
+    [ -n "$first_path" ] || first_path="-"
+    printf '%s\t%s\tok\n' "${count:-0}" "$first_path"
+}
+
+_reflux_inventory_snapshot() {
+    local insights_file="${1:-$SCRIPT_DIR/queue/insights.yaml}"
+    local insight_count first_insight backlink_count first_backlink backlink_status total
+    insight_count=$(_reflux_insight_pending_count "$insights_file")
+    first_insight=$(_reflux_first_pending_insight_id "$insights_file" 2>/dev/null || true)
+    IFS=$'\t' read -r backlink_count first_backlink backlink_status < <(_reflux_zero_backlink_inventory)
+    [[ "$insight_count" =~ ^[0-9]+$ ]] || insight_count=0
+    [[ "$backlink_count" =~ ^[0-9]+$ ]] || backlink_count=0
+    [ -n "$first_insight" ] || first_insight="-"
+    [ -n "$first_backlink" ] || first_backlink="-"
+    total=$((insight_count + backlink_count))
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$insight_count" "$backlink_count" "$total" "$first_insight" "$first_backlink" "${backlink_status:-ok}"
+}
+
+_handle_reflux_auto_deploy() {
+    local name="$1"
+    local now="$2"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local task_status idle_elapsed last_file last_dir last elapsed
+    local insight_before backlink_before total_before first_insight first_backlink backlink_status
+    local insight_after backlink_after total_after _after_insight _after_backlink _after_status
+    local kind target_path cmd_id deploy_script tmp_task purpose ac1 ac2
+
+    [ -n "$name" ] || return 1
+
+    if _training_pipeline_has_work; then
+        unset "REFLUX_IDLE_FIRST_SEEN[$name]"
+        log "REFLUX-AUTO-SKIP: $name production pipeline has pending work"
+        return 1
+    fi
+
+    if [ -f "$task_file" ]; then
+        task_status=$(yaml_field_get "$task_file" "status")
+        case "$task_status" in
+            assigned|acknowledged|in_progress|pending|failed)
+                unset "REFLUX_IDLE_FIRST_SEEN[$name]"
+                log "REFLUX-AUTO-SKIP: $name task status=${task_status}"
+                return 1
+                ;;
+        esac
+    fi
+
+    if [ -z "${REFLUX_IDLE_FIRST_SEEN[$name]:-}" ]; then
+        REFLUX_IDLE_FIRST_SEEN[$name]=$now
+        log "REFLUX-AUTO-WATCH: $name idle tracking started"
+        return 1
+    fi
+
+    idle_elapsed=$((now - REFLUX_IDLE_FIRST_SEEN[$name]))
+    if [ "$idle_elapsed" -lt "${REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD:-600}" ]; then
+        log "REFLUX-AUTO-WAIT: $name idle ${idle_elapsed}s < ${REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD:-600}s"
+        return 1
+    fi
+
+    last_file=$(_reflux_auto_state_file "$name")
+    last_dir="${last_file%/*}"
+    [ "$last_dir" = "$last_file" ] && last_dir="."
+    if ! mkdir -p "$last_dir"; then
+        log "REFLUX-AUTO-SKIP: failed to prepare cooldown state dir for ${name}: ${last_dir}"
+        return 1
+    fi
+    if [ -e "$last_file" ] && [ ! -f "$last_file" ]; then
+        log "REFLUX-AUTO-SKIP: cooldown state path is not a regular file for ${name}: ${last_file}"
+        return 1
+    fi
+    last=0
+    if [ -f "$last_file" ]; then
+        read -r last < "$last_file" || last=0
+    fi
+    [[ "$last" =~ ^[0-9]+$ ]] || last=0
+    elapsed=$((now - last))
+    if [ "$elapsed" -lt "${REFLUX_AUTO_DEPLOY_COOLDOWN:-3600}" ]; then
+        log "REFLUX-AUTO-COOLDOWN: $name ${elapsed}s < ${REFLUX_AUTO_DEPLOY_COOLDOWN:-3600}s"
+        return 1
+    fi
+
+    IFS=$'\t' read -r insight_before backlink_before total_before first_insight first_backlink backlink_status < <(_reflux_inventory_snapshot)
+    [ "$first_insight" = "-" ] && first_insight=""
+    [ "$first_backlink" = "-" ] && first_backlink=""
+    if [ "${backlink_status:-ok}" != "ok" ]; then
+        log "REFLUX-AUTO-COUNT-WARN: $name zero_backlinks_status=${backlink_status}"
+    fi
+    log "REFLUX-AUTO-INVENTORY-BEFORE: $name insights_pending=${insight_before:-0} zero_backlinks=${backlink_before:-0} total=${total_before:-0}"
+
+    if [ "${total_before:-0}" -le 0 ] 2>/dev/null; then
+        unset "REFLUX_IDLE_FIRST_SEEN[$name]"
+        log "REFLUX-AUTO-SKIP: $name no reflux inventory"
+        return 1
+    fi
+
+    if [ "${insight_before:-0}" -gt 0 ] 2>/dev/null && [ -n "$first_insight" ]; then
+        kind="insight"
+        target_path="queue/insights.yaml"
+        purpose="還流在庫自動消化: queue/insights.yaml の pending insight ${first_insight} を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する"
+        ac1="対象insight ${first_insight} を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する"
+    elif [ -n "$first_backlink" ]; then
+        kind="backlink"
+        target_path="$first_backlink"
+        purpose="還流在庫自動消化: backlinksゼロ文書 ${first_backlink} を確認し、適切なsemantic-links/origin/因果リンクを追加して孤立を減らす"
+        ac1="対象文書 ${first_backlink} のincoming backlinkゼロ状態を確認し、適切な因果リンクを追加する"
+    else
+        unset "REFLUX_IDLE_FIRST_SEEN[$name]"
+        log "REFLUX-AUTO-SKIP: $name inventory count positive but no target item"
+        return 1
+    fi
+    ac2="作業前後の還流在庫残数(insights_pending/zero_backlinks/total)を報告YAMLへ記録し、実行証拠を残す"
+
+    deploy_script="$SCRIPT_DIR/scripts/deploy_task.sh"
+    if [ ! -r "$deploy_script" ]; then
+        log "REFLUX-AUTO-SKIP: deploy_task.sh not readable"
+        return 1
+    fi
+    if ! mkdir -p "$STATE_DIR"; then
+        log "REFLUX-AUTO-SKIP: failed to prepare state dir for ${name}: ${STATE_DIR}"
+        return 1
+    fi
+    if ! tmp_task=$(mktemp "${STATE_DIR}/reflux_auto_${name}.XXXXXX.yaml"); then
+        log "REFLUX-AUTO-SKIP: failed to create temporary task YAML for ${name}"
+        return 1
+    fi
+
+    cmd_id="cmd_reflux_${kind}_$(date '+%Y%m%d%H%M')_${name}"
+    if ! cat > "$tmp_task" <<EOF
+task:
+  parent_cmd: ${cmd_id}
+  task_id: ${cmd_id}_exact
+  task_type: exact
+  project: infra
+  target_path: ${target_path}
+  scout_exempt: true
+  status: assigned
+  purpose: |-
+    ${purpose}
+  acceptance_criteria:
+    - id: AC1
+      checks:
+        - check: ${ac1}
+    - id: AC2
+      checks:
+        - check: ${ac2}
+  reflux_inventory_before:
+    insights_pending: ${insight_before:-0}
+    zero_backlinks: ${backlink_before:-0}
+    total: ${total_before:-0}
+EOF
+    then
+        rm -f "$tmp_task"
+        log "REFLUX-AUTO-SKIP: failed to write temporary task YAML for ${name}"
+        return 1
+    fi
+
+    log "REFLUX-AUTO-DEPLOY: $name cmd=${cmd_id} kind=${kind} target=${target_path}"
+    if bash "$deploy_script" --direct --yaml "$tmp_task" "$name" "$cmd_id" >> "$SCRIPT_DIR/logs/deploy_reflux_auto.log" 2>&1; then
+        rm -f "$tmp_task"
+        printf '%s\n' "$now" > "$last_file" 2>/dev/null || true
+        unset "REFLUX_IDLE_FIRST_SEEN[$name]"
+        IFS=$'\t' read -r insight_after backlink_after total_after _after_insight _after_backlink _after_status < <(_reflux_inventory_snapshot)
+        log "REFLUX-AUTO-INVENTORY-AFTER: $name insights_pending=${insight_after:-0} zero_backlinks=${backlink_after:-0} total=${total_after:-0}"
+        log "REFLUX-AUTO-DEPLOY-DONE: $name cmd=${cmd_id} kind=${kind}"
+        return 0
+    fi
+
+    rm -f "$tmp_task"
+    log "REFLUX-AUTO-DEPLOY-FAIL: $name cmd=${cmd_id} kind=${kind} (non-blocking)"
+    return 1
+}
+
 _training_auto_state_file() {
     local name="$1"
     printf '%s_%s.last\n' "$TRAINING_AUTO_DEPLOY_STATE_PREFIX" "$name"
@@ -2764,6 +3016,7 @@ handle_confirmed_idle() {
     _handle_idle_notify "$name" "$now"
     _record_training_effect "$name"  # 修行完了時にbefore/after FAIL率を比較記録 (cmd_2767)
     _trigger_training_completion_check "$name"  # 修行完了判定→SKILL.md自動更新 (cmd_3230: Phase3)
+    if _handle_reflux_auto_deploy "$name" "$now"; then return; fi
     if _handle_speed_training_auto_deploy "$name" "$now"; then return; fi
     if _handle_training_auto_deploy "$name" "$now"; then return; fi
     _handle_auto_clear "$name" "$now"
@@ -2781,6 +3034,7 @@ handle_busy() {
     PREV_STATE[$name]="busy"
     unset "IDLE_NOTIFY_SENT[$name]"  # 状態変化: busy復帰→次idle時に再通知許可
     unset "TRAINING_IDLE_FIRST_SEEN[$name]"
+    unset "REFLUX_IDLE_FIRST_SEEN[$name]"
     # 作業再開 → 停滞追跡リセット + fingerprint リセット（次idle時に新鮮な判定を保証）
     unset "STALL_FIRST_SEEN[$name]"
     unset "STALL_FIRST_SEEN[deploy_stall_${name}]"
