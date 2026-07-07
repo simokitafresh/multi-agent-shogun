@@ -1,29 +1,22 @@
 task:
-  parent_cmd: cmd_reflux_promotion_202607080545_kotaro
-  task_id: cmd_reflux_promotion_202607080545_kotaro_exact
+  parent_cmd: cmd_reflux_promotion_202607080632_kotaro
+  task_id: cmd_reflux_promotion_202607080632_kotaro_exact
   task_type: exact
   project: infra
   target_path: projects/infra/lessons_shogun.yaml
   scout_exempt: true
-  status: in_progress
+  status: idle
   purpose: |-
-    還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_shogun.yaml] LS-A02 (L1:事後検出): 殿との対話原則 — ヒントは方向指示、沈黙は承認ではない を確認し、Level4以上の実装・gate・task注入などへ昇格する
+    還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_shogun.yaml] LS-A11 (L1:事後検出): infra修正実績 — バグはenforcement(hook/gate)で修正済み を確認し、Level4以上の実装・gate・task注入などへ昇格する
   acceptance_criteria:
     - id: AC1
       checks:
-        - check: '昇格候補 [lessons_shogun.yaml] LS-A02 (L1:事後検出): 殿との対話原則 — ヒントは方向指示、沈黙は承認ではない を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する'
+        - check: '昇格候補 [lessons_shogun.yaml] LS-A11 (L1:事後検出): infra修正実績 — バグはenforcement(hook/gate)で修正済み を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する'
     - id: AC2
       checks:
         - check: '作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す'
   reflux_inventory_before:
     insights_pending: 1
     zero_backlinks: 0
-    promotions: 76
-    total: 77
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  report_filename: kotaro_report_cmd_reflux_promotion_202607080545_kotaro.yaml
-  report_path: queue/reports/kotaro_report_cmd_reflux_promotion_202607080545_kotaro.yaml
-  ac_version: 99b6419e
+    promotions: 75
+    total: 76

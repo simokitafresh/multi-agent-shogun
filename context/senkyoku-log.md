@@ -1395,3 +1395,4 @@
 - 2026-07-08 cmd_reflux_insight_202607080553_kagemaru完了: 影丸がINS-4075をSG-PRE31意味検算概念としてsemantic-indexへ登録し、参照先docs/researchも追跡化。`semantic_search "SG-PRE31 N×M 意味検算 LG048"` hit、在庫2→1、GATE CLEAR。
 - 2026-07-08 cmd_reflux_promotion_202607080545_kotaro完了: 小太郎がLS-A02 enforcementを実態(cmd_save q5/q8 + 各role startup追体験Q4)に合わせてLevel4明示化し、L4未満候補14→13を確認。deploy_task fail由来のtask/report欠落は家老が補正し、重複tobisaru配備はidleへ戻して二重作業を停止。
 - 2026-07-08 cmd_reflux_insight_202607080614_hayate完了: 疾風がINS-618cをPD-056構造対策完了済みの残存insightとしてresolve。pending 2→1、report gate PASS、task idle差分もcommitしてGATE CLEAR。
+- 2026-07-08 cmd_reflux_promotion_202607080617_tobisaru完了: 飛猿がLS-A10 enforcementをcmd_save `check_measurement_env_info`(cmd_2634)実装へ接続してLevel5明示化。promotions 76→75、未カバーのRender実測強制/生成機構理解チェックはdecision_candidateへ分離。
