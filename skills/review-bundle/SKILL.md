@@ -10,7 +10,9 @@ description: |
   DO NOT TRIGGER: レビュー判定そのもの（→手動）、gate_sync（→/gate-sync）、idle分析永続化（→/idle-persist）
 ---
 
-<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-07T23:28:58+09:00 -->
+
+Script refs verified: 2026-07-07 cmd_3743. `inbox_write.sh` checked_at以降の変更(b8285b3c9/e949b27b5/71ab22b6d)をgit logで確認。review context添付、memory references追加、model-aware injection profileの内部メタデータ追加で、Step 3の `bash scripts/inbox_write.sh karo "$MESSAGE" review_feedback gunshi` 契約、永続化確認、retry手順は変更なし。
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 
@@ -199,4 +201,4 @@ Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は�
 
 Script refs verified: 2026-07-02 a2e4e93cc. `bulletin_write.sh` 直近変更は引数順序ミス検出ガード追加(contentがagent名ならERROR)。本SKILL.mdのinbox送信・掲示板投稿手順は正しい引数順のため契約に変更なし。
 
-<!-- script_refs_checked_at: 2026-07-02T13:47:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-07T15:46:38+09:00 -->
