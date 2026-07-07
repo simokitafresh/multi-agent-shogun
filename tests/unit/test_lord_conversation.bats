@@ -449,3 +449,36 @@ EOF
     ! echo "$decisions_section" | grep -q "軍師D0承認"
     ! echo "$decisions_section" | grep -q "方針を共有"
 }
+
+@test "T-LC-018: inbound lord ruling is queued as lesson candidate insight" {
+    export INSIGHTS_FILE="$TEST_TMPDIR/queue/insights.yaml"
+    mkdir -p "$TEST_TMPDIR/queue"
+
+    run append_lord_conversation "殿裁定: 今後は確認してから行動せよ" "inbound" "lord" "terminal" "shogun"
+    [ "$status" -eq 0 ]
+
+    grep -q "lord_conversation教訓候補" "$INSIGHTS_FILE"
+    grep -q "殿裁定" "$INSIGHTS_FILE"
+    grep -q 'source: "lord_conversation:lesson_candidate"' "$INSIGHTS_FILE"
+    grep -q "status: pending" "$INSIGHTS_FILE"
+}
+
+@test "T-LC-019: inbound without lesson trigger does not queue insight" {
+    export INSIGHTS_FILE="$TEST_TMPDIR/queue/insights.yaml"
+    mkdir -p "$TEST_TMPDIR/queue"
+
+    run append_lord_conversation "了解、ありがとう" "inbound" "lord" "terminal" "shogun"
+    [ "$status" -eq 0 ]
+
+    [ ! -f "$INSIGHTS_FILE" ]
+}
+
+@test "T-LC-020: repeated same inbound turn is deduplicated in insights" {
+    export INSIGHTS_FILE="$TEST_TMPDIR/queue/insights.yaml"
+    mkdir -p "$TEST_TMPDIR/queue"
+
+    append_lord_conversation "殿指摘: 同じ失敗を繰り返すな" "inbound" "lord" "terminal" "shogun"
+    append_lord_conversation "殿指摘: 同じ失敗を繰り返すな" "inbound" "lord" "terminal" "shogun"
+
+    [ "$(grep -c "lord_conversation教訓候補" "$INSIGHTS_FILE")" -eq 1 ]
+}

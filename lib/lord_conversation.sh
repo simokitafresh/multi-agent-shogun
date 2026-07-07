@@ -21,6 +21,7 @@ append_lord_conversation() {
   local lock_wait="${LORD_CONVERSATION_LOCK_WAIT_SEC:-5}"
   local db_path="${LORD_CONVERSATION_DB:-}"
   local semantic_index_path="${SEMANTIC_INDEX_PATH:-}"
+  local insight_write_path="${LORD_CONVERSATION_INSIGHT_WRITE:-}"
 
   case "$direction" in
     ""|*[!a-z_]*)
@@ -47,6 +48,9 @@ append_lord_conversation() {
   if [ -z "$semantic_index_path" ]; then
     semantic_index_path="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)/docs/semantic-index/index.md"
   fi
+  if [ -z "$insight_write_path" ]; then
+    insight_write_path="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)/scripts/insight_write.sh"
+  fi
 
   mkdir -p "$(dirname "$LORD_CONVERSATION")"
   [ -f "$LORD_CONVERSATION" ] || : > "$LORD_CONVERSATION"
@@ -63,10 +67,12 @@ append_lord_conversation() {
     CONV_MESSAGE="$message" \
     CONV_DB_PATH="$db_path" \
     CONV_SEMANTIC_INDEX_PATH="$semantic_index_path" \
+    CONV_INSIGHT_WRITE_PATH="$insight_write_path" \
     python3 - <<'PY'
 import json
 import os
 import re
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -83,8 +89,12 @@ target = os.environ.get("CONV_TARGET", "")
 message = os.environ["CONV_MESSAGE"]
 db_path = Path(os.environ.get("CONV_DB_PATH", ""))
 semantic_index_path = Path(os.environ.get("CONV_SEMANTIC_INDEX_PATH", ""))
+insight_write_path = Path(os.environ.get("CONV_INSIGHT_WRITE_PATH", ""))
 CMD_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
 SQLITE_BUSY_TIMEOUT_MS = 5000
+LESSON_TRIGGER_RE = re.compile(
+    r"(指摘|裁定|原則|教訓|学習|改善|許可|承認|禁止|必ず|べき|してよい|してはならない)"
+)
 
 
 def normalize_text(value: object) -> str:
@@ -354,6 +364,45 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
                 )
 
 
+def should_queue_lesson_candidate(entry: dict) -> bool:
+    if normalize_text(entry.get("direction", "")) != "inbound":
+        return False
+    detail = normalize_text(entry.get("detail", ""))
+    if not detail:
+        return False
+    return LESSON_TRIGGER_RE.search(detail) is not None
+
+
+def queue_lesson_candidate(entry: dict) -> None:
+    if not should_queue_lesson_candidate(entry):
+        return
+    if not insight_write_path.exists():
+        return
+
+    detail = normalize_text(entry.get("detail", ""))
+    ts = normalize_text(entry.get("ts", ""))
+    target = normalize_text(entry.get("target", ""))
+    source_name = "lord_conversation:lesson_candidate"
+    message = (
+        f"lord_conversation教訓候補: ts={ts} target={target or 'unknown'} "
+        f"trigger=inbound_lord detail={detail}"
+    )
+    result = subprocess.run(
+        ["bash", str(insight_write_path), message, "medium", source_name],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+    if result.returncode != 0:
+        err = (result.stderr or "").strip()
+        print(
+            f"WARN: append_lord_conversation: lesson candidate insight skipped: {err}",
+            file=os.sys.stderr,
+        )
+
+
 entries = load_jsonl(path)
 if not entries and str(path).endswith(".jsonl"):
     entries = load_legacy_yaml(legacy_path)
@@ -393,6 +442,11 @@ try:
     append_memory_db_entry(entry, len(entries))
 except Exception as exc:
     print(f"WARN: append_lord_conversation: DB INSERT skipped: {exc}", file=os.sys.stderr)
+
+try:
+    queue_lesson_candidate(entry)
+except Exception as exc:
+    print(f"WARN: append_lord_conversation: lesson candidate insight skipped: {exc}", file=os.sys.stderr)
 PY
   ) 200>"$LORD_CONVERSATION_LOCK"; then
     return 1

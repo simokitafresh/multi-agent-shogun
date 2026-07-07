@@ -412,8 +412,8 @@ _TMP_SCRIPTS_STATUS=$(mktemp) _TMP_GUNSHI_INFO=$(mktemp) _TMP_EVO_SCAN=$(mktemp)
 _TMP_DEFERRED_HOLES=$(mktemp) _TMP_BACKLINK_ZERO=$(mktemp)
 _TMP_THREE_LAYER=$(mktemp) _TMP_THREE_LAYER_STATUS=$(mktemp)
 _TMP_GATE4_YAML=$(mktemp) _TMP_SEMANTIC_NO_MATCH=$(mktemp)
-	_TMP_SKILL_REC=$(mktemp) _TMP_SKILL_USAGE=$(mktemp) _TMP_WEEKLY_METRICS=$(mktemp)
-	trap 'rm -f "$_TMP_CI_RED" "$_TMP_G1" "$_TMP_G2" "$_TMP_G3" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_GATE4_YAML" "$_TMP_SEMANTIC_NO_MATCH" "$_TMP_SKILL_REC" "$_TMP_SKILL_USAGE" "$_TMP_WEEKLY_METRICS"' EXIT
+	_TMP_SKILL_REC=$(mktemp) _TMP_SKILL_USAGE=$(mktemp) _TMP_WEEKLY_METRICS=$(mktemp) _TMP_LOOP_LEDGER=$(mktemp)
+	trap 'rm -f "$_TMP_CI_RED" "$_TMP_G1" "$_TMP_G2" "$_TMP_G3" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_GATE4_YAML" "$_TMP_SEMANTIC_NO_MATCH" "$_TMP_SKILL_REC" "$_TMP_SKILL_USAGE" "$_TMP_WEEKLY_METRICS" "$_TMP_LOOP_LEDGER"' EXIT
 	STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
 	"$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
 	_PID_G1=$!
@@ -470,6 +470,13 @@ EOF
 	    _PID_WEEKLY_METRICS=$!
 	else
 	    _PID_WEEKLY_METRICS=""
+	fi
+	_LOOP_LEDGER_SCRIPT="$SCRIPT_DIR/scripts/loop_ledger_update.sh"
+	if [ -x "$_LOOP_LEDGER_SCRIPT" ]; then
+	    bash "$_LOOP_LEDGER_SCRIPT" > "$_TMP_LOOP_LEDGER" 2>&1 &
+	    _PID_LOOP_LEDGER=$!
+	else
+	    _PID_LOOP_LEDGER=""
 	fi
 	awk '
 function flush_run() {
@@ -1995,6 +2002,36 @@ else
     echo "  SKIP: scripts/weekly_metrics_trend.sh 未配備"
 fi
 
+# --- Gate 10.3: 学習ループ台帳(loop_ledger, T7) ---
+echo "■ 学習ループ台帳(loop_ledger)"
+if [ -n "${_PID_LOOP_LEDGER:-}" ]; then
+    if wait "$_PID_LOOP_LEDGER"; then
+        _loop_ledger_rc=0
+    else
+        _loop_ledger_rc=$?
+    fi
+    _loop_ledger_output="$(cat "$_TMP_LOOP_LEDGER" 2>/dev/null)"
+    if [ -n "$_loop_ledger_output" ]; then
+        while IFS= read -r _loop_ledger_line; do
+            [ -n "$_loop_ledger_line" ] || continue
+            echo "  $_loop_ledger_line"
+        done <<< "$_loop_ledger_output"
+    fi
+    if [ "$_loop_ledger_rc" -eq 1 ]; then
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+        fi
+        _loop_ledger_sig=$(printf '%s\n' "$_loop_ledger_output" | awk '/^ALERT:/' | cksum | awk '{print $1 ":" $2}')
+        alerts+=("学習ループ台帳: 空転/在庫超過あり (${_loop_ledger_sig:-unknown})")
+    elif [ "$_loop_ledger_rc" -ne 0 ]; then
+        overall="ALERT"
+        alerts+=("学習ループ台帳: 集計失敗")
+    fi
+    unset _loop_ledger_rc
+else
+    echo "  SKIP: scripts/loop_ledger_update.sh 未配備"
+fi
+
 # --- Gate 10.5: idle時BLOCK提案自動化 ---
 echo "■ idle時BLOCK提案"
 _AUTOFIX_PROPOSAL_GATE="$GATE_DIR/gate_autofix_proposal.sh"
@@ -2178,9 +2215,11 @@ fi
 
 # --- Gate 12.2: 三層記憶引用率([MEM]タグ計測) (cmd_3199, Step 1.7) ---
 echo "■ 三層記憶引用率([MEM]タグ)"
-_lord_conv_12_2="$SCRIPT_DIR/data/lord_conversation.jsonl"
+# 正本はqueue/lord_conversation.jsonl(書式は "direction": "response" とコロン後スペースあり)。
+# data/側の凍結コピー+スペースなしgrepの二重不一致で分母が常時0=計測が機能していなかった(2026-07-07修正)。
+_lord_conv_12_2="$SCRIPT_DIR/queue/lord_conversation.jsonl"
 if [ -f "$_lord_conv_12_2" ]; then
-    _shogun_resp_12_2=$(tail -200 "$_lord_conv_12_2" 2>/dev/null | grep '"direction":"response"' | tail -20)
+    _shogun_resp_12_2=$(tail -200 "$_lord_conv_12_2" 2>/dev/null | grep -E '"direction": ?"response"' | tail -20)
     IFS=$'\t' read -r _resp_count_12_2 _mem_count_12_2 _mem_md_count_12_2 <<< "$(printf '%s\n' "$_shogun_resp_12_2" | awk '
         /"direction"/ { resp++ }
         /\[MEM:/ { mem++ }
