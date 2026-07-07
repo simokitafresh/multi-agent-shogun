@@ -706,7 +706,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L982 -->
+<!-- last_synced_lesson: L983 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 <!-- lesson-sort 2026-04-21: L467-L520の54件をカテゴリ分類(49件移動+5件重複削除)。bash(L474/475/480/482/483/484/487/490/491/495/498/502/503/505/506/509/511/512/515/516), ゲート(L468/470/471/473/479/493/496/501/507), テスト(L476/477/488/497/499/500/513/517/518), WSL2(L485/486/494/504/508), git(L472/514/519), 報告(L467), 教訓(L510), deploy(L520)。重複: L469≈L468, L478≈L477, L481≈L480, L489≈L488, L492≈L491 -->
@@ -1393,6 +1393,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L980: 対話bashの'rg'はClaude Code CLIの関数ラッパーでありsubprocess/非対話シェルからは実体不在。command -vではなくshutil.which/実行時FileNotFoundErrorで検出せよ（cmd_karo_hotfix_rg_fallback_causal_backlinks_202607080241）
 - L981: lesson_health新規蓄積WARNはcheckpoint更新で即時計測差分を取る（cmd_karo_hotfix_lesson_health_ga193_202607080337）
 - L982: semantic index新規ファイル登録insightはSSOT(index.md)へのfile追加のみで足り、semantic_map_generate.shの自動resolve機構がinsight_write.sh --resolveを内部実行する（cmd_reflux_insight_202607080437_saizo）
+- L983: reflux insight consumptionタスクで自タスクYAMLをfiles_modifiedに含めるとcmd_3264-AC2が自己増殖的にBLOCKする（cmd_reflux_insight_202607080457_tobisaru）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

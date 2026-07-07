@@ -10161,3 +10161,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - scripts/semantic_map_generate.sh内のauto_resolve_semantic_index_insights()が、source=semantic_map_generate:new_fileのpending insightについて、参照パスがdocs/semantic-index/index.mdのfile行(known_resources)に含まれたことを検知すると自動でinsight_write.sh --resolveを呼ぶ。手動でinsight_write.sh --resolveを叩く必要はなく、正本編集→semantic_map_generate.sh実行だけで完結する。また、context/semantic-map.mdのfiles列はparse_concepts()内で[:3]件にキャップされる仕様のため、既に3件登録済みの概念へ4件目以降のfileを追加してもsemantic-map.mdの表示行には反映されない(SSOTには正しく残る)。表示に出ないことを『登録失敗』と誤認しないよう注意が必要。
+
+### L983: reflux insight consumptionタスクで自タスクYAMLをfiles_modifiedに含めるとcmd_3264-AC2が自己増殖的にBLOCKする
+- **日付**: 2026-07-08
+- **出典**: cmd_reflux_insight_202607080457_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,context,gate,bash,yaml]
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md,queue/tasks/tobisaru.yaml]
+- **origin**: [[cmd_reflux_insight_202607080457_tobisaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- queue/tasks/{ninja}.yamlをreport files_modifiedに含めてcommitすると、gate_report_format.shのAC2チェック(target_path/files_modified配下のgit status確認)対象に自分のタスクYAMLが入る。gate_report_format.sh自身がBLOCK/実行のたびにそのタスクYAMLへstatus/session_state(attempt/last_block_reason/approach_summary)を自動追記する副作用があるため、commit直後にgateを実行しただけでタスクYAMLが再度dirtyになり、次回実行でcmd_3264-AC2がBLOCKする。本タスクのprevious_failures.attempt=1〜3は全て同一理由で繰り返しており、今回(attempt想定4)も同じ経路で一度BLOCKした。修正: report files_modifiedには実際の正本ファイル(例: docs/semantic-index/index.md, context/semantic-map.md)のみを記載し、queue/tasks/{ninja}.yaml自体は含めない。含めるとgate自身の副作用でAC2が永久ループ的にBLOCKし続ける
