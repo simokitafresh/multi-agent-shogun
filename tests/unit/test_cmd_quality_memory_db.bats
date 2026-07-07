@@ -152,8 +152,45 @@ PY
     unset SHOGUN_MEMORY_DB_CACHE_PATH
 }
 
+isolate_three_layer_chain() {
+    mkdir -p "$TEST_TMPDIR/docs/semantic-index" "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue" "$TEST_TMPDIR/context"
+    export THREE_LAYER_CHAIN_SYNC=1
+    export THREE_LAYER_CHAIN_LOG="$TEST_TMPDIR/three_layer_chain_async.log"
+    export SEMANTIC_INDEX_PATH="$TEST_TMPDIR/docs/semantic-index/index.md"
+    export SEMANTIC_MAP_PATH="$TEST_TMPDIR/context/semantic-map.md"
+    export SEMANTIC_MAP_GENERATE="$PROJECT_ROOT/scripts/semantic_map_generate.sh"
+    export SEMANTIC_INSIGHT_WRITE="$TEST_TMPDIR/scripts/insight_write.sh"
+    export SEMANTIC_MEMORY_DB_PATH="$TEST_TMPDIR/nonexistent_memory.db"
+    export SEMANTIC_DISABLE_MEMORY_TAG_PROPAGATION=1
+    export SEMANTIC_NEW_FILE_LIST="__three_layer_chain_test_no_new_files__"
+    unset SEMANTIC_CMD_HISTORY_FILES SEMANTIC_INSIGHTS_PATH SEMANTIC_PROJECTS_CONFIG
+
+    cat > "$SEMANTIC_INSIGHT_WRITE" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "$SEMANTIC_INSIGHT_WRITE"
+
+    cat > "$SEMANTIC_INDEX_PATH" <<'EOF'
+# セマンティクスインデックス SSOT
+
+## semantic_dictionary_design — セマンティック辞書構想
+
+| 属性 | 値 |
+|------|---|
+| id | semantic_dictionary_design |
+| label | セマンティック辞書構想 |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索 |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/semantic_index_design.md` |
+EOF
+}
+
 @test "memory_db_knowledge_write inserts knowledge directly without communication side effects" {
     init_memory_db
+    isolate_three_layer_chain
 
     run bash "$PROJECT_ROOT/scripts/memory_db_knowledge_write.sh" \
         "Layer1直接パス不在を解消する [[三層貫通設計ギャップ]]" \
@@ -198,6 +235,53 @@ PY
     [ "${result[1]}" = "0" ]
     [ "${result[2]}" = "1" ]
     [ "${result[3]}" = "1" ]
+
+    # AC1: Layer3 obsidian link candidate is logged from the knowledge text
+    run grep -F "CANDIDATE layer3_obsidian_link_candidate" "$THREE_LAYER_CHAIN_LOG"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"target=三層貫通設計ギャップ"* ]]
+
+    # AC1: Layer2 semantic_index_update.sh discussion ran without error
+    run grep -F "ERROR" "$THREE_LAYER_CHAIN_LOG"
+    [ "$status" -ne 0 ]
+}
+
+@test "memory_db_knowledge_write logs Layer2 chain failure and gate_three_layer_health detects it" {
+    init_memory_db
+    isolate_three_layer_chain
+    # Point semantic index at a missing file so Layer2 fails deterministically.
+    rm -f "$SEMANTIC_INDEX_PATH"
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_knowledge_write.sh" \
+        "AC2失敗検知テスト用の知識テキスト" \
+        "cmd_3715_test_source" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --cmd-id "cmd_3715"
+    [ "$status" -eq 0 ]
+    [[ "$output" == OK:\ knowledge:* ]]
+
+    run grep -F "ERROR layer2_semantic_index_update_failed" "$THREE_LAYER_CHAIN_LOG"
+    [ "$status" -eq 0 ]
+
+    run bash "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"未貫通件数=1"* ]]
+    [[ "$output" == *"STATUS: WARN"* ]]
+}
+
+@test "memory_db_knowledge_write skips Layer3 candidate log when knowledge has no [[link]]" {
+    init_memory_db
+    isolate_three_layer_chain
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_knowledge_write.sh" \
+        "リンクを含まない普通の知識テキスト" \
+        "cmd_3715_test_source" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --cmd-id "cmd_3715"
+    [ "$status" -eq 0 ]
+
+    run grep -F "CANDIDATE layer3_obsidian_link_candidate" "$THREE_LAYER_CHAIN_LOG"
+    [ "$status" -ne 0 ]
 }
 
 @test "cmd_quality_log keeps YAML success when live DB insert fails" {

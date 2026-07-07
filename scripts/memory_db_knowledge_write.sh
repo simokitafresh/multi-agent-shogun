@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# semantic-links: [[SQLite記憶DB]], [[三層記憶システム]]
-# memory_db_knowledge_write.sh — Direct Layer1 knowledge insert without mailbox/bulletin side effects.
+# semantic-links: [[SQLite記憶DB]], [[三層記憶システム]], [[cmd_3715_1コマンド3層連鎖]]
+# memory_db_knowledge_write.sh — Layer1 knowledge insert that auto-chains
+# Layer2 (semantic_index_update.sh discussion) and Layer3 (Obsidian [[link]]
+# candidate log) in the background, without mailbox/bulletin side effects.
 # Usage: bash scripts/memory_db_knowledge_write.sh "knowledge text" "source" [--db PATH] [--cmd-id CMD_ID]
 #        echo "knowledge text" | bash scripts/memory_db_knowledge_write.sh - "source"
+# THREE_LAYER_CHAIN_SYNC=1 forces the Layer2/3 chain to run synchronously (tests only).
 
 set -euo pipefail
 
@@ -11,8 +14,12 @@ usage() {
 Usage: memory_db_knowledge_write.sh "knowledge text" "source" [--db PATH] [--cmd-id CMD_ID]
        memory_db_knowledge_write.sh - "source" [--db PATH] [--cmd-id CMD_ID]
 
-Writes a knowledge event directly to the local memory DB. This is Layer1 only:
-it does not write bulletin, inbox, insight, or any other communication channel.
+Writes a knowledge event directly to the local memory DB (Layer1), then
+auto-chains semantic_index_update.sh discussion (Layer2) and an Obsidian
+[[link]] candidate log (Layer3) in the background so the caller returns at
+Layer1 latency. Chain failures are appended to logs/three_layer_chain_async.log
+for startup-gate detection (gate_three_layer_health.sh). It still does not
+write bulletin, inbox, or any other communication channel itself.
 EOF
 }
 
@@ -72,7 +79,7 @@ if [[ -z "$agent_id" && -n "${TMUX_PANE:-}" ]]; then
 fi
 agent_id="${agent_id:-memory_db_knowledge_write}"
 
-python3 - "$SCRIPT_DIR" "$db_path" "$knowledge_text" "$source_text" "$cmd_id" "$agent_id" <<'PY'
+py_output="$(python3 - "$SCRIPT_DIR" "$db_path" "$knowledge_text" "$source_text" "$cmd_id" "$agent_id" <<'PY'
 import hashlib
 import sqlite3
 import sys
@@ -131,3 +138,43 @@ for attempt in range(1, 11):
         time.sleep(1)
 print(f"OK: {event_id}")
 PY
+)"
+printf '%s\n' "$py_output"
+event_id="${py_output#OK: }"
+
+# --- 三層貫通自動連鎖: Layer2(セマンティック)+Layer3(Obsidianリンク候補ログ) ---
+# 呼び出し側の体感をLayer1書込みと同等に保つため、既定ではバックグラウンド実行する。
+chain_log="${THREE_LAYER_CHAIN_LOG:-$SCRIPT_DIR/logs/three_layer_chain_async.log}"
+
+_three_layer_chain() {
+    local _event_id="$1" _knowledge="$2" _source="$3" _chain_log="$4"
+    local _ts
+    _ts="$(date -Iseconds)"
+    mkdir -p "$(dirname "$_chain_log")"
+
+    # Layer2: セマンティックインデックス連携(discussion payload)
+    local _payload
+    _payload="$(jq -cn --arg ts "$_ts" --arg summary "$_knowledge" --arg detail "source: $_source" \
+        '{"timestamp":$ts,"summary":$summary,"detail":$detail}' 2>/dev/null || true)"
+    if [[ -z "$_payload" ]] || ! bash "$SCRIPT_DIR/scripts/semantic_index_update.sh" discussion "$_payload" >/dev/null 2>&1; then
+        printf '%s ERROR layer2_semantic_index_update_failed event=%s source=%s\n' "$_ts" "$_event_id" "$_source" >> "$_chain_log"
+    fi
+
+    # Layer3: 知識テキスト中の[[リンク]]ターゲット候補をログ出力(実際の昇格はobsidian_promote_candidate.shが担う)
+    local _targets
+    _targets="$(grep -oP '(?<=\[\[)[^][]+(?=\]\])' <<< "$_knowledge" 2>/dev/null | sort -u || true)"
+    if [[ -n "$_targets" ]]; then
+        while IFS= read -r _target; do
+            [[ -n "$_target" ]] || continue
+            printf '%s CANDIDATE layer3_obsidian_link_candidate event=%s target=%s source=%s\n' \
+                "$_ts" "$_event_id" "$_target" "$_source" >> "$_chain_log"
+        done <<< "$_targets"
+    fi
+}
+
+if [[ "${THREE_LAYER_CHAIN_SYNC:-0}" == "1" ]]; then
+    _three_layer_chain "$event_id" "$knowledge_text" "$source_text" "$chain_log"
+else
+    _three_layer_chain "$event_id" "$knowledge_text" "$source_text" "$chain_log" &
+    disown 2>/dev/null || true
+fi

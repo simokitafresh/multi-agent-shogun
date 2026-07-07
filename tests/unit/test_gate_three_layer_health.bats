@@ -49,6 +49,7 @@ run_gate() {
     env \
         SHOGUN_MEMORY_DB="$TEST_DB" \
         SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_CACHE" \
+        THREE_LAYER_CHAIN_LOG="$TEST_TMPDIR/three_layer_chain_async.log" \
         bash "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh"
 }
 

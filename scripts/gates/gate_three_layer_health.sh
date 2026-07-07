@@ -200,6 +200,22 @@ else
     overall="WARN"
 fi
 
+echo "■ 三層連鎖(memory_db_knowledge_write.sh Layer2/3)失敗検知"
+chain_log="${THREE_LAYER_CHAIN_LOG:-$repo_root/logs/three_layer_chain_async.log}"
+if [ -f "$chain_log" ]; then
+    chain_fail_count="$(grep -c ' ERROR ' "$chain_log" 2>/dev/null || true)"
+    chain_fail_count="${chain_fail_count:-0}"
+    echo "chain_log=$chain_log 未貫通件数=$chain_fail_count"
+    if [ "$chain_fail_count" -gt 0 ]; then
+        echo "WARN: 三層連鎖Layer2/3の未貫通件数=$chain_fail_count。$chain_log を確認せよ。"
+        overall="WARN"
+    else
+        echo "OK: 三層連鎖失敗ゼロ"
+    fi
+else
+    echo "chain_log=$chain_log (未生成。三層連鎖の実行履歴なし)"
+fi
+
 echo "STATUS: $overall"
 [ "$overall" = "PASS" ] && exit 0
 exit 2
