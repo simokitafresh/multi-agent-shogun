@@ -1,162 +1,29 @@
 task:
+  parent_cmd: cmd_reflux_promotion_202607080617_tobisaru
+  task_id: cmd_reflux_promotion_202607080617_tobisaru_exact
+  task_type: exact
+  project: infra
+  target_path: projects/infra/lessons_shogun.yaml
+  scout_exempt: true
+  status: assigned
+  purpose: |-
+    還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_shogun.yaml] LS-A10 (L2:事前予防(doc)): 計測は仕組みを理解してから — 数字の生成メカニズムを先に理解 を確認し、Level4以上の実装・gate・task注入などへ昇格する
+  acceptance_criteria:
+    - id: AC1
+      checks:
+        - check: '昇格候補 [lessons_shogun.yaml] LS-A10 (L2:事前予防(doc)): 計測は仕組みを理解してから — 数字の生成メカニズムを先に理解 を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する'
+    - id: AC2
+      checks:
+        - check: '作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す'
+  reflux_inventory_before:
+    insights_pending: 1
+    zero_backlinks: 0
+    promotions: 76
+    total: 77
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
-  model_injection_profile:
-    model_label: "Sonnet 5 xhigh"
-    family: "sonnet"
-    injection_intensity: "max"
-    protocol: "T5弱LLM構造化プロトコル"
-    report_contract:
-    - "binary_checks全resultをyes/noで記入"
-    - "lessons_useful全reasonを具体記入"
-    - "files_modifiedはrepo相対path形式"
-    extra_scaffold:
-    - "ACごとに実テスト証跡をresult.detailsへ記録"
-    - "報告前にplaceholder残存確認とgate_report_formatを実行"
-  semantic_concepts:
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/training-cycle.md"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
-      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
-      - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
-    ────────────────────────────────────────
-    
-    
-  acceptance_criteria:
-  - checks:
-    - check: 対象insight INS-20260708-032354613-d650 を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
-    id: AC1
-  - checks:
-    - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
-    id: AC2
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  parent_cmd: cmd_reflux_insight_202607080457_tobisaru
-  project: infra
-  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-032354613-d650 を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
-  reflux_inventory_before:
-    insights_pending: 4
-    promotions: 76
-    total: 82
-    zero_backlinks: 2
-  scout_exempt: true
-  status: done
-  stop_for: []
-  target_path: queue/insights.yaml
-  task_id: cmd_reflux_insight_202607080457_tobisaru_exact
-  task_type: exact
-  previous_failures:
-    attempt: 3
-    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    tried_approaches:
-    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    diagnose_reason: 'commit実施前にbinary_checks.commitをyesへ進めたため、gateがtarget_path未commit変更を検出した。加えてsemantic-map/indexは既存の広いdirty差分があるため、家老がHEAD+最小aliasだけをindexへstageし、広域差分をcommit対象から除外する必要があった。'
-    approach_summary: 'INS-20260708-004710405-d637を再確認。alias追加は前試行(commit b3904253/43e3a690)で既にcommit済みだったが、insights.yaml(git管理外)側のresolveがL351実例で再度pendingへ巻き戻っていたためinsight_write.sh --resolveを再実行し、AC1/A…'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      approach_summary: 'INS-20260708-004710405-d637のNO_MATCH query idle忍者だけrespawanせよをagent_formation_management aliasへ追加し、insightをresolveした'
-    - attempt: 2
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      diagnose_reason: 'commit実施前にbinary_checks.commitをyesへ進めたため、gateがtarget_path未commit変更を検出した。加えてsemantic-map/indexは既存の広いdirty差分があるため、家老がHEAD+最小aliasだけをindexへstageし、広域差分をcommit対象から除外する必要があった。'
-      approach_summary: 'INS-20260708-004710405-d637のNO_MATCH query idle忍者だけrespawanせよをagent_formation_management aliasへ追加し、insightをresolveした'
-    - attempt: 3
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      diagnose_reason: 'commit実施前にbinary_checks.commitをyesへ進めたため、gateがtarget_path未commit変更を検出した。加えてsemantic-map/indexは既存の広いdirty差分があるため、家老がHEAD+最小aliasだけをindexへstageし、広域差分をcommit対象から除外する必要があった。'
-      approach_summary: 'INS-20260708-004710405-d637を再確認。alias追加は前試行(commit b3904253/43e3a690)で既にcommit済みだったが、insights.yaml(git管理外)側のresolveがL351実例で再度pendingへ巻き戻っていたためinsight_write.sh --resolveを再実行し、AC1/A…'
-  related_lessons:
-  - id: 'L311'
-    summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
-    wa_category: 'report_yaml_format'
-    wa_count: 1
-    detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
-  - id: 'L278'
-    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-    wa_category: 'commit_missing'
-    wa_count: 1
-    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
-  - id: 'L342'
-    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
-    wa_category: 'commit_missing'
-    wa_count: 1
-    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
-  memory_db_context:
-  - '2026-07-08T03:29:39+09:00 | この警告は他忍者のスコープ(共有SSOTファイルの並行編集、まさに`L960`の状況)であり、私のタスクスコープ外です。既に自分の担当ファイル(`queue/tasks/tobisaru.yaml`)'
-  - '2026-07-08T00:45:01+09:00 | タスク完了です。前セッションで停止していた報告YAML未作成状態を検出し、`/report-write`スキルに沿って`queue/reports/kotaro_report_cmd_reflux_i'
-  - '2026-06-20T02:15:43+09:00 | スコープ内の全ファイル（`queue/insights.yaml` / `queue/tasks/saizo.yaml` / 報告YAML）は全て `.gitignore` 管理外。 COMMIT M'
-  - '2026-06-20T00:33:13+09:00 | parent_cmd=noneのhot fixタスク。ninja_done.shはcmd_XXX形式不要のため家老へのinbox_write完了報告で終了（既送信済み）。 **作業完了サマリ:** -'
-  - '2026-07-08T04:02:05+09:00 | 定型還流消化。INS-780d。pending=8。APPROVE。'
-  ac_version: 5e2327c5
-  _ac_task_id: cmd_reflux_insight_202607080457_tobisaru_exact
-  _ac_worker_id: 
-  role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_reflux_insight_202607080457_tobisaru.yaml
-  report_path: queue/reports/tobisaru_report_cmd_reflux_insight_202607080457_tobisaru.yaml
-  bloom_level: 
-  ninja_weak_points:
-    source: 'karo_workarounds.yaml'
-    total_workarounds: 5
-    top_pattern: 'report_yaml_format(1件)'
-    breakdown: 'report_yaml_format(1件), commit_missing(1件), gate_false_positive(1件), task_yaml_stale_field(1件), agent_stall_recovery(1件)'
-    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
-    gate_fail_top3:
-    - pattern: 'bc_result_empty'
-      count: 186
-    - pattern: 'field_missing'
-      count: 51
-    - pattern: 'verdict_invalid'
-      count: 45
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
-    gate_blocks:
-    - reason: 'report_format'
-      count: 10
-      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
-    - reason: 'binary_checks_fail'
-      count: 6
-      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-    - reason: 'empty_lessons_useful'
-      count: 3
-      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-    - reason: 'post_deploy_evidence_invalid_timestamp'
-      count: 2
-      hint: 'gate BLOCK: post_deploy_evidence_invalid_timestamp'
-    - reason: 'lesson_candidate_missing'
-      count: 1
-      hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-07-08T04:58:04"
-  completed_at: "2026-07-08T05:06:29+0900"
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    tried_approaches:
-    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    approach_summary: '還流insight INS-20260708-032354613-d650(gs-recalibration-plan.md未登録)を新概念gs_recalibration_planとしてsemantic index正本に登録し、context/semantic-map.mdへ伝播。副次的に同時発生insight f897/4834も同一概念のfile登録で解消。還流在庫: pending 4→1, zero_backlinks 2→0, promotions 76→76, total 82→77'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      approach_summary: '還流insight INS-20260708-032354613-d650(gs-recalibration-plan.md未登録)を新概念gs_recalibration_planとしてsemantic index正本に登録し、context/semantic-map.mdへ伝播。副次的に同時発生insight f897/4834も同一概念のfile登録で解消。還流在庫: pending 4→1, zero_backlinks 2→0, promotions 76→76, total 82→77'
+  report_filename: tobisaru_report_cmd_reflux_promotion_202607080617_tobisaru.yaml
+  report_path: queue/reports/tobisaru_report_cmd_reflux_promotion_202607080617_tobisaru.yaml
+  ac_version: 28d86afc

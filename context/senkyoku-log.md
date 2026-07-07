@@ -1394,3 +1394,4 @@
 - 2026-07-08 cmd_reflux_insight_202607080538_saizo完了: 才蔵がINS-07e7を単純resolveでなく`semantic_map_generate.sh`の説明文付きfile行抽出バグ修正へ昇格。回帰テスト追加、関連Bats 41件+追加39件PASS、L984登録、GATE CLEAR。
 - 2026-07-08 cmd_reflux_insight_202607080553_kagemaru完了: 影丸がINS-4075をSG-PRE31意味検算概念としてsemantic-indexへ登録し、参照先docs/researchも追跡化。`semantic_search "SG-PRE31 N×M 意味検算 LG048"` hit、在庫2→1、GATE CLEAR。
 - 2026-07-08 cmd_reflux_promotion_202607080545_kotaro完了: 小太郎がLS-A02 enforcementを実態(cmd_save q5/q8 + 各role startup追体験Q4)に合わせてLevel4明示化し、L4未満候補14→13を確認。deploy_task fail由来のtask/report欠落は家老が補正し、重複tobisaru配備はidleへ戻して二重作業を停止。
+- 2026-07-08 cmd_reflux_insight_202607080614_hayate完了: 疾風がINS-618cをPD-056構造対策完了済みの残存insightとしてresolve。pending 2→1、report gate PASS、task idle差分もcommitしてGATE CLEAR。
