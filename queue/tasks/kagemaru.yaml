@@ -146,3 +146,17 @@ task:
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
   deployed_at: "2026-07-08T03:45:01"
   completed_at: "2026-07-08T03:48:46+09:00"
+
+  session_state:
+    attempt: 2
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    tried_approaches:
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    approach_summary: 'INS-20260708-015000310-f776はcmd_3749-3751で構造対策済みと確認しresolve済み。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: 'INS-20260708-015000310-f776はcmd_3749-3751で構造対策済みと確認しresolve済み。'
+    - attempt: 2
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: 'INS-20260708-015000310-f776はcmd_3749-3751で構造対策済みと確認しresolve済み。'
