@@ -996,6 +996,14 @@ if [ "${GATE_PREDICTION:-}" = "WARN" ] || [ "${GATE_PREDICTION:-}" = "BLOCK" ]; 
     echo "  ★★★ gate_prediction: ${GATE_PREDICTION} をSG7バンドルに転記必須"
 fi
 
+# ─── 出力フォールバックERRORカウント(cmd定義消失時のSG-PRE25 ERROR見逃し防止) ───
+# SG-PRE25等がERROR行を出力したがERROR変数が加算されなかったケースを捕捉
+_output_errors=$(echo "${_pre25_result:-}" | grep -c '^WARN:' || true)
+if [ "${_output_errors:-0}" -gt 0 ] && [ "$ERRORS" -eq 0 ]; then
+    ERRORS=$((_output_errors))
+    echo "★ フォールバックERROR検出: SG-PRE25出力にWARN ${_output_errors}件だがERRORS未加算だった"
+fi
+
 # ─── 総合判定 ───
 echo ""
 echo "=== 総合: ERRORS=$ERRORS ==="
