@@ -267,7 +267,7 @@ setup_file() {
         detect_real_model shogun shogun:main
     "
     [ "$status" -eq 0 ]
-    [ "$output" = "Fable high" ]
+    [ "$output" = "Fable 5 high" ]
 }
 
 @test "detect_real_model: Claude process args without --model fall back to settings model_name" {
@@ -304,7 +304,7 @@ setup_file() {
         detect_real_model shogun shogun:main
     "
     [ "$status" -eq 0 ]
-    [ "$output" = "fable-5-high" ]
+    [ "$output" = "Fable 5 high" ]
 }
 
 @test "resolve_model_display: Fable settings model_name is the fallback when banner detection fails" {
@@ -341,7 +341,7 @@ setup_file() {
         resolve_model_display shogun shogun:main
     "
     [ "$status" -eq 0 ]
-    [ "$output" = "fable-5-high" ]
+    [ "$output" = "Fable 5 high" ]
 }
 
 @test "detect_real_model: Claude process args can be read from pane tty" {
