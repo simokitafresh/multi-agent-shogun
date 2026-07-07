@@ -50,7 +50,7 @@ codd:
 |------|---|
 | id | gs_recalibration_plan |
 | label | GS再キャリブレーション計画 |
-| aliases | GS再キャリブレーション, L0-L3 GS再キャリブレーション計画, gs-recalibration-plan, 3前提刷新, バンド込み再GS, モメンタムバンド化, 3目的関数変更, CAGR/WorstYear/AvgUWP, L0-L3全レイヤーGS再実行, 設計書ファミリー, 親計画, Phase A詳細, Phase T詳細, Phase 0詳細, 不倒案, 不沈案, 道具磨き→L0→L1→L2→L3 |
+| aliases | GS再キャリブレーション, L0-L3 GS再キャリブレーション計画, gs-recalibration-plan, 3前提刷新, バンド込み再GS, モメンタムバンド化, 3目的関数変更, CAGR/WorstYear/AvgUWP, L0-L3全レイヤーGS再実行, 設計書ファミリー, 親計画, Phase A詳細, Phase T詳細, Phase 0詳細, Phase Tと Phase 0のcmd起票を開始せよ, Phase TとPhase 0のcmd起票, Phase T+0着手裁可, 不倒案, 不沈案, 道具磨き→L0→L1→L2→L3 |
 | related_concepts | gs_ninpo_research, gs_speed_e7_l0_full_confirm, pf_remote_restore, dmsignal_operations |
 
 | 種別 | パス/参照 |
@@ -59,6 +59,7 @@ codd:
 | file | `docs/research/l0-3objective-newold-comparison-design.md` |
 | file | `docs/research/gs-speed-optimization-design.md` |
 | causal | `cmd_reflux_insight_202607080457_tobisaru` files_modified: [[gs_recalibration_plan]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-08T08:11:48+09:00 Phase Tと Phase 0のcmd起票を開始せよ |
 | cmd | `cmd_3691` backfill — | cmd_3691 | 殿指示(2026-07-06 00:23): 浮動小数点ノイズがモメンタム判定に影響するか検証し精度を完璧に仕上げる。(1)全コアシンボル×全期間でprices(自前調整値) |
 
 ## cmd_chronicle — CMD年代記
