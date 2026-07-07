@@ -5319,6 +5319,7 @@ codd:
 | causal | `cmd_reflux_insight_202607071854_kotaro` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607071908_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607071920_hanzo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_insight_202607071926_tobisaru` files_modified: [[semantic_causal_automation]] |
 
 ## provisional_tobisaru — 仮: Tobisaru
 
@@ -5342,6 +5343,7 @@ codd:
 | causal | `cmd_karo_hotfix_lesson_health_ga183_202607060939` -> [[provisional_tobisaru]] (auto_generated) |
 | cmd | `cmd_karo_hotfix_lesson_health_ga183_202607060939` (`queue/tasks/tobisaru.yaml`) |
 | cmd | `cmd_reflux_insight_manual_202607071607_tobisaru` |
+| cmd | `cmd_reflux_insight_202607071926_tobisaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 
 ## provisional_hayate — 仮: Hayate
 

@@ -1383,3 +1383,4 @@
 - 2026-07-06 GA-186完了: 疾風が`context/dm-signal-ops.md`鮮度ALERTを処理。signal_decision_ledger運用差分を§52へ反映し、`gate_context_freshness.sh`総合OKへ復帰。
 - 2026-07-07 家老強ニュー化: startup WARN `dashboard-update FAIL:101` の直因を短縮hotfix ID(`cmd_karo_hotfix_ga190`)が長いparent_cmd reportを解決できないことと特定し、`dashboard_update.sh`に同系列cmd id fallbackを追加。`test_skill_feedback_loop`再発テスト追加、commit `5668b0b8e`、startup gateはスキル品質全PASS/総合OKへ復帰。`queue/compact_state/karo.yaml` と `queue/compact_state_karo.yaml` も14:35時点へ更新。
 - 2026-07-07 cmd_reflux_insight_202607071920_hanzo完了: 半蔵がINS-20260707-081530924-63efを一次会話とGS調査記録へ接続し、semantic alias/discussion追加でpending 12→11。commit `410d6f7d7` + provenance `c4c943b5`、GATE CLEAR。
+- 2026-07-07 cmd_reflux_insight_202607071926_tobisaru完了: 飛猿がINS-20260707-081531046-1ebeをalpha_6_metricsへalias統合し、指標自体の相関とPF間月次リターン相関の混同を検索到達化。pending 11→10、commit `2a432a4c`、GATE CLEAR。
