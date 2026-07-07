@@ -597,3 +597,130 @@ YAML
     # Should PASS without any WARN (check skipped for /tmp)
     [[ "$output" != *"WARN(cmd_3264"* ]]
 }
+
+@test "T-AC2-3: session_state-only tracked task diff does not block commit check" {
+    local repo="$REPO_TMPDIR_BATS/session_state_repo"
+    local report="$repo/reports/testninja_report_cmd_test.yaml"
+    mkdir -p "$repo/queue/tasks" "$repo/reports" "$repo/logs"
+    git -C "$repo" init -q
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    cat > "$repo/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: in_progress
+  target_path: queue/tasks/testninja.yaml
+YAML
+    git -C "$repo" add queue/tasks/testninja.yaml
+    git -C "$repo" commit -q -m "seed task"
+    cat >> "$repo/queue/tasks/testninja.yaml" <<'YAML'
+  session_state:
+    attempt: 1
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    tried_approaches:
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+YAML
+    cat > "$report" <<'YAML'
+worker_id: testninja
+parent_cmd: cmd_test
+ac_version_read: abc12345
+timestamp: '2026-07-08T00:00:00'
+status: completed
+result:
+  summary: "test summary"
+purpose_validation:
+  cmd_purpose: "test"
+  fit: true
+  purpose_gap: ""
+binary_checks:
+  AC1:
+  - check: "test check"
+    result: "yes"
+  commit:
+  - check: "git commitが完了したか"
+    result: "yes"
+files_modified:
+- path: queue/tasks/testninja.yaml
+lesson_candidate:
+  found: false
+  no_lesson_reason: "test"
+lessons_useful: []
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verdict: PASS
+YAML
+
+    run env GATE_REPO_ROOT_OVERRIDE="$repo" GATE_SESSION_STATE_TASK_DIR="$repo/queue/tasks" bash "$GATE" "$report"
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" != *"BLOCK(cmd_3264-AC2)"* ]]
+}
+
+@test "T-AC2-4: tracked task status diff still blocks commit check" {
+    local repo="$REPO_TMPDIR_BATS/task_status_repo"
+    local report="$repo/reports/testninja_report_cmd_test.yaml"
+    mkdir -p "$repo/queue/tasks" "$repo/reports" "$repo/logs"
+    git -C "$repo" init -q
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    cat > "$repo/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: in_progress
+  target_path: queue/tasks/testninja.yaml
+YAML
+    git -C "$repo" add queue/tasks/testninja.yaml
+    git -C "$repo" commit -q -m "seed task"
+    sed -i 's/status: in_progress/status: done/' "$repo/queue/tasks/testninja.yaml"
+    cat > "$report" <<'YAML'
+worker_id: testninja
+parent_cmd: cmd_test
+ac_version_read: abc12345
+timestamp: '2026-07-08T00:00:00'
+status: completed
+result:
+  summary: "test summary"
+purpose_validation:
+  cmd_purpose: "test"
+  fit: true
+  purpose_gap: ""
+binary_checks:
+  AC1:
+  - check: "test check"
+    result: "yes"
+  commit:
+  - check: "git commitが完了したか"
+    result: "yes"
+files_modified:
+- path: queue/tasks/testninja.yaml
+lesson_candidate:
+  found: false
+  no_lesson_reason: "test"
+lessons_useful: []
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verdict: PASS
+YAML
+
+    run env GATE_REPO_ROOT_OVERRIDE="$repo" GATE_SESSION_STATE_TASK_DIR="$repo/queue/tasks" bash "$GATE" "$report"
+    echo "$output"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK(cmd_3264-AC2)"* ]]
+    [[ "$output" == *"M queue/tasks/testninja.yaml"* ]]
+}

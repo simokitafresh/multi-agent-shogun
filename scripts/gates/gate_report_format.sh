@@ -37,7 +37,8 @@ fi
 _REPORT_EXECUTOR="${_REPORT_EXECUTOR:-unknown}"
 
 # --- PASS cache: skip redundant re-checks on unmodified files (GP-073) ---
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+_DEFAULT_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO_ROOT="${GATE_REPO_ROOT_OVERRIDE:-$_DEFAULT_REPO_ROOT}"
 PASS_CACHE="${GATE_PASS_CACHE_FILE:-$REPO_ROOT/logs/.gate_pass_cache}"
 LEARNING_FILE="${GATE_REPORT_FORMAT_LEARNING_FILE:-$REPO_ROOT/logs/gate_report_format_learning.yaml}"
 PREFILL_THRESHOLD="${GATE_REPORT_FORMAT_PREFILL_THRESHOLD:-10}"
@@ -68,9 +69,74 @@ echo "$RESULT"
 # --- cmd_3264: auto-commit contamination check (AC2/AC3) ---
 # bc:commit=yes時にtarget_path配下の未commit変更・auto-commit巻込みを検出
 CONTAMINATION_BLOCK=0
+
+filter_session_state_only_task_diffs() {
+    local repo="$1"
+    local uncommitted_raw="$2"
+    REPO_ROOT="$repo" CC_UNCOMMITTED_RAW="$uncommitted_raw" python3 - <<'PY'
+import os
+import subprocess
+import yaml
+
+repo = os.environ.get("REPO_ROOT", "")
+raw = os.environ.get("CC_UNCOMMITTED_RAW", "").splitlines()
+
+def parse_path(line):
+    if len(line) < 4:
+        return ""
+    path = line[3:].strip()
+    if " -> " in path:
+        path = path.rsplit(" -> ", 1)[1].strip()
+    if len(path) >= 2 and path[0] == path[-1] == '"':
+        path = path[1:-1]
+    return path
+
+def without_session_state(text):
+    data = yaml.safe_load(text) or {}
+    if isinstance(data, dict):
+        node = data.get("task")
+        if isinstance(node, dict):
+            node = dict(node)
+            node.pop("session_state", None)
+            data = dict(data)
+            data["task"] = node
+        else:
+            data = dict(data)
+            data.pop("session_state", None)
+    return data
+
+def is_session_state_only_task_diff(line):
+    xy = line[:2]
+    path = parse_path(line)
+    if "M" not in xy:
+        return False
+    if not path.startswith("queue/tasks/") or not path.endswith(".yaml"):
+        return False
+    worktree_path = os.path.join(repo, path)
+    if not os.path.isfile(worktree_path):
+        return False
+    try:
+        head_text = subprocess.check_output(
+            ["git", "-C", repo, "show", f"HEAD:{path}"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+        with open(worktree_path, encoding="utf-8") as f:
+            worktree_text = f.read()
+        return without_session_state(head_text) == without_session_state(worktree_text)
+    except Exception:
+        return False
+
+for line in raw:
+    if line and not is_session_state_only_task_diff(line):
+        print(line)
+PY
+}
+
 if [[ "$REPORT_PATH" != /tmp/* ]] && [[ "$REPORT_PATH" != *"/tmp/"* ]]; then
     _CC_WORKER="$_REPORT_EXECUTOR"
-    _CC_TASK_FILE="$REPO_ROOT/queue/tasks/${_CC_WORKER}.yaml"
+    _CC_TASK_DIR="${GATE_SESSION_STATE_TASK_DIR:-$REPO_ROOT/queue/tasks}"
+    _CC_TASK_FILE="$_CC_TASK_DIR/${_CC_WORKER}.yaml"
     if [ -f "$_CC_TASK_FILE" ]; then
         _CC_CHECK=$(python3 -c "
 import os
@@ -141,6 +207,9 @@ except Exception:
         if [ -n "${_CC_CHECK//[[:space:]]/}" ]; then
             # AC2: git status check for uncommitted target_path changes
             _CC_UNCOMMITTED=$(cd "$REPO_ROOT" && git status --porcelain -- $_CC_CHECK 2>/dev/null || true)
+            if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
+                _CC_UNCOMMITTED=$(filter_session_state_only_task_diffs "$REPO_ROOT" "$_CC_UNCOMMITTED" 2>/dev/null || printf '%s\n' "$_CC_UNCOMMITTED")
+            fi
             if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
                 echo ""
                 echo "★ BLOCK(cmd_3264-AC2): ${_CC_WORKER} target_path配下に未commit変更あり:"
