@@ -30,7 +30,7 @@ task:
     total: 23
     zero_backlinks: 0
   scout_exempt: true
-  status: done
+  status: idle
   stop_for: []
   target_path: queue/insights.yaml
   task_id: cmd_reflux_insight_202607071734_kagemaru_exact
