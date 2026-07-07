@@ -321,8 +321,45 @@ extract_alert_lines() {
     local output="$1"
     local extra_alert_pattern="${2:-}"
     local line count=0
+    local include_next_context=false
     while IFS= read -r line; do
         if [[ "$line" == ALERT:* || ( -n "$extra_alert_pattern" && "$line" == "$extra_alert_pattern"* ) ]]; then
+            printf '%s\n' "$line"
+            count=$((count + 1))
+            include_next_context=true
+            if [ "$count" -ge 5 ]; then
+                return 0
+            fi
+            continue
+        fi
+        if [[ "$include_next_context" == true && ( "$line" == action:* || "$line" == METRIC:* ) ]]; then
+            printf '%s\n' "$line"
+            include_next_context=false
+            continue
+        fi
+    done <<< "$output"
+}
+
+extract_diagnostic_lines() {
+    local output="$1"
+    local line count=0
+    local include_next_context=false
+    while IFS= read -r line; do
+        if [[ "$line" == WARN:* || "$line" == ALERT:* ]]; then
+            printf '%s\n' "$line"
+            count=$((count + 1))
+            include_next_context=true
+            if [ "$count" -ge 5 ]; then
+                return 0
+            fi
+            continue
+        fi
+        if [[ "$include_next_context" == true && ( "$line" == action:* || "$line" == METRIC:* ) ]]; then
+            printf '%s\n' "$line"
+            include_next_context=false
+            continue
+        fi
+        if [[ "$line" == METRIC:* ]]; then
             printf '%s\n' "$line"
             count=$((count + 1))
             if [ "$count" -ge 5 ]; then
@@ -355,6 +392,9 @@ evaluate_gate_result() {
         # ALERT行を抽出（複数あり得る）
         local alert_lines
         alert_lines=$(extract_alert_lines "$output" "$extra_alert_pattern")
+        if [ -z "$alert_lines" ]; then
+            alert_lines=$(extract_diagnostic_lines "$output")
+        fi
         if [ -z "$alert_lines" ]; then
             local output_snippet
             output_snippet=$(printf '%s\n' "$output" | awk 'NF {print; exit}' | tr '\n' ' ' | cut -c 1-240)

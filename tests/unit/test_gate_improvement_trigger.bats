@@ -125,3 +125,29 @@ SH
     [[ "$output" != *"ALERT detail not captured"* ]]
     grep -q 'exit_code=1; output_snippet=plain failure without alert prefix' "$TEST_TMPDIR/logs/gate_alerts.yaml"
 }
+
+@test "exit code alert without ALERT line captures WARN action and METRIC diagnostics" {
+    cat > "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh" <<'SH'
+#!/usr/bin/env bash
+cat <<'OUT'
+OK: dm-signalのlesson統合状況は健全(未合流0件,total:796,synced:L825)
+WARN: dm-signalの未振り分け教訓8件(早期導線, ALERT閾値10未満, ids: L818,L819,L820,L821,L822,L823,L824,L825)
+action: ALERT閾値(10件)に達する前に /lesson-sort を実行し、dm-signalの未振り分け教訓の蓄積を防げ。
+WARN: 新規教訓+174件(前回審査: L812, 現在最新: L987)。
+action: bash scripts/lesson_deprecation_scan.sh を実行し、新規教訓を審査せよ。
+METRIC: lesson_effectiveness_threshold status=OK rate=100.0% useful_rate=64.7% window_cmds=10 referenced=21 injected=21 useful=22 total_feedback=34 scope=all
+OUT
+exit 1
+SH
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
+
+    GATE_IMPROVEMENT_NOW=1770000000 run_trigger
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SENT: lesson_health"* ]]
+    grep -q 'WARN: dm-signalの未振り分け教訓8件' "$TEST_TMPDIR/logs/gate_alerts.yaml"
+    grep -q 'action: ALERT閾値(10件)に達する前に /lesson-sort を実行し' "$TEST_TMPDIR/logs/gate_alerts.yaml"
+    grep -q 'WARN: 新規教訓+174件' "$TEST_TMPDIR/logs/gate_alerts.yaml"
+    grep -q 'METRIC: lesson_effectiveness_threshold status=OK rate=100.0% useful_rate=64.7%' "$TEST_TMPDIR/logs/gate_alerts.yaml"
+    ! grep -q 'output_snippet=OK: dm-signal' "$TEST_TMPDIR/logs/gate_alerts.yaml"
+}
