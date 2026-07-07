@@ -147,6 +147,95 @@ event_id="${py_output#OK: }"
 chain_log="${THREE_LAYER_CHAIN_LOG:-$SCRIPT_DIR/logs/three_layer_chain_async.log}"
 semantic_update_cmd="${THREE_LAYER_SEMANTIC_UPDATE_CMD:-$SCRIPT_DIR/scripts/semantic_index_update.sh}"
 
+_three_layer_sanitize_detail() {
+    local _text="$1"
+    _text="${_text//$'\r'/ }"
+    _text="${_text//$'\n'/ }"
+    _text="${_text//$'\t'/ }"
+    _text="${_text//\\/\\\\}"
+    _text="${_text//\"/\\\"}"
+    printf '%s' "${_text:0:240}"
+}
+
+_three_layer_payload_b64() {
+    printf '%s' "$1" | base64 | tr -d '\n'
+}
+
+_three_layer_run_semantic_update() {
+    local _semantic_update_cmd="$1" _payload="$2"
+    local _attempt=1 _max_attempts _sleep_sec _tmp_out _tmp_err _combined
+    _max_attempts="${THREE_LAYER_CHAIN_RETRIES:-3}"
+    _sleep_sec="${THREE_LAYER_CHAIN_RETRY_SLEEP:-2}"
+    _tmp_out="$(mktemp "${TMPDIR:-/tmp}/three_layer_semantic_out.XXXXXX")"
+    _tmp_err="$(mktemp "${TMPDIR:-/tmp}/three_layer_semantic_err.XXXXXX")"
+    THREE_LAYER_LAST_ERROR=""
+    while [[ "$_attempt" -le "$_max_attempts" ]]; do
+        : > "$_tmp_out"
+        : > "$_tmp_err"
+        if [[ -n "$_payload" ]] && bash "$_semantic_update_cmd" discussion "$_payload" >"$_tmp_out" 2>"$_tmp_err"; then
+            rm -f "$_tmp_out" "$_tmp_err"
+            return 0
+        fi
+        _combined="$(cat "$_tmp_err" "$_tmp_out" 2>/dev/null || true)"
+        if [[ -z "$_combined" && -z "$_payload" ]]; then
+            _combined="payload_generation_failed"
+        elif [[ -z "$_combined" ]]; then
+            _combined="semantic_index_update exited non-zero without output"
+        fi
+        THREE_LAYER_LAST_ERROR="$(_three_layer_sanitize_detail "$_combined")"
+        [[ "$_attempt" -lt "$_max_attempts" ]] && sleep "$_sleep_sec"
+        _attempt=$((_attempt + 1))
+    done
+    rm -f "$_tmp_out" "$_tmp_err"
+    return 1
+}
+
+_three_layer_repair_unresolved() {
+    local _chain_log="$1" _semantic_update_cmd="$2"
+    [[ "${THREE_LAYER_CHAIN_REPAIR:-1}" == "1" ]] || return 0
+    [[ -f "$_chain_log" ]] || return 0
+    local _repairs
+    _repairs="$(
+        awk '
+            function field(line, key,    tmp) {
+                tmp = line
+                if (tmp ~ (key "=[^[:space:]]+")) {
+                    sub("^.*" key "=", "", tmp)
+                    sub("[[:space:]].*$", "", tmp)
+                    return tmp
+                }
+                return ""
+            }
+            / ERROR layer2_semantic_index_update_failed / {
+                event = field($0, "event")
+                if (event == "") event = "line:" NR
+                unresolved[event] = field($0, "payload_b64")
+                sources[event] = field($0, "source")
+            }
+            / OK layer2_semantic_index_update / {
+                event = field($0, "event")
+                if (event != "") delete unresolved[event]
+            }
+            END {
+                for (event in unresolved) {
+                    if (unresolved[event] != "") print event "|" sources[event] "|" unresolved[event]
+                }
+            }
+        ' "$_chain_log" 2>/dev/null || true
+    )"
+    [[ -n "$_repairs" ]] || return 0
+    local _line _event_id _source _payload_b64 _payload _ts
+    while IFS='|' read -r _event_id _source _payload_b64; do
+        [[ -n "$_event_id" && -n "$_payload_b64" ]] || continue
+        _payload="$(printf '%s' "$_payload_b64" | base64 -d 2>/dev/null || true)"
+        [[ -n "$_payload" ]] || continue
+        if _three_layer_run_semantic_update "$_semantic_update_cmd" "$_payload"; then
+            _ts="$(date -Iseconds)"
+            printf '%s OK layer2_semantic_index_update event=%s source=%s repair=1\n' "$_ts" "$_event_id" "$_source" >> "$_chain_log"
+        fi
+    done <<< "$_repairs"
+}
+
 _three_layer_chain() {
     local _event_id="$1" _knowledge="$2" _source="$3" _chain_log="$4" _semantic_update_cmd="$5"
     local _ts
@@ -157,19 +246,10 @@ _three_layer_chain() {
     local _payload
     _payload="$(jq -cn --arg ts "$_ts" --arg summary "$_knowledge" --arg detail "source: $_source" \
         '{"timestamp":$ts,"summary":$summary,"detail":$detail}' 2>/dev/null || true)"
-    local _attempt=1 _max_attempts _sleep_sec _layer2_ok=0
-    _max_attempts="${THREE_LAYER_CHAIN_RETRIES:-3}"
-    _sleep_sec="${THREE_LAYER_CHAIN_RETRY_SLEEP:-2}"
-    while [[ "$_attempt" -le "$_max_attempts" ]]; do
-        if [[ -n "$_payload" ]] && bash "$_semantic_update_cmd" discussion "$_payload" >/dev/null 2>&1; then
-            _layer2_ok=1
-            break
-        fi
-        [[ "$_attempt" -lt "$_max_attempts" ]] && sleep "$_sleep_sec"
-        _attempt=$((_attempt + 1))
-    done
-    if [[ "$_layer2_ok" != "1" ]]; then
-        printf '%s ERROR layer2_semantic_index_update_failed event=%s source=%s\n' "$_ts" "$_event_id" "$_source" >> "$_chain_log"
+    _three_layer_repair_unresolved "$_chain_log" "$_semantic_update_cmd"
+    if ! _three_layer_run_semantic_update "$_semantic_update_cmd" "$_payload"; then
+        printf '%s ERROR layer2_semantic_index_update_failed event=%s source=%s detail="%s" payload_b64=%s\n' \
+            "$_ts" "$_event_id" "$_source" "$THREE_LAYER_LAST_ERROR" "$(_three_layer_payload_b64 "$_payload")" >> "$_chain_log"
     else
         # 成功も記録する: 失敗のみのログは「ログ不在=実行履歴なし」と「不在=無失敗」を区別できず、
         # 健全性チェックが連鎖未使用と誤読する(2026-07-07修正)

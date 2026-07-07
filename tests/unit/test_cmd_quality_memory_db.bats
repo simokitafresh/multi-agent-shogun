@@ -249,8 +249,14 @@ PY
 @test "memory_db_knowledge_write logs Layer2 chain failure and gate_three_layer_health detects it" {
     init_memory_db
     isolate_three_layer_chain
-    # Point semantic index at a missing file so Layer2 fails deterministically.
-    rm -f "$SEMANTIC_INDEX_PATH"
+    export THREE_LAYER_CHAIN_RETRIES=1
+    export THREE_LAYER_SEMANTIC_UPDATE_CMD="$TEST_TMPDIR/scripts/semantic_always_fail.sh"
+    cat > "$THREE_LAYER_SEMANTIC_UPDATE_CMD" <<'EOF'
+#!/usr/bin/env bash
+echo "semantic boom: missing alias source" >&2
+exit 7
+EOF
+    chmod +x "$THREE_LAYER_SEMANTIC_UPDATE_CMD"
 
     run bash "$PROJECT_ROOT/scripts/memory_db_knowledge_write.sh" \
         "AC2失敗検知テスト用の知識テキスト" \
@@ -262,11 +268,45 @@ PY
 
     run grep -F "ERROR layer2_semantic_index_update_failed" "$THREE_LAYER_CHAIN_LOG"
     [ "$status" -eq 0 ]
+    [[ "$output" == *'detail="semantic boom: missing alias source"'* ]]
+    [[ "$output" == *"payload_b64="* ]]
 
     run bash "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh"
     [ "$status" -ne 0 ]
     [[ "$output" == *"未貫通件数=1"* ]]
     [[ "$output" == *"STATUS: WARN"* ]]
+}
+
+@test "memory_db_knowledge_write repairs unresolved Layer2 chain failure on next write" {
+    init_memory_db
+    isolate_three_layer_chain
+    export THREE_LAYER_CHAIN_RETRIES=1
+    export THREE_LAYER_SEMANTIC_UPDATE_CMD="$TEST_TMPDIR/scripts/semantic_repairable.sh"
+    payload="$(jq -cn --arg ts "2026-07-07T23:00:00+09:00" --arg summary "過去未貫通知識" --arg detail "source: old_source" '{"timestamp":$ts,"summary":$summary,"detail":$detail}')"
+    payload_b64="$(printf '%s' "$payload" | base64 | tr -d '\n')"
+    cat > "$THREE_LAYER_CHAIN_LOG" <<EOF
+2026-07-07T23:00:01+09:00 ERROR layer2_semantic_index_update_failed event=knowledge:old source=old_source detail="semantic boom" payload_b64=$payload_b64
+EOF
+    cat > "$THREE_LAYER_SEMANTIC_UPDATE_CMD" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$2" >> "${TEST_TMPDIR}/semantic_repair_payloads.jsonl"
+exit 0
+EOF
+    chmod +x "$THREE_LAYER_SEMANTIC_UPDATE_CMD"
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_knowledge_write.sh" \
+        "新しいwriteが過去未貫通を自己修復する" \
+        "cmd_3742_repair_source" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --cmd-id "cmd_3742"
+    [ "$status" -eq 0 ]
+
+    run grep -F "OK layer2_semantic_index_update event=knowledge:old source=old_source repair=1" "$THREE_LAYER_CHAIN_LOG"
+    [ "$status" -eq 0 ]
+    run bash "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"未貫通件数=0"* ]]
+    [[ "$output" == *"STATUS: PASS"* ]]
 }
 
 @test "memory_db_knowledge_write retries transient Layer2 semantic update failure" {
