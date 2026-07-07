@@ -220,6 +220,58 @@ if [ "$PI_RATIO" != "?" ] && [ "$PI_RATIO" -lt 100 ] 2>/dev/null; then
     MANUAL+=("PI原理率 ${PI_RATIO}→100%へ: 個別PIを原理PIに昇華せよ")
 fi
 
+# --- 6. semantic候補alias自動昇格(意志依存排除・cmd_3718) ---
+# semantic_stress_testが生成したpending候補は昇格道具(semantic_alias_absorb_pending.sh)が
+# 実在するのに呼び出し元が無く滞留していた。このheartbeat(/loop 30m)を自動トリガーとして接続する。
+SEMANTIC_PENDING_COUNT=0
+if [ -f queue/insights.yaml ]; then
+    read -r SEMANTIC_PENDING_COUNT < <(
+        awk '
+            /^- id:/ {
+                if (started && status == "pending" && insight ~ /semantic_stress_test candidate_aliases/) pending++
+                started = 1; status = ""; insight = ""
+            }
+            /^  status:/ { status = $2 }
+            /^  insight:/ { insight = $0 }
+            END {
+                if (started && status == "pending" && insight ~ /semantic_stress_test candidate_aliases/) pending++
+                print pending + 0
+            }
+        ' queue/insights.yaml
+    )
+fi
+
+SEMANTIC_ABSORB_SCRIPT="$SCRIPT_DIR/scripts/semantic_alias_absorb_pending.sh"
+if [ "$SEMANTIC_PENDING_COUNT" -gt 0 ]; then
+    if [ -f "$SEMANTIC_ABSORB_SCRIPT" ]; then
+        SEMANTIC_ABSORB_OUTPUT="$(bash "$SEMANTIC_ABSORB_SCRIPT" 2>/dev/null || true)"
+        SEMANTIC_PENDING_BEFORE="$(printf '%s\n' "$SEMANTIC_ABSORB_OUTPUT" | grep -oE '^pending_before=[0-9]+$' | cut -d= -f2 || true)"
+        SEMANTIC_ALIASES_ADDED="$(printf '%s\n' "$SEMANTIC_ABSORB_OUTPUT" | grep -oE '^aliases_added=[0-9]+$' | cut -d= -f2 || true)"
+        SEMANTIC_PENDING_AFTER="$(printf '%s\n' "$SEMANTIC_ABSORB_OUTPUT" | grep -oE '^pending_after=[0-9]+$' | cut -d= -f2 || true)"
+        SEMANTIC_PENDING_BEFORE="${SEMANTIC_PENDING_BEFORE:-$SEMANTIC_PENDING_COUNT}"
+        SEMANTIC_ALIASES_ADDED="${SEMANTIC_ALIASES_ADDED:-0}"
+        SEMANTIC_PENDING_AFTER="${SEMANTIC_PENDING_AFTER:-$SEMANTIC_PENDING_COUNT}"
+        FORCED+=("semantic候補alias自動昇格: pending${SEMANTIC_PENDING_BEFORE}→${SEMANTIC_PENDING_AFTER}(追加${SEMANTIC_ALIASES_ADDED})")
+
+        # 実行証拠を既存のNO_MATCH計測出力(logs/semantic_stress_test.log)へ還流し追跡可能にする
+        SEMANTIC_NO_MATCH_LOG="$SCRIPT_DIR/logs/semantic_stress_test.log"
+        SEMANTIC_HIT_RATE_REF="?"
+        if [ -f "$SEMANTIC_NO_MATCH_LOG" ]; then
+            SEMANTIC_HIT_RATE_REF="$(tail -1 "$SEMANTIC_NO_MATCH_LOG" | grep -oE '"hit_rate": *[0-9.]+' | head -1 | grep -oE '[0-9.]+$' || true)"
+            SEMANTIC_HIT_RATE_REF="${SEMANTIC_HIT_RATE_REF:-?}"
+        fi
+        mkdir -p "$(dirname "$SEMANTIC_NO_MATCH_LOG")"
+        printf '{ "timestamp": "%s", "trigger": "gate_cycle_health", "pending_before": %s, "aliases_added": %s, "pending_after": %s, "hit_rate_reference": "%s" }\n' \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            "$SEMANTIC_PENDING_BEFORE" "$SEMANTIC_ALIASES_ADDED" "$SEMANTIC_PENDING_AFTER" "$SEMANTIC_HIT_RATE_REF" \
+            >> "$SEMANTIC_NO_MATCH_LOG"
+    else
+        ALERTS+=("semantic候補alias: pending${SEMANTIC_PENDING_COUNT}件だが昇格スクリプト不在(${SEMANTIC_ABSORB_SCRIPT})")
+    fi
+else
+    INFOS+=("semantic候補alias: pending0件(昇格待ちなし)")
+fi
+
 # --- Output ---
 echo "=== Cycle Health Check ==="
 date '+%Y-%m-%dT%H:%M:%S'

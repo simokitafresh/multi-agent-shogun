@@ -247,6 +247,75 @@ EOF
     [[ "$output" == *"気づきが行動に変わっていない"* ]]
 }
 
+# === Test 8b: semantic候補alias pending=0 → 自動昇格は非発火(cmd_3718) ===
+@test "semantic pending candidates == 0 → auto absorb does not fire" {
+    cat > "$TEST_TMPDIR/scripts/semantic_alias_absorb_pending.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo "MOCK_ABSORB_CALLED" >> "${BASH_SOURCE[0]%.sh}.log"
+echo "pending_before=0"
+echo "aliases_added=0"
+echo "pending_after=0"
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/semantic_alias_absorb_pending.sh"
+
+    cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-resolved-1
+  ts: "2026-07-01T00:00:00+09:00"
+  insight: "[[foo]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=foo"
+  priority: "low"
+  source: "semantic_stress_test"
+  status: resolved
+EOF
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"semantic候補alias: pending0件(昇格待ちなし)"* ]]
+    [[ "$output" != *"semantic候補alias自動昇格"* ]]
+    [ ! -f "$TEST_TMPDIR/scripts/semantic_alias_absorb_pending.log" ]
+}
+
+# === Test 8c: semantic候補alias pending>0 → 自動昇格が発火し証跡を記録(cmd_3718) ===
+@test "semantic pending candidates > 0 → auto absorb fires and logs evidence" {
+    cat > "$TEST_TMPDIR/scripts/semantic_alias_absorb_pending.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo "MOCK_ABSORB_CALLED" >> "${BASH_SOURCE[0]%.sh}.log"
+echo "pending_before=3"
+echo "aliases_added=2"
+echo "pending_after=1"
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/semantic_alias_absorb_pending.sh"
+
+    cat > "$TEST_TMPDIR/logs/semantic_stress_test.log" <<'EOF'
+{ "timestamp": "2026-07-01T00:00:00Z", "hit_rate": 42.5, "no_match": 5, "total": 10 }
+EOF
+
+    {
+        echo "insights:"
+        for i in 1 2 3; do
+            echo "- id: INS-pending-$i"
+            echo "  ts: \"2026-07-01T00:00:0${i}+09:00\""
+            echo "  insight: \"[[term${i}]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=term${i}\""
+            echo "  priority: \"low\""
+            echo "  source: \"semantic_stress_test\""
+            echo "  status: pending"
+        done
+    } > "$TEST_TMPDIR/queue/insights.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"semantic候補alias自動昇格: pending3→1(追加2)"* ]]
+    [ -f "$TEST_TMPDIR/scripts/semantic_alias_absorb_pending.log" ]
+
+    run tail -1 "$TEST_TMPDIR/logs/semantic_stress_test.log"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"trigger": "gate_cycle_health"'* ]]
+    [[ "$output" == *'"pending_before": 3'* ]]
+    [[ "$output" == *'"aliases_added": 2'* ]]
+    [[ "$output" == *'"pending_after": 1'* ]]
+    [[ "$output" == *'"hit_rate_reference": "42.5"'* ]]
+}
+
 # === Test 9: GATE CLEAR済みの報告は除外される ===
 @test "CLEAR-ed reports are excluded from pending count" {
     # Create 2 completed reports
