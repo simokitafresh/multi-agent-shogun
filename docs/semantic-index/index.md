@@ -5310,6 +5310,7 @@ codd:
 | causal | `cmd_reflux_insight_202607071734_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607071754_kotaro` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607071816_hanzo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_insight_202607071843_kagemaru` files_modified: [[semantic_causal_automation]] |
 
 ## provisional_tobisaru — 仮: Tobisaru
 
@@ -5428,6 +5429,7 @@ codd:
 | cmd | `cmd_3723` (`queue/tasks/kagemaru.yaml`) |
 | causal | `cmd_reflux_insight_202607071734_kagemaru` files_modified: [[provisional_kagemaru]] |
 | cmd | `cmd_reflux_insight_202607071734_kagemaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`, `queue/tasks/kagemaru.yaml`) |
+| cmd | `cmd_reflux_insight_202607071843_kagemaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 
 ## provisional_lessons — 仮: Lessons
 
