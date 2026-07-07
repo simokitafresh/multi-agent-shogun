@@ -4625,7 +4625,7 @@ codd:
 |------|---|
 | id | infrastructure_ops |
 | label | インフラ運用基盤 |
-| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ, lock cleanup, stale lock削除, karo snapshot生成, bulletin自動アーカイブ, CDP cleanup, paste buffer nudge, atomic wakeup state, dependency gated deployment, auto deploy blocked_by control, report-before-clear guard, 忍者完了通知, report-summary-guard, done-and-notify, CIredはかいしょうしているはずだ, CI redは解消したか, 全員止まっていないか, どうなった？全員止まっていないか？, 家老が止まっていないか, インフラバグは修正しよう, 家老が自分でも対策をしているので協調せよ, デーモンは全て順調に動作しているか？, デーモンの再起動をスクリプトでせよ, ゲートやデーモンのバグや品質問題がないか調査しよう, snapshot古い, dashboard古い表示残り, snapshot更新遅延, snapshot監視詰まり, karo_snapshot stale, snapshot fast path, atomic snapshot publish, early snapshot refresh, write_karo_snapshot atomic, デーモンは万全か？スクリプトで全デーモンを再起動させよ, ほかにインフラバグはないか, デーモンはすべて順調か？スクリプトで再起動せよ, CI redがないか確認して, スクリプトでデーモンをすべて再起動せよ |
+| aliases | flock, 並行安全, 排他制御, daemon, デーモン, daemon management, デーモン管理, daemon_supervisor, watchdog, auto restart, 自動再起動, heartbeat, health check, inbox_watcher, ninja_monitor, ntfy_listener, プロセス管理, 重複実行, WSL2 NTFS, デーモン異常, 全再起動セーフティ, デーモンが無事に再起動できているか確認せよ, lock cleanup, stale lock削除, karo snapshot生成, bulletin自動アーカイブ, CDP cleanup, paste buffer nudge, atomic wakeup state, dependency gated deployment, auto deploy blocked_by control, report-before-clear guard, 忍者完了通知, report-summary-guard, done-and-notify, CIredはかいしょうしているはずだ, CI redは解消したか, 全員止まっていないか, どうなった？全員止まっていないか？, 家老が止まっていないか, インフラバグは修正しよう, 家老が自分でも対策をしているので協調せよ, デーモンは全て順調に動作しているか？, デーモンの再起動をスクリプトでせよ, ゲートやデーモンのバグや品質問題がないか調査しよう, snapshot古い, dashboard古い表示残り, snapshot更新遅延, snapshot監視詰まり, karo_snapshot stale, snapshot fast path, atomic snapshot publish, early snapshot refresh, write_karo_snapshot atomic, デーモンは万全か？スクリプトで全デーモンを再起動させよ, ほかにインフラバグはないか, デーモンはすべて順調か？スクリプトで再起動せよ, CI redがないか確認して, スクリプトでデーモンをすべて再起動せよ, agentのwindowが壊れているな, 謎のpaneが作成され配置とサイズがバラバラだ, 原因と今後起こさないような対策をしよう, agentのwindowが壊れているな。謎のpaneが作成され配置とサイズがバラバラだ。原因と今後起こさないような対策をしよう, 無主ペイン, 孤児pane, orphan pane, auto-update pane spawn |
 | skills | reset-layout |
 | related_concepts | daemon_supervision, agent_formation_management, yaml_safe_write, verify_dont_imagine, shogun_android_app, infra_design_intent |
 
@@ -4643,6 +4643,9 @@ codd:
 | file | `scripts/dashboard_auto_section.sh` ダッシュボードリアルタイムステータス自動生成 |
 | file | `scripts/auto_deploy_next.sh` サブタスク自動連続配備(auto_deployフラグ/blocked_by/忍者空き制御) |
 | file | `scripts/reset_layout.sh` agentsウィンドウペイン配置一発復元 |
+| cmd | `cmd_karo_hotfix_auto_update_pane_spawn_202607031806` reset_layout.sh/shutsujin_departure.shにflock排他ガード追加(2026-07-03 16:55 auto-update経由6孤児pane発生インシデント対応) (`scripts/reset_layout.sh`, `tests/unit/test_reset_layout_lock.bats`) |
+| causal | `cmd_karo_hotfix_auto_update_pane_spawn_202607031806` origin: [[殿instance_20260703_1655_orphan_pane]] -> [[reset_layout_no_flock_guard]] -> [[38a30ca2f_flock_guard_added]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-06T17:34:38+09:00 agentのwindowが壊れているな。謎のpaneが作成され配置とサイズがバラバラだ。原因と今後起こさないような対策をしよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-21T02:45:19+09:00 デーモンが無事に再起動できているか確認せよ |
 | lesson | `L651` inbox_watcherはagent別singletonを起動時に強制せよ |
 | cmd | `cmd_2935` infra — inbox_watcher二重nudge偵察(殿確認済みバグ) |
