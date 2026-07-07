@@ -97,7 +97,9 @@ def resource_values_from_blocks(blocks):
     values = set()
     for block in blocks:
         for _kind, value in block["resources"]:
-            cleaned = value.strip().strip("`")
+            stripped = value.strip()
+            match = re.match(r"^`([^`]+)`", stripped)
+            cleaned = match.group(1) if match else stripped.strip("`")
             if cleaned:
                 values.add(cleaned)
     return values
