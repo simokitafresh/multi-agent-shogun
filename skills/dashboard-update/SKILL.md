@@ -19,6 +19,8 @@ allowed-tools:
   - Grep
 ---
 
+<!-- script_refs_checked_at: 2026-07-08T08:36:00+09:00 -->
+<!-- 検分: dashboard_update.sh 9a4627f23 hyphenated training cmd id許可、gate_report_format.sh 460db6e2b session_state-only task diff除外。dashboard生成契約 `bash scripts/dashboard_update.sh <cmd_id> [--dry-run]` と報告gate契約は不変 -->
 <!-- script_refs_checked_at: 2026-07-07T15:46:04+09:00 -->
 
 Script refs verified: 2026-07-04 cmd_training_skill_refs_dashboard_update_202607042005. checked_at 2026-07-03T02:15:00+09:00 以降の `dashboard_update.sh` 差分は bb140170d (`cmd_karo_hotfix_dashboard_snapshot_stale_status_202607041407`) のみ。AUTO域再生成直前に `ninja_monitor.sh` の `refresh_karo_snapshot_fast_path` をtimeout 20で呼び、snapshot stale status/model/idleを減らす内部更新で、呼び出し契約 `bash scripts/dashboard_update.sh <cmd_id> [--dry-run]` とpre-flightのcmd_id必須契約は変更なし。

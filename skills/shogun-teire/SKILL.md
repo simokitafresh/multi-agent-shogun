@@ -25,6 +25,8 @@ allowed-tools:
   - Edit
 ---
 
+<!-- script_refs_checked_at: 2026-07-08T08:40:00+09:00 -->
+<!-- 検分: gate_lesson_health.sh GA-196で自己修復cmd(reflux/karo_hotfix/ci_fix)を長期useful率健康指標から除外。棚卸し時のlesson health確認、METRIC行、WARN/ALERT出力契約は不変 -->
 <!-- script_refs_checked_at: 2026-07-05T01:06:00+09:00 -->
 
 Script refs verified: 2026-07-05 cmd_karo_hotfix_skill_refs_shogun_teire_2026070501. `scripts/lesson_deprecate.sh` 直近変更(616b469f2)は退役処理のSSOT経路修正。通常運用では `lesson_write.sh <project> --retire <lesson_id>` へ委譲し、`LESSON_DEPRECATE_ROOT` 指定時だけlegacy test用の直接 `projects/<project>/lessons.yaml` 編集経路を使う。`bash scripts/lesson_deprecate.sh <project> <lesson_id> "<reason>" [cmd_id]` の呼び出し契約は維持され、棚卸し時の教訓退役判断・lesson lifecycle確認手順への破壊的影響なし。

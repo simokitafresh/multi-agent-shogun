@@ -373,6 +373,9 @@ check_lesson_effectiveness() {
             if (cmd !~ /^cmd_/) next
             if (cmd ~ /^cmd_test/) next
             if (cmd ~ /^cmd_training/) next
+            if (cmd ~ /^cmd_reflux_/) next
+            if (cmd ~ /^cmd_karo_hotfix_/) next
+            if (cmd ~ /^cmd_karo_ci_fix_/) next
             if (result == "pending" || ref == "pending") next
             if (project != "" && proj != project) next
             if (!(cmd in seen)) {
@@ -465,6 +468,9 @@ check_lesson_effectiveness() {
             gsub(/\r$/, "", cmd); gsub(/\r$/, "", action)
             gsub(/\r$/, "", result); gsub(/\r$/, "", ref); gsub(/\r$/, "", proj); gsub(/\r$/, "", task_type); gsub(/\r$/, "", lid)
             if (cmd !~ /^cmd_/) next
+            if (cmd ~ /^cmd_reflux_/) next
+            if (cmd ~ /^cmd_karo_hotfix_/) next
+            if (cmd ~ /^cmd_karo_ci_fix_/) next
             if (!(cmd in selected)) next
             if (project != "" && proj != project) next
             lesson_key = ""

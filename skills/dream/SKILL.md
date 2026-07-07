@@ -24,6 +24,8 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
+<!-- script_refs_checked_at: 2026-07-08T08:40:00+09:00 -->
+<!-- 検分: gate_lesson_health.sh GA-196で自己修復cmd(reflux/karo_hotfix/ci_fix)を長期useful率健康指標から除外。引数なし全project走査/PROJECT単体走査、METRIC行、WARN/ALERT出力契約は不変 -->
 <!-- script_refs_checked_at: 2026-07-07T23:28:58+09:00 -->
 
 Script refs verified: 2026-07-07 cmd_3743. `gate_shogun_memory.sh` checked_at以降の変更(bce8c3ed0)と`insight_write.sh` checked_at以降の変更(eca859044)をgit logで確認。前者はmemory pipeline freshness warning追加、後者は破損insight残骸のarchive処理で、/dreamの三層記憶整理手順、`bash scripts/insight_write.sh "message" [priority] [source]` 契約、MCP操作手順は変更なし。

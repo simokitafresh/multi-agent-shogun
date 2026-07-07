@@ -10,6 +10,8 @@ description: |
   DO NOT TRIGGER: 報告YAML全体作成（→/report-write）、commit（→/ninja-commit）
 ---
 
+<!-- script_refs_checked_at: 2026-07-08T08:36:00+09:00 -->
+<!-- 検分: gate_report_format.sh 460db6e2b session_state-only task diff除外。binary_checksからのverdict自動導出、未記入/FILL_THIS BLOCK、呼び出し契約は不変 -->
 <!-- script_refs_checked_at: 2026-07-04T20:13:35+09:00 -->
 
 Script refs verified: 2026-07-04 cmd_training_skill_refs_verdict_check_202607042005. checked_at 2026-07-03T02:15:00+09:00 以降の `gate_report_format.sh` 差分は 83fc58fd (`cmd_karo_hotfix_commit_missing_structural_202607032250`) のみ。bc:commit=yes時の未commit検査対象を`target_path`だけでなく報告YAMLの`files_modified`申告ファイルにも拡張する変更で、`binary_checks`からのverdict自動導出（全yes→PASS/1つでもno→FAIL/空・FILL_THIS→BLOCK）ロジックは`gate_report_format_combined.py`側にあり無変更。verdict-checkの手順・判定ルールへの影響なし。

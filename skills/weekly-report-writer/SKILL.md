@@ -15,6 +15,8 @@ allowed-tools:
   - Write
 ---
 
+<!-- script_refs_checked_at: 2026-07-08T08:36:00+09:00 -->
+<!-- 検分: note_draft.sh 8e4872513 reCAPTCHA guard内部強化。呼び出し契約 `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`、週報Markdown生成後のnote下書き保存契約は不変 -->
 <!-- script_refs_checked_at: 2026-06-27T14:55:14+0900 -->
 
 Script refs verified: 2026-06-12. `note_draft.sh` の契約は `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"` のまま。932936059は外部reCAPTCHA画像チャレンジ未解決を運用FAILではなくSKIPとして`skill_execution_log.yaml`へ記録し、exit 0で返す変更。Gate20も同じ外部reCAPTCHAチャレンジ由来の`note-draft`結果をFAIL率分母から除外する。週報Markdown生成後のnote下書き保存呼び出し・Chrome未起動時SKIP・通常PASS/FAILログの契約変更なし。

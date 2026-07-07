@@ -18,6 +18,8 @@ allowed-tools:
   - AskUserQuestion
 ---
 
+<!-- script_refs_checked_at: 2026-07-08T08:36:00+09:00 -->
+<!-- 検分: note_draft.sh 8e4872513 reCAPTCHA guard内部強化。呼び出し契約 `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`、Markdown→note下書き保存契約は不変 -->
 <!-- script_refs_checked_at: 2026-06-30T12:12:00+0900 -->
 
 Script refs verified: 2026-06-30 a519e6365+dad84ea2c. `note_draft.sh` 直近変更はinvisible reCAPTCHA対応(dispatch_click+quick_url待ち)とコメント形式修正。`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`、Markdown→note下書き保存、PASS/FAIL/SKIP記録の契約は変更なし。

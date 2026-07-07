@@ -10,6 +10,8 @@ description: |
   DO NOT TRIGGER: 同一CLI内の /model 操作（Claude系内でOpus↔Sonnet等）、レイアウト全崩壊（→/reset-layout）
 ---
 
+<!-- script_refs_checked_at: 2026-07-08T08:36:00+09:00 -->
+<!-- 検分: ninja_monitor.sh 5b84066d8 lesson backlog warning通知文調整。idle判定、respawn-pane -k、cli_launch_cmd()/cli_lookup.sh経由の起動契約は不変 -->
 <!-- script_refs_checked_at: 2026-07-07T18:19:00+09:00 -->
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
