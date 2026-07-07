@@ -1982,6 +1982,11 @@ EOF
     [ "$status" -eq 1 ]
 }
 
+@test "waiting-permission labels are absent from stop_check_inbox hook" {
+    run bash -c "rg -n 'idle時に確認推奨|低優先/後で扱い|低優先=|後で扱い' '$PROJECT_ROOT/scripts/hooks/stop_check_inbox.sh'"
+    [ "$status" -eq 1 ]
+}
+
 @test "Q6 missing for 3 consecutive sessions requests action_required bulletin" {
     export STARTUP_WARN_STREAK_THRESHOLD=3
     cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'

@@ -529,7 +529,7 @@ else
     if [[ -f "$_insights_file" ]]; then
       _ins_pending=$(grep -cE 'status:.*pending' "$_insights_file" 2>/dev/null || echo 0)
       if [[ "$_ins_pending" -gt 3 ]]; then
-        _warning_text+="⚠ insights pending ${_ins_pending}件（idle時に確認推奨）"$'\n'
+        _warning_text+="⚠ insights pending ${_ins_pending}件（今処理 or wait_reason宣言）"$'\n'
       fi
     fi
     printf '%s' "$_warning_text" > "$_warning_cache" 2>/dev/null || true
