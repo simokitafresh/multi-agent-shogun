@@ -3388,3 +3388,13 @@ entries:
   source: "cmd_complete_gate"
   timestamp: "2026-07-07T07:58:50Z"
   notes: "startup_alert_backfill_20260707 no_task_benchmark_fast_path"
+- cmd_id: "cmd_reflux_insight_202607071651_kotaro"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-07T08:17:39Z"
