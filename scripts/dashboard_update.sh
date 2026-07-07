@@ -5,7 +5,7 @@
 # 家老の手動更新作業を排除する
 #
 # Usage: bash scripts/dashboard_update.sh <cmd_id> [--dry-run]
-#   cmd_id (必須): cmd_XXX 形式
+#   cmd_id (必須): cmd_XXX 形式（英数字・アンダースコア・ハイフン）
 #   --dry-run: 差分のみ表示。dashboard.mdは変更しない
 #
 # Exit:
@@ -66,8 +66,8 @@ if [[ -z "$CMD_ID" && "$DRY_RUN" == true ]]; then
     exit 0
 fi
 
-if [[ -z "$CMD_ID" || ! "$CMD_ID" =~ ^cmd_[a-zA-Z0-9_]+$ ]]; then
-    echo "ERROR: cmd_id は cmd_XXX 形式（英数字・アンダースコア）で指定せよ。" >&2
+if [[ -z "$CMD_ID" || ! "$CMD_ID" =~ ^cmd_[a-zA-Z0-9_-]+$ ]]; then
+    echo "ERROR: cmd_id は cmd_XXX 形式（英数字・アンダースコア・ハイフン）で指定せよ。" >&2
     echo "  進捗メモの追記は Edit tool で dashboard.md を直接編集すること。" >&2
     exit 1
 fi
@@ -289,7 +289,7 @@ def find_matches(search_dir, cmd_id_filter=None):
         )
 
     parent_cmd_re = re.compile(
-        r'^\s*parent_cmd:\s*[\'"]?' + re.escape(CMD_ID) + r'(?:_[A-Za-z0-9_]+)?[\'"]?\s*(?:#.*)?$'
+        r'^\s*parent_cmd:\s*[\'"]?' + re.escape(CMD_ID) + r'(?:_[A-Za-z0-9_-]+)?[\'"]?\s*(?:#.*)?$'
     )
 
     def rg_parent_cmd_files():

@@ -9924,3 +9924,180 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - cli_model_displayがfable系をFable 5へ正規化した後、process args fallback/settings fallback/resolve fallbackの期待値が旧表記のまま残ると、実装は正しくてもCI全量batsでplanned/executed差分を伴うREDになる。モデル表示正規化を変えたらbanner/process/settings/resolveの全経路テストを同じ表示名で揃える。 origin: [[GA-191]] -> [[Fable表示正規化]] -> [[旧期待値CI RED]]
+
+### L963: startup gateの補助DB不在と読取失敗を同じALERTにしない
+- **日付**: 2026-07-07
+- **出典**: cmd_karo_ci_fix_ga191_followup_202607071752
+- **記録者**: hanzo
+- **tags**: [infra,gate,db,testing,gate]
+- **target_files**: [scripts/gates/gate_gunshi_startup.sh,scripts/loop_ledger_update.sh]
+- **origin**: [[cmd_karo_ci_fix_ga191_followup_202607071752]]
+- **when**: 未設定
+- **how**: 未設定
+- テストfixtureや最小環境で補助DBが存在しないケースまでクエリ失敗ALERTにすると、本来検証したいWARN集約を覆って回帰テストが誤FAILする。存在しない=空結果、存在するが読めない=ALERTの二値を分ける。
+
+### L964: startup gateの補助DB不在は親ディレクトリ有無で本番不在と最小fixtureを分離する
+- **日付**: 2026-07-07
+- **出典**: cmd_karo_ci_fix_ga191_db_missing_followup_202607071808
+- **記録者**: kagemaru
+- **tags**: [infra,gate,db,deploy,gate]
+- **target_files**: [scripts/gates/gate_gunshi_startup.sh]
+- **origin**: [[cmd_karo_ci_fix_ga191_db_missing_followup_202607071808]]
+- **when**: 未設定
+- **how**: 未設定
+- L963の存在しない=空結果を無条件適用すると、本番想定DB不在ALERTを消す。補助DB正本の親ディレクトリがfixtureに用意されているならDB不在はALERT、親ディレクトリ自体が無い最小fixtureだけ空結果にする二値が必要。
+
+### L965: 可搬coreの依存検査は生成物側を対象にする
+- **日付**: 2026-07-07
+- **出典**: cmd_3728
+- **記録者**: hayate
+- **tags**: [infra,testing]
+- **target_files**: [scripts/portable_loop_bootstrap.sh,docs/research/portable-learning-loop-core.md,tests/unit/test_portable_loop_bootstrap.bats]
+- **origin**: [[cmd_3728]]
+- **when**: 未設定
+- **how**: 未設定
+- bootstrap本体や境界文書には禁止語を説明として含むことがある。AC2で守るべき対象は他PJへ設置される生成物であり、生成物ディレクトリをgrepする回帰テストで依存混入を防ぐのがFPを避ける実装になる。
+
+### L966: 教訓ロックファイル方式の不整合(lesson_write.sh=直接/mnt/c flock vs lesson_edit.sh=lock_path.sh経由/tmp)は同時実行時に排他制御が効かない潜在バグ
+- **日付**: 2026-07-07
+- **出典**: cmd_3730
+- **記録者**: kotaro
+- **tags**: [infra,recon,bash,yaml]
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_3730]]
+- **when**: 未設定
+- **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-07-07
+- cmd_3730偵察でscripts/lesson_write.sh(L552 lockfile=${lessons_yaml}.lock、/mnt/c上で直接flock)とscripts/lesson_edit.sh(scripts/lib/lock_path.sh経由でWSL2 NTFS flock不安定性対策として/tmp/shogun_lock_<hash>.lockを取得)が同一の教訓ファイルに対して別々のロックパスを使っていることを発見。両者が同時に同一lessons.yamlへ書込みを試みた場合、ロックが競合せずすり抜ける可能性がある。今回のタスクでは変更していないが、今後PJ別忍者教訓へenforcement遡及付与スクリプトを書く際はlesson_write.shと同じロック方式(直接${file}.lock)を踏襲する必要がある。根本対処にはlesson_write.sh側もlock_path.sh経由に統一するか、lesson_edit.sh側を直接lock方式に統一するかの選択が必要
+
+### L967: lesson_write/lesson_editのlock方式不整合は同時実行時に排他をすり抜ける
+- **日付**: 2026-07-07
+- **出典**: cmd_3730
+- **記録者**: karo
+- **tags**: [lesson, locking, infra]
+- **target_files**: [scripts/lesson_write.sh,scripts/lesson_edit.sh,scripts/lib/lock_path.sh]
+- **origin**: [[cmd_3724]] -> [[忍者教訓のenforcement field欠落初可視化]] -> [[lesson_lock_path_divergence]]
+- **when**: projects/*/lessons.yamlへ新規追記・既存編集・遡及付与スクリプトを実装またはレビューする時
+- **how**: lesson_write.shとlesson_edit.shが同じlock_pathを使うか確認し、別ロックなら片方へ統一してからバッチ書換えを実行する
+- cmd_3730偵察でscripts/lesson_write.shは対象lessons.yaml直下の.lockを直接flockし、scripts/lesson_edit.shはscripts/lib/lock_path.sh経由で/tmp/shogun_lock_<hash>.lockを取得する別方式だと判明。同一projects/*/lessons.yamlへ新規追記と既存編集または遡及付与が同時に走ると別ロックで排他が効かない可能性がある。遡及付与スクリプト作成時は既存書込み経路と同じロック方式へ統一し、根本対処ではlesson_write.sh/lesson_edit.shのロックSSOTを揃える。origin: [[cmd_3724]] -> [[忍者教訓のenforcement field欠落初可視化]] -> [[lesson_lock_path_divergence]]
+
+### L968: ninja_monitor.shの内部関数だけ使いたい場合でもsourceしてはならない(誤起動でシングルトンデーモン重複プロセス発生)
+- **日付**: 2026-07-07
+- **出典**: cmd_reflux_insight_202607072050_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,bash,monitor]
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202607072050_kotaro]]
+- **enforcement**: 未自動化
+- **when**: bashスクリプトの内部関数・計測関数だけを使いたくなり、`source scripts/*.sh` を検討する時
+- **how**: source前にそのスクリプトがLIB_ONLY/ガード付きか確認し、未対応ならsourceせずCLI実行・awk再実装・独立ヘルパ抽出のいずれかで計測する
+- 還流在庫のpending件数を計測する際、_reflux_insight_pending_count等の内部関数を使おうとして source scripts/ninja_monitor.sh を実行した。結果、スクリプト本体のmain処理が走り、正規デーモン(pid=40366, Jul06から稼働)に加え重複プロセス(pid=80176/89044/89045)が一時的に起動した。シングルトンガード(/tmp/ninja_monitor.pid比較)が機能し数秒で自動終了(SINGLETON-EXITログ確認)したため実害はなかったが、ガードがなければ二重書込み・二重配備・ロック競合の危険があった。今後、内部関数のみ流用したい場合はsourceせず、該当ロジックをawkで直接複製するか、独立ヘルパースクリプト(例: causal_backlink_counts.sh)を直接呼び出すべき。
+
+### L969: semantic_map_generate.shは概念あたりfile上位3件のみ索引層へ反映(キャップ制限)。index.mdに新規file追加してもsemantic-map.mdへ出ないのは仕様で異常ではない
+- **日付**: 2026-07-07
+- **出典**: cmd_reflux_insight_202607072138_saizo
+- **記録者**: saizo
+- **tags**: [infra,bash]
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202607072138_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- insight source=semantic_map_generate:new_fileの解消時、docs/semantic-index/index.mdへfile行を追加した後にbash scripts/semantic_map_generate.shを実行してもcontext/semantic-map.mdの差分がゼロになるケースがある。原因はscripts/semantic_map_generate.sh L603 'files = [value for kind, value in resources if kind=="file"][:3]' により、概念あたり上位3件のみが索引層(主要ファイル列)へ採用される仕様のため。既に3件以上file行がある概念へ新規追加しても索引層には表示されない。詳細層(index.md)への到達性は確保されているため、これはbugではなくresolve可能な状態と判断してよい。同種insight解消時、semantic-map.md diffが空でも異常ではないと確認してから進めよ。誤ってbugと誤認しコード修正に走らないよう次回忍者への注意喚起とする。
+
+### L970: report template placeholder除去はmemory_references queryも対象にする
+- **日付**: 2026-07-07
+- **出典**: cmd_karo_ci_fix_deploy_task_ci_red_202607072231
+- **記録者**: hayate
+- **tags**: [infra,deploy-task]
+- **target_files**: [scripts/deploy_task.sh]
+- **origin**: [[cmd_karo_ci_fix_deploy_task_ci_red_202607072231]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- binary_checks本文でFILL-THISを維持しても、memory_references.queryがtask本文を圧縮して再混入するとplaceholder残存テストが落ちる。テンプレート生成時のplaceholder除去は、表示本文だけでなく検索クエリ/補助コメントなど全出力経路に適用する。
+
+### L971: gate_report_format.sh AC2は共有generatedファイルの他忍者並行編集分を自分のcontaminationと誤検出する
+- **日付**: 2026-07-07
+- **出典**: cmd_reflux_insight_202607072256_saizo
+- **記録者**: saizo
+- **tags**: [infra,context,testing,process,gate]
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md,queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202607072256_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- docs/semantic-index/index.md等の共有generatedファイルはL960手順(自分のhunkのみ抽出しgit apply --cached→commit)で安全にcommit分離できるが、AC2チェック(gate_report_format.sh L143 git status --porcelain -- files_modified)は commit後もgit statusがdirtyなら無条件でBLOCKする。他忍者の並行reflux作業による残存差分と自分の未commit忘れを区別できない。改善案: 自分のcommit_hashに含まれる差分と現在のgit diffを比較し、files_modified中のpathで『自分がcommitした行が現HEADに含まれているか』を検証する方式にすればcontaminationの真偽を判定できる。今回は診断根拠(commit hash+diff --stat)を報告に添えてkaro判断を仰いだ。
+
+### L972: _cleanup_stale_keysは新規compound-key連想配列を機械的にプルーン対象へ登録する仕組みが無く、L622と同型のメモリリークが再発する
+- **日付**: 2026-07-08
+- **出典**: cmd_training_L4_auto_202607072345_saizo
+- **記録者**: saizo
+- **tags**: [infra,ninja-monitor,process,gate,bash]
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_training_auto.bats,docs/design/cmd_2762_ninja_monitor_design.md]
+- **origin**: [[cmd_training_L4_auto_202607072345_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/ninja_monitor.sh:3113-3183の_cleanup_stale_keysは、compound-key(agent:task_id等)を持つ連想配列を1つ追加するたびに、開発者が手動でプルーンブロックを追記する運用になっている。L622(2026-05-18)でこの規律が一度明文化されたが、2026-06頃(cmd_3230)に追加されたTRAINING_COMPLETION_CHECKEDはプルーンブロック追加が漏れ、本cmdまで約1.5ヶ月間リークし続けていた。根本原因は「declare -Aの一覧」と「_cleanup_stale_keysのプルーン対象一覧」の2箇所を常に同期させる仕組みが無いこと。今回は同型ブロックを追加する対症修正のみ実施(スコープ内)。恒久対策案: (a) 新規compound-key配列追加時のチェックリスト/lint(shellcheck等では検出不可なため専用grepベースのgateが必要)、または(b) _cleanup_stale_keys自体を「配列名リスト×共通プルーン関数」のデータ駆動構造へリファクタし、配列追加=リスト追記のみで自動的にカバーされる設計に変更する。(b)は今回スコープ外(既存8ブロックとのスタイル一貫性を優先し実装しなかった)ため、次のL4-Rラウンドまたはcodd fix候補として持ち越す。
+
+### L973: bashの[[ str == *"パターン"* ]]構文はダブルクォート内バックスラッシュがリテラル文字として残りグロブエスケープとして機能しない
+- **日付**: 2026-07-08
+- **出典**: cmd_reflux_insight_202607072348_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,testing,gate,bash]
+- **target_files**: [.claude/hooks/pre-bash-combined.sh,tests/unit/test_pre_bash_guard4_shogun_to_karo.bats]
+- **origin**: [[cmd_reflux_insight_202607072348_kotaro]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 対象hook(.claude/hooks/pre-bash-combined.sh)のGuard4検知パターンで置換メソッド用のドットエスケープ記法が使われていたが、bashの[[ str == PATTERN ]]でPATTERNがダブルクォートで囲まれる場合、内部のバックスラッシュ文字がリテラル文字として保持され、globのエスケープ記号としては機能しない(シングルクォートで囲んだ場合やバックスラッシュを使わないダブルクォートなら正しく動作する)。この結果、通常のメソッド呼出し記法(例: 変数名+ドット+メソッド名+開き括弧)を含む文字列は検知パターンにマッチせず、cmd_2134事故の再発防止を目的としたGuard4の一部が導入当初から機能していなかった。今後hookスクリプトでglobパターンにドットや特殊文字を書く場合は、シングルクォートで完全リテラル化するか、不要なバックスラッシュを付けないことを確認せよ。実測: hookへ直接payload投入しexit codeを比較(修正前0=許可、修正後2=BLOCK)。
+
+### L974: report WA根治はgate追加より入力導線とdone未到達監視を先に見る
+- **日付**: 2026-07-08
+- **出典**: cmd_3749
+- **記録者**: hayate
+- **tags**: [infra,gate,yaml,monitor]
+- **target_files**: [queue/reports/hayate_report_cmd_3749.yaml]
+- **origin**: [[cmd_3749]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- report_field_set/gate_report_format/cmd_complete_gate/ninja_monitorが既に存在しても、報告者がverified_existing_dependencyやmemory_references listを自然に正しく書けない、またはtaskがdoneに到達せずidle/停止すると防御層に入らない。report_yaml_format WAを見たら、gate有無だけでなく『正しい入力がテンプレに出ているか』『done前のidle/停止を監視しているか』を必ず確認する。
+
+### L975: STARTUP_WARN_STREAK_THRESHOLD等のgate既定値変更cmdは、依存する全テストの'総合判定'アサーションへ機械的にcascadeする。修正時は影響テストを個別に本文確認し、除外フィルタ(改善cmd接続済み等)の有無を都度検証せよ
+- **日付**: 2026-07-08
+- **出典**: cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122
+- **記録者**: kotaro
+- **tags**: [infra,testing,db,deploy,testing]
+- **target_files**: [tests/unit/test_gate_karo_startup.bats,tests/unit/test_gate_shogun_startup.bats,tests/unit/test_cmd_quality_memory_db.bats]
+- **origin**: [[cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3747はgate_karo_startup.sh/gate_shogun_startup.shのSTARTUP_WARN_STREAK_THRESHOLD既定値を3→1に変更した。この一見小さい定数変更が、単発alertの即時escalation(家老=ALERT、将軍=BLOCK)という質的な仕様変更を生み、依存する45件のテストの'総合判定'期待値が一括で不整合になった。さらに調査中、test_cmd_quality_memory_db.batsの1件はcmd_3747と無関係の既存バグ(gate_three_layer_health.shがSHOGUN_MEMORY_DB_CACHE_PATH未指定時に本番/tmpキャッシュを参照するため、ローカル開発機では常時稼働中の本番キャッシュが存在しPASSする一方、CIの新規checkoutではキャッシュ不在でSTATUS: WARNになりFAILする)を発見した。ローカルで3回連続PASSしても、環境依存のフレーキーテストはCIでのみ再現しうる。対処: (1)gate定数変更cmdでは影響テストの本文を全件読み、除外フィルタや例外条件を考慮しながら個別修正する(一括sedは安全な場合のみ) (2)ローカルPASSがCI再現性を保証しない場合、ambient/共有state(本番DB/キャッシュ/tmpファイル)への暗黙依存を疑い、強制的に不在パスを指定して再現確認する
+
+### L976: semantic_map_generate.shのnew_file_candidates()既知判定が説明文付きfile行を誤って未登録扱いする
+- **日付**: 2026-07-08
+- **出典**: cmd_reflux_insight_202607080153_saizo
+- **記録者**: saizo
+- **tags**: [infra,gate,bash,git]
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202607080153_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/semantic_map_generate.sh L96-101 resource_values_from_blocks()は、SSOT docs/semantic-index/index.mdの`| file | `path` — 説明文 |`形式の行から`cleaned = value.strip().strip("`")`でパスを抽出しようとするが、値の末尾が説明文(バッククォートでない)のため末尾側のバッククォートは除去されず、known_resourcesには"path` — 説明文"という文字列全体が入る。一方queue_new_file_insights()がgit新規ファイル検出で得るrel_pathは素のパス文字列のため、`rel_path in known_resources`が常にFalseとなり、SSOTに既登録のファイルでも繰り返し「semantic index未登録」insightが誤生成されうる。今回の対象insight(INS-20260707-172652934-b2c6)はcommit cbcb5829d(2026-07-06T20:28:16)で既に登録済みだったにも関わらず約21時間後に生成された。前例cmd_reflux_insight_202607072138_saizoのlesson(semantic-map.mdの[:3]表示キャップは仕様)とは別の、より根本的な検出ロジック側のバグ。同一source(semantic_map_generate:new_file)の他insight(INS-20260708-010415303-e5a9等)も同型誤検知の疑いがある。修正案: cleaned抽出をre.match(r"^`([^`]+)`", value)等でバッククォート内のみを厳密抽出する方式に変更すべき。
+
+### L977: verdict missing修行ではgate前にbc全件yes/no抽出を実行する
+- **日付**: 2026-07-08
+- **出典**: cmd_training_L1_report-write_20260708020332
+- **記録者**: hanzo
+- **tags**: [infra,gate,bash]
+- **target_files**: [queue/reports/hanzo_report_cmd_training_L1_report-write_20260708020332.yaml]
+- **origin**: [[cmd_training_L1_report-write_20260708020332]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- verdict missingはverdict欄を手で埋める問題ではなく、binary_checks未記入によりgateが自動導出できない問題。次回はgate前にbinary_checks全resultを抽出し、空欄・PASS・FAIL・waiveが0件であることを確認してからgate_report_format.shを実行する。

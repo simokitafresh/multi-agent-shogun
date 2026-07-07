@@ -19,7 +19,7 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-07-04T20:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-07T15:46:04+09:00 -->
 
 Script refs verified: 2026-07-04 cmd_training_skill_refs_dashboard_update_202607042005. checked_at 2026-07-03T02:15:00+09:00 以降の `dashboard_update.sh` 差分は bb140170d (`cmd_karo_hotfix_dashboard_snapshot_stale_status_202607041407`) のみ。AUTO域再生成直前に `ninja_monitor.sh` の `refresh_karo_snapshot_fast_path` をtimeout 20で呼び、snapshot stale status/model/idleを減らす内部更新で、呼び出し契約 `bash scripts/dashboard_update.sh <cmd_id> [--dry-run]` とpre-flightのcmd_id必須契約は変更なし。
 
@@ -27,19 +27,19 @@ Script refs verified: 2026-07-04 cmd_training_skill_refs_dashboard_update_202607
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-07T15:46:04+09:00 -->
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-07T15:46:04+09:00 -->
 
 Script refs verified: 2026-06-26 cmd_3550. `gate_report_format.sh` 直近変更後も `bash scripts/gates/gate_report_format.sh <report_yaml_path>` の報告YAML検証契約は変更なし。dashboard生成契約 `bash scripts/dashboard_update.sh <cmd_id> [--dry-run]` も変更なし。
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-07T15:46:04+09:00 -->
 
 Script refs verified: 2026-06-20 a16c93387+48204a464. `dashboard_update.sh` 直近変更はLS071統合/Guard18運用データ反映、`gate_report_format.sh` 直近変更は操作的オントロジー/targetフィルタ/スキル強制の内部検査強化。dashboard生成コマンドと報告YAML検証契約は変更なし。
 
 Script refs verified: 2026-06-21 729635be5. `dashboard_update.sh` 直近変更はmodel family literalのSSOT化。`bash scripts/dashboard_update.sh <cmd_id> [--dry-run]` の生成契約、報告YAML検証契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-07T15:46:04+09:00 -->
 
 Script refs verified: 2026-06-11. `dashboard_update.sh` の契約は `<cmd_id> [--dry-run]` のまま。`gate_report_format.sh` は `bash scripts/gates/gate_report_format.sh <report_yaml_path>` で報告YAMLを検証し、binary_checks由来verdict自動導出・未記入BLOCK・PASS cache・auto-commit contamination WARNの契約変更なし。
 
@@ -71,11 +71,11 @@ Script refs verified: 2026-05-22 cmd_2959. `gate_report_format.sh` は `gate_rep
 - <!-- skill-auto-improve:b6620bfa817a --> 自動防止: gate=dashboard_update のTop FAIL理由「dashboard_update.sh exit=2 cmd=<cmd_id> dry_run=false」(count=1, last=2026-06-08T02:29:18+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
 ### pre-flight: cmd_id空パラメータ検出
 
-`dashboard_update.sh` 実行前に必ず `cmd_id` を明示し、空文字・`--dry-run`単独・`cmd_`以外の値なら実行しない。cmd_id未指定のまま実行すると `dashboard_update.sh exit=1 cmd=<empty>` / `cmd=--dry-run` がskill FAILとして記録される。
+`dashboard_update.sh` 実行前に必ず `cmd_id` を明示し、空文字・`--dry-run`単独・`cmd_`以外の値なら実行しない。training cmdのskill名に含まれるハイフンは有効なcmd_id文字として許可する。cmd_id未指定のまま実行すると `dashboard_update.sh exit=1 cmd=<empty>` / `cmd=--dry-run` がskill FAILとして記録される。
 
 ```bash
 cmd_id="${1:-}"
-if [ -z "$cmd_id" ] || [ "$cmd_id" = "--dry-run" ] || ! [[ "$cmd_id" =~ ^cmd_[A-Za-z0-9_]+$ ]]; then
+if [ -z "$cmd_id" ] || [ "$cmd_id" = "--dry-run" ] || ! [[ "$cmd_id" =~ ^cmd_[A-Za-z0-9_-]+$ ]]; then
   echo "BLOCK: dashboard-update requires cmd_id like cmd_3193 before optional --dry-run" >&2
   exit 1
 fi
@@ -200,6 +200,6 @@ bash scripts/ntfy.sh "📊 Dashboard: {直近cmd結果} | idle:{N}名 | pipeline
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `gate_report_format.sh` の現行契約を再確認。dashboard更新前の報告YAML検証は、binary_checks由来verdict自動導出・lessons_useful空リストBLOCK・中間FAILログ抑止を含む現在のgate出力を正本にする。
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-07T15:46:04+09:00 -->
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-07T15:46:04+09:00 -->
