@@ -269,6 +269,37 @@ PY
     [[ "$output" == *"STATUS: WARN"* ]]
 }
 
+@test "memory_db_knowledge_write retries transient Layer2 semantic update failure" {
+    init_memory_db
+    isolate_three_layer_chain
+    export THREE_LAYER_CHAIN_RETRIES=2
+    export THREE_LAYER_CHAIN_RETRY_SLEEP=0
+    export THREE_LAYER_SEMANTIC_UPDATE_CMD="$TEST_TMPDIR/scripts/semantic_once.sh"
+    cat > "$THREE_LAYER_SEMANTIC_UPDATE_CMD" <<'EOF'
+#!/usr/bin/env bash
+count_file="${TEST_TMPDIR}/semantic_once.count"
+count=0
+[ -f "$count_file" ] && count="$(cat "$count_file")"
+count=$((count + 1))
+printf '%s' "$count" > "$count_file"
+[ "$count" -ge 2 ]
+EOF
+    chmod +x "$THREE_LAYER_SEMANTIC_UPDATE_CMD"
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_knowledge_write.sh" \
+        "一時的なLayer2失敗はretryで解消する" \
+        "cmd_3715_retry_test_source" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --cmd-id "cmd_3715"
+    [ "$status" -eq 0 ]
+
+    [ "$(cat "$TEST_TMPDIR/semantic_once.count")" = "2" ]
+    run grep -F "ERROR layer2_semantic_index_update_failed" "$THREE_LAYER_CHAIN_LOG"
+    [ "$status" -ne 0 ]
+    run grep -F "OK layer2_semantic_index_update" "$THREE_LAYER_CHAIN_LOG"
+    [ "$status" -eq 0 ]
+}
+
 @test "memory_db_knowledge_write skips Layer3 candidate log when knowledge has no [[link]]" {
     init_memory_db
     isolate_three_layer_chain

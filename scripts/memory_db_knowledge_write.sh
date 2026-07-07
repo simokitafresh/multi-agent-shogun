@@ -145,9 +145,10 @@ event_id="${py_output#OK: }"
 # --- 三層貫通自動連鎖: Layer2(セマンティック)+Layer3(Obsidianリンク候補ログ) ---
 # 呼び出し側の体感をLayer1書込みと同等に保つため、既定ではバックグラウンド実行する。
 chain_log="${THREE_LAYER_CHAIN_LOG:-$SCRIPT_DIR/logs/three_layer_chain_async.log}"
+semantic_update_cmd="${THREE_LAYER_SEMANTIC_UPDATE_CMD:-$SCRIPT_DIR/scripts/semantic_index_update.sh}"
 
 _three_layer_chain() {
-    local _event_id="$1" _knowledge="$2" _source="$3" _chain_log="$4"
+    local _event_id="$1" _knowledge="$2" _source="$3" _chain_log="$4" _semantic_update_cmd="$5"
     local _ts
     _ts="$(date -Iseconds)"
     mkdir -p "$(dirname "$_chain_log")"
@@ -156,7 +157,18 @@ _three_layer_chain() {
     local _payload
     _payload="$(jq -cn --arg ts "$_ts" --arg summary "$_knowledge" --arg detail "source: $_source" \
         '{"timestamp":$ts,"summary":$summary,"detail":$detail}' 2>/dev/null || true)"
-    if [[ -z "$_payload" ]] || ! bash "$SCRIPT_DIR/scripts/semantic_index_update.sh" discussion "$_payload" >/dev/null 2>&1; then
+    local _attempt=1 _max_attempts _sleep_sec _layer2_ok=0
+    _max_attempts="${THREE_LAYER_CHAIN_RETRIES:-3}"
+    _sleep_sec="${THREE_LAYER_CHAIN_RETRY_SLEEP:-2}"
+    while [[ "$_attempt" -le "$_max_attempts" ]]; do
+        if [[ -n "$_payload" ]] && bash "$_semantic_update_cmd" discussion "$_payload" >/dev/null 2>&1; then
+            _layer2_ok=1
+            break
+        fi
+        [[ "$_attempt" -lt "$_max_attempts" ]] && sleep "$_sleep_sec"
+        _attempt=$((_attempt + 1))
+    done
+    if [[ "$_layer2_ok" != "1" ]]; then
         printf '%s ERROR layer2_semantic_index_update_failed event=%s source=%s\n' "$_ts" "$_event_id" "$_source" >> "$_chain_log"
     else
         # 成功も記録する: 失敗のみのログは「ログ不在=実行履歴なし」と「不在=無失敗」を区別できず、
@@ -177,8 +189,8 @@ _three_layer_chain() {
 }
 
 if [[ "${THREE_LAYER_CHAIN_SYNC:-0}" == "1" ]]; then
-    _three_layer_chain "$event_id" "$knowledge_text" "$source_text" "$chain_log"
+    _three_layer_chain "$event_id" "$knowledge_text" "$source_text" "$chain_log" "$semantic_update_cmd"
 else
-    _three_layer_chain "$event_id" "$knowledge_text" "$source_text" "$chain_log" &
+    _three_layer_chain "$event_id" "$knowledge_text" "$source_text" "$chain_log" "$semantic_update_cmd" &
     disown 2>/dev/null || true
 fi
