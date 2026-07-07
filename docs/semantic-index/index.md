@@ -11,6 +11,22 @@ codd:
 <!-- scope: multi-agent-shogun conceptual reverse index -->
 <!-- related_concepts format: concept_id or concept_id(relation_type=同義|上位|混同注意|関連). Parsers must keep legacy concept_id entries backward-compatible. -->
 
+## pf_remote_restore — 本番PF即時復元機構
+
+| 属性 | 値 |
+|------|---|
+| id | pf_remote_restore |
+| label | 本番PF即時復元機構 |
+| aliases | PF復元機構, 本番PF復元, portfolio_archive, PF archive, 削除PF復元, 遠隔復元, 任意PF復元, 全量PF復元, 削除時自動退避, 復元API, PF可逆性, 大規模実験の可逆性保証, ローカルがなくても元に戻せる仕組み, 今の本番PFをいつでも元に戻す仕組み, pf-remote-restore |
+| related_concepts | semantic_dictionary_design, dm_signal, pf_registration, recalculation_pipeline |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/pf-remote-restore-asis-tobe-5w1h_20260708.md` |
+| causal | [[殿要望20260708_0243_PF即時復元]] -> [[pf_remote_restore]] -> [[大規模実験の可逆性保証]] |
+| causal | `cmd_reflux_insight_202607080431_hayate` files_modified: [[pf_remote_restore]] |
+| cmd | `cmd_3330` backfill — | session_20260612_shogun_ac2_cycles_mtdux_complete | AC2第1-2サイクル本番着地+第二サイクルレビュー通過+mtd-ux全PR完遂+裁可型是正 |
+
 ## cmd_chronicle — CMD年代記
 
 | 属性 | 値 |
@@ -818,7 +834,7 @@ codd:
 | label | セマンティック辞書構想 |
 | aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL, L7まで貫通させてバグを修正せよ, 意思依存でスキルを使わないのはバグだ, WF速度ACはcache生成後の反復も記録し, フックがimport only混在をBLOCKする場合は, import追加を不要にする実装へ寄せる, バグ1は将軍の操作ミスならば, 更新漏れをgate後追いから配備時点の防御へ上げられる, ちがう, 必要ならページ本体の段階取得だけをSSOTにする, バックグラウンド連鎖を追加する既存スクリプトのテストは, pendingのみが表示されているのはバグだな |
 | skills | なし |
-| related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system, unread_cmd_new_deployment_guard |
+| related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system, unread_cmd_new_deployment_guard, pf_remote_restore |
 | related_lessons | `L317`, `L088`, `L079` |
 
 | 種別 | パス/参照 |
@@ -1654,6 +1670,7 @@ codd:
 | cmd | `cmd_training_speed_cmd_delegate_20260606232002` (`scripts/cmd_delegate.sh`) |
 | causal | `cmd_karo_hotfix_report_field_files_modified_path_guard` files_modified: [[gate_bypass_prevention]] |
 | causal | `cmd_karo_hotfix_cmd3264_target_path_false_block_202607061003` files_modified: [[gate_bypass_prevention]] |
+| causal | `cmd_3752` files_modified: [[gate_bypass_prevention]] |
 
 ## terminology_dictionary — 用語辞書
 
@@ -2094,6 +2111,7 @@ codd:
 | lesson | `L956` 可搬コア偵察ではinbox/tmuxをTier0に含めるな |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T17:15:35+09:00 三層学習ループ極限化 初日完了(2026-07-07): 設計書T1-T7の全9cmd完了(cmd_3718-3726全アーカイブ確認)。実証された免疫サイクル=(1)将軍D0未コミット消失→LS-A14(2)教訓化→再適用+即コミット6a |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T18:31:49+09:00 startup CI RED検知は2026-06-12速度hotfixのgh timeout 0.05s短縮で25日間silent-deathしていた。async実行関数のtimeout短縮は直列時間に寄与せず機能だけ殺す。修正=既定8s復 |
+| causal | `cmd_3752` files_modified: [[growth_loop]] |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
 | causal_chain | `[[cmd_147]]` (L012) |
@@ -4231,6 +4249,7 @@ codd:
 | cmd | `cmd_2784` 破壊的操作の前に殿の明示的承認確認をpre-bash hookに追加 |
 | lesson | `LK-A01 v6` 破壊的操作はremote現状確認+lord_conversation確認必須 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T21:03:06+09:00 全ての作業で共通の内容だぞ。各論にするな。破壊的操作を禁止するのはナンセンスで責任転換しているだけだ。人もLLMもミスをする。俺に判断を投げるという発想が根本的に間違っているな。 |
+| causal | `cmd_3752` files_modified: [[destructive_operations]] |
 
 ## cmd_quality_logging — cmd設計品質ログ
 
@@ -5143,6 +5162,9 @@ codd:
 | causal | `cmd_3674` files_modified: [[hook_automation_framework]] |
 | causal | `cmd_karo_hotfix_stop_hook_toolless_escape_2026070506` files_modified: [[hook_automation_framework]] |
 | causal | `cmd_karo_hotfix_ga190` files_modified: [[hook_automation_framework]] |
+| causal | `cmd_3752` files_modified: [[hook_automation_framework]] |
+| cmd | `cmd_3752` workaround記録の迂回経路根絶 — 全書込み経路でbrainwash_check空欄を書けない構造化 (`.claude/hooks/pre-bash-combined.sh`, `scripts/karo_workaround_log.sh`, `tests/unit/test_karo_workaround_validation.bats`) |
+| causal | `cmd_3752` origin: [[家老エスカレーション20260708_0406_brainwash未記入]] -> [[手編集後追いの迂回経路残存]] -> [[cmd_3752_全経路空欄BLOCK]] |
 | causal_chain | `[[cmd_3401]]` (L811) |
 | causal_chain | `[[cmd_3728]]` (L965) |
 | causal_chain | `[[cmd_3522]]` (L843) |
@@ -5391,6 +5413,8 @@ codd:
 | causal | `cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501` files_modified: [[provisional_hayate]] |
 | cmd | `cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501` (`queue/reports/hayate_report_cmd_karo_hotfix_ga179_dm_signal_context_freshness_2026070501.yaml`, `queue/tasks/hayate.yaml`, `context/dm-signal.md`) |
 | cmd | `cmd_reflux_insight_202607071908_hayate` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
+| causal | `cmd_reflux_insight_202607080400_hayate` files_modified: [[provisional_hayate]] |
+| cmd | `cmd_reflux_insight_202607080400_hayate` (`queue/tasks/hayate.yaml`) |
 
 ## provisional_kotaro — 仮: Kotaro
 
