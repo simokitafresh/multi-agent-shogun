@@ -154,7 +154,10 @@ _PID_FIND_R=$!
 # python3のsqlite3モジュール経由にし、exit statusを別ファイルに残して呼び出し元で判定する。
 { trap - EXIT; set +e; python3 -c "
 import sqlite3, sys
+from pathlib import Path
 db_path = sys.argv[1]
+if not Path(db_path).is_file():
+    sys.exit(0)
 try:
     con = sqlite3.connect('file:' + db_path + '?mode=ro', uri=True)
     rows = con.execute(
