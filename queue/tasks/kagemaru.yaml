@@ -1,61 +1,34 @@
 task:
-  acceptance_criteria:
-  - checks:
-    - check: 対象insight INS-20260707-081531178-279c を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
-    id: AC1
-  - checks:
-    - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/total)を報告YAMLへ記録し、実行証拠を残す
-    id: AC2
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  parent_cmd: cmd_reflux_insight_202607071943_kagemaru
-  project: infra
-  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260707-081531178-279c を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
-  reflux_inventory_before:
-    insights_pending: 10
-    total: 10
-    zero_backlinks: 0
-  scout_exempt: true
-  status: done
-  stop_for: []
-  target_path: queue/insights.yaml
-  task_id: cmd_reflux_insight_202607071943_kagemaru_exact
-  task_type: exact
-  related_lessons:
-  - id: 'L351'
-    summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
-    detail: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
-  - id: 'L508'
-    summary: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-    detail: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
-  - id: 'L278'
-    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-  - id: 'L342'
-    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
-    wa_category: 'commit_missing'
-    wa_count: 1
-    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
+  _ac_task_id: cmd_3736_scout
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3736 (deployed 2026-07-07T21:47:29). Read from the beginning.
+  ac_version: 7f7775d9
+  cmd_id: cmd_3736
+  deployed_at: "2026-07-07T21:48:44"
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
+  model_injection_profile:
+    model_label: "gpt-5.5-low"
+    family: "gpt"
+    injection_intensity: "max"
+    protocol: "T5弱LLM構造化プロトコル"
+    report_contract:
+    - "binary_checks全resultをyes/noで記入"
+    - "lessons_useful全reasonを具体記入"
+    - "files_modifiedはrepo相対path形式"
+    extra_scaffold:
+    - "ACごとに実テスト証跡をresult.detailsへ記録"
+    - "報告前にrg -n FILL_THISとgate_report_formatを実行"
   semantic_concepts:
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh tests/unit/test_deploy_training.bats scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md docs/research/model-comparison-5w1h-20260701.md 全モデル5W1H比較(GPT5.5/Sonnet4.6/Sonnet5/Opus4.8) docs/research/sonnet5_vs_46_ab_evaluation_20260701.md 5ラウンドA/B/C評価データ scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
+  recommended_skills:
+  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
+  related_causal_links:
+  - "[[cmd_3736_M3偵察]]"
+  - "[[忍者の動的想起が1割未満]]"
+  - "[[殿裁可_三層記憶有効利用加速_20260707]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -65,23 +38,69 @@ task:
   - "context/training-cycle.md"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L351: insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL
-      - L508: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL
+      - L159: IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
+    
+    【3-strike rule】
+      - 初期仮説は最低3本。hypothesis_count に現在の本数を維持せよ
+      - 3回連続で仮説が外れたら、追加探索で粘らずエスカレーションせよ
+      ────────────────────────────────────────
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  hypothesis_count: 3
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok: []
+  parent_cmd: cmd_3736
+  project: infra
+  purpose: 殿裁可(2026-07-07 21:37「やろう」— 三層記憶有効利用加速設計書v1 §7)の第2弾M3の偵察フェーズ。忍者の三層記憶検索は全体の1割未満で、知識到達が配備時の静的注入のみに依存している。報告記入時に環境が関連知識を差し出す挿入点と、成果物への引用欄の追加方式を偵察する
+  status: done
+  stop_for: []
+  target_path: /mnt/c/tools/multi-agent-shogun
+  task_id: cmd_3736_scout
+  task_type: scout
+  three_strike_rule: 仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告
+  related_lessons:
+  - id: 'L159'
+    summary: 'IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore'
+    detail: 'IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore'
+  - id: 'L278'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
+  - id: 'L342'
+    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
   memory_db_context:
-  - '2026-07-07T18:08:02+09:00 | 確認完了。残っている未commit変更はすべて元々のセッション開始時から存在していた、他のエージェント担当の変更であり、私のスコープ外。私の担当ファイル(docs/semantic-index/ind'
-  - '2026-07-07T14:42:31 | 三層記憶の穴3種を特定・修正(2026-07-07殿指示「利用されなければ効果を発揮しない」)。穴1=Gate12.2引用率計測が読み手パス(data/凍結コピー)+grep書式(スペースなし)の二重'
-  - '2026-06-20T02:15:43+09:00 | スコープ内の全ファイル（`queue/insights.yaml` / `queue/tasks/saizo.yaml` / 報告YAML）は全て `.gitignore` 管理外。 COMMIT M'
-  - '2026-06-20T00:33:13+09:00 | parent_cmd=noneのhot fixタスク。ninja_done.shはcmd_XXX形式不要のため家老へのinbox_write完了報告で終了（既送信済み）。 **作業完了サマリ:** -'
-  - '2026-07-07T16:35:54+09:00 | 還流ツール(`semantic_index_update.sh absorb_pending`)の実行完了を待っています。完了通知が届き次第、対象insightの処理結果を確認し、報告YAMLの作成に'
-  ac_version: 50908e82
-  _ac_task_id: cmd_reflux_insight_202607071943_kagemaru_exact
-  _ac_worker_id: 
+  - '2026-07-07T21:32:00+09:00 | 【将軍】三層記憶有効利用加速 設計書v1完成+gist共有。書込み層は健全(PASS)、読出し側が主戦場(忍者検索8%偏在・引用有効性未計測)。施策M1-M6は殿裁可待ち。https://gist.g'
+  - '2026-07-06T19:49:11+09:00 | AC3件: (1)BE台帳リゾルバ切替+メタデータ追加 (2)FEバッジ描画(✓確定/✎訂正/⏳確定前)+tooltip (3)テスト。ローカル実装のみ。 **6観点レビュー**: - **前提**:'
+  - '2026-07-07T21:40:48+09:00 | 【INFOバッチ】 2026-07-07 21:27:29|cmd_3733 2026-07-07 21:28:18|cmd_3734'
+  - '2026-07-07T21:40:10 | 軍師セッション2026-07-07: レビュー約40件処理(draft APPROVE 15件+report LGTM 20件+FAIL 3件)。FAIL検出3件: cmd_3720 AC2未comm'
+  - '2026-06-23T21:52:56+09:00 | 【INFOバッチ】 2026-06-23 21:37:43|cmd_3520'
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: '報告テンプレ生成経路への自動想起の挿入点を偵察し報告する — テンプレ生成関数と報告フィールド記入scriptと報告形式gateの現物から、注入位置・クエリ生成のソース(タスクYAMLのどのフィールドか)・既存lessons_useful機構との整合を、変更対象ファイル・波及先・関連テスト・エッジケース・依存順序の偵察必須要件を満たして報告する'
+  - id: 'AC2'
+    checks:
+    - check: '報告YAMLへの引用欄(参照した記憶の記録+有効性二値)の追加方式を偵察し報告する — 報告形式gateの検証互換・テンプレ雛形への追加位置・M4(有効性回収)への接続点を特定して報告する'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_reflux_insight_202607071943_kagemaru.yaml
-  report_path: queue/reports/kagemaru_report_cmd_reflux_insight_202607071943_kagemaru.yaml
+  report_filename: kagemaru_report_cmd_3736.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3736.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -110,4 +129,4 @@ task:
     - reason: 'empty_lessons_useful'
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-07-07T19:44:54"
+  completed_at: "2026-07-07T21:52:12+09:00"
