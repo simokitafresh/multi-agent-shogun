@@ -1392,3 +1392,4 @@
 - 2026-07-08 cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523完了: 影丸がDM-Signal cmd_3711 `signal_decision_ledger`全履歴バックフィルを`context/dm-signal-core.md` §21へ索引化。`gate_context_freshness.sh`総合OK、commit `9bb2ce80c`、GATE CLEAR。
 - 2026-07-08 家老D0強ニュー化: cmd_complete_gateとcmd-complete Step4の重複で`cmd_design_quality.yaml` CLEAR記録が二重化する穴を検出し、`cmd_quality_log.sh`をCLEAR idempotent化。`bats tests/unit/test_cmd_quality_log.bats` 2/2 PASS、commit `c9143edfb` push済み。
 - 2026-07-08 cmd_reflux_insight_202607080538_saizo完了: 才蔵がINS-07e7を単純resolveでなく`semantic_map_generate.sh`の説明文付きfile行抽出バグ修正へ昇格。回帰テスト追加、関連Bats 41件+追加39件PASS、L984登録、GATE CLEAR。
+- 2026-07-08 cmd_reflux_insight_202607080553_kagemaru完了: 影丸がINS-4075をSG-PRE31意味検算概念としてsemantic-indexへ登録し、参照先docs/researchも追跡化。`semantic_search "SG-PRE31 N×M 意味検算 LG048"` hit、在庫2→1、GATE CLEAR。
