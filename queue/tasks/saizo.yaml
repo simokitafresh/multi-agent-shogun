@@ -167,4 +167,23 @@ task:
       count: 1
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
   deployed_at: "2026-07-08T04:38:21"
-  completed_at: "2026-07-08T04:43:37+0900"
+  completed_at: "2026-07-08T04:46:12+0900"
+
+  session_state:
+    attempt: 3
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    tried_approaches:
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    diagnose_reason: '対象INSの修正は完了していたが、gate実行後にsession_stateがtask YAMLへ追記され、その追記とcompleted_at更新を成果コミットに含めないまま再計測したため、target_path配下の未commit差分として再検出された。'
+    approach_summary: 'INS-20260708-025933526-e6b3をcausal_traversal_pipeline概念へ登録し、semantic index未登録候補を解消した。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: 'INS-20260708-025933526-e6b3をcausal_traversal_pipeline概念へ登録し、semantic index未登録候補を解消した。'
+    - attempt: 2
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: 'INS-20260708-025933526-e6b3をcausal_traversal_pipeline概念へ登録し、semantic index未登録候補を解消した。'
+    - attempt: 3
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      diagnose_reason: '対象INSの修正は完了していたが、gate実行後にsession_stateがtask YAMLへ追記され、その追記とcompleted_at更新を成果コミットに含めないまま再計測したため、target_path配下の未commit差分として再検出された。'
+      approach_summary: 'INS-20260708-025933526-e6b3をcausal_traversal_pipeline概念へ登録し、semantic index未登録候補を解消した。'
