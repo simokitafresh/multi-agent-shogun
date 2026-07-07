@@ -119,6 +119,38 @@ print('ok')
     [ "$output" = "ok" ]
 }
 
+@test "sync_lessons propagates enforcement and automated flag from markdown to index" {
+    cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
+### L001: enforcement propagation
+- **日付**: 2026-07-07
+- **出典**: cmd_3731
+- **tags**: [infra]
+- **enforcement**: Level5: task YAMLへ事前コンテキスト提供
+- sample summary text
+EOF
+
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+ssot_path: /tmp/dummy
+last_synced: '2026-07-06T00:00:00'
+lessons: []
+EOF
+
+    run bash "$TEST_PROJECT/scripts/sync_lessons.sh" testproj
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/projects/testproj/lessons.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+lesson = data.get('lessons', [])[0]
+assert lesson.get('enforcement') == 'Level5: task YAMLへ事前コンテキスト提供', lesson
+assert lesson.get('automated') is True, lesson
+print('ok')
+"
+    [ "$status" -eq 0 ]
+    [ "$output" = "ok" ]
+}
+
 @test "sync_lessons propagates when and how from markdown to index" {
     cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
 ### L001: when how propagation

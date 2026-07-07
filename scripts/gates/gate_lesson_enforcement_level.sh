@@ -9,8 +9,9 @@
 #
 # 対象:
 #   - ロール別 lessons (enforcement fieldあり): lessons_shogun.yaml / lessons_karo.yaml / lessons_gunshi.yaml
-#   - PJ別 lessons (忍者教訓, enforcement field無し): projects/*/lessons.yaml
-#     → Level判定不能につき件数のみ報告(計測対象外として明示。昇格候補には含めない)
+#   - PJ別 lessons (忍者教訓): projects/*/lessons.yaml
+#     → enforcement fieldありは正式なLevel分布へ算入。field無しは件数のみ報告し、
+#        Level判定不能として昇格候補には含めない
 #
 # 判定方式:
 #   1) 明示Levelマーカー("Level4" "L5:" 等)をテキストから抽出し最大値を採用
@@ -141,17 +142,40 @@ for path in role_files:
     print(f"  {basename}: enforcement記載{measured}件 / {hist_str} / L4未満:{below4}件({pct:.1f}%)")
 
 print("")
-print("[PJ別: enforcement field無し(忍者教訓。Level判定不能=計測対象外)]")
+print("[PJ別: enforcement fieldありは分布算入 / field無しは件数報告のみ]")
 pj_total = 0
+pj_measured = 0
+pj_fieldless = 0
+pj_level_hist = {n: 0 for n in range(1, 7)}
 for path in pj_files:
     import os
     basename = os.path.basename(os.path.dirname(path))
     lessons = load_lessons(path)
     total = len(lessons)
-    with_enf = sum(1 for e in lessons if isinstance(e, dict) and e.get('enforcement'))
     pj_total += total
+    file_hist = {n: 0 for n in range(1, 7)}
+    with_enf = 0
+    without_enf = 0
+    for entry in lessons:
+        if not isinstance(entry, dict):
+            continue
+        enforcement = entry.get('enforcement')
+        if enforcement and isinstance(enforcement, str):
+            with_enf += 1
+            level, source = classify(enforcement)
+            file_hist[level] += 1
+            pj_level_hist[level] += 1
+            if level < 4:
+                candidates.append((basename, entry.get('id', '?'), level, entry.get('title', '')))
+        else:
+            without_enf += 1
+    pj_measured += with_enf
+    pj_fieldless += without_enf
     if with_enf:
-        print(f"  {basename}: {total}件 (enforcement記載あり{with_enf}件を検出 — 想定外。要確認)")
+        below4 = sum(file_hist[n] for n in range(1, 4))
+        pct = (100.0 * below4 / with_enf) if with_enf else 0.0
+        hist_str = ' '.join(f"L{n}:{file_hist[n]}" for n in range(1, 7))
+        print(f"  {basename}: {total}件 / enforcement記載{with_enf}件 / {hist_str} / L4未満:{below4}件({pct:.1f}%) / field無し:{without_enf}件")
     else:
         print(f"  {basename}: {total}件 (enforcement field無し)")
 
@@ -159,11 +183,19 @@ print("")
 print("[総合]")
 role_below4 = sum(role_level_hist[n] for n in range(1, 4))
 role_at4plus = sum(role_level_hist[n] for n in range(4, 7))
-pct_at4plus = (100.0 * role_at4plus / role_total) if role_total else 0.0
+total_level_hist = {n: role_level_hist[n] + pj_level_hist[n] for n in range(1, 7)}
+total_measured = role_total + pj_measured
+total_below4 = sum(total_level_hist[n] for n in range(1, 4))
+total_at4plus = sum(total_level_hist[n] for n in range(4, 7))
+pct_at4plus = (100.0 * total_at4plus / total_measured) if total_measured else 0.0
 hist_str = ' '.join(f"L{n}:{role_level_hist[n]}" for n in range(1, 7))
 print(f"  ロール別enforcement記載合計: {role_total}件 / {hist_str}")
-print(f"  L4以上(恒久防御)到達: {role_at4plus}件({pct_at4plus:.1f}%) / L4未満(昇格候補): {role_below4}件")
-print(f"  PJ別(忍者教訓)合計: {pj_total}件(enforcement field無し、Level分布の集計対象外)")
+pj_hist_str = ' '.join(f"L{n}:{pj_level_hist[n]}" for n in range(1, 7))
+print(f"  PJ別enforcement記載合計: {pj_measured}件 / {pj_hist_str} / field無し:{pj_fieldless}件")
+total_hist_str = ' '.join(f"L{n}:{total_level_hist[n]}" for n in range(1, 7))
+print(f"  全enforcement記載合計: {total_measured}件 / {total_hist_str}")
+print(f"  L4以上(恒久防御)到達: {total_at4plus}件({pct_at4plus:.1f}%) / L4未満(昇格候補): {total_below4}件")
+print(f"  PJ別(忍者教訓)合計: {pj_total}件(field無しはLevel分布の集計対象外)")
 
 print("")
 print(f"=== 昇格候補一覧(L4未満、恒久防御未到達) {len(candidates)}件 ===")

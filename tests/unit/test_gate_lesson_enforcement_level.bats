@@ -138,7 +138,60 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"infra: 1件 (enforcement field無し)"* ]]
     [[ "$output" == *"dm-signal: 1件 (enforcement field無し)"* ]]
-    [[ "$output" == *"PJ別(忍者教訓)合計: 2件(enforcement field無し、Level分布の集計対象外)"* ]]
+    [[ "$output" == *"PJ別enforcement記載合計: 0件"* ]]
+    [[ "$output" == *"PJ別(忍者教訓)合計: 2件(field無しはLevel分布の集計対象外)"* ]]
     [[ "$output" != *"L001"* ]]
     [[ "$output" != *"L900"* ]]
+}
+
+@test "gate_lesson_enforcement_level includes PJ lessons with enforcement in distribution and keeps fieldless out-of-scope" {
+    cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_TMPDIR/projects/infra/lessons_karo.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_TMPDIR/projects/infra/lessons_gunshi.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_TMPDIR/projects/infra/lessons.yaml" <<'EOF'
+lessons:
+- id: L001
+  title: pj level5 lesson
+  enforcement: 'Level5: task YAMLへ事前コンテキスト提供'
+- id: L002
+  title: pj fieldless lesson
+  summary: fieldless remains out of distribution
+EOF
+
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"infra: 2件 / enforcement記載1件 / L1:0 L2:0 L3:0 L4:0 L5:1 L6:0 / L4未満:0件(0.0%) / field無し:1件"* ]]
+    [[ "$output" == *"PJ別enforcement記載合計: 1件 / L1:0 L2:0 L3:0 L4:0 L5:1 L6:0 / field無し:2件"* ]]
+    [[ "$output" == *"全enforcement記載合計: 1件 / L1:0 L2:0 L3:0 L4:0 L5:1 L6:0"* ]]
+    [[ "$output" != *"L002"* ]]
+}
+
+@test "gate_lesson_enforcement_level lists below-4 PJ lessons with enforcement as candidates" {
+    cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_TMPDIR/projects/infra/lessons_karo.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_TMPDIR/projects/infra/lessons_gunshi.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_TMPDIR/projects/dm-signal/lessons.yaml" <<'EOF'
+lessons:
+- id: L900
+  title: pj doc only lesson
+  enforcement: 'ドキュメント記載のみ'
+EOF
+
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"dm-signal: 1件 / enforcement記載1件 / L1:0 L2:1 L3:0 L4:0 L5:0 L6:0 / L4未満:1件(100.0%) / field無し:0件"* ]]
+    [[ "$output" == *"[dm-signal] L900 (L2:事前予防(doc)): pj doc only lesson"* ]]
+    [[ "$output" == *"##ENFORCEMENT_LEVEL_BELOW4_COUNT##"$'\n'"1"* ]]
 }

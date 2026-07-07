@@ -373,6 +373,7 @@ SUBDOMAIN=""
 TARGET_FILES=""
 SOURCE_MARKER=""
 ORIGIN=""
+ENFORCEMENT="未自動化"
 
 show_usage() {
     cat <<'EOF'
@@ -389,6 +390,8 @@ Options:
                           教訓の対象ファイルパターンを明示指定
   --source-marker "value" 教訓生成元マーカーを明示指定
   --origin "[[cmd_XXX]]"  因果ネットワーク用originを明示指定
+  --enforcement "Level4: gate blocks ..."
+                          防御階層/自動化状態を明示指定。省略時は未自動化
   --when "trigger"        発動条件を明示指定
   --how "steps"           実行手順を明示指定
   --if "condition" --then "action" --because "reason"
@@ -433,6 +436,10 @@ while [ $# -gt 0 ]; do
             ;;
         --origin)
             ORIGIN="${2:-}"
+            shift 2
+            ;;
+        --enforcement)
+            ENFORCEMENT="${2:-}"
             shift 2
             ;;
         --if)
@@ -570,6 +577,7 @@ write_project_yaml_lesson() {
         TAGS_ENV="${TAGS:-$PROJECT_ID}" \
         TARGET_FILES_ENV="${TARGET_FILES:-}" \
         ORIGIN_ENV="$RESOLVED_ORIGIN" \
+        ENFORCEMENT_ENV="${ENFORCEMENT:-未自動化}" \
         TIMESTAMP_ENV="$timestamp" \
         FORCE_ENV="${FORCE:-0}" \
         python3 <<'PY'
@@ -582,6 +590,7 @@ title = os.environ["TITLE_ENV"]
 detail = os.environ["DETAIL_ENV"]
 source_cmd = os.environ.get("SOURCE_CMD_ENV", "")
 origin = os.environ.get("ORIGIN_ENV", "")
+enforcement = os.environ.get("ENFORCEMENT_ENV", "未自動化") or "未自動化"
 timestamp = os.environ["TIMESTAMP_ENV"]
 force = os.environ.get("FORCE_ENV", "0") == "1"
 tags = [t.strip() for t in os.environ.get("TAGS_ENV", "").split(",") if t.strip()]
@@ -628,6 +637,8 @@ if source_cmd:
     entry.append(f"  source: {sq(source_cmd)}")
 if origin:
     entry.append(f"  origin: {sq(origin)}")
+entry.extend(block_scalar("  enforcement", enforcement))
+entry.append(f"  automated: {'false' if enforcement == '未自動化' else 'true'}")
 entry.append(f"  date: {sq(timestamp)}")
 entry.append("  tags:")
 for tag in tags or ["universal"]:
@@ -1139,6 +1150,7 @@ PYCOMBINED
             [ -n "${SUBDOMAIN:-}" ] && printf -- '- **subdomain**: %s\n' "$SUBDOMAIN"
             [ -n "$_LW_TARGET_FILES" ] && printf -- '- **target_files**: [%s]\n' "$_LW_TARGET_FILES"
             [ -n "$_lw_origin" ] && printf -- '- **origin**: %s\n' "$_lw_origin"
+            printf -- '- **enforcement**: %s\n' "${ENFORCEMENT:-未自動化}"
             printf -- '- **when**: %s\n' "$_lw_when"
             printf -- '- **how**: %s\n' "$_lw_how"
             [ -n "${IF_COND:-}" ] && printf -- '- **if**: %s\n' "$IF_COND"

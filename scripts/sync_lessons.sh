@@ -210,6 +210,7 @@ while i < len(lines):
     target_files = None
     subdomain = None
     origin = None
+    enforcement = None
 
     # Match ## N. title (numbered top-level lesson)
     m_h2_num = re.match(r'^## (\d+)\.\s+(.+)', line)
@@ -367,6 +368,11 @@ while i < len(lines):
             m_forigin = re.match(r'- \*\*origin\*\*:\s*(.+)', sline)
             if m_forigin:
                 origin = m_forigin.group(1).strip()
+        # Extract enforcement field (defense hierarchy / automation state)
+        if enforcement is None:
+            m_fenforcement = re.match(r'- \*\*enforcement\*\*:\s*(.+)', sline)
+            if m_fenforcement:
+                enforcement = m_fenforcement.group(1).strip()
         # Extract retired_at field
         if retired_at is None:
             m_fretired_at = re.match(r'- \*\*retired_at\*\*:\s*(.+)', sline)
@@ -378,7 +384,7 @@ while i < len(lines):
             summary_parts.append(text)
         elif len(summary_parts) < 2 and sline and not sline.startswith('```') and not sline.startswith('|'):
             # Skip metadata fields for summary
-            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|subdomain|target_files|origin|when|how|if|then|because|retired|retired_at|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
+            if not re.match(r'^- \*\*(日付|出典|記録者|status|deprecated_by|merged_from|tags|subdomain|target_files|origin|enforcement|when|how|if|then|because|retired|retired_at|原因|影響|対策|教訓|修正|参照|結果)\*\*:', sline):
                 if sline.startswith('- '):
                     summary_parts.append(sline[2:])
                 elif not sline.startswith('**') and not sline.startswith('#'):
@@ -407,6 +413,9 @@ while i < len(lines):
     if subdomain:
         entry['subdomain'] = subdomain
     entry['origin'] = origin if origin else f'[[{source_cmd}]]'
+    if enforcement:
+        entry['enforcement'] = enforcement
+        entry['automated'] = enforcement != '未自動化'
     if retired:
         entry['retired'] = True
     if retired_at:
@@ -609,6 +618,9 @@ for l in active_lessons:
         entry['target_files'] = FlowList(l['target_files'])
     if l.get('origin'):
         entry['origin'] = l['origin']
+    if l.get('enforcement'):
+        entry['enforcement'] = l['enforcement']
+        entry['automated'] = bool(l.get('automated'))
     index_entries.append(entry)
 
 index_data = {

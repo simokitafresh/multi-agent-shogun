@@ -294,6 +294,24 @@ EOF
     [[ "$output" == *"**origin**: [[cmd_703]] [[LG001]]"* ]]
 }
 
+@test "--enforcement writes explicit enforcement field" {
+    run_lesson_write testproj "enforcement明示教訓" "enforcement明示指定が正しく記録されるかの確認テストです" "cmd_705" "karo" "" --enforcement "Level5: task YAMLへ自動注入"
+    [ "$status" -eq 0 ]
+
+    run grep "enforcement" "$EXT_PROJECT/tasks/lessons.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"**enforcement**: Level5: task YAMLへ自動注入"* ]]
+}
+
+@test "enforcement defaults to 未自動化 when omitted" {
+    run_lesson_write testproj "enforcement省略教訓" "enforcement省略時に未自動化が記録されるかの確認テストです" "cmd_706" "karo"
+    [ "$status" -eq 0 ]
+
+    run grep "enforcement" "$EXT_PROJECT/tasks/lessons.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"**enforcement**: 未自動化"* ]]
+}
+
 @test "origin defaults from source_cmd when --origin omitted" {
     run_lesson_write testproj "origin自動教訓" "origin未指定時にsource_cmdから自動生成される確認テストです" "cmd_704" "karo"
     [ "$status" -eq 0 ]
@@ -395,6 +413,44 @@ EOF
     run_lesson_write testproj "タイトル" "教訓ファイルが存在しない場合のエラーハンドリングテスト"
     [ "$status" -eq 1 ]
     [[ "$output" == *"not found"* ]]
+}
+
+@test "project YAML fallback writes explicit enforcement and automated true" {
+    rm -f "$EXT_PROJECT/tasks/lessons.md"
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+lessons:
+- id: L001
+  title: existing yaml lesson
+  summary: existing yaml lesson
+EOF
+
+    run_lesson_write testproj "YAML明示enforcement教訓" "YAML直接書込みでenforcementが残ることを確認するテスト" "cmd_707" "karo" "" --enforcement "Level4: gate blocks invalid report"
+    [ "$status" -eq 0 ]
+
+    run grep -A14 "^- id: L002" "$TEST_PROJECT/projects/testproj/lessons.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"enforcement: >-"* ]]
+    [[ "$output" == *"Level4: gate blocks invalid report"* ]]
+    [[ "$output" == *"automated: true"* ]]
+}
+
+@test "project YAML fallback defaults enforcement to 未自動化 and automated false" {
+    rm -f "$EXT_PROJECT/tasks/lessons.md"
+    cat > "$TEST_PROJECT/projects/testproj/lessons.yaml" <<'EOF'
+lessons:
+- id: L001
+  title: existing yaml lesson
+  summary: existing yaml lesson
+EOF
+
+    run_lesson_write testproj "YAML省略enforcement教訓" "YAML直接書込みで省略時の既定値が残ることを確認するテスト" "cmd_708" "karo"
+    [ "$status" -eq 0 ]
+
+    run grep -A14 "^- id: L002" "$TEST_PROJECT/projects/testproj/lessons.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"enforcement: >-"* ]]
+    [[ "$output" == *"未自動化"* ]]
+    [[ "$output" == *"automated: false"* ]]
 }
 
 # ============================================================
