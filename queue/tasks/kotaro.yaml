@@ -76,7 +76,7 @@ task:
     total: 14
     zero_backlinks: 0
   scout_exempt: true
-  status: acknowledged
+  status: completed
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun
   task_id: cmd_3730_scout
