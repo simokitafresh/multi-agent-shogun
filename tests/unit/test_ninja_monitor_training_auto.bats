@@ -530,6 +530,15 @@ grep -q "DEPLOY_CALLED:--direct --yaml" "$TMP_ROOT/deploy.log"
 grep -q "target_path: projects/infra/lessons_karo.yaml" "$TMP_ROOT/deployed.yaml"
 grep -q "cmd_reflux_promotion_" "$TMP_ROOT/deployed.yaml"
 grep -q "promotions: 1" "$TMP_ROOT/deployed.yaml"
+python3 - "$TMP_ROOT/deployed.yaml" <<PY
+import sys
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    data = yaml.safe_load(fh)
+check = data["task"]["acceptance_criteria"][0]["checks"][0]["check"]
+assert "): doc-only lesson" in check, check
+PY
 grep -q "REFLUX-AUTO-INVENTORY-BEFORE: hayate insights_pending=0 zero_backlinks=0 promotions=1 total=1" "$TMP_ROOT/test.log"
 echo "REFLUX_PROMOTION_DEPLOY_OK"
 '

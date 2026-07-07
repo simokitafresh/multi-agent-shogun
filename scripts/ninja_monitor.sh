@@ -2620,6 +2620,12 @@ raise SystemExit(1)
 PY
 }
 
+_yaml_single_quote_scalar() {
+    local value="${1:-}"
+    value=${value//\'/\'\'}
+    printf "'%s'" "$value"
+}
+
 _handle_reflux_auto_deploy() {
     local name="$1"
     local now="$2"
@@ -2627,7 +2633,7 @@ _handle_reflux_auto_deploy() {
     local task_status idle_elapsed last_file last_dir last elapsed
     local insight_before backlink_before promotion_before total_before first_insight first_backlink first_promotion backlink_status promotion_status
     local insight_after backlink_after promotion_after total_after _after_insight _after_backlink _after_promotion _after_backlink_status _after_promotion_status
-    local kind target_path cmd_id deploy_script tmp_task purpose ac1 ac2
+    local kind target_path cmd_id deploy_script tmp_task purpose ac1 ac2 ac1_yaml ac2_yaml
 
     [ -n "$name" ] || return 1
 
@@ -2721,6 +2727,8 @@ _handle_reflux_auto_deploy() {
         return 1
     fi
     ac2="作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す"
+    ac1_yaml=$(_yaml_single_quote_scalar "$ac1")
+    ac2_yaml=$(_yaml_single_quote_scalar "$ac2")
 
     local active_owner
     active_owner=$(_reflux_active_target_owner "$target_path" "$name" 2>/dev/null || true)
@@ -2758,10 +2766,10 @@ task:
   acceptance_criteria:
     - id: AC1
       checks:
-        - check: ${ac1}
+        - check: ${ac1_yaml}
     - id: AC2
       checks:
-        - check: ${ac2}
+        - check: ${ac2_yaml}
   reflux_inventory_before:
     insights_pending: ${insight_before:-0}
     zero_backlinks: ${backlink_before:-0}
@@ -2771,6 +2779,11 @@ EOF
     then
         rm -f "$tmp_task"
         log "REFLUX-AUTO-SKIP: failed to write temporary task YAML for ${name}"
+        return 1
+    fi
+    if ! python3 -c 'import sys,yaml; yaml.safe_load(open(sys.argv[1], encoding="utf-8"))' "$tmp_task" >/dev/null 2>&1; then
+        log "REFLUX-AUTO-SKIP: generated task YAML parse failed for ${name}: ${tmp_task}"
+        rm -f "$tmp_task"
         return 1
     fi
 
