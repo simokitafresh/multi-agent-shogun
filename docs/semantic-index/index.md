@@ -5314,6 +5314,7 @@ codd:
 | causal | `cmd_reflux_insight_202607071754_kotaro` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607071816_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607071843_kagemaru` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_insight_202607071854_kotaro` files_modified: [[semantic_causal_automation]] |
 
 ## provisional_tobisaru — 仮: Tobisaru
 
@@ -5396,6 +5397,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:30:05+09:00 status barが実際と乖離している。これはバグだ。saizo,kotaro,tobisaruはsonnet5 xhighだ。自動でリニアに実際のCLIとmodelとeffortに連動されなくてはいけない |
 | causal | `cmd_reflux_insight_202607071754_kotaro` files_modified: [[provisional_kotaro]] |
 | cmd | `cmd_reflux_insight_202607071754_kotaro` (`context/semantic-map.md`, `docs/semantic-index/index.md`, `queue/tasks/kotaro.yaml`) |
+| cmd | `cmd_reflux_insight_202607071854_kotaro` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 
 ## provisional_kagemaru — 仮: Kagemaru
 
