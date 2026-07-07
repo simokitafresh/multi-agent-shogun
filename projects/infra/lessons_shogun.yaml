@@ -211,9 +211,9 @@ lessons:
     計測環境を明記し本番との差異を注記。本番特定にはRender上計測必須。
   source_ids: [LS039, LS041]
   created_at: '2026-04-24'
-  automated: false
-  enforcement_level: 2
-  enforcement: '設計書§4.1に計測環境注意追記済み(ドキュメント記載のみ。gate/hookなし)'
+  automated: true
+  enforcement_level: 5
+  enforcement: "Level5: cmd_save.sh check_measurement_env_info()(L1076-1114、呼出しはCheck20 L5898、起源cmd_2634/commit c0d7989a3 2026-05-10)がassumptions記載cmdでローカル/本番/Render/staging等の環境差異キーワードをgrep自動検出し、measurement_envフィールド未記入なら記入例を自動提示(cmd_2617と同型のLevel5パターン)。bats Check20.11-20.13で3件PASS実測(2026-07-08)。ただし『計測データの生成メカニズムを理解したか』の検証と『本番特定にはRender上計測必須』の実測強制は未自動化 — decision_candidate: 性能計測系cmd(GS共通コード変更等)にmeasurement_source(local/Render実行証跡)フィールドを追加し/gs-bench-gateスキルへ統合すべきか、家老/将軍判断で検討を要する。"
 
 # === クラスタ6: 独立パターン ===
 - id: LS-A11
