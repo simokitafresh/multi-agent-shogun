@@ -49,7 +49,16 @@ export FIELD_GET_NO_LOG=1
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
-source "$SCRIPT_DIR/scripts/lib/model_injection_profile.sh"
+if [ -f "$SCRIPT_DIR/scripts/lib/model_injection_profile.sh" ]; then
+    source "$SCRIPT_DIR/scripts/lib/model_injection_profile.sh"
+else
+    model_injection_profile_intensity() {
+        case "${1,,}" in
+            *gpt*|*codex*|*sonnet*|*haiku*) printf '%s\n' "max" ;;
+            *) printf '%s\n' "standard" ;;
+        esac
+    }
+fi
 
 append_line_locked() {
     local target_file="$1"
