@@ -5068,8 +5068,21 @@ check_obsidian_candidate_promotion() {
         return
     fi
 
-    candidate_count=$(sqlite3 "$db_path" "SELECT COUNT(*) FROM events WHERE state='obsidian_candidate';" 2>/dev/null || echo "0")
-    [[ "$candidate_count" =~ ^[0-9]+$ ]] || candidate_count=0
+    # sqlite3 CLI不在環境では `|| echo "0"` が常時0を返し候補が永久に昇格されない(2026-07-07実測: 実34件をcandidates=0と誤認)。
+    # python3で直接クエリし、失敗時は0扱いにせず明示ERRORでスキップする(silent-zero禁止)。
+    candidate_count=$(python3 -c "
+import sqlite3, sys
+try:
+    con = sqlite3.connect('file:' + sys.argv[1] + '?mode=ro', uri=True)
+    print(con.execute(\"SELECT COUNT(*) FROM events WHERE state='obsidian_candidate'\").fetchone()[0])
+except Exception as exc:
+    print('ERROR:' + str(exc))
+" "$db_path" 2>/dev/null)
+    if ! [[ "$candidate_count" =~ ^[0-9]+$ ]]; then
+        log "OBSIDIAN-PROMOTE: ERROR candidate count query failed ($candidate_count) — 0扱いにせずスキップ"
+        printf '%s\n' "$now" > "$OBSIDIAN_PROMOTE_STATE_FILE" 2>/dev/null || true
+        return
+    fi
 
     if [ "$candidate_count" -lt "$OBSIDIAN_PROMOTE_THRESHOLD" ]; then
         log "OBSIDIAN-PROMOTE: candidates=$candidate_count (threshold=$OBSIDIAN_PROMOTE_THRESHOLD), skip"

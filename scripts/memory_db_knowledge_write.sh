@@ -158,6 +158,10 @@ _three_layer_chain() {
         '{"timestamp":$ts,"summary":$summary,"detail":$detail}' 2>/dev/null || true)"
     if [[ -z "$_payload" ]] || ! bash "$SCRIPT_DIR/scripts/semantic_index_update.sh" discussion "$_payload" >/dev/null 2>&1; then
         printf '%s ERROR layer2_semantic_index_update_failed event=%s source=%s\n' "$_ts" "$_event_id" "$_source" >> "$_chain_log"
+    else
+        # 成功も記録する: 失敗のみのログは「ログ不在=実行履歴なし」と「不在=無失敗」を区別できず、
+        # 健全性チェックが連鎖未使用と誤読する(2026-07-07修正)
+        printf '%s OK layer2_semantic_index_update event=%s source=%s\n' "$_ts" "$_event_id" "$_source" >> "$_chain_log"
     fi
 
     # Layer3: 知識テキスト中の[[リンク]]ターゲット候補をログ出力(実際の昇格はobsidian_promote_candidate.shが担う)
