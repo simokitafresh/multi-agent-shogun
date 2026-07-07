@@ -2139,6 +2139,50 @@ EOF
     deploy_task_teardown
 }
 
+@test "direct yaml prewrite collision guard blocks before task yaml mutation" {
+    deploy_task_scaffold "target_collision_prewrite"
+    mkdir -p "$TEST_PROJECT/scripts"
+    touch "$TEST_PROJECT/scripts/shared.sh"
+
+    cat > "$TEST_PROJECT/queue/tasks/kagemaru.yaml" <<'EOF'
+task:
+  status: idle
+  parent_cmd: cmd_old
+  task_id: cmd_old_exact
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  status: assigned
+  parent_cmd: cmd_peer
+  target_path: scripts/shared.sh
+EOF
+    cat > "$TEST_PROJECT/tmp_direct.yaml" <<'EOF'
+task:
+  status: assigned
+  parent_cmd: cmd_new
+  target_path: scripts/shared.sh
+EOF
+
+    run bash -lc "
+        source '$TEST_PROJECT/scripts/deploy_task.sh'
+        log() { :; }
+        DIRECT_MODE=true
+        deploy_task_guard_direct_yaml_prewrite_collision '$TEST_PROJECT/tmp_direct.yaml' kagemaru
+    "
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: target_path collision with hayate"* ]]
+    run bash -lc "
+        source '$TEST_PROJECT/scripts/lib/field_get.sh'
+        field_get '$TEST_PROJECT/queue/tasks/kagemaru.yaml' status ''
+        field_get '$TEST_PROJECT/queue/tasks/kagemaru.yaml' parent_cmd ''
+        field_get '$TEST_PROJECT/queue/tasks/kagemaru.yaml' task_id ''
+    "
+    [ "$status" -eq 0 ]
+    [ "$output" = $'idle\ncmd_old\ncmd_old_exact' ]
+
+    deploy_task_teardown
+}
+
 @test "target_path collision guard keeps directory overlap informational" {
     deploy_task_scaffold "target_collision_dir"
     mkdir -p "$TEST_PROJECT/scripts"

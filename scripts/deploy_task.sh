@@ -6449,6 +6449,17 @@ if collisions:
 TARGET_COLLISION_PY
 }
 
+deploy_task_guard_direct_yaml_prewrite_collision() {
+    local yaml_file="$1"
+    local ninja_name="$2"
+
+    [ "$DIRECT_MODE" = true ] || return 0
+    [ -n "$yaml_file" ] || return 0
+    [ -f "$yaml_file" ] || return 0
+
+    deploy_task_guard_target_path_collision "$yaml_file" "$ninja_name"
+}
+
 # ─── inject_task_modifiers: 7関数統合ラッパー（cmd_1393） ───
 # inject_engineering_preferences, inject_reports_to_read, inject_context_files,
 # inject_credential_files, inject_context_update, inject_report_template,
@@ -8647,6 +8658,10 @@ except Exception:
             _DEPLOY_PREV_PARENT_CMD="$CMD_ID"
             log "same_cmd_redeploy: skipped reset_stale_fields and resolve_cmd_to_task for ${CMD_ID}"
         else
+            if ! deploy_task_guard_direct_yaml_prewrite_collision "$YAML_FILE" "$NINJA_NAME"; then
+                deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                return 1
+            fi
             reset_stale_fields "$NINJA_NAME"
             if [ "$DIRECT_MODE" = true ]; then
             if [ -n "$YAML_FILE" ]; then
