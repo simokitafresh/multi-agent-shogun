@@ -157,6 +157,9 @@ import sqlite3, sys
 from pathlib import Path
 db_path = sys.argv[1]
 if not Path(db_path).is_file():
+    if Path(db_path).parent.is_dir():
+        print('ERROR:db_not_found:' + db_path, file=sys.stderr)
+        sys.exit(1)
     sys.exit(0)
 try:
     con = sqlite3.connect('file:' + db_path + '?mode=ro', uri=True)
