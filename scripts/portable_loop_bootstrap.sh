@@ -10,7 +10,7 @@ Usage: portable_loop_bootstrap.sh <target_dir>
 
 Installs a project-local learning-loop core:
   .learning-loop/{lessons.yaml,insights.yaml,memory/events.jsonl,semantic-map.md,inbox/}
-  scripts/learning-loop/{report_gate.py,lesson_write.sh,insight_write.sh,memory_write.sh,inbox_write.sh,semantic_search.sh}
+  scripts/learning-loop/{report_gate.py,lesson_write.sh,insight_write.sh,memory_write.sh,inbox_write.sh,semantic_search.sh,recall_inject.sh}
   docs/learning-loop-portable-core.md
 EOF
 }
@@ -320,6 +320,80 @@ exit "$status"
 SH
 chmod +x "$script_dir/semantic_search.sh"
 
+cat > "$script_dir/recall_inject.sh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+map="${LEARNING_LOOP_SEMANTIC_MAP:-$root/.learning-loop/semantic-map.md}"
+memory="${LEARNING_LOOP_MEMORY_FILE:-$root/.learning-loop/memory/events.jsonl}"
+
+if [[ "$#" -gt 0 ]]; then
+  context="$*"
+else
+  context="$(cat)"
+fi
+
+context="$(printf '%s' "$context" | tr '\n' ' ' | sed -E 's/[[:space:]]+/ /g; s/^[[:space:]]+|[[:space:]]+$//g')"
+[[ -n "$context" ]] || exit 0
+
+queries="$(
+  CONTEXT="$context" python3 - <<'PY'
+import os
+import re
+
+text = os.environ.get("CONTEXT", "")
+tokens = []
+for token in re.findall(r"[A-Za-z0-9_][A-Za-z0-9_.:-]{2,}|[一-龯ぁ-んァ-ンー]{2,}", text):
+    cleaned = token.strip("._:-")
+    if len(cleaned) >= 2:
+        tokens.append(cleaned)
+
+seen = set()
+ordered = []
+for token in tokens:
+    key = token.lower()
+    if key not in seen:
+        seen.add(key)
+        ordered.append(token)
+
+phrases = []
+if len(text) <= 120:
+    phrases.append(text)
+for idx in range(len(ordered) - 1):
+    phrases.append(f"{ordered[idx]} {ordered[idx + 1]}")
+phrases.extend(ordered)
+
+seen.clear()
+for query in phrases[:20]:
+    key = query.lower()
+    if key and key not in seen:
+        seen.add(key)
+        print(query)
+PY
+)"
+
+matches="$(
+  while IFS= read -r query; do
+    [[ -n "$query" ]] || continue
+    if [[ -f "$map" ]]; then
+      grep -iF -- "$query" "$map" | sed "s/^/[semantic] query=${query} /" || true
+    fi
+    if [[ -f "$memory" ]]; then
+      grep -iF -- "$query" "$memory" | sed "s/^/[memory] query=${query} /" || true
+    fi
+  done <<< "$queries" | awk '!seen[$0]++' | head -20
+)"
+
+[[ -n "$matches" ]] || exit 0
+
+cat <<EOF
+learning_loop_recall:
+$matches
+EOF
+SH
+chmod +x "$script_dir/recall_inject.sh"
+
 cat > "$script_dir/report_template.yaml" <<'EOF'
 worker_id: ""
 parent_cmd: ""
@@ -352,6 +426,7 @@ Portable core:
 - insight storage: `scripts/learning-loop/insight_write.sh`
 - memory append: `scripts/learning-loop/memory_write.sh`
 - semantic lookup: `scripts/learning-loop/semantic_search.sh`
+- recall injection: `scripts/learning-loop/recall_inject.sh`
 - inbox append: `scripts/learning-loop/inbox_write.sh`
 - stores: `.learning-loop/`
 
@@ -366,6 +441,7 @@ Project-specific layer:
 bash scripts/learning-loop/lesson_write.sh "First lesson" "Record a reusable rule" "smoke" "local"
 bash scripts/learning-loop/insight_write.sh "First insight" medium smoke
 bash scripts/learning-loop/memory_write.sh "portable core installed" smoke
+bash scripts/learning-loop/recall_inject.sh "portable core"
 python3 scripts/learning-loop/report_gate.py path/to/report.yaml
 ```
 

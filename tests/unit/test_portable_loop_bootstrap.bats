@@ -20,6 +20,7 @@ teardown() {
   [ -x scripts/learning-loop/memory_write.sh ]
   [ -x scripts/learning-loop/inbox_write.sh ]
   [ -x scripts/learning-loop/semantic_search.sh ]
+  [ -x scripts/learning-loop/recall_inject.sh ]
   [ -x scripts/learning-loop/report_gate.py ]
 
   run bash scripts/learning-loop/lesson_write.sh "Portable lesson" "Reusable rule" "test" "bats"
@@ -62,6 +63,34 @@ EOF
   run python3 scripts/learning-loop/report_gate.py report.yaml
   [ "$status" -eq 0 ]
   [ "$output" = "PASS" ]
+}
+
+@test "portable loop recall injection emits semantic and memory matches" {
+  run bash "$REPO_ROOT/scripts/portable_loop_bootstrap.sh" "$TEST_TMP/project"
+  [ "$status" -eq 0 ]
+
+  cd "$TEST_TMP/project"
+  cat >> .learning-loop/semantic-map.md <<'EOF'
+| portable recall | recall, portable recall, learning-loop | docs/learning-loop-portable-core.md |
+EOF
+  run bash scripts/learning-loop/memory_write.sh "portable recall keeps event context available" test
+  [ "$status" -eq 0 ]
+
+  run bash scripts/learning-loop/recall_inject.sh "Please use portable recall during report writing"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"learning_loop_recall:"* ]]
+  [[ "$output" == *"[semantic] query=portable recall"* ]]
+  [[ "$output" == *"[memory] query=portable recall"* ]]
+}
+
+@test "portable loop recall injection returns empty success for no match" {
+  run bash "$REPO_ROOT/scripts/portable_loop_bootstrap.sh" "$TEST_TMP/project"
+  [ "$status" -eq 0 ]
+
+  cd "$TEST_TMP/project"
+  run bash scripts/learning-loop/recall_inject.sh "zzznomatchtoken"
+  [ "$status" -eq 0 ]
+  [ "$output" = "" ]
 }
 
 @test "portable loop installed files do not contain project-specific dependencies" {
