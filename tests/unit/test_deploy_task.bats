@@ -212,6 +212,41 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "resolve_cmd_to_task overwrites stale task cmd_id when assigning new cmd" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old
+  cmd_id: cmd_old
+  task_id: cmd_old_full
+  status: failed
+EOF
+
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_new:
+    title: "new task"
+    project: dm-signal
+    scope_mode: FULL
+    purpose: "new purpose"
+    target_path: /tmp/project
+EOF
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        resolve_cmd_to_task cmd_new sasuke
+    '
+    [ "$status" -eq 0 ]
+
+    run python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1]))["task"]
+print(task.get("parent_cmd"), task.get("cmd_id"), task.get("task_id"), task.get("status"))
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "cmd_new cmd_new cmd_new_full assigned" ]
+}
+
 @test "cmd_2832: deploy_task_main arms internal cooperative timeout" {
     run grep -F "deploy_task_start_deadline" "$PROJECT_ROOT/scripts/deploy_task.sh"
     [ "$status" -eq 0 ]
