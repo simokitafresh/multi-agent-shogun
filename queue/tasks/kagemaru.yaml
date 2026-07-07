@@ -132,15 +132,18 @@ task:
   deployed_at: "2026-07-08T05:53:37"
 
   session_state:
-    attempt: 2
+    attempt: 5
     last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
     tried_approaches:
     - 'cmd_3264-AC2 target_path配下に未commit変更あり'
     approach_summary: 'INS-20260708-054851790-4075を処理し、SG-PRE31意味検算のsemantic概念を追加して検索NO_MATCHを解消。還流在庫はpending 2→1、total 79→78。'
     prior_attempts:
-    - attempt: 1
+    - attempt: 3
       block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
       approach_summary: 'INS-20260708-054851790-4075を処理し、SG-PRE31意味検算のsemantic概念を追加して検索NO_MATCHを解消。還流在庫はpending 2→1、total 79→78。'
-    - attempt: 2
+    - attempt: 4
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: 'INS-20260708-054851790-4075を処理し、SG-PRE31意味検算のsemantic概念を追加して検索NO_MATCHを解消。還流在庫はpending 2→1、total 79→78。'
+    - attempt: 5
       block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
       approach_summary: 'INS-20260708-054851790-4075を処理し、SG-PRE31意味検算のsemantic概念を追加して検索NO_MATCHを解消。還流在庫はpending 2→1、total 79→78。'
