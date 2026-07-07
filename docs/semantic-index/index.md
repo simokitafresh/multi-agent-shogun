@@ -2114,7 +2114,7 @@ codd:
 | causal | `cmd_3752` files_modified: [[growth_loop]] |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
-| causal_chain | `[[cmd_147]]` (L012) |
+| causal_chain | `[[legacy_lesson_L012]]` (L012) |
 | causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L833) |
 | causal_chain | `[[cmd_3227]]` (L757) |
 | causal_chain | `[[cmd_3644]]` (L927) |
@@ -2389,8 +2389,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T17:06:43+09:00 やり残したことはないか？確認しよう。完了したら検証して報告してくれ |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
-| causal_chain | `[[cmd_092]]` (L004) |
-| causal_chain | `[[cmd_134]]` (L005) |
+| causal_chain | `[[006.md検証]]` (L004) |
+| causal_chain | `[[006.md検証]]` (L005) |
 | causal_chain | `[[cmd_3354]]` (L804) |
 | causal_chain | `[[cmd_3432]]` (L817) |
 | causal_chain | `[[cmd_3523]]` (L844) |
@@ -2626,14 +2626,14 @@ codd:
 | cmd | `cmd_goal_gs_speed_e7_l0_full_confirm_202607061018` |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T12:22:06+09:00 b1g04fdma toolu_01D9MjA9Ac5VdZGFPTewk7gC /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/9719df86-a08a-4cde-8c15-30f3b7 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T12:27:57+09:00 b8p447g55 Monitor event: "Stream GS full run progress lines" [ac1] parity report saved to /mnt/c/Python_app/DM-signal/ou |
-| causal_chain | `[[cmd_125]]` (L001) |
-| causal_chain | `[[cmd_125]]` (L002) |
-| causal_chain | `[[cmd_125]]` (L003) |
+| causal_chain | `[[cmd_1055]]` (L001) |
+| causal_chain | `[[cmd_1055]]` (L002) |
+| causal_chain | `[[006.md検証]]` (L003) |
 | causal_chain | `[[cmd_training_speed_decision_write_20260607000310]]` (L750) |
 | causal_chain | `[[cmd_training_speed_deploy_task_20260607000353]]` (L751) |
 | causal_chain | `[[cmd_3211]]` (L753) |
-| causal_chain | `[[cmd_150]]` (L013) |
-| causal_chain | `[[cmd_151]]` (L014) |
+| causal_chain | `[[cmd_3445_saizo]]` (L013) |
+| causal_chain | `[[cmd_3445]]` (L014) |
 | causal_chain | `[[cmd_3413]]` (L816) |
 
 ## gs_ninpo_research — GS忍法研究
@@ -5363,6 +5363,7 @@ codd:
 | causal | `cmd_reflux_insight_202607071943_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607080313_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607080431_hayate` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_insight_202607080451_kagemaru` files_modified: [[semantic_causal_automation]] |
 
 ## provisional_tobisaru — 仮: Tobisaru
 
@@ -5494,6 +5495,8 @@ codd:
 | cmd | `cmd_reflux_insight_202607071843_kagemaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 | causal | `cmd_reflux_insight_202607071943_kagemaru` files_modified: [[provisional_kagemaru]] |
 | cmd | `cmd_reflux_insight_202607071943_kagemaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`, `queue/tasks/kagemaru.yaml`) |
+| causal | `cmd_reflux_insight_202607080451_kagemaru` files_modified: [[provisional_kagemaru]] |
+| cmd | `cmd_reflux_insight_202607080451_kagemaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`, `queue/tasks/kagemaru.yaml`) |
 
 ## provisional_lessons — 仮: Lessons
 
@@ -5599,7 +5602,7 @@ codd:
 | lesson | `LK013` inbox_mark_read hook誤判定時もEditで既読化せず正規scriptを変数経由で使う |
 | causal | `cmd_karo_hotfix_report_field_files_modified_path_guard` files_modified: [[yaml_safe_write]] |
 | causal_chain | `[[cmd_karo_infra_recon_core]]` (L548) |
-| causal_chain | `[[cmd_cycle_L4_025]]` (L351) |
+| causal_chain | `[[cmd_1020]]` (L351) |
 
 ## inbox_processing_discipline — inbox処理規律
 
