@@ -10101,3 +10101,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - verdict missingはverdict欄を手で埋める問題ではなく、binary_checks未記入によりgateが自動導出できない問題。次回はgate前にbinary_checks全resultを抽出し、空欄・PASS・FAIL・waiveが0件であることを確認してからgate_report_format.shを実行する。
+
+### L978: verdict missingはbinary_checks空欄を先に疑う
+- **日付**: 2026-07-08
+- **出典**: cmd_training_L1_report-write_20260708022912
+- **記録者**: hayate
+- **tags**: [infra,gate]
+- **target_files**: [queue/reports/hayate_report_cmd_training_L1_report-write_20260708022912.yaml,queue/tasks/hayate.yaml]
+- **origin**: [[cmd_training_L1_report-write_20260708022912]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_report_formatでverdict missingが出た場合、verdict欄を手動で埋める前にbinary_checks全resultがyes/noか確認する。空欄が1つでもあると自動導出できず、verdict非二値FAILが連鎖する。次回チェック: gate前にbinary_checks空欄件数を0件と数値確認する。

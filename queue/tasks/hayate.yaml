@@ -37,7 +37,7 @@ task:
   project: infra
   purpose: 'skill=report-write のgate FAIL(#1: verdict非二値)に対するL1修行。BLOCKパターンを実戦前に学習し一発PASS率を向上させる'
   scout_exempt: true
-  status: done
+  status: idle
   stop_for: []
   target_path: skills/report-write/SKILL.md
   task_id: cmd_training_L1_report-write_20260708022912_normal
