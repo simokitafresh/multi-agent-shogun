@@ -97,7 +97,7 @@ if [ "$PENDING_REPORTS_CACHE_HIT" -eq 0 ]; then
         # B2: grep+grep-oE+sort 1パイプライン (echo subshell廃止)
         _CLEARED_IDS=$(grep $'\tCLEAR' "$GATE_LOG" 2>/dev/null | grep -oE 'cmd_[a-zA-Z0-9_]+' | sort -u || true)
     fi
-    # B1: bash glob + stat一括 + awk単一パス(cleared/cutoff/status check with getline)
+    # B1: bash glob + stat一括 + awk単一パス(cleared/cutoff/status/parent_cmd check with getline)
     shopt -s nullglob
     _REPORT_FILES=( queue/reports/*_report_*.yaml )
     shopt -u nullglob
@@ -107,14 +107,23 @@ if [ "$PENDING_REPORTS_CACHE_HIT" -eq 0 ]; then
             BEGIN{n=split(cids,c,"\n");for(i=1;i<=n;i++)clr[c[i]]=1}
             {
                 mtime=$1; path=$2
+                if(mtime+0 <= cutoff+0) next
                 fname=path; sub(".*/","",fname)
                 sub(".*_report_","",fname); sub("\\.yaml$","",fname); sub("_[a-z]*$","",fname)
-                if(clr[fname]) next
-                if(mtime+0 <= cutoff+0) next
+                status_completed=0
+                parent_cmd=""
                 while ((getline line < path) > 0) {
-                    if(line ~ /^status: completed/) { count++; break }
+                    if(line ~ /^status:[[:space:]]*completed[[:space:]]*$/) status_completed=1
+                    if(line ~ /^parent_cmd:/ && parent_cmd == "") {
+                        parent_cmd=line
+                        sub(/^parent_cmd:[[:space:]]*/, "", parent_cmd)
+                        gsub(/["'\''[:space:]]/, "", parent_cmd)
+                    }
+                    if(status_completed && parent_cmd != "") break
                 }
                 close(path)
+                clear_key=(parent_cmd != "" ? parent_cmd : fname)
+                if(status_completed && !clr[clear_key]) count++
             }
             END{print count+0}
         ')

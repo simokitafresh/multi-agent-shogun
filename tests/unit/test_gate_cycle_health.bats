@@ -336,6 +336,22 @@ EOF
     [[ "$output" == *"GATE未処理報告: 1件"* ]]
 }
 
+@test "pending report CLEAR check prefers parent_cmd over filename-derived cmd id" {
+    local rpath="$TEST_TMPDIR/queue/reports/saizo_report_cmd_reflux_insight_202607080319_saizo.yaml"
+    cat > "$rpath" <<'EOF'
+status: completed
+worker_id: saizo
+parent_cmd: cmd_reflux_insight_202607080319_saizo
+EOF
+
+    # filename-derived id is cmd_reflux_insight_202607080319, but parent_cmd is the CLEAR target.
+    printf "2026-07-08T07:00:00\tCLEAR\tcmd_reflux_insight_202607080319_saizo\tsaizo\n" > "$TEST_TMPDIR/logs/gate_metrics.log"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"GATE未処理報告: 1件"* ]]
+}
+
 @test "pending report cache invalidates when gate log changes" {
     export GATE_CYCLE_HEALTH_CACHE_TTL_SEC=60
 
