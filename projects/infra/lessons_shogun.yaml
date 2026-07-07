@@ -654,3 +654,11 @@ lessons:
 # LS081: superseded by LS-A04(45) (q11語彙マッチ+行動変換語=cmdテンプレートルール。吸収コメント既存(2026-07-06)だが実体未削除だったため2026-07-07物理削除)
 # LS082: superseded by LS-A09(30) (UI現物確認=現物確認必須パターン。吸収コメント既存(2026-07-06)だが実体未削除だったため2026-07-07物理削除)
 # LS083: superseded by LS-A09(31) (ゲート資産混同=現物確認必須パターン。吸収コメント既存(2026-07-06)だが実体未削除だったため2026-07-07物理削除)
+- id: 'LS081'
+  title: 'async関数のtimeout短縮は速度に寄与せず機能だけをsilent-deathさせる'
+  origin: "[[cmd_karo_hotfix_speed_gate_shogun_startup_20260612]] -> [[SHOGUN_STARTUP_GH_TIMEOUT 0.05s短縮]] -> [[CI RED検知silent-death 25日間]]"
+  detail: '事故: 2026-06-12速度hotfix(755d202c1)がstartup CI RED検知のgh timeoutを0.05sへ短縮。gh APIレイテンシ(数百ms〜)未満のため常に空応答→無音return 0となり、検知が25日間死んでいた。2026-07-07にCI RED 2連続failureが起動時非表示で発覚(将軍の手動gh実行で初検出=LS-A09(22)試行錯誤はバグのサイン)。原因: 対象関数は元々async(&)実行+未完了時disown回収の設計で、timeoutを縮めてもgate直列時間は1msも変わらない。速度最適化の対象選定を実測せず、外形(timeout値)だけ縮めた。修正: 既定8s復活+DIGESTにci=conclusion常時表示(unknown含む)で経路死亡を毎起動可視化+bats両テストにci=表示assert(d5ed06f9b)。上位構造: 機能を痩せさせる最適化は『その待ち時間は誰が払っているか』を先に実測せよ。async実行の待ちは誰も払っていない'
+  source_cmd: 'cmd_session_20260707'
+  created_at: '2026-07-07'
+  automated: true
+  enforcement: 'type=gate; file=scripts/gates/gate_shogun_startup.sh; pattern=ci='
