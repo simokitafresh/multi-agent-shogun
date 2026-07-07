@@ -413,7 +413,8 @@ _TMP_DEFERRED_HOLES=$(mktemp) _TMP_BACKLINK_ZERO=$(mktemp)
 _TMP_THREE_LAYER=$(mktemp) _TMP_THREE_LAYER_STATUS=$(mktemp)
 _TMP_GATE4_YAML=$(mktemp) _TMP_SEMANTIC_NO_MATCH=$(mktemp)
 	_TMP_SKILL_REC=$(mktemp) _TMP_SKILL_USAGE=$(mktemp) _TMP_WEEKLY_METRICS=$(mktemp) _TMP_LOOP_LEDGER=$(mktemp)
-	trap 'rm -f "$_TMP_CI_RED" "$_TMP_G1" "$_TMP_G2" "$_TMP_G3" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_GATE4_YAML" "$_TMP_SEMANTIC_NO_MATCH" "$_TMP_SKILL_REC" "$_TMP_SKILL_USAGE" "$_TMP_WEEKLY_METRICS" "$_TMP_LOOP_LEDGER"' EXIT
+	_TMP_ENFORCE_LEVEL=$(mktemp)
+	trap 'rm -f "$_TMP_CI_RED" "$_TMP_G1" "$_TMP_G2" "$_TMP_G3" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_GATE4_YAML" "$_TMP_SEMANTIC_NO_MATCH" "$_TMP_SKILL_REC" "$_TMP_SKILL_USAGE" "$_TMP_WEEKLY_METRICS" "$_TMP_LOOP_LEDGER" "$_TMP_ENFORCE_LEVEL"' EXIT
 	STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
 	"$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
 	_PID_G1=$!
@@ -426,9 +427,12 @@ _TMP_GATE4_YAML=$(mktemp) _TMP_SEMANTIC_NO_MATCH=$(mktemp)
 	    _PID_G12=$!
 	    bash "$GATE_DIR/gate_lesson_health.sh" > "$_TMP_G13" 2>&1 &
 	    _PID_G13=$!
+	    bash "$GATE_DIR/gate_lesson_enforcement_level.sh" > "$_TMP_ENFORCE_LEVEL" 2>&1 &
+	    _PID_ENFORCE_LEVEL=$!
 	else
 	    _PID_G12=""
 	    _PID_G13=""
+	    _PID_ENFORCE_LEVEL=""
 	fi
 	"$GATE_DIR/gate_knowledge_freshness.sh" > "$_TMP_G25" 2>&1 &
 	_PID_G25=$!
@@ -2406,6 +2410,19 @@ else
     echo "  gate_lesson_health.sh不在"
 fi
 
+# --- Gate 13.5c: 教訓enforcement_level分布 (cmd_3724) ---
+echo "■ 教訓enforcement_level分布"
+if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
+    _DEFER_ENFORCE_LEVEL=0
+    echo "  SKIP(lightweight)"
+elif [ -f "$GATE_DIR/gate_lesson_enforcement_level.sh" ]; then
+    _DEFER_ENFORCE_LEVEL=1
+    echo "  実行中（総合判定前に反映）"
+else
+    _DEFER_ENFORCE_LEVEL=0
+    echo "  gate_lesson_enforcement_level.sh不在"
+fi
+
 # --- Gate 13.5: 将軍教訓ファイル存在+件数チェック ---
 echo "■ 将軍教訓"
 _LS_FILE="$SCRIPT_DIR/projects/infra/lessons_shogun.yaml"
@@ -3439,7 +3456,23 @@ if [ "${_DEFER_G13:-0}" = "1" ]; then
         fi
     fi
 fi
-	
+
+if [ "${_DEFER_ENFORCE_LEVEL:-0}" = "1" ]; then
+    wait "$_PID_ENFORCE_LEVEL" 2>/dev/null || true
+    echo "■ 教訓enforcement_level分布（遅延結果, cmd_3724）"
+    if [ -s "$_TMP_ENFORCE_LEVEL" ]; then
+        awk '/^\[総合\]/{p=1; print; next} p && /^$/{exit} p{print}' "$_TMP_ENFORCE_LEVEL" | sed 's/^/  /'
+        _enforce_below4=$(awk '/^##ENFORCEMENT_LEVEL_BELOW4_COUNT##/{getline c; print c; exit}' "$_TMP_ENFORCE_LEVEL")
+        if [[ "$_enforce_below4" =~ ^[0-9]+$ ]] && [ "$_enforce_below4" -gt 0 ]; then
+            echo "  昇格候補(L4未満)上位5件:"
+            awk '/^=== 昇格候補一覧/{p=1; next} p && /^  - /' "$_TMP_ENFORCE_LEVEL" | head -5 | sed 's/^/  /'
+            echo "  詳細: bash scripts/gates/gate_lesson_enforcement_level.sh で全${_enforce_below4}件を確認"
+        fi
+    else
+        echo "  SKIP: enforcement_level集計失敗"
+    fi
+fi
+
 	# --- 総合判定 ---
 STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-3}"
 show_startup_streak_cmd_proposals() {
