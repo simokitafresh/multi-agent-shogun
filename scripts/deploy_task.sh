@@ -2524,6 +2524,10 @@ EOF
 # \$RFS lesson_candidate.found "false"
 # \$RFS lesson_candidate.no_lesson_reason "既知パターンL084"
 # echo '[{check: "内容", result: "yes"}]' | \$RFS binary_checks.AC1 -
+# 既存依存を参照のみで確認した場合:
+# echo '- {path: scripts/existing.sh, reason: "既存依存として参照のみ。変更不要を確認", checked_not_modified: true}' | \$RFS verified_existing_dependency -
+# memory_references全体を更新する場合:
+# echo '- {id: MEM001, source: semantic_search, query: "検索語", summary: "要約", used: true, useful: true, reason: "判断に使用"}' | \$RFS memory_references -
 # verdict は gate_report_format.sh が binary_checks から自動導出する。手動記入禁止。
 # !! スペース区切り(lesson_candidate found false)は不可 → ドット記法必須 !!
 # ━━━ 提出手順（番号順に実行せよ）━━━
@@ -3419,6 +3423,10 @@ implementation_readiness:
 # ─── ★偵察で発見した重要Gap/知見はknowledge_candidateに記入せよ ───
 # 「我が軍に欠落」「本番と不一致」「設計変更が必要」等の発見は found: true にして記録。
 # context反映のトリガーになる。docs/research/に書くだけでは埋没する。
+# ─── 既存依存宣言（参照のみファイルをLG037除外する場合だけ記入） ───
+# 記入例:
+# echo '- {path: scripts/existing.sh, reason: "既存依存として参照のみ。変更不要を確認", checked_not_modified: true}' | bash scripts/report_field_set.sh <report> verified_existing_dependency -
+verified_existing_dependency: []
 RECON_EOF
         log "report_template: added implementation_readiness (recon/scout)"
     fi

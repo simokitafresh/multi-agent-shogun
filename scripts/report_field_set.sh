@@ -448,6 +448,53 @@ for i, item in enumerate(data):
                 return 1
             fi
             ;;
+        verified_existing_dependency)
+            if [[ "$dot_key" == "verified_existing_dependency" ]]; then
+                python3 -c "
+import yaml, sys
+data = yaml.safe_load(sys.stdin.read())
+if not isinstance(data, list):
+    print('ERROR: verified_existing_dependency must be YAML list format.', file=sys.stderr)
+    print(\"  Correct: - {path: scripts/foo.sh, reason: '既存依存として参照のみ', checked_not_modified: true}\", file=sys.stderr)
+    sys.exit(1)
+for i, item in enumerate(data):
+    if not isinstance(item, dict):
+        print(f'BLOCK: verified_existing_dependency[{i}] はdict必須。受信: {type(item).__name__}', file=sys.stderr)
+        sys.exit(1)
+    path = str(item.get('path', '') or '').strip()
+    reason = str(item.get('reason', '') or '').strip()
+    if not path or path == 'FILL_THIS':
+        print(f'BLOCK: verified_existing_dependency[{i}].path が空またはplaceholder', file=sys.stderr)
+        sys.exit(1)
+    if '/' not in path:
+        print(f'BLOCK: verified_existing_dependency[{i}].path はrepo相対パス形式必須。受信: {path}', file=sys.stderr)
+        sys.exit(1)
+    if not reason or reason == 'FILL_THIS':
+        print(f'BLOCK: verified_existing_dependency[{i}].reason が空またはplaceholder', file=sys.stderr)
+        sys.exit(1)
+    if item.get('checked_not_modified') is not True:
+        print(f'BLOCK: verified_existing_dependency[{i}].checked_not_modified は true 必須', file=sys.stderr)
+        sys.exit(1)
+" <<< "$val" || return 1
+            elif [[ "$dot_key" =~ ^verified_existing_dependency\.[0-9]+\.checked_not_modified$ ]]; then
+                local ved_bool
+                ved_bool="$(echo "$val" | xargs)"
+                if [[ "$ved_bool" != "true" ]]; then
+                    echo "BLOCK: ${dot_key} は true のみ。既存依存は変更なし確認済みの場合だけ宣言せよ。受信: $val" >&2
+                    return 1
+                fi
+            elif [[ "$dot_key" =~ ^verified_existing_dependency\.[0-9]+\.(path|reason)$ ]]; then
+                if [[ "$(echo "$val" | xargs)" == "FILL_THIS" || -z "$(echo "$val" | xargs)" ]]; then
+                    echo "BLOCK: ${dot_key} に空値/FILL_THIS は不可" >&2
+                    return 1
+                fi
+            elif [[ "$dot_key" =~ ^verified_existing_dependency\.[^0-9] ]]; then
+                local bad_key="${dot_key#verified_existing_dependency.}"
+                echo "BLOCK: verified_existing_dependency.${bad_key} は不正。verified_existing_dependencyはYAML listのためindex指定が必要。" >&2
+                echo "  正: verified_existing_dependency.0.path / verified_existing_dependency.0.reason / verified_existing_dependency.0.checked_not_modified" >&2
+                return 1
+            fi
+            ;;
         binary_checks)
             # Full-field write validation (GP-072 binary_checks型バリデーション)
             # BaseLoader使用: yes/noを文字列として保持し true/falseと区別する
@@ -1818,6 +1865,15 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
             exit $?
         fi
 
+        # YAML list item dot-notation (memory_references.0.used etc.) must be
+        # handled by the Python path. The generic awk nested writer treats the
+        # numeric segment as a mapping key and can produce dicts instead of
+        # lists, which later fails gate_report_format.
+        if [[ "$DOT_KEY" =~ ^(memory_references|verified_existing_dependency)\.[0-9]+\. ]]; then
+            _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "$VALUE" "$STDIN_VALUE"
+            exit $?
+        fi
+
         # JSON/YAML structure value (starts with [ or {) → Python fallback (GP-038)
         # awk経路は構造体をリテラル文字列として書くためYAML破壊の原因になる
         if [[ "$VALUE" == '['* ]] || [[ "$VALUE" == '{'* ]]; then
@@ -1941,7 +1997,7 @@ done
 # per-item書込み(lessons_useful.0.id等)後に数値キーdictをリストに変換
 # binary_checks.*.*.result / lessons_useful.*.reason は既存list内の値だけを
 # 置換するhot pathなので変換不要(常にlistのまま。dict化する余地がない)。
-if { [[ "$DOT_KEY" == lessons_useful.* ]] && [ "$RFS_LU_REASON_WRITE" -ne 1 ]; } || { [[ "$DOT_KEY" == binary_checks.*.* ]] && [ "$RFS_BINARY_CHECK_RESULT_WRITE" -ne 1 ]; }; then
+if { [[ "$DOT_KEY" == lessons_useful.* ]] && [ "$RFS_LU_REASON_WRITE" -ne 1 ]; } || { [[ "$DOT_KEY" == binary_checks.*.* ]] && [ "$RFS_BINARY_CHECK_RESULT_WRITE" -ne 1 ]; } || [[ "$DOT_KEY" == memory_references.* ]] || [[ "$DOT_KEY" == verified_existing_dependency.* ]]; then
     PYTHONPATH="$SCRIPT_DIR" python3 -c "
 import yaml, sys, os
 from scripts.lib.yaml_atomic import atomic_yaml_write
@@ -1955,7 +2011,7 @@ if not isinstance(data, dict):
     sys.exit(0)
 changed = False
 # Convert numeric-keyed dicts to lists
-for field in ('lessons_useful',):
+for field in ('lessons_useful', 'memory_references', 'verified_existing_dependency'):
     val = data.get(field)
     if isinstance(val, dict) and all(str(k).isdigit() for k in val.keys()):
         max_idx = max(int(k) for k in val.keys())

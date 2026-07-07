@@ -331,6 +331,16 @@ _setup_git_project() {
     [ -z "$commit_block" ]
 }
 
+@test "recon task template includes existing dependency and memory reference write examples" {
+    local report_path
+    report_path="$(fixture_report_path recon_template)"
+
+    grep -Fq 'verified_existing_dependency: []' "$report_path"
+    grep -Fq 'checked_not_modified: true' "$report_path"
+    grep -Fq 'verified_existing_dependency -' "$report_path"
+    grep -Fq 'memory_references -' "$report_path"
+}
+
 @test "AC descriptionにmonthlyを含む場合はdescription由来checkへ進行中月除外を付記する" {
     local report_path
     report_path="$(fixture_report_path monthly_description)"

@@ -599,12 +599,26 @@ def inject_recon_task_template(task):
         changed = True
 
     marker = '【3-strike rule】'
+    report_marker = '【report-write quick examples】'
     desc = str(task.get('description', '') or '')
     if marker not in desc:
         prefix = (
             f'{marker}\n'
             '  - 初期仮説は最低3本。hypothesis_count に現在の本数を維持せよ\n'
             '  - 3回連続で仮説が外れたら、追加探索で粘らずエスカレーションせよ\n'
+            '  ────────────────────────────────────────\n\n'
+        )
+        task['description'] = prefix + desc
+        changed = True
+        desc = task['description']
+
+    if report_marker not in desc:
+        prefix = (
+            f'{report_marker}\n'
+            '  - 既存依存を参照のみで確認した場合:\n'
+            '    echo \'- {path: scripts/existing.sh, reason: "既存依存として参照のみ。変更不要を確認", checked_not_modified: true}\' | bash scripts/report_field_set.sh <report> verified_existing_dependency -\n'
+            '  - memory_references全体を書き直す場合:\n'
+            '    echo \'- {id: MEM001, source: semantic_search, query: "検索語", summary: "要約", used: true, useful: true, reason: "判断に使用"}\' | bash scripts/report_field_set.sh <report> memory_references -\n'
             '  ────────────────────────────────────────\n\n'
         )
         task['description'] = prefix + desc

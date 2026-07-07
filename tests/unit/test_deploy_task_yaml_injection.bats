@@ -397,6 +397,39 @@ assert '【DB変更前バックアップ必須】' in task['description'], task[
 PY
 }
 
+@test "recon task modifier injects report-write examples into task YAML" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks"
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_recon_examples
+  task_id: cmd_recon_examples_scout
+  status: assigned
+  task_type: scout
+  description: "既存依存導線を確認する"
+YAML
+
+    run env TASK_FILE_ENV="$tmpdir/queue/tasks/sasuke.yaml" \
+        SCRIPT_DIR_ENV="$tmpdir" \
+        INJECT_TASK_MODIFIERS_ONLY="recon_task_template" \
+        python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+desc = task.get('description', '')
+assert '【report-write quick examples】' in desc, desc
+assert 'verified_existing_dependency -' in desc, desc
+assert 'memory_references -' in desc, desc
+assert task.get('hypothesis_count') == 3, task
+PY
+}
+
 @test "db backup controls: non-DB cmd does not inject stop_for" {
     tmpdir="$(mktemp -d)"
     mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"

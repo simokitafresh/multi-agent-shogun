@@ -68,6 +68,71 @@ PY
     [[ "$output" == *"used/useful はbool必須"* ]]
 }
 
+@test "memory_references: item dot notation preserves list structure" {
+    cat >> "$TEST_REPORT" <<'YAML'
+memory_references:
+  - id: MEM001
+    source: semantic_search
+    query: q
+    summary: s
+    used: false
+    useful: false
+    reason: ""
+YAML
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' memory_references.0.used true 2>&1"
+    [ "$status" -eq 0 ]
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' memory_references.0.reason '判断に使用' 2>&1"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+mr = data["memory_references"]
+assert isinstance(mr, list), mr
+assert mr[0]["used"] is True, mr
+assert mr[0]["reason"] == "判断に使用", mr
+PY
+}
+
+@test "verified_existing_dependency: 正しいlist形式入力はexit 0" {
+    run bash -c "echo '- {path: scripts/report_field_set.sh, reason: 既存依存として参照のみ, checked_not_modified: true}' | bash '$SCRIPT' '$TEST_REPORT' verified_existing_dependency - 2>&1"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+ved = data["verified_existing_dependency"]
+assert isinstance(ved, list), ved
+assert ved[0]["path"] == "scripts/report_field_set.sh", ved
+assert ved[0]["checked_not_modified"] is True, ved
+PY
+}
+
+@test "verified_existing_dependency: checked_not_modified false はexit 1" {
+    run bash -c "echo '- {path: scripts/report_field_set.sh, reason: 既存依存として参照のみ, checked_not_modified: false}' | bash '$SCRIPT' '$TEST_REPORT' verified_existing_dependency - 2>&1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"checked_not_modified は true 必須"* ]]
+}
+
+@test "verified_existing_dependency: item dot notation preserves list structure" {
+    cat >> "$TEST_REPORT" <<'YAML'
+verified_existing_dependency:
+  - path: scripts/report_field_set.sh
+    reason: 既存依存として参照のみ
+    checked_not_modified: true
+YAML
+    run bash -c "bash '$SCRIPT' '$TEST_REPORT' verified_existing_dependency.0.reason '既存依存として参照のみ。変更不要を確認' 2>&1"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+ved = data["verified_existing_dependency"]
+assert isinstance(ved, list), ved
+assert ved[0]["reason"].endswith("変更不要を確認"), ved
+PY
+}
+
 @test "lessons_useful: dict形式はautofixメッセージ表示" {
     run bash -c "echo '{0: {id: L001}}' | bash '$SCRIPT' '$TEST_REPORT' lessons_useful - 2>&1"
     [ "$status" -eq 0 ]
