@@ -475,6 +475,7 @@ MOCK
     [[ "$output" == *"■ CI RED自動修正配備"* ]]
     [[ "$output" == *"WARN: 最新CI conclusion=failure"* ]]
     [[ "$output" == *"ACTION: karoへci_red_fix通知送信"* ]]
+    [[ "$output" == *"ci=failure"* ]]
     [[ "$output" == *"総合判定: WARN"* ]]
     grep -q "karo CI RED検知: 最新GitHub Actions conclusion=failure" "$TEST_TMPDIR/logs/inbox_write_calls.log"
     grep -q "ci_red_fix gate_shogun_startup" "$TEST_TMPDIR/logs/inbox_write_calls.log"
@@ -487,6 +488,7 @@ MOCK
     [[ "$output" != *"CI RED"* ]]
     [[ "$output" != *"ci_red_fix"* ]]
     [ ! -f "$TEST_TMPDIR/logs/inbox_write_calls.log" ]
+    [[ "$output" == *"ci=success"* ]]
     [[ "$output" == *"総合判定: OK"* ]]
 }
 

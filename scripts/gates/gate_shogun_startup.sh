@@ -119,7 +119,10 @@ count_unread_inbox_messages() {
 	    fi
 
 	    local ci_json ci_conclusion
-	    ci_json="$(timeout "${SHOGUN_STARTUP_GH_TIMEOUT:-0.05}" gh run list --repo simokitafresh/multi-agent-shogun --limit 1 --json conclusion 2>/dev/null || true)"
+	    # timeout既定8s: 本関数はasync(&)実行で回収時に未完了ならdisownされるためgate直列時間に影響しない。
+	    # 0.05sはgh APIレイテンシ(数百ms〜)未満で常に空応答となり、CI RED検知が2026-06-12速度hotfixから
+	    # 無音死していた(2026-07-07実測: CI RED 2連続failureが起動時に一切表示されず)。silent-skip禁止。
+	    ci_json="$(timeout "${SHOGUN_STARTUP_GH_TIMEOUT:-8}" gh run list --repo simokitafresh/multi-agent-shogun --limit 1 --json conclusion 2>/dev/null || true)"
 	    [ -n "$ci_json" ] || return 0
 
 	    ci_conclusion="$(python3 - "$ci_json" <<'PY' 2>/dev/null || true
@@ -134,6 +137,10 @@ if isinstance(runs, list) and runs:
     print(str((runs[0] or {}).get("conclusion") or ""))
 PY
 )"
+	    # DIGEST用にconclusionを記録(空=in_progress等はunknown扱い。回収はDIGEST生成部)
+	    if [ -n "${_TMP_CI_CONCLUSION:-}" ] && [ -n "$ci_conclusion" ]; then
+	        printf '%s' "$ci_conclusion" > "$_TMP_CI_CONCLUSION" 2>/dev/null || true
+	    fi
 	    [ "$ci_conclusion" = "failure" ] || return 0
 
 	    echo "■ CI RED自動修正配備"
@@ -398,6 +405,7 @@ fi
 
 # --- Gate 0.9: CI RED自動修正配備 ---
 _TMP_CI_RED=$(mktemp)
+_TMP_CI_CONCLUSION=$(mktemp)
 check_ci_red_autodeploy > "$_TMP_CI_RED" 2>&1 &
 _PID_CI_RED=$!
 
@@ -414,7 +422,7 @@ _TMP_THREE_LAYER=$(mktemp) _TMP_THREE_LAYER_STATUS=$(mktemp)
 _TMP_GATE4_YAML=$(mktemp) _TMP_SEMANTIC_NO_MATCH=$(mktemp)
 	_TMP_SKILL_REC=$(mktemp) _TMP_SKILL_USAGE=$(mktemp) _TMP_WEEKLY_METRICS=$(mktemp) _TMP_LOOP_LEDGER=$(mktemp)
 	_TMP_ENFORCE_LEVEL=$(mktemp)
-	trap 'rm -f "$_TMP_CI_RED" "$_TMP_G1" "$_TMP_G2" "$_TMP_G3" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_GATE4_YAML" "$_TMP_SEMANTIC_NO_MATCH" "$_TMP_SKILL_REC" "$_TMP_SKILL_USAGE" "$_TMP_WEEKLY_METRICS" "$_TMP_LOOP_LEDGER" "$_TMP_ENFORCE_LEVEL"' EXIT
+	trap 'rm -f "$_TMP_CI_RED" "$_TMP_CI_CONCLUSION" "$_TMP_G1" "$_TMP_G2" "$_TMP_G3" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_GATE4_YAML" "$_TMP_SEMANTIC_NO_MATCH" "$_TMP_SKILL_REC" "$_TMP_SKILL_USAGE" "$_TMP_WEEKLY_METRICS" "$_TMP_LOOP_LEDGER" "$_TMP_ENFORCE_LEVEL"' EXIT
 	STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
 	"$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
 	_PID_G1=$!
@@ -3756,7 +3764,10 @@ if [[ "$_d_unpushed" =~ ^[0-9]+$ ]] && [ "$_d_unpushed" -ge "${UNPUSHED_WARN_THR
     echo "  WARN: 未push ${_d_unpushed}件滞留(閾値${UNPUSHED_WARN_THRESHOLD:-30}) — 滞留はCI REDの先送り。CI GREEN確認の上pushせよ(2026-07-07: 129本一括pushでRED露出の実測)"
     alerts+=("未push滞留: ${_d_unpushed}件(RED先送り。CI GREEN確認後にpush)")
 fi
-echo "■ DIGEST: inbox=${_d_inbox} insights=${_d_insights} proposals=${_d_proposals} unpushed=${_d_unpushed} idle_trigger=${IDLE_TRIGGER} judge=${overall}"
+# CI conclusion表示(check_ci_red_autodeploy async結果の回収。空=取得失敗/in_progress=unknown)
+_d_ci=$(cat "${_TMP_CI_CONCLUSION:-/dev/null}" 2>/dev/null)
+[ -n "$_d_ci" ] || _d_ci="unknown"
+echo "■ DIGEST: inbox=${_d_inbox} insights=${_d_insights} proposals=${_d_proposals} unpushed=${_d_unpushed} ci=${_d_ci} idle_trigger=${IDLE_TRIGGER} judge=${overall}"
 echo ""
 echo "■ 必読: projects/infra/lessons_shogun.yaml（将軍教訓。deepdive前に通読せよ=Step 2.45。superseded_by付きは参考扱い）"
 echo "■ 必読: memory/deepdive_why_chain_20260321.md（知性の外部化原則 全過程）"
