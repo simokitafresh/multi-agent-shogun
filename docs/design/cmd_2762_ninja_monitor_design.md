@@ -15,6 +15,11 @@ codd:
 
 # ninja_monitor.sh Brownfield Design
 
+> **Historical snapshot (cmd_2762)**. The actively maintained design doc — with the current
+> Related Files, Stall Detection Contract, and Reset Safety Contract sections — is
+> [[ninja_monitor_design]] (`codd/design/ninja_monitor_design.md`). Read that file first;
+> this one is kept for brownfield-run provenance only.
+
 ## Entry Flow
 
 The daemon loads shared libraries, acquires a singleton pid file, discovers panes, then loops through idle detection, task/report reconciliation, health checks, auto-clear handling, snapshot generation, and notification routines.

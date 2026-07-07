@@ -3172,6 +3172,14 @@ _cleanup_stale_keys() {
         agent_part="${key%%:*}"
         [ -z "${active[$agent_part]}" ] && unset "TRAINING_EFFECT_RECORDED[$key]"
     done
+
+    # compound key (agent:task_id) の配列: agentが非アクティブなら削除
+    # TRAINING_COMPLETION_CHECKEDはtask_idごとに1エントリ蓄積（cmd_3230で追加、L622修正後に導入されたため
+    # 本関数の対象漏れ→長期稼働でキー無制限増加。TRAINING_EFFECT_RECORDEDと同一の蓄積パターン）
+    for key in "${!TRAINING_COMPLETION_CHECKED[@]}"; do
+        agent_part="${key%%:*}"
+        [ -z "${active[$agent_part]}" ] && unset "TRAINING_COMPLETION_CHECKED[$key]"
+    done
 }
 
 # ─── 停滞検知（assigned/acknowledged/in_progress+idle） ───

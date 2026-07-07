@@ -525,3 +525,28 @@ echo "REFLUX_EMPTY_SKIP_OK"
     [ "$status" -eq 0 ]
     [[ "$output" == *"REFLUX_EMPTY_SKIP_OK"* ]]
 }
+
+@test "_cleanup_stale_keys prunes TRAINING_COMPLETION_CHECKED for inactive agents" {
+    # note: ninja_monitor.sh自体がset -uを使わない前提で書かれている(active[$agent_part]は
+    # 全compound-keyループ共通で未設定キー参照を許容する)。本番実行条件を再現するため-uは付けない。
+    run bash -c '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+NINJA_NAMES=(hayate)
+declare -gA TRAINING_COMPLETION_CHECKED
+TRAINING_COMPLETION_CHECKED["hayate:cmd_active"]="1"
+TRAINING_COMPLETION_CHECKED["retired_ninja:cmd_stale"]="1"
+
+_cleanup_stale_keys
+
+[ "${TRAINING_COMPLETION_CHECKED[hayate:cmd_active]:-}" = "1" ] || { echo "ACTIVE_KEY_LOST"; exit 1; }
+[ -z "${TRAINING_COMPLETION_CHECKED[retired_ninja:cmd_stale]:-}" ] || { echo "STALE_KEY_NOT_PRUNED"; exit 1; }
+echo "CLEANUP_OK"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CLEANUP_OK"* ]]
+}
