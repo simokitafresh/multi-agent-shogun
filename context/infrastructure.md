@@ -34,6 +34,7 @@
 
 想起ファネル台帳: `scripts/loop_ledger_update.sh`のmemoryチャネルは`search_logs`をproduced、将軍回答の`[MEM:]`引用タグをconsumedとして集計し、検索継続・引用ゼロの空転を検知する（cmd_3735, produced=7872/consumed=147実測）。
 報告テンプレM3: `deploy_task.sh`は報告YAMLへ`memory_references`欄を自動生成し、`report_field_set.sh`/`gate_report_format_main.py`が欄の記入と条件付き検査を担う（cmd_3739）。
+引用有効性回収M4: `scripts/loop_ledger_update.sh`のmemoryチャネルは`memory_references.useful`を集計し、`reflux_targets`で無関係引用のsource別還流候補を出力する（cmd_3740, evaluated=8/useful=1/rate=12.5%/reflux_targets=2実測）。
 
 ### 三層記憶×学習ループ接続（cmd_3116〜cmd_3128, 2026-06-02）
 
