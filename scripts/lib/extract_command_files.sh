@@ -145,10 +145,24 @@ write_markers = (
     "修正", "更新", "変更", "編集", "実装", "追加", "削除", "作成", "反映",
     "modify", "update", "edit", "add", "remove", "delete", "create", "write", "implement",
 )
+content_operation_markers = (
+    "追加", "算出", "計算", "引用", "抽出", "集計", "要約", "説明", "記載", "報告",
+    "add", "calculate", "quote", "extract", "summarize", "report",
+)
+debug_enabled = os.environ.get("EXTRACT_COMMAND_FILES_DEBUG", "").strip().lower() in {"1", "true", "yes"}
 
 def marker_pos(text, markers):
     positions = [text.find(marker) for marker in markers if text.find(marker) >= 0]
     return min(positions) if positions else -1
+
+def marker_pos_detail(text, markers):
+    hits = [(text.find(marker), marker) for marker in markers if text.find(marker) >= 0]
+    hits = [(pos, marker) for pos, marker in hits if pos >= 0]
+    return min(hits, default=(-1, ""), key=lambda item: item[0])
+
+def debug(ref, message):
+    if debug_enabled:
+        print(f"DEBUG: {os.path.basename(ref)} {message}")
 
 def is_probable_product_token(ref):
     clean_ref = ref.strip().strip("`'\".,:;()[]{}")
@@ -201,11 +215,12 @@ for idx, match in enumerate(matches):
     next_file_start = matches[idx + 1].start() if idx + 1 < len(matches) else sentence_end
     local = cmd_text[match.end():next_file_start]
     sentence_tail = cmd_text[match.end():sentence_end]
-    read_pos = marker_pos(local, read_markers)
+    read_pos, read_marker = marker_pos_detail(local, read_markers)
     if read_pos < 0:
-        read_pos = marker_pos(sentence_tail, read_markers)
-    write_pos = marker_pos(sentence_tail, write_markers)
+        read_pos, read_marker = marker_pos_detail(sentence_tail, read_markers)
+    write_pos, write_marker = marker_pos_detail(sentence_tail, write_markers)
     if is_design_spec_instruction_ref(ref, local, sentence_tail, match.start()):
+        debug(ref, f"design_or_research_ref readonly=True")
         readonly_refs.append(os.path.basename(ref))
         continue
     next_ref_before_write = idx + 1 < len(matches) and matches[idx + 1].start() < sentence_end and (write_pos < 0 or matches[idx + 1].start() - match.end() < write_pos)
@@ -217,8 +232,13 @@ for idx, match in enumerate(matches):
         has_clause_boundary = bool(clause_positions and min(clause_positions) < write_pos)
     # read_marker immediately after filename (within 5 chars) = strong readonly signal
     read_immediate = read_pos >= 0 and read_pos <= 5
-    is_readonly = is_exec_prefix or has_clause_boundary or (read_pos >= 0 and (write_pos < 0 or read_pos < write_pos) and (write_pos < 0 or next_ref_before_write or read_immediate))
+    content_op_after_read = False
+    if read_immediate and read_marker == "から" and write_pos >= 0 and read_pos < write_pos:
+        between = sentence_tail[read_pos:write_pos + len(write_marker)]
+        content_op_after_read = any(marker in between for marker in content_operation_markers)
+    is_readonly = is_exec_prefix or has_clause_boundary or content_op_after_read or (read_pos >= 0 and (write_pos < 0 or read_pos < write_pos) and (write_pos < 0 or next_ref_before_write or read_immediate))
     base = os.path.basename(ref)
+    debug(ref, f"read={read_marker or '-'}:{read_pos} write={write_marker or '-'}:{write_pos} exec={is_exec_prefix} boundary={has_clause_boundary} content_op_after_read={content_op_after_read} readonly={is_readonly}")
     (readonly_refs if is_readonly else write_refs).append(base)
 
 fm_bases = {os.path.basename(p.strip()) for p in fm_raw.splitlines() if p.strip()}
