@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-07 cmd_3714 -->
+<!-- last_updated: 2026-07-07 cmd_3716 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -630,15 +630,16 @@ DM-Signal本番FEのmobile実運用条件計測は、`scripts/mobile_lighthouse_
 
 GA-181分類メモ(source commits since last_updated=2026-07-03の3件): 上記45f00c6bのみ研究正本反映対象。`a3059891`(tasks/lessons.md退役8行)・`894736d4`(tasks/lessons.md cmd_3686教訓登録26行)はlesson運用のみで研究索引への追記対象外(L787準拠)。
 
-## §49. GS目的関数相関分析 (cmd_3713-3714, 2026-07-07)
+## §49. GS目的関数相関分析 (cmd_3713-3716, 2026-07-07)
 
 | cmd | 対象 | 結論 |
 |-----|------|------|
 | cmd_3713 | 7忍法×4DM系の6指標チャンピオン月次リターン相関 | 現行3目的(cagr/maxdd/new_high_ratio)は6C3=20通り中8位。チャンピオン返り値類似度では中位上位 |
 | cmd_3714 | 全パターン733,392件の13指標スカラー値相関、13C3=286通り | 現行3目的は148位/286(avg_abs_corr=0.5141)。cagr×new_high_ratio相関0.913が独立性を阻害。最良はkurtosis+vdrag+avg_uwp(avg_abs_corr=0.1499) |
+| cmd_3716 | rolling_1y_low追加後の14指標全量相関、14C3=364通り | 候補B(cagr/worst_year_return/avg_uwp)推薦維持。Rolling1yLow×AvgUWPは部分値-0.547→全量-0.444へ変化し、AvgUWP系ペアはサンプル感度が高い |
 
 実装注意: `grid_monthly_fast.csv` は全パターンで先頭連続NaN(burn-in区間)を持つ。月次CSVからmean/prod/cumprod系の追加指標を作る時は `nanmean`、`log1p+nansum`、burn-in中立値埋めを使う。素朴なmean/prod/cumprodはsortino/vdrag/avg_uwp/mruを99.8% NaN化する。
-→ 詳細: `outputs/analysis/cmd_3713_metric_combo_correlation_report.md`, `outputs/analysis/cmd_3714_metric13_correlation_report.md`
+→ 詳細: `outputs/analysis/cmd_3713_metric_combo_correlation_report.md`, `outputs/analysis/cmd_3714_metric13_correlation_report.md`, `docs/research/gs_3objective_correlation_analysis_20260707.md`
 
 ---
 

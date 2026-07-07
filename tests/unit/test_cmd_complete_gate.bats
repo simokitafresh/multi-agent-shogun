@@ -601,6 +601,19 @@ EOF
     [[ "$output" == *"ALL_CLEAR=true"* ]]
 }
 
+@test "command/files_modified coverage treats csv input 'から' as read-only" {
+    _write_command_coverage_fixture \
+        "AC1: grid_monthly_fast.csv全ファイルからrolling_1y_low算出→14指標テーブル。AC3: docs/research/gs_3objective_correlation_analysis_20260707.mdを更新" \
+        "  - path: docs/research/gs_3objective_correlation_analysis_20260707.md
+    change: modified"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+    [[ "$output" != *"missing: grid_monthly_fast.csv"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
 @test "command/files_modified coverage excludes verified_existing_dependency refs (LG037)" {
     _write_command_coverage_fixture \
         "scripts/cmd_complete_gate.sh と scripts/deploy_task.sh を修正" \

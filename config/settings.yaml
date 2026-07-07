@@ -7,10 +7,10 @@ cli:
   agents:
     shogun:
       type: claude
-      model_name: opus-4-6-high
+      model_name: fable-5-xhigh
       role: shogun
       japanese_name: 将軍
-      launch_cmd: "/home/simokitafresh/bin/claude --dangerously-skip-permissions --model 'claude-opus-4-6[1m]' --effort high"
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model fable --effort xhigh
     karo:
       type: codex
       model_name: gpt-5.5-high

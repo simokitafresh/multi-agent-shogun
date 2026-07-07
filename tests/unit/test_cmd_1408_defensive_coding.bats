@@ -95,6 +95,57 @@ EOF
     [[ "$output" != *"$parent_repo"* ]]
 }
 
+@test "check_project_code_stubs ignores dirty files outside current report files_modified" {
+    local gate_script="$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    local fake_root="$TEST_TMPDIR/root"
+    local repo="$TEST_TMPDIR/DM-signal"
+    local cmd_id="cmd_3716"
+    mkdir -p "$fake_root/config" "$fake_root/queue/tasks" "$fake_root/queue/reports" "$repo/docs/research" "$repo/scripts/oneshot" "$repo/tasks"
+
+    git -C "$repo" init -q
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name Test
+    printf '# base\n' > "$repo/README.md"
+    git -C "$repo" add README.md
+    git -C "$repo" commit -q -m "base"
+    printf 'done\n' > "$repo/docs/research/gs_3objective_correlation_analysis_20260707.md"
+    printf 'print(\"done\")\n' > "$repo/scripts/oneshot/cmd_3716_rolling1y_full.py"
+    git -C "$repo" add docs/research/gs_3objective_correlation_analysis_20260707.md scripts/oneshot/cmd_3716_rolling1y_full.py
+    git -C "$repo" commit -q -m "$cmd_id complete"
+    printf 'other dirty\n' > "$repo/tasks/lessons.md"
+
+    cat > "$fake_root/config/projects.yaml" <<EOF
+projects:
+  - id: dm-signal
+    path: "$repo"
+EOF
+    cat > "$fake_root/queue/tasks/tobisaru.yaml" <<EOF
+task:
+  parent_cmd: $cmd_id
+  target_path: "$repo"
+  report_filename: tobisaru_report_${cmd_id}.yaml
+EOF
+    cat > "$fake_root/queue/reports/tobisaru_report_${cmd_id}.yaml" <<EOF
+worker_id: tobisaru
+parent_cmd: $cmd_id
+files_modified:
+  - path: docs/research/gs_3objective_correlation_analysis_20260707.md
+    change: modified
+  - path: scripts/oneshot/cmd_3716_rolling1y_full.py
+    change: added
+EOF
+    {
+        sed -n '/^resolve_report_file()/,/^}/p' "$gate_script"
+        sed -n '/^collect_report_modified_files()/,/^}/p' "$gate_script"
+        sed -n '/^check_project_code_stubs()/,/^}/p' "$gate_script"
+    } > "$TEST_TMPDIR/stub_check.sh"
+
+    run bash -c "export SCRIPT_DIR='$fake_root' TASKS_DIR='$fake_root/queue/tasks' MATCHING_TASK_FILES=('$fake_root/queue/tasks/tobisaru.yaml'); source '$TEST_TMPDIR/stub_check.sh'; check_project_code_stubs '$cmd_id' dm-signal"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"commit_missing"* ]]
+    [[ "$output" != *"tasks/lessons.md"* ]]
+}
+
 # ─── AC2: ntfy.sh validate_topic + ntfy_listener.sh grep anchor ───
 
 @test "T-1408-003: ntfy.sh calls ntfy_validate_topic after TOPIC resolution" {

@@ -2189,6 +2189,31 @@ check_project_code_stubs() {
     uncommitted=$({ git -C "$project_path" diff --name-only 2>/dev/null; git -C "$project_path" diff --cached --name-only 2>/dev/null; } | sort -u | sed '/^$/d')
     if [[ -n "$uncommitted" ]]; then
         uncommitted_filtered=$(printf '%s\n' "$uncommitted" | grep -v -E '^queue/|^logs/|^dashboard\.md$|^context/lord-conversation-index\.md$|^context/senkyoku-log\.md$|^context/cmd-chronicle\.md$|^context/dm-signal-research\.md$|\.log$' || true)
+        # BLOCK only dirty files claimed by the current cmd report. External
+        # repos may contain unrelated dirty files from older tasks.
+        if [[ -n "$uncommitted_filtered" ]] && declare -F collect_report_modified_files >/dev/null 2>&1; then
+            local report_paths_for_commit scoped_uncommitted
+            report_paths_for_commit=$(collect_report_modified_files || true)
+            if [[ -n "$report_paths_for_commit" ]]; then
+                scoped_uncommitted=$(UNCOMMITTED_PATHS="$uncommitted_filtered" REPORT_PATHS="$report_paths_for_commit" python3 - <<'PY'
+import os
+
+uncommitted = [p.strip().strip("./") for p in os.environ.get("UNCOMMITTED_PATHS", "").splitlines() if p.strip()]
+reported = [p.strip().strip("./") for p in os.environ.get("REPORT_PATHS", "").splitlines() if p.strip()]
+
+def matches(path, ref):
+    path_base = os.path.basename(path)
+    ref_base = os.path.basename(ref)
+    return path == ref or path.endswith("/" + ref) or ref.endswith("/" + path) or path_base == ref_base
+
+for path in uncommitted:
+    if any(matches(path, ref) for ref in reported):
+        print(path)
+PY
+)
+                uncommitted_filtered="$scoped_uncommitted"
+            fi
+        fi
         if [[ -n "$uncommitted_filtered" ]]; then
             local ucount
             ucount=$(printf '%s\n' "$uncommitted_filtered" | wc -l)
@@ -4596,7 +4621,7 @@ read_markers = (
     "実行", "実行のみ", "変更対象外", "走らせ", "検証", "run", "execute",
     "同構造", "と同一", "と同じ", "同等", "踏襲", "に基づ", "を参考",
     "突合", "比較", "一覧", "解析", "分析", "取得", "検索", "出力", "表示", "呼び出", "呼出",
-    "コピー", "copy", "ベース", "由来", "from",
+    "コピー", "copy", "ベース", "由来", "from", "から",
 )
 write_markers = (
     "修正", "更新", "変更", "編集", "実装", "追加", "削除", "作成", "反映",
