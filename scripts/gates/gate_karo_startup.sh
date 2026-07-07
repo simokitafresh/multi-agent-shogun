@@ -750,6 +750,7 @@ _WA_DQ_TMP=$(mktemp)
 WA_RATE_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh"
 NINJA_WA_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_ninja_workaround_rate.sh"
 WA_DQ_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_wa_data_quality.sh"
+QUEUE_YAML_PARSE_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_queue_yaml_parse.sh"
 _WA_RATE_CACHE="${KARO_WA_RATE_CACHE:-/tmp/karo_wa_rate_cache}"
 _NINJA_WA_CACHE="${KARO_NINJA_WA_CACHE:-/tmp/karo_ninja_wa_cache}"
 _SKILL_SUMMARY_CACHE="${KARO_SKILL_SUMMARY_CACHE:-/tmp/karo_skill_summary_cache}"
@@ -1651,6 +1652,23 @@ if [ -f "$SCRIPT_DIR/queue/inbox/karo.yaml" ]; then
 else
     echo "  未読: 0件 (inbox不在)"
     unread=0
+fi
+
+echo "■ queue YAML parse"
+_queue_yaml_parse_rc=0
+if [ -x "$QUEUE_YAML_PARSE_SCRIPT" ]; then
+    _queue_yaml_parse_output="$(bash "$QUEUE_YAML_PARSE_SCRIPT" 2>&1)" || _queue_yaml_parse_rc=$?
+    printf '%s\n' "$_queue_yaml_parse_output" | sed 's/^/  /'
+    if [ "$_queue_yaml_parse_rc" -ne 0 ]; then
+        overall="ALERT"
+        alerts+=("queue YAML parse error")
+    fi
+else
+    echo "  WARN: gate_queue_yaml_parse.sh 不在または実行権限なし"
+    if [ "$overall" != "ALERT" ]; then
+        overall="WARN"
+    fi
+    alerts+=("queue YAML parse gate不在")
 fi
 
 # --- Check 3.5: 掲示板未確認 ---

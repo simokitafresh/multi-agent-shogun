@@ -29,6 +29,8 @@ setup() {
     chmod +x "$TEST_TMPDIR/scripts/gates/session_alerts_render.sh"
     cp "$PROJECT_ROOT/scripts/gates/gate_wa_data_quality.sh" "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh"
+    cp "$PROJECT_ROOT/scripts/gates/gate_queue_yaml_parse.sh" "$TEST_TMPDIR/scripts/gates/gate_queue_yaml_parse.sh"
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_queue_yaml_parse.sh"
     cp "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh" "$TEST_TMPDIR/scripts/gates/gate_three_layer_health.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_three_layer_health.sh"
     cp "$PROJECT_ROOT/scripts/gates/gate_codex_hooks_no_stop.sh" "$TEST_TMPDIR/scripts/gates/gate_codex_hooks_no_stop.sh"
@@ -1301,4 +1303,27 @@ EOF
     [[ "$output" == *"■ レビュー品質スケール"* ]]
     [[ "$output" == *"WARN率 50% (1/2, cmd_id単位最終verdict集計)"* ]]
     [[ "$output" == *"WARN: レビュー品質WARN率が30%超"* ]]
+}
+
+@test "queue YAML parse: truncated quoted block reports file and line ALERT" {
+    cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_broken:
+    status: pending
+    purpose: "truncated block
+EOF
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ queue YAML parse"* ]]
+    [[ "$output" == *"ALERT: queue YAML parse error"* ]]
+    [[ "$output" =~ queue/shogun_to_karo\.yaml:[0-9]+:[0-9]+ ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
+@test "queue YAML parse: valid queue files pass without ALERT" {
+    run bash "$TEST_TMPDIR/scripts/gates/gate_queue_yaml_parse.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: queue YAML parse clean"* ]]
+    [[ "$output" != *"ALERT"* ]]
 }
