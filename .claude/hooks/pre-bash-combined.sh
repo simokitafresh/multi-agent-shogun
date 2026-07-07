@@ -455,7 +455,7 @@ fi
 # sed/awk/python regexによるshogun_to_karo.yamlのstatus操作はBLOCK。
 if [[ -n "${command:-}" ]]; then
     if [[ "$command" == *'shogun_to_karo'* ]]; then
-        if [[ "$command" == *'sed '* || "$command" == *'sed -'* || "$command" == *"re.sub"* || "$command" == *"\.replace("* || "$command" == *'awk '* ]]; then
+        if [[ "$command" == *'sed '* || "$command" == *'sed -'* || "$command" == *"re.sub"* || "$command" == *".replace("* || "$command" == *'awk '* ]]; then
             emit_deny "BLOCK: shogun_to_karo.yamlへのsed/regex操作は禁止。Edit toolで手動変更せよ。status遷移gateの迂回を防ぐため。"
         fi
     fi
