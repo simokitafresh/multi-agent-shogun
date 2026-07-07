@@ -1381,3 +1381,4 @@
 - 2026-07-06 cmd_3696完了: 疾風がGS道具磨きPhase Aを実測。L0 DM2はPhase1=77.6%支配で設計書v4基準「方針変更」、L3 kasoku_diffはDB connect/build/load支配。`compare_gs_sqlite_monthly.py`を追加し372+12400 cells完全一致PASS、設計書へ結果還流、GATE CLEAR。
 - 2026-07-06 cmd_3702完了: 飛猿が保有シグナル確定台帳dry-runをrebalance_trigger対応へ是正。計画306→102、汚染混入0件、テスト17/17 PASS、core contextへ新前提を還流。
 - 2026-07-06 GA-186完了: 疾風が`context/dm-signal-ops.md`鮮度ALERTを処理。signal_decision_ledger運用差分を§52へ反映し、`gate_context_freshness.sh`総合OKへ復帰。
+- 2026-07-07 家老強ニュー化: startup WARN `dashboard-update FAIL:101` の直因を短縮hotfix ID(`cmd_karo_hotfix_ga190`)が長いparent_cmd reportを解決できないことと特定し、`dashboard_update.sh`に同系列cmd id fallbackを追加。`test_skill_feedback_loop`再発テスト追加、commit `5668b0b8e`、startup gateはスキル品質全PASS/総合OKへ復帰。`queue/compact_state/karo.yaml` と `queue/compact_state_karo.yaml` も14:35時点へ更新。
