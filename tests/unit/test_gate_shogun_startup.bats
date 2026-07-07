@@ -565,6 +565,54 @@ EOF
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
+@test "Q6 automation target without explicit path resolves INSIGHT_REPEAT and reflux inventory proof → no grep skip" {
+    cat > "$TEST_TMPDIR/scripts/insight_write.sh" <<'EOF'
+#!/usr/bin/env bash
+# INSIGHT_REPEAT proof fixture: source pending count escalates repeated insights.
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/insight_write.sh"
+    cat > "$TEST_TMPDIR/scripts/ninja_monitor.sh" <<'EOF'
+#!/usr/bin/env bash
+# 還流在庫 proof fixture
+REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=600
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/ninja_monitor.sh"
+    cat > "$TEST_TMPDIR/scripts/gates/gate_shogun_startup.sh" <<'EOF'
+#!/usr/bin/env bash
+# cmd候補 proof fixture
+echo "類似cmd候補"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_shogun_startup.sh"
+
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 洗脳#5先送りを止めるため、INSIGHT_REPEAT 2件放置が示すinsight→cmd化の手動依存を確認した。自動化ターゲット: INSIGHT_REPEAT 2件放置が示すinsight→cmd化の手動依存を、還流在庫しきい値超過→cmd候補自動生成で環境に埋め込む。"}
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: Q6(創造主の洗脳チェック)回答検出 + 自動化ターゲット記入あり"* ]]
+    [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
+    [[ "$output" == *"scripts/insight_write.sh: INSIGHT_REPEAT,insight"* ]]
+    [[ "$output" == *"scripts/ninja_monitor.sh: 還流在庫,REFLUX_AUTO_DEPLOY"* ]]
+    [[ "$output" == *"scripts/gates/gate_shogun_startup.sh: cmd候補,類似cmd候補"* ]]
+    [[ "$output" != *"WARN: 自動化ターゲット実装証拠 grep検証スキップ"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
+
+@test "Q6 proof checker ignores ordinary status report mentioning Q6 automation target warning" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 洗脳#5先送りを止めるため、殿のために一次情報で確認した。自動化ターゲット: scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。"}
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"はっ！自走ラウンド完了。Q6自動化ターゲット実装証拠WARN（3セッション連続）根治: パス入りQ6回答を投稿 → gate実測 OK。"}
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
+    [[ "$output" != *"Q6自動化ターゲット実装証拠WARN"* ]]
+    [[ "$output" != *"WARN: 自動化ターゲット実装証拠 grep検証スキップ"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
+
 @test "Q6 automation target accepts markdown bold label → 総合判定: OK" {
     cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
 {"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。**自動化ターゲット**: scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。"}

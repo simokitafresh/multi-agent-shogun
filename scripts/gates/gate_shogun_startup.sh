@@ -1058,7 +1058,7 @@ automation_action_negation_re = re.compile(
     r"スクリプト変更|教訓追記|教訓登録|lesson追記|D0修正|実装修正|テスト追加|検知追加|"
     r"ブロック追加|BLOCK追加)\s*(なし|無し|不要|しない|せず|未実施|未対応)"
 )
-q6_answer_re = re.compile(r"(Q6\s*(回答|[:：])|創造主の洗脳チェック)")
+q6_answer_re = re.compile(r"((?<![A-Za-z0-9_一-龯ぁ-んァ-ヶ])Q6\s*回答|創造主の洗脳チェック)")
 found_answer = False
 found_automation_target = False
 automation_target = ""
@@ -1318,6 +1318,10 @@ hint_paths = {
     "commit前": ["scripts/hooks/git-pre-commit.sh"],
     "pre-commit": ["scripts/hooks/git-pre-commit.sh"],
     "コミット前": ["scripts/hooks/git-pre-commit.sh"],
+    "INSIGHT_REPEAT": ["scripts/insight_write.sh"],
+    "insight": ["scripts/insight_write.sh"],
+    "還流在庫": ["scripts/ninja_monitor.sh"],
+    "cmd候補": ["scripts/gates/gate_shogun_startup.sh"],
     "掲示板": ["scripts/gates/gate_shogun_startup.sh", "scripts/bulletin_write.sh"],
     "action_required": ["scripts/gates/gate_shogun_startup.sh", "scripts/bulletin_write.sh"],
     "backlinks": ["scripts/causal_backlink_counts.sh", "context/semantic-map.md"],
@@ -1328,6 +1332,10 @@ hint_tokens = {
     "commit前": ["pre-commit"],
     "pre-commit": ["pre-commit"],
     "コミット前": ["pre-commit"],
+    "INSIGHT_REPEAT": ["INSIGHT_REPEAT"],
+    "insight": ["insight"],
+    "還流在庫": ["還流在庫", "REFLUX_AUTO_DEPLOY"],
+    "cmd候補": ["cmd候補", "類似cmd候補"],
     "掲示板": ["action_required"],
     "action_required": ["action_required"],
     "backlinks": ["backlink"],
