@@ -1175,7 +1175,7 @@ resolve_cmd_to_task() {
     # R1: task YAMLの中核フィールドを一括設定（7回flock→1回batch。CoDD refactor_sequence準拠）
     local _deploy_ts
     _deploy_ts="$(date '+%Y-%m-%dT%H:%M:%S')"
-    local _batch_args=("parent_cmd=$cmd_id" "cmd_id=$cmd_id" "task_id=$task_id" "task_type=$task_type" "status=assigned" "_ac_task_id=" "_ac_worker_id=" "_deploy_notice=STALE TASK INVALID. This YAML is the latest instruction for ${cmd_id} (deployed ${_deploy_ts}). Read from the beginning.")
+    local _batch_args=("parent_cmd=$cmd_id" "cmd_id=$cmd_id" "task_id=$task_id" "task_type=$task_type" "status=assigned" "deployed_at=$_deploy_ts" "_ac_task_id=" "_ac_worker_id=" "_deploy_notice=STALE TASK INVALID. This YAML is the latest instruction for ${cmd_id} (deployed ${_deploy_ts}). Read from the beginning.")
     [ -n "$project" ] && _batch_args+=("project=$project")
     [ -n "$purpose" ] && _batch_args+=("purpose=$purpose")
     [ -n "$_target_path" ] && _batch_args+=("target_path=$_target_path")
@@ -8845,9 +8845,13 @@ except Exception:
             else
                 direct_task_id_suffix="normal"
             fi
-            yaml_field_set "$task_yaml" "task" "parent_cmd" "$CMD_ID" 2>/dev/null || true
-            yaml_field_set "$task_yaml" "task" "status" "assigned" 2>/dev/null || true
-            yaml_field_set "$task_yaml" "task" "task_id" "${CMD_ID}_${direct_task_id_suffix}" 2>/dev/null || true
+            local _direct_deploy_ts
+            _direct_deploy_ts="$(date '+%Y-%m-%dT%H:%M:%S')"
+            yaml_field_set_batch "$task_yaml" "task" \
+                "parent_cmd=$CMD_ID" \
+                "status=assigned" \
+                "task_id=${CMD_ID}_${direct_task_id_suffix}" \
+                "deployed_at=$_direct_deploy_ts" 2>/dev/null || true
             inject_training_target_path_from_alias_quality "$task_yaml" "$CMD_ID" || true
             inject_direct_training_template "$task_yaml" "$CMD_ID" || true
             deploy_task_resolved_mutated=1
@@ -8866,6 +8870,8 @@ except Exception:
                 || { log "FATAL: yaml_field_set failed for task_id (cmd_forced)"; return 1; }
             yaml_field_set "$task_yaml" "task" "status" "assigned" \
                 || { log "FATAL: yaml_field_set failed for status (cmd_forced)"; return 1; }
+            yaml_field_set "$task_yaml" "task" "deployed_at" "$(date '+%Y-%m-%dT%H:%M:%S')" \
+                || { log "FATAL: yaml_field_set failed for deployed_at (cmd_forced)"; return 1; }
             yaml_field_set "$task_yaml" "task" "_ac_task_id" "" \
                 || { log "FATAL: yaml_field_set failed for _ac_task_id (cmd_forced)"; return 1; }
             yaml_field_set "$task_yaml" "task" "_ac_worker_id" "" \
