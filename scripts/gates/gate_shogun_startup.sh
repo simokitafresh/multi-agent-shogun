@@ -2276,22 +2276,27 @@ else
     alerts+=("三層記憶DB健全性: gate不在")
 fi
 
-# --- Gate 12.2: 三層記憶引用率([MEM]タグ計測) (cmd_3199, Step 1.7) ---
+# --- Gate 12.2: 三層記憶引用率([MEM]タグ計測) (cmd_3199, Step 1.7 / cmd_3738 定型応答除外) ---
 echo "■ 三層記憶引用率([MEM]タグ)"
 # 正本はqueue/lord_conversation.jsonl(書式は "direction": "response" とコロン後スペースあり)。
 # data/側の凍結コピー+スペースなしgrepの二重不一致で分母が常時0=計測が機能していなかった(2026-07-07修正)。
+# 配備報告・完了通知・GATE結果・inbox待機等の定型応答は「殿の質問への回答」ではないため分母から除外する
+# (cmd_3738 AC2: 質問応答でない回答への誤発火防止)。
 _lord_conv_12_2="$SCRIPT_DIR/queue/lord_conversation.jsonl"
 if [ -f "$_lord_conv_12_2" ]; then
     _shogun_resp_12_2=$(tail -200 "$_lord_conv_12_2" 2>/dev/null | grep -E '"direction": ?"response"' | tail -20)
     IFS=$'\t' read -r _resp_count_12_2 _mem_count_12_2 _mem_md_count_12_2 <<< "$(printf '%s\n' "$_shogun_resp_12_2" | awk '
-        /"direction"/ { resp++ }
-        /\[MEM:/ { mem++ }
+        {
+            routine = ($0 ~ /配備(開始|完了)|初回配備|GATE (CLEAR|BLOCK)|完了(しました|報告)|inbox未読|新着を待つ/)
+        }
+        /"direction"/ && !routine { resp++ }
+        /\[MEM:/ && !routine { mem++ }
         /\[MEM: memory_md/ { mem_md++ }
         END { printf "%d\t%d\t%d\n", resp + 0, mem + 0, mem_md + 0 }
     ')"
-    echo "  三層記憶引用率: ${_mem_count_12_2}/${_resp_count_12_2}件 (grep [MEM:)"
+    echo "  三層記憶引用率: ${_mem_count_12_2}/${_resp_count_12_2}件 (grep [MEM:, 定型応答除外)"
     if [ "${_resp_count_12_2:-0}" -gt 3 ] && [ "${_mem_count_12_2:-0}" -eq 0 ]; then
-        echo "  WARN: 直近${_resp_count_12_2}件の将軍回答に[MEM:]タグなし。Step 1.7: 三層記憶起点の原則が守られていない"
+        echo "  WARN: 直近${_resp_count_12_2}件の将軍質問応答に[MEM:]タグなし(定型応答除外後)。Step 1.7: 三層記憶起点の原則が守られていない"
         if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
         alerts+=("三層記憶引用率0%: 殿の質問に三層記憶を使っていない")
     fi

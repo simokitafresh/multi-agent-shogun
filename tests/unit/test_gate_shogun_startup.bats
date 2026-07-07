@@ -2209,3 +2209,59 @@ EOF
     # 空WARNなし
     [[ "$output" != *"WARN: lessons_useful空リスト"* ]]
 }
+
+# === Gate 12.2: 三層記憶引用率([MEM]タグ) — cmd_3738 M5 ===
+# AC1: 引用タグゼロが継続する場合にWARNとsession_alerts連携が発火することを確認する
+@test "Gate 12.2 substantive responses with zero [MEM] citation → WARN and session_alerts連携" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。"}
+{"ts":"2099-01-01T00:01:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"殿への回答: 三層記憶有効利用加速の設計方針について検討した結果を報告する。"}
+{"ts":"2099-01-01T00:02:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"殿への回答: M5施策の優先順位について判断した根拠を説明する。"}
+{"ts":"2099-01-01T00:03:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"殿への回答: 三層記憶の運用ルールを踏まえた対応方針を報告する。"}
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"三層記憶引用率: 0/4件 (grep [MEM:, 定型応答除外)"* ]]
+    [[ "$output" == *"WARN: 直近4件の将軍質問応答に[MEM:]タグなし(定型応答除外後)"* ]]
+    [[ "$output" == *"⚠ 三層記憶引用率0%: 殿の質問に三層記憶を使っていない"* ]]
+    grep -q '^\[TODO\] 三層記憶引用率0%: 殿の質問に三層記憶を使っていない$' "$TEST_TMPDIR/queue/session_alerts_shogun.txt"
+}
+
+# AC2 境界テスト(1/2): 配備報告・完了通知等の定型応答はMEM無しでも誤発火しない
+@test "Gate 12.2 定型応答(配備報告・完了通知等)のみ → WARN誤発火なし" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。"}
+{"ts":"2099-01-01T00:01:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"inbox未読0件。新着を待つ。"}
+{"ts":"2099-01-01T00:02:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"cmd_9001 GATE CLEAR。影響なし（LGTM済み）。"}
+{"ts":"2099-01-01T00:03:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"cmd_9002初回配備開始。"}
+{"ts":"2099-01-01T00:04:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"cmd_9003の作業を完了しました。"}
+{"ts":"2099-01-01T00:05:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"cmd_9003の完了報告を家老へ送信済みです。"}
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"三層記憶引用率: 0/1件 (grep [MEM:, 定型応答除外)"* ]]
+    [[ "$output" != *"WARN: 直近"*"件の将軍質問応答に[MEM:]タグなし"* ]]
+    [[ "$output" != *"⚠ 三層記憶引用率0%"* ]]
+    ! grep -q '三層記憶引用率0%' "$TEST_TMPDIR/queue/session_alerts_shogun.txt" 2>/dev/null
+}
+
+# AC2 境界テスト(2/2): 定型応答に埋もれても質問応答にMEM引用があればWARNなし
+@test "Gate 12.2 定型応答混在でも質問応答にMEM引用あり → WARNなし" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: scripts/gates/q6_target_fixture.sh に `q6_target_probe` をgrep検証する。"}
+{"ts":"2099-01-01T00:01:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"inbox未読0件。新着を待つ。"}
+{"ts":"2099-01-01T00:02:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"殿への回答: [MEM: search_log:cmd_3725] を根拠に三層記憶引用率の分母修正を確認した。"}
+{"ts":"2099-01-01T00:03:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"cmd_9004 GATE CLEAR。影響なし（LGTM済み）。"}
+{"ts":"2099-01-01T00:04:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"殿への回答: [MEM: lord_conversation:blt_20260707] を根拠にM5施策の優先順位を説明する。"}
+{"ts":"2099-01-01T00:05:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"殿への回答: [MEM: semantic_map:three_layer_memory] を根拠に運用方針を報告する。"}
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"三層記憶引用率: 3/4件 (grep [MEM:, 定型応答除外)"* ]]
+    [[ "$output" != *"WARN: 直近"*"件の将軍質問応答に[MEM:]タグなし"* ]]
+    [[ "$output" != *"⚠ 三層記憶引用率0%"* ]]
+    ! grep -q '三層記憶引用率0%' "$TEST_TMPDIR/queue/session_alerts_shogun.txt" 2>/dev/null
+}
