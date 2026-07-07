@@ -2151,6 +2151,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T17:15:35+09:00 三層学習ループ極限化 初日完了(2026-07-07): 設計書T1-T7の全9cmd完了(cmd_3718-3726全アーカイブ確認)。実証された免疫サイクル=(1)将軍D0未コミット消失→LS-A14(2)教訓化→再適用+即コミット6a |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T18:31:49+09:00 startup CI RED検知は2026-06-12速度hotfixのgh timeout 0.05s短縮で25日間silent-deathしていた。async実行関数のtimeout短縮は直列時間に寄与せず機能だけ殺す。修正=既定8s復 |
 | causal | `cmd_3752` files_modified: [[growth_loop]] |
+| lesson | `L986` テキストベースの数値判定gateへの数値記述は誤分類を招く。構造化フィールドで実値を明示せよ |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
 | causal_chain | `[[cmd_147]]` (L012) |
@@ -2159,6 +2160,7 @@ codd:
 | causal_chain | `[[cmd_3644]]` (L927) |
 | causal_chain | `[[cmd_reflux_insight_202607072256_saizo]]` (L971) |
 | causal_chain | `[[cmd_3726]]` (L956) |
+| causal_chain | `[[cmd_reflux_promotion_202607080658_kotaro]]` (L986) |
 
 ## chain_principle — 鎖の原理
 
@@ -3084,7 +3086,7 @@ codd:
 |------|---|
 | id | dmsignal_operations |
 | label | DM-Signal運用 |
-| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する, FoF複製2件はおれの操作だ, PF構成確認はcheck_pf_config.py一発, hide判定はtier_visibility_settings全Tier確認必須(portfolios.hide_portfolioだけでは不十分), pipeline_configがBBの実体(selection_pipeline+terminal_block), TrendReversalFilter, DM signalのハナシをしよう, FoFの理解が怪しい, 22分は長いな, DM signalは順調か？, DM-signalは順調か？, L1+, L1+実験, BB直列, ビルディングブロック直列, BB直列拡張, run_l1plus_backtest, 441パターン, L1ビルディングブロック直列接続, 現在本番には全部で102PFある, バグの影響を受けたPFをフォルダーグループ単位で報告, Standard PFの過去シグナルNone化とは何だ？, 理論上過去のシグナルはinbox1, データが日々変わる, データが毎日変わる, 当月シグナルは日々変わる, 過去シグナルは毎日変動, つまりデータが毎日変わっているのか, つまりデータが毎日変わっているのか？, 保有ポジションやパフォーマンスも日々変わる, 保有ポジションやパフォーマンスも日々変わってしまう, そうすると保有ポジションやパフォーマンスも日々変わってしまうということか？, 価格データソース多重化Phase 0, 殿のAPIキー発行待ちでこちら側の起票対象なし, 価格データソース多重化は実装済み, バンドを採用, バンド採用, 閾値バンド, threshold_band, 三状態判定, A/A+B/B, バンド内半々, モメンタムバンド, デッドバンド, 僅差判定の反転, absolute_assetはgatekeeper sensorで保有対象外, TMFを保有するパターンは存在しない, relative_assetsが保有候補でabsolute_assetは判定指標, モメンタムバンドも導入したから, ワイヤーフレームV3を許可する, ワイヤーフレームv3裁可, ワイヤーフレームv3許可, ワイヤーフレームv3, Monthly Trade状態バッジ, 確定台帳表示 |
+| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する, FoF複製2件はおれの操作だ, PF構成確認はcheck_pf_config.py一発, hide判定はtier_visibility_settings全Tier確認必須(portfolios.hide_portfolioだけでは不十分), pipeline_configがBBの実体(selection_pipeline+terminal_block), TrendReversalFilter, DM signalのハナシをしよう, FoFの理解が怪しい, 22分は長いな, DM signalは順調か？, DM-signalは順調か？, L1+, L1+実験, BB直列, ビルディングブロック直列, BB直列拡張, run_l1plus_backtest, 441パターン, L1ビルディングブロック直列接続, 現在本番には全部で102PFある, バグの影響を受けたPFをフォルダーグループ単位で報告, Standard PFの過去シグナルNone化とは何だ？, 理論上過去のシグナルはinbox1, データが日々変わる, データが毎日変わる, 当月シグナルは日々変わる, 過去シグナルは毎日変動, つまりデータが毎日変わっているのか, つまりデータが毎日変わっているのか？, 保有ポジションやパフォーマンスも日々変わる, 保有ポジションやパフォーマンスも日々変わってしまう, そうすると保有ポジションやパフォーマンスも日々変わってしまうということか？, 価格データソース多重化Phase 0, 殿のAPIキー発行待ちでこちら側の起票対象なし, 価格データソース多重化は実装済み, バンドを採用, バンド採用, 閾値バンド, threshold_band, 三状態判定, A/A+B/B, バンド内半々, モメンタムバンド, デッドバンド, 僅差判定の反転, absolute_assetはgatekeeper sensorで保有対象外, TMFを保有するパターンは存在しない, relative_assetsが保有候補でabsolute_assetは判定指標, モメンタムバンドも導入したから, ワイヤーフレームV3を許可する, ワイヤーフレームv3裁可, ワイヤーフレームv3許可, ワイヤーフレームv3, Monthly Trade状態バッジ, 確定台帳表示, まだ本番にはモメンタムバンドで計算されたPFがないのでは？ |
 | skills | db-check, pf-registration |
 | related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking, investment_knowledge_base, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, modern_web_guidance, cdp_browser_capability, tier_plan_mapping, alpha_6_metrics, saxo_openapi_excel, saxo_trade_engine, db_price_data_range, content_artifacts, fusion_api_endpoint, dm_fusion_app, dmsignal_fe_experience_deploy, gs_recalibration_plan |
 
@@ -3157,6 +3159,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T00:51:40+09:00 これはスタンダードのポートフォリオ か fof のレイヤー 0か レイヤー3までの今 102 ポートフォリオ あるけど ポートフォリオ 全体だとどうなる |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T01:02:25+09:00 どちらにせよGSの道具磨きをまたやらないとな。5分が厳しいなら10分制限にしよう。モメンタムバンドも導入したから、どちらにしても必須だよな。本番とのパリティは、すでに本番に再計算済みのデータがあるから本番のデータをゴールデンとして使えばいい |
 | causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[dmsignal_operations]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-08T08:07:44+09:00 まだ本番にはモメンタムバンドで計算されたPFがないのでは？ |
 | causal_chain | `[[cmd_3368]]` (L805) |
 | causal_chain | `[[cmd_3380]]` (L807) |
 
@@ -3609,6 +3612,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T14:42:31+09:00 三層記憶の穴3種を特定・修正(2026-07-07殿指示「利用されなければ効果を発揮しない」)。穴1=Gate12.2引用率計測が読み手パス(data/凍結コピー)+grep書式(スペースなし)の二重不一致で分母常時0=cmd_3199導入 |
 | causal | `cmd_3721` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_3721` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_training_auto.bats`) |
+| lesson | `L985` 計測gateは構造化フィールドを無視するな — テキストヒューリスティックは明示フィールドのフォールバックに限定せよ |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -3650,6 +3654,7 @@ codd:
 | causal_chain | `[[cmd_3664]]` (L941) |
 | causal_chain | `[[cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051]]` (L944) |
 | causal_chain | `[[cmd_3726]]` (L956) |
+| causal_chain | `[[cmd_reflux_promotion_202607080640_saizo]]` (L985) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -5062,6 +5067,9 @@ codd:
 | lesson | `L935` hotfix別名完了通知は送信側で正規化dedupする |
 | lesson | `L959` git ls-files成功0件はfilesystem fallbackへ戻す |
 | causal | `cmd_reflux_promotion_202607080511_hanzo` files_modified: [[lesson_lifecycle]] |
+| causal | `cmd_reflux_promotion_202607080545_kotaro` files_modified: [[lesson_lifecycle]] |
+| causal | `cmd_reflux_promotion_202607080617_tobisaru` files_modified: [[lesson_lifecycle]] |
+| causal | `cmd_reflux_promotion_202607080632_hanzo` files_modified: [[lesson_lifecycle]] |
 | causal_chain | `[[cmd_2955]]` (L685) |
 | causal_chain | `[[cmd_3012]]` (L693) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]` (L778) |
@@ -5437,6 +5445,7 @@ codd:
 | cmd | `cmd_reflux_insight_202607071926_tobisaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 | causal | `cmd_reflux_insight_202607080313_tobisaru` files_modified: [[provisional_tobisaru]] |
 | cmd | `cmd_reflux_insight_202607080313_tobisaru` (`queue/tasks/tobisaru.yaml`, `context/semantic-map.md`, `docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_promotion_202607080617_tobisaru` (`projects/infra/lessons_shogun.yaml`) |
 
 ## provisional_hayate — 仮: Hayate
 
@@ -5471,6 +5480,8 @@ codd:
 | cmd | `cmd_reflux_insight_202607080431_hayate` (`queue/tasks/hayate.yaml`, `context/semantic-map.md`, `docs/research/pf-remote-restore-asis-tobe-5w1h_20260708.md`) |
 | causal | `cmd_reflux_insight_202607080507_hayate` files_modified: [[provisional_hayate]] |
 | cmd | `cmd_reflux_insight_202607080507_hayate` (`queue/tasks/hayate.yaml`) |
+| causal | `cmd_reflux_insight_202607080614_hayate` files_modified: [[provisional_hayate]] |
+| cmd | `cmd_reflux_insight_202607080614_hayate` (`queue/tasks/hayate.yaml`) |
 
 ## provisional_kotaro — 仮: Kotaro
 
@@ -5505,6 +5516,8 @@ codd:
 | cmd | `cmd_reflux_insight_202607071754_kotaro` (`context/semantic-map.md`, `docs/semantic-index/index.md`, `queue/tasks/kotaro.yaml`) |
 | cmd | `cmd_reflux_insight_202607071854_kotaro` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_insight_202607080444_kotaro` |
+| causal | `cmd_reflux_promotion_202607080545_kotaro` files_modified: [[provisional_kotaro]] |
+| cmd | `cmd_reflux_promotion_202607080545_kotaro` (`projects/infra/lessons_shogun.yaml`, `queue/tasks/kotaro.yaml`) |
 
 ## provisional_kagemaru — 仮: Kagemaru
 
@@ -5575,6 +5588,7 @@ codd:
 | cmd | `cmd_3483` 教訓タグ精緻化 — 0%有効率教訓50件のwhen/howキーワード限定化 (`projects/infra/lessons.yaml`, `queue/reports/hayate_report_cmd_3483.yaml`, `queue/tasks/hayate.yaml`) |
 | causal | `cmd_3483` origin: [[PD-047_裁定]] -> [[cmd_3466_残課題_50件タグ]] -> [[when_how精緻化]] |
 | cmd | `cmd_reflux_promotion_202607080511_hanzo` (`projects/infra/lessons_shogun.yaml`) |
+| cmd | `cmd_reflux_promotion_202607080632_hanzo` (`projects/infra/lessons_shogun.yaml`) |
 
 ## infra_design_intent — インフラ設計意図カタログ
 
