@@ -292,6 +292,84 @@ setup() {
     grep -q "^  from: 'custom_sender'" "$TEST_INBOX_DIR/test_agent.yaml"
 }
 
+@test "review_draft attaches memory and semantic context before delivery" {
+    setup_basic_test_env
+    cat > "$TEST_TMPDIR/scripts/memory_db_query.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+echo "2026-07-07|cmd_3737|レビュー想起: 過去教訓あり"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/memory_db_query.sh"
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+echo "matched: [[レビュー想起がpull型依存]]"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+    mkdir -p "$TEST_TMPDIR/queue"
+    cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_3737:
+    purpose: "レビュー依頼へ関連知識をpush型添付する"
+    project: infra
+    acceptance_criteria:
+      - "添付内容が届く"
+YAML
+
+    run bash "$TEST_INBOX_WRITE" "gunshi" "draft cmd_3737 レビュー依頼。" "review_draft" "karo" "review_request"
+    [ "$status" -eq 0 ]
+    grep -q "\[review_context_push\]" "$TEST_INBOX_DIR/gunshi.yaml"
+    grep -q "レビュー想起: 過去教訓あり" "$TEST_INBOX_DIR/gunshi.yaml"
+    grep -q "レビュー想起がpull型依存" "$TEST_INBOX_DIR/gunshi.yaml"
+}
+
+@test "review_draft context search failure is fail-soft and preserves delivery" {
+    setup_basic_test_env
+    cat > "$TEST_TMPDIR/scripts/memory_db_query.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+exit 42
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/memory_db_query.sh"
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+exit 43
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+
+    run bash "$TEST_INBOX_WRITE" "gunshi" "draft cmd_3737 レビュー依頼。" "review_draft" "karo" "review_request"
+    [ "$status" -eq 0 ]
+    grep -q "^- action: 'review_request'" "$TEST_INBOX_DIR/gunshi.yaml"
+    grep -q "draft cmd_3737 レビュー依頼。" "$TEST_INBOX_DIR/gunshi.yaml"
+    ! grep -q "\[review_context_push\]" "$TEST_INBOX_DIR/gunshi.yaml"
+}
+
+@test "report_review builds context query from report YAML" {
+    setup_basic_test_env
+    cat > "$TEST_TMPDIR/scripts/memory_db_query.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+printf 'query=%s\n' "$*"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/memory_db_query.sh"
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+exit 0
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+    mkdir -p "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_3737.yaml" <<'YAML'
+parent_cmd: cmd_3737
+result:
+  summary: "報告レビュー対象の要約"
+files_modified:
+  - path: scripts/inbox_write.sh
+    change: modified
+YAML
+
+    run bash "$TEST_INBOX_WRITE" "gunshi" "testninja報告完了。レビュー依頼: cmd_3737 report=testninja_report_cmd_3737.yaml" "report_review" "karo"
+    [ "$status" -eq 0 ]
+    grep -q "\[review_context_push\]" "$TEST_INBOX_DIR/gunshi.yaml"
+    grep -q "報告レビュー対象の要約" "$TEST_INBOX_DIR/gunshi.yaml"
+    grep -q "scripts/inbox_write.sh" "$TEST_INBOX_DIR/gunshi.yaml"
+}
+
 @test "memory DB live insert: inbox write appends event_type=inbox after YAML persistence" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/data"

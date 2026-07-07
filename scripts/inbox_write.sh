@@ -1199,6 +1199,166 @@ inject_universal_lessons_if_missing() {
     echo "INJECTED: ${#selected_lessons[@]} universal lessons (safety net)"
 }
 
+inbox_is_review_request_type() {
+    case "$1" in
+        review_draft|report_review|verify_request)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+inbox_truncate_lines() {
+    local max_lines="${1:-5}"
+    local max_chars="${2:-1200}"
+    awk -v max_lines="$max_lines" -v max_chars="$max_chars" '
+        BEGIN { chars = 0 }
+        NF {
+            line = $0
+            if (length(line) > 220) line = substr(line, 1, 217) "..."
+            next_chars = chars + length(line) + 1
+            if (NR > max_lines || next_chars > max_chars) exit
+            print line
+            chars = next_chars
+        }
+    '
+}
+
+inbox_extract_report_summary_for_review_context() {
+    local report_path="$1"
+    [ -f "$report_path" ] || return 0
+
+    python3 - "$report_path" <<'PY' 2>/dev/null || true
+import sys
+import yaml
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as f:
+    data = yaml.safe_load(f) or {}
+
+parts = []
+parent = str(data.get("parent_cmd") or "").strip()
+if parent:
+    parts.append(parent)
+result = data.get("result") if isinstance(data.get("result"), dict) else {}
+summary = str(result.get("summary") or "").strip()
+details = str(result.get("details") or "").strip()
+if summary:
+    parts.append(summary)
+elif details:
+    parts.append(details[:240])
+for item in data.get("files_modified") or []:
+    if isinstance(item, dict) and item.get("path"):
+        parts.append(str(item["path"]))
+if parts:
+    print(" ".join(parts)[:600])
+PY
+}
+
+inbox_extract_cmd_summary_for_review_context() {
+    local cmd_id="$1"
+    local cmd_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    [ -n "$cmd_id" ] || return 0
+    [ -f "$cmd_file" ] || return 0
+
+    python3 - "$cmd_file" "$cmd_id" <<'PY' 2>/dev/null || true
+import sys
+import yaml
+
+path, cmd_id = sys.argv[1], sys.argv[2]
+with open(path, encoding="utf-8") as f:
+    data = yaml.safe_load(f) or {}
+cmd = (data.get("commands") or {}).get(cmd_id) or {}
+if not isinstance(cmd, dict):
+    raise SystemExit(0)
+parts = [cmd_id]
+for key in ("purpose", "title", "command", "project"):
+    value = cmd.get(key)
+    if value:
+        parts.append(str(value))
+acs = cmd.get("acceptance_criteria") or []
+if isinstance(acs, list):
+    for ac in acs[:3]:
+        parts.append(str(ac))
+print(" ".join(parts)[:700])
+PY
+}
+
+inbox_build_review_context_query() {
+    local content="$1"
+    local cmd_id="" report_path="" report_query="" cmd_query=""
+
+    cmd_id=$(printf '%s' "$content" | grep -oE 'cmd_[A-Za-z0-9_]+' | head -1 || true)
+    report_path=$(inbox_extract_report_path_from_content "$content")
+    if [ -n "$report_path" ]; then
+        report_query=$(inbox_extract_report_summary_for_review_context "$report_path")
+        if [ -z "$cmd_id" ] && [ -f "$report_path" ]; then
+            cmd_id=$(inbox_extract_parent_cmd_from_report "$report_path")
+        fi
+    fi
+    cmd_query=$(inbox_extract_cmd_summary_for_review_context "$cmd_id")
+
+    printf '%s\n%s\n%s\n' "$cmd_query" "$report_query" "$content" \
+        | tr '\n' ' ' \
+        | sed 's/[[:space:]][[:space:]]*/ /g; s/^[[:space:]]*//; s/[[:space:]]*$//' \
+        | cut -c 1-900
+}
+
+inbox_collect_review_memory_context() {
+    local query="$1"
+    local timeout_sec="${INBOX_REVIEW_CONTEXT_TIMEOUT_SEC:-5}"
+    local memory_output="" semantic_output=""
+
+    [ -n "${query//[[:space:]]/}" ] || return 0
+
+    if [ -x "$SCRIPT_DIR/scripts/memory_db_query.sh" ]; then
+        memory_output=$(
+            MEMORY_DB_QUERY_LIMIT="${INBOX_REVIEW_CONTEXT_MEMORY_LIMIT:-3}" \
+                timeout "$timeout_sec" bash "$SCRIPT_DIR/scripts/memory_db_query.sh" --search "$query" 2>/dev/null \
+                | inbox_truncate_lines 4 1000
+        ) || memory_output=""
+    fi
+
+    if [ -x "$SCRIPT_DIR/scripts/semantic_search.sh" ]; then
+        semantic_output=$(
+            SEMANTIC_DISABLE_LLM=1 \
+            SEMANTIC_DISABLE_CAUSAL=1 \
+                timeout "$timeout_sec" bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$query" 2>/dev/null \
+                | inbox_truncate_lines 5 1200
+        ) || semantic_output=""
+    fi
+
+    if [ -z "$memory_output" ] && [ -z "$semantic_output" ]; then
+        return 0
+    fi
+
+    {
+        printf '\n\n[review_context_push]\n'
+        printf 'query: %s\n' "$query"
+        if [ -n "$memory_output" ]; then
+            printf 'memory_db:\n%s\n' "$memory_output"
+        fi
+        if [ -n "$semantic_output" ]; then
+            printf 'semantic_search:\n%s\n' "$semantic_output"
+        fi
+        printf '[/review_context_push]'
+    }
+}
+
+inbox_maybe_attach_review_context() {
+    local query="" context_block=""
+
+    inbox_is_review_request_type "$TYPE" || return 0
+    [ "${INBOX_REVIEW_CONTEXT_DISABLE:-0}" = "1" ] && return 0
+    [[ "$CONTENT" == *"[review_context_push]"* ]] && return 0
+
+    query=$(inbox_build_review_context_query "$CONTENT")
+    context_block=$(inbox_collect_review_memory_context "$query")
+    [ -n "$context_block" ] || return 0
+
+    CONTENT="${CONTENT}${context_block}"
+}
+
 TARGET="$1"
 CONTENT="$2"
 TYPE="${3:-wake_up}"
@@ -1299,6 +1459,10 @@ printf -v _msg_stamp '%(%Y%m%d_%H%M%S)T' -1
 printf -v _msg_rand '%04x%04x' "$RANDOM" "$RANDOM"
 MSG_ID="msg_${_msg_stamp}_$$_${_msg_rand}"
 printf -v TIMESTAMP '%(%Y-%m-%dT%H:%M:%S)T' -1
+
+# Review context push: 軍師レビュー依頼は送信経路で三層記憶を添付する。
+# 検索失敗・timeoutはfail-soft。依頼送信自体は止めない。
+inbox_maybe_attach_review_context
 
 # Duplicate deploy gate: every task_assigned delivery path must converge here.
 # If another ninja already owns the same parent_cmd in an active state, block
