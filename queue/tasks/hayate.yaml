@@ -1,53 +1,55 @@
 task:
-  _ac_task_id: cmd_3699_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3699 (deployed 2026-07-06T16:04:59). Read from the beginning.
-  ac_version: 33575228
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      description: GitHub Actions run 28851880770 の失敗ログを一次情報として読み、直接原因(planned/executed差分2件)と根本原因仮説を報告YAMLに記録する
+    AC2:
+      description: ローカルで該当bats実行または最小再現を行い、失敗カテゴリを再現/確認する
+    AC3:
+      description: 必要なコードまたはテスト修正を実装し、該当テストと関連テストがPASSする
+    AC4:
+      description: 同カテゴリの横展開候補と、次にGA-191が鳴らないための防御層をlesson_candidateまたはknowledge_candidateへ記録する
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
-  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
-  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
-  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
-  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
-  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
-  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
-  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
-  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
-  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
-  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  notes:
+    alert_id: GA-191
+    ci_job: Unit Tests (bats)
+    ci_run_id: 28851880770
+    observed_failure: 'bats warning: Executed 2856 instead of expected 2858 tests; Unit tests failed'
   parallel_ok: []
-  parent_cmd: cmd_3699
-  project: dm-signal
-  purpose: '殿裁定(2026-07-06 15:07): 決定イベント単位の追記専用確定台帳の導入。tobisaru偵察(cmd_3698_recon2 GATE CLEAR)で設計材料が確定 — 書込みチョークポイントはsignal_flush.py::_flush_batchとmonthly_returns.py::_generate_monthly_returnsの2箇所+debug.py fof-profiling実書込み経路。初期台帳ソースはsignal_change_log(append-only本番実証済み。month_start_signal_input_snapshotsはUPSERTで決定時点値が消失し不適=cmd_3698前提の覆り)。決定済み期間への遡及書換えが7月に26件/9PF実測済み。この材料を統合した設計書を作り軍師レビューを通す。実装は次cmd'
-  scout_exempt: true
+  parent_cmd: cmd_karo_ci_fix_ga191_bats_count_202607071728
+  project: infra
+  purpose: CI RED修正 — GitHub Actions Unit Tests(bats)で planned 2858 / executed 2856 となり失敗する原因を特定し、再発しない防御層まで実装する
   status: idle
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal/docs/design
-  task_id: cmd_3699_full
-  task_type: full
-  skill_hint: /db-check
+  target_path:
+  - tests/unit
+  - scripts
+  - .github/workflows
+  task_id: cmd_karo_ci_fix_ga191_bats_count_202607071728_normal
+  task_type: ci_fix
   related_lessons:
-  - id: 'L286'
-    summary: 'context/dm-signal-core.mdがprojects/dm-signal.yaml内の詳細セクション(common_misconceptions'
-    detail: 'context/dm-signal-core.mdがprojects/dm-signal.yaml内の詳細セクション(common_misconceptions'
-  - id: 'L958'
-    summary: 'cmd_complete_gate.shはL7でset -eを宣言し、GATE CLEAR印字(L7249)からset_matching_tasks_idle('
-    detail: 'cmd_complete_gate.shはL7でset -eを宣言し、GATE CLEAR印字(L7249)からset_matching_tasks_idle('
   - id: 'L625'
     summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
     detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L589'
+    summary: 'build_instructions.sh再生成後にgit addした際、既存stageのscripts/gates/gate_report_format.sh'
+    detail: 'build_instructions.sh再生成後にgit addした際、既存stageのscripts/gates/gate_report_format.sh'
+  - id: 'L226'
+    summary: 'ashigaru.md読込スキップ(コスト削減)で忍者は8行のアイデンティティブロック+1行role_reminderだけでペルソナ再構築が必要。対策: /cl'
+    detail: 'ashigaru.md読込スキップ(コスト削減)で忍者は8行のアイデンティティブロック+1行role_reminderだけでペルソナ再構築が必要。対策: /cl'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -63,55 +65,44 @@ task:
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "production_parity — 本番パリティ:  context/dm-signal-core.md §19.3 context/checklist-shin-v2-registration.md docs/research/dmsignal_parity_verification_audit.md docs/research/pf_config_backup_20260601_pre_delete.json 削除前58件config全量バックアップ docs/research/gunshi_alm_parity_drift_analysis_20260409.md — 軍師分析: ALMパリティドリフト分析(2026-04-09)"
-  - "recalculate_pipeline — 再計算パイプライン:  /mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fast.py context/dm-signal-core.md §19.2 docs/research/fullrecalculate-architecture-2026-03-28.md /mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fof.py /mnt/c/Python_app/DM-signal/backend/app/jobs/shared.py preload_fof_signals_for_portfolios"
-  - "dmsignal_operations — DM-Signal運用:  context/dm-signal.md context/dm-signal-ops.md context/dm-signal-core.md context/dm-signal-frontend.md context/dm-signal-research.md context/checklist-shin-v2-registration.md context/checklist-alm-registration.md docs/research/ops-procedures.md docs/research/ops-db-rules.md docs/operations/daemon_runbook.md docs/operations/profiling_runbook.md /mnt/c/Python_app/DM-signal/scripts/check_pf_config.py — PF構成一括確認(cmd_3378)"
-  - "shin_shijin_design — 四神設計:  context/dm-signal-core.md §PFレイヤー context/checklist-shin-v2-registration.md context/l3-robustness.md §WF四神"
-  - "silent_fallback_quality — Silent Fallback品質:  context/gunshi-silent-fallback-analysis.md scripts/gates/gate_silent_fallback.sh scripts/gates/gate_gunshi_cs_checklist.sh scripts/gates/gate_gunshi_report_precheck.sh scripts/gates/gate_gunshi_report_precheck_engine.py context/dm-signal-core.md context/dm-signal-ops.md"
-  related_causal_links:
-  - "[[cmd_3698_確定台帳偵察]]"
-  - "[[cmd_3699_台帳設計書]]"
-  - "[[signal_change_log_append_only_発見]]"
+  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/gates/gate_gunshi_accuracy.sh gate予測精度の公正計算(FAIL→BLOCK→修正CLEAR=正解) scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh scripts/cmd_skeleton.sh context/growth-loop.md scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比) docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md — 軍師idle: コミットチェックWAパターン(2026-04-10) docs/research/gunshi_idle_cross_contamination_20260503.md — 軍師idle: クロスプロジェクト汚染分析(2026-05-03) docs/research/gunshi_idle_cross_project_fp_20260426.md — 軍師idle: クロスプロジェクトFP分析(2026-04-26) docs/research/gunshi_idle_gate_fail_rate_anatomy_20260502.md — 軍師idle: ゲート失敗率解剖(2026-05-02) docs/research/gunshi_idle_gate_fail_trend_20260430.md — 軍師idle: ゲート失敗トレンド分析(2026-04-30) docs/research/gunshi_idle_gate_fire_traceback_20260510.md — 軍師idle: ゲート発火トレースバック(2026-05-10) docs/research/gunshi_idle_gate_fp_analysis_20260527.md — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27) docs/research/gunshi_idle_gate_prediction_false_positive_analysis_20260706.md — 軍師idle: gate_prediction偽陽性分析(2026-07-06) docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md — 軍師idle: LG003ゲートWA分析(2026-05-19) docs/research/gunshi_idle_lu_dict_pattern_20260415.md — 軍師idle: LU辞書パターン分析(2026-04-15)"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/robustness-verification-catalog.md"
-  - "context/gs-speedup-knowledge.md"
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
-  production_invariants:
-  - "PI-001: 時間解像度原理: 全ての日次シグナル比較では日次差異を保持し、月次dedupで潰さない"
-  - "PI-002: 信頼境界原理: 全ての本番判断ではSQLiteを真実とせず、PostgreSQLをSSOTとして再検証する"
-  - "PI-003: 構成スキーマ完全性原理: 全てのstandard PF config JSONはpipeline_configを必須とし、NoneでCashフォールバックさせない"
-  - "PI-004: 信頼境界原理: 全てのGS成果物は本番投入前にPydanticスキーマで再検証する"
-  - "PI-005: 全期間・全下流検証原理: 任意の新規PF登録後はportfolio_id指定なしfull recalculate一発で下流全体を再生成する"
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L286: context/dm-signal-core.mdがprojects/dm-signal.yaml内の詳細セクション(common_misconceptions
-      - L958: cmd_complete_gate.shはL7でset -eを宣言し、GATE CLEAR印字(L7249)からset_matching_tasks_idle(
       - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L589: build_instructions.sh再生成後にgit addした際、既存stageのscripts/gates/gate_report_format.sh
+      - L226: ashigaru.md読込スキップ(コスト削減)で忍者は8行のアイデンティティブロック+1行role_reminderだけでペルソナ再構築が必要。対策: /cl
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
   memory_db_context:
-  - '2026-07-06T12:13:01+09:00 | 【INFOバッチ】 2026-07-06 12:12:08|cmd_karo_db_check_signal_change_alert_202607061149'
-  - '2026-07-06T11:58:35+09:00 | [MEM: memory_db ts=2026-07-06 "L0 246s/L3 diff 191s/L3 ratio 266-298s 全3対象5分目標実測達成"] [MEM: semantic '
-  - '2026-06-16T15:17:14+09:00 | 【INFOバッチ】 2026-06-16 15:03:31|cmd_3418 2026-06-16 15:07:46|cmd_3419 2026-06-16 15:12:20|cmd_3420 202'
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: '設計書 docs/design/signal-decision-ledger-design.md を作成する。必須章: (1)台帳テーブルDDL — signal_change_logのappend-onlyパターン(単純INSERT・ON CONFLICT句なし)踏襲、PF削除時CASCADE要否の判断と根拠、決定イベントキー(portfolio_id×リバランス決定日)+有効期間 (2)書込みガード — signal_flush.py::_flush_batch(L130-189)とmonthly_returns.py::_generate_monthly_returns(L77-468)の双方+debug.py fof-profiling経路(L286-364)を対象に、確定済み有効期間への変更を上書きせず乖離記録+警報へ迂回させる設計 (3)読み経路切替 — signals API/monthly returns/FoF子PF参照(price_ratio_impl.py get_signal_payload_at_date)/trade生成の各層で確定済み月は台帳値を返す設計 (4)初期台帳構築手順 — signal_change_logから6/1・7/1決定値を復元し、5/1決定(quarterly_feb系)はログ空白期間のため現在値逆算となる限界を明記 (5)訂正手続き — 理由コード付き明示的correction(追記型)の設計 (6)決定ロジック2重実装(rebalance.py should_update_holding_signal=FoF側のみ/recalculate_fast.py独自inline判定)の統合方針 (7)月初夕方再計算が同日朝cron確定値を再上書きしうる構造への対処 (8)UI上の確定/遡及計算の区別表示方針'
-  - id: 'AC2'
-    checks:
-    - check: '軍師レビュー(7穴観点)を受け、指摘を設計書に反映する。レビュー往復の記録(指摘→反映)を設計書末尾の改訂履歴に残す'
-  - id: 'AC3'
-    checks:
-    - check: '確定月signal変更アラート(cmd_3679/3684系)の発火実態を検証する — 偵察報告decision_candidate(今朝のsync-fof起因書換えでntfyが実際に発火したか)を、Render環境変数NTFY_ALERT_TOPICの実値とアプリログ(または送信履歴)の一次情報で確認し、(a)通知は機能していた/(b)配線が発火していない、のどちらかを証拠付きで結論する。(b)の場合は修復方法を設計書の書込みガード章に含める'
+  - '2026-07-03T14:10:06+09:00 | CI RED修正(cmd_karo_ci_fix_shogun_retry_20260703_normal)が完了。 **根本原因(2件のbash race condition + 1件の環境変数欠落'
+  - '2026-07-03T14:10:03+09:00 | CI RED修正(cmd_karo_ci_fix_shogun_retry_20260703_normal)が完了。 **根本原因(2件のbash race condition + 1件の環境変数欠落'
+  - '2026-07-07T00:28:27+09:00 | https://gist.github.com/simokitafresh/37f26cdb4639314a78b7870fc0e9da40#file-2026-07-06_holding-signa'
+  - '2026-07-06T18:12:25+09:00 | 殿、ドキュメント作成とgist共有が完了しました。 ## 成果物 - **gist(secret)**: https://gist.github.com/simokitafresh/37f26cdb4'
+  - '2026-07-05T16:58:05 | Idle improvement 2026-07-05: actions/upload-artifact was upgraded from v5 to v7 after official tags '
+  ac_version: d41d8cd9
+  _ac_task_id: cmd_karo_ci_fix_ga191_bats_count_202607071728_normal
+  _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_3699.yaml
-  report_path: queue/reports/hayate_report_cmd_3699.yaml
+  report_filename: hayate_report_cmd_karo_ci_fix_ga191_bats_count_202607071728.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_ci_fix_ga191_bats_count_202607071728.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -134,16 +125,4 @@ task:
     - reason: 'binary_checks_fail'
       count: 1
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-06T16:06:58"
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'knowledge_candidate: found=true but items is empty'
-    tried_approaches:
-    - 'knowledge_candidate: found=true but items is empty'
-    approach_summary: '決定イベント単位の追記専用確定台帳設計書を作成し、Renderログ証跡と軍師draft reviewを改訂履歴へ反映した'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'knowledge_candidate: found=true but items is empty'
-      approach_summary: '決定イベント単位の追記専用確定台帳設計書を作成し、Renderログ証跡と軍師draft reviewを改訂履歴へ反映した'
-  completed_at: "2026-07-06T16:14:19"
+  deployed_at: "2026-07-07T17:28:47"

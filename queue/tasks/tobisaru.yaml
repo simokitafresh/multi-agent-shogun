@@ -30,7 +30,7 @@ task:
     total: 21
     zero_backlinks: 0
   scout_exempt: true
-  status: acknowledged
+  status: idle
   stop_for: []
   target_path: queue/insights.yaml
   task_id: cmd_reflux_insight_202607071717_tobisaru_exact

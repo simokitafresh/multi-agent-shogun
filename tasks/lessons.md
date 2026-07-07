@@ -979,6 +979,8 @@ L024(アーカイブ不在)の実害パターン。回避策: (1)偵察者と統
 - **tags**: [gate, yaml, lesson]
 - **when**: gateやhookの検知・補正ロジックを変更する時
 - **how**: 2026-02-27
+- **retired**: true
+- **retired_at**: 2026-07-07
 - タスク仕様で「queue/gate_metrics.yaml — 教訓参照履歴(lesson_referenced)」と指定されたが実際のファイルは存在せず、正しくはlogs/lesson_tracking.tsvが教訓参照情報を持つ。タスク仕様策定時のデータソース誤記。
 
 ### L103: skill.md(小文字)でスキル配置するとLinux native環境やCI等case-sensitive環境でClaude Codeがスキルを検出できない。WSL2はcase-insensitiveで動作するが移植性なし。SKILL.md(大文字)への統一が必要。該当: building-block-addition, fof-pipeline-troubleshooting
@@ -3408,6 +3410,8 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **tags**: [process, communication, bash, git, monitor, inbox]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: git add -fで回避可能だが、ホワイトリスト追加が正規対応
+- **retired**: true
+- **retired_at**: 2026-07-07
 - ninja_done.shは.gitignoreのホワイトリスト(Step3: !scripts/xxx.sh)に未登録。類似の運用スクリプト(inbox_write.sh, ninja_monitor.sh等)は全て登録済み。git add -fで回避可能だが、ホワイトリスト追加が正規対応
 
 ### L348: --strategicフラグ検出は位置引数ではなくスキャン方式にすべき
@@ -7420,6 +7424,8 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **origin**: [[cmd_karo_hotfix_ga408_hook_failure_20260603]]
 - **when**: 未設定
 - **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-07-07
 - hook_failure GA-408は、cmd_3150実装commitにqueue/tasks/hayate.yamlが混入しpre-push/test_selectでWARN露出した。ninja-commit手順だけでは防げず、pre-commitでstaged queue/tasks/*.yaml + 実装ファイルの混在をBLOCKする必要がある。origin: [[GA-408]] -> [[scope外運用YAML mixed commit]] -> [[pre-push hook_failure]]
 
 ### L740: 新hook機能実装時のtest setup()ディレクトリ作成漏れパターン
@@ -9841,3 +9847,80 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_training_L4_idle_202607041308バッチで配備されたhanzo/hayate/saizo/kagemaru4名のqueue/tasks/*.yamlには全員共通コアとしてL259/L625/L317を含むrelated_lessons(4〜6件)が注入されていたが、kotaro.yamlにはrelated_lessonsキー自体が存在しなかった(grep -c 0件、Read全文でも不在確認)。結果としてAC4(task.related_lessonsの注入教訓を1件以上参照)が構造的に自己完結不能になり、siblingタスクから同一バッチの共通コア教訓を借用して評価する代替対応を取った。根因はdeploy_task.sh(またはL4修行配備スクリプト)のlesson_tags注入ロジックがkotaro向け配備でのみ空マッチになったことと推測される。5人中4人が一致するコアセットを持つ一方1人だけ完全空という分布は、L317が指摘する既存のマッチング精度問題(過剰マッチ)とは逆の欠陥(過少/皆無マッチ)であり、同根の構造的脆弱性の可能性がある。
+
+### L956: 可搬コア偵察ではinbox/tmuxをTier0に含めるな
+- **日付**: 2026-07-07
+- **出典**: cmd_3726
+- **記録者**: kagemaru
+- **tags**: [infra,recon,gate,yaml]
+- **target_files**: [queue/tasks/kagemaru.yaml,queue/reports/kagemaru_report_cmd_3726.yaml]
+- **origin**: [[cmd_3726]]
+- **when**: 未設定
+- **how**: 未設定
+- 学習ループの最小移植は報告gate+YAML安全書込み+教訓/insight記録から始めるべき。inbox_writeはtmux/agent/queue/report gate/git gateまで抱えて依存60件と重く、最小bootstrapに入れると他PJ移植の失敗点が増える。
+
+### L957: commit前に既存ステージを必ず確認する
+- **日付**: 2026-07-07
+- **出典**: cmd_3725
+- **記録者**: hanzo
+- **tags**: [infra,git,reporting,cache]
+- **target_files**: [lib/lord_conversation.sh]
+- **origin**: [[cmd_3725]]
+- **when**: 未設定
+- **how**: 未設定
+- git statusでM になっている既存ステージ済みファイルを見落とすと、個別git addでもcommitに混入する。commit直前はgit diff --cached --name-statusで既存stageを確認し、対象外stageがある場合は作業を止めて報告する。
+
+### L958: 空のalertsリストを2行(key行+フロー空リスト行)に分けてYAML出力すると不正YAMLになり前回snapshotの再読込が失敗する
+- **日付**: 2026-07-07
+- **出典**: cmd_3720
+- **記録者**: saizo
+- **tags**: [infra,testing,testing,bash,yaml]
+- **target_files**: [scripts/loop_ledger_update.sh,tests/unit/test_loop_ledger_update.bats,scripts/gates/gate_shogun_startup.sh]
+- **origin**: [[cmd_3720]]
+- **when**: 未設定
+- **how**: 未設定
+- weekly_metrics_trend.shのemit方式(alertsキーを1行、値の[]を次の行に別途出力)を踏襲してlogs/loop_ledger.yamlを生成したところ、alerts列が空の回でyaml.safe_loadが前回ファイルを解析できずScannerErrorになり、次回実行時に過去snapshotが消えてしまう実バグを実データ検証(3回連続実行)で発見した。原因: フロー空シーケンス[]はキーと同じ行に書かないとYAML的に不正(key: project: infra [] は不可、key: [] のみ可)。loop_ledger_update.sh側は空リスト時のみ1行(alerts: [])で出力するよう修正し3回連続実行で正しく蓄積されることを確認した。同一パターンをweekly_metrics_trend.shも内包しており(load_existing()が同じ理由で失敗しうる)、そちらは本cmdのスコープ外のため修正していない。次回追加すべきチェック: manual YAML emitで空リスト/空dictを出力する箇所は必ずyaml.safe_loadで自己ラウンドトリップ検証してからテストに組み込む。
+
+### L959: 教訓enforcement文中のL[1-6]明示Levelマーカー検出は、教訓ID(L978等)や行番号参照(L2684等)と字面衝突するため境界チェック必須
+- **日付**: 2026-07-07
+- **出典**: cmd_3724
+- **記録者**: tobisaru
+- **tags**: [infra,gate,lesson]
+- **target_files**: [scripts/gates/gate_lesson_enforcement_level.sh,tests/unit/test_gate_lesson_enforcement_level.bats,scripts/gates/gate_shogun_startup.sh]
+- **origin**: [[cmd_3724]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_3724でenforcement記述からLevel1-6を正規表現で抽出する際、単純に'L[1-6]'を検索すると教訓ID(L978,L1655)や行番号参照(L2684,L551)の先頭桁が誤ってLevelマーカーとして拾われる。'L2684'は'L2'として誤検出されうる。対策: L[1-6]の前後に英数字が続かないことを要求する境界チェック((?<![0-9A-Za-z])L[1-6](?![0-9A-Za-z]))で回避した。同種のID/番号体系が混在するテキストからキーワード的に短い数値マーカーを抽出する処理全般に当てはまる教訓。
+
+### L960: 複数忍者が同一generated/SSOTファイル(docs/semantic-index/index.md, context/semantic-map.md)を並行編集する際、git index(staging area)は全忍者で共有されているため、無警戒なgit add/commitは他忍者の未完了変更を巻き込む(L589の実例+具体的対処手順)
+- **日付**: 2026-07-07
+- **出典**: cmd_reflux_insight_202607071621_saizo
+- **記録者**: saizo
+- **tags**: [infra,api,testing,process]
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202607071621_saizo]]
+- **when**: 未設定
+- **how**: 未設定
+- cmd_reflux_insight_202607071621_saizo実行中、docs/semantic-index/index.mdへ2行(1 alias+1 discussion行)を追加しcommit準備したところ、git diffで49 hunks(自分は2 hunkのみ)を検出。他忍者(推定tobisaru/hanzo等が並行して同種のreflux insight task中)がindex.mdへ未commit編集を蓄積しており、さらにcontext/semantic-map.mdは他忍者が既にgit add済み(git indexにstage済み)の状態だった。対処: (1)git diff -- <file> > full.txtで全hunkを確認、(2)自分の変更箇所のhunkのみを抽出したunified diffを作成、(3)git apply --check --cachedで適用可否を検証、(4)git apply --cachedでindexにのみ適用(working treeは無傷)、(5)他忍者がstage済みだった無関係ファイルはgit restore --staged <file>でindexからのみ除去(working treeの内容は保持、他忍者のcommit機会を破壊しない)、(6)git diff --cachedで最終確認してからgit commit。この手順により他忍者の47 hunksとsemantic-map.mdのstageを一切壊さずに自分の分だけをcommitできた
+
+### L961: semantic_stress_test NO_MATCH insightはdirect_concept構文で手動誘導せよ。alias:直後は検索語のみに限定
+- **日付**: 2026-07-07
+- **出典**: cmd_reflux_insight_202607071717_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,context,testing,bash,yaml]
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md,queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202607071717_tobisaru]]
+- **when**: 未設定
+- **how**: 未設定
+- semantic_index_update.sh absorb_pendingの類似度自動マッチはpending_alias_threshold=16.0で、日本語の言い換えクエリは大抵このスコアに届かず(実測score=3.2)、誤った概念への低信頼マッチのみが記録されresolveされない。この場合はqueue/insights.yamlの対象insightのinsightフィールドをyaml_field_set.shで '[[既存concept_id]] alias: alias1, alias2' 形式に書換えてからabsorb_pendingを再実行すると、指定した概念へ安全にalias追加+insight自動resolve(status:done)される。ただし alias: の後ろに (由来メモ等)のような括弧書きメタデータを混ぜると、それがそのままノイズaliasとして概念に登録されてしまうため、alias:直後は検索語のみをカンマ区切りで書き、由来はresolved_reason相当の別チャネル(insight_resolve.shのreason引数や報告YAML)に残すこと。
+
+### L962: モデル表示正規化変更時は全fallback経路のテスト期待値を同時更新する
+- **日付**: 2026-07-07
+- **出典**: cmd_karo_ci_fix_ga191_bats_count_202607071728
+- **記録者**: hayate
+- **tags**: [infra,testing,testing,grid_search]
+- **target_files**: [tests/unit/test_model_detect.bats]
+- **origin**: [[cmd_karo_ci_fix_ga191_bats_count_202607071728]]
+- **when**: 未設定
+- **how**: 未設定
+- cli_model_displayがfable系をFable 5へ正規化した後、process args fallback/settings fallback/resolve fallbackの期待値が旧表記のまま残ると、実装は正しくてもCI全量batsでplanned/executed差分を伴うREDになる。モデル表示正規化を変えたらbanner/process/settings/resolveの全経路テストを同じ表示名で揃える。 origin: [[GA-191]] -> [[Fable表示正規化]] -> [[旧期待値CI RED]]
