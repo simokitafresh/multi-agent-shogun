@@ -32,6 +32,9 @@
 三層記憶新機能: `update_event_state`でstate遷移を記録し、`memory_recall_control.sh`で想起制御、`obsidian_promote_candidate.sh`でObsidian昇格候補、`append_contradiction_candidate`で矛盾検出候補を扱う。
 → `docs/research/three-layer-memory-l0-l7-penetration-design_20260604.md` §3 / `scripts/memory_db_live_insert.py` / `scripts/memory_recall_control.sh` / `scripts/obsidian_promote_candidate.sh`
 
+想起ファネル台帳: `scripts/loop_ledger_update.sh`のmemoryチャネルは`search_logs`をproduced、将軍回答の`[MEM:]`引用タグをconsumedとして集計し、検索継続・引用ゼロの空転を検知する（cmd_3735, produced=7872/consumed=147実測）。
+報告テンプレM3: `deploy_task.sh`は報告YAMLへ`memory_references`欄を自動生成し、`report_field_set.sh`/`gate_report_format_main.py`が欄の記入と条件付き検査を担う（cmd_3739）。
+
 ### 三層記憶×学習ループ接続（cmd_3116〜cmd_3128, 2026-06-02）
 
 殿指示で家老×軍師協議→穴分析→13cmd一気通貫で三層記憶の概念空間を接続。
