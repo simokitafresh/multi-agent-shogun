@@ -110,6 +110,8 @@
 
 ## §4 ハマりポイント
 
+- L824: GS月次リターンCSV(grid_monthly_fast.csv)は全パターンがリーディングNaN(burn-in区間)を持つ。mean/prod/cumprodを素朴に使うと1つのNaNが列全体に伝播し指標がほぼ全滅NaN化する（cmd_3714）
+
 ### align_months月セット不一致リスク（kagemaru発見 — 最重要）
 
 **問題**: 高速版はget_sim_contextが全コンポーネント共通月でmatrixを構築する。逐次版でサブセットのみでalign_monthsすると共通月セットが変わり、md5不一致になる。

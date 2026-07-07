@@ -10,6 +10,7 @@
 
 6Phase+OPT-E(Phase3.7)構成。signal_calc 1,724s→0.53s(3,786倍)。最新本番: **357.28s/124PF**(2026-03-29 cmd_1478, OPT-12~15全反映)。
 112件消失バグ(L045)=Phase4 dict miss時continue→日次フォールバック追加(91c04a4)で修正済。
+- L818: 本番DB read-only確認はpython3 -cのインライン実行ではなくスクリプトファイル経由で行え（cmd_3698_recon2）
 crash-safety(cmd_1463/1465): shutdown警告(main.py)+recalculation_statusテーブルDB永続化+pg_advisory_lock排他制御(key=8675309, セッション保持方式, fail-open)。SIGKILL時PostgreSQL自動解放。
 GP-124(cmd_1477): fullrecalculate後signal整合性チェック(_check_signal_integrity)。zero-signal自動検知WARN+signal COUNT記録。OPT-13(修正)+GP-124(検知)=二重防御。
 Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal日<当月かつリバランス月PF存在時、前月末signalをforward-fillした月初signal行を自動生成。月初Pending最大24h表示→即時解消。
@@ -310,6 +311,7 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 <!-- lesson_sync: 2026-03-03 lesson-sortでL129-L146を反映 -->
 
 - L791: 追加指示の取消は未commit差分からscope別に除去する（cmd_3586）
+- L821: 本番適用cmd着手時はgit log origin/main..HEADでpush状態を先に確認せよ。前段cmdのGATE CLEAR=push完了ではない（cmd_3704）
 - L812: DM-Signalのgit commitがlefthook pre-commitでBash既定2分timeoutを超える場合、9pスタルと決めずtimeoutを上げて再試行する（cmd_3686）
 - L810: 新規importのトップレベル追加はmixed-commit BLOCKやruff空コミット化を招くため、repo-checksの分割境界を先に確認する（cmd_3684）
 
@@ -609,6 +611,9 @@ import metrics_research_engine as MRE
 
 > 偵察開始時: 症状を見て下表の「共通パターン」「DM-signal固有パターン」に当てはめ、初期仮説を立ててから調査に入れ。想像で進むな — 仮説1つに絞って検証→結果見て次仮説へ。
 
+- L819: PF単位の確定イベント実装はrebalance_trigger等のPF別設定を参照せよ。全PF一律の固定日付/件数はハードコードの温床（cmd_3702）
+- L822: MonthlyTradeCalculatorのMockベースdbテストは新規DB問合せ関数追加のたびに複数クラスへ横展開して壊れる（cmd_3710）
+
 ### 共通パターン (汎用6)
 
 | # | 症状シグナル | 初期仮説 | 最初に確認すること |
@@ -803,6 +808,7 @@ import metrics_research_engine as MRE
 ## §38 2026-05 運用・CI・知識基盤更新
 
 - L789: check_mixed_format_commit.pyはimport行のみhunkを検出してblock→多行import形式で回避可能（cmd_3569）
+- L820: check_mixed_format_commit.pyは新規import追加を「並び替え」と誤検知することがある。--no-verifyせず根本原因を修正せよ（cmd_3703）
 
 | 領域 | 結論 | 参照 |
 |------|------|------|

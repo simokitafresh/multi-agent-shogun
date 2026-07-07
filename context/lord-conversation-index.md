@@ -1,40 +1,40 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-08 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-08T04:22:44+09:00 -->
+<!-- generated_at: 2026-07-08T08:37:19+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-08T04:22:43+09:00 | terminal | response | cmd_3752 LGTM完了 + review_log自動アーカイブ(2521→1242行)。未読0件。レビュー依頼を待つ。 [meta] stop_reason=end_turn
-- 2026-07-08T04:17:38+09:00 | terminal | response | cmd_3752 draft APPROVE完了。未読0件。レビュー依頼を待つ。 [meta] stop_reason=end_turn
-- 2026-07-08T04:15:16+09:00 | terminal | response | 保存OK。家老へ委任します。 [meta] stop_reason=tool_use
-- 2026-07-08T04:07:59+09:00 | terminal | response | inbox処理完了。2件ありました。 **1. 家老エスカレーション(04:06) — 対応済み**: brainwash_check未記入WA 2件の先送りCRITICAL。現物を特定した上で(kagemaru停滞回収WA / hanz…
-- 2026-07-08T04:07:31+09:00 | terminal | response | 未読0件。レビュー依頼を待つ。 [meta] stop_reason=end_turn
-- 2026-07-08T04:07:26+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率98% 連勝120
-- 2026-07-08T04:07:02+09:00 | terminal | response | hayate報告LGTM完了。未読0件。 strip処理バグ同型偽陽性が3件目（INS-b2c6, INS-780d, さらに今後も出る可能性）。saizoが発見しdecision_candidateに記録済みのsemantic_map_…
-- 2026-07-08T04:06:33+09:00 | ntfy | outbound | 【家老CRITICAL】先送り1セッション連続検出。起動は許可するが即対処必須
-- 2026-07-08T04:06:17+09:00 | ntfy | outbound | 【家老CRITICAL】先送り1セッション連続検出。起動は許可するが即対処必須
-- 2026-07-08T04:02:05+09:00 | terminal | response | 定型還流消化。INS-780d。pending=8。APPROVE。
+- 2026-07-08T08:37:18+09:00 | terminal | response | SESSION ALERTS 19件(実質6種)を全処理しました。 ## alert処理結果 - **inbox未読/未確認GATE CLEAR**: alert生成時点のスナップショットで、確認時点では全既読・検分済み(cmd_3753…
+- 2026-07-08T08:35:37+09:00 | terminal | response | Phase T+Phase 0の起票が完了し、想定を超える速度で進行しています。 ## 起票・配備結果(4 cmd全て配備済み) | cmd | 内容 | 状態 | |-----|------|------| | **cmd_3753**…
+- 2026-07-08T08:35:31+09:00 | terminal | response | cmd_3754 PF復元R2 draft APPROVE完了。未読0件。レビュー依頼を待つ。
+- 2026-07-08T08:34:21+09:00 | terminal | response | 未読0件。nudge到着時点では新着なし。レビュー依頼を待つ。 [meta] stop_reason=end_turn
+- 2026-07-08T08:33:24+09:00 | terminal | response | GA-196 draft APPROVE完了。未読0件。レビュー依頼を待つ。 [meta] stop_reason=end_turn
+- 2026-07-08T08:32:46+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働3名 CLEAR率98% 連勝149
+- 2026-07-08T08:32:12+09:00 | terminal | response | 未読0件。レビュー依頼を待つ。 [meta] stop_reason=end_turn
+- 2026-07-08T08:31:24+09:00 | terminal | response | cmd_3753 PF復元R1 LGTM完了。未読0件。レビュー依頼を待つ。 [meta] stop_reason=end_turn
+- 2026-07-08T08:30:11+09:00 | terminal | response | 未読0件。レビュー依頼を待つ。
+- 2026-07-08T08:27:11+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働3名 CLEAR率98% 連勝148
 
 ## 未解決確認事項
-- ありました。**4穴を発見・修正しました**(全設計書gist更新済み)。重大なものから: ## H6(重大): 確定シグナル「無音上書き」の未決裁定がPhase Bに直撃 cmd_3676の確定時に残った未決裁定 — 「ユーザーに表示済みのcurrent-month conf…
-- inbox未読は全て処理完了した。 タスク(cmd_reflux_insight_202607080319_saizo)の対応をまとめると: - 対象insight(test_stop_session_alerts.batsのsemantic index未登録)を、SSOT(d…
-- 完了しました。まず殿の確認依頼への回答から。 ## バンド適用状態の検分結果 — 殿の記憶が両方とも正しい 一次情報で確定させました: - **本番: バンド未適用**。本番102PFのconfigを全量確認(admin API実測 03:20)、`threshold_band…
-- タスク完了です。表示された未commit警告は他の忍者・プロセスが担当する範囲外ファイル(context/*, skills/*/SKILL.md等、セッション開始時から既に変更されていたもの)であり、私のtarget_path(`scripts/causal_backlink…
-- 穴はありました — 殿の指摘2件を含む**計5穴**を確定し、v1.2に修正してgist更新済みです(同一URL)。 ## 見つかった穴(§9に全記録) | # | 穴 | 発見 | 修正 | |---|-----|------|------| | **H1** | **FoF…
-- 文書の続き(候補B/C と結論)を確認する。 [meta] stop_reason=tool_use
-- [MEM: memory_db ts=2026-07-08 "本セッション洗脳検出: 定型reflux 4本のレビュー深度が浅い(冒頭25行のみ)→次セッションから定型でも報告全文Read"] 前セッション軍師の自己監査で「定型refluxレビュー深度が浅い」を検出。今セッショ…
-- push成功。CIの新runを確認し、GREEN復帰を監視する。 [meta] stop_reason=tool_use
+- SESSION ALERTS 19件(実質6種)を全処理しました。 ## alert処理結果 - **inbox未読/未確認GATE CLEAR**: alert生成時点のスナップショットで、確認時点では全既読・検分済み(cmd_3753 CLEAR含む) - **掲示板未確認…
+- Phase T+Phase 0の起票が完了し、想定を超える速度で進行しています。 ## 起票・配備結果(4 cmd全て配備済み) | cmd | 内容 | 状態 | |-----|------|------| | **cmd_3753** | Phase 0-R1: portf…
+- LS036の還流昇格タスクが完了した。 **やったこと**: 昇格候補として指定されたLS036(「CoDDはbrownfield逆生成が正解、greenfield generateは遅い」)を一次情報で確認したところ、実際の防御はすでにLevel3(`context/codd…
+- inbox処理完了。**promotionチャネル9本目の消化完走**(cmd_reflux_promotion_202607080756_hayate)のGATE CLEAR通知を読んで既読化しました(未読0確認済み)。今の作業への影響はありません — 昇格候補の自動消化が定…
+- 全8件完了。反映を検証し、未読inboxを確認します。 [meta] stop_reason=tool_use
+- 報告済み。これでcmd_reflux_promotion_202607080715_saizoのタスクは完了。 ## 完了報告 **LS-A16(本番パリティ必須)昇格タスク**: Level4(フロー内BLOCK)実装は行わず、decision_candidateへ整理して報…
+- タスク完了しました。 **cmd_reflux_promotion_202607080658_kotaro（LS-A16昇格）の結果:** - LS-A16「本番パリティ必須」のenforcement機構(checklist/PI/health_check.py/pf-regi…
+- inbox処理と対応が完了しました。 ## 同型エスカレーション2回目(06:40) — 今回は根因を確定し還流投入 **検分結果**: parse error(kotaro/saizo L14)は私が確認した時点で**既に自然解消**(gate再実行=OK 37 files)…
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
 
 ## 参照cmd
+- cmd_2634
 - cmd_3219
 - cmd_3264
-- cmd_3494
 - cmd_3637
+- cmd_3676
 - cmd_3678
-- cmd_3687
 - cmd_3688
 - cmd_3698
 - cmd_3701
@@ -45,20 +45,20 @@
 - cmd_3712
 - cmd_3713
 - cmd_3714
-- cmd_3723
-- cmd_3727
-- cmd_3728
-- cmd_3729
-- cmd_3730
-- cmd_3731
-- cmd_3732
-- cmd_3733
-- cmd_3734
 - cmd_3735
 - cmd_3736
 - cmd_3737
 - cmd_3738
 - cmd_3739
+- cmd_3740
+- cmd_3741
+- cmd_3742
+- cmd_3743
+- cmd_3744
+- cmd_3745
+- cmd_3746
+- cmd_3747
+- cmd_3748
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
