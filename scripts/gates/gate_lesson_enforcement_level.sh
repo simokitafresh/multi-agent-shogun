@@ -14,7 +14,10 @@
 #        Level判定不能として昇格候補には含めない
 #
 # 判定方式:
-#   1) 明示Levelマーカー("Level4" "L5:" 等)をテキストから抽出し最大値を採用
+#   0) entry.enforcement_level フィールド(著者が明示記録した構造化値)があれば最優先で採用
+#      (2026-07-08 cmd_reflux_promotion_202607080640_saizo: テキスト解析のみだとgunshi
+#       34件中29件がフィールド値と不一致=判定精度不足と判明したため追加)
+#   1) フィールド無し → 明示Levelマーカー("Level4" "L5:" 等)をテキストから抽出し最大値を採用
 #      lesson ID(L978等)との誤検出を避けるため `L[1-6]` の前後は非英数字境界を要求
 #   2) 明示マーカー無し → キーワードヒューリスティック(BLOCK/ガード=L4, 自動注入/自動表示=L5, weak_points=L6等)
 #   3) 何もヒットしない → Level1(事後検出)を保守的デフォルトとする
@@ -86,7 +89,9 @@ def explicit_levels(text):
     return [int(m.group('l1') or m.group('l2')) for m in EXPLICIT_RE.finditer(text)]
 
 
-def classify(text):
+def classify(text, field_level=None):
+    if isinstance(field_level, int) and 1 <= field_level <= 6:
+        return field_level, 'field'
     levels = explicit_levels(text)
     if levels:
         return max(levels), 'explicit'
@@ -130,7 +135,7 @@ for path in role_files:
         if not enforcement or not isinstance(enforcement, str):
             continue
         measured += 1
-        level, source = classify(enforcement)
+        level, source = classify(enforcement, entry.get('enforcement_level'))
         file_hist[level] += 1
         role_level_hist[level] += 1
         if level < 4:
@@ -162,7 +167,7 @@ for path in pj_files:
         enforcement = entry.get('enforcement')
         if enforcement and isinstance(enforcement, str):
             with_enf += 1
-            level, source = classify(enforcement)
+            level, source = classify(enforcement, entry.get('enforcement_level'))
             file_hist[level] += 1
             pj_level_hist[level] += 1
             if level < 4:

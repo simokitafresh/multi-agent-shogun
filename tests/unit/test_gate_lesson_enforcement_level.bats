@@ -172,6 +172,56 @@ EOF
     [[ "$output" != *"L002"* ]]
 }
 
+@test "gate_lesson_enforcement_level prefers explicit enforcement_level field over text heuristics (role file)" {
+    # 2026-07-08 cmd_reflux_promotion_202607080640_saizo: enforcement_levelフィールドが
+    # あるのに、テキストにL/Levelマーカーやキーワードが無いとdefaultのL1へ誤判定されていた
+    # 実例(LS-A14: enforcement_level=4だがenforcementテキストに明示マーカー無し)を再現する。
+    cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
+lessons:
+- id: LS-T04
+  title: field says level4 but text has no explicit marker or keyword
+  enforcement: 'clear_prep_check.sh Check 10で裁定反映漏れをALERTとして検出する'
+  enforcement_level: 4
+EOF
+    cat > "$TEST_TMPDIR/projects/infra/lessons_karo.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_TMPDIR/projects/infra/lessons_gunshi.yaml" <<'EOF'
+lessons: []
+EOF
+
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"lessons_shogun.yaml: enforcement記載1件"* ]]
+    [[ "$output" == *"L4:1"* ]]
+    [[ "$output" != *"LS-T04"* ]]
+    [[ "$output" == *"##ENFORCEMENT_LEVEL_BELOW4_COUNT##"$'\n'"0"* ]]
+}
+
+@test "gate_lesson_enforcement_level prefers explicit enforcement_level field over text heuristics (PJ file)" {
+    cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_TMPDIR/projects/infra/lessons_karo.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_TMPDIR/projects/infra/lessons_gunshi.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_TMPDIR/projects/dm-signal/lessons.yaml" <<'EOF'
+lessons:
+- id: L901
+  title: pj lesson with field overriding keyword misread as L5
+  enforcement: '自動表示されるが実運用ではLevel2相当のドキュメント参照に留まる'
+  enforcement_level: 2
+EOF
+
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[dm-signal] L901 (L2:事前予防(doc)): pj lesson with field overriding keyword misread as L5"* ]]
+    [[ "$output" == *"##ENFORCEMENT_LEVEL_BELOW4_COUNT##"$'\n'"1"* ]]
+}
+
 @test "gate_lesson_enforcement_level lists below-4 PJ lessons with enforcement as candidates" {
     cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
 lessons: []
