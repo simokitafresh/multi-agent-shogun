@@ -111,3 +111,19 @@ task:
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
   deployed_at: "2026-07-07T16:53:08"
+
+  session_state:
+    attempt: 2
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    tried_approaches:
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    diagnose_reason: 'commit後、自分以外のプロセス(別忍者またはsemantic_index_update.shのリアルタイム処理)がdocs/semantic-index/index.md(known_unknowns_principle concept)へ新規alias+discussion行を追記し、context/semantic-map.mdも再生成された。これはL960既知パターン(複数忍者が同一SSOTファイルを並行編集)の再発。自分のcommit後に発生した他プロセスの正当な追記であり、自分の変更漏れではない'
+    approach_summary: 'insight INS-20260706-092825089-42f7(殿厳命timeout 300s強制/5分超え放置は最悪の行為)を一次情報(docs/research/gunshi_gs_speed_design_l0_l3_20260706.md:226)で確認。既存concept gs_speed_e7_l0_full_confirm(semantic-map.md)にalias追加+causal記録し、semantic_search実測でヒット確認後insight_write.sh --resolveで正式resolve。還流在庫はpending 21→20/zero_backlinks 0→0/total 21→20に減少'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: 'insight INS-20260706-092825089-42f7(殿厳命timeout 300s強制/5分超え放置は最悪の行為)を一次情報(docs/research/gunshi_gs_speed_design_l0_l3_20260706.md:226)で確認。既存concept gs_speed_e7_l0_full_confirm(semantic-map.md)にalias追加+causal記録し、semantic_search実測でヒット確認後insight_write.sh --resolveで正式resolve。還流在庫はpending 21→20/zero_backlinks 0→0/total 21→20に減少'
+    - attempt: 2
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      diagnose_reason: 'commit後、自分以外のプロセス(別忍者またはsemantic_index_update.shのリアルタイム処理)がdocs/semantic-index/index.md(known_unknowns_principle concept)へ新規alias+discussion行を追記し、context/semantic-map.mdも再生成された。これはL960既知パターン(複数忍者が同一SSOTファイルを並行編集)の再発。自分のcommit後に発生した他プロセスの正当な追記であり、自分の変更漏れではない'
+      approach_summary: 'insight INS-20260706-092825089-42f7(殿厳命timeout 300s強制/5分超え放置は最悪の行為)を一次情報(docs/research/gunshi_gs_speed_design_l0_l3_20260706.md:226)で確認。既存concept gs_speed_e7_l0_full_confirm(semantic-map.md)にalias追加+causal記録し、semantic_search実測でヒット確認後insight_write.sh --resolveで正式resolve。還流在庫はpending 21→20/zero_backlinks 0→0/total 21→20に減少'
