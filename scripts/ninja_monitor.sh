@@ -675,6 +675,7 @@ declare -A RENUDGE_LAST_SEND      # 最終renudge送信時刻 — key: agent_nam
 declare -A AUTO_DEPLOY_DONE       # auto_deploy_next.sh呼出済みフラグ — key: "ninja:task_id", value: "1"
 declare -A REPORT_GATE_SENT      # 報告フォーマットgate FAIL送信済みフラグ — key: "ninja:cmd_id", value: "1"
 declare -A UNCOMMITTED_BLOCK_SENT # commit未完了BLOCK送信済みフラグ — key: "ninja:cmd_id", value: "1"
+declare -A ACTIVE_IDLE_RECOVERY_SENT # active task+idle時の忍者再通知済みフラグ — key: "ninja:task_id:reason", value: "1"
 declare -A STALL_COUNT            # DEPLOY-STALL回数カウンター — key: "ninja:subtask_id", value: count
 declare -A POST_CLEAR_PENDING     # /new後にpost_clear_cmd送信待ち — key: agent_name, value: epoch秒
 declare -A REPORT_DONE_MISMATCH_NOTIFIED  # report done+status未idle通知時刻 — key: "ninja:cmd_id", value: epoch秒
@@ -3347,6 +3348,7 @@ check_stall() {
     if [ -z "${STALL_FIRST_SEEN[$name]}" ]; then
         STALL_FIRST_SEEN[$name]=$now
         log "STALL-WATCH: $name has ${status} task $task_id and is idle (tracking started)"
+        evaluate_active_idle_report_recovery "$name" "$task_file" "$status" "$task_id" 0 "$STALL_THRESHOLD_MIN"
         return
     fi
 
@@ -3366,6 +3368,8 @@ check_stall() {
     esac
 
     local stall_key="${name}:${task_id}"
+
+    evaluate_active_idle_report_recovery "$name" "$task_file" "$status" "$task_id" "$elapsed_min" "$threshold"
 
     if [ "$elapsed_min" -ge "$threshold" ]; then
         local last_notified=${STALL_NOTIFIED[$stall_key]:-0}
@@ -3396,6 +3400,71 @@ check_stall() {
 
         unset "STALL_FIRST_SEEN[$name]"
     fi
+}
+
+evaluate_active_idle_report_recovery() {
+    local name="$1"
+    local task_file="$2"
+    local status="$3"
+    local task_id="$4"
+    local elapsed_min="$5"
+    local threshold="$6"
+
+    [ -f "$task_file" ] || return 0
+
+    local parent_cmd report_file report_base gate_output gate_result
+    parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    [ -n "$parent_cmd" ] || parent_cmd=$(yaml_field_get "$task_file" "cmd_id" "" 2>/dev/null || true)
+    [ -n "$parent_cmd" ] || return 0
+
+    report_file=$(find_matching_report_file "$name" 2>/dev/null || true)
+    if [ -n "$report_file" ] && [ -f "$report_file" ]; then
+        report_base=$(basename "$report_file")
+        gate_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || true
+        if echo "$gate_output" | grep -q "^PASS"; then
+            gate_result="PASS"
+        else
+            gate_result="FAIL"
+        fi
+        log "ACTIVE-IDLE-REPORT-EVAL: ${name} task=${task_id} status=${status} report=${report_base} result=${gate_result} elapsed=${elapsed_min}m output=${gate_output}"
+
+        if [ "$gate_result" != "PASS" ] && [ "$elapsed_min" -ge "$threshold" ]; then
+            local report_key="${name}:${task_id}:report_format"
+            if [ "${ACTIVE_IDLE_RECOVERY_SENT[$report_key]:-}" != "1" ]; then
+                ACTIVE_IDLE_RECOVERY_SENT[$report_key]="1"
+                send_inbox_message "$name" "idle状態で報告YAML未完了を検知。gate_report_formatを確認し、報告YAMLを修正して家老へ再通知せよ。対象: ${report_base}" report_format_fix
+                log "ACTIVE-IDLE-REPORT-RENOTIFY: ${name} task=${task_id} report=${report_base}"
+            else
+                log "ACTIVE-IDLE-REPORT-RENOTIFY-SKIP: ${name} task=${task_id} duplicate"
+            fi
+        fi
+    fi
+
+    if [ "$elapsed_min" -lt "$threshold" ]; then
+        return 0
+    fi
+
+    local project_id project_path uncommitted_files commit_key uncommit_file_list
+    project_id=$(yaml_field_get "$task_file" "project" "" 2>/dev/null || true)
+    project_path="$SCRIPT_DIR"
+    if [ -n "$project_id" ]; then
+        local looked_up
+        looked_up=$(grep -A5 "id: ${project_id}$" "$SCRIPT_DIR/config/projects.yaml" 2>/dev/null | grep "path:" | head -1 | sed 's/.*path: *"\([^"]*\)"/\1/')
+        [ -n "$looked_up" ] && [ -d "$looked_up" ] && project_path="$looked_up"
+    fi
+    uncommitted_files=$(cd "$project_path" && { git diff --name-only 2>/dev/null; git diff --cached --name-only 2>/dev/null; } | sort -u || true)
+    [ -n "$uncommitted_files" ] || return 0
+
+    commit_key="${name}:${task_id}:uncommitted"
+    if [ "${ACTIVE_IDLE_RECOVERY_SENT[$commit_key]:-}" = "1" ]; then
+        log "ACTIVE-IDLE-COMMIT-RENOTIFY-SKIP: ${name} task=${task_id} duplicate"
+        return 0
+    fi
+
+    ACTIVE_IDLE_RECOVERY_SENT[$commit_key]="1"
+    uncommit_file_list=$(echo "$uncommitted_files" | tr '\n' ' ')
+    send_inbox_message "$name" "idle状態だが未commitファイルあり: ${uncommit_file_list}。git add + git commitを完了し、報告YAMLにcommit_hashを記録せよ。" uncommitted_block
+    log "ACTIVE-IDLE-COMMIT-RENOTIFY: ${name} task=${task_id} files=${uncommit_file_list}"
 }
 
 # ─── report done + task status未idle 検知 (cmd_selfimprovement_monitor_report_done) ───

@@ -481,6 +481,136 @@ cat "$TEST_LOG"
     [[ "$output" == *"STALL-RECOVERY-SEND:"* ]]
 }
 
+@test "check_stall: active idle task evaluates non-done report and re-notifies once" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts/gates" "$SCRIPT_DIR/logs"
+
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS ACTIVE_IDLE_RECOVERY_SENT
+TEST_LOG="$(mktemp)"
+TEST_MESSAGES="$(mktemp)"
+LOG="$TEST_LOG"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: in_progress
+  task_id: cmd_3751_full
+  parent_cmd: cmd_3751
+EOF
+
+cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_3751.yaml" <<'"'"'EOF'"'"'
+worker_id: kagemaru
+task_id: cmd_3751_full
+parent_cmd: cmd_3751
+status: pending
+verdict: ""
+EOF
+
+cat > "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" <<'"'"'EOF'"'"'
+#!/bin/bash
+echo "FAIL forced active report gate"
+exit 1
+EOF
+chmod +x "$SCRIPT_DIR/scripts/gates/gate_report_format.sh"
+
+log() { echo "$1" >> "$TEST_LOG"; }
+send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
+check_idle() { return 0; }
+cli_profile_get() {
+    case "$2" in
+        in_progress_stall_min) echo "1" ;;
+        *) echo "" ;;
+    esac
+}
+
+PANE_TARGETS[kagemaru]="shogun:2.5"
+now=$(date +%s)
+STALL_FIRST_SEEN[kagemaru]=$((now - 2 * 60))
+check_stall kagemaru
+STALL_FIRST_SEEN[kagemaru]=$((now - 2 * 60))
+check_stall kagemaru
+
+echo "REPORT_FIX_COUNT=$(grep -F -c "kagemaru|report_format_fix|" "$TEST_MESSAGES" || true)"
+grep -q "ACTIVE-IDLE-REPORT-EVAL: kagemaru task=cmd_3751_full status=in_progress report=kagemaru_report_cmd_3751.yaml result=FAIL" "$TEST_LOG"
+grep -q "ACTIVE-IDLE-REPORT-RENOTIFY: kagemaru task=cmd_3751_full" "$TEST_LOG"
+grep -q "ACTIVE-IDLE-REPORT-RENOTIFY-SKIP: kagemaru task=cmd_3751_full duplicate" "$TEST_LOG"
+cat "$TEST_MESSAGES"
+cat "$TEST_LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REPORT_FIX_COUNT=1"* ]]
+    [[ "$output" == *"FAIL forced active report gate"* ]]
+}
+
+@test "check_stall: active idle task re-notifies once for uncommitted files" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts/gates" "$SCRIPT_DIR/logs"
+git -C "$SCRIPT_DIR" init -q
+git -C "$SCRIPT_DIR" config user.email test@example.invalid
+git -C "$SCRIPT_DIR" config user.name test
+touch "$SCRIPT_DIR/base.txt"
+git -C "$SCRIPT_DIR" add base.txt
+git -C "$SCRIPT_DIR" commit -q -m init
+printf "changed\n" > "$SCRIPT_DIR/base.txt"
+
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS ACTIVE_IDLE_RECOVERY_SENT
+TEST_LOG="$(mktemp)"
+TEST_MESSAGES="$(mktemp)"
+LOG="$TEST_LOG"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: assigned
+  task_id: cmd_3751_full
+  parent_cmd: cmd_3751
+EOF
+
+cat > "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" <<'"'"'EOF'"'"'
+#!/bin/bash
+echo "PASS"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/gates/gate_report_format.sh"
+
+log() { echo "$1" >> "$TEST_LOG"; }
+send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
+check_idle() { return 0; }
+cli_profile_get() { echo ""; }
+
+PANE_TARGETS[kagemaru]="shogun:2.5"
+now=$(date +%s)
+STALL_FIRST_SEEN[kagemaru]=$((now - 16 * 60))
+check_stall kagemaru
+STALL_FIRST_SEEN[kagemaru]=$((now - 16 * 60))
+check_stall kagemaru
+
+echo "COMMIT_BLOCK_COUNT=$(grep -F -c "kagemaru|uncommitted_block|" "$TEST_MESSAGES" || true)"
+grep -q "ACTIVE-IDLE-COMMIT-RENOTIFY: kagemaru task=cmd_3751_full files=base.txt" "$TEST_LOG"
+grep -q "ACTIVE-IDLE-COMMIT-RENOTIFY-SKIP: kagemaru task=cmd_3751_full duplicate" "$TEST_LOG"
+cat "$TEST_MESSAGES"
+cat "$TEST_LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COMMIT_BLOCK_COUNT=1"* ]]
+    [[ "$output" == *"未commitファイルあり: base.txt"* ]]
+}
+
 @test "count_unread_messages_cached: same cycle reuses count and next cycle refreshes" {
     run bash -lc '
 set -euo pipefail
