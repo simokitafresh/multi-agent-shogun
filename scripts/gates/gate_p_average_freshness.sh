@@ -16,20 +16,29 @@
 # ============================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-# shellcheck source=scripts/lib/project_path.sh
-if [ -f "${SCRIPT_DIR}/scripts/lib/project_path.sh" ]; then
-    source "${SCRIPT_DIR}/scripts/lib/project_path.sh"
-    _REPO_ROOT_CACHE="${SCRIPT_DIR}"
+_SELF_PATH="${BASH_SOURCE[0]:-$0}"
+[[ "$_SELF_PATH" != /* ]] && _SELF_PATH="$PWD/$_SELF_PATH"
+SCRIPT_DIR="$(cd "$(dirname "$_SELF_PATH")/../.." && pwd)"
+
+if [ -n "${P_AVERAGE_ENV_FILE:-}" ]; then
+    # Tests and ad-hoc checks may run this repo script from outside the repo.
+    # When the env file is explicit, avoid repo-root discovery entirely.
+    _DM_PATH="${DM_SIGNAL_DIR:-/mnt/c/Python_app/DM-signal}"
 else
-    get_project_path() {
-        case "$1" in
-            dm-signal) printf '%s\n' "${DM_SIGNAL_DIR:-/mnt/c/Python_app/DM-signal}" ;;
-            *) return 1 ;;
-        esac
-    }
+    # shellcheck source=scripts/lib/project_path.sh
+    if [ -f "${SCRIPT_DIR}/scripts/lib/project_path.sh" ]; then
+        source "${SCRIPT_DIR}/scripts/lib/project_path.sh"
+        _REPO_ROOT_CACHE="${SCRIPT_DIR}"
+    else
+        get_project_path() {
+            case "$1" in
+                dm-signal) printf '%s\n' "${DM_SIGNAL_DIR:-/mnt/c/Python_app/DM-signal}" ;;
+                *) return 1 ;;
+            esac
+        }
+    fi
+    _DM_PATH="$(get_project_path 'dm-signal')"
 fi
-_DM_PATH="$(get_project_path 'dm-signal')"
 ENV_FILE="${P_AVERAGE_ENV_FILE:-${_DM_PATH}/backend/.env}"
 API_BASE="${P_AVERAGE_API_BASE:-https://dm-signal-backend.onrender.com}"
 CACHE_FILE="${P_AVERAGE_CACHE_FILE:-/tmp/gate_p_average_cache.txt}"
