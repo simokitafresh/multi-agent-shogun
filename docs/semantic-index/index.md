@@ -4651,6 +4651,9 @@ codd:
 | cmd | `cmd_2866` 統合パイプライン |
 | file | `docs/research/gunshi_idle_causal_chain_quality_20260425.md` — 軍師idle: 因果チェーン品質評価(2026-04-25) |
 | causal | `cmd_karo_hotfix_semantic_map_generate_insight_20260624` files_modified: [[causal_traversal_pipeline]] |
+| file | `scripts/causal_backlink_counts.sh` |
+| file | `tests/unit/test_causal_backlink_counts.bats` |
+| causal | `cmd_karo_hotfix_rg_fallback_causal_backlinks_202607080241` rgフォールバック追加(rg未導入環境向けPure Python fallback) files_modified: [[causal_traversal_pipeline]] |
 
 ## infrastructure_ops — インフラ運用基盤
 
@@ -5359,6 +5362,7 @@ codd:
 | causal | `cmd_reflux_insight_202607071926_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607071943_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607080313_tobisaru` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_insight_202607080431_hayate` files_modified: [[semantic_causal_automation]] |
 
 ## provisional_tobisaru — 仮: Tobisaru
 
@@ -5415,6 +5419,8 @@ codd:
 | cmd | `cmd_reflux_insight_202607071908_hayate` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
 | causal | `cmd_reflux_insight_202607080400_hayate` files_modified: [[provisional_hayate]] |
 | cmd | `cmd_reflux_insight_202607080400_hayate` (`queue/tasks/hayate.yaml`) |
+| causal | `cmd_reflux_insight_202607080431_hayate` files_modified: [[provisional_hayate]] |
+| cmd | `cmd_reflux_insight_202607080431_hayate` (`queue/tasks/hayate.yaml`, `context/semantic-map.md`, `docs/research/pf-remote-restore-asis-tobe-5w1h_20260708.md`) |
 
 ## provisional_kotaro — 仮: Kotaro
 
