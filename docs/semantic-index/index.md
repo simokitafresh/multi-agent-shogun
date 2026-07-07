@@ -1169,6 +1169,7 @@ codd:
 | lesson | `L798` 重いページはPAGE_APIS prefetchを空にしてページ本体fetchをSSOTにする |
 | lesson | `L974` バックグラウンド連鎖を追加する既存スクリプトのテストは、DB引数(--db等)だけでなく連鎖先スクリプトの全env override(SEMANTIC_INDEX_PATH等)も隔離しないと本番ファイルを汚染する |
 | lesson | `L977` grep -oEの複数マッチ混入によるJSONL破損(pipefail環境) |
+| lesson | `L961` semantic_stress_test NO_MATCH insightはdirect_concept構文で手動誘導せよ。alias:直後は検索語のみに限定 |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -1273,6 +1274,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_skill_script_refs_20260612]]` (L795) |
 | causal_chain | `[[cmd_karo_hotfix_note_draft_skill_refs_20260612]]` (L796) |
 | causal_chain | `[[cmd_karo_hotfix_shogun_startup_deferred_20260612]]` (L798) |
+| causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -1353,6 +1355,7 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_ga151_main_ci_red_202606291410]]` (L878) |
 | causal_chain | `[[cmd_karo_hotfix_gunshi_cs_operational_sim_20260612]]` (L793) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
+| causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 
 ## systems_knowledge_base — システム知識辞書
 
@@ -1451,7 +1454,7 @@ codd:
 |------|---|
 | id | codd_methodology |
 | label | CoDD整合性駆動開発 |
-| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, codd fix, codd fix PHENOMENON, dag verify, dag-verify, coherence-engine, codd v2, codd yaml, brownfield方式, codd measure, dag build, codd propagate, codd review, 設計書を実装しよう, 設計書に反映してアップデートして |
+| aliases | CoDD, Coherence-Driven Development, 整合性駆動開発, Harness Engineering, codd fix, codd fix PHENOMENON, dag verify, dag-verify, coherence-engine, codd v2, codd yaml, brownfield方式, codd measure, codd update, dag build, codd propagate, codd review, 設計書を実装しよう, 設計書に反映してアップデートして, 設計書を更新せよ |
 | skills | codd, codd-refactor |
 | related_concepts | semantic_dictionary_design, skill_design_rules, test_quality_framework, ultimate_state_principle, parameter_space_integrity, cmd_quality_logging |
 
@@ -4509,6 +4512,7 @@ codd:
 | causal_chain | `[[cmd_training_L4_R20260701_idle1_kagemaru]]` (L909) |
 | causal_chain | `[[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]` (L923) |
 | causal_chain | `[[cmd_3683]]` (L947) |
+| causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
 
 ## ac_merit_review_integrity — AC本旨レビュー整合性
 
