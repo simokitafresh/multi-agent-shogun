@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-05-19 -->
+<!-- last_updated: 2026-07-08 cmd_reflux_promotion_202607080807_kotaro -->
 # 修行サイクル設計書（殿直伝 2026-03-25）
 
 ## §1 背景と原理
