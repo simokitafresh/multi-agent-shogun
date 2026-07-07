@@ -2,7 +2,7 @@ worker_id: tobisaru
 task_id: cmd_3724_full
 parent_cmd: cmd_3724
 timestamp: '2026-07-07T15:45:33+09:00'
-status: pending
+status: completed
 ac_version_read: 9fa96d68
 result:
   summary: 教訓enforcement_level分布計測gate(gate_lesson_enforcement_level.sh)を新規実装し、実データで全ロールlessonsを計測。将軍startup
@@ -49,6 +49,7 @@ lesson_candidate:
   detail: 'cmd_3724でenforcement記述からLevel1-6を正規表現で抽出する際、単純に''L[1-6]''を検索すると教訓ID(L978,L1655)や行番号参照(L2684,L551)の先頭桁が誤ってLevelマーカーとして拾われる。''L2684''は''L2''として誤検出されうる。対策:
     L[1-6]の前後に英数字が続かないことを要求する境界チェック((?<![0-9A-Za-z])L[1-6](?![0-9A-Za-z]))で回避した。同種のID/番号体系が混在するテキストからキーワード的に短い数値マーカーを抽出する処理全般に当てはまる教訓。'
   project: infra
+  origin: '[[殿指示_三層学習ループ極限化_20260707]] -> [[教訓のLevel分布不可視]] -> [[cmd_3724_enforcement_level計測]]'
 lessons_useful:
 - id: L573
   useful: false
@@ -73,7 +74,10 @@ lessons_useful:
 skill_candidate:
   found: false
 decision_candidate:
-  found: false
+  found: true
+  detail: 'gate_report_format.shのcmd_3264-AC2(target_path配下未commit検出)はfiles_modified記載ファイルのgit
+    status --porcelainをファイル単位で見るため、複数忍者が同一共有ファイル(例: gate_shogun_startup.sh)を並行編集すると自分のcommit漏れでなくても他忍者の未commit分でBLOCKされうる。今回は他忍者が先にcommit(8a313734d)したため自然解消したが、タイミング次第では無関係な忍者がBLOCKで足止めされる。家老判断:
+    このcheckをhunk単位/diff内容ベースに改善するか、共有頻出ファイルでの一時的な相互ブロックを許容するか、を判断されたし。'
 knowledge_candidate:
   found: false
 assumption_invalidation:
@@ -99,10 +103,17 @@ binary_checks:
     result: 'yes'
   commit:
   - check: git commitが完了したか(untracked/modified=0)
-    result: ''
+    result: 'yes'
 self_gate_check:
   lesson_ref: PASS
   lesson_candidate: PASS
   status_valid: PASS
   purpose_fit: PASS
-verdict: ''
+verdict: PASS
+commit_hash: 667472aff36c9cce2cff7020a927291d652b2a0c
+diagnose_reason: BLOCKの原因は自分のcommit漏れではない。scripts/gates/gate_shogun_startup.shは複数忍者が並行編集する共有ファイルで、自分の4箇所の変更はcommit
+  667472affに全てhunk単位選別(git add -p)でcommit済みだったが、他忍者(cmd_3718系列、INSIGHT_REPEAT/還流在庫のhint_paths/hint_tokens辞書を編集中)の未commit分が同じファイルに残っておりBLOCK検出された。この未commit分は自分のscope外・検証不能のため意図的にcommitせず待機。再実行時には他忍者側がcommit
+  8a313734d(cmd_3725関連)で自分の分をcommit済みとなり、target_path配下は自分の変更のみ=クリーンとなってBLOCK解消を確認した。
+test_results: 'bats tests/unit/test_gate_lesson_enforcement_level.bats: 5/5 PASS SKIP=0
+  | bats tests/unit/test_gate_shogun_startup.bats(変更前後比較): 79/80 PASS(1件はgit stashで検証済みの既存不具合。今回変更と無関係)
+  SKIP=0 | gate_shogun_startup.sh実行2回(bash -n構文チェック+実データ実行): exit=0, 教訓enforcement_level分布セクション出力を実データで確認'

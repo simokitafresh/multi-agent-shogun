@@ -35,7 +35,7 @@ task:
   parent_cmd: cmd_3724
   project: dm-signal
   purpose: '将軍疑義2点(blt_20260706_164437)を軍師が両方正当と判定(blt_20260706_164522、自身のLGTM見落とし=洗脳#2として自己記録)。将軍がコード現物で裏付け済み: build_signal_decision_ledger_initial.pyはrebalance_triggerを参照しておらず(rg 0件)、全PFへ機械的に3決定日を計画していた(計画306=PF数×3)。またsignals_fallback分に今朝のsync-fof書換え後の汚染値が混入するリスクがある。第2弾(実挿入)の前提としてdry-runを是正し内訳を再提示する'
-  status: in_progress
+  status: done
   stop_for: []
   target_path: /mnt/c/Python_app/DM-signal/backend/scripts/build_signal_decision_ledger_initial.py
   task_id: cmd_3724_full
@@ -142,3 +142,19 @@ task:
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
   deployed_at: "2026-07-06T16:54:12"
+
+  session_state:
+    attempt: 2
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    tried_approaches:
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    diagnose_reason: 'BLOCKの原因は自分のcommit漏れではない。scripts/gates/gate_shogun_startup.shは複数忍者が並行編集する共有ファイルで、自分の4箇所の変更(trap/TMP変数追加、gate起動、Gate 13.5cセクション、表示ブロック)はcommit 667472affに全て含めてcommit済み(git add -pでhunk単位選別)。gate_report_format.shのcmd_3264-AC2チェックはfiles_modified配下ファイルのgit status --porcelainを見るだけでhunk単位の判別をしないため、他忍者(cmd_3718系列でINSIGHT_REPEAT/還流在庫のhint_paths/hint_tokens辞書を編集中)の未commit分が同じファイルに残っており、これがBLOCKとして検出された。この未commit分は自分のscope外(他忍者の進行中作業)であり、内容未検証のまま自分のcmdでcommitすることはできない(スコープ混入・検証責任の観点で不適切)。家老へエスカレーションし対処を仰ぐ。'
+    approach_summary: '教訓enforcement_level分布計測gate(gate_lesson_enforcement_level.sh)を新規実装し、実データで全ロールlessonsを計測。将軍startup gateへ昇格候補リストを接続した。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: '教訓enforcement_level分布計測gate(gate_lesson_enforcement_level.sh)を新規実装し、実データで全ロールlessonsを計測。将軍startup gateへ昇格候補リストを接続した。'
+    - attempt: 2
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      diagnose_reason: 'BLOCKの原因は自分のcommit漏れではない。scripts/gates/gate_shogun_startup.shは複数忍者が並行編集する共有ファイルで、自分の4箇所の変更(trap/TMP変数追加、gate起動、Gate 13.5cセクション、表示ブロック)はcommit 667472affに全て含めてcommit済み(git add -pでhunk単位選別)。gate_report_format.shのcmd_3264-AC2チェックはfiles_modified配下ファイルのgit status --porcelainを見るだけでhunk単位の判別をしないため、他忍者(cmd_3718系列でINSIGHT_REPEAT/還流在庫のhint_paths/hint_tokens辞書を編集中)の未commit分が同じファイルに残っており、これがBLOCKとして検出された。この未commit分は自分のscope外(他忍者の進行中作業)であり、内容未検証のまま自分のcmdでcommitすることはできない(スコープ混入・検証責任の観点で不適切)。家老へエスカレーションし対処を仰ぐ。'
+      approach_summary: '教訓enforcement_level分布計測gate(gate_lesson_enforcement_level.sh)を新規実装し、実データで全ロールlessonsを計測。将軍startup gateへ昇格候補リストを接続した。'
