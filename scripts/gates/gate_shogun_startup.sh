@@ -1102,45 +1102,63 @@ for entry in reversed(session_entries):
 # lord_conversationのみの検知ではチャネル不一致で常時WARNになる形骸化を実測
 # (2026-06-11: 将軍がQ6回答+軍師検証OK済みでも3セッション連続escalation)。
 # 掲示板のposted_by=shogun直近24h投稿もOR条件で検索する。
-if not (found_answer and found_automation_target) and bulletin_path and bulletin_path.is_file():
-    import datetime
+# 2026-07-07修正: bulletin_archive(queue/archive/bulletin_YYYYMMDD.yaml)もフォールバック検索。
+# Q6投稿がbulletin_archive.sh --max-keep 30でアーカイブされると検出不可だった(3セッション連続WARN根因)。
+# 現在の掲示板→直近2日分のアーカイブの順で検索する。
+_bulletin_files = []
+if bulletin_path and bulletin_path.is_file():
+    _bulletin_files.append(bulletin_path)
+# フォールバック: 直近2日分のアーカイブ
+import datetime as _dt
+_archive_dir = bulletin_path.parent / "archive" if bulletin_path else None
+if _archive_dir and _archive_dir.is_dir():
+    _today = _dt.date.today()
+    for _delta in range(2):
+        _d = _today - _dt.timedelta(days=_delta)
+        _af = _archive_dir / f"bulletin_{_d.strftime('%Y%m%d')}.yaml"
+        if _af.is_file():
+            _bulletin_files.append(_af)
+if not (found_answer and found_automation_target) and _bulletin_files:
     import os
     try:
         _hours = int(os.environ.get("SHOGUN_STARTUP_Q6_BULLETIN_HOURS", "24"))
     except ValueError:
         _hours = 24
-    now = datetime.datetime.now()
+    now = _dt.datetime.now()
     bulletin_entries = []
     current = None
     in_content = False
-    for raw in bulletin_path.read_text(encoding="utf-8", errors="ignore").splitlines():
-        if raw.startswith("- id:"):
-            if current:
-                bulletin_entries.append(current)
-            current = {"content": [], "posted_by": "", "posted_at": ""}
-            in_content = False
-            continue
-        if current is None:
-            continue
-        meta = re.match(r"^  ([a-z_]+):\s*(.*)$", raw)
-        if meta and not raw.startswith("    "):
-            key, value = meta.group(1), meta.group(2).strip().strip("'\"")
-            if key == "content":
-                in_content = True
-            else:
+    for _bf in _bulletin_files:
+        for raw in _bf.read_text(encoding="utf-8", errors="ignore").splitlines():
+            if raw.startswith("- id:"):
+                if current:
+                    bulletin_entries.append(current)
+                current = {"content": [], "posted_by": "", "posted_at": ""}
                 in_content = False
-                if key in ("posted_by", "posted_at"):
-                    current[key] = value
-            continue
-        if in_content:
-            current["content"].append(raw.strip())
-    if current:
-        bulletin_entries.append(current)
+                continue
+            if current is None:
+                continue
+            meta = re.match(r"^  ([a-z_]+):\s*(.*)$", raw)
+            if meta and not raw.startswith("    "):
+                key, value = meta.group(1), meta.group(2).strip().strip("'\"")
+                if key == "content":
+                    in_content = True
+                else:
+                    in_content = False
+                    if key in ("posted_by", "posted_at"):
+                        current[key] = value
+                continue
+            if in_content:
+                current["content"].append(raw.strip())
+        # flush last entry per file
+        if current:
+            bulletin_entries.append(current)
+            current = None
     for entry in bulletin_entries:
         if entry.get("posted_by") != "shogun":
             continue
         try:
-            posted = datetime.datetime.fromisoformat(str(entry.get("posted_at", ""))[:19])
+            posted = _dt.datetime.fromisoformat(str(entry.get("posted_at", ""))[:19])
         except ValueError:
             continue
         # 直近=過去方向のみ。未来timestampはデータ異常であり「直近の回答」ではない

@@ -5650,13 +5650,13 @@ ${FULL_CMD}"
     # 研究スクリプト参照または明示的なGS文言に限定する。
     # "GS CSV" = データファイル参照であり研究スクリプト実行ではないため除外(cmd_2227 FP修正)
     local GS_SEARCH_TEXT
-    GS_SEARCH_TEXT=$(printf '%s\n' "$SEARCH_TEXT" | grep -v 'outputs/grid_search' | sed -E 's/GS[[:space:]]*CSV//g' || true)
+    GS_SEARCH_TEXT=$(printf '%s\n' "$SEARCH_TEXT" | grep -vE 'outputs/grid_search|grid_monthly_fast|grid_results_fast' | sed -E 's/GS[[:space:]]*CSV//g' || true)
     if echo "$GS_SEARCH_TEXT" | grep -qE 'run_077|scripts/analysis/grid[_-]search|grid[_-]search/run|グリッドサーチ|[[:space:]]GS[[:space:]　]|[[:space:]]GS新規|忍法GS|GS[[:space:]を]|GS[[:space:]の]'; then
         HIT_GS=true
     fi
     if [[ "$HIT_GS" == true ]] && [[ -z "$GS_PATH_CANDIDATE" ]] \
-        && printf '%s\n' "$SEARCH_TEXT" | grep -q 'outputs/grid_search' \
-        && printf '%s\n' "$SEARCH_TEXT" | grep -qE '偵察|分析|調査|結果参照|CSV|差分確認'; then
+        && printf '%s\n' "$SEARCH_TEXT" | grep -qE 'outputs/grid_search|grid_monthly_fast|grid_results_fast' \
+        && printf '%s\n' "$SEARCH_TEXT" | grep -qE '偵察|分析|調査|結果参照|CSV|差分確認|算出|相関'; then
         HIT_GS=false
     fi
 
