@@ -2083,6 +2083,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T13:44:33+09:00 三層学習ループの自動成長を極限まで高める方法を考えよう。より性能の低いLLMや他のCLIにも適用できる環境整備だ。自動で会話や作業の度に無限に成長を続ける仕組みを向上させるためのasis/tobe 5w1Hのinbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T13:59:46+09:00 三層学習ループ自動成長極限化設計書v1作成(2026-07-07殿指示)。AsIs一次計測: 自己修正率83%/L6化率100%/再発率0%は健全、NO_MATCH79.5%/教訓活用率26%/insight在庫22件/洗脳自己検出22.2 |
 | lesson | `L956` 可搬コア偵察ではinbox/tmuxをTier0に含めるな |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-07T17:15:35+09:00 三層学習ループ極限化 初日完了(2026-07-07): 設計書T1-T7の全9cmd完了(cmd_3718-3726全アーカイブ確認)。実証された免疫サイクル=(1)将軍D0未コミット消失→LS-A14(2)教訓化→再適用+即コミット6a |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
 | causal_chain | `[[cmd_147]]` (L012) |
@@ -2700,7 +2701,7 @@ codd:
 |------|---|
 | id | gs_speed_e7_l0_full_confirm |
 | label | GS道具磨きE7 L0 full実測 |
-| aliases | GS道具磨きE7, GS道具磨きE7: E6後のL0四神GS full実測をtimeout 300で確認し、5分目標を見込みではなく実測で判定する, E6後のL0四神GS full実測, L0四神GS full実測, timeout 300で確認, 5分目標を見込みではなく実測で判定する, 見込みではなく実測で判定, L0 GS 5分目標 full実測, 殿厳命 timeout 300s強制。5分超え放置は最悪の行為, 5分超え放置は最悪の行為, また無駄に長時間 計算していないか 5分の目標があるのに5分超えて最後まで待つ これは最悪の行為だ, timeout 300s強制, 全量を最後まで走らせるな |
+| aliases | GS道具磨きE7, GS道具磨きE7: E6後のL0四神GS full実測をtimeout 300で確認し、5分目標を見込みではなく実測で判定する, E6後のL0四神GS full実測, L0四神GS full実測, timeout 300で確認, 5分目標を見込みではなく実測で判定する, 見込みではなく実測で判定, L0 GS 5分目標 full実測, 殿厳命 timeout 300s強制。5分超え放置は最悪の行為, 5分超え放置は最悪の行為, また無駄に長時間 計算していないか 5分の目標があるのに5分超えて最後まで待つ これは最悪の行為だ, timeout 300s強制, 全量を最後まで走らせるな, GSの見込み時間を明確にしよう, GSの見込み時間, ではGSの見込み時間は？先に道具磨きをするほうがベターでは？道具磨きは軍師の仕事だな |
 | skills | gs-bench-gate |
 | related_concepts | gs_ninpo_research, shin_shijin_design, parameter_space_integrity |
 
