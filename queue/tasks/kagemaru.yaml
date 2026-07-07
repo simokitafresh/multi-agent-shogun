@@ -1,38 +1,25 @@
 task:
-  _ac_task_id: cmd_3723_scout
+  _ac_task_id: cmd_3726_scout
   _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3723 (deployed 2026-07-07T15:14:01). Read from the beginning.
-  ac_version: 2553810a
-  cmd_id: cmd_3723
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3726 (deployed 2026-07-07T15:31:28). Read from the beginning.
+  ac_version: e0238fce
+  cmd_id: cmd_3726
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh tests/unit/test_deploy_training.bats scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md docs/research/model-comparison-5w1h-20260701.md 全モデル5W1H比較(GPT5.5/Sonnet4.6/Sonnet5/Opus4.8) docs/research/sonnet5_vs_46_ab_evaluation_20260701.md 5ラウンドA/B/C評価データ scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
-  - "skill_design_rules — Skill設計ルール:  context/skill-design-rules.md docs/research/dream-skill-design.md scripts/skill_gate_feedback.sh scripts/skill_auto_improve.sh scripts/skill_execution_log.sh context/codd.md skills/codd/SKILL.md skills/codd-refactor/SKILL.md skills/reset-layout/SKILL.md skills/pf-registration/SKILL.md docs/research/gstack-gbrain-skillify-2026-04.md docs/research/gunshi_idle_skill_precision_cycle2_20260609.md docs/research/gunshi_idle_adaptive_gating_bucket_split_20260521.md — 軍師idle: 適応型ゲートバケット分割設計(2026-05-21)"
-  - "systems_knowledge_base — システム知識辞書:  docs/research/systems-knowledge-base/index.md docs/research/systems-knowledge-base/systems/ docs/research/systems-knowledge-base/systems/gstack.md"
-  - "hook_automation_framework — Hook自動化フレームワーク:  .claude/hooks/pre-bash-combined.sh .claude/hooks/post-bash-combined.sh .claude/hooks/pre-write-edit-combined.sh .claude/hooks/pre-write-read-tracker.sh .claude/hooks/pre-edit-pi-inject.sh .claude/hooks/post-write-edit-combined.sh .claude/hooks/stop-lint-gate.sh scripts/hooks/session_start_inject.sh scripts/hooks/stop_check_inbox.sh .claude/settings.json scripts/gates/gate_hooks_no_runtime_incident_ids.sh tests/unit/test_gate_hooks_no_runtime_incident_ids.bats"
-  - "infrastructure_ops — インフラ運用基盤:  scripts/ninja_monitor.sh tests/unit/test_ninja_monitor_stall.bats scripts/inbox_watcher.sh scripts/daemon_supervisor.sh scripts/ntfy_listener.sh context/infrastructure.md scripts/dashboard_auto_section.sh ダッシュボードリアルタイムステータス自動生成 scripts/auto_deploy_next.sh サブタスク自動連続配備(auto_deployフラグ/blocked_by/忍者空き制御) scripts/reset_layout.sh agentsウィンドウペイン配置一発復元 docs/research/gunshi_idle_autocommit_scope_leak_20260602.md — 軍師idle: 自動コミットスコープ漏洩(2026-06-02) docs/research/gunshi_idle_clear_durability_fix_20260516.md — 軍師idle: /clear耐久性修正(2026-05-16) docs/research/gunshi_idle_clear_durability_flag_gap_20260515.md — 軍師idle: /clear耐久性フラグギャップ(2026-05-15) docs/research/gunshi_idle_clear_durability_nazenaze_20260515.md — 軍師idle: /clear耐久性なぜなぜ分析(2026-05-15) docs/research/gunshi_idle_clear_durability_nazenaze_20260515d.md — 軍師idle: /clear耐久性なぜなぜ分析(続)(2026-05-15) docs/research/gunshi_idle_clear_respawn_bug_20260607.md — 軍師idle: /clear respawnバグ分析(2026-06-07) docs/research/gunshi_idle_dashboard_corruption_20260603.md — 軍師idle: ダッシュボード破損分析(2026-06-03) docs/research/gunshi_idle_deploy_structural_bugs_20260517.md — 軍師idle: 配備構造バグ分析(2026-05-17) docs/research/gunshi_idle_deploy_yaml_parse_error_20260516.md — 軍師idle: 配備YAMLパースエラー(2026-05-16) docs/research/gunshi_idle_direct_mode_stale_ac_20260502.md — 軍師idle: ダイレクトモード古いAC問題(2026-05-02) docs/research/gunshi_idle_gitignore_wa_20260409.md — 軍師idle: .gitignore WAパターン(2026-04-09) docs/research/gunshi_idle_infra_bug_audit_20260409.md — 軍師idle: インフラバグ監査(2026-04-09) docs/research/gunshi_idle_infra_bug_trio_20260502.md — 軍師idle: インフラバグトリオ分析(2026-05-02) docs/research/gunshi_idle_infra_bug_trio_fix_20260503.md — 軍師idle: インフラバグトリオ修正(2026-05-03) docs/research/gunshi_idle_infra_bug_universal_commit_20260430.md — 軍師idle: インフラバグ汎用コミット対策(2026-04-30) docs/research/gunshi_idle_infra_bugs_full_audit_20260424.md — 軍師idle: インフラバグ全量監査(2026-04-24) docs/research/gunshi_idle_infra_health_20260425.md — 軍師idle: インフラ健全性レポート(2026-04-25) docs/research/gunshi_idle_infra_speed_hidden_bugs_20260605.md — 軍師idle: インフラ速度の隠れバグ(2026-06-05) docs/research/gunshi_idle_wa_pattern_20260612.md — 軍師idle: WAパターン分析(2026-06-12)"
-  recommended_skills:
-  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
-  - "skill-installer"
-  - "reset-layout"
-  - "shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み)"
-  - "reset-layout(全ペイン配置復元)"
-  - "shogun-clear-prep(clear前)"
-  - "dream(三層記憶整理)"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
   related_causal_links:
-  - "[[cmd_3723_プロファイル偵察]]"
+  - "[[cmd_3726_可搬コア境界偵察]]"
+  - "[[学習ループのリポジトリ癒着]]"
   - "[[殿指示_三層学習ループ極限化_20260707]]"
-  - "[[注入強度のモデル非依存固定]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/gs-speedup-knowledge.md"
   - "context/training-cycle.md"
   growth_loop_defense:
   - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
@@ -47,6 +34,7 @@ task:
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
       - L159: IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore
+      - L129: python3-venv未導入だとvenv構築不可。pip --userもPEP668で拒否されるため、偵察手順に --break-system-package
       - L213: cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
@@ -72,19 +60,32 @@ task:
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3723
+  parent_cmd: cmd_3726
   project: infra
-  purpose: '殿裁可(2026-07-07 14:11「許可する」— 三層学習ループ極限化設計書T5)+殿指示(14:55 並列起票): 修行実績でテンプレート有無によりGPTの初回PASS品質が大きく変動した通り、注入の厚さがモデル性能差を打ち消す。settings.yamlのモデル値に応じて注入強度(テンプレート・実例・弱点ヒント)を自動切替する実装ポイントと、モデル別初回PASS率の常設計測の挿入点を偵察する'
+  purpose: '殿裁可(2026-07-07 14:11「許可する」— 三層学習ループ極限化設計書T6)+殿指示(14:55 並列起票): 学習ループの機構(教訓・insight・報告gate・記憶)がこのリポジトリのパス・tmux構成・WSL2に癒着しており、他プロジェクトへ持ち出す境界定義と手順が存在しない。コア(ループ機構)とPJ固有(知識・設定)の境界を偵察し、最小移植セットの構成案を報告する'
   status: done
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun
-  task_id: cmd_3723_scout
+  task_id: cmd_3726_scout
   task_type: scout
   three_strike_rule: 仮説が3回連続で外れたら調査を止め、failed hypotheses と証拠を添えて家老へ報告
+  previous_failures:
+    attempt: 1
+    last_block_reason: 'knowledge_candidate: found=true but items is empty'
+    tried_approaches:
+    - 'knowledge_candidate: found=true but items is empty'
+    approach_summary: 'cmd_3723偵察完了。モデル階層プロファイルの配備時注入はdeploy_task.sh、セッション開始時注入はsession_start_inject.sh、常設計測はgate_fire_log+training_completion_check互換で追加可能と特定。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'knowledge_candidate: found=true but items is empty'
+      approach_summary: 'cmd_3723偵察完了。モデル階層プロファイルの配備時注入はdeploy_task.sh、セッション開始時注入はsession_start_inject.sh、常設計測はgate_fire_log+training_completion_check互換で追加可能と特定。'
   related_lessons:
   - id: 'L159'
     summary: 'IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore'
     detail: 'IF 5軸以上の独立した偵察を実施する時 THEN 並列Agent(例: 4並列)で各軸を分担して同時実行せよ 軸ごとの独立性が高い偵察タスクではExplore'
+  - id: 'L129'
+    summary: 'python3-venv未導入だとvenv構築不可。pip --userもPEP668で拒否されるため、偵察手順に --break-system-package'
+    detail: 'python3-venv未導入だとvenv構築不可。pip --userもPEP668で拒否されるため、偵察手順に --break-system-package'
   - id: 'L213'
     summary: 'cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit'
     detail: 'cmd_873の4観点偵察統合結論。実装許可すると教訓サイクル・GATEシステム・report追跡の3重迂回が発生しF003の根拠が崩壊する。capabilit'
@@ -99,19 +100,19 @@ task:
     wa_count: 1
     detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
   memory_db_context:
+  - '2026-07-07T15:26:27+09:00 | 【INFOバッチ】 2026-07-07 15:16:36|cmd_3719 2026-07-07 15:20:30|cmd_3722 2026-07-07 15:23:37|cmd_3723'
   - '2026-07-07T14:50:18+09:00 | 【INFOバッチ】 2026-07-07 14:38:47|cmd_3718'
-  - '2026-07-07T14:42:31 | 三層記憶の穴3種を特定・修正(2026-07-07殿指示「利用されなければ効果を発揮しない」)。穴1=Gate12.2引用率計測が読み手パス(data/凍結コピー)+grep書式(スペースなし)の二重'
   - '2026-06-17T14:14:20+09:00 | 【INFOバッチ】 2026-06-17 14:11:44|cmd_3425'
   acceptance_criteria:
   - id: 'AC1'
     checks:
-    - check: '注入強度の切替を実装すべき箇所(配備時注入とセッション開始時注入の経路)を変更対象ファイル・行番号つきで特定し、波及先ファイル・関連テスト有無・エッジケース・依存順序の偵察必須要件を全て満たす報告を作成することを報告YAMLで確認する'
+    - check: '学習ループを構成するスクリプト群の依存関係(相互参照・環境前提・ハードコードパス)を調査し、コアとPJ固有の境界を変更対象ファイル・行番号つきで特定して、波及先・関連テスト有無・エッジケース・依存順序の偵察必須要件を全て満たす報告を作成することを報告YAMLで確認する'
   - id: 'AC2'
     checks:
-    - check: 'モデル別初回gate結果を配備毎に記録する常設計測の挿入点(既存ログのどこに何を足すか)を特定し、修行実績のモデル別データ形式との互換性を確認して報告する'
+    - check: '他プロジェクトへ最小の学習ループ(教訓記録・insight記録・報告二値検証・雛形)を設置するための最小移植セット構成案と設置手順案を報告YAMLに記載し、マシン可搬設計(multinode文書)との役割分担を明確化して報告することを確認する'
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3723.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3723.yaml
+  report_filename: kagemaru_report_cmd_3726.yaml
+  report_path: queue/reports/kagemaru_report_cmd_3726.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -140,15 +141,4 @@ task:
     - reason: 'empty_lessons_useful'
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-07-07T15:15:20"
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'knowledge_candidate: found=true but items is empty'
-    tried_approaches:
-    - 'knowledge_candidate: found=true but items is empty'
-    approach_summary: 'cmd_3723偵察完了。モデル階層プロファイルの配備時注入はdeploy_task.sh、セッション開始時注入はsession_start_inject.sh、常設計測はgate_fire_log+training_completion_check互換で追加可能と特定。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'knowledge_candidate: found=true but items is empty'
-      approach_summary: 'cmd_3723偵察完了。モデル階層プロファイルの配備時注入はdeploy_task.sh、セッション開始時注入はsession_start_inject.sh、常設計測はgate_fire_log+training_completion_check互換で追加可能と特定。'
+  deployed_at: "2026-07-07T15:32:43"
