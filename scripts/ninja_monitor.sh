@@ -3216,6 +3216,11 @@ _cleanup_stale_keys() {
         [ -z "${active[$agent_part]}" ] && unset "UNCOMMITTED_BLOCK_SENT[$key]"
     done
 
+    for key in "${!ACTIVE_IDLE_RECOVERY_SENT[@]}"; do
+        agent_part="${key%%:*}"
+        [ -z "${active[$agent_part]}" ] && unset "ACTIVE_IDLE_RECOVERY_SENT[$key]"
+    done
+
     for key in "${!STALL_COUNT[@]}"; do
         agent_part="${key%%:*}"
         [ -z "${active[$agent_part]}" ] && unset "STALL_COUNT[$key]"
