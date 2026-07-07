@@ -148,9 +148,26 @@ find "$SCRIPT_DIR/docs/research" -maxdepth 1 -name "gunshi_*" -mmin -1440 -type 
 _PID_FIND_D=$!
 find "$SCRIPT_DIR/docs/research" -maxdepth 1 -name "*.md" -mtime -7 -type f > "$_TMP_D/find_research" 2>/dev/null &
 _PID_FIND_R=$!
-# §3.3: sqlite3 lord_rulings クエリを並列化(NTFS上371MB DB=2-5秒ボトルネック。cmd_3632)
-{ trap - EXIT; sqlite3 "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" \
-  "SELECT ts || ' | ' || substr(summary, 1, 120) FROM events WHERE agent = 'lord' AND direction = 'inbound' AND target = 'gunshi' AND ts >= datetime('now', '-6 hours') ORDER BY ts DESC LIMIT 5;" > "$_TMP_D/lord_rulings" 2>/dev/null; } &
+# §3.3: lord_rulings クエリを並列化(NTFS上371MB DB=2-5秒ボトルネック。cmd_3632)
+# sqlite3 CLI不在環境ではCLI呼び出し失敗が2>/dev/nullで握りつぶされ、
+# 「直近6hの殿→軍師対話なし」という誤った正常系メッセージに化けていた(2026-07-07発見)。
+# python3のsqlite3モジュール経由にし、exit statusを別ファイルに残して呼び出し元で判定する。
+{ trap - EXIT; set +e; python3 -c "
+import sqlite3, sys
+db_path = sys.argv[1]
+try:
+    con = sqlite3.connect('file:' + db_path + '?mode=ro', uri=True)
+    rows = con.execute(
+        \"SELECT ts || ' | ' || substr(summary, 1, 120) FROM events \"
+        \"WHERE agent = 'lord' AND direction = 'inbound' AND target = 'gunshi' \"
+        \"AND ts >= datetime('now', '-6 hours') ORDER BY ts DESC LIMIT 5\"
+    ).fetchall()
+    for row in rows:
+        print(row[0])
+except Exception as exc:
+    print('ERROR:' + str(exc), file=sys.stderr)
+    sys.exit(1)
+" "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" > "$_TMP_D/lord_rulings" 2>"$_TMP_D/lord_rulings_err"; echo $? > "$_TMP_D/lord_rulings_exit"; } &
 _PID_LORD_RULINGS=$!
 # §3.3: gate_immunity_depth.sh を並列化(~150ms削減。cmd_3632)
 _DEPTH_SH="$SCRIPT_DIR/scripts/gates/gate_immunity_depth.sh"
@@ -264,10 +281,16 @@ echo ""
 # 真因: /clear後に三層記憶で前セッションの因果文脈を確認しなかった(2026-06-07事故)
 # 根源: Codex rate limit→CLI切替→settings.yaml未更新→GPTに戻った因果を見逃した
 echo "■ 前セッション殿裁定（三層記憶）"
-# §3.3: sqlite3並列化済み。結果をtmpから読出し(cmd_3632)
+# §3.3: python3並列化済み。結果をtmpから読出し(cmd_3632, sqlite3 CLI依存除去=cmd_3719)
 wait "$_PID_LORD_RULINGS" 2>/dev/null || true
+_lord_rulings_exit="$(cat "$_TMP_D/lord_rulings_exit" 2>/dev/null)" || _lord_rulings_exit=""
 _lord_rulings="$(cat "$_TMP_D/lord_rulings" 2>/dev/null)" || _lord_rulings=""
-if [ -n "$_lord_rulings" ]; then
+if [ "$_lord_rulings_exit" != "0" ]; then
+    overall="ALERT"
+    _lord_rulings_err="$(cat "$_TMP_D/lord_rulings_err" 2>/dev/null)"
+    alerts+=("lord_rulingsクエリ失敗: ${_lord_rulings_err:-unknown error}")
+    echo "  ALERT: lord_rulingsクエリ失敗（「対話なし」ではない。無言のfalse-negative防止） — ${_lord_rulings_err:-unknown error}"
+elif [ -n "$_lord_rulings" ]; then
     echo "  直近6h殿→軍師（時系列で因果をたどれ）:"
     echo "$_lord_rulings" | while IFS= read -r line; do
         echo "    $line"

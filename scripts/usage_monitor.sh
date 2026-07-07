@@ -234,12 +234,33 @@ monitor_status_codex() {
     h5_ago=$((now - 5 * 3600))
     d7_ago=$((now - 7 * 86400))
 
-    usage_row=$(sqlite3 "$CODEX_DB" \
-        "SELECT COALESCE(SUM(CASE WHEN updated_at > $h5_ago THEN tokens_used ELSE 0 END),0) || char(9) || COALESCE(SUM(CASE WHEN updated_at > $d7_ago THEN tokens_used ELSE 0 END),0) FROM threads WHERE model_provider='openai' AND updated_at > $d7_ago;" \
-        2>/dev/null) || usage_row=$'0\t0'
+    # sqlite3 CLI不在環境ではCLI呼び出しがエラーとなり、旧実装は `|| usage_row=$'0\t0'`
+    # で無言のゼロにフォールバックしていた(2026-07-07実測: 常時0%使用と誤表示)。
+    # python3のsqlite3モジュール経由にし、失敗時は明示的にERRとしてスキップする。
+    usage_row=$(python3 -c "
+import sqlite3, sys
+db_path, h5_ago, d7_ago = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
+try:
+    con = sqlite3.connect('file:' + db_path + '?mode=ro', uri=True)
+    row = con.execute(
+        \"SELECT \"
+        \"COALESCE(SUM(CASE WHEN updated_at > ? THEN tokens_used ELSE 0 END),0),\"
+        \"COALESCE(SUM(CASE WHEN updated_at > ? THEN tokens_used ELSE 0 END),0) \"
+        \"FROM threads WHERE model_provider='openai' AND updated_at > ?\",
+        (h5_ago, d7_ago, d7_ago),
+    ).fetchone()
+    print(f'{row[0]}\t{row[1]}')
+except Exception as exc:
+    print('ERROR:' + str(exc), file=sys.stderr)
+    sys.exit(1)
+" "$CODEX_DB" "$h5_ago" "$d7_ago" 2>/dev/null) || usage_row=""
+
+    if [[ -z "$usage_row" ]]; then
+        echo "usage_monitor: ERROR codex usage query failed (db=$CODEX_DB)" >&2
+        printf 'ERR\t--\tERR\t--\n'
+        return
+    fi
     IFS=$'\t' read -r h5_tokens d7_tokens <<< "$usage_row"
-    h5_tokens="${h5_tokens:-0}"
-    d7_tokens="${d7_tokens:-0}"
 
     local h5_used_pct d7_used_pct h5_left d7_left
     if (( CODEX_BUDGET_5H > 0 )); then

@@ -91,10 +91,6 @@ MD
 
 format_openai() {
     local codex_db="${HOME}/.codex/state_5.sqlite"
-    if ! command -v sqlite3 >/dev/null 2>&1; then
-        show_fetch_error "OpenAI (Codex) Usage" "sqlite3 が見つかりません"
-        return
-    fi
 
     if [[ ! -f "$codex_db" ]]; then
         show_fetch_error "OpenAI (Codex) Usage" "Codex CLIデータが見つかりません"
@@ -108,21 +104,38 @@ format_openai() {
     local d7_ago=$((now - 7 * 86400))
     local active_ago=$((now - 1800))
 
-    # Single query: all aggregates in one pass (7→1 sqlite3 invocation)
-    local h5_tokens=0 h5_sessions=0 d1_tokens=0 d1_sessions=0 d7_tokens=0 d7_sessions=0 active=0
+    # Single query: all aggregates in one pass. sqlite3 CLI不在環境のため
+    # python3のsqlite3モジュール経由(2026-07-07: sqlite3 CLI silent-zero修正)
+    local h5_tokens h5_sessions d1_tokens d1_sessions d7_tokens d7_sessions active
     local _result
-    _result=$(sqlite3 -separator $'\t' "$codex_db" \
-        "SELECT COALESCE(SUM(CASE WHEN updated_at>$h5_ago THEN tokens_used ELSE 0 END),0),\
-COUNT(CASE WHEN updated_at>$h5_ago THEN 1 ELSE NULL END),\
-COALESCE(SUM(CASE WHEN updated_at>$d1_ago THEN tokens_used ELSE 0 END),0),\
-COUNT(CASE WHEN updated_at>$d1_ago THEN 1 ELSE NULL END),\
-COALESCE(SUM(CASE WHEN updated_at>$d7_ago THEN tokens_used ELSE 0 END),0),\
-COUNT(CASE WHEN updated_at>$d7_ago THEN 1 ELSE NULL END),\
-COUNT(CASE WHEN updated_at>$active_ago THEN 1 ELSE NULL END)\
- FROM threads WHERE model_provider='openai';" 2>/dev/null) || _result=""
-    if [[ -n "$_result" ]]; then
-        IFS=$'\t' read -r h5_tokens h5_sessions d1_tokens d1_sessions d7_tokens d7_sessions active <<< "$_result"
+    _result=$(python3 -c "
+import sqlite3, sys
+db_path, h5_ago, d1_ago, d7_ago, active_ago = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5])
+try:
+    con = sqlite3.connect('file:' + db_path + '?mode=ro', uri=True)
+    row = con.execute(
+        \"SELECT \"
+        \"COALESCE(SUM(CASE WHEN updated_at>? THEN tokens_used ELSE 0 END),0),\"
+        \"COUNT(CASE WHEN updated_at>? THEN 1 ELSE NULL END),\"
+        \"COALESCE(SUM(CASE WHEN updated_at>? THEN tokens_used ELSE 0 END),0),\"
+        \"COUNT(CASE WHEN updated_at>? THEN 1 ELSE NULL END),\"
+        \"COALESCE(SUM(CASE WHEN updated_at>? THEN tokens_used ELSE 0 END),0),\"
+        \"COUNT(CASE WHEN updated_at>? THEN 1 ELSE NULL END),\"
+        \"COUNT(CASE WHEN updated_at>? THEN 1 ELSE NULL END) \"
+        \"FROM threads WHERE model_provider='openai'\",
+        (h5_ago, h5_ago, d1_ago, d1_ago, d7_ago, d7_ago, active_ago),
+    ).fetchone()
+    print('\t'.join(str(v) for v in row))
+except Exception as exc:
+    print('ERROR:' + str(exc), file=sys.stderr)
+    sys.exit(1)
+" "$codex_db" "$h5_ago" "$d1_ago" "$d7_ago" "$active_ago" 2>/dev/null) || _result=""
+
+    if [[ -z "$_result" ]]; then
+        show_fetch_error "OpenAI (Codex) Usage" "データ取得に失敗しました(sqlite3クエリエラー)"
+        return
     fi
+    IFS=$'\t' read -r h5_tokens h5_sessions d1_tokens d1_sessions d7_tokens d7_sessions active <<< "$_result"
 
     # Format token counts (K/M) — pure bash, no awk
     local h5_fmt d1_fmt d7_fmt

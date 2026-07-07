@@ -88,10 +88,38 @@ print(dest)
 PY
 }
 
+# sqlite3 CLI不在環境(command -v sqlite3=不在)のためpython3のsqlite3モジュール経由にする。
+# クエリ失敗時はここでexit 1し、呼び出し元の `var="$(sqlite_scalar ...)"` をset -eで
+# 明示的に停止させる(無言の既定値へフォールバックしない)。
 sqlite_scalar() {
     local target_db="$1"
     local sql="$2"
-    sqlite3 "$target_db" "$sql"
+    python3 -c "
+import sqlite3, sys
+db_path, sql = sys.argv[1], sys.argv[2]
+try:
+    con = sqlite3.connect(db_path)
+    row = con.execute(sql).fetchone()
+    print(row[0] if row is not None else '')
+except Exception as exc:
+    print('ERROR:' + str(exc), file=sys.stderr)
+    sys.exit(1)
+" "$target_db" "$sql"
+}
+
+wal_checkpoint() {
+    local target_db="$1"
+    timeout 15 python3 -c "
+import sqlite3, sys
+db_path = sys.argv[1]
+try:
+    con = sqlite3.connect(db_path)
+    con.execute('PRAGMA busy_timeout=1000')
+    row = con.execute('PRAGMA wal_checkpoint(TRUNCATE)').fetchone()
+    print('wal_checkpoint result=' + str(row))
+except Exception as exc:
+    print('ERROR:' + str(exc))
+" "$target_db" 2>&1 || true
 }
 
 db_size="$(stat -c '%s' "$db_path")"
@@ -109,7 +137,7 @@ if [ "$backup" -eq 1 ]; then
 fi
 
 if [ "$apply" -eq 1 ]; then
-    checkpoint="$(timeout 15 sqlite3 "$db_path" "PRAGMA busy_timeout=1000; PRAGMA wal_checkpoint(TRUNCATE);" 2>&1 || true)"
+    checkpoint="$(wal_checkpoint "$db_path")"
     echo "memory_db_health: live_checkpoint=${checkpoint//$'\n'/;}"
     bash "$script_dir/scripts/cleanup_three_layer_tmp.sh" --apply --ttl-hours "$tmp_ttl_hours" --cache-dir "$cache_dir"
 fi
@@ -123,7 +151,7 @@ echo "memory_db_health: events=$events event_concepts=$event_concepts event_link
 
 cache_db="$(cache_path_for)"
 if [ "$apply" -eq 1 ] && [ -f "$cache_db" ]; then
-    cache_checkpoint="$(timeout 15 sqlite3 "$cache_db" "PRAGMA busy_timeout=1000; PRAGMA wal_checkpoint(TRUNCATE);" 2>&1 || true)"
+    cache_checkpoint="$(wal_checkpoint "$cache_db")"
     echo "memory_db_health: cache_checkpoint=${cache_checkpoint//$'\n'/;}"
 fi
 if [ -f "$cache_db" ]; then
@@ -134,7 +162,16 @@ else
     quick_source="live"
 fi
 
-quick_result="$(timeout "$quick_timeout" sqlite3 "$quick_target" "PRAGMA quick_check;" 2>&1 || true)"
+quick_result="$(timeout "$quick_timeout" python3 -c "
+import sqlite3, sys
+db_path = sys.argv[1]
+try:
+    con = sqlite3.connect(db_path)
+    row = con.execute('PRAGMA quick_check').fetchone()
+    print(row[0] if row else '')
+except Exception as exc:
+    print('ERROR:' + str(exc))
+" "$quick_target" 2>&1 || true)"
 if [ "$quick_result" != "ok" ]; then
     echo "memory_db_health: status=FAIL quick_check_source=$quick_source quick_check=${quick_result:-timeout_or_empty}"
     exit 1
@@ -142,7 +179,7 @@ fi
 echo "memory_db_health: quick_check_source=$quick_source quick_check=ok"
 
 if [ "$apply" -eq 1 ] && [ -f "$cache_db" ]; then
-    final_cache_checkpoint="$(timeout 15 sqlite3 "$cache_db" "PRAGMA busy_timeout=1000; PRAGMA wal_checkpoint(TRUNCATE);" 2>&1 || true)"
+    final_cache_checkpoint="$(wal_checkpoint "$cache_db")"
     echo "memory_db_health: final_cache_checkpoint=${final_cache_checkpoint//$'\n'/;}"
 fi
 

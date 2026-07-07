@@ -58,18 +58,28 @@ EOF
 }
 
 @test "openai output reuses shared codex status for remaining budgets" {
-    mkdir -p "$TEST_DIR/bin" "$TEST_DIR/home/.codex"
-    touch "$TEST_DIR/home/.codex/state_5.sqlite"
-    cat > "$TEST_DIR/bin/sqlite3" <<'SH'
-#!/usr/bin/env bash
-# Single combined query returns all aggregates in one tab-separated row:
-# h5_tokens h5_sessions d1_tokens d1_sessions d7_tokens d7_sessions active
-printf "70\t2\t70\t2\t120\t3\t1\n"
-SH
-    chmod +x "$TEST_DIR/bin/sqlite3"
+    # cmd_3719: sqlite3 CLI依存除去に伴い、CLIをスタブ化する旧実装ではなく
+    # python3のsqlite3モジュールで実DBを作成してテストする(実データ経路の回帰確認)。
+    mkdir -p "$TEST_DIR/home/.codex"
+    local now h5_ago_row d1_only_row d7_only_row
+    now=$(date +%s)
+    h5_ago_row=$((now - 600))       # 10分前: h5/d1/d7/active 全てに算入
+    d1_only_row=$((now - 7200))     # 2時間前: h5/d1/d7に算入、activeには非算入
+    d7_only_row=$((now - 3 * 86400)) # 3日前: d7のみに算入
+    python3 - "$TEST_DIR/home/.codex/state_5.sqlite" "$h5_ago_row" "$d1_only_row" "$d7_only_row" <<'PY'
+import sqlite3, sys
+db_path, r1, r2, r3 = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])
+con = sqlite3.connect(db_path)
+con.execute("CREATE TABLE threads (updated_at INTEGER, tokens_used INTEGER, model_provider TEXT)")
+con.executemany(
+    "INSERT INTO threads(updated_at, tokens_used, model_provider) VALUES (?, ?, 'openai')",
+    [(r1, 40), (r2, 30), (r3, 50)],
+)
+con.commit()
+con.close()
+PY
 
     run env \
-        PATH="$TEST_DIR/bin:$PATH" \
         HOME="$TEST_DIR/home" \
         TEST_DIR="$TEST_DIR" \
         CODEX_BUDGET_5H=100 \
@@ -86,25 +96,29 @@ SH
     [[ "$output" == *"Codex CLI ローカルDB + usage_monitor.sh"* ]]
 }
 
-@test "openai output explains sqlite3 preflight failure" {
-    local safe_bin
-    safe_bin="$(mktemp -d "$BATS_TMPDIR/nobin.XXXXXX")"
-    ln -s "$(command -v bash)" "$safe_bin/bash"
-    ln -s "$(command -v env)" "$safe_bin/env" 2>/dev/null || true
-    for cmd in date awk cat; do
-        local cmd_path
-        cmd_path="$(command -v "$cmd" 2>/dev/null)" || true
-        [ -n "$cmd_path" ] && ln -s "$cmd_path" "$safe_bin/$cmd" 2>/dev/null || true
-    done
-
+@test "openai output explains missing codex data file" {
+    # cmd_3719: sqlite3 CLI不在の前提チェックは廃止(python3のsqlite3モジュールに一本化)。
+    # 残る graceful-degradation経路はCodexデータファイル自体が存在しないケース。
     run env \
-        PATH="$safe_bin" \
         HOME="$TEST_DIR" \
         bash "$API_USAGE_SCRIPT" openai
 
-    rm -rf "$safe_bin"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"# OpenAI (Codex) Usage"* ]]
+    [[ "$output" == *"Codex CLIデータが見つかりません"* ]]
+}
+
+@test "openai output explains malformed codex data file (not silent zero)" {
+    # cmd_3719: threadsテーブル不在などのクエリ失敗時は無言の0扱いにせず明示エラーにする。
+    mkdir -p "$TEST_DIR/home/.codex"
+    : > "$TEST_DIR/home/.codex/state_5.sqlite"
+
+    run env \
+        HOME="$TEST_DIR/home" \
+        bash "$API_USAGE_SCRIPT" openai
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"# OpenAI (Codex) Usage"* ]]
-    [[ "$output" == *"sqlite3"* ]]
+    [[ "$output" == *"データ取得に失敗しました"* ]]
+    [[ "$output" != *"| 5時間 | 0 | 0 |"* ]]
 }

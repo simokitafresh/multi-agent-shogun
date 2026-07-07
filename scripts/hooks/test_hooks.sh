@@ -171,7 +171,11 @@ wait_parallel_expectations() {
     PARALLEL_JOBS=()
 }
 
-sqlite3 "$MEMORY_DB_FILE" <<'SQL'
+# sqlite3 CLI不在環境のためpython3のsqlite3モジュール経由でテストフィクスチャDBを作成する
+python3 - "$MEMORY_DB_FILE" <<'PY'
+import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+conn.executescript("""
 CREATE TABLE events (
   id TEXT PRIMARY KEY,
   ts TEXT,
@@ -193,7 +197,10 @@ VALUES
   ('e1', '2026-05-22T10:00:00', 'conversation', 'lord', 'saizo', 'inbound', 'needle saizo only', 'detail'),
   ('e2', '2026-05-22T10:01:00', 'conversation', 'lord', 'shogun', 'inbound', 'needle shogun hidden', 'detail'),
   ('e3', '2026-05-22T10:02:00', 'conversation', 'karo', 'saizo', 'task_assigned', 'needle karo hidden', 'detail');
-SQL
+""")
+conn.commit()
+conn.close()
+PY
 
 echo "=== pre-bash-combined.sh Guard Tests ==="
 echo "Hook: pre_bash_combined_eval_command"
