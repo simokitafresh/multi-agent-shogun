@@ -2499,6 +2499,66 @@ _reflux_inventory_snapshot() {
     printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$insight_count" "$backlink_count" "$total" "$first_insight" "$first_backlink" "${backlink_status:-ok}"
 }
 
+_reflux_active_target_owner() {
+    local target_path="$1"
+    local current_name="$2"
+    [ -n "$target_path" ] || return 1
+
+    python3 - "$SCRIPT_DIR" "$target_path" "$current_name" <<'PY'
+import os
+import sys
+import yaml
+
+script_dir, target_path, current_name = sys.argv[1:4]
+active_statuses = {"active", "assigned", "acknowledged", "in_progress"}
+
+def load_task(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            doc = yaml.safe_load(f) or {}
+    except Exception:
+        return {}
+    task = doc.get("task") if isinstance(doc.get("task"), dict) else doc
+    return task if isinstance(task, dict) else {}
+
+def paths_from(value):
+    if isinstance(value, str):
+        return [value.strip()] if value.strip() else []
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    return []
+
+def normalize(path):
+    path = path.replace("\\", "/").strip()
+    if not path:
+        return ""
+    if not os.path.isabs(path):
+        path = os.path.join(script_dir, path)
+    return os.path.normpath(path)
+
+target_norm = normalize(target_path)
+if not target_norm:
+    raise SystemExit(1)
+
+task_dir = os.path.join(script_dir, "queue", "tasks")
+for filename in sorted(os.listdir(task_dir)) if os.path.isdir(task_dir) else []:
+    if not filename.endswith(".yaml") or filename.startswith("."):
+        continue
+    ninja = filename[:-5]
+    if ninja == current_name:
+        continue
+    task = load_task(os.path.join(task_dir, filename))
+    status = str(task.get("status") or "").strip()
+    if status not in active_statuses:
+        continue
+    for peer_target in paths_from(task.get("target_path")):
+        if normalize(peer_target) == target_norm:
+            print(f"{ninja} status={status} parent_cmd={task.get('parent_cmd') or 'unknown'}")
+            raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
 _handle_reflux_auto_deploy() {
     local name="$1"
     local now="$2"
@@ -2591,6 +2651,13 @@ _handle_reflux_auto_deploy() {
         return 1
     fi
     ac2="作業前後の還流在庫残数(insights_pending/zero_backlinks/total)を報告YAMLへ記録し、実行証拠を残す"
+
+    local active_owner
+    active_owner=$(_reflux_active_target_owner "$target_path" "$name" 2>/dev/null || true)
+    if [ -n "$active_owner" ]; then
+        log "REFLUX-AUTO-SKIP: $name target_path already active (${active_owner}): ${target_path}"
+        return 1
+    fi
 
     deploy_script="$SCRIPT_DIR/scripts/deploy_task.sh"
     if [ ! -r "$deploy_script" ]; then
