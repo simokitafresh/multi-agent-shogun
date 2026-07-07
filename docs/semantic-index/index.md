@@ -2400,7 +2400,7 @@ codd:
 |------|---|
 | id | parameter_space_integrity |
 | label | パラメータ空間縮小禁止 |
-| aliases | パラメータ空間縮小禁止, 探索範囲維持, 範囲を狭めるな, 全探索継承, 計算量で絞るな |
+| aliases | パラメータ空間縮小禁止, 探索範囲維持, 範囲を狭めるな, 全探索継承, 計算量で絞るな, 目標を達成するまで高速化を続けずにfailにするのはなぜだ？高速化トライは何回やったんだ？ |
 | skills | なし |
 | related_concepts | growth_loop, codd_methodology, test_quality_framework, gs_speed_e7_l0_full_confirm |
 
@@ -2410,6 +2410,7 @@ codd:
 | file | `context/growth-loop.md` |
 | cmd | `cmd_1449` backfill — | cmd_1449 | Phase 4 perf_calc除去(cmd_1447偵察のorphaned code実証) | GATE CLEAR。125行除去。signals完全一致(3PF×20日 |
 | causal | `cmd_3615` files_modified: [[parameter_space_integrity]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-06T08:07:27+09:00 目標を達成するまで高速化を続けずにfailにするのはなぜだ？高速化トライは何回やったんだ？ (INS-20260706-092824641-586a還流, cmd_reflux_insight_202607071621_saizo) |
 
 ## alm_research — ALM研究
 
