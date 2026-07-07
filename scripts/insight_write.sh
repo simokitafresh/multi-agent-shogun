@@ -5,6 +5,7 @@
 #        bash scripts/insight_write.sh --resolve <id>
 #   priority: high/medium/low (default: medium)
 #   source: 気づきの出所 (default: manual)
+#   optional env: INSIGHT_FIX_KNOWN=1 INSIGHT_TARGET_FILE=<path> INSIGHT_VERIFY_COMMAND=<cmd>
 #
 # 設計原則: 1コマンドで保存完了。コスト最小。/clear後も消えない。
 # 消費: idle時 or セッション開始時にqueue/insights.yamlを確認→着手
@@ -140,6 +141,10 @@ fi
 msg="${1:?Usage: insight_write.sh \"message\" [priority] [source]}"
 priority="${2:-medium}"
 source_info="${3:-manual}"
+fix_known="${INSIGHT_FIX_KNOWN:-false}"
+target_file="${INSIGHT_TARGET_FILE:-}"
+verify_command="${INSIGHT_VERIFY_COMMAND:-}"
+verify_timeout="${INSIGHT_VERIFY_TIMEOUT:-10}"
 
 # Validate priority
 if [[ ! "$priority" =~ ^(high|medium|low)$ ]]; then
@@ -150,11 +155,38 @@ if [[ ! "$SOURCE_REPEAT_THRESHOLD" =~ ^[0-9]+$ ]]; then
   echo "ERROR: INSIGHT_SOURCE_REPEAT_THRESHOLD must be a non-negative integer, got: '$SOURCE_REPEAT_THRESHOLD'" >&2
   exit 1
 fi
+case "${fix_known,,}" in
+  1|true|yes|y) fix_known="true" ;;
+  ""|0|false|no|n) fix_known="false" ;;
+  *)
+    echo "ERROR: INSIGHT_FIX_KNOWN must be true/false, got: '$fix_known'" >&2
+    exit 1
+    ;;
+esac
+if [[ ! "$verify_timeout" =~ ^[0-9]+$ ]] || [[ "$verify_timeout" -le 0 ]]; then
+  echo "ERROR: INSIGHT_VERIFY_TIMEOUT must be a positive integer, got: '$verify_timeout'" >&2
+  exit 1
+fi
 
 # Skip synthetic test fixtures. They are useful in tests, but must not pollute the real queue.
 if [[ "$msg" == *"test_pattern"* || "$msg" == *"test_fix"* ]]; then
   echo "SKIP:test-fixture"
   exit 0
+fi
+
+verification_status="not_requested"
+verification_exit_code=""
+verification_output=""
+if [[ "$fix_known" == "true" && -n "$verify_command" ]]; then
+  set +e
+  verification_output="$(timeout "$verify_timeout" bash -lc "$verify_command" 2>&1)"
+  verification_exit_code="$?"
+  set -e
+  if [[ "$verification_exit_code" -eq 0 ]]; then
+    verification_status="passed"
+  else
+    verification_status="failed"
+  fi
 fi
 
 # Generate ID and ts in a single date call (eliminates redundant second subprocess).
@@ -188,7 +220,11 @@ fi
   # Parse the controlled YAML shape directly to avoid importing PyYAML on every call.
   raw_result=$(INSIGHTS_FILE_ENV="$INSIGHTS_FILE" MSG_ENV="$msg" PRIORITY_ENV="$priority" \
                SOURCE_INFO_ENV="$source_info" ID_ENV="$id" TS_ENV="$ts" STATUS_ENV="$status" \
-               RESOLVED_AT_ENV="$resolved_at" \
+               RESOLVED_AT_ENV="$resolved_at" FIX_KNOWN_ENV="$fix_known" \
+               TARGET_FILE_ENV="$target_file" VERIFY_COMMAND_ENV="$verify_command" \
+               VERIFICATION_STATUS_ENV="$verification_status" \
+               VERIFICATION_EXIT_CODE_ENV="$verification_exit_code" \
+               VERIFICATION_OUTPUT_ENV="$verification_output" \
                python3 - <<'PYEOF'
 import json
 import os
@@ -205,6 +241,12 @@ entry_id = os.environ['ID_ENV']
 ts = os.environ['TS_ENV']
 status = os.environ['STATUS_ENV']
 resolved_at = os.environ['RESOLVED_AT_ENV']
+fix_known = os.environ['FIX_KNOWN_ENV']
+target_file = os.environ['TARGET_FILE_ENV']
+verify_command = os.environ['VERIFY_COMMAND_ENV']
+verification_status = os.environ['VERIFICATION_STATUS_ENV']
+verification_exit_code = os.environ['VERIFICATION_EXIT_CODE_ENV']
+verification_output = os.environ['VERIFICATION_OUTPUT_ENV']
 
 def repair_trailing_partial_entry(path):
     """Quarantine an incomplete tail entry before scanning/appending."""
@@ -217,7 +259,12 @@ def repair_trailing_partial_entry(path):
     truncate_at = None
     current_start = None
     current_has_status = False
-    known_fields = ('  ts:', '  insight:', '  priority:', '  source:', '  status:', '  resolved_at:', '  resolved_reason:')
+    known_fields = (
+        '  ts:', '  insight:', '  priority:', '  source:', '  status:',
+        '  resolved_at:', '  resolved_reason:', '  fix_known:',
+        '  target_file:', '  verify_command:', '  verification:',
+        '    status:', '    exit_code:', '    output:',
+    )
 
     for idx, line in enumerate(lines):
         stripped = line.strip()
@@ -393,8 +440,23 @@ entry_lines = [
     f'  insight: {yaml_escape(msg)}\n',
     f'  priority: {yaml_escape(priority)}\n',
     f'  source: {yaml_escape(source_info)}\n',
+    f'  fix_known: {fix_known}\n',
     f'  status: {status}\n',
 ]
+if target_file:
+    entry_lines.append(f'  target_file: {yaml_escape(target_file)}\n')
+if verify_command:
+    entry_lines.append(f'  verify_command: {yaml_escape(verify_command)}\n')
+if verification_status != 'not_requested':
+    verification_output = re.sub(r'\s+', ' ', verification_output).strip()
+    if len(verification_output) > 300:
+        verification_output = verification_output[:300] + '...'
+    entry_lines.extend([
+        '  verification:\n',
+        f'    status: {yaml_escape(verification_status)}\n',
+        f'    exit_code: {verification_exit_code or -1}\n',
+        f'    output: {yaml_escape(verification_output)}\n',
+    ])
 if resolved_at:
     entry_lines.append(f'  resolved_at: {yaml_escape(resolved_at)}\n')
 
@@ -413,9 +475,10 @@ finally:
     if os.path.exists(tmp_path):
         os.unlink(tmp_path)
 
-# Line 1: entry_id; Line 2: source_pending_count (for bulletin threshold check)
+# Line 1: entry_id; Line 2: source_pending_count; Line 3: immediate action flag
 print(entry_id)
 print(source_pending_count)
+print('fix_known_verified' if fix_known == 'true' and verification_status == 'passed' else 'threshold')
 PYEOF
 ) || { echo "ERROR: insight write failed" >&2; exit 1; }
 
@@ -447,9 +510,21 @@ PYEOF
   # Escalate repeated pending insights from the same source so important patterns
   # do not remain buried in queue/insights.yaml. Keep this out of the write path:
   # bulletin failures must not break normal insight recording.
-  if [[ "$result" == INS-* && "$SOURCE_REPEAT_THRESHOLD" -gt 0 ]]; then
-    repeat_count="${raw_result##*$'\n'}"
-    if [[ "$repeat_count" -ge "$SOURCE_REPEAT_THRESHOLD" && -f "$BULLETIN_SCRIPT" ]]; then
+  if [[ "$result" == INS-* ]]; then
+    repeat_count="$(printf '%s\n' "$raw_result" | sed -n '2p')"
+    escalation_mode="$(printf '%s\n' "$raw_result" | sed -n '3p')"
+    if [[ "$escalation_mode" == "fix_known_verified" && -f "$BULLETIN_SCRIPT" ]]; then
+      _fix_summary="${msg//$'\n'/ }"
+      _fix_summary="${_fix_summary//$'\r'/ }"
+      _fix_summary="${_fix_summary//$'\t'/ }"
+      if (( ${#_fix_summary} > 200 )); then
+        _fix_summary="${_fix_summary:0:200}..."
+      fi
+      BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" saizo \
+        "INSIGHT_FIX_KNOWN: latest=${result} source=${source_info} priority=${priority} target_file=${target_file:-none} verify_command=${verify_command} verification=passed insight_summary=${_fix_summary}" \
+        false action_required \
+        >/dev/null || echo "WARN: insight fix_known bulletin failed for source=$source_info" >&2
+    elif [[ "$SOURCE_REPEAT_THRESHOLD" -gt 0 && "$repeat_count" -ge "$SOURCE_REPEAT_THRESHOLD" && -f "$BULLETIN_SCRIPT" ]]; then
       # デバウンス: 同一sourceのINSIGHT_REPEATを24時間以内に重複投稿しない (10分→24h: 2026-06-29 INSIGHT_REPEAT 17件蓄積→確認負荷→先送り誘発の対策)
       _repeat_debounce_file="/tmp/shogun_insight_repeat_${source_info//[^a-zA-Z0-9_]/_}.last"
       _repeat_now=$(date +%s)

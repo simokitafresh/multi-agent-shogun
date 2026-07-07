@@ -605,3 +605,78 @@ EOF
     run grep -F "insight_summary=同一source二件目" "$TEST_TMP/bulletin.log"
     [ "$status" -eq 0 ]
 }
+
+@test "fix_known: 検証成功ならsource閾値を待たずaction_required掲示板へ通知する" {
+    rm -f /tmp/shogun_insight_repeat_fix_known_source.last
+    cat > "${TEST_TMP}/scripts/bulletin_write.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'notify=%s\nposted_by=%s\ncontent=%s\naction_type=%s\n' "${BULLETIN_NOTIFY:-}" "$1" "$2" "$4" >> "$TEST_TMP/bulletin.log"
+EOF
+    chmod +x "${TEST_TMP}/scripts/bulletin_write.sh"
+    printf 'exists\n' > "$TEST_TMP/target.txt"
+
+    run env TEST_TMP="$TEST_TMP" \
+        INSIGHT_SOURCE_REPEAT_THRESHOLD=3 \
+        INSIGHT_FIX_KNOWN=true \
+        INSIGHT_TARGET_FILE="$TEST_TMP/target.txt" \
+        INSIGHT_VERIFY_COMMAND="test -f '$TEST_TMP/target.txt'" \
+        bash "${TEST_TMP}/scripts/insight_write.sh" "fix known target exists" "high" "fix_known_source"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ ^INS- ]]
+    local ins_id="$output"
+
+    run grep -F "notify=shogun" "$TEST_TMP/bulletin.log"
+    [ "$status" -eq 0 ]
+    run grep -F "action_type=action_required" "$TEST_TMP/bulletin.log"
+    [ "$status" -eq 0 ]
+    run grep -F "INSIGHT_FIX_KNOWN: latest=${ins_id}" "$TEST_TMP/bulletin.log"
+    [ "$status" -eq 0 ]
+    run grep -F "verification=passed" "$TEST_TMP/bulletin.log"
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('${TEST_TMP}/queue/insights.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+entry = data['insights'][0]
+assert entry['fix_known'] is True, entry
+assert entry['target_file'] == '${TEST_TMP}/target.txt', entry
+assert entry['verification']['status'] == 'passed', entry
+assert entry['verification']['exit_code'] == 0, entry
+print('FIX_KNOWN_RECORDED')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"FIX_KNOWN_RECORDED"* ]]
+}
+
+@test "fix_known: 検証失敗なら即時通知せず従来閾値経路へフォールバックし結果を記録する" {
+    rm -f /tmp/shogun_insight_repeat_fix_known_fail.last
+    cat > "${TEST_TMP}/scripts/bulletin_write.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'notify=%s\nposted_by=%s\ncontent=%s\naction_type=%s\n' "${BULLETIN_NOTIFY:-}" "$1" "$2" "$4" >> "$TEST_TMP/bulletin.log"
+EOF
+    chmod +x "${TEST_TMP}/scripts/bulletin_write.sh"
+
+    run env TEST_TMP="$TEST_TMP" \
+        INSIGHT_SOURCE_REPEAT_THRESHOLD=3 \
+        INSIGHT_FIX_KNOWN=true \
+        INSIGHT_TARGET_FILE="$TEST_TMP/missing.txt" \
+        INSIGHT_VERIFY_COMMAND="test -f '$TEST_TMP/missing.txt'" \
+        bash "${TEST_TMP}/scripts/insight_write.sh" "fix known target missing" "high" "fix_known_fail"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ ^INS- ]]
+    [ ! -f "$TEST_TMP/bulletin.log" ]
+
+    run python3 -c "
+import yaml
+with open('${TEST_TMP}/queue/insights.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+entry = data['insights'][0]
+assert entry['fix_known'] is True, entry
+assert entry['verification']['status'] == 'failed', entry
+assert entry['verification']['exit_code'] != 0, entry
+print('FIX_KNOWN_FAILED_RECORDED')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"FIX_KNOWN_FAILED_RECORDED"* ]]
+}
