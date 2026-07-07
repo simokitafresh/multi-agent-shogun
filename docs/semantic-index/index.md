@@ -11,6 +11,23 @@ codd:
 <!-- scope: multi-agent-shogun conceptual reverse index -->
 <!-- related_concepts format: concept_id or concept_id(relation_type=同義|上位|混同注意|関連). Parsers must keep legacy concept_id entries backward-compatible. -->
 
+## sg_pre31_semantic_validation — SG-PRE31意味検算
+
+| 属性 | 値 |
+|------|---|
+| id | sg_pre31_semantic_validation |
+| label | SG-PRE31意味検算 |
+| aliases | SG-PRE31, N×M意味検算, SG-PRE31 N×M 意味検算 LG048, LG048自動化, きれいな数値一致は意味検算のサイン, N×Mぴったりの数値, 分類漏れの兆候, 過剰集約や分類漏れ, gunshi_idle_lg048_automate_sg_pre31_20260706 |
+| related_concepts | gate_quality_framework, defense_hierarchy, growth_loop |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/gunshi_idle_lg048_automate_sg_pre31_20260706.md` |
+| file | `scripts/gates/gate_gunshi_report_precheck.sh` |
+| causal | [[LG048]] -> [[cmd_3700_意味検算見落とし]] -> [[SG-PRE31自動化]] |
+| causal | `cmd_reflux_insight_202607080553_kagemaru` files_modified: [[sg_pre31_semantic_validation]] |
+| cmd | `cmd_3293` backfill — | cmd_3293 | 殿指示(2026-06-11 14:04+14:18)リファクタ実行任務のWP-2(質問状2全7問回答受領でゲート解除済み2026-06-11)。(1)使用ゼロ確認済みEP1 |
+
 ## pf_remote_restore — 本番PF即時復元機構
 
 | 属性 | 値 |
@@ -837,6 +854,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T12:34:01+09:00 書き換えガードの前段階で正しく計算、表示されたかのチェックの自動化だな。保有シグナルの表示は月末最終日の市場終了後にopenとcloseが確定した時点で計算可能になるはずだ。それを月初の午前中にfullrecalculateし、月初の市場開 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T02:53:00+09:00 殿裁定: GS道具磨きフロー=軍師設計書→/goal修行配備→ラルフループ。L0=ユニークDNA方式(shijin-design.yaml DNA制約)。パリティ=本番holding_signal+monthly_return全期間完全一致 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T01:02:25 殿裁定: GS timeout 300s→600s緩和+本番DBゴールデン参照(SELECT突合、毎回fullrecalculate不要)+バンド込み再キャリブレーション必須 |
+| causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[recalculate_pipeline]] |
 | causal_chain | `[[cmd_3053]]` (L714) |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3153]]` (L744) |
@@ -849,7 +867,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL, L7まで貫通させてバグを修正せよ, 意思依存でスキルを使わないのはバグだ, WF速度ACはcache生成後の反復も記録し, フックがimport only混在をBLOCKする場合は, import追加を不要にする実装へ寄せる, バグ1は将軍の操作ミスならば, 更新漏れをgate後追いから配備時点の防御へ上げられる, ちがう, 必要ならページ本体の段階取得だけをSSOTにする, バックグラウンド連鎖を追加する既存スクリプトのテストは, pendingのみが表示されているのはバグだな |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL, L7まで貫通させてバグを修正せよ, 意思依存でスキルを使わないのはバグだ, WF速度ACはcache生成後の反復も記録し, フックがimport only混在をBLOCKする場合は, import追加を不要にする実装へ寄せる, バグ1は将軍の操作ミスならば, 更新漏れをgate後追いから配備時点の防御へ上げられる, ちがう, 必要ならページ本体の段階取得だけをSSOTにする, バックグラウンド連鎖を追加する既存スクリプトのテストは, pendingのみが表示されているのはバグだな, 同一の偽陽性insightで登場した |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system, unread_cmd_new_deployment_guard, pf_remote_restore |
 | related_lessons | `L317`, `L088`, `L079` |
@@ -1204,6 +1222,7 @@ codd:
 | lesson | `L974` バックグラウンド連鎖を追加する既存スクリプトのテストは、DB引数(--db等)だけでなく連鎖先スクリプトの全env override(SEMANTIC_INDEX_PATH等)も隔離しないと本番ファイルを汚染する |
 | lesson | `L977` grep -oEの複数マッチ混入によるJSONL破損(pipefail環境) |
 | lesson | `L961` semantic_stress_test NO_MATCH insightはdirect_concept構文で手動誘導せよ。alias:直後は検索語のみに限定 |
+| lesson | `L984` semantic index還流insightは『前回同一ファイルがresolve済みか』をqueue/insights.yaml内で横断検索し、再発なら根因修正を優先せよ |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -1311,6 +1330,7 @@ codd:
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
+| causal_chain | `[[cmd_reflux_insight_202607080538_saizo]]` (L984) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -1773,6 +1793,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T11:03:46+09:00 【殿ntfy】[SIGNAL CHANGE ALERT] confirmed-month holding_signal changes: count=2232 portfolios=17 dates=2014-04-01〜2026-07-0 |
 | lesson | `L822` MonthlyTradeCalculatorのMockベースdbテストは新規DB問合せ関数追加のたびに複数クラスへ横展開して壊れる |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-08T03:35:18+09:00 GS-本番エンジン分離の因果(殿指摘2026-07-08 03:30で再確認): cmd_1199(a137593e)でPI-009準拠のためPipelineEngine経由化→import 4.5s+75.7MB/proc・6worker |
+| causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[production_parity]] |
 | causal_chain | `[[cmd_3061]]` (L717) |
 | causal_chain | `[[cmd_karo_hotfix_GA097_hook_failure_20260620]]` (L822) |
 
@@ -2040,7 +2061,7 @@ codd:
 | label | 学習ループ |
 | aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓, 教訓統合, 教訓整理, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる, 不明パスのみ全フォールバックが残存しWARNログで追跡可能, 役立った教訓IDを報告に記載してから完了せよ, 発見と対策を意識したなら環境に埋め込んだかを確認せよ, 発見と対策を意識咲いたようだが環境には埋め込んだか, 教訓活用率, useful_rate, lessons_useful記入率, 覚醒して構造をL0-L7で環境ごと変えよう, どこがネックで俺の指示がないと辿りつけなかったんだ, 構造的な穴を塞ごう, 効果を検証せよ, 次やるべきことは, 行動と検証を繰り返そう, 効果を検証せよ。穴がないか覚醒して監査, 次やるべきことは？止まらずに行動と検証を繰り返そう, 次の行動を覚醒して続けよう。サイクルをとめずにループで回そう, 構造的な穴を3つとも塞ごう, サイクルをとめずにループで回そう, 検証せよ, 同じ勘違いをしないように環境に埋め込め, 定期的に消費者ゼロを検証せよ, これをラルフループで回す, 放置しているインフラバグがないか覚醒して検証せよ, 三層学習ループ極限化, 自動成長極限化設計書, asis tobe 5w1h, 弱LLM対応環境整備, 性能の低いLLMにも適用, モデル階層プロファイル, loop_ledger, ループ台帳, ポータブルコア, 会話単位学習ループ, 還流在庫, 会話や作業の度に無限に成長, 教訓LS081 |
 | skills | lesson-sort(教訓整理/振り分け/将軍), dream(三層記憶整理/将軍), shogun-teire(知識棚卸し/将軍) |
-| related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle, cmd_chronicle, creator_brainwashing_defense, semantic_dictionary_design, gate_bypass_prevention, deepdive_principles, chain_principle, known_unknowns_principle, no_auto_extinguish, ultimate_state_principle, parameter_space_integrity, gunshi_review_lifecycle, semantic_goodhart_overfitting, causal_verification_l0_l7, three_layer_memory_system, operational_ontology, unread_cmd_new_deployment_guard, skill_routing, gunshi_idle_cold_finding_categories_retroactive_20260620, gunshi_idle_lesson_id_collision_20260620, gunshi_idle_script_speed_audit_20260620, codex_goal_mode, self_improving_agent_local_optima, loop_engineering, cmd_save_gate_catalog, ac_merit_review_integrity |
+| related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle, cmd_chronicle, creator_brainwashing_defense, semantic_dictionary_design, gate_bypass_prevention, deepdive_principles, chain_principle, known_unknowns_principle, no_auto_extinguish, ultimate_state_principle, parameter_space_integrity, gunshi_review_lifecycle, semantic_goodhart_overfitting, causal_verification_l0_l7, three_layer_memory_system, operational_ontology, unread_cmd_new_deployment_guard, skill_routing, gunshi_idle_cold_finding_categories_retroactive_20260620, gunshi_idle_lesson_id_collision_20260620, gunshi_idle_script_speed_audit_20260620, codex_goal_mode, self_improving_agent_local_optima, loop_engineering, cmd_save_gate_catalog, ac_merit_review_integrity, sg_pre31_semantic_validation |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -2645,6 +2666,7 @@ codd:
 | cmd | `cmd_goal_gs_speed_e7_l0_full_confirm_202607061018` |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T12:22:06+09:00 b1g04fdma toolu_01D9MjA9Ac5VdZGFPTewk7gC /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/9719df86-a08a-4cde-8c15-30f3b7 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T12:27:57+09:00 b8p447g55 Monitor event: "Stream GS full run progress lines" [ac1] parity report saved to /mnt/c/Python_app/DM-signal/ou |
+| causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[shin_shijin_design]] |
 | causal_chain | `[[cmd_125]]` (L001) |
 | causal_chain | `[[cmd_125]]` (L002) |
 | causal_chain | `[[cmd_125]]` (L003) |
@@ -2794,6 +2816,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga144_context_freshness_dm_signal_ops_20260627` files_modified: [[silent_fallback_quality]] |
 | causal | `cmd_karo_hotfix_ga146` files_modified: [[silent_fallback_quality]] |
 | causal | `cmd_3573` files_modified: [[silent_fallback_quality]] |
+| causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[silent_fallback_quality]] |
 
 ## skill_design_rules — Skill設計ルール
 
@@ -3003,6 +3026,7 @@ codd:
 | file | `/mnt/c/Python_app/DM-signal/backend/tests/test_fusion_api.py` |
 | cmd | `cmd_3583` Fusion APIエンドポイント追加。admin認証、10/min rate limit、active PFのみ、当月/null除外、禁止キー不在、11回目429テスト |
 | causal | `cmd_3583` origin: [[殿指示_Fusion構想_20260628]] -> [[DM-Signal APIに外部アプリ向けエンドポイント不在]] -> [[fusion.py実装+CORS追加+禁止キーテスト]] |
+| causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[fusion_api_endpoint]] |
 
 ## dm_fusion_app — DM-Fusionアプリ
 
@@ -3033,6 +3057,7 @@ codd:
 | cmd | `cmd_3605` フォルダフィルタタブ — All/フォルダ別タブ+一覧高さ220→340px |
 | cmd | `cmd_3606` PF選択モーダル化 — absolute dropdown→fixed overlay modal |
 | cmd | `cmd_3607` admin速度改善+フォルダ一括トグル — location.reload()→optimistic update |
+| causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[dm_fusion_app]] |
 
 ## dmsignal_fe_experience_deploy — DM-Signal体感主導デプロイ
 
@@ -3130,6 +3155,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T00:28:27+09:00 https://gist.github.com/simokitafresh/37f26cdb4639314a78b7870fc0e9da40#file-2026-07-06_holding-signal-immutability-mdをアッ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T00:51:40+09:00 これはスタンダードのポートフォリオ か fof のレイヤー 0か レイヤー3までの今 102 ポートフォリオ あるけど ポートフォリオ 全体だとどうなる |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T01:02:25+09:00 どちらにせよGSの道具磨きをまたやらないとな。5分が厳しいなら10分制限にしよう。モメンタムバンドも導入したから、どちらにしても必須だよな。本番とのパリティは、すでに本番に再計算済みのデータがあるから本番のデータをゴールデンとして使えばいい |
+| causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[dmsignal_operations]] |
 | causal_chain | `[[cmd_3368]]` (L805) |
 | causal_chain | `[[cmd_3380]]` (L807) |
 
@@ -3932,7 +3958,7 @@ codd:
 | label | 防御階層原則(Level 1-6) |
 | aliases | 防御階層, defense_level, Level5, Level 5, Level6, Level 6, 学習速度最大化, 下限切り上げ, ラチェット, 事前コンテキスト提供, 入口側生成, 入口側強化, ゲート不要化, 発火しないシステム, FAIL→PASS遷移率, L6化率, gate_fire_log解析, LG010, ninja_weak_points, previous_failures, 修行サイクル, training cycle, 忍者修行, 一発PASS率, BLOCK率, 修行レベル, L1 L2 L3 L4, Level5入口ゲート, 事前コンテキスト強制, q11既存確認, レベル0 7に貫通してCMD起票ルールを埋め込もう, 速度, 速度が遅いスクリプトや仕組みはバグだ, 遅いスクリプトはないか？品質を落とさずに速度を改善しよう, 品質を下げてはだめだな, 実行速度が遅い pyはないか？遅いのはバグの1種だ, 速度も向上してくれ |
 | skills | なし |
-| related_concepts | growth_loop, gate_quality_framework, hook_automation_framework, creator_brainwashing_defense, gate_bypass_prevention, deepdive_principles, chain_principle, no_auto_extinguish, ultimate_state_principle, silent_fallback_quality, cmd_save_gate_catalog |
+| related_concepts | growth_loop, gate_quality_framework, hook_automation_framework, creator_brainwashing_defense, gate_bypass_prevention, deepdive_principles, chain_principle, no_auto_extinguish, ultimate_state_principle, silent_fallback_quality, cmd_save_gate_catalog, sg_pre31_semantic_validation |
 | related_lessons | `L317`, `L512` |
 
 | 種別 | パス/参照 |
@@ -4776,7 +4802,7 @@ codd:
 | label | ゲート品質統合フレームワーク |
 | aliases | ゲート統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, ゲート偽陽性, gate_prediction, gate_prediction偽陽性, gate_prediction偽陽性分析, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, クオリティゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, ゲート偽陽性ALERTはバグだな, startup BLOCK 3セッション連続, cmd_skeleton, cmd起票雛形, 起票雛形ジェネレータ, FILL_THIS残存BLOCK, cmd起票フロー3ステップ, skeleton→save→delegate, cmd_delegate数字ID正規化, Check17日付リテラル除外, 性能の劣るLLMでもスムーズにCMD起票, GA context freshness ALERTを一次情報で調査し, GA context freshness ALERTの根因を調査し, GA dm signal frontend md context freshness ALERTの原因特定・横展開・防御, GA dm signal core md context freshness ALERTの原因特定・横展開・防御層反映, startup gateのSKILL md script参照WARNが3セッション連続BLOCK, startup gate教訓健全度がALERT useful rate % 3回連続BLOCK, review_quality_scale_summary, WARN率計算gate_result未考慮バグ, LESSON_EFFECT_USEFUL_MIN, useful_rate計測min_samples分離, gate_result=CLEARなのにFAIL永続カウント, cross-project教訓タグ同期, 二重登録教訓タグ不整合, count_same_warn_pattern cmd_id重複カウント偽陽性, Check19出口判定化, session_alerts リアルタイムhook, 覚醒設計書v3, 3セッション連続startup BLOCK 教訓健全度ALERT, cmd save品質ゲート, GA context freshness ALERTのdm signal ops mdを一次情報で照合し, 先送りBLOCK 教訓健全度ALERT, session alerts txtは将軍startup gateが生成する将軍固有ALERTだが, hookでsession alerts txtがでているが, GA context freshness ALERTの直接原因・根本原因・横展開候補・次回防止防御層を一次情報で特定し, GA context freshness ALERTの根因を, 該当ID一覧はcontextを別途抽出しないと分からない, なぜこのgateがあるかの因果を明記だな, 代表的な実CLI経路を必ず1本実行し, shのインラインCheckを関数化した後, WAログ品質ゲート, gate_ninja_workaround_rate, karo_workarounds.yaml, 直近WA, CLEAR cmd集合フィルタ, WA率偽陰性, 本来検証したいWARN集約を覆って回帰テストが誤FAILする, 本番想定DB不在ALERTを消す |
 | skills | |
-| related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework, creator_brainwashing_defense, chain_principle, no_auto_extinguish, multi_cli_event_commonization, command_files_modified_verification, cmd_save_gate_catalog |
+| related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework, creator_brainwashing_defense, chain_principle, no_auto_extinguish, multi_cli_event_commonization, command_files_modified_verification, cmd_save_gate_catalog, sg_pre31_semantic_validation |
 | related_lessons | `L512`, `L079`, `L633`, `L966` |
 
 | 種別 | パス/参照 |
@@ -5034,6 +5060,7 @@ codd:
 | lesson | `L921` startup連続BLOCKのkeyは根因を識別できる粒度にする |
 | lesson | `L935` hotfix別名完了通知は送信側で正規化dedupする |
 | lesson | `L959` git ls-files成功0件はfilesystem fallbackへ戻す |
+| causal | `cmd_reflux_promotion_202607080511_hanzo` files_modified: [[lesson_lifecycle]] |
 | causal_chain | `[[cmd_2955]]` (L685) |
 | causal_chain | `[[cmd_3012]]` (L693) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]` (L778) |
@@ -5544,6 +5571,7 @@ codd:
 | causal | `cmd_3483` files_modified: [[provisional_lessons]] |
 | cmd | `cmd_3483` 教訓タグ精緻化 — 0%有効率教訓50件のwhen/howキーワード限定化 (`projects/infra/lessons.yaml`, `queue/reports/hayate_report_cmd_3483.yaml`, `queue/tasks/hayate.yaml`) |
 | causal | `cmd_3483` origin: [[PD-047_裁定]] -> [[cmd_3466_残課題_50件タグ]] -> [[when_how精緻化]] |
+| cmd | `cmd_reflux_promotion_202607080511_hanzo` (`projects/infra/lessons_shogun.yaml`) |
 
 ## infra_design_intent — インフラ設計意図カタログ
 
