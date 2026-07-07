@@ -2,7 +2,7 @@
 
 origin: [[殿指示_三層記憶有効利用加速_20260707]] <- [[three-layer-memory-l0-l7-penetration-design_20260604]] + [[three_layer_memory_first_priority_design_20260606]] + [[three-layer-learning-loop-auto-growth-asis-tobe-5w1h_20260707]]
 created: 2026-07-07T21:30+09:00 (将軍直筆。設計書=将軍直接編集)
-status: **v1.1 — 殿裁可済み(21:37「やろう」)。M1-M5同日実装完了、M4配備中、M6は最終盤(§7実績表参照)**
+status: **v1.2 — M1-M6全施策 同日実装完了(2026-07-07 23:20検証済み。§7実績表参照)。派生: Layer2連鎖自己修復=cmd_3742配備中**
 baseline計測日: 2026-07-07 21:25 (gate_three_layer_health.sh + search_logs SQL一次計測)。M1初回実測(22:16): 検索→引用変換率1.9%
 
 ## §0 要求定義（殿指示 2026-07-07 21:24 の5W1H）
@@ -161,8 +161,9 @@ baseline計測日: 2026-07-07 21:25 (gate_three_layer_health.sh + search_logs SQ
 | 2 | cmd_3736→cmd_3739 | M3 報告テンプレ自動想起+memory_references欄(偵察→実装) | **完了**。偵察が挿入点・欄分離設計・「gate先行は全FAIL化」の順序制約を特定 |
 | 3 | cmd_3737 | M2 レビュー依頼へのpush型検索添付+fail-soft | **完了** |
 | 4 | cmd_3738 | M5 引用欠落の事後検証(定型応答除外+回帰テスト) | **完了**。※起票前提の誤り(WARN判定は既存)を軍師レビューが補正し真の差分に絞って達成 |
-| 5 | cmd_3740 | M4 引用有効率集計+還流リスト | depends_on=cmd_3739で配備中 |
-| 6 | (M4完了後起票) | M6 bootstrap想起同梱(T6の増分) | 想起script一式の確定後に起票 |
+| 5 | cmd_3740 | M4 引用有効率集計+還流リスト | **完了**(22:41 CLEAR)。初回実測: 引用有効率12.5%(evaluated=8)、還流対象2 source(semantic_search 6件が同一無関係結果を重複注入=検索品質の還流入口が初稼働) |
+| 6 | cmd_3741 | M6 bootstrap想起同梱(T6の増分) | **完了**(23:14 CLEAR)。recall_inject.sh(クエリ生成+検索+注入)を可搬コアへ同梱。将軍が新PJ相当一時dirで動作実証: 境界=空出力exit 0、ヒット時=キーワード抽出→検索→注入テキスト出力 |
+| 7 | cmd_3742 | 派生: Layer2連鎖自己修復(失敗理由記録+未貫通の自動再貫通) | 配備中。発端=家老エスカレーション(三層記憶DB健全性WARN複数セッション連続)。将軍手動再貫通で当座回復(未貫通1→0)。書込み時retryはfix 04cea95d9で別途稼働 |
 
 ## §8 先行設計書との対応（車輪防止）
 
