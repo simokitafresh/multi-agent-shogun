@@ -449,6 +449,23 @@ if [[ "$payload" == *'queue/reports/'* ]]; then
     fi
 fi
 
+# === Guard 3.5: karo_workarounds-deny (bash direct write to workaround log) ===
+if [[ "$payload" == *'logs/karo_workarounds.yaml'* ]]; then
+    if [[ -n "${command:-}" && "$command" != *'karo_workaround_log.sh'* ]]; then
+        wa_redirect_pattern='>+[[:space:]]*[^ ]*logs/karo_workarounds\.yaml'
+        wa_tee_pattern='tee[[:space:]].*logs/karo_workarounds\.yaml'
+        wa_sed_pattern='(^|[;&|])[[:space:]]*sed[[:space:]].*(-i|--in-place).*logs/karo_workarounds\.yaml'
+        wa_awk_pattern='(^|[;&|])[[:space:]]*awk[[:space:]].*logs/karo_workarounds\.yaml.*>+'
+        wa_yfs_pattern='(^|[;&|])[[:space:]]*(bash[[:space:]]+)?[^;&|[:space:]]*yaml_field_set\.sh[[:space:]]+logs/karo_workarounds\.yaml'
+        wa_python_pattern='python3?.*open.*logs/karo_workarounds\.yaml'
+        if [[ "$command" =~ $wa_redirect_pattern ]] || [[ "$command" =~ $wa_tee_pattern ]] \
+            || [[ "$command" =~ $wa_sed_pattern ]] || [[ "$command" =~ $wa_awk_pattern ]] \
+            || [[ "$command" =~ $wa_yfs_pattern ]] || [[ "$command" =~ $wa_python_pattern ]]; then
+            emit_deny "BLOCKED: logs/karo_workarounds.yamlへのBash直接書込み禁止。karo_workaround_log.sh経由で記録せよ。brainwash_checkとALERT経路を迂回させないため。"
+        fi
+    fi
+fi
+
 # === Guard 4: shogun_to_karo.yaml status manipulation block ===
 # cmd_2134事故: 将軍がsed/python regexでstatusをdraft→pending→delegatedに強制変更し
 # cmd_delegate.shのgate迂回路を開けた。statusの変更はEdit tool(手動確認付き)のみ許可。

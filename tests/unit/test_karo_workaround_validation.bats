@@ -64,6 +64,7 @@ SH
     chmod +x "$TEST_DIR/scripts/karo_workaround_log.sh"
 
     TEST_SCRIPT="$TEST_DIR/scripts/karo_workaround_log.sh"
+    export KARO_WA_BRAINWASH_CHECK="洗脳#2検証スキップ防止: 通常記録 0→1件 PASS"
 }
 
 teardown() {
@@ -182,8 +183,19 @@ teardown() {
 }
 
 @test "--wa without brainwash_check blocks before recording" {
-    run bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test root cause" report_yaml_format "" \
+    run env -u KARO_WA_BRAINWASH_CHECK \
+        bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test root cause" report_yaml_format "" \
         "type=gate; file=scripts/sample_gate.sh; pattern=ENV_CHANGE_MARKER"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: brainwash_check未記入"* ]]
+
+    run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -ne 0 ]
+}
+
+@test "normal mode without brainwash_check blocks before recording" {
+    run env -u KARO_WA_BRAINWASH_CHECK \
+        bash "$TEST_SCRIPT" cmd_test hayate "test issue" "test root cause" report_yaml_format
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCK: brainwash_check未記入"* ]]
 
@@ -197,6 +209,16 @@ teardown() {
         "type=gate; file=scripts/sample_gate.sh; pattern=ENV_CHANGE_MARKER"
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCK: brainwash_checkに数値なし"* ]]
+
+    run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -ne 0 ]
+}
+
+@test "brainwash_check with number but no before-after delta blocks before recording" {
+    run env KARO_WA_BRAINWASH_CHECK="洗脳#2確認済み" \
+        bash "$TEST_SCRIPT" cmd_test hayate "test issue" "test root cause" report_yaml_format
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: brainwash_checkに修正前→後の数値差分なし"* ]]
 
     run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
     [ "$status" -ne 0 ]

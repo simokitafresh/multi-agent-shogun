@@ -227,6 +227,24 @@ verify_environment_change() {
     fi
 }
 
+validate_brainwash_check() {
+    local check="${1:-}"
+
+    if [[ -z "$check" ]]; then
+        echo "[karo_workaround_log] BLOCK: brainwash_check未記入。KARO_WA_BRAINWASH_CHECK='洗脳#X + 修正前→後の数値'で渡せ: $CMD_ID/$NINJA_NAME" >&2
+        echo "  例: KARO_WA_BRAINWASH_CHECK='洗脳#2検証スキップ防止: gate再実行 0→1件 PASS'" >&2
+        return 1
+    fi
+    if [[ ! "$check" =~ [0-9] ]]; then
+        echo "[karo_workaround_log] BLOCK: brainwash_checkに数値なし。修正前→後の数値、またはN件中N件確認を記録せよ: $CMD_ID/$NINJA_NAME" >&2
+        return 1
+    fi
+    if [[ ! "$check" =~ (→|->|=>|[0-9]+[[:space:]]*/[[:space:]]*[0-9]+|[0-9]+[[:space:]]*件中[[:space:]]*[0-9]+[[:space:]]*件) ]]; then
+        echo "[karo_workaround_log] BLOCK: brainwash_checkに修正前→後の数値差分なし。0→1件、0/1件、N件中N件などを記録せよ: $CMD_ID/$NINJA_NAME" >&2
+        return 1
+    fi
+}
+
 # --- Argument order auto-swap (cmd_id/ninja reversal detection) ---
 # 家老がcmd_idとninja_nameを逆順で渡すバグを自動検出+修正(4件データ汚染で発見 2026-04-28)
 if [[ ! "$CMD_ID" =~ ^cmd_ && "$NINJA_NAME" =~ ^cmd_ ]]; then
@@ -313,17 +331,9 @@ if [[ "$WA_MODE" = true ]]; then
     verify_environment_change "$ENVIRONMENT_CHANGE"
 fi
 
-# AC2(cmd_3474) + idle hardening(2026-06-30): --wa brainwash_check is mandatory and numeric.
-if [[ "$WA_MODE" = true ]]; then
-    if [[ -z "$BRAINWASH_CHECK" ]]; then
-        echo "[karo_workaround_log] BLOCK: brainwash_check未記入。KARO_WA_BRAINWASH_CHECK='洗脳#X + 修正前→後の数値'で渡せ: $CMD_ID/$NINJA_NAME" >&2
-        echo "  例: KARO_WA_BRAINWASH_CHECK='洗脳#2検証スキップ防止: gate再実行 0→1件 PASS'" >&2
-        exit 1
-    fi
-    if [[ ! "$BRAINWASH_CHECK" =~ [0-9] ]]; then
-        echo "[karo_workaround_log] BLOCK: brainwash_checkに数値なし。修正前→後の数値、またはN件中N件確認を記録せよ: $CMD_ID/$NINJA_NAME" >&2
-        exit 1
-    fi
+# AC2(cmd_3474) + cmd_3752: every workaround:true path must carry numeric brainwash_check.
+if [[ "$CLEAN_MODE" != true ]]; then
+    validate_brainwash_check "$BRAINWASH_CHECK"
 fi
 
 # --- Count category entries excluding resolved (AC1+AC3: cmd_1211, GP-084: Python→awk) ---
