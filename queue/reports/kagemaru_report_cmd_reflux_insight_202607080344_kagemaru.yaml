@@ -1,0 +1,135 @@
+worker_id: kagemaru
+task_id: cmd_reflux_insight_202607080344_kagemaru_exact
+parent_cmd: cmd_reflux_insight_202607080344_kagemaru
+timestamp: "2026-07-08T03:48:46+09:00"
+status: completed
+ac_version_read: 7d00ba56
+result:
+  summary: INS-20260708-015000310-f776はcmd_3749-3751で構造対策済みと確認しresolve済み。
+  details: '対象insight本文: workaround同一カテゴリ report_yaml_format が4件蓄積し構造対策cmdの起票が必要。一次確認:
+    queue/insights.yamlで対象status pending、context/infrastructure.md:39とcontext/cmd-chronicle.md:410-412でcmd_3749偵察、cmd_3750記入層、cmd_3751監視層の構造対策が2026-07-08全CLEAR済みと確認。git
+    logでも edb26ea14(cmd_3750) と 9a6ff4fb7(cmd_3751) を確認。insight_write.sh --resolveで対象status
+    done/resolved_atを記録。還流在庫: before task注入 insights_pending=10 zero_backlinks=3 promotions=74
+    total=87; after実測 insights_pending=9 zero_backlinks=3 promotions=75 total=87。promotion
+    +1は並行還流の自然変動。実行証拠: awk status pending=9、causal_backlink_counts --zero=3、gate_lesson_enforcement_level
+    below4=75。'
+purpose_validation:
+  cmd_purpose: '還流在庫自動消化: pending insight INS-20260708-015000310-f776を確認しresolveまたは実修正/decision_candidateへ整理する'
+  fit: true
+  purpose_gap: なし。既存構造対策cmdの完了を一次情報で確認し、対象insightをresolveした。
+simplicity_check: 追加実装は不要。既存のcmd_3749-3751が対象要求を満たしていたためresolveのみ実施。
+assumption_check: 対象insightの前提は『構造対策cmd未起票』だが、cmd_3749-3751の完了記録で崩れているためresolveが妥当。
+task_clarity:
+  score: 95
+  unclear_points: なし
+  discretion_fills: promotion在庫の並行変動を自然変動として明記した
+status_detail: DONE
+test_triage: in_branch
+causal_verification:
+  cause_checked: 1) queue/insights.yaml L201-L208で対象INS-20260708-015000310-f776の本文とpending状態を確認。2)
+    context/infrastructure.md:39でPD-056 report_yaml_format構造根絶がcmd_3749-3751全CLEAR済みと確認。3)
+    context/cmd-chronicle.md:410-412とgit log edb26ea14/9a6ff4fb7で記入層・監視層の実装commitを確認。
+  design_intent_checked: 対象insightは同カテゴリWA蓄積を構造対策cmdへつなぐための還流在庫。既にcmd_3749で突破点を特定し、cmd_3750/3751で不備を書けない構造とactive-idle回収を実装済みのため、追加実装ではなくresolveで在庫を閉じる。
+  evidence: 'bounded確認: sed queue/insights.yaml L195-218; rg ''PD-056|report_yaml_format|cmd_3749|cmd_3750|cmd_3751''
+    context/infrastructure.md context/cmd-chronicle.md logs/karo_workarounds.yaml
+    scripts; git show --stat edb26ea14 9a6ff4fb7; awk pending=9; causal_backlink_counts
+    zero=3; gate_lesson_enforcement_level below4=75。'
+  origin: '[[karo_workaround_log]] -> [[report_yaml_format同一カテゴリ蓄積]] -> [[PD-056構造対策cmd_3749_3750_3751]]'
+files_modified:
+- path: queue/insights.yaml
+  change: INS-20260708-015000310-f776をinsight_write.sh --resolveでstatus doneへ更新
+- path: queue/tasks/kagemaru.yaml
+  change: 自task状態をin_progress/doneへ更新
+- path: queue/reports/kagemaru_report_cmd_reflux_insight_202607080344_kagemaru.yaml
+  change: AC証跡・在庫数・binary_checksを記録
+lesson_candidate:
+  found: false
+  no_lesson_reason: 既存の還流消化パターン。対象insightはcmd_3749-3751で既に構造対策済みだったため、新規教訓候補なし。
+  title: ''
+  detail: ''
+  project: infra
+lessons_useful:
+- id: L351
+  useful: true
+  reason: L351に従い、insight resolveはyaml.dumpではなくline-by-line編集のinsight_write.sh --resolveを使用した。
+- id: L508
+  useful: true
+  reason: L508に従い、全量探索を避けてrg/sed/git show/既存集計コマンドに限定し、WSL2 NTFSの過剰I/Oを避けた。
+- id: L278
+  useful: true
+  reason: L278に従い、resolve後すぐに報告YAMLを作成・記入し、報告未作成で止まらないようにした。
+- id: L342
+  useful: true
+  reason: L342に従い、queue/reportsとqueue/insightsが.gitignore対象であることをgit check-ignoreで確認し、必要時はgit
+    add -fを使う前提を明確化した。
+- id: L311
+  useful: true
+  reason: L311に従い、report_yaml_format系の再発原因を既存構造対策cmd_3749-3751へ照合し、RFS経由で報告構造を壊さず記入した。
+memory_references:
+- id: MEM001
+  source: semantic_search
+  query: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-015000310-f776
+    を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する checks
+    che'
+  summary: 'matched: insight_write'
+  used: true
+  useful: true
+  reason: report_quality_protocolに到達し、report-write/verdict-checkとgate_report_formatの注意点確認に使用した。
+- id: MEM002
+  source: semantic_search
+  query: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-015000310-f776
+    を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する checks
+    che'
+  summary: '- file: `docs/research/semantic_index_design.md`'
+  used: true
+  useful: true
+  reason: semantic index設計の到達先として、今回の還流在庫がsemantic/insight経路由来である確認に使用した。
+- id: MEM003
+  source: semantic_search
+  query: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-015000310-f776
+    を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する checks
+    che'
+  summary: '- file: `context/lord-conversation-index.md`'
+  used: false
+  useful: false
+  reason: 今回のresolve判断はcontext/infrastructure.mdとcmd-chronicleの一次記録で足り、lord conversation
+    indexは未使用。
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+knowledge_candidate:
+  found: false
+assumption_invalidation:
+  found: true
+  affected_cmds:
+  - cmd_3749
+  - cmd_3750
+  - cmd_3751
+  detail: 対象insightの『構造対策cmdの起票が必要』という前提は、cmd_3749-3751が既に完了済みであるため無効化された。
+hook_failures:
+  count: 0
+  details: ''
+post_deploy_evidence:
+  required: false
+  deploy_live_at: ''
+  evidence_run_start_at: ''
+  evidence_run_completed_at: ''
+  run_completed: false
+  source: ''
+binary_checks:
+  AC1:
+  - check: 対象insight INS-20260708-015000310-f776 を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
+    result: 'yes'
+  AC2:
+  - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
+    result: 'yes'
+  commit:
+  - check: git commitが完了したか(untracked/modified=0)
+    result: 'no'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verdict: FAIL
