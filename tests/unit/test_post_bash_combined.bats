@@ -132,6 +132,37 @@ EOF
     [[ "$context" != *'git add -A'* ]]
 }
 
+@test "LS-A16 parity reminder fires on recalculate-sync curl command" {
+    local payload
+    payload="$(jq -cn --arg cmd 'curl -X POST https://dm-signal-backend.onrender.com/admin/recalculate-sync -u "$ADMIN_USER:$ADMIN_PASS"' --arg result "ok" '{tool_name:"Bash", tool_input:{command:$cmd}, tool_result:$result}')"
+
+    run_hook "$payload"
+    [ "$status" -eq 0 ]
+    hook_name="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.hookEventName')"
+    context="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')"
+    [ "$hook_name" = "PostToolUse" ]
+    [[ "$context" == *'LS-A16'* ]]
+    [[ "$context" == *'parity_check.sh'* ]]
+}
+
+@test "LS-A16 parity reminder stays silent on unrelated recalculate-sync mention" {
+    local payload
+    payload="$(jq -cn --arg cmd 'grep -rn "recalculate-sync" docs/' --arg result "docs/x.md: recalculate-sync usage" '{tool_name:"Bash", tool_input:{command:$cmd}, tool_result:$result}')"
+
+    run_hook "$payload"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "LS-A16 parity reminder stays silent when curl and recalculate-sync co-occur in non-curl command text" {
+    local payload
+    payload="$(jq -cn --arg cmd 'bash scripts/report_field_set.sh report.yaml result.details "curl経由のadmin/recalculate-sync実行を検知した直後に警告を出す"' --arg result "ok" '{tool_name:"Bash", tool_input:{command:$cmd}, tool_result:$result}')"
+
+    run_hook "$payload"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
 @test "commit-reminder path stays silent when project is clean" {
     cat > "$TEST_ROOT/queue/tasks/saizo.yaml" <<'YAML'
 task:

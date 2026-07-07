@@ -438,4 +438,18 @@ if [[ "${_g4_verb:-}" == "bash" && "${_g4_arg1:-}" == *deploy_task.sh* ]]; then
     fi
 fi
 
+# === Guard 5: LS-A16 fullrecalculate後parity確認リマインド (本番パリティ必須) ===
+# admin/recalculate-sync実行を検知したら即parity確認を促す。事後BLOCKでなく事前検出層
+# (post-bash-commit-reminder.shと同じ「事前WARN、事後BLOCKはcmd_complete_gate側」の二段構え)。
+# cmd_1770三重事故(DB登録→パリティ未確認→コード未デプロイ+偽signal)の再発防止。
+if [[ "$payload" == *'recalculate-sync'* ]]; then
+    _g5_cmd="$(jq -r '.tool_input.command // .toolInput.command // ""' 2>/dev/null <<< "$payload" || true)"
+    _g5_verb="${_g5_cmd%%[[:space:]]*}"
+    _g5_verb="${_g5_verb//\"/}"
+    if [[ "$_g5_verb" == "curl" && "$_g5_cmd" == *'recalculate-sync'* ]]; then
+        _g5_msg=$'\n⚠ LS-A16(本番パリティ必須): fullrecalculate実行を検知した。\n即座にparity_check.sh（またはgate_recalculate_completeness.sh）でholding_signal+monthly_returnの完全一致を確認せよ。「あとでまとめて確認」は禁止(cmd_1770三重事故)。\n3レイヤー貫通(DB+API+FE)も忘れるな → skills/pf-registration/SKILL.md Phase 3 Step 6'
+        printf '%s' "$_g5_msg" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
+    fi
+fi
+
 exit 0
