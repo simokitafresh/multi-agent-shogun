@@ -10113,3 +10113,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - gate_report_formatでverdict missingが出た場合、verdict欄を手動で埋める前にbinary_checks全resultがyes/noか確認する。空欄が1つでもあると自動導出できず、verdict非二値FAILが連鎖する。次回チェック: gate前にbinary_checks空欄件数を0件と数値確認する。
+
+### L979: python3 subprocessでのrg呼出しはローカルWSL2環境で常にFileNotFoundError(シェル関数はexecve()に見えない)
+- **日付**: 2026-07-08
+- **出典**: cmd_reflux_insight_202607080225_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,testing,process,bash]
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202607080225_kotaro]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- causal_backlink_counts.sh(scripts/causal_backlink_counts.sh)がPython内でsubprocess.Popen(['rg',...])をtry/exceptで並列起動しているが、このWSL2ローカル開発環境には'rg'という実行ファイルがPATH上に存在しない。実体はClaude Code内蔵バイナリをexec -a rgで偽装呼出しする対話的bashシェルの関数としてのみ定義されており(command -v rgは対話シェルでのみ'rg is a function'、非対話bash -cではrc=1)、Pythonのsubprocessは常にexecve()でPATH上の実ファイルを探すためシェル関数を認識できずFileNotFoundError(OSError)になる。except節で全プロセスハンドルがNoneにフォールバックし、targetsが空リストとなって呼び出し元は常にrc=0+出力空(サイレント無害化)を受け取る。CI(.github/workflows/test.yml)はapt-get install ripgrepで実バイナリを導入しているためテストはPASSするが、ローカルでは同じテストが常時決定論的にFAILする——真のflakyではなく環境依存の決定論的差異。教訓: シェル関数として動くCLIツール(rg等)をPythonのsubprocessやbatsの非対話サブシェルから呼ぶ設計は、ローカル/CI間で無言の挙動差を生む。外部CLIをsubprocessで呼ぶ場合はshutil.which()等で実体の存在を確認し、無ければ明示的にSKIP/WARNするか、Pure Python実装にフォールバックすべき

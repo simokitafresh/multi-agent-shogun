@@ -1,8 +1,24 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-07-08T02:35:17'
+last_synced: '2026-07-08T02:43:54'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 954
+lesson_count: 955
 lessons:
+- id: L979
+  title: python3 subprocessでのrg呼出しはローカルWSL2環境で常にFileNotFoundError(シェル関数はexecve()に見えない)
+  summary: causal_backlink_counts.sh(scripts/causal_backlink_counts.sh)がPython内でsubprocess.
+  tags:
+  - infra
+  - testing
+  - process
+  - bash
+  source_cmd: cmd_reflux_insight_202607080225_kotaro
+  when: 未設定
+  how: 未設定
+  target_files:
+  - queue/insights.yaml
+  origin: '[[cmd_reflux_insight_202607080225_kotaro]]'
+  enforcement: 未自動化
+  automated: false
 - id: L978
   title: verdict missingはbinary_checks空欄を先に疑う
   summary: gate_report_formatでverdict missingが出た場合、verdict欄を手動で埋める前にbinary_checks全resultがye

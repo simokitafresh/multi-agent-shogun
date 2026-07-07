@@ -1,24 +1,4 @@
 entries:
-- cmd_id: "cmd_3648"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-02T05:34:46Z"
-- cmd_id: "cmd_3648"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-02T05:35:00Z"
 - cmd_id: "cmd_3649"
   ac_count: 0
   gate_result: "BLOCK"
@@ -2071,3 +2051,23 @@ entries:
   supplementary_cmds: 0
   source: "cmd_complete_gate"
   timestamp: "2026-07-07T17:27:07Z"
+- cmd_id: "cmd_training_L1_report-write_20260708022912"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-07T17:35:24Z"
+- cmd_id: "cmd_reflux_insight_202607080225_kotaro"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-07T17:44:03Z"

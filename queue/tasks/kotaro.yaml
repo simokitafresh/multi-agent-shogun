@@ -1,10 +1,10 @@
 task:
   acceptance_criteria:
   - checks:
-    - check: 対象insight INS-20260707-133813292-2a68 を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
+    - check: 対象insight INS-20260707-222005585-d7cc を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
     id: AC1
   - checks:
-    - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/total)を報告YAMLへ記録し、実行証拠を残す
+    - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
     id: AC2
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
@@ -22,18 +22,19 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_reflux_insight_202607072050_kotaro
+  parent_cmd: cmd_reflux_insight_202607080225_kotaro
   project: infra
-  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260707-133813292-2a68 を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
+  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260707-222005585-d7cc を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
   reflux_inventory_before:
-    insights_pending: 8
-    total: 8
+    insights_pending: 9
+    promotions: 71
+    total: 80
     zero_backlinks: 0
   scout_exempt: true
-  status: in_progress
+  status: idle
   stop_for: []
   target_path: queue/insights.yaml
-  task_id: cmd_reflux_insight_202607072050_kotaro_exact
+  task_id: cmd_reflux_insight_202607080225_kotaro_exact
   task_type: exact
   related_lessons:
   - id: 'L351'
@@ -48,7 +49,7 @@ task:
   - id: 'L311'
     summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
     wa_category: 'report_yaml_format'
-    wa_count: 3
+    wa_count: 4
     detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
   standard_skills:
   - "report-write"
@@ -65,7 +66,7 @@ task:
     - "files_modifiedはrepo相対path形式"
     extra_scaffold:
     - "ACごとに実テスト証跡をresult.detailsへ記録"
-    - "報告前にrg -n FILL_THISとgate_report_formatを実行"
+    - "報告前にplaceholder残存確認とgate_report_formatを実行"
   semantic_concepts:
   - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
   causal_verification:
@@ -83,31 +84,31 @@ task:
       - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
     ────────────────────────────────────────
   memory_db_context:
-  - '2026-07-07T18:08:02+09:00 | 確認完了。残っている未commit変更はすべて元々のセッション開始時から存在していた、他のエージェント担当の変更であり、私のスコープ外。私の担当ファイル(docs/semantic-index/ind'
-  - '2026-07-07T14:42:31 | 三層記憶の穴3種を特定・修正(2026-07-07殿指示「利用されなければ効果を発揮しない」)。穴1=Gate12.2引用率計測が読み手パス(data/凍結コピー)+grep書式(スペースなし)の二重'
+  - '2026-07-08T00:45:01+09:00 | タスク完了です。前セッションで停止していた報告YAML未作成状態を検出し、`/report-write`スキルに沿って`queue/reports/kotaro_report_cmd_reflux_i'
+  - '2026-07-07T21:21:57+09:00 | 既存なし確認。cmd_3733(queue正本parse定期検証)を起票する。 [meta] stop_reason=tool_use'
   - '2026-06-20T02:15:43+09:00 | スコープ内の全ファイル（`queue/insights.yaml` / `queue/tasks/saizo.yaml` / 報告YAML）は全て `.gitignore` 管理外。 COMMIT M'
   - '2026-06-20T00:33:13+09:00 | parent_cmd=noneのhot fixタスク。ninja_done.shはcmd_XXX形式不要のため家老へのinbox_write完了報告で終了（既送信済み）。 **作業完了サマリ:** -'
-  - '2026-07-07T16:35:54+09:00 | 還流ツール(`semantic_index_update.sh absorb_pending`)の実行完了を待っています。完了通知が届き次第、対象insightの処理結果を確認し、報告YAMLの作成に'
-  ac_version: 3ad1ff4f
-  _ac_task_id: cmd_reflux_insight_202607072050_kotaro_exact
+  - '2026-07-07T23:17:00+09:00 | 作業完了です。要点をまとめます。 **タスク完了報告(cmd_reflux_insight_202607072256_saizo)** - **AC1**: pending insight `INS-'
+  ac_version: 823d5247
+  _ac_task_id: cmd_reflux_insight_202607080225_kotaro_exact
   _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_reflux_insight_202607072050_kotaro.yaml
-  report_path: queue/reports/kotaro_report_cmd_reflux_insight_202607072050_kotaro.yaml
+  report_filename: kotaro_report_cmd_reflux_insight_202607080225_kotaro.yaml
+  report_path: queue/reports/kotaro_report_cmd_reflux_insight_202607080225_kotaro.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 4
-    top_pattern: 'report_yaml_format(3件)'
-    breakdown: 'report_yaml_format(3件), uncategorized(1件)'
+    total_workarounds: 5
+    top_pattern: 'report_yaml_format(4件)'
+    breakdown: 'report_yaml_format(4件), uncategorized(1件)'
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 100
+      count: 102
     - pattern: 'field_missing'
-      count: 51
+      count: 52
     - pattern: 'verdict_invalid'
-      count: 32
+      count: 33
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
@@ -122,4 +123,15 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-07-07T20:51:08"
+  deployed_at: "2026-07-08T02:26:26"
+
+  session_state:
+    attempt: 2
+    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - attempt: 2
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'

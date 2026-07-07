@@ -63820,3 +63820,23 @@ entries:
   checks: "warn_missing_prev_cmd_lesson"
   diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点+preflightテンプレ準拠+実測証拠つきで記載"
   notes: "前cmd_3647で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3647 LS-A05"
+- cmd_id: "cmd_3648"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-07-02T05:34:46Z"
+- cmd_id: "cmd_3648"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "cmd_save"
+  timestamp: "2026-07-02T05:35:00Z"
