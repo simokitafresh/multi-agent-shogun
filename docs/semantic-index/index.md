@@ -18,7 +18,7 @@ codd:
 | id | pf_remote_restore |
 | label | 本番PF即時復元機構 |
 | aliases | PF復元機構, 本番PF復元, portfolio_archive, PF archive, 削除PF復元, 遠隔復元, 任意PF復元, 全量PF復元, 削除時自動退避, 復元API, PF可逆性, 大規模実験の可逆性保証, ローカルがなくても元に戻せる仕組み, 今の本番PFをいつでも元に戻す仕組み, pf-remote-restore |
-| related_concepts | semantic_dictionary_design, dm_signal, pf_registration, recalculation_pipeline |
+| related_concepts | semantic_dictionary_design, dm_signal, pf_registration, recalculation_pipeline, gs_recalibration_plan |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -26,6 +26,23 @@ codd:
 | causal | [[殿要望20260708_0243_PF即時復元]] -> [[pf_remote_restore]] -> [[大規模実験の可逆性保証]] |
 | causal | `cmd_reflux_insight_202607080431_hayate` files_modified: [[pf_remote_restore]] |
 | cmd | `cmd_3330` backfill — | session_20260612_shogun_ac2_cycles_mtdux_complete | AC2第1-2サイクル本番着地+第二サイクルレビュー通過+mtd-ux全PR完遂+裁可型是正 |
+
+## gs_recalibration_plan — GS再キャリブレーション計画
+
+| 属性 | 値 |
+|------|---|
+| id | gs_recalibration_plan |
+| label | GS再キャリブレーション計画 |
+| aliases | GS再キャリブレーション, L0-L3 GS再キャリブレーション計画, gs-recalibration-plan, 3前提刷新, バンド込み再GS, モメンタムバンド化, 3目的関数変更, CAGR/WorstYear/AvgUWP, L0-L3全レイヤーGS再実行, 設計書ファミリー, 親計画, Phase A詳細, Phase T詳細, Phase 0詳細, 不倒案, 不沈案, 道具磨き→L0→L1→L2→L3 |
+| related_concepts | gs_ninpo_research, gs_speed_e7_l0_full_confirm, pf_remote_restore, dmsignal_operations |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/gs-recalibration-plan.md` |
+| file | `docs/research/l0-3objective-newold-comparison-design.md` |
+| file | `docs/research/gs-speed-optimization-design.md` |
+| causal | `cmd_reflux_insight_202607080457_tobisaru` files_modified: [[gs_recalibration_plan]] |
+| cmd | `cmd_3691` backfill — | cmd_3691 | 殿指示(2026-07-06 00:23): 浮動小数点ノイズがモメンタム判定に影響するか検証し精度を完璧に仕上げる。(1)全コアシンボル×全期間でprices(自前調整値) |
 
 ## cmd_chronicle — CMD年代記
 
@@ -2114,7 +2131,7 @@ codd:
 | causal | `cmd_3752` files_modified: [[growth_loop]] |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
-| causal_chain | `[[legacy_lesson_L012]]` (L012) |
+| causal_chain | `[[cmd_147]]` (L012) |
 | causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L833) |
 | causal_chain | `[[cmd_3227]]` (L757) |
 | causal_chain | `[[cmd_3644]]` (L927) |
@@ -2389,8 +2406,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T17:06:43+09:00 やり残したことはないか？確認しよう。完了したら検証して報告してくれ |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
-| causal_chain | `[[006.md検証]]` (L004) |
-| causal_chain | `[[006.md検証]]` (L005) |
+| causal_chain | `[[cmd_092]]` (L004) |
+| causal_chain | `[[cmd_134]]` (L005) |
 | causal_chain | `[[cmd_3354]]` (L804) |
 | causal_chain | `[[cmd_3432]]` (L817) |
 | causal_chain | `[[cmd_3523]]` (L844) |
@@ -2626,14 +2643,14 @@ codd:
 | cmd | `cmd_goal_gs_speed_e7_l0_full_confirm_202607061018` |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T12:22:06+09:00 b1g04fdma toolu_01D9MjA9Ac5VdZGFPTewk7gC /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/9719df86-a08a-4cde-8c15-30f3b7 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T12:27:57+09:00 b8p447g55 Monitor event: "Stream GS full run progress lines" [ac1] parity report saved to /mnt/c/Python_app/DM-signal/ou |
-| causal_chain | `[[cmd_1055]]` (L001) |
-| causal_chain | `[[cmd_1055]]` (L002) |
-| causal_chain | `[[006.md検証]]` (L003) |
+| causal_chain | `[[cmd_125]]` (L001) |
+| causal_chain | `[[cmd_125]]` (L002) |
+| causal_chain | `[[cmd_125]]` (L003) |
 | causal_chain | `[[cmd_training_speed_decision_write_20260607000310]]` (L750) |
 | causal_chain | `[[cmd_training_speed_deploy_task_20260607000353]]` (L751) |
 | causal_chain | `[[cmd_3211]]` (L753) |
-| causal_chain | `[[cmd_3445_saizo]]` (L013) |
-| causal_chain | `[[cmd_3445]]` (L014) |
+| causal_chain | `[[cmd_150]]` (L013) |
+| causal_chain | `[[cmd_151]]` (L014) |
 | causal_chain | `[[cmd_3413]]` (L816) |
 
 ## gs_ninpo_research — GS忍法研究
@@ -2644,7 +2661,7 @@ codd:
 | label | GS忍法研究 |
 | aliases | 忍法, 忍法GS, GS忍法, グリッドサーチ忍法, run_077, 奥義GS, 忍法研究, GS高速化, パリティ完全一致, gs_engine, bunshin, oikaze, nukimi, kawarimi, kasoku, yotsume, 忍法とはそれに対応するビルディングブロックのことだ, ビルディングブロック毎に忍法の固有名をつけている, 実はL1 とは忍法の重ねがけだ, 忍法についてはL1だけ, 奥義命名BBはL2段階で最後に適用するBB名であり入力L1のBBとは独立, 奥義-GS-追い風のコンポーネントに追い風L1が含まれないのはGS選別結果で正常, ではL3に向いた忍法を考えよう, 忍法とビルディングブロックの対応を教えてくれ, 分身=EqualWeight, 追い風=MomentumFilter, 抜き身=SingleViewMomentumFilter, 変わり身=TrendReversalFilter, 加速D加速R=MomentumAccelerationFilter, 四つ目=MultiViewMomentumFilter, AbsoluteMomentumFilter忍法未使用StandardPF内部用, SafeHavenSwitch忍法未使用StandardPF内部用, 新四つ目, WeightedMultiViewMomentumFilter, 重み付き四つ目, 投票数ウェイト, 4視点投票→重み付き保有, context.final_weights, 既存四つ目はunionで重複情報消失, 正規化=Σ投票数で割る(4×top_nは破綻), L3候補=追い風(CAGR+34pp)+加速R(Calmar+3.8), SafeHaven=Cashはナンセンス(殿検証済み), 新四つ目BBはFEやUIにも実装されているか？, これはGSをやっていないせいかもしれない, 新四つ目GS道具磨き — 突合ロジック月次化 全探索実行, GS入力データソース不一致, source_type=local_sqliteは本番PostgreSQLと異なるデータ, UUID完備universeでもsource_typeがlocal_sqliteならGS出力は本番と不一致, GS突合でopen vs close比較ミスに注意, open-to-open比較が正道(PI-008), 本番に奥義新四つ目を登録してくれ, 奥義 GS 新四つ目 3モード本番登録 激攻・鉄壁・常勝, 豊かになりましょう, L0パイプライン, L1パイプライン, L2パイプライン, AbsMomはL0内部, SafeHavenはL0内部, FoFはBB1つ, L1+, BB直列, BB重ね掛け, 441パターン, L1横方向拡張, とL2を比較してくれ, GS道具磨きE2 kasoku diff全量GSを5分以内へ近づける追加高速化を実装する, GS道具磨きE2 kasoku ratio全量GSを5分以内へ近づける追加高速化を実装する |
 | skills | gs-bench-gate |
-| related_concepts | dmsignal_operations, alm_research, recalculate_pipeline, gs_speed_e7_l0_full_confirm |
+| related_concepts | dmsignal_operations, alm_research, recalculate_pipeline, gs_speed_e7_l0_full_confirm, gs_recalibration_plan |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -2735,7 +2752,7 @@ codd:
 | label | GS道具磨きE7 L0 full実測 |
 | aliases | GS道具磨きE7, GS道具磨きE7: E6後のL0四神GS full実測をtimeout 300で確認し、5分目標を見込みではなく実測で判定する, E6後のL0四神GS full実測, L0四神GS full実測, timeout 300で確認, 5分目標を見込みではなく実測で判定する, 見込みではなく実測で判定, L0 GS 5分目標 full実測, 殿厳命 timeout 300s強制。5分超え放置は最悪の行為, 5分超え放置は最悪の行為, また無駄に長時間 計算していないか 5分の目標があるのに5分超えて最後まで待つ これは最悪の行為だ, timeout 300s強制, 全量を最後まで走らせるな, GSの見込み時間を明確にしよう, GSの見込み時間, ではGSの見込み時間は？先に道具磨きをするほうがベターでは？道具磨きは軍師の仕事だな |
 | skills | gs-bench-gate |
-| related_concepts | gs_ninpo_research, shin_shijin_design, parameter_space_integrity |
+| related_concepts | gs_ninpo_research, shin_shijin_design, parameter_space_integrity, gs_recalibration_plan |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -3041,7 +3058,7 @@ codd:
 | label | DM-Signal運用 |
 | aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する, FoF複製2件はおれの操作だ, PF構成確認はcheck_pf_config.py一発, hide判定はtier_visibility_settings全Tier確認必須(portfolios.hide_portfolioだけでは不十分), pipeline_configがBBの実体(selection_pipeline+terminal_block), TrendReversalFilter, DM signalのハナシをしよう, FoFの理解が怪しい, 22分は長いな, DM signalは順調か？, DM-signalは順調か？, L1+, L1+実験, BB直列, ビルディングブロック直列, BB直列拡張, run_l1plus_backtest, 441パターン, L1ビルディングブロック直列接続, 現在本番には全部で102PFある, バグの影響を受けたPFをフォルダーグループ単位で報告, Standard PFの過去シグナルNone化とは何だ？, 理論上過去のシグナルはinbox1, データが日々変わる, データが毎日変わる, 当月シグナルは日々変わる, 過去シグナルは毎日変動, つまりデータが毎日変わっているのか, つまりデータが毎日変わっているのか？, 保有ポジションやパフォーマンスも日々変わる, 保有ポジションやパフォーマンスも日々変わってしまう, そうすると保有ポジションやパフォーマンスも日々変わってしまうということか？, 価格データソース多重化Phase 0, 殿のAPIキー発行待ちでこちら側の起票対象なし, 価格データソース多重化は実装済み, バンドを採用, バンド採用, 閾値バンド, threshold_band, 三状態判定, A/A+B/B, バンド内半々, モメンタムバンド, デッドバンド, 僅差判定の反転, absolute_assetはgatekeeper sensorで保有対象外, TMFを保有するパターンは存在しない, relative_assetsが保有候補でabsolute_assetは判定指標, モメンタムバンドも導入したから, ワイヤーフレームV3を許可する, ワイヤーフレームv3裁可, ワイヤーフレームv3許可, ワイヤーフレームv3, Monthly Trade状態バッジ, 確定台帳表示 |
 | skills | db-check, pf-registration |
-| related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking, investment_knowledge_base, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, modern_web_guidance, cdp_browser_capability, tier_plan_mapping, alpha_6_metrics, saxo_openapi_excel, saxo_trade_engine, db_price_data_range, content_artifacts, fusion_api_endpoint, dm_fusion_app, dmsignal_fe_experience_deploy |
+| related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking, investment_knowledge_base, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, modern_web_guidance, cdp_browser_capability, tier_plan_mapping, alpha_6_metrics, saxo_openapi_excel, saxo_trade_engine, db_price_data_range, content_artifacts, fusion_api_endpoint, dm_fusion_app, dmsignal_fe_experience_deploy, gs_recalibration_plan |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -5602,7 +5619,7 @@ codd:
 | lesson | `LK013` inbox_mark_read hook誤判定時もEditで既読化せず正規scriptを変数経由で使う |
 | causal | `cmd_karo_hotfix_report_field_files_modified_path_guard` files_modified: [[yaml_safe_write]] |
 | causal_chain | `[[cmd_karo_infra_recon_core]]` (L548) |
-| causal_chain | `[[cmd_1020]]` (L351) |
+| causal_chain | `[[cmd_cycle_L4_025]]` (L351) |
 
 ## inbox_processing_discipline — inbox処理規律
 
