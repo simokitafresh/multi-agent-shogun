@@ -31,7 +31,7 @@ task:
     total: 86
     zero_backlinks: 3
   scout_exempt: true
-  status: done
+  status: idle
   stop_for: []
   target_path: queue/insights.yaml
   task_id: cmd_reflux_insight_202607080400_hayate_exact
@@ -129,3 +129,17 @@ task:
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
   deployed_at: "2026-07-08T04:01:09"
   completed_at: "2026-07-08T04:05:32+09:00"
+
+  session_state:
+    attempt: 2
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    tried_approaches:
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    approach_summary: 'INS-20260708-022756389-780dは正本semantic index登録済みのstale候補としてresolved化。pending在庫は8→7。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: 'INS-20260708-022756389-780dは正本semantic index登録済みのstale候補としてresolved化。pending在庫は8→7。'
+    - attempt: 2
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: 'INS-20260708-022756389-780dは正本semantic index登録済みのstale候補としてresolved化。pending在庫は8→7。'
