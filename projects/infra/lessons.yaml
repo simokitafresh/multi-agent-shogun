@@ -1,8 +1,25 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-07-08T03:05:23'
+last_synced: '2026-07-08T03:45:07'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 956
+lesson_count: 957
 lessons:
+- id: L981
+  title: lesson_health新規蓄積WARNはcheckpoint更新で即時計測差分を取る
+  summary: gate_lesson_healthが新規教訓+Nでexit=1になった場合、queue/lesson_deprecation_checkpoint.txtの値
+  tags:
+  - infra
+  - gate
+  - bash
+  - lesson
+  source_cmd: cmd_karo_hotfix_lesson_health_ga193_202607080337
+  when: 未設定
+  how: 未設定
+  target_files:
+  - queue/lesson_deprecation_checkpoint.txt
+  - queue/tasks/hayate.yaml
+  origin: '[[cmd_karo_hotfix_lesson_health_ga193_202607080337]]'
+  enforcement: 未自動化
+  automated: false
 - id: L980
   title: 対話bashの'rg'はClaude Code CLIの関数ラッパーでありsubprocess/非対話シェルからは実体不在。command -vではなくshutil.which/実行時FileNotFoundErrorで検出せよ
   summary: 対話bashセッションでcommand -v rgは'rg is a function'としてヒットするが、これはClaude Code CLI本体をARGV0
@@ -1882,7 +1899,7 @@ lessons:
   origin: '[[cmd_karo_hotfix_ga135_lesson_health_dm_signal_unclassified_20260626]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-07-06'
+  last_referenced: '2026-07-08'
 - id: L856
   title: 'context_freshness_check: docs/semantic-index pathspecが過広でindex.md成長更新が偽陽性ALERTを常時発火'
   summary: obsidian-link-principles.mdのsource pathspecにdocs/semantic-indexを含むため、index.mdへのa
@@ -2438,9 +2455,6 @@ lessons:
   - scripts/gates/gate_gunshi_report_precheck.sh
   - scripts/gates/gate_report_format.sh
   origin: '[[cmd_3461_hayate_saizo_FAIL撤回]] -> [[precheck偽陽性]] -> [[related_lessons有無未確認]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-07-06'
 - id: L822
   title: pre-push hook_failureはtimeout WARNと最終BLOCK原因を分離して分類する
   summary: pre-push artifactではtest_select timeoutが出ていてもpush allowedなら直接原因ではない。最後にexit
@@ -3343,9 +3357,6 @@ lessons:
   - scripts/deploy_task.sh
   - projects/infra/lessons.yaml
   origin: '[[cmd_3254]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-07-06'
 - id: L763
   title: 'SG-PRE25 WARNが出た時点でFAIL判定必須: gate予行演習'
   summary: SG-PRE25 WARNはgateのBLOCK予測。gate_prediction CLEARでもSG-PRE25 WARNがあればgateはBLOCKする(
@@ -5467,6 +5478,9 @@ lessons:
   - skills/karo-direct/SKILL.md
   - skills/shogun-teire/SKILL.md
   origin: '[[cmd_2793]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-08'
 - id: L613
   title: 'deploy_task.sh: STKのac_assignedはinject関数で明示転記が必要'
   summary: resolve_cmd_to_taskはSTKの多くのフィールドを転記するがac_assignedは対象外だった。inject_ac_assigned_from
@@ -5913,7 +5927,7 @@ lessons:
   origin: '[[cmd_2657]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-07-06'
+  last_referenced: '2026-07-08'
 - id: L584
   title: heredocのfi/}はheredoc終端マーカーの後に置け
   summary: run_python_logged ... <<'MARKER'; then のパターンでは、MARKERまでが全てheredoc内容。fi/}をheredoc
@@ -7840,9 +7854,6 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: cli_adapter.sh build_cli_command()でopus時は--modelスキップに修正(ci_fix_200k)
   origin: '[[legacy_lesson_L432]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-07-06'
 - id: L431
   title: hensei_apply.shテスト時にinbox_write model_switchが本番忍者に送信され実際にモデル切替が発生する副作用あり
   summary: テスト環境でinbox_write model_switchを実行すると本番忍者のCLI状態が変わる。hensei_apply.shにdry-runモード追加推
@@ -8063,9 +8074,6 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-31'
   origin: '[[cmd_cycle_L4_085]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-07-06'
 - id: L412
   title: inbox_prune.shもyaml.dump禁止規則の対象漏れ
   summary: inbox_prune.shがyaml.dumpでqueue/inbox/*.yamlを上書きしていた。CLAUDE.mdのyaml.dump禁止規則(cmd_
@@ -8338,9 +8346,6 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: 検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる
   origin: '[[cmd_cycle_L4_063]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-07-06'
 - id: L388
   title: gitignoreホワイトリスト方式でのcommit不可パターン
   summary: 修行サイクルの対象ファイルがgitignoreホワイトリスト(デフォルト全除外)に未登録の場合、改善を実装してもgit commitできない。対象ファイルのco
@@ -10196,9 +10201,6 @@ lessons:
   when: テスト設計・実行・結果判定を行う時
   how: テストスイート増加に伴いtimeout延長かテスト分割が必要
   origin: '[[cmd_995]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-07-06'
 - id: L231
   title: ruffの出力判定は終了コードか--quietで行うべき
   summary: 'ruffはlint成功時にAll checks passed!を標準出力する。出力の空判定(if [ -n ruff_out ])では偽陽性。修正:

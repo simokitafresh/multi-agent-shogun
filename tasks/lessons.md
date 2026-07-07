@@ -10137,3 +10137,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - 対話bashセッションでcommand -v rgは'rg is a function'としてヒットするが、これはClaude Code CLI本体をARGV0=rgで起動するラッパー関数であり、実PATH上のバイナリではない(shutil.which('rg')はNoneを返す)。そのためPythonのsubprocess.Popen(['rg',...])やbats run bash -c 'rg ...'のような非対話シェルからの呼び出しは常にFileNotFoundError/exit 127になる。scripts/causal_backlink_counts.shの旧実装はこれをexcept OSErrorで沈黙キャッチしており出力が常に空になっていた(本cmdで修正)。同根本原因の別事例として、scripts/lesson_harvest.shはcommand -v rgでpreflightしているため同環境では明示的エラーで停止する構造(こちらは沈黙ではなく明示失敗なので挙動は異なるが同根)。tests/unit/test_gate_shogun_startup.bats L1980-1988の2テストはbash -c "rg -n ..."を直接実行しておりexit 127(コマンド未検出)でstatus -eq 1の期待に失敗する(本タスクのtarget_path外のため未修正、decision_candidateへ記録)
+
+### L981: lesson_health新規蓄積WARNはcheckpoint更新で即時計測差分を取る
+- **日付**: 2026-07-08
+- **出典**: cmd_karo_hotfix_lesson_health_ga193_202607080337
+- **記録者**: hayate
+- **tags**: [infra,gate,bash,lesson]
+- **target_files**: [queue/lesson_deprecation_checkpoint.txt,queue/tasks/hayate.yaml]
+- **origin**: [[cmd_karo_hotfix_lesson_health_ga193_202607080337]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_lesson_healthが新規教訓+Nでexit=1になった場合、queue/lesson_deprecation_checkpoint.txtの値と最新L番号を確認し、bash scripts/lesson_deprecation_scan.sh --project all --candidates-onlyを実行してcheckpoint更新後にgate再実行で+N→0を数値確認する。未振り分けWARNとは原因と対処が別。

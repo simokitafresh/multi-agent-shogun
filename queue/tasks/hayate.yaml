@@ -99,7 +99,7 @@ task:
   parent_cmd: cmd_karo_hotfix_lesson_health_ga193_202607080337
   project: infra
   purpose: GA-193 lesson_health ALERTの直接原因・根本原因・横展開候補を一次情報で特定し、次回同型ALERTを防ぐ防御層を実装またはdecision/lessonへ構造化する
-  status: done
+  status: idle
   stop_for: []
   target_path: scripts/gates/gate_lesson_health.sh
   task_id: cmd_karo_hotfix_lesson_health_ga193_202607080337_normal
