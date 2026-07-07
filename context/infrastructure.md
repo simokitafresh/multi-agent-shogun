@@ -36,6 +36,7 @@
 報告テンプレM3: `deploy_task.sh`は報告YAMLへ`memory_references`欄を自動生成し、`report_field_set.sh`/`gate_report_format_main.py`が欄の記入と条件付き検査を担う（cmd_3739）。
 引用有効性回収M4: `scripts/loop_ledger_update.sh`のmemoryチャネルは`memory_references.useful`を集計し、`reflux_targets`で無関係引用のsource別還流候補を出力する（cmd_3740, evaluated=8/useful=1/rate=12.5%/reflux_targets=2実測）。
 可搬想起M6: `scripts/portable_loop_bootstrap.sh`は`recall_inject.sh`を生成し、hookなしCLIでもイベント文脈からsemantic/memory一致を注入テキスト化できる（cmd_3741, bats 4/4 PASS）。
+報告WA構造根絶(PD-056): report_yaml_format系WAの防御突破点3系統を偵察特定(cmd_3749)し、記入層=`deploy_task.sh`/`report_field_set.sh`へ既存依存宣言の記入導線+型検証(cmd_3750)、監視層=`ninja_monitor.sh`へactive+idle滞留のdone前報告評価+報告修正/未commit再通知(cmd_3751, ACTIVE-IDLE-REPORT-EVAL)を実装。家老手動補正へ流れる経路を構造で回収（2026-07-08全CLEAR）。
 三層連鎖自己修復: `scripts/memory_db_knowledge_write.sh`はLayer2全失敗時に最終エラー要点+payload_b64をERROR行へ記録し、次回write時に未解決ERRORを自動repairしてOK行を追記する（cmd_3742, bats 15/15 PASS）。
 
 ### 三層記憶×学習ループ接続（cmd_3116〜cmd_3128, 2026-06-02）
