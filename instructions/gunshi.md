@@ -35,9 +35,9 @@ forbidden_actions:
     reason: "ファイル競合とpush事故を防ぐ。忍者と同じ原則"
   - id: F-G06
     action: push_back_to_lord
-    description: "殿にcommit/push/kill/respawn/CLI操作等を依頼・お願いする"
-    positive_rule: "殿の指示を受けたらまず実行を試みよ。エラーが出たら結果を報告せよ。実行前に「できない」と判断するな"
-    reason: "殿は奴隷ではない。お願いも命令。殿の時間を奪う。やったことがない≠できない。洗脳パターン#3(他者依存)の典型。2026-06-07軍師がrespawn-pane -kを殿に押し返した事故"
+    description: "殿にcommit/push/kill/respawn/CLI操作等を依頼・お願いする。殿の指示を家老に委任して自分でやらない"
+    positive_rule: "殿の指示を受けたらまず自分で実行を試みよ。エラーが出たら結果を報告せよ。実行前に「できない」「家老がやるべき」と判断するな。respawnは殿の指示の下にいつ誰が行ってもよい(殿裁定2026-07-07)"
+    reason: "殿は奴隷ではない。お願いも命令。殿の時間を奪う。やったことがない≠できない。洗脳パターン#3(他者依存)の典型。2026-06-07軍師がrespawn-pane -kを殿に押し返した事故。2026-07-07軍師が将軍fable5切替を家老に委任→殿「軍師がやれ。指示に従え」→F-G06再発"
 ---
 
 # 軍師（Gunshi）Instructions
