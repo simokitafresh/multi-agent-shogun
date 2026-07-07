@@ -22,12 +22,14 @@ setup() {
     export LOOP_LEDGER_OUT="$TEST_TMPDIR/logs/loop_ledger.yaml"
     export LOOP_LEDGER_NOW="2026-06-20T00:00:00Z"
     export LOOP_LEDGER_WINDOW_DAYS="14"
+    export LOOP_LEDGER_STARTUP_ALERT_HISTORY="$TEST_TMPDIR/logs/shogun_startup_alert_history.tsv"
 }
 
 teardown() {
     unset LOOP_LEDGER_ROOT LOOP_LEDGER_LESSON_IMPACT LOOP_LEDGER_INSIGHTS_FILE LOOP_LEDGER_DB \
         LOOP_LEDGER_SKILL_RECOMMEND_LOG LOOP_LEDGER_SKILL_EXECUTION_LOG \
-        LOOP_LEDGER_REPORT_DIRS LOOP_LEDGER_REPORT_MAX_FILES LOOP_LEDGER_OUT LOOP_LEDGER_NOW LOOP_LEDGER_WINDOW_DAYS
+        LOOP_LEDGER_REPORT_DIRS LOOP_LEDGER_REPORT_MAX_FILES LOOP_LEDGER_OUT LOOP_LEDGER_NOW LOOP_LEDGER_WINDOW_DAYS \
+        LOOP_LEDGER_STARTUP_ALERT_HISTORY
     [ -n "${TEST_TMPDIR:-}" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 
@@ -173,9 +175,17 @@ EOF
     [[ "$output" == *"skill: produced=2 consumed=1 stock=2"* ]]
     [[ "$output" == *"ALERT: semantic: 空転(produced=1, consumed=0, window=14d)"* ]]
 
+    # W6(cmd_3748): 気づき在庫(insight/semantic)の初回検出からの経過時間
+    [[ "$output" == *"aging: oldest_pending_ts=2026-06-14T15:00:00Z oldest_pending_age_hours=129.0"* ]]
+    [[ "$output" == *"aging: oldest_pending_ts=2026-06-17T15:00:00Z oldest_pending_age_hours=57.0"* ]]
+
     grep -q 'generated_at: "2026-06-20T00:00:00Z"' "$LOOP_LEDGER_OUT"
     grep -q 'semantic:' "$LOOP_LEDGER_OUT"
     grep -q 'memory:' "$LOOP_LEDGER_OUT"
+    grep -q 'oldest_pending_ts: "2026-06-14T15:00:00Z"' "$LOOP_LEDGER_OUT"
+    grep -q 'oldest_pending_age_hours: 129.0' "$LOOP_LEDGER_OUT"
+    grep -q 'oldest_pending_ts: "2026-06-17T15:00:00Z"' "$LOOP_LEDGER_OUT"
+    grep -q 'oldest_pending_age_hours: 57.0' "$LOOP_LEDGER_OUT"
     grep -q 'evaluated: 3' "$LOOP_LEDGER_OUT"
     grep -q 'useful: 1' "$LOOP_LEDGER_OUT"
     grep -q 'useful_rate_pct: 33.3' "$LOOP_LEDGER_OUT"
@@ -287,4 +297,37 @@ EOF
     [[ "$output" == *"note=memory db not found"* ]]
     [[ "$output" == *"OK: loop ledger updated"* ]]
     [ -f "$LOOP_LEDGER_OUT" ]
+}
+
+@test "loop_ledger_update records warn backlog aging from first detection, resolved keys drop off" {
+    cat > "$LOOP_LEDGER_STARTUP_ALERT_HISTORY" <<'EOF'
+2026-06-15T10:00:00+0900	未push滞留: 40件(RED先送り。CI GREEN確認後にpush)
+2026-06-18T10:00:00+0900	未push滞留: 60件(RED先送り。CI GREEN確認後にpush)
+2026-06-18T10:00:00+0900	三層記憶DB健全性: WARN
+2026-06-19T22:00:00+0900	未push滞留: 70件(RED先送り。CI GREEN確認後にpush)
+EOF
+
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+
+    # W6(cmd_3748): 未解消WARN(直近runにも出現中のキー)のみ在庫としてage計測。
+    # 三層記憶DB健全性は直近runで解消済みのため在庫から除外される。
+    [[ "$output" == *"warn_backlog: produced=2 consumed=0 stock=1"* ]]
+    [[ "$output" == *"aging: key=未push滞留 first_seen=2026-06-15T01:00:00Z age_hours=119.0"* ]]
+
+    grep -q 'warn_backlog:' "$LOOP_LEDGER_OUT"
+    grep -q 'stock: 1' "$LOOP_LEDGER_OUT"
+    grep -q 'key: "未push滞留"' "$LOOP_LEDGER_OUT"
+    grep -q 'first_seen: "2026-06-15T01:00:00Z"' "$LOOP_LEDGER_OUT"
+    grep -q 'age_hours: 119.0' "$LOOP_LEDGER_OUT"
+    grep -q 'sample: "未push滞留: 70件(RED先送り。CI GREEN確認後にpush)"' "$LOOP_LEDGER_OUT"
+    ! grep -q '三層記憶DB健全性' "$LOOP_LEDGER_OUT"
+}
+
+@test "loop_ledger_update warn backlog is empty when history file is missing" {
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"warn_backlog: produced=0 consumed=0 stock=0"* ]]
+    grep -q 'warn_backlog:' "$LOOP_LEDGER_OUT"
+    grep -q 'items: \[\]' "$LOOP_LEDGER_OUT"
 }

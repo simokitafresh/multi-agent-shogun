@@ -12,6 +12,7 @@ case "$_sa_self" in
   scripts/hooks/*) SHOGUN_ROOT="." ;;
   *) SHOGUN_ROOT="$(cd "${_sa_self%/*}/../.." && pwd)" ;;
 esac
+SHOGUN_ROOT="${STOP_SESSION_ALERTS_ROOT:-$SHOGUN_ROOT}"
 
 # --- agent_idを取得 ---
 AGENT_ID=""
@@ -59,7 +60,7 @@ ALERT_CONTENT=$(grep '^\[TODO\]' "$ALERTS_FILE" | head -20 || true)
 # ファイル操作不可セッションでは成果物へ依頼文を書かず、事実だけ残して閾値後に自動通過する。
 BLOCK_BYPASS_THRESHOLD=5
 
-FAIL_HASH_FILE="/tmp/stop_session_alerts_${AGENT_ID}_fail_hash"
+FAIL_HASH_FILE="${STOP_SESSION_ALERTS_FAIL_HASH_FILE:-/tmp/stop_session_alerts_${AGENT_ID}_fail_hash}"
 CURRENT_HASH="$(printf '%s' "$ALERT_CONTENT" | md5sum | cut -d' ' -f1)"
 CURRENT_COUNT=1
 
@@ -72,6 +73,14 @@ if [[ -f "$FAIL_HASH_FILE" ]]; then
         CURRENT_COUNT="$PREV_COUNT"
         if [[ "$PREV_COUNT" -ge "$BLOCK_BYPASS_THRESHOLD" ]]; then
             rm -f "$FAIL_HASH_FILE" 2>/dev/null || true
+            # W3(cmd_3748): 無音通過の禁止。逃げ道を使ったら必ず記録を残す(棚卸しA2)。
+            _BYPASS_SCRIPT="${STOP_SESSION_ALERTS_BULLETIN_SCRIPT:-$SHOGUN_ROOT/scripts/bulletin_write.sh}"
+            _BYPASS_SAMPLE="$(printf '%s' "$ALERT_CONTENT" | head -3 | tr '\n' ' / ')"
+            if [[ -f "$_BYPASS_SCRIPT" ]]; then
+                BULLETIN_ROOT_OVERRIDE="$SHOGUN_ROOT" bash "$_BYPASS_SCRIPT" "$AGENT_ID" \
+                    "stop hook自動通過: ${AGENT_ROLE}の同一BLOCKが${BLOCK_BYPASS_THRESHOLD}回連続到達し無条件通過。残件${TODO_COUNT}件(先頭3件): ${_BYPASS_SAMPLE}" \
+                    "true" "action_required" >/dev/null 2>&1 || true
+            fi
             exit 0
         fi
         printf '%s\n%s\n' "$CURRENT_HASH" "$PREV_COUNT" > "$FAIL_HASH_FILE"

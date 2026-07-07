@@ -23,6 +23,7 @@ NOW="${LOOP_LEDGER_NOW:-$(date -u '+%Y-%m-%dT%H:%M:%SZ')}"
 WINDOW_DAYS="${LOOP_LEDGER_WINDOW_DAYS:-14}"
 SKILL_EXEC_TAIL_LINES="${LOOP_LEDGER_SKILL_EXEC_TAIL_LINES:-30000}"
 MAX_SNAPSHOTS="${LOOP_LEDGER_MAX_SNAPSHOTS:-100}"
+STARTUP_ALERT_HISTORY="${LOOP_LEDGER_STARTUP_ALERT_HISTORY:-$ROOT/logs/shogun_startup_alert_history.tsv}"
 
 # skill_execution_log.yaml は数万行規模になるためtailで有界化する(境界の壊れたエントリは破棄)
 SKILL_EXEC_CHUNK="$(mktemp)"
@@ -38,7 +39,8 @@ else
 fi
 
 python3 - "$LESSON_IMPACT" "$INSIGHTS_FILE" "$DB_PATH" "$SKILL_RECOMMEND_LOG" "$SKILL_EXEC_CHUNK" \
-    "$REPORT_DIRS" "$REPORT_MAX_FILES" "$OUT_FILE" "$NOW" "$WINDOW_DAYS" "$MAX_SNAPSHOTS" "$ROOT" <<'PY'
+    "$REPORT_DIRS" "$REPORT_MAX_FILES" "$OUT_FILE" "$NOW" "$WINDOW_DAYS" "$MAX_SNAPSHOTS" "$ROOT" \
+    "$STARTUP_ALERT_HISTORY" <<'PY'
 import datetime as dt
 import os
 import re
@@ -54,7 +56,7 @@ except Exception:
 
 (lesson_impact_path, insights_path, db_path, skill_recommend_path,
  skill_exec_chunk_path, report_dirs_raw, report_max_files_raw, out_path, now_raw,
- window_days_raw, max_snapshots_raw, root_path_raw) = sys.argv[1:13]
+ window_days_raw, max_snapshots_raw, root_path_raw, startup_alert_history_path) = sys.argv[1:14]
 
 out_path = Path(out_path)
 root_path = Path(root_path_raw)
@@ -180,11 +182,18 @@ def load_insight_entries(path):
     return entries
 
 
+def age_hours_since(ts):
+    if ts is None:
+        return 0.0
+    return round(max((now - ts).total_seconds(), 0) / 3600, 2)
+
+
 def loop_from_insights(entries, predicate):
     produced = 0
     consumed = 0
     stock = 0
     consumption_ts_all = []
+    pending_ts_all = []
     for entry in entries:
         if not predicate(entry):
             continue
@@ -194,16 +203,21 @@ def loop_from_insights(entries, predicate):
             produced += 1
         if status == "pending":
             stock += 1
+            pending_ts_all.append(ts)
         elif status in {"resolved", "done"}:
             consumption_ts = parse_ts(entry.get("resolved_at")) or ts
             consumption_ts_all.append(consumption_ts)
             if in_window(consumption_ts):
                 consumed += 1
+    # W6(cmd_3748): 気づき在庫の初回検出(first_seen)からの経過時間を可視化(滞留コスト)
+    oldest_pending = min((t for t in pending_ts_all if t is not None), default=None)
     return {
         "produced": produced,
         "consumed": consumed,
         "stock": stock,
         "last_consumption_ts": iso(max_ts(consumption_ts_all)),
+        "oldest_pending_ts": iso(oldest_pending),
+        "oldest_pending_age_hours": age_hours_since(oldest_pending),
     }
 
 
@@ -259,6 +273,63 @@ def load_promotion_loop(root_path):
         "stock": count,
         "last_consumption_ts": None,
         "first_candidate": first_candidate,
+    }
+
+
+# --- warn backlog loop: logs/shogun_startup_alert_history.tsv (未解消WARNの初回検出からの経過時間, W6) ---
+def load_warn_backlog(path):
+    p = Path(path)
+    if not p.is_file():
+        return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None,
+                "note": "shogun_startup_alert_history.tsv not found", "items": []}
+    rows = []
+    with p.open(encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            line = line.rstrip("\n")
+            if not line:
+                continue
+            parts = line.split("\t", 1)
+            if len(parts) != 2:
+                continue
+            ts = parse_ts(parts[0])
+            text = parts[1].strip()
+            if not text or text == "__OK__":
+                continue
+            key = text.split(":", 1)[0].strip() if ":" in text else text
+            rows.append((ts, key, text))
+    if not rows:
+        return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "items": []}
+
+    latest_run_ts = max_ts([r[0] for r in rows])
+    active_keys = {key for ts, key, _ in rows if ts is not None and ts == latest_run_ts}
+
+    first_seen = {}
+    sample_text = {}
+    for ts, key, text in rows:
+        if ts is None:
+            continue
+        if key not in first_seen or ts < first_seen[key]:
+            first_seen[key] = ts
+        if key in active_keys:
+            sample_text[key] = text
+
+    produced = len({key for ts, key, _ in rows if in_window(ts)})
+    items = []
+    for key in sorted(active_keys):
+        fs = first_seen.get(key)
+        items.append({
+            "key": key,
+            "first_seen": iso(fs),
+            "age_hours": age_hours_since(fs),
+            "sample": sample_text.get(key, key),
+        })
+    items.sort(key=lambda item: item["age_hours"], reverse=True)
+    return {
+        "produced": produced,
+        "consumed": 0,
+        "stock": len(active_keys),
+        "last_consumption_ts": None,
+        "items": items,
     }
 
 
@@ -568,6 +639,8 @@ loops = {
     "skill": skill_loop,
 }
 
+warn_backlog = load_warn_backlog(startup_alert_history_path)
+
 for name, loop in loops.items():
     loop["stalled"] = bool(loop["produced"] > 0 and loop["consumed"] == 0)
 
@@ -620,7 +693,7 @@ def q(value):
     return '"' + str(value).replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
-def emit_snapshot(generated_at, window_days, loops):
+def emit_snapshot(generated_at, window_days, loops, warn_backlog=None):
     lines = [
         f"- generated_at: {q(generated_at)}",
         f"  window_days: {window_days}",
@@ -636,6 +709,9 @@ def emit_snapshot(generated_at, window_days, loops):
         lines.append(f"      stalled: {'true' if loop['stalled'] else 'false'}")
         if loop.get("note"):
             lines.append(f"      note: {q(loop['note'])}")
+        if name in ("insight", "semantic"):
+            lines.append(f"      oldest_pending_ts: {q(loop.get('oldest_pending_ts'))}")
+            lines.append(f"      oldest_pending_age_hours: {float(loop.get('oldest_pending_age_hours', 0.0) or 0.0)}")
         if name == "promotion":
             lines.append(f"      stock_started_at: {q(loop.get('stock_started_at'))}")
             lines.append(f"      age_hours: {float(loop.get('age_hours', 0.0) or 0.0)}")
@@ -662,6 +738,24 @@ def emit_snapshot(generated_at, window_days, loops):
                     lines.append(f"          sample_reason: {q(target.get('sample_reason'))}")
             else:
                 lines.append("      reflux_targets: []")
+    if warn_backlog is not None:
+        lines.append("  warn_backlog:")
+        lines.append(f"    produced: {int(warn_backlog.get('produced', 0) or 0)}")
+        lines.append(f"    consumed: {int(warn_backlog.get('consumed', 0) or 0)}")
+        lines.append(f"    stock: {int(warn_backlog.get('stock', 0) or 0)}")
+        lines.append(f"    last_consumption_ts: {q(warn_backlog.get('last_consumption_ts'))}")
+        if warn_backlog.get("note"):
+            lines.append(f"    note: {q(warn_backlog.get('note'))}")
+        items = [item for item in (warn_backlog.get("items") or []) if isinstance(item, dict)]
+        if items:
+            lines.append("    items:")
+            for item in items:
+                lines.append(f"      - key: {q(item.get('key'))}")
+                lines.append(f"        first_seen: {q(item.get('first_seen'))}")
+                lines.append(f"        age_hours: {float(item.get('age_hours', 0.0) or 0.0)}")
+                lines.append(f"        sample: {q(item.get('sample'))}")
+        else:
+            lines.append("    items: []")
     return "\n".join(lines)
 
 
@@ -673,6 +767,7 @@ all_snapshot_dicts = existing_snapshots + [{
     "generated_at": iso(now),
     "window_days": window_days,
     "loops": {name: dict(loop) for name, loop in loops.items()},
+    "warn_backlog": dict(warn_backlog),
 }]
 all_snapshot_dicts = all_snapshot_dicts[-max_snapshots:]
 
@@ -682,7 +777,7 @@ for snap in all_snapshot_dicts:
     rendered.append(emit_snapshot(snap.get("generated_at"), snap.get("window_days", window_days), {
         name: snap_loops.get(name, {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "stalled": False})
         for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill")
-    }))
+    }, snap.get("warn_backlog")))
 
 out_path.parent.mkdir(parents=True, exist_ok=True)
 content = ["# loop_ledger.yaml — generated by scripts/loop_ledger_update.sh (T7, cmd_3720)", "snapshots:"]
@@ -711,11 +806,26 @@ for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory",
             f"useful={loop.get('useful', 0)} useful_rate_pct={loop.get('useful_rate_pct', 0.0)} "
             f"reflux_targets={len(loop.get('reflux_targets') or [])}"
         )
+    if name in ("insight", "semantic"):
+        print(
+            f"    aging: oldest_pending_ts={loop.get('oldest_pending_ts')} "
+            f"oldest_pending_age_hours={loop.get('oldest_pending_age_hours', 0.0)}"
+        )
     if name == "promotion":
         print(
             f"    aging: stock_started_at={loop.get('stock_started_at')} "
             f"age_hours={loop.get('age_hours', 0.0)} first_candidate={loop.get('first_candidate')}"
         )
+warn_note = f" note={warn_backlog['note']}" if warn_backlog.get("note") else ""
+print(
+    f"  warn_backlog: produced={warn_backlog['produced']} consumed={warn_backlog['consumed']} "
+    f"stock={warn_backlog['stock']}{warn_note}"
+)
+for item in (warn_backlog.get("items") or []):
+    print(
+        f"    aging: key={item.get('key')} first_seen={item.get('first_seen')} "
+        f"age_hours={item.get('age_hours', 0.0)}"
+    )
 if alerts:
     for a in alerts:
         print(f"ALERT: {a}")
