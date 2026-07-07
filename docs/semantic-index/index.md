@@ -2393,7 +2393,7 @@ codd:
 |------|---|
 | id | no_auto_extinguish |
 | label | 自動消火禁止 |
-| aliases | 自動消火禁止, 消火禁止, 根源を隠すな, autofix禁止, 表面対処禁止 |
+| aliases | 自動消火禁止, 消火禁止, 根源を隠すな, autofix禁止, 表面対処禁止, 他に迂回したい 根因修正をせずに過ごしているバグはないか, 迂回ゼロ, 全て根因修正 |
 | skills | なし |
 | related_concepts | growth_loop, defense_hierarchy, gate_quality_framework |
 
@@ -2402,6 +2402,8 @@ codd:
 | file | `AGENTS.md` 自動消火禁止 |
 | file | `context/training-cycle.md` |
 | cmd | `cmd_1171` backfill — | cmd_1171 | gate/BLOCK消火パターン偵察(21本段取りリスト) | GATE CLEAR。消火1件(gate_auto_respond.sh L115自動委任)。グレー15件(閾 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-07T13:16:26+09:00 他に迂回したい 根因修正をせずに過ごしているバグはないか |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-07T13:21:22+09:00 全4件修正完了(Q6アーカイブ検出/教訓32→31/GS研究cmd偽陽性/SKILL.md 3件WARN)。全て根因修正。迂回ゼロ。 |
 
 ## verify_dont_imagine — 想像するな確認せよ
 
