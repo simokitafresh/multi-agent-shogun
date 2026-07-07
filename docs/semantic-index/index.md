@@ -5304,6 +5304,7 @@ codd:
 | causal | `cmd_karo_hotfix_clear_prep_semantic_nomatch_20260703014831` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_karo_hotfix_semantic_pending_lord_queries_202607031936` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607071734_kagemaru` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_insight_202607071754_kotaro` files_modified: [[semantic_causal_automation]] |
 
 ## provisional_tobisaru — 仮: Tobisaru
 
@@ -5384,6 +5385,8 @@ codd:
 | causal | `cmd_3628` files_modified: [[provisional_kotaro]] |
 | cmd | `cmd_3629_kotaro` (`tests/test_insight_sanitize.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T12:30:05+09:00 status barが実際と乖離している。これはバグだ。saizo,kotaro,tobisaruはsonnet5 xhighだ。自動でリニアに実際のCLIとmodelとeffortに連動されなくてはいけない |
+| causal | `cmd_reflux_insight_202607071754_kotaro` files_modified: [[provisional_kotaro]] |
+| cmd | `cmd_reflux_insight_202607071754_kotaro` (`context/semantic-map.md`, `docs/semantic-index/index.md`, `queue/tasks/kotaro.yaml`) |
 
 ## provisional_kagemaru — 仮: Kagemaru
 
