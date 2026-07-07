@@ -2490,10 +2490,51 @@ _reflux_zero_backlink_inventory() {
     printf '%s\t%s\tok\n' "${count:-0}" "$first_path"
 }
 
+# PD登録済み(status: pending)のdecision summaryからLS-XX形式の教訓IDを抽出する。
+# reflux promotionの重複dispatch根因(saizo cmd_reflux_promotion_202607080715実証):
+# 家老がdecision_candidateをpending_decisions.yamlへ登録しても、below4候補一覧
+# 選定ロジックがそれを一切参照しないため、PD登録済みの候補が繰り返し先頭に居座り
+# 同一対象への再dispatchが発生する。新規状態管理は追加せず、既存のpending_decisions.yaml
+# を一次情報として参照するのみに留める。
+_reflux_promotion_pending_pd_ids() {
+    local pd_file="$SCRIPT_DIR/queue/pending_decisions.yaml"
+    [ -r "$pd_file" ] || return 0
+    python3 - "$pd_file" 2>/dev/null <<'PY'
+import re
+import sys
+
+import yaml
+
+path = sys.argv[1]
+try:
+    with open(path, encoding='utf-8') as fh:
+        data = yaml.safe_load(fh)
+except Exception:
+    sys.exit(0)
+
+if not isinstance(data, dict):
+    sys.exit(0)
+
+id_re = re.compile(r'(?<![0-9A-Za-z-])LS-?[A-Za-z]?[0-9]+(?![0-9A-Za-z])')
+ids = set()
+for d in data.get('decisions') or []:
+    if not isinstance(d, dict):
+        continue
+    if d.get('status') != 'pending':
+        continue
+    summary = d.get('summary', '')
+    if isinstance(summary, str):
+        ids.update(id_re.findall(summary))
+
+for i in sorted(ids):
+    print(i)
+PY
+}
+
 _reflux_promotion_inventory() {
     local helper="$SCRIPT_DIR/scripts/gates/gate_lesson_enforcement_level.sh"
     local timeout_sec="${REFLUX_PROMOTION_TIMEOUT:-20}"
-    local output status count first_item
+    local output status count first_item candidates_list pd_ids cand cand_id
 
     [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=20
     [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=20
@@ -2517,8 +2558,24 @@ _reflux_promotion_inventory() {
     fi
 
     count=$(printf '%s\n' "$output" | awk '/^##ENFORCEMENT_LEVEL_BELOW4_COUNT##/{getline c; print c; found=1; exit} END{if(!found) print 0}')
-    first_item=$(printf '%s\n' "$output" | awk '/^=== 昇格候補一覧/{p=1; next} p && /^  - / { sub(/^  - /, ""); print; exit }')
     [[ "$count" =~ ^[0-9]+$ ]] || count=0
+
+    candidates_list=$(printf '%s\n' "$output" | awk '/^=== 昇格候補一覧/{p=1; next} p && /^  - / { sub(/^  - /, ""); print }')
+    pd_ids=$(_reflux_promotion_pending_pd_ids)
+
+    first_item="-"
+    if [ -n "$candidates_list" ]; then
+        while IFS= read -r cand; do
+            [ -n "$cand" ] || continue
+            cand_id=$(printf '%s\n' "$cand" | sed -n 's/^\[[^]]*\] \([A-Za-z0-9_-]*\).*/\1/p')
+            if [ -n "$cand_id" ] && [ -n "$pd_ids" ] && printf '%s\n' "$pd_ids" | grep -qxF "$cand_id"; then
+                continue
+            fi
+            first_item="$cand"
+            break
+        done <<< "$candidates_list"
+    fi
+
     [ -n "$first_item" ] || first_item="-"
     printf '%s\t%s\tok\n' "$count" "$first_item"
 }
