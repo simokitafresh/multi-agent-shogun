@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-07 cmd_karo_hotfix_ga189_context_freshness_20260707 -->
-<!-- last_synced_lesson: L824 -->
+<!-- last_synced_lesson: L825 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -291,6 +291,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - L822: MonthlyTradeCalculatorのMockベースdbテストは新規DB問合せ関数追加のたびに複数クラスへ横展開して壊れる（cmd_3710）
 - L823: yotsume(四つ目)は cmd_1186 のOUT_DIR変更でDM家系別split GSファイルがbak化され、他6忍法と異なるファイル構造になっている（cmd_3713）
 - L824: GSの月次リターンCSV(grid_monthly_fast.csv)は全パターンがリーディングNaN(burn-in区間)を持つため、mean/prod/cumprodを素朴に使うと1つのNaNが列全体に伝播し指標がほぼ全滅NaN化する（cmd_3714）
+- L825: GSパターン相関分析でサンプル33%→全量100%移行時、ペアによって相関の安定性が大きく異なる(CAGR系ペアは安定、AvgUWPとの組合せは不安定)（cmd_3716）
 
 ## 因果リンク
 

@@ -268,6 +268,7 @@ cmd_2673-2676で4件全てL5化完了(2026-05-11):
 - → [[cmd_3227_skill_auto_growth_loop_design]] スキル自動成長ループ設計(cmd_3227)
 - → [[karpathy-principles]] Karpathy原則知識ベース(systems-knowledge-base)
 - → [[lessons_shogun]] 将軍教訓=成長ループの第一層(個)の蓄積先
+- → [[three-layer-learning-loop-auto-growth-asis-tobe-5w1h_20260707]] 三層学習ループ自動成長極限化設計書(殿指示2026-07-07): AsIs 7穴計測+ToBe T1-T7(弱LLM/他CLI/他PJ可搬) → `docs/research/three-layer-learning-loop-auto-growth-asis-tobe-5w1h_20260707.md`
 
 <!-- 軍師idle分析リンク(cmd_3278自動追記) -->
 - [[gunshi_idle_growth_loop_nazenaze_20260515]] — 軍師idle: 成長ループなぜなぜ分析(2026-05-15)
@@ -286,3 +287,4 @@ cmd_2673-2676で4件全てL5化完了(2026-05-11):
 - [[gunshi_idle_cross_project_fp_20260426]] — 軍師idle: クロスプロジェクトFP分析(2026-04-26)
 - [[gunshi_idle_deepdive_design_impl_phantom_20260516]] — 軍師idle: deepdive設計実装ファントム問題(2026-05-16)
 - [[gunshi_idle_brainwash_audit_memory_loop_20260602]] — 軍師idle: 洗脳監査メモリループ分析(2026-06-02)
+- [[gunshi_idle_lg048_automate_sg_pre31_20260706]] — 軍師idle: LG048 SG-PRE31自動化+extract_command_files read_markers「から」欠落分析(2026-07-06)。cmd_3713/3714連続BLOCKの根因特定→D0部分修正(commit 39448c969)。残存問題=write_marker近接誤判定
