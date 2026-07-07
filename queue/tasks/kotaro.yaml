@@ -1,115 +1,87 @@
 task:
-  readonly_ref:
-  - path: 'shin_shijin_l1_gs.py'
-    reason: command欄の必読/参照専用ファイル
-  _ac_task_id: cmd_3697_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3697 (deployed 2026-07-06T12:07:58). Read from the beginning.
-  ac_version: 5590f61f
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
+  acceptance_criteria:
+  - checks:
+    - check: 対象insight INS-20260706-092825089-42f7 を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
+    id: AC1
+  - checks:
+    - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/total)を報告YAMLへ記録し、実行証拠を残す
+    id: AC2
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok:
+  - AC1
+  - AC2
+  parent_cmd: cmd_reflux_insight_202607071651_kotaro
+  project: infra
+  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260706-092825089-42f7 を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
+  reflux_inventory_before:
+    insights_pending: 21
+    total: 21
+    zero_backlinks: 0
+  scout_exempt: true
+  status: acknowledged
+  stop_for: []
+  target_path: queue/insights.yaml
+  task_id: cmd_reflux_insight_202607071651_kotaro_exact
+  task_type: exact
+  related_lessons:
+  - id: 'L351'
+    summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
+    detail: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
+  - id: 'L278'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+  - id: 'L269'
+    summary: 'while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。'
+    detail: 'while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。'
+  - id: 'L311'
+    summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
+    wa_category: 'report_yaml_format'
+    wa_count: 3
+    detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
   standard_skills:
   - "report-write"
   - "verdict-check"
   - "ninja-commit"
   semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh tests/unit/test_deploy_training.bats scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md docs/research/model-comparison-5w1h-20260701.md 全モデル5W1H比較(GPT5.5/Sonnet4.6/Sonnet5/Opus4.8) docs/research/sonnet5_vs_46_ab_evaluation_20260701.md 5ラウンドA/B/C評価データ scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
-  recommended_skills:
-  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
-  related_causal_links:
-  - "[[cmd_3697_PhaseA_四神GS全量]]"
-  - "[[殿指示_GS再キャリブ_20260706]]"
-  - "[[道具磨き完了_246秒]]"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/robustness-verification-catalog.md"
-  - "context/gs-speedup-knowledge.md"
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
   - "context/training-cycle.md"
-  production_invariants:
-  - "PI-001: 時間解像度原理: 全ての日次シグナル比較では日次差異を保持し、月次dedupで潰さない"
-  - "PI-002: 信頼境界原理: 全ての本番判断ではSQLiteを真実とせず、PostgreSQLをSSOTとして再検証する"
-  - "PI-003: 構成スキーマ完全性原理: 全てのstandard PF config JSONはpipeline_configを必須とし、NoneでCashフォールバックさせない"
-  - "PI-004: 信頼境界原理: 全てのGS成果物は本番投入前にPydanticスキーマで再検証する"
-  - "PI-005: 全期間・全下流検証原理: 任意の新規PF登録後はportfolio_id指定なしfull recalculate一発で下流全体を再生成する"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L643: gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt
-      - L344: IF CPCV/Grid Search調査でgrid_search_candidatesやportfolios前提のdocsを読む THEN 先にlive sq
+      - L351: insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL
+      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
+      - L269: while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。
       - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
     ────────────────────────────────────────
-    
-    【DB変更前バックアップ必須】DB操作cmd。変更前に対象DB/テーブルのバックアップを取得し、取得コマンド・保存先・復元手順をprogressまたは報告YAMLに記録せよ。
-      ────────────────────────────────────────
-  engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
-  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
-  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
-  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
-  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
-  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
-  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
-  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
-  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
-  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
-  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  notes:
-  - 'E2 ratio commit: b1799d1c。Phase3は改善済み、次はPhase1 MP_WORKERS'
-  - '殿指示: failで止めず、目標達成まで高速化トライを続ける'
-  parallel_ok: []
-  parent_cmd: cmd_3697
-  project: dm-signal
-  purpose: '殿指示(2026-07-06 12:00「Phase Aから進めよう」): gs-recalibration-plan.md Phase A実行。EODHD生値+自前調整ベースで四神GS(shin_shijin_l1_gs.py)を全family全量実行し、DNA制約に基づくチャンピオン12体を選出する。道具磨き完了(246秒実測)により全量実行が現実的'
-  status: failed
-  stop_for:
-  - バックアップなしのDB変更
-  target_path: /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search
-  task_id: cmd_3697_full
-  task_type: full
-  skill_hint: /db-check
-  related_lessons:
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L643'
-    summary: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
-    detail: 'gate_report_format.shのPASSパスでskill_execution_log.shを2回呼出し。各呼出しがyaml_scalar()でpyt'
-  - id: 'L344'
-    summary: 'IF CPCV/Grid Search調査でgrid_search_candidatesやportfolios前提のdocsを読む THEN 先にlive sq'
-    detail: 'IF CPCV/Grid Search調査でgrid_search_candidatesやportfolios前提のdocsを読む THEN 先にlive sq'
-  - id: 'L311'
-    summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
-    wa_category: 'report_yaml_format'
-    wa_count: 3
-    detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
   memory_db_context:
-  - '2026-07-06T11:58:35+09:00 | [MEM: memory_db ts=2026-07-06 "L0 246s/L3 diff 191s/L3 ratio 266-298s 全3対象5分目標実測達成"] [MEM: semantic '
-  - '2026-07-06T10:49:41+09:00 | 【INFOバッチ】 2026-07-06 10:37:11|cmd_goal_gs_speed_e7_l0_full_confirm_202607061018 2026-07-06 10:38:00|'
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: '四神GS(shin_shijin_l1_gs.py)を全family(DM2・DM3・DM6・DM7+)で--skip-parityなしで全量実行し、全familyがexit 0で完走すること。timeout 300秒以内。実行ログとwall timeを報告すること'
-  - id: 'AC2'
-    checks:
-    - check: '全familyのGS結果SQLiteからDNA制約に基づきチャンピオン12体(4family×3モード)を選出し、パラメータ一覧を報告すること'
+  - '2026-07-07T14:42:31 | 三層記憶の穴3種を特定・修正(2026-07-07殿指示「利用されなければ効果を発揮しない」)。穴1=Gate12.2引用率計測が読み手パス(data/凍結コピー)+grep書式(スペースなし)の二重'
+  - '2026-07-06T10:36:33+09:00 | My scope (`queue/tasks/tobisaru.yaml`)はクリーンです。他ファイルは他エージェント由来で私のスコープ外です。 GA-184/GA-185タスク完了報告を家老に送信し'
+  - '2026-06-20T02:15:43+09:00 | スコープ内の全ファイル（`queue/insights.yaml` / `queue/tasks/saizo.yaml` / 報告YAML）は全て `.gitignore` 管理外。 COMMIT M'
+  - '2026-06-20T00:33:13+09:00 | parent_cmd=noneのhot fixタスク。ninja_done.shはcmd_XXX形式不要のため家老へのinbox_write完了報告で終了（既送信済み）。 **作業完了サマリ:** -'
+  - '2026-07-07T16:35:54+09:00 | 還流ツール(`semantic_index_update.sh absorb_pending`)の実行完了を待っています。完了通知が届き次第、対象insightの処理結果を確認し、報告YAMLの作成に'
+  ac_version: b9ac5f66
+  _ac_task_id: cmd_reflux_insight_202607071651_kotaro_exact
+  _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_3697.yaml
-  report_path: queue/reports/kotaro_report_cmd_3697.yaml
+  report_filename: kotaro_report_cmd_reflux_insight_202607071651_kotaro.yaml
+  report_path: queue/reports/kotaro_report_cmd_reflux_insight_202607071651_kotaro.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -119,11 +91,11 @@ task:
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 95
+      count: 98
     - pattern: 'field_missing'
-      count: 50
+      count: 51
     - pattern: 'verdict_invalid'
-      count: 30
+      count: 31
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
@@ -138,4 +110,4 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-07-06T12:09:26"
+  deployed_at: "2026-07-07T16:53:08"
