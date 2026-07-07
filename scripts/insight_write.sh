@@ -50,6 +50,17 @@ if [ "${1:-}" = "--resolve" ]; then
       exit 1
     fi
 
+    if [ "${INSIGHT_ALLOW_RESOLVE_WITH_CORRUPT:-0}" != "1" ]; then
+      _insights_dir="$(dirname "$INSIGHTS_FILE")"
+      shopt -s nullglob
+      _insight_corrupt_leftovers=("${_insights_dir}/$(basename "$INSIGHTS_FILE").corrupt."*)
+      shopt -u nullglob
+      if [ "${#_insight_corrupt_leftovers[@]}" -gt 0 ]; then
+        echo "ERROR: unresolved corrupt insight quarantine remains in queue root: ${#_insight_corrupt_leftovers[@]} file(s). Run startup corrupt TTL cleanup or move them to queue/archive/insights_corrupt before resolve." >&2
+        exit 1
+      fi
+    fi
+
     # Line-by-line edit: avoids full-file YAML rewrite data loss
     INSIGHTS_FILE_ENV="$INSIGHTS_FILE" RESOLVE_ID_ENV="$resolve_id" TS_ENV="$ts" \
     python3 - <<'PYEOF'
@@ -245,7 +256,11 @@ def repair_trailing_partial_entry(path):
     elif keep[-1] and not keep[-1].endswith('\n'):
         keep[-1] += '\n'
 
-    corrupt_path = f"{path}.corrupt.{int(time.time() * 1000)}"
+    archive_dir = os.environ.get('INSIGHT_CORRUPT_ARCHIVE_DIR')
+    if not archive_dir:
+        archive_dir = os.path.join(os.path.dirname(os.path.abspath(path)), 'archive', 'insights_corrupt')
+    os.makedirs(archive_dir, exist_ok=True)
+    corrupt_path = os.path.join(archive_dir, f"{os.path.basename(path)}.corrupt.{int(time.time() * 1000)}")
     with open(corrupt_path, 'w', encoding='utf-8') as f:
         f.writelines(corrupt)
     directory = os.path.dirname(os.path.abspath(path)) or '.'

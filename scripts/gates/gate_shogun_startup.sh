@@ -1675,10 +1675,53 @@ fi
 # --- Gate 8: 気づきキュー（自動アーカイブ付き） ---
 INSIGHTS_FILE="$SCRIPT_DIR/queue/insights.yaml"
 INSIGHTS_ARCHIVE="$SCRIPT_DIR/queue/archive/insights_archive.yaml"
+INSIGHTS_CORRUPT_ARCHIVE_DIR="$SCRIPT_DIR/queue/archive/insights_corrupt"
 echo "■ 気づきキュー"
 if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
     echo "  SKIP(lightweight)"
 else
+    insight_corrupt_ttl_hours="${INSIGHT_CORRUPT_TTL_HOURS:-24}"
+    corrupt_archive_result=$(python3 - "$SCRIPT_DIR/queue" "$INSIGHTS_CORRUPT_ARCHIVE_DIR" "$insight_corrupt_ttl_hours" <<'PY' 2>/dev/null || true
+import os
+import shutil
+import sys
+import time
+from pathlib import Path
+
+queue_dir = Path(sys.argv[1])
+archive_dir = Path(sys.argv[2])
+try:
+    ttl_hours = int(sys.argv[3])
+except ValueError:
+    ttl_hours = 24
+
+cutoff = time.time() - (ttl_hours * 3600)
+archive_dir.mkdir(parents=True, exist_ok=True)
+total = moved = kept = 0
+for path in sorted(queue_dir.glob('insights.yaml.corrupt.*')):
+    if not path.is_file():
+        continue
+    total += 1
+    try:
+        mtime = path.stat().st_mtime
+    except OSError:
+        kept += 1
+        continue
+    if mtime > cutoff:
+        kept += 1
+        continue
+    dest = archive_dir / path.name
+    if dest.exists():
+        dest = archive_dir / f"{path.name}.{int(time.time() * 1000)}"
+    shutil.move(str(path), str(dest))
+    moved += 1
+
+print(f"corrupt退避TTL: moved={moved} kept={kept} total={total} ttl_hours={ttl_hours}")
+PY
+)
+    if [ -n "$corrupt_archive_result" ]; then
+        echo "  $corrupt_archive_result"
+    fi
 if [ -f "$INSIGHTS_FILE" ]; then
     # Auto-archive: done/monitoring/observation/deferred が合計5件以上なら自動アーカイブ
     # 高速パス: grepで先にarchivable件数チェック（閾値未満ならPythonスキップ）

@@ -1882,6 +1882,23 @@ EOF
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
+@test "insights corrupt TTL cleanup moves only expired root leftovers" {
+    export SHOGUN_STARTUP_LIGHTWEIGHT=0
+    export INSIGHT_CORRUPT_TTL_HOURS=1
+    cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
+insights:
+EOF
+    printf 'old partial\n' > "$TEST_TMPDIR/queue/insights.yaml.corrupt.old"
+    printf 'fresh partial\n' > "$TEST_TMPDIR/queue/insights.yaml.corrupt.fresh"
+    touch -d '2 hours ago' "$TEST_TMPDIR/queue/insights.yaml.corrupt.old"
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"corrupt退避TTL: moved=1 kept=1 total=2 ttl_hours=1"* ]]
+    [ -f "$TEST_TMPDIR/queue/archive/insights_corrupt/insights.yaml.corrupt.old" ]
+    [ -f "$TEST_TMPDIR/queue/insights.yaml.corrupt.fresh" ]
+}
+
 @test "karo_sent GP proposal older than threshold → ALERT" {
     export SHOGUN_STARTUP_LIGHTWEIGHT=0
     export GP_STALE_DAYS=14

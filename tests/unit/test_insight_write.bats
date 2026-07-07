@@ -185,7 +185,8 @@ with open('${TEST_TMP}/queue/insights.yaml', encoding='utf-8') as f:
     data = yaml.safe_load(f)
 entries = data['insights']
 assert [e['insight'] for e in entries] == ['既存', '中断後の追記']
-assert glob.glob('${TEST_TMP}/queue/insights.yaml.corrupt.*'), 'corrupt quarantine missing'
+assert glob.glob('${TEST_TMP}/queue/archive/insights_corrupt/insights.yaml.corrupt.*'), 'corrupt quarantine missing'
+assert not glob.glob('${TEST_TMP}/queue/insights.yaml.corrupt.*'), 'corrupt quarantine must not remain in queue root'
 print('PARTIAL RECOVERED')
 "
     [ "$status" -eq 0 ]
@@ -215,7 +216,8 @@ with open('${TEST_TMP}/queue/insights.yaml', encoding='utf-8') as f:
     data = yaml.safe_load(f)
 entries = data['insights']
 assert [e['insight'] for e in entries] == ['既存', '破損後の追記']
-assert glob.glob('${TEST_TMP}/queue/insights.yaml.corrupt.*'), 'corrupt quarantine missing'
+assert glob.glob('${TEST_TMP}/queue/archive/insights_corrupt/insights.yaml.corrupt.*'), 'corrupt quarantine missing'
+assert not glob.glob('${TEST_TMP}/queue/insights.yaml.corrupt.*'), 'corrupt quarantine must not remain in queue root'
 print('CORRUPT RECOVERED')
 "
     [ "$status" -eq 0 ]
@@ -396,6 +398,18 @@ print('RESOLVE OK')
 "
     [ "$status" -eq 0 ]
     [[ "$output" == *"RESOLVE OK"* ]]
+}
+
+@test "resolve: queue直下にcorrupt残骸がある場合は現物不一致として拒否する" {
+    ins_id="$(bash "${TEST_TMP}/scripts/insight_write.sh" "resolve blocked by corrupt")"
+    printf 'partial\n' > "${TEST_TMP}/queue/insights.yaml.corrupt.leftover"
+
+    run bash "${TEST_TMP}/scripts/insight_write.sh" --resolve "$ins_id"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"unresolved corrupt insight quarantine remains in queue root"* ]]
+
+    run grep -q "status: pending" "${TEST_TMP}/queue/insights.yaml"
+    [ "$status" -eq 0 ]
 }
 
 @test "resolve: INSIGHTS_FILE環境変数で対象ファイルを切り替えられる" {
