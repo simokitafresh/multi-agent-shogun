@@ -10149,3 +10149,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - gate_lesson_healthが新規教訓+Nでexit=1になった場合、queue/lesson_deprecation_checkpoint.txtの値と最新L番号を確認し、bash scripts/lesson_deprecation_scan.sh --project all --candidates-onlyを実行してcheckpoint更新後にgate再実行で+N→0を数値確認する。未振り分けWARNとは原因と対処が別。
+
+### L982: semantic index新規ファイル登録insightはSSOT(index.md)へのfile追加のみで足り、semantic_map_generate.shの自動resolve機構がinsight_write.sh --resolveを内部実行する
+- **日付**: 2026-07-08
+- **出典**: cmd_reflux_insight_202607080437_saizo
+- **記録者**: saizo
+- **tags**: [infra,bash]
+- **target_files**: [docs/semantic-index/index.md,queue/tasks/saizo.yaml]
+- **origin**: [[cmd_reflux_insight_202607080437_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/semantic_map_generate.sh内のauto_resolve_semantic_index_insights()が、source=semantic_map_generate:new_fileのpending insightについて、参照パスがdocs/semantic-index/index.mdのfile行(known_resources)に含まれたことを検知すると自動でinsight_write.sh --resolveを呼ぶ。手動でinsight_write.sh --resolveを叩く必要はなく、正本編集→semantic_map_generate.sh実行だけで完結する。また、context/semantic-map.mdのfiles列はparse_concepts()内で[:3]件にキャップされる仕様のため、既に3件登録済みの概念へ4件目以降のfileを追加してもsemantic-map.mdの表示行には反映されない(SSOTには正しく残る)。表示に出ないことを『登録失敗』と誤認しないよう注意が必要。
