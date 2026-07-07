@@ -120,6 +120,50 @@ EOF
     [[ "$output" != *"PASS_NO_IMPROVEMENT"* ]]
 }
 
+@test "memory_references absence remains gate-compatible" {
+    local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_2072.yaml"
+    _write_base_pni_report "$rpath" "binary_checks:
+  AC1:
+    - check: 改善実装完了
+      result: yes"
+
+    run bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" != *"memory_references"* ]]
+}
+
+@test "memory_references present validates used reason only when used true" {
+    local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_2072.yaml"
+    _write_base_pni_report "$rpath" "binary_checks:
+  AC1:
+    - check: 改善実装完了
+      result: yes"
+    python3 - "$rpath" <<'PY'
+import sys, yaml
+path = sys.argv[1]
+with open(path, encoding="utf-8") as f:
+    data = yaml.safe_load(f)
+data["memory_references"] = [
+    {
+        "id": "MEM001",
+        "source": "semantic_search",
+        "query": "report template",
+        "summary": "関連知識",
+        "used": True,
+        "useful": True,
+        "reason": "",
+    }
+]
+with open(path, "w", encoding="utf-8") as f:
+    yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+PY
+
+    run bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"memory_references[0].reason: empty"* ]]
+}
+
 @test "dict形式task acceptance_criteriaのbinary_checks件数不足を検出する" {
     local tpath="$TEST_TMPDIR/queue/tasks/tobisaru.yaml"
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_2072.yaml"

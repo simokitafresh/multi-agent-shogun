@@ -386,6 +386,33 @@ def main() -> int:
         else:
             errors.append(f"lessons_useful: unexpected type {type(lu).__name__} (must be list of dicts)")
 
+    mr = data.get("memory_references")
+    if mr is not None:
+        if isinstance(mr, list):
+            for i, item in enumerate(mr):
+                if not isinstance(item, dict):
+                    errors.append(f"memory_references[{i}]: is {type(item).__name__} (must be dict)")
+                    continue
+                for key in ("id", "source", "query", "used", "useful", "reason"):
+                    if key not in item:
+                        errors.append(f'memory_references[{i}]: missing "{key}" field')
+                for key in ("id", "source", "query"):
+                    value = str(item.get(key, "") or "").strip()
+                    if not value:
+                        errors.append(f"memory_references[{i}].{key}: empty")
+                    elif value == "FILL_THIS":
+                        errors.append(f"memory_references[{i}].{key}: FILL_THIS placeholder remaining")
+                for key in ("used", "useful"):
+                    if key in item and not isinstance(item.get(key), bool):
+                        errors.append(f"memory_references[{i}].{key}: is {type(item.get(key)).__name__} (must be true or false)")
+                reason = str(item.get("reason", "") or "").strip()
+                if reason == "FILL_THIS":
+                    errors.append(f"memory_references[{i}].reason: FILL_THIS placeholder remaining")
+                if item.get("used") is True and not reason:
+                    errors.append(f"memory_references[{i}].reason: empty (参照した理由を具体的に書け)")
+        else:
+            errors.append(f"memory_references: is {type(mr).__name__} (must be list of dicts)")
+
     bc = data.get("binary_checks")
     if bc is None and "binary_checks" in data:
         errors.append("binary_checks: null (must be dict with AC entries)")

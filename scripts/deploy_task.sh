@@ -2666,6 +2666,114 @@ EOF
         fi
     fi
 
+    # cmd_3739: task contextから三層記憶をfail-soft検索し、報告側に参照記録欄を生成する。
+    # lessons_usefulとは別欄にして、教訓ID検証/集計と記憶参照の評価を混ぜない。
+    local _memory_references_block
+    _memory_references_block=$(
+        TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$SCRIPT_DIR" python3 - <<'PY_MEMORY_REFS'
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+import yaml
+
+task_path = Path(os.environ["TASK_FILE_ENV"])
+script_dir = Path(os.environ["SCRIPT_DIR_ENV"])
+
+
+def clean_text(value):
+    if value is None:
+        return ""
+    if isinstance(value, (list, tuple)):
+        return " ".join(clean_text(v) for v in value)
+    if isinstance(value, dict):
+        return " ".join(f"{k} {clean_text(v)}" for k, v in value.items())
+    return re.sub(r"\s+", " ", str(value)).strip()
+
+
+def truncate(value, limit=220):
+    value = clean_text(value)
+    return value[:limit].rstrip()
+
+
+try:
+    raw = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+except Exception:
+    raw = {}
+task = raw.get("task", raw) if isinstance(raw, dict) else {}
+
+query_parts = [
+    task.get("purpose"),
+    task.get("acceptance_criteria"),
+    task.get("related_lessons"),
+    task.get("semantic_concepts"),
+    task.get("target_path"),
+]
+query = truncate(" ".join(clean_text(part) for part in query_parts if clean_text(part)), 500)
+
+entries = []
+if query:
+    cmd = ["timeout", "8", "bash", str(script_dir / "scripts" / "semantic_search.sh"), query]
+    env = os.environ.copy()
+    env.setdefault("SEMANTIC_DISABLE_SEARCH_LOG", "1")
+    env.setdefault("SEMANTIC_MEMORY_DB_TIMEOUT", "3")
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=str(script_dir),
+            env=env,
+            text=True,
+            capture_output=True,
+            timeout=10,
+            check=False,
+        )
+        output = (proc.stdout or "") + "\n" + (proc.stderr or "")
+        for line in output.splitlines():
+            text = line.strip()
+            if not text or text.startswith(("Usage:", "ERROR:")):
+                continue
+            if any(marker in text for marker in ("matched:", "file:", "cmd:", "causal:", "discussion:", "source:")):
+                entries.append(text)
+            if len(entries) >= 3:
+                break
+    except Exception:
+        entries = []
+
+print("memory_references:")
+if entries:
+    for idx, text in enumerate(entries, start=1):
+        safe_text = truncate(text, 180).replace("'", "''")
+        safe_query = truncate(query, 160).replace("'", "''")
+        print(f"  - id: MEM{idx:03d}")
+        print("    source: semantic_search")
+        print(f"    query: '{safe_query}'")
+        print(f"    summary: '{safe_text}'")
+        print("    used: false")
+        print("    useful: false")
+        print("    reason: ''")
+else:
+    safe_query = truncate(query or "task context unavailable", 160).replace("'", "''")
+    print("  - id: MEM001")
+    print("    source: search_unavailable")
+    print(f"    query: '{safe_query}'")
+    print("    summary: ''")
+    print("    used: false")
+    print("    useful: false")
+    print("    reason: ''")
+PY_MEMORY_REFS
+    )
+
+    if [ -n "$_memory_references_block" ]; then
+        awk -v repl="$_memory_references_block" '
+            /^skill_candidate:/ && !inserted { print repl; inserted=1 }
+            { print }
+            END { if (!inserted) print repl }
+        ' "$report_file" > "${report_file}.tmp" && mv "${report_file}.tmp" "$report_file"
+        log "report_template: memory_references template injected"
+    fi
+
     # cmd_1260+cmd_1393: acceptance_criteriaのbinary_checksをreportに事前展開（Python→bash/awk）
     # GP-194: ac_assigned フィールド読み込み（分割配備時の担当AC範囲制限）
     # 両フォーマット対応: inline "[AC1,AC2]" と yaml.dump後の multi-line "- AC1"

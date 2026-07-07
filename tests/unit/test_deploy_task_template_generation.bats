@@ -670,6 +670,63 @@ YAML
     _fixture_project_end
 }
 
+@test "cmd_3739 memory_references template is injected independently from lessons_useful" {
+    _fixture_project_start
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  assigned_to: sasuke
+  parent_cmd: cmd_3739_fixture
+  task_id: cmd_3739_fixture_full
+  project: infra
+  ac_version: 44308e18
+  report_filename: sasuke_report_cmd_3739_fixture.yaml
+  purpose: "報告時に関連知識を差し出し参照記録欄を生成する"
+  target_path: scripts/deploy_task.sh
+  semantic_concepts:
+    - "report_quality_protocol"
+  related_lessons:
+    - id: L625
+      summary: "report_path欠落はBLOCK"
+  acceptance_criteria:
+    - id: AC1
+      description: "memory_references欄が生成される"
+YAML
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        export SEMANTIC_DISABLE_MEMORY_DB=1
+        export SEMANTIC_DISABLE_LLM=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        generate_report_template sasuke cmd_3739_fixture_full cmd_3739_fixture infra
+    )
+
+    local report_path="$TEST_PROJECT/queue/reports/sasuke_report_cmd_3739_fixture.yaml"
+    run python3 - <<EOF
+import yaml
+from pathlib import Path
+
+data = yaml.safe_load(Path("$report_path").read_text(encoding="utf-8"))
+assert "lessons_useful" in data, data
+assert data["lessons_useful"][0]["id"] == "L625", data["lessons_useful"]
+mr = data.get("memory_references")
+assert isinstance(mr, list) and mr, mr
+item = mr[0]
+for key in ["id", "source", "query", "used", "useful", "reason"]:
+    assert key in item, item
+assert isinstance(item["used"], bool), item
+assert isinstance(item["useful"], bool), item
+assert item["id"].startswith("MEM"), item
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+
+    _fixture_project_end
+}
+
 @test "binary_checks generated from AC text do not leave literal FILL_THIS in report" {
     _fixture_project_start
 

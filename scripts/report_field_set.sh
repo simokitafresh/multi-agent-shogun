@@ -404,6 +404,50 @@ print(len(d) if isinstance(d, list) else 0)
                 return 1
             fi
             ;;
+        memory_references)
+            if [[ "$dot_key" == "memory_references" ]]; then
+                python3 -c "
+import yaml, sys
+data = yaml.safe_load(sys.stdin.read())
+if not isinstance(data, list):
+    print('ERROR: memory_references must be YAML list format.', file=sys.stderr)
+    print(\"  Correct: - {id: MEM001, source: semantic_search, query: '...', used: false, useful: false, reason: '...'}\", file=sys.stderr)
+    sys.exit(1)
+for i, item in enumerate(data):
+    if not isinstance(item, dict):
+        print(f'BLOCK: memory_references[{i}] はdict必須。受信: {type(item).__name__}', file=sys.stderr)
+        sys.exit(1)
+    for key in ('id', 'source', 'query', 'used', 'useful', 'reason'):
+        if key not in item:
+            print(f'BLOCK: memory_references[{i}].{key} が欠落', file=sys.stderr)
+            sys.exit(1)
+    for key in ('id', 'source', 'query'):
+        if not str(item.get(key, '')).strip() or str(item.get(key, '')).strip() == 'FILL_THIS':
+            print(f'BLOCK: memory_references[{i}].{key} が空またはplaceholder', file=sys.stderr)
+            sys.exit(1)
+    if not isinstance(item.get('used'), bool) or not isinstance(item.get('useful'), bool):
+        print(f'BLOCK: memory_references[{i}].used/useful はbool必須', file=sys.stderr)
+        sys.exit(1)
+" <<< "$val" || return 1
+            elif [[ "$dot_key" =~ ^memory_references\.[0-9]+\.(used|useful)$ ]]; then
+                local mr_bool
+                mr_bool="$(echo "$val" | xargs)"
+                if [[ "$mr_bool" != "true" && "$mr_bool" != "false" ]]; then
+                    echo "BLOCK: ${dot_key} は true/false のみ。受信: $val" >&2
+                    return 1
+                fi
+            elif [[ "$dot_key" =~ ^memory_references\.[0-9]+\.reason$ ]]; then
+                if [[ "$(echo "$val" | xargs)" == "FILL_THIS" ]]; then
+                    echo "BLOCK: ${dot_key} に FILL_THIS は不可。参照した/しなかった理由を記入せよ" >&2
+                    return 1
+                fi
+            elif [[ "$dot_key" =~ ^memory_references\.[^0-9] ]]; then
+                local bad_key="${dot_key#memory_references.}"
+                echo "BLOCK: memory_references.${bad_key} は不正。memory_referencesはYAML listのためindex指定が必要。" >&2
+                echo "  正: memory_references.0.used / memory_references.0.reason" >&2
+                return 1
+            fi
+            ;;
         binary_checks)
             # Full-field write validation (GP-072 binary_checks型バリデーション)
             # BaseLoader使用: yes/noを文字列として保持し true/falseと区別する

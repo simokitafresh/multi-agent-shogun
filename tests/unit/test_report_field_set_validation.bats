@@ -42,6 +42,32 @@ teardown() {
     [ "$status" -eq 0 ]
 }
 
+@test "memory_references: 正しいlist形式入力はexit 0" {
+    run bash -c "echo '- {id: MEM001, source: semantic_search, query: report template, used: false, useful: false, reason: 未使用}' | bash '$SCRIPT' '$TEST_REPORT' memory_references - 2>&1"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
+mr = data["memory_references"]
+assert mr[0]["id"] == "MEM001", mr
+assert mr[0]["used"] is False, mr
+assert mr[0]["useful"] is False, mr
+PY
+}
+
+@test "memory_references: dict形式入力はexit 1" {
+    run bash -c "echo '{id: MEM001, source: semantic_search, query: q, used: false, useful: false, reason: r}' | bash '$SCRIPT' '$TEST_REPORT' memory_references - 2>&1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"ERROR: memory_references must be YAML list format"* ]]
+}
+
+@test "memory_references: used/usefulの非boolはexit 1" {
+    run bash -c "echo '- {id: MEM001, source: semantic_search, query: q, used: \"yes\", useful: false, reason: r}' | bash '$SCRIPT' '$TEST_REPORT' memory_references - 2>&1"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"used/useful はbool必須"* ]]
+}
+
 @test "lessons_useful: dict形式はautofixメッセージ表示" {
     run bash -c "echo '{0: {id: L001}}' | bash '$SCRIPT' '$TEST_REPORT' lessons_useful - 2>&1"
     [ "$status" -eq 0 ]
