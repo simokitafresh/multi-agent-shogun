@@ -249,6 +249,76 @@ check_last_curated() {
     fi
 }
 
+check_pipeline_freshness() {
+    if [ ! -f "$MEMORY_FILE" ]; then
+        return
+    fi
+
+    local threshold="${SHOGUN_MEMORY_PIPELINE_STALE_DAYS:-3}"
+    if ! [[ "$threshold" =~ ^[0-9]+$ ]]; then
+        warn "WARN: 進行中パイプライン鮮度: 閾値が数値ではありません($threshold)" \
+            "SHOGUN_MEMORY_PIPELINE_STALE_DAYS を日数の整数へ修正せよ。"
+        return
+    fi
+
+    local today_epoch
+    today_epoch=$(date +%s)
+
+    local stale_count=0
+    local skipped_count=0
+    local checked_count=0
+    local line title detail_path date_text entry_epoch days_ago
+    while IFS=$'\t' read -r title detail_path date_text; do
+        [ -n "$title" ] || continue
+        if [ -z "$date_text" ]; then
+            skipped_count=$((skipped_count + 1))
+            continue
+        fi
+        entry_epoch=$(date -d "$date_text" +%s 2>/dev/null) || {
+            skipped_count=$((skipped_count + 1))
+            continue
+        }
+        checked_count=$((checked_count + 1))
+        days_ago=$(( (today_epoch - entry_epoch) / 86400 ))
+        if [ "$days_ago" -gt "$threshold" ]; then
+            stale_count=$((stale_count + 1))
+            warn "WARN: 進行中パイプライン鮮度: ${title} が ${days_ago}日前(>${threshold}日)。詳細: ${detail_path:-MEMORY.md}" \
+                "MEMORY.md の進行中パイプライン欄と ${detail_path:-該当詳細memoryファイル} を照合し、完了済み/待ち状態の記述を更新せよ。"
+        fi
+    done < <(awk '
+        /^## 進行中パイプライン[[:space:]]*$/ { in_section=1; next }
+        in_section && /^## / { exit }
+        in_section && /^[[:space:]]*-[[:space:]]/ {
+            line=$0
+            title=line
+            sub(/^[[:space:]]*-[[:space:]]*/, "", title)
+            if (match(title, /^\[[^]]+\]/)) {
+                title=substr(title, RSTART + 1, RLENGTH - 2)
+            } else {
+                sub(/[[:space:]]*[—:-].*$/, "", title)
+            }
+            detail=""
+            if (match(line, /\]\([^)]+\.md\)/)) {
+                detail=substr(line, RSTART + 2, RLENGTH - 3)
+            } else if (match(line, /memory\/[A-Za-z0-9_-]+\.md/)) {
+                detail=substr(line, RSTART, RLENGTH)
+            } else if (match(line, /[A-Za-z0-9_-]+\.md/)) {
+                detail=substr(line, RSTART, RLENGTH)
+            }
+            date_text=""
+            if (match(line, /[0-9]{4}-[0-9]{2}-[0-9]{2}/)) {
+                date_text=substr(line, RSTART, RLENGTH)
+            }
+            print title "\t" detail "\t" date_text
+        }
+    ' "$MEMORY_FILE")
+
+    if [ "$stale_count" -eq 0 ]; then
+        printf 'OK: 進行中パイプライン鮮度: stale=0 checked=%s skipped_no_date=%s threshold=%s日\n' \
+            "$checked_count" "$skipped_count" "$threshold"
+    fi
+}
+
 _count_staging_entries() {
     awk '
         /^entries:/ { in_entries=1; next }
@@ -414,6 +484,7 @@ check_staleness
 check_duplication
 check_mcp
 check_last_curated
+check_pipeline_freshness
 check_mcp_sync
 check_referenced_files
 

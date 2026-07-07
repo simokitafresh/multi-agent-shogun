@@ -98,6 +98,55 @@ EOF
     [[ "$output" == *"WARN: MCP同期: tracker未作成。1件の未同期"* ]]
 }
 
+@test "進行中パイプライン欄の日付が閾値超過 → entry名と経過日数と詳細memory導線をWARN表示" {
+    cat > "$TEST_MEMORY_FILE" <<'EOF'
+# MEMORY
+Last curated: 2099-01-01
+参照: memory/deepdive_why_chain_20260321.md
+
+## 進行中パイプライン
+
+- [価格データソース多重化](project_price_data_source_plan.md) — Phase 0待ち(2000-01-01)
+EOF
+
+    run env \
+        SHOGUN_MEMORY_SCRIPT_DIR="$TEST_REPO" \
+        SHOGUN_MEMORY_FILE="$TEST_MEMORY_FILE" \
+        SHOGUN_MEMORY_CLAUDE_MD="$TEST_CLAUDE" \
+        SHOGUN_MEMORY_CHANGELOG="$TEST_CHANGELOG" \
+        SHOGUN_MEMORY_PENDING_DECISIONS="$TEST_PENDING" \
+        SHOGUN_MEMORY_PIPELINE_STALE_DAYS=1 \
+        bash "$TEST_GATE"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"WARN: 進行中パイプライン鮮度: 価格データソース多重化 が"* ]]
+    [[ "$output" == *"日前(>1日)"* ]]
+    [[ "$output" == *"詳細: project_price_data_source_plan.md"* ]]
+    [[ "$output" == *"進行中パイプライン欄と project_price_data_source_plan.md を照合"* ]]
+}
+
+@test "進行中パイプライン欄の日付なしentryはスキップし誤発火しない" {
+    cat > "$TEST_MEMORY_FILE" <<'EOF'
+# MEMORY
+Last curated: 2099-01-01
+参照: memory/deepdive_why_chain_20260321.md
+
+## 進行中パイプライン
+
+- [日付未記載の案件](project_without_date.md) — 状態確認中
+EOF
+
+    run env \
+        SHOGUN_MEMORY_SCRIPT_DIR="$TEST_REPO" \
+        SHOGUN_MEMORY_FILE="$TEST_MEMORY_FILE" \
+        SHOGUN_MEMORY_CLAUDE_MD="$TEST_CLAUDE" \
+        SHOGUN_MEMORY_CHANGELOG="$TEST_CHANGELOG" \
+        SHOGUN_MEMORY_PENDING_DECISIONS="$TEST_PENDING" \
+        SHOGUN_MEMORY_PIPELINE_STALE_DAYS=1 \
+        bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: 進行中パイプライン鮮度: stale=0 checked=0 skipped_no_date=1 threshold=1日"* ]]
+}
+
 @test "missing referenced file → ALERT exit 1" {
     rm -f "$TEST_TMPDIR/repo/memory/deepdive_why_chain_20260321.md"
 
