@@ -2485,18 +2485,74 @@ _reflux_zero_backlink_inventory() {
     printf '%s\t%s\tok\n' "${count:-0}" "$first_path"
 }
 
+_reflux_promotion_inventory() {
+    local helper="$SCRIPT_DIR/scripts/gates/gate_lesson_enforcement_level.sh"
+    local timeout_sec="${REFLUX_PROMOTION_TIMEOUT:-20}"
+    local output status count first_item
+
+    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=20
+    [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=20
+
+    if [ ! -r "$helper" ]; then
+        printf '0\t-\tmissing-helper\n'
+        return 0
+    fi
+
+    if command -v timeout >/dev/null 2>&1; then
+        output=$(LESSON_ENFORCEMENT_ROOT="$SCRIPT_DIR" timeout "$timeout_sec" bash "$helper" 2>/dev/null)
+        status=$?
+    else
+        output=$(LESSON_ENFORCEMENT_ROOT="$SCRIPT_DIR" bash "$helper" 2>/dev/null)
+        status=$?
+    fi
+
+    if [ "$status" -ne 0 ]; then
+        printf '0\t-\tstatus_%s\n' "$status"
+        return 0
+    fi
+
+    count=$(printf '%s\n' "$output" | awk '/^##ENFORCEMENT_LEVEL_BELOW4_COUNT##/{getline c; print c; found=1; exit} END{if(!found) print 0}')
+    first_item=$(printf '%s\n' "$output" | awk '/^=== 昇格候補一覧/{p=1; next} p && /^  - / { sub(/^  - /, ""); print; exit }')
+    [[ "$count" =~ ^[0-9]+$ ]] || count=0
+    [ -n "$first_item" ] || first_item="-"
+    printf '%s\t%s\tok\n' "$count" "$first_item"
+}
+
+_reflux_promotion_target_path() {
+    local candidate="$1"
+    local source
+    source=$(printf '%s\n' "$candidate" | sed -n 's/^\[\([^]]*\)\].*/\1/p')
+    case "$source" in
+        lessons_shogun.yaml|lessons_karo.yaml|lessons_gunshi.yaml)
+            printf 'projects/infra/%s\n' "$source"
+            ;;
+        ""|"-")
+            printf 'projects/infra/lessons.yaml\n'
+            ;;
+        *)
+            printf 'projects/%s/lessons.yaml\n' "$source"
+            ;;
+    esac
+}
+
 _reflux_inventory_snapshot() {
     local insights_file="${1:-$SCRIPT_DIR/queue/insights.yaml}"
-    local insight_count first_insight backlink_count first_backlink backlink_status total
+    local insight_count first_insight backlink_count first_backlink backlink_status promotion_count first_promotion promotion_status total
     insight_count=$(_reflux_insight_pending_count "$insights_file")
     first_insight=$(_reflux_first_pending_insight_id "$insights_file" 2>/dev/null || true)
     IFS=$'\t' read -r backlink_count first_backlink backlink_status < <(_reflux_zero_backlink_inventory)
+    IFS=$'\t' read -r promotion_count first_promotion promotion_status < <(_reflux_promotion_inventory)
     [[ "$insight_count" =~ ^[0-9]+$ ]] || insight_count=0
     [[ "$backlink_count" =~ ^[0-9]+$ ]] || backlink_count=0
+    [[ "$promotion_count" =~ ^[0-9]+$ ]] || promotion_count=0
     [ -n "$first_insight" ] || first_insight="-"
     [ -n "$first_backlink" ] || first_backlink="-"
-    total=$((insight_count + backlink_count))
-    printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$insight_count" "$backlink_count" "$total" "$first_insight" "$first_backlink" "${backlink_status:-ok}"
+    [ -n "$first_promotion" ] || first_promotion="-"
+    total=$((insight_count + backlink_count + promotion_count))
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$insight_count" "$backlink_count" "$promotion_count" "$total" \
+        "$first_insight" "$first_backlink" "$first_promotion" \
+        "${backlink_status:-ok}" "${promotion_status:-ok}"
 }
 
 _reflux_active_target_owner() {
@@ -2564,8 +2620,8 @@ _handle_reflux_auto_deploy() {
     local now="$2"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
     local task_status idle_elapsed last_file last_dir last elapsed
-    local insight_before backlink_before total_before first_insight first_backlink backlink_status
-    local insight_after backlink_after total_after _after_insight _after_backlink _after_status
+    local insight_before backlink_before promotion_before total_before first_insight first_backlink first_promotion backlink_status promotion_status
+    local insight_after backlink_after promotion_after total_after _after_insight _after_backlink _after_promotion _after_backlink_status _after_promotion_status
     local kind target_path cmd_id deploy_script tmp_task purpose ac1 ac2
 
     [ -n "$name" ] || return 1
@@ -2621,13 +2677,17 @@ _handle_reflux_auto_deploy() {
         return 1
     fi
 
-    IFS=$'\t' read -r insight_before backlink_before total_before first_insight first_backlink backlink_status < <(_reflux_inventory_snapshot)
+    IFS=$'\t' read -r insight_before backlink_before promotion_before total_before first_insight first_backlink first_promotion backlink_status promotion_status < <(_reflux_inventory_snapshot)
     [ "$first_insight" = "-" ] && first_insight=""
     [ "$first_backlink" = "-" ] && first_backlink=""
+    [ "$first_promotion" = "-" ] && first_promotion=""
     if [ "${backlink_status:-ok}" != "ok" ]; then
         log "REFLUX-AUTO-COUNT-WARN: $name zero_backlinks_status=${backlink_status}"
     fi
-    log "REFLUX-AUTO-INVENTORY-BEFORE: $name insights_pending=${insight_before:-0} zero_backlinks=${backlink_before:-0} total=${total_before:-0}"
+    if [ "${promotion_status:-ok}" != "ok" ]; then
+        log "REFLUX-AUTO-COUNT-WARN: $name promotion_status=${promotion_status}"
+    fi
+    log "REFLUX-AUTO-INVENTORY-BEFORE: $name insights_pending=${insight_before:-0} zero_backlinks=${backlink_before:-0} promotions=${promotion_before:-0} total=${total_before:-0}"
 
     if [ "${total_before:-0}" -le 0 ] 2>/dev/null; then
         unset "REFLUX_IDLE_FIRST_SEEN[$name]"
@@ -2645,12 +2705,17 @@ _handle_reflux_auto_deploy() {
         target_path="$first_backlink"
         purpose="還流在庫自動消化: backlinksゼロ文書 ${first_backlink} を確認し、適切なsemantic-links/origin/因果リンクを追加して孤立を減らす"
         ac1="対象文書 ${first_backlink} のincoming backlinkゼロ状態を確認し、適切な因果リンクを追加する"
+    elif [ "${promotion_before:-0}" -gt 0 ] 2>/dev/null && [ -n "$first_promotion" ]; then
+        kind="promotion"
+        target_path=$(_reflux_promotion_target_path "$first_promotion")
+        purpose="還流在庫自動消化: 恒久防御未到達の昇格候補 ${first_promotion} を確認し、Level4以上の実装・gate・task注入などへ昇格する"
+        ac1="昇格候補 ${first_promotion} を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する"
     else
         unset "REFLUX_IDLE_FIRST_SEEN[$name]"
         log "REFLUX-AUTO-SKIP: $name inventory count positive but no target item"
         return 1
     fi
-    ac2="作業前後の還流在庫残数(insights_pending/zero_backlinks/total)を報告YAMLへ記録し、実行証拠を残す"
+    ac2="作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す"
 
     local active_owner
     active_owner=$(_reflux_active_target_owner "$target_path" "$name" 2>/dev/null || true)
@@ -2695,6 +2760,7 @@ task:
   reflux_inventory_before:
     insights_pending: ${insight_before:-0}
     zero_backlinks: ${backlink_before:-0}
+    promotions: ${promotion_before:-0}
     total: ${total_before:-0}
 EOF
     then
@@ -2708,8 +2774,8 @@ EOF
         rm -f "$tmp_task"
         printf '%s\n' "$now" > "$last_file" 2>/dev/null || true
         unset "REFLUX_IDLE_FIRST_SEEN[$name]"
-        IFS=$'\t' read -r insight_after backlink_after total_after _after_insight _after_backlink _after_status < <(_reflux_inventory_snapshot)
-        log "REFLUX-AUTO-INVENTORY-AFTER: $name insights_pending=${insight_after:-0} zero_backlinks=${backlink_after:-0} total=${total_after:-0}"
+        IFS=$'\t' read -r insight_after backlink_after promotion_after total_after _after_insight _after_backlink _after_promotion _after_backlink_status _after_promotion_status < <(_reflux_inventory_snapshot)
+        log "REFLUX-AUTO-INVENTORY-AFTER: $name insights_pending=${insight_after:-0} zero_backlinks=${backlink_after:-0} promotions=${promotion_after:-0} total=${total_after:-0}"
         log "REFLUX-AUTO-DEPLOY-DONE: $name cmd=${cmd_id} kind=${kind}"
         return 0
     fi

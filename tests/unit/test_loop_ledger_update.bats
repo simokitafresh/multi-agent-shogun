@@ -11,6 +11,7 @@ setup_file() {
 setup() {
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/loop_ledger.XXXXXX")"
     mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/queue/archive/reports" "$TEST_TMPDIR/data"
+    export LOOP_LEDGER_ROOT="$TEST_TMPDIR"
     export LOOP_LEDGER_LESSON_IMPACT="$TEST_TMPDIR/logs/lesson_impact.tsv"
     export LOOP_LEDGER_INSIGHTS_FILE="$TEST_TMPDIR/queue/insights.yaml"
     export LOOP_LEDGER_DB="$TEST_TMPDIR/data/memory.db"
@@ -24,7 +25,7 @@ setup() {
 }
 
 teardown() {
-    unset LOOP_LEDGER_LESSON_IMPACT LOOP_LEDGER_INSIGHTS_FILE LOOP_LEDGER_DB \
+    unset LOOP_LEDGER_ROOT LOOP_LEDGER_LESSON_IMPACT LOOP_LEDGER_INSIGHTS_FILE LOOP_LEDGER_DB \
         LOOP_LEDGER_SKILL_RECOMMEND_LOG LOOP_LEDGER_SKILL_EXECUTION_LOG \
         LOOP_LEDGER_REPORT_DIRS LOOP_LEDGER_REPORT_MAX_FILES LOOP_LEDGER_OUT LOOP_LEDGER_NOW LOOP_LEDGER_WINDOW_DAYS
     [ -n "${TEST_TMPDIR:-}" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
@@ -216,6 +217,37 @@ PY
     [ "$status" -eq 1 ]
     [[ "$output" == *"memory: produced=1 consumed=0 stock=1"* ]]
     [[ "$output" == *"ALERT: memory: 空転(produced=1, consumed=0, window=14d)"* ]]
+}
+
+@test "loop_ledger_update records promotion candidate aging from first detection" {
+    mkdir -p "$TEST_TMPDIR/scripts/gates"
+    cat > "$TEST_TMPDIR/scripts/gates/gate_lesson_enforcement_level.sh" <<'SH'
+#!/usr/bin/env bash
+cat <<'OUT'
+=== 昇格候補一覧(L4未満、恒久防御未到達) 2件 ===
+  - [lessons_karo.yaml] L901 (L2:事前予防(doc)): doc-only lesson
+  - [lessons_gunshi.yaml] L902 (L3:事前強制(auto-gen)): weak lesson
+##ENFORCEMENT_LEVEL_BELOW4_COUNT##
+2
+OUT
+SH
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_enforcement_level.sh"
+
+    export LOOP_LEDGER_NOW="2026-06-20T00:00:00Z"
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"promotion: produced=2 consumed=0 stock=2"* ]]
+    [[ "$output" == *"aging: stock_started_at=2026-06-20T00:00:00Z age_hours=0.0"* ]]
+    grep -q 'stock_started_at: "2026-06-20T00:00:00Z"' "$LOOP_LEDGER_OUT"
+    grep -q 'age_hours: 0.0' "$LOOP_LEDGER_OUT"
+    grep -q 'first_candidate: "\[lessons_karo.yaml\] L901' "$LOOP_LEDGER_OUT"
+
+    export LOOP_LEDGER_NOW="2026-06-21T12:00:00Z"
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"promotion: produced=2 consumed=0 stock=2"* ]]
+    [[ "$output" == *"aging: stock_started_at=2026-06-20T00:00:00Z age_hours=36.0"* ]]
+    grep -q 'age_hours: 36.0' "$LOOP_LEDGER_OUT"
 }
 
 @test "loop_ledger_update alerts on stock increase vs previous snapshot" {

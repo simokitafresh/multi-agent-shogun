@@ -392,8 +392,8 @@ _handle_reflux_auto_deploy hayate 100
 
 grep -q "DEPLOY_CALLED:--direct --yaml" "$TMP_ROOT/deploy.log"
 grep -q "target_path: queue/insights.yaml" "$TMP_ROOT/deployed.yaml"
-grep -q "REFLUX-AUTO-INVENTORY-BEFORE: hayate insights_pending=1 zero_backlinks=0 total=1" "$TMP_ROOT/test.log"
-grep -q "REFLUX-AUTO-INVENTORY-AFTER: hayate insights_pending=1 zero_backlinks=0 total=1" "$TMP_ROOT/test.log"
+grep -q "REFLUX-AUTO-INVENTORY-BEFORE: hayate insights_pending=1 zero_backlinks=0 promotions=0 total=1" "$TMP_ROOT/test.log"
+grep -q "REFLUX-AUTO-INVENTORY-AFTER: hayate insights_pending=1 zero_backlinks=0 promotions=0 total=1" "$TMP_ROOT/test.log"
 echo "REFLUX_INSIGHT_DEPLOY_OK"
 '
     [ "$status" -eq 0 ]
@@ -457,11 +457,84 @@ _handle_reflux_auto_deploy hayate 100
 
 grep -q "DEPLOY_CALLED:--direct --yaml" "$TMP_ROOT/deploy.log"
 grep -q "target_path: docs/research/orphan.md" "$TMP_ROOT/deployed.yaml"
-grep -q "REFLUX-AUTO-INVENTORY-BEFORE: hayate insights_pending=0 zero_backlinks=1 total=1" "$TMP_ROOT/test.log"
+grep -q "REFLUX-AUTO-INVENTORY-BEFORE: hayate insights_pending=0 zero_backlinks=1 promotions=0 total=1" "$TMP_ROOT/test.log"
 echo "REFLUX_BACKLINK_DEPLOY_OK"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"REFLUX_BACKLINK_DEPLOY_OK"* ]]
+}
+
+@test "reflux auto deploy fires for lesson promotion inventory when insights and backlinks are empty" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -r \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue" "$SCRIPT_DIR/scripts/gates" "$SCRIPT_DIR/logs" "$STATE_DIR"
+
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: idle
+YAML
+
+cat > "$SCRIPT_DIR/queue/insights.yaml" <<YAML
+insights: []
+YAML
+
+cat > "$SCRIPT_DIR/scripts/causal_backlink_counts.sh" <<SH
+#!/usr/bin/env bash
+exit 0
+SH
+chmod +x "$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
+
+cat > "$SCRIPT_DIR/scripts/gates/gate_lesson_enforcement_level.sh" <<SH
+#!/usr/bin/env bash
+cat <<OUT
+=== 昇格候補一覧(L4未満、恒久防御未到達) 1件 ===
+  - [lessons_karo.yaml] L999 (L2:事前予防(doc)): doc-only lesson
+##ENFORCEMENT_LEVEL_BELOW4_COUNT##
+1
+OUT
+SH
+chmod +x "$SCRIPT_DIR/scripts/gates/gate_lesson_enforcement_level.sh"
+
+cat > "$SCRIPT_DIR/scripts/deploy_task.sh" <<SH
+#!/usr/bin/env bash
+echo "DEPLOY_CALLED:\$*" >> "$TMP_ROOT/deploy.log"
+cp "\$3" "$TMP_ROOT/deployed.yaml"
+SH
+chmod +x "$SCRIPT_DIR/scripts/deploy_task.sh"
+
+log() { echo "$1" >> "$TMP_ROOT/test.log"; }
+yaml_field_get() {
+    grep -m1 -E "^[[:space:]]*$2:" "$1" | sed "s/.*:[[:space:]]*//; s/[\"'"'"' ]//g" || true
+}
+_training_pipeline_has_work() { return 1; }
+
+declare -gA REFLUX_IDLE_FIRST_SEEN
+REFLUX_IDLE_FIRST_SEEN[hayate]=0
+REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=1
+REFLUX_AUTO_DEPLOY_COOLDOWN=1
+REFLUX_AUTO_DEPLOY_STATE_PREFIX="$TMP_ROOT/state/reflux_auto"
+
+_handle_reflux_auto_deploy hayate 100
+
+grep -q "DEPLOY_CALLED:--direct --yaml" "$TMP_ROOT/deploy.log"
+grep -q "target_path: projects/infra/lessons_karo.yaml" "$TMP_ROOT/deployed.yaml"
+grep -q "cmd_reflux_promotion_" "$TMP_ROOT/deployed.yaml"
+grep -q "promotions: 1" "$TMP_ROOT/deployed.yaml"
+grep -q "REFLUX-AUTO-INVENTORY-BEFORE: hayate insights_pending=0 zero_backlinks=0 promotions=1 total=1" "$TMP_ROOT/test.log"
+echo "REFLUX_PROMOTION_DEPLOY_OK"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REFLUX_PROMOTION_DEPLOY_OK"* ]]
 }
 
 @test "reflux auto deploy does not fire when inventory is empty" {

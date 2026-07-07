@@ -38,11 +38,13 @@ else
 fi
 
 python3 - "$LESSON_IMPACT" "$INSIGHTS_FILE" "$DB_PATH" "$SKILL_RECOMMEND_LOG" "$SKILL_EXEC_CHUNK" \
-    "$REPORT_DIRS" "$REPORT_MAX_FILES" "$OUT_FILE" "$NOW" "$WINDOW_DAYS" "$MAX_SNAPSHOTS" <<'PY'
+    "$REPORT_DIRS" "$REPORT_MAX_FILES" "$OUT_FILE" "$NOW" "$WINDOW_DAYS" "$MAX_SNAPSHOTS" "$ROOT" <<'PY'
 import datetime as dt
+import os
 import re
 import sqlite3
 import sys
+import subprocess
 from pathlib import Path
 
 try:
@@ -52,9 +54,10 @@ except Exception:
 
 (lesson_impact_path, insights_path, db_path, skill_recommend_path,
  skill_exec_chunk_path, report_dirs_raw, report_max_files_raw, out_path, now_raw,
- window_days_raw, max_snapshots_raw) = sys.argv[1:12]
+ window_days_raw, max_snapshots_raw, root_path_raw) = sys.argv[1:13]
 
 out_path = Path(out_path)
+root_path = Path(root_path_raw)
 window_days = int(window_days_raw)
 max_snapshots = int(max_snapshots_raw)
 report_max_files = int(report_max_files_raw)
@@ -215,6 +218,48 @@ def is_semantic(entry):
 
 
 semantic_loop = loop_from_insights(insight_entries, is_semantic)
+
+
+# --- promotion loop: lesson enforcement candidates below Level4 ---
+def load_promotion_loop(root_path):
+    helper = Path(root_path) / "scripts" / "gates" / "gate_lesson_enforcement_level.sh"
+    if not helper.is_file():
+        return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "gate_lesson_enforcement_level.sh not found"}
+    try:
+        env = os.environ.copy()
+        env["LESSON_ENFORCEMENT_ROOT"] = str(root_path)
+        proc = subprocess.run(
+            ["bash", str(helper)],
+            cwd=str(root_path),
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            timeout=20,
+            check=False,
+        )
+    except Exception as exc:
+        return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": f"promotion scan failed: {exc}"}
+    if proc.returncode != 0:
+        return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": f"promotion scan status {proc.returncode}"}
+    count = 0
+    first_candidate = None
+    lines = proc.stdout.splitlines()
+    for idx, line in enumerate(lines):
+        if line.startswith("##ENFORCEMENT_LEVEL_BELOW4_COUNT##") and idx + 1 < len(lines):
+            try:
+                count = int(str(lines[idx + 1]).strip())
+            except ValueError:
+                count = 0
+        if first_candidate is None and line.startswith("  - "):
+            first_candidate = line[4:].strip()
+    return {
+        "produced": count,
+        "consumed": 0,
+        "stock": count,
+        "last_consumption_ts": None,
+        "first_candidate": first_candidate,
+    }
 
 
 # --- obsidian loop: data/multi_agent_shogun_memory.db (event_state_transitions) ---
@@ -517,6 +562,7 @@ loops = {
     "lesson": load_lesson_loop(lesson_impact_path),
     "insight": insight_loop,
     "semantic": semantic_loop,
+    "promotion": load_promotion_loop(root_path),
     "obsidian": obsidian_loop,
     "memory": memory_loop,
     "skill": skill_loop,
@@ -543,7 +589,7 @@ previous_snapshot = existing_snapshots[-1] if existing_snapshots else None
 previous_loops = previous_snapshot.get("loops", {}) if previous_snapshot else {}
 
 alerts = []
-for name in ("lesson", "insight", "semantic", "obsidian", "memory", "skill"):
+for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill"):
     loop = loops[name]
     if loop["stalled"]:
         alerts.append(f"{name}: 空転(produced={loop['produced']}, consumed=0, window={window_days}d)")
@@ -552,6 +598,20 @@ for name in ("lesson", "insight", "semantic", "obsidian", "memory", "skill"):
         prev_stock = prev.get("stock")
         if isinstance(prev_stock, int) and loop["stock"] > prev_stock:
             alerts.append(f"{name}: 在庫超過(前回{prev_stock}→今回{loop['stock']})")
+
+promotion_loop = loops["promotion"]
+prev_promotion = previous_loops.get("promotion") if isinstance(previous_loops, dict) else None
+if int(promotion_loop.get("stock", 0) or 0) > 0:
+    started = None
+    if isinstance(prev_promotion, dict) and int(prev_promotion.get("stock", 0) or 0) > 0:
+        started = parse_ts(prev_promotion.get("stock_started_at"))
+    if started is None:
+        started = now
+    promotion_loop["stock_started_at"] = iso(started)
+    promotion_loop["age_hours"] = round(max((now - started).total_seconds(), 0) / 3600, 2)
+else:
+    promotion_loop["stock_started_at"] = None
+    promotion_loop["age_hours"] = 0.0
 
 
 def q(value):
@@ -566,7 +626,7 @@ def emit_snapshot(generated_at, window_days, loops):
         f"  window_days: {window_days}",
         "  loops:",
     ]
-    for name in ("lesson", "insight", "semantic", "obsidian", "memory", "skill"):
+    for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill"):
         loop = loops[name]
         lines.append(f"    {name}:")
         lines.append(f"      produced: {int(loop['produced'])}")
@@ -576,6 +636,10 @@ def emit_snapshot(generated_at, window_days, loops):
         lines.append(f"      stalled: {'true' if loop['stalled'] else 'false'}")
         if loop.get("note"):
             lines.append(f"      note: {q(loop['note'])}")
+        if name == "promotion":
+            lines.append(f"      stock_started_at: {q(loop.get('stock_started_at'))}")
+            lines.append(f"      age_hours: {float(loop.get('age_hours', 0.0) or 0.0)}")
+            lines.append(f"      first_candidate: {q(loop.get('first_candidate'))}")
         if name == "memory":
             lines.append(f"      evaluated: {int(loop.get('evaluated', 0) or 0)}")
             lines.append(f"      useful: {int(loop.get('useful', 0) or 0)}")
@@ -617,7 +681,7 @@ for snap in all_snapshot_dicts:
     snap_loops = snap.get("loops", {})
     rendered.append(emit_snapshot(snap.get("generated_at"), snap.get("window_days", window_days), {
         name: snap_loops.get(name, {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "stalled": False})
-        for name in ("lesson", "insight", "semantic", "obsidian", "memory", "skill")
+        for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill")
     }))
 
 out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -633,7 +697,7 @@ else:
 out_path.write_text("\n".join(content) + "\n", encoding="utf-8")
 
 print("=== Loop Ledger (T7) ===")
-for name in ("lesson", "insight", "semantic", "obsidian", "memory", "skill"):
+for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill"):
     loop = loops[name]
     note = f" note={loop['note']}" if loop.get("note") else ""
     print(
@@ -646,6 +710,11 @@ for name in ("lesson", "insight", "semantic", "obsidian", "memory", "skill"):
             f"    effectiveness: evaluated={loop.get('evaluated', 0)} "
             f"useful={loop.get('useful', 0)} useful_rate_pct={loop.get('useful_rate_pct', 0.0)} "
             f"reflux_targets={len(loop.get('reflux_targets') or [])}"
+        )
+    if name == "promotion":
+        print(
+            f"    aging: stock_started_at={loop.get('stock_started_at')} "
+            f"age_hours={loop.get('age_hours', 0.0)} first_candidate={loop.get('first_candidate')}"
         )
 if alerts:
     for a in alerts:
