@@ -1,7 +1,7 @@
 worker_id: kagemaru
 task_id: cmd_reflux_insight_202607080344_kagemaru_exact
 parent_cmd: cmd_reflux_insight_202607080344_kagemaru
-timestamp: "2026-07-08T03:48:46+09:00"
+timestamp: '2026-07-08T03:48:46+09:00'
 status: completed
 ac_version_read: 7d00ba56
 result:
@@ -48,6 +48,7 @@ lesson_candidate:
   title: ''
   detail: ''
   project: infra
+  origin: '[[karo_workaround_log]] -> [[report_yaml_format同一カテゴリ蓄積]] -> [[INS-20260708-015000310-f776解決]]'
 lessons_useful:
 - id: L351
   useful: true
@@ -126,10 +127,13 @@ binary_checks:
     result: 'yes'
   commit:
   - check: git commitが完了したか(untracked/modified=0)
-    result: 'no'
+    result: 'yes'
 self_gate_check:
   lesson_ref: PASS
   lesson_candidate: PASS
   status_valid: PASS
   purpose_fit: PASS
-verdict: FAIL
+verdict: PASS
+commit_hash: e3835ba773acb3edebbf8fb5669dafc8f2b8fdd4
+autofix_applied:
+- verdict binary_checks導出→PASS
