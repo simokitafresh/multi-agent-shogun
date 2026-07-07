@@ -5545,6 +5545,8 @@ codd:
 | cmd | `cmd_reflux_insight_202607071943_kagemaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`, `queue/tasks/kagemaru.yaml`) |
 | causal | `cmd_reflux_insight_202607080451_kagemaru` files_modified: [[provisional_kagemaru]] |
 | cmd | `cmd_reflux_insight_202607080451_kagemaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`, `queue/tasks/kagemaru.yaml`) |
+| causal | `cmd_reflux_insight_202607080553_kagemaru` files_modified: [[provisional_kagemaru]] |
+| cmd | `cmd_reflux_insight_202607080553_kagemaru` (`docs/research/gunshi_idle_lg048_automate_sg_pre31_20260706.md`, `queue/tasks/kagemaru.yaml`) |
 
 ## provisional_lessons — 仮: Lessons
 
