@@ -40,7 +40,7 @@ lessons:
   source_ids: [LS021, LS022, LS030, LS063]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'deepdive追体験Q5(殿が前提を崩した場面特定)+cmd_save.sh q5/q8で想像/各論を部分対処'
+  enforcement: "Level4: cmd_save.sh check_q5_code_reading_only_blockがq5=code_readingのみ(実行未確認='想像')検出時にrecord_block_reasonでBLOCK。check_q8_scope_expression_warn/check_q8_compound_question_warnが各論パッチ(縮小表現)・複利視点欠如をWARN。加えてgate_shogun_startup.sh Gate6.5 Q4(将軍)/gate_karo_startup.sh Check1.5 Q4(家老)/gate_gunshi_startup.sh Check1.5 Q4(軍師)が「PhaseNがPhaseMで覆された例=殿が前提を崩した場面」の時系列×因果特定を起動フローへ自動表示/強制(CLAUDE.md Step8/2.88/2.9)。(6)(7)は自動化未達 — decision_candidate: 掲示板未確認時の運用事故分析手順(6)、裁可申請の推薦先行形式チェック(7)をcmd_save.sh gateへ追加すべきか要検討。"
 
 - id: LS-A03
   title: 前提切替原則 — PJ切替・方向転換・新検証で古い前提をリセット
