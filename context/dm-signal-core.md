@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-06 cmd_3702 -->
+<!-- last_updated: 2026-07-07 cmd_3711 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -589,6 +589,7 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - 2026-07-06 cmd_3700: 確定台帳実装第1弾完了。`signal_decision_ledger` DDL/ORM/migration、append-only update/delete guard、partial unique index `ux_sdl_initial_decision`、初期構築dry-runスクリプト、台帳テストを追加。実挿入・書込みガード実装は後続cmd。対象commit: `/mnt/c/Python_app/DM-signal` `5e9ea355`。
 - 2026-07-06 cmd_3702: 初期構築dry-runの決定日フィルタを `rebalance_trigger` 対応へ是正。旧306件(102PF×3日)は非リバランス月混入で誤り、新計画は102件(1PF×1決定日)、復元不能0件、provenance内訳=signal_change_log_old_chain 9 + signals_fallback 93。本番trigger分布はmonthly 91 / quarterly_jan 5 / bimonthly_even 3 / bimonthly_odd 3 / quarterly_feb 0 / quarterly_mar 0。2026-07-01遡及書換え9PFは全てold_chainで決定時点値へ解決し、汚染混入0件(3PFは現在値と決定値が実際に異なる巻き戻り、6PFはnet-zero往復)。対象commit: `/mnt/c/Python_app/DM-signal` `e0734172`。
 - 2026-07-06 cmd_3704: 本番`signal_decision_ledger`初期構築を実行。バックアップ`signal_decision_ledger_backup_cmd3704_20260706T2018`作成後、102PF分102件を挿入し、sync-standard/sync-fof後もchecksum `36334bde8188c94e7295c69427768f15105522f35c70701babe970311432f241` 不変。CRITICAL drift 2件でガード発火を実証。台帳=決定済みholding_signalのSSOTとして本番稼働。
+- 2026-07-07 cmd_3711: `signal_decision_ledger`全履歴バックフィルを本番実行。SPYカレンダー月初営業日キーで2003-2026の確定リバランス月へ`historical_backfill`行を追加し、Monthly Tradeの過去月Pending表示を解消。バックアップ`signal_decision_ledger_backup_cmd3711_20260706T1454`後、dry-run 15,058 planned、実行後15,160 total、API `decision_source` spot check済み。対象commit: `/mnt/c/Python_app/DM-signal` `4b9fae64`。
 
 ## §22 CI/テスト基盤 2026-05更新 (cmd_2652〜2660)
 
