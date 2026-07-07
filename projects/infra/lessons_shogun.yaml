@@ -230,7 +230,8 @@ lessons:
   source_ids: [LS033, LS037, LS074, LS084, LS086, LS087, LS051, LS066]
   created_at: '2026-04-24'
   automated: true
-  enforcement: '各enforcement箇所(settings.json hook, bulletin_write.sh, gate_shogun_startup.sh)で個別に自動強制済み'
+  enforcement_level: 4
+  enforcement: "Level4: 個別事象は運用フロー内のhook/gate/scriptへ埋込済み。一次証跡: .claude/settings.json PostToolUse→.claude/hooks/posttool-dispatch.sh→post-shogun-inbox-check.sh(将軍inbox盲点/復帰手順スキップ警告), scripts/bulletin_write.sh(L294付近: prepend書込み), scripts/restart_watchers.sh watcher_process_count()(親子プロセスを除外して二重起動誤判定防止), scripts/lib/model_detect.sh _model_detect_latest_claude_session()(ログ内他CLIバナー誤検出防止), scripts/lib/pre_bash_combined_guard.sh queue/inbox symlink WARN(cmd_3453)。LS-A11は『未実装候補』ではなく既存防御の実績カタログとして扱う。"
 
 - id: LS-A12
   title: inbox_write guard 3段階設計 — 迂回路ゼロの構造
