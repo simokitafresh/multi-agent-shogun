@@ -8,6 +8,13 @@ set -e
 
 _lwk_self="${BASH_SOURCE[0]}"; [[ "$_lwk_self" != /* ]] && _lwk_self="$PWD/$_lwk_self"
 SCRIPT_DIR="${_lwk_self%/scripts/lesson_write_karo.sh}"
+if [ -f "$SCRIPT_DIR/scripts/lib/lock_path.sh" ]; then
+    # Use the shared helper so role lesson writers and generic lesson writers
+    # serialize through the same stable lock namespace.
+    source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
+else
+    lock_path() { printf '%s.lock' "$1"; }
+fi
 TITLE="${1:-}"
 DETAIL="${2:-}"
 SOURCE_CMD="${3:-}"
@@ -65,7 +72,7 @@ if [ "$DETAIL_LEN" -lt 10 ]; then
 fi
 
 LESSONS_FILE="$SCRIPT_DIR/projects/infra/lessons_karo.yaml"
-LOCKFILE="${LESSONS_FILE}.lock"
+LOCKFILE="$(lock_path "$LESSONS_FILE")"
 
 # Verify lessons file exists
 if [ ! -f "$LESSONS_FILE" ]; then

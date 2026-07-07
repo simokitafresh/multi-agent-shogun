@@ -23,8 +23,15 @@ _self="${BASH_SOURCE[0]}"
 _scripts_dir="${_self%/*}"
 SCRIPT_DIR="${_scripts_dir%/*}"
 unset _self _scripts_dir
+if [ -f "$SCRIPT_DIR/scripts/lib/lock_path.sh" ]; then
+    # Use the shared helper so /mnt/c lesson YAML locks live on /tmp, matching
+    # the rest of the YAML-safe write infrastructure.
+    source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
+else
+    lock_path() { printf '%s.lock' "$1"; }
+fi
 LESSONS_FILE="$SCRIPT_DIR/projects/infra/lessons_shogun.yaml"
-LOCKFILE="${LESSONS_FILE}.lock"
+LOCKFILE="$(lock_path "$LESSONS_FILE")"
 
 # --- Mode: --supersedes (古い教訓を非優先化) ---
 if [ "${1:-}" = "--supersedes" ]; then
@@ -121,7 +128,7 @@ if [ "$DETAIL_LEN" -lt 30 ]; then
 fi
 
 LESSONS_FILE="$SCRIPT_DIR/projects/infra/lessons_shogun.yaml"
-LOCKFILE="${LESSONS_FILE}.lock"
+LOCKFILE="$(lock_path "$LESSONS_FILE")"
 
 # Verify lessons file exists
 if [ ! -f "$LESSONS_FILE" ]; then

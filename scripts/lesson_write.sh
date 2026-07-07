@@ -16,6 +16,13 @@ else
     [[ "$_self_dir" != /* ]] && _self_dir="$(cd "$_self_dir" && pwd)"
     SCRIPT_DIR="${_self_dir%/scripts}"
 fi
+if [ -f "$SCRIPT_DIR/scripts/lib/lock_path.sh" ]; then
+    # Keep all lesson writers on the same lock namespace. On WSL2 /mnt/c,
+    # lock_path places flock files on /tmp instead of NTFS/DrvFs.
+    source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
+else
+    lock_path() { printf '%s.lock' "$1"; }
+fi
 PROJECT_ID="${1:-}"
 TITLE="${2:-}"
 DETAIL="${3:-}"
@@ -556,12 +563,13 @@ require_origin_value() {
 
 write_project_yaml_lesson() {
     local lessons_yaml="$SCRIPT_DIR/projects/${PROJECT_ID}/lessons.yaml"
-    local lockfile="${lessons_yaml}.lock"
+    local lockfile
     local timestamp
 
     if [ ! -f "$lessons_yaml" ]; then
         return 1
     fi
+    lockfile="$(lock_path "$lessons_yaml")"
 
     timestamp=$(date "+%Y-%m-%d")
     RESOLVED_ORIGIN="$(require_origin_value)"
@@ -690,7 +698,7 @@ if [ -n "$RETAG_ID" ]; then
     fi
 
     LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
-    LOCKFILE="${LESSONS_FILE}.lock"
+    LOCKFILE="$(lock_path "$LESSONS_FILE")"
 
     if [ ! -f "$LESSONS_FILE" ]; then
         echo "ERROR: $LESSONS_FILE not found." >&2
@@ -784,7 +792,7 @@ if [ -n "$RETIRE_ID" ]; then
     fi
 
     LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
-    LOCKFILE="${LESSONS_FILE}.lock"
+    LOCKFILE="$(lock_path "$LESSONS_FILE")"
 
     if [ ! -f "$LESSONS_FILE" ]; then
         echo "ERROR: $LESSONS_FILE not found." >&2
@@ -894,7 +902,7 @@ if [ -z "$PROJECT_PATH" ]; then
 fi
 
 LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
-LOCKFILE="${LESSONS_FILE}.lock"
+LOCKFILE="$(lock_path "$LESSONS_FILE")"
 
 # Verify lessons file exists
 if [ ! -f "$LESSONS_FILE" ]; then
