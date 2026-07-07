@@ -9,7 +9,7 @@ description: |
 quality_metric: "当該スキルで配備した偵察2名タスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-04T20:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-07T18:19:00+09:00 -->
 
 Script refs verified: 2026-07-04 cmd_training_skill_refs_recon_dual_202607042005. `deploy_task.sh` の checked_at(2026-07-03T02:15:00+09:00)以降変更をgit log/showで確認。781d3c456は報告YAMLartifact向け教訓target_files除外の内部注入精度改善、15ff192a9はtask YAML構文FAIL時にtask_assigned/report template/draft reviewを停止して家老へdeploy_error通知、fc056d4b2はreport templateのfiles_modified雛形とbinary_checks生成強化、da70ad039はactive peerとのtarget_pathファイル衝突をBLOCKしディレクトリ衝突はINFOにする安全ガード追加。1人目 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の呼び出し契約、safe_inbox_write通知、report template生成は維持。ただし2人目`--yaml`でも同一ファイルtarget_path衝突は新ガードでBLOCKされるため、これは重複ガード回避対象ではなく安全境界として扱い、配備済みにしない。
 
@@ -86,4 +86,6 @@ Script refs verified: 2026-06-26 12c935c10. `deploy_task.sh` 直近変更はNO_W
 
 Script refs verified: 2026-06-28 b1922e36b+0226e0db5+75aac6a10. `deploy_task.sh` 直近変更はfailed redeploy時のgate扱い修正とcanceled cmd配備BLOCK。`yaml_field_set.sh` 直近変更は新規field挿入位置の内部修正。1人目正規配備 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `--yaml <file> <ninja2>` の契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+Script refs verified: 2026-07-07T18:19:00+09:00 (shogun復帰時WARN解消). `deploy_task.sh` 直近変更(88dae4ee5)をgit showで確認。direct/--yamlモードのtarget_path衝突ガードをtask YAML書換え前に先行実行する`deploy_task_guard_direct_yaml_prewrite_collision`追加。衝突BLOCKの判定基準は既存`deploy_task_guard_target_path_collision`のままで、2人目`--yaml`の呼び出し契約・安全境界の扱い(同一file衝突=BLOCK、配備済みにしない)は本文記載の通り変更なし。
+
+<!-- script_refs_checked_at: 2026-07-07T18:19:00+09:00 -->
