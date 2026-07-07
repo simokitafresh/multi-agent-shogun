@@ -1224,6 +1224,11 @@ inbox_truncate_lines() {
     '
 }
 
+inbox_utf8_truncate() {
+    local max_chars="${1:-900}"
+    python3 -c 'import sys; limit=int(sys.argv[1]); raw=sys.stdin.buffer.read(); text=raw.decode("utf-8", "replace"); sys.stdout.write(text[:limit])' "$max_chars" 2>/dev/null || true
+}
+
 inbox_extract_report_summary_for_review_context() {
     local report_path="$1"
     [ -f "$report_path" ] || return 0
@@ -1301,7 +1306,7 @@ inbox_build_review_context_query() {
     printf '%s\n%s\n%s\n' "$cmd_query" "$report_query" "$content" \
         | tr '\n' ' ' \
         | sed 's/[[:space:]][[:space:]]*/ /g; s/^[[:space:]]*//; s/[[:space:]]*$//' \
-        | cut -c 1-900
+        | inbox_utf8_truncate 900
 }
 
 inbox_collect_review_memory_context() {

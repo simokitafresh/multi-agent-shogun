@@ -203,7 +203,26 @@ fi
 echo "■ 三層連鎖(memory_db_knowledge_write.sh Layer2/3)失敗検知"
 chain_log="${THREE_LAYER_CHAIN_LOG:-$repo_root/logs/three_layer_chain_async.log}"
 if [ -f "$chain_log" ]; then
-    chain_fail_count="$(grep -c ' ERROR ' "$chain_log" 2>/dev/null || true)"
+    chain_fail_count="$(
+        awk '
+            function event_id(line,    tmp) {
+                tmp = line
+                if (tmp ~ /event=[^[:space:]]+/) {
+                    sub(/^.*event=/, "", tmp)
+                    sub(/[[:space:]].*$/, "", tmp)
+                    return tmp
+                }
+                return "line:" NR
+            }
+            / ERROR / { unresolved[event_id($0)] = 1 }
+            / OK / { delete unresolved[event_id($0)] }
+            END {
+                count = 0
+                for (id in unresolved) count++
+                print count + 0
+            }
+        ' "$chain_log" 2>/dev/null || true
+    )"
     chain_fail_count="${chain_fail_count:-0}"
     echo "chain_log=$chain_log 未貫通件数=$chain_fail_count"
     if [ "$chain_fail_count" -gt 0 ]; then

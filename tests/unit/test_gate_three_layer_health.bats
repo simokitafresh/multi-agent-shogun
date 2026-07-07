@@ -78,3 +78,30 @@ run_gate() {
     [[ "$output" == *"state遷移件数(state!=raw): 0"* ]]
     [[ "$output" == *"STATUS: WARN"* ]]
 }
+
+@test "chain ERROR followed by OK for same event is treated as resolved" {
+    init_cache_db "obsidian_promoted"
+    cat > "$TEST_TMPDIR/three_layer_chain_async.log" <<'EOF'
+2026-07-07T21:39:56+09:00 ERROR layer2_semantic_index_update_failed event=knowledge:e1 source=test
+2026-07-07T21:40:11+09:00 OK layer2_semantic_index_update event=knowledge:e1 source=test
+EOF
+
+    run run_gate
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"未貫通件数=0"* ]]
+    [[ "$output" == *"STATUS: PASS"* ]]
+}
+
+@test "chain ERROR without later OK remains unresolved" {
+    init_cache_db "obsidian_promoted"
+    cat > "$TEST_TMPDIR/three_layer_chain_async.log" <<'EOF'
+2026-07-07T21:39:56+09:00 ERROR layer2_semantic_index_update_failed event=knowledge:e1 source=test
+EOF
+
+    run run_gate
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"未貫通件数=1"* ]]
+    [[ "$output" == *"STATUS: WARN"* ]]
+}

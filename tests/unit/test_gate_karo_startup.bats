@@ -664,6 +664,33 @@ MOCK
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
+@test "recent deployed assigned pane with unparseable CTX is grace-skipped from STALL suspicion" {
+    local now_time
+    now_time=$(date '+%Y-%m-%dT%H:%M:%S')
+    cat > "$TEST_TMPDIR/queue/tasks/hanzo.yaml" <<YAML
+task:
+  status: assigned
+  deployed_at: "$now_time"
+YAML
+    cat > "$TEST_TMPDIR/bin/tmux" <<'MOCK'
+#!/usr/bin/env bash
+case "$1" in
+  list-panes)
+    printf '5 hanzo\n'
+    ;;
+  capture-pane)
+    printf 'waiting without context meter\n'
+    ;;
+esac
+MOCK
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    run env KARO_ASSIGNED_STALL_GRACE_SEC=300 bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"hanzo: CTX=EMPTY status=assigned → 配備直後("* ]]
+    [[ "$output" != *"STALL疑い"* ]]
+}
+
 # === Test 10: workarounds傾向表示(workaroundあり) ===
 @test "workarounds present → shows category and count" {
     cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'

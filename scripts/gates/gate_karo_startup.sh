@@ -23,6 +23,7 @@ STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-3}"
 # cmd_3658: 到着直後の未読が先送りCRITICAL streakに混入する誤検知の根治。
 # 最古未読メッセージがこの分数以上滞留していない限り、streak判定対象のalertを積まない。
 KARO_INBOX_UNREAD_DWELL_MIN="${KARO_INBOX_UNREAD_DWELL_MIN:-30}"
+KARO_ASSIGNED_STALL_GRACE_SEC="${KARO_ASSIGNED_STALL_GRACE_SEC:-300}"
 
 log_startup_stderr_file() {
     local label="$1"
@@ -194,6 +195,33 @@ collect_causal_backlink_hits() {
                 -f "$pattern_file" . 2>/dev/null \
             || true
     fi
+}
+
+karo_startup_recent_deploy_grace() {
+    local task_file="$1"
+    local now_epoch="$2"
+    local deployed_at deployed_epoch age
+
+    [ -f "$task_file" ] || return 1
+    deployed_at=$(awk '
+        /^[[:space:]]*deployed_at:[[:space:]]*/ {
+            val=$0
+            sub(/^[[:space:]]*deployed_at:[[:space:]]*/, "", val)
+            gsub(/^["'\'' ]+|["'\'' ]+$/, "", val)
+            print val
+            exit
+        }
+    ' "$task_file" 2>/dev/null)
+    [ -n "$deployed_at" ] || return 1
+
+    deployed_epoch=$(date -d "$deployed_at" +%s 2>/dev/null || echo 0)
+    [ "$deployed_epoch" -gt 0 ] || return 1
+    age=$(( now_epoch - deployed_epoch ))
+    [ "$age" -ge 0 ] || age=0
+    [ "$age" -le "$KARO_ASSIGNED_STALL_GRACE_SEC" ] || return 1
+
+    printf '%s\n' "$age"
+    return 0
 }
 
 show_active_cmd_semantic_context_one() {
@@ -1572,6 +1600,7 @@ done
 for _pid in "${_CTX_PIDS[@]}"; do wait "$_pid" 2>/dev/null || true; done
 
 stall_count=0
+_stall_now_epoch=$(date +%s)
 for ninja in $_KARO_NINJA_NAMES; do
     task_status=${_NINJA_STATUS_CACHE[$ninja]:-}
     if [ -z "$task_status" ] && [ -f "$SCRIPT_DIR/queue/tasks/${ninja}.yaml" ]; then
@@ -1586,8 +1615,13 @@ for ninja in $_KARO_NINJA_NAMES; do
         fi
         rm -f "${_CTX_TMPF[$ninja]}"
         if [[ "$task_status" == "assigned" && ( "$ctx" == "0%" || -z "$ctx" ) ]]; then
-            echo "  ⚠ $ninja: CTX=${ctx:-EMPTY} status=$task_status → STALL疑い"
-            stall_count=$((stall_count + 1))
+            task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
+            if _stall_age="$(karo_startup_recent_deploy_grace "$task_file" "$_stall_now_epoch")"; then
+                echo "  $ninja: CTX=${ctx:-EMPTY} status=$task_status → 配備直後(${_stall_age}s<=${KARO_ASSIGNED_STALL_GRACE_SEC}s)のためSTALL判定猶予"
+            else
+                echo "  ⚠ $ninja: CTX=${ctx:-EMPTY} status=$task_status → STALL疑い"
+                stall_count=$((stall_count + 1))
+            fi
         else
             echo "  $ninja: CTX=${ctx:-?} status=${task_status:-?}"
         fi

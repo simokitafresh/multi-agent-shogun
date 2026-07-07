@@ -370,6 +370,35 @@ YAML
     grep -q "scripts/inbox_write.sh" "$TEST_INBOX_DIR/gunshi.yaml"
 }
 
+@test "review context truncation preserves UTF-8 YAML validity" {
+    setup_basic_test_env
+    cat > "$TEST_TMPDIR/scripts/memory_db_query.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+echo "memory hit"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/memory_db_query.sh"
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+echo "semantic hit"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+
+    long_japanese=$(printf '三層記憶引用検証%.0s' {1..140})
+    run bash "$TEST_INBOX_WRITE" "gunshi" "draft cmd_3737 レビュー依頼。${long_japanese}" "review_draft" "karo" "review_request"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_INBOX_DIR/gunshi.yaml" <<'PY'
+import sys
+import yaml
+
+path = sys.argv[1]
+with open(path, "rb") as f:
+    raw = f.read()
+raw.decode("utf-8")
+with open(path, encoding="utf-8") as f:
+    yaml.safe_load(f)
+PY
+}
+
 @test "memory DB live insert: inbox write appends event_type=inbox after YAML persistence" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/data"
