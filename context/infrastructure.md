@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-07 cmd_karo_hotfix_ga189_context_freshness_20260707 -->
+<!-- last_updated: 2026-07-08 cmd_3744 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -450,6 +450,7 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 idle検知+コンテキストリセット送信（Codex=/new, Claude=/clear）、is_task_deployed二重チェック、STALE-TASK検出、CLEAR_DEBOUNCE=300s、karo_snapshot自動生成、状態遷移検知(cmd_255)。
 karo_snapshotは重いmaintenance/gate処理より前に早期発行し、temp file + mvでatomic publishする。古い表示残り/監視詰まりの再発防止はL851を参照。
 実装正本は[[ninja_monitor.sh]]。修行自動配備の設計根拠は[[training-cycle.md]]、詳細仕様は[[infra-details.md]] §3を参照。
+プルーン網羅検証(cmd_3744): `tests/unit/test_ninja_monitor_training_auto.bats` が `ninja_monitor.sh` の常駐連想配列を `_cleanup_stale_keys` のプルーン対象または理由付き除外へ分類し、未登録配列追加の境界入力でexit 1を確認する。個別リーク後追いではなく、配列追加時の漏れをCIで検出する。
 三段階/clear(cmd_1039/1040): Stage 1: YAML status確認(acknowledged/in_progress→skip)→Stage 2: 再確認(race condition防止)→Stage 3: /clear送信。作業中忍者の誤クリア防止。
 auto-done判定: parent_cmdだけでなくtask_idも一致チェック必須。Wave間で誤done発生実績あり(L048)。
 auto_deploy統合(cmd_338): auto-done後にauto_deploy_next.sh自動発火。次サブタスク自動配備。
