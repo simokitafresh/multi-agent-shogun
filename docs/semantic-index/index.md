@@ -1275,6 +1275,8 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_skill_script_refs_20260612]]` (L795) |
 | causal_chain | `[[cmd_karo_hotfix_note_draft_skill_refs_20260612]]` (L796) |
 | causal_chain | `[[cmd_karo_hotfix_shogun_startup_deferred_20260612]]` (L798) |
+| causal_chain | `[[cmd_3749]]` (L974) |
+| causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 
 ## investment_knowledge_base — 投資知識辞書
@@ -1448,6 +1450,7 @@ codd:
 | causal_chain | `[[cmd_3246]]` (L761) |
 | causal_chain | `[[cmd_karo_ci_fix_shogun_retry_20260703]]` (L946) |
 | causal_chain | `[[cmd_3720]]` (L958) |
+| causal_chain | `[[cmd_3724]] -> [[忍者教訓のenforcement field欠落初可視化]] -> [[lesson_lock_path_divergence]]` (L967) |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -2096,6 +2099,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_model_family_ssot_20260620]]` (L833) |
 | causal_chain | `[[cmd_3227]]` (L757) |
 | causal_chain | `[[cmd_3644]]` (L927) |
+| causal_chain | `[[cmd_reflux_insight_202607072256_saizo]]` (L971) |
 | causal_chain | `[[cmd_3726]]` (L956) |
 
 ## chain_principle — 鎖の原理
@@ -2117,6 +2121,7 @@ codd:
 | causal | `cmd_3615` files_modified: [[chain_principle]] |
 | lesson | `L970` dm-signal分割context5ファイルは独立last_updated+閾値3跨ぎで時間差連鎖ALERTする(バグではない) |
 | causal_chain | `[[cmd_karo_hotfix_ga146_context_freshness_dm_signal_core_20260627]]` (L871) |
+| causal_chain | `[[cmd_karo_ci_fix_deploy_task_ci_red_202607072231]]` (L970) |
 
 ## known_unknowns_principle — 無知の知
 
@@ -3956,6 +3961,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T07:35:46+09:00 速度改善の結果を報告して |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-02T09:40:54+09:00 DM-signalの実サイトの表示速度改善は達成されたか？ |
 | lesson | `L969` lesson_health未振り分けは閾値前から将軍/lesson-sort入力を自動生成する |
+| causal_chain | `[[cmd_reflux_insight_202607072138_saizo]]` (L969) |
 
 ## tier_plan_mapping — Tier-プラン対応
 
@@ -5133,6 +5139,7 @@ codd:
 | causal | `cmd_karo_hotfix_stop_hook_toolless_escape_2026070506` files_modified: [[hook_automation_framework]] |
 | causal | `cmd_karo_hotfix_ga190` files_modified: [[hook_automation_framework]] |
 | causal_chain | `[[cmd_3401]]` (L811) |
+| causal_chain | `[[cmd_3728]]` (L965) |
 | causal_chain | `[[cmd_3522]]` (L843) |
 
 ## multi_cli_event_commonization — multi-CLI hook/event共通化
@@ -5324,6 +5331,7 @@ codd:
 | causal | `cmd_reflux_insight_202607071920_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607071926_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607071943_kagemaru` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_insight_202607080313_tobisaru` files_modified: [[semantic_causal_automation]] |
 
 ## provisional_tobisaru — 仮: Tobisaru
 
@@ -5348,6 +5356,8 @@ codd:
 | cmd | `cmd_karo_hotfix_lesson_health_ga183_202607060939` (`queue/tasks/tobisaru.yaml`) |
 | cmd | `cmd_reflux_insight_manual_202607071607_tobisaru` |
 | cmd | `cmd_reflux_insight_202607071926_tobisaru` (`context/semantic-map.md`, `docs/semantic-index/index.md`) |
+| causal | `cmd_reflux_insight_202607080313_tobisaru` files_modified: [[provisional_tobisaru]] |
+| cmd | `cmd_reflux_insight_202607080313_tobisaru` (`queue/tasks/tobisaru.yaml`, `context/semantic-map.md`, `docs/semantic-index/index.md`) |
 
 ## provisional_hayate — 仮: Hayate
 
@@ -5904,6 +5914,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-29T12:11:50+09:00 そうしよう |
 | lesson | `L973` 絶対パス起動されるgateはcwdに依存せずSCRIPT_DIR由来repo rootを渡す |
 | causal_chain | `[[cmd_3278]]` (L772) |
+| causal_chain | `[[cmd_reflux_insight_202607072348_kotaro]]` (L973) |
 
 ## project_dividend_tracker — Dividend Tracker
 
@@ -5999,6 +6010,7 @@ codd:
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_3458_tobisaru]]` (L821) |
+| causal_chain | `[[cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122]]` (L975) |
 
 ## commander_role_ssot_analysis — Commanderロール SSOT分析
 
