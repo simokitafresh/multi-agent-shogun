@@ -4734,6 +4734,7 @@ codd:
 | file | `scripts/cmd_save.sh` |
 | file | `scripts/cmd_skeleton.sh` |
 | file | `context/growth-loop.md` |
+| file | `tests/unit/test_gate_gunshi_precheck_large_artifact.bats` |
 | cmd | `cmd_2897` ac_phase_mixing commit FP除外 |
 | cmd | `cmd_karo_hotfix_review_quality_warn_gate_result_20260615` review_quality_scale_summaryでgate_result=CLEARのFAIL除外(WARN率36%→9%) |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-15 教訓健全度useful_rate計測バグ(min_samples=5→useful_min=2分離) |
