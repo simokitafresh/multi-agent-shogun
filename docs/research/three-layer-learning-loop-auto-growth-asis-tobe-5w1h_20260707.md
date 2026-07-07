@@ -321,3 +321,5 @@ T4の新計器が可視化した穴に対し、**偵察→前提の覆り→実�
 - → [[LS081]] 穴8(検出器silent-death)の教訓化 — async timeout短縮は機能だけを殺す
 - → [[cmd_3729_ライフサイクル整備]] 穴9(虚偽resolve)の構造防御
 - → [[cmd_3731_書込み時付与実装]] §10.3 第2世代サイクルの実装先
+- → [[three-layer-memory-utilization-acceleration-asis-tobe-5w1h_20260707]] 想起側の姉妹編 — P1-P6原理を想起軸へ継承しM1-M6同日完了(2026-07-07)
+- → [[portable-learning-loop-core]] T6可搬コア文書 — cmd_3728生成器の正本。M6(cmd_3741)でrecall_inject.sh想起経路を同梱
