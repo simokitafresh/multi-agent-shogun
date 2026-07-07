@@ -279,8 +279,17 @@ def find_matches(search_dir, cmd_id_filter=None):
     if not os.path.isdir(search_dir):
         return []
 
+    def cmd_ids_match(candidate, requested):
+        candidate = str(candidate or '').strip()
+        requested = str(requested or '').strip()
+        return (
+            candidate == requested
+            or candidate.startswith(requested + '_')
+            or requested.startswith(candidate + '_')
+        )
+
     parent_cmd_re = re.compile(
-        r'^\s*parent_cmd:\s*[\'"]?' + re.escape(CMD_ID) + r'[\'"]?\s*(?:#.*)?$'
+        r'^\s*parent_cmd:\s*[\'"]?' + re.escape(CMD_ID) + r'(?:_[A-Za-z0-9_]+)?[\'"]?\s*(?:#.*)?$'
     )
 
     def rg_parent_cmd_files():
@@ -320,7 +329,7 @@ def find_matches(search_dir, cmd_id_filter=None):
                 if not raw:
                     continue
                 pcmd = str(get_first(raw, 'parent_cmd', 'report.parent_cmd'))
-                if pcmd != CMD_ID:
+                if not cmd_ids_match(pcmd, CMD_ID):
                     continue
                 status = str(get_first(raw, 'status', 'report.status', default=''))
                 # Skip placeholder reports (empty status)
