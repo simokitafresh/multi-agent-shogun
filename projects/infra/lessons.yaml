@@ -1,8 +1,26 @@
 ssot_path: /mnt/c/tools/multi-agent-shogun/tasks/lessons.md
-last_synced: '2026-07-08T02:43:54'
+last_synced: '2026-07-08T03:05:23'
 archive_path: /mnt/c/tools/multi-agent-shogun/projects/infra/lessons_archive.yaml
-lesson_count: 955
+lesson_count: 956
 lessons:
+- id: L980
+  title: 対話bashの'rg'はClaude Code CLIの関数ラッパーでありsubprocess/非対話シェルからは実体不在。command -vではなくshutil.which/実行時FileNotFoundErrorで検出せよ
+  summary: 対話bashセッションでcommand -v rgは'rg is a function'としてヒットするが、これはClaude Code CLI本体をARGV0
+  tags:
+  - infra
+  - testing
+  - testing
+  - gate
+  - bash
+  source_cmd: cmd_karo_hotfix_rg_fallback_causal_backlinks_202607080241
+  when: 未設定
+  how: 未設定
+  target_files:
+  - scripts/causal_backlink_counts.sh
+  - tests/unit/test_causal_backlink_counts.bats
+  origin: '[[cmd_karo_hotfix_rg_fallback_causal_backlinks_202607080241]]'
+  enforcement: 未自動化
+  automated: false
 - id: L979
   title: python3 subprocessでのrg呼出しはローカルWSL2環境で常にFileNotFoundError(シェル関数はexecve()に見えない)
   summary: causal_backlink_counts.sh(scripts/causal_backlink_counts.sh)がPython内でsubprocess.
@@ -2658,9 +2676,6 @@ lessons:
   - scripts/gates/gate_gunshi_report_precheck.sh
   - tests/unit/test_sg_pre25_readonly_ref.bats
   origin: '[[cmd_3380]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-07-06'
 - id: L806
   title: 'cmd_save.sh/cmd_skeleton.sh非対称成長の根因: 追加チェックの反映に強制機構が存在しない'
   summary: 'cmd_save.shにチェックを追加しても、cmd_skeleton.shへの反映を強制する仕組みがなかった。batsテスト追加(LS_NEW:
@@ -5288,7 +5303,7 @@ lessons:
   origin: '[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-07-07'
+  last_referenced: '2026-07-08'
 - id: L624
   title: yaml_field_setのnested指定は構文破壊リスク→dot notation専用ツール要
   summary: yaml_field_set.shでネストされたYAMLフィールドを指定すると構文が破壊されるリスクがある。dot notationで安全にネスト指定できる専用
@@ -6425,7 +6440,7 @@ lessons:
   origin: '[[cmd_karo_infra_recon_gates]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-07-07'
+  last_referenced: '2026-07-08'
 - id: L548
   title: 運用YAML yaml.dump残存を偵察で検出せよ
   summary: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
@@ -7652,6 +7667,9 @@ lessons:
   when: gateやhookの検知・補正ロジックを変更する時
   how: pre-bash-combined.shのG2ルールにより/mnt/c/Python_app以下の外部リポへのdirect push to mainは禁止
   origin: '[[cmd_step2c_push]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-08'
 - id: L446
   title: AC3設計書参照検知はq5_verified_sourceベースが信頼性高い
   summary: cmdブロック全体でのgunshiキーワード検索より、quality_gateのq5_verified_sourceフィールドに設計書パスが含まれるかを判定基準
@@ -9139,9 +9157,6 @@ lessons:
   target_files:
   - deploy_task.sh
   origin: '[[lessons,deploy,injection,useful-rate]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-07-06'
 - id: L316
   title: emit_deny後のexit 1欠落でDENYが無効化
   summary: pre-bash-report-deny.shでemit_deny(JSON出力)後にexit 1がなくexit 0に落ちていた。Claude
@@ -11782,9 +11797,6 @@ lessons:
   - deploy_task.sh
   - lesson_tags.yaml
   origin: '[[cmd_397]]'
-  helpful_count: 0
-  harmful_count: 0
-  last_referenced: '2026-07-06'
 - id: L086
   title: auto_draft_lesson.shがlesson_write.shをCMD_ID空で呼ぶためlesson.done未生成
   summary: auto_draft_lesson.sh L151でlesson_write.shを呼ぶ際、6番目引数(CMD_ID)が空文字。lesson_write.shは

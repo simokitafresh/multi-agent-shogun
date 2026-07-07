@@ -10125,3 +10125,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - causal_backlink_counts.sh(scripts/causal_backlink_counts.sh)がPython内でsubprocess.Popen(['rg',...])をtry/exceptで並列起動しているが、このWSL2ローカル開発環境には'rg'という実行ファイルがPATH上に存在しない。実体はClaude Code内蔵バイナリをexec -a rgで偽装呼出しする対話的bashシェルの関数としてのみ定義されており(command -v rgは対話シェルでのみ'rg is a function'、非対話bash -cではrc=1)、Pythonのsubprocessは常にexecve()でPATH上の実ファイルを探すためシェル関数を認識できずFileNotFoundError(OSError)になる。except節で全プロセスハンドルがNoneにフォールバックし、targetsが空リストとなって呼び出し元は常にrc=0+出力空(サイレント無害化)を受け取る。CI(.github/workflows/test.yml)はapt-get install ripgrepで実バイナリを導入しているためテストはPASSするが、ローカルでは同じテストが常時決定論的にFAILする——真のflakyではなく環境依存の決定論的差異。教訓: シェル関数として動くCLIツール(rg等)をPythonのsubprocessやbatsの非対話サブシェルから呼ぶ設計は、ローカル/CI間で無言の挙動差を生む。外部CLIをsubprocessで呼ぶ場合はshutil.which()等で実体の存在を確認し、無ければ明示的にSKIP/WARNするか、Pure Python実装にフォールバックすべき
+
+### L980: 対話bashの'rg'はClaude Code CLIの関数ラッパーでありsubprocess/非対話シェルからは実体不在。command -vではなくshutil.which/実行時FileNotFoundErrorで検出せよ
+- **日付**: 2026-07-08
+- **出典**: cmd_karo_hotfix_rg_fallback_causal_backlinks_202607080241
+- **記録者**: saizo
+- **tags**: [infra,testing,testing,gate,bash]
+- **target_files**: [scripts/causal_backlink_counts.sh,tests/unit/test_causal_backlink_counts.bats]
+- **origin**: [[cmd_karo_hotfix_rg_fallback_causal_backlinks_202607080241]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 対話bashセッションでcommand -v rgは'rg is a function'としてヒットするが、これはClaude Code CLI本体をARGV0=rgで起動するラッパー関数であり、実PATH上のバイナリではない(shutil.which('rg')はNoneを返す)。そのためPythonのsubprocess.Popen(['rg',...])やbats run bash -c 'rg ...'のような非対話シェルからの呼び出しは常にFileNotFoundError/exit 127になる。scripts/causal_backlink_counts.shの旧実装はこれをexcept OSErrorで沈黙キャッチしており出力が常に空になっていた(本cmdで修正)。同根本原因の別事例として、scripts/lesson_harvest.shはcommand -v rgでpreflightしているため同環境では明示的エラーで停止する構造(こちらは沈黙ではなく明示失敗なので挙動は異なるが同根)。tests/unit/test_gate_shogun_startup.bats L1980-1988の2テストはbash -c "rg -n ..."を直接実行しておりexit 127(コマンド未検出)でstatus -eq 1の期待に失敗する(本タスクのtarget_path外のため未修正、decision_candidateへ記録)
