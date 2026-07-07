@@ -215,7 +215,9 @@ for idx, match in enumerate(matches):
     if read_pos >= 0 and write_pos >= 0 and read_pos < write_pos:
         clause_positions = [p for p in (sentence_tail.find("、", read_pos), sentence_tail.find(",", read_pos)) if p >= 0]
         has_clause_boundary = bool(clause_positions and min(clause_positions) < write_pos)
-    is_readonly = is_exec_prefix or has_clause_boundary or (read_pos >= 0 and (write_pos < 0 or read_pos < write_pos) and (write_pos < 0 or next_ref_before_write))
+    # read_marker immediately after filename (within 5 chars) = strong readonly signal
+    read_immediate = read_pos >= 0 and read_pos <= 5
+    is_readonly = is_exec_prefix or has_clause_boundary or (read_pos >= 0 and (write_pos < 0 or read_pos < write_pos) and (write_pos < 0 or next_ref_before_write or read_immediate))
     base = os.path.basename(ref)
     (readonly_refs if is_readonly else write_refs).append(base)
 
