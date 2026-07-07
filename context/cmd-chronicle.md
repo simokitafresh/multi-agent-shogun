@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-07 -->
+<!-- last_updated: 2026-07-08 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,16 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3206 | 速度修行でscript群が更新されたがSKILL.md内容が未追随。忍者が古い手順で作業するリスク解消。3セッション連続startup BLOCK | infra | 06-07 | 14件のSKILL.mdを参照scriptの現行動作へ追従し |
-| cmd_3211 | 速度修行ledger auto-deployがCTX%を確認せず連続配備→コンパクション頻発→速度低下。_handle_speed_training_auto_deployにCTX閾値チェックを追加し、CTX高忍者への配備をauto-clear完了まで保留する | infra | 06-07 | ninja_monitor.sh _handle_speed |
-| cmd_3210 | report_received hookがテンプレート段階(bc空)で偽発火→FAIL記録し、dashboard-updateのFAIL率が実態と乖離している。bc空FAILを偽FAIL分類して計測精度を回復する | infra | 06-07 | gate_karo_startup.shのskill_exe |
-| cmd_3213 | cmd_3211で追加したCTX50%閾値チェック(L2095-2104)を削除。殿指摘(2026-06-07 21:13): idleなら何%でも/clearする既存仕組みで十分。閾値は不要な複雑性であり洗脳#4(緩い設計)+#6(出力=仕事)の産物 | infra | 06-07 | ninja_monitor.sh _handle_speed |
-| cmd_3214 | gate_skill_script_refs.shが検出した9件のSKILL.mdが参照先scriptより古い。scriptの変更内容をSKILL.mdに反映し、startup BLOCKを解消する | infra | 06-07 | gate_skill_script_refs.sh検出の9件 |
-| cmd_3212 | ledger pending39件中34件がcommit済みだがrecord-after未実行で偽pending。一括修復+karo_directフローにrecord-after呼出しを統合し再発防止 | infra | 06-07 | reconcile追加+update_entry_field |
-| cmd_9998 | cmd_save.sh速度計測のための新規PASSシナリオ。cmd_9999に蓄積したWARN履歴の影響を排除する | — | 06-07 | — |
-| cmd_9999 | 速度計測テスト用のダミーcmd | — | 06-07 | — |
-| cmd_3215 | 3xレバレッジETF保有中の大幅損失月を全期間で特定し、その前月のシグナル・価格・ボラティリティに共通パターンがないか調査する。殿指示(2026-06-07): 先週木金の急落のような事態を事前に予測できるサインを探す | dm-signal | 06-07 | 3xレバレッジETF保有中の月次リターン-10%以下を全期間 |
-| cmd_3216 | cmd_3215は3xレバレッジETF保有月のみに限定していた。殿指示(2026-06-07 22:55): 全デュアルモメンタム全PFを同時に分析に加えないと意味がない。四神12体+忍法20体+奥義21体の全53PFで損失月(-10%以下)を全期間特定し、前月パターンを分析する | dm-signal | 06-07 | 全54PF(L0四神12+L1忍法21+L2奥義21)の全期 |
 | cmd_3217 | cmd_3216の損失パターン(負け条件)に加え、全PFの好調月(勝ち条件)も同手法で分析。全利用可能データ(monthly_returns/holding_signal/signal_change_log/deterioration_snapshots/prices/VIX/DTB3)を投入し、勝ち条件vs負け条件を対比。殿指示: サイズ調整のための危険度判定材料を全データで構築 | dm-signal | 06-08 | 全54体(L0四神12+L1忍法21+L2奥義21)の月次リ |
 | cmd_3219 | safe_send_clear後にL891で@context_pctを0%リセットするが、CLIステータスラインに前回のCTX表示が残留し、次のget_context_pctサイクルでcapture-paneから旧値が検出→@context_pctに書き戻される。殿指摘(2026-06-08 01:45): /clear後にCTXが0%にならないのはおかしい | infra | 06-08 | safe_send_clear内の/clear後にtmux |
 | cmd_3220 | 殿指示: サイズ調整のみ、100% or 80%の二択。7戦略(VIX連動/実現ボラ/ATR/分類器/レジーム検出/カレンダー効果/連続上昇カウンター)を全78PF×全期間でバックテストし横並び比較。cmd_3218の教訓(HIGH月+3.3%で機会損失)を踏まえ控えめな20%縮小で検証 | dm-signal | 06-08 | 7戦略サイズ調整(100%/80%)バックテスト完了。全78 |
@@ -412,3 +402,6 @@
 | cmd_3740 | 殿裁可(2026-07-07 21:37「やろう」— 三層記憶有効利用加速設計書v1 §7)の最終盤M4。cmd_3739のmemory_references欄が生む有効性データ(useful/reason)を集計しなければ、引用が役立ったかの計測(設計書§2.3の欠落2番)が埋まらない。有効率の集計と、無関係と記録された引用の還流リストを実装する。偵察cmd_3736がM4接続点(useful/reasonが分子分母、cmd_id突合で注入から有効まで回収)を特定済み | infra | 07-07 | memory_references有効性をloop_ledg |
 | cmd_3741 | 殿裁可(2026-07-07 21:37「やろう」— 三層記憶有効利用加速設計書の最終盤M6)。想起の自動注入経路はhook設定(CLI・repo固有層)に癒着しており、可搬コア(portable learning-loop bootstrap)には検索scriptまでしか同梱されていない。イベント文脈からのクエリ生成と検索結果の注入テキスト生成を担う想起scriptを可搬コアへ追加し、新しいプロジェクトでも想起が動く証拠を取る | infra | 07-07 | portable learning-loop bootstr |
 | cmd_3743 | 起動チェックと参照鮮度チェックが要更新SKILL.mdの一覧をWARN表示し、前セッションの先送り穴一覧にも記録されている。本日の実装cmd群で対応scriptが更新され、SKILL.md記載が現行仕様から乖離している可能性がある。要更新一覧の全ペアを現行仕様と突合し、乖離反映と確認基準の更新でWARNを解消する | infra | 07-07 | SKILL.md script参照鮮度のWARN 9件を全ペ |
+| cmd_3744 | 殿指摘(2026-07-08 00:11「待たずにいますぐ修正した方がメリットが大きくないか。再発を待つ事の優位性はあるのか」)。同型メモリリーク(L622系)は修行タスクが直近で繰り返し後追い修正しており、プルーンブロックの手動追記規律は構造的に漏れる。常駐連想配列のプルーン網羅を機械検証し、追記漏れをCIで即検出する構造に変える | infra | 07-08 | ninja_monitorの常駐連想配列プルーン網羅を機械検 |
+| cmd_3745 | 殿裁可(2026-07-08 00:31「やろう」— 待機許可機構の根絶設計書の施策W1)。因果特定済み・修正方法既知の気づきも、現行は同一source回数閾値へ到達するまで無音で待つ(棚卸しA1)。気づきへfix_known構造化フィールドと検証コマンドの自動実行を追加し、検証で実在確認できた気づきは閾値を待たず即エスカレーションさせる。閾値の役割を偽陽性フィルタから検証不能時のフォールバックへ限定する | infra | 07-08 | fix_known構造化フィールドと検証コマンド実行をins |
+| cmd_3746 | 殿裁可(2026-07-08 00:31「やろう」— 待機許可機構の根絶設計書の施策W2)。防御レベルが恒久域に達しない教訓が「昇格候補」として毎起動表示されるだけで、消化経路が存在しない(棚卸しA6=陳列のみ)。還流自動配備(気づき・backlinks在庫と同機構)へ昇格候補チャネルを追加し、idle忍者が昇格実装を自動消化する構造に変える。滞留の経過も台帳で計測する | infra | 07-08 | 昇格候補(L4未満教訓)を還流自動配備の第三チャネルへ追加し |
