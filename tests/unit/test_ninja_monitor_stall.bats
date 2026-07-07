@@ -852,6 +852,57 @@ cat "$SCRIPT_DIR/ntfy.log"
     [[ "$output" == *"【三層ループALERT】WARNING: loop slow"* ]]
 }
 
+@test "check_lesson_health notifies karo for early-route lesson backlog warnings" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+export SCRIPT_DIR
+mkdir -p "$SCRIPT_DIR/scripts/gates" "$SCRIPT_DIR/scripts"
+
+cat > "$SCRIPT_DIR/scripts/gates/gate_lesson_health.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "OK: dm-signalのlesson統合状況は健全(未合流0件,total:796,synced:L825)\n"
+printf "WARN: dm-signalの未振り分け教訓8件(早期導線, ALERT閾値10未満, ids: L818,L819,L820,L821,L822,L823,L824,L825)\n"
+printf "action: ALERT閾値(10件)に達する前に /lesson-sort を実行し、dm-signalの未振り分け教訓の蓄積を防げ。\n"
+printf "WARN: 新規教訓+174件(前回審査: L814, 現在最新: L988)。\n"
+EOF
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$SCRIPT_DIR/inbox.log"
+EOF
+cat > "$SCRIPT_DIR/scripts/ntfy.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s\n" "$1" >> "$SCRIPT_DIR/ntfy.log"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/gates/"*.sh "$SCRIPT_DIR/scripts/"*.sh
+
+LESSON_CHECK_INTERVAL=0
+LESSON_ALERT_DEBOUNCE=0
+LAST_LESSON_CHECK=0
+LAST_LESSON_ALERT=0
+log() { echo "$1" >> "$LOG"; }
+
+check_lesson_health
+
+cat "$LOG"
+cat "$SCRIPT_DIR/inbox.log"
+cat "$SCRIPT_DIR/ntfy.log"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"LESSON-HEALTH: WARN: dm-signalの未振り分け教訓8件"* ]]
+    [[ "$output" == *"WARN: 新規教訓+174件"* ]]
+    [[ "$output" == *"karo|lesson_health|lesson健全性ALERT: WARN: dm-signalの未振り分け教訓8件"* ]]
+    [[ "$output" == *"【教訓ALERT】WARN: dm-signalの未振り分け教訓8件"* ]]
+}
+
 @test "run_lock_cleanup deletes stale shogun locks with one configurable scan" {
     run bash -lc '
 set -euo pipefail

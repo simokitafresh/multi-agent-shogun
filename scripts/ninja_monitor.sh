@@ -5101,8 +5101,9 @@ check_lesson_health() {
     local output
     output=$(bash "$gate_script" 2>/dev/null) || true
 
-    # ALERTがあるか確認（herestring: echo不要でサブシェル1個削減）
-    if grep -q "^ALERT:" <<< "$output"; then
+    # ALERTまたは早期対応が必要なWARNがあるか確認（herestring: echo不要でサブシェル1個削減）
+    local lesson_alert_pattern='^(ALERT:|WARN: .*未振り分け教訓.*早期導線|WARN: 新規教訓\+)'
+    if grep -Eq "$lesson_alert_pattern" <<< "$output"; then
         # デバウンスチェック
         local alert_elapsed=$((now - LAST_LESSON_ALERT))
         if [ $alert_elapsed -lt $LESSON_ALERT_DEBOUNCE ]; then
@@ -5111,7 +5112,7 @@ check_lesson_health() {
         fi
 
         local alerts
-        alerts=$(grep "^ALERT:" <<< "$output" | tr '\n' ' ')
+        alerts=$(grep -E "$lesson_alert_pattern" <<< "$output" | tr '\n' ' ')
         log "LESSON-HEALTH: $alerts"
         bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "lesson健全性ALERT: ${alerts}" lesson_health ninja_monitor >> "$LOG" 2>&1
         bash "$SCRIPT_DIR/scripts/ntfy.sh" "【教訓ALERT】${alerts}" >> "$LOG" 2>&1
