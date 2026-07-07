@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-06 cmd_karo_hotfix_ga181 -->
+<!-- last_updated: 2026-07-07 cmd_karo_hotfix_ga189_context_freshness_20260707 -->
 <!-- last_synced_lesson: L824 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -219,6 +219,12 @@ Dashboard/Compare Summary/Deterioration Monitor/FAQの4ページで数値→色�
 
 GA-179原因: `dm-signal.md`のlast_updatedは2026-07-04で、source監視対象に2026-07-04以後のDM-Signal commitが3件残っていた。恒久索引に反映すべき差分はcmd_3686の確定シグナル変更ntfy集約で、flush通知は個別POSTではなくバッチサマリー1通が正。詳細は `context/dm-signal-core.md` §21 FoF表示・監査系 / commit `0b034e3d`。
 `tasks/lessons.md`のみの2件(`894736d4`, `a3059891`)は教訓登録・stale lesson整理であり、総合索引本文への追記対象外。分割contextではcore/frontend/researchにもsource ALERTが残るため、横展開は各分割contextの鮮度cmdで扱う。
+
+## §35 2026-07-07 GA-189 ALERTは偽陽性(config/projects.yaml project_id衝突バグ)
+
+GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更新は不要**(偽陽性)。根因: `config/projects.yaml`で`dm-fusion`(L17-22)と`dm-signal`(L2-16)が同一の`context_file: "context/dm-signal.md"`を宣言しており、`scripts/context_freshness_check.sh`の`EXPLICIT_CONTEXT_MAP`(1キー1値のdict)がYAML走査順で後勝ち上書きされ、`infer_project_id("context/dm-signal.md")`が`dm-fusion`を返す。`source_repo_for_context()`は`base.startswith(f"{project_id}.")`で"dm-signal.md".startswith("dm-fusion.")=Falseとなり本来のDM-Signalリポジトリ参照に失敗、root fallback(multi-agent-shogun自リポジトリのgit log)に落ちて無関係な3コミット(`6108be73d`/`8b91a001`/`39448c96`、いずれもinfra側の変更)を誤帰属していた。
+一次確認: `dm-signal.md`が本来監視すべきDM-Signalリポジトリ側パス(`context/dm-signal-terminology.md`, `docs/knowledge-base/terminology/disambiguation.md`, `docs/rule/db-operations-runbook.md`)への実commitは`git -C /mnt/c/Python_app/DM-signal log --since="2026-07-07 00:00:00" -- <上記3パス>`で0件。内容更新不要と判断し、last_updatedのみ更新。
+根本修正(`EXPLICIT_CONTEXT_MAP`の1:1制約解消 or dm-fusion専用context_file分離)はcontext_freshness_check.shの実装変更を伴うため本cmd範囲外。defense_candidateとして家老へ報告。
 
 ## 補助ポインタ
 

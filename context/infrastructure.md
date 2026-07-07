@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-06 cmd_karo_hotfix_ga181 -->
+<!-- last_updated: 2026-07-07 cmd_karo_hotfix_ga189_context_freshness_20260707 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -173,6 +173,9 @@ CLEAR率62.7%→84.6%(+21.9pt)。gate品質BLOCK3大原因の構造的解消+新
 | b079eb73 | `ac_physical_verify` にプロジェクトリポジトリfallback検索を追加し、外部PJ参照の実在確認を強化 | `scripts/ac_physical_verify.sh` |
 | d26d6ac6 | `inbox_write.sh` がarchive移動済み報告YAMLをfallback検索できるよう修正 | `scripts/inbox_write.sh` |
 | 7513b8da | `inbox_watcher.sh` のCodexナッジ再読指示を `task_assigned` 時のみに限定 | `scripts/inbox_watcher.sh` |
+| 6108be73d | `deploy_task.sh` のstale cmd id resetを修正 | `scripts/deploy_task.sh` |
+| 8b91a001 | cmd_3715: `memory_db_knowledge_write.sh`にLayer2(semantic_index_update.sh)+Layer3(Obsidian候補ログ)自動連鎖を追加。失敗は`logs/three_layer_chain_async.log`へ記録し`gate_three_layer_health.sh`が未貫通件数として検出 | `scripts/memory_db_knowledge_write.sh`, `scripts/gates/gate_three_layer_health.sh` |
+| 39448c96 | `extract_command_files.sh`のread_markersに「から」を追加(cmd_3713/3714 BLOCK根因分析より)。「から」+近接write marker併存時の誤分類は未解消の部分修正 | `scripts/lib/extract_command_files.sh` |
 
 ## deploy_task.sh --direct mode（cmd_1672）
 
