@@ -489,12 +489,13 @@ lessons:
 # LS035: 撤回(2026-05-18)。gate迂回=Phase6再発。cmd_2851でgateを修正する
 - id: 'LS036'
   title: 'CoDDはbrownfield逆生成が正解。greenfield generateは遅い'
-  origin: '[[cmd_2850]]'
+  origin: '[[cmd_2850]] -> [[cmd_2891_修行CoDD導入で30分超過]] -> [[context/training-cycle.md §28_brownfield限定制定2026-05-19]]'
   detail: 'CoDD greenfield generate(wave1-5直列)は各wave数分×5=30分以上かかる。先に実装を完成させてcodd extract(brownfield逆生成)のほうが圧倒的に早い。Simple-OCR(cmd_2780)で実証済み。kj-role-countでgreenfield 5wave実行→30分以上消費。忍者6並列実装→逆生成が正しいフロー。'
   source_cmd: 'cmd_2850'
   created_at: '2026-05-18'
   automated: true
-  enforcement: 'type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=brownfield'
+  enforcement_level: 3
+  enforcement: 'Level3(テンプレート自動生成による事前強制): context/codd.md §4.5(適用判断ルール、cmd_1953事故→殿裁定2026-04-16で明文化)+context/training-cycle.md §28「CoDD速度改善ラウンド」AC2テンプレートが`codd extract`(brownfield)起点を強制し`codd require`/`codd spec`(greenfield)を明示禁止(2026-05-19制定、cmd_2891の実測30分超過を受けた恒久対処)。§14旧記述との矛盾はcmd_reflux_promotion_202607080807_kotaroで解消済み。真のフロー内BLOCK(codd CLI wrapper等のLevel4)は影響範囲が全PJ横断のため未実装、decision_candidateへ整理'
 # LS037: superseded by LS-A09(11) (新PJ設定コピー=現物確認必須の環境設定版。2026-05-19統合)
 # LS038: LS040に統合(2026-05-18)。各論パッチ→バックアップファーストに集約
 # LS039: LS040に統合(2026-05-18)。各論パッチ→バックアップファーストに集約

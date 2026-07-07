@@ -332,10 +332,10 @@ L1-L3は各スキルを個別に修行。L4は**全スキルを同時に要求�
 - AC2: 改善点の1つを実装しgit commit（実装系）
 - AC3: lesson_candidate found=true + 他2ACのbinary_checks全記入 + verdict（総合系）
 
-**CoDDパイプライン修行パターン（設計書品質型）**:
-- Stage 1: `codd spec` 相当の目的・制約・対象範囲を `docs/research/` に記録する
+**CoDDパイプライン修行パターン（設計書品質型、brownfield限定 — §28と同一方針、LS036）**:
+- Stage 1: `codd extract`で対象コードから構造・依存関係を逆生成する（起点。ゼロから設計書を組む`codd spec`/`codd require`のgreenfield手順は§28により禁止。実測30分超で§28制定2026-05-19）
 - Stage 2: `codd elicit` / lexicon観点で要件穴・coverage軸を洗い出す
-- Stage 3: `codd generate` / `codd implement run` を試行し、AI制限時は手動実装へfallbackする
+- Stage 3: 抽出済み設計書を基に手動実装、または`codd implement run`を試行しAI制限時は手動実装へfallbackする（`codd generate --wave`によるゼロからの生成は使わない）
 - Stage 4: `codd dag verify` / `codd validate` で設計書DAGと実装整合性を検証する
 - Stage 5: `codd measure` / registry追記で設計書品質と再利用可能な知見を残す
 
