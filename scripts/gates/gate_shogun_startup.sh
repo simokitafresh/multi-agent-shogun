@@ -2988,7 +2988,7 @@ def _exclude_from_fail_denominator(entry):
         if not is_full_cmd_id and not cmd_id.startswith(("cmd_test_", "cmd_training_speed_")):
             return True
     stumbling = str(entry.get("stumbling_points") or "")
-    if skill == "note-draft" and re.search(r"reCAPTCHA challenge was not so|reCAPTCHA challenge was not solved|External reCAPTCHA challenge", stumbling, re.IGNORECASE):
+    if skill == "note-draft" and re.search(r"reCAPTCHA challenge was not so|reCAPTCHA challenge was not solved|External reCAPTCHA challenge|reCAPTCHA image challenge blocked|LS029 Level4 guard", stumbling, re.IGNORECASE):
         return True
     return False
 

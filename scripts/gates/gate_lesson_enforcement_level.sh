@@ -114,6 +114,13 @@ def load_lessons(path):
     return lessons if isinstance(lessons, list) else []
 
 
+def is_superseded(entry):
+    value = entry.get('superseded_by')
+    if isinstance(value, str):
+        return bool(value.strip())
+    return value not in (None, "", [], {})
+
+
 print(f"=== 教訓 enforcement_level 分布計測 {__import__('datetime').datetime.now().isoformat(timespec='seconds')} ===")
 print("")
 print("[ロール別: enforcement記載あり]")
@@ -130,6 +137,8 @@ for path in role_files:
     measured = 0
     for entry in lessons:
         if not isinstance(entry, dict):
+            continue
+        if is_superseded(entry):
             continue
         enforcement = entry.get('enforcement')
         if not enforcement or not isinstance(enforcement, str):
@@ -163,6 +172,8 @@ for path in pj_files:
     without_enf = 0
     for entry in lessons:
         if not isinstance(entry, dict):
+            continue
+        if is_superseded(entry):
             continue
         enforcement = entry.get('enforcement')
         if enforcement and isinstance(enforcement, str):

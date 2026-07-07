@@ -917,6 +917,25 @@ EOF
     [[ "$output" == *"スキル別FAIL率: 直近50件FAIL率10%超の改善対象あり"* ]]
 }
 
+@test "skill fail rate excludes LS029 note-draft reCAPTCHA guard stops" {
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
+executions:
+- ts: "2099-01-01T00:00:00+0900"
+  skill: "note-draft"
+  executor: "shogun"
+  result: "FAIL"
+  used: "true"
+  stumbling_points: "External reCAPTCHA image challenge blocked by LS029 Level4 guard; draft creation skipped"
+  gate: "none"
+  source: "note_draft.sh"
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"note-draft: 直近50件FAIL率"* ]]
+    [[ "$output" != *"スキル別FAIL率: 直近50件FAIL率10%超の改善対象あり"* ]]
+}
+
 @test "skill fail rate excludes cmd_test and invalid dashboard-update invocations" {
     cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
 executions:

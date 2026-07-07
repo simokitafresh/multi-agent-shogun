@@ -76,6 +76,11 @@ PORT = ${CDP_PORT}
 MD_FILE = "${MD_FILE}"
 ENV_FILE = pathlib.Path("${AUTO_OPS_DIR}") / ".env.note"
 CAPTCHA_SCREENSHOT = pathlib.Path("/tmp/note_recaptcha_challenge.png")
+RECAPTCHA_BLOCK_HINT = (
+    "External reCAPTCHA image challenge blocked by LS029 Level4 guard; "
+    f"screenshot={CAPTCHA_SCREENSHOT}; "
+    "complete login in the visible browser once and reuse the saved cookie/profile"
+)
 
 def runtime_eval(expression, timeout=30):
     response = cdp_send(
@@ -166,7 +171,8 @@ def handle_recaptcha_if_present():
     if state == "challenge":
         shot = screenshot(tab, str(CAPTCHA_SCREENSHOT), port=PORT)
         print(f"[note_draft] reCAPTCHA image challenge detected. Screenshot: {shot}")
-        print("[note_draft] Solve the visible challenge in the browser or via agent vision; waiting up to 120s...")
+        print("[note_draft] LS029 guard: automated image-tile solving is blocked; use browser login cookie reuse.")
+        raise RuntimeError(RECAPTCHA_BLOCK_HINT)
     else:
         print("[note_draft] reCAPTCHA state unclear; waiting for login completion up to 120s...")
     if not wait_until_not_login(timeout=120):
@@ -421,9 +427,9 @@ else
     STUMBLING="Python script exited with code ${PY_EXIT}"
   fi
   EXIT_CODE="$PY_EXIT"
-  if [[ -s "$_PY_STDERR_FILE" ]] && grep -qiE 'reCAPTCHA challenge was not solved|Login did not complete.*reCAPTCHA' "$_PY_STDERR_FILE"; then
+  if [[ -s "$_PY_STDERR_FILE" ]] && grep -qiE 'reCAPTCHA challenge was not solved|Login did not complete.*reCAPTCHA|reCAPTCHA image challenge blocked|LS029 Level4 guard' "$_PY_STDERR_FILE"; then
     RESULT="SKIP"
-    STUMBLING="External reCAPTCHA challenge was not completed; draft creation skipped"
+    STUMBLING="External reCAPTCHA image challenge blocked by LS029 Level4 guard; draft creation skipped"
     EXIT_CODE=0
   fi
 fi

@@ -77,6 +77,33 @@ EOF
     [[ "$output" == *"[lessons_shogun.yaml] LS-T02 (L1:事後検出)"* ]]
 }
 
+@test "gate_lesson_enforcement_level excludes superseded lessons from active promotion inventory" {
+    cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
+lessons:
+- id: LS-OLD
+  title: old below-4 lesson
+  enforcement: '意志依存(gate/hookなし)'
+  superseded_by: 'LS-NEW'
+- id: LS-NEW
+  title: new guarded lesson
+  enforcement: 'type=flow_block; file=scripts/note_draft.sh; pattern=LS029 Level4 guard'
+EOF
+    cat > "$TEST_TMPDIR/projects/infra/lessons_karo.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_TMPDIR/projects/infra/lessons_gunshi.yaml" <<'EOF'
+lessons: []
+EOF
+
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"lessons_shogun.yaml: enforcement記載1件"* ]]
+    [[ "$output" == *"L4:1"* ]]
+    [[ "$output" != *"LS-OLD"* ]]
+    [[ "$output" != *"old below-4 lesson"* ]]
+    [[ "$output" == *"##ENFORCEMENT_LEVEL_BELOW4_COUNT##"$'\n'"0"* ]]
+}
+
 @test "gate_lesson_enforcement_level classifies keyword-based BLOCK/guard text as Level4 and lists true below-4 candidates" {
     cat > "$TEST_TMPDIR/projects/infra/lessons_karo.yaml" <<'EOF'
 lessons:
