@@ -35,10 +35,10 @@ import sys
 
 db_path = sys.argv[1]
 conn = sqlite3.connect(db_path)
-conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, state TEXT)")
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, ts TEXT, agent TEXT, summary TEXT, detail TEXT, state TEXT)")
 conn.execute("CREATE TABLE event_state_transitions (id INTEGER PRIMARY KEY, event_id TEXT, from_state TEXT, to_state TEXT, reason TEXT, actor TEXT, transitioned_at TEXT)")
-conn.execute("INSERT INTO events VALUES ('e1', 'obsidian_candidate')")
-conn.execute("INSERT INTO events VALUES ('e2', 'obsidian_promoted')")
+conn.execute("INSERT INTO events (id, state) VALUES ('e1', 'obsidian_candidate')")
+conn.execute("INSERT INTO events (id, state) VALUES ('e2', 'obsidian_promoted')")
 conn.execute("INSERT INTO event_state_transitions (event_id, from_state, to_state, reason, actor, transitioned_at) VALUES ('e2','raw','obsidian_candidate','x','y','2026-06-14T00:00:00')")
 conn.execute("INSERT INTO event_state_transitions (event_id, from_state, to_state, reason, actor, transitioned_at) VALUES ('e2','obsidian_candidate','obsidian_promoted','x','y','2026-06-16T00:00:00')")
 conn.execute("INSERT INTO event_state_transitions (event_id, from_state, to_state, reason, actor, transitioned_at) VALUES ('e1','raw','obsidian_candidate','x','y','2026-06-17T00:00:00')")
@@ -47,7 +47,26 @@ conn.close()
 PY
 }
 
-@test "loop_ledger_update computes produced/consumed/stock across all 5 loops and detects semantic stall" {
+add_memory_loop_data() {
+    python3 - "$LOOP_LEDGER_DB" <<'PY'
+import sqlite3
+import sys
+
+db_path = sys.argv[1]
+conn = sqlite3.connect(db_path)
+conn.execute("CREATE TABLE IF NOT EXISTS search_logs (id INTEGER PRIMARY KEY, ts TEXT NOT NULL, caller TEXT NOT NULL, agent_id TEXT, query TEXT NOT NULL, hit_count INTEGER NOT NULL, no_match INTEGER NOT NULL, elapsed_ms INTEGER NOT NULL, exit_code INTEGER)")
+conn.execute("INSERT INTO search_logs (ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code) VALUES ('2026-06-15T00:00:00','semantic_search','shogun','alpha',3,0,10,0)")
+conn.execute("INSERT INTO search_logs (ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code) VALUES ('2026-06-16T00:00:00','memory_db_query','shogun','beta',1,0,11,0)")
+conn.execute("INSERT INTO search_logs (ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code) VALUES ('2026-05-01T00:00:00','memory_db_query','shogun','old',1,0,12,0)")
+conn.execute("INSERT INTO events (id, ts, agent, summary, detail, state) VALUES ('m1','2026-06-17T00:00:00','shogun','回答 [memory:search_logs:alpha]','引用タグあり','raw')")
+conn.execute("INSERT INTO events (id, ts, agent, summary, detail, state) VALUES ('m2','2026-06-18T00:00:00','shogun','三層記憶について通常言及','タグなし通常文は消費扱いしない','raw')")
+conn.execute("INSERT INTO events (id, ts, agent, summary, detail, state) VALUES ('m3','2026-06-17T00:00:00','karo','回答 [memory:ignored]','将軍以外は消費扱いしない','raw')")
+conn.commit()
+conn.close()
+PY
+}
+
+@test "loop_ledger_update computes produced/consumed/stock across all 6 loops and detects semantic stall" {
     cat > "$LOOP_LEDGER_LESSON_IMPACT" <<'EOF'
 timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
 2026-06-15T00:00:00	cmd_1	hayate	L001	injected	USEFUL	yes	infra	full	unknown	0	0
@@ -110,6 +129,7 @@ executions:
 EOF
 
     make_obsidian_db
+    add_memory_loop_data
 
     run bash "$SRC_SCRIPT"
     [ "$status" -eq 1 ]
@@ -118,12 +138,35 @@ EOF
     [[ "$output" == *"insight: produced=3 consumed=1 stock=2"* ]]
     [[ "$output" == *"semantic: produced=1 consumed=0 stock=1"* ]]
     [[ "$output" == *"obsidian: produced=2 consumed=1 stock=1"* ]]
+    [[ "$output" == *"memory: produced=2 consumed=1 stock=1"* ]]
     [[ "$output" == *"skill: produced=2 consumed=1 stock=2"* ]]
     [[ "$output" == *"ALERT: semantic: 空転(produced=1, consumed=0, window=14d)"* ]]
 
     grep -q 'generated_at: "2026-06-20T00:00:00Z"' "$LOOP_LEDGER_OUT"
     grep -q 'semantic:' "$LOOP_LEDGER_OUT"
+    grep -q 'memory:' "$LOOP_LEDGER_OUT"
     grep -q 'stalled: true' "$LOOP_LEDGER_OUT"
+}
+
+@test "loop_ledger_update alerts when memory searches continue without shogun citation tags" {
+    make_obsidian_db
+    python3 - "$LOOP_LEDGER_DB" <<'PY'
+import sqlite3
+import sys
+
+db_path = sys.argv[1]
+conn = sqlite3.connect(db_path)
+conn.execute("CREATE TABLE search_logs (id INTEGER PRIMARY KEY, ts TEXT NOT NULL, caller TEXT NOT NULL, agent_id TEXT, query TEXT NOT NULL, hit_count INTEGER NOT NULL, no_match INTEGER NOT NULL, elapsed_ms INTEGER NOT NULL, exit_code INTEGER)")
+conn.execute("INSERT INTO search_logs (ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code) VALUES ('2026-06-15T00:00:00','semantic_search','shogun','alpha',3,0,10,0)")
+conn.execute("INSERT INTO events (id, ts, agent, summary, detail, state) VALUES ('m1','2026-06-17T00:00:00','shogun','三層記憶について通常言及','タグなし通常文','raw')")
+conn.commit()
+conn.close()
+PY
+
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"memory: produced=1 consumed=0 stock=1"* ]]
+    [[ "$output" == *"ALERT: memory: 空転(produced=1, consumed=0, window=14d)"* ]]
 }
 
 @test "loop_ledger_update alerts on stock increase vs previous snapshot" {
@@ -136,6 +179,7 @@ snapshots:
     insight: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
     semantic: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
     obsidian: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
+    memory: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
     skill: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
 alerts: []
 EOF

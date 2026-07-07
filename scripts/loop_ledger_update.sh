@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# loop_ledger_update.sh — 学習ループ別(教訓/insight/semantic/obsidian/skill)統合台帳 (T7, cmd_3720)
+# loop_ledger_update.sh — 学習ループ別(教訓/insight/semantic/obsidian/memory/skill)統合台帳 (T7, cmd_3720)
 # 目的: 各ループの生産量・消化量・在庫・最終消化時刻を既存ログ/DBから集計し、
 #       律速段階(最も詰まった段階)と空転(生産継続なのに消化ゼロ)を可視化する。
 # Usage: bash scripts/loop_ledger_update.sh
@@ -257,6 +257,66 @@ def load_obsidian_loop(path):
 obsidian_loop = load_obsidian_loop(db_path)
 
 
+# --- memory recall loop: search_logs production + tagged shogun answer consumption ---
+MEMORY_CITATION_PATTERN = re.compile(
+    r"(?:\[(?:memory|mem|記憶|三層記憶)[^\]]*\]|"
+    r"【(?:memory|mem|記憶|三層記憶)[^】]*】|"
+    r"（(?:memory|mem|記憶|三層記憶)[^）]*）)",
+    re.IGNORECASE,
+)
+
+
+def load_memory_loop(path):
+    p = Path(path)
+    if not p.is_file():
+        return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "memory db not found"}
+    try:
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    except Exception as exc:
+        return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": f"db connect failed: {exc}"}
+    try:
+        tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if "search_logs" not in tables:
+            return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "search_logs table missing"}
+        if "events" not in tables:
+            return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "events table missing"}
+        event_cols = {row[1] for row in conn.execute("PRAGMA table_info(events)")}
+        if not {"ts", "agent", "summary", "detail"}.issubset(event_cols):
+            return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "events citation columns missing"}
+
+        cutoff_iso = cutoff.isoformat().replace("+00:00", "")
+        now_iso = now.isoformat().replace("+00:00", "")
+        produced = conn.execute(
+            "SELECT COUNT(*) FROM search_logs WHERE ts >= ? AND ts <= ?",
+            (cutoff_iso, now_iso),
+        ).fetchone()[0]
+
+        consumed = 0
+        consumption_ts_all = []
+        for raw_ts, agent, summary, detail in conn.execute(
+            "SELECT ts, agent, summary, detail FROM events "
+            "WHERE ts >= ? AND ts <= ? "
+            "AND lower(coalesce(agent, '')) = 'shogun'",
+            (cutoff_iso, now_iso),
+        ):
+            body = f"{summary or ''}\n{detail or ''}"
+            if MEMORY_CITATION_PATTERN.search(body):
+                consumed += 1
+                consumption_ts_all.append(parse_ts(raw_ts))
+
+        return {
+            "produced": int(produced or 0),
+            "consumed": int(consumed or 0),
+            "stock": max(int(produced or 0) - consumed, 0),
+            "last_consumption_ts": iso(max_ts(consumption_ts_all)),
+        }
+    finally:
+        conn.close()
+
+
+memory_loop = load_memory_loop(db_path)
+
+
 # --- skill loop: logs/skill_recommend_log.yaml + logs/skill_execution_log.yaml ---
 def load_skill_recommend(path):
     """Returns list of (ts, skill) tuples, one per recommended skill mention."""
@@ -367,6 +427,7 @@ loops = {
     "insight": insight_loop,
     "semantic": semantic_loop,
     "obsidian": obsidian_loop,
+    "memory": memory_loop,
     "skill": skill_loop,
 }
 
@@ -391,7 +452,7 @@ previous_snapshot = existing_snapshots[-1] if existing_snapshots else None
 previous_loops = previous_snapshot.get("loops", {}) if previous_snapshot else {}
 
 alerts = []
-for name in ("lesson", "insight", "semantic", "obsidian", "skill"):
+for name in ("lesson", "insight", "semantic", "obsidian", "memory", "skill"):
     loop = loops[name]
     if loop["stalled"]:
         alerts.append(f"{name}: 空転(produced={loop['produced']}, consumed=0, window={window_days}d)")
@@ -414,7 +475,7 @@ def emit_snapshot(generated_at, window_days, loops):
         f"  window_days: {window_days}",
         "  loops:",
     ]
-    for name in ("lesson", "insight", "semantic", "obsidian", "skill"):
+    for name in ("lesson", "insight", "semantic", "obsidian", "memory", "skill"):
         loop = loops[name]
         lines.append(f"    {name}:")
         lines.append(f"      produced: {int(loop['produced'])}")
@@ -443,7 +504,7 @@ for snap in all_snapshot_dicts:
     snap_loops = snap.get("loops", {})
     rendered.append(emit_snapshot(snap.get("generated_at"), snap.get("window_days", window_days), {
         name: snap_loops.get(name, {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "stalled": False})
-        for name in ("lesson", "insight", "semantic", "obsidian", "skill")
+        for name in ("lesson", "insight", "semantic", "obsidian", "memory", "skill")
     }))
 
 out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -459,7 +520,7 @@ else:
 out_path.write_text("\n".join(content) + "\n", encoding="utf-8")
 
 print("=== Loop Ledger (T7) ===")
-for name in ("lesson", "insight", "semantic", "obsidian", "skill"):
+for name in ("lesson", "insight", "semantic", "obsidian", "memory", "skill"):
     loop = loops[name]
     note = f" note={loop['note']}" if loop.get("note") else ""
     print(
