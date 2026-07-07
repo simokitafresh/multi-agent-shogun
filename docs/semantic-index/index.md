@@ -5609,7 +5609,7 @@ codd:
 |------|---|
 | id | project_database |
 | label | Stock Database |
-| aliases | database, Stock Database, database project, Stock Database PJ, yfinanceはdatabase側が使うだけで, database側にログはないのか？, Stockdata-API, Stockdata, fetch_jobs, fetch job実行記録, 価格値履歴なし上書き型, DM-Signal価格取得元API, yfinance遡及修正, 価格データ遡及修正, データベースの信頼度, データベースの信頼性, Stockdata-API信頼性, yfinance単一ソース信頼性, 価格データ信頼性, より正しいのはdatabaseがわでのupdateだよな |
+| aliases | database, Stock Database, database project, Stock Database PJ, yfinanceはdatabase側が使うだけで, database側にログはないのか？, Stockdata-API, Stockdata, fetch_jobs, fetch job実行記録, 価格値履歴なし上書き型, DM-Signal価格取得元API, yfinance遡及修正, 価格データ遡及修正, データベースの信頼度, データベースの信頼性, Stockdata-API信頼性, yfinance単一ソース信頼性, 価格データ信頼性, より正しいのはdatabaseがわでのupdateだよな, EODHDの株価も日々変動するということか, EODHD株価日々変動, EODHD価格データ日次変動 |
 | related_concepts | external_project_registry |
 
 | 種別 | パス/参照 |
