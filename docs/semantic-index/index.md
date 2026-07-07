@@ -1247,7 +1247,7 @@ codd:
 | causal_chain | `[[cmd_3139]]` (L736) |
 | causal_chain | `[[cmd_3145]]` (L737) |
 | causal_chain | `[[cmd_karo_context_freshness_ga407_20260603]]` (L738) |
-| causal_chain | `[[cmd_3378]]` (L739) |
+| causal_chain | `[[cmd_karo_hotfix_ga408_hook_failure_20260603]]` (L739) |
 | causal_chain | `[[cmd_karo_hotfix_ga410_hook_failure_20260603]]` (L741) |
 | causal_chain | `[[lord_session_20260603]] -> [[hook_gate_vs_lord_instruction]] -> [[chain_of_command_clarity]]` (L742) |
 | causal_chain | `[[cmd_karo_hotfix_ga411_test_select_mapping_20260603]]` (L745) |
@@ -1291,7 +1291,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_shogun_startup_deferred_20260612]]` (L798) |
 | causal_chain | `[[cmd_3145]]` (L737) |
 | causal_chain | `[[cmd_karo_context_freshness_ga407_20260603]]` (L738) |
-| causal_chain | `[[cmd_3378]]` (L739) |
+| causal_chain | `[[cmd_karo_hotfix_ga408_hook_failure_20260603]]` (L739) |
 | causal_chain | `[[cmd_karo_hotfix_ga411_test_select_mapping_20260603]]` (L745) |
 | causal_chain | `[[cmd_3154]]` (L746) |
 | causal_chain | `[[cmd_karo_ci_fix_ga412_semantic_search_logs_20260603]]` (L747) |
@@ -2905,7 +2905,7 @@ codd:
 | causal_chain | `[[cmd_training_L7_v3_kotaro_5_20260521202900]]` (L662) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_6_20260521205341]]` (L666) |
 | causal_chain | `[[cmd_2995]]` (L687) |
-| causal_chain | `[[gate_skill_script_refs.sh_WARN]] -> [[checked_at_re_matches_last]] ->` (L770) |
+| causal_chain | `[[gate_skill_script_refs.sh_WARN]] -> [[checked_at_re_matches_last]] -> [[先頭タグ追加だけでは不十分]]` (L770) |
 | causal_chain | `[[cmd_karo_hotfix_skill_script_refs_202607022043]]` (L940) |
 
 ## dm_signal_refactor_mission — DM-Signalリファクタ任務
@@ -4943,7 +4943,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga177_p_average_stale_fallback_fix_202607041954` files_modified: [[gate_quality_framework]] |
 | lesson | `L963` startup gateの補助DB不在と読取失敗を同じALERTにしない |
 | lesson | `L964` startup gateの補助DB不在は親ディレクトリ有無で本番不在と最小fixtureを分離する |
-| causal_chain | `[[cmd_2443]]` (L695) |
+| causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
 | causal_chain | `[[cmd_3369]]` (L806) |
@@ -5441,6 +5441,8 @@ codd:
 | cmd | `cmd_reflux_insight_202607080400_hayate` (`queue/tasks/hayate.yaml`) |
 | causal | `cmd_reflux_insight_202607080431_hayate` files_modified: [[provisional_hayate]] |
 | cmd | `cmd_reflux_insight_202607080431_hayate` (`queue/tasks/hayate.yaml`, `context/semantic-map.md`, `docs/research/pf-remote-restore-asis-tobe-5w1h_20260708.md`) |
+| causal | `cmd_reflux_insight_202607080507_hayate` files_modified: [[provisional_hayate]] |
+| cmd | `cmd_reflux_insight_202607080507_hayate` (`queue/tasks/hayate.yaml`) |
 
 ## provisional_kotaro — 仮: Kotaro
 

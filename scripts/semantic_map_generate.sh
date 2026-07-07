@@ -515,17 +515,83 @@ def auto_intake_semantic_index():
 if not body_only:
     auto_intake_semantic_index()
 
-def load_lesson_origins(repo_root):
-    """projects/*/lessons*.yaml（archive除く）からlesson_id→originマップを作成"""
+def load_task_lesson_origins(repo_root):
+    """tasks/lessons.md（SSOT）からlesson_id→originマップを作成"""
     origins = {}
+    lessons_md = repo_root / "tasks" / "lessons.md"
+    try:
+        text = lessons_md.read_text(encoding="utf-8")
+    except Exception:
+        return origins
+    current_id = None
+    source_cmd = None
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        heading = re.match(r"^###\s+(L\w+):", line)
+        if heading:
+            if current_id and source_cmd:
+                origins.setdefault(current_id, f"[[{source_cmd}]]")
+            current_id = heading.group(1)
+            source_cmd = None
+            continue
+        if not current_id:
+            continue
+        origin = re.match(r"^-\s+\*\*origin\*\*:\s*(.+)", line)
+        if origin:
+            val = origin.group(1).strip().strip("'\"")
+            if "[[" in val:
+                origins[current_id] = val
+            current_id = None
+            source_cmd = None
+            continue
+        source = re.match(r"^-\s+\*\*(?:出典|source|source_cmd)\*\*:\s*(.+)", line)
+        if source:
+            source_cmd = source.group(1).strip().strip("'\"")
+    if current_id and source_cmd:
+        origins.setdefault(current_id, f"[[{source_cmd}]]")
+    return origins
+
+def git_head_text(path):
+    rel = path.relative_to(repo_root).as_posix()
+    try:
+        result = subprocess.run(
+            ["git", "show", f"HEAD:{rel}"],
+            cwd=repo_root,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            timeout=3,
+            check=False,
+        )
+    except Exception:
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout
+
+def load_project_lesson_origins(repo_root):
+    """projects/*/lessons*.yaml（archive除く）からlesson_id→originマップを作成。
+    共有worktreeの未commit派生YAMLは並行忍者の一時状態で揺れるため、既定ではHEADを読む。
+    """
+    origins = {}
+    use_worktree = os.environ.get("SEMANTIC_LESSON_ORIGIN_SOURCE") == "worktree"
     pattern = str(repo_root / "projects" / "*" / "lessons*.yaml")
     for yaml_path in sorted(glob.glob(pattern)):
-        if "archive" in Path(yaml_path).name:
+        yaml_path = Path(yaml_path)
+        if "archive" in yaml_path.name:
             continue
-        try:
-            text = Path(yaml_path).read_text(encoding="utf-8")
-        except Exception:
-            continue
+        if use_worktree:
+            try:
+                text = yaml_path.read_text(encoding="utf-8")
+            except Exception:
+                continue
+        else:
+            text = git_head_text(yaml_path)
+            if text is None:
+                try:
+                    text = yaml_path.read_text(encoding="utf-8")
+                except Exception:
+                    continue
         current_id = None
         for raw_line in text.splitlines():
             line = raw_line.strip()
@@ -536,6 +602,12 @@ def load_lesson_origins(repo_root):
                 if "[[" in val:
                     origins[current_id] = val
                 current_id = None
+    return origins
+
+def load_lesson_origins(repo_root):
+    origins = load_task_lesson_origins(repo_root)
+    for lid, origin in load_project_lesson_origins(repo_root).items():
+        origins.setdefault(lid, origin)
     return origins
 
 def inject_causal_chains(index_path, origins):

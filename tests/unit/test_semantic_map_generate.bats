@@ -1,0 +1,61 @@
+#!/usr/bin/env bats
+
+setup() {
+    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/semantic_map_generate.XXXXXX")"
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/tasks" "$TEST_TMPDIR/projects/infra" \
+        "$TEST_TMPDIR/docs/semantic-index" "$TEST_TMPDIR/context"
+    cp "$BATS_TEST_DIRNAME/../../scripts/semantic_map_generate.sh" "$TEST_TMPDIR/scripts/semantic_map_generate.sh"
+    chmod +x "$TEST_TMPDIR/scripts/semantic_map_generate.sh"
+    cd "$TEST_TMPDIR"
+    git init -q
+    git config user.email test@example.invalid
+    git config user.name "test"
+}
+
+teardown() {
+    [ -n "${TEST_TMPDIR:-}" ] && rm -rf "$TEST_TMPDIR"
+}
+
+write_fixture() {
+    cat > tasks/lessons.md <<'EOF'
+### L001: SSOT origin wins
+- **origin**: [[ssot_origin]]
+- lesson body
+EOF
+
+    cat > projects/infra/lessons.yaml <<'EOF'
+lessons:
+- id: L001
+  origin: '[[committed_project_origin]]'
+EOF
+
+    cat > docs/semantic-index/index.md <<'EOF'
+## concept_one — Concept One
+
+| 属性 | 値 |
+|------|---|
+| id | concept_one |
+| label | Concept One |
+| aliases | one |
+| lesson | `L001` SSOT origin wins |
+| causal_chain | `[[old_origin]]` (L001) |
+EOF
+}
+
+@test "semantic_map_generate uses tasks lessons SSOT before dirty project lesson YAML" {
+    write_fixture
+    git add tasks/lessons.md projects/infra/lessons.yaml docs/semantic-index/index.md
+    git commit -q -m "fixture"
+
+    cat > projects/infra/lessons.yaml <<'EOF'
+lessons:
+- id: L001
+  origin: '[[dirty_project_origin]]'
+EOF
+
+    run bash scripts/semantic_map_generate.sh
+    [ "$status" -eq 0 ]
+    [ "$(grep -F -c '[[ssot_origin]]' docs/semantic-index/index.md)" -eq 1 ]
+    [ "$(grep -F -c '[[dirty_project_origin]]' docs/semantic-index/index.md)" -eq 0 ]
+    [ "$(grep -F -c '[[committed_project_origin]]' docs/semantic-index/index.md)" -eq 0 ]
+}
