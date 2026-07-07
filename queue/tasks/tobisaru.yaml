@@ -1,7 +1,7 @@
 task:
   acceptance_criteria:
   - checks:
-    - check: 対象insight INS-20260707-211436184-17f0 を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
+    - check: 対象insight INS-20260708-004710405-d637 を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
     id: AC1
   - checks:
     - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
@@ -22,19 +22,19 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_reflux_insight_202607080213_tobisaru
+  parent_cmd: cmd_reflux_insight_202607080313_tobisaru
   project: infra
-  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260707-211436184-17f0 を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
+  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-004710405-d637 を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
   reflux_inventory_before:
     insights_pending: 10
-    promotions: 70
-    total: 80
-    zero_backlinks: 0
+    promotions: 74
+    total: 86
+    zero_backlinks: 2
   scout_exempt: true
-  status: idle
+  status: done
   stop_for: []
   target_path: queue/insights.yaml
-  task_id: cmd_reflux_insight_202607080213_tobisaru_exact
+  task_id: cmd_reflux_insight_202607080313_tobisaru_exact
   task_type: exact
   related_lessons:
   - id: 'L351'
@@ -95,12 +95,12 @@ task:
   - '2026-06-20T02:15:43+09:00 | スコープ内の全ファイル（`queue/insights.yaml` / `queue/tasks/saizo.yaml` / 報告YAML）は全て `.gitignore` 管理外。 COMMIT M'
   - '2026-06-20T00:33:13+09:00 | parent_cmd=noneのhot fixタスク。ninja_done.shはcmd_XXX形式不要のため家老へのinbox_write完了報告で終了（既送信済み）。 **作業完了サマリ:** -'
   - '2026-07-07T23:17:00+09:00 | 作業完了です。要点をまとめます。 **タスク完了報告(cmd_reflux_insight_202607072256_saizo)** - **AC1**: pending insight `INS-'
-  ac_version: 0bc8d08b
-  _ac_task_id: cmd_reflux_insight_202607080213_tobisaru_exact
+  ac_version: 9ab6cba8
+  _ac_task_id: cmd_reflux_insight_202607080313_tobisaru_exact
   _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_reflux_insight_202607080213_tobisaru.yaml
-  report_path: queue/reports/tobisaru_report_cmd_reflux_insight_202607080213_tobisaru.yaml
+  report_filename: tobisaru_report_cmd_reflux_insight_202607080313_tobisaru.yaml
+  report_path: queue/reports/tobisaru_report_cmd_reflux_insight_202607080313_tobisaru.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -132,4 +132,15 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-07-08T02:14:07"
+  deployed_at: "2026-07-08T03:14:17"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    tried_approaches:
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    approach_summary: 'INS-20260708-004710405-d637のNO_MATCH query idle忍者だけrespawanせよをagent_formation_management aliasへ追加し、insightをresolveした'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: 'INS-20260708-004710405-d637のNO_MATCH query idle忍者だけrespawanせよをagent_formation_management aliasへ追加し、insightをresolveした'
