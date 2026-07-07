@@ -1382,6 +1382,9 @@
 - 2026-07-06 cmd_3702完了: 飛猿が保有シグナル確定台帳dry-runをrebalance_trigger対応へ是正。計画306→102、汚染混入0件、テスト17/17 PASS、core contextへ新前提を還流。
 - 2026-07-06 GA-186完了: 疾風が`context/dm-signal-ops.md`鮮度ALERTを処理。signal_decision_ledger運用差分を§52へ反映し、`gate_context_freshness.sh`総合OKへ復帰。
 - 2026-07-07 家老強ニュー化: startup WARN `dashboard-update FAIL:101` の直因を短縮hotfix ID(`cmd_karo_hotfix_ga190`)が長いparent_cmd reportを解決できないことと特定し、`dashboard_update.sh`に同系列cmd id fallbackを追加。`test_skill_feedback_loop`再発テスト追加、commit `5668b0b8e`、startup gateはスキル品質全PASS/総合OKへ復帰。`queue/compact_state/karo.yaml` と `queue/compact_state_karo.yaml` も14:35時点へ更新。
+- 2026-07-07 cmd_3741完了: 半蔵がportable learning-loop bootstrapへhook非依存`recall_inject.sh`を同梱し、イベント文脈からsemantic/memory一致を注入テキスト化する経路を追加。`bats tests/unit/test_portable_loop_bootstrap.bats` 4/4 PASS、GATE CLEAR。
+- 2026-07-07 cmd_reflux_insight_202607072256_saizo完了: 才蔵がINS-20260707-145838204-80d9をno_auto_extinguish aliasへ接続し、還流在庫pending 8→7。commit `c1a211420`、GATE CLEAR。
+- 2026-07-07 cmd_3742完了: 影丸が三層連鎖Layer2失敗理由のERROR記録とpayload付き未貫通自動repairを実装。`bats tests/unit/test_cmd_quality_memory_db.bats` 15/15 PASS、commit `98c1cc045`、GATE CLEAR。
 - 2026-07-07 cmd_reflux_insight_202607071920_hanzo完了: 半蔵がINS-20260707-081530924-63efを一次会話とGS調査記録へ接続し、semantic alias/discussion追加でpending 12→11。commit `410d6f7d7` + provenance `c4c943b5`、GATE CLEAR。
 - 2026-07-07 cmd_reflux_insight_202607071926_tobisaru完了: 飛猿がINS-20260707-081531046-1ebeをalpha_6_metricsへalias統合し、指標自体の相関とPF間月次リターン相関の混同を検索到達化。pending 11→10、commit `2a432a4c`、GATE CLEAR。
 - 2026-07-07 cmd_reflux_insight_202607071943_kagemaru完了: 影丸がINS-20260707-081531178-279cをsemantic_dictionary_designへalias統合し、pending表示バグ発言のsemantic_search NO_MATCHをhit化。commit `e334d2f1`、GATE CLEAR。
