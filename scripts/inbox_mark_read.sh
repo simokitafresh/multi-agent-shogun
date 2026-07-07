@@ -1,8 +1,8 @@
 #!/bin/bash
 # semantic-links: [[YAML安全書込み]], [[inbox処理規律]]
 # inbox_mark_read.sh — inboxメッセージの既読化（排他ロック＋アトミック書込み）
-# Usage: bash scripts/inbox_mark_read.sh <agent_id> [msg_id]
-#   msg_id指定: そのメッセージのみ read:true に変更
+# Usage: bash scripts/inbox_mark_read.sh <agent_id> [msg_id...]
+#   msg_id指定: そのメッセージのみ read:true に変更（複数指定可。1件ずつ逐次処理）
 #   msg_id省略: 全 read:false を read:true に変更
 #
 # inbox_write.sh と同じ lockfile (${INBOX}.lock) で flock を取得し、
@@ -16,6 +16,18 @@ _imr_self="${BASH_SOURCE[0]}"
 [[ "$_imr_self" != /* ]] && _imr_self="$PWD/$_imr_self"
 SCRIPT_DIR="${_imr_self%/scripts/inbox_mark_read.sh}"
 unset _imr_self
+
+# 複数msg_id対応(2026-07-07 軍師発見バグ: $3以降が無視され1件しかmarkされない):
+# 3個以上の引数は1件ずつ自己呼出しへ分解し、既存の単一msg_idロジック(flock/awk/bulletin連携)を変更しない
+if [ $# -gt 2 ]; then
+    _imr_agent="$1"
+    shift
+    _imr_rc=0
+    for _imr_mid in "$@"; do
+        bash "${BASH_SOURCE[0]}" "$_imr_agent" "$_imr_mid" || _imr_rc=$?
+    done
+    exit "$_imr_rc"
+fi
 
 AGENT_ID="$1"
 MSG_ID="${2:-}"

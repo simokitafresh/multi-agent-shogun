@@ -269,3 +269,12 @@ YAML
     [[ "$output" == *"Marked 1 message"* ]]
     [ "$(_get_read_status saizo msg_blt)" = "true" ]
 }
+
+@test "複数msg_id同時指定で全件がmarkされる (2026-07-07 軍師発見バグ再発防止)" {
+    _create_inbox hayate
+
+    run bash "$TEST_SCRIPT" hayate msg_001 msg_002
+    [ "$status" -eq 0 ]
+    [ "$(_get_read_status hayate msg_001)" = "true" ]
+    [ "$(_get_read_status hayate msg_002)" = "true" ]
+}
