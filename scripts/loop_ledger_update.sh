@@ -235,10 +235,41 @@ semantic_loop = loop_from_insights(insight_entries, is_semantic)
 
 
 # --- promotion loop: lesson enforcement candidates below Level4 ---
+def load_promotion_consumption(root_path):
+    quality_path = Path(root_path) / "logs" / "cmd_design_quality.yaml"
+    if not quality_path.is_file() or yaml is None:
+        return 0, None
+    try:
+        entries = yaml.safe_load(quality_path.read_text(encoding="utf-8")) or []
+    except Exception:
+        return 0, None
+    if isinstance(entries, dict):
+        entries = entries.get("entries") or []
+    if not isinstance(entries, list):
+        return 0, None
+    consumed_by_cmd = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        cmd_id = str(entry.get("cmd_id") or "")
+        if not cmd_id.startswith("cmd_reflux_promotion_"):
+            continue
+        if str(entry.get("gate_result") or "").upper() != "CLEAR":
+            continue
+        ts = parse_ts(entry.get("timestamp"))
+        if not in_window(ts):
+            continue
+        prev = consumed_by_cmd.get(cmd_id)
+        if prev is None or (ts is not None and ts > prev):
+            consumed_by_cmd[cmd_id] = ts
+    return len(consumed_by_cmd), max_ts(consumed_by_cmd.values())
+
+
 def load_promotion_loop(root_path):
+    consumed, last_consumption_ts = load_promotion_consumption(root_path)
     helper = Path(root_path) / "scripts" / "gates" / "gate_lesson_enforcement_level.sh"
     if not helper.is_file():
-        return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "gate_lesson_enforcement_level.sh not found"}
+        return {"produced": 0, "consumed": consumed, "stock": 0, "last_consumption_ts": iso(last_consumption_ts), "note": "gate_lesson_enforcement_level.sh not found"}
     try:
         env = os.environ.copy()
         env["LESSON_ENFORCEMENT_ROOT"] = str(root_path)
@@ -253,9 +284,9 @@ def load_promotion_loop(root_path):
             check=False,
         )
     except Exception as exc:
-        return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": f"promotion scan failed: {exc}"}
+        return {"produced": 0, "consumed": consumed, "stock": 0, "last_consumption_ts": iso(last_consumption_ts), "note": f"promotion scan failed: {exc}"}
     if proc.returncode != 0:
-        return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": f"promotion scan status {proc.returncode}"}
+        return {"produced": 0, "consumed": consumed, "stock": 0, "last_consumption_ts": iso(last_consumption_ts), "note": f"promotion scan status {proc.returncode}"}
     count = 0
     first_candidate = None
     lines = proc.stdout.splitlines()
@@ -269,9 +300,9 @@ def load_promotion_loop(root_path):
             first_candidate = line[4:].strip()
     return {
         "produced": count,
-        "consumed": 0,
+        "consumed": consumed,
         "stock": count,
-        "last_consumption_ts": None,
+        "last_consumption_ts": iso(last_consumption_ts),
         "first_candidate": first_candidate,
     }
 

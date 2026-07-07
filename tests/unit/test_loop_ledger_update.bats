@@ -260,6 +260,48 @@ SH
     grep -q 'age_hours: 36.0' "$LOOP_LEDGER_OUT"
 }
 
+@test "loop_ledger_update counts completed reflux promotion commands as consumption" {
+    mkdir -p "$TEST_TMPDIR/scripts/gates"
+    cat > "$TEST_TMPDIR/scripts/gates/gate_lesson_enforcement_level.sh" <<'SH'
+#!/usr/bin/env bash
+cat <<'OUT'
+=== 昇格候補一覧(L4未満、恒久防御未到達) 2件 ===
+  - [lessons_karo.yaml] L901 (L2:事前予防(doc)): doc-only lesson
+  - [lessons_gunshi.yaml] L902 (L3:事前強制(auto-gen)): weak lesson
+##ENFORCEMENT_LEVEL_BELOW4_COUNT##
+2
+OUT
+SH
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_enforcement_level.sh"
+
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_reflux_promotion_202606190001_hanzo"
+  gate_result: "CLEAR"
+  timestamp: "2026-06-19T00:01:00Z"
+- cmd_id: "cmd_reflux_promotion_202606190001_hanzo"
+  gate_result: "CLEAR"
+  timestamp: "2026-06-19T00:02:00Z"
+- cmd_id: "cmd_reflux_promotion_202606190002_kotaro"
+  gate_result: "CLEAR"
+  timestamp: "2026-06-19T00:03:00Z"
+- cmd_id: "cmd_reflux_promotion_202606190003_saizo"
+  gate_result: "BLOCK"
+  timestamp: "2026-06-19T00:04:00Z"
+- cmd_id: "cmd_reflux_promotion_202605010001_old"
+  gate_result: "CLEAR"
+  timestamp: "2026-05-01T00:01:00Z"
+EOF
+
+    export LOOP_LEDGER_NOW="2026-06-20T00:00:00Z"
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"promotion: produced=2 consumed=2 stock=2 last_consumption=2026-06-19T00:03:00Z"* ]]
+    [[ "$output" != *"ALERT: promotion: 空転"* ]]
+    grep -q 'consumed: 2' "$LOOP_LEDGER_OUT"
+    grep -q 'last_consumption_ts: "2026-06-19T00:03:00Z"' "$LOOP_LEDGER_OUT"
+}
+
 @test "loop_ledger_update alerts on stock increase vs previous snapshot" {
     cat > "$LOOP_LEDGER_OUT" <<'EOF'
 snapshots:
