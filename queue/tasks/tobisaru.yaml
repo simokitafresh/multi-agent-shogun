@@ -135,12 +135,12 @@ task:
   deployed_at: "2026-07-08T03:14:17"
 
   session_state:
-    attempt: 2
+    attempt: 3
     last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
     tried_approaches:
     - 'cmd_3264-AC2 target_path配下に未commit変更あり'
     diagnose_reason: 'commit実施前にbinary_checks.commitをyesへ進めたため、gateがtarget_path未commit変更を検出した。加えてsemantic-map/indexは既存の広いdirty差分があるため、家老がHEAD+最小aliasだけをindexへstageし、広域差分をcommit対象から除外する必要があった。'
-    approach_summary: 'INS-20260708-004710405-d637のNO_MATCH query idle忍者だけrespawanせよをagent_formation_management aliasへ追加し、insightをresolveした'
+    approach_summary: 'INS-20260708-004710405-d637を再確認。alias追加は前試行(commit b3904253/43e3a690)で既にcommit済みだったが、insights.yaml(git管理外)側のresolveがL351実例で再度pendingへ巻き戻っていたためinsight_write.sh --resolveを再実行し、AC1/AC2を完遂した'
     prior_attempts:
     - attempt: 1
       block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
@@ -149,3 +149,7 @@ task:
       block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
       diagnose_reason: 'commit実施前にbinary_checks.commitをyesへ進めたため、gateがtarget_path未commit変更を検出した。加えてsemantic-map/indexは既存の広いdirty差分があるため、家老がHEAD+最小aliasだけをindexへstageし、広域差分をcommit対象から除外する必要があった。'
       approach_summary: 'INS-20260708-004710405-d637のNO_MATCH query idle忍者だけrespawanせよをagent_formation_management aliasへ追加し、insightをresolveした'
+    - attempt: 3
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      diagnose_reason: 'commit実施前にbinary_checks.commitをyesへ進めたため、gateがtarget_path未commit変更を検出した。加えてsemantic-map/indexは既存の広いdirty差分があるため、家老がHEAD+最小aliasだけをindexへstageし、広域差分をcommit対象から除外する必要があった。'
+      approach_summary: 'INS-20260708-004710405-d637を再確認。alias追加は前試行(commit b3904253/43e3a690)で既にcommit済みだったが、insights.yaml(git管理外)側のresolveがL351実例で再度pendingへ巻き戻っていたためinsight_write.sh --resolveを再実行し、AC1/AC2を完遂した'
