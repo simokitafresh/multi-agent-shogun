@@ -49,6 +49,7 @@ export FIELD_GET_NO_LOG=1
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
+source "$SCRIPT_DIR/scripts/lib/model_injection_profile.sh"
 
 append_line_locked() {
     local target_file="$1"
@@ -589,6 +590,16 @@ build_clear_ctx_metric() {
     else
         printf 'ctx_pct=unknown'
     fi
+}
+
+build_first_gate_model_metric() {
+    local first_gate="true"
+    local profile
+    if [ -f "$GATE_METRICS_LOG" ] && awk -F '\t' -v cmd="$CMD_ID" '$2 == cmd { found=1; exit } END { exit(found ? 0 : 1) }' "$GATE_METRICS_LOG" 2>/dev/null; then
+        first_gate="false"
+    fi
+    profile="$(model_injection_profile_intensity "${GATE_MODEL:-unknown}" 2>/dev/null || printf '%s' "standard")"
+    printf 'first_gate=%s\tmodel_profile=%s' "$first_gate" "$profile"
 }
 
 # ─── status自動更新関数 ───
@@ -5167,6 +5178,7 @@ IFS=$'\t' read -r GATE_TASK_TYPE GATE_MODEL GATE_BLOOM_LEVEL <<< "$(collect_gate
 GATE_INJECTED_LESSONS="$(collect_injected_lessons "$CMD_ID")"
 CMD_TITLE="$(collect_cmd_title "$CMD_ID")"
 CMD_CHANGED_FILES="$(get_cmd_changed_files "$CMD_ID" || true)"
+GATE_FIRST_MODEL_METRIC="$(build_first_gate_model_metric)"
 
 # ─── cmd_776 B層: 報告YAML自動正規化（auto-draft前に実行） ───
 NORMALIZE_LOG="$SCRIPT_DIR/logs/normalize_report.log"
@@ -5237,7 +5249,7 @@ if [ "${MATCHING_TASK_FILES_INITIAL_COUNT:-0}" -eq 0 ] && ! cmd_entry_exists "$C
     echo "  no task files and no cmd entry; report-dependent gates skipped"
     echo ""
     echo "GATE CLEAR: cmd完了許可"
-    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tno_task_benchmark_fast_path\t%s\t%s\t%s\t%s\t%s\tunknown\tunknown' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE")"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tno_task_benchmark_fast_path\t%s\t%s\t%s\t%s\t%s\tunknown\tunknown\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC")"
     print_matching_task_files_summary
     exit 0
 fi
@@ -5258,7 +5270,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     fi
     update_status "$CMD_ID"
     append_changelog "$CMD_ID"
-    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tOVERRIDE\temergency_override\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE")"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tOVERRIDE\temergency_override\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC")"
     update_karo_workaround_resolutions "$CMD_ID" || echo "  [WARN] karo workaround resolution update failed (non-blocking)"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     if append_lesson_tracking "$CMD_ID" "OVERRIDE" 2>&1; then
@@ -7270,11 +7282,11 @@ if [ "$ALL_CLEAR" = true ]; then
     GATE_CTX_METRIC=$(build_clear_ctx_metric)
     if ! run_cdp_production_check; then
         echo "GATE BLOCK: ${CMD_ID}:cdp_production_check_failed"
-        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tcdp_production_check_failed\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_CTX_METRIC")"
+        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tcdp_production_check_failed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
         exit 1
     fi
     echo "GATE CLEAR: cmd完了許可"
-    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tall_gates_passed\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_CTX_METRIC")"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tall_gates_passed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
     update_karo_workaround_resolutions "$CMD_ID" || echo "  [WARN] karo workaround resolution update failed (non-blocking)"
     log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$CMD_ID"
     (bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" >/dev/null 2>&1 || true) &
@@ -8019,7 +8031,7 @@ else
         done
         block_reason="fallback_gate_status:$(IFS='|'; echo "${_gate_details[*]}")"
     fi
-    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$block_reason" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE")"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$block_reason" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC")"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     echo "GATE BLOCK: 不足フラグ=[${missing_list}] 理由=${block_reason}"
     echo ""

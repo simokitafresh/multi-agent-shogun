@@ -1291,6 +1291,26 @@ EOF
     [[ "$output" == *"commit_missing"* ]]
 }
 
+@test "cmd_complete_gate appends first gate model profile metrics to gate_metrics rows" {
+    grep -q 'build_first_gate_model_metric()' "$SRC_GATE_SCRIPT"
+    grep -q 'first_gate=%s' "$SRC_GATE_SCRIPT"
+    grep -q 'model_profile=%s' "$SRC_GATE_SCRIPT"
+    python3 - "$SRC_GATE_SCRIPT" <<'PY'
+import sys
+script = open(sys.argv[1], encoding='utf-8').read()
+for marker in [
+    'CLEAR\\tno_task_benchmark_fast_path',
+    'OVERRIDE\\temergency_override',
+    'BLOCK\\tcdp_production_check_failed',
+    'CLEAR\\tall_gates_passed',
+    'BLOCK\\t%s',
+]:
+    idx = script.index(marker)
+    window = script[idx:idx + 700]
+    assert 'GATE_FIRST_MODEL_METRIC' in window, marker
+PY
+}
+
 @test "update_karo_workaround_resolutions fills unresolved matching categories only" {
     export GATE_METRICS_LOG="$TEST_PROJECT/logs/gate_metrics.log"
     export KARO_WORKAROUNDS_FILE="$TEST_PROJECT/logs/karo_workarounds.yaml"

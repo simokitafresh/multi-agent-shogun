@@ -64,6 +64,7 @@ fi
 
 # cli_lookup.sh — CLI Profile SSOT参照（CLI種別判定・パターン取得）
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+source "$SCRIPT_DIR/scripts/lib/model_injection_profile.sh"
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 source "$SCRIPT_DIR/scripts/lib/project_path.sh"
 DEPLOY_NINJA_NAMES="$(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo saizo kotaro tobisaru')"
@@ -3827,6 +3828,47 @@ inject_standard_skills() {
     cp "$tmp_file" "$task_file"
     rm -f "$tmp_file"
     log "inject_standard_skills: standard skills injected"
+}
+
+inject_model_injection_profile() {
+    local task_file="$1"
+    local ninja_name="$2"
+    [ -f "$task_file" ] || return 0
+
+    local model_label family intensity tmp_file inject_block indent="  "
+    model_label="$(cli_model_display "$ninja_name" 2>/dev/null || true)"
+    [ -n "$model_label" ] || model_label="$(FIELD_GET_NO_LOG=1 _cli_lookup_settings_get "$ninja_name" model_name unknown 2>/dev/null || true)"
+    [ -n "$model_label" ] || model_label="unknown"
+    family="$(model_injection_profile_family "$model_label")"
+    intensity="$(model_injection_profile_intensity "$model_label")"
+
+    inject_block="${indent}model_injection_profile:"
+    inject_block="${inject_block}"$'\n'"${indent}  model_label: \"${model_label}\""
+    inject_block="${inject_block}"$'\n'"${indent}  family: \"${family}\""
+    inject_block="${inject_block}"$'\n'"${indent}  injection_intensity: \"${intensity}\""
+    inject_block="${inject_block}"$'\n'"${indent}  protocol: \"T5弱LLM構造化プロトコル\""
+    inject_block="${inject_block}"$'\n'"${indent}  report_contract:"
+    inject_block="${inject_block}"$'\n'"${indent}  - \"binary_checks全resultをyes/noで記入\""
+    inject_block="${inject_block}"$'\n'"${indent}  - \"lessons_useful全reasonを具体記入\""
+    inject_block="${inject_block}"$'\n'"${indent}  - \"files_modifiedはrepo相対path形式\""
+    if [ "$intensity" = "max" ]; then
+        inject_block="${inject_block}"$'\n'"${indent}  extra_scaffold:"
+        inject_block="${inject_block}"$'\n'"${indent}  - \"ACごとに実テスト証跡をresult.detailsへ記録\""
+        inject_block="${inject_block}"$'\n'"${indent}  - \"報告前にrg -n FILL_THISとgate_report_formatを実行\""
+    fi
+
+    tmp_file=$(mktemp)
+    awk '
+        /^  model_injection_profile:/ { skip=1; next }
+        skip && /^  [a-zA-Z_][a-zA-Z0-9_]*:/ { skip=0 }
+        skip && /^[^ ]/ { skip=0 }
+        !skip { print }
+    ' "$task_file" > "$tmp_file"
+
+    insert_task_block_before_description "$tmp_file" "$inject_block"
+    cp "$tmp_file" "$task_file"
+    rm -f "$tmp_file"
+    log "inject_model_injection_profile: ninja=${ninja_name} model=${model_label} intensity=${intensity}"
 }
 
 insert_task_block_before_description() {
@@ -8475,6 +8517,7 @@ deploy_task_apply_task_mutations() {
         inject_related_lessons "$task_file" || handle_yaml_injection_failure "inject_related_lessons" "$task_file" "$ninja_name"
         inject_workaround_pattern_lessons "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_workaround_pattern_lessons" "$task_file" "$ninja_name"
         inject_standard_skills "$task_file" || true  # Level5: 全taskに常時使用スキルを明示(cmd_2737)
+        inject_model_injection_profile "$task_file" "$ninja_name" || true  # cmd_3727: モデル階層別注入強度
         inject_semantic_concepts "$task_file" || true  # Level5: 全忍者にセマンティクス概念+ファイル自動提供
         inject_memory_db_context "$task_file" || true  # Level5: 三層記憶先行知識注入(殿厳命2026-06-10)
         inject_causal_links "$task_file" || true      # Level5: 全忍者にcmd origin因果リンクを自動提供(cmd_2822)

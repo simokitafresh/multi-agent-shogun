@@ -18,6 +18,7 @@ deploy_task_setup_file() {
     export SRC_AGENT_CONFIG_SCRIPT="$PROJECT_ROOT/scripts/lib/agent_config.sh"
     export SRC_INJECT_TASK_MODIFIERS="$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
     export SRC_FIREFIGHTING_KEYWORDS_SCRIPT="$PROJECT_ROOT/scripts/lib/firefighting_keywords.sh"
+    export SRC_MODEL_INJECTION_PROFILE_SCRIPT="$PROJECT_ROOT/scripts/lib/model_injection_profile.sh"
     export SRC_DASHBOARD_AUTO_SECTION_SCRIPT="$PROJECT_ROOT/scripts/dashboard_auto_section.sh"
     export SRC_SEMANTIC_ALIAS_QUALITY_SCRIPT="$PROJECT_ROOT/scripts/semantic_alias_quality.sh"
     export SRC_MARKDOWN_LINK_COUNTS_SCRIPT="$PROJECT_ROOT/scripts/markdown_link_counts.sh"
@@ -36,6 +37,7 @@ deploy_task_setup_file() {
     [ -f "$SRC_AGENT_CONFIG_SCRIPT" ] || return 1
     [ -f "$SRC_INJECT_TASK_MODIFIERS" ] || return 1
     [ -f "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" ] || return 1
+    [ -f "$SRC_MODEL_INJECTION_PROFILE_SCRIPT" ] || return 1
     [ -f "$SRC_DASHBOARD_AUTO_SECTION_SCRIPT" ] || return 1
     [ -f "$SRC_SEMANTIC_ALIAS_QUALITY_SCRIPT" ] || return 1
     [ -f "$SRC_MARKDOWN_LINK_COUNTS_SCRIPT" ] || return 1
@@ -69,6 +71,7 @@ deploy_task_setup_file() {
     cp "$SRC_AGENT_CONFIG_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/agent_config.sh"
     cp "$SRC_INJECT_TASK_MODIFIERS" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/inject_task_modifiers.py"
     cp "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/firefighting_keywords.sh"
+    cp "$SRC_MODEL_INJECTION_PROFILE_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/model_injection_profile.sh"
     cp "$SRC_DASHBOARD_AUTO_SECTION_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/dashboard_auto_section.sh"
     cp "$SRC_SEMANTIC_ALIAS_QUALITY_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/semantic_alias_quality.sh"
     cp "$SRC_MARKDOWN_LINK_COUNTS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/markdown_link_counts.sh"

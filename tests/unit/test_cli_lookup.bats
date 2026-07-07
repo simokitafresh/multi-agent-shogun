@@ -132,3 +132,9 @@ PY
     [ "$status" -eq 0 ]
     [ "$output" = "#a6e3a1" ]
 }
+
+@test "model_injection_profile: weak LLM families use max injection" {
+    run bash -lc "source '$PROJECT_ROOT/scripts/lib/model_injection_profile.sh'; model_injection_profile_intensity 'GPT-5.5 medium'; model_injection_profile_intensity 'Sonnet 5'; model_injection_profile_intensity 'Opus 4.8'"
+    [ "$status" -eq 0 ]
+    [ "$output" = $'max\nmax\nstandard' ]
+}

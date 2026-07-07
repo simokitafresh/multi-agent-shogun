@@ -84,6 +84,40 @@ PY
     [ "${result[3]}" = "True" ]
 }
 
+@test "SSH-001e: session_start_inject injects model injection profile from settings" {
+    export MOCK_AGENT_ID="saizo"
+    mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/config"
+    ln -s "$PROJECT_ROOT/scripts/lib/cli_lookup.sh" "$TEST_TMPDIR/scripts/lib/cli_lookup.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/model_injection_profile.sh" "$TEST_TMPDIR/scripts/lib/model_injection_profile.sh"
+    cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    saizo:
+      type: codex
+      model_name: gpt-5.5-medium
+YAML
+    cat > "$TEST_TMPDIR/queue/karo_snapshot.txt" <<'EOF'
+snapshot line
+EOF
+
+    run bash -c "cd '$TEST_TMPDIR' && printf '%s' '{\"type\":\"startup\"}' | scripts/hooks/session_start_inject.sh"
+    [ "$status" -eq 0 ]
+
+    readarray -t result < <(OUTPUT_JSON="$output" python3 - <<'PY'
+import json
+import os
+ctx = json.loads(os.environ["OUTPUT_JSON"])["hookSpecificOutput"]["additionalContext"]
+print("--- model_injection_profile ---" in ctx)
+print("injection_intensity: max" in ctx)
+print("gpt-5.5-medium" in ctx)
+PY
+)
+    [ "${result[0]}" = "True" ]
+    [ "${result[1]}" = "True" ]
+    [ "${result[2]}" = "True" ]
+}
+
 @test "SSH-001a: session_start_inject preserves compact_state 24h stale contract without date command" {
     export MOCK_AGENT_ID="saizo"
     cat > "$TEST_TMPDIR/queue/compact_state/saizo.yaml" <<'YAML'

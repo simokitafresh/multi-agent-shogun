@@ -40,6 +40,35 @@ task:
 EOF
 }
 
+@test "model injection profile uses settings.yaml model for deploy task YAML" {
+    cat > "$TEST_TMPDIR/settings_gpt_priority.yaml" <<'EOF'
+cli:
+  default: claude
+  agents:
+    saizo:
+      type: codex
+      model_name: gpt-5.5-medium
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/saizo.yaml" <<'EOF'
+task:
+  status: assigned
+  description: test task
+EOF
+
+    run bash -lc '
+        export DEPLOY_TASK_LIB_ONLY=1
+        export CLI_LOOKUP_SETTINGS="'"$TEST_TMPDIR/settings_gpt_priority.yaml"'"
+        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
+        log() { :; }
+        inject_model_injection_profile "'"$TEST_PROJECT/queue/tasks/saizo.yaml"'" saizo
+    '
+
+    [ "$status" -eq 0 ]
+    grep -q 'model_injection_profile:' "$TEST_PROJECT/queue/tasks/saizo.yaml"
+    grep -q 'injection_intensity: "max"' "$TEST_PROJECT/queue/tasks/saizo.yaml"
+    grep -q 'binary_checks全resultをyes/noで記入' "$TEST_PROJECT/queue/tasks/saizo.yaml"
+}
+
 @test "GPT priority blocks non-Codex deployment while Codex ninja is idle" {
     write_gpt_priority_settings
     write_task_status saizo idle

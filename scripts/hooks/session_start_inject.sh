@@ -8,6 +8,15 @@ _session_start_self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${_session_start_self%/scripts/hooks/session_start_inject.sh}"
 unset _session_start_self
 
+if [[ -f "$SCRIPT_DIR/scripts/lib/cli_lookup.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+fi
+if [[ -f "$SCRIPT_DIR/scripts/lib/model_injection_profile.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$SCRIPT_DIR/scripts/lib/model_injection_profile.sh"
+fi
+
 _session_start_json_get() {
   local _session_start_field="$1"
   local _session_start_default="$2"
@@ -313,6 +322,15 @@ ${compact_state}"
 auto_idle_section="
 --- auto_idle_actions ---
 ${auto_idle_actions}"
+model_profile_section=""
+if declare -F cli_model_display >/dev/null 2>&1 && declare -F model_injection_profile_text >/dev/null 2>&1; then
+  model_label="$(cli_model_display "$agent_id" 2>/dev/null || true)"
+  [ -n "$model_label" ] || model_label="$(_cli_lookup_settings_get "$agent_id" model_name unknown 2>/dev/null || true)"
+  [ -n "$model_label" ] || model_label="unknown"
+  model_profile_section="
+--- model_injection_profile ---
+$(model_injection_profile_text "$model_label")"
+fi
 startup_gate_section="
 --- startup_gate_output ---
 ${startup_gate_output}"
@@ -336,7 +354,7 @@ if (( ${#startup_gate_section} > startup_gate_budget )); then
 (truncated)"
 fi
 
-additional_context="${fixed_part}${karo_snapshot}${compact_section}${auto_idle_section}${startup_gate_section}"
+additional_context="${fixed_part}${karo_snapshot}${compact_section}${auto_idle_section}${model_profile_section}${startup_gate_section}"
 
 # --- Output JSON ---
 _session_start_emit_output "SessionStart" "$additional_context"
