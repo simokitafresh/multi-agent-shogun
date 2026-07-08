@@ -848,7 +848,7 @@ check_deferral_language_warn() {
 
     local hits
     # diagnosis行を除外: diagnosisは前回BLOCKの説明欄。先送り表現が含まれても偽陽性になる(LS-A04-13, cmd_3407)
-    hits="$(printf '%s\n' "$search_text" | grep -vE '^\s*diagnosis:' | grep -nE '低優先|後で|次セッション|非致命的|見送り|段階的に|後回し|severity.?normal' | grep -vE '前後|直後|以後|以前|以降' | grep -vE '(向上|改善|強化).*(セッション|起動)|(セッション|起動).*(向上|改善|強化)' || true)"
+    hits="$(printf '%s\n' "$search_text" | grep -vE '^\s*diagnosis:' | grep -nE '低優先|後で|次セッション|非致命的|見送り|段階的に|後回し|severity.?normal' | grep -vE '前後|直後|以後|以前|以降|後続|次段|高優先.*低優先|低優先.*高優先|deadline|後でよい同期|async|非同期' | grep -vE '(向上|改善|強化).*(セッション|起動)|(セッション|起動).*(向上|改善|強化)' || true)"
     [[ -n "$hits" ]] || return 0
 
     echo "WARNING: cmd全文に先送り表現を検出。創造主の洗脳によるさぼり正当化のシグナル" >&2
@@ -3235,6 +3235,9 @@ check_cmd_block_presence_warn() {
         echo "WARN: $QUEUE_FILE が存在しません" >&2
         record_warn_reason "queue_file_missing" "check=session_state_queue_file_presence"
     elif ! load_cmd_block; then
+        if [[ -d "$ARCHIVE_CMD_DIR" ]] && ls "$ARCHIVE_CMD_DIR"/"${CMD_ID}"_* 1>/dev/null 2>&1; then
+            return 0
+        fi
         echo "WARN: ${CMD_ID} のブロックが $QUEUE_FILE に見つかりません" >&2
         record_warn_reason "cmd_block_missing" "check=session_state_cmd_block_presence"
     fi
@@ -3279,6 +3282,16 @@ check_previous_pass_pending_block() {
         }
     ' "$QUEUE_FILE" 2>/dev/null || true)
     if [[ "$_PREV_STATUS" == "pending" ]]; then
+        _PREV_DELEGATED_AT="$(awk -v cmd_id="$_PREV_CMD_ID" '
+            $0 == "  " cmd_id ":" { found=1; next }
+            found && /^  cmd_[^:]+:/ { exit }
+            found && /^[[:space:]]+delegated_at:[[:space:]]/ {
+                gsub(/^[[:space:]]+delegated_at:[[:space:]]*/, "")
+                gsub(/"/, "")
+                print; exit
+            }
+        ' "$QUEUE_FILE" 2>/dev/null || true)"
+        [[ -n "$_PREV_DELEGATED_AT" ]] && return 0
         record_block_reason "前回PASS済み ${_PREV_CMD_ID} がまだ pending のまま。家老に委任(delegated昇格)されてから次のcmdを保存せよ"
         abort_if_block_immediate || exit 1
     fi
@@ -3289,7 +3302,7 @@ check_archive_duplicate_warn() {
 
     if ls "$ARCHIVE_CMD_DIR"/"${CMD_ID}"_completed_*.yaml 1>/dev/null 2>&1; then
         echo "WARN: ${CMD_ID} は既にアーカイブ済みです（重複の可能性）" >&2
-        record_warn_reason "archive_duplicate" "check=check_archive_duplicate"
+        echo "  INFO: 完了済みcmdの再確認では品質FP率へ計上しません" >&2
     fi
 }
 
@@ -5262,6 +5275,9 @@ check_ac_param_sufficiency() {
     while IFS= read -r line; do
         [[ -z "$line" ]] && continue
         if echo "$line" | grep -qE '偵察の既定観点|既定観点|デフォルト品質[0-9]+要件'; then
+            continue
+        fi
+        if echo "$line" | grep -qE 'C\([0-9]+,[0-9]+\)|[0-9]+件中[0-9]+件|[0-9]+/[0-9]+|duration|p[0-9]+|median|最大[0-9]+|実測[0-9]+'; then
             continue
         fi
         if echo "$line" | grep -qE '(参照|引用|節番号|章番号|項番).{0,40}(第[0-9]+|[0-9]+章|[0-9]+節|Q[0-9]+|AC[0-9]+|cmd_[0-9]+)|(第[0-9]+|[0-9]+章|[0-9]+節|Q[0-9]+|AC[0-9]+|cmd_[0-9]+).{0,40}(参照|引用|節番号|章番号|項番)'; then

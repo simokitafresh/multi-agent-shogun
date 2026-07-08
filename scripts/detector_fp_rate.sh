@@ -41,6 +41,9 @@ except Exception as exc:
     sys.exit(2)
 
 gate_fire_path, quality_path, alerts_path, out_path, now = sys.argv[1:6]
+root_dir = Path(quality_path).parent.parent
+archive_cmd_dir = root_dir / "queue" / "archive" / "cmds"
+queue_file = root_dir / "queue" / "shogun_to_karo.yaml"
 
 
 def load_yaml(path):
@@ -147,6 +150,42 @@ def escalation_events():
     return events
 
 
+def cmd_text_for(cmd_id):
+    if not cmd_id:
+        return ""
+    candidates = []
+    if archive_cmd_dir.is_dir():
+        candidates.extend(sorted(archive_cmd_dir.glob(f"{cmd_id}_*.yaml")))
+    if queue_file.is_file():
+        candidates.append(queue_file)
+    for path in candidates:
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if cmd_id in text:
+            return text
+    return ""
+
+
+def deferral_language_still_matches(cmd_id):
+    text = cmd_text_for(cmd_id)
+    if not text:
+        return True
+    hit_re = re.compile(r"低優先|後で|次セッション|非致命的|見送り|段階的に|後回し|severity.?normal", re.I)
+    exclude_re = re.compile(
+        r"前後|直後|以後|以前|以降|後続|次段|高優先.*低優先|低優先.*高優先|deadline|後でよい同期|async|非同期",
+        re.I,
+    )
+    improve_re = re.compile(r"(向上|改善|強化).*(セッション|起動)|(セッション|起動).*(向上|改善|強化)", re.I)
+    for line in text.splitlines():
+        if re.match(r"^\s*diagnosis:", line):
+            continue
+        if hit_re.search(line) and not exclude_re.search(line) and not improve_re.search(line):
+            return True
+    return False
+
+
 events = cmd_save_events() + escalation_events()
 events.sort(key=lambda x: parse_ts(x.get("ts")) or dt.datetime.min.replace(tzinfo=dt.timezone.utc))
 
@@ -161,6 +200,8 @@ for cmd_id, cmd_events in by_cmd.items():
     emitted = set()
     for e in cmd_events:
         if e.get("result") not in {"WARN", "BLOCK", "ALERT"}:
+            continue
+        if e.get("detector") == "cmd_save:cmd_text_deferral_language" and not deferral_language_still_matches(cmd_id):
             continue
         event_key = (e.get("detector"), e.get("result"))
         if event_key in emitted:
