@@ -706,7 +706,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L995 -->
+<!-- last_synced_lesson: L997 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1407,6 +1407,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L993: 起票/配備速度改善後も知識注入層追加でhot pathは再劣化する（cmd_3757）
 - L994: cmd_save検索cacheだけでは2秒目標に届かない場合がある（cmd_3760）
 - L995: semantic_alias_absorb_pending.shのalias_similarity_scoreは長い一文クエリを構造的に低スコア化し、閾値16.0未達=noiseと機械的に判定すると意味的に関連するinsightを見送ってしまう（cmd_reflux_insight_202607081557_tobisaru）
+- L996: context/training-cycle.md §28の『codd require禁止』記述は一次情報(codd --help)で誤りと判明。codd requireはbrownfield専用(extract後の下流ステップ)（cmd_reflux_promotion_202607081642_saizo）
+- L997: verdict missing防止はbinary_checks全件yes/no確認を先に固定する（cmd_training_L1_report-write_20260708173845）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
