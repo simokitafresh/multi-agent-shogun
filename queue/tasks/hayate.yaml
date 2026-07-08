@@ -128,13 +128,23 @@ task:
   acknowledged_at: "2026-07-08T13:59:27"
 
   session_state:
-    attempt: 2
-    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    attempt: 5
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
     tried_approaches:
     - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    diagnose_reason: '家老が報告到着直後にamend前reportを早期検査し、そのgate確認がtask session_stateを更新したため未commit差分が発生した。報告本文にもamend前commit hashが残っており、commit_hash欄との整合確認が必要だった。'
+    approach_summary: '対象cmd_save FP insight 3件を列挙し、detector_fp_rateに現行cmd_save条件再評価を追加、3件をresolveしてcommit完了'
     prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    - attempt: 2
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - attempt: 3
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: '対象cmd_save FP insight 3件を列挙し、detector_fp_rateに現行cmd_save条件再評価を追加、3件をresolveしてcommit完了'
+    - attempt: 4
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      diagnose_reason: '家老が報告到着直後にamend前reportを早期検査し、そのgate確認がtask session_stateを更新したため未commit差分が発生した。報告本文にもamend前commit hashが残っており、commit_hash欄との整合確認が必要だった。'
+      approach_summary: '対象cmd_save FP insight 3件を列挙し、detector_fp_rateに現行cmd_save条件再評価を追加、3件をresolveしてcommit完了'
+    - attempt: 5
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      diagnose_reason: '家老が報告到着直後にamend前reportを早期検査し、そのgate確認がtask session_stateを更新したため未commit差分が発生した。報告本文にもamend前commit hashが残っており、commit_hash欄との整合確認が必要だった。'
+      approach_summary: '対象cmd_save FP insight 3件を列挙し、detector_fp_rateに現行cmd_save条件再評価を追加、3件をresolveしてcommit完了'
   completed_at: "2026-07-08T14:08:21+09:00"
