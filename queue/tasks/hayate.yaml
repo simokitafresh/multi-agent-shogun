@@ -31,7 +31,7 @@ task:
     total: 98
     zero_backlinks: 2
   scout_exempt: true
-  status: done
+  status: idle
   stop_for: []
   target_path: queue/insights.yaml
   task_id: cmd_reflux_insight_202607090025_hayate_exact
@@ -113,3 +113,14 @@ task:
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
   deployed_at: "2026-07-09T00:26:03"
   acknowledged_at: "2026-07-09T00:26:34"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    tried_approaches:
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    approach_summary: 'INS-20260708-202916450-af87を一次情報で確認し、同一root causeの重複throughput insightとしてresolveした'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: 'INS-20260708-202916450-af87を一次情報で確認し、同一root causeの重複throughput insightとしてresolveした'
