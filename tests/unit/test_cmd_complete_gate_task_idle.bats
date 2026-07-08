@@ -101,7 +101,11 @@ import sys
 from pathlib import Path
 
 lines = Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()
-call_lines = [idx for idx, line in enumerate(lines, start=1) if line.strip() == "set_matching_tasks_idle"]
+call_lines = [
+    idx
+    for idx, line in enumerate(lines, start=1)
+    if line.lstrip().startswith("(set_matching_tasks_idle")
+]
 
 if len(call_lines) != 1:
     raise SystemExit(f"expected single set_matching_tasks_idle call, got {len(call_lines)}")
