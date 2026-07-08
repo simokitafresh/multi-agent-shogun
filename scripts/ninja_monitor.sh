@@ -5081,6 +5081,10 @@ WORKAROUND_PATTERN_CHECK_INTERVAL=600  # 10分間隔(秒)
 LAST_GATE_IMPROVEMENT=$EPOCHSECONDS
 GATE_IMPROVEMENT_INTERVAL=300  # 5分間隔(秒)
 
+# ─── throughput_scan定期チェック (cmd_3766) ───
+LAST_THROUGHPUT_SCAN=$EPOCHSECONDS
+THROUGHPUT_SCAN_INTERVAL=${THROUGHPUT_SCAN_INTERVAL:-300}  # 5分間隔(秒)
+
 # ─── 第三層loop health定期チェック (三層学習ループ自己監視) ───
 LAST_LOOP_HEALTH_CHECK=$EPOCHSECONDS
 LOOP_HEALTH_CHECK_INTERVAL=1800  # 30分間隔(秒)
@@ -5202,6 +5206,24 @@ check_gate_improvement() {
     fi
 
     bash "$gate_script" >> "$SCRIPT_DIR/logs/gate_improvement.log" 2>&1 || true
+}
+
+check_throughput_scan() {
+    local now elapsed scan_script
+    now=$EPOCHSECONDS
+    elapsed=$((now - LAST_THROUGHPUT_SCAN))
+    if [ "$elapsed" -lt "$THROUGHPUT_SCAN_INTERVAL" ]; then
+        return
+    fi
+    LAST_THROUGHPUT_SCAN=$now
+
+    scan_script="$SCRIPT_DIR/scripts/throughput_scan.sh"
+    if [ ! -x "$scan_script" ]; then
+        log "THROUGHPUT-SCAN: throughput_scan.sh not executable, skip"
+        return
+    fi
+
+    bash "$scan_script" >> "$SCRIPT_DIR/logs/throughput_scan.log" 2>&1 || true
 }
 
 check_skill_auto_improve() {
@@ -6186,6 +6208,9 @@ while true; do
 
     # ═══ gate_improvement定期チェック（5分間隔 cmd_1114） ═══
     check_gate_improvement
+
+    # ═══ throughput_scan定期チェック（5分間隔 cmd_3766） ═══
+    check_throughput_scan
 
     # ═══ skill_auto_improve定期チェック（週1回 cmd_2605） ═══
     check_skill_auto_improve
