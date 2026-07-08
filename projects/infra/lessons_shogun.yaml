@@ -674,4 +674,5 @@ lessons:
   source_cmd: 'cmd_3763'
   created_at: '2026-07-08'
   automated: true
-  enforcement: '未自動化 — 比較設計cmd起票時の同格性確認をcmd_saveのAC設計ガイド/preflight問いに追加するかは還流で検討'
+  enforcement_level: 4
+  enforcement: 'Level4(フロー内WARN): cmd_reflux_promotion_202607090418_saizoでscripts/cmd_save.shにcheck_comparison_pipeline_parity_warn()を新設し実装済み。cmd全文が「比較」と「合成|集計|代理実験|代理指標|代理データ」の両方に一致し、かつ「同一パイプライン|同一生成パイプライン|同格性|パリティ確認|同一L[0-9]」等の同格性確認文言が無ければWARNをrecord_warn_reason(check=comparison_pipeline_parity)へ記録する。main flow内でcheck_deferral_language_warnの直後(L3740付近)に接続済み。一次情報検証: bash -n scripts/cmd_save.shでシンタックス確認、tests/unit/test_cmd_save.batsへ回帰テスト4件(合成/集計キーワードでWARN発火、同格性確認文言ありでWARNなし、キーワード無しの通常比較cmdでWARNなし)を追加し、bats実行で124/124 PASS(既存120件+新規4件、regression無し)を確認済み。限界: キーワードマッチのためcmd文面が曖昧な場合はFP/FN双方の余地あり。精度改善は還流のFP計測(detector_fp_rate等)で継続監視する'

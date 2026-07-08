@@ -857,6 +857,24 @@ check_deferral_language_warn() {
     record_warn_reason "先送り表現検出" "check=cmd_text_deferral_language"
 }
 
+# LS083: 比較実験の同格性。cmd_3763 C3事故(殿指摘2026-07-08) — 旧新チャンピオン各3体の
+# 静的等ウェイト合成を「合成FoF比較」として扱ったが、本番pf_L1は選別層を持つ動的FoFであり
+# (1)選別層の欠如(2)本番に無い組合せ(3)構成差と基準差の交絡、の3点で比較不能だった。
+# 合成・集計・代理実験を含む比較cmdは、比較対象が同一生成パイプラインの同格生成物であることを
+# 明示させる(横展開: LS083 enforcement)。
+check_comparison_pipeline_parity_warn() {
+    local search_text="${1:-${CMD_BLOCK_NC:-}}"
+    [[ -n "$search_text" ]] || return 0
+
+    cmd_text_matches_pattern "$search_text" '比較' || return 0
+    cmd_text_matches_pattern "$search_text" '合成|集計|代理実験|代理指標|代理データ' || return 0
+    cmd_text_matches_pattern "$search_text" '同一.{0,6}パイプライン|同一生成パイプライン|同格性|パリティ確認|pipeline.{0,2}parity|同一L[0-9]' && return 0
+
+    echo "WARNING: 比較実験cmd(合成/集計/代理実験)を検出。LS083(cmd_3763 C3事故)の教訓 — 比較対象は同一生成パイプラインの同格生成物か確認せよ" >&2
+    echo '  例: AC「比較対象(旧/新チャンピオン群等)は同一の生成パイプライン(同一の選別→合成手順)から生成された同格物であることを確認する」' >&2
+    record_warn_reason "比較実験cmdに同一パイプライン同格性確認なし" "check=comparison_pipeline_parity"
+}
+
 extract_acceptance_criteria_block() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
@@ -3735,6 +3753,10 @@ QG_TEMPLATE
 
     # cmd全文の先送り表現検出。低優先/後で/次セッション/非致命的をWARNで露出する。
     check_deferral_language_warn "$CMD_BLOCK_NC"
+
+    # LS083: 比較実験cmd(合成/集計/代理実験)は同一生成パイプラインの同格性確認をWARNで促す
+    # 起源: cmd_3763 C3事故 — 静的等ウェイト合成比較を本番動的FoFと同格に扱い殿指摘で訂正
+    check_comparison_pipeline_parity_warn "$CMD_BLOCK_NC"
 
     # mizchi Red flag (1): 「自分で読み直せば同じ効果」
     # 自己申告/目視確認/自問で曖昧さや品質を担保しようとしていないかをWARNINGで可視化

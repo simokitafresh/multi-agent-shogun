@@ -65,6 +65,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^check_measurement_env_info()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_lord_30min_cost_question()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_deferral_language_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_comparison_pipeline_parity_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^extract_acceptance_criteria_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_action_immediate_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^extract_command_text_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -114,7 +115,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     check_origin_field() { :; }
     check_gate_script_execution_evidence() { :; }
     is_gate_or_script_modification_cmd() { return 1; }
-    export -f is_gate_or_script_modification_cmd trim_inline_yaml_scalar path_exists_for_cmd_source parent_exists_for_cmd_source display_parent_for_cmd_source load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check collect_q11_guard_list check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info check_lord_30min_cost_question check_deferral_language_warn extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag extract_cmd_target_path_text check_three_layer_penetration check_bundle_red_flag check_cmd_text_pipe_danger is_db_operation_command_text check_db_backup_ac_warn build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason cmd_save_caller_check_name abort_if_block_immediate cmd_text_matches_pattern warn_q5_pair_missing_session_state check_depends_on_field check_origin_field check_gate_script_execution_evidence check_unverified_assumptions_block check_assumption_source_paths_block check_assumption_claim_dates_warn check_negative_claim_grep_evidence_warn check_bulletin_count_grep_evidence_warn check_q4_depth_warn check_research_baseline_warn check_q6_not_hiding_warn check_q7_definition_verified_warn check_q10_knowledge_boundary_warn check_q5_code_reading_only_block check_q8_scope_expression_warn check_q8_compound_question_warn check_q8_when_how_warn check_q8_where_who_warn check_q9_firefighting_root_cause_block check_q9_root_cause_label_block check_q9_prevention_label_block check_q9_root_cause_length_block check_q9_prevention_length_block check_required_quality_gate_keys_block check_q11_guard_duplicate_block check_q11_existing_alternative_block
+    export -f is_gate_or_script_modification_cmd trim_inline_yaml_scalar path_exists_for_cmd_source parent_exists_for_cmd_source display_parent_for_cmd_source load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check collect_q11_guard_list check_gate_hook_action_conversion check_lord_instruction_ac_alignment_info collect_assumption_claims_missing_dates collect_negative_claims_missing_grep_evidence collect_bulletin_count_claims_missing_grep_evidence check_measurement_env_info check_lord_30min_cost_question check_deferral_language_warn check_comparison_pipeline_parity_warn extract_acceptance_criteria_block check_action_immediate_verification extract_command_text_block collect_numeric_derivation_source_evidence numeric_derivation_source_evidence_exists check_numeric_literal_derivation_source_info check_self_reread_red_flag extract_cmd_target_path_text check_three_layer_penetration check_bundle_red_flag check_cmd_text_pipe_danger is_db_operation_command_text check_db_backup_ac_warn build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason cmd_save_caller_check_name abort_if_block_immediate cmd_text_matches_pattern warn_q5_pair_missing_session_state check_depends_on_field check_origin_field check_gate_script_execution_evidence check_unverified_assumptions_block check_assumption_source_paths_block check_assumption_claim_dates_warn check_negative_claim_grep_evidence_warn check_bulletin_count_grep_evidence_warn check_q4_depth_warn check_research_baseline_warn check_q6_not_hiding_warn check_q7_definition_verified_warn check_q10_knowledge_boundary_warn check_q5_code_reading_only_block check_q8_scope_expression_warn check_q8_compound_question_warn check_q8_when_how_warn check_q8_where_who_warn check_q9_firefighting_root_cause_block check_q9_root_cause_label_block check_q9_prevention_label_block check_q9_root_cause_length_block check_q9_prevention_length_block check_required_quality_gate_keys_block check_q11_guard_duplicate_block check_q11_existing_alternative_block
 
     # This unit suite validates local check output, not historical WARN analytics.
     # Avoid spawning Python for every record_warn_reason() call.
@@ -365,6 +366,54 @@ _setup_cmd_block() {
 
     [ "$status" -eq 0 ]
     [[ "$output" != *"先送り表現を検出"* ]]
+}
+
+@test "LS083: comparison + synthesis cmd without pipeline parity confirmation warns" {
+    CMD_BLOCK_NC='    title: "旧新チャンピオン合成比較cmd"
+    command: "旧基準3体と新基準3体を等ウェイト合成しCAGRを比較する"'
+    export CMD_BLOCK_NC
+
+    run bash -c 'check_comparison_pipeline_parity_warn "$CMD_BLOCK_NC" 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"比較実験cmd(合成/集計/代理実験)を検出"* ]]
+    [[ "$output" == *"LS083"* ]]
+}
+
+@test "LS083: comparison + aggregation cmd without pipeline parity confirmation warns" {
+    CMD_BLOCK_NC='    title: "月次リターン集計比較cmd"
+    command: "旧チャンピオン群と新チャンピオン群の月次リターンを集計して比較する"'
+    export CMD_BLOCK_NC
+
+    run bash -c 'check_comparison_pipeline_parity_warn "$CMD_BLOCK_NC" 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"比較実験cmd(合成/集計/代理実験)を検出"* ]]
+}
+
+@test "LS083: comparison + synthesis cmd with pipeline parity confirmation does not warn" {
+    CMD_BLOCK_NC='    title: "旧新チャンピオン合成比較cmd"
+    command: "旧基準3体と新基準3体を等ウェイト合成しCAGRを比較する"
+    acceptance_criteria:
+      - id: AC1
+        description: "比較対象は同一のL1パイプライン(選別→合成)から生成された同格物であることを確認する"'
+    export CMD_BLOCK_NC
+
+    run bash -c 'check_comparison_pipeline_parity_warn "$CMD_BLOCK_NC" 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"比較実験cmd(合成/集計/代理実験)を検出"* ]]
+}
+
+@test "LS083: plain comparison cmd without synthesis/aggregation keyword does not warn" {
+    CMD_BLOCK_NC='    title: "修正前後比較cmd"
+    command: "修正前後でgate出力を比較する"'
+    export CMD_BLOCK_NC
+
+    run bash -c 'check_comparison_pipeline_parity_warn "$CMD_BLOCK_NC" 2>&1'
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"比較実験cmd(合成/集計/代理実験)を検出"* ]]
 }
 
 # --- Check 6: GP重複検出 ---
