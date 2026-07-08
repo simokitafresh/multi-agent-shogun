@@ -213,11 +213,12 @@ lessons:
   source_ids: [LK007, LK017, LK038]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'deploy_task.sh テンプレート品質+karo-operations.md §1配備+§3レビュー'
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK、複数環で二重防御): (1)配備環=deploy_task.sh check_scout_gate()(L7775-7877、呼出L8747)がimplタスクの偵察未完了時に配備そのものをBLOCK『BLOCK(scout_gate): 偵察未完了』。家老がscout_exemptを恣意決定できない設計はkaro-operations.md §1(L51)に明記。(2)報告環=gate_report_format.sh がbinary_checks欠落・verdict不正等の報告フォーマット違反時にexit 1でBLOCK(L368/376/381/645/761)。(3)配備テンプレート品質=deploy_task.sh L3011-3058がtarget_path全件gitignore対象時にcommit checkを自動でgate通過値'no'に設定(LK007由来『テンプレートデフォルト値はgate通過値にする』原則の実装箇所)。一次情報再検証(2026-07-09 cmd_reflux_promotion_202607090500_tobisaru): 該当ファイル・行を現物grep確認、かつ回帰テスト実行確認 — tests/unit/test_scout_gate_completed_skip.bats(6テスト全PASS、うち『scout_gate BLOCKs assigned impl task without scouts』が本BLOCK挙動を直接検証)。enforcement本文にLevel判定キーワードが無くgate_lesson_enforcement_level.shがデフォルトL1に誤分類していたため、enforcement_levelフィールドを明示追加(field優先ルール)。同日のLS080/LS040/LS078/LS-A24と同型の誤判定パターン。"
 
   when: cmd分解・タスクYAML作成時。仕組み変更cmd時
   how: 配備品質が忍者品質を決める。仕組み変更は3層同時修正(テンプレート/忍者ルール/家老ルール)
-  origin: "[[LK017]] -> [[cmd曖昧]] -> [[品質低下連鎖]]"
+  origin: "[[LK017]] -> [[cmd曖昧]] -> [[品質低下連鎖]] -> [[cmd_reflux_promotion_202607090500_tobisaru_一次情報再検証]]"
 - id: LK-A08
   title: cmdの制約を独自解釈するな — 制約通りに配備
   detail: |
