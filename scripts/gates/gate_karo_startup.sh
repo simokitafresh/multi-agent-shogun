@@ -1446,6 +1446,8 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         qmiss = 0
         qmiss_cmds = ""
         for (gcmd in gate_clear) {
+            # reflux/karo_direct/training auto-generated cmds carry no quality_gate by design (INS-20260708-094738751)
+            if (gcmd ~ /^cmd_(reflux|karo|training)_/) continue
             if (!(gcmd in quality_logged)) {
                 qmiss++
                 if (qmiss <= 5) qmiss_cmds = qmiss_cmds (qmiss_cmds != "" ? ", " : "") gcmd
