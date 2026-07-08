@@ -986,6 +986,62 @@ echo ""
 echo "■ SG-PRE31: N×M意味検算(LG048)"
 _sg_pre31_check "$REPORT_PATH"
 
+# ─── SG-PRE32: 視点列間の全行一致検出(LG049: 独立視点の縮退検出) ───
+# 関数化: テストから呼出し可能にする
+_sg_pre32_check() {
+    local files_modified_text="${1:-}"
+    local project_dir="${2:-$PROJECT_DIR}"
+    local repo_root="${3:-$REPO_ROOT}"
+    local detector="$repo_root/scripts/lib/detect_view_column_degeneracy.py"
+
+    if [ -z "$files_modified_text" ]; then
+        echo "  PASS: files_modified空(対象外)"
+        return
+    fi
+    if [ ! -f "$detector" ]; then
+        echo "  WARN(LG049): detector missing: $detector"
+        return
+    fi
+
+    local _found_md=0
+    local _found_warn=0
+    local _path _full_path _detected
+    while IFS= read -r _path; do
+        _path="$(echo "$_path" | sed 's/.*path: *//' | tr -d "'\"" | sed 's/^[[:space:]-]*//;s/[[:space:]]*$//')"
+        [ -z "$_path" ] && continue
+        case "$_path" in
+            *.md|*.markdown) ;;
+            *) continue ;;
+        esac
+        _found_md=1
+        _full_path="$project_dir/$_path"
+        if [ ! -f "$_full_path" ]; then
+            _full_path="$repo_root/$_path"
+        fi
+        if [ ! -f "$_full_path" ]; then
+            continue
+        fi
+        _detected="$(python3 "$detector" "$_full_path" 2>/dev/null || true)"
+        if [ -n "$_detected" ]; then
+            echo "  WARN(LG049): $_path"
+            echo "$_detected" | sed 's/^/    /'
+            echo "    → 視点列が全データ行で一致。Expanding/WF等の独立算出が同一系列へ縮退していないか確認せよ"
+            _found_warn=1
+        fi
+    done <<< "$files_modified_text"
+
+    if [ "$_found_warn" -eq 0 ]; then
+        if [ "$_found_md" -eq 0 ]; then
+            echo "  PASS: Markdown成果物なし(対象外)"
+        else
+            echo "  PASS: 視点列間の全行一致なし"
+        fi
+    fi
+}
+echo ""
+echo "■ SG-PRE32: 視点列間一致検出(LG049)"
+_sg_pre32_check "${FILES_MODIFIED:-}" "$PROJECT_DIR" "$REPO_ROOT"
+
 echo ""
 echo "■ GATE_PREDICTION (自動計算 — SG7 gate_predictionに転記せよ)"
 echo "  prediction: ${GATE_PREDICTION:-UNKNOWN}"
