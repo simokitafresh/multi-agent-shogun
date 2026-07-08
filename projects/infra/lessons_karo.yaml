@@ -290,12 +290,13 @@ v7吸収(2026-05-19):
   source_ids: [LK006, LK042, LK020, LK078, LK014]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'deploy_task.sh commit check gitignore確認+karo-operations.md §2分解パターン'
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK、二層防御): (1)配備テンプレート層=deploy_task.sh L3011-3058がtarget_path全件gitignore対象時にcommit checkのresultを自動で'no'(gate通過値)へ設定し、達成不可能なcommit ACそのものを生成しない(cmd_1838由来)。回帰テストtests/unit/test_deploy_task_template_generation.bats のgitignore commit check系2テスト実行確認済み('gitignore対象ファイルのみ変更するcmdでcommit check=noが自動設定される'/'gitignore対象外ファイルのcmdではcommit checkは空のまま' 両PASS)。(2)レビュー層=instructions/gunshi.md L387「AC実行可能性チェック（必須）」がgitignore対象へのcommit要求・進行中月データの完全一致要求・推奨事項の必須混同をNG→REQUEST_CHANGES、L389-393「ACスコープ完結性チェック（必須）」が速度目標AC+scope外律速/全量テストAC+環境依存ツール/本番確認AC+権限外を検出しREQUEST_CHANGES(家老実施ACへの分離指示付き)で停止。この軍師draft reviewはdeploy_task.sh maybe_notify_draft_review()がtask_assigned配備時にinbox_write経由で自動起動する(LK-A09と同一の自動ゲート経路)ため、家老の恣意判断を介さず全impl task配備時に強制発火する。一次情報再検証(2026-07-09 cmd_reflux_promotion_202607090621_saizo): 該当行を現物grep確認、かつ回帰テスト実行確認済み(2/2 PASS)。enforcement本文にLevel判定キーワードが無くgate_lesson_enforcement_level.shがデフォルトL1に誤分類していたため、enforcement_levelフィールドを明示追加(field優先ルール)。同日のLK-A07/LK-A09と同型の誤判定パターン。"
 
 # === infra修正実績 ===
   when: AC設計時。cmdのbinary_checks設計時
   how: "忍者が物理的に達成可能か事前確認。gitignore対象へのcommit要求禁止。推奨と必須を混同するな。v7: 全テストPASS AC→test_select.sh関連テストのみ。速度目標ACはscope完結性確認(bf02cd97)"
-  origin: "[[LK042]] -> [[達成不可能AC]] -> [[verdict_override]]"
+  origin: "[[LK042]] -> [[達成不可能AC]] -> [[verdict_override]] -> [[cmd_reflux_promotion_202607090621_saizo_一次情報再検証]]"
 - id: LK-A12
   title: infra修正実績(ninja_monitor/inbox_watcher) — 各バグはenforcementで修正済み
   detail: |
