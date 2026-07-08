@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-07 cmd_karo_hotfix_ga189_context_freshness_20260707 -->
-<!-- last_synced_lesson: L830 -->
+<!-- last_synced_lesson: L834 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -286,6 +286,10 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - PD-054裁定(2026-07-02): 7023=Next App Router runtime不可避。App Router runtime削減設計には進まず、次方向は初期レンダー計算量削減(テーブル仮想化・チャート遅延・hydration削減)=fd9d/app chunks側。cmd_3660本番metrics計測はPerf 46→95/TBT 1724→55ms/CLS 0.743→0を確認。→ `/mnt/c/Python_app/DM-signal/docs/research/lighthouse_rounds/round_20260702_cmd3660_production_metrics_cls_close/manifest.json`
 - （L818-L825は振り分け済 2026-07-08 → ops§6-7(L818:DB確認スクリプト経由), ops§32(L819:PF別設定参照/L822:Mockテスト横展開), ops§38(L820:pre-commit誤検知根本修正), ops教訓索引(L821:push状態先確認), research§24(L823:yotsume bak構造), gs-speedup§4(L824:GS CSVリーディングNaN), research§27(L825:相関全量安定性)。不変量候補なし）
 - （L826-L830は振り分け済 2026-07-08 → research§27(L826:選出ツールの粒度差明示), ops§6-7(L827:FK依存復元のdb.flush), research§48(L828:GS-本番DTB3暦解像度差[PI-028]), infra教訓索引(L829:絶対パス直書きGuard16 BLOCK), research教訓索引(L830:小標本quantile交差分類不能)。不変量: PI-028追加）
+- L831: serial/batch preflight不一致の切り分けは要因を1つずつNone化する対照実験で（cmd_karo_recon2_cmd3772_yotsume_preflight_202607081453）
+- L832: 境界近傍のゲート判定は『合成式の代数的一致』では不十分。入力値(DTB3等)そのものの数値一致まで検証せよ（cmd_karo_recon2_cmd3772_dmsafe_pi009_202607081452）
+- L833: recalculate完了矛盾は経過時間見積り(timing-history平均2000s級)と照合してから切り分けよ。API running確認は複数worker前提で解釈せよ（cmd_karo_recon2_cmd3771_recalc_status_202607081502）
+- L834: run_077_*.pyをモジュールimportで診断スクリプト再利用時はsys.argvでuniverseを明示指定せよ（cmd_karo_hotfix_yotsume_bootstrap_preflight_202607081515）
 
 ## 因果リンク
 
