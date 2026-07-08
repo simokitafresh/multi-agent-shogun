@@ -1,7 +1,7 @@
 task:
   acceptance_criteria:
   - checks:
-    - check: '昇格候補 [lessons_shogun.yaml] LS-A16 (L3:事前強制(auto-gen)): 本番パリティ必須 — DB変更後即確認+3レイヤー貫通+savepoint を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する'
+    - check: '昇格候補 [lessons_karo.yaml] LK-A05 (L1:事後検出): 消火禁止 — パターン集計→構造的解決→発火検証の3段階 を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する'
     id: AC1
   - checks:
     - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
@@ -22,45 +22,30 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_karo_hotfix_reflux_promotion_202607090438_hayate
+  parent_cmd: cmd_reflux_promotion_202607090455_hayate
   project: infra
-  purpose: '還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_shogun.yaml] LS-A16 (L3:事前強制(auto-gen)): 本番パリティ必須 — DB変更後即確認+3レイヤー貫通+savepoint を確認し、Level4以上の実装・gate・task注入などへ昇格する'
+  purpose: '還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_karo.yaml] LK-A05 (L1:事後検出): 消火禁止 — パターン集計→構造的解決→発火検証の3段階 を確認し、Level4以上の実装・gate・task注入などへ昇格する'
   reflux_inventory_before:
     insights_pending: 0
-    promotions: 84
-    total: 84
+    promotions: 82
+    total: 82
     zero_backlinks: 0
   scout_exempt: true
   status: idle
   stop_for: []
-  target_path: projects/infra/lessons_shogun.yaml
-  task_id: cmd_karo_hotfix_reflux_promotion_202607090438_hayate_normal
-  task_type: hotfix
-  previous_failures:
-    attempt: 1
-    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    tried_approaches:
-    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    approach_summary: 'LS078にenforcement_level: 4を明示し、gate_lesson_enforcement_levelの昇格在庫からLS078を除外。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      approach_summary: 'LS078にenforcement_level: 4を明示し、gate_lesson_enforcement_levelの昇格在庫からLS078を除外。'
+  target_path: projects/infra/lessons_karo.yaml
+  task_id: cmd_reflux_promotion_202607090455_hayate_exact
+  task_type: exact
   related_lessons:
-  - id: 'L830'
-    summary: 'gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo'
-    detail: 'gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo'
-  - id: 'L1002'
-    summary: 'gate_lesson_enforcement_level.shはenforcement_levelフィールドが無い場合、enforcement本文からBLOC'
-    detail: 'gate_lesson_enforcement_level.shはenforcement_levelフィールドが無い場合、enforcement本文からBLOC'
-  - id: 'L096'
-    summary: 'bash,variable-scope,preflight'
-    detail: 'bash,variable-scope,preflight'
+  - id: 'L581'
+    summary: 'cmd_2611でsaizo+hanzoに二重配備(LK011のkaro_direct迂回が原因)。saizoが先に完了しGATE処理開始したがhanzoの不完'
+    detail: 'cmd_2611でsaizo+hanzoに二重配備(LK011のkaro_direct迂回が原因)。saizoが先に完了しGATE処理開始したがhanzoの不完'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-    wa_category: 'commit_missing'
-    wa_count: 1
-    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
+    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+  - id: 'L269'
+    summary: 'while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。'
+    detail: 'while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。'
   - id: 'L342'
     summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
     wa_category: 'commit_missing'
@@ -83,7 +68,9 @@ task:
     - "ACごとに実テスト証跡をresult.detailsへ記録"
     - "報告前にplaceholder残存確認とgate_report_formatを実行"
   semantic_concepts:
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_wa_stall_pattern_20260708.md — report_yaml_format + agent_stall_recovery WA分析 docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh tests/unit/test_deploy_training.bats scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md docs/research/model-comparison-5w1h-20260701.md 全モデル5W1H比較(GPT5.5/Sonnet4.6/Sonnet5/Opus4.8) docs/research/sonnet5_vs_46_ab_evaluation_20260701.md 5ラウンドA/B/C評価データ scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
+  recommended_skills:
+  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -103,18 +90,17 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L830: gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo
-      - L1002: gate_lesson_enforcement_level.shはenforcement_levelフィールドが無い場合、enforcement本文からBLOC
-      - L096: bash,variable-scope,preflight
+      - L581: cmd_2611でsaizo+hanzoに二重配備(LK011のkaro_direct迂回が原因)。saizoが先に完了しGATE処理開始したがhanzoの不完
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
+      - L269: while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
-  ac_version: 46776801
-  _ac_task_id: cmd_karo_hotfix_reflux_promotion_202607090438_hayate_normal
+  ac_version: 336d7437
+  _ac_task_id: cmd_reflux_promotion_202607090455_hayate_exact
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_hotfix_reflux_promotion_202607090438_hayate.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_hotfix_reflux_promotion_202607090438_hayate.yaml
+  report_filename: hayate_report_cmd_reflux_promotion_202607090455_hayate.yaml
+  report_path: queue/reports/hayate_report_cmd_reflux_promotion_202607090455_hayate.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -137,6 +123,6 @@ task:
     - reason: 'binary_checks_fail'
       count: 2
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-09T04:38:55"
-  acknowledged_at: "2026-07-09T04:39:31"
-  completed_at: "2026-07-09T04:43:02+09:00"
+  deployed_at: "2026-07-09T04:55:26"
+  acknowledged_at: "2026-07-09T04:55:43"
+  completed_at: "2026-07-09T04:59:29+09:00"
