@@ -635,7 +635,8 @@ lessons:
   source_cmd: 'session_20260702'
   created_at: '2026-07-02'
   automated: true
-  enforcement: 'gate_skill_script_refs.sh max採用+判定根拠出力(commit 07a0cfd83/68c5f0cf7)+再現bats test_gate_skill_script_refs_marker.bats(3テスト)+prompt_state_inject.sh session_alerts突合+キー本文表示(commit 1ac6eb794)+test_prompt_state_defer_reconcile.bats(3テスト)'
+  enforcement_level: 4
+  enforcement: 'Level4(フロー内BLOCK/現在状態突合): gate_skill_script_refs.sh max採用+判定根拠出力(commit 07a0cfd83/68c5f0cf7)+再現bats test_gate_skill_script_refs_marker.bats(3テスト)+prompt_state_inject.sh session_alerts突合+キー本文表示(commit 1ac6eb794)+test_prompt_state_defer_reconcile.bats(3テスト)。一次情報再検証(2026-07-09): scripts/hooks/prompt_state_inject.sh は追記専用historyで未解消件数を算出後、queue/session_alerts_${agent_id}.txt に[TODO]が残っていなければ _defer_count=0 に補正し、解消済み履歴の再注入をフロー内で防ぐ。scripts/clear_prep_check.sh はinsights.yaml pendingをsemantic_search現物で再照合し、alias昇格済みなら自動resolveする。scripts/gates/gate_karo_startup.sh は__OK__行をクリーンセッションとしてstreakを切り、解消信号無視による連続WARN誤昇格を防ぐ。LS078本文の対処(2)(3)は実装済みで、既存gate_lesson_enforcement_level.shが本文語彙ではなく構造化enforcement_levelを読むため、L1002同型の誤判定を避ける目的で明示する。'
 # LS079: superseded by LS-A09(32) (UPSERT updated_at≠初回到着=検証手段の証明力確認パターン。2026-07-07統合)
 - id: 'LS080'
   title: 'cmd_save PASS前のキューEditは家老の自動配備とレースする'
