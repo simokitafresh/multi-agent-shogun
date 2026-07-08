@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-07 cmd_karo_hotfix_ga189_context_freshness_20260707 -->
-<!-- last_synced_lesson: L834 -->
+<!-- last_synced_lesson: L836 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -290,6 +290,8 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - L832: 境界近傍のゲート判定は『合成式の代数的一致』では不十分。入力値(DTB3等)そのものの数値一致まで検証せよ（cmd_karo_recon2_cmd3772_dmsafe_pi009_202607081452）
 - L833: recalculate完了矛盾は経過時間見積り(timing-history平均2000s級)と照合してから切り分けよ。API running確認は複数worker前提で解釈せよ（cmd_karo_recon2_cmd3771_recalc_status_202607081502）
 - L834: run_077_*.pyをモジュールimportで診断スクリプト再利用時はsys.argvでuniverseを明示指定せよ（cmd_karo_hotfix_yotsume_bootstrap_preflight_202607081515）
+- L835: 全量ベンチACとpreflight不一致は分離して記録する（cmd_3772）
+- L836: recalculate acceptedと完走証跡を分離して判定する（cmd_3771）
 
 ## 因果リンク
 

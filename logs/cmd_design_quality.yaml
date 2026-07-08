@@ -829,7 +829,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "LGTM"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -839,7 +839,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "LGTM"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -849,7 +849,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "LGTM"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -859,7 +859,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "LGTM"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -1016,3 +1016,45 @@ entries:
   supplementary_cmds: 0
   source: "cmd_complete_gate"
   timestamp: "2026-07-08T07:41:58Z"
+- cmd_id: "cmd_3771"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T07:47:58Z"
+  notes: "kagemaru:binary_checks_fail|kagemaru:purpose_validation_fit_false"
+- cmd_id: "cmd_3772"
+  ac_count: 0
+  gate_result: "BLOCK"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T07:47:58Z"
+  notes: "hanzo:binary_checks_fail"
+- cmd_id: "cmd_3771"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T07:51:14Z"
+- cmd_id: "cmd_3772"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T07:51:20Z"
