@@ -10436,3 +10436,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - LK-A10は4つの異なる懸念(成果物確認/ACファイル名/context還流/DC重複チェック)を1つのenforcement文言に混在させた複合エントリだった。一次情報確認の結果、(4)DC前重複チェックはgate_dc_duplicate.shがcmd_complete_gate.sh:6624から自動呼出しされexit1でBLOCKする実質Level4実装済みだったが、(1)(2)はdoc記載のみのLevel2、(3)は明記通り未着手のLevel1だった。gate_lesson_enforcement_level.shはenforcement文言全体からのテキスト解析(BLOCK等keyword)でLevel判定するため、複合エントリでは最良実装(Level4)が可視化されずLevel1判定に落ちる。reflux_promotion候補が複合的な内容を含む場合は個別懸念ごとに実装状況を分けて確認し、必要なら教訓エントリ自体の分割を家老に提起すべき
+
+### L1006: 複合lessonの単一Level昇格は未達要素を隠す
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_promotion_202607090537_hanzo
+- **記録者**: hanzo
+- **tags**: [infra,lesson]
+- **target_files**: [queue/reports/hanzo_report_cmd_reflux_promotion_202607090537_hanzo.yaml,queue/tasks/hanzo.yaml]
+- **origin**: [[cmd_reflux_promotion_202607090537_hanzo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- LK-A10は成果物確認、ACファイル名、context還流、DC重複チェックを1エントリに混在させていた。一次情報ではDC重複のみLevel4相当で、他3要素はLevel4未達。単一enforcement_levelを付与すると、Level4に合わせれば未達が隠れ、Level1に合わせれば実装済み防御が隠れる。複合lessonは要素分割して個別Levelを付けるべき。
