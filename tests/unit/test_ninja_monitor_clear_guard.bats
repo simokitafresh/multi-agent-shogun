@@ -1796,3 +1796,294 @@ echo "PASS: no false-positive preflight block"
     [[ "$output" == *"PASS: respawn allowed when task stays done"* ]]
     [[ "$output" == *"PASS: no false-positive preflight block"* ]]
 }
+
+# cmd_karo_hotfix_completion_notify_gap AC3: LGTM後grace超過+bulletin/shogun未通知→検知
+@test "completion_notify_gap: grace expired with no bulletin/shogun notification triggers detection" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@"
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+old_ts="$(date -d "-400 seconds" "+%Y-%m-%dT%H:%M:%S")"
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<INNEREOF
+messages:
+- content: "cmd_test_gap001 hayate報告レビュー。verdict: LGTM。4観点OK。"
+  from: gunshi
+  id: msg_test_gap001
+  read: true
+  timestamp: "$old_ts"
+  type: review_feedback
+INNEREOF
+cat > "$SCRIPT_DIR/queue/bulletin_board.yaml" <<INNEREOF
+entries: []
+INNEREOF
+cat > "$SCRIPT_DIR/queue/inbox/shogun.yaml" <<INNEREOF
+messages: []
+INNEREOF
+
+log() { echo "$1" >> "$LOG"; }
+
+check_karo_completion_notify_gap
+
+if grep -q "INBOX_CALLED:karo .*cmd_test_gap001.*completion_notify_gap" "$LOG"; then
+    echo "PASS: gap detected and notified"
+else
+    echo "FAIL: gap not detected"
+    cat "$LOG"
+    exit 1
+fi
+grep -q "KARO-COMPLETION-NOTIFY-GAP: LGTM received for cmd_test_gap001" "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: gap detected and notified"* ]]
+}
+
+# bulletin_board.yamlに完了通知済みなら重複検知しない
+@test "completion_notify_gap: bulletin notification present suppresses detection" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@"
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+old_ts="$(date -d "-400 seconds" "+%Y-%m-%dT%H:%M:%S")"
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<INNEREOF
+messages:
+- content: "cmd_test_gap002 hayate報告レビュー。verdict: LGTM。4観点OK。"
+  from: gunshi
+  id: msg_test_gap002
+  read: true
+  timestamp: "$old_ts"
+  type: review_feedback
+INNEREOF
+cat > "$SCRIPT_DIR/queue/bulletin_board.yaml" <<INNEREOF
+entries:
+- id: blt_test_gap002
+  content: "cmd_test_gap002完了報告: hayate PASS/LGTM。"
+  posted_by: karo
+  posted_at: "$(date "+%Y-%m-%dT%H:%M:%S")"
+INNEREOF
+cat > "$SCRIPT_DIR/queue/inbox/shogun.yaml" <<INNEREOF
+messages: []
+INNEREOF
+
+log() { echo "$1" >> "$LOG"; }
+
+check_karo_completion_notify_gap
+
+if grep -q "INBOX_CALLED" "$LOG"; then
+    echo "FAIL: notification suppressed by bulletin should not fire"
+    cat "$LOG"
+    exit 1
+else
+    echo "PASS: bulletin notification suppresses detection"
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: bulletin notification suppresses detection"* ]]
+}
+
+# shogun inboxに完了通知済みなら重複検知しない
+@test "completion_notify_gap: shogun inbox notification present suppresses detection" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@"
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+old_ts="$(date -d "-400 seconds" "+%Y-%m-%dT%H:%M:%S")"
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<INNEREOF
+messages:
+- content: "cmd_test_gap003 hayate報告レビュー。verdict: LGTM。4観点OK。"
+  from: gunshi
+  id: msg_test_gap003
+  read: true
+  timestamp: "$old_ts"
+  type: review_feedback
+INNEREOF
+cat > "$SCRIPT_DIR/queue/bulletin_board.yaml" <<INNEREOF
+entries: []
+INNEREOF
+cat > "$SCRIPT_DIR/queue/inbox/shogun.yaml" <<INNEREOF
+messages:
+- content: "GATE CLEAR — cmd_test_gap003 完了"
+  from: cmd_complete_gate
+  id: msg_gap003_shogun
+  read: false
+  timestamp: "$(date "+%Y-%m-%dT%H:%M:%S")"
+  type: gate_clear
+INNEREOF
+
+log() { echo "$1" >> "$LOG"; }
+
+check_karo_completion_notify_gap
+
+if grep -q "INBOX_CALLED" "$LOG"; then
+    echo "FAIL: notification suppressed by shogun inbox should not fire"
+    cat "$LOG"
+    exit 1
+else
+    echo "PASS: shogun inbox notification suppresses detection"
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: shogun inbox notification suppresses detection"* ]]
+}
+
+# grace期間内(猶予中)は検知しない
+@test "completion_notify_gap: within grace period does not trigger" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@"
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+recent_ts="$(date -d "-30 seconds" "+%Y-%m-%dT%H:%M:%S")"
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<INNEREOF
+messages:
+- content: "cmd_test_gap004 hayate報告レビュー。verdict: LGTM。4観点OK。"
+  from: gunshi
+  id: msg_test_gap004
+  read: true
+  timestamp: "$recent_ts"
+  type: review_feedback
+INNEREOF
+cat > "$SCRIPT_DIR/queue/bulletin_board.yaml" <<INNEREOF
+entries: []
+INNEREOF
+cat > "$SCRIPT_DIR/queue/inbox/shogun.yaml" <<INNEREOF
+messages: []
+INNEREOF
+
+log() { echo "$1" >> "$LOG"; }
+
+check_karo_completion_notify_gap
+
+if grep -q "INBOX_CALLED" "$LOG"; then
+    echo "FAIL: within-grace LGTM should not trigger yet"
+    cat "$LOG"
+    exit 1
+else
+    echo "PASS: grace period respected"
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: grace period respected"* ]]
+}
+
+# draft review(配備前レビュー)は対象外
+@test "completion_notify_gap: draft review is excluded from detection" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@"
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+old_ts="$(date -d "-400 seconds" "+%Y-%m-%dT%H:%M:%S")"
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<INNEREOF
+messages:
+- content: "cmd_test_gap005 draft review。verdict: APPROVE。6観点OK。hayate配備。"
+  from: gunshi
+  id: msg_test_gap005
+  read: true
+  timestamp: "$old_ts"
+  type: review_feedback
+INNEREOF
+cat > "$SCRIPT_DIR/queue/bulletin_board.yaml" <<INNEREOF
+entries: []
+INNEREOF
+cat > "$SCRIPT_DIR/queue/inbox/shogun.yaml" <<INNEREOF
+messages: []
+INNEREOF
+
+log() { echo "$1" >> "$LOG"; }
+
+check_karo_completion_notify_gap
+
+if grep -q "INBOX_CALLED" "$LOG"; then
+    echo "FAIL: draft review should be excluded"
+    cat "$LOG"
+    exit 1
+else
+    echo "PASS: draft review excluded"
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: draft review excluded"* ]]
+}

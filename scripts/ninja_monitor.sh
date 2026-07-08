@@ -1539,6 +1539,133 @@ notify_karo_throttled() {
     write_auto_commit_timestamp "$stamp_file"
 }
 
+# ─── 軍師LGTM後の将軍未通知検知 (cmd_karo_hotfix_completion_notify_gap) ───
+# 軍師のreview_feedback(完了報告レビュー、verdict:LGTM/APPROVE/PASS)はkaro inboxにのみ
+# 配信される。家老がbulletin_write.sh/cmd_complete_gate.shで将軍へ通知するかは家老の
+# 手動判断・実行タイミングに完全依存しており、これをトリガー/検知する仕組みが無かった。
+# cmd_3780実例(2026-07-08): LGTM 22:53:35受領→家老が23:05頃rgで確認するまでbulletin/
+# shogun inboxに完了通知ゼロ。殿の質問で家老が気づき手動投稿するまで自動通知は皆無だった。
+# draft review(配備前レビュー)は対象外。猶予時間内の正常な処理待ちは誤検知しない。
+check_karo_completion_notify_gap() {
+    local inbox_karo="$SCRIPT_DIR/queue/inbox/karo.yaml"
+    local bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
+    local inbox_shogun="$SCRIPT_DIR/queue/inbox/shogun.yaml"
+    local grace="${NINJA_MONITOR_LGTM_NOTIFY_GRACE:-300}"
+
+    [ -f "$inbox_karo" ] || return 0
+
+    local pending
+    pending=$(python3 - "$inbox_karo" "$bulletin_file" "$inbox_shogun" "$grace" "$EPOCHSECONDS" <<'PY'
+import datetime as dt
+import re
+import sys
+
+import yaml
+
+karo_inbox, bulletin_file, shogun_inbox, grace_s, now_s = sys.argv[1:6]
+grace = int(grace_s)
+now = int(now_s)
+
+
+def load_yaml(path):
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            return yaml.safe_load(fh) or {}
+    except Exception:
+        return {}
+
+
+def epoch(value):
+    if not value:
+        return None
+    text = str(value).strip()
+    try:
+        parsed = dt.datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt.datetime.now().astimezone().tzinfo)
+    return int(parsed.timestamp())
+
+
+def dedup_key(cmd_id):
+    m = re.match(r'^(cmd_karo_hotfix_ga\d+)(_.+)?$', cmd_id)
+    if m:
+        return m.group(1)
+    m = re.match(r'^(.+)_\d{12,14}$', cmd_id)
+    if m:
+        return m.group(1)
+    return cmd_id
+
+
+karo_data = load_yaml(karo_inbox)
+messages = karo_data.get("messages") if isinstance(karo_data, dict) else None
+if not isinstance(messages, list):
+    sys.exit(0)
+
+lgtm_events = []
+for msg in messages:
+    if not isinstance(msg, dict):
+        continue
+    if str(msg.get("type", "")) != "review_feedback":
+        continue
+    content = str(msg.get("content", ""))
+    if "draft review" in content:
+        continue
+    if "報告レビュー" not in content:
+        continue
+    if not re.search(r'verdict[:=]\s*(LGTM|APPROVE|PASS)', content):
+        continue
+    m = re.match(r'^(cmd_[A-Za-z0-9_]+)', content)
+    if not m:
+        continue
+    ts = epoch(msg.get("timestamp"))
+    if ts is None:
+        continue
+    lgtm_events.append((m.group(1), ts))
+
+if not lgtm_events:
+    sys.exit(0)
+
+notified_keys = set()
+bulletin_data = load_yaml(bulletin_file)
+bulletin_entries = bulletin_data.get("entries") if isinstance(bulletin_data, dict) else None
+for entry in (bulletin_entries or []):
+    if not isinstance(entry, dict):
+        continue
+    content = str(entry.get("content", ""))
+    m = re.match(r'^(cmd_[A-Za-z0-9_]+)', content)
+    if m:
+        notified_keys.add(dedup_key(m.group(1)))
+
+shogun_data = load_yaml(shogun_inbox)
+shogun_messages = shogun_data.get("messages") if isinstance(shogun_data, dict) else None
+for msg in (shogun_messages or []):
+    if not isinstance(msg, dict):
+        continue
+    content = str(msg.get("content", ""))
+    for m in re.finditer(r'(cmd_[A-Za-z0-9_]+)', content):
+        notified_keys.add(dedup_key(m.group(1)))
+
+for cmd_id, ts in lgtm_events:
+    if dedup_key(cmd_id) in notified_keys:
+        continue
+    if now - ts < grace:
+        continue
+    print(cmd_id)
+PY
+)
+
+    [ -z "$pending" ] && return 0
+
+    local cmd_id
+    while IFS= read -r cmd_id; do
+        [ -z "$cmd_id" ] && continue
+        log "KARO-COMPLETION-NOTIFY-GAP: LGTM received for ${cmd_id} but no bulletin/shogun notification within ${grace}s"
+        notify_karo_throttled completion_notify_gap "$cmd_id" "【自動検知】軍師LGTM(${cmd_id})受領後${grace}秒超過してもbulletin/将軍inboxに完了通知なし。cmd_complete_gate実行またはbulletin_write.shでの通知を確認せよ。"
+    done <<< "$pending"
+}
+
 report_file_has_verdict() {
     local name="$1"
     local report_file="$2"
@@ -6237,6 +6364,11 @@ while true; do
     # ═══ Pending cmd検知チェック（2分間隔） ═══
     if [ $((cycle % 6)) -eq 0 ]; then
         check_karo_pending
+    fi
+
+    # ═══ 軍師LGTM後の将軍未通知検知（2分間隔 cmd_karo_hotfix_completion_notify_gap） ═══
+    if [ $((cycle % 6)) -eq 0 ]; then
+        check_karo_completion_notify_gap
     fi
 
     # ═══ CI赤検知チェック（5分間隔 cmd_715） ═══
