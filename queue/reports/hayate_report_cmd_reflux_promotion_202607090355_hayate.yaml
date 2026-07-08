@@ -117,10 +117,13 @@ binary_checks:
     result: 'yes'
   commit:
   - check: git commitが完了したか(untracked/modified=0)
-    result: 'no'
+    result: 'yes'
 self_gate_check:
   lesson_ref: PASS
   lesson_candidate: PASS
   status_valid: PASS
   purpose_fit: PASS
-verdict: FAIL
+verdict: PASS
+commit_hash: 6b884dcf815bd8db12f1959aa9ce58ac9cc8d3e3
+autofix_applied:
+- verdict binary_checks導出→PASS

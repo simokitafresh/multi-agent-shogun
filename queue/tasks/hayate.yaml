@@ -31,7 +31,7 @@ task:
     total: 86
     zero_backlinks: 0
   scout_exempt: true
-  status: in_progress
+  status: done
   stop_for: []
   target_path: projects/infra/lessons_shogun.yaml
   task_id: cmd_reflux_promotion_202607090355_hayate_exact
@@ -123,3 +123,15 @@ task:
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
   deployed_at: "2026-07-09T03:55:13"
   acknowledged_at: "2026-07-09T03:55:41"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    tried_approaches:
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    approach_summary: 'LS078にenforcement_level: 4を明示し、gate_lesson_enforcement_levelの昇格在庫からLS078を除外。'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: 'LS078にenforcement_level: 4を明示し、gate_lesson_enforcement_levelの昇格在庫からLS078を除外。'
+  completed_at: "2026-07-09T03:59:21+09:00"
