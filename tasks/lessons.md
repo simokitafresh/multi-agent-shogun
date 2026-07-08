@@ -10496,3 +10496,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - scripts/ninja_monitor.sh L2677の_reflux_promotion_pending_pd_ids()内正規表現(?<![0-9A-Za-z-])LS-?[A-Za-z]?[0-9]+(?![0-9A-Za-z])は'LS'プレフィックスID(dm-signal lessons.yaml由来)のみ抽出し'LK'プレフィックスID(lessons_karo.yaml由来、例:LK-A14)を検出しない。このためkotaroがLK-A14を一次検証しPD-108(pending)へ整理した直後(commit 0442bc2fa,06:52)にも関わらず同一LK-A14が還流候補一覧から除外されずtobisaruへ重複配備された(07:08:26)。★根源: この関数はtobisaru自身が2026-07-08に commit 966def872(cmd_reflux_promotion_202607080727_tobisaru)でLS-A16の3連続重複dispatch(kotaro→saizo→tobisaru)を修正した際に導入したものだが、コメント含め最初から'LS-XX形式の教訓ID'限定で実装しLKプレフィックスへの横展開確認を行わなかった。tests/unit/test_ninja_monitor_reflux_promotion.batsも全ケースLS-A16/LS-A99のみでLK系テストが皆無であり、テスト設計時点でも横展開漏れが見逃された。これはLK-A14自体が警告する教訓(LG027横展開確認: grep修正前パターンで残存0件確認必須)の実例そのもの。修正案: 正規表現をL[SK]-?[A-Za-z]?[0-9]+へ拡張し(scripts/ninja_monitor.sh L2677)、LK-A16等LK系ケースのテストをtest_ninja_monitor_reflux_promotion.batsへ追加する。影響範囲は_reflux_promotion_pending_pd_ids単体で他機能への副作用なし。
+
+### L1011: reflux_promotion配備前は必ずpending_decisions.yamlを対象lesson IDで直接grep確認せよ(自動除外フィルタはLK-/LG-プレフィックスIDを検出できない既知バグがある)
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_promotion_202607090721_saizo
+- **記録者**: saizo
+- **tags**: [infra,bash,yaml,monitor]
+- **target_files**: [queue/tasks/saizo.yaml]
+- **origin**: [[cmd_reflux_promotion_202607090721_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_reflux_promotion_202607090644_kotaro(06:44)→202607090701_hayate(07:01)→202607090721_saizo(07:21、本タスク)の3件が同一LK-A14候補を17-20分間隔で重複配備された。原因はscripts/ninja_monitor.shの_reflux_promotion_pending_pd_ids()がpending PDのsummaryからID抽出する正規表現を'LS-?[A-Za-z]?[0-9]+'に限定しており、'LK-A14'のようなLK-/LG-プレフィックスのlesson IDには一切マッチしないため、PD-108がpendingで存在してもexclusion filterが機能しない(PD-109として起票、根本修正はninja_monitor.sh改修が必要でスコープ外)。恒久修正が入るまでの当面の対策として、reflux_promotion系タスクに着手する忍者は作業開始直後にgrep -n '<lesson_id>' queue/pending_decisions.yamlで既存pending PDの有無を必ず一次確認し、重複が判明した場合は同一PDを再作成せずdecision_candidateで既存PD IDを参照するに留めよ。
