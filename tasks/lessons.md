@@ -10352,3 +10352,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - GATE BLOCK分岐はcmd_quality_log.shを同期if文で呼びOK/WARNを判定するが、GATE CLEAR分岐は同じ呼出しを(...)&で非同期化し結果を確認していなかった。gate_metrics.logへのCLEAR記録は直前に同期書込みされるため、非同期ジョブだけが後続処理中(多数の並行&ジョブ+セッション境界)で失われても外部からは検知できず、gate_karo_startup.shのcross-check(gate_metrics.log vs cmd_design_quality.yaml)でのみ発覚する。監査対象のログ書込みはベストエフォート非同期ジョブと同列に扱わず、常に同期実行してOK/WARN判定すること。cmd_3773-3778の6件で実際に発生(2026-07-08 17:18-21:17の連続CLEARで顕在化)。origin: [[家老escalation_20260708_2358]] -> [[cmd_quality_log非同期呼出しのCLEAR/BLOCK非対称]] -> [[cmd_complete_gate.sh同期化修正+cmd_3773-3778遡及補完]]
+
+### L999: ninja毎に使い回すtask file(queue/tasks/{ninja}.yaml)は次cmd配備で上書きされるため、cmd完了時刻計測にはper-cmd不変マーカーを使え
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_insight_202607090217_saizo
+- **記録者**: saizo
+- **tags**: [infra,cmd-quality,frontend,deploy,gate]
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_reflux_insight_202607090217_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- build_clear_duration_metric()はqueue/tasks/{ninja}.yamlのacknowledged_at/deployed_at/done_at/completed_atを直接参照していたが、このファイルはninja単位で使い回され、reflux/hotfix系の高速タスク回転では次cmd配備によりGATE CLEAR判定前に上書きされ得る(deploy_task.shが新cmd配備時に4フィールドを空リセットする設計自体は意図的)。この結果、gate_metrics.logのduration_sec(gate_loop_health.shが中央値比較でCLEAR異常検知に使う一次指標)が恒常的にunknownになっていた。教訓: cmd単位の完了時刻を後から計測したい場合、ninja単位で使い回されるファイルのフィールドだけに依存せず、queue/dispatch_ntfy_started/{cmd_id}.started(deploy_task.shが既にcmd毎に1度だけ書く不変マーカー)や報告YAML自身のtimestamp(cmd毎に一意のファイル名)のようなper-cmd不変の情報源をフォールバックとして持つべき。同種の『使い回しファイル vs per-cmd不変ファイル』の混同は今後も別の指標計測で再発し得る
