@@ -334,7 +334,8 @@ v7吸収(2026-05-19):
   source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080, LK009b, LK013, LK014, LK015, LK001i, LK012i]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'ninja_monitor.sh各修正+inbox_watcher.sh各修正+cmd_complete_gate.sh lifecycle自動化'
+  enforcement_level: 4
+  enforcement: 'Level4(フロー内BLOCK/自動復旧): 一次情報再検証(2026-07-09, cmd_reflux_promotion_202607090631_kagemaru)。ninja_monitor.sh は safe_send_clear() で can_send_clear_with_report_gate() を必ず通し、task status=done だけでは /clear せず報告YAML存在+verdict+通知完了を確認する。欠落時は REPORT-MISSING-BLOCK と report_missing inbox_write で停止する(07d5f282, tests/unit/test_ninja_monitor_clear_guard.bats)。agent_state busy/idle判定は busy_pat を idle_pat より先に評価し、thinking+prompt同時表示の偽idleを防ぐ(3beefbd0, tests/unit/test_agent_state.bats)。ninja_monitor.sh の check_inbox_watcher_health() は inbox_watcher 死亡/スクリプト更新(stale)を検出して個別再起動し、restart_watchers実行中はdeferする。inbox_watcher.sh は singleton fd 209 を script_update へ明示し、自己再起動時に実fdを解放する(2ade4e4e/関連テスト: tests/unit/test_inbox_watcher_dedup.bats, tests/unit/test_inbox_watcher_health.bats)。restart_watchers/restart_all_daemons は nohup 子へ fd200 を継承しないよう 200>&- で遮断しflockリークを防ぐ(041eb2f23/63784b7d)。従来enforcement本文にLevel判定キーワードが無く gate_lesson_enforcement_level.sh がL1誤分類していたため、field優先ルールに合わせて enforcement_level を明示追加。'
 
   when: ninja_monitor/inbox_watcher関連のバグ修正時。infra修正レビュー時
   how: 各バグはenforcementで修正済み。新バグ発見時は同パターンの他箇所をgrep横展開
