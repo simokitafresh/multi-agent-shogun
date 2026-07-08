@@ -153,3 +153,18 @@ teardown() {
     [[ "$output" != *"$FAKE_PROJECT_DIR/$absolute_file"* ]]
     [[ "$output" != *"BLOCK:"* ]]
 }
+
+# T-008: INS-20260708-130637223-380c回帰テスト
+# 日本語文中の"/"区切り(「A(注記)/B(注記)」形式)が既存の相対パスに誤結合し、
+# 偽の絶対パス("/backend/app/services/engine.py")としてOS root直下を探索→誤って
+# missing parent判定されていた(cmd_save:check_ac_file_paths fp_rate=80%, INS-20260708-130637223-380c)
+@test "T-008: slash used as Japanese enumeration separator is not absorbed into an absolute path" {
+    local CMD_BLOCK="    acceptance_criteria:
+      - 'AC1: 対象はbackend/app/services/engine.pyの初期化(L10付近)/frontend/app/components/Chart.tsxの描画(L20付近)を修正'
+    project: test-proj"
+
+    run bash -c '"$1" "$2" 2>&1' _ "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"missing parent"* ]]
+    [[ "$output" != *"BLOCK:"* ]]
+}

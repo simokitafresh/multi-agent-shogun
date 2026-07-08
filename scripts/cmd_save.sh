@@ -4147,7 +4147,12 @@ check_ac_file_paths() {
         in_ac && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
         in_ac { print }
     ' || true)
-    PATHS=$(echo "$AC_BLOCK" | grep -oE '/?[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' | sort -u || true)
+    # cmd_reflux_insight_202607081318: 区切り文字"/"の絶対パス誤吸収防止(INS-20260708-130637223-380c)
+    # 日本語文中で"A(注記)/B(注記)"のように"/"を列挙区切りに使うと、直前の"/"が
+    # 次のパスの先頭に誤結合し「/scripts/foo.sh」のような偽の絶対パスを生成していた
+    # (path_exists_for_cmd_sourceがOS root直下を探索し実在ファイルを「不在」と誤判定)。
+    # 先頭"/"は空白/行頭直後にのみ許可し、区切り文字直後の吸収を止める
+    PATHS=$(echo "$AC_BLOCK" | grep -oP '(?<![^\s])/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)|[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' | sort -u || true)
     [[ -z "$PATHS" ]] && return 0
 
     # プロジェクトWDを取得: cmdブロックのproject → current_project → fallback
