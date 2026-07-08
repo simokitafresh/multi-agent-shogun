@@ -1,22 +1,162 @@
 task:
-  parent_cmd: cmd_reflux_promotion_202607080640_kotaro
-  task_id: cmd_reflux_promotion_202607080640_kotaro_exact
-  task_type: exact
-  project: infra
-  target_path: projects/infra/lessons_shogun.yaml
-  scout_exempt: true
-  status: idle
-  purpose: |-
-    還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_shogun.yaml] LS-A14 (L1:事後検出): 進行中計画は即永続化 — /clearは予告なく来る を確認し、Level4以上の実装・gate・task注入などへ昇格する
-  acceptance_criteria:
-    - id: AC1
-      checks:
-        - check: '昇格候補 [lessons_shogun.yaml] LS-A14 (L1:事後検出): 進行中計画は即永続化 — /clearは予告なく来る を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する'
-    - id: AC2
-      checks:
-        - check: '作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す'
+  _ac_task_id: cmd_3763_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3763 (deployed 2026-07-08T10:02:50). Read from the beginning.
+  acknowledged_at: "2026-07-08T01:04:14Z"
+  cmd_id: cmd_3763
+  completed_at: "2026-07-08T01:24:06Z"
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
+  deployed_at: "2026-07-08T10:03:10"
+  done_at: "2026-07-08T01:24:06Z"
+  engineering_preferences:
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
+  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
+  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
+  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
+  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
+  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
+  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
+  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
+  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
+  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
+  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok: []
+  parent_cmd: cmd_3763
+  project: dm-signal
+  purpose: GS再キャリブレーション計画v2.4のPhase A後半。cmd_3762の2基準チャンピオンを比較分析し、殿がpf_L1〜pf_L3の選出基準(旧/新)を裁定する材料を作る。設計書=docs/research/l0-3objective-newold-comparison-design.md v1.1のStep 3-4(比較4軸C1-C4)。指標空間では新基準優位が既に確定(cmd_3716)だが、本実験の追加情報は選出PF同士の実測月次リターン相関と合成FoF実測性能(指標相関と選出PF相関は別物、かつL750=同一ticker宇宙の最悪時相関1.0の構造限界を確認する)
   reflux_inventory_before:
     insights_pending: 1
-    zero_backlinks: 0
     promotions: 74
     total: 75
+    zero_backlinks: 0
+  scout_exempt: true
+  status: completed
+  stop_for: []
+  target_path: /mnt/c/Python_app/DM-signal
+  task_id: cmd_3763_full
+  task_type: full
+  related_lessons:
+  - id: 'L088'
+    summary: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
+    detail: 'lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)'
+  - id: 'L317'
+    summary: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
+    detail: '直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ'
+  - id: 'L434'
+    summary: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
+    detail: 'inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信'
+  - id: 'L311'
+    summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
+    wa_category: 'report_yaml_format'
+    wa_count: 5
+    detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  model_injection_profile:
+    model_label: "Sonnet 5 xhigh"
+    family: "sonnet"
+    injection_intensity: "max"
+    protocol: "T5弱LLM構造化プロトコル"
+    report_contract:
+    - "binary_checks全resultをyes/noで記入"
+    - "lessons_useful全reasonを具体記入"
+    - "files_modifiedはrepo相対path形式"
+    extra_scaffold:
+    - "ACごとに実テスト証跡をresult.detailsへ記録"
+    - "報告前にplaceholder残存確認とgate_report_formatを実行"
+  semantic_concepts:
+  - "gs_recalibration_plan — GS再キャリブレーション計画:  docs/research/gs-recalibration-plan.md docs/research/l0-3objective-newold-comparison-design.md docs/research/gs-speed-optimization-design.md"
+  - "gs_ninpo_research — GS忍法研究:  context/gs-speedup-knowledge.md context/gunshi-gs-speed-optimization-design.md context/gunshi-gs-landscape-analysis.md docs/research/gs-speedup-details.md docs/research/gs-results-by-ninjutsu.md docs/research/gunshi_nazenaze7_gs_speedup_20260414.md scripts/oneshot/wf_profile.py scripts/gates/gate_artifact_map.sh docs/research/gunshi_gs_sqlite_further_optimization_20260429.md — 軍師分析: GS SQLiteさらなる最適化(2026-04-29) backend/app/schemas/pipeline.py — BB全種定義(BlockType enum)+パラメータスキーマ(MomentumFilterConfig等)。確認: grep class.*Config pipeline.py backend/app/services/pipeline/blocks/ — BB実装ディレクトリ。各BB名.py。確認: ls backend/app/services/pipeline/blocks/ frontend/app/admin/fof/components/SelectionPipelineSection.tsx — FEバリデーション(min=/max=属性)。確認: grep min= max= SelectionPipelineSection.tsx /mnt/c/Python_app/DM-signal/scripts/check_pf_config.py — PF構成一括確認(cmd_3378)。確認: .venv/Scripts/python.exe scripts/check_pf_config.py PF名 docs/research/cmd_3377_bb_effect_analysis.md — BB単体効果+重ねがけ効果α6指標分析(cmd_3377) backend/app/services/pipeline/blocks/multi_view_momentum_filter.py — 既存四つ目実装。L73 SKIP_MONTHS_LIST=[0,1,2,3]固定。L207-208タイブレーク均等含む。L221 union(set)で重み消失 backend/app/services/pipeline/engine.py — L179-180 context.final_weights非空なら自動伝搬(改修不要) backend/app/services/pipeline/blocks/ward_two_stage_ew.py — L148 context.final_weights書込み前例"
+  - "dmsignal_operations — DM-Signal運用:  docs/research/cmd_3705_absolute_momentum_band_study.md — δバンド研究(24PF/6703判定・δ0.5%でバンド内6.70%・AC5はgatekeeper誤解の訂正注記あり)。DM-signal側: /mnt/c/Python_app/DM-signal/docs/research/cmd_3705_absolute_momentum_band_study.md context/dm-signal.md context/dm-signal-ops.md context/dm-signal-core.md context/dm-signal-frontend.md context/dm-signal-research.md context/checklist-shin-v2-registration.md context/checklist-alm-registration.md docs/research/ops-procedures.md docs/research/ops-db-rules.md docs/operations/daemon_runbook.md docs/operations/profiling_runbook.md /mnt/c/Python_app/DM-signal/scripts/check_pf_config.py — PF構成一括確認(cmd_3378)"
+  - "gs_speed_e7_l0_full_confirm — GS道具磨きE7 L0 full実測:  context/gs-speedup-knowledge.md docs/research/gunshi_gs_speed_design_l0_l3_20260706.md"
+  - "pf_remote_restore — 本番PF即時復元機構:  docs/research/pf-remote-restore-asis-tobe-5w1h_20260708.md"
+  related_causal_links:
+  - "[[cmd_3762選出データ]]"
+  - "[[cmd_3763_C1-C4比較+裁定材料]]"
+  - "[[殿指示20260708_0306_pf_L0新旧比較フロー]]"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/robustness-verification-catalog.md"
+  - "context/gs-speedup-knowledge.md"
+  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
+  - "context/training-cycle.md"
+  production_invariants:
+  - "PI-001: 時間解像度原理: 全ての日次シグナル比較では日次差異を保持し、月次dedupで潰さない"
+  - "PI-002: 信頼境界原理: 全ての本番判断ではSQLiteを真実とせず、PostgreSQLをSSOTとして再検証する"
+  - "PI-003: 構成スキーマ完全性原理: 全てのstandard PF config JSONはpipeline_configを必須とし、NoneでCashフォールバックさせない"
+  - "PI-004: 信頼境界原理: 全てのGS成果物は本番投入前にPydanticスキーマで再検証する"
+  - "PI-005: 全期間・全下流検証原理: 任意の新規PF登録後はportfolio_id指定なしfull recalculate一発で下流全体を再生成する"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L088: lesson_tags.yamlのdeployパターンに環境、lessonパターンに教訓等の汎用語が含まれ、ほぼ全タスクが多数タグにマッチ(最大15/22タグ)
+      - L317: 直近30cmdの分析で、useful:false理由の81.7%が該当場面なし。根因: deploy_task.shのlesson_tagsマッチが広すぎ狭スコ
+      - L434: inbox_writeのみで分析結果を送信→全てアーカイブ→次セッションでアクセス不可。CS4違反。対策: Idle Activities報告時にinbox送信
+      - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
+    ────────────────────────────────────────
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: '比較4軸を実測する — C1: 各基準チャンピオン(計24体、うち実差分は非CAGRモードの8体)の14指標比較(特に非CAGR体のCAGRパーセンタイル)。C2: 各基準の3体間の実測月次リターン相関(四神ごと+12体全体、最悪時相関含む)。C3: 各基準の3体合成FoF(四神ごと)の全期間バックテスト比較 — 合成方式は本番L1四神FoF(シン青龍等)の実configから読み取り同一方式で再現(等ウェイト仮定禁止、v1.1 H8)。C4: 新旧で選ばれたパラメータの距離と重複率'
+  - id: 'AC2'
+    checks:
+    - check: '裁定材料レポートをdocs/researchへ作成する — 全軸の結果表+旧新の優劣所見+L750構造限界(同一ticker宇宙)の該当状況を1文書にまとめ、将軍がgist共有できる形式にする。結論の押し付けはせず、判断材料と所見欄を分離する'
+  ac_version: 24b49881
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_3763.yaml
+  report_path: queue/reports/kotaro_report_cmd_3763.yaml
+  bloom_level: 
+  ninja_weak_points:
+    source: 'karo_workarounds.yaml'
+    total_workarounds: 6
+    top_pattern: 'report_yaml_format(5件)'
+    breakdown: 'report_yaml_format(5件), uncategorized(1件)'
+    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
+    gate_fail_top3:
+    - pattern: 'bc_result_empty'
+      count: 106
+    - pattern: 'field_missing'
+      count: 54
+    - pattern: 'verdict_invalid'
+      count: 35
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
+    gate_blocks:
+    - reason: 'report_format'
+      count: 14
+      hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
+    - reason: 'binary_checks_fail'
+      count: 8
+      hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+    - reason: 'empty_lessons_useful'
+      count: 1
+      hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+    - reason: 'lesson_candidate_missing'
+      count: 1
+      hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'cmd_3762出力(24体チャンピオン)を対象にC1(14指標比較)/C2(選出後PF月次リターン相関)/C3(3体合成FoF全期間バックテスト、本番FoF実config方式=EqualWeight+monthly再現)/C4(パラメータ距離+重複率)を実測し、裁定材料レポートをdocs/research/cmd_3763_l0_newold_champion_comparison.mdへ作成した'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'cmd_3762出力(24体チャンピオン)を対象にC1(14指標比較)/C2(選出後PF月次リターン相関)/C3(3体合成FoF全期間バックテスト、本番FoF実config方式=EqualWeight+monthly再現)/C4(パラメータ距離+重複率)を実測し、裁定材料レポートをdocs/research/cmd_3763_l0_newold_champion_comparison.mdへ作成した'
