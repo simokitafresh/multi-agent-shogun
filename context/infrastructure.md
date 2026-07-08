@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-08 cmd_3744 -->
+<!-- last_updated: 2026-07-08 cmd_karo_hotfix_completion_notify_gap_202607082310 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -37,6 +37,7 @@
 引用有効性回収M4: `scripts/loop_ledger_update.sh`のmemoryチャネルは`memory_references.useful`を集計し、`reflux_targets`で無関係引用のsource別還流候補を出力する（cmd_3740, evaluated=8/useful=1/rate=12.5%/reflux_targets=2実測）。
 可搬想起M6: `scripts/portable_loop_bootstrap.sh`は`recall_inject.sh`を生成し、hookなしCLIでもイベント文脈からsemantic/memory一致を注入テキスト化できる（cmd_3741, bats 4/4 PASS）。
 報告WA構造根絶(PD-056): report_yaml_format系WAの防御突破点3系統を偵察特定(cmd_3749)し、記入層=`deploy_task.sh`/`report_field_set.sh`へ既存依存宣言の記入導線+型検証(cmd_3750)、監視層=`ninja_monitor.sh`へactive+idle滞留のdone前報告評価+報告修正/未commit再通知(cmd_3751, ACTIVE-IDLE-REPORT-EVAL)を実装。家老手動補正へ流れる経路を構造で回収（2026-07-08全CLEAR）。
+完了通知gap検出: `ninja_monitor.sh` に `completion_notify_gap` を追加。軍師LGTM後、grace300sを超えても将軍向けbulletin/shogun inbox/cmd_complete_gate CLEARが無い場合に家老へ通知する。cmd_3780でLGTM 22:53:35→手動bulletin 23:05:58まで12分自動通知ゼロだった穴を封じ、実データで景丸hotfix未達1件を検出・補完（cmd_karo_hotfix_completion_notify_gap_202607082310, tests 38/38 PASS, commit 2734ed518）。
 三層連鎖自己修復: `scripts/memory_db_knowledge_write.sh`はLayer2全失敗時に最終エラー要点+payload_b64をERROR行へ記録し、次回write時に未解決ERRORを自動repairしてOK行を追記する（cmd_3742, bats 15/15 PASS）。
 
 ### 三層記憶×学習ループ接続（cmd_3116〜cmd_3128, 2026-06-02）

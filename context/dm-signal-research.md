@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-08 cmd_karo_hotfix_ga200_context_freshness_202607081121 -->
+<!-- last_updated: 2026-07-08 cmd_3780 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -654,6 +654,13 @@ GA-181分類メモ(source commits since last_updated=2026-07-03の3件): 上記4
 - cmd_3767: 本番active 102PFの構成からpf_L0採用を逆算。12体すべて上位PFに採用済みで、未採用二値ではなく採用頻度をpriorにする。unique parent上位は白虎-鉄壁61、青龍-激攻60、玄武-激攻59、青龍-鉄壁57。朱雀-鉄壁だけ6件で外れ値。
 - 次段仮説: 青龍/玄武の高採用部品と白虎鉄壁を核にし、朱雀鉄壁を除外または別役割にする。構成採用と月次holding実選択頻度は未分離。
 → 詳細: `docs/research/cmd_3767_pf_l0_adoption_reverse_features.md`, `docs/research/cmd_3767_pf_l0_adoption_summary.csv`, `outputs/analysis/cmd_3763_c1_c4_results.json`
+
+## §51. 新L0-L3チャンピオン群 α6堅牢性検証 (cmd_3780, 2026-07-08)
+
+工程2で選出した新チャンピオン75体(L0=12, L1=21, L2=21, L3=21)について、4視点(IS/OOS/Expanding/WF)+レジーム3種(Bull/Neutral/Bear)×α6(CAGR/NHF/MaxDD/MRU/Calmar/AvgUWP)を全量算出。出力は75×7×6=3,150 metric rows、coverage 525 rows、nonfinite 0。代表4層smokeでCAGR/NHF/MaxDD差分は全て1e-9以内。工程4入替の殿裁定材料。
+
+計画書正本は本陣 `docs/research/plan_alpha6_band_champions_verification_20260708.md`。DM-Signal側に同名ファイルはない。
+→ 詳細: `docs/research/cmd_3780_alpha6_band_champions_robustness.md`, `outputs/analysis/cmd_3780_alpha6_band_champions_input_contract.json`, `outputs/analysis/cmd_3780_alpha6_band_champions_robustness.json`, `outputs/analysis/cmd_3780_alpha6_band_champions_coverage.csv`
 
 ---
 
