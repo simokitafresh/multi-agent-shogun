@@ -88,6 +88,9 @@ BUSY_TIMEOUT_SEC="${BUSY_TIMEOUT_SEC:-30}"  # @last_active based timeout (AC1: i
 HANG_DETECT_SEC="${HANG_DETECT_SEC:-300}"  # seconds before daemon_watchdog.sh considers this watcher hung
 LOOP_HEARTBEAT_FILE="${STATE_DIR}/inbox_watcher_loop_hb_${AGENT_ID}"
 DELIVERY_LATENCY_WARN_SEC="${DELIVERY_LATENCY_WARN_SEC:-60}"  # cmd_3646: 殿指摘の長い尾(上位1割>60s)を可視化するしきい値
+HIGH_PRIORITY_NUDGE_DEADLINE_SEC="${HIGH_PRIORITY_NUDGE_DEADLINE_SEC:-60}"
+NORMAL_PRIORITY_NUDGE_DEADLINE_SEC="${NORMAL_PRIORITY_NUDGE_DEADLINE_SEC:-120}"
+LOW_PRIORITY_NUDGE_DEADLINE_SEC="${LOW_PRIORITY_NUDGE_DEADLINE_SEC:-600}"
 
 # Self-restart on script change (cmd_100)
 SCRIPT_PATH="$_iw_self"  # reuse already-resolved path (avoids realpath subprocess)
@@ -149,7 +152,7 @@ if [ "${INBOX_WATCHER_LIB_ONLY:-0}" != "1" ] && ! command -v inotifywait &>/dev/
 fi
 
 # ─── Extract unread message info (lock-free read) ───
-# Returns TAB-separated: count \t has_specials \t fingerprint \t specials_tsv \t has_task_assigned
+# Returns TAB-separated: count \t has_specials \t fingerprint \t specials_tsv \t has_task_assigned \t priority
 # specials_tsv: newline-separated "id\ttype\tbase64_content" lines (base64-encoded as whole)
 # inbox_write.sh emits a constrained YAML shape, so use a lightweight line parser
 # instead of PyYAML full-load on every watch cycle.
@@ -178,7 +181,7 @@ get_unread_info() {
     # watcher cycle; fall back to the parser below when special CLI commands
     # may need multiline/base64 handling.
     if ! grep -qE 'type:[[:space:]]*['"'"'"]?(clear_command|model_switch)['"'"'"]?' "$INBOX" 2>/dev/null; then
-        local fast_info fast_count fast_has_task fast_ids fast_fp
+        local fast_info fast_count fast_has_task fast_ids fast_fp fast_priority
         fast_info=$(awk '
 function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
 function unquote(s) {
@@ -203,8 +206,11 @@ function flush_message(    mid) {
     count++
     ids[count] = mid
     if (msg["type"] == "task_assigned") has_task = "true"
+    if (msg["type"] ~ /^(task_assigned|task_supplement|report_review|verify_request|cmd_new|escalation|recovery)$/) high_count++
+    else if (msg["type"] ~ /^(gate_clear|info|heartbeat|status_update)$/) low_count++
+    else normal_count++
 }
-BEGIN { count = 0; has_task = "false"; in_msg = 0 }
+BEGIN { count = 0; high_count = 0; normal_count = 0; low_count = 0; has_task = "false"; in_msg = 0 }
 /^- / {
     if (in_msg) flush_message()
     delete msg
@@ -218,7 +224,7 @@ in_msg && /^  [A-Za-z0-9_.-]+:/ {
 END {
     if (in_msg) flush_message()
     if (count == 0) {
-        print "0\tfalse\t-"
+        print "0\tfalse\t-\tnone"
         exit
     }
     for (i = 1; i <= count; i++) {
@@ -230,18 +236,22 @@ END {
     }
     fp_ids = ids[1]
     for (i = 2; i <= count; i++) fp_ids = fp_ids "," ids[i]
-    print count "\t" has_task "\t" fp_ids
+    priority = "normal"
+    if (high_count > 0) priority = "high"
+    else if (low_count == count) priority = "low"
+    print count "\t" has_task "\t" fp_ids "\t" priority
 }
 ' "$INBOX")
-        IFS=$'\t' read -r fast_count fast_has_task fast_ids <<< "$fast_info"
+        IFS=$'\t' read -r fast_count fast_has_task fast_ids fast_priority <<< "$fast_info"
         fast_count="${fast_count:-0}"
         fast_has_task="${fast_has_task:-false}"
         fast_ids="${fast_ids:--}"
+        fast_priority="${fast_priority:-normal}"
         if [ "$fast_count" -gt 0 ] 2>/dev/null; then
             fast_fp="$(fingerprint_unread_ids "$fast_ids")"
-            printf '%s\tfalse\t%s\t-\t%s\n' "$fast_count" "$fast_fp" "$fast_has_task"
+            printf '%s\tfalse\t%s\t-\t%s\t%s\n' "$fast_count" "$fast_fp" "$fast_has_task" "$fast_priority"
         else
-            printf '0\tfalse\t-\t-\tfalse\n'
+            printf '0\tfalse\t-\t-\tfalse\tnone\n'
         fi
         return
     fi
@@ -269,6 +279,7 @@ def decode_scalar(value):
 try:
     inbox_path = os.environ['INBOX_PATH']
     normal_ids = []
+    normal_types = []
     specials = []
     task_nudge_ids = []
     current = None
@@ -288,7 +299,9 @@ try:
             specials.append(current)
         else:
             normal_ids.append(current.get('id', ''))
-            if current.get('type', '') in TASK_NUDGE_TYPES:
+            msg_type = current.get('type', '')
+            normal_types.append(msg_type)
+            if msg_type in TASK_NUDGE_TYPES:
                 task_nudge_ids.append(current.get('id', ''))
 
     def assign_field(target, key, raw_value):
@@ -328,7 +341,7 @@ try:
     flush_message()
 
     if not normal_ids and not specials:
-        print('0\tfalse\t-\t-\tfalse')
+        print('0\tfalse\t-\t-\tfalse\tnone')
         sys.exit(0)
 
     normal_count = len(normal_ids)
@@ -342,10 +355,37 @@ try:
             lines.append(f\"{s.get('id', '')}\t{s.get('type', '')}\t{content_b64}\")
         specials_tsv = base64.b64encode('\n'.join(lines).encode('utf-8')).decode('ascii')
     has_task_assigned = 'true' if task_nudge_ids else 'false'
-    print(f\"{normal_count}\t{'true' if specials else 'false'}\t{normal_fp}\t{specials_tsv}\t{has_task_assigned}\")
+    high_types = {'task_assigned', 'task_supplement', 'report_review', 'verify_request', 'cmd_new', 'escalation', 'recovery'}
+    low_types = {'gate_clear', 'info', 'heartbeat', 'status_update'}
+    priority = 'normal'
+    if any(t in high_types for t in normal_types):
+        priority = 'high'
+    elif normal_types and all(t in low_types for t in normal_types):
+        priority = 'low'
+    print(f\"{normal_count}\t{'true' if specials else 'false'}\t{normal_fp}\t{specials_tsv}\t{has_task_assigned}\t{priority}\")
 except Exception:
-    print('0\tfalse\t-\t-\tfalse')
+    print('0\tfalse\t-\t-\tfalse\tnone')
 " 2>/dev/null
+}
+
+priority_deadline_sec() {
+    local priority="${1:-normal}"
+    local deadline
+    case "$priority" in
+        high) deadline="$HIGH_PRIORITY_NUDGE_DEADLINE_SEC" ;;
+        low) deadline="$LOW_PRIORITY_NUDGE_DEADLINE_SEC" ;;
+        *) deadline="$NORMAL_PRIORITY_NUDGE_DEADLINE_SEC" ;;
+    esac
+    [[ "$deadline" =~ ^[0-9]+$ ]] || deadline="$NORMAL_PRIORITY_NUDGE_DEADLINE_SEC"
+    printf '%s\n' "$deadline"
+}
+
+priority_deadline_reached() {
+    local priority="${1:-normal}"
+    local unread_age="${2:-0}"
+    local deadline
+    deadline=$(priority_deadline_sec "$priority")
+    [ "$unread_age" -ge "$deadline" ] 2>/dev/null
 }
 
 # ─── Mark one special message as read (flock + atomic write) ───
@@ -595,6 +635,7 @@ send_wakeup() {
     local unread_count="$1"
     local has_task_assigned="${2:-false}"
     local current_fp="${3:-}"
+    local priority="${4:-normal}"
     ensure_current_pane_target || return 1
     if [ "${ASW_DISABLE_ESCALATION:-0}" = "1" ]; then
         echo "[$(date)] [SKIP] Escalation disabled for $AGENT_ID (nudge: inbox${unread_count})" >&2
@@ -676,6 +717,13 @@ send_wakeup() {
                     echo "[$(date)] [BUSY] Agent $AGENT_ID is active+busy, deferring nudge (age=${fp_age}s/unread=${unread_age}s < ${busy_max_defer}s)" >&2
                     return 2
                 fi
+                if [ "$unread_age" -lt "$busy_max_defer" ] || ! priority_deadline_reached "$priority" "$unread_age"; then
+                    local priority_deadline
+                    priority_deadline=$(priority_deadline_sec "$priority")
+                    echo "[$(date)] [BUSY] Agent $AGENT_ID is active+busy, deferring ${priority} nudge (unread=${unread_age}s < deadline=${priority_deadline}s)" >&2
+                    return 2
+                fi
+                echo "[$(date)] [PRIORITY-DEADLINE] Agent $AGENT_ID ${priority} unread ${unread_age}s reached deadline, allowing nudge despite busy state" >&2
                 echo "[$(date)] [BUSY-FORCE] Agent $AGENT_ID active+busy for fp=${fp_age}s unread=${unread_age}s, forcing nudge" >&2
             elif [ "$busy_rc" -eq 2 ]; then
                 local unread_age
@@ -684,6 +732,13 @@ send_wakeup() {
                     echo "[$(date)] [BUSY-UNKNOWN] Agent $AGENT_ID active with unknown pane state, deferring nudge (age=${fp_age}s/unread=${unread_age}s < ${busy_max_defer}s)" >&2
                     return 2
                 fi
+                if [ "$unread_age" -lt "$busy_max_defer" ] || ! priority_deadline_reached "$priority" "$unread_age"; then
+                    local priority_deadline
+                    priority_deadline=$(priority_deadline_sec "$priority")
+                    echo "[$(date)] [BUSY-UNKNOWN] Agent $AGENT_ID active with unknown pane state, deferring ${priority} nudge (unread=${unread_age}s < deadline=${priority_deadline}s)" >&2
+                    return 2
+                fi
+                echo "[$(date)] [PRIORITY-DEADLINE] Agent $AGENT_ID ${priority} unread ${unread_age}s reached deadline, allowing nudge despite unknown busy state" >&2
                 echo "[$(date)] [BUSY-UNKNOWN-FORCE] Agent $AGENT_ID active with unknown pane state for fp=${fp_age}s unread=${unread_age}s, forcing nudge" >&2
             fi
         fi
@@ -707,8 +762,13 @@ send_wakeup() {
                 IFS= read -r _last < "$DEBOUNCE_FILE" 2>/dev/null || true
                 if [[ "$_last" =~ ^[0-9]+$ ]]; then
                     _elapsed=$((_now - _last))
-                    if [ "$_elapsed" -lt "$DEBOUNCE_SEC" ]; then
+                    _unread_age=$(get_first_unread_age)
+                    if [ "$_elapsed" -lt "$DEBOUNCE_SEC" ] && ! priority_deadline_reached "$priority" "$_unread_age"; then
                         printf 'skip\t[DEBOUNCE] Skipping nudge (%ss < %ss) for %s\n' "$_elapsed" "$DEBOUNCE_SEC" "$AGENT_ID" > "$atomic_result_file"
+                        exit 0
+                    fi
+                    if [ "$_elapsed" -lt "$DEBOUNCE_SEC" ]; then
+                        printf 'send\t[PRIORITY-DEADLINE] %s unread age %ss reached deadline during debounce for %s\n' "$priority" "$_unread_age" "$AGENT_ID" > "$atomic_result_file"
                         exit 0
                     fi
                 fi
@@ -735,6 +795,14 @@ send_wakeup() {
                 touch "$FINGERPRINT_FILE"
                 printf '%s' "$_now" > "$DEBOUNCE_FILE"
                 printf 'send\t[BACKOFF] Stale unread for %ss >= %ss, re-notifying %s\n' "$_fp_age" "$BACKOFF_SEC" "$AGENT_ID" > "$atomic_result_file"
+                exit 0
+            fi
+
+            _unread_age=$(get_first_unread_age)
+            if priority_deadline_reached "$priority" "$_unread_age"; then
+                touch "$FINGERPRINT_FILE"
+                printf '%s' "$_now" > "$DEBOUNCE_FILE"
+                printf 'send\t[PRIORITY-DEADLINE] %s unread age %ss reached deadline for %s\n' "$priority" "$_unread_age" "$AGENT_ID" > "$atomic_result_file"
                 exit 0
             fi
 
@@ -843,14 +911,15 @@ send_wakeup() {
 
 # ─── Process cycle ───
 process_unread() {
-    # Single python3 call: TAB-separated "count \t has_specials \t fingerprint \t specials_b64 \t has_task_assigned"
+    # Single parser call: TAB-separated "count \t has_specials \t fingerprint \t specials_b64 \t has_task_assigned \t priority"
     local raw_info
     raw_info=$(get_unread_info)
-    local normal_count has_specials _current_fp specials_b64 has_task_assigned
-    IFS=$'\t' read -r normal_count has_specials _current_fp specials_b64 has_task_assigned <<< "$raw_info"
+    local normal_count has_specials _current_fp specials_b64 has_task_assigned priority
+    IFS=$'\t' read -r normal_count has_specials _current_fp specials_b64 has_task_assigned priority <<< "$raw_info"
     normal_count="${normal_count:-0}"
     has_specials="${has_specials:-false}"
     has_task_assigned="${has_task_assigned:-false}"
+    priority="${priority:-normal}"
 
     if [ "$normal_count" -gt 0 ] 2>/dev/null || [ "$has_specials" = "true" ]; then
         mark_first_unread_seen
@@ -937,7 +1006,7 @@ process_unread() {
     # Send wake-up nudge for normal messages (fingerprint dedup)
     if [ "$normal_count" -gt 0 ] 2>/dev/null; then
         local wake_rc=0
-        send_wakeup "$normal_count" "$has_task_assigned" "$_current_fp" || wake_rc=$?
+        send_wakeup "$normal_count" "$has_task_assigned" "$_current_fp" "$priority" || wake_rc=$?
         if [ "$wake_rc" -eq 2 ]; then
             echo "[$(date)] [WAKE-DEFER] Deferred nudge for $AGENT_ID (busy gating)" >&2
         fi
