@@ -566,7 +566,8 @@ lessons:
   source_ids_absorbed: [LS052, LS065, LS066, LS073]
   created_at: '2026-06-09'
   automated: true
-  enforcement: 'type=hook; file=scripts/hooks/prompt_state_inject.sh+stop_check_inbox.sh; pattern=因果+detect_f009'
+  enforcement_level: 5
+  enforcement: 'Level5: type=hook; file=scripts/hooks/prompt_state_inject.sh+stop_check_inbox.sh; pattern=因果+detect_f009。一次情報再検証(2026-07-09): stop_check_inbox.shはF009殿操作依頼をdecision=blockで停止し、Q6洗脳検出時にstate flagを作る。prompt_state_inject.shは通常時に将軍へ洗脳自問を事前注入し、Q6 flag検出時は8パターン全文+gate_fire_log/detector台帳記録へ接続する。検出→環境強制→実戦検証→バグ修正のLS048サイクルはcmd_3251/cmd_3252/cmd_3409/cmd_3522/cmd_3782でhook+testsへ実装済み。分類器のテキストヒューリスティックではL1誤判定になるため、構造化enforcement_levelを明示する。'
 # LS050: superseded by LS-A18 (GATE CLEAR≠効果保証=計測なき改善は不能の拡張。2026-06-09統合)
 # LS049: superseded by LS-A04(32) (初回起票3点デフォルト=テンプレートルール。2026-06-11統合)
 # LS050: superseded by LS051 (Check17日付リテラルFPはcmd_save.shコード修正で根治済み。2026-06-11物理削除)
