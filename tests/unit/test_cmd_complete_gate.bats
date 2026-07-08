@@ -1457,6 +1457,19 @@ for marker in [
 PY
 }
 
+@test "cmd_complete_gate honors GATE_METRICS_LOG override for no-task benchmark fast path" {
+    local isolated_metrics="$TEST_TMPDIR/isolated/gate_metrics.log"
+    mkdir -p "$(dirname "$isolated_metrics")"
+    : > "$TEST_PROJECT/logs/gate_metrics.log"
+
+    run env GATE_METRICS_LOG="$isolated_metrics" bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" cmd_nonexistent_benchmark
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"No-task benchmark fast path"* ]]
+    grep -Fq $'\tcmd_nonexistent_benchmark\tCLEAR\tno_task_benchmark_fast_path\t' "$isolated_metrics"
+    ! grep -Fq "cmd_nonexistent_benchmark" "$TEST_PROJECT/logs/gate_metrics.log"
+}
+
 @test "update_karo_workaround_resolutions fills unresolved matching categories only" {
     export GATE_METRICS_LOG="$TEST_PROJECT/logs/gate_metrics.log"
     export KARO_WORKAROUNDS_FILE="$TEST_PROJECT/logs/karo_workarounds.yaml"

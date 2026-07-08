@@ -36,7 +36,7 @@ done
 # ─── CLEAR済みcmd早期exit（lib source前、GP-026 B案: cmd_1332） ───
 # WSL2最適化: source/mkdir/flock前にCLEARチェック。CLEARED cmdsのlib読込コスト削減
 LOG_DIR="$SCRIPT_DIR/logs"
-GATE_METRICS_LOG="$LOG_DIR/gate_metrics.log"
+GATE_METRICS_LOG="${GATE_METRICS_LOG:-$LOG_DIR/gate_metrics.log}"
 if [ "$FORCE_MODE" = false ] && [ -f "$GATE_METRICS_LOG" ]; then
     if grep -Fq $'\t'"${CMD_ID}"$'\tCLEAR\t' "$GATE_METRICS_LOG"; then
         echo "[gate] ${CMD_ID}: Already CLEARED (gate_metrics.logにCLEAR記録あり。--forceで再検査可能)"
