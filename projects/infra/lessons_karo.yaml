@@ -148,7 +148,8 @@ lessons:
   source_ids: [LK014, LK015, LK016, LK026, LK027, LK033, LK034, LK007b, LK002i, LK003i, LK011i]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'context/training-cycle.md+deploy_task.sh テンプレート自動生成+gate_fire_log計測'
+  enforcement_level: 4
+  enforcement: '一次情報再検証(2026-07-09, scripts/deploy_task.sh実読): 点3(忍者別cmd_idで配備/重複ガード回避)=deploy_task_main() L9207-9220が同一parent_cmdへの二重配備をstatus assigned/acknowledged/in_progress検知でBLOCKしtask YAMLをidleへロールバック、return 1でフロー停止(フロー内BLOCK=L4相当)。should_skip_same_cmd_resolve() L8313-8348のSKIP duplicate same-cmd deploy判定(既存task YAML再利用)と合わせ実装済みと確認。点1(テンプレート設計ヘッダ+フッター挟撃)=deploy_task.sh L6084/6476/6485の【注入教訓】マーカー区切りパターンでrelated_lessons/ninja_weak_pointsをdescriptionへ自動注入=L3相当(テンプレート自動生成、確認済み)。限界: (a)点2後半(BLOCK消し≠改善)を防ぐ構造ガード=gate定義弱体化そのものを検知する仕組みは未実装。detector_fp_rate.sh/gate_fire_logは事後計測のみでgate定義変更自体はBLOCKしない(grep確認済み)。(b)v3統合吸収のCoDD修行AC設計(5AC/timeout1200/test_select PASS確認)はcontext/training-cycle.md記載のみ(L2)で、cmd_save.sh等にAC件数・timeout値・test PASS確認を検証する自動チェックは不在(scripts/deploy_training.sh/training_task_generator.sh/cmd_save.sh全grep確認済み)。(c)点4(修行と実バグ修正の一体化)・点5(pane直接観察→gate_fire_logでは見えない摩擦の発見)は新規摩擦の発見という性質上、既存パターンへの構造化が本質的に遅れる家老の実践知であり、現時点で自動化ターゲットとして定義困難。(a)(b)の恒久化・自動チェック実装要否はdecision_candidateへ整理(cmd_reflux_promotion_202607090443_kotaro、実装は別cmdで判断)。'
 
 # === 消火禁止 ===
   when: 修行サイクル設計・配備時。idle忍者への訓練配備時
