@@ -738,6 +738,61 @@ MOCK
     [[ "$output" != *"STALL疑い"* ]]
 }
 
+@test "failed task with completed report past threshold → ALERT 乖離検知" {
+    mkdir -p "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/tasks/hanzo.yaml" <<'YAML'
+task:
+  status: failed
+  report_path: queue/reports/hanzo_report_cmd_test.yaml
+YAML
+    cat > "$TEST_TMPDIR/queue/reports/hanzo_report_cmd_test.yaml" <<'EOF'
+status: completed
+verdict: PASS
+EOF
+    touch -d "25 minutes ago" "$TEST_TMPDIR/queue/tasks/hanzo.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ failed×report completed 乖離検知"* ]]
+    [[ "$output" == *"ALERT: hanzo task=failed report=completed 乖離"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
+@test "failed task with completed report within threshold → no 乖離ALERT" {
+    mkdir -p "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/tasks/hanzo.yaml" <<'YAML'
+task:
+  status: failed
+  report_path: queue/reports/hanzo_report_cmd_test.yaml
+YAML
+    cat > "$TEST_TMPDIR/queue/reports/hanzo_report_cmd_test.yaml" <<'EOF'
+status: completed
+verdict: PASS
+EOF
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: failed×report completedの乖離なし"* ]]
+    [[ "$output" != *"failed×report completed乖離"* ]]
+}
+
+@test "failed task with non-completed report → no 乖離ALERT (通常の失敗)" {
+    mkdir -p "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/tasks/hanzo.yaml" <<'YAML'
+task:
+  status: failed
+  report_path: queue/reports/hanzo_report_cmd_test.yaml
+YAML
+    cat > "$TEST_TMPDIR/queue/reports/hanzo_report_cmd_test.yaml" <<'EOF'
+status: in_progress
+EOF
+    touch -d "25 minutes ago" "$TEST_TMPDIR/queue/tasks/hanzo.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: failed×report completedの乖離なし"* ]]
+}
+
 # === Test 10: workarounds傾向表示(workaroundあり) ===
 @test "workarounds present → shows category and count" {
     cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'

@@ -2156,6 +2156,41 @@ else
 fi
 echo ""
 
+# --- Check 9.3: task status=failed × report status=completed 乖離検知 (INS-20260708-165744270-6a1d) ---
+# cmd_3771/3772がtask status=failed+報告YAML status=completedの乖離状態で約75分滞留した事故の再発防止
+echo "■ failed×report completed 乖離検知"
+_FRM_THRESHOLD_MIN="${KARO_FAILED_REPORT_MISMATCH_MIN:-20}"
+_frm_now=$(date +%s)
+_frm_count=0
+for ninja in $_KARO_NINJA_NAMES; do
+    _frm_task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
+    [ -f "$_frm_task_file" ] || continue
+    _frm_task_status=${_NINJA_STATUS_CACHE[$ninja]:-}
+    if [ -z "$_frm_task_status" ]; then
+        _frm_task_status=$(awk '/^[[:space:]]*status:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"'[:space:]]/,"",v); print v; exit }' "$_frm_task_file" 2>/dev/null)
+    fi
+    [ "$_frm_task_status" = "failed" ] || continue
+    _frm_report_rel=$(awk '/^[[:space:]]*report_path:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"']/,"",v); gsub(/^[[:space:]]+|[[:space:]]+$/,"",v); print v; exit }' "$_frm_task_file" 2>/dev/null)
+    [ -n "$_frm_report_rel" ] || continue
+    _frm_report_full="$SCRIPT_DIR/$_frm_report_rel"
+    [ -f "$_frm_report_full" ] || continue
+    _frm_report_status=$(awk '/^status:/ { print $2; exit }' "$_frm_report_full" 2>/dev/null)
+    [ "$_frm_report_status" = "completed" ] || continue
+    _frm_mtime=$(stat -c %Y "$_frm_task_file" 2>/dev/null || echo 0)
+    [ "$_frm_mtime" -gt 0 ] || continue
+    _frm_age_min=$(( (_frm_now - _frm_mtime) / 60 ))
+    if [ "$_frm_age_min" -ge "$_FRM_THRESHOLD_MIN" ]; then
+        echo "  ALERT: ${ninja} task=failed report=completed 乖離${_frm_age_min}分継続(report=${_frm_report_rel}) → 再ゲート要検討"
+        _frm_count=$((_frm_count + 1))
+        overall="ALERT"
+        alerts+=("${ninja}: failed×report completed乖離${_frm_age_min}分(要再ゲート)")
+    fi
+done
+if [ "$_frm_count" -eq 0 ]; then
+    echo "  OK: failed×report completedの乖離なし"
+fi
+echo ""
+
 # tmpファイル削除
 rm -f "$_WA_RATE_TMP" "$_WA_RATE_ERR_TMP" "$_NINJA_WA_TMP" "$_WA_DQ_TMP" \
     "$_aggregate_tmp"
