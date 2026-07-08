@@ -10460,3 +10460,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - 2点の教訓。(A)二重配備: 本タスク(cmd_reflux_promotion_202607090544_kotaro、05:44配備)はcmd_reflux_promotion_202607090537_hanzo(05:40完了、7分前)と全く同一の昇格候補[lessons_karo.yaml]LK-A10を対象としていた。hanzoは既に独立に同じ4項目分解・decision_candidate整理という結論に到達済みだったが、その報告がまだ家老に処理(GATE/lessons_karo.yaml反映)される前に、還流在庫スキャンが同一candidateを再度ピックアップし別忍者へ配備した。L581(saizo+hanzo二重配備)と同型の構造的問題であり、reflux_promotion配備ロジックは直近completed(未処理)の報告と重複する候補を一時的に除外する仕組みが必要。(B)grep限定の見落とし: LK-A10(4)『DC前重複チェック』の実装状況調査で grep '重複|duplicate' scripts/cmd_save.sh scripts/pending_decision_write.sh のみに限定し0件→『完全未実装』と誤判断した。実際は gate_dc_duplicate.sh(cmd_complete_gate.sh L6624から自動呼出、2026-03-20初出)がresolved裁定との完全一致BLOCKとして既に実装済みだった。日本語キーワード('重複')は実装コードでは英語識別子(decision_candidate等)で書かれるため直接一致grepでは見つからない。今後は grep -rl <対象フィールド名> scripts/ で関連ファイルを横断的に洗い出してから『未実装』と判断すべき。
+
+### L1008: L968(ninja_monitor.sh source絶対禁止)とL134(NINJA_MONITOR_LIB_ONLY安全経路)が未連携。L968本文だけ読むと安全な代替手段(L134)を知らずに『関数だけ使いたくても一切sourceするな』と過度に広く解釈しうる
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_promotion_202607090621_saizo
+- **記録者**: saizo
+- **tags**: [infra,bash,monitor,lesson]
+- **target_files**: [projects/infra/lessons_karo.yaml]
+- **origin**: [[cmd_reflux_promotion_202607090621_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 本タスクでAC2の還流在庫after値を計測するため_reflux_inventory_snapshot()を呼ぼうとし、一度ガード無しでsource scripts/ninja_monitor.shを実行した(L968が警告する誤り)。幸いacquire_singleton_lock()が稼働中デーモンのPIDを検出しexit 0で即終了したため実害は無かったが、もしデーモン未起動状態だったら誤ってメインループ(while true)まで到達し重複起動していた。原因を辿るとL134(cmd_519, context/infrastructure.md L466)が既に『NINJA_MONITOR_LIB_ONLY=1でメインループを回避して関数のみロードする』安全パターンを確立済みだったが、L968(cmd_reflux_insight_202607072050_kotaro)はこれを参照せずsource自体を全面禁止と記述しており、両教訓が連携していない。次回追加すべきチェック: L968の教訓本文に『ただしNINJA_MONITOR_LIB_ONLY=1環境変数を設定すればacquire_singleton_lockと main loopをスキップして安全に関数のみロード可能(L134参照)』を明記し、originで[[L134]] <-> [[L968]]を相互リンクする
