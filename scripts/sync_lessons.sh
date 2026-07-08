@@ -176,8 +176,7 @@ def _add_tracked_filenames_from_git(base):
 for _tf_search_base in _tf_search_bases:
     if not _tf_search_base or not os.path.isdir(_tf_search_base):
         continue
-    if _add_tracked_filenames_from_git(_tf_search_base):
-        continue
+    _add_tracked_filenames_from_git(_tf_search_base)
     for _tf_sd in _tf_scan_dirs:
         _tf_dir = os.path.join(_tf_search_base, _tf_sd)
         if not os.path.isdir(_tf_dir):

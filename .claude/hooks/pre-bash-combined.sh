@@ -685,8 +685,8 @@ for segment in split_segments(command):
         continue
     if has_existing_source(resolved):
         print(
-            "BLOCKED(LS036/Guard15): 既存コードがある対象への codd generate --wave (greenfield)は禁止。"
-            f"先に codd extract --path {target} を実行せよ(brownfield逆生成が正解。cmd_2891実測30分超)。"
+            "BLOCKED: 既存コードがある対象への codd generate --wave (greenfield)は禁止。"
+            f"先に codd extract --path {target} を実行せよ(brownfield逆生成が正解)。"
         )
         break
 PY

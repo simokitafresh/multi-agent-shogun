@@ -29,7 +29,7 @@ _run_hook() {
     _run_hook "{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"codd generate --wave 1 --path ${TEST_DIR}/existing_code\"}}"
     [ "$status" -ne 0 ]
     [[ "$output" == *"deny"* ]]
-    [[ "$output" == *"LS036"* ]]
+    [[ "$output" == *"既存コード"* ]]
     [[ "$output" == *"codd extract"* ]]
 }
 
