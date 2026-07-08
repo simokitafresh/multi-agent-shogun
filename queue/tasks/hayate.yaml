@@ -1,7 +1,7 @@
 task:
   acceptance_criteria:
   - checks:
-    - check: '昇格候補 [lessons_karo.yaml] LK-A10 (L1:事後検出): 研究cmd固有ルール — 成果物現物確認+ファイル名AC明示+context還流 を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する'
+    - check: '昇格候補 [lessons_karo.yaml] LK-A14 (L2:事前予防(doc)): LG027横展開確認 — grep修正前パターンで残存0件確認必須 を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する'
     id: AC1
   - checks:
     - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
@@ -22,30 +22,35 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_reflux_promotion_202607090600_hayate
+  parent_cmd: cmd_reflux_promotion_202607090701_hayate
   project: infra
-  purpose: '還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_karo.yaml] LK-A10 (L1:事後検出): 研究cmd固有ルール — 成果物現物確認+ファイル名AC明示+context還流 を確認し、Level4以上の実装・gate・task注入などへ昇格する'
+  purpose: '還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_karo.yaml] LK-A14 (L2:事前予防(doc)): LG027横展開確認 — grep修正前パターンで残存0件確認必須 を確認し、Level4以上の実装・gate・task注入などへ昇格する'
   reflux_inventory_before:
     insights_pending: 0
-    promotions: 82
-    total: 82
+    promotions: 81
+    total: 81
     zero_backlinks: 0
   scout_exempt: true
-  status: idle
+  status: in_progress
   stop_for: []
   target_path: projects/infra/lessons_karo.yaml
-  task_id: cmd_reflux_promotion_202607090600_hayate_exact
+  task_id: cmd_reflux_promotion_202607090701_hayate_exact
   task_type: exact
   related_lessons:
-  - id: 'L561'
-    summary: 'cmd_2554 task YAMLには旧cmd_2549/2553のAC/report_path/target_pathが残っていた。任務目的と最新inbox'
-    detail: 'cmd_2554 task YAMLには旧cmd_2549/2553のAC/report_path/target_pathが残っていた。任務目的と最新inbox'
-  - id: 'L581'
-    summary: 'cmd_2611でsaizo+hanzoに二重配備(LK011のkaro_direct迂回が原因)。saizoが先に完了しGATE処理開始したがhanzoの不完'
-    detail: 'cmd_2611でsaizo+hanzoに二重配備(LK011のkaro_direct迂回が原因)。saizoが先に完了しGATE処理開始したがhanzoの不完'
+  - id: 'L1009'
+    summary: 'LK-A14(コード修正後のgrep横展開残存確認)をscripts/hooks|gates|skills|tests全域grepで一次検証したところ、他の多く'
+    detail: 'LK-A14(コード修正後のgrep横展開残存確認)をscripts/hooks|gates|skills|tests全域grepで一次検証したところ、他の多く'
+  - id: 'L307'
+    summary: 'WSL2 DrvFs/9Pでは並行ファイルI/Oがカーネル直列化で逆効果。Gate14/15先行計算(Gate13 wait中にI/O実行)は5.5sに悪化(3'
+    detail: 'WSL2 DrvFs/9Pでは並行ファイルI/Oがカーネル直列化で逆効果。Gate14/15先行計算(Gate13 wait中にI/O実行)は5.5sに悪化(3'
+  - id: 'L335'
+    summary: 'grep -q でYAML/md内のcmd_idを検索する際、substring matchによりcmd_5がcmd_539等に誤マッチする。-F(固定文字列)'
+    detail: 'grep -q でYAML/md内のcmd_idを検索する際、substring matchによりcmd_5がcmd_539等に誤マッチする。-F(固定文字列)'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
   - id: 'L342'
     summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
     wa_category: 'commit_missing'
@@ -88,17 +93,18 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L561: cmd_2554 task YAMLには旧cmd_2549/2553のAC/report_path/target_pathが残っていた。任務目的と最新inbox
-      - L581: cmd_2611でsaizo+hanzoに二重配備(LK011のkaro_direct迂回が原因)。saizoが先に完了しGATE処理開始したがhanzoの不完
+      - L1009: LK-A14(コード修正後のgrep横展開残存確認)をscripts/hooks|gates|skills|tests全域grepで一次検証したところ、他の多く
+      - L307: WSL2 DrvFs/9Pでは並行ファイルI/Oがカーネル直列化で逆効果。Gate14/15先行計算(Gate13 wait中にI/O実行)は5.5sに悪化(3
+      - L335: grep -q でYAML/md内のcmd_idを検索する際、substring matchによりcmd_5がcmd_539等に誤マッチする。-F(固定文字列)
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
-  ac_version: 1d1d5c96
-  _ac_task_id: cmd_reflux_promotion_202607090600_hayate_exact
+  ac_version: 2256119f
+  _ac_task_id: cmd_reflux_promotion_202607090701_hayate_exact
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_reflux_promotion_202607090600_hayate.yaml
-  report_path: queue/reports/hayate_report_cmd_reflux_promotion_202607090600_hayate.yaml
+  report_filename: hayate_report_cmd_reflux_promotion_202607090701_hayate.yaml
+  report_path: queue/reports/hayate_report_cmd_reflux_promotion_202607090701_hayate.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -121,6 +127,16 @@ task:
     - reason: 'binary_checks_fail'
       count: 2
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-09T06:00:51"
-  acknowledged_at: "2026-07-09T06:01:08"
-  completed_at: "2026-07-09T06:06:22+09:00"
+  deployed_at: "2026-07-09T07:01:29"
+  acknowledged_at: "2026-07-09T07:01:46"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    tried_approaches:
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
+    approach_summary: 'LK-A14はLevel4未実装を再確認し、PD-108既登録に沿ってdecision_candidateへ整理した'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
+      approach_summary: 'LK-A14はLevel4未実装を再確認し、PD-108既登録に沿ってdecision_candidateへ整理した'
