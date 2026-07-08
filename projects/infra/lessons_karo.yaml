@@ -400,11 +400,12 @@ v7吸収(2026-05-19):
   source_ids: [LK031]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'karo-operations.md Step 0の後に即Step 1へ進め明記+§0.1判断4問チェック'
+  enforcement_level: 4
+  enforcement: 'Level4(フロー内BLOCK/自動誘導): 一次情報再検証(2026-07-09, cmd_reflux_promotion_202607090749_hanzo)。context/karo-operations.md §7はidle時改善サイクルを「データを見る→問い→なぜ→自動化ターゲット→行動→次のデータを見る」と定義し、Step0(配備)だけで閉じず思考サイクルへ進む正本手順を保持する。scripts/hooks/stop_check_inbox.sh は軍師idle時に「idle自走プロトコル実行せよ(Step 0→8)。止まるな。」をStop hookで強制表示し、前回中断Stepがあれば「再開せよ(→Step 8)」を注入する。scripts/gates/gate_karo_startup.sh Check 8 は家老起動時にidle自走プロンプトを表示し、Step 1〜6と「止まるな。1つ完了したら次へ」を注入する。scripts/ninja_monitor.sh check_karo_idle_cycle は全忍者idle+パイプライン空10分継続時に家老へidle分析triggerを送る。従来enforcement本文が「明記」中心でgate_lesson_enforcement_level.shがL1誤分類していたため、field優先ルールに合わせてenforcement_levelを明示追加し、既存のStop hook/startup gate/monitor誘導をLevel4根拠として記録する。'
 
   when: idle自走Step 0(配備最優先)で忍者全員配備済みの時
   how: 即Step 1(思考)へ進む。配備=手段、思考=目的。配備ループに閉じ込められるな
-  origin: "[[LK031]] -> [[Step0無限ループ]] -> [[思考未到達]]"
+  origin: "[[LK031]] -> [[Step0無限ループ]] -> [[思考未到達]] -> [[cmd_reflux_promotion_202607090749_hanzo_一次情報再検証]]"
 - id: LK-A17
   title: 将軍への報告は掲示板経由+CMD起票要請まで回せ
   detail: |
