@@ -709,7 +709,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1006 -->
+<!-- last_synced_lesson: L1007 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1421,6 +1421,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1004: reflux_promotion(L1候補検証)はenforcement文言でなくreferenced実装+testを直接確認せよ（cmd_reflux_promotion_202607090500_tobisaru）
 - L1005: 複合lessonエントリはgate_lesson_enforcement_level.shで個別要素のLevel差が平均化・埋没する（cmd_reflux_promotion_202607090518_saizo）
 - L1006: 複合lessonの単一Level昇格は未達要素を隠す（cmd_reflux_promotion_202607090537_hanzo）
+- L1007: 還流促進(reflux_promotion)在庫は既配備中/直近completed分を除外せよ。既存実装調査はキーワードgrep限定でなく識別子横断検索を行え（cmd_reflux_promotion_202607090544_kotaro）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

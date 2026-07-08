@@ -10448,3 +10448,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - LK-A10は成果物確認、ACファイル名、context還流、DC重複チェックを1エントリに混在させていた。一次情報ではDC重複のみLevel4相当で、他3要素はLevel4未達。単一enforcement_levelを付与すると、Level4に合わせれば未達が隠れ、Level1に合わせれば実装済み防御が隠れる。複合lessonは要素分割して個別Levelを付けるべき。
+
+### L1007: 還流促進(reflux_promotion)在庫は既配備中/直近completed分を除外せよ。既存実装調査はキーワードgrep限定でなく識別子横断検索を行え
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_promotion_202607090544_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,testing,recon,gate,bash]
+- **target_files**: [scripts/pending_decision_write.sh,tests/unit/test_pending_decision_write.bats]
+- **origin**: [[cmd_reflux_promotion_202607090544_kotaro]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 2点の教訓。(A)二重配備: 本タスク(cmd_reflux_promotion_202607090544_kotaro、05:44配備)はcmd_reflux_promotion_202607090537_hanzo(05:40完了、7分前)と全く同一の昇格候補[lessons_karo.yaml]LK-A10を対象としていた。hanzoは既に独立に同じ4項目分解・decision_candidate整理という結論に到達済みだったが、その報告がまだ家老に処理(GATE/lessons_karo.yaml反映)される前に、還流在庫スキャンが同一candidateを再度ピックアップし別忍者へ配備した。L581(saizo+hanzo二重配備)と同型の構造的問題であり、reflux_promotion配備ロジックは直近completed(未処理)の報告と重複する候補を一時的に除外する仕組みが必要。(B)grep限定の見落とし: LK-A10(4)『DC前重複チェック』の実装状況調査で grep '重複|duplicate' scripts/cmd_save.sh scripts/pending_decision_write.sh のみに限定し0件→『完全未実装』と誤判断した。実際は gate_dc_duplicate.sh(cmd_complete_gate.sh L6624から自動呼出、2026-03-20初出)がresolved裁定との完全一致BLOCKとして既に実装済みだった。日本語キーワード('重複')は実装コードでは英語識別子(decision_candidate等)で書かれるため直接一致grepでは見つからない。今後は grep -rl <対象フィールド名> scripts/ で関連ファイルを横断的に洗い出してから『未実装』と判断すべき。
