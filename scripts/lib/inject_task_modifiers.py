@@ -35,6 +35,19 @@ BACKUP_INSTRUCTION = (
     '取得コマンド・保存先・復元手順をprogressまたは報告YAMLに記録せよ。'
 )
 
+LSA16_STOP_FOR = '本番パリティ未確認'
+LSA16_INSTRUCTION_MARKER = '【LS-A16 本番パリティ必須】'
+LSA16_INSTRUCTION = (
+    '【LS-A16 本番パリティ必須】DM-Signal本番DB/recalculate系cmd。'
+    'DB変更後は同一cmd内でDB/API/FEの3レイヤー貫通確認を実行し、'
+    'precompute等の巻き添えrollbackがあり得る処理はsavepoint(begin_nested)で範囲限定せよ。'
+)
+LSA16_RE = re.compile(
+    r'(fullrecalculate|recalculate-sync|recalculate_fast|本番DB|DB変更|'
+    r'holding_signal|monthly_returns|precompute|pipeline_config)',
+    re.IGNORECASE,
+)
+
 
 def load_yaml_safe(path):
     try:
@@ -579,6 +592,65 @@ def inject_db_backup_controls(task, script_dir):
     return changed
 
 
+def inject_lsa16_production_parity_controls(task, script_dir):
+    """LS-A16: DM-Signal本番DB/recalculate系cmdへ確認ACを事前注入する。"""
+    fields = ['project', 'target_path', 'command', 'description', 'purpose']
+    texts = [str(task.get(field, '') or '') for field in fields]
+    parent_entry = parent_cmd_entry(task, script_dir)
+    if parent_entry:
+        texts.extend(str(parent_entry.get(field, '') or '')
+                     for field in ['project', 'target_path', 'command',
+                                   'description', 'purpose', 'title'])
+
+    haystack = '\n'.join(texts)
+    is_dm_signal = (
+        str(task.get('project', '') or '') == 'dm-signal'
+        or 'DM-signal' in haystack
+        or 'DM-Signal' in haystack
+        or '/DM-signal' in haystack
+        or '/DM-Signal' in haystack
+    )
+    if not is_dm_signal or not LSA16_RE.search(haystack):
+        return False
+
+    changed = False
+    stop_for = task.get('stop_for')
+    if not isinstance(stop_for, list):
+        stop_for = [] if stop_for in (None, '') else [str(stop_for)]
+    if LSA16_STOP_FOR not in stop_for:
+        task['stop_for'] = stop_for + [LSA16_STOP_FOR]
+        changed = True
+
+    desc = str(task.get('description', '') or '')
+    if LSA16_INSTRUCTION_MARKER not in desc:
+        task['description'] = LSA16_INSTRUCTION + '\n  ────────────────────────────────────────\n' + desc
+        changed = True
+
+    ac_list = task.get('acceptance_criteria') or []
+    existing_text = '\n'.join(
+        str(ac.get('description', '') if isinstance(ac, dict) else ac)
+        for ac in ac_list
+    )
+    required_acs = [
+        'DB/API/FEの3レイヤー貫通確認結果を一次情報で報告YAMLに記録する',
+        'fullrecalculateまたは差分確認をDB変更直後に実行し、後回しにしない',
+        'precompute等の巻き添えrollbackリスクがある変更ではsavepoint(begin_nested)または明示的な不要理由を記録する',
+    ]
+    new_acs = []
+    for text in required_acs:
+        if text not in existing_text:
+            new_acs.append({'id': f'AC{len(ac_list) + len(new_acs) + 1}',
+                            'description': text})
+    if new_acs:
+        task['acceptance_criteria'] = list(ac_list) + new_acs
+        changed = True
+
+    if changed:
+        print('[LSA16_PARITY] Injected production parity stop_for + ACs',
+              file=sys.stderr)
+    return changed
+
+
 # ─── recon task template hints ───
 def inject_recon_task_template(task):
     task_type = str(task.get('task_type', '') or '').lower()
@@ -765,6 +837,8 @@ def main():
          lambda: inject_execution_controls(task)),
         ('db_backup_controls',
          lambda: inject_db_backup_controls(task, script_dir)),
+        ('lsa16_production_parity_controls',
+         lambda: inject_lsa16_production_parity_controls(task, script_dir)),
         ('recon_task_template',
          lambda: inject_recon_task_template(task)),
         ('golden_snapshot_for_be',

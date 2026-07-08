@@ -465,3 +465,77 @@ assert 'stop_for' not in task, task
 assert '【DB変更前バックアップ必須】' not in task['description'], task['description']
 PY
 }
+
+@test "LS-A16 controls: DM-Signal recalculate cmd injects production parity ACs" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_recalc
+  project: dm-signal
+  task_id: cmd_recalc_impl
+  status: assigned
+  description: "holding_signalを更新する"
+  acceptance_criteria:
+  - id: AC1
+    description: "更新が完了する"
+YAML
+    cat > "$tmpdir/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_recalc:
+    project: dm-signal
+    command: |
+      本番DB変更後にfullrecalculateを実行する
+YAML
+
+    run env TASK_FILE_ENV="$tmpdir/queue/tasks/sasuke.yaml" SCRIPT_DIR_ENV="$tmpdir" INJECT_TASK_MODIFIERS_ONLY="lsa16_production_parity_controls" \
+        python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+assert '本番パリティ未確認' in task['stop_for'], task
+assert '【LS-A16 本番パリティ必須】' in task['description'], task['description']
+ac_text = '\n'.join(ac['description'] for ac in task['acceptance_criteria'])
+assert 'DB/API/FEの3レイヤー貫通確認結果' in ac_text, ac_text
+assert 'fullrecalculateまたは差分確認' in ac_text, ac_text
+assert 'savepoint(begin_nested)' in ac_text, ac_text
+PY
+}
+
+@test "LS-A16 controls: non DM-Signal recalculate mention does not inject" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_docs
+  project: infra
+  task_id: cmd_docs_impl
+  status: assigned
+  description: "recalculateという語を含む文書を更新する"
+  acceptance_criteria:
+  - id: AC1
+    description: "文書が更新される"
+YAML
+
+    run env TASK_FILE_ENV="$tmpdir/queue/tasks/sasuke.yaml" SCRIPT_DIR_ENV="$tmpdir" INJECT_TASK_MODIFIERS_ONLY="lsa16_production_parity_controls" \
+        python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+assert 'stop_for' not in task, task
+assert '【LS-A16 本番パリティ必須】' not in task['description'], task['description']
+assert len(task['acceptance_criteria']) == 1, task['acceptance_criteria']
+PY
+}
