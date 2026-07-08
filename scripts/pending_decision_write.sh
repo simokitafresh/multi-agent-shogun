@@ -151,7 +151,7 @@ cmd_create() {
             flock -w 5 200 || exit 1
 
             python3 - "$DATA_FILE" "$SUMMARY" "$SOURCE_CMD" "$TYPE" "$CREATED_BY" "$TIMESTAMP" "$SCRIPT_DIR/dashboard.md" "$ORIGIN" <<'PY' || exit 1
-import yaml, sys, os, tempfile
+import yaml, sys, os, tempfile, difflib
 
 data_path = sys.argv[1]
 summary = sys.argv[2]
@@ -229,6 +229,23 @@ try:
             except ValueError:
                 pass
     new_id = f'PD-{max_id + 1:03d}'
+
+    # LK-A10 (4): DC前の既存裁定との重複チェック(Level5コンテキスト提供)
+    # 重複=意味的判断のため自動BLOCKはfalse positiveリスクが高い。
+    # pending中の類似decisionを検出しSTDERRへ警告表示するに留め、作成自体は止めない。
+    _DUP_THRESHOLD = 0.6
+    similar = []
+    for d in data['decisions']:
+        if not isinstance(d, dict) or d.get('status') != 'pending':
+            continue
+        existing_summary = d.get('summary', '') or ''
+        ratio = difflib.SequenceMatcher(None, summary, existing_summary).ratio()
+        if ratio >= _DUP_THRESHOLD:
+            similar.append((d.get('id', '?'), ratio, existing_summary[:80]))
+    if similar:
+        print('[pending_decision] ★★★ 類似する既存pending decisionを検出(重複の可能性。作成前に内容確認せよ):', file=sys.stderr)
+        for sid, ratio, ssum in sorted(similar, key=lambda x: -x[1]):
+            print(f'  {sid} (類似度{ratio:.2f}): {ssum}', file=sys.stderr)
 
     new_decision = {
         'id': new_id,

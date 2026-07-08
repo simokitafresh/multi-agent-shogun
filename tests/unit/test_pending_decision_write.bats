@@ -364,3 +364,34 @@ EOF
     grep -q "  resolved: 2$" "$df"
     grep -q "  pending: 0$"  "$df"
 }
+
+# ── Test 22: create - similar existing pending decision triggers duplicate warning (LK-A10) ──
+@test "create warns on similar existing pending decision" {
+    _run_pd create "本番PFのバンド閾値未設定により発火せず不具合が発生する懸念がある" "cmd_2000" "escalation" "karo" >/dev/null 2>&1
+
+    run _run_pd create "本番PFのバンド閾値未設定により発火せず不具合が発生する懸念がある件" "cmd_2001" "escalation" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"類似する既存pending decision"* ]]
+    [[ "$output" == *"PD-001"* ]]
+    # 警告のみ。作成自体はブロックされずPD-002が発行される
+    [[ "$output" == *"PD_ID=PD-002"* ]]
+}
+
+# ── Test 23: create - dissimilar summary does not trigger duplicate warning ──
+@test "create does not warn when existing pending decision is dissimilar" {
+    _run_pd create "Ward FoFクラスタ固定問題の継続判断" "cmd_2100" "escalation" "karo" >/dev/null 2>&1
+
+    run _run_pd create "Render backend再起動タイミングの調整方法" "cmd_2101" "escalation" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"類似する既存pending decision"* ]]
+}
+
+# ── Test 24: create - resolved decisions are excluded from duplicate check ──
+@test "create does not warn against resolved decisions" {
+    _run_pd create "本番PFのバンド閾値未設定により発火せず不具合が発生する懸念がある" "cmd_2200" "escalation" "karo" >/dev/null 2>&1
+    _run_pd resolve "PD-001" "解決済み" "cmd_2201" >/dev/null 2>&1
+
+    run _run_pd create "本番PFのバンド閾値未設定により発火せず不具合が発生する懸念がある件" "cmd_2202" "escalation" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"類似する既存pending decision"* ]]
+}
