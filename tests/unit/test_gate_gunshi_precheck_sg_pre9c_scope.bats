@@ -69,3 +69,65 @@ YAML
     [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
     [[ "$output" == *"未達"* ]]
 }
+
+@test "SG-PRE9c allows investigation-state unresolved wording in recon context" {
+    cat > "$TEST_TMPDIR/report.yaml" <<YAML
+ninja: hayate
+task_id: cmd_recon
+status: completed
+task_clarity:
+  score: 90
+  unclear_points: "偵察の調査状態: 本番パスワード未確認。原因切り分けとして401認証差異を分類した。"
+  discretion_fills: "detector分類ロジックでは未解決/未確認を状態記述として扱う。"
+binary_checks:
+  ac1:
+    - check: "原因分類済み"
+      result: yes
+YAML
+
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+    [[ "$output" == *"BC_YES_CLARITY_TERMS=''"* ]]
+}
+
+@test "SG-PRE9c still detects unresolved wording when delegated later" {
+    cat > "$TEST_TMPDIR/report.yaml" <<YAML
+ninja: hayate
+task_id: cmd_recon
+status: completed
+task_clarity:
+  score: 70
+  unclear_points: "AC1は未解決。後で家老が実施する。"
+binary_checks:
+  ac1:
+    - check: "AC1完了"
+      result: yes
+YAML
+
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
+    [[ "$output" == *"未解決"* ]]
+}
+
+@test "SG-PRE9 sets BLOCK prediction for waived binary check no" {
+    cat > "$TEST_TMPDIR/report.yaml" <<YAML
+ninja: hayate
+task_id: cmd_recon
+status: completed
+test_triage: pre_existing
+binary_checks:
+  commit:
+    - check: "git commitが完了したか(untracked/modified=0)"
+      result: no
+      waive_reason: "偵察cmd: commit不要"
+YAML
+
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_HAS_NO=1"* ]]
+    [[ "$output" == *"BC_NO_WAIVE_ITEMS='commit/git commitが完了したか(untracked/modified=0)'"* ]]
+    [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+    [[ "$output" == *"bc:no検出(waive_reason有でもBLOCK)"* ]]
+}

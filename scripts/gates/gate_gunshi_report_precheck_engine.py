@@ -136,6 +136,7 @@ def main():
     # ── 2b. binary_checks result:no 検出 → T1違反予防 ──────────────────
     report_bc = report.get('binary_checks') or {}
     bc_no_items = []
+    bc_no_waive_items = []
 
     def _normalize_bc_result(raw: object) -> str:
         """YAML unquoted yes/no → PyYAML bool True/False を正規化."""
@@ -154,8 +155,12 @@ def main():
                 if res == 'no':
                     check_name = check_item.get('check', ac_key)
                     bc_no_items.append(f'{ac_key}/{check_name}')
+                    waive = str(check_item.get('waive_reason', '') or '').strip()
+                    if waive:
+                        bc_no_waive_items.append(f'{ac_key}/{check_name}')
     result['BC_HAS_NO'] = '1' if bc_no_items else '0'
     result['BC_NO_ITEMS'] = ', '.join(bc_no_items)
+    result['BC_NO_WAIVE_ITEMS'] = ', '.join(bc_no_waive_items)
     result['TEST_TRIAGE'] = str(report.get('test_triage', '') or '').strip()
 
     # ── 2b1. binary_checks yes × task_clarity矛盾検出 (LG043) ─────────────
@@ -236,6 +241,29 @@ def main():
             benign_markers = ('スコープ外', 'scope外', 'not_in_scope', '補完', '補完済み', '次改善', '次の改善', '対象外')
             delegation_markers = ('家老実施', '家老が実施', '後で', '未実施', '未完了', '保留')
             if any(marker.lower() in lower_text for marker in benign_markers) and not any(
+                marker.lower() in lower_text for marker in delegation_markers
+            ):
+                return True
+        if term in ('未確認', '未解決'):
+            # 偵察報告やdetector設計説明では「未確認/未解決」は調査状態・分類語であり、
+            # AC未達や委譲を意味しない。委譲・未完了語が同居する場合は検出を維持する。
+            investigation_markers = (
+                '偵察',
+                '調査',
+                '切り分け',
+                '原因',
+                '分類',
+                '分類ロジック',
+                'detector',
+                '設計用語',
+                '状態記述',
+                '本番パスワード',
+                'パスワード',
+                '認証',
+                '401',
+            )
+            delegation_markers = ('家老実施', '家老が実施', '後で', '未実施', '未完了', '保留', 'todo', 'fill_this')
+            if any(marker.lower() in lower_text for marker in investigation_markers) and not any(
                 marker.lower() in lower_text for marker in delegation_markers
             ):
                 return True
@@ -426,7 +454,10 @@ def main():
     gate_pred_reasons = []
     if result.get('BC_HAS_NO') == '1':
         gate_pred = 'BLOCK'
-        gate_pred_reasons.append('bc:no検出')
+        if result.get('BC_NO_WAIVE_ITEMS'):
+            gate_pred_reasons.append('bc:no検出(waive_reason有でもBLOCK)')
+        else:
+            gate_pred_reasons.append('bc:no検出')
     if result.get('BC_YES_CLARITY_CONTRADICTION') == '1':
         gate_pred = 'BLOCK'
         gate_pred_reasons.append('binary_checks yes×task_clarity矛盾(LG043)')

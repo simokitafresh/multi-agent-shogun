@@ -626,3 +626,31 @@ lessons:
   enforcement: gate_gunshi_report_precheck.sh SG-PRE31がresultブロック内のN×M一致パターンを自動検出しINFOリマインド表示。5テストPASS(test_gate_gunshi_precheck_sg_pre31.bats)
   when: report reviewのSG-PRE31自動実行時。resultブロック内の数値にN×M=C関係が検出された時
   how: SG-PRE31がINFO表示→分類軸(rebalance_trigger、PF種別、日付、event_type等)ごとの内訳を再計算し、仕様上その分布になる理由を確認する
+- id: LG049
+  title: SG-PRE9cの未確認/未解決は文脈で判定せよ — 偵察の調査状態語をAC未達語にするな
+  detail: |
+    cmd_3772系の偵察レビューで、task_clarity/discretion_fillsに出た「本番パスワード未確認」「detector分類ロジックの未解決/未確認」をSG-PRE9cがAC未達成語として誤検知した。
+    偵察・調査・切り分け・detector設計の文脈では未確認/未解決は状態記述や分類語であり、binary_checks yesとの矛盾とは限らない。
+    一方で「後で」「家老実施」「未完了」「保留」等が同居する場合は実未達として検出を維持する。
+  source_cmd: cmd_3772_viewer_auth偵察
+  origin: '[[cmd_3772_viewer_auth偵察]] -> [[SG-PRE9c設計用語誤検知]] -> [[偽陽性2件]]'
+  created_at: '2026-07-08'
+  automated: true
+  enforcement_level: 3
+  enforcement: gate_gunshi_report_precheck_engine.pyが未確認/未解決を偵察・調査・切り分け・detector設計文脈ではFP扱いし、委譲/未完了語が同居する場合だけBLOCK継続。test_gate_gunshi_precheck_sg_pre9c_scope.batsで回帰固定
+  when: report reviewでtask_clarity/discretion_fillsに未確認/未解決が出た時
+  how: まず文脈が調査状態・分類語か、AC未達/委譲かを分ける。偵察の状態記述ならLGTM判定をSG-PRE9cだけで止めず、別AC証跡で判定する
+- id: LG050
+  title: waive_reasonはbc:noの免罪符ではない — gate_predictionはBLOCK固定にせよ
+  detail: |
+    cmd_3771 band_diff分離レビューでcommit checkのwaive付きbc:noを「偵察waive妥当」と見てgate_prediction CLEARにしたが、LG006(LGTM=GATE通過保証)の観点ではbc:noが存在する以上GATEはBLOCKし得る。
+    waive_reasonは「なぜnoか」の説明であって、SG7の通過予測をCLEARに変える根拠ではない。
+    report reviewではwaive_reason付きresult:noを検出したら、実際にgateを通す前提ではなくprediction=BLOCKとして差戻し/再記入/waive設計見直しに進む。
+  source_cmd: cmd_3771_band_diff_separation
+  origin: '[[cmd_3771_band_diff_separation]] -> [[bc:no waive+prediction CLEAR矛盾]] -> [[GATE BLOCK無駄サイクル]]'
+  created_at: '2026-07-08'
+  automated: true
+  enforcement_level: 3
+  enforcement: gate_gunshi_report_precheck_engine.pyがBC_NO_WAIVE_ITEMSを出力しGATE_PREDICTION_REASONへbc:no検出(waive_reason有でもBLOCK)を付与。gate_gunshi_report_precheck.sh SG-PRE9はtest_triage/waiveでもBLOCK固定表示
+  when: report reviewでbinary_checksにresult:noがあり、waive_reasonやtest_triageが付いている時
+  how: waive_reasonの妥当性確認で止めず、SG7 gate_predictionはBLOCKにする。CLEARにしたいならbinary_checksをyesへ正規化できる証跡か、GATE側の正式な免除設計を先に作る

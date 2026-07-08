@@ -44,12 +44,10 @@ print_sg_pre9() {
     echo "■ SG-PRE9: T1違反予防(binary_checks no検出)"
     if [ "${BC_HAS_NO:-0}" = "1" ]; then
         echo "  ★★★ WARN: binary_checks result:no検出: ${BC_NO_ITEMS}"
-        if [ "${TEST_TRIAGE:-}" = "pre_existing" ]; then
-            echo "  → test_triage=pre_existing: gate WARN降格でCLEAR見込み(cmd_2339実証)"
-            echo "  → gate_prediction: WARN(BLOCK→降格)"
-        else
-            echo "  → gate_prediction: BLOCK固定(waive_reasonがあっても免除なし)"
+        if [ -n "${BC_NO_WAIVE_ITEMS:-}" ]; then
+            echo "  → waive_reason付きresult:no: ${BC_NO_WAIVE_ITEMS}"
         fi
+        echo "  → gate_prediction: BLOCK固定(waive_reason/test_triageがあっても免除なし)"
         echo "  → GP-128: verdict PASS + result:no → gate機械的BLOCK"
         echo "  → 見落とし実績: cmd_1897, cmd_1900, cmd_2093 (T1違反3回)"
     else
