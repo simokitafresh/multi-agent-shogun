@@ -494,8 +494,8 @@ lessons:
   source_cmd: 'cmd_2850'
   created_at: '2026-05-18'
   automated: true
-  enforcement_level: 3
-  enforcement: 'Level3(テンプレート自動生成による事前強制): context/codd.md §4.5(適用判断ルール、cmd_1953事故→殿裁定2026-04-16で明文化)+context/training-cycle.md §28「CoDD速度改善ラウンド」AC2テンプレートが`codd extract`(brownfield)起点を強制し`codd require`/`codd spec`(greenfield)を明示禁止(2026-05-19制定、cmd_2891の実測30分超過を受けた恒久対処)。§14旧記述との矛盾はcmd_reflux_promotion_202607080807_kotaroで解消済み。真のフロー内BLOCK(codd CLI wrapper等のLevel4)は影響範囲が全PJ横断のため未実装、decision_candidateへ整理'
+  enforcement_level: 4
+  enforcement: 'Level4(フロー内BLOCK): .claude/hooks/pre-bash-combined.sh Guard15(cmd_reflux_promotion_202607081642_saizo実装、tests/unit/test_pre_bash_codd_greenfield_guard.bats 9件PASS+既存回帰41件PASS)。一次情報再検証(2026-07-08, codd v2.19.0 --help)でLevel3記述の誤りを訂正: `codd require`は実際にはbrownfield専用ツール(--help「Run codd extract first」と明記、要件推定はextract後の下流ステップ)であり禁止対象ではない。`codd spec`はCLI非存在(Error: No such command)で言及自体が無意味。真の時間浪費源はgreenfield限定の`codd generate --wave`ループ(wave1-5直列で実測30分超, cmd_2891)。Guard15はcodd generate --waveの実コマンド呼出しをshlexトークン解析で検出し、対象パスに.codd/extract/が無くかつ既存ソース(.py/.sh/.ts/.js/.go/.java、maxdepth3)がある場合のみBLOCKして`codd extract`先行を強制する(新規空プロジェクトへのgenerateは誤検知なく許可)。旧Level3(context/codd.md §4.5+training-cycle.md §28テンプレート強制)は維持しつつ、テンプレートを経由しないBash直接呼出しも今回のGuardで捕捉する。context/training-cycle.md §28の「禁止操作: codd require/codd spec」表記は上記の理由で不正確なため修正が必要(lesson_candidateで別途報告、本cmdのtarget_path外のため直接修正はしない)。'
 # LS037: superseded by LS-A09(11) (新PJ設定コピー=現物確認必須の環境設定版。2026-05-19統合)
 # LS038: LS040に統合(2026-05-18)。各論パッチ→バックアップファーストに集約
 # LS039: LS040に統合(2026-05-18)。各論パッチ→バックアップファーストに集約

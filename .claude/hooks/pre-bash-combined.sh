@@ -627,6 +627,76 @@ if [[ "$command" == *psycopg2* || "$command" == *"DATABASE_URL"* || "$command" =
     exit 2
 fi
 
+# === Guard 15: CoDD greenfield generate before extract BLOCK (LS036 L4, cmd_2891事故) ===
+# 一次情報確認(2026-07-08, codd v2.19.0 --help): `codd require`はbrownfield専用("Run 'codd extract' first"と明記)、
+# `codd spec`はCLI非存在(Error: No such command)。真の時間浪費源はgreenfield限定の`codd generate --wave`ループ
+# (wave1-5直列で実測30分超, cmd_2891)。extract未実行(.codd/extract/不在)かつ対象に既存ソースがある場合のみBLOCK。
+# 新規空プロジェクトへのgenerateは許可(誤検知回避)。トークン解析(shlex)で実コマンド呼出しのみ判定し、
+# echo/grep等の引数内の文字列言及による誤検知(cmd_2075と同種のFPパターン)を避ける。
+if [[ -n "${command:-}" && "$command" == *'codd'* && "$command" == *'generate'* && "$command" == *'--wave'* ]]; then
+    _codd_block_reason="$(COMMAND="$command" python3 - <<'PY'
+import os
+import re
+import shlex
+
+command = os.environ.get("COMMAND", "")
+
+
+def split_segments(cmd: str):
+    return [seg.strip() for seg in re.split(r"(?:&&|\|\||;|\|)", cmd) if seg.strip()]
+
+
+def find_path_arg(tokens: list[str]) -> str:
+    for i, tok in enumerate(tokens):
+        if tok == "--path" and i + 1 < len(tokens):
+            return tokens[i + 1]
+    return "."
+
+
+def has_existing_source(root_dir: str, max_depth: int = 3) -> bool:
+    if not os.path.isdir(root_dir):
+        return False
+    exts = (".py", ".sh", ".ts", ".js", ".go", ".java")
+    base_depth = root_dir.rstrip(os.sep).count(os.sep)
+    for root, dirs, files in os.walk(root_dir):
+        dirs[:] = [d for d in dirs if d not in (".codd", "node_modules", ".git")]
+        cur_depth = root.count(os.sep) - base_depth
+        if cur_depth >= max_depth:
+            dirs[:] = []
+            continue
+        if any(f.endswith(exts) for f in files):
+            return True
+    return False
+
+
+for segment in split_segments(command):
+    try:
+        tokens = shlex.split(segment, posix=True)
+    except ValueError:
+        continue
+    if len(tokens) < 2 or os.path.basename(tokens[0]) != "codd" or tokens[1] != "generate":
+        continue
+    if "--wave" not in tokens:
+        continue
+    target = find_path_arg(tokens)
+    resolved = target if os.path.isabs(target) else os.path.join(os.getcwd(), target)
+    resolved = os.path.realpath(resolved)
+    if os.path.isdir(os.path.join(resolved, ".codd", "extract")):
+        continue
+    if has_existing_source(resolved):
+        print(
+            "BLOCKED(LS036/Guard15): 既存コードがある対象への codd generate --wave (greenfield)は禁止。"
+            f"先に codd extract --path {target} を実行せよ(brownfield逆生成が正解。cmd_2891実測30分超)。"
+        )
+        break
+PY
+)"
+    if [[ -n "$_codd_block_reason" ]]; then
+        emit_deny "$_codd_block_reason"
+    fi
+    unset _codd_block_reason
+fi
+
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
    "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git reset'* && \
