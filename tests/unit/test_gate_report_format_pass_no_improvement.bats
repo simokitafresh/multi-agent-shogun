@@ -577,6 +577,92 @@ EOF
     rm -rf "$workdir"
 }
 
+@test "cmd_3264 AC2 commit_hash allows non-overlapping concurrent dirty hunk in same reported file" {
+    local worker="cmd3264nonoverlap"
+    local workdir="$PROJECT_ROOT/.codex_tmp/gate_report_format_cmd3264_nonoverlap_test_$$"
+    local task_path="$workdir/queue/tasks/${worker}.yaml"
+    local rpath="$workdir/queue/reports/${worker}_report_cmd_3264.yaml"
+    local gate="$workdir/scripts/gates/gate_report_format.sh"
+    rm -rf "$workdir"
+    mkdir -p "$workdir/scripts/gates" "$workdir/queue/reports" "$workdir/queue/tasks" "$workdir/logs" "$workdir/context"
+    cp "$GATE_SCRIPT" "$gate"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_main.py" "$workdir/scripts/gates/"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$workdir/scripts/gates/"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$workdir/scripts/gates/"
+    chmod +x "$gate"
+    git -C "$workdir" init -q
+    cat > "$workdir/context/reported.md" <<'EOF'
+line 1
+line 2
+line 3
+line 4
+line 5
+EOF
+    git -C "$workdir" add context/reported.md
+    git -C "$workdir" -c user.email=test@example.com -c user.name=test commit -q -m init
+    perl -0pi -e 's/line 2/line 2 cmd change/' "$workdir/context/reported.md"
+    git -C "$workdir" add context/reported.md
+    git -C "$workdir" -c user.email=test@example.com -c user.name=test commit -q -m "cmd_3264: modify reported file"
+    local commit_hash
+    commit_hash="$(git -C "$workdir" rev-parse HEAD)"
+    perl -0pi -e 's/line 5/line 5 concurrent change/' "$workdir/context/reported.md"
+    cat > "$task_path" <<EOF
+task:
+  target_path: context/reported.md
+EOF
+    cat > "$rpath" <<EOF
+worker_id: ${worker}
+parent_cmd: cmd_3264
+ac_version_read: test_hash_abc
+status: completed
+commit_hash: ${commit_hash}
+result:
+  summary: "テスト用報告"
+  details: "詳細"
+purpose_validation:
+  cmd_purpose: "テスト"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - path: context/reported.md
+    change: modified
+lesson_candidate:
+  found: false
+  no_lesson_reason: "テスト用の報告であるため新規教訓なし"
+  title: ""
+  detail: ""
+lessons_useful:
+  - id: L001
+    useful: true
+    reason: helpful
+binary_checks:
+  AC1:
+    - check: テスト完了
+      result: yes
+  commit:
+    - check: git commitが完了したか
+      result: yes
+verdict: PASS
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+EOF
+
+    run env GATE_NO_LOG=1 SKILL_EXECUTION_PASS_LOG_DISABLE=1 GATE_PASS_CACHE_FILE="$workdir/pass_cache" bash "$gate" "$rpath"
+
+    [ "$status" -eq 0 ] || {
+        echo "Expected exit 0 but got $status"
+        echo "$output"
+        echo "git status context/reported.md:"
+        git -C "$workdir" status --porcelain -- context/reported.md || true
+        rm -rf "$workdir"
+        return 1
+    }
+    [[ "$output" != *"BLOCK(cmd_3264-AC2)"* ]]
+    rm -rf "$workdir"
+}
+
 # === Test 4: PASS_NO_IMPROVEMENT はゲートとしてexit 0 (PASSと同等) ===
 @test "PASS_NO_IMPROVEMENTのときゲートはexit 0を返す" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_2072.yaml"

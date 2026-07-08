@@ -133,6 +133,86 @@ for line in raw:
 PY
 }
 
+filter_report_commit_nonoverlap_diffs() {
+    local repo="$1"
+    local report_path="$2"
+    local uncommitted_raw="$3"
+    REPO_ROOT="$repo" REPORT_PATH="$report_path" CC_UNCOMMITTED_RAW="$uncommitted_raw" python3 - <<'PY'
+import os
+import re
+import subprocess
+import sys
+import yaml
+
+repo = os.environ.get("REPO_ROOT", "")
+report_path = os.environ.get("REPORT_PATH", "")
+raw_lines = [line for line in os.environ.get("CC_UNCOMMITTED_RAW", "").splitlines() if line.strip()]
+
+def run_git(args):
+    try:
+        return subprocess.check_output(["git", "-C", repo, *args], text=True, stderr=subprocess.DEVNULL)
+    except Exception:
+        return ""
+
+def parse_path(line):
+    if len(line) < 4:
+        return ""
+    path = line[3:].strip()
+    if " -> " in path:
+        path = path.rsplit(" -> ", 1)[1].strip()
+    if len(path) >= 2 and path[0] == path[-1] == '"':
+        path = path[1:-1]
+    return path
+
+def hunk_ranges(diff_text):
+    ranges = []
+    for match in re.finditer(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@", diff_text, re.M):
+        start = int(match.group(1))
+        count = int(match.group(2) or "1")
+        if count <= 0:
+            continue
+        ranges.append((start, start + count - 1))
+    return ranges
+
+def overlaps(left, right):
+    return any(a <= d and c <= b for a, b in left for c, d in right)
+
+try:
+    with open(report_path, encoding="utf-8") as f:
+        report = yaml.safe_load(f) or {}
+except Exception:
+    report = {}
+
+commit_hash = str(report.get("commit_hash") or "").strip()
+if not re.fullmatch(r"[0-9a-f]{40}", commit_hash):
+    print("\n".join(raw_lines))
+    raise SystemExit(0)
+
+changed_files = set(run_git(["diff-tree", "--no-commit-id", "--name-only", "-r", commit_hash]).splitlines())
+if not changed_files:
+    print("\n".join(raw_lines))
+    raise SystemExit(0)
+
+kept = []
+suppressed = []
+for line in raw_lines:
+    path = parse_path(line)
+    if not path or path not in changed_files:
+        kept.append(line)
+        continue
+    commit_ranges = hunk_ranges(run_git(["diff", "--unified=0", f"{commit_hash}^", commit_hash, "--", path]))
+    dirty_ranges = hunk_ranges(run_git(["diff", "--unified=0", "--", path]) + "\n" + run_git(["diff", "--cached", "--unified=0", "--", path]))
+    if commit_ranges and dirty_ranges and not overlaps(commit_ranges, dirty_ranges):
+        suppressed.append(path)
+    else:
+        kept.append(line)
+
+for path in suppressed:
+    print(f"WARN(cmd_3264-AC2): {path} has uncommitted non-overlapping diff after report commit_hash; treating as concurrent unrelated change", file=sys.stderr)
+print("\n".join(kept))
+PY
+}
+
 if [[ "$REPORT_PATH" != /tmp/* ]] && [[ "$REPORT_PATH" != *"/tmp/"* ]]; then
     _CC_WORKER="$_REPORT_EXECUTOR"
     _CC_TASK_DIR="${GATE_SESSION_STATE_TASK_DIR:-$REPO_ROOT/queue/tasks}"
@@ -209,6 +289,9 @@ except Exception:
             _CC_UNCOMMITTED=$(cd "$REPO_ROOT" && git status --porcelain -- $_CC_CHECK 2>/dev/null || true)
             if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
                 _CC_UNCOMMITTED=$(filter_session_state_only_task_diffs "$REPO_ROOT" "$_CC_UNCOMMITTED" 2>/dev/null || printf '%s\n' "$_CC_UNCOMMITTED")
+            fi
+            if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
+                _CC_UNCOMMITTED=$(filter_report_commit_nonoverlap_diffs "$REPO_ROOT" "$REPORT_PATH" "$_CC_UNCOMMITTED" 2>>"$REPO_ROOT/logs/gate_report_format_stderr.log" || printf '%s\n' "$_CC_UNCOMMITTED")
             fi
             if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
                 echo ""
