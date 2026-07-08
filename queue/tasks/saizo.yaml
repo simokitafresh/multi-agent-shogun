@@ -31,7 +31,7 @@ task:
     total: 93
     zero_backlinks: 1
   scout_exempt: true
-  status: in_progress
+  status: idle
   stop_for: []
   target_path: queue/insights.yaml
   task_id: cmd_reflux_insight_202607081542_saizo_exact
@@ -130,10 +130,11 @@ task:
   acknowledged_at: "2026-07-08T15:43:17"
 
   session_state:
-    attempt: 2
-    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    attempt: 3
+    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
     tried_approaches:
     - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
     approach_summary: 'INS-20260708-110048210-19eb(semantic_stress_test由来のNO_MATCH候補alias, source=lord, 過去cmd_3758の作業継続指示文)を一次情報で確認し、noiseと判定してinsight_write.sh --resolveでstatus:doneへ整理した'
     prior_attempts:
     - attempt: 1
@@ -141,4 +142,7 @@ task:
       approach_summary: 'INS-20260708-110048210-19eb(semantic_stress_test由来のNO_MATCH候補alias, source=lord, 過去cmd_3758の作業継続指示文)を一次情報で確認し、noiseと判定してinsight_write.sh --resolveでstatus:doneへ整理した'
     - attempt: 2
       block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'INS-20260708-110048210-19eb(semantic_stress_test由来のNO_MATCH候補alias, source=lord, 過去cmd_3758の作業継続指示文)を一次情報で確認し、noiseと判定してinsight_write.sh --resolveでstatus:doneへ整理した'
+    - attempt: 3
+      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
       approach_summary: 'INS-20260708-110048210-19eb(semantic_stress_test由来のNO_MATCH候補alias, source=lord, 過去cmd_3758の作業継続指示文)を一次情報で確認し、noiseと判定してinsight_write.sh --resolveでstatus:doneへ整理した'
