@@ -1,6 +1,6 @@
 # CoDD (Coherence-Driven Development) 索引
 
-<!-- last_updated: 2026-07-01 cmd_karo_hotfix_ga154_context_freshness_202607010005 -->
+<!-- last_updated: 2026-07-09 cmd_karo_hotfix_context_freshness_ga203_202607090005 -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
 
@@ -70,6 +70,14 @@
 | `/home/simokitafresh/.codd-venv/bin/codd --version` | `codd, version 2.19.0` | §2/§5のv2.19.0前提は維持 |
 | `git log --since=2026-06-23 -- scripts/codd scripts/codd_ skills/codd skills/codd-refactor` | 対象差分なし | CoDDコマンド体系・スキル参照の更新不要 |
 | 通常`gate_context_freshness.sh` | 日数WARNのみ | 内容更新ではなく鮮度確認としてlast_updatedを更新 |
+
+### 2026-07-09 鮮度確認
+
+| 確認 | 結果 | 判断 |
+|------|------|------|
+| `/home/simokitafresh/.codd-venv/bin/codd --version` | `codd, version 2.19.0` | §1/§2/§5のローカルCLI前提は維持 |
+| `/home/simokitafresh/.codd-venv/bin/codd --help` | `drift`, `fixup-drift`, `propagate-from`, `qc`, `require`, `restore`, `watch`を含む | 2026-07-01記載の現行コマンド体系と矛盾なし |
+| `git log --since=2026-07-01 -- context/codd.md scripts/gates/gate_context_freshness.sh scripts/context_freshness_check.sh` | context本体更新はGA-154のみ。以後はcontext freshness gate品質/重複mapping修正 | CoDD本文へ追記すべき新仕様なし。今回GA-203は日数WARNの再確認 |
 
 ## §3 核心原理 (記事#1-#5)
 

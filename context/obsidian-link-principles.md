@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-07-01 cmd_karo_hotfix_ga154_context_freshness_202607010005 -->
+<!-- last_updated: 2026-07-09 cmd_karo_hotfix_context_freshness_ga203_202607090005 -->
 # Obsidianリンク×セマンティクスインデックス 分離原則
 
 <!-- created: 2026-05-22 | origin: 殿×将軍×軍師 対話で確立 -->
@@ -60,6 +60,11 @@ SQLiteは記憶台帳、Obsidianは人間の認知編集層、セマンティッ
 
 - 2026-06-23以降に`docs/semantic-index/`、`scripts/semantic_*`、`scripts/causal_*`関連commitが多数あるが、内容はalias追加・semantic index同期・因果トラバース運用・完了記録の追記であり、本ファイルの分離原則（セマンティクスインデックス=検索入口、Obsidianリンク=人が読んで張る直接関係、自動ハブ化禁止）は維持。
 - `cmd_3615`の設計思想カタログ中間レイヤー貫通も、概念到達/配備文脈の改善であり、Obsidian直接リンクを自動生成する設計ではないため、本原則との矛盾なし。
+
+### 2026-07-09 鮮度確認
+
+- 2026-07-01以降の`docs/semantic-index/`、`context/semantic-map.md`、`scripts/semantic_*`、`scripts/causal_backlinks.sh`関連commitは、還流insightのalias追加、semantic index同期、三層連鎖修復、因果バックリンク計測資源登録が中心。
+- これらは検索入口・概念到達・運用記録の更新であり、Obsidianリンクを機械生成したり、概念ハブへ還流したりする変更ではない。本ファイルの分離原則と禁止事項は維持。
 
 ## Why（なぜこの結論か）
 
