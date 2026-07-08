@@ -507,7 +507,8 @@ lessons:
   source_cmd: 'cmd_2850'
   created_at: '2026-05-18'
   automated: true
-  enforcement: 'type=gate; file=/mnt/c/Python_app/kj-role-count/backend/database.py; pattern=run_backup'
+  enforcement_level: 4
+  enforcement: 'type=gate; file=/mnt/c/Python_app/kj-role-count/backend/database.py; pattern=run_backup。一次情報再検証(2026-07-09, backend/database.py L94-98実読): init_database内でDB既存時に無条件run_backup()を実行しdb変更フローへ自動介入するコード実装済み(フロー内強制、忍者が取り忘れる余地なし=L4以上相当)。ただし適用範囲はkj-role-count1PJ1箇所のみ。dm-signal本番マイグレーション(backend/run_migration.py, backend/app/db/migrations.py)にbackup呼出し0件(grep確認)、.claude/hooks/および scripts/gates/にもDB破壊操作前バックアップを強制する横断gate/hook不在(grep確認)。他PJ・システム全体への横展開はcmd_reflux_promotion_202607090317_saizoでdecision_candidateへ整理(汎用hook化はDB破壊操作の検知パターンがPJごとに異なり誤検知リスク大のため、PJ単位の個別実装cmdを推奨)。'
 # LS041: superseded by LS034 (外部PJパス二重結合を統合。2026-05-19)
 # LS042: superseded by LS-A17 (書込時アーカイブ=Vercelスタイル。2026-05-21統合)
 # LS043: superseded by LS-A09 (grep0件→未実装断定。LS-A09(8)に吸収。cmd_2862, 2026-05-19)
