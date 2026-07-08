@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-07 cmd_3716 -->
+<!-- last_updated: 2026-07-08 cmd_karo_hotfix_ga200_context_freshness_202607081121 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -642,6 +642,14 @@ GA-181分類メモ(source commits since last_updated=2026-07-03の3件): 上記4
 
 実装注意: `grid_monthly_fast.csv` は全パターンで先頭連続NaN(burn-in区間)を持つ。月次CSVからmean/prod/cumprod系の追加指標を作る時は `nanmean`、`log1p+nansum`、burn-in中立値埋めを使う。素朴なmean/prod/cumprodはsortino/vdrag/avg_uwp/mruを99.8% NaN化する。
 → 詳細: `outputs/analysis/cmd_3713_metric_combo_correlation_report.md`, `outputs/analysis/cmd_3714_metric13_correlation_report.md`, `docs/research/gs_3objective_correlation_analysis_20260707.md`
+
+## §50. L0/シン方式チャンピオン比較・本番採用逆算 (cmd_3755-3767, 2026-07-08)
+
+- cmd_3755-3763: `shin_shijin_l1_gs.py`へthreshold_band三状態を追加し、L0/シン方式4DM系×3モードで旧基準(CAGR/MaxDD/NHF)と新基準(CAGR/WorstYear/AvgUWP, PD-060)のチャンピオンを比較。現行本番4体のlookbackはtrading_days複数項加重で、標準GSカタログとは完全一致しないため、価格・バンド変更影響とパラメータ空間差分は直接分離できない。
+- cmd_3756/3762: 旧基準と新基準の選別結果は`outputs/analysis/cmd_3756_champion_selection_summary.md`、`outputs/analysis/cmd_3762_shin_champion_selection_summary.md`、`outputs/analysis/cmd_3762_prod_champion_percentile_note.md`を正本とする。
+- cmd_3767: 本番active 102PFの構成からpf_L0採用を逆算。12体すべて上位PFに採用済みで、未採用二値ではなく採用頻度をpriorにする。unique parent上位は白虎-鉄壁61、青龍-激攻60、玄武-激攻59、青龍-鉄壁57。朱雀-鉄壁だけ6件で外れ値。
+- 次段仮説: 青龍/玄武の高採用部品と白虎鉄壁を核にし、朱雀鉄壁を除外または別役割にする。構成採用と月次holding実選択頻度は未分離。
+→ 詳細: `docs/research/cmd_3767_pf_l0_adoption_reverse_features.md`, `docs/research/cmd_3767_pf_l0_adoption_summary.csv`, `outputs/analysis/cmd_3763_c1_c4_results.json`
 
 ---
 

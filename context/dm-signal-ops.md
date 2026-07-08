@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-07 cmd_3711 -->
+<!-- last_updated: 2026-07-08 cmd_karo_hotfix_ga200_context_freshness_202607081121 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -975,3 +975,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - provenance: 2026-05-01は`current_value_backfill`、6/1・7/1は`signal_change_log_old_chain`を優先し、履歴なしなら`signals_fallback`。7/1 sync-fof rewrite影響9PF/26行は`signals.holding_signal`の汚染現在値ではなく、`signal_change_log.old_holding_signal`連鎖で決定時点値へ戻す。
 - PF削除前運用: `signal_decision_ledger`は`portfolios(id) ON DELETE CASCADE`対象。削除前に対象PFの台帳行をJSON/CSVで退避する。未退避なら削除禁止。
 - 不要分類: cmd_3694 small-run GS pattern limitsはgrid_search実行制限と研究証跡であり、本ops手順の追記不要。`a3059891 retire stale lessons`は`tasks/lessons.md`整理で運用差分なし。
+
+## §53 PF削除アーカイブ・復元API (cmd_3753/3754, 2026-07-08)
+
+- PF削除は`PortfolioRepository.delete_by_id`で`portfolio_archive`へpayload退避してから関連行を削除する。対象はPF本体、folder hierarchy、monthly_returns、signals、ledger、month_start snapshots等。明示delete API以外の保存差分では削除しない安全弁を維持。
+- 復元APIは`POST /api/admin/portfolios/restore/{portfolio_id}`と`POST /api/admin/portfolios/restore-all`。FoF依存はarchiveからL0→L3順に復元し、名前衝突は既定`abort`、必要時`on_name_conflict=suffix|force`。
+- 復元後recalculateは既存のcross-process advisory lockを再利用し、最大300秒待機。lock timeout時は503で停止し、並行fullrecalculateを迂回しない。
