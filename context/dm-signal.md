@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-07 cmd_karo_hotfix_ga189_context_freshness_20260707 -->
-<!-- last_synced_lesson: L836 -->
+<!-- last_synced_lesson: L837 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -292,6 +292,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - L834: run_077_*.pyをモジュールimportで診断スクリプト再利用時はsys.argvでuniverseを明示指定せよ（cmd_karo_hotfix_yotsume_bootstrap_preflight_202607081515）
 - L835: 全量ベンチACとpreflight不一致は分離して記録する（cmd_3772）
 - L836: recalculate acceptedと完走証跡を分離して判定する（cmd_3771）
+- L837: local_sqlite loaderはmonthly_blobと重複pattern_idを標準対応すべき（cmd_3774）
 
 ## 因果リンク
 
