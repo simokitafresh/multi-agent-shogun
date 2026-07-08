@@ -1,5 +1,5 @@
 # 成長ループ設計 — 全ロール共通
-<!-- last_updated: 2026-06-30 cmd_3615 -->
+<!-- last_updated: 2026-07-08 cmd_3765 -->
 <!-- origin: 殿指摘2026-04-20「BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉」 -->
 
 ## §1 核心原則
@@ -233,6 +233,7 @@ cmd_2673-2676で4件全てL5化完了(2026-05-11):
 - ← [[deepdive_causal_tracing_20260415]] 因果をたどる=成長ループのSystem 2側
 - → [[training-cycle]] 修行サイクル=成長ループの忍者向け実装
 - → [[infrastructure]] gate/hook/lessons=成長ループの環境埋込み先
+- → [[throughput-first-asis-tobe-5w1h_20260708]] 全体スループット第一原則(殿2026-07-08): ルール複利の逆流を単一の自問+FP率計測(削る装置)+プルーンサイクルで反転させる。成長ループの§11防御階層に対する上位制約
 - → [[gunshi_idle_nazenaze7_bottleneck_20260413]] なぜなぜ7回転がボトルネックになる構造分析
 - → [[gunshi_idle_nazenaze_ci_red_lesson_gap_20260605]] CI red→lesson gap: なぜなぜが成長ループに接続されていない根因
 - → [[gunshi_idle_recommended_skills_role_filter_20260602]] 推奨スキルのロールフィルタ設計: 不要通知削減の実践
