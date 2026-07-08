@@ -1,7 +1,7 @@
 task:
   acceptance_criteria:
   - checks:
-    - check: 対象insight INS-20260708-215958678-4c42 を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
+    - check: 対象insight INS-20260709-000407802-de1e を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
     id: AC1
   - checks:
     - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
@@ -22,30 +22,20 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_reflux_insight_202607090148_hayate
+  parent_cmd: cmd_reflux_insight_202607090249_hayate
   project: infra
-  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-215958678-4c42 を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
+  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260709-000407802-de1e を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
   reflux_inventory_before:
-    insights_pending: 7
-    promotions: 86
-    total: 95
+    insights_pending: 1
+    promotions: 87
+    total: 90
     zero_backlinks: 2
   scout_exempt: true
-  status: idle
+  status: done
   stop_for: []
   target_path: queue/insights.yaml
-  task_id: cmd_reflux_insight_202607090148_hayate_exact
+  task_id: cmd_reflux_insight_202607090249_hayate_exact
   task_type: exact
-  previous_failures:
-    attempt: 1
-    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    tried_approaches:
-    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    approach_summary: 'INS-20260708-202916450-af87を一次情報で確認し、同一root causeの重複throughput insightとしてresolveした'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      approach_summary: 'INS-20260708-202916450-af87を一次情報で確認し、同一root causeの重複throughput insightとしてresolveした'
   related_lessons:
   - id: 'L351'
     summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
@@ -93,12 +83,12 @@ task:
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
-  ac_version: 3378bd13
-  _ac_task_id: cmd_reflux_insight_202607090148_hayate_exact
+  ac_version: 7b0dcdfc
+  _ac_task_id: cmd_reflux_insight_202607090249_hayate_exact
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_reflux_insight_202607090148_hayate.yaml
-  report_path: queue/reports/hayate_report_cmd_reflux_insight_202607090148_hayate.yaml
+  report_filename: hayate_report_cmd_reflux_insight_202607090249_hayate.yaml
+  report_path: queue/reports/hayate_report_cmd_reflux_insight_202607090249_hayate.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -121,5 +111,6 @@ task:
     - reason: 'binary_checks_fail'
       count: 2
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-09T01:48:45"
-  acknowledged_at: "2026-07-09T01:49:06"
+  deployed_at: "2026-07-09T02:49:46"
+  acknowledged_at: "2026-07-09T02:50:11"
+  completed_at: "2026-07-09T02:54:49+09:00"
