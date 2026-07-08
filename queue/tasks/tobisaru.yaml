@@ -64,7 +64,7 @@ task:
     total: 90
     zero_backlinks: 2
   scout_exempt: true
-  status: done
+  status: idle
   stop_for: []
   target_path: docs/research/cmd_3780_analysis_report_20260709.md
   task_id: cmd_reflux_backlink_202607090255_tobisaru_exact

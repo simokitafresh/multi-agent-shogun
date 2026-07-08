@@ -10376,3 +10376,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - source=semantic_stress_testのpending insight(candidate_aliases: NO_MATCH形式)を担当する際は、まず bash scripts/semantic_alias_absorb_pending.sh を実行せよ。これは既存の全概念に対しbest_similar_conceptで自動fuzzy-match(pending_alias_threshold=16.0)を試み、一致すればalias追加+insight自動resolveまで行う。今回はscore 4.7<16.0で非吸収だったため、この結果自体(=誤routing回避が正しく機能した証拠)を根拠にscripts/insight_resolve.shで手動resolveした。この2段階(自動吸収トライ→ダメなら根拠付き手動resolve)を踏まずに一次情報確認だけでresolveすると、absorb_pendingが将来同じqueryを拾って再度スコアリングを試みる可能性がありinsightsが往復しかねない(実際はresolve後は対象外になるため実害は小さいが、判断根拠にスコア実測値を含めることが重要)。origin: [[cmd_reflux_insight_202607090242_kotaro]] -> [[semantic_stress_test insight解決パターン未文書化]] -> [[absorb_pending先行実行の教訓化]]
+
+### L1001: scripts/causal_backlinks.shが複数SEARCH_PATHS同時指定時に既存backlinkを偽陰性報告する(ゼロ backlink判定を誤らせるinfraバグ)
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_backlink_202607090255_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,testing,process,bash]
+- **target_files**: [docs/research/plan_alpha6_band_champions_verification_20260708.md,docs/research/gs-recalibration-plan.md]
+- **origin**: [[cmd_reflux_backlink_202607090255_tobisaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 本タスクでplan_alpha6_band_champions_verification_20260708.mdへ[[cmd_3780_analysis_report_20260709]]リンクを追加しgit grepで存在を確認した直後、bash scripts/causal_backlinks.sh cmd_3780_analysis_report_20260709(実運用のデフォルト引数。SEARCH_PATHS=AGENTS.md/instructions/context/projects/skills/scripts/docs/tasksを一括rg呼出し)を実行したがEXIT=0かつ出力0件=backlinkなしと誤報告した。切り分けの結果: rg単体で'docs'ディレクトリのみ指定すれば正しく1件ヒットするが、'scripts docs'のように複数ルートを同時指定すると同じneedleが0件になる(順序無関係)。原因は.gitignoreのwhitelist方式(先頭アスタリスクで全除外し!docs/research等で個別許可)がrgの複数root探索時に正しく解決されない模様。causal_backlinks.shはrun_backlink_search関数内でrgの結果をOR trueで無条件成功扱いにするため、この偽陰性がスクリプト利用者に一切警告されない。一方、ninja_monitor.shのreflux在庫計測が使うscripts/causal_backlink_counts.sh(Python実装)は同じ操作で正しく1件(修正後の残存対象のみ)を返しており本バグの影響を受けていない。影響範囲: causal_backlinks.shを対話的に単発ID検証で使う全エージェント(家老/軍師/忍者)がbacklink存在を見誤る可能性がある。次回追加すべきチェック: causal_backlinks.shを信頼する前に、疑わしい場合はgit grep 固定文字列検索(-- '*.md')で二重検証する。恒久対策は複数root一括rgではなく1root毎に個別rg実行し結果をマージする実装変更(スクリプト修正はninjaの権限外につきdecision_candidateへ回した)
