@@ -1642,7 +1642,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "LGTM"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -1652,7 +1652,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "LGTM"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -1668,3 +1668,23 @@ entries:
   supplementary_cmds: 0
   source: "cmd_complete_gate"
   timestamp: "2026-07-08T22:57:46Z"
+- cmd_id: "cmd_reflux_insight_202607090745_kotaro"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T23:06:45Z"
+- cmd_id: "cmd_3784"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T23:11:44Z"
