@@ -919,9 +919,14 @@ if (( unread_count >= 1 )); then
 fi
 
 # --- Question pattern detection → confirmation injection (cmd_2293) ---
+# cmd_karo_hotfix_shogun_startup_loop_memory_202607082152: 「今クリアされても今より強くて
+# ニューゲームできるようにせよ」という殿の命令文(疑問符なし)がquestion_detectedに未検知のまま
+# [MEM:]タグなしで応答された実例を確認(2026-07-08T21:42/21:46)。疑問形のみを検知しており、
+# 三層記憶に基づく状態検証を要求する命令形を見逃していた(実装不足)。「ニューゲーム」は殿の
+# 強くてニューゲーム原則(三層記憶の中核概念)に直結する語で日常会話に紛れず過検知リスクが低い。
 question_warning=""
 question_detected=0
-if echo "$prompt_text" | grep -qiE '\?|？|分かるか|確認|どう|即答|知って'; then
+if echo "$prompt_text" | grep -qiE '\?|？|分かるか|確認|どう|即答|知って|ニューゲーム'; then
   question_detected=1
   current_project="unknown"
   projects_yaml="$SCRIPT_DIR/config/projects.yaml"

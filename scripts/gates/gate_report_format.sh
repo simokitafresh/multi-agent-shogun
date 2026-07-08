@@ -385,11 +385,21 @@ fi
 LOG_FILE="${GATE_FIRE_LOG_FILE:-$REPO_ROOT/logs/gate_fire_log.yaml}"
 TS=$(date -Is)
 
+# パス正規化(cmd_karo_hotfix_shogun_startup_loop_memory_202607082152): 呼び出し元(cmd_complete_gate.sh/
+# 忍者の直接実行等)によってREPORT_PATHが絶対パス/相対パスで混在すると、gate_loop_health.shの自己修正率・
+# FAIL率集計がファイル名の生文字列でグルーピングするため同一ファイルが別ファイル扱いされ、免疫系が
+# 正常(自己修正)なのに異常(空転)として計測される。既に算出済みの絶対パス正規形_CANONからREPO_ROOT
+# プレフィックスを除去し、常にリポジトリ相対パスでログへ記録する。
+_LOG_PATH="$REPORT_PATH"
+case "$_CANON" in
+    "$REPO_ROOT"/*) _LOG_PATH="${_CANON#"$REPO_ROOT"/}" ;;
+esac
+
 if [ "$RESULT_IS_PASS" -eq 1 ]; then
     # WSL2最適化: gate_fire_log書込みをバックグラウンド化（ログは判定に影響しない）
     (
         flock -w 5 200 2>/dev/null
-        printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: PASS\n' "$TS" "$REPORT_PATH" >> "$LOG_FILE"
+        printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: PASS\n' "$TS" "$_LOG_PATH" >> "$LOG_FILE"
     ) 200>"$LOG_FILE.lock" 2>/dev/null &
     # DB INSERT: eventsテーブルへゲート記録（非ブロック）
     _GRF_CMD_ID="$(basename "${REPORT_PATH%.yaml}" | grep -oE 'cmd_[0-9a-zA-Z_]+' | head -1 || true)"
@@ -479,7 +489,7 @@ except Exception:
     if [ "${GATE_SESSION_STATE_TEST:-0}" != "1" ] && [ "$_GATE_FIRE_LOG_SKIP" = "0" ]; then
         (
             flock -w 5 200 2>/dev/null
-            printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: FAIL, reasons: "%s"\n' "$TS" "$REPORT_PATH" "$REASONS" >> "$LOG_FILE"
+            printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: FAIL, reasons: "%s"\n' "$TS" "$_LOG_PATH" "$REASONS" >> "$LOG_FILE"
         ) 200>"$LOG_FILE.lock" 2>/dev/null || true
         # DB INSERT: eventsテーブルへゲート記録（非ブロック）
         _GRF_CMD_ID="$(basename "${REPORT_PATH%.yaml}" | grep -oE 'cmd_[0-9a-zA-Z_]+' | head -1 || true)"

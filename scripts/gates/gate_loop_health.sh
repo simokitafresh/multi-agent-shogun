@@ -37,6 +37,19 @@ log_path = os.environ['GATE_LOG_FILE']
 wa_path = os.environ['GATE_WA_FILE']
 repo_root = os.environ['GATE_REPO_ROOT']
 gate_metrics_path = os.path.join(repo_root, 'logs', 'gate_metrics.log')
+_repo_root_prefix = repo_root.rstrip('/') + '/'
+
+
+def normalize_gate_file_path(path):
+    # cmd_karo_hotfix_shogun_startup_loop_memory_202607082152: gate_report_format.shの呼び出し元
+    # (cmd_complete_gate.sh/忍者の直接実行等)が絶対パス/相対パスを混在させてREPORT_PATHを渡すため、
+    # 同一ファイルへの「FAIL→修正→PASS」が別ファイル扱いされ自己修正率(sc_pct)が実態より低く出る
+    # (実測: 正規化なし79% → 正規化後95%)。記録時点の正規化(gate_report_format.sh側)に加え、
+    # 既存ログ(混在済み)を正しく集計するため読込時にもリポジトリ相対パスへ正規化する。
+    if path.startswith(_repo_root_prefix):
+        return path[len(_repo_root_prefix):]
+    return path
+
 
 # --- Load gate fire log (flow-style format, parsed via regex) ---
 entries = []
@@ -54,7 +67,7 @@ with open(log_path) as f:
         if ts_m:
             entry['ts'] = ts_m.group(1)
         if file_m:
-            entry['file'] = file_m.group(1)
+            entry['file'] = normalize_gate_file_path(file_m.group(1))
         if result_m:
             entry['result'] = result_m.group(1)
         if reasons_m:

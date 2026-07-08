@@ -2332,7 +2332,11 @@ if [ -f "$_lord_conv_12_2" ]; then
     _shogun_resp_12_2=$(tail -200 "$_lord_conv_12_2" 2>/dev/null | grep -E '"direction": ?"response"' | tail -20)
     IFS=$'\t' read -r _resp_count_12_2 _mem_count_12_2 _mem_md_count_12_2 <<< "$(printf '%s\n' "$_shogun_resp_12_2" | awk '
         {
-            routine = ($0 ~ /配備(開始|完了)|初回配備|GATE (CLEAR|BLOCK)|完了(しました|報告)|inbox未読|新着を待つ/)
+            # cmd_karo_hotfix_shogun_startup_loop_memory_202607082152: 「inbox空。レビュー依頼待ち。」等の
+            # 定型的な自己申告(殿の質問への回答ではなくアイドル状態のセッション継続メッセージ)が
+            # 表現ゆれ(未読/空)でroutine判定から漏れ、分母を汚染していた(計測FP)。実測: 直近20件中
+            # mem=0の9件中6-7件がこの定型文だった。
+            routine = ($0 ~ /配備(開始|完了)|初回配備|GATE (CLEAR|BLOCK)|完了(しました|報告)|inbox(未読|空)|新着を待つ|レビュー依頼待ち/)
         }
         /"direction"/ && !routine { resp++ }
         /\[MEM:/ && !routine { mem++ }
