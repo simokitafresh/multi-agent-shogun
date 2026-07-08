@@ -10424,3 +10424,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - gate_lesson_enforcement_level.shはenforcement本文のキーワード有無でLevelを判定しデフォルトL1にする。しかしLK-A07のように本文が'deploy_task.sh テンプレート品質+karo-operations.md §1配備+§3レビュー'のような参照表記のみで、実体はdeploy_task.shのcheck_scout_gate()(BLOCK)やgate_report_format.sh(exit 1 BLOCK)という既存Level4実装を指している場合がある。reflux_promotion配備では、enforcement本文の言葉だけで判断せず、本文が参照するファイル・関数を実際にgrep/Readし、対応する回帰テストを実行してBLOCK/auto-gen挙動を確認してからenforcement_levelフィールドを追加すべき。本cmdはこの手順で確認しL1→L4へ修正(LS080/LS040/LS078/LS-A24と同型、同日5件目の同型誤判定)。
+
+### L1005: 複合lessonエントリはgate_lesson_enforcement_level.shで個別要素のLevel差が平均化・埋没する
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_promotion_202607090518_saizo
+- **記録者**: saizo
+- **tags**: [infra,gate,bash,lesson]
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_reflux_promotion_202607090518_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- LK-A10は4つの異なる懸念(成果物確認/ACファイル名/context還流/DC重複チェック)を1つのenforcement文言に混在させた複合エントリだった。一次情報確認の結果、(4)DC前重複チェックはgate_dc_duplicate.shがcmd_complete_gate.sh:6624から自動呼出しされexit1でBLOCKする実質Level4実装済みだったが、(1)(2)はdoc記載のみのLevel2、(3)は明記通り未着手のLevel1だった。gate_lesson_enforcement_level.shはenforcement文言全体からのテキスト解析(BLOCK等keyword)でLevel判定するため、複合エントリでは最良実装(Level4)が可視化されずLevel1判定に落ちる。reflux_promotion候補が複合的な内容を含む場合は個別懸念ごとに実装状況を分けて確認し、必要なら教訓エントリ自体の分割を家老に提起すべき
