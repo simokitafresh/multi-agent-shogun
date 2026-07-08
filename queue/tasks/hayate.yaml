@@ -1,99 +1,4 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
-  acceptance_criteria:
-    AC1:
-      binary_checks:
-      - '改善点を3つ特定したか: yes/no'
-      - '各改善点に対象ファイル・根拠を添えたか: yes/no'
-      description: 指定ファイルの改善点を3つ特定し、根拠付きで報告する
-    AC2:
-      binary_checks:
-      - '最高インパクト1件を実装したか: yes/no'
-      - '対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加したか: yes/no'
-      - '追加した[[ファイル名]]リンクのリンク先ファイルから特定行を引用して報告したか: yes/no'
-      - '関連テストまたは明示的な検証を実行したか: yes/no'
-      description: 改善点のうち最高インパクト1件を実装し、対象Markdownへ関連ファイルへの直接[[ファイル名]]リンクを1件以上追加し、リンク先ファイルの特定行引用と必要な検証を報告する
-    AC3:
-      binary_checks:
-      - 'lesson_candidate found=trueでtitle/detail/projectを記入したか: yes/no'
-      - 'AC1/AC2/AC3/AC4/AC5のbinary_checksを全てyes/noで記入したか: yes/no'
-      - 'verdictがbinary_checksと矛盾していないか: yes/no'
-      description: lesson_candidate found=true、AC1/AC2のbinary_checks全記入、verdict整合を含む報告YAMLを完成させる
-    AC4:
-      binary_checks:
-      - 'task.related_lessonsの注入教訓を1件以上参照したか: yes/no'
-      - '参照した教訓IDのusefulとreasonをlessons_usefulに記入したか: yes/no'
-      description: 注入教訓から1件以上を作業判断に参照し、lessons_usefulに有用性と理由を記入する
-    AC5:
-      binary_checks:
-      - 'bash scripts/causal_backlink_counts.sh --zero --limit 20でincoming backlink baselineを確認したか: yes/no'
-      - 'bash scripts/markdown_link_counts.sh --top 20でbaselineを確認したか: yes/no'
-      - 'git diffで対象Markdownの孤立解消またはファイル間直接[[ファイル名]]リンク数増加を確認したか: yes/no'
-      description: 対象ファイルの現在のincoming backlink数とファイル間直接[[ファイル名]]リンク数baselineを計測し、変更後に孤立解消または直接リンク数増加を報告する
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok: []
-  parent_cmd: cmd_training_L4_auto_202607081543_hayate
-  project: infra
-  purpose: 'L4修行: 指定ファイルの改善点3つを特定し、最高インパクト1件を実装し、[[リンク]]で知識ネットワークを育て、報告YAMLを一発PASS品質で完成させる'
-  scout_exempt: true
-  status: idle
-  stop_for: []
-  target_path: scripts/ninja_monitor.sh
-  task_id: cmd_training_L4_auto_202607081543_hayate_normal
-  task_type: training
-  previous_failures:
-    attempt: 4
-    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; resu…'
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verd…'
-    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    diagnose_reason: 'gate_report_formatがtarget_path配下の未commit変更としてqueue/tasks/hayate.yamlを検出した。自分がacknowledged/in_progress状態更新をtracked運用YAMLに残したままgateを実行したためで、scope対象を個別commitしてから再gateすべきだった。'
-    approach_summary: 'INS-20260708-120232949-e792は一次情報上『偵察を許可する』単独発話で、既存context/semanticに接続不能な短文候補のためinsight_write.sh --resolveでdone化。pending在庫は4→3。'
-    prior_attempts:
-    - attempt: 2
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verd…'
-      approach_summary: 'INS-20260708-120232949-e792は一次情報上『偵察を許可する』単独発話で、既存context/semanticに接続不能な短文候補のためinsight_write.sh --resolveでdone化。pending在庫は4→3。'
-    - attempt: 3
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      approach_summary: 'INS-20260708-120232949-e792は一次情報上『偵察を許可する』単独発話で、既存context/semanticに接続不能な短文候補のためinsight_write.sh --resolveでdone化。pending在庫は4→3。'
-    - attempt: 4
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      diagnose_reason: 'gate_report_formatがtarget_path配下の未commit変更としてqueue/tasks/hayate.yamlを検出した。自分がacknowledged/in_progress状態更新をtracked運用YAMLに残したままgateを実行したためで、scope対象を個別commitしてから再gateすべきだった。'
-      approach_summary: 'INS-20260708-120232949-e792は一次情報上『偵察を許可する』単独発話で、既存context/semanticに接続不能な短文候補のためinsight_write.sh --resolveでdone化。pending在庫は4→3。'
-  related_lessons:
-  - id: 'L972'
-    summary: 'scripts/ninja_monitor.sh:3113-3183の_cleanup_stale_keysは、compound-key(agent:task_'
-    detail: 'scripts/ninja_monitor.sh:3113-3183の_cleanup_stale_keysは、compound-key(agent:task_'
-  - id: 'L948'
-    summary: 'scripts/ninja_monitor.sh(5688行)は多数のL4-R速度改善ラウンドを経ておりTODO/FIXME/grep-cバグ等の既知アンチパタ'
-    detail: 'scripts/ninja_monitor.sh(5688行)は多数のL4-R速度改善ラウンドを経ておりTODO/FIXME/grep-cバグ等の既知アンチパタ'
-  - id: 'L548'
-    summary: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-    detail: 'queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y'
-  - id: 'L278'
-    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-    wa_category: 'commit_missing'
-    wa_count: 1
-    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
-  - id: 'L342'
-    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
-    wa_category: 'commit_missing'
-    wa_count: 1
-    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
   standard_skills:
   - "report-write"
   - "verdict-check"
@@ -111,9 +16,7 @@ task:
     - "ACごとに実テスト証跡をresult.detailsへ記録"
     - "報告前にplaceholder残存確認とgate_report_formatを実行"
   semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh tests/unit/test_deploy_training.bats scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md docs/research/model-comparison-5w1h-20260701.md 全モデル5W1H比較(GPT5.5/Sonnet4.6/Sonnet5/Opus4.8) docs/research/sonnet5_vs_46_ab_evaluation_20260701.md 5ラウンドA/B/C評価データ scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
-  recommended_skills:
-  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
+  - "lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/auto_draft_lesson.sh scripts/sync_lessons.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml docs/research/gunshi_idle_insights_consumption_bottleneck_20260515.md — 軍師idle: インサイト消費ボトルネック分析(2026-05-15) docs/research/gunshi_idle_knowledge_burial_audit_20260505.md — 軍師idle: 知識埋没監査(2026-05-05) docs/research/gunshi_idle_lesson_dedup_20260413.md — 軍師idle: 教訓重複排除分析(2026-04-13) docs/research/gunshi_idle_lesson_effectiveness_20260413.md — 軍師idle: 教訓有効性測定(2026-04-13) docs/research/gunshi_idle_lesson_impact_20260412.md — 軍師idle: 教訓インパクト分析(2026-04-12) docs/research/gunshi_idle_lesson_injection_dual_track_20260428.md — 軍師idle: 教訓注入デュアルトラック設計(2026-04-28) docs/research/gunshi_idle_lesson_injection_quality_20260605.md — 軍師idle: 教訓注入品質監査(2026-06-05) docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md — 軍師idle: 教訓注入汎用バイパス問題(2026-06-02) docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md — 軍師idle: 教訓参照率分析(2026-04-30) docs/research/gunshi_idle_lesson_tag_mismatch_20260507.md — 軍師idle: 教訓タグ不一致分析(2026-05-07) docs/research/gunshi_idle_lesson_useful_rate_20260422.md — 軍師idle: 教訓有用率計測(2026-04-22) docs/research/gunshi_idle_lesson_useful_rate_20260503.md — 軍師idle: 教訓有用率計測v2(2026-05-03) docs/research/gunshi_idle_lesson_useful_rate_20260608.md — 軍師idle: 教訓有用率計測v3(2026-06-08) docs/research/gunshi_idle_lesson_waste_analysis_20260516.md — 軍師idle: 教訓無駄分析(2026-05-16) docs/research/gunshi_idle_lesson_useful_rate_improvement_20260620.md — 軍師idle: 教訓有用率改善分析(2026-06-20) docs/research/gunshi_idle_session_lessons_20260617.md — 軍師idle: セッション教訓分析(2026-06-17) docs/research/gunshi_idle_session_lessons_20260618.md — 軍師idle: セッション教訓分析(2026-06-18) docs/research/gunshi_idle_self_run_20260624.md — 軍師idle: idle自走Step1-8完了分析(2026-06-24) docs/research/gunshi_idle_useful_rate_bootstrap_analysis_20260618.md — 軍師idle: 有用率ブートストラップ分析(2026-06-18) docs/research/lessons_karo_v3_archive.md — 家老教訓v3アーカイブ(統合前全文保存)"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -123,18 +26,65 @@ task:
   - "context/training-cycle.md"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L972: scripts/ninja_monitor.sh:3113-3183の_cleanup_stale_keysは、compound-key(agent:task_
-      - L948: scripts/ninja_monitor.sh(5688行)は多数のL4-R速度改善ラウンドを経ておりTODO/FIXME/grep-cバグ等の既知アンチパタ
-      - L548: queue/tasksなど運用YAMLはyaml.dump禁止だが長大デーモン内の補助Pythonに残存する。中核スクリプト偵察ではrg yaml.dump|y
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
-  ac_version: b9649a49
-  _ac_task_id: cmd_training_L4_auto_202607081543_hayate_normal
+    
+    
+  acceptance_criteria:
+  - checks:
+    - check: 対象文書 docs/research/cmd_3763_l0_newold_champion_comparison.md のincoming backlinkゼロ状態を確認し、適切な因果リンクを追加する
+    id: AC1
+  - checks:
+    - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
+    id: AC2
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok:
+  - AC1
+  - AC2
+  parent_cmd: cmd_reflux_backlink_202607081636_hayate
+  project: infra
+  purpose: '還流在庫自動消化: backlinksゼロ文書 docs/research/cmd_3763_l0_newold_champion_comparison.md を確認し、適切なsemantic-links/origin/因果リンクを追加して孤立を減らす'
+  reflux_inventory_before:
+    insights_pending: 0
+    promotions: 92
+    total: 93
+    zero_backlinks: 1
+  scout_exempt: true
+  status: idle
+  stop_for: []
+  target_path: docs/research/cmd_3763_l0_newold_champion_comparison.md
+  task_id: cmd_reflux_backlink_202607081636_hayate_exact
+  task_type: exact
+  related_lessons:
+  - id: 'L278'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
+  - id: 'L342'
+    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
+  ac_version: b978b840
+  _ac_task_id: cmd_reflux_backlink_202607081636_hayate_exact
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_training_L4_auto_202607081543_hayate.yaml
-  report_path: queue/reports/hayate_report_cmd_training_L4_auto_202607081543_hayate.yaml
+  report_filename: hayate_report_cmd_reflux_backlink_202607081636_hayate.yaml
+  report_path: queue/reports/hayate_report_cmd_reflux_backlink_202607081636_hayate.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -157,5 +107,5 @@ task:
     - reason: 'binary_checks_fail'
       count: 2
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-08T15:43:46"
-  acknowledged_at: "2026-07-08T15:44:10"
+  deployed_at: "2026-07-08T16:36:56"
+  acknowledged_at: "2026-07-08T16:37:21"
