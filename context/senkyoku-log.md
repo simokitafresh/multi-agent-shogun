@@ -5,6 +5,7 @@
 
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
+| 強ニュー化(cmd_3779中間) | /clear後もpf_L3 GSを即再開できる復帰点を外部化 | `queue/compact_state/karo.yaml` と互換 `queue/compact_state_karo.yaml` を2026-07-08T21:47時点へ更新。半蔵cmd_3779_fullはrun id `cmd_3779_full_20260708_213122`、加速D full完了(Exit 0、4分58秒、RSS約10.8GB)、加速R full実行中、本番DB書込みなし。将軍申し送り(blt_20260708_214602_a6dbbb)を吸収し、CLEAR後=工程3バックアップ検証→工程4入替、変わり身第四弾は殿裁可確認と明記 | 殿「今クリアされても今より強くてニューゲーム」→古い7/7 compact_stateを放置せず現行cmdの一次情報・待機条件・復帰後最初の行動へ差替え |
 | cmd_karo_hotfix_skill_script_refs_202607021234 | SKILL.md script参照WARN 20件の鮮度回復 | GATE CLEAR。13 SKILL.md更新、gate_skill_script_refs rc=2→0、commit 9c16569ff push済み | script側mtime進行でskill契約確認が陳腐化。gate弱体化せず確認記録で防御維持 |
 | cmd_karo_hotfix_shogun_startup_q6_chain | 将軍startup Q6未検出+洗脳連鎖2x2危険象限の真偽判定 | GATE CLEAR。分類=真陽性、D0修正なし。将軍Q6掲示板投稿が必要と掲示板action_required化 | 現行bulletinに将軍Q6不在→gate設計通り発火。archive過去Q6を現在回答扱いにしない |
 | note_draft.sh検証 | 修正版(dispatch_click+quick_url)の動作確認 | PASS。Login 1秒→Editor→Body inserted 25→Draft saved。SKIP→PASS改善 | 殿「検証してみたか？」→一次データで確認 |

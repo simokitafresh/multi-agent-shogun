@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-07 cmd_karo_hotfix_ga189_context_freshness_20260707 -->
-<!-- last_synced_lesson: L838 -->
+<!-- last_synced_lesson: L839 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -112,6 +112,8 @@ note.comメンバーシップの料金プランとDB viewer_tiersの対応。詳
 E7速度確認(2026-07-06): L0四神GS full 191,796 patternsは `timeout 300` で246.09s完走し、5分目標は実測達成。ただし `--skip-parity` の速度確認であり、本番PF登録/fullrecalculate/PostgreSQL-Pipeline-Pydantic境界パリティは未実施。E7を本番適用完了として扱うな。
 
 入力方式統一(cmd_3693): 秘奥義L3 `okugi_l3_168.yaml` は旧CSV84体から奥義21体DB componentsへ変更済み。四神GS `shin_shijin_l1_gs.py` は価格読込入口を `gs_data_loader` 経由へ統一し、少数検証用 `--pattern-limit` を追加。source_type棚卸しは db=4 / local_sqlite=2 / csv=14 / total=20。
+
+pf_L3再GS完了(cmd_3779): 新pf_L2チャンピオン21体を構成PFとして7忍法全量GS(3,484,075 patterns)を完走し、21チャンピオンを選出。成果物は `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3779_pf_l3_champions.json` と `docs/research/cmd_3779_pf_l3_champion_selection.md`。
 
 根拠: `/mnt/c/Python_app/DM-signal/docs/design/gs-recalibration-plan.md`（commit `4828c134`, `78ed9bec`, `97e06904`）。
 
@@ -294,6 +296,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - L836: recalculate acceptedと完走証跡を分離して判定する（cmd_3771）
 - L837: local_sqlite loaderはmonthly_blobと重複pattern_idを標準対応すべき（cmd_3774）
 - L838: run_077 monthly blob chunk差は全量GS総時間を支配する（cmd_3775）
+- L839: GS blob月次md5はNaN payload差を避けarray_equalで検証する（cmd_3778）
 
 ## 因果リンク
 
