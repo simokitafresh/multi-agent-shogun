@@ -10,6 +10,8 @@ description: |
   DO NOT TRIGGER: 報告YAML全体作成（→/report-write）、commit（→/ninja-commit）
 ---
 
+<!-- script_refs_checked_at: 2026-07-08T18:15:00+09:00 -->
+<!-- 検分: gate_report_format.sh bc8c87bc5 非重複post-commit dirty hunk許容(FAIL条件緩和)。binary_checksからのverdict自動導出(全yes→PASS/1つでもno→FAIL/空・FILL_THIS→BLOCK)と呼び出し契約は不変 -->
 <!-- script_refs_checked_at: 2026-07-08T08:36:00+09:00 -->
 <!-- 検分: gate_report_format.sh 460db6e2b session_state-only task diff除外。binary_checksからのverdict自動導出、未記入/FILL_THIS BLOCK、呼び出し契約は不変 -->
 <!-- script_refs_checked_at: 2026-07-04T20:13:35+09:00 -->
@@ -113,6 +115,15 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 - **verdict を Edit toolで直接書くな** — 独立フィールドとして扱うほど矛盾の温床になる
 
 ## 注意ポイント
+- 2026-07-08: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks.AC2[2].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")
+
+- 2026-07-08: gate=gate_report_format result=FAIL executor=hayate reason=binary_checks: item count 3/14 (<50% of task template)
+- 2026-07-08: gate=gate_report_format result=FAIL executor=hayate reason=binary_checks.AC4[1].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")
+
+- 2026-07-08: gate=gate_report_format result=FAIL executor=tobisaru reason=binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; ve...
+- 2026-07-08: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; ...
+
+- 2026-07-08: gate=gate_report_format result=FAIL executor=hayate reason=binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[2].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[1].result: 空文字。\"yes\" または \"no\" を記入せよ; ...
 - 2026-07-04: gate=gate_report_format result=FAIL executor=tobisaru reason=binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ;...
 
 - 2026-07-03: gate=gate_report_format result=FAIL executor=kotaro reason=binary_checks: item count 6/14 (<50% of task template)

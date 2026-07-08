@@ -10,6 +10,8 @@ description: |
   DO NOT TRIGGER: 同一CLI内の /model 操作（Claude系内でOpus↔Sonnet等）、レイアウト全崩壊（→/reset-layout）
 ---
 
+<!-- script_refs_checked_at: 2026-07-08T18:15:00+09:00 -->
+<!-- 検分: ninja_monitor.sh 82291e12a(reflux deploy rollback修正)+ed73c6e60(fix_known reflux insight優先ディスパッチ)+4c07cb037(修行doc参照リンク)。いずれもreflux/修行系の内部変更。idle判定、respawn-pane -k、cli_launch_cmd()/cli_lookup.sh経由の起動契約は不変 -->
 <!-- script_refs_checked_at: 2026-07-08T10:26:09+09:00 -->
 <!-- 検分: ninja_monitor.sh 0c73c7d1(cmd_3761) check_and_update_done_task()にtask done_at自動記録(既存なら上書きしない)を追加。throughput計測用の内部フィールド追加のみ。idle判定、respawn-pane -k、cli_launch_cmd()/cli_lookup.sh経由の起動契約は不変 -->
 <!-- script_refs_checked_at: 2026-07-08T08:36:00+09:00 -->
