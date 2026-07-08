@@ -7880,11 +7880,19 @@ print('\n'.join(scripts))
     fi
 
     # ─── cmd品質ログ記録（GATE CLEAR時、ベストエフォート） ───
+    # 同期実行必須(INS-20260709-000457431-b624): gate_metrics.logへのCLEAR記録(line ~7533)は
+    # 同期書込みのため即座に確定するが、本呼出しを非同期&にすると、家老セッション境界
+    # (/clear respawn等)がプロセスグループごと本ジョブを道連れにした場合、
+    # gate_metrics.logにはCLEARが残るのにcmd_design_quality.yamlだけ欠落する
+    # (=品質記録漏れ)。GATE BLOCK側(下記)は元々同期呼出しであり、対称性のためCLEAR側も揃える。
     echo ""
     echo "Cmd quality log (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/cmd_quality_log.sh" ]; then
-        (bash "$SCRIPT_DIR/scripts/cmd_quality_log.sh" "$CMD_ID" "CLEAR" "no" "0" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "  [INFO] cmd_quality_log: WARN (logging failed, non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
-        echo "  cmd_quality_log: queued (async)"
+        if bash "$SCRIPT_DIR/scripts/cmd_quality_log.sh" "$CMD_ID" "CLEAR" "no" "0" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1; then
+            echo "  cmd_quality_log: OK"
+        else
+            echo "  [INFO] cmd_quality_log: WARN (logging failed, non-blocking)"
+        fi
     else
         echo "  SKIP (cmd_quality_log.sh not found)"
     fi
