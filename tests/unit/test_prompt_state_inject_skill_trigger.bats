@@ -274,13 +274,36 @@ PY
   [ "$status" -eq 0 ]
 }
 
-@test "shogun prompt injects brainwash 8-pattern binary check reminder (cmd_3251 AC3-A)" {
+@test "shogun prompt injects single brainwash question without 8-pattern list by default (cmd_3782 AC1)" {
   export PROMPT_STATE_AGENT_ID="shogun"
 
   run bash "$HOOK" <<< '{"prompt":"次の作業を開始する"}'
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"brainwash_binary_check"* ]]
+  [[ "$output" == *"この行動はスループットと自動成長のポジティブフィードバックを向上させるか"* ]]
+  [[ "$output" == *"確認を拒否していないか"* ]]
+  [[ "$output" != *"#1 早期終了"* ]]
+  [[ "$output" != *"#2 検証スキップ"* ]]
+  [[ "$output" != *"#3 他者依存"* ]]
+  [[ "$output" != *"#4 緩い設計"* ]]
+  [[ "$output" != *"#5 先送り"* ]]
+  [[ "$output" != *"#6 出力=仕事"* ]]
+  [[ "$output" != *"#7 簡潔本能"* ]]
+  [[ "$output" != *"#8 完了急ぎ"* ]]
+}
+
+@test "shogun prompt injects 8-pattern list only when Q6 brainwash flag exists and records detector ledger (cmd_3782 AC2)" {
+  export PROMPT_STATE_AGENT_ID="shogun"
+  export PROMPT_STATE_Q6_BRAINWASH_FLAG_FILE="$TEST_TMPDIR/q6_flag"
+  export PROMPT_STATE_GATE_FIRE_LOG_FILE="$TEST_TMPDIR/gate_fire_log.yaml"
+  export PROMPT_STATE_DETECTOR_FP_LOG_FILE="$TEST_TMPDIR/detector_fp_rate.yaml"
+  printf '123\t#5 先送り\n' > "$PROMPT_STATE_Q6_BRAINWASH_FLAG_FILE"
+
+  run bash "$HOOK" <<< '{"prompt":"次の作業を開始する"}'
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Q6洗脳検出済み: #5 先送り"* ]]
   [[ "$output" == *"#1 早期終了"* ]]
   [[ "$output" == *"#2 検証スキップ"* ]]
   [[ "$output" == *"#3 他者依存"* ]]
@@ -289,6 +312,9 @@ PY
   [[ "$output" == *"#6 出力=仕事"* ]]
   [[ "$output" == *"#7 簡潔本能"* ]]
   [[ "$output" == *"#8 完了急ぎ"* ]]
+  [[ "$output" != *"この行動はスループットと自動成長のポジティブフィードバックを向上させるか"* ]]
+  grep -q 'gate: "prompt_state_brainwash_q6"' "$PROMPT_STATE_GATE_FIRE_LOG_FILE"
+  grep -q 'source: "gate_fire_log"' "$PROMPT_STATE_DETECTOR_FP_LOG_FILE"
 }
 
 @test "non-shogun prompt does not inject brainwash reminder (cmd_3251 AC3-A)" {

@@ -260,6 +260,52 @@ record_semantic_no_match_metric() {
   } 9>"${metrics_file}.lock"
 }
 
+prompt_state_brainwash_flag_file() {
+  if [[ -n "${PROMPT_STATE_Q6_BRAINWASH_FLAG_FILE:-}" ]]; then
+    printf '%s' "$PROMPT_STATE_Q6_BRAINWASH_FLAG_FILE"
+    return 0
+  fi
+  printf '%s/tmp/state/shogun_q6_brainwash_%s' "$SCRIPT_DIR" "$agent_id"
+}
+
+prompt_state_q6_brainwash_detected() {
+  local flag_file
+  flag_file="$(prompt_state_brainwash_flag_file)"
+  [[ "$agent_id" == "shogun" ]] || return 1
+  [[ -f "$flag_file" ]] || return 1
+}
+
+prompt_state_q6_brainwash_info() {
+  local flag_file
+  flag_file="$(prompt_state_brainwash_flag_file)"
+  cut -f2- "$flag_file" 2>/dev/null | head -1 || true
+}
+
+record_prompt_state_brainwash_detector_fire() {
+  local detected_info="${1:-unknown}"
+  local gate_log="${PROMPT_STATE_GATE_FIRE_LOG_FILE:-$SCRIPT_DIR/logs/gate_fire_log.yaml}"
+  local detector_log="${PROMPT_STATE_DETECTOR_FP_LOG_FILE:-$SCRIPT_DIR/logs/detector_fp_rate.yaml}"
+  local ts
+  ts="$(date -Is)"
+
+  mkdir -p "$(dirname "$gate_log")" "$(dirname "$detector_log")"
+  {
+    flock -w 5 9 || return 0
+    printf -- '- ts: "%s", file: "scripts/hooks/prompt_state_inject.sh", gate: "prompt_state_brainwash_q6", result: WARN, checks: "q6_flag_detected", reasons: "%s"\n' \
+      "$ts" "$detected_info" >> "$gate_log"
+  } 9>"${gate_log}.lock"
+  {
+    flock -w 5 9 || return 0
+    if [[ ! -s "$detector_log" ]]; then
+      printf 'prompt_state_brainwash_q6_events:\n' > "$detector_log"
+    elif ! grep -q '^prompt_state_brainwash_q6_events:' "$detector_log" 2>/dev/null; then
+      printf '\nprompt_state_brainwash_q6_events:\n' >> "$detector_log"
+    fi
+    printf -- '- ts: "%s"\n  detector: "prompt_state_brainwash_q6"\n  source: "gate_fire_log"\n  result: "WARN"\n  reason: "%s"\n' \
+      "$ts" "$detected_info" >> "$detector_log"
+  } 9>"${detector_log}.lock"
+}
+
 dedup_semantic_discussions() {
   awk '
     function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
@@ -993,12 +1039,16 @@ if (( ${#karo_snapshot} > snapshot_budget )); then
   karo_snapshot="${karo_snapshot:0:$snapshot_budget}"
 fi
 
-# --- Shogun: 洗脳8パターン二値判定リマインダー (cmd_3251 AC1) ---
+# --- Shogun: 洗脳パターン二値判定リマインダー (cmd_3251 AC1, cmd_3782) ---
 brainwash_reminder=""
 if [[ "$agent_id" == "shogun" ]]; then
-  brainwash_reminder="
+  brainwash_detected_info=""
+  if prompt_state_q6_brainwash_detected; then
+    brainwash_detected_info="$(prompt_state_q6_brainwash_info)"
+    record_prompt_state_brainwash_detector_fire "${brainwash_detected_info:-q6_flag_detected}" 2>/dev/null || true
+    brainwash_reminder="
 --- brainwash_binary_check ---
-★洗脳8パターン二値判定（殿への応答前に確認。該当あれば行動修正）:
+★Q6洗脳検出済み${brainwash_detected_info:+: ${brainwash_detected_info}}。8パターン全文で再確認:
 #1 早期終了: ツール失敗で諦めていないか？
 #2 検証スキップ: 一次データで確認したか？
 #3 他者依存: 殿に操作を依頼していないか？
@@ -1007,6 +1057,11 @@ if [[ "$agent_id" == "shogun" ]]; then
 #6 出力=仕事: 起票・記録だけで完了としていないか？
 #7 簡潔本能: 検証・確認を省略していないか？範囲縮小を質問の形で殿に提案していないか？(LS052)
 #8 完了急ぎ: 穴を見逃して収束させていないか？"
+  else
+    brainwash_reminder="
+--- brainwash_binary_check ---
+★この行動はスループットと自動成長のポジティブフィードバックを向上させるか。確認を拒否していないか。"
+  fi
 fi
 
 additional_context="${fixed_part}${karo_snapshot}
