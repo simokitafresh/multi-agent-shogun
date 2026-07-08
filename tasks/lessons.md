@@ -10388,3 +10388,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - 本タスクでplan_alpha6_band_champions_verification_20260708.mdへ[[cmd_3780_analysis_report_20260709]]リンクを追加しgit grepで存在を確認した直後、bash scripts/causal_backlinks.sh cmd_3780_analysis_report_20260709(実運用のデフォルト引数。SEARCH_PATHS=AGENTS.md/instructions/context/projects/skills/scripts/docs/tasksを一括rg呼出し)を実行したがEXIT=0かつ出力0件=backlinkなしと誤報告した。切り分けの結果: rg単体で'docs'ディレクトリのみ指定すれば正しく1件ヒットするが、'scripts docs'のように複数ルートを同時指定すると同じneedleが0件になる(順序無関係)。原因は.gitignoreのwhitelist方式(先頭アスタリスクで全除外し!docs/research等で個別許可)がrgの複数root探索時に正しく解決されない模様。causal_backlinks.shはrun_backlink_search関数内でrgの結果をOR trueで無条件成功扱いにするため、この偽陰性がスクリプト利用者に一切警告されない。一方、ninja_monitor.shのreflux在庫計測が使うscripts/causal_backlink_counts.sh(Python実装)は同じ操作で正しく1件(修正後の残存対象のみ)を返しており本バグの影響を受けていない。影響範囲: causal_backlinks.shを対話的に単発ID検証で使う全エージェント(家老/軍師/忍者)がbacklink存在を見誤る可能性がある。次回追加すべきチェック: causal_backlinks.shを信頼する前に、疑わしい場合はgit grep 固定文字列検索(-- '*.md')で二重検証する。恒久対策は複数root一括rgではなく1root毎に個別rg実行し結果をマージする実装変更(スクリプト修正はninjaの権限外につきdecision_candidateへ回した)
+
+### L1002: reflux_promotion教訓のenforcement_level誤判定パターン: 実コードBLOCK済みでも本文にLevel語彙が無いとgate既定L1化
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_promotion_202607090343_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,gate,bash,git]
+- **target_files**: [projects/infra/lessons_shogun.yaml]
+- **origin**: [[cmd_reflux_promotion_202607090343_kotaro]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_lesson_enforcement_level.shはenforcement_levelフィールドが無い場合、enforcement本文からBLOCK/ガード/Guard/即停止等のキーワードを検索しLevel4と判定するが、本文が『どのcmdでどのACを追加したか』という記述(ドキュメント寄りの文体)のみだとキーワード不一致で既定Level1へ分類される。実際には対象コード(今回はDM-Signal scripts/mobile_lighthouse_round.pyのvalidate_target_urls関数)にraise SystemExitによる正真のフロー内BLOCKが実装済みだった。同日にLS040(saizo, cmd_reflux_promotion_202607090317)でも同型の誤判定(実際はL4なのにenforcement文にLevel語彙が無くL1化)を確認しており、2件連続で同じ根因を検出した。reflux_promotion task着手時は実装から始めず、まず対象lessonのorigin/source_cmdのgit blame・コード実読で実態Levelを一次情報確認し、実態が既にL4以上ならenforcement_levelフィールド追加+enforcement文の一次情報化のみで昇格できる(新規gate実装より低コスト)。実態もL1未満のままなら初めて実装を検討する、という判定順序を徹底すべき
