@@ -24,6 +24,7 @@ WINDOW_DAYS="${LOOP_LEDGER_WINDOW_DAYS:-14}"
 SKILL_EXEC_TAIL_LINES="${LOOP_LEDGER_SKILL_EXEC_TAIL_LINES:-30000}"
 MAX_SNAPSHOTS="${LOOP_LEDGER_MAX_SNAPSHOTS:-100}"
 STARTUP_ALERT_HISTORY="${LOOP_LEDGER_STARTUP_ALERT_HISTORY:-$ROOT/logs/shogun_startup_alert_history.tsv}"
+GATE_METRICS_LOG="${LOOP_LEDGER_GATE_METRICS_LOG:-$ROOT/logs/gate_metrics.log}"
 
 # skill_execution_log.yaml は数万行規模になるためtailで有界化する(境界の壊れたエントリは破棄)
 SKILL_EXEC_CHUNK="$(mktemp)"
@@ -40,7 +41,7 @@ fi
 
 python3 - "$LESSON_IMPACT" "$INSIGHTS_FILE" "$DB_PATH" "$SKILL_RECOMMEND_LOG" "$SKILL_EXEC_CHUNK" \
     "$REPORT_DIRS" "$REPORT_MAX_FILES" "$OUT_FILE" "$NOW" "$WINDOW_DAYS" "$MAX_SNAPSHOTS" "$ROOT" \
-    "$STARTUP_ALERT_HISTORY" <<'PY'
+    "$STARTUP_ALERT_HISTORY" "$GATE_METRICS_LOG" <<'PY'
 import datetime as dt
 import os
 import re
@@ -57,6 +58,7 @@ except Exception:
 (lesson_impact_path, insights_path, db_path, skill_recommend_path,
  skill_exec_chunk_path, report_dirs_raw, report_max_files_raw, out_path, now_raw,
  window_days_raw, max_snapshots_raw, root_path_raw, startup_alert_history_path) = sys.argv[1:14]
+gate_metrics_path = sys.argv[14]
 
 out_path = Path(out_path)
 root_path = Path(root_path_raw)
@@ -98,6 +100,29 @@ def iso(ts):
 def max_ts(values):
     values = [v for v in values if v is not None]
     return max(values) if values else None
+
+
+def median(values):
+    nums = sorted(v for v in values if isinstance(v, (int, float)))
+    if not nums:
+        return None
+    mid = len(nums) // 2
+    if len(nums) % 2:
+        return float(nums[mid])
+    return (nums[mid - 1] + nums[mid]) / 2.0
+
+
+def round1(value):
+    return None if value is None else round(float(value), 1)
+
+
+def as_float(value):
+    try:
+        if value is None:
+            return None
+        return float(value)
+    except Exception:
+        return None
 
 
 # --- lesson loop: logs/lesson_impact.tsv (action=injected/feedback) ---
@@ -555,6 +580,99 @@ memory_effectiveness = load_memory_reference_effectiveness(report_dirs_raw)
 memory_loop.update(memory_effectiveness)
 
 
+# --- throughput loop: gate_metrics CLEAR rows with cmd-level stage durations ---
+def parse_metric_pairs(text):
+    pairs = {}
+    for part in str(text or "").split():
+        if "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+        pairs[key.strip()] = value.strip()
+    return pairs
+
+
+def parse_num(value):
+    try:
+        text = str(value).strip()
+        if text in {"", "na", "unknown", "null", "None"}:
+            return None
+        return float(text)
+    except Exception:
+        return None
+
+
+def load_throughput_loop(path):
+    p = Path(path)
+    if not p.is_file():
+        return {
+            "produced": 0,
+            "consumed": 0,
+            "stock": 0,
+            "last_consumption_ts": None,
+            "note": "gate_metrics.log not found",
+            "completed_cmds": 0,
+            "e2e_median_sec": None,
+            "overhead_rate_median_pct": None,
+            "deploy_median_sec": None,
+            "work_median_sec": None,
+            "finalize_median_sec": None,
+        }
+    latest = {}
+    with p.open(encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            cols = line.rstrip("\n").split("\t")
+            if len(cols) < 4:
+                continue
+            ts = parse_ts(cols[0])
+            if not in_window(ts):
+                continue
+            cmd_id = cols[1].strip()
+            status = cols[2].strip().upper()
+            if status != "CLEAR" or not cmd_id:
+                continue
+            throughput_field = next((c for c in cols[8:] if "e2e_sec=" in c and "work_sec=" in c), "")
+            if not throughput_field:
+                continue
+            prev = latest.get(cmd_id)
+            if prev is None or (ts is not None and ts > prev[0]):
+                latest[cmd_id] = (ts, parse_metric_pairs(throughput_field))
+    rows = list(latest.values())
+    deploy = []
+    work = []
+    finalize = []
+    e2e = []
+    overhead_rates = []
+    for _, metrics in rows:
+        d = parse_num(metrics.get("deploy_sec"))
+        w = parse_num(metrics.get("work_sec"))
+        f = parse_num(metrics.get("finalize_sec"))
+        e = parse_num(metrics.get("e2e_sec"))
+        if d is not None:
+            deploy.append(d)
+        if w is not None:
+            work.append(w)
+        if f is not None:
+            finalize.append(f)
+        if e is not None:
+            e2e.append(e)
+        if e is not None and w is not None and e > 0:
+            overhead_rates.append(max((e - w) / e * 100.0, 0.0))
+    last_ts = max_ts([ts for ts, _ in rows])
+    completed = len(rows)
+    return {
+        "produced": completed,
+        "consumed": completed,
+        "stock": 0,
+        "last_consumption_ts": iso(last_ts),
+        "completed_cmds": completed,
+        "e2e_median_sec": round1(median(e2e)),
+        "overhead_rate_median_pct": round1(median(overhead_rates)),
+        "deploy_median_sec": round1(median(deploy)),
+        "work_median_sec": round1(median(work)),
+        "finalize_median_sec": round1(median(finalize)),
+    }
+
+
 # --- skill loop: logs/skill_recommend_log.yaml + logs/skill_execution_log.yaml ---
 def load_skill_recommend(path):
     """Returns list of (ts, skill) tuples, one per recommended skill mention."""
@@ -668,6 +786,7 @@ loops = {
     "obsidian": obsidian_loop,
     "memory": memory_loop,
     "skill": skill_loop,
+    "throughput": load_throughput_loop(gate_metrics_path),
 }
 
 warn_backlog = load_warn_backlog(startup_alert_history_path)
@@ -693,7 +812,7 @@ previous_snapshot = existing_snapshots[-1] if existing_snapshots else None
 previous_loops = previous_snapshot.get("loops", {}) if previous_snapshot else {}
 
 alerts = []
-for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill"):
+for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill", "throughput"):
     loop = loops[name]
     if loop["stalled"]:
         alerts.append(f"{name}: 空転(produced={loop['produced']}, consumed=0, window={window_days}d)")
@@ -702,6 +821,15 @@ for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory",
         prev_stock = prev.get("stock")
         if isinstance(prev_stock, int) and loop["stock"] > prev_stock:
             alerts.append(f"{name}: 在庫超過(前回{prev_stock}→今回{loop['stock']})")
+    if name == "throughput" and isinstance(prev, dict):
+        prev_e2e = as_float(prev.get("e2e_median_sec"))
+        curr_e2e = as_float(loop.get("e2e_median_sec"))
+        if prev_e2e is not None and curr_e2e is not None and curr_e2e > prev_e2e:
+            alerts.append(f"throughput: E2E中央値悪化(前回{prev_e2e}→今回{curr_e2e}秒)")
+        prev_overhead = as_float(prev.get("overhead_rate_median_pct"))
+        curr_overhead = as_float(loop.get("overhead_rate_median_pct"))
+        if prev_overhead is not None and curr_overhead is not None and curr_overhead > prev_overhead:
+            alerts.append(f"throughput: オーバーヘッド率悪化(前回{prev_overhead}→今回{curr_overhead}%)")
 
 promotion_loop = loops["promotion"]
 prev_promotion = previous_loops.get("promotion") if isinstance(previous_loops, dict) else None
@@ -730,7 +858,7 @@ def emit_snapshot(generated_at, window_days, loops, warn_backlog=None):
         f"  window_days: {window_days}",
         "  loops:",
     ]
-    for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill"):
+    for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill", "throughput"):
         loop = loops[name]
         lines.append(f"    {name}:")
         lines.append(f"      produced: {int(loop['produced'])}")
@@ -769,6 +897,13 @@ def emit_snapshot(generated_at, window_days, loops, warn_backlog=None):
                     lines.append(f"          sample_reason: {q(target.get('sample_reason'))}")
             else:
                 lines.append("      reflux_targets: []")
+        if name == "throughput":
+            lines.append(f"      completed_cmds: {int(loop.get('completed_cmds', 0) or 0)}")
+            lines.append(f"      e2e_median_sec: {q(loop.get('e2e_median_sec'))}")
+            lines.append(f"      overhead_rate_median_pct: {q(loop.get('overhead_rate_median_pct'))}")
+            lines.append(f"      deploy_median_sec: {q(loop.get('deploy_median_sec'))}")
+            lines.append(f"      work_median_sec: {q(loop.get('work_median_sec'))}")
+            lines.append(f"      finalize_median_sec: {q(loop.get('finalize_median_sec'))}")
     if warn_backlog is not None:
         lines.append("  warn_backlog:")
         lines.append(f"    produced: {int(warn_backlog.get('produced', 0) or 0)}")
@@ -807,7 +942,7 @@ for snap in all_snapshot_dicts:
     snap_loops = snap.get("loops", {})
     rendered.append(emit_snapshot(snap.get("generated_at"), snap.get("window_days", window_days), {
         name: snap_loops.get(name, {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "stalled": False})
-        for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill")
+        for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill", "throughput")
     }, snap.get("warn_backlog")))
 
 out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -823,7 +958,7 @@ else:
 out_path.write_text("\n".join(content) + "\n", encoding="utf-8")
 
 print("=== Loop Ledger (T7) ===")
-for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill"):
+for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill", "throughput"):
     loop = loops[name]
     note = f" note={loop['note']}" if loop.get("note") else ""
     print(
@@ -846,6 +981,15 @@ for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory",
         print(
             f"    aging: stock_started_at={loop.get('stock_started_at')} "
             f"age_hours={loop.get('age_hours', 0.0)} first_candidate={loop.get('first_candidate')}"
+        )
+    if name == "throughput":
+        print(
+            f"    daily: completed_cmds={loop.get('completed_cmds', 0)} "
+            f"e2e_median_sec={loop.get('e2e_median_sec')} "
+            f"overhead_rate_median_pct={loop.get('overhead_rate_median_pct')} "
+            f"deploy_median_sec={loop.get('deploy_median_sec')} "
+            f"work_median_sec={loop.get('work_median_sec')} "
+            f"finalize_median_sec={loop.get('finalize_median_sec')}"
         )
 warn_note = f" note={warn_backlog['note']}" if warn_backlog.get("note") else ""
 print(

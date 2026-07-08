@@ -586,6 +586,146 @@ PY
     fi
 }
 
+# ─── GATE CLEAR時 throughput段階別duration記録（cmd_3764） ───
+# cmd 1サイクルの起票→配備→ack→done→CLEARを常時計測する。
+# 欠損は unknown ではなく missing=<reason,...> に集約して記録する。
+build_clear_throughput_metric() {
+    local clear_ts="${1:-$(date +%Y-%m-%dT%H:%M:%S)}"
+
+    CMD_ID_ENV="$CMD_ID" YAML_FILE_ENV="$YAML_FILE" CLEAR_TS_ENV="$clear_ts" \
+    python3 - "${MATCHING_TASK_FILES[@]}" <<'PY'
+import os
+import sys
+from datetime import datetime
+
+import yaml
+
+cmd_id = os.environ["CMD_ID_ENV"]
+yaml_file = os.environ["YAML_FILE_ENV"]
+clear_ts_raw = os.environ["CLEAR_TS_ENV"]
+task_files = sys.argv[1:]
+
+
+def parse_iso(raw):
+    text = str(raw or "").strip().strip("'").strip('"')
+    if not text or text.lower() in {"null", "none", "unknown"}:
+        return None
+    text = text.replace('\\"', '"').strip('"')
+    text = text.replace("Z", "+00:00")
+    try:
+        return datetime.fromisoformat(text).replace(tzinfo=None)
+    except Exception:
+        return None
+
+
+def sec(start, end):
+    if start is None or end is None:
+        return None
+    delta = int((end - start).total_seconds())
+    return delta if delta >= 0 else None
+
+
+def fmt(value):
+    return str(value) if value is not None else "na"
+
+
+issue_ts = None
+try:
+    with open(yaml_file, encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    commands = data.get("commands")
+    entry = None
+    if isinstance(commands, dict):
+        entry = commands.get(cmd_id)
+    elif isinstance(commands, list):
+        for item in commands:
+            if isinstance(item, dict) and str(item.get("id", "")).strip() == cmd_id:
+                entry = item
+                break
+    if isinstance(entry, dict):
+        issue_ts = parse_iso(entry.get("delegated_at") or entry.get("timestamp") or entry.get("created_at"))
+except Exception:
+    issue_ts = None
+
+if issue_ts is None:
+    root_dir = os.path.dirname(os.path.dirname(yaml_file))
+    for rel in ("logs/cmd_design_quality.yaml", "logs/archive/cmd_design_quality.yaml"):
+        path = os.path.join(root_dir, rel)
+        try:
+            with open(path, encoding="utf-8") as f:
+                quality_data = yaml.safe_load(f) or []
+        except Exception:
+            continue
+        if isinstance(quality_data, dict):
+            quality_data = quality_data.get("entries") or []
+        candidates = []
+        for item in quality_data if isinstance(quality_data, list) else []:
+            if not isinstance(item, dict) or str(item.get("cmd_id", "")).strip() != cmd_id:
+                continue
+            ts = parse_iso(item.get("timestamp"))
+            if ts is not None:
+                candidates.append(ts)
+        if candidates:
+            issue_ts = min(candidates)
+            break
+
+deploy_values = []
+ack_values = []
+done_values = []
+for path in task_files:
+    try:
+        with open(path, encoding="utf-8") as f:
+            raw = yaml.safe_load(f) or {}
+    except Exception:
+        continue
+    task = raw.get("task", raw) if isinstance(raw, dict) else {}
+    if not isinstance(task, dict):
+        continue
+    deploy_values.append(parse_iso(task.get("deployed_at")))
+    ack_values.append(parse_iso(task.get("acknowledged_at")))
+    done_values.append(parse_iso(task.get("done_at") or task.get("completed_at")))
+
+deploy_ts = max((v for v in deploy_values if v is not None), default=None)
+ack_ts = min((v for v in ack_values if v is not None), default=None)
+done_ts = max((v for v in done_values if v is not None), default=None)
+clear_ts = parse_iso(clear_ts_raw)
+
+deploy_sec = sec(issue_ts, deploy_ts)
+work_sec = sec(ack_ts, done_ts)
+finalize_sec = sec(done_ts, clear_ts)
+e2e_sec = sec(issue_ts, clear_ts)
+
+missing = []
+if issue_ts is None:
+    missing.append("missing_issue_ts")
+if deploy_ts is None:
+    missing.append("missing_deploy_ts")
+if ack_ts is None:
+    missing.append("missing_ack_ts")
+if done_ts is None:
+    missing.append("missing_done_ts")
+if clear_ts is None:
+    missing.append("missing_clear_ts")
+for name, value in (
+    ("deploy_sec", deploy_sec),
+    ("work_sec", work_sec),
+    ("finalize_sec", finalize_sec),
+    ("e2e_sec", e2e_sec),
+):
+    if value is None:
+        missing.append(f"invalid_{name}")
+
+missing_text = ",".join(dict.fromkeys(missing)) if missing else "none"
+print(
+    f"deploy_sec={fmt(deploy_sec)} "
+    f"work_sec={fmt(work_sec)} "
+    f"finalize_sec={fmt(finalize_sec)} "
+    f"e2e_sec={fmt(e2e_sec)} "
+    f"missing={missing_text}"
+)
+PY
+}
+
 # ─── GATE CLEAR時 CTX%記録（cmd_2129） ───
 # MATCHING_TASK_FILES内の各忍者のtmuxペインからCTX%を取得し最大値を返す。
 # 取得不可の場合は ctx_pct=unknown を返す。
@@ -7304,15 +7444,17 @@ fi
 # ─── 判定結果 ───
 echo ""
 if [ "$ALL_CLEAR" = true ]; then
+    GATE_CLEAR_TS="$(date +%Y-%m-%dT%H:%M:%S)"
     GATE_DURATION_METRIC=$(build_clear_duration_metric)
+    GATE_THROUGHPUT_METRIC=$(build_clear_throughput_metric "$GATE_CLEAR_TS")
     GATE_CTX_METRIC=$(build_clear_ctx_metric)
     if ! run_cdp_production_check; then
         echo "GATE BLOCK: ${CMD_ID}:cdp_production_check_failed"
-        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tcdp_production_check_failed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
+        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tcdp_production_check_failed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
         exit 1
     fi
     echo "GATE CLEAR: cmd完了許可"
-    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tall_gates_passed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tall_gates_passed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
     log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$CMD_ID"
     (bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" >/dev/null 2>&1 || true) &
     # gate_yaml_status: YAML status更新（WARNING only）

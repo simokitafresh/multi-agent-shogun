@@ -36,6 +36,8 @@ setup_file() {
         printf '\n'
         sed -n '/^build_clear_duration_metric()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^build_clear_throughput_metric()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^binary_checks_warn_reason()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^report_has_commit_binary_check_yes()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -88,6 +90,101 @@ end = text.index("\n# ─── changelog自動記録関数", start)
 print(text[start:end])
 PY
     } > "$GATE_HELPERS_FILE"
+}
+
+@test "build_clear_throughput_metric records stage durations for nested and flat task YAML" {
+    source "$GATE_HELPERS_FILE"
+    export CMD_ID="$TEST_CMD_ID"
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml" "$TEST_PROJECT/queue/tasks/hanzo.yaml")
+    mkdir -p "$TEST_PROJECT/queue/tasks"
+
+    cat > "$YAML_FILE" <<EOF
+commands:
+  $TEST_CMD_ID:
+    id: $TEST_CMD_ID
+    delegated_at: "2026-07-08T09:00:00"
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_999
+  deployed_at: '2026-07-08T09:01:00'
+  acknowledged_at: '2026-07-08T09:02:00'
+  done_at: '2026-07-08T09:07:00'
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/hanzo.yaml" <<'EOF'
+parent_cmd: cmd_999
+deployed_at: '2026-07-08T09:03:00'
+acknowledged_at: '2026-07-08T09:04:00'
+done_at: '2026-07-08T09:09:00'
+EOF
+
+    run build_clear_throughput_metric "2026-07-08T09:10:00"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"deploy_sec=180"* ]]
+    [[ "$output" == *"work_sec=420"* ]]
+    [[ "$output" == *"finalize_sec=60"* ]]
+    [[ "$output" == *"e2e_sec=600"* ]]
+    [[ "$output" == *"missing=none"* ]]
+}
+
+@test "build_clear_throughput_metric emits missing reason codes instead of unknown" {
+    source "$GATE_HELPERS_FILE"
+    export CMD_ID="$TEST_CMD_ID"
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    mkdir -p "$TEST_PROJECT/queue/tasks"
+
+    cat > "$YAML_FILE" <<EOF
+commands:
+  $TEST_CMD_ID:
+    id: $TEST_CMD_ID
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_999
+  deployed_at: '2026-07-08T09:01:00'
+EOF
+
+    run build_clear_throughput_metric "2026-07-08T09:10:00"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"deploy_sec=na"* ]]
+    [[ "$output" == *"work_sec=na"* ]]
+    [[ "$output" == *"e2e_sec=na"* ]]
+    [[ "$output" == *"missing=missing_issue_ts,missing_ack_ts,missing_done_ts,invalid_deploy_sec,invalid_work_sec,invalid_finalize_sec,invalid_e2e_sec"* ]]
+    [[ "$output" != *"unknown"* ]]
+}
+
+@test "build_clear_throughput_metric falls back to cmd_design_quality timestamp when cmd has no delegated_at" {
+    source "$GATE_HELPERS_FILE"
+    export CMD_ID="$TEST_CMD_ID"
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/logs"
+
+    cat > "$YAML_FILE" <<EOF
+commands:
+  $TEST_CMD_ID:
+    status: pending
+EOF
+    cat > "$TEST_PROJECT/logs/cmd_design_quality.yaml" <<EOF
+- cmd_id: "$TEST_CMD_ID"
+  timestamp: "2026-07-08T09:00:00Z"
+  source: cmd_save_warn
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_999
+  deployed_at: '2026-07-08T09:01:00'
+  acknowledged_at: '2026-07-08T09:02:00'
+  done_at: '2026-07-08T09:06:00'
+EOF
+
+    run build_clear_throughput_metric "2026-07-08T09:10:00"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"deploy_sec=60"* ]]
+    [[ "$output" == *"e2e_sec=600"* ]]
+    [[ "$output" == *"missing=none"* ]]
 }
 
 @test "build_clear_duration_metric uses acknowledged_at and done_at for nested and flat task YAML" {

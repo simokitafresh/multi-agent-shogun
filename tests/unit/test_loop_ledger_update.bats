@@ -23,13 +23,14 @@ setup() {
     export LOOP_LEDGER_NOW="2026-06-20T00:00:00Z"
     export LOOP_LEDGER_WINDOW_DAYS="14"
     export LOOP_LEDGER_STARTUP_ALERT_HISTORY="$TEST_TMPDIR/logs/shogun_startup_alert_history.tsv"
+    export LOOP_LEDGER_GATE_METRICS_LOG="$TEST_TMPDIR/logs/gate_metrics.log"
 }
 
 teardown() {
     unset LOOP_LEDGER_ROOT LOOP_LEDGER_LESSON_IMPACT LOOP_LEDGER_INSIGHTS_FILE LOOP_LEDGER_DB \
         LOOP_LEDGER_SKILL_RECOMMEND_LOG LOOP_LEDGER_SKILL_EXECUTION_LOG \
         LOOP_LEDGER_REPORT_DIRS LOOP_LEDGER_REPORT_MAX_FILES LOOP_LEDGER_OUT LOOP_LEDGER_NOW LOOP_LEDGER_WINDOW_DAYS \
-        LOOP_LEDGER_STARTUP_ALERT_HISTORY
+        LOOP_LEDGER_STARTUP_ALERT_HISTORY LOOP_LEDGER_GATE_METRICS_LOG
     [ -n "${TEST_TMPDIR:-}" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 
@@ -95,6 +96,51 @@ memory_references:
   useful: false
   reason: 古い別cmdの記録だった
 EOF
+}
+
+@test "loop_ledger_update records throughput daily medians from gate_metrics stage durations" {
+    cat > "$LOOP_LEDGER_GATE_METRICS_LOG" <<'EOF'
+2026-06-19T00:00:00	cmd_1	CLEAR	all_gates_passed	full	GPT	unknown	L001	title	duration_sec=300	deploy_sec=60 work_sec=300 finalize_sec=120 e2e_sec=600 missing=none	ctx_pct=10	first_model=GPT
+2026-06-19T01:00:00	cmd_2	CLEAR	all_gates_passed	full	GPT	unknown	L001	title	duration_sec=500	deploy_sec=180 work_sec=500 finalize_sec=180 e2e_sec=1000 missing=none	ctx_pct=10	first_model=GPT
+2026-06-19T02:00:00	cmd_3	BLOCK	report_format	full	GPT	unknown	L001	title	first_model=GPT
+EOF
+
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"throughput: produced=2 consumed=2 stock=0"* ]]
+    [[ "$output" == *"daily: completed_cmds=2 e2e_median_sec=800.0 overhead_rate_median_pct=50.0 deploy_median_sec=120.0 work_median_sec=400.0 finalize_median_sec=150.0"* ]]
+
+    grep -q 'throughput:' "$LOOP_LEDGER_OUT"
+    grep -q 'completed_cmds: 2' "$LOOP_LEDGER_OUT"
+    grep -q 'e2e_median_sec: "800.0"' "$LOOP_LEDGER_OUT"
+    grep -q 'overhead_rate_median_pct: "50.0"' "$LOOP_LEDGER_OUT"
+}
+
+@test "loop_ledger_update alerts when throughput e2e or overhead median worsens" {
+    cat > "$LOOP_LEDGER_OUT" <<'EOF'
+snapshots:
+- generated_at: "2026-06-19T00:00:00Z"
+  window_days: 14
+  loops:
+    lesson: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
+    insight: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
+    semantic: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
+    promotion: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
+    obsidian: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
+    memory: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
+    skill: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
+    throughput: {produced: 1, consumed: 1, stock: 0, last_consumption_ts: "2026-06-19T00:00:00Z", stalled: false, e2e_median_sec: "500.0", overhead_rate_median_pct: "20.0"}
+alerts: []
+EOF
+    cat > "$LOOP_LEDGER_GATE_METRICS_LOG" <<'EOF'
+2026-06-19T01:00:00	cmd_2	CLEAR	all_gates_passed	full	GPT	unknown	L001	title	duration_sec=500	deploy_sec=200 work_sec=500 finalize_sec=300 e2e_sec=1200 missing=none	ctx_pct=10	first_model=GPT
+EOF
+
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"ALERT: throughput: E2E中央値悪化(前回500.0→今回1200.0秒)"* ]]
+    [[ "$output" == *"ALERT: throughput: オーバーヘッド率悪化(前回20.0→今回58.3%)"* ]]
+    grep -q 'throughput: E2E中央値悪化' "$LOOP_LEDGER_OUT"
 }
 
 @test "loop_ledger_update computes produced/consumed/stock across all 6 loops and detects semantic stall" {
