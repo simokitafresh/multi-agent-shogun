@@ -1645,6 +1645,51 @@ fi
 echo "  ⚠ lord_conversationの「未完了」「未実装」は当時の事実。現在も未完了かはls/grepで現物確認せよ(LS080)"
 fi
 
+# --- Gate 7.2: 未回答殿質問検出 ---
+# 目的: /clear直前の殿inboundに将軍のresponse(target=lord)が無いまま消えるのを防ぐ。
+# ★確認すべき事リスト(hook)は直近inboundを列挙するが回答済み/未回答を区別しない。その穴を塞ぐ(2026-07-08 D0)
+echo "■ 未回答殿質問"
+_uq_lord_log="${SHOGUN_STARTUP_LORD_CONVERSATION:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
+if [ -f "$_uq_lord_log" ]; then
+    _uq_result=$(tail -300 "$_uq_lord_log" | python3 -c "
+import sys, json
+last_in = None
+answered = True
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        e = json.loads(line)
+    except Exception:
+        continue
+    # 将軍宛inboundのみ対象(lord_conversationは全エージェント共有。他宛を混ぜると誤判定)
+    if e.get('agent') == 'lord' and e.get('direction') == 'inbound' and e.get('target') in ('shogun', '', None):
+        last_in = e
+        answered = False
+    elif not answered and e.get('direction') == 'response' and e.get('agent') == 'shogun' and e.get('target') == 'lord':
+        answered = True
+if last_in is None:
+    print('NONE')
+elif answered:
+    print('OK')
+else:
+    print('ALERT|' + last_in.get('ts', '?') + '|' + last_in.get('summary', '')[:100])
+" 2>/dev/null) || _uq_result="NONE"
+    case "$_uq_result" in
+        ALERT*)
+            _uq_ts=$(echo "$_uq_result" | cut -d'|' -f2)
+            _uq_sum=$(echo "$_uq_result" | cut -d'|' -f3-)
+            echo "  ALERT: 未回答の殿inboundあり ($_uq_ts): $_uq_sum"
+            echo "  ★ 定型復帰より先にこの質問へ回答せよ(instructions/shogun.md Rule 9: 殿の指示優先)"
+            ;;
+        OK) echo "  OK: 最終殿inboundに回答済み" ;;
+        *)  echo "  対象なし(lord inboundなし)" ;;
+    esac
+else
+    echo "  lord_conversation.jsonl不在"
+fi
+
 # --- Gate 7.5: 戦局日誌 直近5エントリ ---
 # 目的: cmd完了ごとの意図・結果・因果を将軍起動時に自動想起させる(cmd_2648)
 echo "■ 戦局日誌 直近5エントリ"
