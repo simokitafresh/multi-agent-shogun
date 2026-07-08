@@ -10400,3 +10400,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - gate_lesson_enforcement_level.shはenforcement_levelフィールドが無い場合、enforcement本文からBLOCK/ガード/Guard/即停止等のキーワードを検索しLevel4と判定するが、本文が『どのcmdでどのACを追加したか』という記述(ドキュメント寄りの文体)のみだとキーワード不一致で既定Level1へ分類される。実際には対象コード(今回はDM-Signal scripts/mobile_lighthouse_round.pyのvalidate_target_urls関数)にraise SystemExitによる正真のフロー内BLOCKが実装済みだった。同日にLS040(saizo, cmd_reflux_promotion_202607090317)でも同型の誤判定(実際はL4なのにenforcement文にLevel語彙が無くL1化)を確認しており、2件連続で同じ根因を検出した。reflux_promotion task着手時は実装から始めず、まず対象lessonのorigin/source_cmdのgit blame・コード実読で実態Levelを一次情報確認し、実態が既にL4以上ならenforcement_levelフィールド追加+enforcement文の一次情報化のみで昇格できる(新規gate実装より低コスト)。実態もL1未満のままなら初めて実装を検討する、という判定順序を徹底すべき
+
+### L1003: 還流候補の実装/メタデータ判別: enforcement_levelフィールド欠落によるLevel1誤分類はL1002の判定順序で解決する
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_promotion_202607090400_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,deploy,testing,gate]
+- **target_files**: [projects/infra/lessons_shogun.yaml]
+- **origin**: [[cmd_reflux_promotion_202607090400_tobisaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- LS080はcmd_3701で二段階化(cmd_save.sh draft→pending昇格+deploy_task.sh draft配備BLOCK)実装済み・回帰テストも既存(test_cmd_save.bats/test_deploy_task_lifecycle.bats)だったが、lessons_shogun.yaml本文にenforcement_levelフィールドが無く、本文語彙(『自動昇格』等)がgate_lesson_enforcement_level.shのキーワード規則(BLOCK/ガード/自動注入等)に一致しないため既定Level1へ誤分類され、還流在庫の昇格候補として繰り返し検出されていた。L1002(2026-07-08 LS040/saizo)と完全に同型。reflux_promotion task着手時は実装追加から始めず、まずgit blame/コード実読で実態Levelを一次情報確認し、実態が既にL4以上ならenforcement_levelフィールド追加のみで解決できる(新規実装よりコスト低)。実態もL1未満のままなら初めて実装を検討する、という判定順序をL1002同様に徹底すべき。横展開: gate_lesson_enforcement_level.shの誤分類パターンは複数回(LS040/LS078/LS080)発生しており、根本対策としてlesson_write.sh側でenforcement_level未記入時に警告するhookの追加を検討価値あり(decision_candidateへ)
