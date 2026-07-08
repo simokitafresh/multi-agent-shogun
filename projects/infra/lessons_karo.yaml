@@ -433,11 +433,12 @@ v7吸収(2026-05-19):
   source_ids: [LK062, LK087]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'gate_gunshi_report_precheck.sh SG-PRE14(revert検出gate)'
+  enforcement_level: 1
+  enforcement: 'Level1(事後検出): 一次情報再検証(2026-07-09, cmd_reflux_promotion_202607090818_tobisaru)。revert実行経路を確認したところ、revertはinstructions/karo.md L167「Halt受信: 即停止→忍者clear→commit revert→YAML idle化→dashboard更新→待機」記載の家老手動git revertのみで、専用ラッパースクリプトや自動化経路は存在しない(scripts/配下にgit revertを実行するスクリプト0件)。「revert前に変更元エージェントへ通知」を強制する仕組みは皆無(PreToolUse Bashフックでのgit revert検知/BLOCKも未実装)。「revert後の再計測強制」に該当するのはgate_gunshi_report_precheck.sh SG-PRE14(L378-398)のみだが、これは軍師の報告レビュー時(revert実行後・忍者の報告提出タイミング)にfiles_modified内のファイルへ直近revert commitがあるかをgit log grep判定しWARN表示するだけで、BLOCKでも強制でもない(REVERT_FOUND=1でも処理続行)。よってLK-A18は通知/再計測の両輪ともLevel4未到達、報告レビュー時のWARNのみの真正Level1と確定。Level4化には(a)revert実行経路の一元化(karo手動git revertのラッパースクリプト化、またはPreToolUse Bashフックでのgit revert検知)(b)変更元エージェント特定方法(revert対象commitのco-authorやtask_id逆引きによる自動identify)(c)再計測強制の実装対象(revert後の再計測task自動生成、またはcmd_complete_gateでのbefore/after記録必須化)の3点設計が必要なため単独実装を見送りPD-110(escalation)へ整理し家老/将軍判断を要請。'
 
   when: 忍者の変更をrevertする前。revert後
   how: revert前に変更元忍者に理由通知。revert後はbefore/after再計測必須(SG-PRE14)
-  origin: "[[LK062]] -> [[revert未通知]] -> [[代替案消失]]"
+  origin: "[[LK062]] -> [[revert未通知]] -> [[代替案消失]] -> [[PD-110]]"
 - id: LK-A19
   title: 情報フィルタは品質軸 — ブロック判定だけでは品質の鎖が切れる
   detail: 軽微指摘を伝えない=10回繰返したら10件手戻り=負の複利。自動転送(1d0a59e)で解決済み。
