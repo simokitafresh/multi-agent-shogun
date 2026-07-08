@@ -983,3 +983,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - PF削除は`PortfolioRepository.delete_by_id`で`portfolio_archive`へpayload退避してから関連行を削除する。対象はPF本体、folder hierarchy、monthly_returns、signals、ledger、month_start snapshots等。明示delete API以外の保存差分では削除しない安全弁を維持。
 - 復元APIは`POST /api/admin/portfolios/restore/{portfolio_id}`と`POST /api/admin/portfolios/restore-all`。FoF依存はarchiveからL0→L3順に復元し、名前衝突は既定`abort`、必要時`on_name_conflict=suffix|force`。
 - 復元後recalculateは既存のcross-process advisory lockを再利用し、最大300秒待機。lock timeout時は503で停止し、並行fullrecalculateを迂回しない。
+
+## §54 工程3: 全PF事前バックアップ確定 (cmd_3783, 2026-07-09)
+
+- 工程4(旧PF削除+新PF登録)前提として、run_id `cmd_3783_full_pre_replacement_backup_20260709` で本番102PFを`portfolio_archive`へ削除なしINSERT済み。dry-run再検証も`live_portfolios=102 / existing_for_run_before=102 / archive_count_after=102`で一致。
+- 復元素材はfolder payload 102件、`signal_decision_ledger` 15,160行、`month_start_signal_input_snapshots` 3,495行を含む。FoF 78 / standard 24、required fields・内部UUID/name重複・依存欠落・cycleはいずれもPASS。
+- 工程4開始条件はCLEAR。詳細と価格改定時の再計算値解釈は `/mnt/c/Python_app/DM-signal/docs/research/cmd_3783_full_pre_replacement_backup_report.md`。実行commitはDM-Signal `57530143`。
