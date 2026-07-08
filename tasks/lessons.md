@@ -10364,3 +10364,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - build_clear_duration_metric()はqueue/tasks/{ninja}.yamlのacknowledged_at/deployed_at/done_at/completed_atを直接参照していたが、このファイルはninja単位で使い回され、reflux/hotfix系の高速タスク回転では次cmd配備によりGATE CLEAR判定前に上書きされ得る(deploy_task.shが新cmd配備時に4フィールドを空リセットする設計自体は意図的)。この結果、gate_metrics.logのduration_sec(gate_loop_health.shが中央値比較でCLEAR異常検知に使う一次指標)が恒常的にunknownになっていた。教訓: cmd単位の完了時刻を後から計測したい場合、ninja単位で使い回されるファイルのフィールドだけに依存せず、queue/dispatch_ntfy_started/{cmd_id}.started(deploy_task.shが既にcmd毎に1度だけ書く不変マーカー)や報告YAML自身のtimestamp(cmd毎に一意のファイル名)のようなper-cmd不変の情報源をフォールバックとして持つべき。同種の『使い回しファイル vs per-cmd不変ファイル』の混同は今後も別の指標計測で再発し得る
+
+### L1000: semantic_stress_test候補insight解決手順: absorb_pendingを先に走らせよ
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_insight_202607090242_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,testing,process,bash]
+- **target_files**: [queue/insights.yaml,queue/tasks/kotaro.yaml]
+- **origin**: [[cmd_reflux_insight_202607090242_kotaro]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- source=semantic_stress_testのpending insight(candidate_aliases: NO_MATCH形式)を担当する際は、まず bash scripts/semantic_alias_absorb_pending.sh を実行せよ。これは既存の全概念に対しbest_similar_conceptで自動fuzzy-match(pending_alias_threshold=16.0)を試み、一致すればalias追加+insight自動resolveまで行う。今回はscore 4.7<16.0で非吸収だったため、この結果自体(=誤routing回避が正しく機能した証拠)を根拠にscripts/insight_resolve.shで手動resolveした。この2段階(自動吸収トライ→ダメなら根拠付き手動resolve)を踏まずに一次情報確認だけでresolveすると、absorb_pendingが将来同じqueryを拾って再度スコアリングを試みる可能性がありinsightsが往復しかねない(実際はresolve後は対象外になるため実害は小さいが、判断根拠にスコア実測値を含めることが重要)。origin: [[cmd_reflux_insight_202607090242_kotaro]] -> [[semantic_stress_test insight解決パターン未文書化]] -> [[absorb_pending先行実行の教訓化]]
