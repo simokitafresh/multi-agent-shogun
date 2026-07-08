@@ -1109,6 +1109,7 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         if (/^[[:space:]]*-[[:space:]]/) {
             if (inbox_entry && inbox_read_false && inbox_type == "cmd_new") {
                 unread_cmd_new++
+                if (inbox_ts != "" && (oldest_cmd_new_ts == "" || inbox_ts < oldest_cmd_new_ts)) oldest_cmd_new_ts = inbox_ts
                 if (unread_cmd_new <= 3) {
                     item = inbox_id
                     if (item == "") item = "unknown"
@@ -1351,6 +1352,7 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
     END {
         if (inbox_entry && inbox_read_false && inbox_type == "cmd_new") {
             unread_cmd_new++
+            if (inbox_ts != "" && (oldest_cmd_new_ts == "" || inbox_ts < oldest_cmd_new_ts)) oldest_cmd_new_ts = inbox_ts
             if (unread_cmd_new <= 3) {
                 item = inbox_id
                 if (item == "") item = "unknown"
@@ -1395,6 +1397,7 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         }
         print "UNREAD|" unread+0
         print "UNREAD_CMD_NEW|" unread_cmd_new+0 "|" unread_cmd_new_items
+        print "UNREAD_CMD_NEW_OLDEST_TS|" oldest_cmd_new_ts
         print "UNREAD_IDLE_CYCLE|" unread_idle_cycle+0
         print "UNREAD_OLDEST_ACTIONABLE_TS|" oldest_unread_actionable_ts
         print "READ_ACTIONABLE|" read_actionable+0 "|" read_actionable_items
@@ -1474,6 +1477,7 @@ while IFS='|' read -r _agg_key _agg_a _agg_b _agg_c _agg_d _agg_e _agg_f; do
         STATUS) _NINJA_STATUS_CACHE[$_agg_a]=$_agg_b ;;
         UNREAD) unread=${_agg_a:-0} ;;
         UNREAD_CMD_NEW) unread_cmd_new=${_agg_a:-0}; unread_cmd_new_items=${_agg_b:-} ;;
+        UNREAD_CMD_NEW_OLDEST_TS) unread_cmd_new_oldest_ts=${_agg_a:-} ;;
         UNREAD_IDLE_CYCLE) unread_idle_cycle=${_agg_a:-0} ;;
         UNREAD_OLDEST_ACTIONABLE_TS) unread_oldest_actionable_ts=${_agg_a:-} ;;
         READ_ACTIONABLE) read_actionable=${_agg_a:-0}; read_actionable_items=${_agg_b:-} ;;
@@ -1661,7 +1665,22 @@ if [ -f "$SCRIPT_DIR/queue/inbox/karo.yaml" ]; then
         echo "  ALERT: 未処理cmd_new ${unread_cmd_new}件。配備漏れ防止のため通常作業禁止"
         [ -n "${unread_cmd_new_items:-}" ] && echo "    ${unread_cmd_new_items}"
         overall="ALERT"
-        alerts+=("未処理cmd_new: ${unread_cmd_new}件")
+        # cmd_3658と同根の誤検知根治(2026-07-08): 委任直後の数秒〜数分をstartup checkが拾い
+        # 「先送りCRITICAL」として将軍へ自動エスカレする誤報が同日3回発生(cmd_3773/3774/3775委任の各直後)。
+        # DWELL猶予は従来「inbox未読滞留」経路にしか効いていなかった。cmd_newにも同じ猶予を適用し、
+        # 猶予未満は即時配備を促すALERT表示のみ(streak/エスカレ対象外)とする。
+        _cmd_new_dwell_min=""
+        if [ -n "${unread_cmd_new_oldest_ts:-}" ]; then
+            _cmd_new_oldest_epoch=$(date -d "$unread_cmd_new_oldest_ts" +%s 2>/dev/null || echo "0")
+            if [ "$_cmd_new_oldest_epoch" -gt 0 ]; then
+                _cmd_new_dwell_min=$(( ($(date +%s) - _cmd_new_oldest_epoch) / 60 ))
+            fi
+        fi
+        if [ -z "$_cmd_new_dwell_min" ] || [ "$_cmd_new_dwell_min" -ge "$KARO_INBOX_UNREAD_DWELL_MIN" ]; then
+            alerts+=("未処理cmd_new: ${unread_cmd_new}件")
+        else
+            echo "  INFO: 最古cmd_newは${_cmd_new_dwell_min}分前着(閾値${KARO_INBOX_UNREAD_DWELL_MIN}分未満) — 到着直後のため先送りCRITICAL streak対象外。即時配備せよ"
+        fi
     elif [ "$unread" -gt 0 ]; then
         echo "  WARN: inbox未読あり。nudge/Stop hookに依存せず通常作業前に処理せよ"
         if [ "${unread_idle_cycle:-0}" -eq "$unread" ]; then
