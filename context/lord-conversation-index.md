@@ -1,57 +1,44 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-09 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-09T00:57:04+09:00 -->
+<!-- generated_at: 2026-07-09T08:07:31+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-09T00:57:04+09:00 | terminal | response | 殿、inbox処理完了にござる。中身は家老エスカレーション（cmd_3778の品質記録漏れ）だったが、一次確認の結果**既に解消済み**と判明した: - 飛猿がINS-b624（将軍が00:04に投入したfix_known）の還流消化で、…
-- 2026-07-09T00:55:25+09:00 | ntfy | outbound | 【家老CRITICAL】先送り1セッション連続検出。起動は許可するが即対処必須
-- 2026-07-09T00:52:30+09:00 | terminal | response | **cmd_3783** — 工程3(本番全PFの事前バックアップ+復元可能性検証)。殿指示(00:42「工程3をやろう」)。hanzo配備。重要cmd。 AC3個: - AC1: cmd_3753/3754成果物現物確認+削除なし事前全…
-- 2026-07-09T00:51:07+09:00 | terminal | response | queueはアーカイブ済みで末尾はcmd_3537。cmd_3783（工程3）を起票する。 [meta] stop_reason=tool_use
-- 2026-07-09T00:50:32+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働1名 CLEAR率99% 連勝228
-- 2026-07-09T00:50:31+09:00 | terminal | response | 完了。本セッション累計22件。inbox待機。 [meta] stop_reason=end_turn
-- 2026-07-09T00:49:56+09:00 | ntfy | outbound | 【将軍】cmd_reflux_insight_202607090049_tobisaru 初回配備開始 (title=(untitled), ninja=tobisaru)
-- 2026-07-09T00:49:38+09:00 | terminal | response | 完了。本セッション累計21件。inbox待機。 [meta] stop_reason=end_turn
-- 2026-07-09T00:48:26+09:00 | terminal | response | 未読なし。対応完了です。 **修正完了**: 家老の指摘どおり `queue/tasks/kotaro.yaml` の `task.status` を `in_progress` → `done` へ更新（commit `e199a911…
-- 2026-07-09T00:48:23+09:00 | terminal | response | Gate PASS維持。家老へ再報告します。 [meta] stop_reason=tool_use
+- 2026-07-09T08:07:30+09:00 | terminal | response | inbox処理完了にござる。小太郎のreflux消化タスク（cmd_reflux_insight_202607090745_kotaro=還流insight系）のGATE CLEAR通知だった — 既読化済み。 還流は自走を継続中で、将軍…
+- 2026-07-09T07:58:33+09:00 | terminal | response | 殿、**工程4を開始した**。cmd_3784（入替の対象リスト確定+実行手順書）を起票・委任済みにござる（07:54 DELEGATED、gate正規通過）。 ## 進め方 — 二段構え **第一段=cmd_3784（今配備、非破壊・本…
+- 2026-07-09T07:58:16+09:00 | terminal | response | gate-sync完了。inbox待機。 [meta] stop_reason=end_turn
+- 2026-07-09T07:56:56+09:00 | terminal | response | cmd_3784 APPROVE完了。本セッション累計95件。inbox待機。 [meta] stop_reason=end_turn
+- 2026-07-09T07:54:58+09:00 | terminal | response | 完了。本セッション累計94件。inbox待機。 [meta] stop_reason=end_turn
+- 2026-07-09T07:54:34+09:00 | terminal | response | 報告完了です。COMMIT MISSING警告のファイル(archive/cmd-chronicle, lessons.yaml等)は自分のタスクスコープ(queue/insights.yaml)外の他エージェントによる変更のため、sta…
+- 2026-07-09T07:54:32+09:00 | terminal | response | 殿、**工程4を開始した**。cmd_3784（入替の対象リスト確定+実行手順書）を起票・委任済みにござる（07:54 DELEGATED、gate正規通過）。 ## 進め方 — 二段構え **第一段=cmd_3784（今配備、非破壊・本…
+- 2026-07-09T07:54:31+09:00 | terminal | response | 報告YAMLがgate PASSしました。家老へ報告を送ります。 [meta] stop_reason=tool_use
+- 2026-07-09T07:50:32+09:00 | terminal | response | 完了。本セッション累計93件。inbox待機。 [meta] stop_reason=end_turn
+- 2026-07-09T07:46:33+09:00 | terminal | response | 完了。本セッション累計92件。inbox待機。
 
 ## 未解決確認事項
-- 殿、inbox処理完了にござる。中身は家老エスカレーション（cmd_3778の品質記録漏れ）だったが、一次確認の結果**既に解消済み**と判明した: - 飛猿がINS-b624（将軍が00:04に投入したfix_known）の還流消化で、**6件全部（cmd_3773〜3778…
-- **cmd_3783** — 工程3(本番全PFの事前バックアップ+復元可能性検証)。殿指示(00:42「工程3をやろう」)。hanzo配備。重要cmd。 AC3個: - AC1: cmd_3753/3754成果物現物確認+削除なし事前全量バックアップ経路確立 - AC2: 全…
-- 未読なし。対応完了です。 **修正完了**: 家老の指摘どおり `queue/tasks/kotaro.yaml` の `task.status` を `in_progress` → `done` へ更新（commit `e199a911d`）。報告YAMLの `commit_…
-- inbox処理完了にござる。家老からの回答: - **saizoのSTALL疑いは解消済み** — 一次確認の結果、才蔵は既にtask done・報告YAML PASS・軍師LGTMまで完了していた。将軍がcapture-paneで見た「配備待機」の発言は完了後のidle状態だ…
-- 殿、**ntfy送信済みにござる** — アーティファクトのリンク（https://claude.ai/code/artifact/56cfa95f-5bf8-44e9-a0d7-4a88a9740db1）を要旨1行付きで通知した。 あわせて家老からのエスカレーション2件を処理…
-- 未読inboxなし、タスク完了です。 ## 完了報告 cmd_reflux_insight_202607090011_saizo(還流在庫自動消化)を完了しました。 **AC1**: 対象insight `INS-20260708-201832501-5ebb`(through…
-- cmd_3781のGATE CLEARを確認・検分完了にござる。 **SG-PRE32（視点縮退検出）として実装完了** — commit 511f226fb。軍師precheckエンジンに視点列間の全数一致検出が追加され（実装3箇所をgrepで確認）、cmd_3780実データ…
-- 殿への報告前に、家老エスカレーション（品質記録漏れ6件）の実態を一次確認する。 [meta] stop_reason=tool_use
+- 殿、**工程4を開始した**。cmd_3784（入替の対象リスト確定+実行手順書）を起票・委任済みにござる（07:54 DELEGATED、gate正規通過）。 ## 進め方 — 二段構え **第一段=cmd_3784（今配備、非破壊・本番読取りのみ）**: - **AC1**…
+- 報告完了です。COMMIT MISSING警告のファイル(archive/cmd-chronicle, lessons.yaml等)は自分のタスクスコープ(queue/insights.yaml)外の他エージェントによる変更のため、stageせず家老へ報告済みです。 タスクサマ…
+- 未読なし。タスクは完了した。idle待機に入る。 ## 作業完了サマリー **cmd_reflux_promotion_202607090721_saizo — verdict: PASS** 配備されたLK-A14昇格候補は、37分前にkotaro(cmd_...0644)が…
+- このWARNはセッション開始時から存在していた他忍者・他タスク管轄のuncommitted変更(archive/cmd-chronicle.md、context/lord-conversation-index.md、projects/dm-signal/lessons.yaml…
+- 完了。本セッション累計87件。新着inbox確認。
+- タスク完了です。 **発見**: LK-A14(還流promotion対象)は既に前任のkotaroが06:52に一次検証・PD-108(pending)へ整理済みでした。重複配備と判断し、新規PD登録は見送りました。 **根本原因の特定**: 調査の過程で、還流promoti…
+- 家老への報告を送信しました。inboxを再確認し、他に未処理メッセージがないか確認します。 [meta] stop_reason=tool_use
+- タスク完了。作業内容をまとめる。 **cmd_reflux_promotion_202607090644_kotaro** — LK-A14(lessons_karo.yaml、「LG027横展開確認: grep修正前パターンで残存0件確認必須」)の一次検証と昇格処理: - `…
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
 
 ## 参照cmd
 - cmd_3
-- cmd_37
-- cmd_376
-- cmd_1114
-- cmd_1125
 - cmd_3517
 - cmd_3518
-- cmd_3637
 - cmd_3704
-- cmd_3705
-- cmd_3707
 - cmd_3712
-- cmd_3716
 - cmd_3753
-- cmd_3757
-- cmd_3761
 - cmd_3762
 - cmd_3763
-- cmd_3765
 - cmd_3766
 - cmd_3767
-- cmd_3768
-- cmd_3769
 - cmd_3771
 - cmd_3772
 - cmd_3773
@@ -59,6 +46,16 @@
 - cmd_3775
 - cmd_3776
 - cmd_3777
+- cmd_3778
+- cmd_3779
+- cmd_3780
+- cmd_3781
+- cmd_3782
+- cmd_3783
+- cmd_3784
+- PD-011
+- PD-108
+- PD-109
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
