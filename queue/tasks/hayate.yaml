@@ -49,7 +49,7 @@ task:
   project: infra
   purpose: 'L4修行: 指定ファイルの改善点3つを特定し、最高インパクト1件を実装し、[[リンク]]で知識ネットワークを育て、報告YAMLを一発PASS品質で完成させる'
   scout_exempt: true
-  status: done
+  status: idle
   stop_for: []
   target_path: scripts/ninja_monitor.sh
   task_id: cmd_training_L4_auto_202607081543_hayate_normal
