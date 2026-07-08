@@ -79,7 +79,10 @@ def parse_ts(value):
     except ValueError:
         return None
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=dt.timezone.utc)
+        # naive timestamps come from local-clock writers (gate_metrics.log,
+        # lesson impact log); interpreting them as UTC shifts JST entries 9h
+        # into the future and in_window() drops them
+        parsed = parsed.astimezone()
     return parsed.astimezone(dt.timezone.utc)
 
 
@@ -260,38 +263,49 @@ semantic_loop = loop_from_insights(insight_entries, is_semantic)
 
 
 # --- promotion loop: lesson enforcement candidates below Level4 ---
-def load_promotion_consumption(root_path):
-    quality_path = Path(root_path) / "logs" / "cmd_design_quality.yaml"
-    if not quality_path.is_file() or yaml is None:
-        return 0, None
-    try:
-        entries = yaml.safe_load(quality_path.read_text(encoding="utf-8")) or []
-    except Exception:
-        return 0, None
-    if isinstance(entries, dict):
-        entries = entries.get("entries") or []
-    if not isinstance(entries, list):
-        return 0, None
+def load_promotion_consumption(root_path, metrics_path):
     consumed_by_cmd = {}
-    for entry in entries:
-        if not isinstance(entry, dict):
-            continue
-        cmd_id = str(entry.get("cmd_id") or "")
+
+    def record(cmd_id, ts):
         if not cmd_id.startswith("cmd_reflux_promotion_"):
-            continue
-        if str(entry.get("gate_result") or "").upper() != "CLEAR":
-            continue
-        ts = parse_ts(entry.get("timestamp"))
+            return
         if not in_window(ts):
-            continue
+            return
         prev = consumed_by_cmd.get(cmd_id)
         if prev is None or (ts is not None and ts > prev):
             consumed_by_cmd[cmd_id] = ts
+
+    # gate_metrics.log is the primary source: reflux auto-generated cmds skip
+    # cmd_save, so they never appear in logs/cmd_design_quality.yaml
+    metrics = Path(metrics_path)
+    if metrics.is_file():
+        for line in metrics.read_text(encoding="utf-8", errors="replace").splitlines():
+            cols = line.split("\t")
+            if len(cols) < 3 or cols[2].strip().upper() != "CLEAR":
+                continue
+            record(cols[1].strip(), parse_ts(cols[0]))
+
+    quality_path = Path(root_path) / "logs" / "cmd_design_quality.yaml"
+    if quality_path.is_file() and yaml is not None:
+        try:
+            entries = yaml.safe_load(quality_path.read_text(encoding="utf-8")) or []
+        except Exception:
+            entries = []
+        if isinstance(entries, dict):
+            entries = entries.get("entries") or []
+        if isinstance(entries, list):
+            for entry in entries:
+                if not isinstance(entry, dict):
+                    continue
+                if str(entry.get("gate_result") or "").upper() != "CLEAR":
+                    continue
+                record(str(entry.get("cmd_id") or ""), parse_ts(entry.get("timestamp")))
+
     return len(consumed_by_cmd), max_ts(consumed_by_cmd.values())
 
 
-def load_promotion_loop(root_path):
-    consumed, last_consumption_ts = load_promotion_consumption(root_path)
+def load_promotion_loop(root_path, metrics_path):
+    consumed, last_consumption_ts = load_promotion_consumption(root_path, metrics_path)
     helper = Path(root_path) / "scripts" / "gates" / "gate_lesson_enforcement_level.sh"
     if not helper.is_file():
         return {"produced": 0, "consumed": consumed, "stock": 0, "last_consumption_ts": iso(last_consumption_ts), "note": "gate_lesson_enforcement_level.sh not found"}
@@ -782,7 +796,7 @@ loops = {
     "lesson": load_lesson_loop(lesson_impact_path),
     "insight": insight_loop,
     "semantic": semantic_loop,
-    "promotion": load_promotion_loop(root_path),
+    "promotion": load_promotion_loop(root_path, gate_metrics_path),
     "obsidian": obsidian_loop,
     "memory": memory_loop,
     "skill": skill_loop,

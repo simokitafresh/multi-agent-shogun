@@ -9,6 +9,9 @@ setup_file() {
 }
 
 setup() {
+    # naive fixture timestamps are interpreted as local time; pin TZ so
+    # assertions hold on both JST dev machines and UTC CI
+    export TZ=UTC
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/loop_ledger.XXXXXX")"
     mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/queue/archive/reports" "$TEST_TMPDIR/data"
     export LOOP_LEDGER_ROOT="$TEST_TMPDIR"
@@ -346,6 +349,36 @@ EOF
     [[ "$output" != *"ALERT: promotion: 空転"* ]]
     grep -q 'consumed: 2' "$LOOP_LEDGER_OUT"
     grep -q 'last_consumption_ts: "2026-06-19T00:03:00Z"' "$LOOP_LEDGER_OUT"
+}
+
+@test "loop_ledger_update counts reflux promotion consumption from gate_metrics.log" {
+    mkdir -p "$TEST_TMPDIR/scripts/gates"
+    cat > "$TEST_TMPDIR/scripts/gates/gate_lesson_enforcement_level.sh" <<'SH'
+#!/usr/bin/env bash
+cat <<'OUT'
+=== 昇格候補一覧(L4未満、恒久防御未到達) 2件 ===
+  - [lessons_karo.yaml] L901 (L2:事前予防(doc)): doc-only lesson
+  - [lessons_gunshi.yaml] L902 (L3:事前強制(auto-gen)): weak lesson
+##ENFORCEMENT_LEVEL_BELOW4_COUNT##
+2
+OUT
+SH
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_enforcement_level.sh"
+
+    # reflux cmds skip cmd_save: they appear only in gate_metrics.log, never in cmd_design_quality.yaml
+    cat > "$LOOP_LEDGER_GATE_METRICS_LOG" <<'EOF'
+2026-06-19T00:01:00	cmd_reflux_promotion_202606190001_hanzo	CLEAR	all_gates_passed	exact	unknown	unknown	L901
+2026-06-19T00:02:00	cmd_reflux_promotion_202606190001_hanzo	CLEAR	all_gates_passed	exact	unknown	unknown	L901
+2026-06-19T00:03:00	cmd_reflux_promotion_202606190002_kotaro	CLEAR	all_gates_passed	exact	unknown	unknown	L902
+2026-06-19T00:04:00	cmd_reflux_promotion_202606190003_saizo	BLOCK	report_missing	exact	unknown	unknown	L902
+2026-05-01T00:01:00	cmd_reflux_promotion_202605010001_old	CLEAR	all_gates_passed	exact	unknown	unknown	L900
+EOF
+
+    export LOOP_LEDGER_NOW="2026-06-20T00:00:00Z"
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"promotion: produced=2 consumed=2 stock=2 last_consumption=2026-06-19T00:03:00Z"* ]]
+    [[ "$output" != *"ALERT: promotion: 空転"* ]]
 }
 
 @test "loop_ledger_update alerts on stock increase vs previous snapshot" {
