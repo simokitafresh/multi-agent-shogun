@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-07 cmd_karo_hotfix_ga189_context_freshness_20260707 -->
-<!-- last_synced_lesson: L829 -->
+<!-- last_synced_lesson: L830 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -289,6 +289,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - L827: archive由来の複数行復元(FK依存あり)はテーブルごとにdb.flush()を挟まないとFK制約違反になる（cmd_3754）
 - L828: GS DTB3ローリング計算と本番PipelineEngineのDTB3参照は生値一致でも暦解像度が異なりthreshold_band境界で稀にフリップする（cmd_3755）
 - L829: DM-signal repoへ新規Pythonスクリプトを書く際、Write toolでハードコード絶対パス(/mnt/c/Python_app/...)をsys.path等に直書きするとGuard16(操作的オントロジー)でBLOCKされる（cmd_3763）
+- L830: pf_L0規模(N=12程度)の小標本ランキング分析では両軸quantile交差分類が機能せず、tie処理が結果を歪める（cmd_karo_recon2_cmd3768_gap_method_202607081213）
 
 ## 因果リンク
 
