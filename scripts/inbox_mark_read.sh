@@ -49,6 +49,38 @@ CONFIRM_SCRIPT="$SCRIPT_DIR/scripts/bulletin_confirm.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \
     || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
 
+record_task_acknowledged_at() {
+    local agent_id="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${agent_id}.yaml"
+    local yfs="$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+    local ack_ts
+    local status=""
+    local ack_existing=""
+
+    [ -f "$task_file" ] || return 0
+    [ -f "$yfs" ] || return 0
+
+    status=$(awk -F': *' '
+        /^task:/ { in_task=1; next }
+        in_task && /^  status:/ { gsub(/["'\'']/, "", $2); print $2; exit }
+        !in_task && /^status:/ { gsub(/["'\'']/, "", $2); print $2; exit }
+    ' "$task_file" 2>/dev/null || true)
+    case "$status" in
+        assigned|acknowledged|in_progress) ;;
+        *) return 0 ;;
+    esac
+
+    ack_existing=$(awk -F': *' '
+        /^task:/ { in_task=1; next }
+        in_task && /^  acknowledged_at:/ { gsub(/["'\'']/, "", $2); print $2; exit }
+        !in_task && /^acknowledged_at:/ { gsub(/["'\'']/, "", $2); print $2; exit }
+    ' "$task_file" 2>/dev/null || true)
+    [ -z "$ack_existing" ] || return 0
+
+    ack_ts=$(date '+%Y-%m-%dT%H:%M:%S')
+    bash "$yfs" "$task_file" task acknowledged_at "$ack_ts" >/dev/null 2>&1 || true
+}
+
 resolve_inbox_file_path() {
     local inbox_file="$1"
     local resolved=""
@@ -254,6 +286,7 @@ while [ $attempt -lt $max_attempts ]; do
         echo "[inbox_mark_read] Marked ${_changed} message(s) as read for $AGENT_ID"
 
     ) 200>"$LOCKFILE"; then
+        record_task_acknowledged_at "$AGENT_ID"
         if [ -s "$CONFIRM_LIST_FILE" ]; then
             mapfile -t _bulletin_entries < "$CONFIRM_LIST_FILE"
             confirm_bulletin_reads "${_bulletin_entries[@]}"

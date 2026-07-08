@@ -18,8 +18,10 @@ setup() {
 
     cp "$SOURCE_SCRIPT" "$TEST_ROOT/scripts/inbox_mark_read.sh"
     cp "$SOURCE_CONFIRM_SCRIPT" "$TEST_ROOT/scripts/bulletin_confirm.sh"
+    cp "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$TEST_ROOT/scripts/lib/yaml_field_set.sh"
     chmod +x "$TEST_ROOT/scripts/inbox_mark_read.sh"
     chmod +x "$TEST_ROOT/scripts/bulletin_confirm.sh"
+    chmod +x "$TEST_ROOT/scripts/lib/yaml_field_set.sh"
     cat > "$TEST_ROOT/scripts/lib/agent_config.sh" <<'SH'
 get_all_agents() {
     echo "karo gunshi hayate kagemaru hanzo saizo kotaro tobisaru"
@@ -277,4 +279,52 @@ YAML
     [ "$status" -eq 0 ]
     [ "$(_get_read_status hayate msg_001)" = "true" ]
     [ "$(_get_read_status hayate msg_002)" = "true" ]
+}
+
+@test "mark-read records acknowledged_at on active task when empty" {
+    _create_inbox hanzo
+    mkdir -p "$TEST_ROOT/queue/tasks"
+    cat > "$TEST_ROOT/queue/tasks/hanzo.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_999
+  status: assigned
+  acknowledged_at: ''
+YAML
+
+    run bash "$TEST_SCRIPT" hanzo msg_001
+    [ "$status" -eq 0 ]
+
+    run python3 - <<PY
+import re
+import yaml
+data = yaml.safe_load(open("$TEST_ROOT/queue/tasks/hanzo.yaml"))
+ack = str(data["task"].get("acknowledged_at", ""))
+assert re.match(r"^202[0-9]-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$", ack), ack
+print("ACK_TS_OK")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ACK_TS_OK"* ]]
+}
+
+@test "mark-read does not overwrite existing acknowledged_at" {
+    _create_inbox hanzo
+    mkdir -p "$TEST_ROOT/queue/tasks"
+    cat > "$TEST_ROOT/queue/tasks/hanzo.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_999
+  status: in_progress
+  acknowledged_at: '2026-07-08T09:00:00'
+YAML
+
+    run bash "$TEST_SCRIPT" hanzo msg_001
+    [ "$status" -eq 0 ]
+
+    run python3 - <<PY
+import yaml
+data = yaml.safe_load(open("$TEST_ROOT/queue/tasks/hanzo.yaml"))
+assert data["task"]["acknowledged_at"] == "2026-07-08T09:00:00"
+print("ACK_TS_PRESERVED")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ACK_TS_PRESERVED"* ]]
 }

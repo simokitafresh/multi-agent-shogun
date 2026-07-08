@@ -290,6 +290,7 @@ PY
 }
 
 LAST_GATE_NOTIFY_ROUTE=""
+CLEAR_NOTIFICATION_SENT=false
 
 send_high_notification() {
     local message="$1"
@@ -397,6 +398,26 @@ notify_karo_cmd_complete_skill_hint() {
     else
         echo "  [INFO] karo /cmd-complete hint: WARN (non-blocking)"
     fi
+}
+
+send_clear_notifications_once() {
+    local cmd_id="$1"
+    local phase="${2:-GATE CLEAR}"
+
+    if [ "${CLEAR_NOTIFICATION_SENT:-false}" = true ]; then
+        echo "  clear notification: SKIP (already sent)"
+        return 0
+    fi
+
+    echo "Auto-notification (${phase}):"
+    if send_info_cmd_notification "$cmd_id" "GATE CLEAR — ${cmd_id} 完了" 2>/dev/null; then
+        echo "  ${LAST_GATE_NOTIFY_ROUTE}: OK (INFO)"
+    else
+        echo "  [INFO] ${LAST_GATE_NOTIFY_ROUTE:-notification}: WARN (INFO notification failed, non-blocking)" >&2
+    fi
+    notify_shogun_gate_clear "$cmd_id" "GATE CLEAR — ${cmd_id} 完了"
+    notify_karo_cmd_complete_skill_hint "$cmd_id"
+    CLEAR_NOTIFICATION_SENT=true
 }
 
 notify_karo_lesson_registration_reminder() {
@@ -5278,6 +5299,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         echo "  [INFO] gate_yaml_status.sh failed (non-blocking)"
     fi
     update_status "$CMD_ID"
+    send_clear_notifications_once "$CMD_ID" "GATE CLEAR - emergency override immediate"
     append_changelog "$CMD_ID"
     append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tOVERRIDE\temergency_override\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC")"
     update_karo_workaround_resolutions "$CMD_ID" || echo "  [WARN] karo workaround resolution update failed (non-blocking)"
@@ -5328,12 +5350,8 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         echo "  [INFO] gist_sync: WARN (sync failed, non-blocking)" >&2
     fi
 
-    # ntfy_cmd（gist_sync後に実行）
-    if send_info_cmd_notification "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了" 2>/dev/null; then
-        echo "  ${LAST_GATE_NOTIFY_ROUTE}: OK (INFO)"
-    else
-        echo "  [INFO] ${LAST_GATE_NOTIFY_ROUTE:-notification}: WARN (INFO notification failed, non-blocking)" >&2
-    fi
+    # ntfy_cmd（CLEAR直後に送信済み。ここでは未送信時だけ補完）
+    send_clear_notifications_once "$CMD_ID" "GATE CLEAR - emergency override"
     echo "Gunshi gate_result reflux (GATE CLEAR - emergency override):"
     if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
         if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" 2>&1; then
@@ -5344,8 +5362,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     else
         echo "  SKIP (gunshi_gate_reflux.sh not found)"
     fi
-    notify_shogun_gate_clear "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了"
-    notify_karo_cmd_complete_skill_hint "$CMD_ID"
+    send_clear_notifications_once "$CMD_ID" "GATE CLEAR - emergency override shogun/karo"
 
     # ─── 掲示板自動投稿（GATE CLEAR時、将軍が/clear後に即把握できるよう） ───
     echo ""
@@ -7296,7 +7313,6 @@ if [ "$ALL_CLEAR" = true ]; then
     fi
     echo "GATE CLEAR: cmd完了許可"
     append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tall_gates_passed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
-    update_karo_workaround_resolutions "$CMD_ID" || echo "  [WARN] karo workaround resolution update failed (non-blocking)"
     log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$CMD_ID"
     (bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" >/dev/null 2>&1 || true) &
     # gate_yaml_status: YAML status更新（WARNING only）
@@ -7311,20 +7327,21 @@ if [ "$ALL_CLEAR" = true ]; then
         echo "$status_output"
         echo "  [INFO] update_status failed (non-blocking)"
     fi
+    send_clear_notifications_once "$CMD_ID" "GATE CLEAR immediate"
+    (update_karo_workaround_resolutions "$CMD_ID" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "  [WARN] karo workaround resolution update failed (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
+    echo "Karo workaround resolution update: queued (async)"
     (append_changelog "$CMD_ID" >/dev/null 2>&1 || true) &
     echo "CHANGELOG: queued (async)"
 
     echo ""
     echo "Lesson feedback recording (pre-impact scan):"
-    record_lesson_feedback_for_cmd
+    (record_lesson_feedback_for_cmd >/dev/null 2>&1 || true) &
+    echo "  lesson feedback: queued (async)"
 
     (append_lesson_tracking "$CMD_ID" "CLEAR" >/dev/null 2>&1 || true) &
     echo "LESSON_TRACKING: queued (async)"
-    if update_lesson_impact_tsv "$CMD_ID" "CLEAR" 2>&1; then
-        true
-    else
-        echo "  [INFO] update_lesson_impact_tsv failed (non-blocking)"
-    fi
+    (update_lesson_impact_tsv "$CMD_ID" "CLEAR" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "  [INFO] update_lesson_impact_tsv failed (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
+    echo "  lesson impact tsv: queued (async)"
     queue_lesson_impact_followup
 
     echo ""
@@ -7384,7 +7401,7 @@ PY
     echo ""
     echo "Semantic causal traverse (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/semantic_causal_traverse.sh" ]; then
-        _traverse_output=$(bash "$SCRIPT_DIR/scripts/semantic_causal_traverse.sh" \
+            _traverse_output=$(timeout 20 bash "$SCRIPT_DIR/scripts/semantic_causal_traverse.sh" \
             --cmd-id "$CMD_ID" \
             --depth 3 \
             --format json 2>/dev/null || true)
@@ -7472,11 +7489,8 @@ print('\n'.join(scripts))
     echo ""
     echo "Lesson merge (auto):"
     if [ -f "$SCRIPT_DIR/scripts/lesson_merge.sh" ]; then
-        if bash "$SCRIPT_DIR/scripts/lesson_merge.sh" 2>&1; then
-            echo "  [GATE] lesson_merge: OK"
-        else
-            echo "  [GATE] lesson_merge: SKIP (non-blocking)"
-        fi
+        (bash "$SCRIPT_DIR/scripts/lesson_merge.sh" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
+        echo "  lesson_merge: queued (async)"
     else
         echo "  [GATE] lesson_merge: SKIP (script not found)"
     fi
@@ -7573,14 +7587,8 @@ print('\n'.join(scripts))
     (bash "$SCRIPT_DIR/scripts/gist_sync.sh" --once >/dev/null 2>&1 || true) &
     echo "  gist_sync: queued (async)"
 
-    # ntfy_cmd（gist_sync後に実行）
-    if send_info_cmd_notification "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了" 2>/dev/null; then
-        echo "  ${LAST_GATE_NOTIFY_ROUTE}: OK (INFO)"
-    else
-        echo "  [INFO] ${LAST_GATE_NOTIFY_ROUTE:-notification}: WARN (INFO notification failed, non-blocking)" >&2
-    fi
-    notify_shogun_gate_clear "$CMD_ID" "GATE CLEAR — ${CMD_ID} 完了"
-    notify_karo_cmd_complete_skill_hint "$CMD_ID"
+    # ntfy_cmd / shogun / karo はCLEAR直後に送信済み。ここでは未送信時だけ補完。
+    send_clear_notifications_once "$CMD_ID" "GATE CLEAR"
 
     # GATE結果通知を出す前にreview_logへ同期し、/gate-sync手動依存を残さない。
     echo ""
@@ -7657,11 +7665,8 @@ print('\n'.join(scripts))
     echo ""
     echo "Cmd quality log (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/cmd_quality_log.sh" ]; then
-        if bash "$SCRIPT_DIR/scripts/cmd_quality_log.sh" "$CMD_ID" "CLEAR" "no" "0" 2>&1; then
-            echo "  cmd_quality_log: OK"
-        else
-            echo "  [INFO] cmd_quality_log: WARN (logging failed, non-blocking)"
-        fi
+        (bash "$SCRIPT_DIR/scripts/cmd_quality_log.sh" "$CMD_ID" "CLEAR" "no" "0" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "  [INFO] cmd_quality_log: WARN (logging failed, non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
+        echo "  cmd_quality_log: queued (async)"
     else
         echo "  SKIP (cmd_quality_log.sh not found)"
     fi
@@ -7953,7 +7958,8 @@ PYEOF
     # karo_idle_fix: 報告YAMLのlessons_usefulをlesson_impact.tsvに書き戻し
     echo ""
     echo "Lesson feedback recording (post-GATE CLEAR):"
-    record_lesson_feedback_for_cmd
+    (record_lesson_feedback_for_cmd >/dev/null 2>&1 || true) &
+    echo "  lesson feedback: queued (async)"
 
     # ─── status: completed 自動設定（GATE CLEAR後。cmdライフサイクル完了） ───
     echo ""
@@ -7974,16 +7980,14 @@ PYEOF
     echo ""
     echo "Archive (post-GATE CLEAR):"
     if [ ! -f "$GATES_DIR/archive.done" ]; then
-        if bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" 2>&1; then
-            echo "  archive: OK"
-        else
-            echo "  [INFO] archive: WARN (failed, non-blocking)"
-        fi
+        (bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "  [INFO] archive: WARN (failed, non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
+        echo "  archive: queued (async)"
     else
         echo "  archive: already exists (skip)"
     fi
 
-    set_matching_tasks_idle
+    (set_matching_tasks_idle >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
+    echo "Task idle transition: queued (async)"
 
     # ─── git push（GATE CLEAR後、殿裁定2026-03-24: GATE CLEARしたcommitは家老がpush） ───
     echo ""
@@ -8007,11 +8011,8 @@ PYEOF
     echo ""
     echo "Gunshi gate_result reflux (post-GATE CLEAR 2nd run):"
     if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
-        if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" 2>&1; then
-            echo "  gunshi_gate_reflux: OK"
-        else
-            echo "  [INFO] gunshi_gate_reflux: WARN (non-blocking)"
-        fi
+        (bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "  [INFO] gunshi_gate_reflux: WARN (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
+        echo "  gunshi_gate_reflux: queued (async)"
     else
         echo "  SKIP (gunshi_gate_reflux.sh not found)"
     fi

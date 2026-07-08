@@ -1077,7 +1077,7 @@ EOF
 
     assert_missing_fields \
         "$file" \
-        target_path progress description deployed_at started_at \
+        target_path progress description started_at \
         constraints engineering_preferences context_files scope context context_hints assigned_scope expected_model_effort pre_deploy_banner_evidence not_in_scope recommended_skills stop_for never_stop_for parallel_ok \
         AC1 AC2 AC3 acceptance_criteria ac_priority ac_checkpoint \
         command reports_to_read credential_warning context_update type report_template \
@@ -1123,6 +1123,31 @@ PY
     rm -rf "$root"
     [ "$status" -eq 0 ]
     [[ "$output" == *"DEPLOY_PIPE_OK"* ]]
+}
+
+@test "resolve_cmd_to_task initializes duration timestamps for fresh deployment" {
+    local root
+    root="$(mktemp -d "$BATS_TMPDIR/deploy_duration_fields.XXXXXX")"
+    prepare_source_fixture "$root"
+
+    resolve_fixture_task "$root" "cmd_9999" "tobisaru"
+
+    run python3 - <<PY
+import re
+import yaml
+from pathlib import Path
+data = yaml.safe_load(Path("$root/queue/tasks/tobisaru.yaml").read_text())
+task = data["task"]
+assert task["status"] == "assigned"
+assert re.match(r"^202[0-9]-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$", str(task.get("deployed_at", "")))
+assert task.get("acknowledged_at") in (None, "")
+assert task.get("done_at") in (None, "")
+assert task.get("completed_at") in (None, "")
+print("DEPLOY_DURATION_FIELDS_OK")
+PY
+    rm -rf "$root"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DEPLOY_DURATION_FIELDS_OK"* ]]
 }
 
 @test "reset_stale_fields clears stale cmd scope metadata while preserving scout_exempt" {

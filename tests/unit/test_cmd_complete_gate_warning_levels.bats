@@ -18,6 +18,7 @@ setup_file() {
         sed -n '/^shogun_gate_clear_already_notified()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_shogun_gate_clear()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_karo_cmd_complete_skill_hint()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^send_clear_notifications_once()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_karo_gate_block()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_karo_cmd_fail()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^log_skill_execution_pass()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -644,8 +645,8 @@ EOF
     grep -q "^karo|$TEST_CMD_ID gate_result: FAIL ninja=sasuke report=$(basename "$REPORT_FILE") reason=binary_checks_fail:AC1。再配備提案: FAIL報告を確認し、修正タスクを再配備せよ。|gate_fail|cmd_complete_gate$" "$INBOX_WRITE_LOG"
 }
 
-@test "cmd_complete_gate invokes shogun gate clear notify in both emergency and normal GATE CLEAR sections" {
-    run bash -lc "grep -c 'notify_shogun_gate_clear \"\\\$CMD_ID\" \"GATE CLEAR — \\\${CMD_ID} 完了\"' '$SRC_GATE_SCRIPT'"
+@test "cmd_complete_gate invokes immediate clear notification helper in emergency and normal GATE CLEAR sections" {
+    run bash -lc "grep -c 'send_clear_notifications_once \"\\\$CMD_ID\" \"GATE CLEAR .*immediate\"' '$SRC_GATE_SCRIPT'"
     [ "$status" -eq 0 ]
     [ "$output" -eq 2 ]
 }
@@ -668,7 +669,7 @@ EOF
     [ "$output" -eq 2 ]
 }
 
-@test "GATE CLEAR cmd_quality_log runs synchronously and surfaces WARN" {
+@test "GATE CLEAR cmd_quality_log is queued asynchronously after CLEAR notification" {
     run python3 - "$SRC_GATE_SCRIPT" <<'PY'
 import sys
 
@@ -678,12 +679,9 @@ start = text.index("Cmd quality log (GATE CLEAR):")
 end = text.index("Gunshi verdict update to cmd_design_quality", start)
 section = text[start:end]
 
-assert "bash \"$SCRIPT_DIR/scripts/cmd_quality_log.sh\" \"$CMD_ID\" \"CLEAR\" \"no\" \"0\" 2>&1" in section
-assert "cmd_quality_log: OK" in section
+assert "(bash \"$SCRIPT_DIR/scripts/cmd_quality_log.sh\" \"$CMD_ID\" \"CLEAR\" \"no\" \"0\" >> \"$LOG_DIR/cmd_complete_gate_async.log\" 2>&1" in section
 assert "[INFO] cmd_quality_log: WARN (logging failed, non-blocking)" in section
-assert "queued (async)" not in section
-assert ">/dev/null 2>&1" not in section
-assert "|| true) &" not in section
+assert "cmd_quality_log: queued (async)" in section
 PY
     [ "$status" -eq 0 ]
 }

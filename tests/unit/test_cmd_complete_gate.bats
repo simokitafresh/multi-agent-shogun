@@ -34,6 +34,8 @@ setup_file() {
         printf '\n'
         sed -n '/^append_lesson_tracking()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^build_clear_duration_metric()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^binary_checks_warn_reason()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^report_has_commit_binary_check_yes()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -86,6 +88,53 @@ end = text.index("\n# ─── changelog自動記録関数", start)
 print(text[start:end])
 PY
     } > "$GATE_HELPERS_FILE"
+}
+
+@test "build_clear_duration_metric uses acknowledged_at and done_at for nested and flat task YAML" {
+    source "$GATE_HELPERS_FILE"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml" "$TEST_PROJECT/queue/tasks/hanzo.yaml")
+    MATCHING_TASK_FILES_PROCESSED_COUNT=0
+    MATCHING_TASK_FILES_SKIPPED_COUNT=0
+    mkdir -p "$TEST_PROJECT/queue/tasks"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_999
+  acknowledged_at: '2026-07-08T09:00:00'
+  done_at: '2026-07-08T09:03:00'
+  deployed_at: '2026-07-01T00:00:00'
+  completed_at: '2026-07-01T00:00:01'
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/hanzo.yaml" <<'EOF'
+parent_cmd: cmd_999
+acknowledged_at: '2026-07-08T09:00:00'
+done_at: '2026-07-08T09:05:00'
+EOF
+
+    run build_clear_duration_metric
+    [ "$status" -eq 0 ]
+    [ "$output" = "duration_sec=300" ]
+}
+
+@test "build_clear_duration_metric ignores stale fallback timestamps when acknowledged_at/done_at are present" {
+    source "$GATE_HELPERS_FILE"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    MATCHING_TASK_FILES_PROCESSED_COUNT=0
+    MATCHING_TASK_FILES_SKIPPED_COUNT=0
+    mkdir -p "$TEST_PROJECT/queue/tasks"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_999
+  acknowledged_at: '2026-07-08T09:00:00'
+  done_at: '2026-07-08T09:02:00'
+  deployed_at: '2026-01-01T00:00:00'
+  completed_at: '2026-01-02T00:00:00'
+EOF
+
+    run build_clear_duration_metric
+    [ "$status" -eq 0 ]
+    [ "$output" = "duration_sec=120" ]
 }
 
 @test "canceled cmd excludes matching task files from completion tracking" {

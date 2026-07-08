@@ -1747,7 +1747,13 @@ check_and_update_done_task() {
                     log "ERROR: yaml_field_set failed for ${name} task status update"
                     exit 1
                 else
-                    # completed_at自動記録（cmd_387: 既存なら上書きしない）
+                    # done_at/completed_at自動記録（既存なら上書きしない）
+                    if [ -z "$(yaml_field_get "$task_file" "done_at")" ]; then
+                        if ! bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$task_file" task done_at "$completed_ts"; then
+                            log "ERROR: yaml_field_set failed for ${name} task done_at update"
+                            exit 1
+                        fi
+                    fi
                     if [ -z "$(yaml_field_get "$task_file" "completed_at")" ]; then
                         if ! bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$task_file" task completed_at "$completed_ts"; then
                             log "ERROR: yaml_field_set failed for ${name} task completed_at update"
