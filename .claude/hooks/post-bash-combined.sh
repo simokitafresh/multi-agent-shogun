@@ -447,7 +447,7 @@ if [[ "$payload" == *'recalculate-sync'* ]]; then
     _g5_verb="${_g5_cmd%%[[:space:]]*}"
     _g5_verb="${_g5_verb//\"/}"
     if [[ "$_g5_verb" == "curl" && "$_g5_cmd" == *'recalculate-sync'* ]]; then
-        _g5_msg=$'\n⚠ LS-A16 本番パリティ必須: fullrecalculate実行を検知した。\n即座にparity_check.sh（またはgate_recalculate_completeness.sh）でholding_signal+monthly_returnの完全一致を確認せよ。「あとでまとめて確認」は禁止。\n3レイヤー貫通(DB+API+FE)も忘れるな → skills/pf-registration/SKILL.md Phase 3 Step 6'
+        _g5_msg=$'\n⚠ 本番パリティ必須: fullrecalculate実行を検知した。\n即座にparity_check.sh（またはgate_recalculate_completeness.sh）でholding_signal+monthly_returnの完全一致を確認せよ。「あとでまとめて確認」は禁止。\n3レイヤー貫通(DB+API+FE)も忘れるな → skills/pf-registration/SKILL.md Phase 3 Step 6'
         printf '%s' "$_g5_msg" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
     fi
 fi

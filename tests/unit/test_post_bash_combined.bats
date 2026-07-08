@@ -141,7 +141,7 @@ EOF
     hook_name="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.hookEventName')"
     context="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')"
     [ "$hook_name" = "PostToolUse" ]
-    [[ "$context" == *'LS-A16'* ]]
+    [[ "$context" == *'本番パリティ必須'* ]]
     [[ "$context" == *'parity_check.sh'* ]]
 }
 
