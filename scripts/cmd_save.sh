@@ -145,6 +145,7 @@ cmd_save_metadata_cache_replay() {
     cache_file="$(cmd_save_metadata_cache_file "$label" "$payload")"
     if [[ -f "$cache_file" ]]; then
         echo "INFO: [CMD_SAVE_CACHE] ${label}: 同一cmd本文hashのpreflight結果を再利用" >&2
+        cat "$cache_file" >&2 2>/dev/null || true
         return 0
     fi
     return 1
@@ -4449,8 +4450,9 @@ show_lord_conversation_matches() {
         return 0
     }
 
-    local _cache_payload _cache_tmp
-    _cache_payload="lord:${CMD_BLOCK_NC}"
+    local _cache_payload _cache_tmp _conversation_sig
+    _conversation_sig="$(stat -c '%n:%Y:%s' "$LORD_CONVERSATION_FILE" 2>/dev/null || printf '%s' "$LORD_CONVERSATION_FILE")"
+    _cache_payload="lord:${_conversation_sig}:${CMD_BLOCK_NC}"
     if declare -F cmd_save_metadata_cache_replay >/dev/null && cmd_save_metadata_cache_replay "lord_conversation" "$_cache_payload"; then
         return 0
     fi
@@ -5913,7 +5915,7 @@ show_quality_summary
 
 # --- Gunshi直近指摘表示（informational — WARN_COUNTに加算しない） ---
 show_gunshi_recent_issues() {
-    local GUNSHI_LOG="$PROJECT_DIR/logs/gunshi_review_log.yaml"
+    local GUNSHI_LOG="${CMD_SAVE_GUNSHI_REVIEW_LOG_FILE:-$PROJECT_DIR/logs/gunshi_review_log.yaml}"
 
     # AC3: ファイル不存在/空→スキップ
     if [[ ! -f "$GUNSHI_LOG" ]] || [[ ! -s "$GUNSHI_LOG" ]]; then

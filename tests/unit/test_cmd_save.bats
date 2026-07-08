@@ -173,6 +173,7 @@ DOC
     export PROJECT_DIR="$TEST_SHARED_TMP"
     export QUALITY_LOG_FILE="${TEST_SHARED_TMP}/cmd_design_quality.yaml"
     export CMD_SAVE_SHOGUN_LESSONS_FILE="${TEST_SHARED_TMP}/lessons_shogun.yaml"
+    export CMD_SAVE_GUNSHI_REVIEW_LOG_FILE="${TEST_SHARED_TMP}/logs/gunshi_review_log.yaml"
     export CMD_QUALITY_FAST_METADATA=1
 }
 
@@ -192,6 +193,7 @@ setup() {
     export BLOCK_COUNT=0
     export QUALITY_LOG_FILE="${TEST_SHARED_TMP}/cmd_design_quality.yaml"
     export CMD_SAVE_SHOGUN_LESSONS_FILE="${TEST_SHARED_TMP}/lessons_shogun.yaml"
+    export CMD_SAVE_GUNSHI_REVIEW_LOG_FILE="${TEST_SHARED_TMP}/logs/gunshi_review_log.yaml"
     export CMD_QUALITY_FAST_METADATA=1
     declare -ga BLOCK_REASONS=()
     declare -ga WARN_REASONS=()
@@ -443,6 +445,11 @@ YAML
     q8_lord="$q8_tmpdir/lord_conversation.jsonl"
     q8_chronicle="$q8_tmpdir/cmd-chronicle.md"
     mkdir -p "$q8_archive" "$q8_tmpdir/docs/research"
+    cat > "$q8_tmpdir/no_memory_db_live_insert.py" <<'PY'
+#!/usr/bin/env python3
+import sys
+sys.exit(0)
+PY
 
     cat > "$q8_queue" <<'YAML'
 commands:
