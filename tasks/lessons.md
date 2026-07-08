@@ -10185,3 +10185,135 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - 同一ファイル(docs/research/gunshi_idle_gate_prediction_false_positive_analysis_20260706.md)が2026-07-07(INS-20260707-172652934-b2c6)と2026-07-08(INS-20260708-052828789-07e7)の2回、同一の偽陽性insightで登場した。前回resolve時、根因(scripts/semantic_map_generate.sh resource_values_from_blocks()のbacktick除去バグ)は正しく診断されdecision_candidateへ記録されていたが、コード修正は行われず単純resolveのみだったため再発した。教訓: semantic_map_generate:new_fileタイプのinsightをresolveする前に、grep -n <対象ファイル名> queue/insights.yamlで同一ファイルの過去resolve履歴を確認し、resolved_reasonに根因診断が既に書かれていれば、単純resolveではなく実修正を優先すべき。単純resolveの繰り返しは同じ低優先度insightを無限に量産し還流サイクルを消費する。
+
+### L985: 検知器追加cmdはFP計測接続をAC化する
+- **日付**: 2026-07-08
+- **出典**: cmd_3765
+- **記録者**: hayate
+- **tags**: [infra,cmd-quality,gate]
+- **target_files**: [scripts/detector_fp_rate.sh,scripts/cmd_save.sh,context/growth-loop.md,tests/unit/test_cmd_save_q11_fp_reduction.bats,tests/unit/test_detector_fp_rate.bats]
+- **origin**: [[cmd_3765]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate/hook等の検知器を追加すると局所品質は上がるが、発報後の真偽回収がなければ誤発報がスループット税として累積する。新規検知器cmdではdetector_fp_rate/gate_fire_log/loop_ledger等への接続をACまたはquality_gateに明記する。
+
+### L986: 在庫ALERTは生産元の性質を確認してから絶対量比較で設計せよ
+- **日付**: 2026-07-08
+- **出典**: cmd_reflux_insight_202607081229_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,gate,bash,lesson]
+- **target_files**: [queue/insights.yaml,queue/pending_decisions.yaml]
+- **origin**: [[cmd_reflux_insight_202607081229_tobisaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/loop_ledger_update.shのmemoryチャネルはproduced=search_logs件数(検索実行のたびに1件増加する高頻度アクティビティログ)をそのまま在庫算出の分子にしていたため、stockが常時7500-7900台で高止まりし、前回snapshot比較のALERT条件(stock>prev_stock)が微増のたびに発火する構造的FPを生んでいた(gate_shogun_startup.shのwarn_backlogで'学習ループ台帳'が21h超未解消のまま滞留)。教訓/insight等の他チャネルは生成物1件=在庫1件で意味が通るが、検索ログのような高頻度アクティビティ系列をそのまま在庫算出に使うと在庫が実態と乖離する。在庫超過ALERTを設計する際は生産元カウントが真に消化対象の生成物か、それとも単なるアクティビティ量かを見極めよ
+
+### L987: YAML簡易パーサは直下フィールドだけを読む
+- **日付**: 2026-07-08
+- **出典**: cmd_karo_recon2_idle_reflux_dispatch_fixknown_202607081300
+- **記録者**: hanzo
+- **tags**: [infra,ninja-monitor,yaml,fof]
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_reflux_promotion.bats]
+- **origin**: [[cmd_karo_recon2_idle_reflux_dispatch_fixknown_202607081300]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- queue/insights.yamlのverification.statusをstatusとして誤読するとpending判定が崩れる。awk等の簡易YAML走査では対象階層のインデントを固定し、nested fixtureをテストに含める。origin: [[INS-20260708-112032141-a1a5]] -> [[nested status誤読]] -> [[fix_known選定順序回帰テスト]]
+
+### L988: insight_write.sh --resolveは既にline-by-line editでyaml.dump問題を解消済み(L351は陳腐化)
+- **日付**: 2026-07-08
+- **出典**: cmd_reflux_insight_202607081306_saizo
+- **記録者**: saizo
+- **tags**: [infra,bash,yaml,lesson]
+- **target_files**: [queue/insights.yaml,queue/pending_decisions.yaml]
+- **origin**: [[cmd_reflux_insight_202607081306_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- L351『insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き』を現物確認したところ、現行のscripts/insight_write.sh --resolve(L46-138)はatomic_replace_lines()によるline-by-line editで実装されており、yaml.dumpは使用されていない(grep 'yaml.dump' scripts/insight_write.sh → 0件)。教訓の前提となった実装は既に修正済みであり、L351をlessons_usefulで毎回『未参照』評価するのは陳腐化した教訓の再確認コストを生んでいる。lesson-sort等で最新実装確認を促す注記を追加するか、教訓自体をsuperseded扱いにすべきか家老/将軍判断を要する
+
+### L989: fix_known insightのresolveはfp_rate統計改善ではなく対象detector/target_fileへの実コード変更(git diff)で裏付けよ
+- **日付**: 2026-07-08
+- **出典**: cmd_reflux_insight_202607081318_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,cmd-quality,testing,process,bash]
+- **target_files**: [scripts/cmd_save.sh,tests/test_cmd_save_ac_paths.bats,queue/tasks/kotaro.yaml]
+- **origin**: [[cmd_reflux_insight_202607081318_kotaro]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- INS-20260708-130637223-380c(detector=cmd_save:check_ac_file_paths)は、直前roundがfp_rate 80%→50%への改善を根拠にinsight_write.sh --resolveでdone化したが、target_file=scripts/cmd_save.shのcheck_ac_file_paths関数自体はgit diffで未変更だった。fp_rate改善は同時期の他detector修正(check_ac_param_sufficiency等)による母数変化の副産物であり、対象detectorの欠陥は残存していた。fix_known=1のinsightをresolveする際は、resolve前にgit log/diffでtarget_fileの対象関数が実際に変更されたか(またはverify_commandが対象欠陥を直接検証する内容か)を確認するチェックをreflux運用に加えるべき。統計的改善だけで閉じると自動消火(CLAUDE.md原則)になる
+
+### L990: THROUGHPUT_FIX_KNOWN fp_rate系insightのverify_commandは実質no-opの場合がある。resolve時は必ずdetector_fp_rate.sh再実行で一次確認せよ
+- **日付**: 2026-07-08
+- **出典**: cmd_reflux_insight_202607081342_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,testing,bash,yaml]
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202607081342_tobisaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/throughput_scan.shのverify_from_detector()はcmd_save:系detectorに対して常に'test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh'という存在確認のみのverify_commandを割当てる(実際のfp_rate再計算をしない)。このためinsight本文のfp_rate/false_positive数値は生成時点のスナップショットに過ぎず、resolve時に鵜呑みにすると誤判断する。本タスクでは対象INS-20260708-130637985-e616のfp_rate=50%(3/6)が、生成17秒後のcommit e7b86f6e9でdetector自体が修正され33.3%(1/3)まで下がっていた。今後同種insight(source=S2_detector_fp_rate)をresolveする際は、bash scripts/detector_fp_rate.sh --out /tmp/<tmpfile>.yamlを実行して該当detectorの現在fp_rateを閾値(50%, throughput_scan.sh: FP_RATE_THRESHOLD)と再比較し、閾値未満ならresolve、閾値以上なら実修正またはdecision_candidateへ整理せよ
+
+### L991: log_terminal_input.shはUserPromptSubmit経由の全input(Agent tool task-notification含む)をagent=lordとして記録しており、殿の発言と誤帰属される
+- **日付**: 2026-07-08
+- **出典**: cmd_reflux_insight_202607081406_saizo
+- **記録者**: saizo
+- **tags**: [infra,testing,db,communication,gate]
+- **target_files**: [lib/lord_conversation.sh,tests/unit/test_lord_conversation.bats,queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202607081406_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- log_terminal_input.sh L28はappend_lord_conversation "$INPUT" "inbound" "lord" "terminal" "$AGENT_ID" でUserPromptSubmitフックが受け取った全内容をagent=lord(殿の発言)として記録している。しかしUserPromptSubmitはAgent tool task-notification到着時にも発火するため、殿が実際に発言していない内容もlord_conversation.jsonl/DBにagent=lordとして混入する(実測: 直近500件中inbound+agent=lord 23件中4件=17%がtask-notification混入)。cmd_3267はgate_shogun_startup.shの追体験Q生成という1消費者側でのみ対策済みだったが、lib/lord_conversation.shのqueue_lesson_candidate()という別消費者は無防備だった(今回修正)。他にも同じ汚染データを読む消費者(context/lord-conversation-index.md生成、lord_conversation_read.sh、memory_db等)がないか、家老/将軍判断で棚卸しを推奨する
+
+### L992: gate_loop_health.shは既判定パターン用の分岐をMaturation recommendationsとAuto-insight generationの両方に同期追加しないと矛盾insightを再生成する
+- **日付**: 2026-07-08
+- **出典**: cmd_reflux_insight_202607081523_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,gate,gate,bash,inbox]
+- **target_files**: [scripts/gates/gate_loop_health.sh,tests/unit/test_gate_loop_health.bats]
+- **origin**: [[cmd_reflux_insight_202607081523_kotaro]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- binary_checks.ACx[N].result: 空文字パターンはcmd_1614でauto-fix導入=消火と確定済み(意図的BLOCK)なのに、Auto-insight generationのcount>=10フォールバック(旧256-257行目)には個別分岐がなく、Maturation recommendationsのQUALITY判定(既存の144-151行目)と矛盾する「GP-107で判定後に検討せよ」insightを繰り返し生成していた(dedupで新規生成自体は防がれるがpending在庫として残り続ける)。origin: [[INS-20260708-141012556-fc9b]] -> [[gate_loop_health.sh 2ロジック不同期]] -> [[GP-107確定済みパターンのinsight重複残留]]。教訓: gate_loop_health.shに新FAILパターンの個別対応を追加する際は、Maturation recommendationsとAuto-insight generationの両ループに同じ条件分岐を同期追加せよ。片方だけの追加は矛盾メッセージを生む。
+
+### L993: script対象修行でMarkdown ACがある場合はcontext_hintsの関連Markdownへ双方向リンクを張る
+- **日付**: 2026-07-08
+- **出典**: cmd_training_L4_auto_202607081543_hayate
+- **記録者**: hayate
+- **tags**: [infra,ninja-monitor]
+- **target_files**: [scripts/ninja_monitor.sh,context/training-cycle.md,queue/tasks/hayate.yaml]
+- **origin**: [[cmd_training_L4_auto_202607081543_hayate]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- target_pathがscriptでもACに対象Markdownへの[[リンク]]追加が含まれる場合、context_hintsやdoc-linksから対応するMarkdownを一次確認し、scriptヘッダとMarkdown本文の両側に直接ファイル名リンクを追加するとACを満たしつつ保守導線を強化できる。
+
+### L994: semantic_stress_test.shのalias_candidate()正規表現がcmd番号+直後Japanese文字の組合せでcmd_NNNN除去に失敗する
+- **日付**: 2026-07-08
+- **出典**: cmd_reflux_insight_202607081542_saizo
+- **記録者**: saizo
+- **tags**: [infra,testing,bash,yaml]
+- **target_files**: [queue/insights.yaml,queue/tasks/saizo.yaml]
+- **origin**: [[cmd_reflux_insight_202607081542_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/semantic_stress_test.sh L368の re.sub(パターン: cmd_[A-Za-z0-9_]+ を単語境界で挟んだ正規表現, " ", text) はcmd_NNNNの直後に空白等の区切りなくJapanese文字が続く場合(例: "cmd_3758作業継続")、除去に失敗しcmd番号がalias候補文字列に残存する。原因はPython3のreモジュールがデフォルトでUnicode対応の単語文字判定を行い、CJK文字(作業等)も単語構成文字とみなすため、数字とCJK文字の間に単語境界が成立しないこと(python3で再現確認済み: "cmd_3758作業継続" は除去失敗、"cmd_3758 作業継続"(空白区切りあり)は除去成功)。実害は軽微(候補aliasに冗長なcmd番号が残るのみで、最終的にis_semantic_wiki_target()やabsorb_pendingのスコア閾値が救済し実害は防止されている)だが、cmd番号を含む一回限りの指示文がinsights.yamlのpending候補として蓄積し続ける一因になっている。修正案: 単語境界指定を外し先読み条件(非英数字または行末)に置換すればJapanese直後でも確実に除去できる
+
+### L995: semantic_alias_absorb_pending.shのalias_similarity_scoreは長い一文クエリを構造的に低スコア化し、閾値16.0未達=noiseと機械的に判定すると意味的に関連するinsightを見送ってしまう
+- **日付**: 2026-07-08
+- **出典**: cmd_reflux_insight_202607081557_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,testing,bash]
+- **target_files**: [queue/insights.yaml,queue/tasks/tobisaru.yaml]
+- **origin**: [[cmd_reflux_insight_202607081557_tobisaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/semantic_index_update.sh L641のalias_similarity_score()は部分文字列包含スコアを55.0*(shorter長/longer長)で計算するため、対象がlordの長い一文発言(例: 40文字超の複合クエリ)の場合、たとえ既存概念(growth_loop等)と強く同テーマでも、包含比率が分母(長い方の文字列長)で割られ低スコアになりやすい構造的弱点がある。今回INS-20260708-110048746-9779は自動スコア3.8(閾値16.0未満)で見送られたが、scratchpad上でgrowth_loopへ1行alias追加しsemantic_index.py first-layerへ直接投入したところ実際にMATCHすることを確認した(is_single_generic_word_matchはterm長>=12文字で非該当となるため、元クエリ全文レベルの長さなら除外されない)。よってscore<閾値を機械的に『noise』と即断せず、候補が既存概念の頻出テーマ(growth_loopの効果検証系aliasesなど)と重なる場合は、scratchpad上での簡易MATCH実証を1回行ってからresolve/decision_candidateを判断すべき。修正案: 長文クエリ向けにスコア計算を長さで正規化しすぎない代替スコア(例: 最長共通部分列比率でなくトークンJaccardのみ採用)を検討するか、または長文かつgrowth_loop等の高頻度概念との部分一致がある場合は閾値を緩和する特例ルールを追加する
