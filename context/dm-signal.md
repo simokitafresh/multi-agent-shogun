@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-07 cmd_karo_hotfix_ga189_context_freshness_20260707 -->
-<!-- last_synced_lesson: L837 -->
+<!-- last_synced_lesson: L838 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -293,6 +293,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - L835: 全量ベンチACとpreflight不一致は分離して記録する（cmd_3772）
 - L836: recalculate acceptedと完走証跡を分離して判定する（cmd_3771）
 - L837: local_sqlite loaderはmonthly_blobと重複pattern_idを標準対応すべき（cmd_3774）
+- L838: run_077 monthly blob chunk差は全量GS総時間を支配する（cmd_3775）
 
 ## 因果リンク
 
