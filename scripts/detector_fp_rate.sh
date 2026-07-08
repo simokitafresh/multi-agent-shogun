@@ -30,7 +30,9 @@ done
 python3 - "$GATE_FIRE_LOG" "$CMD_QUALITY_LOG" "$GATE_ALERTS_LOG" "$OUT_FILE" "$NOW" <<'PY'
 import collections
 import datetime as dt
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -186,6 +188,46 @@ def deferral_language_still_matches(cmd_id):
     return False
 
 
+CURRENT_REEVALUATION_DETECTORS = {
+    "cmd_save:check_ac_file_paths",
+    "cmd_save:check_ac_param_sufficiency",
+    "cmd_save:session_state_cmd_block_presence",
+}
+
+
+def cmd_archive_file(cmd_id):
+    if not cmd_id or not archive_cmd_dir.is_dir():
+        return None
+    matches = sorted(archive_cmd_dir.glob(f"{cmd_id}_*.yaml"))
+    return matches[0] if matches else None
+
+
+def cmd_save_currently_emits_detector(cmd_id, detector):
+    """Return False when the current cmd_save detector no longer fires for an archived FP."""
+    if detector not in CURRENT_REEVALUATION_DETECTORS:
+        return True
+    archive_file = cmd_archive_file(cmd_id)
+    if archive_file is None:
+        return True
+    check_name = detector.split(":", 1)[1]
+    env = os.environ.copy()
+    env["CMD_SAVE_QUEUE_FILE"] = str(archive_file)
+    try:
+        proc = subprocess.run(
+            ["bash", str(root_dir / "scripts" / "cmd_save.sh"), "--preflight", cmd_id],
+            cwd=str(root_dir),
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=30,
+            check=False,
+        )
+    except Exception:
+        return True
+    return f"check={check_name}" in proc.stdout or f'checks: "{check_name}"' in proc.stdout
+
+
 events = cmd_save_events() + escalation_events()
 events.sort(key=lambda x: parse_ts(x.get("ts")) or dt.datetime.min.replace(tzinfo=dt.timezone.utc))
 
@@ -216,6 +258,8 @@ for cmd_id, cmd_events in by_cmd.items():
             outcome = "true_positive"
         elif e.get("result") == "ALERT" and e.get("source") != "gate_alerts" and final == "ALERT":
             outcome = "false_positive"
+        if outcome == "false_positive" and not cmd_save_currently_emits_detector(cmd_id, e.get("detector")):
+            continue
         rows.append({**e, "outcome": outcome})
 
 stats = collections.defaultdict(lambda: {"fires": 0, "false_positive": 0, "true_positive": 0, "unknown": 0})
