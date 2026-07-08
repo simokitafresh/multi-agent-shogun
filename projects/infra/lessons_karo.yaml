@@ -364,7 +364,8 @@ v7吸収(2026-05-19):
   source_ids: [LK002, LK003, LK004, LK008, LK011, LK013, LK039, LK053, LK074, LK077, LK082, LK083, LK084, LK087, LK090, LK001b, LK011b, LK012b, LK007, LK009, LK010, LK005i]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'deploy_task.sh各修正+gate各修正+hook各修正(個別commit参照)'
+  enforcement: 'Level4(フロー内BLOCK/自動ゲート接続): 一次情報再検証(2026-07-09, cmd_reflux_promotion_202607090637_hanzo)。deploy_task.sh は check_scout_gate() でimplタスクの偵察未完了を配備時点でBLOCKし、報告テンプレートへself_gate_checkを自動注入する。maybe_notify_draft_review() は通常配備時に軍師draft reviewを自動送信し、EXIT trap fallbackで配備異常終了時もreview_draftへ接続する。ninja_monitor.sh は can_send_clear_with_report_gate() 経由で報告YAML未作成/未通知のdone状態をREPORT-MISSING-BLOCKとして/clear保留し、report_missingを家老へ通知する。scripts/lib/gunshi_notify.sh + inbox_write.sh はreport_receivedからreport_review、report_review_result(LGTM)からreview_gate.done作成+cmd_complete_gate起動へ接続する。関連回帰テスト: tests/unit/test_deploy_task_draft_review.bats、tests/unit/test_inbox_write.bats、tests/unit/test_ninja_monitor_clear_guard.bats、tests/unit/test_cmd_save_research_artifact_reflux.bats、tests/unit/test_deploy_task_template_generation.bats。従来enforcement本文が抽象的でgate_lesson_enforcement_level.shがL1誤分類していたため、field優先ルールに合わせてenforcement_levelを明示追加。'
+  enforcement_level: 4
 
 # === 独立パターン ===
   when: deploy_task.sh/gate/hook関連のバグ修正時
