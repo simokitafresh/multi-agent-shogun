@@ -10472,3 +10472,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - 本タスクでAC2の還流在庫after値を計測するため_reflux_inventory_snapshot()を呼ぼうとし、一度ガード無しでsource scripts/ninja_monitor.shを実行した(L968が警告する誤り)。幸いacquire_singleton_lock()が稼働中デーモンのPIDを検出しexit 0で即終了したため実害は無かったが、もしデーモン未起動状態だったら誤ってメインループ(while true)まで到達し重複起動していた。原因を辿るとL134(cmd_519, context/infrastructure.md L466)が既に『NINJA_MONITOR_LIB_ONLY=1でメインループを回避して関数のみロードする』安全パターンを確立済みだったが、L968(cmd_reflux_insight_202607072050_kotaro)はこれを参照せずsource自体を全面禁止と記述しており、両教訓が連携していない。次回追加すべきチェック: L968の教訓本文に『ただしNINJA_MONITOR_LIB_ONLY=1環境変数を設定すればacquire_singleton_lockと main loopをスキップして安全に関数のみロード可能(L134参照)』を明記し、originで[[L134]] <-> [[L968]]を相互リンクする
+
+### L1009: reflux_promotion候補は必ずしも既存Level4の誤分類ではない: 真に未実装ならPD escalationへ整理し虚偽のenforcement_level昇格を避けよ
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_promotion_202607090644_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,testing,gate,bash]
+- **target_files**: [projects/infra/lessons_karo.yaml]
+- **origin**: [[cmd_reflux_promotion_202607090644_kotaro]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- LK-A14(コード修正後のgrep横展開残存確認)をscripts/hooks|gates|skills|tests全域grepで一次検証したところ、他の多くのreflux_promotion候補(LK-A07/A09/A11/A13等)と異なり自動化実装が本当に存在しなかった(該当0件)。今後同種タスクでは『既存実装の見落とし』と『真の未実装』を切り分け、後者ならenforcement_levelを無理にLevel4へ引き上げず、実態(このケースはLevel2:doc記載のみ)を正直に記録した上でpending_decision_write.sh createでPD escalationへ整理し、家老/将軍の設計判断(適用範囲/レジストリ方式/FP対策等)に委ねるべき。虚偽のLevel4宣言はgate_lesson_enforcement_level.shのbelow4集計を偽装し免疫系の可視性を損なう
