@@ -1,0 +1,142 @@
+worker_id: tobisaru
+task_id: cmd_reflux_insight_202607082024_tobisaru_exact
+parent_cmd: cmd_reflux_insight_202607082024_tobisaru
+timestamp: '2026-07-08T20:30:42'
+status: completed
+ac_version_read: f46b04fc
+result:
+  summary: INS-20260708-180152835-796c(throughput_e2e悪化アラート)を一次情報(logs/gate_metrics.log,
+    logs/loop_ledger.yaml, scripts/throughput_scan.sh)で調査し、cmd_complete_gate.shのコード劣化ではなくcold-start統計アーチファクトと判定。insight_resolve.shでresolve済み。
+  details: 'deploy_sec/work_sec/finalize_sec/e2e_sec計測は本日2026-07-08 10:08 JSTにcmd_3758-3761で新規追加された機能でday-1データ。loop_ledger.yamlのprev
+    snapshot(e2e_median=651.0s)はn=1(cmd_3765単独、e2e_sec=651と完全一致)。curr snapshot(e2e_median=16649.5s@18:00:22
+    JST=09:00:22Z)はn=8で、うち4件は正常値(107-138s: cmd_3767/3768/3769/3765)、4件はdeploy_sec約31900-32550s(cmd_karo_recon2_cmd3771_band_diff_separation=31915s,
+    cmd_3771=32548s, cmd_3772=32517s, cmd_3773=32543s)。deploy_sec中央値=(138+31915)/2=16026.5sと算出一致を確認、e2e中央値もこれに整合。4件の高deploy_secは既知の滞留事故(cmd_3771/3772の家老clear跨ぎ束ね消失、殿指摘で復旧済み。context/gunshi向け掲示板・MEMORY.mdに記録済み)に起因し、gate
+    script自体は正常動作。n=8の小標本に外れ値4件が混入した統計アーチファクトであり、標本数増加で自然収束見込み。scripts/cmd_complete_gate.shへの実修正は不要と判断しresolve。'
+purpose_validation:
+  cmd_purpose: 還流在庫(pending insight)を一次情報で確認し、resolveまたは実修正/decision_candidateへ整理する
+  fit: true
+  purpose_gap: ''
+simplicity_check: insight_resolve.sh(yaml_field_set経由の安全な部分更新)で対応。新規スクリプト・複雑さ追加は不要。
+assumption_check: なし。task ACの前提(一次情報で確認しresolveまたはdecision_candidateへ)通りに完結。
+task_clarity:
+  score: 95
+  unclear_points: なし
+  discretion_fills: 資源=gate_metrics.log/loop_ledger.yaml/throughput_scan.shの読解による根本原因特定は独自判断で実施(insight本文には根本原因の記載なし)
+status_detail: DONE
+test_triage: pre_existing
+causal_verification:
+  cause_checked: 1) logs/gate_metrics.logをgrepし、deploy_sec/e2e_secフィールドが2026-07-08T10:08:01(cmd_3765)から初出現と確認。それ以前のCLEAR行はduration_sec=unknownのみでフィールド自体が存在しない。2)
+    scripts/loop_ledger_update.shのload_throughput_loop()を読み、e2e_median_sec/deploy_median_secがgate_metrics.logのCLEAR行内deploy_sec/work_sec/finalize_sec/e2e_secのmedianであることを確認。3)
+    scripts/throughput_scan.shのE2E_WORSEN_THRESHOLD=60sしきい値とtarget=cmd_complete_gate.sh固定ロジックを確認。
+  design_intent_checked: throughput_scan.shはS1(cmd_3764/3758-3761)の一環でloop_ledger.yamlのsnapshot間差分を監視しFIX_KNOWN
+    insightを自動生成する免疫系。目的はcmd_complete_gate.shの実際の劣化検知。今回はtargetをcmd_complete_gate.sh固定で出しているが、根本原因はデプロイ待ち滞留(別インシデントで既知)であり検出器の対象特定ロジックに改善余地がある(decision_candidateへ)。
+  evidence: 'gate_metrics.log(bounded: grep ''deploy_sec='' 59行のみ抽出)、loop_ledger.yaml(offset/limit指定でsnapshot末尾のみ読込)、throughput_scan.sh(grep
+    -n限定読込)。全走査なし。'
+  origin: ''
+files_modified:
+- path: queue/insights.yaml
+  change: modified
+lesson_candidate:
+  found: true
+  no_lesson_reason: このタスクでは新規教訓候補なし
+  title: 新規throughputメトリクス導入直後はcold-start小標本で偽regression検知が起きる
+  detail: 'scripts/throughput_scan.shはloop_ledger.yamlのsnapshot間差分(prev vs curr median)でe2e/overhead悪化を検知しFIX_KNOWN
+    insightを自動生成するが、最小標本数のガードがない。今回、deploy_sec/e2e_sec計測自体が本日新規追加(cmd_3758-3761, 2026-07-08
+    10:08 JST)されday-1でn=1→n=8に急増する過程だったため、prev(n=1,651.0s)とcurr(n=8,16649.5s、うち4件が別件の既知滞留事故で約9時間の外れ値)を比較した結果、実際にはgate
+    script非劣化にも関わらずTHROUGHPUT_FIX_KNOWNアラートが発火した。加えてtarget=scripts/cmd_complete_gate.sh固定ロジックのため、根本原因がdeploy-phase(dispatch/queue滞留)でもwork-phase(gate
+    logic自体)でも同一ファイルに誤帰属する。対策案: (1)snapshot比較にn>=15程度の最小標本数ガードを追加しcold-start期は判定保留、(2)target属性をdeploy/work/finalizeどの区分の中央値が支配的に悪化したかで動的に出し分ける。'
+  project: infra
+  origin: '[[INS-20260708-180152835-796c]] -> [[cmd_3771/3772滞留(家老clear跨ぎ束ね消失)]] ->
+    [[deploy_sec中央値の小標本アーチファクト]]'
+lessons_useful:
+- id: L351
+  useful: true
+  reason: L351(insight_write.shのyaml.dump全件上書きリスク)を踏まえscripts/insight_resolve.sh(yaml_field_set経由の安全な部分更新)を選定し使用した
+- id: L508
+  useful: true
+  reason: L508(WSL2 NTFS I/Oシリアライズでrg全走査/yaml.safe_load全量読込が遅い)を踏まえ、grep 'deploy_sec='等でgate_metrics.logをbounded抽出し全量scanを回避した
+- id: L278
+  useful: true
+  reason: L278(報告YAML未作成のままcmd doneとされclear消失した事故)を踏まえ、resolve後に間を置かず本報告YAMLの記入まで完了させた
+- id: L311
+  useful: true
+  reason: L311(report_yaml_format WA最多パターン)を踏まえ、report-writeスキル+report_field_set.sh経由で全フィールドを記入した
+- id: L342
+  useful: false
+  reason: L342(新規ファイルのgit add -f要否)は今回queue/reports配下の新規report file commit時に該当し得るが、実際のcommit操作はStep後段で個別に確認するため直接の判断材料としては未参照
+memory_references:
+- id: MEM001
+  source: semantic_search
+  query: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-180152835-796c
+    を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する checks
+    che'
+  summary: 'matched: insight_write'
+  used: true
+  useful: true
+  reason: insight_write.sh関連の検索がinsight_resolve.sh(安全なresolve手段)発見の入口として有用だった
+- id: MEM002
+  source: semantic_search
+  query: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-180152835-796c
+    を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する checks
+    che'
+  summary: '- file: `docs/research/semantic_index_design.md`'
+  used: false
+  useful: false
+  reason: semantic_index_designは今回の根本原因(throughput_scan.shの小標本cold-start)と無関係
+- id: MEM003
+  source: semantic_search
+  query: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-180152835-796c
+    を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する checks
+    che'
+  summary: '- file: `context/lord-conversation-index.md`'
+  used: false
+  useful: false
+  reason: lord-conversation-indexは今回の技術調査(gate_metrics.log分析)と無関係
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  summary: scripts/throughput_scan.shのTHROUGHPUT_FIX_KNOWN検知に最小標本数ガードとphase別target属性の改善余地あり(INS-20260708-180152835-796c調査で判明)。新規メトリクス導入直後のcold-start誤検知と、deploy滞留由来の悪化をgate
+    script側の問題として誤帰属する2点。家老/軍師で改修要否を判断されたし。
+knowledge_candidate:
+  found: false
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ''
+hook_failures:
+  count: 0
+  details: ''
+post_deploy_evidence:
+  required: false
+  deploy_live_at: ''
+  evidence_run_start_at: ''
+  evidence_run_completed_at: ''
+  run_completed: false
+  source: ''
+binary_checks:
+  AC1:
+  - check: 対象insight INS-20260708-180152835-796c を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
+    result: 'yes'
+  AC2:
+  - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
+    result: 'yes'
+  commit:
+  - check: git commitが完了したか(untracked/modified=0)
+    result: 'no'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verdict: FAIL
+reflux_inventory_before:
+  insights_pending: 4
+  zero_backlinks: 0
+  promotions: 98
+  total: 102
+reflux_inventory_after:
+  insights_pending: 3
+  zero_backlinks: 0
+  promotions: 99
+  total: 102
