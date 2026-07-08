@@ -1146,7 +1146,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "LGTM"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -1166,7 +1166,7 @@ entries:
   ac_count: 0
   gate_result: "PASS"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "LGTM"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
@@ -1238,3 +1238,13 @@ entries:
   source: "cmd_complete_gate"
   timestamp: "2026-07-08T15:55:48Z"
   notes: "backfill: 非同期cmd_quality_log呼出しが家老セッション境界で欠落(INS-20260709-000457431-b624)。gate_metrics.log CLEAR記録済みだったため遡及補完(escalation count=6のうち表示上限5件外の1件)"
+- cmd_id: "cmd_3783"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T16:06:19Z"
