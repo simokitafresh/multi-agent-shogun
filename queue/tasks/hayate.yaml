@@ -81,7 +81,7 @@ task:
   project: infra
   purpose: 将軍startup BLOCKのうち掲示板action_required未対応3件を、表面クローズで隠さず実処理してactioned_by/statusへ反映する
   scout_exempt: true
-  status: in_progress
+  status: done
   stop_for: []
   target_path: /mnt/c/tools/multi-agent-shogun/queue/bulletin_board.yaml
   task_id: cmd_karo_hotfix_shogun_startup_action_required_202607082152_normal
