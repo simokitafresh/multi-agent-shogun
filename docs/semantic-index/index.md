@@ -2159,6 +2159,9 @@ codd:
 | lesson | `L986` テキストベースの数値判定gateへの数値記述は誤分類を招く。構造化フィールドで実値を明示せよ |
 | cmd | `cmd_3764` スループット免疫系S1 — cmd段階別E2E常時計器とthroughputチャネル (`scripts/cmd_complete_gate.sh`, `scripts/loop_ledger_update.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 | causal | `cmd_3764` origin: [[殿原則20260708_0950_品質と速度は一体]] -> [[全体計器の不在(duration全行unknown実測)]] -> [[cmd_3764_S1段階別E2E計器]] |
+| file | `scripts/detector_fp_rate.sh` 検知器FP率計器(gate_fire_log/cmd_design_quality/gate_alertsから検知器別FP率算出。削るための計測) |
+| cmd | `cmd_3765` スループット免疫系S2 — 検知器FP率計器(削るための計測)+cmd_save q11 FP削減 (`scripts/cmd_save.sh`, `scripts/detector_fp_rate.sh`, `tests/unit/test_detector_fp_rate.bats`) |
+| causal | `cmd_3765` origin: [[殿原則20260708_0959_1つの自問への統合]] -> [[FP率計測不在(削るための装置が不在)]] -> [[cmd_3765_S2検知器FP率計器]] |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
 | causal_chain | `[[cmd_147]]` (L012) |
