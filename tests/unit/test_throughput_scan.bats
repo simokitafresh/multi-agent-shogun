@@ -152,3 +152,37 @@ cat "$SCRIPT_DIR/logs/throughput_scan.log"
     [ "$status" -eq 0 ]
     [[ "$output" == *"stub throughput scan"* ]]
 }
+
+@test "throughput S1 candidates include stage attribution and numeric verify" {
+    cat > "$TEST_TMPDIR/logs/loop_ledger.yaml" <<'EOF'
+snapshots:
+- generated_at: "2026-07-08T09:00:00Z"
+  loops:
+    throughput:
+      e2e_median_sec: 100.0
+      overhead_rate_median_pct: 10.0
+      deploy_median_sec: 10.0
+      work_median_sec: 80.0
+      finalize_median_sec: 10.0
+- generated_at: "2026-07-08T10:00:00Z"
+  loops:
+    throughput:
+      e2e_median_sec: 250.0
+      overhead_rate_median_pct: 30.0
+      deploy_median_sec: 70.0
+      work_median_sec: 120.0
+      finalize_median_sec: 60.0
+EOF
+    cat > "$TEST_TMPDIR/logs/detector_fp_rate.yaml" <<'EOF'
+detectors: []
+EOF
+
+    run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"THROUGHPUT_SCAN_DRY_RUN"* ]]
+    [[ "$output" == *"target=scripts/throughput_scan.sh"* ]]
+    [[ "$output" == *"stage_medians=deploy:70.0s,work:120.0s,finalize:60.0s,e2e:250.0s,overhead:30.0%"* ]]
+    [[ "$output" == *"yaml.safe_load(open('logs/loop_ledger.yaml'))"* ]]
+    [[ "$output" != *"target=scripts/cmd_complete_gate.sh"* ]]
+    [[ "$output" != *"test -f logs/loop_ledger.yaml && test -f scripts/cmd_complete_gate.sh"* ]]
+}

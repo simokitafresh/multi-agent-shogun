@@ -128,6 +128,48 @@ def verify_from_detector(detector):
     return "test -f logs/detector_fp_rate.yaml"
 
 
+def fmt_metric(value, suffix=""):
+    num = as_float(value)
+    if num is None:
+        return "na"
+    return f"{num:.1f}{suffix}"
+
+
+def throughput_stage_summary(curr_tp):
+    return (
+        "stage_medians="
+        f"deploy:{fmt_metric(curr_tp.get('deploy_median_sec'), 's')},"
+        f"work:{fmt_metric(curr_tp.get('work_median_sec'), 's')},"
+        f"finalize:{fmt_metric(curr_tp.get('finalize_median_sec'), 's')},"
+        f"e2e:{fmt_metric(curr_tp.get('e2e_median_sec'), 's')},"
+        f"overhead:{fmt_metric(curr_tp.get('overhead_rate_median_pct'), '%')}"
+    )
+
+
+def throughput_verify(kind):
+    metric = "overhead_rate_median_pct" if kind == "throughput_overhead" else "e2e_median_sec"
+    return (
+        "python3 - <<'PY'\n"
+        "import sys, yaml\n"
+        "d=yaml.safe_load(open('logs/loop_ledger.yaml')) or {}\n"
+        "s=(d.get('snapshots') or [{}])[-1]\n"
+        "tp=((s.get('loops') or {}).get('throughput') or {})\n"
+        f"v=tp.get('{metric}')\n"
+        "sys.exit(0 if v not in (None, '', 'null') else 1)\n"
+        "PY"
+    )
+
+
+def throughput_candidate(kind, priority, msg):
+    return {
+        "kind": kind,
+        "target": "scripts/throughput_scan.sh",
+        "verify": throughput_verify(kind),
+        "priority": priority,
+        "msg": msg,
+    }
+
+
 def latest_snapshot(data):
     snapshots = data.get("snapshots") if isinstance(data, dict) else None
     if isinstance(snapshots, list) and snapshots:
@@ -153,33 +195,35 @@ def build_candidates():
     if prev_overhead is not None and curr_overhead is not None:
         delta = round(curr_overhead - prev_overhead, 1)
         if delta >= OVERHEAD_WORSEN_THRESHOLD:
-            candidates.append({
-                "kind": "throughput_overhead",
-                "target": "scripts/cmd_complete_gate.sh",
-                "verify": "test -f logs/loop_ledger.yaml && test -f scripts/cmd_complete_gate.sh",
-                "priority": "high",
-                "msg": (
+            stage_summary = throughput_stage_summary(curr_tp)
+            verify = throughput_verify("throughput_overhead")
+            candidates.append(throughput_candidate(
+                "throughput_overhead",
+                "high",
+                (
                     "THROUGHPUT_FIX_KNOWN throughput_overhead: throughput overhead median worsened "
                     f"prev={prev_overhead}% curr={curr_overhead}% delta={delta}pp. "
-                    "INSIGHT_FIX_KNOWN=1 target=scripts/cmd_complete_gate.sh "
-                    "verify='test -f logs/loop_ledger.yaml && test -f scripts/cmd_complete_gate.sh' source=S1_loop_ledger"
+                    f"{stage_summary}. "
+                    "INSIGHT_FIX_KNOWN=1 target=scripts/throughput_scan.sh "
+                    f"verify={verify!r} source=S1_loop_ledger"
                 ),
-            })
+            ))
     if prev_e2e is not None and curr_e2e is not None:
         delta = round(curr_e2e - prev_e2e, 1)
         if delta >= E2E_WORSEN_THRESHOLD:
-            candidates.append({
-                "kind": "throughput_e2e",
-                "target": "scripts/cmd_complete_gate.sh",
-                "verify": "test -f logs/loop_ledger.yaml && test -f scripts/cmd_complete_gate.sh",
-                "priority": "high",
-                "msg": (
+            stage_summary = throughput_stage_summary(curr_tp)
+            verify = throughput_verify("throughput_e2e")
+            candidates.append(throughput_candidate(
+                "throughput_e2e",
+                "high",
+                (
                     "THROUGHPUT_FIX_KNOWN throughput_e2e: throughput e2e median worsened "
                     f"prev={prev_e2e}s curr={curr_e2e}s delta={delta}s. "
-                    "INSIGHT_FIX_KNOWN=1 target=scripts/cmd_complete_gate.sh "
-                    "verify='test -f logs/loop_ledger.yaml && test -f scripts/cmd_complete_gate.sh' source=S1_loop_ledger"
+                    f"{stage_summary}. "
+                    "INSIGHT_FIX_KNOWN=1 target=scripts/throughput_scan.sh "
+                    f"verify={verify!r} source=S1_loop_ledger"
                 ),
-            })
+            ))
 
     fp_data = load_yaml(fp_path)
     for item in fp_data.get("detectors") or []:
