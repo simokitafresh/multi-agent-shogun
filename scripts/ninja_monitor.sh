@@ -2436,11 +2436,20 @@ _reflux_first_pending_insight_id() {
     [ -f "$insights_file" ] || return 1
     awk '
         function clean(s) { gsub(/^[[:space:]"'\''"]+|[[:space:]"'\''"]+$/, "", s); return s }
+        function prio_score(p) {
+            if (p == "high") return 3
+            if (p == "medium") return 2
+            if (p == "low") return 1
+            return 2
+        }
         function flush() {
             if (id != "" && status == "pending") {
-                print id
-                found = 1
-                exit
+                score = prio_score(priority) + (fix_known == "true" ? 10 : 0)
+                if (!found || score > best_score) {
+                    best_id = id
+                    best_score = score
+                    found = 1
+                }
             }
         }
         /^-[[:space:]]+id:[[:space:]]*/ {
@@ -2449,15 +2458,32 @@ _reflux_first_pending_insight_id() {
             sub(/^-[[:space:]]+id:[[:space:]]*/, "", id)
             id = clean(id)
             status = ""
+            priority = ""
+            fix_known = "false"
             next
         }
-        /^[[:space:]]+status:[[:space:]]*/ {
+        /^  status:[[:space:]]*/ {
             status = $0
-            sub(/^[[:space:]]+status:[[:space:]]*/, "", status)
+            sub(/^  status:[[:space:]]*/, "", status)
             status = clean(status)
             next
         }
-        END { if (!found) flush() }
+        /^  priority:[[:space:]]*/ {
+            priority = $0
+            sub(/^  priority:[[:space:]]*/, "", priority)
+            priority = clean(priority)
+            next
+        }
+        /^  fix_known:[[:space:]]*/ {
+            fix_known = $0
+            sub(/^  fix_known:[[:space:]]*/, "", fix_known)
+            fix_known = clean(fix_known)
+            next
+        }
+        END {
+            flush()
+            if (found) print best_id
+        }
     ' "$insights_file"
 }
 

@@ -142,3 +142,88 @@ _reflux_promotion_inventory
     [ "$status" -eq 0 ]
     [[ "$output" == "2"$'\t'* ]]
 }
+
+@test "_reflux_first_pending_insight_id: high fix_known を通常pendingより優先する" {
+    cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-low-first
+  ts: "2026-07-08T10:00:00+09:00"
+  insight: "先頭だがlow"
+  priority: "low"
+  fix_known: false
+  status: pending
+- id: INS-medium-fix
+  ts: "2026-07-08T10:01:00+09:00"
+  insight: "fix_knownだがmedium"
+  priority: "medium"
+  fix_known: true
+  status: pending
+- id: INS-high-fix
+  ts: "2026-07-08T10:02:00+09:00"
+  insight: "高優先fix_known"
+  priority: "high"
+  fix_known: true
+  status: pending
+EOF
+    run bash -lc '
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="'"$TEST_TMPDIR"'"
+_reflux_first_pending_insight_id "$SCRIPT_DIR/queue/insights.yaml"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "INS-high-fix" ]
+}
+
+@test "_reflux_first_pending_insight_id: 同ランクなら既存順を維持する" {
+    cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-high-fix-first
+  priority: "high"
+  fix_known: true
+  status: pending
+- id: INS-high-fix-second
+  priority: "high"
+  fix_known: true
+  status: pending
+EOF
+    run bash -lc '
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="'"$TEST_TMPDIR"'"
+_reflux_first_pending_insight_id "$SCRIPT_DIR/queue/insights.yaml"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "INS-high-fix-first" ]
+}
+
+@test "_reflux_first_pending_insight_id: nested verification.status は直下statusを上書きしない" {
+    cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
+insights:
+- id: INS-high-fix-with-verification
+  priority: "high"
+  fix_known: true
+  status: pending
+  verification:
+    status: "passed"
+    exit_code: 0
+- id: INS-medium-normal
+  priority: "medium"
+  fix_known: false
+  status: pending
+EOF
+    run bash -lc '
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="'"$TEST_TMPDIR"'"
+_reflux_first_pending_insight_id "$SCRIPT_DIR/queue/insights.yaml"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "INS-high-fix-with-verification" ]
+}
