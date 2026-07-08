@@ -196,3 +196,54 @@ _set_cmd_block_nc() {
     [[ "$output" != *"WARN: ACに数量指定"* ]]
     [[ "$output" == *"WARN_COUNT=0"* ]]
 }
+
+@test "cmd_3753 FP: binary_check内の再生成不能データ2種はWARNにならない" {
+    _set_cmd_block_nc "    acceptance_criteria:
+      AC1:
+        description: 'payload(JSON: portfolios行の全列+folder名と親階層+signal_decision_ledger当該PF行全量+month_start_signal_input_snapshots当該PF行全量=再生成不能データ)を実装する'
+        binary_check: 'portfolio_archiveのmigration+model+payload構築(再生成不能データ2種含む)がテストで確認されているか'"
+    run bash -c '
+        eval "$(sed -n '"'"'/^extract_acceptance_criteria_block()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^check_ac_param_sufficiency()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        WARN_COUNT=0
+        check_ac_param_sufficiency
+        echo "WARN_COUNT=$WARN_COUNT"
+    '
+    echo "output: $output" >&2
+    [[ "$output" != *"WARN: ACに数量指定"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
+}
+
+@test "cmd_3757 FP: 偵察5要件参照はWARNにならない" {
+    _set_cmd_block_nc "    acceptance_criteria:
+      AC2:
+        description: '改善候補を削減見込みの大きい順に報告する。各候補に変更対象file:line・削減見込み・波及先・関連テスト有無・エッジケース・依存順序の観点を付ける。既存資産との差分を明記して偵察5要件付き効果順で報告する'
+        binary_check: '改善候補が削減見込み順・上記観点付きで各動線分報告されているか'"
+    run bash -c '
+        eval "$(sed -n '"'"'/^extract_acceptance_criteria_block()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^check_ac_param_sufficiency()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        WARN_COUNT=0
+        check_ac_param_sufficiency
+        echo "WARN_COUNT=$WARN_COUNT"
+    '
+    echo "output: $output" >&2
+    [[ "$output" != *"WARN: ACに数量指定"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
+}
+
+@test "cmd_3764 FP: descriptionで列挙済みのduration4種をbinary_checkで再掲してもWARNにならない" {
+    _set_cmd_block_nc "    acceptance_criteria:
+      AC1:
+        description: 'cmd_complete_gate.shのgate_metrics記録を段階別duration(deploy_sec=起票tsから配備完了ts/work_sec=acknowledged_atからdone_at/finalize_sec=done_atからCLEAR ts/e2e_sec=起票tsからCLEAR ts)へ拡張する'
+        binary_check: '段階別duration4種が実cmdで数値記録され、欠損時は理由コードが入ることが確認されているか'"
+    run bash -c '
+        eval "$(sed -n '"'"'/^extract_acceptance_criteria_block()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        eval "$(sed -n '"'"'/^check_ac_param_sufficiency()/,/^}/p'"'"' "$SRC_SAVE_SCRIPT")"
+        WARN_COUNT=0
+        check_ac_param_sufficiency
+        echo "WARN_COUNT=$WARN_COUNT"
+    '
+    echo "output: $output" >&2
+    [[ "$output" != *"WARN: ACに数量指定"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
+}

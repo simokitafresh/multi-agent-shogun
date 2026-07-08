@@ -5279,7 +5279,10 @@ check_ac_param_sufficiency() {
     local HIT=false
     while IFS= read -r line; do
         [[ -z "$line" ]] && continue
-        if echo "$line" | grep -qE '偵察の既定観点|既定観点|デフォルト品質[0-9]+要件'; then
+        if echo "$line" | grep -qE '^[[:space:]]*binary_check:'; then
+            continue
+        fi
+        if echo "$line" | grep -qE '偵察の既定観点|既定観点|デフォルト品質[0-9]+要件|偵察[0-9]+要件'; then
             continue
         fi
         if echo "$line" | grep -qE 'C\([0-9]+,[0-9]+\)|[0-9]+件中[0-9]+件|[0-9]+/[0-9]+|duration|p[0-9]+|median|最大[0-9]+|実測[0-9]+'; then
