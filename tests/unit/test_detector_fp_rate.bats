@@ -31,3 +31,26 @@ EOF
     grep -q 'detector: "cmd_save:check_ac_param_sufficiency"' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
     grep -q 'outcome: "false_positive"' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
 }
+
+@test "detector_fp_rate does not reintroduce direct yaml dump writes" {
+    run python3 - "$PROJECT_ROOT/scripts/detector_fp_rate.sh" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+hits = []
+for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+    stripped = line.strip()
+    if not stripped or stripped.startswith("#"):
+        continue
+    if re.search(r"\byaml\.(safe_dump|dump)\s*\(", line):
+        hits.append(f"{path}:{lineno}:{line.strip()}")
+
+if hits:
+    print("\n".join(hits))
+    sys.exit(1)
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "" ]
+}
