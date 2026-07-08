@@ -766,6 +766,7 @@ codd:
 | causal | `cmd_karo_hotfix_idle_cmdsave_fp_202607081300` files_modified: [[creator_brainwashing_defense]] |
 | causal | `cmd_reflux_insight_202607081337_hayate` files_modified: [[creator_brainwashing_defense]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-09T00:42:46+09:00 工程３をやろう |
+| causal | `cmd_reflux_promotion_202607090418_saizo` files_modified: [[creator_brainwashing_defense]] |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -4446,6 +4447,7 @@ codd:
 | causal | `cmd_3764` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_reflux_insight_202607081337_hayate` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_idle_gate_metrics_isolation_202607081358` files_modified: [[cmd_quality_logging]] |
+| causal | `cmd_reflux_promotion_202607090418_saizo` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_2888]]` (L637) |
 | causal_chain | `[[cmd_2888]]` (L638) |
 | causal_chain | `[[cmd_3531_completion]] -> [[stale_skill_path]] -> [[cmd_complete_skill_static_test]]` (L852) |
@@ -5074,6 +5076,8 @@ codd:
 | causal | `cmd_karo_hotfix_idle_cmdsave_fp_202607081300` files_modified: [[gate_quality_framework]] |
 | cmd | `cmd_karo_hotfix_idle_cmdsave_fp_202607081300` (`scripts/cmd_save.sh`, `scripts/detector_fp_rate.sh`) |
 | causal | `cmd_reflux_insight_202607081337_hayate` files_modified: [[gate_quality_framework]] |
+| causal | `cmd_reflux_promotion_202607090418_saizo` files_modified: [[gate_quality_framework]] |
+| cmd | `cmd_reflux_promotion_202607090418_saizo` (`projects/infra/lessons_shogun.yaml`, `scripts/cmd_save.sh`, `tests/unit/test_cmd_save.bats`) |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
@@ -5171,6 +5175,7 @@ codd:
 | causal | `cmd_reflux_promotion_202607080617_tobisaru` files_modified: [[lesson_lifecycle]] |
 | causal | `cmd_reflux_promotion_202607080632_hanzo` files_modified: [[lesson_lifecycle]] |
 | lesson | `L987` YAML簡易パーサは直下フィールドだけを読む |
+| causal | `cmd_reflux_promotion_202607090418_saizo` files_modified: [[lesson_lifecycle]] |
 | causal_chain | `[[cmd_2955]]` (L685) |
 | causal_chain | `[[cmd_3012]]` (L693) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]` (L778) |
@@ -5442,6 +5447,7 @@ codd:
 | causal | `cmd_3758` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_hotfix_idle_cmdsave_fp_202607081300` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_reflux_insight_202607081337_hayate` files_modified: [[causal_verification_l0_l7]] |
+| causal | `cmd_reflux_promotion_202607090418_saizo` files_modified: [[causal_verification_l0_l7]] |
 
 ## test_quality_framework — テスト品質統合フレームワーク
 
@@ -6384,3 +6390,4 @@ codd:
 | causal | `cmd_karo_hotfix_ga156` files_modified: [[cmd_save_gate_catalog]] |
 | causal | `cmd_karo_hotfix_idle_cmdsave_fp_202607081300` files_modified: [[cmd_save_gate_catalog]] |
 | causal | `cmd_reflux_insight_202607081337_hayate` files_modified: [[cmd_save_gate_catalog]] |
+| causal | `cmd_reflux_promotion_202607090418_saizo` files_modified: [[cmd_save_gate_catalog]] |
