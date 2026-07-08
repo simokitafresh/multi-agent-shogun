@@ -2135,6 +2135,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-08T22:11:09+09:00 三層学習ループの成長は順調か？ |
 | cmd | `cmd_3244` スキル推薦precision計測修正: 推薦ログninja_name追加+照合キー変更 |
 | causal | `cmd_3244` origin: 因果: [[3セッション連続BLOCK_スキル推薦精度]] -> [[推薦agent≠実行agent]] -> [[precision照合キー不一致]]。教訓LS-A18(計測なき改善不能)が根拠 |
+| file | `docs/research/gunshi_idle_skill_precision_20260608.md` — cmd_3244の根拠分析。precision 0%(0/18)の根因3件と改善順序を記録 |
 | file | `docs/research/gunshi_idle_growth_loop_nazenaze_20260515.md` — 軍師idle: 成長ループなぜなぜ分析(2026-05-15) |
 | file | `docs/research/gunshi_idle_immune_effectiveness_20260512.md` — 軍師idle: 免疫システム有効性測定(2026-05-12) |
 | file | `docs/research/gunshi_idle_immune_system_evidence_20260426.md` — 軍師idle: 免疫システム証拠収集(2026-04-26) |
