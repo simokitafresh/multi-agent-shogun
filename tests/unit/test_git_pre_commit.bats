@@ -100,6 +100,7 @@ yaml.safe_dump(data, open("queue/tasks/test.yaml", "w"))
 EOF
     (
         cd "$TEST_ROOT"
+        : > logs/hook_failures.yaml
         git add tool.py
     )
 
@@ -108,6 +109,30 @@ EOF
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCKED: yaml.dump/yaml.safe_dump detected in staged files"* ]]
     grep -q "hook: pre-commit" "$TEST_ROOT/logs/hook_failures.yaml"
+}
+
+@test "records hook failure detail as parseable YAML when stderr contains backslash quote" {
+    cat >> "$TEST_ROOT/tool.py" <<'EOF'
+import yaml
+yaml.safe_dump({"bad": "\\'"}, open("queue/tasks/test.yaml", "w"))
+EOF
+    (
+        cd "$TEST_ROOT"
+        : > logs/hook_failures.yaml
+        git add tool.py
+    )
+
+    run_hook
+
+    [ "$status" -eq 1 ]
+    python3 - <<PY
+import yaml
+with open("$TEST_ROOT/logs/hook_failures.yaml", encoding="utf-8") as f:
+    data = yaml.safe_load(f)
+assert isinstance(data, list)
+assert data[-1]["hook"] == "pre-commit"
+assert "\\\\'" in data[-1]["detail"]
+PY
 }
 
 @test "ignores yaml dump mentions in tests and comments" {

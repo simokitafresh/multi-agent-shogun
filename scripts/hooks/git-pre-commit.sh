@@ -310,7 +310,7 @@ _record_hook_failure() {
         (
             ninja_name=$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")
             stderr_summary=""
-            [ -s "$_STDERR_FILE" ] && stderr_summary=$(head -c 200 "$_STDERR_FILE" 2>/dev/null | tr '\n' ' ' | tr '"' "'")
+            [ -s "$_STDERR_FILE" ] && stderr_summary=$(head -c 200 "$_STDERR_FILE" 2>/dev/null | tr '\n' ' ')
             printf -v _hook_failure_ts '%(%Y-%m-%dT%H:%M:%S%z)T' -1
             if [[ "$_hook_failure_ts" =~ ^(.+)([+-][0-9]{2})([0-9]{2})$ ]]; then
                 _hook_failure_ts="${BASH_REMATCH[1]}${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
@@ -321,7 +321,8 @@ _record_hook_failure() {
                 echo "  hook: pre-commit"
                 echo "  ninja: $ninja_name"
                 echo "  exit_code: $exit_code"
-                echo "  detail: \"$stderr_summary\""
+                echo "  detail: |-"
+                printf '    %s\n' "$stderr_summary"
             } >> "$REPO_ROOT/logs/hook_failures.yaml"
         ) || true
     fi
