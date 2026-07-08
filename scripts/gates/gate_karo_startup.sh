@@ -1235,18 +1235,23 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
     }
     FILENAME ~ /logs\/gate_metrics\.log$/ {
         gcmd = ""; gresult = ""
+        greason = ""
         gts = $1
         gsub(/Z$/, "", gts)
         if (quality_cutoff != "" && gts < quality_cutoff) next
         if (NF >= 3 && $2 ~ /^cmd_/) {
             gcmd = $2
             gresult = $3
+            greason = $4
         } else if (NF >= 3 && $3 ~ /^cmd_/) {
             gcmd = $3
             gresult = $2
+            greason = $4
         }
         gsub(/["'"'"']/, "", gcmd)
         gsub(/["'"'"']/, "", gresult)
+        gsub(/["'"'"']/, "", greason)
+        if (greason == "no_task_benchmark_fast_path") next
         if (gcmd != "" && gresult ~ /^(CLEAR|PASS)$/) gate_clear[gcmd] = 1
         next
     }

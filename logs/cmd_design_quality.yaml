@@ -1,214 +1,145 @@
 entries:
-- cmd_id: "cmd_3649"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-02T05:48:14Z"
-  checks: "warn_missing_prev_cmd_lesson"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点+preflightテンプレ準拠+根因の現物行番号つきで記載"
-  notes: "前cmd_3648で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3648 LS-A05"
-- cmd_id: "cmd_3649"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-02T05:48:49Z"
-  block_duration_minutes: 1
-- cmd_id: "cmd_3649"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-02T05:49:22Z"
-- cmd_id: "cmd_3647"
+- cmd_id: "cmd_3765"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "APPROVE"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
   source: "cmd_complete_gate"
-  timestamp: "2026-07-02T05:50:53Z"
-- cmd_id: "cmd_3650"
+  timestamp: "2026-07-08T01:08:13Z"
+- cmd_id: "cmd_3764"
   ac_count: 0
-  gate_result: "WARN"
+  gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T01:12:59Z"
+- cmd_id: "cmd_karo_ci_fix_ga199_202607081018"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T01:27:22Z"
+- cmd_id: "cmd_karo_hotfix_ga198_hook_fp_yaml_dump_202607081021"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T01:30:41Z"
+- cmd_id: "cmd_3766"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T01:30:57Z"
+- cmd_id: "cmd_3763"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T01:32:24Z"
+- cmd_id: "cmd_karo_hotfix_skill_refs_202607081021"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T01:35:26Z"
+- cmd_id: "cmd_karo_ci_fix_ci_red_lsa16_preflight_202607081036"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T01:44:19Z"
+- cmd_id: "cmd_reflux_insight_202607081044_kotaro"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T01:53:03Z"
+- cmd_id: "cmd_karo_ci_fix_runtime_id_lsa16_202607081052"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T01:58:06Z"
+- cmd_id: "cmd_reflux_insight_202607081053_saizo"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T02:03:30Z"
+- cmd_id: "cmd_3767"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-07-02T05:54:43Z"
-  checks: "check_causal_verification_requirement"
-  notes: "causal_verification_missing|check=check_causal_verification_requirement"
-- cmd_id: "cmd_3650"
+  source: "cmd_save"
+  timestamp: "2026-07-08T02:09:59Z"
+- cmd_id: "cmd_reflux_insight_202607081103_tobisaru"
   ac_count: 0
-  gate_result: "BLOCK"
+  gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "unknown"
+  gunshi_verdict: "APPROVE"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-08T02:10:55Z"
+- cmd_id: "cmd_3767"
+  ac_count: 0
+  gate_result: "PASS"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
   ninja_blockers: 0
   project: "dm-signal"
   supplementary_cmds: 0
   source: "cmd_save"
-  timestamp: "2026-07-02T05:54:44Z"
-  checks: "warn_missing_prev_cmd_lesson"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 雛形起点+preflightテンプレ準拠+計測データ根拠つきで記載"
-  notes: "前cmd_3649で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3649 LS-A05"
-- cmd_id: "cmd_karo_hotfix_insight_corruption_202607021437"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-02T05:55:40Z"
-- cmd_id: "cmd_3650"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-07-02T05:56:12Z"
-  checks: "check_causal_verification_requirement"
-  notes: "causal_verification_missing|check=check_causal_verification_requirement"
-- cmd_id: "cmd_3650"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-02T06:01:30Z"
-  block_duration_minutes: 7
-- cmd_id: "cmd_3649"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-02T06:02:50Z"
-- cmd_id: "cmd_3650"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "dm-signal"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-02T06:02:55Z"
-- cmd_id: "cmd_3726"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T06:25:16Z"
-  checks: "warn_missing_prev_cmd_lesson"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 偵察のためコード変更なし。報告YAMLが唯一の成果物"
-  notes: "前cmd_3725で1回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh cmd_3725 LS-A06"
-- cmd_id: "cmd_3726"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T06:26:19Z"
-  checks: "check_environment_change_after_prior_block"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 偵察のためコード変更なし。報告YAMLが唯一の成果物"
-  notes: "environment_changeが非構造化。構造化形式で記載せよ: type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な文字列"
-- cmd_id: "cmd_3722"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T06:29:58Z"
-- cmd_id: "cmd_3719"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T06:29:58Z"
-- cmd_id: "cmd_3723"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T06:29:58Z"
-- cmd_id: "cmd_3726"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T06:30:08Z"
-  block_duration_minutes: 5
-- cmd_id: "cmd_3726"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T06:30:41Z"
-- cmd_id: "cmd_3726"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T06:39:35Z"
-- cmd_id: "cmd_3726"
+  timestamp: "2026-07-08T02:11:14Z"
+- cmd_id: "cmd_reflux_insight_202607081110_hayate"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
@@ -217,18 +148,8 @@ entries:
   project: ""
   supplementary_cmds: 0
   source: "cmd_complete_gate"
-  timestamp: "2026-07-07T06:39:40Z"
-- cmd_id: "cmd_3721"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T06:42:47Z"
-- cmd_id: "cmd_3721"
+  timestamp: "2026-07-08T02:17:50Z"
+- cmd_id: "cmd_3767"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
@@ -237,18 +158,8 @@ entries:
   project: ""
   supplementary_cmds: 0
   source: "cmd_complete_gate"
-  timestamp: "2026-07-07T06:42:56Z"
-- cmd_id: "cmd_3725"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T06:44:47Z"
-- cmd_id: "cmd_3725"
+  timestamp: "2026-07-08T02:22:24Z"
+- cmd_id: "cmd_karo_hotfix_ga200_context_freshness_202607081121"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
@@ -257,689 +168,29 @@ entries:
   project: ""
   supplementary_cmds: 0
   source: "cmd_complete_gate"
-  timestamp: "2026-07-07T06:45:27Z"
-- cmd_id: "cmd_3720"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T06:58:38Z"
-- cmd_id: "cmd_3720"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T06:59:26Z"
-- cmd_id: "cmd_3724"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:00:02Z"
-- cmd_id: "cmd_3724"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 1
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:00:46Z"
-- cmd_id: "cmd_reflux_insight_manual_202607071607_tobisaru"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:19:56Z"
-- cmd_id: "cmd_reflux_insight_manual_202607071607_tobisaru"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:20:39Z"
-- cmd_id: "cmd_reflux_insight_202607071621_saizo"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:52:58Z"
-- cmd_id: "cmd_reflux_insight_202607071621_saizo"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:54:29Z"
-- cmd_id: "cmd_3702"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:47Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_karo_hotfix_ga186_dm_signal_ops_context_freshness_202607061707"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:47Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_karo_hotfix_ga187_p_average_freshness_detail_not_captured_202607061759"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:47Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_karo_hotfix_ga188_p_average_repo_root_outside_cwd_202607061807"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:47Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_3703"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:47Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_3705"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:48Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_3706"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:48Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_3704"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:48Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_3707"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:48Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_3708"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:48Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_3709"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:48Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_karo_hotfix_monthly_trade_ledger_badge_cache_20260706"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:48Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_3710"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:49Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_3711"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:49Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_3713"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:49Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_3714"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "yes"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:49Z"
-  notes: "startup_alert_backfill_20260707 wa:gate_false_positive"
-- cmd_id: "cmd_3715"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:49Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_karo_hotfix_ga189_context_freshness_20260707"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:49Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_3716"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "yes"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:50Z"
-  notes: "startup_alert_backfill_20260707 wa:task_yaml_stale_field"
-- cmd_id: "cmd_karo_hotfix_ga190"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:50Z"
-  notes: "startup_alert_backfill_20260707"
-- cmd_id: "cmd_3718"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "yes"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:50Z"
-  notes: "startup_alert_backfill_20260707 wa:report_yaml_format"
-- cmd_id: "cmd_3701"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T07:58:50Z"
-  notes: "startup_alert_backfill_20260707 no_task_benchmark_fast_path"
-- cmd_id: "cmd_reflux_insight_202607071651_kotaro"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T08:17:39Z"
-- cmd_id: "cmd_reflux_insight_202607071717_tobisaru"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T08:35:45Z"
-- cmd_id: "cmd_karo_ci_fix_ga191_bats_count_202607071728"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T08:36:16Z"
-- cmd_id: "cmd_reflux_insight_202607071734_kagemaru"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T08:45:25Z"
-- cmd_id: "cmd_reflux_insight_202607071745_saizo"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T08:54:27Z"
-- cmd_id: "cmd_karo_ci_fix_ga191_followup_202607071752"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T09:00:02Z"
-- cmd_id: "cmd_reflux_insight_202607071754_kotaro"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T09:08:20Z"
-- cmd_id: "cmd_karo_ci_fix_ga191_db_missing_followup_202607071808"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T09:15:53Z"
-- cmd_id: "cmd_reflux_insight_202607071807_hayate"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T09:17:04Z"
-- cmd_id: "cmd_reflux_insight_202607071816_hanzo"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T09:23:06Z"
-- cmd_id: "cmd_reflux_insight_202607071822_tobisaru"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T09:44:35Z"
-- cmd_id: "cmd_reflux_insight_202607071822_tobisaru"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T09:47:12Z"
-- cmd_id: "cmd_reflux_insight_202607071843_kagemaru"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T09:51:16Z"
-- cmd_id: "cmd_reflux_insight_202607071843_kagemaru"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T09:51:49Z"
-- cmd_id: "cmd_reflux_insight_202607071854_kotaro"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T10:04:26Z"
-- cmd_id: "cmd_reflux_insight_202607071854_kotaro"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T10:05:04Z"
-- cmd_id: "cmd_reflux_insight_202607071908_hayate"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T10:21:16Z"
-- cmd_id: "cmd_reflux_insight_202607071908_hayate"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "yes"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T10:21:40Z"
-- cmd_id: "cmd_reflux_insight_202607071920_hanzo"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T10:27:22Z"
-- cmd_id: "cmd_reflux_insight_202607071920_hanzo"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 1
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T10:29:35Z"
-- cmd_id: "cmd_reflux_insight_202607071926_tobisaru"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T10:36:01Z"
-- cmd_id: "cmd_reflux_insight_202607071926_tobisaru"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T10:36:27Z"
-- cmd_id: "cmd_reflux_insight_202607071943_kagemaru"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T10:50:19Z"
-- cmd_id: "cmd_reflux_insight_202607071943_kagemaru"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 1
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T10:51:03Z"
-- cmd_id: "cmd_3727"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T10:55:12Z"
-- cmd_id: "cmd_3727"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T10:55:45Z"
-- cmd_id: "cmd_3728"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T10:58:47Z"
-- cmd_id: "cmd_3728"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T10:59:32Z"
-- cmd_id: "cmd_3729"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T11:05:24Z"
-- cmd_id: "cmd_3729"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T11:05:48Z"
-- cmd_id: "cmd_3730"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T11:07:27Z"
-- cmd_id: "cmd_3730"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T11:07:48Z"
+  timestamp: "2026-07-08T02:28:17Z"
 - cmd_id: "cmd_3727"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "APPROVE"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T11:12:40Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:16Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3728"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "APPROVE"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T11:13:02Z"
-- cmd_id: "cmd_3727"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T11:17:46Z"
-- cmd_id: "cmd_3728"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T11:18:39Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:16Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3729"
   ac_count: 0
   gate_result: "CLEAR"
@@ -948,18 +199,9 @@ entries:
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T11:21:22Z"
-- cmd_id: "cmd_3729"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T11:22:35Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:16Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3730"
   ac_count: 0
   gate_result: "CLEAR"
@@ -968,103 +210,9 @@ entries:
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T11:27:22Z"
-- cmd_id: "cmd_3730"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T11:29:47Z"
-- cmd_id: "cmd_3731"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T11:31:16Z"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 偵察報告の主張を現物rgで裏取りしてから起票"
-  notes: "yaml_syntax_error"
-- cmd_id: "cmd_karo_ci_fix_cmd_complete_gate_model_profile_202607072026"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T11:34:16Z"
-- cmd_id: "cmd_3731"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T11:34:56Z"
-  checks: "check_environment_change_after_prior_block"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 偵察報告の主張を現物rgで裏取りしてから起票"
-  notes: "environment_changeが非構造化。構造化形式で記載せよ: type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な文字列"
-- cmd_id: "cmd_3731"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T11:50:41Z"
-- cmd_id: "cmd_nonexistent_benchmark"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T11:50:53Z"
-- cmd_id: "cmd_3731"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T11:50:56Z"
-- cmd_id: "cmd_reflux_insight_202607072038_hayate"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T11:51:18Z"
-- cmd_id: "cmd_reflux_insight_202607072038_hayate"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T11:56:29Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:16Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3731"
   ac_count: 0
   gate_result: "CLEAR"
@@ -1073,653 +221,152 @@ entries:
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T11:59:31Z"
-- cmd_id: "cmd_3731"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T12:00:08Z"
-- cmd_id: "cmd_3732"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:01:54Z"
-- cmd_id: "cmd_3732"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:02:10Z"
-- cmd_id: "cmd_reflux_insight_202607072050_kotaro"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T12:02:15Z"
-- cmd_id: "cmd_reflux_insight_202607072050_kotaro"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T12:02:43Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:16Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3732"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "APPROVE"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T12:10:15Z"
-- cmd_id: "cmd_3732"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T12:10:28Z"
-- cmd_id: "cmd_3733"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-07-07T12:17:12Z"
-  checks: "check_causal_verification_requirement"
-  notes: "causal_verification_missing|check=check_causal_verification_requirement"
-- cmd_id: "cmd_3733"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:17:13Z"
-  checks: "cmd_save_main"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 既存検証の不在をrgで確認し、実発生破損の現物確認を済ませてから起票"
-  notes: "WARNが1件検出。environment_changeを記載せよ。次のcmdで同じWARNが出ないように環境に何を埋め込むか書け"
-- cmd_id: "cmd_3733"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:18:18Z"
-  block_duration_minutes: 1
-- cmd_id: "cmd_3733"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:18:45Z"
-- cmd_id: "cmd_3734"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:20:40Z"
-- cmd_id: "cmd_3734"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:21:25Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:16Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3733"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "APPROVE"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T12:27:29Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:16Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3734"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T12:28:19Z"
-- cmd_id: "cmd_3733"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "yes"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T12:30:13Z"
-- cmd_id: "cmd_3734"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T12:31:29Z"
-- cmd_id: "cmd_3735"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:44:09Z"
-- cmd_id: "cmd_3735"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:45:03Z"
-- cmd_id: "cmd_3736"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:46:37Z"
-- cmd_id: "cmd_3736"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:46:53Z"
-- cmd_id: "cmd_3737"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:48:55Z"
-- cmd_id: "cmd_3737"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:49:16Z"
-- cmd_id: "cmd_3738"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:50:48Z"
-- cmd_id: "cmd_3738"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T12:51:06Z"
-- cmd_id: "cmd_reflux_insight_202607072138_saizo"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
   gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T13:03:55Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3736"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T13:04:23Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3737"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T13:04:28Z"
-- cmd_id: "cmd_3739"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T13:07:11Z"
-- cmd_id: "cmd_3739"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T13:07:28Z"
-- cmd_id: "cmd_3740"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T13:08:46Z"
-- cmd_id: "cmd_3740"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T13:09:04Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3735"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T13:16:41Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3738"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "REQUEST_CHANGES"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T13:19:00Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3739"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T13:21:47Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3740"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T13:41:40Z"
-- cmd_id: "cmd_karo_ci_fix_deploy_task_ci_red_202607072231"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T13:45:28Z"
-- cmd_id: "cmd_3741"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T14:04:47Z"
-- cmd_id: "cmd_3741"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T14:05:29Z"
-- cmd_id: "cmd_3742"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-07-07T14:10:06Z"
-  checks: "check_causal_verification_requirement"
-  notes: "causal_verification_missing|check=check_causal_verification_requirement"
-- cmd_id: "cmd_3742"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T14:11:05Z"
-- cmd_id: "cmd_3742"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T14:11:15Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3741"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T14:14:05Z"
-- cmd_id: "cmd_3741"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T14:15:41Z"
-- cmd_id: "cmd_reflux_insight_202607072256_saizo"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T14:18:03Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3742"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T14:19:12Z"
-- cmd_id: "cmd_3743"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T14:23:40Z"
-- cmd_id: "cmd_3743"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T14:24:05Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3743"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T14:34:37Z"
-- cmd_id: "cmd_training_L4_auto_202607072345_saizo"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T15:08:20Z"
-- cmd_id: "cmd_reflux_insight_202607072348_kotaro"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T15:14:53Z"
-- cmd_id: "cmd_3744"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T15:16:59Z"
-- cmd_id: "cmd_3744"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T15:17:45Z"
-- cmd_id: "cmd_reflux_insight_202607080014_hayate"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T15:22:31Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3744"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T15:25:53Z"
-- cmd_id: "cmd_reflux_insight_202607080027_kagemaru"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
   gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T15:31:28Z"
-- cmd_id: "cmd_3745"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T15:34:38Z"
-- cmd_id: "cmd_3745"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T15:34:52Z"
-- cmd_id: "cmd_3746"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T15:37:32Z"
-- cmd_id: "cmd_3746"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T15:37:52Z"
-- cmd_id: "cmd_3747"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-07-07T15:40:59Z"
-  checks: "cmd_text_deferral_language"
-  notes: "先送り表現検出|check=cmd_text_deferral_language"
-- cmd_id: "cmd_3747"
-  ac_count: 0
-  gate_result: "BLOCK"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T15:41:00Z"
-  checks: "check_ac_must_should_mix"
-  diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 2部構成形式で記載。表示文言と閾値既定の変更に限定し判定ロジック本体へ触れない"
-  notes: "ACに推奨事項が混在しています。推奨はnotesに分離し、ACは必須(MUST)のみにせよ"
-- cmd_id: "cmd_3747"
-  ac_count: 0
-  gate_result: "WARN"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save_warn"
-  timestamp: "2026-07-07T15:43:24Z"
-  checks: "cmd_text_deferral_language"
-  notes: "先送り表現検出|check=cmd_text_deferral_language"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3745"
   ac_count: 0
   gate_result: "CLEAR"
@@ -1728,49 +375,9 @@ entries:
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T15:44:37Z"
-- cmd_id: "cmd_3747"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T15:44:43Z"
-  block_duration_minutes: 4
-- cmd_id: "cmd_3747"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T15:44:57Z"
-- cmd_id: "cmd_3748"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T15:46:57Z"
-- cmd_id: "cmd_3748"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T15:47:13Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3746"
   ac_count: 0
   gate_result: "CLEAR"
@@ -1779,8 +386,9 @@ entries:
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T15:47:30Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3747"
   ac_count: 0
   gate_result: "CLEAR"
@@ -1789,38 +397,9 @@ entries:
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T15:55:35Z"
-- cmd_id: "cmd_3747"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T15:56:46Z"
-- cmd_id: "cmd_3749"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T16:05:09Z"
-- cmd_id: "cmd_3749"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T16:05:30Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3748"
   ac_count: 0
   gate_result: "CLEAR"
@@ -1829,18 +408,9 @@ entries:
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T16:09:38Z"
-- cmd_id: "cmd_3748"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T16:10:14Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3749"
   ac_count: 0
   gate_result: "CLEAR"
@@ -1849,9 +419,10 @@ entries:
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T16:12:58Z"
-- cmd_id: "cmd_3749"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
+- cmd_id: "cmd_3750"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
@@ -1859,68 +430,9 @@ entries:
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T16:14:19Z"
-- cmd_id: "cmd_3750"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T16:15:31Z"
-- cmd_id: "cmd_3750"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T16:15:40Z"
-- cmd_id: "cmd_3751"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T16:17:10Z"
-- cmd_id: "cmd_3751"
-  ac_count: 0
-  gate_result: "PASS"
-  karo_rework: "no"
-  gunshi_verdict: "unknown"
-  ninja_blockers: 0
-  project: "infra"
-  supplementary_cmds: 0
-  source: "cmd_save"
-  timestamp: "2026-07-07T16:17:26Z"
-- cmd_id: "cmd_3750"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T16:23:35Z"
-- cmd_id: "cmd_3750"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T16:26:00Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
 - cmd_id: "cmd_3751"
   ac_count: 0
   gate_result: "CLEAR"
@@ -1929,9 +441,10 @@ entries:
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T16:29:46Z"
-- cmd_id: "cmd_3751"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
+- cmd_id: "cmd_3752"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
@@ -1939,135 +452,116 @@ entries:
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T16:31:09Z"
-- cmd_id: "cmd_karo_ci_fix_ga192_pre_push_ninja_monitor_cleanup_202607080133"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
+- cmd_id: "cmd_3753"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "APPROVE"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T16:50:22Z"
-- cmd_id: "cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
+- cmd_id: "cmd_3756"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T17:09:43Z"
-- cmd_id: "cmd_reflux_insight_202607080153_saizo"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
+- cmd_id: "cmd_3757"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T17:11:37Z"
-- cmd_id: "cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
+- cmd_id: "cmd_3754"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T17:11:46Z"
-- cmd_id: "cmd_reflux_insight_202607080153_saizo"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
+- cmd_id: "cmd_3755"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "APPROVE"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T17:14:26Z"
-- cmd_id: "cmd_reflux_insight_202607080208_hayate"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
+- cmd_id: "cmd_3759"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T17:14:53Z"
-- cmd_id: "cmd_reflux_insight_202607080208_hayate"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
+- cmd_id: "cmd_3761"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "APPROVE"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T17:15:15Z"
-- cmd_id: "cmd_training_L1_report-write_20260708020332"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:17Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
+- cmd_id: "cmd_3760"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T17:23:38Z"
-- cmd_id: "cmd_training_L1_report-write_20260708020332"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:18Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
+- cmd_id: "cmd_3758"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "APPROVE"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T17:24:15Z"
-- cmd_id: "cmd_reflux_insight_202607080213_tobisaru"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:18Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"
+- cmd_id: "cmd_3762"
   ac_count: 0
   gate_result: "CLEAR"
   karo_rework: "no"
-  gunshi_verdict: "LGTM"
+  gunshi_verdict: "unknown"
   ninja_blockers: 0
   project: ""
   supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T17:26:45Z"
-- cmd_id: "cmd_reflux_insight_202607080213_tobisaru"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "APPROVE"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T17:27:07Z"
-- cmd_id: "cmd_training_L1_report-write_20260708022912"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T17:35:24Z"
-- cmd_id: "cmd_reflux_insight_202607080225_kotaro"
-  ac_count: 0
-  gate_result: "CLEAR"
-  karo_rework: "no"
-  gunshi_verdict: "LGTM"
-  ninja_blockers: 0
-  project: ""
-  supplementary_cmds: 0
-  source: "cmd_complete_gate"
-  timestamp: "2026-07-07T17:44:03Z"
+  source: "karo_startup_backfill"
+  timestamp: "2026-07-08T02:30:18Z"
+  notes: "backfill: startup cmd品質記録漏れ alert 2026-07-08"

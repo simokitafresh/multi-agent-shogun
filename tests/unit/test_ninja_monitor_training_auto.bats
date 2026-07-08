@@ -400,6 +400,97 @@ echo "REFLUX_INSIGHT_DEPLOY_OK"
     [[ "$output" == *"REFLUX_INSIGHT_DEPLOY_OK"* ]]
 }
 
+@test "reflux auto deploy rolls back partial task when deploy_task fails" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -r \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$STATE_DIR"
+
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: idle
+YAML
+
+cat > "$SCRIPT_DIR/queue/insights.yaml" <<YAML
+insights:
+- id: INS-001
+  status: pending
+YAML
+
+cat > "$SCRIPT_DIR/scripts/causal_backlink_counts.sh" <<SH
+#!/usr/bin/env bash
+exit 0
+SH
+chmod +x "$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
+
+cat > "$SCRIPT_DIR/scripts/deploy_task.sh" <<SH
+#!/usr/bin/env bash
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
+task:
+  parent_cmd: \$5
+  task_id: \${5}_exact
+  status: assigned
+  report_path:
+  ac_version:
+YAML
+exit 1
+SH
+chmod +x "$SCRIPT_DIR/scripts/deploy_task.sh"
+
+log() { echo "$1" >> "$TMP_ROOT/test.log"; }
+yaml_field_get() {
+    grep -m1 -E "^[[:space:]]*$2:" "$1" | sed "s/.*:[[:space:]]*//; s/[\"'"'"' ]//g" || true
+}
+field_get() { yaml_field_get "$@"; }
+yaml_field_set() {
+    local file="$1" block="$2" field="$3" value="$4"
+    python3 - "$file" "$field" "$value" <<PY
+import sys
+path, field, value = sys.argv[1:4]
+lines = open(path, encoding="utf-8").read().splitlines()
+out = []
+done = False
+for line in lines:
+    if line.strip().startswith(field + ":"):
+        indent = line[:len(line)-len(line.lstrip())]
+        out.append(f"{indent}{field}: {value}")
+        done = True
+    else:
+        out.append(line)
+if not done:
+    out.append(f"  {field}: {value}")
+open(path, "w", encoding="utf-8").write("\\n".join(out) + "\\n")
+PY
+}
+_training_pipeline_has_work() { return 1; }
+
+declare -gA REFLUX_IDLE_FIRST_SEEN
+REFLUX_IDLE_FIRST_SEEN[hayate]=0
+REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=1
+REFLUX_AUTO_DEPLOY_COOLDOWN=1
+REFLUX_AUTO_DEPLOY_STATE_PREFIX="$TMP_ROOT/state/reflux_auto"
+REFLUX_BACKLINK_SCAN_LIMIT=5
+REFLUX_BACKLINK_TIMEOUT=5
+
+_handle_reflux_auto_deploy hayate 100 && exit 1
+
+grep -q "REFLUX-AUTO-ROLLBACK: hayate partial task reset after deploy failure" "$TMP_ROOT/test.log"
+grep -q "status: idle" "$SCRIPT_DIR/queue/tasks/hayate.yaml"
+echo "REFLUX_DEPLOY_FAILURE_ROLLBACK_OK"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REFLUX_DEPLOY_FAILURE_ROLLBACK_OK"* ]]
+}
+
 @test "reflux auto deploy fires for zero backlink inventory when no pending insights" {
     run bash -c '
 set -euo pipefail

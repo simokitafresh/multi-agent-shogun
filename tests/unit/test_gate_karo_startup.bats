@@ -1080,6 +1080,22 @@ EOF
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
+@test "no_task_benchmark_fast_path CLEAR is excluded from 品質記録漏れ" {
+    cat > "$TEST_TMPDIR/logs/gate_metrics.log" <<'EOF'
+2026-06-24T00:00:00	cmd_nonexistent_benchmark	CLEAR	no_task_benchmark_fast_path	unknown	unknown	unknown	none		unknown	unknown
+EOF
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_other"
+  gate_result: "CLEAR"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ cmd品質記録漏れチェック"* ]]
+    [[ "$output" == *"OK: GATE CLEAR済みcmdはcmd_design_quality記録済み"* ]]
+    [[ "$output" != *"cmd_nonexistent_benchmark"* ]]
+}
+
 @test "GATE CLEAR with cmd_design_quality record → OK 品質記録済み" {
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]

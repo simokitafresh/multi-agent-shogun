@@ -2862,6 +2862,18 @@ EOF
     fi
 
     rm -f "$tmp_task"
+    if [ -f "$task_file" ]; then
+        local _reflux_partial_parent
+        _reflux_partial_parent=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+        if [ "$_reflux_partial_parent" = "$cmd_id" ]; then
+            yaml_field_set "$task_file" "task" "status" "idle" >/dev/null 2>&1 || true
+            yaml_field_set "$task_file" "task" "report_path" "" >/dev/null 2>&1 || true
+            yaml_field_set "$task_file" "task" "report_filename" "" >/dev/null 2>&1 || true
+            yaml_field_set "$task_file" "task" "ac_version" "" >/dev/null 2>&1 || true
+            yaml_field_set "$task_file" "task" "task_id" "" >/dev/null 2>&1 || true
+            log "REFLUX-AUTO-ROLLBACK: $name partial task reset after deploy failure cmd=${cmd_id}"
+        fi
+    fi
     log "REFLUX-AUTO-DEPLOY-FAIL: $name cmd=${cmd_id} kind=${kind} (non-blocking)"
     return 1
 }
