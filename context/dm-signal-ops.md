@@ -989,3 +989,10 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 工程4(旧PF削除+新PF登録)前提として、run_id `cmd_3783_full_pre_replacement_backup_20260709` で本番102PFを`portfolio_archive`へ削除なしINSERT済み。dry-run再検証も`live_portfolios=102 / existing_for_run_before=102 / archive_count_after=102`で一致。
 - 復元素材はfolder payload 102件、`signal_decision_ledger` 15,160行、`month_start_signal_input_snapshots` 3,495行を含む。FoF 78 / standard 24、required fields・内部UUID/name重複・依存欠落・cycleはいずれもPASS。
 - 工程4開始条件はCLEAR。詳細と価格改定時の再計算値解釈は `/mnt/c/Python_app/DM-signal/docs/research/cmd_3783_full_pre_replacement_backup_report.md`。実行commitはDM-Signal `57530143`。
+
+## §55 工程4前段: 入替対象リスト・実行手順確定 (cmd_3784, 2026-07-09)
+
+- 非破壊の計画成果物として、本番102PFスナップショット(`docs/research/cmd_3771_20260708T052126Z_portfolio_config_snapshot.json.gz`)から削除対象86・維持対象16を機械分類。旧L0-L3本体78に加え、参照切れ防止のため旧対象へ依存するFoF 8件をdependency_closure削除対象に含める。
+- 新規登録仕様は工程2成果物から75件(L0 12 / L1 21 / L2 21 / L3 21)を生成。維持対象との名前衝突0、固定UUIDなし(登録時に新規生成)、削除前にだけ既存置換スロットとの名前衝突あり。
+- 正本成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3784_deletion_inventory.json` / `.csv`, `/mnt/c/Python_app/DM-signal/docs/research/cmd_3784_registration_spec.json` / `.csv`, `/mnt/c/Python_app/DM-signal/docs/research/cmd_3784_execution_runbook.md`。
+- 後続実行順序: dependency_closure→pf_L3→pf_L2→pf_L1→pf_L0の逆依存順削除、pf_L0→pf_L1→pf_L2→pf_L3の正依存順登録、全PF fullrecalculate、GS-本番のholding_signal(ticker×weight)+monthly_returns完全一致、DB/API/FEの3レイヤー確認。失敗時はcmd_3783 archiveからrestore-allまたは依存順restore。
