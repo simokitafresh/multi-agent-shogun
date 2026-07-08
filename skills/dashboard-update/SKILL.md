@@ -207,3 +207,6 @@ Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `gate_repo
 <!-- script_refs_checked_at: 2026-07-07T15:46:04+09:00 -->
 
 <!-- script_refs_checked_at: 2026-07-07T15:46:04+09:00 -->
+
+<!-- script_refs_checked_at: 2026-07-08T22:35:00+09:00 -->
+Script refs verified: 2026-07-08 将軍検分. 前回checked_at以降の gate_report_format.sh 差分は c1f2b38d8 のみ(gate_loop_health集計向けログパス正規化=内部ログ記録のみの変更。報告YAMLパス引数・PASS/FAIL判定・verdict自動導出の契約は不変)。

@@ -159,3 +159,6 @@ Script refs verified: 2026-06-28 b1922e36b+0226e0db5. `deploy_task.sh` 直近変
 Script refs verified: 2026-07-07T18:19:00+09:00 (shogun復帰時WARN解消). `deploy_task.sh` 直近変更(88dae4ee5)をgit showで確認。`deploy_task_guard_direct_yaml_prewrite_collision`追加 — direct/--yamlモードでtask YAML書換え前に既存`deploy_task_guard_target_path_collision`を先行実行し、衝突時はtask未変更のままBLOCKする発火位置の前倒し。判定基準・呼び出し契約(`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>`)・通知・report template生成は変更なし。
 
 <!-- script_refs_checked_at: 2026-07-07T18:19:00+09:00 -->
+
+<!-- script_refs_checked_at: 2026-07-08T22:35:00+09:00 -->
+Script refs verified: 2026-07-08 将軍検分. 前回checked_at以降の deploy_task.sh 差分は f5f7600d6(注入cache化)+0c73c7d1c(完了timing/通知)+e191bcf88(EXIT trap fallback報告メタデータ修復)=いずれも内部処理で、配備呼出し契約(引数・重複ガード・karo_direct経路)は不変。
