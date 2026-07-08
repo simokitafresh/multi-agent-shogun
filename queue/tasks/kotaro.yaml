@@ -1,7 +1,7 @@
 task:
   acceptance_criteria:
   - checks:
-    - check: 対象insight INS-20260708-215958435-09b1 を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
+    - check: 対象insight INS-20260708-221142928-1f86 を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
     id: AC1
   - checks:
     - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
@@ -22,28 +22,20 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_reflux_insight_202607090140_kotaro
+  parent_cmd: cmd_reflux_insight_202607090242_kotaro
   project: infra
-  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-215958435-09b1 を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
+  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-221142928-1f86 を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
   reflux_inventory_before:
-    insights_pending: 8
-    promotions: 86
-    total: 96
+    insights_pending: 2
+    promotions: 87
+    total: 91
     zero_backlinks: 2
   scout_exempt: true
-  status: idle
+  status: done
   stop_for: []
   target_path: queue/insights.yaml
-  task_id: cmd_reflux_insight_202607090140_kotaro_exact
+  task_id: cmd_reflux_insight_202607090242_kotaro_exact
   task_type: exact
-  previous_failures:
-    attempt: 1
-    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; resu…'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; resu…'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; resu…'
   related_lessons:
   - id: 'L351'
     summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
@@ -91,12 +83,12 @@ task:
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
     ────────────────────────────────────────
-  ac_version: 04e18c6f
-  _ac_task_id: cmd_reflux_insight_202607090140_kotaro_exact
+  ac_version: df7d1ad4
+  _ac_task_id: cmd_reflux_insight_202607090242_kotaro_exact
   _ac_worker_id: 
   role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_reflux_insight_202607090140_kotaro.yaml
-  report_path: queue/reports/kotaro_report_cmd_reflux_insight_202607090140_kotaro.yaml
+  report_filename: kotaro_report_cmd_reflux_insight_202607090242_kotaro.yaml
+  report_path: queue/reports/kotaro_report_cmd_reflux_insight_202607090242_kotaro.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -125,5 +117,5 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-07-09T01:40:44"
-  acknowledged_at: "2026-07-09T01:40:55"
+  deployed_at: "2026-07-09T02:42:42"
+  acknowledged_at: "2026-07-09T02:43:01"
