@@ -32,6 +32,29 @@ EOF
     grep -q 'outcome: "false_positive"' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
 }
 
+@test "detector_fp_rate keeps unresolved escalation alerts as unknown" {
+    cat > "$TEST_TMPDIR/logs/gate_fire_log.yaml" <<'EOF'
+EOF
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries: []
+EOF
+    cat > "$TEST_TMPDIR/logs/gate_alerts.yaml" <<'EOF'
+alerts:
+  - alert_id: GA-001
+    gate: ci_red
+    detected_at: "2026-07-08T10:00:00+0900"
+    alert_detail: "ALERT: CI赤"
+    three_questions_sent: true
+    investigation_cmd: null
+    improvement_done: false
+EOF
+
+    run env DETECTOR_FP_ROOT="$TEST_TMPDIR" bash "$PROJECT_ROOT/scripts/detector_fp_rate.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"escalation:ci_red: fp_rate=0.0% fp=0/1"* ]]
+    grep -q 'outcome: "unknown"' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+}
+
 @test "detector_fp_rate does not reintroduce direct yaml dump writes" {
     run python3 - "$PROJECT_ROOT/scripts/detector_fp_rate.sh" <<'PY'
 import re

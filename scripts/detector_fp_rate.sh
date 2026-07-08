@@ -158,15 +158,22 @@ for e in events:
 rows = []
 for cmd_id, cmd_events in by_cmd.items():
     final = cmd_events[-1].get("result")
+    emitted = set()
     for e in cmd_events:
         if e.get("result") not in {"WARN", "BLOCK", "ALERT"}:
             continue
+        event_key = (e.get("detector"), e.get("result"))
+        if event_key in emitted:
+            continue
+        emitted.add(event_key)
         outcome = "unknown"
-        if any(x.get("result") == "PASS" for x in cmd_events if x is not e):
+        if e.get("result") == "BLOCK" and any(x.get("result") in {"PASS", "CLEAR"} for x in cmd_events if x is not e):
+            outcome = "true_positive"
+        elif any(x.get("result") == "PASS" for x in cmd_events if x is not e):
             outcome = "false_positive"
         elif any(x.get("result") in {"TRUE", "CLEAR"} for x in cmd_events if x is not e):
             outcome = "true_positive"
-        elif e.get("result") == "ALERT" and final == "ALERT":
+        elif e.get("result") == "ALERT" and e.get("source") != "gate_alerts" and final == "ALERT":
             outcome = "false_positive"
         rows.append({**e, "outcome": outcome})
 
