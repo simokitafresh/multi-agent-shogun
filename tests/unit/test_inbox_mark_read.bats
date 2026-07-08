@@ -102,14 +102,25 @@ for entry in data.get('entries', []):
     [ "$(_get_read_status testagent msg_003)" = "true" ]
 }
 
-@test "mark all unread messages when msg_id omitted" {
+@test "msg_id omission blocks when unread messages exist" {
     _create_inbox testagent
 
     run bash "$TEST_SCRIPT" testagent
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"msg_id is required"* ]]
+
+    [ "$(_get_read_status testagent msg_001)" = "false" ]
+    [ "$(_get_read_status testagent msg_002)" = "false" ]
+    [ "$(_get_read_status testagent msg_003)" = "true" ]
+}
+
+@test "explicit audited override marks all unread messages" {
+    _create_inbox testagent
+
+    run env INBOX_MARK_READ_ALLOW_ALL=1 bash "$TEST_SCRIPT" testagent
     [ "$status" -eq 0 ]
     [[ "$output" == *"Marked 2 message"* ]]
 
-    # All should be read now
     [ "$(_get_read_status testagent msg_001)" = "true" ]
     [ "$(_get_read_status testagent msg_002)" = "true" ]
     [ "$(_get_read_status testagent msg_003)" = "true" ]
@@ -159,7 +170,7 @@ YAML
     [ "$(_get_read_status testagent msg_002)" = "false" ]
     [ "$(grep -c '^    read: false$' "$TEST_ROOT/queue/inbox/testagent.yaml")" -eq 2 ]
 
-    run bash "$TEST_SCRIPT" testagent
+    run bash "$TEST_SCRIPT" testagent msg_002
     [ "$status" -eq 0 ]
     [[ "$output" == *"Marked 1 message"* ]]
     [ "$(_get_read_status testagent msg_002)" = "true" ]

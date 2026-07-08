@@ -58,6 +58,17 @@ run_gate() {
     [[ "$output" == *"1 refs checked"* ]]
 }
 
+@test "json.gz参照はjsonで切断されずに解決される" {
+    make_projects_yaml ""
+    echo "content" > "$TEST_TMPDIR/docs/research/snapshot.json.gz"
+    make_context_file "test.md" "link: \`/tmp/example/docs/research/snapshot.json.gz\`"
+
+    run_gate "$TEST_TMPDIR/context/test.md"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[OK]"* ]]
+    [[ "$output" == *"1 refs checked"* ]]
+}
+
 @test "当リポに存在しない参照 + 外部リポなし: SKIP（偽陽性防止）" {
     # 外部リポを持たないprojects.yaml
     make_projects_yaml ""
