@@ -1,7 +1,7 @@
 task:
   acceptance_criteria:
   - checks:
-    - check: '昇格候補 [lessons_shogun.yaml] LS081 (L1:事後検出): async関数のtimeout短縮は速度に寄与せず機能だけをsilent-deathさせる を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する'
+    - check: '昇格候補 [lessons_karo.yaml] LK-A09 (L1:事後検出): 配備後の軍師レビュー依頼を漏らすな → 自動化済み を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する'
     id: AC1
   - checks:
     - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
@@ -22,30 +22,30 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_reflux_promotion_202607090413_kagemaru
+  parent_cmd: cmd_reflux_promotion_202607090514_kagemaru
   project: infra
-  purpose: '還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_shogun.yaml] LS081 (L1:事後検出): async関数のtimeout短縮は速度に寄与せず機能だけをsilent-deathさせる を確認し、Level4以上の実装・gate・task注入などへ昇格する'
+  purpose: '還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_karo.yaml] LK-A09 (L1:事後検出): 配備後の軍師レビュー依頼を漏らすな → 自動化済み を確認し、Level4以上の実装・gate・task注入などへ昇格する'
   reflux_inventory_before:
     insights_pending: 0
-    promotions: 85
-    total: 85
+    promotions: 81
+    total: 81
     zero_backlinks: 0
   scout_exempt: true
   status: idle
   stop_for: []
-  target_path: projects/infra/lessons_shogun.yaml
-  task_id: cmd_reflux_promotion_202607090413_kagemaru_exact
+  target_path: projects/infra/lessons_karo.yaml
+  task_id: cmd_reflux_promotion_202607090514_kagemaru_exact
   task_type: exact
   related_lessons:
-  - id: 'L830'
-    summary: 'gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo'
-    detail: 'gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo'
-  - id: 'L1002'
-    summary: 'gate_lesson_enforcement_level.shはenforcement_levelフィールドが無い場合、enforcement本文からBLOC'
-    detail: 'gate_lesson_enforcement_level.shはenforcement_levelフィールドが無い場合、enforcement本文からBLOC'
-  - id: 'L549'
-    summary: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
-    detail: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L1004'
+    summary: 'gate_lesson_enforcement_level.shはenforcement本文のキーワード有無でLevelを判定しデフォルトL1にする。しかしLK'
+    detail: 'gate_lesson_enforcement_level.shはenforcement本文のキーワード有無でLevelを判定しデフォルトL1にする。しかしLK'
+  - id: 'L550'
+    summary: 'deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys'
+    detail: 'deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -100,19 +100,19 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L830: gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo
-      - L1002: gate_lesson_enforcement_level.shはenforcement_levelフィールドが無い場合、enforcement本文からBLOC
-      - L549: queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L1004: gate_lesson_enforcement_level.shはenforcement本文のキーワード有無でLevelを判定しデフォルトL1にする。しかしLK
+      - L550: deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
       - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
     ────────────────────────────────────────
-  ac_version: 988c2f95
-  _ac_task_id: cmd_reflux_promotion_202607090413_kagemaru_exact
+  ac_version: 511bf4ac
+  _ac_task_id: cmd_reflux_promotion_202607090514_kagemaru_exact
   _ac_worker_id: 
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_reflux_promotion_202607090413_kagemaru.yaml
-  report_path: queue/reports/kagemaru_report_cmd_reflux_promotion_202607090413_kagemaru.yaml
+  report_filename: kagemaru_report_cmd_reflux_promotion_202607090514_kagemaru.yaml
+  report_path: queue/reports/kagemaru_report_cmd_reflux_promotion_202607090514_kagemaru.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -141,6 +141,6 @@ task:
     - reason: 'empty_lessons_useful'
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
-  deployed_at: "2026-07-09T04:13:44"
-  acknowledged_at: "2026-07-09T04:14:14"
-  done_at: "2026-07-09T04:17:22+09:00"
+  deployed_at: "2026-07-09T05:14:30"
+  acknowledged_at: "2026-07-09T05:14:53"
+  done_at: "2026-07-09T05:18:02+09:00"
