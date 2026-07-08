@@ -105,6 +105,7 @@ CMD_SAVE_SCAN_JSON_CACHE="/tmp/cmd_save_scan_$$.json"
 _SEMANTIC_SESSION_CACHE_KEY="${TMUX_PANE:-${PPID}}"
 _SEMANTIC_SESSION_CACHE_KEY="${_SEMANTIC_SESSION_CACHE_KEY//%/pane}"  # %8 → pane8
 _SEMANTIC_SESSION_CACHE_DIR="${TMPDIR:-/tmp}/cmd_save_semantic_${_SEMANTIC_SESSION_CACHE_KEY}"
+_CMD_SAVE_METADATA_CACHE_DIR="${TMPDIR:-/tmp}/cmd_save_metadata_${_SEMANTIC_SESSION_CACHE_KEY}"
 CMD_SAVE_SEMANTIC_CACHE_READY=0
 CMD_SAVE_ACCUMULATE_BLOCKS="${CMD_SAVE_ACCUMULATE_BLOCKS:-1}"
 BLOCK_DURATION_MINUTES=0
@@ -118,6 +119,47 @@ declare -a BLOCK_REASONS=()
 declare -a WARN_REASONS=()
 declare -a BLOCK_CHECKS=()
 declare -A CMD_BLOCK_CACHE=()
+
+cmd_save_hash_text() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        printf '%s' "$1" | sha256sum | cut -d' ' -f1
+    else
+        printf '%s' "$1" | cksum | cut -d' ' -f1
+    fi
+}
+
+cmd_save_metadata_cache_file() {
+    local label="${1:-metadata}"
+    local payload="${2:-${CMD_BLOCK_NC:-}}"
+    local cmd_id_part="${CMD_ID:-unknown}"
+    local hash
+    hash="$(cmd_save_hash_text "$payload")"
+    mkdir -p "$_CMD_SAVE_METADATA_CACHE_DIR" 2>/dev/null || true
+    printf '%s/%s_%s_%s.cache' "$_CMD_SAVE_METADATA_CACHE_DIR" "$cmd_id_part" "$label" "$hash"
+}
+
+cmd_save_metadata_cache_replay() {
+    local label="$1"
+    local payload="$2"
+    local cache_file
+    cache_file="$(cmd_save_metadata_cache_file "$label" "$payload")"
+    if [[ -f "$cache_file" ]]; then
+        echo "INFO: [CMD_SAVE_CACHE] ${label}: 同一cmd本文hashのpreflight結果を再利用" >&2
+        return 0
+    fi
+    return 1
+}
+
+cmd_save_metadata_cache_store() {
+    local label="$1"
+    local payload="$2"
+    local source_file="$3"
+    local cache_file
+    [[ -f "$source_file" ]] || return 0
+    cache_file="$(cmd_save_metadata_cache_file "$label" "$payload")"
+    mkdir -p "${cache_file%/*}" 2>/dev/null || true
+    cp "$source_file" "$cache_file" 2>/dev/null || true
+}
 
 extract_cmd_diagnosis() {
     local block_text="${1:-}"
@@ -532,9 +574,14 @@ show_q11_semantic_search_matches() {
     local semantic_script="${CMD_SAVE_SEMANTIC_SEARCH_SCRIPT:-$PROJECT_DIR/scripts/semantic_search.sh}"
     [[ -f "$semantic_script" ]] || return 0
 
-    local query output rc
+    local query output rc _cache_payload _cache_tmp
     query="$(extract_q11_semantic_query "$block_text" || true)"
     [[ -n "${query//[[:space:]]/}" ]] || return 0
+    _cache_payload="q11:${query}"
+    if declare -F cmd_save_metadata_cache_replay >/dev/null && cmd_save_metadata_cache_replay "q11_semantic" "$_cache_payload"; then
+        return 0
+    fi
+    _cache_tmp="$(mktemp)"
 
     if command -v timeout >/dev/null 2>&1; then
         if output="$(
@@ -557,19 +604,27 @@ show_q11_semantic_search_matches() {
     fi
 
     if [[ "$rc" -eq 0 ]]; then
-        [[ -n "${output//[[:space:]]/}" ]] || return 0
-        echo "INFO: q11 semantic_search 関連概念/既存cmd候補:" >&2
-        head -50 <<< "$output" | sed 's/^/  /' >&2
-        show_q11_causal_backlinks "${query}
-${output}"
+        [[ -n "${output//[[:space:]]/}" ]] || { rm -f "$_cache_tmp"; return 0; }
+        {
+            echo "INFO: q11 semantic_search 関連概念/既存cmd候補:"
+            head -50 <<< "$output" | sed 's/^/  /'
+            show_q11_causal_backlinks "${query}
+${output}" 2>&1
+        } > "$_cache_tmp"
+        cat "$_cache_tmp" >&2
+        declare -F cmd_save_metadata_cache_store >/dev/null && cmd_save_metadata_cache_store "q11_semantic" "$_cache_payload" "$_cache_tmp"
+        rm -f "$_cache_tmp"
         return 0
     fi
 
     if [[ "$rc" -eq 124 ]]; then
-        echo "INFO: q11 semantic_search timeout(5s)。既存grepチェックへフォールバックします" >&2
+        echo "INFO: q11 semantic_search timeout(5s)。既存grepチェックへフォールバックします" > "$_cache_tmp"
     else
-        echo "INFO: q11 semantic_search failed(rc=$rc)。既存grepチェックへフォールバックします" >&2
+        echo "INFO: q11 semantic_search failed(rc=$rc)。既存grepチェックへフォールバックします" > "$_cache_tmp"
     fi
+    cat "$_cache_tmp" >&2
+    declare -F cmd_save_metadata_cache_store >/dev/null && cmd_save_metadata_cache_store "q11_semantic" "$_cache_payload" "$_cache_tmp"
+    rm -f "$_cache_tmp"
     return 0
 }
 
@@ -3663,7 +3718,7 @@ QG_TEMPLATE
         ')
         if [[ -n "${_Q11_COMMAND_SECTION:-}" ]]; then
             if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
-                show_q11_semantic_search_matches "$CMD_BLOCK_NC"
+                show_q11_semantic_search_matches "$CMD_BLOCK_NC" &
             fi
 
             # WSL2最適化: docs/research/全件grep(50+NTFSファイル)はunitテストで10-20秒かかる。
@@ -4348,10 +4403,17 @@ show_lord_conversation_matches() {
         return 0
     }
 
+    local _cache_payload _cache_tmp
+    _cache_payload="lord:${CMD_BLOCK_NC}"
+    if declare -F cmd_save_metadata_cache_replay >/dev/null && cmd_save_metadata_cache_replay "lord_conversation" "$_cache_payload"; then
+        return 0
+    fi
+    _cache_tmp="$(mktemp)"
+
     CMD_BLOCK_FOR_LORD="$CMD_BLOCK_NC" \
     CMD_SAVE_LORD_CONVERSATION_MAX_LINES="$CMD_SAVE_LORD_CONVERSATION_MAX_LINES" \
     CMD_SAVE_LORD_CONVERSATION_MAX_BYTES="$CMD_SAVE_LORD_CONVERSATION_MAX_BYTES" \
-    python3 - "$LORD_CONVERSATION_FILE" >&2 <<'PY'
+    python3 - "$LORD_CONVERSATION_FILE" > "$_cache_tmp" <<'PY'
 import json
 import os
 import re
@@ -4468,6 +4530,9 @@ for score, ts, summary, overlap in hits:
     terms = ",".join(overlap)
     print(f"  - {ts} 類似度{score:.0f}% terms={terms}: {summary}")
 PY
+    cat "$_cache_tmp" >&2
+    declare -F cmd_save_metadata_cache_store >/dev/null && cmd_save_metadata_cache_store "lord_conversation" "$_cache_payload" "$_cache_tmp"
+    rm -f "$_cache_tmp"
 }
 
 # WSL2最適化: lord_conversation検索を非同期化（全出力>&2、判定に影響しない）
@@ -4489,10 +4554,17 @@ show_cmd_chronicle_matches() {
         return 0
     }
 
+    local _cache_payload _cache_tmp
+    _cache_payload="chronicle:${CMD_BLOCK_NC}"
+    if declare -F cmd_save_metadata_cache_replay >/dev/null && cmd_save_metadata_cache_replay "cmd_chronicle" "$_cache_payload"; then
+        return 0
+    fi
+    _cache_tmp="$(mktemp)"
+
     CMD_BLOCK_FOR_CHRONICLE="$CMD_BLOCK_NC" \
     CMD_SAVE_CHRONICLE_MAX_LINES="$CMD_SAVE_CHRONICLE_MAX_LINES" \
     CMD_SAVE_CHRONICLE_MAX_BYTES="$CMD_SAVE_CHRONICLE_MAX_BYTES" \
-    python3 - "$CMD_CHRONICLE_FILE" >&2 <<'PY'
+    python3 - "$CMD_CHRONICLE_FILE" > "$_cache_tmp" <<'PY'
 import os
 import re
 import sys
@@ -4606,6 +4678,9 @@ for score, cmd_id, title, overlap in hits:
     terms = ",".join(overlap)
     print(f"  - {cmd_id} 類似度{score:.0f}% terms={terms}: {title}")
 PY
+    cat "$_cache_tmp" >&2
+    declare -F cmd_save_metadata_cache_store >/dev/null && cmd_save_metadata_cache_store "cmd_chronicle" "$_cache_payload" "$_cache_tmp"
+    rm -f "$_cache_tmp"
 }
 
 # WSL2最適化: cmd-chronicle検索を非同期化（全出力>&2、判定に影響しない）

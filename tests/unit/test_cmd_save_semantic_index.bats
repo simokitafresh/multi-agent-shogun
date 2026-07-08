@@ -8,10 +8,16 @@ setup_file() {
     [ -f "$SRC_SAVE_SCRIPT" ] || return 1
 
     eval "$(sed -n '/^show_semantic_index_matches()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^cmd_save_hash_text()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^cmd_save_metadata_cache_file()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^cmd_save_metadata_cache_replay()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^cmd_save_metadata_cache_store()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^extract_q11_semantic_query()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^show_q11_semantic_search_matches()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^show_q11_causal_backlinks()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f show_semantic_index_matches extract_q11_semantic_query show_q11_semantic_search_matches show_q11_causal_backlinks
+    export -f show_semantic_index_matches cmd_save_hash_text cmd_save_metadata_cache_file \
+        cmd_save_metadata_cache_replay cmd_save_metadata_cache_store extract_q11_semantic_query \
+        show_q11_semantic_search_matches show_q11_causal_backlinks
 }
 
 setup() {
@@ -161,4 +167,33 @@ EOF
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"INFO: q11 semantic_search failed(rc=42)。既存grepチェックへフォールバックします"* ]]
+}
+
+@test "q11 semantic_search reuses cached result for same query" {
+    mkdir -p "$TEST_TMPDIR/scripts"
+    export _CMD_SAVE_METADATA_CACHE_DIR="$TEST_TMPDIR/cache"
+    export CMD_ID="cmd_cache_test"
+    export CALL_COUNT_FILE="$TEST_TMPDIR/calls.txt"
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'EOF'
+#!/usr/bin/env bash
+count=0
+if [ -f "$CALL_COUNT_FILE" ]; then
+    count="$(cat "$CALL_COUNT_FILE")"
+fi
+count=$((count + 1))
+printf '%s\n' "$count" > "$CALL_COUNT_FILE"
+printf 'MATCH: cached_semantic_result\n'
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+    export CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$TEST_TMPDIR/scripts/semantic_search.sh"
+
+    block='    title: "強化 — q11 cache"
+    purpose: "semantic_search.shの同一queryを再利用する"
+    command: "scripts/cmd_save.sh を修正する"'
+
+    run bash -c 'show_q11_semantic_search_matches "$1" 2>&1; show_q11_semantic_search_matches "$1" 2>&1' _ "$block"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: [CMD_SAVE_CACHE] q11_semantic: 同一cmd本文hashのpreflight結果を再利用"* ]]
+    [ "$(cat "$CALL_COUNT_FILE")" = "1" ]
 }
