@@ -997,18 +997,18 @@ for _nn in $(get_ninja_names 2>/dev/null); do
 done
 for _agg_file in \
   "${_ninja_task_globs[@]}" \
+  "$SCRIPT_DIR/logs/gate_metrics.log" \
+  "$SCRIPT_DIR/logs/cmd_design_quality.yaml" \
+  "$SCRIPT_DIR/logs/archive/cmd_design_quality.yaml" \
   "$SCRIPT_DIR/queue/inbox/karo.yaml" \
   "$SCRIPT_DIR/queue/insights.yaml" \
   "$SCRIPT_DIR/logs/gunshi_review_log.yaml" \
   "$SCRIPT_DIR/queue/pending_decisions.yaml" \
   "$SCRIPT_DIR/logs/karo_workarounds.yaml" \
-  "$SCRIPT_DIR/queue/shogun_to_karo.yaml" \
-  "$SCRIPT_DIR/logs/gate_metrics.log" \
-  "$SCRIPT_DIR/logs/cmd_design_quality.yaml" \
-  "$SCRIPT_DIR/logs/archive/cmd_design_quality.yaml"; do
+  "$SCRIPT_DIR/queue/shogun_to_karo.yaml"; do
     [[ -f "$_agg_file" ]] && _AGG_FILES+=("$_agg_file")
 done
-_AGG_SIG="$(stat -c '%n:%y:%s' "${_AGG_FILES[@]}" 2>/dev/null | tr '\n' ';' || true)"
+_AGG_SIG="$(stat -c '%n:%y:%s' "$SCRIPT_DIR/scripts/gates/gate_karo_startup.sh" "${_AGG_FILES[@]}" 2>/dev/null | tr '\n' ';' || true)"
 _QUALITY_MISSING_CUTOFF="${KARO_QUALITY_MISSING_CUTOFF:-$(date -d '24 hours ago' '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || date -v-1d '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || echo '')}"
 if [[ -f "$_AGGREGATE_CACHE" ]]; then
     IFS= read -r _agg_cache_sig < "$_AGGREGATE_CACHE" || _agg_cache_sig=""
@@ -1052,6 +1052,13 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         path = root "/queue/gates/" cmd_id "/archive.done"
         return system("test -f " path) == 0
     }
+    function gate_clear_recorded(cmd_id) {
+        if (cmd_id == "") return 0
+        if (gate_archive_done(cmd_id)) return 1
+        if (cmd_id in gate_clear) return 1
+        if (cmd_id in quality_logged) return 1
+        return 0
+    }
     function should_count_read_actionable(msg_type, msg_content, cmd_id) {
         if (msg_content == "") return 0
         if (msg_type == "cmd_new") {
@@ -1060,7 +1067,7 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         }
         if (msg_type == "skill_hint" && msg_content ~ /GATE CLEAR/) {
             cmd_id = extract_cmd_token(msg_content)
-            if (gate_archive_done(cmd_id)) return 0
+            if (gate_clear_recorded(cmd_id)) return 0
         }
         return (msg_type == "skill_hint" ||
                 msg_content ~ /(実行せよ|配備せよ|future fix|変更対象|即修正候補|対応せよ)/)

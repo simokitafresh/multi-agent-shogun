@@ -429,6 +429,28 @@ EOF
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 
+@test "read GATE CLEAR skill_hint is ignored when gate_metrics already records CLEAR" {
+    local now_time
+    now_time=$(date '+%Y-%m-%dT%H:%M:%S')
+    cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'EOF'
+messages:
+- content: 'GATE CLEAR — cmd_999 完了。/cmd-complete スキルで完了処理を実行せよ。'
+  from: 'cmd_complete_gate'
+  id: 'msg_skill'
+  read: true
+  timestamp: '2026-06-26T07:47:04'
+  type: 'skill_hint'
+EOF
+    cat > "$TEST_TMPDIR/logs/gate_metrics.log" <<EOF
+$now_time	cmd_999	CLEAR	all_gates_passed	full	unknown	unknown	none		duration_sec=unknown	ctx_pct=0	first_gate=true
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"未読: 0件"* ]]
+    [[ "$output" != *"既読actionable候補"* ]]
+    [[ "$output" != *"msg_skill"* ]]
+}
+
 @test "gunshi action_required bulletin without actioned_by warns at karo startup" {
     cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
 entries:
