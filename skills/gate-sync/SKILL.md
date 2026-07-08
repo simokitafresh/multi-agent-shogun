@@ -10,7 +10,9 @@ description: |
 quality_metric: "当該スキル同期後の軍師review精度（logs/gunshi_review_log.yamlでgate_prediction==gate_resultとなった割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-08T10:26:09+09:00 -->
+
+Script refs verified: 2026-07-08 cmd_karo_hotfix_skill_refs_202607081021. `yaml_field_set.sh` checked_at以降の変更(d1b841e/f8137de/2fb50f6)をgit showで確認。3件とも`gunshi_review_log.yaml`が`- cmd_id: xxx`形式のYAMLリストである点への対応強化: d1b841eはbegin_target 3箇所に`- cmd_id:`パターンを追加(review_logのgate_result更新自体ができないインフラバグの修正)、f8137deはis_boundary正規表現を`/- id:/`→`/- (id|cmd_id):/`へ拡張(次エントリを境界と誤認せず対象ブロック内に混入させない修正)、2fb50f6はflush_blockのblock_len=1条件にi>1を追加(1行だけのcmd_idブロックでfieldが正しい位置に入らない不具合の修正)。本SKILL.mdのStep1が実行する`bash scripts/lib/yaml_field_set.sh logs/gunshi_review_log.yaml "<cmd_id>" gate_result/gate_synced_at "<value>"`はこの`- cmd_id:`形式を直接対象にしており、3件はいずれもこの呼び出しの正しさ・安全性を修正・強化するもの。呼び出し引数の形式(`<file> <cmd_id> <field> <value>`)自体は変更なく、gate-sync手順の書き換えは不要。ただし従来はこのバグにより対象外エントリを誤って汚染する/更新が反映されないリスクがあった点は認識しておくべき（現在は解消済み）。
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 

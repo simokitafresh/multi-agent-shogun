@@ -9,7 +9,9 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-07T23:28:58+09:00 -->
+<!-- script_refs_checked_at: 2026-07-08T10:26:09+09:00 -->
+
+Script refs verified: 2026-07-08 cmd_karo_hotfix_skill_refs_202607081021. `cmd_complete_gate.sh` checked_at以降の変更(c4373d06/0c73c7d1)をgit showで確認。c4373d06はGATE CLEAR時のthroughput段階別duration計測(deploy/work/finalize/e2e秒数)をGATE_METRICS_LOGへ追加列として記録する計測強化。0c73c7d1はntfy/将軍/家老通知を`send_clear_notifications_once`へ集約し多重送信を防止した上で、lesson_merge/archive/gunshi_gate_reflux等の後処理をasync化(非同期queued)した内部高速化。いずれも`bash scripts/cmd_complete_gate.sh <cmd_id>`の呼び出し契約、GATE CLEAR/BLOCK出口の標準出力文言、codd-fix本文手順は変更なし。
 
 Script refs verified: 2026-07-07 cmd_3743. `cmd_complete_gate.sh` checked_at以降の変更(dabcb6144)をgit logで確認。model profile source guardの内部検査強化で、`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約、GATE CLEAR/BLOCK出口、codd-fix本文手順は変更なし。
 

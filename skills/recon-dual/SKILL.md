@@ -9,7 +9,9 @@ description: |
 quality_metric: "当該スキルで配備した偵察2名タスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-07T23:28:58+09:00 -->
+<!-- script_refs_checked_at: 2026-07-08T10:26:09+09:00 -->
+
+Script refs verified: 2026-07-08 cmd_karo_hotfix_skill_refs_202607081021. `deploy_task.sh` checked_at以降の変更(edb26ea1/0c73c7d1/f5f7600d)をgit showで確認。edb26ea1はrecon/scoutタイプreport templateへ`verified_existing_dependency: []`雛形とコメント例を追加(LG037除外宣言用、recon-dualの1人目scoutテンプレートにも及ぶ)。0c73c7d1はtask YAML配備batchに`deployed_at`/`acknowledged_at`/`done_at`/`completed_at`初期化を追加(throughput計測用)。f5f7600dはlesson/semantic/memory-db注入4関数のキャッシュ経路統一による内部性能改善(約140秒→約3秒)のみ。いずれも1人目 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の呼び出し契約、safe_inbox_write通知は変更なし。recon-dual手順の書き換えは不要。
 
 Script refs verified: 2026-07-07 cmd_3743. `deploy_task.sh` checked_at以降の変更(3094ffeba/132a0f3fc/cbd5c9c94/88dae4ee5)をgit logで確認。CI回帰修正、配備鮮度/レビュー文脈強化、deployed_at保持、direct YAML collision guard追加で、1人目 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の呼び出し契約、safe_inbox_write通知、report template生成は維持。衝突時はdeploy_task.shのBLOCKを安全境界として扱う既存記載と一致。
 

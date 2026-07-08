@@ -10,7 +10,9 @@ description: |
   DO NOT TRIGGER: 報告YAMLの読み取り（→Read tool直接）、verdict判定（→/verdict-check）、commit（→/ninja-commit）
 ---
 
-<!-- script_refs_checked_at: 2026-07-07T23:28:58+09:00 -->
+<!-- script_refs_checked_at: 2026-07-08T10:26:09+09:00 -->
+
+Script refs verified: 2026-07-08 cmd_karo_hotfix_skill_refs_202607081021. `report_field_set.sh` checked_at以降の変更(edb26ea1)をgit showで確認。`verified_existing_dependency`フィールド(list of {path, reason, checked_not_modified: true}、既存依存を参照のみで確認しLG037照合から除外する宣言)に型/必須値BLOCKバリデーションを新規追加。書込み例: `echo '- {path: scripts/foo.sh, reason: "既存依存として参照のみ", checked_not_modified: true}' | bash scripts/report_field_set.sh "$REPORT" verified_existing_dependency -`。既存の`bash scripts/report_field_set.sh "$REPORT" <field> <value>`契約、stdin YAML、lessons_useful保護、binary_checks yes/no、verdict自動導出前提には影響なし。Step 2の必須フィールド手順自体の書き換えは不要(このフィールドは該当時のみ任意記入)。
 
 Script refs verified: 2026-07-07 cmd_3743. `report_field_set.sh` checked_at以降の変更はgit log上なし、mtimeのみ22:12:18へ更新されていることを確認。現行契約 `bash scripts/report_field_set.sh "$REPORT" <field> <value>`、stdin YAML、lessons_useful保護、binary_checks yes/no、verdict自動導出前提は変更なし。報告YAML記入手順は現行仕様と一致。
 

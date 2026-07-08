@@ -10,9 +10,9 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-07T23:28:58+09:00 -->
+<!-- script_refs_checked_at: 2026-07-08T10:26:09+09:00 -->
 
-Script refs verified: 2026-07-07 cmd_3743. `deploy_task.sh` checked_at以降の変更(3094ffeba/132a0f3fc/cbd5c9c94/88dae4ee5)をgit logで確認。CI回帰修正、配備鮮度/レビュー文脈強化、deployed_at保持、direct YAML collision guard追加で、`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>` の呼び出し契約、通知、report template生成は維持。衝突時はdeploy_task.shのBLOCKを正とし、karo-direct側の追記手順変更なし。
+Script refs verified: 2026-07-08 cmd_karo_hotfix_skill_refs_202607081021. `deploy_task.sh` checked_at以降の変更(edb26ea1/0c73c7d1/f5f7600d)をgit showで確認。edb26ea1はrecon/scoutタイプreport templateへ`verified_existing_dependency: []`雛形とコメント例を追加(LG037除外宣言用)。0c73c7d1はtask YAML配備時のbatch flock書込みに`deployed_at`/`acknowledged_at`/`done_at`/`completed_at`初期化を追加(throughput計測用)。f5f7600dはinject_related_lessons等4関数のmemory-db参照をmemory_db_query.sh経由のext4キャッシュへ寄せ、注入処理を約140秒→約3秒へ高速化した内部性能改善のみ。いずれも`bash scripts/deploy_task.sh --yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>` の呼び出し契約、通知、stale field resetは変更なし。karo-direct手順の書き換えは不要。
 
 Script refs verified: 2026-07-04 cmd_karo_hotfix_skill_refs_after_deploy_task_202607041407. `deploy_task.sh` 直近変更(fc056d4b2+da70ad039)をgit log/showで確認。fc056d4b2はreport templateの`files_modified`雛形とbinary_checks生成の内部強化、da70ad039は`deploy_task_guard_target_path_collision`追加による活動中taskとの同一file `target_path` 衝突の配備前BLOCK(directory重複はINFO)で、いずれも安全強化。`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>` の呼び出し契約、通知、report template生成、stale field resetは変更なし。karo-direct手順は現行仕様と一致し、同一file target衝突時はdeploy_task.shのBLOCKに従い別忍者/別target選定または先行task完了待ちとする。
 
