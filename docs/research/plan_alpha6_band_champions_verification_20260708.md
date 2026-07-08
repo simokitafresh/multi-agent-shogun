@@ -90,3 +90,4 @@ CAGR, NHF(New High Frequency), MaxDD, MRU(Max Run-Up), Calmar, Avg UWP(Average U
 - ← [[cmd_3779]] pf_L3チャンピオン選出完了が本検証の入力
 - → [[robustness-verification-catalog]] 4つの試練+レジームの道具カタログ
 - → [[LS083]] 比較実験の同格性=Step 1バンド対応確認の根拠
+- → [[cmd_3780_analysis_report_20260709]] 本計画のStep 1-3実行完了後の分析レポート(成果物)
