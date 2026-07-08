@@ -370,6 +370,10 @@ def should_queue_lesson_candidate(entry: dict) -> bool:
     detail = normalize_text(entry.get("detail", ""))
     if not detail:
         return False
+    # Agent tool task-notificationは殿の発言ではない(cmd_3267と同根: gate_shogun_startup.shの
+    # 殿生発言Q生成でも同判定を採用済み)。誤帰属によるlord_conversation教訓候補FPを防ぐ。
+    if detail.lstrip().startswith("<task-notification>"):
+        return False
     return LESSON_TRIGGER_RE.search(detail) is not None
 
 

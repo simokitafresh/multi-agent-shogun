@@ -482,3 +482,13 @@ EOF
 
     [ "$(grep -c "lord_conversation教訓候補" "$INSIGHTS_FILE")" -eq 1 ]
 }
+
+@test "T-LC-021: inbound task-notification content is not queued as lesson candidate despite trigger keywords" {
+    export INSIGHTS_FILE="$TEST_TMPDIR/queue/insights.yaml"
+    mkdir -p "$TEST_TMPDIR/queue"
+
+    run append_lord_conversation "$(printf '<task-notification>\n<task-id>abc123</task-id>\n<summary>Agent task completed</summary>\n<result>## Report\n\nLesson Candidate: 教訓候補あり。改善を許可する。</result>\n</task-notification>')" "inbound" "lord" "terminal" "gunshi"
+    [ "$status" -eq 0 ]
+
+    [ ! -f "$INSIGHTS_FILE" ]
+}
