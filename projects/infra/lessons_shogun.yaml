@@ -640,12 +640,13 @@ lessons:
 # LS079: superseded by LS-A09(32) (UPSERT updated_at≠初回到着=検証手段の証明力確認パターン。2026-07-07統合)
 - id: 'LS080'
   title: 'cmd_save PASS前のキューEditは家老の自動配備とレースする'
-  origin: '[[cmd_3698_確定台帳偵察]] -> [[保存ゲートと自動配備のレース]] -> [[cmd_3700_WARN残存配備]]'
+  origin: '[[cmd_3698_確定台帳偵察]] -> [[保存ゲートと自動配備のレース]] -> [[cmd_3700_WARN残存配備]] -> [[cmd_3701_二段階化]] -> [[cmd_reflux_promotion_202607090400_tobisaru_一次情報再検証]]'
   detail: 'cmd_3698とcmd_3700の2連続で、将軍がキューにstatus:pendingでcmdを書いた直後、cmd_save完走(PASS)前に家老が検知して配備した(3698: 保存3回目で重複BLOCK=既にarchive済み、3700: 保存NG WARN2件のまま16:27にdeploy lock)。品質ゲートの判定が配備に反映されず事実上迂回される。WARN指摘(テストスコープ過広等)が忍者タスクに残ったまま走る'
   source_cmd: 'cmd_3700'
   created_at: '2026-07-06'
   automated: true
-  enforcement: "cmd_3701で実装完了(2026-07-07 completed確認): キュー書込みはstatus:draft、cmd_save.sh PASSがpendingへ自動昇格する二段階化が稼働中。cmd_3727-3730の起票4本で昇格動作を実測済み"
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK、二重防御): (1)書込み側=cmd_save.sh L6601-6612がキューをstatus:draftのまま保存し、BLOCK_COUNT=0のPASS経路でのみdraft→pendingへ自動昇格(commit ba2a83b1c)。(2)配備側=deploy_task.sh L953-983 deploy_task_cmd_status_is_draft()がshogun_to_karo.yamlの現在status(配備直前の一次情報)を読み、L8886-8889でDIRECT_MODE/CMD_FORCED以外の通常配備をstatus=draft中は即BLOCKして先に進めない(commit 6103c3d43)。一次情報再検証(2026-07-09 cmd_reflux_promotion_202607090400_tobisaru): 両commit・両ファイルの該当行を現物grep確認、かつ回帰テスト実在確認 — tests/unit/test_cmd_save.bats(draft関連3テストPASS: L607/616/623)+tests/unit/test_deploy_task_lifecycle.bats『cmd_3701: draft cmd is blocked before deployment』(L859、deploy_task_main実行によるE2E統合テスト、PASS確認済み)。enforcement_levelフィールドを本文に明示追加(旧版は本文語彙がgate_lesson_enforcement_level.shのキーワード規則に一致せずLevel1誤分類→還流在庫の昇格候補に誤って残存していた。LS078のL1002誤判定と同型構造)"
 # LS081: superseded by LS-A04(45) (q11語彙マッチ+行動変換語=cmdテンプレートルール。吸収コメント既存(2026-07-06)だが実体未削除だったため2026-07-07物理削除)
 # LS082: superseded by LS-A09(30) (UI現物確認=現物確認必須パターン。吸収コメント既存(2026-07-06)だが実体未削除だったため2026-07-07物理削除)
 # LS083: superseded by LS-A09(31) (ゲート資産混同=現物確認必須パターン。吸収コメント既存(2026-07-06)だが実体未削除だったため2026-07-07物理削除)
