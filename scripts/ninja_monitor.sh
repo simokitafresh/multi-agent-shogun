@@ -1,6 +1,6 @@
 #!/bin/bash
 # semantic-links: [[インフラ設計意図カタログ]], [[インフラ運用基盤]], [[デーモン監視と復旧]], [[忍者修行サイクル品質]], [[編成管理]]
-# doc-links: [[infrastructure.md]], [[infra-details]], [[training-cycle]], [[three-layer-memory-l0-l7-penetration-design_20260604]], [[multi-cli-hook-event-commonization-design_20260602]], [[ninja_monitor_requirements.md]], [[ninja_monitor_design.md]]
+# doc-links: [[infrastructure.md]], [[infra-details]], [[training-cycle]], [[training-cycle.md]], [[ninja_monitor_requirements.md]], [[ninja_monitor_design.md]], [[three-layer-memory-l0-l7-penetration-design_20260604]], [[multi-cli-hook-event-commonization-design_20260602]]
 # shellcheck disable=SC1091,SC2034,SC2129
 # ninja_monitor.sh — 忍者idle検知デーモン
 # Usage: bash scripts/ninja_monitor.sh

@@ -61,6 +61,7 @@ idle忍者に報告書作成修行を配備し、gate BLOCKパターンを実戦
 2. parent_cmd: `cmd_training_L{level}_{連番}` 形式
 3. gate_report_format.shが本番同様に検証
 4. BLOCKされたら忍者が自力修正（FIX hintsがgateから表示される）
+5. 自動配備の実装入口は [[ninja_monitor.sh]]。修行idle検知・クールダウン・配備判断を同スクリプト側で担う。
 
 ### 自動修行サイクル（将来的な自動化）
 

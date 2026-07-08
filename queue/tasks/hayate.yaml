@@ -49,7 +49,7 @@ task:
   project: infra
   purpose: 'L4修行: 指定ファイルの改善点3つを特定し、最高インパクト1件を実装し、[[リンク]]で知識ネットワークを育て、報告YAMLを一発PASS品質で完成させる'
   scout_exempt: true
-  status: assigned
+  status: done
   stop_for: []
   target_path: scripts/ninja_monitor.sh
   task_id: cmd_training_L4_auto_202607081543_hayate_normal
@@ -134,7 +134,7 @@ task:
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
   report_filename: hayate_report_cmd_training_L4_auto_202607081543_hayate.yaml
-  report_path: 
+  report_path: queue/reports/hayate_report_cmd_training_L4_auto_202607081543_hayate.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -157,3 +157,5 @@ task:
     - reason: 'binary_checks_fail'
       count: 2
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
+  deployed_at: "2026-07-08T15:43:46"
+  acknowledged_at: "2026-07-08T15:44:10"
