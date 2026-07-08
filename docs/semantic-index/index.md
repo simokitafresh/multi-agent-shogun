@@ -756,6 +756,8 @@ codd:
 | lesson | `L825` GSパターン相関分析でサンプル33%→全量100%移行時、ペアによって相関の安定性が大きく異なる(CAGR系ペアは安定、AvgUWPとの組合せは不安定) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T13:46:04+09:00 先送りや対応可能な内容を報告のみで終わらしていないか？極限まで自立自走しよう。覚醒せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T13:49:40+09:00 先送りや対応可能な内容を報告のみで終わらしていないか？極限 まで自立自走しよう。覚醒せよ |
+| cmd | `cmd_3762` Phase A実行1 — pf_L0バンド込み全量GSと新旧2基準チャンピオン選別 |
+| causal | `cmd_3762` origin: [[殿指示20260708_0306_pf_L0新旧比較フロー]] -> [[T1+T3道具完成]] -> [[cmd_3762_PhaseA_GS実行+2基準選別]] |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -1405,6 +1407,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T13:26:04+09:00 baaarbfqn Monitor event: "Monitor cmd_3716 script progress and errors" merged14 total rows: 733392 (base13=733392) If th |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T13:26:22+09:00 baaarbfqn Monitor event: "Monitor cmd_3716 script progress and errors" dropna(rolling_1y_low): before=733392 dropped=0 a |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T13:26:28+09:00 baaarbfqn Monitor event: "Monitor cmd_3716 script progress and errors" n_ninpou_x_dm combos used: 28 analysis universe ( |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-08T10:38:03+09:00 a3220718f9654cb39 toolu_01WVQs6XVfHxQuzkvoE8J1gY /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/e9fc9492-ed40-4682-b02 |
 | causal_chain | `[[cmd_3142]]` (L735) |
 | causal_chain | `[[cmd_3207]]` (L752) |
 | causal_chain | `[[cmd_karo_ci_fix_ga124_codex_hook_adapter_commit_20260624]]` (L842) |
@@ -2052,6 +2055,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T23:42:40+09:00 なぜtobizaruばかりに配備するんだ？忍者はクリアされて記憶は毎回なくなるよな？何か理由があるのか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T14:26:45+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T18:00:04+09:00 今クリアされてもinbox1 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-08T09:52:05+09:00 今 クリアされても 今より強くてニューゲーム できるようにしたよ |
 | causal_chain | `[[cmd_3624_kagemaru]]` (L900) |
 
 ## growth_loop — 学習ループ
@@ -2060,7 +2064,7 @@ codd:
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓, 教訓統合, 教訓整理, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる, 不明パスのみ全フォールバックが残存しWARNログで追跡可能, 役立った教訓IDを報告に記載してから完了せよ, 発見と対策を意識したなら環境に埋め込んだかを確認せよ, 発見と対策を意識咲いたようだが環境には埋め込んだか, 教訓活用率, useful_rate, lessons_useful記入率, 覚醒して構造をL0-L7で環境ごと変えよう, どこがネックで俺の指示がないと辿りつけなかったんだ, 構造的な穴を塞ごう, 効果を検証せよ, 次やるべきことは, 行動と検証を繰り返そう, 効果を検証せよ。穴がないか覚醒して監査, 次やるべきことは？止まらずに行動と検証を繰り返そう, 次の行動を覚醒して続けよう。サイクルをとめずにループで回そう, 構造的な穴を3つとも塞ごう, サイクルをとめずにループで回そう, 検証せよ, 同じ勘違いをしないように環境に埋め込め, 定期的に消費者ゼロを検証せよ, これをラルフループで回す, 放置しているインフラバグがないか覚醒して検証せよ, 三層学習ループ極限化, 自動成長極限化設計書, asis tobe 5w1h, 弱LLM対応環境整備, 性能の低いLLMにも適用, モデル階層プロファイル, loop_ledger, ループ台帳, ポータブルコア, 会話単位学習ループ, 還流在庫, 会話や作業の度に無限に成長, 教訓LS081 |
+| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓, 教訓統合, 教訓整理, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる, 不明パスのみ全フォールバックが残存しWARNログで追跡可能, 役立った教訓IDを報告に記載してから完了せよ, 発見と対策を意識したなら環境に埋め込んだかを確認せよ, 発見と対策を意識咲いたようだが環境には埋め込んだか, 教訓活用率, useful_rate, lessons_useful記入率, 覚醒して構造をL0-L7で環境ごと変えよう, どこがネックで俺の指示がないと辿りつけなかったんだ, 構造的な穴を塞ごう, 効果を検証せよ, 次やるべきことは, 行動と検証を繰り返そう, 効果を検証せよ。穴がないか覚醒して監査, 次やるべきことは？止まらずに行動と検証を繰り返そう, 次の行動を覚醒して続けよう。サイクルをとめずにループで回そう, 構造的な穴を3つとも塞ごう, サイクルをとめずにループで回そう, 検証せよ, 同じ勘違いをしないように環境に埋め込め, 定期的に消費者ゼロを検証せよ, これをラルフループで回す, 放置しているインフラバグがないか覚醒して検証せよ, 三層学習ループ極限化, 自動成長極限化設計書, asis tobe 5w1h, 弱LLM対応環境整備, 性能の低いLLMにも適用, モデル階層プロファイル, loop_ledger, ループ台帳, ポータブルコア, 会話単位学習ループ, 還流在庫, 会話や作業の度に無限に成長, 教訓LS081, 全体スループット第一原則, throughput-first, スループット第一原則, スループット税, 1つの自問への統合, 削るサイクル, 局所最適の罠, 品質と速度は一体 |
 | skills | lesson-sort(教訓整理/振り分け/将軍), dream(三層記憶整理/将軍), shogun-teire(知識棚卸し/将軍) |
 | related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle, cmd_chronicle, creator_brainwashing_defense, semantic_dictionary_design, gate_bypass_prevention, deepdive_principles, chain_principle, known_unknowns_principle, no_auto_extinguish, ultimate_state_principle, parameter_space_integrity, gunshi_review_lifecycle, semantic_goodhart_overfitting, causal_verification_l0_l7, three_layer_memory_system, operational_ontology, unread_cmd_new_deployment_guard, skill_routing, gunshi_idle_cold_finding_categories_retroactive_20260620, gunshi_idle_lesson_id_collision_20260620, gunshi_idle_script_speed_audit_20260620, codex_goal_mode, self_improving_agent_local_optima, loop_engineering, cmd_save_gate_catalog, ac_merit_review_integrity, sg_pre31_semantic_validation |
 
@@ -2070,6 +2074,7 @@ codd:
 | file | `context/growth-loop.md` |
 | file | `context/infrastructure.md` 知識サイクル現状 |
 | file | `docs/research/three-layer-learning-loop-auto-growth-asis-tobe-5w1h_20260707.md` 三層学習ループ自動成長極限化設計書(AsIs/ToBe 5W1H・弱LLM/他CLI/他PJ可搬) |
+| file | `docs/research/throughput-first-asis-tobe-5w1h_20260708.md` 全体スループット第一原則設計書v1.1(品質と速度は一体・局所最適の罠・既存問い群を1つの自問へ統合+削るサイクル常設) |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T08:57 三層ループALERT対策 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-10T15:18:24+09:00 将軍自身の学習ループは順調か？成長しているか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-10T17:00:36+09:00 学習ループは順調か？ |
@@ -2152,6 +2157,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T18:31:49+09:00 startup CI RED検知は2026-06-12速度hotfixのgh timeout 0.05s短縮で25日間silent-deathしていた。async実行関数のtimeout短縮は直列時間に寄与せず機能だけ殺す。修正=既定8s復 |
 | causal | `cmd_3752` files_modified: [[growth_loop]] |
 | lesson | `L986` テキストベースの数値判定gateへの数値記述は誤分類を招く。構造化フィールドで実値を明示せよ |
+| cmd | `cmd_3764` スループット免疫系S1 — cmd段階別E2E常時計器とthroughputチャネル (`scripts/cmd_complete_gate.sh`, `scripts/loop_ledger_update.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
+| causal | `cmd_3764` origin: [[殿原則20260708_0950_品質と速度は一体]] -> [[全体計器の不在(duration全行unknown実測)]] -> [[cmd_3764_S1段階別E2E計器]] |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
 | causal_chain | `[[cmd_147]]` (L012) |
@@ -2160,7 +2167,6 @@ codd:
 | causal_chain | `[[cmd_3644]]` (L927) |
 | causal_chain | `[[cmd_reflux_insight_202607072256_saizo]]` (L971) |
 | causal_chain | `[[cmd_3726]]` (L956) |
-| causal_chain | `[[cmd_reflux_promotion_202607080658_kotaro]]` (L986) |
 
 ## chain_principle — 鎖の原理
 
@@ -2594,7 +2600,7 @@ codd:
 |------|---|
 | id | shin_shijin_design |
 | label | 四神設計 |
-| aliases | 四神, シン四神, L0, pf_stage_shijin, WF四神, 12体, step2のクライアントIDは取得した, ノンレバ玄武, ノンレバ玄武-鉄壁, nonlev_genbu, 玄武-鉄壁はメトリクスが計算されていない, 安全資産PF, あっているか？, 本番PF数, PF数, PF何体, 何体登録, 本番に何体, portfolios count, 本番PF数の確認方法=db-checkスキルでSELECT COUNT FROM portfolios WHERE hide_portfolio=false, じゃあ試しに本番のl0 l4だけでやってみよう, なぜならGSの値が変わるからだ |
+| aliases | 四神, シン四神, L0, pf_stage_shijin, WF四神, 12体, step2のクライアントIDは取得した, ノンレバ玄武, ノンレバ玄武-鉄壁, nonlev_genbu, 玄武-鉄壁はメトリクスが計算されていない, 安全資産PF, あっているか？, 本番PF数, PF数, PF何体, 何体登録, 本番に何体, portfolios count, 本番PF数の確認方法=db-checkスキルでSELECT COUNT FROM portfolios WHERE hide_portfolio=false, じゃあ試しに本番のl0 l4だけでやってみよう, なぜならGSの値が変わるからだ, 本番にはすでにL1 L3まで存在する |
 | skills | pf-registration, db-check |
 | related_concepts | production_parity, dmsignal_operations, visibility_tier_masking, gs_speed_e7_l0_full_confirm |
 
@@ -2670,6 +2676,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T12:22:06+09:00 b1g04fdma toolu_01D9MjA9Ac5VdZGFPTewk7gC /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/9719df86-a08a-4cde-8c15-30f3b7 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T12:27:57+09:00 b8p447g55 Monitor event: "Stream GS full run progress lines" [ac1] parity report saved to /mnt/c/Python_app/DM-signal/ou |
 | causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[shin_shijin_design]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-08T11:00:45+09:00 ここで1回立ち止まって考えるべきだ。本番にはすでにL1-L3まで存在する。実際にL0から何が選ばれているのか？L0内で使われていないPFや採用頻度にばらつきがあるのでは何が選ばれたかから逆算して特徴量を検討すれば、ゼロベースで新パターンをか |
 | causal_chain | `[[cmd_125]]` (L001) |
 | causal_chain | `[[cmd_125]]` (L002) |
 | causal_chain | `[[cmd_125]]` (L003) |
@@ -3613,6 +3620,10 @@ codd:
 | causal | `cmd_3721` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_3721` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_training_auto.bats`) |
 | lesson | `L985` 計測gateは構造化フィールドを無視するな — テキストヒューリスティックは明示フィールドのフォールバックに限定せよ |
+| causal | `cmd_3758` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_3758` 配備動線の高速化 — deploy_task.sh注入層のキャッシュと一括取得 (`scripts/deploy_task.sh`) |
+| causal | `cmd_3758` origin: [[殿指摘20260708_0845_起票配備連携が遅い]] -> [[cmd_3757_配備注入25-83s実測]] -> [[cmd_3758_注入cache一括取得]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-08T10:03:14+09:00 殿原則の進化(2026-07-08 09:59): ルール追加は制限の複利=スループット税(実測: cmd_save 1.06s→8.09s、deploy_task 1s→140s、照合すべき問い50超)。問うべきは単一の自問『この行動・追 |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -3654,7 +3665,7 @@ codd:
 | causal_chain | `[[cmd_3664]]` (L941) |
 | causal_chain | `[[cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051]]` (L944) |
 | causal_chain | `[[cmd_3726]]` (L956) |
-| causal_chain | `[[cmd_reflux_promotion_202607080640_saizo]]` (L985) |
+| causal_chain | `[[cmd_3765]]` (L985) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -3954,6 +3965,7 @@ codd:
 | causal | `cmd_karo_hotfix_cmd_complete_context_marker_scope_202607060318` files_modified: [[cdp_browser_capability]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T09:09:08+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T15:14:57+09:00 続けて |
+| causal | `cmd_3764` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_3588]]` (L875) |
 
 ## defense_hierarchy — 防御階層原則
@@ -4261,6 +4273,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T09:34:54+09:00 boj1drc82 toolu_01KjhDTbw67giH4pbbVhdv6c /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/40641b21-4288-4eae-a118-76c114 |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-23T14:13:59+09:00 b2yrna70g toolu_01KJa68b6RXtwWvKKDWDFUaQ /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/40641b21-4288-4eae-a118-76c114 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-03T15:22:29+09:00 bscgbtgi2 toolu_01CrtqwdJoQdj8gKkjdzoYDL /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b4761f6c-ddd2-41aa-8e4b-ef824f |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-08T10:50:38+09:00 bdh9kpflx toolu_01PfVn1NTvxKju8Jn7dV4KgT /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ec27e854-6f03-4b0b-bfd8-3b14fc |
 
 ## kj_partshift — KJ Partshift Checker（シフト見える化MVP）
 
@@ -4363,6 +4376,7 @@ codd:
 | causal | `cmd_karo_hotfix_archive_unicode_decode_202607041355` files_modified: [[cmd_quality_logging]] |
 | cmd | `cmd_karo_hotfix_archive_unicode_decode_202607041355` (`scripts/archive_completed.sh`) |
 | causal | `cmd_karo_hotfix_cmd_complete_context_marker_scope_202607060318` files_modified: [[cmd_quality_logging]] |
+| causal | `cmd_3764` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_2888]]` (L637) |
 | causal_chain | `[[cmd_2888]]` (L638) |
 | causal_chain | `[[cmd_3531_completion]] -> [[stale_skill_path]] -> [[cmd_complete_skill_static_test]]` (L852) |
@@ -4390,6 +4404,7 @@ codd:
 | causal | `cmd_karo_hotfix_deploy_task_postcondition_order_202607010627` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530` files_modified: [[task_modifier_injection]] |
+| causal | `cmd_3758` files_modified: [[task_modifier_injection]] |
 
 ## training_cycle_quality — 忍者修行サイクル品質
 
@@ -4589,6 +4604,8 @@ codd:
 | causal | `cmd_3700` depends_on: cmd_3699 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T17:02:57+09:00 b3pwvb3h5 toolu_01UkGZj21dSjFB66qQjuHLUi /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/e9fc9492-ed40-4682-b023-e88dcb |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-06T22:07:33+09:00 どうなった？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-08T10:36:54+09:00 aa64f6210dbbe494f toolu_014F3KebsNy8Ag8aJykWL2s9 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/e9fc9492-ed40-4682-b02 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-08T10:37:56+09:00 a355c309202d063a0 toolu_017pysMPSjxg6b7kqZBzgH6L /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/e9fc9492-ed40-4682-b02 |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
@@ -4975,6 +4992,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga177_p_average_stale_fallback_fix_202607041954` files_modified: [[gate_quality_framework]] |
 | lesson | `L963` startup gateの補助DB不在と読取失敗を同じALERTにしない |
 | lesson | `L964` startup gateの補助DB不在は親ディレクトリ有無で本番不在と最小fixtureを分離する |
+| lesson | `L985` 検知器追加cmdはFP計測接続をAC化する |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
@@ -4987,6 +5005,7 @@ codd:
 | causal_chain | `[[cmd_3658]]` (L936) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_db_missing_followup_202607071808]]` (L964) |
+| causal_chain | `[[cmd_3765]]` (L985) |
 
 ## lesson_lifecycle — 教訓ライフサイクル管理
 
@@ -5337,6 +5356,7 @@ codd:
 | causal | `cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_training_backlinks_zero_gunshi_docs_202607042005` files_modified: [[causal_verification_l0_l7]] |
+| causal | `cmd_3758` files_modified: [[causal_verification_l0_l7]] |
 
 ## test_quality_framework — テスト品質統合フレームワーク
 
@@ -5518,6 +5538,7 @@ codd:
 | cmd | `cmd_reflux_insight_202607080444_kotaro` |
 | causal | `cmd_reflux_promotion_202607080545_kotaro` files_modified: [[provisional_kotaro]] |
 | cmd | `cmd_reflux_promotion_202607080545_kotaro` (`projects/infra/lessons_shogun.yaml`, `queue/tasks/kotaro.yaml`) |
+| cmd | `cmd_reflux_insight_202607081044_kotaro` |
 
 ## provisional_kagemaru — 仮: Kagemaru
 
@@ -5641,6 +5662,7 @@ codd:
 | causal | `cmd_karo_hotfix_deploy_task_postcondition_order_202607010627` files_modified: [[scope_integrity_lifecycle]] |
 | causal | `cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133` files_modified: [[scope_integrity_lifecycle]] |
 | causal | `cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530` files_modified: [[scope_integrity_lifecycle]] |
+| causal | `cmd_3758` files_modified: [[scope_integrity_lifecycle]] |
 
 ## yaml_safe_write — YAML安全書込み
 
