@@ -1,57 +1,57 @@
 task:
-  _ac_task_id: cmd_3771_full
-  _ac_worker_id: null
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3771 (deployed 2026-07-08T14:16:44). Read from the beginning.
-  ac_version: 009a4334
-  acknowledged_at: "2026-07-08T14:17:54+09:00"
-  cmd_id: cmd_3771
-  completed_at: "2026-07-08T15:05:00+09:00"
-  context_files:
-  - context/dm-signal.md
-  - context/dm-signal-core.md
-  - context/dm-signal-ops.md
-  - context/dm-signal-research.md
-  - context/dm-signal-frontend.md
-  deployed_at: "2026-07-08T14:17:01"
-  done_at: "2026-07-08T15:05:00+09:00"
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: ''
+  acceptance_criteria:
+    AC1:
+      binary_checks:
+      - 'training_proposal.fail_reasonを読み、該当するBLOCKパターンを特定したか: yes/no'
+      - '対象スキル手順のどのステップで同種FAILを防ぐかを報告したか: yes/no'
+      description: 'gate FAIL原因(#1: verdict非二値)を対象スキル手順と照合し、どの記入・検証手順で防ぐかを説明する'
+    AC2:
+      binary_checks:
+      - 'report_field_set.sh経由で必須フィールドを記入したか: yes/no'
+      - '全binary_checksのresultをyes/noで記入したか: yes/no'
+      - 'gate_report_formatを実行し結果を報告したか: yes/no'
+      description: 報告YAMLテンプレートをreport_field_set.sh経由で完成させ、gate_report_formatを実行してPASS/FAILを数値で確認する
+    AC3:
+      binary_checks:
+      - 'lesson_candidateに次回追加すべきチェックをorigin付きで記入したか: yes/no'
+      - 'verdictがgateまたはbinary_checksと矛盾していないことを確認したか: yes/no'
+      description: 同じFAILを次回防ぐlesson_candidateをorigin付きで記録し、verdictとbinary_checksの整合を確認する
+  command: training_proposal.fail_reason を再現し、report-write の手順で gate_report_format をPASSへ戻す。report_field_set.sh/verdict自動導出/binary_checksのどこで同種FAILを防ぐかを報告する。
   engineering_preferences:
-  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
-  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
-  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
-  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
-  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
-  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
-  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
-  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
-  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
-  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
-  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
-  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
   parallel_ok: []
-  parent_cmd: cmd_3771
-  project: dm-signal
-  purpose: '殿工程指示(2026-07-08 14:00: 本番のモメンタムバンド適用→現行3基準でのpf_L0〜pf_L3 GS実行→本番PFのバックアップ検証→入れ替え、の工程1)。バンドエンジンは実装済みだが本番全PFのthreshold_band未設定でバンド不発稼働(2026-07-08 03:20 API実測)。殿裁定値のバンドを本番全アクティブPFへ適用し、GSと本番の判定条件を揃える。バックアップファースト厳守で退避を内包する'
-  status: idle
+  parent_cmd: cmd_training_L1_report-write_20260708173845
+  project: infra
+  purpose: 'skill=report-write のgate FAIL(#1: verdict非二値)に対するL1修行。BLOCKパターンを実戦前に学習し一発PASS率を向上させる'
+  scout_exempt: true
+  status: done
   stop_for: []
-  target_path: /mnt/c/Python_app/DM-signal
-  task_id: cmd_3771_full
-  task_type: full
-  skill_hint: /db-check
+  target_path: skills/report-write/SKILL.md
+  task_id: cmd_training_L1_report-write_20260708173845_normal
+  task_type: skill_training
   related_lessons:
-  - id: 'L102'
-    summary: 'SKIP_MONTHS_LIST=[0,1,2,3]はクラス変数として定義されており、pipeline_configのconfig辞書からは変更できない。パラメ'
-    detail: 'SKIP_MONTHS_LIST=[0,1,2,3]はクラス変数として定義されており、pipeline_configのconfig辞書からは変更できない。パラメ'
-  - id: 'L294'
-    summary: 'cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想'
-    detail: 'cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想'
-  - id: 'L203'
-    summary: 'xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール'
-    detail: 'xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール'
+  - id: 'L573'
+    summary: 'clear_prep_check.shのCheck 7でgate_artifact_map.shがexit 1(BLOCK判定)を返す。set -euo pip'
+    detail: 'clear_prep_check.shのCheck 7でgate_artifact_map.shがexit 1(BLOCK判定)を返す。set -euo pip'
+  - id: 'L687'
+    summary: 'script内部変更がSKILL.md記述へ影響しない場合、SKILL.md mtimeだけで追従要否を判定すると偽陽性が再発する。確認済みの事実は<!-- s'
+    detail: 'script内部変更がSKILL.md記述へ影響しない場合、SKILL.md mtimeだけで追従要否を判定すると偽陽性が再発する。確認済みの事実は<!-- s'
+  - id: 'L950'
+    summary: 'target_path中心の未commit検査だけでは、報告YAMLのfiles_modifiedに載せたtarget_path外ファイルが未commitでも見'
+    detail: 'target_path中心の未commit検査だけでは、報告YAMLのfiles_modifiedに載せたtarget_path外ファイルが未commitでも見'
   - id: 'L278'
     summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
     wa_category: 'commit_missing'
@@ -84,54 +84,39 @@ task:
     - "ACごとに実テスト証跡をresult.detailsへ記録"
     - "報告前にplaceholder残存確認とgate_report_formatを実行"
   semantic_concepts:
-  - "dmsignal_operations — DM-Signal運用:  docs/research/cmd_3705_absolute_momentum_band_study.md — δバンド研究(24PF/6703判定・δ0.5%でバンド内6.70%・AC5はgatekeeper誤解の訂正注記あり)。DM-signal側: /mnt/c/Python_app/DM-signal/docs/research/cmd_3705_absolute_momentum_band_study.md context/dm-signal.md context/dm-signal-ops.md context/dm-signal-core.md context/dm-signal-frontend.md context/dm-signal-research.md context/checklist-shin-v2-registration.md context/checklist-alm-registration.md docs/research/ops-procedures.md docs/research/ops-db-rules.md docs/operations/daemon_runbook.md docs/operations/profiling_runbook.md /mnt/c/Python_app/DM-signal/scripts/check_pf_config.py — PF構成一括確認(cmd_3378)"
-  - "recalculate_pipeline — 再計算パイプライン:  /mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fast.py context/dm-signal-core.md §19.2 docs/research/fullrecalculate-architecture-2026-03-28.md /mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fof.py /mnt/c/Python_app/DM-signal/backend/app/jobs/shared.py preload_fof_signals_for_portfolios"
-  - "production_parity — 本番パリティ:  context/dm-signal-core.md §19.3 context/checklist-shin-v2-registration.md docs/research/dmsignal_parity_verification_audit.md docs/research/pf_config_backup_20260601_pre_delete.json 削除前58件config全量バックアップ docs/research/gunshi_alm_parity_drift_analysis_20260409.md — 軍師分析: ALMパリティドリフト分析(2026-04-09)"
-  - "cdp_browser_capability — CDP(ブラウザ操作能力):  context/cdp-philosophy.md scripts/cdp/cdp_cli.sh scripts/cdp/cdp_measure.sh scripts/cmd_complete_gate.sh cmd_requires_cdp_production_check(CDP適用条件: 本番反映証跡あり限定) tests/unit/test_cmd_complete_gate.bats CDP適用条件回帰テスト scripts/cdp/cdp_server.py scripts/cdp/cdp_helper.py /mnt/c/Python_app/auto-ops/cdp/cdp_helper.py context/dm-signal-ops.md §DM-Signal本番FE CDP確認手順 scripts/note_draft.sh skills/cdp-browse/SKILL.md §Reactアプリのスワイプ操作 docs/research/gunshi_idle_cdp_dmsignal_auth_20260505.md — 軍師idle: CDP DM-Signal認証分析(2026-05-05)"
-  - "shin_shijin_design — 四神設計:  context/dm-signal-core.md §PFレイヤー context/checklist-shin-v2-registration.md context/l3-robustness.md §WF四神"
-  related_causal_links:
-  - "[[cmd_3707_バンドエンジン実装]]"
-  - "[[cmd_3771_本番バンド適用]]"
-  - "[[殿工程指示20260708_1400_バンド適用から入替まで]]"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/robustness-verification-catalog.md"
-  - "context/gs-speedup-knowledge.md"
-  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
   - "context/training-cycle.md"
-  production_invariants:
-  - "PI-001: 時間解像度原理: 全ての日次シグナル比較では日次差異を保持し、月次dedupで潰さない"
-  - "PI-002: 信頼境界原理: 全ての本番判断ではSQLiteを真実とせず、PostgreSQLをSSOTとして再検証する"
-  - "PI-003: 構成スキーマ完全性原理: 全てのstandard PF config JSONはpipeline_configを必須とし、NoneでCashフォールバックさせない"
-  - "PI-004: 信頼境界原理: 全てのGS成果物は本番投入前にPydanticスキーマで再検証する"
-  - "PI-005: 全期間・全下流検証原理: 任意の新規PF登録後はportfolio_id指定なしfull recalculate一発で下流全体を再生成する"
-  execution_env: "Linux venv必須。RSS計測=/usr/bin/time -v。PowerShell/Windows python禁止(cmd_3496事故)"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L102: SKIP_MONTHS_LIST=[0,1,2,3]はクラス変数として定義されており、pipeline_configのconfig辞書からは変更できない。パラメ
-      - L294: cmd_1397で4つの前提知識欠如(CSV間pattern_id不一致/kasoku weight要件/フォルダーAPI不在/.env認証不在)が全て将軍の想
-      - L203: xAI APIのlive search(search_parameters)はchat/completionsで廃止(HTTP 410)。x_searchツール
+      - L573: clear_prep_check.shのCheck 7でgate_artifact_map.shがexit 1(BLOCK判定)を返す。set -euo pip
+      - L687: script内部変更がSKILL.md記述へ影響しない場合、SKILL.md mtimeだけで追従要否を判定すると偽陽性が再発する。確認済みの事実は<!-- s
+      - L950: target_path中心の未commit検査だけでは、報告YAMLのfiles_modifiedに載せたtarget_path外ファイルが未commitでも見
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
       - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
     ────────────────────────────────────────
-  acceptance_criteria:
-  - id: 'AC1'
-    checks:
-    - check: '適用前バックアップ — 全アクティブPFのconfigスナップショットを保存し、既存の退避機構(archive退避テーブル+復元API)で退避を実行、代表PFの復元テストで復元可能性を確認する'
-  - id: 'AC2'
-    checks:
-    - check: '全アクティブPFのpipeline_configへ殿裁定値のthreshold_bandを設定し、fullrecalculateを完走させ、設定済み件数が対象全数と一致することを本番DBの読み取りで確認する'
-  - id: 'AC3'
-    checks:
-    - check: '適用前後のholding_signal差分(変化したPFと年月の全列挙)・月次リターンへの影響・確定済みシグナルが変わる場合のledger証跡を検証し、DBとAPIと画面の3レイヤー貫通確認を含む差分レポートをdocs/research配下に作成する'
+  ac_version: bad60c63
+  _ac_task_id: cmd_training_L1_report-write_20260708173845_normal
+  _ac_worker_id: 
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_3771.yaml
-  report_path: queue/reports/kagemaru_report_cmd_3771.yaml
+  report_filename: kagemaru_report_cmd_training_L1_report-write_20260708173845.yaml
+  report_path: queue/reports/kagemaru_report_cmd_training_L1_report-write_20260708173845.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -141,35 +126,60 @@ task:
     warning: '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 193
+      count: 213
     - pattern: 'field_missing'
-      count: 55
-    - pattern: 'lu_structure_error'
-      count: 47
-    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; lessons_usefulの各要素にid/reason/usefulフィールド必須。null/空リスト/dict禁止。テンプレート構造を壊すな'
+      count: 60
+    - pattern: 'verdict_invalid'
+      count: 49
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
       count: 10
       hint: 'report YAMLのフォーマットエラー。report_field_set.sh使用必須'
     - reason: 'binary_checks_fail'
-      count: 3
+      count: 4
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
     - reason: 'purpose_validation_fit_false'
-      count: 2
+      count: 3
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
     - reason: 'empty_lessons_useful'
       count: 1
       hint: 'lessons_usefulの各教訓にuseful(true/false)+reason(理由)を記入。空のまま提出禁止'
+  deployed_at: "2026-07-08T17:43:42"
+  acknowledged_at: "2026-07-08T17:44:07"
+  done_at: "2026-07-08T17:46:12+09:00"
+training_proposal:
+  block_patterns: '#1: verdict非二値'
+  fail_reason: verdict missing
+  gate: gate_report_format
+  generated_at: '2026-07-08T17:38:45'
+  skill: report-write
+  status: pending_karo_review
+  suggested_parent_cmd: cmd_training_L1_report-write_20260708173845
+  suggested_purpose: 'skill=report-write のgate FAIL(#1: verdict非二値)に対する修行。BLOCKパターンを実戦前に学習し一発PASS率を向上させる'
+  training_level: L1
+  unchanged_streak: 2
 
-  session_state:
+  previous_failures:
     attempt: 5
-    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
     tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
     prior_attempts:
     - attempt: 3
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
     - attempt: 4
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
     - attempt: 5
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'binary_checks.AC2[2].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.AC2[2].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'report-write L1修行: verdict missingのBLOCK原因を照合し、binary_checks yes/no記入とgate_report_format自動導出でPASSへ戻した'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.AC2[2].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'report-write L1修行: verdict missingのBLOCK原因を照合し、binary_checks yes/no記入とgate_report_format自動導出でPASSへ戻した'
