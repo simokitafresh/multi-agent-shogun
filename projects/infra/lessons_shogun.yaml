@@ -626,7 +626,8 @@ lessons:
   source_ids: [LS074, LS076, LS077]
   created_at: '2026-07-03'
   automated: true
-  enforcement: 'cmd_3654 AC2(network-requests証拠AC化)+projects/dm-signal/lessons.yaml frontend教訓+計測系cmd起票時のAC設計知識(mobile条件/有効性証拠/local本番分離の3点をACに含める)'
+  enforcement_level: 4
+  enforcement: "一次情報再検証(2026-07-09, /mnt/c/Python_app/DM-signal/scripts/mobile_lighthouse_round.py実読): (1)条件代表性(LS074)=lighthouse_mobile_config.jsonをCONFIG_PATH固定参照(L24)でformFactor=mobile+cpuSlowdownMultiplier=4を強制、CLI引数に desktop切替オプション無しで回避不可(cmd_3653)。(2)有効性証拠(LS076)+環境分離のprod側(LS077前半)=validate_target_urls() L398-414がFRONTEND_ORIGIN以外のURLと portfolio_id 誤クエリキーをraise SystemExitでBLOCK(cmd_3654、フロー内BLOCK=L4相当)。(3)データ到達証拠(cmd_3670/3671由来)=extract_api_evidence() L493-526+collect_dom_evidence() L529-577がresourceSize>0/DOM描画有無を全ラウンドmanifest.jsonへ無条件自動記録(cmd_3672)。限界: (a)本チェックはmobile_lighthouse_round.py単体スコープで横断gate/hook不在(他PJ・他計測手段は未カバー、grep確認)。(b)LS077後半のlocal計測と本番計測をcmd/AC単位で分離する強制は本スクリプト範囲外(prod URL限定のみ)。cmd_save.shのcheck_ac_phase_mixing(起源cmd_2300、別教訓)がAC混在を汎用WARNするがLS-A24特有パターンでの検証は未実施。(c)evidence関数はmanifest記録のみでresourceSize=0等の証拠不足時にscript自体はraiseせず後続レビュー依存。(a)(b)(c)の恒久化・横展開要否はdecision_candidateへ整理(cmd_reflux_promotion_202607090343_kotaro)。"
 - id: 'LS078'
   title: '真実の在処不一致クラス — 書き手と読み手が別ストアを見る構造は恒常誤判定を生む'
   origin: '[[LS-A11]] -> [[gate_skill_script_refs_matches末尾採用]] -> [[先送りBLOCK注入stale化]]'
