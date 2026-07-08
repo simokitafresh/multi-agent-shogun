@@ -3605,8 +3605,12 @@ inject_semantic_concepts() {
     target_path="${target_path:-none}"
 
     # semantic_search.sh でマッチする概念+ファイル+スキルを取得
+    # cmd_3758: 同一purposeで2回呼んでいた(matches用+recommended_skills用)のを1回のraw出力共有に統合
+    local semantic_raw
+    semantic_raw=$(SEMANTIC_DISABLE_LLM=1 timeout 5 bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$purpose" 2>/dev/null)
+
     local matches
-    matches=$(SEMANTIC_DISABLE_LLM=1 timeout 5 bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$purpose" 2>/dev/null | awk '
+    matches=$(printf '%s\n' "$semantic_raw" | awk '
         /^## /{label=$0; sub(/^## /,"",label); next}
         /^- skills:/{sub(/^- skills: /,""); if($0!="なし") skills=skills " " $0; next}
         /^- file:/{gsub(/`/,"",$0); sub(/^- file: /,""); files=files " " $0; next}
@@ -3619,7 +3623,7 @@ inject_semantic_concepts() {
     fi
 
     local recommended_skills
-    recommended_skills=$(SEMANTIC_DISABLE_LLM=1 timeout 5 bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$purpose" 2>/dev/null | awk '
+    recommended_skills=$(printf '%s\n' "$semantic_raw" | awk '
         /^- skills:/ {
             sub(/^- skills: /,"")
             if ($0 == "" || $0 == "なし") next
@@ -3779,11 +3783,16 @@ inject_memory_db_context() {
     keywords=$(echo "$purpose" | tr '　/ ()（）' '\n' | grep -E '.{3,}' | head -3 | tr '\n' ' ')
     [ -n "$keywords" ] || return 0
 
-    local kw hit
+    # cmd_3758: キーワード毎に別プロセスで叩いていたのをUNION ALLで1クエリ/1プロセスに統合(per-keyword LIMIT 2は維持)
+    local kw kw_esc combined_sql=""
     for kw in $keywords; do
-        hit=$(bash "$query_script" "SELECT ts || ' | ' || substr(summary,1,100) FROM events WHERE summary LIKE '%${kw}%' AND event_type IN ('conversation','knowledge','ruling') ORDER BY ts DESC LIMIT 2" 2>/dev/null | head -4)
-        [ -n "$hit" ] && result="${result}${hit}"$'\n'
+        kw_esc="${kw//\'/\'\'}"
+        if [ -n "$combined_sql" ]; then
+            combined_sql="${combined_sql}"$'\nUNION ALL\n'
+        fi
+        combined_sql="${combined_sql}SELECT ts || ' | ' || substr(summary,1,100) FROM events WHERE summary LIKE '%${kw_esc}%' AND event_type IN ('conversation','knowledge','ruling') ORDER BY ts DESC LIMIT 2"
     done
+    result=$(bash "$query_script" "$combined_sql" 2>/dev/null)
     [ -n "$result" ] || { log "inject_memory_db_context: no hits for: $keywords"; return 0; }
 
     # task YAMLに memory_db_context フィールドとして注入
@@ -5220,6 +5229,66 @@ try:
                 break
         return boosts, matched_concepts
 
+    def _resolve_memory_db_read_path(db_path):
+        """cmd_3758: event_concepts全表スキャンをext4キャッシュ経由に迂回する。
+        WSL2の/mnt/cは9pマウントで、464MB DBへのGROUP BY/JOINランダムI/Oが
+        1クエリ40-60s級になる(scripts/memory_db_query.shのwarmキャッシュでは<1s)。
+        memory_db_query.shのprepare_memory_db_for_read(L77-125)と同じ判定を
+        Python側から再現し、同一キャッシュを共有する。取得失敗時はdb_pathをそのまま返す
+        (テスト用フィクスチャDB等、キャッシュ層が使えない環境でも既存動作を維持)。"""
+        if os.environ.get('SHOGUN_MEMORY_DB_QUERY_DISABLE_CACHE', '0') == '1':
+            return db_path
+        if os.environ.get('SHOGUN_DISABLE_MEMORY_DB_CACHE', '0') == '1':
+            return db_path
+        lib_dir = os.path.join(script_dir, 'scripts')
+        try:
+            if lib_dir not in sys.path:
+                sys.path.insert(0, lib_dir)
+            import memory_db_live_insert as _mdbi
+            cache_path = _mdbi.memory_db_cache_path(db_path)
+        except Exception:
+            return db_path
+
+        def _mtime(path):
+            try:
+                return os.path.getmtime(path)
+            except OSError:
+                return None
+
+        cache_mtime = _mtime(cache_path)
+        _build_cmd = [
+            sys.executable, '-c',
+            'import sys; sys.path.insert(0, sys.argv[1]); '
+            'import memory_db_live_insert as m; m.create_memory_db_ext4_cache(sys.argv[2])',
+            lib_dir, db_path,
+        ]
+        if cache_mtime is None or os.path.getsize(cache_path) == 0:
+            # キャッシュ未生成: 初回のみ同期構築(タイムアウト保護)。以降の呼出は常にwarmキャッシュを使う
+            try:
+                import subprocess
+                subprocess.run(
+                    _build_cmd,
+                    timeout=int(os.environ.get('SHOGUN_MEMORY_DB_CACHE_INIT_TIMEOUT', '30')),
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False,
+                )
+            except Exception:
+                return db_path
+            return cache_path if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0 else db_path
+
+        src_mtime = _mtime(db_path)
+        wal_mtime = _mtime(f'{db_path}-wal')
+        shm_mtime = _mtime(f'{db_path}-shm')
+        if any(m is not None and m > cache_mtime for m in (src_mtime, wal_mtime, shm_mtime)):
+            try:
+                import subprocess
+                subprocess.Popen(
+                    _build_cmd,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True,
+                )
+            except Exception:
+                pass
+        return cache_path
+
     def _memory_db_concept_lesson_boosts(query_text, seed_concepts=None):
         """Boost lesson IDs found in memory events connected to matched event_concepts."""
         import sqlite3
@@ -5235,8 +5304,9 @@ try:
         if not query_fold.strip():
             return {}, [], 0
 
+        db_read_path = _resolve_memory_db_read_path(db_path)
         try:
-            conn = sqlite3.connect(f'file:{db_path}?mode=ro', uri=True, timeout=2.0)
+            conn = sqlite3.connect(f'file:{db_read_path}?mode=ro', uri=True, timeout=2.0)
         except Exception:
             return {}, [], 0
 
