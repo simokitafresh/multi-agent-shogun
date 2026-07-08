@@ -1,7 +1,7 @@
 task:
   acceptance_criteria:
   - checks:
-    - check: '昇格候補 [lessons_shogun.yaml] LS080 (L1:事後検出): cmd_save PASS前のキューEditは家老の自動配備とレースする を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する'
+    - check: '昇格候補 [lessons_karo.yaml] LK-A07 (L1:事後検出): 品質の鎖 — cmd→配備→作業→報告→教訓の各環が品質を受け渡す を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する'
     id: AC1
   - checks:
     - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
@@ -22,30 +22,30 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_reflux_promotion_202607090400_tobisaru
+  parent_cmd: cmd_reflux_promotion_202607090500_tobisaru
   project: infra
-  purpose: '還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_shogun.yaml] LS080 (L1:事後検出): cmd_save PASS前のキューEditは家老の自動配備とレースする を確認し、Level4以上の実装・gate・task注入などへ昇格する'
+  purpose: '還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_karo.yaml] LK-A07 (L1:事後検出): 品質の鎖 — cmd→配備→作業→報告→教訓の各環が品質を受け渡す を確認し、Level4以上の実装・gate・task注入などへ昇格する'
   reflux_inventory_before:
     insights_pending: 0
-    promotions: 86
-    total: 86
+    promotions: 81
+    total: 81
     zero_backlinks: 0
   scout_exempt: true
   status: idle
   stop_for: []
-  target_path: projects/infra/lessons_shogun.yaml
-  task_id: cmd_reflux_promotion_202607090400_tobisaru_exact
+  target_path: projects/infra/lessons_karo.yaml
+  task_id: cmd_reflux_promotion_202607090500_tobisaru_exact
   task_type: exact
   related_lessons:
-  - id: 'L830'
-    summary: 'gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo'
-    detail: 'gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo'
-  - id: 'L1002'
-    summary: 'gate_lesson_enforcement_level.shはenforcement_levelフィールドが無い場合、enforcement本文からBLOC'
-    detail: 'gate_lesson_enforcement_level.shはenforcement_levelフィールドが無い場合、enforcement本文からBLOC'
-  - id: 'L549'
-    summary: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
-    detail: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
+  - id: 'L826'
+    summary: 'scripts/lib/yaml_atomic.pyのようなyaml.dump集中管理ファイルはGP-136のスキャン対象外にすべき。is_yaml_dump_'
+    detail: 'scripts/lib/yaml_atomic.pyのようなyaml.dump集中管理ファイルはGP-136のスキャン対象外にすべき。is_yaml_dump_'
+  - id: 'L594'
+    summary: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
+    detail: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
+  - id: 'L550'
+    summary: 'deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys'
+    detail: 'deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys'
   - id: 'L311'
     summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
     wa_category: 'report_yaml_format'
@@ -78,7 +78,18 @@ task:
     - "ACごとに実テスト証跡をresult.detailsへ記録"
     - "報告前にplaceholder残存確認とgate_report_formatを実行"
   semantic_concepts:
-  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/gates/gate_gunshi_accuracy.sh gate予測精度の公正計算(FAIL→BLOCK→修正CLEAR=正解) scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh scripts/cmd_skeleton.sh context/growth-loop.md tests/unit/test_gate_gunshi_precheck_large_artifact.bats scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比) docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md — 軍師idle: コミットチェックWAパターン(2026-04-10) docs/research/gunshi_idle_cross_contamination_20260503.md — 軍師idle: クロスプロジェクト汚染分析(2026-05-03) docs/research/gunshi_idle_cross_project_fp_20260426.md — 軍師idle: クロスプロジェクトFP分析(2026-04-26) docs/research/gunshi_idle_gate_fail_rate_anatomy_20260502.md — 軍師idle: ゲート失敗率解剖(2026-05-02) docs/research/gunshi_idle_gate_fail_trend_20260430.md — 軍師idle: ゲート失敗トレンド分析(2026-04-30) docs/research/gunshi_idle_gate_fire_traceback_20260510.md — 軍師idle: ゲート発火トレースバック(2026-05-10) docs/research/gunshi_idle_gate_fp_analysis_20260527.md — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27) docs/research/gunshi_idle_gate_prediction_false_positive_analysis_20260706.md — 軍師idle: gate_prediction偽陽性分析(2026-07-06) docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md — 軍師idle: LG003ゲートWA分析(2026-05-19) docs/research/gunshi_idle_lu_dict_pattern_20260415.md — 軍師idle: LU辞書パターン分析(2026-04-15)"
+  - "skill_routing — スキルルーティング:  skills/*/SKILL.md"
+  recommended_skills:
+  - "shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み)"
+  - "reset-layout(全ペイン配置復元)"
+  - "shogun-clear-prep(clear前)"
+  - "dream(三層記憶整理)"
+  - "shogun-teire(棚卸し)"
+  - "lesson-sort(教訓整理)"
+  - "switch-project(PJ切替)"
+  - "shogun-pd-sync(裁定反映)"
+  - "cmd-complete(GATE CLEAR後/家老)"
+  - "dashboard-update(ダッシュボード/家老)"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -98,19 +109,19 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L830: gate_shogun_startup.shはQ6自動化ターゲット本文からpath_reでファイルパスを抽出して実装証拠をgrep検証する。抽象的なMarkdo
-      - L1002: gate_lesson_enforcement_level.shはenforcement_levelフィールドが無い場合、enforcement本文からBLOC
-      - L549: queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形
+      - L826: scripts/lib/yaml_atomic.pyのようなyaml.dump集中管理ファイルはGP-136のスキャン対象外にすべき。is_yaml_dump_
+      - L594: deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1
+      - L550: deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys
       - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
-  ac_version: 0b4abbb0
-  _ac_task_id: cmd_reflux_promotion_202607090400_tobisaru_exact
+  ac_version: 83d6a01f
+  _ac_task_id: cmd_reflux_promotion_202607090500_tobisaru_exact
   _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_reflux_promotion_202607090400_tobisaru.yaml
-  report_path: queue/reports/tobisaru_report_cmd_reflux_promotion_202607090400_tobisaru.yaml
+  report_filename: tobisaru_report_cmd_reflux_promotion_202607090500_tobisaru.yaml
+  report_path: queue/reports/tobisaru_report_cmd_reflux_promotion_202607090500_tobisaru.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -142,5 +153,5 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-07-09T04:00:25"
-  acknowledged_at: "2026-07-09T04:00:36"
+  deployed_at: "2026-07-09T05:01:00"
+  acknowledged_at: "2026-07-09T05:01:21"

@@ -10412,3 +10412,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - LS080はcmd_3701で二段階化(cmd_save.sh draft→pending昇格+deploy_task.sh draft配備BLOCK)実装済み・回帰テストも既存(test_cmd_save.bats/test_deploy_task_lifecycle.bats)だったが、lessons_shogun.yaml本文にenforcement_levelフィールドが無く、本文語彙(『自動昇格』等)がgate_lesson_enforcement_level.shのキーワード規則(BLOCK/ガード/自動注入等)に一致しないため既定Level1へ誤分類され、還流在庫の昇格候補として繰り返し検出されていた。L1002(2026-07-08 LS040/saizo)と完全に同型。reflux_promotion task着手時は実装追加から始めず、まずgit blame/コード実読で実態Levelを一次情報確認し、実態が既にL4以上ならenforcement_levelフィールド追加のみで解決できる(新規実装よりコスト低)。実態もL1未満のままなら初めて実装を検討する、という判定順序をL1002同様に徹底すべき。横展開: gate_lesson_enforcement_level.shの誤分類パターンは複数回(LS040/LS078/LS080)発生しており、根本対策としてlesson_write.sh側でenforcement_level未記入時に警告するhookの追加を検討価値あり(decision_candidateへ)
+
+### L1004: reflux_promotion(L1候補検証)はenforcement文言でなくreferenced実装+testを直接確認せよ
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_promotion_202607090500_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,deploy,testing,review]
+- **target_files**: [projects/infra/lessons_karo.yaml]
+- **origin**: [[cmd_reflux_promotion_202607090500_tobisaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_lesson_enforcement_level.shはenforcement本文のキーワード有無でLevelを判定しデフォルトL1にする。しかしLK-A07のように本文が'deploy_task.sh テンプレート品質+karo-operations.md §1配備+§3レビュー'のような参照表記のみで、実体はdeploy_task.shのcheck_scout_gate()(BLOCK)やgate_report_format.sh(exit 1 BLOCK)という既存Level4実装を指している場合がある。reflux_promotion配備では、enforcement本文の言葉だけで判断せず、本文が参照するファイル・関数を実際にgrep/Readし、対応する回帰テストを実行してBLOCK/auto-gen挙動を確認してからenforcement_levelフィールドを追加すべき。本cmdはこの手順で確認しL1→L4へ修正(LS080/LS040/LS078/LS-A24と同型、同日5件目の同型誤判定)。
