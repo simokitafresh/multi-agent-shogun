@@ -253,6 +253,10 @@ for pattern, count in reason_counter.most_common():
         msg = f'報告テンプレートAC展開漏れ: {pattern} ({count}回発火) → acceptance_criteria形式をparseし、AC binary_checks自動生成を修正せよ'
     elif 'MISSING' in pattern and count >= 10:
         msg = f'テンプレート導線強化: {pattern} ({count}回発火) → report templateの警告/入力導線を強化せよ。有効値の自動補完は禁止'
+    elif pattern.startswith('binary_checks.ACx') and '.result: 空文字' in pattern:
+        # cmd_1614でGP-107判定済み: auto-fix導入は消火と確定、意図的BLOCK(quality_fail_recentとしてLoop Statusで健全判定済み)。
+        # Maturation recommendationsのQUALITY表示で十分であり、同じ結論を再度促すinsightは生成しない。
+        continue
     elif count >= 10:
         msg = f'高頻度FAIL: {pattern} ({count}回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり'
     else:

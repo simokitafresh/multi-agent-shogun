@@ -111,6 +111,21 @@ EOF
     [[ "$output" != *'gate_report_autofix.sh'* ]]
 }
 
+@test "gate_loop_health bc result empty at 10+ fires does not re-raise already-judged GP-107 insight" {
+    {
+        for i in $(seq 1 10); do
+            printf -- '- ts: "2026-04-19T14:%02d:00" file: "queue/reports/recent_fail_%02d.yaml" result: FAIL reasons: "binary_checks.AC1[0].result: 空文字。\\\"yes\\\" または \\\"no\\\" を記入せよ" fixes: ""\n' "$i" "$i"
+        done
+    } > "$TEST_TMPDIR/logs/gate_fire_log.yaml"
+
+    run bash "$TEST_GATE"
+    # QUALITY推奨(Maturation recommendations)は表示され続ける
+    [[ "$output" == *'QUALITY: "binary_checks.ACx[0].result: 空文字。'* ]]
+    # cmd_1614でGP-107判定済み(auto-fix禁止・意図的BLOCK)のため、矛盾する「高頻度FAIL...GP-107で判定後に」insightは生成しない
+    [[ "$output" != *'高頻度FAIL: binary_checks.ACx[0].result: 空文字'* ]]
+    [[ "$output" != *'INSIGHT_TEST'* ]]
+}
+
 @test "gate_loop_health AC self-verification missing points to AC parser fix" {
     {
         for i in $(seq 1 10); do
