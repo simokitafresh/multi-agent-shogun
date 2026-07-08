@@ -2649,7 +2649,7 @@ _reflux_zero_backlink_inventory() {
     printf '%s\t%s\tok\n' "${count:-0}" "$first_path"
 }
 
-# PD登録済み(status: pending)のdecision summaryからLS-XX形式の教訓IDを抽出する。
+# PD登録済み(status: pending)のdecision summaryから教訓IDを抽出する。
 # reflux promotionの重複dispatch根因(saizo cmd_reflux_promotion_202607080715実証):
 # 家老がdecision_candidateをpending_decisions.yamlへ登録しても、below4候補一覧
 # 選定ロジックがそれを一切参照しないため、PD登録済みの候補が繰り返し先頭に居座り
@@ -2674,7 +2674,10 @@ except Exception:
 if not isinstance(data, dict):
     sys.exit(0)
 
-id_re = re.compile(r'(?<![0-9A-Za-z-])LS-?[A-Za-z]?[0-9]+(?![0-9A-Za-z])')
+# Role lessons use LS/LK/LG prefixes, while PJ lessons commonly use L<number>.
+# Pending PD exclusion must cover all of them or escalated candidates get
+# repeatedly dispatched by reflux promotion.
+id_re = re.compile(r'(?<![0-9A-Za-z-])(?:LS|LK|LG|L)-?[A-Za-z]?[0-9]+(?![0-9A-Za-z])')
 ids = set()
 for d in data.get('decisions') or []:
     if not isinstance(d, dict):

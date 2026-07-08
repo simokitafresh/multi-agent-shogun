@@ -143,6 +143,41 @@ _reflux_promotion_inventory
     [[ "$output" == "2"$'\t'* ]]
 }
 
+@test "_reflux_promotion_inventory: LK prefixのPD pending登録済み候補も除外する" {
+    cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
+lessons: []
+EOF
+    cat > "$TEST_TMPDIR/projects/infra/lessons_karo.yaml" <<'EOF'
+lessons:
+- id: LK-A14
+  title: LG027横展開確認
+  enforcement: 'ドキュメント記載のみ'
+  enforcement_level: 2
+- id: LK-A99
+  title: 別の家老昇格候補
+  enforcement: 'ドキュメント記載のみ'
+  enforcement_level: 2
+EOF
+    cat > "$TEST_TMPDIR/queue/pending_decisions.yaml" <<'EOF'
+decisions:
+- id: PD-108
+  type: escalation
+  status: pending
+  summary: 'LK-A14(LG027横展開確認: コード修正後grep残存0件確認)はLevel4未実装のため設計判断待ち'
+EOF
+    run bash -lc '
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="'"$TEST_TMPDIR"'"
+_reflux_promotion_inventory
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"LK-A99"* ]]
+    [[ "$output" != *"LK-A14"* ]]
+}
+
 @test "_reflux_first_pending_insight_id: high fix_known を通常pendingより優先する" {
     cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
 insights:
