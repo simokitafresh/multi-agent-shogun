@@ -270,7 +270,8 @@ lessons:
   source_ids: [LK058, LK069, LK071, LK072]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'gate_gunshi_report_precheck.sh PRE3(ファイル実在)+SG7 context_reflux'
+  enforcement: 'Level4(フロー内BLOCK): 一次情報再検証(2026-07-09, cmd_reflux_promotion_202607090600_hayate)。scripts/cmd_save.sh の check_research_artifact_reflux_ac() が研究/分析cmd保存時にAC内の(1)成果物ファイル名プレフィックス(cmd_XXXX_*等) (2)成果物現物確認(ls/head/test -s等) (3)context還流(context/・knowledge/lesson_candidate等)を検査し、不足があればBLOCKして保存を止める。完了時側は既存の gate_gunshi_report_precheck.sh PRE3 が files_modified の実在を検査し、SG7 context_reflux がレビューで還流確認する。回帰テスト: tests/unit/test_cmd_save_research_artifact_reflux.bats で欠落BLOCK/三要素ありPASS/非研究cmd対象外を固定。'
+  enforcement_level: L4
 
   when: 研究cmd完了時のレビュー。成果物確認時
   how: 成果物のls+headで現物確認。ACに出力ファイル名プレフィックス明記。context還流チェック

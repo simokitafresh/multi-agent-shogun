@@ -5876,6 +5876,56 @@ ${FULL_CMD}"
 
 check_research_tool_explicit
 
+# --- Check 18.5: LK-A10 研究cmd成果物・context還流AC (BLOCK) ---
+# 起源: LK-A10 — 研究cmdはcommit checkが効きにくく、成果物現物確認とcontext還流が後追いになっていた。
+# 目的: 研究/分析cmd保存時に、成果物ファイル名プレフィックス・ls/head等の現物確認・context還流をACへ明示させる。
+check_research_artifact_reflux_ac() {
+    [[ -z "${CMD_BLOCK:-}" ]] && return 0
+
+    local TASK_TYPE PROJECT_ID SEARCH_TEXT AC_SECTION
+    TASK_TYPE="$(cmd_block_get_field "type")"
+    PROJECT_ID="$(cmd_block_get_field "project")"
+    SEARCH_TEXT="$(printf '%s\n%s\n%s\n%s\n' \
+        "$TASK_TYPE" \
+        "$(cmd_block_get_field "title")" \
+        "$(cmd_block_get_field "purpose")" \
+        "${CMD_BLOCK_NC:-}")"
+
+    if ! printf '%s\n' "$SEARCH_TEXT" | grep -qiE 'research|analysis|investigation|研究|分析|調査|リサーチ'; then
+        return 0
+    fi
+
+    AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+        /^[[:space:]]*acceptance_criteria:/ { found=1; next }
+        found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
+        found { print }
+    ')
+    [[ -n "$AC_SECTION" ]] || AC_SECTION="$CMD_BLOCK_NC"
+
+    local missing=()
+    if ! printf '%s\n' "$AC_SECTION" | grep -qE 'cmd_[A-Za-z0-9_-]+_[^[:space:]"'\'']*[*]|cmd_[A-Za-z0-9_-]+[*]|docs/research/cmd_[A-Za-z0-9_-]+|outputs/[^[:space:]"'\'']*cmd_[A-Za-z0-9_-]+'; then
+        missing+=("成果物ファイル名プレフィックス(cmd_XXXX_*等)")
+    fi
+    if ! printf '%s\n' "$AC_SECTION" | grep -qiE '(^|[^A-Za-z])(ls|head|wc -l|test -s|stat)([^A-Za-z]|$)|現物確認|ファイル実在|成果物.*(確認|存在)|artifact.*(verify|exists)'; then
+        missing+=("成果物現物確認(ls/head/test -s等)")
+    fi
+    if ! printf '%s\n' "$AC_SECTION" | grep -qiE 'context/|context還流|コンテキスト還流|知識還流|semantic-map|knowledge_candidate|lesson_candidate|projects/[^[:space:]]+\.yaml'; then
+        missing+=("context還流")
+    fi
+
+    if ((${#missing[@]} > 0)); then
+        local joined
+        joined="$(printf '%s, ' "${missing[@]}")"
+        joined="${joined%, }"
+        record_block_reason "LK-A10: 研究/分析cmdのACに ${joined} が不足。成果物プレフィックス、現物確認、context還流をACへ明記せよ"
+        echo "  対象: project=${PROJECT_ID:-unknown} type=${TASK_TYPE:-unknown}" >&2
+        echo '  例: "docs/research/cmd_XXXX_*.md を生成し、ls -l + head -40で現物確認し、context/<project>.mdへ結論+参照を還流したか"' >&2
+        abort_if_block_immediate || return 1
+    fi
+}
+
+check_research_artifact_reflux_ac
+
 # --- Quality Summary (品質パターン表示) ---
 show_quality_summary() {
     local QUALITY_LOG="$QUALITY_LOG_FILE"
