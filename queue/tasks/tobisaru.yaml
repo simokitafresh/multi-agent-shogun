@@ -1,7 +1,7 @@
 task:
   acceptance_criteria:
   - checks:
-    - check: '昇格候補 [lessons_karo.yaml] LK-A07 (L1:事後検出): 品質の鎖 — cmd→配備→作業→報告→教訓の各環が品質を受け渡す を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する'
+    - check: '昇格候補 [lessons_karo.yaml] LK-A11 (L1:事後検出): AC設計は忍者が物理的に達成可能か事前確認 を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する'
     id: AC1
   - checks:
     - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
@@ -22,40 +22,35 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_reflux_promotion_202607090500_tobisaru
+  parent_cmd: cmd_reflux_promotion_202607090607_tobisaru
   project: infra
-  purpose: '還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_karo.yaml] LK-A07 (L1:事後検出): 品質の鎖 — cmd→配備→作業→報告→教訓の各環が品質を受け渡す を確認し、Level4以上の実装・gate・task注入などへ昇格する'
+  purpose: '還流在庫自動消化: 恒久防御未到達の昇格候補 [lessons_karo.yaml] LK-A11 (L1:事後検出): AC設計は忍者が物理的に達成可能か事前確認 を確認し、Level4以上の実装・gate・task注入などへ昇格する'
   reflux_inventory_before:
     insights_pending: 0
-    promotions: 81
-    total: 81
+    promotions: 82
+    total: 82
     zero_backlinks: 0
   scout_exempt: true
-  status: idle
+  status: in_progress
   stop_for: []
   target_path: projects/infra/lessons_karo.yaml
-  task_id: cmd_reflux_promotion_202607090500_tobisaru_exact
+  task_id: cmd_reflux_promotion_202607090607_tobisaru_exact
   task_type: exact
   related_lessons:
-  - id: 'L826'
-    summary: 'scripts/lib/yaml_atomic.pyのようなyaml.dump集中管理ファイルはGP-136のスキャン対象外にすべき。is_yaml_dump_'
-    detail: 'scripts/lib/yaml_atomic.pyのようなyaml.dump集中管理ファイルはGP-136のスキャン対象外にすべき。is_yaml_dump_'
-  - id: 'L594'
-    summary: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
-    detail: 'deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1'
-  - id: 'L550'
-    summary: 'deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys'
-    detail: 'deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys'
+  - id: 'L445'
+    summary: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑'
+    detail: 'yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑'
+  - id: 'L561'
+    summary: 'cmd_2554 task YAMLには旧cmd_2549/2553のAC/report_path/target_pathが残っていた。任務目的と最新inbox'
+    detail: 'cmd_2554 task YAMLには旧cmd_2549/2553のAC/report_path/target_pathが残っていた。任務目的と最新inbox'
+  - id: 'L278'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
   - id: 'L311'
     summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
     wa_category: 'report_yaml_format'
     wa_count: 1
     detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
-  - id: 'L278'
-    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-    wa_category: 'commit_missing'
-    wa_count: 1
-    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
   - id: 'L342'
     summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
     wa_category: 'commit_missing'
@@ -78,18 +73,9 @@ task:
     - "ACごとに実テスト証跡をresult.detailsへ記録"
     - "報告前にplaceholder残存確認とgate_report_formatを実行"
   semantic_concepts:
-  - "skill_routing — スキルルーティング:  skills/*/SKILL.md"
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh tests/unit/test_deploy_training.bats scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md docs/research/model-comparison-5w1h-20260701.md 全モデル5W1H比較(GPT5.5/Sonnet4.6/Sonnet5/Opus4.8) docs/research/sonnet5_vs_46_ab_evaluation_20260701.md 5ラウンドA/B/C評価データ scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
   recommended_skills:
-  - "shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み)"
-  - "reset-layout(全ペイン配置復元)"
-  - "shogun-clear-prep(clear前)"
-  - "dream(三層記憶整理)"
-  - "shogun-teire(棚卸し)"
-  - "lesson-sort(教訓整理)"
-  - "switch-project(PJ切替)"
-  - "shogun-pd-sync(裁定反映)"
-  - "cmd-complete(GATE CLEAR後/家老)"
-  - "dashboard-update(ダッシュボード/家老)"
+  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -109,19 +95,18 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L826: scripts/lib/yaml_atomic.pyのようなyaml.dump集中管理ファイルはGP-136のスキャン対象外にすべき。is_yaml_dump_
-      - L594: deploy_task.sh:5764/5767/5770はinbox_write.shをif/ラッパなしで呼ぶため、inbox_write.sh:1345-1
-      - L550: deploy_task.shのreset_stale_fieldsはsingle-quote heredocで変数展開不可。python3の引数として渡しsys
-      - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
+      - L445: yaml.safe_load(f)はyaml.load(f,Loader=yaml.SafeLoader)の糖衣構文。grep → 0チェックを満たしつつ、複雑
+      - L561: cmd_2554 task YAMLには旧cmd_2549/2553のAC/report_path/target_pathが残っていた。任務目的と最新inbox
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
+      - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
-  ac_version: 83d6a01f
-  _ac_task_id: cmd_reflux_promotion_202607090500_tobisaru_exact
+  ac_version: 6154540b
+  _ac_task_id: cmd_reflux_promotion_202607090607_tobisaru_exact
   _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_reflux_promotion_202607090500_tobisaru.yaml
-  report_path: queue/reports/tobisaru_report_cmd_reflux_promotion_202607090500_tobisaru.yaml
+  report_filename: tobisaru_report_cmd_reflux_promotion_202607090607_tobisaru.yaml
+  report_path: queue/reports/tobisaru_report_cmd_reflux_promotion_202607090607_tobisaru.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -153,5 +138,5 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-07-09T05:01:00"
-  acknowledged_at: "2026-07-09T05:01:21"
+  deployed_at: "2026-07-09T06:07:48"
+  acknowledged_at: "2026-07-09T06:08:03"
