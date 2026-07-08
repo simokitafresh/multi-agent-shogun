@@ -10317,3 +10317,38 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - scripts/semantic_index_update.sh L641のalias_similarity_score()は部分文字列包含スコアを55.0*(shorter長/longer長)で計算するため、対象がlordの長い一文発言(例: 40文字超の複合クエリ)の場合、たとえ既存概念(growth_loop等)と強く同テーマでも、包含比率が分母(長い方の文字列長)で割られ低スコアになりやすい構造的弱点がある。今回INS-20260708-110048746-9779は自動スコア3.8(閾値16.0未満)で見送られたが、scratchpad上でgrowth_loopへ1行alias追加しsemantic_index.py first-layerへ直接投入したところ実際にMATCHすることを確認した(is_single_generic_word_matchはterm長>=12文字で非該当となるため、元クエリ全文レベルの長さなら除外されない)。よってscore<閾値を機械的に『noise』と即断せず、候補が既存概念の頻出テーマ(growth_loopの効果検証系aliasesなど)と重なる場合は、scratchpad上での簡易MATCH実証を1回行ってからresolve/decision_candidateを判断すべき。修正案: 長文クエリ向けにスコア計算を長さで正規化しすぎない代替スコア(例: 最長共通部分列比率でなくトークンJaccardのみ採用)を検討するか、または長文かつgrowth_loop等の高頻度概念との部分一致がある場合は閾値を緩和する特例ルールを追加する
+
+### L996: context_freshnessの日数WARNはsource ALERTと分けてbefore/after件数を記録する
+- **日付**: 2026-07-09
+- **出典**: --origin
+- **記録者**: [[GA-203_context_freshness_WARN]] -> [[ALERT呼称と実WARN分類の乖離]] -> [[before_after件数記録必須]]
+- **tags**: [infra,gate,yaml,git]
+- **origin**: [[GA-203_context_freshness_WARN]] -> [[ALERT呼称と実WARN分類の乖離]] -> [[before_after件数記録必須]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- GA-203はALERT呼称だったが一次gateではsource commitsなしの日数WARN 3件だった。context freshness hotfixでは、発火名ではなく実gate出力を正とし、before WARN/ALERT件数、source commit有無、after件数を報告YAMLに必ず残す。防御層候補: task注入時にCONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1の実出力とWARN/ALERT分類を自動添付する。
+
+### L997: 監視系の頑健統計『修正』は両方向のリスク(誤検知抑制=見逃し)を検証してから採用せよ
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_insight_202607090030_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,testing,bash,monitor]
+- **target_files**: [queue/insights.yaml,queue/tasks/kotaro.yaml]
+- **origin**: [[cmd_reflux_insight_202607090030_kotaro]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- insightが提案する『trimmed median』修正案をscripts/loop_ledger_update.shへ実装し、実データ+手計算で検証したところ、ちょうど50/50contamination(2クラスタが同数)の縮退ケースでは絶対レンジの狭い方を機械的に選ぶため、外れ値クラスタを『正常』として誤選択し得ることが判明した(work_sec例: 正常クラスタrange=414 vs 外れ値クラスタrange=409で後者を選択)。これは誤検知(false positive)を減らす目的の統計手法が、逆に本来検知すべき悪化を隠す(false negative)リスクを新規導入し得ることを意味する。監視・アラート系のコードでは『False Positiveを減らす』改善案でも『False Negativeを増やしていないか』を境界条件(縮退ケース)で必ず検証してから採用すべき。origin: [[INS-20260708-232310081-0d3e]] -> [[trimmed_median50/50縮退検証]] -> [[監視系はFP改善よりFN増加リスクを優先検証]]
+
+### L998: cmd_complete_gate.shのGATE CLEAR/BLOCK分岐でcmd_quality_log.sh呼出しの同期性が非対称だと品質記録が静かに消失する
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_insight_202607090049_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality,gate,bash,yaml]
+- **target_files**: [scripts/cmd_complete_gate.sh,logs/cmd_design_quality.yaml]
+- **origin**: [[cmd_reflux_insight_202607090049_tobisaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- GATE BLOCK分岐はcmd_quality_log.shを同期if文で呼びOK/WARNを判定するが、GATE CLEAR分岐は同じ呼出しを(...)&で非同期化し結果を確認していなかった。gate_metrics.logへのCLEAR記録は直前に同期書込みされるため、非同期ジョブだけが後続処理中(多数の並行&ジョブ+セッション境界)で失われても外部からは検知できず、gate_karo_startup.shのcross-check(gate_metrics.log vs cmd_design_quality.yaml)でのみ発覚する。監査対象のログ書込みはベストエフォート非同期ジョブと同列に扱わず、常に同期実行してOK/WARN判定すること。cmd_3773-3778の6件で実際に発生(2026-07-08 17:18-21:17の連続CLEARで顕在化)。origin: [[家老escalation_20260708_2358]] -> [[cmd_quality_log非同期呼出しのCLEAR/BLOCK非対称]] -> [[cmd_complete_gate.sh同期化修正+cmd_3773-3778遡及補完]]
