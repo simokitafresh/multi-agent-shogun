@@ -1868,6 +1868,61 @@ TRAINING_TEMPLATE_PY
         return "$rc"
     fi
 
+    TASK_FILE_ENV="$task_file" python3 - <<'TRAINING_TEMPLATE_VALIDATE_PY'
+import os
+import sys
+import yaml
+
+def flatten_text(value):
+    if isinstance(value, dict):
+        return "\n".join(str(k) + "\n" + flatten_text(v) for k, v in value.items())
+    if isinstance(value, list):
+        return "\n".join(flatten_text(v) for v in value)
+    return "" if value is None else str(value)
+
+task_file = os.environ["TASK_FILE_ENV"]
+with open(task_file, encoding="utf-8") as f:
+    data = yaml.safe_load(f) or {}
+task = data.get("task") if isinstance(data, dict) else {}
+if not isinstance(task, dict):
+    print("training_template_validation: task mapping missing", file=sys.stderr)
+    sys.exit(1)
+
+acs = task.get("acceptance_criteria")
+required = {
+    "AC1": "改善点を3つ特定",
+    "AC2": "[[ファイル名]]リンク",
+    "AC3": "lesson_candidate found=true",
+    "AC4": "lessons_useful",
+    "AC5": "causal_backlink_counts.sh --zero --limit 20",
+}
+
+found = {}
+if isinstance(acs, dict):
+    for key, value in acs.items():
+        found[str(key)] = value
+elif isinstance(acs, list):
+    for item in acs:
+        if isinstance(item, dict) and item.get("id"):
+            found[str(item.get("id"))] = item
+
+missing = []
+for ac_id, needle in required.items():
+    block = found.get(ac_id)
+    text = flatten_text(block)
+    if needle not in text:
+        missing.append(f"{ac_id}:{needle}")
+
+if missing:
+    print("training_template_validation: missing " + ", ".join(missing), file=sys.stderr)
+    sys.exit(1)
+TRAINING_TEMPLATE_VALIDATE_PY
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+        log "FATAL: training L4 template validation failed for ${cmd_id}"
+        return "$rc"
+    fi
+
     log "direct_mode: training L4 template injected for ${cmd_id}"
 }
 
@@ -8970,7 +9025,10 @@ except Exception:
                 "status=assigned" \
                 "task_id=${CMD_ID}_${direct_task_id_suffix}" 2>/dev/null || true
             inject_training_target_path_from_alias_quality "$task_yaml" "$CMD_ID" || true
-            inject_direct_training_template "$task_yaml" "$CMD_ID" || true
+            inject_direct_training_template "$task_yaml" "$CMD_ID" || {
+                deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                return 1
+            }
             deploy_task_resolved_mutated=1
             log "direct_mode: parent_cmd=${CMD_ID}, task_id=${CMD_ID}_${direct_task_id_suffix}, status=assigned set"
             elif [ -n "$CMD_FORCED" ]; then
@@ -8993,6 +9051,7 @@ except Exception:
                 || { log "FATAL: yaml_field_set failed for _ac_worker_id (cmd_forced)"; return 1; }
             _overwrite_ac_from_cmd "$task_yaml" || true
             inject_training_target_path_from_alias_quality "$task_yaml" "$CMD_FORCED" || true
+            inject_direct_training_template "$task_yaml" "$CMD_FORCED" || return 1
             deploy_task_resolved_mutated=1
             log "cmd_forced: ${CMD_FORCED} → parent_cmd/task_id set directly (shogun_to_karo.yaml not required)"
             elif resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then

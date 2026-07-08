@@ -1122,6 +1122,48 @@ PY
     _fixture_project_end
 }
 
+@test "direct training deployment requires L4 growth-loop template" {
+    _fixture_project_start
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  task_type: normal
+  parent_cmd: old_cmd
+  task_id: old_cmd_normal
+  project: infra
+  acceptance_criteria:
+    - id: AC0
+      description: "stale AC must be replaced"
+YAML
+
+    run deploy_task_fast --direct sasuke cmd_training_L4_auto_guard_sasuke
+    [ "$status" -eq 0 ]
+
+    python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+task = data["task"]
+acs = task["acceptance_criteria"]
+assert task["parent_cmd"] == "cmd_training_L4_auto_guard_sasuke"
+assert task["task_id"] == "cmd_training_L4_auto_guard_sasuke_normal"
+assert isinstance(acs, dict), type(acs)
+assert set(acs) >= {"AC1", "AC2", "AC3", "AC4", "AC5"}
+dump = yaml.safe_dump(acs, allow_unicode=True, sort_keys=False)
+for needle in [
+    "改善点を3つ特定",
+    "[[ファイル名]]リンク",
+    "lesson_candidate found=true",
+    "lessons_useful",
+    "causal_backlink_counts.sh --zero --limit 20",
+]:
+    assert needle in dump, needle
+PY
+
+    _fixture_project_end
+}
+
 @test "scout_gate AWK returns empty when scout_exempt is false" {
     local stk_yaml
     stk_yaml=$(cat <<'YAML'

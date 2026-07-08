@@ -196,7 +196,7 @@ deploy_task_fast() {
                 yaml_field_set "$task_file" "task" "status" "assigned"
                 yaml_field_set "$task_file" "task" "task_id" "${CMD_ID}_${direct_task_id_suffix}"
                 inject_training_target_path_from_alias_quality "$task_file" "$CMD_ID" || true
-                inject_direct_training_template "$task_file" "$CMD_ID" || true
+                inject_direct_training_template "$task_file" "$CMD_ID" || return 1
             elif ! resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
                 echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
                 return 1
