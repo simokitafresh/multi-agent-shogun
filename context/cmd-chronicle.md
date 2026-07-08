@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-08 -->
+<!-- last_updated: 2026-07-09 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,26 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3217 | cmd_3216の損失パターン(負け条件)に加え、全PFの好調月(勝ち条件)も同手法で分析。全利用可能データ(monthly_returns/holding_signal/signal_change_log/deterioration_snapshots/prices/VIX/DTB3)を投入し、勝ち条件vs負け条件を対比。殿指示: サイズ調整のための危険度判定材料を全データで構築 | dm-signal | 06-08 | 全54体(L0四神12+L1忍法21+L2奥義21)の月次リ |
-| cmd_3219 | safe_send_clear後にL891で@context_pctを0%リセットするが、CLIステータスラインに前回のCTX表示が残留し、次のget_context_pctサイクルでcapture-paneから旧値が検出→@context_pctに書き戻される。殿指摘(2026-06-08 01:45): /clear後にCTXが0%にならないのはおかしい | infra | 06-08 | safe_send_clear内の/clear後にtmux |
-| cmd_3220 | 殿指示: サイズ調整のみ、100% or 80%の二択。7戦略(VIX連動/実現ボラ/ATR/分類器/レジーム検出/カレンダー効果/連続上昇カウンター)を全78PF×全期間でバックテストし横並び比較。cmd_3218の教訓(HIGH月+3.3%で機会損失)を踏まえ控えめな20%縮小で検証 | dm-signal | 06-08 | 7戦略サイズ調整(100%/80%)バックテスト完了。全78 |
-| cmd_3221 | Gate 20がcmd_training_speed_*(修行cmd)を運用cmdと同列にFAIL判定しreport-write FAIL率12%(6/50)で3セッション連続BLOCK。修行cmdの報告は運用cmdより簡易でフィールド欠落が起きやすいが修行の性質であり運用品質の問題ではない。GP-263(adversarial免除)と同構造 | infra | 06-08 | gate_shogun_startup.sh _exclud |
-| cmd_3222 | 殿指摘: cmd_3220のVIX>25は調査が甘い。VIXだけでも時点・動的閾値・変化率・パーセンタイル・組合せがある。投資知識に基づくシグナル(SPY200日MA/実現ボラパーセンタイル/モメンタム急落)も加え、約20バリアントを全78PF×全期間でバックテストし横並び比較。cmd_3220のD10-VIX>25を超える戦略を探索 | dm-signal | 06-08 | VIX深掘り+投資知識シグナル13バリアント×78PF×全期 |
-| cmd_3223 | cmd_3222でV8(VIX>25 AND VIX>VIX_MA20)が最優秀と判明したが全額キャッシュ方式で実装されていた。殿指示の100%/80%二択方式で再計算し、cmd_3220と直接比較可能にする。加えてV8ベースで閾値(VIX>20/25/30)×MA期間(10/20/30/50)の12バリアントを80%方式で網羅的にバックテストし最適パラメータを特定 | dm-signal | 06-08 | V8閾値チューニング完了。12バリアント(VIX閾値20/2 |
-| cmd_3224 | cmd_3223でV8_T25_MA50が80%方式の最適パラメータと判明。本番採用前に過適合リスクを検証する。(1)OOS検証: 2010-2017訓練期/2018-2026テスト期で効果が持続するか (2)サブ期間分析: COVID(2020)/金利上昇(2022)/平常期での戦略効果を個別検証 (3)ローリング3年窓で年ごとの安定性を確認 | dm-signal | 06-08 | V8_T25_MA50過適合検証完了。OOS保持率Sorti |
-| cmd_3225 | 殿指摘: 四神(L0)と忍法(L1)でパフォーマンスが全く違うのにcmd_3223/3224は全PF平均。レイヤー別のV8効果を確認する。加えて殿提案のマネージドボラティリティ(PFごとの実現ボラでサイズを動的調整)をBT。(1)V8_T25_MA50をL0四神/L1忍法/L2スタンダード/L3奥義で分けて分析 (2)マネージドボラ方式=各PFの実現ボラ20日をターゲットボラで割り、サイズを80-100%にクリップして適用 | dm-signal | 06-08 | V8_T25_MA50をL0四神/L1忍法/L2スタンダード |
-| cmd_3226 | note.comエディタが2026-06時点で初回ロード時にスピナーで停止しProseMirror未描画。note_draft.shがno_prosemirrorで失敗する。リロード+待機ロジック追加とセレクタ更新で対応。加えてreference_cdp_note_com.mdに新エディタ構造を反映 | infra | 06-08 | note_draft.shにwait_for_prosemi |
-| cmd_3227 | 殿指摘: 各論パッチではなく全スキル・今後作るスキルにも適用される自動成長の仕組みが必要。現状の穴: (1)実行結果記録が各スキル個別実装→未接続スキルは失敗が見えない (2)失敗→修行課題生成が手動 (3)修行完了→SKILL.md更新が手動。全ステップ(実行→検知→修行→再現性確認→スキル更新)を共通基盤で自動化する設計を作成 | infra | 06-08 | 全スキル自動成長ループ共通基盤の設計を作成。現状穴3件(実行 |
-| cmd_3228 | cmd_3227設計に基づきPhase1を実装。PostToolUse hookでSkill tool実行後にskill_execution_log.shを自動呼出し、全スキルの実行結果(PASS/FAIL+失敗理由)を記録する。新スキル追加時の個別接続作業がゼロになる | infra | 06-08 | PostToolUse hookにSkill tool判定分 |
-| cmd_3229 | cmd_3227設計§3穴2に基づきPhase2を実装。skill_auto_improve.shのescalation判定(unchanged_streak>=閾値)後に修行課題を自動生成し家老inboxに通知する。完全自動配備ではなく家老確認を挟む安全弁付き | infra | 06-08 | skill_auto_improve.shのescalati |
-| cmd_3230 | cmd_3227設計§3穴3に基づきPhase3を実装。修行完了時(gate_fire_log解析でPASS判定)にskill_auto_improve.shを呼出しSKILL.mdの防止ステップを自動更新。修行の成果がスキル自体に自動還流する最終ピース | infra | 06-08 | Phase3実装完了: training_completio |
-| cmd_3231 | 教訓健全度WARNが3セッション連続BLOCK。根因=研究cmdにtarget_pathなし→deploy_task.shのinject_related_lessonsがMIN_KEYWORD_SCORE閾値を下回り全量fallback注入→大半NOT_USEFUL(useful_rate=35%)。target_pathなし時のスコアリング精度を上げ、関連性の低い教訓の注入を抑止する | infra | 06-08 | deploy_task.sh inject_related_ |
-| cmd_3234 | 起動チェックがbacklinks=0の5ファイルを検出。孤立ドキュメントは因果ネットワークから切断され知識として到達不能。context/skills/docsから因果リンクを接続し知識基盤の健全性を回復する | infra | 06-08 | backlinks=0の5ファイル(ashigaru-det |
-| cmd_3240 | obsidian昇格率0.07%(32/47037)。candidate12件蓄積。昇格が将軍の/dream(手動)依存=意志依存=停止。ninja_monitorの定期サイクルでcandidate蓄積を検知し自動昇格するトリガーを追加する | infra | 06-08 | ninja_monitorにcheck_obsidian_c |
-| cmd_3239 | raw_content充填率2.4%(1121/47037)。97.6%のイベントが原文未保存で要約のみ。三層記憶の全文記録原則(LS-A23)が機能していない。書込みスクリプト群(lord_conversation_write/bulletin_write/insight_write等)にraw_content保存を追加し充填率を向上させる | infra | 06-08 | lord_conversation.sh/memory_db |
-| cmd_3242 | 忍者にはninja_weak_points/gate_fail_top3/gate_blocks(L6)が自動注入されるが、将軍のcmd起票には同等の仕組みがない。本セッション10回BLOCK+5回lesson_ack=同じパターン繰返し=L6不在の証拠。cmd_save.sh実行前のpreflight表示に将軍個人のBLOCK TOP3と過去の回避策を自動表示し、忍者と同等のL6を将軍に適用する | infra | 06-08 | — |
-| cmd_3241 | 将軍の三層記憶引用率0%。殿応答時のみ[MEM:]引用で自発的引用なし。殿指摘(2026-06-05)「使わないから間違う」が改善されていない。cmd起票時のpreflight(pre-write-edit-combined.sh)に記憶DB検索結果を自動表示し、将軍が三層記憶を参照せざるを得ない環境を作る | infra | 06-08 | pre-write-edit-combined.shのcmd |
-| cmd_3244 | startup gate「スキル推薦精度」が3セッション連続BLOCK。precision 0%(0/18)、偽陽性100%。軍師分析で根因3つ特定(設計書: docs/research/gunshi_idle_skill_precision_20260608.md)。根因1(推薦ログ停止)と根因3(役割フィルタ)は家老D0で対処。本cmdは根因2(推薦agent≠実行agent照合不一致)を修正する。推薦ログにninja_nameフィールドを追加し、precision計測の照合キーを推薦agent→割当ninjaに変更する | infra | 06-08 | deploy_task.shのinject_semantic |
 | cmd_3245 | cmd_3244起票で7回BLOCK。覚醒なぜなぜ7回で根因特定: cmd_save.shがquality_gateのフィールド値はチェックするがフィールド名の正しさはチェックしない。将軍がq5_assumptionsと書いてもq5_verified_sourceと照合されず素通り→値チェックフェーズで初めてBLOCK→修正ループ。フィールド名バリデーション(テンプレートの必須名リストとの照合)を追加し、不正フィールド名を即BLOCKする | infra | 06-09 | cmd_save.sh Check3にquality_gat |
 | cmd_3246 | cmd_3244起票で7回BLOCK→覚醒なぜなぜで根因言語化→しかし教訓記録+環境cmd起票は殿の介入で初めて実行(殿依存=洗脳#3)。根因: cmd_publish.sh PASS後にnazenaze_root_causeがあっても教訓記録+環境変更cmdの起票を強制するgateがない(半パイプライン)。加えて殿裁定(2026-06-08): 洗脳監査の正しいサイクル(行動→行動結果検証)は家老/軍師にも横展開が必須 | infra | 06-09 | cmd_publish.shにnazenaze_root_c |
 | cmd_3247 | 覚醒洗脳監査→家老なぜなぜで根因特定: 軍師レビューWARN率35%(7/20)の全件がcommand_files_modified_mismatch由来。SG-PRE25がreadonly_ref未考慮のINFOを出す→軍師がLGTM→gateはreadonly_ref除外後にBLOCK→判定乖離。SG-PRE25にreadonly_ref除外ロジックを追加し、除外後の真のmismatchをWARNに昇格させることでgate判定と同期する | infra | 06-09 | SG-PRE25にcmd_complete_gate.shと |
@@ -432,3 +412,4 @@
 | cmd_3776 | 殿工程指示(2026-07-08 18:30、道具磨きを次層GSより先に行う)の第一弾。cmd_3775偵察で実測特定した加速D系の支配的ボトルネック(月次blob出力のチャンク設定未伝播による強制ガベージ回収の過多)を、加速R系で実装済みのチャンク設定を共有化して全run_077系へ伝播することで解消する | dm-signal | 07-08 | run_077系8本へ共有GS_MONTHLY_BLOB_C |
 | cmd_3777 | 殿裁定(2026-07-08 20:22、道具磨きを第三弾まで完遂してから次層GSへ進む)の第二弾。cmd_3775偵察で実測特定した共有出力層の無条件ガベージ回収(チャンクごと強制実行)を、OOM対策の設計意図(cb1b487d)を保持したままメモリ圧条件または間隔実行に条件化し、全run_077系の出力時間を恒久短縮する | dm-signal | 07-08 | 共有gs_db_utilsの月次chunk後GCを条件化し、 |
 | cmd_3778 | 殿裁定(2026-07-08 20:22、道具磨きを第三弾まで完遂してから次層GSへ進む)の第三弾。cmd_3775偵察で実測特定した追い風道具の支配項(サブセットごとのpandasコンテキスト再構築)を、kasoku系で実証済みのグローバル事前計算配列のスライス方式へ置換し、per-pattern効率の構造差を解消する | dm-signal | 07-08 | run_077_oikaze.pyを全体前処理+subset |
+| cmd_3782 | 殿裁可(2026-07-08 23:40「許可する」、棚卸し表=docs/research/s4-question-pruning-inventory_20260708.md)。throughput設計書v1.2 §0.5の1問置換を実装する。洗脳8パターンの毎プロンプト全文注入は形骸化80%実測(brainwash_check 140件中数値なし)かつ最大のスループット税であり、情報を失わずに縮約する: (1)毎プロンプトは単一自問1行 (2)8パターン全文はstartup Q6に集約済み (3)検出時のみ全文表示。表示層のみの変更で検証ロジックは不変、効果指標が下がれば1 commit revert | infra | 07-09 | 将軍向けbrainwash注入を通常時1行自問へ縮約し、Q6 |

@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-08 cmd_karo_hotfix_completion_notify_gap_202607082310 -->
+<!-- last_updated: 2026-07-09 cmd_3781 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -38,6 +38,8 @@
 可搬想起M6: `scripts/portable_loop_bootstrap.sh`は`recall_inject.sh`を生成し、hookなしCLIでもイベント文脈からsemantic/memory一致を注入テキスト化できる（cmd_3741, bats 4/4 PASS）。
 報告WA構造根絶(PD-056): report_yaml_format系WAの防御突破点3系統を偵察特定(cmd_3749)し、記入層=`deploy_task.sh`/`report_field_set.sh`へ既存依存宣言の記入導線+型検証(cmd_3750)、監視層=`ninja_monitor.sh`へactive+idle滞留のdone前報告評価+報告修正/未commit再通知(cmd_3751, ACTIVE-IDLE-REPORT-EVAL)を実装。家老手動補正へ流れる経路を構造で回収（2026-07-08全CLEAR）。
 完了通知gap検出: `ninja_monitor.sh` に `completion_notify_gap` を追加。軍師LGTM後、grace300sを超えても将軍向けbulletin/shogun inbox/cmd_complete_gate CLEARが無い場合に家老へ通知する。cmd_3780でLGTM 22:53:35→手動bulletin 23:05:58まで12分自動通知ゼロだった穴を封じ、実データで景丸hotfix未達1件を検出・補完（cmd_karo_hotfix_completion_notify_gap_202607082310, tests 38/38 PASS, commit 2734ed518）。
+将軍prompt洗脳注入縮約: `scripts/hooks/prompt_state_inject.sh` は通常時の将軍向けbrainwash注入を単一自問52文字へ縮約し、`stop_check_inbox.sh`由来のQ6検出flagがある時だけ8パターン全文を再注入する。検出時は`gate_fire_log.yaml`と`detector_fp_rate.yaml`へ台帳記録する（cmd_3782, bats 78/78 PASS, commit 851bd946）。
+軍師precheck視点列独立性検証: `gate_gunshi_report_precheck.sh` のSG-PRE32は、報告YAMLのMarkdown成果物を`detect_view_column_degeneracy.py`で走査し、Expanding/WF等の数値列が全データ行で完全一致した場合にWARN(LG049)を出す。cmd_3780のExpanding/WF縮退見逃しを機械検出へ還流（cmd_3781, bats 29/29 PASS, commit 511f226f）。
 三層連鎖自己修復: `scripts/memory_db_knowledge_write.sh`はLayer2全失敗時に最終エラー要点+payload_b64をERROR行へ記録し、次回write時に未解決ERRORを自動repairしてOK行を追記する（cmd_3742, bats 15/15 PASS）。
 
 ### 三層記憶×学習ループ接続（cmd_3116〜cmd_3128, 2026-06-02）

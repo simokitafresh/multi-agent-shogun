@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-08 cmd_3780 -->
+<!-- last_updated: 2026-07-08 cmd_karo_hotfix_cmd3780_expanding_wf_rework_202607082310 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -657,7 +657,7 @@ GA-181分類メモ(source commits since last_updated=2026-07-03の3件): 上記4
 
 ## §51. 新L0-L3チャンピオン群 α6堅牢性検証 (cmd_3780, 2026-07-08)
 
-工程2で選出した新チャンピオン75体(L0=12, L1=21, L2=21, L3=21)について、4視点(IS/OOS/Expanding/WF)+レジーム3種(Bull/Neutral/Bear)×α6(CAGR/NHF/MaxDD/MRU/Calmar/AvgUWP)を全量算出。出力は75×7×6=3,150 metric rows、coverage 525 rows、nonfinite 0。代表4層smokeでCAGR/NHF/MaxDD差分は全て1e-9以内。工程4入替の殿裁定材料。
+工程2で選出した新チャンピオン75体(L0=12, L1=21, L2=21, L3=21)について、4視点(IS/OOS/Expanding/WF)+レジーム3種(Bull/Neutral/Bear)×α6(CAGR/NHF/MaxDD/MRU/Calmar/AvgUWP)を全量算出。出力は75×7×6=3,150 metric rows、coverage 525 rows、nonfinite 0。初版はExpanding/WFが固定同一月集合スライスで450/450完全一致し4視点が実質3視点に縮退していたため、`cmd_karo_hotfix_cmd3780_expanding_wf_rework_202607082310`で動的trial評価へ修正し、完全一致35/450へ縮小。工程4入替の殿裁定材料は修正後commit `edb296cfebe45730657e6fa30fb36212981a796f` を正とする。
 
 計画書正本は本陣 `docs/research/plan_alpha6_band_champions_verification_20260708.md`。DM-Signal側に同名ファイルはない。
 → 詳細: `docs/research/cmd_3780_alpha6_band_champions_robustness.md`, `outputs/analysis/cmd_3780_alpha6_band_champions_input_contract.json`, `outputs/analysis/cmd_3780_alpha6_band_champions_robustness.json`, `outputs/analysis/cmd_3780_alpha6_band_champions_coverage.csv`
