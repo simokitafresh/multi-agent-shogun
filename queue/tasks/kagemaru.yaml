@@ -64,7 +64,7 @@ task:
     total: 89
     zero_backlinks: 1
   scout_exempt: true
-  status: done
+  status: idle
   stop_for: []
   target_path: docs/research/gunshi_idle_skill_precision_20260608.md
   task_id: cmd_reflux_backlink_202607090302_kagemaru_exact
