@@ -758,6 +758,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T13:49:40+09:00 先送りや対応可能な内容を報告のみで終わらしていないか？極限 まで自立自走しよう。覚醒せよ |
 | cmd | `cmd_3762` Phase A実行1 — pf_L0バンド込み全量GSと新旧2基準チャンピオン選別 |
 | causal | `cmd_3762` origin: [[殿指示20260708_0306_pf_L0新旧比較フロー]] -> [[T1+T3道具完成]] -> [[cmd_3762_PhaseA_GS実行+2基準選別]] |
+| cmd | `cmd_3767` 本番pf_L0採用の全数調査 — 上位レイヤー実選択から逆算する特徴量材料 |
+| causal | `cmd_3767` origin: [[殿指示20260708_1100_pf_L0採用逆算]] -> [[cmd_3763_C1-C4比較+裁定材料]] -> [[cmd_3767_本番pf_L0採用全数調査]] |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -2830,6 +2832,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga146` files_modified: [[silent_fallback_quality]] |
 | causal | `cmd_3573` files_modified: [[silent_fallback_quality]] |
 | causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[silent_fallback_quality]] |
+| causal | `cmd_karo_hotfix_ga200_context_freshness_202607081121` files_modified: [[silent_fallback_quality]] |
 
 ## skill_design_rules — Skill設計ルール
 
@@ -3040,6 +3043,7 @@ codd:
 | cmd | `cmd_3583` Fusion APIエンドポイント追加。admin認証、10/min rate limit、active PFのみ、当月/null除外、禁止キー不在、11回目429テスト |
 | causal | `cmd_3583` origin: [[殿指示_Fusion構想_20260628]] -> [[DM-Signal APIに外部アプリ向けエンドポイント不在]] -> [[fusion.py実装+CORS追加+禁止キーテスト]] |
 | causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[fusion_api_endpoint]] |
+| causal | `cmd_karo_hotfix_ga200_context_freshness_202607081121` files_modified: [[fusion_api_endpoint]] |
 
 ## dm_fusion_app — DM-Fusionアプリ
 
@@ -3071,6 +3075,7 @@ codd:
 | cmd | `cmd_3606` PF選択モーダル化 — absolute dropdown→fixed overlay modal |
 | cmd | `cmd_3607` admin速度改善+フォルダ一括トグル — location.reload()→optimistic update |
 | causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[dm_fusion_app]] |
+| causal | `cmd_karo_hotfix_ga200_context_freshness_202607081121` files_modified: [[dm_fusion_app]] |
 
 ## dmsignal_fe_experience_deploy — DM-Signal体感主導デプロイ
 
@@ -3089,6 +3094,7 @@ codd:
 | causal | `[[殿裁定_20260702_体感主導デプロイ]] -> [[cmd_3663_monthly_returns仮想化]] -> [[post_deploy_CDP正しさ検分]]` |
 | causal | `[[cmd_3672_計測道具実データ対応]] -> [[cmd_3673_真値差分表]] -> [[殿裁定_20260703_体感クローズ]]` |
 | cmd | `cmd_3330` backfill — | session_20260612_shogun_ac2_cycles_mtdux_complete | AC2第1-2サイクル本番着地+第二サイクルレビュー通過+mtd-ux全PR完遂+裁可型是正 |
+| causal | `cmd_karo_hotfix_ga200_context_freshness_202607081121` files_modified: [[dmsignal_fe_experience_deploy]] |
 
 ## dmsignal_operations — DM-Signal運用
 
@@ -3170,6 +3176,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T01:02:25+09:00 どちらにせよGSの道具磨きをまたやらないとな。5分が厳しいなら10分制限にしよう。モメンタムバンドも導入したから、どちらにしても必須だよな。本番とのパリティは、すでに本番に再計算済みのデータがあるから本番のデータをゴールデンとして使えばいい |
 | causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[dmsignal_operations]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-08T08:07:44+09:00 まだ本番にはモメンタムバンドで計算されたPFがないのでは？ |
+| causal | `cmd_karo_hotfix_ga200_context_freshness_202607081121` files_modified: [[dmsignal_operations]] |
 | causal_chain | `[[cmd_3368]]` (L805) |
 | causal_chain | `[[cmd_3380]]` (L807) |
 
@@ -3969,6 +3976,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T09:09:08+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T15:14:57+09:00 続けて |
 | causal | `cmd_3764` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_karo_hotfix_ga200_context_freshness_202607081121` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_3588]]` (L875) |
 
 ## defense_hierarchy — 防御階層原則
@@ -5442,6 +5450,7 @@ codd:
 | causal | `cmd_reflux_insight_202607080313_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607080431_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_insight_202607080451_kagemaru` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_insight_202607081110_hayate` files_modified: [[semantic_causal_automation]] |
 
 ## provisional_tobisaru — 仮: Tobisaru
 
@@ -5505,6 +5514,8 @@ codd:
 | cmd | `cmd_reflux_insight_202607080507_hayate` (`queue/tasks/hayate.yaml`) |
 | causal | `cmd_reflux_insight_202607080614_hayate` files_modified: [[provisional_hayate]] |
 | cmd | `cmd_reflux_insight_202607080614_hayate` (`queue/tasks/hayate.yaml`) |
+| causal | `cmd_reflux_insight_202607081110_hayate` files_modified: [[provisional_hayate]] |
+| cmd | `cmd_reflux_insight_202607081110_hayate` (`context/semantic-map.md`, `docs/semantic-index/index.md`, `queue/tasks/hayate.yaml`) |
 
 ## provisional_kotaro — 仮: Kotaro
 
