@@ -19,10 +19,48 @@ setup_file() {
     eval "$(sed -n '/^q11_has_guard_duplicate_check()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_q11_guard_list()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_gate_hook_action_conversion()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_gate_hook_fp_measurement_connection()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     export -f cmd_text_matches_pattern trim_inline_yaml_scalar load_cmd_block_cache cmd_block_has_field cmd_block_get_field \
         is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification \
         collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check \
-        collect_q11_guard_list check_gate_hook_action_conversion
+        collect_q11_guard_list check_gate_hook_action_conversion check_gate_hook_fp_measurement_connection
+    record_warn_reason() {
+        WARN_COUNT=$(( ${WARN_COUNT:-0} + 1 ))
+        WARN_REASONS+=("$1|$2")
+    }
+    export -f record_warn_reason
+}
+
+@test "Q11-TP-004: 真のgate新設cmdでFP計測接続記載がなければWARNINGする" {
+    CMD_BLOCK_NC='    title: "強化 — 新規gate追加"
+    scope_mode: EXACT
+    purpose: "cmd_save.shへ新規gateを追加して未記入を自動検出する"
+    command: "scripts/cmd_save.shに新規gateを追加し、不備があれば遮断する"
+    quality_gate:
+      q11_not_already_done: "未達成。grep -rn missing_required_field scripts/cmd_save.sh → 0件。代替なし。新規gateとして実装する"'
+    export CMD_BLOCK_NC
+    WARN_COUNT=0
+    WARN_REASONS=()
+
+    run check_gate_hook_fp_measurement_connection "$CMD_BLOCK_NC"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"FP計測への接続記載がありません"* ]]
+}
+
+@test "Q11-TP-005: 真のgate新設cmdでdetector_fp_rate接続記載があればWARNINGしない" {
+    CMD_BLOCK_NC='    title: "強化 — 新規gate追加"
+    scope_mode: EXACT
+    purpose: "cmd_save.shへ新規gateを追加して未記入を自動検出する"
+    command: "scripts/cmd_save.shに新規gateを追加し、不備があれば遮断する。発報結果はscripts/detector_fp_rate.shでFP率計測へ接続する"
+    quality_gate:
+      q11_not_already_done: "未達成。grep -rn missing_required_field scripts/cmd_save.sh → 0件。代替なし。新規gateとして実装する"'
+    export CMD_BLOCK_NC
+    WARN_COUNT=0
+    WARN_REASONS=()
+
+    run check_gate_hook_fp_measurement_connection "$CMD_BLOCK_NC"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"FP計測への接続記載がありません"* ]]
 }
 
 setup() {

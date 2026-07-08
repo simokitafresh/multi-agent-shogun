@@ -799,6 +799,33 @@ check_gate_hook_action_conversion() {
     record_warn_reason "gate/hook追加cmdに行動変換キーワードなし" "check=gate_hook_action_conversion"
 }
 
+check_gate_hook_fp_measurement_connection() {
+    local block_text="${1:-${CMD_BLOCK_NC:-}}"
+    local measurement_text=""
+
+    [[ -n "$block_text" ]] || return 0
+    is_gate_or_hook_addition_cmd "$block_text" || return 0
+
+    measurement_text="$(printf '%s\n' "$block_text" | awk '
+        /^[[:space:]]{4}command:[[:space:]]*\|/ { in_command=1; print; next }
+        /^[[:space:]]{4}command:[[:space:]]*[^|]/ { sub(/^[[:space:]]{4}command:[[:space:]]*/, ""); print; next }
+        /^[[:space:]]{4}acceptance_criteria:[[:space:]]*$/ { in_ac=1; print; next }
+        /^[[:space:]]{4}acceptance_criteria:[[:space:]]*\[/ { sub(/^[[:space:]]{4}acceptance_criteria:[[:space:]]*/, ""); print; next }
+        /^[[:space:]]{4}quality_gate:[[:space:]]*$/ { in_qg=1; print; next }
+        (in_command || in_ac || in_qg) && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_command=0; in_ac=0; in_qg=0; next }
+        in_command && /^[[:space:]]{4,}/ { print; next }
+        in_ac && /^[[:space:]]{6,}/ { print; next }
+        in_qg && /^[[:space:]]{6,}/ { print; next }
+    ')"
+
+    if printf '%s\n' "$measurement_text" | grep -qiE 'FP[率計測]|false[ _-]?positive|偽陽性|誤発報|detector_fp_rate|gate_fire_log|loop_ledger|cmd_design_quality'; then
+        return 0
+    fi
+
+    echo "WARNING: gate/hook追加cmdにFP計測への接続記載がありません。新しい検知器は発報後の真偽を detector_fp_rate / gate_fire_log / loop_ledger 等へ接続せよ" >&2
+    record_warn_reason "gate/hook追加cmdにFP計測接続記載なし" "check=gate_hook_fp_measurement_connection"
+}
+
 check_lord_30min_cost_question() {
     if ! cmd_block_has_field "quality_gate.q12_lord_30min_cost"; then
         echo "WARNING: q12_lord_30min_cost未記入。「この判断は殿に30分コストを課すか？」をyes/noで記載せよ" >&2
@@ -3830,6 +3857,7 @@ QG_TEMPLATE
     check_q11_guard_duplicate_block
     check_q11_existing_alternative_block
     check_gate_hook_action_conversion "$CMD_BLOCK_NC"
+    check_gate_hook_fp_measurement_connection "$CMD_BLOCK_NC"
 
     # q8_branch_coverage: 条件分岐変更cmdの本番データ分岐確認AC提案（段階的導入 — WARNING）
     # 起源: cmd_1443事例 — 本番未使用コードパスへの無駄修正
@@ -5233,6 +5261,9 @@ check_ac_param_sufficiency() {
     local HIT=false
     while IFS= read -r line; do
         [[ -z "$line" ]] && continue
+        if echo "$line" | grep -qE '偵察の既定観点|既定観点|デフォルト品質[0-9]+要件'; then
+            continue
+        fi
         if echo "$line" | grep -qE '(参照|引用|節番号|章番号|項番).{0,40}(第[0-9]+|[0-9]+章|[0-9]+節|Q[0-9]+|AC[0-9]+|cmd_[0-9]+)|(第[0-9]+|[0-9]+章|[0-9]+節|Q[0-9]+|AC[0-9]+|cmd_[0-9]+).{0,40}(参照|引用|節番号|章番号|項番)'; then
             continue
         fi

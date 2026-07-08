@@ -66,6 +66,8 @@ environment_changeに書く前に「なぜ」を深掘りしないと浅い対�
 gate_shogun_startup.sh Gate 13.8: WARN typeごとの偽陽性率を30日窓で計測。
 FP率60%以上 → ALERT。gate精度劣化の早期発見 → gate改善も成長の一部。
 
+- positive_rule: gate/検知器/手順を追加するcmdは追加所要時間とFP見込み、FP計測接続先(`scripts/detector_fp_rate.sh`/`logs/detector_fp_rate.yaml`等)を明記する。reason: 局所品質装置の無検証追加は誤発報で全体スループット税を増やし、品質と速度を同時に落とす。
+
 ## §10 スキル自動成長ループ(4段階 + L6強制)
 
 スキル実行の品質を計測→還流し、SKILL.md自体を育てる仕組み。
