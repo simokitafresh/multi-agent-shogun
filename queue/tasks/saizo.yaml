@@ -1,7 +1,7 @@
 task:
   acceptance_criteria:
   - checks:
-    - check: 対象insight INS-20260708-110048210-19eb を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
+    - check: 対象insight INS-20260708-165744270-6a1d を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
     id: AC1
   - checks:
     - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
@@ -22,19 +22,19 @@ task:
   parallel_ok:
   - AC1
   - AC2
-  parent_cmd: cmd_reflux_insight_202607081542_saizo
+  parent_cmd: cmd_reflux_insight_202607090116_saizo
   project: infra
-  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-110048210-19eb を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
+  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-165744270-6a1d を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
   reflux_inventory_before:
-    insights_pending: 3
-    promotions: 89
-    total: 93
-    zero_backlinks: 1
+    insights_pending: 10
+    promotions: 86
+    total: 98
+    zero_backlinks: 2
   scout_exempt: true
-  status: idle
+  status: done
   stop_for: []
   target_path: queue/insights.yaml
-  task_id: cmd_reflux_insight_202607081542_saizo_exact
+  task_id: cmd_reflux_insight_202607090116_saizo_exact
   task_type: exact
   related_lessons:
   - id: 'L351'
@@ -83,12 +83,12 @@ task:
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
     ────────────────────────────────────────
-  ac_version: 1158a102
-  _ac_task_id: cmd_reflux_insight_202607081542_saizo_exact
+  ac_version: 52f7ee01
+  _ac_task_id: cmd_reflux_insight_202607090116_saizo_exact
   _ac_worker_id: 
   role_reminder: 忍者saizo。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: saizo_report_cmd_reflux_insight_202607081542_saizo.yaml
-  report_path: queue/reports/saizo_report_cmd_reflux_insight_202607081542_saizo.yaml
+  report_filename: saizo_report_cmd_reflux_insight_202607090116_saizo.yaml
+  report_path: queue/reports/saizo_report_cmd_reflux_insight_202607090116_saizo.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -98,11 +98,11 @@ task:
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 205
+      count: 213
     - pattern: 'field_missing'
-      count: 63
+      count: 64
     - pattern: 'verdict_invalid'
-      count: 47
+      count: 50
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
@@ -126,23 +126,5 @@ task:
     - reason: 'ac_version_mismatch'
       count: 1
       hint: 'ac_version_readがtask YAMLのac_versionと不一致。最新タスクを再読込'
-  deployed_at: "2026-07-08T15:42:59"
-  acknowledged_at: "2026-07-08T15:43:17"
-
-  session_state:
-    attempt: 3
-    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    approach_summary: 'INS-20260708-110048210-19eb(semantic_stress_test由来のNO_MATCH候補alias, source=lord, 過去cmd_3758の作業継続指示文)を一次情報で確認し、noiseと判定してinsight_write.sh --resolveでstatus:doneへ整理した'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'INS-20260708-110048210-19eb(semantic_stress_test由来のNO_MATCH候補alias, source=lord, 過去cmd_3758の作業継続指示文)を一次情報で確認し、noiseと判定してinsight_write.sh --resolveでstatus:doneへ整理した'
-    - attempt: 2
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: 'INS-20260708-110048210-19eb(semantic_stress_test由来のNO_MATCH候補alias, source=lord, 過去cmd_3758の作業継続指示文)を一次情報で確認し、noiseと判定してinsight_write.sh --resolveでstatus:doneへ整理した'
-    - attempt: 3
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      approach_summary: 'INS-20260708-110048210-19eb(semantic_stress_test由来のNO_MATCH候補alias, source=lord, 過去cmd_3758の作業継続指示文)を一次情報で確認し、noiseと判定してinsight_write.sh --resolveでstatus:doneへ整理した'
+  deployed_at: "2026-07-09T01:16:54"
+  acknowledged_at: "2026-07-09T01:17:16"
