@@ -1,15 +1,56 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: ''
   acceptance_criteria:
-    AC1:
-      description: 3件のbulletin内容と対応insight IDを一次情報で読み、既存cmd/既存commitで解決済みか、新規修正が必要かを各1行で判定する
-    AC2:
-      description: 解決済みなら `scripts/insight_resolve.sh` と `scripts/bulletin_action.sh`、未解決なら必要な最小コード/台帳修正を実施し、3件すべてにactioned_byを入れる
-    AC3:
-      description: 作業前後で `bash scripts/gates/gate_shogun_startup.sh` のaction_required件数を比較し、3件→0件または残件の明確なwait_reasonを報告YAMLに記録する
-    AC4:
-      description: 変更したファイルをscope限定commitし、report YAMLのbinary_checksを全てyes/noで記入し、gate_report_formatをPASSさせる
+  - checks:
+    - check: 対象insight INS-20260708-202916450-af87 を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
+    id: AC1
+  - checks:
+    - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
+    id: AC2
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok:
+  - AC1
+  - AC2
+  parent_cmd: cmd_reflux_insight_202607090025_hayate
+  project: infra
+  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260708-202916450-af87 を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
+  reflux_inventory_before:
+    insights_pending: 13
+    promotions: 83
+    total: 98
+    zero_backlinks: 2
+  scout_exempt: true
+  status: done
+  stop_for: []
+  target_path: queue/insights.yaml
+  task_id: cmd_reflux_insight_202607090025_hayate_exact
+  task_type: exact
+  related_lessons:
+  - id: 'L351'
+    summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
+    detail: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
+  - id: 'L508'
+    summary: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
+    detail: '6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL'
+  - id: 'L278'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+  - id: 'L342'
+    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
   standard_skills:
   - "report-write"
   - "verdict-check"
@@ -27,7 +68,7 @@ task:
     - "ACごとに実テスト証跡をresult.detailsへ記録"
     - "報告前にplaceholder残存確認とgate_report_formatを実行"
   semantic_concepts:
-  - "gate_quality_framework — ゲート品質統合フレームワーク:  scripts/gates/gate_shogun_startup.sh scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_cmd_state.sh scripts/gates/gate_lesson_health.sh scripts/gates/gate_enforcement_audit.sh scripts/gates/gate_autofix_proposal.sh scripts/gates/gate_gunshi_accuracy.sh gate予測精度の公正計算(FAIL→BLOCK→修正CLEAR=正解) scripts/context_freshness_check.sh scripts/gates/gate_ninja_workaround_rate.sh scripts/cmd_save.sh scripts/cmd_skeleton.sh context/growth-loop.md tests/unit/test_gate_gunshi_precheck_large_artifact.bats scripts/ac_physical_verify.sh AC物理検証(ファイルパス/行番号/§実在確認) scripts/model_analysis.sh モデル5軸分析(CLEAR率/コスト効率/専門性/安定性/cmd-CLEAR比) docs/research/gunshi_idle_commit_check_wa_pattern_20260410.md — 軍師idle: コミットチェックWAパターン(2026-04-10) docs/research/gunshi_idle_cross_contamination_20260503.md — 軍師idle: クロスプロジェクト汚染分析(2026-05-03) docs/research/gunshi_idle_cross_project_fp_20260426.md — 軍師idle: クロスプロジェクトFP分析(2026-04-26) docs/research/gunshi_idle_gate_fail_rate_anatomy_20260502.md — 軍師idle: ゲート失敗率解剖(2026-05-02) docs/research/gunshi_idle_gate_fail_trend_20260430.md — 軍師idle: ゲート失敗トレンド分析(2026-04-30) docs/research/gunshi_idle_gate_fire_traceback_20260510.md — 軍師idle: ゲート発火トレースバック(2026-05-10) docs/research/gunshi_idle_gate_fp_analysis_20260527.md — 軍師idle: ゲート偽陽性(FP)分析(2026-05-27) docs/research/gunshi_idle_gate_prediction_false_positive_analysis_20260706.md — 軍師idle: gate_prediction偽陽性分析(2026-07-06) docs/research/gunshi_idle_lg003_gate_wa_analysis_20260519.md — 軍師idle: LG003ゲートWA分析(2026-05-19) docs/research/gunshi_idle_lu_dict_pattern_20260415.md — 軍師idle: LU辞書パターン分析(2026-04-15)"
+  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
@@ -35,83 +76,19 @@ task:
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
-      - L828: gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr
-      - L549: queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形
+      - L351: insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL
+      - L508: 6723ファイルのrg scan + 153ファイルのyaml.safe_load両方がWSL2 NTFSのI/Oシリアライズに支配される。Python GIL
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
-    
-    家老一次確認:
-    - [MEM: memory_db ts=2026-07-08] 同型の将軍startup先送りBLOCKは本日複数回発火し、10:27にD0修正済み履歴あり。今回が再発か別根かを現物で切り分けること。
-    - [MEM: semantic concept=skill_routing] karo_directは家老自立配備の正規経路。
-    - `bash scripts/gates/gate_shogun_startup.sh` 実行で `掲示板action_required未対応: 3件` を確認済み。
-    - 対象bulletin: blt_20260708_214937_aa620b, blt_20260708_204508_2c90d2, blt_20260708_195725_f23783。
-    - `scripts/bulletin_action.sh <agent_id> <entry_id>` はactioned_by更新とaction_required status=closed化の正規helper。
-    禁止:
-    - 実処理なしにstatusだけ閉じるな。
-    - 根本修正が必要なinsightを「既読化」で隠すな。
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok: []
-  parent_cmd: cmd_karo_hotfix_shogun_startup_action_required_202607082152
-  project: infra
-  purpose: 将軍startup BLOCKのうち掲示板action_required未対応3件を、表面クローズで隠さず実処理してactioned_by/statusへ反映する
-  scout_exempt: true
-  status: done
-  stop_for: []
-  target_path: /mnt/c/tools/multi-agent-shogun/queue/bulletin_board.yaml
-  task_id: cmd_karo_hotfix_shogun_startup_action_required_202607082152_normal
-  task_type: hotfix
-  related_lessons:
-  - id: 'L625'
-    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
-  - id: 'L828'
-    summary: 'gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr'
-    detail: 'gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr'
-  - id: 'L549'
-    summary: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
-    detail: 'queue/tasksはflat形式とnested task形式が混在。awk固定やdata.get固定の検査は片方を読み落とす。gate/hook変更時は両形'
-  - id: 'L278'
-    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-    wa_category: 'commit_missing'
-    wa_count: 1
-    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
-  - id: 'L342'
-    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
-    wa_category: 'commit_missing'
-    wa_count: 1
-    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
-  ac_version: d41d8cd9
-  _ac_task_id: cmd_karo_hotfix_shogun_startup_action_required_202607082152_normal
+  ac_version: bd4ffffd
+  _ac_task_id: cmd_reflux_insight_202607090025_hayate_exact
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_hotfix_shogun_startup_action_required_202607082152.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_hotfix_shogun_startup_action_required_202607082152.yaml
+  report_filename: hayate_report_cmd_reflux_insight_202607090025_hayate.yaml
+  report_path: queue/reports/hayate_report_cmd_reflux_insight_202607090025_hayate.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -121,11 +98,11 @@ task:
     warning: '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 222
+      count: 230
     - pattern: 'verdict_invalid'
-      count: 46
+      count: 48
     - pattern: 'field_missing'
-      count: 37
+      count: 39
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
     gate_blocks:
     - reason: 'report_format'
@@ -134,16 +111,5 @@ task:
     - reason: 'binary_checks_fail'
       count: 2
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-08T21:55:26"
-
-  session_state:
-    attempt: 2
-    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    - attempt: 2
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-  acknowledged_at: "2026-07-08T21:56:40"
+  deployed_at: "2026-07-09T00:26:03"
+  acknowledged_at: "2026-07-09T00:26:34"
