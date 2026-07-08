@@ -669,7 +669,7 @@ EOF
     [ "$output" -eq 2 ]
 }
 
-@test "GATE CLEAR cmd_quality_log is queued asynchronously after CLEAR notification" {
+@test "GATE CLEAR cmd_quality_log runs synchronously and reports OK/WARN" {
     run python3 - "$SRC_GATE_SCRIPT" <<'PY'
 import sys
 
@@ -679,9 +679,10 @@ start = text.index("Cmd quality log (GATE CLEAR):")
 end = text.index("Gunshi verdict update to cmd_design_quality", start)
 section = text[start:end]
 
-assert "(bash \"$SCRIPT_DIR/scripts/cmd_quality_log.sh\" \"$CMD_ID\" \"CLEAR\" \"no\" \"0\" >> \"$LOG_DIR/cmd_complete_gate_async.log\" 2>&1" in section
+assert "if bash \"$SCRIPT_DIR/scripts/cmd_quality_log.sh\" \"$CMD_ID\" \"CLEAR\" \"no\" \"0\" >> \"$LOG_DIR/cmd_complete_gate_async.log\" 2>&1; then" in section
+assert "cmd_quality_log: OK" in section
 assert "[INFO] cmd_quality_log: WARN (logging failed, non-blocking)" in section
-assert "cmd_quality_log: queued (async)" in section
+assert "cmd_quality_log: queued (async)" not in section
 PY
     [ "$status" -eq 0 ]
 }
