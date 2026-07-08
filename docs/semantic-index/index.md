@@ -198,6 +198,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-06-04T12:08:24+09:00 三層記憶は全員がそれぞれのロールで使えるようにするべきだよな？将軍専用のってなんだ？ |
 | should_not_merge_with | three_layer_memory_system — ローカル記憶DBはSQLite/FTS5の永続検索層。三層記憶システムは記憶DB・セマンティック索引・Obsidian/因果辺を貫通させる全体アーキテクチャ |
 | causal | `cmd_3478` files_modified: [[local_memory_db]] |
+| causal | `cmd_karo_hotfix_context_freshness_ga203_202607090005` files_modified: [[local_memory_db]] |
 
 ## three_layer_memory_system — 三層記憶システム
 
@@ -764,6 +765,7 @@ codd:
 | causal | `cmd_3769` origin: [[殿指示20260708_1229_全組み合わせ覚醒]] -> [[cmd_3756_選別パイプライン]] -> [[cmd_3769_基準空間全量探索]] |
 | causal | `cmd_karo_hotfix_idle_cmdsave_fp_202607081300` files_modified: [[creator_brainwashing_defense]] |
 | causal | `cmd_reflux_insight_202607081337_hayate` files_modified: [[creator_brainwashing_defense]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T00:42:46+09:00 工程３をやろう |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -1514,6 +1516,7 @@ codd:
 | cmd | `cmd_training_L4_idle_202607052346_hayate` (`codd/extracted/L6_tests.md`) |
 | cmd | `cmd_training_L4_idle_202607060015_kagemaru` (`codd/extracted/ac_physical_verify_20260520/architecture-overview.md`) |
 | lesson | `L967` CoDD extractペア成果物(system-context.md/architecture-overview.md)は同一失敗抽出から生成されるが相互リンクを自動生成しない |
+| cmd | `cmd_karo_hotfix_context_freshness_ga203_202607090005` (`context/codd.md`, `context/memory-db-queries.md`, `context/obsidian-link-principles.md`) |
 | causal_chain | `[[cmd_3246]]` (L761) |
 | causal_chain | `[[cmd_karo_ci_fix_shogun_retry_20260703]]` (L946) |
 | causal_chain | `[[cmd_3720]]` (L958) |
@@ -1696,6 +1699,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-25T21:13:44+09:00 では起票しよう |
 | file | `docs/research/gunshi_idle_codd_ac3_ambiguity_20260424.md` — 軍師idle: CoDD AC3曖昧性分析(2026-04-24) |
 | causal | `cmd_3478` files_modified: [[codd_methodology]] |
+| causal | `cmd_karo_hotfix_context_freshness_ga203_202607090005` files_modified: [[codd_methodology]] |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -2078,7 +2082,7 @@ codd:
 |------|---|
 | id | growth_loop |
 | label | 学習ループ |
-| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓, 教訓統合, 教訓整理, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる, 不明パスのみ全フォールバックが残存しWARNログで追跡可能, 役立った教訓IDを報告に記載してから完了せよ, 発見と対策を意識したなら環境に埋め込んだかを確認せよ, 発見と対策を意識咲いたようだが環境には埋め込んだか, 教訓活用率, useful_rate, lessons_useful記入率, 覚醒して構造をL0-L7で環境ごと変えよう, どこがネックで俺の指示がないと辿りつけなかったんだ, 構造的な穴を塞ごう, 効果を検証せよ, 次やるべきことは, 行動と検証を繰り返そう, 効果を検証せよ。穴がないか覚醒して監査, 次やるべきことは？止まらずに行動と検証を繰り返そう, 次の行動を覚醒して続けよう。サイクルをとめずにループで回そう, 構造的な穴を3つとも塞ごう, サイクルをとめずにループで回そう, 検証せよ, 同じ勘違いをしないように環境に埋め込め, 定期的に消費者ゼロを検証せよ, これをラルフループで回す, 放置しているインフラバグがないか覚醒して検証せよ, 三層学習ループ極限化, 自動成長極限化設計書, asis tobe 5w1h, 弱LLM対応環境整備, 性能の低いLLMにも適用, モデル階層プロファイル, loop_ledger, ループ台帳, ポータブルコア, 会話単位学習ループ, 還流在庫, 会話や作業の度に無限に成長, 教訓LS081, 全体スループット第一原則, throughput-first, スループット第一原則, スループット税, 1つの自問への統合, 削るサイクル, 局所最適の罠, 品質と速度は一体, ルールばかり増えて制限が多くなりむしろ遅くなっていないか, スループット向上と自動成長がポジティブフィードバックを向上させるか, この行動追加ルールは全体スループットと自動成長のポジティブフィードバックを向上させるか |
+| aliases | 学習ループ, 成長ループ, 二値計測, 知見還流, ラルフループ, 三層学習ループ, 教訓, 教訓統合, 教訓整理, lessons_shogun v3統合, 自動成長ループ, BLOCK後環境埋込み, WARN後environment_change強制, BLOCKから環境に埋め込む, 改善の判断基準, 効果 計測, 効果測定, 実際に効果がすでにあるか試してみよう, 実際の効果がでているか説明して, 本セッションの改良でどのくらいの効果が実際に出てる, 不明パスのみ全フォールバックが残存しWARNログで追跡可能, 役立った教訓IDを報告に記載してから完了せよ, 発見と対策を意識したなら環境に埋め込んだかを確認せよ, 発見と対策を意識咲いたようだが環境には埋め込んだか, 教訓活用率, useful_rate, lessons_useful記入率, 覚醒して構造をL0-L7で環境ごと変えよう, どこがネックで俺の指示がないと辿りつけなかったんだ, 構造的な穴を塞ごう, 効果を検証せよ, 次やるべきことは, 行動と検証を繰り返そう, 効果を検証せよ。穴がないか覚醒して監査, 次やるべきことは？止まらずに行動と検証を繰り返そう, 次の行動を覚醒して続けよう。サイクルをとめずにループで回そう, 構造的な穴を3つとも塞ごう, サイクルをとめずにループで回そう, 検証せよ, 同じ勘違いをしないように環境に埋め込め, 定期的に消費者ゼロを検証せよ, これをラルフループで回す, 放置しているインフラバグがないか覚醒して検証せよ, 三層学習ループ極限化, 自動成長極限化設計書, asis tobe 5w1h, 弱LLM対応環境整備, 性能の低いLLMにも適用, モデル階層プロファイル, loop_ledger, ループ台帳, ポータブルコア, 会話単位学習ループ, 還流在庫, 会話や作業の度に無限に成長, 教訓LS081, 全体スループット第一原則, throughput-first, スループット第一原則, スループット税, 1つの自問への統合, 削るサイクル, 局所最適の罠, 品質と速度は一体, ルールばかり増えて制限が多くなりむしろ遅くなっていないか, スループット向上と自動成長がポジティブフィードバックを向上させるか, この行動追加ルールは全体スループットと自動成長のポジティブフィードバックを向上させるか, prompt_state_inject, brainwash_reminder, Q6検出flag, detector_fp_rate, gate_fire_log, 将軍prompt洗脳注入縮約, 通常時単一自問, 検出時のみ8パターン全文 |
 | skills | lesson-sort(教訓整理/振り分け/将軍), dream(三層記憶整理/将軍), shogun-teire(知識棚卸し/将軍) |
 | related_concepts | defense_hierarchy, training_cycle_quality, lesson_lifecycle, cmd_chronicle, creator_brainwashing_defense, semantic_dictionary_design, gate_bypass_prevention, deepdive_principles, chain_principle, known_unknowns_principle, no_auto_extinguish, ultimate_state_principle, parameter_space_integrity, gunshi_review_lifecycle, semantic_goodhart_overfitting, causal_verification_l0_l7, three_layer_memory_system, operational_ontology, unread_cmd_new_deployment_guard, skill_routing, gunshi_idle_cold_finding_categories_retroactive_20260620, gunshi_idle_lesson_id_collision_20260620, gunshi_idle_script_speed_audit_20260620, codex_goal_mode, self_improving_agent_local_optima, loop_engineering, cmd_save_gate_catalog, ac_merit_review_integrity, sg_pre31_semantic_validation |
 
@@ -2567,6 +2571,7 @@ codd:
 | cmd | `cmd_1449` backfill — | cmd_1449 | Phase 4 perf_calc除去(cmd_1447偵察のorphaned code実証) | GATE CLEAR。125行除去。signals完全一致(3PF×20日 |
 | causal | `cmd_3478` files_modified: [[ultimate_state_principle]] |
 | causal | `cmd_3615` files_modified: [[ultimate_state_principle]] |
+| causal | `cmd_karo_hotfix_context_freshness_ga203_202607090005` files_modified: [[ultimate_state_principle]] |
 
 ## parameter_space_integrity — パラメータ空間縮小禁止
 
@@ -2981,6 +2986,7 @@ codd:
 | causal | `cmd_karo_hotfix_skill_refs_shogun_teire_2026070501` files_modified: [[skill_design_rules]] |
 | cmd | `cmd_karo_hotfix_skill_refs_shogun_teire_2026070501` (`skills/shogun-teire/SKILL.md`) |
 | causal | `cmd_karo_hotfix_skill_refs_codd_fix_2026070501` files_modified: [[skill_design_rules]] |
+| causal | `cmd_karo_hotfix_context_freshness_ga203_202607090005` files_modified: [[skill_design_rules]] |
 | causal_chain | `[[cmd_2929]]` (L647) |
 | causal_chain | `[[cmd_2929]]` (L649) |
 | causal_chain | `[[cmd_training_L7_v3_hanzo_5_20260521202900]]` (L660) |
@@ -4474,7 +4480,7 @@ codd:
 |------|---|
 | id | training_cycle_quality |
 | label | 忍者修行サイクル品質 |
-| aliases | 修行サイクル, training cycle, 忍者修行, ダミータスク修行, gate BLOCK訓練, 一発PASS率, first pass rate, 修行レベル, L1修行, L2修行, L3修行, L4修行, gate_fire_log計測, BLOCKパターン学習, 修行自動配備, training auto deploy, FAIL率記録, idle継続修行トリガー, training_auto_deploy, 修行cooldown状態ファイル破損, 修行再配備cooldown破損, 修行FAIL率重複排除, gate実行重複計上防止, L4修行 指定ファイルの改善点3つを特定し |
+| aliases | 修行サイクル, training cycle, 忍者修行, ダミータスク修行, gate BLOCK訓練, 一発PASS率, first pass rate, 修行レベル, L1修行, L2修行, L3修行, L4修行, gate_fire_log計測, BLOCKパターン学習, 修行自動配備, training auto deploy, FAIL率記録, idle継続修行トリガー, training_auto_deploy, 修行cooldown状態ファイル破損, 修行再配備cooldown破損, 修行FAIL率重複排除, gate実行重複計上防止, L4修行 指定ファイルの改善点3つを特定し, WA stall pattern, agent_stall_recovery, stall後の報告未完了, GPT忍者report完成率, LG014到達 |
 | skills | なし |
 | related_concepts | agent_formation_management, growth_loop, report_quality_protocol |
 | related_lessons | `L603`, `L310` |
@@ -4504,6 +4510,7 @@ codd:
 | file | `docs/research/gunshi_idle_l2_completion_check_20260413.md` — 軍師idle: L2完了チェック(2026-04-13) |
 | file | `docs/research/gunshi_idle_l7_autopromote_nazenaze_20260521.md` — 軍師idle: L7自動昇格なぜなぜ(2026-05-21) |
 | file | `docs/research/gunshi_idle_l7_causal_network_learning_20260520.md` — 軍師idle: L7因果ネットワーク学習設計(2026-05-20) |
+| file | `docs/research/gunshi_idle_wa_stall_pattern_20260708.md` — 軍師idle: WA stall pattern分析(2026-07-08) |
 | causal | `cmd_3485` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_3554` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_dashboard_snapshot_stale_status_202607041407` files_modified: [[training_cycle_quality]] |
@@ -4518,7 +4525,7 @@ codd:
 |------|---|
 | id | report_quality_protocol |
 | label | 忍者報告品質プロトコル |
-| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, GP-286, GP-287, files_modifiedパス形式, commit_hash 40文字hex, short commit_hash, full hash, 40文字フルhash, batsテスト, CI回帰防護, gate report format regression, 軍師提案 GP-286 GP-287, 軍師提案 GP-286 GP-287 files_modified commit_hash batsテスト CI回帰防護, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？, 報告して返答をもらえ, Phase1 FE削除, 家老と軍師のペアは順調か？, では軍師にも穴がないかチェックしてもらおう, 設計書に穴はないか？, 自分で解決困難であれば分析して掲示板に投稿し, 問題は軍師が将軍と俺の会話を自分ごととしてとらえた点だ, ちょっとまて, 軍師のことは軍師に任せろ, では軍師の掲示板に対応せよ, あわてずに軍師のpaneを読め, これが必要なのは将軍, 軍師にもアドバイスをもらえ, 作業開始時点のgateは既にOKだった, 設計書を家老にレビューしてもらおう, 軍師と協議せよ, どうなった？, Ⅴに関しては家老と軍師による再戻しがあるのでは？, 設計書を作成, 軍師から掲示板は来ていないか？, 3621はどうなった？, 軍師はopus4 highだ, 軍師はopus4 6 highだ, 家老と軍師をぴん留めopus highにしてくれ, 家老と軍師をぴん留めopus 4 6 highにしてくれ, 将軍と軍師をinbox3, 将軍のレビューをせよ, P4はどうなった？, 軍師も覚醒して独自に調査せよ, 忍者や家老 |
+| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, GP-286, GP-287, files_modifiedパス形式, commit_hash 40文字hex, short commit_hash, full hash, 40文字フルhash, batsテスト, CI回帰防護, gate report format regression, report_yaml_format, fallback template品質, report_path欠落, ac_version欠落, 報告未完了でidle化, 軍師提案 GP-286 GP-287, 軍師提案 GP-286 GP-287 files_modified commit_hash batsテスト CI回帰防護, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？, 報告して返答をもらえ, Phase1 FE削除, 家老と軍師のペアは順調か？, では軍師にも穴がないかチェックしてもらおう, 設計書に穴はないか？, 自分で解決困難であれば分析して掲示板に投稿し, 問題は軍師が将軍と俺の会話を自分ごととしてとらえた点だ, ちょっとまて, 軍師のことは軍師に任せろ, では軍師の掲示板に対応せよ, あわてずに軍師のpaneを読め, これが必要なのは将軍, 軍師にもアドバイスをもらえ, 作業開始時点のgateは既にOKだった, 設計書を家老にレビューしてもらおう, 軍師と協議せよ, どうなった？, Ⅴに関しては家老と軍師による再戻しがあるのでは？, 設計書を作成, 軍師から掲示板は来ていないか？, 3621はどうなった？, 軍師はopus4 highだ, 軍師はopus4 6 highだ, 家老と軍師をぴん留めopus highにしてくれ, 家老と軍師をぴん留めopus 4 6 highにしてくれ, 将軍と軍師をinbox3, 将軍のレビューをせよ, P4はどうなった？, 軍師も覚醒して独自に調査せよ, 忍者や家老 |
 | skills | report-write, verdict-check |
 | related_concepts | lesson_lifecycle, training_cycle_quality, yaml_safe_write, gunshi_review_lifecycle, ac_merit_review_integrity |
 | related_lessons | `L625`, `L633`, `L643` |
@@ -4529,6 +4536,7 @@ codd:
 | file | `scripts/gates/gate_report_format_main.py` |
 | file | `scripts/report_field_set.sh` |
 | file | `context/training-cycle.md` |
+| file | `docs/research/gunshi_idle_wa_stall_pattern_20260708.md` — report_yaml_format + agent_stall_recovery WA分析 |
 | cmd | `cmd_2871` verdict計算値化(bcから自動導出) |
 | lesson | `L625` report_path未注入taskでは完了報告前にreport_field_setで報告YAMLを明示作成する |
 | lesson | `L633` verdict自動導出は免除文脈(waive_reason)をgate検出へ残す |
@@ -6375,4 +6383,3 @@ codd:
 | causal | `cmd_karo_hotfix_ga156` files_modified: [[cmd_save_gate_catalog]] |
 | causal | `cmd_karo_hotfix_idle_cmdsave_fp_202607081300` files_modified: [[cmd_save_gate_catalog]] |
 | causal | `cmd_reflux_insight_202607081337_hayate` files_modified: [[cmd_save_gate_catalog]] |
-
