@@ -10484,3 +10484,15 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - LK-A14(コード修正後のgrep横展開残存確認)をscripts/hooks|gates|skills|tests全域grepで一次検証したところ、他の多くのreflux_promotion候補(LK-A07/A09/A11/A13等)と異なり自動化実装が本当に存在しなかった(該当0件)。今後同種タスクでは『既存実装の見落とし』と『真の未実装』を切り分け、後者ならenforcement_levelを無理にLevel4へ引き上げず、実態(このケースはLevel2:doc記載のみ)を正直に記録した上でpending_decision_write.sh createでPD escalationへ整理し、家老/将軍の設計判断(適用範囲/レジストリ方式/FP対策等)に委ねるべき。虚偽のLevel4宣言はgate_lesson_enforcement_level.shのbelow4集計を偽装し免疫系の可視性を損なう
+
+### L1010: 還流promotion選定ロジックがLKプレフィックスPD登録済み候補を除外できず重複配備が発生
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_promotion_202607090708_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,frontend,testing,bash]
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_reflux_promotion_202607090708_tobisaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/ninja_monitor.sh L2677の_reflux_promotion_pending_pd_ids()内正規表現(?<![0-9A-Za-z-])LS-?[A-Za-z]?[0-9]+(?![0-9A-Za-z])は'LS'プレフィックスID(dm-signal lessons.yaml由来)のみ抽出し'LK'プレフィックスID(lessons_karo.yaml由来、例:LK-A14)を検出しない。このためkotaroがLK-A14を一次検証しPD-108(pending)へ整理した直後(commit 0442bc2fa,06:52)にも関わらず同一LK-A14が還流候補一覧から除外されずtobisaruへ重複配備された(07:08:26)。★根源: この関数はtobisaru自身が2026-07-08に commit 966def872(cmd_reflux_promotion_202607080727_tobisaru)でLS-A16の3連続重複dispatch(kotaro→saizo→tobisaru)を修正した際に導入したものだが、コメント含め最初から'LS-XX形式の教訓ID'限定で実装しLKプレフィックスへの横展開確認を行わなかった。tests/unit/test_ninja_monitor_reflux_promotion.batsも全ケースLS-A16/LS-A99のみでLK系テストが皆無であり、テスト設計時点でも横展開漏れが見逃された。これはLK-A14自体が警告する教訓(LG027横展開確認: grep修正前パターンで残存0件確認必須)の実例そのもの。修正案: 正規表現をL[SK]-?[A-Za-z]?[0-9]+へ拡張し(scripts/ninja_monitor.sh L2677)、LK-A16等LK系ケースのテストをtest_ninja_monitor_reflux_promotion.batsへ追加する。影響範囲は_reflux_promotion_pending_pd_ids単体で他機能への副作用なし。
