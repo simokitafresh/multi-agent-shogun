@@ -1,7 +1,7 @@
-# DM-Signal 本番不変量 (Production Invariants) 全文 PI-001〜PI-025
+# DM-Signal 本番不変量 (Production Invariants) 全文 PI-001〜PI-028
 
 > 移動元: `projects/dm-signal.yaml §(PI)` (cmd_2295圧縮 2026-04-26)
-> 最終更新: 2026-04-25
+> 最終更新: 2026-07-08 (PI-027同期+PI-028追加 /lesson-sort)
 > 用途: 全エージェントに自動ロード。GS・偵察・impl設計の前提事実。
 
 | ID | 事実 | 含意 |
@@ -32,3 +32,5 @@
 | PI-024 | 株価データはsplit・データプロバイダ修正で過去全期間が遡及的に変わりうる。再計算は常に全期間(full history)で実行 | 差分再計算では修正を見逃して本番DBが静かに劣化する (殿厳命2026-04-22) |
 | PI-025 | upfront cleanup(Phase 0先消し)後にRender worker restartすると、再生成前のMonthlyReturn 0件が永続化する | replace系precomputeはbegin_nested(savepoint)でrollback範囲を限定必須 |
 | PI-026 | 本番(PipelineEngine+DB)が正(ground truth)。GSパリティ不一致時は本番を疑わずGS側を改善。本番バグ仮説を立てるな | GS不一致=GS側の再現性不足。本番は稼働中・ユーザー参照中であり正と見做す (殿裁定) |
+| PI-027 | 公開信頼境界原理: 全PFはhide_portfolio=trueで作成し、検証完了後に殿承認を得るまで公開しない | 中間状態・未検証PFをユーザーに見せない (projects/dm-signal.yamlから同期) |
+| PI-028 | GS DTB3ローリング(取引日リサンプル系列のNトレーディング日前)と本番PipelineEngineのDTB3照会(暦N日前)は生値一致でも暦解像度が異なり、threshold_band境界(±2.3e-5程度)で判定が稀にフリップする | band付きGS-本番パリティは境界フリップを既知差異として解釈せよ(1ヶ月/233ヶ月規模)。根絶にはDTB3参照解像度の統一が必要。source: cmd_3755, verified_file: backend/app/services/pipeline/blocks/absolute_momentum.py (_calculate_economic_indicator_momentum) |

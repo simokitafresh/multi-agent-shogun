@@ -285,11 +285,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - （L786-L801は振り分け済 2026-07-02 → frontend§12(L786:ComparisonChart Y軸/L796:localStorage storage event/L798:PAGE_APIS prefetch空/L801:Next共通chunk分割不能), ops§38(L789:mixed_format_commit回避), ops§49(L790:MTD cache), ops教訓索引(L791:scope別除去), ops§37(L793:cron envVars API検証/L794:cron UTC越境), ops§18(L799:計測クエリ入口BLOCK/L800:production Lighthouse証明限界), ops§19(L797:CDP cookie注入≠admin成立), infra教訓索引(L795:外部repo commit分類)。不変量候補なし）
 - PD-054裁定(2026-07-02): 7023=Next App Router runtime不可避。App Router runtime削減設計には進まず、次方向は初期レンダー計算量削減(テーブル仮想化・チャート遅延・hydration削減)=fd9d/app chunks側。cmd_3660本番metrics計測はPerf 46→95/TBT 1724→55ms/CLS 0.743→0を確認。→ `/mnt/c/Python_app/DM-signal/docs/research/lighthouse_rounds/round_20260702_cmd3660_production_metrics_cls_close/manifest.json`
 - （L818-L825は振り分け済 2026-07-08 → ops§6-7(L818:DB確認スクリプト経由), ops§32(L819:PF別設定参照/L822:Mockテスト横展開), ops§38(L820:pre-commit誤検知根本修正), ops教訓索引(L821:push状態先確認), research§24(L823:yotsume bak構造), gs-speedup§4(L824:GS CSVリーディングNaN), research§27(L825:相関全量安定性)。不変量候補なし）
-- L826: 指標選出ツールは「グローバル1チャンピオン」と「グループ別チャンピオン」の粒度差を明示せよ（cmd_3756）
-- L827: archive由来の複数行復元(FK依存あり)はテーブルごとにdb.flush()を挟まないとFK制約違反になる（cmd_3754）
-- L828: GS DTB3ローリング計算と本番PipelineEngineのDTB3参照は生値一致でも暦解像度が異なりthreshold_band境界で稀にフリップする（cmd_3755）
-- L829: DM-signal repoへ新規Pythonスクリプトを書く際、Write toolでハードコード絶対パス(/mnt/c/Python_app/...)をsys.path等に直書きするとGuard16(操作的オントロジー)でBLOCKされる（cmd_3763）
-- L830: pf_L0規模(N=12程度)の小標本ランキング分析では両軸quantile交差分類が機能せず、tie処理が結果を歪める（cmd_karo_recon2_cmd3768_gap_method_202607081213）
+- （L826-L830は振り分け済 2026-07-08 → research§27(L826:選出ツールの粒度差明示), ops§6-7(L827:FK依存復元のdb.flush), research§48(L828:GS-本番DTB3暦解像度差[PI-028]), infra教訓索引(L829:絶対パス直書きGuard16 BLOCK), research教訓索引(L830:小標本quantile交差分類不能)。不変量: PI-028追加）
 
 ## 因果リンク
 

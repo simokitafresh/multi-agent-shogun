@@ -119,6 +119,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L146 | 最新引け軸を使う比較ではlatest_close_dateを先に確定し、軸重複を判定する | cmd_495 |
 | L145 | FoF差分はholding_signal文字列ではなく、展開後ticker×weightで比較する | cmd_495 |
 | L186 | 日次比較偵察は対象日N点固定に加えMAX(date)確認を同時実施すると欠落原因を誤診しにくい | recon |
+| L830 | pf_L0規模(N=12程度)の小標本ランキング分析では両軸quantile交差分類が機能せず、tie処理は平均順位化が必須 | cmd_3768_gap_method |
 
 ### GS結果/パラメータ
 
@@ -359,6 +360,7 @@ v2全面再設計: DNA事前制約+データ駆動lookback→12体。R28 Ward Cl
 - L752: 相関乖離分析の閾値設計: σベース閾値は同一母集団(層別)でのみ有効。混成母集団では分散拡大でシグナル消失（cmd_3430）
 - L753: DM-Signalシン四神にMomentum Turning Points適用: Bull偏重でBear/Rebound観測不足→新BB不採用（cmd_3431）
 - L825: GSパターン相関分析でサンプル33%→全量100%移行時、ペアにより相関の安定性が大きく異なる(CAGR系ペアは安定、AvgUWPとの組合せは不安定)（cmd_3716）
+- L826: 指標選出ツールは「グローバル1チャンピオン」と「グループ別チャンピオン」の粒度差を明示せよ（cmd_3756）
 
 ---
 
@@ -629,6 +631,8 @@ DM-Signal本番FEのmobile実運用条件計測は、`scripts/mobile_lighthouse_
 
 `--pattern-limit`をGS runner 7本(bunshin/oikaze/nukimi/kawarimi/kasoku_diff/kasoku_ratio/weighted_yotsume)に追加し、少数実行(`--pattern-limit 3`)で全て exit 0を確認(AC1 PASS)。既存GS SQLiteとのpattern_idパリティ突合はAC2 FAIL: 最大差分0.0873〜0.319。原因は`--pattern-limit`実装不備ではなく、既存成果物のdata_period_end(〜2026-06)と今回`okugi_l3_168.yaml`入力のdata_period_end(2026-07)の系列差分。2026-07-05の価格データソース移行(yfinance adjusted→EODHD raw+自前調整、`docs/design/gs-recalibration-plan.md`)により全レイヤー再GSが必要と記録されており、本パリティFAILはその症状の一つ。
 → 詳細: `docs/research/cmd_3694_ninpo_gs_small_run_parity.md`
+
+- L828: GS DTB3ローリング計算と本番PipelineEngineのDTB3参照は生値一致でも暦解像度が異なりthreshold_band境界(±2.3e-5程度)で稀にフリップする。GS側=取引日リサンプル系列のNトレーディング日前、本番側=_calculate_economic_indicator_momentumのN日前照会（cmd_3755、PI-028）
 
 GA-181分類メモ(source commits since last_updated=2026-07-03の3件): 上記45f00c6bのみ研究正本反映対象。`a3059891`(tasks/lessons.md退役8行)・`894736d4`(tasks/lessons.md cmd_3686教訓登録26行)はlesson運用のみで研究索引への追記対象外(L787準拠)。
 
