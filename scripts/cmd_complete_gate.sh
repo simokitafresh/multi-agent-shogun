@@ -513,11 +513,16 @@ log_skill_execution_pass() {
 # ─── GATE CLEAR時 task duration記録（cmd_2129） ───
 # 上位指示: CTX%ではなく実時間を正本指標とする。
 # acknowledged_at/done_at を優先し、既存運用データの deployed_at/completed_at にフォールバックする。
+# INS-20260708-232310653-77c5: reflux/hotfix系は高速タスク回転により、GATE CLEAR判定時点で
+# queue/tasks/{ninja}.yamlが既に次cmdの配備で上書きされ4フィールド全消失することがある。
+# タスクYAML本体に依存しない per-cmd 不変マーカー(dispatch_ntfy_started/report timestamp)を
+# 追加フォールバックとして使い、上書きレースでもduration_secを復元する。
 build_clear_duration_metric() {
     local task_file
     local duration_sec
     local max_duration=-1
     local resolved=0
+    local ninja_name marker_file report_file fallback_start fallback_end
 
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
         if [ ! -f "$task_file" ]; then
@@ -527,13 +532,29 @@ build_clear_duration_metric() {
         fi
         MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
         [ -f "$task_file" ] || continue
-        duration_sec=$(TASK_FILE_ENV="$task_file" python3 - <<'PY'
+
+        ninja_name=$(basename "$task_file" .yaml)
+        fallback_start=""
+        fallback_end=""
+        marker_file="$SCRIPT_DIR/queue/dispatch_ntfy_started/${CMD_ID}.started"
+        if [ -f "$marker_file" ]; then
+            fallback_start=$(awk '/^timestamp:/ { sub(/^timestamp:[ \t]*/, ""); gsub(/["'"'"']/, ""); print; exit }' "$marker_file" 2>/dev/null || true)
+        fi
+        report_file=$(resolve_report_file "$ninja_name" "$CMD_ID" 2>/dev/null || true)
+        if [ -n "$report_file" ] && [ -f "$report_file" ]; then
+            fallback_end=$(awk '/^timestamp:/ { sub(/^timestamp:[ \t]*/, ""); gsub(/["'"'"']/, ""); print; exit }' "$report_file" 2>/dev/null || true)
+        fi
+
+        duration_sec=$(TASK_FILE_ENV="$task_file" FALLBACK_START_ENV="$fallback_start" FALLBACK_END_ENV="$fallback_end" CMD_ID_ENV="$CMD_ID" python3 - <<'PY'
 import os
 from datetime import datetime
 
 import yaml
 
 task_file = os.environ["TASK_FILE_ENV"]
+fallback_start = os.environ.get("FALLBACK_START_ENV", "")
+fallback_end = os.environ.get("FALLBACK_END_ENV", "")
+cmd_id_env = os.environ.get("CMD_ID_ENV", "")
 try:
     with open(task_file, encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
@@ -546,8 +567,20 @@ if not isinstance(task, dict):
     print("")
     raise SystemExit(0)
 
-start_raw = task.get("acknowledged_at") or task.get("deployed_at") or ""
-end_raw = task.get("done_at") or task.get("completed_at") or ""
+# task fileはninja毎に使い回されるため、reflux/hotfix系の高速タスク回転では
+# GATE CLEAR判定までに次cmdの配備で上書きされていることがある(INS-20260708-232310653-77c5)。
+# parent_cmd/cmd_idが今回のcmdと一致しない場合は上書き後の別cmdのデータなので、
+# task file由来の時刻は信用せずper-cmd不変マーカー(fallback_start/fallback_end)のみを使う。
+current_cmd = str(task.get("parent_cmd") or task.get("cmd_id") or "").strip()
+task_matches_cmd = bool(cmd_id_env) and current_cmd == cmd_id_env
+
+if task_matches_cmd:
+    start_raw = task.get("acknowledged_at") or task.get("deployed_at") or fallback_start or ""
+    end_raw = task.get("done_at") or task.get("completed_at") or fallback_end or ""
+else:
+    start_raw = fallback_start or ""
+    end_raw = fallback_end or ""
+
 if not start_raw or not end_raw:
     print("")
     raise SystemExit(0)
