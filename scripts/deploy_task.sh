@@ -592,12 +592,53 @@ deploy_task_exit_draft_review_fallback() {
 
     DEPLOY_TASK_DRAFT_REVIEW_SENT=1
     log "${DEPLOY_TASK_DRAFT_REVIEW_NINJA}: EXIT trap draft_review fallback"
+    deploy_task_ensure_fallback_report_metadata \
+        "$DEPLOY_TASK_DRAFT_REVIEW_TASK_FILE" \
+        "$DEPLOY_TASK_DRAFT_REVIEW_NINJA" \
+        "$DEPLOY_TASK_DRAFT_REVIEW_CMD_ID" || \
+        log "${DEPLOY_TASK_DRAFT_REVIEW_NINJA}: WARN EXIT trap fallback report metadata repair failed"
     maybe_notify_draft_review \
         "$DEPLOY_TASK_DRAFT_REVIEW_TASK_FILE" \
         "$DEPLOY_TASK_DRAFT_REVIEW_CMD_ID" \
         "$DEPLOY_TASK_DRAFT_REVIEW_NINJA" \
         "$DEPLOY_TASK_DRAFT_REVIEW_TYPE" || \
         log "${DEPLOY_TASK_DRAFT_REVIEW_NINJA}: WARN EXIT trap draft_review fallback failed"
+}
+
+deploy_task_ensure_fallback_report_metadata() {
+    local task_file="$1"
+    local ninja_name="$2"
+    local fallback_parent_cmd="$3"
+
+    [ -f "$task_file" ] || return 0
+    [ -n "$ninja_name" ] || return 0
+
+    local parent_cmd task_id _ac_task_id project report_path report_filename ac_version
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
+        parent_cmd task_id _ac_task_id project report_path report_filename ac_version 2>/dev/null)" || true
+
+    parent_cmd="${parent_cmd:-$fallback_parent_cmd}"
+    [ -n "$parent_cmd" ] || return 0
+
+    if [ -z "${report_filename:-}" ]; then
+        inject_report_filename "$task_file" || log "WARN: fallback_report_metadata inject_report_filename failed"
+    fi
+
+    if [ -z "${ac_version:-}" ]; then
+        inject_ac_version "$task_file" || log "WARN: fallback_report_metadata inject_ac_version failed"
+    fi
+
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
+        task_id _ac_task_id project report_path report_filename ac_version 2>/dev/null)" || true
+    task_id="${task_id:-${_ac_task_id:-}}"
+
+    if [ -z "${report_path:-}" ] || [ ! -f "$SCRIPT_DIR/${report_path}" ]; then
+        generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "${project:-infra}" || return 1
+    else
+        ensure_report_template_completeness "$SCRIPT_DIR/${report_path}" "$task_file" || return 1
+    fi
+
+    log "fallback_report_metadata: ensured report_path/ac_version for ${ninja_name} ${parent_cmd}"
 }
 
 run_python_logged() {

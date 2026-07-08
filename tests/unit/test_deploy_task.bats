@@ -405,6 +405,27 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == sasuke\|*queue/tasks/sasuke.yaml* ]]
     [[ "$output" == *"|task_assigned|karo" ]]
+
+    TASK_FILE="$TEST_PROJECT/queue/tasks/sasuke.yaml" python3 - <<'PY'
+import os
+from pathlib import Path
+
+import yaml
+
+task_path = Path(os.environ["TASK_FILE"])
+task = yaml.safe_load(task_path.read_text(encoding="utf-8"))["task"]
+
+assert task.get("report_filename") == "sasuke_report_cmd_2974.yaml", task
+assert task.get("report_path") == "queue/reports/sasuke_report_cmd_2974.yaml", task
+assert task.get("ac_version"), task
+
+report_path = task_path.parents[2] / task["report_path"]
+assert report_path.exists(), report_path
+report = yaml.safe_load(report_path.read_text(encoding="utf-8"))
+assert report["parent_cmd"] == "cmd_2974", report
+assert report["ac_version_read"] == task["ac_version"], report
+print("fallback metadata OK")
+PY
 }
 
 @test "--yaml direct deploy skips stale training parent repair before YAML overwrite" {
