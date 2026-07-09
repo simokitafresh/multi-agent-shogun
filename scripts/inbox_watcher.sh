@@ -515,6 +515,25 @@ get_effective_cli_type() {
     echo "codex"
 }
 
+pane_input_line_has_text() {
+    local pane_target="$1"
+    local pane_tail last_line stripped
+
+    pane_tail=$(tmux capture-pane -t "$pane_target" -p -J -S -3 2>/dev/null || true)
+    last_line=$(printf '%s\n' "$pane_tail" | grep -v '^[[:space:]]*$' | tail -1 || true)
+    [ -n "$last_line" ] || return 1
+
+    stripped="$last_line"
+    stripped="${stripped//$'\r'/}"
+    stripped="$(printf '%s' "$stripped" | sed -E \
+        -e 's/^[[:space:]]*[›❯][[:space:]]*//' \
+        -e 's/[[:space:]]*[0-9]+%[[:space:]]+(context[[:space:]]+)?left.*$//' \
+        -e 's/[[:space:]]*\\?[[:space:]]+for[[:space:]]+shortcuts.*$//' \
+        -e 's/[[:space:]]+$//')"
+
+    [ -n "$stripped" ]
+}
+
 # ─── Send CLI command directly via send-keys ───
 # For /clear and /model only. These are CLI commands, not conversation messages.
 # CLI種別はcli_profiles.yamlのフィールドで動的に判定（name-based分岐なし）
@@ -848,8 +867,10 @@ send_wakeup() {
     # and Enter risked submitting partial input in race conditions.
     local lock
     lock="${STATE_DIR}/tmux_sendkeys_$(echo "$PANE_TARGET" | tr ':.' '_').lock"
-    if ! (
+    local send_rc=0
+    (
         flock -w 5 200 || { echo "[$(date)] LOCK TIMEOUT: send_wakeup $PANE_TARGET" >&2; exit 1; }
+        local sent_token=""
         if [ -n "$current_fp" ] && [ "$current_fp" != "-" ]; then
             local safe_fp sent_token sent_mtime sent_elapsed
             safe_fp="${current_fp//[^A-Za-z0-9_.-]/_}"
@@ -872,6 +893,11 @@ send_wakeup() {
             sleep 0.3
             echo "[$(date)] [COPY-MODE] Exited copy-mode for $AGENT_ID before nudge" >&2
         fi
+        if pane_input_line_has_text "$PANE_TARGET"; then
+            [ -n "$sent_token" ] && rm -f "$sent_token" 2>/dev/null || true
+            echo "[$(date)] [INPUT-GUARD] Deferring nudge for $AGENT_ID: pane input line is not empty" >&2
+            exit 2
+        fi
         tmux set-buffer -b "nudge_${AGENT_ID}" "$nudge"
         if ! timeout "$SEND_KEYS_TIMEOUT" tmux paste-buffer -t "$PANE_TARGET" -b "nudge_${AGENT_ID}" -d 2>/dev/null; then
             echo "[$(date)] WARNING: paste-buffer timed out ($SEND_KEYS_TIMEOUT s)" >&2
@@ -882,7 +908,10 @@ send_wakeup() {
             echo "[$(date)] WARNING: send-keys Enter timed out ($SEND_KEYS_TIMEOUT s)" >&2
             exit 1
         fi
-    ) 200>"$lock"; then
+    ) 200>"$lock" || send_rc=$?
+    if [ "$send_rc" -eq 2 ]; then
+        return 2
+    elif [ "$send_rc" -ne 0 ]; then
         return 1
     fi
 

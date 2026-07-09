@@ -423,3 +423,104 @@ echo "PRIORITY_BUSY_DEADLINE_OK=yes"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PRIORITY_BUSY_DEADLINE_OK=yes"* ]]
 }
+
+@test "T-IWD-010: input guard defers nudge when pane input line has unsent text" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/state"
+touch "$TMP_ROOT/tmux.log"
+
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+export INBOX_WATCHER_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/inbox_watcher.sh" saizo dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+
+get_effective_cli_type() { echo codex; }
+agent_has_self_watch() { return 1; }
+check_agent_busy() { return 0; }
+sleep() { :; }
+timeout() { shift; "$@"; }
+tmux() {
+    case "$1" in
+        display-message)
+            case "${*: -1}" in
+                *pane_in_mode*) echo 0 ;;
+                *) echo idle ;;
+            esac
+            ;;
+        capture-pane) printf "› honbannwo" ;;
+        set-buffer) echo "SET_BUFFER $*" >> "$TMP_ROOT/tmux.log" ;;
+        paste-buffer) echo "PASTE $*" >> "$TMP_ROOT/tmux.log" ;;
+        send-keys) echo "ENTER $*" >> "$TMP_ROOT/tmux.log" ;;
+        set-option) echo "SET_OPTION $*" >> "$TMP_ROOT/tmux.log" ;;
+        *) ;;
+    esac
+}
+
+set +e
+send_wakeup 1 true "$(printf msg_input_guard | sha256sum | cut -d " " -f1)" high 2> "$TMP_ROOT/stderr.log"
+rc=$?
+set -e
+
+paste_count="$(grep -c "^PASTE " "$TMP_ROOT/tmux.log" || true)"
+enter_count="$(grep -c "^ENTER " "$TMP_ROOT/tmux.log" || true)"
+[ "$rc" = "2" ]
+[ "$paste_count" = "0" ]
+[ "$enter_count" = "0" ]
+grep -q "\[INPUT-GUARD\] Deferring nudge for saizo" "$TMP_ROOT/stderr.log"
+echo "INPUT_GUARD_DEFERRED=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INPUT_GUARD_DEFERRED=yes"* ]]
+}
+
+@test "T-IWD-011: input guard allows nudge when pane input line is empty prompt" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/state"
+touch "$TMP_ROOT/tmux.log"
+
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+export INBOX_WATCHER_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/inbox_watcher.sh" saizo dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+
+get_effective_cli_type() { echo codex; }
+agent_has_self_watch() { return 1; }
+check_agent_busy() { return 0; }
+sleep() { :; }
+timeout() { shift; "$@"; }
+tmux() {
+    case "$1" in
+        display-message)
+            case "${*: -1}" in
+                *pane_in_mode*) echo 0 ;;
+                *) echo idle ;;
+            esac
+            ;;
+        capture-pane) printf "› 95%% context left" ;;
+        set-buffer) echo "SET_BUFFER $*" >> "$TMP_ROOT/tmux.log" ;;
+        paste-buffer) echo "PASTE $*" >> "$TMP_ROOT/tmux.log" ;;
+        send-keys) echo "ENTER $*" >> "$TMP_ROOT/tmux.log" ;;
+        set-option) echo "SET_OPTION $*" >> "$TMP_ROOT/tmux.log" ;;
+        *) ;;
+    esac
+}
+
+send_wakeup 1 true "$(printf msg_empty_prompt | sha256sum | cut -d " " -f1)" high
+
+paste_count="$(grep -c "^PASTE " "$TMP_ROOT/tmux.log" || true)"
+enter_count="$(grep -c "^ENTER " "$TMP_ROOT/tmux.log" || true)"
+[ "$paste_count" = "1" ]
+[ "$enter_count" = "1" ]
+echo "INPUT_GUARD_ALLOWED_EMPTY_PROMPT=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INPUT_GUARD_ALLOWED_EMPTY_PROMPT=yes"* ]]
+}
