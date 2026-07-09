@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-09 cmd_3787 -->
+<!-- last_updated: 2026-07-09 cmd_3788 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -13,6 +13,7 @@
 - L818: 本番DB read-only確認はpython3 -cのインライン実行ではなくスクリプトファイル経由で行え（cmd_3698_recon2）
 - L827: archive由来の複数行復元(FK依存あり)はテーブルごとにdb.flush()を挟まないとFK制約違反になる（cmd_3754）
 crash-safety(cmd_1463/1465): shutdown警告(main.py)+recalculation_statusテーブルDB永続化+pg_advisory_lock排他制御(key=8675309, セッション保持方式, fail-open)。SIGKILL時PostgreSQL自動解放。
+cmd_3788: Render `uvicorn --workers 2`下の`/admin/recalculate-status`と`/admin/recalculate-sync`起票ガードをDB SSOT化。最新`recalculation_status.status='running' AND end_time IS NULL`をクロスプロセス真実源にし、他worker実行中は起票時に409を返す。成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3788_recalc_status_db_ssot.md`
 GP-124(cmd_1477): fullrecalculate後signal整合性チェック(_check_signal_integrity)。zero-signal自動検知WARN+signal COUNT記録。OPT-13(修正)+GP-124(検知)=二重防御。
 Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal日<当月かつリバランス月PF存在時、前月末signalをforward-fillした月初signal行を自動生成。月初Pending最大24h表示→即時解消。
 詳細アーキ全量解析(2026-03-28コード全文読了) → `docs/research/fullrecalculate-architecture-2026-03-28.md`
@@ -32,6 +33,7 @@ Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal
 - L690: recalculate-sync完了判定はAPI statusだけでなくDB recalculation_status行で確認する（cmd_2424）
 - L701: fullrecalculate後は非対象PFのmonthly_returns件数diffを確認し復元判断まで行う（cmd_2450）
 - L783: fullrecalculate完了確認はtiming-history DB記録が一次証跡。recalculate-statusはLB別インスタンス不正確（cmd_3546, 102PF完全一致証明済み）
+- cmd_3788以後: running状態の可視性はDB `recalculation_status`を参照するためworker-local誤答は修正済み。ただし完了証跡は引き続きDB行/timing-historyで確認する。
 ローカルでやらないこと: recalculate_fast.pyの直接実行（Render上で動くコード）。
 
 ### DM-Signal本番FE CDP確認手順（2026-05-05実証済み）
@@ -1023,3 +1025,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 殿指示(13:40)によりfail-closed化のAsIs/ToBe設計書を作成済み。実装cmdは未起票(R1-R4、単一cmd案)。
 - cmd_3787でfail-closed化を実装済み。`_calculate_return_from_price_movement()`は3要素`(calculated_return, matched_weight, missing_tickers)`を返し、ticker欠落または対象価格変化欠落で`calculated_return=None`にする。API/FE型へ`missing_tickers`追加。検証: `PYTHONPATH=backend pytest -q backend/tests/test_monthly_trade_calculator.py` → 35 passed。成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3787_monthly_trade_missing_ticker_fail_closed.md`
 - 因果リンク: [[cmd_3786ロールバック中ログ確認]] -> [[matched_weight部分計算続行発見]] -> [[monthly-trade-missing-ticker-calc-asis-tobe-5w1h_20260709]]
+
+## §59 再計算ステータスDB SSOT化 (cmd_3788, 2026-07-09)
+
+- 発端: cmd_3786ロールバック中にDB `recalculation_status.id=195`がrunningのまま見える一方、`/admin/recalculate-status`が`running=false`を返し、Render `uvicorn --workers 2`のworker-localメモリ可視性欠陥が判明。
+- 修正: `get_recalculate_status_data()`が最新running DB行を参照し、local idleでもDB runningなら`source=db`でrunningを返す。`trigger_recalculate_sync()`はbackground投入前に`start_recalculation()`でadvisory lock/DB排他を取得し、取得不可なら200 acceptedではなく409を返す。
+- 成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3788_recalc_status_db_ssot.md`。因果リンク: [[殿指摘20260709_1349_3786完了確認]] -> [[worker-local_status誤答]] -> [[recalc_status_DB_SSOT化]]
