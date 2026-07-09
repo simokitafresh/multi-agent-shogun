@@ -1,66 +1,28 @@
 task:
+  _ac_task_id: cmd_3786_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3786 (deployed 2026-07-09T12:58:40). Read from the beginning.
+  ac_version: 520dd6c2
   acceptance_criteria:
-  - checks:
-    - check: 対象insight INS-20260709-082115936-b27f を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
-    id: AC1
-  - checks:
-    - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
-    id: AC2
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  parent_cmd: cmd_reflux_insight_202607090821_hayate
-  project: infra
-  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260709-082115936-b27f を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
-  reflux_inventory_before:
-    insights_pending: 1
-    promotions: 82
-    total: 83
-    zero_backlinks: 0
-  scout_exempt: true
-  status: done
-  stop_for: []
-  target_path: queue/insights.yaml
-  task_id: cmd_reflux_insight_202607090821_hayate_exact
-  task_type: exact
-  previous_failures:
-    attempt: 2
-    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-    - attempt: 2
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; bi…'
-  related_lessons:
-  - id: 'L351'
-    summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
-    detail: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
-  - id: 'L278'
-    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-  - id: 'L269'
-    summary: 'while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。'
-    detail: 'while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。'
-  - id: 'L342'
-    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
-    wa_category: 'commit_missing'
-    wa_count: 1
-    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
+  - id: 'AC1'
+    checks:
+    - check: 'cmd_3785で削除した旧pf_L0〜pf_L3系統86件(依存閉包8件含む)を復元API(restore-all、since=cmd_3785削除時刻、with_dependencies=trueで正依存順自動解決)によりportfolio_archiveから元UUIDで復元し、復元件数が86件と一致することをDB突合で確認して、復元ログをdocs/research/cmd_3786_プレフィックスの成果物として記録しls等で現物確認しcontext/dm-signal-ops.mdへ還流する'
+  - id: 'AC2'
+    checks:
+    - check: 'cmd_3785で新規登録した75件(config内cmd_3785_sourceで識別)を削除フック内包経路で削除し、削除後の本番PF数が入替前の102件と一致することをDB突合で確認して、削除ログをdocs/research/cmd_3786_プレフィックスの成果物として記録しls等で現物確認しcontext/dm-signal-ops.mdへ還流する'
+  - id: 'AC3'
+    checks:
+    - check: '復元後にfullrecalculateを実行し、復元86件を含む全102件のholding_signal/monthly_returnsがDB実体で生成されていることを確認して、ロールバック結果レポートをdocs/research/cmd_3786_プレフィックスで作成し、ls等での成果物現物確認とcontext/dm-signal-ops.mdへの還流を確認する'
+  acknowledged_at: "2026-07-09T12:59:44+09:00"
+  cmd_id: cmd_3786
+  completed_at: "2026-07-09T13:06:35+09:00"
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
+  deployed_at: "2026-07-09T12:59:09"
   standard_skills:
   - "report-write"
   - "verdict-check"
@@ -78,27 +40,110 @@ task:
     - "ACごとに実テスト証跡をresult.detailsへ記録"
     - "報告前にplaceholder残存確認とgate_report_formatを実行"
   semantic_concepts:
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_wa_stall_pattern_20260708.md — report_yaml_format + agent_stall_recovery WA分析 docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
+  - "production_parity — 本番パリティ:  context/dm-signal-core.md §19.3 context/checklist-shin-v2-registration.md docs/research/dmsignal_parity_verification_audit.md docs/research/pf_config_backup_20260601_pre_delete.json 削除前58件config全量バックアップ docs/research/gunshi_alm_parity_drift_analysis_20260409.md — 軍師分析: ALMパリティドリフト分析(2026-04-09)"
+  - "pf_remote_restore — 本番PF即時復元機構:  docs/research/pf-remote-restore-asis-tobe-5w1h_20260708.md"
+  recommended_skills:
+  - "db-check"
+  related_causal_links:
+  - "[[cmd_3785_パリティ根因確定]]"
+  - "[[cmd_3786_ロールバック]]"
+  - "[[殿裁定20260709_1245_GS無効]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
+  - "context/robustness-verification-catalog.md"
+  - "context/gs-speedup-knowledge.md"
+  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
   - "context/training-cycle.md"
+  production_invariants:
+  - "PI-001: 時間解像度原理: 全ての日次シグナル比較では日次差異を保持し、月次dedupで潰さない"
+  - "PI-002: 信頼境界原理: 全ての本番判断ではSQLiteを真実とせず、PostgreSQLをSSOTとして再検証する"
+  - "PI-003: 構成スキーマ完全性原理: 全てのstandard PF config JSONはpipeline_configを必須とし、NoneでCashフォールバックさせない"
+  - "PI-004: 信頼境界原理: 全てのGS成果物は本番投入前にPydanticスキーマで再検証する"
+  - "PI-005: 全期間・全下流検証原理: 任意の新規PF登録後はportfolio_id指定なしfull recalculate一発で下流全体を再生成する"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L351: insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL
+      - L625: task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK
+      - L837: デフォルト層=tmux再起動時復帰。動的層=起動後にオントロジー駆動で変更追随。実装必要: (1)cli_profiles.yamlにdefaultsセクション
+      - L787: source pathsが広いcontextでは、ALERT件数=全て同じcontextへ追記すべき情報ではない。commitを研究正本/補助資料/core寄り
       - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
-      - L269: while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
-  ac_version: de207218
-  _ac_task_id: cmd_reflux_insight_202607090821_hayate_exact
-  _ac_worker_id: 
+
+    【LS-A16 本番パリティ必須】DM-Signal本番DB/recalculate系cmd。DB変更後は同一cmd内でDB/API/FEの3レイヤー貫通確認を実行し、precompute等の巻き添えrollbackがあり得る処理はsavepoint(begin_nested)で範囲限定せよ。
+      ────────────────────────────────────────
+  done_at: null
+  engineering_preferences:
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
+  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
+  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
+  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
+  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
+  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
+  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
+  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
+  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
+  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
+  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok: []
+  parent_cmd: cmd_3786
+  project: dm-signal
+  purpose: 殿裁定(2026-07-09 12:45「違う株価データで行ったGSはすべて無効だな。本番と同じデータを使い、本番との完全なパリティが必要だ」)。cmd_3785のパリティ検証でGS環境がEODHDローカルスナップショット、本番pricesが全量stockdata_apiという価格系列の相違が根因と確定し(mismatch 51/51がholding_signal差、才蔵偵察+軍師レビューLGTM)、EODHDベースで選出した工程2の全チャンピオンは無効と裁定された。cmd_3785で削除した旧pf_L0〜pf_L3系統86件をportfolio_archiveから復元し、新規登録した75件を削除して、本番を入替前の状態へ戻す
+  reflux_inventory_before:
+    insights_pending: 3
+    promotions: 85
+    total: 88
+    zero_backlinks: 0
+  scout_exempt: true
+  status: failed
+  stop_for:
+  - 本番パリティ未確認
+  target_path: /mnt/c/Python_app/DM-signal
+  task_id: cmd_3786_full
+  task_type: full
+  previous_failures:
+    attempt: 2
+    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; resu…'
+    tried_approaches:
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; resu…'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; resu…'
+    - attempt: 2
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; resu…'
+  skill_hint: /db-check
+  related_lessons:
+  - id: 'L625'
+    summary: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+    detail: 'task YAMLにreport_pathが無い状態でinbox_write完了報告を試みるとreport_format_gateが報告YAML不在でBLOCK'
+  - id: 'L837'
+    summary: 'デフォルト層=tmux再起動時復帰。動的層=起動後にオントロジー駆動で変更追随。実装必要: (1)cli_profiles.yamlにdefaultsセクション'
+    detail: 'デフォルト層=tmux再起動時復帰。動的層=起動後にオントロジー駆動で変更追随。実装必要: (1)cli_profiles.yamlにdefaultsセクション'
+  - id: 'L787'
+    summary: 'source pathsが広いcontextでは、ALERT件数=全て同じcontextへ追記すべき情報ではない。commitを研究正本/補助資料/core寄り'
+    detail: 'source pathsが広いcontextでは、ALERT件数=全て同じcontextへ追記すべき情報ではない。commitを研究正本/補助資料/core寄り'
+  - id: 'L278'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
+  - id: 'L342'
+    summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: '新規ファイル作成時や既存ファイルの初回追跡時はgit add -fが必要'
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_reflux_insight_202607090821_hayate.yaml
-  report_path: queue/reports/hayate_report_cmd_reflux_insight_202607090821_hayate.yaml
+  report_filename: hayate_report_cmd_3786.yaml
+  report_path: queue/reports/hayate_report_cmd_3786.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -108,11 +153,11 @@ task:
     warning: '⚠ コード変更後は必ずgit add+git commitを実行してから報告。commit漏れ厳禁'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 238
+      count: 242
     - pattern: 'verdict_invalid'
-      count: 50
+      count: 52
     - pattern: 'field_missing'
-      count: 41
+      count: 43
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな'
     gate_blocks:
     - reason: 'report_format'
@@ -121,5 +166,5 @@ task:
     - reason: 'binary_checks_fail'
       count: 2
       hint: 'binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認'
-  deployed_at: "2026-07-09T08:21:36"
-  acknowledged_at: "2026-07-09T08:22:00"
+  superseded_by: cmd_karo_hotfix_cmd3786_sequence_rerun_202607091318
+  terminal_reason: cmd_3786_full failed was covered by karo_direct hotfix cmd_karo_hotfix_cmd3786_sequence_rerun_202607091318 GATE CLEAR; no redeploy needed

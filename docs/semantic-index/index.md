@@ -35,7 +35,7 @@ codd:
 | id | pf_remote_restore |
 | label | 本番PF即時復元機構 |
 | aliases | PF復元機構, 本番PF復元, portfolio_archive, PF archive, 削除PF復元, 遠隔復元, 任意PF復元, 全量PF復元, 削除時自動退避, 復元API, PF可逆性, 大規模実験の可逆性保証, ローカルがなくても元に戻せる仕組み, 今の本番PFをいつでも元に戻す仕組み, pf-remote-restore |
-| related_concepts | semantic_dictionary_design, dm_signal, pf_registration, recalculation_pipeline, gs_recalibration_plan |
+| related_concepts | semantic_dictionary_design, dm_signal, pf_registration, recalculation_pipeline, gs_recalibration_plan, dm_signal_pf_restore_guardrails |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -43,6 +43,25 @@ codd:
 | causal | [[殿要望20260708_0243_PF即時復元]] -> [[pf_remote_restore]] -> [[大規模実験の可逆性保証]] |
 | causal | `cmd_reflux_insight_202607080431_hayate` files_modified: [[pf_remote_restore]] |
 | cmd | `cmd_3330` backfill — | session_20260612_shogun_ac2_cycles_mtdux_complete | AC2第1-2サイクル本番着地+第二サイクルレビュー通過+mtd-ux全PR完遂+裁可型是正 |
+
+## dm_signal_pf_restore_guardrails — DM-Signal PF復元運用ガードレール
+
+| 属性 | 値 |
+|------|---|
+| id | dm_signal_pf_restore_guardrails |
+| label | DM-Signal PF復元運用ガードレール |
+| aliases | PF復元ガードレール, PFロールバック手順, cmd_3786復旧手順, restore-all運用, PF一括削除反復削除, API参照保護反復削除, DELETE API 400参照保護, /api/portfolios/get, restore-all HTTP応答未返却, recalculation_status stale running, dm_signal_pf_operation_guardrails, PF削除復元前提知識, 新75削除→旧86復元, 旧102PF復旧 |
+| related_concepts | pf_remote_restore, dmsignal_operations, production_parity, recalculate_pipeline, three_layer_memory_system |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `context/dm-signal-ops.md` §57 |
+| file | `scripts/deploy_task.sh` (`inject_dm_signal_pf_operation_guardrails`) |
+| file | `/mnt/c/Python_app/DM-signal/docs/research/cmd_3786_rollback_report.md` |
+| cmd | `cmd_karo_hotfix_cmd3786_sequence_rerun_202607091318` — 新75PF API削除→旧86PF restore-all→fullrecalculateで本番旧102PFへ復旧 |
+| causal | [[cmd_3785順序不備]] -> [[PF削除依存順誤認]] -> [[dm_signal_pf_restore_guardrails]] |
+| causal | [[restore-all応答未終端]] -> [[recalculation_status_stale_running]] -> [[生成物102_102一次確認で判定]] |
+| causal | [[忍者追加報告_cmd3786_20260709]] -> [[前提知識不備]] -> [[deploy_task自動注入_Level5]] |
 
 ## gs_recalibration_plan — GS再キャリブレーション計画
 
@@ -206,8 +225,8 @@ codd:
 |------|---|
 | id | three_layer_memory_system |
 | label | 三層記憶システム |
-| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ, 三層記憶にも貫通させておいて, symlinkが必然である知識を三層記憶に貫通佐瀬よ, 三層記憶を勘違いしていないか？, 貫通=3層全てに書き込んで各層から独立に検索到達可能にすること, 掲示板投稿だけでは1層のみ=未貫通, 三層記憶を確認しろ, スキルの理解が極めて低いな, 顛末を三層記憶に貫通させて, 三層記憶と一緒だ, 三層記憶は正しく理解しているか？, 今回の知見を三層記憶に貫通させて, 今回得た知見を三層記憶に貫通させてアップデートせよ, この知見とルールを三層記憶に貫通させて, 今回の知見を三層記憶に貫通させよ, 家老によりスムーズな goalのやり方を確認させて, 今回は最速最適に実行できたか？厳しく確認しより良いやり方や, だから三層記憶なんだ, 今回の試行錯誤を経て, オントロジーと三層記憶の連携は順調か？, この知見は三層記憶に貫通させておいて, 今回の知見を三層記憶とスキルにアップデートせよ, 三層記憶に貫通させて, 今回の試行錯誤を, 三層記憶は記憶DB obsidian セマンティックの三層 |
-| related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop, operational_ontology, unread_cmd_new_deployment_guard, codex_goal_mode |
+| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ, 三層記憶にも貫通させておいて, symlinkが必然である知識を三層記憶に貫通佐瀬よ, 三層記憶を勘違いしていないか？, 貫通=3層全てに書き込んで各層から独立に検索到達可能にすること, 掲示板投稿だけでは1層のみ=未貫通, 三層記憶を確認しろ, スキルの理解が極めて低いな, 顛末を三層記憶に貫通させて, 三層記憶と一緒だ, 三層記憶は正しく理解しているか？, 今回の知見を三層記憶に貫通させて, 今回得た知見を三層記憶に貫通させてアップデートせよ, この知見とルールを三層記憶に貫通させて, 今回の知見を三層記憶に貫通させよ, 家老によりスムーズな goalのやり方を確認させて, 今回は最速最適に実行できたか？厳しく確認しより良いやり方や, だから三層記憶なんだ, 今回の試行錯誤を経て, オントロジーと三層記憶の連携は順調か？, この知見は三層記憶に貫通させておいて, 今回の知見を三層記憶とスキルにアップデートせよ, 三層記憶に貫通させて, 今回の試行錯誤を, 三層記憶は記憶DB obsidian セマンティックの三層, 三層記憶にも正しく貫通させよう |
+| related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop, operational_ontology, unread_cmd_new_deployment_guard, codex_goal_mode, dm_signal_pf_restore_guardrails |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -313,6 +332,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T14:23:54+09:00 三層記憶に穴はないか？さらなる利用向上と自動成長をはかる方法を検討しよう。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T14:45:12+09:00 bnw5wynxp toolu_0139sSxh6aDyg7VP5rXg2akg /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ba8a7377-699d-49b7-bda1-2e2015 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-09T10:10:58+09:00 今回の知識は再発しないように三層記憶に貫通させておいてくれ。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T13:55:54+09:00 三層記憶にも正しく貫通させよう |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -768,6 +788,7 @@ codd:
 | causal | `cmd_reflux_insight_202607081337_hayate` files_modified: [[creator_brainwashing_defense]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-09T00:42:46+09:00 工程３をやろう |
 | causal | `cmd_reflux_promotion_202607090418_saizo` files_modified: [[creator_brainwashing_defense]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T13:49:03+09:00 3786は完了していないか？将軍に報告が来ないのはインフラバグでは？覚醒して確認し、バグは修正しよう |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3060]]` (L716) |
 | causal_chain | `[[cmd_3065]]` (L720) |
@@ -790,7 +811,7 @@ codd:
 | label | 再計算パイプライン |
 | aliases | fullrecalculate, recalc, 再計算フロー, recalculate_fast, ネストFoF, nested FoF, FoF of FoF, トポロジカルソート, signal_cache, holding_signal_raw, deferred flush, recalculate_fof, FoF再計算, 2段目FoF, 奥義GS, 秘奥義, つまり秘奥義もnew FoFもL3だな, 呼出し元でFoF構成PF 1段目・2段目 を事前一括取得, recalculation_status, recalculate速度, psycopg2直接接続, WSL DB接続方式A, 本番のFoFの設定はこうなっている, 本番のfull recalculateしてくれ, cronと競合していないか？, cron競合, fullrecalculateとcronの重複実行, pg_advisory_lock, recalculate排他制御, 手動recalculateとcronの同時実行 |
 | skills | db-check |
-| related_concepts | production_parity, dmsignal_operations, alm_research, gs_ninpo_research |
+| related_concepts | production_parity, dmsignal_operations, alm_research, gs_ninpo_research, dm_signal_pf_restore_guardrails |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -1760,7 +1781,7 @@ codd:
 | label | 本番パリティ |
 | aliases | パリティ検証, GS-本番パリティ, holding_signal, monthly_returns, golden data, 月次リターン, MTD, 月次部分月, MTD判定, Month-to-Date, 部分月, partial_month, monthly_common, チェックリスト, monthly trade画面には現時点で全PFの６月の保有ポジションがpendingに表示される必要がある, signal_pending, pending 3条件, monthly_trade.py, signals.py pending, is_pending, is_mtd, build_pending_map, 3レイヤー貫通確認, DB→API→FE, PF物理削除, PF論理削除, is_active, portfolio_config_snapshots, FK制約, CASCADE, NO ACTION, 逆依存順削除, PF設定バックアップ, PF削除手順, 旧式PF削除, チェックリストを家老にれびゅーしてもらおう, is active削除WP Phase 前提ゲート実測, is active機能のFE BE docs削除実装, is active削除ブランチの指示書準拠再構成, monthly productのBEスキーマ削除実装, MTDテーブルDaily列の実装 設計書PR2, MTD速報行の実装 設計書PR3 Feature C, MTD速報ラベル仮置き, MTD速報行の日付は仮置き, 06/19速報ラベル, 06/19 ⚡は市場営業日SSOTではない, Juneteenth MTD速報ラベル修正不要, 市場カレンダーなし MTD速報ラベル, 秘奥義-激攻 06/19検算, MTD preliminary label placeholder, Juneteenth preliminary MTD label no fix, MTD preliminary row market calendar not SSOT, source_type_local_sqlite鵜呑み, GS universe DB昇格, local_sqlite vs PostgreSQL入力差, weighted_yotsume 0不一致, UUID完備universe DB source昇格, GS月次突合解像度差, デプロイまで終わってるか？, デプロイ完了確認, DM-signalのはなしをしよう相変わらずmonthly returnやmonthly tradeページでloadingが発生する, ローカルで検査すると、本番のネットワーク負荷などが見えないのでは？問題はないのか？, monthly-trade側の対策後計測不在, 76PF分で十分なのか？ |
 | skills | db-check, pf-registration |
-| related_concepts | recalculate_pipeline, dmsignal_operations, silent_fallback_quality, terminology_dictionary, shin_shijin_design, alpha_6_metrics, db_price_data_range, dm_signal_refactor_mission, fusion_api_endpoint, dmsignal_fe_experience_deploy |
+| related_concepts | recalculate_pipeline, dmsignal_operations, silent_fallback_quality, terminology_dictionary, shin_shijin_design, alpha_6_metrics, db_price_data_range, dm_signal_refactor_mission, fusion_api_endpoint, dmsignal_fe_experience_deploy, dm_signal_pf_restore_guardrails |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -2736,6 +2757,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-08T12:27:21+09:00 目的を見失ってないか？目的はよりリターンが高く優秀なL0-L3を本番環境で実稼働させることだ。そのための最短距離か？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-08T13:36:52+09:00 殿速度3原則(2026-07-08 12:27-12:49): ①目的への最短距離か②時間3段裁定=5-10分なら即実行・数時間なら他をすべて先に仕上げる・数日なら保留③既に存在するもの(本番稼働中の計算結果)より速いものはない。極端への振 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-08T16:08:39+09:00 L0の結果は報告したか？ |
+| lesson | `L841` PF一括削除は登録順ではなく現DB依存グラフで反復削除する |
 | causal_chain | `[[cmd_125]]` (L001) |
 | causal_chain | `[[cmd_125]]` (L002) |
 | causal_chain | `[[cmd_125]]` (L003) |
@@ -2745,6 +2767,7 @@ codd:
 | causal_chain | `[[cmd_150]]` (L013) |
 | causal_chain | `[[cmd_151]]` (L014) |
 | causal_chain | `[[cmd_3413]]` (L816) |
+| causal_chain | `[[cmd_karo_hotfix_inbox_watcher_karo_nudge_20260624]]` (L841) |
 
 ## gs_ninpo_research — GS忍法研究
 
@@ -3161,7 +3184,7 @@ codd:
 | label | DM-Signal運用 |
 | aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する, FoF複製2件はおれの操作だ, PF構成確認はcheck_pf_config.py一発, hide判定はtier_visibility_settings全Tier確認必須(portfolios.hide_portfolioだけでは不十分), pipeline_configがBBの実体(selection_pipeline+terminal_block), TrendReversalFilter, DM signalのハナシをしよう, FoFの理解が怪しい, 22分は長いな, DM signalは順調か？, DM-signalは順調か？, L1+, L1+実験, BB直列, ビルディングブロック直列, BB直列拡張, run_l1plus_backtest, 441パターン, L1ビルディングブロック直列接続, 現在本番には全部で102PFある, バグの影響を受けたPFをフォルダーグループ単位で報告, Standard PFの過去シグナルNone化とは何だ？, 理論上過去のシグナルはinbox1, データが日々変わる, データが毎日変わる, 当月シグナルは日々変わる, 過去シグナルは毎日変動, つまりデータが毎日変わっているのか, つまりデータが毎日変わっているのか？, 保有ポジションやパフォーマンスも日々変わる, 保有ポジションやパフォーマンスも日々変わってしまう, そうすると保有ポジションやパフォーマンスも日々変わってしまうということか？, 価格データソース多重化Phase 0, 殿のAPIキー発行待ちでこちら側の起票対象なし, 価格データソース多重化は実装済み, バンドを採用, バンド採用, 閾値バンド, threshold_band, 三状態判定, A/A+B/B, バンド内半々, モメンタムバンド, デッドバンド, 僅差判定の反転, absolute_assetはgatekeeper sensorで保有対象外, TMFを保有するパターンは存在しない, relative_assetsが保有候補でabsolute_assetは判定指標, モメンタムバンドも導入したから, ワイヤーフレームV3を許可する, ワイヤーフレームv3裁可, ワイヤーフレームv3許可, ワイヤーフレームv3, Monthly Trade状態バッジ, 確定台帳表示, まだ本番にはモメンタムバンドで計算されたPFがないのでは？ |
 | skills | db-check, pf-registration |
-| related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking, investment_knowledge_base, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, modern_web_guidance, cdp_browser_capability, tier_plan_mapping, alpha_6_metrics, saxo_openapi_excel, saxo_trade_engine, db_price_data_range, content_artifacts, fusion_api_endpoint, dm_fusion_app, dmsignal_fe_experience_deploy, gs_recalibration_plan |
+| related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking, investment_knowledge_base, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, modern_web_guidance, cdp_browser_capability, tier_plan_mapping, alpha_6_metrics, saxo_openapi_excel, saxo_trade_engine, db_price_data_range, content_artifacts, fusion_api_endpoint, dm_fusion_app, dmsignal_fe_experience_deploy, gs_recalibration_plan, dm_signal_pf_restore_guardrails |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -3695,6 +3718,7 @@ codd:
 | causal | `cmd_karo_recon2_idle_reflux_dispatch_fixknown_202607081300` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_recon2_idle_reflux_dispatch_fixknown_202607081300` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_reflux_promotion.bats`) |
 | causal | `cmd_training_L4_auto_202607081543_hayate` files_modified: [[agent_formation_management]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T13:34:03+09:00 軍師セッション2026-07-08〜09実績: レビュー123件処理。免疫獲得=SG-PRE32(視点列間一致検出)+completion_notify_gap+deploy_task fallback+AUTO-PREFILL修正+PD除 |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -5097,6 +5121,7 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_db_missing_followup_202607071808]]` (L964) |
 | causal_chain | `[[cmd_3765]]` (L985) |
+| lesson | `L1017` karo_direct hotfixが失敗cmdを代替したら元taskへsuperseded_by終端を付ける |
 
 ## lesson_lifecycle — 教訓ライフサイクル管理
 
@@ -5653,6 +5678,7 @@ codd:
 | causal | `cmd_reflux_promotion_202607080545_kotaro` files_modified: [[provisional_kotaro]] |
 | cmd | `cmd_reflux_promotion_202607080545_kotaro` (`projects/infra/lessons_shogun.yaml`, `queue/tasks/kotaro.yaml`) |
 | cmd | `cmd_reflux_insight_202607081044_kotaro` |
+| cmd | `cmd_reflux_insight_202607091329_kotaro` |
 
 ## provisional_kagemaru — 仮: Kagemaru
 

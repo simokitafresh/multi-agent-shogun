@@ -2177,6 +2177,14 @@ for ninja in $_KARO_NINJA_NAMES; do
     [ -f "$_frm_report_full" ] || continue
     _frm_report_status=$(awk '/^status:/ { print $2; exit }' "$_frm_report_full" 2>/dev/null)
     [ "$_frm_report_status" = "completed" ] || continue
+    _frm_superseded_by=$(awk '/^[[:space:]]*superseded_by:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"']/,"",v); gsub(/^[[:space:]]+|[[:space:]]+$/,"",v); print v; exit }' "$_frm_task_file" 2>/dev/null)
+    if [ -n "$_frm_superseded_by" ]; then
+        if awk -v cmd="$_frm_superseded_by" 'BEGIN { found=0 } $2 == cmd && $3 == "CLEAR" { found=1 } END { exit found ? 0 : 1 }' "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null; then
+            echo "  SUPERSEDED: ${ninja} task=failed report=completed covered_by=${_frm_superseded_by} GATE CLEAR (report=${_frm_report_rel})"
+            _frm_wait_count=$((_frm_wait_count + 1))
+            continue
+        fi
+    fi
     _frm_wait_reason=$(awk '/^[[:space:]]*wait_reason:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"']/,"",v); gsub(/^[[:space:]]+|[[:space:]]+$/,"",v); print v; exit }' "$_frm_task_file" 2>/dev/null)
     _frm_wait_connected_cmd=$(awk '/^[[:space:]]*wait_connected_cmd:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"']/,"",v); gsub(/^[[:space:]]+|[[:space:]]+$/,"",v); print v; exit }' "$_frm_task_file" 2>/dev/null)
     case "$_frm_wait_reason" in

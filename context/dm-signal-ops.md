@@ -1014,3 +1014,11 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - API/FE確認: `/api/portfolios/get`は102件、FE `/admin` と `/compare-summary` はHTTP 200。成果物は `/mnt/c/Python_app/DM-signal/docs/research/cmd_3786_rollback_report.md` と `cmd_3786_delete_new75_log.csv`、実行commitはDM-Signal `a74fec06`。
 - 残懸念: `restore-all`はDB復元と再計算生成完了後もHTTP応答が返らず、DB `recalculation_status.id=195` が`running`のまま残った。一方で`/admin/recalculate-status`は`running=false`、生成物は102/102。後続でrestore-allの応答終端とDB status終端処理を修正候補として扱う。
 - cmd_3785はロールバック済みのため本番破壊状態ではない。ただし価格系列差によるGS/本番パリティ問題は未解決であり、再入替前にGS入力を本番`prices`系列へ揃えるか、ズレ許容根拠を裁定する必要がある。
+- 因果リンク: [[cmd_3785順序不備]] -> [[PF削除依存順誤認]] -> [[dm_signal_pf_restore_guardrails]]。忍者追加報告の試行錯誤は`deploy_task.sh`の`inject_dm_signal_pf_operation_guardrails`でLevel5注入化済み。
+
+## §58 Monthly Trade検証用リターン計算のticker欠落問題発見・設計書化 (2026-07-09)
+
+- cmd_3786ロールバック中の本番ログ確認で`WARNING:app.services.monthly_trade_impl:Matched weight 0.7500 < 0.99, some tickers may be missing`を発見。`_calculate_return_from_price_movement()`(`monthly_trade_impl.py:1092-1116`)が欠落ticker時もmatched_weight未正規化のまま部分加重和を計算続行しており、Silent Fallback原則(PI-018)違反の新規インスタンス(既存SF-001〜カタログ未収載)と判明。
+- 実害: 現状FEはこの値を表示に使わずAPI応答のみ(消費者grep 0件)のためユーザー影響なし。ただし将来この値が参照された瞬間に汚染データとして機能するリスクは残る。
+- 殿指示(13:40)によりfail-closed化のAsIs/ToBe設計書を作成済み。実装cmdは未起票(R1-R4、単一cmd案)。
+- 因果リンク: [[cmd_3786ロールバック中ログ確認]] -> [[matched_weight部分計算続行発見]] -> [[monthly-trade-missing-ticker-calc-asis-tobe-5w1h_20260709]]

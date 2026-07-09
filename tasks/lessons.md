@@ -10508,3 +10508,74 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_reflux_promotion_202607090644_kotaro(06:44)→202607090701_hayate(07:01)→202607090721_saizo(07:21、本タスク)の3件が同一LK-A14候補を17-20分間隔で重複配備された。原因はscripts/ninja_monitor.shの_reflux_promotion_pending_pd_ids()がpending PDのsummaryからID抽出する正規表現を'LS-?[A-Za-z]?[0-9]+'に限定しており、'LK-A14'のようなLK-/LG-プレフィックスのlesson IDには一切マッチしないため、PD-108がpendingで存在してもexclusion filterが機能しない(PD-109として起票、根本修正はninja_monitor.sh改修が必要でスコープ外)。恒久修正が入るまでの当面の対策として、reflux_promotion系タスクに着手する忍者は作業開始直後にgrep -n '<lesson_id>' queue/pending_decisions.yamlで既存pending PDの有無を必ず一次確認し、重複が判明した場合は同一PDを再作成せずdecision_candidateで既存PD IDを参照するに留めよ。
+
+### L1012: context_freshness source path共有によるdm-signal-research.md/ops.md二重ALERTはL787完成まで繰り返す
+- **日付**: 2026-07-09
+- **出典**: cmd_karo_hotfix_ga206_context_freshness_202607091123
+- **記録者**: kotaro
+- **tags**: [infra,context,db,api,testing]
+- **target_files**: [context/dm-signal-research.md]
+- **origin**: [[cmd_karo_hotfix_ga206_context_freshness_202607091123]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- L787(GA-047, 2026-06-11)はdocs/researchのsource path breadth問題を特定したが、whenフィールド「未設定」howフィールド「未設定」のまま放置され、分類ロジックの実装(decision_candidate)も一度もcmd化されなかった。結果、同一根本原因でGA-200(07-08)・GA-206(07-09、本cmd)と再発し、gate_alerts.yaml集計ではdm-signal-research.mdが直近35日で18回ALERT発火(ops.md同数、core.mdも14回=source path共有ファイルで軒並み高頻度)。次回このgateが鳴った時に追加すべきチェック: (1)L787のwhen/howフィールドを本教訓の内容で埋めること(when: DM-Signal docs/research配下へ運用実行ログ(backup/deletion/registration/parity/db_api_verification等)を伴うcmdをcommitする直前、how: 生成先をdocs/research/直下ではなく内容種別で分離するか、context_freshness_check.shにcontent-domain分類ヒントを持たせる設計をkaro/shogunへ提起)。(2)18回/35日という高頻度recurrenceは単発hotfix cmdでの都度対応(content更新+last_updated bump)では収束しないため、次にGA-2xxがdm-signal-research.md/ops.mdで発火した際は即座にcontent対応するのではなく、まずこの教訓と過去3件(GA-047/GA-200/GA-206)の再発カウントを家老・軍師へ提示し、gate-code側の恒久設計(decision_candidate参照)に着手すべきか判断を仰ぐこと。origin: [[L787]] -> [[GA-047 decision_candidate未実装]] -> [[GA-200/GA-206再発]]
+
+### L1013: gate_loop_health高頻度FAIL insightはSTALL検知ポーリングの反復ログで誤って高頻度化しうる
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_insight_202607091155_saizo
+- **記録者**: saizo
+- **tags**: [infra,gate,bash,yaml]
+- **target_files**: [queue/insights.yaml,queue/tasks/saizo.yaml]
+- **origin**: [[cmd_reflux_insight_202607091155_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_loop_health.shはINSIGHT_WINDOW=20(直近20エントリ)でinsightを生成するが、ninja_monitor.shのSTALL検知ループが停滞タスクのreport YAMLに対し数分間隔でgate_report_format.shを反復実行するため、単一の停滞タスクだけで直近20エントリの大半を『同一reasonの高頻度FAIL』として占有しうる(実例: 2026-07-09、kagemaru cmd_3785の停滞で6分間隔13-14件連続FAIL)。gate_loop_health由来のinsightをresolve/実修正判断する際は、まず該当reasonの発火ファイルが単一ファイルに偏っていないか(ユニークファイル数)を確認し、単一ファイル偏在ならstall/polling起因と疑え。
+
+### L1014: 拡張子.yamlでもjson.dumpで書込む学習ファイルは、消費側のYAML前提grep判定で検出漏れするサイレント不具合を起こす
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_insight_202607091206_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,deploy-task,frontend,deploy,gate]
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_ac_handling.bats]
+- **origin**: [[cmd_reflux_insight_202607091206_kotaro]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_report_format.sh:631はlogs/gate_report_format_learning.yamlをjson.dump(ensure_ascii=False)で書込むため、実体はダブルクォート付きJSON('"prefill_active": true')。一方deploy_task.sh:3407の事前ゲートはgrep -q 'prefill_active:[[:space:]]*true'というYAML(引用符なし)前提の正規表現で、ダブルクォートが間に挟まるため恒常的にNO MATCHとなり、閾値超過(prefill_active:true)が正しく設定されていてもAUTO-PREFILL機構(cmd_2161: result.summary等の空欄再発防止コメント自動挿入)が一度も発動していなかった。Python側(yaml.safe_load)はJSONもパースできるため後段は無傷で動いており、症状(insight INS-20260709-094628266-2717: result.summary空欄14回発火)としてしか表面化しなかった。対策: 拡張子と実シリアライズ形式が一致しない設定/学習ファイルをbash側でgrep/文字列パターンマッチする箇所は、ダブルクォート有無や空白差異に頑健な正規表現にするか、そもそもpython(yaml.safe_load等)に判定ロジックを寄せるべき。また該当機能のテストフィクスチャもYAML形式で書かれておりこのフォーマット不一致を検出できていなかった(テストのフィクスチャは本番の実出力形式で作るべき)
+
+### L1015: FAILパターンのinsight抑制はco-occurrence率100%を実測してから横展開せよ。似ているだけでは不十分
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_insight_202607091222_tobisaru
+- **記録者**: tobisaru
+- **tags**: [infra,gate,gate,bash,yaml]
+- **target_files**: [scripts/gates/gate_loop_health.sh]
+- **origin**: [[cmd_reflux_insight_202607091222_tobisaru]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- L992/cmd_1614はgate_loop_health.shでbinary_checks.ACx*.result空文字パターンを意図的BLOCKと確定しMaturation recommendations/Auto-insight generationの両ループにcontinue抑制分岐を追加したが、同じ根本原因(binary_checks未記入)から副次的に発生するverdict: "" is not validパターン(全期間329件)には横展開されておらず、同じ結論を促すinsightがcmd_reflux_insight_202607091222_tobisaru(INS-20260709-094628528-15b2)として再起票され続けていた。gate_fire_log.yamlをgrepしverdict空文字パターンが過去329件全て(100%)binary_checks空文字と同一行で発火することを実測確認した上でL992と同型の抑制分岐を追加した。一方、見た目が似ているresult.summary: MISSING or emptyパターン(269件)は同じ手法でco-occurrence率を測ると211件(78%)にとどまり100%ではなかったため、横展開対象から意図的に除外した。教訓: 『同じ根本原因の別symptomではないか』という疑いが生じたら、grep -c本体 | grep -c 相手パターンでco-occurrence率を実測してから横展開の可否を判断せよ。見た目のメッセージの類似性や『同じcmdで一緒に出ている』という印象だけで判断すると、独立した品質シグナルまで誤って抑制しかねない(result.summaryの22%は真に独立した欠落であり、抑制すれば品質低下を見逃す)
+
+### L1016: semantic_alias_absorb_pendingはスコア閾値未達なら機能せず、正本index.md手動編集+再生成が必要な場合がある
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_insight_202607091255_saizo
+- **記録者**: saizo
+- **tags**: [infra,context,pipeline,testing,process]
+- **target_files**: [docs/semantic-index/index.md,context/semantic-map.md]
+- **origin**: [[cmd_reflux_insight_202607091255_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 「cronと競合していないか？」insightにsemantic_alias_absorb_pending.shを実行したところ、意味的に無関係な'infrastructure_ops'概念へscore=3.7でマッチしたが閾値未達で自動吸収されず(pending維持)。実際に意味的に正しい概念'recalculate_pipeline'は候補にすら挙がらなかった。自動吸収は既存概念群への類似度マッチングに依存するため、正しい概念のスコアが低い/候補外の場合は自動化だけでは解決しない。標準対応: (1)一次情報でクエリの実際の文脈を確認 (2)正本docs/semantic-index/index.mdの意味的に正しいブロックへ手動でalias追加 (3)scripts/semantic_map_generate.shで再生成 (4)semantic_search.shで自己検証(HIT確認) (5)insight_write.sh --resolveでresolve。この5ステップを、自動吸収非対応時の還流消化フローとしてninja_monitor.sh運用ドキュメントに明記する価値がある
+
+### L1017: karo_direct hotfixが失敗cmdを代替したら元taskへsuperseded_by終端を付ける
+- **日付**: 2026-07-09
+- **出典**: cmd_karo_hotfix_cmd3786_sequence_rerun_202607091318
+- **記録者**: karo
+- **tags**: [karo_direct, gate_karo_startup, superseded_by]
+- **origin**: [[cmd_3786_full]] -> [[karo_direct_hotfix_CLEAR]] -> [[superseded_by終端ゲート]]
+- **enforcement**: Level4: gate_karo_startup treats failed+completed with superseded_by pointing to CLEAR gate_metrics as SUPERSEDED
+- **when**: failed task is covered by a separate karo_direct hotfix cmd
+- **how**: write superseded_by and terminal_reason on original task, then verify target cmd has CLEAR in logs/gate_metrics.log
+- cmd_3786でHayateのcmd_3786_fullは正当にFAILEDだが、家老hotfix cmd_karo_hotfix_cmd3786_sequence_rerun_202607091318 がGATE CLEARして上位カバーした後も、元taskがfailed+report completedのまま残りstartup gateが恒久ALERTを吐いた。代替完了時は元taskへsuperseded_by=<CLEAR cmd> と terminal_reason を記録し、gate_karo_startupはsuperseded_by先がlogs/gate_metrics.logでCLEARならSUPERSEDEDとして閉じる。これによりkaro_direct hotfixがshogun cmdを代替した際の終端連携が意志依存にならない。
