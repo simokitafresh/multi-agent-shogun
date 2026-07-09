@@ -5804,7 +5804,7 @@ ${FULL_CMD}"
     # 研究スクリプト参照または明示的なGS文言に限定する。
     # "GS CSV" = データファイル参照であり研究スクリプト実行ではないため除外(cmd_2227 FP修正)
     local GS_SEARCH_TEXT
-    GS_SEARCH_TEXT=$(printf '%s\n' "$SEARCH_TEXT" | grep -vE 'outputs/grid_search|grid_monthly_fast|grid_results_fast' | sed -E 's/GS[[:space:]]*CSV//g' || true)
+    GS_SEARCH_TEXT=$(printf '%s\n' "$SEARCH_TEXT" | grep -vE 'outputs/grid_search|grid_monthly_fast|grid_results_fast|gs_price_preflight|download_all_prices|data_sync' | sed -E 's/GS[[:space:]]*CSV//g' || true)
     if echo "$GS_SEARCH_TEXT" | grep -qE 'run_077|scripts/analysis/grid[_-]search|grid[_-]search/run|グリッドサーチ|[[:space:]]GS[[:space:]　]|[[:space:]]GS新規|忍法GS|GS[[:space:]を]|GS[[:space:]の]'; then
         HIT_GS=true
     fi
