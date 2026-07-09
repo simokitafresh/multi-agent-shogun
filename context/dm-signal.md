@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-10 cmd_3815 -->
+<!-- last_updated: 2026-07-10 cmd_3816 -->
 <!-- last_synced_lesson: L857 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -363,9 +363,17 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 
 - cmd_3815で残った8体72ヶ月の乖離を、cmd_3811と同一の3点突合(本番DB値/PipelineEngine直接実行値/GS値)で全数追跡した。静的diff(cmd_3806/3812/3815の乖離月集合比較)により**cmd_3814(GS DTB3暦再生成)は玄武-常勝2023-12(cmd_3813/3814で別途解決済み)を除き本cmd範囲の72ヶ月に一切影響していない**ことを確定(`FIXED_BY_3814`が全PFで空集合)。原因は**cmd_3812のledger weights再backfill**に一本化される: 67/75行が`NEW_IN_3812_PERSISTS_AFTER_3814`、64/75行が`PIPELINE_GS_MATCH_PROD_DIVERGES`(ライブPipelineEngine実行値とGS値が一致し本番保存値のみ乖離)。
 - **根本メカニズム**: `backend/app/jobs/generators/monthly_returns.py` L344-349がledger保存weightsを無条件優先するようcmd_3812で変更されたが、`backend/scripts/build_signal_decision_ledger_historical_backfill.py` L163-180の`_extract_signal_weights`は`signals.momentum_data.weights`を**現在保存されている値のまま**コピーする設計(docstring L13「as recorded today」)。多くの履歴月・直近月(2026-04含む)で`signals`保存値はband混合weightsのままだが、現在の本番価格データで`absolute_momentum.py`のmarginを再計算すると明確に`fail`域(閾値0.005を大きく超える負値)で単一資産100%が正しい。この不整合はcmd_3812以前は等ウェイトフォールバックの陰に隠れており、ledger優先化で表面化した。
-- 残り11/75行(14.7%)は`ALL_DIVERGE`(GS値もライブ実行と不一致)でband遷移直後の月に集中する別要因、根因未特定のまま残存。
+- 残り11/75行(14.7%)は`ALL_DIVERGE`(GS値もライブ実行と不一致)でband遷移直後の月に集中する別要因→**cmd_3818(2026-07-10)で根因確定**(下記§42.1)。
 - 次アクション(未着手): `signals.momentum_data`の全履歴再生成、またはledger優先ロジックへのband再検証の要否は実装判断が必要。
 - 詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3816_residual_divergence.md`、機械証跡 → `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3816_residual_divergence.json`、スクリプト → `/mnt/c/Python_app/DM-signal/scripts/oneshot/cmd_3816_residual_divergence.py`
+
+### §42.1 ALL_DIVERGE 11行の根因確定=「band遷移」ではなく検証スクリプトのrebalance_trigger非対応 (cmd_3818, 2026-07-10)
+
+- 11行全てが朱雀(bimonthly_even)・白虎(quarterly_jan)の4PF(常勝/鉄壁)のみに集中し、monthlyの玄武・青龍は0行。**「band遷移直後」は見かけ上の相関で、真因は非monthlyリバランスPFの参照日解決**。
+- `cmd_3811_remaining_divergence.py`/`cmd_3816_residual_divergence.py`の`month_bounds()`(両ファイル共通の同名関数)は`rebalance_trigger`を一切参照せず、常に「返り月の直前営業日」を参照日として`PipelineEngine.execute_pipeline(target_date=...)`を呼ぶ。非monthly PFの非リバランス月ではこれが誤った参照日になる。
+- 正しい参照日解決は`backend/app/services/rebalance.py`の`get_last_rebalance_month_end_business()`(`_resolve_signal_month()`経由)。これで11行全件のtarget_dateを補正して`PipelineEngine`を再実行した結果、**11/11行が1e-6以内でGS値と完全一致**(`corrected_matches_gs=True`)。**GS(`shin_shijin_l1_gs.py` L1011-1031の`carried_idx`/`rebalance_masks`機構)は正しい**、検証スクリプト側にバグがあった。
+- 本番保存値との残差(11/11行で依然prod≠corrected)は新規根因ではなく、§42既出の「ledger優先ロジック+staleスナップショット」機構と同一(cmd_3817が並行して着手済み)。
+- 詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3818_band_transition_divergence.md`、機械証跡 → `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3818_band_transition_trace.json`、スクリプト → `/mnt/c/Python_app/DM-signal/scripts/oneshot/cmd_3818_band_transition_trace.py`
 
 ## §35 GS D3出力パリティ再検証 (cmd_3794, 2026-07-09)
 
