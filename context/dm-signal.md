@@ -328,6 +328,12 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - 7忍法直列実行は全てexit 0。出力は`outputs/grid_search/20260709/L1/cmd_3798_phase_b/`、ログは`outputs/analysis/cmd_3798_logs/`。行数: bunshin 781 / oikaze 17550 / kasoku_diff 84240 / kasoku_ratio 84240 / kawarimi 28116 / nukimi 45150 / yotsume 3906。
 - 旧3基準チャンピオン21体を選出済み。特記事項: kasoku_ratioは激攻(CAGR最大)と常勝(NHF最大)が同一`kasoku_ratio_N4_0352_10M_11M_ratio_N1_R1`。詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3798_phase_b_l1.md`
 
+## §38 残存4体15ヶ月パリティ乖離 (cmd_3811, 2026-07-10)
+
+- cmd_3806後も残った4体15ヶ月は常勝モード固有バグではない。15件中7件はPipelineEngine直接実行=GSで本番monthly_returnsのみ乖離、7件は直接Pipeline/GS/本番ledgerの比較基準が三者不一致、1件(玄武-常勝2023-12)は本番=PipelineでGSのみ乖離。
+- 主因は`signal_decision_ledger` historical_backfillがband時の50% safe haven weightを`decision_ticker_weights`として保持せず、`decision_holding_signal`文字列を等ウェイト展開すること。非リバランス月は直接Pipeline再評価ではなく直近決定持ち越し基準で比較する必要がある。
+- 詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3811_remaining_divergence.md`、機械証跡 → `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3811_remaining_divergence.json`
+
 ## §35 GS D3出力パリティ再検証 (cmd_3794, 2026-07-09)
 
 - **PI-009 GS-vs本番エンジン突合はD1価格同期の影響を受けない**: cmd_3755(T1)の5/7 PASS結果と、D1同期済みprices再検証後の結果は完全一致(5/7 PASS、変化なし)。2 FAIL(DM-safe/DM-safe-2、共に2009-05・gate_state=band)は価格陳腐化ではなく別要因と確定。
