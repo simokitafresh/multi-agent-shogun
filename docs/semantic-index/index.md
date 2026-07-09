@@ -62,6 +62,7 @@ codd:
 | causal | [[cmd_3785順序不備]] -> [[PF削除依存順誤認]] -> [[dm_signal_pf_restore_guardrails]] |
 | causal | [[restore-all応答未終端]] -> [[recalculation_status_stale_running]] -> [[生成物102_102一次確認で判定]] |
 | causal | [[忍者追加報告_cmd3786_20260709]] -> [[前提知識不備]] -> [[deploy_task自動注入_Level5]] |
+| causal | `cmd_3788` files_modified: [[dm_signal_pf_restore_guardrails]] |
 
 ## gs_recalibration_plan — GS再キャリブレーション計画
 
@@ -225,7 +226,7 @@ codd:
 |------|---|
 | id | three_layer_memory_system |
 | label | 三層記憶システム |
-| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ, 三層記憶にも貫通させておいて, symlinkが必然である知識を三層記憶に貫通佐瀬よ, 三層記憶を勘違いしていないか？, 貫通=3層全てに書き込んで各層から独立に検索到達可能にすること, 掲示板投稿だけでは1層のみ=未貫通, 三層記憶を確認しろ, スキルの理解が極めて低いな, 顛末を三層記憶に貫通させて, 三層記憶と一緒だ, 三層記憶は正しく理解しているか？, 今回の知見を三層記憶に貫通させて, 今回得た知見を三層記憶に貫通させてアップデートせよ, この知見とルールを三層記憶に貫通させて, 今回の知見を三層記憶に貫通させよ, 家老によりスムーズな goalのやり方を確認させて, 今回は最速最適に実行できたか？厳しく確認しより良いやり方や, だから三層記憶なんだ, 今回の試行錯誤を経て, オントロジーと三層記憶の連携は順調か？, この知見は三層記憶に貫通させておいて, 今回の知見を三層記憶とスキルにアップデートせよ, 三層記憶に貫通させて, 今回の試行錯誤を, 三層記憶は記憶DB obsidian セマンティックの三層, 三層記憶にも正しく貫通させよう |
+| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ, 三層記憶にも貫通させておいて, symlinkが必然である知識を三層記憶に貫通佐瀬よ, 三層記憶を勘違いしていないか？, 貫通=3層全てに書き込んで各層から独立に検索到達可能にすること, 掲示板投稿だけでは1層のみ=未貫通, 三層記憶を確認しろ, スキルの理解が極めて低いな, 顛末を三層記憶に貫通させて, 三層記憶と一緒だ, 三層記憶は正しく理解しているか？, 今回の知見を三層記憶に貫通させて, 今回得た知見を三層記憶に貫通させてアップデートせよ, この知見とルールを三層記憶に貫通させて, 今回の知見を三層記憶に貫通させよ, 家老によりスムーズな goalのやり方を確認させて, 今回は最速最適に実行できたか？厳しく確認しより良いやり方や, だから三層記憶なんだ, 今回の試行錯誤を経て, オントロジーと三層記憶の連携は順調か？, この知見は三層記憶に貫通させておいて, 今回の知見を三層記憶とスキルにアップデートせよ, 三層記憶に貫通させて, 今回の試行錯誤を, 三層記憶は記憶DB obsidian セマンティックの三層, 三層記憶にも正しく貫通させよう, スキルの問題か？三層記憶の問題か？ |
 | related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop, operational_ontology, unread_cmd_new_deployment_guard, codex_goal_mode, dm_signal_pf_restore_guardrails |
 
 | 種別 | パス/参照 |
@@ -333,6 +334,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T14:45:12+09:00 bnw5wynxp toolu_0139sSxh6aDyg7VP5rXg2akg /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ba8a7377-699d-49b7-bda1-2e2015 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-09T10:10:58+09:00 今回の知識は再発しないように三層記憶に貫通させておいてくれ。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-09T13:55:54+09:00 三層記憶にも正しく貫通させよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T14:44:40+09:00 1Mになっていないバグだな。スキルの問題か？三層記憶の問題か？ |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -895,6 +897,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-09T10:15:43+09:00 PF登録config不正値事故の教訓(cmd_3785, 2026-07-09): pipeline_config内ブロックのcategoryに'selection'を書くとPipelineConfig検証が失敗する(正当値はfilter/ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-09T09:09:12+09:00 cronと競合していないか？ |
 | file | `/mnt/c/Python_app/DM-signal/backend/app/utils/recalc_status.py` — start_recalculation()がpg_advisory_lockでcross-process排他。手動fullrecalculateとRender日次cron(01:10/01:40 UTC sync-standard/sync-fof)は同一lock keyで排他されるため同時実行不可（409で弾かれ30秒待って再実行、`context/dm-signal-ops.md` 排他制御節） |
+| cmd | `cmd_3788` 再計算ステータスのクロスプロセス真実源統一 — DB SSOT化 (`context/dm-signal-ops.md`) |
+| causal | `cmd_3788` origin: [[殿指摘20260709_1349_3786完了確認]] -> [[recalc-status-cross-process-truth設計書]] -> [[cmd_3788_DB_SSOT化実装]] |
 | causal_chain | `[[cmd_3053]]` (L714) |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3153]]` (L744) |
@@ -1265,6 +1269,7 @@ codd:
 | lesson | `L961` semantic_stress_test NO_MATCH insightはdirect_concept構文で手動誘導せよ。alias:直後は検索語のみに限定 |
 | lesson | `L984` semantic index還流insightは『前回同一ファイルがresolve済みか』をqueue/insights.yaml内で横断検索し、再発なら根因修正を優先せよ |
 | lesson | `L994` semantic_stress_test.shのalias_candidate()正規表現がcmd番号+直後Japanese文字の組合せでcmd_NNNN除去に失敗する |
+| lesson | `L1023` semantic_stress_test resolve時はabsorb_pendingのスコア未満match先の既存alias一覧も目視確認せよ(L1000補完) |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -1374,6 +1379,7 @@ codd:
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_reflux_insight_202607080538_saizo]]` (L984) |
 | causal_chain | `[[cmd_reflux_insight_202607081542_saizo]]` (L994) |
+| causal_chain | `[[cmd_reflux_insight_202607091521_tobisaru]]` (L1023) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -1545,6 +1551,7 @@ codd:
 | cmd | `cmd_training_L4_idle_202607060015_kagemaru` (`codd/extracted/ac_physical_verify_20260520/architecture-overview.md`) |
 | lesson | `L967` CoDD extractペア成果物(system-context.md/architecture-overview.md)は同一失敗抽出から生成されるが相互リンクを自動生成しない |
 | cmd | `cmd_karo_hotfix_context_freshness_ga203_202607090005` (`context/codd.md`, `context/memory-db-queries.md`, `context/obsidian-link-principles.md`) |
+| cmd | `cmd_karo_hotfix_skill_refs_update_202607091452` (`skills/codd-fix/SKILL.md`, `skills/karo-direct/SKILL.md`, `skills/recon-dual/SKILL.md`) |
 | causal_chain | `[[cmd_3246]]` (L761) |
 | causal_chain | `[[cmd_karo_ci_fix_shogun_retry_20260703]]` (L946) |
 | causal_chain | `[[cmd_3720]]` (L958) |
@@ -2102,6 +2109,8 @@ codd:
 | lesson | `L991` log_terminal_input.shはUserPromptSubmit経由の全input(Agent tool task-notification含む)をagent=lordとして記録しており、殿の発言と誤帰属される |
 | causal | `cmd_training_L4_auto_202607081543_hayate` files_modified: [[deepdive_principles]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-09T14:20:23+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T14:23:09+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T14:38:00+09:00 家老強ニュー申し送り: 今クリアされても今より強くてニューゲームできるように、cmd_3787 CLEAR、cmd_3788 kagemaru配備、CI RED saizo配備、INSIGHT_REPEAT kotaro/tobisaru配 |
 | causal_chain | `[[cmd_3624_kagemaru]]` (L900) |
 | causal_chain | `[[cmd_reflux_insight_202607081406_saizo]]` (L991) |
 
@@ -2238,7 +2247,7 @@ codd:
 |------|---|
 | id | chain_principle |
 | label | 鎖の原理 |
-| aliases | 鎖, 鎖の原理, chain principle, weakest link, 最弱リンク, 全体クオリティ, ボトルネック原理, スクリプトなどの実行速度にボトルネックはないか, 実行回数が多いものや頻度の多いものにフォーカス |
+| aliases | 鎖, 鎖の原理, chain principle, weakest link, 最弱リンク, 全体クオリティ, ボトルネック原理, スクリプトなどの実行速度にボトルネックはないか, 実行回数が多いものや頻度の多いものにフォーカス, リンク |
 | skills | なし |
 | related_concepts | growth_loop, defense_hierarchy, gate_quality_framework |
 
@@ -2504,6 +2513,10 @@ codd:
 | lesson | `L990` THROUGHPUT_FIX_KNOWN fp_rate系insightのverify_commandは実質no-opの場合がある。resolve時は必ずdetector_fp_rate.sh再実行で一次確認せよ |
 | lesson | `L993` script対象修行でMarkdown ACがある場合はcontext_hintsの関連Markdownへ双方向リンクを張る |
 | lesson | `L995` semantic_alias_absorb_pending.shのalias_similarity_scoreは長い一文クエリを構造的に低スコア化し、閾値16.0未達=noiseと機械的に判定すると意味的に関連するinsightを見送ってしまう |
+| lesson | `L1020` INSIGHT_REPEATの掲示板status=closedは通知処理完了を意味するだけで、根本原因の解消を意味しない |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T15:06:22+09:00 覚醒して実際の現況を確認したうえで行動。 |
+| lesson | `L1022` L770(matches[-1]基準)はL940(2026-07-02)でgate側修正(max(epochs)採用)により無効化済みだが、superseded_by未記入のまま放置され、7日後の本タスクAC設計にも古い前提が埋め込まれた |
+| lesson | `L843` download_all_prices後も本番prices preflightで値差確認する |
 | causal_chain | `[[cmd_3270]]` (L768) |
 | causal_chain | `[[cmd_3278]]` (L772) |
 | causal_chain | `[[cmd_092]]` (L004) |
@@ -2532,6 +2545,9 @@ codd:
 | causal_chain | `[[cmd_reflux_insight_202607081342_tobisaru]]` (L990) |
 | causal_chain | `[[cmd_training_L4_auto_202607081543_hayate]]` (L993) |
 | causal_chain | `[[cmd_reflux_insight_202607081557_tobisaru]]` (L995) |
+| causal_chain | `[[cmd_karo_recon_insight_repeat_backlog_202607091438]]` (L1020) |
+| causal_chain | `[[cmd_karo_hotfix_skill_refs_update_202607091452]]` (L1022) |
+| causal_chain | `[[cmd_3522]]` (L843) |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -2913,6 +2929,9 @@ codd:
 | causal | `cmd_3573` files_modified: [[silent_fallback_quality]] |
 | causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[silent_fallback_quality]] |
 | causal | `cmd_karo_hotfix_ga200_context_freshness_202607081121` files_modified: [[silent_fallback_quality]] |
+| cmd | `cmd_3787` Monthly Trade検証用リターン計算 — ticker欠落時のfail-closed化 |
+| causal | `cmd_3787` origin: [[殿指摘20260709_1337_matched_weight]] -> [[monthly-trade-missing-ticker-calc設計書]] -> [[cmd_3787_fail-closed化実装]] |
+| causal | `cmd_3788` files_modified: [[silent_fallback_quality]] |
 
 ## skill_design_rules — Skill設計ルール
 
@@ -3019,6 +3038,8 @@ codd:
 | cmd | `cmd_karo_hotfix_skill_refs_shogun_teire_2026070501` (`skills/shogun-teire/SKILL.md`) |
 | causal | `cmd_karo_hotfix_skill_refs_codd_fix_2026070501` files_modified: [[skill_design_rules]] |
 | causal | `cmd_karo_hotfix_context_freshness_ga203_202607090005` files_modified: [[skill_design_rules]] |
+| causal | `cmd_karo_hotfix_skill_refs_update_202607091452` files_modified: [[skill_design_rules]] |
+| lesson | `L770` SKILL.md checked_at matches[-1]基準はdeprecated。現行gateはmax epoch採用 |
 | causal_chain | `[[cmd_2929]]` (L647) |
 | causal_chain | `[[cmd_2929]]` (L649) |
 | causal_chain | `[[cmd_training_L7_v3_hanzo_5_20260521202900]]` (L660) |
@@ -3027,6 +3048,7 @@ codd:
 | causal_chain | `[[cmd_2995]]` (L687) |
 | causal_chain | `[[gate_skill_script_refs.sh_WARN]] -> [[checked_at_re_matches_last]] -> [[先頭タグ追加だけでは不十分]]` (L770) |
 | causal_chain | `[[cmd_karo_hotfix_skill_script_refs_202607022043]]` (L940) |
+| causal_chain | `[[gate_skill_script_refs.sh_WARN]] -> [[checked_at_re_matches_last]] -> [[先頭タグ追加だけでは不十分]]` (L770) |
 
 ## dm_signal_refactor_mission — DM-Signalリファクタ任務
 
@@ -3125,6 +3147,7 @@ codd:
 | causal | `cmd_3583` origin: [[殿指示_Fusion構想_20260628]] -> [[DM-Signal APIに外部アプリ向けエンドポイント不在]] -> [[fusion.py実装+CORS追加+禁止キーテスト]] |
 | causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[fusion_api_endpoint]] |
 | causal | `cmd_karo_hotfix_ga200_context_freshness_202607081121` files_modified: [[fusion_api_endpoint]] |
+| causal | `cmd_3788` files_modified: [[fusion_api_endpoint]] |
 
 ## dm_fusion_app — DM-Fusionアプリ
 
@@ -3157,6 +3180,7 @@ codd:
 | cmd | `cmd_3607` admin速度改善+フォルダ一括トグル — location.reload()→optimistic update |
 | causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[dm_fusion_app]] |
 | causal | `cmd_karo_hotfix_ga200_context_freshness_202607081121` files_modified: [[dm_fusion_app]] |
+| causal | `cmd_3788` files_modified: [[dm_fusion_app]] |
 
 ## dmsignal_fe_experience_deploy — DM-Signal体感主導デプロイ
 
@@ -3176,6 +3200,7 @@ codd:
 | causal | `[[cmd_3672_計測道具実データ対応]] -> [[cmd_3673_真値差分表]] -> [[殿裁定_20260703_体感クローズ]]` |
 | cmd | `cmd_3330` backfill — | session_20260612_shogun_ac2_cycles_mtdux_complete | AC2第1-2サイクル本番着地+第二サイクルレビュー通過+mtd-ux全PR完遂+裁可型是正 |
 | causal | `cmd_karo_hotfix_ga200_context_freshness_202607081121` files_modified: [[dmsignal_fe_experience_deploy]] |
+| causal | `cmd_3788` files_modified: [[dmsignal_fe_experience_deploy]] |
 
 ## dmsignal_operations — DM-Signal運用
 
@@ -3258,6 +3283,7 @@ codd:
 | causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[dmsignal_operations]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-08T08:07:44+09:00 まだ本番にはモメンタムバンドで計算されたPFがないのでは？ |
 | causal | `cmd_karo_hotfix_ga200_context_freshness_202607081121` files_modified: [[dmsignal_operations]] |
+| causal | `cmd_3788` files_modified: [[dmsignal_operations]] |
 | causal_chain | `[[cmd_3368]]` (L805) |
 | causal_chain | `[[cmd_3380]]` (L807) |
 
@@ -3315,7 +3341,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, idle忍者だけrespawanせよ, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが, 結果 respawn対象なのにスキップ 3名スキップ実証, どちらがいいと思う？, 起動後はsettings yamlに従うなどの, 2層SSOT, デフォルト復帰, cli_profiles defaults, codex --full-auto exit 2, settings.yaml type未更新, switch_cli_mode settings未反映, respawn-pane -k codex単体起動, 未配備のCMDへの対策は将軍にせよ, shogun-cli-switch後にshutsujin_departureを呼ぶな, runtime CLI switchでデフォルト復元禁止, 固定行sedでsettings確認禁止, YAMLパースで対象agent確認, settings tmux 実pane 三点照合, CLI切替後post-switch verification, 調査してバグを修正しよう, 報告では対象contextの解消証跡と, 既存の広いdirty差分inbox1 — CMD受領済み, GPT忍者に配備しなおそう, 3595は配備されているか？, per-agent launch_cmd, cli_lookup launch_cmd override, ninja_monitor 巻き戻し, 2.1.87巻き戻し防止, settings.yaml per-agent launch_cmd, ~/.local/bin/claude 最新版, 最新版と固定版の個別切替, 最新版とピン留めの違い, pin-2.1.87は版だけ, unpin-latestは版だけ, unpin-latestだけではOpus 4.8 xhighにならない, 最新版 Opus 4.8 xhigh は二段切替, いつでもだれでも個別もしくは複数をピン留めや最新版に自由自在に切り替えられることが必須だ, tobisaru 最新版, agent単位バージョン切替, cli_lookup.sh _CLI_LAUNCH_CMD_OVERRIDE, model comparison, A/B evaluation, A/B/C evaluation, モデル比較, Sonnet 5 vs Sonnet 4.6, GPT 5.5 vs Opus 4.8, 四者比較, 三者比較, 三社比較, 3社比較, Opus 4.8 xhigh, 1M xhigh, saizo Opus 4.8 xhigh, CLIとモデルとエフォートを切り替え, 未調査モデルeffort組み合わせ, CLI model effort組合せ, MECEモデル比較, paneの枠のステータスがsonnetのまま, GPTはCodex専用, SonnetはClaude Code専用, OpusはClaude Code専用, 別会社の別CLI, クロス使用不可能, GPTのClaude Code版は存在しない, 未検証の組合せを検証しよう, 将軍と軍師を最新版のopus xhigh変更してくれ, ピン留めと最新版の違いはわかるか？, 将軍と軍師をピン留めopus highにしてくれ, 将軍と軍師をピン留めopus 4 6 highにしてくれ, 忍者は終わり次第, 将軍をピン止めopus4 1m highにせよ, 将軍をピン止めopus4 6 1m highにせよ, 将軍をピン留めopu 1Mにスキルを使って変更せよ, 将軍をピン留めopu 4 6 1Mにスキルを使って変更せよ, 偵察を許可する |
+| aliases | 編成, hensei, モデル編成, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, idle忍者だけrespawanせよ, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが, 結果 respawn対象なのにスキップ 3名スキップ実証, どちらがいいと思う？, 起動後はsettings yamlに従うなどの, 2層SSOT, デフォルト復帰, cli_profiles defaults, codex --full-auto exit 2, settings.yaml type未更新, switch_cli_mode settings未反映, respawn-pane -k codex単体起動, 未配備のCMDへの対策は将軍にせよ, shogun-cli-switch後にshutsujin_departureを呼ぶな, runtime CLI switchでデフォルト復元禁止, 固定行sedでsettings確認禁止, YAMLパースで対象agent確認, settings tmux 実pane 三点照合, CLI切替後post-switch verification, 調査してバグを修正しよう, 報告では対象contextの解消証跡と, 既存の広いdirty差分inbox1 — CMD受領済み, GPT忍者に配備しなおそう, 3595は配備されているか？, per-agent launch_cmd, cli_lookup launch_cmd override, ninja_monitor 巻き戻し, 2.1.87巻き戻し防止, settings.yaml per-agent launch_cmd, ~/.local/bin/claude 最新版, 最新版と固定版の個別切替, 最新版とピン留めの違い, pin-2.1.87は版だけ, unpin-latestは版だけ, unpin-latestだけではOpus 4.8 xhighにならない, 最新版 Opus 4.8 xhigh は二段切替, いつでもだれでも個別もしくは複数をピン留めや最新版に自由自在に切り替えられることが必須だ, tobisaru 最新版, agent単位バージョン切替, cli_lookup.sh _CLI_LAUNCH_CMD_OVERRIDE, model comparison, A/B evaluation, A/B/C evaluation, モデル比較, Sonnet 5 vs Sonnet 4.6, GPT 5.5 vs Opus 4.8, 四者比較, 三者比較, 三社比較, 3社比較, Opus 4.8 xhigh, 1M xhigh, saizo Opus 4.8 xhigh, CLIとモデルとエフォートを切り替え, 未調査モデルeffort組み合わせ, CLI model effort組合せ, MECEモデル比較, paneの枠のステータスがsonnetのまま, GPTはCodex専用, SonnetはClaude Code専用, OpusはClaude Code専用, 別会社の別CLI, クロス使用不可能, GPTのClaude Code版は存在しない, 未検証の組合せを検証しよう, 将軍と軍師を最新版のopus xhigh変更してくれ, ピン留めと最新版の違いはわかるか？, 将軍と軍師をピン留めopus highにしてくれ, 将軍と軍師をピン留めopus 4 6 highにしてくれ, 忍者は終わり次第, 将軍をピン止めopus4 1m highにせよ, 将軍をピン止めopus4 6 1m highにせよ, 将軍をピン留めopu 1Mにスキルを使って変更せよ, 将軍をピン留めopu 4 6 1Mにスキルを使って変更せよ, 偵察を許可する, 将軍をピン止めopus 1Mにrespawanせよ, D1偵察cmdを起票せよ |
 | skills | shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み), karo-direct, recon-dual |
 | related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework, systems_knowledge_base, skill_design_rules, shogun_android_app, task_modifier_injection, infrastructure_ops, bulletin_communication, inbox_processing_discipline, multi_cli_event_commonization, skill_routing, commander_role_ssot_analysis, codex_goal_mode |
 | related_lessons | `L594`, `L603`, `L550`, `L310` |
@@ -3720,6 +3746,9 @@ codd:
 | cmd | `cmd_karo_recon2_idle_reflux_dispatch_fixknown_202607081300` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_reflux_promotion.bats`) |
 | causal | `cmd_training_L4_auto_202607081543_hayate` files_modified: [[agent_formation_management]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-09T13:34:03+09:00 軍師セッション2026-07-08〜09実績: レビュー123件処理。免疫獲得=SG-PRE32(視点列間一致検出)+completion_notify_gap+deploy_task fallback+AUTO-PREFILL修正+PD除 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T14:42:01+09:00 将軍をピン止めopus 1Mにrespawanせよ |
+| causal | `cmd_karo_hotfix_skill_refs_update_202607091452` files_modified: [[agent_formation_management]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T15:41:43+09:00 D1偵察cmdを起票せよ |
 | causal_chain | `[[gunshi_session_20260510]]` (L587) |
 | causal_chain | `[[cmd_karo_lk004_inbox_root_cause]]` (L594) |
 | causal_chain | `[[cmd_2691]]` (L602) |
@@ -4064,6 +4093,7 @@ codd:
 | causal | `cmd_3764` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_ga200_context_freshness_202607081121` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_idle_gate_metrics_isolation_202607081358` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_3788` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_3588]]` (L875) |
 
 ## defense_hierarchy — 防御階層原則
@@ -4559,7 +4589,7 @@ codd:
 |------|---|
 | id | report_quality_protocol |
 | label | 忍者報告品質プロトコル |
-| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, GP-286, GP-287, files_modifiedパス形式, commit_hash 40文字hex, short commit_hash, full hash, 40文字フルhash, batsテスト, CI回帰防護, gate report format regression, report_yaml_format, fallback template品質, report_path欠落, ac_version欠落, 報告未完了でidle化, 軍師提案 GP-286 GP-287, 軍師提案 GP-286 GP-287 files_modified commit_hash batsテスト CI回帰防護, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？, 報告して返答をもらえ, Phase1 FE削除, 家老と軍師のペアは順調か？, では軍師にも穴がないかチェックしてもらおう, 設計書に穴はないか？, 自分で解決困難であれば分析して掲示板に投稿し, 問題は軍師が将軍と俺の会話を自分ごととしてとらえた点だ, ちょっとまて, 軍師のことは軍師に任せろ, では軍師の掲示板に対応せよ, あわてずに軍師のpaneを読め, これが必要なのは将軍, 軍師にもアドバイスをもらえ, 作業開始時点のgateは既にOKだった, 設計書を家老にレビューしてもらおう, 軍師と協議せよ, どうなった？, Ⅴに関しては家老と軍師による再戻しがあるのでは？, 設計書を作成, 軍師から掲示板は来ていないか？, 3621はどうなった？, 軍師はopus4 highだ, 軍師はopus4 6 highだ, 家老と軍師をぴん留めopus highにしてくれ, 家老と軍師をぴん留めopus 4 6 highにしてくれ, 将軍と軍師をinbox3, 将軍のレビューをせよ, P4はどうなった？, 軍師も覚醒して独自に調査せよ, 忍者や家老 |
+| aliases | 報告クオリティ, report quality, 報告YAML, report template, gate_report_format, binary_checks, lesson_candidate, lessons_useful, purpose_validation, verdict自動導出, report_field_set, 報告ゲート, SKIPはFAIL, status completed, AC二値チェック, 完了ゲート報告検証, report YAML existence check, binary_checks validation, lessons_useful検査, purpose_validation check, 報告フィールド更新, binary_checks保護, verdict bc整合, report archive sweep, fail count summary, 報告必須項目検証, binary_checks二値検証, stale報告検出, 報告修正ヒント生成, gate失敗学習記録, assumption_invalidation正規化, report_field_set互換shim, lesson_candidate必須項目強制, 教訓候補必須項目検査, 報告ゲート再検証, 通知済みgate再実行, 報告フィールド設定, assumption_invalidationガード, GP-286, GP-287, files_modifiedパス形式, commit_hash 40文字hex, short commit_hash, full hash, 40文字フルhash, batsテスト, CI回帰防護, gate report format regression, report_yaml_format, fallback template品質, report_path欠落, ac_version欠落, 報告未完了でidle化, 軍師提案 GP-286 GP-287, 軍師提案 GP-286 GP-287 files_modified commit_hash batsテスト CI回帰防護, 軍師, レビュー, 軍師にも同じ問いをしてみよう, 軍師に相談せよ, phase1 5を覚醒モードでレビューしよう, レビューはどうなった？, 軍師からの三往復目はきたのか？, 将軍は独自にレビューして掲示板に回答せよ, レビューしてもらえ, 雑なレビューになっていないか？, 報告して返答をもらえ, Phase1 FE削除, 家老と軍師のペアは順調か？, では軍師にも穴がないかチェックしてもらおう, 設計書に穴はないか？, 自分で解決困難であれば分析して掲示板に投稿し, 問題は軍師が将軍と俺の会話を自分ごととしてとらえた点だ, ちょっとまて, 軍師のことは軍師に任せろ, では軍師の掲示板に対応せよ, あわてずに軍師のpaneを読め, これが必要なのは将軍, 軍師にもアドバイスをもらえ, 作業開始時点のgateは既にOKだった, 設計書を家老にレビューしてもらおう, 軍師と協議せよ, どうなった？, Ⅴに関しては家老と軍師による再戻しがあるのでは？, 設計書を作成, 軍師から掲示板は来ていないか？, 3621はどうなった？, 軍師はopus4 highだ, 軍師はopus4 6 highだ, 家老と軍師をぴん留めopus highにしてくれ, 家老と軍師をぴん留めopus 4 6 highにしてくれ, 将軍と軍師をinbox3, 将軍のレビューをせよ, P4はどうなった？, 軍師も覚醒して独自に調査せよ, 忍者や家老, 家老に設計書のレビューを依頼しよう |
 | skills | report-write, verdict-check |
 | related_concepts | lesson_lifecycle, training_cycle_quality, yaml_safe_write, gunshi_review_lifecycle, ac_merit_review_integrity |
 | related_lessons | `L625`, `L633`, `L643` |
@@ -4713,6 +4743,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-08T10:36:54+09:00 aa64f6210dbbe494f toolu_014F3KebsNy8Ag8aJykWL2s9 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/e9fc9492-ed40-4682-b02 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-08T10:37:56+09:00 a355c309202d063a0 toolu_017pysMPSjxg6b7kqZBzgH6L /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/e9fc9492-ed40-4682-b02 |
 | causal | `cmd_training_L4_auto_202607081543_hayate` files_modified: [[report_quality_protocol]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T15:33:11+09:00 家老に設計書のレビューを依頼しよう |
 | causal_chain | `[[cmd_karo_kjrc_B_staff_records]] -> [[report_path_missing]] -> [[inbox_write_blocked]]` (L625) |
 | causal_chain | `[[cmd_karo_ci_fix_verdict_derive]]` (L633) |
 | causal_chain | `[[cmd_training_speed_hanzo_3]]` (L643) |
@@ -4750,7 +4781,7 @@ codd:
 |------|---|
 | id | external_project_registry |
 | label | 外部プロジェクト登録 |
-| aliases | 外部PJ, external project, project registry, projects yaml, config projects, PJ登録, プロジェクト登録, rebalancer, Simple-OCR, kj-partshift, Google Classroom, OpenPBX, プロジェクト核心知識, context project md, context freshness check shがconfig projects yamlのpathを読まずroot, config |
+| aliases | 外部PJ, external project, project registry, projects yaml, config projects, PJ登録, プロジェクト登録, rebalancer, Simple-OCR, kj-partshift, Google Classroom, OpenPBX, プロジェクト核心知識, context project md, context freshness check shがconfig projects yamlのpathを読まずroot, config, 登録config一致だけではパリティを保証できないため |
 | skills | なし |
 | related_concepts | rebalancer_app, simple_ocr, kj_partshift, google_classroom, cdp_browser_capability, openpbx_reference, project_database, project_milk, project_auto_ops, project_mcas, project_kj_toilet, project_kj_role_count, kj_series, project_clinic_expense_tracker, project_dividend_tracker |
 
@@ -4762,6 +4793,8 @@ codd:
 | file | `projects/kj-partshift.yaml` |
 | cmd | `cmd_2701` rebalancer PJ登録 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-18T21:06:34+09:00 外部PJなのでkaro_directで家老に配備する。とはなんだ？ |
+| lesson | `L842` GS投入前は系列preflightを必須化する |
+| causal_chain | `[[cmd_karo_ci_fix_ga124_codex_hook_adapter_commit_20260624]]` (L842) |
 
 ## daemon_supervision — デーモン監視と復旧
 
@@ -5209,6 +5242,9 @@ codd:
 | causal | `cmd_reflux_promotion_202607080632_hanzo` files_modified: [[lesson_lifecycle]] |
 | lesson | `L987` YAML簡易パーサは直下フィールドだけを読む |
 | causal | `cmd_reflux_promotion_202607090418_saizo` files_modified: [[lesson_lifecycle]] |
+| lesson | `L1024` lesson_write.shはsubdomain未指定時にcontext/{pid}.md汎用教訓索引へ滞留し、gate_lesson_health.sh未振り分けALERTの根本原因になる |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T16:47:00+09:00 GA-207修正: cmd_complete_gate.shのregister_recommended:true自動lesson_write経路は、報告YAMLのlesson_candidate.subdomain/target_files |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T17:08:29+09:00 [[GA-209]] lesson_health再発防止: report lesson_candidate自動登録経路は複数ある。cmd_complete_gate.shのregister_recommended:true経路だけでなく、c |
 | causal_chain | `[[cmd_2955]]` (L685) |
 | causal_chain | `[[cmd_3012]]` (L693) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_useful_rate_20260611134310]]` (L778) |
@@ -5225,6 +5261,7 @@ codd:
 | causal_chain | `[[cmd_3657]]` (L935) |
 | causal_chain | `[[cmd_3724]]` (L959) |
 | causal_chain | `[[cmd_karo_recon2_idle_reflux_dispatch_fixknown_202607081300]]` (L987) |
+| causal_chain | `[[cmd_karo_recon2_ga207_lesson_unsorted_202607091627]]` (L1024) |
 
 ## gunshi_review_lifecycle — 軍師レビューライフサイクル
 
@@ -5595,6 +5632,9 @@ codd:
 | cmd | `cmd_reflux_insight_202607081229_tobisaru` |
 | causal | `cmd_reflux_insight_202607081557_tobisaru` files_modified: [[provisional_tobisaru]] |
 | cmd | `cmd_reflux_insight_202607081557_tobisaru` (`queue/tasks/tobisaru.yaml`) |
+| causal | `cmd_reflux_insight_202607091521_tobisaru` files_modified: [[provisional_tobisaru]] |
+| cmd | `cmd_reflux_insight_202607091521_tobisaru` (`queue/tasks/tobisaru.yaml`) |
+| cmd | `cmd_reflux_insight_202607091630_tobisaru` |
 
 ## provisional_hayate — 仮: Hayate
 
@@ -5728,6 +5768,8 @@ codd:
 | causal | `cmd_karo_hotfix_idle_gate_improvement_fp_round2_202607081319` files_modified: [[provisional_kagemaru]] |
 | cmd | `cmd_karo_hotfix_idle_gate_improvement_fp_round2_202607081319` (`queue/tasks/kagemaru.yaml`) |
 | cmd | `cmd_reflux_insight_202607091400_kagemaru` |
+| causal | `cmd_reflux_insight_202607091541_kagemaru` files_modified: [[provisional_kagemaru]] |
+| cmd | `cmd_reflux_insight_202607091541_kagemaru` (`queue/tasks/kagemaru.yaml`) |
 
 ## provisional_lessons — 仮: Lessons
 
