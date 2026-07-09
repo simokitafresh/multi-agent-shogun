@@ -11,7 +11,7 @@
 # 実行内容:
 #   1. status: on_hold は保持したまま cmd_save.sh でgate検証 → BLOCK/FAILなら停止
 #   2. status: draft/on_hold → status: pending に昇格 (yaml_field_set)
-#   4. cmd_delegate.sh で委任 (status=pending検証 + inbox_write + delegated_at)
+#   3. cmd_delegate.sh で委任 (status=pending検証 + inbox_write + delegated_at)
 #
 # 設計思想:
 #   将軍の「書く」(創造的) と「通す」(機械的) を分離。
@@ -49,7 +49,7 @@ count_active_shogun_lessons() {
         echo 0
         return 0
     }
-    awk 'BEGIN { count = 0; skip = 0 } /^- id:/ { count++; skip = 0 } /superseded_by:/ { skip = 1; count-- } END { print (count > 0 ? count : 0) }' "$SHOGUN_LESSONS_FILE" 2>/dev/null || echo 0
+    awk 'BEGIN { count = 0 } /^- id:/ { count++ } /superseded_by:/ { count-- } END { print (count > 0 ? count : 0) }' "$SHOGUN_LESSONS_FILE" 2>/dev/null || echo 0
 }
 
 count_cmd_save_blocks_for_cmd() {
@@ -335,7 +335,7 @@ get_cmd_publish_q11_value() {
 }
 
 warn_if_q11_evidence_paths_changed() {
-    local q11_value path diff_stat any_changed=false
+    local q11_value path diff_stat
 
     q11_value="$(get_cmd_publish_q11_value 2>/dev/null || true)"
     [[ -n "${q11_value//[[:space:]]/}" ]] || return 0
