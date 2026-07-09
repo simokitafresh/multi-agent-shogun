@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-10 cmd_3809 -->
+<!-- last_updated: 2026-07-10 cmd_3813 -->
 <!-- last_synced_lesson: L852 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -118,6 +118,8 @@ pf_L3再GS完了(cmd_3779): 新pf_L2チャンピオン21体を構成PFとして7
 GS価格経路偵察(cmd_3790, 2026-07-09): パリティ0/75の主因は登録configではなくGS入力価格系列差。`analysis_runs/experiments.db.daily_prices`は75,473行/14銘柄/最終2026-03-20、本番`prices`は99,871行/18銘柄/最終2026-07-08。同一2026-03-20でもTQQQ -0.394%、TECL -0.194%、LQD -1.145%、SPY -0.257%のclose差。再入替前にL0 daily price cacheとL1-L3 local_sqlite成果物を本番`prices`由来で再生成し、価格系列preflightをBLOCK化せよ。詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3790_gs_price_path_recon.md`
 
 Phase A再実行完了(cmd_3797, 2026-07-09): cmd_3762/3763(20260708)は本番未同期のEODHDローカルスナップショットで実行されており無効(殿裁定2026-07-09 13:40)。D1同期済みprices(`analysis_runs/experiments.db`, gs_price_preflight 14/14 PASS)でL0四神全量GS(191,796patterns、threshold_band=0.005込み、266s、exit 0)を再実行し、旧基準(CAGR/MaxDD/NHF)・新基準(CAGR/WorstYear/AvgUWP)で12体ずつ再選出、C1-C4比較を再実施。定性的傾向は前回踏襲(新基準は対象指標8スロット中6で改善、四神間相関は改善するが四神内相関は一部悪化、四神合成FoF後は青龍/朱雀/白虎でMaxDD悪化=個体最適化と合成後性能が逆転しうる)。副次発見: スクリプト内蔵legacyパリティ(`run_parity_check`, cmd_1018由来)はthreshold_band非対応で、band適用済み本番PF(工程1=cmd_3771で24PF適用済み)に対し必ずFAILする。GS計算経路自体の正確性は別の専用ツール`verify_gs_band_parity_pi009.py`(cmd_3794「D3」で本cmd同日に再検証、DM2含め該当PASS)で担保済みのため`--skip-parity`が正しい選択(cmd_3762前例と整合)。詳細 → `docs/research/cmd_3797_phase_a_l0.md`。L1-L3基準の採用裁定(設計書§2 Step 4)は引き続き殿裁定待ち。
+
+Ledger band weights修正(cmd_3812, 2026-07-10): `signal_decision_ledger` historical_backfillが`signals.momentum_data.weights`を`decision_ticker_weights`へ保存し、`monthly_returns`生成がledger weightsを優先復元するよう修正。weightsなし旧ledger行は従来どおり等ウェイト展開で後方互換。詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3812_ledger_band_weights.md`
 
 matched_weight=0.5調査(cmd_3809, 2026-07-10): Render WARN `Matched weight 0.5000, missing_tickers=[]` の対象は `奥義-GS-変わり身-鉄壁`。本番DBの該当月 `momentum_data.weights` と `display_ticker_weights` はいずれも合計1.0で、band片側欠落は確認されず。問題はmonthly_trade APIがFoF表示用 `expanded_tickers` を後段で上書きした後、`matched_weight`/`missing_tickers`/return系を同じweight基準で再計算しない不整合の疑い。修正対象はband生成ではなくmonthly_trade整合性とWARNログ文脈追加。詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3809_band_weights_half_bug.md`
 
@@ -333,6 +335,14 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - cmd_3806後も残った4体15ヶ月は常勝モード固有バグではない。15件中7件はPipelineEngine直接実行=GSで本番monthly_returnsのみ乖離、7件は直接Pipeline/GS/本番ledgerの比較基準が三者不一致、1件(玄武-常勝2023-12)は本番=PipelineでGSのみ乖離。
 - 主因は`signal_decision_ledger` historical_backfillがband時の50% safe haven weightを`decision_ticker_weights`として保持せず、`decision_holding_signal`文字列を等ウェイト展開すること。非リバランス月は直接Pipeline再評価ではなく直近決定持ち越し基準で比較する必要がある。
 - 詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3811_remaining_divergence.md`、機械証跡 → `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3811_remaining_divergence.json`
+
+## §39 玄武-常勝2023-12 GS/本番乖離=DTB3暦解像度band境界フリップ (cmd_3813, 2026-07-10)
+
+- cmd_3811で残った「玄武-常勝2023-12のみ本番=PipelineでGSだけ乖離」を数値トレースし確定。原因はPI-028と同一構造: GS `MomentumCache`がDTB3(risk_free/reference_asset)を株式取引日マスターカレンダーへ強制リインデックスしてから378日rollingを取る(`grid_search_metrics_v2.py:813,1047-1132,1195-1300`)のに対し、本番PipelineEngineはDTB3ネイティブ発表日暦で378日rollingを取る(`absolute_momentum.py:272-327`, `data_loader.py:53`)。
+- 実測: abs_mom(SPXL)は完全一致(0.069647...)。rf_mom(DTB3)がGS=0.06485872673910675/本番=0.06462168371748911で乖離(delta=-2.37e-4)。margin(abs_mom-rf_mom)がGS=0.004788(band圏内)/本番=0.005026(pass圏)とthreshold_band=0.005の境界をまたぎ、GSはband(XLU50%+TQQQ50%→0.07674...)、本番はpass(XLU100%→0.01376...)に分岐した。
+- GS本体グリッドサーチ(944K+パターン)は`shin_shijin_l1_gs.py:1740-1741`で`pipeline_config=None`を強制しnumpy_fast経路のみを通る。PipelineEngine経由パスのDTB3日付補正はこの経路に適用されない。
+- 波及範囲: 171ヶ月中2023-12の1ヶ月のみ(玄武-常勝)。同ファミリーの玄武-激攻/鉄壁は乖離0件(marginがband境界から離れているため未発現)。系統的ではない。
+- 詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3813_genbu_gs_divergence.md`、機械証跡 → `/mnt/c/Python_app/DM-signal/scripts/oneshot/cmd_3813_genbu_gs_divergence.py`
 
 ## §35 GS D3出力パリティ再検証 (cmd_3794, 2026-07-09)
 
