@@ -1402,3 +1402,4 @@
 - 2026-07-08 軍師idle分析: WA率50%上昇をLG014到達で分析([[gunshi_idle_wa_stall_pattern_20260708]])。deploy_task fallback template品質の道具穴は家老hotfix(e191bcf88)で即日修正済み。
 - 2026-07-08 スループット設計書v1.2+S4棚卸し: 実測1日目検証でS1-S3稼働+穴6点(H1計器代表性・H2 scan空転・H3帰属形骸・H4 recall欠如・H5 duration欠損)を特定、fix_known4本還流投入+cmd_3781(SG-PRE31拡張)委任。殿裁可(23:31)を受けS4置換対象の棚卸し表=[[s4-question-pruning-inventory_20260708]](gist=ec836cab)を作成し殿裁定へ。核心=洗脳8問の毎プロンプト全文注入(形骸化80%実測)を1問+startup集約+検出型へ縮約する案。
 - 2026-07-09 家老強ニュー化: [[cmd_3787_fail-closed化実装]]はGATE CLEAR+push `b59bd18c3`。[[cmd_3788_DB_SSOT化実装]]は影丸へ配備済み、CI RED([[gate_metrics_duration_sec_213不一致]])は左近、INSIGHT_REPEAT 5件は小太郎/鳶猿へ配備済み。申し送りは記憶DB `knowledge:7878e3e39564494e`、semantic `deepdive_principles`、掲示板 `blt_20260709_143818_22f2be` に貫通。
+- 2026-07-09 cmd_reflux_insight_202607091804_saizo完了: 才蔵がINS-20260709-144208346-8f26を一次会話L305-L306と姉妹insight反映済み事実で確認し、指示語断片の偽陽性としてresolve。pending 3→2、GATE CLEAR、dashboard/ntfy/inbox archive完了。
