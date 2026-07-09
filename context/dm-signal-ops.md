@@ -82,7 +82,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L844 -->
+<!-- last_synced_lesson: L845 -->
 
 ## §36 API認証
 
@@ -784,6 +784,7 @@ import metrics_research_engine as MRE
 - PD-055裁定(2026-07-06): パリティ確認のための本番DB接続は許容。Phase Cは17.6s→12.6s(28.4%削減)の暫定成果で切り、完全ゼロ化は後続対処。止まらずPhase D全量ベンチマークへ進む。
 - L840: 多視点レポートは視点間一致件数を機械検査する（cmd_karo_hotfix_cmd3780_expanding_wf_rework_202607082310）
 - L844: PI-009 GS突合スクリプトはexperiments.dbではなく別キャッシュgs_prefetch.dbを読む。価格同期cmdは対象DBを名指しで確認せよ（cmd_3794）
+- L845: run_077_weighted_yotsumeのuniverse自動判定がall()の空虚な真で誤爆する（cmd_3795）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
