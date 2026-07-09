@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-10 cmd_3804 -->
-<!-- last_synced_lesson: L849 -->
+<!-- last_updated: 2026-07-10 cmd_3809 -->
+<!-- last_synced_lesson: L852 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -305,6 +305,8 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - （L818-L825は振り分け済 2026-07-08 → ops§6-7(L818:DB確認スクリプト経由), ops§32(L819:PF別設定参照/L822:Mockテスト横展開), ops§38(L820:pre-commit誤検知根本修正), ops教訓索引(L821:push状態先確認), research§24(L823:yotsume bak構造), gs-speedup§4(L824:GS CSVリーディングNaN), research§27(L825:相関全量安定性)。不変量候補なし）
 - （L826-L830は振り分け済 2026-07-08 → research§27(L826:選出ツールの粒度差明示), ops§6-7(L827:FK依存復元のdb.flush), research§48(L828:GS-本番DTB3暦解像度差[PI-028]), infra教訓索引(L829:絶対パス直書きGuard16 BLOCK), research教訓索引(L830:小標本quantile交差分類不能)。不変量: PI-028追加）
 - （L831-L843は振り分け済 2026-07-10 /lesson-sort → ops§33(L831/L835/L842/L843), ops§12(L832), ops§6-7(L833/L836), ops§39(L841), research§48(L834/L837/L838/L839)。L840はops教訓索引に既存。新規PIなし(DTB3系はPI-028既存でカバー)）
+- L851: matched_weightは固定1.0ではなくsum(weights)と比較する（cmd_3808）
+- L852: monthly_tradeのmatched_weightは表示展開後weightsと同じ基準で検証せよ（cmd_3809 → ops§60）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 

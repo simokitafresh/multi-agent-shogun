@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-09 cmd_3788 -->
+<!-- last_updated: 2026-07-10 cmd_3809 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -84,7 +84,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L849 -->
+<!-- last_synced_lesson: L852 -->
 
 ## §36 API認証
 
@@ -798,6 +798,7 @@ import metrics_research_engine as MRE
 - L847: db-checkスキルのpsycopg2接続正規表現がポート省略DATABASE_URLに未対応（cmd_3800）
 - L848: GS lookback_terms_jsonのunit=months換算規約は既存ツールにのみ実装されドキュメント化されていない（cmd_3803）
 - L849: GS-本番パリティ比較で本番monthly_returnsを無条件にSSOTとしてはならない(signal_decision_ledger凍結の考慮漏れ)（cmd_3805）
+- L852: monthly_tradeのmatched_weightは表示展開後weightsと同じ基準で検証せよ（cmd_3809）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
@@ -1048,3 +1049,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 発端: cmd_3786ロールバック中にDB `recalculation_status.id=195`がrunningのまま見える一方、`/admin/recalculate-status`が`running=false`を返し、Render `uvicorn --workers 2`のworker-localメモリ可視性欠陥が判明。
 - 修正: `get_recalculate_status_data()`が最新running DB行を参照し、local idleでもDB runningなら`source=db`でrunningを返す。`trigger_recalculate_sync()`はbackground投入前に`start_recalculation()`でadvisory lock/DB排他を取得し、取得不可なら200 acceptedではなく409を返す。
 - 成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3788_recalc_status_db_ssot.md`。因果リンク: [[殿指摘20260709_1349_3786完了確認]] -> [[worker-local_status誤答]] -> [[recalc_status_DB_SSOT化]]
+
+## §60 Monthly Trade matched_weight表示展開後不整合 (cmd_3809, 2026-07-10)
+
+- `matched_weight=0.5, missing_tickers=[]`はband片側欠落ではない。本番DBの対象PF「奥義-GS-変わり身-鉄壁」該当月weightsは合計1.0で、`safe_haven_switch.py`/`recalculate_fast.py`のband生成経路も0.5+0.5を保存する。
+- 問題候補はFoF表示展開後のメタデータ不整合。`monthly_trade.py`が`expanded_tickers`を`display_ticker_weights`へ後段上書きする一方、`monthly_trade_impl.py`由来の`matched_weight`は同じ表示weight基準で再計算されず、表示weights合計1.0とmatched_weight=0.5が同居する。
+- 修正候補: monthly_trade表示展開後に`matched_weight`/`missing_tickers`を再計算するか、raw component weightsとdisplay ticker weightsをAPI上で明示分離する。詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3809_band_weights_half_bug.md`

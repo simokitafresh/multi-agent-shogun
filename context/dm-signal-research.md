@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-09 cmd_3797 -->
+<!-- last_updated: 2026-07-10 cmd_3809 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -671,6 +671,12 @@ GA-181分類メモ(source commits since last_updated=2026-07-03の3件): 上記4
 
 cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(削除・登録実行)は`docs/research/`配下にbackup_report/deletion_log/registration_log/parity_verification/db_api_verification等の運用実行ログを生成したが、GS/シグナル分析の研究成果ではない。運用ドメインとして`context/dm-signal-ops.md`(last_updated=2026-07-09 cmd_3784)側で既に追跡済み。本節への研究内容追加は不要と判定し、GA-206(context_freshness ALERT)への回答として記録する。cmd_3785は実行結果を失敗記録として残しており(`docs/research/cmd_3785_execution_report.md`)、原因調査はcmd_karo_recon_cmd3785_parity_rootcause系の別cmdが対応中。
 → 参照: `context/dm-signal-ops.md`, `docs/research/cmd_3785_execution_report.md`
+
+## §53. Monthly Trade matched_weight=0.5再分類 (cmd_3808-3809, 2026-07-10)
+
+- cmd_3808の「partial/non-Cash weight偽陽性」分類は殿の理論制約(Cashなし、band時relative/safe haven各50%、weights合計1.0)で再検証対象となり、cmd_3809で本番DB/API/Renderログ/コード行を照合した。
+- 結論: band片側欠落ではない。対象PF「奥義-GS-変わり身-鉄壁」の本番DB weightsは2025-12/2026-01/2026-06いずれも合計1.0、`signal_decision_ledger`該当なし。`matched_weight=0.5`はFoF表示展開後に表示weightsとmatched_weightが別基準で残る不整合疑い。
+- 正本: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3809_band_weights_half_bug.md`。運用修正候補は`context/dm-signal-ops.md` §60。
 
 ---
 
