@@ -1,66 +1,83 @@
 task:
+  readonly_ref:
+  - path: 'scripts/analysis/grid_search/gs_price_preflight.py'
+    reason: command欄の必読/参照専用ファイル
+  - path: 'scripts/analysis/grid_search/run_077_kawarimi.py'
+    reason: command欄の必読/参照専用ファイル
+  - path: 'run_077_nukimi.py'
+    reason: command欄の必読/参照専用ファイル
+  - path: 'run_077_yotsume.py'
+    reason: command欄の必読/参照専用ファイル
+  - path: 'run_077_weighted_yotsume.py'
+    reason: command欄の必読/参照専用ファイル
+  - path: 'docs/research/cmd_3795_d4_bench.md'
+    reason: command欄の必読/参照専用ファイル
+  _ac_task_id: cmd_3795_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3795 (deployed 2026-07-09T17:28:54). Read from the beginning.
+  ac_version: b5df8a96
   acceptance_criteria:
-  - checks:
-    - check: 対象insight INS-20260709-135558859-233b を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する
-    id: AC1
-  - checks:
-    - check: 作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す
-    id: AC2
+  - id: 'AC1'
+    checks:
+    - check: 'scripts/analysis/grid_search/gs_price_preflight.pyで入力パリティPASS確認後、scripts/analysis/grid_search/run_077_kawarimi.py・run_077_nukimi.py・run_077_yotsume.py・run_077_weighted_yotsume.pyの4本を直列全量実行し、docs/research/cmd_3795_d4_bench.mdにwall time・RSS・exit codeを出力してls -l + head -20で現物確認する。5分超過忍法の対策方針も記載する。結論をcontext/dm-signal.mdへ還流する'
+  acknowledged_at: "2026-07-09T17:29:31+09:00"
+  cmd_id: cmd_3795
+  completed_at: null
+  context_files:
+  - context/dm-signal.md
+  - context/dm-signal-core.md
+  - context/dm-signal-ops.md
+  - context/dm-signal-research.md
+  - context/dm-signal-frontend.md
+  deployed_at: "2026-07-09T17:29:06"
+  done_at: null
   engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  - prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ
+  - prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測
+  - prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな
+  - prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解
+  - prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離
+  - prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな
+  - prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告
+  - prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)
+  - prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな
+  - prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て
+  - prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな
+  - prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
   - 自明な修正（typo等） — 実行→事後報告
   - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  parent_cmd: cmd_reflux_insight_202607091521_tobisaru
-  project: infra
-  purpose: '還流在庫自動消化: queue/insights.yaml の pending insight INS-20260709-135558859-233b を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する'
+  parallel_ok: []
+  parent_cmd: cmd_3795
+  project: dm-signal
+  purpose: 道具磨きD4軸の残4忍法(kawarimi・nukimi・yotsume・weighted_yotsume)のパターン数棚卸しと全量ベンチマーク。5分超過があればE2/E3系技法(チャンク伝播・GC条件化・グローバル配列化)を同型適用する
   reflux_inventory_before:
-    insights_pending: 8
-    promotions: 106
-    total: 114
+    insights_pending: 10
+    promotions: 108
+    total: 118
     zero_backlinks: 0
   scout_exempt: true
-  status: done
+  status: acknowledged
   stop_for: []
-  target_path: queue/insights.yaml
-  task_id: cmd_reflux_insight_202607091521_tobisaru_exact
-  task_type: exact
-  previous_failures:
-    attempt: 1
-    last_block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \…'
-    tried_approaches:
-    - 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \…'
-    approach_summary: 'INSIGHT_REPEAT残件4件を掲示板+insights_archive.yaml+関連コード/文書で一次確認。4件とも掲示板status=closed済みだが、根拠を裏取りした結果、close可能3件・保留1件(追加cmd不要)。close可能=(a)cmd_3783教訓dedup候補はlesson_write.shに既にJaccard類似度WAR…'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \…'
-      approach_summary: 'INSIGHT_REPEAT残件4件を掲示板+insights_archive.yaml+関連コード/文書で一次確認。4件とも掲示板status=closed済みだが、根拠を裏取りした結果、close可能3件・保留1件(追加cmd不要)。close可能=(a)cmd_3783教訓dedup候補はlesson_write.shに既にJaccard類似度WAR…'
+  target_path: /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search
+  task_id: cmd_3795_full
+  task_type: full
   related_lessons:
-  - id: 'L351'
-    summary: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
-    detail: 'insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL'
-  - id: 'L278'
-    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-    detail: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
-  - id: 'L269'
-    summary: 'while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。'
-    detail: 'while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。'
+  - id: 'L103'
+    summary: 'IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置'
+    detail: 'IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置'
   - id: 'L311'
     summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
     wa_category: 'report_yaml_format'
     wa_count: 1
     detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
+  - id: 'L278'
+    summary: 'cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor'
+    wa_category: 'commit_missing'
+    wa_count: 1
+    detail: 'commitと報告は不可分のセットであり、commit後即座にreport作成が必要'
   - id: 'L342'
     summary: 'ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回'
     wa_category: 'commit_missing'
@@ -83,28 +100,48 @@ task:
     - "ACごとに実テスト証跡をresult.detailsへ記録"
     - "報告前にplaceholder残存確認とgate_report_formatを実行"
   semantic_concepts:
-  - "report_quality_protocol — 忍者報告品質プロトコル:  scripts/gates/gate_report_format.sh scripts/gates/gate_report_format_main.py scripts/report_field_set.sh context/training-cycle.md docs/research/gunshi_idle_wa_stall_pattern_20260708.md — report_yaml_format + agent_stall_recovery WA分析 docs/research/gunshi_idle_commit_missing_wa_root_cause_analysis_20260627.md commit_missing WA根因分析(GP-286/287封止+残存2件)"
+  - "gs_ninpo_research — GS忍法研究:  context/gs-speedup-knowledge.md context/gunshi-gs-speed-optimization-design.md context/gunshi-gs-landscape-analysis.md docs/research/gs-speedup-details.md docs/research/gs-results-by-ninjutsu.md docs/research/gunshi_nazenaze7_gs_speedup_20260414.md scripts/oneshot/wf_profile.py scripts/gates/gate_artifact_map.sh docs/research/gunshi_gs_sqlite_further_optimization_20260429.md — 軍師分析: GS SQLiteさらなる最適化(2026-04-29) backend/app/schemas/pipeline.py — BB全種定義(BlockType enum)+パラメータスキーマ(MomentumFilterConfig等)。確認: grep class.*Config pipeline.py backend/app/services/pipeline/blocks/ — BB実装ディレクトリ。各BB名.py。確認: ls backend/app/services/pipeline/blocks/ frontend/app/admin/fof/components/SelectionPipelineSection.tsx — FEバリデーション(min=/max=属性)。確認: grep min= max= SelectionPipelineSection.tsx /mnt/c/Python_app/DM-signal/scripts/check_pf_config.py — PF構成一括確認(cmd_3378)。確認: .venv/Scripts/python.exe scripts/check_pf_config.py PF名 docs/research/cmd_3377_bb_effect_analysis.md — BB単体効果+重ねがけ効果α6指標分析(cmd_3377) backend/app/services/pipeline/blocks/multi_view_momentum_filter.py — 既存四つ目実装。L73 SKIP_MONTHS_LIST=[0,1,2,3]固定。L207-208タイブレーク均等含む。L221 union(set)で重み消失 backend/app/services/pipeline/engine.py — L179-180 context.final_weights非空なら自動伝搬(改修不要) backend/app/services/pipeline/blocks/ward_two_stage_ew.py — L148 context.final_weights書込み前例"
+  - "skill_routing — スキルルーティング:  skills/*/SKILL.md"
+  recommended_skills:
+  - "shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み)"
+  - "reset-layout(全ペイン配置復元)"
+  - "shogun-clear-prep(clear前)"
+  - "dream(三層記憶整理)"
+  - "shogun-teire(棚卸し)"
+  - "lesson-sort(教訓整理)"
+  - "switch-project(PJ切替)"
+  - "shogun-pd-sync(裁定反映)"
+  - "cmd-complete(GATE CLEAR後/家老)"
+  related_causal_links:
+  - "[[4忍法パターン未棚卸し]]"
+  - "[[D4全量ベンチマーク]]"
+  - "[[道具磨きD4未実測]]"
   causal_verification:
     cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
     design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
     evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
-  - "context/training-cycle.md"
+  - "context/robustness-verification-catalog.md"
+  - "context/gs-speedup-knowledge.md"
+  - "/mnt/c/Python_app/DM-signal/context/dm-signal-terminology.md"
+  production_invariants:
+  - "PI-001: 時間解像度原理: 全ての日次シグナル比較では日次差異を保持し、月次dedupで潰さない"
+  - "PI-002: 信頼境界原理: 全ての本番判断ではSQLiteを真実とせず、PostgreSQLをSSOTとして再検証する"
+  - "PI-003: 構成スキーマ完全性原理: 全てのstandard PF config JSONはpipeline_configを必須とし、NoneでCashフォールバックさせない"
+  - "PI-004: 信頼境界原理: 全てのGS成果物は本番投入前にPydanticスキーマで再検証する"
+  - "PI-005: 全期間・全下流検証原理: 任意の新規PF登録後はportfolio_id指定なしfull recalculate一発で下流全体を再生成する"
+  execution_env: "Linux venv必須。RSS計測=/usr/bin/time -v。PowerShell/Windows python禁止(cmd_3496事故)"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L351: insight_write.shのresolve(L54)とwrite(L122)がyaml.dumpでqueue/insights.yamlを全件上書き。CL
-      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
-      - L269: while IFS= readループで ^[[:space:]]{4}cmd_ パターンマッチしたがYAML複数行文字列内のインデントと区別できず過剰カウント。
+      - L103: IF skill.md(小文字)でスキル配置時 THEN DM-signal側2スキルがskill.md小文字で配置
       - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
+      - L278: cmd_1264でkagemaruがcommit完了・task status doneだが報告YAML未作成のまま/clearされた。ninja_monitor
       - L342: ホワイトリスト方式(.gitignore先頭が*)ではscripts/配下でも未許可ファイルはgit addが拒否される。新規ファイル作成時や既存ファイルの初回
     ────────────────────────────────────────
-  ac_version: 6674a72e
-  _ac_task_id: cmd_reflux_insight_202607091521_tobisaru_exact
-  _ac_worker_id: 
   role_reminder: 忍者tobisaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: tobisaru_report_cmd_reflux_insight_202607091521_tobisaru.yaml
-  report_path: queue/reports/tobisaru_report_cmd_reflux_insight_202607091521_tobisaru.yaml
+  report_filename: tobisaru_report_cmd_3795.yaml
+  report_path: queue/reports/tobisaru_report_cmd_3795.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
@@ -114,11 +151,11 @@ task:
     warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 204
+      count: 206
     - pattern: 'field_missing'
       count: 55
     - pattern: 'verdict_invalid'
-      count: 54
+      count: 55
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; 必須フィールド(binary_checks/files_modified/result.summary)を省略するな; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止'
     gate_blocks:
     - reason: 'report_format'
@@ -136,16 +173,3 @@ task:
     - reason: 'lesson_candidate_missing'
       count: 1
       hint: 'lesson_candidate.found欄を必ず記入(true/false)。省略禁止'
-  deployed_at: "2026-07-09T15:22:37"
-  acknowledged_at: "2026-07-09T15:23:00"
-
-  session_state:
-    attempt: 1
-    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-    approach_summary: '対象insight INS-20260709-135558859-233b(semantic_stress_test候補alias, query=環境に落とし込め...)を一次情報で確認しresolve。absorb_pending実行でscore3.3(閾値16.0未達)で非吸収=誤routing回避が正しく機能(L1000踏襲)。lord_conversation.jsonl確認で元発言はCLAUDE.mdの知性の外部化原則の再表明と判明、新規alias強制追加・decision_candidate化とも不要と判断。還流在庫insights_pending 8→7に減少'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
-      approach_summary: '対象insight INS-20260709-135558859-233b(semantic_stress_test候補alias, query=環境に落とし込め...)を一次情報で確認しresolve。absorb_pending実行でscore3.3(閾値16.0未達)で非吸収=誤routing回避が正しく機能(L1000踏襲)。lord_conversation.jsonl確認で元発言はCLAUDE.mdの知性の外部化原則の再表明と判明、新規alias強制追加・decision_candidate化とも不要と判断。還流在庫insights_pending 8→7に減少'

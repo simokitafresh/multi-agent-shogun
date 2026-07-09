@@ -308,6 +308,11 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - `analysis_runs/experiments.db.daily_prices` は `download_all_prices.py grid-search` 後に `sync_experiments_prices.py` で本番PostgreSQL `prices` / `economic_indicators(DTB3)` と同期する。cmd_3793では同期後 `gs_price_preflight.py` が14/14 ticker PASS、missing/mismatch 0を確認。
 - GS実行前は `python3 scripts/analysis/grid_search/gs_price_preflight.py` を必須実行する。不一致時はexit 1で停止し、全一致時のみexit 0。詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3793_d1_price_sync.md`
 
+## §36 GS D4残4忍法ベンチマーク (cmd_3795, 2026-07-09)
+
+- kawarimi(270,900pat)/nukimi(586,950pat)/yotsume(45,150pat)は現行`cmd_3774_pf_l1_champions_21.yaml`(21体)でフル実行し、既存E1(チャンク伝播)+E2(GC条件化)最適化のみで全て2分45秒以内・exit 0完了。5分超過なし、E3級追加最適化は現時点で不要。
+- `run_077_weighted_yotsume.py`は現行universeでも自身のデフォルトuniverseでも実行不能(2系統の失敗を確認)。(1)`cmd_3774_pf_l1_champions_21.yaml`(champion_pattern_ids形式)→`all()`の空虚な真によりsource_type誤変換→KeyError。(2)デフォルト`okugi_shin_ninpo_20.yaml`→記載UUIDが本番monthly_returnsに現存せず(PF再登録で陳腐化)ValueError。`gsl2_shin_ninpo_21.yaml`(components形式、cmd_2394由来)でのみ実測成功(45,150pat, 46s, RSS464MB)。標準7忍法ローテーションに組込むには分岐条件修正+universe差替えが必要(decision_candidate、未修正)。詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3795_d4_bench.md`
+
 ## §35 GS D3出力パリティ再検証 (cmd_3794, 2026-07-09)
 
 - **PI-009 GS-vs本番エンジン突合はD1価格同期の影響を受けない**: cmd_3755(T1)の5/7 PASS結果と、D1同期済みprices再検証後の結果は完全一致(5/7 PASS、変化なし)。2 FAIL(DM-safe/DM-safe-2、共に2009-05・gate_state=band)は価格陳腐化ではなく別要因と確定。
