@@ -160,6 +160,8 @@ for pattern, count in reason_counter.most_common():
             recommendations.append(f'UPGRADE: "{pattern}" ({count}回) → gate_report_autofix.shにdict→list変換追加')
         elif pattern.startswith('binary_checks.ACx') and '.result: 空文字' in pattern:
             recommendations.append(f'QUALITY: "{pattern}" ({count}回) → 値の推定auto-fix禁止。deploy_taskテンプレート警告・report_field_set導線・L1修行サイクルでresult記入を強制せよ')
+        elif pattern.startswith('verdict: "" is not valid'):
+            recommendations.append(f'QUALITY: "{pattern}" ({count}回) → binary_checks未記入時の副次症状(cmd_1614/L992でGP-107判定済み・意図的BLOCK)。値の推定auto-fix禁止。binary_checks全項目記入で自動導出され解消する')
         elif 'MISSING' in pattern and count >= 10:
             recommendations.append(f'INVESTIGATE: "{pattern}" ({count}回) → テンプレート導線/事前警告を強化。空欄を有効値で隠す補完は禁止')
 
@@ -268,6 +270,12 @@ for pattern, count in reason_counter.most_common():
         msg = f'テンプレート導線強化: {pattern} ({count}回発火) → report templateの警告/入力導線を強化せよ。有効値の自動補完は禁止'
     elif pattern.startswith('binary_checks.ACx') and '.result: 空文字' in pattern:
         # cmd_1614でGP-107判定済み: auto-fix導入は消火と確定、意図的BLOCK(quality_fail_recentとしてLoop Statusで健全判定済み)。
+        # Maturation recommendationsのQUALITY表示で十分であり、同じ結論を再度促すinsightは生成しない。
+        continue
+    elif pattern.startswith('verdict: "" is not valid'):
+        # cmd_reflux_insight_202607091222_tobisaru: 過去329件の発火全てがbinary_checks.ACx*.result空文字と同時発火(100%相関)。
+        # binary_checksが全項目埋まらない限りverdictはautofixで導出できない(gate_report_autofix_main.py should_derive_verdict)ため、
+        # 根本原因は上のbinary_checks.ACxパターンと同一でありcmd_1614/L992のGP-107判定がそのまま適用される。意図的BLOCK。
         # Maturation recommendationsのQUALITY表示で十分であり、同じ結論を再度促すinsightは生成しない。
         continue
     elif count >= 10:
