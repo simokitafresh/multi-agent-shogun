@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-08 cmd_karo_hotfix_cmd3780_expanding_wf_rework_202607082310 -->
+<!-- last_updated: 2026-07-09 cmd_karo_hotfix_ga206_context_freshness_202607091123 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -661,6 +661,11 @@ GA-181分類メモ(source commits since last_updated=2026-07-03の3件): 上記4
 
 計画書正本は本陣 `docs/research/plan_alpha6_band_champions_verification_20260708.md`。DM-Signal側に同名ファイルはない。
 → 詳細: `docs/research/cmd_3780_alpha6_band_champions_robustness.md`, `outputs/analysis/cmd_3780_alpha6_band_champions_input_contract.json`, `outputs/analysis/cmd_3780_alpha6_band_champions_robustness.json`, `outputs/analysis/cmd_3780_alpha6_band_champions_coverage.csv`
+
+## §52. GA-206分類注記: PF入替執行ログは運用ドメイン (cmd_3783-3785, 2026-07-09)
+
+cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(削除・登録実行)は`docs/research/`配下にbackup_report/deletion_log/registration_log/parity_verification/db_api_verification等の運用実行ログを生成したが、GS/シグナル分析の研究成果ではない。運用ドメインとして`context/dm-signal-ops.md`(last_updated=2026-07-09 cmd_3784)側で既に追跡済み。本節への研究内容追加は不要と判定し、GA-206(context_freshness ALERT)への回答として記録する。cmd_3785は実行結果を失敗記録として残しており(`docs/research/cmd_3785_execution_report.md`)、原因調査はcmd_karo_recon_cmd3785_parity_rootcause系の別cmdが対応中。
+→ 参照: `context/dm-signal-ops.md`, `docs/research/cmd_3785_execution_report.md`
 
 ---
 
