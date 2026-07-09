@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-10 cmd_3814 -->
-<!-- last_synced_lesson: L852 -->
+<!-- last_updated: 2026-07-10 cmd_3815 -->
+<!-- last_synced_lesson: L857 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -313,6 +313,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - （L831-L843は振り分け済 2026-07-10 /lesson-sort → ops§33(L831/L835/L842/L843), ops§12(L832), ops§6-7(L833/L836), ops§39(L841), research§48(L834/L837/L838/L839)。L840はops教訓索引に既存。新規PIなし(DTB3系はPI-028既存でカバー)）
 - L851: matched_weightは固定1.0ではなくsum(weights)と比較する（cmd_3808）
 - L852: monthly_tradeのmatched_weightは表示展開後weightsと同じ基準で検証せよ（cmd_3809 → ops§60）
+- L857: 同一手法再利用スクリプトはexec文字列置換ではなく環境変数overrideで差し替える（cmd_3815）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 
@@ -357,6 +358,14 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - cmd_3814修正済みエンジンでDM2/DM3/DM6/DM7Pをthreshold_band=0.005込みで全量再GS。直前`gs_price_preflight.py`は14/14 PASS、missing/mismatch 0。出力は`/mnt/c/Python_app/DM-signal/outputs/grid_search/20260710/L0/shin/`、全4family合計191,796パターンで20260709既存gridDBと同数。
 - cmd_3806同一手法で本番現行12体の同一パラメータ突合を再実行した結果、完全一致は4/12(玄武-常勝、玄武-鉄壁、白虎-激攻、玄武-激攻以外は残乖離あり)。大工程L0 Stage 2は未完了。残乖離はcmd_3812(ledger weights)・cmd_3814(DTB3 native暦)だけでは説明不能として別根因切り分けが必要。
 - 2026-07-10 04時台のSIGNAL CHANGE 1件は`signal_change_log.id=66123`、PF=`秘奥義-変わり身-激攻`、signal_date=2014-10-31。旧TECL/TQQQ各50%から新XLU50%+TECL/TQQQ各25%へ変化し、cmd_3812 weighted ledger rebuildによるband safe-haven weight復元が理由。詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3815_final_parity.md`、機械証跡 → `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3815_same_param_parity.json`
+
+## §42 残存8体72ヶ月の3点突合根因確定=cmd_3812のledger優先ロジックが潜在staleデータを活性化 (cmd_3816, 2026-07-10)
+
+- cmd_3815で残った8体72ヶ月の乖離を、cmd_3811と同一の3点突合(本番DB値/PipelineEngine直接実行値/GS値)で全数追跡した。静的diff(cmd_3806/3812/3815の乖離月集合比較)により**cmd_3814(GS DTB3暦再生成)は玄武-常勝2023-12(cmd_3813/3814で別途解決済み)を除き本cmd範囲の72ヶ月に一切影響していない**ことを確定(`FIXED_BY_3814`が全PFで空集合)。原因は**cmd_3812のledger weights再backfill**に一本化される: 67/75行が`NEW_IN_3812_PERSISTS_AFTER_3814`、64/75行が`PIPELINE_GS_MATCH_PROD_DIVERGES`(ライブPipelineEngine実行値とGS値が一致し本番保存値のみ乖離)。
+- **根本メカニズム**: `backend/app/jobs/generators/monthly_returns.py` L344-349がledger保存weightsを無条件優先するようcmd_3812で変更されたが、`backend/scripts/build_signal_decision_ledger_historical_backfill.py` L163-180の`_extract_signal_weights`は`signals.momentum_data.weights`を**現在保存されている値のまま**コピーする設計(docstring L13「as recorded today」)。多くの履歴月・直近月(2026-04含む)で`signals`保存値はband混合weightsのままだが、現在の本番価格データで`absolute_momentum.py`のmarginを再計算すると明確に`fail`域(閾値0.005を大きく超える負値)で単一資産100%が正しい。この不整合はcmd_3812以前は等ウェイトフォールバックの陰に隠れており、ledger優先化で表面化した。
+- 残り11/75行(14.7%)は`ALL_DIVERGE`(GS値もライブ実行と不一致)でband遷移直後の月に集中する別要因、根因未特定のまま残存。
+- 次アクション(未着手): `signals.momentum_data`の全履歴再生成、またはledger優先ロジックへのband再検証の要否は実装判断が必要。
+- 詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3816_residual_divergence.md`、機械証跡 → `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3816_residual_divergence.json`、スクリプト → `/mnt/c/Python_app/DM-signal/scripts/oneshot/cmd_3816_residual_divergence.py`
 
 ## §35 GS D3出力パリティ再検証 (cmd_3794, 2026-07-09)
 
