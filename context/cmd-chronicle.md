@@ -419,3 +419,4 @@
 | cmd_3793 | cmd_3790偵察で確定した根因(experiments.db daily_pricesが110日古い+同一日でも価格値が乖離)を修正する。download_all_prices.py再実行で本番pricesと同期し、GS実行前に自動突合する入力検証スクリプトを追加してD1(入力パリティ)を恒久保証する。意図的にscripts/analysis/grid_search/gs_price_preflight.pyを新設する(cmd_3790偵察AC3 fix direction 3で設計済み) | dm-signal | 07-09 | GS価格入力を本番pricesへ同期し、GS実行前prefl |
 | cmd_3794 | D1修正(cmd_3793)で入力パリティ復元済み。cmd_3755(T1)でPI-009突合5/7一致だったが旧pricesでの結果だったため、同期済みpricesで再検証しD3(出力パリティ)を確定する | dm-signal | 07-09 | D3出力パリティ再検証完了。gs_price_preflig |
 | cmd_3795 | 道具磨きD4軸の残4忍法(kawarimi・nukimi・yotsume・weighted_yotsume)のパターン数棚卸しと全量ベンチマーク。5分超過があればE2/E3系技法(チャンク伝播・GC条件化・グローバル配列化)を同型適用する | dm-signal | 07-09 | kawarimi/nukimi/yotsumeはcmd_37 |
+| cmd_3797 | 道具磨き5軸完了を受けGS再キャリブレーション計画Phase Aを再実行する。同期済みpricesとバンド込みでL0四神全量GSを実行し、旧基準と新基準で各チャンピオンを選出する | dm-signal | 07-09 | cmd_3762/3763(20260708)は本番未同期の |
