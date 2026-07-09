@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-10 cmd_3813 -->
+<!-- last_updated: 2026-07-10 cmd_3814 -->
 <!-- last_synced_lesson: L852 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -343,6 +343,14 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - GS本体グリッドサーチ(944K+パターン)は`shin_shijin_l1_gs.py:1740-1741`で`pipeline_config=None`を強制しnumpy_fast経路のみを通る。PipelineEngine経由パスのDTB3日付補正はこの経路に適用されない。
 - 波及範囲: 171ヶ月中2023-12の1ヶ月のみ(玄武-常勝)。同ファミリーの玄武-激攻/鉄壁は乖離0件(marginがband境界から離れているため未発現)。系統的ではない。
 - 詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3813_genbu_gs_divergence.md`、機械証跡 → `/mnt/c/Python_app/DM-signal/scripts/oneshot/cmd_3813_genbu_gs_divergence.py`
+
+## §40 GS MomentumCache DTB3ネイティブ暦rolling化=PI-028実害修正完了 (cmd_3814, 2026-07-10)
+
+- cmd_3813偵察の修正候補(a)を実装完了。`MomentumCache`にDTB3専用のnative calendar cache(`_build_dtb3_native_cache`、既存`_build_vix_native_cache`と同一設計)を新設し、`daily_prices`から`ticker='DTB3'`のみでネイティブ発表日系列を読み直す。Phase1(`_build_cache_fast`のmomentum_matrix注入)とPhase2(`_build_dtb3_rolling_matrix`/`get_dtb3_rolling`のthreshold_band判定)が同一キャッシュを共有し、算出日カレンダーが統一された。`get_dtb3_rolling`は辞書直引きから`bisect`による「date以前で直近のDTB3発表日」検索へ変更(本番`get_momentum_value_at_date`と同一セマンティクス)。
+- **修正後、玄武-常勝2023-12を含む171/171完全一致(誤差1e-11オーダー)を実測確認**。玄武-激攻/鉄壁も171/171維持(デグレなし)。既存最強回帰テストcmd_3755 AC2(`verify_gs_band_parity_pi009.py`、7PF×threshold_band注入×実PipelineEngine突合)も全PASS(max_abs_diff=0.00e+00)、既存パリティを一切崩していない。
+- **影響範囲を全gridDB(4family, 191,796パターン, threshold_band=0.005で生成済み)で網羅集計**: distinct DNA group(absolute_asset+lookback_terms_json, 9,589組・間引きなし)ごとに旧margin/新marginを全171ヶ月で算出。境界近傍(|margin∓band|<2.4e-4になる月が1回でもある)=92,892パターン(48.4%、緩い上限)。**実際にpass/band/fail分類が新旧で変わる「実フリップ」=6,684パターン(3.5%)**。系統別ではDM2(青龍系)が実フリップの82%を占め偏りが大きい。DM7+(玄武系)は今回修正したDNA groupを共有する24パターン全てが該当。
+- 現行本番102PFはthreshold_band未設定(band不発稼働、§既出)のため、この影響範囲は「将来threshold_bandを本番適用した場合にGS選出結果へ及ぶリスク」の定量値であり、現行本番の実害ではない。
+- 詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3814_dtb3_native_calendar.md`、回帰テスト → `/mnt/c/Python_app/DM-signal/backend/tests/test_dtb3_native_calendar_parity.py`、機械証跡 → `/mnt/c/Python_app/DM-signal/scripts/oneshot/cmd_3814_{verify_dtb3_native,genbu_parity_recheck,boundary_impact_scan}.py`
 
 ## §35 GS D3出力パリティ再検証 (cmd_3794, 2026-07-09)
 
