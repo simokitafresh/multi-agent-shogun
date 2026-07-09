@@ -125,6 +125,12 @@ for e in entries:
         # Normalize: remove specific values, keep pattern
         # e.g., 'verdict: "CONDITIONAL_PASS"' → 'verdict: invalid'
         pattern = reason
+        # gate_fire_log.yamlのreasonsは埋込み引用符が \" とエスケープされたまま
+        # 生の行テキストとして正規表現キャプチャされる(unescape処理なし)ため、
+        # 'verdict: "" is not valid'等の引用符始まりパターンとの.startswith比較が
+        # 常にFalseになり、下流のGP-107抑制分岐が発火しない(cmd_reflux_insight_202607091222_tobisaru
+        # で追加した抑制分岐が実データに対して無効だった根本原因)。比較前に正規化する。
+        pattern = pattern.replace('\\"', '"')
         pattern = RE_LU.sub('lessons_useful[N]', pattern)
         pattern = RE_BC.sub('binary_checks.ACx', pattern)
         reason_counter_all[pattern] += 1

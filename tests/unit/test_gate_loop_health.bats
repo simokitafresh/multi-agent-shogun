@@ -126,6 +126,24 @@ EOF
     [[ "$output" != *'INSIGHT_TEST'* ]]
 }
 
+@test "gate_loop_health verdict empty at 14+ fires (escaped quotes) does not re-raise already-judged GP-107 insight" {
+    {
+        # 本番gate_fire_log.yamlの実フォーマットを再現: 埋込み引用符は \" とバックスラッシュ
+        # エスケープされたまま記録される(正規表現キャプチャにunescape処理がないため)。
+        for i in $(seq 1 14); do
+            printf -- '- ts: "2026-07-09T09:%02d:00" file: "queue/reports/recent_fail_%02d.yaml" result: FAIL reasons: "verdict: \\"\\" is not valid (must be \\"PASS\\", \\"FAIL\\", or \\"PASS_NO_IMPROVEMENT\\")" fixes: ""\n' "$i" "$i"
+        done
+    } > "$TEST_TMPDIR/logs/gate_fire_log.yaml"
+
+    run bash "$TEST_GATE"
+    # QUALITY推奨(Maturation recommendations)は表示され続ける
+    [[ "$output" == *'QUALITY: "verdict: "" is not valid'* ]]
+    # cmd_reflux_insight_202607091222_tobisaruでGP-107判定済み(binary_checks空文字と100%co-occurrence)
+    # のため、矛盾する「高頻度FAIL...GP-107で判定後に」insightは生成しない
+    [[ "$output" != *'高頻度FAIL: verdict:'* ]]
+    [[ "$output" != *'INSIGHT_TEST'* ]]
+}
+
 @test "gate_loop_health AC self-verification missing points to AC parser fix" {
     {
         for i in $(seq 1 10); do
