@@ -457,10 +457,10 @@ v7吸収(2026-05-19):
   source_ids: [LK020]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'projects/{id}.yaml production_invariants登録時に既存PIとの共通根を確認'
-
+  enforcement: "Level4(フロー内BLOCK): 一次情報再検証(2026-07-09, cmd_reflux_promotion_202607092022_kagemaru)。PI登録時の原理抽出は従来 projects/{id}.yaml production_invariants登録時に既存PIとの共通根を確認 という文書指示のみで、実装上は scripts/gates/gate_cycle_health.sh が dm-signal のPI原理率を算出して ALERT/MANUAL 表示するだけだった。今回、同gateへ GATE_CYCLE_HEALTH_PI_STRICT=1 を追加し、PI_RATIO<100 の場合は BLOCK + exit 1 で停止するLevel4ゲートに昇格。通常heartbeatは従来どおりexit 0を維持し、PI登録・レビュー前の厳格実行時だけ個別PI→原理PI昇華を強制できる。回帰テスト: tests/unit/test_gate_cycle_health.bats に strict mode 50% BLOCK / 100% PASS を追加。"
   when: "projects/{id}.yaml PI登録時"
   how: 複数PIに共通の根があれば原理PIに昇華。個別事実のままPI蓄積しない
+  enforcement_level: 4
   origin: "[[LK020]] -> [[個別PI蓄積]] -> [[原理PI昇華]]"
 - id: LK-A21
   title: 自動化実装時に既存ルール(lessons/karo.md)更新を連動させよ

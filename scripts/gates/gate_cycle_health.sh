@@ -20,6 +20,7 @@ INSIGHT_COUNT=0
 IDLE_COUNT=0
 IDLE_NAMES=""
 PI_RATIO="?"
+PI_STRICT_BLOCK=0
 
 # --- 1. 未消化insights aging check (pendingのみ)
 if [ -f queue/insights.yaml ]; then
@@ -161,6 +162,10 @@ if [ -f projects/dm-signal.yaml ]; then
         ALERTS+=("PI原理率: ${PI_RATIO}%。個別防御に偏っている(原理=1対N防御)")
     else
         INFOS+=("PI原理率: ${PI_RATIO}%")
+    fi
+    if [ "${GATE_CYCLE_HEALTH_PI_STRICT:-0}" = "1" ] && [ "$PI_RATIO" != "?" ] && [ "$PI_RATIO" -lt 100 ] 2>/dev/null; then
+        PI_STRICT_BLOCK=1
+        ALERTS+=("PI原理率: ${PI_RATIO}%。GATE_CYCLE_HEALTH_PI_STRICT=1 のため、PI登録前に個別PIを原理PIへ昇華せよ")
     fi
 fi
 
@@ -313,3 +318,8 @@ if [ ${#MANUAL[@]} -gt 0 ]; then
 fi
 
 echo "--- 行動したら即再実行: bash scripts/gates/gate_cycle_health.sh ---"
+
+if [ "$PI_STRICT_BLOCK" -eq 1 ]; then
+    echo "BLOCK: PI登録ゲート。個別PIを原理PIへ昇華し、PI原理率を100%にしてから再実行せよ"
+    exit 1
+fi

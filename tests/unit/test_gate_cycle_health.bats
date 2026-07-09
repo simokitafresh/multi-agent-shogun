@@ -220,6 +220,28 @@ EOF
     [[ "$output" == *"個別防御に偏っている"* ]]
 }
 
+@test "PI strict mode blocks when ratio is below 100%" {
+    cat > "$TEST_TMPDIR/projects/dm-signal.yaml" <<'EOF'
+production_invariants:
+  entries:
+    - id: PI-001
+      implication: "全てのPFで適用される原理"
+    - id: PI-002
+      implication: "特定PFだけの個別防御"
+EOF
+    run env GATE_CYCLE_HEALTH_PI_STRICT=1 bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"PI原理率: 50%"* ]]
+    [[ "$output" == *"PI登録ゲート"* ]]
+}
+
+@test "PI strict mode passes when ratio is 100%" {
+    run env GATE_CYCLE_HEALTH_PI_STRICT=1 bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PI原理率: 100%"* ]]
+    [[ "$output" != *"PI登録ゲート"* ]]
+}
+
 # === Test 8: insights > 15 → ALERT ===
 @test "insights > 15 → ALERT" {
     # Create insights.yaml with 20 entries (16 pending + 2 resolved + 2 done)
