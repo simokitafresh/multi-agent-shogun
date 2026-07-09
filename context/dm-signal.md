@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-09 cmd_3798 -->
+<!-- last_updated: 2026-07-09 cmd_3805 -->
 <!-- last_synced_lesson: L843 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -122,6 +122,8 @@ Phase A再実行完了(cmd_3797, 2026-07-09): cmd_3762/3763(20260708)は本番�
 L0本番突合完了(cmd_3800, 2026-07-09): 殿指摘(21:33「L0は本番とのパリティを確認したのか？」)への回答。cmd_3797の旧基準12体チャンピオンを本番`monthly_returns`(holding_signal/monthly_return_open)と全期間(171ヶ月, 2012-04〜2026-06)で突合した結果、**完全一致は12体中1体(シン玄武-鉄壁、171/171・最大差分4.9e-11)のみ**。threshold_bandは12/12で一致(0.005)だが、config(safe_haven_asset/top_n/rebalance_trigger/lookback)は12体中2体(シン玄武-激攻・鉄壁)のみ本番現行登録と完全一致し、残り10体は本番と異なるパラメータが選出されている。これはGS計算エンジンの誤りではなく、価格同期後の再探索で現行本番と異なるチャンピオンが選ばれた結果(config完全一致の2体は高精度で一致=エンジン自体は健全)。**L1以降へこの12体を使い続ける場合、本番反映時に11体の実際の挙動(保有銘柄・リターン)が現行から変わる**ことを意味し、意図された変化か将軍・殿の確認が必要。詳細 → `docs/research/cmd_3800_l0_prod_check.md`。
 
 全12体同一パラメータエンジン正当性検証完了(cmd_3803, 2026-07-09): 殿指示(22:47)。cmd_3800はチャンピオン選出結果(新旧パラメータ相違)を確認したのみで、「GSエンジンが本番と同一パラメータで同一の答えを出すか」は未検証だった(cmd_3800 §4 limitation)。本cmdはGSチャンピオンではなくGS探索空間(paramsテーブル全76,680〜行)から本番現行12体と**パラメータ完全一致**(safe_haven/top_n/rebalance/lookback、unit=months→period*21換算規約で照合)のpattern_idを12体全てで一意に発見し、monthly_return_openを全期間171ヶ月で突合した。**結果は二極化**: 単一期間lookback PF(玄武3体・朱雀3体)は166〜171/171の高一致率(玄武-鉄壁は171/171完全一致、最大差分4.9e-11)。**複数期間加重lookback PF(青龍3体・白虎3体、lookback項2〜3個の加重平均)はパラメータ完全一致にもかかわらず不一致が大幅増加**(白虎165〜168/171、青龍137〜157/171=最悪は約20%の月で不一致、最大差分0.22)。band境界の僅差(単一期間PFで観測された1件程度の乖離)では説明できない規模であり、**GSエンジンの多期間加重lookback計算ロジックと本番PipelineEngineの間に未特定の相違がある可能性が高い**。原因箇所(重み正規化/起点日ズレ/合成順序等)は本cmd範囲では未特定。詳細 → `docs/research/cmd_3803_same_param_parity.md`。
+
+複数期間加重lookback乖離の根因特定完了(cmd_3805, 2026-07-09): cmd_3803で判明した青龍/白虎(複数期間加重lookback)の乖離について、GS側(`shin_shijin_l1_gs.py`/`grid_search_metrics_v2.py`)と本番側(`vectorized_momentum.py`/`absolute_momentum.py`/`safe_haven_switch.py`)のコードを比較。**GS側の計算ロジックにバグは無い**。本番`PipelineEngine`を同一日付・同一価格データで直接呼び出して検証した結果、GSの計算値(margin=0.003234833442463803、gate_state=band、TECL50%+XLU50%)と完全一致した(シン青龍-鉄壁2012-04時点)。**cmd_3803が観測した乖離の真因はGSエンジンではなく、本番`monthly_returns`が参照する`signal_decision_ledger`の凍結タイミング**: `cmd_3711`のhistorical_backfill(2026-07-06 14:57、threshold_band未適用時点)が全期間のholding_signalを2値判定(pass/fail)で確定・凍結し、3日後の`cmd_3771`のband適用(2026-07-09 16:51、threshold_band=0.005追加)を遡及的に反映していない。これはPI-P06/cmd_3703 design §4 targetの意図的仕様(確定済み月はledger優先、新計算との食い違いはsilent上書きせずdriftとしてCRITICAL記録)であり、バグではない。**影響**: `docs/research/gs-parity-100-staged-plan.md`(殿指示2026-07-09 23:38「100%一致のみ合格」)の前提「本番が正・GS側のみ修正」は再検討が必要。単一期間PF(玄武/朱雀)の高精度一致は、marginがband境界から離れておりledger凍結の影響を受けにくかった統計的偶然の可能性が高い。詳細 → `docs/research/cmd_3805_multi_lookback_divergence.md`。
 
 根拠: `/mnt/c/Python_app/DM-signal/docs/design/gs-recalibration-plan.md`（commit `4828c134`, `78ed9bec`, `97e06904`）。
 
