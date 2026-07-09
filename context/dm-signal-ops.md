@@ -996,3 +996,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 新規登録仕様は工程2成果物から75件(L0 12 / L1 21 / L2 21 / L3 21)を生成。維持対象との名前衝突0、固定UUIDなし(登録時に新規生成)、削除前にだけ既存置換スロットとの名前衝突あり。
 - 正本成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3784_deletion_inventory.json` / `.csv`, `/mnt/c/Python_app/DM-signal/docs/research/cmd_3784_registration_spec.json` / `.csv`, `/mnt/c/Python_app/DM-signal/docs/research/cmd_3784_execution_runbook.md`。
 - 後続実行順序: dependency_closure→pf_L3→pf_L2→pf_L1→pf_L0の逆依存順削除、pf_L0→pf_L1→pf_L2→pf_L3の正依存順登録、全PF fullrecalculate、GS-本番のholding_signal(ticker×weight)+monthly_returns完全一致、DB/API/FEの3レイヤー確認。失敗時はcmd_3783 archiveからrestore-allまたは依存順restore。
+
+## §56 工程4実行中断状態 (cmd_3785, 2026-07-09)
+
+- cmd_3785は旧86削除・新75登録・config category修正まで本番反映済み。削除archiveは`delete_reason=cmd_3785_pf_replacement_20260709`で86/86、登録後active PFは91(維持16+新75)、新75のDB/API到達とsignals/monthly_rows生成は75/75。
+- ただし2026-07-09 10:06 JST時点で`recalculation_status.id=194`が`running`のまま、GS月次比較は`monthly_return_open`/`monthly_return`とも75/75不一致。cronは10:00 JST `sync-prices`、10:05 `sync-tickers`、10:10 `sync-standard`、10:40 `sync-fof`帯に入っており競合リスクあり。
+- 成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3785_parity_verification.json`、`cmd_3785_log_recovery_report.json`、`cmd_3785_config_fix_report.json`。完了扱い禁止。次手はrecalc完了/cron競合の切り分け後、月次不一致の根因(登録config生成・GS比較列・本番pipeline解釈)を調査する。
