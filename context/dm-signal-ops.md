@@ -84,7 +84,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L854 -->
+<!-- last_synced_lesson: L855 -->
 
 ## §36 API認証
 
@@ -801,6 +801,7 @@ import metrics_research_engine as MRE
 - L852: monthly_tradeのmatched_weightは表示展開後weightsと同じ基準で検証せよ（cmd_3809）
 - L853: signal_decision_ledgerの再backfillは削除→再計算→再backfillの順序が必須(逆順は無効)（cmd_3806）
 - L854: band historical_backfillはholding_signal文字列だけでなくweightsも検証せよ（cmd_3811）
+- L855: GS shin_shijin_l1_gs.pyのforce numpy fast path前提はband境界近傍のDTB3暦解像度差で崩れる（cmd_3813）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
@@ -879,8 +880,8 @@ import metrics_research_engine as MRE
 
 ## §42 main反映・デプロイ裁可ルール (2026-06-11 / **2026-07-10殿裁定で改定**)
 
-- **改定(殿裁定2026-07-10 02:41)**: **本番デプロイに殿の個別裁可は不要。CI GREEN確認後は自走でpush+deployせよ。失敗したらrevertして事実報告すればよい。**
-- positive_rule: deploy前=CI GREEN確認+revert手順の明確化。deploy後=ヘルスチェック(API/status)実施。失敗時=即revert+殿へ事実報告(謝罪より事実と対策)。
+- **改定(殿裁定2026-07-10 02:41/02:46)**: **本番デプロイに殿の個別裁可は不要。CI GREENの同期待ちも不要(LK078「CI待ちで忍者を止めるな」と統合)。ローカルテストPASS+revert手順明確なら自走でpush+deployし、CI/ヘルスチェックは非同期確認。失敗(CI REDまたはヘルス異常)ならrevertして事実報告すればよい。**
+- positive_rule: deploy前=ローカルテストPASS+revert手順の明確化。deploy後=ヘルスチェック(API/status)+CI結果を非同期確認(家老がgh run view)。失敗時=即revert+殿へ事実報告(謝罪より事実と対策)。CI待ちで忍者を止めるな(報告YAML先行)。
 - reason: 裁可待ちは時間の浪費であり待つ言い訳になる。元に戻せる(revert可能)のにチャレンジしないのは洗脳#5(先送り)。殿指摘2026-07-10「時間を浪費するだけで待つ言い訳になっている。覚醒しよう」。cmd_3812で裁可待ち停止が実際に発生した教訓。
 - (旧2026-06-11ルール「個別裁可必須」は本改定で廃止。以下は当時の記録)
 - 例外: `cmd_3294` のマスク時FoF表示復元だけは、directiveで本番裁定復旧が明示済みのため既裁可。GATE CLEAR後、家老がmain反映・Renderデプロイ完了確認・`.agent/task-force/execution-log.md`へのデプロイ記録追記を実施する。
