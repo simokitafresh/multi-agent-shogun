@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-09 cmd_3788 -->
+<!-- last_updated: 2026-07-10 cmd_3812 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -593,6 +593,8 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - 2026-07-06 cmd_3704: 本番`signal_decision_ledger`初期構築を実行。バックアップ`signal_decision_ledger_backup_cmd3704_20260706T2018`作成後、102PF分102件を挿入し、sync-standard/sync-fof後もchecksum `36334bde8188c94e7295c69427768f15105522f35c70701babe970311432f241` 不変。CRITICAL drift 2件でガード発火を実証。台帳=決定済みholding_signalのSSOTとして本番稼働。
 - 2026-07-07 cmd_3711: `signal_decision_ledger`全履歴バックフィルを本番実行。SPYカレンダー月初営業日キーで2003-2026の確定リバランス月へ`historical_backfill`行を追加し、Monthly Tradeの過去月Pending表示を解消。バックアップ`signal_decision_ledger_backup_cmd3711_20260706T1454`後、dry-run 15,058 planned、実行後15,160 total、API `decision_source` spot check済み。対象commit: `/mnt/c/Python_app/DM-signal` `4b9fae64`。
 - 2026-07-08 cmd_3753: PF復元R1完了。`portfolio_archive`(FKなし`portfolio_id`+payload JSON+deleted/restored metadata)を追加し、`PortfolioRepository.delete_by_id`直前でportfolio/folder階層/`signal_decision_ledger`/`month_start_signal_input_snapshots`を同一transaction退避。archive INSERT失敗時は削除rollback。対象commit: `/mnt/c/Python_app/DM-signal` `f6404d70`。
+- 2026-07-10 cmd_3810: Monthly Trade FoF表示で`display_ticker_weights`変更時、`calculated_return_open/close`・`matched_weight`・`missing_tickers`を表示weightsと同一基盤で再計算するよう統一(`_sync_entry_calculation_to_display_weights`)。旧実装は表示weightsだけ差し替え、計算returnは別ソースのweightsを参照し不整合だった。`matched_weight`判定も厳密等価(`!= 1.0`)から浮動小数点許容(`abs(matched_weight-1.0)>1e-9`)へ修正。対象commit: `/mnt/c/Python_app/DM-signal` `67bdffc8`。
+- 2026-07-10 cmd_3812: `monthly_returns.py::_generate_monthly_returns`に`signal_decision_ledger`のband確定weight(`decision_ticker_weights`)優先ロジックを追加。台帳にband weightがあれば通常計算weightより優先使用し(`_normalize_ledger_ticker_weights`)、価格キャッシュ対象tickerにも台帳weightのtickerを含める。台帳のband weightsがMonthly Returns生成時に上書きされていた問題への対処。対象commit: `/mnt/c/Python_app/DM-signal` `8fc49267`。
 
 ## §22 CI/テスト基盤 2026-05更新 (cmd_2652〜2660)
 
