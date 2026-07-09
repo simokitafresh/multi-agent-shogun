@@ -654,6 +654,7 @@ GA-181分類メモ(source commits since last_updated=2026-07-03の3件): 上記4
 - cmd_3767: 本番active 102PFの構成からpf_L0採用を逆算。12体すべて上位PFに採用済みで、未採用二値ではなく採用頻度をpriorにする。unique parent上位は白虎-鉄壁61、青龍-激攻60、玄武-激攻59、青龍-鉄壁57。朱雀-鉄壁だけ6件で外れ値。
 - 次段仮説: 青龍/玄武の高採用部品と白虎鉄壁を核にし、朱雀鉄壁を除外または別役割にする。構成採用と月次holding実選択頻度は未分離。
 → 詳細: `docs/research/cmd_3767_pf_l0_adoption_reverse_features.md`, `docs/research/cmd_3767_pf_l0_adoption_summary.csv`, `outputs/analysis/cmd_3763_c1_c4_results.json`
+- **無効化注記(2026-07-09)**: cmd_3755-3763のL0 GS(20260708実行分)は本番未同期のGS専用EODHDローカルスナップショット価格を使用しており、cmd_3785で本番pricesとパリティが取れていないことが判明、殿裁定(2026-07-09 13:40)で「違う株価データで行ったGSは全て無効」と裁定された。cmd_3767(pf_L0採用逆算)は本番configの採用実績分析であり価格非依存のため無効化対象外。C1-C4比較の**定性的傾向**はcmd_3797(D1同期済みprices再実行)で概ね再現確認済みだが、**数値そのもの(cagr/maxdd等の具体値)は同一視するな**。最新の正本はcmd_3797 → `docs/research/cmd_3797_phase_a_l0.md`
 
 ## §51. 新L0-L3チャンピオン群 α6堅牢性検証 (cmd_3780, 2026-07-08)
 

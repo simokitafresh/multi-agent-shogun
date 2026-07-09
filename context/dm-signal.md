@@ -117,6 +117,8 @@ pf_L3再GS完了(cmd_3779): 新pf_L2チャンピオン21体を構成PFとして7
 
 GS価格経路偵察(cmd_3790, 2026-07-09): パリティ0/75の主因は登録configではなくGS入力価格系列差。`analysis_runs/experiments.db.daily_prices`は75,473行/14銘柄/最終2026-03-20、本番`prices`は99,871行/18銘柄/最終2026-07-08。同一2026-03-20でもTQQQ -0.394%、TECL -0.194%、LQD -1.145%、SPY -0.257%のclose差。再入替前にL0 daily price cacheとL1-L3 local_sqlite成果物を本番`prices`由来で再生成し、価格系列preflightをBLOCK化せよ。詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3790_gs_price_path_recon.md`
 
+Phase A再実行完了(cmd_3797, 2026-07-09): cmd_3762/3763(20260708)は本番未同期のEODHDローカルスナップショットで実行されており無効(殿裁定2026-07-09 13:40)。D1同期済みprices(`analysis_runs/experiments.db`, gs_price_preflight 14/14 PASS)でL0四神全量GS(191,796patterns、threshold_band=0.005込み、266s、exit 0)を再実行し、旧基準(CAGR/MaxDD/NHF)・新基準(CAGR/WorstYear/AvgUWP)で12体ずつ再選出、C1-C4比較を再実施。定性的傾向は前回踏襲(新基準は対象指標8スロット中6で改善、四神間相関は改善するが四神内相関は一部悪化、四神合成FoF後は青龍/朱雀/白虎でMaxDD悪化=個体最適化と合成後性能が逆転しうる)。副次発見: スクリプト内蔵legacyパリティ(`run_parity_check`, cmd_1018由来)はthreshold_band非対応で、band適用済み本番PF(工程1=cmd_3771で24PF適用済み)に対し必ずFAILする。GS計算経路自体の正確性は別の専用ツール`verify_gs_band_parity_pi009.py`(cmd_3794「D3」で本cmd同日に再検証、DM2含め該当PASS)で担保済みのため`--skip-parity`が正しい選択(cmd_3762前例と整合)。詳細 → `docs/research/cmd_3797_phase_a_l0.md`。L1-L3基準の採用裁定(設計書§2 Step 4)は引き続き殿裁定待ち。
+
 根拠: `/mnt/c/Python_app/DM-signal/docs/design/gs-recalibration-plan.md`（commit `4828c134`, `78ed9bec`, `97e06904`）。
 
 ## 弱体化確率推定(P_det)
