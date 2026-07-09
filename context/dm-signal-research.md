@@ -633,6 +633,10 @@ DM-Signal本番FEのmobile実運用条件計測は、`scripts/mobile_lighthouse_
 → 詳細: `docs/research/cmd_3694_ninpo_gs_small_run_parity.md`
 
 - L828: GS DTB3ローリング計算と本番PipelineEngineのDTB3参照は生値一致でも暦解像度が異なりthreshold_band境界(±2.3e-5程度)で稀にフリップする。GS側=取引日リサンプル系列のNトレーディング日前、本番側=_calculate_economic_indicator_momentumのN日前照会（cmd_3755、PI-028）
+- L834: run_077_*.pyをモジュールimportで診断スクリプト再利用時はsys.argvでuniverseを明示指定せよ（cmd_karo_hotfix_yotsume_bootstrap_preflight_202607081515）
+- L837: local_sqlite loaderはmonthly_blobと重複pattern_idを標準対応すべき（cmd_3774）
+- L838: run_077 monthly blob chunk差は全量GS総時間を支配する（cmd_3775）
+- L839: GS blob月次md5はNaN payload差を避けarray_equalで検証する（cmd_3778）
 
 GA-181分類メモ(source commits since last_updated=2026-07-03の3件): 上記45f00c6bのみ研究正本反映対象。`a3059891`(tasks/lessons.md退役8行)・`894736d4`(tasks/lessons.md cmd_3686教訓登録26行)はlesson運用のみで研究索引への追記対象外(L787準拠)。
 

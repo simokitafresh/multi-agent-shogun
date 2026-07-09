@@ -12,6 +12,8 @@
 112件消失バグ(L045)=Phase4 dict miss時continue→日次フォールバック追加(91c04a4)で修正済。
 - L818: 本番DB read-only確認はpython3 -cのインライン実行ではなくスクリプトファイル経由で行え（cmd_3698_recon2）
 - L827: archive由来の複数行復元(FK依存あり)はテーブルごとにdb.flush()を挟まないとFK制約違反になる（cmd_3754）
+- L833: recalculate完了矛盾は経過時間見積り(timing-history平均2000s級)と照合してから切り分けよ。API running確認は複数worker前提で解釈せよ（cmd_karo_recon2_cmd3771_recalc_status_202607081502）
+- L836: recalculate acceptedと完走証跡を分離して判定する（cmd_3771）
 crash-safety(cmd_1463/1465): shutdown警告(main.py)+recalculation_statusテーブルDB永続化+pg_advisory_lock排他制御(key=8675309, セッション保持方式, fail-open)。SIGKILL時PostgreSQL自動解放。
 cmd_3788: Render `uvicorn --workers 2`下の`/admin/recalculate-status`と`/admin/recalculate-sync`起票ガードをDB SSOT化。最新`recalculation_status.status='running' AND end_time IS NULL`をクロスプロセス真実源にし、他worker実行中は起票時に409を返す。成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3788_recalc_status_db_ssot.md`
 GP-124(cmd_1477): fullrecalculate後signal整合性チェック(_check_signal_integrity)。zero-signal自動検知WARN+signal COUNT記録。OPT-13(修正)+GP-124(検知)=二重防御。
@@ -82,7 +84,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L848 -->
+<!-- last_synced_lesson: L849 -->
 
 ## §36 API認証
 
@@ -256,6 +258,8 @@ OPT一覧(1-15):
 - L768: SQLite /mnt/c p9停滞→ローカルcopyまたは事前matrix cacheを使う（cmd_3515）
 
 ## §12 計算データ管理
+
+- L832: 境界近傍のゲート判定は『合成式の代数的一致』では不十分。入力値(DTB3等)そのものの数値一致まで検証せよ（cmd_karo_recon2_cmd3772_dmsafe_pi009_202607081452）
 
 命名: `{cmd番号}_{ブロック名}_{説明}.csv` + `.meta.yaml`。上書き禁止(`_v2`)。
 テンプレ: `scripts/analysis/grid_search/template_gs_runner.py` は現treeに不在（再配置待ち）。
@@ -645,6 +649,11 @@ import metrics_research_engine as MRE
 
 ## §33 GS正規化 進捗 (2026-04-27)
 
+- L831: serial/batch preflight不一致の切り分けは要因を1つずつNone化する対照実験で（cmd_karo_recon2_cmd3772_yotsume_preflight_202607081453）
+- L835: 全量ベンチACとpreflight不一致は分離して記録する（cmd_3772）
+- L842: GS投入前は系列preflightを必須化する（cmd_3790）
+- L843: download_all_prices後も本番prices preflightで値差確認する（cmd_3793）
+
 ### 汚染発覚と方針転換
 
 246系CSV(C12_shin_shijin_v2)の月次リターンが本番と完全不一致(0.0%)。根因: `shin_v2_12_monthly_returns.csv`(ユニバース)が2026-03-24で凍結、GS再実行(04-03)で未更新。CSVという腐りうる中間ファイルが汚染源。
@@ -788,6 +797,7 @@ import metrics_research_engine as MRE
 - L846: shin_shijin_l1_gs.py内蔵legacyパリティ(run_parity_check)はthreshold_band非対応、band適用済み本番PFに対し必ずFAILする（cmd_3797）
 - L847: db-checkスキルのpsycopg2接続正規表現がポート省略DATABASE_URLに未対応（cmd_3800）
 - L848: GS lookback_terms_jsonのunit=months換算規約は既存ツールにのみ実装されドキュメント化されていない（cmd_3803）
+- L849: GS-本番パリティ比較で本番monthly_returnsを無条件にSSOTとしてはならない(signal_decision_ledger凍結の考慮漏れ)（cmd_3805）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
@@ -832,6 +842,8 @@ import metrics_research_engine as MRE
 - L780: lefthook import-only分割時は同一ファイルのunstaged機能差分退避に注意（cmd_3536）
 
 ## §39 PF物理削除手順 (2026-06-01)
+
+- L841: PF一括削除は登録順ではなく現DB依存グラフで反復削除する（cmd_karo_hotfix_cmd3786_sequence_rerun_202607091318）
 
 **手順(安全順序)**:
 1. バックアップ: `portfolio_config_snapshots` INSERT + ローカルJSON(`docs/research/pf_config_backup_*.json`)
