@@ -312,6 +312,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T08:18:00 三層貫通速度テスト |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T14:23:54+09:00 三層記憶に穴はないか？さらなる利用向上と自動成長をはかる方法を検討しよう。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T14:45:12+09:00 bnw5wynxp toolu_0139sSxh6aDyg7VP5rXg2akg /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ba8a7377-699d-49b7-bda1-2e2015 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T10:10:58+09:00 今回の知識は再発しないように三層記憶に貫通させておいてくれ。 |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -787,7 +788,7 @@ codd:
 |------|---|
 | id | recalculate_pipeline |
 | label | 再計算パイプライン |
-| aliases | fullrecalculate, recalc, 再計算フロー, recalculate_fast, ネストFoF, nested FoF, FoF of FoF, トポロジカルソート, signal_cache, holding_signal_raw, deferred flush, recalculate_fof, FoF再計算, 2段目FoF, 奥義GS, 秘奥義, つまり秘奥義もnew FoFもL3だな, 呼出し元でFoF構成PF 1段目・2段目 を事前一括取得, recalculation_status, recalculate速度, psycopg2直接接続, WSL DB接続方式A, 本番のFoFの設定はこうなっている |
+| aliases | fullrecalculate, recalc, 再計算フロー, recalculate_fast, ネストFoF, nested FoF, FoF of FoF, トポロジカルソート, signal_cache, holding_signal_raw, deferred flush, recalculate_fof, FoF再計算, 2段目FoF, 奥義GS, 秘奥義, つまり秘奥義もnew FoFもL3だな, 呼出し元でFoF構成PF 1段目・2段目 を事前一括取得, recalculation_status, recalculate速度, psycopg2直接接続, WSL DB接続方式A, 本番のFoFの設定はこうなっている, 本番のfull recalculateしてくれ, cronと競合していないか？, cron競合, fullrecalculateとcronの重複実行, pg_advisory_lock, recalculate排他制御, 手動recalculateとcronの同時実行 |
 | skills | db-check |
 | related_concepts | production_parity, dmsignal_operations, alm_research, gs_ninpo_research |
 
@@ -868,6 +869,11 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-07T01:02:25 殿裁定: GS timeout 300s→600s緩和+本番DBゴールデン参照(SELECT突合、毎回fullrecalculate不要)+バンド込み再キャリブレーション必須 |
 | causal | `cmd_karo_hotfix_dm_signal_core_context_freshness_202607080523` files_modified: [[recalculate_pipeline]] |
 | lesson | `L833` recalculate完了矛盾は経過時間見積り(timing-history平均2000s級)と照合してから切り分けよ。API running確認は複数worker前提で解釈せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T09:17:23+09:00 本番のfull recalculateしてくれ。忍者がうまくやれていないようだ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T09:28:54+09:00 b6lp21p24 toolu_01HHdD7BMviB41TN9gUWJsBH /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/ec27e854-6f03-4b0b-bfd8-3b14fc |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T10:15:43+09:00 PF登録config不正値事故の教訓(cmd_3785, 2026-07-09): pipeline_config内ブロックのcategoryに'selection'を書くとPipelineConfig検証が失敗する(正当値はfilter/ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T09:09:12+09:00 cronと競合していないか？ |
+| file | `/mnt/c/Python_app/DM-signal/backend/app/utils/recalc_status.py` — start_recalculation()がpg_advisory_lockでcross-process排他。手動fullrecalculateとRender日次cron(01:10/01:40 UTC sync-standard/sync-fof)は同一lock keyで排他されるため同時実行不可（409で弾かれ30秒待って再実行、`context/dm-signal-ops.md` 排他制御節） |
 | causal_chain | `[[cmd_3053]]` (L714) |
 | causal_chain | `[[cmd_3060]]` (L715) |
 | causal_chain | `[[cmd_3153]]` (L744) |
