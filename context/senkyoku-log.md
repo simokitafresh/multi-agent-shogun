@@ -1409,3 +1409,4 @@
 - 2026-07-09 cmd_3804配備: cmd_3803 GATE CLEAR後、殿厳命のシン玄武-鉄壁1体試験登録→fullrecalculate→GS/本番突合をDB直列で才蔵へ配備。nudge未到達はmanual_nudgeで補正し、才蔵がin_progressへ移行済み。
 - 2026-07-09 cmd_3801完了: 小太郎が`cmd_save.sh`のgate/hook判定とprimary target収集をメモ化し、fork proxy 168→159(-5.4%)・wall-clock 31-39%短縮を確認。GATE CLEAR済み、ac_version注意はCLEAR証跡によりWA不要。
 - 2026-07-09 cmd_reflux_promotion_202607092337_kagemaru完了: 影丸がLK-A14をreport gateのLevel4 BLOCKへ昇格し、横展開/修正前パターン報告時にgrep/rg残存0件証跡を必須化。promotion在庫118→117、commit `0a5074623` push済み、GATE CLEAR。
+- 2026-07-10 cmd_3805完了: 小太郎が青龍/白虎の複数期間加重lookback乖離を偵察。GS側バグではなく、`signal_decision_ledger`がthreshold_band適用前に全期間凍結したPI-P06仕様の隙間が真因と特定し、パリティ計画前提再検討をdecision_candidate化。GATE CLEAR。
