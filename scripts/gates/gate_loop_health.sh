@@ -284,6 +284,12 @@ for pattern, count in reason_counter.most_common():
         # 根本原因は上のbinary_checks.ACxパターンと同一でありcmd_1614/L992のGP-107判定がそのまま適用される。意図的BLOCK。
         # Maturation recommendationsのQUALITY表示で十分であり、同じ結論を再度促すinsightは生成しない。
         continue
+    elif pattern.startswith('status: "pending" はテンプレート初期値'):
+        # cmd_reflux_insight_202607100346_tobisaru: 全期間291件全ての発火がbinary_checks.ACx*.result空文字と同時発火(100%相関、実データ検証済み)。
+        # gate_report_autofix_main.py の status pending→completed 自動修正は verdict が有効(=binary_checks全項目埋まる)時のみ発火する
+        # 設計のため、binary_checksが埋まらない限りstatus単独では解消しない。根本原因は上のbinary_checks.ACx/verdictパターンと同一であり
+        # cmd_1614/L992のGP-107判定がそのまま適用される。意図的BLOCK。同じ結論を再度促すinsightは生成しない。
+        continue
     elif count >= 10:
         msg = f'高頻度FAIL: {pattern} ({count}回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり'
     else:
