@@ -126,7 +126,7 @@ shogun_lesson_exists_for_cmd() {
     if grep -qE "^[[:space:]]+source_cmd:[[:space:]]*['\"]?${source_cmd_id}['\"]?" "$SHOGUN_LESSONS_FILE" 2>/dev/null; then
         return 0
     fi
-    grep -qF "$source_cmd_id" "$SHOGUN_LESSONS_FILE" 2>/dev/null
+    grep -qE "(source_cmd|origin|detail):.*['\"]?${source_cmd_id}['\"]?([[:space:]]|$|['\"])" "$SHOGUN_LESSONS_FILE" 2>/dev/null
 }
 
 extract_nazenaze_from_cmd_yaml() {
@@ -178,25 +178,26 @@ extract_nazenaze_from_cmd_yaml() {
 }
 
 ensure_cmd_publish_default_fields() {
-    local depends_on_value origin_value
+    # Bug3修正: 2回の_yaml_field_get_in_blockを1回のawk走査に統合(~28ms→~14ms)
+    local missing_fields
+    missing_fields="$(awk -v cmd_id="$CMD_ID" '
+        BEGIN { in_cmd=0; has_depends=0; has_origin=0 }
+        { s=$0; sub(/^[[:space:]]*/,"",s) }
+        !in_cmd && s == cmd_id ":" { in_cmd=1; next }
+        in_cmd && s != "" && !/^[[:space:]]/ { exit }
+        in_cmd && /depends_on:/ { has_depends=1 }
+        in_cmd && /origin:/ { has_origin=1 }
+        END { if(!has_depends) printf "depends_on "; if(!has_origin) printf "origin " }
+    ' "$SHOGUN_TO_KARO" 2>/dev/null || true)"
 
-    depends_on_value="$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "depends_on" 2>/dev/null || true)"
-    if [ -z "${depends_on_value:-}" ]; then
-        yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "depends_on" "none" || {
-            echo "ERROR: failed to set depends_on=none for $CMD_ID" >&2
+    local field
+    for field in $missing_fields; do
+        yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "$field" "none" || {
+            echo "ERROR: failed to set ${field}=none for $CMD_ID" >&2
             return 1
         }
-        echo "OK: $CMD_ID depends_on未記入 → depends_on: none を自動挿入"
-    fi
-
-    origin_value="$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "origin" 2>/dev/null || true)"
-    if [ -z "${origin_value:-}" ]; then
-        yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "origin" "none" || {
-            echo "ERROR: failed to set origin=none for $CMD_ID" >&2
-            return 1
-        }
-        echo "OK: $CMD_ID origin未記入 → origin: none を自動挿入"
-    fi
+        echo "OK: $CMD_ID ${field}未記入 → ${field}: none を自動挿入"
+    done
 }
 
 run_cmd_save_with_block_summary() {
@@ -343,20 +344,22 @@ warn_if_q11_evidence_paths_changed() {
         return 0
     fi
 
+    # Bug5修正: per-path git diff 2回ループ → 一括git diff 1回
+    local paths_array=()
     while IFS= read -r path; do
         [[ -n "${path//[[:space:]]/}" ]] || continue
         [[ -e "$CMD_PUBLISH_GIT_ROOT/$path" ]] || continue
-
-        git -C "$CMD_PUBLISH_GIT_ROOT" diff --quiet HEAD -- "$path" 2>/dev/null && continue
-        diff_stat="$(git -C "$CMD_PUBLISH_GIT_ROOT" diff --stat HEAD -- "$path" 2>/dev/null || true)"
-        [[ -n "${diff_stat//[[:space:]]/}" ]] || continue
-
-        if [[ "$any_changed" == false ]]; then
-            echo "WARN: q11_not_already_done のgrep根拠ファイルに未コミット差分があります。起票時のgrep結果が陳腐化している可能性があります。" >&2
-            any_changed=true
-        fi
-        printf '%s\n' "$diff_stat" | sed 's/^/  /' >&2
+        paths_array+=("$path")
     done < <(extract_q11_evidence_paths "$q11_value")
+
+    [[ ${#paths_array[@]} -gt 0 ]] || return 0
+
+    local diff_stat
+    diff_stat="$(git -C "$CMD_PUBLISH_GIT_ROOT" diff --stat HEAD -- "${paths_array[@]}" 2>/dev/null || true)"
+    if [[ -n "${diff_stat//[[:space:]]/}" ]]; then
+        echo "WARN: q11_not_already_done のgrep根拠ファイルに未コミット差分があります。起票時のgrep結果が陳腐化している可能性があります。" >&2
+        printf '%s\n' "$diff_stat" | sed 's/^/  /' >&2
+    fi
 }
 
 # --- Step 1: cmd_save.sh gate検証 ---
@@ -399,11 +402,7 @@ fi
 
 # --- Step 2: draft → pending 昇格 ---
 echo "=== [2/3] pending昇格: $CMD_ID ==="
-# 現在のstatusを確認
-current_status=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$CMD_ID" "status" 2>/dev/null) || {
-    echo "ERROR: $CMD_ID not found in shogun_to_karo.yaml" >&2
-    exit 1
-}
+# current_status は Step 0.5 (L368) で取得済み。再読み不要(Bug2修正: 28ms削減)
 
 if [ "$current_status" = "pending" ] || [ "$current_status" = "delegated" ]; then
     echo "SKIP: $CMD_ID is already $current_status"

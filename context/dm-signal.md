@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-07 cmd_karo_hotfix_ga189_context_freshness_20260707 -->
-<!-- last_synced_lesson: L839 -->
+<!-- last_synced_lesson: L841 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -297,6 +297,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - L837: local_sqlite loaderはmonthly_blobと重複pattern_idを標準対応すべき（cmd_3774）
 - L838: run_077 monthly blob chunk差は全量GS総時間を支配する（cmd_3775）
 - L839: GS blob月次md5はNaN payload差を避けarray_equalで検証する（cmd_3778）
+- L841: PF一括削除は登録順ではなく現DB依存グラフで反復削除する（cmd_karo_hotfix_cmd3786_sequence_rerun_202607091318）
 
 ## 因果リンク
 

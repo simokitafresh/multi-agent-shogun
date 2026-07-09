@@ -2101,6 +2101,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-08T13:33:34+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | lesson | `L991` log_terminal_input.shはUserPromptSubmit経由の全input(Agent tool task-notification含む)をagent=lordとして記録しており、殿の発言と誤帰属される |
 | causal | `cmd_training_L4_auto_202607081543_hayate` files_modified: [[deepdive_principles]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-09T14:20:23+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
 | causal_chain | `[[cmd_3624_kagemaru]]` (L900) |
 | causal_chain | `[[cmd_reflux_insight_202607081406_saizo]]` (L991) |
 

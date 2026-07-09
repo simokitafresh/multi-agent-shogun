@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-09 cmd_3784 -->
+<!-- last_updated: 2026-07-09 cmd_reflux_backlink_202607091355_saizo -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -1021,4 +1021,5 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - cmd_3786ロールバック中の本番ログ確認で`WARNING:app.services.monthly_trade_impl:Matched weight 0.7500 < 0.99, some tickers may be missing`を発見。`_calculate_return_from_price_movement()`(`monthly_trade_impl.py:1092-1116`)が欠落ticker時もmatched_weight未正規化のまま部分加重和を計算続行しており、Silent Fallback原則(PI-018)違反の新規インスタンス(既存SF-001〜カタログ未収載)と判明。
 - 実害: 現状FEはこの値を表示に使わずAPI応答のみ(消費者grep 0件)のためユーザー影響なし。ただし将来この値が参照された瞬間に汚染データとして機能するリスクは残る。
 - 殿指示(13:40)によりfail-closed化のAsIs/ToBe設計書を作成済み。実装cmdは未起票(R1-R4、単一cmd案)。
+- cmd_3787でfail-closed化を実装済み。`_calculate_return_from_price_movement()`は3要素`(calculated_return, matched_weight, missing_tickers)`を返し、ticker欠落または対象価格変化欠落で`calculated_return=None`にする。API/FE型へ`missing_tickers`追加。検証: `PYTHONPATH=backend pytest -q backend/tests/test_monthly_trade_calculator.py` → 35 passed。成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3787_monthly_trade_missing_ticker_fail_closed.md`
 - 因果リンク: [[cmd_3786ロールバック中ログ確認]] -> [[matched_weight部分計算続行発見]] -> [[monthly-trade-missing-ticker-calc-asis-tobe-5w1h_20260709]]
