@@ -17,6 +17,7 @@ setup_file() {
     eval "$(sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_primary_cmd_targets()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^is_gate_or_hook_addition_cmd()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^_is_gate_or_hook_addition_cmd_uncached()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^q11_has_existing_alternative_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^collect_assumption_source_files()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^extract_guard_list_from_files()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -38,7 +39,7 @@ setup_file() {
     count_same_warn_pattern() { echo 0; }
     export -f trim_inline_yaml_scalar path_exists_for_cmd_source parent_exists_for_cmd_source display_parent_for_cmd_source
     export -f load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field collect_primary_cmd_targets
-    export -f is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification collect_assumption_source_files
+    export -f is_gate_or_hook_addition_cmd _is_gate_or_hook_addition_cmd_uncached q11_has_existing_alternative_verification collect_assumption_source_files
     export -f extract_guard_list_from_files q11_has_guard_duplicate_check collect_q11_guard_list check_gate_hook_action_conversion
     export -f build_warn_note warn_note_key warn_note_message record_warn_reason record_block_reason cmd_save_caller_check_name
     export -f abort_if_block_immediate cmd_text_matches_pattern warn_q5_pair_missing_session_state

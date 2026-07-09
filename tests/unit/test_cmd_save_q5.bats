@@ -26,6 +26,7 @@ setup_file() {
     eval "$(sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^cmd_text_matches_pattern()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^is_gate_or_hook_addition_cmd()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^_is_gate_or_hook_addition_cmd_uncached()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^q11_has_existing_alternative_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^is_gate_or_script_modification_cmd()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^q5_has_execution_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -60,7 +61,7 @@ setup_file() {
     check_bundle_red_flag() { :; }
     show_q11_semantic_search_matches() { :; }
     export -f trim_inline_yaml_scalar load_cmd_block load_cmd_block_cache cmd_block_has_field cmd_block_get_field \
-        cmd_text_matches_pattern is_gate_or_hook_addition_cmd q11_has_existing_alternative_verification \
+        cmd_text_matches_pattern is_gate_or_hook_addition_cmd _is_gate_or_hook_addition_cmd_uncached q11_has_existing_alternative_verification \
         is_gate_or_script_modification_cmd q5_has_execution_evidence check_gate_script_execution_evidence \
         collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check \
         collect_q11_guard_list check_gate_hook_action_conversion record_block_reason record_warn_reason abort_if_block_immediate \
