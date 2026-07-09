@@ -26,6 +26,8 @@ setup() {
 projects:
   - id: testproj
     path: $EXT_PROJECT
+  - id: dm-signal
+    path: $EXT_PROJECT
 EOF
 
     cat > "$EXT_PROJECT/tasks/lessons.md" <<'EOF'
@@ -100,6 +102,39 @@ EOF
     [ "$status" -eq 0 ]
     [ -f "$TEST_PROJECT/queue/gates/cmd_123/lesson.done" ]
     run grep -Fx -- "source: lesson_write" "$TEST_PROJECT/queue/gates/cmd_123/lesson.done"
+    [ "$status" -eq 0 ]
+}
+
+@test "infers dm-signal grid search subdomain from auto draft target files" {
+    local report="$TEST_TMPDIR/report.yaml"
+    cat > "$report" <<'EOF'
+parent_cmd: cmd_3793
+worker_id: kagemaru
+lesson_candidate:
+  found: true
+  project: dm-signal
+  title: download_all_prices後も本番prices preflightで値差確認する
+  detail: GS price path must compare local SQLite daily_prices against production prices before deployment.
+  tags:
+    - dm-signal
+    - context
+    - db
+files_modified:
+  - path: scripts/analysis/grid_search/gs_price_preflight.py
+  - path: docs/research/cmd_3793_d1_price_sync.md
+EOF
+
+    run_auto_draft "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Registering confirmed lesson"* ]]
+
+    run grep -Fx -- "--target-files" "$TEST_TMPDIR/lesson_write_args.txt"
+    [ "$status" -eq 0 ]
+    run grep -Fx -- "scripts/analysis/grid_search/gs_price_preflight.py,docs/research/cmd_3793_d1_price_sync.md" "$TEST_TMPDIR/lesson_write_args.txt"
+    [ "$status" -eq 0 ]
+    run grep -Fx -- "--subdomain" "$TEST_TMPDIR/lesson_write_args.txt"
+    [ "$status" -eq 0 ]
+    run grep -Fx -- "gs" "$TEST_TMPDIR/lesson_write_args.txt"
     [ "$status" -eq 0 ]
 }
 

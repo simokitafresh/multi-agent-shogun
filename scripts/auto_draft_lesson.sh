@@ -118,6 +118,7 @@ def emit(data):
         ("THEN_ACTION", "then_action", ""),
         ("BECAUSE_REASON", "because_reason", ""),
         ("TARGET_FILES", "target_files", ""),
+        ("SUBDOMAIN", "subdomain", ""),
     ]
     for shell_name, key, default in fields:
         print(f"{shell_name}={shlex.quote(str(data.get(key, default)))}")
@@ -185,6 +186,53 @@ for path in paths:
     if len(target_files) >= 5:
         break
 
+def csv_value(value):
+    if isinstance(value, list):
+        return ",".join(str(v).strip() for v in value if str(v).strip())
+    return str(value or "").strip()
+
+def normalize_subdomain(value):
+    aliases = {
+        "frontend": "fe", "front": "fe", "ui": "fe",
+        "backend": "be", "back": "be", "api": "be", "ops": "be",
+        "grid_search": "gs", "grid-search": "gs", "gridsearch": "gs",
+        "platform": "infra",
+    }
+    parts = [p.strip() for p in csv_value(value).split(",") if p.strip()]
+    normalized = []
+    for part in parts:
+        part = aliases.get(part, part)
+        if part in {"fe", "be", "gs", "infra"} and part not in normalized:
+            normalized.append(part)
+    return ",".join(normalized)
+
+def infer_subdomain(project_id, title_text, detail_text, tags_value, target_files_csv):
+    explicit = normalize_subdomain(lc.get("subdomain") or lc.get("subdomains"))
+    if explicit:
+        return explicit
+    if project_id == "infra":
+        return "infra"
+    haystack = " ".join([
+        project_id,
+        title_text,
+        detail_text,
+        csv_value(tags_value),
+        target_files_csv,
+    ]).lower()
+    if project_id == "dm-signal":
+        if any(k in haystack for k in ["scripts/gates/", "lesson_write", "cmd_complete_gate", "deploy_task", "inbox_", "ninja_monitor", "semantic"]):
+            return "infra"
+        if any(k in haystack for k in ["run_077", "grid_search", "grid search", "grid-search", " gs", "gs-", "gs_", "l0", "l1", "l2", "l3", "blob", "monthly", "daily_prices", "price path", "価格", "系列preflight"]):
+            return "gs"
+        if any(k in haystack for k in ["frontend", "next", "react", "component", "chart", "ui", "css", "app/", "components/"]):
+            return "fe"
+        if any(k in haystack for k in ["database", "db", "api", "recalculate", "fullrecalculate", "portfolio", "pf", "migration", "cron", "production", "prices"]):
+            return "be"
+    return ""
+
+target_files_csv = ",".join(target_files)
+subdomain = infer_subdomain(project, title, detail, tags, target_files_csv)
+
 emit({
     "action": "register",
     "project": project,
@@ -196,7 +244,8 @@ emit({
     "if_cond": if_then.get("if", ""),
     "then_action": if_then.get("then", ""),
     "because_reason": if_then.get("because", ""),
-    "target_files": ",".join(target_files),
+    "target_files": target_files_csv,
+    "subdomain": subdomain,
 })
 PYEOF
 )
@@ -295,6 +344,9 @@ if [ -n "$BECAUSE_REASON" ]; then
 fi
 if [ -n "$TARGET_FILES" ]; then
     EXTRA_FLAGS+=(--target-files "$TARGET_FILES")
+fi
+if [ -n "$SUBDOMAIN" ]; then
+    EXTRA_FLAGS+=(--subdomain "$SUBDOMAIN")
 fi
 bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "$SOURCE_CMD" --status confirmed "${EXTRA_FLAGS[@]}"
 
