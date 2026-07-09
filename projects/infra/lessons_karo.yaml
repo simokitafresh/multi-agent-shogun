@@ -468,11 +468,12 @@ v7吸収(2026-05-19):
   source_ids: [LK070, LK091]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'karo-operations.md §5教訓抽出時に既存ルール更新チェック'
+  enforcement_level: 2
+  enforcement: 'Level2(事前予防、doc): 一次情報再検証(2026-07-09, cmd_reflux_promotion_202607092101_kotaro)。旧enforcement記載『karo-operations.md §5教訓抽出時に既存ルール更新チェック』は誤り — context/karo-operations.md §5およびdocs/research/karo-operations-detail.md §5を現物確認したところ、記載内容は教訓draftの査読手順(lesson_review.sh→confirm/edit/delete)のみで、「自動化コード変更時に既存ルール文書更新を確認する」手順自体が存在しない(該当0件)。cmd_save.sh/deploy_task.sh/gate系全域grep(既存ルール|rule_update|ルール更新)でも自動チェックは0件で、Level4相当の実装は皆無と確定。実態はlessons_karo.yaml本文がCLAUDE.md Step2.5(家老起動時全文読込必須)により家老へ毎回配信される受動的知識層のみ=Level2(事前予防、doc)。Level4化には(a)『自動化実装』とみなす対象範囲の定義(scripts/hooks|gates|deploy_task.sh等)(b)コード変更と対応する既存ルール文書(instructions/karo.md・context/karo-operations.md等)の自動特定方法(静的マッピング不可、意味判断が必要)(c)false positive対策(全ての自動化変更がルール更新を要するわけではない)の3点設計が必要なため単独実装を見送りPD-114(escalation)へ整理し家老/将軍判断を要請。'
 
   when: 自動化コード変更完了時。gate/hook/テンプレート修正後
   how: ACに既存ルール(lessons/karo.md/operations)更新を含める。コード変更→知識基盤更新を連動
-  origin: "[[LK070]] -> [[自動化実装]] -> [[既存ルール未更新]]"
+  origin: "[[LK070]] -> [[自動化実装]] -> [[既存ルール未更新]] -> [[PD-114]]"
 - id: LK-A22
   title: depends_onはAC単位で分析 — cmd全体を鵜呑みにするな
   detail: depends_on cmd_Xがあっても全ACが依存するとは限らない。AC単位で依存分析し並列可能な部分を先に配備。idle=最大の無駄。
