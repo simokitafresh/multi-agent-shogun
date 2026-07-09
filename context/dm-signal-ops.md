@@ -84,7 +84,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L852 -->
+<!-- last_synced_lesson: L853 -->
 
 ## §36 API認証
 
@@ -799,6 +799,7 @@ import metrics_research_engine as MRE
 - L848: GS lookback_terms_jsonのunit=months換算規約は既存ツールにのみ実装されドキュメント化されていない（cmd_3803）
 - L849: GS-本番パリティ比較で本番monthly_returnsを無条件にSSOTとしてはならない(signal_decision_ledger凍結の考慮漏れ)（cmd_3805）
 - L852: monthly_tradeのmatched_weightは表示展開後weightsと同じ基準で検証せよ（cmd_3809）
+- L853: signal_decision_ledgerの再backfillは削除→再計算→再backfillの順序が必須(逆順は無効)（cmd_3806）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
