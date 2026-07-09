@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-09 cmd_3797 -->
+<!-- last_updated: 2026-07-09 cmd_3800 -->
 <!-- last_synced_lesson: L843 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -118,6 +118,8 @@ pf_L3再GS完了(cmd_3779): 新pf_L2チャンピオン21体を構成PFとして7
 GS価格経路偵察(cmd_3790, 2026-07-09): パリティ0/75の主因は登録configではなくGS入力価格系列差。`analysis_runs/experiments.db.daily_prices`は75,473行/14銘柄/最終2026-03-20、本番`prices`は99,871行/18銘柄/最終2026-07-08。同一2026-03-20でもTQQQ -0.394%、TECL -0.194%、LQD -1.145%、SPY -0.257%のclose差。再入替前にL0 daily price cacheとL1-L3 local_sqlite成果物を本番`prices`由来で再生成し、価格系列preflightをBLOCK化せよ。詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3790_gs_price_path_recon.md`
 
 Phase A再実行完了(cmd_3797, 2026-07-09): cmd_3762/3763(20260708)は本番未同期のEODHDローカルスナップショットで実行されており無効(殿裁定2026-07-09 13:40)。D1同期済みprices(`analysis_runs/experiments.db`, gs_price_preflight 14/14 PASS)でL0四神全量GS(191,796patterns、threshold_band=0.005込み、266s、exit 0)を再実行し、旧基準(CAGR/MaxDD/NHF)・新基準(CAGR/WorstYear/AvgUWP)で12体ずつ再選出、C1-C4比較を再実施。定性的傾向は前回踏襲(新基準は対象指標8スロット中6で改善、四神間相関は改善するが四神内相関は一部悪化、四神合成FoF後は青龍/朱雀/白虎でMaxDD悪化=個体最適化と合成後性能が逆転しうる)。副次発見: スクリプト内蔵legacyパリティ(`run_parity_check`, cmd_1018由来)はthreshold_band非対応で、band適用済み本番PF(工程1=cmd_3771で24PF適用済み)に対し必ずFAILする。GS計算経路自体の正確性は別の専用ツール`verify_gs_band_parity_pi009.py`(cmd_3794「D3」で本cmd同日に再検証、DM2含め該当PASS)で担保済みのため`--skip-parity`が正しい選択(cmd_3762前例と整合)。詳細 → `docs/research/cmd_3797_phase_a_l0.md`。L1-L3基準の採用裁定(設計書§2 Step 4)は引き続き殿裁定待ち。
+
+L0本番突合完了(cmd_3800, 2026-07-09): 殿指摘(21:33「L0は本番とのパリティを確認したのか？」)への回答。cmd_3797の旧基準12体チャンピオンを本番`monthly_returns`(holding_signal/monthly_return_open)と全期間(171ヶ月, 2012-04〜2026-06)で突合した結果、**完全一致は12体中1体(シン玄武-鉄壁、171/171・最大差分4.9e-11)のみ**。threshold_bandは12/12で一致(0.005)だが、config(safe_haven_asset/top_n/rebalance_trigger/lookback)は12体中2体(シン玄武-激攻・鉄壁)のみ本番現行登録と完全一致し、残り10体は本番と異なるパラメータが選出されている。これはGS計算エンジンの誤りではなく、価格同期後の再探索で現行本番と異なるチャンピオンが選ばれた結果(config完全一致の2体は高精度で一致=エンジン自体は健全)。**L1以降へこの12体を使い続ける場合、本番反映時に11体の実際の挙動(保有銘柄・リターン)が現行から変わる**ことを意味し、意図された変化か将軍・殿の確認が必要。詳細 → `docs/research/cmd_3800_l0_prod_check.md`。
 
 根拠: `/mnt/c/Python_app/DM-signal/docs/design/gs-recalibration-plan.md`（commit `4828c134`, `78ed9bec`, `97e06904`）。
 
