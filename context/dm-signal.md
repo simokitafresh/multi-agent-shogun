@@ -382,6 +382,13 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - 新規ユニットテスト14件(0件/1件以上の通知分岐含む)追加、既存テスト含め該当スコープ96件全PASS。全件テスト実行(1614 passed)で1件の既存FAIL(`test_recalculate_status.py::test_status_resets_after_completion`)を検出したが、`git stash`で本cmd変更を退避しても同一失敗が再現することを実証し、本cmdと無関係のpre-existing environment依存(DBに残存する"running"行への依存)と確定。
 - 詳細・テスト証跡 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3820_warn_monitor.md`
 
+## §44 precompute全量最速化 Phase P1: 評価器2道具凍結+immutable baseline (cmd_3819, 2026-07-10)
+
+- **評価器2道具を凍結**（`scripts/oneshot/cmd_3819_precompute_bench.py`=全量ベンチPF別/ビルダー別秒割り+RSSピーク+3回中央値、`cmd_3819_precompute_parity.py`=canonical JSON hash+Pythonオブジェクト等価2判定の突合ゲート、`--export`で凍結スナップショット化可）。凍結commit `c956e4e7f2dd6d335c4e7a5eafbd95c0b58a3814`。P2(/goalループ)のgoal忍者はこの2ファイル変更禁止
+- **ローカルPostgresはDocker不可、pgserver方式**: このヘッドレス環境ではDocker Desktop WSL2統合が機能しない（GUI操作を要し完了不可、実測確認済み）。sudo・Docker不要の`pgserver`パッケージ(PyPI, prebuilt PG16.2バイナリ同梱)を`$HOME/dm-signal-cmd3819-localpg/venv`に隔離導入。ネイティブext4上で稼働（`/mnt/c`は9pで低速、ベンチが歪むため不使用）。同梱pg_dumpはSSL非対応ビルドのため本番接続にはpsycopg2 COPY BINARYストリーミング方式(`cmd_3819_baseline_provision.py`)を使用。他PJでローカルPostgresが要る場合の再利用可
+- **binary COPYは列順一致必須**: 本番の物理列順とSQLAlchemy `Base.metadata.create_all()`の宣言順が食い違うと値がずれてUTF8デコードエラー等の破損を起こす（実測）。export/restore双方で`Base.metadata`由来の明示列リストを使うことで解消
+- 詳細・凍結hash証跡・baseline snapshot・初回ベンチ数値・理論下限推定 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3819_precompute_p1.md`
+
 ## §35 GS D3出力パリティ再検証 (cmd_3794, 2026-07-09)
 
 - **PI-009 GS-vs本番エンジン突合はD1価格同期の影響を受けない**: cmd_3755(T1)の5/7 PASS結果と、D1同期済みprices再検証後の結果は完全一致(5/7 PASS、変化なし)。2 FAIL(DM-safe/DM-safe-2、共に2009-05・gate_state=band)は価格陳腐化ではなく別要因と確定。
