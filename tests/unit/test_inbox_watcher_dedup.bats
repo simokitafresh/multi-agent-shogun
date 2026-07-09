@@ -561,3 +561,55 @@ echo "INPUT_GUARD_ALLOWED_EMPTY_PROMPT=yes"
     [ "$status" -eq 0 ]
     [[ "$output" == *"INPUT_GUARD_ALLOWED_EMPTY_PROMPT=yes"* ]]
 }
+
+@test "T-IWD-012: input guard allows Claude idle prompt with NBSP" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/state"
+touch "$TMP_ROOT/tmux.log"
+
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+export INBOX_WATCHER_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/inbox_watcher.sh" gunshi dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+touch "$TMP_ROOT/state/shogun_idle_gunshi"
+
+get_effective_cli_type() { echo claude; }
+agent_has_self_watch() { return 1; }
+check_agent_busy() { return 0; }
+sleep() { :; }
+timeout() { shift; "$@"; }
+tmux() {
+    case "$1" in
+        display-message)
+            case "${*: -1}" in
+                *pane_in_mode*) echo 0 ;;
+                *agent_id*) echo gunshi ;;
+                *) echo idle ;;
+            esac
+            ;;
+        capture-pane)
+            printf "%b" "─────────────────────────────────────────────────────────────\n❯\302\240\n─────────────────────────────────────────────────────────────\n  CTX:42%%\n  ⏵⏵ bypass permissions on (shift+tab to cycle)\n"
+            ;;
+        set-buffer) echo "SET_BUFFER $*" >> "$TMP_ROOT/tmux.log" ;;
+        paste-buffer) echo "PASTE $*" >> "$TMP_ROOT/tmux.log" ;;
+        send-keys) echo "ENTER $*" >> "$TMP_ROOT/tmux.log" ;;
+        set-option) echo "SET_OPTION $*" >> "$TMP_ROOT/tmux.log" ;;
+        *) ;;
+    esac
+}
+
+send_wakeup 1 true "$(printf msg_claude_nbsp_prompt | sha256sum | cut -d " " -f1)" high
+
+paste_count="$(grep -c "^PASTE " "$TMP_ROOT/tmux.log" || true)"
+enter_count="$(grep -c "^ENTER " "$TMP_ROOT/tmux.log" || true)"
+[ "$paste_count" = "1" ]
+[ "$enter_count" = "1" ]
+echo "INPUT_GUARD_ALLOWED_CLAUDE_NBSP_PROMPT=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INPUT_GUARD_ALLOWED_CLAUDE_NBSP_PROMPT=yes"* ]]
+}

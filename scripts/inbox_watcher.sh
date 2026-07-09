@@ -525,6 +525,7 @@ pane_input_line_has_text() {
 
     stripped="$last_line"
     stripped="${stripped//$'\r'/}"
+    stripped="${stripped//$'\302\240'/}"
     stripped="$(printf '%s' "$stripped" | sed -E \
         -e 's/^[[:space:]]*[›❯][[:space:]]*//' \
         -e 's/[[:space:]]*[0-9]+%[[:space:]]+(context[[:space:]]+)?left.*$//' \
