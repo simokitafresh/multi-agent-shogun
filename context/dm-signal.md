@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-09 cmd_3793 -->
+<!-- last_updated: 2026-07-09 cmd_3794 -->
 <!-- last_synced_lesson: L843 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -307,6 +307,12 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 
 - `analysis_runs/experiments.db.daily_prices` は `download_all_prices.py grid-search` 後に `sync_experiments_prices.py` で本番PostgreSQL `prices` / `economic_indicators(DTB3)` と同期する。cmd_3793では同期後 `gs_price_preflight.py` が14/14 ticker PASS、missing/mismatch 0を確認。
 - GS実行前は `python3 scripts/analysis/grid_search/gs_price_preflight.py` を必須実行する。不一致時はexit 1で停止し、全一致時のみexit 0。詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3793_d1_price_sync.md`
+
+## §35 GS D3出力パリティ再検証 (cmd_3794, 2026-07-09)
+
+- **PI-009 GS-vs本番エンジン突合はD1価格同期の影響を受けない**: cmd_3755(T1)の5/7 PASS結果と、D1同期済みprices再検証後の結果は完全一致(5/7 PASS、変化なし)。2 FAIL(DM-safe/DM-safe-2、共に2009-05・gate_state=band)は価格陳腐化ではなく別要因と確定。
+- **PI-009突合スクリプトが参照するDBはexperiments.dbではなくgs_prefetch.db**: `scripts/analysis/grid_search/verify_gs_band_parity_pi009.py`(cmd_3755作成)は`analysis_runs/gs_prefetch.db`(`prefetch_gs_data.py`で生成)を読む。D1(cmd_3793)は`experiments.db`のみ同期対象で`gs_prefetch.db`は対象外だったため、D3実施前は`gs_prefetch.db`も本番と14/14 FAIL(TQQQ最大diff 0.20)で陳腐化していた。`prefetch_gs_data.py`再実行(本番→ローカルcache読取専用、`.gitignore`対象)で14/14 PASSへ復元してから再検証した。GS入力価格系列は**experiments.db(L0系)とgs_prefetch.db(PI-009突合系)の2系統**が別々に本番同期を要する。
+- 2 FAILの共通構造: 3資産universe(`QQQ/GLD/XLU`or`QLD/GDX/XLU`)+`safe_haven_asset=GLD`+`top_n=2`。PASSの5PFは全て2資産(`TQQQ/TECL`)+`top_n=1`。原因は`top_n=2`のband gate下でのマルチアセット重み配分ロジック差の疑い(follow-up cmd要)。詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3794_d3_parity_recheck.md`
 
 ## 因果リンク
 
