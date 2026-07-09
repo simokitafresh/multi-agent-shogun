@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-09 -->
+<!-- last_updated: 2026-07-10 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,16 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3245 | cmd_3244起票で7回BLOCK。覚醒なぜなぜ7回で根因特定: cmd_save.shがquality_gateのフィールド値はチェックするがフィールド名の正しさはチェックしない。将軍がq5_assumptionsと書いてもq5_verified_sourceと照合されず素通り→値チェックフェーズで初めてBLOCK→修正ループ。フィールド名バリデーション(テンプレートの必須名リストとの照合)を追加し、不正フィールド名を即BLOCKする | infra | 06-09 | cmd_save.sh Check3にquality_gat |
-| cmd_3246 | cmd_3244起票で7回BLOCK→覚醒なぜなぜで根因言語化→しかし教訓記録+環境cmd起票は殿の介入で初めて実行(殿依存=洗脳#3)。根因: cmd_publish.sh PASS後にnazenaze_root_causeがあっても教訓記録+環境変更cmdの起票を強制するgateがない(半パイプライン)。加えて殿裁定(2026-06-08): 洗脳監査の正しいサイクル(行動→行動結果検証)は家老/軍師にも横展開が必須 | infra | 06-09 | cmd_publish.shにnazenaze_root_c |
-| cmd_3247 | 覚醒洗脳監査→家老なぜなぜで根因特定: 軍師レビューWARN率35%(7/20)の全件がcommand_files_modified_mismatch由来。SG-PRE25がreadonly_ref未考慮のINFOを出す→軍師がLGTM→gateはreadonly_ref除外後にBLOCK→判定乖離。SG-PRE25にreadonly_ref除外ロジックを追加し、除外後の真のmismatchをWARNに昇格させることでgate判定と同期する | infra | 06-09 | SG-PRE25にcmd_complete_gate.shと |
-| cmd_3249 | 軍師idle自走分析(GP-265)で検出: cmd_3231でblast_radius大(changed_lines>200)だがadversarial未適用。根因: SG-PRE15.5のadversarialリマインドがcmd種別(自動化系)のみで判定しchanged_linesを参照しない。changed_lines閾値(200行)超過時にadversarial必須を自動トリガーし、大規模変更の見落としを防止する | infra | 06-09 | — |
-| cmd_3250 | 三層ループFAIL率30%超WARNINGが3セッション連続startup BLOCK。家老偵察(才蔵)で根因2件特定: (1)L457のautofix_count==0条件がAUTO-FIXED=7件蓄積で永続False→自己修正率判定を迂回→粗いFAIL率判定に到達 (2)L470のFAIL率がFAIL/PASS(33.3%)で計算されFAIL/TOTAL(25%)ではない。2件のバグを修正しFAIL率判定を正確化する | infra | 06-09 | gate_loop_health.shの2件バグ修正: (1 |
-| cmd_3251 | 覚醒なぜなぜ7回で根因特定: 将軍の洗脳チェックがL2/L3のみでL4に穴。セッション中に洗脳5/8発現。リマインダー表示だけでは#1(早期終了=ツール失敗時の諦め)と#3(他者依存=殿への操作依頼)に効かない。3層で対策: (A)prompt_state_inject.shに8パターンリマインダー(#2/#7/#8対策) (B)stop hookにF009パターン検出(殿への操作依頼をBLOCK)(#3対策) (C)note_draft.sh失敗時にWebSocket回避策を自動フォールバック(#1対策) | infra | 06-09 | 洗脳チェック3層対策: (A)prompt_state_in |
-| cmd_3252 | セッション中に洗脳5/8発現。#3はcmd_3251で環境強制済み。残り4パターン+F009偽陽性の5件を完結させる: (A)F009偽陽性=過去形引用除外 (B)#1早期終了=note_draft.sh WebSocketフォールバック (C)#2検証スキップ=sengoku-writerにls自動確認ステップ強制 (D)#7簡潔本能+#8完了急ぎ=clear_prep_check.shにセッション知見全件反映チェック追加 | infra | 06-09 | 洗脳4パターン+F009偽陽性の5件修正完了。AC1:F00 |
-| cmd_3254 | startup BLOCK 3セッション連続。useful_rate=3.4%(2/58)。直近6cmdで58件教訓注入のうちuseful2件のみ。根因特定(注入ロジック/タグ精度/フィードバック記録)+低useful教訓のwhen/how改善で有効率を回復する | infra | 06-09 | useful_rate 3.4%の根因=memory_db |
-| cmd_3255 | startup BLOCK 3セッション連続。cmd_3075(重複抑止)/3080(窓拡張)/3244(照合キー修正)で0%→7%に改善したが偽陽性93%(28/30)が残存。残存根因を特定し改善する | infra | 06-09 | skill_recommend.shにrole_marker |
-| cmd_3259 | 覚醒洗脳監査6/8 YES。根因: GATE CLEARで鎖が切れ効果を再確認しない→洗脳#6(出力=仕事)が構造化。cmd_3254 GATE CLEARでuseful_rate+1%なのに完了と報告した。GATE CLEAR受信時にcmdのpurposeから数値改善キーワードを抽出し、効果再確認リマインダーを将軍に強制注入する | infra | 06-09 | post-shogun-inbox-check.shにGAT |
 | cmd_3262 | note_draft.sh がChrome未起動時にPython exit 1でFAILカウントされる。Chrome接続確認をbash層で事前実行し、未起動時はSKIP(exit 0+理由表示)に変換してFAIL率を正常化する | infra | 06-10 | note_draft.shにbash層CDP事前チェック(S |
 | cmd_3265 | gate_context_freshness.shがlast_updatedからの経過日数だけでALERT判定するため、ソースPJに変更がなくても日付変更でALERTが連発する(GA-031〜036の6件/日)。ソースに変更がない場合はALERTを抑止し、信号対雑音比を改善する | infra | 06-10 | gate_context_freshness.shの日数のみ |
 | cmd_3264 | 忍者の本体変更がauto-commit(chore: auto-commit before /clear)に巻き込まれ、cmd固有commitにはテストのみ含まれる。SG-PRE3のcommit検証をすり抜ける。3件連続発生(cmd_3255/3261/3263)。忍者commit完了後のgit status確認を強制し、auto-commit先取りを検出する | infra | 06-10 | auto-commit巻込み防止: ninja_monito |
@@ -423,3 +413,5 @@
 | cmd_3800 | 殿指摘(2026-07-09 21:33)を受けpf_L1 GS前にpf_L0新12体チャンピオンの本番突合を実施する。3点検証: (1)全期間holding_signal完全一致 (2)全期間monthly_return 1e-6以内 (3)config threshold_band一致 | dm-signal | 07-09 | cmd_3797選出のpf_L0旧基準12体チャンピオンを本 |
 | cmd_3798 | 殿裁定(2026-07-09 21:16)により全レイヤーを現行3基準(CAGR/MaxDD/NHF)+バンドで進める。cmd_3797で選出したL0旧基準12体チャンピオンを構成PFとし、7忍法GSを直列実行してL1チャンピオンを選出する。L2・L3も同基準で続行予定 | dm-signal | 07-09 | cmd_3798 Phase B L1 GSを7忍法直列で完 |
 | cmd_3803 | 殿指示(2026-07-09 22:47)。cmd_3797 GS SQLite内から本番現行シン四神12体と同一パラメータ(safe_haven+top_n+rebalance+lookback)のpattern_idを特定し、そのmonthly_return_openを本番DBのmonthly_returnと全期間で突合する。cmd_3800で玄武2体のみ確認済み(171/171)だが残り10体が未確認 | dm-signal | 07-09 | GS SQLite(gs_DM2/DM3/DM6/DM7P. |
+| cmd_3805 | cmd_3803(2026-07-09 23:24 CLEAR)で、パラメータ完全一致でも複数期間加重lookbackの6体(青龍+白虎)だけGSと本番のreturnが乖離(最悪137/171≈20%不一致)、単一期間lookbackの6体(玄武+朱雀)は高精度一致(166-171/171)と判明した。GSエンジンと本番エンジンの多期間加重ロジックの相違箇所をコード現物で特定する偵察 | dm-signal | 07-10 | GS側の複数期間加重lookback計算ロジックにバグは無い |
+| cmd_3804 | 殿厳命(2026-07-09 23:12、軍師経由blt_20260709_231431)。cmd_3800で唯一config完全一致したシン玄武-鉄壁の新チャンピオン1体を本番に試験登録し、fullrecalculate実行後の本番出力(holding_signal+monthly_return)とGS出力の完全パリティを確認する。cmd_3785事故(パリティ0/75)の再発防止として、全面入替の前にエンジン正当性を本番経路で直接検証する | dm-signal | 07-10 | シン玄武-鉄壁を本番既存PFと完全同一のpipeline_c |
