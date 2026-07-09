@@ -95,9 +95,15 @@ else
     echo "  SKIP: worker_id not found"
 fi
 
-# ─── Batch git data (WSL2最適化: N*2 per-file git log → 2 batch calls) ───
+# ─── Batch git data (cmd_3807: PRE3/PRE13/PRE19が独立に行っていた最大4回の全履歴--grep走査を統合) ───
+# 実測(docs/research/cmd_3807_gunshi_precheck_speedup.md): 統合前は同一REPO_ROOTへの
+# `git log --grep=$PARENT_CMD --numstat`系走査がPRE3(name-only)/PRE13(numstat)/PRE19(numstat)で
+# 最大3回重複実行され、1回あたり約1.2s(WSL2 NTFS)。numstat 1回の出力から3列目(path)を抽出すれば
+# name-onlyと等価(実データでdiff行数0を確認済み)なため、numstatへ統一し結果を共有する。
 _PRE_CMD_FILES=""
 _PRE_RECENT_DATA=""
+_PRE_PROJECT_NUMSTAT=""  # PROJECT_DIR(dm-signalならDM_SIGNAL_PATH)のnumstat。PRE3のfile一覧+PRE19のDM-Signal合計が共用
+_PRE_REPO_NUMSTAT=""     # REPO_ROOTのnumstat。PRE13+PRE19のshogun側合計が共用
 _REPORT_HASHES=$(grep -oiP '(?:commit|commit_hash:)\s*\K[0-9a-f]{7,40}' "$REPORT_PATH" 2>/dev/null | sort -u || true)
 if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
     if [ -n "$_REPORT_HASHES" ]; then
@@ -116,10 +122,21 @@ if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
         done <<< "$_REPORT_HASHES"
         _PRE_CMD_FILES=$(printf '%s\n' "$_PRE_CMD_FILES" | sed '/^$/d' | sort -u)
     else
-        # PRE3用: cmd固有commitが触れたファイル一覧 (1 call)
-        _PRE_CMD_FILES=$(cd "${PROJECT_DIR:-$REPO_ROOT}" && timeout 2 git log --grep="${PARENT_CMD}" --format="" --name-only 2>/dev/null | sort -u) || true
+        # PRE3/PRE19-DM用: cmd固有commitのnumstat (1 call)。name-only相当は3列目(path)から導出しPRE3と共用
+        _PRE_PROJECT_NUMSTAT=$(cd "${PROJECT_DIR:-$REPO_ROOT}" && timeout 2 git log --no-merges --fixed-strings --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null) || true
+        _PRE_CMD_FILES=$(printf '%s\n' "$_PRE_PROJECT_NUMSTAT" | awk -F'\t' 'NF>=3{print $3}' | sort -u)
         # PRE14用: 直近20 commitとファイル (1 call)
         _PRE_RECENT_DATA=$(cd "$REPO_ROOT" && timeout 2 git log --oneline -20 --name-only 2>/dev/null) || true
+    fi
+fi
+# PRE13/PRE19-shogun用: REPO_ROOTのnumstat。PRE13はhashの有無に関わらず全履歴grep走査が必要なため
+# 上のブロックとは独立にガードする(元のPRE13ガードと同一条件=FILES_MODIFIEDのみ)。
+# PROJECT_DIR==REPO_ROOT(非DM-Signal報告。実運用で最頻出)なら上のnumstatをそのまま再利用しgit呼出を省略する。
+if [ -n "${FILES_MODIFIED:-}" ]; then
+    if [ "${PROJECT_DIR:-$REPO_ROOT}" = "$REPO_ROOT" ] && [ -n "$_PRE_PROJECT_NUMSTAT" ]; then
+        _PRE_REPO_NUMSTAT="$_PRE_PROJECT_NUMSTAT"
+    else
+        _PRE_REPO_NUMSTAT=$( { timeout 3 git -C "$REPO_ROOT" log --no-merges --fixed-strings --grep="${PARENT_CMD:-}" --format="" --numstat 2>/dev/null || true; } )
     fi
 fi
 
@@ -345,10 +362,12 @@ echo ""
 echo "■ SG-PRE13: hook/gate大規模削減検出"
 if [ -n "${FILES_MODIFIED:-}" ]; then
     HOOK_GATE_WARN=0
-    # §speed最適化(2026-07-01 gunshi-D0): git log --grep をper-fileループ外で1回だけ実行。
+    # §speed最適化(2026-07-01 gunshi-D0→cmd_3807で再統合): git log --grep をper-fileループ外で1回だけ実行。
     # 従来はhook/gateファイルごとにgit log(全履歴grep走査~2s/回)を呼びN倍遅延(cmd_3632で2gate×2s=4s実測)。
-    # 全ファイル分のnumstatを1回取得→ループ内はawkでfpath該当行を抽出集計(挙動同一・等価性検証済み)。
-    _pre13_numstat=$( { timeout 3 git -C "$REPO_ROOT" log --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true; } )
+    # さらにcmd_3807実測でPRE13単独scanがPRE19(no-hash)の同一REPO_ROOT scanと重複(1.234s+1.177s)と判明。
+    # 冒頭のBatch git dataで算出済みの_PRE_REPO_NUMSTATを再利用し、git再呼出をゼロにする
+    # (挙動同一・等価性検証済み: docs/research/cmd_3807_gunshi_precheck_speedup.md)。
+    _pre13_numstat="$_PRE_REPO_NUMSTAT"
     while IFS= read -r fpath; do
         case "$fpath" in
             *.claude/hooks/*|*scripts/hooks/*|*scripts/gates/*)
@@ -559,19 +578,20 @@ PY
         TOTAL_ADDED="${_changed_counts%% *}"
         TOTAL_DELETED="${_changed_counts##* }"
     else
-        # shogunリポジトリ
+        # shogunリポジトリ (cmd_3807: 冒頭Batch git dataの_PRE_REPO_NUMSTATを再利用。git再呼出なし)
         while IFS=$'\t' read -r added deleted _; do
             [[ "$added" == "-" ]] && continue
             TOTAL_ADDED=$((TOTAL_ADDED + added))
             TOTAL_DELETED=$((TOTAL_DELETED + deleted))
-        done < <(timeout 2 git -C "$REPO_ROOT" log --no-merges --fixed-strings --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
-        # DM-Signalリポジトリ（プロジェクトがDM-Signalの場合）
+        done < <(printf '%s\n' "$_PRE_REPO_NUMSTAT")
+        # DM-Signalリポジトリ（プロジェクトがDM-Signalの場合。IS_DM_SIGNAL=1の時PROJECT_DIR==DM_SIGNAL_PATHが
+        # 保証されるため_PRE_PROJECT_NUMSTATが該当データ。cmd_3807: 冒頭Batch git dataを再利用しgit再呼出なし）
         if [ "${IS_DM_SIGNAL:-0}" = "1" ] && [ -d "${DM_SIGNAL_PATH}/.git" ]; then
             while IFS=$'\t' read -r added deleted _; do
                 [[ "$added" == "-" ]] && continue
                 TOTAL_ADDED=$((TOTAL_ADDED + added))
                 TOTAL_DELETED=$((TOTAL_DELETED + deleted))
-            done < <(timeout 2 git -C "${DM_SIGNAL_PATH}" log --no-merges --fixed-strings --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null || true)
+            done < <(printf '%s\n' "$_PRE_PROJECT_NUMSTAT")
         fi
     fi
     TOTAL_CHANGED=$((TOTAL_ADDED + TOTAL_DELETED))

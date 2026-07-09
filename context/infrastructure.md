@@ -41,6 +41,8 @@
 将軍prompt洗脳注入縮約: `scripts/hooks/prompt_state_inject.sh` は通常時の将軍向けbrainwash注入を単一自問52文字へ縮約し、`stop_check_inbox.sh`由来のQ6検出flagがある時だけ8パターン全文を再注入する。検出時は`gate_fire_log.yaml`と`detector_fp_rate.yaml`へ台帳記録する（cmd_3782, bats 78/78 PASS, commit 851bd946）。
 軍師precheck視点列独立性検証: `gate_gunshi_report_precheck.sh` のSG-PRE32は、報告YAMLのMarkdown成果物を`detect_view_column_degeneracy.py`で走査し、Expanding/WF等の数値列が全データ行で完全一致した場合にWARN(LG049)を出す。cmd_3780のExpanding/WF縮退見逃しを機械検出へ還流（cmd_3781, bats 29/29 PASS, commit 511f226f）。
 三層連鎖自己修復: `scripts/memory_db_knowledge_write.sh`はLayer2全失敗時に最終エラー要点+payload_b64をERROR行へ記録し、次回write時に未解決ERRORを自動repairしてOK行を追記する（cmd_3742, bats 15/15 PASS）。
+軍師precheck git履歴走査統合: `gate_gunshi_report_precheck.sh`はSG-PRE3/SG-PRE13/SG-PRE19が独立にPARENT_CMD全履歴`git log --grep`走査(numstat/name-only)を最大4回実行しており、同一REPO_ROOT/PROJECT_DIRへの重複走査が軍師レビュー実行時間13.4秒の主要因(PS4行別プロファイルで実測)だった。1回のnumstat走査結果を3チェック間で共有し、name-only相当は3列目(path)から導出する構成へ統合。実測(PROJECT_DIR==REPO_ROOTのno-hash分岐): 8.56s→4.06s(-52.6%)、同一report入力での標準出力diff行数0(等価性実証済み)。bats 54/54 PASS(cmd_3807)。
+→ `docs/research/cmd_3807_gunshi_precheck_speedup.md`
 
 ### 三層記憶×学習ループ接続（cmd_3116〜cmd_3128, 2026-06-02）
 
