@@ -810,25 +810,35 @@ EOF
 }
 
 @test "cmd_2164: learned prefills annotate targeted placeholders and keep gate blocking on empty values" {
+    # cmd_reflux_insight_202607091206: gate_report_format.shは実際にはjson.dumpで
+    # このファイルを書く(拡張子は.yamlだがキーはダブルクォート付きJSON)。
+    # フィクスチャも本番出力形式(JSON)に合わせ、フォーマット不一致の再発を検出させる。
     cat > "$TEST_PROJECT/logs/gate_report_format_learning.yaml" <<'EOF'
-threshold: 10
-patterns:
-  bc_result_empty:
-    count: 12
-    prefill_active: true
-    prefill_field: binary_checks.result
-  files_modified_missing:
-    count: 14
-    prefill_active: true
-    prefill_field: files_modified
-  lu_reason_empty:
-    count: 11
-    prefill_active: true
-    prefill_field: lessons_useful.reason
-  result_summary_empty:
-    count: 13
-    prefill_active: true
-    prefill_field: result.summary
+{
+  "threshold": 10,
+  "patterns": {
+    "bc_result_empty": {
+      "count": 12,
+      "prefill_active": true,
+      "prefill_field": "binary_checks.result"
+    },
+    "files_modified_missing": {
+      "count": 14,
+      "prefill_active": true,
+      "prefill_field": "files_modified"
+    },
+    "lu_reason_empty": {
+      "count": 11,
+      "prefill_active": true,
+      "prefill_field": "lessons_useful.reason"
+    },
+    "result_summary_empty": {
+      "count": 13,
+      "prefill_active": true,
+      "prefill_field": "result.summary"
+    }
+  }
+}
 EOF
 
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'

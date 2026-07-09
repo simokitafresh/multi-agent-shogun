@@ -3404,7 +3404,9 @@ PY_GATE_WARN
     # cmd_2161: gate_report_format 学習済みパターンが閾値超なら、空欄再発しやすい項目を
     # コメント付き空値にして、記入対象の template state を明示する。
     local _learning_prefill_file="${GATE_REPORT_FORMAT_LEARNING_FILE:-$SCRIPT_DIR/logs/gate_report_format_learning.yaml}"
-    if [ -s "$_learning_prefill_file" ] && grep -q 'prefill_active:[[:space:]]*true' "$_learning_prefill_file" 2>/dev/null; then
+    # gate_report_format.shはjson.dumpで書込む(拡張子は.yamlだが中身はJSON、キーはダブルクォート付き)。
+    # ダブルクォート有無どちらのフォーマットでもマッチさせる。
+    if [ -s "$_learning_prefill_file" ] && grep -qE '"?prefill_active"?[[:space:]]*:[[:space:]]*true' "$_learning_prefill_file" 2>/dev/null; then
     REPORT_FILE_ENV="$report_file" \
     LEARNING_FILE_ENV="$_learning_prefill_file" \
     python3 - <<'PY_LEARNED_PREFILL'
