@@ -2162,6 +2162,7 @@ echo "■ failed×report completed 乖離検知"
 _FRM_THRESHOLD_MIN="${KARO_FAILED_REPORT_MISMATCH_MIN:-20}"
 _frm_now=$(date +%s)
 _frm_count=0
+_frm_wait_count=0
 for ninja in $_KARO_NINJA_NAMES; do
     _frm_task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
     [ -f "$_frm_task_file" ] || continue
@@ -2176,6 +2177,17 @@ for ninja in $_KARO_NINJA_NAMES; do
     [ -f "$_frm_report_full" ] || continue
     _frm_report_status=$(awk '/^status:/ { print $2; exit }' "$_frm_report_full" 2>/dev/null)
     [ "$_frm_report_status" = "completed" ] || continue
+    _frm_wait_reason=$(awk '/^[[:space:]]*wait_reason:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"']/,"",v); gsub(/^[[:space:]]+|[[:space:]]+$/,"",v); print v; exit }' "$_frm_task_file" 2>/dev/null)
+    _frm_wait_connected_cmd=$(awk '/^[[:space:]]*wait_connected_cmd:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"']/,"",v); gsub(/^[[:space:]]+|[[:space:]]+$/,"",v); print v; exit }' "$_frm_task_file" 2>/dev/null)
+    case "$_frm_wait_reason" in
+        external_input|evidence_gathering|dependency)
+            if [ -n "$_frm_wait_connected_cmd" ]; then
+                echo "  WAIT: ${ninja} task=failed report=completed but wait_reason=${_frm_wait_reason} connected=${_frm_wait_connected_cmd} (report=${_frm_report_rel})"
+                _frm_wait_count=$((_frm_wait_count + 1))
+                continue
+            fi
+            ;;
+    esac
     _frm_mtime=$(stat -c %Y "$_frm_task_file" 2>/dev/null || echo 0)
     [ "$_frm_mtime" -gt 0 ] || continue
     _frm_age_min=$(( (_frm_now - _frm_mtime) / 60 ))
@@ -2187,7 +2199,11 @@ for ninja in $_KARO_NINJA_NAMES; do
     fi
 done
 if [ "$_frm_count" -eq 0 ]; then
-    echo "  OK: failed×report completedの乖離なし"
+    if [ "$_frm_wait_count" -gt 0 ]; then
+        echo "  OK: failed×report completedの未宣言乖離なし(wait=${_frm_wait_count})"
+    else
+        echo "  OK: failed×report completedの乖離なし"
+    fi
 fi
 echo ""
 
