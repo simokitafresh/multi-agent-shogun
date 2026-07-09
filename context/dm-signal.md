@@ -352,6 +352,12 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - 現行本番102PFはthreshold_band未設定(band不発稼働、§既出)のため、この影響範囲は「将来threshold_bandを本番適用した場合にGS選出結果へ及ぶリスク」の定量値であり、現行本番の実害ではない。
 - 詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3814_dtb3_native_calendar.md`、回帰テスト → `/mnt/c/Python_app/DM-signal/backend/tests/test_dtb3_native_calendar_parity.py`、機械証跡 → `/mnt/c/Python_app/DM-signal/scripts/oneshot/cmd_3814_{verify_dtb3_native,genbu_parity_recheck,boundary_impact_scan}.py`
 
+## §41 DTB3修正済み4family再GS+12体最終突合 (cmd_3815, 2026-07-10)
+
+- cmd_3814修正済みエンジンでDM2/DM3/DM6/DM7Pをthreshold_band=0.005込みで全量再GS。直前`gs_price_preflight.py`は14/14 PASS、missing/mismatch 0。出力は`/mnt/c/Python_app/DM-signal/outputs/grid_search/20260710/L0/shin/`、全4family合計191,796パターンで20260709既存gridDBと同数。
+- cmd_3806同一手法で本番現行12体の同一パラメータ突合を再実行した結果、完全一致は4/12(玄武-常勝、玄武-鉄壁、白虎-激攻、玄武-激攻以外は残乖離あり)。大工程L0 Stage 2は未完了。残乖離はcmd_3812(ledger weights)・cmd_3814(DTB3 native暦)だけでは説明不能として別根因切り分けが必要。
+- 2026-07-10 04時台のSIGNAL CHANGE 1件は`signal_change_log.id=66123`、PF=`秘奥義-変わり身-激攻`、signal_date=2014-10-31。旧TECL/TQQQ各50%から新XLU50%+TECL/TQQQ各25%へ変化し、cmd_3812 weighted ledger rebuildによるband safe-haven weight復元が理由。詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3815_final_parity.md`、機械証跡 → `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3815_same_param_parity.json`
+
 ## §35 GS D3出力パリティ再検証 (cmd_3794, 2026-07-09)
 
 - **PI-009 GS-vs本番エンジン突合はD1価格同期の影響を受けない**: cmd_3755(T1)の5/7 PASS結果と、D1同期済みprices再検証後の結果は完全一致(5/7 PASS、変化なし)。2 FAIL(DM-safe/DM-safe-2、共に2009-05・gate_state=band)は価格陳腐化ではなく別要因と確定。
