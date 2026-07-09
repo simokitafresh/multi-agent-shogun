@@ -8130,6 +8130,7 @@ END_GV_PY
 
         # Extract lesson_candidate fields including register_recommended (1 python3 spawn)
         _lc_action=skip _lc_title="" _lc_reg=false _lc_project="" _lc_detail="" _lc_source="" _lc_author=auto_gate
+        _lc_subdomain="" _lc_target_files="" _lc_origin="" _lc_when="" _lc_how=""
         if _lc_raw=$(REPORT_PATH="$report_file" python3 - 2>/dev/null <<'PYEOF'
 import yaml, os, sys, shlex
 report_path = os.environ["REPORT_PATH"]
@@ -8147,6 +8148,88 @@ project = str(lc.get("project", "") or "").strip()
 reg = bool(lc.get("register_recommended"))
 source_cmd = str(data.get("parent_cmd", "") or data.get("task_id", "") or "").strip()
 worker_id = str(data.get("worker_id", "") or "auto_gate").strip()
+
+def csv_value(value):
+    if isinstance(value, list):
+        return ",".join(str(v).strip() for v in value if str(v).strip())
+    return str(value or "").strip()
+
+def collect_target_files(report, lesson_candidate):
+    raw = lesson_candidate.get("target_files") or []
+    if isinstance(raw, str):
+        paths = [p.strip() for p in raw.split(",")]
+    elif isinstance(raw, list):
+        paths = [str(p).strip() for p in raw]
+    else:
+        paths = []
+    if not paths:
+        files = report.get("files_modified") or []
+        if isinstance(files, str):
+            paths = [files.strip()]
+        elif isinstance(files, list):
+            for item in files:
+                if isinstance(item, dict):
+                    path = item.get("path") or item.get("file") or item.get("name")
+                else:
+                    path = item
+                if path:
+                    paths.append(str(path).strip())
+    seen = set()
+    result = []
+    for path in paths:
+        if not path or path in seen:
+            continue
+        seen.add(path)
+        result.append(path)
+        if len(result) >= 5:
+            break
+    return ",".join(result)
+
+def normalize_subdomain(value):
+    aliases = {
+        "frontend": "fe", "front": "fe", "ui": "fe",
+        "backend": "be", "back": "be", "api": "be", "ops": "be",
+        "grid_search": "gs", "grid-search": "gs", "gridsearch": "gs",
+        "platform": "infra",
+    }
+    parts = [p.strip() for p in csv_value(value).split(",") if p.strip()]
+    normalized = []
+    for part in parts:
+        part = aliases.get(part, part)
+        if part in {"fe", "be", "gs", "infra"} and part not in normalized:
+            normalized.append(part)
+    return ",".join(normalized)
+
+def infer_subdomain(project_id, title_text, detail_text, tags_value, target_files_csv):
+    explicit = normalize_subdomain(lc.get("subdomain") or lc.get("subdomains"))
+    if explicit:
+        return explicit
+    if project_id == "infra":
+        return "infra"
+    haystack = " ".join([
+        project_id,
+        title_text,
+        detail_text,
+        csv_value(tags_value),
+        target_files_csv,
+    ]).lower()
+    if project_id == "dm-signal":
+        if any(k in haystack for k in ["scripts/gates/", "lesson_write", "cmd_complete_gate", "deploy_task", "inbox_", "ninja_monitor", "semantic"]):
+            return "infra"
+        if any(k in haystack for k in ["run_077", "grid_search", "grid search", "grid-search", " gs", "gs-", "gs_", "l0", "l1", "l2", "l3", "blob", "monthly", "daily_prices", "price path", "価格", "系列preflight"]):
+            return "gs"
+        if any(k in haystack for k in ["frontend", "next", "react", "component", "chart", "ui", "css", "app/", "components/"]):
+            return "fe"
+        if any(k in haystack for k in ["database", "db", "api", "recalculate", "fullrecalculate", "portfolio", "pf", "migration", "cron", "production", "prices"]):
+            return "be"
+    return ""
+
+tags = lc.get("tags", "")
+target_files = collect_target_files(data, lc)
+subdomain = infer_subdomain(project, title, detail, tags, target_files)
+origin = str(lc.get("origin", "") or "").strip()
+when = str(lc.get("when", "") or "").strip()
+how = str(lc.get("how", "") or "").strip()
 if not title:
     sys.exit(0)
 print(f"_lc_action=check")
@@ -8156,6 +8239,11 @@ print(f"_lc_project={shlex.quote(project)}")
 print(f"_lc_detail={shlex.quote(detail)}")
 print(f"_lc_source={shlex.quote(source_cmd)}")
 print(f"_lc_author={shlex.quote(worker_id or 'auto_gate')}")
+print(f"_lc_subdomain={shlex.quote(subdomain)}")
+print(f"_lc_target_files={shlex.quote(target_files)}")
+print(f"_lc_origin={shlex.quote(origin)}")
+print(f"_lc_when={shlex.quote(when)}")
+print(f"_lc_how={shlex.quote(how)}")
 PYEOF
 ); then
             eval "$_lc_raw"
@@ -8167,7 +8255,13 @@ PYEOF
             elif [ "$_lc_reg" = "true" ] && [ -n "$_lc_project" ] && [ -n "$_lc_source" ]; then
                 # register_recommended:true → auto lesson_write (cmd_2697)
                 echo "  AUTO-REGISTER: ${ninja_name}: ${_lc_title} (register_recommended:true)"
-                if bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$_lc_project" "$_lc_title" "$_lc_detail" "$_lc_source" "$_lc_author" "$_lc_source" 2>&1; then
+                _lc_lesson_flags=()
+                [ -n "$_lc_subdomain" ] && _lc_lesson_flags+=(--subdomain "$_lc_subdomain")
+                [ -n "$_lc_target_files" ] && _lc_lesson_flags+=(--target-files "$_lc_target_files")
+                [ -n "$_lc_origin" ] && _lc_lesson_flags+=(--origin "$_lc_origin")
+                [ -n "$_lc_when" ] && _lc_lesson_flags+=(--when "$_lc_when")
+                [ -n "$_lc_how" ] && _lc_lesson_flags+=(--how "$_lc_how")
+                if bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$_lc_project" "$_lc_title" "$_lc_detail" "$_lc_source" "$_lc_author" "$_lc_source" "${_lc_lesson_flags[@]}" 2>&1; then
                     echo "  [OK] lesson_write: registered (${ninja_name})"
                     LC_AUTO_REG_COUNT=$((LC_AUTO_REG_COUNT + 1))
                 else

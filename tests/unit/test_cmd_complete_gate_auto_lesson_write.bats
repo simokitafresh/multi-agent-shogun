@@ -43,6 +43,85 @@ project = str(lc.get("project", "") or "").strip()
 reg = bool(lc.get("register_recommended"))
 source_cmd = str(data.get("parent_cmd", "") or data.get("task_id", "") or "").strip()
 worker_id = str(data.get("worker_id", "") or "auto_gate").strip()
+
+def csv_value(value):
+    if isinstance(value, list):
+        return ",".join(str(v).strip() for v in value if str(v).strip())
+    return str(value or "").strip()
+
+def collect_target_files(report, lesson_candidate):
+    raw = lesson_candidate.get("target_files") or []
+    if isinstance(raw, str):
+        paths = [p.strip() for p in raw.split(",")]
+    elif isinstance(raw, list):
+        paths = [str(p).strip() for p in raw]
+    else:
+        paths = []
+    if not paths:
+        files = report.get("files_modified") or []
+        if isinstance(files, str):
+            paths = [files.strip()]
+        elif isinstance(files, list):
+            for item in files:
+                if isinstance(item, dict):
+                    path = item.get("path") or item.get("file") or item.get("name")
+                else:
+                    path = item
+                if path:
+                    paths.append(str(path).strip())
+    seen = set()
+    result = []
+    for path in paths:
+        if not path or path in seen:
+            continue
+        seen.add(path)
+        result.append(path)
+        if len(result) >= 5:
+            break
+    return ",".join(result)
+
+def normalize_subdomain(value):
+    aliases = {
+        "frontend": "fe", "front": "fe", "ui": "fe",
+        "backend": "be", "back": "be", "api": "be", "ops": "be",
+        "grid_search": "gs", "grid-search": "gs", "gridsearch": "gs",
+        "platform": "infra",
+    }
+    parts = [p.strip() for p in csv_value(value).split(",") if p.strip()]
+    normalized = []
+    for part in parts:
+        part = aliases.get(part, part)
+        if part in {"fe", "be", "gs", "infra"} and part not in normalized:
+            normalized.append(part)
+    return ",".join(normalized)
+
+def infer_subdomain(project_id, title_text, detail_text, tags_value, target_files_csv):
+    explicit = normalize_subdomain(lc.get("subdomain") or lc.get("subdomains"))
+    if explicit:
+        return explicit
+    if project_id == "infra":
+        return "infra"
+    haystack = " ".join([
+        project_id,
+        title_text,
+        detail_text,
+        csv_value(tags_value),
+        target_files_csv,
+    ]).lower()
+    if project_id == "dm-signal":
+        if any(k in haystack for k in ["scripts/gates/", "lesson_write", "cmd_complete_gate", "deploy_task", "inbox_", "ninja_monitor", "semantic"]):
+            return "infra"
+        if any(k in haystack for k in ["run_077", "grid_search", "grid search", "grid-search", " gs", "gs-", "gs_", "l0", "l1", "l2", "l3", "blob", "monthly", "daily_prices", "price path", "価格", "系列preflight"]):
+            return "gs"
+        if any(k in haystack for k in ["frontend", "next", "react", "component", "chart", "ui", "css", "app/", "components/"]):
+            return "fe"
+        if any(k in haystack for k in ["database", "db", "api", "recalculate", "fullrecalculate", "portfolio", "pf", "migration", "cron", "production", "prices"]):
+            return "be"
+    return ""
+
+tags = lc.get("tags", "")
+target_files = collect_target_files(data, lc)
+subdomain = infer_subdomain(project, title, detail, tags, target_files)
 if not title:
     sys.exit(0)
 print(f"_lc_action=check")
@@ -52,6 +131,8 @@ print(f"_lc_project={shlex.quote(project)}")
 print(f"_lc_detail={shlex.quote(detail)}")
 print(f"_lc_source={shlex.quote(source_cmd)}")
 print(f"_lc_author={shlex.quote(worker_id or 'auto_gate')}")
+print(f"_lc_subdomain={shlex.quote(subdomain)}")
+print(f"_lc_target_files={shlex.quote(target_files)}")
 PY
 }
 
@@ -74,9 +155,11 @@ if '_lc_reg' not in gate_clear_text:
 
 # Use _lc_reg check (code-level marker, not comment)
 lc_reg_idx = gate_clear_text.index('[ "$_lc_reg" = "true" ]')
-nearby = gate_clear_text[lc_reg_idx:lc_reg_idx+400]
+nearby = gate_clear_text[lc_reg_idx:lc_reg_idx+1200]
 if "lesson_write.sh" not in nearby:
     raise SystemExit("lesson_write.sh call not found near _lc_reg check")
+if "_lc_lesson_flags" not in nearby:
+    raise SystemExit("lesson_write flags array not found near _lc_reg check")
 
 print("OK: _lc_reg check + lesson_write.sh in GATE CLEAR section")
 PY
@@ -94,7 +177,7 @@ gate_clear_idx = text.index('if [ "$ALL_CLEAR" = true ]; then')
 gate_clear_text = text[gate_clear_idx:]
 
 lc_reg_idx = gate_clear_text.index('[ "$_lc_reg" = "true" ]')
-reg_section = gate_clear_text[lc_reg_idx:lc_reg_idx+800]
+reg_section = gate_clear_text[lc_reg_idx:lc_reg_idx+1400]
 
 if "non-blocking" not in reg_section:
     raise SystemExit("non-blocking keyword not found near _lc_reg section")
@@ -128,6 +211,7 @@ EOF
     [[ "$result" == *"_lc_action=check"* ]]
     [[ "$result" == *"_lc_reg=true"* ]]
     [[ "$result" == *"Test auto-register lesson"* ]]
+    [[ "$result" == *"_lc_subdomain=infra"* ]]
 }
 
 @test "register_recommended:false sets _lc_reg=false" {
@@ -221,6 +305,57 @@ STUB
     [[ "$content" == *"infra"* ]]
     [[ "$content" == *"Should be auto-registered at GATE CLEAR"* ]]
     [[ "$content" == *"cmd_auto_reg"* ]]
+}
+
+@test "dm-signal GS auto lesson passes inferred subdomain and target files" {
+    local report="$TEST_TMPDIR/report.yaml"
+    cat > "$report" <<'EOF'
+parent_cmd: cmd_auto_gs
+worker_id: kagemaru
+lesson_candidate:
+  found: true
+  title: GS投入前は系列preflightを必須化する
+  detail: run_077 GS price path uses local daily_prices and must check price series before replacement
+  project: dm-signal
+  register_recommended: true
+files_modified:
+  - path: scripts/analysis/run_077_gs.py
+    change: recon
+status: done
+EOF
+    mkdir -p "$TEST_TMPDIR/scripts"
+    local called_file="$TEST_TMPDIR/lesson_write_args.txt"
+    cat > "$TEST_TMPDIR/scripts/lesson_write.sh" <<STUB
+#!/usr/bin/env bash
+printf '%s\n' "\$@" > "$called_file"
+exit 0
+STUB
+    chmod +x "$TEST_TMPDIR/scripts/lesson_write.sh"
+
+    _lc_action=skip _lc_title="" _lc_reg=false _lc_project="" _lc_detail="" _lc_source="" _lc_author=auto_gate
+    _lc_subdomain="" _lc_target_files=""
+    eval "$(_py_extract_lc "$report")"
+
+    [ "$_lc_action" = "check" ]
+    [ "$_lc_reg" = "true" ]
+    [ "$_lc_project" = "dm-signal" ]
+    [ "$_lc_subdomain" = "gs" ]
+    [ "$_lc_target_files" = "scripts/analysis/run_077_gs.py" ]
+
+    _lc_lesson_flags=()
+    [ -n "$_lc_subdomain" ] && _lc_lesson_flags+=(--subdomain "$_lc_subdomain")
+    [ -n "$_lc_target_files" ] && _lc_lesson_flags+=(--target-files "$_lc_target_files")
+    SCRIPT_DIR="$TEST_TMPDIR" bash "$TEST_TMPDIR/scripts/lesson_write.sh" \
+        "$_lc_project" "$_lc_title" "$_lc_detail" "$_lc_source" "$_lc_author" "$_lc_source" "${_lc_lesson_flags[@]}"
+
+    [ -f "$called_file" ]
+    local content
+    content=$(cat "$called_file")
+    [[ "$content" == *"dm-signal"* ]]
+    [[ "$content" == *"--subdomain"* ]]
+    [[ "$content" == *"gs"* ]]
+    [[ "$content" == *"--target-files"* ]]
+    [[ "$content" == *"scripts/analysis/run_077_gs.py"* ]]
 }
 
 @test "lesson_write.sh failure exits 0 (non-blocking)" {
