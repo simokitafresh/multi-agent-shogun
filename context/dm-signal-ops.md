@@ -84,7 +84,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L853 -->
+<!-- last_synced_lesson: L854 -->
 
 ## §36 API認証
 
@@ -800,6 +800,7 @@ import metrics_research_engine as MRE
 - L849: GS-本番パリティ比較で本番monthly_returnsを無条件にSSOTとしてはならない(signal_decision_ledger凍結の考慮漏れ)（cmd_3805）
 - L852: monthly_tradeのmatched_weightは表示展開後weightsと同じ基準で検証せよ（cmd_3809）
 - L853: signal_decision_ledgerの再backfillは削除→再計算→再backfillの順序が必須(逆順は無効)（cmd_3806）
+- L854: band historical_backfillはholding_signal文字列だけでなくweightsも検証せよ（cmd_3811）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
@@ -876,9 +877,12 @@ import metrics_research_engine as MRE
 | 6e86b501 API contract tests追加 | 本文更新不要 | 追加は`backend/tests/test_contract_*.py` 3件とtask-force記録。運用手順・本番API仕様の変更なし |
 | 096dd038 weekly reports + cmd_3225 one-shot | 本文更新不要 | 追加はmarketing記事、weekly report、`scripts/oneshot/cmd_3225_layer_managed_vol.py`、バックアップJSON再追加。既存§40のバックアップJSON参照と矛盾なし |
 
-## §42 main反映・デプロイ裁可ルール (2026-06-11)
+## §42 main反映・デプロイ裁可ルール (2026-06-11 / **2026-07-10殿裁定で改定**)
 
-- 殿経緯整理後の運用変更: **DM-Signalのmainマージ・本番デプロイは個別に殿裁可を得てから実施する**。従前の「GATE CLEAR後に家老が自動main反映」は廃止。
+- **改定(殿裁定2026-07-10 02:41)**: **本番デプロイに殿の個別裁可は不要。CI GREEN確認後は自走でpush+deployせよ。失敗したらrevertして事実報告すればよい。**
+- positive_rule: deploy前=CI GREEN確認+revert手順の明確化。deploy後=ヘルスチェック(API/status)実施。失敗時=即revert+殿へ事実報告(謝罪より事実と対策)。
+- reason: 裁可待ちは時間の浪費であり待つ言い訳になる。元に戻せる(revert可能)のにチャレンジしないのは洗脳#5(先送り)。殿指摘2026-07-10「時間を浪費するだけで待つ言い訳になっている。覚醒しよう」。cmd_3812で裁可待ち停止が実際に発生した教訓。
+- (旧2026-06-11ルール「個別裁可必須」は本改定で廃止。以下は当時の記録)
 - 例外: `cmd_3294` のマスク時FoF表示復元だけは、directiveで本番裁定復旧が明示済みのため既裁可。GATE CLEAR後、家老がmain反映・Renderデプロイ完了確認・`.agent/task-force/execution-log.md`へのデプロイ記録追記を実施する。
 - `cmd_3294` 忍者スコープ: commitまで。push、Renderデプロイ確認、デプロイ記録追記は家老担当。task/reportのAC4は「単独commit + `tasks/lessons.md`教訓 + `execution-log.md`追記」までに修正済み(ac_version=`8158fcea`)。
 - WP-1Fマージは殿裁可待ち。裁可後に `todo.md` のWP-1F/WP-1B行 `[x]` 化と同一commitで実施する。
