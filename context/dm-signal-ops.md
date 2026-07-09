@@ -82,7 +82,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L847 -->
+<!-- last_synced_lesson: L848 -->
 
 ## §36 API認証
 
@@ -787,6 +787,7 @@ import metrics_research_engine as MRE
 - L845: run_077_weighted_yotsumeのuniverse自動判定がall()の空虚な真で誤爆する（cmd_3795）
 - L846: shin_shijin_l1_gs.py内蔵legacyパリティ(run_parity_check)はthreshold_band非対応、band適用済み本番PFに対し必ずFAILする（cmd_3797）
 - L847: db-checkスキルのpsycopg2接続正規表現がポート省略DATABASE_URLに未対応（cmd_3800）
+- L848: GS lookback_terms_jsonのunit=months換算規約は既存ツールにのみ実装されドキュメント化されていない（cmd_3803）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true

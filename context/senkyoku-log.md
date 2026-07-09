@@ -1405,3 +1405,7 @@
 - 2026-07-09 cmd_reflux_insight_202607091804_saizo完了: 才蔵がINS-20260709-144208346-8f26を一次会話L305-L306と姉妹insight反映済み事実で確認し、指示語断片の偽陽性としてresolve。pending 3→2、GATE CLEAR、dashboard/ntfy/inbox archive完了。
 - 2026-07-09 家老強ニュー化(19:13): 18:50記憶DBの「cmd_3797未配備」は陳腐化と補正。cmd_3797はtobisaru完了報告済み(format PASS, 191,796patterns, commit `63a1638b`/`3ffad5ede`)で軍師review待ち。CI RED GA-210(run `29009508184`, `EVENT inbox1` timeout)はkagemaruへkaro_direct配備済み、commit `8cc8aa1d2` 後の報告pending。復帰正本は `queue/compact_state/karo.yaml` と記憶DB `knowledge:70a51efaca469fd2`。
 - 2026-07-09 家老強ニュー化(19:21): GA-210はkagemaru完了報告済み(report PASS, binary_checks 5/5 yes, commit `8cc8aa1d2`)で軍師review待ちへ更新。WA clean+inbox既読化済み。復帰正本は記憶DB `knowledge:800ac7f42000be3c` に追記。
+- 2026-07-09 cmd_3803完了: 才蔵が本番現行シン四神12体とGS探索空間の同一パラメータpattern_idを全件一意発見し、本番monthly_returnと全期間突合。単一期間lookbackは高精度一致、複数期間加重lookbackは最大約20%月不一致で、cmd_3797/3798の「パラメータ一致なら十分」前提が崩れた。
+- 2026-07-09 cmd_3804配備: cmd_3803 GATE CLEAR後、殿厳命のシン玄武-鉄壁1体試験登録→fullrecalculate→GS/本番突合をDB直列で才蔵へ配備。nudge未到達はmanual_nudgeで補正し、才蔵がin_progressへ移行済み。
+- 2026-07-09 cmd_3801完了: 小太郎が`cmd_save.sh`のgate/hook判定とprimary target収集をメモ化し、fork proxy 168→159(-5.4%)・wall-clock 31-39%短縮を確認。GATE CLEAR済み、ac_version注意はCLEAR証跡によりWA不要。
+- 2026-07-09 cmd_reflux_promotion_202607092337_kagemaru完了: 影丸がLK-A14をreport gateのLevel4 BLOCKへ昇格し、横展開/修正前パターン報告時にgrep/rg残存0件証跡を必須化。promotion在庫118→117、commit `0a5074623` push済み、GATE CLEAR。

@@ -422,3 +422,4 @@
 | cmd_3797 | 道具磨き5軸完了を受けGS再キャリブレーション計画Phase Aを再実行する。同期済みpricesとバンド込みでL0四神全量GSを実行し、旧基準と新基準で各チャンピオンを選出する | dm-signal | 07-09 | cmd_3762/3763(20260708)は本番未同期の |
 | cmd_3800 | 殿指摘(2026-07-09 21:33)を受けpf_L1 GS前にpf_L0新12体チャンピオンの本番突合を実施する。3点検証: (1)全期間holding_signal完全一致 (2)全期間monthly_return 1e-6以内 (3)config threshold_band一致 | dm-signal | 07-09 | cmd_3797選出のpf_L0旧基準12体チャンピオンを本 |
 | cmd_3798 | 殿裁定(2026-07-09 21:16)により全レイヤーを現行3基準(CAGR/MaxDD/NHF)+バンドで進める。cmd_3797で選出したL0旧基準12体チャンピオンを構成PFとし、7忍法GSを直列実行してL1チャンピオンを選出する。L2・L3も同基準で続行予定 | dm-signal | 07-09 | cmd_3798 Phase B L1 GSを7忍法直列で完 |
+| cmd_3803 | 殿指示(2026-07-09 22:47)。cmd_3797 GS SQLite内から本番現行シン四神12体と同一パラメータ(safe_haven+top_n+rebalance+lookback)のpattern_idを特定し、そのmonthly_return_openを本番DBのmonthly_returnと全期間で突合する。cmd_3800で玄武2体のみ確認済み(171/171)だが残り10体が未確認 | dm-signal | 07-09 | GS SQLite(gs_DM2/DM3/DM6/DM7P. |
