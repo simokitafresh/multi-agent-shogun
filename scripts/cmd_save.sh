@@ -393,7 +393,22 @@ cmd_text_matches_pattern() {
     printf '%s\n' "$text" | grep -qiE "$pattern"
 }
 
+# cmd_3801: 1回のcmd_save.sh実行内でblock_textは不変(CMD_BLOCK_NC固定)のため、
+# 4箇所の呼出元が同一入力を毎回再計算していた(awk+grep数個 x再計算回数のfork重複)。
+# 呼出元互換のためpublic関数名は維持し、実処理を_uncachedへ委譲してメモ化する。
 is_gate_or_hook_addition_cmd() {
+    local block_text="${1:-${CMD_BLOCK_NC:-}}"
+    if [[ -n "${_GATE_HOOK_ADDITION_CACHE_SET:-}" && "${_GATE_HOOK_ADDITION_CACHE_KEY-}" == "$block_text" ]]; then
+        return "$_GATE_HOOK_ADDITION_CACHE_RESULT"
+    fi
+    _is_gate_or_hook_addition_cmd_uncached "$block_text"
+    _GATE_HOOK_ADDITION_CACHE_RESULT=$?
+    _GATE_HOOK_ADDITION_CACHE_SET=1
+    _GATE_HOOK_ADDITION_CACHE_KEY="$block_text"
+    return "$_GATE_HOOK_ADDITION_CACHE_RESULT"
+}
+
+_is_gate_or_hook_addition_cmd_uncached() {
     local block_text="${1:-${CMD_BLOCK_NC:-}}"
     # Treat underscores as identifier characters so gate_fire_log/gate_result
     # remain data names, not gate/hook addition keywords.
@@ -1432,6 +1447,14 @@ check_origin_field() {
 collect_primary_cmd_targets() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
+    # cmd_3801: 呼出元2箇所(show_target_path_git_history / check_bundle_red_flag)が
+    # 同一CMD_BLOCK_NCに対し毎回8段のawk/sed/grep/sortパイプラインを再実行していた。
+    # 結果をメモ化し2回目以降はforkなしで返す。
+    if [[ -n "${_PRIMARY_CMD_TARGETS_CACHE_SET:-}" && "${_PRIMARY_CMD_TARGETS_CACHE_KEY-}" == "$CMD_BLOCK_NC" ]]; then
+        printf '%s\n' "$_PRIMARY_CMD_TARGETS_CACHE"
+        return 0
+    fi
+
     normalize_bundle_path() {
         local path="${1:-}"
         local repo_root="${PROJECT_DIR:-${PROJECT_ROOT:-}}"
@@ -1487,6 +1510,7 @@ collect_primary_cmd_targets() {
     )"
     target_scope="$(detect_target_scope "$target_path_raw" || true)"
 
+    _PRIMARY_CMD_TARGETS_CACHE="$(
     printf '%s\n' "$CMD_BLOCK_NC" \
         | awk '
             function emit_inline(value) {
@@ -1543,6 +1567,10 @@ collect_primary_cmd_targets() {
             }
         ' \
         | sort -u
+    )"
+    _PRIMARY_CMD_TARGETS_CACHE_SET=1
+    _PRIMARY_CMD_TARGETS_CACHE_KEY="$CMD_BLOCK_NC"
+    printf '%s\n' "$_PRIMARY_CMD_TARGETS_CACHE"
 }
 
 _cmd_save_git_target_info() {
@@ -6560,19 +6588,27 @@ fi
 # 穴2対処(殿指摘2026-04-20): environment_changeを書いたのに同じWARNが再発
 #   = 前回の環境変化が無効だった証拠。通常のWARN累計昇格メッセージに加え、
 #   「前回のenvironment_changeが効いていない」を明示的にフィードバック。
-_WARN_ESCALATE_THRESHOLD=1
+_WARN_ESCALATE_THRESHOLD=2
 if [[ ${#WARN_REASONS[@]} -gt 0 ]]; then
     # カウントを先に(log書込み前)。書込み後だと自分自身をカウントする(閾値1で即BLOCK)
+    # 殿裁定(2026-07-09 22:50): 過去の別cmdのWARNが新cmdをBLOCKするのはインフラバグ。
+    # 同一cmd_id内の繰り返しのみ累計昇格対象とする。
     for _warn_r in "${WARN_REASONS[@]}"; do
         case "$_warn_r" in
             *"check=cmd_text_deferral_language"*|*"check=quality_gate_q8_scope_expression"*|*"check=check_ac_param_sufficiency"*|*"check=check_causal_verification_requirement"*)
                 continue
                 ;;
         esac
-        _warn_prior_count=$(count_same_warn_pattern "$_warn_r" 2>/dev/null || echo 0)
-        [[ "$_warn_prior_count" =~ ^[0-9]+$ ]] || _warn_prior_count=0
+        _warn_prior_cmd_ids="$(count_same_warn_pattern "$_warn_r" cmd_ids 2>/dev/null || true)"
+        # 殿裁定(2026-07-09 22:50): 過去の別cmdのWARNで新cmdをBLOCKしない。
+        # 同一cmd_id内の繰り返しのみ累計昇格対象。
+        _warn_prior_count=0
+        if [[ -n "${_warn_prior_cmd_ids:-}" && -n "${CMD_ID:-}" ]]; then
+            for _wid in $(echo "$_warn_prior_cmd_ids" | tr ',' ' '); do
+                [[ "$_wid" == "$CMD_ID" ]] && (( _warn_prior_count++ )) || true
+            done
+        fi
         if (( _warn_prior_count >= _WARN_ESCALATE_THRESHOLD )); then
-            _warn_prior_cmd_ids="$(count_same_warn_pattern "$_warn_r" cmd_ids 2>/dev/null || true)"
             log_preflight_autolearn "$_warn_r" "$_warn_prior_count"
             if [[ -n "${_warn_prior_cmd_ids:-}" ]]; then
                 record_block_reason "WARN累計昇格: 「${_warn_r}」が${_warn_prior_count}回繰り返されています(cmd_ids=${_warn_prior_cmd_ids})。WARNを解消してからcmd_save.shを実行せよ"
@@ -6619,7 +6655,12 @@ if [[ -f "$BLOCK_START_FILE" ]]; then
     fi
 fi
 
-if [[ "$BLOCK_COUNT" -eq 0 && "$WARN_COUNT" -eq 0 ]]; then
+if [[ "$BLOCK_COUNT" -eq 0 ]]; then
+    # 殿裁定(2026-07-09 22:50): WARNのみ(BLOCKなし)はPASS扱い。
+    # WARNは記録するがcmd起票をBLOCKしない。cmdを通した後に修正する。
+    if (( WARN_COUNT > 0 )); then
+        echo "  WARN ${WARN_COUNT}件あり(BLOCKなし=PASS扱い)。次cmdまでに解消せよ。" >&2
+    fi
     # PASS: clean up block start file
     [[ "$CMD_SAVE_PREFLIGHT_ONLY" == "1" ]] || rm -f "$BLOCK_START_FILE"
     if (( BLOCK_DURATION_MINUTES > 0 )); then
