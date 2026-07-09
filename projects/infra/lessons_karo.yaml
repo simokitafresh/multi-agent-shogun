@@ -445,7 +445,8 @@ v7吸収(2026-05-19):
   source_ids: [LK038]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'inbox_write.sh 軍師→忍者指摘自動転送(1d0a59e)'
+  enforcement: 'Level5(事前コンテキスト提供): 一次情報再検証(2026-07-09, cmd_reflux_promotion_202607092004_tobisaru)。scripts/inbox_write.sh の forward_gunshi_review_result_to_active_ninjas() は、type=review_result かつ from=gunshi かつ target=karo のメッセージ受信時、review_content先頭のcmd_IDを抽出し、queue/tasks/{ninja}.yaml の parent_cmd と一致する稼働中忍者へ「軍師レビュー補足: <内容>」をtask_supplementとして自動転送する(inbox_write.sh L1985-1992付近で呼出)。家老の手動転送を待たず軍師の指摘(軽微指摘含む)が忍者へ直接届くため「軽微指摘を伝え忘れる」という人的ミスの発生余地自体が消える。task_supplement受信時は再転送しない(再帰ループ防止)。回帰テスト: tests/unit/test_inbox_write.bats の "review_result: forwarded to active ninjas only as task_supplement" と "task_supplement: not forwarded again to avoid recursive fanout" で固定、2026-07-09実行時点で両方PASS確認済み。実運用実証: 本cmd配備直後、軍師のdraftレビュー結果がまさにこの仕組みでtobisaruのinboxへtask_supplementとして自動転送され受信した(msg_20260709_200702_48108_7ee224e4)。従来enforcement本文にLevel判定キーワードが無くgate_lesson_enforcement_level.shがL1誤分類していたため、enforcement_levelフィールドを明示追加。'
+  enforcement_level: 5
 
   when: 軍師から軽微指摘を受けた時
   how: 伝えない=10回繰返しで10件手戻り=負の複利。自動転送(1d0a59e)で解決済み
