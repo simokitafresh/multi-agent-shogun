@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-09 cmd_reflux_backlink_202607091355_saizo -->
+<!-- last_updated: 2026-07-09 cmd_3787 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
