@@ -127,6 +127,8 @@ L0本番突合完了(cmd_3800, 2026-07-09): 殿指摘(21:33「L0は本番との�
 
 複数期間加重lookback乖離の根因特定完了(cmd_3805, 2026-07-09): cmd_3803で判明した青龍/白虎(複数期間加重lookback)の乖離について、GS側(`shin_shijin_l1_gs.py`/`grid_search_metrics_v2.py`)と本番側(`vectorized_momentum.py`/`absolute_momentum.py`/`safe_haven_switch.py`)のコードを比較。**GS側の計算ロジックにバグは無い**。本番`PipelineEngine`を同一日付・同一価格データで直接呼び出して検証した結果、GSの計算値(margin=0.003234833442463803、gate_state=band、TECL50%+XLU50%)と完全一致した(シン青龍-鉄壁2012-04時点)。**cmd_3803が観測した乖離の真因はGSエンジンではなく、本番`monthly_returns`が参照する`signal_decision_ledger`の凍結タイミング**: `cmd_3711`のhistorical_backfill(2026-07-06 14:57、threshold_band未適用時点)が全期間のholding_signalを2値判定(pass/fail)で確定・凍結し、3日後の`cmd_3771`のband適用(2026-07-09 16:51、threshold_band=0.005追加)を遡及的に反映していない。これはPI-P06/cmd_3703 design §4 targetの意図的仕様(確定済み月はledger優先、新計算との食い違いはsilent上書きせずdriftとしてCRITICAL記録)であり、バグではない。**影響**: `docs/research/gs-parity-100-staged-plan.md`(殿指示2026-07-09 23:38「100%一致のみ合格」)の前提「本番が正・GS側のみ修正」は再検討が必要。単一期間PF(玄武/朱雀)の高精度一致は、marginがband境界から離れておりledger凍結の影響を受けにくかった統計的偶然の可能性が高い。詳細 → `docs/research/cmd_3805_multi_lookback_divergence.md`。
 
+monthly_trade matched_weight偽陽性分類(cmd_3808, 2026-07-10): cmd_3787のfail-closedガードは欠落ticker防御として有効だが、`missing_tickers=[] && matched_weight<1.0` は「全ticker価格照合成功だがweights辞書自体が1未満」でも発火する。Renderログで`Matched weight 0.5000 != 1.0, missing_tickers=[]`を392件確認。分類はデータ破損ではなく部分weight/非Cash表示weightの偽陽性。修正案は`matched_weight`を固定1.0ではなく`sum(weights)`と1e-9許容で比較し、`missing_tickers`非空だけをfail-closed対象にする。詳細 → `docs/research/cmd_3808_matched_weight_classification.md`。
+
 根拠: `/mnt/c/Python_app/DM-signal/docs/design/gs-recalibration-plan.md`（commit `4828c134`, `78ed9bec`, `97e06904`）。
 
 ## 弱体化確率推定(P_det)

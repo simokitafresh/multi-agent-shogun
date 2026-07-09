@@ -1,0 +1,132 @@
+worker_id: kagemaru
+task_id: cmd_3808_full
+parent_cmd: cmd_3808
+timestamp: '2026-07-10T01:04:30'
+status: completed
+ac_version_read: 5dcac90e
+result:
+  summary: matched_weight=0.5 WARNを部分weight/非Cash表示weightの偽陽性と分類し、docs/researchへ記録、contextへ索引還流した
+  details: "Render本番ログで2026-07-09 05:20-16:00ZにMatched weight 0.5000 WARN 392件を確認。15:09-15:14Zの月次tradeアクセス候補PFはAve-X/裏Ave-X/劇薬DMオリジナル/劇薬DMスムーズ/DM-safe/DM-safe-2。現在APIでは0.5行は再現せず、コード因果上はmissing_tickers=[]かつmatched_weight<1.0は全ticker価格照合成功だがweights合計が1未満の状態。修正案はmatched_weightを固定1.0ではなくsum(weights)と1e-9許容で比較し、missing_tickers非空をfail-closed対象にする。DM-Signal commit=1e193f36b4e939f7994c678129c3e0629158f9a9。shogun管理commit(before final amend)=f38390d71258e54a25f52dd581a78ecec1941232。"
+purpose_validation:
+  cmd_purpose: matched_weight=0.5 WARN発火PF・由来を分類し、docs/researchとcontextへ記録する
+  fit: true
+  purpose_gap: なし
+simplicity_check: コード変更せず、既存ログ/API/コード読解の一次証跡をdocsへ集約した
+assumption_check: 現在APIでは0.5行が再現しないため、発火月はログ粒度の制約で未特定。ただし発火PF候補とコード因果は確認済み。
+task_clarity:
+  score: 85
+  unclear_points: Render WARNログ自体にPF/月が含まれず、発火月の直接特定はログ単体では不可
+  discretion_fills: 本番API再取得とコード因果で、現在値とログ時点を分けて分類した
+status_detail: DONE
+test_triage: in_branch
+causal_verification:
+  cause_checked: git blameでmonthly_trade_impl.py L1119-1126がcmd_3787(bbd546b8)導入と確認。RenderログでMatched
+    weight 0.5000 WARN 392件を確認。portfolio_listとアクセスログで候補PF6件を確認。
+  design_intent_checked: cmd_3787の設計意図は欠落tickerの部分加重和を返さないfail-closed。今回壊れている因果はmissing_tickers=[]でもweights合計1未満の正当状態を同じガードで捨てる点。
+  evidence: 'bounded: Render logs 2026-07-09T05:20-16:00Z, API recheck for six PF
+    limit=24/0, git blame L1118-1127, code read price_ratio_impl.py L1113-1195'
+  origin: '[[殿観測20260709_2359_matched_weight_WARN]] -> [[cmd_3787_fail-closedガード]]
+    -> [[部分weight状態の偽陽性]]'
+files_modified:
+- path: docs/research/cmd_3808_matched_weight_classification.md
+  change: matched_weight=0.5 WARNの分類・証跡・修正案を新規記録
+- path: context/dm-signal.md
+  change: cmd_3808結論を索引層へ還流
+lesson_candidate:
+  found: true
+  no_lesson_reason: このタスクでは新規教訓候補なし
+  title: matched_weightは固定1.0ではなくsum(weights)と比較する
+  detail: 'missing_tickers=[]でもweights辞書自体が1未満ならmatched_weight<1になる。欠落ticker防御はmissing_tickers非空またはmatched_weightとsum(weights)不一致で判定し、固定1.0比較で部分weight状態を捨てない。origin:
+    [[殿観測20260709_2359_matched_weight_WARN]] -> [[cmd_3787_fail-closedガード]] -> [[部分weight偽陽性]]'
+  project: dm-signal
+  origin: '[[殿観測20260709_2359_matched_weight_WARN]] -> [[cmd_3787_fail-closedガード]]
+    -> [[部分weight偽陽性]]'
+lessons_useful:
+- id: L480
+  useful: false
+  reason: 今回の作業では主に報告品質/commit漏れ防止の注意として参照。該当教訓そのものは分類ロジックには直接影響なし。
+- id: L140
+  useful: false
+  reason: 今回の作業では主に報告品質/commit漏れ防止の注意として参照。該当教訓そのものは分類ロジックには直接影響なし。
+- id: L208
+  useful: false
+  reason: 今回の作業では主に報告品質/commit漏れ防止の注意として参照。該当教訓そのものは分類ロジックには直接影響なし。
+- id: L278
+  useful: true
+  reason: 今回の作業では主に報告品質/commit漏れ防止の注意として参照。該当教訓そのものは分類ロジックには直接影響なし。
+- id: L342
+  useful: false
+  reason: 今回の作業では主に報告品質/commit漏れ防止の注意として参照。該当教訓そのものは分類ロジックには直接影響なし。
+- id: L311
+  useful: true
+  reason: 今回の作業では主に報告品質/commit漏れ防止の注意として参照。該当教訓そのものは分類ロジックには直接影響なし。
+memory_references:
+- id: MEM001
+  source: semantic_search
+  query: 殿質問(2026-07-09 23:59)への回答で判明した未分類事象。cmd_3787のfail-closedガード(monthly_trade_impl.py
+    L1119-1127)がmissing_tickers=[]かつmatched_weight=0.5で発火している。欠落ticker想定のガードが『全tic
+  summary: '- file: `scripts/gates/gate_report_format.sh`'
+  used: true
+  useful: true
+  reason: report品質プロトコルとしてreport_field_set/gate手順に使用
+- id: MEM002
+  source: semantic_search
+  query: 殿質問(2026-07-09 23:59)への回答で判明した未分類事象。cmd_3787のfail-closedガード(monthly_trade_impl.py
+    L1119-1127)がmissing_tickers=[]かつmatched_weight=0.5で発火している。欠落ticker想定のガードが『全tic
+  summary: '- file: `scripts/gates/gate_report_format_main.py`'
+  used: false
+  useful: false
+  reason: gate_report_format確認に使用
+- id: MEM003
+  source: semantic_search
+  query: 殿質問(2026-07-09 23:59)への回答で判明した未分類事象。cmd_3787のfail-closedガード(monthly_trade_impl.py
+    L1119-1127)がmissing_tickers=[]かつmatched_weight=0.5で発火している。欠落ticker想定のガードが『全tic
+  summary: '- file: `scripts/report_field_set.sh`'
+  used: false
+  useful: false
+  reason: report_field_set経由記入に使用
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  detail: monthly_tradeのpartial/non-cash exposureを表示上どう扱うか要判断。現状案はreturn算出をsum(weights)基準にし、必要ならCash
+    weightを明示する。
+knowledge_candidate:
+  found: true
+  items:
+  - fact: Render本番ログで2026-07-09T05:20-16:00ZにMatched weight 0.5000 WARNが392件発火
+    source: render logs srv-d4ja7q15pdvs739a4q1g --text Matched weight 0.5000
+  - fact: 現在の本番APIでは候補6PFにmatched_weight=0.5行は再現しない
+    source: admin Basic auth /api/monthly-trade/{pid}?limit=24/0 recheck
+assumption_invalidation:
+  found: true
+  affected_cmds:
+  - cmd_3787
+  detail: cmd_3787ガードのmatched_weight!=1.0は欠落tickerだけでなく部分weight状態も捕捉するため、条件分離が必要
+hook_failures:
+  count: 0
+  details: ''
+post_deploy_evidence:
+  required: false
+  deploy_live_at: ''
+  evidence_run_start_at: ''
+  evidence_run_completed_at: ''
+  run_completed: false
+  source: ''
+binary_checks:
+  AC1:
+  - check: 本番再計算ログまたは再現実行からWARN発火PF・月・ウェイト内訳を特定し、ウェイト合計0.5の由来(band 50%ブレンド/重み付き保有/データ破損のいずれか)をweights保存元データで分類する。分類結果と該当PF一覧をdocs/research/cmd_3808_matched_weight_classification.mdに記録してls
+      -l + head -20で現物確認する。正当パターンと判明した場合はガード条件の修正案(Σweights基準+浮動小数許容1e-9等)を同mdに記載する。結論をcontext/dm-signal.mdへ還流する
+    result: 'yes'
+  commit:
+  - check: git commitが完了したか(untracked/modified=0)
+    result: 'yes'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verdict: PASS
+commit_hash: 1e193f36b4e939f7994c678129c3e0629158f9a9
+autofix_applied:
+- verdict binary_checks導出→PASS
