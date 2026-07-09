@@ -10579,3 +10579,27 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: failed task is covered by a separate karo_direct hotfix cmd
 - **how**: write superseded_by and terminal_reason on original task, then verify target cmd has CLEAR in logs/gate_metrics.log
 - cmd_3786でHayateのcmd_3786_fullは正当にFAILEDだが、家老hotfix cmd_karo_hotfix_cmd3786_sequence_rerun_202607091318 がGATE CLEARして上位カバーした後も、元taskがfailed+report completedのまま残りstartup gateが恒久ALERTを吐いた。代替完了時は元taskへsuperseded_by=<CLEAR cmd> と terminal_reason を記録し、gate_karo_startupはsuperseded_by先がlogs/gate_metrics.logでCLEARならSUPERSEDEDとして閉じる。これによりkaro_direct hotfixがshogun cmdを代替した際の終端連携が意志依存にならない。
+
+### L1018: causal_backlinks.shの-lモードがprojects/scripts含む複数パス検索時に非決定的に0件を返す
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_backlink_202607091355_saizo
+- **記録者**: saizo
+- **tags**: [infra,context,bash,wsl2]
+- **target_files**: [context/gunshi-silent-fallback-analysis.md,context/dm-signal-ops.md]
+- **origin**: [[cmd_reflux_backlink_202607091355_saizo]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/causal_backlinks.sh(引数なし=-lモード)で対象文書のincoming backlinkを検索したところ、検索パスにcontextのみを指定すれば安定して2件ヒットするが、デフォルトの全SEARCH_PATHS(AGENTS.md instructions context projects skills scripts docs tasks)を使うと再現性なく0件を返すことがあった(同一コマンドを複数回実行して結果が変動)。rg -lを検索パス単体(context)で直接実行すると常に安定してヒットする一方、複数パス同時指定(特にprojects/やscripts/を含む場合)でrgの出力が不安定になる現象を観測。原因はWSL2/mnt/c上のファイルシステム特性(stat遅延等)によるrgの並列ファイル走査のタイミング依存の可能性が高いが未確定。今回はgrep直接実行で回避したが、causal_backlinks.shを一次情報として信頼すると誤って「backlinkなし」と判断するリスクがある。
+
+### L1019: causal_backlinks.shは検索パスを個別走査してrg -lの非決定的0件を避ける
+- **日付**: 2026-07-09
+- **出典**: cmd_reflux_backlink_202607091355_saizo
+- **記録者**: karo
+- **tags**: [causal_backlinks, rg, WSL2, determinism]
+- **target_files**: [context/gunshi-silent-fallback-analysis.md,context/dm-signal-ops.md]
+- **origin**: [[cmd_reflux_backlink_202607091355_saizo]] -> [[causal_backlinks_non_deterministic_zero]] -> [[pathwise_rg_search]]
+- **enforcement**: Level4: scripts/causal_backlinks.sh searches each path separately and de-duplicates with sort -u
+- **when**: checking incoming backlinks with causal_backlinks.sh
+- **how**: run rg per existing search path, not all paths in one rg invocation
+- cmd_reflux_backlink_202607091355_saizoで、causal_backlinks.shの-l相当検索がWSL2 /mnt/c上で複数パス(AGENTS.md instructions context projects skills scripts docs tasks)を一括rgすると非決定的に0件を返す現象を観測した。context単体のrg直接検索では安定してヒットしたため、全パス一括検索結果を一次情報として信じるとbacklinkなしを誤判定する。対策としてscripts/causal_backlinks.shは検索パスごとにrgを実行しsort -uで統合する。

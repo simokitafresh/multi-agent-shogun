@@ -5108,6 +5108,7 @@ codd:
 | causal | `cmd_reflux_insight_202607081337_hayate` files_modified: [[gate_quality_framework]] |
 | causal | `cmd_reflux_promotion_202607090418_saizo` files_modified: [[gate_quality_framework]] |
 | cmd | `cmd_reflux_promotion_202607090418_saizo` (`projects/infra/lessons_shogun.yaml`, `scripts/cmd_save.sh`, `tests/unit/test_cmd_save.bats`) |
+| lesson | `L1017` karo_direct hotfixが失敗cmdを代替したら元taskへsuperseded_by終端を付ける |
 | causal_chain | `[[cmd_3027]]` (L695) |
 | causal_chain | `[[cmd_3027]]` (L696) |
 | causal_chain | `[[cmd_3033_saizo]]` (L699) |
@@ -5121,7 +5122,7 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_db_missing_followup_202607071808]]` (L964) |
 | causal_chain | `[[cmd_3765]]` (L985) |
-| lesson | `L1017` karo_direct hotfixが失敗cmdを代替したら元taskへsuperseded_by終端を付ける |
+| causal_chain | `[[cmd_3786_full]] -> [[karo_direct_hotfix_CLEAR]] -> [[superseded_by終端ゲート]]` (L1017) |
 
 ## lesson_lifecycle — 教訓ライフサイクル管理
 
@@ -5725,6 +5726,7 @@ codd:
 | cmd | `cmd_reflux_insight_202607081155_kagemaru` (`docs/semantic-index/index.md`) |
 | causal | `cmd_karo_hotfix_idle_gate_improvement_fp_round2_202607081319` files_modified: [[provisional_kagemaru]] |
 | cmd | `cmd_karo_hotfix_idle_gate_improvement_fp_round2_202607081319` (`queue/tasks/kagemaru.yaml`) |
+| cmd | `cmd_reflux_insight_202607091400_kagemaru` |
 
 ## provisional_lessons — 仮: Lessons
 
