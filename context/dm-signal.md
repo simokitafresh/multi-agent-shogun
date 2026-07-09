@@ -115,6 +115,8 @@ E7速度確認(2026-07-06): L0四神GS full 191,796 patternsは `timeout 300` �
 
 pf_L3再GS完了(cmd_3779): 新pf_L2チャンピオン21体を構成PFとして7忍法全量GS(3,484,075 patterns)を完走し、21チャンピオンを選出。成果物は `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3779_pf_l3_champions.json` と `docs/research/cmd_3779_pf_l3_champion_selection.md`。
 
+GS価格経路偵察(cmd_3790, 2026-07-09): パリティ0/75の主因は登録configではなくGS入力価格系列差。`analysis_runs/experiments.db.daily_prices`は75,473行/14銘柄/最終2026-03-20、本番`prices`は99,871行/18銘柄/最終2026-07-08。同一2026-03-20でもTQQQ -0.394%、TECL -0.194%、LQD -1.145%、SPY -0.257%のclose差。再入替前にL0 daily price cacheとL1-L3 local_sqlite成果物を本番`prices`由来で再生成し、価格系列preflightをBLOCK化せよ。詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3790_gs_price_path_recon.md`
+
 根拠: `/mnt/c/Python_app/DM-signal/docs/design/gs-recalibration-plan.md`（commit `4828c134`, `78ed9bec`, `97e06904`）。
 
 ## 弱体化確率推定(P_det)
