@@ -74,6 +74,23 @@ def _flatten_for_scope(value):
     return str(value)
 
 
+def _report_mentions_residual_sweep(value):
+    text = _flatten_for_scope(value)
+    if not text:
+        return False
+    expansion_terms = ("横展開", "修正前パターン", "残存確認", "残存0件", "grep残存", "同一パターン残存")
+    return any(term in text for term in expansion_terms)
+
+
+def _report_has_residual_sweep_evidence(value):
+    text = _flatten_for_scope(value)
+    if not text:
+        return False
+    has_search = bool(re.search(r"\b(rg|grep)\b|grep|検索", text, re.IGNORECASE))
+    has_zero = bool(re.search(r"残存\s*0\s*件|0\s*件|0\s*hits?|該当\s*0\s*件|no matches?", text, re.IGNORECASE))
+    return has_search and has_zero
+
+
 def _task_needs_causal_verification(task_data):
     if not isinstance(task_data, dict) or not task_data:
         return False
@@ -659,6 +676,23 @@ def main() -> int:
         hints.append(
             "WARN: causal_verification欄が空/未記入 — hook/gate/daemon/semantic/search/memory DB/配備フロー変更では "
             "git log/blame・関連教訓・設計書・semantic/causal確認結果を記録せよ"
+        )
+
+    residual_sweep_sources = {
+        "result": data.get("result"),
+        "binary_checks": data.get("binary_checks"),
+        "lesson_candidate": data.get("lesson_candidate"),
+        "lessons_useful": data.get("lessons_useful"),
+        "causal_verification": data.get("causal_verification"),
+        "purpose_validation": data.get("purpose_validation"),
+    }
+    if _report_mentions_residual_sweep(residual_sweep_sources) and not _report_has_residual_sweep_evidence(
+        residual_sweep_sources
+    ):
+        errors.append("LK-A14: 横展開/修正前パターンを扱う報告にはgrep/rg残存0件の一次証跡が必須")
+        hints.append(
+            "FIX (LK-A14): result.details または causal_verification.evidence に "
+            "rg/grepの対象範囲・検索語・残存0件を記録せよ"
         )
 
     ai = data.get("assumption_invalidation")

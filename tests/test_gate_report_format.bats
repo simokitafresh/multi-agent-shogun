@@ -205,6 +205,45 @@ PY
     [[ "$output" != *"パス形式でない"* ]]
 }
 
+@test "T-LKA14-1: residual sweep mention without grep zero evidence fails" {
+    local report="$TMPDIR_BATS/lka14_missing_evidence.yaml"
+    create_valid_report "$report" >/dev/null
+    python3 - "$report" <<'PY'
+import sys, yaml
+path = sys.argv[1]
+with open(path, encoding="utf-8") as f:
+    data = yaml.safe_load(f)
+data["result"]["details"] = "修正前パターンの横展開確認を実施した"
+data["files_modified"] = ["scripts/gates/gate_report_format_main.py"]
+with open(path, "w", encoding="utf-8") as f:
+    yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+PY
+
+    run bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"LK-A14: 横展開/修正前パターンを扱う報告にはgrep/rg残存0件の一次証跡が必須"* ]]
+}
+
+@test "T-LKA14-2: residual sweep mention with grep zero evidence passes" {
+    local report="$TMPDIR_BATS/lka14_with_evidence.yaml"
+    create_valid_report "$report" >/dev/null
+    python3 - "$report" <<'PY'
+import sys, yaml
+path = sys.argv[1]
+with open(path, encoding="utf-8") as f:
+    data = yaml.safe_load(f)
+data["result"]["details"] = "修正前パターンの横展開確認を実施。rg 'old_pattern' scripts tests の残存0件を確認。"
+data["files_modified"] = ["scripts/gates/gate_report_format_main.py"]
+with open(path, "w", encoding="utf-8") as f:
+    yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+PY
+
+    run bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" != *"LK-A14"* ]]
+}
+
 # --- T-006: GP-073 PASS cache hit ---
 @test "T-006: GP-073 second call hits mtime cache" {
     local report="$REPO_TMPDIR_BATS/cache_report.yaml"
