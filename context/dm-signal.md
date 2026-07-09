@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-09 cmd_3790 -->
-<!-- last_synced_lesson: L842 -->
+<!-- last_updated: 2026-07-09 cmd_3793 -->
+<!-- last_synced_lesson: L843 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -301,6 +301,12 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - L839: GS blob月次md5はNaN payload差を避けarray_equalで検証する（cmd_3778）
 - L841: PF一括削除は登録順ではなく現DB依存グラフで反復削除する（cmd_karo_hotfix_cmd3786_sequence_rerun_202607091318）
 - L842: GS投入前は系列preflightを必須化する（cmd_3790）
+- L843: download_all_prices後も本番prices preflightで値差確認する（cmd_3793）
+
+## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
+
+- `analysis_runs/experiments.db.daily_prices` は `download_all_prices.py grid-search` 後に `sync_experiments_prices.py` で本番PostgreSQL `prices` / `economic_indicators(DTB3)` と同期する。cmd_3793では同期後 `gs_price_preflight.py` が14/14 ticker PASS、missing/mismatch 0を確認。
+- GS実行前は `python3 scripts/analysis/grid_search/gs_price_preflight.py` を必須実行する。不一致時はexit 1で停止し、全一致時のみexit 0。詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3793_d1_price_sync.md`
 
 ## 因果リンク
 
