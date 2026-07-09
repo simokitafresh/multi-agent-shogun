@@ -6193,9 +6193,14 @@ is_db_operation_command_text() {
     local command_text="${1:-}"
     [[ -n "${command_text//[[:space:]]/}" ]] || return 1
 
-    # GS出力SQLite(quick_check/出力/結果)は読取のみでDB操作ではない
+    # SCOUT(偵察)cmdは読取専用。DB変更を含まない
+    if [[ -n "${CMD_BLOCK_NC:-}" ]] && printf '%s\n' "$CMD_BLOCK_NC" | grep -qiE 'scope_mode.*SCOUT'; then
+        return 1
+    fi
+
+    # GS出力SQLite(quick_check/出力/結果/experiments.db/突合/統計/経路/参照)は読取のみでDB操作ではない
     local filtered
-    filtered="$(printf '%s\n' "$command_text" | grep -viE 'quick_check|GS.*SQLite|SQLite.*出力|SQLite.*結果|SQLite.*記録|grid_search')"
+    filtered="$(printf '%s\n' "$command_text" | grep -viE 'quick_check|GS.*SQLite|SQLite.*出力|SQLite.*結果|SQLite.*記録|SQLite.*統計|SQLite.*突合|SQLite.*経路|SQLite.*参照|grid_search|experiments\.db|daily_prices')"
     [[ -n "${filtered//[[:space:]]/}" ]] || return 1
     printf '%s\n' "$filtered" | grep -qiE '(^|[^A-Za-z0-9_])(migrate|ALTER[[:space:]]+TABLE|schema|database|init_database|SQLite|DROP|TRUNCATE|DELETE[[:space:]]+FROM)([^A-Za-z0-9_]|$)' || return 1
 }
