@@ -1007,3 +1007,10 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 才蔵の追加偵察(PASS)では代表PF「シン青龍-激攻 / `DM2_SGLD_T1_Qj_L1779`」のGS Phase1+Phase2計算を`threshold_band=0.005`込みでread-only再現し、GS DBとの差は最大7.2e-7(浮動小数点誤差)まで一致。本番とのmismatch 51ヶ月は51/51でproduction holding_signalがGS決定と乖離。DTB3暦解像度ではなく、GSローカル価格スナップショット(`analysis_runs/experiments.db`, max date 2026-03-20)と本番`prices`のadjusted-close系列乖離(TQQQ +0.396% / TECL +0.195% / LQD +1.507% / GLD 0%)が主因候補。DTB3は本番economic_indicatorsとローカルスナップショットで差分ゼロ。
 - 才蔵の追加発見: 本番`prices`のTQQQ全履歴(2010-02-11〜2026-07-08, 4125行)は`source='stockdata_api'`のみで、`context/dm-signal.md`記載の「EODHD生値+自前調整(2026-07-05本番移行完了)」と矛盾。工程4をCLEARする前に、GS価格入力を本番と同一系列に揃えるか、ズレを許容する根拠を裁定する必要がある。
 - 成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3785_parity_verification.json`、`cmd_3785_log_recovery_report.json`、`cmd_3785_config_fix_report.json`。完了扱い禁止。次手は`cmd_3785_verify_replacement.py`をGS monthly_return単独比較からconfig parity / signal parity / return parityの3段階比較へ分離し、GS側signal trace生成または同一target_date ledger比較でfalse negativeを潰す。
+
+## §57 工程4ロールバック完了状態 (cmd_3786 / cmd_karo_hotfix_cmd3786_sequence_rerun, 2026-07-09)
+
+- cmd_3786順序修正版で本番は入替前の旧102PF状態へ復旧済み。実行順序は新75PF API削除→旧86PF `restore-all` 復元→fullrecalculate。最終値は`active_total=102`、`new75_live_by_config=0`、`cmd3785_restored_archive=86`、`holding_signal=102/102`、`monthly_returns=102/102`。
+- API/FE確認: `/api/portfolios/get`は102件、FE `/admin` と `/compare-summary` はHTTP 200。成果物は `/mnt/c/Python_app/DM-signal/docs/research/cmd_3786_rollback_report.md` と `cmd_3786_delete_new75_log.csv`、実行commitはDM-Signal `a74fec06`。
+- 残懸念: `restore-all`はDB復元と再計算生成完了後もHTTP応答が返らず、DB `recalculation_status.id=195` が`running`のまま残った。一方で`/admin/recalculate-status`は`running=false`、生成物は102/102。後続でrestore-allの応答終端とDB status終端処理を修正候補として扱う。
+- cmd_3785はロールバック済みのため本番破壊状態ではない。ただし価格系列差によるGS/本番パリティ問題は未解決であり、再入替前にGS入力を本番`prices`系列へ揃えるか、ズレ許容根拠を裁定する必要がある。

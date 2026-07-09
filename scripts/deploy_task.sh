@@ -4118,6 +4118,64 @@ insert_task_block_before_description() {
     fi
 }
 
+# ─── DM-Signal PF削除/復元運用ガードレール注入 ───
+# Level5: cmd_3786で露呈した前提知識不備をタスクYAMLへ自動注入し、
+# PF一括削除/restore-all/rollback系で同じ試行錯誤を再発させない。
+inject_dm_signal_pf_operation_guardrails() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local project task_type title purpose command_text parent_cmd haystack
+    project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
+    [ "$project" = "dm-signal" ] || return 0
+
+    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
+    title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "" 2>/dev/null || true)
+    purpose=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "" 2>/dev/null || true)
+    command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "" 2>/dev/null || true)
+    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+
+    if [ -n "$parent_cmd" ] && [ -f "$SCRIPT_DIR/queue/shogun_to_karo.yaml" ]; then
+        command_text="${command_text}
+$(awk -v cmd="$parent_cmd" '
+    /^  [a-zA-Z0-9_-]+:/ {
+        cur=$0
+        sub(/^[[:space:]]*/, "", cur)
+        sub(/:.*$/, "", cur)
+    }
+    cur == cmd && /^(    title:|    type:|    purpose:|    command:|    acceptance_criteria:|        )/ { print }
+' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)"
+    fi
+
+    haystack="${task_type}
+${title}
+${purpose}
+${command_text}"
+
+    printf '%s\n' "$haystack" | grep -Eqi 'restore-all|restore|復元|rollback|ロールバック|portfolio_archive|archive.*portfolio|PF.*(削除|復元|rollback|ロールバック)|portfolio.*(delete|restore)|一括削除|cmd_3785|cmd_3786' || return 0
+
+    local tmp_file inject_block indent="  "
+    tmp_file=$(mktemp)
+    awk '
+        /^  dm_signal_pf_operation_guardrails:/ { skip=1; next }
+        skip && /^  [a-zA-Z_][a-zA-Z0-9_]*:/ { skip=0 }
+        skip && /^[^ ]/ { skip=0 }
+        !skip { print }
+    ' "$task_file" > "$tmp_file"
+
+    inject_block="${indent}dm_signal_pf_operation_guardrails:"
+    inject_block="${inject_block}"$'\n'"${indent}- \"PF一括削除は登録順だけで判断しない。DELETE APIの400参照保護は安全停止。live DB/config依存を再計測し、削除できたPFから反復削除する。\""
+    inject_block="${inject_block}"$'\n'"${indent}- \"restore-allは POST /api/admin/portfolios/restore-all。名前衝突がある時は新PF削除を先行する。PF一覧APIは /api/portfolios/get であり /api/portfolios は404。\""
+    inject_block="${inject_block}"$'\n'"${indent}- \"restore-all後はHTTP応答やDB recalculation_statusがstaleでも、/admin/recalculate-status running=false、active数、holding_signal/monthly_returns生成数、API/FEを一次確認して判定する。\""
+    inject_block="${inject_block}"$'\n'"${indent}- \"WSL実行ではLinux python3を使う。Windows venv pythonをWSLから起動しない。CSV成果物はLFへ正規化し git diff --check を通す。\""
+    inject_block="${inject_block}"$'\n'"${indent}- \"開始前後に active_total、新PFlive数、archive restored/unrestored数、holding_signal数、monthly_returns数、API件数、FE HTTP status を数値で記録する。\""
+
+    insert_task_block_before_description "$tmp_file" "$inject_block"
+    cp "$tmp_file" "$task_file"
+    rm -f "$tmp_file"
+    log "inject_dm_signal_pf_operation_guardrails: injected"
+}
+
 # ─── context hints注入（purpose/project/task_typeから必読contextをLevel5化） ───
 # R2残件: 重要contextをタスクYAMLに強制注入し、忍者の能動検索依存をなくす。
 inject_context_hints() {
@@ -8807,6 +8865,7 @@ deploy_task_apply_task_mutations() {
         inject_memory_db_context "$task_file" || true  # Level5: 三層記憶先行知識注入(殿厳命2026-06-10)
         inject_causal_links "$task_file" || true      # Level5: 全忍者にcmd origin因果リンクを自動提供(cmd_2822)
         inject_causal_verification_template "$task_file" || true  # Level5: infra変更前の因果確認をCLI非依存で注入
+        inject_dm_signal_pf_operation_guardrails "$task_file" || true  # Level5: PF削除/復元/rollback前提知識を自動注入(cmd_3786)
         inject_context_hints "$task_file" || true  # Level5: purpose/project/task_typeから必読contextを強制提供
         inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供
         inject_checklist_constraints "$task_file" || true  # Level5: checklist隣接Step制約強制注入(cmd_2644)
