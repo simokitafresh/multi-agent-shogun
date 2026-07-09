@@ -5754,27 +5754,35 @@ show_semantic_index_matches() {
     ' "$INDEX_PATH" 2>/dev/null || true)
     [[ -z "$_semantic_rows" ]] && return 0
 
-    while IFS=$'\t' read -r _semantic_label _semantic_aliases _semantic_files; do
-        [[ -z "$_semantic_label" || -z "$_semantic_aliases" ]] && continue
-        IFS=',' read -r -a _semantic_alias_array <<< "$_semantic_aliases"
-        for _semantic_alias in "${_semantic_alias_array[@]}"; do
-            _semantic_alias="$(printf '%s' "$_semantic_alias" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')"
-            [[ -z "$_semantic_alias" ]] && continue
-            _semantic_alias_re="$(printf '%s' "$_semantic_alias" | sed -E 's/[][(){}.^$*+?|\\/]/\\&/g')"
-            if printf '%s' "$_semantic_alias" | LC_ALL=C grep -qE '^[A-Za-z0-9_ -]+$'; then
-                _semantic_match_cmd=(grep -Eqi "(^|[^[:alnum:]_])${_semantic_alias_re}([^[:alnum:]_]|$)")
-            else
-                _semantic_match_cmd=(grep -Fqi -- "$_semantic_alias")
-            fi
-            if printf '%s\n' "$SEARCH_TEXT" | "${_semantic_match_cmd[@]}"; then
-                echo "INFO: [SEMANTIC] ${_semantic_label} matched alias '${_semantic_alias}'" >&2
-                if [[ -n "$_semantic_files" ]]; then
-                    echo "  主要ファイル: ${_semantic_files}" >&2
-                fi
-                break
-            fi
-        done
-    done <<< "$_semantic_rows"
+    # 全alias照合を単一awkプロセスで実行する。
+    # 旧実装はalias毎にsed×2+grep×1-2をforkし(実測3,199 alias≈1万fork=35秒)、
+    # cmd_save全体を36秒に劣化させていた(将軍実測2026-07-10)。判定ロジックは旧実装と同一:
+    # ASCII語([A-Za-z0-9_ -]+)は単語境界付き大文字小文字無視マッチ、それ以外は部分一致。
+    SEMANTIC_SEARCH_TEXT="$SEARCH_TEXT" awk -F'\t' '
+        BEGIN { t = tolower(ENVIRON["SEMANTIC_SEARCH_TEXT"]) }
+        function esc(s) { gsub(/[][(){}.^$*+?|\\\/]/, "\\\\&", s); return s }
+        {
+            label = $1; aliases = $2; files = $3
+            if (label == "" || aliases == "") next
+            n = split(aliases, arr, ",")
+            for (i = 1; i <= n; i++) {
+                a = arr[i]
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", a)
+                if (a == "") continue
+                al = tolower(a); hit = 0
+                if (a ~ /^[A-Za-z0-9_ -]+$/) {
+                    if (t ~ ("(^|[^[:alnum:]_])" esc(al) "([^[:alnum:]_]|$)")) hit = 1
+                } else if (index(t, al) > 0) {
+                    hit = 1
+                }
+                if (hit) {
+                    printf "INFO: [SEMANTIC] %s matched alias '\''%s'\''\n", label, a > "/dev/stderr"
+                    if (files != "") printf "  主要ファイル: %s\n", files > "/dev/stderr"
+                    break
+                }
+            }
+        }
+    ' <<< "$_semantic_rows"
 }
 
 # --- Check 18: 研究cmd道具明示チェック（dm-signal研究cmd対象 — WARNING） ---
