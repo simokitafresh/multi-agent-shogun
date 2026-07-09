@@ -119,3 +119,10 @@ diffモード(`--diff <commit>`)で新規コードのみの検査も可能。
 ## 残りMedium (9件) / Low (17件)
 
 HIGH消化完了後に分析予定。
+
+## ★新発見2: monthly_trade_impl.py matched_weight部分計算続行 (2026-07-09、設計書化済み・実装未着手)
+
+- `_calculate_return_from_price_movement()`(`monthly_trade_impl.py:1092-1116`): `matched_weight < 0.99`でも`logger.warning()`のみで計算続行し、未正規化の歪んだ`total_return`をそのまま返す。SF-001（例外→偽装値返却）と同型のSilent Fallbackパターンの新規インスタンス（既存SF-001〜カタログ未収載、gate_silent_fallback.sh検出対象にも未収載）
+- 消費者なし（他コードからの参照grep 0件、FEも表示に不使用）のため現状のユーザー影響はゼロ。ただし将来この値が監視・診断機能で参照された瞬間に汚染データとして機能するリスクが残る死んだデータ経路
+- ToBe: 欠落tickerが1件でもあれば`None`+`missing_tickers`一覧を返すfail-closed化。殿指示によりAsIs/ToBe設計書化済み、実装cmdは未起票（R1: 判定基準変更, R2: API/FEスキーマ追加, R3: 既存テスト更新, R4: 本カタログへの正式追加）
+- 設計書: [[monthly-trade-missing-ticker-calc-asis-tobe-5w1h_20260709]]
