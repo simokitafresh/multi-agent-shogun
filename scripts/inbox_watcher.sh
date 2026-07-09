@@ -1097,7 +1097,7 @@ process_unread
 # Timeout 60s: WSL2 /mnt/c/ can miss inotify events.
 # On timeout (exit 2), check for unread messages as a safety net.
 INOTIFY_TIMEOUT="${INOTIFY_TIMEOUT:-60}"
-MTIME_POLL_INTERVAL="${MTIME_POLL_INTERVAL:-10}"  # MTIME_POLL: seconds between stat mtime checks
+MTIME_POLL_INTERVAL="${MTIME_POLL_INTERVAL:-3}"  # MTIME_POLL: seconds between stat mtime checks (10→3: 殿指摘 inbox遅延改善)
 
 # Initialize mtime baseline for MTIME_POLL fallback
 LAST_MTIME=$(stat -c %Y "$INBOX" 2>/dev/null || echo 0)
