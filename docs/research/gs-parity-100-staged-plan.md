@@ -8,6 +8,7 @@
 ## §0 大原則
 
 1. **本番が正。GSを本番に合わせる。** コードは共有しない、結果を一致させる(殿原則 2026-07-08 03:30。PipelineEngine経由GSはcmd_1199で速度棄却済み)
+   - 精密化(cmd_3805): 「正」とは**現行configで本番PipelineEngineが計算する結果**を指す。本番DBの凍結値(signal_decision_ledger)が現行configと不整合な場合はDB側を修正する(cmd_3806=案A、殿裁定2026-07-10 00:10)。GS計算ロジック自体は本番PipelineEngine直接実行と完全一致を実証済み
 2. **100%一致のみ合格。** 166/171や170/171は不合格。「高精度一致」という表現で妥協しない
 3. **パリティ定義(PI-009 3点)**: (a) holding_signal 全期間完全一致 (b) monthly_return 全期間差分1e-6以内 (c) config一致(threshold_band=δ含む)
 4. **突合規約**: 本番`monthly_return_open`(Open-to-Open, PI-008)。lookback単位はtrading days、GS側`unit:months`は`period*21`換算(cmd_3803 §0-3で規約確定済み)
@@ -95,8 +96,10 @@
 |---|---|---|
 | cmd_3803 | 12体同一パラメータ突合(As-Is実測) | CLEAR |
 | cmd_3804 | Stage 1: 玄武-鉄壁試験登録E2E | 委任済み |
-| cmd_3805 | Stage 2-A: 多期間加重乖離の根因偵察 | 委任済み |
-| (次) | Stage 2-A修正実装 / 2-B / 2-C分類 | cmd_3805結果待ち |
+| cmd_3805 | Stage 2-A: 多期間加重乖離の根因偵察 | **CLEAR — GSにバグなし。真因=ledger凍結(cmd_3711)とband適用(cmd_3771)の順序逆転** |
+| cmd_3806 | Stage 2根本対応: band適用後configでledger再backfill+部分再計算+12体再突合(案A) | 委任済み(depends_on cmd_3804) |
+
+- cmd_3805の帰結でStage 2の性質が変化: 2-A/2-B/2-Cの乖離は全て同一根因(ledger凍結)の可能性が高い。cmd_3806の12体再突合で残存乖離を再分類し、残った分のみ個別ラインを起こす
 
 ## 因果リンク
 
