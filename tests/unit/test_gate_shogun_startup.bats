@@ -516,6 +516,36 @@ EOF
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
+@test "Q6 automation target proof resolves external project relative paths" {
+    local external_root="$TEST_TMPDIR/external/DM-signal"
+    mkdir -p "$external_root/backend/app/services" "$external_root/backend/tests"
+    cat > "$external_root/backend/app/services/monthly_trade_impl.py" <<'EOF'
+def require_ticker_for_monthly_trade():
+    return "ticker"
+EOF
+    cat > "$external_root/backend/tests/test_monthly_trade_calculator.py" <<'EOF'
+def test_require_ticker_for_monthly_trade():
+    assert "ticker"
+EOF
+    cat > "$TEST_TMPDIR/config/projects.yaml" <<EOF
+projects:
+  - id: dm-signal
+    path: "$external_root"
+  - id: infra
+    path: "$TEST_TMPDIR"
+EOF
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 外部PJ相対パスをinfra rootだけで見ていた前提を捨て、殿のために一次情報で検証する。自動化ターゲット: backend/app/services/monthly_trade_impl.py と backend/tests/test_monthly_trade_calculator.py に `require_ticker_for_monthly_trade` をgrep検証する。"}
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
+    [[ "$output" == *"dm-signal:backend/app/services/monthly_trade_impl.py: require_ticker_for_monthly_trade"* ]]
+    [[ "$output" == *"dm-signal:backend/tests/test_monthly_trade_calculator.py: require_ticker_for_monthly_trade"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
+
 @test "Q6 automation target without explicit path resolves commit hook proof → no grep skip" {
     mkdir -p "$TEST_TMPDIR/scripts/hooks"
     cat > "$TEST_TMPDIR/scripts/hooks/git-pre-commit.sh" <<'EOF'

@@ -1311,6 +1311,35 @@ from pathlib import Path
 root = Path(sys.argv[1]).resolve()
 target = sys.argv[2].strip() if len(sys.argv) > 2 else ""
 
+def load_project_roots(base: Path):
+    config = base / "config" / "projects.yaml"
+    roots = [("infra", base)]
+    if not config.is_file():
+        return roots
+    try:
+        text = config.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return roots
+    current_id = None
+    for line in text.splitlines():
+        id_match = re.match(r"\s*-\s+id:\s*['\"]?([^'\"\s#]+)", line)
+        if id_match:
+            current_id = id_match.group(1)
+            continue
+        path_match = re.match(r"\s*path:\s*['\"]?([^'\"#]+)", line)
+        if path_match and current_id:
+            raw_path = path_match.group(1).strip()
+            candidate = Path(raw_path)
+            if candidate.is_absolute():
+                resolved = candidate.resolve()
+            else:
+                resolved = (base / candidate).resolve()
+            if (current_id, resolved) not in roots:
+                roots.append((current_id, resolved))
+    return roots
+
+project_roots = load_project_roots(root)
+
 if not target:
     print("SKIP\t自動化ターゲット本文なし")
     raise SystemExit(0)
@@ -1404,13 +1433,19 @@ if not tokens:
 failures = []
 passes = []
 for rel in paths:
-    path = (root / rel).resolve()
-    try:
-        path.relative_to(root)
-    except ValueError:
-        failures.append(f"{rel}: root外パス")
-        continue
-    if not path.is_file():
+    path = None
+    project_id = ""
+    for candidate_project_id, candidate_root in project_roots:
+        candidate = (candidate_root / rel).resolve()
+        try:
+            candidate.relative_to(candidate_root)
+        except ValueError:
+            continue
+        if candidate.is_file():
+            path = candidate
+            project_id = candidate_project_id
+            break
+    if path is None:
         failures.append(f"{rel}: ファイル不在")
         continue
     try:
@@ -1419,10 +1454,11 @@ for rel in paths:
         failures.append(f"{rel}: 読込失敗({exc})")
         continue
     matched = [token for token in tokens if token in text]
+    display_rel = rel if project_id in ("", "infra") else f"{project_id}:{rel}"
     if matched:
-        passes.append(f"{rel}: {','.join(matched[:3])}")
+        passes.append(f"{display_rel}: {','.join(matched[:3])}")
     else:
-        failures.append(f"{rel}: キーワード未検出({','.join(tokens[:5])})")
+        failures.append(f"{display_rel}: キーワード未検出({','.join(tokens[:5])})")
 
 if failures:
     print("BLOCK\t" + " | ".join(failures))
