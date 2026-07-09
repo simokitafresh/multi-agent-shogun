@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-09 cmd_3800 -->
+<!-- last_updated: 2026-07-09 cmd_3798 -->
 <!-- last_synced_lesson: L843 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。

@@ -420,3 +420,5 @@
 | cmd_3794 | D1修正(cmd_3793)で入力パリティ復元済み。cmd_3755(T1)でPI-009突合5/7一致だったが旧pricesでの結果だったため、同期済みpricesで再検証しD3(出力パリティ)を確定する | dm-signal | 07-09 | D3出力パリティ再検証完了。gs_price_preflig |
 | cmd_3795 | 道具磨きD4軸の残4忍法(kawarimi・nukimi・yotsume・weighted_yotsume)のパターン数棚卸しと全量ベンチマーク。5分超過があればE2/E3系技法(チャンク伝播・GC条件化・グローバル配列化)を同型適用する | dm-signal | 07-09 | kawarimi/nukimi/yotsumeはcmd_37 |
 | cmd_3797 | 道具磨き5軸完了を受けGS再キャリブレーション計画Phase Aを再実行する。同期済みpricesとバンド込みでL0四神全量GSを実行し、旧基準と新基準で各チャンピオンを選出する | dm-signal | 07-09 | cmd_3762/3763(20260708)は本番未同期の |
+| cmd_3800 | 殿指摘(2026-07-09 21:33)を受けpf_L1 GS前にpf_L0新12体チャンピオンの本番突合を実施する。3点検証: (1)全期間holding_signal完全一致 (2)全期間monthly_return 1e-6以内 (3)config threshold_band一致 | dm-signal | 07-09 | cmd_3797選出のpf_L0旧基準12体チャンピオンを本 |
+| cmd_3798 | 殿裁定(2026-07-09 21:16)により全レイヤーを現行3基準(CAGR/MaxDD/NHF)+バンドで進める。cmd_3797で選出したL0旧基準12体チャンピオンを構成PFとし、7忍法GSを直列実行してL1チャンピオンを選出する。L2・L3も同基準で続行予定 | dm-signal | 07-09 | cmd_3798 Phase B L1 GSを7忍法直列で完 |
