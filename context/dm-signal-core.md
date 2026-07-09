@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-08 cmd_3753 -->
+<!-- last_updated: 2026-07-09 cmd_3788 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -48,6 +48,7 @@
 | 3 | 01:40 | sync-fof | FoFシグナル計算 |
 
 再計算排他制御: `recalc_status.py`の`threading.Lock`。同時実行不可。409=正常排他(FAILではない)。30秒待って再実行。status timestampはUTC/JST cutoverを明示して書き込む（commit 546565d6）。→ `projects/dm-signal.yaml` (c) recalculate_concurrency
+2026-07-09 cmd_3788: Render複数worker下の再計算running判定はDB `recalculation_status`がSSOT。`/admin/recalculate-status`は最新running DB行を見て`source=db`で返し、`/admin/recalculate-sync`はbackground投入前にDB/advisory lock排他を取れない場合409で止める。詳細 → `context/dm-signal-ops.md` §59 / `/mnt/c/Python_app/DM-signal/docs/research/cmd_3788_recalc_status_db_ssot.md`
 p̄バッチ: `p_average_results`テーブルに事前計算結果を格納。バッチ未実行 or cold sleepで空(L319)。p̄ゲート: `gate_p_average_freshness.sh`で鮮度監視。
 - L232: recalculate_fast.pyのholding_signal更新は「月変わりANDリバランス月」の2条件で制御される（cmd_764）
 
@@ -341,6 +342,7 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 - L254: FoF展開共通関数のcache未注入でquery storm化する（cmd_806）
 - L255: ticker precompute欠落時のfallbackはmonths windowをPrice queryへ必ず伝播させる（cmd_805）
 - L257: Monthly Trade raw payload: Pydantic未宣言fieldもAPI contract（cmd_819）
+- 2026-07-09 cmd_3787: Monthly Trade検証用リターン計算はticker/価格欠落時に部分加重和で続行せずfail-closedする。`_calculate_return_from_price_movement()`は`missing_tickers`を返し、欠落時は`calculated_return=None`。FE/API型にも`missing_tickers`追加。詳細 → `context/dm-signal-ops.md` §58 / `/mnt/c/Python_app/DM-signal/docs/research/cmd_3787_monthly_trade_missing_ticker_fail_closed.md`
 - L310: apiCache.clear()はETag IDB未削除→304エラーの可能性。汎用clear()は未対応（cmd_962）
 - L311: isRetryableError()はHTTP 5xx未対応→Render cold start 502/503で即エラー表示（cmd_962）
 - L314: CORS expose_headersなしではFEがカスタムレスポンスヘッダを読めない（cmd_964）
