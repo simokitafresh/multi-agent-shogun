@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-09 cmd_3801 -->
+<!-- last_updated: 2026-07-10 cmd_3807 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
