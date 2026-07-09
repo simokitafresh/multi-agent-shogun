@@ -12,7 +12,8 @@
 3. **パリティ定義(PI-009 3点)**: (a) holding_signal 全期間完全一致 (b) monthly_return 全期間差分1e-6以内 (c) config一致(threshold_band=δ含む)
 4. **突合規約**: 本番`monthly_return_open`(Open-to-Open, PI-008)。lookback単位はtrading days、GS側`unit:months`は`period*21`換算(cmd_3803 §0-3で規約確定済み)
 5. **反復ループが単位作業**: 乖離初月特定→中間値トレース→GS側相違行修正→再GS(1PF分のみ=秒〜分)→再突合。100%になるまで繰り返す。1PFのGS再実行は軽いので反復コストは小さい
-6. **本番再計算は常に直列(殿裁定23:44)**: 試験登録→fullrecalculateを伴う検証は同時1件のみ。並列にすると本番での再計算が競合する。並列してよいのはコード偵察・GS側修正・GS側突合(本番に触れない作業)のみ
+6. **本番再計算は常に直列(殿裁定23:44)**: 本番再計算を伴う検証は同時1件のみ。並列にすると本番での再計算が競合する。並列してよいのはコード偵察・GS側修正・GS側突合(本番に触れない作業)のみ
+7. **再計算は部分再計算を使う(殿指摘23:49)**: fullrecalculateは不要。`_run_partial_recalc(portfolio_ids)`(`backend/app/api/portfolios.py:366`)が`recalculate_history_fast(portfolio_ids=[対象ID])`を2000-01-01起点で実行する既存機能。試験登録PFはどのFoFにも属さないため上向き伝播(include_parent_fof)の影響もゼロ。全PF再計算より速く競合面も小さい。完了判定はL714/L715どおりDB直接クエリ
 
 ## §1 As-Is (cmd_3803実測 2026-07-09)
 
@@ -41,7 +42,7 @@
 
 ### Stage 1: 1PF×本番経路E2E (=cmd_3804、委任済み)
 - 対象: シン玄武-鉄壁(GS側突合で唯一171/171の個体)
-- 内容: 本番全PFバックアップ→チャンピオン1体試験登録→fullrecalculate(DB直接クエリでcompleted確認)→本番出力とGS出力のPI-009 3点突合
+- 内容: 本番全PFバックアップ→チャンピオン1体試験登録→**1体のみ部分再計算(§0-7。fullrecalculate不使用)**→本番出力とGS出力のPI-009 3点突合
 - 合格: holding_signal完全一致+monthly_return 1e-6。**失敗したら根因修正→再登録→再突合の反復。100%まで次Stageへ進まない**
 - 意義: GS→本番登録→再計算のE2E経路そのものの正当性証明(cmd_3785事故の再発防止)
 
