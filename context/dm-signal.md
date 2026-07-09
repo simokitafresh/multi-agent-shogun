@@ -375,6 +375,13 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - 本番保存値との残差(11/11行で依然prod≠corrected)は新規根因ではなく、§42既出の「ledger優先ロジック+staleスナップショット」機構と同一(cmd_3817が並行して着手済み)。
 - 詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3818_band_transition_divergence.md`、機械証跡 → `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3818_band_transition_trace.json`、スクリプト → `/mnt/c/Python_app/DM-signal/scripts/oneshot/cmd_3818_band_transition_trace.py`
 
+## §43 Matched weight WARN run単位自動集計+ntfy通知=恒久監視完成 (cmd_3820, 2026-07-10)
+
+- WARN根絶設計書(`docs/research/matched-weight-warn-eradication-design.md`)§3手順6を実装。`monthly_trade_impl.py`のMatched weight WARN(matched_weight != 1.0)を、既存`signal_change_log_buffer`と同型のミュータブルリスト集約パターンでrun単位にプロセス内カウンタ化(ログgrep不要)。0件時は通知抑制、1件以上ならCRITICALログ+既存confirmed signal change alertと同一ntfy経路(`NTFY_ALERT_TOPIC`)へ`[MATCHED WEIGHT WARN]`バッチ通知1回のみ送信。fullrecalculate/部分再計算/precomputeいずれの経路でも自動適用(`precompute_raw_for_portfolios`が生成する`MonthlyTradeCalculator`単一インスタンスをrun全体で使い回す既存構造を利用)。
+- WARN=0達成(cmd_3812)後の再発を人手のログ確認に頼らず即検知する防御階層Level5が完成し、設計書§3の手順1-6が全て完了。
+- 新規ユニットテスト14件(0件/1件以上の通知分岐含む)追加、既存テスト含め該当スコープ96件全PASS。全件テスト実行(1614 passed)で1件の既存FAIL(`test_recalculate_status.py::test_status_resets_after_completion`)を検出したが、`git stash`で本cmd変更を退避しても同一失敗が再現することを実証し、本cmdと無関係のpre-existing environment依存(DBに残存する"running"行への依存)と確定。
+- 詳細・テスト証跡 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3820_warn_monitor.md`
+
 ## §35 GS D3出力パリティ再検証 (cmd_3794, 2026-07-09)
 
 - **PI-009 GS-vs本番エンジン突合はD1価格同期の影響を受けない**: cmd_3755(T1)の5/7 PASS結果と、D1同期済みprices再検証後の結果は完全一致(5/7 PASS、変化なし)。2 FAIL(DM-safe/DM-safe-2、共に2009-05・gate_state=band)は価格陳腐化ではなく別要因と確定。
