@@ -99,7 +99,8 @@
 | cmd_3805 | Stage 2-A: 多期間加重乖離の根因偵察 | **CLEAR — GSにバグなし。真因=ledger凍結(cmd_3711)とband適用(cmd_3771)の順序逆転** |
 | cmd_3806 | Stage 2根本対応: band適用後configでledger再backfill+部分再計算+12体再突合(案A) | **CLEAR(01:55) — 12体中8体が完全一致(diff≈5e-11)。再backfill前は1体のみ** |
 | cmd_3811 | Stage 2残: 残存乖離4体15ヶ月の根因偵察(3点突合) | **CLEAR(02:16) — 根因=ledger historical_backfillがdecision_ticker_weights未保存→band 50/50構成が等ウェイト展開で化ける。常勝固有ではない。例外: 玄武-常勝2023-12のみGS側月次系列の別要因** |
-| cmd_3812 | Stage 2最終修正: ledger weights保存・復元実装+回帰テスト+weights付き再backfill+12体再突合 | 委任済み(depends_on cmd_3811) |
+| cmd_3812 | Stage 2最終修正: ledger weights保存・復元実装+回帰テスト+weights付き再backfill+12体再突合 | **CLEAR(06:22) — deploy済み(dep-d980eif)+weights付き再backfill(290行Σ=1.0000)+precompute全量(1548行)で`Matched weight` WARN=0件達成。12体突合は2/12(本番側が正しくなりGS旧暦gridDBとズレが顕在化=見かけの悪化)** |
+| cmd_3815 | 修正後エンジンで4family全量再GS+12体最終突合+2014-10-31 SIGNAL CHANGE由来特定 | 委任済み(depends_on cmd_3812) |
 | cmd_3813 | 玄武-常勝2023-12のGS側乖離偵察(殿指示02:22で先行並列化) | **CLEAR(02:48) — 根因=DTB3暦解像度差(PI-028実害初確認)。GSがDTB3を株式取引日へ強制リインデックス→band境界でmargin -2.37e-4変位しフリップ。単月・非系統的** |
 | cmd_3814 | DTB3ネイティブ暦rolling化+境界回帰テスト+DM7P再GS+全gridDB境界近傍影響集計 | **CLEAR(03:24) — 玄武-常勝2023-12含め171/171完全一致、玄武3体デグレなし。影響定量化: 実フリップ6,684パターン(全体3.5%、青龍系が82%)=既存gridDB(20260709)のこのパターン群は旧暦計算値。現行本番はband不発稼働のため実害なし、GS選出時のみ顕在化** |
 
