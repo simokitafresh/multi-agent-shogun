@@ -5,6 +5,43 @@ setup() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 }
 
+@test "T-IWD-000: input guard ignores non-prompt log lines" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/state"
+
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+export INBOX_WATCHER_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/inbox_watcher.sh" kirimaru dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+
+tmux() {
+    case "$1" in
+        capture-pane)
+            cat <<'"'"'PANE'"'"'
+Codex CLI (mock)
+? for shortcuts                100% context left
+› [mock_cli:kirimaru] STATE IDLE
+[mock_cli:kirimaru] READY
+PANE
+            ;;
+        *) return 1 ;;
+    esac
+}
+
+if pane_input_line_has_text dummy-pane; then
+    echo "INPUT_GUARD_FALSE_POSITIVE=yes"
+    exit 1
+fi
+echo "INPUT_GUARD_IGNORES_LOG_LINE=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INPUT_GUARD_IGNORES_LOG_LINE=yes"* ]]
+}
+
 @test "T-IWD-001: same-agent second inbox_watcher exits on singleton lock" {
     run bash -c '
 set -euo pipefail

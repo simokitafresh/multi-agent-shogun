@@ -520,7 +520,7 @@ pane_input_line_has_text() {
     local pane_tail last_line stripped
 
     pane_tail=$(tmux capture-pane -t "$pane_target" -p -J -S -3 2>/dev/null || true)
-    last_line=$(printf '%s\n' "$pane_tail" | grep -v '^[[:space:]]*$' | tail -1 || true)
+    last_line=$(printf '%s\n' "$pane_tail" | grep -E '^[[:space:]]*[›❯]' | tail -1 || true)
     [ -n "$last_line" ] || return 1
 
     stripped="$last_line"
@@ -531,6 +531,7 @@ pane_input_line_has_text() {
         -e 's/[[:space:]]*\\?[[:space:]]+for[[:space:]]+shortcuts.*$//' \
         -e 's/[[:space:]]+$//')"
 
+    [[ "$stripped" =~ ^\[[^]]+\][[:space:]] ]] && return 1
     [ -n "$stripped" ]
 }
 
