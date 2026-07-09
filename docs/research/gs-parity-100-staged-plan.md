@@ -98,7 +98,9 @@
 | cmd_3804 | Stage 1: 玄武-鉄壁試験登録E2E | 委任済み |
 | cmd_3805 | Stage 2-A: 多期間加重乖離の根因偵察 | **CLEAR — GSにバグなし。真因=ledger凍結(cmd_3711)とband適用(cmd_3771)の順序逆転** |
 | cmd_3806 | Stage 2根本対応: band適用後configでledger再backfill+部分再計算+12体再突合(案A) | **CLEAR(01:55) — 12体中8体が完全一致(diff≈5e-11)。再backfill前は1体のみ** |
-| cmd_3811 | Stage 2残: 残存乖離4体15ヶ月の根因偵察(3点突合) | 委任済み |
+| cmd_3811 | Stage 2残: 残存乖離4体15ヶ月の根因偵察(3点突合) | **CLEAR(02:16) — 根因=ledger historical_backfillがdecision_ticker_weights未保存→band 50/50構成が等ウェイト展開で化ける。常勝固有ではない。例外: 玄武-常勝2023-12のみGS側月次系列の別要因** |
+| cmd_3812 | Stage 2最終修正: ledger weights保存・復元実装+回帰テスト+weights付き再backfill+12体再突合 | 委任済み(depends_on cmd_3811) |
+| (残) | 玄武-常勝2023-12のGS側月次系列差の追跡 | cmd_3812結果を見て起票 |
 
 - cmd_3806の帰結: ledger凍結説で説明できた乖離は全て解消(青龍3/朱雀2/白虎1/玄武1が新規に完全一致)。**残存4体(朱雀-常勝5件/玄武-常勝1件/白虎-常勝3件/白虎-鉄壁6件=計15ヶ月)は不一致月がcmd_3803と完全同一=別の未特定要因**。4体中3体が常勝モードに集中。cmd_3811で3点突合(本番DB/PipelineEngine直接/GS)により特定する
 
