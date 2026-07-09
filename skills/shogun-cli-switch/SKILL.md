@@ -10,6 +10,9 @@ description: |
   DO NOT TRIGGER: 同一CLI内の /model 操作（Claude系内でOpus↔Sonnet等）、レイアウト全崩壊（→/reset-layout）
 ---
 
+<!-- script_refs_checked_at: 2026-07-09T14:56:35+09:00 -->
+<!-- 検分: ninja_monitor.sh edc86c525(reflux promotion候補除外の教訓ID正規表現をLS限定からLS/LK/LG/L全prefix対応へ拡張)+2734ed518(check_karo_completion_notify_gap追加=軍師LGTM後に家老がbulletin/将軍inboxへ通知しない場合を検知する新規チェック)。いずれもreflux/completion通知検知系の内部追加で、idle判定(check_idle)、respawn-pane -k実行手順、cli_launch_cmd()/cli_lookup.sh経由の起動契約、CLI/version切替契約には無関係 -->
+
 <!-- script_refs_checked_at: 2026-07-08T18:15:00+09:00 -->
 <!-- 検分: ninja_monitor.sh 82291e12a(reflux deploy rollback修正)+ed73c6e60(fix_known reflux insight優先ディスパッチ)+4c07cb037(修行doc参照リンク)。いずれもreflux/修行系の内部変更。idle判定、respawn-pane -k、cli_launch_cmd()/cli_lookup.sh経由の起動契約は不変 -->
 <!-- script_refs_checked_at: 2026-07-08T10:26:09+09:00 -->

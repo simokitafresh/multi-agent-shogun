@@ -96,3 +96,6 @@ Script refs verified: 2026-07-07T18:19:00+09:00 (shogun復帰時WARN解消). `de
 
 <!-- script_refs_checked_at: 2026-07-08T22:35:00+09:00 -->
 Script refs verified: 2026-07-08 将軍検分. 前回checked_at以降の deploy_task.sh 差分は f5f7600d6(注入cache化)+0c73c7d1c(完了timing/通知)+e191bcf88(EXIT trap fallback報告メタデータ修復)=いずれも内部処理で、配備呼出し契約(引数・重複ガード・karo_direct経路)は不変。
+
+<!-- script_refs_checked_at: 2026-07-09T14:56:35+09:00 -->
+Script refs verified: 2026-07-09 cmd_karo_hotfix_skill_refs_update_202607091452_saizo. `deploy_task.sh` 前回checked_at以降の変更(bddf2a457/0cb0954e3/14b74c865)をgit showで確認。bddf2a457はproject=dm-signal かつ PF削除/復元/rollback関連purposeの時のみ発火する`inject_dm_signal_pf_operation_guardrails`追加(Level5知識注入の対象追加。scout/`--yaml`いずれの経路でも発火し得るが引数・通知契約には無関係)。0cb0954e3はgate_report_format_learning.yamlのJSON形式prefill_active判定grepバグ修正(内部AUTO-PREFILL発火条件の修正)。14b74c865は`--direct` training(cmd_training_*)専用のtemplate内容検証追加で、recon-dualが使う1人目`<cmd_id> <ninja1> scout`・2人目`--yaml <file> <ninja2>`経路には未到達。1人目正規配備と2人目`--yaml`配備の引数契約、safe_inbox_write通知、report template生成は変更なし。recon-dual手順の書き換えは不要。

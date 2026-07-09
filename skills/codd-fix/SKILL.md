@@ -9,6 +9,9 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
+<!-- script_refs_checked_at: 2026-07-09T14:56:35+09:00 -->
+<!-- 検分: cmd_complete_gate.sh b5b751536(reflux/hotfix高速回転でtask YAML上書き時のduration_secフォールバックにper-cmd不変マーカー追加=計測内部強化)+218aa852a(GATE CLEAR時cmd_quality_log呼出しをBLOCK側と同じ同期実行へ統一=品質記録漏れ防止の内部処理変更)。`bash scripts/cmd_complete_gate.sh <cmd_id>`の呼び出し契約・GATE CLEAR/BLOCK出口・codd-fix本文手順は不変 -->
+
 <!-- script_refs_checked_at: 2026-07-08T18:15:00+09:00 -->
 <!-- 検分: cmd_complete_gate.sh d387255f0(gate metrics benchmarks分離=計測内部変更)+bc8c87bc5(report gateの非重複post-commit dirty hunk許容=FAIL条件緩和)。`bash scripts/cmd_complete_gate.sh <cmd_id>`の呼び出し契約・GATE CLEAR/BLOCK出口・codd-fix本文手順は不変 -->
 <!-- script_refs_checked_at: 2026-07-08T10:26:09+09:00 -->
