@@ -567,6 +567,16 @@ PROJ
     [[ "$output" != *"context/infrastructure.md source commits"* ]]
 }
 
+@test "infra root fallback ignores project research documents" {
+    _create_context "context/infrastructure.md" "$STALE_DATE"
+    _create_source_commit "docs/research/project-design.md" "docs: project design changed"
+    _create_shogun_to_karo "cmd_937" "infra"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_937
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"context/infrastructure.md source commits"* ]]
+}
+
 @test "infra scoped contexts do not share root fallback counts" {
     _create_context "context/codd.md" "$STALE_DATE"
     _create_context "context/obsidian-link-principles.md" "$STALE_DATE"

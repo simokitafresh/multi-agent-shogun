@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-10 cmd_karo_hotfix_three_layer_preaction_enforcement_202607101452 -->
+<!-- last_updated: 2026-07-11 cmd_karo_hotfix_ga219_context_freshness_202607110107 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -9,6 +9,10 @@
 > deploy_task --yaml高速化 + recon guard: `docs/research/deploy_task_yaml_speed_recon_guard_spec_20260702.md`
 
 ## コンテキスト管理
+
+pre-commit Ruff ratchet: `scripts/run_precommit_checks.sh` は変更PythonファイルのRuff診断をHEAD baselineと比較し、新規診断だけをBLOCKする。既存負債は増加させず段階解消する。→ `tests/test_run_precommit_ruff_ratchet.sh`（cmd_karo_hotfix_precommit_ruff_ratchet_202607110002）
+
+context freshnessのinfra root fallbackはinfra実装だけをsource扱いし、project固有の`docs/research/`は各project contextのpathspecへ委譲する。これによりDM-Signal研究文書だけのcommitで`infrastructure.md`を誤ALERTにしない。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`（cmd_karo_hotfix_ga219_context_freshness_202607110107）
 
 変更系 PreToolUse は `scripts/hooks/three_layer_preflight.sh` の現prompt・agent/pane単位 atomic 証跡を必須とする。`prompt_state_inject.sh` が UserPromptSubmit ごとに記憶DB・semantic・Obsidian因果索引を検索し、`.claude/hooks/pre-write-edit-combined.sh` と `.claude/hooks/pre-bash-combined.sh` が証跡なし/失敗/別promptを exit 2 でBLOCKする。Read・read-only検索・preflight自身は許可する。→ `tests/unit/test_three_layer_preflight.bats`（cmd_karo_hotfix_three_layer_preaction_enforcement_202607101452）
 

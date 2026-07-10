@@ -391,6 +391,11 @@ AUTO_COMMIT_SUBJECT_RE = re.compile(
 ROOT_FALLBACK_IGNORED_PREFIXES = (
     "archive/",
     "context/",
+    # Project research documents are indexed by their project-specific
+    # context pathspecs (for example dm-signal-research.md).  Treating them
+    # as infrastructure sources makes unrelated project design work stale
+    # the infra root context as well.
+    "docs/research/",
     "docs/semantic-index/",
     "logs/",
     "projects/",
