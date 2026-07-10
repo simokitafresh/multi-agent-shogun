@@ -485,6 +485,7 @@ inotifywait検知→`inboxN`短ナッジ送信。symlink注意。fingerprint ded
 - L018: Edit tool flock未対応→inbox既読化はinbox_mark_read.sh必須（cmd_189）
 - L029: nudge嵐=二重経路合流（cmd_255）
 - L043: inbox_write.sh Python展開にインジェクション脆弱性（cmd_317）
+- cmd_3828: `pre-write-edit-combined.sh` が `queue/inbox` の論理パスとsymlink解決先へのWrite/Edit/MultiEditをdeny。flock正規経路(`inbox_write.sh`/`inbox_mark_read.sh`/`inbox_archive.sh`)を強制し、inbox lost updateを構造封鎖。詳細→ `docs/research/cmd_3828_inbox_lost_update_guard.md`
 → `docs/research/infra-details.md` §4
 
 ## ntfy.sh

@@ -240,6 +240,33 @@ file_path="$(json_string_after "$payload" "file_path")"
 [[ "$tool_name" != "Write" && "$tool_name" != "Edit" && "$tool_name" != "MultiEdit" ]] && exit 0
 [[ -z "$file_path" ]] && exit 0
 mark_numeric_write_for_memory_check
+
+# === Guard inbox-direct-write: queue/inboxはflock経由の正規スクリプトだけを許可 ===
+# inbox_mark_read/edit等をWrite/Editで直接行うと、別プロセスのflock更新を
+# lost updateで上書きし、通知自体が消失する。queue/inboxはsymlink運用のため、
+# 入力された論理パスとrealpath解決後の実体パスの両方を検査する。
+inbox_direct_write_guard() {
+    local candidate resolved inbox_root inbox_real
+    candidate="$file_path"
+    [[ "$candidate" == /* ]] || candidate="$SCRIPT_DIR/$candidate"
+    resolved="$(realpath -m -- "$candidate" 2>/dev/null || printf '%s' "$candidate")"
+    inbox_root="${GUARD_INBOX_ROOT_OVERRIDE:-$SCRIPT_DIR/queue/inbox}"
+    inbox_real="$(realpath -m -- "$inbox_root" 2>/dev/null || printf '%s' "$inbox_root")"
+
+    case "$candidate" in
+        */queue/inbox/*) return 0 ;;
+    esac
+    case "$resolved" in
+        "$inbox_real"/*) return 0 ;;
+    esac
+    return 1
+}
+
+if inbox_direct_write_guard; then
+    emit_deny "BLOCKED: queue/inbox配下への直接Write/Edit禁止。WHY: flockなしの更新はinboxメッセージをlost updateで消失させる。FIX: bash scripts/inbox_write.sh <agent> <content>、既読化はbash scripts/inbox_mark_read.sh <agent> [msg_id]、アーカイブはbash scripts/inbox_archive.sh <agent>を使用せよ。queue/inboxのsymlink実体への直接書込みも禁止。"
+    exit 2
+fi
+
 # §3.2速度改善: 明らかに無関係な一時/デバイスパスだけGuardスキップ。
 # CI/Batsは/tmp配下にqueue/config/scripts/docsを作ってGuard自体を検証するため、/tmp全面skipは防御層を無効化する。
 case "$file_path" in

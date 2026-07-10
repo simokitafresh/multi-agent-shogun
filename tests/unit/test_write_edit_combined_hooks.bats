@@ -91,6 +91,38 @@ _mark_read_for_current_agent() {
     [ -z "$output" ]
 }
 
+@test "inbox direct Write is denied with flock-safe alternatives" {
+    local inbox_file="$TMP_DIR/queue/inbox/hayate.yaml"
+    mkdir -p "$(dirname "$inbox_file")"
+    printf 'messages: []\n' > "$inbox_file"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$inbox_file"'"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'"permissionDecision":"deny"'* ]]
+    [[ "$output" == *'inbox_write.sh'* ]]
+    [[ "$output" == *'inbox_mark_read.sh'* ]]
+}
+
+@test "inbox direct Edit is denied through queue/inbox symlink" {
+    local real_inbox="$TMP_DIR/real_inbox"
+    mkdir -p "$real_inbox" "$TMP_DIR/queue"
+    ln -s "$real_inbox" "$TMP_DIR/queue/inbox"
+    export GUARD_INBOX_ROOT_OVERRIDE="$TMP_DIR/queue/inbox"
+    _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_DIR"'/queue/inbox/karo.yaml"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'"permissionDecision":"deny"'* ]]
+    [[ "$output" == *'symlink実体'* ]]
+}
+
+@test "inbox symlink real target is denied even when addressed by resolved path" {
+    local real_inbox="$TMP_DIR/real_inbox"
+    mkdir -p "$real_inbox" "$TMP_DIR/queue"
+    ln -s "$real_inbox" "$TMP_DIR/queue/inbox"
+    export GUARD_INBOX_ROOT_OVERRIDE="$TMP_DIR/queue/inbox"
+    _run_pre '{"tool_name":"Write","tool_input":{"file_path":"'"$real_inbox"'/gunshi.yaml"}}'
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'"permissionDecision":"deny"'* ]]
+}
+
 @test "pre combined hook shows shogun_to_karo edit checklist" {
     _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'"}}'
     [ "$status" -eq 0 ]
