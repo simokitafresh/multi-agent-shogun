@@ -103,13 +103,20 @@ note.comメンバーシップの料金プランとDB viewer_tiersの対応。詳
 
 ## §33 L0-L3 GS再キャリブレーション計画 (2026-07-06)
 
-### cmd_3824 非決定性調査 (2026-07-10)
+### cmd_3824 非決定性調査 (2026-07-10, tobisaru継続偵察で機構確定)
 
 `秘奥義-変わり身-激攻` 2014-10-31で、再計算5回に対応するsignal変更5件が
-`A→B→A→B→A→B` と反転した。各重み合計は1.0でband制約内、対象PF/dateの
-signal_decision_ledgerは0件。FoF月初PipelineEngineのコンポーネント入力再読込から
-判定までが根因層で、margin/DTB3/価格hashの揺れ源は未確定。
-詳細→ `docs/research/cmd_3824_nondeterminism.md`
+`A→B→A→B→A→B` と反転した根因は`AbsoluteMomentumBlock`の`margin`(=`abs_mom-ref_mom`)が
+`threshold_band=0.005`境界をまたぐ判定drift(`absolute_momentum.py:139-156`)と、
+`band`状態を`safe_haven 0.5+選択資産0.5分割`へ変換する`SafeHavenSwitchBlock`
+(`safe_haven_switch.py:40-52`)の組み合わせで完全一致確定。cmd_3817残75 mismatchの
+`67/75`(89.3%)が同一機構(pipelineライブ再計算はpass/fail確定、ledger/signalは過去の
+band期の値のままstale)で説明可能、うち65件はcmd_3816の`layer=NEW_IN_3812_PERSISTS_AFTER_3814`
+(67件)とほぼ一致(97%)。残8件は別機構(旧式1/3均等ledger・safe haven銘柄差異)の疑い。
+marginが実行間で動く一次トリガーはRender backend deployの連続着地(5回のrecalc実行の
+全ての間隙+id=202自体がdeployによる中断)と相関するが、価格データ改定diffまでは未追跡。
+standard PFの`signals.momentum_data`はintermediate_results(margin等)を永続化しない
+構造的欠落を確認した。詳細→ `docs/research/cmd_3824_nondeterminism.md`
 
 価格データソース多重化の本番適用により、GS入力はyfinance adjusted closeからEODHD生値+自前調整へ移行済み。既存本番PFのpipeline_configは旧入力価格で選出されたチャンピオンのため、L0→L1→L2→L3の依存順で全レイヤーを再GSし、新チャンピオン選出・本番config更新・パリティ検証が必要。
 
