@@ -214,6 +214,7 @@ def load_projects():
 ACTIVE_PROJECT_IDS, EXPLICIT_CONTEXT_MAP = load_projects()
 SORTED_PROJECT_IDS = sorted(ACTIVE_PROJECT_IDS, key=len, reverse=True)
 LAST_UPDATED_RE = re.compile(r"<!--\s*last_updated:\s*(\d{4}-\d{2}-\d{2})\b")
+SOURCE_COMMIT_RE = re.compile(r"\bsource_commit:([0-9a-f]{7,40})\b")
 CHRONICLE_MONTH_RE = re.compile(r"^##\s+(\d{4})-(\d{2})\s*$")
 CHRONICLE_ROW_RE = re.compile(
     r"^\|\s*(cmd_[^| ]+)\s*\|[^|]*\|\s*([^|]+?)\s*\|\s*(\d{2}-\d{2})\s*\|"
@@ -316,6 +317,22 @@ def last_updated_date(abs_path: str) -> date | None:
     except Exception:
         return None
 
+    return None
+
+
+def source_commit_marker(abs_path: str) -> str | None:
+    """Return the source-repository commit recorded beside last_updated."""
+    try:
+        with open(abs_path, encoding="utf-8") as f:
+            for _ in range(5):
+                line = f.readline()
+                if not line:
+                    break
+                match = SOURCE_COMMIT_RE.search(line)
+                if match:
+                    return match.group(1)
+    except Exception:
+        return None
     return None
 
 
@@ -555,21 +572,27 @@ def _root_fallback_commit_count_since(updated_at: date) -> int:
     return count
 
 
-def source_commit_summary_since(project_id: str, rel_path: str, updated_at: date) -> tuple[int, list[str]]:
+def source_commit_summary_since(
+    project_id: str, rel_path: str, updated_at: date, source_commit: str | None = None
+) -> tuple[int, list[str]]:
     repo_path, pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
     if not repo_path or not os.path.isdir(repo_path):
         return 0, []
     if root_fallback:
         return _root_fallback_commit_count_since(updated_at), []
 
+    revision = f"{source_commit}..HEAD" if source_commit else None
     cmd = [
         "git",
         "-C",
         repo_path,
         "log",
-        f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00",
         "--pretty=format:%h%x00%s",
     ]
+    if revision:
+        cmd.append(revision)
+    else:
+        cmd.append(f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00")
     if pathspecs:
         cmd.extend(["--", *pathspecs])
 
@@ -607,16 +630,18 @@ def source_commit_summary_since(project_id: str, rel_path: str, updated_at: date
 
 
 def _compute_one_commit_count(
-    args: tuple[str, str, str, date],
+    args: tuple[str, str, str, date, str | None],
 ) -> tuple[tuple[str, str], int, list[str]]:
     """ThreadPoolExecutor worker: source_commit_count_since を呼んで結果を返す"""
-    project_id, rel_path, _abs_path, updated_at = args
-    count, details = source_commit_summary_since(project_id, rel_path, updated_at)
+    project_id, rel_path, _abs_path, updated_at, source_commit = args
+    count, details = source_commit_summary_since(
+        project_id, rel_path, updated_at, source_commit
+    )
     return (project_id, rel_path), count, details
 
 
 def batch_source_commit_summaries(
-    infos: list[tuple[str, str, str, date]],
+    infos: list[tuple[str, str, str, date, str | None]],
 ) -> dict[tuple[str, str], tuple[int, list[str]]]:
     """(project_id, rel_path) → commit_count を並列計算（ThreadPoolExecutor）"""
     if not infos:
@@ -624,14 +649,14 @@ def batch_source_commit_summaries(
     summaries: dict[tuple[str, str], tuple[int, list[str]]] = {}
 
     root_fallback_groups: dict[date, list[tuple[str, str]]] = {}
-    direct_infos: list[tuple[str, str, str, date]] = []
+    direct_infos: list[tuple[str, str, str, date, str | None]] = []
 
-    for project_id, rel_path, abs_path, updated_at in infos:
+    for project_id, rel_path, abs_path, updated_at, source_commit in infos:
         _repo_path, _pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
         if root_fallback:
             root_fallback_groups.setdefault(updated_at, []).append((project_id, rel_path))
         else:
-            direct_infos.append((project_id, rel_path, abs_path, updated_at))
+            direct_infos.append((project_id, rel_path, abs_path, updated_at, source_commit))
 
     with ThreadPoolExecutor(max_workers=16) as executor:
         root_futures = {
@@ -955,10 +980,10 @@ if mode == "--dashboard-warnings":
         if updated_at is None:
             warnings.append(build_warning(rel_path, None))
             continue
-        files_for_git.append((project_id, rel_path, abs_path, updated_at))
+        files_for_git.append((project_id, rel_path, abs_path, updated_at, source_commit_marker(abs_path)))
     commit_summaries = batch_source_commit_summaries(files_for_git)
     min_source_commits = int(os.environ.get("CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS", "1"))
-    for project_id, rel_path, abs_path, updated_at in files_for_git:
+    for project_id, rel_path, abs_path, updated_at, _source_commit in files_for_git:
         cc, details = commit_summaries.get((project_id, rel_path), (0, []))
         if cc < 0:
             warnings.append(build_source_check_warning(rel_path, updated_at))
@@ -977,9 +1002,9 @@ elif mode == "--cmd-warnings":
             if updated_at is None:
                 warnings.append(build_warning(rel_path, None))
                 continue
-            files_for_git.append((current_project, rel_path, abs_path, updated_at))
+            files_for_git.append((current_project, rel_path, abs_path, updated_at, source_commit_marker(abs_path)))
         commit_summaries = batch_source_commit_summaries(files_for_git)
-        for current_project, rel_path, abs_path, updated_at in files_for_git:
+        for current_project, rel_path, abs_path, updated_at, _source_commit in files_for_git:
             cc, details = commit_summaries.get((current_project, rel_path), (0, []))
             if cc < 0:
                 warnings.append(build_source_check_warning(rel_path, updated_at))

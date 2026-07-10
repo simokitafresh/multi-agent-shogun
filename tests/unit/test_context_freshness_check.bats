@@ -453,6 +453,37 @@ EOF
     [[ "$output" != *"infrastructure.md"* ]]
 }
 
+@test "source_commit marker prevents same-day commits before context refresh from re-alerting" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$source_repo/backend/app" "$TEST_TMPDIR/projects"
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
+
+    printf 'v1\n' > "$source_repo/backend/app/core.py"
+    git -C "$source_repo" add backend/app/core.py
+    git -C "$source_repo" commit -q -m "feature: first same-day source change"
+    local first_sha
+    first_sha="$(git -C "$source_repo" rev-parse --short HEAD)"
+
+    _create_context "context/dm-signal-core.md" "$TODAY"
+    sed -i "1s/ -->/ source_commit:${first_sha} -->/" "$TEST_TMPDIR/context/dm-signal-core.md"
+    _create_shogun_to_karo "cmd_938" "dm-signal"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_938
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"context/dm-signal-core.md source commits"* ]]
+
+    printf 'v2\n' >> "$source_repo/backend/app/core.py"
+    git -C "$source_repo" add backend/app/core.py
+    git -C "$source_repo" commit -q -m "feature: later same-day source change"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_938
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/dm-signal-core.md source commits 1件"* ]]
+}
+
 @test "duplicate context_file mapping keeps dm-signal.md attached to dm-signal project" {
     local source_repo="$TEST_TMPDIR/source/dm-signal"
     mkdir -p "$source_repo/docs/rule" "$TEST_TMPDIR/projects"
