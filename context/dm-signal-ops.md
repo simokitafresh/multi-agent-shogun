@@ -1132,4 +1132,5 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 
 - 公式id=206 verified fixtureの103PF全量で、legacy/candidate各1545行がmissing/extra/mismatch=0。固定3PF warmup後のproduction相当L5境界は13.213641秒（render 9.053741 + encode 0.718013 + atomic bulk UPSERT 3.436778 + commit 0.005109）で30秒gateをPASS。SELECT/loaderは全0。
 - 103PF初回差分25件はstandard PFの`monthly_trade` oldest boundaryへ`component_portfolios: []`を新設したschema-presence差のみ。元key欠落は欠落維持、FoFで元key存在時のみ`[]`へ更新する最小修正後、3PF 45/45→103PF 1545/1545の順で完全一致を確認。
-- 本番`fullrecalculate`は未実行。DB lock・push/deploy確認後のPhase 4のみ残る。詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3835_zero_recompute_exec.md`。因果リンク: [[cmd_3825でP2到達+bulk零化完了]] -> [[monthly_trade_schema-presence差25件]] -> [[cmd_3835_Phase3_103PF完全一致]]。
+- Phase 3時点では本番`fullrecalculate`未実行でDB lock待ちだった。詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3835_zero_recompute_exec.md`。因果リンク: [[cmd_3825でP2到達+bulk零化完了]] -> [[monthly_trade_schema-presence差25件]] -> [[cmd_3835_Phase3_103PF完全一致]]。
+- **Phase 4本番結果**: DB lock解放後、commit `d942982b`へ`fullrecalculate`を厳密1回実行。status id=212はcompleted/end_timeあり、PF=102・rows=1533・failed=0だが、本番L5は66.64秒で目標30秒をFAIL。実行前`precomputed_raw=0`、実行後1533のため凍結比較はbefore=0/after=1533/extra=1533（common mismatch=0）。停止規則に従い再実行なし。詳細は同実行ログPhase 4。
