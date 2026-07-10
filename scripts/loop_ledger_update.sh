@@ -222,6 +222,7 @@ def loop_from_insights(entries, predicate):
     stock = 0
     consumption_ts_all = []
     pending_ts_all = []
+    invalid_resolution_count = 0
     for entry in entries:
         if not predicate(entry):
             continue
@@ -233,6 +234,11 @@ def loop_from_insights(entries, predicate):
             stock += 1
             pending_ts_all.append(ts)
         elif status in {"resolved", "done"}:
+            # A status flip alone is not consumption.  Require both the reason
+            # and the concrete artifact/cmd/path that proves the action.
+            if not str(entry.get("resolved_reason") or "").strip() or not str(entry.get("action_artifact") or "").strip():
+                invalid_resolution_count += 1
+                continue
             consumption_ts = parse_ts(entry.get("resolved_at")) or ts
             consumption_ts_all.append(consumption_ts)
             if in_window(consumption_ts):
@@ -246,6 +252,7 @@ def loop_from_insights(entries, predicate):
         "last_consumption_ts": iso(max_ts(consumption_ts_all)),
         "oldest_pending_ts": iso(oldest_pending),
         "oldest_pending_age_hours": age_hours_since(oldest_pending),
+        "invalid_resolution_count": invalid_resolution_count,
     }
 
 
@@ -447,7 +454,7 @@ def load_obsidian_loop(path):
 obsidian_loop = load_obsidian_loop(db_path)
 
 
-# --- memory recall loop: search_logs production + tagged shogun answer consumption ---
+# --- memory candidate loop + recall usage diagnostics ---
 MEMORY_CITATION_PATTERN = re.compile(
     r"(?:\[(?:memory|mem|記憶|三層記憶)[^\]]*\]|"
     r"【(?:memory|mem|記憶|三層記憶)[^】]*】|"
@@ -466,39 +473,54 @@ def load_memory_loop(path):
         return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": f"db connect failed: {exc}"}
     try:
         tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-        if "search_logs" not in tables:
-            return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "search_logs table missing"}
         if "events" not in tables:
-            return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "events table missing"}
+            return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "events table missing", "search_count": 0, "citation_count": 0}
         event_cols = {row[1] for row in conn.execute("PRAGMA table_info(events)")}
-        if not {"ts", "agent", "summary", "detail"}.issubset(event_cols):
-            return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "events citation columns missing"}
+        if "state" not in event_cols:
+            return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "events.state missing", "search_count": 0, "citation_count": 0}
 
         cutoff_iso = cutoff.isoformat().replace("+00:00", "")
         now_iso = now.isoformat().replace("+00:00", "")
-        produced = conn.execute(
-            "SELECT COUNT(*) FROM search_logs WHERE ts >= ? AND ts <= ?",
-            (cutoff_iso, now_iso),
+        candidate_states = ("contradiction_candidate", "duplicate_candidate", "obsidian_candidate")
+        stock = conn.execute(
+            "SELECT COUNT(*) FROM events WHERE state IN (?,?,?)", candidate_states
         ).fetchone()[0]
 
-        consumed = 0
+        produced = consumed = 0
         consumption_ts_all = []
-        for raw_ts, agent, summary, detail in conn.execute(
-            "SELECT ts, agent, summary, detail FROM events "
-            "WHERE ts >= ? AND ts <= ? "
-            "AND lower(coalesce(agent, '')) = 'shogun'",
-            (cutoff_iso, now_iso),
-        ):
-            body = f"{summary or ''}\n{detail or ''}"
-            if MEMORY_CITATION_PATTERN.search(body):
-                consumed += 1
-                consumption_ts_all.append(parse_ts(raw_ts))
+        if "event_state_transitions" in tables:
+            produced = conn.execute(
+                "SELECT COUNT(*) FROM event_state_transitions WHERE transitioned_at >= ? AND transitioned_at <= ? AND to_state IN (?,?,?)",
+                (cutoff_iso, now_iso, *candidate_states),
+            ).fetchone()[0]
+            rows = conn.execute(
+                "SELECT transitioned_at FROM event_state_transitions WHERE transitioned_at >= ? AND transitioned_at <= ? AND from_state IN (?,?,?) AND to_state NOT IN (?,?,?)",
+                (cutoff_iso, now_iso, *candidate_states, *candidate_states),
+            ).fetchall()
+            consumed = len(rows)
+            consumption_ts_all = [parse_ts(row[0]) for row in rows]
+
+        search_count = 0
+        if "search_logs" in tables:
+            search_count = conn.execute(
+                "SELECT COUNT(*) FROM search_logs WHERE ts >= ? AND ts <= ?", (cutoff_iso, now_iso)
+            ).fetchone()[0]
+        citation_count = 0
+        if {"ts", "agent", "summary", "detail"}.issubset(event_cols):
+            for _, agent, summary, detail in conn.execute(
+                "SELECT ts, agent, summary, detail FROM events WHERE ts >= ? AND ts <= ? AND lower(coalesce(agent, '')) = 'shogun'",
+                (cutoff_iso, now_iso),
+            ):
+                if MEMORY_CITATION_PATTERN.search(f"{summary or ''}\n{detail or ''}"):
+                    citation_count += 1
 
         return {
             "produced": int(produced or 0),
             "consumed": int(consumed or 0),
-            "stock": max(int(produced or 0) - consumed, 0),
+            "stock": int(stock or 0),
             "last_consumption_ts": iso(max_ts(consumption_ts_all)),
+            "search_count": int(search_count or 0),
+            "citation_count": int(citation_count or 0),
         }
     finally:
         conn.close()
@@ -885,11 +907,14 @@ def emit_snapshot(generated_at, window_days, loops, warn_backlog=None):
         if name in ("insight", "semantic"):
             lines.append(f"      oldest_pending_ts: {q(loop.get('oldest_pending_ts'))}")
             lines.append(f"      oldest_pending_age_hours: {float(loop.get('oldest_pending_age_hours', 0.0) or 0.0)}")
+            lines.append(f"      invalid_resolution_count: {int(loop.get('invalid_resolution_count', 0) or 0)}")
         if name == "promotion":
             lines.append(f"      stock_started_at: {q(loop.get('stock_started_at'))}")
             lines.append(f"      age_hours: {float(loop.get('age_hours', 0.0) or 0.0)}")
             lines.append(f"      first_candidate: {q(loop.get('first_candidate'))}")
         if name == "memory":
+            lines.append(f"      search_count: {int(loop.get('search_count', 0) or 0)}")
+            lines.append(f"      citation_count: {int(loop.get('citation_count', 0) or 0)}")
             lines.append(f"      evaluated: {int(loop.get('evaluated', 0) or 0)}")
             lines.append(f"      useful: {int(loop.get('useful', 0) or 0)}")
             lines.append(f"      useful_rate_pct: {float(loop.get('useful_rate_pct', 0.0) or 0.0)}")

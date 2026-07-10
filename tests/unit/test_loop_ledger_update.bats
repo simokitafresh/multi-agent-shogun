@@ -168,6 +168,8 @@ insights:
   priority: "low"
   source: "manual"
   resolved_at: "2026-06-17T00:00:00+09:00"
+  resolved_reason: "implemented"
+  action_artifact: "cmd_implemented"
   status: resolved
 - id: INS-3
   ts: "2026-06-18T00:00:00+09:00"
@@ -181,6 +183,8 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   resolved_at: "2026-05-02T00:00:00+09:00"
+  resolved_reason: "alias exists"
+  action_artifact: "context/semantic-map.md"
   status: resolved
 EOF
 
@@ -250,14 +254,14 @@ EOF
 
     run bash "$SRC_SCRIPT"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"memory: produced=0 consumed=0 stock=0"* ]]
+    [[ "$output" == *"memory: produced=2 consumed=1 stock=1"* ]]
     [[ "$output" == *"effectiveness: evaluated=3 useful=1 useful_rate_pct=33.3 reflux_targets=2"* ]]
     grep -q 'report_count: 1' "$LOOP_LEDGER_OUT"
     grep -q 'sample_query: "unrelated db query"' "$LOOP_LEDGER_OUT"
     grep -q 'sample_reason: "古い別cmdの記録だった"' "$LOOP_LEDGER_OUT"
 }
 
-@test "loop_ledger_update alerts when memory searches continue without shogun citation tags" {
+@test "loop_ledger_update does not treat append-only searches as actionable memory stock" {
     make_obsidian_db
     python3 - "$LOOP_LEDGER_DB" <<'PY'
 import sqlite3
@@ -273,9 +277,27 @@ conn.close()
 PY
 
     run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"memory: produced=2 consumed=1 stock=1"* ]]
+    grep -q 'search_count: 1' "$LOOP_LEDGER_OUT"
+}
+
+@test "loop_ledger_update rejects unproved insight resolution and counts memory candidate states" {
+    cat > "$LOOP_LEDGER_INSIGHTS_FILE" <<'EOF'
+insights:
+- id: INS-BAD
+  ts: "2026-06-18T00:00:00Z"
+  source: manual
+  status: resolved
+  resolved_reason: "claimed fixed"
+EOF
+    make_obsidian_db
+
+    run bash "$SRC_SCRIPT"
     [ "$status" -eq 1 ]
-    [[ "$output" == *"memory: produced=1 consumed=0 stock=1"* ]]
-    [[ "$output" == *"ALERT: memory: 空転(produced=1, consumed=0, window=14d)"* ]]
+    [[ "$output" == *"insight: produced=1 consumed=0 stock=0"* ]]
+    [[ "$output" == *"memory: produced=2 consumed=1 stock=1"* ]]
+    grep -q 'invalid_resolution_count: 1' "$LOOP_LEDGER_OUT"
 }
 
 @test "loop_ledger_update records promotion candidate aging from first detection" {
