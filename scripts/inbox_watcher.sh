@@ -82,6 +82,7 @@ FINGERPRINT_FILE="${STATE_DIR}/inbox_watcher_fingerprint_${AGENT_ID}"
 BACKOFF_SEC="${BACKOFF_SEC:-120}"  # 2 minutes — safety net re-notification for stale unread (was 600)
 STATE_LOCK_FILE="${STATE_DIR}/inbox_watcher_state_${AGENT_ID}.lock"
 SINGLETON_LOCK_FILE="${STATE_DIR}/inbox_watcher_singleton_${AGENT_ID}.lock"
+DEFERRED_NUDGE_FILE="${STATE_DIR}/inbox_watcher_deferred_nudge_${AGENT_ID}"
 FIRST_UNREAD_SEEN="${FIRST_UNREAD_SEEN:-${STATE_DIR}/first_unread_seen_${AGENT_ID}}"
 FORCE_IDLE_AFTER_SEC="${FORCE_IDLE_AFTER_SEC:-60}"
 BUSY_TIMEOUT_SEC="${BUSY_TIMEOUT_SEC:-30}"  # @last_active based timeout (AC1: idle_flag force-creation)
@@ -444,6 +445,29 @@ clear_first_unread_seen() {
     rm -f "$FIRST_UNREAD_SEEN"
 }
 
+record_deferred_nudge() {
+    local fingerprint="${1:-}"
+    local reason="${2:-unknown}"
+    local tmp_file="${DEFERRED_NUDGE_FILE}.$$"
+    {
+        printf 'ts=%s\n' "$EPOCHSECONDS"
+        printf 'fingerprint=%s\n' "$fingerprint"
+        printf 'reason=%s\n' "$reason"
+    } > "$tmp_file"
+    mv -f "$tmp_file" "$DEFERRED_NUDGE_FILE"
+}
+
+clear_deferred_nudge() {
+    rm -f "$DEFERRED_NUDGE_FILE" 2>/dev/null || true
+}
+
+has_deferred_nudge_for_fp() {
+    local fingerprint="${1:-}"
+    [ -s "$DEFERRED_NUDGE_FILE" ] || return 1
+    [ -n "$fingerprint" ] && [ "$fingerprint" != "-" ] || return 0
+    grep -q "^fingerprint=${fingerprint}\$" "$DEFERRED_NUDGE_FILE" 2>/dev/null
+}
+
 maybe_force_idle_flag() {
     local effective_cli="$1"
     [ "$effective_cli" = "claude" ] || return 1
@@ -667,6 +691,7 @@ send_wakeup() {
     local last
     local elapsed
     local effective_cli
+    local allow_nonempty_input_line=0
     effective_cli=$(get_effective_cli_type)
 
     # Codex/non-claude ninja: task_assigned時のみ「前task無効+再読」ナッジを付与してSTALL防止
@@ -719,7 +744,19 @@ send_wakeup() {
     if [[ "$effective_cli" != "claude" ]]; then
         local agent_state
         agent_state=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_state}' 2>/dev/null || echo "unknown")
-        if [ "$agent_state" = "active" ]; then
+        if [[ "$effective_cli" == "codex" ]]; then
+            local codex_busy_rc
+            if check_agent_busy "$PANE_TARGET" "$AGENT_ID"; then
+                codex_busy_rc=0
+            else
+                codex_busy_rc=$?
+            fi
+            if [ "$codex_busy_rc" -eq 1 ]; then
+                allow_nonempty_input_line=1
+                echo "[$(date)] [BUSY-CODEX-QUEUE] Agent $AGENT_ID is actually busy in Codex; sending nudge immediately as queued message" >&2
+            fi
+        fi
+        if [ "$agent_state" = "active" ] && [ "$allow_nonempty_input_line" != "1" ]; then
             local fp_age
             fp_age=$(get_fp_age)
             local busy_max_defer
@@ -734,18 +771,21 @@ send_wakeup() {
             if [ "$busy_rc" -eq 1 ]; then
                 local unread_age
                 unread_age=$(get_first_unread_age)
-                if [ "$fp_age" -lt "$busy_max_defer" ] && [ "$unread_age" -lt "$busy_max_defer" ]; then
+                if [[ "$effective_cli" == "codex" ]]; then
+                    allow_nonempty_input_line=1
+                    echo "[$(date)] [BUSY-CODEX-QUEUE] Agent $AGENT_ID active+busy in Codex; sending nudge immediately as queued message" >&2
+                elif [ "$fp_age" -lt "$busy_max_defer" ] && [ "$unread_age" -lt "$busy_max_defer" ]; then
                     echo "[$(date)] [BUSY] Agent $AGENT_ID is active+busy, deferring nudge (age=${fp_age}s/unread=${unread_age}s < ${busy_max_defer}s)" >&2
                     return 2
-                fi
-                if [ "$unread_age" -lt "$busy_max_defer" ] || ! priority_deadline_reached "$priority" "$unread_age"; then
+                elif [ "$unread_age" -lt "$busy_max_defer" ] || ! priority_deadline_reached "$priority" "$unread_age"; then
                     local priority_deadline
                     priority_deadline=$(priority_deadline_sec "$priority")
                     echo "[$(date)] [BUSY] Agent $AGENT_ID is active+busy, deferring ${priority} nudge (unread=${unread_age}s < deadline=${priority_deadline}s)" >&2
                     return 2
+                else
+                    echo "[$(date)] [PRIORITY-DEADLINE] Agent $AGENT_ID ${priority} unread ${unread_age}s reached deadline, allowing nudge despite busy state" >&2
+                    echo "[$(date)] [BUSY-FORCE] Agent $AGENT_ID active+busy for fp=${fp_age}s unread=${unread_age}s, forcing nudge" >&2
                 fi
-                echo "[$(date)] [PRIORITY-DEADLINE] Agent $AGENT_ID ${priority} unread ${unread_age}s reached deadline, allowing nudge despite busy state" >&2
-                echo "[$(date)] [BUSY-FORCE] Agent $AGENT_ID active+busy for fp=${fp_age}s unread=${unread_age}s, forcing nudge" >&2
             elif [ "$busy_rc" -eq 2 ]; then
                 local unread_age
                 unread_age=$(get_first_unread_age)
@@ -777,6 +817,13 @@ send_wakeup() {
             flock -w 5 201 || { echo "error	STATE_LOCK_TIMEOUT"; exit 1; }
 
             _now="$EPOCHSECONDS"
+
+            if has_deferred_nudge_for_fp "$current_fp"; then
+                printf '%s' "$current_fp" > "$FINGERPRINT_FILE"
+                printf '%s' "$_now" > "$DEBOUNCE_FILE"
+                printf 'send\t[DEFERRED-RETRY] Previous nudge for %s was deferred before delivery; retrying while unread remains\n' "$AGENT_ID" > "$atomic_result_file"
+                exit 0
+            fi
 
             if [ -f "$DEBOUNCE_FILE" ]; then
                 _last=""
@@ -895,10 +942,14 @@ send_wakeup() {
             sleep 0.3
             echo "[$(date)] [COPY-MODE] Exited copy-mode for $AGENT_ID before nudge" >&2
         fi
-        if pane_input_line_has_text "$PANE_TARGET"; then
+        if [ "$allow_nonempty_input_line" != "1" ] && pane_input_line_has_text "$PANE_TARGET"; then
             [ -n "$sent_token" ] && rm -f "$sent_token" 2>/dev/null || true
+            record_deferred_nudge "$current_fp" "input_guard"
+            rm -f "$FINGERPRINT_FILE" "$DEBOUNCE_FILE" 2>/dev/null || true
             echo "[$(date)] [INPUT-GUARD] Deferring nudge for $AGENT_ID: pane input line is not empty" >&2
             exit 2
+        elif [ "$allow_nonempty_input_line" = "1" ]; then
+            echo "[$(date)] [INPUT-GUARD-BYPASS] $AGENT_ID is Codex active+busy; queueing nudge despite non-empty generated UI line" >&2
         fi
         tmux set-buffer -b "nudge_${AGENT_ID}" "$nudge"
         if ! timeout "$SEND_KEYS_TIMEOUT" tmux paste-buffer -t "$PANE_TARGET" -b "nudge_${AGENT_ID}" -d 2>/dev/null; then
@@ -916,6 +967,8 @@ send_wakeup() {
     elif [ "$send_rc" -ne 0 ]; then
         return 1
     fi
+
+    clear_deferred_nudge
 
     # AC1(cmd_3646): busy gatingで保留された場合の「保留開始(first-unread)→実配達完了」レイテンシを記録。
     # first_unread_seenはfingerprint再作成に影響されない一次時刻(L841)なので、複数回deferしても保留開始時刻を維持する。
@@ -1047,6 +1100,7 @@ process_unread() {
             rm -f "$FINGERPRINT_FILE"
             rm -f "${STATE_DIR}/inbox_watcher_sent_fingerprint_${AGENT_ID}"
             rm -f "${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_"*
+            clear_deferred_nudge
             echo "[$(date)] [FP-RESET] No unread, cleared fingerprint for $AGENT_ID" >&2
         fi
         clear_first_unread_seen

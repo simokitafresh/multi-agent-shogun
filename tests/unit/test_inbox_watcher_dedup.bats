@@ -289,6 +289,220 @@ echo "STALE_UNREAD_FORCED_NUDGE=yes"
     [[ "$output" == *"STALE_UNREAD_FORCED_NUDGE=yes"* ]]
 }
 
+@test "T-IWD-005A: input-guard deferred nudge retries same fingerprint instead of debounce-skip" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/state"
+touch "$TMP_ROOT/tmux.log"
+
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+export INBOX_WATCHER_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/inbox_watcher.sh" saizo dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+
+get_effective_cli_type() { echo codex; }
+agent_has_self_watch() { return 1; }
+check_agent_busy() { return 0; }
+sleep() { :; }
+timeout() { shift; "$@"; }
+
+input_has_text=1
+tmux() {
+    case "$1" in
+        capture-pane)
+            if [ "$input_has_text" = "1" ]; then
+                printf "%s\n" "Codex CLI (mock)" "› partial input"
+            else
+                printf "%s\n" "Codex CLI (mock)" "›"
+            fi
+            ;;
+        display-message)
+            case "${*: -1}" in
+                *pane_in_mode*) echo 0 ;;
+                *) echo idle ;;
+            esac
+            ;;
+        set-buffer) echo "SET_BUFFER $*" >> "$TMP_ROOT/tmux.log" ;;
+        paste-buffer) echo "PASTE $*" >> "$TMP_ROOT/tmux.log" ;;
+        send-keys) echo "ENTER $*" >> "$TMP_ROOT/tmux.log" ;;
+        set-option) echo "SET_OPTION $*" >> "$TMP_ROOT/tmux.log" ;;
+        *) ;;
+    esac
+}
+
+fp="msg_input_guard"
+send_wakeup 1 true "$fp" 2>"$TMP_ROOT/first.err" && exit 1
+first_rc=$?
+[ "$first_rc" = "2" ]
+[ -s "$DEFERRED_NUDGE_FILE" ]
+[ ! -f "$DEBOUNCE_FILE" ]
+
+input_has_text=0
+send_wakeup 1 true "$fp" 2>"$TMP_ROOT/second.err"
+
+grep -q "DEFERRED-RETRY" "$TMP_ROOT/second.err"
+sent_count="$(grep -c "^PASTE " "$TMP_ROOT/tmux.log" || true)"
+[ "$sent_count" = "1" ]
+[ ! -f "$DEFERRED_NUDGE_FILE" ]
+echo "DEFERRED_RETRY_SENT=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DEFERRED_RETRY_SENT=yes"* ]]
+}
+
+@test "T-IWD-005B: Codex active busy sends immediately despite nonempty generated UI line" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/state"
+touch "$TMP_ROOT/tmux.log"
+
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+export INBOX_WATCHER_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/inbox_watcher.sh" saizo dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+
+get_effective_cli_type() { echo codex; }
+agent_has_self_watch() { return 1; }
+check_agent_busy() { return 1; }
+cli_profile_get() { echo 30; }
+sleep() { :; }
+timeout() { shift; "$@"; }
+tmux() {
+    case "$1" in
+        capture-pane) printf "%s\n" "Codex CLI (mock)" "› generated suggestion text" ;;
+        display-message)
+            case "${*: -1}" in
+                *pane_in_mode*) echo 0 ;;
+                *) echo active ;;
+            esac
+            ;;
+        set-buffer) echo "SET_BUFFER $*" >> "$TMP_ROOT/tmux.log" ;;
+        paste-buffer) echo "PASTE $*" >> "$TMP_ROOT/tmux.log" ;;
+        send-keys) echo "ENTER $*" >> "$TMP_ROOT/tmux.log" ;;
+        set-option) echo "SET_OPTION $*" >> "$TMP_ROOT/tmux.log" ;;
+        *) ;;
+    esac
+}
+
+send_wakeup 1 true "$(printf msg_codex_busy | sha256sum | cut -d " " -f1)" normal 2>"$TMP_ROOT/stderr.log"
+
+grep -q "BUSY-CODEX-QUEUE" "$TMP_ROOT/stderr.log"
+grep -q "INPUT-GUARD-BYPASS" "$TMP_ROOT/stderr.log"
+sent_count="$(grep -c "^PASTE " "$TMP_ROOT/tmux.log" || true)"
+[ "$sent_count" = "1" ]
+echo "CODEX_BUSY_NONEMPTY_SENT=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CODEX_BUSY_NONEMPTY_SENT=yes"* ]]
+}
+
+@test "T-IWD-005C: non-Codex active busy still defers before deadline" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/state"
+touch "$TMP_ROOT/tmux.log"
+
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+export INBOX_WATCHER_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/inbox_watcher.sh" saizo dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+
+get_effective_cli_type() { echo kimi; }
+agent_has_self_watch() { return 1; }
+check_agent_busy() { return 1; }
+cli_profile_get() { echo 30; }
+sleep() { :; }
+timeout() { shift; "$@"; }
+tmux() {
+    case "$1" in
+        capture-pane) printf "%s\n" "Other CLI (mock)" "› typed input" ;;
+        display-message)
+            case "${*: -1}" in
+                *pane_in_mode*) echo 0 ;;
+                *) echo active ;;
+            esac
+            ;;
+        set-buffer) echo "SET_BUFFER $*" >> "$TMP_ROOT/tmux.log" ;;
+        paste-buffer) echo "PASTE $*" >> "$TMP_ROOT/tmux.log" ;;
+        send-keys) echo "ENTER $*" >> "$TMP_ROOT/tmux.log" ;;
+        set-option) echo "SET_OPTION $*" >> "$TMP_ROOT/tmux.log" ;;
+        *) ;;
+    esac
+}
+
+set +e
+send_wakeup 1 true "$(printf msg_kimi_busy | sha256sum | cut -d " " -f1)" normal 2>"$TMP_ROOT/stderr.log"
+rc=$?
+set -e
+
+[ "$rc" = "2" ]
+grep -q "deferring nudge" "$TMP_ROOT/stderr.log"
+sent_count="$(grep -c "^PASTE " "$TMP_ROOT/tmux.log" || true)"
+[ "$sent_count" = "0" ]
+echo "NON_CODEX_BUSY_DEFERRED=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NON_CODEX_BUSY_DEFERRED=yes"* ]]
+}
+
+@test "T-IWD-005D: Codex actual busy sends even when tmux agent_state is stale idle" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/state"
+touch "$TMP_ROOT/tmux.log"
+
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+export INBOX_WATCHER_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/inbox_watcher.sh" karo dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+
+get_effective_cli_type() { echo codex; }
+agent_has_self_watch() { return 1; }
+check_agent_busy() { return 1; }
+cli_profile_get() { echo 30; }
+sleep() { :; }
+timeout() { shift; "$@"; }
+tmux() {
+    case "$1" in
+        capture-pane) printf "%s\n" "Codex CLI (mock)" "› generated suggestion text" ;;
+        display-message)
+            case "${*: -1}" in
+                *pane_in_mode*) echo 0 ;;
+                *) echo idle ;;
+            esac
+            ;;
+        set-buffer) echo "SET_BUFFER $*" >> "$TMP_ROOT/tmux.log" ;;
+        paste-buffer) echo "PASTE $*" >> "$TMP_ROOT/tmux.log" ;;
+        send-keys) echo "ENTER $*" >> "$TMP_ROOT/tmux.log" ;;
+        set-option) echo "SET_OPTION $*" >> "$TMP_ROOT/tmux.log" ;;
+        *) ;;
+    esac
+}
+
+send_wakeup 1 true "$(printf msg_codex_busy_stale_idle | sha256sum | cut -d " " -f1)" normal 2>"$TMP_ROOT/stderr.log"
+
+grep -q "BUSY-CODEX-QUEUE" "$TMP_ROOT/stderr.log"
+grep -q "INPUT-GUARD-BYPASS" "$TMP_ROOT/stderr.log"
+sent_count="$(grep -c "^PASTE " "$TMP_ROOT/tmux.log" || true)"
+[ "$sent_count" = "1" ]
+echo "CODEX_BUSY_STALE_IDLE_SENT=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CODEX_BUSY_STALE_IDLE_SENT=yes"* ]]
+}
+
 @test "T-IWD-006: same unread fingerprint does not retry before backoff" {
     run bash -c '
 set -euo pipefail
@@ -418,7 +632,7 @@ export INBOX_WATCHER_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/inbox_watcher.sh" saizo dummy-pane
 unset INBOX_WATCHER_LIB_ONLY
 
-get_effective_cli_type() { echo codex; }
+get_effective_cli_type() { echo kimi; }
 agent_has_self_watch() { return 1; }
 check_agent_busy() { return 1; }
 cli_profile_get() { echo 30; }
