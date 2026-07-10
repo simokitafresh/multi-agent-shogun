@@ -227,6 +227,7 @@ lessons:
     $(</dev/stdin)はWSL2で/dev/stdin不在時crash→全hookでcat 2>/dev/null使用(cmd_3207)。関数追加時はテストのmock/export -fリスト確認必須(cmd_3207→CI RED)
     model_detect.sh tail -1バグ(LS070吸収2026-06-20): ログ内他CLIバナー誤検出→head -1修正。試行錯誤=確認不足のバグ(殿指摘)
     symlink設計意図(LS066吸収2026-06-28): queue/inbox symlink先=~/.claude/projects/{path}/inbox。設計意図=CLI再起動永続+パス自動解決。実体ディレクトリ化→inotify死亡+watcher停止。変更前にreadlink+設計意図カタログ照合必須
+    ループ内fork禁止(LS084吸収2026-07-10): semantic alias照合がalias毎sed×2+grep起動(3199 alias≈1万fork)でcmd_save 36.5s劣化→単一awk化で1.66s(22x)。ループ内外部コマンドforkは単一awk/grepに畳む。特定はPS4=EPOCHREALTIME bash -x行別累積集計。再発検知=gate_metricsのcmd_save duration監視(cmd_3806)
   source_ids: [LS033, LS037, LS074, LS084, LS086, LS087, LS051, LS066]
   created_at: '2026-04-24'
   automated: true
@@ -686,6 +687,7 @@ lessons:
   created_at: '2026-07-10'
   automated: true
   enforcement: 'commit d0修正済み(scripts/cmd_save.sh show_semantic_index_matches)。再発検知はgate_metricsのcmd_save duration監視'
+  superseded_by: 'LS-A11 infra修正実績へ吸収(active上限対応 2026-07-10)'
 - id: 'LS085'
   title: '可逆行動の裁可待ち禁止 — 元に戻せるものに行動しないのは洗脳'
   origin: '[[殿裁定20260710_0241_デプロイ裁可不要]] -> [[殿一般化20260710_0244_可逆なら行動せよ]] -> [[LS085可逆行動の裁可待ち禁止]]'
