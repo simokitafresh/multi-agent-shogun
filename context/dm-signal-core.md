@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-11 cmd_karo_hotfix_ga221_context_freshness_202607110323 source_commit:0e149e32 -->
+<!-- last_updated: 2026-07-11 cmd_karo_hotfix_ga221_context_freshness_202607110323 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
