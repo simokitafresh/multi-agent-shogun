@@ -290,10 +290,26 @@ def save_escalation_state(path, state):
         print(f"WARN: escalation state write failed: {exc}", file=sys.stderr)
 
 
-def is_code_fix_cleared(state_entry):
+def is_code_fix_cleared(state_entry, last_fail=""):
     if not isinstance(state_entry, dict):
         return False
-    return bool(state_entry.get("code_fix_cleared_at") or state_entry.get("code_fix_cleared_by"))
+    cleared_at = str(
+        state_entry.get("code_fix_cleared_pass_ts")
+        or state_entry.get("code_fix_cleared_at")
+        or ""
+    )
+    # A FAIL recorded after CLEAR starts a new streak.  The old CLEAR marker
+    # must not suppress a genuinely unresolved recurrence forever.
+    if last_fail and cleared_at and last_fail > cleared_at:
+        return False
+    return bool(cleared_at or state_entry.get("code_fix_cleared_by"))
+
+
+def reset_escalation_counters(state_entry):
+    """Synchronize all streak/notified state when a pattern is cleared."""
+    state_entry["unchanged_streak"] = 0
+    state_entry["notified_streak"] = 0
+    state_entry["training_notified_streak"] = 0
 
 
 def classify_fail_cause(row, skill_changed, unchanged_streak, state_entry=None):
@@ -606,6 +622,7 @@ for key, entry in escalation_state.get("patterns", {}).items():
         continue
     entry.pop("classification", None)
     entry.pop("classification_reason", None)
+    reset_escalation_counters(entry)
     entry["code_fix_cleared_at"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     entry["code_fix_cleared_by"] = "skill_auto_improve_pass_result"
     entry["code_fix_cleared_pass_ts"] = pass_ts
@@ -625,7 +642,9 @@ for skill, rows in apply_plan.items():
     for row in rows:
         key = escalation_key(row)
         entry = escalation_state["patterns"].setdefault(key, {})
-        if is_code_fix_cleared(entry):
+        if is_code_fix_cleared(entry, row.get("last_fail") or ""):
+            # Keep the current CLEAR marker for this run, but ensure stale
+            # notification counters cannot leak into a future recurrence.
             entry.update({
                 "skill": row["skill"],
                 "gate": row.get("gate") or entry.get("gate", ""),
@@ -639,6 +658,19 @@ for skill, rows in apply_plan.items():
                 f"gate={row.get('gate') or entry.get('gate') or 'unknown_gate'}"
             )
             continue
+        if is_code_fix_cleared(entry):
+            # A newer FAIL invalidates the prior CLEAR and starts a fresh
+            # unchanged streak eligible for one new training task.
+            for field in (
+                "code_fix_cleared_at",
+                "code_fix_cleared_by",
+                "code_fix_cleared_pass_ts",
+                "code_fix_cleared_note",
+                "code_fix_cleared_recent50_fail",
+                "code_fix_cleared_recent50_total",
+            ):
+                entry.pop(field, None)
+            reset_escalation_counters(entry)
         pass_ts = latest_pass.get((row["skill"], row.get("gate") or ""), "")
         if pass_ts and pass_ts >= (row.get("last_fail") or ""):
             entry.update({

@@ -1408,3 +1408,99 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
+
+@test "skill_auto_improve syncs CLEAR counters and emits one task only for a later unresolved FAIL" {
+    mkdir -p "$TEST_TMPDIR/skills/report-write" "$TEST_TMPDIR/scripts"
+    printf '# report-write\n' > "$TEST_TMPDIR/skills/report-write/SKILL.md"
+    cat > "$TEST_TMPDIR/scripts/training_task_generator.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'generated\n' >> "$TRAINING_CAPTURE"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/training_task_generator.sh"
+    STATE_JSON="$TEST_TMPDIR/skill_auto_improve_state.json"
+    TRAINING_CAPTURE="$TEST_TMPDIR/training.log"
+
+    cat > "$TEST_SKILL_LOG" <<EOF
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+  gate: "gate_report_format"
+  skill_path: "$TEST_TMPDIR/skills/report-write/SKILL.md"
+EOF
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
+        SKILL_AUTO_IMPROVE_TRAINING_GENERATOR="$TEST_TMPDIR/scripts/training_task_generator.sh" \
+        TRAINING_CAPTURE="$TRAINING_CAPTURE" \
+        bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 1 --apply --unchanged-threshold 1
+    [ "$status" -eq 0 ]
+    [ ! -e "$TRAINING_CAPTURE" ]
+
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
+        SKILL_AUTO_IMPROVE_TRAINING_GENERATOR="$TEST_TMPDIR/scripts/training_task_generator.sh" \
+        TRAINING_CAPTURE="$TRAINING_CAPTURE" \
+        bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 1 --apply --unchanged-threshold 1
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$TRAINING_CAPTURE")" -eq 1 ]
+
+    cat > "$TEST_SKILL_LOG" <<EOF
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+  gate: "gate_report_format"
+  skill_path: "$TEST_TMPDIR/skills/report-write/SKILL.md"
+- ts: "2026-05-02T10:05:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "PASS"
+  stumbling_points: "gate_report_format PASS"
+  gate: "gate_report_format"
+  skill_path: "$TEST_TMPDIR/skills/report-write/SKILL.md"
+EOF
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
+        SKILL_AUTO_IMPROVE_TRAINING_GENERATOR="$TEST_TMPDIR/scripts/training_task_generator.sh" \
+        TRAINING_CAPTURE="$TRAINING_CAPTURE" \
+        bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 1 --apply --unchanged-threshold 1
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$TRAINING_CAPTURE")" -eq 1 ]
+
+    cat >> "$TEST_SKILL_LOG" <<EOF
+- ts: "2026-05-02T10:10:00+0900"
+  skill: "report-write"
+  executor: "saizo"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+  gate: "gate_report_format"
+  skill_path: "$TEST_TMPDIR/skills/report-write/SKILL.md"
+EOF
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
+        SKILL_AUTO_IMPROVE_TRAINING_GENERATOR="$TEST_TMPDIR/scripts/training_task_generator.sh" \
+        TRAINING_CAPTURE="$TRAINING_CAPTURE" \
+        bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 1 --apply --unchanged-threshold 1
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$TRAINING_CAPTURE")" -eq 2 ]
+
+    python3 - "$STATE_JSON" <<'PY'
+import json, sys
+entry = next(iter(json.load(open(sys.argv[1], encoding="utf-8"))["patterns"].values()))
+assert entry["unchanged_streak"] == 1, entry
+assert entry["training_notified_streak"] == 1, entry
+assert "code_fix_cleared_at" not in entry, entry
+PY
+}
