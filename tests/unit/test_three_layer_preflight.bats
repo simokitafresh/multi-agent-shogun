@@ -163,3 +163,66 @@ JSON
     run bash -c "printf '%s' '{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"$tmp_root/repo.txt\"}}' | /bin/bash '$tmp_root/.claude/hooks/pre-write-edit-combined.sh'"
     [ "$status" -eq 2 ]
 }
+
+@test "改行を含むpromptでもissue()はrg exit2でクラッシュしない" {
+    # rg --fixed-strings with an embedded newline used to exit 2 (a real
+    # error, not "no match"), failing the whole evidence record even when
+    # memory/semantic succeeded. Recurred 3x on 2026-07-10 and locked
+    # agents out of every tool for the evidence TTL.
+    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "$(printf 'line one about the codebase\nline two more detail\nline three')"
+    [ "$status" -eq 0 ]
+    [ -s "$EVIDENCE" ]
+    run grep -o '"obsidian":"[0-9]*"' "$EVIDENCE"
+    [ "$output" = '"obsidian":"0"' ]
+    run grep -o '"status":"[a-z]*"' "$EVIDENCE"
+    [ "$output" = '"status":"success"' ]
+}
+
+@test "break-glass: 三層検索スクリプト自体はevidence failedでも実行許可され続ける" {
+    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"x","nonce":"n","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"2","status":"failed"}\n' \
+        "$AGENT" "$PANE" > "$EVIDENCE"
+    printf 'n\n' > "$EVIDENCE.current"
+    run verify Bash "" "bash scripts/memory_db_query.sh --search test"
+    [ "$status" -eq 0 ]
+    run verify Bash "" "bash scripts/semantic_search.sh test"
+    [ "$status" -eq 0 ]
+    run verify Bash "" "bash scripts/hooks/three_layer_preflight.sh issue test"
+    [ "$status" -eq 0 ]
+}
+
+@test "evidence statusがfailedのままなら一般Bashは引き続きBLOCK" {
+    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"x","nonce":"n","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"2","status":"failed"}\n' \
+        "$AGENT" "$PANE" > "$EVIDENCE"
+    printf 'n\n' > "$EVIDENCE.current"
+    run verify Bash "" "touch repo-file"
+    [ "$status" -eq 1 ]
+}
+
+@test "一層が失敗すれば他二層が成功してもstatusはfailedのまま(並列実行後も個別rc集計)" {
+    local tmp_root="$TMP_EVIDENCE/one_layer_fail"
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/context" "$tmp_root/docs"
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    cat > "$tmp_root/scripts/memory_db_query.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 3
+EOF
+    chmod +x "$tmp_root/scripts/memory_db_query.sh"
+    cat > "$tmp_root/scripts/semantic_search.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "$tmp_root/scripts/semantic_search.sh"
+
+    local evidence_dir="$TMP_EVIDENCE/one_layer_fail_evidence"
+    mkdir -p "$evidence_dir"
+    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="onelayer" TMUX_PANE="%onelayer" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "one layer fail test"
+    [ "$status" -eq 1 ]
+    run grep -o '"status":"[a-z]*"' "$evidence_dir"/evidence_onelayer*.json
+    [ "$output" = '"status":"failed"' ]
+    run grep -o '"memory_db":"[0-9]*"' "$evidence_dir"/evidence_onelayer*.json
+    [ "$output" = '"memory_db":"3"' ]
+    run grep -o '"semantic":"[0-9]*"' "$evidence_dir"/evidence_onelayer*.json
+    [ "$output" = '"semantic":"0"' ]
+}

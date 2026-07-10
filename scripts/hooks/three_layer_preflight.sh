@@ -54,11 +54,43 @@ issue() {
     fi
     issued_at="$(date -Iseconds)"
     prompt_hash="$(printf '%s\n%s\n%s' "$prompt" "$issued_at" "${RANDOM:-0}" | sha256sum | awk '{print $1}')"
-    local nonce="$(printf '%s\n%s\n%s' "$prompt_hash" "$issued_at" "${RANDOM:-0}" | sha256sum | awk '{print $1}')"
+    local nonce
+    nonce="$(printf '%s\n%s\n%s' "$prompt_hash" "$issued_at" "${RANDOM:-0}" | sha256sum | awk '{print $1}')"
 
+    # rg --fixed-strings cannot handle a pattern with an embedded newline: it
+    # exits 2 (a real error, not "no match"), which fails the whole evidence
+    # record closed even when the other two layers genuinely succeeded.
+    # Multi-line prompts recurred 3x on 2026-07-10 and locked agents out of
+    # every tool for the evidence TTL. Obsidian only ever needs a short
+    # literal to search for, so give it the prompt's first line, CR-stripped
+    # and capped; this does not change what memory_db_query.sh/semantic_search.sh
+    # receive (their own query parsers already tokenize multi-line input safely).
+    local obsidian_query="${prompt%%$'\n'*}"
+    obsidian_query="${obsidian_query//$'\r'/}"
+    obsidian_query="${obsidian_query:0:200}"
+
+    # The three layers are independent reads; run them concurrently instead
+    # of back-to-back (sequential baseline: median 2.76s / p95 3.22s per
+    # UserPromptSubmit) and collect each exit code individually so a slow or
+    # failing layer cannot mask another layer's real result.
     local memory_rc=0 semantic_rc=0 obsidian_rc=0
-    timeout 5s bash "$ROOT/scripts/memory_db_query.sh" --search "$prompt" >/dev/null 2>&1 || memory_rc=$?
-    timeout 5s bash "$ROOT/scripts/semantic_search.sh" "$prompt" >/dev/null 2>&1 || semantic_rc=$?
+    local memory_pid semantic_pid obsidian_pid=""
+
+    ( timeout 5s bash "$ROOT/scripts/memory_db_query.sh" --search "$prompt" >/dev/null 2>&1 ) &
+    memory_pid=$!
+    ( timeout 5s bash "$ROOT/scripts/semantic_search.sh" "$prompt" >/dev/null 2>&1 ) &
+    semantic_pid=$!
+    rg_cmd="$(resolve_rg 2>/dev/null || true)"
+    if [[ -n "$rg_cmd" ]]; then
+        # --no-mmap: WSL2's 9P-backed /mnt/c mount pays a large syscall
+        # penalty for mmap'd reads across the ~2600 files under docs/;
+        # buffered reads measured ~30% faster here (2026-07-10 benchmark).
+        ( "$rg_cmd" --no-mmap -n --fixed-strings -- "$obsidian_query" "$ROOT/context/semantic-map.md" "$ROOT/docs" >/dev/null 2>&1 ) &
+        obsidian_pid=$!
+    fi
+
+    wait "$memory_pid" || memory_rc=$?
+    wait "$semantic_pid" || semantic_rc=$?
     # semantic_search.sh exit 1 means NO_MATCH (a completed search that found
     # nothing for this prompt text) in the common case, but it also uses
     # exit 1 if docs/semantic-index/index.md itself is missing. Only
@@ -68,9 +100,8 @@ issue() {
     [[ "$semantic_rc" == 1 && -f "$ROOT/docs/semantic-index/index.md" ]] && semantic_rc=0
     # Obsidian's causal index is the repository's [[link]] graph. rg exit 1
     # means no match, which is still a completed search; exit 2 is a failure.
-    rg_cmd="$(resolve_rg 2>/dev/null || true)"
-    if [[ -n "$rg_cmd" ]]; then
-        "$rg_cmd" -n --fixed-strings -- "$prompt" "$ROOT/context/semantic-map.md" "$ROOT/docs" >/dev/null 2>&1 || obsidian_rc=$?
+    if [[ -n "$obsidian_pid" ]]; then
+        wait "$obsidian_pid" || obsidian_rc=$?
     else
         obsidian_rc=127
     fi
