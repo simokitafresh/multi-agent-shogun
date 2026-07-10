@@ -670,6 +670,157 @@ fi
     [[ "$output" == *"PASS: archived report_received → return 0 (allowed)"* ]]
 }
 
+# cmd_karo_hotfix_report_notify_inprogress_guard AC1: 再配備(in_progress)後に
+# まだ新しいreportが作られていない場合、旧い(前回試行の)completed reportを見て
+# AUTO-DONEがtask statusを誤ってdoneへ書き換えてはならない。
+# → check_and_update_done_taskがstatusを変えず、report_notification_missingも検知されない。
+@test "report_gate: in_progress redeployed task with stale completed report does not auto-done or notify-missing" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts/lib"
+ln -s "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@" >> "\$LOG"
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+# 家老が再配備した後のtask: status=in_progress, deployed_atは旧reportより後
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<INNEREOF
+task:
+  status: in_progress
+  task_id: cmd_test_redeploy
+  parent_cmd: cmd_test_redeploy
+  deployed_at: "2026-07-10T19:11:35"
+  report_filename: kagemaru_report_cmd_test_redeploy.yaml
+INNEREOF
+
+# 旧report: 再配備(deployed_at)より前のtimestampでstatus:completed(前回試行の報告)
+cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_test_redeploy.yaml" <<INNEREOF
+worker_id: kagemaru
+task_id: cmd_test_redeploy
+parent_cmd: cmd_test_redeploy
+timestamp: "2026-07-10T19:08:00+09:00"
+status: completed
+verdict: PASS
+INNEREOF
+
+log() { echo "$1" >> "$LOG"; }
+
+cadt_result=0
+check_and_update_done_task kagemaru || cadt_result=$?
+
+status_after=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" "status")
+if [ "$status_after" = "done" ]; then
+    echo "FAIL: stale report incorrectly auto-marked task done (cadt_rc=$cadt_result)"
+    cat "$LOG"
+    exit 1
+fi
+
+gate_result=0
+can_send_clear_with_report_gate kagemaru "test_trigger" || gate_result=$?
+
+if grep -q "REPORT-NOTIFY-MISSING-BLOCK" "$LOG"; then
+    echo "FAIL: false report_notification_missing for in_progress redeployed task"
+    cat "$LOG"
+    exit 1
+fi
+
+echo "PASS: in_progress redeployed task with stale report kept status=$status_after (cadt_rc=$cadt_result, gate_rc=$gate_result), no notify-missing"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: in_progress redeployed task with stale report"* ]]
+}
+
+# cmd_karo_hotfix_report_notify_inprogress_guard AC2: 再配備後に実際に完了し、
+# deployed_at以降のreportがあるのに家老へのreport_received通知がない場合は、
+# 従来どおりAUTO-DONEでstatus=doneへ更新され、report_notification_missingも検知される
+# （通知防御を弱めない）。
+@test "report_gate: in_progress task with fresh report after redeploy still auto-dones and notifies-missing" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts/lib"
+ln -s "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@" >> "\$LOG"
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<INNEREOF
+task:
+  status: in_progress
+  task_id: cmd_test_redeploy_real
+  parent_cmd: cmd_test_redeploy_real
+  deployed_at: "2026-07-10T19:11:35"
+  report_filename: kagemaru_report_cmd_test_redeploy_real.yaml
+INNEREOF
+
+# 新report: deployed_atより後のtimestamp(今回の再配備後に実際に完了した報告)
+cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_test_redeploy_real.yaml" <<INNEREOF
+worker_id: kagemaru
+task_id: cmd_test_redeploy_real
+parent_cmd: cmd_test_redeploy_real
+timestamp: "2026-07-10T19:20:00+09:00"
+status: completed
+verdict: PASS
+INNEREOF
+
+log() { echo "$1" >> "$LOG"; }
+
+cadt_result=0
+check_and_update_done_task kagemaru || cadt_result=$?
+
+status_after=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" "status")
+if [ "$status_after" != "done" ]; then
+    echo "FAIL: fresh post-redeploy report should still auto-done (cadt_rc=$cadt_result, status=$status_after)"
+    cat "$LOG"
+    exit 1
+fi
+
+gate_result=0
+can_send_clear_with_report_gate kagemaru "test_trigger" || gate_result=$?
+
+if [ "$gate_result" -ne 1 ]; then
+    echo "FAIL: expected report_notification_missing to still block (gate_rc=$gate_result)"
+    cat "$LOG"
+    exit 1
+fi
+
+if ! grep -q "REPORT-NOTIFY-MISSING-BLOCK" "$LOG"; then
+    echo "FAIL: expected REPORT-NOTIFY-MISSING-BLOCK log for genuinely missing notification"
+    cat "$LOG"
+    exit 1
+fi
+
+echo "PASS: fresh post-redeploy report auto-dones (status=$status_after) and notify-missing still detected (gate_rc=$gate_result)"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: fresh post-redeploy report auto-dones"* ]]
+}
+
 # verdict値チェック: report存在+verdict不正値→return 1(clearブロック)
 @test "report_gate: invalid verdict blocks clear" {
     run bash -lc '

@@ -1818,6 +1818,26 @@ auto_void_if_parent_cmd_completed() {
     return 0
 }
 
+# YAML timestamp文字列をepoch秒に変換する。無効/空ならreturn 1(何も出力しない)。
+# report_notification_completed内の日時変換ロジックと同一パターン。
+_ninja_monitor_timestamp_epoch() {
+    local text="$1"
+    [ -z "$text" ] && return 1
+    python3 - "$text" <<'PY' 2>/dev/null
+import datetime as dt
+import sys
+
+text = sys.argv[1].strip()
+try:
+    value = dt.datetime.fromisoformat(text.replace("Z", "+00:00"))
+except ValueError:
+    raise SystemExit(1)
+if value.tzinfo is None:
+    value = value.replace(tzinfo=dt.datetime.now().astimezone().tzinfo)
+print(int(value.timestamp()))
+PY
+}
+
 # ─── AC1: 報告YAML完了判定 + タスクYAML自動done更新 ───
 # 報告YAMLのparent_cmdがタスクと一致し、status=doneなら自動更新
 # 戻り値: 0=完了済み(auto-done実行), 1=未完了
@@ -1855,6 +1875,23 @@ check_and_update_done_task() {
     # task_id一致チェック（同一cmd内のWave間誤マッチ防止）
     report_task_id=$(yaml_field_get "$report_file" "task_id")
     [ -n "$task_id" ] && [ -n "$report_task_id" ] && [ "$task_id" != "$report_task_id" ] && return 1
+
+    # cmd_karo_hotfix_report_notify_inprogress_guard: 再配備(deployed_at)より前のreportは
+    # 前回試行の残骸。in_progress再開後にまだ新しい報告が届いていないだけなのに、
+    # 旧いcompleted報告を見てAUTO-DONEしてしまうとreport_notification_missingが偽陽性化する。
+    # deployed_at以降のreportのみ「今回の完了」とみなす（deployed_at欠落時は従来どおり）。
+    local task_deployed_at
+    task_deployed_at=$(yaml_field_get "$task_file" "deployed_at" "" 2>/dev/null || true)
+    if [ -n "$task_deployed_at" ]; then
+        local report_timestamp task_deployed_epoch report_epoch
+        report_timestamp=$(yaml_field_get "$report_file" "timestamp" "" 2>/dev/null || true)
+        task_deployed_epoch=$(_ninja_monitor_timestamp_epoch "$task_deployed_at") || task_deployed_epoch=""
+        report_epoch=$(_ninja_monitor_timestamp_epoch "$report_timestamp") || report_epoch=""
+        if [ -n "$task_deployed_epoch" ] && [ -n "$report_epoch" ] && [ "$report_epoch" -lt "$task_deployed_epoch" ]; then
+            log "AUTO-DONE-SKIP-STALE-REPORT: $name report=$(basename "$report_file") timestamp=$report_timestamp predates deployed_at=$task_deployed_at, status=$task_status kept"
+            return 1
+        fi
+    fi
 
     # 報告のstatus確認（done/completed/success を完了とみなす）
     local report_status
