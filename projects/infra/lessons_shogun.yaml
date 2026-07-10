@@ -329,6 +329,7 @@ lessons:
   created_at: '2026-04-24'
   automated: true
   enforcement: 'cmd_save.sh L551(q5 BLOCK昇格)+L1553(AC数量BLOCK昇格)+CLAUDE.md File Reading Rule+GP-211(stop hook結論突合)'
+  superseded_by: 'LS-A24 (計測原則ファミリーへ統合(要点は(0)として吸収済み)。active上限31対応)'
 
 - id: LS-A19
   title: 原理3則 — 車輪/各論パッチ/無知の知
@@ -622,6 +623,7 @@ lessons:
     (1)条件の代表性(LS074吸収): FE体感計測はmobileエミュレーション+CPUスロットリング+実運用相当URL(PF指定クエリ)をデフォルトにせよ。desktop preset平均98.5がmobile実測60/TBT 7274msだった(cmd_3647→殿実測)。desktop計測はモバイルCPUメインスレッド実行時間(チャンク7023 scripting 131s)を全く捕捉しない。desktop高スコアを実運用達成と報告するな
     (2)条件の有効性証拠(LS076吸収): 計測系cmdのACには条件が機能した証拠の確認を含めよ。cmd_3653はURLにportfolio_id=を付けたがFE現物はportfolioのみ解釈しPF未指定数値が原票化。忍者bc yesも家老GATEも「URLにクエリが付いている」しか見ていなかった。network-requestsに指定PFのAPI呼び出しがあることまで確認(cmd_3654 AC2で是正)。URLに付けた=有効ではない(LS-A09(17)と同根)
     (3)環境の分離(LS077吸収): FE変更cmdはlocal build計測(忍者のAC)と本番デプロイ後計測(家老/次cmdの後続ステップ)を分離せよ。忍者はpush禁止のため本番計測は未デプロイの旧状態を測り構造的に達成不能(cmd_3655 verdict FAIL)。色是正はCSS変数と直接utility class(text-red-400等)の両経路をスコープに含めよ
+    (0)計測カテゴリ不在=見えていない=改善不能(LS-A18吸収)。品質WARNと形式WARNを混在させると全WARNオプショナル化を招く。計測されていないものは改善ループが回らない
     (4)データ到達の証拠(cmd_3670/3671検分 2026-07-03): 「APIが呼ばれた」≠「データが計測ウィンドウ内に到達し描画された」。隔離プロファイル計測では初回API 401→リトライ200だが、200応答のresourceSize=0/transferSize=0=実データ未受信のまま好数値が原票化された。認証済みデータ描画ありの殿実測との比較は条件不一致で改善幅が過大評価される。有効性証拠は(a)200応答のresourceSize>0 (b)データ描画完了のDOM証拠まで要求せよ。(2)の「network-requestsにAPI呼び出し」だけでは1階層足りない
   source_ids: [LS074, LS076, LS077]
   created_at: '2026-07-03'
@@ -676,3 +678,19 @@ lessons:
   automated: true
   enforcement_level: 4
   enforcement: 'Level4(フロー内WARN): cmd_reflux_promotion_202607090418_saizoでscripts/cmd_save.shにcheck_comparison_pipeline_parity_warn()を新設し実装済み。cmd全文が「比較」と「合成|集計|代理実験|代理指標|代理データ」の両方に一致し、かつ「同一パイプライン|同一生成パイプライン|同格性|パリティ確認|同一L[0-9]」等の同格性確認文言が無ければWARNをrecord_warn_reason(check=comparison_pipeline_parity)へ記録する。main flow内でcheck_deferral_language_warnの直後(L3740付近)に接続済み。一次情報検証: bash -n scripts/cmd_save.shでシンタックス確認、tests/unit/test_cmd_save.batsへ回帰テスト4件(合成/集計キーワードでWARN発火、同格性確認文言ありでWARNなし、キーワード無しの通常比較cmdでWARNなし)を追加し、bats実行で124/124 PASS(既存120件+新規4件、regression無し)を確認済み。限界: キーワードマッチのためcmd文面が曖昧な場合はFP/FN双方の余地あり。精度改善は還流のFP計測(detector_fp_rate等)で継続監視する'
+- id: 'LS084'
+  title: 'ループ内fork照合の禁止 — cmd_save semantic照合36.5s事故'
+  origin: '[[殿指摘20260710_0018_cmd_save遅い]] -> [[alias毎fork1万回]] -> [[単一awk化22x]]'
+  detail: 'semantic alias照合がalias毎にsed×2+grep起動(3199 alias≈1万fork)しcmd_save全体を36.5秒に劣化させた。単一awkプロセス化で1.66s(22x)。ループ内外部コマンドforkは必ず単一awk/grepに畳む。特定はPS4=EPOCHREALTIME bash -x の行別累積集計'
+  source_cmd: 'cmd_3806'
+  created_at: '2026-07-10'
+  automated: true
+  enforcement: 'commit d0修正済み(scripts/cmd_save.sh show_semantic_index_matches)。再発検知はgate_metricsのcmd_save duration監視'
+- id: 'LS085'
+  title: '可逆行動の裁可待ち禁止 — 元に戻せるものに行動しないのは洗脳'
+  origin: '[[殿裁定20260710_0241_デプロイ裁可不要]] -> [[殿一般化20260710_0244_可逆なら行動せよ]] -> [[LS085可逆行動の裁可待ち禁止]]'
+  detail: '殿裁定2026-07-10 02:41-02:44: 本番デプロイ含め、完全に元に戻せる(revert/restore可能な)行動に個別裁可・待ちを挟むな。CI GREEN+revert手順明確なら自走で実行し、失敗したらrevert+事実報告。裁可待ちは洗脳#5(先送り)の変形=待つ言い訳。この原則は全てにおいて有効(DM-Signalデプロイに限らない)。可逆性の判定=バックアップ/revert/restore手順が存在し検証済みであること'
+  source_cmd: 'cmd_3812'
+  created_at: '2026-07-10'
+  automated: true
+  enforcement: 'context/dm-signal-ops.md §42改定済み+memory_db knowledge:b999e6ef40de164f。cmd起票時q12/貫通確認'
