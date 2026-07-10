@@ -1534,3 +1534,468 @@
   causal_chain: "zero_backlinks検出→2ファイルwikilink追加→incoming backlink 0→2→孤立解消"
   brainwash_check: "zero_backlinks 1→0=差分1件。commit 992ba84c4存在。precheck ERRORS=0。#1-#8未該当"
   timestamp: "2026-07-09T14:11:00"
+- cmd_id: cmd_karo_recon2_cmd3824_resume_202607101113
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/inbox/gunshi.yaml:223(recon2 cmd_3824 resume)"
+  gate_result: null
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - adversarial
+    - ambiguity
+  findings_summary: "6観点OK。cmd_3824(非決定性根因)のrecon2続行。kagemaru failed→saizo配備。偵察。配備可"
+  observations:
+    - "事実1: cmd_3824がfailed(kagemaru CTX消化)→recon2としてsaizoに続行配備"
+    - "事実2: 非決定性根因偵察の続行。パリティ計画最重要"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察続行"
+  origin: "[[cmd_3824_非決定性根因]] -> [[recon2_resume]]"
+  causal_chain: "cmd_3824 kagemaru CTX消化→recon2 saizo続行→非決定性根因解明継続"
+  brainwash_check: "偵察続行cmd 1/1確認。task_type=recon2"
+  timestamp: "2026-07-10T11:20:00+09:00"
+- cmd_id: cmd_karo_hotfix_startup_alerts_202607101046
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/tobisaru_report_cmd_karo_hotfix_startup_alerts_202607101046.yaml:137(AC1 yes)"
+    - "queue/reports/tobisaru_report_cmd_karo_hotfix_startup_alerts_202607101046.yaml:152(verdict:PASS)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: gate_report_format PASS。ac_version不一致はprecheck WARNだがgate BLOCKにならない
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "4観点OK。AC1品質記録漏れ24件根因=記録側切詰め(未commit状態)。AC2 push_allowed自動付与inject_push_allowed()。AC3 bats10/10+回帰342/343(1件pre-existing rg PATH)"
+  observations:
+    - "事実1: 品質記録漏れ24件は生成側24/24成功、記録側logs/cmd_design_quality.yamlが188→5に切詰め(未commit操作)"
+    - "事実2: inject_push_allowed()は既存inject_*パターン踏襲。冪等性設計(既存フィールド上書きなし)"
+    - "事実3: pre-existing rg PATH failure 1件はgit stashで変更前から存在と確認。infra既知問題"
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "deploy_task.sh/cmd_save.sh変更。inject_push_allowed()は正当権限付与経路追加のみ。G2ガード設計意図は維持"
+  lesson_quality: OK
+  origin: "[[cmd_3820_push_allowed欠落]] -> [[hotfix_inject_push_allowed]] -> [[grep境界問題発見]]"
+  causal_chain: "cmd_3820 G2 BLOCK→WA→根因=AC内push検出時にpush_allowed未付与→inject_push_allowed()追加→再発防止"
+  step3_5_verified: true
+  brainwash_check: "24/24生成成功+343回帰中342 PASS+10新規PASS+135 cmd_save PASS。pre-existing 1件はgit stash検証で無関係確認"
+  timestamp: "2026-07-10T11:22:00+09:00"
+- cmd_id: cmd_karo_hotfix_quality_log_restore_202607101124
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/kagemaru.yaml:purpose(品質記録復元+ローテーション防御)"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - adversarial
+    - ambiguity
+  findings_summary: "6観点OK。hotfix。先行cmd(startup_alerts)で発見された24件品質記録欠落の復元+件数減少時ALERT機構。品質向上(消火ではない)"
+  observations:
+    - "事実1: startup_alertsのdecision_candidateで分離された復元タスクの実行"
+    - "事実2: 件数減少時停止+ALERTはLevel4防御(自動化×強制)"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "ログ復元+防御機構追加"
+  origin: "[[cmd_karo_hotfix_startup_alerts]] -> [[decision_candidate_24件復元]]"
+  causal_chain: "品質記録188→5切詰め→24件欠落→復元+ローテーション防御でLevel4化"
+  brainwash_check: "先行hotfix LGTM→GATE CLEAR確認済み。decision_candidate対応として因果整合。1/1 task確認"
+  timestamp: "2026-07-10T11:26:00+09:00"
+- cmd_id: cmd_karo_hotfix_quality_log_restore_202607101124
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_karo_hotfix_quality_log_restore_202607101124.yaml:117(AC1 yes)"
+    - "queue/reports/kagemaru_report_cmd_karo_hotfix_quality_log_restore_202607101124.yaml:133(verdict:PASS)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "4観点OK。24件復元(189→213件)+共有lock+件数保存検証。bats 4/4 PASS。根因=appendとarchiveの別lock競合→共有lockで直列化"
+  observations:
+    - "事実1: 復元前189→復元後213件(24件=gate_metrics CLEAR一次証跡から)"
+    - "事実2: cmd_quality_logとyaml_auto_archiveを同一lock(.lock)で直列化→競合解消"
+    - "事実3: archive前後の件数保存検証(active減=archive増でないと中断)=Level4防御"
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "ログ復元+共有lock。破壊的変更なし"
+  lesson_quality: OK
+  origin: "[[cmd品質記録欠落]] -> [[別lock競合根因]] -> [[共有lock+件数保存検証]]"
+  causal_chain: "188→5切詰め→別lock競合→共有lock直列化+件数保存検証→Level4防御"
+  step3_5_verified: true
+  brainwash_check: "189→213件(+24)復元を数値確認。bats 4/4 PASS、SKIP 0、FAIL 0"
+  timestamp: "2026-07-10T11:38:00+09:00"
+- cmd_id: cmd_karo_hotfix_skill_auto_improve_sync_202607101147
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/kagemaru.yaml:purpose(修行結果同期不整合修正)"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - adversarial
+    - ambiguity
+  findings_summary: "6観点OK。hotfix。GATE CLEAR後も重複修行生成される同期バグ修正。配備可"
+  observations:
+    - "事実1: report-write L1修行のGATE CLEAR+教訓登録後もunchanged_streak=2で重複修行が生成"
+    - "事実2: 同期不整合=修行結果がskill_auto_improveに反映されていない"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "同期バグ修正"
+  origin: "[[training_L1_report-write_CLEAR]] -> [[unchanged_streak同期不整合]]"
+  causal_chain: "修行CLEAR→結果未反映→unchanged_streak=2継続→重複修行生成→同期修正"
+  brainwash_check: "hotfix定型 1/1確認"
+  timestamp: "2026-07-10T11:50:00+09:00"
+- cmd_id: cmd_karo_ci_fix_ga210_202607101045
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_karo_ci_fix_ga210_202607101045.yaml:8(summary)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed。ac_version不一致はkaro_direct既知パターン
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "4観点OK。CI RED 6件=旧WARN仕様テスト未追従。テストのみ修正13/13 PASS。本体は別commit(b458129d1)で修正済み確認"
+  observations:
+    - "事実1: GA-210 CI RED根因=commit 737350613のWARN-only化にテスト未追従(6件)"
+    - "事実2: 13/13 PASS、SKIP 0、FAIL 0。ローカル24 FAILはCI非再現(rg未インストール+並行競合)"
+    - "事実3: cmd_save.sh本体の累計昇格バグは別commit(b458129d1)で既修正済み"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "テスト修正のみ。本番コード変更なし"
+  lesson_quality: OK
+  origin: "[[GA-210_CI_RED]] -> [[殿裁定737350613_WARN-only化]] -> [[テスト未追従修正]]"
+  causal_chain: "殿裁定WARN-only化→テスト未追従→CI RED 6件→テスト修正→13/13 PASS"
+  step3_5_verified: true
+  brainwash_check: "13/13 PASS数値確認。ローカル24 FAILはCI実ログ6件に含まれず、rg/concurrency要因として分離"
+  timestamp: "2026-07-10T11:50:00+09:00"
+- cmd_id: cmd_karo_hotfix_skill_ref_freshness_202607101154
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/tobisaru.yaml:purpose(SKILL.md参照鮮度WARN5件同期)"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - adversarial
+    - ambiguity
+  findings_summary: "6観点OK。SKILL.md script_refs鮮度WARN 5件の同期hotfix。定型・低リスク。配備可"
+  observations:
+    - "事実1: script変更後にSKILL.mdのscript_refs_checked_atが古い→WARN"
+    - "事実2: 実装との照合+checked_at更新の定型作業"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "SKILL.mdメタデータ更新のみ"
+  origin: "[[startup_gate_WARN]] -> [[skill_ref_freshness同期]]"
+  causal_chain: "script変更→SKILL.md checked_at古い→WARN→照合+更新→WARN解消"
+  brainwash_check: "hotfix定型 1/1確認。WARN 5件"
+  timestamp: "2026-07-10T11:52:00+09:00"
+- cmd_id: cmd_karo_hotfix_skill_auto_improve_sync_202607101147
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_karo_hotfix_skill_auto_improve_sync_202607101147.yaml:8(summary)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "4観点OK。CLEAR後のstreak同期不整合修正。bats 30/30 PASS。CLEAR防御維持+新規FAIL再開判定"
+  observations:
+    - "事実1: GATE CLEAR時にcode_fix_cleared_*のみ更新されunchanged_streak/training_notified_streakが残存→重複修行"
+    - "事実2: 修正でCLEAR時3カウンタ0同期+後続FAILでCLEAR印無効化"
+    - "事実3: bats 30/30 PASS(CLEAR中0件+後続FAIL1件の回帰テスト含む)"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "状態同期修正のみ"
+  lesson_quality: OK
+  origin: "[[GATE_CLEAR後状態同期不整合]] -> [[streak残存]] -> [[重複修行抑止+後続FAIL再学習]]"
+  causal_chain: "CLEAR時に3カウンタ未同期→streak残存→重複修行生成→3カウンタ0同期+CLEAR印無効化で解消"
+  step3_5_verified: true
+  brainwash_check: "30/30 PASS数値確認。SKIP 0、FAIL 0。commit 8a9aaa3ff"
+  timestamp: "2026-07-10T11:56:00+09:00"
+- cmd_id: cmd_karo_hotfix_skill_ref_freshness_202607101154
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/tobisaru_report_cmd_karo_hotfix_skill_ref_freshness_202607101154.yaml:8(summary)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "4観点OK。SKILL.md script_refs WARN 5件→4本更新。gate PASS、bats 3/3 PASS。shogun-cli-switchのみ本文更新(未commit差分の新機能記載)"
+  observations:
+    - "事実1: 5 WARN中4件は契約不変(checked_at+検分ノートのみ)。shogun-cli-switchのみ本文更新"
+    - "事実2: cli_lookup.sh/ninja_monitor.shの未commit差分(codex_config_apply_agent)をSKILL.md本文に反映"
+    - "事実3: gate再実行WARN 0/PASS、bats 3/3 PASS"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "SKILL.mdメタデータ+検分ノート更新"
+  lesson_quality: OK
+  origin: "[[startup_gate_WARN]] -> [[skill_ref_freshness_5件]] -> [[SKILL.md同期完了]]"
+  causal_chain: "script変更→checked_at古い→WARN→実装照合+更新→WARN 0"
+  step3_5_verified: true
+  brainwash_check: "WARN 5→0件。gate PASS。bats 3/3 PASS"
+  timestamp: "2026-07-10T12:01:00+09:00"
+- cmd_id: cmd_karo_hotfix_ga215_context_freshness_202607101205
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/kagemaru.yaml:purpose(GA-215 context鮮度ALERT解消)"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - adversarial
+    - ambiguity
+  findings_summary: "6観点OK。GA-215 context鮮度ALERT解消+防御層還流hotfix。定型。配備可"
+  observations:
+    - "事実1: obsidian-link-principles.md鮮度ALERT"
+    - "事実2: 更新トリガーの穴を防御層へ還流"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "context鮮度更新"
+  origin: "[[GA-215_context_freshness]] -> [[obsidian-link-principles鮮度]]"
+  causal_chain: "context更新トリガー未発火→鮮度ALERT→差分解消+防御層還流"
+  brainwash_check: "hotfix定型 1/1確認"
+  timestamp: "2026-07-10T12:06:00+09:00"
+- cmd_id: cmd_karo_hotfix_ga215_context_freshness_202607101205
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_karo_hotfix_ga215_context_freshness_202607101205.yaml:8(summary)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "4観点OK。GA-215鮮度ALERT解消。過広pathspec削除でsemantic成長による偽陽性排除。bats 38/38 PASS"
+  observations:
+    - "事実1: source 3件全てsemantic alias/insight/索引運用。Obsidian原則変更0件"
+    - "事実2: INFRA_CONTEXT_PATHSからdocs/semantic-index過広要素削除=偽陽性排除"
+    - "事実3: ALERT 1→0件。bats 38/38 PASS、SKIP 0、FAIL 0"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "pathspec修正+context更新"
+  lesson_quality: OK
+  origin: "[[GA-215]] -> [[過広pathspec]] -> [[偽陽性排除]]"
+  causal_chain: "semantic index成長→過広pathspecで偽陽性ALERT→pathspec修正→ALERT 0"
+  step3_5_verified: true
+  brainwash_check: "ALERT 1→0件。bats 38/38 PASS。source 3件全てgit show確認済み"
+  timestamp: "2026-07-10T12:19:00+09:00"
+- cmd_id: cmd_karo_hotfix_precompute_stage_harness_202607101220
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/hayate.yaml:purpose(少数PF段階ベンチharness)"
+  gate_result: null
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - adversarial
+    - ambiguity
+  findings_summary: "6観点OK。precompute /goal最速化の道具改良。少数PF段階ベンチでCodexターン制限対応。配備可"
+  observations:
+    - "事実1: cmd_3825でhanzoが全量ベンチ中にCodexターン制限で打切られた問題への対処"
+    - "事実2: 不変bulk固定費除外+少数PF段階ベンチで/goal反復ループの実用性確保"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "ベンチ道具改良。本番変更なし"
+  origin: "[[cmd_3825_Codex打切り]] -> [[段階ベンチharness]]"
+  causal_chain: "全量ベンチ12分超→Codexターン制限打切り→少数PF段階ベンチでターン内完走"
+  brainwash_check: "道具改良hotfix 1/1確認"
+  timestamp: "2026-07-10T12:20:00+09:00"
+- cmd_id: cmd_karo_hotfix_precompute_stage_harness2_202607101222
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/kotaro.yaml:purpose(少数PF段階ベンチharness)"
+  gate_result: null
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - adversarial
+    - ambiguity
+  findings_summary: "6観点OK。harness1(hayate)と同一目的の並行投入。少数PF段階ベンチ。配備可"
+  observations:
+    - "事実1: harness1(hayate)と同一purpose。並行競争投入か分割か不明だが道具改良で低リスク"
+    - "事実2: precompute /goal最速化の道具。本番変更なし"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "ベンチ道具改良"
+  origin: "[[cmd_3825_Codex打切り]] -> [[段階ベンチharness2]]"
+  causal_chain: "全量ベンチ打切り→段階ベンチ並行投入→早い方を採用"
+  brainwash_check: "harness1と同一purpose 1/1確認。並行投入は殿原則(idle=最大の無駄)整合"
+  timestamp: "2026-07-10T12:22:00+09:00"
+- cmd_id: cmd_karo_recon2_cmd3824_mechanism_202607101223
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/tobisaru.yaml:purpose(cmd_3824継続偵察 非決定性機構特定)"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - adversarial
+    - ambiguity
+  findings_summary: "6観点OK。cmd_3824偵察続行。影丸CLI中断→飛猿引継ぎ。非決定性機構特定。偵察。配備可"
+  observations:
+    - "事実1: cmd_3824はkagemaru→saizo→tobisaruと3名目の引継ぎ(CTX消化による)"
+    - "事実2: 2014-10-31往復フリップの非決定性機構特定がパリティ計画の最重要根因"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察続行"
+  origin: "[[cmd_3824_非決定性根因]] -> [[recon2_mechanism]]"
+  causal_chain: "kagemaru/saizo CTX消化→tobisaru引継ぎ→非決定性機構特定"
+  brainwash_check: "偵察3名目引継ぎ 1/1確認"
+  timestamp: "2026-07-10T12:25:00+09:00"
+- cmd_id: cmd_karo_recon2_cmd3824_mechanism_202607101223
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  verified_files:
+    - "queue/inbox/gunshi.yaml:536(報告概要 89.3%機構一致)"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "4観点OK。AbsoluteMomentumBlock+SafeHavenSwitchBlockのband境界判定driftでflip機構確定。75行中67件(89.3%)同一機構。kagemaruの層別と97%一致"
+  observations:
+    - "事実1: absolute_momentum.py:139-156のmargin=abs_mom-ref_momがthreshold_band=0.005境界をまたぐ判定driftが根因"
+    - "事実2: 67/75(89.3%)が同一機構で説明可能。kagemaru層別NEW_IN_3812と65/67(97%)一致"
+    - "事実3: standard PFのmomentum_dataがintermediate_results(margin等)を永続化しない構造的欠落を新規検出"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偵察報告。本番変更なし"
+  lesson_quality: OK
+  origin: "[[cmd_3824_非決定性根因]] -> [[AbsoluteMomentumBlock_band境界drift]] -> [[89.3%機構確定]]"
+  causal_chain: "再計算ごとにmarginが微小変動→band境界0.005をまたぐ→holding_signal反転→非決定性flip"
+  step3_5_verified: true
+  brainwash_check: "67/75=89.3%、65/67=97%の数値検算。偵察報告で本番変更なし"
+  timestamp: "2026-07-10T12:46:00+09:00"
+- cmd_id: cmd_3826
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_3826(AC1-3+assumptions)"
+  gate_result: null
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - adversarial
+    - ambiguity
+  findings_summary: "6観点OK。本番バンド設定解除+復元。殿裁可12:48。退避→復元→fullrecalc→反転再発なし確認。可逆。cmd_3771退避データ存在確認済み。配備可"
+  observations:
+    - "事実1: 殿裁可済み(12:48)。バンド後付け=全層劣化(99/102体)+非決定性flip(89.3%機構確定)"
+    - "事実2: AC3個(退避→復元→fullrecalc→反転確認)。バックアップファースト準拠"
+    - "事実3: 可逆(退避から再復元可能)。execution_env=Linux venv+直列配備"
+  ambiguity_points: none
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "本番DB変更だが可逆(退避先行)。殿裁可済み。復元=バンド適用前への書き戻し"
+  origin: "[[殿裁可20260710_1248]] -> [[cmd_3712全層劣化+飛猿drift]] -> [[バンド解除復元]]"
+  causal_chain: "バンドなしGS最適化構成+バンド後付け→全層劣化+非決定性flip→殿裁可→バンド解除+整合状態復帰"
+  brainwash_check: "殿裁可12:48確認。AC3個。退避先行(バックアップファースト)。可逆。99/102体悪化+89.3%機構確定で根拠十分"
+  timestamp: "2026-07-10T12:57:00+09:00"

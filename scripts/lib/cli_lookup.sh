@@ -339,6 +339,11 @@ cli_model_display() {
         haiku-4-5*)          echo "Haiku 4.5" ;;
         claude-haiku-4*)     echo "Haiku 4" ;;
         haiku-4*)            echo "Haiku 4" ;;
+        gpt-5.6-sol*)        echo "GPT 5.6 Sol" ;;
+        gpt-5.6-terra*)      echo "GPT 5.6 Terra" ;;
+        gpt-5.6-luna*)       echo "GPT 5.6 Luna" ;;
+        gpt-5.6*)            echo "GPT 5.6" ;;
+        gpt-5.5*)            echo "GPT 5.5" ;;
         *)                   echo "$model_name" ;;
     esac | awk -v raw="$model_name" '
         {
@@ -561,4 +566,66 @@ cli_launch_cmd() {
     else
         printf '%s\n' "$base_cmd"
     fi
+}
+
+# codex_config_apply_agent <agent_name>
+# settings.yamlのmodel_name/service_tierからconfig.tomlを一時切替する。
+# SSOT: この関数がconfig.toml per-agent切替の唯一の実装(2層SSOT: settings.yaml→config.toml)
+_CODEX_CFG_BACKUP_MODEL=""
+_CODEX_CFG_BACKUP_EFFORT=""
+_CODEX_CFG_BACKUP_TIER=""
+_CODEX_CFG_CHANGED=false
+
+codex_config_apply_agent() {
+    local agent="$1"
+    local cfg="$HOME/.codex/config.toml"
+    [[ ! -f "$cfg" ]] && return 1
+    _CODEX_CFG_CHANGED=false
+
+    local model_name
+    model_name=$(_cli_lookup_settings_get "$agent" "model_name" "")
+    [[ -z "$model_name" || "$model_name" != gpt-* ]] && return 0
+
+    _CODEX_CFG_BACKUP_MODEL=$(grep -oP '^model\s*=\s*"\K[^"]+' "$cfg" || true)
+    _CODEX_CFG_BACKUP_EFFORT=$(grep -oP '^model_reasoning_effort\s*=\s*"\K[^"]+' "$cfg" || true)
+    _CODEX_CFG_BACKUP_TIER=$(grep -oP '^service_tier\s*=\s*"\K[^"]+' "$cfg" || true)
+
+    local target_effort="" target_model=""
+    if [[ "$model_name" =~ ^(.*)-([a-z]+)$ ]]; then
+        local suffix="${BASH_REMATCH[2]}"
+        case "$suffix" in
+            low|medium|high|xhigh) target_effort="$suffix"; target_model="${BASH_REMATCH[1]}" ;;
+            *) target_model="$model_name" ;;
+        esac
+    else
+        target_model="$model_name"
+    fi
+
+    local target_tier
+    target_tier=$(_cli_lookup_settings_get "$agent" "service_tier" "default")
+
+    if [[ -n "$target_model" && "$target_model" != "$_CODEX_CFG_BACKUP_MODEL" ]]; then
+        sed -i "s|^model = \".*\"|model = \"$target_model\"|" "$cfg"
+        _CODEX_CFG_CHANGED=true
+    fi
+    if [[ -n "$target_effort" && "$target_effort" != "$_CODEX_CFG_BACKUP_EFFORT" ]]; then
+        sed -i "s|^model_reasoning_effort = \".*\"|model_reasoning_effort = \"$target_effort\"|" "$cfg"
+        _CODEX_CFG_CHANGED=true
+    fi
+    if [[ "$target_tier" != "$_CODEX_CFG_BACKUP_TIER" ]]; then
+        sed -i "s|^service_tier = \".*\"|service_tier = \"$target_tier\"|" "$cfg"
+        _CODEX_CFG_CHANGED=true
+    fi
+    return 0
+}
+
+codex_config_restore() {
+    local cfg="$HOME/.codex/config.toml"
+    [[ ! -f "$cfg" || "$_CODEX_CFG_CHANGED" != true ]] && return 0
+
+    [[ -n "$_CODEX_CFG_BACKUP_MODEL" ]] && sed -i "s|^model = \".*\"|model = \"$_CODEX_CFG_BACKUP_MODEL\"|" "$cfg"
+    [[ -n "$_CODEX_CFG_BACKUP_EFFORT" ]] && sed -i "s|^model_reasoning_effort = \".*\"|model_reasoning_effort = \"$_CODEX_CFG_BACKUP_EFFORT\"|" "$cfg"
+    [[ -n "$_CODEX_CFG_BACKUP_TIER" ]] && sed -i "s|^service_tier = \".*\"|service_tier = \"$_CODEX_CFG_BACKUP_TIER\"|" "$cfg"
+    _CODEX_CFG_CHANGED=false
+    return 0
 }

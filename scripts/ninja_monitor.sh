@@ -1104,10 +1104,16 @@ safe_send_clear() {
         _launch_cmd=$(cli_launch_cmd "$agent_name" 2>/dev/null || echo "")
         if [ -n "${_launch_cmd:-}" ]; then
             local _node_dir="${_launch_cmd%/bin/codex*}/bin"
+            # per-agent config.toml切替(2層SSOT: settings.yaml→config.toml。SSOT実装=cli_lookup.sh)
+            codex_config_apply_agent "$agent_name" && \
+                [[ "$_CODEX_CFG_CHANGED" == true ]] && \
+                log "CODEX-CFG-SWITCH: $agent_name applied"
             log "CODEX-RESPAWN: $agent_name respawn-pane (codex reset)"
             tmux respawn-pane -k -t "$pane" "export PATH=\"${_node_dir}:\$PATH\" && cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
                 log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed"
             }
+            # config.toml復元(SSOT: cli_lookup.sh codex_config_restore)
+            codex_config_restore
             # respawn-pane -kはscrollback履歴を引き継ぐ(tmux仕様)。Androidアプリが前セッション残像を表示するためクリア(殿実測2026-07-08)
             tmux clear-history -t "$pane" 2>/dev/null || true
             tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
@@ -5015,9 +5021,15 @@ check_ninja_cli_dead() {
         local _script_dir_bg="$SCRIPT_DIR"
         (
             log "CLI-DEAD: ${_name_bg} pane_dead=${_pane_dead_bg} → respawn-pane使用"
+            # per-agent config.toml切替(SSOT: cli_lookup.sh)
+            codex_config_apply_agent "$_name_bg" 2>/dev/null && \
+                [[ "$_CODEX_CFG_CHANGED" == true ]] && \
+                log "CODEX-CFG-SWITCH(CLI-DEAD): $_name_bg applied"
             # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
             local _node_path="${HOME}/.nvm/versions/node/v20.20.0/bin"
             tmux respawn-pane -k -t "$_pane_target_bg" "export PATH=\"${_node_path}:\$PATH\" && cd '${_script_dir_bg}' && ${_launch_bg}" 2>/dev/null || true
+            # config.toml復元
+            codex_config_restore 2>/dev/null
             # respawn-pane -kはscrollback履歴を引き継ぐ(tmux仕様)。前セッション残像防止(殿実測2026-07-08)
             tmux clear-history -t "$_pane_target_bg" 2>/dev/null || true
             sleep 30

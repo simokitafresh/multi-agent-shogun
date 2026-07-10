@@ -13,9 +13,10 @@ cli:
       launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model fable --effort xhigh
     karo:
       type: codex
-      model_name: gpt-5.5-high
+      model_name: gpt-5.6-terra-high
       role: karo
       launch_cmd: 
+      service_tier: fast
       japanese_name: 家老
     gunshi:
       type: claude
@@ -25,22 +26,24 @@ cli:
       japanese_name: 軍師
     hayate:
       type: codex
-      model_name: gpt-5.5-low
+      model_name: gpt-5.6-luna-medium
       role: ninja
       japanese_name: 疾風
-      service_tier: 
+      service_tier: default
       launch_cmd: /home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen
     kagemaru:
       type: codex
-      model_name: gpt-5.5-low
+      model_name: gpt-5.6-luna-medium
       role: ninja
       japanese_name: 影丸
+      service_tier: default
       launch_cmd: /home/simokitafresh/.nvm/versions/node/v20.20.0/bin/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen
     hanzo:
       type: codex
-      model_name: gpt-5.5-low
+      model_name: gpt-5.6-luna-medium
       role: ninja
       japanese_name: 半蔵
+      service_tier: default
       launch_cmd: 
     saizo:
       type: claude
