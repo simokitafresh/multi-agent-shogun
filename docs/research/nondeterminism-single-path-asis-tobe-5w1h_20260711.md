@@ -108,6 +108,8 @@
 
 軍師はレビュー機構へ「運用接続3問（回帰はどこで？裁定はいつ？通知は誰へ？）」を恒常追加（プロセス還流済み）。
 
+- **M8（殿指摘2026-07-11 02:03で発見、v1.3.1）**: 家老の呼出し元全列挙に**第6の書込みcallerが漏れていた**。`api/debug.py`のadmin向けFoFプロファイリングEPが`_recalculate_fof_history`を直呼びし、確定済みholding_signalを実書き換えし得る（内部commit・rollback不能とコード内コメントに明記済み）。recalculate_history_fastを経由しないためmanifest/snapshot契約の迂回路になる——P1bで被覆(manifest必須化 or write禁止化)、AC-Bの対象へ追加。あわせて用語整理: `fullrecalculate.py`というファイルは存在せず、実体はrecalculate_fast.py+recalculate_fof.py+precompute_raw/mtd.pyの4ファイル（fullrecalculateは運用操作名）。
+
 ## 6. 因果
 
 `[[cmd_3827_FAIL]] -> [[Stage_A計測汚染=git_hash_subprocess238回]] + [[入力manifest不在で比較不能]] + [[二重実装の乖離(日跨ぎparity割れで実証)]] -> [[P1 hotfix(snapshot+manifest) -> P2 differential RED -> P3 共通executor -> P4 GREEN]]`
