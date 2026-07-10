@@ -21,6 +21,19 @@ SCRIPT_DIR="${BULLETIN_ROOT_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." &
 BULLETIN_FILE="$SCRIPT_DIR/queue/bulletin_board.yaml"
 LOCK_FILE="${BULLETIN_FILE}.lock"
 AGENT_CONFIG="$SCRIPT_DIR/scripts/lib/agent_config.sh"
+NOTIFY_FAILURE_LOG="${BULLETIN_NOTIFY_FAILURE_LOG:-$SCRIPT_DIR/logs/bulletin_notify_failures.yaml}"
+NOTIFY_RETRIES="${BULLETIN_NOTIFY_RETRIES:-3}"
+NOTIFY_RETRY_DELAY_SECONDS="${BULLETIN_NOTIFY_RETRY_DELAY_SECONDS:-0}"
+
+if ! [[ "$NOTIFY_RETRIES" =~ ^[1-9][0-9]*$ ]]; then
+    echo "ERROR: BULLETIN_NOTIFY_RETRIES must be a positive integer: $NOTIFY_RETRIES" >&2
+    exit 1
+fi
+
+if ! [[ "$NOTIFY_RETRY_DELAY_SECONDS" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    echo "ERROR: BULLETIN_NOTIFY_RETRY_DELAY_SECONDS must be a non-negative number: $NOTIFY_RETRY_DELAY_SECONDS" >&2
+    exit 1
+fi
 
 KNOWN_AGENTS_RAW=""
 if [[ -f "$AGENT_CONFIG" ]]; then
@@ -405,13 +418,58 @@ if [[ -f "$INBOX_WRITE" ]]; then
     # 理由: 通知だけでは読みに行く行動は強制できない。
     # inboxを読む行動は既に強制されている(startup gate+stop hook)。
     # その中に全文があれば、別途掲示板を読みに行く必要がない。
+    notify_failed=0
+
+    record_notify_failure() {
+        local target="$1"
+        local attempts="$2"
+        local recorded_at
+        recorded_at="$(date '+%Y-%m-%dT%H:%M:%S %z')"
+        mkdir -p "${NOTIFY_FAILURE_LOG%/*}"
+        {
+            flock -x 201
+            {
+                printf '%s\n' "- entry_id: '$ENTRY_ID'"
+                printf "  posted_by: '%s'\n" "${POSTED_BY//\'/\'\'}"
+                printf "  target: '%s'\n" "${target//\'/\'\'}"
+                printf "  attempts: %s\n" "$attempts"
+                printf "  recorded_at: '%s'\n" "$recorded_at"
+                printf "  content: |-\n"
+                while IFS= read -r _failure_line; do
+                    printf '    %s\n' "$_failure_line"
+                done <<< "掲示板新規投稿($ENTRY_ID): ${CONTENT}"
+            } >> "$NOTIFY_FAILURE_LOG"
+        } 201>>"${NOTIFY_FAILURE_LOG}.lock"
+    }
+
+    notify_target() {
+        local target="$1"
+        local attempt=1
+        while (( attempt <= NOTIFY_RETRIES )); do
+            if bash "$INBOX_WRITE" "$target" "掲示板新規投稿($ENTRY_ID): ${CONTENT}" bulletin_notify "$POSTED_BY" 2>/dev/null; then
+                if ! pgrep -f "inbox_watcher.sh ${target}" >/dev/null 2>&1; then
+                    echo "[bulletin_write] WARN: inbox_watcher not running for ${target} — nudge may be lost" >&2
+                fi
+                return 0
+            fi
+            if (( attempt < NOTIFY_RETRIES )) && [[ "$NOTIFY_RETRY_DELAY_SECONDS" != "0" ]]; then
+                sleep "$NOTIFY_RETRY_DELAY_SECONDS"
+            fi
+            ((attempt++))
+        done
+        record_notify_failure "$target" "$NOTIFY_RETRIES"
+        echo "[bulletin_write] ERROR: inbox_write failed for ${target} after ${NOTIFY_RETRIES} attempts — failure recorded in ${NOTIFY_FAILURE_LOG}" >&2
+        return 1
+    }
+
     for target in "${NOTIFY_TARGETS[@]}"; do
-        if ! bash "$INBOX_WRITE" "$target" "掲示板新規投稿($ENTRY_ID): ${CONTENT}" bulletin_notify "$POSTED_BY" 2>/dev/null; then
-            echo "[bulletin_write] WARN: inbox_write failed for ${target} — bulletin notification not delivered" >&2
-            continue
-        fi
-        if ! pgrep -f "inbox_watcher.sh ${target}" >/dev/null 2>&1; then
-            echo "[bulletin_write] WARN: inbox_watcher not running for ${target} — nudge may be lost" >&2
+        if ! notify_target "$target"; then
+            notify_failed=1
         fi
     done
+
+    if (( notify_failed )); then
+        echo "[bulletin_write] ERROR: bulletin notification delivery failed; bulletin entry ${ENTRY_ID} was written but command failed closed" >&2
+        exit 1
+    fi
 fi

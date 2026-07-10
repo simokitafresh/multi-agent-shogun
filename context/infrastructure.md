@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-10 cmd_3807 -->
+<!-- last_updated: 2026-07-10 cmd_3828 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -9,6 +9,8 @@
 > deploy_task --yaml高速化 + recon guard: `docs/research/deploy_task_yaml_speed_recon_guard_spec_20260702.md`
 
 ## コンテキスト管理
+
+掲示板通知は `scripts/bulletin_write.sh` が通知先ごとに最大3回再送する。一時失敗は成功まで継続し、最終失敗は `logs/bulletin_notify_failures.yaml` に永続記録して投稿者へ非ゼロ終了コードで可視化する（cmd_3829）。詳細は `docs/research/cmd_3829_bulletin_notify_failclose.md`。
 
 全て外部インフラが自動処理。エージェントは何もするな。Codex忍者=/new、Claude忍者=/clear、家老=/clear(陣形図付き)、将軍=殿判断。
 閾値: ソフト50%（外部トリガー）、ハード90%（AUTOCOMPACT）。CLI差異は`config/settings.yaml`参照。

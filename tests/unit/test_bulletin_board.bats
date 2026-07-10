@@ -29,9 +29,11 @@ setup() {
     cp "$SRC_AGENT_CONFIG" "$TEST_TMPDIR/scripts/lib/agent_config.sh"
     cp "$SRC_MEMORY_DB_LIVE_INSERT" "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
     cp "$SRC_MEMORY_DB_LIVE_INSERT_ASYNC" "$TEST_TMPDIR/scripts/memory_db_live_insert_async.py"
-    cat > "$TEST_TMPDIR/scripts/inbox_write.sh" <<'EOF'
+cat > "$TEST_TMPDIR/scripts/inbox_write.sh" <<'EOF'
 #!/usr/bin/env bash
-printf '%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" >> "${INBOX_WRITE_LOG:?}"
+if [ -n "${INBOX_WRITE_LOG:-}" ]; then
+    printf '%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" >> "$INBOX_WRITE_LOG"
+fi
 EOF
     chmod +x "$TEST_TMPDIR/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_archive.sh" "$TEST_TMPDIR/scripts/bulletin_confirm.sh" "$TEST_TMPDIR/scripts/bulletin_close.sh" "$TEST_TMPDIR/scripts/inbox_write.sh" "$TEST_TMPDIR/scripts/memory_db_live_insert_async.py"
     cat > "$TEST_TMPDIR/scripts/bin/tmux" <<'EOF'
@@ -295,18 +297,45 @@ PY
     [ "$output" = "board=30 archive=21" ]
 }
 
-@test "bulletin_write warns when inbox_write fails" {
+@test "bulletin_write retries and fails closed when inbox_write fails" {
     cat > "$TEST_TMPDIR/scripts/inbox_write.sh" <<'EOF'
 #!/usr/bin/env bash
 exit 42
 EOF
     chmod +x "$TEST_TMPDIR/scripts/inbox_write.sh"
 
-    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY="shogun" TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "通知失敗"
+    local failure_log="$TEST_TMPDIR/logs/bulletin_notify_failures.yaml"
+    run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_NOTIFY_FAILURE_LOG="$failure_log" BULLETIN_NOTIFY_RETRIES=3 BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY="shogun" TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "通知失敗"
+    [ "$status" -eq 1 ]
+    [[ "$output" == blt_* ]]
+    [[ "$output" == *"ERROR: inbox_write failed for shogun after 3 attempts"* ]]
+    [[ "$output" == *"command failed closed"* ]]
+    [[ "$output" != *"inbox_watcher not running for shogun"* ]]
+    [ "$(wc -l < "$failure_log")" -ge 6 ]
+    run grep -F "target: 'shogun'" "$failure_log"
+    [ "$status" -eq 0 ]
+    run grep -F "attempts: 3" "$failure_log"
+    [ "$status" -eq 0 ]
+}
+
+@test "bulletin_write succeeds after a transient notification failure" {
+    cat > "$TEST_TMPDIR/scripts/inbox_write.sh" <<'EOF'
+#!/usr/bin/env bash
+state="${INBOX_RETRY_STATE:?}"
+count=0
+[ -f "$state" ] && count="$(cat "$state")"
+count=$((count + 1))
+printf '%s\n' "$count" > "$state"
+[ "$count" -ge 2 ]
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/inbox_write.sh"
+    local retry_state="$TEST_TMPDIR/retry.count"
+    local failure_log="$TEST_TMPDIR/logs/bulletin_notify_failures.yaml"
+    run env INBOX_RETRY_STATE="$retry_state" BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_NOTIFY_FAILURE_LOG="$failure_log" BULLETIN_NOTIFY_RETRIES=3 BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY="shogun" TMUX_PANE="$TMUX_PANE" PATH="$PATH" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "再送成功"
     [ "$status" -eq 0 ]
     [[ "$output" == blt_* ]]
-    [[ "$output" == *"WARN: inbox_write failed for shogun"* ]]
-    [[ "$output" != *"inbox_watcher not running for shogun"* ]]
+    [ "$(cat "$retry_state")" -eq 2 ]
+    [ ! -e "$failure_log" ]
 }
 
 @test "bulletin_confirm adds agent to confirmed_by" {
