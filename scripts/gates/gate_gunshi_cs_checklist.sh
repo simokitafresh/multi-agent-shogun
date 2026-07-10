@@ -318,6 +318,16 @@ while IFS= read -r line; do
     esac
 done <<< "$RESULT"
 
+# Speed optimization: cache python3 results by LOG_FILE mtime+size (cmd_gunshi_speed D0)
+_cs_cache_key="$(stat -c '%Y:%s' "$LOG_FILE" 2>/dev/null || true)"
+_cs_cache_dir="/tmp/shogun_cs_checklist_cache"
+mkdir -p "$_cs_cache_dir" 2>/dev/null || true
+_cs_cold_cache="$_cs_cache_dir/cold_${_cs_cache_key//[!0-9:]/_}"
+_cs_skill_cache="$_cs_cache_dir/skill_${_cs_cache_key//[!0-9:]/_}"
+
+if [ -f "$_cs_cold_cache" ]; then
+    cold_category_missing="$(< "$_cs_cold_cache")"
+else
 cold_category_missing=$(python3 - "$LOG_FILE" <<'PY' 2>/dev/null || true
 import re
 import sys
@@ -415,7 +425,12 @@ for idx in range(start, len(reviews)):
 print("\n".join(warnings))
 PY
 )
+printf '%s' "$cold_category_missing" > "$_cs_cold_cache" 2>/dev/null || true
+fi
 
+if [ -f "$_cs_skill_cache" ]; then
+    skill_usage_missing="$(< "$_cs_skill_cache")"
+else
 skill_usage_missing=$(python3 - "$REPO_ROOT" "$LOG_FILE" <<'PY' 2>/dev/null || true
 import os
 import re
@@ -584,6 +599,8 @@ for entry in reviews[-20:]:
 print("\n".join(warnings))
 PY
 )
+printf '%s' "$skill_usage_missing" > "$_cs_skill_cache" 2>/dev/null || true
+fi
 
 # --- AC1: cs_checklist空/null検出 (cmd_3373) ---
 # cs_checklistフィールドが存在するが中身が空またはnullの場合にBLOCK
