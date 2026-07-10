@@ -1027,6 +1027,25 @@ def search_events(db_path: Path, query: str, limit: int = 20, target: str = "") 
     target = normalize_text(target)
     target_clause = "AND (e.target = ? OR e.event_type = 'document')" if target else ""
 
+    try:
+        return _search_events_impl(db_path, normalized_query, query, target, target_clause, limit)
+    except sqlite3.OperationalError as exc:
+        # A DB that has not been through the ETL import yet (fresh checkout,
+        # e.g. CI) has no events/events_fts tables. That is an empty index,
+        # not a query failure: treat it like "search found nothing".
+        if "no such table" in str(exc):
+            return []
+        raise
+
+
+def _search_events_impl(
+    db_path: Path,
+    normalized_query: str,
+    query: str,
+    target: str,
+    target_clause: str,
+    limit: int,
+) -> list[sqlite3.Row]:
     with sqlite3.connect(db_path) as conn:
         configure_connection(conn)
         conn.row_factory = sqlite3.Row

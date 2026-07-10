@@ -47,6 +47,12 @@ task:
   task_type: impl
   project: dm-signal
   status: completed
+  cancel_reason: '前cmdの取消理由'
+  superseded_by: cmd_old_replacement
+  assumptions:
+  - claim: '前cmdの古い前提'
+    source: 'old-source'
+    trust: unverified
   purpose: '前cmdの古いpurpose'
   target_path: /mnt/c/Python_app/DM-signal/backend/old_file.py
   constraints:
@@ -131,8 +137,53 @@ resolve_fixture_task() {
 
     eval "$(extract_function reset_stale_fields)"
     eval "$(extract_function resolve_cmd_to_task)"
+    eval "$(extract_function inject_cmd_assumptions)"
     reset_stale_fields "$ninja_name"
     resolve_cmd_to_task "$cmd_id" "$ninja_name"
+}
+
+@test "normal deploy injects source assumptions structurally and clears canceled-task metadata" {
+    local root
+    root="$(mktemp -d "$BATS_TMPDIR/deploy_assumptions.XXXXXX")"
+    prepare_source_fixture "$root"
+    sed -i "/    timestamp:/i\\    assumptions:\n    - claim: '2026-07-10 verified claim'\n      source: 'scripts/deploy_task.sh:1134'\n      trust: verified" "$root/queue/shogun_to_karo.yaml"
+
+    resolve_fixture_task "$root" "cmd_9999" "tobisaru"
+    SCRIPT_DIR="$root"
+    source "$REAL_PROJECT_ROOT/scripts/lib/field_get.sh"
+    eval "$(extract_function _overwrite_ac_from_cmd)"
+    _overwrite_ac_from_cmd "$root/queue/tasks/tobisaru.yaml"
+
+    run python3 - "$root/queue/tasks/tobisaru.yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1]))['task']
+assert task['assumptions'] == [{'claim': '2026-07-10 verified claim', 'source': 'scripts/deploy_task.sh:1134', 'trust': 'verified'}]
+assert 'cancel_reason' not in task
+assert 'superseded_by' not in task
+PY
+    [ "$status" -eq 0 ]
+    rm -rf "$root"
+}
+
+@test "normal deploy without source assumptions does not fabricate them and overwrites existing AC" {
+    local root
+    root="$(mktemp -d "$BATS_TMPDIR/deploy_no_assumptions.XXXXXX")"
+    prepare_source_fixture "$root"
+
+    resolve_fixture_task "$root" "cmd_9999" "tobisaru"
+    SCRIPT_DIR="$root"
+    source "$REAL_PROJECT_ROOT/scripts/lib/field_get.sh"
+    eval "$(extract_function _overwrite_ac_from_cmd)"
+    _overwrite_ac_from_cmd "$root/queue/tasks/tobisaru.yaml"
+
+    run python3 - "$root/queue/tasks/tobisaru.yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1]))['task']
+assert 'assumptions' not in task
+assert task['acceptance_criteria'] != {'AC1': {'description': '前cmdのAC1'}}
+PY
+    [ "$status" -eq 0 ]
+    rm -rf "$root"
 }
 
 get_task_values() {

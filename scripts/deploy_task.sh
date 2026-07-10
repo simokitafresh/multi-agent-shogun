@@ -854,6 +854,8 @@ STALE_FIELDS = [
     # 第15層: cmd固有メタ(karo_direct手動注入/resolve_cmd_to_task転写。前cmdの値が次cmdに残留する)
     'expected_model_effort', 'pre_deploy_banner_evidence',
     'not_in_scope', 'recommended_skills',
+    # 第16層: cmdで検証済みの前提とstatus固有メタ。新cmdだけを正本にする
+    'assumptions', 'cancel_reason', 'cancellation_reason', 'superseded_by',
 ]
 # parent_cmdが変わる場合だけacceptance_criteriaをクリアする。
 # 同一cmd再配備では、cmdソース不在時にテンプレートACをfallbackとして保持する。
@@ -1225,8 +1227,103 @@ resolve_cmd_to_task() {
     yaml_field_set_batch "$task_file" "task" "${_batch_args[@]}" \
         || { log "FATAL: yaml_field_set_batch failed for resolve_cmd_to_task"; return 1; }
 
+    # cmd_saveで検証済みのassumptionsを構造保持してtaskへ渡す。
+    # sourceに無い場合は何も生成しない（暗黙前提の捏造防止）。
+    inject_cmd_assumptions "$task_file" "$cmd_id" \
+        || { log "FATAL: assumptions injection failed for ${cmd_id}"; return 1; }
+
     log "resolve_cmd: ${cmd_id} → ninja=${ninja_name}, task_id=${task_id}, project=${project:-none}, type=${task_type}, title=${title}"
     return 0
+}
+
+# ─── cmd assumptions構造保持注入 ───
+inject_cmd_assumptions() {
+    local task_file="$1"
+    local cmd_id="$2"
+    python3 - "$task_file" "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$cmd_id" <<'ASSUMPTIONS_INJECT_PY'
+import os
+import sys
+import tempfile
+import yaml
+
+task_path, source_path, cmd_id = sys.argv[1:]
+with open(source_path, encoding='utf-8') as f:
+    source = yaml.safe_load(f) or {}
+commands = source.get('commands', {})
+entry = commands.get(cmd_id, {}) if isinstance(commands, dict) else {}
+assumptions = entry.get('assumptions') if isinstance(entry, dict) else None
+if assumptions is None:
+    raise SystemExit(0)
+
+def scalar(value):
+    if value is None:
+        return 'null'
+    if isinstance(value, bool):
+        return str(value).lower()
+    if isinstance(value, (int, float)):
+        return str(value)
+    text = str(value)
+    quote = chr(39)
+    return quote + text.replace(quote, quote + quote) + quote
+
+def emit_value(value, indent):
+    prefix = ' ' * indent
+    if isinstance(value, dict):
+        if not value:
+            return [prefix + '{}']
+        lines = []
+        for key, nested in value.items():
+            if isinstance(nested, (dict, list)):
+                lines.append(prefix + str(key) + ':')
+                lines.extend(emit_value(nested, indent + 2))
+            else:
+                lines.append(prefix + str(key) + ': ' + scalar(nested))
+        return lines
+    if isinstance(value, list):
+        if not value:
+            return [prefix + '[]']
+        lines = []
+        for item in value:
+            if isinstance(item, dict) and item:
+                first = True
+                for key, nested in item.items():
+                    marker = '- ' if first else '  '
+                    first = False
+                    if isinstance(nested, (dict, list)):
+                        lines.append(prefix + marker + str(key) + ':')
+                        lines.extend(emit_value(nested, indent + 4))
+                    else:
+                        lines.append(prefix + marker + str(key) + ': ' + scalar(nested))
+            elif isinstance(item, (dict, list)):
+                lines.append(prefix + '-')
+                lines.extend(emit_value(item, indent + 2))
+            else:
+                lines.append(prefix + '- ' + scalar(item))
+        return lines
+    return [prefix + scalar(value)]
+
+with open(task_path, encoding='utf-8') as f:
+    raw = f.read()
+block = ['  assumptions:'] + emit_value(assumptions, 4)
+lines = raw.splitlines()
+insert_at = next((i + 1 for i, line in enumerate(lines) if line == 'task:'), None)
+if insert_at is None:
+    raise SystemExit('task block missing')
+lines[insert_at:insert_at] = block
+rendered = '\n'.join(lines) + '\n'
+yaml.safe_load(rendered)
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(task_path), suffix='.tmp')
+try:
+    with os.fdopen(fd, 'w', encoding='utf-8') as f:
+        f.write(rendered)
+    os.replace(tmp, task_path)
+except Exception:
+    try:
+        os.unlink(tmp)
+    except OSError:
+        pass
+    raise
+ASSUMPTIONS_INJECT_PY
 }
 
 # ─── cmd_1157: flat→nested YAML正規化 ───
