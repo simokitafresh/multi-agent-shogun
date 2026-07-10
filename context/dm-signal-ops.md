@@ -1127,3 +1127,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 清掃前後の実効visible件数はBasic 5 / Standard 22 / AddOn 22 / NewStandard 17 / premium 27で不変。commit後の`/api/signals`実応答も全tierでPF名・件数・`hide_signal`が清掃前と完全一致。
 - 退避・再実行・検証証跡: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3841_orphan_cleanup_backup.json`、`cmd_3841_orphan_cleanup_result.json`、`cmd_3841_viewer_api_pre.json`、`cmd_3841_viewer_api_post.json`、`scripts/oneshot/cmd_3841_orphan_cleanup.py`。
 - 因果リンク: [[PF削除cleanup非対称の残骸蓄積]] -> [[cmd_3841退避付き除去]] -> [[可視性対応表と現行PF集合の整合]]。
+
+## §66 L5 zero-recompute Phase 3ローカル全量検証 (cmd_3835, 2026-07-11)
+
+- 公式id=206 verified fixtureの103PF全量で、legacy/candidate各1545行がmissing/extra/mismatch=0。固定3PF warmup後のproduction相当L5境界は13.213641秒（render 9.053741 + encode 0.718013 + atomic bulk UPSERT 3.436778 + commit 0.005109）で30秒gateをPASS。SELECT/loaderは全0。
+- 103PF初回差分25件はstandard PFの`monthly_trade` oldest boundaryへ`component_portfolios: []`を新設したschema-presence差のみ。元key欠落は欠落維持、FoFで元key存在時のみ`[]`へ更新する最小修正後、3PF 45/45→103PF 1545/1545の順で完全一致を確認。
+- 本番`fullrecalculate`は未実行。DB lock・push/deploy確認後のPhase 4のみ残る。詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3835_zero_recompute_exec.md`。因果リンク: [[cmd_3825でP2到達+bulk零化完了]] -> [[monthly_trade_schema-presence差25件]] -> [[cmd_3835_Phase3_103PF完全一致]]。
