@@ -1,5 +1,6 @@
-# precompute全量最速化 — /goal自律ループ設計書 v2.0
+# precompute全量最速化 — /goal自律ループ設計書 v2.1
 
+- v2.1: 殿North Star「本番100PFを約30秒」を反映。L5を再計算層からL2成果物のpure formatting+chunked一括UPSERT層へ変えるZero-Recompute Architectureを最優先化。100PF×15行で0.3秒/PFを目安とし、L5内のprice/signal/ledger/momentum/MTD再計算を原則ゼロ、parameter variantsは1回のfull結果からslice、評価は本番total/p50/p95/max/RSS+完全parity
 - v2.0: 殿指摘「full recalculate時の既存キャッシュを根本的に見落としているのでは」を一次コードで確認。cold単独L5の絶対5秒ゲートを撤回し、production-warm経路を正本へ変更。`recalculate_fast.py`で既に構築済みのmonthly return/signal/portfolio/price/benchmark/business-days/DTB3/rf-map cacheがL5呼出しへ渡されない配管断絶を最優先修正対象とし、cold standaloneとwarm fullrecalculateを別々に計測する
 - v1.9: 殿裁定「3PFで41秒は実用に耐えない」を反映。3PFの暫定実用ゲートをunprofiled stage harness `<=5.0s`へ固定し、到達までは10PF昇格禁止。局所micro-cache探索から、monthly/annual等の全履歴中間計算をPFごとに1回化する構造改善へ優先順位を変更。mismatch/missing/extra/FAIL/SKIPが1件でもあれば速度に関係なくFAIL
 - v1.8: 殿裁定「重要なのは本番環境での高速化」を反映。ローカルelapsedを候補選別へ格下げし、本番移植可能なDB往復/query数/計算量/割当量の削減と、本番L5区間実測+production parityを成功条件へ固定
@@ -23,6 +24,7 @@
 4. **計測なき改善は改善ではない**: 全iterationで before→after 数値を記録。安全パターン（try/except, invalidate順序等）の削除によるスピードアップは禁止（check_safety_pattern_removal準拠）
 5. **総見込み時間を最小化**: 目的関数は `T_total = 道具改修時間 + 残り探索run時間 + 昇格検証時間 + 最終103PF検証時間`。開始済みrunの経過時間は意思決定から除外し、今後の残時間が代替案より長いと判明した時点で中断する
 6. **本番速度が目的**: ローカルpgserverのelapsedは候補選別・回帰検出にのみ使う。採用する変更は本番へ移植可能なDB往復数、SQL query数、計算量、メモリ割当量の削減に限る。WSL/pgserver/cache固有の高速化を成果へ数えない
+7. **Zero-Recompute**: fullrecalculateのL2で算出済みのデータをL5で再計算しない。L5は既存artifactのpure formatting、params別slice、raw JSON化、chunked一括UPSERTだけを担う
 
 ## §1 As-Is（実測 2026-07-09〜10）
 
@@ -51,7 +53,7 @@
 
 ## §2 To-Be
 
-- 全量precompute（103PF×15行）を出力等価のまま**production-warm理論下限に漸近**させる。cold standalone経路は機能回帰用、warm fullrecalculate経路を速度評価の正本とする
+- 全量precompute（約100PF×15行）を出力等価のまま**本番30秒程度**へ短縮する。cold standalone経路は機能回帰用、warm fullrecalculate経路を速度評価の正本とする
 - 副次: rssピークの削減（1.9GBは並列化の障害になる）
 - 完了定義: /goalループのstop condition（§4）到達+パリティゲートPASS+本番実測
 - 最終成功指標: Render本番のL5/precompute開始終了ログによる区間秒数before→after、同一本番入力からのproduction output parity、ピークRSS。ローカル秒数だけで完了判定しない
@@ -60,6 +62,7 @@
 
 | # | 仮説 | 期待 | リスク |
 |---|---|---|---|
+| H0 | Zero-Recompute Architecture（L2成果物をcontext/artifactでL5へ渡し、再計算せずpure formatting+slice+一括UPSERT） | 100PF約30秒へ到達する本命。現在99.2%を占めるmonthly/annual/monthly_trade再計算を消す | artifact寿命・型・日付境界。warm/cold双方の完全parity必須 |
 | H1 | PF間並列化（DBセッション分離のworker N並列。one-PF-at-a-timeの解消） | 支配的。コア数分の短縮 | DBセッション共有不可・rss×N。要セッションfactory設計 |
 | H2 | PF内6ビルダーの共通中間データ再利用（月次リターン系列を6回別々に引いている疑い→1回取得して共有） | PF内の重複I/O消滅 | ビルダー間の暗黙依存。要プロファイルで確定 |
 | H3 | bulk化の横展開（compare_returns_bulk方式を per-PF エンドポイントにも: 全PFの月次系列を1クエリで先読み） | DB往復をO(PF)→O(1) | メモリ増。チャンク分割で対処（殿原則: チャンクに分けよ） |
@@ -77,7 +80,7 @@
 対象PFは固定順序の段階集合3→10→25→50→103。各上位集合は下位集合を包含し、PF ID一覧と選定理由を記録する。
 反復手順: (1)同一immutable DB clone・同一logical dateで対照snapshotを作成 (2)現段階のPF集合で最遅コンポーネントを特定 (3)出力等価の改善を1つ実装
 (4)非凍結stage harnessでPFループとbulk prefixの両方を現段階の集合へ限定し、全endpoint・全パラメータを1回計測。対象集合のcanonical hash一致+Pythonオブジェクト等価を確認
-(5)同じPF段階でprofile→最大ボトルネック改善1件→parity→再計測を反復。3PFはcold standaloneとproduction-warm contextの両方を計測し、速度の昇格判定はwarm値を正本とする。**2連続改善5%未満かつwarm実測理論下限との差10%以内**を両方満たした段階だけ次へ昇格
+(5)同じPF段階でprofile→最大ボトルネック改善1件→parity→再計測を反復。3PFは本番ログのworst top3を使い、cold standaloneとproduction-warm contextの両方を計測する。速度の正本はwarm値。L5中の再計算を原則ゼロにし、100PF換算30秒程度へ到達後も**2連続改善5%未満かつwarm実測理論下限との差10%以内**まで反復
 (6)103PFまで昇格した最終候補だけ凍結bench/parityで全pipeline 3回中央値+全2699行parityを確定。数値をdocs/research/cmd_3825_h2_parity_fix.mdへ累積追記。
 parityのmismatch/missing/extraが1件でもある、またはtest FAIL/SKIPが1件でもあるiterationは無効として原因修正まで次の仮説へ進まない。
 stop condition: 103PFでparity PASSし、改善が2連続5%未満、またはH1-H6を全て計測・判定済み。3/10/25/50PFで停止してはならない。上限10 iterationは各段階ではなく全体の仮説変更回数に適用。
@@ -93,6 +96,7 @@ stop condition: 103PFでparity PASSし、改善が2連続5%未満、またはH1-
 - **各iterationの記録契約**: iteration番号/PF段階/PF ID集合/変更1行要約/全endpoint件数/秒数/rssピーク/parity判定/昇格可否。3回中央値は103PF最終判定にのみ必須。記録なきiterationは無効
 - **本番移植性契約（v1.8修正）**: 各iterationでローカル秒数に加え、SQL query数、DB round-trip数、取得/書込行数、主要CPU区間、RSS/割当量を記録する。削減理由がローカルファイルシステム・pgserver・OS cacheだけに依存する候補は不採用。P4で本番L5区間実測とproduction parityを必ず閉じる
 - **production-warm context契約（v2.0追加）**: `precompute_raw_for_portfolios()`は任意の明示contextでfullrecalculate側の既存cacheを受け取る。context未指定のstandalone APIは従来どおり自前fallbackで完全動作する。cacheの暗黙global化・別DB/別runへの漏洩は禁止。warm/cold両経路で同一logical dateのcanonical parityを通す
+- **Zero-Recompute契約（v2.1追加）**: performance/monthly/annual/monthly_tradeのparams違いは各PFでfull結果を1回だけ生成してsliceする。rolling/drawdown/metrics/signals/compare_returnsはL2生成済みtable/artifactから整形する。per-PF commitは禁止し、約1500 raw行を安全なchunkにまとめてUPSERTする。L5内のprice/signal/ledger/momentum再計算は計測上0を要求する
 - 環境: **immutable baseline+logical date固定方式（v1.2修正）** — 本番同期のbaseline dumpを凍結→作業DBはそこからclone→各iterationの対照と変更後を同一logical dateで生成して比較。DB snapshot id/source commit/seed/evaluation dateを記録必須。日跨ぎしたhistorical raw_jsonと当日再生成値を直接比較しない。共有ローカルDBの直接使用は禁止（他cmdの書込みで期待値が汚れる）。本番非接触=他cmdと並列可
 
 ## §5 Phase構成
@@ -102,7 +106,7 @@ stop condition: 103PFでparity PASSし、改善が2連続5%未満、またはH1-
 | P1 ベンチ+パリティ道具（評価器） | **完了(cmd_3819)**。全量ベンチ+canonical parityゲートを非goal側で凍結、baseline DB dump作成、理論下限を推定 | 凍結commit `c956e4e7...`、snapshot id、1180.64s/RSS 311.9MBを記録済み |
 | P2 /goalループ | **実行中(cmd_3825)**。H2初回36.32%短縮はparity FAILで無効。等価版H2を確定後、H1-H6を計測順に反復 | parity PASSした有効iterationだけでstop condition到達。全iteration数値記録 |
 | P3 検証 | canonical parityゲートPASS+既存テスト全PASS+回帰テスト追加 | テスト全PASS |
-| P4 本番反映 | §42v2で自走deploy→本番実測は**L5/precompute区間の開始終了ログで区間計測**(fullrecalculate全体ではなく)→before 7分と比較→失敗ならrevert | 本番区間実測数値の報告 |
+| P4 本番反映 | §42v2で自走deploy→本番実測は**L5/precompute区間の開始終了ログで区間計測**(fullrecalculate全体ではなく)→total/p50/p95/max/RSSを比較→失敗ならrevert | 約100PFで30秒程度+完全parityの本番証明 |
 
 - **P1とP2は別cmdに分離**（レビュー修正1: 評価器を先に凍結してからgeneratorを走らせる）。cmd分割は P1 / P2 / P3+P4 の3本を基本とする
 - 配備: goal忍者はCodex CLIの忍者（M:GPT）を優先（/goalはCodex機能）。他忍者・他cmdと並列可
