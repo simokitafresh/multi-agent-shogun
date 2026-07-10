@@ -1085,3 +1085,12 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - Viewer APIではfolder非表示がportfolio可視性より優先する。奥義-GS-分身3体のfolder `5396fe40-8f48-4619-aebc-402476c9120a`はglobal hiddenのため、Standard既存overrideに加えてAddOn/premiumへ`hidden=false`を各1キー追加。API実応答も5/22/22/17/27で完全一致。
 - 復旧・rollback証跡: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3837_visibility_pre_change_backup.json`、`cmd_3837_visibility_post_db.json`、`cmd_3837_folder_override_diff.json`、`cmd_3837_visibility_post_folder_db.json`、`cmd_3837_viewer_api_verify.json`。再実行script: `/mnt/c/Python_app/DM-signal/scripts/oneshot/cmd_3837_visibility_diff.py`。
 - 因果リンク: [[殿指示20260710_2028_note対応表準拠設定]] -> [[cmd_3837差分書き込み]] -> [[tier別可視性完成形]]。
+
+## §63 admin visibility「手動saveしたのに反映されない」偵察: folder非表示はSignals限定 (cmd_3838, 2026-07-10)
+
+- **殿報告(20:40)の主因(確度高)**: L1.5フォルダ非表示(`check_hide_folder`)を呼んでいるのは全コードベース中`backend/app/api/signals.py:376`の**1箇所のみ**。§62の「Viewer APIではfolder非表示がportfolio可視性より優先する」は`/api/signals`限定の記述であり、compare-returns/metrics/monthly-returns/performance/deterioration/history/rolling-returns/regime-analysis/monthly-trade/trades/p_average/annual-returnsの**12エンドポイントはfolder非表示を一切参照しない**(`check_hide_portfolio`のみ実行)。フォルダを非表示にしても保存自体は成功するため、Signals以外のページでは該当PFが表示され続け「反映されていない」ように見える。
+- 副次バグ(実在確認済・トリガー未特定): (1) `PUT /api/admin/tiers/{tier_id}/visibility`は`portfolio_settings`等を`updated_at`突合なしに全置換する(楽観的並行性制御ゼロ。スキーマに`updated_at`はあるが書込み側で未使用)。(2) FE `/admin/visibility`はTier切替や離脱時に未保存編集を確認なしに破棄する(`hasUnsavedChanges`/`confirm(`/`beforeunload`いずれも実装なし)。殿が20:28〜20:40に複数Tierを順次手動設定した運用フローと一致する再現条件。
+- 棄却済み仮説: precompute rawキャッシュ無効化範囲不足(rawはtier非依存でマスキングは都度動的適用のため無関係)/ Fusion API(殿裁定2026-07-10 17:44で意図的に独立管理、§61参照)。
+- 別リスクとして記録: `portfolios.hide_portfolio`/`hide_signal`列はPF configから同期される複製列だが、閲覧側マスキング判定はこの列を一切参照しない「死んだ列」(debug.py診断出力のみが読み手)。将来PF個別編集画面での混同源になりうる。
+- 詳細・行番号付き全コードパス・テストギャップ: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3838_visibility_save_recon.md`
+- 因果リンク: [[殿報告20260710_2040_admin保存不反映]] -> [[folder非表示signals限定発覚]] -> [[cmd_3838偵察recon文書]]
