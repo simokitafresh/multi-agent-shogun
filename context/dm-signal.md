@@ -103,6 +103,10 @@ note.comメンバーシップの料金プランとDB viewer_tiersの対応。詳
 
 ## §33 L0-L3 GS再キャリブレーション計画 (2026-07-06)
 
+### cmd_3826 バンド解除・復元完了 (2026-07-10)
+
+cmd_3771 snapshotからstandard 24体をバンド適用前configへ復元し、試験登録1体もthreshold_bandのみ除去。PostgreSQL再照会でstandard `threshold_band`残存0件。fullrecalculate id=206/run `20260710_040539` はcompleted、2497.25s、103/103 PFのsignals・monthly_returns・portfolio_metrics生成を確認。L5 raw precomputeは1548 rows / 1659.78s / RSS 2075.2MB、L2は568.03s(9m28s、22.7%)。詳細→ `/mnt/c/Python_app/DM-signal/docs/research/cmd_3826_band_rollback.md`。
+
 ### cmd_3824 非決定性調査 (2026-07-10, tobisaru継続偵察で機構確定)
 
 `秘奥義-変わり身-激攻` 2014-10-31で、再計算5回に対応するsignal変更5件が
