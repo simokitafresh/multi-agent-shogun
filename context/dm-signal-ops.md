@@ -84,7 +84,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L859 -->
+<!-- last_synced_lesson: L860 -->
 
 ## §36 API認証
 
@@ -804,6 +804,7 @@ import metrics_research_engine as MRE
 - L855: GS shin_shijin_l1_gs.pyのforce numpy fast path前提はband境界近傍のDTB3暦解像度差で崩れる（cmd_3813）
 - L856: 既存の同種native-calendar実装を先に探せば設計時間とリスクを削減できる+大規模パラメータ空間の網羅集計はDNA group単位の重複排除で「間引き」なしに実現できる（cmd_3814）
 - L859: PipelineEngine検証スクリプトはrebalance_triggerを無視した固定target_date(直前営業日)を使うと非monthlyリバランスPFを誤って乖離判定する（cmd_3818）
+- L860: PostgreSQL binary COPYは列名タグを持たない位置ベース形式。source/target間の列順不一致がUTF8デコードエラー等の破損を生む（cmd_3819）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
