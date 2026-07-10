@@ -4331,7 +4331,10 @@ check_impl_push_ac() {
     local AC_SECTION
     AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
         /^[[:space:]]*acceptance_criteria:/ { found=1; next }
-        found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
+        # binary_check: はAC配下の常設キー。exit条件に含めるとAC1のdescription
+        # 1行しか検査されず、AC2以降の記述が検出されないFPを生む
+        # (2026-07-10 cmd_3836/3837で4回BLOCK往復実証。4関数同型を一括修正)
+        found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*binary_check:/ && !/^[[:space:]]*id:/ { exit }
         found { print }
     ')
 
@@ -4415,7 +4418,10 @@ check_ac_must_should_mix() {
     local AC_SECTION
     AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
         /^[[:space:]]*acceptance_criteria:/ { found=1; next }
-        found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
+        # binary_check: はAC配下の常設キー。exit条件に含めるとAC1のdescription
+        # 1行しか検査されず、AC2以降の記述が検出されないFPを生む
+        # (2026-07-10 cmd_3836/3837で4回BLOCK往復実証。4関数同型を一括修正)
+        found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*binary_check:/ && !/^[[:space:]]*id:/ { exit }
         found { print }
     ')
     [[ -z "$AC_SECTION" ]] && return 0
@@ -4480,7 +4486,10 @@ check_research_tool_growth_ac() {
     local AC_SECTION
     AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
         /^[[:space:]]*acceptance_criteria:/ { found=1; next }
-        found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
+        # binary_check: はAC配下の常設キー。exit条件に含めるとAC1のdescription
+        # 1行しか検査されず、AC2以降の記述が検出されないFPを生む
+        # (2026-07-10 cmd_3836/3837で4回BLOCK往復実証。4関数同型を一括修正)
+        found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*binary_check:/ && !/^[[:space:]]*id:/ { exit }
         found { print }
     ')
     [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
@@ -5939,7 +5948,10 @@ check_research_artifact_reflux_ac() {
 
     AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
         /^[[:space:]]*acceptance_criteria:/ { found=1; next }
-        found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
+        # binary_check: はAC配下の常設キー。exit条件に含めるとAC1のdescription
+        # 1行しか検査されず、AC2以降の記述が検出されないFPを生む
+        # (2026-07-10 cmd_3836/3837で4回BLOCK往復実証。4関数同型を一括修正)
+        found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*binary_check:/ && !/^[[:space:]]*id:/ { exit }
         found { print }
     ')
     [[ -n "$AC_SECTION" ]] || AC_SECTION="$CMD_BLOCK_NC"

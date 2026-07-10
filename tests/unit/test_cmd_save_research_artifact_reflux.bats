@@ -78,6 +78,27 @@ teardown() {
     [[ "$output" == *"BLOCK_COUNT=0"* ]]
 }
 
+@test "LK-A10: three elements spread across AC1..AC3 after binary_check lines still pass (2026-07-10 FP fix)" {
+    local cmd='  type: research
+  project: dm-signal
+  title: 調査 — 可視性設定の経路確認
+  purpose: 分析結果をまとめる
+  acceptance_criteria:
+    AC1:
+      description: docs/research/cmd_9999_visibility_*.md を生成する
+      binary_check: 成果物が生成されたか
+    AC2:
+      description: test -s と ls -l で成果物現物確認を行う
+      binary_check: 現物確認を行ったか
+    AC3:
+      description: context/dm-signal-ops.md へ結論を還流する
+      binary_check: context還流を行ったか'
+
+    run bash "$TEST_TMPDIR/run_check.sh" "$cmd" 2>&1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK_COUNT=0"* ]]
+}
+
 @test "LK-A10: non-research cmd is outside this gate" {
     local cmd='  type: impl
   project: infra
