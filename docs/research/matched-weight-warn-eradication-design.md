@@ -31,7 +31,7 @@ cmd_3812は旧§42「殿個別裁可待ち」で push/deploy/再backfill を全�
 3. **データ修正**: ledger対象行バックアップ（退避行数の数値確認）→band適用24PFの**weights付き再backfill**→対象PFのみ部分再計算→DB直接クエリでcompleted確認（L714/715）
 4. **12体再突合**: cmd_3803方式。期待値=玄武-常勝2023-12（DTB3・GS側要因=本番無関係）以外の**全乖離解消**
 5. **WARN=0計測**: 手順3の部分再計算ログ（+次回cron全量再計算ログ）で`Matched weight`件数をgrep集計→**0件を数値記録**。0でなければ残存パターンを分類し本設計書を改定
-6. **恒久監視**: シグナル変更アラートと同様に、再計算完了時のWARN件数をログ集計しdashboard/ntfyへ載せる軽量チェックを追加（0でない=即検知。防御階層Level5）
+6. **恒久監視**: ✅完了(cmd_3820, 2026-07-10 09:17 CLEAR) — run単位のmatched_weight_warn_countを再計算完了ログへ記録し、1件以上で[MATCHED WEIGHT WARN] ntfy通知(0件は抑制)。deploy済み(commit a74ad188, dep-d982ekp Live)。本番実運転で count=0+通知抑制の動作を実証済み(2026-07-09 23:38Z precompute 102PF rows=1533)
 
 ## §4 実行割当
 
