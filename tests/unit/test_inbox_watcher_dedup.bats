@@ -728,6 +728,32 @@ echo "INPUT_GUARD_DEFERRED=yes"
     [[ "$output" == *"INPUT_GUARD_DEFERRED=yes"* ]]
 }
 
+@test "T-IWD-010A: Codex dim idle suggestion is not treated as unsent input" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export INBOX_WATCHER_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/inbox_watcher.sh" hanzo dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+
+tmux() {
+    if [[ "$*" == *" -e "* ]]; then
+        printf "\\033[1m›\\033[0m \\033[2mImprove documentation in @filename\\033[0m\\n"
+    else
+        printf "› Improve documentation in @filename\\n"
+    fi
+}
+
+if pane_input_line_has_text dummy-pane codex; then
+    echo "DIM_SUGGESTION_MISCLASSIFIED=yes"
+    exit 1
+fi
+echo "DIM_SUGGESTION_ALLOWED=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DIM_SUGGESTION_ALLOWED=yes"* ]]
+}
+
 @test "T-IWD-011: input guard allows nudge when pane input line is empty prompt" {
     run bash -c '
 set -euo pipefail

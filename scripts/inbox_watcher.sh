@@ -541,11 +541,21 @@ get_effective_cli_type() {
 
 pane_input_line_has_text() {
     local pane_target="$1"
-    local pane_tail last_line stripped
+    local effective_cli="${2:-unknown}"
+    local pane_tail styled_tail last_line stripped
 
     pane_tail=$(tmux capture-pane -t "$pane_target" -p -J -S -3 2>/dev/null || true)
     last_line=$(printf '%s\n' "$pane_tail" | grep -E '^[[:space:]]*[›❯]' | tail -1 || true)
     [ -n "$last_line" ] || return 1
+
+    # Codex renders its idle suggestion inside the prompt using ANSI dim (SGR 2).
+    # Plain capture makes that placeholder indistinguishable from unsent user text,
+    # which can defer recovery nudges forever. Preserve styles for this one check;
+    # genuinely typed text is not dim and remains protected by INPUT-GUARD.
+    if [ "$effective_cli" = "codex" ]; then
+        styled_tail=$(tmux capture-pane -t "$pane_target" -p -e -J -S -3 2>/dev/null || true)
+        [[ "$styled_tail" == *$'\033[2m'* ]] && return 1
+    fi
 
     stripped="$last_line"
     stripped="${stripped//$'\r'/}"
@@ -942,7 +952,7 @@ send_wakeup() {
             sleep 0.3
             echo "[$(date)] [COPY-MODE] Exited copy-mode for $AGENT_ID before nudge" >&2
         fi
-        if [ "$allow_nonempty_input_line" != "1" ] && pane_input_line_has_text "$PANE_TARGET"; then
+        if [ "$allow_nonempty_input_line" != "1" ] && pane_input_line_has_text "$PANE_TARGET" "$effective_cli"; then
             [ -n "$sent_token" ] && rm -f "$sent_token" 2>/dev/null || true
             record_deferred_nudge "$current_fp" "input_guard"
             rm -f "$FINGERPRINT_FILE" "$DEBOUNCE_FILE" 2>/dev/null || true

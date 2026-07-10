@@ -7,7 +7,7 @@ Worker: hayate
 
 `inbox_watcher.sh` の INPUT-GUARD 保留は、実送信前に `fingerprint` / `debounce` を更新済みだったため、同一未読集合の次回確認が `FP-SAME` / debounce 扱いで抑止され得た。これを `deferred_nudge` 状態として明示し、保留時は送信済み状態をrollback、未読が残る限り次回 `DEFERRED-RETRY` で再送するよう修正した。
 
-追加で、Codex の `agent_state=active` かつ `check_agent_busy=busy` の場合、非空入力行は生成中UI/suggestionであり paste+Enter が queued message として安全に入るため、INPUT-GUARDをbypassして即時送達する。Claude/非Codex/idle/unknownでは従来通り非空入力行を保護する。
+追加で、Codex の `agent_state=active` かつ `check_agent_busy=busy` の場合、非空入力行は生成中UIであり paste+Enter が queued message として安全に入るため、INPUT-GUARDをbypassして即時送達する。さらにidle promptの候補文はANSI dim (SGR 2) を一次情報として実入力と区別し、安全に送達する。通常色の実入力とClaude/非Codexは従来通り保護する。
 
 ## 実装
 
@@ -17,11 +17,13 @@ Worker: hayate
   - 同一fingerprintの未読が残る場合は `DEFERRED-RETRY` として送信。
   - 成功送信/未読0で `deferred_nudge` をclear。
   - Codex active+busyのみ `BUSY-CODEX-QUEUE` / `INPUT-GUARD-BYPASS` で即時queued送達。
+  - Codex idle promptのANSI dim候補文を空入力扱いにし、blocked/goal停止中にも復旧nudgeを送達。
 - `tests/unit/test_inbox_watcher_dedup.bats`
   - deferred retry成功とstate clear。
   - Codex active+busy+nonempty input = SEND。
   - stale `@agent_state=idle` でも Codex actual busy = SEND。
   - 非Codex active+busy = DEFER。
+  - Codex dim idle suggestion = SEND、通常色の未送信入力 = DEFER。
   - 既存singleton/fingerprint/debounce/priority/input guard回帰を維持。
 
 ## AC対応
