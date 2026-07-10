@@ -66,6 +66,25 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "READY: missing assigned_to preserves status column and derives worker from filename" {
+    cat > "$TEST_ROOT/queue/tasks/tobisaru.yaml" <<'EOF'
+task:
+  _ac_task_id: cmd_test_scout
+  _ac_worker_id: null
+  parent_cmd: cmd_test
+  status: done
+  task_id: cmd_test_scout
+  task_type: scout
+EOF
+    write_report "tobisaru"
+
+    run bash "$TEST_ROOT/scripts/report_merge.sh" cmd_test
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"tobisaru: done ($TEST_ROOT/queue/reports/tobisaru_report_cmd_test.yaml)"* ]]
+    [[ "$output" == *"READY: 並行偵察1件完了。統合分析(Step 1.5)を実施せよ"* ]]
+    [ -f "$TEST_ROOT/queue/gates/cmd_test/report_merge.done" ]
+}
+
 @test "WAITING: pending ninja name is aggregated and legacy report path is shown" {
     write_task "sasuke" "done"
     write_task "saizo" "in_progress"

@@ -89,7 +89,13 @@ fi
 
 # awkで該当タスクファイルのみ処理: TAB区切りで file|ninja|status|task_id を出力
 if [ "${#FILTERED_FILES[@]}" -gt 0 ]; then
-    while IFS=$'\t' read -r r_file r_ninja r_status r_task_id; do
+    # TAB is IFS whitespace, so an empty assigned_to collapses the field and
+    # shifts status/task_id left. Use a non-whitespace delimiter and recover
+    # the worker from the task filename when assigned_to is absent/null.
+    while IFS='|' read -r r_file r_ninja r_status r_task_id; do
+        if [ -z "$r_ninja" ] || [ "$r_ninja" = "null" ]; then
+            r_ninja="$(basename "$r_file" .yaml)"
+        fi
         if [ -z "$r_status" ]; then
             echo "[WARN] Empty status in $r_file" >&2
             continue
@@ -140,7 +146,7 @@ if [ "${#FILTERED_FILES[@]}" -gt 0 ]; then
     function process(   tid) {
         if (parent_cmd == cmd_id && (task_type == "recon" || task_type == "scout")) {
             tid = (task_id != "") ? task_id : ac_task_id
-            print cur_file "\t" assigned_to "\t" status "\t" tid
+            print cur_file "|" assigned_to "|" status "|" tid
         }
     }
     ' "${FILTERED_FILES[@]}"
