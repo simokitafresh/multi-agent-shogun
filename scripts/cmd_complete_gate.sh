@@ -2008,7 +2008,7 @@ detect_task_types() {
         local ttype
         ttype=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "")
         case "$ttype" in
-            recon) has_recon=true ;;
+            recon|scout) has_recon=true ;;
             implement) has_implement=true ;;
             review) ;; # 既知の種別。条件ゲートには影響しない
             *) echo "[WARN] Unknown task_type: '$ttype'" >&2 ;;
@@ -5181,6 +5181,17 @@ collect_task_readonly_refs() {
 
 check_command_files_modified_coverage() {
     level_heading "[L3]" "Command/files_modified coverage check:"
+
+    # Recon/scout commands cite product files as investigation inputs, not write
+    # targets.  Inferring writes from those references makes an honest report
+    # (research/context artifacts only) impossible to distinguish from an
+    # implementation omission.  Other report/commit gates still verify the
+    # actual recon artifacts.  Mixed recon+implementation commands retain the
+    # strict coverage check for their implementation phase.
+    if [ "${HAS_RECON:-false}" = "true" ] && [ "${HAS_IMPLEMENT:-false}" = "false" ]; then
+        echo "  SKIP (recon/scout-only cmd: command file refs are investigation inputs)"
+        return 0
+    fi
 
     local command_refs report_paths verified_deps
     verified_deps="$(

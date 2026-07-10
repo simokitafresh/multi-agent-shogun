@@ -54,6 +54,8 @@ setup_file() {
         printf '\n'
         sed -n '/^handle_empty_lessons_useful_check()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^detect_task_types()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^_check_lc_found()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^preflight_gate_flags()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -710,6 +712,54 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"SKIP (files_modified=no-code-change sentinel"* ]]
     [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
+@test "command/files_modified coverage skips product refs for recon-only cmd with research artifacts" {
+    _write_command_coverage_fixture \
+        "backend/app/api/signals.py と frontend/app/admin/visibility/page.tsx を精読して原因を特定" \
+        "  - path: docs/research/cmd_999_visibility_recon.md
+    change: added
+  - path: context/dm-signal-ops.md
+    change: modified"
+    export HAS_RECON=true
+    export HAS_IMPLEMENT=false
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP (recon/scout-only cmd: command file refs are investigation inputs)"* ]]
+    [[ "$output" != *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
+@test "task type detection classifies scout as recon-only" {
+    _write_command_coverage_fixture \
+        "backend/app/api/signals.py を精読" \
+        "  - path: docs/research/cmd_999_visibility_recon.md
+    change: added"
+    cat >> "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+  task_type: scout
+EOF
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+
+    run detect_task_types "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [ "$output" = "true false" ]
+}
+
+@test "command/files_modified coverage remains strict for mixed recon and implementation cmd" {
+    _write_command_coverage_fixture \
+        "backend/app/api/signals.py を調査して修正" \
+        "  - path: docs/research/cmd_999_visibility_recon.md
+    change: added"
+    export HAS_RECON=true
+    export HAS_IMPLEMENT=true
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"missing: backend/app/api/signals.py"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+    [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
 }
 
 @test "command/files_modified coverage blocks typo path even when file does not exist" {
