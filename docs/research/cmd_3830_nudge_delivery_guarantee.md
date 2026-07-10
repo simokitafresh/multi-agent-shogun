@@ -49,3 +49,5 @@ bash -n scripts/inbox_watcher.sh scripts/bulletin_write.sh scripts/hooks/stop_ch
 ## 因果
 
 `[[殿指摘20260710_1427_家老に回答未達]] -> [[INPUT-GUARD保留nudgeの再注入不在]] -> [[通知配達保証の仕組み化]]`
+
+`[[Codex idle候補文を未送信入力と誤認]] -> [[復旧nudge永久保留]] -> [[ANSI dim一次判定]]`
