@@ -1499,6 +1499,26 @@ EOF
     [[ "$output" != *"unwrap returned unknown"* ]]
 }
 
+@test "resolve_report_file uses preloaded filename cache over repeated task scan" {
+    local report_file="$TEST_PROJECT/queue/reports/hayate_cached_${TEST_CMD_ID}.yaml"
+    export SCRIPT_DIR="$TEST_PROJECT"
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export CMD_ID="$TEST_CMD_ID"
+    declare -gA REPORT_FILENAME_CACHE=([hayate]="hayate_cached_${TEST_CMD_ID}.yaml")
+    export REPORT_FILENAME_CACHE_READY=true
+
+    cat > "$TASKS_DIR/hayate.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: wrong_should_not_be_read.yaml
+EOF
+    printf 'worker_id: hayate\nstatus: completed\n' > "$report_file"
+
+    run resolve_report_file hayate "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [ "$output" = "$report_file" ]
+}
+
 @test "resolve_report_file unwraps wrapped report once then uses flat fast path" {
     local report_file="$TEST_PROJECT/queue/reports/hayate_report_${TEST_CMD_ID}.yaml"
     export SCRIPT_DIR="$TEST_PROJECT"

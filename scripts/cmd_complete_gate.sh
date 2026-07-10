@@ -273,7 +273,13 @@ PY
     local task_yaml="$TASKS_DIR/${ninja}.yaml"
     if [ -f "$task_yaml" ]; then
         local explicit
-        explicit=$(grep 'report_filename:' "$task_yaml" | head -1 | sed 's/.*report_filename:[[:space:]]*//' | tr -d "'" | tr -d '"')
+        if [ "${REPORT_FILENAME_CACHE_READY:-false}" = "true" ]; then
+            explicit="${REPORT_FILENAME_CACHE[$ninja]:-}"
+        else
+            # Unit-source/legacy fallback. Production preloads all task files
+            # once below, avoiding this five-process pipeline on every call.
+            explicit=$(grep 'report_filename:' "$task_yaml" | head -1 | sed 's/.*report_filename:[[:space:]]*//' | tr -d "'" | tr -d '"')
+        fi
         explicit_path="$SCRIPT_DIR/queue/reports/$explicit"
         if [ -n "$explicit" ] && [ -f "$explicit_path" ]; then
             auto_unwrap_report_yaml "$explicit_path"
@@ -306,6 +312,30 @@ PY
         echo "$new_fmt"  # デフォルト（存在チェックは呼び出し側）
     fi
 }
+
+# Snapshot report_filename for every worker with one awk process. The gate
+# already snapshots matching tasks later; this early lookup cache only removes
+# repeated parsing and does not decide task membership or completion state.
+declare -A REPORT_FILENAME_CACHE=()
+REPORT_FILENAME_CACHE_READY=true
+_report_cache_task_files=("$TASKS_DIR"/*.yaml)
+if [ -e "${_report_cache_task_files[0]:-}" ]; then
+    while IFS=$'\t' read -r _report_cache_file _report_cache_name; do
+        [ -n "$_report_cache_file" ] || continue
+        _report_cache_ninja="${_report_cache_file##*/}"
+        _report_cache_ninja="${_report_cache_ninja%.yaml}"
+        REPORT_FILENAME_CACHE["$_report_cache_ninja"]="$_report_cache_name"
+    done < <(awk '
+        /^[[:space:]]*report_filename:/ {
+            value=$0
+            sub(/^[[:space:]]*report_filename:[[:space:]]*/, "", value)
+            gsub(/^["'"'"']|["'"'"']$/, "", value)
+            print FILENAME "\t" value
+            nextfile
+        }
+    ' "${_report_cache_task_files[@]}" 2>/dev/null)
+fi
+unset _report_cache_task_files _report_cache_file _report_cache_name _report_cache_ninja
 
 LAST_GATE_NOTIFY_ROUTE=""
 CLEAR_NOTIFICATION_SENT=false
