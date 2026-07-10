@@ -4054,6 +4054,33 @@ inject_standard_skills() {
     log "inject_standard_skills: standard skills injected"
 }
 
+# ─── push_allowed自動付与（cmd_3820: ACにpush要求があるcmdでG2ガードBLOCK→家老WAが発生） ───
+# Level5: ACに'push'があるcmdは配備時にpush_allowed:trueを自動付与し、忍者の権限不足による
+# git push BLOCK(.claude/hooks/pre-bash-combined.sh check_main_branch_protection)と
+# karo_workarounds category=push_deploy_permission_gap(cmd_3820)の再発を防ぐ。
+# §42v2(2026-07-10殿裁定: 自走push+deploy)に伝播していなかった権限設定を接続する。
+inject_push_allowed() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    # 既にpush_allowedが設定済み（preinject/手動設定）なら上書きしない
+    grep -q '^[[:space:]]*push_allowed:' "$task_file" && return 0
+
+    local ac_text
+    ac_text="$(awk '
+        /^  acceptance_criteria:/ { f=1; next }
+        f && /^  [a-zA-Z_][a-zA-Z0-9_]*:/ { f=0 }
+        f { print }
+    ' "$task_file")"
+
+    # \bpush\b はC.UTF-8ロケールで日本語(カナ/漢字)に直接隣接するとASCII境界を検出できない
+    # (例:「pushして」「push完了」がNOMATCH)。ASCII文字以外を境界とみなす自前境界で代替する。
+    if printf '%s\n' "$ac_text" | grep -qiE '(^|[^A-Za-z])push($|[^A-Za-z])'; then
+        yaml_field_set "$task_file" "task" "push_allowed" "true" \
+            && log "inject_push_allowed: AC内に'push'検出。push_allowed=trueを自動付与(cmd_3820 G2ガード解消)"
+    fi
+}
+
 inject_model_injection_profile() {
     local task_file="$1"
     local ninja_name="$2"
@@ -8902,6 +8929,7 @@ deploy_task_apply_task_mutations() {
         inject_credential_files "$task_file" || true
         inject_target_path_check "$task_file" || true
         inject_context_update "$task_file" || true
+        inject_push_allowed "$task_file" || true  # Level5: AC内push検出でpush_allowed自動付与(cmd_3820)
         inject_role_reminder "$task_file" "$ninja_name" || true
         inject_report_template "$task_file" || true
     fi

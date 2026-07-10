@@ -2723,6 +2723,12 @@ for entry in entries:
     ):
         continue
     entry_cmd = str(entry.get("cmd_id", "") or "").strip()
+    # cmd_3801/737350613: 同一cmd_id内の繰り返しのみ累計昇格対象(殿裁定2026-07-09 22:50)。
+    # cmd_ids モードの呼出元(WARN累計昇格)は自身のcmd_idの再発回数を数えるため、
+    # 下のFP fix(他cmdのunique化)とは別に、self-repeatは重複除外せず1件ずつ数える。
+    if output_mode == "cmd_ids" and entry_cmd and entry_cmd == cmd_id:
+        matching_cmd_ids_ordered.append(entry_cmd)
+        continue
     # FP fix: count unique cmd_ids only (same cmd retry creates duplicate WARN entries)
     # FP fix (2026-06-26): skip canceled cmds — their WARNs are invalid (cmd_3537 canceled but counted)
     if entry_cmd and entry_cmd != cmd_id and entry_cmd not in matching_cmd_ids_set and not is_cmd_canceled(entry_cmd):
@@ -6499,14 +6505,18 @@ if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
     fi
 fi
 
-# --- Check 22: ACにpush要求があればWARN（忍者はpush禁止） ---
-# 根因: 将軍がACに「commit+push」を習慣的に記載→忍者はpush不可→gate BLOCK→家老WA
-# cmd_2225/cmd_2226で実証(2026-04-22殿指摘)
+# --- Check 22: ACにpush要求があればWARN（配備時にpush_allowed自動付与を確認せよ） ---
+# 根因: 将軍がACに「commit+push」を習慣的に記載→忍者はデフォルトpush不可(G2ガード)
+# cmd_2225/cmd_2226で実証(2026-04-22殿指摘)。
+# §42v2(2026-07-10殿裁定: 自走push+deploy)以降、deploy_task.shのinject_push_allowed()が
+# AC内'push'検出時にpush_allowed:trueを自動付与する(cmd_3820 push_deploy_permission_gap対策)
 if load_cmd_block; then
     _AC_BLOCK="$(extract_acceptance_criteria_block)"
-    if printf '%s\n' "$_AC_BLOCK" | grep -qiE '\bpush\b'; then
-        echo "WARN: ACに'push'が含まれている。忍者はpush禁止(CLAUDE.md)。'commit'のみに変更せよ" >&2
-        echo "  pushは家老が行う。ACに含めると忍者がbinary_checks no→gate BLOCK→毎回WA" >&2
+    # \bpush\b はC.UTF-8ロケールで日本語に直接隣接するASCII境界を検出できない(「pushして」等がNOMATCH)。
+    # deploy_task.sh inject_push_allowed()と同一の自前境界パターンで検出を揃える。
+    if printf '%s\n' "$_AC_BLOCK" | grep -qiE '(^|[^A-Za-z])push($|[^A-Za-z])'; then
+        echo "WARN: ACに'push'が含まれている。配備時にpush_allowed:trueが自動付与される(inject_push_allowed)" >&2
+        echo "  自走push+deployが不要なら'commit'のみに変更せよ。家老はtask YAMLのpush_allowed付与を確認すること" >&2
         record_warn_reason "ac_contains_push" "check=check_ac_contains_push"
     fi
 fi
