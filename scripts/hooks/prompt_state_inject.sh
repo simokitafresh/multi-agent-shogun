@@ -187,6 +187,15 @@ fi
 prompt_text="$(_prompt_state_json_get ".prompt" "")" || {
   exit 0
 }
+
+# cmd_karo_hotfix_three_layer_preaction_enforcement: every prompt invalidates
+# prior evidence and atomically issues a fresh per-agent/pane three-layer
+# preflight record. Failure remains visible to PreToolUse; prompt handling is
+# not swallowed into a false success state.
+if [[ -x "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" ]]; then
+  bash "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" issue <<<"$payload" >/dev/null 2>&1 || true
+fi
+
 prompt_is_inbox_nudge=0
 if [[ "$prompt_text" =~ ^inbox[0-9]+$ ]]; then
   prompt_is_inbox_nudge=1

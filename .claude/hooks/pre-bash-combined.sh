@@ -40,6 +40,14 @@ _pre_bash_self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${_pre_bash_self%/.claude/hooks/pre-bash-combined.sh}"
 unset _pre_bash_self
 
+# All state-changing Bash commands in this repository consume the same
+# per-prompt three-layer evidence as Write/Edit. The verifier has a narrow
+# read-only allowlist so the preflight search itself cannot deadlock.
+if [[ -x "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" ]] && \
+   ! bash "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" verify "Bash" "" "$command" >/dev/null 2>&1; then
+    emit_deny "BLOCK: 三層preflight証跡なし/無効。UserPromptSubmitごとに記憶DB・semantic・Obsidian検索を完了せよ"
+fi
+
 mark_memory_or_gist_numeric_flags() {
     local agent_id state_dir
     agent_id="${TMUX_AGENT_ID:-}"

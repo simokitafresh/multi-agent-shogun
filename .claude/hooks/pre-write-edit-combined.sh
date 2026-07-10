@@ -239,6 +239,15 @@ file_path="$(json_string_after "$payload" "file_path")"
 
 [[ "$tool_name" != "Write" && "$tool_name" != "Edit" && "$tool_name" != "MultiEdit" ]] && exit 0
 [[ -z "$file_path" ]] && exit 0
+
+# Three-layer pre-action gate: repository mutations require evidence issued by
+# the current UserPromptSubmit. Read tracking and the specialized guards below
+# remain available after this shared prerequisite.
+if [[ -x "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" ]] && \
+   ! bash "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" verify "$tool_name" "$file_path" "$payload" >/dev/null 2>&1; then
+    emit_deny "BLOCK: 三層preflight証跡なし/無効。UserPromptSubmitごとに記憶DB・semantic・Obsidian検索を完了せよ"
+    exit 2
+fi
 mark_numeric_write_for_memory_check
 
 # === Guard inbox-direct-write: queue/inboxはflock経由の正規スクリプトだけを許可 ===

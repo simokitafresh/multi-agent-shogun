@@ -10,6 +10,8 @@
 
 ## コンテキスト管理
 
+変更系 PreToolUse は `scripts/hooks/three_layer_preflight.sh` の現prompt・agent/pane単位 atomic 証跡を必須とする。`prompt_state_inject.sh` が UserPromptSubmit ごとに記憶DB・semantic・Obsidian因果索引を検索し、`.claude/hooks/pre-write-edit-combined.sh` と `.claude/hooks/pre-bash-combined.sh` が証跡なし/失敗/別promptを exit 2 でBLOCKする。Read・read-only検索・preflight自身は許可する。→ `tests/unit/test_three_layer_preflight.bats`（cmd_karo_hotfix_three_layer_preaction_enforcement_202607101452）
+
 掲示板通知は `scripts/bulletin_write.sh` が通知先ごとに最大3回再送する。一時失敗は成功まで継続し、最終失敗は `logs/bulletin_notify_failures.yaml` に永続記録して投稿者へ非ゼロ終了コードで可視化する（cmd_3829）。詳細は `docs/research/cmd_3829_bulletin_notify_failclose.md`。
 
 全て外部インフラが自動処理。エージェントは何もするな。Codex忍者=/new、Claude忍者=/clear、家老=/clear(陣形図付き)、将軍=殿判断。
