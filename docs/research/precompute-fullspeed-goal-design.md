@@ -1,5 +1,6 @@
-# precompute全量最速化 — /goal自律ループ設計書 v1.7
+# precompute全量最速化 — /goal自律ループ設計書 v1.8
 
+- v1.8: 殿裁定「重要なのは本番環境での高速化」を反映。ローカルelapsedを候補選別へ格下げし、本番移植可能なDB往復/query数/計算量/割当量の削減と、本番L5区間実測+production parityを成功条件へ固定
 - v1.7: 殿裁定「3PFで繰り返し極限まで高速化してから」を反映。1回の速度改善+parityだけでは昇格せず、3PF内で飽和条件と理論下限条件を両方満たすまで反復する段階内ループへ変更
 - v1.6: 殿裁定「サンクコストにとらわれず中断」「トータル見込み時間を最小化」を反映。目的関数を総残時間へ変更し、旧bench継続の即時中断基準とstage harness投資の損益分岐を数値化
 - v1.5: 段階実行の一次計測で、凍結benchの`--portfolio-ids`がPFループのみを絞りbulk prefixを全103PFで実行することを検出。D1用stage harnessではbulk prefixも対象集合へ限定し、凍結評価器は103PF最終確認へ限定する契約を追加
@@ -19,6 +20,7 @@
 3. **基準は探索（殿速度3原則）**: 目標値を先に固定しない。理論下限（支配的コストの計測値）を先に測り、それに漸近するまで回す
 4. **計測なき改善は改善ではない**: 全iterationで before→after 数値を記録。安全パターン（try/except, invalidate順序等）の削除によるスピードアップは禁止（check_safety_pattern_removal準拠）
 5. **総見込み時間を最小化**: 目的関数は `T_total = 道具改修時間 + 残り探索run時間 + 昇格検証時間 + 最終103PF検証時間`。開始済みrunの経過時間は意思決定から除外し、今後の残時間が代替案より長いと判明した時点で中断する
+6. **本番速度が目的**: ローカルpgserverのelapsedは候補選別・回帰検出にのみ使う。採用する変更は本番へ移植可能なDB往復数、SQL query数、計算量、メモリ割当量の削減に限る。WSL/pgserver/cache固有の高速化を成果へ数えない
 
 ## §1 As-Is（実測 2026-07-09〜10）
 
@@ -46,6 +48,7 @@
 - 全量precompute（103PF×15行）を出力等価のまま**理論下限に漸近**させる
 - 副次: rssピークの削減（1.9GBは並列化の障害になる）
 - 完了定義: /goalループのstop condition（§4）到達+パリティゲートPASS+本番実測
+- 最終成功指標: Render本番のL5/precompute開始終了ログによる区間秒数before→after、同一本番入力からのproduction output parity、ピークRSS。ローカル秒数だけで完了判定しない
 
 ## §3 改善仮説（/goalループの初期弾。順序は計測が決める）
 
@@ -82,6 +85,7 @@ stop condition: 103PFでparity PASSし、改善が2連続5%未満、またはH1-
 - **stage harness契約（v1.5修正）**: 凍結benchの`--portfolio-ids`はPFループだけを絞り、`compare_returns_bulk`/`metrics_summary_bulk`等のbulk prefixを全103PFで実行するため内側ループには使わない。D1用の非凍結harnessはbulk関数にも同じPF ID集合を渡す。103PF指定時に凍結benchと処理行数・対象endpointが一致する回帰テストを必須とし、凍結評価器そのものは変更しない
 - **中断規則（v1.6修正）**: 現runの残時間が「中断+道具修正+再実行」の見込みを上回る、または対象PF外の固定費が実行時間の50%を超えると判明した時点で即中断する。既経過時間・取得済みsnapshot・「もう少しで終わる」は継続理由にしない
 - **各iterationの記録契約**: iteration番号/PF段階/PF ID集合/変更1行要約/全endpoint件数/秒数/rssピーク/parity判定/昇格可否。3回中央値は103PF最終判定にのみ必須。記録なきiterationは無効
+- **本番移植性契約（v1.8修正）**: 各iterationでローカル秒数に加え、SQL query数、DB round-trip数、取得/書込行数、主要CPU区間、RSS/割当量を記録する。削減理由がローカルファイルシステム・pgserver・OS cacheだけに依存する候補は不採用。P4で本番L5区間実測とproduction parityを必ず閉じる
 - 環境: **immutable baseline+logical date固定方式（v1.2修正）** — 本番同期のbaseline dumpを凍結→作業DBはそこからclone→各iterationの対照と変更後を同一logical dateで生成して比較。DB snapshot id/source commit/seed/evaluation dateを記録必須。日跨ぎしたhistorical raw_jsonと当日再生成値を直接比較しない。共有ローカルDBの直接使用は禁止（他cmdの書込みで期待値が汚れる）。本番非接触=他cmdと並列可
 
 ## §5 Phase構成
