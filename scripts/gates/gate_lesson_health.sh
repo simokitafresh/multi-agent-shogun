@@ -23,6 +23,17 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/config/projects.yaml"
+
+# lesson subdomain(fe/be/gs/infra) → context file ルーティングのSSOT。
+# scripts/lesson_write.shと共有する。GA-216/GA-217: このgateがconfig/projects.yamlの
+# 単一context_fileしか見ていなかったため、subdomain routingで実際には
+# dm-signal-frontend.md/dm-signal-ops.mdへ合流済みの教訓を「未合流」と誤検知していた。
+if [ ! -f "$SCRIPT_DIR/scripts/gates/lesson_context_routes.sh" ]; then
+    echo "ERROR: scripts/gates/lesson_context_routes.sh not found — context route SSOT missing" >&2
+    exit 1
+fi
+source "$SCRIPT_DIR/scripts/gates/lesson_context_routes.sh"
+
 ALERT_THRESHOLD=5
 EXIT_CODE=0
 LESSON_IMPACT_FILE="$SCRIPT_DIR/logs/lesson_impact.tsv"
@@ -100,9 +111,22 @@ _compute_lesson_stats() {
     local checkpoint="${3:-0}"
     local inject_thr="${4:-10}"
     local pid="${5:-}"
+    # GA-216/GA-217: subdomain(fe/be/gs/infra) routed context fileがdefaultと異なる場合
+    # そのファイル自身のlast_synced_lessonをこのsubdomainの実効synced値として使う。
+    # 形式: "fe:861;gs:864;be:864" (キーはLESSON_CONTEXT_ROUTE_KNOWN_SUBDOMAINSの値)
+    # 該当キーがなければ default(synced_num) を使う = ルーティングなしprojectは従来通り。
+    local route_markers="${6:-}"
 
     awk -v synced="$synced_num" -v chk="$checkpoint" \
-        -v thr="$inject_thr" -v pid="$pid" '
+        -v thr="$inject_thr" -v pid="$pid" -v routes="$route_markers" '
+    BEGIN {
+        n_routes = split(routes, route_pairs, ";")
+        for (ri = 1; ri <= n_routes; ri++) {
+            if (route_pairs[ri] == "") continue
+            split(route_pairs[ri], kv, ":")
+            route_synced[kv[1]] = kv[2] + 0
+        }
+    }
     function trim(s) { sub(/^[ \t\r\n]+/, "", s); sub(/[ \t\r\n]+$/, "", s); return s }
     function inline_value(line, field,    pat,m,v) {
         pat = "(^|[,][[:space:]]*)" field ":[[:space:]]*([^,}]+)"
@@ -117,7 +141,14 @@ _compute_lesson_stats() {
         v = trim(v)
         return (v != "")
     }
-    function flush_current(    n) {
+    function effective_synced(subdomain,    first_sd) {
+        if (subdomain == "") return synced + 0
+        first_sd = subdomain
+        sub(/,.*$/, "", first_sd)
+        if (first_sd in route_synced) return route_synced[first_sd]
+        return synced + 0
+    }
+    function flush_current(    n, eff_synced) {
         if (current_id == "") return
         n = current_id + 0
         if (is_deprecated) {
@@ -128,7 +159,8 @@ _compute_lesson_stats() {
             if (has_how) how_count++
             if (has_origin) origin_count++
             if (n > max_id) max_id = n
-            if (n > synced + 0) unsynced++
+            eff_synced = effective_synced(cur_subdomain)
+            if (n > eff_synced) unsynced++
             if (n > chk + 0) new_since++
             if (ic + 0 >= thr + 0 && hc + 0 == 0) {
                 problems[active_nc] = "L" current_id ": injection=" ic+0 ", helpful=0 [" pid "]"
@@ -140,7 +172,7 @@ _compute_lesson_stats() {
         current_id = $0
         sub(/^.*id:[[:space:]]*['\''"]?L/, "", current_id)
         sub(/[^0-9].*$/, "", current_id)
-        is_deprecated = 0; ic = 0; hc = 0; has_when = 0; has_how = 0; has_origin = 0
+        is_deprecated = 0; ic = 0; hc = 0; has_when = 0; has_how = 0; has_origin = 0; cur_subdomain = ""
         if (is_set_value(inline_value($0, "when"))) has_when = 1
         if (is_set_value(inline_value($0, "how"))) has_how = 1
         if (is_set_value(inline_value($0, "origin"))) has_origin = 1
@@ -161,6 +193,12 @@ _compute_lesson_stats() {
         v = $0
         sub(/^[[:space:]]+origin:[[:space:]]*/, "", v)
         if (is_set_value(v)) has_origin = 1
+    }
+    /^[[:space:]]+subdomain:[[:space:]]*[^[:space:]]/ {
+        v = $0
+        sub(/^[[:space:]]+subdomain:[[:space:]]*/, "", v)
+        gsub(/^['\''"]|['\''"]$/, "", v)
+        if (is_set_value(v)) cur_subdomain = trim(v)
     }
     /[[:space:]]+injection_count:[[:space:]]/ {
         gsub(/.*injection_count:[[:space:]]*/,""); ic = $1 + 0
@@ -650,9 +688,36 @@ for _pid in "${_target_pids[@]}"; do
         _unsorted_ids="${_rest#*|}"
     fi
 
+    # GA-216/GA-217: subdomain routing対象file(dm-signal-frontend.md/dm-signal-ops.md等)の
+    # last_synced_lesson markerを収集し、そのsubdomainの教訓はdefault(_synced_num)ではなく
+    # 実際にsyncされたファイル自身のmarkerと比較する。ルーティングなしprojectは
+    # resolve_lesson_context_route が CONTEXT_ROUTE_FILE=default を返すため _route_markers は空のまま。
+    PROJECT_META_CONTEXT_FILE="$_cf"
+    _route_markers=""
+    declare -A _route_file_seen=()
+    for _route_sd in "${LESSON_CONTEXT_ROUTE_KNOWN_SUBDOMAINS[@]}"; do
+        resolve_lesson_context_route "$_pid" "$_route_sd"
+        [ "$CONTEXT_ROUTE_FILE" = "$_cf" ] && continue
+        _route_full_path="$SCRIPT_DIR/$CONTEXT_ROUTE_FILE"
+        _route_marker_num=0
+        if [ -f "$_route_full_path" ]; then
+            if [ -n "${_route_file_seen[$CONTEXT_ROUTE_FILE]:-}" ]; then
+                _route_marker_num="${_route_file_seen[$CONTEXT_ROUTE_FILE]}"
+            else
+                _route_marker_num=$(awk '
+                    /<!-- last_synced_lesson: L[0-9]+ -->/ { match($0, /L([0-9]+)/, arr); print arr[1]+0; exit }
+                ' "$_route_full_path")
+                [ -z "$_route_marker_num" ] && _route_marker_num=0
+                _route_file_seen["$CONTEXT_ROUTE_FILE"]="$_route_marker_num"
+            fi
+        fi
+        _route_markers="${_route_markers}${_route_markers:+;}${_route_sd}:${_route_marker_num}"
+    done
+    unset _route_file_seen
+
     # ─── 1回のawk passで全統計を取得 ───
     _stats_output=$(_compute_lesson_stats "$_lessons_file" "$_synced_num" "$_checkpoint" \
-        "$INJECTION_WARN_THRESHOLD" "$_pid")
+        "$INJECTION_WARN_THRESHOLD" "$_pid" "$_route_markers")
 
     _stats_line="${_stats_output%%$'\n'*}"
     IFS='|' read -r _total_lessons _max_id _deprecated_count _unsynced _new_count _when_count _how_count _origin_count <<< "$_stats_line"

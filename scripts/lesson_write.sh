@@ -101,37 +101,14 @@ resolve_project_path() {
     resolve_project_field "$1" "path"
 }
 
-resolve_lesson_context_route() {
-    local proj_id="$1"
-    local subdomain="${2:-}"
-    local first_subdomain="${subdomain%%,*}"
-
-    CONTEXT_ROUTE_FILE="$PROJECT_META_CONTEXT_FILE"
-    CONTEXT_ROUTE_ANCHOR=""
-
-    case "$proj_id:$first_subdomain" in
-        dm-signal:fe)
-            CONTEXT_ROUTE_FILE="context/dm-signal-frontend.md"
-            CONTEXT_ROUTE_ANCHOR='^## 12\. Frontend関連教訓'
-            ;;
-        dm-signal:be)
-            CONTEXT_ROUTE_FILE="context/dm-signal-ops.md"
-            CONTEXT_ROUTE_ANCHOR='^## §6-7 '
-            ;;
-        dm-signal:gs)
-            CONTEXT_ROUTE_FILE="context/dm-signal-ops.md"
-            CONTEXT_ROUTE_ANCHOR='^## §33 '
-            ;;
-        dm-signal:infra|infra:infra)
-            CONTEXT_ROUTE_FILE="context/infrastructure.md"
-            CONTEXT_ROUTE_ANCHOR='^## Infra教訓索引'
-            ;;
-        infra:*)
-            CONTEXT_ROUTE_FILE="context/infrastructure.md"
-            CONTEXT_ROUTE_ANCHOR='^## Infra教訓索引'
-            ;;
-    esac
-}
+# resolve_lesson_context_route()のSSOTはscripts/gates/lesson_context_routes.sh。
+# gate_lesson_health.shの未合流判定と同じルーティング表を共有し、
+# 「書込み側がsyncしたファイル」と「gateが見るファイル」がドリフトしないようにする(GA-216/GA-217)。
+if [ ! -f "$SCRIPT_DIR/scripts/gates/lesson_context_routes.sh" ]; then
+    echo "ERROR: scripts/gates/lesson_context_routes.sh not found — context route SSOT missing" >&2
+    exit 1
+fi
+source "$SCRIPT_DIR/scripts/gates/lesson_context_routes.sh"
 
 resolve_cmd_project() {
     local cmd_id="$1"

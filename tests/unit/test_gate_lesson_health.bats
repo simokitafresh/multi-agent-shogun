@@ -23,6 +23,10 @@ setup() {
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
     export TEST_GATE="$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
 
+    # GA-216/GA-217: gate sources the shared subdomain routing SSOT.
+    cp "$PROJECT_ROOT/scripts/gates/lesson_context_routes.sh" \
+        "$TEST_TMPDIR/scripts/gates/lesson_context_routes.sh"
+
     # Stub ntfy.sh to prevent exit 127 when WARN/ALERT triggers notification
     printf '#!/bin/bash\nexit 0\n' > "$TEST_TMPDIR/scripts/ntfy.sh"
     chmod +x "$TEST_TMPDIR/scripts/ntfy.sh"

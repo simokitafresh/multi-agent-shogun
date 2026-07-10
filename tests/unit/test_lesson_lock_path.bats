@@ -4,8 +4,9 @@ setup() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export TEST_ROOT="$BATS_TEST_TMPDIR/project"
-    mkdir -p "$TEST_ROOT/scripts/lib" "$TEST_ROOT/projects/infra" "$TEST_ROOT/projects/testproj" "$TEST_ROOT/config" "$TEST_ROOT/ext/tasks"
+    mkdir -p "$TEST_ROOT/scripts/lib" "$TEST_ROOT/scripts/gates" "$TEST_ROOT/projects/infra" "$TEST_ROOT/projects/testproj" "$TEST_ROOT/config" "$TEST_ROOT/ext/tasks"
     cp "$PROJECT_ROOT/scripts/lib/lock_path.sh" "$TEST_ROOT/scripts/lib/lock_path.sh"
+    cp "$PROJECT_ROOT/scripts/gates/lesson_context_routes.sh" "$TEST_ROOT/scripts/gates/lesson_context_routes.sh"
     cp "$PROJECT_ROOT/scripts/lesson_write.sh" "$TEST_ROOT/scripts/lesson_write.sh"
     cp "$PROJECT_ROOT/scripts/lesson_write_karo.sh" "$TEST_ROOT/scripts/lesson_write_karo.sh"
     cp "$PROJECT_ROOT/scripts/lesson_write_shogun.sh" "$TEST_ROOT/scripts/lesson_write_shogun.sh"

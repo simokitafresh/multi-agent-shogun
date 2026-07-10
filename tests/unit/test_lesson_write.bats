@@ -13,10 +13,14 @@ setup_file() {
     SHARED_DIR="$(mktemp -d "$BATS_TMPDIR/lw_shared.XXXXXX")"
 
     # scripts/ — no-op sync_lessons.sh込み
-    mkdir -p "$SHARED_DIR/scripts"
+    mkdir -p "$SHARED_DIR/scripts/gates"
     cp "$SRC_LESSON_WRITE" "$SHARED_DIR/scripts/lesson_write.sh"
     printf '#!/bin/bash\nexit 0\n' > "$SHARED_DIR/scripts/sync_lessons.sh"
     chmod +x "$SHARED_DIR/scripts/sync_lessons.sh"
+
+    # GA-216/GA-217: lesson_write.sh sources the shared subdomain routing SSOT.
+    cp "$REAL_PROJECT_ROOT/scripts/gates/lesson_context_routes.sh" \
+        "$SHARED_DIR/scripts/gates/lesson_context_routes.sh"
 
     # lessons.mdテンプレート（各テストでここからコピー）
     export LESSONS_TEMPLATE="$SHARED_DIR/lessons_template.md"
