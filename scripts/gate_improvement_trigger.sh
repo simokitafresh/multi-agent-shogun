@@ -84,9 +84,22 @@ dedup_alert_lines_24h() {
     local kept_lines=()
     local skipped_count=0
     local line key state_file last_epoch elapsed
+    # GA-216/GA-217: dedup by logical EVENT, not by individual line. A gate
+    # emits one ALERT:/WARN: line optionally followed by continuation lines
+    # (action:/METRIC:) that belong to that same event — see
+    # extract_alert_lines()/extract_diagnostic_lines() above, which pair them
+    # up. dedup_key_for_alert_line() only matches lines starting with
+    # ALERT:/WARN:, so a continuation line alone never matches. Track the
+    # skip/keep decision made for the most recent ALERT:/WARN: line and apply
+    # it to its continuation lines too, so a deduped-away event is dropped as
+    # a whole block instead of leaving an orphaned "action: ..." line that
+    # bypasses dedup entirely and mints a spurious new GA-ID (reproduced
+    # verbatim in logs/gate_alerts.yaml GA-217).
+    local skip_current_block=false
     while IFS= read -r line; do
         [[ -n "$line" ]] || continue
         if key="$(dedup_key_for_alert_line "$gate_name" "$line")"; then
+            skip_current_block=false
             state_file="${STATE_DIR}/gate_improvement_dedup_${key}.last"
             if [[ -f "$state_file" ]]; then
                 last_epoch="$(head -n 1 "$state_file" 2>/dev/null || true)"
@@ -95,11 +108,16 @@ dedup_alert_lines_24h() {
                     if (( elapsed >= 0 && elapsed < DEDUP_WINDOW_SECONDS )); then
                         echo "SKIP: ${gate_name} — ${line} は同一file+alert_typeで24時間以内に送信済み (${elapsed}s ago)" >&2
                         skipped_count=$((skipped_count + 1))
+                        skip_current_block=true
                         continue
                     fi
                 fi
             fi
             printf '%s\n' "$now" > "$state_file"
+        elif [[ "$skip_current_block" == true ]]; then
+            # Continuation line of an event whose ALERT:/WARN: line was just
+            # deduped away — drop it too instead of leaking it through.
+            continue
         fi
         kept_lines+=("$line")
     done <<< "$alert_lines"

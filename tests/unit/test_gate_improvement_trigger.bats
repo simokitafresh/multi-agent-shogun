@@ -151,3 +151,53 @@ SH
     grep -q 'METRIC: lesson_effectiveness_threshold status=OK rate=100.0% useful_rate=64.7%' "$TEST_TMPDIR/logs/gate_alerts.yaml"
     ! grep -q 'output_snippet=OK: dm-signal' "$TEST_TMPDIR/logs/gate_alerts.yaml"
 }
+
+# GA-216/GA-217 regression: dedup_alert_lines_24h() must dedup by logical
+# ALERT/WARN event (the ALERT/WARN line plus its paired action:/METRIC:
+# continuation lines), not by individual line. Before the fix, an ALERT/WARN
+# line matched dedup_key_for_alert_line() and got correctly skipped inside
+# the 24h window, but its paired "action: ..." line never matched the
+# ^(WARN|ALERT): regex, so it fell through the per-line dedup check
+# unconditionally and alone triggered a brand-new GA-ID with truncated,
+# ALERT-line-less detail (reproduced verbatim in logs/gate_alerts.yaml
+# GA-217: alert_detail was only the action: line).
+
+@test "GA-216/GA-217: WARN+action pair does not spawn a duplicate GA on same-window rerun" {
+    write_context_gate "$(printf 'WARN: codd.md (11日前更新)\naction: codd.mdを更新せよ')"
+
+    GATE_IMPROVEMENT_NOW=1770000000 run_trigger
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SENT: context_freshness"* ]]
+    [ "$(inbox_call_count)" -eq 1 ]
+
+    GATE_IMPROVEMENT_NOW=1770000300 run_trigger
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"SENT: context_freshness"* ]]
+    [[ "$output" == *"SKIP: context_freshness — 全ALERT行が同一file+alert_typeの24時間dedup対象。"* ]]
+    [ "$(inbox_call_count)" -eq 1 ]
+}
+
+@test "GA-216/GA-217: WARN+action pair for a different fingerprint still sends its own GA" {
+    write_context_gate "$(printf 'WARN: codd.md (11日前更新)\naction: codd.mdを更新せよ')"
+    GATE_IMPROVEMENT_NOW=1770000000 run_trigger
+    [ "$status" -eq 0 ]
+    [ "$(inbox_call_count)" -eq 1 ]
+
+    write_context_gate "$(printf 'WARN: other.md (12日前更新)\naction: other.mdを更新せよ')"
+    GATE_IMPROVEMENT_NOW=1770000300 run_trigger
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SENT: context_freshness"* ]]
+    [ "$(inbox_call_count)" -eq 2 ]
+}
+
+@test "GA-216/GA-217: WARN+action pair sends again after the 24h window elapses" {
+    write_context_gate "$(printf 'WARN: codd.md (11日前更新)\naction: codd.mdを更新せよ')"
+    GATE_IMPROVEMENT_NOW=1770000000 run_trigger
+    [ "$status" -eq 0 ]
+    [ "$(inbox_call_count)" -eq 1 ]
+
+    GATE_IMPROVEMENT_NOW=1770086401 run_trigger
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SENT: context_freshness"* ]]
+    [ "$(inbox_call_count)" -eq 2 ]
+}
