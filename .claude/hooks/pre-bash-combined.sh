@@ -43,8 +43,10 @@ unset _pre_bash_self
 # All state-changing Bash commands in this repository consume the same
 # per-prompt three-layer evidence as Write/Edit. The verifier has a narrow
 # read-only allowlist so the preflight search itself cannot deadlock.
-if [[ -x "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" ]] && \
-   ! bash "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" verify "Bash" "" "$command" >/dev/null 2>&1; then
+if [[ ! -x "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" ]]; then
+    emit_deny "BLOCK: 三層preflight scriptが欠落。状態変更Bashをfail-closedで停止"
+fi
+if ! bash "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" verify "Bash" "" "$command" >/dev/null 2>&1; then
     emit_deny "BLOCK: 三層preflight証跡なし/無効。UserPromptSubmitごとに記憶DB・semantic・Obsidian検索を完了せよ"
 fi
 

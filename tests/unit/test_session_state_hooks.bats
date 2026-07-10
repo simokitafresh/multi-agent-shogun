@@ -110,7 +110,7 @@ import os
 ctx = json.loads(os.environ["OUTPUT_JSON"])["hookSpecificOutput"]["additionalContext"]
 print("--- model_injection_profile ---" in ctx)
 print("injection_intensity: max" in ctx)
-print("gpt-5.5-medium" in ctx)
+print("gpt-5.5-medium" in ctx or "GPT 5.5 medium" in ctx)
 PY
 )
     [ "${result[0]}" = "True" ]

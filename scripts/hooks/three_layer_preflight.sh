@@ -18,6 +18,7 @@ pane_id="${TMUX_PANE:-default}"
 safe_key="${agent_id}_${pane_id}"
 safe_key="${safe_key//[^A-Za-z0-9_.-]/_}"
 evidence_file="$EVIDENCE_DIR/evidence_${safe_key}.json"
+nonce_file="$evidence_file.current"
 
 json_escape() {
     local value="$1"
@@ -39,27 +40,28 @@ prompt_from_payload() {
 }
 
 issue() {
+    local prompt_arg="${1:-}"
     local payload prompt prompt_hash issued_at tmp_file rg_cmd
-    payload="$(cat)"
-    prompt="$(prompt_from_payload "$payload")"
+    # Invalidate before parsing or searching: a malformed/failed new prompt
+    # must not inherit the previous prompt's proof.
+    mkdir -p "$EVIDENCE_DIR"
+    rm -f "$evidence_file" "$nonce_file"
+    if [[ -n "$prompt_arg" ]]; then
+        prompt="$prompt_arg"
+    else
+        payload="$(cat)"
+        prompt="$(prompt_from_payload "$payload")"
+    fi
     issued_at="$(date -Iseconds)"
     prompt_hash="$(printf '%s\n%s\n%s' "$prompt" "$issued_at" "${RANDOM:-0}" | sha256sum | awk '{print $1}')"
-    mkdir -p "$EVIDENCE_DIR"
-    # Invalidate the prior prompt before any new search starts. A failed or
-    # interrupted search must never leave an older prompt's proof consumable.
-    rm -f "$evidence_file"
+    local nonce="$(printf '%s\n%s\n%s' "$prompt_hash" "$issued_at" "${RANDOM:-0}" | sha256sum | awk '{print $1}')"
 
     local memory_rc=0 semantic_rc=0 obsidian_rc=0
     timeout 5s bash "$ROOT/scripts/memory_db_query.sh" --search "$prompt" >/dev/null 2>&1 || memory_rc=$?
     timeout 5s bash "$ROOT/scripts/semantic_search.sh" "$prompt" >/dev/null 2>&1 || semantic_rc=$?
     # Obsidian's causal index is the repository's [[link]] graph. rg exit 1
     # means no match, which is still a completed search; exit 2 is a failure.
-    rg_cmd="$(command -v rg 2>/dev/null || true)"
-    if [[ -z "$rg_cmd" && -x "$HOME/.local/bin/rg" ]]; then
-        rg_cmd="$HOME/.local/bin/rg"
-    elif [[ -z "$rg_cmd" && -x /usr/bin/rg ]]; then
-        rg_cmd=/usr/bin/rg
-    fi
+    rg_cmd="$(resolve_rg 2>/dev/null || true)"
     if [[ -n "$rg_cmd" ]]; then
         "$rg_cmd" -n --fixed-strings -- "$prompt" "$ROOT/context/semantic-map.md" "$ROOT/docs" >/dev/null 2>&1 || obsidian_rc=$?
     else
@@ -71,11 +73,13 @@ issue() {
     [[ "$memory_rc" == 0 && "$semantic_rc" == 0 && "$obsidian_rc" == 0 ]] || status=failed
     tmp_file="$(mktemp "$EVIDENCE_DIR/.evidence.XXXXXX")"
     {
-        printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"%s","issued_at":"%s","memory_db":"%s","semantic":"%s","obsidian":"%s","status":"%s"}\n' \
-            "$(json_escape "$agent_id")" "$(json_escape "$pane_id")" "$prompt_hash" "$issued_at" \
+        printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"%s","nonce":"%s","issued_at":"%s","memory_db":"%s","semantic":"%s","obsidian":"%s","status":"%s"}\n' \
+            "$(json_escape "$agent_id")" "$(json_escape "$pane_id")" "$prompt_hash" "$nonce" "$issued_at" \
             "$memory_rc" "$semantic_rc" "$obsidian_rc" "$status"
     } >"$tmp_file"
     mv -f "$tmp_file" "$evidence_file"
+    printf '%s\n' "$nonce" >"${nonce_file}.tmp"
+    mv -f "${nonce_file}.tmp" "$nonce_file"
     [[ "$status" == success ]] || {
         printf 'three_layer_preflight: %s evidence failed (memory=%s semantic=%s obsidian=%s)\n' "$agent_id" "$memory_rc" "$semantic_rc" "$obsidian_rc" >&2
         return 1
@@ -84,9 +88,43 @@ issue() {
 }
 
 is_allowed_read_only_bash() {
-    local command="$1"
-    [[ "$command" =~ (^|[[:space:];|&])(cat|head|tail|ls|pwd|printf|echo|rg|grep|git[[:space:]]+(status|diff|log|show)|bats|bash[[:space:]].*(memory_db_query|semantic_search|three_layer_preflight)\.sh)($|[[:space:];|&]) ]] && return 0
-    return 1
+    COMMAND_TEXT="$1" python3 - <<'PY'
+import os, shlex, sys
+
+command = os.environ.get("COMMAND_TEXT", "")
+# Any shell grammar means the whole command needs proof. This closes redirect,
+# substitution, backtick, pipeline, list, and compound-command bypasses.
+if any(token in command for token in (";", "&&", "||", "|", ">", "<", "`", "$(", "${")):
+    raise SystemExit(1)
+try:
+    tokens = shlex.split(command, posix=True)
+except ValueError:
+    raise SystemExit(1)
+if not tokens:
+    raise SystemExit(1)
+base = os.path.basename(tokens[0])
+if base in {"cat", "head", "tail", "ls", "pwd", "printf", "rg", "grep"}:
+    raise SystemExit(0)
+if base == "git" and len(tokens) >= 2 and tokens[1] in {"status", "diff", "log", "show"}:
+    raise SystemExit(0)
+if base == "bash" and len(tokens) >= 2 and tokens[1].endswith(("memory_db_query.sh", "semantic_search.sh", "three_layer_preflight.sh")):
+    raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
+resolve_rg() {
+    local rg_cmd
+    rg_cmd="$(command -v rg 2>/dev/null || true)"
+    if [[ -n "$rg_cmd" ]]; then
+        printf '%s\n' "$rg_cmd"
+    elif [[ -x "$HOME/.local/bin/rg" ]]; then
+        printf '%s\n' "$HOME/.local/bin/rg"
+    elif [[ "${THREE_LAYER_DISABLE_SYSTEM_RG:-0}" != "1" && -x /usr/bin/rg ]]; then
+        printf '%s\n' /usr/bin/rg
+    else
+        return 1
+    fi
 }
 
 verify() {
@@ -105,14 +143,25 @@ verify() {
         echo "BLOCK: 三層preflight証跡なし。UserPromptSubmit後に記憶DB・semantic・Obsidian検索を完了せよ" >&2
         return 1
     }
-    parsed_status="$(python3 - "$evidence_file" <<'PY'
+    parsed_status="$(python3 - "$evidence_file" "$nonce_file" "${THREE_LAYER_PREACTION_MAX_AGE_SECONDS:-14400}" <<'PY'
 import json, sys
+from datetime import datetime, timezone
 try:
     data = json.load(open(sys.argv[1], encoding="utf-8"))
+    nonce = open(sys.argv[2], encoding="utf-8").read().strip()
 except Exception:
     raise SystemExit(2)
-required = ("agent_id", "pane_id", "prompt_hash", "issued_at", "memory_db", "semantic", "obsidian", "status")
+required = ("agent_id", "pane_id", "prompt_hash", "nonce", "issued_at", "memory_db", "semantic", "obsidian", "status")
 if any(not str(data.get(key, "")).strip() for key in required):
+    raise SystemExit(2)
+if nonce != data.get("nonce"):
+    raise SystemExit(2)
+try:
+    issued = datetime.fromisoformat(data["issued_at"].replace("Z", "+00:00"))
+    age = (datetime.now(timezone.utc) - issued).total_seconds()
+except Exception:
+    raise SystemExit(2)
+if age < -5 or age > float(sys.argv[3]):
     raise SystemExit(2)
 if data.get("status") != "success" or any(str(data.get(key)) != "0" for key in ("memory_db", "semantic", "obsidian")):
     raise SystemExit(3)
@@ -122,16 +171,12 @@ PY
         echo "BLOCK: 三層preflight証跡が無効または失敗状態" >&2
         return 1
     }
-    if [[ -n "${THREE_LAYER_EXPECTED_PROMPT_HASH:-}" ]] && \
-       ! grep -q '"prompt_hash":"'"$THREE_LAYER_EXPECTED_PROMPT_HASH"'"' "$evidence_file"; then
-        echo "BLOCK: 三層preflight証跡が別promptのもの" >&2
-        return 1
-    fi
     [[ "$parsed_status" == success ]]
 }
 
 case "${1:-}" in
-    issue) issue ;;
+    issue) shift; issue "${1:-}" ;;
+    resolve-rg) resolve_rg ;;
     verify) shift; verify "$@" ;;
     *) echo "Usage: $0 issue|verify <tool_name> [target] [command]" >&2; exit 2 ;;
 esac
