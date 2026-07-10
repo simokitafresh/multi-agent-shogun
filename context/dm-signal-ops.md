@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-10 cmd_3837 -->
+<!-- last_updated: 2026-07-10 cmd_3840 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -84,7 +84,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L869 -->
+<!-- last_synced_lesson: L871 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -813,6 +813,7 @@ import metrics_research_engine as MRE
 - L859: PipelineEngine検証スクリプトはrebalance_triggerを無視した固定target_date(直前営業日)を使うと非monthlyリバランスPFを誤って乖離判定する（cmd_3818）
 - L860: PostgreSQL binary COPYは列名タグを持たない位置ベース形式。source/target間の列順不一致がUTF8デコードエラー等の破損を生む（cmd_3819）
 - L863: LayerTimerは新規Layer追加時にLAYER_ORDER+layer()登録を怠ると壁時計TOTALだけ正しく内訳が誤解を招く（cmd_3831）
+- L871: backend/app/api/metrics.pyはモジュールローカルget_db()を独自定義しておりFastAPI test dependency_overrides[db.database.get_db]では横取りできない（cmd_3839）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
@@ -1100,9 +1101,17 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 
 - **AC1完了**: `backend/app/services/visibility_helpers.py`に共通関数`check_hide_portfolio_or_folder(tier_settings, global_settings, portfolio_id, folder_id, is_admin)`を追加し、§63で判明した未適用12エンドポイント(compare_returns/metrics×4/monthly_returns/p_average×2/performance×2/deterioration×2/history/rolling_returns/regime_analysis/monthly_trade/trades/annual_returns、計18呼出箇所)全てに適用。`signals.py`はhanzo cmd_3835が同時改修中のため参照専用に固定し無変更(competing-write回避、家老指示2026-07-10 21:52)。
 - grep実測で`check_hide_portfolio(`単体呼出し(旧L2onlyパターン)の残存0件、`check_hide_portfolio_or_folder(`が18箇所へ適用済みを確認。既存回帰テスト46件(test_visibility_masking/test_global_visibility/test_compare_returns_api)は適用後も全PASS。
-- 副次バグ(機構B: PUT楽観ロック欠如、機構C: FE Tier切替時の未保存編集消失)は同cmd内でAC3/AC4として対応(進行中)。
+- 副次バグ(機構B: PUT楽観ロック欠如、機構C: FE Tier切替時の未保存編集消失)は同cmd内でAC3/AC4として対応完了(§63.2参照)。
 - 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3839_folder_hide_rollout.md`
 - 因果リンク: [[cmd_3838偵察recon文書]] -> [[cmd_3839全EP一括適用]] -> [[folder非表示L1.5全EP適用完了]]
+
+## §63.2 cmd_3839 AC3-5: 楽観ロック+FE未保存ガード+本番検証 (2026-07-10)
+
+- **AC3**: `viewer_tiers.py`の`update_tier_visibility`/`update_global_visibility`へ`updated_at`楽観ロック追加(不一致409、未指定は後方互換でスキップ)。`GlobalVisibilitySettingsUpdate`スキーマ+GET/PUT globalレスポンスに`updated_at`追加。新規`test_visibility_optimistic_lock.py` 9/9 PASS
+- **AC4**: FE `page.tsx`に`hasUnsavedChanges`/`tierUpdatedAt`/`globalUpdatedAt` state追加。Tier切替を`handleTierSelect`でガード(未保存時confirm())、`beforeunload`警告追加、Save時に`updated_at`送信+409専用メッセージ。新規`visibility-unsaved-guard.test.tsx` 5/5 PASS
+- **AC5**: 検証スクリプト`scripts/oneshot/cmd_3839_ac5_verify.py`(read-only)でデプロイ前ベースライン取得済み: `/api/signals`は5/22/22/17/27で完全不変。compare_returns/metrics_summary/p_averageは現行データにhidden folderが存在しないため既にsignals.pyと一致(潜在バグ、ローカルtest_folder_hide_rollout.py 41testsで修正効果は実証済み)。`/api/deterioration`のmissing差分はfolder非表示と無関係の別問題(データカバレッジ、スコープ外)。**忍者はpush/deploy不可のため、本番push後の再検証は家老/将軍に引き継ぎ**
+- 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3839_ac5_production_verification.md`
+- 因果リンク: [[folder非表示L1.5全EP適用完了]] -> [[cmd_3839楽観ロック+FEガード]] -> [[本番デプロイ後検証待ち]]
 
 ## §64 Stage A timeout / vectorized非決定性の再設計 (cmd_3840, 2026-07-10)
 

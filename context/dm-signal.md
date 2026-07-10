@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-10 cmd_karo_recon2_cmd3824_mechanism_202607101223 -->
-<!-- last_synced_lesson: L857 -->
+<!-- last_synced_lesson: L870 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -333,6 +333,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - L851: matched_weightは固定1.0ではなくsum(weights)と比較する（cmd_3808）
 - L852: monthly_tradeのmatched_weightは表示展開後weightsと同じ基準で検証せよ（cmd_3809 → ops§60）
 - L857: 同一手法再利用スクリプトはexec文字列置換ではなく環境変数overrideで差し替える（cmd_3815）
+- L870: run不変値を日次ループで外部process再取得するな（cmd_3840）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 

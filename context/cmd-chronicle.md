@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-10 -->
+<!-- last_updated: 2026-07-11 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,19 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_3262 | note_draft.sh がChrome未起動時にPython exit 1でFAILカウントされる。Chrome接続確認をbash層で事前実行し、未起動時はSKIP(exit 0+理由表示)に変換してFAIL率を正常化する | infra | 06-10 | note_draft.shにbash層CDP事前チェック(S |
-| cmd_3265 | gate_context_freshness.shがlast_updatedからの経過日数だけでALERT判定するため、ソースPJに変更がなくても日付変更でALERTが連発する(GA-031〜036の6件/日)。ソースに変更がない場合はALERTを抑止し、信号対雑音比を改善する | infra | 06-10 | gate_context_freshness.shの日数のみ |
-| cmd_3264 | 忍者の本体変更がauto-commit(chore: auto-commit before /clear)に巻き込まれ、cmd固有commitにはテストのみ含まれる。SG-PRE3のcommit検証をすり抜ける。3件連続発生(cmd_3255/3261/3263)。忍者commit完了後のgit status確認を強制し、auto-commit先取りを検出する | infra | 06-10 | auto-commit巻込み防止: ninja_monito |
-| cmd_3266 | 将軍のstartup gateにある先送り3セッション連続検出+自動エスカレーション(L1)が家老・軍師に未実装。洗脳#5(先送り)は全ロールに作用するため、gate_karo_startup.sh/gate_gunshi_startup.shに同等機能を横展開する | infra | 06-10 | gate_karo/gunshi_startup.shに先送 |
-| cmd_3267 | gate_shogun_startup.shの殿生発言Q生成がtask-notificationをinboundとして取得し殿の発言でないテキストを追体験Qに含めている。フィルタ追加で追体験Qの精度を改善する | infra | 06-10 | gate_shogun_startup.shの2箇所のinb |
-| cmd_3268 | docs/research/cmd_1991_codd_extract/modules/配下5ファイルがbacklinks=0で因果ネットワークから孤立。20セッション先送り。context/dm-signal-research.mdから因果リンクを接続し知識到達性を回復する | infra | 06-10 | cmd_1991 CoDD extract modules/ |
-| cmd_3269 | deploy_task.sh inject_related_lessonsがassigned_to未設定時にninja_name=unknownで記録し、同一教訓が忍者名+unknownで二重登録される。172 NOT_USEFUL中81件がunknownで水増し。二重記録を防止しuseful_rate計測を正常化する | infra | 06-10 | deploy_task.sh inject_related_ |
-| cmd_3270 | note-draft スキルの直近50件FAIL率が38%(3/8)で3セッション連続startup BLOCK。家老escalation(blt_20260610_115209)でCMD起票要請あり。skill_auto_improve_stateでcode_fix_requiredエスカレーション済み。根因を特定し修正する | infra | 06-10 | note-draft FAIL率38%の根本原因(CDPなし |
-| cmd_3271 | 教訓健全度WARN(useful_rate=46.2%)が3セッション連続startup BLOCK。根因=target_path未設定cmdでMIN_KEYWORD_SCORE閾値を下回り全量fallback注入(cmd_3231分析済み)。絞り込み精度を改善しuseful_rateを向上させる | infra | 06-10 | inject_related_lessonsのtarget_ |
-| cmd_3272 | 家老escalation(blt_20260610_172123): pre-commit yaml.dump BLOCKの根因修正。skills/shogun-claude-version-switch/scripts/claude_version_switch.sh L198がyaml.safe_dumpでsettings.yamlを丸ごと上書き→GP-136正当BLOCK。yaml_field_set.shで該当フィールドのみ更新に変更 | infra | 06-10 | set_launch_cmd()のL182-198 yaml |
-| cmd_3274 | 殿指示(2026-06-10 21:04「遅すぎる。やり方が間違っている。Gmailは今後も増える。サンクコストに囚われず今やるべき」+21:18「速度を合格点にするのではなく、より早くを目的にして修行すべき」)。遅さの真因=1通ごとにgws CLI(Node.js)をcold startする直列ループ(実測145分/1,577通=5.5秒/通)。投入自体は21:06に完了済み(1,577件・将軍と家老が独立検証済み)のため、本cmdはデータ再投入ではなく取込エンジンの恒久部品化: プロセス起動O(1)化+増分同期+FTS5日本語トークナイザ欠陥修正 | clinic-expense-tracker | 06-10 | gws CLI cold start O(N)→O(1)化( |
-| cmd_3275 | 殿裁定(2026-06-10 19:12「最大の痛みは現況がはっきりしないこと」+19:15「まずはリスト。次にリストを佐瀬メールなどで埋める。見える化で第三者にも頼める作業になる」+19:17「今後も使う仕組みだから古い時期から」)。docs/02 §WHATの21カテゴリ表を骨格に完全リストを生成する。佐瀬メール起点は抜け漏れ→手戻りのため骨格はマスタ表(殿裁定)。ソースで埋める作業はStep 2(後続cmd) | clinic-expense-tracker | 06-10 | expense_sources 21件+monthly_st |
-| cmd_3276 | 殿裁定(2026-06-10 19:15「次にリストを佐瀬メールなどで埋める」)の手順(2)第1ソース。佐瀬会計メール=会計士が何を受け取り何が不足と言っているかの一次記録(ground truth)。gmail_receiptsのshortage_list 35通(検証済み)をパースし、cmd_3275で生成した294セル(全not_obtained)のうち会計士記録が裏付けるセルを更新する。1ソースずつ埋める(殿裁定: 全部一気にやらない) | clinic-expense-tracker | 06-10 | 佐瀬メールshortage_list 35通を全文取得しパー |
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
@@ -431,3 +418,5 @@
 | cmd_3830 | 殿指摘(2026-07-10 14:27「家老に回答が届いていない。インフラバグだな」)+家老一次調査(blt_20260710_144946)。将軍のレビュー回答通知はinboxファイルへ永続化されwatcherも検知したが、受信者がactive turn中のためINPUT-GUARDでnudgeが保留され、turn終了境界で未読の再注入が行われず、家老は未認識のまま誤報に至った。保留nudgeの必達・最終回答直前の未読再検知・watcher singleton保証の3点で配達の鎖を閉じ、あわせてbulletin_write通知失敗の可視化も行う | infra | 07-10 | INPUT-GUARD保留nudgeのdeferred re |
 | cmd_3831 | 殿指示(2026-07-10 15:02「再計算の時間がかかりすぎだな。調査しよう」)。fullrecalculate id=206のTIMING実測でL5(66.4%)はcmd_3825対策進行中だが、L2内trade_perfが4分32秒とL2の過半を占め、L5解消後の総時間の主犯になる。trade_perfの時間消費機構を偵察5要件で特定する。あわせてTIMING SUMMARYがL5区間を表示しない欠落(L2がBOTTLENECKと誤表示)の原因箇所も特定する | dm-signal | 07-10 | trade_perf(272.35s, L2内86.3%)の |
 | cmd_3836 | 殿指摘(2026-07-10 20:02): 本番PFのhide設定が崩れている、tier別に確認し修正せよ。将軍偵察で根因確定済み: 工程4の旧PF削除がvisibility cleanup処理でtier別・global両方の可視性エントリを物理削除し、cmd_3786のPF本体ロールバックではarchive payloadに可視性設定が含まれないため戻らなかった。premiumのvisibleゼロ化等が発生中。Render PITRで削除イベント直前時点の設定を取得し、現存PFへ書き戻して原状回復する | dm-signal | 07-10 | — |
+| cmd_3840 | cmd_3827 FAIL裁定(2026-07-10 22:11家老掲示板: AC1のledgerバンドなし完全一致は達成、AC2はDRIFT BLOCK再発+基準生成Stage Aの30秒timeoutで原因未特定、現設計の追加試行はサンクコスト化)を受けた再設計。既往絞込み(blt_20260710_184729): PipelineEngine連続実行は完全決定的・DB破損なし・DRIFT BLOCK時のsignals実書込みゼロ。残真因はrecalculate_fast.pyの独立vectorized経路(_compute_pipeline_signalsのDTB3参照bisect等)に限定済み。本cmdはStage A timeoutの構造特定と非決定性の最小再現を完了させ、根治方針(単一実装への委譲 vs 経路の決定化)を設計書で確定する | dm-signal | 07-10 | Stage A timeout主因をgit hash sub |
+| cmd_3839 | 殿報告(2026-07-10 20:40: admin画面でsaveしたのに反映されないものがあった。FE/BE/DB連携を確認せよ)の根治実装。cmd_3838偵察(GATE CLEAR 21:19)で主因確定: folder非表示(L1.5)を実際に判定するのはsignals.pyの1箇所のみで、他の閲覧系エンドポイント群がfolder hideを無視してPFを露出する。偵察成果(docs/research/cmd_3838_visibility_save_recon.md+context/dm-signal-ops.md §63)に基づき、全閲覧EPへfolder非表示判定を一括適用し、副次特定されたPUT全置換の楽観ロック欠如とFEのTier切替時未保存編集消失も同時に塞ぐ | dm-signal | 07-10 | cmd_3838偵察成果に基づき、folder非表示(L1. |
