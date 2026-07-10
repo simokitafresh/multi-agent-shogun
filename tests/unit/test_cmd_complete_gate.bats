@@ -746,6 +746,50 @@ EOF
     [ "$output" = "true false" ]
 }
 
+@test "task type detection classifies full as implementation" {
+    _write_command_coverage_fixture \
+        "backend/app/api/signals.py を修正" \
+        "  - path: backend/app/api/signals.py
+    change: modified"
+    cat >> "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+  task_type: full
+EOF
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+
+    run detect_task_types "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [ "$output" = "false true" ]
+}
+
+@test "task type detection fail-closes unknown type as implementation" {
+    _write_command_coverage_fixture \
+        "scripts/tool.sh を修正" \
+        "  - path: scripts/tool.sh
+    change: modified"
+    cat >> "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+  task_type: future_type
+EOF
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+
+    run detect_task_types "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Unknown task_type: 'future_type'; fail-closed as implementation"* ]]
+    [[ "$output" == *"false true"* ]]
+}
+
+@test "task type detection fail-closes missing type as implementation" {
+    _write_command_coverage_fixture \
+        "scripts/tool.sh を修正" \
+        "  - path: scripts/tool.sh
+    change: modified"
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+
+    run detect_task_types "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Missing task_type; fail-closed as implementation"* ]]
+    [[ "$output" == *"false true"* ]]
+}
+
 @test "command/files_modified coverage remains strict for mixed recon and implementation cmd" {
     _write_command_coverage_fixture \
         "backend/app/api/signals.py を調査して修正" \

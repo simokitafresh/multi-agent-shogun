@@ -2027,9 +2027,18 @@ detect_task_types() {
         ttype=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "")
         case "$ttype" in
             recon|scout) has_recon=true ;;
-            implement) has_implement=true ;;
-            review) ;; # 既知の種別。条件ゲートには影響しない
-            *) echo "[WARN] Unknown task_type: '$ttype'" >&2 ;;
+            implement|impl|full|normal|exact|hotfix|ci_fix|speed_training|skill_training|training|gp|improvement)
+                has_implement=true
+                ;;
+            review|verify) ;; # 既知の非実装種別。条件ゲートには影響しない
+            "")
+                echo "[WARN] Missing task_type; fail-closed as implementation" >&2
+                has_implement=true
+                ;;
+            *)
+                echo "[WARN] Unknown task_type: '$ttype'; fail-closed as implementation" >&2
+                has_implement=true
+                ;;
         esac
     done
 
