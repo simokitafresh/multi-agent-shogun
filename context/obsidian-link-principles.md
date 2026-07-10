@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-07-09 cmd_karo_hotfix_context_freshness_ga203_202607090005 -->
+<!-- last_updated: 2026-07-10 cmd_karo_hotfix_ga215_context_freshness_202607101205 -->
 # Obsidianリンク×セマンティクスインデックス 分離原則
 
 <!-- created: 2026-05-22 | origin: 殿×将軍×軍師 対話で確立 -->
@@ -65,6 +65,11 @@ SQLiteは記憶台帳、Obsidianは人間の認知編集層、セマンティッ
 
 - 2026-07-01以降の`docs/semantic-index/`、`context/semantic-map.md`、`scripts/semantic_*`、`scripts/causal_backlinks.sh`関連commitは、還流insightのalias追加、semantic index同期、三層連鎖修復、因果バックリンク計測資源登録が中心。
 - これらは検索入口・概念到達・運用記録の更新であり、Obsidianリンクを機械生成したり、概念ハブへ還流したりする変更ではない。本ファイルの分離原則と禁止事項は維持。
+
+### 2026-07-10 鮮度確認
+
+- `5d86caab2`、`00f756b11`、`47c0440a8`を現物照合。変更はsemantic alias追加、NO_MATCH insight解消、生成索引へのcmd/lesson/discussion記録であり、Obsidianリンク生成・概念ハブ化・Obsidian結果の索引還流は0件。本ファイルの分離原則と禁止事項は維持。
+- 鮮度ALERTの直接原因は`context_freshness_check.sh`が成長し続ける`docs/semantic-index/`全体を本ファイルのsourceとして扱っていた過広pathspec（L856）。原則を変える実装sourceである`scripts/obsidian_*`、`scripts/causal_*`、`scripts/semantic_*`のみを監視し、生成索引の通常成長を原則変更と誤認しない。
 
 ## Why（なぜこの結論か）
 

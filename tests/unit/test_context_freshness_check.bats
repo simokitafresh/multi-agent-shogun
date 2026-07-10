@@ -579,6 +579,16 @@ PROJ
     [[ "$output" != *"context/obsidian-link-principles.md source commits 1件"* ]]
 }
 
+@test "obsidian principles ignores generated semantic index growth" {
+    _create_context "context/obsidian-link-principles.md" "$STALE_DATE"
+    _create_source_commit "docs/semantic-index/index.md" "chore: semantic aliases and records grew"
+    _create_shogun_to_karo "cmd_936" "infra"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_936
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"context/obsidian-link-principles.md source commits"* ]]
+}
+
 @test "git timeout is reported instead of treated as zero source commits" {
     _create_context "context/codd.md" "$STALE_DATE"
     _create_source_commit "scripts/codd/generate.py" "test: codd source changed"

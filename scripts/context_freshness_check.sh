@@ -458,7 +458,6 @@ INFRA_CONTEXT_PATHS: dict[str, list[str]] = {
         "scripts/obsidian_",
         "scripts/causal_",
         "scripts/semantic_",
-        "docs/semantic-index",
     ],
 }
 # WSL2 NTFS上でgit logが7秒以上かかるため並列実行と組み合わせてこの値で打ち切る。
