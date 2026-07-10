@@ -103,6 +103,14 @@ note.comメンバーシップの料金プランとDB viewer_tiersの対応。詳
 
 ## §33 L0-L3 GS再キャリブレーション計画 (2026-07-06)
 
+### cmd_3824 非決定性調査 (2026-07-10)
+
+`秘奥義-変わり身-激攻` 2014-10-31で、再計算5回に対応するsignal変更5件が
+`A→B→A→B→A→B` と反転した。各重み合計は1.0でband制約内、対象PF/dateの
+signal_decision_ledgerは0件。FoF月初PipelineEngineのコンポーネント入力再読込から
+判定までが根因層で、margin/DTB3/価格hashの揺れ源は未確定。
+詳細→ `docs/research/cmd_3824_nondeterminism.md`
+
 価格データソース多重化の本番適用により、GS入力はyfinance adjusted closeからEODHD生値+自前調整へ移行済み。既存本番PFのpipeline_configは旧入力価格で選出されたチャンピオンのため、L0→L1→L2→L3の依存順で全レイヤーを再GSし、新チャンピオン選出・本番config更新・パリティ検証が必要。
 
 判断済み事項: 入力価格はEODHD生値+自前調整、パリティは全期間holding_signal(ticker×weight)+monthly_return完全一致、GSスクリプトは入力prices変更のみで原則変更不要、パラメータ空間は前回同一で縮小禁止、チャンピオン選別はin-sample最適化、WFは選別に使わない。
@@ -388,6 +396,13 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - **ローカルPostgresはDocker不可、pgserver方式**: このヘッドレス環境ではDocker Desktop WSL2統合が機能しない（GUI操作を要し完了不可、実測確認済み）。sudo・Docker不要の`pgserver`パッケージ(PyPI, prebuilt PG16.2バイナリ同梱)を`$HOME/dm-signal-cmd3819-localpg/venv`に隔離導入。ネイティブext4上で稼働（`/mnt/c`は9pで低速、ベンチが歪むため不使用）。同梱pg_dumpはSSL非対応ビルドのため本番接続にはpsycopg2 COPY BINARYストリーミング方式(`cmd_3819_baseline_provision.py`)を使用。他PJでローカルPostgresが要る場合の再利用可
 - **binary COPYは列順一致必須**: 本番の物理列順とSQLAlchemy `Base.metadata.create_all()`の宣言順が食い違うと値がずれてUTF8デコードエラー等の破損を起こす（実測）。export/restore双方で`Base.metadata`由来の明示列リストを使うことで解消
 - 詳細・凍結hash証跡・baseline snapshot・初回ベンチ数値・理論下限推定 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3819_precompute_p1.md`
+
+## §45 fresh signals再backfillではcmd_3816残差は解消せず + 2014-10-31往復フリップ検出 (cmd_3817, 2026-07-10)
+
+- cmd_3817は24PF ledger backup→ledger 3495行削除→signals再計算→fresh signalsからledger 3495行backfill→monthly_returns反映再計算を本番で実行したが、cmd_3815同一手法の最終突合は**改善なし**。完全一致は`3/12`、一致月`1977/2052`、ミスマッチ`75`でcmd_3816時点と同一。単純なfresh-signals rebackfillでは残差は解消しない。
+- 実行上の注意: 1回目のrecalc `id=201` は修正deploy完了前に走ったため無効化し、deploy後にledger削除からやり直した。最終有効シーケンスは`id=204`(signals再計算完了 2026-07-10T00:53:03Z)→backfill 3495行→`id=205`(monthly_returns/precompute完了 2026-07-10T01:37:20Z)。
+- 追加補足の`signal_change_log`確認で、PF `65db7b53-9e62-4217-b8bb-65cf5445b606` / `秘奥義-変わり身-激攻` / `2014-10-31` の直近3件が `TECL/TQQQ 50/50 -> XLU50+TECL/TQQQ25 -> TECL/TQQQ50/50 -> XLU50+TECL/TQQQ25` の往復フリップであることを検出。最終値はband理論制約(選択資産合計0.5+safe haven 0.5=1.0)を満たすが、一方向再構築ではないため非決定性バグ候補として扱う。
+- 詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3817_fresh_signals_rebackfill.md`、機械証跡 → `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3815_same_param_parity.json` `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3816_residual_divergence.json`
 
 ## §35 GS D3出力パリティ再検証 (cmd_3794, 2026-07-09)
 
