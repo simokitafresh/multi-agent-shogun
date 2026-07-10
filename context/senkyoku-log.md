@@ -1410,3 +1410,4 @@
 - 2026-07-09 cmd_3801完了: 小太郎が`cmd_save.sh`のgate/hook判定とprimary target収集をメモ化し、fork proxy 168→159(-5.4%)・wall-clock 31-39%短縮を確認。GATE CLEAR済み、ac_version注意はCLEAR証跡によりWA不要。
 - 2026-07-09 cmd_reflux_promotion_202607092337_kagemaru完了: 影丸がLK-A14をreport gateのLevel4 BLOCKへ昇格し、横展開/修正前パターン報告時にgrep/rg残存0件証跡を必須化。promotion在庫118→117、commit `0a5074623` push済み、GATE CLEAR。
 - 2026-07-10 cmd_3805完了: 小太郎が青龍/白虎の複数期間加重lookback乖離を偵察。GS側バグではなく、`signal_decision_ledger`がthreshold_band適用前に全期間凍結したPI-P06仕様の隙間が真因と特定し、パリティ計画前提再検討をdecision_candidate化。GATE CLEAR。
+- 2026-07-10: パリティ大工程L0=根因3種特定(DTB3暦=cmd_3814解消/ledger stale weights/検証スクリプトバグ)+再計算非決定性を発見(2014-10-31往復フリップ、ledger保護なし×band境界が条件)→cmd_3824機構特定へ。WARN根絶完了(cmd_3820恒久監視deploy)。品質記録188→5消失をトリム根因で全量復元(200件)。precompute /goal P1完了(3ビルダー99.2%)→P2はparity868件FAILを評価器が阻止→cmd_3825等価版へ。殿裁定: 可逆なら行動せよ(裁可待ち禁止)+CI同期待ち不要+常に本番が正(ネイティブ暦統一)

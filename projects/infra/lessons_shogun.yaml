@@ -694,3 +694,11 @@ lessons:
   created_at: '2026-07-10'
   automated: true
   enforcement: 'context/dm-signal-ops.md §42改定済み+memory_db knowledge:b999e6ef40de164f。cmd起票時q12/貫通確認'
+- id: 'LS086'
+  title: '設計書クローズ時の実装cmd未起票チェック — 設計書完成で満足する先送り'
+  origin: '[[殿実装確認20260710_0720_0724]] -> [[設計書完成で先送り2連発]] -> [[LS086クローズ時起票照合]]'
+  detail: '2026-07-10に2連発: precompute /goal設計書(v1.1完成→P1起票を裁可待ちで放置、殿の実装確認07:20で発覚)とWARN根絶設計書(手順6恒久監視が未起票のまま、殿の実装確認07:24で発覚)。設計書は成果物ではなく工程の入口。設計書をクローズ(レビュー反映完了)した時点で、Phase/手順表の各行に対応する実装cmdが起票済みかを機械的に照合し、未起票が残るなら即起票するか保留理由を殿へ明示する。可逆なcmd起票を待つのは洗脳#5(LS085の系)'
+  source_cmd: 'cmd_3819'
+  created_at: '2026-07-10'
+  automated: true
+  enforcement: '設計書テンプレのPhase表に『起票cmd』列を必須化(gs-parity/precompute設計書は反映済みの形式)。将軍の設計書クローズ手順に照合ステップを組込み'
