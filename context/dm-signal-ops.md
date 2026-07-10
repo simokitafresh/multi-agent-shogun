@@ -84,10 +84,10 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L864 -->
+<!-- last_synced_lesson: L866 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
-- L865: sync-tickers cronは固定オフセット単発curlではなくL0ロック解放待ちリトライにせよ。cmd_3685でL0(sync-prices)所要が19s→~700-850sに増大し、render.yaml固定5分後の単発curlが毎回409で失敗しticker_daily_returnsが凍結した（cmd_3832、docs/research/cmd_3832_sync_tickers_recon.md）
+- L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
 - L866: recalculate-sync全PF実行のcleanupはmodeに関わらずTickerMonthlyReturnを削除するが再生成はmode=full/tickerのみ。既定mode="portfolio"のため全PF再計算のたびにticker_monthly_returnsが空になっていた。削除ゲートと再生成ゲートは常に対称にせよ（cmd_3832、docs/research/cmd_3832_sync_tickers_recon.md）
 
 ## §36 API認証
@@ -106,7 +106,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - cmd_3685: `sync-prices` はREFETCH_DAYS窓ではなく全期間を要求する。対象は `backend/app/jobs/data_fetcher.py` / `backend/app/jobs/sync_layers.py` / `backend/app/api/etl_trigger.py`、回帰テストは `backend/tests/test_data_fetcher_full_period.py`。関連commit: DM-Signal `75c4444d`。
 - L793: Render cron envVarsはAPI現物で検証せよ（cmd_3634）
 - L794: 月次cronのUTC day-of-month指定はJSTタイムゾーンオフセット越境で1日ずれる（cmd_3634_recon3）
-- ETL cronはL0-L3の4本体制。L0/L1/L2/L3の各レイヤーを独立cronで同期し、上位レイヤーは下位レイヤー完了後の本番DBを読む。
+- ETL cronはL0-L3の4本体制。L0/L1/L2/L3の各レイヤーを独立cronで同期し、L1-L3は`/admin/sync-status`の上流`last_success_date`がUTC当日になるまで待機してから本番DBを読む。
 - L0-L3各sync cronで全期間再計算が完結する。途中レイヤーだけの手動補正で完了扱いにしない。
 - L0: base/standard系、L1: 忍法・四神派生、L2: 奥義・合成standard、L3: FoF/入れ子FoFの同期境界として扱う。
 - `daily_etl.py`は冗長であり廃止予定。
