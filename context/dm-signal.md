@@ -408,6 +408,17 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - **binary COPYは列順一致必須**: 本番の物理列順とSQLAlchemy `Base.metadata.create_all()`の宣言順が食い違うと値がずれてUTF8デコードエラー等の破損を起こす（実測）。export/restore双方で`Base.metadata`由来の明示列リストを使うことで解消
 - 詳細・凍結hash証跡・baseline snapshot・初回ベンチ数値・理論下限推定 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3819_precompute_p1.md`
 
+## §46 precompute全量最速化 P2: H2 canonical parity FAIL 868件は日付ドリフト、id=206検証法自体が非等価 (cmd_3825, 2026-07-10)
+
+- **cmd_3821のcanonical parity FAIL 868件はH2のバグではない**: baseline(2026-07-09)とrerun(2026-07-10)が別日だったための`as_of_date`/`computed_for`等の日付依存フィールド差分。H2単体(monthly_return_cacheの3ビルダー共有)はfresh clone同日apples-to-apples(2699/2699, mismatch 0)で既に無罪と確認済み(hayate cmd_3821)。今回100%無改造git HEADコードで再検証し同一結論を再確認
+- **id=206候補DB vs 実本番fullrecalculate結果の突合(candidate_id206系)は方法論自体が非等価**: standalone `precompute_raw_for_portfolios()`単体実行は、`recalculate_fast`のライブパイプライン内実行と厳密には同値でない(FoF PF 2体で15行中13-14行不一致、標準PFは1行のみ)。**100%無改造コードでも同じ29件の不一致が再現**(`/tmp/dm-signal-cmd3825-pristine-check`検証)。cmd_3825のスコープ外、standaloneモードのFoF固有差異として別cmd起票が必要
+- **正しい検証法はapples-to-apples(pristine standalone vs candidate standalone、同一実行方式)**。この方式でH2単体=0/45不一致(完全無罪)、フルwarm-context+canonical slicing=11/45不一致(実バグ)と判明
+- **canonical variant slicing機能(cmd_3825で追加された非H2拡張)を実バグと確定・削除**: 1回計算した"canonical"結果を他パラメータへスライス流用する最適化が`performance`(年数カットオフの基準日リベースを無視)と`monthly_trade`(limit値のスライスは実際のクエリ意味と不一致)で出力を壊す。`monthly_returns`/`annual_returns`は偶然ソート順が一致し無事だったが、機構自体が不健全なため`backend/app/jobs/precompute_raw.py`から全面削除(explicit/minimal diff優先)
+- **`MonthlyTradeCalculator`の共有price_cacheに日付レンジ網羅チェック欠如を発見・修正**: 既存のFoF分岐は`has_ticker()`(ticker存在有無のみ)でギャップ判定していたが、これはticker自体はキャッシュにあってもその月に必要な特定日付がカバーされているかは保証しない。共有/warmキャッシュが個別PFの必要レンジと異なる窓で構築されると特定日のprice lookupが静かに失敗し、`missing_tickers`全件+`matched_weight=0.0`+`price_movement=None`という壊れ方をする。標準PF分岐には元々この安全網自体が存在しなかった(FoF分岐のみ)。`_ensure_price_cache_coverage()`を新設し両分岐に追加、`_date_lists`で実際の日付網羅を確認しギャップのみmerge-load(38-39s、無条件全件reload版の91sから復帰)
+- **最終形: フルwarm-context(portfolio_preload/signal_preload/rolling系preload/drawdown_preload/perf_price_cache全て) + canonical slicing削除 + price_cache網羅修正 = 0/45不一致(apples-to-apples)**。関連テスト(test_precompute_raw.py 3件更新含む11件、周辺calculator/endpoint系192件)全PASS
+- **凍結評価器(cmd_3819)による最終103PF全量確認完了**: ベンチ3回=677.59/649.78/623.02s、**中央値649.78s（baseline 1180.64s比 44.96%短縮）**。パリティ=2699/2699 common、missing/extra=0、**mismatch=3件のみ**、全てPF単体行(2696件)ではなく無改造の`compare_returns_bulk`/`metrics_summary_bulk`(グローバル集計、H2/zero-recompute対象外コード)。原因はローカルclone間のデータ不整合疑い(スコープ外、別cmd要)。PF単体2696/2696は完全一致
+- 詳細・iteration log・数値根拠 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3825_h2_parity_fix.md`
+
 ## §45 fresh signals再backfillではcmd_3816残差は解消せず + 2014-10-31往復フリップ検出 (cmd_3817, 2026-07-10)
 
 - cmd_3817は24PF ledger backup→ledger 3495行削除→signals再計算→fresh signalsからledger 3495行backfill→monthly_returns反映再計算を本番で実行したが、cmd_3815同一手法の最終突合は**改善なし**。完全一致は`3/12`、一致月`1977/2052`、ミスマッチ`75`でcmd_3816時点と同一。単純なfresh-signals rebackfillでは残差は解消しない。
