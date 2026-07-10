@@ -318,15 +318,56 @@ while IFS= read -r line; do
     esac
 done <<< "$RESULT"
 
-# Speed optimization: cache python3 results by LOG_FILE mtime+size (cmd_gunshi_speed D0)
-_cs_cache_key="$(stat -c '%Y:%s' "$LOG_FILE" 2>/dev/null || true)"
-_cs_cache_dir="/tmp/shogun_cs_checklist_cache"
-mkdir -p "$_cs_cache_dir" 2>/dev/null || true
-_cs_cold_cache="$_cs_cache_dir/cold_${_cs_cache_key//[!0-9:]/_}"
-_cs_skill_cache="$_cs_cache_dir/skill_${_cs_cache_key//[!0-9:]/_}"
+# Speed optimization: cache Python results by the complete input contents.
+# mtime+size is insufficient: skill usage also depends on the execution log,
+# active task YAMLs and reports, and same-size rewrites can retain a stale
+# verdict.  Namespace by project root, include this gate's implementation hash,
+# and atomically replace two fixed cache files so concurrency cannot expose a
+# partial value and /tmp usage stays bounded.
+_cs_hash_file() {
+    if [ -f "$1" ]; then
+        sha256sum -- "$1" 2>/dev/null || printf 'unreadable  %s\n' "$1"
+    else
+        printf 'missing  %s\n' "$1"
+    fi
+}
 
-if [ -f "$_cs_cold_cache" ]; then
-    cold_category_missing="$(< "$_cs_cold_cache")"
+_cs_read_cache() {
+    local cache_file="$1" expected_key="$2" cached_key=""
+    [ -f "$cache_file" ] || return 1
+    IFS= read -r cached_key < "$cache_file" || true
+    [ "$cached_key" = "$expected_key" ] || return 1
+    tail -n +2 "$cache_file"
+}
+
+_cs_write_cache() {
+    local cache_file="$1" cache_key="$2" cache_value="$3" tmp_file
+    tmp_file="$(mktemp "${cache_file}.tmp.XXXXXX")" || return 0
+    {
+        printf '%s\n' "$cache_key"
+        printf '%s' "$cache_value"
+    } > "$tmp_file"
+    mv -f -- "$tmp_file" "$cache_file" 2>/dev/null || true
+}
+
+_cs_namespace="$(printf '%s' "$REPO_ROOT" | sha256sum | awk '{print $1}')"
+_cs_cache_dir="/tmp/shogun_cs_checklist_cache/${_cs_namespace}"
+mkdir -p "$_cs_cache_dir" 2>/dev/null || true
+_cs_cold_cache="$_cs_cache_dir/cold.cache"
+_cs_skill_cache="$_cs_cache_dir/skill.cache"
+_cs_gate_hash="$(_cs_hash_file "${BASH_SOURCE[0]}" | sha256sum | awk '{print $1}')"
+_cs_review_hash="$(_cs_hash_file "$LOG_FILE" | sha256sum | awk '{print $1}')"
+_cs_cold_key="$(printf '%s\n%s\n' "$_cs_gate_hash" "$_cs_review_hash" | sha256sum | awk '{print $1}')"
+_cs_skill_key="$({
+    printf '%s\n%s\n' "$_cs_gate_hash" "$_cs_review_hash"
+    _cs_hash_file "$REPO_ROOT/logs/skill_execution_log.yaml"
+    while IFS= read -r -d '' _cs_input; do
+        _cs_hash_file "$_cs_input"
+    done < <(find "$REPO_ROOT/queue/tasks" "$REPO_ROOT/queue/reports" -maxdepth 1 -type f -print0 2>/dev/null | sort -z)
+} | sha256sum | awk '{print $1}')"
+
+if cold_category_missing="$(_cs_read_cache "$_cs_cold_cache" "$_cs_cold_key")"; then
+    :
 else
 cold_category_missing=$(python3 - "$LOG_FILE" <<'PY' 2>/dev/null || true
 import re
@@ -425,11 +466,11 @@ for idx in range(start, len(reviews)):
 print("\n".join(warnings))
 PY
 )
-printf '%s' "$cold_category_missing" > "$_cs_cold_cache" 2>/dev/null || true
+_cs_write_cache "$_cs_cold_cache" "$_cs_cold_key" "$cold_category_missing"
 fi
 
-if [ -f "$_cs_skill_cache" ]; then
-    skill_usage_missing="$(< "$_cs_skill_cache")"
+if skill_usage_missing="$(_cs_read_cache "$_cs_skill_cache" "$_cs_skill_key")"; then
+    :
 else
 skill_usage_missing=$(python3 - "$REPO_ROOT" "$LOG_FILE" <<'PY' 2>/dev/null || true
 import os
@@ -599,7 +640,7 @@ for entry in reviews[-20:]:
 print("\n".join(warnings))
 PY
 )
-printf '%s' "$skill_usage_missing" > "$_cs_skill_cache" 2>/dev/null || true
+_cs_write_cache "$_cs_skill_cache" "$_cs_skill_key" "$skill_usage_missing"
 fi
 
 # --- AC1: cs_checklist空/null検出 (cmd_3373) ---

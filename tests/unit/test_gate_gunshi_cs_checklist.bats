@@ -1153,6 +1153,52 @@ YAML
     [[ "$output" != *"recommended_skills未使用"* ]]
 }
 
+@test "skill usage cache invalidates when execution log changes without review log change" {
+    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+reviews:
+- cmd_id: cmd_5003
+  review_type: report
+  report_ninja: sasuke
+  report_task_id: cmd_5003_impl
+  verdict: LGTM
+  observations:
+    - "事実1"
+    - "事実2"
+YAML
+    cat > "$TEST_TMPDIR/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  task_id: cmd_5003_impl
+  report_path: queue/reports/sasuke_report_cmd_5003.yaml
+  recommended_skills:
+    - db-check
+YAML
+    cat > "$TEST_TMPDIR/queue/reports/sasuke_report_cmd_5003.yaml" <<'YAML'
+worker_id: sasuke
+task_id: cmd_5003_impl
+verdict: PASS
+YAML
+    printf 'executions: []\n' > "$TEST_TMPDIR/logs/skill_execution_log.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"cmd_5003: missing_skills=db-check"* ]]
+
+    cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'YAML'
+executions:
+- ts: "2026-07-10T21:00:00+0900"
+  skill: "db-check"
+  executor: "sasuke"
+  result: "PASS"
+  used: "true"
+  source: "queue/reports/sasuke_report_cmd_5003.yaml"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"recommended_skills未使用"* ]]
+}
+
 @test "infra report without 実行 confirmation blocks with exit 2 (AC1 cmd_3372)" {
     cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
 - cmd_id: cmd_7001
