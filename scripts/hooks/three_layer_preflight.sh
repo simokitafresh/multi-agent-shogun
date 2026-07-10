@@ -59,13 +59,6 @@ issue() {
     local memory_rc=0 semantic_rc=0 obsidian_rc=0
     timeout 5s bash "$ROOT/scripts/memory_db_query.sh" --search "$prompt" >/dev/null 2>&1 || memory_rc=$?
     timeout 5s bash "$ROOT/scripts/semantic_search.sh" "$prompt" >/dev/null 2>&1 || semantic_rc=$?
-    # semantic_search.sh exit 1 means NO_MATCH (a completed search that found
-    # nothing for this prompt text) in the common case, but it also uses
-    # exit 1 if docs/semantic-index/index.md itself is missing. Only
-    # normalize when the index file is actually present, so a genuinely
-    # broken checkout still fails closed. Same reasoning as the Obsidian
-    # layer below.
-    [[ "$semantic_rc" == 1 && -f "$ROOT/docs/semantic-index/index.md" ]] && semantic_rc=0
     # Obsidian's causal index is the repository's [[link]] graph. rg exit 1
     # means no match, which is still a completed search; exit 2 is a failure.
     rg_cmd="$(resolve_rg 2>/dev/null || true)"

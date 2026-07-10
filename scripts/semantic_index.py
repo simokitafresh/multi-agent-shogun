@@ -496,23 +496,6 @@ def memory_db_fts_concept_rank_rows(
     if not fts_query or not db_path.is_file():
         return [], 0, {}
 
-    try:
-        return _memory_db_fts_concept_rank_rows_impl(db_path, fts_query, result_limit, target)
-    except sqlite3.OperationalError as exc:
-        # A DB file can exist (e.g. auto-vivified by a prior connect) without
-        # having been through the ETL import yet, so events/events_fts may be
-        # missing. That is an empty index, not a query failure.
-        if "no such table" in str(exc):
-            return [], 0, {}
-        raise
-
-
-def _memory_db_fts_concept_rank_rows_impl(
-    db_path: Path,
-    fts_query: str,
-    result_limit: int,
-    target: str = "",
-) -> tuple[list[dict], int, dict]:
     target = target.strip()
     target_clause = "AND (e.target = ? OR e.event_type = 'document')" if target else ""
     params: list[object] = [fts_query]
