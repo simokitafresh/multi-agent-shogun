@@ -705,3 +705,11 @@ lessons:
   created_at: '2026-07-10'
   automated: true
   enforcement: '設計書テンプレのPhase表に『起票cmd』列を必須化(gs-parity/precompute設計書は反映済みの形式)。将軍の設計書クローズ手順に照合ステップを組込み'
+- id: 'LS087'
+  title: 'gate検査のAC区間抽出はAC配下常設キーをexit条件に含めるな'
+  origin: '[[cmd_session_20260710]]'
+  detail: 'check_research_artifact_reflux_ac等4関数のawk AC区間抽出がbinary_check:(小文字キー)でexitし、AC1のdescription 1行のみ検査→AC2以降の記述が恒常的に未検出(LS078真実の在処不一致の変種: 書き手はAC全体に書くが読み手は1行しか見ない)。cmd_3836/3837で4回BLOCK往復。修正=exit条件からbinary_check:除外(4箇所一括、commit 6e1854eb0)+回帰テスト追加。横展開: AC配下を走査するawk/grepを新設する際はAC実データ(description+binary_check複数AC)でセクション抽出を実測せよ'
+  source_cmd: 'cmd_session_20260710'
+  created_at: '2026-07-10'
+  automated: true
+  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=binary_check:/ && ; test=tests/unit/test_cmd_save_research_artifact_reflux.bats'
