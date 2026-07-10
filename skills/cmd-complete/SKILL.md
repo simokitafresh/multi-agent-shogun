@@ -29,8 +29,11 @@ GATE CLEAR後の5-7ステップを順序保証で1コマンド実行。ステッ
 - <!-- skill-auto-improve:75c5317166e9 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「<ninja>:ac_version_mismatch:task=d41d8cd9:report=88572c76」(count=1, last=2026-05-02T23:46:44+0900)を避ける。確認: ac_version_read がHEADの短縮ハッシュと一致するか `git rev-parse --short HEAD` で確認する。修正: `report_field_set.sh <report> ac_version_read $(git rev-parse --short HEAD)` で記入する。
 ### Step 1: lesson review
 ```bash
-bash scripts/lesson_review.sh
+bash scripts/lesson_review.sh <project_id>
 ```
+`lesson_review.sh` はproject ID必須。対象cmdの `project:` を正本にする
+（例: `project: dm-signal` → `bash scripts/lesson_review.sh dm-signal`、
+`project: infra` → `bash scripts/lesson_review.sh infra`）。引数なし実行は禁止。
 draft教訓レビューを必ず実行する。draft=0ならスキップしてStep 2へ進む。
 draft>0なら全件confirm/edit/deleteで完了させるまでStep 2以降へ進むな。
 lesson_review完了前にcmd_complete_gateを実行することは禁止。
