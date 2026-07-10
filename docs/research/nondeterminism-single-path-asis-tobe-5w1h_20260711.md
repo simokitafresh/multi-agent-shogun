@@ -96,6 +96,18 @@
 
 横展開メモ: 「HTTP accepted≠job成功」（家老発見）は他cron・他PJにも同型があり得る。lesson登録時に横展開対象の列挙を含めること。
 
+### M1-M7の確定仕様（v1.3、家老全採用 blt_20260711_015722 + 軍師盲点認定 blt_20260711_015612）
+
+- **M1→P5回帰の新設**: P4本番fullrecalculate後に、発端cmd_3827と同一の整合シナリオ（ledger・confirmed holding・exact-set・DRIFT BLOCKの元事故条件）を再実行しmismatch 0で発端の問いを閉じる
+- **M4→裁定checkpoint必須化**: 「停止点なく実装可能」の結語は洗脳#8として削除。設計確定範囲は**P1a→P1bまで**。P1b完了時にmanifest現物・5呼出し元・cron縮退・production preflight結果を殿へ提示し、**P2-P4への進行は殿裁定必須。自動継続禁止**
+- **M5→drift三段通知**: (1)primary=DB永続（layer_data._run.drift_summaryにmanifest_id/source hash/PF/date/before/ledger/count）(2)immediate=ntfy集約1件 (3)dashboard=未解消drift件数+最新manifest_id。ntfy失敗でもguardは緩めず、DB永続を正本に再送可能化
+- **M2→baseline再計測**: P1a冒頭でStage A cold/warmを再計測。旧35.2/11.8/3.9秒は現値扱いしない
+- **M3→shard/chunk実行計画**: 固定PF shard manifest+同一fixture read-only+shard内直列。RSS上限超過時はchunk分割で全量統合（対象縮小・SKIP 0）
+- **M6→cmd_3788正本へ統合**: 新しいstatus SSOTを作らず、既存のcross-process recalc lock+cmd_3788正本へmanifest phase（provisional/completed/failed）を統合。partial 2系にもlock必須+5呼出し元の並行排他test
+- **M7→版固定**: 起票時に正本設計書のcommit full 40桁+gist revisionをtask YAMLへ固定。実装中の設計変更は再レビューなしの取込禁止。**正本commit固定前はP1a配備BLOCK**
+
+軍師はレビュー機構へ「運用接続3問（回帰はどこで？裁定はいつ？通知は誰へ？）」を恒常追加（プロセス還流済み）。
+
 ## 6. 因果
 
 `[[cmd_3827_FAIL]] -> [[Stage_A計測汚染=git_hash_subprocess238回]] + [[入力manifest不在で比較不能]] + [[二重実装の乖離(日跨ぎparity割れで実証)]] -> [[P1 hotfix(snapshot+manifest) -> P2 differential RED -> P3 共通executor -> P4 GREEN]]`
