@@ -72,6 +72,32 @@ if [ -z "$AGENT_ID" ] || [ "$AGENT_ID" = "shogun" ] || [ "$AGENT_ID" = "karo" ] 
     exit 0
 fi
 
+# --- Scope to this agent's own task target_path ---
+# All ninjas share one git worktree/index. A staged file left by another
+# agent's concurrent WIP (e.g. an unrelated repo entirely, cmd_karo_hotfix
+# incident 2026-07-10) must not block THIS agent's stop just because it is
+# sitting in the same index. Only files under the agent's own task
+# target_path are in scope; when the task file is missing/unreadable or its
+# target_path is the whole repo, no extra filtering is applied.
+task_target_path=""
+task_file="$SHOGUN_ROOT/queue/tasks/${AGENT_ID}.yaml"
+if [ -f "$task_file" ]; then
+    task_target_path="$(sed -n 's/^[[:space:]]*target_path:[[:space:]]*//p' "$task_file" | head -1 \
+        | sed -e 's/^[\"'"'"']//' -e 's/[\"'"'"']$//' -e 's/[[:space:]]*$//')"
+fi
+if [ -n "$task_target_path" ] && [ "$task_target_path" != "$SHOGUN_ROOT" ]; then
+    scoped_files=()
+    for f in "${changed_files[@]}"; do
+        case "$SHOGUN_ROOT/$f" in
+            "$task_target_path"/*|"$task_target_path") scoped_files+=("$f") ;;
+        esac
+    done
+    changed_files=("${scoped_files[@]}")
+fi
+if [ "${#changed_files[@]}" -eq 0 ]; then
+    exit 0
+fi
+
 # --- Separate files by type ---
 sh_files=()
 py_files=()
@@ -90,14 +116,55 @@ done
 violations=""
 cd "$SHOGUN_ROOT"
 
+# Lines this agent actually added/modified in the staged diff for one file.
+# A large shared .py file can carry legacy violations on lines nobody
+# touched; those must not block an unrelated staged edit in the same file
+# (cmd_karo_hotfix_stop_lint_changed_line_scope incident 2026-07-10).
+_stop_lint_changed_lines() {
+    local file="$1"
+    git diff --cached --unified=0 -- "$file" 2>/dev/null | awk '
+        /^@@/ {
+            line = $0
+            sub(/^@@ -[0-9]+(,[0-9]+)? \+/, "", line)
+            sub(/ @@.*/, "", line)
+            n = split(line, parts, ",")
+            start = parts[1] + 0
+            count = (n > 1 ? parts[2] + 0 : 1)
+            for (i = 0; i < count; i++) print start + i
+        }
+    '
+}
+
+# Filter ruff "file:line:col: CODE message" concise output down to only the
+# violations that land on a changed line for that file.
+_stop_lint_filter_changed_lines() {
+    local raw="$1" cur_file="" cur_ranges=$'\n'
+    while IFS= read -r vline; do
+        [ -z "$vline" ] && continue
+        local vfile vlineno
+        vfile="${vline%%:*}"
+        vlineno="$(printf '%s' "$vline" | cut -d: -f2)"
+        if [ "$vfile" != "$cur_file" ]; then
+            cur_file="$vfile"
+            cur_ranges=$'\n'"$(_stop_lint_changed_lines "$vfile")"$'\n'
+        fi
+        case "$cur_ranges" in
+            *$'\n'"$vlineno"$'\n'*) printf '%s\n' "$vline" ;;
+        esac
+    done <<<"$raw"
+}
+
 # ShellCheck for .sh files (-S warning: info/style除外。既存警告での偽ブロック防止)
+# -f gcc: "file:line:col: ..." per finding, so changed-line filtering (below)
+# can apply here the same way it does for ruff.
 if [ "${#sh_files[@]}" -gt 0 ] && command -v shellcheck >/dev/null 2>&1; then
-    sc_out=""
-    if ! sc_out="$(shellcheck -S warning "${sh_files[@]}" 2>&1)"; then
-        :
-    fi
-    if [ -n "$sc_out" ]; then
-        violations="${violations}--- shellcheck ---"$'\n'"${sc_out}"$'\n'
+    sc_raw=""
+    sc_raw="$(shellcheck -S warning -f gcc "${sh_files[@]}" 2>&1)" || true
+    if [ -n "$sc_raw" ]; then
+        sc_out="$(_stop_lint_filter_changed_lines "$sc_raw")"
+        if [ -n "$sc_out" ]; then
+            violations="${violations}--- shellcheck ---"$'\n'"${sc_out}"$'\n'
+        fi
     fi
 fi
 
@@ -112,8 +179,10 @@ if [ "${#py_files[@]}" -gt 0 ]; then
         ruff_cmd="ruff"
     fi
     if [ -n "$ruff_cmd" ]; then
-        ruff_out=""
-        if ! ruff_out="$("$ruff_cmd" check --quiet --select E,W,F "${py_files[@]}" 2>&1)"; then
+        ruff_raw=""
+        ruff_raw="$("$ruff_cmd" check --quiet --select E,W,F --output-format=concise "${py_files[@]}" 2>&1)" || true
+        if [ -n "$ruff_raw" ]; then
+            ruff_out="$(_stop_lint_filter_changed_lines "$ruff_raw")"
             if [ -n "$ruff_out" ]; then
                 violations="${violations}--- ruff ---"$'\n'"${ruff_out}"$'\n'
             fi
@@ -133,25 +202,40 @@ if [ "${#ts_js_files[@]}" -gt 0 ] && command -v npx >/dev/null 2>&1; then
 fi
 
 # --- No violations: clean exit ---
+fail_hash_file="${STOP_LINT_HASH_FILE:-/tmp/stop_hook_${AGENT_ID}_lint_fail_hash}"
+escalated_hash_file="${fail_hash_file}.escalated"
 if [ -z "$violations" ]; then
-    rm -f "${STOP_LINT_HASH_FILE:-/tmp/stop_hook_${AGENT_ID}_lint_fail_hash}" 2>/dev/null
+    rm -f "$fail_hash_file" "$escalated_hash_file" 2>/dev/null
     exit 0
 fi
 
 # --- Violations found: compare with previous failure (loop prevention) ---
-fail_hash_file="${STOP_LINT_HASH_FILE:-/tmp/stop_hook_${AGENT_ID}_lint_fail_hash}"
 current_hash="$(printf '%s' "$violations" | md5sum | cut -d' ' -f1)"
 
 if [ -f "$fail_hash_file" ]; then
     prev_hash="$(< "$fail_hash_file")"
     if [ "$current_hash" = "$prev_hash" ]; then
-        # Same failure repeated — agent cannot fix this. Block + escalate to karo.
-        # 消火禁止: auto-approveは問題を隠す。blockを維持し家老に対処を委ねる。
-        rm -f "$fail_hash_file" 2>/dev/null
-        if [ -x "${SHOGUN_ROOT}/scripts/inbox_write.sh" ]; then
-            bash "${SHOGUN_ROOT}/scripts/inbox_write.sh" karo \
-                "${AGENT_ID}: Stop Hook lint違反同一繰り返し。修正不能。タスク停止+lint修正cmdが必要。" \
-                error_report "$AGENT_ID" 2>/dev/null || true
+        # Same failure repeated — agent cannot fix this. Escalate to karo
+        # exactly once per distinct hash; do NOT delete fail_hash_file here
+        # (that previously made the very next run see "no prior hash" and
+        # re-enter the first-time ERROR branch, which then escalated again
+        # next run — an ERROR<->BLOCK loop that spammed karo's inbox with
+        # duplicate notifications for one unresolved violation, cmd_karo_hotfix
+        # 2026-07-10). escalated_hash_file records which hash was already
+        # notified so repeats of the SAME hash stay silent toward karo.
+        already_escalated=0
+        if [ -f "$escalated_hash_file" ]; then
+            escalated_prev_hash="$(< "$escalated_hash_file")"
+            [ "$escalated_prev_hash" = "$current_hash" ] && already_escalated=1
+        fi
+        if [ "$already_escalated" -eq 0 ]; then
+            printf '%s' "$current_hash" > "$escalated_hash_file"
+            # 消火禁止: auto-approveは問題を隠す。blockを維持し家老に対処を委ねる。
+            if [ -x "${SHOGUN_ROOT}/scripts/inbox_write.sh" ]; then
+                bash "${SHOGUN_ROOT}/scripts/inbox_write.sh" karo \
+                    "${AGENT_ID}: Stop Hook lint違反同一繰り返し。修正不能。タスク停止+lint修正cmdが必要。" \
+                    error_report "$AGENT_ID" 2>/dev/null || true
+            fi
         fi
         violations_escaped2="$(printf '%s' "$violations" | head -50 | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g' | tr '\n' '|' | sed 's/|/\\n/g')"
         cat <<HOOK_JSON
@@ -166,6 +250,7 @@ fi
 
 # --- New or different failure: save hash and block stop ---
 printf '%s' "$current_hash" > "$fail_hash_file"
+rm -f "$escalated_hash_file" 2>/dev/null
 
 # Prepare violations for JSON (escape special chars)
 violations_escaped="$(printf '%s' "$violations" | head -100 | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g' | tr '\n' '|' | sed 's/|/\\n/g')"

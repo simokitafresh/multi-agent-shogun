@@ -26,7 +26,9 @@ EOF
 #!/usr/bin/env bash
 echo "$*" >> "${TEST_ROOT}/shellcheck_calls.log"
 if [ "${MOCK_SHELLCHECK_MODE:-pass}" = "fail" ]; then
-    printf '%s\n' "${1}:1:1: warning: mock shellcheck failure [SC9999]"
+    target="${*: -1}"
+    lineno="$(wc -l < "$target" | tr -d '[:space:]')"
+    printf '%s\n' "${target}:${lineno}:1: warning: mock shellcheck failure [SC9999]"
     exit 1
 fi
 EOF
@@ -107,9 +109,9 @@ run_hook() {
     [ -z "$output" ]
 
     [ "$(wc -l < "$TEST_ROOT/shellcheck_calls.log")" -eq 1 ]
-    grep -q -- "-S warning a.sh b.sh" "$TEST_ROOT/shellcheck_calls.log"
+    grep -q -- "-S warning -f gcc a.sh b.sh" "$TEST_ROOT/shellcheck_calls.log"
     [ "$(wc -l < "$TEST_ROOT/ruff_calls.log")" -eq 1 ]
-    grep -q -- "check --quiet --select E,W,F c.py" "$TEST_ROOT/ruff_calls.log"
+    grep -q -- "check --quiet --select E,W,F --output-format=concise c.py" "$TEST_ROOT/ruff_calls.log"
     [ ! -f "$TEST_ROOT/npx_calls.log" ]
 }
 
@@ -142,4 +144,113 @@ run_hook() {
     [[ "$output" == *'Same lint violations repeated'* ]]
     [ -f "$TEST_ROOT/inbox_write.log" ]
     grep -q "error_report hayate" "$TEST_ROOT/inbox_write.log"
+}
+
+@test "same fail hash escalates to karo exactly once across repeated runs" {
+    printf '# change\n' >> "$TEST_ROOT/a.sh"
+    git -C "$TEST_ROOT" add a.sh
+
+    for _ in 1 2 3; do
+        run env TEST_ROOT="$TEST_ROOT" MOCK_AGENT_ID="hayate" TMUX_PANE="%1" \
+            MOCK_SHELLCHECK_MODE="fail" STOP_LINT_HASH_FILE="$HASH_FILE" PATH="$TEST_ROOT/mock_bin:$PATH" \
+            bash -c 'cd "$TEST_ROOT" && bash .claude/hooks/stop-lint-gate.sh'
+        [ "$status" -eq 0 ]
+    done
+
+    # 3 runs of the identical, still-unfixed violation must notify karo
+    # exactly once, not on every repeat (cmd_karo_hotfix ERROR<->BLOCK loop
+    # incident 2026-07-10: fail_hash_file was deleted on escalation, so the
+    # very next run looked like a brand-new violation and re-escalated).
+    [ -f "$TEST_ROOT/inbox_write.log" ]
+    [ "$(wc -l < "$TEST_ROOT/inbox_write.log")" -eq 1 ]
+    [[ "$output" == *'Same lint violations repeated'* ]]
+}
+
+@test "legacy violation on an unmodified line does not block when a different line changes" {
+    cat > "$TEST_ROOT/c.py" <<'EOF'
+print("line1")
+print("line2")
+print("line3")
+print("line4")
+print("line5")
+EOF
+    git -C "$TEST_ROOT" add c.py
+    git -C "$TEST_ROOT" -c user.email=t@e.com -c user.name=T commit -qm "multi-line c.py"
+
+    sed -i '4s/.*/print("line4 changed")/' "$TEST_ROOT/c.py"
+    git -C "$TEST_ROOT" add c.py
+
+    cat > "$TEST_ROOT/mock_bin/ruff" <<EOF
+#!/usr/bin/env bash
+echo "\$*" >> "${TEST_ROOT}/ruff_calls.log"
+printf '%s\n' "c.py:1:89: E501 Line too long (legacy, untouched)"
+exit 1
+EOF
+    chmod +x "$TEST_ROOT/mock_bin/ruff"
+
+    run_hook
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "a violation landing on a changed line still blocks" {
+    cat > "$TEST_ROOT/c.py" <<'EOF'
+print("line1")
+print("line2")
+print("line3")
+print("line4")
+print("line5")
+EOF
+    git -C "$TEST_ROOT" add c.py
+    git -C "$TEST_ROOT" -c user.email=t@e.com -c user.name=T commit -qm "multi-line c.py"
+
+    sed -i '4s/.*/print("line4 changed")/' "$TEST_ROOT/c.py"
+    git -C "$TEST_ROOT" add c.py
+
+    cat > "$TEST_ROOT/mock_bin/ruff" <<EOF
+#!/usr/bin/env bash
+echo "\$*" >> "${TEST_ROOT}/ruff_calls.log"
+printf '%s\n' "c.py:4:89: E501 Line too long (on the changed line)"
+exit 1
+EOF
+    chmod +x "$TEST_ROOT/mock_bin/ruff"
+
+    run_hook
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"decision": "block"'* ]]
+    [[ "$output" == *'ERROR: Lint violations found in changed files'* ]]
+}
+
+@test "a staged file outside the agent's task target_path is not linted" {
+    mkdir -p "$TEST_ROOT/queue/tasks"
+    cat > "$TEST_ROOT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  target_path: /some/unrelated/project
+EOF
+    printf '# change\n' >> "$TEST_ROOT/a.sh"
+    git -C "$TEST_ROOT" add a.sh queue/tasks/hayate.yaml
+
+    run env TEST_ROOT="$TEST_ROOT" MOCK_AGENT_ID="hayate" TMUX_PANE="%1" \
+        MOCK_SHELLCHECK_MODE="fail" STOP_LINT_HASH_FILE="$HASH_FILE" PATH="$TEST_ROOT/mock_bin:$PATH" \
+        bash -c 'cd "$TEST_ROOT" && bash .claude/hooks/stop-lint-gate.sh'
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+    [ ! -f "$TEST_ROOT/shellcheck_calls.log" ]
+}
+
+@test "a staged file inside the agent's task target_path is still linted" {
+    mkdir -p "$TEST_ROOT/queue/tasks"
+    cat > "$TEST_ROOT/queue/tasks/hayate.yaml" <<EOF
+task:
+  target_path: ${TEST_ROOT}
+EOF
+    printf '# change\n' >> "$TEST_ROOT/a.sh"
+    git -C "$TEST_ROOT" add a.sh queue/tasks/hayate.yaml
+
+    run env TEST_ROOT="$TEST_ROOT" MOCK_AGENT_ID="hayate" TMUX_PANE="%1" \
+        MOCK_SHELLCHECK_MODE="fail" STOP_LINT_HASH_FILE="$HASH_FILE" PATH="$TEST_ROOT/mock_bin:$PATH" \
+        bash -c 'cd "$TEST_ROOT" && bash .claude/hooks/stop-lint-gate.sh'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"decision": "block"'* ]]
+    [ -f "$TEST_ROOT/shellcheck_calls.log" ]
 }

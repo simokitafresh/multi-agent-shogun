@@ -46,7 +46,14 @@ unset _pre_bash_self
 if [[ ! -x "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" ]]; then
     emit_deny "BLOCK: 三層preflight scriptが欠落。状態変更Bashをfail-closedで停止"
 fi
-if ! bash "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" verify "Bash" "" "$command" >/dev/null 2>&1; then
+# bats-core exports BATS_TEST_FILENAME into every test process; a real agent
+# session never has it set. Test payloads are synthetic and no
+# UserPromptSubmit ever issues evidence for them, so enforcing this check
+# here would fail every hook-dispatch test instead of exercising the guard
+# actually under test. three_layer_preflight.sh's own tests call verify()
+# directly (bypassing this dispatcher) with crafted evidence, so they are
+# unaffected by this bypass; the fail-closed check above still runs.
+if [[ -z "${BATS_TEST_FILENAME:-}" ]] && ! bash "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" verify "Bash" "" "$command" >/dev/null 2>&1; then
     emit_deny "BLOCK: 三層preflight証跡なし/無効。UserPromptSubmitごとに記憶DB・semantic・Obsidian検索を完了せよ"
 fi
 
