@@ -1,5 +1,6 @@
-# precompute全量最速化 — /goal自律ループ設計書 v2.1
+# precompute全量最速化 — /goal自律ループ設計書 v2.2
 
+- v2.2: 家老が探索を停止してコード一次調査を実施。実装正本をDM-Signal `docs/design/precompute-zero-recompute-implementation-design.md`へ分離した。本番id=206正本はL5 1659.78s/1548行/RSS2075.2MB。18.42s/2699一致はselected 33/45のstale混入で無効。実装順を「完全fixtureでlegacy 45/45→warm render SELECT/price/signal/ledger load 0→atomic 1548 UPSERT→3PF飽和→段階拡大」に固定し、current performance pure-sliceの月途中cutoff境界差も修正対象へ追加
 - v2.1: 殿North Star「本番100PFを約30秒」を反映。L5を再計算層からL2成果物のpure formatting+chunked一括UPSERT層へ変えるZero-Recompute Architectureを最優先化。100PF×15行で0.3秒/PFを目安とし、L5内のprice/signal/ledger/momentum/MTD再計算を原則ゼロ、parameter variantsは1回のfull結果からslice、評価は本番total/p50/p95/max/RSS+完全parity
 - v2.0: 殿指摘「full recalculate時の既存キャッシュを根本的に見落としているのでは」を一次コードで確認。cold単独L5の絶対5秒ゲートを撤回し、production-warm経路を正本へ変更。`recalculate_fast.py`で既に構築済みのmonthly return/signal/portfolio/price/benchmark/business-days/DTB3/rf-map cacheがL5呼出しへ渡されない配管断絶を最優先修正対象とし、cold standaloneとwarm fullrecalculateを別々に計測する
 - v1.9: 殿裁定「3PFで41秒は実用に耐えない」を反映。3PFの暫定実用ゲートをunprofiled stage harness `<=5.0s`へ固定し、到達までは10PF昇格禁止。局所micro-cache探索から、monthly/annual等の全履歴中間計算をPFごとに1回化する構造改善へ優先順位を変更。mismatch/missing/extra/FAIL/SKIPが1件でもあれば速度に関係なくFAIL
@@ -29,7 +30,8 @@
 ## §1 As-Is（実測 2026-07-09〜10）
 
 - 実装: `precompute_raw_for_portfolios()` — docstring明記「one PF at a time」の**完全直列ループ**。並列化なし（ThreadPool/asyncio/multiprocessing 0件をgrepで確認）
-- 実測: fullrecalculate(id=196)の尻尾で **103PF×約4秒/PF ≒ 7分**、`rss=1923.8MB`
+- 旧実測: fullrecalculate(id=196)の尻尾で **103PF×約4秒/PF ≒ 7分**、`rss=1923.8MB`
+- 正本実測: fullrecalculate(id=206/run `20260710_040539`)で **L5=1659.78s、1548行(103×15+global3)、RSS=2075.2MB**。PF別は6.26s〜28.20s。約30秒目標には98.2%以上の構造短縮が必要
 - 1PFあたりの中身: 6種ビルダー（performance/monthly_returns/annual_returns/drawdowns/rolling_returns/monthly_trade）×複数パラメータ=**15行/PF** のraw_json生成+upsert
 - 既存の部分最適: compare_returns_bulk/metrics_summary_bulkは先頭でbulk一括生成済み（先行最適化の余地実証）。partial recalc時は対象PFのみ（cmd_3804裁定で採用済み）
 - 発生頻度: fullrecalculate毎+日次cron再計算の尻尾=**毎日全ユーザーの画面鮮度に直結**
@@ -104,7 +106,7 @@ stop condition: 103PFでparity PASSし、改善が2連続5%未満、またはH1-
 | Phase | 内容 | 完了条件 |
 |---|---|---|
 | P1 ベンチ+パリティ道具（評価器） | **完了(cmd_3819)**。全量ベンチ+canonical parityゲートを非goal側で凍結、baseline DB dump作成、理論下限を推定 | 凍結commit `c956e4e7...`、snapshot id、1180.64s/RSS 311.9MBを記録済み |
-| P2 /goalループ | **実行中(cmd_3825)**。H2初回36.32%短縮はparity FAILで無効。等価版H2を確定後、H1-H6を計測順に反復 | parity PASSした有効iterationだけでstop condition到達。全iteration数値記録 |
+| P2 /goalループ | **家老設計待ちへ一時停止(cmd_3825)**。18.42s結果もselected 33/45のため無効。実装正本 `docs/design/precompute-zero-recompute-implementation-design.md` v1.0をPhase 0から順に実行 | 完全fixtureのlegacy control 45/45→candidate exact 45/45+payload完全一致→warm render I/O 0 |
 | P3 検証 | canonical parityゲートPASS+既存テスト全PASS+回帰テスト追加 | テスト全PASS |
 | P4 本番反映 | §42v2で自走deploy→本番実測は**L5/precompute区間の開始終了ログで区間計測**(fullrecalculate全体ではなく)→total/p50/p95/max/RSSを比較→失敗ならrevert | 約100PFで30秒程度+完全parityの本番証明 |
 
@@ -131,3 +133,4 @@ stop condition: 103PFでparity PASSし、改善が2連続5%未満、またはH1-
 - [[殿観測20260709_2353_precompute遅い]] -> [[one_PF_at_a_time直列7分]] -> [[precompute-fullspeed-goal-design]]
 - [[codex_goal_mode]] -> [[Loop_Engineering_generator_evaluator分離]] -> [[goal自律最適化ループ]]
 - [[殿裁定20260710_0241_可逆なら行動せよ]] -> [[§42v2自走deploy]] -> [[P4本番実測]]
+- [[本番L5_1659.78秒]] -> [[selected_33_of_45偽parity]] -> [[precompute_zero_recompute_design]]
