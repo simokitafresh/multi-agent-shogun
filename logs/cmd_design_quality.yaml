@@ -1936,3 +1936,277 @@ entries:
   supplementary_cmds: 0
   source: "cmd_save"
   timestamp: "2026-07-09T05:18:41Z"
+- cmd_id: "cmd_karo_hotfix_startup_alerts_202607101046"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: ""
+  supplementary_cmds: 0
+  source: "cmd_complete_gate"
+  timestamp: "2026-07-10T02:22:57Z"
+- cmd_id: "cmd_3790"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:18Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3793"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:18Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3794"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:19Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3795"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:19Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3797"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:19Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3798"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:19Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3800"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:19Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3801"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:19Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3803"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:19Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3804"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:19Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3805"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:19Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3806"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:19Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3807"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:19Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3808"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:19Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3809"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:19Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3811"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:20Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3812"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:20Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3813"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:20Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3814"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:20Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3815"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:20Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3816"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:20Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3818"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:20Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3819"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:20Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"
+- cmd_id: "cmd_3820"
+  ac_count: 0
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "unknown"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "recovery_20260710"
+  timestamp: "2026-07-10T02:35:20Z"
+  notes: "recovered_from=logs/gate_metrics.log; incident=188_to_5_trim"

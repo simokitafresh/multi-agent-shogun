@@ -41,6 +41,15 @@ _archive_one() {
     local count
     count=$(grep -cE "$entry_pattern" "$path" 2>/dev/null) || count=0
 
+    # cmd_design_quality is consumed as a hot, recent-history log.  Its
+    # configured retention must never be weakened into a small trimming value
+    # (the 188 -> 5 incident); changing the limit requires an explicit code
+    # change, not a mutable TSV edit.
+    if [[ "$relpath" == "logs/cmd_design_quality.yaml" ]] && (( keep < ${CMD_QUALITY_MIN_HOT_ENTRIES:-200} )); then
+        echo "ALERT $relpath: configured keep=$keep is below protected minimum ${CMD_QUALITY_MIN_HOT_ENTRIES:-200}; aborting without write" >&2
+        return 1
+    fi
+
     if (( count <= keep )); then
         echo "OK $relpath: entries=$count keep=$keep"
         return
@@ -48,8 +57,9 @@ _archive_one() {
 
     # アーカイブ必要 — awk単一パス
     local n_archive=$(( count - keep ))
-    local archive_has_content=0
+    local archive_has_content=0 archive_before_count=0
     [[ -s "$archive_path" ]] && archive_has_content=1
+    archive_before_count=$(grep -cE "$entry_pattern" "$archive_path" 2>/dev/null) || archive_before_count=0
     mkdir -p "$(dirname "$archive_path")"
     local tmp_path="${path}.tmp.$$"
     # NOTE: gawk dynamic regex(\s未サポート) → POSIX [[:space:]]に変換
@@ -104,6 +114,20 @@ _archive_one() {
         close(tmp_path)
     }' "$path"
 
+    # A rotation is allowed to reduce the hot-file count only when every
+    # removed entry is present in the archive.  Verify before publishing the
+    # replacement, so a parser/pattern regression becomes an ALERT rather
+    # than destructive data loss.
+    local kept_count archive_after_count expected_archive_count
+    kept_count=$(grep -cE "$entry_pattern" "$tmp_path" 2>/dev/null) || kept_count=0
+    archive_after_count=$(grep -cE "$entry_pattern" "$archive_path" 2>/dev/null) || archive_after_count=0
+    expected_archive_count=$((archive_before_count + n_archive))
+    if (( kept_count != keep || archive_after_count != expected_archive_count )); then
+        rm -f "$tmp_path"
+        echo "ALERT $relpath: rotation count mismatch before=$count keep=$kept_count expected_keep=$keep archive_before=$archive_before_count archive_after=$archive_after_count expected_archive=$expected_archive_count; aborting without replacing source" >&2
+        return 1
+    fi
+
     mv "$tmp_path" "$path"
     echo "ARCHIVED $relpath: $n_archive archived, $keep kept -> $rel_archive"
 }
@@ -116,7 +140,17 @@ while IFS=$'\t' read -r rel_path keep_s top_key entry_pattern rel_archive; do
     fi
     [[ "$rel_path"    == /* ]] && fp="$rel_path"    || fp="$ROOT_DIR/$rel_path"
     [[ "$rel_archive" == /* ]] && fa="$rel_archive" || fa="$ROOT_DIR/$rel_archive"
-    _archive_one "$fp" "$keep_s" "$top_key" "$entry_pattern" "$fa"
+    # cmd_quality_log.sh locks its own hot file while appending.  Take that
+    # identical lock around a possible replacement to make append+archive
+    # serializable; the global archive lock alone did not cover writers.
+    if [[ "${fp#$ROOT_DIR/}" == "logs/cmd_design_quality.yaml" ]]; then
+        exec 201>"${fp}.lock"
+        flock -w 10 201 || { echo "ALERT ${fp#$ROOT_DIR/}: failed to acquire quality-log lock; aborting" >&2; exit 1; }
+        _archive_one "$fp" "$keep_s" "$top_key" "$entry_pattern" "$fa"
+        exec 201>&-
+    else
+        _archive_one "$fp" "$keep_s" "$top_key" "$entry_pattern" "$fa"
+    fi
 done < "$CONFIG_FILE"
 
 exec 200>&-

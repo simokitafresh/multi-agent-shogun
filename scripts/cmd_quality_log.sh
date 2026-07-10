@@ -16,7 +16,10 @@ _cql_self="${BASH_SOURCE[0]:-$0}"
 SCRIPT_DIR="${_cql_self%/*}"
 REPO_ROOT="${SCRIPT_DIR%/scripts}"
 LOG_FILE="${CMD_QUALITY_LOG_FILE:-$REPO_ROOT/logs/cmd_design_quality.yaml}"
-LOCK_FILE="/tmp/cmd_design_quality.lock"
+# yaml_auto_archive.sh uses this same per-file lock before replacing the hot
+# log.  A separate lock allowed an append to race with archive's stale temp
+# file and silently discard the appended entries.
+LOCK_FILE="${LOG_FILE}.lock"
 SOURCE_STAGE="${CMD_QUALITY_SOURCE:-cmd_complete_gate}"
 DIAGNOSIS_TEXT="${CMD_QUALITY_DIAGNOSIS:-}"
 FAST_METADATA="${CMD_QUALITY_FAST_METADATA:-0}"

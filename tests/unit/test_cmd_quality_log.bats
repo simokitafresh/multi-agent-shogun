@@ -36,3 +36,34 @@ count_entries() {
     [ "$status" -eq 0 ]
     [ "$(count_entries)" -eq 2 ]
 }
+
+@test "cmd_quality_log uses the hot log's lock path shared with rotation" {
+    run bash -c '
+        source="$1"
+        log="$2"
+        grep -Fq "LOCK_FILE=\"\${LOG_FILE}.lock\"" "$source" && \
+        [ "$log.lock" = "${log}.lock" ]
+    ' _ "$PROJECT_ROOT/scripts/cmd_quality_log.sh" "$CMD_QUALITY_LOG_FILE"
+    [ "$status" -eq 0 ]
+}
+
+@test "quality-log rotation aborts instead of applying a five-entry trim" {
+    mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/config"
+    cat > "$TEST_TMPDIR/config/yaml_auto_archive.tsv" <<'EOF'
+logs/cmd_design_quality.yaml	5	entries	^\s*-\s+cmd_id:	logs/archive/cmd_design_quality.yaml
+EOF
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: cmd_one
+- cmd_id: cmd_two
+- cmd_id: cmd_three
+EOF
+
+    run env SHOGUN_ROOT="$TEST_TMPDIR" \
+        YAML_AUTO_ARCHIVE_CONFIG="$TEST_TMPDIR/config/yaml_auto_archive.tsv" \
+        bash "$PROJECT_ROOT/scripts/yaml_auto_archive.sh"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"ALERT logs/cmd_design_quality.yaml"* ]]
+    [ "$(grep -c '^- cmd_id:' "$TEST_TMPDIR/logs/cmd_design_quality.yaml")" -eq 3 ]
+    [ ! -e "$TEST_TMPDIR/logs/archive/cmd_design_quality.yaml" ]
+}
