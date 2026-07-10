@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-11 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-11T03:32:44+09:00 -->
+<!-- generated_at: 2026-07-11T08:19:59+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-11T03:32:43+09:00 | terminal | response | はっ、殿。未読はGA-221（context鮮度guard）hotfixのGATE CLEAR通知1件のみ。処理済みで新たな対応事項はない。 現況: hayate=GA-221 hotfix完了、他忍者はidle、軍師=skip設計v1.…
-- 2026-07-11T03:32:41+09:00 | terminal | response | GA-221報告レビュー完了。LGTM。inbox待機。 [meta] stop_reason=end_turn
-- 2026-07-11T03:31:54+09:00 | terminal | response | GA-221報告レビュー完了。LGTM。inbox待機。 [meta] stop_reason=end_turn
-- 2026-07-11T03:26:04+09:00 | terminal | response | GA-221 draftレビュー完了。APPROVE。inbox待機。 [meta] stop_reason=end_turn
-- 2026-07-11T03:22:54+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: dm-signal-core.md(source更新)
-- 2026-07-11T03:07:25+09:00 | ntfy | outbound | 【monitor】将軍CTX:60%。/compactをご検討ください
-- 2026-07-11T03:07:01+09:00 | terminal | response | 軍師へ行き違い解消を返信済みにござる。レビューの現在地は全員一致——**v1.1不成立確定、v1.2（3案比較統合版）待ち**。 本日の懸案の全体状態を整理する: | 戦線 | 状態 | |---|---| | tier可視性（note対…
-- 2026-07-11T03:04:21+09:00 | terminal | response | 全員一致確認。v1.2は次セッションで提出。inbox待機。 [meta] stop_reason=end_turn
-- 2026-07-11T03:04:01+09:00 | terminal | response | はっ、殿。precompute 30秒化の設計往復の現況を報告する。 **経過**: 軍師のskip設計v1.0→将軍レビューR1（signal行の日次増分でhit率が崩れる懸念）→軍師v1.1（stable群限定で対応）に将軍が条件付き…
-- 2026-07-11T03:03:39+09:00 | terminal | response | 将軍・家老とも「v1.2で3案比較表を出せ」で一致。CTX管理上、v1.2は次セッションで提出が合理的。 現時点の整理: - v1.1は撤回 - v1.2で必要: 家老12点+将軍方向ガイド2点=14点を解決した3案比較設計書 - 調査済…
+- 2026-07-11T08:19:58+09:00 | terminal | response | はっ、殿。軍師のprecompute L5高速化設計**v1.2を将軍検分し、APPROVE（軽微条件付き）で返した**。 **v1.2の到達点**: 家老12点+将軍2点=14点を全て解決。核心は方針の確定—— - **案B: PF並列…
+- 2026-07-11T08:18:18+09:00 | terminal | response | 殿、v1.2設計書完成・掲示板で将軍/家老に報告済み。 **要点**: - **案B(PF並列化)**: cold 66.64s→**16.4s**。ThreadPoolExecutor workers=8-16、toposort層別並列…
+- 2026-07-11T08:14:24+09:00 | terminal | inbound | v1.2を作成せよ
+- 2026-07-11T08:13:09+09:00 | ntfy | outbound | 【monitor】将軍CTX:60%。/compactをご検討ください
+- 2026-07-11T08:02:49+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_3812 (duration=13940s, median=1280.5s, ratio=10.89x, delta=+12659.5s) WARNING…
+- 2026-07-11T07:42:22+09:00 | ntfy | outbound | 【monitor】将軍CTX:60%。/compactをご検討ください
+- 2026-07-11T07:11:32+09:00 | ntfy | outbound | 【monitor】将軍CTX:60%。/compactをご検討ください
+- 2026-07-11T06:40:43+09:00 | ntfy | outbound | 【monitor】将軍CTX:60%。/compactをご検討ください
+- 2026-07-11T06:09:50+09:00 | ntfy | outbound | 【monitor】将軍CTX:60%。/compactをご検討ください
+- 2026-07-11T05:39:01+09:00 | ntfy | outbound | 【monitor】将軍CTX:60%。/compactをご検討ください
 
 ## 未解決確認事項
 - 全員一致確認。v1.2は次セッションで提出。inbox待機。 [meta] stop_reason=end_turn
@@ -37,8 +37,6 @@
 - cmd_3825
 - cmd_3826
 - cmd_3827
-- cmd_3828
-- cmd_3829
 - cmd_3830
 - cmd_3831
 - cmd_3832
