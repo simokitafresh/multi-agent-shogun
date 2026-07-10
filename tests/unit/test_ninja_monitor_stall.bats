@@ -481,6 +481,100 @@ cat "$TEST_LOG"
     [[ "$output" == *"STALL-RECOVERY-SEND:"* ]]
 }
 
+@test "check_stall: intentional pause with reason and blocking cmd suppresses false stall" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS
+TEST_LOG="$(mktemp)"
+TEST_MESSAGES="$(mktemp)"
+
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<'"'"'EOF'"'"'
+task:
+  status: in_progress
+  subtask_id: cmd_3827_full
+  stall_detection_paused: true
+  pause_reason: production DB exclusive operation
+  paused_by_cmd: cmd_3832
+EOF
+
+log() { echo "$1" >> "$TEST_LOG"; }
+send_inbox_message() { echo "$1|$3|$2" >> "$TEST_MESSAGES"; }
+check_idle() { return 0; }
+PANE_TARGETS[saizo]="shogun:2.6"
+now=$(date +%s)
+STALL_FIRST_SEEN[saizo]=$((now - 60 * 60))
+STALL_NOTIFIED[saizo:cmd_3827_full]=$((now - 60 * 60))
+STALL_COUNT[saizo:cmd_3827_full]=2
+
+check_stall saizo
+
+echo "MESSAGE_COUNT=$(wc -l < "$TEST_MESSAGES" | tr -d " ")"
+echo "FIRST_SEEN=${STALL_FIRST_SEEN[saizo]-cleared}"
+echo "NOTIFIED=${STALL_NOTIFIED[saizo:cmd_3827_full]-cleared}"
+echo "COUNT=${STALL_COUNT[saizo:cmd_3827_full]-cleared}"
+cat "$TEST_LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MESSAGE_COUNT=0"* ]]
+    [[ "$output" == *"FIRST_SEEN=cleared"* ]]
+    [[ "$output" == *"NOTIFIED=cleared"* ]]
+    [[ "$output" == *"COUNT=cleared"* ]]
+    [[ "$output" == *"STALL-PAUSED: saizo task=cmd_3827_full blocked_by=cmd_3832"* ]]
+}
+
+@test "check_stall: pause flag without contract metadata remains monitored" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS
+TEST_LOG="$(mktemp)"
+TEST_MESSAGES="$(mktemp)"
+
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<'"'"'EOF'"'"'
+task:
+  status: in_progress
+  subtask_id: cmd_3827_full
+  stall_detection_paused: true
+EOF
+
+log() { echo "$1" >> "$TEST_LOG"; }
+send_inbox_message() { echo "$1|$3|$2" >> "$TEST_MESSAGES"; }
+check_idle() { return 0; }
+cli_profile_get() { echo "1"; }
+PANE_TARGETS[saizo]="shogun:2.6"
+now=$(date +%s)
+STALL_FIRST_SEEN[saizo]=$((now - 2 * 60))
+
+check_stall saizo
+
+cat "$TEST_MESSAGES"
+cat "$TEST_LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"karo|stall_alert|"* ]]
+    [[ "$output" == *"STALL-PAUSE-INVALID:"* ]]
+    [[ "$output" == *"STALL-DETECTED:"* ]]
+}
+
 @test "check_stall: active idle task evaluates non-done report and re-notifies once" {
     run bash -lc '
 set -euo pipefail

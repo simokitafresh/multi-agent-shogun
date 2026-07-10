@@ -3538,16 +3538,20 @@ check_stall() {
 
     # awk単一パスで残りフィールドを一括取得（従来: yaml_field_get×5=最大5サブシェル → awk×1）
     # L4-R24最適化パターン（write_karo_snapshot/write_state_fileと同方式）
-    local deployed_at_val last_progress
-    IFS='|' read -r task_id deployed_at_val last_progress < <(awk '
-        BEGIN { t=""; da=""; pa="" }
+    # 意図的停止は status を壊さず、明示フラグ+理由+遮断元cmdの3点契約で表す。
+    local deployed_at_val last_progress stall_detection_paused pause_reason paused_by_cmd
+    IFS='|' read -r task_id deployed_at_val last_progress stall_detection_paused pause_reason paused_by_cmd < <(awk '
+        BEGIN { t=""; da=""; pa=""; sp=""; pr=""; pb="" }
         /^[ \t]*subtask_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
         /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
         /^[ \t]*_ac_task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
         /^[ \t]*cmd_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
         /^[ \t]*deployed_at:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); da=v }
         /^[ \t]*progress_updated_at:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pa=v }
-        END { print t "|" da "|" pa }
+        /^[ \t]*stall_detection_paused:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); sp=tolower(v) }
+        /^[ \t]*pause_reason:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pr=v }
+        /^[ \t]*paused_by_cmd:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pb=v }
+        END { print t "|" da "|" pa "|" sp "|" pr "|" pb }
     ' "$task_file")
 
     # Ghost Filter: task_id空のSTALL誤検知を排除(cmd_1150)
@@ -3555,6 +3559,22 @@ check_stall() {
         log "STALL-GHOST: $name has status=${status} but empty task_id — skipping stall detection"
         return
     fi
+
+    # 本番DB排他など、家老が意図的に一時停止した作業を異常STALLと誤認しない。
+    # フラグだけで監視を止められないよう、理由と遮断元cmdも必須にする。
+    case "$stall_detection_paused" in
+        true|yes|1)
+            if [ -n "$pause_reason" ] && [ -n "$paused_by_cmd" ]; then
+                local paused_stall_key="${name}:${task_id}"
+                unset "STALL_FIRST_SEEN[$name]"
+                unset "STALL_NOTIFIED[$paused_stall_key]"
+                unset "STALL_COUNT[$paused_stall_key]"
+                log "STALL-PAUSED: $name task=$task_id blocked_by=$paused_by_cmd reason=$pause_reason"
+                return
+            fi
+            log "STALL-PAUSE-INVALID: $name task=$task_id requires pause_reason and paused_by_cmd; monitoring remains active"
+            ;;
+    esac
 
     if [ -n "$deployed_at_val" ]; then
         local deployed_epoch
