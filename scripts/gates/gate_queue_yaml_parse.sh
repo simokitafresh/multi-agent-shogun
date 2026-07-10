@@ -6,13 +6,15 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ROOT_DIR="${QUEUE_YAML_PARSE_ROOT:-$SCRIPT_DIR}"
 
-python3 - "$ROOT_DIR" <<'PY'
+python3 - "$ROOT_DIR" "$SCRIPT_DIR/scripts/lib" <<'PY'
 import glob
 import sys
-import time
 from pathlib import Path
 
 import yaml
+
+sys.path.insert(0, sys.argv[2])
+from yaml_safe_read import safe_load_retry  # noqa: E402
 
 root = Path(sys.argv[1])
 patterns = [
@@ -40,25 +42,13 @@ for pattern in patterns:
 
 def load(path):
     # cmd_karo_hotfix_queue_yaml_atomicity_202607110113:
-    # yaml_field_set.shの公開はmktemp+mv(atomic rename)へ修正済みだが、WSL2 drvfs越しの
-    # renameはPOSIX同様の完全な原子性を保証しない(実測: 数百readに1回、rename直後の
-    # 一瞬だけ宛先パスがENOENTになる。中身が壊れるのではなく一時的に不在になるだけ)。
-    # FileNotFoundErrorのみ1回だけ短い待機を挟んで再読込し、それでも消えている場合や
-    # YAMLError/他のOSErrorはそのまま即エラーにする(実際の破損を握りつぶさないため)。
+    # safe_load_retry()(scripts/lib/yaml_safe_read.py)がFileNotFoundErrorのみ
+    # リトライする。YAMLError/他のOSErrorはそのまま即エラーにする
+    # (実際の破損を握りつぶさないため)。
     try:
-        with path.open(encoding="utf-8") as fh:
-            return yaml.safe_load(fh), None
-    except FileNotFoundError:
-        time.sleep(0.05)
-        try:
-            with path.open(encoding="utf-8") as fh:
-                return yaml.safe_load(fh), None
-        except FileNotFoundError as exc:
-            return None, ("io_error", exc)
-        except yaml.YAMLError as exc:
-            return None, ("yaml_error", exc)
-        except OSError as exc:
-            return None, ("io_error", exc)
+        return safe_load_retry(path), None
+    except FileNotFoundError as exc:
+        return None, ("io_error", exc)
     except yaml.YAMLError as exc:
         return None, ("yaml_error", exc)
     except OSError as exc:
