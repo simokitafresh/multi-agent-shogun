@@ -1120,3 +1120,10 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 恒久方針はPipelineEngineのblock意味論を共通executorへ抽出し、日次Engineとvectorized adapterを単一実装化。逐日Engine直呼びは約149K calls / 約2000秒へ退行するためoracle限定。ledger guardは緩めない。
 - 詳細・行別内訳・比較設計・回帰方針: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md`
 - 因果リンク: [[cmd_3827_FAIL]] -> [[Stage_A_timeout+同一入力差分0]] -> [[cmd_3840単一意味論再設計]]
+
+## §65 Tier/global可視性設定の孤児清掃 (cmd_3841, 2026-07-11)
+
+- 現行`portfolios` 102 IDとの集合差で孤児設定を限定し、退避完全一致をtransaction直前に確認してtier 428件（Basic 62 / Standard 122 / AddOn 122 / NewStandard 0 / premium 122）とglobal 102件を除去。現行PF宛の設定値差分は0。
+- 清掃前後の実効visible件数はBasic 5 / Standard 22 / AddOn 22 / NewStandard 17 / premium 27で不変。commit後の`/api/signals`実応答も全tierでPF名・件数・`hide_signal`が清掃前と完全一致。
+- 退避・再実行・検証証跡: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3841_orphan_cleanup_backup.json`、`cmd_3841_orphan_cleanup_result.json`、`cmd_3841_viewer_api_pre.json`、`cmd_3841_viewer_api_post.json`、`scripts/oneshot/cmd_3841_orphan_cleanup.py`。
+- 因果リンク: [[PF削除cleanup非対称の残骸蓄積]] -> [[cmd_3841退避付き除去]] -> [[可視性対応表と現行PF集合の整合]]。
