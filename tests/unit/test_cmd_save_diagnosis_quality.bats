@@ -26,6 +26,10 @@ setup() {
     export MEMORY_DB_LIVE_INSERT="$TEST_TMPDIR/no_memory_db_live_insert.py"
     mkdir -p "$TEST_ARCHIVE_DIR"
     printf '%s\n' '[]' > "$TEST_INSIGHTS"
+    # cmd_save.shはMEMORY_DB_LIVE_INSERTが存在しないと本番scripts/memory_db_live_insert.py
+    # へフォールバックする(-f判定, L85-86)。存在しないパスのままだと本番SQLite記憶DBへ
+    # 誤って書き込む(既存汚染182件で実証済み)。no-opスクリプトを実体化して防止する。
+    printf 'import sys\nsys.exit(0)\n' > "$MEMORY_DB_LIVE_INSERT"
 }
 
 teardown() {
@@ -122,12 +126,15 @@ YAML
 
 warn_seed_log() {
     local count="${1:-1}"
+    # cmd_3801/737350613(殿裁定2026-07-09 22:50): WARN累計昇格は同一cmd_id内の
+    # 繰り返しのみ対象。他cmd(cmd_warntest_prev_N)の履歴は対象外になったため、
+    # 実行対象と同一のcmd_id(cmd_warntest)でseedしてエスカレーションを再現する。
     {
         echo "entries:"
         local i
         for ((i = 1; i <= count; i++)); do
             cat <<YAML
-  - cmd_id: "cmd_warntest_prev_${i}"
+  - cmd_id: "cmd_warntest"
     ac_count: 0
     gate_result: "WARN"
     karo_rework: "no"
@@ -281,13 +288,54 @@ run_q5_pair_save() {
     run_warn_save
     echo "$output" >&2
 
-    # q8_複利の問いWARNが出るが1回目(過去0件)はBLOCKなし
-    [ "$status" -ne 0 ]   # WARNがあるのでNG
+    # 殿裁定(2026-07-09 22:50/cmd_3801経由): WARN-onlyはBLOCKなしでPASS扱い。
+    # q8_複利の問いWARNが出るが1回目(過去0件)はエスカレーションもしない。
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN累計昇格"* ]]
+    [[ "$output" == *"WARN: q8に複利の問いがありません"* ]]
+    [[ "$output" == *"WARN 1件あり(BLOCKなし=PASS扱い)"* ]]
+}
+
+@test "AC2-2: 同一WARNが2回目はまだBLOCK昇格しない(閾値2)" {
+    write_warn_cmd
+    # 1回目実行済み相当のWARN履歴(同一cmd_id)を直接fixture化する。
+    warn_seed_log 1
+
+    # 2回目実行 — 過去1件(閾値2未満)のためまだPASS扱い
+    write_warn_cmd
+    run_warn_save
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
     [[ "$output" != *"WARN累計昇格"* ]]
     [[ "$output" == *"WARN: q8に複利の問いがありません"* ]]
 }
 
-@test "cmd_2898: WARN時にチェック名と行番号つきトリガーマップを一括表示する" {
+@test "AC2-3: 同一WARNが3回目でBLOCK昇格" {
+    # 1回目・2回目実行済み相当のWARN履歴(同一cmd_id)を直接fixture化する。
+    write_warn_cmd
+    warn_seed_log 2
+
+    # 3回目: 過去2件(閾値2)に到達しBLOCK昇格
+    write_warn_cmd
+    run_warn_save
+    echo "$output" >&2
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"WARN累計昇格"* ]]
+    [[ "$output" == *"q8_複利の問い"* ]]
+    [[ "$output" == *"cmd_ids=cmd_warntest,cmd_warntest"* ]]
+    [[ "$output" == *"BLOCK"* ]]
+    [ -f "$TEST_PREFLIGHT_AUTOLEARN" ]
+    [[ "$(cat "$TEST_PREFLIGHT_AUTOLEARN")" == *"check=quality_gate_q8_compound_question"* ]]
+    [[ "$(cat "$TEST_PREFLIGHT_AUTOLEARN")" == *"count=2"* ]]
+}
+
+@test "cmd_2898: WARN累計昇格時にチェック名と行番号つきトリガーマップを一括表示する" {
+    # BLOCKに達した時のみWARNトリガーマップが表示される(AC2-3と同一シナリオ)。
+    write_warn_cmd
+    warn_seed_log 2
+
     write_warn_cmd
     run_warn_save
     echo "$output" >&2
@@ -297,41 +345,6 @@ run_q5_pair_save() {
     [[ "$output" == *"check=quality_gate_q8_compound_question"* ]]
     [[ "$output" == *"line="* ]]
     [[ "$output" == *"keyword=q8"* ]]
-}
-
-@test "AC2-2: 同一WARNが2回目でBLOCK昇格(閾値1)" {
-    write_warn_cmd
-    # 1回目実行済み相当のWARN履歴を直接fixture化する。
-    warn_seed_log 1
-
-    # 2回目実行 — 過去1件あるのでBLOCK昇格
-    write_warn_cmd
-    run_warn_save
-    echo "$output" >&2
-
-    [ "$status" -ne 0 ]
-    [[ "$output" == *"WARN累計昇格"* ]]
-    [[ "$output" == *"cmd_ids=cmd_warntest_prev_1"* ]]
-    [ -f "$TEST_PREFLIGHT_AUTOLEARN" ]
-    [[ "$(cat "$TEST_PREFLIGHT_AUTOLEARN")" == *"check=quality_gate_q8_compound_question"* ]]
-    [[ "$(cat "$TEST_PREFLIGHT_AUTOLEARN")" == *"count=1"* ]]
-}
-
-@test "AC2-3: 同一WARNが3回目でBLOCK昇格" {
-    # 1回目・2回目実行済み相当のWARN履歴を直接fixture化する。
-    write_warn_cmd
-    warn_seed_log 2
-
-    # 3回目: BLOCK昇格
-    write_warn_cmd
-    run_warn_save
-    echo "$output" >&2
-
-    [ "$status" -ne 0 ]
-    [[ "$output" == *"WARN累計昇格"* ]]
-    [[ "$output" == *"q8_複利の問い"* ]]
-    [[ "$output" == *"cmd_ids=cmd_warntest_prev_1,cmd_warntest_prev_2"* ]]
-    [[ "$output" == *"BLOCK"* ]]
 }
 
 @test "AC2-4: project違いの同一WARN履歴ではBLOCK昇格しない" {
@@ -355,12 +368,16 @@ YAML
     run_warn_save
     echo "$output" >&2
 
-    [ "$status" -ne 0 ]
+    # 殿裁定(2026-07-09 22:50): WARN-onlyはPASS扱い。project違いのためそもそも
+    # エスカレーション対象外(cmd_idも異なる)。
+    [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: q8に複利の問いがありません"* ]]
     [[ "$output" != *"WARN累計昇格"* ]]
 }
 
-@test "AC2-5: project一致の同一WARN履歴では従来通りBLOCK昇格する" {
+@test "AC2-5: project一致でも異なるcmd_idの同一WARN履歴ではBLOCK昇格しない" {
+    # cmd_3801/737350613(殿裁定2026-07-09 22:50): 累計昇格の判定基準はproject
+    # ではなく同一cmd_idの繰り返しのみ。project一致でもcmd_id違いならPASS扱い。
     write_warn_cmd "infra"
 
     cat > "$TEST_QUALITY_LOG" <<'YAML'
@@ -381,8 +398,8 @@ YAML
     run_warn_save
     echo "$output" >&2
 
-    [ "$status" -ne 0 ]
-    [[ "$output" == *"WARN累計昇格"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN累計昇格"* ]]
 }
 
 @test "cmd_3135 AC1: q5対フィールド欠落WARNが累計追跡される" {
