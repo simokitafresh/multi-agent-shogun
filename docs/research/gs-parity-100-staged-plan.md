@@ -102,7 +102,8 @@
 | cmd_3812 | Stage 2最終修正: ledger weights保存・復元実装+回帰テスト+weights付き再backfill+12体再突合 | **CLEAR(06:22) — deploy済み(dep-d980eif)+weights付き再backfill(290行Σ=1.0000)+precompute全量(1548行)で`Matched weight` WARN=0件達成。12体突合は2/12(本番側が正しくなりGS旧暦gridDBとズレが顕在化=見かけの悪化)** |
 | cmd_3815 | 修正後エンジンで4family全量再GS+12体最終突合+2014-10-31 SIGNAL CHANGE由来特定 | **CLEAR(06:40) — 完全一致4/12(玄武-常勝/鉄壁、白虎-激攻=171/171)。修正2本の効果は玄武系で実証。だが残8体に乖離、しかも新出月あり(玄武-激攻2026-04 diff0.238、朱雀2013-04起点16件等)=cmd_3812/3814適用の回帰疑い。2014-10-31 SIGNAL CHANGEは秘奥義-変わり身-激攻のband weight修正(旧: 等ウェイトでsafe haven欠落→新: XLU0.5+0.25×2)=意図された修正と確定** |
 | cmd_3816 | 残存8体の3点突合根因偵察+cmd_3806基線との新出/従来層別 | **CLEAR(07:02) — 根因確定: 乖離75行中67行(89.3%)=stale signals.momentum_data.weightsをcmd_3812のledger優先ロジックが活性化(ライブPipeline=GS一致、本番保存値のみ誤り)。cmd_3814起因は0件。副次: ALL_DIVERGE 11行(14.7%)はband遷移直後月に集中の別機構** |
-| cmd_3817 | 順序是正の再構築: ledger削除→signals先行再計算→フレッシュweightsでbackfill→monthly_returns再計算→12体再突合 | 委任済み(本番DB直列) |
+| cmd_3817 | 順序是正の再構築: ledger削除→signals先行再計算→フレッシュweightsでbackfill→monthly_returns再計算→12体再突合 | **FAIL(10:49) — 再構築後も3/12・75 mismatch改善なし。2014-10-31でweights合計1.0のままA→B→A→B往復フリップを確認=再計算の非決定性が実在(stale weights凍結仮説では説明不能)** |
+| cmd_3824 | 再計算非決定性の機構特定: 最小再現5回反復+中間値diff(margin/DTB3参照/価格hash)+75件層別 | 委任済み(本番DB直列枠) |
 | cmd_3818 | ALL_DIVERGE 11行(band遷移直後月)の機構偵察 | **CLEAR(07:29) — 三者不一致の正体=検証スクリプトのバグ(month_bounds()がrebalance_trigger非対応で、朱雀bimonthly/白虎quarterlyの非リバランス月に誤った参照日を使用)。参照日を本番のget_last_rebalance_month_end_business()相当に直すと11/11が1e-6でGS=PipelineEngine一致=GS無罪。band遷移集中は見かけの相関。本番側の残問題はcmd_3816既出のstale weightsに収束(cmd_3817が是正中)** |
 
 - **根因の一本化(07:29時点)**: 全乖離の説明が出揃った — ①GS暦近似(cmd_3814解消済み) ②ledger stale weights(cmd_3817是正中) ③検証スクリプトの参照日バグ(見かけの乖離、実乖離なし)。残るタスクはcmd_3817の完了と最終12体突合のみ
