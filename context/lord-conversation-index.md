@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-11 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-11T03:31:54+09:00 -->
+<!-- generated_at: 2026-07-11T03:32:44+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-07-11T03:32:43+09:00 | terminal | response | はっ、殿。未読はGA-221（context鮮度guard）hotfixのGATE CLEAR通知1件のみ。処理済みで新たな対応事項はない。 現況: hayate=GA-221 hotfix完了、他忍者はidle、軍師=skip設計v1.…
+- 2026-07-11T03:32:41+09:00 | terminal | response | GA-221報告レビュー完了。LGTM。inbox待機。 [meta] stop_reason=end_turn
 - 2026-07-11T03:31:54+09:00 | terminal | response | GA-221報告レビュー完了。LGTM。inbox待機。 [meta] stop_reason=end_turn
 - 2026-07-11T03:26:04+09:00 | terminal | response | GA-221 draftレビュー完了。APPROVE。inbox待機。 [meta] stop_reason=end_turn
 - 2026-07-11T03:22:54+09:00 | ntfy | outbound | 【将軍】context鮮度ALERT: dm-signal-core.md(source更新)
@@ -12,8 +14,6 @@
 - 2026-07-11T03:04:21+09:00 | terminal | response | 全員一致確認。v1.2は次セッションで提出。inbox待機。 [meta] stop_reason=end_turn
 - 2026-07-11T03:04:01+09:00 | terminal | response | はっ、殿。precompute 30秒化の設計往復の現況を報告する。 **経過**: 軍師のskip設計v1.0→将軍レビューR1（signal行の日次増分でhit率が崩れる懸念）→軍師v1.1（stable群限定で対応）に将軍が条件付き…
 - 2026-07-11T03:03:39+09:00 | terminal | response | 将軍・家老とも「v1.2で3案比較表を出せ」で一致。CTX管理上、v1.2は次セッションで提出が合理的。 現時点の整理: - v1.1は撤回 - v1.2で必要: 家老12点+将軍方向ガイド2点=14点を解決した3案比較設計書 - 調査済…
-- 2026-07-11T03:02:51+09:00 | terminal | response | はっ、殿。precompute 30秒化の設計往復の現況を報告する。 **経過**: 軍師のskip設計v1.0→将軍レビューR1（signal行の日次増分でhit率が崩れる懸念）→軍師v1.1（stable群限定で対応）に将軍が条件付き…
-- 2026-07-11T03:01:58+09:00 | terminal | response | 中間報告投稿完了。v1.2は次ターンで12点全解決して提出する。inbox待機。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - 全員一致確認。v1.2は次セッションで提出。inbox待機。 [meta] stop_reason=end_turn
