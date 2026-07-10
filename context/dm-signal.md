@@ -1,5 +1,5 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-10 cmd_3820 -->
+<!-- last_updated: 2026-07-10 cmd_karo_recon2_cmd3824_mechanism_202607101223 -->
 <!-- last_synced_lesson: L857 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
