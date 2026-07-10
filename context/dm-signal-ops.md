@@ -928,7 +928,7 @@ GA-102原因: `dm-signal-ops.md`のlast_updatedは2026-06-13で、2026-06-14以�
 | commit | ops更新判断 | 根拠 |
 |------|------|------|
 | 288f0e36/314b596a cmd_3583 Fusion API | 運用影響あり。`/api/fusion/portfolios`はFusion別アプリがDM-SignalからPF名+monthly_returnsのみを取得するadmin専用API。CORSは開発用`http://localhost:3001`追加済み、本番Fusion URLは確定時にコメント解除。10/min rate limit、11回目429テストあり | `backend/app/api/fusion.py`, `backend/app/main.py`, `backend/tests/test_fusion_api.py`, `docs/spec/fusion-api-endpoint.md` |
-| a3a854ba cmd_3601 Fusion API hide_portfolio除外 | 運用影響あり。admin画面で非表示にしたPFはFusion APIにも出さない。`/api/fusion/portfolios`は`is_active=true`に加えて`hide_portfolio=false`を満たすPFだけ返す | `backend/app/api/fusion.py`, `backend/tests/test_fusion_api.py` |
+| 7abaec5c / cmd_3834 Fusion独自visibility | Fusion APIはadmin認証済み別アプリへ全active PFを渡し、表示制御はFusion独自settingsへ委ねる。`hide_portfolio`で絞らず`is_active=true`のみ。b73e5656の旧仕様CI回帰をcmd_3834で復元 | `backend/app/api/fusion.py`, `backend/tests/test_fusion_api.py`, `docs/research/cmd_3834_fusion_filter_restore.md` |
 | 896a20b2/46e1b48c cmd_3569 Compare Returns page | 運用影響あり。`/compare-returns` API/router/page_visibilityが追加され、Admin visibility対象ページが増えた。運用上は既存CDP/Admin確認手順で対象URLを`/compare-returns`へ切替えて確認する | `backend/app/api/compare_returns.py`, `backend/app/main.py`, `backend/app/services/page_visibility.py`, `backend/tests/test_compare_returns_api.py` |
 | 9b3618ae cmd_3572 Compare Returns MTD事前計算 | 運用影響あり。`precomputed_mtd`テーブル作成後、通常は`recalculate_fast.py`正常完了末尾でMTD事前計算が更新される。欠損/stale時はAPIがPF/BM単位fallbackするため表示正確性は維持、速度のみ劣化 | `backend/migrations/add_precomputed_mtd.py`, `backend/app/jobs/precompute_mtd.py`, `backend/app/api/compare_returns.py` |
 | baf7db97/fb40fc2c/1368f895 compare系spec索引更新 | 本文追加不要 | `docs/spec/*`/`docs/_INDEX.md`/`tasks/lessons.md`中心。運用手順の新規差分はCompare Returns行で吸収 |
@@ -1071,3 +1071,10 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - `matched_weight=0.5, missing_tickers=[]`はband片側欠落ではない。本番DBの対象PF「奥義-GS-変わり身-鉄壁」該当月weightsは合計1.0で、`safe_haven_switch.py`/`recalculate_fast.py`のband生成経路も0.5+0.5を保存する。
 - 問題候補はFoF表示展開後のメタデータ不整合。`monthly_trade.py`が`expanded_tickers`を`display_ticker_weights`へ後段上書きする一方、`monthly_trade_impl.py`由来の`matched_weight`は同じ表示weight基準で再計算されず、表示weights合計1.0とmatched_weight=0.5が同居する。
 - 修正候補: monthly_trade表示展開後に`matched_weight`/`missing_tickers`を再計算するか、raw component weightsとdisplay ticker weightsをAPI上で明示分離する。詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3809_band_weights_half_bug.md`
+
+## §61 Fusion可視性の殿裁定とCI修正による裁定逆行事故 (cmd_3834, 2026-07-10)
+
+- **殿裁定(2026-07-10 17:44確定)**: DM-Fusionは本番稼働中(is_active)の**全PF**をAPIで返す。表示のon/offは**Fusion側admin画面の個別・フォルダー単位制御**が担う。DM-Signal側の`hide_portfolio`/TierはFusion表示に関与しない。`hide_portfolio=true`が92体あるのは正常状態(可視制御の正=tier_visibility_settings)。
+- **事故経緯**: 6/29に裁定コミット`7abaec5c`(Fusion独自visibilityのため全PF必要)でフィルタ除去→旧仕様前提の`test_fusion_api.py`が未更新のまま残存→7/3のCI RED自走修正`b73e5656`がテストの仕様正当性を確認せず**コード側にフィルタを再追加=裁定逆行**→Fusionが11体しか返さずフォルダー表示全滅(殿報告7/10 17:19)。cmd_3834で裁定復元+テスト準拠化。
+- **教訓**: (1)CI RED修正は当該テストの仕様正当性(直近裁定との整合)を先に確認せよ。テストに合わせてコードを曲げると裁定が覆る (2)裁定でコードを変えたら旧仕様前提テストを同時に更新せよ (3)UPSERT系のupdated_atは値変化の証拠にならない(将軍のcmd_3833誤起票=LS-A09(32)再発)。
+- 因果リンク: [[殿裁定20260710_1744_Fusion可視性]] -> [[CI修正b73e5656裁定逆行]] -> [[cmd_3834フィルタ裁定復元]]。記憶DB: knowledge:bb944c45e23802c3
