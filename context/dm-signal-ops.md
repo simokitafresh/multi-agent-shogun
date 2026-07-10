@@ -229,6 +229,8 @@ OPT一覧(1-15):
 初回→現在: **95.9%削減(11,818s→479.94s)**。Cycle 1→Cycle 4: **-24.8%**。※Cycle 3(357s)→4(480s)はtrade_perf計測修正(+129s)であり劣化ではない
 残改善ターゲット: L2 trade_perf残(whileループNumPy化, cmd_1503偵察中)、L3 daily_loop(部分batch化, cmd_1506偵察中)
 軍師詳細分析: `context/gunshi-fullrecalc-speed-analysis.md` (3サイクル比較・ボトルネック構造・予測精度検証)
+
+**cmd_3831偵察(2026-07-10, PF数103体時点の再実測)**: trade_perf **272.35s(L2内86.3%)に肥大化**(旧126.46s比+115%、PF数増加+ネスト階層化が要因)。主犯は月次whileループではなく`_extract_trades_unified()`が全営業日1件ずつ`expand_portfolio_to_tickers()`を再帰呼出しする箇所(`trade_performance.py:575-587`)。ネスト2-3階層(秘奥義/奥義系)は1PFあたり5-21秒、単層(シン四神/GS忍法)は2秒未満(実測ログ確認済み、cmd_1503のwhileループNumPy化仮説は本実測で棄却=while_iters側は既に軽量)。**TIMING SUMMARYがL2を誤BOTTLENECK表示するバグも同時特定**: Layer 5 raw precompute(`precompute_raw_for_portfolios`)が`LayerTimer`(`utils/timing.py:74 LAYER_ORDER`)に未登録のため、実際は66.5%(1659.78s/2497s)を占めるL5が表から消え、22.7%のL2がBOTTLENECKマーカーを得る。詳細・実装候補3案(New Fund of Funds_copy系要否確認/メモ化/ベクトル化)・precompute-fullspeed-goal-design(Layer 5)との非衝突確認 → `docs/research/cmd_3831_trade_perf_recon.md`
 - L503: DM-SignalリポジトリにGitHub Actionsワークフロー未設定(.github/workflows/不在)（cmd_1448）
 - L504: 性能異常値はリソース競合を先に疑え。pipeline_exec 626sは同時実行run起因のanomaly（cmd_1456）
 - L136: 改善候補調査前に既存最適化履歴を照合する（cmd_474）
