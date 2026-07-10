@@ -1,5 +1,6 @@
-# precompute全量最速化 — /goal自律ループ設計書 v1.4
+# precompute全量最速化 — /goal自律ループ設計書 v1.5
 
+- v1.5: 段階実行の一次計測で、凍結benchの`--portfolio-ids`がPFループのみを絞りbulk prefixを全103PFで実行することを検出。D1用stage harnessではbulk prefixも対象集合へ限定し、凍結評価器は103PF最終確認へ限定する契約を追加
 - v1.4: 殿裁定「少数PFで高速化を実現するまで反復し、少しずつ対象PFを増やす」を反映。探索対象を `3→10→25→50→103PF` の段階昇格制へ変更し、各段階で速度改善+parity PASSを昇格条件とした
 - v1.3: 殿レビュー「全量を実行するため改善サイクルが極端に長い」を反映。各iterationの全量3回を廃止し、全103PFを維持したD1変更対象1回→D2全量1回+parity→D3最終候補のみ全量3回の三段ゲートへ変更
 - v1.2: Gist revision `11928e1ae8e850360d67d87e211252942eec1701`を実行実績で再レビュー。P1完了、P2/H2初回結果、日付境界で発生したparity 868件FAIL、同一logical date比較、合格iterationのみをstop conditionへ算入する規則を反映
@@ -61,9 +62,9 @@
 評価器commit c956e4e7f2dd6d335c4e7a5eafbd95c0b58a3814のscripts/oneshot/cmd_3819_precompute_bench.pyとcmd_3819_precompute_parity.pyは変更禁止。
 対象PFは固定順序の段階集合3→10→25→50→103。各上位集合は下位集合を包含し、PF ID一覧と選定理由を記録する。
 反復手順: (1)同一immutable DB clone・同一logical dateで対照snapshotを作成 (2)現段階のPF集合で最遅コンポーネントを特定 (3)出力等価の改善を1つ実装
-(4)現段階の全endpoint・全パラメータを1回計測し、凍結parityでcanonical hash一致+Pythonオブジェクト等価を確認
+(4)非凍結stage harnessでPFループとbulk prefixの両方を現段階の集合へ限定し、全endpoint・全パラメータを1回計測。対象集合のcanonical hash一致+Pythonオブジェクト等価を確認
 (5)速度改善+parity PASSを満たすまで同じPF段階で反復。満たしたら次のPF段階へ昇格
-(6)103PFまで昇格した最終候補だけ全pipeline 3回中央値+parityで確定。数値をdocs/research/cmd_3825_h2_parity_fix.mdへ累積追記。
+(6)103PFまで昇格した最終候補だけ凍結bench/parityで全pipeline 3回中央値+全2699行parityを確定。数値をdocs/research/cmd_3825_h2_parity_fix.mdへ累積追記。
 parity FAILのiterationは無効として原因修正まで次の仮説へ進まない。
 stop condition: 103PFでparity PASSし、改善が2連続5%未満、またはH1-H6を全て計測・判定済み。3/10/25/50PFで停止してはならない。上限10 iterationは各段階ではなく全体の仮説変更回数に適用。
 禁止: raw_json出力の変更、安全パターン削除、本番DBへの書込み。
@@ -73,6 +74,7 @@ stop condition: 103PFでparity PASSし、改善が2連続5%未満、またはH1-
 - **parity判定のFP防止（レビュー修正2）**: 「バイト等価」はPostgres JSON化・辞書キー順・float表現で偽陽性/偽陰性化し得る。SSOTは**canonical JSON hash（`json.dumps(sort_keys=True, separators=(',',':'))`のhash）+Pythonオブジェクト等価**の2判定。`computed_at`等の非出力メタ列は比較対象外と明記
 - **stop condition明文化**（blind loop防止）: parity PASSした有効iterationのみを母数とし、改善飽和(2連続<5%) or 仮説消化。parity FAILを「消化済み」「改善なし」へ算入して早期終了してはならない。token blowout防止でiteration上限=10
 - **段階昇格ゲート（v1.4修正）**: `3→10→25→50→103PF`。最初の3PFは少なくともstandard単体・FoF・monthly_trade高コストPFを各1件含める。各上位集合は下位集合を包含し、段階ごとに全endpoint・全パラメータを実行する。速度改善とparity PASSの両方が揃うまで昇格禁止
+- **stage harness契約（v1.5修正）**: 凍結benchの`--portfolio-ids`はPFループだけを絞り、`compare_returns_bulk`/`metrics_summary_bulk`等のbulk prefixを全103PFで実行するため内側ループには使わない。D1用の非凍結harnessはbulk関数にも同じPF ID集合を渡す。103PF指定時に凍結benchと処理行数・対象endpointが一致する回帰テストを必須とし、凍結評価器そのものは変更しない
 - **各iterationの記録契約**: iteration番号/PF段階/PF ID集合/変更1行要約/全endpoint件数/秒数/rssピーク/parity判定/昇格可否。3回中央値は103PF最終判定にのみ必須。記録なきiterationは無効
 - 環境: **immutable baseline+logical date固定方式（v1.2修正）** — 本番同期のbaseline dumpを凍結→作業DBはそこからclone→各iterationの対照と変更後を同一logical dateで生成して比較。DB snapshot id/source commit/seed/evaluation dateを記録必須。日跨ぎしたhistorical raw_jsonと当日再生成値を直接比較しない。共有ローカルDBの直接使用は禁止（他cmdの書込みで期待値が汚れる）。本番非接触=他cmdと並列可
 
