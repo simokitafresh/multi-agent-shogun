@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-10 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-10T18:21:21+09:00 -->
+<!-- generated_at: 2026-07-10T19:24:05+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-10T18:21:21+09:00 | terminal | response | APPROVE完了。未読0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-10T18:15:08+09:00 | terminal | response | cmd_3835 APPROVE完了。未読0件。idle待機。
-- 2026-07-10T18:12:39+09:00 | terminal | response | はっ、殿。inbox処理と次段の起票を完了した。 **inbox**: cmd_karo_hotfix_cmd3825_bulk_parity_zeroがGATE CLEAR——cmd_3825で最後に残っていたbulk 3件の不一致が「…
-- 2026-07-10T18:11:45+09:00 | ntfy | outbound | 【INFOバッチ】 2026-07-10 18:06:19|cmd_karo_hotfix_cmd3825_bulk_parity_zero_202607101725
-- 2026-07-10T18:08:04+09:00 | ntfy | outbound | 【monitor】将軍CTX:64%。/compactをご検討ください
-- 2026-07-10T18:07:01+09:00 | terminal | response | CLEAR同期済み。未読0件。idle待機。
-- 2026-07-10T18:06:47+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働2名 CLEAR率99% 連勝367
-- 2026-07-10T18:06:01+09:00 | terminal | response | LGTM完了。未読0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-10T18:04:55+09:00 | terminal | response | Verdict consistency confirmed: all binary_checks yes → verdict PASS, status completed. Report is submitted and karo has…
-- 2026-07-10T18:04:48+09:00 | terminal | response | PASS with same 3 non-blocking WARNs as before (expected, same reasons as cmd_3825's report). Now let's notify karo: [me…
+- 2026-07-10T19:24:04+09:00 | terminal | response | **今セッション最終状態**: - accuracy: 96%(26/27)、直近10件100% - レビュー完了: cmd_3826/3827/3828/3830/3831/3832/3833/3834/3835 + hotfix 7件…
+- 2026-07-10T19:23:05+09:00 | terminal | inbound | いまクリアされても今より強くてニューゲームできるようにせよ
+- 2026-07-10T19:22:54+09:00 | terminal | inbound | いまクリアされても今より強くてニューゲームできるようにせよ
+- 2026-07-10T19:21:49+09:00 | ntfy | outbound | CI赤: run 29083200009 Unit Tests (bats)
+- 2026-07-10T19:19:40+09:00 | terminal | response | 「OPT-E date miss」仮説も完全に棄却されました。run1のログには`OPT-E hit rate: 100.0%`、`Date miss fallback: 0`と明記されており、フォールバックは一切発生していません。つまり…
+- 2026-07-10T19:19:32+09:00 | ntfy | outbound | 【INFOバッチ】 2026-07-10 19:13:32|cmd_3834
+- 2026-07-10T19:18:53+09:00 | terminal | response | はっ、殿。CDPで実画面まで確認し、**数値で確定した。結論: バグではなく仕様——差の正体は「当月(MTD)を含むか否か」である。** **CDP実画面(Fusion本番、隔離プロファイルで取得)**: デフォルト表示のAve-X 10…
+- 2026-07-10T19:14:21+09:00 | terminal | response | CLEAR同期済み。未読0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-10T19:13:44+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働4名 CLEAR率99% 連勝370
+- 2026-07-10T19:13:41+09:00 | terminal | response | 2件とも処理済み(draft APPROVE送信済み+cmd_3834 LGTM送信済み)。既読化。
 
 ## 未解決確認事項
+- はっ、殿。CDPで実画面まで確認し、**数値で確定した。結論: バグではなく仕様——差の正体は「当月(MTD)を含むか否か」である。** **CDP実画面(Fusion本番、隔離プロファイルで取得)**: デフォルト表示のAve-X 100%は CAGR **+39.9%** …
+- はっ、殿。両側の計算コードを現物で突き合わせた。**結論: バグではなく仕様——ただし「異なる定義のCAGR」が同じ名前で表示されている設計であり、differの正体は3つの定義差である。** **Fusion側の計算(fusion.ts L84-127を現物確認)**: Fu…
+- はっ、殿。escalation 2件目(STALL疑い)を処理した——**誤検知でクローズ**である。 **確認内容**: 「1名STALL疑い(assigned+CTX0%)」の正体は、先ほどの将軍裁定(cmd_3834再ゲート)で家老がhayateのtask statusを…
+- はっ、殿。家老からのescalation(hayateのcmd_3834が「task=failed」なのに「報告=completed」の乖離45分)を裁定・処理した。 **将軍裁定: 新規cmd起票は不要**。乖離の実態は単純で、cmd_3834のFAIL要因(無関係の既存DT…
+- はっ、殿。処理を報告する。 **inbox**: DTB3厳密数値一致版のCI修正がGATE CLEAR(18:38)——1本目の「assert弱化」消火型を家老が自ら無効化し、rf_mom・marginの厳密一致で作り直した正本が完了した。 **次の手を指示済み**: これで…
+- 家老へ3つの選択肢を提示し、判断を仰ぎました。応答を待ちます。 ## 現状サマリー cmd_3827の原因調査で重要な進展がありました: 1. **DRIFT BLOCK(8,729件)自体は実害なし**: `signal_change_log`を確認したところ、DRIFT検出…
+- はっ、殿。**DM-Fusionの障害は本番で復旧完了である**——将軍が本番APIを実測確認した。 **復旧の実測値**: `api/fusion/portfolios`が**103件・全6フォルダー**を返却(メンバーシップ7・オリジナル17・GSシン忍法21・シン四神12…
 - はっ、殿。inbox処理と次段の起票を完了した。 **inbox**: cmd_karo_hotfix_cmd3825_bulk_parity_zeroがGATE CLEAR——cmd_3825で最後に残っていたbulk 3件の不一致が「スコープ外」逃げをせず根因解消された。こ…
-- 殿、飛猿(tobisaru)の状況を報告する。 [MEM: memory_db ts=2026-07-10 "draft cmd_karo_hotfix_cmd3825_bulk_parity_zero_202607101725 レビュー依頼"] [MEM: semantic …
-- はっ、殿。**三層記憶への貫通を完了した**(commit 74ed81457、混入なし確認済み)。 **貫通した知見**: Fusion可視性の殿裁定(is_active全PF表示+Fusion側adminでon/off、hide_portfolio/Tierは非関与)+CI…
-- candidate側の完了を待機中。完了次第、凍結パリティツールで最終確認(2699/2699・不一致0)を実行する。 [meta] stop_reason=end_turn
-- はっ、殿。仕様の確定と対処の全体像を報告する。 **殿仕様(17:44確定、実装者へ固定伝達済み)**: DM-Fusionは**本番稼働中(is_active)の全PFを表示**し、表示のon/offは**Fusion側admin画面の個別・フォルダー単位制御**が担う。DM…
-- Pristine側の完了を待機中。両方完了次第、凍結パリティツールで最終確認(2699/2699・不一致0)を実行する。 [meta] stop_reason=end_turn
-- 緊急cmd。6観点レビュー: **Step 1 前提検証**: DB照会verified(92体hide=true, updated=04:05 UTC=cmd_3826時刻一致)。fusion.py L33-34フィルタ現物確認。assumptions全verified。OK…
-- admin APIが0件を返した——応答の生データを確認する。 [meta] stop_reason=tool_use
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
@@ -34,11 +34,8 @@
 - cmd_2898
 - cmd_3712
 - cmd_3771
-- cmd_3773
 - cmd_3790
-- cmd_3803
 - cmd_3804
-- cmd_3805
 - cmd_3806
 - cmd_3810
 - cmd_3811
@@ -59,6 +56,9 @@
 - cmd_3828
 - cmd_3829
 - cmd_3830
+- cmd_3831
+- cmd_3832
+- cmd_3833
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
