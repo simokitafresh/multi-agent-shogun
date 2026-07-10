@@ -1,5 +1,6 @@
-# precompute全量最速化 — /goal自律ループ設計書 v1.5
+# precompute全量最速化 — /goal自律ループ設計書 v1.6
 
+- v1.6: 殿裁定「サンクコストにとらわれず中断」「トータル見込み時間を最小化」を反映。目的関数を総残時間へ変更し、旧bench継続の即時中断基準とstage harness投資の損益分岐を数値化
 - v1.5: 段階実行の一次計測で、凍結benchの`--portfolio-ids`がPFループのみを絞りbulk prefixを全103PFで実行することを検出。D1用stage harnessではbulk prefixも対象集合へ限定し、凍結評価器は103PF最終確認へ限定する契約を追加
 - v1.4: 殿裁定「少数PFで高速化を実現するまで反復し、少しずつ対象PFを増やす」を反映。探索対象を `3→10→25→50→103PF` の段階昇格制へ変更し、各段階で速度改善+parity PASSを昇格条件とした
 - v1.3: 殿レビュー「全量を実行するため改善サイクルが極端に長い」を反映。各iterationの全量3回を廃止し、全103PFを維持したD1変更対象1回→D2全量1回+parity→D3最終候補のみ全量3回の三段ゲートへ変更
@@ -16,6 +17,7 @@
 2. **可逆なら行動せよ（殿裁定2026-07-10 02:41/02:46）**: コード変更はrevert可能=裁可待ち不要。ローカルテストPASS+revert手順明確なら自走deploy、失敗はrevert+事実報告（§42v2）
 3. **基準は探索（殿速度3原則）**: 目標値を先に固定しない。理論下限（支配的コストの計測値）を先に測り、それに漸近するまで回す
 4. **計測なき改善は改善ではない**: 全iterationで before→after 数値を記録。安全パターン（try/except, invalidate順序等）の削除によるスピードアップは禁止（check_safety_pattern_removal準拠）
+5. **総見込み時間を最小化**: 目的関数は `T_total = 道具改修時間 + 残り探索run時間 + 昇格検証時間 + 最終103PF検証時間`。開始済みrunの経過時間は意思決定から除外し、今後の残時間が代替案より長いと判明した時点で中断する
 
 ## §1 As-Is（実測 2026-07-09〜10）
 
@@ -35,6 +37,8 @@
 | P2 cmd_3825 | 実行中 | 868件を分類し、同一logical dateの対照snapshotで等価版H2を再検証後、stop conditionまで継続 |
 
 レビュー所見: 868件はH2対象だけでなく未変更endpointにも分布し、代表差分は `as_of_date/computed_for/as_of` の `2026-07-09 → 2026-07-10`。immutable DBだけでは日付依存出力を固定できないため、**DB snapshotとlogical evaluation dateの両方**を揃えることが評価前提である。
+
+総時間レビュー: 3PFを旧benchで実行した結果は `373.76s`。PF本体3件の合計は `40.82s`、不変bulk prefix等の固定費は約 `332.94s`（89.1%）。stage harnessなら1 run約41秒が見込まれ、1回あたり約5.55分短縮する。残り3回以上で約16.6分以上を回収できるため、10分以内のharness実装は総時間で黒字。旧benchによる10PF以降のrunは開始済みでも中断対象とする。
 
 ## §2 To-Be
 
@@ -75,6 +79,7 @@ stop condition: 103PFでparity PASSし、改善が2連続5%未満、またはH1-
 - **stop condition明文化**（blind loop防止）: parity PASSした有効iterationのみを母数とし、改善飽和(2連続<5%) or 仮説消化。parity FAILを「消化済み」「改善なし」へ算入して早期終了してはならない。token blowout防止でiteration上限=10
 - **段階昇格ゲート（v1.4修正）**: `3→10→25→50→103PF`。最初の3PFは少なくともstandard単体・FoF・monthly_trade高コストPFを各1件含める。各上位集合は下位集合を包含し、段階ごとに全endpoint・全パラメータを実行する。速度改善とparity PASSの両方が揃うまで昇格禁止
 - **stage harness契約（v1.5修正）**: 凍結benchの`--portfolio-ids`はPFループだけを絞り、`compare_returns_bulk`/`metrics_summary_bulk`等のbulk prefixを全103PFで実行するため内側ループには使わない。D1用の非凍結harnessはbulk関数にも同じPF ID集合を渡す。103PF指定時に凍結benchと処理行数・対象endpointが一致する回帰テストを必須とし、凍結評価器そのものは変更しない
+- **中断規則（v1.6修正）**: 現runの残時間が「中断+道具修正+再実行」の見込みを上回る、または対象PF外の固定費が実行時間の50%を超えると判明した時点で即中断する。既経過時間・取得済みsnapshot・「もう少しで終わる」は継続理由にしない
 - **各iterationの記録契約**: iteration番号/PF段階/PF ID集合/変更1行要約/全endpoint件数/秒数/rssピーク/parity判定/昇格可否。3回中央値は103PF最終判定にのみ必須。記録なきiterationは無効
 - 環境: **immutable baseline+logical date固定方式（v1.2修正）** — 本番同期のbaseline dumpを凍結→作業DBはそこからclone→各iterationの対照と変更後を同一logical dateで生成して比較。DB snapshot id/source commit/seed/evaluation dateを記録必須。日跨ぎしたhistorical raw_jsonと当日再生成値を直接比較しない。共有ローカルDBの直接使用は禁止（他cmdの書込みで期待値が汚れる）。本番非接触=他cmdと並列可
 
