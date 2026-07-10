@@ -67,11 +67,67 @@ if [ "${#python_files[@]}" -gt 0 ]; then
     read -r -a ruff_parts <<<"$ruff_cmd"
     (
         cd "$ROOT_DIR"
-        "${ruff_parts[@]}" check --fix -- "${python_files[@]}"
         "${ruff_parts[@]}" format -- "${python_files[@]}"
-        "${ruff_parts[@]}" check -- "${python_files[@]}"
     )
     git -C "$ROOT_DIR" add -- "${python_files[@]}"
+
+    # Compare the final staged bytes with HEAD. Existing debt is allowed; only
+    # an increase in identical code+message diagnostics blocks the commit.
+    _ruff_ratchet_dir="$(mktemp -d)"
+    trap 'rm -rf "${_ruff_ratchet_dir:-}"' EXIT
+    : > "$_ruff_ratchet_dir/head.jsonl"
+    : > "$_ruff_ratchet_dir/staged.jsonl"
+    for _ruff_file in "${python_files[@]}"; do
+        _ruff_head_rc=0
+        _ruff_staged_rc=0
+        if git -C "$ROOT_DIR" cat-file -e "HEAD:$_ruff_file" 2>/dev/null; then
+            git -C "$ROOT_DIR" show "HEAD:$_ruff_file" |
+                "${ruff_parts[@]}" check --output-format json --stdin-filename "$_ruff_file" - \
+                    >> "$_ruff_ratchet_dir/head.jsonl" || _ruff_head_rc=$?
+        else
+            printf '[]\n' >> "$_ruff_ratchet_dir/head.jsonl"
+        fi
+        git -C "$ROOT_DIR" show ":$_ruff_file" |
+            "${ruff_parts[@]}" check --output-format json --stdin-filename "$_ruff_file" - \
+                >> "$_ruff_ratchet_dir/staged.jsonl" || _ruff_staged_rc=$?
+        if [ "$_ruff_head_rc" -gt 1 ] || [ "$_ruff_staged_rc" -gt 1 ]; then
+            echo "ERROR: ruff JSON diagnostics failed for $_ruff_file" >&2
+            exit 1
+        fi
+        printf '\n' >> "$_ruff_ratchet_dir/head.jsonl"
+        printf '\n' >> "$_ruff_ratchet_dir/staged.jsonl"
+    done
+    python3 - "$_ruff_ratchet_dir/head.jsonl" "$_ruff_ratchet_dir/staged.jsonl" <<'PY'
+import collections
+import json
+import sys
+
+
+def counts(path):
+    result = collections.Counter()
+    with open(path, encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            for item in json.loads(line):
+                result[(item.get("code"), item.get("message"))] += 1
+    return result
+
+
+baseline = counts(sys.argv[1])
+staged = counts(sys.argv[2])
+regressions = [
+    (code, message, baseline[key], count)
+    for key, count in sorted(staged.items())
+    for code, message in [key]
+    if count > baseline[key]
+]
+if regressions:
+    print("ERROR: staged Python files add Ruff diagnostics:", file=sys.stderr)
+    for code, message, before, after in regressions:
+        print(f"  {code}: {message} ({before} -> {after})", file=sys.stderr)
+    raise SystemExit(1)
+PY
 fi
 
 if [ "${#js_files[@]}" -gt 0 ]; then
