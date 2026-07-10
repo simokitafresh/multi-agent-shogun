@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-10 cmd_3838 -->
+<!-- last_updated: 2026-07-10 cmd_3837 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -84,11 +84,12 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L866 -->
+<!-- last_synced_lesson: L869 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
 - L866: recalculate-sync全PF実行のcleanupはmodeに関わらずTickerMonthlyReturnを削除するが再生成はmode=full/tickerのみ。既定mode="portfolio"のため全PF再計算のたびにticker_monthly_returnsが空になっていた。削除ゲートと再生成ゲートは常に対称にせよ（cmd_3832、docs/research/cmd_3832_sync_tickers_recon.md）
+- L869: PF可視性検証はfolder優先を含むAPI実効件数で完了判定する（cmd_3837）
 
 ## §36 API認証
 
@@ -1094,3 +1095,19 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 別リスクとして記録: `portfolios.hide_portfolio`/`hide_signal`列はPF configから同期される複製列だが、閲覧側マスキング判定はこの列を一切参照しない「死んだ列」(debug.py診断出力のみが読み手)。将来PF個別編集画面での混同源になりうる。
 - 詳細・行番号付き全コードパス・テストギャップ: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3838_visibility_save_recon.md`
 - 因果リンク: [[殿報告20260710_2040_admin保存不反映]] -> [[folder非表示signals限定発覚]] -> [[cmd_3838偵察recon文書]]
+
+## §63.1 admin visibility根治実装: folder非表示(L1.5)を全閲覧EPへ横展開 (cmd_3839, 2026-07-10)
+
+- **AC1完了**: `backend/app/services/visibility_helpers.py`に共通関数`check_hide_portfolio_or_folder(tier_settings, global_settings, portfolio_id, folder_id, is_admin)`を追加し、§63で判明した未適用12エンドポイント(compare_returns/metrics×4/monthly_returns/p_average×2/performance×2/deterioration×2/history/rolling_returns/regime_analysis/monthly_trade/trades/annual_returns、計18呼出箇所)全てに適用。`signals.py`はhanzo cmd_3835が同時改修中のため参照専用に固定し無変更(competing-write回避、家老指示2026-07-10 21:52)。
+- grep実測で`check_hide_portfolio(`単体呼出し(旧L2onlyパターン)の残存0件、`check_hide_portfolio_or_folder(`が18箇所へ適用済みを確認。既存回帰テスト46件(test_visibility_masking/test_global_visibility/test_compare_returns_api)は適用後も全PASS。
+- 副次バグ(機構B: PUT楽観ロック欠如、機構C: FE Tier切替時の未保存編集消失)は同cmd内でAC3/AC4として対応(進行中)。
+- 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3839_folder_hide_rollout.md`
+- 因果リンク: [[cmd_3838偵察recon文書]] -> [[cmd_3839全EP一括適用]] -> [[folder非表示L1.5全EP適用完了]]
+
+## §64 Stage A timeout / vectorized非決定性の再設計 (cmd_3840, 2026-07-10)
+
+- Stage A 35.21秒の主因はvectorized計算ではなく、月初snapshot生成中の`_get_git_commit_hash()` 238回→git subprocess累計21.17秒(60.1%)。`_compute_pipeline_signals()`自体は0.20秒(0.6%)。run固定hashへ置換すればcold 11.80秒 / warm 3.92秒で30秒内。
+- DM-safe 5,000日次行の同一入力2反復は`portfolio_id/date/signal/holding_signal/momentum_data`差分0、semantic SHA-256完全一致。単一process/同一DB入力では非決定性を再現せず、残条件は並行config/price更新・別transaction snapshot・別commit・ledger生成時点差。run入力manifest固定が次の切分け条件。
+- 恒久方針はPipelineEngineのblock意味論を共通executorへ抽出し、日次Engineとvectorized adapterを単一実装化。逐日Engine直呼びは約149K calls / 約2000秒へ退行するためoracle限定。ledger guardは緩めない。
+- 詳細・行別内訳・比較設計・回帰方針: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md`
+- 因果リンク: [[cmd_3827_FAIL]] -> [[Stage_A_timeout+同一入力差分0]] -> [[cmd_3840単一意味論再設計]]
