@@ -3907,6 +3907,14 @@ _d_ci=$(cat "${_TMP_CI_CONCLUSION:-/dev/null}" 2>/dev/null)
 echo "■ DIGEST: inbox=${_d_inbox} insights=${_d_insights} proposals=${_d_proposals} unpushed=${_d_unpushed} ci=${_d_ci} idle_trigger=${IDLE_TRIGGER} judge=${overall}"
 echo ""
 echo "■ 必読: projects/infra/lessons_shogun.yaml（将軍教訓。deepdive前に通読せよ=Step 2.45。superseded_by付きは参考扱い）"
+# 必読ファイル肥大チェック(2026-07-10): Read toolは1回25,000トークン(日本語YAML実測2.22bytes/token≒55KB)が上限。
+# 必読が55KBを超えると「全文通読せよ」が物理的に1回で不可能になり、復帰のたびに分割読みの試行錯誤が再発する
+# (2026-07-10実測: 99,219bytes=44,614tokensでRead1回エラー+3分割)。試行錯誤=隠れインフラバグ(LS-A09(22))。
+_lessons_bytes=$(wc -c < "$SCRIPT_DIR/projects/infra/lessons_shogun.yaml" 2>/dev/null || echo 0)
+if [ "${_lessons_bytes:-0}" -gt "${LESSONS_SHOGUN_READ_CAP_BYTES:-55000}" ]; then
+    echo "  ALERT: lessons_shogun.yaml ${_lessons_bytes}bytes — Read 1回上限(約55KB)超過。/lesson-sortで統合圧縮せよ(全文通読が物理的に分割必須の状態)"
+    alerts+=("必読lessons肥大: ${_lessons_bytes}bytes>55KB(/lesson-sortで統合圧縮)")
+fi
 echo "■ 必読: memory/deepdive_why_chain_20260321.md（知性の外部化原則 全過程）"
 
 mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
