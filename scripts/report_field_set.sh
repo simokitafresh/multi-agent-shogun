@@ -62,6 +62,31 @@ if [[ "$REPORT_PATH" != /* ]]; then
     REPORT_PATH="$SCRIPT_DIR/$REPORT_PATH"
 fi
 
+# A completed report is moved from queue/reports to archive/reports.  A stale
+# caller that still holds the old active path must not recreate a partial YAML
+# file via the legacy create-on-write behavior below.  Keep that legacy
+# behavior for every other missing path: deploy_task normally creates report
+# templates first, but older callers and isolated tests intentionally use this
+# helper to create reports outside the canonical active directory.
+if [ ! -e "$REPORT_PATH" ] && [[ "$REPORT_PATH" == "$SCRIPT_DIR/queue/reports/"* ]]; then
+    _rfs_active_rel="${REPORT_PATH#"$SCRIPT_DIR/queue/reports/"}"
+    if [[ "$_rfs_active_rel" != */* ]]; then
+        _rfs_archive_candidates=()
+        while IFS= read -r -d '' _rfs_candidate; do
+            _rfs_archive_candidates+=("$_rfs_candidate")
+        done < <(find "$SCRIPT_DIR/archive/reports" -type f -name "$_rfs_active_rel" -print0 2>/dev/null || true)
+        if [ "${#_rfs_archive_candidates[@]}" -gt 0 ]; then
+            echo "BLOCK: active report is missing but an archived report with the same basename exists; refusing to create a residual YAML." >&2
+            echo "  requested active path: $REPORT_PATH" >&2
+            for _rfs_candidate in "${_rfs_archive_candidates[@]}"; do
+                echo "  candidate archive path: $_rfs_candidate" >&2
+            done
+            echo "  To update the canonical archived report, pass its archive path explicitly." >&2
+            exit 1
+        fi
+    fi
+fi
+
 # Resolve the current task/cmd origin for the shorthand command when operators
 # intentionally omit the value: `report_field_set.sh <report> origin`.
 _report_field_set_resolve_cmd_origin() {
