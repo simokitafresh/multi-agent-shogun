@@ -24,7 +24,8 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-07-08T08:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-10T19:55:00+09:00 -->
+<!-- 検分: gate_lesson_health.sh 1f0aed8d1(subdomain別context routeをlesson_write.shとSSOT化し、合流済み教訓の偽ALERTを解消)。引数なし実行・ALERT/CLEAR出口・/dream本文手順は不変 -->
 <!-- 検分: gate_lesson_health.sh GA-196で自己修復cmd(reflux/karo_hotfix/ci_fix)を長期useful率健康指標から除外。引数なし全project走査/PROJECT単体走査、METRIC行、WARN/ALERT出力契約は不変 -->
 <!-- script_refs_checked_at: 2026-07-07T23:28:58+09:00 -->
 

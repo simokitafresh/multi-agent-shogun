@@ -9,7 +9,8 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-10T11:56:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-10T19:55:00+09:00 -->
+<!-- 検分: cmd_complete_gate.sh e89307c7c(報告commitと他忍者dirty hunkの非重複判定を共有libraryへSSOT化)。`bash scripts/cmd_complete_gate.sh <cmd_id>`の引数・CLEAR/BLOCK出口・codd-fix本文手順は不変 -->
 <!-- 検分: cmd_complete_gate.sh a76572f27(GATE CLEAR時のauto lesson_write.sh呼出しへsubdomain/target_files/origin/when/how自動推定フィールドを追加=lesson_candidate登録内容の内部強化)。`bash scripts/cmd_complete_gate.sh <cmd_id>`の呼び出し契約・GATE CLEAR/BLOCK出口・codd-fix本文手順は不変 -->
 
 <!-- script_refs_checked_at: 2026-07-09T14:56:35+09:00 -->

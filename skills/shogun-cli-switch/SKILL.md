@@ -10,7 +10,8 @@ description: |
   DO NOT TRIGGER: 同一CLI内の /model 操作（Claude系内でOpus↔Sonnet等）、レイアウト全崩壊（→/reset-layout）
 ---
 
-<!-- script_refs_checked_at: 2026-07-10T11:56:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-10T19:55:00+09:00 -->
+<!-- 検分: ninja_monitor.sh 3de92b6b/11047811/35d42cac。Codex respawn時のagent別config適用、明示pauseのSTALL除外、再配備前reportのAUTO-DONE除外はいずれもmonitor内部防御。switch scriptの引数・CLI切替・idle pane respawn契約は不変 -->
 <!-- 検分: cli_lookup.sh/ninja_monitor.sh 未commit差分(2026-07-10時点ワーキングツリー、要再検証)を確認。(1)cli_lookup.shに`codex_config_apply_agent()`/`codex_config_restore()`を追加。settings.yamlのper-agent`model_name`が`gpt-*`の場合、末尾suffix(low/medium/high/xhigh)を`model_reasoning_effort`、`service_tier`を`~/.codex/config.toml`へ一時適用しrespawn後に復元する。(2)`cli_model_display()`に`gpt-5.6-sol/terra/luna`等の表示ラベルを追加。(3)ninja_monitor.shの`safe_send_clear()`(idle /clear等の自動respawn経路)と`check_ninja_cli_dead()`(死亡pane自動復旧経路)がrespawn-pane直前直後に上記2関数を呼ぶよう変更。`shogun_cli_switch.sh`本体(`switch_cli_mode.sh`のrespawn-pane呼出し=Step2手動切替経路)には未接続で、Options/Step2/Step4記載の呼び出し契約・idle判定・respawn-pane -k実行手順は変更なし。下記「per-agent effort回避策」の揮発性注記のみ影響あり(該当箇所に追記) -->
 
 <!-- script_refs_checked_at: 2026-07-09T14:56:35+09:00 -->
