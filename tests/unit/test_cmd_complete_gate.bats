@@ -1431,6 +1431,59 @@ EOF
     [[ "$output" == *"$report_file"* ]]
 }
 
+@test "resolve_report_file fast-paths flat report without unwrap warning" {
+    local report_file="$TEST_PROJECT/queue/reports/hayate_report_${TEST_CMD_ID}.yaml"
+    export SCRIPT_DIR="$TEST_PROJECT"
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export CMD_ID="$TEST_CMD_ID"
+
+    cat > "$TASKS_DIR/hayate.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: hayate_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$report_file" <<'EOF'
+# preserved comment
+
+worker_id: hayate
+status: completed
+EOF
+
+    run resolve_report_file hayate "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [ "$output" = "$report_file" ]
+    [[ "$output" != *"unwrap returned unknown"* ]]
+}
+
+@test "resolve_report_file unwraps wrapped report once then uses flat fast path" {
+    local report_file="$TEST_PROJECT/queue/reports/hayate_report_${TEST_CMD_ID}.yaml"
+    export SCRIPT_DIR="$TEST_PROJECT"
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export CMD_ID="$TEST_CMD_ID"
+
+    cat > "$TASKS_DIR/hayate.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: hayate_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$report_file" <<'EOF'
+# preserved comment
+report:
+  worker_id: hayate
+  status: completed
+EOF
+
+    run resolve_report_file hayate "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"report YAML auto-unwrapped"* ]]
+    ! grep -q '^report:' "$report_file"
+    grep -q '^worker_id: hayate' "$report_file"
+
+    run resolve_report_file hayate "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [ "$output" = "$report_file" ]
+}
+
 @test "CoDD registry append extracts target and before/after from report and spec" {
     mkdir -p "$TEST_PROJECT/docs/research"
     export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"

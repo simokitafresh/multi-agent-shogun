@@ -167,8 +167,22 @@ resolve_report_file() {
         local report_file="$1"
         local unwrap_result
         local report_lock="${report_file}.lock"
+        local line trimmed first_content=""
 
         [ -f "$report_file" ] || return 0
+
+        # Normal reports are already flat. Avoid flock + Python + full YAML
+        # parsing on every resolve_report_file call (dozens per gate run).
+        # A wrapped report can only have `report:` as its first significant
+        # line; comments and blank lines are preserved by the Python unwrap.
+        while IFS= read -r line; do
+            trimmed="${line#"${line%%[![:space:]]*}"}"
+            case "$trimmed" in
+                ""|\#*) continue ;;
+                *) first_content="$trimmed"; break ;;
+            esac
+        done < "$report_file"
+        [ "$first_content" = "report:" ] || return 0
 
         unwrap_result=$(
             (
@@ -244,6 +258,10 @@ PY
                 ;;
             flock_timeout)
                 echo "[gate] WARN: report YAML unwrap flock timeout: ${report_file}" >&2
+                ;;
+            skip)
+                # Another process may have unwrapped the report after the
+                # Bash precheck but before this process acquired the lock.
                 ;;
             *)
                 echo "[gate] WARN: report YAML unwrap returned unknown status '${unwrap_result:-<empty>}': ${report_file}" >&2
