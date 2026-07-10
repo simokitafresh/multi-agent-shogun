@@ -133,6 +133,18 @@ ensure_cli_lookup_loaded() {
     CLI_LOOKUP_LOADED=1
 }
 
+DIRTY_HUNK_FILTER_LOADED=0
+ensure_dirty_hunk_filter_loaded() {
+    if [ "${DIRTY_HUNK_FILTER_LOADED:-0}" = "1" ]; then
+        return 0
+    fi
+    if [ -f "$SCRIPT_DIR/scripts/lib/report_commit_nonoverlap_filter.sh" ]; then
+        # shellcheck source=/dev/null
+        source "$SCRIPT_DIR/scripts/lib/report_commit_nonoverlap_filter.sh" 2>/dev/null || true
+    fi
+    DIRTY_HUNK_FILTER_LOADED=1
+}
+
 lock_path() {
     case "$1" in
         /mnt/c/*|/mnt/d/*)
@@ -1796,6 +1808,28 @@ if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ] || [ "$TYPE" = "
                     UNCOMMITTED=""
                 else
                     UNCOMMITTED=$(git -C "$GIT_REPO_DIR" status --porcelain -- "${_filtered_check_paths[@]}" 2>/dev/null || true)
+                fi
+                # cmd_karo_hotfix_shared_dirty_commit_gate_202607101643 (AC1/AC2):
+                # 報告者自身の変更が commit_hash として commit 済みなら、同一ファイル内に残る
+                # 他忍者の非重複(non-overlapping)WIP hunkだけで誤BLOCKしない。
+                # 報告者自身の未commit hunkが commit 済み範囲と重なる場合は従来通りBLOCKする。
+                if [ -n "$UNCOMMITTED" ] && [ -n "$FULL_REPORT" ] && [ -f "$FULL_REPORT" ]; then
+                    ensure_dirty_hunk_filter_loaded
+                    if type filter_report_commit_nonoverlap_uncommitted >/dev/null 2>&1; then
+                        _dirty_plain_paths=$(printf '%s\n' "$UNCOMMITTED" | cut -c4-)
+                        _dirty_kept_paths=$(filter_report_commit_nonoverlap_uncommitted "$GIT_REPO_DIR" "$FULL_REPORT" "$_dirty_plain_paths")
+                        if [ -z "$_dirty_kept_paths" ]; then
+                            UNCOMMITTED=""
+                        else
+                            UNCOMMITTED=$(printf '%s\n' "$UNCOMMITTED" | awk -v kept="$_dirty_kept_paths" '
+                                BEGIN {
+                                    n = split(kept, arr, "\n")
+                                    for (i = 1; i <= n; i++) keep[arr[i]] = 1
+                                }
+                                { path = substr($0, 4); if (path in keep) print }
+                            ')
+                        fi
+                    fi
                 fi
                 if [ -n "$UNCOMMITTED" ]; then
                     echo "[git_uncommitted_gate] BLOCKED: 未commitファイルあり (ninja: ${FROM})" >&2

@@ -11,6 +11,7 @@ cmd_gate_setup_file() {
     export SRC_LOCK_PATH_SCRIPT="$PROJECT_ROOT/scripts/lib/lock_path.sh"
     export SRC_YAML_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
     export SRC_GUNSHI_NOTIFY_SCRIPT="$PROJECT_ROOT/scripts/lib/gunshi_notify.sh"
+    export SRC_NONOVERLAP_FILTER_SCRIPT="$PROJECT_ROOT/scripts/lib/report_commit_nonoverlap_filter.sh"
 
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
     [ -f "$SRC_CONTEXT_FRESHNESS_SCRIPT" ] || return 1
@@ -18,6 +19,7 @@ cmd_gate_setup_file() {
     [ -f "$SRC_LOCK_PATH_SCRIPT" ] || return 1
     [ -f "$SRC_YAML_FIELD_SET_SCRIPT" ] || return 1
     [ -f "$SRC_GUNSHI_NOTIFY_SCRIPT" ] || return 1
+    [ -f "$SRC_NONOVERLAP_FILTER_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 }
 
@@ -47,6 +49,7 @@ cmd_gate_scaffold() {
     ln -s "$SRC_LOCK_PATH_SCRIPT" "$TEST_PROJECT/scripts/lib/lock_path.sh"
     ln -s "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
     ln -s "$SRC_GUNSHI_NOTIFY_SCRIPT" "$TEST_PROJECT/scripts/lib/gunshi_notify.sh"
+    ln -s "$SRC_NONOVERLAP_FILTER_SCRIPT" "$TEST_PROJECT/scripts/lib/report_commit_nonoverlap_filter.sh"
 
     # Non-blocking script stubs required by cmd_complete_gate.sh
     local stubs=(auto_draft_lesson inbox_archive lesson_impact_analysis dashboard_update gist_sync ntfy_cmd ntfy)

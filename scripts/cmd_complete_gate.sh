@@ -1983,6 +1983,10 @@ EOF
 export PROJECT_ROOT="$SCRIPT_DIR"
 source "$SCRIPT_DIR/scripts/lib/gunshi_notify.sh"
 
+# ─── non-overlap dirty hunk判定（SSOT, cmd_karo_hotfix_shared_dirty_commit_gate_202607101643） ───
+# inbox_write.shのgit_uncommitted_gateとも共有する独立関数
+source "$SCRIPT_DIR/scripts/lib/report_commit_nonoverlap_filter.sh"
+
 # ─── task_type検出: タスクYAMLからparent_cmd一致のtask_typeを収集 ───
 detect_task_types() {
     local cmd_id="$1"
@@ -2430,7 +2434,7 @@ PY
                     matching_report_for_commit="$(resolve_report_file "$(basename "${MATCHING_TASK_FILES[0]}" .yaml)" 2>/dev/null || true)"
                 fi
                 if [[ -n "$scoped_uncommitted" && -n "$matching_report_for_commit" && -f "$matching_report_for_commit" ]]; then
-                    scoped_uncommitted=$(filter_report_commit_nonoverlap_uncommitted "$matching_report_for_commit" "$scoped_uncommitted" 2>>"$LOG_DIR/cmd_complete_gate_stderr.log" || printf '%s\n' "$scoped_uncommitted")
+                    scoped_uncommitted=$(filter_report_commit_nonoverlap_uncommitted "$SCRIPT_DIR" "$matching_report_for_commit" "$scoped_uncommitted" 2>>"$LOG_DIR/cmd_complete_gate_stderr.log" || printf '%s\n' "$scoped_uncommitted")
                 fi
                 uncommitted_filtered="$scoped_uncommitted"
             fi
@@ -4775,75 +4779,6 @@ collect_report_modified_files() {
             }
         ' "$report_file" 2>/dev/null || true
     done | awk 'NF && !seen[$0]++'
-}
-
-filter_report_commit_nonoverlap_uncommitted() {
-    local report_file="$1"
-    local uncommitted_paths="$2"
-
-    REPO_ROOT="$SCRIPT_DIR" REPORT_FILE="$report_file" UNCOMMITTED_PATHS="$uncommitted_paths" python3 - <<'PY'
-import os
-import re
-import subprocess
-import sys
-import yaml
-
-repo = os.environ.get("REPO_ROOT", "")
-report_file = os.environ.get("REPORT_FILE", "")
-paths = [p.strip().strip("./") for p in os.environ.get("UNCOMMITTED_PATHS", "").splitlines() if p.strip()]
-
-def run_git(args):
-    try:
-        return subprocess.check_output(["git", "-C", repo, *args], text=True, stderr=subprocess.DEVNULL)
-    except Exception:
-        return ""
-
-def hunk_ranges(diff_text):
-    ranges = []
-    for match in re.finditer(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@", diff_text, re.M):
-        start = int(match.group(1))
-        count = int(match.group(2) or "1")
-        if count <= 0:
-            continue
-        ranges.append((start, start + count - 1))
-    return ranges
-
-def overlaps(left, right):
-    return any(a <= d and c <= b for a, b in left for c, d in right)
-
-try:
-    with open(report_file, encoding="utf-8") as f:
-        report = yaml.safe_load(f) or {}
-except Exception:
-    report = {}
-
-commit_hash = str(report.get("commit_hash") or "").strip()
-if not re.fullmatch(r"[0-9a-f]{40}", commit_hash):
-    print("\n".join(paths))
-    raise SystemExit(0)
-
-changed_files = set(run_git(["diff-tree", "--no-commit-id", "--name-only", "-r", commit_hash]).splitlines())
-if not changed_files:
-    print("\n".join(paths))
-    raise SystemExit(0)
-
-kept = []
-suppressed = []
-for path in paths:
-    if path not in changed_files:
-        kept.append(path)
-        continue
-    commit_ranges = hunk_ranges(run_git(["diff", "--unified=0", f"{commit_hash}^", commit_hash, "--", path]))
-    dirty_ranges = hunk_ranges(run_git(["diff", "--unified=0", "--", path]) + "\n" + run_git(["diff", "--cached", "--unified=0", "--", path]))
-    if commit_ranges and dirty_ranges and not overlaps(commit_ranges, dirty_ranges):
-        suppressed.append(path)
-    else:
-        kept.append(path)
-
-for path in suppressed:
-    print(f"  [WARN] {path}: uncommitted non-overlapping diff after report commit_hash; treating as concurrent unrelated change", file=sys.stderr)
-print("\n".join(kept))
-PY
 }
 
 collect_cmd_command_file_refs() {

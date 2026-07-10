@@ -31,8 +31,8 @@ setup_file() {
     python3 -c "import yaml" 2>/dev/null || return 1
 
     mkdir -p "$GIT_TEMPLATE_DIR/scripts/lib" "$GIT_TEMPLATE_DIR/scripts/gates" "$GIT_TEMPLATE_DIR/queue/tasks" "$GIT_TEMPLATE_DIR/queue/reports" "$GIT_TEMPLATE_DIR/src"
-    # 選択的コピー: inbox_write.shが使う4ファイルのみ (NTFS→tmpfs コスト削減)
-    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh; do
+    # 選択的コピー: inbox_write.shが使うファイルのみ (NTFS→tmpfs コスト削減)
+    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh; do
         cp "$PROJECT_ROOT/scripts/lib/$_lib_f" "$GIT_TEMPLATE_DIR/scripts/lib/$_lib_f"
     done
 
@@ -828,6 +828,53 @@ _wait_for_file() {
 
     # Verify message was delivered to inbox
     [ -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}
+
+@test "report_received: reporter's hunk committed + other ninja's non-overlapping dirty hunk in same file → PASS (AC1)" {
+    setup_git_test_env
+
+    # 報告者(testninja)自身の変更: line2を追加してcommitし、commit_hashを報告YAMLに記録
+    printf 'echo "reporter own change"\n' >> "$TEST_TMPDIR/src/test_file.sh"
+    git -C "$TEST_TMPDIR" add src/test_file.sh
+    git -C "$TEST_TMPDIR" commit -q -m "testninja: own change"
+    local commit_hash
+    commit_hash=$(git -C "$TEST_TMPDIR" rev-parse HEAD)
+    run bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" commit_hash "$commit_hash"
+    [ "$status" -eq 0 ]
+
+    # 他忍者のWIP: 同一ファイルの別行(非重複hunk)に未commit変更を残す
+    printf 'echo "other ninja wip"\n' >> "$TEST_TMPDIR/src/test_file.sh"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"uncommitted non-overlapping diff"* ]]
+    [ -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}
+
+@test "report_received: reporter's own uncommitted hunk overlapping committed range in same file → BLOCKED (AC2)" {
+    setup_git_test_env
+
+    # 報告者(testninja)がline2を変更してcommitし、commit_hashを報告YAMLに記録
+    printf 'echo "line2"\n' >> "$TEST_TMPDIR/src/test_file.sh"
+    git -C "$TEST_TMPDIR" add src/test_file.sh
+    git -C "$TEST_TMPDIR" commit -q -m "testninja: baseline line2"
+    sed -i 's/line2/line2-updated/' "$TEST_TMPDIR/src/test_file.sh"
+    git -C "$TEST_TMPDIR" add src/test_file.sh
+    git -C "$TEST_TMPDIR" commit -q -m "testninja: update line2"
+    local commit_hash
+    commit_hash=$(git -C "$TEST_TMPDIR" rev-parse HEAD)
+    run bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" commit_hash "$commit_hash"
+    [ "$status" -eq 0 ]
+
+    # 報告者自身の未commit hunk: commit済み範囲(line2)と重なる箇所にさらに変更を残す
+    # (他者WIPに偽装してcommit漏れを通さないことを確認)
+    sed -i 's/line2-updated/line2-updated-more/' "$TEST_TMPDIR/src/test_file.sh"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"git_uncommitted_gate"* ]]
+    [[ "$output" == *"BLOCKED"* ]]
+    [ ! -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
 }
 
 @test "report_received: verdict FAIL from binary_checks no → BLOCKED before inbox write" {
