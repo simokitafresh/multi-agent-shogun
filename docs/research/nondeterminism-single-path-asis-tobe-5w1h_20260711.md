@@ -1,8 +1,8 @@
-# 本番再計算の非決定性根治 — AS-IS / TO-BE 5W1H (v1.1)
+# 本番再計算の非決定性根治 — AS-IS / TO-BE 5W1H (v1.2)
 
-作成: 2026-07-11 将軍 | v1.1: 軍師深層レビュー(blt_20260711_005845、A-H全指摘)反映
-源流: cmd_3827 FAIL → cmd_3840偵察設計(GATE CLEAR 2026-07-10 23:03) → 深層レビューREQUEST_CHANGES反映
-正本設計書: DM-signal `docs/research/cmd_3840_nondeterminism_redesign.md`
+作成: 2026-07-11 将軍 | v1.1: 軍師深層レビュー(A-H)反映 | v1.2: 家老運用レビュー(依存・影響範囲・cron・縮退)反映
+源流: cmd_3827 FAIL → cmd_3840偵察設計 → 軍師レビュー → 家老運用レビュー(blt_20260711_014245)
+正本設計書: DM-signal `docs/research/cmd_3840_nondeterminism_redesign.md` (v1.2、§8=運用確定仕様)
 
 ---
 
@@ -52,16 +52,27 @@
 | **Who** | 忍者直列（P1 hotfix cmd→P2-P4本体cmd）。設計は正本設計書+本レビュー反映で確定 |
 | **How** | 下記の実装順P1-P4と二値AC7本。対象縮小禁止（全PF×全日付、PF shard分割で網羅） |
 
-## 4. 確定実装順（軍師レビューで未決断ゼロ化）
+## 4. 確定実装順（軍師+家老レビューで未決断ゼロ化。v1.2でP1を二分）
 
 | Phase | 内容 |
 |---|---|
-| P1 hotfix | full source hash定数化+logical_date 1値固定+immutable input/ledger snapshot+strict manifest provisional保存 |
-| P2 RED | frozen fixtureで全PF×全日付をPF shard分割し、Engine対adapterのsignal/weights/exceptionのexact比較testを先にRED状態で整備（対象縮小禁止） |
-| P3 実装 | 共通pure executor実装、両adapter接続、旧`_compute_pipeline_signals`削除 |
-| P4 GREEN+性能 | 全shard exact GREEN、Stage A warm5 median≤5s/p95≤6s/hard<30s、cold≤15s、RSS非増大、本番fullrecalculateは許可済み1回のみ |
+| **P1a**（単独デプロイ可） | full source identity(40hex、Render環境変数優先)のrun開始1回化+logical_date 1値固定+20桁一意run_id+loop内git呼出0 |
+| **P1b**（全統合test後） | immutable input/ledger snapshot+strict manifest+query guard+全呼出し元/cron対応 |
+| P2 RED | 専用branch/worktreeで全PF×全日付のEngine対adapter exact比較testをRED整備（mainに置かない、対象縮小禁止） |
+| P3 実装 | 同branchで共通pure executor実装、両adapter接続、旧関数削除。GREEN後のみmerge |
+| P4 GREEN+性能 | 全shard exact GREEN、Stage A warm5 median≤5s/p95≤6s/hard<30s、cold≤15s、本番fullrecalculateは許可済み1回のみ |
 
-**二値AC**: ①loop内git hash呼出0・manifest 1/run・unknown/dirtyでwrite0 ②snapshot後のsource SELECT0・ledger query0 ③differential全PF×全日付でsignal/weights exact mismatch0・SKIP0 ④旧関数の定義/呼出0 ⑤ledger guardの不一致提案値write0+manifest_id付与 ⑥性能値達成 ⑦全既存test PASS/SKIP0・schema migration0
+**着手条件**: cmd_3835（同ファイル群を変更中）のGATE CLEAR+作業ツリー整流後。並行編集禁止。
+
+**二値AC（軍師7本+家老7本）**: 軍師分=①loop内git hash呼出0・manifest 1/run・unknown/dirtyでwrite0 ②snapshot後source SELECT0・ledger query0 ③differential exact mismatch0・SKIP0 ④旧関数定義/呼出0 ⑤guard不一致提案値write0+manifest_id ⑥性能値 ⑦既存test PASS/SKIP0・schema migration0。家老分=Ⓐ失敗時はconfig audit含むbusiness write0 Ⓑ5つの本番呼出し元全てで識別情報の伝播一致 Ⓒprovisional→completedでmanifest消失0+run_id衝突test Ⓓ L2失敗→L3/L5実行0+cron nonzero検知 Ⓔstandalone L5のmanifest+L3当日成功必須 Ⓕguard 0件強制 Ⓖ全PF×全日付shard網羅
+
+## 4.5 家老運用レビューで塞がった穴（v1.2）
+
+- **書込み順序の重大穴**: 現コードは入力ロード前にconfig snapshot INSERT+cleanupを実行しており「manifest失敗時write0」が現順序では偽。REPEATABLE READのread-sessionで全入力をmaterialize→manifest確定→**初めて**業務書込み、の順序に確定。失敗時は旧公開データ完全維持
+- **standalone L5経路の未被覆**: precompute単独実行(admin API+02:00UTC fallback cron)がmanifest対象外だった→専用manifest_kind=l5を新設
+- **cronの見かけ成功問題**: L2/L3/月次はHTTP acceptedを即返すためcurl成功≠job成功。endpoint受理前の同期preflight+terminal poll+失敗時nonzeroへ変更。UNKNOWN/DIRTYは恒久エラーとして自動retry禁止+alert
+- **L5 fallback cronの穴**: L3失敗日でもstale DBで走れる→L3当日成功を実行条件に追加
+- **timing書込みの穴**: LayerTimerは例外握り潰し+layer_data全置換でmanifestが消え得る→"_run"予約key+strict UPSERT(失敗raise)+merge方式へ
 
 ## 5. これで何が変わるか（殿の体験）
 
