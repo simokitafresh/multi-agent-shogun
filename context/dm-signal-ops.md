@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-10 cmd_3814 -->
+<!-- last_updated: 2026-07-10 cmd_3831 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -84,8 +84,11 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L862 -->
+<!-- last_synced_lesson: L864 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
+- L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
+- L865: sync-tickers cronは固定オフセット単発curlではなくL0ロック解放待ちリトライにせよ。cmd_3685でL0(sync-prices)所要が19s→~700-850sに増大し、render.yaml固定5分後の単発curlが毎回409で失敗しticker_daily_returnsが凍結した（cmd_3832、docs/research/cmd_3832_sync_tickers_recon.md）
+- L866: recalculate-sync全PF実行のcleanupはmodeに関わらずTickerMonthlyReturnを削除するが再生成はmode=full/tickerのみ。既定mode="portfolio"のため全PF再計算のたびにticker_monthly_returnsが空になっていた。削除ゲートと再生成ゲートは常に対称にせよ（cmd_3832、docs/research/cmd_3832_sync_tickers_recon.md）
 
 ## §36 API認証
 
@@ -808,6 +811,7 @@ import metrics_research_engine as MRE
 - L856: 既存の同種native-calendar実装を先に探せば設計時間とリスクを削減できる+大規模パラメータ空間の網羅集計はDNA group単位の重複排除で「間引き」なしに実現できる（cmd_3814）
 - L859: PipelineEngine検証スクリプトはrebalance_triggerを無視した固定target_date(直前営業日)を使うと非monthlyリバランスPFを誤って乖離判定する（cmd_3818）
 - L860: PostgreSQL binary COPYは列名タグを持たない位置ベース形式。source/target間の列順不一致がUTF8デコードエラー等の破損を生む（cmd_3819）
+- L863: LayerTimerは新規Layer追加時にLAYER_ORDER+layer()登録を怠ると壁時計TOTALだけ正しく内訳が誤解を招く（cmd_3831）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
