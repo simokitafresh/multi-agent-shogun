@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-10 cmd_3809 -->
+<!-- last_updated: 2026-07-11 cmd_karo_hotfix_ga220_dm_signal_research_freshness_202607110139 -->
+<!-- dm_signal_research_reflux: fingerprint=73774e205aac20fe890bdb263ed4653fa6dcf9a17f4a8b3d1164fdcd8b698da3; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgwqc1NCB2MS4y6YKE5rWB5riI44G/ -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -677,6 +678,14 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 - cmd_3808の「partial/non-Cash weight偽陽性」分類は殿の理論制約(Cashなし、band時relative/safe haven各50%、weights合計1.0)で再検証対象となり、cmd_3809で本番DB/API/Renderログ/コード行を照合した。
 - 結論: band片側欠落ではない。対象PF「奥義-GS-変わり身-鉄壁」の本番DB weightsは2025-12/2026-01/2026-06いずれも合計1.0、`signal_decision_ledger`該当なし。`matched_weight=0.5`はFoF表示展開後に表示weightsとmatched_weightが別基準で残る不整合疑い。
 - 正本: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3809_band_weights_half_bug.md`。運用修正候補は`context/dm-signal-ops.md` §60。
+
+## §54. Stage A/vectorized経路再設計 v1.1 (cmd_3840, 2026-07-11)
+
+- 結論: 決定性実証はDM-safe 1PF・先頭5,000行・単一プロセス・vectorized経路に限定。manifest正本は実際にロードしたimmutable artifactのcanonical SHA-256とし、`logical_date`を1 run 1値に固定。snapshot確定後のsource SELECTとflush時ledger queryは0件を強制する。
+- 実装順: P1 manifest/snapshot hotfix → P2全PF×全日付differential RED → P3 pure executor SSOT化 → P4 exact GREEN+性能検証。旧 `_compute_pipeline_signals` は定義・呼出とも0件を完了条件とする。
+- GA-220 bounded分類: `last_updated=2026-07-10`以後のgate対象commitは3件。研究索引反映対象は`a00e1253` 1件、`44f29418`/`85553199` 2件はcmd_3841の可視性設定孤児清掃・証跡来歴修正であり運用ドメインのため非対象。
+→ 正本: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` §7
+- v1.2追記(家老運用レビュー blt_20260711_014245反映): P1をP1a(source identity+logical_date+run_id、単独deploy可)/P1b(snapshot+manifest+guard+cron対応)に分割。書込み順序を「read-session全materialize→manifest確定→初めてbusiness write」に確定(現コードは入力load前にconfig snapshot INSERT=write0が偽だった)。standalone L5にmanifest_kind=l5新設。cronはHTTP accepted≠job成功のためterminal poll+失敗nonzero化、L5 fallbackはL3当日成功を実行条件に追加。追加AC7本(業務write0/5caller伝播/manifest消失0/L2失敗遮断/L5被覆/guard0件/全shard網羅)。→ 正本§8
 
 ---
 

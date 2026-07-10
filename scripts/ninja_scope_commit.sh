@@ -49,6 +49,11 @@ done
 
 # Path限定addは他者の既存stageを変更しない。--onlyは共有indexの他pathをcommitしない。
 git add -- "${paths[@]}"
+if [[ -x "$repo_root/../multi-agent-shogun/scripts/dm_signal_research_reflux_guard.sh" ]]; then
+    bash "$repo_root/../multi-agent-shogun/scripts/dm_signal_research_reflux_guard.sh" check --repo "$repo_root"
+elif [[ -x "/mnt/c/tools/multi-agent-shogun/scripts/dm_signal_research_reflux_guard.sh" ]]; then
+    bash "/mnt/c/tools/multi-agent-shogun/scripts/dm_signal_research_reflux_guard.sh" check --repo "$repo_root"
+fi
 git commit --only -m "$message" -- "${paths[@]}"
 
 # 二値postcondition: commit treeは指定scopeのみ、他者stageはそのまま残る。
