@@ -10,7 +10,8 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-10T11:56:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-10T20:00:00+09:00 -->
+Script refs verified: 2026-07-10 cmd_karo_hotfix_skill_refs_202607101945 follow-up. `parse_deploy_task_args`と`tests/unit/test_deploy_task_yaml_injection.bats`を実検分し、`--direct --yaml <yaml_file> <ninja_name>`が正式対応済みで、source YAMLのACをcmd sourceで上書きせず保持する契約を確認。trainingは手製の不完全YAMLを禁止する一方、`queue/training`のauto-generated完全AC YAMLはこの複合経路を正本として配備する。
 Script refs verified: 2026-07-10 cmd_karo_hotfix_skill_ref_freshness_202607101154_normal. `deploy_task.sh` checked_at以降の変更(b458129d1)をgit showで確認。ACに'push'語を含むtask YAMLへ配備時`push_allowed:true`を自動付与する`inject_push_allowed()`を追加(cmd_3820 G2ガードBLOCK再発防止、Level5知識注入)。`deploy_task_apply_task_mutations`内の内部注入チェーン追加のみで、`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>` の呼び出し契約、通知、report template生成、stale field resetは変更なし。karo-direct手順の書き換えは不要。
 
 <!-- script_refs_checked_at: 2026-07-08T10:26:09+09:00 -->
@@ -45,7 +46,8 @@ Script refs verified: 2026-06-11 ab0d45dad. `deploy_task.sh` はzero-useful less
 
 内部で使う `deploy_task.sh` は次の2系統:
 - `bash scripts/deploy_task.sh --yaml <yaml_file> <ninja_name>`: ci_fix/recon2/hotfix用。YAML内の `parent_cmd:` を `CMD_ID` として自動取得する。
-- `bash scripts/deploy_task.sh --direct <ninja_name> <cmd_id>`: training用。`cmd_id` は `cmd_training_...` 形式にする。
+- `bash scripts/deploy_task.sh --direct <ninja_name> <cmd_id>`: trainingテンプレートをその場で自動生成する場合。
+- `bash scripts/deploy_task.sh --direct --yaml <yaml_file> <ninja_name>`: `queue/training`でauto-generated済みの完全AC YAMLを配備する場合。source YAMLのACを保持する正本経路。
 
 ## 実行フロー
 
@@ -120,18 +122,22 @@ acceptance_criteria:
   AC2: {description: "修正対象ファイル・行番号・波及先を明記"}
 ```
 
-### training（必ず deploy_task.sh --direct を使え）
+### training（必ず deploy_task.sh --direct 系経路を使え）
 ```bash
-# ★ training だけは /tmp 手動YAML禁止。deploy_task.sh --direct が修行テンプレート(purpose/AC)を自動注入する。
+# 手製YAMLを使わず、その場で修行テンプレート(purpose/AC)を自動注入する場合。
 # cmd_id は cmd_training_L4_r<round>_<ninja_name> 形式など、cmd_training_ で始める。
 bash scripts/deploy_task.sh --direct <ninja_name> cmd_training_L4_r<round>_<ninja_name>
 # --direct は parent_cmd/task_id/status を自動設定し、cmd_training_* なら target_path 自動選定後に
 # inject_direct_training_template が purpose/ACを自動注入する。inbox_write は deploy_task.sh 内部で自動送信されるため不要。
+
+# queue/trainingが生成した完全AC YAMLを使う場合。--directと--yamlの併用が正式契約。
+# deploy_task.shはsource YAMLのACをcmd sourceで上書きせず、そのまま保持する。
+bash scripts/deploy_task.sh --direct --yaml queue/training/<generated_task>.yaml <ninja_name>
 ```
-手動でpurpose/ACを書いてはならない。inject_direct_training_template が自動注入する。
+`--direct`単独では手動でpurpose/ACを書かず、`inject_direct_training_template`に生成させる。`--direct --yaml`は`queue/training`のauto-generated完全AC YAMLに限る。
 
 ## 制約
-- training タイプは deploy_task.sh --direct を使え。/tmp 手動YAML方式は AC 未注入を引き起こす（cmd_training_L4_r16 事故実証済み）
+- training タイプは `deploy_task.sh --direct`単独、または`queue/training`のauto-generated完全AC YAMLに限り`deploy_task.sh --direct --yaml <yaml_file> <ninja_name>`を使う。`/tmp`手製YAMLは禁止（AC未注入を引き起こす。cmd_training_L4_r16事故実証済み）
 - ci_fix/recon2/hotfix タイプは `/tmp` に一時YAMLを作り、必ず `bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>` で配備する。直接 `cp` 禁止（stale field reset、parent_cmd/task_id/status設定、注入チェーン、report template生成、safe_inbox_write通知を迂回するため）
 - `/tmp` YAMLには `parent_cmd: cmd_karo_<task_type>_<簡潔な説明>` を入れる。`--yaml` はこの値を配備cmdとして読む。
 - 再配備前に対象忍者の既存reportを確認する。`deploy_task.sh` がpending own report / completed peer reportをBLOCKした場合は、cmd_complete_gate完了または別忍者選定まで配備済み扱いにしない。
