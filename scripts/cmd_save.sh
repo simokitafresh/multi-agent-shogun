@@ -5431,8 +5431,8 @@ check_param_space_against_results() {
         [[ -z "$PROJECT_ROOT_FOR_CMD" ]] && return 0
     fi
     # results YAML候補が存在しなければpython3不要 (cmd_2077最適化)
-    if ! find "$PROJECT_ROOT_FOR_CMD/outputs/analysis" -name "*.yaml" \
-            -maxdepth 3 2>/dev/null | grep -q .; then
+    # -print -quit: 存在判定だけなので最初の1件で走査打ち切り(NTFS上のfind全列挙0.6s→ms級)
+    if [[ -z "$(find "$PROJECT_ROOT_FOR_CMD/outputs/analysis" -maxdepth 3 -name "*.yaml" -print -quit 2>/dev/null)" ]]; then
         return 0
     fi
 
