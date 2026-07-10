@@ -74,6 +74,23 @@ _yaml_field_set_normalize() {
     printf '%s' "$_YFS_NORM"
 }
 
+# cmd_karo_hotfix_queue_yaml_atomicity_202607110113: 公開前にYAML構文を検証する。
+# awk生成物が不正(例: 値に生の改行が混入し裸テキストが行頭に漏れる)でも、
+# 検証をパスしない限り旧ファイルへは一切書き戻さない(fail-closed)。
+_yaml_field_set_validate_parseable() {
+    local candidate_file="$1"
+    python3 -c '
+import sys
+import yaml
+try:
+    with open(sys.argv[1], encoding="utf-8") as fh:
+        yaml.safe_load(fh)
+except Exception as exc:
+    print(f"invalid_yaml: {exc}", file=sys.stderr)
+    sys.exit(1)
+' "$candidate_file"
+}
+
 _yaml_field_set_apply_root() {
     local yaml_file="$1"
     local out_file="$2"
@@ -795,8 +812,13 @@ yaml_field_set() {
             ;;
     esac
     local tmp_file
-    # WSL2最適化: tmpfsにtemp作成(NTFS mktemp/mv削減)。flock内のcat>yaml_fileで書込み
-    tmp_file="$(mktemp)" || {
+    # cmd_karo_hotfix_queue_yaml_atomicity_202607110113: 同一ディレクトリ(同一FS)にtemp作成。
+    # 旧実装はtmpfs(/tmp)にtemp作成しflock内cat>yaml_fileで公開していたが、
+    # cat>は open(O_TRUNC)直後にwriteするため truncate-write間に一瞬 0byte/不完全な状態が生じ、
+    # flockを取らない読み手(gate_queue_yaml_parse.sh等)がその瞬間を読むと
+    # YAMLError/UnicodeDecodeErrorで破損を観測する(2026-07-11 01:09 kagemaru.yaml破損の実因)。
+    # 同一ディレクトリでmktempし最後にmv(rename)することで、公開を単一のatomic操作にする。
+    tmp_file="$(mktemp "${yaml_file}.XXXXXX")" || {
         echo "FATAL: yaml_field_set: failed to create temp file for $yaml_file" >&2
         return 1
     }
@@ -846,10 +868,18 @@ yaml_field_set() {
             return 1
         fi
 
-        # WSL2最適化: mv NTFS→NTFS(~40ms)をcat tmpfs→NTFS(~10ms)に置換。flock内なので競合安全
-        if ! { cat "$tmp_file" > "$yaml_file" && rm -f "$tmp_file"; }; then
+        # 公開前にYAML構文を検証する。不正なら旧ファイルは一切変更せず失敗する(fail-closed)。
+        if ! _yaml_field_set_validate_parseable "$tmp_file" 2>&1; then
             rm -f "$tmp_file"
-            echo "FATAL: yaml_field_set: write failed: $yaml_file" >&2
+            echo "FATAL: yaml_field_set: generated content failed YAML validation, original file kept unchanged: $yaml_file" >&2
+            return 1
+        fi
+
+        # 同一ファイルシステム上のrename(mv)はatomicであり、読み手が
+        # truncate-write間の不完全な状態を観測することがない。
+        if ! mv "$tmp_file" "$yaml_file"; then
+            rm -f "$tmp_file"
+            echo "FATAL: yaml_field_set: atomic publish (mv) failed: $yaml_file" >&2
             return 1
         fi
 
@@ -1114,6 +1144,13 @@ END {
         if [ "$rc" -ne 0 ]; then
             rm -f "$tmp_file"
             echo "FATAL: yaml_field_set_batch: awk failed (rc=$rc) for $yaml_file" >&2
+            return 1
+        fi
+
+        # 公開前にYAML構文を検証する。不正なら旧ファイルは一切変更せず失敗する(fail-closed)。
+        if ! _yaml_field_set_validate_parseable "$tmp_file" 2>&1; then
+            rm -f "$tmp_file"
+            echo "FATAL: yaml_field_set_batch: generated content failed YAML validation, original file kept unchanged: $yaml_file" >&2
             return 1
         fi
 

@@ -567,6 +567,90 @@ print('CMD_ID_SINGLE_LINE_OK')
     [[ "$output" == *"CMD_ID_SINGLE_LINE_OK"* ]]
 }
 
+# ── cmd_karo_hotfix_queue_yaml_atomicity_202607110113 回帰テスト ──
+# Origin: 2026-07-11 01:09 queue/tasks/kagemaru.yaml破損(queue YAML parse error)。
+# 直接原因: (1) 公開が非atomicなcat>truncateで、flockを取らない読み手(gate等)が
+#   truncate-write間の一瞬(空/不完全な内容)を観測しうる。
+#   (2) list/idブロック向けの書込み関数(_yaml_field_set_apply)には改行を含む値の
+#   ガードがなく、値に生の改行が混入すると裸テキストが行頭に漏れ不正YAMLを公開していた。
+# 修正: 公開前にpython3 yaml.safe_loadで検証しfail-closed、公開は同一ディレクトリ
+#   mktemp+mv(atomic rename)に統一。
+
+@test "不正YAML注入: 値に生の改行が混入しても公開前に検証で拒否し旧ファイルを変更しない" {
+    local yaml="$TEST_TMPDIR/corrupt_injection.yaml"
+    cat > "$yaml" <<'EOF'
+- id: AC1
+  status: pending
+  description: test
+- id: AC2
+  status: pending
+EOF
+    cp "$yaml" "$yaml.orig"
+
+    run bash "$YFS" "$yaml" AC1 status $'line1\nline2 malformed'
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"FATAL"* ]]
+
+    # 旧ファイルはバイト単位で不変であること(公開前に検証がブロックした証跡)
+    run diff "$yaml.orig" "$yaml"
+    [ "$status" -eq 0 ]
+
+    run python3 -c 'import sys, yaml; yaml.safe_load(open(sys.argv[1], encoding="utf-8"))' "$yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "並行アクセス: flockを取らない読み手が公開中に破損/空/parse errorを一切観測しない" {
+    # $BATS_TMPDIR(=/tmp)はtmpfsでwriteがμs級のため非atomic実装でもrace窓が狭すぎて
+    # 再現しない(本テストで実測済み)。実運用の queue/ 配下と同じ /mnt/c(drvfs, 遅延あり)
+    # 配下にscratch領域を作り、修正前実装で実測した破損(10-16%のreadがbad)が
+    # 修正後は0件であることを本物の環境条件で保証する。
+    local race_dir="$PROJECT_ROOT/tmp/yfs_race_test_$$"
+    mkdir -p "$race_dir"
+    local yaml="$race_dir/race_target.yaml"
+    {
+        echo "task:"
+        echo "  status: pending"
+        echo "  ninja: hayate"
+        for i in $(seq 1 300); do
+            echo "  note_${i}: \"padding value ${i} to widen the publish window\""
+        done
+    } > "$yaml"
+
+    # flockを取らない読み手を背景で走らせ、書込み中に空/不完全な内容を読まないか検証する。
+    python3 -c "
+import time, yaml, sys
+deadline = time.time() + 3.0
+bad = 0
+total = 0
+while time.time() < deadline:
+    total += 1
+    try:
+        with open('$yaml', encoding='utf-8') as f:
+            data = yaml.safe_load(f)
+        if not data:
+            bad += 1
+    except Exception:
+        bad += 1
+with open('$race_dir/reader_result.txt', 'w') as out:
+    out.write(f'{bad} {total}\n')
+" &
+    local reader_pid=$!
+
+    end=$((SECONDS + 3))
+    local i=0
+    while [ $SECONDS -lt $end ]; do
+        bash "$YFS" "$yaml" task status "in_progress_${i}" >/dev/null 2>&1 || true
+        i=$((i + 1))
+    done
+    wait "$reader_pid"
+
+    read -r bad total < "$race_dir/reader_result.txt" || true
+    echo "race test: bad=${bad} total=${total} writer_iterations=${i}"
+    rm -rf "$race_dir"
+    [ "$total" -gt 0 ]
+    [ "$bad" -eq 0 ]
+}
+
 @test "cmd_id list: 対象にfieldが無い時は対象直下に追加する" {
     yaml="$BATS_TMPDIR/cmdid_insert.yaml"
     cat > "$yaml" <<'EOF'

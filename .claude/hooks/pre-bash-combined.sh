@@ -390,6 +390,14 @@ if [[ -n "${command:-}" && "$command" == *'queue/inbox'* ]]; then
 fi
 
 # === Guard 1: no-verify + hook bypass detection (G3: extended beyond commit-only) ===
+# GA-220: DM-Signal docs/research commitは、staged blob fingerprintと本陣context reflux証跡が
+# 一致しなければ直接git commit経路でも公開前にBLOCKする。read-only commandには非発火。
+if [[ -n "${command:-}" && "$command" == *git* && "$command" == *commit* ]]; then
+    if ! bash "$SCRIPT_DIR/scripts/dm_signal_research_reflux_guard.sh" check-command "$command"; then
+        emit_deny "BLOCK(GA-220): DM-Signal research commit requires matching context reflux fingerprint"
+    fi
+fi
+
 # Outer fast-check: --no-verify, HUSKY=0, or potential git commit -n
 if [[ "$payload" == *'--no-verify'* || "$payload" == *'HUSKY=0'* ]] || \
    [[ "$payload" == *'commit'* && "$payload" == *' -n '* ]]; then
@@ -479,6 +487,24 @@ if [[ "$payload" == *'logs/karo_workarounds.yaml'* ]]; then
             || [[ "$command" =~ $wa_sed_pattern ]] || [[ "$command" =~ $wa_awk_pattern ]] \
             || [[ "$command" =~ $wa_yfs_pattern ]] || [[ "$command" =~ $wa_python_pattern ]]; then
             emit_deny "BLOCKED: logs/karo_workarounds.yamlへのBash直接書込み禁止。karo_workaround_log.sh経由で記録せよ。brainwash_checkとALERT経路を迂回させないため。"
+        fi
+    fi
+fi
+
+# === Guard 3.6: queue/tasks-deny (bash direct write to task YAML) ===
+# cmd_karo_hotfix_queue_yaml_atomicity_202607110113: queue/tasks/*.yaml は
+# queue/reports/ と同様に他エージェント/gateが常時読む共有運用YAML。sed -i/リダイレクト/
+# tee/python3 open()での直接書換えはtruncate-writeの一瞬を晒し、読み手側にYAMLError/デコード
+# エラーを発生させる(2026-07-11 01:09 kagemaru.yaml破損の実例)。yaml_field_set.sh経由のみ許可する。
+if [[ "$payload" == *'queue/tasks/'* ]]; then
+    if [[ -n "${command:-}" && "$command" != *'yaml_field_set'* ]]; then
+        task_redirect_pattern='>+[[:space:]]*[^ ]*queue/tasks/[^ ]*\.yaml'
+        task_tee_pattern='tee[[:space:]].*queue/tasks/[^ ]*\.yaml'
+        task_sed_pattern='(^|[;&|])[[:space:]]*sed[[:space:]].*(-i|--in-place).*queue/tasks/[^ ]*\.yaml'
+        task_python_pattern='python3?.*open.*queue/tasks/[^ ]*\.yaml'
+        if [[ "$command" =~ $task_redirect_pattern ]] || [[ "$command" =~ $task_tee_pattern ]] \
+            || [[ "$command" =~ $task_sed_pattern ]] || [[ "$command" =~ $task_python_pattern ]]; then
+            emit_deny "BLOCKED: queue/tasks/へのBash直接書換え(sed -i/リダイレクト/tee/python3 open())は禁止。bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value> 経由で書き込みせよ(非atomicな公開は破損の実因: 2026-07-11 kagemaru.yaml破損)。"
         fi
     fi
 fi

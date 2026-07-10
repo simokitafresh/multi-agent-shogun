@@ -552,6 +552,22 @@ pre_bash_combined_eval_command() {
         fi
     fi
 
+    # cmd_karo_hotfix_queue_yaml_atomicity_202607110113: queue/tasks/ と shogun_to_karo.yaml は
+    # queue/reports/ と同様に他エージェント/gateが常時読む共有運用YAML。sed -i/リダイレクト/tee/
+    # python3 open()での直接書換えはtruncate-writeの一瞬を晒し、読み手側にYAMLError/デコード
+    # エラーを発生させる(2026-07-11 01:09 kagemaru.yaml破損の実例)。yaml_field_set.sh(またはそれを
+    # 内部で使う正規helperスクリプト)経由のみを許可する。
+    if { [[ "$command" == *'queue/tasks/'* ]] || [[ "$command" == *'shogun_to_karo.yaml'* ]]; } \
+        && [[ "$command" != *'yaml_field_set'* ]]; then
+        task_yaml_pattern='(>+|\|[[:space:]]*tee)[[:space:]]*[^ ]*(queue/tasks/[^ ]*\.yaml|shogun_to_karo\.yaml)'
+        task_sed_pattern='sed[[:space:]]+-i[[:space:]].*(queue/tasks/[^ ]*\.yaml|shogun_to_karo\.yaml)'
+        task_python3_pattern='python3.*open.*(queue/tasks/[^ ]*\.yaml|shogun_to_karo\.yaml)'
+        if [[ "$command" =~ $task_yaml_pattern ]] || [[ "$command" =~ $task_sed_pattern ]] || [[ "$command" =~ $task_python3_pattern ]]; then
+            pre_bash_combined_emit_deny "BLOCKED: task/cmd運用YAMLへの直接書換え(sed -i/リダイレクト/tee/python3 open())は禁止。bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value> 経由で書き込みせよ(非atomicな公開は破損の実因: 2026-07-11 kagemaru.yaml破損)。"
+            return 1
+        fi
+    fi
+
     if [[ "$command" =~ bats[[:space:]]+tests/unit/?[[:space:]]*$ ]] || [[ "$command" =~ bats[[:space:]]+tests/unit/\* ]]; then
         pre_bash_combined_emit_deny "BLOCK: bats tests/unit/ 全量実行は禁止。変更対象のテストファイルのみ指定せよ(見込み12分超)。"
         return 1
