@@ -393,6 +393,7 @@ def request_training_task(row, unchanged_streak, state_entry):
                 "--gate", row.get("gate") or "unknown_gate",
                 "--reason", shorten(row["reason"], 300),
                 "--streak", str(unchanged_streak),
+                "--failure-at", str(row.get("last_fail") or ""),
             ],
             cwd=repo_root,
             text=True,
