@@ -1078,3 +1078,10 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - **事故経緯**: 6/29に裁定コミット`7abaec5c`(Fusion独自visibilityのため全PF必要)でフィルタ除去→旧仕様前提の`test_fusion_api.py`が未更新のまま残存→7/3のCI RED自走修正`b73e5656`がテストの仕様正当性を確認せず**コード側にフィルタを再追加=裁定逆行**→Fusionが11体しか返さずフォルダー表示全滅(殿報告7/10 17:19)。cmd_3834で裁定復元+テスト準拠化。
 - **教訓**: (1)CI RED修正は当該テストの仕様正当性(直近裁定との整合)を先に確認せよ。テストに合わせてコードを曲げると裁定が覆る (2)裁定でコードを変えたら旧仕様前提テストを同時に更新せよ (3)UPSERT系のupdated_atは値変化の証拠にならない(将軍のcmd_3833誤起票=LS-A09(32)再発)。
 - 因果リンク: [[殿裁定20260710_1744_Fusion可視性]] -> [[CI修正b73e5656裁定逆行]] -> [[cmd_3834フィルタ裁定復元]]。記憶DB: knowledge:bb944c45e23802c3
+
+## §62 Tier別PF可視性の承認完成形 (cmd_3837, 2026-07-10)
+
+- 本番`tier_visibility_settings`を差分追記で復旧。実効visible件数はBasic 5 / Standard 22 / AddOn 22 / NewStandard 17 / premium 27。承認対象hidden 59件のみ`hide_portfolio=false, hide_signal=false, hide_components=true`へ変更し、Basic孤児ID 1件を非表示化。既存visible/非対象portfolio/global設定の差分は0。
+- Viewer APIではfolder非表示がportfolio可視性より優先する。奥義-GS-分身3体のfolder `5396fe40-8f48-4619-aebc-402476c9120a`はglobal hiddenのため、Standard既存overrideに加えてAddOn/premiumへ`hidden=false`を各1キー追加。API実応答も5/22/22/17/27で完全一致。
+- 復旧・rollback証跡: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3837_visibility_pre_change_backup.json`、`cmd_3837_visibility_post_db.json`、`cmd_3837_folder_override_diff.json`、`cmd_3837_visibility_post_folder_db.json`、`cmd_3837_viewer_api_verify.json`。再実行script: `/mnt/c/Python_app/DM-signal/scripts/oneshot/cmd_3837_visibility_diff.py`。
+- 因果リンク: [[殿指示20260710_2028_note対応表準拠設定]] -> [[cmd_3837差分書き込み]] -> [[tier別可視性完成形]]。
