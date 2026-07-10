@@ -361,6 +361,12 @@ v7吸収(2026-05-19):
     - 軍師D0(brainwash_check全level拡張 c8f6062a)のCI RED副作用: consolidated testのfixture旧形式残存(cdf6747cで修正)。新フィールド必須化時はfixture影響を確認せよ(LK005 v2/LG026と同根)
     v3統合吸収(2026-06-09, cmd_3253):
     - gate修正cmdはtest_select波及先テストを配備前に確認せよ(LK005: cmd_2798でgate修正→test_selectに間接依存マッピングなし→CI RED。cmd_2802で修正済み。v2: consolidated test wrapper更新漏れ cmd_3029。grep {対象名} tests/で事前確認)
+    v6吸収(2026-07-10, 家老D0 gate高速化+誤判定修正。origin: [[cmd_3838]] -> [[gate意味分類/cache依存欠落]] -> [[偽BLOCK2件+偽CLEAR危険]]):
+    - gate高速化のcacheは全依存ファイルのcontent hashをキーにし原子的に書け(部分キーは依存変更を見逃し偽CLEAR/stale偽BLOCKを生む)
+    - scout入力と変更対象は分離して判定せよ(混同すると偵察cmdが実装扱いで偽BLOCK)
+    - 未知task_typeは実装扱いのfail-closedにせよ(未知を素通しにすると検査回避経路になる)
+    - gate修正後は対象回帰テスト+所要時間の実測をセットで記録せよ(速度もバグ: 殿厳命2026-07-10)
+    - 実装証拠: e34933ff3,70bfa75f4,790504963,f025df5aa,64eb1316a,0a41c0110
   source_ids: [LK002, LK003, LK004, LK008, LK011, LK013, LK039, LK053, LK074, LK077, LK082, LK083, LK084, LK087, LK090, LK001b, LK011b, LK012b, LK007, LK009, LK010, LK005i]
   created_at: '2026-04-24'
   automated: true
