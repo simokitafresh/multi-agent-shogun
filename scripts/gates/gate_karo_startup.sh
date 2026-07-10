@@ -2177,6 +2177,17 @@ for ninja in $_KARO_NINJA_NAMES; do
     [ -f "$_frm_report_full" ] || continue
     _frm_report_status=$(awk '/^status:/ { print $2; exit }' "$_frm_report_full" 2>/dev/null)
     [ "$_frm_report_status" = "completed" ] || continue
+    # report.status=completed means that the report document is complete; it
+    # does not mean that the task succeeded.  A completed report whose verdict
+    # is FAIL is the canonical terminal record for a failed task and therefore
+    # is not a state mismatch.  Only success-like/unknown verdicts need the
+    # stale mismatch escalation below.
+    _frm_report_verdict=$(awk '/^verdict:/ { print $2; exit }' "$_frm_report_full" 2>/dev/null)
+    if [ "$_frm_report_verdict" = "FAIL" ]; then
+        echo "  CLOSED_FAIL: ${ninja} task=failed report=completed verdict=FAIL (report=${_frm_report_rel})"
+        _frm_wait_count=$((_frm_wait_count + 1))
+        continue
+    fi
     _frm_superseded_by=$(awk '/^[[:space:]]*superseded_by:/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'"'"']/,"",v); gsub(/^[[:space:]]+|[[:space:]]+$/,"",v); print v; exit }' "$_frm_task_file" 2>/dev/null)
     if [ -n "$_frm_superseded_by" ]; then
         if awk -v cmd="$_frm_superseded_by" 'BEGIN { found=0 } $2 == cmd && $3 == "CLEAR" { found=1 } END { exit found ? 0 : 1 }' "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null; then

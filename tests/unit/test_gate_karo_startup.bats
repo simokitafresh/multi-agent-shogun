@@ -793,6 +793,26 @@ EOF
     [[ "$output" == *"OK: failed×report completedの乖離なし"* ]]
 }
 
+@test "failed task with completed FAIL report → closed failure, no 乖離ALERT" {
+    mkdir -p "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/tasks/hanzo.yaml" <<'YAML'
+task:
+  status: failed
+  report_path: queue/reports/hanzo_report_cmd_test.yaml
+YAML
+    cat > "$TEST_TMPDIR/queue/reports/hanzo_report_cmd_test.yaml" <<'EOF'
+status: completed
+verdict: FAIL
+EOF
+    touch -d "25 minutes ago" "$TEST_TMPDIR/queue/tasks/hanzo.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CLOSED_FAIL: hanzo task=failed report=completed verdict=FAIL"* ]]
+    [[ "$output" == *"OK: failed×report completedの未宣言乖離なし"* ]]
+    [[ "$output" != *"ALERT: hanzo task=failed report=completed 乖離"* ]]
+}
+
 # === Test 10: workarounds傾向表示(workaroundあり) ===
 @test "workarounds present → shows category and count" {
     cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
