@@ -694,6 +694,7 @@ lessons:
   created_at: '2026-07-10'
   automated: true
   enforcement: 'context/dm-signal-ops.md §42改定済み+memory_db knowledge:b999e6ef40de164f。cmd起票時q12/貫通確認'
+  superseded_by: 'CLAUDE.md恒久ルール「可逆なら行動せよ」(2026-07-10反映済み) + LS-A08(8)待ちの合理性テスト。原文はCLAUDE.md/dm-signal-ops §42が正本(active上限31対応 2026-07-10)'
 - id: 'LS086'
   title: '設計書クローズ時の実装cmd未起票チェック — 設計書完成で満足する先送り'
   origin: '[[殿実装確認20260710_0720_0724]] -> [[設計書完成で先送り2連発]] -> [[LS086クローズ時起票照合]]'

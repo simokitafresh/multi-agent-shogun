@@ -9,6 +9,9 @@ description: |
 quality_metric: "当該スキルで配備した偵察2名タスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
+<!-- script_refs_checked_at: 2026-07-10T11:56:00+09:00 -->
+Script refs verified: 2026-07-10 cmd_karo_hotfix_skill_ref_freshness_202607101154_normal. `deploy_task.sh` checked_at以降の変更(b458129d1)をgit showで確認。ACに'push'語を含むtask YAMLへ配備時`push_allowed:true`を自動付与する`inject_push_allowed()`を追加(cmd_3820 G2ガードBLOCK再発防止、Level5知識注入)。`deploy_task_apply_task_mutations`内の内部注入チェーン追加のみで、1人目 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の呼び出し契約、safe_inbox_write通知、report template生成は変更なし。recon-dual手順の書き換えは不要。
+
 <!-- script_refs_checked_at: 2026-07-08T10:26:09+09:00 -->
 
 Script refs verified: 2026-07-08 cmd_karo_hotfix_skill_refs_202607081021. `deploy_task.sh` checked_at以降の変更(edb26ea1/0c73c7d1/f5f7600d)をgit showで確認。edb26ea1はrecon/scoutタイプreport templateへ`verified_existing_dependency: []`雛形とコメント例を追加(LG037除外宣言用、recon-dualの1人目scoutテンプレートにも及ぶ)。0c73c7d1はtask YAML配備batchに`deployed_at`/`acknowledged_at`/`done_at`/`completed_at`初期化を追加(throughput計測用)。f5f7600dはlesson/semantic/memory-db注入4関数のキャッシュ経路統一による内部性能改善(約140秒→約3秒)のみ。いずれも1人目 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の呼び出し契約、safe_inbox_write通知は変更なし。recon-dual手順の書き換えは不要。

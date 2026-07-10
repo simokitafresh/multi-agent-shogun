@@ -10,6 +10,9 @@ description: |
   DO NOT TRIGGER: 同一CLI内の /model 操作（Claude系内でOpus↔Sonnet等）、レイアウト全崩壊（→/reset-layout）
 ---
 
+<!-- script_refs_checked_at: 2026-07-10T11:56:00+09:00 -->
+<!-- 検分: cli_lookup.sh/ninja_monitor.sh 未commit差分(2026-07-10時点ワーキングツリー、要再検証)を確認。(1)cli_lookup.shに`codex_config_apply_agent()`/`codex_config_restore()`を追加。settings.yamlのper-agent`model_name`が`gpt-*`の場合、末尾suffix(low/medium/high/xhigh)を`model_reasoning_effort`、`service_tier`を`~/.codex/config.toml`へ一時適用しrespawn後に復元する。(2)`cli_model_display()`に`gpt-5.6-sol/terra/luna`等の表示ラベルを追加。(3)ninja_monitor.shの`safe_send_clear()`(idle /clear等の自動respawn経路)と`check_ninja_cli_dead()`(死亡pane自動復旧経路)がrespawn-pane直前直後に上記2関数を呼ぶよう変更。`shogun_cli_switch.sh`本体(`switch_cli_mode.sh`のrespawn-pane呼出し=Step2手動切替経路)には未接続で、Options/Step2/Step4記載の呼び出し契約・idle判定・respawn-pane -k実行手順は変更なし。下記「per-agent effort回避策」の揮発性注記のみ影響あり(該当箇所に追記) -->
+
 <!-- script_refs_checked_at: 2026-07-09T14:56:35+09:00 -->
 <!-- 検分: ninja_monitor.sh edc86c525(reflux promotion候補除外の教訓ID正規表現をLS限定からLS/LK/LG/L全prefix対応へ拡張)+2734ed518(check_karo_completion_notify_gap追加=軍師LGTM後に家老がbulletin/将軍inboxへ通知しない場合を検知する新規チェック)。いずれもreflux/completion通知検知系の内部追加で、idle判定(check_idle)、respawn-pane -k実行手順、cli_launch_cmd()/cli_lookup.sh経由の起動契約、CLI/version切替契約には無関係 -->
 
@@ -86,6 +89,8 @@ Codex CLIには`--reasoning-effort`起動引数がない。per-agent effortはco
 3. `sed -i 's/model_reasoning_effort = "medium"/model_reasoning_effort = "low"/' ~/.codex/config.toml` (即座に戻す)
 4. バナーで `medium fast` を確認
 **制約**: 対象agentが再respawn(/clear等)されるとconfig.toml現在値(low)に戻る(揮発的)。ninja_monitorのidle /clearでrespawnされる忍者はconfig.toml現在値を取得する。
+
+**2026-07-10追記(未commit差分確認・要再検証)**: `cli_lookup.sh`の`codex_config_apply_agent()`/`codex_config_restore()`が`ninja_monitor.sh`の自動respawn経路(`safe_send_clear`=idle /clear系、`check_ninja_cli_dead`=死亡pane復旧)にのみ組み込まれた。該当agentのsettings.yaml `model_name`が`gpt-*`形式で設定されていれば、ninja_monitor起因の自動respawnではeffort/service_tierが一時適用→復元され揮発しなくなる見込み。ただし`switch_cli_mode.sh`(Step2の手動`to-codex`/`to-claude`)経路には未接続のため、手動切替直後は従来通り本回避策の手順が必要。本変更は未commit・無テストのため、実機respawnでの動作確認は次回検証時に実施すること。
 
 ### Step 4: 一次確認（必須）
 
