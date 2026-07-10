@@ -39,7 +39,7 @@ Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234.
 # タスクYAMLのtarget_path/files_modifiedからscope内ファイルを特定
 git status --short
 ```
-scope外の変更ファイルがあれば**commitに含めるな**。`git checkout -- <file>`で復元するか、scope外であることを報告。
+scope外の変更ファイルがあれば**触らず、commitに含めるな**。他者ファイルのcheckout/restore/unstageは禁止。scope外であることを報告する。
 
 ### Step 2: 差分確認
 ```bash
@@ -48,22 +48,16 @@ git diff --stat           # 未ステージ
 ```
 意図した変更のみがステージされていることを確認。
 
-### Step 3: scope内ファイルのみステージ
+### Step 3: scope限定helperでcommit（必須）
 ```bash
-# scope内ファイルのみを個別にadd（git add . 禁止）
-git add <file1> <file2> ...
+bash scripts/ninja_scope_commit.sh \
+  -m "<cmd_id>: <変更内容の1行要約>" -- \
+  <file1> <file2> ...
 ```
-**`git add .` / `git add -A` は禁止** — scope外ファイル、.env、credentials混入の原因。
 
-### Step 4: commit
-```bash
-git commit -m "$(cat <<'EOF'
-<cmd_id>: <変更内容の1行要約>
+helperは指定pathだけをaddし、`git commit --only -- <paths>`でcommitする。共有indexにある他者stageは変更もcommitもしない。空scope・存在しないpathはBLOCKし、pre-commit hookは通常どおり実行する。
 
-Co-Authored-By: <agent_model> <noreply@anthropic.com>
-EOF
-)"
-```
+**通常の `git commit` 直書きは禁止** — commit前から他者stageが存在すると、後から自分のpathだけ`git add`しても両方がcommitされる。
 
 ### Step 5: commit後確認
 ```bash
@@ -84,6 +78,8 @@ Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*�
 ## 禁止事項
 
 - **`git add .` / `git add -A`** — scope外混入の原因
+- **通常の `git commit` 直書き** — 共有indexの他者stage混入原因。必ず`ninja_scope_commit.sh`を使う
+- **他者ファイルのcheckout/restore/unstage** — 他者WIPを破壊する。触らずhelperでscope分離する
 - **`git push`** — 忍者はcommitまで。pushは家老の責務
 - **`--no-verify`** — pre-commitフックをスキップするな
 - **`git reset --hard`** — 未commit変更を全て失う。`git stash`を使え
