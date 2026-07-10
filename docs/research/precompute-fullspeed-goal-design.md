@@ -1,5 +1,6 @@
-# precompute全量最速化 — /goal自律ループ設計書 v1.6
+# precompute全量最速化 — /goal自律ループ設計書 v1.7
 
+- v1.7: 殿裁定「3PFで繰り返し極限まで高速化してから」を反映。1回の速度改善+parityだけでは昇格せず、3PF内で飽和条件と理論下限条件を両方満たすまで反復する段階内ループへ変更
 - v1.6: 殿裁定「サンクコストにとらわれず中断」「トータル見込み時間を最小化」を反映。目的関数を総残時間へ変更し、旧bench継続の即時中断基準とstage harness投資の損益分岐を数値化
 - v1.5: 段階実行の一次計測で、凍結benchの`--portfolio-ids`がPFループのみを絞りbulk prefixを全103PFで実行することを検出。D1用stage harnessではbulk prefixも対象集合へ限定し、凍結評価器は103PF最終確認へ限定する契約を追加
 - v1.4: 殿裁定「少数PFで高速化を実現するまで反復し、少しずつ対象PFを増やす」を反映。探索対象を `3→10→25→50→103PF` の段階昇格制へ変更し、各段階で速度改善+parity PASSを昇格条件とした
@@ -67,7 +68,7 @@
 対象PFは固定順序の段階集合3→10→25→50→103。各上位集合は下位集合を包含し、PF ID一覧と選定理由を記録する。
 反復手順: (1)同一immutable DB clone・同一logical dateで対照snapshotを作成 (2)現段階のPF集合で最遅コンポーネントを特定 (3)出力等価の改善を1つ実装
 (4)非凍結stage harnessでPFループとbulk prefixの両方を現段階の集合へ限定し、全endpoint・全パラメータを1回計測。対象集合のcanonical hash一致+Pythonオブジェクト等価を確認
-(5)速度改善+parity PASSを満たすまで同じPF段階で反復。満たしたら次のPF段階へ昇格
+(5)同じPF段階でprofile→最大ボトルネック改善1件→parity→再計測を反復。**2連続改善5%未満かつ実測理論下限との差10%以内**を両方満たした段階だけ次へ昇格
 (6)103PFまで昇格した最終候補だけ凍結bench/parityで全pipeline 3回中央値+全2699行parityを確定。数値をdocs/research/cmd_3825_h2_parity_fix.mdへ累積追記。
 parity FAILのiterationは無効として原因修正まで次の仮説へ進まない。
 stop condition: 103PFでparity PASSし、改善が2連続5%未満、またはH1-H6を全て計測・判定済み。3/10/25/50PFで停止してはならない。上限10 iterationは各段階ではなく全体の仮説変更回数に適用。
@@ -77,7 +78,7 @@ stop condition: 103PFでparity PASSし、改善が2連続5%未満、またはH1-
 - **evaluator分離+凍結（レビュー修正1）**: bench/parityの2スクリプトは**/goal開始前に非goal側（別忍者、家老レビュー）で作成・凍結**する。凍結commit hashを記録し、goal忍者はこの2ファイルを変更禁止（変更を含むiterationは無効）。generatorが評価基準を都合よく変えられない構造にする（評価器汚染防止）
 - **parity判定のFP防止（レビュー修正2）**: 「バイト等価」はPostgres JSON化・辞書キー順・float表現で偽陽性/偽陰性化し得る。SSOTは**canonical JSON hash（`json.dumps(sort_keys=True, separators=(',',':'))`のhash）+Pythonオブジェクト等価**の2判定。`computed_at`等の非出力メタ列は比較対象外と明記
 - **stop condition明文化**（blind loop防止）: parity PASSした有効iterationのみを母数とし、改善飽和(2連続<5%) or 仮説消化。parity FAILを「消化済み」「改善なし」へ算入して早期終了してはならない。token blowout防止でiteration上限=10
-- **段階昇格ゲート（v1.4修正）**: `3→10→25→50→103PF`。最初の3PFは少なくともstandard単体・FoF・monthly_trade高コストPFを各1件含める。各上位集合は下位集合を包含し、段階ごとに全endpoint・全パラメータを実行する。速度改善とparity PASSの両方が揃うまで昇格禁止
+- **段階昇格ゲート（v1.7修正）**: `3→10→25→50→103PF`。最初の3PFは少なくともstandard単体・FoF・monthly_trade高コストPFを各1件含める。各上位集合は下位集合を包含し、段階ごとに全endpoint・全パラメータを実行する。単発の速度改善+parity PASSは昇格条件として不十分。各段階で2連続改善5%未満かつ理論下限差10%以内まで磨き切ってから昇格する
 - **stage harness契約（v1.5修正）**: 凍結benchの`--portfolio-ids`はPFループだけを絞り、`compare_returns_bulk`/`metrics_summary_bulk`等のbulk prefixを全103PFで実行するため内側ループには使わない。D1用の非凍結harnessはbulk関数にも同じPF ID集合を渡す。103PF指定時に凍結benchと処理行数・対象endpointが一致する回帰テストを必須とし、凍結評価器そのものは変更しない
 - **中断規則（v1.6修正）**: 現runの残時間が「中断+道具修正+再実行」の見込みを上回る、または対象PF外の固定費が実行時間の50%を超えると判明した時点で即中断する。既経過時間・取得済みsnapshot・「もう少しで終わる」は継続理由にしない
 - **各iterationの記録契約**: iteration番号/PF段階/PF ID集合/変更1行要約/全endpoint件数/秒数/rssピーク/parity判定/昇格可否。3回中央値は103PF最終判定にのみ必須。記録なきiterationは無効
