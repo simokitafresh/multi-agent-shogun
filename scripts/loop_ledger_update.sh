@@ -9,7 +9,8 @@ set -euo pipefail
 
 self="${BASH_SOURCE[0]}"
 [[ "$self" != /* ]] && self="$PWD/$self"
-ROOT="${LOOP_LEDGER_ROOT:-${self%/scripts/loop_ledger_update.sh}}"
+SCRIPT_ROOT="${self%/scripts/loop_ledger_update.sh}"
+ROOT="${LOOP_LEDGER_ROOT:-$SCRIPT_ROOT}"
 
 LESSON_IMPACT="${LOOP_LEDGER_LESSON_IMPACT:-$ROOT/logs/lesson_impact.tsv}"
 INSIGHTS_FILE="${LOOP_LEDGER_INSIGHTS_FILE:-$ROOT/queue/insights.yaml}"
@@ -26,6 +27,20 @@ MAX_SNAPSHOTS="${LOOP_LEDGER_MAX_SNAPSHOTS:-100}"
 STARTUP_ALERT_HISTORY="${LOOP_LEDGER_STARTUP_ALERT_HISTORY:-$ROOT/logs/shogun_startup_alert_history.tsv}"
 GATE_METRICS_LOG="${LOOP_LEDGER_GATE_METRICS_LOG:-$ROOT/logs/gate_metrics.log}"
 
+# obsidian_loop/memory_loopはevents.summary/detailの行本体を読むため、WSL2 /mnt/c(9p)上だと
+# 行本体読取が約40倍遅い(citation_countクエリ実測3.3s vs ext4コピー0.085s)。
+# memory_db_query.shと同じext4キャッシュ+鮮度判定+fail-safeを共有ライブラリ経由で再利用する。
+# repo_root(モジュール解決)は常にSCRIPT_ROOT(実スクリプト位置)を使う。ROOTはLOOP_LEDGER_ROOTで
+# テスト用に差し替え可能なデータルートであり、memory_db_live_insert.pyの所在とは無関係。
+DB_DEFAULT_PATH="$ROOT/data/multi_agent_shogun_memory.db"
+DB_READ_PATH="$DB_PATH"
+if [ -f "$SCRIPT_ROOT/scripts/lib/memory_db_cache.sh" ]; then
+    # shellcheck source=lib/memory_db_cache.sh
+    source "$SCRIPT_ROOT/scripts/lib/memory_db_cache.sh"
+    DB_READ_PATH="$(prepare_memory_db_for_read "$SCRIPT_ROOT" "$DB_PATH" "$DB_DEFAULT_PATH" 2>/dev/null || printf '%s' "$DB_PATH")"
+    [ -n "$DB_READ_PATH" ] || DB_READ_PATH="$DB_PATH"
+fi
+
 # skill_execution_log.yaml は数万行規模になるためtailで有界化する(境界の壊れたエントリは破棄)
 SKILL_EXEC_CHUNK="$(mktemp)"
 trap 'rm -f "$SKILL_EXEC_CHUNK"' EXIT
@@ -41,7 +56,7 @@ fi
 
 python3 - "$LESSON_IMPACT" "$INSIGHTS_FILE" "$DB_PATH" "$SKILL_RECOMMEND_LOG" "$SKILL_EXEC_CHUNK" \
     "$REPORT_DIRS" "$REPORT_MAX_FILES" "$OUT_FILE" "$NOW" "$WINDOW_DAYS" "$MAX_SNAPSHOTS" "$ROOT" \
-    "$STARTUP_ALERT_HISTORY" "$GATE_METRICS_LOG" <<'PY'
+    "$STARTUP_ALERT_HISTORY" "$GATE_METRICS_LOG" "$DB_READ_PATH" <<'PY'
 import datetime as dt
 import os
 import re
@@ -59,6 +74,9 @@ except Exception:
  skill_exec_chunk_path, report_dirs_raw, report_max_files_raw, out_path, now_raw,
  window_days_raw, max_snapshots_raw, root_path_raw, startup_alert_history_path) = sys.argv[1:14]
 gate_metrics_path = sys.argv[14]
+# ext4キャッシュ解決済みの読取パス(memory_db_cache.sh側でstale/missing/timeout時はdb_pathへfallback済み)。
+# 空/未指定ならdb_path(正本)を使う。
+db_read_path = sys.argv[15] if len(sys.argv) > 15 and sys.argv[15] else db_path
 
 out_path = Path(out_path)
 root_path = Path(root_path_raw)
@@ -410,19 +428,42 @@ def load_warn_backlog(path):
     }
 
 
+# memory dbはext4キャッシュ(read_path)を優先して開く。キャッシュが未生成/欠損/破損(corrupt)の
+# 場合のみ正本(source_path)へ1回だけfallbackする。正本との全行/件数完全一致を守るための最終防御。
+def _run_with_cache_fallback(read_path, source_path, query_fn, empty_result):
+    candidates = [read_path]
+    if source_path and source_path != read_path:
+        candidates.append(source_path)
+
+    existing = [c for c in candidates if Path(c).is_file()]
+    if not existing:
+        return {**empty_result, "note": "memory db not found"}
+
+    last_exc = None
+    for candidate in existing:
+        try:
+            conn = sqlite3.connect(f"file:{candidate}?mode=ro", uri=True)
+        except Exception as exc:
+            last_exc = exc
+            continue
+        try:
+            return query_fn(conn)
+        except sqlite3.DatabaseError as exc:
+            last_exc = exc
+            continue
+        finally:
+            conn.close()
+    return {**empty_result, "note": f"db read failed: {last_exc}"}
+
+
 # --- obsidian loop: data/multi_agent_shogun_memory.db (event_state_transitions) ---
-def load_obsidian_loop(path):
-    p = Path(path)
-    if not p.is_file():
-        return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "memory db not found"}
-    try:
-        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
-    except Exception as exc:
-        return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": f"db connect failed: {exc}"}
-    try:
+def load_obsidian_loop(path, source_path=None):
+    empty = {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None}
+
+    def _query(conn):
         tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         if "event_state_transitions" not in tables or "events" not in tables:
-            return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "required tables missing"}
+            return {**empty, "note": "required tables missing"}
         cutoff_iso = cutoff.isoformat().replace("+00:00", "")
         now_iso = now.isoformat().replace("+00:00", "")
         produced = conn.execute(
@@ -447,11 +488,11 @@ def load_obsidian_loop(path):
             "stock": int(stock or 0),
             "last_consumption_ts": iso(parse_ts(last_consumption)) if last_consumption else None,
         }
-    finally:
-        conn.close()
+
+    return _run_with_cache_fallback(path, source_path, _query, empty)
 
 
-obsidian_loop = load_obsidian_loop(db_path)
+obsidian_loop = load_obsidian_loop(db_read_path, db_path)
 
 
 # --- memory candidate loop + recall usage diagnostics ---
@@ -463,21 +504,16 @@ MEMORY_CITATION_PATTERN = re.compile(
 )
 
 
-def load_memory_loop(path):
-    p = Path(path)
-    if not p.is_file():
-        return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "memory db not found"}
-    try:
-        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
-    except Exception as exc:
-        return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": f"db connect failed: {exc}"}
-    try:
+def load_memory_loop(path, source_path=None):
+    empty = {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "search_count": 0, "citation_count": 0}
+
+    def _query(conn):
         tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         if "events" not in tables:
-            return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "events table missing", "search_count": 0, "citation_count": 0}
+            return {**empty, "note": "events table missing"}
         event_cols = {row[1] for row in conn.execute("PRAGMA table_info(events)")}
         if "state" not in event_cols:
-            return {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "note": "events.state missing", "search_count": 0, "citation_count": 0}
+            return {**empty, "note": "events.state missing"}
 
         cutoff_iso = cutoff.isoformat().replace("+00:00", "")
         now_iso = now.isoformat().replace("+00:00", "")
@@ -522,8 +558,8 @@ def load_memory_loop(path):
             "search_count": int(search_count or 0),
             "citation_count": int(citation_count or 0),
         }
-    finally:
-        conn.close()
+
+    return _run_with_cache_fallback(path, source_path, _query, empty)
 
 
 def load_memory_reference_effectiveness(report_dirs_raw):
@@ -611,7 +647,7 @@ def load_memory_reference_effectiveness(report_dirs_raw):
     }
 
 
-memory_loop = load_memory_loop(db_path)
+memory_loop = load_memory_loop(db_read_path, db_path)
 memory_effectiveness = load_memory_reference_effectiveness(report_dirs_raw)
 memory_loop.update(memory_effectiveness)
 

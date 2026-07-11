@@ -474,3 +474,96 @@ EOF
     grep -q 'warn_backlog:' "$LOOP_LEDGER_OUT"
     grep -q 'items: \[\]' "$LOOP_LEDGER_OUT"
 }
+
+# --- ext4 cache fail-safe (cmd_karo_hotfix_infra_ops_speed_awaken_202607120130 RC) ---
+# loop_ledger_updateのmemory/obsidian loopはmemory_db_cache.sh(memory_db_query.shと共有)経由で
+# ext4キャッシュを優先読取する。fresh/missing/corruptの3状態全てで正しくfail-safeすることを検証する。
+
+@test "loop_ledger_update reads memory/obsidian loop through fresh ext4 cache, not source" {
+    python3 - "$LOOP_LEDGER_DB" <<'PY'
+import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, ts TEXT, agent TEXT, summary TEXT, detail TEXT, state TEXT)")
+conn.execute("CREATE TABLE event_state_transitions (id INTEGER PRIMARY KEY, event_id TEXT, from_state TEXT, to_state TEXT, reason TEXT, actor TEXT, transitioned_at TEXT)")
+conn.execute("INSERT INTO events VALUES ('e1', '2026-06-17T00:00:00', 'shogun', 'SOURCE cite [memory:x]', 'from source db', 'obsidian_candidate')")
+conn.commit()
+conn.close()
+PY
+
+    cache_dir="$TEST_TMPDIR/cache"
+    mkdir -p "$cache_dir"
+    python3 - "$cache_dir/memory.db" <<'PY'
+import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, ts TEXT, agent TEXT, summary TEXT, detail TEXT, state TEXT)")
+conn.execute("CREATE TABLE event_state_transitions (id INTEGER PRIMARY KEY, event_id TEXT, from_state TEXT, to_state TEXT, reason TEXT, actor TEXT, transitioned_at TEXT)")
+conn.execute("INSERT INTO events VALUES ('c1', '2026-06-17T00:00:00', 'shogun', 'CACHE cite [memory:x]', 'from cache db', 'raw')")
+conn.execute("INSERT INTO events VALUES ('c2', '2026-06-17T00:00:00', 'shogun', 'CACHE cite2 [memory:y]', 'from cache db', 'raw')")
+conn.commit()
+conn.close()
+PY
+    # cacheのmtimeをsourceより新しくし、staleness判定によるasync再構築を発火させない(結果を決定的にする)
+    touch -d "@$(($(stat -c %Y "$LOOP_LEDGER_DB") + 100))" "$cache_dir/memory.db"
+
+    export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$cache_dir/memory.db"
+
+    run bash "$SRC_SCRIPT"
+
+    # citation_count=2はcache由来。source単独ならcitation_count=1になるはず
+    grep -q 'citation_count: 2' "$LOOP_LEDGER_OUT"
+    ! grep -q 'citation_count: 1' "$LOOP_LEDGER_OUT"
+}
+
+@test "loop_ledger_update falls back to source db when ext4 cache is corrupt" {
+    python3 - "$LOOP_LEDGER_DB" <<'PY'
+import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, ts TEXT, agent TEXT, summary TEXT, detail TEXT, state TEXT)")
+conn.execute("CREATE TABLE event_state_transitions (id INTEGER PRIMARY KEY, event_id TEXT, from_state TEXT, to_state TEXT, reason TEXT, actor TEXT, transitioned_at TEXT)")
+conn.execute("INSERT INTO events VALUES ('e1', '2026-06-17T00:00:00', 'shogun', 'SOURCE cite [memory:x]', 'from source db', 'obsidian_candidate')")
+conn.execute("INSERT INTO events VALUES ('e2', '2026-06-17T00:00:00', 'shogun', 'SOURCE cite2 [memory:y]', 'from source db', 'raw')")
+conn.commit()
+conn.close()
+PY
+
+    cache_dir="$TEST_TMPDIR/cache"
+    mkdir -p "$cache_dir"
+    printf 'not-a-sqlite-database' > "$cache_dir/memory.db"
+    # 破損キャッシュでも新鮮に見せてstaleness再構築を回避し、query時点でのfail-safeだけを検証する
+    touch -d "@$(($(stat -c %Y "$LOOP_LEDGER_DB") + 100))" "$cache_dir/memory.db"
+
+    export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$cache_dir/memory.db"
+
+    run bash "$SRC_SCRIPT"
+
+    # 破損キャッシュにfallbackせず正本(source)の値が反映されること(citation_count=2, obsidian stock=1)
+    grep -q 'citation_count: 2' "$LOOP_LEDGER_OUT"
+    [[ "$output" == *"obsidian: produced=0 consumed=0 stock=1"* ]]
+}
+
+@test "loop_ledger_update builds missing ext4 cache and matches source output exactly" {
+    python3 - "$LOOP_LEDGER_DB" <<'PY'
+import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, ts TEXT, agent TEXT, summary TEXT, detail TEXT, state TEXT)")
+conn.execute("CREATE TABLE event_state_transitions (id INTEGER PRIMARY KEY, event_id TEXT, from_state TEXT, to_state TEXT, reason TEXT, actor TEXT, transitioned_at TEXT)")
+conn.execute("INSERT INTO events VALUES ('e1', '2026-06-17T00:00:00', 'shogun', 'SOURCE cite [memory:x]', 'from source db', 'obsidian_candidate')")
+conn.commit()
+conn.close()
+PY
+
+    cache_dir="$TEST_TMPDIR/cache"
+    cache_path="$cache_dir/memory.db"
+    [ ! -e "$cache_path" ]
+
+    export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$cache_path"
+
+    run bash "$SRC_SCRIPT"
+
+    [ -s "$cache_path" ]
+    grep -q 'citation_count: 1' "$LOOP_LEDGER_OUT"
+    [[ "$output" == *"obsidian: produced=0 consumed=0 stock=1"* ]]
+}

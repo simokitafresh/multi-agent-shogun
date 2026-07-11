@@ -23,106 +23,8 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 default_db_path="$script_dir/data/multi_agent_shogun_memory.db"
 db_path="${MEMORY_DB_QUERY_DB:-$default_db_path}"
 
-memory_db_cache_path() {
-    local source_path="$1"
-    python3 - "$source_path" "$script_dir" <<'PY'
-import sys
-
-db_path = sys.argv[1]
-repo_root = sys.argv[2]
-sys.path.insert(0, f"{repo_root}/scripts")
-import memory_db_live_insert as live_insert
-
-print(live_insert.memory_db_cache_path(db_path))
-PY
-}
-
-create_memory_db_cache() {
-    local source_path="$1"
-    python3 - "$source_path" "$script_dir" <<'PY'
-import sys
-
-db_path = sys.argv[1]
-repo_root = sys.argv[2]
-sys.path.insert(0, f"{repo_root}/scripts")
-import memory_db_live_insert as live_insert
-
-live_insert.create_memory_db_ext4_cache(db_path)
-PY
-}
-
-refresh_memory_db_cache_async() {
-    local source_path="$1"
-    local cache_path="$2"
-    local timeout_sec="${SHOGUN_MEMORY_DB_CACHE_REFRESH_TIMEOUT:-60}"
-    export script_dir
-    export -f create_memory_db_cache
-    (
-        flock -n 8 2>/dev/null || exit 0
-        if command -v timeout >/dev/null 2>&1; then
-            timeout -k 1 "$timeout_sec" bash -c 'create_memory_db_cache "$1"' _ "$source_path" >/dev/null 2>&1 || true
-        else
-            create_memory_db_cache "$source_path" >/dev/null 2>&1 || true
-        fi
-    ) 8>"${cache_path}.refresh.lock" >/dev/null 2>&1 </dev/null &
-}
-
-notify_cache_timeout() {
-    local timeout_sec="$1"
-    if [ -x "$script_dir/scripts/ntfy.sh" ]; then
-        bash "$script_dir/scripts/ntfy.sh" "【memory_db_query】ext4 cache初期生成が${timeout_sec}sを超過。正本DBへfallback。" >/dev/null 2>&1 || true
-    fi
-}
-
-prepare_memory_db_for_read() {
-    local source_path="$1"
-    if [ "${SHOGUN_MEMORY_DB_QUERY_DISABLE_CACHE:-0}" = "1" ] || [ "${SHOGUN_DISABLE_MEMORY_DB_CACHE:-0}" = "1" ]; then
-        printf '%s\n' "$source_path"
-        return 0
-    fi
-    if [ ! -f "$source_path" ]; then
-        printf '%s\n' "$source_path"
-        return 0
-    fi
-    if [ "$source_path" != "$default_db_path" ] && [ "${SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT:-0}" != "1" ]; then
-        printf '%s\n' "$source_path"
-        return 0
-    fi
-
-    local cache_path timeout_sec rc
-    cache_path="$(memory_db_cache_path "$source_path" 2>/dev/null || true)"
-    if [ -z "$cache_path" ]; then
-        printf '%s\n' "$source_path"
-        return 0
-    fi
-    if [ -s "$cache_path" ]; then
-        if [ "$source_path" -nt "$cache_path" ] \
-            || { [ -f "${source_path}-wal" ] && [ "${source_path}-wal" -nt "$cache_path" ]; } \
-            || { [ -f "${source_path}-shm" ] && [ "${source_path}-shm" -nt "$cache_path" ]; }; then
-            refresh_memory_db_cache_async "$source_path" "$cache_path"
-        fi
-        printf '%s\n' "$cache_path"
-        return 0
-    fi
-
-    timeout_sec="${SHOGUN_MEMORY_DB_CACHE_INIT_TIMEOUT:-30}"
-    rc=0
-    if command -v timeout >/dev/null 2>&1; then
-        export script_dir
-        export -f create_memory_db_cache
-        timeout -k 1 "$timeout_sec" bash -c 'create_memory_db_cache "$1"' _ "$source_path" 2>/dev/null || rc=$?
-    else
-        create_memory_db_cache "$source_path" 2>/dev/null || rc=$?
-    fi
-    if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
-        notify_cache_timeout "$timeout_sec"
-    fi
-    if [ "$rc" -eq 0 ] && [ -s "$cache_path" ]; then
-        printf '%s\n' "$cache_path"
-    else
-        printf '%s\n' "$source_path"
-    fi
-}
+# shellcheck source=lib/memory_db_cache.sh
+source "$script_dir/scripts/lib/memory_db_cache.sh"
 
 search_query=""
 target="${MEMORY_DB_QUERY_TARGET:-${AGENT_ID:-}}"
@@ -171,7 +73,7 @@ if [ -z "$target" ] && [ -n "${TMUX_PANE:-}" ]; then
 fi
 
 source_db_path="$db_path"
-db_path="$(prepare_memory_db_for_read "$db_path")"
+db_path="$(prepare_memory_db_for_read "$script_dir" "$db_path" "$default_db_path")"
 
 if [ -n "$search_query" ]; then
     search_args=(
