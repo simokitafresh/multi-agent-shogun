@@ -9,6 +9,7 @@
 import os
 import glob
 import argparse
+import re
 import shlex
 import yaml
 
@@ -267,6 +268,34 @@ def main():
                 marker.lower() in lower_text for marker in delegation_markers
             ):
                 return True
+        if term in ('todo', 'fill_this'):
+            # 機能名/識別子、引用、検出器の説明に現れる予約語は未完了作業ではない。
+            # 各出現の局所文脈を判定し、1件でも実作業の用法なら検出を維持する。
+            incomplete_markers = ('後で', '未実施', '未完了', '保留', '家老実施', '家老が実施')
+            detector_markers = (
+                '機能名', '識別子', '検出器', '検出', 'チェック', '引用', '文字列',
+                '語句', '予約語', 'detector', 'checker', 'check',
+            )
+            occurrences = list(re.finditer(re.escape(lower_term), lower_text))
+            benign_count = 0
+            for occurrence in occurrences:
+                start, end = occurrence.span()
+                before = lower_text[start - 1:start]
+                after = lower_text[end:end + 1]
+                in_identifier = bool(
+                    (before and (before.isalnum() or before == '_'))
+                    or (after and (after.isalnum() or after == '_'))
+                )
+                window = lower_text[max(0, start - 32):min(len(lower_text), end + 32)]
+                quoted = (
+                    (before in ('"', "'", '`', '「', '『') and after in ('"', "'", '`', '」', '』'))
+                )
+                explanatory = any(marker.lower() in window for marker in detector_markers)
+                incomplete = any(marker.lower() in window for marker in incomplete_markers)
+                if (in_identifier or quoted or explanatory) and not incomplete:
+                    benign_count += 1
+            if occurrences and benign_count == len(occurrences):
+                return True
         return False
 
     matched_terms = [
@@ -437,7 +466,6 @@ def main():
     # golden/snapshot参照検出
     has_golden = False
     if task_type_be:
-        import re
         texts = str((report.get('result') or {}).get('summary', '')) + str((report.get('result') or {}).get('details', ''))
         has_golden = bool(re.search(r'(golden|snapshot|ゴールデン|パリティ).{0,30}(確認|検証|比較|一致|PASS)', texts, re.IGNORECASE))
 

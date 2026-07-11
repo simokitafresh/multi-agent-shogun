@@ -111,6 +111,47 @@ YAML
     [[ "$output" == *"未解決"* ]]
 }
 
+@test "SG-PRE9c allows TODO and FILL_THIS in identifiers and detector descriptions" {
+    cat > "$TEST_TMPDIR/report.yaml" <<YAML
+ninja: kotaro
+task_id: cmd_detector_fix
+status: completed
+task_clarity:
+  score: 100
+  unclear_points: "機能名run_todo_fixme_residual_checkとFILL_THIS検出器の説明を検証した。引用 'TODO' もfixture対象。"
+binary_checks:
+  ac1:
+    - check: "検出器fixture完了"
+      result: yes
+YAML
+
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+    [[ "$output" == *"BC_YES_CLARITY_TERMS=''"* ]]
+}
+
+@test "SG-PRE9c still detects actionable TODO and FILL_THIS work" {
+    cat > "$TEST_TMPDIR/report.yaml" <<YAML
+ninja: kotaro
+task_id: cmd_incomplete
+status: completed
+task_clarity:
+  score: 70
+  unclear_points: "TODO: 後で実施する。FILL_THISは未実施。"
+binary_checks:
+  ac1:
+    - check: "AC1完了"
+      result: yes
+YAML
+
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
+    [[ "$output" == *"todo"* ]]
+    [[ "$output" == *"fill_this"* ]]
+}
+
 @test "SG-PRE9 sets BLOCK prediction for waived binary check no" {
     cat > "$TEST_TMPDIR/report.yaml" <<YAML
 ninja: hayate
