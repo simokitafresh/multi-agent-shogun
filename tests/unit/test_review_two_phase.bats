@@ -6,6 +6,13 @@ setup() {
   mkdir -p "$TMPROOT/queue/gates/cmd_test/review_approvals/reports"
   mkdir -p "$TMPROOT/queue/reports"
   mkdir -p "$TMPROOT/queue/tasks"
+  mkdir -p "$TMPROOT/scripts/lib"
+  cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/review_approval.sh"
+  cat > "$TMPROOT/scripts/bulletin_write.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "${REVIEW_APPROVAL_ROOT:?}/bulletin_calls.log"
+SH
+  chmod +x "$TMPROOT/scripts/bulletin_write.sh"
   REPORT="$TMPROOT/queue/reports/ninja_report_cmd_test.yaml"
   printf 'worker_id: ninja\nparent_cmd: cmd_test\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nresult:\n  summary: ok\n' > "$REPORT"
   PROJECT_ROOT="$TMPROOT"
@@ -42,6 +49,23 @@ approve() {
   fp=$(review_report_fingerprint "$REPORT")
   printf 'result: LGTM\nfingerprint: %s\n' "$fp" > "$APPROVALS/gunshi.yaml"
   ! review_two_phase_ready cmd_test "$REPORT"
+}
+
+@test "formal gunshi LGTM automatically persists a Shogun completion-review notice" {
+  approve gunshi LGTM "$REPORT"
+  [ "$(wc -l < "$TMPROOT/bulletin_calls.log")" -eq 1 ]
+  grep -q '^gunshi cmd_test 完了レビュー LGTM .*家老ACCEPT/GATE判定待ち。 false info$' "$TMPROOT/bulletin_calls.log"
+}
+
+@test "formal gunshi LGTM fails closed when Shogun notice cannot persist" {
+  cat > "$TMPROOT/scripts/bulletin_write.sh" <<'SH'
+#!/usr/bin/env bash
+exit 1
+SH
+  chmod +x "$TMPROOT/scripts/bulletin_write.sh"
+  run approve gunshi LGTM "$REPORT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Shogun notification persistence failed"* ]]
 }
 
 @test "karo RC blocks and stale approvals cannot be reused" {

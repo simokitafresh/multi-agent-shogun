@@ -1546,9 +1546,9 @@ notify_karo_throttled() {
 }
 
 # ─── 軍師LGTM後の将軍未通知検知 (cmd_karo_hotfix_completion_notify_gap) ───
-# 軍師のreview_feedback(完了報告レビュー、verdict:LGTM/APPROVE/PASS)はkaro inboxにのみ
-# 配信される。家老がbulletin_write.sh/cmd_complete_gate.shで将軍へ通知するかは家老の
-# 手動判断・実行タイミングに完全依存しており、これをトリガー/検知する仕組みが無かった。
+# review_approval.shが正式LGTM時に将軍へ自動通知する。本チェックはそのフェイルセーフが
+# 機能しない異常経路を検知するバックストップ。自然言語の「報告レビュー」固定文面に依存せず、
+# LGTMイベントより前の進捗通知を完了通知と誤認しない。
 # cmd_3780実例(2026-07-08): LGTM 22:53:35受領→家老が23:05頃rgで確認するまでbulletin/
 # shogun inboxに完了通知ゼロ。殿の質問で家老が気づき手動投稿するまで自動通知は皆無だった。
 # draft review(配備前レビュー)は対象外。猶予時間内の正常な処理待ちは誤検知しない。
@@ -1616,11 +1616,9 @@ for msg in messages:
     if str(msg.get("type", "")) != "review_feedback":
         continue
     content = str(msg.get("content", ""))
-    if "draft review" in content:
+    if "draft review" in content.lower():
         continue
-    if "報告レビュー" not in content:
-        continue
-    if not re.search(r'verdict[:=]\s*(LGTM|APPROVE|PASS)', content):
+    if not re.search(r'verdict[:=]\s*(LGTM|APPROVE|PASS)', content, re.I):
         continue
     m = re.match(r'^(cmd_[A-Za-z0-9_]+)', content)
     if not m:
@@ -1633,7 +1631,8 @@ for msg in messages:
 if not lgtm_events:
     sys.exit(0)
 
-notified_keys = set()
+notifications = []
+completion_words = re.compile(r'(完了|LGTM|GATE\s*CLEAR|レビュー)', re.I)
 bulletin_data = load_yaml(bulletin_file)
 bulletin_entries = bulletin_data.get("entries") if isinstance(bulletin_data, dict) else None
 for entry in (bulletin_entries or []):
@@ -1641,8 +1640,9 @@ for entry in (bulletin_entries or []):
         continue
     content = str(entry.get("content", ""))
     m = re.match(r'^(cmd_[A-Za-z0-9_]+)', content)
-    if m:
-        notified_keys.add(dedup_key(m.group(1)))
+    notice_ts = epoch(entry.get("posted_at") or entry.get("timestamp"))
+    if m and notice_ts is not None and completion_words.search(content):
+        notifications.append((dedup_key(m.group(1)), notice_ts))
 
 shogun_data = load_yaml(shogun_inbox)
 shogun_messages = shogun_data.get("messages") if isinstance(shogun_data, dict) else None
@@ -1650,11 +1650,15 @@ for msg in (shogun_messages or []):
     if not isinstance(msg, dict):
         continue
     content = str(msg.get("content", ""))
+    notice_ts = epoch(msg.get("timestamp"))
+    if notice_ts is None or not completion_words.search(content):
+        continue
     for m in re.finditer(r'(cmd_[A-Za-z0-9_]+)', content):
-        notified_keys.add(dedup_key(m.group(1)))
+        notifications.append((dedup_key(m.group(1)), notice_ts))
 
 for cmd_id, ts in lgtm_events:
-    if dedup_key(cmd_id) in notified_keys:
+    event_key = dedup_key(cmd_id)
+    if any(key == event_key and notice_ts >= ts for key, notice_ts in notifications):
         continue
     if now - ts < grace:
         continue

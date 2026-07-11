@@ -67,6 +67,18 @@ PY
   echo "review approval recorded: $cmd_id $role $result fingerprint=$fingerprint"
   exit 0
 fi
+
+# A formal report LGTM is operationally relevant to Shogun even before Karo's
+# ACCEPT/GATE result. Persist it at the approval boundary instead of relying on
+# a second manual send. bulletin_write.sh is fail-closed for inbox persistence;
+# retry is safe because identical bulletin content is deduplicated.
+if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ "${REVIEW_APPROVAL_NO_NOTIFY:-0}" != 1 ]; then
+  review_notice="$cmd_id 完了レビュー LGTM — report=$report_rel fingerprint=$fingerprint。家老ACCEPT/GATE判定待ち。"
+  BULLETIN_NOTIFY=shogun bash "$ROOT/scripts/bulletin_write.sh" gunshi "$review_notice" false info || {
+    echo "BLOCK: LGTM recorded but Shogun notification persistence failed: cmd=$cmd_id report=$report_rel" >&2
+    exit 1
+  }
+fi
 echo "review approval recorded: $cmd_id $role $result fingerprint=$fingerprint"
 
 mapfile -t reports < <(find "$ROOT/queue/reports" -maxdepth 1 -type f -name "*_report_${cmd_id}.yaml" -print | LC_ALL=C sort)

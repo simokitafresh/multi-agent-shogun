@@ -1984,7 +1984,7 @@ chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
 old_ts="$(date -d "-400 seconds" "+%Y-%m-%dT%H:%M:%S")"
 cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<INNEREOF
 messages:
-- content: "cmd_test_gap001 hayate報告レビュー。verdict: LGTM。4観点OK。"
+- content: "cmd_test_gap001レビュー完了。verdict: LGTM。4観点OK。"
   from: gunshi
   id: msg_test_gap001
   read: true
@@ -2013,6 +2013,60 @@ grep -q "KARO-COMPLETION-NOTIFY-GAP: LGTM received for cmd_test_gap001" "$LOG"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS: gap detected and notified"* ]]
+}
+
+# LGTMより前の進捗報告は、同一cmdでも完了通知の代替にならない
+@test "completion_notify_gap: earlier progress bulletin does not suppress a later LGTM gap" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@"
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+old_ts="$(date -d "-400 seconds" "+%Y-%m-%dT%H:%M:%S")"
+progress_ts="$(date -d "-500 seconds" "+%Y-%m-%dT%H:%M:%S")"
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<INNEREOF
+messages:
+- content: "cmd_test_gap006レビュー完了。verdict: LGTM。"
+  from: gunshi
+  id: msg_test_gap006
+  read: true
+  timestamp: "$old_ts"
+  type: review_feedback
+INNEREOF
+cat > "$SCRIPT_DIR/queue/bulletin_board.yaml" <<INNEREOF
+entries:
+- id: blt_test_gap006
+  content: "cmd_test_gap006現況: 作業進行中。"
+  posted_by: karo
+  posted_at: "$progress_ts"
+INNEREOF
+cat > "$SCRIPT_DIR/queue/inbox/shogun.yaml" <<INNEREOF
+messages: []
+INNEREOF
+
+log() { echo "$1" >> "$LOG"; }
+check_karo_completion_notify_gap
+grep -q "INBOX_CALLED:karo .*cmd_test_gap006.*completion_notify_gap" "$LOG"
+echo "PASS: earlier progress did not suppress later LGTM gap"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: earlier progress did not suppress later LGTM gap"* ]]
 }
 
 # bulletin_board.yamlに完了通知済みなら重複検知しない
