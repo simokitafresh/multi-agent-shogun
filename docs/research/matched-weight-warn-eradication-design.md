@@ -1,8 +1,22 @@
-# Matched weight WARN根絶設計書 v1.0
+# Matched weight WARN根絶設計書 v1.1 — ✅解決済みクローズ (2026-07-11)
 
 - 起票: 将軍 2026-07-10 03:17 | 殿指摘「変わらずwarningがlogに表示されている。解決方法を覚醒して設計書にまとめよう」
 - 対象WARN: `WARNING:app.services.monthly_trade_impl:Matched weight X != 1.0, missing_tickers=[...]`
 - origin: `[[殿観測20260709_2359_matched_weight_WARN]] -> [[修正3本実装済み未反映]] -> [[warn-eradication-design]]`
+
+## §RESOLVED 解決サマリ (v1.1追記、殿確認指示2026-07-11 14:31→将軍検証)
+
+**完了定義(§2「本番再計算ログでMatched weight WARN件数=0の数値証明」)は達成済み。本設計書はクローズ。**
+
+| 手順(§3) | 状態 | 証跡 |
+|---|---|---|
+| 1 push / 2 deploy / 3 weights付き再backfill+部分再計算 / 5 WARN=0計測 | ✅完了 | cmd_3812 CLEAR(2026-07-10 06:22)。WARN=0を数値証明(cmd_3815起票文に「WARN=0を達成」明記) |
+| 6 恒久監視 | ✅完了 | cmd_3820 CLEAR(2026-07-10 09:17)。run単位warn_count集計→1件以上で[MATCHED WEIGHT WARN] ntfy通知(0件抑制)。本番deploy済み(a74ad188)、count=0+通知抑制を実運転実証(2026-07-09 23:38Z, 102PF/1533行) |
+| 4 12体再突合 | ➡別戦線へ発展(WARN問題とは独立) | 完全一致はcmd_3815で2/12→cmd_3816で4/12。残乖離の真因はWARNではなくGS側基準差(旧DTB3暦gridDB)→追跡の結果「バンド後付けの全層劣化」判明→殿裁定(2026-07-10)でバンド全解除+GS再実行当面不要として決着 |
+
+**再発ゼロの継続証跡**: 恒久監視(cmd_3820)稼働下で、以降の全再計算run(直近=2026-07-11 02:26 JSTの本番fullrecalculate id=212、102PF/1533行/failed 0/総時間約545秒を含む)で[MATCHED WEIGHT WARN]通知は0件(lord_conversation.jsonl grep 0件、2026-07-11 14:33確認)。§2の正当なfail-closed WARN(真のticker欠落時)は仕様どおり存置。
+
+**§5再発防止の教訓**: 「裁定改定は実行中タスクへ即push型で伝播」はlesson_candidateとして教訓サイクルへ還流済み。
 
 ## §0 覚醒ポイント（なぜ「変わらず」出ているのか）
 
