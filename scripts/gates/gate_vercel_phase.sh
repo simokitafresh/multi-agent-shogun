@@ -16,6 +16,29 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 
+# nohup経由の非対話bashサブプロセスではPATHにrgが載らないCLI環境がある(rg実体は
+# $HOME/.local/bin/rgに存在するがPATH外)。command not foundを2>/dev/null経由で
+# 握り潰し常に0件scanned扱いになるsilent false-negative経路を防ぐため呼出前にrg解決を試みる
+# (three_layer_preflight.shのresolve_rg/cmd_complete_gate.shのresolve_gate_rgと同じ考え方)。
+resolve_vercel_phase_rg() {
+    local rg_cmd
+    rg_cmd="$(command -v rg 2>/dev/null || true)"
+    if [[ -n "$rg_cmd" ]]; then
+        printf '%s\n' "$rg_cmd"
+        return 0
+    fi
+    if [[ -x "$HOME/.local/bin/rg" ]]; then
+        printf '%s\n' "$HOME/.local/bin/rg"
+        return 0
+    fi
+    return 1
+}
+
+RG_BIN="$(resolve_vercel_phase_rg)" || {
+    echo "[ALERT] gate_vercel_phase: rg not found (PATH and \$HOME/.local/bin/rg both missing)"
+    exit 1
+}
+
 declare -A SEEN_REFS=()
 # shellcheck disable=SC2034  # FIRST_ORIGIN: kept for debugging broken refs
 declare -A FIRST_ORIGIN=()
@@ -208,7 +231,7 @@ main() {
         [ -n "$context_file" ] || continue
         check_ref_record "$context_file" "$line_no" "$raw_ref"
     done < <(
-        rg -n -o --with-filename --no-heading 'docs/research/[^\s\x60\[\]()\x27"<>,;{}|。、）（」「]+?\.(md|json\.gz|json|yaml|py|sh|txt)' "${context_files[@]}" 2>/dev/null \
+        "$RG_BIN" -n -o --with-filename --no-heading 'docs/research/[^\s\x60\[\]()\x27"<>,;{}|。、）（」「]+?\.(md|json\.gz|json|yaml|py|sh|txt)' "${context_files[@]}" 2>/dev/null \
             | grep -v 'XXX\|YYY\|ZZZ\|{.*}' \
             | awk -F: '{
                 file = $1

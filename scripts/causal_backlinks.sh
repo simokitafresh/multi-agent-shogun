@@ -14,6 +14,29 @@ usage() {
     echo "Usage: causal_backlinks.sh [--detail] [--semantic] <ID|[[ID]]>" >&2
 }
 
+# nohup経由の非対話bashサブプロセスではPATHにrgが載らないCLI環境がある(rg実体は
+# $HOME/.local/bin/rgに存在するがPATH外)。command not foundを2>/dev/null+||trueで
+# 握り潰し常に0件扱いになるsilent false-negative経路を防ぐため呼出前にrg解決を試みる
+# (three_layer_preflight.shのresolve_rg/cmd_complete_gate.shのresolve_gate_rgと同じ考え方)。
+resolve_backlinks_rg() {
+    local rg_cmd
+    rg_cmd="$(command -v rg 2>/dev/null || true)"
+    if [[ -n "$rg_cmd" ]]; then
+        printf '%s\n' "$rg_cmd"
+        return 0
+    fi
+    if [[ -x "$HOME/.local/bin/rg" ]]; then
+        printf '%s\n' "$HOME/.local/bin/rg"
+        return 0
+    fi
+    return 1
+}
+
+RG_BIN="$(resolve_backlinks_rg)" || {
+    echo "ERROR: rg not found (PATH and \$HOME/.local/bin/rg both missing)" >&2
+    exit 1
+}
+
 DETAIL=0
 SEMANTIC=0
 while [[ "${1:-}" == --* ]]; do
@@ -73,11 +96,11 @@ run_backlink_search() {
 
     if [ "$DETAIL" -eq 1 ]; then
         for _cbl_path in "${existing_search_paths[@]}"; do
-            rg -n "${RG_COMMON_ARGS[@]}" "$needle" "$_cbl_path" 2>/dev/null || true
+            "$RG_BIN" -n "${RG_COMMON_ARGS[@]}" "$needle" "$_cbl_path" 2>/dev/null || true
         done | sort -u
     else
         for _cbl_path in "${existing_search_paths[@]}"; do
-            rg -l "${RG_COMMON_ARGS[@]}" "$needle" "$_cbl_path" 2>/dev/null || true
+            "$RG_BIN" -l "${RG_COMMON_ARGS[@]}" "$needle" "$_cbl_path" 2>/dev/null || true
         done | sort -u
     fi
 }

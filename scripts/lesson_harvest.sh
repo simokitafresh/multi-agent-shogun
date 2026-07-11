@@ -17,12 +17,20 @@ if [[ ! -d "$ARCHIVE_DIR" ]]; then
     exit 1
 fi
 
-if ! command -v rg >/dev/null 2>&1; then
+# nohup経由の非対話bashサブプロセスではPATHにrgが載らないCLI環境がある(rg実体は
+# $HOME/.local/bin/rgに存在するがPATH外)。command -vのみだとその環境で常にNGになる
+# ため、$HOME/.local/bin/rgも解決対象に含める(three_layer_preflight.shのresolve_rg
+# /cmd_complete_gate.shのresolve_gate_rgと同じ考え方)。
+RG_BIN="$(command -v rg 2>/dev/null || true)"
+if [[ -z "$RG_BIN" && -x "$HOME/.local/bin/rg" ]]; then
+    RG_BIN="$HOME/.local/bin/rg"
+fi
+if [[ -z "$RG_BIN" ]]; then
     echo "rg が見つかりません: lesson_harvest.sh は ripgrep 必須です" >&2
     exit 1
 fi
 
-python3 - "$ARCHIVE_DIR" "$PROJECTS_DIR" <<'PYEOF'
+python3 - "$ARCHIVE_DIR" "$PROJECTS_DIR" "$RG_BIN" <<'PYEOF'
 import sys
 import re
 import subprocess
@@ -36,6 +44,7 @@ import yaml
 
 archive_dir = Path(sys.argv[1])
 projects_dir = Path(sys.argv[2])
+rg_bin = sys.argv[3]
 
 
 def _scan_cache_key():
@@ -157,7 +166,7 @@ def load_registered_titles():
     rg_env = os.environ.copy()
     rg_env["LC_ALL"] = "C"
     cmd = [
-        "rg",
+        rg_bin,
         "-uuu",
         "-n",
         r"^\s+title:\s*",
@@ -224,7 +233,7 @@ def _build_scan_data():
     rg_env = os.environ.copy()
     rg_env["LC_ALL"] = "C"
     cmd = [
-        "rg",
+        rg_bin,
         "-uuu",
         "-n",
         _REPORT_LINE_RE.pattern,
