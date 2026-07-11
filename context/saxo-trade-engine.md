@@ -50,6 +50,8 @@ Trade Execution Engine (Python)
   └─ ntfy結果通知
 ```
 
+実行入力は `signal` ではなく、リバランス月外の維持を含む `holding_signal` を使う（定義は [[dm-signal-core]]）。SIM→LIVE移行では、全期間の `holding_signal` と売買重量を同一入力で突合し、既存のパリティ基準に従う（[[dm-signal-ops]]）。
+
 ## §5 認証
 
 OAuth2フロー。LIVE環境はrefresh_tokenで長期維持可能。
