@@ -26,6 +26,25 @@ review_report_key() {
     printf '%s' "$report" | sha256sum | awk '{print $1}'
 }
 
+review_validate_cmd_id() { [[ "$1" =~ ^cmd_[A-Za-z0-9_]+$ ]]; }
+
+review_validate_report() {
+    local cmd_id="$1" report="$2" root reports_dir resolved parent
+    root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+    review_validate_cmd_id "$cmd_id" || return 1
+    reports_dir=$(realpath "$root/queue/reports") || return 1
+    resolved=$(realpath "$report") || return 1
+    [[ "$resolved" == "$reports_dir/"* ]] || return 1
+    [[ "$(dirname "$resolved")" == "$reports_dir" ]] || return 1
+    parent=$(python3 - "$resolved" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+print(d.get('parent_cmd', ''))
+PY
+)
+    [ "$parent" = "$cmd_id" ]
+}
+
 review_approval_value() {
     local file="$1" key="$2"
     [ -f "$file" ] || return 1
@@ -35,6 +54,7 @@ review_approval_value() {
 review_two_phase_ready() {
     local cmd_id="$1" report="$2" root dir key fingerprint gunshi_fp gunshi_result karo_fp karo_result
     root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+    review_validate_report "$cmd_id" "$report" || return 1
     key=$(review_report_key "${report#"$root"/}")
     dir="$root/queue/gates/${cmd_id}/review_approvals/reports/$key"
     fingerprint=$(review_report_fingerprint "$report") || return 1
@@ -43,6 +63,18 @@ review_two_phase_ready() {
     karo_fp=$(review_approval_value "$dir/karo.yaml" fingerprint || true)
     karo_result=$(review_approval_value "$dir/karo.yaml" result || true)
     [ "$gunshi_result" = "LGTM" ] && [ "$karo_result" = "ACCEPT" ] && [ "$gunshi_fp" = "$fingerprint" ] && [ "$karo_fp" = "$fingerprint" ]
+}
+
+review_two_phase_ready_gunshi() {
+    local cmd_id="$1" report="$2" root key dir fingerprint stored result
+    root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+    review_validate_report "$cmd_id" "$report" || return 1
+    fingerprint=$(review_report_fingerprint "$report") || return 1
+    key=$(review_report_key "${report#"$root"/}")
+    dir="$root/queue/gates/$cmd_id/review_approvals/reports/$key"
+    stored=$(review_approval_value "$dir/gunshi.yaml" fingerprint || true)
+    result=$(review_approval_value "$dir/gunshi.yaml" result || true)
+    [ "$result" = LGTM ] && [ "$stored" = "$fingerprint" ]
 }
 
 review_all_reports_ready() {
