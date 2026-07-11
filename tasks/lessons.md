@@ -1632,7 +1632,7 @@ L005を適用し、source files修正→build実行→全生成ファイルに�
 - **日付**: 2026-03-05
 - **出典**: cmd_548
 - **記録者**: kagemaru
-- **tags**: [recon]
+- **tags**: [large-recon, parallel-agent, independent-axes]
 - **if**: 5軸以上の独立した偵察を実施する時
 - **then**: 並列Agent(例: 4並列)で各軸を分担して同時実行せよ
 - **because**: 逐次実行より大幅に短縮でき、全調査を約12分で完了できるため
@@ -3323,7 +3323,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_015
 - **記録者**: kotaro
-- **tags**: [yaml, monitor]
+- **tags**: [daemon-performance, python-inline, yaml-read]
 - **when**: Pythonインラインスクリプトで同一ファイルを複数回開く場合は
 - **how**: 2026-03-31
 - health_check.shのcheck_task_stalledが同一YAMLを3回別python3プロセスで開いていた。パイプ区切りで複数値を返し、IFS='|' read -r で分解すれば1回で済む。python3起動コスト(数百ms)×チェック対象エージェント数が毎分発生するため、デーモンスクリプトでは特にインパクト大
@@ -3368,7 +3368,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_012
 - **記録者**: kagemaru
-- **tags**: [communication, bash, yaml, lesson, reporting]
+- **tags**: [lesson-metrics, yaml-parser, report-parser]
 - **when**: 報告YAMLやレビュー結果を作成・検証する時
 - **how**: 2026-03-31
 - lesson_effectiveness.shのparse_lesson_listが全71報告でuseful_count=0を返していた。原因は正規表現^[[:space:]]+-が先頭空白必須でインデント0のリストアイテムを見落とし、(L[0-9]+)がid:プレフィックスなしを前提、さらにセクション終了がサブフィールド行で誤発火。bashでYAMLリストをパースする場合は^[[:space:]]*-で0-indent対応し、セクション終了は^[a-zA-Z_]でtop-level keyのみ検出すべき
@@ -3481,7 +3481,7 @@ bats固有のSKIPは既にL138の "# skip" パターンで正しく検出でき�
 - **日付**: 2026-03-31
 - **出典**: cmd_cycle_L4_028
 - **記録者**: tobisaru
-- **tags**: [bash, yaml]
+- **tags**: [bash-regex, yaml-parser, workaround-detection]
 - **when**: 同種の作業・判断・検証を行う時
 - **how**: 2026-03-31
 - workaround_pattern_check.shの正規表現がダブルクォートのみ対応で、実データ127件全て非クォートのためパターン検出が完全に非機能だった。bash正規表現でYAML値をパースする際は3形式対応必須
@@ -5340,7 +5340,7 @@ WSL2 /mnt/c では setup の美化より、反復 hot path の subprocess 削減
 - **日付**: 2026-05-02
 - **出典**: cmd_karo_infra_recon_core
 - **記録者**: karo
-- **tags**: [recon-yaml-dump]
+- **tags**: [operational-yaml, yaml-serialization, recon-script]
 - **target_files**: [queue/tasks/hayate.yaml (status assigned->acknowledged->in_progress),queue/reports/hayate_report_cmd_karo_infra_recon_core.yaml]
 - **when**: queue/tasks・queue/reports・queue/inboxなど運用YAMLを書き換えるスクリプトや偵察を担当する時
 - **how**: rg 'yaml\\.dump|yaml\\.safe_dump' と書込先確認を行い、運用YAMLはyaml_field_set/report_field_set/inbox_mark_read等の専用helperへ置き換える
