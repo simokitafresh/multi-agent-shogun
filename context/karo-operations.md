@@ -47,6 +47,7 @@
 - **配備コマンド: `deploy_task.sh <ninja> <cmd_id>`**。cmd_id第2引数は必須。省略するとAC上書きされず旧タスクを実行する(LK061)。使えない場合は--directモード。手動配備(cat+inbox_write)はdeploy_task.shの全ガードをバイパスするため禁止。
 - **karo_direct配備手順(将軍cmd不要の家老自立配備)**: (1)nested形式のtask YAMLを/tmpに作成(`task:`配下にparent_cmd/task_id/scout_exempt:true等を記載) (2)`cp /tmp/task.yaml queue/tasks/{ninja}.yaml` (3)`inbox_write.sh {ninja} "..." task_assigned karo`でnudge。deploy_task.sh --yamlはscout_gateを通るが、task YAML内のscout_exempt:trueで自動PASS(64ec3aa5)。
 - 配備前は毎回「五問チェック」を通す。Purpose / Decomposition / Headcount / Difficulty / Risk を1行で言えなければ配備するな。
+- **AC設計ミス事前検出（verdict_override防止）**: draft配備前に全AC/binary checkを実行順にシミュレートし、`(1)実現可能 (2)成果物の追跡/commit可能 (3)日時・本番更新で自然に変わる値を固定一致要件にしていない (4)推奨条件を必須ACに混入していない` を各yes/noで確認する。1つでもnoなら配備前にACを修正する。「後でverdict override」は禁止。origin: `[[verdict_override_6件中5件]] -> [[AC設計ミス]] -> [[draft配備前二値シミュレーション]]`
 - **配備前にcmdの前提を現物確認せよ**。ダッシュボードの記載は過去の事実。CI赤→`dashboard.md AUTO_SECTION`のCI Status確認。本番障害→本番を直接確認。KARO_SECTIONの手書き情報は二次データ(LK043: cmd_1806事故)
 - implタスク配備前の偵察要否は `deploy_task.sh` が強制する。家老は `scout_exempt` を勝手に決めない。
 - **karo_direct配備のtask_type設定**: --yaml/手動配備時、偵察・context更新・調査系cmdは`task_type: recon`を設定せよ。デフォルトimplだと実装用教訓が過剰注入される(20件→7件に削減可能。deploy_task.sh L2318のrecon_modeフィルタが発動)。
