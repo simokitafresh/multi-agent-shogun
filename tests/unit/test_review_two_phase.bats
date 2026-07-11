@@ -171,17 +171,22 @@ SH
 }
 
 @test "cmd_complete normalize integration blocks when approved bytes mutate" {
-  mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
+  mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/scripts" "$TMPROOT/logs"
   cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
+  cp "$ROOT/scripts/lib/field_get.sh" "$ROOT/scripts/lib/yaml_field_set.sh" "$ROOT/scripts/lib/lock_path.sh" "$TMPROOT/scripts/lib/"
+  cp "$ROOT/scripts/cmd_complete_gate.sh" "$TMPROOT/scripts/"
   approve gunshi LGTM "$REPORT"; approve karo ACCEPT "$REPORT"
-  review_all_reports_ready cmd_test "$REPORT"
   cat > "$TMPROOT/scripts/lib/normalize_report.sh" <<'SH'
 #!/usr/bin/env bash
 printf 'normalized: true\n' >> "$1"
 SH
   chmod +x "$TMPROOT/scripts/lib/normalize_report.sh"
-  bash "$TMPROOT/scripts/lib/normalize_report.sh" "$REPORT"
-  run bash -c 'source "$1"; review_all_reports_ready cmd_test "$2" || { echo GATE_BLOCK_review_fingerprint_changed_after_normalize; exit 1; }' _ "$ROOT/scripts/lib/review_approval.sh" "$REPORT"
+  : > "$TMPROOT/notify.log"
+  run env CMD_COMPLETE_TEST_NORMALIZE_REPORT="$REPORT" GATE_METRICS_LOG="$TMPROOT/logs/gate_metrics.log" REVIEW_APPROVAL_ROOT="$TMPROOT" \
+    bash "$TMPROOT/scripts/cmd_complete_gate.sh" cmd_test
   [ "$status" -eq 1 ]
   [[ "$output" == *"review_fingerprint_changed_after_normalize"* ]]
+  [ "$(grep -c $'\tcmd_test\tCLEAR\t' "$TMPROOT/logs/gate_metrics.log" || true)" -eq 0 ]
+  [ ! -e "$TMPROOT/queue/gates/cmd_test/archive.done" ]
+  [ ! -s "$TMPROOT/notify.log" ]
 }
