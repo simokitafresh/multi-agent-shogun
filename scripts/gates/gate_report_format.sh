@@ -380,8 +380,10 @@ if [[ "${GATE_NO_LOG:-}" = "1" ]]; then
     [ "$RESULT_IS_PASS" -eq 1 ] && exit 0 || exit 1
 fi
 
-# --- Test report guard: /tmp/ reports are test artifacts, not production signal ---
-if [[ "$REPORT_PATH" == /tmp/* ]] || [[ "$REPORT_PATH" == *"/tmp/"* ]]; then
+# --- Test report guard: external /tmp reports are test artifacts. A detached
+# repository rooted under /tmp is still a real CI checkout and must exercise
+# logging/learning paths exactly like the primary worktree. ---
+if [[ "$_REPORT_REAL" != "$_REPO_REAL"/* ]] && { [[ "$REPORT_PATH" == /tmp/* ]] || [[ "$REPORT_PATH" == *"/tmp/"* ]]; }; then
     [ "$RESULT_IS_PASS" -eq 1 ] && exit 0 || exit 1
 fi
 

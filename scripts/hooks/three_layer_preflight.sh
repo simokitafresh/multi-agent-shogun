@@ -94,7 +94,7 @@ issue() {
     # memory_db_query.sh uses exit 1 for a completed search with no matches.
     # Treat that as successful evidence when the query script itself exists;
     # missing/broken tooling still fails closed with its distinct exit code.
-    [[ "$memory_rc" == 1 && -x "$ROOT/scripts/memory_db_query.sh" ]] && memory_rc=0
+    [[ "$memory_rc" == 1 && -f "$ROOT/scripts/memory_db_query.sh" ]] && memory_rc=0
     # semantic_search.sh exit 1 means NO_MATCH (a completed search that found
     # nothing for this prompt text) in the common case, but it also uses
     # exit 1 if docs/semantic-index/index.md itself is missing. Only
