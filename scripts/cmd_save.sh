@@ -6570,7 +6570,8 @@ check_new_file_structure_warning() {
     echo "  既存活用を優先し、新規作成が必要なら理由と既存代替の現物確認をcmdに明記せよ" >&2
     # Level5: 新規ファイル名から既存類似ファイルを自動検索して提案
     local _new_names
-    _new_names=$(printf '%s\n' "$hits" | grep -oE '[a-zA-Z_][a-zA-Z0-9_-]*\.(sh|py|yaml|md|tsx?)' | sort -u | head -3)
+    # grep無ヒットrc=1がpipefail下でスクリプト全体をexit 1させる(2026-07-12 cmd_3854で実証: WARN表示直後にsilent crash)
+    _new_names=$(printf '%s\n' "$hits" | grep -oE '[a-zA-Z_][a-zA-Z0-9_-]*\.(sh|py|yaml|md|tsx?)' | sort -u | head -3 || true)
     if [[ -n "$_new_names" ]]; then
         echo "  ─── 既存類似ファイル候補 ───" >&2
         while IFS= read -r _nf; do
