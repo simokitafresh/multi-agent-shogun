@@ -1,9 +1,15 @@
 #!/usr/bin/env bats
 
 setup() {
-    export ROOT TMP_EVIDENCE AGENT PANE EVIDENCE
+    export ROOT TMP_EVIDENCE AGENT PANE EVIDENCE MEMORY_DB_QUERY_DB
     ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     TMP_EVIDENCE="$(mktemp -d)"
+    mkdir -p "$TMP_EVIDENCE/archive"
+    printf '%s\n' '{"ts":"2026-07-10T15:00:00+09:00","agent":"lord","direction":"inbound","summary":"fixture","detail":"three layer preflight fixture"}' > "$TMP_EVIDENCE/archive/fixture.jsonl"
+    MEMORY_DB_QUERY_DB="$TMP_EVIDENCE/memory.db"
+    python3 "$ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TMP_EVIDENCE/archive" \
+        --db "$MEMORY_DB_QUERY_DB" >/dev/null
     AGENT="kagemaru"
     PANE="%test_${BATS_TEST_NUMBER}"
     EVIDENCE="$TMP_EVIDENCE/evidence_${AGENT}__test_${BATS_TEST_NUMBER}.json"
@@ -14,8 +20,49 @@ teardown() {
 }
 
 verify() {
-    env THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+    env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
         bash "$ROOT/scripts/hooks/three_layer_preflight.sh" verify "$@"
+}
+
+@test "有効なSQLite DBのNO_MATCHは成功" {
+    run env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "definitely-absent-memory-query"
+    [ "$status" -eq 0 ]
+    run grep -o '"memory_db":"[0-9]*"' "$EVIDENCE"
+    [ "$output" = '"memory_db":"0"' ]
+}
+
+@test "欠落SQLite DBはfail-closed" {
+    run env MEMORY_DB_QUERY_DB="$TMP_EVIDENCE/missing-parent/missing.db" THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "missing database"
+    [ "$status" -ne 0 ]
+    run grep -o '"status":"[a-z]*"' "$EVIDENCE"
+    [ "$output" = '"status":"failed"' ]
+}
+
+@test "壊れたSQLite DBはfail-closed" {
+    local broken_db="$TMP_EVIDENCE/broken.db"
+    printf 'not sqlite' > "$broken_db"
+    run env MEMORY_DB_QUERY_DB="$broken_db" THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "broken database"
+    [ "$status" -ne 0 ]
+    run grep -o '"status":"[a-z]*"' "$EVIDENCE"
+    [ "$output" = '"status":"failed"' ]
+}
+
+@test "memory_db_query exit1 stubはscript存在でもfail-closed" {
+    local tmp_root="$TMP_EVIDENCE/exit_one"
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index"
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    printf '#!/usr/bin/env bash\nexit 1\n' > "$tmp_root/scripts/memory_db_query.sh"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/scripts/semantic_search.sh"
+    chmod +x "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh"
+    cp "$ROOT/context/semantic-map.md" "$tmp_root/context/semantic-map.md"
+    : > "$tmp_root/docs/semantic-index/index.md"
+    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE/exit_one_evidence" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "exit one stub"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"memory=1"* ]]
 }
 
 @test "証跡なしの変更系BashをBLOCK" {
