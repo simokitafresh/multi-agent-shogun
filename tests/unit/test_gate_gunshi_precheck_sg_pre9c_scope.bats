@@ -152,6 +152,25 @@ YAML
     [[ "$output" == *"fill_this"* ]]
 }
 
+@test "SG-PRE9c allows the originating report detector-design wording" {
+    local origin_report="$PROJECT_ROOT/queue/reports/kagemaru_report_cmd_karo_hotfix_sg_pre9c_todo_context_202607111318.yaml"
+    [ -f "$origin_report" ]
+
+    run python3 "$ENGINE" --report "$origin_report" --tasks-dir "$PROJECT_ROOT/queue/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+    [[ "$output" == *"BC_YES_CLARITY_TERMS=''"* ]]
+}
+
+@test "SG-PRE9c still detects explicit AC unfinished wording" {
+    _write_report "AC1未完了。"
+
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
+    [[ "$output" == *"未完了"* ]]
+}
+
 @test "SG-PRE9 sets BLOCK prediction for waived binary check no" {
     cat > "$TEST_TMPDIR/report.yaml" <<YAML
 ninja: hayate

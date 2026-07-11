@@ -268,10 +268,25 @@ def main():
                 marker.lower() in lower_text for marker in delegation_markers
             ):
                 return True
+        if term == '未完了':
+            # 「未完了マーカー」「未完了検出」等は検出器設計のメタ言語。
+            # 「AC未完了」「作業未完了」は実際の未完了なので除外しない。
+            occurrences = list(re.finditer(re.escape(lower_term), lower_text))
+            metalinguistic = 0
+            for occurrence in occurrences:
+                start, end = occurrence.span()
+                before = lower_text[max(0, start - 8):start]
+                after = lower_text[end:min(len(lower_text), end + 8)]
+                if (
+                    after.startswith(('マーカー', '語', '文字列', '検出', '判定', 'チェック'))
+                    and not before.endswith(('ac', '作業', '実装', 'タスク'))
+                ):
+                    metalinguistic += 1
+            if occurrences and metalinguistic == len(occurrences):
+                return True
         if term in ('todo', 'fill_this'):
             # 機能名/識別子、引用、検出器の説明に現れる予約語は未完了作業ではない。
             # 各出現の局所文脈を判定し、1件でも実作業の用法なら検出を維持する。
-            incomplete_markers = ('後で', '未実施', '未完了', '保留', '家老実施', '家老が実施')
             detector_markers = (
                 '機能名', '識別子', '検出器', '検出', 'チェック', '引用', '文字列',
                 '語句', '予約語', 'detector', 'checker', 'check',
@@ -291,8 +306,11 @@ def main():
                     (before in ('"', "'", '`', '「', '『') and after in ('"', "'", '`', '」', '』'))
                 )
                 explanatory = any(marker.lower() in window for marker in detector_markers)
-                incomplete = any(marker.lower() in window for marker in incomplete_markers)
-                if (in_identifier or quoted or explanatory) and not incomplete:
+                actionable = bool(re.search(
+                    re.escape(lower_term) + r'(?:は|:|：)?[^。\n]{0,8}(?:後で|未実施|未完了|保留|家老実施|家老が実施)',
+                    window,
+                ))
+                if (in_identifier or quoted or explanatory) and not actionable:
                     benign_count += 1
             if occurrences and benign_count == len(occurrences):
                 return True
