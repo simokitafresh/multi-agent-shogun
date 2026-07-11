@@ -24,6 +24,7 @@ setup_file() {
     {
         sed -n '/^append_line_locked()/,/^}/p' "$SRC_GATE_SCRIPT"
         extract_function record_block_reason
+        extract_function resolve_gate_rg
         extract_function level_heading
         extract_function detect_task_role
         extract_function cmd_task_matches
@@ -313,6 +314,42 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"[CRITICAL] NG ← 1件のTODO/FIXMEが残存:"* ]]
     [[ "$output" == *"ALL_CLEAR=false"* ]]
+}
+
+@test "TODO check falls back to grep and blocks when rg is unavailable on PATH (AC3 rg fallback)" {
+    _setup_review_quality
+    mkdir -p "$TEST_TMPDIR/scripts"
+    cat > "$TEST_TMPDIR/scripts/sample.sh" <<EOF
+#!/usr/bin/env bash
+# TODO cmd_999
+exit 0
+EOF
+    local fake_home
+    fake_home="$(mktemp -d "$BATS_TMPDIR/fake_home.XXXXXX")"
+
+    # PATHからrgを含むディレクトリを排除し、$HOME/.local/bin/rgフォールバックも
+    # fake_home(空)へ差し替えて無効化する。resolve_gate_rgが必ずgrepへ委譲する経路を検証。
+    PATH="/usr/bin:/bin" HOME="$fake_home" run _run_todo_check_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[CRITICAL] NG ← 1件のTODO/FIXMEが残存:"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+}
+
+@test "TODO check falls back to grep and clears when rg is unavailable and no residual exists (AC3 rg fallback)" {
+    _setup_review_quality
+    mkdir -p "$TEST_TMPDIR/scripts"
+    cat > "$TEST_TMPDIR/scripts/sample.sh" <<EOF
+#!/usr/bin/env bash
+echo "no residual markers here"
+exit 0
+EOF
+    local fake_home
+    fake_home="$(mktemp -d "$BATS_TMPDIR/fake_home.XXXXXX")"
+
+    PATH="/usr/bin:/bin" HOME="$fake_home" run _run_todo_check_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"TODO check: OK (0 remaining)"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
 }
 
 @test "skill script refs check runs after clear and keeps stale refs non-blocking" {

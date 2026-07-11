@@ -3889,6 +3889,26 @@ record_block_reason() {
     fi
 }
 
+# ─── rg解決ヘルパー(cmd_karo_hotfix_review_trigger_gate_datetime_202607111233 AC3) ───
+# nohup経由の非対話bashサブプロセスではPATHにrgが載らないCLI環境がある(rg実体は
+# $HOME/.local/bin/rgに存在するがPATH外)。command not foundを2>/dev/null+||trueで
+# 握り潰し常に0件扱いになるsilent false-negative経路を防ぐため、呼出元でrg解決を
+# 試み、失敗時はgrepへ明示フォールバックする(three_layer_preflight.shのresolve_rg
+# と同じ考え方。専用SSOTスクリプト化はしない)。
+resolve_gate_rg() {
+    local rg_cmd
+    rg_cmd="$(command -v rg 2>/dev/null || true)"
+    if [ -n "$rg_cmd" ]; then
+        printf '%s\n' "$rg_cmd"
+        return 0
+    fi
+    if [ -x "$HOME/.local/bin/rg" ]; then
+        printf '%s\n' "$HOME/.local/bin/rg"
+        return 0
+    fi
+    return 1
+}
+
 level_heading() {
     local level="$1"
     local title="$2"
@@ -4291,13 +4311,19 @@ run_review_quality_check() {
 
 run_todo_fixme_residual_check() {
     local cmd_id="${1:-$CMD_ID}"
-    local cmd_num todo_hits todo_count
+    local cmd_num todo_hits todo_count rg_cmd
 
     level_heading "[L2]" "TODO/FIXME residual check:"
 
     cmd_num="${cmd_id#cmd_}"
-    # rg 1-pass scan: grep -rEn より /mnt/c WSL2 上で速い
-    todo_hits=$(rg -n -S "(TODO|FIXME).*(${cmd_id}|subtask_${cmd_num})" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/lib" 2>/dev/null | sort -u || true)
+    if rg_cmd="$(resolve_gate_rg)"; then
+        # rg 1-pass scan: grep -rEn より /mnt/c WSL2 上で速い
+        todo_hits=$("$rg_cmd" -n -S "(TODO|FIXME).*(${cmd_id}|subtask_${cmd_num})" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/lib" 2>/dev/null | sort -u || true)
+    else
+        # rg不在時のfallback。パターンは大文字のみなのでsmart-case(rg -S)と
+        # 同じ挙動になり、大文字小文字区別ありのgrep -Eで意味が一致する。
+        todo_hits=$(grep -rEn "(TODO|FIXME).*(${cmd_id}|subtask_${cmd_num})" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/lib" 2>/dev/null | sort -u || true)
+    fi
     todo_count=$(printf '%s\n' "$todo_hits" | awk 'NF{c++} END{print c+0}')
 
     if [ "$todo_count" -gt 0 ]; then
@@ -7022,7 +7048,12 @@ done <<< "$CMD_CHANGED_FILES"
 
 hits=""
 if [ "${#RAW_GREP_TARGETS[@]}" -gt 0 ]; then
-    hits=$(rg -n "grep.*['\\\"]\\^(\\\\s|  ).*[a-z_]+:" "${RAW_GREP_TARGETS[@]}" 2>/dev/null | grep -v 'field_get' || true)
+    if raw_grep_rg_cmd="$(resolve_gate_rg)"; then
+        hits=$("$raw_grep_rg_cmd" -n "grep.*['\\\"]\\^(\\\\s|  ).*[a-z_]+:" "${RAW_GREP_TARGETS[@]}" 2>/dev/null | grep -v 'field_get' || true)
+    else
+        # rg不在時のfallback。パターンの\sはPCRE構文のためgrep -Pで同一パターンを再利用する。
+        hits=$(grep -rPn "grep.*['\\\"]\\^(\\\\s|  ).*[a-z_]+:" "${RAW_GREP_TARGETS[@]}" 2>/dev/null | grep -v 'field_get' || true)
+    fi
 fi
 if [ -n "$hits" ]; then
     while IFS=: read -r hit_file hit_line hit_rest; do
