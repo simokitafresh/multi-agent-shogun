@@ -5684,6 +5684,8 @@ check_gunshi_design_num_relax() {
     WHAT_PART="${WHAT_PART%%複利:*}"
     # FP修正(2026-06-10 LS050): 日付リテラル(2026/7/1, 2026-06-10, ISO時刻)は設計数値ではない
     WHAT_PART="$(echo "$WHAT_PART" | sed -E 's#(19|20)[0-9]{2}[-/][0-9]{1,2}([-/][0-9]{1,2})?(T[0-9:]+)?##g')"
+    # FP修正(2026-07-11 cmd_3850): float8send/sha256等の英字始まり識別子内の数字は設計数値ではない
+    WHAT_PART="$(echo "$WHAT_PART" | sed -E 's#[A-Za-z][A-Za-z]*[0-9][A-Za-z0-9]*##g')"
     Q8_NUMS=$(echo "$WHAT_PART" | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
     [[ -z "$Q8_NUMS" ]] && return 0
     Q8_MAX=$(echo "$Q8_NUMS" | tail -1)
@@ -5697,7 +5699,7 @@ check_gunshi_design_num_relax() {
         found { exit }
     ')
     [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
-    AC_NUMS=$(echo "$AC_SECTION" | sed -E 's#(19|20)[0-9]{2}[-/][0-9]{1,2}([-/][0-9]{1,2})?(T[0-9:]+)?##g' | sed 's|AC[0-9]\{1,\}||g; s|[A-Za-z_]*_[0-9]\{1,\}[A-Za-z0-9_.-]*||g; s|[A-Za-z_/]\{1,\}/[^ ]*||g; s|[αβγδ][0-9]\{1,\}||g; s|§[0-9.]\{1,\}||g' | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
+    AC_NUMS=$(echo "$AC_SECTION" | sed -E 's#(19|20)[0-9]{2}[-/][0-9]{1,2}([-/][0-9]{1,2})?(T[0-9:]+)?##g' | sed 's|AC[0-9]\{1,\}||g; s|[A-Za-z_]*_[0-9]\{1,\}[A-Za-z0-9_.-]*||g; s|[A-Za-z_/]\{1,\}/[^ ]*||g; s|[αβγδ][0-9]\{1,\}||g; s|§[0-9.]\{1,\}||g' | sed -E 's#[A-Za-z][A-Za-z]*[0-9][A-Za-z0-9]*##g' | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
 
     if [[ -z "$AC_NUMS" ]]; then
         echo "WARN: 軍師設計書参照cmdでAC数値不一致を検出（cmd_1783教訓）" >&2
