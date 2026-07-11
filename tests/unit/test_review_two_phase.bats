@@ -142,3 +142,46 @@ SH
   for _ in {1..20}; do [ -f "$REVIEW_TRIGGER_LOG" ] && break; sleep 0.05; done
   [ "$(wc -l < "$REVIEW_TRIGGER_LOG")" -eq 1 ]
 }
+
+@test "canonical and dot report paths share one approval key" {
+  mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
+  cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
+  approve gunshi LGTM "$TMPROOT/queue/reports/./ninja_report_cmd_test.yaml"
+  approve karo ACCEPT "$REPORT"
+  [ "$(find "$TMPROOT/queue/gates/cmd_test/review_approvals/reports" -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 1 ]
+  review_two_phase_ready cmd_test "$REPORT"
+}
+
+@test "global lock serializes late approval and RC; RC leaves no formal state" {
+  mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
+  cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
+  approve gunshi LGTM "$REPORT"
+  ready="$TMPROOT/ready" release="$TMPROOT/release"
+  REVIEW_APPROVAL_ROOT="$TMPROOT" REVIEW_APPROVAL_NO_TRIGGER=1 REVIEW_APPROVAL_TEST_READY_FILE="$ready" REVIEW_APPROVAL_TEST_RELEASE_FILE="$release" \
+    bash "$ROOT/scripts/review_approval.sh" cmd_test karo ACCEPT "$REPORT" >"$TMPROOT/accept.log" 2>&1 & accept_pid=$!
+  for _ in {1..100}; do [ -e "$ready" ] && break; sleep 0.01; done
+  [ -e "$ready" ]
+  REVIEW_APPROVAL_ROOT="$TMPROOT" REVIEW_APPROVAL_NO_TRIGGER=1 \
+    bash "$ROOT/scripts/review_approval.sh" cmd_test karo RC "$REPORT" >"$TMPROOT/rc.log" 2>&1 & rc_pid=$!
+  : > "$release"
+  wait "$accept_pid"; wait "$rc_pid"
+  [ ! -e "$TMPROOT/queue/gates/cmd_test/review_gate.done" ]
+  ! find "$TMPROOT/queue/gates/cmd_test/review_approvals" -maxdepth 1 -name '.gate_triggered.*' | grep -q .
+  ! review_two_phase_ready cmd_test "$REPORT"
+}
+
+@test "cmd_complete normalize integration blocks when approved bytes mutate" {
+  mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
+  cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
+  approve gunshi LGTM "$REPORT"; approve karo ACCEPT "$REPORT"
+  review_all_reports_ready cmd_test "$REPORT"
+  cat > "$TMPROOT/scripts/lib/normalize_report.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'normalized: true\n' >> "$1"
+SH
+  chmod +x "$TMPROOT/scripts/lib/normalize_report.sh"
+  bash "$TMPROOT/scripts/lib/normalize_report.sh" "$REPORT"
+  run bash -c 'source "$1"; review_all_reports_ready cmd_test "$2" || { echo GATE_BLOCK_review_fingerprint_changed_after_normalize; exit 1; }' _ "$ROOT/scripts/lib/review_approval.sh" "$REPORT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"review_fingerprint_changed_after_normalize"* ]]
+}

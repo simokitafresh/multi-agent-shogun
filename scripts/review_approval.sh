@@ -8,6 +8,7 @@ cmd_id=$1; role=$2; result=$3; report=$4
 case "$role:$result" in gunshi:LGTM|karo:ACCEPT|karo:RC) ;; *) echo "BLOCK: invalid role/result" >&2; exit 2;; esac
 [[ "$report" = /* ]] || report="$ROOT/$report"
 PROJECT_ROOT="$ROOT" review_validate_report "$cmd_id" "$report" || { echo "BLOCK: invalid cmd/report boundary or parent_cmd mismatch" >&2; exit 2; }
+report=$(realpath "$report")
 base="$ROOT/queue/gates/$cmd_id/review_approvals"
 mkdir -p "$base"
 exec 200>"$base/.lock"; flock -w 10 200
@@ -29,6 +30,10 @@ fi
 echo "review approval recorded: $cmd_id $role $result fingerprint=$fingerprint"
 
 mapfile -t reports < <(find "$ROOT/queue/reports" -maxdepth 1 -type f -name "*_report_${cmd_id}.yaml" -print | LC_ALL=C sort)
+if [ -n "${REVIEW_APPROVAL_TEST_READY_FILE:-}" ]; then
+  : > "$REVIEW_APPROVAL_TEST_READY_FILE"
+  while [ ! -e "${REVIEW_APPROVAL_TEST_RELEASE_FILE:?}" ]; do sleep 0.01; done
+fi
 if review_all_reports_ready "$cmd_id" "${reports[@]}"; then
   manifest=$(PROJECT_ROOT="$ROOT" review_manifest_fingerprint "${reports[@]}")
   marker="$ROOT/queue/gates/$cmd_id/review_gate.done"
