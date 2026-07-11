@@ -2732,6 +2732,7 @@ EOF
 worker_id: ${worker_id}
 task_id: ${resolved_task_id}
 parent_cmd: ${resolved_parent_cmd}
+task_type: ${task_type}
 timestamp: ""  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
 status: pending
 ac_version_read: ${ac_version}

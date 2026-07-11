@@ -878,6 +878,14 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "recon report template persists task_type for review after task redeploy" {
+    local REPORT_FILE
+    REPORT_FILE="$(fixture_report_path recon_template)"
+
+    run grep -Eq '^task_type: recon$' "$REPORT_FILE"
+    [ "$status" -eq 0 ]
+}
+
 @test "recon report template includes all 5 implementation_readiness fields" {
     local REPORT_FILE
     REPORT_FILE="$(fixture_report_path recon_template)"

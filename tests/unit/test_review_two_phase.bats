@@ -64,7 +64,7 @@ approve() {
   review_report_fingerprint "$REPORT"
 }
 
-@test "deployed SCOUT report resolves task_type from parent task and allows report artifact only" {
+@test "deployed SCOUT report remains self-contained after task YAML is overwritten" {
   mkdir -p "$TMPROOT/scripts/lib"
   cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
   cat > "$TMPROOT/queue/tasks/ninja.yaml" <<'YAML'
@@ -74,6 +74,7 @@ task:
 YAML
   cat > "$REPORT" <<YAML
 parent_cmd: cmd_test
+task_type: scout
 files_modified:
   - path: queue/reports/ninja_report_cmd_test.yaml
     change: report artifact
@@ -82,6 +83,11 @@ binary_checks:
     - {check: inspected, result: yes}
 result:
   summary: scout complete
+YAML
+  cat > "$TMPROOT/queue/tasks/ninja.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_next
+  task_type: implement
 YAML
   fp=$(review_report_fingerprint "$REPORT")
   [[ "$fp" == *":no-code-change" ]]
