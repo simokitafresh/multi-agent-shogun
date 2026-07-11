@@ -6,7 +6,7 @@ setup() {
   mkdir -p "$TMPROOT/queue/gates/cmd_test/review_approvals/reports"
   mkdir -p "$TMPROOT/queue/reports"
   REPORT="$TMPROOT/queue/reports/ninja_report_cmd_test.yaml"
-  printf 'parent_cmd: cmd_test\ncommit_hash: abc123\nresult:\n  summary: ok\n' > "$REPORT"
+  printf 'parent_cmd: cmd_test\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nresult:\n  summary: ok\n' > "$REPORT"
   PROJECT_ROOT="$TMPROOT"
   source "$ROOT/scripts/lib/review_approval.sh"
   KEY=$(review_report_key "${REPORT#"$TMPROOT"/}")
@@ -49,6 +49,37 @@ approve() {
   ! review_two_phase_ready cmd_test "$REPORT"
 }
 
+@test "no-code SCOUT without commit_hash fingerprints and clears two-phase approval" {
+  printf 'parent_cmd: cmd_test\ntask_type: scout\nfiles_modified: []\nbinary_checks:\n  AC1:\n    - {check: inspected, result: yes}\nresult:\n  summary: ok\n' > "$REPORT"
+  fp=$(review_report_fingerprint "$REPORT")
+  [[ "$fp" == *":no-code-change" ]]
+  printf 'result: LGTM\nfingerprint: %s\n' "$fp" > "$APPROVALS/gunshi.yaml"
+  printf 'result: ACCEPT\nfingerprint: %s\n' "$fp" > "$APPROVALS/karo.yaml"
+  review_two_phase_ready cmd_test "$REPORT"
+}
+
+@test "no-code RECON without commit_hash fingerprints" {
+  printf 'parent_cmd: cmd_test\ntask_type: recon\nfiles_modified: []\nbinary_checks: {}\n' > "$REPORT"
+  review_report_fingerprint "$REPORT"
+}
+
+@test "SCOUT with modified files cannot omit commit_hash" {
+  printf 'parent_cmd: cmd_test\ntask_type: scout\nfiles_modified: [scripts/example.sh]\nbinary_checks: {}\n' > "$REPORT"
+  ! review_report_fingerprint "$REPORT"
+}
+
+@test "SCOUT claiming commit=yes cannot omit commit_hash" {
+  printf 'parent_cmd: cmd_test\ntask_type: scout\nfiles_modified: []\nbinary_checks:\n  commit:\n    - {check: committed, result: yes}\n' > "$REPORT"
+  ! review_report_fingerprint "$REPORT"
+}
+
+@test "implementation report without full commit_hash stays fail-closed" {
+  printf 'parent_cmd: cmd_test\ntask_type: implement\nfiles_modified: []\n' > "$REPORT"
+  ! review_report_fingerprint "$REPORT"
+  printf 'commit_hash: abc123\n' >> "$REPORT"
+  ! review_report_fingerprint "$REPORT"
+}
+
 @test "F1 review followed by F2 update does not bind delayed notification to F2" {
   mkdir -p "$TMPROOT/queue/reports" "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
   cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
@@ -83,8 +114,8 @@ approve() {
   mkdir -p "$TMPROOT/queue/reports" "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
   cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
   rm "$REPORT"
-  printf 'parent_cmd: cmd_test\ncommit_hash: abc123\n' > "$TMPROOT/queue/reports/a_report_cmd_test.yaml"
-  printf 'parent_cmd: cmd_test\ncommit_hash: abc123\n' > "$TMPROOT/queue/reports/b_report_cmd_test.yaml"
+  printf 'parent_cmd: cmd_test\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n' > "$TMPROOT/queue/reports/a_report_cmd_test.yaml"
+  printf 'parent_cmd: cmd_test\ncommit_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n' > "$TMPROOT/queue/reports/b_report_cmd_test.yaml"
   local a="$TMPROOT/queue/reports/a_report_cmd_test.yaml" b="$TMPROOT/queue/reports/b_report_cmd_test.yaml"
   approve gunshi LGTM "$a"; approve karo ACCEPT "$a"
   [ ! -e "$TMPROOT/queue/gates/cmd_test/review_gate.done" ]

@@ -2,23 +2,50 @@
 # Fingerprint-bound two-phase review approval storage.
 
 review_report_fingerprint() {
-    local report="$1" content_hash commit_hash
+    local report="$1" content_hash commit_identity
     [ -f "$report" ] || return 1
     content_hash=$(sha256sum "$report" | awk '{print $1}') || return 1
-    commit_hash=$(python3 - "$report" <<'PY'
+    commit_identity=$(python3 - "$report" <<'PY'
 import sys, yaml
 d = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+commit_hash = ""
 for key in ("commit_hash", "commit", "git_commit"):
     value = d.get(key)
     if isinstance(value, str) and value.strip():
-        print(value.strip()); break
-else:
+        commit_hash = value.strip()
+        break
+if not commit_hash:
     result = d.get("result") or {}
-    print(result.get("commit_hash", "") if isinstance(result, dict) else "")
+    commit_hash = result.get("commit_hash", "") if isinstance(result, dict) else ""
+
+if isinstance(commit_hash, str) and len(commit_hash) == 40 and all(c in "0123456789abcdef" for c in commit_hash):
+    print(commit_hash)
+    raise SystemExit(0)
+
+task_type = str(d.get("task_type", "")).strip().lower()
+files_modified = d.get("files_modified")
+checks = d.get("binary_checks") or {}
+commit_claimed = False
+if isinstance(checks, dict):
+    for item in checks.get("commit", []) if isinstance(checks.get("commit", []), list) else []:
+        if isinstance(item, dict) and (
+            item.get("result") is True
+            or str(item.get("result", "")).strip().lower() == "yes"
+        ):
+            commit_claimed = True
+            break
+
+# No-code reports have no commit to bind.  Their explicit structural contract is
+# part of content_hash, while every report outside this narrow case stays fail-closed.
+if task_type in ("scout", "recon") and files_modified == [] and not commit_claimed and not commit_hash:
+    print("no-code-change")
+    raise SystemExit(0)
+
+raise SystemExit(1)
 PY
-)
-    [ -n "$commit_hash" ] || return 1
-    printf '%s:%s\n' "$content_hash" "$commit_hash"
+) || return 1
+    [ -n "$commit_identity" ] || return 1
+    printf '%s:%s\n' "$content_hash" "$commit_identity"
 }
 
 review_report_key() {
