@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-12 cmd_karo_hotfix_ga225_context_freshness_infra_202607120124 source_commit:5a786c069 -->
+<!-- last_updated: 2026-07-12 cmd_karo_hotfix_ga225_context_freshness_infra_202607120124 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
