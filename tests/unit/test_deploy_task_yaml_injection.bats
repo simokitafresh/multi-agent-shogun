@@ -539,3 +539,107 @@ assert '【LS-A16 本番パリティ必須】' not in task['description'], task[
 assert len(task['acceptance_criteria']) == 1, task['acceptance_criteria']
 PY
 }
+
+# ── cmd_karo_hotfix_deploy_task_atomic_publish_202607111645 回帰テスト ──
+# Origin: cmd_3847偵察で、旧direct_modeは$YAML_FILEを検証前に$task_yamlへ直接cpし
+# (fail-open)、repair失敗時は壊れた内容がtask_yamlに居座っていた。
+# deploy_task_direct_yaml_publish()に切り出し、同一dir candidate経由の
+# validate/repair→atomic mvへ統一(fail-closed)。
+
+@test "direct_yaml_publish: 正当なYAMLはtask_yamlへ反映されYAML_FILEも候補ファイルも変更/残存しない" {
+    local tmpdir task_yaml yaml_file
+    tmpdir="$(mktemp -d)"
+    task_yaml="$tmpdir/task.yaml"
+    yaml_file="$tmpdir/source.yaml"
+    cat > "$task_yaml" <<'EOF'
+task:
+  status: idle
+EOF
+    cat > "$yaml_file" <<'EOF'
+task:
+  status: assigned
+  purpose: valid source
+EOF
+    cp "$yaml_file" "$yaml_file.orig"
+
+    run bash -lc "
+        set -e
+        export DEPLOY_TASK_LIB_ONLY=1
+        source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        log() { :; }
+        deploy_task_direct_yaml_publish '$task_yaml' '$yaml_file'
+    "
+    [ "$status" -eq 0 ]
+
+    run diff "$yaml_file.orig" "$yaml_file"
+    [ "$status" -eq 0 ]
+
+    run bash -c "compgen -G '${task_yaml}.??????' 2>/dev/null"
+    [ "$status" -ne 0 ]
+
+    run python3 -c "
+import yaml
+task = yaml.safe_load(open('$task_yaml', encoding='utf-8'))['task']
+assert task['status'] == 'assigned', task
+assert task['purpose'] == 'valid source', task
+print('DIRECT_PUBLISH_OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DIRECT_PUBLISH_OK"* ]]
+}
+
+@test "direct_yaml_publish: 修復不能なYAMLは旧task_yamlをbyte-identicalに保ちYAML_FILEも候補ファイルも変更/残存しない" {
+    local tmpdir task_yaml yaml_file
+    tmpdir="$(mktemp -d)"
+    task_yaml="$tmpdir/task.yaml"
+    yaml_file="$tmpdir/source_broken.yaml"
+    cat > "$task_yaml" <<'EOF'
+task:
+  status: idle
+  purpose: pre-existing valid content
+EOF
+    cp "$task_yaml" "$task_yaml.orig"
+    printf 'task:\n  status: "unterminated\n  purpose: [unbalanced\n' > "$yaml_file"
+    cp "$yaml_file" "$yaml_file.orig"
+
+    run bash -lc "
+        set -e
+        export DEPLOY_TASK_LIB_ONLY=1
+        source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        log() { :; }
+        deploy_task_direct_yaml_publish '$task_yaml' '$yaml_file'
+    "
+    [ "$status" -ne 0 ]
+
+    run diff "$task_yaml.orig" "$task_yaml"
+    [ "$status" -eq 0 ]
+
+    run diff "$yaml_file.orig" "$yaml_file"
+    [ "$status" -eq 0 ]
+
+    run bash -c "compgen -G '${task_yaml}.??????' 2>/dev/null"
+    [ "$status" -ne 0 ]
+}
+
+@test "direct_yaml_publish: YAML_FILEが存在しない場合はtask_yamlを変更せず失敗する" {
+    local tmpdir task_yaml
+    tmpdir="$(mktemp -d)"
+    task_yaml="$tmpdir/task.yaml"
+    cat > "$task_yaml" <<'EOF'
+task:
+  status: idle
+EOF
+    cp "$task_yaml" "$task_yaml.orig"
+
+    run bash -lc "
+        set -e
+        export DEPLOY_TASK_LIB_ONLY=1
+        source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        log() { :; }
+        deploy_task_direct_yaml_publish '$task_yaml' '$tmpdir/does_not_exist.yaml'
+    "
+    [ "$status" -ne 0 ]
+
+    run diff "$task_yaml.orig" "$task_yaml"
+    [ "$status" -eq 0 ]
+}

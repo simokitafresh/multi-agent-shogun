@@ -1118,8 +1118,7 @@ text = "\n".join(out) + "\n"
 yaml.safe_load(text)
 dst.write_text(text, encoding="utf-8")
 DIRECT_YAML_REPAIR_PY
-        cp "$tmp_file" "$task_file"
-        rm -f "$tmp_file"
+        _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
         log "direct_mode: repaired invalid multiline scalar YAML from ${source_yaml}"
         return 0
     fi
@@ -1128,6 +1127,38 @@ DIRECT_YAML_REPAIR_PY
     log "FATAL: direct_mode source YAML invalid and repair failed: ${source_yaml}"
     echo "FATAL: --yaml input is invalid and could not be repaired: ${source_yaml}" >&2
     return 1
+}
+
+# cmd_karo_hotfix_deploy_task_atomic_publish_202607111645: $yaml_fileの内容を$task_yamlへ
+# 安全に反映する。同一dir candidateを経由し、validate/repair成功後にのみatomic mvで公開する
+# (fail-closed)。$yaml_file自体は呼び出し元がcheck_yaml_freshness等で後続再読込するため
+# 一切変更しない(cpのみ、mv/rmしない)。戻り値0=公開成功、1=失敗(task_yamlは変更前のまま)。
+deploy_task_direct_yaml_publish() {
+    local task_yaml="$1"
+    local yaml_file="$2"
+
+    if [ ! -f "$yaml_file" ]; then
+        log "ERROR: --yaml file not found: $yaml_file"
+        echo "ERROR: --yaml ファイルが見つからない: $yaml_file" >&2
+        return 1
+    fi
+
+    local direct_yaml_candidate
+    direct_yaml_candidate="$(mktemp "${task_yaml}.XXXXXX")" || {
+        log "ERROR: direct_mode: failed to create candidate temp file for $task_yaml"
+        return 1
+    }
+    cp "$yaml_file" "$direct_yaml_candidate"
+    deploy_task_validate_or_repair_direct_yaml "$direct_yaml_candidate" "$yaml_file" || {
+        rm -f "$direct_yaml_candidate"
+        return 1
+    }
+    if ! mv "$direct_yaml_candidate" "$task_yaml"; then
+        rm -f "$direct_yaml_candidate"
+        log "ERROR: direct_mode: atomic publish (mv) failed for $task_yaml"
+        return 1
+    fi
+    log "direct_mode: task YAML overwritten from $yaml_file"
 }
 
 # ─── cmd_id→task YAML自動解決（なぜなぜL5根因対策: 家老の手動ステップ排除） ───
@@ -2498,7 +2529,7 @@ inject_causal_verification_template() {
     origin: ""  # [[発端]] -> [[原因]] -> [[結果]]'
 
     local tmp_file insert_file
-    tmp_file=$(mktemp)
+    tmp_file=$(mktemp "${task_file}.XXXXXX")
     awk '
         /^  causal_verification:/ { skip=1; next }
         skip && /^    / { next }
@@ -2523,8 +2554,7 @@ inject_causal_verification_template() {
         printf '%s\n' "$inject_block" >> "$tmp_file"
     fi
     rm -f "$insert_file"
-    cp "$tmp_file" "$task_file"
-    rm -f "$tmp_file"
+    _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
     log "inject_causal_verification_template: causal_verification injected"
 }
 
@@ -3886,7 +3916,7 @@ inject_semantic_concepts() {
 
     # 既存のsemantic_concepts/recommended_skillsを除去してから追加
     local tmp_file
-    tmp_file=$(mktemp)
+    tmp_file=$(mktemp "${task_file}.XXXXXX")
     awk '
         /^  semantic_concepts:/ { skip=1; next }
         /^  recommended_skills:/ { skip=1; next }
@@ -3915,8 +3945,7 @@ inject_semantic_concepts() {
         echo "$inject_block" >> "$tmp_file"
     fi
 
-    cp "$tmp_file" "$task_file"
-    rm -f "$tmp_file"
+    _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
     log "inject_semantic_concepts: $(echo "$matches" | wc -l) concepts injected"
 
     # 推薦ログにninja_name付きで記録 (cmd_3244: precision照合キー修正)
@@ -4074,7 +4103,7 @@ inject_causal_links() {
 
     # 既存のrelated_causal_linksを除去してから追加
     local tmp_file
-    tmp_file=$(mktemp)
+    tmp_file=$(mktemp "${task_file}.XXXXXX")
     awk '
         /^  related_causal_links:/ { skip=1; next }
         skip && /^  - / { next }
@@ -4102,8 +4131,7 @@ inject_causal_links() {
         printf '%s\n' "$inject_block" >> "$tmp_file"
     fi
 
-    cp "$tmp_file" "$task_file"
-    rm -f "$tmp_file"
+    _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
     log "inject_causal_links: $(printf '%s\n' "$links" | wc -l) links injected from ${parent_cmd}.origin"
 }
 
@@ -4120,7 +4148,7 @@ inject_standard_skills() {
     inject_block="${inject_block}  - \"ninja-commit\""
 
     local tmp_file
-    tmp_file=$(mktemp)
+    tmp_file=$(mktemp "${task_file}.XXXXXX")
     awk '
         /^  standard_skills:/ { skip=1; next }
         skip && /^  - / { next }
@@ -4147,8 +4175,7 @@ inject_standard_skills() {
         printf '%s\n' "$inject_block" >> "$tmp_file"
     fi
 
-    cp "$tmp_file" "$task_file"
-    rm -f "$tmp_file"
+    _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
     log "inject_standard_skills: standard skills injected"
 }
 
@@ -4206,7 +4233,7 @@ inject_model_injection_profile() {
         inject_block="${inject_block}"$'\n'"${indent}  - \"報告前にplaceholder残存確認とgate_report_formatを実行\""
     fi
 
-    tmp_file=$(mktemp)
+    tmp_file=$(mktemp "${task_file}.XXXXXX")
     awk '
         /^  model_injection_profile:/ { skip=1; next }
         skip && /^  [a-zA-Z_][a-zA-Z0-9_]*:/ { skip=0 }
@@ -4215,8 +4242,7 @@ inject_model_injection_profile() {
     ' "$task_file" > "$tmp_file"
 
     insert_task_block_before_description "$tmp_file" "$inject_block"
-    cp "$tmp_file" "$task_file"
-    rm -f "$tmp_file"
+    _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
     log "inject_model_injection_profile: ninja=${ninja_name} model=${model_label} intensity=${intensity}"
 }
 
@@ -4280,7 +4306,7 @@ ${command_text}"
     printf '%s\n' "$haystack" | grep -Eqi 'restore-all|restore|復元|rollback|ロールバック|portfolio_archive|archive.*portfolio|PF.*(削除|復元|rollback|ロールバック)|portfolio.*(delete|restore)|一括削除|cmd_3785|cmd_3786' || return 0
 
     local tmp_file inject_block indent="  "
-    tmp_file=$(mktemp)
+    tmp_file=$(mktemp "${task_file}.XXXXXX")
     awk '
         /^  dm_signal_pf_operation_guardrails:/ { skip=1; next }
         skip && /^  [a-zA-Z_][a-zA-Z0-9_]*:/ { skip=0 }
@@ -4296,8 +4322,7 @@ ${command_text}"
     inject_block="${inject_block}"$'\n'"${indent}- \"開始前後に active_total、新PFlive数、archive restored/unrestored数、holding_signal数、monthly_returns数、API件数、FE HTTP status を数値で記録する。\""
 
     insert_task_block_before_description "$tmp_file" "$inject_block"
-    cp "$tmp_file" "$task_file"
-    rm -f "$tmp_file"
+    _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
     log "inject_dm_signal_pf_operation_guardrails: injected"
 }
 
@@ -4340,7 +4365,7 @@ ${command_text}"
     [ ${#hints[@]} -gt 0 ] || return 0
 
     local tmp_file inject_block indent="  "
-    tmp_file=$(mktemp)
+    tmp_file=$(mktemp "${task_file}.XXXXXX")
     awk '
         {
             if (match($0, /[^ ]/)) indent = RSTART - 1; else indent = 999
@@ -4361,8 +4386,7 @@ ${command_text}"
 
     insert_task_block_before_description "$tmp_file" "$inject_block"
 
-    cp "$tmp_file" "$task_file"
-    rm -f "$tmp_file"
+    _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
     log "inject_context_hints: ${#hints[@]} hints injected"
 }
 
@@ -4402,7 +4426,7 @@ inject_production_invariants() {
         inject_block="${inject_block}"$'\n'"${indent}- \"${line}\""
     done <<< "$pi_lines"
 
-    tmp_file=$(mktemp)
+    tmp_file=$(mktemp "${task_file}.XXXXXX")
     awk '
         /^  production_invariants:/ { skip=1; next }
         skip && /^  - "/ { next }
@@ -4413,8 +4437,7 @@ inject_production_invariants() {
 
     insert_task_block_before_description "$tmp_file" "$inject_block"
 
-    cp "$tmp_file" "$task_file"
-    rm -f "$tmp_file"
+    _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
     log "inject_production_invariants: project=$project $(echo "$pi_lines" | wc -l) PIs injected"
 }
 
@@ -7089,13 +7112,12 @@ inject_execution_controls() {
         local inject_line="${indent}execution_env: \"Linux venv必須。RSS計測=/usr/bin/time -v。PowerShell/Windows python禁止(cmd_3496事故)\""
         # description行の前に挿入
         local tmp_file
-        tmp_file=$(mktemp)
+        tmp_file=$(mktemp "${task_file}.XXXXXX")
         awk -v line="$inject_line" '
             /^  description:/ && !done { print line; done=1 }
             { print }
         ' "$task_file" > "$tmp_file"
-        cp "$tmp_file" "$task_file"
-        rm -f "$tmp_file"
+        _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
         log "inject_execution_controls: execution_env injected (GS/DB detected)"
     else
         log "inject_execution_controls: no GS/DB keywords, skip"
@@ -9178,15 +9200,7 @@ except Exception:
             reset_stale_fields "$NINJA_NAME"
             if [ "$DIRECT_MODE" = true ]; then
             if [ -n "$YAML_FILE" ]; then
-                if [ ! -f "$YAML_FILE" ]; then
-                    log "ERROR: --yaml file not found: $YAML_FILE"
-                    echo "ERROR: --yaml ファイルが見つからない: $YAML_FILE" >&2
-                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
-                    return 1
-                fi
-                cp "$YAML_FILE" "$task_yaml"
-                log "direct_mode: task YAML overwritten from $YAML_FILE"
-                deploy_task_validate_or_repair_direct_yaml "$task_yaml" "$YAML_FILE" || {
+                deploy_task_direct_yaml_publish "$task_yaml" "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
                 }

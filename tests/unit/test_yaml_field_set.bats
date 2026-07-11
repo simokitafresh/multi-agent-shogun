@@ -746,3 +746,75 @@ print('CMD_ID_INSERT_OK')
     [ "$status" -eq 0 ]
     [[ "$output" == *"CMD_ID_INSERT_OK"* ]]
 }
+
+# ── cmd_karo_hotfix_deploy_task_atomic_publish_202607111645 回帰テスト ──
+# Origin: cmd_3847偵察でscripts/deploy_task.sh内11箇所がyaml_field_set.shを経由せず
+# 非atomic cp+無検証で公開していたと判明(tmp_fileが/tmp、queue/tasksは/mnt/cで別
+# filesystemのためmv不可)。共通口_yaml_field_set_publish_atomicを新設し11箇所を
+# 同一dir mktemp+検証+atomic mvへ統一。以下は共通口自体の契約を保証する。
+
+@test "publish_atomic: 不正YAML候補は旧targetをbyte-identicalに保ち一時ファイルも残さない" {
+    local target="$TEST_TMPDIR/target.yaml"
+    cat > "$target" <<'EOF'
+task:
+  status: assigned
+  purpose: original
+EOF
+    cp "$target" "$target.orig"
+
+    local candidate
+    candidate="$(mktemp "${target}.XXXXXX")"
+    printf 'task:\n  status: "broken\n' > "$candidate"
+
+    run bash -c "source '$YFS' && _yaml_field_set_publish_atomic '$candidate' '$target'"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"FATAL"* ]]
+
+    run diff "$target.orig" "$target"
+    [ "$status" -eq 0 ]
+
+    [ ! -e "$candidate" ]
+    run bash -c "compgen -G '${target}.*' | grep -v '\.orig$'"
+    [ "$status" -ne 0 ]
+}
+
+@test "publish_atomic: 正当なYAML候補はatomic mvでtargetへ反映され候補ファイルは消える" {
+    local target="$TEST_TMPDIR/target_ok.yaml"
+    cat > "$target" <<'EOF'
+task:
+  status: assigned
+EOF
+
+    local candidate
+    candidate="$(mktemp "${target}.XXXXXX")"
+    cat > "$candidate" <<'EOF'
+task:
+  status: completed
+EOF
+
+    run bash -c "source '$YFS' && _yaml_field_set_publish_atomic '$candidate' '$target'"
+    [ "$status" -eq 0 ]
+
+    [ ! -e "$candidate" ]
+    run python3 -c "
+import yaml
+data = yaml.safe_load(open('$target', encoding='utf-8'))
+assert data['task']['status'] == 'completed', data
+print('PUBLISH_OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PUBLISH_OK"* ]]
+}
+
+@test "deploy_task.sh: task YAML未検証cp公開が0件である(静的検査)" {
+    run grep -nE 'cp[[:space:]]+"\$(tmp_file|YAML_FILE)"[[:space:]]+"\$(task_file|task_yaml)"' \
+        "$PROJECT_ROOT/scripts/deploy_task.sh"
+    [ "$status" -ne 0 ]
+    [ -z "$output" ]
+}
+
+@test "deploy_task.sh: 全injectorがpublish_atomic経由でtask_fileへ公開する(静的検査)" {
+    run grep -c "_yaml_field_set_publish_atomic" "$PROJECT_ROOT/scripts/deploy_task.sh"
+    [ "$status" -eq 0 ]
+    [ "$output" -ge 10 ]
+}

@@ -91,6 +91,26 @@ except Exception as exc:
 ' "$candidate_file"
 }
 
+# cmd_karo_hotfix_deploy_task_atomic_publish_202607111645: awk/python生成のtmp_fileを
+# 共有運用YAML(target_file)へ発行する共通口。tmp_fileは呼び出し側がtarget_fileと同一
+# ディレクトリ(同一filesystem)でmktempしていることが前提(別filesystemだとmvがEXDEVで失敗する)。
+# 検証NGなら target_file は一切変更せず、tmp_fileも残さない(fail-closed + 一時ファイル0件)。
+_yaml_field_set_publish_atomic() {
+    local tmp_file="$1"
+    local target_file="$2"
+
+    if ! _yaml_field_set_validate_parseable "$tmp_file" 2>&1; then
+        rm -f "$tmp_file"
+        echo "FATAL: publish_atomic: generated content failed YAML validation, original file kept unchanged: $target_file" >&2
+        return 1
+    fi
+    if ! mv "$tmp_file" "$target_file"; then
+        rm -f "$tmp_file"
+        echo "FATAL: publish_atomic: atomic publish (mv) failed: $target_file" >&2
+        return 1
+    fi
+}
+
 _yaml_field_set_apply_root() {
     local yaml_file="$1"
     local out_file="$2"
