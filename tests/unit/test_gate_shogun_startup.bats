@@ -1057,7 +1057,7 @@ EOF
     [[ "$output" != *"スキル別FAIL率: 直近50件FAIL率10%超の改善対象あり"* ]]
 }
 
-@test "code_fix_required alert clears when recent 50 skill executions have zero FAIL" {
+@test "code_fix_required alert remains read-only until skill_auto_improve clears it" {
     cat > "$TEST_TMPDIR/logs/skill_execution_log.yaml" <<'EOF'
 executions:
 EOF
@@ -1089,16 +1089,13 @@ EOF
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"■ スキル自動成長エスカレーション"* ]]
-    [[ "$output" == *"OK: code_fix_required未解消パターンなし"* ]]
-    [[ "$output" != *"ALERT: report-write"* ]]
+    [[ "$output" == *"ALERT: report-write"* ]]
     run python3 - "$TEST_TMPDIR/logs/skill_auto_improve_state.json" <<'PY'
 import json, sys
 state = json.load(open(sys.argv[1], encoding="utf-8"))
 entry = state["patterns"]["report_write_old"]
-assert entry.get("classification") != "code_fix_required"
-assert entry.get("code_fix_cleared_by") == "gate_shogun_startup_recent50_zero_fail"
-assert entry.get("code_fix_cleared_recent50_total") == 50
-assert entry.get("code_fix_cleared_recent50_fail") == 0
+assert entry.get("classification") == "code_fix_required"
+assert "code_fix_cleared_by" not in entry
 print("OK")
 PY
     [ "$status" -eq 0 ]
