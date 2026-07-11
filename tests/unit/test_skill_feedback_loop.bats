@@ -1325,6 +1325,28 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "skill_auto_improve keeps same-timestamp PASS unresolved fail-closed" {
+    mkdir -p "$TEST_TMPDIR/skills/report-write"
+    printf '# report-write\n' > "$TEST_TMPDIR/skills/report-write/SKILL.md"
+    STATE_JSON="$TEST_TMPDIR/skill_auto_improve_state.json"
+    cat > "$TEST_SKILL_LOG" <<EOF
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "report-write"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+  gate: "gate_report_format"
+- ts: "2026-05-02T10:00:00+09:00"
+  skill: "report-write"
+  result: "PASS"
+  gate: "gate_report_format"
+EOF
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 1 --apply --unchanged-threshold 1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CLASSIFIED: report-write"* ]]
+    [[ "$output" != *"SKIPPED_CLASSIFICATION_AFTER_PASS"* ]]
+}
+
 @test "skill_auto_improve does not reclassify or escalate code_fix_cleared pattern" {
     mkdir -p "$TEST_TMPDIR/skills/report-write" "$TEST_TMPDIR/scripts"
     cat > "$TEST_TMPDIR/skills/report-write/SKILL.md" <<'EOF'

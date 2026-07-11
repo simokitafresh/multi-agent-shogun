@@ -3257,7 +3257,6 @@ _skill_ai_state="$SCRIPT_DIR/logs/skill_auto_improve_state.json"
 if [ -f "$_skill_ai_state" ]; then
     _cfr_list=$(python3 - "$_skill_ai_state" "$_TMP_SKILL_EXEC_RECENT" <<'PY' 2>/dev/null || true
 import json, sys
-import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -3289,41 +3288,10 @@ def load_skill_exec_entries(path):
         entries.append(current)
     return entries
 
-skill_exec_entries = load_skill_exec_entries(exec_log_path)
-
-def recent_skill_fail_count(skill, window=50):
-    if not skill:
-        return None
-    skill_entries = [
-        entry for entry in skill_exec_entries
-        if str(entry.get("skill") or "").strip() == skill
-    ][-window:]
-    if not skill_entries:
-        return None
-    fail_count = sum(
-        1 for entry in skill_entries
-        if str(entry.get("result") or "").strip().upper() == "FAIL"
-    )
-    return len(skill_entries), fail_count
-
 cfr = []
-changed = False
 for k, v in patterns.items():
     if v.get("classification") != "code_fix_required":
         continue
-    skill = str(v.get("skill") or "").strip()
-    recent = recent_skill_fail_count(skill)
-    if recent is not None:
-        total, fail = recent
-        if fail == 0:
-            v.pop("classification", None)
-            v.pop("classification_reason", None)
-            v["code_fix_cleared_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-            v["code_fix_cleared_by"] = "gate_shogun_startup_recent50_zero_fail"
-            v["code_fix_cleared_recent50_total"] = total
-            v["code_fix_cleared_recent50_fail"] = fail
-            changed = True
-            continue
     last_str = v.get("last_fail", "")
     try:
         last_dt = datetime.fromisoformat(last_str.replace("Z", "+00:00"))
@@ -3334,8 +3302,6 @@ for k, v in patterns.items():
     except (ValueError, TypeError):
         pass
     cfr.append((k, v))
-if changed:
-    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 if not cfr:
     print("OK")
 else:

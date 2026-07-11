@@ -53,7 +53,7 @@ import subprocess
 import sys
 import tempfile
 from collections import Counter, defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -267,6 +267,27 @@ def escalation_key(row):
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
 
 
+def parse_event_ts(value):
+    """Parse execution timestamps for ordering; invalid values stay unresolved."""
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        parsed = datetime.fromisoformat(re.sub(r"([+-]\d{2})(\d{2})$", r"\1:\2", raw).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def pass_resolves_fail(pass_ts, fail_ts):
+    """Fail closed: only a valid PASS strictly newer than FAIL resolves it."""
+    parsed_pass = parse_event_ts(pass_ts)
+    parsed_fail = parse_event_ts(fail_ts)
+    return parsed_pass is not None and parsed_fail is not None and parsed_pass > parsed_fail
+
+
 def load_escalation_state(path):
     if not path.is_file():
         return {"patterns": {}}
@@ -300,7 +321,7 @@ def is_code_fix_cleared(state_entry, last_fail=""):
     )
     # A FAIL recorded after CLEAR starts a new streak.  The old CLEAR marker
     # must not suppress a genuinely unresolved recurrence forever.
-    if last_fail and cleared_at and last_fail > cleared_at:
+    if last_fail and cleared_at and not pass_resolves_fail(cleared_at, last_fail):
         return False
     return bool(cleared_at or state_entry.get("code_fix_cleared_by"))
 
@@ -619,7 +640,7 @@ for key, entry in escalation_state.get("patterns", {}).items():
     gate = str(entry.get("gate") or "").strip()
     last_fail = str(entry.get("last_fail") or "").strip()
     pass_ts = latest_pass.get((skill, gate), "")
-    if not pass_ts or pass_ts < last_fail:
+    if not pass_resolves_fail(pass_ts, last_fail):
         continue
     entry.pop("classification", None)
     entry.pop("classification_reason", None)
@@ -673,7 +694,7 @@ for skill, rows in apply_plan.items():
                 entry.pop(field, None)
             reset_escalation_counters(entry)
         pass_ts = latest_pass.get((row["skill"], row.get("gate") or ""), "")
-        if pass_ts and pass_ts >= (row.get("last_fail") or ""):
+        if pass_resolves_fail(pass_ts, row.get("last_fail") or ""):
             entry.update({
                 "skill": row["skill"],
                 "gate": row.get("gate") or "",
