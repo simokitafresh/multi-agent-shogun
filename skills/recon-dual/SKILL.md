@@ -107,3 +107,5 @@ Script refs verified: 2026-07-08 将軍検分. 前回checked_at以降の deploy_
 <!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 Script refs verified: 2026-07-09 cmd_karo_hotfix_skill_refs_update_202607091452_saizo. `deploy_task.sh` 前回checked_at以降の変更(bddf2a457/0cb0954e3/14b74c865)をgit showで確認。bddf2a457はproject=dm-signal かつ PF削除/復元/rollback関連purposeの時のみ発火する`inject_dm_signal_pf_operation_guardrails`追加(Level5知識注入の対象追加。scout/`--yaml`いずれの経路でも発火し得るが引数・通知契約には無関係)。0cb0954e3はgate_report_format_learning.yamlのJSON形式prefill_active判定grepバグ修正(内部AUTO-PREFILL発火条件の修正)。14b74c865は`--direct` training(cmd_training_*)専用のtemplate内容検証追加で、recon-dualが使う1人目`<cmd_id> <ninja1> scout`・2人目`--yaml <file> <ninja2>`経路には未到達。1人目正規配備と2人目`--yaml`配備の引数契約、safe_inbox_write通知、report template生成は変更なし。recon-dual手順の書き換えは不要。
+
+<!-- script参照互換確認 2026-07-12: 参照先(yaml_field_set.sh/deploy_task.sh/ninja_monitor.sh)の直近変更はatomic mv/validate/fail-closed等の内部堅牢化のみでCLI引数・呼出手順の変更なし。本書の手順は現行スクリプトと互換(将軍git log現物確認) -->

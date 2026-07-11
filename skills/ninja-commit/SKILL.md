@@ -86,6 +86,8 @@ Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*�
 - **scope外ファイルのcommit** — .env、credentials.json、他の忍者のファイルに触れるな
 
 ## 注意ポイント
+
+- 2026-07-12: gate=gate_report_format result=FAIL executor=tobisaru reason=commit_hash: 'no-code-change' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ
 - 2026-07-03: gate=gate_report_format result=FAIL executor=tobisaru reason=commit_hash: '67da37c4, ca170887' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ
 
 - 2026-07-03: gate=gate_report_format result=FAIL executor=saizo reason=commit_hash: '0f50b1d3 (DM-Signalリポジトリ /mnt/c/Python_app/DM-signal)' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ
