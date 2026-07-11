@@ -44,7 +44,11 @@ setup_file() {
         printf '\n'
         sed -n '/^collect_report_files_modified()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^discover_reports_for_cmd()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^collect_parent_cmd_report_files_modified()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^has_parent_cmd_report()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^collect_git_show_w_files()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
@@ -642,6 +646,169 @@ EOF
     run collect_parent_cmd_report_files_modified "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
     [ "$(printf '%s\n' "$output" | grep -c '^scripts/touched.sh$')" -eq 1 ]
+}
+
+# ─── cmd_karo_hotfix_gate_report_discovery_after_redeploy: task snapshot=0でも
+#     report自身のparent_cmd/task_idからcmd Aのreportを発見する(cmd_3844型偽BLOCK根治) ───
+
+@test "discover_reports_for_cmd finds cmd A report/files_modified/binary_checks after worker task YAML is overwritten by cmd B AC1" {
+    export SCRIPT_DIR="$TEST_PROJECT"
+    export CMD_ID="$TEST_CMD_ID"
+
+    # sasuke was redeployed to the NEXT cmd before this gate ran: sasuke.yaml
+    # no longer references $TEST_CMD_ID at all (task snapshot=0 for cmd A).
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: cmd_next_9999
+  report_filename: sasuke_report_cmd_next_9999.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+task_id: ${TEST_CMD_ID}_normal
+parent_cmd: $TEST_CMD_ID
+files_modified:
+  - path: scripts/cmd_complete_gate.sh
+    change: modified
+binary_checks:
+  AC1:
+    - check: xxx
+      result: yes
+EOF
+
+    run discover_reports_for_cmd "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"sasuke_report_${TEST_CMD_ID}.yaml"* ]]
+
+    unset MATCHING_TASK_FILES
+    run collect_report_modified_files
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"scripts/cmd_complete_gate.sh"* ]]
+
+    run python3 -c "
+import yaml
+with open('$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml') as f:
+    data = yaml.safe_load(f)
+# YAML 1.1 resolves unquoted 'yes' to boolean True (PyYAML safe_load).
+result = data['binary_checks']['AC1'][0]['result']
+assert result is True or str(result).strip().lower() == 'yes'
+print('ok')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "ok" ]]
+}
+
+@test "discover_reports_for_cmd rejects prefix-collision cmd_ids (AC2 strict equality)" {
+    export SCRIPT_DIR="$TEST_PROJECT"
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_cmd_100.yaml" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_100
+files_modified:
+  - path: scripts/exact.sh
+    change: modified
+EOF
+    cat > "$TEST_PROJECT/queue/reports/hanzo_report_cmd_1000.yaml" <<'EOF'
+worker_id: hanzo
+parent_cmd: cmd_1000
+files_modified:
+  - path: scripts/prefix_collision.sh
+    change: modified
+EOF
+
+    run discover_reports_for_cmd "cmd_100"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"sasuke_report_cmd_100.yaml"* ]]
+    [[ "$output" != *"hanzo_report_cmd_1000.yaml"* ]]
+}
+
+@test "collect_report_modified_files merges task-snapshot reports with parent_cmd-discovered reports and excludes other cmds AC1 AC2" {
+    export SCRIPT_DIR="$TEST_PROJECT"
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export CMD_ID="$TEST_CMD_ID"
+
+    # hanzo: still tracked live via MATCHING_TASK_FILES (normal path).
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/hanzo.yaml")
+    cat > "$TEST_PROJECT/queue/tasks/hanzo.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: hanzo_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/hanzo_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: hanzo
+parent_cmd: $TEST_CMD_ID
+files_modified:
+  - path: scripts/live_task.sh
+    change: modified
+EOF
+
+    # sasuke: task YAML already overwritten by the next cmd — only discoverable
+    # via report parent_cmd match, not via MATCHING_TASK_FILES.
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: cmd_next_9999
+  report_filename: sasuke_report_cmd_next_9999.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+parent_cmd: $TEST_CMD_ID
+files_modified:
+  - path: scripts/stale_task.sh
+    change: modified
+EOF
+
+    # A report for a completely different cmd must never be mixed in.
+    cat > "$TEST_PROJECT/queue/reports/kotaro_report_cmd_other_9999.yaml" <<'EOF'
+worker_id: kotaro
+parent_cmd: cmd_other_9999
+files_modified:
+  - path: scripts/unrelated.sh
+    change: modified
+EOF
+
+    run collect_report_modified_files
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"scripts/live_task.sh"* ]]
+    [[ "$output" == *"scripts/stale_task.sh"* ]]
+    [[ "$output" != *"scripts/unrelated.sh"* ]]
+}
+
+@test "command/files_modified coverage does not false-BLOCK when task snapshot is 0 (cmd_3844 pattern) AC1 AC3" {
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=()
+    export MATCHING_TASK_FILES_PROCESSED_COUNT=0
+    export MATCHING_TASK_FILES_SKIPPED_COUNT=0
+    export ALL_CLEAR=true
+    BLOCK_REASONS=()
+
+    cat > "$YAML_FILE" <<EOF
+commands:
+  $TEST_CMD_ID:
+    command: "scripts/cmd_complete_gate.sh を修正"
+    target_path: ""
+EOF
+
+    # sasuke was redeployed to the NEXT cmd before this gate ran: sasuke.yaml
+    # no longer references $TEST_CMD_ID at all (MATCHING_TASK_FILES snapshot=0),
+    # but the completed report for cmd A still exists on disk (cmd_3844).
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: cmd_next_9999
+  report_filename: sasuke_report_cmd_next_9999.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+parent_cmd: $TEST_CMD_ID
+files_modified:
+  - path: scripts/cmd_complete_gate.sh
+    change: modified
+EOF
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (command欄ファイル参照 全1件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" != *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+    [[ "$output" == *"BLOCK_REASONS="* ]]
+    [[ "$output" != *"command_files_modified_mismatch"* ]]
 }
 
 @test "command/files_modified coverage blocks when command target is missing from report" {

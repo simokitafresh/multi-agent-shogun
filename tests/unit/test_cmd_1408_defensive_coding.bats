@@ -136,11 +136,12 @@ files_modified:
 EOF
     {
         sed -n '/^resolve_report_file()/,/^}/p' "$gate_script"
+        sed -n '/^discover_reports_for_cmd()/,/^}/p' "$gate_script"
         sed -n '/^collect_report_modified_files()/,/^}/p' "$gate_script"
         sed -n '/^check_project_code_stubs()/,/^}/p' "$gate_script"
     } > "$TEST_TMPDIR/stub_check.sh"
 
-    run bash -c "export SCRIPT_DIR='$fake_root' TASKS_DIR='$fake_root/queue/tasks' MATCHING_TASK_FILES=('$fake_root/queue/tasks/tobisaru.yaml'); source '$TEST_TMPDIR/stub_check.sh'; check_project_code_stubs '$cmd_id' dm-signal"
+    run bash -c "export SCRIPT_DIR='$fake_root' TASKS_DIR='$fake_root/queue/tasks' CMD_ID='$cmd_id' MATCHING_TASK_FILES=('$fake_root/queue/tasks/tobisaru.yaml'); source '$TEST_TMPDIR/stub_check.sh'; check_project_code_stubs '$cmd_id' dm-signal"
     [ "$status" -eq 0 ]
     [[ "$output" != *"commit_missing"* ]]
     [[ "$output" != *"tasks/lessons.md"* ]]

@@ -3999,7 +3999,10 @@ for item in files:
 PY
 }
 
-collect_parent_cmd_report_files_modified() {
+# cmd_karo_hotfix_gate_report_discovery_after_redeploy: 同一忍者への次task配備でtask YAMLが
+# 上書きされ(parent_cmdが変わり)MATCHING_TASK_FILESの対象外になっても、report自身のparent_cmd/
+# task_idの厳密一致でcmd Aのreportを発見できるようにする共通ヘルパー(cmd_3844型の偽BLOCK根治)。
+discover_reports_for_cmd() {
     local cmd_id="${1:-$CMD_ID}"
     local reports_dir="$SCRIPT_DIR/queue/reports"
 
@@ -4010,14 +4013,6 @@ import yaml
 
 reports_dir = os.environ["REPORTS_DIR"]
 cmd_id = os.environ["CMD_ID"]
-seen = set()
-
-def emit(value):
-    value = str(value or "").strip()
-    if not value or value in ("no-code-change", "no_code_change") or value in seen:
-        return
-    seen.add(value)
-    print(value)
 
 for path in sorted(glob.glob(os.path.join(reports_dir, "*.yaml"))):
     try:
@@ -4027,47 +4022,26 @@ for path in sorted(glob.glob(os.path.join(reports_dir, "*.yaml"))):
         continue
     if not isinstance(report, dict):
         continue
-    if str(report.get("parent_cmd") or "").strip() != cmd_id:
-        continue
-
-    files = report.get("files_modified") or []
-    if isinstance(files, str):
-        files = [files]
-    if not isinstance(files, list):
-        continue
-    for item in files:
-        if isinstance(item, dict):
-            emit(item.get("path") or item.get("file") or item.get("name"))
-        else:
-            emit(item)
+    parent_cmd = str(report.get("parent_cmd") or "").strip()
+    task_id = str(report.get("task_id") or "").strip()
+    if parent_cmd == cmd_id or task_id == cmd_id:
+        print(path)
 PY
+}
+
+collect_parent_cmd_report_files_modified() {
+    local cmd_id="${1:-$CMD_ID}"
+    local report_path
+
+    while IFS= read -r report_path; do
+        [ -n "$report_path" ] || continue
+        collect_report_files_modified "$report_path"
+    done < <(discover_reports_for_cmd "$cmd_id") | awk 'NF && !seen[$0]++'
 }
 
 has_parent_cmd_report() {
     local cmd_id="${1:-$CMD_ID}"
-    local reports_dir="$SCRIPT_DIR/queue/reports"
-
-    REPORTS_DIR="$reports_dir" CMD_ID="$cmd_id" python3 - <<'PY'
-import glob
-import os
-import yaml
-
-reports_dir = os.environ["REPORTS_DIR"]
-cmd_id = os.environ["CMD_ID"]
-
-for path in sorted(glob.glob(os.path.join(reports_dir, "*.yaml"))):
-    try:
-        with open(path, encoding="utf-8") as f:
-            report = yaml.safe_load(f) or {}
-    except Exception:
-        continue
-    if not isinstance(report, dict):
-        continue
-    if str(report.get("parent_cmd") or "").strip() == cmd_id:
-        raise SystemExit(0)
-
-raise SystemExit(1)
-PY
+    [ -n "$(discover_reports_for_cmd "$cmd_id")" ]
 }
 
 collect_git_show_w_files() {
@@ -4844,15 +4818,27 @@ get_cmd_changed_files() {
 
 collect_report_modified_files() {
     local task_file ninja_name report_file
+    local -A _crmf_seen_reports=()
 
-    if ! declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
-        return 0
+    if declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        for task_file in "${MATCHING_TASK_FILES[@]}"; do
+            [ -f "$task_file" ] || continue
+            ninja_name=$(basename "$task_file" .yaml)
+            report_file=$(resolve_report_file "$ninja_name")
+            [ -f "$report_file" ] || continue
+            _crmf_seen_reports["$report_file"]=1
+        done
     fi
 
-    for task_file in "${MATCHING_TASK_FILES[@]}"; do
-        [ -f "$task_file" ] || continue
-        ninja_name=$(basename "$task_file" .yaml)
-        report_file=$(resolve_report_file "$ninja_name")
+    # cmd_karo_hotfix_gate_report_discovery_after_redeploy: worker task YAMLが
+    # 次cmdへ既に上書きされ(MATCHING_TASK_FILESの対象外/task snapshot=0)ても、
+    # report自身のparent_cmd/task_id厳密一致でcmd Aのreportを発見する(cmd_3844型偽BLOCK根治)。
+    while IFS= read -r report_file; do
+        [ -n "$report_file" ] || continue
+        _crmf_seen_reports["$report_file"]=1
+    done < <(discover_reports_for_cmd "$CMD_ID")
+
+    for report_file in "${!_crmf_seen_reports[@]}"; do
         [ -f "$report_file" ] || continue
         awk '
             /^files_modified:/ { in_files=1; next }
