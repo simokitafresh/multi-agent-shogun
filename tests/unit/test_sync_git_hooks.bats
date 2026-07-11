@@ -207,6 +207,36 @@ OLDSCRIPT
     [[ "$output" == *"STAGED_FOR_THIS_COMMIT"* ]]
 }
 
+@test "GA-222 followup: staged content IS used when a parent directory is declared in-scope" {
+    # ninja_scope_commit.sh permits directory scopes (e.g. -- scripts/hooks),
+    # which git add stages recursively. sync_git_hooks.sh must treat a file
+    # under an in-scope directory as in-scope too, not just exact matches.
+    commit_hook_source "echo COMMITTED_V1"
+    printf '#!/usr/bin/env bash\necho STAGED_VIA_DIRECTORY_SCOPE\n' > "$TEST_ROOT/scripts/hooks/git-pre-commit.sh"
+    (cd "$TEST_ROOT" && git add scripts/hooks/git-pre-commit.sh)
+
+    run bash -c "cd '$TEST_ROOT' && bash '$HELPER' --scope-path scripts/hooks"
+
+    [ "$status" -eq 0 ]
+    run cat "$TEST_ROOT/.git/hooks/pre-commit"
+    [[ "$output" == *"STAGED_VIA_DIRECTORY_SCOPE"* ]]
+}
+
+@test "GA-222 followup: a similarly-prefixed scope path is not treated as in-scope" {
+    # "scripts/hook" (no trailing s) must not match "scripts/hooks/..." — the
+    # boundary must require an actual "/" separator, not just a string prefix.
+    commit_hook_source "echo COMMITTED_V1"
+    printf '#!/usr/bin/env bash\necho SHOULD_NOT_BE_USED\n' > "$TEST_ROOT/scripts/hooks/git-pre-commit.sh"
+    (cd "$TEST_ROOT" && git add scripts/hooks/git-pre-commit.sh)
+
+    run bash -c "cd '$TEST_ROOT' && bash '$HELPER' --scope-path scripts/hook"
+
+    [ "$status" -eq 0 ]
+    run cat "$TEST_ROOT/.git/hooks/pre-commit"
+    [[ "$output" == *"COMMITTED_V1"* ]]
+    [[ "$output" != *"SHOULD_NOT_BE_USED"* ]]
+}
+
 @test "fails closed when tracked source vanishes from HEAD while scripts/hooks/ convention is in use" {
     commit_hook_source "echo v1"
     # Simulate the source file disappearing from HEAD while scripts/hooks/

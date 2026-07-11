@@ -22,6 +22,14 @@
 #      ディレクトリ自体がHEADに存在するなら、このrepoは本方式の管理対象であり
 #      個別ファイルの消失は異常事態としてfail-closedする。scripts/hooks/自体が
 #      HEADに存在しない場合のみ「本方式を使わないrepo」としてno-opする。
+#
+# GA-222 followupレビュー指摘(2026-07-11 karo 2回目REQUEST_CHANGES)への対応:
+#  (5) is_in_scopeが完全一致のみだと、ninja_scope_commit.shがdirectory scope
+#      (例: -- scripts/hooks)で呼ばれた場合にscripts/hooks/git-pre-commit.sh
+#      自身がgit addされてcommitされるのにsync側はscope外と誤判定しHEAD版を
+#      配備してしまい、commit直後に再driftする。scope_pathがdirectoryの場合
+#      その配下も含めてin-scope判定するよう修正(末尾slash正規化+"/"境界要求で
+#      scripts/hook等の類似prefix誤マッチを回避)。
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" \
@@ -48,9 +56,15 @@ while (($#)); do
 done
 
 is_in_scope() {
-    local target="$1" p
+    # ninja_scope_commit.shはdirectory scope(例: -- scripts/hooks)を許容し、
+    # その配下の全ファイルがcommit対象になる。scope_pathがdirectoryの場合、
+    # その配下のtarget(例: scripts/hooks/git-pre-commit.sh)もin-scope扱いする。
+    # 末尾slash除去で正規化し、"scripts/hook"のような類似prefixを誤マッチしないよう
+    # 境界に"/"を要求する(scripts/hooks/*でscripts/hooks2/*等は非マッチ)。
+    local target="$1" p norm
     for p in ${scope_paths[@]+"${scope_paths[@]}"}; do
-        [[ "$p" == "$target" ]] && return 0
+        norm="${p%/}"
+        [[ "$norm" == "$target" || "$target" == "$norm"/* ]] && return 0
     done
     return 1
 }

@@ -146,3 +146,32 @@ teardown() {
     run cat "$REPO/.git/hooks/pre-commit"
     [[ "$output" == *"NEW_VERSION"* ]]
 }
+
+@test "GA-222 followup: committing a directory scope that contains the hook source installs the newly staged content" {
+    mkdir -p "$REPO/scripts/hooks"
+    cp "$BATS_TEST_DIRNAME/../../scripts/sync_git_hooks.sh" "$REPO/scripts/sync_git_hooks.sh"
+    chmod +x "$REPO/scripts/sync_git_hooks.sh"
+    printf '#!/usr/bin/env bash\nprintf OLD_VERSION > .git/hook-marker\n' \
+        > "$REPO/scripts/hooks/git-pre-commit.sh"
+    chmod +x "$REPO/scripts/hooks/git-pre-commit.sh"
+    (
+        cd "$REPO"
+        git add scripts/sync_git_hooks.sh scripts/hooks/git-pre-commit.sh
+        git commit -qm "add tracked hook source + sync helper"
+    )
+
+    # This ninja commits the whole scripts/hooks directory (not the exact
+    # file path). git add stages git-pre-commit.sh recursively, and the
+    # committed tree includes the new content — the live hook must match
+    # that same new content immediately after commit, not the stale HEAD
+    # value from before this commit (which would otherwise cause an
+    # immediate re-drift right after the commit completes).
+    printf '#!/usr/bin/env bash\nprintf NEW_VERSION_VIA_DIR_SCOPE > .git/hook-marker\n' \
+        > "$REPO/scripts/hooks/git-pre-commit.sh"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m update-hook-source-dir-scope -- scripts/hooks"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" show HEAD:scripts/hooks/git-pre-commit.sh)" = "$(cat "$REPO/scripts/hooks/git-pre-commit.sh")" ]
+    run cat "$REPO/.git/hooks/pre-commit"
+    [[ "$output" == *"NEW_VERSION_VIA_DIR_SCOPE"* ]]
+}
